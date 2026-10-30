@@ -94,6 +94,29 @@ class ExceptionCodes(Enum):
     # Others (reserved / unknown) map to default signal
 
 
+# Slot order matches enum xtensa_extra_register in arch/xtensa/core/coredump.c.
+EXTRA_REGISTERS = (
+    "WINDOWBASE",
+    "WINDOWSTART",
+    "THREADPTR",
+    "EPC1",
+    "EPC2",
+    "EPC3",
+    "EPC4",
+    "EPC5",
+    "EPC6",
+    "EPC7",
+    "DEPC",
+    "EPS2",
+    "EPS3",
+    "EPS4",
+    "EPS5",
+    "EPS6",
+    "EPS7",
+    "EXCSAVE1",
+)
+
+
 class GdbStub_Xtensa(GdbStub):
     GDB_SIGNAL_DEFAULT = 7
 
@@ -139,7 +162,9 @@ class GdbStub_Xtensa(GdbStub):
     def parse_arch_data_block(self):
         arch_data_blk = self.logfile.get_arch_data()['data']
 
-        self.version = struct.unpack('H', arch_data_blk[1:3])[0]
+        self.version = struct.unpack('<H', arch_data_blk[1:3])[0]
+        if self.version not in (1, 2, 3):
+            raise ValueError(f"Unsupported Xtensa coredump version: {self.version}")
         logger.debug(f"Xtensa GDB stub version: {self.version}")
 
         # Get SOC and toolchain to get correct format for unpack
@@ -159,11 +184,34 @@ class GdbStub_Xtensa(GdbStub):
 
         self.gdb_reg_def = get_gdb_reg_definition(self.soc, self.toolchain)
 
+        self.extra_valid = 0
+        if self.version == 3:
+            self.extra_valid = struct.unpack("<I", arch_data_blk_regs[:4])[0]
+            arch_data_blk_regs = arch_data_blk_regs[4:]
+            if self.extra_valid >> len(EXTRA_REGISTERS):
+                raise ValueError("Unknown Xtensa extra register slots")
+
+        self.extra_registers = {}
+        if self.version == 3:
+            base_size = struct.calcsize(self.gdb_reg_def.ARCH_DATA_BLK_STRUCT_REGS)
+            values = iter(
+                struct.unpack(f"<{self.extra_valid.bit_count()}I", arch_data_blk_regs[base_size:])
+            )
+            for index, name in enumerate(EXTRA_REGISTERS):
+                if self.extra_valid & (1 << index):
+                    value = next(values)
+                    self.extra_registers[name] = value
+                    logger.info("Xtensa extra register %s: 0x%08x", name, value)
+            arch_data_blk_regs = arch_data_blk_regs[:base_size]
+
         tu = struct.unpack(self.gdb_reg_def.ARCH_DATA_BLK_STRUCT_REGS, arch_data_blk_regs)
 
         self.registers = dict()
 
         self.map_registers(tu)
+        for register in self.gdb_reg_def.ExtraRegNum:
+            if register.name in self.extra_registers:
+                self.registers[register.value] = self.extra_registers[register.name]
 
     def map_registers(self, tu):
         i = 0
@@ -201,24 +249,17 @@ class GdbStub_Xtensa(GdbStub):
         self.gdb_signal = sig
 
     def handle_register_group_read_packet(self):
-        idx = 0
-        pkt = b''
+        max_reg = max(register.value for register in self.gdb_reg_def.RegNum)
+        size = min((max_reg + 1) * 4, self.gdb_reg_def.SOC_GDB_GPKT_BIN_SIZE)
+        pkt = bytearray(b'x' * (size * 2))
+        offsets = getattr(self.gdb_reg_def, "GDB_G_PKT_OFFSETS", {})
+        for reg_num, value in self.registers.items():
+            offset = offsets.get(reg_num, reg_num * 4)
+            if offset + 4 <= size:
+                encoded = binascii.hexlify(struct.pack(self.reg_fmt, value))
+                pkt[offset * 2 : (offset + 4) * 2] = encoded
 
-        GDB_G_PKT_MAX_REG = max([reg_num.value for reg_num in self.gdb_reg_def.RegNum])
-
-        # We try to send as many of the registers listed
-        # as possible, but we are constrained by the
-        # maximum length of the g packet
-        while idx <= GDB_G_PKT_MAX_REG and idx * 4 < self.gdb_reg_def.SOC_GDB_GPKT_BIN_SIZE:
-            if idx in self.registers:
-                bval = struct.pack(self.reg_fmt, self.registers[idx])
-                pkt += binascii.hexlify(bval)
-            else:
-                pkt += b'x' * 8
-
-            idx += 1
-
-        self.put_gdb_packet(pkt)
+        self.put_gdb_packet(bytes(pkt))
 
     def handle_register_single_read_packet(self, pkt):
         # format is pXX, where XX is the hex representation of the idx
@@ -253,6 +294,24 @@ class GdbRegDef_Sample_Controller:
     # actual hard limit to how big the g packet can be.
     SOC_GDB_GPKT_BIN_SIZE = 444
 
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        EPC1 = 51
+        EPC2 = 52
+        EPC3 = 53
+        EPC4 = 54
+        EPC5 = 55
+        EPC6 = 56
+        EPC7 = 57
+        DEPC = 58
+        EPS2 = 59
+        EPS3 = 60
+        EPS4 = 61
+        EPS5 = 62
+        EPS6 = 63
+        EPS7 = 64
+        EXCSAVE1 = 65
+
     class RegNum(Enum):
         PC = 0
         EXCCAUSE = 77
@@ -285,6 +344,25 @@ class GdbRegDef_Sample_Controller:
 class GdbRegDef_ESP32:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
     SOC_GDB_GPKT_BIN_SIZE = 420
+
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        THREADPTR = 74
+        EPC1 = 116
+        EPC2 = 117
+        EPC3 = 118
+        EPC4 = 119
+        EPC5 = 120
+        EPC6 = 121
+        EPC7 = 122
+        DEPC = 123
+        EPS2 = 124
+        EPS3 = 125
+        EPS4 = 126
+        EPS5 = 127
+        EPS6 = 128
+        EPS7 = 129
+        EXCSAVE1 = 130
 
     class RegNum(Enum):
         PC = 0
@@ -320,6 +398,25 @@ class GdbRegDef_ESP32S2:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIII'
     SOC_GDB_GPKT_BIN_SIZE = 420
 
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        THREADPTR = 71
+        EPC1 = 82
+        EPC2 = 83
+        EPC3 = 84
+        EPC4 = 85
+        EPC5 = 86
+        EPC6 = 87
+        EPC7 = 88
+        DEPC = 89
+        EPS2 = 90
+        EPS3 = 91
+        EPS4 = 92
+        EPS5 = 93
+        EPS6 = 94
+        EPS7 = 95
+        EXCSAVE1 = 96
+
     class RegNum(Enum):
         PC = 0
         EXCCAUSE = 99
@@ -349,6 +446,25 @@ class GdbRegDef_ESP32S2:
 class GdbRegDef_ESP32S3:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
     SOC_GDB_GPKT_BIN_SIZE = 420
+
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        THREADPTR = 74
+        EPC1 = 139
+        EPC2 = 140
+        EPC3 = 141
+        EPC4 = 142
+        EPC5 = 143
+        EPC6 = 144
+        EPC7 = 145
+        DEPC = 146
+        EPS2 = 147
+        EPS3 = 148
+        EPS4 = 149
+        EPS5 = 150
+        EPS6 = 151
+        EPS7 = 152
+        EXCSAVE1 = 153
 
     class RegNum(Enum):
         PC = 0
@@ -380,7 +496,7 @@ class GdbRegDef_ESP32S3:
         WINDOWSTART = 70
 
 
-# sdk-ng -> overlays/xtensa_intel_apl/gdb/gdb/xtensa-config.c
+# sdk-ng -> overlays/xtensa_intel_apl_adsp.tar.gz -> gdb/gdb/xtensa-config.c
 class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
 
@@ -390,6 +506,62 @@ class GdbRegDef_Intel_Adsp_CAVS_Zephyr:
     # even if it was sent in the g packet, I arbitrarily shrunk the
     # G packet to include up to A1, which fixed the issue.
     SOC_GDB_GPKT_BIN_SIZE = 640
+
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        THREADPTR = 75
+        EPC1 = 121
+        EPC2 = 122
+        EPC3 = 123
+        EPC4 = 124
+        EPC5 = 125
+        EPC6 = 126
+        EPC7 = 127
+        DEPC = 128
+        EPS2 = 129
+        EPS3 = 130
+        EPS4 = 131
+        EPS5 = 132
+        EPS6 = 133
+        EPS7 = 134
+        EXCSAVE1 = 135
+
+    # Audio registers occupy more than four bytes in the GDB g packet.
+    GDB_G_PKT_OFFSETS = {
+        121: 564,
+        122: 568,
+        123: 572,
+        124: 576,
+        125: 580,
+        126: 584,
+        127: 588,
+        128: 592,
+        129: 596,
+        130: 600,
+        131: 604,
+        132: 608,
+        133: 612,
+        134: 616,
+        135: 620,
+        148: 672,
+        154: 696,
+        158: 712,
+        159: 716,
+        160: 720,
+        161: 724,
+        162: 728,
+        163: 732,
+        164: 736,
+        165: 740,
+        166: 744,
+        167: 748,
+        168: 752,
+        169: 756,
+        170: 760,
+        171: 764,
+        172: 768,
+        173: 772,
+    }
 
     class RegNum(Enum):
         PC = 0
@@ -430,6 +602,25 @@ class GdbRegDef_Intel_Adsp_CAVS_XCC:
     # xt-gdb doesn't use the g packet at all
     SOC_GDB_GPKT_BIN_SIZE = 0
 
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        THREADPTR = 0x3E7
+        EPC1 = 0x2B1
+        EPC2 = 0x2B2
+        EPC3 = 0x2B3
+        EPC4 = 0x2B4
+        EPC5 = 0x2B5
+        EPC6 = 0x2B6
+        EPC7 = 0x2B7
+        DEPC = 0x2C0
+        EPS2 = 0x2C2
+        EPS3 = 0x2C3
+        EPS4 = 0x2C4
+        EPS5 = 0x2C5
+        EPS6 = 0x2C6
+        EPS7 = 0x2C7
+        EXCSAVE1 = 0x2D1
+
     class RegNum(Enum):
         PC = 32
         EXCCAUSE = 744
@@ -465,6 +656,25 @@ class GdbRegDef_DC233C:
     ARCH_DATA_BLK_STRUCT_REGS = '<IIIIIIIIIIIIIIIIIIIIIIIII'
 
     SOC_GDB_GPKT_BIN_SIZE = 568
+
+    # Extra registers do not change the base payload order in RegNum.
+    class ExtraRegNum(Enum):
+        THREADPTR = 43
+        EPC1 = 66
+        EPC2 = 67
+        EPC3 = 68
+        EPC4 = 69
+        EPC5 = 70
+        EPC6 = 71
+        EPC7 = 72
+        DEPC = 73
+        EPS2 = 74
+        EPS3 = 75
+        EPS4 = 76
+        EPS5 = 77
+        EPS6 = 78
+        EPS7 = 79
+        EXCSAVE1 = 80
 
     class RegNum(Enum):
         PC = 0
