@@ -541,6 +541,77 @@ static void quic_ctx_drain_incoming_streams(struct quic_context *ctx)
 	}
 }
 
+/*
+ * The application closes the socket of a context, so nothing is accepted on
+ * it any more. Release the streams and the connections that were handed over
+ * to it but not accepted yet: each holds a reference to a context. The flag is
+ * set under contexts_lock, where a connection is handed over and a stream is
+ * queued, so that either the hand-over or the queueing sees it or the
+ * connection or stream is taken here. The connections taken are marked the
+ * same way, as nobody accepts their streams either.
+ */
+static void quic_ctx_release_unaccepted(struct quic_context *ctx)
+{
+	struct quic_context *waiting[CONFIG_QUIC_MAX_CONTEXTS];
+	size_t waiting_count = 0;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	ctx->accept_closed = true;
+
+	while (waiting_count < ARRAY_SIZE(waiting)) {
+		waiting[waiting_count] = k_fifo_get(&ctx->pending.accept_q, K_NO_WAIT);
+		if (waiting[waiting_count] == NULL) {
+			break;
+		}
+
+		waiting[waiting_count]->accept_closed = true;
+		waiting_count++;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	quic_ctx_drain_incoming_streams(ctx);
+
+	for (size_t i = 0; i < waiting_count; i++) {
+		NET_DBG("[CO:%p/%d] Releasing connection that was not accepted",
+			waiting[i], quic_get_by_conn(waiting[i]));
+		quic_ctx_drain_incoming_streams(waiting[i]);
+		quic_context_unref(waiting[i]);
+	}
+}
+
+/* Queue a stream the peer opened for accept(). Returns false when nothing is
+ * accepted on the context any more; the stream is released then, as the
+ * release of the queue would have done. Otherwise a stream queued after that
+ * release would keep the context referenced for good.
+ */
+ZTESTABLE_STATIC bool quic_ctx_queue_incoming_stream(struct quic_context *ctx,
+						     struct quic_stream *stream)
+{
+	bool queued = false;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+
+	if (!ctx->accept_closed) {
+		k_fifo_put(&ctx->incoming.stream_q, stream);
+		k_sem_give(&ctx->incoming.stream_sem);
+		queued = true;
+	}
+
+	k_mutex_unlock(&contexts_lock);
+
+	if (!queued) {
+		NET_DBG("[CO:%p/%d] Releasing stream %" PRIu64 " that nobody accepts",
+			ctx, quic_get_by_conn(ctx), stream->id);
+
+		stream->ep = NULL;
+		quic_stream_unref(stream);
+	}
+
+	return queued;
+}
+
 static int quic_ctx_close_vmeth(void *obj)
 {
 	struct quic_context *ctx = obj;
@@ -565,11 +636,7 @@ static int quic_ctx_close_vmeth(void *obj)
 	 */
 	ctx->sock = -1;
 
-	/*
-	 * Release any unaccepted incoming streams. Each holds a context ref;
-	 * without this, ctx->refcount stays elevated and the context leaks.
-	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	quic_context_unref(ctx);
 
@@ -1804,6 +1871,10 @@ static int quic_connection_accept(struct quic_context *listen_ctx,
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
+		/* Streams moved to the connection before it was accepted hold
+		 * references to it, so release them with the connection.
+		 */
+		quic_ctx_release_unaccepted(child_ctx);
 		quic_context_unref(child_ctx);
 		return -ENOSPC;
 	}
@@ -2439,12 +2510,13 @@ int quic_connection_close(int sock)
 	}
 
 	/*
-	 * Release any peer-initiated streams that were received but never
-	 * accepted via zsock_accept(). Each holds a context reference; without
-	 * this the context refcount stays elevated and quic_context_unref()
-	 * below never reaches zero, leaving the context pool slot occupied.
+	 * Release any peer-initiated streams and connections that were
+	 * received but never accepted via zsock_accept(). Each holds a context
+	 * reference; without this the context refcount stays elevated and
+	 * quic_context_unref() below never reaches zero, leaving the context
+	 * pool slot occupied.
 	 */
-	quic_ctx_drain_incoming_streams(ctx);
+	quic_ctx_release_unaccepted(ctx);
 
 	(void)sock_obj_core_dealloc(ctx->sock);
 	quic_context_unref(ctx);
