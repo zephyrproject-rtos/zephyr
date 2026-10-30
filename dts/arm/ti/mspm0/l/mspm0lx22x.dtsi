@@ -85,6 +85,14 @@
 			};
 		};
 
+		trng: trng@40444000 {
+			compatible = "ti,mspm0-trng";
+			reg = <0x40444000 0x2000>;
+			interrupts = <1 0>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			status = "disabled";
+		};
+
 		spi1: spi@4046a000 {
 			compatible = "ti,mspm0-spi";
 			reg = <0x4046a000 0x2000>;
