@@ -9,3 +9,5 @@ board:
   vendor: infineon
   socs:
   - name: psc3m6ges3ahq1
+    variants:
+    - name: 'norflash'
