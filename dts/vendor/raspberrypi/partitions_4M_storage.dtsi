@@ -17,10 +17,24 @@
 			read-only;
 		};
 
+#ifdef WITH_CPU1_PARTITIONS
+		cpu1_slot0_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x100000 DT_SIZE_K(256)>;
+			label = "cpu1_slot0_partition";
+		};
+
+		storage_partition: partition@240000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x240000 0x1c0000>;
+			label = "storage";
+		};
+#else
 		storage_partition: partition@100000 {
 			compatible = "zephyr,mapped-partition";
 			reg = <0x100000 DT_SIZE_M(3)>;
 			label = "storage";
 		};
+#endif
 	};
 };
