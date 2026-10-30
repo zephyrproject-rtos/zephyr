@@ -9,8 +9,8 @@
 	/* Flash Interface Unit (FIU) */
 	/omit-if-no-ref/ fiu0_shd_cs_io0_io1_clk_gpio44_45_46_47: periph-fiu0-shd {
 		cs {
-			nuvoton,device-control = <NPCM_SCFG_DEVCNT 6 0>; /* SHD_SPI_TRIS */
 			pinmux = <&pin_gpio44_shd_cs>;
+			nuvoton,device-control = <NPCM_SCFG_DEVCNT 6 0>; /* SHD_SPI_TRIS */
 		};
 
 		io0 {
@@ -33,6 +33,25 @@
 
 		io3 {
 			pinmux = <&pin_gpio56_shd_dio3>;
+		};
+	};
+
+	/* Flash write-protect pin function groups; board selects one via pinctrl-0. */
+	/omit-if-no-ref/ fiu0_wp_int_fl: periph-fiu0-wp-int-fl {
+		wp {
+			pinmux = <&pin_scfg_wp_int_fl>;
+		};
+	};
+
+	/omit-if-no-ref/ fiu0_wp_gpio55: periph-fiu0-wp-gpio55 {
+		wp {
+			pinmux = <&pin_gpio55_wp_gpio55>;
+		};
+	};
+
+	/omit-if-no-ref/ fiu0_wp_gpio76: periph-fiu0-wp-gpio76 {
+		wp {
+			pinmux = <&pin_gpio76_wp_gpio76>;
 		};
 	};
 
