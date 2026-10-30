@@ -506,7 +506,7 @@ static void adc_enter_idle_mode(ADC_TypeDef *adc, const struct stm32_pclken *ana
 
 	/* Turn off ADC analog domain clock */
 	err = clock_control_off(clk, (clock_control_subsys_t)ana_clk);
-	if (err < 0) {
+	if (err != 0 && err != -ENOTSUP) {
 		LOG_WRN("failed to turn off ADC analog clock (%d)", err);
 	}
 
