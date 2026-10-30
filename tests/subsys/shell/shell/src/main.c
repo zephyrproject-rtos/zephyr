@@ -15,6 +15,14 @@
 
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
+#if defined(CONFIG_SHELL_LOG_BACKEND)
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/shell/shell_log_backend.h>
+#include "../../../../subsys/shell/shell_ops.h"
+
+LOG_MODULE_REGISTER(test_shell_log, LOG_LEVEL_INF);
+#endif
 
 #define MAX_CMD_SYNTAX_LEN	(11)
 static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
@@ -796,6 +804,44 @@ ZTEST(sh, test_shell_readline_success)
 
 	/* Clean up */
 	shell_backend_dummy_clear_input(sh);
+}
+
+ZTEST(sh, test_shell_log_panic_while_locked)
+{
+#if defined(CONFIG_SHELL_LOG_BACKEND)
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	size_t len;
+	const char *out;
+
+	/* Clear previous dummy output */
+	shell_backend_dummy_clear_output(sh);
+
+	/* Acquire shell lock */
+	z_shell_lock(sh);
+
+	/* Emit a log message */
+	LOG_INF("panic_test_log_msg");
+
+	/* Trigger log panic processing while lock is held */
+	LOG_PANIC();
+
+	/* Release shell lock */
+	z_shell_unlock(sh);
+
+	/* Verify no deadlock and log flushed to dummy backend */
+	out = shell_backend_dummy_get_output(sh, &len);
+	zassert_not_null(out, "Expected dummy output to be non-null");
+	zassert_not_null(strstr(out, "panic_test_log_msg"),
+			 "Expected log message in dummy output, got: %s", out);
+
+	/* Restore log and shell state */
+	z_shell_log_backend_enable(sh->log_backend, (void *)sh, sh->ctx->log_level);
+	z_flag_sync_mode_set(sh, false);
+	log_init();
+	shell_backend_dummy_clear_output(sh);
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void *shell_setup(void)
