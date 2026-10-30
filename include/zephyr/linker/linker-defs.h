@@ -222,6 +222,12 @@ extern char __sg_end[];
 extern char __sg_size[];
 #endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
 
+#if defined(CONFIG_ARM) && defined(CONFIG_KERNEL_COHERENCE)
+extern char __coherent_start[];
+extern char __coherent_end[];
+extern char __coherent_size[];
+#endif
+
 /*
  * Non-cached kernel memory region, currently only available on ARM Cortex-M7
  * with a MPU. Start and end will be aligned for memory management/protection

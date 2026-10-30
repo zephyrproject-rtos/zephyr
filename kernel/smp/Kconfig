@@ -162,7 +162,7 @@ config KERNEL_COHERENCE
 	  running on cache-incoherent architectures only.  Note that
 	  when this is selected, there is an implicit API change that
 	  assumes cache coherence to any memory passed to the kernel.
-	  Code that creates kernel data structures in uncached regions
+	  Code that creates kernel data structures in cached regions
 	  may fail strangely.  Some assertions exist to catch these
 	  mistakes, but not all circumstances can be tested.
 
