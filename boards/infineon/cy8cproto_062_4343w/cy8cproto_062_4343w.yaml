@@ -26,4 +26,5 @@ supported:
   - dma
   - timer
   - watchdog
+  - pm
 vendor: infineon

@@ -4,6 +4,10 @@
 if(CONFIG_SOC_FAMILY_PSOC6)
   zephyr_include_directories(common)
   zephyr_sources(common/soc.c)
+  zephyr_sources_ifdef(CONFIG_PM common/power.c)
+  zephyr_sources_ifdef(CONFIG_POWEROFF common/poweroff.c)
+  zephyr_sources_ifdef(CONFIG_SOC_PSOC6_LPM_TIMER
+                       ${ZEPHYR_BASE}/soc/infineon/common/lpm_timer.c)
 
   # Add sections
   zephyr_linker_sources(NOINIT common/noinit.ld)

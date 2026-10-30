@@ -18,19 +18,69 @@
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
 			device_type = "cpu";
+			status = "disabled"; /* Not referenced in the CM4 build */
 		};
 
-		cpu@1 {
+		cpu0: cpu@1 {
 			compatible = "arm,cortex-m4f";
 			reg = <1>;
 			device_type = "cpu";
+			cpu-power-states = <&sleep &deepsleep>;
 		};
+	};
+
+	/* Not a child of /cpus: Zephyr numbers CPUs by the status-okay children
+	 * of that node, so a non-CPU child there shifts the CPU indices.
+	 */
+	power-states {
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <0>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <100>;
+			exit-latency-us = <50>;
+		};
+
+		/* Out of cpu-power-states: wake is a reset, so the idle policy
+		 * must never pick it.
+		 */
+		hibernate: hibernate {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <0>;
+			status = "disabled";
+		};
+	};
+
+	/* Enabled by a board or application, which picks the triggers it needs. */
+	hibernate_wakeup: hibernate-wakeup {
+		compatible = "infineon,hibernate-wakeup";
+		status = "disabled";
 	};
 
 	soc {
 		uid: device_uid@16000600 {
 			compatible = "infineon,uid";
 			reg = <0x16000600 0xb>;
+			status = "disabled";
+		};
+
+		mcwdt0: mcwdt@40260200 {
+			compatible = "infineon,lp-timer";
+			reg = <0x40260200 0x40>;
+			interrupts = <19 6>;
+			status = "disabled";
+		};
+
+		mcwdt1: mcwdt@40260240 {
+			compatible = "infineon,lp-timer";
+			reg = <0x40260240 0x40>;
+			interrupts = <20 6>;
 			status = "disabled";
 		};
 
