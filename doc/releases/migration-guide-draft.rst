@@ -62,6 +62,10 @@ Ethernet
   the Ethernet drivers that need a PHY driver. Out-of-tree Ethernet drivers that use a PHY driver
   must select it as well. (:github:`120871`)
 
+* The Kconfig option ``CONFIG_ETH_INTEL_IGC_NET_MTU`` has been removed. The Intel IGC Ethernet
+  driver now always uses the standard Ethernet MTU of 1500 bytes, as the Ethernet L2 does not
+  support jumbo frames. (:github:`122863`)
+
 OPAMP
 =====
 
