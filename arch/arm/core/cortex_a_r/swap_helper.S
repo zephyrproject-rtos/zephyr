@@ -168,7 +168,7 @@ out_fp_inactive:
 in_fp_inactive:
 #endif /* CONFIG_FPU_SHARING */
 
-#if defined (CONFIG_ARM_MPU)
+#if defined(CONFIG_ARM_MPU) && (defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE))
     /* r2 contains k_thread */
     mov r0, r2
     /* Re-program dynamic memory map */

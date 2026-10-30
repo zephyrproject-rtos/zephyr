@@ -168,6 +168,7 @@ void z_arm_configure_static_mpu_regions(void)
 #endif
 
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
+	(defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)) && \
 	defined(CONFIG_MULTITHREADING)
 	/* Define a constant array of z_arm_mpu_partition objects that holds the
 	 * boundaries of the areas, inside which dynamic region programming
