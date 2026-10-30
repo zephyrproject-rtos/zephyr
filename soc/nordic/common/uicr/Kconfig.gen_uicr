@@ -77,6 +77,15 @@ config GEN_UICR_ERASEPROTECT
 	  resulting UICR hex file would completely lock the UICR from any modification
 	  for the lifetime of the device.
 
+config GEN_UICR_VALIDATE_PERIPHCONF
+	bool "Validate periphconf data"
+	default y
+	help
+	  When enabled, the generated periphconf data is validated during the
+	  build and any errors detected cause the build to fail. Disable this
+	  option to skip periphconf checking, for example to allow generation
+	  of a configuration that the validator would otherwise reject.
+
 menu "UICR.APPROTECT - Access Port Protection"
 
 config GEN_UICR_APPROTECT_APPLICATION_PROTECTED
