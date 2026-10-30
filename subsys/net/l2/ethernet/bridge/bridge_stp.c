@@ -119,21 +119,49 @@ static void tx_bpdu(struct eth_rstp_port *port, const struct eth_rstp_bpdu *bpdu
 	}
 }
 
+/* Pass a port state or an FDB flush to a device that forwards in hardware */
+static void hw_port_config(struct net_if *iface, enum ethernet_config_type type,
+			   enum ethernet_stp_port_state state)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->api;
+	struct ethernet_config config = {.stp_port_state = state};
+	int ret = -ENOTSUP;
+
+	if ((net_eth_get_hw_capabilities(iface) & ETHERNET_HW_STP_PORT_STATE) == 0) {
+		return;
+	}
+
+	if (api->set_config != NULL) {
+		ret = api->set_config(dev, iface, type, &config);
+	}
+
+	if (ret < 0) {
+		NET_ERR("iface %d: hardware %s failed (%d)", net_if_get_by_iface(iface),
+			type == ETHERNET_CONFIG_TYPE_FDB_FLUSH ? "FDB flush" : "port state", ret);
+	}
+}
+
 static void set_port_state(struct eth_rstp_port *port, bool learning, bool forwarding)
 {
 	struct stp_port *sp = stp_port_of(port);
 	struct stp_bridge *stp = port->user_data;
+	enum ethernet_stp_port_state hw_state;
 	enum eth_bridge_port_state state;
 
 	if (forwarding) {
 		state = ETH_BRIDGE_PORT_STATE_FORWARDING;
+		hw_state = ETHERNET_STP_PORT_STATE_FORWARDING;
 	} else if (learning) {
 		state = ETH_BRIDGE_PORT_STATE_LEARNING;
+		hw_state = ETHERNET_STP_PORT_STATE_LEARNING;
 	} else {
 		state = ETH_BRIDGE_PORT_STATE_DISCARDING;
+		hw_state = ETHERNET_STP_PORT_STATE_DISCARDING;
 	}
 
 	(void)atomic_set(&stp->ctx->ports[port_index(stp, sp)].state, state);
+	hw_port_config(sp->iface, ETHERNET_CONFIG_TYPE_STP_PORT_STATE, hw_state);
 
 	NET_DBG("iface %d %s", net_if_get_by_iface(sp->iface),
 		forwarding ? "forwarding" : (learning ? "learning" : "discarding"));
@@ -144,6 +172,8 @@ static void flush_fdb(struct eth_rstp_port *port)
 	struct stp_bridge *stp = port->user_data;
 
 	eth_bridge_fdb_flush(stp->ctx->iface, stp_port_of(port)->iface, true);
+	hw_port_config(stp_port_of(port)->iface, ETHERNET_CONFIG_TYPE_FDB_FLUSH,
+		       ETHERNET_STP_PORT_STATE_FORWARDING);
 }
 
 static enum eth_bridge_stp_role role_of(enum eth_rstp_role role)
@@ -429,8 +459,10 @@ bool eth_bridge_stp_is_running(struct eth_bridge_iface_context *ctx)
 
 bool eth_bridge_stp_port_supported(struct net_if *iface)
 {
-	return (net_eth_get_hw_capabilities(iface) &
-		(ETHERNET_DSA_USER_PORT | ETHERNET_HW_PORT_FORWARDING)) == 0;
+	enum ethernet_hw_caps caps = net_eth_get_hw_capabilities(iface);
+
+	return (caps & ETHERNET_HW_STP_PORT_STATE) != 0 ||
+	       (caps & (ETHERNET_DSA_USER_PORT | ETHERNET_HW_PORT_FORWARDING)) == 0;
 }
 
 void eth_bridge_stp_port_added(struct eth_bridge_iface_context *ctx, size_t index)
@@ -459,6 +491,8 @@ void eth_bridge_stp_port_removed(struct eth_bridge_iface_context *ctx, size_t in
 
 	if (stp->enabled) {
 		eth_rstp_port_set_enabled(&sp->rstp, false);
+		hw_port_config(sp->iface, ETHERNET_CONFIG_TYPE_STP_PORT_STATE,
+			       ETHERNET_STP_PORT_STATE_FORWARDING);
 	}
 
 	stp->ports[index] = NULL;
@@ -562,6 +596,9 @@ int eth_bridge_stp_enable(struct net_if *br, bool enable)
 			if (ctx->ports[i].iface != NULL) {
 				(void)atomic_set(&ctx->ports[i].state,
 						 ETH_BRIDGE_PORT_STATE_FORWARDING);
+				hw_port_config(ctx->ports[i].iface,
+					       ETHERNET_CONFIG_TYPE_STP_PORT_STATE,
+					       ETHERNET_STP_PORT_STATE_FORWARDING);
 			}
 		}
 
