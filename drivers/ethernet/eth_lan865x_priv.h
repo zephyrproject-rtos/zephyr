@@ -47,6 +47,29 @@
 /* Memory Map Sector (MMS) 10 (0xA) */
 #define LAN865x_DEVID MMS_REG(0xA, 0x094)
 
+/**
+ * @brief Events dispatched from the LAN865x MAC driver to the PHY driver.
+ */
+enum lan865x_phy_event {
+	/** Hardware reset occurred; PHY must re-apply fixups and config. */
+	LAN865X_PHY_EVENT_RESET = 0,
+};
+
+/**
+ * @brief PHY event callback implemented by the Microchip T1S PHY driver.
+ *
+ * Called by the LAN865x MAC driver after a hardware reset to re-apply
+ * vendor-specific configuration and cached PLCA settings.
+ *
+ * @param phy_dev The PHY device instance.
+ * @param event   The event that occurred.
+ * @param data    Optional event-specific data (unused for RESET).
+ *
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+int lan865x_phy_callback(const struct device *phy_dev, enum lan865x_phy_event event, void *data);
+
 struct lan865x_config {
 	const struct device *phy;
 	struct spi_dt_spec spi;
@@ -60,20 +83,10 @@ struct lan865x_config {
 };
 
 struct lan865x_data {
-	struct net_if *iface;
-	struct gpio_callback gpio_int_callback;
-	struct k_sem tx_rx_sem;
-	struct k_sem int_sem;
 	struct oa_tc6 *tc6;
 	uint16_t chip_id;
 	uint8_t silicon_rev;
 	uint8_t mac_address[6];
-	bool iface_initialized;
-	bool reset;
-
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ETH_LAN865X_IRQ_THREAD_STACK_SIZE);
-	struct k_thread thread;
-	k_tid_t tid_int;
 };
 
 int eth_lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
