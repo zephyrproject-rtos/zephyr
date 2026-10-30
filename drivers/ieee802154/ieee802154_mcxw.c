@@ -819,6 +819,18 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 
 	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
 
+#if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
+	/* The Frame Counter used by the NBU is only written into the driver's
+	 * private copy of the frame (tx_frame.psdu). Write it back into the
+	 * caller's buffer as well, so that the upper layer reads the Frame
+	 * Counter actually used on air once the header is reported as updated,
+	 * and so that a MAC-layer retry reuses this Frame Counter.
+	 */
+	if (!net_pkt_ieee802154_mac_hdr_rdy(pkt) && mcxw_radio->tx_frame.hdr_updated) {
+		set_frame_counter(payload, payload_len, mcxw_radio->tx_frame.frame_counter);
+	}
+#endif
+
 	/* Propagate the security flags back to the net_pkt so that the
 	 * OT platform layer (radio.c) can report the correct values to
 	 * OpenThread via otPlatRadioTxDone(). This mirrors what the
@@ -1410,6 +1422,7 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		    !mcxw_ctx.tx_frame.sec_processed && !mcxw_ctx.tx_frame.hdr_updated) {
 			set_frame_counter(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length,
 					  data_msg->fc);
+			mcxw_ctx.tx_frame.frame_counter = data_msg->fc;
 			mcxw_ctx.tx_frame.hdr_updated = true;
 		}
 #endif
@@ -1551,6 +1564,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 			    !mcxw_ctx.tx_frame.sec_processed && !mcxw_ctx.tx_frame.hdr_updated) {
 				set_frame_counter(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length,
 						  plme_msg->fc);
+				mcxw_ctx.tx_frame.frame_counter = plme_msg->fc;
 				mcxw_ctx.tx_frame.hdr_updated = true;
 			}
 #endif
@@ -1577,6 +1591,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 		    !mcxw_ctx.tx_frame.sec_processed && !mcxw_ctx.tx_frame.hdr_updated) {
 			set_frame_counter(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length,
 					  plme_msg->fc);
+			mcxw_ctx.tx_frame.frame_counter = plme_msg->fc;
 			mcxw_ctx.tx_frame.hdr_updated = true;
 		}
 #endif

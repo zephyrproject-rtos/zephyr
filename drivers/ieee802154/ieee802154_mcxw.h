@@ -80,6 +80,7 @@ typedef struct mcxw_tx_frame {
 	uint32_t tx_delay_base;
 	bool sec_processed;
 	bool hdr_updated;
+	uint32_t frame_counter;
 } mcxw_tx_frame;
 
 struct mcxw_context {
