@@ -1728,3 +1728,9 @@ test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
 };
+
+test_i2c_tsl2522: tsl2522@e0 {
+	compatible = "ams,tsl2522";
+	reg = <0xe0>;
+	int-gpios = <&test_gpio 0 0>;
+};
