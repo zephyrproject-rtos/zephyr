@@ -3996,19 +3996,31 @@ static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum h
 		hl78xx_stop_timer(data);
 		break;
 
-	case MODEM_HL78XX_EVENT_MDM_RESTART:
+	case MODEM_HL78XX_EVENT_MDM_RESTART: {
+		int ret;
+
 		/* The modem rebooted underneath the power-off (its +KSUP banner
-		 * arrived while AT+CFUN=0/AT+CPWROFF was in flight), so the
-		 * response the script is waiting for will never come. The
-		 * decision to power off is already final: drop the orphaned
-		 * script and complete the power-off now instead of stalling
-		 * for the full script timeout with the board unrecoverable.
+		 * arrived while AT+CFUN=0/AT+CPWROFF was in flight): the response
+		 * the script is waiting for will never come, and the modem is on
+		 * again. Drop the orphaned script and send the power-off to the
+		 * new session. The chat is released rather than aborted: an abort
+		 * reports a failure, which this state takes for the end of the
+		 * power-off, and nothing waits on this asynchronous script. Each
+		 * attempt is still bounded by the script timeout.
 		 */
-		LOG_WRN("Modem restarted during power-off; completing power-off immediately");
-		hl78xx_stop_timer(data);
-		hl78xx_chat_abort_active_script(data);
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		LOG_WRN("Modem restarted during power-off; sending the power-off again");
+		modem_chat_release(&data->chat);
+		ret = modem_chat_attach(&data->chat, data->uart_pipe);
+		if (ret == 0) {
+			ret = hl78xx_run_pwroff_script_async(data);
+		}
+		if (ret < 0) {
+			LOG_WRN("Power-off not sent again (%d); powering down anyway", ret);
+			hl78xx_stop_timer(data);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		}
 		break;
+	}
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		/* A PM suspend arrived while the graceful detach was still
