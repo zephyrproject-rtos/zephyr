@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+
+title: Axstechnology AXS15231B Display controller
+
+description: |
+  The axstechnology AXS15231B is a 262K colors TFT-LCD controller
+  with a maximum 170RGBx560 resolution.
+
+compatible: "axstechnology,axs15231b"
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  h-mirror:
+    type: boolean
+    description: Enable horizonal mirroring.
+
+  v-mirror:
+    type: boolean
+    description: Enable vertical mirroring.
+
+  swap-xy:
+    type: boolean
+    description: Swap X and Y coordinates.
+
+  color-invert:
+    type: boolean
+    description: When present, inverts display colors.
+
+  red-blue-swap:
+    type: boolean
+    description: |
+      Inverting color format order (RGB->BGR or BGR->RGB)
+      Panel controller expects RGB color channel order (not byte-order) instead of BGR.
