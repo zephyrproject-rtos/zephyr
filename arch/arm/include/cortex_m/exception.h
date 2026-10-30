@@ -81,6 +81,12 @@ extern "C" {
 #define EXC_RETURN_RETURN_STACK_Non_Secure     0
 #define EXC_RETURN_RETURN_STACK_Secure         EXC_RETURN_RETURN_STACK_Msk
 
+/* xPSR bit[9]: Stack realignment. Indicates whether exception entry
+ * inserted a 4-byte pad to 8-byte align the stack frame.
+ */
+#define XPSR_SPREALIGN_Pos                     9
+#define XPSR_SPREALIGN_Msk                     BIT(XPSR_SPREALIGN_Pos)
+
 /*
  * The current executing vector is found in the IPSR register. All
  * IRQs and system exceptions are considered as interrupt context.
@@ -245,12 +251,9 @@ static ALWAYS_INLINE void z_arm_set_fault_sp(const struct arch_esf *esf, uint32_
 	}
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
-#if !(defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE))
-	if ((esf->basic.xpsr & SCB_CCR_STKALIGN_Msk) == SCB_CCR_STKALIGN_Msk) {
-		/* Adjust stack alignment after PSR bit[9] detected */
+	if ((esf->basic.xpsr & XPSR_SPREALIGN_Msk) != 0U) {
 		z_arm_coredump_fault_sp |= 0x4;
 	}
-#endif /* !CONFIG_ARMV8_M_MAINLINE */
 
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE || CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_DEBUG_COREDUMP */
