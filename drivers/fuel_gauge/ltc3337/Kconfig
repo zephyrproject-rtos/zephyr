@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Federico Borgo
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_LTC3337
+	bool "LTC3337 fuel gauge"
+	default y
+	depends on DT_HAS_ADI_LTC3337_ENABLED
+	select I2C
+	help
+	  Enable the driver for the Analog Devices LTC3337 primary battery
+	  state of health monitor with coulomb counter.
+
+config EMUL_LTC3337
+	bool "Emulate an LTC3337 fuel gauge"
+	default y
+	depends on EMUL
+	depends on FUEL_GAUGE_LTC3337
+	help
+	  Emulate the register interface of the LTC3337 so that the driver can
+	  be tested without hardware.
