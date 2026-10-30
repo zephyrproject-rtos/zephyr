@@ -520,6 +520,11 @@ static inline uint8_t read_rxfifo_length(const struct device *dev)
 static inline bool read_rxfifo_content(const struct device *dev,
 				       struct net_buf *buf, uint8_t len)
 {
+	if (net_buf_tailroom(buf) < len) {
+		LOG_ERR("RX frame too long for buffer: %u", len);
+		return false;
+	}
+
 	if (!z_cc2520_access(dev, true, CC2520_INS_RXBUF, 0, buf->data, len)) {
 		return false;
 	}
