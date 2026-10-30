@@ -32,7 +32,7 @@ static const struct usbh_class_filter filter_rules_vid_pid[] = {
 
 static const struct usbh_class_filter filter_rules_triple[] = {
 	{
-		.class = FOO_TEST_CLASS,
+		.class_code = FOO_TEST_CLASS,
 		.sub = FOO_TEST_SUB,
 		.proto = FOO_TEST_PROTO,
 		.flags = USBH_CLASS_MATCH_CODE_TRIPLE,
@@ -42,7 +42,7 @@ static const struct usbh_class_filter filter_rules_triple[] = {
 
 static const struct usbh_class_filter filter_rules_either[] = {
 	{
-		.class = FOO_TEST_CLASS,
+		.class_code = FOO_TEST_CLASS,
 		.sub = FOO_TEST_SUB,
 		.proto = FOO_TEST_PROTO,
 		.flags = USBH_CLASS_MATCH_CODE_TRIPLE,
@@ -77,7 +77,7 @@ static const struct usbh_class_filter filter_invalid_pid_triple = {
 static const struct usbh_class_filter filter_valid = {
 	.vid = FOO_TEST_VID,
 	.pid = FOO_TEST_PID,
-	.class = FOO_TEST_CLASS,
+	.class_code = FOO_TEST_CLASS,
 	.sub = FOO_TEST_SUB,
 	.proto = FOO_TEST_PROTO,
 };
@@ -85,7 +85,7 @@ static const struct usbh_class_filter filter_valid = {
 static const struct usbh_class_filter filter_invalid_vid = {
 	.vid = FOO_TEST_VID + 1,
 	.pid = FOO_TEST_PID,
-	.class = FOO_TEST_CLASS,
+	.class_code = FOO_TEST_CLASS,
 	.sub = FOO_TEST_SUB,
 	.proto = FOO_TEST_PROTO,
 };
@@ -93,7 +93,7 @@ static const struct usbh_class_filter filter_invalid_vid = {
 static const struct usbh_class_filter filter_invalid_pid = {
 	.vid = FOO_TEST_VID,
 	.pid = FOO_TEST_PID + 1,
-	.class = FOO_TEST_CLASS,
+	.class_code = FOO_TEST_CLASS,
 	.sub = FOO_TEST_SUB,
 	.proto = FOO_TEST_PROTO,
 };

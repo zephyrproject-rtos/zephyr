@@ -150,7 +150,7 @@ int usbh_desc_fill_filter(const struct usb_desc_header *const desc,
 	if (desc->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 		const struct usb_association_descriptor *ia_desc = (const void *)desc;
 
-		filter->class = ia_desc->bFunctionClass;
+		filter->class_code = ia_desc->bFunctionClass;
 		filter->sub = ia_desc->bFunctionSubClass;
 		filter->proto = ia_desc->bFunctionProtocol;
 		if (iface != NULL) {
@@ -162,7 +162,7 @@ int usbh_desc_fill_filter(const struct usb_desc_header *const desc,
 	if (desc->bDescriptorType == USB_DESC_INTERFACE) {
 		const struct usb_if_descriptor *if_desc = (const void *)desc;
 
-		filter->class = if_desc->bInterfaceClass;
+		filter->class_code = if_desc->bInterfaceClass;
 		filter->sub = if_desc->bInterfaceSubClass;
 		filter->proto = if_desc->bInterfaceProtocol;
 		if (iface != NULL) {
