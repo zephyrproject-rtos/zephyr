@@ -176,6 +176,46 @@ static ssize_t sock_dispatch_write_vmeth(void *obj, const void *buffer,
 	return vtable->write(new_obj, buffer, count);
 }
 
+static int sock_dispatch_poll_prepare_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				     struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	int fd;
+	const struct fd_op_vtable *vtable;
+	void *new_obj;
+
+	fd = sock_dispatch_default(obj);
+	if (fd < 0) {
+		return -1;
+	}
+
+	new_obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	if (new_obj == NULL) {
+		return -1;
+	}
+
+	return zvfs_fdtable_call_poll_prepare(vtable, new_obj, pfd, pev, pev_end);
+}
+
+static int sock_dispatch_poll_update_vmeth(void *obj, struct zvfs_pollfd *pfd,
+				     struct k_poll_event **pev)
+{
+	int fd;
+	const struct fd_op_vtable *vtable;
+	void *new_obj;
+
+	fd = sock_dispatch_default(obj);
+	if (fd < 0) {
+		return -1;
+	}
+
+	new_obj = zvfs_get_fd_obj_and_vtable(fd, &vtable, NULL);
+	if (new_obj == NULL) {
+		return -1;
+	}
+
+	return zvfs_fdtable_call_poll_update(vtable, new_obj, pfd, pev);
+}
+
 static int sock_dispatch_ioctl_vmeth(void *obj, unsigned int request,
 				     va_list args)
 {
@@ -432,6 +472,8 @@ static const struct socket_op_vtable sock_dispatch_fd_op_vtable = {
 		.write = sock_dispatch_write_vmeth,
 		.close2 = sock_dispatch_close_vmeth,
 		.ioctl = sock_dispatch_ioctl_vmeth,
+		.poll_prepare = sock_dispatch_poll_prepare_vmeth,
+		.poll_update = sock_dispatch_poll_update_vmeth,
 	},
 	.shutdown = sock_dispatch_shutdown_vmeth,
 	.bind = sock_dispatch_bind_vmeth,

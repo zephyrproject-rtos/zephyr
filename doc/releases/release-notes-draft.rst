@@ -53,6 +53,12 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Networking
+
+  * Deprecated ``ZFD_IOCTL_POLL_PREPARE``, ``ZFD_IOCTL_POLL_UPDATE``, and ``ZFD_IOCTL_POLL_OFFLOAD``
+    in favor of the typed ``poll_prepare``, ``poll_update``, and ``poll_offload`` callbacks in
+    :c:struct:`fd_op_vtable`.
+
 New APIs and options
 ====================
 ..
