@@ -101,6 +101,12 @@ static int input_reg_rd_fp(uint16_t addr, float *reg)
 
 static int holding_reg_rd(uint16_t addr, uint16_t *reg)
 {
+	if (IN_RANGE(addr, MB_TEST_LARGE_OFFSET,
+		     MB_TEST_LARGE_OFFSET + MB_TEST_LARGE_QTY - 1)) {
+		*reg = addr;
+		return 0;
+	}
+
 	if (addr >= ARRAY_SIZE(holding_reg)) {
 		return -ENOTSUP;
 	}

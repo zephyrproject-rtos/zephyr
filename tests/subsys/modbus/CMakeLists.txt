@@ -12,3 +12,8 @@ target_sources(app PRIVATE
     src/test_modbus_server.c
     src/test_modbus_raw.c
     )
+
+if(CONFIG_UART_EMUL)
+    # No serial hardware: connect two emulated UARTs crosswise.
+    target_sources(app PRIVATE src/test_modbus_link.c)
+endif()

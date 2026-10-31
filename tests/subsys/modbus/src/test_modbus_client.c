@@ -14,6 +14,7 @@ const static uint16_t fp_offset = MB_TEST_FP_OFFSET;
 const static uint8_t node = MB_TEST_NODE_ADDR;
 const static uint16_t offset_oor = 32;
 const static uint16_t fp_offset_oor = fp_offset + offset_oor;
+#define MB_TEST_FC16_HOLDING_REGS_WR	16
 
 static uint8_t client_iface;
 
@@ -210,6 +211,70 @@ void test_diagnostic(void)
 	zassert_not_equal(err, 0, "FC08 not supported request not failed");
 }
 
+/*
+ * The interfaces must still work after an oversized ASCII frame. Corrupted
+ * interface state makes the transfer fail or the test crash.
+ */
+static void verify_interfaces_usable(void)
+{
+	uint16_t reg = 0;
+	int err;
+
+	err = modbus_write_holding_reg(client_iface, node, 0, 0xcafe);
+	zassert_equal(err, 0, "FC06 request failed after oversized frame");
+
+	err = modbus_read_holding_regs(client_iface, node, 0, &reg, 1);
+	zassert_equal(err, 0, "FC03 request failed after oversized frame");
+	zassert_equal(reg, 0xcafe, "FC03 verify failed after oversized frame");
+}
+
+/*
+ * The FC03 response to MB_TEST_LARGE_QTY registers has 2 * 125 + 1 data
+ * bytes, which needs an ASCII frame of 511 characters, more than the RTU
+ * maximum of 256 bytes. The outcome of the request itself is not checked,
+ * only that the server survives it.
+ */
+void test_ascii_server_oversized_response(void)
+{
+	uint16_t regs[MB_TEST_LARGE_QTY];
+
+	test_server_setup_ascii();
+	test_client_setup_ascii();
+
+	(void)modbus_read_holding_regs(client_iface, node, MB_TEST_LARGE_OFFSET,
+				       regs, ARRAY_SIZE(regs));
+
+	verify_interfaces_usable();
+
+	test_client_disable();
+	test_server_disable();
+}
+
+/*
+ * A gateway forwards the ADU of a Modbus/TCP client unchecked. The largest
+ * ADU needs an ASCII frame of 513 characters. The outcome of the transfer is
+ * not checked, only that the client interface survives it.
+ */
+void test_ascii_gateway_oversized_adu(void)
+{
+	struct modbus_adu adu = {
+		.unit_id = node,
+		.fc = MB_TEST_FC16_HOLDING_REGS_WR,
+		.length = sizeof(adu.data),
+	};
+
+	test_server_setup_ascii();
+	test_client_setup_ascii();
+
+	memset(adu.data, 0xa5, sizeof(adu.data));
+	(void)modbus_raw_backend_txn(client_iface, &adu);
+
+	verify_interfaces_usable();
+
+	test_client_disable();
+	test_server_disable();
+}
+
 static struct modbus_iface_param client_param = {
 	.mode = MODBUS_MODE_RTU,
 	.rx_timeout = MB_TEST_RESPONSE_TO,
@@ -273,6 +338,7 @@ void test_client_setup_high_even(void)
 
 void test_client_setup_ascii(void)
 {
+	struct modbus_iface_param param;
 	int err;
 
 	client_iface = modbus_iface_get_by_name(rtu_iface_name);
@@ -280,7 +346,10 @@ void test_client_setup_ascii(void)
 	client_param.serial.baud = MB_TEST_BAUDRATE_HIGH;
 	client_param.serial.parity = UART_CFG_PARITY_EVEN;
 
-	err = modbus_init_client(client_iface, client_param);
+	param = client_param;
+	param.rx_timeout = MB_TEST_RESPONSE_TO_ASCII;
+
+	err = modbus_init_client(client_iface, param);
 
 	zassert_equal(err, 0, "Failed to configure RTU client");
 }
@@ -350,6 +419,16 @@ void test_holding_reg(void)
 }
 
 void test_diagnostic(void)
+{
+	ztest_test_skip();
+}
+
+void test_ascii_server_oversized_response(void)
+{
+	ztest_test_skip();
+}
+
+void test_ascii_gateway_oversized_adu(void)
 {
 	ztest_test_skip();
 }
