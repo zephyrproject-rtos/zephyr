@@ -31,6 +31,9 @@
 		/*
 		 * Note:
 		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *    Measure total exit latency in the actual project and adjust these defaults.
+		 *    The nominal 10 MHz SPC LPWKUP_DELAY timer adds about 10 us per 100 cycles.
+		 *    Update the exit latency when overriding the SPC wakeup-delay count.
 		 *  - 'min-residency-us' needs to be adjusted according to the actual project
 		 *    requirements. The values provided here are not applicable to all real
 		 *    projects.
@@ -46,14 +49,16 @@
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-idle";
 			min-residency-us = <50000>;
-			exit-latency-us = <10>;
+			/* 12 us SPC LPWKUP_DELAY (0x6e cycles) + 10 us recovery allowance. */
+			exit-latency-us = <22>;
 		};
 
 		powerdown: powerdown {
 			compatible = "zephyr,power-state";
 			power-state-name = "standby";
 			min-residency-us = <80000>;
-			exit-latency-us = <20>;
+			/* 12 us SPC LPWKUP_DELAY (0x6e cycles) + 20 us recovery allowance. */
+			exit-latency-us = <32>;
 		};
 
 		/*
@@ -66,7 +71,8 @@
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-ram";
 			min-residency-us = <500000>;
-			exit-latency-us = <500>;
+			/* 12 us SPC LPWKUP_DELAY (0x6e cycles) + 500 us reset/resume allowance. */
+			exit-latency-us = <512>;
 			/* Suspend-to-RAM needs the application to place its working set
 			 * in retained RAM and arm a wakeup source, so it is opt-in:
 			 * enable this node from the application to use it.
@@ -298,7 +304,15 @@
 			compatible = "nxp,spc";
 			reg = <0x40090000 0x1000>;
 			interrupts = <16 0>;
-			wakeup-delay = <780>;
+			/*
+			 * RM Rev. 2, Table 173 (LP_CFG voltage -> ACTIVE_CFG voltage):
+			 * 0x5b (10 us): 0.6 V -> 1.0 V, 1.0 V -> 1.1 V, or 1.15 V -> 1.2 V.
+			 * 0x6e (12 us): 0.6 V -> 1.1 V.
+			 * 1.0 V -> 1.0 V requires no delay.
+			 * Default to the larger listed requirement, in SPC timer cycles.
+			 * Users need to make adjustments based on their actual configuration.
+			 */
+			wakeup-delay = <0x6e>;
 
 			bandgap_buffer: bandgap-buffer {
 				compatible = "nxp,spc-bandgap-buffer";
