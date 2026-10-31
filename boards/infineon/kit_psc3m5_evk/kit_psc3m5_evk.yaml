@@ -13,8 +13,10 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - can
   - gpio
+  - i2c
   - spi
   - timer
   - uart
