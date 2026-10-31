@@ -109,7 +109,8 @@ static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 	while (len) {
 		ret = config->read_fn(dev, offset, pbuf, len);
 		if (ret < 0) {
-			LOG_ERR("failed to read EEPROM (err %d)", ret);
+			LOG_ERR("failed to read EEPROM dev:%s offset: 0x%lx, len: %zu (err %d)",
+				dev->name, (long)offset, len, ret);
 			k_mutex_unlock(&data->lock);
 			return ret;
 		}
@@ -183,7 +184,8 @@ static int eeprom_at2x_write(const struct device *dev, off_t offset,
 	while (len) {
 		ret = config->write_fn(dev, offset, pbuf, len);
 		if (ret < 0) {
-			LOG_ERR("failed to write to EEPROM (err %d)", ret);
+			LOG_ERR("failed to write to EEPROM dev:%s offset: 0x%lx, len: %zu (err %d)",
+				dev->name, (long)offset, len, ret);
 #if ANY_INST_HAS_WP_GPIOS
 			eeprom_at2x_write_protect(dev);
 #endif /* ANY_INST_HAS_WP_GPIOS */
