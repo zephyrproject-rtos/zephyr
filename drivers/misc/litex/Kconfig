@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config LITEX_SOC_CTRL
+	bool "LiteX SoC controller"
+	default y
+	depends on DT_HAS_LITEX_SOC_CONTROLLER_ENABLED
+	depends on REBOOT
+	select USE_LITEX_CSR
+	help
+	  The LiteX SoC controller CSR, used to reset the SoC. This lives outside
+	  the LiteX SoC family so that it is also available when the LiteX
+	  peripherals are attached to a hardcore such as the Gowin AE350.
+
+config USE_LITEX_CSR
+	bool
+	help
+	  Indicate accessing LiteX CSR bus.
+
+if USE_LITEX_CSR
+
+config LITEX_CSR_DATA_WIDTH
+	int "Select Control/Status register width"
+	default 32
+
+config LITEX_CSR_DATA_WIDTH_DEPRECATED
+	def_bool y
+	depends on LITEX_CSR_DATA_WIDTH != 32
+	select DEPRECATED
+	help
+	  This option is there to select DEPRECATED, when LITEX_CSR_DATA_WIDTH is
+	  set to a value other than 32. It will be removed in future releases.
+
+choice LITEX_CSR_ORDERING
+	prompt "Select Control/Status register ordering"
+	default LITEX_CSR_ORDERING_BIG
+
+config LITEX_CSR_ORDERING_BIG
+	bool "Big-endian ordering"
+	help
+	  Use big-endian ordering for CSR accesses
+
+config LITEX_CSR_ORDERING_LITTLE
+	bool "Little-endian ordering"
+	help
+	  Use little-endian ordering for CSR accesses
+
+endchoice
+
+endif

@@ -7,3 +7,4 @@ config ETH_LITEX_LITEETH
 	depends on DT_HAS_LITEX_LITEETH_ENABLED
 	depends on NET_L2_ETHERNET
 	select ETH_PHY_DRIVER
+	select USE_LITEX_CSR

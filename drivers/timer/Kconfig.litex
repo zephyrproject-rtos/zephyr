@@ -8,5 +8,6 @@ config LITEX_TIMER
 	default y
 	depends on DT_HAS_LITEX_TIMER0_ENABLED
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select USE_LITEX_CSR
 	help
 	  This module implements a kernel device driver for LiteX Timer.
