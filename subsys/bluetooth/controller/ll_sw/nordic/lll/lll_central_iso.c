@@ -206,6 +206,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 		cis_idx_in_round = 0U;
 		cis_handle_first = cis_handle_curr;
 		cis_closed_bitmask = 0U;
+		cis_lll_next = NULL;
 
 		/* Initialize per-CIS channel PRN state for the first CIS */
 		cis_interleaved[0].prn_s = data_chan_prn_s;
@@ -682,6 +683,7 @@ static void isr_tx(void *param)
 		/* Save current CIS PRN state before switching */
 		cis_interleaved[cis_idx_in_round].prn_s = data_chan_prn_s;
 		cis_interleaved[cis_idx_in_round].remap_idx = data_chan_remap_idx;
+		cis_lll_next = NULL;
 
 		/* Find the next CIS in this round */
 		cis_handle = cis_handle_curr;
@@ -695,9 +697,13 @@ static void isr_tx(void *param)
 				break;
 			}
 
+			if (!candidate->prepared) {
+				continue;
+			}
+
 			next_idx++;
 
-			if (candidate->prepared &&
+			if ((cis_se[next_idx] < candidate->nse) &&
 			    !(cis_closed_bitmask &
 			      (1U << LL_CIS_IDX_FROM_HANDLE(candidate->handle)))) {
 				next_cis_lll = candidate;
@@ -728,8 +734,11 @@ static void isr_tx(void *param)
 					break;
 				}
 
-				if (candidate->prepared &&
-				    !(cis_closed_bitmask &
+				if (!candidate->prepared) {
+					continue;
+				}
+
+				if (!(cis_closed_bitmask &
 				      (1U << LL_CIS_IDX_FROM_HANDLE(candidate->handle)))) {
 					if (cis_se[find_idx] < candidate->nse) {
 						next_cis_lll = candidate;
@@ -1126,6 +1135,10 @@ isr_rx_next_subevent:
 	cig_lll = ull_conn_iso_lll_group_get_by_stream(cis_lll);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED) && (cig_lll->packing != 0U)) {
+		if (cis_lll_next == NULL) {
+			goto isr_rx_done;
+		}
+
 		/* Interleaved packing: CIE handling for current CIS.
 		 * Mark CIS as closed if CIE received. Finalization
 		 * (payload_count_flush_or_inc_on_close) runs only when all
