@@ -85,6 +85,11 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* FIDO2
+
+  * Added PSA Protected Storage backend, enable with
+    :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
