@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Raspberry Pi RP1 MSI-X interrupt controller.
+
+  The RP1 exposes one MSI-X vector per internal interrupt source. The
+  irq cell contains the RP1 vector number from
+  <zephyr/dt-bindings/interrupt-controller/rp1-irq.h>. The controller
+  is a nexus for its children: `interrupt-map` translates each RP1
+  vector to the MSI controller, which in turn raises a host interrupt.
+
+  The driver locates the RP1 in the configuration space of the PCIe
+  root complex that parents this node, programs the MSI-X table and
+  unmasks the host side of the MSI proxy.
+
+compatible: "raspberrypi,rp1-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      MSI-X CFG register block, i.e. the RP1 PCIe APBS window at
+      offset 0x108000.
+
+  msi-parent:
+    type: phandle
+    required: true
+    description: MSI controller that receives the RP1 MSI-X writes.
+
+  interrupt-map:
+    type: compound
+    required: true
+    description: |
+      Maps an RP1 vector to the MSI controller. Entry layout is
+      <vector flags> <msi-controller phandle> <vector flags>.
+
+interrupt-cells:
+  - irq
+  - flags

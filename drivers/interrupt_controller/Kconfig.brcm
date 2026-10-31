@@ -40,3 +40,29 @@ config BCM2712_MIP_INIT_PRIORITY
 	help
 	  Initialisation priority of the BCM2712 MSI interrupt proxy.
 	  It must run before the RP1 interrupt controller.
+
+config RP1_IRQ
+	bool "Raspberry Pi RP1 MSI-X interrupt controller"
+	default y
+	depends on DT_HAS_RASPBERRYPI_RP1_INTC_ENABLED
+	depends on ARM64
+	depends on PCIE
+	depends on PCIE_CONTROLLER
+	depends on MSI_PROXY
+	help
+	  Driver for the interrupt controller of the RP1 PCIe south
+	  bridge found on the Raspberry Pi 5. The RP1 raises one MSI-X
+	  vector per internal interrupt source; the BCM2712 MSI
+	  interrupt proxy converts each vector into a GIC SPI. The
+	  driver programs the MSI-X table, unmasks the host side of the
+	  proxy and uses the corresponding GIC INTIDs for the RP1 sources.
+
+config RP1_IRQ_INIT_PRIORITY
+	int "RP1 interrupt controller init priority"
+	default 42
+	depends on RP1_IRQ
+	help
+	  Initialisation priority of the RP1 interrupt controller. It
+	  must run after the PCIe root complex (CONFIG_PCIE_INIT_PRIORITY)
+	  because it reads the RP1 configuration space, and before the
+	  serial drivers that enable RP1 UART interrupts.
