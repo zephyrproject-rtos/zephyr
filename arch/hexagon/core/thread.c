@@ -102,6 +102,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 	 */
 	frame[SWITCH_UGP / 4] = (uint32_t)thread->tls;
 #endif
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	z_arch_stack_protection_setup(thread);
+#endif
 }
 
 char *arch_k_thread_stack_buffer(k_thread_stack_t *stack)
