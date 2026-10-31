@@ -868,7 +868,15 @@
 	spc: system-modules@cb000 {
 		compatible = "nxp,spc";
 		reg = <0xcb000 0x1000>;
-		wakeup-delay = <0x7d>;
+		/*
+		 * RM V1.12, section 32.1.7, Table 396 (LP_CFG voltage -> ACTIVE_CFG voltage):
+		 * 0.7 V -> 1.0 V: 0x138; 0.7 V -> 1.1 V: 0x19c; 0.7 V -> 1.2 V: 0x20d.
+		 * 1.0 V -> 1.1 V and 1.1 V -> 1.2 V: 0x64; 1.0 V -> 1.2 V: 0xc8.
+		 * 1.2 V -> 1.2 V requires no delay.
+		 * Default to the largest listed requirement, in SPC timer cycles.
+		 * Users need to make adjustments based on their actual configuration.
+		 */
+		wakeup-delay = <0x20d>;
 
 		bandgap_buffer: bandgap-buffer {
 			compatible = "nxp,spc-bandgap-buffer";
