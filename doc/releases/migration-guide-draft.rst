@@ -281,6 +281,19 @@ PCIe
   mastering; dependent drivers such as NVMe, ivshmem and IGC fail to initialize. This is
   intentional: use a 64-bit MSI capability or a target address below 4 GiB. (:github:`124156`)
 
+Power Management
+================
+
+* NXP MCX :dtcompatible:`nxp,spc` ``wakeup-delay`` specifies regulator-settling delay in
+  SPC timer cycles. At the nominal 10 MHz timer frequency, every additional 100 cycles
+  adds approximately 10 us to wake-up time. A nonzero programmed delay can also apply
+  when ``LP_CFG`` and ``ACTIVE_CFG`` select the same voltage.
+  SoC power-state ``exit-latency-us`` defaults include SPC settling and mode-specific
+  recovery allowances. Board/application overlays can select counts for their regulator,
+  voltages, output capacitance and external power circuitry. Measure the total wake-up
+  time for the actual project, including clock recovery and resume processing, and adjust
+  ``exit-latency-us`` accordingly; these defaults are not measured worst-case bounds.
+
 PTP Clock
 =========
 
