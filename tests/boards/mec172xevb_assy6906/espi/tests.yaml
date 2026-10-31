@@ -1,0 +1,8 @@
+tests:
+  boards.mec172xevb_assy6906.espi:
+    platform_allow: mec172xevb_assy6906
+    integration_platforms:
+      - mec172xevb_assy6906
+    tags:
+      - drivers
+      - espi
