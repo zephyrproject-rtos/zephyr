@@ -83,6 +83,18 @@ Serial Port
 The FRDM-MCXA577 SoC has 6 LPUART  interfaces for serial communication.
 LPUART0 is configured as UART for the console.
 
+.. include:: ../../common/mcxa-mcxn-power-management.rst.inc
+
+The ``wakeup-button`` alias selects SW2 on P3_17, routed to WUU external pin 26
+with a falling-edge interrupt.
+
+Deep Power Down can retain SRAM arrays A0 and A3 through the VBAT backup SRAM
+regulator, not the board's full RAM allocation. The
+:zephyr_file:`samples/boards/nxp/mcxn_a/s2ram/boards/frdm_mcxa577.overlay`
+limits ``zephyr,sram`` to A3, 16 KB at ``0x20004000``, so the entire retained
+working set fits in a retainable array. Use this layout as a starting point
+and check the application's RAM usage before enabling suspend-to-RAM.
+
 Programming and Debugging
 *************************
 
