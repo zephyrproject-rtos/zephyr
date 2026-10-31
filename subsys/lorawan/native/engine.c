@@ -49,6 +49,19 @@ static K_THREAD_STACK_DEFINE(engine_stack,
 			     CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE);
 static struct k_thread engine_thread;
 
+static bool engine_req_needs_join(const struct lwan_req *req)
+{
+	switch (req->type) {
+	case LWAN_REQ_SEND:
+		return true;
+	case LWAN_REQ_LINK_CHECK:
+		/* The forced empty uplink needs an established session */
+		return ((const struct lwan_link_check_req *)req->data)->force_request;
+	default:
+		return false;
+	}
+}
+
 static void engine_thread_fn(void *p1, void *p2, void *p3)
 {
 	struct lwan_ctx *ctx = p1;
@@ -63,6 +76,12 @@ static void engine_thread_fn(void *p1, void *p2, void *p3)
 		k_msgq_get(&engine_msgq, &req, K_FOREVER);
 
 		LOG_DBG("Engine request: %d", req.type);
+
+		if (engine_req_needs_join(&req) &&
+		    !atomic_test_bit(ctx->flags, LWAN_FLAG_JOINED)) {
+			engine_signal_result(&req, -ENETDOWN);
+			continue;
+		}
 
 		mac_process_req(ctx, &req);
 	}
