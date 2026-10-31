@@ -7027,6 +7027,14 @@ West:
   labels:
     - "platform: nRF BSIM"
 
+"West project: bsworld":
+  status: maintained
+  maintainers:
+    - LingaoM
+  files: []
+  labels:
+    - "area: Bluetooth"
+
 "West project: cmsis":
   status: maintained
   maintainers:
