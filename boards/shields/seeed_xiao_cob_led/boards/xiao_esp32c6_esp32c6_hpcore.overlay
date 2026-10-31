@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 &seeed_xiao_cob_led_pwm_led_0 {

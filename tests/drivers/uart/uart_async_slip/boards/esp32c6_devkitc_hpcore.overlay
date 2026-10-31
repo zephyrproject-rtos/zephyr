@@ -5,7 +5,6 @@
  */
 
 /* TX and RX share GPIO4 for internal loopback, no external wiring needed. */
-#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
 
 &pinctrl {
 	uart1_loop: uart1_loop {
