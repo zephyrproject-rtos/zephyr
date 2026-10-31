@@ -71,4 +71,14 @@ ZTEST(modbus, test_setup_raw)
 	test_server_disable();
 }
 
+ZTEST(modbus, test_ascii_server_oversized_response)
+{
+	test_ascii_server_oversized_response();
+}
+
+ZTEST(modbus, test_ascii_gateway_oversized_adu)
+{
+	test_ascii_gateway_oversized_adu();
+}
+
 ZTEST_SUITE(modbus, NULL, NULL, NULL, NULL, NULL);
