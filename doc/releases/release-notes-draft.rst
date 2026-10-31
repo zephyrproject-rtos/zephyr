@@ -68,6 +68,7 @@ New APIs and options
   * Host
 
     * :c:func:`bt_addr_matches_irk`
+    * :c:func:`bt_l2cap_server_unregister`
 
   * Services
 
