@@ -23,6 +23,18 @@
 #include "time_machine.h"
 #include "bstests.h"
 
+#include "memq.h"
+#include "lll.h"
+#include "pdu_df.h"
+#include "pdu_vendor.h"
+#include "pdu.h"
+#include "ccm.h"
+#include "util.h"
+#include "lll_adv_types.h"
+#include "lll_adv.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
+
 #define HANDLE          0x0000
 #define EVT_PROP_SCAN   BIT(1)
 #define EVT_PROP_ANON   BIT(5)
@@ -53,6 +65,8 @@
 
 #define SCAN_INTERVAL   0x04
 #define SCAN_WINDOW     0x04
+
+#define FILLER_BYTE(idx, val) val
 
 #define FAIL(...)					\
 	do {						\
@@ -107,10 +121,90 @@ static uint8_t per_adv_data3[] = {
 
 static uint8_t chan_map[] = { 0x1F, 0XF1, 0x1F, 0xF1, 0x1F };
 
+static const uint8_t small_filler[10] = { LISTIFY(10, FILLER_BYTE, (,), 0xAA) };
+
+static const uint8_t med_filler[180] = { LISTIFY(100, FILLER_BYTE, (,), 0xAA) };
+
+static const struct bt_data ad_small[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
+	BT_DATA(BT_DATA_MANUFACTURER_DATA, small_filler, sizeof(small_filler)),
+};
+
+static const struct bt_data ad_medium[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
+	BT_DATA(BT_DATA_MANUFACTURER_DATA, med_filler, sizeof(med_filler)),
+};
+
 static bool volatile is_scanned, is_connected, is_disconnected;
 static bool volatile connection_to_test;
 static uint8_t adv_data_expected_len;
 static uint8_t *adv_data_expected;
+
+static struct ll_adv_aux_set *get_aux_set(uint8_t handle)
+{
+	struct ll_adv_set *adv;
+	struct ll_adv_aux_set *aux;
+
+	adv = ull_adv_set_get(handle);
+
+	if (adv == NULL || adv->lll.aux == NULL) {
+		return 0U;
+	}
+
+	aux = HDR_LLL2ULL(adv->lll.aux);
+
+	return aux;
+}
+
+static int check_aux_ticks_slot_update_conn(struct bt_le_ext_adv *adv)
+{
+	struct ll_adv_aux_set *aux;
+	int err = 0;
+	uint32_t initial_ticks, ticks_1, ticks_2;
+	uint8_t handle;
+
+	handle = bt_le_ext_adv_get_index(adv);
+
+	aux = get_aux_set(handle);
+
+	while (aux->is_started == 0U) {
+		(void)k_sleep(K_MSEC(100));
+	}
+
+	initial_ticks = aux->ull.ticks_slot;
+
+	/* set adv_data, wait for the next advertising event so that adv data
+	 * gets updated. then record how many ticks slots are reserved for it
+	 */
+	err = bt_le_ext_adv_set_data(adv, ad_small, ARRAY_SIZE(ad_small), NULL, 0);
+	if (err != 0) {
+		return err;
+	}
+	(void)k_sleep(K_MSEC(1000));
+	ticks_1 = aux->ull.ticks_slot;
+
+	/* set a new adv_data PDU, this time larger
+	 * verify if reserved tick slots increase
+	 */
+	err = bt_le_ext_adv_set_data(adv, ad_medium, ARRAY_SIZE(ad_medium), NULL, 0);
+	if (err != 0) {
+		return err;
+	}
+	(void)k_sleep(K_MSEC(1000));
+	ticks_2 = aux->ull.ticks_slot;
+
+	if (initial_ticks >= ticks_1 || initial_ticks >= ticks_2 || ticks_1 >= ticks_2) {
+		FAIL("Reserved tick slots incorrectly computed");
+	}
+
+	/* reset PDU data, to ensure smooth flow of the rest of the tests */
+	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		return err;
+	}
+
+	return err;
+}
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
@@ -368,6 +462,13 @@ static void test_advx_main(void)
 	ext_adv_param.timeout = 0;
 	ext_adv_param.num_events = 0;
 	err = bt_le_ext_adv_start(adv, &ext_adv_param);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
+	printk("Checking if aux time reservation is correctly computed...");
+	err = check_aux_ticks_slot_update_conn(adv);
 	if (err) {
 		goto exit;
 	}
@@ -1412,7 +1513,7 @@ static void test_scanx_main(void)
 	/* This wait is to ensure we match with connectable advertising in the
 	 * advertiser's timeline.
 	 */
-	k_sleep(K_MSEC(500));
+	k_sleep(K_MSEC(4000));
 
 	connection_to_test = true;
 
@@ -1845,7 +1946,7 @@ exit:
 
 static void test_advx_init(void)
 {
-	bst_ticker_set_next_tick_absolute(30e6);
+	bst_ticker_set_next_tick_absolute(40e6);
 	bst_result = In_progress;
 }
 
