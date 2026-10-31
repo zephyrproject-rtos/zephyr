@@ -6,6 +6,9 @@ if SOC_BCM2712
 config NUM_IRQS
 	default 280
 
+config MAX_XLAT_TABLES
+	default 16 if RP1_IRQ && !USERSPACE
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 54000000
 
