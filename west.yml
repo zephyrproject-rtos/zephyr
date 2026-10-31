@@ -23,8 +23,10 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: xiaomi
+      url-base: https://github.com/XiaoMi
 
-  group-filter: [-babblesim, -optional, -testing]
+  group-filter: [-babblesim, -bsworld, -optional, -testing]
 
   #
   # Please add items below based on alphabetical order
@@ -116,6 +118,12 @@ manifest:
       path: tools/bsim
       groups:
         - babblesim
+    - name: bsworld
+      remote: xiaomi
+      revision: c8e1a8e260483afffd67e8e4883cb77a7cd33cf0
+      path: tools/bsworld
+      groups:
+        - bsworld
     - name: cmsis
       revision: 512cc7e895e8491696b61f7ba8066b4a182569b8
       path: modules/hal/cmsis

@@ -15,6 +15,7 @@ coverage
 
 # used for west-command testing
 pytest>=9.0.3
+pytest-asyncio
 mypy
 
 # used for JUnit XML parsing in CTest harness

@@ -1430,6 +1430,12 @@ pyshacl==0.40.1 \
 pytest==9.1.1 \
     --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
     --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
+    # via
+    #   -r requirements-actions.in
+    #   pytest-asyncio
+pytest-asyncio==1.4.1 \
+    --hash=sha256:507afa78ec77c6661164ef1a2368bc7820383fd1a14b2a7f813de8b5a92949cc \
+    --hash=sha256:e8266eb094e5ee9ffdb2068c9836f33e209ea77a970eb846933d416b5602669b
     # via -r requirements-actions.in
 python-can==4.6.1 \
     --hash=sha256:17f95255868a95108dcfcb90565a684dad32d5a3ebb35afd14f739e18c84ff6c \
@@ -1980,6 +1986,7 @@ typing-extensions==4.16.0 \
     #   exceptiongroup
     #   mypy
     #   pygithub
+    #   pytest-asyncio
     #   python-can
     #   referencing
     #   tox
