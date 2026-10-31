@@ -53,6 +53,13 @@
 	};
 
 	soc {
+		sid: efuse@3006000 {
+			compatible = "allwinner,sunxi-sid";
+			reg = <0x03006000 0x1000>;
+			size = <512>;
+			status = "okay";
+		};
+
 		gpioa: gpio@300b000 {
 			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
 			reg = <0x0300b000 0x24>, <0x0300b000 0x400>;
