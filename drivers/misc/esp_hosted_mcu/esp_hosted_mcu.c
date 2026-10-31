@@ -58,6 +58,9 @@ struct esp_hosted_mcu_data {
 	int rpc_resp_status;
 	k_tid_t tid;
 	uint32_t fw_version;
+	uint32_t boot_events;
+	/* Restart recoveries completed, counted by the restart work handler. */
+	uint32_t restarts_handled;
 	bool rx_stride_aligned;
 	esp_hosted_mcu_rx_cb_t if_cb[ESP_HOSTED_MCU_MAX_IF];
 	void *if_user[ESP_HOSTED_MCU_MAX_IF];
@@ -97,6 +100,24 @@ static struct esp_hosted_mcu_rpc_ctx esp_hosted_mcu_rpc;
  * the event-task dispatch match/consume mutually exclusive.
  */
 static struct k_spinlock esp_hosted_mcu_rpc_ctx_lock;
+
+/*
+ * Guards the list of restart listeners against registration while they run.
+ * Both are initialised statically and usable before the core's init has run.
+ */
+static K_MUTEX_DEFINE(esp_hosted_mcu_restart_lock);
+static sys_slist_t esp_hosted_mcu_restart_cbs = SYS_SLIST_STATIC_INIT(&esp_hosted_mcu_restart_cbs);
+
+/*
+ * Work queue the restart listeners run on. A listener issues RPCs, whose
+ * responses the event task delivers, and blocks until each is answered or
+ * times out.
+ */
+static K_KERNEL_STACK_DEFINE(esp_hosted_mcu_restart_stack,
+			     CONFIG_ESP_HOSTED_MCU_RESTART_STACK_SIZE);
+static struct k_work_q esp_hosted_mcu_restart_wq;
+static void esp_hosted_mcu_restart_work_handler(struct k_work *work);
+static K_WORK_DEFINE(esp_hosted_mcu_restart_work, esp_hosted_mcu_restart_work_handler);
 
 static struct esp_hosted_mcu_data esp_hosted_mcu_data_0;
 
@@ -139,6 +160,27 @@ int esp_hosted_mcu_register_rpc_event(esp_hosted_mcu_event_cb_t cb, void *user_d
 	compiler_barrier();
 	esp_hosted_mcu_data_0.rpc_event_cb = cb;
 	return 0;
+}
+
+void esp_hosted_mcu_register_restart_cb(struct esp_hosted_mcu_restart_cb *cb)
+{
+	sys_snode_t *prev = NULL;
+
+	k_mutex_lock(&esp_hosted_mcu_restart_lock, K_FOREVER);
+	if (!sys_slist_find(&esp_hosted_mcu_restart_cbs, &cb->node, &prev)) {
+		sys_slist_append(&esp_hosted_mcu_restart_cbs, &cb->node);
+	}
+	k_mutex_unlock(&esp_hosted_mcu_restart_lock);
+}
+
+/* Run the restart listeners in registration order. The caller holds the restart lock. */
+static void esp_hosted_mcu_run_restart_cbs(void)
+{
+	struct esp_hosted_mcu_restart_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&esp_hosted_mcu_restart_cbs, cb, node) {
+		cb->handler(cb);
+	}
 }
 
 /*
@@ -362,11 +404,66 @@ static void esp_hosted_mcu_dispatch_serial(struct esp_hosted_mcu_data *data,
 }
 
 /*
+ * Count a boot event and store the firmware version it carries, if any. The
+ * first boot event is the coprocessor's boot during init; every later one is
+ * a restart. A first event that lands after init finished still counts as the
+ * first.
+ *
+ * This maps one init-type boot event to one coprocessor start: the coprocessor
+ * sends exactly one per start. A second within a single start would count as a
+ * restart and run the listeners, and a dropped one would hide the next restart.
+ */
+static void esp_hosted_mcu_boot_event(struct esp_hosted_mcu_data *data, const uint32_t *version)
+{
+	if (version != NULL) {
+		data->fw_version = *version;
+	}
+
+	data->boot_events++;
+	if (data->boot_events == 1U) {
+		return;
+	}
+
+	LOG_WRN("coprocessor restarted");
+
+	/* The round trip in flight, sent to the previous run, completes with -ECONNRESET. */
+	K_SPINLOCK(&esp_hosted_mcu_rpc_ctx_lock) {
+		if (esp_hosted_mcu_rpc.pending) {
+			esp_hosted_mcu_rpc.pending = false;
+			data->rpc_resp_status = -ECONNRESET;
+			k_sem_give(&data->rpc_sem);
+		}
+	}
+
+	if (k_work_submit_to_queue(&esp_hosted_mcu_restart_wq, &esp_hosted_mcu_restart_work) < 0) {
+		LOG_ERR("restart recovery not queued");
+	}
+}
+
+static void esp_hosted_mcu_restart_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	LOG_INF("coprocessor firmware v%u.%u.%u after restart",
+		ESP_HOSTED_MCU_FW_VERSION_MAJOR(esp_hosted_mcu_data_0.fw_version),
+		ESP_HOSTED_MCU_FW_VERSION_MINOR(esp_hosted_mcu_data_0.fw_version),
+		ESP_HOSTED_MCU_FW_VERSION_PATCH(esp_hosted_mcu_data_0.fw_version));
+
+	k_mutex_lock(&esp_hosted_mcu_restart_lock, K_FOREVER);
+	esp_hosted_mcu_run_restart_cbs();
+	k_mutex_unlock(&esp_hosted_mcu_restart_lock);
+
+	esp_hosted_mcu_data_0.restarts_handled++;
+}
+
+/*
  * Parse the boot-time priv event. Its body is a stream of {tag, length,
- * value} triplets; only the firmware version is consumed, every other tag
- * is skipped by its own length. This is the fallback source for firmware
- * too old to answer the version RPC, so it only fills in a version that
- * has not been learned already.
+ * value} triplets; only the firmware version and the SDIO buffer config are
+ * consumed, every other tag is skipped by its own length. The version is the
+ * one of the run that sent the event and replaces the one stored before.
+ *
+ * Only a well-formed boot event counts as a boot and supplies the version: of
+ * the init type, with the body inside the frame and every tag inside the body.
  */
 static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const uint8_t *payload,
 				      uint16_t len)
@@ -376,6 +473,8 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 	const uint16_t hdr_len = sizeof(struct esp_hosted_mcu_priv_event);
 	uint16_t off = 0;
 	uint16_t body;
+	uint32_t version = 0;
+	bool has_version = false;
 
 	if (len < hdr_len) {
 		return;
@@ -396,8 +495,9 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 		}
 
 		if (tag == ESP_HOSTED_MCU_PRIV_TAG_FIRMWARE_VERSION &&
-		    tag_len == sizeof(uint32_t) && data->fw_version == 0) {
-			data->fw_version = sys_get_le32(&ev->event_data[off]);
+		    tag_len == sizeof(uint32_t)) {
+			version = sys_get_le32(&ev->event_data[off]);
+			has_version = true;
 		} else if (tag == ESP_HOSTED_MCU_PRIV_TAG_SDIO_BUF_CONFIG &&
 			   tag_len == sizeof(struct esp_hosted_mcu_sdio_buf_config)) {
 			const struct esp_hosted_mcu_sdio_buf_config *cfg =
@@ -417,6 +517,10 @@ static void esp_hosted_mcu_priv_event(struct esp_hosted_mcu_data *data, const ui
 		}
 
 		off += tag_len;
+	}
+
+	if (ev->event_type == ESP_HOSTED_MCU_PRIV_EVENT_INIT && ev->event_len <= len - hdr_len) {
+		esp_hosted_mcu_boot_event(data, has_version ? &version : NULL);
 	}
 }
 
@@ -640,6 +744,47 @@ uint32_t esp_hosted_mcu_fw_version(void)
 	return esp_hosted_mcu_data_0.fw_version;
 }
 
+int esp_hosted_mcu_reattach(k_timeout_t timeout)
+{
+	const struct device *dev = esp_hosted_mcu_data_0.dev;
+	const struct esp_hosted_mcu_config *cfg;
+	struct esp_hosted_mcu_data *data;
+	k_timepoint_t end;
+	uint32_t handled;
+	int ret;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	cfg = dev->config;
+	data = dev->data;
+
+	if (cfg->transport->reattach == NULL) {
+		return -ENOTSUP;
+	}
+
+	end = sys_timepoint_calc(timeout);
+	handled = data->restarts_handled;
+
+	ret = cfg->transport->reattach(dev, timeout);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/*
+	 * The new run announces itself with its boot event, which queues the
+	 * restart work; the listeners have run once the handler counted the run.
+	 */
+	while (data->restarts_handled == handled) {
+		if (sys_timepoint_expired(end)) {
+			return -ETIMEDOUT;
+		}
+		k_msleep(10);
+	}
+
+	return 0;
+}
+
 /*
  * Ask the coprocessor for its firmware version and log what it runs against
  * the version this host was built for. The version is informational: the
@@ -708,6 +853,9 @@ static int esp_hosted_mcu_core_init(const struct device *dev)
 	const struct esp_hosted_mcu_config *cfg = dev->config;
 	struct esp_hosted_mcu_data *data = dev->data;
 	static struct k_thread event_thread;
+	const struct k_work_queue_config restart_wq_cfg = {
+		.name = "esp_hosted_mcu_restart",
+	};
 	int ret;
 
 	static K_KERNEL_STACK_DEFINE(event_stack, CONFIG_ESP_HOSTED_MCU_EVENT_TASK_STACK_SIZE);
@@ -718,6 +866,11 @@ static int esp_hosted_mcu_core_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	/* Runs the restart listeners; the event task queues the work. */
+	k_work_queue_start(&esp_hosted_mcu_restart_wq, esp_hosted_mcu_restart_stack,
+			   K_KERNEL_STACK_SIZEOF(esp_hosted_mcu_restart_stack),
+			   CONFIG_ESP_HOSTED_MCU_RESTART_PRIORITY, &restart_wq_cfg);
 
 	data->tid = k_thread_create(&event_thread, event_stack, K_KERNEL_STACK_SIZEOF(event_stack),
 				    esp_hosted_mcu_event_task, (void *)dev, NULL, NULL,
