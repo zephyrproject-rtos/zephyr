@@ -450,6 +450,19 @@ ll_cig_parameters_commit_retry:
 	}
 #endif /* CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
+		/* Interleaved CISes - the CIS with most subevents sets the duration */
+		uint32_t total_count_max = 0U;
+
+		for (uint8_t i = 0U; i < num_cis; i++) {
+			total_count_max = MAX(total_count_max, se[i].total_count);
+		}
+
+		total_time = total_count_max * MAX(SUB_INTERVAL_MIN, num_cis * max_se_length);
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
 	handle_iter = UINT16_MAX;
 	cig_sync_delay = 0U;
 
@@ -483,46 +496,11 @@ ll_cig_parameters_commit_retry:
 #endif /* CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
-#if defined(CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY)
-			/* For interleaved packing with low latency policy, use reliability
-			 * policy approach to calculate flush timeout. This requires the
-			 * reliability policy to be enabled.
-			 *
-			 * Set CIG_Sync_Delay = ISO_Interval as the maximum allowed value.
-			 * This provides maximum scheduling flexibility for interleaved
-			 * subevents across multiple CISes while respecting the
-			 * Max_Transport_Latency.
-			 */
 			if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
-				uint32_t cig_sync_delay_us_max = iso_interval_us;
-
-				cis->lll.tx.ft = ll_cis_calculate_ft(cig_sync_delay_us_max,
-								     iso_interval_us,
-								     cig->c_sdu_interval,
-								     cig->c_latency,
-								     cis->framed);
-
-				cis->lll.rx.ft = ll_cis_calculate_ft(cig_sync_delay_us_max,
-								     iso_interval_us,
-								     cig->p_sdu_interval,
-								     cig->p_latency,
-								     cis->framed);
-
-				if ((cis->lll.tx.ft == 0U) || (cis->lll.rx.ft == 0U)) {
-					/* Invalid FT caused by invalid combination of parameters */
-					err = BT_HCI_ERR_INVALID_PARAM;
-					goto ll_cig_parameters_commit_cleanup;
-				}
+				/* Use symmetric flush timeout */
+				cis->lll.tx.ft = DIV_ROUND_UP(total_time, iso_interval_us);
+				cis->lll.rx.ft = cis->lll.tx.ft;
 			}
-#else /* !CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY */
-			/* Interleaved packing with low latency policy requires reliability
-			 * policy to be enabled for flush timeout calculation
-			 */
-			if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
-				err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-				goto ll_cig_parameters_commit_cleanup;
-			}
-#endif /* CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY */
 #else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 			/* Interleaved packing support is not compiled in */
 			if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {

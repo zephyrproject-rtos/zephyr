@@ -1084,8 +1084,6 @@ config BT_CTLR_CONN_ISO_INTERLEAVED
 	  Enable support for interleaved packing of CIS subevents where first
 	  subevents of all CISes are adjacent, then second subevents, etc.
 	  At least one of sequential or interleaved packing must be enabled.
-	  Note: Interleaved packing with low latency policy requires the
-	  reliability policy to also be enabled for flush timeout calculation.
 
 config BT_CTLR_CONN_ISO_STREAMS
 	int "LE Connected Isochronous Streams"
