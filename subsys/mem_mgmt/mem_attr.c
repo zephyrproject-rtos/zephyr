@@ -50,7 +50,7 @@ int mem_attr_check_buf(void *v_addr, size_t size, uint32_t attr)
 		/* Check if the buffer is in the region */
 		if ((addr >= region->dt_addr) && (addr < region_end)) {
 			/* Check if the buffer is entirely contained in the region */
-			if ((addr + size) <= region_end) {
+			if (size <= (region_end - addr)) {
 				/* check if the attribute is correct */
 				return (region->dt_attr & attr) == attr ? 0 : -EINVAL;
 			}
