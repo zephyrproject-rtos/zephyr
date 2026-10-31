@@ -4,6 +4,13 @@
 # Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+config MSI_PROXY
+	bool
+	help
+	  Selected by drivers that implement the MSI proxy API. An MSI
+	  proxy accepts posted MSI writes from an endpoint and raises a
+	  host interrupt.
+
 menu "Interrupt controller drivers"
 
 config ARCV2_INTERRUPT_UNIT

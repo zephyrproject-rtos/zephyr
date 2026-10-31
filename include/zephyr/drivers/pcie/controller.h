@@ -236,6 +236,36 @@ static inline void pcie_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf
 }
 
 /**
+ * @brief Find a PCI(e) capability through its controller.
+ *
+ * Read the endpoint's configuration space through @p ctrl.
+ * Requires CONFIG_PCIE_CONTROLLER.
+ *
+ * @param ctrl PCIe controller that owns the endpoint; must not be NULL
+ * @param bdf PCI(e) endpoint
+ * @param cap_id Capability ID to find
+ * @return Configuration word index of the matching capability
+ * @retval 0 No matching capability is present, or @p ctrl is NULL
+ */
+uint32_t pcie_ctrl_get_cap(const struct device *ctrl, pcie_bdf_t bdf, uint32_t cap_id);
+
+/**
+ * @brief Get a memory BAR through its controller.
+ *
+ * Probe the BAR through @p ctrl and translate its bus address to a CPU physical
+ * address using the same controller. Requires CONFIG_PCIE_CONTROLLER.
+ *
+ * @param ctrl PCIe controller that owns the endpoint; must not be NULL
+ * @param bdf PCI(e) endpoint
+ * @param bar_index 0-based BAR index
+ * @param mbar Pointer to the BAR result
+ * @retval true The BAR was found and is valid
+ * @retval false The BAR is invalid, cannot be translated, or @p ctrl is NULL
+ */
+bool pcie_ctrl_get_mbar(const struct device *ctrl, pcie_bdf_t bdf, unsigned int bar_index,
+			struct pcie_bar *mbar);
+
+/**
  * @brief Allocate a memory region subset for an endpoint Base Address Register.
  *
  * When enumerating PCIe Endpoints, Type0 endpoints can require up to 6 memory zones

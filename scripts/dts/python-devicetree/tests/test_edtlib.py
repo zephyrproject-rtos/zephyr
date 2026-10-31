@@ -120,6 +120,12 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
     ]
 
+    node = edt.get_node("/interrupt-map-test/node@5")
+    assert node.interrupts == [
+        edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 0}, name=None, basename=None),
+        edtlib.ControllerAndData(node=node, controller=controller_1, data={'one': 0, 'two': 1}, name=None, basename=None)
+    ]
+
     node = edt.get_node("/interrupt-map-test/node@100000004")
     assert node.interrupts == [
         edtlib.ControllerAndData(node=node, controller=controller_0, data={'one': 3}, name=None, basename=None),

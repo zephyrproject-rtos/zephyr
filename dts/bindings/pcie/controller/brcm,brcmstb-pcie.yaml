@@ -10,3 +10,7 @@ include: [base.yaml, pcie-controller.yaml]
 properties:
   reg:
     required: true
+
+  msi-parent:
+    type: phandle
+    description: BCM2712 MSI interrupt proxy receiving endpoint MSI writes.

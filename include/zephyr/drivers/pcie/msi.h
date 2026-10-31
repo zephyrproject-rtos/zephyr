@@ -33,10 +33,28 @@ extern "C" {
 #ifdef CONFIG_PCIE_CONTROLLER
 struct msi_vector_generic {
 	unsigned int irq;
-	uint32_t address;
+	union {
+		struct {
+#ifdef CONFIG_BIG_ENDIAN
+			uint32_t: 32;
+#endif
+			uint32_t address;
+		};
+		uint64_t address64;
+	};
 	uint16_t eventid;
 	unsigned int priority;
 };
+
+/*
+ * address aliases the low 32 bits of address64 on both endiannesses.
+ * Legacy providers write only address, so the union must be zeroed before
+ * allocation (see pcie_msi_vectors_allocate()).
+ */
+BUILD_ASSERT(offsetof(struct msi_vector_generic, address) ==
+		     offsetof(struct msi_vector_generic, address64) +
+			     (IS_ENABLED(CONFIG_BIG_ENDIAN) ? 4U : 0U),
+	     "legacy MSI address must alias the low 32 bits");
 
 typedef struct msi_vector_generic arch_msi_vector_t;
 
@@ -109,11 +127,30 @@ extern bool pcie_msi_vector_connect(pcie_bdf_t bdf,
  * @param irq The IRQ we wish to trigger via MSI.
  * @param vector The vector for which you want the address (or NULL)
  * @param n_vector the size of the vector array
- * @return A (32-bit) value for the MSI MAP register.
+ * @return The lower 32 bits of the MSI target address.
+ *
+ * @see pcie_msi_map64() for the complete target address.
  */
 extern uint32_t pcie_msi_map(unsigned int irq,
 			     msi_vector_t *vector,
 			     uint8_t n_vector);
+
+/**
+ * @brief Compute the complete target address for an MSI posted write.
+ *
+ * The default implementation zero-extends pcie_msi_map(). Architectures or
+ * controllers supporting target addresses above 4 GiB must provide a 64-bit
+ * implementation. Zero-extension cannot recover high bits lost by a 32-bit
+ * implementation.
+ *
+ * @param irq The IRQ to trigger via MSI.
+ * @param vector The vector for which to compute the address, or NULL when
+ *               supported by the architecture.
+ * @param n_vector The size of the vector array.
+ *
+ * @return The 64-bit target address as seen by the endpoint, not a CPU virtual address.
+ */
+extern uint64_t pcie_msi_map64(unsigned int irq, msi_vector_t *vector, uint8_t n_vector);
 
 /**
  * @brief Compute the data for an MSI posted write.
@@ -134,7 +171,10 @@ extern uint16_t pcie_msi_mdr(unsigned int irq,
  * @param vectors an array of allocated vector(s)
  * @param n_vector the size of the vector array
  * @param irq The IRQ we wish to trigger via MSI.
- * @return true if the endpoint supports MSI, false otherwise.
+ * @retval true MSI or MSI-X was enabled.
+ * @retval false MSI or MSI-X could not be enabled: the endpoint has no
+ *                supported MSI or MSI-X capability, or the target address
+ *                exceeds 32 bits and the endpoint only supports 32-bit MSI.
  */
 extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    msi_vector_t *vectors,

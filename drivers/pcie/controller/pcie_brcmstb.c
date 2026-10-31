@@ -13,7 +13,9 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #include <zephyr/kernel.h>
 #include <zephyr/math/ilog2.h>
 #include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/util.h>
 
+#include <zephyr/drivers/interrupt_controller/msi_proxy.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
 
@@ -34,6 +36,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define PCIE_MISC_RC_BAR1_CONFIG_LO           0x402c
 #define PCIE_MISC_RC_BAR1_CONFIG_LO_SIZE_MASK 0x1f
+#define PCIE_MISC_RC_BAR1_CONFIG_HI           0x4030
 
 #define PCIE_MISC_RC_BAR2_CONFIG_LO           0x4034
 #define PCIE_MISC_RC_BAR2_CONFIG_LO_SIZE_MASK 0x1f
@@ -52,6 +55,9 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define PCIE_MISC_UBUS_BAR2_CONFIG_REMAP                    0x40b4
 #define PCIE_MISC_UBUS_BAR2_CONFIG_REMAP_ACCESS_ENABLE_MASK 0x1
+
+#define PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_LO 0x40ac
+#define PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_HI 0x40b0
 
 #define PCIE_MISC_UBUS_BAR4_CONFIG_REMAP_LO 0x410c
 #define PCIE_MISC_UBUS_BAR4_CONFIG_REMAP_HI 0x4110
@@ -175,6 +181,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 struct pcie_brcmstb_config {
 	const struct pcie_ctrl_config *common;
+	const struct device *msi_proxy;
 	size_t regs_count;
 	struct {
 		uintptr_t addr;
@@ -193,6 +200,9 @@ struct pcie_brcmstb_data {
 	uintptr_t cfg_phys_addr;
 	mm_reg_t cfg_addr;
 	size_t cfg_size;
+	uint64_t msi_bus_addr;
+	uint64_t msi_cpu_addr;
+	size_t msi_size;
 	struct {
 		uintptr_t phys_start;
 		uintptr_t bus_start;
@@ -392,13 +402,39 @@ static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t b
 					  bool mem64, uintptr_t bar_bus_addr, uintptr_t *bar_addr)
 {
 	struct pcie_brcmstb_data *data = dev->data;
-	enum pcie_region_type type;
 
-	type = pcie_brcmstb_determine_region_type(dev, mem, mem64);
+	ARG_UNUSED(bdf);
+	ARG_UNUSED(mem64);
 
-	*bar_addr = data->regions[type].phys_start + (bar_bus_addr - data->regions[type].bus_start);
+	/*
+	 * Keep the I/O and memory spaces apart, but pick the memory window
+	 * by bus address: a 64-bit BAR may be allocated inside the 32-bit
+	 * window.
+	 */
+	for (unsigned int type = 0U; type < PCIE_REGION_MAX; type++) {
+		uintptr_t bus_start = data->regions[type].bus_start;
+		size_t size = data->regions[type].size;
 
-	return true;
+		if (!mem && type != PCIE_REGION_IO) {
+			continue;
+		}
+
+		if (mem && type == PCIE_REGION_IO) {
+			continue;
+		}
+
+		if (size == 0U) {
+			continue;
+		}
+
+		if (bar_bus_addr >= bus_start && bar_bus_addr < bus_start + size) {
+			*bar_addr = data->regions[type].phys_start + (bar_bus_addr - bus_start);
+
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static DEVICE_API(pcie_ctrl, pcie_brcmstb_api) = {
@@ -594,6 +630,18 @@ static int pcie_brcmstb_setup(const struct device *dev)
 	tmp &= ~PCIE_MISC_RC_BAR1_CONFIG_LO_SIZE_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_LO);
 
+	if (data->msi_size != 0U) {
+		/* Map the proxy doorbell window; its size is already rounded up. */
+		sys_write32(upper_32_bits(data->msi_bus_addr),
+			    data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_HI);
+		sys_write32(lower_32_bits(data->msi_cpu_addr) | BIT(0),
+			    data->cfg_addr + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_LO);
+		sys_write32(upper_32_bits(data->msi_cpu_addr),
+			    data->cfg_addr + PCIE_MISC_UBUS_BAR1_CONFIG_REMAP_HI);
+		sys_write32(lower_32_bits(data->msi_bus_addr) | encode_ibar_size(data->msi_size),
+			    data->cfg_addr + PCIE_MISC_RC_BAR1_CONFIG_LO);
+	}
+
 	tmp = sys_read32(data->cfg_addr + PCIE_MISC_RC_BAR3_CONFIG_LO);
 	tmp &= ~PCIE_MISC_RC_BAR3_CONFIG_LO_SIZE_MASK;
 	sys_write32(tmp, data->cfg_addr + PCIE_MISC_RC_BAR3_CONFIG_LO);
@@ -643,6 +691,44 @@ static int pcie_brcmstb_init(const struct device *dev)
 	data->cfg_size = config->common->cfg_size;
 
 	device_map(&data->cfg_addr, data->cfg_phys_addr, data->cfg_size, K_MEM_CACHE_NONE);
+
+	if (config->msi_proxy != NULL) {
+		struct msi_proxy_window window;
+		size_t size;
+
+		if (!device_is_ready(config->msi_proxy)) {
+			LOG_ERR("MSI proxy is not ready");
+			return -ENODEV;
+		}
+
+		ret = msi_proxy_get_window(config->msi_proxy, &window);
+		if (ret != 0) {
+			LOG_ERR("MSI proxy window is not available");
+			return ret;
+		}
+
+		if (window.size == 0U || window.size > BIT64(36)) {
+			LOG_ERR("MSI proxy window size is not supported");
+			return -EINVAL;
+		}
+
+		/* The controller maps power-of-two windows of at least one page. */
+		size = BIT(LOG2CEIL(MAX(window.size, 0x1000U)));
+		if (encode_ibar_size(size) == 0U) {
+			LOG_ERR("MSI proxy window size cannot be encoded");
+			return -EINVAL;
+		}
+
+		if ((window.bus_addr & (size - 1U)) != 0U ||
+		    (window.cpu_addr & (size - 1U)) != 0U) {
+			LOG_ERR("MSI proxy window is not aligned");
+			return -EINVAL;
+		}
+
+		data->msi_bus_addr = window.bus_addr;
+		data->msi_cpu_addr = window.cpu_addr;
+		data->msi_size = size;
+	}
 
 	/* PCIe Setup */
 	pcie_brcmstb_setup(dev);
@@ -699,6 +785,7 @@ static int pcie_brcmstb_init(const struct device *dev)
 	return 0;
 }
 
+/* clang-format off */
 #define PCIE_BRCMSTB_INIT(n)                                                                       \
 	static struct pcie_brcmstb_data pcie_brcmstb_data_##n = {};                                \
                                                                                                    \
@@ -711,6 +798,9 @@ static int pcie_brcmstb_init(const struct device *dev)
                                                                                                    \
 	static const struct pcie_brcmstb_config pcie_brcmstb_cfg_##n = {                           \
 		.common = &pcie_ctrl_cfg_##n,                                                      \
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, msi_parent), (                                 \
+			.msi_proxy = DEVICE_DT_GET(DT_INST_PHANDLE(n, msi_parent)),                \
+		))                                                                                \
 		.regs_count = DT_NUM_REGS(DT_DRV_INST(n)),                                         \
 		.regs =                                                                            \
 			{                                                                          \
@@ -728,3 +818,4 @@ static int pcie_brcmstb_init(const struct device *dev)
 			      &pcie_brcmstb_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PCIE_BRCMSTB_INIT)
+/* clang-format on */

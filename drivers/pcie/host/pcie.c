@@ -52,19 +52,49 @@ void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmdstat);
 }
 
-uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
+/* A NULL controller preserves the platform's legacy configuration access. */
+static inline uint32_t pcie_conf_read_internal(const struct device *ctrl, pcie_bdf_t bdf,
+					       unsigned int reg)
+{
+#ifdef CONFIG_PCIE_CONTROLLER
+	if (ctrl != NULL) {
+		return pcie_ctrl_conf_read(ctrl, bdf, reg);
+	}
+#else
+	ARG_UNUSED(ctrl);
+#endif
+
+	return pcie_conf_read(bdf, reg);
+}
+
+static inline void pcie_conf_write_internal(const struct device *ctrl, pcie_bdf_t bdf,
+					    unsigned int reg, uint32_t val)
+{
+#ifdef CONFIG_PCIE_CONTROLLER
+	if (ctrl != NULL) {
+		pcie_ctrl_conf_write(ctrl, bdf, reg, val);
+		return;
+	}
+#else
+	ARG_UNUSED(ctrl);
+#endif
+
+	pcie_conf_write(bdf, reg, val);
+}
+
+static uint32_t pcie_find_cap(const struct device *ctrl, pcie_bdf_t bdf, uint32_t cap_id)
 {
 	uint32_t reg = 0U;
 	uint32_t data;
 
-	data = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	data = pcie_conf_read_internal(ctrl, bdf, PCIE_CONF_CMDSTAT);
 	if ((data & PCIE_CONF_CMDSTAT_CAPS) != 0U) {
-		data = pcie_conf_read(bdf, PCIE_CONF_CAPPTR);
+		data = pcie_conf_read_internal(ctrl, bdf, PCIE_CONF_CAPPTR);
 		reg = PCIE_CONF_CAPPTR_FIRST(data);
 	}
 
 	while (reg != 0U) {
-		data = pcie_conf_read(bdf, reg);
+		data = pcie_conf_read_internal(ctrl, bdf, reg);
 
 		if (PCIE_CONF_CAP_ID(data) == cap_id) {
 			break;
@@ -75,6 +105,22 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 
 	return reg;
 }
+
+uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
+{
+	return pcie_find_cap(NULL, bdf, cap_id);
+}
+
+#ifdef CONFIG_PCIE_CONTROLLER
+uint32_t pcie_ctrl_get_cap(const struct device *ctrl, pcie_bdf_t bdf, uint32_t cap_id)
+{
+	if (ctrl == NULL) {
+		return 0U;
+	}
+
+	return pcie_find_cap(ctrl, bdf, cap_id);
+}
+#endif
 
 uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
@@ -104,29 +150,30 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 /**
  * @brief Get the BAR at a specific BAR index
  *
+ * @param ctrl PCIe controller that owns the endpoint, or NULL for the chosen one
  * @param bdf the PCI(e) endpoint
  * @param bar_index 0-based BAR index
  * @param bar Pointer to struct pcie_bar
  * @param io true for I/O BARs, false otherwise
  * @return true if the BAR was found and is valid, false otherwise
  */
-static bool pcie_get_bar(pcie_bdf_t bdf,
-			 unsigned int bar_index,
-			 struct pcie_bar *bar,
-			 bool io)
+static bool pcie_get_bar(const struct device *ctrl, pcie_bdf_t bdf, unsigned int bar_index,
+			 struct pcie_bar *bar, bool io)
 {
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
 	uint32_t cmd_reg;
 	bool ret = false;
-#ifdef CONFIG_PCIE_CONTROLLER
-	const struct device *dev;
-#endif
 	uintptr_t phys_addr;
 	size_t size;
 
 #ifdef CONFIG_PCIE_CONTROLLER
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
-	if (!dev) {
+	const struct device *dev = ctrl;
+
+	if (dev == NULL) {
+		dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
+	}
+
+	if (dev == NULL) {
 		LOG_ERR("Failed to get PCIe root complex");
 		return false;
 	}
@@ -136,7 +183,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	phys_addr = pcie_conf_read(bdf, reg);
+	phys_addr = pcie_conf_read_internal(ctrl, bdf, reg);
 #ifndef CONFIG_PCIE_CONTROLLER
 	if ((PCIE_CONF_BAR_MEM(phys_addr) && io) || (PCIE_CONF_BAR_IO(phys_addr) && !io)) {
 		return false;
@@ -148,19 +195,19 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	cmd_reg = pcie_conf_read(bdf, PCIE_CONF_CMDSTAT);
+	cmd_reg = pcie_conf_read_internal(ctrl, bdf, PCIE_CONF_CMDSTAT);
 
 	/* IO/memory decode should be disabled before sizing/update BAR. */
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT,
-			cmd_reg & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
+	pcie_conf_write_internal(ctrl, bdf, PCIE_CONF_CMDSTAT,
+				 cmd_reg & (~(PCIE_CONF_CMDSTAT_IO | PCIE_CONF_CMDSTAT_MEM)));
 
-	pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
-	size = pcie_conf_read(bdf, reg);
-	pcie_conf_write(bdf, reg, (uint32_t)phys_addr);
+	pcie_conf_write_internal(ctrl, bdf, reg, 0xFFFFFFFFU);
+	size = pcie_conf_read_internal(ctrl, bdf, reg);
+	pcie_conf_write_internal(ctrl, bdf, reg, (uint32_t)phys_addr);
 
 	if (IS_ENABLED(CONFIG_64BIT) && PCIE_CONF_BAR_64(phys_addr)) {
 		reg++;
-		phys_addr |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
+		phys_addr |= ((uint64_t)pcie_conf_read_internal(ctrl, bdf, reg)) << 32;
 
 		if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL64) ||
 		    (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
@@ -168,9 +215,9 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 			goto err_exit;
 		}
 
-		pcie_conf_write(bdf, reg, 0xFFFFFFFFU);
-		size |= ((uint64_t)pcie_conf_read(bdf, reg)) << 32;
-		pcie_conf_write(bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
+		pcie_conf_write_internal(ctrl, bdf, reg, 0xFFFFFFFFU);
+		size |= ((uint64_t)pcie_conf_read_internal(ctrl, bdf, reg)) << 32;
+		pcie_conf_write_internal(ctrl, bdf, reg, (uint32_t)((uint64_t)phys_addr >> 32));
 	} else if ((PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_INVAL) ||
 		   (PCIE_CONF_BAR_ADDR(phys_addr) == PCIE_CONF_BAR_NONE)) {
 		/* Discard on invalid address */
@@ -208,7 +255,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 
 	ret = true;
 err_exit:
-	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg);
+	pcie_conf_write_internal(ctrl, bdf, PCIE_CONF_CMDSTAT, cmd_reg);
 
 	return ret;
 }
@@ -248,15 +295,27 @@ static bool pcie_probe_bar(pcie_bdf_t bdf,
 		return false;
 	}
 
-	return pcie_get_bar(bdf, reg - PCIE_CONF_BAR0, bar, io);
+	return pcie_get_bar(NULL, bdf, reg - PCIE_CONF_BAR0, bar, io);
 }
 
 bool pcie_get_mbar(pcie_bdf_t bdf,
 		   unsigned int bar_index,
 		   struct pcie_bar *mbar)
 {
-	return pcie_get_bar(bdf, bar_index, mbar, false);
+	return pcie_get_bar(NULL, bdf, bar_index, mbar, false);
 }
+
+#ifdef CONFIG_PCIE_CONTROLLER
+bool pcie_ctrl_get_mbar(const struct device *ctrl, pcie_bdf_t bdf, unsigned int bar_index,
+			struct pcie_bar *mbar)
+{
+	if (ctrl == NULL) {
+		return false;
+	}
+
+	return pcie_get_bar(ctrl, bdf, bar_index, mbar, false);
+}
+#endif
 
 bool pcie_probe_mbar(pcie_bdf_t bdf,
 		     unsigned int index,
@@ -269,7 +328,7 @@ bool pcie_get_iobar(pcie_bdf_t bdf,
 		    unsigned int bar_index,
 		    struct pcie_bar *iobar)
 {
-	return pcie_get_bar(bdf, bar_index, iobar, true);
+	return pcie_get_bar(NULL, bdf, bar_index, iobar, true);
 }
 
 bool pcie_probe_iobar(pcie_bdf_t bdf,
