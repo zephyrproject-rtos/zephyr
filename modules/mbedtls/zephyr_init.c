@@ -17,7 +17,12 @@
 #include <mbedtls/platform_time.h>
 #include <errno.h>
 
+#include <mbedtls/build_info.h>
 #include <mbedtls/debug.h>
+
+#if defined(MBEDTLS_SSL_TLS_C) && !defined(MBEDTLS_SSL_CLI_C) && !defined(MBEDTLS_SSL_SRV_C)
+#error "MBEDTLS_SSL_CLI_C or MBEDTLS_SSL_SRV_C must be enabled with MBEDTLS_SSL_TLS_C"
+#endif
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #include <psa/crypto.h>

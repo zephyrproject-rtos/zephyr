@@ -75,6 +75,11 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* Mbed TLS
+
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C`
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
