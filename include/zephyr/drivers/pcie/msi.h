@@ -109,7 +109,7 @@ extern bool pcie_msi_vector_connect(pcie_bdf_t bdf,
  * @param irq The IRQ we wish to trigger via MSI.
  * @param vector The vector for which you want the address (or NULL)
  * @param n_vector the size of the vector array
- * @return A (32-bit) value for the MSI MAP register.
+ * @return The 64-bit target address as seen by the endpoint, not a CPU virtual address.
  */
 extern uint64_t pcie_msi_map(unsigned int irq, msi_vector_t *vector, uint8_t n_vector);
 
@@ -132,7 +132,12 @@ extern uint16_t pcie_msi_mdr(unsigned int irq,
  * @param vectors an array of allocated vector(s)
  * @param n_vector the size of the vector array
  * @param irq The IRQ we wish to trigger via MSI.
- * @return true if the endpoint supports MSI, false otherwise.
+ * @retval true MSI or MSI-X was enabled.
+ * @retval false MSI or MSI-X could not be enabled: the endpoint has no
+ *                supported MSI or MSI-X capability, or the target address
+ *                exceeds 32 bits and the endpoint only supports 32-bit MSI.
+ *                On failure, the endpoint's MSI configuration and bus-master
+ *                state are left unchanged.
  */
 extern bool pcie_msi_enable(pcie_bdf_t bdf,
 			    msi_vector_t *vectors,
