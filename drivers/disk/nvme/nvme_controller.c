@@ -209,12 +209,12 @@ static int nvme_controller_setup_io_queues(const struct device *dev)
 
 	for (idx = 0; idx < nvme_ctrlr->num_io_queues; idx++) {
 		io_qpair = &nvme_ctrlr->ioq[idx];
+		nvme_cmd_qpair_reset(io_qpair);
+
 		if (nvme_cmd_qpair_setup(io_qpair, nvme_ctrlr, idx+1) != 0) {
 			LOG_ERR("IO cmd qpair %u setup failed", idx+1);
 			return -EIO;
 		}
-
-		nvme_cmd_qpair_reset(io_qpair);
 
 		nvme_cpl_status_poll_init(&status);
 
@@ -365,6 +365,8 @@ static int nvme_controller_pcie_configure(const struct device *dev)
 		LOG_ERR("Could not enable MSI-X");
 		return -EIO;
 	}
+
+	nvme_ctrlr->num_vectors = n_vectors;
 
 	return 0;
 }

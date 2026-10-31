@@ -283,12 +283,13 @@ static void eth_intel_igc_queue_isr(void *arg)
 	igc_modify(data->base, INTEL_IGC_EIMS, BIT(msix), true);
 }
 
+static void eth_intel_igc_map_intr_to_vector(const struct device *dev);
+
 static int eth_intel_igc_connect_queue_msix_vector(pcie_bdf_t bdf, const struct device *dev)
 {
-	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 
-	for (uint8_t msix = 0; msix < cfg->num_queues; msix++) {
+	for (uint8_t msix = 0; msix < data->num_queues; msix++) {
 		struct eth_intel_igc_intr_info *info = &data->intr_info[msix];
 
 		info->id = msix;
@@ -308,6 +309,7 @@ static int eth_intel_igc_pcie_msix_setup(const struct device *dev)
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 	pcie_bdf_t bdf;
+	uint8_t n_vector;
 	int ret;
 
 	bdf = eth_intel_get_pcie_bdf(cfg->platform);
@@ -316,19 +318,22 @@ static int eth_intel_igc_pcie_msix_setup(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ret = pcie_msi_vectors_allocate(bdf, CONFIG_ETH_INTEL_IGC_INT_PRIORITY, data->msi_vec,
-					cfg->num_msix);
-	if (ret < cfg->num_msix) {
+	n_vector = pcie_msi_vectors_allocate(bdf, CONFIG_ETH_INTEL_IGC_INT_PRIORITY, data->msi_vec,
+					     cfg->num_msix);
+	if (n_vector == 0U) {
 		LOG_ERR("Failed to allocate MSI-X vectors");
 		return -EIO;
 	}
+
+	data->num_queues = MIN(n_vector, cfg->num_queues);
 
 	ret = eth_intel_igc_connect_queue_msix_vector(bdf, dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (!pcie_msi_enable(bdf, data->msi_vec, cfg->num_msix, 0)) {
+	eth_intel_igc_map_intr_to_vector(dev);
+	if (!pcie_msi_enable(bdf, data->msi_vec, n_vector, 0)) {
 		LOG_ERR("Failed to enable MSI-X vectors");
 		return -EIO;
 	}
@@ -341,7 +346,6 @@ static int eth_intel_igc_pcie_msix_setup(const struct device *dev)
  */
 static void eth_intel_igc_map_intr_to_vector(const struct device *dev)
 {
-	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 	uint32_t config, reg_idx;
 
@@ -351,7 +355,7 @@ static void eth_intel_igc_map_intr_to_vector(const struct device *dev)
 	igc_modify(data->base, INTEL_IGC_GPIE, config, true);
 
 	/* Configure IVAR RX and TX for each queue interrupt */
-	for (uint8_t msix = 0; msix < cfg->num_queues; msix++) {
+	for (uint8_t msix = 0; msix < data->num_queues; msix++) {
 		reg_idx = msix >> 1;
 		config = sys_read32(data->base + (INTEL_IGC_IVAR_BASE_ADDR + (reg_idx << 2)));
 
@@ -420,7 +424,6 @@ static void eth_intel_igc_phylink_cb(const struct device *phy __unused,
 
 static void eth_intel_igc_intr_enable(const struct device *dev)
 {
-	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 	uint32_t config = 0;
 
@@ -428,7 +431,7 @@ static void eth_intel_igc_intr_enable(const struct device *dev)
 	sys_read32(data->base + INTEL_IGC_ICR);
 
 	/* Prepare bit mask of Queue interrupt */
-	for (uint8_t msix = 0; msix < cfg->num_queues; msix++) {
+	for (uint8_t msix = 0; msix < data->num_queues; msix++) {
 		config |= BIT(msix);
 	}
 
@@ -508,7 +511,6 @@ static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
 						     struct net_if *iface __unused)
 {
 	struct eth_intel_igc_mac_data *data = dev->data;
-	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct net_stats_eth *stats = &data->stats;
 
 	stats->bytes.sent += sys_read32(data->base + INTEL_IGC_TOTL);
@@ -534,7 +536,7 @@ static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
 	stats->flow_control.tx_flow_control_xon += sys_read32(data->base + INTEL_IGC_XONTXC);
 	stats->flow_control.tx_flow_control_xoff += sys_read32(data->base + INTEL_IGC_XOFFTXC);
 	stats->collisions += sys_read32(data->base + INTEL_IGC_COLC);
-	for (uint8_t queue = 0; queue < cfg->num_queues; queue++) {
+	for (uint8_t queue = 0; queue < data->num_queues; queue++) {
 		stats->tx_dropped += sys_read32(data->base + INTEL_IGC_TQDPC(queue));
 	}
 
@@ -616,7 +618,6 @@ static int eth_intel_igc_tx_frag(const struct device *dev, struct net_pkt *pkt,
  */
 static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 {
-	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 	struct eth_intel_igc_mac_data *data = dev->data;
 	uint8_t queue = 0;
 	int ret = 0;
@@ -630,8 +631,8 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 	net_pkt_ref(pkt);
 
 	queue = net_tx_priority2tc(net_pkt_priority(pkt));
-	if (queue >= cfg->num_queues) {
-		queue = cfg->num_queues - 1;
+	if (queue >= data->num_queues) {
+		queue = data->num_queues - 1U;
 	}
 
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
@@ -802,7 +803,7 @@ static void eth_intel_igc_init_tx_desc_ring(const struct eth_intel_igc_mac_cfg *
 	uint64_t desc_addr;
 	uint32_t config;
 
-	for (uint8_t queue = 0; queue < cfg->num_queues; queue++) {
+	for (uint8_t queue = 0; queue < data->num_queues; queue++) {
 		k_sem_init(&data->tx.sem[queue], 1, 1);
 
 		/* Disable the transmit descriptor ring */
@@ -843,7 +844,7 @@ static int eth_intel_igc_tx_dma_init(const struct device *dev)
 	uint32_t size;
 
 	/* Calculate the total size of the TX descriptor buffer */
-	size = cfg->num_queues * cfg->num_tx_desc * sizeof(union dma_tx_desc);
+	size = data->num_queues * cfg->num_tx_desc * sizeof(union dma_tx_desc);
 	/* Allocate memory for the TX descriptor buffer */
 	size = ROUND_UP(size, sizeof(union dma_tx_desc));
 	data->tx.desc = (union dma_tx_desc *)eth_intel_igc_aligned_alloc(size);
@@ -894,14 +895,14 @@ static int eth_intel_igc_rx_desc_prepare(const struct device *dev)
 	uint8_t *buf;
 
 	/* Allocate memory for receive DMA buffer */
-	data->rx.buf = (uint8_t *)k_calloc(cfg->num_queues * cfg->num_rx_desc, ETH_MAX_FRAME_SZ);
+	data->rx.buf = (uint8_t *)k_calloc(data->num_queues * cfg->num_rx_desc, ETH_MAX_FRAME_SZ);
 	if (data->rx.buf == NULL) {
 		LOG_ERR("Receive DMA buffer alloc failed");
 		return -ENOBUFS;
 	}
 
 	/* Assign allocated memory to each descriptor as per it's index */
-	for (uint8_t queue = 0; queue < cfg->num_queues; queue++) {
+	for (uint8_t queue = 0; queue < data->num_queues; queue++) {
 		desc = &data->rx.desc[queue * cfg->num_rx_desc];
 
 		for (uint32_t desc_idx = 0; desc_idx < cfg->num_rx_desc; desc_idx++) {
@@ -930,7 +931,7 @@ static void eth_intel_igc_init_rx_desc_ring(const struct eth_intel_igc_mac_cfg *
 	uint64_t desc_addr;
 	uint32_t config;
 
-	for (uint8_t queue = 0; queue < cfg->num_queues; queue++) {
+	for (uint8_t queue = 0; queue < data->num_queues; queue++) {
 		k_sem_init(&data->rx.sem[queue], 1, 1);
 
 		/* Disable the receive descriptor ring */
@@ -993,7 +994,7 @@ static int eth_intel_igc_rx_dma_init(const struct device *dev)
 	sys_write32(0, data->base + INTEL_IGC_RXCSUM);
 
 	/* Calculate the total size of the RX descriptor buffer */
-	size = cfg->num_queues * cfg->num_rx_desc * sizeof(union dma_rx_desc);
+	size = data->num_queues * cfg->num_rx_desc * sizeof(union dma_rx_desc);
 	size = ROUND_UP(size, sizeof(union dma_rx_desc));
 
 	/* Allocate memory for the RX descriptor buffer */
@@ -1158,7 +1159,6 @@ static int eth_intel_igc_init_mac_hw(const struct device *dev)
 	eth_intel_igc_rx_addrs_init(dev);
 
 	eth_intel_igc_get_dev_ownership(data);
-	eth_intel_igc_map_intr_to_vector(dev);
 	eth_intel_igc_init_speed(data);
 
 	return ret;

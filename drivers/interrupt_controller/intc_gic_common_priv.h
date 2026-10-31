@@ -24,6 +24,7 @@
 /* GICv3.1 Support for Extended SPI Range */
 #define GIC_ESPI_START        4096
 #define GIC_ESPI_END          5119
+#define GIC_LPI_INT_BASE      8192U
 #define GIC_DIST_IGROUPRnE    0x1000
 #define GIC_DIST_ISENABLERnE  0x1200
 #define GIC_DIST_ICENABLERnE  0x1400
