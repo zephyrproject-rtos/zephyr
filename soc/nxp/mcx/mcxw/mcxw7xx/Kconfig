@@ -11,6 +11,7 @@ config SOC_MCXW716C
 	select NXP_MULTICORE if NXP_NBU
 	select NXP_MCXW7X_BLE_CTRL if NXP_NBU
 	select HAS_PM
+	select HAS_POWEROFF
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_MCM_LPCAC
 
@@ -18,6 +19,7 @@ config SOC_MCXW727C
 	select NXP_MULTICORE if NXP_NBU
 	select NXP_MCXW7X_BLE_CTRL if NXP_NBU
 	select HAS_PM
+	select HAS_POWEROFF
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_MCM_LPCAC
 
@@ -26,8 +28,33 @@ config SOC_MCXW70AC
 	select NXP_MCXW7XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
 	select NXP_MCXW7X_BLE_CTRL if NXP_NBU
 	select NXP_MULTICORE if NXP_NBU
+	select HAS_PM
+	select HAS_POWEROFF
 	select CPU_HAS_ICACHE
 	select HAS_MCUX_MCM_LPCAC
+
+choice
+	prompt "System power-off (sys_poweroff) mode"
+	depends on POWEROFF
+	default SOC_MCXW7XX_POWEROFF_POWER_DOWN if SOC_MCXW70AC
+	default SOC_MCXW7XX_POWEROFF_DEEP_POWER_DOWN
+	help
+	  Select which low-power mode sys_poweroff() enters. The SoC wakes up
+	  from both modes through a reset.
+
+config SOC_MCXW7XX_POWEROFF_POWER_DOWN
+	bool "Power Down"
+	help
+	  sys_poweroff() enters Power Down: the cores and the main power domain
+	  are off, part of the SRAM and the wake domain can be retained.
+
+config SOC_MCXW7XX_POWEROFF_DEEP_POWER_DOWN
+	bool "Deep Power Down"
+	help
+	  sys_poweroff() enters Deep Power Down, the lowest power mode: little or
+	  no SRAM is retained.
+
+endchoice
 
 config NXP_MCXW7XX_BOOT_HEADER
 	bool "Create boot header"

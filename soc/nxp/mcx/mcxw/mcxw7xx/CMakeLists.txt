@@ -10,6 +10,7 @@ zephyr_sources_ifdef(CONFIG_SOC_MCXW716C mcxw71_platform_init.S)
 zephyr_sources_ifdef(CONFIG_SOC_MCXW727C mcxw72_platform_init.S)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_include_directories(./)
 
