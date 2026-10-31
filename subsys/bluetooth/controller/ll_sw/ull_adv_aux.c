@@ -686,7 +686,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 			ticks_slot_overhead =
-				ull_adv_aux_evt_init(aux, &ticks_anchor);
+				ull_adv_aux_evt_init(aux, (void *)adv->lll.aux->data.pdu[sec_idx],
+						     &ticks_anchor);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor,
 						ticks_slot_overhead);
@@ -2515,19 +2516,17 @@ uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 	return ull_adv_aux_handle_get((void *)lll->hdr.parent);
 }
 
-uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
+uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
 			      uint32_t *ticks_anchor)
 {
 	const struct lll_adv_aux *lll_aux;
 	const struct pdu_adv *pdu_scan;
 	uint32_t ticks_slot_overhead;
 	const struct lll_adv *lll;
-	const struct pdu_adv *pdu;
 	uint32_t time_us;
 
 	lll_aux = &aux->lll;
 	lll = lll_aux->adv;
-	pdu = lll_adv_aux_data_peek(lll_aux);
 	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	time_us = aux_time_min_get(aux, pdu, pdu_scan);

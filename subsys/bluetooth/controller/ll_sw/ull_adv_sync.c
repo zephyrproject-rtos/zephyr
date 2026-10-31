@@ -576,7 +576,8 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			ticks_anchor_aux = ticker_ticks_now_get() +
 				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 			ticks_slot_overhead_aux =
-				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
+				ull_adv_aux_evt_init(aux, (void *)lll_aux->data.pdu[sec_idx],
+						     &ticks_anchor_aux);
 
 #if !defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET) || \
 	(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET == 0)
