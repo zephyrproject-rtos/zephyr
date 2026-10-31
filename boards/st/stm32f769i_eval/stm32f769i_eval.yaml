@@ -1,0 +1,16 @@
+identifier: stm32f769i_eval
+name: ST STM32F769I Evaluation
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 384
+flash: 2048
+supported:
+  - uart
+  - gpio
+  - memc
+  - display
+  - video
+vendor: st
