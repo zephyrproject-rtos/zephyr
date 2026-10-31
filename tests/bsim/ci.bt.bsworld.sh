@@ -33,6 +33,11 @@ build shell tests/bluetooth/shell \
   -DEXTRA_CONF_FILE=xterm-native-shell.conf \
   -DEXTRA_DTC_OVERLAY_FILE=xterm-native-shell.overlay
 
+# Samples are built with their own prj.conf.
+for sample in peripheral_hr central_hr; do
+  build "${sample}" "samples/bluetooth/${sample}"
+done
+
 # Import BSWorld from the west checkout.
 export PYTHONPATH="${BSWORLD_DIR}/src${PYTHONPATH:+:${PYTHONPATH}}"
 python3 -m pytest -p bsworld.plugin -p no:cacheprovider -c "${tests}/pytest.ini" "${tests}" \

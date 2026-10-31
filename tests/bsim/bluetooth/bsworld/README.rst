@@ -18,9 +18,12 @@ through their consoles and checks their output.
    * - ``shell/test_shell.py``
      - Passive and active scanning; an encrypted connection carrying a GATT
        notification
+   * - ``samples/test_heart_rate.py``
+     - ``central_hr`` subscribing to ``peripheral_hr`` and receiving heart rate notifications
 
 The shell is the default ``tests/bluetooth/shell`` build with its console on
-stdio, as in the ``bluetooth.native_shell`` twister scenario.
+stdio, as in the ``bluetooth.native_shell`` twister scenario. The samples are
+built with their own ``prj.conf``.
 
 Running
 *******
