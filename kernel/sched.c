@@ -584,11 +584,23 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 			 * remaining in-flight window before the caller of
 			 * z_thread_halt() returns.
 			 */
-			if (key != NULL) {
-				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
-					z_sched_spinlock_unlock(*key);
-					*key = z_sched_spinlock_lock();
-				}
+			if ((key != NULL) &&
+			    (z_try_abort_thread_timeout(thread) == -EAGAIN)) {
+				/* The wait drops the lock with the thread
+				 * already dead (only possible on SMP). Flag
+				 * the halt as still in progress, so
+				 * k_thread_join() waits on join_queue instead
+				 * of returning early or spinning on the lock
+				 * (clear_halting() below drops the flag), and
+				 * keep interrupts masked: a dead _current that
+				 * an interrupt switches away never comes back
+				 * to finish the halt.
+				 */
+				thread->base.thread_state |= _THREAD_ABORTING;
+				do {
+					z_sched_spinlock_release();
+					(void)z_sched_spinlock_lock();
+				} while (z_try_abort_thread_timeout(thread) == -EAGAIN);
 			}
 			unpend_all(&thread->join_queue);
 
