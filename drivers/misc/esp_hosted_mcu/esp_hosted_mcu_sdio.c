@@ -243,73 +243,43 @@ static void ESP_HOSTED_MCU_ISR_ATTR esp_hosted_mcu_sdio_card_int(const struct de
 	k_sem_give(&data->rx_sem);
 }
 
-static int esp_hosted_mcu_sdio_init(const struct device *dev)
+/*
+ * Enumerate the coprocessor as an SDIO card. It only answers once its
+ * firmware has booted and armed the SDIO peripheral, so retry until it
+ * does rather than waiting a fixed worst-case delay: a coprocessor that
+ * comes up early lets the rest of the system boot that much sooner.
+ */
+static int esp_hosted_mcu_sdio_enumerate(const struct esp_hosted_mcu_sdio_config *sdio,
+					 struct esp_hosted_mcu_sdio_data *data, k_timeout_t timeout)
 {
-	const struct esp_hosted_mcu_config *cfg = dev->config;
-	const struct esp_hosted_mcu_sdio_config *sdio = cfg->transport_config;
-	struct esp_hosted_mcu_sdio_data *data = &esp_hosted_mcu_sdio_data_0;
+	k_timepoint_t end = sys_timepoint_calc(timeout);
 	int ret;
-
-	k_mutex_init(&data->bus_lock);
-	k_sem_init(&data->rx_sem, 0, 1);
-
-	if (!device_is_ready(sdio->sdhc_dev)) {
-		LOG_ERR("SDHC controller not ready");
-		return -ENODEV;
-	}
-
-	/*
-	 * A reset line is the reliable way to restart the coprocessor, but it is
-	 * optional: where none is routed, the coprocessor is left to the power
-	 * cycle the SD subsystem performs when it enumerates the card below.
-	 * That only restarts it when the host controller acts on the SDHC power
-	 * mode and the board routes the coprocessor supply through it, so the
-	 * enumeration retry below is what covers a cycle that did nothing.
-	 */
-	if (sdio->reset_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&sdio->reset_gpio)) {
-			LOG_ERR("reset GPIO not ready");
-			return -ENODEV;
-		}
-
-		if (gpio_pin_configure_dt(&sdio->reset_gpio, GPIO_OUTPUT_ACTIVE)) {
-			return -EIO;
-		}
-
-		/*
-		 * The reset line rests in its inactive state and a momentary pulse to
-		 * the active state restarts the coprocessor, so the sequence must end back at
-		 * rest before its firmware boots and arms the SDIO coprocessor. Leaving it
-		 * asserted holds the coprocessor in reset, where it never answers.
-		 */
-		gpio_pin_set_dt(&sdio->reset_gpio, 1);
-		k_msleep(CONFIG_ESP_HOSTED_MCU_RESET_PULSE_MS);
-		gpio_pin_set_dt(&sdio->reset_gpio, 0);
-		k_msleep(CONFIG_ESP_HOSTED_MCU_RESET_PULSE_MS);
-		gpio_pin_set_dt(&sdio->reset_gpio, 1);
-	}
-
-	/*
-	 * Enumerate the coprocessor as an SDIO card. It only answers once its
-	 * firmware has booted and armed the SDIO peripheral, so retry until it
-	 * does rather than waiting a fixed worst-case delay: a coprocessor that
-	 * comes up early lets the rest of the system boot that much sooner.
-	 */
-	k_timepoint_t ready_end = sys_timepoint_calc(K_MSEC(ESP_SLC_READY_TIMEOUT));
 
 	while (true) {
 		ret = sd_init(sdio->sdhc_dev, &data->card);
 		if (ret == 0) {
 			break;
 		}
-		if (sys_timepoint_expired(ready_end)) {
+		if (sys_timepoint_expired(end)) {
 			LOG_ERR("SDIO enumeration failed (%d)", ret);
 			return ret;
 		}
 		k_msleep(10);
 	}
 
-	/* Bring up Function 1 (the SLC data function) and set its block size. */
+	return 0;
+}
+
+/*
+ * Bring up Function 1 (the SLC data function), set its block size, open the
+ * coprocessor's data path and arm the card interrupt. Runs on an enumerated
+ * card: at init, and again after the coprocessor restarted.
+ */
+static int esp_hosted_mcu_sdio_open(const struct esp_hosted_mcu_sdio_config *sdio,
+				    struct esp_hosted_mcu_sdio_data *data)
+{
+	int ret;
+
 	ret = sdio_init_func(&data->card, &data->func1, SDIO_FUNC_NUM_1);
 	if (ret != 0) {
 		LOG_ERR("func1 init failed (%d)", ret);
@@ -362,9 +332,113 @@ static int esp_hosted_mcu_sdio_init(const struct device *dev)
 		return ret;
 	}
 
+	return 0;
+}
+
+static int esp_hosted_mcu_sdio_init(const struct device *dev)
+{
+	const struct esp_hosted_mcu_config *cfg = dev->config;
+	const struct esp_hosted_mcu_sdio_config *sdio = cfg->transport_config;
+	struct esp_hosted_mcu_sdio_data *data = &esp_hosted_mcu_sdio_data_0;
+	int ret;
+
+	k_mutex_init(&data->bus_lock);
+	k_sem_init(&data->rx_sem, 0, 1);
+
+	if (!device_is_ready(sdio->sdhc_dev)) {
+		LOG_ERR("SDHC controller not ready");
+		return -ENODEV;
+	}
+
+	/*
+	 * A reset line is the reliable way to restart the coprocessor, but it is
+	 * optional: where none is routed, the coprocessor is left to the power
+	 * cycle the SD subsystem performs when it enumerates the card below.
+	 * That only restarts it when the host controller acts on the SDHC power
+	 * mode and the board routes the coprocessor supply through it, so the
+	 * enumeration retry below is what covers a cycle that did nothing.
+	 */
+	if (sdio->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&sdio->reset_gpio)) {
+			LOG_ERR("reset GPIO not ready");
+			return -ENODEV;
+		}
+
+		if (gpio_pin_configure_dt(&sdio->reset_gpio, GPIO_OUTPUT_ACTIVE)) {
+			return -EIO;
+		}
+
+		/*
+		 * The reset line rests in its inactive state and a momentary pulse to
+		 * the active state restarts the coprocessor, so the sequence must end back at
+		 * rest before its firmware boots and arms the SDIO coprocessor. Leaving it
+		 * asserted holds the coprocessor in reset, where it never answers.
+		 */
+		gpio_pin_set_dt(&sdio->reset_gpio, 1);
+		k_msleep(CONFIG_ESP_HOSTED_MCU_RESET_PULSE_MS);
+		gpio_pin_set_dt(&sdio->reset_gpio, 0);
+		k_msleep(CONFIG_ESP_HOSTED_MCU_RESET_PULSE_MS);
+		gpio_pin_set_dt(&sdio->reset_gpio, 1);
+	}
+
+	ret = esp_hosted_mcu_sdio_enumerate(sdio, data, K_MSEC(ESP_SLC_READY_TIMEOUT));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = esp_hosted_mcu_sdio_open(sdio, data);
+	if (ret != 0) {
+		return ret;
+	}
+
 	data->ready = true;
 
 	return 0;
+}
+
+/*
+ * Reopen the link to a coprocessor that restarted: enumerate it again as it
+ * boots, then open its data path as init does. The counters restart with the
+ * coprocessor's own. Holds the bus for the whole sequence with ready false,
+ * so the receive and transmit paths stay off the bus until the link is open
+ * again; after a failure ready stays false.
+ */
+static int esp_hosted_mcu_sdio_reattach(const struct device *dev, k_timeout_t timeout)
+{
+	const struct esp_hosted_mcu_config *cfg = dev->config;
+	const struct esp_hosted_mcu_sdio_config *sdio = cfg->transport_config;
+	struct esp_hosted_mcu_sdio_data *data = &esp_hosted_mcu_sdio_data_0;
+	uint32_t val = 0;
+	int ret;
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
+
+	/*
+	 * A coprocessor that still answers a register read did not restart:
+	 * the link is left as it is. A read that fails, or returns all ones,
+	 * comes from a card that is not enumerated.
+	 */
+	ret = esp_slc_read_u32(data, ESP_SLC_PKT_LEN_REG, &val);
+	if (ret == 0 && (val & ESP_SLC_RX_BYTE_MASK) != ESP_SLC_RX_BYTE_MASK) {
+		k_mutex_unlock(&data->bus_lock);
+		return -EALREADY;
+	}
+
+	data->ready = false;
+
+	ret = esp_hosted_mcu_sdio_enumerate(sdio, data, timeout);
+	if (ret != 0) {
+		k_mutex_unlock(&data->bus_lock);
+		return -ETIMEDOUT;
+	}
+
+	ret = esp_hosted_mcu_sdio_open(sdio, data);
+	if (ret == 0) {
+		data->ready = true;
+	}
+	k_mutex_unlock(&data->bus_lock);
+
+	return ret;
 }
 
 static bool esp_hosted_mcu_sdio_data_ready(const struct device *dev)
@@ -395,6 +469,12 @@ static void esp_hosted_mcu_sdio_wait_for_rx(const struct device *dev, k_timeout_
 	const struct esp_hosted_mcu_config *cfg = dev->config;
 	const struct esp_hosted_mcu_sdio_config *sdio = cfg->transport_config;
 	struct esp_hosted_mcu_sdio_data *data = &esp_hosted_mcu_sdio_data_0;
+
+	/* The link is closed: wait out the timeout off the bus. */
+	if (!data->ready) {
+		k_sleep(timeout);
+		return;
+	}
 
 	/*
 	 * Acknowledge whatever the coprocessor has already flagged. Until this
@@ -528,4 +608,5 @@ const struct esp_hosted_mcu_transport_api esp_hosted_mcu_sdio_api = {
 	.transfer = esp_hosted_mcu_sdio_transfer,
 	.data_ready = esp_hosted_mcu_sdio_data_ready,
 	.wait_for_rx = esp_hosted_mcu_sdio_wait_for_rx,
+	.reattach = esp_hosted_mcu_sdio_reattach,
 };

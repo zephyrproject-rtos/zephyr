@@ -59,6 +59,8 @@ struct esp_hosted_mcu_data {
 	k_tid_t tid;
 	uint32_t fw_version;
 	uint32_t boot_events;
+	/* Restart recoveries completed, counted by the restart work handler. */
+	uint32_t restarts_handled;
 	bool rx_stride_aligned;
 	esp_hosted_mcu_rx_cb_t if_cb[ESP_HOSTED_MCU_MAX_IF];
 	void *if_user[ESP_HOSTED_MCU_MAX_IF];
@@ -450,6 +452,8 @@ static void esp_hosted_mcu_restart_work_handler(struct k_work *work)
 	k_mutex_lock(&esp_hosted_mcu_restart_lock, K_FOREVER);
 	esp_hosted_mcu_run_restart_cbs();
 	k_mutex_unlock(&esp_hosted_mcu_restart_lock);
+
+	esp_hosted_mcu_data_0.restarts_handled++;
 }
 
 /*
@@ -738,6 +742,47 @@ int esp_hosted_mcu_send_frame(esp_hosted_mcu_if_type_t if_type, uint8_t if_num, 
 uint32_t esp_hosted_mcu_fw_version(void)
 {
 	return esp_hosted_mcu_data_0.fw_version;
+}
+
+int esp_hosted_mcu_reattach(k_timeout_t timeout)
+{
+	const struct device *dev = esp_hosted_mcu_data_0.dev;
+	const struct esp_hosted_mcu_config *cfg;
+	struct esp_hosted_mcu_data *data;
+	k_timepoint_t end;
+	uint32_t handled;
+	int ret;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+	cfg = dev->config;
+	data = dev->data;
+
+	if (cfg->transport->reattach == NULL) {
+		return -ENOTSUP;
+	}
+
+	end = sys_timepoint_calc(timeout);
+	handled = data->restarts_handled;
+
+	ret = cfg->transport->reattach(dev, timeout);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/*
+	 * The new run announces itself with its boot event, which queues the
+	 * restart work; the listeners have run once the handler counted the run.
+	 */
+	while (data->restarts_handled == handled) {
+		if (sys_timepoint_expired(end)) {
+			return -ETIMEDOUT;
+		}
+		k_msleep(10);
+	}
+
+	return 0;
 }
 
 /*

@@ -208,6 +208,12 @@ struct esp_hosted_mcu_transport_api {
 	 * no event source waits out the timeout instead.
 	 */
 	void (*wait_for_rx)(const struct device *dev, k_timeout_t timeout);
+	/*
+	 * Reopen the link to a coprocessor that restarted while the host kept
+	 * running, within timeout. NULL where the transport sees a restart by
+	 * itself.
+	 */
+	int (*reattach)(const struct device *dev, k_timeout_t timeout);
 };
 
 /* Core per-instance immutable config, filled from devicetree. */
@@ -266,14 +272,32 @@ struct esp_hosted_mcu_restart_cb {
  * Register a restart listener. The handlers run one after another, in the
  * order they were registered, on the core's own work queue once the restarted
  * coprocessor sends its boot event. Over SDIO a restarted coprocessor stays
- * silent until the host opens its data path again, which only init does, so
- * no handler runs there. A listener registered from main() or later runs
- * after those registered during device init.
+ * silent until the host opens its data path again, which init and
+ * esp_hosted_mcu_reattach() do, so there the handlers run once that call
+ * reopened the link. A listener registered from main() or later runs after
+ * those registered during device init.
  *
  * cb must stay valid for as long as the core runs. Registering it again has
  * no effect. Call from thread context.
  */
 void esp_hosted_mcu_register_restart_cb(struct esp_hosted_mcu_restart_cb *cb);
+
+/*
+ * Reopen the link to a coprocessor that restarted while the host kept running
+ * and wait for the restart listeners to run, up to timeout. Over SDIO a
+ * restarted coprocessor stays silent until the host enumerates it again; the
+ * caller that restarted it calls this once it released the reset line.
+ *
+ * Returns 0 once the listeners ran. -EALREADY when the coprocessor still
+ * answers; the link is left as it is. -ETIMEDOUT when the coprocessor did not
+ * enumerate in time, which leaves the link closed until the next call, or when
+ * the listeners did not run in time; they still run once its boot event
+ * arrives. The deadline is checked between enumeration attempts, so one
+ * attempt always runs. -ENOTSUP where the transport sees a restart by itself,
+ * as over SPI. -ENODEV when the core did not initialise. Call from thread
+ * context, not from a restart listener.
+ */
+int esp_hosted_mcu_reattach(k_timeout_t timeout);
 
 /*
  * Send an RPC request and block for its matching response. On success resp
