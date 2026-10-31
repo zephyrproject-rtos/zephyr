@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/init.h>
 #include <string.h>
 #include <soc.h>
@@ -27,6 +29,7 @@ LOG_MODULE_REGISTER(dma_sam_xdmac);
 
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)
 #define DMA_CHANNELS_MAX 31
+#define SAM_XDMAC_MAX_DESCRIPTORS 32U
 
 enum dma_state {
 	DMA_STATE_INIT = 0,
@@ -35,12 +38,27 @@ enum dma_state {
 	DMA_STATE_SUSPENDED,
 };
 
+static struct sam_xdmac_linked_list_desc_view1
+	sam_xdmac_desc_pool[DMA_CHANNELS_MAX + 1U][SAM_XDMAC_MAX_DESCRIPTORS]
+	__aligned(32);
+static struct sam_xdmac_cache_range
+	sam_xdmac_src_range_pool[DMA_CHANNELS_MAX + 1U][SAM_XDMAC_MAX_DESCRIPTORS];
+static struct sam_xdmac_cache_range
+	sam_xdmac_dst_range_pool[DMA_CHANNELS_MAX + 1U][SAM_XDMAC_MAX_DESCRIPTORS];
+
 /* DMA channel configuration */
 struct sam_xdmac_channel_cfg {
 	void *user_data;
 	dma_callback_t callback;
 	uint32_t data_size;
 	enum dma_state state;
+
+	struct sam_xdmac_linked_list_desc_view1 *descriptors;
+	struct sam_xdmac_cache_range *src_ranges;
+	struct sam_xdmac_cache_range *dst_ranges;
+
+	uint32_t descriptor_count;
+	bool scatter_gather;
 };
 
 /* Device constant configuration parameters */
@@ -49,6 +67,10 @@ struct sam_xdmac_dev_cfg {
 	void (*irq_config)(void);
 	const struct atmel_sam_pmc_config clock_cfg;
 	uint8_t irq_id;
+
+	struct sam_xdmac_linked_list_desc_view1 *desc_pool;
+	struct sam_xdmac_cache_range *src_range_pool;
+	struct sam_xdmac_cache_range *dst_range_pool;
 };
 
 /* Device run time data */
@@ -57,37 +79,275 @@ struct sam_xdmac_dev_data {
 	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_MAX + 1];
 };
 
+static void sam_xdmac_flush_transfer_memory(
+	struct sam_xdmac_channel_cfg *channel)
+{
+	uint32_t i;
+
+	for (i = 0U; i < channel->descriptor_count; i++) {
+		const struct sam_xdmac_cache_range *src = &channel->src_ranges[i];
+		const struct sam_xdmac_cache_range *dst = &channel->dst_ranges[i];
+
+		if (src->address != 0U && src->size != 0U) {
+			sys_cache_data_flush_range(
+			(void *)(uintptr_t)src->address,
+			src->size);
+		}
+
+		if (dst->address != 0U && dst->size != 0U) {
+			/*
+			 * Flush destination before DMA so dirty CPU cache
+			 * lines cannot overwrite DMA output.
+			 */
+			sys_cache_data_flush_range(
+				(void *)(uintptr_t)dst->address, dst->size);
+		}
+	}
+
+	if (channel->descriptors != NULL && channel->descriptor_count != 0U) {
+		sys_cache_data_flush_range(
+			channel->descriptors,
+			channel->descriptor_count *
+			sizeof(channel->descriptors[0]));
+	}
+	/*
+	 * Ensure all writes are visible to the DMA master before
+	 * enabling the channel.
+	 */
+	barrier_dsync_fence_full();
+}
+
+static void sam_xdmac_invalidate_destinations(
+	struct sam_xdmac_channel_cfg *channel)
+{
+	uint32_t i;
+
+	for (i = 0U; i < channel->descriptor_count; i++) {
+		const struct sam_xdmac_cache_range *dst =
+			&channel->dst_ranges[i];
+
+		if (dst->address == 0U || dst->size == 0U) {
+			continue;
+		}
+		sys_cache_data_invd_range(
+			(void *)(uintptr_t)dst->address,
+			dst->size);
+	}
+	/*
+	 * Ensure invalidation is complete before callback wakes
+	 * the thread that reads the destination buffers.
+	 */
+	barrier_dsync_fence_full();
+}
+
 static void sam_xdmac_isr(const struct device *dev)
 {
-	const struct sam_xdmac_dev_cfg *const dev_cfg = dev->config;
-	struct sam_xdmac_dev_data *const dev_data = dev->data;
-	uint32_t channel_num = dev_data->dma_ctx.dma_channels;
+	const struct sam_xdmac_dev_cfg *dev_cfg = dev->config;
+	struct sam_xdmac_dev_data *dev_data = dev->data;
+	Xdmac *xdmac = dev_cfg->regs;
+	uint32_t channel_count;
+	uint32_t global_status;
 
-	Xdmac * const xdmac = dev_cfg->regs;
-	struct sam_xdmac_channel_cfg *channel_cfg;
-	uint32_t isr_status;
-	uint32_t err;
+	channel_count = MIN(dev_data->dma_ctx.dma_channels,
+			DMA_CHANNELS_MAX + 1U);
 
-	/* Get global interrupt status */
-	isr_status = xdmac->XDMAC_GIS;
+	global_status = xdmac->XDMAC_GIS;
 
-	for (int channel = 0; channel < channel_num; channel++) {
-		if (!(isr_status & (1 << channel))) {
+	for (uint32_t channel = 0U; channel < channel_count; channel++) {
+		struct sam_xdmac_channel_cfg *channel_cfg;
+		uint32_t cis;
+		uint32_t cnda;
+		int callback_status = 0;
+		bool transfer_complete = true;
+
+		if ((global_status & BIT(channel)) == 0U) {
 			continue;
 		}
 
-		dev_data->dma_channels[channel].state = DMA_STATE_CONFIGURED;
 		channel_cfg = &dev_data->dma_channels[channel];
 
-		/* Get channel errors */
-		err = xdmac->XDMAC_CHID[channel].XDMAC_CIS & XDMAC_INT_ERR;
+		cis = xdmac->XDMAC_CHID[channel].XDMAC_CIS;
+		cnda = xdmac->XDMAC_CHID[channel].XDMAC_CNDA;
 
-		/* Execute callback */
-		if (channel_cfg->callback) {
-			channel_cfg->callback(dev, channel_cfg->user_data,
-					      channel, err);
+		if ((cis & XDMAC_INT_ERR) != 0U) {
+			callback_status = -EIO;
+			xdmac->XDMAC_GD = XDMAC_GD_DI0 << channel;
+			channel_cfg->state = DMA_STATE_CONFIGURED;
+		} else if (channel_cfg->scatter_gather) {
+			/*
+			 * For a linked-list transfer, CNDA should contain
+			 * the next descriptor while the chain is active.
+			 * CNDA == 0 means the final descriptor was consumed.
+			 */
+			if (cnda != 0U) {
+				transfer_complete = false;
+			} else {
+				channel_cfg->state = DMA_STATE_CONFIGURED;
+			}
+		} else {
+			channel_cfg->state = DMA_STATE_CONFIGURED;
+		}
+
+		if (transfer_complete) {
+			if (callback_status == 0) {
+				sam_xdmac_invalidate_destinations(channel_cfg);
+			}
+
+			if (channel_cfg->callback != NULL) {
+				channel_cfg->callback(dev,
+					channel_cfg->user_data,
+					channel,
+					callback_status);
+			}
 		}
 	}
+}
+
+static int sam_xdmac_validate_block_chain(
+	const struct dma_config *cfg)
+{
+	const struct dma_block_config *block;
+	uint32_t i;
+
+	if (cfg == NULL || cfg->head_block == NULL) {
+		return -EINVAL;
+	}
+
+	if (cfg->block_count == 0U ||
+		cfg->block_count > SAM_XDMAC_MAX_DESCRIPTORS) {
+		return -EINVAL;
+	}
+
+	block = cfg->head_block;
+
+	for (i = 0U; i < cfg->block_count; i++) {
+		if (block == NULL) {
+			return -EINVAL;
+		}
+
+		if (block->block_size == 0U) {
+			return -EINVAL;
+		}
+
+		block = block->next_block;
+	}
+
+	/*
+	 * This implementation supports finite scatter-gather lists.
+	 * Cyclic lists are intentionally rejected.
+	 */
+	if (block != NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int sam_xdmac_build_view1_descriptors(
+	const struct dma_config *cfg,
+	struct sam_xdmac_channel_cfg *channel,
+	uint32_t xdmac_channel_cfg)
+{
+	const struct dma_block_config *block;
+	uint32_t transfer_width;
+	uint32_t i;
+	int ret;
+
+	ret = sam_xdmac_validate_block_chain(cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (cfg->source_data_size != cfg->dest_data_size) {
+		return -ENOTSUP;
+	}
+
+	/*
+	 * The current driver stores data_size as log2(width):
+	 * 0 = 1 byte, 1 = 2 bytes, 2 = 4 bytes.
+	 */
+	if (cfg->source_data_size != 1U &&
+		cfg->source_data_size != 2U &&
+		cfg->source_data_size != 4U) {
+		return -EINVAL;
+	}
+
+	transfer_width = cfg->source_data_size;
+	block = cfg->head_block;
+
+	for (i = 0U; i < cfg->block_count; i++) {
+		struct sam_xdmac_linked_list_desc_view1 *desc;
+		uint32_t microblock_length;
+		uintptr_t next_descriptor;
+
+		if (block->block_size == 0U ||
+			(block->block_size % transfer_width) != 0U) {
+			return -EINVAL;
+		}
+
+		if (block->source_address > UINT32_MAX ||
+			block->dest_address > UINT32_MAX) {
+			return -EOVERFLOW;
+		}
+		channel->src_ranges[i].address =
+			(uint32_t)block->source_address;
+		channel->dst_ranges[i].address =
+			(uint32_t)block->dest_address;
+		channel->src_ranges[i].size = block->block_size;
+		channel->dst_ranges[i].size = block->block_size;
+
+		microblock_length = block->block_size / transfer_width;
+
+		if (microblock_length == 0U ||
+			microblock_length > 0x00ffffffU) {
+			return -EINVAL;
+		}
+
+		desc = &channel->descriptors[i];
+
+		desc->mbr_sa = (uint32_t)block->source_address;
+		desc->mbr_da = (uint32_t)block->dest_address;
+		desc->mbr_ubc =
+			XDMA_UBC_NVIEW_NDV1 |
+			(microblock_length & 0x00ffffffU);
+
+		if (i + 1U < cfg->block_count) {
+			next_descriptor = (uintptr_t)&channel->descriptors[i + 1U];
+
+			if (next_descriptor > UINT32_MAX) {
+				return -EOVERFLOW;
+			}
+
+			desc->mbr_nda = (uint32_t)next_descriptor;
+			desc->mbr_ubc |=
+				XDMA_UBC_NDE_FETCH_EN |
+				XDMA_UBC_NSEN_UPDATED |
+				XDMA_UBC_NDEN_UPDATED;
+		} else {
+		/*
+		 * The last descriptor terminates the chain.
+		 */
+			desc->mbr_nda = 0U;
+		}
+
+		block = block->next_block;
+	}
+
+	channel->descriptor_count = cfg->block_count;
+	channel->scatter_gather = cfg->block_count > 1U;
+
+	/*
+	 * Flush the complete descriptor list. The previous code used
+	 * descriptors[i] after the loop; at this point i equals
+	 * cfg->block_count, so it flushed memory after the descriptor
+	 * array instead of flushing descriptor[0].
+	 */
+	sys_cache_data_flush_range(
+		channel->descriptors,
+		channel->descriptor_count * sizeof(channel->descriptors[0]));
+	barrier_dsync_fence_full();
+
+	return 0;
 }
 
 int sam_xdmac_channel_configure(const struct device *dev, uint32_t channel,
@@ -226,9 +486,24 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 	}
 
 	if (cfg->block_count != 1U) {
-		LOG_ERR("Only single block transfer is currently supported."
-			    " Please submit a patch.");
-		return -EINVAL;
+		if (cfg == NULL || cfg->head_block == NULL) {
+			return -EINVAL;
+		}
+		if (cfg->source_burst_length != cfg->dest_burst_length) {
+			LOG_ERR("Different source and destination burst lengths unsupported");
+			return -EINVAL;
+		}
+		ret = sam_xdmac_validate_block_chain(cfg);
+		if (ret < 0) {
+			LOG_ERR("Invalid DMA block chain");
+			return ret;
+		}
+		ret = sam_xdmac_build_view1_descriptors(cfg,
+			&dev_data->dma_channels[channel],
+			channel_cfg.cfg);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	burst_size = find_msb_set(cfg->source_burst_length) - 1;
@@ -309,12 +584,34 @@ static int sam_xdmac_config(const struct device *dev, uint32_t channel,
 	dev_data->dma_channels[channel].user_data = cfg->user_data;
 
 	(void)memset(&transfer_cfg, 0, sizeof(transfer_cfg));
-	transfer_cfg.sa = cfg->head_block->source_address;
-	transfer_cfg.da = cfg->head_block->dest_address;
-	transfer_cfg.ublen = cfg->head_block->block_size >> data_size;
+	if (cfg->block_count > 1U) {
+		uintptr_t first_descriptor;
 
+		first_descriptor =
+			(uintptr_t)&dev_data->dma_channels[channel].descriptors[0];
+
+		if (first_descriptor > UINT32_MAX) {
+			return -EOVERFLOW;
+		}
+
+		transfer_cfg.nda =
+			(uint32_t)first_descriptor;
+		transfer_cfg.ndc = XDMAC_CNDC_NDE_DSCR_FETCH_EN |
+				XDMAC_CNDC_NDSUP_SRC_PARAMS_UPDATED |
+				XDMAC_CNDC_NDDUP_DST_PARAMS_UPDATED |
+				XDMAC_CNDC_NDVIEW_NDV1;
+	} else {
+		transfer_cfg.sa = cfg->head_block->source_address;
+		transfer_cfg.da = cfg->head_block->dest_address;
+		transfer_cfg.ublen = cfg->head_block->block_size >> data_size;
+	}
 	ret = sam_xdmac_transfer_configure(dev, channel, &transfer_cfg);
+	if (ret < 0) {
+		return ret;
+	}
 
+	dev_data->dma_channels[channel].callback = cfg->dma_callback;
+	dev_data->dma_channels[channel].user_data = cfg->user_data;
 	return ret;
 }
 
@@ -355,6 +652,9 @@ int sam_xdmac_transfer_start(const struct device *dev, uint32_t channel)
 		LOG_DBG("Channel %d already enabled", channel);
 		return -EBUSY;
 	}
+
+	sam_xdmac_flush_transfer_memory(
+		&dev_data->dma_channels[channel]);
 
 	/* Enable channel interrupt */
 	xdmac->XDMAC_GIE = XDMAC_GIE_IE0 << channel;
@@ -409,11 +709,27 @@ static int sam_xdmac_initialize(const struct device *dev)
 	struct sam_xdmac_dev_data *const dev_data = dev->data;
 
 	Xdmac * const xdmac = dev_cfg->regs;
+	uint32_t channel;
 
 	dev_data->dma_ctx.dma_channels = FIELD_GET(XDMAC_GTYPE_NB_CH_Msk, xdmac->XDMAC_GTYPE) + 1;
 	if (dev_data->dma_ctx.dma_channels > DMA_CHANNELS_MAX + 1) {
 		LOG_ERR("Maximum supported channels is %d", DMA_CHANNELS_MAX + 1);
 		return -EINVAL;
+	}
+
+	for (channel = 0U;
+		channel < dev_data->dma_ctx.dma_channels;
+		channel++) {
+		dev_data->dma_channels[channel].descriptors =
+			 &sam_xdmac_desc_pool[channel][0];
+		dev_data->dma_channels[channel].src_ranges =
+			 &sam_xdmac_src_range_pool[channel][0];
+		dev_data->dma_channels[channel].dst_ranges =
+			 &sam_xdmac_dst_range_pool[channel][0];
+
+		dev_data->dma_channels[channel].descriptor_count = 0U;
+		dev_data->dma_channels[channel].scatter_gather = false;
+		dev_data->dma_channels[channel].state = DMA_STATE_INIT;
 	}
 
 	/* Configure interrupts */
@@ -563,6 +879,18 @@ static DEVICE_API(dma, sam_xdmac_driver_api) = {
 };
 
 #define DMA_INIT(n)								\
+	static struct sam_xdmac_linked_list_desc_view1				\
+	dma##n##_desc_pool[DMA_CHANNELS_MAX + 1U]				\
+		[SAM_XDMAC_MAX_DESCRIPTORS]					\
+		__aligned(32);							\
+										\
+	static struct sam_xdmac_cache_range					\
+	dma##n##_src_range_pool[DMA_CHANNELS_MAX + 1U]				\
+		[SAM_XDMAC_MAX_DESCRIPTORS];					\
+	static struct sam_xdmac_cache_range					\
+	dma##n##_dst_range_pool[DMA_CHANNELS_MAX + 1U]				\
+		[SAM_XDMAC_MAX_DESCRIPTORS];					\
+										\
 	static void dma##n##_irq_config(void)					\
 	{									\
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
@@ -574,6 +902,9 @@ static DEVICE_API(dma, sam_xdmac_driver_api) = {
 		.irq_config = dma##n##_irq_config,				\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(n),			\
 		.irq_id = DT_INST_IRQN(n),					\
+		.desc_pool = &dma##n##_desc_pool[0][0],				\
+		.src_range_pool = &dma##n##_src_range_pool[0][0],		\
+		.dst_range_pool = &dma##n##_dst_range_pool[0][0],		\
 	};									\
 										\
 	static ATOMIC_DEFINE(dma_channels_atomic_##n, DMA_CHANNELS_MAX);	\
