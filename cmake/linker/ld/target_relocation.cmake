@@ -11,12 +11,13 @@ macro(toolchain_ld_relocation)
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
   set(MEM_REGION_DEFAULT_RAM RAM)
   set(DICT_FILE "${PROJECT_BINARY_DIR}/relocation_dict.txt")
+  set(relocation_directives "$<TARGET_PROPERTY:code_data_relocation_target,RELOCATION_DIRECTIVES>")
 
   file(GENERATE
     OUTPUT
       ${DICT_FILE}
     CONTENT
-      $<TARGET_PROPERTY:code_data_relocation_target,INTERFACE_SOURCES>
+      $<TARGET_GENEX_EVAL:code_data_relocation_target,${relocation_directives}>
   )
 
   add_custom_command(

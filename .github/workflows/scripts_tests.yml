@@ -9,6 +9,9 @@ on:
       - main
       - v*-branch
     paths:
+      - 'cmake/modules/extensions.cmake'
+      - 'cmake/linker/ld/target_relocation.cmake'
+      - 'cmake/linker/arcmwdt/target.cmake'
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'
@@ -22,6 +25,9 @@ on:
       - main
       - v*-branch
     paths:
+      - 'cmake/modules/extensions.cmake'
+      - 'cmake/linker/ld/target_relocation.cmake'
+      - 'cmake/linker/arcmwdt/target.cmake'
       - 'scripts/build/**'
       - 'scripts/checkpatch.pl'
       - 'scripts/checkpatch/**'

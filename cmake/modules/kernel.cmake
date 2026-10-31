@@ -47,7 +47,10 @@ Targets
 
 .. cmake:variable:: code_data_relocation_target
 
-   Custom target for code data relocation.
+   Custom target for code data relocation. Its ``RELOCATION_DIRECTIVES`` property
+   stores newline-separated directives from ``zephyr_code_relocate()`` for the
+   linker backend. Consumers must evaluate embedded generator expressions using
+   ``TARGET_GENEX_EVAL``. These directives are metadata, not interface source files.
 
 
 .. cmake:variable:: app
