@@ -83,6 +83,14 @@ static ALWAYS_INLINE void update_cache(int preempt_ok)
 	struct k_thread *thread = next_up();
 
 	if (should_preempt(thread, preempt_ok)) {
+		if (IS_ENABLED(CONFIG_TIMESLICING) && (thread != _current) &&
+		    z_is_thread_queued(_current) && thread_is_preemptible(_current) &&
+		    (z_sched_prio_cmp(thread, _current) > 0)) {
+			/* As on SMP, a preempted thread goes behind the other
+			 * threads of its priority, so that they run first.
+			 */
+			runq_yield();
+		}
 #ifdef CONFIG_TIMESLICING
 		if (thread != _current) {
 			z_time_slice_reset(thread);
