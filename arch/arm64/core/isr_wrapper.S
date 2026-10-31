@@ -109,11 +109,11 @@ spurious_continue:
 	ldr	x0, [sp], #16
 
 	/* Signal end-of-interrupt */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) && !defined(CONFIG_ARM64_GIC_SOC_IRQ_HOOKS)
 	bl	arm_gic_eoi
 #else
 	bl	z_soc_irq_eoi
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER && !CONFIG_ARM64_GIC_SOC_IRQ_HOOKS */
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_exit
