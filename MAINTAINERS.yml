@@ -5353,7 +5353,6 @@ PHYTEC Platforms:
   maintainers:
     - dnltz
   collaborators:
-    - jonas-rem
     - pefech
   files:
     - boards/phytec/
