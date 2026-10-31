@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 
 #ifdef CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2
@@ -94,18 +95,29 @@ struct ifx_tcpwm_grp_pwm_config {
 #endif /* CONFIG_PWM_EVENT */
 };
 
-#ifdef CONFIG_PWM_EVENT
+#if defined(CONFIG_PWM_EVENT) || defined(CONFIG_PM_DEVICE)
 struct ifx_tcpwm_grp_pwm_data {
+#ifdef CONFIG_PWM_EVENT
 	sys_slist_t event_callbacks;
 	struct k_spinlock lock;
-};
 #endif /* CONFIG_PWM_EVENT */
+#ifdef CONFIG_PM_DEVICE
+	uint32_t period_cycles;
+	uint32_t pulse_cycles;
+	pwm_flags_t flags;
+	bool was_running;
+#endif /* CONFIG_PM_DEVICE */
+};
+#endif /* CONFIG_PWM_EVENT || CONFIG_PM_DEVICE */
 
 static int ifx_tcpwm_grp_pwm_set_cycles(const struct device *dev, uint32_t channel,
 					uint32_t period_cycles, uint32_t pulse_cycles,
 					pwm_flags_t flags)
 {
 	const struct ifx_tcpwm_grp_pwm_config *config = dev->config;
+#ifdef CONFIG_PM_DEVICE
+	struct ifx_tcpwm_grp_pwm_data *data = dev->data;
+#endif /* CONFIG_PM_DEVICE */
 	mm_reg_t base = config->base;
 	uint32_t ctrl;
 
@@ -142,6 +154,13 @@ static int ifx_tcpwm_grp_pwm_set_cycles(const struct device *dev, uint32_t chann
 	sys_write32(TCPWM_TR_CMD_CAPTURE0, base + TCPWM_TR_CMD);
 	sys_write32(ctrl | TCPWM_CTRL_ENABLED, base + TCPWM_CTRL);
 	sys_write32(TCPWM_TR_CMD_START, base + TCPWM_TR_CMD);
+
+#ifdef CONFIG_PM_DEVICE
+	data->period_cycles = period_cycles;
+	data->pulse_cycles = pulse_cycles;
+	data->flags = flags;
+	data->was_running = true;
+#endif /* CONFIG_PM_DEVICE */
 
 	return 0;
 }
@@ -304,6 +323,36 @@ static int ifx_tcpwm_grp_pwm_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_tcpwm_grp_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_tcpwm_grp_pwm_config *config = dev->config;
+	struct ifx_tcpwm_grp_pwm_data *data = dev->data;
+	mm_reg_t base = config->base;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		sys_write32(sys_read32(base + TCPWM_CTRL) & ~TCPWM_CTRL_ENABLED, base + TCPWM_CTRL);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		sys_write32(sys_read32(base + TCPWM_CTRL) | TCPWM_CTRL_ENABLED, base + TCPWM_CTRL);
+		if (data->was_running) {
+			return ifx_tcpwm_grp_pwm_set_cycles(dev, 0U, data->period_cycles,
+							    data->pulse_cycles, data->flags);
+		}
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		return ifx_tcpwm_grp_pwm_init(dev);
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(pwm, ifx_tcpwm_grp_pwm_api) = {
 	.set_cycles = ifx_tcpwm_grp_pwm_set_cycles,
 	.get_cycles_per_sec = ifx_tcpwm_grp_pwm_get_cycles_per_sec,
@@ -312,9 +361,16 @@ static DEVICE_API(pwm, ifx_tcpwm_grp_pwm_api) = {
 #endif /* CONFIG_PWM_EVENT */
 };
 
+#if defined(CONFIG_PWM_EVENT) || defined(CONFIG_PM_DEVICE)
+#define IFX_TCPWM_GRP_PWM_DATA_DEFINE(n)                                                           \
+	static struct ifx_tcpwm_grp_pwm_data ifx_tcpwm_grp_pwm_data_##n;
+#define IFX_TCPWM_GRP_PWM_DATA_GET(n) (&ifx_tcpwm_grp_pwm_data_##n)
+#else
+#define IFX_TCPWM_GRP_PWM_DATA_DEFINE(n)
+#define IFX_TCPWM_GRP_PWM_DATA_GET(n) NULL
+#endif /* CONFIG_PWM_EVENT || CONFIG_PM_DEVICE */
+
 #define IFX_TCPWM_GRP_PWM_IRQ_CONFIG(n)                                                            \
-	static struct ifx_tcpwm_grp_pwm_data ifx_tcpwm_grp_pwm_data_##n;                           \
-                                                                                                   \
 	static void ifx_tcpwm_grp_pwm_irq_config_##n(void)                                         \
 	{                                                                                          \
 		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), DT_IRQ(DT_INST_PARENT(n), priority),       \
@@ -350,9 +406,12 @@ static DEVICE_API(pwm, ifx_tcpwm_grp_pwm_api) = {
 #endif
 
 #define IFX_TCPWM_GRP_PWM_INIT(n)                                                                  \
+	IFX_TCPWM_GRP_PWM_DATA_DEFINE(n)                                                           \
 	IF_ENABLED(CONFIG_PWM_EVENT, (IFX_TCPWM_GRP_PWM_IRQ_CONFIG(n)))                            \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_grp_pwm_pm_action);                                  \
                                                                                                    \
 	static const struct ifx_tcpwm_grp_pwm_config ifx_tcpwm_grp_pwm_config_##n = {              \
 		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
@@ -363,10 +422,9 @@ static DEVICE_API(pwm, ifx_tcpwm_grp_pwm_api) = {
 			   (.irq_config = ifx_tcpwm_grp_pwm_irq_config_##n,))                      \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_grp_pwm_init, NULL,                                     \
-			      COND_CODE_1(CONFIG_PWM_EVENT, (&ifx_tcpwm_grp_pwm_data_##n),         \
-					  (NULL)),                                                 \
-			      &ifx_tcpwm_grp_pwm_config_##n, POST_KERNEL,                          \
+	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_grp_pwm_init, PM_DEVICE_DT_INST_GET(n),                 \
+			      IFX_TCPWM_GRP_PWM_DATA_GET(n), &ifx_tcpwm_grp_pwm_config_##n,        \
+			      POST_KERNEL,                                                         \
 			      CONFIG_PWM_INIT_PRIORITY, &ifx_tcpwm_grp_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_TCPWM_GRP_PWM_INIT)
