@@ -15,4 +15,13 @@
 			#mbox-cells = <1>;
 		};
 	};
+
+	mbox-gic-sw {
+		compatible = "zephyr,mbox-gic-sw";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 90 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+			     <GIC_SPI 92 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		tx-spis = <91 93>;
+		#mbox-cells = <1>;
+	};
 };
