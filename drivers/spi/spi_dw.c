@@ -517,6 +517,10 @@ void spi_dw_isr(const struct device *dev)
 	LOG_DBG("SPI %p int_status 0x%x - (tx: %d, rx: %d)", dev, int_status,
 		read_txflr(dev), read_rxflr(dev));
 
+	if (int_status == 0) {
+		return;
+	}
+
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
 		error = -EIO;
 		goto out;
