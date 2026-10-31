@@ -17,6 +17,7 @@
 #include <zephyr/linker/sections.h>
 #include <hexagon_vm.h>
 #include <switch_frame.h>
+#include <offsets_short.h>
 
 GTEXT(z_hexagon_arch_switch)
 GTEXT(z_hexagon_thread_start)
@@ -92,6 +93,31 @@ SECTION_FUNC(TEXT, z_hexagon_arch_switch)
 		r29 = r0
 	}
 
+#ifdef CONFIG_HW_STACK_PROTECTION
+	{
+		r2 = ##_kernel
+	}
+	{
+		r2 = add(r2, #___kernel_t_cpus_OFFSET)
+	}
+	{
+		r2 = memw(r2+#___cpu_t_current_OFFSET)
+	}
+	{
+		r3 = memub(r2+#_thread_offset_to_arch_flags)
+		r4 = memw(r2+#_thread_offset_to_framelimit)
+	}
+	{
+		p0 = tstbit(r3, #2)
+	}
+	{
+		if (!p0) r4 = #0
+	}
+	{
+		c16 = r4
+	}
+#endif
+
 	/* Restore callee-saved registers from new thread's stack */
 	{
 		r17:16 = memd(r29+#SWITCH_R1716)
@@ -150,17 +176,11 @@ SECTION_FUNC(TEXT, z_hexagon_arch_switch)
  * and ARM thread start trampolines.
  */
 SECTION_FUNC(TEXT, z_hexagon_thread_start)
-#ifdef CONFIG_HW_STACK_PROTECTION
-	/*
-	 * arch_switch() normally calls z_arch_stack_protection_switch()
-	 * after z_hexagon_arch_switch() returns, but new threads arrive
-	 * here instead of returning.  Set FRAMELIMIT for this thread now.
-	 * r0 = _kernel.cpus[0].current (i.e., _current)
-	 */
-	r0 = ##_kernel
-	r0 = add(r0, #___kernel_t_cpus_OFFSET)
-	r0 = memw(r0+#___cpu_t_current_OFFSET)
-	call ##z_hexagon_thread_start_stack_protect
+#ifdef CONFIG_USERSPACE
+	/* Install this thread's hardware memory-domain map, if needed. */
+	{
+		call ##z_hexagon_mem_domain_switch
+	}
 #endif
 	/* Enable interrupts for the new thread (vmsetie(1)) */
 	{

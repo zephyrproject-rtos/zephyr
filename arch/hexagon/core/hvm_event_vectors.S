@@ -90,6 +90,10 @@ SECTION_FUNC(TEXT, __reset_handler)
 	/* Clear frame pointer */
 	r30 = #0
 
+	/* Disable FRAMELIMIT until the first thread switch loads c16. */
+	r0 = #0
+	c16 = r0
+
 	/*
 	 * Initialize BSS section BEFORE page table setup.
 	 * The page table lives in BSS (.bss.page_table), so we must

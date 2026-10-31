@@ -18,6 +18,14 @@
 extern "C" {
 #endif
 
+/* Stack protection functions */
+#ifdef CONFIG_HW_STACK_PROTECTION
+extern void z_arch_stack_protection_setup(struct k_thread *thread);
+#ifdef CONFIG_USERSPACE
+extern void z_hexagon_stack_protect_user_enter(struct k_thread *thread);
+#endif
+#endif
+
 /* Thread context switching */
 extern void z_hexagon_arch_switch(void *switch_to, void **switched_from);
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
@@ -27,7 +35,7 @@ static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 
 /* Thread creation */
 extern void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
-			    k_thread_entry_t entry, void *p1, void *p2, void *p3);
+			   k_thread_entry_t entry, void *p1, void *p2, void *p3);
 
 /* Thread abortion */
 /* arch_thread_return_value_set is only needed for !CONFIG_USE_SWITCH */

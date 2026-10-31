@@ -111,6 +111,7 @@ void z_hexagon_event_exit_user_sync(void)
 
 /* Handle general exceptions */
 #define GSR_CAUSE_MASK 0xFF
+#define HEXAGON_CAUSE_STACK_LIMIT 0x27U
 
 static void z_hexagon_exception_handler(struct event_context *ctx)
 {
@@ -119,7 +120,10 @@ static void z_hexagon_exception_handler(struct event_context *ctx)
 
 	LOG_ERR("exception: cause=0x%x pc=0x%x", cause, pc);
 
-	/* Fatal error for now */
+	if (cause == HEXAGON_CAUSE_STACK_LIMIT) {
+		z_hexagon_fatal_error(K_ERR_STACK_CHK_FAIL);
+	}
+
 	z_hexagon_fatal_error(K_ERR_CPU_EXCEPTION);
 }
 
