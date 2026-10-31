@@ -4,27 +4,25 @@
 MC communication stress tests
 =============================
 
-These tests exercise Zephyr's ``mc_comm`` implementation with segmented
-payloads, asymmetric frame sizes, repeated transfers, packet loss,
-duplicates, corruption, shortened frames, disconnections, and timeouts.
-The native test uses an in-memory transport and runs without extra source
-repositories. Both UART roles use the same implementation as the native test.
+These tests check long messages, lost or damaged frames, and timeouts. The
+simulator and QEMU tests use an in-memory link. No external ``micro_core``
+library is needed.
 
-Host test
----------
+Simulator and x86 QEMU
+---------------------
 
-From the root of a west workspace containing this Zephyr checkout, run::
+Run one command from the Zephyr directory in a west workspace::
 
    west twister -p native_sim/native/64 -s mc.comm.stress.native -i
+   west twister -p qemu_x86/atom -s mc.comm.stress.qemu_x86 -i
+   west twister -p qemu_x86_64/atom -s mc.comm.stress.qemu_x86_64 -i
 
-The host test uses bounded iterations and deterministic fault injection.
-The eight cases are separate ztests. The lossy cases use 20% and 96% frame
-loss. The high-loss case accepts a bounded transmission timeout.
+QEMU needs an installed Zephyr toolchain and QEMU. Each command runs eight tests.
 
 nRF54L15 DK UART test
 ---------------------
 
-Build the receiver and sender from the Zephyr directory::
+Build one image for each board from the Zephyr directory::
 
    west build -b nrf54l15dk/nrf54l15/cpuapp \
      tests/subsys/mc/comm_stress -d build/mc_receiver --pristine \
@@ -33,14 +31,15 @@ Build the receiver and sender from the Zephyr directory::
      tests/subsys/mc/comm_stress -d build/mc_sender --pristine \
      -- -DCONF_FILE=prj_sender.conf
 
-Flash each image to its corresponding board using ``west flash -d`` and
-the appropriate ``--dev-id``. UART20 carries protocol data at 1 Mbaud.
-UART30 is the 115200 baud console. Cross the boards' P1.04/TXD1 and
-P1.05/RXD1 pins and connect their grounds. The debugger's VCOM1 interface
-shares the UART20 pins; disable VCOM1 on both board controllers before
-running the wired test. Keep VCOM0 enabled for the console.
+Connect P1.04 (TX) on each board to P1.05 (RX) on the other board. Connect
+their grounds. UART20 uses 1 Mbaud. Disable VCOM1 on both boards because it
+shares the UART20 pins. Keep VCOM0 for the console.
 
-Start both console captures before resetting the receiver, then reset the
-sender. Both boards run the eight cases in the same order. The UART build
-uses the full iteration counts; the high-loss phase can take several
-minutes. No external ``micro_core`` sources or libraries are required.
+Flash the images. Replace the device IDs with your board IDs::
+
+   west flash -d build/mc_receiver --dev-id <receiver-id>
+   west flash -d build/mc_sender --dev-id <sender-id>
+
+Open both VCOM0 consoles at 115200 baud. Reset the receiver, then the sender.
+Both consoles should print ``PROJECT EXECUTION SUCCESSFUL``. The test with
+high frame loss may take several minutes.

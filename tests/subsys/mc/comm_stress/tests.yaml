@@ -8,6 +8,18 @@ tests:
     tags:
       - mc
       - comm
+  mc.comm.stress.qemu_x86:
+    platform_allow:
+      - qemu_x86/atom
+    tags:
+      - mc
+      - comm
+  mc.comm.stress.qemu_x86_64:
+    platform_allow:
+      - qemu_x86_64/atom
+    tags:
+      - mc
+      - comm
   mc.comm.stress.sender:
     build_only: true
     extra_args: CONF_FILE=prj_sender.conf
