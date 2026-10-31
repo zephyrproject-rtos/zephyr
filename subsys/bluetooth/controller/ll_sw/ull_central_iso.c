@@ -582,8 +582,9 @@ ll_cig_parameters_commit_retry:
 			 */
 			cis->lll.sub_interval = MAX(SUB_INTERVAL_MIN, num_cis * max_se_length);
 			cig_sync_delay = MAX(cig_sync_delay,
-					     (cis->lll.nse * cis->lll.sub_interval) +
-					     (i * cis->lll.sub_interval / num_cis));
+					     ((cis->lll.nse - 1U) * cis->lll.sub_interval) +
+					     (i * cis->lll.sub_interval / num_cis) +
+					     se[i].length);
 		}
 #else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 		/* Interleaved packing support is not compiled in */
