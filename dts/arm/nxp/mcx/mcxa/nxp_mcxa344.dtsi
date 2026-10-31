@@ -298,7 +298,15 @@
 			compatible = "nxp,spc";
 			reg = <0x40090000 0x1000>;
 			interrupts = <16 0>;
-			wakeup-delay = <780>;
+			/*
+			 * RM Rev. 2, Table 173 (LP_CFG voltage -> ACTIVE_CFG voltage):
+			 * 0x5b (10 us): 0.6 V -> 1.0 V, 1.0 V -> 1.1 V, or 1.15 V -> 1.2 V.
+			 * 0x6e (12 us): 0.6 V -> 1.1 V.
+			 * 1.0 V -> 1.0 V requires no delay.
+			 * Default to the larger listed requirement, in SPC timer cycles.
+			 * Users need to make adjustments based on their actual configuration.
+			 */
+			wakeup-delay = <0x6e>;
 
 			bandgap_buffer: bandgap-buffer {
 				compatible = "nxp,spc-bandgap-buffer";
