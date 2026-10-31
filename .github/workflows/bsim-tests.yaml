@@ -88,7 +88,7 @@ jobs:
       - name: Environment Setup
         uses: ./.github/actions/zephyr-ci-env
         with:
-          group-filter: '+ci'
+          group-filter: '+ci,+bsworld'
           base-ref: ${{ github.base_ref }}
 
       - name: Install Python packages
@@ -185,6 +185,11 @@ jobs:
         run: |
           tests/bsim/ci.bt.sh
 
+      - name: Run Bluetooth shell and sample tests with BSWorld
+        if: steps.check-bluetooth-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
+        run: |
+          tests/bsim/ci.bt.bsworld.sh
+
       - name: Run Networking Tests with BSIM
         if: steps.check-networking-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
         run: |
@@ -207,7 +212,7 @@ jobs:
 
       - name: Merge Test Results
         run: |
-          junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" "./twister-out-gpio/twister.xml" junit.xml
+          junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" "./twister-out-gpio/twister.xml" "./twister-out-bsworld/bsworld.xml" junit.xml
           junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results in HTML
@@ -218,6 +223,15 @@ jobs:
           if-no-files-found: ignore
           path: |
             junit.html
+
+      - name: Upload BSWorld logs and captures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: BSWorld logs and captures
+          if-no-files-found: ignore
+          path: |
+            twister-out-bsworld/runtime/
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2.25.0
