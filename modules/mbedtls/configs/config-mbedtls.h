@@ -43,8 +43,18 @@
 
 /* Common modules required for TLS 1.2 and 1.3 */
 #define MBEDTLS_SSL_TLS_C
+
+#if defined(CONFIG_MBEDTLS_SSL_SRV_C)
 #define MBEDTLS_SSL_SRV_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_SSL_CLI_C)
 #define MBEDTLS_SSL_CLI_C
+#endif
+
+#if !defined(MBEDTLS_SSL_SRV_C) && !defined(MBEDTLS_SSL_CLI_C)
+#error "At least one of CONFIG_MBEDTLS_SSL_CLI_C or CONFIG_MBEDTLS_SSL_SRV_C must be enabled"
+#endif
 
 /* This is not supported by Mbed TLS in TLS 1.3 mode
  * (see modules/crypto/mbedtls/docs/architecture/tls13-support.md).
@@ -61,14 +71,18 @@
 
 #if defined(CONFIG_MBEDTLS_SSL_SESSION_TICKETS)
 #define MBEDTLS_SSL_SESSION_TICKETS
+#if defined(CONFIG_MBEDTLS_SSL_SRV_C)
 #define MBEDTLS_SSL_TICKET_C
+#endif
 #endif
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_DTLS)
 #define MBEDTLS_SSL_PROTO_DTLS
 #define MBEDTLS_SSL_DTLS_ANTI_REPLAY
 #define MBEDTLS_SSL_DTLS_HELLO_VERIFY
+#if defined(CONFIG_MBEDTLS_SSL_SRV_C)
 #define MBEDTLS_SSL_COOKIE_C
+#endif
 #endif
 
 /* Supported key exchange methods */
