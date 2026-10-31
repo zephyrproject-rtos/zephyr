@@ -10,6 +10,11 @@
 
 /* functions documented in include/drivers/pcie/msi.h */
 
+__weak uint64_t pcie_msi_map64(unsigned int irq, msi_vector_t *vector, uint8_t n_vector)
+{
+	return pcie_msi_map(irq, vector, n_vector);
+}
+
 static uint32_t pcie_msi_base(pcie_bdf_t bdf, bool *msi)
 {
 	uint32_t base;
@@ -170,6 +175,10 @@ uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 
 	for (req_vectors = 0; req_vectors < n_vector; req_vectors++) {
 		vectors[req_vectors].bdf = bdf;
+#ifdef CONFIG_PCIE_CONTROLLER
+		/* Clear all 8 bytes; legacy providers write only the 32-bit address member. */
+		vectors[req_vectors].arch.address64 = 0U;
+#endif
 	}
 
 	return arch_pcie_msi_vectors_allocate(priority, vectors, n_vector);
@@ -205,13 +214,13 @@ static void enable_msix(pcie_bdf_t bdf,
 	int i;
 
 	for (i = 0; i < n_vector; i++) {
-		uint32_t map = pcie_msi_map(irq, &vectors[i], 1);
+		uint64_t map = pcie_msi_map64(irq, &vectors[i], 1);
 		uint32_t mdr = pcie_msi_mdr(irq, &vectors[i]);
 
-		sys_write32(map, (mm_reg_t) &vectors[i].msix_vector->msg_addr);
-		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->msg_up_addr);
-		sys_write32(mdr, (mm_reg_t) &vectors[i].msix_vector->msg_data);
-		sys_write32(0, (mm_reg_t) &vectors[i].msix_vector->vector_ctrl);
+		sys_write32((uint32_t)map, (mm_reg_t)&vectors[i].msix_vector->msg_addr);
+		sys_write32((uint32_t)(map >> 32), (mm_reg_t)&vectors[i].msix_vector->msg_up_addr);
+		sys_write32(mdr, (mm_reg_t)&vectors[i].msix_vector->msg_data);
+		sys_write32(0, (mm_reg_t)&vectors[i].msix_vector->vector_ctrl);
 	}
 
 	mcr = pcie_conf_read(bdf, base + PCIE_MSIX_MCR);
@@ -233,24 +242,24 @@ static void disable_msi(pcie_bdf_t bdf,
 	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
 }
 
-static void enable_msi(pcie_bdf_t bdf,
-		       msi_vector_t *vectors,
-		       uint8_t n_vector,
-		       uint32_t base,
+static bool enable_msi(pcie_bdf_t bdf, msi_vector_t *vectors, uint8_t n_vector, uint32_t base,
 		       unsigned int irq)
 {
 	uint32_t mcr;
-	uint32_t map;
+	uint64_t map;
 	uint32_t mdr;
 	uint32_t mme;
 
-	map = pcie_msi_map(irq, vectors, n_vector);
-	pcie_conf_write(bdf, base + PCIE_MSI_MAP0, map);
+	mcr = pcie_conf_read(bdf, base + PCIE_MSI_MCR);
+	map = pcie_msi_map64(irq, vectors, n_vector);
+	if ((mcr & PCIE_MSI_MCR_64) == 0U && (map >> 32) != 0U) {
+		return false;
+	}
 
 	mdr = pcie_msi_mdr(irq, vectors);
-	mcr = pcie_conf_read(bdf, base + PCIE_MSI_MCR);
+	pcie_conf_write(bdf, base + PCIE_MSI_MAP0, (uint32_t)map);
 	if ((mcr & PCIE_MSI_MCR_64) != 0U) {
-		pcie_conf_write(bdf, base + PCIE_MSI_MAP1_64, 0U);
+		pcie_conf_write(bdf, base + PCIE_MSI_MAP1_64, (uint32_t)(map >> 32));
 		pcie_conf_write(bdf, base + PCIE_MSI_MDR_64, mdr);
 	} else {
 		pcie_conf_write(bdf, base + PCIE_MSI_MDR_32, mdr);
@@ -265,6 +274,8 @@ static void enable_msi(pcie_bdf_t bdf,
 
 	mcr |= PCIE_MSI_MCR_EN;
 	pcie_conf_write(bdf, base + PCIE_MSI_MCR, mcr);
+
+	return true;
 }
 
 bool pcie_msi_enable(pcie_bdf_t bdf,
@@ -283,8 +294,8 @@ bool pcie_msi_enable(pcie_bdf_t bdf,
 	if (!msi && IS_ENABLED(CONFIG_PCIE_MSI_X)) {
 		disable_msi(bdf, base);
 		enable_msix(bdf, vectors, n_vector, base, irq);
-	} else {
-		enable_msi(bdf, vectors, n_vector, base, irq);
+	} else if (!enable_msi(bdf, vectors, n_vector, base, irq)) {
+		return false;
 	}
 
 	pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MASTER, true);
