@@ -621,9 +621,13 @@ static void isr_rx(void *param)
 					break;
 				}
 
+				if (!c->prepared) {
+					continue;
+				}
+
 				next_idx++;
 
-				if (c->prepared &&
+				if ((cis_se[next_idx] < c->nse) &&
 				    !(cis_closed_bitmask &
 				      (1U << LL_CIS_IDX_FROM_HANDLE(
 						c->handle)))) {
@@ -649,8 +653,11 @@ static void isr_rx(void *param)
 						break;
 					}
 
-					if (c->prepared &&
-					    !(cis_closed_bitmask &
+					if (!c->prepared) {
+						continue;
+					}
+
+					if (!(cis_closed_bitmask &
 					      (1U << LL_CIS_IDX_FROM_HANDLE(c->handle))) &&
 					    (cis_se[fi] < c->nse)) {
 						next_cis_lll = c;
@@ -1026,9 +1033,13 @@ static void isr_rx(void *param)
 				break;
 			}
 
+			if (!candidate->prepared) {
+				continue;
+			}
+
 			next_idx++;
 
-			if (candidate->prepared &&
+			if ((cis_se[next_idx] < candidate->nse) &&
 			    !(cis_closed_bitmask &
 			      (1U << LL_CIS_IDX_FROM_HANDLE(candidate->handle)))) {
 				next_cis_lll = candidate;
@@ -1054,8 +1065,11 @@ static void isr_rx(void *param)
 					break;
 				}
 
-				if (candidate->prepared &&
-				    !(cis_closed_bitmask &
+				if (!candidate->prepared) {
+					continue;
+				}
+
+				if (!(cis_closed_bitmask &
 				      (1U << LL_CIS_IDX_FROM_HANDLE(candidate->handle))) &&
 				    (cis_se[find_idx] < candidate->nse)) {
 					next_cis_lll = candidate;
