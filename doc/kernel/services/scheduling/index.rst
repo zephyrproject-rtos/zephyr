@@ -171,10 +171,9 @@ can be used to allow other threads of the same priority to execute.
 .. image:: timeslicing.svg
    :align: center
 
-.. note::
-   For SMP, the behavior would be similar to the above UP image, except that
-   Thread 1 would not immediately follow Thread 4. Instead it would be
-   Thread 2, Thread 3, Thread 1, ....
+A thread that a higher priority thread preempts is moved behind the other
+ready threads of its priority, so that they run before it once the higher
+priority thread is done.
 
 The scheduler divides time on each CPU into a series of **time slices**, where
 slices are measured in system clock ticks. The time slice size is configurable,
