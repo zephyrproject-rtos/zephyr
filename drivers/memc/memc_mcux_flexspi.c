@@ -54,6 +54,13 @@ struct memc_flexspi_config {
 
 /* flexspi device data should be stored in RAM to avoid read-while-write hazards */
 struct memc_flexspi_data {
+	/*
+	 * Controller base, copied from the ROM config at init. Without an MMU
+	 * DEVICE_MMIO_NAMED_GET() reads the ROM config, which sits in the XIP
+	 * flash; reading it inside a flash operation's critical section is a
+	 * read-while-write whenever the D-cache misses.
+	 */
+	FLEXSPI_Type *base;
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	DEVICE_MMIO_NAMED_RAM(ahb);
 	bool xip;
@@ -80,7 +87,9 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 
 static inline FLEXSPI_Type *get_base(const struct device *dev)
 {
-	return (FLEXSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct memc_flexspi_data *data = dev->data;
+
+	return data->base;
 }
 
 static inline uint8_t *get_ahb(const struct device *dev)
@@ -295,15 +304,15 @@ int memc_flexspi_transfer(const struct device *dev,
 	flexspi_transfer_t tmp;
 	struct memc_flexspi_data *data = dev->data;
 	status_t status;
-	uint32_t seq_off, addr_offset = 0U;
-	int i;
+	uint32_t seq_off;
 
-	/* Calculate sequence offset and address offset based on port */
+	/*
+	 * Calculate sequence offset based on port. The port address offset
+	 * is applied by FLEXSPI_TransferBlocking() in the HAL, which adds the
+	 * sizes of all preceding ports from FLSHCR0.
+	 */
 	seq_off = data->port_luts[transfer->port].lut_offset /
 				MEMC_FLEXSPI_CMD_PER_SEQ;
-	for (i = 0; i < transfer->port; i++) {
-		addr_offset += data->size[i];
-	}
 
 	/*
 	 * Lock IRQs while an IP command is active. If an ISR fires and its handler
@@ -313,11 +322,10 @@ int memc_flexspi_transfer(const struct device *dev,
 #if CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	unsigned int key = irq_lock();
 #endif
-	if ((seq_off != 0) || (addr_offset != 0)) {
-		/* Adjust device address and sequence index for transfer */
+	if (seq_off != 0) {
+		/* Adjust sequence index for transfer */
 		memcpy(&tmp, transfer, sizeof(tmp));
 		tmp.seqIndex += seq_off;
-		tmp.deviceAddress += addr_offset;
 		status = FLEXSPI_TransferBlocking(base, &tmp);
 	} else {
 		/* Transfer does not need adjustment */
@@ -404,6 +412,7 @@ static int memc_flexspi_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 	DEVICE_MMIO_NAMED_MAP(dev, ahb, data->ahb_cacheable ? K_MEM_DIRECT_MAP
 				: (K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP));
+	data->base = (FLEXSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	base = get_base(dev);
 
 	/* we should not configure the device we are running on */

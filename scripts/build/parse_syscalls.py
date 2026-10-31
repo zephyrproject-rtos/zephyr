@@ -153,8 +153,8 @@ def analyze_headers(include_dir, scan_dir, file_list):
         with open(one_file, encoding="utf-8") as fp:
             try:
                 contents = fp.read()
-            except Exception:
-                sys.stderr.write(f"Error decoding {one_file} (included in {path})\n")
+            except UnicodeDecodeError:
+                sys.stderr.write(f"Error decoding {one_file}\n")
                 raise
 
         if not any(marker in contents for marker in scan_markers):

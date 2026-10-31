@@ -15,14 +15,14 @@
 };
 
 &arduino_i2c {
+	opt3001_ti_bp_bassensorsmkii: opt3001@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+	};
+
 	bmi160_ti_bp_bassensorsmkii: bmi160@69 {
 		compatible = "bosch,bmi160";
 		reg = <0x69>;
 		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_HIGH>;
-	};
-
-	opt3001_ti_bp_bassensorsmkii: opt3001@44 {
-		compatible = "ti,opt3001";
-		reg = <0x44>;
 	};
 };

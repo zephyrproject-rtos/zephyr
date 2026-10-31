@@ -133,6 +133,8 @@ static int http_hpack_find_index(struct http_hpack_header_buf *header,
 }
 
 #define HPACK_INTEGER_CONTINUATION_FLAG            0x80
+/* Shift of the last 7-bit group that fits a 32-bit integer. */
+#define HPACK_INTEGER_MAX_SHIFT                    28
 #define HPACK_STRING_HUFFMAN_FLAG                  0x80
 #define HPACK_STRING_PREFIX_LEN                    7
 
@@ -177,6 +179,8 @@ static int hpack_integer_decode(const uint8_t *buf, size_t datalen,
 	}
 
 	do {
+		uint32_t group;
+
 		buf++;
 		len++;
 
@@ -184,12 +188,15 @@ static int hpack_integer_decode(const uint8_t *buf, size_t datalen,
 			return -EAGAIN;
 		}
 
-		if (m >= sizeof(uint32_t) * 8) {
-			/* Can't handle integer that large. */
+		group = *buf & ~HPACK_INTEGER_CONTINUATION_FLAG;
+
+		/* Integers are limited to 32 bits (RFC 7541, Section 5.1). */
+		if (m > HPACK_INTEGER_MAX_SHIFT || ((group << m) >> m) != group ||
+		    *value > UINT32_MAX - (group << m)) {
 			return -EBADMSG;
 		}
 
-		*value += (uint32_t)(*buf & ~HPACK_INTEGER_CONTINUATION_FLAG) << m;
+		*value += group << m;
 		m += 7;
 
 	} while (*buf & HPACK_INTEGER_CONTINUATION_FLAG);
@@ -213,7 +220,13 @@ static int hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 	NET_ASSERT(type == HPACK_HEADER_NAME || type == HPACK_HEADER_VALUE);
 
 	ret = http_hpack_huffman_decode(encoded_buf, encoded_len, buf, buflen);
-	if (ret < 0) {
+	if (ret == -ENOBUFS) {
+		/* The string length is explicit, so the entry can still be
+		 * consumed; the field is reported as oversized instead.
+		 */
+		header->oversized = true;
+		ret = 0;
+	} else if (ret < 0) {
 		return ret;
 	}
 
@@ -303,14 +316,15 @@ static int hpack_handle_indexed(const uint8_t *buf, size_t datalen,
 		return -EBADMSG;
 	}
 
-	if (entry->name == NULL || entry->value == NULL) {
+	if (entry->name == NULL) {
 		return -EBADMSG;
 	}
 
 	header->name = entry->name;
 	header->name_len = strlen(entry->name);
-	header->value = entry->value;
-	header->value_len = strlen(entry->value);
+	/* Static entries with an empty value store it as NULL. */
+	header->value = (entry->value != NULL) ? entry->value : "";
+	header->value_len = strlen(header->value);
 
 	return ret;
 }
@@ -387,7 +401,11 @@ static int hpack_handle_literal_no_index(const uint8_t *buf, size_t datalen,
 				    HPACK_PREFIX_LEN_LITERAL_NO_INDEXING);
 }
 
-static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen)
+/* The size requested is reported to the caller, who knows what it has
+ * advertised; no dynamic table is kept here.
+ */
+static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen,
+					    struct http_hpack_header_buf *header)
 {
 	uint32_t max_size;
 	int ret;
@@ -398,7 +416,10 @@ static int hpack_handle_dynamic_size_update(const uint8_t *buf, size_t datalen)
 		return ret;
 	}
 
-	/* TODO Add dynamic table support, if needed. */
+	header->type = HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE;
+	header->table_size = max_size;
+	header->name_len = 0;
+	header->value_len = 0;
 
 	return ret;
 }
@@ -417,6 +438,8 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 		return -EAGAIN;
 	}
 
+	header->type = HTTP_HPACK_ENTRY_FIELD;
+	header->oversized = false;
 	prefix = *buf;
 
 	if ((prefix & HPACK_PREFIX_INDEXED_MASK) == HPACK_PREFIX_INDEXED) {
@@ -431,7 +454,7 @@ int http_hpack_decode_header(const uint8_t *buf, size_t datalen,
 		ret = hpack_handle_literal_no_index(buf, datalen, header);
 	} else if ((prefix & HPACK_PREFIX_DYNAMIC_TABLE_SIZE_MASK) ==
 		   HPACK_PREFIX_DYNAMIC_TABLE_SIZE_UPDATE) {
-		ret = hpack_handle_dynamic_size_update(buf, datalen);
+		ret = hpack_handle_dynamic_size_update(buf, datalen, header);
 	} else {
 		ret = -EINVAL;
 	}
@@ -604,7 +627,7 @@ int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 
 	if (buf == NULL || header == NULL ||
 	    header->name == NULL || header->name_len == 0 ||
-	    header->value == NULL || header->value_len == 0) {
+	    (header->value == NULL && header->value_len > 0)) {
 		return -EINVAL;
 	}
 
@@ -625,4 +648,15 @@ int http_hpack_encode_header(uint8_t *buf, size_t buflen,
 	}
 
 	return len;
+}
+
+int http_hpack_encode_field(uint8_t *buf, size_t buflen, struct http_hpack_header_buf *header,
+			    const char *name, const char *value)
+{
+	header->name = name;
+	header->name_len = strlen(name);
+	header->value = value;
+	header->value_len = strlen(value);
+
+	return http_hpack_encode_header(buf, buflen, header);
 }

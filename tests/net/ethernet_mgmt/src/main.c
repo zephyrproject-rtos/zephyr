@@ -71,6 +71,8 @@ struct eth_fake_context {
 
 static struct eth_fake_context eth_fake_data;
 
+static struct net_stats_eth eth_fake_stats;
+
 static void eth_fake_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -452,12 +454,19 @@ static int eth_fake_get_config(const struct device *dev,
 	return 0;
 }
 
+static struct net_stats_eth *eth_fake_get_stats(const struct device *dev __unused,
+						struct net_if *iface __unused)
+{
+	return &eth_fake_stats;
+}
+
 static struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
 	.get_config = eth_fake_get_config,
+	.get_stats = eth_fake_get_stats,
 	.send = eth_fake_send,
 };
 
@@ -1259,5 +1268,58 @@ ZTEST(net_ethernet_mgmt, test_change_to_promisc_mode)
 	change_promisc_mode_on();
 	change_to_same_promisc_mode();
 	change_promisc_mode_off();
+}
+
+/* A valid frame with an EtherType that has no handler is counted once, as an
+ * unknown protocol, and not as a processing error of the interface.
+ */
+ZTEST(net_ethernet_mgmt, test_unknown_ethertype_stats)
+{
+	/* IEEE 802 local experimental EtherType 1, no handler in the stack */
+	static const uint16_t ptype = 0x88b5;
+	static const uint8_t src[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x02};
+	struct net_if *iface = default_iface;
+	uint8_t payload[46] = {0};
+	net_stats_t unknown_protocol;
+	net_stats_t processing_error;
+	struct net_eth_hdr hdr;
+	struct net_pkt *pkt;
+	bool was_up;
+	int ret;
+
+	/* Other tests take the interface down to change its configuration */
+	was_up = net_if_is_admin_up(iface);
+	if (!was_up) {
+		zassert_equal(net_if_up(iface), 0, "Cannot take the interface up");
+	}
+
+	memcpy(hdr.dst.addr, net_eth_broadcast_addr()->addr, sizeof(hdr.dst.addr));
+	memcpy(hdr.src.addr, src, sizeof(hdr.src.addr));
+	hdr.type = net_htons(ptype);
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(hdr) + sizeof(payload), NET_AF_UNSPEC, 0,
+					   K_SECONDS(1));
+	zassert_not_null(pkt, "out of mem");
+
+	zassert_equal(net_pkt_write(pkt, &hdr, sizeof(hdr)), 0);
+	zassert_equal(net_pkt_write(pkt, payload, sizeof(payload)), 0);
+
+	unknown_protocol = eth_fake_stats.unknown_protocol;
+	processing_error = iface->stats.processing_error;
+
+	ret = net_recv_data(iface, pkt);
+	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
+
+	/* Give the RX thread a chance to process the frame. */
+	k_msleep(10);
+
+	zexpect_equal(eth_fake_stats.unknown_protocol, unknown_protocol + 1,
+		      "Frame not counted as an unknown protocol");
+	zexpect_equal(iface->stats.processing_error, processing_error,
+		      "Frame counted as a processing error");
+
+	if (!was_up) {
+		(void)net_if_down(iface);
+	}
 }
 ZTEST_SUITE(net_ethernet_mgmt, NULL, ethernet_mgmt_setup, NULL, NULL, NULL);

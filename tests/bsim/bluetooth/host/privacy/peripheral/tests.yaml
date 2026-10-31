@@ -30,6 +30,7 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_host_privacy_peripheral_prj_rpa_expired_conf
       tests_scripts:
         - test_scripts/run_test_rpa_expired.sh
+        - test_scripts/run_test_rpa_expired_limited.sh
     extra_args:
       EXTRA_CONF_FILE=prj_rpa_expired.conf
   bluetooth.host.privacy.peripheral_rpa_sharing:

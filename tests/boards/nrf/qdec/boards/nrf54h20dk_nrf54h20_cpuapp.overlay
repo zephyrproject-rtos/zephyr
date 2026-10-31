@@ -91,23 +91,23 @@
 };
 
 &qdec130 {
-	status = "okay";
 	pinctrl-0 = <&qdec_130_pinctrl>;
 	pinctrl-1 = <&qdec_130_sleep_pinctrl>;
 	pinctrl-names = "default", "sleep";
 	steps = <127>;
 	led-pre = <500>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &qdec131 {
-	status = "okay";
 	pinctrl-0 = <&qdec_131_pinctrl>;
 	pinctrl-1 = <&qdec_131_sleep_pinctrl>;
 	pinctrl-names = "default", "sleep";
 	steps = <127>;
 	led-pre = <500>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 /* To prevent enabling console receiver. */

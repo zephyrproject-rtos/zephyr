@@ -13,15 +13,15 @@
 		zephyr,ipc = &mailbox0;
 	};
 
-	dspsram3: memory@1bef0000 {
-		reg = <0x1bef0000 0x110000>;
-	};
-
 	mailbox0: mailbox {
 		compatible = "zephyr,mbox-ipm";
 		mboxes = <&mu3 0>, <&mu3 0>;
 		mbox-names = "tx", "rx";
 		status = "okay";
+	};
+
+	dspsram3: memory@1bef0000 {
+		reg = <0x1bef0000 0x110000>;
 	};
 };
 

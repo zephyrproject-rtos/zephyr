@@ -380,11 +380,11 @@ class CheckPatch(ComplianceTest):
 
 class BoardYmlCheck(ComplianceTest):
     """
-    Check the board.yml files
+    Check the board.yml and shield.yml files
     """
 
     name = "BoardYml"
-    doc = "Check the board.yml file format"
+    doc = "Check the board.yml and shield.yml file format"
 
     def check_board_file(self, file, vendor_prefixes):
         """Validate a single board file."""
@@ -421,8 +421,9 @@ class BoardYmlCheck(ComplianceTest):
             if vendor_prefix_file.exists():
                 vendor_prefixes |= get_vendor_prefixes(vendor_prefix_file, self.error)
 
-        for file in path.glob("**/board.yml"):
-            self.check_board_file(file, vendor_prefixes)
+        for pattern in ("**/board.yml", "**/shield.yml"):
+            for file in path.glob(pattern):
+                self.check_board_file(file, vendor_prefixes)
 
 
 class ClangFormatCheck(ComplianceTest):
@@ -474,6 +475,11 @@ class ClangFormatCheck(ComplianceTest):
             except subprocess.CalledProcessError as ex:
                 patchset = unidiff.PatchSet.from_string(ex.output, encoding="utf-8")
                 for patch in patchset:
+                    # .clang-format-ignore: clang-format skips the file (exit 0, empty stdout).
+                    # clang-format-diff diffs against that empty output, yielding a spurious
+                    # full-file removal diff; unidiff reports that as is_removed_file.
+                    if patch.is_removed_file:
+                        continue
                     self._process_patch_error(file, patch)
 
 
@@ -783,6 +789,9 @@ class DevicetreeLintingCheck(ComplianceTest):
                 "--outputFormat",
                 "json",
                 "--format",
+                "--enableSortNodesAndProperties",
+                "--sortNodesNodesBy",
+                "address",
                 "--patchFile",
                 temp_patch,
             ]
@@ -1764,6 +1773,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             ":!/doc/security/vulnerabilities.rst",
             ":!/doc/security/vulnerabilities",
             cwd=GIT_TOP,
+            ignore_non_zero=True,
         )
 
         self_folder = Path(__file__).resolve().parent

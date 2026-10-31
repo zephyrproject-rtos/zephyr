@@ -6,21 +6,21 @@
 
 / {
 	pwmclock: pwmclock {
-		status = "okay";
 		compatible = "pwm-clock";
 		#clock-cells = <1>;
 		clock-frequency = <1000000>;
 		pwms = <&pwm_ccu80 0 PWM_KHZ(1000) PWM_POLARITY_NORMAL>;
+		status = "okay";
 	};
 
 	samplenode: samplenode {
-		status = "okay";
 		compatible = "test-clock-control-pwm-clock";
 		clocks = <&pwmclock 0>;
+		status = "okay";
 	};
 };
 
 &pwm_ccu80 {
-	status = "okay";
 	slice-prescaler = <0 0 0 0>;
+	status = "okay";
 };

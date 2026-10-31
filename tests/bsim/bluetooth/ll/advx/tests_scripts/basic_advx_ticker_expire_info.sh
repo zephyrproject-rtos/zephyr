@@ -19,6 +19,11 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_advx_prj_conf_overlay-ticker_ex
   -v=${verbosity_level} -s=${simulation_id} -RealEncryption=1 -d=1 -testid=scanx
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=60e6 $@
+  -D=2 -sim_length=60e6 -dump $@
 
 wait_for_background_jobs
+
+# The advertiser's auxiliary packets must start where its AuxPtrs say
+check=${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/advx/scripts/check_auxptr_timing.py
+${check} --self-test || exit 1
+${check} ${BSIM_OUT_PATH}/results/${simulation_id}/d_2G4_00.Tx.csv

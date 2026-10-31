@@ -11,4 +11,6 @@ supported:
   - gpio
   - watchdog
   - counter
+  - pmod_gpio
+  - pmod_spi
 vendor: renesas

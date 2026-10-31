@@ -232,6 +232,11 @@ void tc_attached_snk_entry(void *obj)
 
 	LOG_INF("Attached.SNK");
 
+	/* Initial roles are sink and UFP */
+	tcpc_set_roles(tcpc, TC_ROLE_SINK, TC_ROLE_UFP);
+	policy_notify(dev, POWER_ROLE_IS_SINK);
+	policy_notify(dev, DATA_ROLE_IS_UFP);
+
 	/* Clear cached CC voltage */
 	tc->cc_voltage = TC_CC_VOLT_OPEN;
 

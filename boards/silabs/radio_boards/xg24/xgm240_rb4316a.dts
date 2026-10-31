@@ -10,8 +10,8 @@
 #include "xgm240_rb4316a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs xGM240P +10 dBm Module Radio Board (xGM240-RB4316A, BRD4316A)";
 	compatible = "silabs,xgm240_rb4316a", "silabs,mgm24";
+	model = "Silicon Labs xGM240P +10 dBm Module Radio Board (xGM240-RB4316A, BRD4316A)";
 };
 
 &led0 {
@@ -69,7 +69,7 @@
 };
 
 &gpiob {
-	board-controller-enable {
+	vcom_enable: vcom-enable {
 		gpio-hog;
 		gpios = <4 GPIO_ACTIVE_HIGH>;
 		output-high;

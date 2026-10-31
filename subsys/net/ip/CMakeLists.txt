@@ -18,8 +18,10 @@ zephyr_library_sources(
   utils.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_NET_CONTEXT net_context.c)
+
 if(CONFIG_NET_OFFLOAD)
-  zephyr_library_sources(net_context.c net_pkt.c)
+  zephyr_library_sources(net_pkt.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
@@ -30,7 +32,6 @@ zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IP icmp.c)
 
 if(CONFIG_NET_NATIVE)
-  zephyr_library_sources(net_context.c)
   zephyr_library_sources(net_pkt.c)
   zephyr_library_sources(net_tc.c)
   zephyr_library_sources_ifdef(CONFIG_NET_IP           connection.c)

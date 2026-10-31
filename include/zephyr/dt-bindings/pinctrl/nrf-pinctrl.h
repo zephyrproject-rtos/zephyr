@@ -184,6 +184,8 @@
 #define NRF_FUN_GRTC_CLKOUT_FAST 55U
 /** GRTC slow clock output */
 #define NRF_FUN_GRTC_CLKOUT_32K  56U
+/** VPR VIO (pin controlled by a VPR through its VIO interface) */
+#define NRF_FUN_VPR_VIO          57U
 /** TDM SCK in master mode */
 #define NRF_FUN_TDM_SCK_M        71U
 /** TDM SCK in slave mode */

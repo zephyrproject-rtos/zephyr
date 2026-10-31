@@ -68,6 +68,8 @@ extern "C" {
 /** @brief Flag core/processor id prefix. */
 #define LOG_OUTPUT_FLAG_CORE			BIT(9)
 
+/** Keep log_backend_std_get_flags() updated when adding new flags in this section */
+
 /**@} */
 
 /**

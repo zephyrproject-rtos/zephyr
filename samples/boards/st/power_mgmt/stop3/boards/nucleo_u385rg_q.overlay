@@ -15,6 +15,6 @@
 };
 
 &rtc {
-	status = "okay";
 	prescaler = <32768>;
+	status = "okay";
 };

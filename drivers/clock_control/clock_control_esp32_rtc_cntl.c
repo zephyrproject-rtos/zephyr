@@ -17,13 +17,20 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-static void esp32_enable_ext_slow_clk(uint8_t slow_clk)
+static void esp32_enable_ext_slow_clk(uint8_t slow_clk, bool enable)
 {
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 	ARG_UNUSED(slow_clk);
-	rtc_clk_32k_enable_external();
+	if (enable) {
+		rtc_clk_32k_enable_external();
+	} else {
+		rtc_clk_32k_disable_external();
+	}
 #else
-	if (slow_clk == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
+	if (!enable) {
+		rtc_clk_32k_enable(false);
+		rtc_clk_32k_disable_external();
+	} else if (slow_clk == ESP32_RTC_SLOW_CLK_SRC_XTAL32K) {
 		rtc_clk_32k_enable(true);
 	} else if (slow_clk == ESP32_RTC_SLOW_CLK_32K_EXT_OSC) {
 		rtc_clk_32k_enable_external();
@@ -31,7 +38,7 @@ static void esp32_enable_ext_slow_clk(uint8_t slow_clk)
 #endif
 }
 
-int esp32_select_rtc_slow_clk(uint8_t slow_clk)
+int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 {
 	soc_rtc_slow_clk_src_t rtc_slow_clk_src = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
 	const uint32_t cal_cycles = CONFIG_CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES;
@@ -39,7 +46,8 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 	/* number of times to repeat 32k XTAL calibration
 	 * before giving up and switching to the internal RC
 	 */
-	int retry_32k_xtal = 3;
+	int retry_32k_xtal = CONFIG_CLOCK_CONTROL_ESP32_RTC_XTAL_CAL_RETRY;
+	bool revoke_32k = false;
 
 	/*
 	 * RTC slow clock calibration uses TIMG0 to count XTAL cycles.
@@ -64,7 +72,7 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			 * times out and returns 0.
 			 */
 			LOG_DBG("waiting for external slow clock to start up");
-			esp32_enable_ext_slow_clk(slow_clk);
+			esp32_enable_ext_slow_clk(slow_clk, true);
 			/* When CLOCK_CONTROL_ESP32_RTC_CLK_CAL_CYCLES is set to 0, clock
 			 * calibration will not be performed at startup.
 			 */
@@ -75,9 +83,13 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 				} else if (retry_32k_xtal > 0) {
 					retry_32k_xtal--;
 					continue;
-				} else {
-					LOG_ERR("32 kHz XTAL not found");
+				} else if (!fallback) {
+					LOG_ERR("32 kHz clock not found");
 					return -ENODEV;
+				} else {
+					LOG_WRN("32 kHz clock not found, switching to internal RC");
+					rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
+					revoke_32k = true;
 				}
 			}
 		} else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
@@ -86,6 +98,11 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 			/* no action for other slow clock sources */
 		}
 		rtc_clk_slow_src_set(rtc_slow_clk_src);
+
+		if (revoke_32k) {
+			esp32_enable_ext_slow_clk(slow_clk, false);
+			revoke_32k = false;
+		}
 
 		if (cal_cycles > 0) {
 			cal_val = rtc_clk_cal(CLK_CAL_RTC_SLOW, cal_cycles);
@@ -154,6 +171,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 		clock_init_done = true;
 	}
 
+#if CONFIG_ESP_CONSOLE_UART_NUM >= 0
 	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
@@ -163,6 +181,9 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
 		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 	}
+#endif
+#else
+	esp_rom_output_tx_wait_idle(0);
 #endif
 
 	rtc_clk_cpu_freq_get_config(&old_config);
@@ -193,13 +214,15 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
 	}
 #else
-#if defined(CONFIG_MCUBOOT) && defined(ESP_ROM_UART_CLK_IS_XTAL)
-	uint32_t uart_clock_src_hz = (uint32_t)rtc_clk_xtal_freq_get() * MHZ(1);
-#else
-	uint32_t uart_clock_src_hz = esp_clk_apb_freq();
-#endif
-	uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-			     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_clock_src_hz);
+	soc_module_clk_t uart_sclk;
+	uint32_t uart_clock_src_hz;
+
+	uart_ll_get_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), &uart_sclk);
+	if (esp_clk_tree_src_get_freq_hz(uart_sclk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+					 &uart_clock_src_hz) == ESP_OK) {
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
+				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_clock_src_hz);
+	}
 #endif
 #endif
 	return 0;

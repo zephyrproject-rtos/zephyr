@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief Extended public API for the NXP MCUX Analog Comparator (ACMP)
+ * @ingroup mcux_acmp_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_MCUX_ACMP_H_
@@ -19,24 +20,35 @@ extern "C" {
 
 #include <zephyr/drivers/sensor.h>
 
+/**
+ * @brief NXP MCUX analog comparator (ACMP)
+ * @defgroup mcux_acmp_interface MCUX ACMP
+ * @ingroup sensor_interface_ext_nxp
+ * @{
+ */
+
+/** 1 if the ACMP supports positive input port selection, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_C1_INPSEL_BIT) && (FSL_FEATURE_ACMP_HAS_C1_INPSEL_BIT == 1U)
 #define MCUX_ACMP_HAS_INPSEL 1
 #else
 #define MCUX_ACMP_HAS_INPSEL 0
 #endif
 
+/** 1 if the ACMP supports negative input port selection, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_C1_INNSEL_BIT) && (FSL_FEATURE_ACMP_HAS_C1_INNSEL_BIT == 1U)
 #define MCUX_ACMP_HAS_INNSEL 1
 #else
 #define MCUX_ACMP_HAS_INNSEL 0
 #endif
 
+/** 1 if the ACMP supports hard block offset control, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_C0_OFFSET_BIT) && (FSL_FEATURE_ACMP_HAS_C0_OFFSET_BIT == 1U)
 #define MCUX_ACMP_HAS_OFFSET 1
 #else
 #define MCUX_ACMP_HAS_OFFSET 0
 #endif
 
+/** 1 if the ACMP supports discrete mode, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_C3_REG) && (FSL_FEATURE_ACMP_HAS_C3_REG != 0U) && \
 	(FSL_FEATURE_ACMP_HAS_NO_3V_DOMAIN == 0U)
 #define MCUX_ACMP_HAS_DISCRETE_MODE 1
@@ -44,29 +56,34 @@ extern "C" {
 #define MCUX_ACMP_HAS_DISCRETE_MODE 0
 #endif
 
+/** 1 if the ACMP supports hysteresis control, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_C0_HYSTCTR_BIT) && (FSL_FEATURE_ACMP_HAS_C0_HYSTCTR_BIT == 1U)
 #define MCUX_ACMP_HAS_HYSTCTR 1
 #else
 #define MCUX_ACMP_HAS_HYSTCTR 0
 #endif
 
+/** 1 if the ACMP supports window mode, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_NO_WINDOW_MODE) && (FSL_FEATURE_ACMP_HAS_NO_WINDOW_MODE == 1U)
 #define MCUX_ACMP_HAS_WINDOW_MODE 0
 #else
 #define MCUX_ACMP_HAS_WINDOW_MODE 1
 #endif
 
+/** 1 if the ACMP supports sample clock selection, 0 otherwise. */
 #if defined(FSL_FEATURE_ACMP_HAS_NO_C0_SE_BIT) && (FSL_FEATURE_ACMP_HAS_NO_C0_SE_BIT == 1U)
 #define MCUX_ACMP_HAS_SAMPLE_CLOCK_SELECTION 0
 #else
 #define MCUX_ACMP_HAS_SAMPLE_CLOCK_SELECTION 1
 #endif
 
+/** @brief Custom sensor channels for MCUX ACMP */
 enum sensor_channel_mcux_acmp {
 	/** Analog Comparator Output. */
 	SENSOR_CHAN_MCUX_ACMP_OUTPUT = SENSOR_CHAN_PRIV_START,
 };
 
+/** @brief Custom sensor triggers for MCUX ACMP */
 enum sensor_trigger_type_mcux_acmp {
 	/** Analog Comparator Output rising event trigger. */
 	SENSOR_TRIG_MCUX_ACMP_OUTPUT_RISING = SENSOR_TRIG_PRIV_START,
@@ -74,6 +91,7 @@ enum sensor_trigger_type_mcux_acmp {
 	SENSOR_TRIG_MCUX_ACMP_OUTPUT_FALLING,
 };
 
+/** @brief Custom sensor attributes for MCUX ACMP */
 enum sensor_attribute_mcux_acmp {
 	/** Analog Comparator hard block offset. */
 	SENSOR_ATTR_MCUX_ACMP_OFFSET_LEVEL = SENSOR_ATTR_COMMON_COUNT,
@@ -111,6 +129,8 @@ enum sensor_attribute_mcux_acmp {
 	SENSOR_ATTR_MCUX_ACMP_DISCRETE_PHASE2_TIME,
 #endif
 };
+
+/** @} */
 
 #ifdef __cplusplus
 }

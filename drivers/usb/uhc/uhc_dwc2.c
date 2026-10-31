@@ -759,7 +759,7 @@ static int port_resume(const struct device *const dev)
 		/* PRTSUSP is W1S, do not set Suspend */
 		hprt &= ~USB_DWC2_HPRT_PRTSUSP;
 	} else {
-		/* Resume suceeded */
+		/* Resume succeeded */
 		ret = 0;
 	}
 
@@ -1241,6 +1241,9 @@ static int ch_claim(const struct device *const dev,
 
 	LOG_DBG("Claimed channel%d for ep 0x%02x, xfer=%p, channel=%p",
 		ch->index, xfer->ep, (void *)xfer, (void *)ch);
+
+	ch->error_count = 0U;
+	ch->hcint_cplt_pending = 0U;
 
 	/* Save channel characteristics of the underlying channel */
 	ch->xfer = xfer;
@@ -1749,7 +1752,7 @@ static int validate_control_xfer(const struct uhc_transfer *xfer)
 		return -EINVAL;
 	}
 
-	/* For DMA, ponter should be DMA aligned */
+	/* For DMA, pointer should be DMA aligned */
 	if (!IS_ALIGNED(xfer->setup_pkt, 4)) {
 		LOG_ERR("Setup packet address %p is not 4-byte aligned",
 			xfer->setup_pkt);

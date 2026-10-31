@@ -223,7 +223,8 @@ int sys_bitarray_popcount_region(sys_bitarray_t *bitarray, size_t num_bits, size
 
 	key = k_spin_lock(&bitarray->lock);
 
-	if (num_bits == 0 || offset + num_bits > bitarray->num_bits) {
+	if (num_bits == 0 || num_bits > bitarray->num_bits ||
+	    offset > bitarray->num_bits - num_bits) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -280,7 +281,7 @@ int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits
 		goto out;
 	}
 
-	if (num_bits == 0 || offset + num_bits > dst->num_bits) {
+	if (num_bits == 0 || num_bits > dst->num_bits || offset > dst->num_bits - num_bits) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -588,7 +589,8 @@ int sys_bitarray_find_nth_set(sys_bitarray_t *bitarray, size_t n, size_t num_bit
 
 	key = k_spin_lock(&bitarray->lock);
 
-	if (n == 0 || num_bits == 0 || offset + num_bits > bitarray->num_bits) {
+	if (n == 0 || num_bits == 0 || num_bits > bitarray->num_bits ||
+	    offset > bitarray->num_bits - num_bits) {
 		ret = -EINVAL;
 		goto out;
 	}

@@ -79,6 +79,7 @@ enum {
 	BT_CONN_BR_GENERAL_BONDING,           /* BR general bonding */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
+	BT_CONN_TX_FAILED,                    /* Sending failed, pending disconnect */
 	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
 	BT_CONN_PERIPHERAL_PARAM_UPDATE,      /* If periph param update timer fired */
 	BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE, /* If periph param auto update on timer fired */
@@ -421,25 +422,6 @@ void bt_conn_reset_rx_state(struct bt_conn *conn);
 /* Process incoming data for a connection */
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags);
 
-/* Send data over a connection
- *
- * Buffer ownership is transferred to stack in case of success.
- *
- * Calling this from RX thread is assumed to never fail so the return can be
- * ignored.
- */
-int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
-		    bt_conn_tx_cb_t cb, void *user_data);
-
-/* Thin wrapper over `bt_conn_send_cb`
- *
- * Used to set the TS_Flag bit in `buf`'s metadata.
- *
- * Return values & buf ownership same as parent.
- */
-int bt_conn_send_iso_cb(struct bt_conn *conn, struct net_buf *buf,
-			bt_conn_tx_cb_t cb, bool has_ts);
-
 /* Check if a connection object with the peer already exists */
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer);
 
@@ -467,8 +449,6 @@ void bt_sco_cleanup(struct bt_conn *sco_conn);
 
 /* Look up an existing sco connection by BT address */
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer);
-
-void bt_conn_disconnect_all(uint8_t id);
 
 /* Allocate new connection object */
 struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size);
@@ -608,27 +588,6 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 
 #define bt_conn_create_pdu(_pool, _reserve) \
 	bt_conn_create_pdu_timeout(_pool, _reserve, K_FOREVER)
-#endif
-
-/* Prepare a PDU to be sent over a connection */
-#if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve,
-						  k_timeout_t timeout,
-						  const char *func, int line);
-
-#define bt_conn_create_frag_timeout(_reserve, _timeout) \
-	bt_conn_create_frag_timeout_debug(_reserve, _timeout, \
-					  __func__, __LINE__)
-
-#define bt_conn_create_frag(_reserve) \
-	bt_conn_create_frag_timeout_debug(_reserve, K_FOREVER, \
-					  __func__, __LINE__)
-#else
-struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
-					    k_timeout_t timeout);
-
-#define bt_conn_create_frag(_reserve) \
-	bt_conn_create_frag_timeout(_reserve, K_FOREVER)
 #endif
 
 /* Initialize connection management */

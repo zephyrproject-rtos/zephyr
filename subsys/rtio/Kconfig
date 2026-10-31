@@ -62,8 +62,10 @@ config RTIO_SQE_CACHELINE_CHECK
 
 choice RTIO_BLOCK_POOL_PLACEMENT
 	prompt "RTIO block pool placement"
-	default RTIO_BLOCK_POOL_PLACEMENT_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
-	default RTIO_BLOCK_POOL_PLACEMENT_NOCACHE if NOCACHE_MEMORY
+	default RTIO_BLOCK_POOL_PLACEMENT_DTCM if $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM)) && \
+		(!USERSPACE || ARCH_HAS_NOCACHE_MEM_PARTITION_SUPPORT)
+	default RTIO_BLOCK_POOL_PLACEMENT_NOCACHE if NOCACHE_MEMORY && \
+		(!USERSPACE || ARCH_HAS_NOCACHE_MEM_PARTITION_SUPPORT)
 	default RTIO_BLOCK_POOL_PLACEMENT_DEFAULT
 	help
 	  Select where the RTIO block pool is placed.
@@ -80,6 +82,7 @@ config RTIO_BLOCK_POOL_PLACEMENT_DEFAULT
 config RTIO_BLOCK_POOL_PLACEMENT_DTCM
 	bool "DTCM (uncached)"
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	depends on !USERSPACE || ARCH_HAS_NOCACHE_MEM_PARTITION_SUPPORT
 	help
 	  Place RTIO block pool in DTCM. On supported architectures DTCM is
 	  inherently uncached and typically needs no extra cache maintenance.
@@ -87,6 +90,7 @@ config RTIO_BLOCK_POOL_PLACEMENT_DTCM
 config RTIO_BLOCK_POOL_PLACEMENT_NOCACHE
 	bool "Non-cacheable memory (NOCACHE)"
 	depends on NOCACHE_MEMORY
+	depends on !USERSPACE || ARCH_HAS_NOCACHE_MEM_PARTITION_SUPPORT
 	help
 	  Place RTIO block pool in a non-cacheable memory region. This assumes
 	  the board/linker provides corresponding no-cache data/bss sections.

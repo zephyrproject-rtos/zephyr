@@ -18,9 +18,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -39,6 +39,7 @@
 		nvmctrl: flash-controller@44002000 {
 			compatible = "microchip,nvmctrl-g3";
 			reg = <0x44002000 0x7c>, <0x44004000 0x60>;
+			ranges;
 			reg-names = "fcw", "fcr";
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_AHB>,
 				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_APB>,
@@ -51,7 +52,6 @@
 			interrupt-names = "fcw", "eccerr", "crcerr";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "microchip,flash-g3", "soc-nv-flash";
@@ -152,11 +152,21 @@
 			status = "disabled";
 		};
 
+		trng: random@44870000 {
+			compatible = "microchip,trng-g1-entropy";
+			reg = <0x44870000 0x24>;
+			interrupts = <210 0>;
+			interrupt-names = "datardy";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TRNG>;
+			clock-names = "mclk";
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@44840000 {
 			compatible = "microchip,port-g1-pinctrl";
+			ranges = <0x44840000 0x44840000 0x380>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x44840000 0x44840000 0x380>;
 
 			porta: gpio@44840000 {
 				compatible = "microchip,port-g1-gpio";
@@ -249,6 +259,58 @@
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
 			clock-names = "mclk", "gclk";
 			status = "disabled";
+		};
+
+		adc: adc@46820000 {
+			compatible = "microchip,adc-g2";
+			reg = <0x46820000 0x15c>, <0x0a007000 0x188>;
+			reg-names = "adc", "fuses";
+			interrupts = <185 0>;
+			interrupt-names = "global";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_ADC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_ADC>;
+			clock-names = "mclk", "gclk";
+			clock-parent = <&clock>;
+			num-cores = <4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			adc0: adc@0 {
+				reg = <0>;
+				core-id = <0>;
+				#io-channel-cells = <1>;
+				interrupts = <186 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+
+			adc1: adc@1 {
+				reg = <1>;
+				core-id = <1>;
+				#io-channel-cells = <1>;
+				interrupts = <187 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+
+			adc2: adc@2 {
+				reg = <2>;
+				core-id = <2>;
+				#io-channel-cells = <1>;
+				interrupts = <188 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
+
+			adc3: adc@3 {
+				reg = <3>;
+				core-id = <3>;
+				#io-channel-cells = <1>;
+				interrupts = <189 0>;
+				interrupt-names = "core";
+				status = "disabled";
+			};
 		};
 	};
 };

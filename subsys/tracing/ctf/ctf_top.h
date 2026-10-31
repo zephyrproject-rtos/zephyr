@@ -53,10 +53,14 @@
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
 
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP
+uint64_t ctf_top_timestamp_get(void);
+#else  /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 static inline uint64_t ctf_top_timestamp_get(void)
 {
 	return timing_ns_get();
 }
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
 #define CTF_EVENT(...)                                                                             \
 	{                                                                                          \
@@ -64,9 +68,14 @@ static inline uint64_t ctf_top_timestamp_get(void)
 			return;                                                                    \
 		}                                                                                  \
 		int key = irq_lock();                                                              \
+		const uint16_t stream_id = 0;                                                      \
+		uint16_t packet_size = 0;                                                          \
 		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
                                                                                                    \
-		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                                             \
+		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
+					 ##__VA_ARGS__));                                          \
+                                                                                                   \
+		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, __VA_ARGS__)                     \
 		irq_unlock(key);                                                                   \
 	}
 #else
@@ -2321,9 +2330,9 @@ static inline void ctf_top_rtio_sqe_acquire_exit(uint32_t rtio_id, uint32_t sqe)
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_ACQUIRE_EXIT), rtio_id, sqe);
 }
 
-static inline void ctf_top_rtio_sqe_cancel(uint32_t rtio_id)
+static inline void ctf_top_rtio_sqe_cancel(uint16_t index, uint16_t generation)
 {
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_CANCEL), rtio_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_CANCEL), index, generation);
 }
 
 static inline void ctf_top_rtio_cqe_submit_enter(uint32_t rtio_id, int32_t result, uint32_t flags)

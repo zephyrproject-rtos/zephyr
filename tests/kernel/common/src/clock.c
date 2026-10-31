@@ -15,8 +15,9 @@
 
 /** @cond INTERNAL_HIDDEN */
 struct timer_data {
-	int duration_count;
-	int stop_count;
+	/* Updated from ISR context; volatile keeps LTO from caching the reads. */
+	volatile int duration_count;
+	volatile int stop_count;
 };
 static void duration_expire(struct k_timer *timer);
 static void stop_expire(struct k_timer *timer);
@@ -24,7 +25,17 @@ static void stop_expire(struct k_timer *timer);
 /* TESTPOINT: init timer via K_TIMER_DEFINE */
 K_TIMER_DEFINE(ktimer, duration_expire, stop_expire);
 
-static ZTEST_BMEM struct timer_data tdata;
+/*
+ * tdata is written by the timer expiry/stop callbacks (duration_expire(),
+ * stop_expire()) that run asynchronously from the test thread, and polled by
+ * the test after a k_busy_wait(). Mark it volatile so the compiler reloads it
+ * on every access instead of caching it across the busy-wait: under LTO the
+ * whole-program optimizer otherwise proves nothing visible in k_busy_wait()
+ * writes tdata, caches duration_count, and constant-folds the comparisons
+ * (observed as "duration 0 not 1").
+ */
+static ZTEST_BMEM volatile struct timer_data tdata;
+
 /** @endcond */
 
 #define DURATION 100

@@ -7,6 +7,7 @@
 
 #include <renesas/ra/ra6/r7fa6m4af3cfb.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -15,8 +16,8 @@
 #include "ek_ra6m4-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA6M4";
 	compatible = "renesas,ra6m4", "renesas,ra";
+	model = "Renesas EK-RA6M4";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -60,20 +61,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &ioport0 0 0>,	/* AN  */
-			   <1 0 &ioport1 15 0>,	/* RST */
-			   <2 0 &ioport2 5 0>,	/* CS   */
-			   <3 0 &ioport2 4 0>,	/* SCK  */
-			   <4 0 &ioport2 2 0>,	/* MISO */
-			   <5 0 &ioport2 3 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &ioport0 0 0>,
+			   <MIKROBUS_RST 0 &ioport1 15 0>,
+			   <MIKROBUS_CS 0 &ioport2 5 0>,
+			   <MIKROBUS_SCK 0 &ioport2 4 0>,
+			   <MIKROBUS_MISO 0 &ioport2 2 0>,
+			   <MIKROBUS_MOSI 0 &ioport2 3 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &ioport4 8 0>,	/* PWM  */
-			   <7 0 &ioport4 9 0>,	/* INT  */
-			   <8 0 &ioport6 14 0>,	/* RX   */
-			   <9 0 &ioport6 13 0>,	/* TX   */
-			   <10 0 &ioport5 12 0>,	/* SCL  */
-			   <11 0 &ioport5 11 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &ioport4 8 0>,
+			   <MIKROBUS_INT 0 &ioport4 9 0>,
+			   <MIKROBUS_RX 0 &ioport6 14 0>,
+			   <MIKROBUS_TX 0 &ioport6 13 0>,
+			   <MIKROBUS_SCL 0 &ioport5 12 0>,
+			   <MIKROBUS_SDA 0 &ioport5 11 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -197,7 +198,6 @@
 };
 
 &iic1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
@@ -205,6 +205,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&iic1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi0 {
@@ -277,9 +278,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -308,14 +309,14 @@
 
 &data_flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		storage_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };
@@ -365,10 +366,10 @@ pmod_header: &pmod2_header {};
 
 &eth {
 	local-mac-address = [74 90 50 b0 6d 5d];
-	status = "okay";
 	phy-handle = <&phy>;
 	pinctrl-0 = <&ether_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &mdio {
@@ -391,9 +392,9 @@ pmod_header: &pmod2_header {};
 	mx25l25645g: qspi-nor-flash@60000000 {
 		compatible = "renesas,ra-qspi-nor";
 		reg = <0x60000000 DT_SIZE_M(32)>;
-		status = "okay";
 		write-block-size = <1>;
 		erase-block-size = <4096>;
+		status = "okay";
 	};
 };
 

@@ -3,6 +3,8 @@
 
 # Common fields for LED controllers and child LEDs
 
+class: led
+
 child-binding:
   description: LED child node
 

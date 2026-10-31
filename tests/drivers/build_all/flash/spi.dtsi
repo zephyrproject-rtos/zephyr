@@ -6,7 +6,6 @@
 at45@0 {
 	compatible = "atmel,at45";
 	reg = <0x0>;
-	status = "okay";
 	spi-max-frequency = <5000000>;
 	jedec-id = [00 11 22];
 	size = <1048576>;
@@ -14,27 +13,28 @@ at45@0 {
 	sector-0a-pages = <1>;
 	block-size = <1>;
 	page-size = <1>;
+	status = "okay";
 };
 
 spi-nor@1 {
 	compatible = "jedec,spi-nor";
 	reg = <0x1>;
-	status = "okay";
 	spi-max-frequency = <5000000>;
 	size = <1048576>;
 	jedec-id = [00 11 22];
+	status = "okay";
 };
 
 at25xv021a@2 {
 	compatible = "atmel,at25xv021a";
 	reg = <0x2>;
-	status = "okay";
 	spi-max-frequency = <5000000>;
 	jedec-id = [00 11 22];
 	size = <262144>;
 	page-size = <1>;
 	timeout = <1>;
 	timeout-erase = <1>;
+	status = "okay";
 };
 
 s3axx04@3 {
@@ -48,7 +48,6 @@ s3axx04@3 {
 spi-nand@4 {
 	compatible = "jedec,spi-nand";
 	reg = <0x4>;
-	status = "okay";
 	spi-max-frequency = <5000000>;
 	/* mt29f4g01 parameters */
 	jedec-id = [2c 35];
@@ -60,4 +59,5 @@ spi-nand@4 {
 	page-program-duration-max = <600>;
 	page-read-duration-max = <200>;
 	reset-duration-max = <500>;
+	status = "okay";
 };

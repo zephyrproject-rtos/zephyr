@@ -6,10 +6,12 @@
 #include <zephyr/init.h>
 #include <hal/nrf_vpr_csr.h>
 #include <hal/nrf_vpr_csr_vevif.h>
+#include <dmm.h>
 
-static int vpr_init(void)
+void soc_early_init_hook(void)
 {
 	uint32_t sleep_mode;
+	int err;
 
 	if (IS_ENABLED(CONFIG_NORDIC_VPR_DEEPSLEEP)) {
 		sleep_mode = VPRCSR_NORDIC_VPRNORDICSLEEPCTRL_SLEEPSTATE_DEEPSLEEP;
@@ -30,7 +32,7 @@ static int vpr_init(void)
 	/* Notify parent core that core is ready and can accept IPC communication. */
 	nrf_vpr_csr_vevif_events_set(BIT(DT_PROP(DT_NODELABEL(cpu), nordic_vpr_ready_event)));
 #endif
-	return 0;
-}
 
-SYS_INIT(vpr_init, PRE_KERNEL_1, 0);
+	err = dmm_init();
+	__ASSERT_NO_MSG(err == 0);
+}

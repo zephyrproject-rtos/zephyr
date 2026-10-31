@@ -8,8 +8,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "DNESP32S3B APPCPU";
 	compatible = "alientek,dnesp32s3b";
+	model = "DNESP32S3B APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

@@ -8,8 +8,8 @@
 	mpu6050@68 {
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
-		status = "okay";
 		int-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		smplrt-div = <249>;
+		status = "okay";
 	};
 };

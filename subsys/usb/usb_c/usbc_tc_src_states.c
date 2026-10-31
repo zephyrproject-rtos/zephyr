@@ -259,8 +259,10 @@ void tc_attached_src_entry(void *obj)
 
 	LOG_INF("Attached.SRC");
 
-	/* Initial data role for source is DFP */
+	/* Initial roles are source and DFP */
 	tcpc_set_roles(tcpc, TC_ROLE_SOURCE, TC_ROLE_DFP);
+	policy_notify(dev, POWER_ROLE_IS_SOURCE);
+	policy_notify(dev, DATA_ROLE_IS_DFP);
 
 	/* Set cc polarity */
 	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);

@@ -1,14 +1,22 @@
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+    - qemu_cortex_m3
+  tags:
+    - bluetooth
+    - addr
+  integration_platforms:
+    - native_sim
+
 tests:
-  bluetooth.addr:
-    extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-      - qemu_x86
-      - qemu_cortex_m3
-    tags:
-      - bluetooth
-      - addr
-    integration_platforms:
-      - native_sim
+  bluetooth.addr: {}
+  bluetooth.addr.no_smp:
+    extra_configs:
+      - CONFIG_BT_CENTRAL=n
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_SMP=n
+      - CONFIG_BT_PRIVACY=n

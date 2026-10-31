@@ -1418,7 +1418,7 @@ class TestPlan:
         else:
             platform = instance.platform
         pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{required_app.application}"
-        build_dirs = glob.glob(pattern, recursive=True)
+        build_dirs = glob.glob(pattern.replace(os.sep, "/"), recursive=True)
         if not build_dirs:
             return None
         if not os.path.exists(os.path.join(build_dirs[0], "zephyr")):

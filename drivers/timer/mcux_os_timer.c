@@ -131,6 +131,11 @@ void mcux_lpc_ostick_isr(const void *arg)
  */
 static uint32_t mcux_lpc_ostick_set_counter_timeout(uint64_t timeout_us)
 {
+	/* The SoC's zero-tick idle poke may repeat this idle-entry handoff. */
+	if (lpm_companion_armed) {
+		return 0;
+	}
+
 	/* Arm the system-timer low-power companion to wake the system. */
 	z_sys_clock_lpm_enter(timeout_us);
 	lpm_companion_armed = true;
@@ -321,9 +326,9 @@ static inline bool os_timer_state_needs_handoff(enum pm_state state)
 }
 #endif /* handoff-power-states */
 
-/* Poke-path helper: the SoC signals a low-power entry via a zero-tick idle
- * timeout. Hand off to the companion only when the next power state is one in
- * which the OS Timer stops keeping time (handoff-power-states).
+/* Hand off the programmed deadline when the next power state stops the
+ * OS Timer. The generic idle-entry hook and the SoC's zero-tick idle poke
+ * share this helper.
  */
 static void mcux_os_timer_set_lp_counter_timeout(void)
 {
@@ -413,6 +418,15 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	counter_remaining_ticks = 0;
 
 	k_spin_unlock(&lock, key);
+}
+
+void sys_clock_idle_enter(uint32_t ticks)
+{
+	sys_clock_set_timeout(ticks, false);
+
+#if defined(MCUX_OS_TIMER_LPM_GENERIC)
+	mcux_os_timer_set_lp_counter_timeout();
+#endif
 }
 
 uint32_t sys_clock_elapsed(void)

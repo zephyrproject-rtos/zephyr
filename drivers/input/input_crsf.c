@@ -19,21 +19,17 @@
 
 LOG_MODULE_REGISTER(tbs_crsf, CONFIG_INPUT_LOG_LEVEL);
 
+/*
+ * The RX and TX buffers are used for DMA by the UART driver, which is
+ * responsible for their cache coherency. Place them in DTCM or non-cacheable
+ * memory when available.
+ */
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && CONFIG_INPUT_CRSF_USE_DTCM_FOR_DMA_BUFFER
 #define _dma_buffer_section __dtcm_noinit_section
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define _dma_buffer_section __nocache
 #else
 #define _dma_buffer_section
-#ifdef CONFIG_CACHE_MANAGEMENT
-#include <zephyr/cache.h>
-#define CRSF_INVALIDATE_CACHE
-#elif defined(CONFIG_DCACHE)
-#error "CRSF input requires a DMA-safe buffer, but no suitable memory configuration was found. \
-Enable one of the following: \
-CONFIG_INPUT_CRSF_USE_DTCM_FOR_DMA_BUFFER with a zephyr,dtcm node, \
-CONFIG_NOCACHE_MEMORY, or CONFIG_CACHE_MANAGEMENT."
-#endif
 #endif
 
 struct crsf_input_channel {
@@ -42,7 +38,9 @@ struct crsf_input_channel {
 	uint32_t zephyr_code;
 };
 
-static const struct uart_config uart_cfg_crsf = {.baudrate = 420000,
+#define CRSF_BAUDRATE 420000
+
+static const struct uart_config uart_cfg_crsf = {.baudrate = CRSF_BAUDRATE,
 						 .parity = UART_CFG_PARITY_NONE,
 						 .stop_bits = UART_CFG_STOP_BITS_1,
 						 .data_bits = UART_CFG_DATA_BITS_8,
@@ -65,7 +63,14 @@ struct input_crsf_config {
 #define CRSF_CONNECTION_TIMEOUT_MS 200
 #define CRSF_TX_BUF_SIZE           CRSF_MAX_FRAME_LEN
 #define CRSF_RX_BUF_SIZE           (2 * CRSF_MAX_FRAME_LEN) /* Async RX DMA buffer size */
-#define CRSF_RX_TIMEOUT_US         1000                     /* Flush timeout for async RX */
+/*
+ * Flush async RX after a few idle character times (10 bits each).
+ * At 420 kbaud this is ~96 us, short enough to avoid batching
+ * consecutive RC updates even at 1 kHz ExpressLRS packet rates.
+ */
+#define CRSF_RX_IDLE_CHARS         4
+#define CRSF_RX_TIMEOUT_US                                                                         \
+	DIV_ROUND_UP(CRSF_RX_IDLE_CHARS * 10 * USEC_PER_SEC, CRSF_BAUDRATE)
 #define CRSF_QUEUE_SIZE            3
 
 #define REPORT_FILTER      CONFIG_INPUT_CRSF_REPORT_FILTER
@@ -98,10 +103,12 @@ struct input_crsf_data {
 	/* Async RX DMA Buffers (Double buffering) */
 	uint8_t *rx_buf_a;
 	uint8_t *rx_buf_b;
+	uint8_t *rx_buf_next; /* Buffer to provide on the next UART_RX_BUF_REQUEST */
 
 	uint8_t crsf_frame[CRSF_MAX_FRAME_LEN];
 
 	/* TX State */
+	uint8_t *tx_buf;  /* Async TX DMA buffer, owned by the UART while tx_busy */
 	atomic_t tx_busy; /* Flag to prevent concurrent uart_tx calls */
 
 	uint16_t last_reported_value[CRSF_CHANNEL_COUNT];
@@ -139,13 +146,18 @@ int input_crsf_send_telemetry(const struct device *dev, uint8_t type, uint8_t *p
 {
 	const struct input_crsf_config *const config = dev->config;
 	struct input_crsf_data *data = dev->data;
-	uint8_t frame[CRSF_MAX_FRAME_LEN];
+	uint8_t *frame = data->tx_buf;
 	uint8_t offset = 0;
-	uint8_t crc;
+	int ret;
 
-	if (payload_len > CRSF_MAX_PAYLOAD_LEN) {
-		LOG_ERR("CRSF payload too large");
+	if (payload_len > CRSF_MAX_PAYLOAD_LEN || (payload_len > 0 && payload == NULL)) {
+		LOG_ERR("Invalid CRSF payload");
 		return -EINVAL;
+	}
+
+	/* The TX buffer is in use until UART_TX_DONE or UART_TX_ABORTED */
+	if (!atomic_cas(&data->tx_busy, 0, 1)) {
+		return -EBUSY;
 	}
 
 	/* Construct Frame */
@@ -153,19 +165,18 @@ int input_crsf_send_telemetry(const struct device *dev, uint8_t type, uint8_t *p
 	frame[offset++] = (uint8_t)(payload_len + 2);
 	frame[offset++] = type;
 
-	if (payload_len > 0 && payload != NULL) {
+	if (payload_len > 0) {
 		memcpy(&frame[offset], payload, payload_len);
 		offset += payload_len;
 	}
 
-	crc = crc8(&frame[2], offset - 2, 0xD5, 0x00, false);
-	frame[offset++] = crc;
+	frame[offset] = crc8(&frame[2], offset - 2, 0xD5, 0x00, false);
+	offset++;
 
-	if (atomic_cas(&data->tx_busy, 0, 1)) {
-		for (int i = 0; i < offset; i++) {
-			uart_poll_out(config->uart_dev, frame[i]);
-		}
+	ret = uart_tx(config->uart_dev, frame, offset, SYS_FOREVER_US);
+	if (ret < 0) {
 		atomic_set(&data->tx_busy, 0);
+		return ret;
 	}
 
 	return 0;
@@ -474,21 +485,16 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 			break;
 		}
 
-#ifdef CRSF_INVALIDATE_CACHE
-		arch_dcache_invd_range(&rx_buf[rx_off], rx_len);
-#endif
 		/* Process received data chunk */
 		crsf_process_bytes(dev, &rx_buf[rx_off], rx_len);
 		break;
 	}
 
 	case UART_RX_BUF_REQUEST:
-		/* Provide the next buffer to keep reception continuous */
-		{
-			uint8_t *next_buf = (evt->data.rx_buf.buf == data->rx_buf_a)
-						    ? data->rx_buf_b
-						    : data->rx_buf_a;
-			uart_rx_buf_rsp(uart_dev, next_buf, CRSF_RX_BUF_SIZE);
+		/* Provide the idle buffer to keep reception continuous */
+		if (uart_rx_buf_rsp(uart_dev, data->rx_buf_next, CRSF_RX_BUF_SIZE) == 0) {
+			data->rx_buf_next = (data->rx_buf_next == data->rx_buf_a) ? data->rx_buf_b
+										  : data->rx_buf_a;
 		}
 		break;
 
@@ -498,6 +504,7 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 
 	case UART_RX_DISABLED:
 		/* Restart RX if disabled (error recovery) */
+		data->rx_buf_next = data->rx_buf_b;
 		uart_rx_enable(uart_dev, data->rx_buf_a, CRSF_RX_BUF_SIZE, CRSF_RX_TIMEOUT_US);
 		break;
 
@@ -544,6 +551,7 @@ static int input_crsf_init(const struct device *dev)
 	k_msgq_init(&data->rx_queue, data->rx_queue_slab, CRSF_MAX_FRAME_LEN, CRSF_QUEUE_SIZE);
 
 	/* Start Async RX */
+	data->rx_buf_next = data->rx_buf_b;
 	ret = uart_rx_enable(config->uart_dev, data->rx_buf_a, CRSF_RX_BUF_SIZE,
 			     CRSF_RX_TIMEOUT_US);
 	if (ret < 0) {
@@ -583,9 +591,11 @@ static int input_crsf_init(const struct device *dev)
                                                                                                    \
 	static uint8_t __aligned(4) _dma_buffer_section crsf_##n##_rx_buf_a[CRSF_RX_BUF_SIZE];     \
 	static uint8_t __aligned(4) _dma_buffer_section crsf_##n##_rx_buf_b[CRSF_RX_BUF_SIZE];     \
+	static uint8_t __aligned(4) _dma_buffer_section crsf_##n##_tx_buf[CRSF_TX_BUF_SIZE];       \
 	static struct input_crsf_data crsf_data_##n = {                                            \
 		.rx_buf_a = crsf_##n##_rx_buf_a,                                                   \
 		.rx_buf_b = crsf_##n##_rx_buf_b,                                                   \
+		.tx_buf = crsf_##n##_tx_buf,                                                       \
 	};                                                                                         \
                                                                                                    \
 	static const struct input_crsf_config crsf_cfg_##n = {                                     \

@@ -14,8 +14,10 @@ supported:
   - dma
   - flash
   - gpio
+  - hwinfo
   - i2c
   - pinctrl
+  - reset
   - spi
   - uart
   - watchdog

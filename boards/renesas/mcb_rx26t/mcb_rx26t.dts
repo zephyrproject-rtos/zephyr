@@ -11,8 +11,8 @@
 #include "mcb_rx26t-pinctrl.dtsi"
 
 / {
-	model = "Renesas MCB-RX26T KIT";
 	compatible = "renesas,mcb_rx26t";
+	model = "Renesas MCB-RX26T KIT";
 
 	chosen {
 		zephyr,sram = &sram0;

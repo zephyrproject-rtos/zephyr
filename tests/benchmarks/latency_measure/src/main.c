@@ -72,6 +72,7 @@ extern void heap_malloc_free(void);
 static void busy_thread_entry(void *arg1, void *arg2, void *arg3)
 {
 	while (1) {
+		arch_nop();
 	}
 }
 #endif

@@ -11,8 +11,8 @@
 #include "cy8cproto_040t_common.dtsi"
 
 / {
-	model = "CY8CPROTO-040T-AUTO Prototyping Kit";
 	compatible = "infineon,cy8cproto-040t-auto", "infineon,psoc4000t";
+	model = "CY8CPROTO-040T-AUTO Prototyping Kit";
 
 	chosen {
 		zephyr,sram = &sram0;

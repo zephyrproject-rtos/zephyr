@@ -10,6 +10,8 @@ sample:
   name: Socket Echo Server
 tests:
   sample.net.sockets.echo_server:
+    extra_configs:
+      - arch:arm64:CONFIG_STACK_SENTINEL=y
     platform_allow:
       - qemu_x86
       - qemu_x86_64

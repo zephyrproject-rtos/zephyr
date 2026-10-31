@@ -24,6 +24,14 @@
 			status = "disabled";
 		};
 
+		can1: can@40006400 {
+			compatible = "st,stm32-bxcan";
+			reg = <0x40006400 0x400>;
+			interrupts = <30 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
+			status = "disabled";
+		};
+
 		usart6: serial@40011400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011400 0x400>;
@@ -51,18 +59,10 @@
 			status = "disabled";
 		};
 
-		can1: can@40006400 {
-			compatible = "st,stm32-bxcan";
-			reg = <0x40006400 0x400>;
-			interrupts = <30 0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
-			status = "disabled";
-		};
-
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
-			#dma-cells = <2>;
 			reg = <0x40020400 0x400>;
+			#dma-cells = <2>;
 			interrupts = <10 0>, <10 0>, <11 0>, <11 0>, <11 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			status = "disabled";

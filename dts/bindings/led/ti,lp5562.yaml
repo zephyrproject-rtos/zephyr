@@ -4,6 +4,8 @@ compatible: "ti,lp5562"
 
 include: i2c-device.yaml
 
+class: led
+
 properties:
   red-output-current:
     type: int

@@ -777,7 +777,7 @@ static int cmd_affinity_set(const struct shell *sh, size_t argc, char **argv)
 		riscv_plic_irq_set_affinity(irq, mask);
 		shell_print(sh, "IRQ %d affinity set to 0x%X", local_irq, mask);
 	} else {
-		for (local_irq = 1; local_irq <= config->nr_irqs; local_irq++) {
+		for (local_irq = 1; local_irq < config->nr_irqs; local_irq++) {
 			irq = local_irq_to_irq(dev, local_irq);
 			riscv_plic_irq_set_affinity(irq, mask);
 		}
@@ -877,7 +877,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(plic_cmds,
 SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 #endif /* CONFIG_PLIC_SHELL */
 
-#define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
+/* IRQ ID 0 is reserved, so valid local IRQs are 1..riscv,ndev (ndev + 1 IDs) */
+#define PLIC_NR_IRQS(n)     (DT_INST_PROP(n, riscv_ndev) + 1)
+#define PLIC_MIN_IRQ_NUM(n) MIN(PLIC_NR_IRQS(n), CONFIG_MAX_IRQ_PER_AGGREGATOR)
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
 #define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \

@@ -11,8 +11,12 @@ ECHO Request/Response
 
 The L2CAP ECHO feature allows testing the connection by sending ECHO requests and receiving ECHO
 responses.
-Applications can register callbacks to monitor ECHO packets and send ECHO data.
-The feature is enabled through the configuration option: :kconfig:option:`CONFIG_BT_CLASSIC`.
+The stack answers a received ECHO request with an ECHO response without data, unless an
+application callback handles the request.
+
+The API to send ECHO requests and responses and to register callbacks is intended for testing,
+such as qualification testing. It is enabled through the configuration options
+:kconfig:option:`CONFIG_BT_CLASSIC` and :kconfig:option:`CONFIG_BT_TESTING`.
 
 Registering ECHO Callbacks
 ==========================
@@ -24,7 +28,7 @@ structure:
 
    static void echo_req_cb(struct bt_conn *conn, uint8_t identifier, struct net_buf *buf)
    {
-       /* Handle ECHO request */
+       /* Handle ECHO request, answer with bt_l2cap_br_echo_rsp() */
    }
 
    static void echo_rsp_cb(struct bt_conn *conn, struct net_buf *buf)

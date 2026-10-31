@@ -13,8 +13,8 @@
 #include "ek_ra6m3-pinctrl.dtsi"
 
 / {
-	model = "Renesas EK-RA6M3";
 	compatible = "renesas,ra6m3", "renesas,ra";
+	model = "Renesas EK-RA6M3";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -100,7 +100,6 @@
 };
 
 &iic2 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
@@ -108,6 +107,7 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&iic2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &xtal {
@@ -154,9 +154,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dac0 {
@@ -185,14 +185,14 @@
 
 &data_flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		storage_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
@@ -214,10 +214,10 @@
 
 &eth {
 	local-mac-address = [00 11 22 33 44 57];
-	status = "okay";
 	phy-handle = <&phy>;
 	pinctrl-0 = <&ether_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &mdio {
@@ -240,9 +240,9 @@
 	mx25l25645g: qspi-nor-flash@60000000 {
 		compatible = "renesas,ra-qspi-nor";
 		reg = <0x60000000 DT_SIZE_M(32)>;
-		status = "okay";
 		write-block-size = <1>;
 		erase-block-size = <4096>;
+		status = "okay";
 	};
 };
 

@@ -32,8 +32,8 @@ wdt011: &cpuapp_wdt011 {};
 / {
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&cpuapp_nvic>;
 		ranges;
+		interrupt-parent = <&cpuapp_nvic>;
 
 		stmesp: memory@a2000000 {
 			compatible = "arm,stmesp";

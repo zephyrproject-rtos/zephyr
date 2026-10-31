@@ -29,6 +29,7 @@ DEFINE_FAKE_VOID_FUNC(lwm2m_udp_receive, struct lwm2m_ctx *, uint8_t *, uint16_t
 		      struct net_sockaddr *);
 DEFINE_FAKE_VALUE_FUNC(bool, lwm2m_rd_client_is_registred, struct lwm2m_ctx *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
+DEFINE_FAKE_VOID_FUNC(lwm2m_engine_dedup_clear, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_res_buf, const struct lwm2m_obj_path *, void **, uint16_t *,
 		       uint16_t *, uint8_t *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_parse_peerinfo, char *, struct lwm2m_ctx *, bool);
@@ -63,6 +64,17 @@ struct zvfs_pollfd {
 };
 
 static short my_events;
+static uint32_t zero_timeout_polls;
+
+uint32_t get_zero_timeout_polls(void)
+{
+	return zero_timeout_polls;
+}
+
+void clear_zero_timeout_polls(void)
+{
+	zero_timeout_polls = 0;
+}
 
 void set_socket_events(short events)
 {
@@ -127,6 +139,10 @@ ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 
 int z_impl_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout)
 {
+	if (poll_timeout == 0) {
+		zero_timeout_polls++;
+	}
+
 	k_sleep(K_MSEC(1));
 	fds->revents = my_events;
 	return 0;

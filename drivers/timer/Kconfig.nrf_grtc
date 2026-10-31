@@ -78,10 +78,11 @@ choice NRF_GRTC_TIMER_SOURCE
 	# Default to LFLPRC if CLOCK_CONTROL_NRF_K32SRC_RC for backwards compatibility
 	default NRF_GRTC_TIMER_SOURCE_LFLPRC if CLOCK_CONTROL_NRF_K32SRC_RC || \
 	$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,rc)
+	# Default to SYSTEM_LFCLK if LFXO is not present
+	default NRF_GRTC_TIMER_SOURCE_SYSTEM_LFCLK if \
+	$(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,synth)
 	# Default to LFXO if present as this allows GRTC to run in SYSTEM OFF
 	default NRF_GRTC_TIMER_SOURCE_LFXO
-	# Default to SYSTEM_LFCLK if LFXO is not present
-	default NRF_GRTC_TIMER_SOURCE_SYSTEM_LFCLK
 
 config NRF_GRTC_TIMER_SOURCE_LFXO
 	bool "Use Low Frequency XO as clock source"

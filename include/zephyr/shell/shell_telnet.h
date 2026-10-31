@@ -57,6 +57,19 @@ struct shell_telnet {
 
 	/** Mutex protecting the input buffer access. */
 	struct k_mutex rx_lock;
+
+	/** Mutex serializing sends, cancels of send_work and the client close. */
+	struct k_mutex tx_lock;
+
+	/** Bumped on every accept and close; a send resumes only within the
+	 *  session it started in.
+	 */
+	uint32_t session;
+
+	/** Set while the shell thread writes, so send_work leaves the line
+	 *  buffer alone.
+	 */
+	bool tx_active;
 	uint8_t cmd_buf[SHELL_TELNET_MAX_CMD_SIZE];
 	uint8_t cmd_len;
 
@@ -65,7 +78,6 @@ struct shell_telnet {
 	 *  to send the shell prompt for instance.
 	 */
 	struct k_work_delayable send_work;
-	struct k_work_sync work_sync;
 
 	/** If set, no output is sent to the TELNET client. */
 	bool output_lock;

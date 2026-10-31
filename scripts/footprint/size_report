@@ -715,6 +715,46 @@ def set_root_path_for_unmapped_symbols(symbol_dict, addr_range, processed):
     processed['mapped_addr'] = mapped_addresses
     processed['unmapped_symbols'] = unmapped_symbols
 
+def find_no_symbol_ranges(symbol_dict, addr_range, target):
+    # Build a sorted list of symbols
+    symbols = []
+    for sym in symbol_dict.values():
+        for symbol in sym:
+            symbols.append((get_symbol_addr(symbol['symbol']), get_symbol_size(symbol['symbol'])))
+    symbols = sorted(symbols, key=lambda x: x[0])
+
+    # Find gaps between symbols
+    gaps = []
+    for i in range(len(symbols) - 1):
+        end_sym = symbols[i][0] + symbols[i][1]
+        start_next = symbols[i + 1][0]
+        if end_sym < start_next:
+            gaps.append((end_sym, start_next))
+
+    # Generate "hidden" symbols for every gap
+    for start, end in gaps:
+        # Find section of symbol
+        section = None
+        for r in addr_range:
+            if r['start'] <= start and r['end'] >= end:
+                section = r
+                break
+        if section is None:
+            # This gap does not fall within any known address range
+            continue
+        hidden_symbol = {
+            # Define a "hidden" symbol for the gap
+            'symbol': {
+                'st_value': start,
+                'st_size': end - start
+            },
+            'section': section['name'],
+            'mapped_files': set([Path(':')]),
+            'name': f"gap in symbols at {hex(start)}",
+            'loc': target
+        }
+        symbol_dict[f"gap in symbols at {hex(start)}"] = [hidden_symbol]
+
 def find_common_path_prefix(symbol_dict):
     """
     Find the common path prefix of all mapped files.
@@ -1035,6 +1075,7 @@ def main():
                 mark_address_aliases(symbol_dict, processed)
                 common_path_prefix = find_common_path_prefix(symbol_dict)
                 set_root_path_for_unmapped_symbols(symbol_dict, ranges, processed)
+                find_no_symbol_ranges(symbol_dict, ranges, t)
 
                 if args.verbose:
                     for sym in processed['unmapped_symbols']:

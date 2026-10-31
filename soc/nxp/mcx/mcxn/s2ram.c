@@ -108,6 +108,8 @@ static int mcxn_enter_deep_power_down(void)
 
 void mcxn_pm_suspend_to_ram(void)
 {
+	static uint32_t clock_ctrl;
+
 	SPC_SetLowPowerWakeUpDelay(MCXN_SPC_ADDR, MCXN_WAKEUP_DELAY);
 
 	if (mcxn_s2ram_retain_sram() != 0) {
@@ -118,6 +120,7 @@ void mcxn_pm_suspend_to_ram(void)
 	}
 
 	mcxn_scs_save();
+	clock_ctrl = SYSCON->CLOCK_CTRL;
 
 	/* A non-zero return means the SoC never entered Deep Power Down and is
 	 * still fully operational, so skip the resume-path rebuild below.
@@ -131,6 +134,9 @@ void mcxn_pm_suspend_to_ram(void)
 
 	/* re-build clock tree */
 	board_early_init_hook();
+
+	/* Board clock initialization does not restore consumer-enabled outputs. */
+	SYSCON->CLOCK_CTRL = clock_ctrl;
 
 	/* idle-thread stack is nearly full, it is easy to reach the
 	 * PSPLIM limit on resume. Drop the limit here, the next context

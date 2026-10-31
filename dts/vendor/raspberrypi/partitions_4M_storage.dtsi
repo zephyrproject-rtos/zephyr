@@ -12,15 +12,15 @@
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "code";
 			reg = <0x0 DT_SIZE_M(1)>;
+			label = "code";
 			read-only;
 		};
 
 		storage_partition: partition@100000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x100000 DT_SIZE_M(3)>;
+			label = "storage";
 		};
 	};
 };

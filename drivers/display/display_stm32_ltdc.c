@@ -54,6 +54,9 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #elif CONFIG_STM32_LTDC_RGB565
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_RGB565
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_RGB_565
+#elif CONFIG_STM32_LTDC_L8
+#define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_L8
+#define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_L_8
 #else
 #error "Invalid LTDC pixel format chosen"
 #endif
@@ -255,7 +258,9 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		return 0;
 	}
 
-	if (format == PIXEL_FORMAT_RGB_565) {
+	if (format == PIXEL_FORMAT_L_8) {
+		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_L8;
+	} else if (format == PIXEL_FORMAT_RGB_565) {
 		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_RGB565;
 	} else if (format == PIXEL_FORMAT_RGB_888) {
 		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_RGB888;
@@ -301,6 +306,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
 					PIXEL_FORMAT_RGB_888 |
 					PIXEL_FORMAT_RGB_565 |
+					PIXEL_FORMAT_L_8 |
 					(IS_ENABLED(STM32_LTDC_HAS_YUV) ? PIXEL_FORMAT_YUYV : 0);
 	capabilities->screen_info = 0;
 

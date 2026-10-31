@@ -8,8 +8,8 @@
 #include <openhwgroup/cv64a6.dtsi>
 
 / {
-	model = "Openhardwaregroup CV64A6 on Genesys 2";
 	compatible = "openhwgroup,cv64a6_genesys_2";
+	model = "Openhardwaregroup CV64A6 on Genesys 2";
 
 	chosen {
 		zephyr,console = &uart0;

@@ -11,8 +11,8 @@
 #include "am243x_evm_am2434_m4-pinctrl.dtsi"
 
 / {
-	model = "TI AM243x EVM M4F core";
 	compatible = "ti,am243x-evm-m4";
+	model = "TI AM243x EVM M4F core";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -29,8 +29,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <DT_FREQ_M(400)>;
+			status = "okay";
 		};
 	};
 
@@ -40,6 +40,12 @@
 		ld26: led_0 {
 			gpios = <&mcu_gpio0 5 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&main_mbox6 0>, <&main_mbox6 1>;
+		mbox-names = "tx", "rx";
 	};
 
 	rsc_table: memory@a4100000 {
@@ -52,12 +58,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa5000000 DT_SIZE_M(8)>;
 		zephyr,memory-region = "IPC_SHM";
-	};
-
-	ipc0: ipc {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&main_mbox6 0>, <&main_mbox6 1>;
-		mbox-names = "tx", "rx";
 	};
 };
 

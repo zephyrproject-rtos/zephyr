@@ -7,3 +7,12 @@ config RESET_ARM_SCMI
 	default y
 	help
 	  Enable ARM SCMI reset driver based on Reset domain management protocol.
+
+if RESET_ARM_SCMI
+
+config RESET_ARM_SCMI_INIT_PRIORITY
+	int "ARM SCMI Reset driver initialization priority"
+	default 60 if ARM_SCMI_OPTEE_TRANSPORT
+	default RESET_INIT_PRIORITY
+
+endif # RESET_ARM_SCMI

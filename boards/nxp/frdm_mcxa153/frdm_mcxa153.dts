@@ -8,14 +8,15 @@
 
 #include <nxp/mcx/mcxa/nxp_mcxa153.dtsi>
 #include "frdm_mcxa153-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <freq.h>
 
 / {
-	model = "NXP FRDM_MCXA153 board";
 	compatible = "nxp,mcxa153", "nxp,mcx";
+	model = "NXP FRDM_MCXA153 board";
 
 	aliases {
 		led0 = &red_led;
@@ -73,9 +74,9 @@
 		user_button_3: button_3 {
 			label = "User SW3";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_1>;
 			/* SW3 wakes via WUU external pin 9. */
 			wakeup-ctrls = <&wuu NXP_WUU_PIN_9_FALLING_INT>;
+			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
 
@@ -84,18 +85,18 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio3 30 0>,  /* AN */
-			   <1 0 &gpio3 1 0>,   /* RST */
-			   <2 0 &gpio1 3 0>,   /* CS */
-			   <3 0 &gpio1 1 0>,   /* SCK */
-			   <4 0 &gpio1 2 0>,   /* MISO */
-			   <5 0 &gpio1 0 0>,   /* MOSI */
-			   <6 0 &gpio3 12 0>,  /* PWM */
-			   <7 0 &gpio2 5 0>,   /* INT */
-			   <8 0 &gpio3 14 0>,  /* RX */
-			   <9 0 &gpio3 15 0>,  /* TX */
-			   <10 0 &gpio3 27 0>, /* GPIO, Not a SCL  */
-			   <11 0 &gpio3 28 0>; /* GPIO, Not a SDA  */
+		gpio-map = <MIKROBUS_AN 0 &gpio3 30 0>,
+			   <MIKROBUS_RST 0 &gpio3 1 0>,
+			   <MIKROBUS_CS 0 &gpio1 3 0>,
+			   <MIKROBUS_SCK 0 &gpio1 1 0>,
+			   <MIKROBUS_MISO 0 &gpio1 2 0>,
+			   <MIKROBUS_MOSI 0 &gpio1 0 0>,
+			   <MIKROBUS_PWM 0 &gpio3 12 0>,
+			   <MIKROBUS_INT 0 &gpio2 5 0>,
+			   <MIKROBUS_RX 0 &gpio3 14 0>,
+			   <MIKROBUS_TX 0 &gpio3 15 0>,
+			   <MIKROBUS_SCL 0 &gpio3 27 0>,
+			   <MIKROBUS_SDA 0 &gpio3 28 0>;
 	};
 
 	arduino_header: arduino-connector {
@@ -164,35 +165,35 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(40)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@12000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00012000 DT_SIZE_K(40)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0001c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };
 
 &flexpwm0_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -212,13 +213,13 @@
 };
 
 &i3c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_i3c0>;
 	pinctrl-names = "default";
 
 	i2c-scl-hz = <DT_FREQ_K(400)>;
 	i3c-scl-hz = <DT_FREQ_M(4)>;
 	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+	status = "okay";
 
 	p3t1755: p3t1755@4800000236152a0090 {
 		compatible = "nxp,p3t1755";
@@ -228,31 +229,31 @@
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 arduino_i2c: &lpi2c0 {};
 
 &lpspi0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 mikrobus_spi: &lpspi0 {};
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 arduino_spi: &lpspi1 {};
@@ -262,17 +263,17 @@ arduino_spi: &lpspi1 {};
 };
 
 &lpuart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 mikrobus_serial: &lpuart2 {};

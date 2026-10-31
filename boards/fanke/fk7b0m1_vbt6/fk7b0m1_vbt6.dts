@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "FANKE FK7B0M1-VBT6 board";
 	compatible = "fanke,fk7b0m1-vbt6";
+	model = "FANKE FK7B0M1-VBT6 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -96,6 +96,7 @@
 	ext_flash_ctrl: nor-flash-controller@0 {
 		compatible = "jedec,nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
 		jedec-id = [ef 40 17]; /* W25Q64JVSSIQ */
 		sfdp-bfp = [e5 20 f9 ff ff ff ff 03
@@ -110,27 +111,26 @@
 		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
 		mspi-hardware-ce-num = <0>;
-		status = "okay";
 
 		/* QSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		status = "okay";
 
 		ext_flash: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(8)>;
+			ranges;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				slot0_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
@@ -152,11 +152,11 @@
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(40)>;
 		size = <DT_SIZE_M(64)>; /* 64 Mbits */
-		status = "okay";
 		jedec-id = [ef 40 17];
 		has-dpd;
 		t-enter-dpd = <3500>;
 		t-exit-dpd = <3500>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -164,8 +164,8 @@
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+				label = "storage";
 			};
 		};
 	};

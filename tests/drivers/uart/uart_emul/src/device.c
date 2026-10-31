@@ -115,6 +115,24 @@ ZTEST_F(uart_emul_device, test_polling)
 	zassert_equal(ret, -1, "RX buffer should be empty");
 }
 
+ZTEST_F(uart_emul_device, test_config_get_defaults)
+{
+	struct uart_config cfg;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_UART_USE_RUNTIME_CONFIGURE);
+
+	/* Poison the configuration so that every field has to be written */
+	memset(&cfg, 0xff, sizeof(cfg));
+
+	/* euart1 only sets current-speed = <0>, the other fields fall back to 8N1 */
+	zassert_ok(uart_config_get(fixture->dev, &cfg));
+	zassert_equal(cfg.baudrate, 0);
+	zassert_equal(cfg.parity, UART_CFG_PARITY_NONE);
+	zassert_equal(cfg.stop_bits, UART_CFG_STOP_BITS_1);
+	zassert_equal(cfg.data_bits, UART_CFG_DATA_BITS_8);
+	zassert_equal(cfg.flow_ctrl, UART_CFG_FLOW_CTRL_NONE);
+}
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_emul_device_isr_handle_tx_ready(struct uart_emul_device_fixture *fixture)
 {

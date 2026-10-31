@@ -24,6 +24,9 @@ endif()
 # Add offset change as the very first code in ROM
 zephyr_linker_sources(ROM_START SORT_KEY "0x0bflb" sf_offset.ld)
 
+# Moves heaps and net packet pools to the regions chosen as bflb,heap-ram-early/late
+zephyr_linker_sources(RAM_SECTIONS heap_ram.ld)
+
 zephyr_sources(
   power.c
   checks.c

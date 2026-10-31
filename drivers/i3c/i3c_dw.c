@@ -257,8 +257,10 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SLV_DEBUG_STATUS 0x88
 
 #define SLV_INTR_REQ                        0x8c
-#define SLV_INTR_REQ_SIR_DATA_LENGTH(x)     (((x) << 16) & GENMASK(23, 16))
-#define SLV_INTR_REQ_MDB(x)                 (((x) << 8) & GENMASK(15, 8))
+#define SLV_INTR_REQ_SIR_DATA_LENGTH_MASK   GENMASK(23, 16)
+#define SLV_INTR_REQ_SIR_DATA_LENGTH(x)     (((x) << 16) & SLV_INTR_REQ_SIR_DATA_LENGTH_MASK)
+#define SLV_INTR_REQ_MDB_MASK               GENMASK(15, 8)
+#define SLV_INTR_REQ_MDB(x)                 (((x) << 8) & SLV_INTR_REQ_MDB_MASK)
 #define SLV_INTR_REQ_IBI_STS(x)             (((x) & GENMASK(9, 8)) >> 8)
 #define SLV_INTR_REQ_IBI_STS_IBI_ACCEPT     0x01
 #define SLV_INTR_REQ_IBI_STS_IBI_NO_ATTEMPT 0x03
@@ -1042,6 +1044,7 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 	}
 
 	dw_i3c_device_data = desc->controller_priv;
+	__ASSERT((dw_i3c_device_data != NULL), "Known device with no DAT slot bound");
 
 	return dw_i3c_device_data->id;
 }
@@ -1777,6 +1780,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 			return -EINVAL;
 		}
 
+		/* Clear stale MDB/SIR_DATA_LENGTH: the IP does not auto-clear
+		 * between IBIs.
+		 */
+		slv_intr_req &= ~(SLV_INTR_REQ_SIR_DATA_LENGTH_MASK | SLV_INTR_REQ_MDB_MASK);
+
 		/* MDB should be the first byte of the payload */
 		slv_intr_req |= SLV_INTR_REQ_MDB(request->payload[0]) |
 				SLV_INTR_REQ_SIR_DATA_LENGTH(request->payload_len - 1);
@@ -1800,6 +1808,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 	/* wait for SLV_IBI_RESP update */
 	status = k_sem_take(&data->ibi_sts_sem, K_MSEC(100));
 	if (status != 0) {
+		/* The request stays armed here and the IP keeps re-arbitrating for it;
+		 * SLV_INTR_REQ.SIR is not writable once in flight, so there is nothing
+		 * the target can withdraw.
+		 */
+		LOG_WRN("%s: no IBI TIR status within timeout", dev->name);
 		return -ETIMEDOUT;
 	}
 
@@ -2886,7 +2899,7 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		 * written to in bcr
 		 */
 		val |= SLV_CHAR_CTRL_BCR(target_cfg->bcr);
-		val |= SLV_CHAR_CTRL_DCR(target_cfg->dcr) << 8;
+		val |= FIELD_PREP(SLV_CHAR_CTRL_DCR_MASK, target_cfg->dcr);
 		/* HDR CAPs is not settable */
 		sys_write32(val, dw_i3c_regs(dev) + SLV_CHAR_CTRL);
 

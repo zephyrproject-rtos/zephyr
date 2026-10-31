@@ -78,9 +78,6 @@ static int netc_eth_vsi_set_config(const struct device *dev, struct net_if *ifac
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
-		/* Only update the local MAC address; the PSI owner manages the HW filter. */
-		net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
-				     NET_LINK_ETHERNET);
 		break;
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		return netc_eth_vsi_set_mac_filter(dev, &config->filter);

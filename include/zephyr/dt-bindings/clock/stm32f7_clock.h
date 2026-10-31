@@ -100,6 +100,10 @@
 #define DCKCFGR2_REG		0x90
 
 /** @brief Dedicated clocks configuration register selection helpers */
+/** DKCFGR1 devices */
+#define SAI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 21, 20, DCKCFGR1_REG)
+#define SAI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 23, 22, DCKCFGR1_REG)
+
 /** DKCFGR2 devices */
 #define USART1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, DCKCFGR2_REG)
 #define USART2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 3, 2, DCKCFGR2_REG)

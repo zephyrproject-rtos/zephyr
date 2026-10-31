@@ -11,15 +11,10 @@
 
 / {
 	soc {
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(96)>;
-		};
-
 		code_flash_ctrl: code-flash-ctrl {
 			compatible = "renesas,ra-flash-lp-controller";
-			command-interface = <&fcb>;
 			ranges;
+			command-interface = <&fcb>;
 			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -37,8 +32,8 @@
 
 		data_flash_ctrl: data-flash-ctrl {
 			compatible = "renesas,ra-flash-lp-controller";
-			command-interface = <&fcb>;
 			ranges;
+			command-interface = <&fcb>;
 			programming-enable;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -54,11 +49,26 @@
 			};
 		};
 
+		trng: trng {
+			compatible = "renesas,ra-sce5-rng";
+			status = "disabled";
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(96)>;
+		};
+
+		adc@4005c000 {
+			interrupts = <20 1>;
+			channel-available-mask = <0x1a0670>;
+		};
+
 		sci4: sci4@40070080 {
 			compatible = "renesas,ra-sci";
+			reg = <0x40070080 0x20>;
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
 			status = "disabled";
 
@@ -86,22 +96,12 @@
 			};
 		};
 
-		trng: trng {
-			compatible = "renesas,ra-sce5-rng";
-			status = "disabled";
-		};
-
-		adc@4005c000 {
-			interrupts = <20 1>;
-			channel-available-mask = <0x1a0670>;
-		};
-
 		pwm8: pwm8@40078800 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078800 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_8>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};

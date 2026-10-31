@@ -13,9 +13,9 @@
 };
 
 &feather_spi {
-	status = "okay";
 
 	cs-gpios = <&feather_header 16 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ad5592@0 {
 		compatible = "adi,ad559x";

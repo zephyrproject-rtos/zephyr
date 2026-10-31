@@ -471,6 +471,40 @@ ZTEST(net_websocket, test_recv_in_small_buffer)
 			  "Invalid message, should be '%s' was '%s'", frame1_msg, recv_buf);
 }
 
+ZTEST(net_websocket, test_partial_receive_reports_metadata)
+{
+	struct websocket_context ctx = {0};
+	uint32_t msg_type = 0;
+	uint64_t remaining = UINT64_MAX;
+	const size_t first_payload_len = 4;
+	const size_t first_input_len = FRAME1_HDR_SIZE + first_payload_len;
+	int ret;
+
+	ctx.recv_buf.buf = temp_recv_buf;
+	ctx.recv_buf.size = sizeof(temp_recv_buf);
+	memcpy(feed_buf, frame1, sizeof(frame1));
+
+	/* Input ends mid-frame before the caller's receive buffer is full. */
+	ret = test_recv_buf(feed_buf, first_input_len, &ctx, &msg_type, &remaining, recv_buf,
+			    sizeof(recv_buf));
+	zassert_equal(ret, first_payload_len, "Partial payload was not returned");
+	zassert_equal(remaining, sizeof(frame1_msg) - 1 - first_payload_len,
+		      "Remaining length was not updated after timeout");
+	zassert_equal(msg_type, WEBSOCKET_FLAG_TEXT | WEBSOCKET_FLAG_FINAL,
+		      "Message type was not updated after timeout");
+	zassert_mem_equal(recv_buf, frame1_msg, first_payload_len,
+			  "Partial payload was not unmasked");
+
+	ret = test_recv_buf(feed_buf + first_input_len, sizeof(frame1) - first_input_len, &ctx,
+			    &msg_type, &remaining, recv_buf + first_payload_len,
+			    sizeof(recv_buf) - first_payload_len);
+	zassert_equal(ret, sizeof(frame1_msg) - 1 - first_payload_len);
+	zassert_equal(remaining, 0);
+	zassert_equal(msg_type, WEBSOCKET_FLAG_TEXT | WEBSOCKET_FLAG_FINAL);
+	zassert_mem_equal(recv_buf, frame1_msg, sizeof(frame1_msg) - 1,
+			  "Payload did not resume correctly after timeout");
+}
+
 static void *setup(void)
 {
 	k_thread_system_pool_assign(k_current_get());

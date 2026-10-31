@@ -159,6 +159,10 @@ These commands will generate something similar to the output below::
     ========================================================================================
                                                                   21652
 
+Note, entries like ``gap in symbols at 0x00015945`` indicate regions where no
+symbols are defined in the binary. These may correspond to padding, read only
+data, or other regions that the compiler did not output symbols for.
+
 .. _footprint_tools_plot:
 
 Build Targets: ram_plot/rom_plot

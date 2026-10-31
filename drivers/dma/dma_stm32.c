@@ -245,7 +245,8 @@ static int dma_stm32_hal_config_increments(uint16_t source_addr_adj, uint16_t de
  * Default DMA driver configuration relies on these values,
  * in case the fields have not been initialized in the @p zephyr_config.
  *
- * hal_config->Channel			= DMA_CHANNEL_0;
+ * hal_config->Request			= DMA_CHANNEL_0;
+ * (On STM32F2/F4/F7 series this field is hal_config->Channel)
  * hal_config->Direction		= DMA_PERIPH_TO_MEMORY;
  * hal_config->PeriphInc		= DMA_PINC_DISABLE;
  * hal_config->MemInc			= DMA_MINC_DISABLE;
@@ -253,8 +254,10 @@ static int dma_stm32_hal_config_increments(uint16_t source_addr_adj, uint16_t de
  * hal_config->MemDataAlignment		= DMA_MDATAALIGN_BYTE;
  * hal_config->Mode			= DMA_NORMAL;
  * hal_config->Priority			= DMA_PRIORITY_LOW;
+ *
+ * Those 4 fields apply only for CONFIG_DMA_STM32_V1 along with above:
  * hal_config->FIFOMode			= DMA_FIFOMODE_DISABLE;
- * hal_config->FIFOThreshold		= DMA_FIFO_THRESHOLD_1QUARTERFULL;
+ * hal_config->FIFOThreshold		= DMA_FIFO_THRESHOLD_FULL;
  * hal_config->MemBurst			= DMA_MBURST_SINGLE;
  * hal_config->PeriphBurst		= DMA_PBURST_SINGLE;
  */
@@ -295,9 +298,10 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 	}
 
 
-#if defined(CONFIG_DMA_STM32_V1) && !defined(CONFIG_SOC_SERIES_STM32H7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32MP13X)
-	hal_config->Channel = zephyr_config->dma_slot;
+#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X)
+	hal_config->Channel = zephyr_config->dma_slot * DMA_CHANNEL_1;
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
 	/* DMA under "st,stm32-dma-v2bis" compatible do not possess
 	 * DMA_InitTypeDef->Channel or DMA_InitTypeDef->Request.

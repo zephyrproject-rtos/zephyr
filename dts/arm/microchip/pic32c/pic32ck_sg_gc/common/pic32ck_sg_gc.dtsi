@@ -14,9 +14,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -28,11 +28,15 @@
 	};
 
 	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
 		nvmctrl: flash-controller@44004000 {
 			reg = <0x44004000 0x7c>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
@@ -45,10 +49,6 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
-		};
-
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
 		};
 
 		clock: clock@44012000 {

@@ -20,9 +20,9 @@
 };
 
 &pwm130 {
-	status = "okay";
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-1 = <&pwm_sleep>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
 };

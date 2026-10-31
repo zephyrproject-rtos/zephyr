@@ -822,10 +822,11 @@ static int ataes132a_session_free(const struct device *dev,
 				  struct cipher_ctx *session)
 {
 	struct ataes132a_driver_state *state = session->drv_sessn_state;
+	struct ataes132a_device_data *data = dev->data;
 
-	ARG_UNUSED(dev);
-
+	k_sem_take(&data->device_sem, K_FOREVER);
 	state->in_use = false;
+	k_sem_give(&data->device_sem);
 
 	return 0;
 }
@@ -837,12 +838,9 @@ static int ataes132a_session_setup(const struct device *dev,
 {
 	uint8_t key_id = *((uint8_t *)ctx->key.handle);
 	const struct ataes132a_device_config *cfg = dev->config;
+	struct ataes132a_device_data *data = dev->data;
 	uint8_t config;
 
-	if (ataes132a_state[key_id].in_use) {
-		LOG_ERR("Session in progress");
-		return -EINVAL;
-	}
 	if (mode == CRYPTO_CIPHER_MODE_CCM &&
 	    ctx->mode_params.ccm_info.tag_len != 16U) {
 		LOG_ERR("ATAES132A support 16 byte tag only.");
@@ -853,15 +851,6 @@ static int ataes132a_session_setup(const struct device *dev,
 		LOG_ERR("ATAES132A support 12 byte nonce only.");
 		return -EINVAL;
 	}
-
-	ataes132a_state[key_id].in_use = true;
-	read_reg_i2c(&cfg->i2c, ATAES_KEYCFG_REG(key_id), &config);
-	ataes132a_state[key_id].key_config = config;
-	read_reg_i2c(&cfg->i2c, ATAES_CHIPCONFIG_REG, &config);
-	ataes132a_state[key_id].chip_config = config;
-
-	ctx->drv_sessn_state = &ataes132a_state[key_id];
-	ctx->device = dev;
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("ATAES132A unsupported algorithm");
@@ -905,6 +894,31 @@ static int ataes132a_session_setup(const struct device *dev,
 		}
 	}
 
+	/*
+	 * Claim the key slot only once every parameter has been validated,
+	 * so that no error path leaves it marked as in use. The check and
+	 * the update are done under the device semaphore, otherwise two
+	 * threads could both find the slot free and claim it.
+	 */
+	k_sem_take(&data->device_sem, K_FOREVER);
+
+	if (ataes132a_state[key_id].in_use) {
+		k_sem_give(&data->device_sem);
+		LOG_ERR("Session in progress");
+		return -EINVAL;
+	}
+
+	ataes132a_state[key_id].in_use = true;
+
+	k_sem_give(&data->device_sem);
+
+	read_reg_i2c(&cfg->i2c, ATAES_KEYCFG_REG(key_id), &config);
+	ataes132a_state[key_id].key_config = config;
+	read_reg_i2c(&cfg->i2c, ATAES_CHIPCONFIG_REG, &config);
+	ataes132a_state[key_id].chip_config = config;
+
+	ctx->drv_sessn_state = &ataes132a_state[key_id];
+	ctx->device = dev;
 	ctx->ops.cipher_mode = mode;
 
 	return 0;

@@ -3,6 +3,8 @@
  * SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
 / {
 	aliases {
 		dali = &mikroe_dali2_click;
@@ -11,10 +13,9 @@
 
 / {
 	mikroe_dali2_click: dali2_click {
-		status = "okay";
 		compatible = "zephyr,dali-pwm";
 
-		rx-gpios = <&mikrobus_header 7 GPIO_ACTIVE_HIGH>;
+		rx-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_HIGH>;
 		tx-flank-shift-us = <(-46)>;
 		rx-flank-shift-us = <(-68)>;
 
@@ -23,5 +24,6 @@
 		chan-id-rx = <0>;
 		chan-id-tx = <1>;
 		pwms = <&pwm0 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+		status = "okay";
 	};
 };

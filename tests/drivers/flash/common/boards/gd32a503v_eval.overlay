@@ -12,8 +12,8 @@
 
 		/* Set 4KB of storage at the border of bank0(256KB) and bank1(128KB). */
 		storage_partition: partition@3f800 {
-			label = "storage";
 			reg = <0x0003f800 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };

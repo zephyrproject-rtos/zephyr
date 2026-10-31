@@ -59,8 +59,8 @@
 				clocks = <&pll>;
 				div = <2>;
 				mul = <1 0>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pllq: pllq {
@@ -68,8 +68,8 @@
 				clocks = <&pll>;
 				div = <3>;
 				mul = <1 0>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pllr: pllr {
@@ -77,8 +77,8 @@
 				clocks = <&pll>;
 				div = <3>;
 				mul = <1 0>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -90,113 +90,22 @@
 			pll2p: pll2p {
 				compatible = "renesas,rx-cgc-pllccr-type";
 				div = <2>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pll2q: pll2q {
 				compatible = "renesas,rx-cgc-pllccr-type";
 				div = <2>;
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			pll2r: pll2r {
 				compatible = "renesas,rx-cgc-pllccr-type";
 				div = <2>;
-				status = "disabled";
 				#clock-cells = <0>;
-			};
-		};
-
-		pclkblock: pclkblock@87803000 {
-			compatible = "renesas,rx-cgc-pclk-block";
-			reg = <0x87803000 4>, <0x87803004 4>, <0x87803008 4>,
-			      <0x8780300c 4>, <0x87803010 4>, <0x87803014 4>;
-			reg-names = "MSTPA", "MSTPB", "MSTPC",
-				    "MSTPD", "MSTPE", "MSTPF";
-			#clock-cells = <0>;
-			clocks = <&pllp>;
-			status = "okay";
-
-			cpuclk: cpuclk {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <1>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			mriclk: mriclk {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <2>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			iclk: iclk {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <2>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclka: pclka {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <4>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclkb: pclkb {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <8>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclkc: pclkc {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <8>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclkd: pclkd {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <4>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclke: pclke {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <2>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			mrpclk: mrpclk {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <4>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			bclk: bclk {
-				compatible = "renesas,rx-cgc-pclk";
-				clocks = <&pllp>;
-				div = <8>;
-				#clock-cells = <2>;
-				status = "okay";
+				status = "disabled";
 			};
 		};
 
@@ -325,13 +234,104 @@
 			#clock-cells = <2>;
 			status = "disabled";
 		};
+
+		pclkblock: pclkblock@87803000 {
+			compatible = "renesas,rx-cgc-pclk-block";
+			reg = <0x87803000 4>, <0x87803004 4>, <0x87803008 4>,
+			      <0x8780300c 4>, <0x87803010 4>, <0x87803014 4>;
+			reg-names = "MSTPA", "MSTPB", "MSTPC",
+				    "MSTPD", "MSTPE", "MSTPF";
+			#clock-cells = <0>;
+			clocks = <&pllp>;
+			status = "okay";
+
+			cpuclk: cpuclk {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			mriclk: mriclk {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			iclk: iclk {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclke: pclke {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			mrpclk: mrpclk {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			bclk: bclk {
+				compatible = "renesas,rx-cgc-pclk";
+				clocks = <&pllp>;
+				div = <8>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+		};
 	};
 
 	soc {
 		sram0: memory@82000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x82000000 DT_SIZE_K(1536)>;
+			device_type = "memory";
 		};
 
 		mram_ctrl: mram-controller@8709c000 {

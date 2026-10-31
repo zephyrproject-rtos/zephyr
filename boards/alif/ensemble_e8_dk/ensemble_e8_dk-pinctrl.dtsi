@@ -62,39 +62,6 @@
 		};
 	};
 
-	uart5_default: uart5_default {
-		group0 {
-			pinmux = <PIN_P3_4__UART5_RX_A>;
-			input-enable;
-		};
-
-		group1 {
-			pinmux = <PIN_P3_5__UART5_TX_A>;
-		};
-	};
-
-	uart6_default: uart6_default {
-		group0 {
-			pinmux = <PIN_P10_5__UART6_RX_A>;
-			input-enable;
-		};
-
-		group1 {
-			pinmux = <PIN_P10_6__UART6_TX_A>;
-		};
-	};
-
-	uart7_default: uart7_default {
-		group0 {
-			pinmux = <PIN_P9_3__UART7_RX_B>;
-			input-enable;
-		};
-
-		group1 {
-			pinmux = <PIN_P9_4__UART7_TX_B>;
-		};
-	};
-
 	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <PIN_P3_5__I2C0_SDA_B>,
@@ -108,24 +75,6 @@
 		group0 {
 			pinmux = <PIN_P7_2__I2C1_SDA_C>,
 				 <PIN_P7_3__I2C1_SCL_C>;
-			input-enable;
-			drive-strength = <12>;
-		};
-	};
-
-	i2c2_default: i2c2_default {
-		group0 {
-			pinmux = <PIN_P0_7__I2C2_SDA_A>,
-				 <PIN_P0_6__I2C2_SCL_A>;
-			input-enable;
-			drive-strength = <12>;
-		};
-	};
-
-	i2c3_default: i2c3_default {
-		group0 {
-			pinmux = <PIN_P9_6__I2C3_SDA_B>,
-				 <PIN_P9_7__I2C3_SCL_B>;
 			input-enable;
 			drive-strength = <12>;
 		};

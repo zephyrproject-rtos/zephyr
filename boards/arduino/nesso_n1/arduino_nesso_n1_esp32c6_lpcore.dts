@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "Arduino Nesso N1 LP Core";
 	compatible = "arduino,nesso-n1";
+	model = "Arduino Nesso N1 LP Core";
 
 	chosen {
 		zephyr,flash = &flash0;

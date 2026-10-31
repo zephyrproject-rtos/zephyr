@@ -8,6 +8,7 @@
 
 import platform
 import re
+import shlex
 from pathlib import Path
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
@@ -48,6 +49,8 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         interface=None,
         rpd_file=None,
         speed=None,
+        tool_opt=None,
+        dry_run=False,
     ):
         super().__init__(cfg)
 
@@ -60,6 +63,12 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         self.device = device
         self.rpd_file = rpd_file
         self.speed = speed
+        self.dry_run = dry_run
+
+        self.tool_opt = []
+        if tool_opt is not None:
+            for opts in [shlex.split(opt) for opt in tool_opt]:
+                self.tool_opt += opts
 
     @classmethod
     def name(cls):
@@ -67,7 +76,7 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True)
+        return RunnerCaps(commands={'flash'}, erase=True, tool_opt=True, dry_run=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -99,6 +108,10 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--speed', help='Specify the serial port speed')
 
     @classmethod
+    def tool_opt_help(cls) -> str:
+        return "Additional options for Renesas Flash Programmer, e.g. '-osc 20'"
+
+    @classmethod
     def do_create(cls, cfg, args):
         return RfpBinaryRunner(
             cfg,
@@ -111,6 +124,8 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
             erase=args.erase,
             speed=args.speed,
             verify=args.verify,
+            tool_opt=args.tool_opt,
+            dry_run=args.dry_run,
         )
 
     @staticmethod
@@ -141,7 +156,9 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
             self.logger.error("Unsuppported command")
 
     def do_flash(self, **kwargs):
-        self.require(self.rfp_cmd[0])
+        if not self.dry_run:
+            self.require(self.rfp_cmd[0])
+
         self.ensure_output('hex')
 
         hex_name = self.cfg.hex_file
@@ -173,11 +190,12 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
 
         device = ['-device', self.device]
 
-        cmd = self.rfp_cmd + connection + device + load_image
+        cmd = self.rfp_cmd + connection + device + self.tool_opt + load_image
         self.check_call(cmd)
 
     def do_partition(self):
-        self.require(self.rfp_cmd[0])
+        if not self.dry_run:
+            self.require(self.rfp_cmd[0])
 
         rpd_path = self.rpd_file
 
@@ -191,5 +209,5 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         flash_option += ['boundary-file', rpd_path]
         flash_option += ['-p']
 
-        cmd = self.rfp_cmd + device + connection + flash_option
+        cmd = self.rfp_cmd + device + connection + self.tool_opt + flash_option
         self.check_call(cmd)

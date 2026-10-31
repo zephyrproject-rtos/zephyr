@@ -5,6 +5,8 @@
  */
 
 #include <stdarg.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include <zephyr/kernel.h>
 
@@ -25,16 +27,15 @@ int mpipe_object_set_properties(struct mpipe_object *obj, ...)
 
 	va_start(args, obj);
 
-	while (1) {
+	while (true) {
 		key = va_arg(args, uint32_t);
-		val = va_arg(args, const void *);
-
 		if (key == MPIPE_PROP_LIST_END) {
 			break;
 		}
 
+		val = va_arg(args, const void *);
 		ret = obj->set_property(obj, key, val);
-		if (ret < 0) {
+		if (ret != 0) {
 			va_end(args);
 			return ret;
 		}
@@ -60,16 +61,15 @@ int mpipe_object_get_properties(struct mpipe_object *obj, ...)
 
 	va_start(args, obj);
 
-	while (1) {
+	while (true) {
 		key = va_arg(args, uint32_t);
-		val = va_arg(args, void *);
-
 		if (key == MPIPE_PROP_LIST_END) {
 			break;
 		}
 
+		val = va_arg(args, void *);
 		ret = obj->get_property(obj, key, val);
-		if (ret < 0) {
+		if (ret != 0) {
 			va_end(args);
 			return ret;
 		}
@@ -82,5 +82,7 @@ int mpipe_object_get_properties(struct mpipe_object *obj, ...)
 
 void mpipe_object_init(struct mpipe_object *obj)
 {
+	__ASSERT_NO_MSG(obj != NULL);
+
 	memset(obj, 0, sizeof(struct mpipe_object));
 }

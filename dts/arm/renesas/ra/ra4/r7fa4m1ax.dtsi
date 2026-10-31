@@ -10,9 +10,50 @@
 
 / {
 	soc {
+		trng: trng {
+			compatible = "renesas,ra-sce5-rng";
+			status = "disabled";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		port_irq5: external-interrupt@40006005 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006005 0x1>;
+			channel = <5>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq8: external-interrupt@40006008 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006008 0x1>;
+			channel = <8>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq10: external-interrupt@4000600a {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600a 0x1>;
+			channel = <10>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq12: external-interrupt@4000600c {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600c 0x1>;
+			channel = <12>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
 		};
 
 		ioport6: gpio@400400c0 {
@@ -43,6 +84,11 @@
 			#gpio-cells = <2>;
 			ngpios = <16>;
 			status = "disabled";
+		};
+
+		adc@4005c000 {
+			interrupts = <20 1>;
+			channel-available-mask = <0x3ff7fff>;
 		};
 
 		sci2: sci2@40070040 {
@@ -77,68 +123,22 @@
 			};
 		};
 
-		adc@4005c000 {
-			interrupts = <20 1>;
-			channel-available-mask = <0x3ff7fff>;
-		};
-
-		port_irq5: external-interrupt@40006005 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006005 0x1>;
-			channel = <5>;
-			renesas,sample-clock-div = <64>;
-			#port-irq-cells = <0>;
-			status = "disabled";
-		};
-
-		port_irq8: external-interrupt@40006008 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006008 0x1>;
-			channel = <8>;
-			renesas,sample-clock-div = <64>;
-			#port-irq-cells = <0>;
-			status = "disabled";
-		};
-
-		port_irq10: external-interrupt@4000600a {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600a 0x1>;
-			channel = <10>;
-			renesas,sample-clock-div = <64>;
-			#port-irq-cells = <0>;
-			status = "disabled";
-		};
-
-		port_irq12: external-interrupt@4000600c {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600c 0x1>;
-			channel = <12>;
-			renesas,sample-clock-div = <64>;
-			#port-irq-cells = <0>;
-			status = "disabled";
-		};
-
-		trng: trng {
-			compatible = "renesas,ra-sce5-rng";
-			status = "disabled";
-		};
-
 		pwm6: pwm6@40078600 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078600 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_6>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078600 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm7: pwm7@40078700 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078700 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_7>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078700 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};

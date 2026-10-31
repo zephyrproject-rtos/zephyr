@@ -28,6 +28,7 @@
 LOG_MODULE_REGISTER(gpio_it8xxx2, LOG_LEVEL_ERR);
 
 #define ITE_GPIO_MAX_PINS 8
+#define PORT_PIN_MODE_MASK GENMASK(7, 6)
 
 /*
  * Structure gpio_ite_cfg is about the setting of GPIO
@@ -87,6 +88,11 @@ static int gpio_ite_configure(const struct device *dev,
 	struct gpio_ite_data *data = dev->data;
 	uint8_t mask = BIT(pin);
 	int rc = 0;
+
+	/* Simultaneous input and output is not supported */
+	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_MASK) {
+		return -ENOTSUP;
+	}
 
 	/* Don't support "open source" mode */
 	if (((flags & GPIO_SINGLE_ENDED) != 0) &&
@@ -373,6 +379,66 @@ static int gpio_ite_manage_callback(const struct device *dev,
 	return rc;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_ite_get_direction(const struct device *dev, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_ite_cfg *gpio_config = dev->config;
+	struct gpio_ite_data *data = dev->data;
+
+	if (inputs != NULL) {
+		*inputs = 0;
+	}
+
+	if (outputs != NULL) {
+		*outputs = 0;
+	}
+
+	/* Mask out pins not supported by this port */
+	map &= gpio_config->common.port_pin_mask;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	for (gpio_pin_t pin = 0; pin < gpio_config->num_pins; pin++) {
+		uint8_t gpcr;
+
+		/* Skip pins that are not set in the requested map */
+		if (!(map & BIT(pin))) {
+			continue;
+		}
+
+		gpcr = ECREG((uint8_t *)gpio_config->reg_gpcr + pin);
+		/* When configured to disconnect, the pin will be set to tristate mode */
+		if (gpcr == GPCR_PORT_PIN_MODE_TRISTATE) {
+			continue;
+		}
+
+		if (gpio_config->kbs_ctrl) {
+			if ((gpcr & KSIX_KSOX_KBS_GPIO_MODE) == 0) {
+				continue;
+			}
+
+			if ((gpcr & KSIX_KSOX_GPIO_OUTPUT) != 0) {
+				if (outputs != NULL) {
+					*outputs |= BIT(pin);
+				}
+			} else if (inputs != NULL) {
+				*inputs |= BIT(pin);
+			}
+		} else if ((outputs != NULL) &&
+			   ((gpcr & PORT_PIN_MODE_MASK) == GPCR_PORT_PIN_MODE_OUTPUT)) {
+			*outputs |= BIT(pin);
+		} else if ((inputs != NULL) &&
+			   ((gpcr & PORT_PIN_MODE_MASK) == GPCR_PORT_PIN_MODE_INPUT)) {
+			*inputs |= BIT(pin);
+		}
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static void gpio_ite_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
@@ -397,17 +463,22 @@ static void gpio_ite_isr(const void *arg)
 			 */
 			gpio_fire_callbacks(&data->callbacks, dev, BIT(pin));
 
+			if (((data->level_isr_high | data->level_isr_low) & BIT(pin)) &&
+			    irq_is_enabled(irq)) {
+				k_work_submit(&data->interrupt_worker);
+			}
+
 			break;
 		}
 	}
-	/* Reschedule worker */
-	k_work_submit(&data->interrupt_worker);
 }
 
 static void gpio_ite_interrupt_worker(struct k_work *work)
 {
 	struct gpio_ite_data * const data = CONTAINER_OF(
 		work, struct gpio_ite_data, interrupt_worker);
+	const struct gpio_ite_cfg *gpio_config = data->instance->config;
+	uint8_t num_pins = gpio_config->num_pins;
 	gpio_port_value_t value;
 	gpio_port_value_t triggered_int;
 
@@ -417,6 +488,15 @@ static void gpio_ite_interrupt_worker(struct k_work *work)
 
 	triggered_int = (value & data->level_isr_high) | (~value & data->level_isr_low);
 	k_spin_unlock(&data->lock, key);
+
+	if (triggered_int != 0) {
+		for (uint8_t pin = 0; pin < num_pins; pin++) {
+			if ((triggered_int & BIT(pin)) &&
+			    !irq_is_enabled(gpio_config->gpio_irq[pin])) {
+				triggered_int &= ~BIT(pin);
+			}
+		}
+	}
 
 	if (triggered_int != 0) {
 		gpio_fire_callbacks(&data->callbacks, data->instance,
@@ -442,11 +522,21 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 		/* Disable GPIO interrupt */
 		irq_disable(gpio_irq);
+		if (mode == GPIO_INT_MODE_DISABLED) {
+			k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+			data->level_isr_low &= ~BIT(pin);
+			data->level_isr_high &= ~BIT(pin);
+			k_spin_unlock(&data->lock, key);
+		}
 		return 0;
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 	} else if (mode == GPIO_INT_MODE_ENABLE_ONLY) {
 		/* Only enable GPIO interrupt */
 		irq_enable(gpio_irq);
+		if ((data->level_isr_high | data->level_isr_low) & BIT(pin)) {
+			k_work_submit(&data->interrupt_worker);
+		}
 		return 0;
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
 	}
@@ -499,7 +589,9 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev,
 	/* Enable GPIO interrupt */
 	irq_connect_dynamic(gpio_irq, 0, gpio_ite_isr, dev, 0);
 	irq_enable(gpio_irq);
-	k_work_submit(&data->interrupt_worker);
+	if (mode == GPIO_INT_MODE_LEVEL) {
+		k_work_submit(&data->interrupt_worker);
+	}
 
 	return 0;
 }
@@ -516,6 +608,9 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 	.port_toggle_bits = gpio_ite_port_toggle_bits,
 	.pin_interrupt_configure = gpio_ite_pin_interrupt_configure,
 	.manage_callback = gpio_ite_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_ite_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 static int gpio_ite_init(const struct device *dev)

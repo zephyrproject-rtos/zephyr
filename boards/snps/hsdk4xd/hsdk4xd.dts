@@ -9,8 +9,8 @@
 #include <synopsys/arc_hs4xd.dtsi>
 
 / {
-	model = "hsdk4xd";
 	compatible = "snps,hsdk4xd";
+	model = "hsdk4xd";
 
 	aliases {
 		uart-dbg = &uart_dbg;
@@ -26,8 +26,8 @@
 arduino_spi: &spi2 {};
 
 &uart_dbg {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &creg_gpio {

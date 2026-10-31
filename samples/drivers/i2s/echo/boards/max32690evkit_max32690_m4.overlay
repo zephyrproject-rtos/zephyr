@@ -14,9 +14,9 @@ i2s_rxtx: &i2s0 {
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2c_sda_p1_7 &i2c2c_scl_p1_8>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	max9867: max9867@18 {
 		compatible = "adi,max9867";

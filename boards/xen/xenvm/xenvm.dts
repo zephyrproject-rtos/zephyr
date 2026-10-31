@@ -18,8 +18,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "XENVM";
 	compatible = "xen,xenvm";
+	model = "XENVM";
 	interrupt-parent = <&gic>;
 	#address-cells = <0x02>;
 	#size-cells = <0x02>;
@@ -38,10 +38,10 @@
 		#size-cells = <0x00>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,armv8";
-			enable-method = "psci";
 			reg = <0x00>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 
@@ -50,31 +50,11 @@
 		method = "hvc";
 	};
 
-	ram: memory@40000000 {
-		device_type = "memory";
-		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
-	};
-
-	gic: interrupt-controller@3001000 {
-		compatible = "arm,gic-v2", "arm,gic";
-		#interrupt-cells = <0x04>;
-		#address-cells = <0x00>;
-		interrupt-controller;
-		reg = <0x00 0x3001000 0x00 0x1000 0x00 0x3002000 0x00 0x2000>;
-	};
-
 	timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 0x0d IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
 			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-	};
-
-	hypervisor: hypervisor@38000000 {
-		compatible = "xen,xen";
-		reg = <0x00 0x38000000 0x00 0x1000000>;
-		interrupts = <GIC_PPI 0x0f IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 	};
 
@@ -86,5 +66,25 @@
 	xen_wdt: watchdog {
 		compatible = "xen,watchdog";
 		status = "okay";
+	};
+
+	gic: interrupt-controller@3001000 {
+		compatible = "arm,gic-v2", "arm,gic";
+		reg = <0x00 0x3001000 0x00 0x1000 0x00 0x3002000 0x00 0x2000>;
+		#interrupt-cells = <0x04>;
+		#address-cells = <0x00>;
+		interrupt-controller;
+	};
+
+	hypervisor: hypervisor@38000000 {
+		compatible = "xen,xen";
+		reg = <0x00 0x38000000 0x00 0x1000000>;
+		interrupts = <GIC_PPI 0x0f IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	ram: memory@40000000 {
+		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
+		device_type = "memory";
 	};
 };

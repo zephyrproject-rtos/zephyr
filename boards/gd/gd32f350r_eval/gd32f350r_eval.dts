@@ -9,8 +9,8 @@
 #include "gd32f350r_eval-pinctrl.dtsi"
 
 / {
-	model = "GigaDevice GD32F350R Evaluation Kit";
 	compatible = "gd,gd32f350r-eval";
+	model = "GigaDevice GD32F350R Evaluation Kit";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -26,18 +26,18 @@
 };
 
 &usart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc0 {
-	status = "okay";
 	/* Set ADC0 clock source to RCU_ADCCK_APB2_DIV4. */
 	rcu-clock-source = <4>;
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &fwdgt {

@@ -54,13 +54,24 @@ PI controller
 *************
 
 :c:struct:`precision_pi` is an instance-based proportional-integral controller.
-Each instance stores its own gains and integral term. For every error sample,
-the update is equivalent to:
+Each instance stores its own gains, limits and integral term.
+:c:func:`precision_pi_update_interval` takes an error sample and the interval
+since the previous sample; the update is equivalent to:
 
 .. code-block:: c
 
-   integral += ki * error;
-   output = kp * error + integral;
+   integral = clamp(integral + (ki / interval) * error, integral_limit);
+   output = clamp((kp / interval) * error + integral, output_limit);
+
+The gains are given for an interval of 1. When the plant integrates the output
+over the interval, as a clock does with a rate correction, the loop gain per
+sample is then the same for any interval. :c:func:`precision_pi_update` is the
+same update with an interval of 1.
+
+:c:func:`precision_pi_set_limits` sets the two limits; a limit of 0 disables it,
+which is the state after :c:func:`precision_pi_init`. While the output is at its
+limit, the integral term keeps its value instead of moving further towards the
+limit, so it does not wind up.
 
 The controller does not decide whether an error should be stepped, rejected, or
 used for rate adjustment. It also does not track synchronization, acquisition,
@@ -69,9 +80,19 @@ reset the accumulated integral term when their policy requires it.
 
 The PTP and gPTP integrations initialize their controllers from
 :kconfig:option:`CONFIG_PRECISION_TIMING_PI_KP` and
-:kconfig:option:`CONFIG_PRECISION_TIMING_PI_KI`. The integer values express the
-gains in thousandths. Direct users of :c:func:`precision_pi_init` may provide
-different gains for each controller instance.
+:kconfig:option:`CONFIG_PRECISION_TIMING_PI_KI`, with the limits from
+:kconfig:option:`CONFIG_PRECISION_TIMING_PI_INTEGRAL_LIMIT_PPM` and
+:kconfig:option:`CONFIG_PRECISION_TIMING_PI_OUTPUT_LIMIT_PPM`. The integer gain
+values express the gains in thousandths. Direct users of
+:c:func:`precision_pi_init` may provide different gains for each controller
+instance.
+
+The PTP servo scales its gains by the time since its previous update when
+:kconfig:option:`CONFIG_PTP_SERVO_SCALE_GAINS_BY_SYNC_INTERVAL` is enabled.
+:kconfig:option:`CONFIG_PTP_SERVO_STEP_THRESHOLD_MS` and
+:kconfig:option:`CONFIG_PTP_SERVO_OUTLIER_THRESHOLD_MS` set the offsets above
+which the PTP servo steps the clock and, while locked, rejects a sample. Before
+the servo locks, it also steps offsets above a fixed 100 ms.
 
 Protocol integration
 ********************

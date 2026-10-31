@@ -5,6 +5,7 @@ config ETH_BCMGENET
 	bool "Broadcom GENET (Gigabit Ethernet) driver"
 	default y
 	depends on DT_HAS_BRCM_GENET_ENABLED
+	select ETH_PHY_DRIVER
 	help
 	  Enable Broadcom GENET (Gigabit Ethernet) driver.
 

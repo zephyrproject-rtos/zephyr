@@ -704,7 +704,7 @@ static int ifx_mdma_get_status(const struct device *dev, uint32_t channel, struc
 
 	stat->busy = (get_active_channels(cfg->regs) & BIT(channel)) != 0;
 
-	/* pending length is the remaining bytes in the current discriptor chain */
+	/* pending length is the remaining bytes in the current descriptor chain */
 	head = &data->channels[channel].descr[0].descriptor;
 	if (head != NULL && ((head->src != 0) || (head->dst != 0))) {
 		uint32_t total = get_total_size(dev, channel);

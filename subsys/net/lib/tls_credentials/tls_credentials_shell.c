@@ -60,6 +60,9 @@ static const struct cred_type_string type_strings[] = {
 	{"PRE_SHARED_KEY",	TLS_CREDENTIAL_PSK},
 	{"PSK",			TLS_CREDENTIAL_PSK},
 
+	{"PRE_SHARED_KEY_PSA",	TLS_CREDENTIAL_PSK_PSA},
+	{"PSK_PSA",		TLS_CREDENTIAL_PSK_PSA},
+
 	{"PRE_SHARED_KEY_ID",	TLS_CREDENTIAL_PSK_ID},
 	{"PSK_ID",		TLS_CREDENTIAL_PSK_ID}
 };
@@ -468,7 +471,7 @@ static int tls_cred_cmd_add(const struct shell *sh, size_t argc, char *argv[])
 		cred_copy = k_malloc(cred_written);
 		if (!cred_copy) {
 			shell_fprintf(sh, SHELL_ERROR, "Not enough heap for TLS credential of "
-						       "size %d.\n", cred_written);
+						       "size %zu.\n", cred_written);
 			err = -ENOMEM;
 			goto cleanup;
 		}
@@ -495,8 +498,8 @@ static int tls_cred_cmd_add(const struct shell *sh, size_t argc, char *argv[])
 	/* Do not free the copied key during cleanup, since it was successfully written. */
 	keep_copy = true;
 
-	shell_fprintf(sh, SHELL_NORMAL, "Added TLS credential of type %s, sectag %d, and length %d "
-					"bytes.\n", cred_type_name(type), sectag, cred_written);
+	shell_fprintf(sh, SHELL_NORMAL, "Added TLS credential of type %s, sectag %d, and length "
+					"%zu bytes.\n", cred_type_name(type), sectag, cred_written);
 
 cleanup:
 	/* Unlock credentials since we are done interacting with internal state. */
@@ -553,7 +556,7 @@ static void tls_cred_cmd_load_bypass(const struct shell *sh, uint8_t *data, size
 
 	if (terminate) {
 		shell_set_bypass(sh, NULL, NULL);
-		shell_fprintf(sh, SHELL_NORMAL, "Stored %d bytes.\n", cred_written);
+		shell_fprintf(sh, SHELL_NORMAL, "Stored %zu bytes.\n", cred_written);
 	}
 }
 
@@ -652,7 +655,7 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	int i;
 	int remaining;
-	int written;
+	size_t written;
 	int err = 0;
 	size_t cred_len;
 	sec_tag_t sectag;

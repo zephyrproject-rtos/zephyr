@@ -12,8 +12,8 @@
 #include "mt8370_genio_510_evk-pinctrl.dtsi"
 
 / {
-	model = "MediaTek Genio 510 EVK";
 	compatible = "mediatek,mt8370-genio-510-evk";
+	model = "MediaTek Genio 510 EVK";
 
 	chosen {
 		zephyr,console = &uart1;

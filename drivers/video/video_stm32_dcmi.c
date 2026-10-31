@@ -274,14 +274,14 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	int err;
 
 	if (!enable) {
-		err = video_stream_stop(config->sensor_dev, type);
-		if (err < 0) {
-			return err;
-		}
-
 		hal_ret = HAL_DCMI_Stop(&data->hdcmi);
 		if (hal_ret != HAL_OK) {
 			LOG_DBG("Failed to stop DCMI");
+		}
+
+		err = video_stream_stop(config->sensor_dev, type);
+		if (err < 0) {
+			return err;
 		}
 
 		/* Release the video buffer allocated when start streaming */

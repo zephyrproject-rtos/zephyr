@@ -27,6 +27,9 @@ int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
 	     uint8_t *buf, uint8_t buf_size,
 	     int16_t *rssi, int8_t *snr);
 
+/* Listen before talk: -EBUSY when the channel is occupied */
+int radio_lbt(uint32_t freq, uint32_t bandwidth_hz, int16_t threshold_dbm, uint32_t scan_time_ms);
+
 /* Airtime in ms; radio must already be configured for TX */
 uint32_t radio_airtime(uint32_t data_len);
 

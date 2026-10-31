@@ -22,8 +22,8 @@
 
 		uc8176_waveshare_epaper_gdew042t2: uc8176@0 {
 			compatible = "gooddisplay,gdew042t2", "ultrachip,uc8176";
-			mipi-max-frequency = <4000000>;
 			reg = <0>;
+			mipi-max-frequency = <4000000>;
 			width = <400>;
 			height = <300>;
 			busy-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;

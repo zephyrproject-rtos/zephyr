@@ -31,7 +31,7 @@ LOG_MODULE_DECLARE(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 #define NET_DPLPMTUD_MAX_ENTRIES (NET_IPV4_DPLPMTUD_ENTRIES + NET_IPV6_DPLPMTUD_ENTRIES)
 
 static struct net_dplpmtud_entry dplpmtud_entries[NET_DPLPMTUD_MAX_ENTRIES];
-static K_MUTEX_DEFINE(lock);
+static K_MUTEX_DEFINE(dplpmtud_lock);
 
 static inline uint16_t normalize_plpmtu(uint16_t plpmtu)
 {
@@ -391,12 +391,12 @@ static struct net_dplpmtud_entry *lookup_path_entry(struct net_dplpmtud_path *pa
 	return net_dplpmtud_get_entry(net_sad(&path->dst));
 }
 
-/* Resolve the cache entry for a path. The caller MUST hold @lock across both
+/* Resolve the cache entry for a path. The caller MUST hold @dplpmtud_lock across both
  * this lookup and the subsequent read/update of the returned entry. Otherwise a
  * concurrent net_dplpmtud_get_or_create_entry() on another thread could evict
  * and reuse the entry (LRU) in the window between lookup and use, applying the
  * operation to the wrong destination. The per-operation helpers below take
- * @lock too, but k_mutex is recursive so the nested acquisition is a no-op
+ * @dplpmtud_lock too, but k_mutex is recursive so the nested acquisition is a no-op
  * while the wrapper already holds it.
  */
 static struct net_dplpmtud_entry *get_path_entry(struct net_dplpmtud_path *path,
@@ -435,9 +435,9 @@ int net_dplpmtud_init_path(struct net_dplpmtud_path *path,
 	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
 	path->in_use = true;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 	entry = get_path_entry(path, true, true);
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	if (entry == NULL) {
 		memset(path, 0, sizeof(*path));
@@ -456,7 +456,7 @@ void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
 
@@ -478,7 +478,7 @@ void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 void net_dplpmtud_reopen_path_search(struct net_dplpmtud_path *path)
@@ -489,7 +489,7 @@ void net_dplpmtud_reopen_path_search(struct net_dplpmtud_path *path)
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	if (entry != NULL) {
@@ -506,7 +506,7 @@ void net_dplpmtud_reopen_path_search(struct net_dplpmtud_path *path)
 					   entry->max_plpmtu);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)
@@ -514,7 +514,7 @@ int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)
 	struct net_dplpmtud_entry *entry;
 	int mtu;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
@@ -523,7 +523,7 @@ int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)
 		mtu = MIN(get_path_limit(path, entry), entry->validated_plpmtu);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return mtu;
 }
@@ -535,11 +535,11 @@ int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
 	uint16_t search_high;
 	int probe_size;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&dplpmtud_lock);
 		return -ENOENT;
 	}
 
@@ -560,7 +560,7 @@ int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return probe_size;
 }
@@ -570,12 +570,12 @@ bool net_dplpmtud_path_probe_in_flight(struct net_dplpmtud_path *path)
 	struct net_dplpmtud_entry *entry;
 	bool in_flight;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = lookup_path_entry(path, false);
 	in_flight = (entry != NULL) ? entry->probe_in_flight : false;
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return in_flight;
 }
@@ -586,7 +586,7 @@ int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
 	struct net_dplpmtud_entry *entry;
 	int ret;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, true, true);
 	if (entry == NULL) {
@@ -597,7 +597,7 @@ int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
 		ret = net_dplpmtud_start_probe(entry, probe_size);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return ret;
 }
@@ -608,13 +608,13 @@ int net_dplpmtud_on_path_probe_acked(struct net_dplpmtud_path *path,
 	struct net_dplpmtud_entry *entry;
 	int ret;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	ret = (entry == NULL) ? -ENOENT :
 		net_dplpmtud_probe_acked(entry, probe_size);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return ret;
 }
@@ -625,13 +625,13 @@ int net_dplpmtud_on_path_probe_lost(struct net_dplpmtud_path *path,
 	struct net_dplpmtud_entry *entry;
 	int ret;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	ret = (entry == NULL) ? -ENOENT :
 		net_dplpmtud_probe_lost(entry, probe_size);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return ret;
 }
@@ -640,14 +640,14 @@ void net_dplpmtud_note_path_blackhole(struct net_dplpmtud_path *path)
 {
 	struct net_dplpmtud_entry *entry;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	if (entry != NULL) {
 		net_dplpmtud_note_blackhole(entry);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 struct net_dplpmtud_entry *net_dplpmtud_get_entry(const struct net_sockaddr *dst)
@@ -658,9 +658,9 @@ struct net_dplpmtud_entry *net_dplpmtud_get_entry(const struct net_sockaddr *dst
 		return NULL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 	entry = get_entry_locked(dst);
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return entry;
 }
@@ -673,7 +673,7 @@ struct net_dplpmtud_entry *net_dplpmtud_get_or_create_entry(const struct net_soc
 		return NULL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = get_entry_locked(dst);
 	if (entry != NULL) {
@@ -692,7 +692,7 @@ struct net_dplpmtud_entry *net_dplpmtud_get_or_create_entry(const struct net_soc
 	}
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return entry;
 }
@@ -705,11 +705,11 @@ void net_dplpmtud_init_entry(struct net_dplpmtud_entry *entry,
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	init_entry_defaults_locked(entry, base_plpmtu, max_plpmtu);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 void net_dplpmtud_set_base_plpmtu(struct net_dplpmtud_entry *entry, uint16_t base_plpmtu)
@@ -718,7 +718,7 @@ void net_dplpmtud_set_base_plpmtu(struct net_dplpmtud_entry *entry, uint16_t bas
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry->base_plpmtu = normalize_plpmtu(base_plpmtu);
 	entry->max_plpmtu = normalize_max_plpmtu(entry->base_plpmtu, entry->max_plpmtu);
@@ -726,7 +726,7 @@ void net_dplpmtud_set_base_plpmtu(struct net_dplpmtud_entry *entry, uint16_t bas
 	entry->last_update = k_uptime_get_32();
 	update_state_locked(entry);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 void net_dplpmtud_set_max_plpmtu(struct net_dplpmtud_entry *entry, uint16_t max_plpmtu)
@@ -735,14 +735,14 @@ void net_dplpmtud_set_max_plpmtu(struct net_dplpmtud_entry *entry, uint16_t max_
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry->max_plpmtu = normalize_max_plpmtu(entry->base_plpmtu, max_plpmtu);
 	sync_search_bounds_locked(entry);
 	entry->last_update = k_uptime_get_32();
 	update_state_locked(entry);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 uint16_t net_dplpmtud_get_next_probe_size(struct net_dplpmtud_entry *entry)
@@ -753,7 +753,7 @@ uint16_t net_dplpmtud_get_next_probe_size(struct net_dplpmtud_entry *entry)
 		return 0U;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	if (entry->probe_in_flight) {
 		probe_size = entry->probe_size;
@@ -764,7 +764,7 @@ uint16_t net_dplpmtud_get_next_probe_size(struct net_dplpmtud_entry *entry)
 		probe_size = next_probe_size(entry->search_low, entry->search_high);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return probe_size;
 }
@@ -777,7 +777,7 @@ int net_dplpmtud_start_probe(struct net_dplpmtud_entry *entry, uint16_t probe_si
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	if (entry->probe_in_flight) {
 		ret = -EALREADY;
@@ -796,7 +796,7 @@ int net_dplpmtud_start_probe(struct net_dplpmtud_entry *entry, uint16_t probe_si
 	entry->last_update = k_uptime_get_32();
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return ret;
 }
@@ -811,7 +811,7 @@ int net_dplpmtud_probe_acked(struct net_dplpmtud_entry *entry, uint16_t probe_si
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	if (!entry->probe_in_flight || entry->probe_size != probe_size) {
 		ret = -EINVAL;
@@ -829,7 +829,7 @@ int net_dplpmtud_probe_acked(struct net_dplpmtud_entry *entry, uint16_t probe_si
 	sync_pmtu_cache_from_validated(entry, validated_plpmtu, previous_validated);
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return ret;
 }
@@ -842,7 +842,7 @@ int net_dplpmtud_probe_lost(struct net_dplpmtud_entry *entry, uint16_t probe_siz
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	if (!entry->probe_in_flight || entry->probe_size != probe_size) {
 		ret = -EINVAL;
@@ -868,7 +868,7 @@ int net_dplpmtud_probe_lost(struct net_dplpmtud_entry *entry, uint16_t probe_siz
 	update_state_locked(entry);
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return ret;
 }
@@ -882,7 +882,7 @@ void net_dplpmtud_note_blackhole(struct net_dplpmtud_entry *entry)
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	previous_validated = entry->validated_plpmtu;
 	entry->blackhole_count++;
@@ -894,7 +894,7 @@ void net_dplpmtud_note_blackhole(struct net_dplpmtud_entry *entry)
 	entry->state = NET_DPLPMTUD_STATE_ERROR;
 	entry->last_update = k_uptime_get_32();
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	sync_pmtu_cache_from_validated(entry, validated_plpmtu, previous_validated);
 }
@@ -913,10 +913,10 @@ void net_dplpmtud_sync_from_pmtu(const struct net_sockaddr *dst, uint16_t pmtu)
 	 */
 	plpmtu = pmtu_to_plpmtu(dst->sa_family, pmtu);
 
-	/* Hold @lock across the lookup/create and the update so the entry
+	/* Hold @dplpmtud_lock across the lookup/create and the update so the entry
 	 * cannot be evicted and reused for another destination in between.
 	 */
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	entry = net_dplpmtud_get_entry(dst);
 	if (entry == NULL) {
@@ -932,7 +932,7 @@ void net_dplpmtud_sync_from_pmtu(const struct net_sockaddr *dst, uint16_t pmtu)
 		net_dplpmtud_note_blackhole(entry);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }
 
 int net_dplpmtud_foreach(net_dplpmtud_cb_t cb, void *user_data)
@@ -944,7 +944,7 @@ int net_dplpmtud_foreach(net_dplpmtud_cb_t cb, void *user_data)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(dplpmtud_entries); i++) {
 		if (!dplpmtud_entries[i].in_use) {
@@ -955,18 +955,18 @@ int net_dplpmtud_foreach(net_dplpmtud_cb_t cb, void *user_data)
 		count++;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 
 	return count;
 }
 
 void net_dplpmtud_init(void)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&dplpmtud_lock, K_FOREVER);
 
 	ARRAY_FOR_EACH(dplpmtud_entries, i) {
 		dplpmtud_entries[i].in_use = false;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&dplpmtud_lock);
 }

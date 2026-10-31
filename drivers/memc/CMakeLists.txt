@@ -1,9 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/memc.h)
+
 zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_USERSPACE memc_handlers.c)
 
 if((DEFINED CONFIG_FLASH_MCUX_FLEXSPI_XIP) AND (DEFINED CONFIG_FLASH))
   zephyr_code_relocate(FILES memc_mcux_flexspi.c LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+  zephyr_code_relocate(FILES memc_mcux_flexspi.c LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_RODATA)
 endif()
 
 if((DEFINED CONFIG_FLASH_MCUX_XSPI_XIP) AND (DEFINED CONFIG_FLASH))
@@ -32,6 +37,8 @@ zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_APS_Z8 memc_mspi_aps_z8.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MSPI_IS66WV memc_mspi_is66wv.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_S32_QSPI memc_nxp_s32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_S32_XSPI memc_nxp_s32_xspi.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_SEMC memc_nxp_semc.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_SEMC_SDRAM memc_nxp_semc_sdram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_NXP_SRAMC memc_nxp_sramc.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_RENESAS_RA_SDRAM memc_renesas_ra_sdram.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_SAM_SMC memc_sam_smc.c)

@@ -31,6 +31,7 @@
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/usb/usb_device.h>
@@ -44,6 +45,7 @@
 #include "hw_codec.h"
 
 LOG_MODULE_REGISTER(lc3, CONFIG_LOG_DEFAULT_LEVEL);
+ZASSERT_MODULE(DEFAULT);
 
 #define LC3_THREAD_PRIO 10
 BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO >= LC3_THREAD_PRIO);
@@ -53,6 +55,7 @@ struct lc3_data {
 	struct net_buf *buf;
 	struct stream_rx *stream;
 	uint32_t ts;
+	uint32_t disable_cnt; /* stream->lc3_disable_cnt when the SDU was queued */
 	bool do_plc;
 };
 
@@ -60,6 +63,7 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(lc3_data_slab, struct lc3_data, CONFIG_BT_ISO_RX_B
 
 static int16_t lc3_rx_buf[LC3_MAX_NUM_SAMPLES_MONO];
 static K_FIFO_DEFINE(lc3_in_fifo);
+static K_MUTEX_DEFINE(lc3_decoder_mutex);
 
 /* We only want to send USB to left/right from a single stream. If we have 2 left streams, the
  * outgoing audio is going to be terrible.
@@ -289,20 +293,29 @@ static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 	while (true) {
 		struct lc3_data *data = k_fifo_get(&lc3_in_fifo, K_FOREVER);
 		struct stream_rx *stream = data->stream;
+		int err;
 
-		if (stream->lc3_decoder == NULL) {
-			LOG_WRN("Decoder is NULL, discarding data from FIFO");
+		err = k_mutex_lock(&lc3_decoder_mutex, K_FOREVER);
+		ZASSERT(err == 0, "k_mutex_lock failed with %d", err);
+
+		if (stream->lc3_decoder == NULL || data->disable_cnt != stream->lc3_disable_cnt) {
+			err = k_mutex_unlock(&lc3_decoder_mutex);
+			ZASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			LOG_WRN("Decoder stopped, discarding data from FIFO");
+			net_buf_unref(data->buf);
 			k_mem_slab_free(&lc3_data_slab, (void *)data);
 			continue; /* Wait for new data */
 		}
 
 		do_lc3_decode(data);
 
+		err = k_mutex_unlock(&lc3_decoder_mutex);
+		ZASSERT(err == 0, "Failed to unlock mutex: %d", err);
 		k_mem_slab_free(&lc3_data_slab, (void *)data);
 	}
 }
 
-int lc3_enable(struct stream_rx *stream)
+static int do_lc3_enable(struct stream_rx *stream)
 {
 	const struct bt_audio_codec_cfg *codec_cfg = stream->stream.codec_cfg;
 	uint32_t lc3_frame_duration_us = 0U;
@@ -427,13 +440,38 @@ int lc3_enable(struct stream_rx *stream)
 	return 0;
 }
 
+int lc3_enable(struct stream_rx *stream)
+{
+	int ret;
+	int err;
+
+	err = k_mutex_lock(&lc3_decoder_mutex, K_FOREVER);
+	ZASSERT(err == 0, "k_mutex_lock failed with %d", err);
+
+	ret = do_lc3_enable(stream);
+
+	err = k_mutex_unlock(&lc3_decoder_mutex);
+	ZASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	return ret;
+}
+
 int lc3_disable(struct stream_rx *stream)
 {
+	int err;
+
+	err = k_mutex_lock(&lc3_decoder_mutex, K_FOREVER);
+	ZASSERT(err == 0, "k_mutex_lock failed with %d", err);
+
 	if (stream->lc3_decoder == NULL) {
-		return -EINVAL;
+		err = k_mutex_unlock(&lc3_decoder_mutex);
+		ZASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+		return -EALREADY;
 	}
 
 	stream->lc3_decoder = NULL;
+	stream->lc3_disable_cnt++;
 
 	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 		if (usb_left_stream == stream) {
@@ -443,6 +481,9 @@ int lc3_disable(struct stream_rx *stream)
 			usb_right_stream = NULL;
 		}
 	}
+
+	err = k_mutex_unlock(&lc3_decoder_mutex);
+	ZASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return 0;
 }
@@ -483,6 +524,7 @@ void lc3_enqueue_for_decoding(struct stream_rx *stream, const struct bt_iso_recv
 
 	data->buf = net_buf_ref(buf);
 	data->stream = stream;
+	data->disable_cnt = stream->lc3_disable_cnt;
 	if (info->flags & BT_ISO_FLAGS_TS) {
 		data->ts = info->ts;
 	} else {

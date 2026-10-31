@@ -126,6 +126,66 @@ static ZTEST(pacs_test_suite, test_pacs_register)
 	}
 }
 
+struct chrc_search {
+	const struct bt_uuid *uuid;
+	const struct bt_gatt_attr *decl;
+};
+
+static uint8_t chrc_search_cb(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
+{
+	struct chrc_search *search = user_data;
+	const struct bt_gatt_chrc *chrc = attr->user_data;
+
+	if (bt_uuid_cmp(chrc->uuid, search->uuid) == 0) {
+		search->decl = attr;
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void check_notify_property(const struct bt_uuid *uuid, bool notifiable)
+{
+	struct chrc_search search = {.uuid = uuid};
+	const struct bt_gatt_attr *value;
+	const struct bt_gatt_attr *next;
+	const struct bt_gatt_chrc *chrc;
+	bool has_cccd;
+
+	bt_gatt_foreach_attr_type(BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+				  BT_UUID_GATT_CHRC, NULL, 0, chrc_search_cb, &search);
+	zassert_not_null(search.decl, "Could not find characteristic declaration");
+
+	chrc = search.decl->user_data;
+	value = bt_gatt_attr_next(search.decl);
+	zassert_not_null(value, "Could not find characteristic value");
+	next = bt_gatt_attr_next(value);
+	has_cccd = next != NULL && bt_uuid_cmp(next->uuid, BT_UUID_GATT_CCC) == 0;
+
+	zassert_equal(has_cccd, notifiable, "Unexpected CCCD presence %d", has_cccd);
+	zassert_equal((chrc->properties & BT_GATT_CHRC_NOTIFY) != 0U, notifiable,
+		      "Unexpected properties 0x%02x", chrc->properties);
+}
+
+static ZTEST(pacs_test_suite, test_pacs_pac_notify_property)
+{
+	const struct bt_pacs_register_param pacs_param =
+		PACS_REGISTER_PARAM(true, true, true, true);
+	int err;
+
+	err = bt_pacs_register(&pacs_param);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		check_notify_property(BT_UUID_PACS_SNK, IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE));
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		check_notify_property(BT_UUID_PACS_SRC, IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE));
+	}
+}
+
 static ZTEST(pacs_test_suite, test_pacs_register_inval_null_param)
 {
 	int err;

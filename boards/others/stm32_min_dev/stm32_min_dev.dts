@@ -9,8 +9,8 @@
 #include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "STM32 Minimum Development Board";
 	compatible = "st,stm32f103c8";
+	model = "STM32 Minimum Development Board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -77,11 +77,11 @@
 
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
-	status = "okay";
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
@@ -89,8 +89,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -111,9 +111,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pwm_out_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

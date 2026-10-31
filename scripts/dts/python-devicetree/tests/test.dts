@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Nordic Semiconductor
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -198,10 +199,9 @@
 		#address-cells = <0>;
 
 		node {
+			ranges;
 			#address-cells = <0>;
 			#size-cells = <0>;
-
-			ranges;
 		};
 	};
 
@@ -209,12 +209,11 @@
 		#address-cells = <0>;
 
 		node {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
 			ranges = <0xa>,
 				 <0x1a>,
 				 <0x2a>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 
@@ -223,11 +222,11 @@
 
 		node {
 			reg = <1>;
-			#address-cells = <1>;
 
 			ranges = <0xa 0xb>,
 				 <0x1a 0x1b>,
 				 <0x2a 0x2b>;
+			#address-cells = <1>;
 		};
 	};
 
@@ -236,12 +235,12 @@
 
 		node {
 			reg = <1>;
-			#address-cells = <1>;
-			#size-cells = <2>;
 
 			ranges = <0xa 0xb 0xc>,
 				 <0x1a 0x1b 0x1c>,
 				 <0x2a 0x2b 0x2c>;
+			#address-cells = <1>;
+			#size-cells = <2>;
 		};
 	};
 
@@ -262,34 +261,34 @@
 
 		node@1 {
 			reg = <1 2>;
-			#size-cells = <2>;
 
 			ranges = <0xa 0xb 0xc 0xd 0xe>,
 				 <0x1a 0x1b 0x1c 0x1d 0x1e>,
 				 <0x2a 0x2b 0x2c 0x2d 0x1d>;
+			#size-cells = <2>;
 		};
 	};
 
 	ranges-three-address-cells {
 		node@1 {
 			reg = <0 1 2>;
-			#address-cells = <3>;
 
 			ranges = <0xa 0xb 0xc 0xd 0xe 0xf>,
 				 <0x1a 0x1b 0x1c 0x1d 0x1e 0x1f>,
 				 <0x2a 0x2b 0x2c 0x2d 0x2e 0x2f>;
+			#address-cells = <3>;
 		};
 	};
 
 	ranges-three-address-two-size-cells {
 		node@1 {
 			reg = <0 1 2>;
-			#address-cells = <3>;
-			#size-cells = <2>;
 
 			ranges = <0xa 0xb 0xc 0xd 0xe 0xf 0x10>,
 				 <0x1a 0x1b 0x1c 0x1d 0x1e 0x1f 0x110>,
 				 <0x2a 0x2b 0x2c 0x2d 0x2e 0x2f 0x210>;
+			#address-cells = <3>;
+			#size-cells = <2>;
 		};
 	};
 
@@ -321,10 +320,10 @@
 		#address-cells = <2>;
 
 		parent {
-			#address-cells = <1>;
 			ranges = <1 0xa 0xb 1 /* 1    -> 0xA 0xB */
 				  2 0xc 0xd 2 /* 2..3 -> 0xC 0xD */
 				  4 0xe 0xf 1 /* 4    -> 0xE 0xF */>;
+			#address-cells = <1>;
 
 			node {
 				reg = <5 1 /* Matches no range */
@@ -342,13 +341,13 @@
 		#address-cells = <3>;
 
 		grandparent {
+			ranges = <0 0 3 0 0 2 2>;
 			#address-cells = <2>;
 			#size-cells = <2>;
-			ranges = <0 0 3 0 0 2 2>;
 
 			parent {
-				#address-cells = <1>;
 				ranges = <0 2 0 2>;
+				#address-cells = <1>;
 
 				node {
 					reg = <1 1>;
@@ -492,6 +491,20 @@
 		compatible = "defaults";
 		// Should override the 'default:' in the binding
 		default-not-used = <234>;
+	};
+
+	//
+	// For testing 'type: var-uint64'
+	//
+
+	var-uint64-node {
+		compatible = "vnd,var-uint64-test";
+		val-32 = <100000000>;		/* 0x5F5E100 - 1-cell value */
+		val-64 = <1 0>;			/* 4294967296 = 0x100000000 - 2-cell value */
+		val-with-min = <200>;		/* above min: 100 */
+		val-with-max = <0xabcdef01>;	/* below max: 0xFFFFFFFF */
+		val-const = <999>;		/* matches const: 999 */
+		/* val-with-default intentionally omitted to exercise default: 42 */
 	};
 
 	//
@@ -694,15 +707,35 @@
 
 		cpu@0 {
 			compatible = "test-cpu-fallback";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
+		};
+
+		power-states {
+			/* Child of /cpus that is NOT a cpu node: must not appear
+			 * in edt.cpus.
+			 */
+			state0: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <500>;
+			};
 		};
 
 		cpu@1 {
 			compatible = "test-cpu-fallback";
-			device_type = "cpu";
 			reg = <1>;
+			device_type = "cpu";
 			clock-frequency = <2000>;
+		};
+
+		cpu@2 {
+			reg = <2>;
+			/* No compatible: exercises the _CPU_BINDING fallback. */
+			device_type = "cpu";
+			clock-frequency = <3000>;
+			enable-method = "spin-table";
+			status = "disabled";
 		};
 	};
 };

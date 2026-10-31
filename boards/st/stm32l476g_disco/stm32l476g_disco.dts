@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L476G-DISCO board";
 	compatible = "st,stm32l476g-disco";
+	model = "STMicroelectronics STM32L476G-DISCO board";
 
 	aliases {
 		dmic0 = &dmic_dev;
@@ -155,6 +155,9 @@
 };
 
 &dfsdm {
+
+	status = "okay";
+
 	dmic_dev: filter@0 {
 		pinctrl-0 = <&dfsdm1_ckout_pe9
 			     &dfsdm1_datin2_pe7>;
@@ -165,8 +168,6 @@
 			reg = <2>;
 		};
 	};
-
-	status = "okay";
 };
 
 &dma2 {

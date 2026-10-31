@@ -31,8 +31,8 @@ contain the following:
   have similar capabilities. See :ref:`mem_mgmt_api` for information on
   how to annotate the system map in the device tree.
 
-- A read-only, executable region or regions for program text and ro-data, that
-  is accessible to user mode. This could be further sub-divided into a
+- One or more read-only, executable regions for program text and ro-data that are
+  accessible to user mode. This could be further sub-divided into a
   read-only region for ro-data, and a read-only, executable region for text, but
   this will require an additional MPU region. This is required so that
   threads running in user mode can read ro-data and fetch instructions.
@@ -50,8 +50,8 @@ Hardware Stack Overflow
 :kconfig:option:`CONFIG_HW_STACK_PROTECTION` is an optional feature which detects stack
 buffer overflows when the system is running in supervisor mode. This
 catches issues when the entire stack buffer has overflowed, and not
-individual stack frames, use compiler-assisted :kconfig:option:`CONFIG_STACK_CANARIES`
-for that.
+individual stack frames. Use compiler-assisted :kconfig:option:`CONFIG_STACK_CANARIES`
+to detect overflow for individual frames.
 
 Like any crash in supervisor mode, no guarantees can be made about the overall
 health of the system after a supervisor mode stack overflow, and any instances

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * P1.10 looped back to P1.11 (AIN6; see overlay for SOC)
+ */
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};

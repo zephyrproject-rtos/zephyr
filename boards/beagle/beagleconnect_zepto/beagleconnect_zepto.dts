@@ -14,8 +14,8 @@
 #include <dt-bindings/adc/adc.h>
 
 / {
-	model = "BeagleBoard.org BeagleConnect Zepto";
 	compatible = "beagle,beagleconnect_zepto_mspm0l1117";
+	model = "BeagleBoard.org BeagleConnect Zepto";
 
 	aliases {
 		led0 = &led0;
@@ -126,9 +126,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	status = "okay";
 };
 
 &gpioa {
@@ -158,15 +158,15 @@
 /* zephyr,acquisition-time should be overwritten by user based on their needs in overlays */
 &adc0 {
 	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
-	ti,clk-divider = <1>;
-	ti,clk-range = <5>;
 	max-result-reg = <12>;
 	pinctrl-0 = <&analog_pa24>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	auto-powerdown;
+	ti,clk-divider = <1>;
+	ti,clk-range = <5>;
+	status = "okay";
 
 	/* PA27 */
 	channel@0 {

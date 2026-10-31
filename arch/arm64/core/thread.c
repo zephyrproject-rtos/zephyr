@@ -78,13 +78,6 @@
  *  values are reset accordingly in arch_user_mode_enter().
  */
 
-#ifdef CONFIG_USERSPACE
-static bool is_user(struct k_thread *thread)
-{
-	return (thread->base.user_options & K_USER) != 0;
-}
-#endif
-
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
@@ -123,7 +116,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * If the new thread is a user thread we jump into
 	 * arch_user_mode_enter() when still in EL1.
 	 */
-	if (is_user(thread)) {
+	if (k_thread_is_user_thread(thread)) {
 		pInitCtx->elr = (uint64_t)arch_user_mode_enter;
 	} else {
 		pInitCtx->elr = (uint64_t)z_thread_entry;

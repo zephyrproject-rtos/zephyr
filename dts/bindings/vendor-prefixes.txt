@@ -149,6 +149,7 @@ chefree	Chefree Technology Corp.
 chipidea	Chipidea, Inc
 chipone	ChipOne
 chipsemi	Chipsemi Corp.
+chipsourcetek	ShenZhen ChipSourceTek Technology Co., Ltd.
 chipspark	ChipSPARK
 chipwealth	Chip Wealth Technology Ltd.
 chrontel	Chrontel, Inc.
@@ -207,6 +208,7 @@ domintech	Domintech Co., Ltd.
 dongwoon	Dongwoon Anatech
 dptechnics	DPTechnics
 dragino	Dragino Technology Co., Limited
+dsdtech	Dongguan Deshide Technology Co., Ltd. (DSD TECH)
 dserve	dServe Technology B.V.
 dynaimage	Dyna-Image
 ea	Embedded Artists AB
@@ -269,6 +271,7 @@ fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
 fitipower	Fitipower Integrated Technology Inc.
+flextechakt	FlextechAKT
 flysky	FlySky
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
@@ -543,6 +546,7 @@ openthread	OpenThread.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.
 orcl	Oracle Corporation
+orientdisplay	Orient Display
 orisetech	Orise Technology
 ortustech	Ortus Technology Co., Ltd.
 osddisplays	OSD Displays

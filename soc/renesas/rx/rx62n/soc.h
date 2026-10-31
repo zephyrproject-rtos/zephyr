@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __RX62N_SOC_H__
-#define __RX62N_SOC_H__
+#ifndef ZEPHYR_SOC_RENESAS_RX_RX62N_SOC_H_
+#define ZEPHYR_SOC_RENESAS_RX_RX62N_SOC_H_
 
 #include "reg_protection.h"
 
-#endif /* __RX62N_SOC_H__ */
+#endif /* ZEPHYR_SOC_RENESAS_RX_RX62N_SOC_H_ */

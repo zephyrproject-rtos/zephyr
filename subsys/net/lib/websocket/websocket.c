@@ -331,6 +331,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->sec_accept_key = sec_accept_key;
 	ctx->http_cb = wreq->http_cb;
 	ctx->is_client = 1;
+	ctx->tx_broken = 0;
 
 	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)&rnd_value, sizeof(rnd_value),
 				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
@@ -486,10 +487,15 @@ static int websocket_internal_disconnect(struct websocket_context *ctx)
 
 	NET_DBG("[%p] Disconnecting", ctx);
 
-	ret = websocket_send_msg(ctx->sock, NULL, 0, WEBSOCKET_OPCODE_CLOSE,
-				 ctx->is_client, true, SYS_FOREVER_MS);
-	if (ret < 0) {
-		NET_DBG("[%p] Failed to send close message (err %d).", ctx, ret);
+	if (ctx->tx_broken) {
+		/* A CLOSE frame would land inside the torn frame */
+		ret = 0;
+	} else {
+		ret = websocket_send_msg(ctx->sock, NULL, 0, WEBSOCKET_OPCODE_CLOSE,
+					 ctx->is_client, true, SYS_FOREVER_MS);
+		if (ret < 0) {
+			NET_DBG("[%p] Failed to send close message (err %d).", ctx, ret);
+		}
 	}
 
 	(void)sock_obj_core_dealloc(ctx->sock);
@@ -609,9 +615,21 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 }
 
 #if !defined(CONFIG_NET_TEST)
-static int sendmsg_all(int sock, const struct net_msghdr *message, int flags,
-			const k_timepoint_t req_end_timepoint)
+/* How long to back off when the stack is out of network buffers */
+#define NO_BUFS_RETRY K_MSEC(10)
+
+/* Send the whole message before the deadline: write the socket without
+ * blocking and wait for it to become writable until the deadline. On
+ * failure, *sent tells how much of the message the socket had accepted.
+ */
+static int sendmsg_all(int sock, const struct net_msghdr *message,
+			const k_timepoint_t req_end_timepoint, size_t *sent)
 {
+	/* Like the socket layer, do not wait for buffers indefinitely. The
+	 * limit counts only an unbroken run of buffer shortages.
+	 */
+	k_timepoint_t bufs_end_timepoint = { 0 };
+	bool waiting_bufs = false;
 	int ret, i;
 	size_t offset = 0;
 	size_t total_len = 0;
@@ -620,15 +638,51 @@ static int sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		total_len += message->msg_iov[i].iov_len;
 	}
 
+	*sent = 0;
+
 	while (offset < total_len) {
-		ret = zsock_sendmsg(sock, message, flags);
+		ret = zsock_sendmsg(sock, message, ZSOCK_MSG_DONTWAIT);
+
+		if (ret < 0 && errno == ENOBUFS) {
+			/* Short of buffers rather than of window: writability
+			 * does not track that, so back off and try again.
+			 */
+			k_timeout_t left = sys_timepoint_timeout(req_end_timepoint);
+
+			if (K_TIMEOUT_EQ(left, K_NO_WAIT)) {
+				return -ETIMEDOUT;
+			}
+
+			if (!waiting_bufs) {
+				waiting_bufs = true;
+				bufs_end_timepoint = sys_timepoint_calc(
+					K_MSEC(CONFIG_NET_SOCKET_MAX_SEND_WAIT));
+			} else if (sys_timepoint_expired(bufs_end_timepoint)) {
+				return -ENOMEM;
+			}
+
+			if (K_TIMEOUT_EQ(left, K_FOREVER) ||
+			    left.ticks > NO_BUFS_RETRY.ticks) {
+				left = NO_BUFS_RETRY;
+			}
+
+			k_sleep(left);
+			continue;
+		}
+
+		waiting_bufs = false;
 
 		if ((ret == 0) || (ret < 0 && errno == EAGAIN)) {
 			struct zsock_pollfd pfd;
 			int pollres;
-			k_ticks_t req_timeout_ticks =
-				sys_timepoint_timeout(req_end_timepoint).ticks;
-			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+			k_timeout_t req_timeout = sys_timepoint_timeout(req_end_timepoint);
+			int req_timeout_ms;
+
+			if (K_TIMEOUT_EQ(req_timeout, K_FOREVER)) {
+				req_timeout_ms = SYS_FOREVER_MS;
+			} else {
+				req_timeout_ms = k_ticks_to_ms_floor32(req_timeout.ticks);
+			}
 
 			pfd.fd = sock;
 			pfd.events = ZSOCK_POLLOUT;
@@ -645,6 +699,7 @@ static int sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 		}
 
 		offset += ret;
+		*sent = offset;
 		if (offset >= total_len) {
 			break;
 		}
@@ -701,17 +756,26 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 	return verify_sent_and_received_msg(&msg, !(header[1] & BIT(7)));
 #else
 	k_timeout_t tout = K_FOREVER;
+	size_t sent;
+	int ret;
 
 	if (timeout != SYS_FOREVER_MS) {
 		tout = K_MSEC(timeout);
 	}
 
-	k_timeout_t req_timeout = K_MSEC(timeout);
-	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
+	ret = sendmsg_all(ctx->real_sock, &msg, sys_timepoint_calc(tout), &sent);
+	if (ret < 0 && (sent > 0 || timeout != 0)) {
+		/* Part of the frame may be on the wire, or be held by a TLS
+		 * layer that will flush it later; either way any later frame
+		 * would be parsed as the rest of this one. Only a zero timeout
+		 * that got nothing out is a plain "try again".
+		 */
+		NET_DBG("[%p] Send failed (%d) after %zu bytes, connection broken",
+			ctx, ret, sent);
+		ctx->tx_broken = 1;
+	}
 
-	return sendmsg_all(ctx->real_sock, &msg,
-			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? ZSOCK_MSG_DONTWAIT : 0,
-			   req_end_timepoint);
+	return ret;
 #endif /* CONFIG_NET_TEST */
 }
 
@@ -747,6 +811,10 @@ int websocket_send_msg(int ws_sock, const uint8_t *payload, size_t payload_len,
 		return -ENOENT;
 	}
 #endif /* !defined(CONFIG_NET_TEST) */
+
+	if (ctx->tx_broken) {
+		return -EPIPE;
+	}
 
 	NET_DBG("[%p] Len %zd %s/%d/%s", ctx, payload_len, opcode2str(opcode),
 		mask, final ? "final" : "more");
@@ -1071,6 +1139,12 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 
 			if (ret < 0) {
 				if ((ret == -EAGAIN) && (payload.count > 0)) {
+					if (remaining != NULL) {
+						*remaining = ctx->parser_remaining;
+					}
+					if (message_type != NULL) {
+						*message_type = ctx->message_type;
+					}
 					/* go to unmasking */
 					break;
 				}
@@ -1128,10 +1202,10 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
 		}
 	}
 
-	if (ctx->message_type == WEBSOCKET_FLAG_CLOSE) {
-		return websocket_internal_disconnect(ctx);
-	}
-
+	/* A CLOSE frame, final or not, is reported to the application like any
+	 * other message. The application answers it by closing the websocket,
+	 * which sends our CLOSE and releases the context.
+	 */
 	return payload.count;
 }
 
@@ -1256,6 +1330,7 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	ctx->recv_buf.buf = recv_buf;
 	ctx->recv_buf.size = recv_buf_len;
 	ctx->is_client = 0;
+	ctx->tx_broken = 0;
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {

@@ -12,21 +12,6 @@ config NET_SAMPLE_NUM_HANDLERS
 	  Each connection is served by a thread which needs
 	  memory. Only increase the value here if really needed.
 
-config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
-	string "My IPv6 address for second interface"
-	help
-	  The value depends on your network setup.
-
-config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
-	string "My IPv4 address for second interface"
-	help
-	  The value depends on your network setup.
-
-config NET_SAMPLE_IFACE2_MY_IPV4_NETMASK
-	string "My IPv4 netmask for second interface"
-	help
-	  The value depends on your network setup.
-
 config NET_SAMPLE_PSK_HEADER_FILE
 	string "Header file containing PSK"
 	default "dummy_psk.h"
@@ -53,11 +38,6 @@ config NET_SAMPLE_HTTPS_SERVICE
 	bool "Enable HTTPS service for the Webconsole"
 	default y if NET_SAMPLE_WEBSOCKET_CONSOLE
 	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
-
-config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
-	int "Port number for HTTPS service"
-	default 443
-	depends on NET_SAMPLE_HTTPS_SERVICE
 
 if USB_DEVICE_STACK_NEXT
 

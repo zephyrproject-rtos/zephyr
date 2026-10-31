@@ -5,7 +5,6 @@
  */
 
 #include "rpi_5_bcm2712.dts"
-#include "rpi_5_bcm2712_swd-pinctrl.dtsi"
 
 / {
 	chosen {
@@ -15,10 +14,10 @@
 };
 
 &rp1_uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&rp1_uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart10 {

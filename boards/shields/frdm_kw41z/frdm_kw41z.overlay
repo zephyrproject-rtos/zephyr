@@ -11,8 +11,8 @@
 };
 
 &arduino_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";

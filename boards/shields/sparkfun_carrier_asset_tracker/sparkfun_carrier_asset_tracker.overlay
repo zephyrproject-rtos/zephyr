@@ -25,13 +25,15 @@
 };
 
 &micromod_0_spi {
-	status = "okay";
 	/* G0 (SD_CS) */
 	cs-gpios = <&micromod_header 5 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdhc0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
+
+		spi-max-frequency = <DT_FREQ_M(8)>;
 		status = "okay";
 
 		mmc {
@@ -39,8 +41,6 @@
 			disk-name = "SD";
 			status = "okay";
 		};
-
-		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 

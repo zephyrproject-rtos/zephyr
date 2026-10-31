@@ -1,4 +1,8 @@
 / {
+	aliases {
+		retainedmemdevice = &retainedmem0;
+	};
+
 	sram0_image@2006f000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2006f000 DT_SIZE_K(4)>;
@@ -9,10 +13,6 @@
 			compatible = "zephyr,retained-ram";
 			status = "okay";
 		};
-	};
-
-	aliases {
-		retainedmemdevice = &retainedmem0;
 	};
 };
 

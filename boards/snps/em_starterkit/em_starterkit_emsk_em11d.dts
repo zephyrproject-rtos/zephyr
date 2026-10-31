@@ -13,8 +13,8 @@
 #include "board.dtsi"
 
 / {
-	model = "em_starterkit-em11d";
 	compatible = "snps,em_starterkit-em11d", "snps,em_starterkit";
+	model = "em_starterkit-em11d";
 
 	cpus {
 		timebase-frequency = <DT_FREQ_M(20)>;
@@ -54,6 +54,6 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

@@ -707,7 +707,7 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 }
 
 static int eth_smsc_set_config(const struct device *dev,
-			       struct net_if *iface __unused
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {

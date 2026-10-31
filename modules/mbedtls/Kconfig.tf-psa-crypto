@@ -343,6 +343,7 @@ endchoice
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
 	bool "Allow non cryptographically secure random sources (for test only!)"
 	depends on MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
+	select NOT_SECURE
 	help
 	  MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG is by default limited to rely only
 	  on cryptographically secure random number generators. However, only

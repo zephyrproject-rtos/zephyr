@@ -5,7 +5,7 @@
 
 	test_uart: test_uart {
 		compatible = "vnd,serial";
-		status = "okay";
 		buffer-size = <100>;
+		status = "okay";
 	};
 };

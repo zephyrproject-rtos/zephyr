@@ -69,7 +69,16 @@ enum tls_credential_type {
 	 *  with a corresponding public certificate, in place of
 	 *  @ref TLS_CREDENTIAL_PRIVATE_KEY.
 	 */
-	TLS_CREDENTIAL_PRIVATE_KEY_PSA
+	TLS_CREDENTIAL_PRIVATE_KEY_PSA,
+
+	/** Pre-shared key resident in PSA.
+	 *  It should be registered together with a corresponding PSK identity
+	 *  (@ref TLS_CREDENTIAL_PSK_ID) and it should be used with PSK-based
+	 *  ciphersuites.
+	 *  The credential buffer holds a @c psa_key_id_t referencing a key
+	 *  already present in PSA. Key material never leaves PSA.
+	 */
+	TLS_CREDENTIAL_PSK_PSA,
 };
 
 /** Secure tag, a reference to TLS credential
@@ -101,6 +110,11 @@ typedef int sec_tag_t;
  * @param type    A TLS/DTLS credential type.
  * @param cred    A TLS/DTLS credential.
  * @param credlen A TLS/DTLS credential length.
+ *
+ * @note With the volatile backend (@kconfig{CONFIG_TLS_CREDENTIALS_BACKEND_VOLATILE}),
+ *       the credential data is not copied. Only the @p cred pointer is stored, so the
+ *       buffer must stay valid and unchanged for as long as the tag is in use, that is,
+ *       until the credential is removed with @ref tls_credential_delete.
  *
  * @retval 0 TLS credential successfully added.
  * @retval -EACCES Access to the TLS credential subsystem was denied.

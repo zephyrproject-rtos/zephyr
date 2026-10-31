@@ -106,6 +106,36 @@ endchoice
 
 endif # DT_HAS_NXP_IMX_FLEXSPI_ENABLED
 
+if DT_HAS_NXP_SEMC_ENABLED
+
+config MEMC_NXP_SEMC
+	bool "NXP SEMC driver"
+	default y
+	select PINCTRL
+	help
+	  Enable the NXP SEMC (Smart External Memory Controller) driver.
+
+config MEMC_NXP_SEMC_INIT_PRIORITY
+	int "NXP SEMC MEMC driver initialization priority"
+	default MEMC_INIT_PRIORITY
+	help
+	  Initialization priority for the SEMC MEMC driver. The SEMC controller
+	  must be initialized before the devices attached to it (e.g. SDRAM),
+	  so this value must not exceed MEMC_INIT_PRIORITY when the SDRAM driver
+	  is enabled. Equal priorities use devicetree dependency ordering.
+
+config MEMC_NXP_SEMC_SDRAM
+	bool "NXP SEMC SDRAM device driver"
+	default y
+	depends on DT_HAS_NXP_SEMC_SDRAM_ENABLED
+	select MEMC_NXP_SEMC
+	help
+	  Enable the SEMC SDRAM device driver. Each enabled devicetree node
+	  with the nxp,semc-sdram compatible is configured automatically
+	  during driver initialization.
+
+endif # DT_HAS_NXP_SEMC_ENABLED
+
 if DT_HAS_NXP_XSPI_ENABLED
 
 config MEMC_MCUX_XSPI_INIT_XIP

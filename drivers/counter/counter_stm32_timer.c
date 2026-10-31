@@ -293,7 +293,8 @@ static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
 	/* decrement value to detect also case when val == counter_stm32_read(dev). Otherwise,
 	 * condition would need to include comparing diff against 0.
 	 */
-	diff = counter_stm32_ticks_sub(val - 1U, counter_stm32_read(dev), top);
+	diff = counter_stm32_ticks_sub(counter_stm32_ticks_sub(val, 1U, top),
+				       counter_stm32_read(dev), top);
 	if (diff > max_rel_val) {
 		if (absolute) {
 			err = -ETIME;

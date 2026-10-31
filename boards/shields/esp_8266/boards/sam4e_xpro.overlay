@@ -14,11 +14,11 @@
 };
 
 &usart1 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&usart1_esp_wifi>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	esp8266 {
 		compatible = "espressif,esp-at";

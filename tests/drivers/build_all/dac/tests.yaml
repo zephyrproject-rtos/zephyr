@@ -19,3 +19,5 @@ tests:
     platform_allow: nucleo_f091rc
     extra_configs:
       - CONFIG_GPIO=y # needed by some DAC drivers
+  drivers.dac.infineon_hppass_csg.build:
+    platform_allow: kit_psc3m5_evk

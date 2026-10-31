@@ -345,6 +345,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		sys_slist_find_and_remove(&conn->streams, &stream->node);
 		sys_slist_prepend(&conn->streams, &stream->node);
 
+		/* The reference of the new stream goes to the accept queue,
+		 * where the application can take the stream and close it at
+		 * once. Keep one until the data of this frame is delivered.
+		 */
+		quic_stream_ref(stream);
+
 		/* Queue for accept() call */
 		k_fifo_put(&conn->incoming.stream_q, stream);
 
@@ -364,7 +370,7 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		 */
 		NET_DBG("[CO:%p/%d] Failed to deliver stream data: %d",
 			conn, quic_get_by_conn(conn), ret);
-		return ret;
+		goto out;
 	}
 
 	if (level == QUIC_SECRET_LEVEL_EARLY) {
@@ -381,8 +387,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	}
 
 	*consumed = pos + data_len;
+	ret = pos + data_len;
 
-	return pos + data_len;
+out:
+	quic_stream_unref(stream);
+
+	return ret;
 }
 
 /*
@@ -518,10 +528,13 @@ static int quic_send_stop_sending(struct quic_endpoint *ep,
 }
 
 static int handle_stop_sending_frame(struct quic_endpoint *ep,
-				     const uint8_t *buf, size_t len)
+				     const uint8_t *buf, size_t len,
+				     struct quic_reply_budget *budget)
 {
 	uint64_t stream_id, error_code;
 	struct quic_stream *stream;
+	bool local_init;
+	bool is_uni;
 	int pos = 1;
 	int ret;
 
@@ -542,6 +555,25 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] STOP_SENDING: stream=%" PRIu64 ", error=0x%" PRIx64,
 		ep, quic_get_by_ep(ep), stream_id, error_code);
 
+	/* Stream ID encoding (RFC 9000 ch. 2.1): bit 0 is the initiator,
+	 * 0 for the client and 1 for the server, bit 1 is set for a
+	 * unidirectional stream.
+	 */
+	local_init = ((stream_id & 1U) != 0U) == ep->is_server;
+	is_uni = (stream_id & 2U) != 0U;
+
+	/* RFC 9000 ch. 19.5: a unidirectional stream opened by the peer is
+	 * receive-only for us, there is nothing we could stop sending on it.
+	 * The frame is a connection error of type STREAM_STATE_ERROR.
+	 */
+	if (is_uni && !local_init) {
+		NET_DBG("[EP:%p/%d] STOP_SENDING for receive-only stream %" PRIu64,
+			ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_STATE_ERROR,
+						    "STOP_SENDING for a receive-only stream");
+		return -EPROTO;
+	}
+
 	/*
 	 * RFC 9000 ch. 3.5: a sender that receives STOP_SENDING MUST respond
 	 * with either RESET_STREAM or a stream FIN. Send RESET_STREAM to
@@ -550,9 +582,41 @@ static int handle_stop_sending_frame(struct quic_endpoint *ep,
 	 *
 	 * Re-use the peer's error code so the HTTP layer (and any logging)
 	 * can see why the stream was reset.
+	 *
+	 * Every stream is answered, but one payload can carry a great many
+	 * STOP_SENDING frames and the RESET_STREAM is a packet of its own.
+	 * The first frame for a stream is always answered, which is bounded
+	 * by the number of streams. A frame for a stream that was reset
+	 * already is a repeat, sent by a peer that did not get our
+	 * RESET_STREAM: it is answered again, but out of the reply budget of
+	 * the payload.
 	 */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL) {
+	if (stream == NULL && local_init) {
+		struct quic_context *conn = quic_find_context(ep);
+
+		/* RFC 9000 ch. 19.5: a STOP_SENDING for a stream of ours that
+		 * was never created is a connection error of type
+		 * STREAM_STATE_ERROR. A stream that is not found can also be
+		 * one that is closed already, which is fine, so only an ID
+		 * past everything opened so far is taken as never created.
+		 */
+		if (conn != NULL && (stream_id >> 2) >= conn->stream_id_counter) {
+			NET_DBG("[EP:%p/%d] STOP_SENDING for stream %" PRIu64
+				" that was never opened",
+				ep, quic_get_by_ep(ep), stream_id);
+			quic_endpoint_send_connection_close(
+				ep, QUIC_ERROR_STREAM_STATE_ERROR,
+				"STOP_SENDING for a stream that was never opened");
+			return -EPROTO;
+		}
+	}
+
+	if (stream != NULL && stream->tx_reset) {
+		if (quic_reply_budget_take(budget)) {
+			quic_send_reset_stream(ep, stream_id, error_code);
+		}
+	} else if (stream != NULL) {
 		/* Send RESET_STREAM, our TX side is being abandoned */
 		quic_send_reset_stream(ep, stream_id, error_code);
 
@@ -1721,7 +1785,7 @@ ZTESTABLE_STATIC int handle_crypto_frame(struct quic_endpoint *ep,
 	*consumed = pos + crypto_len;
 
 	/* Initialize crypto context if needed (first CRYPTO frame) */
-	if (!ep->crypto.initial.initialized) {
+	if (!ep->crypto.initial.initialized && !ep->crypto.initial.discarded) {
 		if (!quic_conn_init_setup(ep, ep->my_cid, ep->my_cid_len)) {
 			NET_DBG("[EP:%p/%d] Failed to setup Initial crypto context",
 				ep, quic_get_by_ep(ep));
@@ -1977,7 +2041,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_STOP_SENDING:
-			ret = handle_stop_sending_frame(ep, &buf[pos], len - pos);
+			ret = handle_stop_sending_frame(ep, &buf[pos], len - pos,
+							&budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -2184,6 +2249,9 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			if (!ep->is_server) {
 				ep->crypto.tls.state = QUIC_TLS_STATE_CONNECTED;
 				ep->handshake_confirmed = true;
+
+				/* RFC 9001 ch. 4.9.2 */
+				quic_endpoint_discard_keys(ep, QUIC_SECRET_LEVEL_HANDSHAKE);
 			}
 
 			break;
@@ -2443,6 +2511,10 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 						level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
 					quic_recovery_discard_pn_space(ep,
 						level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
+
+					/* RFC 9001 ch. 4.9.2 */
+					quic_endpoint_discard_keys(
+						ep, QUIC_SECRET_LEVEL_HANDSHAKE);
 				}
 				continue;
 
@@ -2541,7 +2613,8 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 
 			case QUIC_FRAME_TYPE_STOP_SENDING:
 				ret = handle_stop_sending_frame(ep, &payload[pos],
-								payload_len - pos);
+								payload_len - pos,
+								&budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;

@@ -639,6 +639,44 @@ ZTEST(modem_chat, test_start_script_then_time_out)
 		      "Script result callback script chat is incorrect");
 }
 
+ZTEST(modem_chat, test_release_cancels_work_items)
+{
+	struct k_work_sync sync;
+
+	zassert_ok(modem_chat_run_script_async(&cmd, &script_timeout_cmd),
+		   "Failed to start script");
+	k_msleep(100);
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)),
+		      sizeof("AT\r\n") - 1, "Request not sent as expected");
+
+	modem_backend_mock_put(&mock, ok_response, sizeof(ok_response) - 1);
+	k_msleep(100);
+	zassert_true(k_work_delayable_is_pending(&cmd.script_timeout_work),
+		     "Script timeout work was not scheduled");
+	zassert_true(k_work_delayable_is_pending(&cmd.script_send_timeout_work),
+		     "Script send timeout work was not scheduled");
+
+	modem_chat_release(&cmd);
+
+	zexpect_equal(k_work_busy_get(&cmd.script_run_work), 0,
+		      "Script run work was not cancelled");
+	zexpect_equal(k_work_delayable_busy_get(&cmd.script_timeout_work), 0,
+		      "Script timeout work was not cancelled");
+	zexpect_equal(k_work_busy_get(&cmd.script_abort_work), 0,
+		      "Script abort work was not cancelled");
+	zexpect_equal(k_work_busy_get(&cmd.script_send_work), 0,
+		      "Script send work was not cancelled");
+	zexpect_equal(k_work_delayable_busy_get(&cmd.script_send_timeout_work), 0,
+		      "Script send timeout work was not cancelled");
+	zexpect_equal(k_work_busy_get(&cmd.receive_work), 0,
+		      "Receive work was not cancelled");
+
+	/* Keep the test suite safe when either expectation fails. */
+	k_work_cancel_delayable_sync(&cmd.script_timeout_work, &sync);
+	k_work_cancel_delayable_sync(&cmd.script_send_timeout_work, &sync);
+	zassert_ok(modem_chat_attach(&cmd, mock_pipe), "Failed to reattach modem chat");
+}
+
 ZTEST(modem_chat, test_script_with_partial_matches)
 {
 	bool called;

@@ -13,5 +13,12 @@ config SOC_POSIX
 	  (if needed use k_busy_wait()).
 	  Note that the interrupt handling is provided by the board.
 
+config NATIVE_SIMULATOR_PREFER_REAL_TIME
+	bool
+	help
+	  Selected by drivers that interact with something running in real
+	  time.
+	  The board may honor it and default to run in real time.
+
 config SOC
 	default "native" if SOC_POSIX

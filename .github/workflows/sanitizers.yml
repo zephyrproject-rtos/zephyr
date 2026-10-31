@@ -116,7 +116,7 @@ jobs:
         run: python3 scripts/ci/sarif_summary.py results-${{ matrix.sanitizer }}.sarif
 
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           sarif_file: results-${{ matrix.sanitizer }}.sarif
           # One category per sanitizer. They report disjoint rule sets, and a
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload SARIF as artifact
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sanitizer-sarif-${{ matrix.sanitizer }}
           if-no-files-found: ignore
@@ -135,7 +135,7 @@ jobs:
 
       - name: Upload sanitizer logs
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sanitizer-logs-${{ matrix.sanitizer }}
           if-no-files-found: ignore

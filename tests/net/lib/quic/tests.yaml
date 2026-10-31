@@ -20,3 +20,9 @@ tests:
       - qemu_x86
     extra_configs:
       - CONFIG_QUIC_0RTT=y
+  net.quic.idle_timeout:
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_QUIC_MAX_IDLE_TIMEOUT=1000

@@ -7,7 +7,6 @@ common:
   platform_allow:
     - nrf52_bsim
     - nrf52840dk/nrf52840
-    - nrf9160dk/nrf9160
     - nrf5340dk/nrf5340/cpuapp
     - nrf5340bsim/nrf5340/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
@@ -17,7 +16,9 @@ common:
     - nrf54lm20dk/nrf54lm20a/cpuapp
     - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf54lm20bsim/nrf54lm20a/cpuapp
+    - nrf54lv10dk/nrf54lv10a/cpuapp
     - nrf7120dk/nrf7120/cpuapp
+    - nrf9160dk/nrf9160
     - ophelia4ev/nrf54l15/cpuapp
   integration_platforms:
     - nrf52840dk/nrf52840

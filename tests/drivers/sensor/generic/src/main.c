@@ -58,6 +58,14 @@ static struct trigger_sequence trigger_elements[] = {
 	{ 155, 180 }, SENSOR_ATTR_UPPER_THRESH }
 };
 
+static struct {
+	struct sensor_value in;
+	int8_t shift;
+	q31_t expected;
+} q31_test_cases[] =
+#include <q31_test_cases.inc>
+	;
+
 #define TOTAL_CHAN_ELEMENTS (sizeof(chan_elements) / \
 		sizeof(struct channel_sequence))
 #define TOTAL_TRIG_ELEMENTS (sizeof(trigger_elements) / \
@@ -357,6 +365,15 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	zassert_equal(ret, -ERANGE, "range error expected");
 
 #endif
+	/* Test struct sensor_value to q31 */
+	ARRAY_FOR_EACH_PTR(q31_test_cases, tc) {
+		q31_t q = sensor_value_to_q31(&tc->in, tc->shift);
+
+		zassert_equal(q, tc->expected, "val1: %d, val2: %d, shift: %d: expected %d, got %d",
+			      tc->in.val1, tc->in.val2, tc->shift, (uint32_t)tc->expected,
+			      (uint32_t)q);
+	}
+
 	/* Test struct sensor_value to fixed point */
 	uint32_t val;
 

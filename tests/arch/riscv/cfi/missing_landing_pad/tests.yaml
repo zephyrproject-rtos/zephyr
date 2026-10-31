@@ -1,0 +1,14 @@
+common:
+  platform_allow:
+    - qemu_riscv32
+    - qemu_riscv32e
+    - qemu_riscv64
+  toolchain_allow:
+    - cross-compile
+  filter: CONFIG_RISCV_LANDING_PADS
+  ignore_faults: true
+
+tests:
+  arch.riscv.cfi.missing_landing_pad:
+    extra_configs:
+      - CONFIG_RISCV_LANDING_PADS=y

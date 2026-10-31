@@ -17,13 +17,13 @@
 };
 
 &uart5 {
-	status = "okay";
 	current-speed = <115200>;
 
 	interrupt-parent = <&intmux_ch21>;
 
 	pinctrl-0 = <&p5_0_scb5_uart_rx &p5_1_scb5_uart_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 arduino_serial: &uart5 {};

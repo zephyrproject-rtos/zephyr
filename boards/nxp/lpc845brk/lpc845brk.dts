@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
 
 / {
-	model = "NXP LPC845-BRK Board";
 	compatible = "nxp,lpc845-brk";
+	model = "NXP LPC845-BRK Board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -35,11 +35,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	clock-source = "frg0";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &swm {
@@ -61,20 +61,20 @@
 
 		slot0_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00008000 DT_SIZE_K(8)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0000f000 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

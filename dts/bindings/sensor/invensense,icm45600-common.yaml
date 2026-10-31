@@ -62,6 +62,13 @@ properties:
       - 5 # ICM45686_DT_ACCEL_LPF_BW_1_64
       - 6 # ICM45686_DT_ACCEL_LPF_BW_1_128
 
+  accel-aaf:
+    type: boolean
+    description: |
+      Enable the FIR anti-alias filter (AAF) of the accelerometer in low-noise mode,
+      which filters the ADC output before the UI low-pass filter and the output data
+      rate.
+
   gyro-pwr-mode:
     type: int
     default: 0
@@ -110,6 +117,13 @@ properties:
       - 4 # ICM45686_DT_GYRO_LPF_BW_1_32
       - 5 # ICM45686_DT_GYRO_LPF_BW_1_64
       - 6 # ICM45686_DT_GYRO_LPF_BW_1_128
+
+  gyro-aaf:
+    type: boolean
+    description: |
+      Enable the FIR anti-alias filter (AAF) of the gyroscope in low-noise mode,
+      which filters the ADC output before the UI low-pass filter and the output data
+      rate.
 
   fifo-watermark:
     type: int

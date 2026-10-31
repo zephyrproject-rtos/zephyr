@@ -5,6 +5,6 @@
  */
 
 &nrf52840_reset {
-	status = "okay";
 	gpios = <&interface_to_nrf52840 5 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };

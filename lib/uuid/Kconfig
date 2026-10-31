@@ -11,7 +11,7 @@ if UUID
 
 config UUID_V4
 	bool "UUID version 4 generation support"
-	depends on ENTROPY_GENERATOR
+	depends on HAS_RANDOM_GENERATOR
 	help
 	  Enable generation of UUID v4.
 

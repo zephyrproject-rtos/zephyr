@@ -166,12 +166,11 @@ int main(void)
 		return 0;
 	}
 
-	const lv_img_dsc_t video_img = {
+	lv_img_dsc_t video_img = {
 		.header.w = CONFIG_VIDEO_WIDTH,
 		.header.h = CONFIG_VIDEO_HEIGHT,
 		.data_size = CONFIG_VIDEO_WIDTH * CONFIG_VIDEO_HEIGHT * sizeof(lv_color_t),
 		.header.cf = LV_COLOR_FORMAT_NATIVE,
-		.data = (const uint8_t *)buffers[0]->buffer,
 	};
 
 	lv_obj_t *screen = lv_img_create(lv_scr_act());
@@ -187,10 +186,11 @@ int main(void)
 			return 0;
 		}
 
+		video_img.data = (const uint8_t *)vbuf->buffer;
 		lv_img_set_src(screen, &video_img);
 		lv_obj_align(screen, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
-		lv_task_handler();
+		lv_timer_handler();
 
 		err = video_enqueue(video_dev, vbuf);
 		if (err) {

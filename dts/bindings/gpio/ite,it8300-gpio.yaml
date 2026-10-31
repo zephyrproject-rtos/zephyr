@@ -1,0 +1,32 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO controller for one ITE IT8300 GPIO group (A through E).
+  Must be a child of an ite,it8300 node.
+
+  An example configuration using the it8300-gpio-cfg.dtsi template:
+
+      ioex_it8300_gpa: gpio@1 {
+          compatible = "ite,it8300-gpio";
+          reg = <0x01 1    /* PDRG  */
+                 0x06 1    /* GPISR */
+                 0x10 8    /* GPCR  */
+                 0x29 1    /* PDMR  */
+                 0x39 1>;  /* OODER */
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <8>;
+      };
+
+compatible: "ite,it8300-gpio"
+
+include: [base.yaml, gpio-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+gpio-cells:
+  - pin
+  - flags

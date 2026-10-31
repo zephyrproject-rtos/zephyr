@@ -13,6 +13,10 @@
 #define ACP_DMA_DSCR_STRT_IDX_0                  0x1240028
 #define ACP_DMA_DSCR_CNT_0                       0x1240050
 #define ACP_DMA_PRIO_0                           0x1240078
+#define ACP_DMA_CNTL_9                           0x1240024
+#define ACP_DMA_DSCR_STRT_IDX_9                  0x124004C
+#define ACP_DMA_DSCR_CNT_9                       0x1240074
+#define ACP_DMA_PRIO_9                           0x124009C
 #define ACP_DMA_DESC_BASE_ADDR                   0x1240118
 #define ACP_DMA_DESC_MAX_NUM_DSCR                0x124011C
 #define ACP_DMA_CH_STS                           0x1240120
@@ -158,7 +162,7 @@
 #define ACP_PDM_2_SW_Enable_Reg                  0x1242D9C
 #define ACP_PDM_2_SW_CTRLReg                     0x1242DA0
 #define ACP_PDM_2_WALLCLK_INTR_CNTL              0x1242DA4
-/* Registers from ACP_SW0_SWCLK bloc */
+/* Registers from ACP_SW0_SWCLK block */
 #define ACP_SW0_EN                               0x1245200
 #define ACP_SW0_EN_STATUS                        0x1245204
 #define ACP_SW0_FRAMESIZE_BANK0                  0x1245208

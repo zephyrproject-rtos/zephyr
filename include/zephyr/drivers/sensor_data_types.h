@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Decoded data types for the sensor API
+ * @ingroup sensor_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_DATA_TYPES_H
 #define ZEPHYR_INCLUDE_DRIVERS_SENSOR_DATA_TYPES_H
 
@@ -16,6 +22,12 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup sensor_interface
+ * @{
+ */
+
+/** Header common to all decoded sensor data types. */
 struct sensor_data_header {
 	/**
 	 * The closest timestamp for when the first frame was generated as attained by
@@ -187,6 +199,8 @@ struct sensor_uint64_data {
 #define PRIsensor_uint64_data_arg(data_, readings_offset_)                                         \
 	(data_).header.base_timestamp_ns + (data_).readings[(readings_offset_)].timestamp_delta,   \
 		(data_).readings[(readings_offset_)].value
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -12,8 +12,9 @@
  * them by deadline and report one summary line per window instead of one line
  * per fragment.
  *
- * An RTC timer wake completes the window. Event wakes keep it open for another
- * fragment. A skipped wait closes when less than the sleep floor remains.
+ * An RTC timer wake completes the window when that timer is the kernel
+ * deadline. An earlier timer wake keeps it open for another fragment. A
+ * skipped wait closes when less than the sleep floor remains.
  */
 
 #include <stdio.h>
@@ -41,6 +42,7 @@ static bool ls_window_open;         /* true while fragments share one deadline *
 static int64_t ls_enter_us;         /* esp_timer us at last fragment entry */
 static int64_t ls_deadline_tick;    /* kernel tick of this window's wake */
 static uint64_t ls_deadline_abs_us; /* same wake, absolute esp_timer us */
+static bool ls_to_kernel_deadline;  /* fragment still uses the kernel budget */
 static uint64_t ls_floor_us;        /* min residency; below this, window closes */
 static struct {
 	uint32_t fragments;
@@ -59,11 +61,11 @@ static struct k_spinlock ls_lock;
 
 static void sleep_stats_print(void);
 
-void esp32_sleep_stats_before(uint64_t sleep_time_us, uint64_t min_sleep_us,
-			      uint64_t deadline_abs_us)
+void esp32_sleep_stats_before(uint64_t kernel_us, uint64_t fragment_us,
+			      uint64_t min_sleep_us, uint64_t deadline_abs_us)
 {
 	int64_t rem_ticks =
-		(int64_t)((sleep_time_us * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / USEC_PER_SEC);
+		(int64_t)((kernel_us * CONFIG_SYS_CLOCK_TICKS_PER_SEC) / USEC_PER_SEC);
 	int64_t deadline = sys_clock_tick_get() + rem_ticks;
 	int64_t tick_delta = deadline - ls_deadline_tick;
 	bool same_window = ls_window_open && (tick_delta <= 1 && tick_delta >= -1);
@@ -75,13 +77,14 @@ void esp32_sleep_stats_before(uint64_t sleep_time_us, uint64_t min_sleep_us,
 	if (!same_window) {
 		memset(&ls_window, 0, sizeof(ls_window));
 		ls_window.pd_and = UINT32_MAX;
-		ls_window.req_us = sleep_time_us;
+		ls_window.req_us = kernel_us;
 		ls_deadline_tick = deadline;
+		ls_deadline_abs_us = deadline_abs_us;
 		ls_window_open = true;
 	}
 
+	ls_to_kernel_deadline = (fragment_us == kernel_us);
 	ls_floor_us = min_sleep_us;
-	ls_deadline_abs_us = deadline_abs_us;
 	ls_enter_us = esp_timer_get_time();
 }
 
@@ -113,14 +116,16 @@ void esp32_sleep_stats_after(void)
 		ls_window.err = hal_err;
 	}
 
-	/* The timer wake means the deadline was reached, so the wait is over.
-	 * A real sleep can wake earlier than the floor, so the time left to the
-	 * deadline only closes a wait that never slept.
+	/* A timer wake ends the window when this fragment reaches the kernel
+	 * deadline. An earlier alarm is another fragment of the same wait. A
+	 * real sleep can wake before the floor, so the time left to the deadline
+	 * only closes a wait that never slept.
 	 */
 	bool woke_on_timer =
 		(hal_err == 0) && (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TIMER));
 
-	if (woke_on_timer || ((int64_t)ls_deadline_abs_us - now < (int64_t)ls_floor_us)) {
+	if ((woke_on_timer && ls_to_kernel_deadline) ||
+	    ((int64_t)ls_deadline_abs_us - now < (int64_t)ls_floor_us)) {
 		sleep_stats_print();
 	}
 }

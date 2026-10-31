@@ -9,8 +9,8 @@
 #include <st/f0/stm32f030f4px-pinctrl.dtsi>
 
 / {
-	model = "STM32F030 DEMO board";
 	compatible = "stm32f030-demo";
+	model = "STM32F030 DEMO board";
 
 	chosen {
 		zephyr,console = &usart1;

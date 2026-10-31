@@ -87,8 +87,8 @@
 		compatible = "regulator-fixed";
 		regulator-name = "npm1100_force_pwm_mode";
 		enable-gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
-		status = "disabled";
 		regulator-boot-on;
+		status = "disabled";
 	};
 
 	vbatt: vbatt {
@@ -165,18 +165,18 @@
 
 /* RGB LED control */
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 /* Buzzer control */
 &pwm1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-1 = <&pwm1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &adc {
@@ -213,11 +213,11 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	bmm150: bmm150@10 {
 		compatible = "bosch,bmm150";
@@ -238,33 +238,33 @@
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>,
 		   <&gpio1 4 GPIO_ACTIVE_LOW>,
 		   <&gpio0 24 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	adxl362: spi-dev-adxl362@0 {
 		compatible = "adi,adxl362";
-		spi-max-frequency = <8000000>;
 		reg = <0>;
+		spi-max-frequency = <8000000>;
 		int1-gpios = <&gpio0 19 0>;
 	};
 
 	bmi270: spi-dev-bmi270@1 {
 		compatible = "bosch,bmi270";
-		status = "disabled";
-		spi-max-frequency = <8000000>;
 		reg = <1>;
+		spi-max-frequency = <8000000>;
+		status = "disabled";
 	};
 
 	nrf_radio_fem_spi: fem_spi@2 {
 		compatible = "nordic,nrf21540-fem-spi";
-		status = "disabled";
 		reg = <2>;
 		spi-max-frequency = <8000000>;
+		status = "disabled";
 	};
 };
 
@@ -272,17 +272,17 @@
 &uart0 {
 	/* Disabled by default */
 	current-speed = <115200>;
-	status = "disabled";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
@@ -308,11 +308,11 @@
 
 edge_connector_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&edge_connector 18 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {

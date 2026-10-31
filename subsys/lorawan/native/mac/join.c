@@ -379,9 +379,8 @@ static int select_join_channel_wait(struct lwan_ctx *ctx, uint32_t *freq,
 	int ret;
 
 	do {
-		ret = region->select_join_channel(ctx->channels,
-						  ctx->channel_count,
-						  freq, dr, &delay_ms);
+		ret = region->select_join_channel(ctx->channels, ctx->channel_count, freq, dr,
+						  &delay_ms);
 		if (ret == -ENOBUFS) {
 			LOG_INF("Duty cycle: waiting %d ms", delay_ms);
 			k_msleep(delay_ms);
@@ -389,6 +388,29 @@ static int select_join_channel_wait(struct lwan_ctx *ctx, uint32_t *freq,
 	} while (ret == -ENOBUFS);
 
 	return ret;
+}
+
+static int join_channel_wait(struct lwan_ctx *ctx, uint32_t *freq, uint8_t *dr)
+{
+	const struct lwan_region_ops *region = ctx->region;
+	int ret;
+
+	for (uint8_t draw = 0; draw <= region->max_lbt_retries; draw++) {
+		ret = select_join_channel_wait(ctx, freq, dr);
+		if (ret != 0 || region->get_lbt_params == NULL) {
+			return ret;
+		}
+
+		/* Selection is random, so a busy channel is worth retrying. */
+		ret = mac_lbt_check(ctx, *freq, *dr);
+		if (ret != -EBUSY) {
+			return ret;
+		}
+	}
+
+	LOG_WRN("LBT: no clear channel after %u draws", region->max_lbt_retries + 1U);
+
+	return -EBUSY;
 }
 
 static void join_state_init(struct join_state *state,
@@ -426,8 +448,7 @@ static int join_select_channel(struct lwan_ctx *ctx, struct join_state *state)
 {
 	int ret;
 
-	ret = select_join_channel_wait(ctx, &state->tx_freq,
-				       &state->tx_dr_idx);
+	ret = join_channel_wait(ctx, &state->tx_freq, &state->tx_dr_idx);
 	if (ret != 0) {
 		LOG_ERR("No join channel available: %d", ret);
 	}

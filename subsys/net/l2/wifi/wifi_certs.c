@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_wifi_certs, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 static struct wifi_enterprise_creds_params enterprise_creds_params = { 0 };
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
+#include <mbedtls/platform_util.h>
 #include <zephyr/net/tls_credentials.h>
 enum wifi_enterprise_cert_sec_tags {
 	WIFI_CERT_CA_SEC_TAG = 0x1020001,
@@ -37,7 +38,7 @@ struct wifi_cert_data {
 	enum tls_credential_type type;
 	uint32_t sec_tag;
 	uint8_t **data;
-	size_t *len;
+	uint32_t *len;
 };
 #else
 static const char ca_cert_test[] = {
@@ -79,11 +80,21 @@ static const char server_key_test[] = {
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
+static void free_cert(uint8_t *cert, size_t len)
+{
+	if (cert == NULL) {
+		return;
+	}
+
+	mbedtls_platform_zeroize(cert, len);
+	k_free(cert);
+}
+
 static void clear_cert_data(struct wifi_cert_data *certs, size_t cert_count)
 {
 	for (size_t i = 0; i < cert_count; i++) {
-		if (certs[i].data != NULL && *certs[i].data != NULL) {
-			k_free(*certs[i].data);
+		if (certs[i].data != NULL) {
+			free_cert(*certs[i].data, certs[i].len != NULL ? *certs[i].len : 0);
 			*certs[i].data = NULL;
 		}
 
@@ -234,23 +245,17 @@ cleanup:
 
 void wifi_clear_enterprise_credentials(void)
 {
-	size_t i;
+	struct wifi_enterprise_creds_params *p = &enterprise_creds_params;
 
-	const uint8_t *certs[] = {
-		enterprise_creds_params.ca_cert,
-		enterprise_creds_params.client_cert,
-		enterprise_creds_params.client_key,
-		enterprise_creds_params.server_cert,
-		enterprise_creds_params.server_key,
-		enterprise_creds_params.ca_cert2,
-		enterprise_creds_params.client_cert2,
-		enterprise_creds_params.client_key2,
-	};
-
-	for (i = 0; i < ARRAY_SIZE(certs); i++) {
-		k_free((void *)certs[i]);
-	}
-	memset(&enterprise_creds_params, 0, sizeof(struct wifi_enterprise_creds_params));
+	free_cert(p->ca_cert, p->ca_cert_len);
+	free_cert(p->client_cert, p->client_cert_len);
+	free_cert(p->client_key, p->client_key_len);
+	free_cert(p->server_cert, p->server_cert_len);
+	free_cert(p->server_key, p->server_key_len);
+	free_cert(p->ca_cert2, p->ca_cert2_len);
+	free_cert(p->client_cert2, p->client_cert2_len);
+	free_cert(p->client_key2, p->client_key2_len);
+	memset(p, 0, sizeof(*p));
 }
 #elif defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE)
 int config_process_blob(struct wpa_config *config, char *name, uint8_t *data,

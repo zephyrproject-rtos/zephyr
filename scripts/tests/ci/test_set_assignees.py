@@ -313,6 +313,67 @@ class TestCompareAreas:
 
 
 # ---------------------------------------------------------------------------
+# changed_area_members
+# ---------------------------------------------------------------------------
+
+
+class TestChangedAreaMembers:
+    def test_includes_maintainers_and_collaborators(self):
+        entry = {"files": ["c/"], "maintainers": ["m1"], "collaborators": ["c1", "c2"]}
+        result = sut.changed_area_members({"Area": entry}, {"Area": entry}, {"Area"})
+        assert result == {"m1", "c1", "c2"}
+
+    def test_includes_added_and_removed_people(self):
+        old = {"Area": {"files": ["c/"], "maintainers": ["m1"], "collaborators": ["gone"]}}
+        new = {"Area": {"files": ["c/"], "maintainers": ["m1", "new_m"], "collaborators": []}}
+        result = sut.changed_area_members(old, new, {"Area"})
+        assert result == {"m1", "new_m", "gone"}
+
+    def test_includes_members_of_added_and_removed_areas(self):
+        old = {"Removed": {"files": ["r/"], "maintainers": ["r_m"], "collaborators": ["r_c"]}}
+        new = {"Added": {"files": ["a/"], "maintainers": ["a_m"], "collaborators": ["a_c"]}}
+        result = sut.changed_area_members(old, new, {"Removed", "Added"})
+        assert result == {"r_m", "r_c", "a_m", "a_c"}
+
+    def test_unchanged_areas_ignored(self):
+        entry = {"files": ["c/"], "maintainers": ["m1"], "collaborators": ["c1"]}
+        result = sut.changed_area_members({"Area": entry}, {"Area": entry}, set())
+        assert result == set()
+
+    def test_process_pr_requests_whole_group(self, tmp_path):
+        base = tmp_path / "base.yml"
+        base.write_text(
+            "Area:\n"
+            "  files: [c/]\n"
+            "  maintainers: [m1]\n"
+            "  collaborators: [c1, gone]\n"
+            "Other:\n"
+            "  files: [o/]\n"
+            "  maintainers: [other_m]\n"
+        )
+        updated = tmp_path / "updated.yml"
+        updated.write_text(
+            "Area:\n"
+            "  files: [c/]\n"
+            "  maintainers: [m1]\n"
+            "  collaborators: [c1, new_c]\n"
+            "Other:\n"
+            "  files: [o/]\n"
+            "  maintainers: [other_m]\n"
+        )
+        mf_area = _make_area("MAINTAINERS file", maintainers=["mf_m"])
+        gh, args, mf, pr = _make_process_pr_harness({"MAINTAINERS.yml": [mf_area]})
+        args.updated_maintainer_file = str(updated)
+        args.base_maintainer_file = str(base)
+
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert {"mf_m", "m1", "c1", "gone", "new_c"} <= set(requested)
+        assert "other_m" not in requested
+
+
+# ---------------------------------------------------------------------------
 # update_size_xs_label
 # ---------------------------------------------------------------------------
 

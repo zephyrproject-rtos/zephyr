@@ -35,8 +35,10 @@ int mpipe_app_src_alloc(struct mpipe_app_src *app_src, uint32_t size, k_timeout_
 	struct net_buf *nb;
 	struct mpipe_buffer_meta *meta;
 
-	if (app_src == NULL || buf == NULL || size == 0U ||
-	    size > CONFIG_MPIPE_BASE_APP_SRC_BUF_SZ) {
+	__ASSERT_NO_MSG(app_src != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
+
+	if (size == 0U || size > CONFIG_MPIPE_BASE_APP_SRC_BUF_SZ) {
 		return -EINVAL;
 	}
 
@@ -63,7 +65,10 @@ int mpipe_app_src_push_buf(struct mpipe_app_src *app_src, struct net_buf *buf, u
 {
 	struct mpipe_buffer_meta *meta;
 
-	if (app_src == NULL || buf == NULL || size == 0U || size > buf->size) {
+	__ASSERT_NO_MSG(app_src != NULL);
+	__ASSERT_NO_MSG(buf != NULL);
+
+	if (size == 0U || size > buf->size) {
 		return -EINVAL;
 	}
 
@@ -85,9 +90,7 @@ int mpipe_app_src_push(struct mpipe_app_src *app_src, const void *data, uint32_t
 	struct net_buf *nb;
 	int ret;
 
-	if (data == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(data != NULL);
 
 	ret = mpipe_app_src_alloc(app_src, size, timeout, &nb);
 	if (ret != 0) {
@@ -108,9 +111,7 @@ int mpipe_app_src_eos(struct mpipe_app_src *app_src, k_timeout_t timeout)
 {
 	void *eos_ptr = &eos_sentinel;
 
-	if (app_src == NULL) {
-		return -EINVAL;
-	}
+	__ASSERT_NO_MSG(app_src != NULL);
 
 	if (k_msgq_put(&app_src->msgq, &eos_ptr, timeout) != 0) {
 		return -EAGAIN;

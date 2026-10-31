@@ -234,7 +234,9 @@ The following keywords (case-insensitive) may be used to specify a credential ty
    "``CA_CERT``, ``CA``", "A trusted CA certificate."
    "``SERVER_CERT``, ``SELF_CERT``, ``CLIENT_CERT``, ``CLIENT``, ``SELF``, ``SERV``", "Self or server certificate."
    "``PRIVATE_KEY``, ``PK``", "A private key."
+   "``PRIVATE_KEY_PSA``, ``PK_PSA``", "ID of a private key stored in PSA."
    "``PRE_SHARED_KEY``, ``PSK``", "A pre-shared key."
+   "``PRE_SHARED_KEY_PSA``, ``PSK_PSA``", "ID of a pre-shared key stored in PSA."
    "``PRE_SHARED_KEY_ID``, ``PSK_ID``", "ID for pre-shared key."
 
 .. _tls_credentials_shell_data_formats:

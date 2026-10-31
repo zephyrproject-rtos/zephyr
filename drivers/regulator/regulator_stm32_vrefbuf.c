@@ -74,9 +74,15 @@ struct regulator_stm32_vrefbuf_config {
 
 static int regulator_stm32_vrefbuf_enable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const struct regulator_stm32_vrefbuf_config *config = dev->config;
 
 	LL_VREFBUF_Enable();
+
+	/* VRR detection is disabled in hold mode (Hi-Z) */
+	if (config->vrefp_output_enable) {
+		while (!LL_VREFBUF_IsVREFReady()) {
+		}
+	}
 
 	return 0;
 }
@@ -174,7 +180,7 @@ static int regulator_stm32_vrefbuf_set_voltage(const struct device *dev, int32_t
 			LL_VREFBUF_DisableHIZ();
 		}
 		if (regulator_enabled) {
-			LL_VREFBUF_Enable();
+			(void)regulator_stm32_vrefbuf_enable(dev);
 		}
 	}
 

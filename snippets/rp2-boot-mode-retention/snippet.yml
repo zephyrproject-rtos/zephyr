@@ -7,6 +7,6 @@ boards:
   /.*\/rp2040(/.*)?/:
     append:
       EXTRA_DTC_OVERLAY_FILE: soc/rp2040.overlay
-  /.*/rp2350b?/.*/:
+  /.*/rp2350[ab]?/.*/:
     append:
       EXTRA_DTC_OVERLAY_FILE: soc/rp2350.overlay

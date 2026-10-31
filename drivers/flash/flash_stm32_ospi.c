@@ -121,6 +121,8 @@ struct flash_stm32_ospi_data {
 	uint16_t page_size;
 	/* Address width in bytes */
 	uint8_t address_width;
+	/* JESD216 DW16 enter_4ba bits 0-1, applied once SFDP reading is done */
+	uint8_t enter_4ba;
 	/* Read operation dummy cycles */
 	uint8_t read_dummy;
 	uint32_t read_opcode;
@@ -1117,6 +1119,21 @@ static int stm32_ospi_abort(const struct device *dev)
 }
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
 
+static uint8_t spi_nor_convert_erase_to_4b(const uint8_t opcode)
+{
+	switch (opcode) {
+	case SPI_NOR_CMD_SE:
+		return SPI_NOR_CMD_SE_4B;
+	case SPI_NOR_CMD_BE_32K:
+		return SPI_NOR_CMD_BE_32K_4B;
+	case SPI_NOR_CMD_BE:
+		return SPI_NOR_CMD_BE_4B;
+	default:
+		/* use provided */
+		return opcode;
+	}
+}
+
 /*
  * Function to erase the flash : chip or sector with possible OSPI/SPI and STR/DTR
  * to erase the complete chip (using dedicated command) :
@@ -1258,6 +1275,9 @@ static int flash_stm32_ospi_erase(const struct device *dev, off_t addr,
 				/* In OPI mode, do not use the SFDP SPI opcode (bet->cmd). */
 				if (dev_cfg->data_mode == OSPI_OPI_MODE) {
 					cmd_erase.Instruction = SPI_NOR_OCMD_SE;
+				} else if (IS_ENABLED(DT_INST_PROP(0, four_byte_opcodes))) {
+					cmd_erase.Instruction =
+						spi_nor_convert_erase_to_4b(bet->cmd);
 				} else {
 					cmd_erase.Instruction = bet->cmd;
 				}
@@ -2067,13 +2087,9 @@ static int spi_nor_process_bfp(const struct device *dev,
 			 * if it is enough to use 0xB7 instruction without
 			 * write enable to switch to 4 bytes addressing mode.
 			 * If bit 1 is set, a write enable is needed.
+			 * The switch is deferred: SFDP reads use a 3-byte address.
 			 */
-			if (dw16.enter_4ba & 0x3) {
-				if (stm32_ospi_program_addr_4b(dev, dw16.enter_4ba & 2)) {
-					LOG_ERR("Unable to enter 4B mode.");
-					return -EIO;
-				}
-			}
+			data->enter_4ba = dw16.enter_4ba & 0x3;
 		}
 	}
 
@@ -2509,6 +2525,14 @@ static int flash_stm32_ospi_init(const struct device *dev)
 			}
 		}
 		++php;
+	}
+
+	if (dev_data->enter_4ba != 0U) {
+		ret = stm32_ospi_program_addr_4b(dev, (dev_data->enter_4ba & 2U) != 0U);
+		if (ret != 0) {
+			LOG_ERR("Unable to enter 4B mode.");
+			return -EIO;
+		}
 	}
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)

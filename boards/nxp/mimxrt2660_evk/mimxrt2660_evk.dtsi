@@ -60,22 +60,22 @@
 	w25h512_ctrl: flash-controller@0 {
 		compatible = "nxp,xspi-nor";
 		reg = <0>;
-		status = "disabled";
+		ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
 		device-name = "w25h512nweam";
 		size = <DT_SIZE_M(64)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
+		status = "disabled";
 
 		w25h512: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <4>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			status = "disabled";
 		};
 	};
 };
@@ -94,8 +94,8 @@
 / {
 	psram: memory@80000000 {
 		compatible = "zephyr,memory-region";
-		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(32)>;
+		device_type = "memory";
 		zephyr,memory-region = "PSRAM";
 		status = "disabled";
 	};

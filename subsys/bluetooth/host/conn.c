@@ -648,6 +648,15 @@ static bool is_acl_conn(struct bt_conn *conn)
 	return bt_conn_is_le(conn) || bt_conn_is_br(conn);
 }
 
+static bool is_bis_tx_conn(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO_BROADCASTER)
+	return bt_conn_is_iso(conn) && conn->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER;
+#else
+	return false;
+#endif /* CONFIG_BT_ISO_BROADCASTER */
+}
+
 static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		    size_t len, bt_conn_tx_cb_t cb, void *ud)
 {
@@ -667,12 +676,6 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		__ASSERT_NO_MSG(0);
 
 		err = -EIO;
-		goto error_return;
-	}
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		LOG_WRN("Dropping buffer since Bluetooth is not ready");
-		err = -EHOSTDOWN;
 		goto error_return;
 	}
 
@@ -905,6 +908,24 @@ static bool cannot_send_to_controller(struct bt_conn *conn)
 	return k_sem_count_get(bt_conn_get_pkts(conn)) == 0;
 }
 
+static bool held_back_by_disable(struct bt_conn *conn)
+{
+	/* bt_disable() clears BT_DEV_READY and takes the connections down only
+	 * once the controller has been reset. Until then what is queued for
+	 * them stays where it is, to be dealt with by the teardown as for any
+	 * connection that goes away with data queued.
+	 */
+	return conn->state == BT_CONN_CONNECTED && !atomic_test_bit(bt_dev.flags, BT_DEV_READY);
+}
+
+static bool held_back_by_tx_failure(struct bt_conn *conn)
+{
+	/* A connection that failed to send is being disconnected, see
+	 * bt_conn_tx_processor().
+	 */
+	return conn->state == BT_CONN_CONNECTED && atomic_test_bit(conn->flags, BT_CONN_TX_FAILED);
+}
+
 static bool dont_have_viewbufs(void)
 {
 #if defined(CONFIG_BT_CONN_TX)
@@ -955,6 +976,18 @@ static struct bt_conn *get_conn_ready(void)
 		/* Iterate over the list of connections that have data to send
 		 * and return the first one that can be sent.
 		 */
+
+		if (held_back_by_disable(conn)) {
+			LOG_DBG("not ready, holding back %p", conn);
+			prev = &conn->_conn_ready;
+			continue;
+		}
+
+		if (held_back_by_tx_failure(conn)) {
+			LOG_DBG("sending failed, holding back %p", conn);
+			prev = &conn->_conn_ready;
+			continue;
+		}
 
 		if (cannot_send_to_controller(conn)) {
 			/* When buffers are full, try next connection. */
@@ -1024,6 +1057,59 @@ void bt_conn_suspend_tx(bool suspend)
 }
 #endif	/* CONFIG_BT_TESTING */
 
+static int disconnect_conn(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ISO_UNICAST)
+	if (bt_conn_is_iso(conn)) {
+		/* Takes the state of the ISO channel along */
+		return bt_iso_chan_disconnect(conn->iso.chan);
+	}
+#endif /* CONFIG_BT_ISO_UNICAST */
+
+	return bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+}
+
+static void disconnect_after_tx_failure(struct bt_conn *conn, void *data)
+{
+	int err;
+
+	ARG_UNUSED(data);
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_TX_FAILED)) {
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		atomic_clear_bit(conn->flags, BT_CONN_TX_FAILED);
+		return;
+	}
+
+	/* The flag holds the connection back for as long as it is connected,
+	 * so it stays set while the connection is being disconnected.
+	 */
+	err = disconnect_conn(conn);
+	if (err == 0) {
+		return;
+	}
+
+	/* Still connected, so let it go on sending */
+	LOG_WRN("Unable to disconnect %p (err %d)", conn, err);
+	atomic_clear_bit(conn->flags, BT_CONN_TX_FAILED);
+	bt_tx_irq_raise();
+}
+
+static void tx_failure_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	bt_conn_foreach(BT_CONN_TYPE_ALL, disconnect_after_tx_failure, NULL);
+}
+
+/* Disconnecting waits for an HCI command, which the TX processor may not do:
+ * it holds the host lock, see tx_processor().
+ */
+static K_WORK_DEFINE(tx_failure_work, tx_failure_handler);
+
 void bt_conn_tx_processor(void)
 {
 	LOG_DBG("start");
@@ -1087,8 +1173,24 @@ void bt_conn_tx_processor(void)
 	int err = send_buf(conn, buf, buf_len, cb, ud);
 
 	if (err) {
+		if (is_bis_tx_conn(conn)) {
+			/* A BIS cannot be disconnected on its own, and
+			 * terminating its BIG would take the other BISes down
+			 * too: what failed is lost, and sending goes on.
+			 */
+			LOG_ERR("Failed to send on BIS %p (err %d)", conn, err);
+			goto raise_and_exit;
+		}
+
 		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
-		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		atomic_set_bit(conn->flags, BT_CONN_TX_FAILED);
+		err = bt_work_submit(&tx_failure_work);
+		if (err < 0) {
+			/* Nothing is going to disconnect the connection */
+			LOG_ERR("Failed to submit the disconnect (err %d)", err);
+			atomic_clear_bit(conn->flags, BT_CONN_TX_FAILED);
+		}
+
 		goto exit;
 	}
 
@@ -1107,6 +1209,11 @@ static void process_unack_tx(struct bt_conn *conn)
 {
 	LOG_DBG("%p", conn);
 
+	/* What was sent in part is not continued on the object's next
+	 * connection: a central CIS keeps its object, without it being zeroed.
+	 */
+	conn->next_is_frag = false;
+
 	/* Return any unacknowledged packets */
 	while (1) {
 		struct bt_conn_tx *tx;
@@ -1123,6 +1230,7 @@ static void process_unack_tx(struct bt_conn *conn)
 
 		conn_tx_destroy(conn, tx);
 		k_sem_give(bt_conn_get_pkts(conn));
+		atomic_dec(&conn->in_ll);
 	}
 }
 
@@ -1223,6 +1331,11 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 
 		break;
 	case BT_CONN_DISCONNECTED:
+		/* The flag is not to carry over to the next connection on this
+		 * object, which is not always zeroed first: a central CIS keeps
+		 * its object.
+		 */
+		atomic_clear_bit(conn->flags, BT_CONN_TX_FAILED);
 #if defined(CONFIG_BT_CONN)
 		if (bt_conn_is_sco(conn)) {
 			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
@@ -1604,6 +1717,18 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
 		LOG_WRN("Timeout discarded. No blocking in syswq.");
+		timeout = K_NO_WAIT;
+	}
+
+	/*
+	 * Only K_FOREVER is forced to K_NO_WAIT here: it is the only timeout
+	 * that blocks bt_workq indefinitely, since bt_workq is also what
+	 * releases the buffers. Bounded timeouts (e.g. L2CAP_RTX_TIMEOUT)
+	 * only stall RX processing briefly and are intentionally left
+	 * untouched.
+	 */
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER) && bt_is_work_thread()) {
+		LOG_DBG("Timeout K_FOREVER discarded. No blocking in bt_workq.");
 		timeout = K_NO_WAIT;
 	}
 
@@ -4025,7 +4150,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 		return -EINVAL;
 	}
 
-	if (!bt_id_scan_random_addr_check()) {
+	if (!bt_id_conn_random_addr_check()) {
 		return -EINVAL;
 	}
 
@@ -4116,7 +4241,7 @@ static int conn_le_create_common_checks(const bt_addr_le_t *peer,
 		return -EALREADY;
 	}
 
-	if (!bt_id_scan_random_addr_check()) {
+	if (!bt_id_conn_random_addr_check()) {
 		LOG_DBG("Conn check failed: invalid random address.");
 		return -EINVAL;
 	}

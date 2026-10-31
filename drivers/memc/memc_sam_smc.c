@@ -76,14 +76,12 @@ static int memc_smc_init(const struct device *dev)
 	| SMC_CYCLE_NRD_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 1))
 
 #define SMC_DATA_BUS_WIDTH(node_id)                                                                \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_data_bus_width),                           \
-		((DT_PROP(node_id, atmel_smc_data_bus_width) == 16) ? SMC_MODE_DBW_16_BIT	   \
-		 : 0), (0))
+	COND_CODE_1(DT_ENUM_IDX_OR(node_id, atmel_smc_data_bus_width, 0),                          \
+		    (SMC_MODE_DBW_16_BIT), (0))
 
 #define SMC_BYTE_ACCESS_TYPE(node_id)                                                              \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_byte_access_type),                         \
-		(DT_ENUM_IDX(node_id, atmel_smc_byte_access_type) ? SMC_MODE_BAT_BYTE_WRITE	   \
-		 : SMC_MODE_BAT_BYTE_SELECT), (0))
+	COND_CODE_1(DT_ENUM_IDX_OR(node_id, atmel_smc_byte_access_type, 0),                        \
+		    (SMC_MODE_BAT_BYTE_WRITE), (0))
 
 #define SMC_PAGE_SIZE(node_id)                                                                     \
 	((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 32)                                       \
@@ -95,9 +93,8 @@ static int memc_smc_init(const struct device *dev)
 				       : SMC_MODE_PS_4_BYTE)))
 
 #define SMC_PAGE_MODE(node_id)                                                                     \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_page_mode),                                \
-		    (DT_PROP_OR(node_id, atmel_smc_page_mode, 0)				   \
-			? (SMC_MODE_PMEN | SMC_PAGE_SIZE(node_id)) : 0), (0))
+	COND_CODE_1(DT_PROP(node_id, atmel_smc_page_mode),                                         \
+		    ((SMC_MODE_PMEN | SMC_PAGE_SIZE(node_id))), (0))
 
 #define BANK_CONFIG(node_id)								\
 	{										\

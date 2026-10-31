@@ -1,4 +1,5 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: BSD-3-Clause
 
 import contextlib
@@ -295,6 +296,33 @@ def test_ranges():
         edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0xa0000000b0000000c, parent_bus_cells=0x2, parent_bus_addr=0xd0000000e, length_cells=0x2, length=0xf00000010),
         edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x1a0000001b0000001c, parent_bus_cells=0x2, parent_bus_addr=0x1d0000001e, length_cells=0x2, length=0x1f00000110),
         edtlib.Range(node=node, child_bus_cells=0x3, child_bus_addr=0x2a0000002b0000002c, parent_bus_cells=0x2, parent_bus_addr=0x2d0000002e, length_cells=0x2, length=0x2f00000210)
+    ]
+
+def test_dma_ranges_undeclared(tmp_path):
+    '''dma-ranges, like ranges, need not be declared in the binding'''
+    # 'defaults' declares properties, but not dma-ranges
+    dts_file = tmp_path / "dma-ranges.dts"
+    dts_file.write_text("""\
+/dts-v1/;
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	node {
+		compatible = "defaults";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		dma-ranges = <0x0 0x10000000 0x1000>;
+	};
+};
+""", encoding="utf-8")
+    with from_here():
+        edt = edtlib.EDT(str(dts_file), ["test-bindings"])
+
+    node = edt.get_node("/node")
+    assert node.dma_ranges == [
+        edtlib.Range(node=node, child_bus_cells=0x1, child_bus_addr=0x0, parent_bus_cells=0x1, parent_bus_addr=0x10000000, length_cells=0x1, length=0x1000)
     ]
 
 def test_reg():
@@ -816,6 +844,123 @@ def test_cpu_props_fallback_from_cpus_node():
     # CPU-local value takes precedence.
     assert cpu1.props["clock-frequency"].val == 2000
 
+
+def test_edt_cpus_list():
+    """edt.cpus contains exactly the /cpus/cpu@N nodes in source order.
+
+    Non-cpu children of /cpus (e.g. power-states) must not appear in the
+    list.
+    """
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu_paths = [n.path for n in edt.cpus]
+    assert cpu_paths == ["/cpus/cpu@0", "/cpus/cpu@1", "/cpus/cpu@2"]
+
+
+def test_cpu_fallback_binding():
+    """A /cpus/cpu@N node with no compatible receives the cpu.yaml binding.
+
+    Verifies binding_path, property types, and property values including
+    a disabled status.
+    """
+    with from_here():
+        edt = edtlib.EDT(
+            "test.dts",
+            ["test-bindings", "../../../../dts/bindings"],
+        )
+
+    cpu2 = edt.get_node("/cpus/cpu@2")
+
+    assert cpu2.binding_path is not None
+    assert cpu2.binding_path.endswith("cpu.yaml")
+    assert cpu2.props["device_type"].val == "cpu"
+    assert cpu2.props["clock-frequency"].val == 3000
+    assert cpu2.props["enable-method"].val == "spin-table"
+    assert cpu2.props["status"].val == "disabled"
+
+
+def test_cpu_binding_type_conflict(tmp_path):
+    """A vendor CPU binding that conflicts with cpu.yaml raises EDTError (werror=True).
+
+    The error message must name the property, the declared type, and the
+    expected type from cpu.yaml.
+    """
+    dts = tmp_path / "conflict.dts"
+    dts.write_text(textwrap.dedent("""\
+        /dts-v1/;
+        / {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            cpus {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                cpu@0 {
+                    compatible = "test,cpu-conflict";
+                    device_type = "cpu";
+                    reg = <0>;
+                };
+            };
+        };
+    """))
+
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as exc_info:
+            edtlib.EDT(
+                str(dts),
+                ["test-bindings", "../../../../dts/bindings"],
+                werror=True,
+            )
+
+    msg = str(exc_info.value)
+    assert "clock-frequency" in msg
+    assert "string" in msg
+    assert "var-uint64" in msg
+
+
+def test_cpu_binding_type_mismatch_warning(caplog, tmp_path):
+    """A vendor CPU binding that conflicts with cpu.yaml emits a warning (werror=False).
+
+    No EDTError must be raised; the warning message must contain the same
+    information as the hard-error path.
+    """
+    dts = tmp_path / "conflict.dts"
+    dts.write_text(textwrap.dedent("""\
+        /dts-v1/;
+        / {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            cpus {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                cpu@0 {
+                    compatible = "test,cpu-conflict";
+                    device_type = "cpu";
+                    reg = <0>;
+                };
+            };
+        };
+    """))
+
+    with caplog.at_level(WARNING):
+        with from_here():
+            # Must not raise even though there is a type conflict.
+            edtlib.EDT(
+                str(dts),
+                ["test-bindings", "../../../../dts/bindings"],
+                werror=False,
+            )
+
+    conflict_warnings = [
+        r.message for r in caplog.records
+        if "clock-frequency" in str(r.message)
+    ]
+    assert conflict_warnings, "expected a warning about clock-frequency type conflict"
+    msg = str(conflict_warnings[0])
+    assert "string" in msg
+    assert "var-uint64" in msg
+
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
@@ -857,6 +1002,102 @@ def test_prop_defaults():
     # int/array defaults (decimal in binding) should NOT be HexInt
     assert not isinstance(node.props["int"].spec.default, edtlib.HexInt)
     assert not any(isinstance(v, edtlib.HexInt) for v in node.props["array"].spec.default)
+
+def test_var_uint64_type():
+    '''type: var-uint64 assembles 1-cell and 2-cell DTS values into a scalar int'''
+
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    node = edt.get_node("/var-uint64-node")
+
+    # 1-cell value: plain 32-bit integer returned as scalar
+    assert node.props["val-32"].val == 100000000
+    assert node.props["val-32"].spec.type == "var-uint64"
+
+    # 2-cell value: assembled 64-bit integer (1 << 32) | 0 = 4294967296
+    assert node.props["val-64"].val == 4294967296
+
+    # min/max constraints work on the assembled value
+    assert node.props["val-with-min"].val == 200
+    assert node.props["val-with-max"].val == 0xABCDEF01
+
+    # const works
+    assert node.props["val-const"].val == 999
+
+    # default is used when property is absent from DTS
+    assert node.props["val-with-default"].val == 42
+
+
+def test_var_uint64_three_cell_error(tmp_path):
+    '''type: var-uint64 rejects a 3-cell DTS value with a clear error'''
+
+    dts = tmp_path / "bad.dts"
+    dts.write_text("""\
+/dts-v1/;
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+    n {
+        compatible = "vnd,var-uint64-test";
+        val-32 = <1 2 3>;
+    };
+};
+""")
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as exc_info:
+            edtlib.EDT(str(dts), ["test-bindings"])
+    msg = str(exc_info.value)
+    assert "var-uint64" in msg
+    assert "3" in msg
+
+
+def test_var_uint64_min_max(tmp_path):
+    '''type: var-uint64 min: constraint is enforced on the assembled value'''
+
+    dts = tmp_path / "bad.dts"
+    dts.write_text("""\
+/dts-v1/;
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+    n {
+        compatible = "vnd,var-uint64-test";
+        val-with-min = <50>;
+    };
+};
+""")
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as exc_info:
+            edtlib.EDT(str(dts), ["test-bindings"])
+    assert "min" in str(exc_info.value).lower()
+
+
+def test_var_uint64_binding_errs(tmp_path):
+    '''Binding validator: min:/max: accepted on var-uint64; min-len: rejected'''
+
+    def check_binding_err(yaml_content, expected_err):
+        binding_file = tmp_path / "bad-var-uint64.yaml"
+        binding_file.write_text(yaml_content)
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding(str(binding_file), {})
+        assert str(e.value) == expected_err
+
+    path = str(tmp_path / "bad-var-uint64.yaml")
+
+    # min-len: on var-uint64 must be rejected
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: var-uint64
+    min-len: 1
+""",
+        f"'min-len:'/'max-len:' in '{path}' for 'foo' "
+        f"requires an array type, but has type 'var-uint64'")
+
 
 def test_prop_enums():
     '''test properties with enum: in the binding'''
@@ -1142,7 +1383,7 @@ properties:
     min: 0
 """,
         f"'min:'/'max:' in '{path}' for 'foo' requires "
-        f"'type: int' or 'type: array', but has type 'string'")
+        f"'type: int', 'type: var-uint64', or 'type: array', but has type 'string'")
 
     # min/max combined with enum
     check_binding_err(

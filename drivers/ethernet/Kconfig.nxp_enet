@@ -10,6 +10,7 @@ config ETH_NXP_ENET
 	bool "NXP ENET Ethernet driver"
 	default y
 	depends on DT_HAS_NXP_ENET_MAC_ENABLED
+	select ETH_PHY_DRIVER
 	select NOCACHE_MEMORY if CPU_HAS_DCACHE
 	select ARM_MPU if CPU_CORTEX_M7
 	imply NET_POWER_MANAGEMENT

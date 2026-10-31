@@ -455,7 +455,7 @@ static DEVICE_API(rtc, rtc_emul_driver_api) = {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-int rtc_emul_init(const struct device *dev)
+static int rtc_emul_init(const struct device *dev)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 

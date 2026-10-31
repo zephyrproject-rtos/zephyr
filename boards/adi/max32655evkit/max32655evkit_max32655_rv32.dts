@@ -10,8 +10,8 @@
 #include "max32655evkit.dtsi"
 
 / {
-	model = "Analog Devices MAX32655EVKIT";
 	compatible = "adi,max32655evkit";
+	model = "Analog Devices MAX32655EVKIT";
 
 	chosen {
 		zephyr,console = &uart3;
@@ -48,9 +48,9 @@
 
 &uart3 {
 	pinctrl-0 = <&lpuartb_rx_p2_6 &lpuartb_tx_p2_7>;
-	status = "okay";
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
+	status = "okay";
 };

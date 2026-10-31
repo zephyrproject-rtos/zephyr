@@ -13,6 +13,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/wifi_utils.h>
 
 #include "util.h"
 #include "system/fmac_api.h"
@@ -24,18 +25,6 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 extern struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 
-static enum nrf_wifi_band nrf_wifi_map_zep_band_to_rpu(enum wifi_frequency_bands zep_band)
-{
-	switch (zep_band) {
-	case WIFI_FREQ_BAND_2_4_GHZ:
-		return NRF_WIFI_BAND_2GHZ;
-	case WIFI_FREQ_BAND_5_GHZ:
-		return NRF_WIFI_BAND_5GHZ;
-	default:
-		return NRF_WIFI_BAND_INVALID;
-	}
-}
-
 int nrf_wifi_disp_scan_zep(const struct device *dev,
 			   struct net_if *iface __unused,
 			   struct wifi_scan_params *params,
@@ -46,7 +35,8 @@ int nrf_wifi_disp_scan_zep(const struct device *dev,
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_umac_scan_info *scan_info = NULL;
-	enum nrf_wifi_band band = NRF_WIFI_BAND_INVALID;
+	enum wifi_frequency_bands band;
+	uint16_t freq;
 	uint8_t band_flags = 0xFF;
 	uint8_t i = 0;
 	uint8_t j = 0;
@@ -184,22 +174,22 @@ int nrf_wifi_disp_scan_zep(const struct device *dev,
 				break;
 			}
 
-			band = nrf_wifi_map_zep_band_to_rpu(params->band_chan[i].band);
+			band = params->band_chan[i].band;
 
-			if (band == NRF_WIFI_BAND_INVALID) {
-				LOG_ERR("%s: Unsupported band %d", __func__,
-					params->band_chan[i].band);
+			if ((band != WIFI_FREQ_BAND_2_4_GHZ) && (band != WIFI_FREQ_BAND_5_GHZ)) {
+				LOG_ERR("%s: Unsupported band %d", __func__, band);
 				goto out;
 			}
 
-			scan_info->scan_params.center_frequency[k++] = nrf_wifi_utils_chan_to_freq(
-				band, params->band_chan[i].channel);
+			freq = wifi_utils_chan_to_freq(band, params->band_chan[i].channel);
 
-			if (scan_info->scan_params.center_frequency[k - 1] == -1) {
+			if (!freq) {
 				LOG_ERR("%s: Invalid channel %d", __func__,
 					 params->band_chan[i].channel);
 				goto out;
 			}
+
+			scan_info->scan_params.center_frequency[k++] = freq;
 		}
 
 		scan_info->scan_params.num_scan_channels = k;

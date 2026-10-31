@@ -11,8 +11,8 @@
 #include "frdm_imxrt700-pinctrl.dtsi"
 
 / {
-	model = "NXP FRDM-IMXRT700 board";
 	compatible = "nxp,mimxrt798s";
+	model = "NXP FRDM-IMXRT700 board";
 
 	aliases {
 		led0 = &red_led;
@@ -30,9 +30,9 @@
 		compatible = "gpio-leds";
 
 		red_led: led_0 {
-			status = "okay";
 			gpios = <&gpio8 6 GPIO_ACTIVE_HIGH>;
 			label = "User LED_RED";
+			status = "okay";
 		};
 	};
 
@@ -54,8 +54,8 @@
  * replace &os_timer with &systick
  */
 &os_timer_cpu1 {
-	status = "okay";
 	wakeup-source;
+	status = "okay";
 };
 
 &flexcomm19 {
@@ -63,10 +63,10 @@
 };
 
 &flexcomm19_lpuart19 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm19_lpuart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio8 {

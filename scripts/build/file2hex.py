@@ -85,16 +85,13 @@ def make_string_literal(chunk):
 
 
 def chunker(source, remaining=-1):
-    while chunk_raw := source.read(1024):
+    while remaining != 0:
+        chunk_raw = source.read(1024 if remaining == -1 else min(1024, remaining))
         if chunk_raw == b"":
             break
-        if remaining == -1:
-            yield chunk_raw
-        elif remaining < len(chunk_raw):
-            yield chunk_raw[:remaining]
-        else:
-            yield chunk_raw
+        if remaining != -1:
             remaining -= len(chunk_raw)
+        yield chunk_raw
 
 
 def main():

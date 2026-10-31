@@ -10,8 +10,8 @@
 #include "imx943_evk-pinctrl.dtsi"
 
 / {
-	model = "NXP i.MX943 EVK board";
 	compatible = "nxp,imx943_evk";
+	model = "NXP i.MX943 EVK board";
 
 	chosen {
 		zephyr,flash = &itcm;
@@ -32,20 +32,20 @@
 		pinctrl-0 = <&flexio1_io5_default>;
 		pinctrl-names = "default";
 
+		status = "okay";
+
 		pwm_1 {
 			pin-id = <5>;
 			prescaler = <1>;
 		};
-
-		status = "okay";
 	};
 };
 
 &lpuart12 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart12_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpt_hw_timer3 {

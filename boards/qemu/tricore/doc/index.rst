@@ -39,12 +39,12 @@ QEMU Setup
 ==========
 
 TriCore QEMU is not part of the Zephyr SDK. Use a prebuilt binary from
-https://github.com/linumiz/qemu-tricore/releases, or build it from source:
+https://gitlab.com/linumiz/infineon/release/qemu-aurix/-/releases, or build it from source:
 
 .. code-block:: console
 
-   git clone https://github.com/linumiz/qemu-tricore.git
-   cd qemu-tricore
+   git clone https://gitlab.com/linumiz/infineon/release/qemu-aurix.git
+   cd qemu-aurix
    ./configure --target-list=tricore-softmmu
    make -j$(nproc) && make install
 

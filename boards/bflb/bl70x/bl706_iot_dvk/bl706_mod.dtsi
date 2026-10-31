@@ -47,22 +47,22 @@
 
 			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "boot_header";
 				reg = <0x00000000 0x2000>;
+				label = "boot_header";
 				read-only;
 			};
 
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00002000 (DT_SIZE_K(4000) - 0x2000)>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@3e8000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x003e8000 DT_SIZE_K(96)>;
+				label = "storage";
 			};
 		};
 	};

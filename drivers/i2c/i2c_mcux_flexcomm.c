@@ -145,6 +145,29 @@ static uint32_t mcux_flexcomm_convert_flags(int msg_flags)
 	return flags;
 }
 
+static int mcux_flexcomm_status_to_errno(status_t status)
+{
+	switch (status) {
+	case kStatus_Success:
+		return 0;
+	case kStatus_I2C_Addr_Nak:
+		return -ENXIO;
+	case kStatus_I2C_ArbitrationLost:
+		return -EAGAIN;
+	case kStatus_I2C_StartStopError:
+	case kStatus_I2C_BitError:
+		return -EPROTO;
+	case kStatus_I2C_Timeout:
+	case kStatus_I2C_EventTimeout:
+	case kStatus_I2C_SclLowTimeout:
+		return -ETIMEDOUT;
+	case kStatus_I2C_Busy:
+		return -EBUSY;
+	default:
+		return -EIO;
+	}
+}
+
 static int mcux_flexcomm_transfer(const struct device *dev,
 				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
@@ -192,9 +215,9 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		/* Return an error if the transfer didn't start successfully
 		 * e.g., if the bus was busy
 		 */
-		if (status != kStatus_Success) {
+		ret = mcux_flexcomm_status_to_errno(status);
+		if (ret != 0) {
 			I2C_MasterTransferAbort(base, &data->handle);
-			ret = -EIO;
 			break;
 		}
 
@@ -204,9 +227,9 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration
 		 */
-		if (data->callback_status != kStatus_Success) {
+		ret = mcux_flexcomm_status_to_errno(data->callback_status);
+		if (ret != 0) {
 			I2C_MasterTransferAbort(base, &data->handle);
-			ret = -EIO;
 			break;
 		}
 

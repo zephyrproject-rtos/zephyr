@@ -20,7 +20,8 @@
 		group0 {
 			pinmux = <FTM3_CH5_PTC11>,
 				 <FTM3_CH0_PTB8>,
-				 <FTM3_CH1_PTB9>;
+				 <FTM3_CH1_PTB9>,
+				 <FTM3_CH2_PTB10>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -29,6 +30,7 @@
 
 /* To test this sample, connect
  * PTC11(J1-12) ---> PTD15(J1-14)
+ * PTB10(J2-2) ---> PTB8(J1-10), for the capture on the generating instance
  */
 
 / {
@@ -37,24 +39,32 @@
 		pwms = <&ftm3 5 0 PWM_POLARITY_NORMAL>, /* PTC11 J1 pin 12 out*/
 		       <&ftm0 0 0 PWM_POLARITY_NORMAL>; /* PTD15 J1 pin 14 in */
 	};
+
+	zephyr,user {
+		/* Generator and capture on one instance, so the capture spans
+		 * rollovers of the counter that sets the period.
+		 */
+		pwms = <&ftm3 2 0 PWM_POLARITY_NORMAL>, /* PTB10 D8 out */
+		       <&ftm3 0 0 PWM_POLARITY_NORMAL>; /* PTB8 D4 in */
+	};
 };
 
 &ftm0 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	clock-source = "external";
 	prescaler = <32>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ftm3 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	clock-source = "external";
 	prescaler = <128>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

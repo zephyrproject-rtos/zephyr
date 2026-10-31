@@ -15,12 +15,12 @@
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			/* 72 kB, as an MCUboot with encryption support enabled does not
 			 * fit into 64 kB. Slot sizes are kept a multiple of the 4 kB
 			 * erase block, which makes 72 kB the next usable size up.
 			 */
 			reg = <0x0 DT_SIZE_K(72)>;
+			label = "mcuboot";
 		};
 
 #ifdef WITH_FLPR_PARTITIONS
@@ -44,20 +44,20 @@
 #else
 		slot0_partition: partition@12000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x12000 DT_SIZE_K(452)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@83000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x83000 DT_SIZE_K(452)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f4000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0xf4000 DT_SIZE_K(36)>;
+			label = "storage";
 		};
 #endif
 	};

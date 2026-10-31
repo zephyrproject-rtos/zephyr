@@ -10,53 +10,53 @@
  */
 
 &clk_hsi {
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(64)>;
 	hsi-div = <1>;
+	status = "okay";
 };
 
 &cpusw {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSI CPU_SEL(0)>;
 	clock-frequency = <DT_FREQ_M(64)>;
+	status = "okay";
 };
 
 &ic1 {
-	status = "okay";
 	pll-src = <1>;
 	ic-div = <2>;
+	status = "okay";
 };
 
 &ic2 {
-	status = "okay";
 	pll-src = <1>;
 	ic-div = <3>;
+	status = "okay";
 };
 
 &ic6 {
-	status = "okay";
 	pll-src = <1>;
 	ic-div = <2>;
+	status = "okay";
 };
 
 &ic11 {
-	status = "okay";
 	pll-src = <1>;
 	ic-div = <3>;
+	status = "okay";
 };
 
 &perck {
-	status = "okay";
 	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
+	status = "okay";
 };
 
 &pll1 {
-	status = "okay";
 	clocks = <&clk_hsi>;
 	div-m = <4>;
 	mul-n = <75>;
 	div-p1 = <1>;
 	div-p2 = <1>;
+	status = "okay";
 };
 
 &rcc {

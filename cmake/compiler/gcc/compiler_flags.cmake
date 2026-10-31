@@ -200,6 +200,7 @@ set_compiler_property(PROPERTY security_canaries -fstack-protector)
 set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong)
 set_compiler_property(PROPERTY security_canaries_all -fstack-protector-all)
 set_compiler_property(PROPERTY security_canaries_explicit -fstack-protector-explicit)
+set_compiler_property(PROPERTY security_canaries_none -fno-stack-protector)
 
 # Only a valid option with GCC 7.x and above, so let's do check and set.
 if(CONFIG_STACK_CANARIES_TLS)

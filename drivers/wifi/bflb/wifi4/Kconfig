@@ -17,7 +17,7 @@ config WIFI_BFLB_WIFI4
 	select PSA_WANT_ALG_CCM
 	help
 	  Common support for the wifi4 MACSW firmware blob driver
-	  (BL60x).
+	  (BL60x, BL808).
 
 config WIFI_BFLB_WIFI4_TASK_STACK_SIZE
 	int "WiFi firmware task stack size"
@@ -31,13 +31,6 @@ config WIFI_BFLB_WIFI4_TASK_PRIORITY
 	default 5
 	help
 	  Preemptible thread priority of the firmware scheduler loop.
-
-config WIFI_BFLB_WIFI4_RX_RING_CNT
-	int "RX staging ring slots"
-	default 8
-	help
-	  Number of 1600-byte staging slots between the firmware RX
-	  callback and the net_pkt allocation work queue.
 
 config WIFI_BFLB_WIFI4_SCAN_AP_MAX
 	int "Scan result cache entries"

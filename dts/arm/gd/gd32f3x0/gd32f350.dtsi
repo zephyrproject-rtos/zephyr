@@ -15,8 +15,8 @@
 			clocks = <&cctl GD32_CLOCK_DAC>;
 			resets = <&rctl GD32_RESET_DAC>;
 			num-channels = <1>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

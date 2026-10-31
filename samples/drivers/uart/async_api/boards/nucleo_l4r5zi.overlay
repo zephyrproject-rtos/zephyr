@@ -5,7 +5,6 @@
  */
 
 &lpuart1 {
-	status = "okay";
 	pinctrl-0 = <&lpuart1_tx_pg7 &lpuart1_rx_pg8>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
@@ -13,6 +12,7 @@
 	dmas = <&dmamux1 5 34 STM32_DMA_PERIPH_TX>,
 	       <&dmamux1 4 35 STM32_DMA_PERIPH_RX>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma1 {

@@ -1766,10 +1766,12 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 						JESD216_DW15_QER_VAL_S2B1v6);
 
 	case 0x3725C2:
+	case 0x3825C2:
 		/* MX25U6432F - Macronix 64Mbit (8MB) QSPI NOR */
-		/* Note: This chip is not used by official NXP boards in Zephyr,
+		/* MX25U12832F - Macronix 128Mbit (16MB) QSPI NOR */
+		/* Note: These chips are not used by official NXP boards in Zephyr,
 		 * but is used on custom board designs.
-		 * 8MB needs only 24-bit addressing.
+		 * Both need only 24-bit addressing.
 		 * Skip SFDP to prevent 4-byte enable breaking XIP.
 		 * LUT matches NXP boot ROM config exactly.
 		 */

@@ -19,10 +19,10 @@
 };
 
 &i2s {
-	status = "okay";
 
 	dmas = <&dma 3>;
 	dma-names = "tx";
+	status = "okay";
 };
 
 &dma {

@@ -596,10 +596,10 @@ config WIFI_FIXED_MAC_ADDRESS_ENABLED
 
 config WIFI_RANDOM_MAC_ADDRESS
 	bool "Random MAC address generation at runtime"
-	depends on ENTROPY_GENERATOR
+	depends on HAS_RANDOM_GENERATOR
 	help
 	  This option enables random MAC address generation at runtime.
-	  The random MAC address is generated using the entropy device random generator.
+	  The random MAC address is generated using sys_rand_get.
 
 endchoice
 
@@ -753,6 +753,14 @@ config NRF_WIFI_AP_DEAD_DETECT_TIMEOUT
 	help
 		The number of seconds after which the AP is declared dead if no beacons
 		are received from the AP. This is used to detect AP silently going down, for example, due to power off.
+
+config WIFI_NRF70_VHT_HT_FALLBACK
+	bool "Allow fallback from VHT to HT on 802.11ac access points"
+	default y
+	help
+	  On 802.11ac 80 MHz access points, allow the link to fall back from
+	  VHT to HT when needed. Clear this option to keep VHT mode. Applies
+	  only to 802.11ac 80 MHz links; other modes are unaffected.
 
 config NRF_WIFI_RPU_RECOVERY
 	bool "RPU recovery mechanism"

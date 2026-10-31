@@ -8,10 +8,6 @@
 #include <ti/cc32xx.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(256)>;
-	};
-
 	flash0: serial-flash@0 {
 		reg = <0x0 DT_SIZE_K(1024)>;
 	};
@@ -19,5 +15,9 @@
 	flash1: flash@1000000 {
 		compatible = "soc-nv-flash";
 		reg = <0x01000000 DT_SIZE_K(1024)>;
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(256)>;
 	};
 };

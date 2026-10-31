@@ -952,10 +952,17 @@ static int lr11xx_lora_send_async(const struct device *dev,
 	data->tx_async_signal = async;
 	k_msgq_purge(&data->tx_msgq);
 
+	if (data->config.explicit_header_disable &&
+		data_len != data->config.implicit_packet_length) {
+		ret = -EINVAL;
+		goto out_error;
+	}
+
 	/* Set packet parameters */
 	ret = lr11xx_set_packet_params(dev,
 				       data->config.preamble_len,
-				       LR11XX_LORA_HEADER_EXPLICIT,
+				       data->config.explicit_header_disable ?
+				       LR11XX_LORA_HEADER_IMPLICIT : LR11XX_LORA_HEADER_EXPLICIT,
 				       data_len,
 				       data->config.packet_crc_disable ?
 				       LR11XX_LORA_CRC_OFF : LR11XX_LORA_CRC_ON,
@@ -1046,8 +1053,10 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 	/* Set packet parameters for variable length reception */
 	ret = lr11xx_set_packet_params(dev,
 				       data->config.preamble_len,
-				       LR11XX_LORA_HEADER_EXPLICIT,
-				       LR11XX_MAX_PAYLOAD_LEN,
+				       data->config.explicit_header_disable ?
+				       LR11XX_LORA_HEADER_IMPLICIT : LR11XX_LORA_HEADER_EXPLICIT,
+				       data->config.explicit_header_disable ?
+				       data->config.implicit_packet_length : LR11XX_MAX_PAYLOAD_LEN,
 				       data->config.packet_crc_disable ?
 				       LR11XX_LORA_CRC_OFF : LR11XX_LORA_CRC_ON,
 				       data->config.iq_inverted ?
@@ -1142,8 +1151,10 @@ static int lr11xx_lora_recv_async(const struct device *dev,
 	/* Set packet parameters */
 	ret = lr11xx_set_packet_params(dev,
 				       data->config.preamble_len,
-				       LR11XX_LORA_HEADER_EXPLICIT,
-				       LR11XX_MAX_PAYLOAD_LEN,
+				       data->config.explicit_header_disable ?
+				       LR11XX_LORA_HEADER_IMPLICIT : LR11XX_LORA_HEADER_EXPLICIT,
+				       data->config.explicit_header_disable ?
+				       data->config.implicit_packet_length : LR11XX_MAX_PAYLOAD_LEN,
 				       data->config.packet_crc_disable ?
 				       LR11XX_LORA_CRC_OFF : LR11XX_LORA_CRC_ON,
 				       data->config.iq_inverted ?
@@ -1197,8 +1208,10 @@ static int lr11xx_duty_cycle_start(const struct device *dev,
 
 	ret = lr11xx_set_packet_params(dev,
 				       data->config.preamble_len,
-				       LR11XX_LORA_HEADER_EXPLICIT,
-				       LR11XX_MAX_PAYLOAD_LEN,
+				       data->config.explicit_header_disable ?
+				       LR11XX_LORA_HEADER_IMPLICIT : LR11XX_LORA_HEADER_EXPLICIT,
+				       data->config.explicit_header_disable ?
+				       data->config.implicit_packet_length : LR11XX_MAX_PAYLOAD_LEN,
 				       data->config.packet_crc_disable ?
 				       LR11XX_LORA_CRC_OFF : LR11XX_LORA_CRC_ON,
 				       data->config.iq_inverted ?
@@ -1338,7 +1351,7 @@ static uint32_t lr11xx_lora_airtime(const struct device *dev, uint32_t data_len)
 {
 	struct lr11xx_data *data = dev->data;
 	uint32_t t_preamble_us, t_payload_us, t_sym_us, n_payload, bw_hz;
-	uint8_t sf, cr;
+	uint8_t sf, cr, hdr_len;
 	int32_t tmp;
 	bool de, crc;
 	int ret;
@@ -1364,8 +1377,9 @@ static uint32_t lr11xx_lora_airtime(const struct device *dev, uint32_t data_len)
 	de = should_enable_ldro(sf, data->config.bandwidth, dev->config);
 	crc = !data->config.packet_crc_disable;
 	cr = data->config.coding_rate;
+	hdr_len = data->config.explicit_header_disable ? 0 : 20;
 
-	tmp = 8 * data_len - 4 * sf + 28 + 16 * crc;
+	tmp = 8 * data_len - 4 * sf + 8 + hdr_len + 16 * crc;
 	if (tmp < 0) {
 		tmp = 0;
 	}

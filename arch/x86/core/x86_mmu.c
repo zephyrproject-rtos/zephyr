@@ -1462,7 +1462,7 @@ void z_x86_swap_update_common_page_table(struct k_thread *incoming)
 {
 	k_spinlock_key_t key;
 
-	if ((incoming->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(incoming)) {
 		/* Incoming thread is not a user thread. Memory domains don't
 		 * affect supervisor threads and we don't need to enable User
 		 * bits for its stack buffer; do nothing.
@@ -1809,7 +1809,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
 
-	if ((thread->base.user_options & K_USER) == 0) {
+	if (!k_thread_is_user_thread(thread)) {
 		return 0;
 	}
 
@@ -1854,7 +1854,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * address translation or else (NULL + offset) != NULL.
 	 */
 	pentry_t *old_ptables = UINT_TO_POINTER(thread->arch.ptables);
-	bool is_user = (thread->base.user_options & K_USER) != 0;
+	bool is_user = k_thread_is_user_thread(thread);
 	bool is_migration = (old_ptables != NULL) && is_user;
 
 	/* Allow US access to the thread's stack in its new domain if

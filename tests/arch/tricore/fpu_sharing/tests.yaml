@@ -1,0 +1,9 @@
+common:
+  tags:
+    - arch
+    - tricore
+    - fpu
+  arch_allow: tricore
+  filter: CONFIG_CPU_HAS_FPU
+tests:
+  arch.tricore.fpu_sharing: {}

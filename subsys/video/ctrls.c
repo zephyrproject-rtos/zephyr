@@ -101,7 +101,7 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) {
-		LOG_ERR("Control id 0x%x is write-only\n", control->id);
+		LOG_ERR("Control id 0x%08x is write-only", control->id);
 		return -EACCES;
 	}
 
@@ -110,6 +110,8 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev,
 				ctrl->cluster ? ctrl->cluster->id : ctrl->id);
 		if (ret) {
+			LOG_ERR("Failed to get volatile control 0x%08x for %s",
+				control->id, dev->name);
 			return ret;
 		}
 	}
@@ -138,24 +140,25 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 
 	ret = video_find_ctrl(dev, control->id, &ctrl);
 	if (ret) {
+		LOG_DBG("Control 0x%08x not found for %s", control->id, dev->name);
 		return ret;
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_READ_ONLY) {
-		LOG_ERR("Control id 0x%x is read-only\n", control->id);
+		LOG_ERR("Control id 0x%08x is read-only for %s", control->id, dev->name);
 		return -EACCES;
 	}
 
 	if (ctrl->flags & VIDEO_CTRL_FLAG_INACTIVE) {
-		LOG_ERR("Control id 0x%x is inactive\n", control->id);
+		LOG_ERR("Control id 0x%08x is inactive for %s", control->id, dev->name);
 		return -EACCES;
 	}
 
 	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
 		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
 		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
-		LOG_ERR("Control value is invalid\n");
-		return -EINVAL;
+		LOG_ERR("Control id 0x%08x value is invalid for %s", control->id, dev->name);
+		return -ERANGE;
 	}
 
 	/* No new value */
@@ -181,6 +184,8 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	    is_cluster_manual(ctrl)) {
 		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev, ctrl->id);
 		if (ret) {
+			LOG_ERR("Failed to get volatile control 0x%08x from %s",
+				control->id, dev->name);
 			goto restore;
 		}
 	}
@@ -189,6 +194,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	ret = video_driver_set_ctrl(ctrl->vdev->dev,
 				    ctrl->cluster ? ctrl->cluster->id : ctrl->id);
 	if (ret && ret != -ENOSYS) {
+		LOG_ERR("Failed to set control 0x%08x for %s", control->id, dev->name);
 		goto restore;
 	}
 
@@ -252,8 +258,6 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 		return "Gain, Automatic";
 	case VIDEO_CID_GAIN:
 		return "Gain";
-	case VIDEO_CID_ANALOGUE_GAIN:
-		return "Analogue Gain";
 	case VIDEO_CID_HFLIP:
 		return "Horizontal Flip";
 	case VIDEO_CID_VFLIP:
@@ -325,6 +329,14 @@ static inline const char *video_get_ctrl_name(uint32_t id)
 	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
 		return "Compression Quality";
 
+	/* Image source controls */
+	case VIDEO_CID_VBLANK:
+		return "Vertical Blanking";
+	case VIDEO_CID_HBLANK:
+		return "Horizontal Blanking";
+	case VIDEO_CID_ANALOGUE_GAIN:
+		return "Analogue Gain";
+
 	/* Image processing controls */
 	case VIDEO_CID_PIXEL_RATE:
 		return "Pixel Rate";
@@ -367,6 +379,7 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 
 	ret = video_find_ctrl(cq->dev, cq->id, &ctrl);
 	if (ret) {
+		LOG_DBG("Could not find control 0x%08x for %s", cq->id, cq->dev->name);
 		return ret;
 	}
 
@@ -389,6 +402,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 {
 	const char *type = NULL;
 	char buf[11];
+	int ret;
 
 	if (cq == NULL || cq->dev == NULL) {
 		LOG_ERR("%s - Invalid parameter given", __func__);
@@ -423,7 +437,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	/* Get current value of the control */
 	struct video_control vc = {.id = cq->id};
 
-	video_get_ctrl(cq->dev, &vc);
+	ret = video_get_ctrl(cq->dev, &vc);
 
 	/* Print the control information */
 	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
@@ -436,6 +450,9 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 			"value=%d ",
 			cq->name, cq->id, buf, cq->flags, cq->range.min, cq->range.max,
 			cq->range.step, cq->range.def, vc.val);
+	}
+	if (ret != 0) {
+		LOG_ERR("%32s (failed to get control value: %d)", "", ret);
 	}
 
 	if ((cq->type == VIDEO_CTRL_TYPE_MENU && cq->menu) ||
@@ -470,6 +487,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 
 	ret = video_query_ctrl(&ctrl_query);
 	if (ret < 0) {
+		LOG_ERR("Failed to query the link frequency from %s", dev->name);
 		return ret;
 	}
 
@@ -478,6 +496,7 @@ int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t l
 	}
 
 	if (ctrl_query.int_menu == NULL) {
+		LOG_ERR("Link frequency control is not initialized correctly for %s", dev->name);
 		return -EINVAL;
 	}
 

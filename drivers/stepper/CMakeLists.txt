@@ -4,6 +4,9 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper.h)
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper_ctrl.h)
 
+zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
+
 # zephyr-keep-sorted-start
 add_subdirectory(adi_tmc)
 add_subdirectory(allegro)
@@ -12,9 +15,6 @@ add_subdirectory(gpio_stepper)
 add_subdirectory(step_dir)
 add_subdirectory(ti)
 # zephyr-keep-sorted-stop
-
-zephyr_library()
-zephyr_library_property(ALLOW_EMPTY TRUE)
 
 zephyr_library_sources_ifdef(CONFIG_FAKE_STEPPER fake_stepper_controller.c)
 zephyr_library_sources_ifdef(CONFIG_STEPPER_SHELL stepper_shell.c)

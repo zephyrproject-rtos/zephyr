@@ -1,0 +1,13 @@
+common:
+  tags:
+    - log_core
+    - logging
+  integration_platforms:
+    - native_sim
+tests:
+  logging.backend.limit:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=n
+  logging.backend.limit.frontend:
+    extra_configs:
+      - CONFIG_LOG_FRONTEND=y

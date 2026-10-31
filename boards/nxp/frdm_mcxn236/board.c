@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -109,15 +109,18 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+/* PLL fractional M divider: 86.016 */
+#define PLL1_SS_MDIV_LSB_VALUE 2886218023U
+
 	/* < Set up PLL1 */
 	const pll_setup_t pll1_Setup = {
-		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(3U) |
-				 SCG_SPLLCTRL_SELP(1U),
-		.pllndiv = SCG_SPLLNDIV_NDIV(25U),
-		.pllpdiv = SCG_SPLLPDIV_PDIV(10U),
-		.pllmdiv = SCG_SPLLMDIV_MDIV(256U),
-		.pllRate = 24576000U
-	};
+		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_LIMUPOFF(1U) |
+			   SCG_SPLLCTRL_SELR(4U) | SCG_SPLLCTRL_SELI(4U) | SCG_SPLLCTRL_SELP(3U),
+		.pllndiv = SCG_SPLLNDIV_NDIV(12U),
+		.pllpdiv = SCG_SPLLPDIV_PDIV(7U),
+		.pllsscg[0] = PLL1_SS_MDIV_LSB_VALUE,
+		.pllsscg[1] = SCG_SPLLSSCG1_SEL_SS_MDIV(1U),
+		.pllRate = 24576000U};
 
 	/* Configure PLL1 to the desired values */
 	CLOCK_SetPLL1Freq(&pll1_Setup);
@@ -327,8 +330,8 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
-	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToWake);
-	CLOCK_AttachClk(kXTAL32K2_to_EWM0);
+	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToWake);
+	CLOCK_AttachClk(kCLK_16K2_to_EWM0);
 	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 

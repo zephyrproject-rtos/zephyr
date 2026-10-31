@@ -6,8 +6,8 @@
 #include <ti/lm3s6965.dtsi>
 
 / {
-	model = "QEMU Cortex-M3";
 	compatible = "ti,lm3s6965evb-qemu", "ti,lm3s6965";
+	model = "QEMU Cortex-M3";
 
 	aliases {
 		uart-0 = &uart0;
@@ -27,18 +27,18 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";

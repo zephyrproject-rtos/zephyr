@@ -9,6 +9,6 @@
 };
 
 &flexcomm5_lpi2c5 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
 };

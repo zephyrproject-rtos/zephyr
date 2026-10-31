@@ -8,6 +8,13 @@ tests:
     min_ram: 16
     integration_platforms:
       - qemu_x86
+  crypto.rng.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    min_ram: 16
+    integration_platforms:
+      - qemu_x86
   crypto.rng.random_sw_systimer:
     extra_args: CONF_FILE=prj_sw_random_systimer.conf
     integration_platforms:

@@ -10,9 +10,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/counter.h>
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-#include <nrfx_clock.h>
-#else
 #include <hal/nrf_clock.h>
 #include <nrfx_clock_lfclk.h>
 
@@ -23,13 +20,9 @@
 #else
 #error "HF clock not enabled"
 #endif
-#endif
+
 
 #define UPDATE_INTERVAL_S 10
-
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-static const struct device *const clock0 = DEVICE_DT_GET_ONE(nordic_nrf_clock);
-#endif
 
 static const struct device *const timer0 = DEVICE_DT_GET(DT_NODELABEL(timer0));
 static struct timeutil_sync_config sync_config;
@@ -116,18 +109,6 @@ static void show_clocks(const char *tag)
 	enum clock_control_status clkstat;
 	bool running;
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	clkstat = clock_control_get_status(clock0, CLOCK_CONTROL_NRF_SUBSYS_LF);
-	running = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK,
-				       &src.lf);
-	printk("%s: LFCLK[%s]: %s %s ; ", tag, clkstat_s[clkstat],
-	       running ? "Running" : "Off", lfsrc_s[src.lf]);
-	clkstat = clock_control_get_status(clock0, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	running = nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_HFCLK,
-				       &src.hf);
-	printk("HFCLK[%s]: %s %s\n", clkstat_s[clkstat],
-	       running ? "Running" : "Off", hfsrc_s[src.hf]);
-#else
 	clkstat = clock_control_get_status(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
 	running = nrfx_clock_lfclk_running_check(&src.lf);
 	printk("%s: LFCLK[%s]: %s %s ; ", tag, clkstat_s[clkstat],
@@ -142,7 +123,6 @@ static void show_clocks(const char *tag)
 			    (nrfx_clock_xo_running_check))(&src.hf);
 	printk("HFCLK[%s]: %s %s\n", clkstat_s[clkstat],
 		running ? "Running" : "Off", hfsrc_s[src.hf]);
-#endif
 }
 
 static void sync_work_handler(struct k_work *work)
@@ -239,24 +219,15 @@ int main(void)
 	int rc;
 
 	/* Grab the clock driver */
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	if (!device_is_ready(clock0)) {
-		printk("%s: device not ready.\n", clock0->name);
-#else
 	if (!device_is_ready(clk_dev)) {
 		printk("%s: device not ready.\n", clk_dev->name);
-#endif
 		return 0;
 	}
 
 	show_clocks("Power-up clocks");
 
 	if (IS_ENABLED(CONFIG_APP_ENABLE_HFXO)) {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-		rc = clock_control_on(clock0, CLOCK_CONTROL_NRF_SUBSYS_HF);
-#else
 		rc = clock_control_on(clk_dev, NULL);
-#endif
 		printk("Enable HFXO got %d\n", rc);
 	}
 

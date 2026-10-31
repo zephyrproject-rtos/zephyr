@@ -115,7 +115,7 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 		return 0;
 	}
 
-	return ctx.result & 0x7F;
+	return (ctx.result & 0x7F) << 1;
 }
 #endif
 

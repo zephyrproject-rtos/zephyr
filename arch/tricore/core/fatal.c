@@ -109,8 +109,7 @@ void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
 	struct z_tricore_upper_context *upper = NULL;
 
 	if (lower != NULL && (lower->pcxi & 0xFFFFF) != 0) {
-		upper = UINT_TO_POINTER(((lower->pcxi & 0xF0000) << 12) |
-					((lower->pcxi & 0xFFFF) << 6));
+		upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	}
 
 	if (lower != NULL) {
@@ -142,7 +141,7 @@ void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
 void z_tricore_fault(uint8_t trap_class, uint8_t tin)
 {
 	uint32_t pcxi = cr_read(TRICORE_PCXI);
-	struct arch_esf *lower = UINT_TO_POINTER(((pcxi & 0xF0000) << 12) | ((pcxi & 0xFFFF) << 6));
+	struct arch_esf *lower = UINT_TO_POINTER(z_tricore_pcx_to_addr(pcxi));
 
 	LOG_ERR("TriCore Trap: Class %u TIN %u (%s)", trap_class, tin,
 		z_tricore_trap_cause_str(trap_class, tin));

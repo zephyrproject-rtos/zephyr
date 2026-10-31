@@ -29,13 +29,13 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio41 0 GPIO_ACTIVE_LOW>;
 	renesas,spck-delay = <1>;
 	renesas,rx-trigger = <4>;
 	renesas,tx-trigger = <0>;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -47,9 +47,9 @@
 };
 
 dut_spis: &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_pins>;
 	pinctrl-names = "default";
 	renesas,rx-trigger = <4>;
 	renesas,tx-trigger = <0>;
+	status = "okay";
 };

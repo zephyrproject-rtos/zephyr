@@ -54,7 +54,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #define MAX_RANDOM_NUMER (3)
 #define MAX_RANDOM_DENOM (2)
 
-static K_MUTEX_DEFINE(lock);
+static K_MUTEX_DEFINE(global_lock);
 
 /* net_if dedicated section limiters */
 extern struct net_if _net_if_list_start[];
@@ -491,6 +491,34 @@ static inline void init_iface(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_LOOPBACK_FRAGMENT)
+/* Run only the fragmentation step of the IP send checks, so that a packet
+ * larger than the loopback MTU is fragmented and reassembled like on a real
+ * link. Raw IP sockets bypass the checks as they do on other interfaces.
+ */
+static enum net_verdict loopback_prepare_for_send(struct net_pkt *pkt,
+						  struct net_context *context)
+{
+	if (context != NULL && net_context_get_type(context) == NET_SOCK_RAW) {
+		return NET_OK;
+	}
+
+#if defined(CONFIG_NET_IPV6_FRAGMENT)
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
+		return net_ipv6_prepare_for_send_fragment(pkt);
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV4_FRAGMENT)
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		return net_ipv4_prepare_for_send_fragment(pkt);
+	}
+#endif
+
+	return NET_OK;
+}
+#endif /* CONFIG_NET_LOOPBACK_FRAGMENT */
+
 enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 				      k_timeout_t timeout)
 {
@@ -548,6 +576,9 @@ enum net_verdict net_if_try_send_data(struct net_if *iface, struct net_pkt *pkt,
 	 * additional checks, so let the packet through.
 	 */
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+#if defined(CONFIG_NET_LOOPBACK_FRAGMENT)
+		verdict = loopback_prepare_for_send(pkt, context);
+#endif
 		goto done;
 	}
 #endif
@@ -807,7 +838,7 @@ static struct net_if_router *iface_router_lookup(struct net_if *iface,
 	struct net_if_router *router = NULL;
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
 		if (!routers[i].is_used ||
@@ -828,7 +859,7 @@ static struct net_if_router *iface_router_lookup(struct net_if *iface,
 	}
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	return router;
 }
@@ -875,7 +906,7 @@ static void iface_router_update_timer(uint32_t now)
 	struct net_if_router *router, *next;
 	uint32_t new_delay = UINT32_MAX;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
 					 router, next, node) {
@@ -895,7 +926,7 @@ static void iface_router_update_timer(uint32_t now)
 		k_work_reschedule(&router_timer, K_MSEC(new_delay));
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 static void iface_router_expired(struct k_work *work)
@@ -906,7 +937,7 @@ static void iface_router_expired(struct k_work *work)
 
 	ARG_UNUSED(work);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
 					  router, next, node) {
@@ -928,7 +959,7 @@ static void iface_router_expired(struct k_work *work)
 
 	iface_router_update_timer(current_time);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 static struct net_if_router *iface_router_add(struct net_if *iface,
@@ -939,7 +970,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 	struct net_if_router *router = NULL;
 	int i;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
 		if (routers[i].is_used) {
@@ -996,7 +1027,7 @@ static struct net_if_router *iface_router_add(struct net_if *iface,
 	}
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	return router;
 }
@@ -1005,7 +1036,7 @@ static bool iface_router_rm(struct net_if_router *router)
 {
 	bool ret = false;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	if (!router->is_used) {
 		goto out;
@@ -1022,14 +1053,14 @@ static bool iface_router_rm(struct net_if_router *router)
 	ret = true;
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	return ret;
 }
 
 static void iface_router_rm_all(struct net_if *iface, uint8_t family)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	ARRAY_FOR_EACH(routers, i) {
 		if (!routers[i].is_used || routers[i].iface != iface ||
@@ -1040,18 +1071,18 @@ static void iface_router_rm_all(struct net_if *iface, uint8_t family)
 		(void)iface_router_rm(&routers[i]);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_router_rm(struct net_if_router *router)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	router->is_used = false;
 
 	/* FIXME - remove timer */
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 static struct net_if_router *iface_router_find_default(struct net_if *iface,
@@ -1064,7 +1095,7 @@ static struct net_if_router *iface_router_find_default(struct net_if *iface,
 	/* Todo: addr will need to be handled */
 	ARG_UNUSED(addr);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
 		if (!routers[i].is_used ||
@@ -1082,7 +1113,7 @@ static struct net_if_router *iface_router_find_default(struct net_if *iface,
 	}
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	return router;
 }
@@ -1102,7 +1133,7 @@ void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
 			       struct net_if *iface,
 			       net_if_mcast_callback_t cb)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
 	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
@@ -1110,16 +1141,16 @@ void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
 	mon->iface = iface;
 	mon->cb = cb;
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_mcast_monitor(struct net_if *iface,
@@ -1128,7 +1159,7 @@ void net_if_mcast_monitor(struct net_if *iface,
 {
 	struct net_if_mcast_monitor *mon, *tmp;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
 					  mon, tmp, node) {
@@ -1137,7 +1168,7 @@ void net_if_mcast_monitor(struct net_if *iface,
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 #else
 #define net_if_mcast_mon_register(...)
@@ -1198,7 +1229,7 @@ int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 		goto out;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
 		if (ipv6_addresses[i].iface) {
@@ -1212,11 +1243,11 @@ int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 			*ipv6 = &ipv6_addresses[i].ipv6;
 		}
 
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 		goto out;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	ret = -ESRCH;
 out:
@@ -1357,7 +1388,7 @@ int net_if_config_ipv6_put(struct net_if *iface)
 	 */
 	ipv6_config_cleanup(iface, iface->config.ip.ipv6);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
 		if (ipv6_addresses[i].iface != iface) {
@@ -1367,11 +1398,11 @@ int net_if_config_ipv6_put(struct net_if *iface)
 		iface->config.ip.ipv6 = NULL;
 		ipv6_addresses[i].iface = NULL;
 
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 		goto out;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	ret = -ESRCH;
 out:
@@ -1485,11 +1516,13 @@ static void join_mcast_nodes(struct net_if *iface, struct net_in6_addr *addr)
 #define join_mcast_nodes(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
+static struct net_if_addr *ipv6_addr_find(struct net_if *iface, const struct net_in6_addr *addr);
+
 /* Generate and add the interface's link-local address. This is run on interface
  * bring-up regardless of DAD: with DAD it is the address DAD is started for,
  * without DAD it is the only thing that adds the link-local address. Returns the
- * added address, or NULL on error. May be called with or without the interface
- * lock held (the lock is recursive).
+ * added address, or NULL on error. Must be called without the interface lock
+ * held because adding the address may start DAD and transmit packets.
  */
 static struct net_if_addr *iface_ipv6_lladdr_add(struct net_if *iface)
 {
@@ -1533,14 +1566,28 @@ static struct net_if_addr *iface_ipv6_lladdr_add(struct net_if *iface)
 		goto out;
 	}
 
+	/* Address addition starts DAD and transmits after dropping its own lock. */
+	net_if_unlock(iface);
+
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0);
 	if (ifaddr == NULL) {
 		NET_ERR("Cannot add %s address to interface %p",
 			net_sprint_ipv6_addr(&addr), iface);
-		goto out;
+		return NULL;
 	}
 
-	IF_ENABLED(CONFIG_NET_IPV6_IID_STABLE, (ipv6->iid = ifaddr));
+#if defined(CONFIG_NET_IPV6_IID_STABLE)
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 != NULL && ipv6_addr_find(iface, &addr) == ifaddr) {
+		ipv6->iid = ifaddr;
+	}
+
+	net_if_unlock(iface);
+#endif /* CONFIG_NET_IPV6_IID_STABLE */
+
+	return ifaddr;
 
 out:
 	net_if_unlock(iface);
@@ -1562,10 +1609,10 @@ static void dad_queue(struct net_if_addr *ifaddr)
 {
 	ifaddr->dad_start = k_uptime_get_32();
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad_node);
 	sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	/* FUTURE: use schedule, not reschedule. */
 	if (!k_work_delayable_remaining_get(&dad_timer)) {
@@ -1584,7 +1631,7 @@ static void dad_timeout(struct k_work *work)
 
 	sys_slist_init(&expired_list);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_dad_timers,
 					  ifaddr, next, dad_node) {
@@ -1608,7 +1655,7 @@ static void dad_timeout(struct k_work *work)
 		k_work_reschedule(&dad_timer, K_MSEC((uint32_t)delay));
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&expired_list, ifaddr, next, dad_node) {
 		struct net_if *iface;
@@ -1745,15 +1792,16 @@ void net_if_start_dad(struct net_if *iface)
 	struct net_if_ipv6 *ipv6;
 	sys_slist_t dad_needed;
 
-	net_if_lock(iface);
-
 	NET_DBG("Starting DAD for iface %d", net_if_get_by_iface(iface));
 
 	/* Add the link-local address. This also configures IPv6 on the
 	 * interface. As the interface is up, the address add starts DAD for it
-	 * directly, so it is skipped in the loop below.
+	 * directly, so it is skipped in the loop below. Do this without holding
+	 * the interface lock because DAD transmits and can lock other interfaces.
 	 */
 	lladdr = iface_ipv6_lladdr_add(iface);
+
+	net_if_lock(iface);
 
 	ipv6 = iface->config.ip.ipv6;
 	if (ipv6 == NULL) {
@@ -1872,7 +1920,7 @@ static void rs_timeout(struct k_work *work)
 
 	sys_slist_init(&expired_list);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_rs_timers,
 					  ipv6, next, rs_node) {
@@ -1896,7 +1944,7 @@ static void rs_timeout(struct k_work *work)
 						    RS_TIMEOUT - current_time));
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&expired_list, ipv6, rs_node) {
 		struct net_if *iface = NULL;
@@ -1945,13 +1993,13 @@ void net_if_start_rs(struct net_if *iface)
 	if (!net_ipv6_start_rs(iface)) {
 		ipv6->rs_start = k_uptime_get_32();
 
-		k_mutex_lock(&lock, K_FOREVER);
+		k_mutex_lock(&global_lock, K_FOREVER);
 
 		/* Make sure that the RS timer is not in the list twice */
 		(void)sys_slist_find_and_remove(&active_rs_timers, &ipv6->rs_node);
 		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
 
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 
 		/* FUTURE: use schedule, not reschedule. */
 		if (!k_work_delayable_remaining_get(&rs_timer)) {
@@ -1977,9 +2025,9 @@ void net_if_stop_rs(struct net_if *iface)
 
 	NET_DBG("Stopping ND/RS for iface %d", net_if_get_by_iface(iface));
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 	sys_slist_find_and_remove(&active_rs_timers, &ipv6->rs_node);
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 out:
 	net_if_unlock(iface);
@@ -2163,7 +2211,7 @@ static void address_lifetime_timeout(struct k_work *work)
 
 	sys_slist_init(&expired_list);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_address_lifetime_timers,
 					  current, next, lifetime.node) {
@@ -2196,7 +2244,7 @@ static void address_lifetime_timeout(struct k_work *work)
 		k_work_reschedule(&address_lifetime_timer, K_MSEC(next_update));
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	/* address_expired() calls net_if_ipv6_addr_rm(), which takes the
 	 * interface lock. That lock is acquired before this one elsewhere, so
@@ -2363,7 +2411,7 @@ void net_if_ipv6_addr_update_lifetime_locked(struct net_if_addr *ifaddr,
 					     uint32_t vlifetime)
 {
 	/* Lock order: interface lock, then the global lock. */
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	NET_DBG("Updating expire time of %s by %u secs",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
@@ -2376,7 +2424,7 @@ void net_if_ipv6_addr_update_lifetime_locked(struct net_if_addr *ifaddr,
 
 	address_start_timer(ifaddr, vlifetime);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
@@ -3139,7 +3187,7 @@ static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
 
 static void prefix_timer_remove(struct net_if_ipv6_prefix *ifprefix)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	NET_DBG("IPv6 prefix %s/%d removed",
 		net_sprint_ipv6_addr(&ifprefix->prefix),
@@ -3150,7 +3198,7 @@ static void prefix_timer_remove(struct net_if_ipv6_prefix *ifprefix)
 
 	net_timeout_set(&ifprefix->lifetime, 0, 0);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 static void prefix_lifetime_timeout(struct k_work *work)
@@ -3164,7 +3212,7 @@ static void prefix_lifetime_timeout(struct k_work *work)
 
 	sys_slist_init(&expired_list);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_prefix_lifetime_timers,
 					  current, next, lifetime.node) {
@@ -3194,7 +3242,7 @@ static void prefix_lifetime_timeout(struct k_work *work)
 		k_work_reschedule(&prefix_lifetime_timer, K_MSEC(next_update));
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&expired_list, current, lifetime.node) {
 		prefix_lifetime_expired(current);
@@ -3204,7 +3252,7 @@ static void prefix_lifetime_timeout(struct k_work *work)
 static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 			       uint32_t lifetime)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	(void)sys_slist_find_and_remove(&active_prefix_lifetime_timers,
 					&ifprefix->lifetime.node);
@@ -3214,7 +3262,7 @@ static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 	net_timeout_set(&ifprefix->lifetime, lifetime, k_uptime_get_32());
 	k_work_reschedule(&prefix_lifetime_timer, K_NO_WAIT);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 static struct net_if_ipv6_prefix *ipv6_prefix_find(struct net_if *iface,
@@ -4327,7 +4375,7 @@ int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
 		goto out;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	ARRAY_FOR_EACH(ipv4_addresses, i) {
 		if (ipv4_addresses[i].iface) {
@@ -4341,11 +4389,11 @@ int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
 			*ipv4 = &ipv4_addresses[i].ipv4;
 		}
 
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 		goto out;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	ret = -ESRCH;
 out:
@@ -4459,7 +4507,7 @@ int net_if_config_ipv4_put(struct net_if *iface)
 	 */
 	ipv4_config_cleanup(iface, iface->config.ip.ipv4);
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	ARRAY_FOR_EACH(ipv4_addresses, i) {
 		if (ipv4_addresses[i].iface != iface) {
@@ -4469,11 +4517,11 @@ int net_if_config_ipv4_put(struct net_if *iface)
 		iface->config.ip.ipv4 = NULL;
 		ipv4_addresses[i].iface = NULL;
 
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 		goto out;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 
 	ret = -ESRCH;
 out:
@@ -4599,6 +4647,11 @@ static bool ipv4_is_broadcast_address(struct net_if *iface,
 			continue;
 		}
 
+		/* A /31 or /32 prefix has no broadcast address (RFC 3021) */
+		if (~net_ntohl(ipv4->unicast[i].netmask.s_addr) <= 1U) {
+			continue;
+		}
+
 		bcast.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr |
 			       ~ipv4->unicast[i].netmask.s_addr;
 
@@ -4718,8 +4771,9 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 }
 
 static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
-						  const struct net_in_addr *dst,
-						  uint8_t *best_so_far, bool ll)
+						      const struct net_in_addr *dst,
+						      uint8_t *best_so_far, bool ll,
+						      bool allow_loopback)
 {
 	struct net_if_ipv4 *ipv4;
 	struct net_in_addr *src = NULL;
@@ -4744,6 +4798,11 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 		}
 
 		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr) != ll) {
+			continue;
+		}
+
+		if (!allow_loopback &&
+		    net_ipv4_is_addr_loopback(&ipv4->unicast[i].ipv4.address.in_addr)) {
 			continue;
 		}
 
@@ -4812,6 +4871,10 @@ static struct net_in_addr *if_ipv4_get_addr(struct net_if *iface,
 			continue;
 		}
 
+		if (!ll && net_ipv4_is_addr_loopback(&ipv4->unicast[i].ipv4.address.in_addr)) {
+			continue;
+		}
+
 		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].ipv4.address.in_addr)) {
 			if (!ll) {
 				continue;
@@ -4849,9 +4912,18 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 {
 	const struct net_in_addr *src = NULL;
 	uint8_t best_match = 0U;
+	bool allow_loopback;
 
 	if (dst == NULL) {
 		return NULL;
+	}
+
+	/* An unspecified destination is used while binding a wildcard socket. */
+	allow_loopback = net_ipv4_is_addr_loopback(dst) || net_ipv4_is_addr_unspecified(dst);
+
+	/* Allow loopback sources for multicast explicitly scoped to an interface. */
+	if (dst_iface != NULL && net_ipv4_is_addr_mcast(dst)) {
+		allow_loopback = true;
 	}
 
 	if (dst_iface == NULL && !net_ipv4_is_ll_addr(dst)) {
@@ -4862,15 +4934,14 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
-			src = net_if_ipv4_get_best_match(dst_iface, dst,
-							 &best_match, false);
+			src = net_if_ipv4_get_best_match(dst_iface, dst, &best_match, false,
+							 allow_loopback);
 		} else {
 			STRUCT_SECTION_FOREACH(net_if, iface) {
 				struct net_in_addr *addr;
 
-				addr = net_if_ipv4_get_best_match(iface, dst,
-								  &best_match,
-								  false);
+				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, false,
+								  allow_loopback);
 				if (addr) {
 					src = addr;
 				}
@@ -4884,9 +4955,8 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			struct net_in_addr *addr;
 
 			STRUCT_SECTION_FOREACH(net_if, iface) {
-				addr = net_if_ipv4_get_best_match(iface, dst,
-								  &best_match,
-								  true);
+				addr = net_if_ipv4_get_best_match(iface, dst, &best_match, true,
+								  allow_loopback);
 				if (addr) {
 					src = addr;
 				}
@@ -4896,9 +4966,8 @@ const struct net_in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 			 * be used if it has a valid LL address, and there was
 			 * no better match on any other interface.
 			 */
-			addr = net_if_ipv4_get_best_match(net_if_get_default(),
-							  dst, &best_match,
-							  true);
+			addr = net_if_ipv4_get_best_match(net_if_get_default(), dst, &best_match,
+							  true, allow_loopback);
 			if (addr) {
 				src = addr;
 			}
@@ -6390,7 +6459,7 @@ static void remove_ipv6_ifaddr(struct net_if *iface,
 	}
 
 	if (!ifaddr->is_infinite) {
-		k_mutex_lock(&lock, K_FOREVER);
+		k_mutex_lock(&global_lock, K_FOREVER);
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 		sys_slist_find_and_remove(&active_address_lifetime_timers,
@@ -6400,15 +6469,15 @@ static void remove_ipv6_ifaddr(struct net_if *iface,
 			k_work_cancel_delayable(&address_lifetime_timer);
 		}
 #endif
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 	}
 
 #if defined(CONFIG_NET_IPV6_DAD)
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
-		k_mutex_lock(&lock, K_FOREVER);
+		k_mutex_lock(&global_lock, K_FOREVER);
 		(void)sys_slist_find_and_remove(&active_dad_timers,
 						&ifaddr->dad_node);
-		k_mutex_unlock(&lock);
+		k_mutex_unlock(&global_lock);
 
 		/* A tentative address still has the entry for itself that
 		 * the DAD solicitation left in the neighbour cache, so
@@ -6634,23 +6703,23 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 void net_if_register_link_cb(struct net_if_link_cb *link,
 			     net_if_link_callback_t cb)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&link_callbacks, &link->node);
 	sys_slist_prepend(&link_callbacks, &link->node);
 
 	link->cb = cb;
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_unregister_link_cb(struct net_if_link_cb *link)
 {
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&link_callbacks, &link->node);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
@@ -6658,13 +6727,13 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 {
 	struct net_if_link_cb *link, *tmp;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&link_callbacks, link, tmp, node) {
 		link->cb(iface, lladdr, status);
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 #if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
@@ -7245,7 +7314,7 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
 	sys_slist_prepend(&timestamp_callbacks, &handle->node);
@@ -7254,7 +7323,7 @@ void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
 	handle->cb = cb;
 	handle->pkt = pkt;
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle)
@@ -7264,19 +7333,19 @@ void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle)
 		return;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	sys_slist_find_and_remove(&timestamp_callbacks, &handle->node);
 	timestamp_cb_clear(handle);
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_call_timestamp_cb(struct net_pkt *pkt)
 {
 	sys_snode_t *sn, *sns;
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 	timestamp_cb_dispatch_thread = k_current_get();
 	timestamp_cb_dispatch_depth++;
 
@@ -7305,13 +7374,16 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt)
 		timestamp_cb_dispatch_thread = NULL;
 	}
 
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_add_tx_timestamp(struct net_pkt *pkt)
 {
-	k_fifo_put(&tx_ts_queue, pkt);
+	/* Take the reference first: the timestamp thread may preempt the
+	 * caller as soon as the packet is queued, and drop its reference.
+	 */
 	net_pkt_ref(pkt);
+	k_fifo_put(&tx_ts_queue, pkt);
 }
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
@@ -7535,11 +7607,13 @@ void net_if_init(void)
 
 	NET_DBG("");
 
-	k_mutex_lock(&lock, K_FOREVER);
+	k_mutex_lock(&global_lock, K_FOREVER);
 
 	net_tc_tx_init();
 
 	STRUCT_SECTION_FOREACH(net_if, iface) {
+
+		NET_ASSERT(iface->if_dev != NULL);
 
 		init_iface(iface);
 
@@ -7585,7 +7659,7 @@ void net_if_init(void)
 #endif /* CONFIG_NET_PKT_TIMESTAMP_THREAD */
 
 out:
-	k_mutex_unlock(&lock);
+	k_mutex_unlock(&global_lock);
 }
 
 void net_if_post_init(void)

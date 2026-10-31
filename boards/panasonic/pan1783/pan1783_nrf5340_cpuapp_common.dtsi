@@ -5,6 +5,7 @@
  */
 #include "pan1783_nrf5340_cpuapp_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -84,20 +85,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio0 4 0>,	/* AN */
-			   <1 0 &gpio1 6 0>,	/* RST */
-			   <2 0 &gpio1 12 0>,	/* CS */
-			   <3 0 &gpio1 15 0>,	/* SCK */
-			   <4 0 &gpio1 14 0>,	/* MISO */
-			   <5 0 &gpio1 13 0>,	/* MOSI */
+		gpio-map = <MIKROBUS_AN 0 &gpio0 4 0>,
+			   <MIKROBUS_RST 0 &gpio1 6 0>,
+			   <MIKROBUS_CS 0 &gpio1 12 0>,
+			   <MIKROBUS_SCK 0 &gpio1 15 0>,
+			   <MIKROBUS_MISO 0 &gpio1 14 0>,
+			   <MIKROBUS_MOSI 0 &gpio1 13 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpio1 7 0>,	/* PWM */
-			   <7 0 &gpio1 4 0>,	/* INT */
-			   <8 0 &gpio1 0 0>,	/* RX */
-			   <9 0 &gpio1 1 0>,	/* TX */
-			   <10 0 &gpio1 3 0>,	/* SCL */
-			   <11 0 &gpio1 2 0>;	/* SDA */
+			   <MIKROBUS_PWM 0 &gpio1 7 0>,
+			   <MIKROBUS_INT 0 &gpio1 4 0>,
+			   <MIKROBUS_RX 0 &gpio1 0 0>,
+			   <MIKROBUS_TX 0 &gpio1 1 0>,
+			   <MIKROBUS_SCL 0 &gpio1 3 0>,
+			   <MIKROBUS_SDA 0 &gpio1 2 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -203,32 +204,32 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "nordic,qspi-nor";
@@ -262,11 +263,11 @@ arduino_i2c: &i2c1 {};
 
 arduino_spi: &spi4 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {

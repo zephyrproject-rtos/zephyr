@@ -54,7 +54,7 @@
 
 #ifdef CONFIG_IWDG_STM32_EARLY_WAKEUP
 
-void iwdg_stm32_isr(const struct device *dev)
+static void iwdg_stm32_isr(const struct device *dev)
 {
 	struct iwdg_stm32_data *data = dev->data;
 	IWDG_TypeDef *iwdg = ((const struct iwdg_stm32_config *)dev->config)->instance;

@@ -38,7 +38,7 @@ tests:
     harness: bluetooth
     tags: bluetooth
     extra_args:
-      - EXTRA_CONF_FILE="extra-bis-bt_ll_sw_split.conf"
+      - EXTRA_CONF_FILE="extra-iso_broadcast-bt_ll_sw_split.conf;extra-iso_receive-bt_ll_sw_split.conf"
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet
@@ -71,7 +71,7 @@ tests:
     harness: bluetooth
     tags: bluetooth
     extra_args:
-      - EXTRA_CONF_FILE="extra-cis-bt_ll_sw_split.conf"
+      - EXTRA_CONF_FILE="extra-iso_central-bt_ll_sw_split.conf;extra-iso_peripheral-bt_ll_sw_split.conf"
     platform_allow:
       - nrf5340dk/nrf5340/cpunet
       - nrf5340_audio_dk/nrf5340/cpunet

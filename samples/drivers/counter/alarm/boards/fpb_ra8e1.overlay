@@ -5,8 +5,8 @@
  */
 
 &agt0 {
-	status = "okay";
 	renesas,prescaler = <4>;
+	status = "okay";
 
 	counter0: counter {
 		status = "okay";

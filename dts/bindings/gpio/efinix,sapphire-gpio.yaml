@@ -10,6 +10,13 @@ properties:
 
   ngpios:
     required: true
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
 
   "#gpio-cells":
     const: 2

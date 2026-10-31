@@ -10,8 +10,8 @@
 #include <mem.h>
 
 / {
-	model = "iotdk";
 	compatible = "snps,iotdk", "snps,iotdk";
+	model = "iotdk";
 
 	aliases {
 		uart-0 = &uart0;
@@ -40,6 +40,6 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

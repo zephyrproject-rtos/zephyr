@@ -513,6 +513,146 @@ ZTEST(transport_mgmt, test_disconnect_invalid)
 		      "Expected 'err' -> 'rc' to be not bridged");
 }
 
+/* Tests that disconnecting a bridge that is no longer connected leaves MCUmgr working */
+ZTEST(transport_mgmt, test_disconnect_bridge_twice)
+{
+	uint8_t buffer[ZCBOR_BUFFER_SIZE];
+	uint8_t buffer_out[OUTPUT_BUFFER_SIZE];
+	bool ok;
+	uint16_t buffer_size;
+	zcbor_state_t zse[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	zcbor_state_t zsd[ZCBOR_HISTORY_ARRAY_SIZE] = { 0 };
+	bool received;
+	struct smp_hdr *header;
+	size_t decoded = 0;
+	struct zcbor_string echo_send_data = { 0 };
+	struct zcbor_string echo_receive_data = { 0 };
+	struct group_error_t group_error;
+	uint32_t rc = 0;
+	struct smp_transport_bridge *bridge;
+	int err;
+
+	struct zcbor_map_decode_key_val output_decode[] = {
+		ZCBOR_MAP_DECODE_KEY_DECODER("d", zcbor_tstr_decode, &echo_send_data),
+		ZCBOR_MAP_DECODE_KEY_DECODER("r", zcbor_tstr_decode, &echo_receive_data),
+		ZCBOR_MAP_DECODE_KEY_DECODER("err", mcumgr_ret_decode, &group_error),
+		ZCBOR_MAP_DECODE_KEY_DECODER("rc", zcbor_uint32_decode, &rc),
+	};
+
+	memset(buffer, 0, sizeof(buffer));
+	memset(buffer_out, 0, sizeof(buffer_out));
+	buffer_size = 0;
+	memset(zse, 0, sizeof(zse));
+	memset(zsd, 0, sizeof(zsd));
+
+	/* Test 1: Bridge to other raw dummy transport */
+	zcbor_new_encode_state(zse, CBOR_MAP_STATES, buffer, ARRAY_SIZE(buffer), 0);
+	ok = create_transport_mgmt_connect_packet(zse, buffer, buffer_out, &buffer_size, 1);
+	zassert_true(ok, "Expected packet creation to be successful");
+
+	/* Enable dummy SMP backend and ready for usage */
+	smp_dummy_enable();
+	smp_dummy_clear_state();
+
+	/* Send query command to dummy SMP backend */
+	(void)smp_dummy_tx_pkt(buffer_out, buffer_size);
+	smp_dummy_add_data();
+
+	/* For a short duration to see if response has been received */
+	received = smp_dummy_wait_for_data(SMP_RESPONSE_WAIT_TIME);
+	zassert_true(received, "Expected to receive data but timed out");
+
+	/* Retrieve response buffer */
+	nb = smp_dummy_get_outgoing();
+	smp_dummy_disable();
+
+	/* Check response is as expected */
+	header = net_buf_pull_mem(nb, sizeof(struct smp_hdr));
+
+	zassert_equal(header->nh_flags, 0, "SMP header flags mismatch");
+	zassert_equal(header->nh_op, MGMT_OP_WRITE_RSP, "SMP header operation mismatch");
+	zassert_equal(header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_TRANSPORT),
+		      "SMP header group mismatch");
+	zassert_equal(header->nh_seq, 1, "SMP header sequence number mismatch");
+	zassert_equal(header->nh_id, TRANSPORT_MGMT_ID_CONNECT, "SMP header command ID mismatch");
+	zassert_equal(header->nh_version, 1, "SMP header version mismatch");
+
+	/* Get the response value to compare */
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
+	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+	zassert_equal(rc, 1, "Expected decode to be successful");
+	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor elements");
+
+	/* Clean up test */
+	memset(buffer, 0, sizeof(buffer));
+	memset(buffer_out, 0, sizeof(buffer_out));
+	buffer_size = 0;
+	memset(zse, 0, sizeof(zse));
+	memset(zsd, 0, sizeof(zsd));
+	output_decode[0].found = false;
+	output_decode[1].found = false;
+	output_decode[2].found = false;
+	output_decode[3].found = false;
+	echo_send_data.len = 0;
+	echo_receive_data.len = 0;
+	cleanup_test(NULL);
+
+	/* Test 2: Disconnect the bridge, then disconnect it again when it is not connected */
+	/* The bridge is const from transport_mgmt_get_bridge(), but taken non-const here */
+	bridge = (struct smp_transport_bridge *)transport_mgmt_get_bridge(
+		smp_client_transport_get(SMP_SERIAL_TRANSPORT), TRANSPORT_MGMT_DIRECTION_INCOMING);
+	zassert_not_null(bridge, "Expected a bridge");
+
+	err = transport_mgmt_disconnect_bridge(bridge);
+	zassert_equal(err, 0, "Expected the bridge to be disconnected");
+
+	err = transport_mgmt_disconnect_bridge(bridge);
+	zassert_equal(err, -ENOTCONN, "Expected the bridge to be reported as not connected");
+
+	/* Test 3: Check dummy transport does echo and gets response */
+	zcbor_new_encode_state(zse, CBOR_MAP_STATES, buffer, ARRAY_SIZE(buffer), 0);
+	ok = create_os_mgmt_echo_packet(zse, buffer, buffer_out, &buffer_size, TEST_STRING);
+	zassert_true(ok, "Expected packet creation to be successful");
+
+	/* Enable dummy SMP backend and ready for usage */
+	smp_dummy_enable();
+	smp_dummy_clear_state();
+
+	/* Send query command to dummy SMP backend */
+	(void)smp_dummy_tx_pkt(buffer_out, buffer_size);
+	smp_dummy_add_data();
+
+	/* For a short duration to see if response has been received */
+	received = smp_dummy_wait_for_data(SMP_RESPONSE_WAIT_TIME);
+	zassert_true(received,
+		     "Expected MCUmgr to respond after disconnecting an unconnected bridge");
+
+	/* Retrieve response buffer */
+	nb = smp_dummy_get_outgoing();
+	smp_dummy_disable();
+
+	/* Check response is as expected */
+	header = net_buf_pull_mem(nb, sizeof(struct smp_hdr));
+
+	zassert_equal(header->nh_flags, 0, "SMP header flags mismatch");
+	zassert_equal(header->nh_op, MGMT_OP_READ_RSP, "SMP header operation mismatch");
+	zassert_equal(header->nh_group, sys_cpu_to_be16(MGMT_GROUP_ID_OS),
+		      "SMP header group mismatch");
+	zassert_equal(header->nh_seq, 1, "SMP header sequence number mismatch");
+	zassert_equal(header->nh_id, OS_MGMT_ID_ECHO, "SMP header command ID mismatch");
+	zassert_equal(header->nh_version, 1, "SMP header version mismatch");
+
+	/* Get the response value to compare */
+	zcbor_new_decode_state(zsd, 4, nb->data, nb->len, 1, NULL, 0);
+	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
+	zassert_equal(rc, 1, "Expected decode to be successful");
+	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
+	zassert_equal(echo_receive_data.len, strlen(TEST_STRING),
+		      "os mgmt echo response length mismatch");
+	zassert_mem_equal(echo_receive_data.value, TEST_STRING, echo_receive_data.len,
+			  "os mgmt echo response mismatch");
+}
+
 /*
  * Tests commands work and get responses without bridge, then tests bridging and un-bridging works
  * along with data transfer between the transport
@@ -532,6 +672,8 @@ ZTEST(transport_mgmt, test_connection)
 	struct zcbor_string echo_receive_data = { 0 };
 	struct group_error_t group_error;
 	uint32_t rc = 0;
+	struct smp_transport *dummy = smp_client_transport_get(SMP_SERIAL_TRANSPORT);
+	struct smp_transport *raw_dummy = smp_client_transport_get(SMP_RAW_SERIAL_TRANSPORT);
 
 	struct zcbor_map_decode_key_val output_decode[] = {
 		ZCBOR_MAP_DECODE_KEY_DECODER("d", zcbor_tstr_decode, &echo_send_data),
@@ -695,6 +837,13 @@ ZTEST(transport_mgmt, test_connection)
 	rc = zcbor_map_decode_bulk(zsd, output_decode, ARRAY_SIZE(output_decode), &decoded) == 0;
 	zassert_equal(rc, 1, "Expected decode to be successful");
 	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor elements");
+
+	/* Check each transport of the bridge gets the other one */
+	zassert_equal(transport_mgmt_get_other_transport(dummy, TRANSPORT_MGMT_DIRECTION_INCOMING),
+		      raw_dummy, "Expected the raw dummy transport as the other transport");
+	zassert_equal(
+		transport_mgmt_get_other_transport(raw_dummy, TRANSPORT_MGMT_DIRECTION_OUTGOING),
+		dummy, "Expected the dummy transport as the other transport");
 
 	/* Clean up test */
 	memset(buffer, 0, sizeof(buffer));

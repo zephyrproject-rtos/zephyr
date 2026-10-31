@@ -24,10 +24,10 @@ config NUM_IRQS
 	default 167 if SOC_DIE_PSC3M6
 	default 140
 
-# MPU-based null-pointer dereferencing detection cannot be applied on PSC3M6 as
+# MPU-based null-pointer dereferencing detection cannot be applied on PSC3 as
 # the (0x0 - 0x400) is unmapped target.
 choice NULL_POINTER_EXCEPTION_DETECTION
-	default NULL_POINTER_EXCEPTION_DETECTION_NONE if SOC_DIE_PSC3M6
+	default NULL_POINTER_EXCEPTION_DETECTION_NONE
 endchoice
 
 # SysTick freezes in every deepsleep-class state (HF clocks stop; a DS-RAM warm
@@ -68,5 +68,12 @@ config PM_POLICY_DEVICE_CONSTRAINTS
 	default y if PM_DEVICE_RUNTIME
 
 # add additional die specific params
+
+# PSC3 is programmed through the SAHB flash alias, which sits 0x20000000
+# above the CBUS alias that flash0 describes. Rebase the load address so
+# the generated image carries programming-alias addresses.
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on XIP
+	default "0x20000000"
 
 endif # SOC_SERIES_PSC3

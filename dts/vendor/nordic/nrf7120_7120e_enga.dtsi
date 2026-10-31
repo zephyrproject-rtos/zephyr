@@ -91,11 +91,11 @@
 		ranges;
 
 		nordic_reserved: memory@200fe000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "mmio-sram";
 			reg = <0x200fe000 0x1000>;
 			ranges = <0x0 0x200fe000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 #ifndef USE_NON_SECURE_ADDRESS_MAP
@@ -113,18 +113,18 @@
 #endif
 
 		nrf_kmu_cracen_exchange_area: memory@200ff000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x200ff000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x200ff000 0x1000>;
-			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "NRF_KMU_CRACEN_EXCHANGE";
 		};
 
 		nrf_mpc: memory@50041000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
 			compatible = "nordic,nrf-mpc";
 			reg = <0x50041000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			override-num = <14>;
 			override-granularity = <4096>;
 		};
@@ -140,14 +140,14 @@
 		status = "disabled";
 	};
 
-	wifi_antsw: wifi_antsw {
-		compatible = "nordic,nrf71-wifi-antsw";
+	antsw: antsw {
+		compatible = "nordic,nrf71-antsw";
 		/*
-		 * Steers the antenna switch towards WLAN, driven from
-		 * soc_early_init_hook() before the Wi-Fi core is started. Hardwired to
-		 * P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
+		 * Steers the antenna switch towards its default radio, driven from
+		 * soc_early_init_hook() before Wi-Fi or BLE starts using it. Hardwired
+		 * to P0.05 in nRF7120. Powering the switch is handled by pwr_antswc.
 		 */
-		wlan-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		sel-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
 		status = "disabled";
 	};
 
@@ -196,33 +196,33 @@
 				ram00_sram: memory@0 {
 					compatible = "mmio-sram";
 					reg = <0x0 DT_SIZE_K(512)>;
+					ranges = <0x0 0x0 DT_SIZE_K(512)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges = <0x0 0x0 DT_SIZE_K(512)>;
 				};
 
 				ram01_sram: memory@80000 {
 					compatible = "mmio-sram";
 					reg = <0x80000 DT_SIZE_K(256)>;
+					ranges = <0x0 0x80000 DT_SIZE_K(256)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges = <0x0 0x80000 DT_SIZE_K(256)>;
 				};
 
 				ram02_sram: memory@c0000 {
 					compatible = "mmio-sram";
 					reg = <0xc0000 DT_SIZE_K(128)>;
+					ranges = <0x0 0xc0000 DT_SIZE_K(128)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges = <0x0 0xc0000 DT_SIZE_K(128)>;
 				};
 
 				ram03_sram: memory@e0000 {
 					compatible = "mmio-sram";
 					reg = <0xe0000 (DT_SIZE_K(120) - 0x20)>;
+					ranges = <0x0 0xe0000 (DT_SIZE_K(120) - 0x20)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges = <0x0 0xe0000 (DT_SIZE_K(120) - 0x20)>;
 				};
 
 #ifndef USE_NON_SECURE_ADDRESS_MAP
@@ -236,9 +236,9 @@
 			vtf_region_default: memory@fdfe0 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				reg = <0xfdfe0 0x20>;
+				ranges = <0x0 0xfdfe0 0x20>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0xfdfe0 0x20>;
 				zephyr,memory-region = "NRF_VTF_REGION";
 			};
 		};
@@ -291,23 +291,23 @@
 			dppic00: dppic@42000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x42000 0x1000>;
-				status = "disabled";
 				channels = <16>;
 				groups = <2>;
+				status = "disabled";
 			};
 
 			ppib00: ppib@44000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x44000 0x1000>;
-				status = "disabled";
 				channels = <12>;
+				status = "disabled";
 			};
 
 			ppib01: ppib@45000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x45000 0x1000>;
-				status = "disabled";
 				channels = <8>;
+				status = "disabled";
 			};
 
 			ccm00: ccm@4a000 {
@@ -330,10 +330,10 @@
 				ranges = <0x0 0x4c000 0x1000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				status = "disabled";
 				enable-secure;
 				enable-dma-secure;
 				hibernation-ram-block = <32>;
+				status = "disabled";
 
 				cpuflpr_clic: interrupt-controller@f0000000 {
 					compatible = "nordic,nrf-clic";
@@ -364,10 +364,10 @@
 				reg = <0x4d000 0x1000>;
 				interrupts = <77 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&hfpll>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			gpio2: gpio@50400 {
@@ -416,6 +416,12 @@
 				phy = <&usbhs_phy>;
 				status = "disabled";
 
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
+					status = "disabled";
+				};
+
 				usbhs: usbhs@20000 {
 					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
 					reg = <0x20000 0x1a000>;
@@ -432,20 +438,14 @@
 							  128 32 32 16 16 16 16 16>;
 					status = "disabled";
 				};
-
-				usbhs_bc12: usbhs_bc12 {
-					compatible = "nordic,nrf-usbhs-bc12";
-					charging-mode = "BC12_TYPE_NONE";
-					status = "disabled";
-				};
 			};
 
 			mspi00: mspi@5b000 {
 				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
+				reg = <0x5b000 0x900 0x5b900 0x700>;
 				interrupts = <91 NRF_DEFAULT_IRQ_PRIORITY>;
 				#address-cells = <1>;
 				#size-cells = <0>;
-				reg = <0x5b000 0x900 0x5b900 0x700>;
 				reg-names = "wrapper", "core";
 				clock-frequency = <DT_FREQ_M(256)>;
 				fifo-depth = <16>;
@@ -453,6 +453,7 @@
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
 				concurrent-memmap-support;
+				rx-sample-delay-initial = <11>;
 				nordic,hspadctrl = <&gpio2>;
 				nordic,hspadctrl-index = <0>;
 				/* This EB/rx-delay configuration is always recommended unless
@@ -460,22 +461,22 @@
 				 * currently isn't supported.
 				 */
 				nordic,eb-rx-delay = <7>;
-				rx-sample-delay-initial = <11>;
 				status = "disabled";
 			};
 
 			mspi01: mspi@5c000 {
 				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
+				reg = <0x5c000 0x900 0x5c900 0x700>;
 				interrupts = <92 NRF_DEFAULT_IRQ_PRIORITY>;
 				#address-cells = <1>;
 				#size-cells = <0>;
-				reg = <0x5c000 0x900 0x5c900 0x700>;
 				reg-names = "wrapper", "core";
 				clock-frequency = <DT_FREQ_M(256)>;
 				fifo-depth = <16>;
 				packet-data-limit = <65536>;
 				dma-transmit-data-level = <8>;
 				dma-receive-data-level = <8>;
+				rx-sample-delay-initial = <11>;
 				nordic,hspadctrl = <&gpio2>;
 				nordic,hspadctrl-index = <1>;
 				/* This EB/rx-delay configuration is always recommended unless
@@ -483,7 +484,6 @@
 				 * currently isn't supported.
 				 */
 				nordic,eb-rx-delay = <7>;
-				rx-sample-delay-initial = <11>;
 				status = "disabled";
 			};
 
@@ -503,23 +503,23 @@
 			dppic10: dppic@82000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x82000 0x1000>;
-				status = "disabled";
 				channels = <24>;
 				groups = <6>;
+				status = "disabled";
 			};
 
 			ppib10: ppib@83000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x83000 0x1000>;
-				status = "disabled";
 				channels = <12>;
+				status = "disabled";
 			};
 
 			ppib11: ppib@84000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x84000 0x1000>;
-				status = "disabled";
 				channels = <16>;
+				status = "disabled";
 			};
 
 			timer10: timer@85000 {
@@ -578,30 +578,30 @@
 			dppic20: dppic@c2000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0xc2000 0x1000>;
-				status = "disabled";
 				channels = <16>;
 				groups = <6>;
+				status = "disabled";
 			};
 
 			ppib20: ppib@c3000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc3000 0x1000>;
-				status = "disabled";
 				channels = <8>;
+				status = "disabled";
 			};
 
 			ppib21: ppib@c4000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc4000 0x1000>;
-				status = "disabled";
 				channels = <16>;
+				status = "disabled";
 			};
 
 			ppib22: ppib@c5000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc5000 0x1000>;
-				status = "disabled";
 				channels = <4>;
+				status = "disabled";
 			};
 
 			spi20: spi@c6000 {
@@ -633,10 +633,10 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0xc6000 0x1000>;
 				interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			spi21: spi@c7000 {
@@ -668,10 +668,10 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0xc7000 0x1000>;
 				interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			spi22: spi@c8000 {
@@ -703,10 +703,10 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0xc8000 0x1000>;
 				interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			egu20: egu@c9000 {
@@ -785,8 +785,8 @@
 				reg = <0xd2000 0x1000>;
 				interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
-				status = "disabled";
 				idleout-supported;
+				status = "disabled";
 			};
 
 			pwm21: pwm@d3000 {
@@ -794,8 +794,8 @@
 				reg = <0xd3000 0x1000>;
 				interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
-				status = "disabled";
 				idleout-supported;
+				status = "disabled";
 			};
 
 			pwm22: pwm@d4000 {
@@ -803,16 +803,18 @@
 				reg = <0xd4000 0x1000>;
 				interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
-				status = "disabled";
 				idleout-supported;
+				status = "disabled";
 			};
 
 			adc: adc@d5000 {
 				compatible = "nordic,nrf-saadc";
 				reg = <0xd5000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				interrupts = <213 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				#io-channel-cells = <1>;
+				status = "disabled";
 			};
 
 			nfct: nfct@d6000 {
@@ -889,19 +891,19 @@
 				cc-num = <16>;
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
-				status = "disabled";
 				extended-channels = <0>;
+				status = "disabled";
 			};
 
 			tdm: tdm@e8000 {
 				compatible = "nordic,nrf-tdm";
+				reg = <0xe8000 0x1000>;
 				easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
-				reg = <0xe8000 0x1000>;
 				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				clocks = <&pclk32m>;
+				status = "disabled";
 			};
 
 			spi23: spi@ed000 {
@@ -933,10 +935,10 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0xed000 0x1000>;
 				interrupts = <237 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			spi24: spi@ee000 {
@@ -968,25 +970,25 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0xee000 0x1000>;
 				interrupts = <238 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			dppic30: dppic@102000 {
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x1000>;
-				status = "disabled";
 				channels = <4>;
 				groups = <2>;
+				status = "disabled";
 			};
 
 			ppib30: ppib@103000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x103000 0x1000>;
-				status = "disabled";
 				channels = <4>;
+				status = "disabled";
 			};
 
 			spi30: spi@104000 {
@@ -1018,10 +1020,10 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x104000 0x1000>;
 				interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				dmaend-supported;
+				status = "disabled";
 			};
 
 			comp: comp@106000 {
@@ -1070,16 +1072,16 @@
 
 				xo: xo {
 					compatible = "nordic,nrf-clock-xo";
-					status = "disabled";
 					clock-frequency = <DT_FREQ_M(32)>;
 					#clock-cells = <0>;
+					status = "disabled";
 				};
 
 				xo24m: xo24m {
 					compatible = "nordic,nrf-clock-xo24m";
-					status = "disabled";
 					clock-frequency = <DT_FREQ_M(24)>;
 					#clock-cells = <0>;
+					status = "disabled";
 				};
 			};
 
@@ -1088,23 +1090,23 @@
 				reg = <0x10e000 0x1000>;
 				ranges = <0x0 0x10e000 0x1000>;
 				interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				status = "disabled";
 
 				gpregret1: gpregret1@500 {
-					#address-cells = <1>;
-					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
 					reg = <0x500 0x1>;
+					#address-cells = <1>;
+					#size-cells = <1>;
 					status = "disabled";
 				};
 
 				gpregret2: gpregret2@504 {
-					#address-cells = <1>;
-					#size-cells = <1>;
 					compatible = "nordic,nrf-gpregret";
 					reg = <0x504 0x1>;
+					#address-cells = <1>;
+					#size-cells = <1>;
 					status = "disabled";
 				};
 			};
@@ -1112,19 +1114,19 @@
 			vregusb: regulator@121000 {
 				compatible = "nordic,vregusb-regulator";
 				reg = <0x121000 0x1000>;
-				status = "disabled";
 				regulator-name = "VREGUSB";
 				interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
 			};
 
 			lfrc: clock-controller@123000 {
 				compatible = "nordic,nrf-lfrc";
 				reg = <0x123000 0x1000>;
 				interrupts = <291 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
 				#clock-cells = <0>;
 				clock-frequency = <32768>;
 				accuracy-ppm = <250>;
+				status = "disabled";
 			};
 
 			audio_auxpll: auxpll@130000 {
@@ -1136,7 +1138,6 @@
 				nordic,out-div = <12>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <9>;
-				nordic,sdm-disable;
 				nordic,range = "mid";
 				status = "disabled";
 			};
@@ -1152,26 +1153,26 @@
 				};
 
 				cpuapp_nvic: interrupt-controller@e000e100 {
-					#address-cells = <1>;
 					compatible = "arm,v8m-nvic";
 					reg = <0xe000e100 0xc00>;
-					arm,num-irq-priority-bits = <3>;
+					#address-cells = <1>;
 					interrupt-controller;
 					#interrupt-cells = <2>;
+					arm,num-irq-priority-bits = <3>;
 				};
 			};
 		};
 
 		wifi_bellboard: mailbox@40074000 {
 			reg = <0x40074000 0x1000>;
-			status = "disabled";
 			#mbox-cells = <1>;
+			status = "disabled";
 		};
 
 		cpuapp_bellboard: mailbox@40078000 {
 			reg = <0x40078000 0x1000>;
-			status = "disabled";
 			#mbox-cells = <1>;
+			status = "disabled";
 		};
 
 		mram_controller: mram-controller@5004e000 {

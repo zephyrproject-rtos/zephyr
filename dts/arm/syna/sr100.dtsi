@@ -21,47 +21,119 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m55";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <400000000>;
 		};
 
 		cpu1: cpu@1 {
 			compatible = "arm,cortex-m4";
-			device_type = "cpu";
 			reg = <1>;
+			device_type = "cpu";
 		};
-	};
-
-	sram0: memory@33ea0000 {
-		compatible = "mmio-sram";
-		reg = <0x33ea0000 DT_SIZE_K(128)>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x0 0x33ea0000 DT_SIZE_K(128)>;
-	};
-
-	itcm0: memory@10000000 {
-		compatible = "mmio-sram";
-		reg = <0x10000000 DT_SIZE_K(128)>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x0 0x10000000 DT_SIZE_K(128)>;
 	};
 
 	soc {
-		gcr: clock-controller@50330700 { /* GLOBAL */
-			reg = <0x50330700 0x100>;
-			compatible = "syna,sr100-clock";
-			#clock-cells = <1>;
-			status = "okay";
+		usb0: usb@50100000 {
+			compatible = "snps,dwc2";
+			reg = <0x50100000 0xffff>;
+			interrupts = <48 0>;
+			num-out-eps = <8>;
+			num-in-eps = <8>;
+			clocks = <&gcr SYNA_USB_CLK>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
+			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
+			g-rx-fifo-size = <576>;
+			g-np-tx-fifo-size = <128>;
+			g-tx-fifo-size = <512 512 256 256 256 256 256 256>;
+			status = "disabled";
 		};
 
-		reset: reset-controller@50330600 { /* GLOBAL */
-			reg = <0x50330600 0x100>;
-			compatible = "syna,sr100-reset";
-			#reset-cells = <1>;
-			status = "okay";
+		gpioa: gpio@50306000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x50306000 0x80>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <50 2>;
+			ngpios = <32>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpiob: gpio@50307000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x50307000 0x80>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <51 2>;
+			ngpios = <32>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@50312000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x50312000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr SYNA_I2C0_MSTR_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			resets = <&reset SYNA_I2C0M_RST>;
+			interrupts = <52 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@50313000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x50313000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr SYNA_I2C1_MSTR_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			resets = <&reset SYNA_I2C1M_RST>;
+			interrupts = <53 0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@50314000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x50314000 0x1000>; /* I2C slave */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr SYNA_I2C_SLV_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			resets = <&reset SYNA_I2CS_RST>;
+			interrupts = <54 0>;
+			status = "disabled";
+		};
+
+		spi0: spi@50315000 {
+			compatible = "snps,designware-spi";
+			reg = <0x50315000 0x88>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr SYNA_SPI_MSTR_CLK>;
+			interrupts = <55 3>;
+			fifo-depth = <8>;
+			max-xfer-size = <32>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			status = "disabled";
+		};
+
+		spi1: spi@50316000 {
+			compatible = "snps,designware-spi";
+			reg = <0x50316000 0x88>; /* slave */
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr SYNA_SPI_SLV_CLK>;
+			interrupts = <56 3>;
+			fifo-depth = <8>;
+			max-xfer-size = <32>;
+			clock-frequency = <DT_FREQ_M(200)>;
+			status = "disabled";
 		};
 
 		ns16550_uart0: uart@50317000 {
@@ -86,6 +158,20 @@
 			status = "disabled";
 		};
 
+		reset: reset-controller@50330600 {
+			compatible = "syna,sr100-reset"; /* GLOBAL */
+			reg = <0x50330600 0x100>;
+			#reset-cells = <1>;
+			status = "okay";
+		};
+
+		gcr: clock-controller@50330700 {
+			compatible = "syna,sr100-clock"; /* GLOBAL */
+			reg = <0x50330700 0x100>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
 		ns16550_lp_uart: uart@b5000000 {
 			compatible = "ns16550";
 			reg = <0xb5000000 0x1000>;
@@ -95,108 +181,22 @@
 			reg-shift = <2>;
 			status = "disabled";
 		};
+	};
 
-		i2c0: i2c@50312000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-i2c";
-			clocks = <&gcr SYNA_I2C0_MSTR_CLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			resets = <&reset SYNA_I2C0M_RST>;
-			reg = <0x50312000 0x1000>;
-			interrupts = <52 0>;
-			status = "disabled";
-		};
+	itcm0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(128)>;
+		ranges = <0x0 0x10000000 DT_SIZE_K(128)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
 
-		i2c1: i2c@50313000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-i2c";
-			clocks = <&gcr SYNA_I2C1_MSTR_CLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			resets = <&reset SYNA_I2C1M_RST>;
-			reg = <0x50313000 0x1000>;
-			interrupts = <53 0>;
-			status = "disabled";
-		};
-
-		i2c2: i2c@50314000 { /* I2C slave */
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-i2c";
-			clocks = <&gcr SYNA_I2C_SLV_CLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			resets = <&reset SYNA_I2CS_RST>;
-			reg = <0x50314000 0x1000>;
-			interrupts = <54 0>;
-			status = "disabled";
-		};
-
-		gpioa: gpio@50306000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-gpio";
-			reg = <0x50306000 0x80>;
-			interrupts = <50 2>;
-			ngpios = <32>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-
-		gpiob: gpio@50307000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-gpio";
-			reg = <0x50307000 0x80>;
-			interrupts = <51 2>;
-			ngpios = <32>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			status = "disabled";
-		};
-
-		spi0: spi@50315000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-spi";
-			clocks = <&gcr SYNA_SPI_MSTR_CLK>;
-			reg = <0x50315000 0x88>;
-			interrupts = <55 3>;
-			fifo-depth = <8>;
-			max-xfer-size = <32>;
-			clock-frequency = <DT_FREQ_M(100)>;
-			status = "disabled";
-		};
-
-		spi1: spi@50316000 { /* slave */
-			#address-cells = <1>;
-			#size-cells = <0>;
-			compatible = "snps,designware-spi";
-			clocks = <&gcr SYNA_SPI_SLV_CLK>;
-			reg = <0x50316000 0x88>;
-			interrupts = <56 3>;
-			fifo-depth = <8>;
-			max-xfer-size = <32>;
-			clock-frequency = <DT_FREQ_M(200)>;
-			status = "disabled";
-		};
-
-		usb0: usb@50100000 {
-			compatible = "snps,dwc2";
-			reg = <0x50100000 0xffff>;
-			interrupts = <48 0>;
-			num-out-eps = <8>;
-			num-in-eps = <8>;
-			clocks = <&gcr SYNA_USB_CLK>;
-			ghwcfg1 = <0x00000000>;
-			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
-			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
-			g-rx-fifo-size = <576>;
-			g-np-tx-fifo-size = <128>;
-			g-tx-fifo-size = <512 512 256 256 256 256 256 256>;
-			status = "disabled";
-		};
+	sram0: memory@33ea0000 {
+		compatible = "mmio-sram";
+		reg = <0x33ea0000 DT_SIZE_K(128)>;
+		ranges = <0x0 0x33ea0000 DT_SIZE_K(128)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };
 

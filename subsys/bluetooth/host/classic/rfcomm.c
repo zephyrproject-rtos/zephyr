@@ -551,6 +551,11 @@ static void rfcomm_dlc_rtx_timeout(struct k_work *work)
 	struct bt_rfcomm_dlc *dlc = DLC_RTX(work);
 	struct bt_rfcomm_session *session = dlc->session;
 
+	if (session == NULL) {
+		LOG_WRN("dlc %p timeout but session already gone", dlc);
+		return;
+	}
+
 	LOG_WRN("dlc %p state %d timeout", dlc, dlc->state);
 
 	rfcomm_dlcs_remove_dlci(session, dlc->dlci);
@@ -1739,10 +1744,10 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 
 static void rfcomm_session_control_channel_connected(struct bt_rfcomm_session *session)
 {
-	struct bt_rfcomm_dlc *dlc;
+	struct bt_rfcomm_dlc *dlc, *next;
 	int err;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&session->dlcs, dlc, _node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->dlcs, dlc, next, _node) {
 		if (dlc->role == BT_RFCOMM_ROLE_INITIATOR && dlc->state == BT_RFCOMM_STATE_INIT) {
 			err = rfcomm_dlc_start(dlc);
 			if (err != 0) {
@@ -2325,6 +2330,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	uint8_t fcs, cr;
+	uint16_t len;
 
 	if (!buf) {
 		return -EINVAL;
@@ -2358,10 +2364,13 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);
 
-	k_fifo_put(&dlc->tx_queue, buf);
+	/* The TX work may send and free the buffer before this function returns */
+	len = buf->len;
+
+	k_fifo_put(&dlc->tx_queue, net_buf_take(&buf));
 	rfcomm_dlc_tx_trigger(dlc);
 
-	return buf->len;
+	return len;
 }
 
 static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -2656,6 +2665,10 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 	return 0;
 
 fail:
+	/* rfcomm_dlc_init() armed the RTX timer; it would otherwise fire long
+	 * after this failure, with dlc->session already cleared below.
+	 */
+	(void)k_work_cancel_delayable(&dlc->rtx_work);
 	(void)rfcomm_dlcs_remove_dlci(session, dlc->dlci);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;

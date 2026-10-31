@@ -571,6 +571,15 @@ config PMP_UNLOCK_ROM_FOR_DEBUG
 
 endif #RISCV_PMP
 
+config RISCV_LANDING_PADS
+	bool "Landing Pad Enforcement (Zicfilp)"
+	depends on RISCV_ISA_EXT_ZICFILP
+	default y
+	help
+	  Enables forward-edge control-flow integrity by configuring
+	  environment registers to enforce landing pad (lpad) instructions at
+	  indirect branch targets.
+
 config PMP_STACK_GUARD
 	bool
 	depends on HW_STACK_PROTECTION
@@ -754,9 +763,6 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 	  code. The requirement for a particular alignment arises from
 	  the format of MTVEC register which is RISC-V platform-specific.
 	  The minimum alignment is 4 bytes according to the Spec.
-
-config GEN_IRQ_VECTOR_TABLE
-	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP

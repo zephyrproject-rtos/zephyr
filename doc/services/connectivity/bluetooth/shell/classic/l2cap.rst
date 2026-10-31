@@ -125,6 +125,8 @@ L2CAP echo
 The echo subcommand provides functionality for L2CAP echo requests and responses in Bluetooth
 Classic.
 
+The subcommand is controlled by :kconfig:option:`CONFIG_BT_TESTING`.
+
 The commands can only be used after the ACL connection has been established.
 
 1. Listen for L2CAP echo request an L2CAP echo response:

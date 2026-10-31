@@ -11,7 +11,8 @@ tests:
        or dt_compat_enabled("xen,watchdog")
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog")
-       or (CONFIG_SOC_FAMILY_LPC and not CONFIG_SOC_SERIES_LPC55XXX) or
+       or (CONFIG_SOC_FAMILY_LPC and not (CONFIG_SOC_SERIES_LPC55XXX
+       or CONFIG_SOC_SERIES_LPC54XXX)) or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
        CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103 or CONFIG_SOC_MAX32655)
     platform_exclude:

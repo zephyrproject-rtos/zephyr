@@ -7,13 +7,13 @@
 
 spi1: &scb1 {
 	compatible = "infineon,spi";
-	status = "okay";
 	pinctrl-0 = <&p1_5_scb1_spi_m_mosi &p1_6_scb1_spi_m_miso
 		     &p1_7_scb1_spi_m_clk &p1_3_scb1_spi_m_select0>;
 	pinctrl-names = "default";
 	clocks = <&peri_clk_div11>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &p1_5_scb1_spi_m_mosi {

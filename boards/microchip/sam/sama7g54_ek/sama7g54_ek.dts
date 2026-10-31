@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <common/freq.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <dt-bindings/sam/sama7g5/sama7g54/sama7g54-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -16,8 +17,8 @@
 #include <microchip/sam/sama7/sama7g5/sama7g54.dtsi>
 
 / {
-	model = "SAMA7G54-EK board";
 	compatible = "microchip,sama7g5ek", "microchip,sama7g5", "microchip,sama7";
+	model = "SAMA7G54-EK board";
 
 	aliases {
 		led0 = &led_green;
@@ -36,6 +37,7 @@
 		zephyr,console = &usart3;
 		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
+		zephyr,system-timer = &pit64b0;
 	};
 
 	clocks {
@@ -46,11 +48,6 @@
 		slow_xtal {
 			clock-frequency = <32768>;
 		};
-	};
-
-	ddram: ddram@60000000 {
-		compatible = "ddram";
-		reg = <0x60000000 DT_SIZE_M(512)>;
 	};
 
 	leds {
@@ -89,17 +86,17 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &piod 0 0>, /* AN = PD0 */
-			   <2 0 &piob 6 0>, /* CS = PB6 */
-			   <3 0 &piob 5 0>, /* SCK = PB5 */
-			   <4 0 &piob 4 0>, /* MISO = PB4 */
-			   <5 0 &piob 3 0>, /* MOSI = PB3 */
-			   <6 0 &pioa 13 0>, /* PWM = PA13 */
-			   <7 0 &pioc 21 0>, /* INT = PC21 */
-			   <8 0 &piod 19 0>, /* RX = PD19 */
-			   <9 0 &piod 18 0>, /* TX = PD18 */
-			   <10 0 &pioc 19 0>, /* SCL = PC19 */
-			   <11 0 &pioc 18 0>; /* SDA = PC18 */
+		gpio-map = <MIKROBUS_AN 0 &piod 0 0>,
+			   <MIKROBUS_CS 0 &piob 6 0>,
+			   <MIKROBUS_SCK 0 &piob 5 0>,
+			   <MIKROBUS_MISO 0 &piob 4 0>,
+			   <MIKROBUS_MOSI 0 &piob 3 0>,
+			   <MIKROBUS_PWM 0 &pioa 13 0>,
+			   <MIKROBUS_INT 0 &pioc 21 0>,
+			   <MIKROBUS_RX 0 &piod 19 0>,
+			   <MIKROBUS_TX 0 &piod 18 0>,
+			   <MIKROBUS_SCL 0 &pioc 19 0>,
+			   <MIKROBUS_SDA 0 &pioc 18 0>;
 	};
 
 	mikrobus_2_header: mikrobus-connector-2 {
@@ -107,17 +104,17 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &piod 1 0>, /* AN = PD1 */
-			   <2 0 &piob 7 0>, /* CS = PB7 */
-			   <3 0 &piob 5 0>, /* SCK = PB5 */
-			   <4 0 &piob 4 0>, /* MISO = PB4 */
-			   <5 0 &piob 3 0>, /* MOSI = PB3 */
-			   <6 0 &piod 20 0>, /* PWM = PD20 */
-			   <7 0 &pioc 20 0>, /* INT = PC20 */
-			   <8 0 &pioc 24 0>, /* RX = PC24 */
-			   <9 0 &pioc 23 0>, /* TX = PC23 */
-			   <10 0 &pioc 19 0>, /* SCL = PC19 */
-			   <11 0 &pioc 18 0>; /* SDA = PC18 */
+		gpio-map = <MIKROBUS_AN 0 &piod 1 0>,
+			   <MIKROBUS_CS 0 &piob 7 0>,
+			   <MIKROBUS_SCK 0 &piob 5 0>,
+			   <MIKROBUS_MISO 0 &piob 4 0>,
+			   <MIKROBUS_MOSI 0 &piob 3 0>,
+			   <MIKROBUS_PWM 0 &piod 20 0>,
+			   <MIKROBUS_INT 0 &pioc 20 0>,
+			   <MIKROBUS_RX 0 &pioc 24 0>,
+			   <MIKROBUS_TX 0 &pioc 23 0>,
+			   <MIKROBUS_SCL 0 &pioc 19 0>,
+			   <MIKROBUS_SDA 0 &pioc 18 0>;
 	};
 
 	pwmleds: pwmleds {
@@ -145,6 +142,11 @@
 		standby-gpios = <&pioc 16 GPIO_ACTIVE_HIGH>;
 		max-bitrate = <DT_FREQ_M(8)>;
 		#phy-cells = <0>;
+	};
+
+	ddram: ddram@60000000 {
+		compatible = "ddram";
+		reg = <0x60000000 DT_SIZE_M(512)>;
 	};
 };
 
@@ -263,7 +265,6 @@
 };
 
 &gmac0 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gmac0_default>;
 	phy-connection-type = "rgmii";
@@ -271,25 +272,25 @@
 
 	nvmem-cells = <&eeprom0_eui48>;
 	nvmem-cell-names = "mac_address";
+	status = "okay";
 };
 
 &gmac0_mdio {
-	status = "okay";
 
 	pinctrl-0 = <&pinctrl_gmac0_mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gmac0_phy: ethernet-phy@7 {
 		compatible = "microchip,ksz9131";
-		status = "okay";
 		reg = <7>;
 		int-gpios = <&pioa 31 GPIO_ACTIVE_LOW>;
 		microchip,rgmii-delay = "id";
+		status = "okay";
 	};
 };
 
 &gmac1 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gmac1_default>;
 	phy-connection-type = "rmii";
@@ -298,35 +299,36 @@
 
 	nvmem-cells = <&eeprom1_eui48>;
 	nvmem-cell-names = "mac_address";
+	status = "okay";
 };
 
 &gmac1_mdio {
-	status = "okay";
 
 	pinctrl-0 = <&pinctrl_gmac1_mdio_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gmac1_phy: ethernet-phy@0 {
 		compatible = "microchip,ksz8081";
-		status = "okay";
 		reg = <0>;
 		int-gpios = <&pioa 21 GPIO_ACTIVE_LOW>;
 		microchip,interface-type = "rmii-25MHz";
+		status = "okay";
 	};
 };
 
 &mcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can0_default>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
+	status = "okay";
 };
 
 &mcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_can1_default>;
 	pinctrl-names = "default";
 	phys = <&transceiver1>;
+	status = "okay";
 };
 
 &pinctrl {

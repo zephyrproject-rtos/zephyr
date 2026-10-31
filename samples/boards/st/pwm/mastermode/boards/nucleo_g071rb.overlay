@@ -22,9 +22,9 @@
 	st,mastermode = "UPDATE";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

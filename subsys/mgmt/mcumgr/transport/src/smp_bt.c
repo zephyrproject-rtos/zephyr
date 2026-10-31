@@ -1116,6 +1116,10 @@ clean_up:
 			cpd->state = 0;
 			cpd->id = 0;
 			cpd->conn = NULL;
+
+			smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+					TRANSPORT_MGMT_ERR_CONNECT_FAILED);
+
 		} else {
 			cpd->state |= DISCOVERED;
 		}
@@ -1128,6 +1132,9 @@ clean_up:
 
 	if (cpd == NULL) {
 		LOG_ERR("Invalid CPD for connection: %p", ud->conn);
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_CONNECTION_ESTABLISHMENT_FATAL_ERROR);
+
 		return false;
 	}
 
@@ -1358,8 +1365,6 @@ static bool smp_bt_bridge_config_details(uint32_t mode, zcbor_state_t *output_da
 	     zcbor_tstr_put_lit(output_data, "le_coded") &&
 	     zcbor_tstr_put_lit(output_data, "type") &&
 	     zcbor_uint32_put(output_data, 2) &&
-	     zcbor_tstr_put_lit(output_data, "required") &&
-	     zcbor_bool_put(output_data, true) &&
 	     zcbor_map_end_encode(output_data, 3);
 
 	*rc = MGMT_RETURN_CHECK(ok);

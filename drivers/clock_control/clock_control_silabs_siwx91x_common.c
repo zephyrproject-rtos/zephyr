@@ -85,12 +85,12 @@ const struct device *siwx91x_clock_control_get_device(uint32_t clkid)
 	return siwx91x_clk_dev_table[clkid];
 }
 
-/* TODO: Remove theses functions when the NWP driver is fully integrated with zephyr */
+/* TODO: Remove these functions when the NWP driver is fully integrated with zephyr */
 void siwx91x_clock_request_xtal_to_nwp(void)
 {
+#ifdef CONFIG_SILABS_SIWX91X_NWP
 	__maybe_unused const struct device *nwp_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(nwp));
 
-#ifdef CONFIG_SILABS_SIWX91X_NWP
 	if (nwp_dev) {
 		/* need to call nwp api */
 		sli_si91x_xtal_turn_on_request_from_m4_to_TA();
@@ -100,9 +100,9 @@ void siwx91x_clock_request_xtal_to_nwp(void)
 
 void siwx91x_clock_release_xtal_to_nwp(void)
 {
+#ifdef CONFIG_SILABS_SIWX91X_NWP
 	__maybe_unused const struct device *nwp_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(nwp));
 
-#ifdef CONFIG_SILABS_SIWX91X_NWP
 	if (nwp_dev) {
 		/* need to call nwp api */
 		sli_si91x_xtal_turn_off_request_from_m4_to_TA();

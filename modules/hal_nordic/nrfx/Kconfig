@@ -286,6 +286,16 @@ config NRFX_USBREG
 config NRFX_WDT
 	bool "WDT driver"
 
+config NRFX_WDT_CONFIG_STOP_AT_INIT
+	bool "WDT stop during initialization"
+	default y
+	depends on NRFX_WDT
+	help
+	  Stop a watchdog inherited in the running state before initializing the nrfx
+	  driver. Watchdog supervision is suspended until the application configures
+	  and starts the watchdog again. Initialization fails if the previous watchdog
+	  configuration does not allow stopping.
+
 menu "Peripheral Resource Sharing module"
 
 config NRFX_PRS

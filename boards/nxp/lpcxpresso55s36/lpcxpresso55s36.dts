@@ -9,11 +9,12 @@
 #include <nxp/lpc/lpc55xxx/nxp_lpc55S36_ns.dtsi>
 #include "lpcxpresso55s36-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP LPCXpresso55S36 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+	model = "NXP LPCXpresso55S36 board";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -78,20 +79,20 @@
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
-		gpio-map = <0 0 &gpio1 9 0>,	/* AN  */
+		gpio-map = <MIKROBUS_AN 0 &gpio1 9 0>,
 			   /* Not a GPIO*/		/* RST */
-			   <2 0 &gpio0 20 0>,	/* CS   */
-			   <3 0 &gpio1 2 0>,	/* SCK  */
-			   <4 0 &gpio1 3 0>,	/* MISO */
-			   <5 0 &gpio0 26 0>,	/* MOSI */
+			   <MIKROBUS_CS 0 &gpio0 20 0>,
+			   <MIKROBUS_SCK 0 &gpio1 2 0>,
+			   <MIKROBUS_MISO 0 &gpio1 3 0>,
+			   <MIKROBUS_MOSI 0 &gpio0 26 0>,
 			   /* +3.3V */
 			   /* GND */
-			   <6 0 &gpio1 8 0>,	/* PWM  */
-			   <7 0 &gpio0 17 0>,	/* INT  */
-			   <8 0 &gpio1 24 0>,	/* RX   */
-			   <9 0 &gpio1 25 0>,	/* TX   */
-			   <10 0 &gpio1 30 0>,	/* SCL  */
-			   <11 0 &gpio1 21 0>;	/* SDA  */
+			   <MIKROBUS_PWM 0 &gpio1 8 0>,
+			   <MIKROBUS_INT 0 &gpio0 17 0>,
+			   <MIKROBUS_RX 0 &gpio1 24 0>,
+			   <MIKROBUS_TX 0 &gpio1 25 0>,
+			   <MIKROBUS_SCL 0 &gpio1 30 0>,
+			   <MIKROBUS_SDA 0 &gpio1 21 0>;
 		/* +5V */
 		/* GND */
 	};
@@ -127,11 +128,11 @@
 };
 
 &flexcomm0 {
-	status = "okay";
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &can0 {
@@ -145,9 +146,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /* Flash is divided into 32 kB sub-regions.
@@ -162,26 +163,26 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(32)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@20000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00020000 DT_SIZE_K(96)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@38000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x00038000 DT_SIZE_K(20)>;
+			label = "storage";
 		};
 		/* The last 12KB are reserved for PFR on the 256KB flash.
 		 */
@@ -189,15 +190,15 @@
 };
 
 &flexpwm1_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbfs {
-	status = "okay";
 	pinctrl-0 = <&pinmux_usbfs>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {
@@ -217,21 +218,21 @@ zephyr_udc0: &usbfs {
 };
 
 &dac0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_dac0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &opamp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_opamp0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &hscmp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_hscmp0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &crc {

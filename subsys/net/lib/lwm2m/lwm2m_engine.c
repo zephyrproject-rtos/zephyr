@@ -596,43 +596,49 @@ void lwm2m_socket_del(struct lwm2m_ctx *ctx)
 static int64_t check_notifications(struct lwm2m_ctx *ctx, const int64_t timestamp)
 {
 	struct observe_node *obs;
-	int rc;
+	bool sent = false;
+	bool no_msg = false;
 	int64_t next = INT64_MAX;
 
 	lwm2m_registry_lock();
 	SYS_SLIST_FOR_EACH_CONTAINER(&ctx->observer, obs, node) {
+		int64_t obs_next;
+
 		if (!obs->event_timestamp) {
 			continue;
 		}
 
-		if (obs->event_timestamp < next) {
-			next = obs->event_timestamp;
+		if (timestamp >= obs->event_timestamp) {
+			if (obs->active_notify != NULL) {
+				/* Previous notification still unacknowledged, retry later */
+				obs->event_timestamp = timestamp + NOTIFY_DELAY_MS;
+			} else if (!sent && !no_msg) {
+				int rc = generate_notify_message(ctx, obs, NULL);
+
+				if (rc == -EAGAIN) {
+					no_msg = true;
+				} else {
+					obs->event_timestamp = engine_observe_shedule_next_event(
+						obs, ctx->srv_obj_inst, timestamp);
+					obs->last_timestamp = timestamp;
+					/* Create at most one notification per call */
+					sent = (rc == 0);
+				}
+			}
 		}
 
-		if (timestamp < obs->event_timestamp) {
+		obs_next = obs->event_timestamp;
+		if (obs_next == 0) {
 			continue;
 		}
-		/* Check That There is not pending process*/
-		if (obs->active_notify != NULL) {
-			obs->event_timestamp += NOTIFY_DELAY_MS;
-			continue;
+
+		/* Nothing can be sent until a message is freed, retry later */
+		if (no_msg && obs_next <= timestamp) {
+			obs_next = timestamp + NOTIFY_DELAY_MS;
 		}
 
-		rc = generate_notify_message(ctx, obs, NULL);
-		if (rc == -ENOMEM) {
-			/* no memory/messages available, retry later */
-			goto cleanup;
-		}
-		obs->event_timestamp =
-			engine_observe_shedule_next_event(obs, ctx->srv_obj_inst, timestamp);
-		obs->last_timestamp = timestamp;
-
-		if (!rc) {
-			/* create at most one notification */
-			goto cleanup;
-		}
+		next = MIN(next, obs_next);
 	}
-cleanup:
 	lwm2m_registry_unlock();
 	return next;
 }
@@ -1245,6 +1251,11 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		LOG_ERR("zsock_fcntl(ZVFS_F_SETFL) failed (%d)", ret);
 		goto error;
 	}
+
+	/* A new socket is a new endpoint; requests handled on the old one
+	 * cannot be retransmitted to it.
+	 */
+	lwm2m_engine_dedup_clear(client_ctx);
 
 	LOG_INF("Connected, sock id %d", client_ctx->sock_fd);
 	return 0;

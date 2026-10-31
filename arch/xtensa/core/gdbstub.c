@@ -339,6 +339,7 @@ static void read_sreg(struct gdb_ctx *ctx, struct xtensa_register *reg)
  * Translate exception into GDB exception reason.
  *
  * @param reason Reason for exception
+ * @return GDB exception code (GDB_EXCEPTION_*)
  */
 static unsigned int get_gdb_exception_reason(unsigned int reason)
 {
@@ -966,6 +967,11 @@ out:
 	return ret;
 }
 
+/**
+ * @brief Enter the GDB stub from a debug interrupt or exception.
+ *
+ * @param esf Exception stack frame of the interrupted context
+ */
 void z_gdb_isr(struct arch_esf *esf)
 {
 	uint32_t reg;

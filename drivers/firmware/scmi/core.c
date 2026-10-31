@@ -171,6 +171,10 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		}
 	}
 
+	if (!use_polling) {
+		k_sem_reset(&proto->tx->sem);
+	}
+
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, use_polling);
 	if (ret < 0) {
 		LOG_ERR("failed to send message at transport layer: %d", ret);

@@ -27,8 +27,8 @@
 				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
 				interrupts = <16 0>, <17 0>, <18 0>, <19 0>;
 				dma-channels = <4>;
-				status = "disabled";
 				#dma-cells = <2>;
+				status = "disabled";
 			};
 		};
 
@@ -43,9 +43,9 @@
 			flash0: flash@1000000 {
 				compatible = "soc-nv-flash";
 				reg = <0x01000000 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x1000000 DT_SIZE_K(1024)>;
 				write-block-size = <16>;
 				erase-block-size = <8192>;
-				ranges = <0x0 0x1000000 DT_SIZE_K(1024)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

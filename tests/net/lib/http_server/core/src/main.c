@@ -202,6 +202,34 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+#define TEST_HTTP2_HEADERS_PADDED_EMPTY_STREAM_1 \
+	0x00, 0x00, 0x00, 0x01, 0x0c, 0x00, 0x00, 0x00, TEST_STREAM_ID_1
+/* The GET / block preceded by a dynamic table size update of 4096, 4097 and 1. */
+#define TEST_HTTP2_HEADERS_GET_ROOT_TABLE_SIZE_4096_STREAM_1 \
+	0x00, 0x00, 0x24, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x3f, 0xe1, 0x1f, \
+	0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, \
+	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa, \
+	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
+#define TEST_HTTP2_HEADERS_GET_ROOT_TABLE_SIZE_4097_STREAM_1 \
+	0x00, 0x00, 0x24, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x3f, 0xe2, 0x1f, \
+	0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, \
+	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa, \
+	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
+#define TEST_HTTP2_HEADERS_GET_ROOT_TABLE_SIZE_1_STREAM_1 \
+	0x00, 0x00, 0x22, 0x01, 0x05, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
+	0x21, \
+	0x82, 0x84, 0x86, 0x41, 0x8a, 0x0b, 0xe2, 0x5c, 0x0b, 0x89, 0x70, 0xdc, \
+	0x78, 0x0f, 0x03, 0x53, 0x03, 0x2a, 0x2f, 0x2a, 0x90, 0x7a, 0x8a, 0xaa, \
+	0x69, 0xd2, 0x9a, 0xc4, 0xc0, 0x57, 0x68, 0x0b, 0x83
+#define TEST_HTTP2_HEADERS_PRIORITY_SHORT_STREAM_1 \
+	0x00, 0x00, 0x03, 0x01, 0x24, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x00, 0x00, 0x00
+#define TEST_HTTP2_DATA_EMPTY_STREAM_1 \
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1
+#define TEST_HTTP2_DATA_PADDING_ONLY_STREAM_1 \
+	0x00, 0x00, 0x05, 0x00, 0x08, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, 0x04, \
+	0x00, 0x00, 0x00, 0x00
 #define TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_NO_END_STREAM \
 	0x00, 0x00, 0x11, 0x00, 0x00, 0x00, 0x00, 0x00, TEST_STREAM_ID_1, \
 	0x54, 0x65, 0x73, 0x74, 0x20, 0x64, 0x79, 0x6e, 0x61, 0x6d, 0x69, 0x63, \
@@ -1537,6 +1565,209 @@ ZTEST(server_function_tests, test_http2_post_data_with_padding)
 
 	common_verify_http2_dynamic_post_request(request_post_dynamic,
 						 sizeof(request_post_dynamic));
+}
+
+/* A frame too short for the field its flag announces is malformed and ends
+ * the connection. The frame is followed by another one, as the server only
+ * handles a frame once it has some payload buffered.
+ */
+static void common_verify_http2_short_field(const uint8_t *request, size_t request_len)
+{
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, request_len, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	do {
+		ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+	} while (ret > 0);
+
+	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http2_header_table_size_update_before_ack)
+{
+	/* Until the client acknowledges the server's SETTINGS, a dynamic table
+	 * size update up to the protocol default of 4096 is valid.
+	 */
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_SIZE_4096_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, sizeof(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+/* A header block the server refuses to decode: the stream gets a 500 and the
+ * connection is closed, with no response to the request itself.
+ */
+static void common_verify_http2_header_block_rejected(const uint8_t *request, size_t request_len)
+{
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "500"}
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, request_len, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS,
+				   expected_headers, 1);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0, HTTP2_FLAG_END_STREAM);
+
+	do {
+		ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+	} while (ret > 0);
+
+	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http2_header_table_size_update_too_large)
+{
+	/* Above the protocol default, acknowledged or not. */
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_SIZE_4097_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_header_block_rejected(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_header_table_size_update_after_ack)
+{
+	/* Once acknowledged, the server's table size of zero is the limit. */
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_SIZE_1_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_header_block_rejected(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_headers_padded_empty)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_PADDED_EMPTY_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_short_field(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_headers_priority_short)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_PRIORITY_SHORT_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+
+	common_verify_http2_short_field(request, sizeof(request));
+}
+
+ZTEST(server_function_tests, test_http2_post_data_padding_only)
+{
+	/* A DATA frame of nothing but padding carries no body. */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_PADDING_ONLY_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_PADDED,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_dynamic, sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	/* The empty chunk is acknowledged with WINDOW_UPDATEs. */
+	expect_http2_window_update_frame(&offset, TEST_STREAM_ID_1);
+	expect_http2_window_update_frame(&offset, 0);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http2_post_data_empty)
+{
+	/* An empty DATA frame consumes no flow control credit, so none is
+	 * granted back.
+	 */
+	static const uint8_t request_post_dynamic[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_POST_DYNAMIC_STREAM_1,
+		TEST_HTTP2_DATA_EMPTY_STREAM_1,
+		TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1_PADDED,
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_post_dynamic, sizeof(request_post_dynamic), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
 }
 
 ZTEST(server_function_tests, test_http2_post_headers_with_priority)
@@ -3289,6 +3520,36 @@ ZTEST(server_function_tests, test_http1_static_fs)
 			  "Received data doesn't match expected response");
 }
 
+ZTEST(server_function_tests, test_http1_static_fs_query)
+{
+	static const char http1_request[] =
+		"GET /static_file.html?v=1 HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 30\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		TEST_STATIC_FS_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
 /* HPACK-encoded "GET /static_file.html" request, END_STREAM | END_HEADERS set.
  * :method: GET (indexed, 0x82), :scheme: http (indexed, 0x86) and :path with an
  * indexed name (4) and a literal, non-Huffman value.
@@ -3338,6 +3599,41 @@ ZTEST(server_function_tests, test_http2_static_fs)
 
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, TEST_STATIC_FS_PAYLOAD,
+				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+/* HPACK-encoded "GET /static_file.html?v=1" request, encoded as above. */
+#define TEST_HTTP2_HEADERS_GET_STATIC_FS_QUERY(_stream_id) \
+	0x00, 0x00, 0x19, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x15, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x69, 0x63, 0x5f, \
+	0x66, 0x69, 0x6c, 0x65, 0x2e, 0x68, 0x74, 0x6d, 0x6c, 0x3f, 0x76, 0x3d, \
+	0x31
+
+ZTEST(server_function_tests, test_http2_static_fs_query)
+{
+	static const uint8_t request_get_static_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_STATIC_FS_QUERY(TEST_STREAM_ID_1),
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, request_get_static_fs,
+			 sizeof(request_get_static_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_FS_PAYLOAD,
 				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
 }
 

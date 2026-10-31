@@ -11,6 +11,11 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/sys/atomic.h>
+
+#include "gatt_write.h"
 
 /* Count down number of write commands after all PHY and connection updates */
 #define COUNT_THROUGHPUT 1000U
@@ -202,8 +207,37 @@ uint32_t last_write_rate;
 uint32_t *write_countdown;
 /* Function pointer used to restart scanning on ACL disconnect */
 void (*start_scan_func)(void);
+/* Function pointer used to restart advertising on ACL disconnect */
+int (*restart_adv_func)(void);
 
-static void write_cmd_cb(struct bt_conn *conn, void *user_data)
+/* Number of notifications received by the central (subscriber) */
+static atomic_t notify_rx_count;
+
+/* Absolute notify_rx_count value that completes the current simplex
+ * measurement window, or 0 to receive forever. Kept as a single atomic so a
+ * new window is published in one update, not as a countdown plus baseline.
+ */
+static atomic_t notify_rx_target;
+
+void notify_rx_window_start(uint32_t count)
+{
+	atomic_val_t target = 0;
+
+	if (count != 0U) {
+		target = atomic_get(&notify_rx_count) + (atomic_val_t)count;
+	}
+
+	(void)atomic_set(&notify_rx_target, target);
+}
+
+bool notify_rx_window_done(void)
+{
+	atomic_val_t target = atomic_get(&notify_rx_target);
+
+	return (target != 0) && (atomic_get(&notify_rx_count) >= target);
+}
+
+static void record_and_step(struct bt_conn *conn, uint16_t len)
 {
 	static uint32_t cycle_stamp;
 	uint64_t delta;
@@ -324,6 +358,13 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 					printk("Scanning stopped.\n");
 
 					*write_countdown = COUNT_THROUGHPUT;
+					if (IS_ENABLED(CONFIG_USE_NOTIFY) &&
+					    !IS_ENABLED(CONFIG_USE_FULL_DUPLEX)) {
+						/* The simplex central completes on its
+						 * RX target, not on the countdown.
+						 */
+						notify_rx_window_start(COUNT_THROUGHPUT);
+					}
 				}
 
 				return;
@@ -351,18 +392,291 @@ static void write_cmd_cb(struct bt_conn *conn, void *user_data)
 		param_update_idx++;
 
 	} else {
-		uint16_t len;
-
 		write_count++;
-
-		/* Extract the 16-bit data length stored in user_data */
-		len = (uint32_t)user_data & 0xFFFF;
-
 		write_len += len;
 		write_rate = ((uint64_t)write_len << 3) * (METRICS_INTERVAL * NSEC_PER_SEC) /
 			     delta;
 	}
 }
+
+static void write_cmd_cb(struct bt_conn *conn, void *user_data)
+{
+	/* The 16-bit data length is stored in user_data */
+	record_and_step(conn, POINTER_TO_UINT(user_data) & 0xFFFF);
+}
+
+#if defined(CONFIG_USE_NOTIFY)
+/* Vendor specific Throughput Measurement service and Notify characteristic */
+#define NOTIFY_SVC_UUID_BYTES \
+	0xCC, 0x7B, 0xCB, 0x32, 0x07, 0x08, 0x17, 0xAF, \
+	0xD3, 0x43, 0x1E, 0x5D, 0x20, 0x0D, 0xEC, 0x1A
+#define NOTIFY_CHRC_UUID_BYTES \
+	0x1E, 0x25, 0x21, 0x59, 0x67, 0x84, 0x78, 0x9E, \
+	0x30, 0x4D, 0xE9, 0x91, 0x81, 0x13, 0xB0, 0xF7
+
+static struct bt_uuid_128 notify_svc_uuid = BT_UUID_INIT_128(NOTIFY_SVC_UUID_BYTES);
+static struct bt_uuid_128 notify_chrc_uuid = BT_UUID_INIT_128(NOTIFY_CHRC_UUID_BYTES);
+
+/* Notify flow, per connection:
+ *
+ * 1. Subscriber (simplex: central; full-duplex: both peers): after the MTU
+ *    exchange, discover the peer's Notify characteristic and subscribe to it.
+ * 2. Notifier (simplex: peripheral; full-duplex: both peers): transmit only
+ *    once the peer has written our CCC on this connection and, in
+ *    full-duplex, our own subscription is in place.
+ *
+ * Both sample threads call notify_poll() on every iteration; it retries a
+ * failed discovery or subscription and reports whether to notify_data().
+ */
+
+/* Set when the peer writes our CCC on the current connection */
+static atomic_t peer_subscribed;
+
+/* State of our subscription to the peer on the current connection */
+enum local_sub_state {
+	LOCAL_SUB_PENDING,
+	LOCAL_SUB_DONE,
+	LOCAL_SUB_RETRY,
+};
+static atomic_t local_sub_state;
+
+static void notify_conn_reset(void)
+{
+	(void)atomic_set(&peer_subscribed, 0);
+	(void)atomic_set(&local_sub_state, LOCAL_SUB_PENDING);
+}
+
+/* Subscriber side */
+
+static struct bt_gatt_discover_params notify_discover_params;
+static struct bt_gatt_subscribe_params notify_subscribe_params;
+
+static uint8_t notify_recv_cb(struct bt_conn *conn,
+			      struct bt_gatt_subscribe_params *params,
+			      const void *data, uint16_t length)
+{
+	ARG_UNUSED(params);
+
+	if (data == NULL) {
+		struct bt_conn_info info;
+
+		/* The host removed the subscription, e.g. the peer rejected
+		 * the CCC write. Subscribe again while still connected; on
+		 * disconnect the state is reset instead.
+		 */
+		if ((bt_conn_get_info(conn, &info) == 0) &&
+		    (info.state == BT_CONN_STATE_CONNECTED)) {
+			printk("%s: Subscription removed, retrying.\n", __func__);
+			(void)atomic_set(&local_sub_state, LOCAL_SUB_RETRY);
+		}
+
+		return BT_GATT_ITER_STOP;
+	}
+
+	(void)atomic_inc(&notify_rx_count);
+
+	if (!IS_ENABLED(CONFIG_USE_FULL_DUPLEX)) {
+		/* Simplex: the subscriber has no TX path, so account the
+		 * received notifications for the throughput measurement. In
+		 * full-duplex each peer measures its own TX (notify_sent_cb) to
+		 * mirror the Write path and avoid double counting TX + RX.
+		 */
+		record_and_step(conn, length);
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void notify_subscribed_cb(struct bt_conn *conn, uint8_t err,
+				 struct bt_gatt_subscribe_params *params)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(params);
+
+	if (err != BT_ATT_ERR_SUCCESS) {
+		/* The host then removes the subscription, and notify_recv_cb()
+		 * schedules the retry.
+		 */
+		printk("%s: CCC write rejected (0x%02x).\n", __func__, err);
+		return;
+	}
+
+	printk("%s: Subscribed for notifications.\n", __func__);
+	(void)atomic_set(&local_sub_state, LOCAL_SUB_DONE);
+}
+
+static uint8_t notify_discover_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				  struct bt_gatt_discover_params *params)
+{
+	uint16_t value_handle;
+	int err;
+
+	if (attr == NULL) {
+		/* Not found, or the discovery itself failed */
+		printk("%s: Notify characteristic not found.\n", __func__);
+		(void)atomic_set(&local_sub_state, LOCAL_SUB_RETRY);
+		return BT_GATT_ITER_STOP;
+	}
+
+	value_handle = bt_gatt_attr_value_handle(attr);
+
+	notify_subscribe_params.notify = notify_recv_cb;
+	notify_subscribe_params.subscribe = notify_subscribed_cb;
+	notify_subscribe_params.value = BT_GATT_CCC_NOTIFY;
+	notify_subscribe_params.value_handle = value_handle;
+	/* CCC descriptor immediately follows the value handle */
+	notify_subscribe_params.ccc_handle = value_handle + 1U;
+	/* Volatile: the host releases the subscription params on disconnect,
+	 * so the static struct is safe to reuse on the next connection.
+	 */
+	atomic_set_bit(notify_subscribe_params.flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
+
+	/* On success the CCC write is only queued; notify_subscribed_cb()
+	 * reports whether the peer accepted it.
+	 */
+	err = bt_gatt_subscribe(conn, &notify_subscribe_params);
+	if (err == -EALREADY) {
+		(void)atomic_set(&local_sub_state, LOCAL_SUB_DONE);
+	} else if (err != 0) {
+		/* For example -ENOMEM: allocation here does not wait */
+		printk("%s: Subscribe failed (%d).\n", __func__, err);
+		(void)atomic_set(&local_sub_state, LOCAL_SUB_RETRY);
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void notify_subscribe(struct bt_conn *conn)
+{
+	int err;
+
+	notify_discover_params.uuid = &notify_chrc_uuid.uuid;
+	notify_discover_params.func = notify_discover_cb;
+	notify_discover_params.start_handle = 0x0001;
+	notify_discover_params.end_handle = 0xffff;
+	notify_discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
+
+	err = bt_gatt_discover(conn, &notify_discover_params);
+	if (err != 0) {
+		printk("%s: Discover failed (%d).\n", __func__, err);
+		(void)atomic_set(&local_sub_state, LOCAL_SUB_RETRY);
+	}
+}
+
+/* Subscribe only on the role(s) that act as the GATT client. */
+static void subscribe_if_needed(struct bt_conn *conn)
+{
+	struct bt_conn_info conn_info;
+
+	if (bt_conn_get_info(conn, &conn_info) != 0) {
+		return;
+	}
+
+	/* Full-duplex: both peers subscribe. Simplex: only the central. */
+	if (IS_ENABLED(CONFIG_USE_FULL_DUPLEX) ||
+	    conn_info.role == BT_CONN_ROLE_CENTRAL) {
+		notify_subscribe(conn);
+	}
+}
+
+/* Notifier side */
+
+static ssize_t notify_ccc_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				uint16_t value)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+
+	/* Called for a CCC write on the current connection only, not for a CCC
+	 * value restored for a bonded peer. The peer installs its subscription
+	 * before writing the CCC, so it is then ready to receive.
+	 */
+	(void)atomic_set(&peer_subscribed, (value == BT_GATT_CCC_NOTIFY) ? 1 : 0);
+	printk("%s: notify %s\n", __func__,
+	       (value == BT_GATT_CCC_NOTIFY) ? "enabled" : "disabled");
+
+	return sizeof(value);
+}
+
+BT_GATT_SERVICE_DEFINE(notify_svc,
+	BT_GATT_PRIMARY_SERVICE(&notify_svc_uuid),
+	BT_GATT_CHARACTERISTIC(&notify_chrc_uuid.uuid, BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
+	BT_GATT_CCC_WITH_WRITE_CB(NULL, notify_ccc_write,
+				  BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+);
+
+/* attrs[1] is the Notify characteristic declaration; bt_gatt_notify_cb()
+ * accepts it and notifies the following value attribute.
+ */
+#define NOTIFY_ATTR (&notify_svc.attrs[1])
+
+static void notify_sent_cb(struct bt_conn *conn, void *user_data)
+{
+	record_and_step(conn, POINTER_TO_UINT(user_data) & 0xFFFF);
+}
+
+/* Called from the sample's thread */
+
+bool notify_poll(struct bt_conn *conn)
+{
+	/* Retry a failed subscription here, where ATT buffer allocation can
+	 * wait, unlike in the ATT response callbacks.
+	 */
+	if (atomic_cas(&local_sub_state, LOCAL_SUB_RETRY, LOCAL_SUB_PENDING)) {
+		notify_subscribe(conn);
+	}
+
+	/* Full-duplex: hold off until our own subscription is in place, so our
+	 * notifications cannot use up the ATT buffers the subscription needs.
+	 */
+	if (IS_ENABLED(CONFIG_USE_FULL_DUPLEX) &&
+	    (atomic_get(&local_sub_state) != LOCAL_SUB_DONE)) {
+		return false;
+	}
+
+	/* peer_subscribed is set just before the host stores the new CCC
+	 * value, so check both.
+	 */
+	return atomic_get(&peer_subscribed) &&
+	       bt_gatt_is_subscribed(conn, NOTIFY_ATTR, BT_GATT_CCC_NOTIFY);
+}
+
+int notify_data(struct bt_conn *conn)
+{
+	static uint8_t data[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct bt_gatt_notify_params params = {0};
+	uint16_t len;
+	int err;
+
+	len = bt_gatt_get_mtu(conn) - 3U;
+	if (len > sizeof(data)) {
+		len = sizeof(data);
+	}
+
+	params.attr = NOTIFY_ATTR;
+	params.data = data;
+	params.len = len;
+	params.func = notify_sent_cb;
+	params.user_data = UINT_TO_POINTER(len);
+
+	err = bt_gatt_notify_cb(conn, &params);
+	if (err != 0 && err != -ENOMEM) {
+		printk("%s: Notify failed (%d).\n", __func__, err);
+	}
+
+	return err;
+}
+#else
+static void notify_conn_reset(void)
+{
+}
+
+static void subscribe_if_needed(struct bt_conn *conn)
+{
+	ARG_UNUSED(conn);
+}
+#endif /* CONFIG_USE_NOTIFY */
 
 static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 			    struct bt_gatt_exchange_params *params)
@@ -370,6 +684,11 @@ static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 	printk("%s: MTU exchange %s (%u)\n", __func__,
 	       err == 0U ? "successful" : "failed",
 	       bt_gatt_get_mtu(conn));
+
+	/* Defer discovery until the MTU exchange frees the single ATT request
+	 * slot (CONFIG_BT_ATT_TX_COUNT=1).
+	 */
+	subscribe_if_needed(conn);
 }
 
 static int mtu_exchange(struct bt_conn *conn)
@@ -408,9 +727,14 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 	printk("%s: %s role %u\n", __func__, bt_conn_dst_str(conn), conn_info.role);
 
+	notify_conn_reset();
 	conn_connected = bt_conn_ref(conn);
 
-	(void)mtu_exchange(conn);
+	err = mtu_exchange(conn);
+	if (err != 0) {
+		/* No MTU-exchange callback will run; start discovery now. */
+		subscribe_if_needed(conn);
+	}
 
 #if defined(CONFIG_BT_SMP)
 	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
@@ -453,11 +777,29 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	       conn_info.role, reason, bt_hci_err_to_str(reason));
 
 	conn_connected = NULL;
+	notify_conn_reset();
 
 	bt_conn_unref(conn);
 
 	if (conn_info.role == BT_CONN_ROLE_CENTRAL) {
 		start_scan_func();
+	}
+}
+
+static void recycled_cb(void)
+{
+	/* Peripheral: the disconnected connection object is only freed, and thus
+	 * available again for a connectable advertiser, once this callback runs.
+	 * With CONFIG_BT_MAX_CONN=1 restarting advertising from the disconnected
+	 * callback fails with -ENOMEM, so restart it here instead, letting a
+	 * reset/reconnecting peer re-establish the link and resume throughput.
+	 */
+	if (restart_adv_func != NULL) {
+		int err = restart_adv_func();
+
+		if (err != 0) {
+			printk("Advertising failed to restart (err %d)\n", err);
+		}
 	}
 }
 
@@ -507,6 +849,7 @@ static void le_data_len_updated(struct bt_conn *conn,
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled_cb,
 	.le_param_req = le_param_req,
 	.le_param_updated = le_param_updated,
 
@@ -522,6 +865,17 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.le_data_len_updated = le_data_len_updated,
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */
 };
+
+k_timeout_t conn_interval_get(struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0) {
+		return K_MSEC(10);
+	}
+
+	return K_USEC(info.le.interval_us);
+}
 
 int write_cmd(struct bt_conn *conn)
 {
@@ -565,7 +919,7 @@ int write_cmd(struct bt_conn *conn)
 	 */
 	err = bt_gatt_write_without_response_cb(conn, 0x0001, data, data_len,
 						false, write_cmd_cb,
-						(void *)((uint32_t)data_len));
+						UINT_TO_POINTER(data_len));
 	if (err) {
 		printk("%s: Write cmd failed (%d).\n", __func__, err);
 	}

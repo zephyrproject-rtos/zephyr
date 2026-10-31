@@ -9,6 +9,8 @@ description: |
 
 compatible: "dac-leds"
 
+class: led
+
 child-binding:
   description: DAC LED child node
   properties:

@@ -133,9 +133,19 @@ struct dma_esp32_channel {
 	int periph_id;
 	/* The peripheral a memory-to-memory pair selects, but does not use */
 	int m2m_periph_id;
+	/* Burst length from dma_config(), applied again by dma_reload() */
+	uint32_t burst_length;
 	dma_callback_t cb;
 	void *user_data;
 	esp_dma_desc_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
+	/*
+	 * TX reload with a transfer in flight: the halves of desc_list are
+	 * used in turn, tail is the last descriptor of the chain, in_flight
+	 * the chains not completed.
+	 */
+	esp_dma_desc_t *tail;
+	uint8_t next_slot;
+	uint8_t in_flight;
 #if CONFIG_PM
 	bool pm_lock_held;
 #endif
@@ -531,6 +541,14 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 
 	gdma_hal_clear_intr(&data->hal, tx->channel_id, GDMA_CHANNEL_DIRECTION_TX, intr_status);
+	if ((intr_status & GDMA_LL_EVENT_TX_EOF) != 0U) {
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		if (tx->in_flight > 0U) {
+			tx->in_flight--;
+		}
+		k_spin_unlock(&data->lock, key);
+	}
 	if (tx->cb) {
 		intr_status &= ~(GDMA_LL_EVENT_TX_TOTAL_EOF | GDMA_LL_EVENT_TX_DONE |
 				 GDMA_LL_EVENT_TX_EOF);
@@ -659,6 +677,10 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
+	dma_channel->tail = desc_iter;
+	dma_channel->next_slot = 1;
+	dma_channel->in_flight = 1;
+
 	/* Write back cache so the GDMA hardware sees fresh descriptor values.
 	 * No-op when CACHE_MANAGEMENT is disabled (SoCs without a data cache).
 	 */
@@ -715,11 +737,54 @@ static void dma_esp32_stop_barrier(struct dma_esp32_data *data, uint32_t channel
 	gdma_hal_clear_intr(&data->hal, channel_id, dir, mask);
 }
 
+/*
+ * On the AHB GDMA v1 (ESP32-S3) the burst length also sets the size of the
+ * blocks the GDMA reads and writes PSRAM in: 16, 32 or 64 bytes, even with
+ * data bursts off. It writes whole aligned blocks, so an RX buffer in PSRAM
+ * that does not start and end on one gets smaller blocks.
+ */
+#if defined(GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE) && (SOC_AHB_GDMA_VERSION == 1)
+#define DMA_ESP32_HAS_PSRAM_BLOCK_SIZE 1
+#endif
+
+#if defined(DMA_ESP32_HAS_PSRAM_BLOCK_SIZE)
+#define DMA_ESP32_BURST_VALID(len)                                                                 \
+	((len) == 0 || (IS_POWER_OF_TWO(len) && (len) <= GDMA_LL_MAX_BURST_SIZE_PSRAM))
+#else
+#define DMA_ESP32_BURST_VALID(len) true
+#endif
+
+/* A burst length of 0 turns bursts off */
+static void dma_esp32_set_burst(struct dma_esp32_data *data, uint32_t channel_id,
+				gdma_channel_direction_t dir, uint32_t burst_length, bool allowed)
+{
+	bool burst = burst_length != 0 && allowed;
+
+	gdma_hal_enable_burst(&data->hal, channel_id, dir, burst, burst);
+#if defined(DMA_ESP32_HAS_PSRAM_BLOCK_SIZE)
+	gdma_hal_set_burst_size(&data->hal, channel_id, dir, burst ? MAX(burst_length, 16) : 16);
+#endif
+}
+
+/* Largest burst length, up to the requested one, that an RX buffer is aligned to */
+static uint32_t dma_esp32_rx_burst(uint32_t burst_length, uint32_t addr, uint32_t size)
+{
+#if defined(CONFIG_ESP_SPIRAM) && defined(GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT)
+	if (esp_ptr_dma_ext_capable((void *)addr)) {
+		while (burst_length > 16 && ((addr | size) & (burst_length - 1)) != 0) {
+			burst_length /= 2;
+		}
+	}
+#endif
+	return burst_length;
+}
+
 static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 			       struct dma_config *config_dma)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
+	uint32_t burst_length = config_dma->dest_burst_length;
 
 	dma_channel->dir = DMA_RX;
 
@@ -733,11 +798,16 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 				      GDMA_CHANNEL_DIRECTION_RX, dma_channel->periph_id);
 	}
 
-	if (config_dma->dest_burst_length) {
-		gdma_hal_enable_burst(&data->hal, dma_channel->channel_id,
-				      GDMA_CHANNEL_DIRECTION_RX, config->sram_alignment >= 4,
-				      config->sram_alignment >= 4);
+	dma_channel->burst_length = config_dma->dest_burst_length;
+
+	for (struct dma_block_config *block = config_dma->head_block; block != NULL;
+	     block = block->next_block) {
+		burst_length =
+			dma_esp32_rx_burst(burst_length, block->dest_address, block->block_size);
 	}
+
+	dma_esp32_set_burst(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX, burst_length,
+			    config->sram_alignment >= 4);
 
 	gdma_hal_set_strategy(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX, true,
 			      false, false);
@@ -773,10 +843,8 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 				      GDMA_CHANNEL_DIRECTION_TX, dma_channel->periph_id);
 	}
 
-	if (config_dma->source_burst_length) {
-		gdma_hal_enable_burst(&data->hal, dma_channel->channel_id,
-				      GDMA_CHANNEL_DIRECTION_TX, true, true);
-	}
+	dma_esp32_set_burst(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
+			    config_dma->source_burst_length, true);
 
 	gdma_hal_set_priority(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 			      config_dma->channel_priority);
@@ -818,6 +886,11 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 
 	if (config_dma->channel_priority > GDMA_LL_CHANNEL_MAX_PRIORITY) {
 		LOG_ERR("Channel priority must be at most %d", GDMA_LL_CHANNEL_MAX_PRIORITY);
+		return -EINVAL;
+	}
+
+	if (!DMA_ESP32_BURST_VALID(config_dma->source_burst_length)) {
+		LOG_ERR("Unsupported burst length %u", config_dma->source_burst_length);
 		return -EINVAL;
 	}
 
@@ -935,6 +1008,9 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 						 GDMA_CHANNEL_DIRECTION_RX,
 						 (intptr_t)dma_channel->desc_list);
 		} else if (dma_channel->dir == DMA_TX) {
+			if (!dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id)) {
+				return 0; /* already running, the reload is linked behind */
+			}
 			gdma_hal_enable_intr(&data->hal, dma_channel->channel_id,
 					     GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF, true);
 			gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
@@ -988,6 +1064,9 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 	}
+
+	dma_channel->tail = NULL;
+	dma_channel->in_flight = 0;
 
 	return 0;
 }
@@ -1060,6 +1139,87 @@ static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t cha
 	return 0;
 }
 
+/*
+ * Links a buffer behind the chain in flight, into the half of desc_list that
+ * chain does not end in. At most two chains in flight: -EBUSY otherwise.
+ */
+static int IRAM_ATTR dma_esp32_tx_append(struct dma_esp32_data *data,
+					 struct dma_esp32_channel *dma_channel, uint32_t src,
+					 size_t size)
+{
+	const size_t half = ARRAY_SIZE(dma_channel->desc_list) / 2;
+	esp_dma_desc_t *slot, *desc_iter;
+	k_spinlock_key_t key;
+	bool dma_capable;
+
+	if (half == 0 || size > half * DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+		return -ENOSPC;
+	}
+
+	dma_capable = esp_ptr_dma_capable((uint32_t *)src);
+#if defined(CONFIG_ESP_SPIRAM)
+	dma_capable = dma_capable || esp_ptr_dma_ext_capable((uint32_t *)src);
+#endif
+#if defined(SOC_DMA_CAN_ACCESS_FLASH)
+	dma_capable = dma_capable || esp_ptr_in_drom((uint32_t *)src);
+#endif
+	if (!dma_capable) {
+		LOG_ERR("Tx buffer not in DMA capable memory: %p", (uint32_t *)src);
+		return -EINVAL;
+	}
+
+	sys_cache_data_flush_range((void *)src, size);
+
+	key = k_spin_lock(&data->lock);
+
+	if (dma_channel->in_flight >= 2) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
+	/* The chain in flight must not reach into the slot, not only end in it. */
+	slot = dma_channel->desc_list + (dma_channel->next_slot ? half : 0);
+	if ((slot != dma_channel->desc_list && dma_channel->tail >= slot) ||
+	    (slot == dma_channel->desc_list && dma_channel->tail < slot + half)) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
+	desc_iter = slot;
+	for (size_t i = 0; i < half; ++i) {
+		memset(desc_iter, 0, sizeof(esp_dma_desc_t));
+		desc_iter->buffer = (void *)(src + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED * i);
+		desc_iter->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
+		if (size <= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+			desc_iter->dw0.size = size;
+			desc_iter->dw0.length = size;
+			desc_iter->dw0.suc_eof = 1;
+			desc_iter->next = NULL;
+			break;
+		}
+		desc_iter->dw0.size = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+		desc_iter->dw0.length = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+		size -= DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+		desc_iter->next = desc_iter + 1;
+		desc_iter += 1;
+	}
+
+	sys_cache_data_flush_range(slot, half * sizeof(esp_dma_desc_t));
+
+	/* The restart makes the GDMA fetch the tail's next pointer again if it parked. */
+	dma_channel->tail->next = slot;
+	sys_cache_data_flush_range(dma_channel->tail, sizeof(esp_dma_desc_t));
+	gdma_hal_append(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+
+	dma_channel->tail = desc_iter;
+	dma_channel->next_slot ^= 1;
+	dma_channel->in_flight++;
+
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
+}
+
 static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
 			    size_t size)
 {
@@ -1067,6 +1227,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 	struct dma_esp32_channel *dma_channel;
 	esp_dma_desc_t *desc_iter;
+	k_spinlock_key_t key;
 	uint32_t buf;
 
 	if (channel >= config->dma_channel_max) {
@@ -1082,17 +1243,27 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		return -EINVAL;
 	}
 
+	/* A running TX channel takes the buffer as the next one, as with eDMA. */
+	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
+	    dma_channel->tail != NULL && !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id)) {
+		return dma_esp32_tx_append(data, dma_channel, src, size);
+	}
+
 	if (size > ARRAY_SIZE(dma_channel->desc_list) *
 		   DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
 		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
 
+	/* Also drop the events of the previous transfer, if not handled yet */
 	if (dma_channel->dir == DMA_RX) {
-		dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		dma_esp32_set_burst(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
+				    dma_esp32_rx_burst(dma_channel->burst_length, dst, size),
+				    config->sram_alignment >= 4);
 		buf = dst;
 	} else if (dma_channel->dir == DMA_TX) {
-		dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 		buf = src;
 	} else {
 		return -EINVAL;
@@ -1125,6 +1296,12 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
+
+	key = k_spin_lock(&data->lock);
+	dma_channel->tail = desc_iter;
+	dma_channel->next_slot = 1;
+	dma_channel->in_flight = 1;
+	k_spin_unlock(&data->lock, key);
 
 	sys_cache_data_flush_range(dma_channel->desc_list, sizeof(dma_channel->desc_list));
 

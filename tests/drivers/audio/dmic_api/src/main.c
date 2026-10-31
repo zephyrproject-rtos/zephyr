@@ -19,7 +19,6 @@ static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
 #define PDM_CHANNELS     CONFIG_SAMPLE_PDM_CHANNELS
 #define PDM_CTL_IDX      CONFIG_TEST_HW_CHANNEL_INDEX
 #define BYTES_PER_SAMPLE SAMPLE_BIT_WIDTH / 8
-#define SLAB_ALIGN       4
 #define MAX_SAMPLE_RATE  48000
 
 /* Milliseconds to wait for a block to be read. */
@@ -40,6 +39,16 @@ static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
  */
 #define MAX_BLOCK_SIZE   BLOCK_SIZE(MAX_SAMPLE_RATE, PDM_CHANNELS)
 #define BLOCK_COUNT      8
+
+/* Cache-line align the blocks so cache maintenance on one block cannot
+ * corrupt a neighbouring block
+ */
+#ifdef CONFIG_DCACHE_LINE_SIZE
+#define SLAB_ALIGN MAX(4, CONFIG_DCACHE_LINE_SIZE)
+#else
+#define SLAB_ALIGN 4
+#endif
+
 K_MEM_SLAB_DEFINE_STATIC(mem_slab, MAX_BLOCK_SIZE, BLOCK_COUNT, SLAB_ALIGN);
 
 static struct pcm_stream_cfg pcm_stream = {

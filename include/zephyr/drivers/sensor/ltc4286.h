@@ -16,7 +16,7 @@
 /**
  * @brief Analog Devices LTC4286 Hot Swap controller and power monitor
  * @defgroup ltc4286_interface LTC4286
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  * @{
  */
 

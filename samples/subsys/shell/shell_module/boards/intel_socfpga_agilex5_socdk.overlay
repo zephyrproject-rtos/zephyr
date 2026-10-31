@@ -28,8 +28,8 @@
 };
 
 &sip_smc {
-	status = "okay";
 	zephyr,num-clients = <2>;
+	status = "okay";
 };
 
 &sdmmc {

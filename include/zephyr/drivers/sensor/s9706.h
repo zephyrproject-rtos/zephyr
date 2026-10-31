@@ -15,7 +15,7 @@
 /**
  * @brief Hamamatsu S9706 RGB sensor
  * @defgroup s9706_interface S9706
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_hamamatsu
  * @{
  */
 

@@ -5,13 +5,13 @@
  */
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	sht4x@44 {
-		status = "okay";
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
 		repeatability = <2>;
+		status = "okay";
 	};
 };

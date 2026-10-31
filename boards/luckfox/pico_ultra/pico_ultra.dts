@@ -9,8 +9,8 @@
 #include <rockchip/rv1106.dtsi>
 
 / {
-	model = "Luckfox Pico Ultra W";
 	compatible = "luckfox,pico-ultra-w";
+	model = "Luckfox Pico Ultra W";
 
 	chosen {
 		zephyr,sram = &ddr;
@@ -30,6 +30,6 @@
 };
 
 &uart2 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

@@ -238,6 +238,61 @@ ZTEST_F(zms, test_zms_mount_fake_ate)
 		      fixture->fs.data_wra);
 }
 
+ZTEST_F(zms, test_zms_mount_invalid_external_data_ranges)
+{
+	struct zms_ate fake_ate;
+	uint8_t data[64] = {0};
+	uint64_t fake_addr;
+	off_t fake_offset;
+	ssize_t len;
+	int err;
+
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount failed: %d", err);
+
+	len = zms_write(&fixture->fs, TEST_DATA_ID, data, sizeof(data));
+	zassert_equal(len, sizeof(data), "zms_write failed: %zd", len);
+
+	/* Inject valid-looking ATEs into successive unwritten slots. Their data
+	 * ranges respectively move backwards, extend outside the sector, and
+	 * overlap the descending ATE area.
+	 */
+	fake_addr = fixture->fs.ate_wra;
+	for (size_t i = 0; i < 3; i++) {
+		memset(&fake_ate, 0, sizeof(fake_ate));
+		fake_ate.id = TEST_DATA_ID + 1 + i;
+		fake_ate.len = ZMS_DATA_IN_ATE_SIZE + 1;
+		fake_ate.cycle_cnt = fixture->fs.sector_cycle;
+
+		if (i == 0) {
+			fake_ate.offset = 0;
+		} else if (i == 1) {
+			fake_ate.offset = fixture->fs.sector_size;
+		} else {
+			fake_ate.offset = SECTOR_OFFSET(fake_addr);
+		}
+
+		fake_ate.crc8 =
+			crc8_ccitt(0xff, (uint8_t *)&fake_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+				   sizeof(fake_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+		fake_offset = fixture->fs.offset +
+			      (fixture->fs.sector_size * SECTOR_NUM(fake_addr)) +
+			      SECTOR_OFFSET(fake_addr);
+		err = flash_write(fixture->fs.flash_device, fake_offset, &fake_ate,
+				  sizeof(fake_ate));
+		zassert_ok(err, "flash_write of fake ATE %zu failed: %d", i, err);
+
+		fake_addr -= fixture->fs.ate_size;
+	}
+
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+	err = zms_mount(&fixture->fs);
+	zassert_ok(err, "zms_mount after reboot failed: %d", err);
+	zassert_equal(fixture->fs.data_wra, sizeof(data), "invalid ATE changed data_wra: %llx",
+		      fixture->fs.data_wra);
+}
+
 #ifdef CONFIG_TEST_ZMS_SIMULATOR
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
 				      uint16_t off)

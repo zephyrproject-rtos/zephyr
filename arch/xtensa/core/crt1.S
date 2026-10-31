@@ -130,6 +130,7 @@ _start:
 	CALLX	a4
 1:
 
+#if !defined(CONFIG_SKIP_BSS_CLEAR)
 #if !XCHAL_HAVE_BOOTLOADER	/* boot loader takes care of zeroing BSS */
 
 # ifdef __XTENSA_CALL0_ABI__
@@ -177,6 +178,7 @@ _start:
 .L3zte:
 
 #endif /* !XCHAL_HAVE_BOOTLOADER */
+#endif /* !CONFIG_SKIP_BSS_CLEAR */
 
 	/* Enter C domain, never returns from here */
 	CALL	z_prep_c

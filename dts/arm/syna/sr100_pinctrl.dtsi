@@ -8,6 +8,38 @@
 
 / {
 	soc {
+		pinctrl_swire: pin-controller@503307b8 { /* GLOBAL - SWIRE_CTRL */
+			compatible = "syna,sr100-pinctrl";
+			reg = <0x503307b8 0x4>, <0x50330a04 0x18>;
+			reg-names = "pinmux", "port";
+
+			/omit-if-no-ref/ swire_clk: swire-clk {
+				pinmux = <SRXXX_SWIRE_PINMUX(0, 0)>;
+			};
+
+			/omit-if-no-ref/ gpio_42: gpio-42 {
+				pinmux = <SRXXX_SWIRE_PINMUX(0, 1)>;
+			};
+
+			/omit-if-no-ref/ i2c1_ms_scl_b: i2c1-ms-scl-b {
+				pinmux = <SRXXX_SWIRE_PINMUX(24, 1)>;
+				port = <SRXXX_PORT_PINMUX(0x14, 0, 1, 1)>;
+			};
+
+			/omit-if-no-ref/ swire_dat: swire-dat {
+				pinmux = <SRXXX_SWIRE_PINMUX(1, 0)>;
+			};
+
+			/omit-if-no-ref/ gpio_43: gpio-43 {
+				pinmux = <SRXXX_SWIRE_PINMUX(1, 1)>;
+			};
+
+			/omit-if-no-ref/ i2c1_ms_sda_b: i2c1-ms-sda-b {
+				pinmux = <SRXXX_SWIRE_PINMUX(25, 1)>;
+				port = <SRXXX_PORT_PINMUX(0x14, 1, 1, 1)>;
+			};
+		};
+
 		pinctrl_global: pin-controller@50338000 { /* GLOBAL */
 			compatible = "syna,sr100-pinctrl";
 			reg = <0x50338000 0xc>, <0x50338800 0x100>,
@@ -764,38 +796,6 @@
 			/omit-if-no-ref/ spi_slv_mosi_b: spi-slv-mosi-b {
 				pinmux = <SRXXX_LPS_PINMUX(4, 3, 3, 0x2c)>;
 				port = <SRXXX_PORT_PINMUX(0x4, 2, 1, 1)>;
-			};
-		};
-
-		pinctrl_swire: pin-controller@503307b8 { /* GLOBAL - SWIRE_CTRL */
-			compatible = "syna,sr100-pinctrl";
-			reg = <0x503307b8 0x4>, <0x50330a04 0x18>;
-			reg-names = "pinmux", "port";
-
-			/omit-if-no-ref/ swire_clk: swire-clk {
-				pinmux = <SRXXX_SWIRE_PINMUX(0, 0)>;
-			};
-
-			/omit-if-no-ref/ gpio_42: gpio-42 {
-				pinmux = <SRXXX_SWIRE_PINMUX(0, 1)>;
-			};
-
-			/omit-if-no-ref/ i2c1_ms_scl_b: i2c1-ms-scl-b {
-				pinmux = <SRXXX_SWIRE_PINMUX(24, 1)>;
-				port = <SRXXX_PORT_PINMUX(0x14, 0, 1, 1)>;
-			};
-
-			/omit-if-no-ref/ swire_dat: swire-dat {
-				pinmux = <SRXXX_SWIRE_PINMUX(1, 0)>;
-			};
-
-			/omit-if-no-ref/ gpio_43: gpio-43 {
-				pinmux = <SRXXX_SWIRE_PINMUX(1, 1)>;
-			};
-
-			/omit-if-no-ref/ i2c1_ms_sda_b: i2c1-ms-sda-b {
-				pinmux = <SRXXX_SWIRE_PINMUX(25, 1)>;
-				port = <SRXXX_PORT_PINMUX(0x14, 1, 1, 1)>;
 			};
 		};
 	};

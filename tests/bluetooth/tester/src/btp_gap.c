@@ -66,7 +66,7 @@ static struct bt_le_oob oob_sc_remote = { 0 };
 #define REJECT_LATENCY 0x0000
 #define REJECT_SUPERVISION_TIMEOUT 0x0C80
 
-static void le_connected(struct bt_conn *conn, uint8_t err)
+static void btp_gap_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
 	struct bt_conn_info info;
@@ -102,7 +102,7 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 	}
 }
 
-static void le_disconnected(struct bt_conn *conn, uint8_t reason)
+static void btp_gap_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
 
@@ -163,8 +163,8 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 	return true;
 }
 
-static void le_security_changed(struct bt_conn *conn, bt_security_t level,
-				enum bt_security_err err)
+static void btp_gap_security_changed(struct bt_conn *conn, bt_security_t level,
+				     enum bt_security_err err)
 {
 	struct btp_gap_sec_level_changed_ev sec_ev;
 	struct btp_gap_bond_lost_ev bond_ev;
@@ -225,12 +225,12 @@ static void le_security_changed(struct bt_conn *conn, bt_security_t level,
 }
 
 static struct bt_conn_cb conn_callbacks = {
-	.connected = le_connected,
-	.disconnected = le_disconnected,
+	.connected = btp_gap_connected,
+	.disconnected = btp_gap_disconnected,
 	.identity_resolved = le_identity_resolved,
 	.le_param_updated = le_param_updated,
 	.le_param_req = le_param_req,
-	.security_changed = le_security_changed,
+	.security_changed = btp_gap_security_changed,
 };
 
 static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,

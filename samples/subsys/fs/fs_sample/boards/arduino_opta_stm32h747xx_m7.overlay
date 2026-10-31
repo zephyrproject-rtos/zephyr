@@ -6,7 +6,6 @@
 
 / {
 	flash_disk0 {
-		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&wlan_partition>;
 		disk-name = "SD";
@@ -16,5 +15,6 @@
 		 */
 		sector-size = <4096>;
 		cache-size = <4096>;
+		status = "okay";
 	};
 };

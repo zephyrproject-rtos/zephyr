@@ -5,8 +5,8 @@
 #include "octopus_som_common-pinctrl.dtsi"
 
 / {
-	model = "Norik Octopus SoM";
 	compatible = "norik,octopus-som";
+	model = "Norik Octopus SoM";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -59,32 +59,32 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	adxl362: adxl362@0 {
 		compatible = "adi,adxl362";
-		spi-max-frequency = <8000000>;
 		reg = <0>;
+		spi-max-frequency = <8000000>;
 		int1-gpios = <&gpio0 12 0>;
 	};
 };

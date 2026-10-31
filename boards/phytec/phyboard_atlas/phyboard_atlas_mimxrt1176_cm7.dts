@@ -9,8 +9,8 @@
 #include "phyboard_atlas.dtsi"
 
 / {
-	model = "PHYTEC phyBOARD-Atlas i.MX RT1170 CM7";
 	compatible = "phytec,phyboard_atlas";
+	model = "PHYTEC phyBOARD-Atlas i.MX RT1170 CM7";
 
 	aliases {
 		mipi-dsi = &mipi_dsi;
@@ -58,8 +58,8 @@
 };
 
 &flexcan3 {
-	status = "okay";
 	phys = <&transceiver0>;
+	status = "okay";
 };
 
 &lpspi1 {
@@ -77,18 +77,18 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart5 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &lpuart8 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 nxp_mipi_i2c: &lpi2c5 {
@@ -103,33 +103,33 @@ nxp_mipi_i2c: &lpi2c5 {
 };
 
 zephyr_udc0: &usb1 {
-	status = "okay";
 	phy-handle = <&usbphy1>;
+	status = "okay";
 };
 
 &usbphy1 {
-	status = "okay";
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &usb2 {
-	status = "disabled";
 	phy-handle = <&usbphy2>;
+	status = "disabled";
 };
 
 &usbphy2 {
-	status = "okay";
 	tx-d-cal = <7>;
 	tx-cal-45-dp-ohms = <6>;
 	tx-cal-45-dm-ohms = <6>;
+	status = "okay";
 };
 
 &usdhc1 {
-	status = "okay";
 	detect-dat3;
 	no-1-8-v;
+	status = "okay";
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";

@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Extended public API for CCS811 Indoor Air Quality Sensor
+ * @ingroup ccs811_interface
  *
  * Some capabilities and operational requirements for this sensor
  * cannot be expressed within the sensor driver abstraction.
@@ -22,27 +23,46 @@ extern "C" {
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 
-/* Status register fields */
+/**
+ * @brief AMS CCS811 indoor air quality sensor
+ * @defgroup ccs811_interface CCS811
+ * @ingroup sensor_interface_ext_ams
+ * @{
+ */
+
+/**
+ * @name Status register fields
+ * @{
+ */
 #define CCS811_STATUS_ERROR             BIT(0)
 #define CCS811_STATUS_DATA_READY        BIT(3)
 #define CCS811_STATUS_APP_VALID         BIT(4)
 #define CCS811_STATUS_FW_MODE           BIT(7)
+/** @} */
 
-/* Error register fields */
+/**
+ * @name Error register fields
+ * @{
+ */
 #define CCS811_ERROR_WRITE_REG_INVALID  BIT(0)
 #define CCS811_ERROR_READ_REG_INVALID   BIT(1)
 #define CCS811_ERROR_MEASMODE_INVALID   BIT(2)
 #define CCS811_ERROR_MAX_RESISTANCE     BIT(3)
 #define CCS811_ERROR_HEATER_FAULT       BIT(4)
 #define CCS811_ERROR_HEATER_SUPPLY      BIT(5)
+/** @} */
 
-/* Measurement mode constants */
+/**
+ * @name Measurement mode constants
+ * @{
+ */
 #define CCS811_MODE_IDLE                0x00
 #define CCS811_MODE_IAQ_1SEC            0x10
 #define CCS811_MODE_IAQ_10SEC           0x20
 #define CCS811_MODE_IAQ_60SEC           0x30
 #define CCS811_MODE_IAQ_250MSEC         0x40
 #define CCS811_MODE_MSK                 0x70
+/** @} */
 
 /** @brief Information collected from the sensor on each fetch. */
 struct ccs811_result_type {
@@ -154,6 +174,8 @@ int ccs811_baseline_update(const struct device *dev, uint16_t baseline);
 int ccs811_envdata_update(const struct device *dev,
 			  const struct sensor_value *temperature,
 			  const struct sensor_value *humidity);
+
+/** @} */
 
 #ifdef __cplusplus
 }

@@ -317,6 +317,14 @@ config NET_IPV6_FRAGMENT_MAX_COUNT
 	  of memory so you need to plan this and increase the network buffer
 	  count.
 
+	  A datagram whose fragments never all arrive keeps its slot until
+	  NET_IPV6_FRAGMENT_TIMEOUT expires. While every slot is taken,
+	  fragments of any other datagram are dropped. With the default of
+	  one slot, a single incomplete datagram blocks all fragmented
+	  traffic for the whole timeout. Increase this value, or lower the
+	  timeout, if the device must keep receiving fragmented packets
+	  while stray or malicious fragments arrive.
+
 config NET_IPV6_FRAGMENT_MAX_PKT
 	int "How many fragments can be handled to reassemble a packet"
 	default 2
@@ -344,6 +352,10 @@ config NET_IPV6_FRAGMENT_TIMEOUT
 	  will timeout. RFC 2460 chapter 4.5 tells to wait for 60 seconds but
 	  this might be too long in memory constrained devices. This value
 	  is in seconds.
+
+	  An incomplete datagram holds one of the NET_IPV6_FRAGMENT_MAX_COUNT
+	  slots for this long, so a shorter timeout frees slots faster at the
+	  cost of giving up on slow senders sooner.
 
 config NET_IPV6_MLD
 	bool "Multicast Listener Discovery support"

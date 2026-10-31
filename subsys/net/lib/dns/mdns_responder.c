@@ -278,6 +278,8 @@ static struct mdns_monitor_iface_addr mon_if[
 	(NET_IF_MAX_IPV4_ADDR + NET_IF_MAX_IPV6_ADDR)];
 #endif
 
+/* Serializes the external record table with the readers walking it */
+static K_MUTEX_DEFINE(external_records_lock);
 static const struct dns_sd_rec *external_records;
 static size_t external_records_count;
 
@@ -727,7 +729,7 @@ static void send_sd_response(int sock,
 	};
 	size_t n = ARRAY_SIZE(label);
 	size_t rec_num;
-	size_t ext_rec_num = external_records_count;
+	size_t ext_rec_num;
 	COND_CODE_1(IS_ENABLED(CONFIG_NET_IPV6),
 		    (struct net_sockaddr_in6), (struct net_sockaddr_in)) dst;
 
@@ -825,6 +827,13 @@ static void send_sd_response(int sock,
 
 	DNS_SD_COUNT(&rec_num);
 
+	/* Held for the whole walk so an unregister returns only once the
+	 * table is no longer referenced.
+	 */
+	k_mutex_lock(&external_records_lock, K_FOREVER);
+
+	ext_rec_num = external_records_count;
+
 	while (rec_num > 0 || ext_rec_num > 0) {
 		/*
 		 * The loop will always iterate over all entries, it can be done
@@ -881,6 +890,8 @@ static void send_sd_response(int sock,
 			}
 		}
 	}
+
+	k_mutex_unlock(&external_records_lock);
 }
 
 static int dns_read(int sock,
@@ -2323,7 +2334,7 @@ static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t
 	struct net_buf *answer;
 	size_t answer_size;
 	size_t rec_num;
-	size_t ext_rec_num = external_records_count;
+	size_t ext_rec_num;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
@@ -2345,6 +2356,10 @@ static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t
 	answer_size = net_buf_tailroom(answer);
 
 	DNS_SD_COUNT(&rec_num);
+
+	k_mutex_lock(&external_records_lock, K_FOREVER);
+
+	ext_rec_num = external_records_count;
 
 	while (rec_num > 0 || ext_rec_num > 0) {
 		if (rec_num > 0) {
@@ -2372,6 +2387,8 @@ static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t
 			net_stats_update_dns_sent(iface);
 		}
 	}
+
+	k_mutex_unlock(&external_records_lock);
 
 	net_buf_unref(answer);
 }
@@ -2581,12 +2598,17 @@ static int mdns_responder_init(void)
 
 int mdns_responder_set_ext_records(const struct dns_sd_rec *records, size_t count)
 {
-	if (records == NULL || count == 0) {
+	/* NULL with a zero count unregisters the records */
+	if ((records == NULL && count > 0) || (records != NULL && count == 0)) {
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&external_records_lock, K_FOREVER);
+
 	external_records = records;
 	external_records_count = count;
+
+	k_mutex_unlock(&external_records_lock);
 
 	return 0;
 }

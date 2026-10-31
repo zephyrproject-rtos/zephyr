@@ -14,8 +14,8 @@
 };
 
 &vdac0 {
-	status = "okay";
 	voltage-reference = "AVDD";
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

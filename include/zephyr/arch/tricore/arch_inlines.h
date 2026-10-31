@@ -24,7 +24,14 @@
 
 static ALWAYS_INLINE uint32_t arch_proc_id(void)
 {
-	return 0;
+	uint32_t id = cr_read(TRICORE_CORE_ID) & 0x7U;
+
+	/* TC1.6.2 devices number CPU5 as CORE_ID 6; CORE_ID 5 is not used */
+	if (IS_ENABLED(CONFIG_CPU_TC162) && (id == 6U)) {
+		id = 5U;
+	}
+
+	return id;
 }
 
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)

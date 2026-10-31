@@ -29,19 +29,19 @@
 
 		storage_partition: partition@d8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000d8000 0x00028000>;
+			label = "storage";
 		};
 	};
 };
 
 / {
 	msc_disk0 {
-		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&storage_partition>;
 		disk-name = "SD";
 		/* cache-size == page erase size */
 		cache-size = <4096>;
+		status = "okay";
 	};
 };

@@ -11,8 +11,8 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "efinix,sapphire-gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			ngpios = <4>;
 			status = "okay";

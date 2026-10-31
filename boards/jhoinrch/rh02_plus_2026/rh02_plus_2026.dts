@@ -8,8 +8,8 @@
 #include <st/g4/stm32g431c(6-8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "Jhoinrch RH02 Plus (2026)";
 	compatible = "jhoinrch,rh02-plus-2026";
+	model = "Jhoinrch RH02 Plus (2026)";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -39,9 +39,9 @@
 };
 
 &clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
 	/* External 25 MHz clock added since 2026 (according to Elmue) */
 	status = "okay";
-	clock-frequency = <DT_FREQ_M(25)>;
 };
 
 &clk_hsi48 {

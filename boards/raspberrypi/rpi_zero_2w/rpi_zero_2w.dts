@@ -7,28 +7,18 @@
 /dts-v1/;
 
 #include <broadcom/bcm2710.dtsi>
-#include <broadcom/bcm2711-pinctrl.dtsi>
-#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
+#include "rpi_zero_2w-pinctrl.dtsi"
 
 / {
-	model = "Raspberry Pi Zero 2 W";
 	compatible = "raspberrypi,model-zero-2-w", "brcm,bcm2710";
+	model = "Raspberry Pi Zero 2 W";
 
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
-	};
-
-	/*
-	 * DRAM window the image is linked into; the base must match the
-	 * kernel_address= line in config.txt.
-	 */
-	dram0: memory@200000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x200000 DT_SIZE_M(256)>;
+		zephyr,display = &fb0;
 	};
 
 	aliases {
@@ -36,9 +26,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * Shared buffer for the VideoCore firmware property
@@ -53,16 +43,14 @@
 		};
 	};
 
-	firmware: firmware {
-		compatible = "raspberrypi,bcm283x-firmware";
-		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
-		mbox-names = "vc";
-		shared-memory = <&vc_mem>;
-
-		vc_thermal: vc-thermal {
-			compatible = "raspberrypi,bcm283x-vc-thermal";
-			status = "okay";
-		};
+	/*
+	 * DRAM window the image is linked into; the base must match the
+	 * kernel_address= line in config.txt.
+	 */
+	dram0: memory@200000 {
+		compatible = "mmio-sram";
+		reg = <0x200000 DT_SIZE_M(256)>;
+		device_type = "memory";
 	};
 };
 

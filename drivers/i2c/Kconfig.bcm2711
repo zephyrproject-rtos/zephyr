@@ -5,6 +5,7 @@ config I2C_BCM2711
 	bool "Broadcom BCM2711 I2C controller"
 	default y
 	depends on DT_HAS_BRCM_BCM2711_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable support for Broadcom BCM2711 I2C controller.
 

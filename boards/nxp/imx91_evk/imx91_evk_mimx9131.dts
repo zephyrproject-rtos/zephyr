@@ -11,18 +11,14 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP i.MX91 A55";
 	compatible = "fsl,mimx91";
+	model = "NXP i.MX91 A55";
 
 	chosen {
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		/* sram node actually locates at DDR DRAM */
 		zephyr,sram = &dram;
-	};
-
-	dram: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(1)>;
 	};
 
 	aliases {
@@ -65,13 +61,17 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	dram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(1)>;
+	};
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio2 {

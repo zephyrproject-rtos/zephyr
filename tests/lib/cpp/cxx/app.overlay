@@ -16,8 +16,8 @@
 
 	test_dev1_dfr: dev1 {
 		compatible = "fake-cpp-driver";
-		status = "okay";
 
 		zephyr,deferred-init;
+		status = "okay";
 	};
 };

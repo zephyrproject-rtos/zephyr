@@ -953,6 +953,19 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	int ret = 0;
 	struct fs_littlefs *fs = mountp->fs_data;
 
+	/* littlefs requires a pre-allocated fs_littlefs; it does not
+	 * allocate one from a NULL fs_data the way ext2 does.
+	 */
+	if (fs == NULL) {
+		LOG_ERR("fs_data is required for littlefs");
+		return -EINVAL;
+	}
+
+	if (fs->backend != NULL) {
+		LOG_ERR("littlefs instance is already mounted");
+		return -EBUSY;
+	}
+
 	/* Create and take mutex. */
 	k_mutex_init(&fs->mutex);
 	fs_lock(fs);

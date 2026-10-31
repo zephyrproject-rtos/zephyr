@@ -9,8 +9,9 @@ Overview
 The random API subsystem provides random number generation APIs in both
 cryptographically and non-cryptographically secure instances. Which
 random API to use is based on the cryptographic requirements of the
-random number. The non-cryptographic APIs will return random values
-much faster if non-cryptographic values are needed.
+random number. The non-cryptographic APIs return random values much
+faster, so they should be preferred whenever cryptographically secure
+values are not needed.
 
 - Use :c:func:`sys_rand_get` and related functions for non-cryptographic
   purposes such as randomizing delays, shuffling data, or general-purpose
@@ -27,6 +28,11 @@ much faster if non-cryptographic values are needed.
    :c:func:`sys_rand8_get`, :c:func:`sys_rand16_get`, :c:func:`sys_rand32_get`,
    :c:func:`sys_rand64_get`) for security-sensitive operations. These functions
    do not provide cryptographically secure random numbers.
+
+The random API is declared in :zephyr_file:`include/zephyr/random/random.h`.
+:c:func:`sys_rand_get` and :c:func:`sys_csrand_get` are system calls and can
+be invoked from user mode threads when :kconfig:option:`CONFIG_USERSPACE` is
+enabled.
 
 API Usage
 *********
@@ -100,7 +106,9 @@ General Options
 
 :kconfig:option:`CONFIG_TEST_RANDOM_GENERATOR`
  For testing, this option allows a non-random number generator to be used and
- permits random number APIs to return values that are not truly random.
+ permits random number APIs to return values that are not truly random. It is
+ intended to be selected by application-level configurations such as tests and
+ samples, never in production.
 
  .. warning::
 
@@ -109,6 +117,19 @@ General Options
     are predictable and not suitable for any security-sensitive use.
 
 Non-Cryptographic Random Generator Selection
+============================================
+
+The ``RNG_GENERATOR_CHOICE`` kconfig choice selects the generator backing
+:c:func:`sys_rand_get`. To override the default in a board or SoC
+configuration file:
+
+.. code-block:: kconfig
+
+   choice RNG_GENERATOR_CHOICE
+	   default XOSHIRO_RANDOM_GENERATOR
+   endchoice
+
+Available generators:
 
 :kconfig:option:`CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR`
    Uses the hardware entropy driver directly to generate random numbers.
@@ -124,17 +145,24 @@ Non-Cryptographic Random Generator Selection
    This is the recommended choice for most applications that need fast
    non-cryptographic random numbers.
 
+:kconfig:option:`CONFIG_ARM64_RANDOM_GENERATOR`
+   Uses the ``RNDR`` instruction from the ARM64 ``FEAT_RNG`` extension, on
+   platforms that support it. The retry behavior on instruction failure can
+   be tuned with :kconfig:option:`CONFIG_ARM64_RANDOM_GENERATOR_MAX_RETRIES`
+   and :kconfig:option:`CONFIG_ARM64_RANDOM_GENERATOR_RETRY_WAIT_USEC`.
+
 :kconfig:option:`CONFIG_TIMER_RANDOM_GENERATOR`
    Uses the system timer to generate pseudo-random numbers. This generator
    produces predictable values and is intended **only for testing** on
-   platforms without hardware entropy support.
+   platforms without hardware entropy support. Its initial state can be set
+   with :kconfig:option:`CONFIG_TIMER_RANDOM_INITIAL_STATE`.
 
    Requires :kconfig:option:`CONFIG_TEST_RANDOM_GENERATOR` to be enabled.
 
 Cryptographically Secure Random Generator Selection
 ===================================================
 
-The :kconfig:option:`CSPRNG_GENERATOR_CHOICE` kconfig choice selects the source
+The ``CSPRNG_GENERATOR_CHOICE`` kconfig choice selects the source
 for cryptographically secure random number generation.
 
 To override the default in a board or SoC configuration file:
@@ -153,11 +181,10 @@ Available generators:
  is certified or validated for cryptographic use.
 
 :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`
- enables a cryptographically secure random number generator that uses the
- PSA Crypto API. This CSPRNG implementation leverages the underlying PSA Crypto
- library's secure random number generation capabilities, which may use hardware
- entropy sources when available. The PSA CSPRNG provides cryptographically secure
- random numbers suitable for security-sensitive applications.
+ Uses the PSA Crypto API's secure random number generation, which may in turn
+ use hardware entropy sources when available. It requires
+ :kconfig:option:`CONFIG_PSA_CRYPTO`, i.e. a PSA Crypto provider such as
+ Mbed TLS or TF-M must be part of the build.
 
 :kconfig:option:`CONFIG_TEST_CSPRNG_GENERATOR`
  Routes calls to :c:func:`sys_csrand_get` through :c:func:`sys_rand_get`.
@@ -169,6 +196,12 @@ Available generators:
  .. warning::
 
     This option provides **no cryptographic security**. Use only for testing.
+
+Applications that need cryptographically secure random numbers only when the
+platform can actually provide them can enable
+:kconfig:option:`CONFIG_CSPRNG_NEEDED` and then check
+:kconfig:option:`CONFIG_CSPRNG_ENABLED`, which is set only when an entropy
+driver suitable for cryptographically secure generation is part of the build.
 
 Devicetree Configuration
 ************************
@@ -185,7 +218,10 @@ the hardware entropy device:
    };
 
 Ensure your board's devicetree correctly specifies this chosen node if your
-platform has a hardware random number generator.
+platform has a hardware random number generator. See :ref:`entropy_api` for
+the entropy driver API. If the platform has no entropy driver, only the test
+generators are available, gated behind
+:kconfig:option:`CONFIG_TEST_RANDOM_GENERATOR`.
 
 API Reference
 *************

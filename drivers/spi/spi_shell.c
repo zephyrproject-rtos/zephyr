@@ -402,6 +402,7 @@ static int cmd_spi_conf_cs(const struct shell *ctx, size_t argc, char **argv)
 
 	spec->config.cs.gpio.port = dev;
 	spec->config.cs.gpio.pin = pin;
+	spec->config.cs.cs_is_gpio = true;
 
 	/* Include flags if provided */
 	if (argc == (CS_ARGV_GPIO_FLAGS + 1)) {

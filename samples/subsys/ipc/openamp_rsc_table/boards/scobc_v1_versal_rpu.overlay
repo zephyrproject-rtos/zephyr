@@ -12,6 +12,12 @@
 		zephyr,ipc_shm = &rpu0vdev0buffer;
 	};
 
+	mbox_consumer: mbox-consumer {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&rpu0_apu_mailbox 0>, <&rpu0_apu_mailbox 1>;
+		mbox-names = "tx", "rx";
+	};
+
 	/*
 	 * One naturally aligned MPU region covers the firmware carveout, both
 	 * vrings, and the shared buffer. APU and the RPU access this memory
@@ -20,11 +26,11 @@
 	rproc0_shm: shared-memory@9800000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x09800000 0x200000>;
-		zephyr,memory-region = "RPROC_SHM";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+		ranges = <0x0 0x09800000 0x200000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x09800000 0x200000>;
+		zephyr,memory-region = "RPROC_SHM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
 
 		/*
 		 * RPROC stores the load image for OCM data and the ELF resource
@@ -55,12 +61,6 @@
 		compatible = "mmio-sram";
 		reg = <0x09868000 0x100000>;
 	};
-
-	mbox_consumer: mbox-consumer {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&rpu0_apu_mailbox 0>, <&rpu0_apu_mailbox 1>;
-		mbox-names = "tx", "rx";
-	};
 };
 
 &ipi1 {
@@ -70,8 +70,8 @@
 		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
 		reg = <0xff360000 0x10000>, <0xff3f0a00 0x200>;
 		reg-names = "ctrl", "msg";
-		xlnx,ipi-id = <5>;
 		#mbox-cells = <1>;
+		xlnx,ipi-id = <5>;
 		status = "okay";
 	};
 };

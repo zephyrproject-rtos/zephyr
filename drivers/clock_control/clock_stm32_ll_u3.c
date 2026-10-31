@@ -44,6 +44,7 @@ static uint32_t get_msis_frequency(void)
 	}
 }
 
+#if defined(STM32_MSIK_ENABLED)
 static uint32_t get_msik_frequency(void)
 {
 	uint32_t frequency = MSIRC1_VALUE;
@@ -64,6 +65,7 @@ static uint32_t get_msik_frequency(void)
 		return 0;
 	}
 }
+#endif /* STM32_MSIK_ENABLED */
 
 static uint32_t get_startup_frequency(void)
 {
@@ -134,7 +136,7 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus, pclken->enr);
 	/* Delay after enabling the clock, to allow it to become active */
 	temp = sys_read32(DT_REG_ADDR(DT_NODELABEL(rcc)) + pclken->bus);
-	UNUSED(temp);
+	(void)temp;
 
 	return 0;
 }

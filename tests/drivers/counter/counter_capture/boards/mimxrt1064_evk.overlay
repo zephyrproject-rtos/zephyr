@@ -16,9 +16,9 @@
 };
 
 &qtmr1_timer0 {
-	status = "okay";
 	#counter-capture-cells = <2>;
 	primary-source = "kQTMR_ClockDivide_128";
 	secondary-source = "kQTMR_Counter0InputPin";
 	mode = "kQTMR_PriSrcRiseEdge";
+	status = "okay";
 };

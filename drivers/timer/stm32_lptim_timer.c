@@ -403,6 +403,11 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	if (err < 0) {
 		return;
 	}
+
+	if (idle) {
+		return;
+	}
+
 	/* passing ticks==1 means "announce the next tick",
 	 * ticks value of zero is legal and
 	 * treated identically: it simply indicates the kernel would like the

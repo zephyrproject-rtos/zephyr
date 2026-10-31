@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/adxl345.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	aliases {
+		accel0 = &adxl345_mikroe_accel_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	adxl345_mikroe_accel_click: adxl345@1d {
+		compatible = "adi,adxl345";
+		reg = <0x1d>;
+		int1-gpios = <&mikrobus_header MIKROBUS_INT GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};

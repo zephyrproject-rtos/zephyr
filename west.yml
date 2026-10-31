@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: 3d7044ea240fc8dcb7b4c843b76f70cae5db736b
+      revision: 61b293a49db34030c545f99101f7ebf6a3050314
       path: modules/hal/ambiq
       groups:
         - hal
@@ -168,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 577b219696191f7715ac772e265b14108ecc49a5
+      revision: 18c998da7dcf550303bc9b2852602dcb401e21a1
       groups:
         - hal
     - name: hal_espressif
-      revision: b16851b3c20e6fad3d2da42ec24a3e82d0b8b444
+      revision: cc81db00233af6020f2fea9fbb0d0098fb3d0d86
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 2191db4d7723737ffd3d59d01b50f7595dac2944
+      revision: eae914ed1ad0b54af28191d13da9b8e98fb5cb2b
       path: modules/hal/infineon
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: c708b9fe1b7a36090c468374811a6e934b97e54a
+      revision: d4462033b4f3b10ca9b7037b5c597d0f0f8c3b38
       path: modules/hal/nordic
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: a8b437ef366ff9a6f9bee3377dc189c4d2623f5b
+      revision: 016bebcd7e13570c5d1e7669302495dd14e81ce4
       path: modules/hal/nxp
       groups:
         - hal
@@ -235,7 +235,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 4f84c164c0f298dd2ffd806521ef66320a0bf3b1
+      revision: 0c0beea010e78899c8ffbfd995cbfe50d3e6595e
       groups:
         - hal
     - name: hal_rpi_pico
@@ -249,7 +249,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: ca5f98ea5588fd6aefcb03cb6ea9898ed90ecf15
+      revision: 3402d10d7bbe0f323e018a4142b7ab7d45f9308b
       path: modules/hal/silabs
       groups:
         - hal
@@ -295,7 +295,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 33921a8a77c56bddfe196a11935009cededc3bb3
+      revision: 64c7fce4823891d289d1f90ba46b554458e7a8a7
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -330,7 +330,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: bfbc2eff1ab2f8d290b915036ecdaafdbc620e0f
+      revision: 725d63c9d5bc1bb572d802e7a768daf504186daf
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -348,7 +348,7 @@ manifest:
       revision: 0f6d088e777a33dd7b54297f137ef10d745c5da8
       path: modules/lib/nanopb
     - name: net-tools
-      revision: 96ecb88c982812d48564d319cf7d9a0709c85c70
+      revision: dbb08b8233d74219fcea896850e73b30a0961aa6
       path: tools/net-tools
       groups:
         - tools
@@ -356,7 +356,7 @@ manifest:
       revision: 50187f3879ffaafc171d364490bead27557f5192
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: fc0872109ec4c006d32843a202b129db33cf16b9
+      revision: 45cb18fd563d7212d2a828da94d1a16455ec80e5
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff

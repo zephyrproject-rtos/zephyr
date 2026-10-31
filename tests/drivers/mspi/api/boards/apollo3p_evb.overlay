@@ -18,15 +18,15 @@
 	pinctrl-0 = <&mspi1_default>;
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_emul>;
-	status = "okay";
 
 	ce-gpios = <&gpio32_63 18 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mspi_device: mspi_device@0 {
-		status = "okay";
 		compatible = "zephyr,emul-device-mspi";
 		reg = <0x0>;
 		mspi-max-frequency = <48000000>;
+		status = "okay";
 	};
 };
 

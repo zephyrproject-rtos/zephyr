@@ -1,0 +1,14 @@
+#
+# Copyright 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config XLNX_INTC
+	bool "Xilinx interrupt controller"
+	default y
+	depends on DT_HAS_XLNX_XPS_INTC_1_00_A_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Enable support for the Xilinx AXI / XPS Interrupt Controller (PG099).

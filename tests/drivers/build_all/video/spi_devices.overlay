@@ -12,22 +12,22 @@
 
 		test_gpio: gpio@10001000 {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0x10001000 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_spi: spi@10004000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x10004000 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <8000000>;
 
 			/* one entry for every device at spi.dtsi */
 			cs-gpios = <&test_gpio 0 0>;
+			status = "okay";
 
 			test_spi_arducam_mega: arducam-mega@0 {
 				compatible = "arducam,mega";

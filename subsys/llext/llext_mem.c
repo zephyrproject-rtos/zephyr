@@ -114,6 +114,9 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				 */
 				region_alloc = ROUND_UP(region_alloc, LLEXT_PMP_GRANULARITY);
 				region_align = MAX(region_align, LLEXT_PMP_GRANULARITY);
+			} else if (IS_ENABLED(CONFIG_XTENSA_MPU)) {
+				region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
+				region_align = MAX(region_align, LLEXT_PAGE_SIZE);
 			} else {
 				LOG_ERR("region %d: no memory protection alignment "
 					"rule for this architecture", mem_idx);
@@ -296,12 +299,10 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 				if (name == NULL) {
 					LOG_WRN("-s (out of bounds section name string table "
 						"index) %#zx",
-						(size_t)ext->mem[mem_idx] +
-							ldr->sect_map[i].offset);
+						(size_t)llext_loaded_sect_ptr(ldr, ext, i));
 				} else {
 					LOG_DBG("-s %s %#zx", name,
-						(size_t)ext->mem[mem_idx] +
-							ldr->sect_map[i].offset);
+						(size_t)llext_loaded_sect_ptr(ldr, ext, i));
 				}
 			}
 		}

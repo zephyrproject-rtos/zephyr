@@ -69,6 +69,10 @@ static inline uint32_t log_backend_std_get_flags(void)
 		flags |= LOG_OUTPUT_FLAG_SKIP_SOURCE;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_CORE_ID_PREFIX)) {
+		flags |= LOG_OUTPUT_FLAG_CORE;
+	}
+
 	return flags;
 }
 

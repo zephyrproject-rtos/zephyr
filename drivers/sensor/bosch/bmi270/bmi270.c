@@ -786,6 +786,8 @@ static int bmi270_init(const struct device *dev)
 		return ret;
 	}
 
+	k_usleep(BMI270_INTER_WRITE_DELAY_US);
+
 	adv_pwr_save = BMI270_SET_BITS_POS_0(adv_pwr_save,
 					     BMI270_PWR_CONF_ADV_PWR_SAVE,
 					     BMI270_PWR_CONF_ADV_PWR_SAVE_DIS);
@@ -874,7 +876,9 @@ static DEVICE_API(sensor, bmi270_driver_api) = {
 	.sample_fetch = bmi270_sample_fetch,
 	.channel_get = bmi270_channel_get,
 	.attr_set = bmi270_attr_set,
+#if defined(CONFIG_BMI270_STREAM)
 	.get_decoder = bmi270_get_decoder,
+#endif
 #if defined(CONFIG_BMI270_TRIGGER)
 	.trigger_set = bmi270_trigger_set,
 #endif

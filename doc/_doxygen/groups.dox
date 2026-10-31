@@ -77,6 +77,12 @@
 @{
 @}
 
+@defgroup sensor_interface_ext_espressif Espressif Systems
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Espressif Systems.
+@{
+@}
+
 @defgroup sensor_interface_ext_fintek Fintek
 @ingroup sensor_interface_ext
 @brief Device-specific extensions for sensors from Fintek.
@@ -92,6 +98,12 @@
 @defgroup sensor_interface_ext_gss Gas Sensing Solutions
 @ingroup sensor_interface_ext
 @brief Device-specific extensions for sensors from Gas Sensing Solutions.
+@{
+@}
+
+@defgroup sensor_interface_ext_hamamatsu Hamamatsu Photonics
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Hamamatsu Photonics.
 @{
 @}
 
@@ -164,6 +176,12 @@
 @defgroup sensor_interface_ext_nxp NXP
 @ingroup sensor_interface_ext
 @brief Device-specific extensions for sensors from NXP.
+@{
+@}
+
+@defgroup sensor_interface_ext_peacefair Peacefair
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Peacefair.
 @{
 @}
 

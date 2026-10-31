@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
 
 / {
-	model = "SAM E54 Xplained Pro";
 	compatible = "same54,xpro", "microchip,atsame54p20a", "microchip,same54";
+	model = "SAM E54 Xplained Pro";
 
 	chosen {
 		zephyr,console = &sercom2;
@@ -48,8 +48,8 @@
 		compatible = "pwm-leds";
 
 		pwm_led0: pwm_led_0 {
-			status = "okay";
 			pwms = <&tcc0 2 PWM_MSEC(20) 0>;
+			status = "okay";
 		};
 	};
 
@@ -158,33 +158,33 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
+			label = "image-1";
 		};
 
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
+			label = "storage";
 		};
 	};
 };
@@ -435,13 +435,13 @@ i2c0: &sercom7 {
 
 &tcc0 {
 	compatible = "microchip,tcc-g1-pwm";
-	status = "okay";
 	#pwm-cells = <3>;
 	pinctrl-0 = <&tcc0_pwm_default>;
 	pinctrl-names = "default";
 	max-bit-width = <24>;
 	prescaler = <8>;
 	channels = <6>;
+	status = "okay";
 };
 
 &tc0 {
@@ -512,8 +512,8 @@ i2c0: &sercom7 {
 
 	phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
-		status = "okay";
 		reg = <0>;
+		status = "okay";
 	};
 };
 

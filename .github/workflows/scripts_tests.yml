@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        python-version: ['3.12', '3.13']
+        python-version: ['3.12', '3.13', '3.14']
         os: [ubuntu-24.04]
     steps:
       - name: checkout

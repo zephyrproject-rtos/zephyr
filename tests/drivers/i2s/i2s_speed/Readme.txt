@@ -19,6 +19,13 @@ These are the HW changes required to run this test:
 	- Remove J99, J100
 	- Short Data J99-pin1 (SAI1_RX_DATA0) to J100-pin1 (SAI1_TX_DATA0)
 
+FRDM-IMXRT1152:
+This board uses CONFIG_I2S_TEST_SEPARATE_DEVICES=n and connects TX and RX blocks in one
+SAI peripheral by shorting signals externally on the board.
+These are the HW changes required to run this test:
+	- Populate R58, R69
+	- Short Data J28-pin1 (SAI1_RX_DATA00) to J27-pin1 (SAI1_TX_DATA00)
+
 FRDM-MCXN947:
 This board uses CONFIG_I2S_TEST_SEPARATE_DEVICES=y and connects two SAI peripherals by shorting
 signals externally on the EVK.  These are the HW changes required to run this test:

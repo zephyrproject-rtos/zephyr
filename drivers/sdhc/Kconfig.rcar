@@ -5,6 +5,7 @@ config RCAR_MMC
 	bool "Renesas Rcar MMC driver"
 	default y
 	depends on DT_HAS_RENESAS_RCAR_MMC_ENABLED
+	select SDHC_COMMON
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select REGULATOR
 	select GPIO

@@ -23,12 +23,12 @@
 
 	grove_i2c: grove-i2c {
 		compatible = "gpio-i2c";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		scl-gpios = <&gpio0 4 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		sda-gpios = <&gpio0 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
+		status = "okay";
 	};
 };
 

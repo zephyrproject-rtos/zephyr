@@ -16,7 +16,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/slist.h>
 
-#include <lmac_types.h>
 #include <bl60x_fw_api.h>
 #include <lmac_mac.h>
 #include <ipc_shared.h>

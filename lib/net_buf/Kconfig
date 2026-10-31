@@ -30,8 +30,10 @@ config NET_BUF_WARN_ALLOC_INTERVAL
 	help
 	  Interval in seconds of Network buffer allocation warnings which are
 	  generated when a buffer cannot immediately be allocated with K_FOREVER
-	  which may lead to deadlocks. Setting it to 0 makes warnings to be
-	  printed only once per allocation.
+	  which may lead to deadlocks. A warning is printed when the allocation
+	  starts to wait and then at this interval, and the time it was blocked
+	  is printed when it gets a buffer. Setting it to 0 disables the
+	  periodic warnings, leaving the first and the last one.
 
 config NET_BUF_SIMPLE_LOG
 	bool "Network buffer memory debugging"
@@ -46,6 +48,7 @@ config NET_BUF_POOL_USAGE
 	help
 	  Enable network buffer pool tracking. This means that:
 	  * amount of free buffers in the pool is remembered
+	  * maximum amount of buffers in use at the same time is remembered
 	  * total size of the pool is calculated
 	  * pool name is stored and can be shown in debugging prints
 
@@ -58,6 +61,9 @@ config NET_BUF_HARDENING
 	  buffer's own storage (e.g. len wrapped to a large value, or data moved
 	  outside __buf..__buf+size) is rejected fail-closed: the mutating
 	  operation returns NULL instead of reading or writing out of bounds.
+	  Operations that return a value return 0 and operations that return
+	  nothing do not write, so the caller cannot always tell that an
+	  operation was rejected.
 
 	  This turns a would-be out-of-bounds access (in particular the
 	  tailroom-underflow -> net_buf_add() overflow) into a controlled

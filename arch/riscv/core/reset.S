@@ -173,6 +173,11 @@ aa_loop:
 	li t0, (PMP_NAPOT | PMP_R | PMP_W | PMP_X)
 	csrw pmpcfg0, t0
 
+#ifdef CONFIG_RISCV_LANDING_PADS
+	li t0, MENVCFG_LPE
+	csrs menvcfg, t0
+#endif
+
 	/* Initialize mscratch to M-mode stack top */
 	la t0, m_mode_stack_top
 	csrw mscratch, t0

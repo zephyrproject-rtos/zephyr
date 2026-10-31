@@ -41,25 +41,22 @@
 	};
 
 	soc {
-		/* Specific soc devices in npck3 series */
-		itims: timer@400b0000 {
-			compatible = "nuvoton,npcx-itim-timer";
-			reg = <0x400b0000 0x2000
-			       0x400bc000 0x2000>;
-			reg-names = "evt_itim", "sys_itim";
-			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
-				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
-			interrupts = <29 1>; /* Event timer interrupt */
-			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
-		};
+		espi0: espi@4000a000 {
+			rx-plsize = <64>;
+			tx-plsize = <64>;
 
-		uart1: serial@400c4000 {
-			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npckn";
-			reg = <0x400c4000 0x2000>;
-			interrupts = <23 3>;
-			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
-			uart-rx = <&wui_cr_sin1>;
-			status = "disabled";
+			rst-gpios = <&gpio1 0 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			espi_taf: espitaf@4000a000 {
+				compatible = "nuvoton,npcx-espi-taf";
+				reg = <0x4000a000 0x2000>,
+				      <0x40021000 0x2000>;
+				reg-names = "saf", "fiu1";
+				status = "disabled";
+			};
 		};
 
 		/* Default clock and power settings in npck3 series */
@@ -242,28 +239,31 @@
 				     &lvol_none &lvol_none &lvol_none &lvol_none>;
 		};
 
+		/* Specific soc devices in npck3 series */
+		itims: timer@400b0000 {
+			compatible = "nuvoton,npcx-itim-timer";
+			reg = <0x400b0000 0x2000
+			       0x400bc000 0x2000>;
+			reg-names = "evt_itim", "sys_itim";
+			clocks = <&pcc NPCX_CLOCK_BUS_LFCLK NPCX_PWDWN_CTL4 0
+				  &pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL2 6>;
+			interrupts = <29 1>; /* Event timer interrupt */
+			clock-frequency = <15000000>; /* Set for SYS_CLOCK_HW_CYCLES_PER_SEC */
+		};
+
+		uart1: serial@400c4000 {
+			compatible = "nuvoton,npcx-uart", "nuvoton,npcx-uart-npckn";
+			reg = <0x400c4000 0x2000>;
+			interrupts = <23 3>;
+			clocks = <&pcc NPCX_CLOCK_BUS_APB2 NPCX_PWDWN_CTL1 4>;
+			uart-rx = <&wui_cr_sin1>;
+			status = "disabled";
+		};
+
 		/* ADC0 comparator configuration in npck3 series */
 		adc0: adc@400d1000 {
 			channel-count = <12>;
 			threshold-count = <6>;
-		};
-
-		espi0: espi@4000a000 {
-			rx-plsize = <64>;
-			tx-plsize = <64>;
-
-			rst-gpios = <&gpio1 0 0>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			espi_taf: espitaf@4000a000 {
-				compatible = "nuvoton,npcx-espi-taf";
-				reg = <0x4000a000 0x2000>,
-				      <0x40021000 0x2000>;
-				reg-names = "saf", "fiu1";
-				status = "disabled";
-			};
 		};
 
 		lct0: lct@400dd000 {
