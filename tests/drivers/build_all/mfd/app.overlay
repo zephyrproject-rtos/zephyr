@@ -44,11 +44,56 @@
 			reg = <0x33335555 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "okay";
+
+			sc18is606: sc18is606@28 {
+				compatible = "nxp,sc18is606";
+				reg = <0x28>;
+				status = "okay";
+
+				spi_ext: sc18is606_spi {
+					compatible = "nxp,sc18is606-spi";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "okay";
+				};
+
+				gpio_ext: sc18is606_gpio {
+					compatible = "nxp,sc18is606-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
+				};
+			};
+
+			sc18is602: sc18is602@29 {
+				compatible = "nxp,sc18is602";
+				status = "okay";
+				reg = <0x29>;
+
+				spi_ext_602: sc18is602_spi {
+					compatible = "nxp,sc18is60x-spi";
+					status = "okay";
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+
+				gpio_ext_602: sc18is602_gpio {
+					compatible = "nxp,sc18is60x-gpio";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <4>;
+				};
+			};
 
 			test_i2c_npm10xx: pmic@0 {
 				compatible = "nordic,npm10xx";
 				reg = <0x0>;
+			};
+
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
 			};
 
 			test_i2c_tla2528: tla2528@1 {

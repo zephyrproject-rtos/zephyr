@@ -1,0 +1,11 @@
+# Copyright (c) 2026 tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_SC18IS60X
+	bool "NXP SC18IS60x I2C-to-SPI bridge"
+	default y
+	depends on DT_HAS_NXP_SC18IS606_ENABLED || DT_HAS_NXP_SC18IS602_ENABLED
+	select I2C
+	help
+	  Enable the MFD driver for NXP SC18IS60x I2C-host bridges
+	  (SC18IS602/SC18IS602B and SC18IS606).

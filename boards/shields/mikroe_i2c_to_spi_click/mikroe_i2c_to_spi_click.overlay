@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * I2C to SPI Click (SC18IS602B) on mikroBUS I2C.
+ * Host SPI on the mikroBUS connector is unused; SPI is on the Click extra header.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&mikrobus_i2c {
+	status = "okay";
+
+	sc18is602: sc18is602@28 {
+		compatible = "nxp,sc18is602";
+		reg = <0x28>;
+		status = "okay";
+		reset-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+
+		spi_click: sc18is602_spi {
+			compatible = "nxp,sc18is60x-spi";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
