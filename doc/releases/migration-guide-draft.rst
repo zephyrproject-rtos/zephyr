@@ -80,6 +80,15 @@ OPAMP
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
 
+Power Management
+================
+
+* NXP MCX :dtcompatible:`nxp,spc` ``wakeup-delay`` specifies regulator-settling delay in
+  SPC timer cycles. SoC-specific defaults contribute to wake-up latency. Board/application
+  overlays can select counts for their regulator, ``LP_CFG``/ ``ACTIVE_CFG`` voltages,
+  output capacitance and external power circuitry. Set power-state ``exit-latency-us``
+  to cover the resulting total wake-up time.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
