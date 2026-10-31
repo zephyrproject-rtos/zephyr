@@ -49,7 +49,7 @@ int sx126x_hal_reset(const struct device *dev)
 	 * After RCC reset, the radio is in sleep mode. Send a wakeup command
 	 * to transition into STDBY_RC so that BUSY can be properly checked.
 	 */
-	ret = sx126x_hal_wakeup(dev);
+	ret = sx12xx_hal_wakeup(dev);
 	if (ret < 0) {
 		LOG_ERR("Wakeup failed: %d", ret);
 		return ret;
@@ -114,7 +114,7 @@ static int sx126x_hal_set_pa_config(const struct device *dev, uint8_t pa_duty_cy
 {
 	uint8_t buf[4] = { pa_duty_cycle, hp_max, device_sel, pa_lut };
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PA_CONFIG, buf, 4);
+	return sx12xx_hal_write_cmd(dev, SX126X_CMD_SET_PA_CONFIG, buf, 4);
 }
 
 int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
@@ -166,12 +166,12 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 			tx_power = max_power;
 		}
 
-		ret = sx126x_hal_read_regs(dev, SX126X_REG_TX_CLAMP_CFG, &reg_val, 1);
+		ret = sx12xx_hal_read_regs(dev, SX126X_REG_TX_CLAMP_CFG, &reg_val, 1);
 		if (ret < 0) {
 			return ret;
 		}
 		reg_val |= (0x0F << 1);
-		ret = sx126x_hal_write_regs(dev, SX126X_REG_TX_CLAMP_CFG, &reg_val, 1);
+		ret = sx12xx_hal_write_regs(dev, SX126X_REG_TX_CLAMP_CFG, &reg_val, 1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -204,7 +204,7 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 	}
 
 	/* Set OCP value */
-	ret = sx126x_hal_write_regs(dev, SX126X_REG_OCP, &ocp_value, 1);
+	ret = sx12xx_hal_write_regs(dev, SX126X_REG_OCP, &ocp_value, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -212,7 +212,7 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 	/* Set TX params */
 	uint8_t buf[2] = { (uint8_t)tx_power, ramp_time };
 
-	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_PARAMS, buf, 2);
+	return sx12xx_hal_write_cmd(dev, SX126X_CMD_SET_TX_PARAMS, buf, 2);
 }
 
 int sx126x_hal_init(const struct device *dev)
@@ -223,8 +223,9 @@ int sx126x_hal_init(const struct device *dev)
 
 	data->dev = dev;
 	data->dio1_callback = NULL;
+	sx12xx_hal_init(dev);
 
-	if (!spi_is_ready_dt(&config->spi)) {
+	if (!spi_is_ready_dt(&config->common.spi)) {
 		LOG_ERR("SPI bus not ready");
 		return -ENODEV;
 	}
@@ -236,19 +237,19 @@ int sx126x_hal_init(const struct device *dev)
 	LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_44);
 
 	/* Configure optional GPIOs */
-	ret = sx126x_hal_configure_gpio(&config->antenna_enable, GPIO_OUTPUT_INACTIVE,
+	ret = sx12xx_hal_configure_gpio(&config->antenna_enable, GPIO_OUTPUT_INACTIVE,
 					"antenna enable");
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = sx126x_hal_configure_gpio(&config->tx_enable, GPIO_OUTPUT_INACTIVE,
+	ret = sx12xx_hal_configure_gpio(&config->common.tx_enable, GPIO_OUTPUT_INACTIVE,
 					"TX enable");
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = sx126x_hal_configure_gpio(&config->rx_enable, GPIO_OUTPUT_INACTIVE,
+	ret = sx12xx_hal_configure_gpio(&config->common.rx_enable, GPIO_OUTPUT_INACTIVE,
 					"RX enable");
 	if (ret < 0) {
 		return ret;

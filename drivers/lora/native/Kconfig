@@ -2,5 +2,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 rsource "Kconfig.fake"
+
+config LORA_SX12XX_NATIVE_COMMON
+	bool
+	help
+	  Code shared by the native SX12xx drivers.
+
 rsource "lr11xx/Kconfig"
 rsource "sx126x/Kconfig"
+rsource "sx128x/Kconfig"
