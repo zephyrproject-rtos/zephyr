@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&espi0 {
+	sram-bars {
+		compatible = "microchip,xec-espi-sram-bar";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		sram-bar@0 {
+			reg = <0>;
+			host-address = <0x20000000>;
+			size = <1024>;
+			access = "READ_WRITE";
+		};
+
+		sram-bar@1 {
+			reg = <1>;
+			host-address = <0x20010000>;
+			size = <4096>;
+			access = "READ_ONLY";
+		};
+	};
+};
