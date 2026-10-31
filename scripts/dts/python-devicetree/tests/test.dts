@@ -112,6 +112,15 @@
 					 4 2 &{/interrupt-map-test/controller-2} 0 0 0 0 0 5>;
 		};
 
+		nexus-with-controller {
+			compatible = "interrupt-two-cell";
+			interrupt-controller;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-map = <0 0 &{/interrupt-map-test/controller-0} 0 0
+					 0 1 &{/interrupt-map-test/controller-1} 0 0 0 1>;
+		};
+
 		node@0 {
 			reg = <0 0>;
 			interrupts = <0 0 0 1 0 2>;
@@ -144,6 +153,12 @@
 			reg = <0 4>;
 			interrupts = <0 1 2>;
 			interrupt-parent = <&{/interrupt-map-test/nexus-1}>;
+		};
+
+		node@5 {
+			reg = <0 5>;
+			interrupts = <0 0 0 1>;
+			interrupt-parent = <&{/interrupt-map-test/nexus-with-controller}>;
 		};
 
 		node@100000004 {
