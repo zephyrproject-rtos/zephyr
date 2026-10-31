@@ -122,6 +122,19 @@ Ethernet
 ========
 To use networking samples with the Ethernet jack, change jumper JP13 to pins 2-3.
 
+.. include:: ../../common/mcxa-mcxn-power-management.rst.inc
+
+CPU1 does not support independent system power management.
+
+The ``wakeup-button`` alias selects SW2 on P1_3, routed to WUU external pin 7
+with a falling-edge interrupt.
+
+Only SRAMA, the first 32 KB at ``0x20000000``, survives Deep Power Down through
+the VBAT RAM LDO. The :zephyr_file:`samples/boards/nxp/mcxn_a/s2ram/mcxn.overlay`
+limits ``zephyr,sram`` to the 24 KB at ``0x20002000`` to avoid the boot ROM's
+scratch area. The default CPU0 RAM allocation is not a suspend-to-RAM layout;
+check that the entire retained working set fits before enabling this state.
+
 Programming and Debugging
 *************************
 
