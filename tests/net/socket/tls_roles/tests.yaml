@@ -1,0 +1,26 @@
+common:
+  depends_on: netif
+  min_ram: 32
+  tags:
+    - net
+    - socket
+    - tls
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+tests:
+  net.socket.tls.roles.client:
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_CLI_C=y
+      - CONFIG_MBEDTLS_SSL_SRV_C=n
+  net.socket.tls.roles.server:
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_CLI_C=n
+      - CONFIG_MBEDTLS_SSL_SRV_C=y
+      - CONFIG_MBEDTLS_SSL_CACHE_C=y
+  net.socket.tls.roles.client_server:
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_CLI_C=y
+      - CONFIG_MBEDTLS_SSL_SRV_C=y
+      - CONFIG_MBEDTLS_SSL_CACHE_C=y
