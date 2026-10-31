@@ -1,19 +1,26 @@
-# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-sample:
-  name: Micro Core UART communication test
-  description: Two-board UART transport for the micro_core communication suite
 tests:
-  sample.mc.uart.sender:
+  mc.comm.stress.native:
+    platform_allow:
+      - native_sim/native/64
+    tags:
+      - mc
+      - comm
+  mc.comm.stress.sender:
     build_only: true
-    skip: true
     extra_args: CONF_FILE=prj_sender.conf
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-  sample.mc.uart.receiver:
+    tags:
+      - mc
+      - uart
+  mc.comm.stress.receiver:
     build_only: true
-    skip: true
     extra_args: CONF_FILE=prj_receiver.conf
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+    tags:
+      - mc
+      - uart

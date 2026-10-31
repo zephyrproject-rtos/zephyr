@@ -25,7 +25,7 @@ struct mc_msg {
 
 static size_t align_up(size_t value)
 {
-	return (value + (sizeof(uintptr_t) - 1U)) & ~(sizeof(uintptr_t) - 1U);
+	return (value + (sizeof(uint64_t) - 1U)) & ~(sizeof(uint64_t) - 1U);
 }
 
 static void dispatch(struct mc_msg *instance, uint16_t id, const uint8_t *data,
@@ -33,10 +33,11 @@ static void dispatch(struct mc_msg *instance, uint16_t id, const uint8_t *data,
 
 size_t mc_msg_required_size(const struct mc_msg_config *config)
 {
-	if (config == NULL || config->message_capacity == 0U ||
-		config->message_capacity < 4U ||
-		config->subscription_capacity == 0U ||
-		mc_comm_required_size(&config->comm) == 0U) {
+	if (config == NULL || config->message_capacity < 4U ||
+	    config->subscription_capacity == 0U ||
+	    config->comm.receive_capacity < 4U ||
+	    config->message_capacity > config->comm.receive_capacity - 4U ||
+	    mc_comm_required_size(&config->comm) == 0U) {
 		return 0U;
 	}
 	return align_up(sizeof(struct mc_msg)) +
@@ -54,7 +55,7 @@ int mc_msg_init(struct mc_msg **instance, void *storage, size_t storage_size,
 	size_t required = mc_msg_required_size(config);
 
 	if (required == 0U || storage_size < required ||
-		((uintptr_t)storage % sizeof(uintptr_t)) != 0U) {
+	    ((uintptr_t)storage % sizeof(uint64_t)) != 0U) {
 		return -ENOMEM;
 	}
 	struct mc_msg *msg = storage;

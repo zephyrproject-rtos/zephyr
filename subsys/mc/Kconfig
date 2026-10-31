@@ -11,6 +11,7 @@ if MC
 
 config MC_COMM
 	bool "Reliable byte communication"
+	select CRC
 	default y
 	help
 	  Enable framed, acknowledged byte communication using application-owned

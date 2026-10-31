@@ -91,9 +91,9 @@ static void init_pair(struct mc_comm **a, struct mc_comm **b, struct test_link *
 	b_endpoint->transmit_link = b_to_a;
 
 	config.context = a_endpoint;
-	zassert_ok(mc_comm_init(a, a_storage, 256U, &config), NULL);
+	zassert_ok(mc_comm_init(a, a_storage, 512U, &config), NULL);
 	config.context = b_endpoint;
-	zassert_ok(mc_comm_init(b, b_storage, 256U, &config), NULL);
+	zassert_ok(mc_comm_init(b, b_storage, 512U, &config), NULL);
 	a_to_b->peer = *b;
 	b_to_a->peer = *a;
 }
@@ -102,7 +102,7 @@ ZTEST(mc_comm, test_invalid_configuration)
 {
 	struct mc_comm_config config = {0};
 	struct mc_comm *instance;
-	uint8_t storage[256] __aligned(8);
+	uint8_t storage[512] __aligned(8);
 
 	zassert_equal(mc_comm_required_size(NULL), 0U, NULL);
 	zassert_equal(mc_comm_required_size(&config), 0U, NULL);
@@ -127,7 +127,7 @@ ZTEST(mc_comm, test_invalid_arguments_and_timeout)
 		.transmit_link = &link,
 	};
 	struct mc_comm_config config = valid_config;
-	uint8_t storage[256] __aligned(8);
+	uint8_t storage[512] __aligned(8);
 	uint8_t data[8];
 	size_t length;
 
@@ -150,8 +150,8 @@ ZTEST(mc_comm, test_transfer_and_zero_length_payload)
 	struct test_endpoint a_endpoint;
 	struct test_endpoint b_endpoint;
 	int err;
-	uint8_t a_storage[256] __aligned(8);
-	uint8_t b_storage[256] __aligned(8);
+	uint8_t a_storage[512] __aligned(8);
+	uint8_t b_storage[512] __aligned(8);
 	const uint8_t payload[] = "payload";
 	uint8_t received[sizeof(payload)];
 	size_t received_length = 0U;
@@ -176,8 +176,8 @@ ZTEST(mc_comm, test_corrupted_frame_and_bounded_retry)
 	struct mc_comm *b;
 	struct test_endpoint a_endpoint;
 	struct test_endpoint b_endpoint;
-	uint8_t a_storage[256] __aligned(8);
-	uint8_t b_storage[256] __aligned(8);
+	uint8_t a_storage[512] __aligned(8);
+	uint8_t b_storage[512] __aligned(8);
 	const uint8_t payload[] = "payload";
 
 	init_pair(&a, &b, &a_to_b, &b_to_a, &a_endpoint, &b_endpoint, a_storage, b_storage);
@@ -197,8 +197,8 @@ ZTEST(mc_comm, test_retries_after_deterministic_frame_loss)
 	struct mc_comm *b;
 	struct test_endpoint a_endpoint;
 	struct test_endpoint b_endpoint;
-	uint8_t a_storage[256] __aligned(8);
-	uint8_t b_storage[256] __aligned(8);
+	uint8_t a_storage[512] __aligned(8);
+	uint8_t b_storage[512] __aligned(8);
 	const uint8_t payload[] = "loss-recovery";
 	uint8_t received[sizeof(payload)];
 	size_t received_length = 0U;

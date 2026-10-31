@@ -60,13 +60,13 @@ static int uart_receive(void *context, uint8_t *data, size_t capacity)
 	       (uart_rx_buffer[0] != 0xc7U || uart_rx_buffer[1] != 0xe9U)) {
 		memmove(uart_rx_buffer, &uart_rx_buffer[1], --uart_rx_length);
 	}
-	if (uart_rx_length < 8U) {
+	if (uart_rx_length < 12U) {
 		return -EAGAIN;
 	}
 
-	size_t payload_length = ((size_t)uart_rx_buffer[4] << 8U) |
-		uart_rx_buffer[5];
-	size_t frame_length = 8U + payload_length;
+	size_t payload_length = ((size_t)uart_rx_buffer[8] << 8U) |
+		uart_rx_buffer[9];
+	size_t frame_length = 12U + payload_length;
 
 	if (frame_length > capacity || frame_length > sizeof(uart_rx_buffer)) {
 		memmove(uart_rx_buffer, &uart_rx_buffer[1], --uart_rx_length);
@@ -118,7 +118,7 @@ static bool wait_for_packet(struct mc_comm *comm, const uint8_t *expected, size_
 
 ZTEST(mc_uart, test_communication_transport)
 {
-	static uint8_t storage[256] __aligned(8);
+	static uint8_t storage[512] __aligned(8);
 	struct mc_comm *comm;
 	struct mc_comm_config config = {
 		.receive = uart_receive,

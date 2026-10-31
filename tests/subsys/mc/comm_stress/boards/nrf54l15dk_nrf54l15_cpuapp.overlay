@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Use UART20/Serial Port 1 for the protocol and UART30/Serial Port 0 as console. */
 / {
 	aliases {
 		mc-uart = &uart20;

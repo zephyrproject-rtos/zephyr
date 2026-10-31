@@ -20,12 +20,16 @@ typedef int (*mc_comm_receive_t)(void *context, uint8_t *data, size_t capacity);
 typedef int (*mc_comm_transmit_t)(void *context, const uint8_t *data, size_t length);
 
 struct mc_comm_config {
-	mc_comm_receive_t receive;
-	mc_comm_transmit_t transmit;
-	void *context;
-	size_t frame_size;
-	size_t receive_capacity;
-	uint8_t retry_limit;
+	mc_comm_receive_t receive;   /**< Read one complete transport frame. */
+	mc_comm_transmit_t transmit; /**< Write one complete transport frame. */
+	void *context;               /**< Transport callback context. */
+	size_t frame_size;           /**< Default frame size in both directions. */
+	size_t receive_capacity;     /**< Maximum complete payload size. */
+	uint8_t retry_limit;        /**< Retries per frame; zero selects the default. */
+	size_t send_window_size;    /**< Outgoing frame size; zero uses frame_size. */
+	size_t receive_window_size; /**< Incoming frame size; zero uses frame_size. */
+	uint8_t send_window_count;    /**< Outstanding frames; zero selects one. */
+	uint8_t receive_window_count; /**< Buffered frames; zero selects one. */
 };
 
 /**
@@ -40,7 +44,7 @@ size_t mc_comm_required_size(const struct mc_comm_config *config);
  * @brief Initialize a communication instance in caller-owned storage.
  *
  * @param instance Output instance pointer.
- * @param storage Suitably aligned storage.
+ * @param storage Storage aligned to 8 bytes.
  * @param storage_size Available storage size in bytes.
  * @param config Communication configuration.
  * @retval 0 Instance initialized.
@@ -64,13 +68,16 @@ int mc_comm_update(struct mc_comm *instance);
 /**
  * @brief Send one application payload and wait for acknowledgment.
  *
+ * Payloads larger than one frame are segmented. After a timeout, delivery is
+ * uncertain; retry the same payload before sending different data.
+ *
  * @param instance Communication instance.
  * @param data Payload buffer, or NULL for an empty payload.
  * @param length Payload length in bytes.
  * @param timeout_us Timeout in microseconds.
  * @retval 0 Payload acknowledged.
  * @retval -EINVAL Invalid instance or payload buffer.
- * @retval -EMSGSIZE Payload exceeds the frame capacity.
+ * @retval -EMSGSIZE Payload length exceeds the 32-bit wire limit.
  * @retval -ETIMEDOUT Acknowledgment timed out.
  * @return Other errors returned by the transport callbacks.
  */

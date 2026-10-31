@@ -80,9 +80,9 @@ static void init_pair(struct mc_msg **a, struct mc_msg **b,
 	b_endpoint->receive_link = a_to_b;
 	b_endpoint->transmit_link = b_to_a;
 	config.comm.context = a_endpoint;
-	zassert_ok(mc_msg_init(a, a_storage, 512U, &config), NULL);
+	zassert_ok(mc_msg_init(a, a_storage, 1024U, &config), NULL);
 	config.comm.context = b_endpoint;
-	zassert_ok(mc_msg_init(b, b_storage, 512U, &config), NULL);
+	zassert_ok(mc_msg_init(b, b_storage, 1024U, &config), NULL);
 	a_to_b->peer = mc_msg_comm(*b);
 	b_to_a->peer = mc_msg_comm(*a);
 }
@@ -126,7 +126,7 @@ ZTEST(mc_msg, test_subscriptions)
 		.transmit_link = &link,
 	};
 	struct mc_msg_config config = valid_config;
-	uint8_t storage[512] __aligned(8);
+	uint8_t storage[1024] __aligned(8);
 
 	config.comm.context = &endpoint;
 	zassert_ok(mc_msg_init(&instance, storage, sizeof(storage), &config), NULL);
@@ -149,8 +149,8 @@ ZTEST(mc_msg, test_message_signal_and_unknown_id)
 	struct mc_msg *b;
 	struct test_endpoint a_endpoint;
 	struct test_endpoint b_endpoint;
-	uint8_t a_storage[512] __aligned(8);
-	uint8_t b_storage[512] __aligned(8);
+	uint8_t a_storage[1024] __aligned(8);
+	uint8_t b_storage[1024] __aligned(8);
 
 	init_pair(&a, &b, &a_to_b, &b_to_a, &a_endpoint, &b_endpoint,
 		  a_storage, b_storage);
