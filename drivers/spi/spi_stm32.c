@@ -1035,6 +1035,9 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 
 #if defined(CONFIG_SPI_STM32_DMA)
 	use_dma = (data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL);
+#if defined(CONFIG_SPI_STM32_DMA_MIN_LEN)
+	use_dma = use_dma && (buf_len >= CONFIG_SPI_STM32_DMA_MIN_LEN);
+#endif /* CONFIG_SPI_STM32_DMA_MIN_LEN */
 #endif /* CONFIG_SPI_STM32_DMA */
 
 	data->ctx.current_tx = NULL;
@@ -1087,6 +1090,14 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 		rx_cfg->dest_data_size   = rx_cfg->dest_burst_length   = dfs;
 		tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
 		tx_cfg->dest_data_size   = tx_cfg->dest_burst_length   = dfs;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+		/* an interrupt driven transfer of the same transaction may have set a size */
+		if (ll_get_transfer_size(spi) != 0U) {
+			ll_disable_spi(spi);
+			ll_set_transfer_size(spi, 0U);
+		}
+#endif /* st_stm32h7_spi */
 
 		spi_dma_enable_requests(spi);
 		LL_SPI_Enable(spi);

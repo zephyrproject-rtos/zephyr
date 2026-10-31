@@ -41,6 +41,14 @@ config SPI_STM32_DMA_BOUNCE_SIZE
 	  this size that is kept coherent with the data cache. Longer
 	  transfers fail as without it. 0 disables the bounce buffer.
 
+config SPI_STM32_DMA_MIN_LEN
+	int "Shortest transfer moved by the DMA, in bytes"
+	default 0
+	depends on SPI_STM32_DMA && SPI_RTIO && SPI_STM32_INTERRUPT
+	help
+	  With RTIO, shorter transfers are moved by interrupts, as starting
+	  the DMA costs more than moving a few frames.
+
 config SPI_STM32_ERRATA_BUSY
 	bool
 	default y
