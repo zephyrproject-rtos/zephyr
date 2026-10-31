@@ -76,6 +76,8 @@ ZTEST(mem_attr, test_mem_attr)
 	 */
 	zassert_equal(mem_attr_check_buf((void *) 0x10000000, 0x2000, DT_MEM_NON_VOLATILE),
 		      -ENOSPC, "Unexpected return value");
+	zassert_equal(mem_attr_check_buf((void *)0x10000100, SIZE_MAX, DT_MEM_NON_VOLATILE),
+		      -ENOSPC, "Unexpected return value");
 
 	/*
 	 * Check a buffer in a disabled region
