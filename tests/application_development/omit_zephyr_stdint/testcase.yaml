@@ -1,0 +1,17 @@
+common:
+  tags: toolchain
+  build_only: true
+  arch_allow:
+    - arm
+    - arm64
+tests:
+  buildsystem.app_dev.omit_zephyr_stdint.enabled:
+    extra_configs:
+      - CONFIG_OMIT_ZEPHYR_STDINT_FOR_APPS=y
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a53
+  buildsystem.app_dev.omit_zephyr_stdint.disabled:
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_cortex_a53
