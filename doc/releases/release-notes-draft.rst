@@ -85,6 +85,11 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* Mbed TLS
+
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_CLI_C`
+  * :kconfig:option:`CONFIG_MBEDTLS_SSL_SRV_C`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
