@@ -127,6 +127,25 @@ When you power on the Raspberry Pi 5, you will see the following output in the s
    Hello World! rpi_5/bcm2712
 
 
+SD card access
+--------------
+
+The on-board Micro SD slot supports native SD commands and PIO transfers at 3.3 V,
+with 1-bit or 4-bit operation up to 25 MHz in default-speed mode or 50 MHz in High Speed mode.
+DMA, UHS modes, SD Express and card insertion
+interrupts are not supported. Boot from the SD card so that the firmware configures the
+SD pin multiplexing and pads before Zephyr starts.
+USB and network boot have not been validated with this driver. The driver does not
+initialize SD pin multiplexing or pad controls; those boot paths require equivalent
+initialization by the bootloader before accessing the SD slot.
+
+The BCM2712 driver uses the shared PIO implementation for standard SDHCI controllers.
+Its SoC-specific code configures the auxiliary registers, card detection and power regulators.
+SD memory cards have been validated. SDIO and eMMC operation is untested and may require
+additional modes.
+
+The controller uses the SDMMC disk driver with disk name ``SD``.
+
 .. _Raspberry Pi 5 product-brief:
    https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf
 

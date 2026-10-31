@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2712 SD host controller. Main-bank SDIO pins may be configured
+  through pinctrl. Dedicated EMMC pads used by the SD card slot are not
+  covered by the BCM2712 pinctrl driver and must retain the boot firmware
+  configuration.
+
+compatible: "brcm,bcm2712-sdhci"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  bus-width:
+    type: int
+    required: true
+    description: Number of data lines connected to the SD or SDIO device.
+
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+    description: SDHCI host registers followed by the Broadcom cfg registers.
+
+  clocks:
+    required: true
+
+  non-removable:
+    type: boolean
+    description: Permanently connected device; no card-detect GPIO is needed.
+
+  cd-gpios:
+    type: phandle-array
+    description: Card detect GPIO, required for removable cards.
+
+  vmmc-supply:
+    type: phandle
+    required: true
+    description: Card power regulator.
+
+  vqmmc-supply:
+    type: phandle
+    description: |
+      SD signalling voltage regulator; absent for fixed 3.3 V signalling.
+      When provided, this supply must remain enabled independently, for example
+      through regulator-always-on. The driver sets its voltage but does not
+      enable or disable it.

@@ -36,6 +36,24 @@ properties:
       Maximum bus frequency for SD card. This should be the highest frequency
       the SDHC is capable of negotiating with cards on the bus.
 
+  sd-uhs-sdr50:
+    type: boolean
+    description: |
+      The board supports SD UHS-I SDR50 signalling at 1.8 V. Drivers that
+      implement this property may enable SDR50 when the host and card support it.
+
+  sd-uhs-sdr104:
+    type: boolean
+    description: |
+      The board supports SD UHS-I SDR104 signalling at 1.8 V. Drivers that
+      implement this property may enable SDR104 when the host and card support it.
+
+  no-1-8-v:
+    type: boolean
+    description: |
+      The board does not support 1.8 V signalling, even if the host does.
+      This property takes precedence over SD UHS capability properties.
+
   min-bus-freq:
     type: int
     default: 400000
