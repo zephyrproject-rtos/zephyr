@@ -178,9 +178,16 @@ static int select_target_iface(struct wg_peer *peer,
 	if (IS_ENABLED(CONFIG_NET_IPV6) && dst->ss_family == NET_AF_INET6) {
 		const struct net_in6_addr *src;
 
-		*iface = net_if_ipv6_select_src_iface_addr(
-			&net_sin6(net_sad(dst))->sin6_addr, &src);
+		int ifindex = peer->ctx->wg_ctx->ifindex;
 
+		if (ifindex > 0) {
+			*iface = net_if_get_by_index(ifindex);
+			src = net_if_ipv6_select_src_addr(*iface,
+				&net_sin6(net_sad(dst))->sin6_addr);
+		} else {
+			*iface = net_if_ipv6_select_src_iface_addr(
+				&net_sin6(net_sad(dst))->sin6_addr, &src);
+		}
 		net_ipv6_addr_copy_raw((uint8_t *)(&net_sin6(addr)->sin6_addr),
 				       (const uint8_t *)src);
 		addr->sa_family = NET_AF_INET6;
@@ -188,8 +195,16 @@ static int select_target_iface(struct wg_peer *peer,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && dst->ss_family == NET_AF_INET) {
 		const struct net_in_addr *src;
 
-		*iface = net_if_ipv4_select_src_iface_addr(
-			&net_sin(net_sad(dst))->sin_addr, &src);
+		int ifindex = peer->ctx->wg_ctx->ifindex;
+
+		if (ifindex > 0) {
+			*iface = net_if_get_by_index(ifindex);
+			src = net_if_ipv4_select_src_addr(*iface,
+				&net_sin(net_sad(dst))->sin_addr);
+		} else {
+			*iface = net_if_ipv4_select_src_iface_addr(
+				&net_sin(net_sad(dst))->sin_addr, &src);
+		}
 
 		net_ipv4_addr_copy_raw((uint8_t *)&net_sin(addr)->sin_addr,
 				       (const uint8_t *)src);
