@@ -1724,6 +1724,10 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	reg = <0xde>;
 };
 
+test_i2c_sths34pf80: sths34pf80@e1 {
+	compatible = "st,sths34pf80";
+	reg = <0xe1>;
+};
 test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
