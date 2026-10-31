@@ -1,0 +1,40 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Two emulated UARTs that test_modbus_link.c connects crosswise, like the
+ * wires of the hardware setup.
+ */
+
+/ {
+	euart0: uart-emul-0 {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <1024>;
+		tx-fifo-size = <1024>;
+		latch-buffer-size = <256>;
+		status = "okay";
+
+		modbus0: modbus0 {
+			compatible = "zephyr,modbus-serial";
+			status = "okay";
+		};
+	};
+
+	euart1: uart-emul-1 {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <1024>;
+		tx-fifo-size = <1024>;
+		latch-buffer-size = <256>;
+		status = "okay";
+
+		modbus1: modbus1 {
+			compatible = "zephyr,modbus-serial";
+			status = "okay";
+		};
+	};
+};
