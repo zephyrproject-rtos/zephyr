@@ -299,6 +299,10 @@
 	pinctrl-names = "default";
 };
 
+&lfrco {
+	precision-mode;
+};
+
 &lpwaes {
 	status = "okay";
 };
