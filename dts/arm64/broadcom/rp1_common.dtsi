@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/rp1-irq.h>
+
 &pcie2 {
 	rp1 {
 		#address-cells = <2>;
@@ -18,6 +21,9 @@
 		rp1_uart0: serial@1f00030000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x30000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART0 IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart0";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -26,6 +32,9 @@
 		rp1_uart1: serial@1f00034000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x34000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART1 IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart1";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -34,6 +43,9 @@
 		rp1_uart2: serial@1f00038000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x38000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART2 IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart2";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -42,6 +54,9 @@
 		rp1_uart3: serial@1f0003c000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x3c000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART3 IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart3";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -50,6 +65,9 @@
 		rp1_uart4: serial@1f00040000 {
 			compatible = "arm,pl011";
 			reg = <0x1f 0x40000 0x100>;
+			interrupt-parent = <&rp1_intc>;
+			interrupts = <RP1_IRQ_UART4 IRQ_TYPE_LEVEL>;
+			interrupt-names = "uart4";
 			clocks = <&rp1_uartclk>;
 			clock-names = "uartclk";
 			status = "disabled";
@@ -90,6 +108,137 @@
 				ngpios = <20>;
 				status = "disabled";
 			};
+		};
+
+		rp1_intc: interrupt-controller@1f00108000 {
+			compatible = "raspberrypi,rp1-intc";
+			reg = <0x1f 0x108000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			#address-cells = <0>;
+			msi-parent = <&mip0>;
+			interrupt-map = <RP1_IRQ_IO_BANK0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_IO_BANK0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_IO_BANK1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_IO_BANK1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_IO_BANK2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_IO_BANK2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_AUDIO_IN IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_AUDIO_IN IRQ_TYPE_EDGE>,
+					<RP1_IRQ_AUDIO_OUT IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_AUDIO_OUT IRQ_TYPE_EDGE>,
+					<RP1_IRQ_PWM0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_PWM0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_ETH IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_ETH IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C3 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C3 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C4 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C4 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C5 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C5 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2C6 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2C6 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2S0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2S0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2S1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2S1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_I2S2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_I2S2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SDIO0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SDIO0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SDIO1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SDIO1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI3 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI3 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI4 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI4 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI5 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI5 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_UART0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_UART0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_TIMER0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_TIMER0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_TIMER1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_TIMER1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_TIMER2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_TIMER2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_TIMER3 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_TIMER3 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST0_0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST0_0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST0_1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST0_1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST0_2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST0_2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST0_3 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST0_3 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST1_0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST1_0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST1_1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST1_1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST1_2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST1_2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_USBHOST1_3 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_USBHOST1_3 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_DMA IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_DMA IRQ_TYPE_EDGE>,
+					<RP1_IRQ_PWM1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_PWM1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_UART1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_UART1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_UART2 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_UART2 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_UART3 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_UART3 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_UART4 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_UART4 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_UART5 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_UART5 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_MIPI0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_MIPI0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_MIPI1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_MIPI1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_VIDEO_OUT IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_VIDEO_OUT IRQ_TYPE_EDGE>,
+					<RP1_IRQ_PIO0 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_PIO0 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_PIO1 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_PIO1 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_ADC_FIFO IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_ADC_FIFO IRQ_TYPE_EDGE>,
+					<RP1_IRQ_PCIE_OUT IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_PCIE_OUT IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI6 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI6 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI7 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI7 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SPI8 IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SPI8 IRQ_TYPE_EDGE>,
+					<RP1_IRQ_PROC_MISC IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_PROC_MISC IRQ_TYPE_EDGE>,
+					<RP1_IRQ_SYSCFG IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_SYSCFG IRQ_TYPE_EDGE>,
+					<RP1_IRQ_CLOCKS IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_CLOCKS IRQ_TYPE_EDGE>,
+					<RP1_IRQ_VBUSCTRL IRQ_TYPE_LEVEL
+					 &mip0 RP1_IRQ_VBUSCTRL IRQ_TYPE_EDGE>;
 		};
 	};
 };
