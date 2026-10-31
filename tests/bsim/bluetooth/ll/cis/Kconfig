@@ -23,6 +23,19 @@ config TEST_CIS_PACKING_INTERLEAVED
 	  sequential packing. Only relevant when the CIG contains multiple
 	  CISes.
 
+config TEST_CIS_MIXED_RTN
+	bool "Use different retransmission counts for each CIS"
+	help
+	  Request zero, one and two retransmissions on successive CISes to
+	  exercise interleaved traversal with different subevent counts.
+
+config TEST_CIS_MIXED_RTN_REVERSE
+	bool "Reverse the retransmission counts"
+	depends on TEST_CIS_MIXED_RTN
+	help
+	  Request two, one and zero retransmissions on successive CISes to
+	  exercise skipping later CISes whose subevents are exhausted.
+
 config TEST_FT_SKIP_SUBEVENTS
 	bool
 	help

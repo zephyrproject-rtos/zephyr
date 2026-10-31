@@ -314,6 +314,18 @@ static void iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_TEST_CIS_MIXED_RTN) &&
+	    (iso_info.type == BT_ISO_CHAN_TYPE_CENTRAL)) {
+		size_t index = chan - iso_chan;
+		uint8_t expected_nse = chan->qos->tx->rtn + 1U;
+
+		if (iso_info.max_subevent != expected_nse) {
+			FAIL("CIS %zu: expected NSE %u, got %u\n", index,
+			     expected_nse, iso_info.max_subevent);
+			return;
+		}
+	}
+
 	printk("ISO Channel %p connected\n", chan);
 
 	k_sem_give(&sem_iso_conn);
@@ -398,6 +410,9 @@ static void test_cis_central(void)
 		iso_tx[i].phy = BT_GAP_LE_PHY_2M;
 		if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
 			iso_tx[i].rtn = 2U;
+		} else if (IS_ENABLED(CONFIG_TEST_CIS_MIXED_RTN)) {
+			iso_tx[i].rtn = IS_ENABLED(CONFIG_TEST_CIS_MIXED_RTN_REVERSE) ?
+					2U - (i % 3U) : i % 3U;
 		} else {
 			iso_tx[i].rtn = 0U;
 		}

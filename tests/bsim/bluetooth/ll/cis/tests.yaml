@@ -68,7 +68,8 @@ tests:
       - overlay-legacy_adv_acl_first_sequential.conf
     harness_config:
       fixture: bsim_multi_test
-      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_sequential_conf
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_sequential_conf
       tests_scripts:
         - tests_scripts/connected_iso_legacy_adv_acl_first_sequential.sh
 
@@ -77,7 +78,8 @@ tests:
       - overlay-legacy_adv_acl_first_interleaved.conf
     harness_config:
       fixture: bsim_multi_test
-      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_interleaved_conf
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_interleaved_conf
       tests_scripts:
         - tests_scripts/connected_iso_legacy_adv_acl_first_interleaved.sh
 
@@ -114,7 +116,8 @@ tests:
       - overlay-acl_group_acl_first_sequential.conf
     harness_config:
       fixture: bsim_multi_test
-      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_sequential_conf
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_sequential_conf
       tests_scripts:
         - tests_scripts/connected_iso_acl_group_acl_first_sequential.sh
 
@@ -123,7 +126,8 @@ tests:
       - overlay-acl_group_acl_first_interleaved.conf
     harness_config:
       fixture: bsim_multi_test
-      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_interleaved_conf
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_interleaved_conf
       tests_scripts:
         - tests_scripts/connected_iso_acl_group_acl_first_interleaved.sh
 
@@ -144,6 +148,26 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-peripheral_cis_interleaved_conf
       tests_scripts:
         - tests_scripts/connected_iso_peripheral_cis_interleaved.sh
+
+  bluetooth.controller.cis.peripheral_cis.mixed_interleaved:
+    extra_overlay_confs:
+      - overlay-peripheral_cis_mixed_interleaved.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_cis_prj_conf_overlay-peripheral_cis_mixed_interleaved_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_peripheral_cis_mixed_interleaved.sh
+
+  bluetooth.controller.cis.peripheral_cis.mixed_reverse_interleaved:
+    extra_overlay_confs:
+      - overlay-peripheral_cis_mixed_reverse.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_ll_cis_prj_conf_overlay-peripheral_cis_mixed_reverse_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_peripheral_cis_mixed_reverse.sh
 
   bluetooth.controller.cis.acl_first_ft_per_skip_2_se:
     extra_overlay_confs:
