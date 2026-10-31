@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# PSOC™ Control C3M8 Evaluation Kit (KIT_PSC3M8_EVK)
+
+config BOARD_KIT_PSC3M8_EVK
+	select SOC_PSC3M8GFS3PAHQ1_MAIN
