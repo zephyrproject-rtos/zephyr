@@ -11,6 +11,13 @@
 #include <kernel_offsets.h>
 
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
+GEN_OFFSET_SYM(_thread_arch_t, flags);
+#ifdef CONFIG_HW_STACK_PROTECTION
+GEN_OFFSET_SYM(_thread_arch_t, framelimit);
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(_thread_arch_t, user_framelimit);
+#endif
+#endif
 
 GEN_OFFSET_SYM(_callee_saved_t, r29_sp);
 GEN_OFFSET_SYM(_callee_saved_t, r30_fp);

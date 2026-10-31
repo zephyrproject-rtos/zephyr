@@ -52,9 +52,6 @@ GTEXT(z_hexagon_enhanced_interrupt)
 GTEXT(z_hexagon_event_handler)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_hexagon_arch_switch)
-#ifdef CONFIG_HW_STACK_PROTECTION
-GTEXT(z_hexagon_event_exit_stack_protect)
-#endif
 #ifdef CONFIG_USERSPACE
 GTEXT(z_hexagon_event_exit_user_sync)
 #endif
@@ -63,10 +60,35 @@ GDATA(_kernel)
 /* offsets.h will be generated and included during build */
 #include <offsets_short.h>
 
+#if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)
+/*
+ * Load FRAMELIMIT (c16) from the given _current->arch field. Clobbers r0
+ * and p0; only for use once both are saved.
+ */
+.macro LOAD_CURRENT_FRAMELIMIT field
+	r0 = ##_kernel
+	r0 = memw(r0+#(___kernel_t_cpus_OFFSET + ___cpu_t_current_OFFSET))
+	r0 = add(r0, #___thread_t_arch_OFFSET)
+	r0 = memw(r0+#\field)
+	c16 = r0
+.endm
+#endif
+
 /* Common event entry macro */
 .macro EVENT_ENTRY event_num
-	/* Allocate space for event context on the interrupted code's stack */
-	allocframe(#EVENT_CTX_SIZE)
+	/*
+	 * Allocate space for event context on the interrupted code's stack.
+	 * This is allocframe(#EVENT_CTX_SIZE) without its FRAMELIMIT check:
+	 * on an event from user mode r29 is already the privileged stack
+	 * while FRAMELIMIT still holds the user stack's limit, and on a
+	 * stack-limit exception r29 is still at the limit. Not encoding LR
+	 * with FRAMEKEY is fine as EVENT_EXIT pops the frame by hand too.
+	 */
+	{
+		memd(r29+#-8) = r31:30
+		r30 = add(r29, #-8)
+		r29 = add(r29, #-(EVENT_CTX_SIZE + 8))
+	}
 
 	/* Save r0:r1 first -- we need r0 as scratch */
 	memd(r29+#EVENT_CTX_R0_R1) = r1:0
@@ -126,6 +148,51 @@ GDATA(_kernel)
 	r0 = usr
 	memw(r29+#EVENT_CTX_USR) = r0
 
+#ifdef CONFIG_HW_STACK_PROTECTION
+#ifdef CONFIG_USERSPACE
+	/* From user mode: switch to the privileged stack's FRAMELIMIT. */
+	r0 = memw(r29+#EVENT_CTX_GSR)
+	{
+		p0 = tstbit(r0, #31)
+		if (!p0.new) jump:t 1f
+	}
+	LOAD_CURRENT_FRAMELIMIT ___thread_arch_t_framelimit_OFFSET
+1:
+#endif
+.if \event_num == 2
+	/*
+	 * A stack-limit exception leaves SP near the bottom of the stack,
+	 * with the frame above just fitting in the headroom the limit
+	 * keeps (see z_arch_stack_protection_setup()). The fatal error
+	 * handler cannot run there, so run it on the otherwise unused ISR
+	 * stack with no limit; the faulting thread is not resumed. The
+	 * event frame pointer is kept on that stack for EVENT_EXIT.
+	 */
+	r0 = memw(r29+#EVENT_CTX_GSR)
+	{
+		r0 = and(r0, #0xff)
+	}
+	{
+		p0 = cmp.eq(r0, #0x27)
+		if (!p0.new) jump:t 2f
+	}
+	{
+		r0 = #0
+		r1 = r29
+	}
+	c16 = r0
+	r29 = ##(z_interrupt_stacks + __z_interrupt_stack_SIZEOF - 8)
+	memw(r29+#0) = r1
+	{
+		r0 = #\event_num
+		call ##z_hexagon_event_handler
+	}
+	r29 = memw(r29+#0)
+	jump 4f
+2:
+.endif
+#endif
+
 	/* Call C handler with event number and saved context */
 	{
 		r0 = #\event_num
@@ -134,6 +201,7 @@ GDATA(_kernel)
 	{
 		call ##z_hexagon_event_handler
 	}
+4:
 .endm
 
 /* Common event exit macro */
@@ -191,13 +259,6 @@ GDATA(_kernel)
 		call ##z_hexagon_arch_switch
 	}
 
-#ifdef CONFIG_HW_STACK_PROTECTION
-	/* Update FRAMELIMIT for the newly scheduled thread */
-	{
-		call ##z_hexagon_event_exit_stack_protect
-	}
-#endif
-
 _event_no_switch_\event_id:
 #endif /* CONFIG_MULTITHREADING */
 
@@ -209,6 +270,20 @@ _event_no_switch_\event_id:
 	{
 		call ##z_hexagon_event_exit_user_sync
 	}
+#endif
+
+#if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)
+	/*
+	 * Back to user mode: load the user stack's FRAMELIMIT. Nothing
+	 * opens a frame from here on.
+	 */
+	r0 = memw(r29+#EVENT_CTX_GSR)
+	{
+		p0 = tstbit(r0, #31)
+		if (!p0.new) jump:t 3f
+	}
+	LOAD_CURRENT_FRAMELIMIT ___thread_arch_t_user_framelimit_OFFSET
+3:
 #endif
 
 _event_restore_\event_id:
@@ -270,9 +345,10 @@ _event_restore_\event_id:
 		r1:0 = memd(r29+#EVENT_CTX_R0_R1)
 	}
 
-	/* Pop the event frame */
+	/* Pop the event frame (deallocframe, minus FRAMEKEY decoding) */
 	{
-		deallocframe
+		r31:30 = memd(r30+#0)
+		r29 = add(r30, #8)
 	}
 
 	/* Return to interrupted context via HVM vmrte */

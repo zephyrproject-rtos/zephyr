@@ -252,6 +252,16 @@ void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2, void 
 	 */
 	_hexagon_user_mode_active = 1;
 
+#ifdef CONFIG_HW_STACK_PROTECTION
+	/*
+	 * Once this thread's FRAMELIMIT is priv_stack's, a switch away and
+	 * back would load it while SP is still on this stack; keep
+	 * interrupts off until vmrte, which re-enables them from GSR.IE.
+	 */
+	(void)arch_irq_lock();
+	z_hexagon_stack_protect_user_enter(thread);
+#endif
+
 	/*
 	 * H2 vmrte with GSSR.UM swaps r29 <-> GOSP.  To end up with
 	 * r29=user_sp in user mode, set:
