@@ -479,8 +479,15 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 			switch (H5_HDR_PKT_TYPE(hdr)) {
 			case HCI_EVENT_PKT:
 				/* The buffer is allocated only once we know
-				 * the exact event type.
+				 * the exact event type, so a packet without
+				 * payload never gets one.
 				 */
+				if (remaining == 0) {
+					LOG_ERR("Zero-length event packet");
+					h5_reset_rx(h5);
+					continue;
+				}
+
 				h5->rx_state = PAYLOAD;
 				break;
 			case HCI_ACLDATA_PKT:
