@@ -22,3 +22,21 @@ config BCM2835_ARMCTRL_IC
 	  2 W) it cascades under the BCM2836 ARM-local intc; on BCM2835
 	  (Pi 1 / Pi Zero W) it is the root controller wired directly to
 	  the ARM core IRQ line.
+
+config BCM2712_MIP
+	bool "BCM2712 MSI interrupt proxy"
+	default y
+	depends on DT_HAS_BRCM_BCM2712_MIP_ENABLED
+	select MSI_PROXY
+	help
+	  Driver for the BCM2712 MSI interrupt proxy (MIP). The MIP
+	  converts endpoint MSI writes into host interrupts and is
+	  consumed through the generic MSI proxy API.
+
+config BCM2712_MIP_INIT_PRIORITY
+	int "BCM2712 MIP init priority"
+	default 40
+	depends on BCM2712_MIP
+	help
+	  Initialisation priority of the BCM2712 MSI interrupt proxy.
+	  It must run before the RP1 interrupt controller.

@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2712 MSI interrupt proxy (MIP).
+
+  The MIP receives MSI/MSI-X writes from PCIe endpoints and raises a
+  GIC SPI for each write. Each MSI vector maps to one SPI:
+
+    SPI = brcm,msi-base-spi + brcm,msi-offset + vector
+
+  The MIP is an interrupt nexus: `interrupt-map` translates an MSI
+  vector to the host interrupt controller. It is also an interrupt
+  controller for the MSI vectors it serves.
+
+  The Raspberry Pi 5 routes the RP1 south bridge through mip0.
+
+compatible: "brcm,bcm2712-mip"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-map:
+    type: compound
+    required: true
+    description: |
+      Maps an MSI vector to the host interrupt controller. Entry layout
+      is <vector flags> <controller phandle> <controller specifier>.
+
+  msi-controller:
+    type: boolean
+    required: true
+
+  brcm,msi-base-spi:
+    type: int
+    required: true
+    description: First GIC SPI used for MSI vectors.
+
+  brcm,msi-num-spis:
+    type: int
+    required: true
+    description: |
+      Number of consecutive SPIs served by the MIP. Valid MSI vector
+      indices run from 0 to brcm,msi-num-spis - 1 - brcm,msi-offset.
+
+  brcm,msi-offset:
+    type: int
+    default: 0
+    description: |
+      Value added to the MSI vector index to obtain the MSI data written
+      to endpoints. The same value selects the MIP mask bit, so it must
+      leave the highest valid value below brcm,msi-num-spis.
+
+  brcm,msi-pci-addr:
+    type: array
+    required: true
+    description: |
+      PCIe bus address that endpoints write to in order to raise an
+      MSI, as two cells (high, low).
+
+interrupt-cells:
+  - vector
+  - flags
