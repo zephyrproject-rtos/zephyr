@@ -1,21 +1,30 @@
 # Copyright (c) 2023 Bjarki Arge Andreasen
 # SPDX-License-Identifier: Apache-2.0
 
+config MODEM_CELLULAR_HW_DEPENDENCIES
+	bool "Generic cellular modem hardware dependencies"
+	depends on MODEM_CELLULAR
+	select MODEM_BACKEND_UART
+	select MODEM_CMUX
+	select MODEM_PPP
+	select NET_L2_PPP_MGMT
+	select NET_L2_PPP_OPTION_MRU
+	select NET_L2_PPP_PAP
+	help
+	  This is required for standard operation of the driver on real
+	  hardware, and should only be disabled for testing that needs
+	  to substitute out backend implementations.
+
 config MODEM_CELLULAR
 	bool "Generic cellular modem support"
+	imply MODEM_CELLULAR_HW_DEPENDENCIES
 	select GPIO
 	select MODEM_MODULES
-	select MODEM_PPP
-	select MODEM_CMUX
 	select MODEM_CHAT
 	select MODEM_PIPE
 	select MODEM_PIPELINK
-	select MODEM_BACKEND_UART
 	select UART_USE_RUNTIME_CONFIGURE
 	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
-	select NET_L2_PPP_OPTION_MRU
-	select NET_L2_PPP_PAP
-	select NET_L2_PPP_MGMT
 	select MODEM_CMUX_DEFAULT_MTU_127 if \
 		(DT_HAS_QUECTEL_BG95_ENABLED || DT_HAS_QUECTEL_BG96_ENABLED || \
 		DT_HAS_QUECTEL_EG21_G_ENABLED || DT_HAS_QUECTEL_EG25_G_ENABLED || \

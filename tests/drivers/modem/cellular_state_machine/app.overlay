@@ -1,0 +1,274 @@
+/*
+ * Copyright (c) 2026 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_gpio: modem-test-gpio {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <26>;
+		/* The ring indicator interrupts on its rising edge */
+		rising-edge;
+		status = "okay";
+	};
+
+	modem_uart_default: uart-emul-default {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 0 0>;
+			mdm-reset-gpios = <&test_gpio 1 0>;
+			status = "okay";
+		};
+	};
+
+	modem_uart_hold: uart-emul-hold {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_hold: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 2 0>;
+			mdm-reset-gpios = <&test_gpio 3 0>;
+			zephyr,mdm-reset-behavior = "hold_on_suspend";
+			status = "okay";
+		};
+	};
+
+	modem_uart_resume: uart-emul-resume {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_resume: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 4 0>;
+			mdm-reset-gpios = <&test_gpio 5 0>;
+			zephyr,mdm-reset-behavior = "toggle_on_resume";
+			status = "okay";
+		};
+	};
+
+	modem_uart_recovery: uart-emul-recovery {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_recovery: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 6 0>;
+			mdm-reset-gpios = <&test_gpio 7 0>;
+			zephyr,mdm-reset-behavior = "toggle_on_recovery";
+			status = "okay";
+		};
+	};
+
+	modem_uart_no_network: uart-emul-no-network {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_no_network: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 8 0>;
+			mdm-reset-gpios = <&test_gpio 9 0>;
+			no-network-script;
+			status = "okay";
+		};
+	};
+
+	modem_uart_autostart: uart-emul-autostart {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_autostart: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 10 0>;
+			mdm-reset-gpios = <&test_gpio 11 0>;
+			autostarts;
+			startup-time-ms = <500>;
+			status = "okay";
+		};
+	};
+
+	modem_uart_status: uart-emul-status {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_status: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 12 0>;
+			mdm-reset-gpios = <&test_gpio 13 0>;
+			mdm-status-gpios = <&test_gpio 14 0>;
+			status = "okay";
+		};
+	};
+
+	modem_uart_no_shutdown: uart-emul-no-shutdown {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_no_shutdown: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 15 0>;
+			mdm-reset-gpios = <&test_gpio 16 0>;
+			no-shutdown-script;
+			status = "okay";
+		};
+	};
+
+	modem_uart_no_baudrate: uart-emul-no-baudrate {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_no_baudrate: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 17 0>;
+			mdm-reset-gpios = <&test_gpio 18 0>;
+			no-set-baudrate-script;
+			status = "okay";
+		};
+	};
+
+	modem_uart_slow: uart-emul-slow {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		/* Every timed state lasts long enough for a test to act within it */
+		modem_slow: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 19 0>;
+			mdm-reset-gpios = <&test_gpio 20 0>;
+			power-pulse-duration-ms = <200>;
+			reset-pulse-duration-ms = <200>;
+			startup-time-ms = <200>;
+			cmux-disconnect-timeout-ms = <200>;
+			shutdown-time-ms = <200>;
+			zephyr,mdm-reset-behavior = "toggle_on_resume";
+			status = "okay";
+		};
+	};
+
+	modem_uart_no_power: uart-emul-no-power {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_no_power: modem {
+			compatible = "zephyr,modem-cellular-test";
+			status = "okay";
+		};
+	};
+
+	modem_uart_no_dlci_setup: uart-emul-no-dlci-setup {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_no_dlci_setup: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 21 0>;
+			mdm-reset-gpios = <&test_gpio 22 0>;
+			no-dlci-setup-script;
+			status = "okay";
+		};
+	};
+
+	modem_uart_no_periodic: uart-emul-no-periodic {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_no_periodic: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 23 0>;
+			mdm-reset-gpios = <&test_gpio 24 0>;
+			no-periodic-script;
+			status = "okay";
+		};
+	};
+
+	modem_uart_info: uart-emul-info {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_info: modem {
+			compatible = "zephyr,modem-cellular-test";
+			modem-info-script;
+			status = "okay";
+		};
+	};
+
+	modem_uart_board_init: uart-emul-board-init {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		/* The only instance with a board init script */
+		modem_board_init: modem {
+			compatible = "zephyr,modem-cellular-test";
+			status = "okay";
+		};
+	};
+
+	modem_uart_ring: uart-emul-ring {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem_ring: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-ring-gpios = <&test_gpio 25 0>;
+			status = "okay";
+		};
+	};
+
+	aliases {
+		modem = &modem;
+	};
+};

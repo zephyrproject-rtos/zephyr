@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_gpio: modem-test-gpio {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <3>;
+		/* The ring indicator interrupts on its rising edge */
+		rising-edge;
+		status = "okay";
+	};
+
+	modem_uart_on_demand: uart-emul-on-demand {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		/* On-demand connect requires a modem without a network script */
+		modem_on_demand: modem {
+			compatible = "zephyr,modem-cellular-test";
+			mdm-power-gpios = <&test_gpio 0 0>;
+			mdm-reset-gpios = <&test_gpio 1 0>;
+			mdm-ring-gpios = <&test_gpio 2 0>;
+			no-network-script;
+			status = "okay";
+		};
+	};
+};
