@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_GIC_SW
+	bool "GIC software interrupt MBOX driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MBOX_GIC_SW_ENABLED
+	depends on GIC
+	help
+	  Signal-only mailbox that sets GIC SPIs pending, for operating
+	  systems on different cores sharing one GIC distributor.
