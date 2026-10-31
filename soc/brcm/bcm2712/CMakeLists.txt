@@ -2,6 +2,10 @@
 
 zephyr_sources_ifdef(CONFIG_PINCTRL pinctrl_soc.c)
 
+if(CONFIG_UART_PL011 AND CONFIG_UART_INTERRUPT_DRIVEN AND NOT CONFIG_RP1_IRQ)
+  zephyr_sources(soc.c)
+endif()
+
 if(CONFIG_ARM64_GIC_SOC_IRQ_HOOKS)
   zephyr_sources(soc_irq.c)
   zephyr_iterable_section(NAME bcm2712_irq_route GROUP RODATA_REGION)
