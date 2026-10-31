@@ -157,7 +157,8 @@ struct lwan_region_ops {
 	 * @param ch Channel array.
 	 * @param count Number of channels.
 	 * @param freq Output: selected frequency.
-	 * @param dr Output: selected datarate index.
+	 * @param dr Output (on success or -ENOBUFS): datarate index the
+	 *           join request will use.
 	 * @param delay_ms Output (only on -ENOBUFS): ms until the earliest
 	 *                 matching channel opens.  Not touched on success
 	 *                 or -ENOENT.
