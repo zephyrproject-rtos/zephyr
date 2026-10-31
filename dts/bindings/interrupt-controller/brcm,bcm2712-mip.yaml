@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2712 MSI interrupt proxy (MIP).
+
+  The MIP receives MSI/MSI-X writes from PCIe endpoints and raises a
+  GIC SPI for each write. The vector cell is the hardware channel
+  number, used directly as the MSI message data and the MIP mask bit.
+
+  The MIP is an interrupt nexus: `interrupt-map` describes the fixed
+  connection from each hardware channel to a GIC SPI. The map defines
+  the available channels and their host interrupts for static IRQ
+  numbering in Zephyr.
+
+  The Raspberry Pi 5 routes the RP1 south bridge through mip0.
+
+compatible: "brcm,bcm2712-mip"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-map:
+    type: compound
+    required: true
+    description: |
+      Maps a hardware channel to the host interrupt controller. Entry
+      layout is <channel flags> <controller phandle> <controller specifier>.
+      Entries must describe a nonempty, ascending consecutive range of
+      channels below brcm,msi-num-spis and consecutive GIC SPIs. The first
+      channel may be nonzero. Both sides use edge-triggered interrupts.
+
+  msi-controller:
+    type: boolean
+    required: true
+
+  brcm,msi-num-spis:
+    type: int
+    required: true
+    description: |
+      Number of hardware channels connected to GIC SPIs.
+      Hardware channel numbers run from 0 to brcm,msi-num-spis - 1.
+      The interrupt-map may expose a consecutive subset of these channels.
+
+  brcm,msi-pci-addr:
+    type: array
+    required: true
+    description: |
+      PCIe bus address that endpoints write to in order to raise an
+      MSI, as two cells (high, low).
+
+interrupt-cells:
+  - vector
+  - flags
