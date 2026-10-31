@@ -179,10 +179,6 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		return -EPERM;
 	}
 
-	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
-		return -ENETDOWN;
-	}
-
 	if (len > 0 && data == NULL) {
 		return -EINVAL;
 	}
@@ -377,12 +373,6 @@ int lorawan_request_link_check(bool force_request)
 
 	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
 		return -EPERM;
-	}
-
-	/* The forced empty uplink needs an established session */
-	if (force_request &&
-	    !atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
-		return -ENETDOWN;
 	}
 
 	return engine_post_req_wait(&msg);
