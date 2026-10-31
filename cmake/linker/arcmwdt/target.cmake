@@ -151,6 +151,7 @@ macro(toolchain_ld_relocation)
   set(MEM_RELOCATION_SRAM_BSS_LD
        "${PROJECT_BINARY_DIR}/include/generated/linker_sram_bss_relocate.ld")
   set(MEM_RELOCATION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
+  set(relocation_directives "$<TARGET_PROPERTY:code_data_relocation_target,RELOCATION_DIRECTIVES>")
 
   add_custom_command(
     OUTPUT ${MEM_RELOCATION_CODE} ${MEM_RELOCATION_LD}
@@ -159,7 +160,7 @@ macro(toolchain_ld_relocation)
     ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     -d ${APPLICATION_BINARY_DIR}
-    -i \"$<TARGET_PROPERTY:code_data_relocation_target,INTERFACE_SOURCES>\"
+    -i \"$<TARGET_GENEX_EVAL:code_data_relocation_target,${relocation_directives}>\"
     -o ${MEM_RELOCATION_LD}
     -s ${MEM_RELOCATION_SRAM_DATA_LD}
     -b ${MEM_RELOCATION_SRAM_BSS_LD}

@@ -2113,10 +2113,11 @@ function(zephyr_code_relocate)
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
   # each directive can embed multiple CMake lists, representing flags and files,
   # the latter of which can come from generator expressions.
+  # Use a custom property so the File API does not interpret directives as sources.
   get_property(code_rel_str TARGET code_data_relocation_target
-    PROPERTY INTERFACE_SOURCES)
+    PROPERTY RELOCATION_DIRECTIVES)
   set_property(TARGET code_data_relocation_target
-    PROPERTY INTERFACE_SOURCES
+    PROPERTY RELOCATION_DIRECTIVES
     "${code_rel_str}\n${CODE_REL_LOCATION}:${flag_list}:${file_list},${CODE_REL_FILTER}")
 endfunction()
 
