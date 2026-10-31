@@ -22,6 +22,9 @@ include: [interrupt-controller.yaml, base.yaml]
 properties:
   reg:
     required: true
+    description: |
+      MIP register block. Only CPU-accessible resources belong in reg; the
+      PCIe doorbell address is described by brcm,msi-pci-addr.
 
   interrupt-map:
     type: compound
@@ -49,8 +52,16 @@ properties:
     type: array
     required: true
     description: |
-      PCIe bus address that endpoints write to in order to raise an
-      MSI, as two cells (high, low).
+      PCIe bus address that endpoints write to in order to raise an MSI, as
+      two cells (high, low). This is an address in the PCIe bus address space
+      and is not translated through the parent bus ranges.
+
+  brcm,msi-window-size:
+    type: int
+    required: true
+    description: |
+      Size in bytes of the doorbell window that the root complex must map
+      from brcm,msi-pci-addr to the MIP register block.
 
 interrupt-cells:
   - vector
