@@ -35,18 +35,25 @@ The wakeup source is configured through the :ref:`WUC (Wakeup Controller)
   worker thread blocks in :c:func:`k_sleep`, so the cycle repeats automatically.
 
 * ``CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON`` resumes on a WUU external pin transition (the
-  board's ``wakeup-button``, SW2). Deep Power Down resets the GPIO, so there is
+  board's ``wakeup-button``: SW3 on FRDM-MCXA153, SW2 on the other supported
+  FRDM boards). Deep Power Down resets the GPIO, so there is
   no live GPIO edge to catch on resume - the press is latched only by the WUU.
   The sample therefore treats the suspend-to-RAM resume itself as the wake signal
   (no other wakeup source is armed), observed from a PM notifier that releases the
-  worker thread. Press SW2 to advance each cycle.
+  worker thread. Press the board's wakeup button to advance each cycle.
 
 .. note::
 
    On MCXN SoCs only SRAMA (the first 32 KB, retained by the VBAT RAM LDO)
    survives Deep Power Down, so the whole retained working set must fit in SRAMA
-   and ``zephyr,sram`` must point to it. On MCXA SoCs all SRAM is retained by the
-   SPC SRAM retention LDO, so no placement constraint applies.
+   and ``zephyr,sram`` must point to it. The ``mcxn.overlay`` uses 24 KB at
+   ``0x20002000`` to avoid the boot ROM scratch area.
+
+   On the supported MCXA boards other than FRDM-MCXA577, all SRAM is retained
+   by the SPC SRAM retention LDO, so no placement constraint applies.
+   FRDM-MCXA577 instead retains arrays A0 and A3 through the VBAT backup SRAM
+   regulator. Its board overlay places the whole working set in A3, 16 KB at
+   ``0x20004000``; the full board RAM allocation cannot be used for this sample.
 
 Building and Running
 ********************
@@ -73,7 +80,8 @@ Sample Output
    Resumed from suspend-to-RAM; retained counter is 10
    Completed 10 suspend-to-RAM cycles
 
-With ``CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON`` each cycle instead waits for an SW2 press:
+With ``CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON`` each cycle instead waits for a wakeup
+button press (SW2 on FRDM-MCXN236):
 
 .. code-block:: console
 
