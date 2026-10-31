@@ -1,0 +1,5 @@
+family:
+- name: qemu_virt_m68k
+  socs:
+  - name: qemu_virt_m68k_m68000
+  - name: qemu_virt_m68k_m68010
