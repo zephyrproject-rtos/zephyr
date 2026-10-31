@@ -18,11 +18,16 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 
-#include <cy_canfd.h>
-
 LOG_MODULE_REGISTER(can_infineon, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT infineon_can
+
+#define IFX_CANFD_CTL            0x1000U
+#define IFX_CANFD_CTL_MRAM_OFF   BIT(31)
+#define IFX_CANFD_TS_CTL         0x1020U
+#define IFX_CANFD_TS_CTL_ENABLED BIT(31)
+#define IFX_CANFD_ECC_CTL        0x1080U
+#define IFX_CANFD_ECC_CTL_ECC_EN BIT(16)
 
 struct can_infineon_data {
 #if !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
@@ -51,7 +56,7 @@ struct can_infineon_config {
  * channel driver can access the parent wrapper's config.
  */
 struct canfd_ifx_ctrl_config {
-	CANFD_Type *base;
+	mm_reg_t base;
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	bool timestamp_counter;
 #endif /* CONFIG_CAN_RX_TIMESTAMP */
@@ -308,12 +313,11 @@ DT_INST_FOREACH_STATUS_OKAY(CAN_INFINEON_MCAN_INIT);
 static int canfd_ifx_ctrl_init(const struct device *dev)
 {
 	const struct canfd_ifx_ctrl_config *cfg = dev->config;
-	uint32_t ctl;
+	mm_reg_t base = cfg->base;
 
 	/* Power on MRAM (clear CTL.MRAM_OFF) */
-	ctl = cfg->base->CTL;
-	ctl &= ~CANFD_CTL_MRAM_OFF_Msk;
-	cfg->base->CTL = ctl;
+	sys_write32(sys_read32(base + IFX_CANFD_CTL) & ~IFX_CANFD_CTL_MRAM_OFF,
+		    base + IFX_CANFD_CTL);
 
 	/*
 	 * Wait for MRAM power-up.  The PDL recommends 150 CPU cycles
@@ -324,13 +328,13 @@ static int canfd_ifx_ctrl_init(const struct device *dev)
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	/* Enable the shared timestamp counter if configured */
 	if (cfg->timestamp_counter) {
-		cfg->base->TS_CTL = CANFD_TS_CTL_ENABLED_Msk;
+		sys_write32(IFX_CANFD_TS_CTL_ENABLED, base + IFX_CANFD_TS_CTL);
 	}
 #endif /* CONFIG_CAN_RX_TIMESTAMP */
 
 	/* Enable ECC if configured */
 	if (cfg->ecc_enabled) {
-		cfg->base->ECC_CTL = CANFD_ECC_CTL_ECC_EN_Msk;
+		sys_write32(IFX_CANFD_ECC_CTL_ECC_EN, base + IFX_CANFD_ECC_CTL);
 	}
 
 	return 0;
@@ -338,7 +342,7 @@ static int canfd_ifx_ctrl_init(const struct device *dev)
 
 #define CANFD_IFX_CTRL_INIT(n)                                                                     \
 	static const struct canfd_ifx_ctrl_config canfd_ifx_ctrl_cfg_##n = {                       \
-		.base = (CANFD_Type *)DT_INST_REG_ADDR_BY_NAME(n, wrapper),                        \
+		.base = DT_INST_REG_ADDR_BY_NAME(n, wrapper),                                      \
 		.ecc_enabled = DT_INST_PROP(n, ecc_enabled),                                       \
 		IF_ENABLED(CONFIG_CAN_RX_TIMESTAMP,                                                \
 			   (.timestamp_counter = DT_INST_PROP(n, shared_timestamp_counter),)) };   \
