@@ -85,6 +85,11 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* Display
+
+  * :c:func:`display_set_timing`
+  * :c:func:`display_get_timing`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
