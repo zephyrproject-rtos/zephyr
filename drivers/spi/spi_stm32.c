@@ -982,6 +982,43 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 					   const struct spi_buf_set *tx_bufs,
 					   const struct spi_buf_set *rx_bufs);
 
+#if defined(CONFIG_SPI_STM32_DMA) && defined(CONFIG_DCACHE)
+/* Point the transfer at the bounce buffer, return false if it does not fit */
+static bool spi_stm32_dma_bounce(struct spi_stm32_data *data, const uint8_t *tx_buf,
+				 uint8_t *rx_buf, uint32_t buf_len)
+{
+#ifdef SPI_STM32_DMA_BOUNCE
+	if (buf_len > sizeof(data->dma_bounce)) {
+		return false;
+	}
+
+	/*
+	 * A full duplex transfer can share the buffer: the DMA reads each frame to transmit
+	 * before the frame received in its place.
+	 */
+	if (tx_buf != NULL) {
+		memcpy(data->dma_bounce, tx_buf, buf_len);
+		data->ctx.tx_buf = data->dma_bounce;
+	}
+	if (rx_buf != NULL) {
+		data->ctx.rx_buf = data->dma_bounce;
+		data->bounce_rx_buf = rx_buf;
+		data->bounce_len = buf_len;
+	}
+	sys_cache_data_flush_and_invd_range(data->dma_bounce, ROUND_UP(buf_len, 32));
+
+	return true;
+#else
+	ARG_UNUSED(data);
+	ARG_UNUSED(tx_buf);
+	ARG_UNUSED(rx_buf);
+	ARG_UNUSED(buf_len);
+
+	return false;
+#endif /* SPI_STM32_DMA_BOUNCE */
+}
+#endif /* CONFIG_SPI_STM32_DMA && CONFIG_DCACHE */
+
 static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_config *config,
 				      const uint8_t *tx_buf, uint8_t *rx_buf, uint32_t buf_len)
 {
@@ -1032,9 +1069,11 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 #ifdef CONFIG_DCACHE
 		if ((tx_buf != NULL && !stm32_buf_in_nocache((uintptr_t)tx_buf, buf_len)) ||
 		    (rx_buf != NULL && !stm32_buf_in_nocache((uintptr_t)rx_buf, buf_len))) {
-			LOG_ERR("SPI DMA transfers not supported on cached memory");
-			spi_stm32_iodev_complete(dev, -EINVAL);
-			return;
+			if (!spi_stm32_dma_bounce(data, tx_buf, rx_buf, buf_len)) {
+				LOG_ERR("SPI DMA transfers not supported on cached memory");
+				spi_stm32_iodev_complete(dev, -EINVAL);
+				return;
+			}
 		}
 #endif /* CONFIG_DCACHE */
 		uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
@@ -1136,6 +1175,16 @@ static void spi_stm32_iodev_complete(const struct device *dev, int status)
 {
 	struct spi_stm32_data *data = dev->data;
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
+
+#ifdef SPI_STM32_DMA_BOUNCE
+	if (data->bounce_rx_buf != NULL) {
+		if (status == 0) {
+			sys_cache_data_invd_range(data->dma_bounce, ROUND_UP(data->bounce_len, 32));
+			memcpy(data->bounce_rx_buf, data->dma_bounce, data->bounce_len);
+		}
+		data->bounce_rx_buf = NULL;
+	}
+#endif /* SPI_STM32_DMA_BOUNCE */
 
 	if (status == 0 && (rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) != 0) {
 		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);

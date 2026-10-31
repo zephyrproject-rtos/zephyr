@@ -31,6 +31,16 @@ config SPI_STM32_DMA
 	  This can be used with the SPI_RTIO config to have SPI
 	  transactions using DMA + RTIO
 
+config SPI_STM32_DMA_BOUNCE_SIZE
+	int "DMA bounce buffer of each SPI instance, in bytes"
+	default 0
+	depends on SPI_STM32_DMA && SPI_RTIO && DCACHE
+	help
+	  With RTIO, a transfer whose buffer the DMA cannot use, in cached
+	  memory or in a tightly coupled memory, is copied through a buffer of
+	  this size that is kept coherent with the data cache. Longer
+	  transfers fail as without it. 0 disables the bounce buffer.
+
 config SPI_STM32_ERRATA_BUSY
 	bool
 	default y

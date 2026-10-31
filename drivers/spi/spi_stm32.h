@@ -69,6 +69,10 @@ struct stream {
 };
 #endif
 
+#if defined(CONFIG_SPI_STM32_DMA_BOUNCE_SIZE) && (CONFIG_SPI_STM32_DMA_BOUNCE_SIZE > 0)
+#define SPI_STM32_DMA_BOUNCE
+#endif
+
 struct spi_stm32_data {
 #ifdef CONFIG_SPI_RTIO
 	struct spi_rtio *rtio_ctx;
@@ -82,6 +86,12 @@ struct spi_stm32_data {
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
+#ifdef SPI_STM32_DMA_BOUNCE
+	/* the buffer of the transfer that receives through dma_bounce, NULL if none */
+	uint8_t *bounce_rx_buf;
+	size_t bounce_len;
+	uint8_t dma_bounce[ROUND_UP(CONFIG_SPI_STM32_DMA_BOUNCE_SIZE, 32)] __aligned(32);
+#endif /* SPI_STM32_DMA_BOUNCE */
 #endif /* CONFIG_SPI_STM32_DMA */
 	bool pm_policy_state_on;
 };
