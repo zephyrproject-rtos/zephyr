@@ -19,6 +19,7 @@ config WIFI_NM_WPA_SUPPLICANT
 	select COMMON_LIBC_MALLOC
 	select ZVFS
 	select ZVFS_EVENTFD
+	select CRC
 	help
 	  WPA supplicant as a network management backend for WIFI_NM.
 
