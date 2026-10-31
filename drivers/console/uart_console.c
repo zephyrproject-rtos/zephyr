@@ -520,6 +520,7 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 					/* break to avoid double line*/
 					break;
 				}
+				__fallthrough;
 			case '\r':
 				cmd->line[cur + end] = '\0';
 				uart_poll_out(uart_console_dev, '\r');
