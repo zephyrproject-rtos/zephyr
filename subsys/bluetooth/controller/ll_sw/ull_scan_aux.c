@@ -702,7 +702,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= pdu_us;
 	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
@@ -717,19 +716,18 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		uint32_t ticks_now;
 		uint32_t diff;
 
-		/* CPU execution overhead to setup the radio for reception plus the
-		 * minimum prepare tick offset. And allow one additional event in
-		 * between as overhead (say, an advertising event in between got closed
-		 * when reception for auxiliary PDU is being setup).
+		/* CPU execution overhead to setup the radio for reception. And
+		 * allow one additional event in between as overhead (say, an
+		 * advertising event in between got closed when reception for
+		 * auxiliary PDU is being setup).
 		 */
-		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US) << 1;
 
 		ticks_now = ticker_ticks_now_get();
-		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset -
-				  HAL_TICKER_US_TO_TICKS(overhead_us);
-		diff = ticker_ticks_diff_get(ticks_now, ticks_at_expire);
-		if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		ticks_at_expire = ftr->ticks_anchor + ticks_aux_offset;
+		diff = ticker_ticks_diff_get(ticks_at_expire, ticks_now);
+		if (((diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) ||
+		    (diff < HAL_TICKER_US_TO_TICKS(overhead_us))) {
 			goto ull_scan_aux_rx_flush;
 		}
 	}
@@ -940,8 +938,13 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		aux->rx_head = rx;
 	}
 
+	/* Initialize the window size for the Auxiliary PDU reception. */
+	lll_aux->window_size_us = window_size_us;
+	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
+				     window_widening_us) << 1);
+
 	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
+		EVENT_OVERHEAD_START_US + ready_delay_us + lll_aux->window_size_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll_aux->phy) +
 		EVENT_OVERHEAD_END_US);
 
@@ -952,11 +955,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		ticks_slot_overhead = 0U;
 	}
 	ticks_slot_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-
-	/* Initialize the window size for the Auxiliary PDU reception. */
-	lll_aux->window_size_us = window_size_us;
-	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
-				     window_widening_us) << 1);
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain yield and start to reduce
@@ -2136,7 +2134,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 
 	/* Calculate the aux offset from start of the scan window */
 	aux_offset_us += ftr->radio_end_us;
-	aux_offset_us -= pdu_us;
 	aux_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
@@ -2155,13 +2152,12 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		/* CPU execution overhead to setup the radio for reception */
 		overhead_us = EVENT_OVERHEAD_START_US;
 #else /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-		/* CPU execution overhead to setup the radio for reception plus the
-		 * minimum prepare tick offset. And allow one additional event in
-		 * between as overhead (say, an advertising event in between got closed
-		 * when reception for auxiliary PDU is being setup).
+		/* CPU execution overhead to setup the radio for reception. And
+		 * allow one additional event in between as overhead (say, an
+		 * advertising event in between got closed when reception for
+		 * auxiliary PDU is being setup).
 		 */
-		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US +
-			       HAL_TICKER_TICKS_TO_US(HAL_TICKER_CNTR_CMP_OFFSET_MIN)) << 1;
+		overhead_us = (EVENT_OVERHEAD_END_US + EVENT_OVERHEAD_START_US) << 1;
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 		ticks_now = ticker_ticks_now_get();
@@ -2866,7 +2862,7 @@ static void chain_start_ticker(struct ll_scan_aux_chain *chain, bool replace)
 	ready_delay_us = lll_radio_rx_ready_delay_get(chain->lll.phy, PHY_FLAGS_S8);
 
 	scan_aux_set.ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
-		EVENT_OVERHEAD_START_US + ready_delay_us +
+		EVENT_OVERHEAD_START_US + ready_delay_us + chain->lll.window_size_us +
 		PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, chain->lll.phy) +
 		EVENT_OVERHEAD_END_US);
 

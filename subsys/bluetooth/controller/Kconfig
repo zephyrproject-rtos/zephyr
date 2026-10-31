@@ -944,6 +944,22 @@ config BT_CTLR_SYNC_ISO_INTERLEAVED
 	depends on BT_CTLR_SYNC_ISO
 	default y
 
+config BT_CTLR_SYNC_ISO_SE_B2B_RX
+	bool "Experimental: BIS subevent back-to-back reception [EXPERIMENTAL]"
+	depends on BT_CTLR_SYNC_ISO
+	depends on !BT_CTLR_TIFS_HW
+	depends on !BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	select EXPERIMENTAL
+	help
+	  Enable experimental back-to-back subevent reception for BIS using
+	  radio_switch_complete_and_b2b_se_rx(). This pre-schedules the next
+	  subevent RX by clearing the SW_SWITCH_TIMER at RADIO READY (instead
+	  of END), allowing the radio to be set up in advance for subsequent
+	  BIS subevents without depending on ISR latency for radio start timing.
+	  Subevents that are not the immediate next subevent, or whose
+	  pre-scheduled radio start was missed, are started using the event
+	  timer.
+
 config BT_CTLR_BROADCAST_ISO
 	bool
 	default BT_CTLR_ADV_ISO || BT_CTLR_SYNC_ISO
@@ -1034,6 +1050,7 @@ config BT_CTLR_SET_HOST_FEATURE
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_ISO_CENTRAL
+	select BT_CTLR_CONN_ISO_SEQUENTIAL if !BT_CTLR_CONN_ISO_INTERLEAVED
 	default y if BT_ISO_CENTRAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -1049,6 +1066,7 @@ config BT_CTLR_CENTRAL_ISO
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_ISO_PERIPHERAL
+	select BT_CTLR_CONN_ISO_SEQUENTIAL if !BT_CTLR_CONN_ISO_INTERLEAVED
 	default y if BT_ISO_PERIPHERAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -1064,6 +1082,26 @@ config BT_CTLR_PERIPHERAL_ISO
 config BT_CTLR_CONN_ISO
 	bool
 	default BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+
+config BT_CTLR_CONN_ISO_SEQUENTIAL
+	bool "LE Connected Isochronous Stream sequential packing"
+	depends on BT_CTLR_CONN_ISO
+	default y
+	help
+	  Enable support for sequential packing of CIS subevents where all
+	  subevents of one CIS complete before the next CIS starts.
+	  At least one of sequential or interleaved packing must be enabled.
+
+config BT_CTLR_CONN_ISO_INTERLEAVED
+	bool "LE Connected Isochronous Stream interleaved packing"
+	depends on BT_CTLR_CONN_ISO
+	default y if BT_CTLR_PERIPHERAL_ISO
+	help
+	  Enable support for interleaved packing of CIS subevents where first
+	  subevents of all CISes are adjacent, then second subevents, etc.
+	  At least one of sequential or interleaved packing must be enabled.
+	  Note: Interleaved packing with low latency policy requires the
+	  reliability policy to also be enabled for flush timeout calculation.
 
 config BT_CTLR_CONN_ISO_STREAMS
 	int "LE Connected Isochronous Streams"
