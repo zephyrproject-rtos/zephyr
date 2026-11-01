@@ -15,11 +15,11 @@
 /* Common bank select register and values */
 #define REG_BANK_SEL  0x76
 #define MASK_BANK_SEL GENMASK(2, 0)
-#define BIT_BANK0     0x000
-#define BIT_BANK1     0x001
-#define BIT_BANK2     0x010
-#define BIT_BANK3     0x011
-#define BIT_BANK4     0x100
+#define BIT_BANK0     0
+#define BIT_BANK1     1
+#define BIT_BANK2     2
+#define BIT_BANK3     3
+#define BIT_BANK4     4
 
 /* Helper macros for addressing registers in the 4 register banks
  * registers are defined as 16 bit values with the bank in the high
