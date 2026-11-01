@@ -188,13 +188,8 @@ static int gpio_rpi_pin_interrupt_configure(const struct device *dev,
 						enum gpio_int_mode mode,
 						enum gpio_int_trig trig)
 {
-	const struct gpio_rpi_config *config = dev->config;
 	const int offset = GPIO_RPI_PINS_PER_PORT * PORT_NO(dev);
 	uint32_t events = 0;
-
-	if (!config->has_irq) {
-		return -ENOTSUP;
-	}
 
 	gpio_set_irq_enabled(pin + offset, ALL_EVENTS, false);
 	if (mode != GPIO_INT_DISABLE) {
@@ -326,9 +321,14 @@ static int gpio_rpi_bank_init(const struct device *dev)
 #define GPIO_RPI_INIT_HIGH_DEV(node_id)
 #endif
 
+/* RP1 banks have individual interrupts; Pico ports share their parent's IRQ. */
+#define GPIO_RPI_IRQ_NODE(node_id)                                                                 \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, raspberrypi_rp1_gpio),                             \
+		    (node_id), (DT_PARENT(node_id)))
+
 #define GPIO_RPI_IRQ_FLAGS(node_id)                                                                \
-	COND_CODE_1(DT_IRQ_HAS_CELL(DT_PARENT(node_id), flags),                                    \
-		    (DT_IRQ(DT_PARENT(node_id), flags)), (0))
+	COND_CODE_1(DT_IRQ_HAS_CELL(GPIO_RPI_IRQ_NODE(node_id), flags),                            \
+		    (DT_IRQ(GPIO_RPI_IRQ_NODE(node_id), flags)), (0))
 
 /*
  * GPIO banks keep their register blocks on the parent node. Only bank0 is
@@ -358,12 +358,12 @@ static int gpio_rpi_bank_init(const struct device *dev)
 		GPIO_RPI_MMIO_MAP_ALL(node_id)                                                     \
 		IF_ENABLED(IS_GPIO_RPI_LO_NODE(node_id), (                                         \
 			(void)gpio_rpi_hal_irq_setup();                                            \
-			IF_ENABLED(DT_IRQ_HAS_IDX(DT_PARENT(node_id), 0), (                        \
-				IRQ_CONNECT(DT_IRQN(DT_PARENT(node_id)),                           \
-					    DT_IRQ(DT_PARENT(node_id), priority),                  \
+			IF_ENABLED(DT_IRQ_HAS_IDX(GPIO_RPI_IRQ_NODE(node_id), 0), (                \
+				IRQ_CONNECT(DT_IRQN(GPIO_RPI_IRQ_NODE(node_id)),                   \
+					    DT_IRQ(GPIO_RPI_IRQ_NODE(node_id), priority),          \
 					    gpio_rpi_isr, DEVICE_DT_GET(node_id),                  \
 					    GPIO_RPI_IRQ_FLAGS(node_id));                          \
-				irq_enable(DT_IRQN(DT_PARENT(node_id)));                           \
+				irq_enable(DT_IRQN(GPIO_RPI_IRQ_NODE(node_id)));                   \
 			))                                                                         \
 		))                                                                                 \
 	}                                                                                          \
@@ -372,7 +372,7 @@ static int gpio_rpi_bank_init(const struct device *dev)
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(node_id),                 \
 		},                                                                                 \
 		.ngpios = DT_PROP(node_id, ngpios),                                                \
-		.has_irq = DT_IRQ_HAS_IDX(DT_PARENT(node_id), 0),                                  \
+		.has_irq = DT_IRQ_HAS_IDX(GPIO_RPI_IRQ_NODE(node_id), 0),                          \
 		.bank_config_func = gpio_rpi_bank_config_##node_id,                                \
 		GPIO_RPI_MMIO_INIT_ALL(node_id)                                                    \
 		GPIO_RPI_INIT_HIGH_DEV(node_id)                                                    \

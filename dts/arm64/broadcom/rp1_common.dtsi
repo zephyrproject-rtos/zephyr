@@ -94,6 +94,8 @@
 			gpio0_0: gpio@0 {
 				compatible = "raspberrypi,rp1-gpio";
 				reg = <0>;
+				interrupt-parent = <&rp1_intc>;
+				interrupts = <RP1_IRQ_IO_BANK0 IRQ_TYPE_LEVEL>;
 				#gpio-cells = <2>;
 				gpio-controller;
 				ngpios = <28>;
@@ -103,6 +105,8 @@
 			gpio0_1: gpio@1 {
 				compatible = "raspberrypi,rp1-gpio";
 				reg = <1>;
+				interrupt-parent = <&rp1_intc>;
+				interrupts = <RP1_IRQ_IO_BANK1 IRQ_TYPE_LEVEL>;
 				#gpio-cells = <2>;
 				gpio-controller;
 				ngpios = <6>;
@@ -112,6 +116,8 @@
 			gpio0_2: gpio@2 {
 				compatible = "raspberrypi,rp1-gpio";
 				reg = <2>;
+				interrupt-parent = <&rp1_intc>;
+				interrupts = <RP1_IRQ_IO_BANK2 IRQ_TYPE_LEVEL>;
 				#gpio-cells = <2>;
 				gpio-controller;
 				ngpios = <20>;
