@@ -286,6 +286,11 @@ _event_no_switch_\event_id:
 	{
 		call ##z_hexagon_event_exit_user_sync
 	}
+
+	/* Reinstall this thread's hardware memory-domain map, if needed. */
+	{
+		call ##z_hexagon_mem_domain_switch
+	}
 #endif
 
 #if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)

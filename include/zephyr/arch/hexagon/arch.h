@@ -115,21 +115,36 @@ typedef uint32_t k_mem_partition_attr_t;
  *   bit 3: priv-writable (implies priv-readable)
  *   bit 4: priv-readable only (no user access)
  *
- * These values are placeholders until arch_mem_domain_partition_add()
- * is implemented to enforce them via the H2 page table permission bits.
+ * HVM maps have a single R/W/X set per page that binds privileged code
+ * too, so a user-accessible partition cannot give the kernel more than
+ * the user. There is no P_RW_U_RO or P_RWX_U_RX for that reason.
  */
 #define K_MEM_PARTITION_P_RW_U_RW  UINT32_C(0x0b) /* priv RW + user RW */
-#define K_MEM_PARTITION_P_RW_U_RO  UINT32_C(0x09) /* priv RW + user RO */
 #define K_MEM_PARTITION_P_RW_U_NA  UINT32_C(0x08) /* priv RW, no user */
 #define K_MEM_PARTITION_P_RO_U_RO  UINT32_C(0x11) /* priv RO + user RO */
 #define K_MEM_PARTITION_P_RO_U_NA  UINT32_C(0x10) /* priv RO, no user */
 #define K_MEM_PARTITION_P_NA_U_NA  UINT32_C(0x00) /* no access */
 #define K_MEM_PARTITION_P_RWX_U_RWX UINT32_C(0x0f) /* priv RWX + user RWX */
-#define K_MEM_PARTITION_P_RWX_U_RX UINT32_C(0x0d) /* priv RWX, user RX */
 #define K_MEM_PARTITION_P_RX_U_RX  UINT32_C(0x15) /* priv RX, user RX */
 
+#define K_MEM_PARTITION_IS_READABLE(attr)   ((attr) & 0x01)
 #define K_MEM_PARTITION_IS_WRITABLE(attr)   ((attr) & 0x02)
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) ((attr) & 0x04)
+
+/**
+ * @brief Architecture-specific memory domain data.
+ *
+ * list holds one dense run of VM_TRANS_TYPE_LINEAR entries per
+ * partition, then a chain entry to the shared fixed tail. It is never
+ * installed itself: each member user thread's own map chains to it.
+ */
+struct arch_mem_domain {
+	struct hexagon_linear_entry
+		list[(CONFIG_MAX_DOMAIN_PARTITIONS * HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES) + 1]
+		__aligned(8);
+};
+
+typedef struct arch_mem_domain arch_mem_domain_t;
 #endif
 
 #ifdef __cplusplus
