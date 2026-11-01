@@ -586,7 +586,7 @@ static int dynamic_get_del_opts_req(struct http_resource_detail_dynamic *dynamic
 	struct http_response_ctx response_ctx;
 
 	/* Start of GET params */
-	ptr = &client->url_buffer[dynamic_detail->common.path_len];
+	ptr = &client->url_buffer[http_server_path_len_without_query(client->url_buffer)];
 	len = strlen(ptr);
 	status = HTTP_SERVER_REQUEST_DATA_FINAL;
 
@@ -1302,7 +1302,6 @@ int handle_http1_request(struct http_client_ctx *client)
 					goto not_found;
 				}
 
-				detail->path_len = path_len;
 				client->current_detail = detail;
 
 				ret = handle_http1_to_websocket_upgrade(client);
@@ -1326,8 +1325,6 @@ int handle_http1_request(struct http_client_ctx *client)
 
 	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
 	if (detail != NULL) {
-		detail->path_len = path_len;
-
 		if (detail->type == HTTP_RESOURCE_TYPE_STATIC) {
 			ret = handle_http1_static_resource(
 				(struct http_resource_detail_static *)detail,

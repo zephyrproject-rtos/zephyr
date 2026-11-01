@@ -140,7 +140,7 @@ int handle_http1_to_websocket_upgrade(struct http_client_ctx *client)
 	}
 
 	memset(&request_ctx, 0, sizeof(request_ctx));
-	params = &client->url_buffer[client->current_detail->path_len];
+	params = &client->url_buffer[http_server_path_len_without_query(client->url_buffer)];
 	params_len = strlen(params);
 	populate_request_ctx(&request_ctx, params, params_len, &client->header_capture_ctx);
 

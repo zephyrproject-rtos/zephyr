@@ -282,7 +282,10 @@ HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
 		    &test_http_service_port, 1, 10, NULL, NULL, NULL);
 
 static const char static_resource_payload[] = TEST_STATIC_PAYLOAD;
-struct http_resource_detail_static static_resource_detail = {
+/* Declared const on purpose: the server must not write into a resource detail,
+ * which on a real target may live in read-only flash.
+ */
+static const struct http_resource_detail_static static_resource_detail = {
 	.common = {
 			.type = HTTP_RESOURCE_TYPE_STATIC,
 			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
@@ -371,6 +374,41 @@ struct http_resource_detail_dynamic dynamic_detail = {
 
 HTTP_RESOURCE_DEFINE(dynamic_resource, test_http_service, "/dynamic",
 		     &dynamic_detail);
+
+static char params_received[32];
+
+static int params_cb(struct http_client_ctx *client, enum http_transaction_status status,
+		     const struct http_request_ctx *request_ctx,
+		     struct http_response_ctx *response_ctx, void *user_data)
+{
+	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
+	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
+		return 0;
+	}
+
+	/* For a GET the request data is what follows the matched resource path. */
+	memset(params_received, 0, sizeof(params_received));
+	memcpy(params_received, request_ctx->data,
+	       MIN(request_ctx->data_len, sizeof(params_received) - 1));
+
+	response_ctx->body = NULL;
+	response_ctx->body_len = 0;
+	response_ctx->final_chunk = true;
+
+	return 0;
+}
+
+static struct http_resource_detail_dynamic params_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		.content_type = "text/plain",
+	},
+	.cb = params_cb,
+	.user_data = NULL,
+};
+
+HTTP_RESOURCE_DEFINE(params_resource, test_http_service, "/params", &params_detail);
 
 struct test_headers_clone {
 	uint8_t buffer[CONFIG_HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE];
@@ -2165,6 +2203,37 @@ ZTEST(server_function_tests, test_http1_connection_close)
 	 */
 	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
 	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_params)
+{
+	static const char http1_request[] =
+		"GET /params?a=1&b=two HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+
+	/* The parameters start right after the matched resource path, so the
+	 * length of that path must have been kept for this request.
+	 */
+	zassert_str_equal(params_received, "?a=1&b=two", "Unexpected GET parameters");
 }
 
 ZTEST(server_function_tests, test_http2_post_data_with_padding)
