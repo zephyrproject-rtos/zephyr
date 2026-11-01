@@ -3550,6 +3550,61 @@ ZTEST(server_function_tests, test_http1_static_fs_query)
 			  "Received data doesn't match expected response");
 }
 
+ZTEST(server_function_tests, test_http1_static_fs_keep_alive)
+{
+	static const char http1_request_1[] =
+		"GET /static_file.html HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char http1_request_2[] =
+		"GET /static_file.html HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 30\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		TEST_STATIC_FS_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, http1_request_1, strlen(http1_request_1), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(&offset, sizeof(expected_response) - 1);
+
+	/* The body is exactly Content-Length bytes long, so the next bytes on
+	 * the connection must be the status line of the second response.
+	 */
+	ret = zsock_send(client_fd, http1_request_2, strlen(http1_request_2), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(&offset, sizeof(expected_response) - 1);
+
+	/* Second request included connection: close, so we should expect the
+	 * connection to be closed now.
+	 */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
 /* HPACK-encoded "GET /static_file.html" request, END_STREAM | END_HEADERS set.
  * :method: GET (indexed, 0x82), :scheme: http (indexed, 0x86) and :path with an
  * indexed name (4) and a literal, non-Huffman value.
