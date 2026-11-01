@@ -202,6 +202,14 @@ Bluetooth Host
 Networking
 **********
 
+* The HTTP server no longer writes into the application's resource details, so static, static fs
+  and websocket resource details can be declared ``const`` and placed in flash. Dynamic resource
+  details stay writable, the server keeps the client that holds the resource in them. The
+  ``path_len`` member of :c:struct:`http_resource_detail` is deprecated and no longer updated. A
+  dynamic GET, DELETE or OPTIONS handler that used it to find the request parameters gets them,
+  from the ``?`` on, in the ``data`` of the :c:struct:`http_request_ctx` passed to its first
+  callback.
+
 Other subsystems
 ****************
 
