@@ -39,3 +39,16 @@ tests:
       - CONFIG_IPI_OPTIMIZE_IDLE=y
       - CONFIG_SCHED_CPU_MASK=y
       - CONFIG_PM=y
+
+  kernel.ipi_optimize.smp_pm:
+    tags:
+      - kernel
+      - smp
+      - pm
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_TEST_IPI_PM_HOOKS=y
