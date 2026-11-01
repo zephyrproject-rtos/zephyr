@@ -42,7 +42,7 @@ struct mc_rx_window {
 };
 
 struct mc_comm {
-	struct mc_comm_config config;
+	struct mc_comm_cfg config;
 	struct mc_tx_window *tx_windows;
 	struct mc_rx_window *rx_windows;
 	uint8_t *rx_frame;
@@ -70,39 +70,36 @@ static uint64_t now_us(void)
 	return k_cyc_to_us_floor64(k_cycle_get_64());
 }
 
-static size_t send_window_size(const struct mc_comm_config *config)
+static size_t send_window_size(const struct mc_comm_cfg *config)
 {
-	return config->send_window_size != 0U ? config->send_window_size : config->frame_size;
+	return config->send.size;
 }
 
-static size_t receive_window_size(const struct mc_comm_config *config)
+static size_t receive_window_size(const struct mc_comm_cfg *config)
 {
-	return config->receive_window_size != 0U ? config->receive_window_size :
-						     config->frame_size;
+	return config->recv.size;
 }
 
-static uint8_t send_window_count(const struct mc_comm_config *config)
+static uint8_t send_window_count(const struct mc_comm_cfg *config)
 {
-	return config->send_window_count != 0U ? config->send_window_count : 1U;
+	return config->send.capacity != 0U ? config->send.capacity : 1U;
 }
 
-static uint8_t receive_window_count(const struct mc_comm_config *config)
+static uint8_t receive_window_count(const struct mc_comm_cfg *config)
 {
-	return config->receive_window_count != 0U ? config->receive_window_count : 1U;
+	return config->recv.capacity != 0U ? config->recv.capacity : 1U;
 }
 
-static bool valid_config(const struct mc_comm_config *config)
+static bool valid_config(const struct mc_comm_cfg *config)
 {
-	if (config == NULL || config->receive == NULL || config->transmit == NULL) {
+	if (config == NULL || config->io.receive == NULL || config->io.transmit == NULL) {
 		return false;
 	}
 
 	size_t send_size = send_window_size(config);
 	size_t receive_size = receive_window_size(config);
 
-	return config->frame_size >= MC_HEADER_SIZE + 1U &&
-	       config->frame_size <= MC_MAX_FRAME_SIZE &&
-	       send_size >= MC_HEADER_SIZE + 1U && send_size <= MC_MAX_FRAME_SIZE &&
+	return send_size >= MC_HEADER_SIZE + 1U && send_size <= MC_MAX_FRAME_SIZE &&
 	       receive_size >= MC_HEADER_SIZE + 1U && receive_size <= MC_MAX_FRAME_SIZE &&
 	       send_window_count(config) <= MC_MAX_WINDOW_COUNT &&
 	       receive_window_count(config) <= MC_MAX_WINDOW_COUNT &&
@@ -110,7 +107,7 @@ static bool valid_config(const struct mc_comm_config *config)
 	       config->receive_capacity <= UINT16_MAX;
 }
 
-size_t mc_comm_required_size(const struct mc_comm_config *config)
+size_t mc_comm_req_size(const struct mc_comm_cfg *config)
 {
 	if (!valid_config(config)) {
 		return 0U;
@@ -130,13 +127,13 @@ size_t mc_comm_required_size(const struct mc_comm_config *config)
 }
 
 int mc_comm_init(struct mc_comm **instance, void *storage, size_t storage_size,
-		 const struct mc_comm_config *config)
+		 const struct mc_comm_cfg *config)
 {
 	if (instance == NULL || storage == NULL || !valid_config(config)) {
 		return -EINVAL;
 	}
 	if (((uintptr_t)storage % sizeof(uint64_t)) != 0U ||
-	    storage_size < mc_comm_required_size(config)) {
+	    storage_size < mc_comm_req_size(config)) {
 		return -ENOMEM;
 	}
 
@@ -173,8 +170,7 @@ int mc_comm_init(struct mc_comm **instance, void *storage, size_t storage_size,
 	return 0;
 }
 
-static size_t encode_frame(uint8_t *frame, uint8_t type, uint32_t sequence,
-			   const uint8_t *payload, size_t length)
+static size_t encode_frame(uint8_t *frame, uint8_t type, uint32_t sequence, size_t length)
 {
 	sys_put_be16(MC_MAGIC, &frame[0]);
 	frame[2] = type;
@@ -182,16 +178,13 @@ static size_t encode_frame(uint8_t *frame, uint8_t type, uint32_t sequence,
 	sys_put_be32(sequence, &frame[4]);
 	sys_put_be16((uint16_t)length, &frame[8]);
 	sys_put_be16(0U, &frame[10]);
-	if (length > 0U && payload != &frame[MC_HEADER_SIZE]) {
-		memcpy(&frame[MC_HEADER_SIZE], payload, length);
-	}
 	sys_put_be16(crc16_itu_t(0xffffU, frame, MC_HEADER_SIZE + length), &frame[10]);
 	return MC_HEADER_SIZE + length;
 }
 
 static int transmit_frame(struct mc_comm *comm, const uint8_t *frame, size_t length)
 {
-	int sent = comm->config.transmit(comm->config.context, frame, length);
+	int sent = comm->config.io.transmit(comm->config.io.context, frame, length);
 
 	if (sent < 0) {
 		return sent;
@@ -202,7 +195,7 @@ static int transmit_frame(struct mc_comm *comm, const uint8_t *frame, size_t len
 static int send_ack(struct mc_comm *comm, uint32_t sequence)
 {
 	uint8_t frame[MC_HEADER_SIZE];
-	size_t length = encode_frame(frame, MC_TYPE_ACK, sequence, NULL, 0U);
+	size_t length = encode_frame(frame, MC_TYPE_ACK, sequence, 0U);
 
 	return transmit_frame(comm, frame, length);
 }
@@ -332,7 +325,7 @@ int mc_comm_update(struct mc_comm *instance)
 	if (instance == NULL) {
 		return -EINVAL;
 	}
-	int received = instance->config.receive(instance->config.context, instance->rx_frame,
+	int received = instance->config.io.receive(instance->config.io.context, instance->rx_frame,
 						instance->receive_window_size);
 
 	if (received == -EAGAIN || received == 0) {
@@ -399,7 +392,7 @@ int mc_comm_send(struct mc_comm *instance, const void *data, size_t length, uint
 	size_t in_flight = 0U;
 	int err = 0;
 
-	while (offset < stream_length || in_flight > 0U) {
+	for (;;) {
 		while (offset < stream_length && in_flight < instance->send_window_count) {
 			struct mc_tx_window *window =
 				&instance->tx_windows[instance->tx_sequence %
@@ -414,8 +407,7 @@ int mc_comm_send(struct mc_comm *instance, const void *data, size_t length, uint
 
 			window->sequence = instance->tx_sequence++;
 			window->length = encode_frame(window->frame, MC_TYPE_DATA,
-						      window->sequence,
-						      &window->frame[MC_HEADER_SIZE], part);
+						      window->sequence, part);
 			window->attempts = 0U;
 			window->sent_at_us = 0U;
 			window->acked = false;
@@ -474,15 +466,13 @@ int mc_comm_send(struct mc_comm *instance, const void *data, size_t length, uint
 		}
 		k_usleep(MC_POLL_INTERVAL_US);
 	}
-	return 0;
-
 failed:
 	clear_tx_windows(instance);
 	instance->tx_sequence = start_sequence;
 	return err;
 }
 
-int mc_comm_receive(struct mc_comm *instance, void *data, size_t capacity, size_t *length,
+int mc_comm_recv(struct mc_comm *instance, void *data, size_t capacity, size_t *length,
 		    uint32_t timeout_us)
 {
 	if (instance == NULL || data == NULL || length == NULL) {

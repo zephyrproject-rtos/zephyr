@@ -100,7 +100,7 @@ static bool wait_for_packet(struct mc_comm *comm, const uint8_t *expected, size_
 	int64_t deadline = k_uptime_get() + 5000;
 
 	while (k_uptime_get() < deadline) {
-		int err = mc_comm_receive(comm, data, sizeof(data), &length, 0U);
+		int err = mc_comm_recv(comm, data, sizeof(data), &length, 0U);
 
 		if (err == 0) {
 			return length == expected_length &&
@@ -120,10 +120,11 @@ ZTEST(mc_uart, test_communication_transport)
 {
 	static uint8_t storage[512] __aligned(8);
 	struct mc_comm *comm;
-	struct mc_comm_config config = {
-		.receive = uart_receive,
-		.transmit = uart_transmit,
-		.frame_size = 64U,
+	struct mc_comm_cfg config = {
+		.io.receive = uart_receive,
+		.io.transmit = uart_transmit,
+		.recv.size = 64U,
+		.send.size = 64U,
 		.receive_capacity = 64U,
 	};
 

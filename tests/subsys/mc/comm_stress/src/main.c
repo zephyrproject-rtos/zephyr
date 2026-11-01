@@ -28,19 +28,18 @@ static struct mc_comm *receiver_comm;
 static uint8_t received[TEST_MESSAGE_SIZE];
 static uint32_t words[1024];
 
-static struct mc_comm_config make_config(bool sender, uint8_t retry_limit)
+static struct mc_comm_cfg make_config(bool sender, uint8_t retry_limit)
 {
-	struct mc_comm_config config = {
-		.receive = stress_transport_receive,
-		.transmit = stress_transport_transmit,
-		.context = stress_transport_context(sender),
-		.frame_size = 64U,
+	struct mc_comm_cfg config = {
+		.io.receive = stress_transport_receive,
+		.io.transmit = stress_transport_transmit,
+		.io.context = stress_transport_context(sender),
 		.receive_capacity = TEST_MESSAGE_SIZE,
 		.retry_limit = retry_limit,
-		.send_window_size = sender ? TEST_SEND_FRAME_SIZE : TEST_RECEIVE_FRAME_SIZE,
-		.receive_window_size = sender ? TEST_RECEIVE_FRAME_SIZE : TEST_SEND_FRAME_SIZE,
-		.send_window_count = sender ? 3U : 1U,
-		.receive_window_count = sender ? 2U : 4U,
+		.send.size = sender ? TEST_SEND_FRAME_SIZE : TEST_RECEIVE_FRAME_SIZE,
+		.recv.size = sender ? TEST_RECEIVE_FRAME_SIZE : TEST_SEND_FRAME_SIZE,
+		.send.capacity = sender ? 3U : 1U,
+		.recv.capacity = sender ? 2U : 4U,
 	};
 
 	return config;
@@ -49,15 +48,15 @@ static struct mc_comm_config make_config(bool sender, uint8_t retry_limit)
 static void init_pair(uint8_t loss_rate, bool duplicate, bool corrupt, bool shorten,
 		      bool disconnect, uint8_t retry_limit)
 {
-	struct mc_comm_config sender_config;
-	struct mc_comm_config receiver_config;
+	struct mc_comm_cfg sender_config;
+	struct mc_comm_cfg receiver_config;
 
 	zassert_ok(stress_transport_init(), NULL);
 	stress_transport_reset(loss_rate, duplicate, corrupt, shorten, disconnect);
 	sender_config = make_config(true, retry_limit);
 	receiver_config = make_config(false, retry_limit);
-	zassert_true(mc_comm_required_size(&sender_config) <= sizeof(sender_storage), NULL);
-	zassert_true(mc_comm_required_size(&receiver_config) <= sizeof(receiver_storage), NULL);
+	zassert_true(mc_comm_req_size(&sender_config) <= sizeof(sender_storage), NULL);
+	zassert_true(mc_comm_req_size(&receiver_config) <= sizeof(receiver_storage), NULL);
 	zassert_ok(mc_comm_init(&sender_comm, sender_storage, sizeof(sender_storage),
 				&sender_config), NULL);
 	zassert_ok(mc_comm_init(&receiver_comm, receiver_storage, sizeof(receiver_storage),
@@ -84,7 +83,7 @@ static int exchange(const void *expected, size_t length, uint32_t timeout_us)
 	}
 	if (!IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) ||
 	    !IS_ENABLED(CONFIG_TEST_MC_STRESS_SENDER)) {
-		err = mc_comm_receive(receiver_comm, received, sizeof(received),
+		err = mc_comm_recv(receiver_comm, received, sizeof(received),
 				      &received_length, timeout_us);
 		if (err != 0) {
 			return err;
@@ -164,21 +163,21 @@ static int run_transfer(uint32_t iterations, uint8_t loss_rate, bool duplicate,
 
 ZTEST(mc_comm_stress, test_01_invalid_creation)
 {
-	struct mc_comm_config config;
+	struct mc_comm_cfg config;
 
 	zassert_ok(stress_transport_init(), NULL);
 	config = make_config(true, 3U);
-	config.receive = NULL;
-	zassert_equal(mc_comm_required_size(&config), 0U, NULL);
+	config.io.receive = NULL;
+	zassert_equal(mc_comm_req_size(&config), 0U, NULL);
 	config = make_config(true, 3U);
-	config.transmit = NULL;
-	zassert_equal(mc_comm_required_size(&config), 0U, NULL);
+	config.io.transmit = NULL;
+	zassert_equal(mc_comm_req_size(&config), 0U, NULL);
 	config = make_config(true, 3U);
-	config.send_window_size = 12U;
-	zassert_equal(mc_comm_required_size(&config), 0U, NULL);
+	config.send.size = 12U;
+	zassert_equal(mc_comm_req_size(&config), 0U, NULL);
 	config = make_config(true, 3U);
-	config.receive_window_count = 17U;
-	zassert_equal(mc_comm_required_size(&config), 0U, NULL);
+	config.recv.capacity = 17U;
+	zassert_equal(mc_comm_req_size(&config), 0U, NULL);
 }
 
 ZTEST(mc_comm_stress, test_02_invalid_argument)
@@ -189,9 +188,9 @@ ZTEST(mc_comm_stress, test_02_invalid_argument)
 	init_pair(0U, false, false, false, false, 3U);
 	zassert_equal(mc_comm_send(NULL, data, sizeof(data), 100U), -EINVAL, NULL);
 	zassert_equal(mc_comm_send(sender_comm, NULL, sizeof(data), 100U), -EINVAL, NULL);
-	zassert_equal(mc_comm_receive(NULL, data, sizeof(data), &received_length, 100U),
+	zassert_equal(mc_comm_recv(NULL, data, sizeof(data), &received_length, 100U),
 		      -EINVAL, NULL);
-	zassert_equal(mc_comm_receive(receiver_comm, NULL, sizeof(data), &received_length,
+	zassert_equal(mc_comm_recv(receiver_comm, NULL, sizeof(data), &received_length,
 				      100U), -EINVAL, NULL);
 	zassert_equal(mc_comm_update(NULL), -EINVAL, NULL);
 	zassert_equal(mc_comm_flush(NULL, 100U), -EINVAL, NULL);
@@ -199,11 +198,11 @@ ZTEST(mc_comm_stress, test_02_invalid_argument)
 
 ZTEST(mc_comm_stress, test_03_valid_creation)
 {
-	struct mc_comm_config config;
+	struct mc_comm_cfg config;
 
 	init_pair(0U, false, false, false, false, 3U);
 	config = make_config(true, 3U);
-	zassert_true(mc_comm_required_size(&config) > 0U, NULL);
+	zassert_true(mc_comm_req_size(&config) > 0U, NULL);
 	zassert_not_null(sender_comm, NULL);
 	zassert_not_null(receiver_comm, NULL);
 }
@@ -250,7 +249,7 @@ ZTEST(mc_comm_stress, test_08_singly_timed_out)
 	}
 	if (!IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) ||
 	    !IS_ENABLED(CONFIG_TEST_MC_STRESS_SENDER)) {
-		zassert_equal(mc_comm_receive(receiver_comm, received, sizeof(received),
+		zassert_equal(mc_comm_recv(receiver_comm, received, sizeof(received),
 					      &length, 50000U), -ETIMEDOUT, NULL);
 	}
 }

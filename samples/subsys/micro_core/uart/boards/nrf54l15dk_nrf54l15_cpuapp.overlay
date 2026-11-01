@@ -1,0 +1,21 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* UART20 is the protocol on P1.04/P1.05; UART30 remains the console. */
+/ {
+	aliases {
+		mc-uart = &uart20;
+	};
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+	};
+};
+
+&uart20 {
+	status = "okay";
+};
+
+&uart30 {
+	status = "okay";
+};
