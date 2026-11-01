@@ -12,6 +12,10 @@ properties:
       property value should ensure the flags properly describe the
       signal that is presented to the driver.
 
+  clocks:
+    description: |
+      Clock connected to pin 9 (CLKIN), between 31 and 50 kHz.
+
   accel-pwr-mode:
     type: int
     default: 0

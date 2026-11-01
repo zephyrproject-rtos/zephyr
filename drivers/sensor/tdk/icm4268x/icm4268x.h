@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_ICM4268X_H_
 #define ZEPHYR_DRIVERS_SENSOR_ICM4268X_H_
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/spi.h>
@@ -404,6 +405,8 @@ struct icm4268x_dev_cfg {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec gpio_int1;
 	struct gpio_dt_spec gpio_int2;
+	const struct device *clk_dev;
+	clock_control_subsys_t clk_subsys;
 };
 
 /**
