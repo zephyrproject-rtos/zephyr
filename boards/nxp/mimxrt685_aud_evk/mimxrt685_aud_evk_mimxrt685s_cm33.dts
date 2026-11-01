@@ -68,7 +68,7 @@
 	};
 };
 
-&os_timer {
+&ostimer0 {
 	wakeup-source;
 	status = "okay";
 };
