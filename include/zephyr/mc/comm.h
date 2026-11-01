@@ -14,22 +14,55 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup micro_core Micro Core communication
+ * @ingroup io_interfaces
+ * @version 0.1.0
+ * @{
+ */
+
 struct mc_comm;
 
+/**
+ * @brief Read one complete transport frame, or return a negative error code.
+ *
+ * @param context Application-owned transport context.
+ * @param data Destination for a complete frame.
+ * @param capacity Destination capacity in bytes.
+ * @return Frame length, zero or -EAGAIN if no frame is ready, or another negative error code.
+ */
 typedef int (*mc_comm_receive_t)(void *context, uint8_t *data, size_t capacity);
+
+/**
+ * @brief Write one complete transport frame, or return a negative error code.
+ *
+ * @param context Application-owned transport context.
+ * @param data Complete frame to transmit.
+ * @param length Frame length in bytes.
+ * @return Number of bytes written, or a negative error code.
+ */
 typedef int (*mc_comm_transmit_t)(void *context, const uint8_t *data, size_t length);
 
-struct mc_comm_config {
+/** @brief Transport callbacks supplied by the application. */
+struct mc_comm_io {
 	mc_comm_receive_t receive;   /**< Read one complete transport frame. */
 	mc_comm_transmit_t transmit; /**< Write one complete transport frame. */
 	void *context;               /**< Transport callback context. */
-	size_t frame_size;           /**< Default frame size in both directions. */
-	size_t receive_capacity;     /**< Maximum complete payload size. */
-	uint8_t retry_limit;        /**< Retries per frame; zero selects the default. */
-	size_t send_window_size;    /**< Outgoing frame size; zero uses frame_size. */
-	size_t receive_window_size; /**< Incoming frame size; zero uses frame_size. */
-	uint8_t send_window_count;    /**< Outstanding frames; zero selects one. */
-	uint8_t receive_window_count; /**< Buffered frames; zero selects one. */
+};
+
+/** @brief Frame size and number of buffered frames in one direction. */
+struct mc_comm_wnd {
+	size_t size;      /**< Maximum frame size, including protocol header. */
+	uint8_t capacity; /**< Number of frames; zero selects one. */
+};
+
+/** @brief Communication instance configuration. */
+struct mc_comm_cfg {
+	struct mc_comm_io io;     /**< Transport operations and context. */
+	struct mc_comm_wnd recv; /**< Incoming frame window. */
+	struct mc_comm_wnd send; /**< Outgoing frame window. */
+	size_t receive_capacity;  /**< Maximum complete payload size. */
+	uint8_t retry_limit;     /**< Retries per frame; zero selects the default. */
 };
 
 /**
@@ -38,13 +71,14 @@ struct mc_comm_config {
  * @param config Communication configuration.
  * @return Required size in bytes, or 0 for an invalid configuration.
  */
-size_t mc_comm_required_size(const struct mc_comm_config *config);
+size_t mc_comm_req_size(const struct mc_comm_cfg *config);
 
 /**
  * @brief Initialize a communication instance in caller-owned storage.
  *
  * @param instance Output instance pointer.
- * @param storage Storage aligned to 8 bytes.
+ * @param storage Caller-owned storage aligned to 8 bytes. Keep it valid for the
+ *                lifetime of the instance. All persistent instance state is placed here.
  * @param storage_size Available storage size in bytes.
  * @param config Communication configuration.
  * @retval 0 Instance initialized.
@@ -52,7 +86,7 @@ size_t mc_comm_required_size(const struct mc_comm_config *config);
  * @retval -ENOMEM Storage is insufficient or misaligned.
  */
 int mc_comm_init(struct mc_comm **instance, void *storage, size_t storage_size,
-		 const struct mc_comm_config *config);
+		 const struct mc_comm_cfg *config);
 
 /**
  * @brief Process one transport frame.
@@ -97,19 +131,23 @@ int mc_comm_send(struct mc_comm *instance, const void *data, size_t length, uint
  * @retval -ETIMEDOUT No payload arrived before the timeout.
  * @return Other errors returned by the transport callbacks.
  */
-int mc_comm_receive(struct mc_comm *instance, void *data, size_t capacity, size_t *length,
+int mc_comm_recv(struct mc_comm *instance, void *data, size_t capacity, size_t *length,
 		    uint32_t timeout_us);
 
 /**
- * @brief Wait until the pending transmission is acknowledged.
+ * @brief Check that no transmission is pending.
+ *
+ * Sending is synchronous in this implementation, so a valid idle instance
+ * returns immediately.
  *
  * @param instance Communication instance.
- * @param timeout_us Timeout in microseconds.
+ * @param timeout_us Reserved timeout argument; currently ignored.
  * @retval 0 No transmission is pending.
  * @retval -EINVAL Invalid instance.
- * @retval -ETIMEDOUT Transmission is still pending at the timeout.
  */
 int mc_comm_flush(struct mc_comm *instance, uint32_t timeout_us);
+
+/** @} */
 
 #ifdef __cplusplus
 }

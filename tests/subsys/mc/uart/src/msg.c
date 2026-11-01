@@ -125,15 +125,16 @@ ZTEST(mc_uart, test_message_transport)
 {
 	static uint8_t storage[1024] __aligned(8);
 	struct mc_msg *msg;
-	struct mc_msg_config config = {
+	struct mc_msg_cfg config = {
 		.comm = {
-			.receive = uart_receive,
-			.transmit = uart_transmit,
-			.frame_size = 64U,
+			.io.receive = uart_receive,
+			.io.transmit = uart_transmit,
+			.recv.size = 64U,
+			.send.size = 64U,
 			.receive_capacity = 64U,
 		},
-		.message_capacity = 32U,
-		.subscription_capacity = 2U,
+		.pool_size = 32U,
+		.ids_capacity = 2U,
 	};
 
 	zassert_true(device_is_ready(uart), NULL);

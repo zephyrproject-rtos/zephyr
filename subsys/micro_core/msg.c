@@ -17,7 +17,7 @@ struct mc_subscription {
 
 struct mc_msg {
 	struct mc_comm *comm;
-	struct mc_msg_config config;
+	struct mc_msg_cfg config;
 	struct mc_subscription *subscriptions;
 	uint8_t *message;
 	size_t subscription_count;
@@ -31,28 +31,32 @@ static size_t align_up(size_t value)
 static void dispatch(struct mc_msg *instance, uint16_t id, const uint8_t *data,
 			     size_t length);
 
-size_t mc_msg_required_size(const struct mc_msg_config *config)
+size_t mc_msg_req_size(const struct mc_msg_cfg *config)
 {
-	if (config == NULL || config->message_capacity < 4U ||
-	    config->subscription_capacity == 0U ||
+	if (config == NULL || config->pool_size < 4U ||
+	    config->ids_capacity == 0U ||
 	    config->comm.receive_capacity < 4U ||
-	    config->message_capacity > config->comm.receive_capacity - 4U ||
-	    mc_comm_required_size(&config->comm) == 0U) {
+	    config->pool_size > config->comm.receive_capacity - 4U ||
+	    mc_comm_req_size(&config->comm) == 0U) {
 		return 0U;
 	}
-	return align_up(sizeof(struct mc_msg)) +
-		align_up(mc_comm_required_size(&config->comm)) +
-		align_up(config->message_capacity + 4U) +
-		config->subscription_capacity * sizeof(struct mc_subscription);
+	size_t base = align_up(sizeof(struct mc_msg)) +
+		align_up(mc_comm_req_size(&config->comm)) +
+		align_up(config->pool_size + 4U);
+
+	if (config->ids_capacity > (SIZE_MAX - base) / sizeof(struct mc_subscription)) {
+		return 0U;
+	}
+	return base + config->ids_capacity * sizeof(struct mc_subscription);
 }
 
 int mc_msg_init(struct mc_msg **instance, void *storage, size_t storage_size,
-		const struct mc_msg_config *config)
+		const struct mc_msg_cfg *config)
 {
 	if (instance == NULL || storage == NULL || config == NULL) {
 		return -EINVAL;
 	}
-	size_t required = mc_msg_required_size(config);
+	size_t required = mc_msg_req_size(config);
 
 	if (required == 0U || storage_size < required ||
 	    ((uintptr_t)storage % sizeof(uint64_t)) != 0U) {
@@ -62,7 +66,7 @@ int mc_msg_init(struct mc_msg **instance, void *storage, size_t storage_size,
 
 	msg->config = *config;
 	uint8_t *cursor = (uint8_t *)storage + align_up(sizeof(*msg));
-	size_t comm_size = mc_comm_required_size(&config->comm);
+	size_t comm_size = mc_comm_req_size(&config->comm);
 	int err = mc_comm_init(&msg->comm, cursor, comm_size, &config->comm);
 
 	if (err != 0) {
@@ -70,11 +74,11 @@ int mc_msg_init(struct mc_msg **instance, void *storage, size_t storage_size,
 	}
 	cursor += align_up(comm_size);
 	msg->message = cursor;
-	cursor += align_up(config->message_capacity + 4U);
+	cursor += align_up(config->pool_size + 4U);
 	msg->subscriptions = (struct mc_subscription *)cursor;
 	msg->subscription_count = 0U;
 	memset(msg->subscriptions, 0,
-		config->subscription_capacity * sizeof(*msg->subscriptions));
+		config->ids_capacity * sizeof(*msg->subscriptions));
 	*instance = msg;
 	return 0;
 }
@@ -96,8 +100,8 @@ int mc_msg_update(struct mc_msg *instance)
 	}
 	size_t length = 0U;
 
-	err = mc_comm_receive(instance->comm, instance->message,
-		instance->config.message_capacity + 4U, &length, 0U);
+	err = mc_comm_recv(instance->comm, instance->message,
+		instance->config.pool_size + 4U, &length, 0U);
 	if (err == -ETIMEDOUT) {
 		return 0;
 	}
@@ -128,7 +132,7 @@ int mc_msg_subscribe(struct mc_msg *instance, uint16_t id,
 			return -EEXIST;
 		}
 	}
-	if (instance->subscription_count >= instance->config.subscription_capacity) {
+	if (instance->subscription_count >= instance->config.ids_capacity) {
 		return -ENOSPC;
 	}
 	struct mc_subscription *sub =
@@ -172,7 +176,7 @@ int mc_msg_send(struct mc_msg *instance, uint16_t id, const void *data,
 	if (instance == NULL || (data == NULL && length != 0U)) {
 		return -EINVAL;
 	}
-	if (length > instance->config.message_capacity || length > UINT16_MAX) {
+	if (length > instance->config.pool_size || length > UINT16_MAX) {
 		return -EMSGSIZE;
 	}
 	uint8_t *wire = instance->message;
@@ -190,4 +194,12 @@ int mc_msg_send(struct mc_msg *instance, uint16_t id, const void *data,
 int mc_msg_signal(struct mc_msg *instance, uint16_t id, uint32_t timeout_us)
 {
 	return mc_msg_send(instance, id, NULL, 0U, timeout_us);
+}
+
+int mc_msg_flush(struct mc_msg *instance, uint32_t timeout_us)
+{
+	if (instance == NULL) {
+		return -EINVAL;
+	}
+	return mc_comm_flush(instance->comm, timeout_us);
 }

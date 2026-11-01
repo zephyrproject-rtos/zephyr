@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Micro Core UART sample"
+
+source "Kconfig.zephyr"
+
+config MC_SAMPLE_SENDER
+	bool "Send sample payloads"
+	help
+	  Select the sender role. Leave disabled on the receiver board.
