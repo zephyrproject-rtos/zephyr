@@ -147,6 +147,8 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder);
 uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start);
 uint32_t radio_tmr_start_us(uint8_t trx, uint32_t us);
 uint32_t radio_tmr_start_now(uint8_t trx);
+void radio_tmr_start_save(uint32_t ticks_start);
+uint32_t radio_tmr_start_restore(void);
 uint32_t radio_tmr_start_get(void);
 uint32_t radio_tmr_start_latency_get(void);
 void radio_tmr_stop(void);
