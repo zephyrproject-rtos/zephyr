@@ -348,7 +348,6 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, s
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
-	int ret;
 
 	/* remember active TX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_tx;
@@ -398,14 +397,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, s
 	/* Pass SPI device as callback context */
 	stream->dma_cfg.user_data = (void *)dev;
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
-	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel, &stream->dma_cfg);
-	/* the channel is the actual stream from 0 */
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* gives the request ID to the dma mux */
-	return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
+	return dma_config(data->dma_tx.dma_dev, data->dma_tx.channel, &stream->dma_cfg);
 }
 
 static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
@@ -413,7 +405,6 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t 
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
 	struct dma_block_config *blk_cfg;
-	int ret;
 
 	/* retrieve active RX DMA channel (used in callback) */
 	struct stream *stream = &data->dma_rx;
@@ -461,17 +452,10 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t 
 
 
 	/* pass our client origin to the dma: data->dma_rx.channel */
-	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel, &stream->dma_cfg);
-	/* the channel is the actual stream from 0 */
-	if (ret != 0) {
-		return ret;
-	}
-
-	/* gives the request ID to the dma mux */
-	return dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+	return dma_config(data->dma_rx.dma_dev, data->dma_rx.channel, &stream->dma_cfg);
 }
 
-static int spi_dma_move_rx_buffers(const struct device *dev, size_t len)
+static int spi_dma_load_rx(const struct device *dev, size_t len)
 {
 	struct spi_stm32_data *data = dev->data;
 	size_t dma_segment_len;
@@ -480,7 +464,7 @@ static int spi_dma_move_rx_buffers(const struct device *dev, size_t len)
 	return spi_stm32_dma_rx_load(dev, data->ctx.rx_buf, dma_segment_len);
 }
 
-static int spi_dma_move_tx_buffers(const struct device *dev, size_t len)
+static int spi_dma_load_tx(const struct device *dev, size_t len)
 {
 	struct spi_stm32_data *data = dev->data;
 	size_t dma_segment_len;
@@ -489,18 +473,45 @@ static int spi_dma_move_tx_buffers(const struct device *dev, size_t len)
 	return spi_stm32_dma_tx_load(dev, data->ctx.tx_buf, dma_segment_len);
 }
 
+static int spi_dma_start_rx(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+
+	/* gives the request ID to the dma mux */
+	return dma_start(data->dma_rx.dma_dev, data->dma_rx.channel);
+}
+
+static int spi_dma_start_tx(const struct device *dev)
+{
+	struct spi_stm32_data *data = dev->data;
+
+	/* gives the request ID to the dma mux */
+	return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
+}
+
+#if defined(CONFIG_SPI_ASYNC) && !defined(CONFIG_SPI_RTIO)
 static int spi_dma_move_buffers(const struct device *dev, size_t len)
 {
 	int ret;
 
-	ret = spi_dma_move_rx_buffers(dev, len);
-
+	ret = spi_dma_load_rx(dev, len);
 	if (ret != 0) {
 		return ret;
 	}
 
-	return spi_dma_move_tx_buffers(dev, len);
+	ret = spi_dma_start_rx(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = spi_dma_load_tx(dev, len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return spi_dma_start_tx(dev);
 }
+#endif /* CONFIG_SPI_ASYNC && !CONFIG_SPI_RTIO */
 
 static void spi_dma_enable_requests(SPI_TypeDef *spi)
 {
@@ -1070,6 +1081,8 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 #endif /* CONFIG_DCACHE */
 		uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 		size_t dma_len;
+		bool rx = true;
+		bool tx = true;
 		int ret = 0;
 
 		struct dma_config *rx_cfg = &data->dma_rx.dma_cfg;
@@ -1093,13 +1106,25 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 			dma_len = spi_context_max_continuous_chunk(&data->ctx);
-			ret = spi_dma_move_buffers(dev, dma_len);
 		} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
 			dma_len = data->ctx.tx_len;
-			ret = spi_dma_move_tx_buffers(dev, dma_len);
+			rx = false;
 		} else {
 			dma_len = data->ctx.rx_len;
-			ret = spi_dma_move_rx_buffers(dev, dma_len);
+			tx = false;
+		}
+
+		if (rx) {
+			ret = spi_dma_load_rx(dev, dma_len);
+			if (ret == 0) {
+				ret = spi_dma_start_rx(dev);
+			}
+		}
+		if (ret == 0 && tx) {
+			ret = spi_dma_load_tx(dev, dma_len);
+		}
+		if (ret == 0 && tx) {
+			ret = spi_dma_start_tx(dev);
 		}
 		if (ret != 0) {
 			LOG_ERR("Failed to start SPI DMA transfer");
@@ -2176,6 +2201,8 @@ static int transceive_dma(const struct device *dev,
 	SPI_TypeDef *spi = cfg->spi;
 	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
+	bool rx;
+	bool tx;
 	int ret;
 	int err;
 	uint8_t dfs = bits2bytes(config->operation);
@@ -2216,15 +2243,30 @@ static int transceive_dma(const struct device *dev,
 	do {
 		data->status_flags = 0;
 
+		rx = true;
+		tx = true;
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 			data->tx_len = data->rx_len = spi_context_max_continuous_chunk(&data->ctx);
-			ret = spi_dma_move_buffers(dev, data->tx_len);
 		} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
 			data->tx_len = data->ctx.tx_len;
-			ret = spi_dma_move_tx_buffers(dev, data->tx_len);
+			rx = false;
 		} else {
 			data->rx_len = data->ctx.rx_len;
-			ret = spi_dma_move_rx_buffers(dev, data->rx_len);
+			tx = false;
+		}
+
+		ret = 0;
+		if (rx) {
+			ret = spi_dma_load_rx(dev, data->rx_len);
+			if (ret == 0) {
+				ret = spi_dma_start_rx(dev);
+			}
+		}
+		if (ret == 0 && tx) {
+			ret = spi_dma_load_tx(dev, data->tx_len);
+		}
+		if (ret == 0 && tx) {
+			ret = spi_dma_start_tx(dev);
 		}
 
 #ifdef CONFIG_SPI_ASYNC
