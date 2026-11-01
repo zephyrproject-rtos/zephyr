@@ -18,6 +18,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <zephyr/arch/arch_interface.h>
+#include <hexagon_vm.h>
 
 /**
  * @brief Callee-saved register context for cooperative context switching.
@@ -100,6 +101,15 @@ struct _thread_arch {
 	void *user_p1;
 	void *user_p2;
 	void *user_p3;
+
+	/*
+	 * Linear map installed while this thread runs in user mode: its own
+	 * stack, then a chain entry to its memory domain's list. map_stale
+	 * is set whenever either changes, so the next install invalidates
+	 * this map's HVM host ASID.
+	 */
+	uint8_t map_stale;
+	struct hexagon_linear_entry map[CONFIG_HEXAGON_USER_STACK_ENTRIES + 1] __aligned(8);
 
 	/*
 	 * Dedicated kernel-mode stack used while executing in kernel mode
