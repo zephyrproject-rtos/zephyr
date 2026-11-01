@@ -19,6 +19,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/cache.h>
 #include <zephyr/ztest.h>
 
 #define XFERS 4
@@ -129,6 +130,8 @@ static int test_sg(void)
 		return TC_FAIL;
 	}
 
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_flush_and_invd_range(rx_data, sizeof(rx_data));
 	TC_PRINT("Starting the transfer on channel %d and waiting completion\n", chan_id);
 
 	if (dma_start(dma, chan_id)) {
@@ -141,6 +144,7 @@ static int test_sg(void)
 		return TC_FAIL;
 	}
 
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
 	TC_PRINT("Verify RX buffer should contain the full TX buffer string.\n");
 
 	for (int i = 0; i < XFERS; i++) {
