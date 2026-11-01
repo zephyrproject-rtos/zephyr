@@ -556,6 +556,24 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
+/*
+ * The core only deinits a domain once every member thread is gone,
+ * and each one already uninstalled its map on removal, so nothing
+ * should still point at domain->arch.list. Uninstall anyway as a
+ * belt-and-suspenders check, then zero the list to a bare terminator
+ * so a stale chain into it maps nothing.
+ */
+int arch_mem_domain_deinit(struct k_mem_domain *domain)
+{
+	if (hexagon_map_thread != NULL &&
+	    hexagon_map_thread->mem_domain_info.mem_domain == domain) {
+		hexagon_mem_domain_uninstall();
+	}
+
+	(void)memset(domain->arch.list, 0, sizeof(domain->arch.list));
+	return 0;
+}
+
 int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
 {
 	const struct k_mem_partition *part = &domain->partitions[partition_id];
