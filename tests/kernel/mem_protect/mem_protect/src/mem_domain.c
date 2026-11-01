@@ -461,6 +461,103 @@ ZTEST(mem_protect_domain, test_mem_domain_migration)
 	k_thread_join(&child_thread, K_FOREVER);
 }
 
+/* A partition only the kernel may touch, in a domain of its own */
+static volatile uint8_t __aligned(MEM_REGION_ALLOC) priv_buf[MEM_REGION_ALLOC];
+K_MEM_PARTITION_DEFINE(priv_part, priv_buf, sizeof(priv_buf),
+		       K_MEM_PARTITION_P_RW_U_NA);
+static struct k_mem_domain priv_domain;
+
+static ZTEST_BMEM volatile bool isr_priv_done;
+static volatile uint8_t isr_priv_val;
+
+static void priv_timer_fn(struct k_timer *timer)
+{
+	if (k_current_get() != &child_thread) {
+		return;
+	}
+
+	priv_buf[0] = 0xa5;
+	isr_priv_val = priv_buf[0];
+	isr_priv_done = true;
+	k_timer_stop(timer);
+}
+
+static K_TIMER_DEFINE(priv_timer, priv_timer_fn, NULL);
+
+#define ISR_PRIV_POLL_STEP_US 10U
+#define ISR_PRIV_POLL_MAX_ITERS 100000U
+
+static void isr_wait_entry(void *p1, void *p2, void *p3)
+{
+	/* Poll for one second for the 1ms timer to interrupt this thread. */
+	for (uint32_t i = 0U; i < ISR_PRIV_POLL_MAX_ITERS && !isr_priv_done; i++) {
+		k_busy_wait(ISR_PRIV_POLL_STEP_US);
+	}
+}
+
+/**
+ * @brief Verify that an ISR can reach a no-user-access partition while a
+ *        member user thread is running.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A K_MEM_PARTITION_P_RW_U_NA partition denies only user mode. An interrupt
+ * that arrives while a user thread of that domain is the current thread runs
+ * with that thread's memory configuration still in place, and must still be
+ * able to read and write the partition.
+ *
+ * Test steps:
+ * - Put a user thread in a domain holding a P_RW_U_NA partition.
+ * - Start a periodic timer whose handler, once it interrupts that thread,
+ *   writes and reads back the partition.
+ * - Join the thread.
+ *
+ * Expected result:
+ * - The handler ran against the user thread and saw its own write, with no
+ *   fault.
+ *
+ * @see k_mem_domain_add_thread()
+ */
+ZTEST(mem_protect_domain, test_mem_domain_isr_access_no_user_part)
+{
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+		&z_libc_partition,
+#endif
+		&ztest_mem_partition, &priv_part
+	};
+
+	if (IS_ENABLED(CONFIG_SMP)) {
+		/* The timer may fire on a CPU not running the thread. */
+		ztest_test_skip();
+	}
+
+	zassert_equal(k_mem_domain_init(&priv_domain, ARRAY_SIZE(parts), parts), 0,
+		      "failed to initialize memory domain");
+
+	set_fault_valid(false);
+	isr_priv_done = false;
+
+	k_thread_create(&child_thread, child_stack,
+			K_THREAD_STACK_SIZEOF(child_stack), isr_wait_entry,
+			NULL, NULL, NULL, 0, K_USER, K_FOREVER);
+	k_thread_name_set(&child_thread, "child_thread");
+	k_mem_domain_add_thread(&priv_domain, &child_thread);
+	k_timer_start(&priv_timer, K_MSEC(1), K_MSEC(1));
+	k_thread_start(&child_thread);
+	k_thread_join(&child_thread, K_FOREVER);
+	k_timer_stop(&priv_timer);
+
+	zassert_true(isr_priv_done, "timer never interrupted the user thread");
+	zassert_equal(isr_priv_val, 0xa5, "ISR did not see its own write");
+
+#if defined(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)
+	zassert_equal(k_mem_domain_deinit(&priv_domain), 0,
+		      "failed to de-initialize memory domain");
+#endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+}
+
 /**
  * @brief Test system assert when new partition overlaps the existing partition
  *
