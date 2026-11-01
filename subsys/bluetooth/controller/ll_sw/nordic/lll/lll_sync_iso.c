@@ -234,18 +234,19 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	lll->latency_prepare = 0U;
 
 	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us * lll->lazy_prepare;
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0U;
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
 
 	/* Initialize trx chain count */
 	trx_cnt = 0U;
@@ -403,7 +404,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	       lll->window_size_event_us;
 	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 	radio_tmr_hcto_configure(hcto);
 
 	radio_tmr_end_capture();
@@ -1383,7 +1384,7 @@ isr_rx_next_subevent:
 		 * listen early by 4 us.
 		 */
 		hcto += radio_tmr_aa_restore();
-		hcto -= radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+		hcto -= radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 		hcto -= addr_us_get(lll->phy);
 		hcto -= radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 
@@ -1415,7 +1416,9 @@ isr_rx_next_subevent:
 
 		hcto -= jitter_us;
 
-		start_us = hcto;
+		/* +1 us radio_tmr_start_us compensation */
+		start_us = hcto - 1U;
+
 		hcto = radio_tmr_start_us(0U, start_us);
 		LL_ASSERT_ERR(hcto == (start_us + 1U));
 
@@ -1432,7 +1435,9 @@ isr_rx_next_subevent:
 		 */
 		hcto += radio_tmr_ready_restore();
 
-		start_us = hcto;
+		/* +1 us radio_tmr_start_us compensation */
+		start_us = hcto - 1U;
+
 		hcto = radio_tmr_start_us(0U, start_us);
 		LL_ASSERT_ERR(hcto == (start_us + 1U));
 
@@ -1446,7 +1451,7 @@ isr_rx_next_subevent:
 	 */
 	hcto += radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy);
-	hcto += radio_rx_chain_delay_get(lll->phy, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy, PHY_FLAGS_S8);
 
 	/* setup absolute PDU header reception timeout */
 	radio_tmr_hcto_configure_abs(hcto);

@@ -1210,7 +1210,7 @@ static void isr_tx(void *param)
 	/* RX delay uses the worst-case S8 coded reception; TX delay uses
 	 * the selected advertising coding scheme.
 	 */
-	hcto += radio_rx_chain_delay_get(phy_p, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(phy_p, PHY_FLAGS_S8);
 	hcto += addr_us_get(phy_p);
 	hcto -= radio_tx_chain_delay_get(phy_p, phy_flags);
 	radio_tmr_hcto_configure(hcto);

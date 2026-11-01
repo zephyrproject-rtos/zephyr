@@ -84,7 +84,7 @@ uint8_t ull_adv_aux_handle_get(struct ll_adv_aux_set *aux);
 uint8_t ull_adv_aux_chm_update(void);
 
 /* helper function to initialize event timings */
-uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
+uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
 			      uint32_t *ticks_anchor);
 
 /* helper function to start auxiliary advertising */

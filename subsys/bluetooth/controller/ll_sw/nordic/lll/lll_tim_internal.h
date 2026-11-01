@@ -21,6 +21,6 @@ static inline uint32_t addr_us_get(uint8_t phy)
 	case BIT(1):
 		return 24;
 	case BIT(2):
-		return 376;
+		return 336;
 	}
 }

@@ -55,9 +55,10 @@ static inline void aux_release(struct ll_adv_aux_set *aux);
 static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 			     const struct pdu_adv *pdu,
 			     uint8_t pdu_len, uint8_t pdu_scan_len);
-static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux);
-static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
-			       struct pdu_adv *pdu_scan);
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
+				 const struct pdu_adv *pdu_scan);
+static uint8_t aux_time_update(struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
+			       const struct pdu_adv *pdu_scan);
 
 #if !defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 static void mfy_aux_offset_get(void *param);
@@ -667,11 +668,11 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * BIG radio events.
 			 */
 			aux->interval =
-				DIV_ROUND_UP(((uint64_t)adv->interval *
-						  ADV_INT_UNIT_US) +
-						 HAL_TICKER_TICKS_TO_US(
-							ULL_ADV_RANDOM_DELAY),
-						 PERIODIC_INT_UNIT_US);
+				DIV_ROUND_UP(
+					ROUND_DOWN((((uint64_t)adv->interval * ADV_INT_UNIT_US) +
+						    HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+						   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+					PERIODIC_INT_UNIT_US);
 
 			/* TODO: Find the anchor before the group of
 			 *       active Periodic Advertising events, so
@@ -680,12 +681,11 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 *       Advertising sets are non-overlapping
 			 *       for the same event interval.
 			 */
-			ticks_anchor =
-				ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor = ticker_ticks_now_get();
 
 			ticks_slot_overhead =
-				ull_adv_aux_evt_init(aux, &ticks_anchor);
+				ull_adv_aux_evt_init(aux, (void *)adv->lll.aux->data.pdu[sec_idx],
+						     &ticks_anchor);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor,
 						ticks_slot_overhead);
@@ -2514,13 +2514,20 @@ uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 	return ull_adv_aux_handle_get((void *)lll->hdr.parent);
 }
 
-uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
+uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
 			      uint32_t *ticks_anchor)
 {
+	const struct lll_adv_aux *lll_aux;
+	const struct pdu_adv *pdu_scan;
 	uint32_t ticks_slot_overhead;
+	const struct lll_adv *lll;
 	uint32_t time_us;
 
-	time_us = aux_time_min_get(aux);
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+	pdu_scan = lll_adv_scan_rsp_peek(lll);
+
+	time_us = aux_time_min_get(aux, pdu, pdu_scan);
 
 	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
@@ -2548,7 +2555,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 						     &ticks_anchor_aux);
 	if (!err) {
 		*ticks_anchor = ticks_anchor_aux;
-		*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		*ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -3063,19 +3070,11 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 	return time_us;
 }
 
-static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
+				 const struct pdu_adv *pdu_scan)
 {
-	const struct lll_adv_aux *lll_aux;
-	const struct pdu_adv *pdu_scan;
-	const struct lll_adv *lll;
-	const struct pdu_adv *pdu;
 	uint8_t pdu_scan_len;
 	uint8_t pdu_len;
-
-	lll_aux = &aux->lll;
-	lll = lll_aux->adv;
-	pdu = lll_adv_aux_data_peek(lll_aux);
-	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	/* Calculate the PDU Tx Time and hence the radio event length,
 	 * Always use maximum length for common extended header format so that
@@ -3091,13 +3090,13 @@ static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
 	return aux_time_get(aux, pdu, pdu_len, pdu_scan_len);
 }
 
-static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
-			       struct pdu_adv *pdu_scan)
+static uint8_t aux_time_update(struct ll_adv_aux_set *aux, const struct pdu_adv *pdu,
+			       const struct pdu_adv *pdu_scan)
 {
 	uint32_t time_ticks;
 	uint32_t time_us;
 
-	time_us = aux_time_min_get(aux);
+	time_us = aux_time_min_get(aux, pdu, pdu_scan);
 	time_ticks = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
