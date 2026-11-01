@@ -3,14 +3,20 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 	default y
 	depends on DT_HAS_ARM_ARMV6M_SYSTICK_ENABLED || \
-		   DT_HAS_ARM_ARMV7M_SYSTICK_ENABLED || \
-		   DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED || \
-		   DT_HAS_ARM_ARMV8_1M_SYSTICK_ENABLED
+		DT_HAS_ARM_ARMV7M_SYSTICK_ENABLED || \
+		DT_HAS_ARM_ARMV8M_SYSTICK_ENABLED || \
+		DT_HAS_ARM_ARMV8_1M_SYSTICK_ENABLED
+	depends on "$(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))" = "" || \
+		($(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER)) && \
+		"$(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))" = \
+		"$(dt_nodelabel_path,systick)")
 	select TICKLESS_CAPABLE
 	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
 	select SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
