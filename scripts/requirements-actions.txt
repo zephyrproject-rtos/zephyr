@@ -90,6 +90,14 @@ boolean-py==5.0 \
     --hash=sha256:60cbc4bad079753721d32649545505362c754e121570ada4658b852a3a318d95 \
     --hash=sha256:ef28a70bd43115208441b53a045d1549e2f0ec6e3d08a9d142cbc41c1938e8d9
     # via license-expression
+bscontroller==0.1.0 \
+    --hash=sha256:035bc7ded650112e40e21985bb661e382a3506067c375821368512ed83f20629 \
+    --hash=sha256:298def96c3056b8b63f5bacf44f941748e49e2e883bc92751c80e3b2cdc37767
+    # via bsworld
+bsworld==1.1.4 \
+    --hash=sha256:91f0e17f4291d82fa82f621f38592dc86e6c8fbcd2d8e487ff3db8f3905f7891 \
+    --hash=sha256:bda5d68b7255b1ff498c77ad3751ef96da7cfcfe209a694e37d05a91fa62f77b
+    # via -r requirements-actions.in
 cachetools==7.2.4 \
     --hash=sha256:4cfbebf3eec4040d2073b19c460511ad47eef7b852dbf9a0d385099b4dafa31e \
     --hash=sha256:e0203b04b75fe13e62098eeb5b2018c4eb1a14c04e2b5b450e70db3ee7e92ec5
@@ -486,7 +494,9 @@ cryptography==50.0.2 \
     --hash=sha256:f9f6143a8c75945eb960d9eb98905a441394abfa24afaae239d514ffb2586480 \
     --hash=sha256:fa8f5efb344d6908a1ce62f4a24e2e5780f825d6f53f5f50ec5ffacac72936cb \
     --hash=sha256:fdd28f912fccfec1846a94e2e1e8f9b0012f557f0c46fe4f3eb0d7a87afcf90b
-    # via pyjwt
+    # via
+    #   bscontroller
+    #   pyjwt
 dill==0.4.1 \
     --hash=sha256:1e1ce33e978ae97fcfcff5638477032b801c46c7c65cf717f95fbc2248f79a9d \
     --hash=sha256:423092df4182177d4d8ba8290c8a5b640c66ab35ec7da59ccfa00f6fa3eea5fa
@@ -1430,7 +1440,14 @@ pyshacl==0.40.1 \
 pytest==9.1.1 \
     --hash=sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313 \
     --hash=sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c
-    # via -r requirements-actions.in
+    # via
+    #   -r requirements-actions.in
+    #   bsworld
+    #   pytest-asyncio
+pytest-asyncio==1.4.1 \
+    --hash=sha256:507afa78ec77c6661164ef1a2368bc7820383fd1a14b2a7f813de8b5a92949cc \
+    --hash=sha256:e8266eb094e5ee9ffdb2068c9836f33e209ea77a970eb846933d416b5602669b
+    # via bsworld
 python-can==4.6.1 \
     --hash=sha256:17f95255868a95108dcfcb90565a684dad32d5a3ebb35afd14f739e18c84ff6c \
     --hash=sha256:290fea135d04b8504ebff33889cc6d301e2181a54099116609f940825ffe5005
@@ -1980,6 +1997,7 @@ typing-extensions==4.16.0 \
     #   exceptiongroup
     #   mypy
     #   pygithub
+    #   pytest-asyncio
     #   python-can
     #   referencing
     #   tox
