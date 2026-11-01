@@ -505,6 +505,7 @@ static void IRAM_ATTR i2c_esp32_controller_stop(const struct device *dev)
 	};
 
 	i2c_ll_master_write_cmd_reg(data->hal.dev, cmd, data->cmd_idx++);
+	i2c_ll_master_enable_tx_it(data->hal.dev);
 }
 
 static int IRAM_ATTR i2c_esp32_write_addr(const struct device *dev, uint16_t addr)
