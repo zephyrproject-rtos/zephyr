@@ -247,7 +247,7 @@ void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2, void 
 	thread->arch.priv_level = 1;
 
 	/*
-	 * Set the global flag now so arch_is_user_context() is already
+	 * Set the thread-local flag now so arch_is_user_context() is already
 	 * correct right after vmrte, before the first trap0 fires.
 	 */
 	_hexagon_user_mode_active = 1;
