@@ -5,6 +5,12 @@ tests:
     arch_allow: x86
     harness: bluetooth
     tags: bluetooth
+  sample.bluetooth.central_hr.bsim:
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - nrf52_bsim
+    tags: bluetooth
   sample.bluetooth.central_hr.minimal:
     harness: bluetooth
     platform_allow:

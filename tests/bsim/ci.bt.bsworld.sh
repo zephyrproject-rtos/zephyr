@@ -20,6 +20,9 @@ export BSWORLD_ZEPHYR_BUILD_DIR="${OUTDIR}/build"
 
 # The default shell with its console on stdio.
 scenarios=(-T tests/bluetooth/shell -s bluetooth.native_shell)
+# The samples with their own prj.conf.
+scenarios+=(-T samples/bluetooth/peripheral_hr -s sample.bluetooth.peripheral_hr)
+scenarios+=(-T samples/bluetooth/central_hr -s sample.bluetooth.central_hr.bsim)
 
 scripts/twister -p nrf52_bsim/native --build-only --clobber-output --inline-logs \
   -O "${BSWORLD_ZEPHYR_BUILD_DIR}" "${scenarios[@]}"
