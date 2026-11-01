@@ -69,6 +69,7 @@ static void fixed_destroy(struct net_buf *buf);
 static void var_destroy(struct net_buf *buf);
 static void var_destroy_aligned(struct net_buf *buf);
 static void var_destroy_aligned_small(struct net_buf *buf);
+static void ref_destroy(struct net_buf *buf);
 
 #define VAR_POOL_ALIGN 8
 #define VAR_POOL_ALIGN_SMALL 4
@@ -89,6 +90,8 @@ NET_BUF_POOL_VAR_ALIGN_DEFINE(var_pool_aligned, VAR_POOL_DATA_COUNT,
 NET_BUF_POOL_VAR_ALIGN_DEFINE(var_pool_aligned_small, VAR_POOL_DATA_COUNT,
 			      VAR_POOL_DATA_SIZE, USER_DATA_VAR,
 			      var_destroy_aligned_small, VAR_POOL_ALIGN_SMALL);
+/* For test_net_buf_ref_saturated(), whose buffer stays allocated if it fails */
+NET_BUF_POOL_FIXED_DEFINE(ref_pool, 1, 16, 0, ref_destroy);
 
 static void buf_destroy(struct net_buf *buf)
 {
@@ -132,6 +135,15 @@ static void var_destroy_aligned_small(struct net_buf *buf)
 
 	destroy_called++;
 	zassert_equal(pool, &var_pool_aligned_small, "Invalid free pointer in buffer");
+	net_buf_destroy(buf);
+}
+
+static void ref_destroy(struct net_buf *buf)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	destroy_called++;
+	zassert_equal(pool, &ref_pool, "Invalid free pointer in buffer");
 	net_buf_destroy(buf);
 }
 
@@ -1428,6 +1440,58 @@ ZTEST(net_buf_tests, test_net_buf_double_free)
 		      buf->pool_id);
 	zexpect_equal(buf->user_data_size, user_data_size, "User data size changed from %u to %u",
 		      user_data_size, buf->user_data_size);
+}
+
+ZTEST(net_buf_tests, test_net_buf_ref_saturated)
+{
+	struct net_buf *buf;
+	uint8_t pool_id;
+	uint8_t user_data_size;
+
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		/* An assertion catches the overflow before it returns */
+		ztest_test_skip();
+	}
+
+	destroy_called = 0;
+
+	buf = net_buf_alloc_len(&ref_pool, 16, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	pool_id = buf->pool_id;
+	user_data_size = buf->user_data_size;
+
+	/* One reference more than the count can hold */
+	for (size_t i = 0; i < UINT8_MAX; i++) {
+		zassert_equal_ptr(net_buf_ref(buf), buf);
+	}
+
+	zexpect_equal(buf->ref, UINT8_MAX, "Reference count %u", buf->ref);
+	zexpect_equal(buf->flags, 0U, "Flags changed to 0x%02x", buf->flags);
+	zexpect_equal(buf->pool_id, pool_id, "Pool id changed from %u to %u", pool_id,
+		      buf->pool_id);
+	zexpect_equal(buf->user_data_size, user_data_size, "User data size changed from %u to %u",
+		      user_data_size, buf->user_data_size);
+
+	/* A reference taken and dropped again must not free the buffer */
+	zassert_equal_ptr(net_buf_ref(buf), buf);
+	net_buf_unref(buf);
+	zexpect_equal(destroy_called, 0, "Buffer freed while referenced");
+
+	/* The count no longer tells when the last reference is dropped, so the
+	 * buffer is never freed.
+	 */
+	for (size_t i = 0; i <= UINT8_MAX; i++) {
+		net_buf_unref(buf);
+	}
+
+	zassert_equal(destroy_called, 0, "Buffer freed with a saturated reference count");
+	zassert_equal(buf->ref, UINT8_MAX, "Reference count changed to %u", buf->ref);
+
+	/* All references have been dropped: give the buffer back to its pool */
+	buf->ref = 1U;
+	net_buf_unref(buf);
+	zassert_equal(destroy_called, 1, "Buffer not freed");
 }
 
 ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);
