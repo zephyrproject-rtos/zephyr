@@ -189,12 +189,19 @@ static int prepare_cb(struct lll_prepare_param *p)
 	 * accordingly, and setup the remaining subevents for transmission
 	 * within the drift-adjusted CIG event window.
 	 */
+	uint16_t cis_handle_resume;
 	uint32_t drift_us = 0U;
 	uint8_t first_se_skip = 0U;
 
 	if (p->ticks_drift != 0U) {
 		drift_us = HAL_TICKER_TICKS_TO_US(p->ticks_drift);
 	}
+
+	/* CISes before the CIS that was being executed when this CIG event was
+	 * preempted have already been closed; get and reset the resume CIS.
+	 */
+	cis_handle_resume = cig_lll->cis_handle_resume;
+	cig_lll->cis_handle_resume = LLL_HANDLE_INVALID;
 
 	/* Reset resume flag for this preparation attempt */
 	cig_lll->is_lll_resume = 0U;
@@ -270,9 +277,20 @@ static int prepare_cb(struct lll_prepare_param *p)
 			} while (cis_lll && !cis_lll->active);
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+			if (cis_lll && (cis_handle_resume != LLL_HANDLE_INVALID)) {
+				if (cis_lll->handle != cis_handle_resume) {
+					/* CIS already closed before the CIG
+					 * event was preempted.
+					 */
+					continue;
+				}
+
+				cis_handle_resume = LLL_HANDLE_INVALID;
+			}
+
 			if (cis_lll && (drift_us != 0U) &&
-			    ((cis_lll->offset + (cis_lll->nse * cis_lll->sub_interval)) <=
-			     drift_us)) {
+			    (drift_us > (cis_lll->offset +
+					 ((cis_lll->nse - 1U) * cis_lll->sub_interval)))) {
 				/* CIS fully elapsed within the drift window;
 				 * account for the skipped subevents and continue
 				 * to the next CIS.
@@ -367,7 +385,12 @@ static int prepare_cb(struct lll_prepare_param *p)
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+	/* Subevents of the first CIS skipped within the drift window */
+	se_curr = first_se_skip + 1U;
+#else /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	se_curr = 1U;
+#endif /* !CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 #if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
 	if (cig_lll->packing) {
@@ -824,6 +847,12 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
 		if (cig_lll->is_lll_resume != 0U) {
+			/* Remember the CIS being executed, CISes before it
+			 * have been closed and shall not be closed again on
+			 * resume.
+			 */
+			cig_lll->cis_handle_resume = cis_handle_curr;
+
 			/* Save the radio timer anchors so the resume prepare
 			 * can compute the remaining subevents relative to the
 			 * original event start.
@@ -889,6 +918,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	if (param && (cig_lll->is_lll_resume != 0U)) {
 		return;
 	}
+
+	/* Event will not be resumed */
+	cig_lll->cis_handle_resume = LLL_HANDLE_INVALID;
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 
 	/* NOTE: Else clean the top half preparations of the aborted event

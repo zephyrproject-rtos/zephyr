@@ -135,6 +135,12 @@ struct lll_conn_iso_group {
 	 * position when the CIG event was wrapped around an overlapping role.
 	 */
 	uint8_t  is_lll_resume:1;
+	/* CIS handle being executed when a started CIG event was preempted to
+	 * be resumed. CISes before it in the event have already been closed and
+	 * their payload counts updated, hence must not be closed again on
+	 * resume.
+	 */
+	uint16_t cis_handle_resume;
 	uint32_t ticks_start;
 	uint32_t ready_us;
 	uint32_t aa_us;
