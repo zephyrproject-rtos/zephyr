@@ -97,6 +97,13 @@ static inline bool arch_is_in_isr(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/*
+ * A user thread's stack is mapped U=1 in whole MMU pages, so it must
+ * not share a page with anything else.
+ */
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)   CONFIG_MMU_PAGE_SIZE
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) ROUND_UP((size), CONFIG_MMU_PAGE_SIZE)
+
 /* Memory partition attributes for userspace support */
 typedef uint32_t k_mem_partition_attr_t;
 
