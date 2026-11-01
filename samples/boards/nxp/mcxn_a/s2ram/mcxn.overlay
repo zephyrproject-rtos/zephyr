@@ -18,7 +18,7 @@
 	status = "okay";
 };
 
-&os_timer {
+&ostimer0 {
 	status = "disabled";
 };
 
