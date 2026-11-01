@@ -375,7 +375,7 @@ static inline int32_t hexagon_vm_newmap(void *addr, uint32_t type, uint32_t tlb_
 			 : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
 			   "r11", "r12", "r13", "r14", "r15", "r28", "r31",
 			   "sa0", "lc0", "sa1", "lc1", "m0", "m1", "usr",
-			   "p0", "p1", "p2", "p3");
+			   "p0", "p1", "p2", "p3", "memory");
 	return r0_val;
 }
 

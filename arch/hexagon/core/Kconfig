@@ -27,4 +27,20 @@ config HEXAGON_MMU
 	  table, so mappings require virt == phys and KERNEL_DIRECT_MAP is
 	  mandatory here.
 
+config HEXAGON_HOST_KERNEL_BASE
+	hex "Hypervisor host kernel image base address"
+	depends on HEXAGON_MMU
+	default 0x9b800000
+	help
+	  Guest-visible address of the host kernel image. The kernel's linear
+	  map keeps it mapped RWX for guest mode only. Must be 4MB-aligned.
+
+config HEXAGON_HOST_KERNEL_SIZE
+	hex "Hypervisor host kernel image size"
+	depends on HEXAGON_MMU
+	default 0x800000
+	help
+	  Size of the host kernel image window at HEXAGON_HOST_KERNEL_BASE. Must
+	  be a non-zero multiple of 4MB, at most 16MB.
+
 endif # CPU_HAS_MMU
