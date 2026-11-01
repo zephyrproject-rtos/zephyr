@@ -64,6 +64,39 @@ ZTEST(spsc, test_produce_consume_size1)
 	zassert_not_null(acq4, "Acquire should succeed");
 }
 
+/**
+ * @brief Count available slots through reservations, releases, and wraparound.
+ */
+ZTEST(spsc, test_acquirable)
+{
+	SPSC_DEFINE(queue, uint32_t, 4);
+
+	for (size_t i = 0; i < 4; ++i) {
+		zassert_equal(spsc_acquirable(&queue), 4 - i);
+		zassert_not_null(spsc_acquire(&queue));
+	}
+	zassert_equal(spsc_acquirable(&queue), 0);
+	zassert_is_null(spsc_acquire(&queue));
+	spsc_drop_all(&queue);
+
+	for (size_t round = 0; round < 4; ++round) {
+		zassert_equal(spsc_acquirable(&queue), 4);
+		for (size_t i = 0; i < 3; ++i) {
+			zassert_not_null(spsc_acquire(&queue));
+			zassert_equal(spsc_acquirable(&queue), 3 - i);
+		}
+		spsc_produce_all(&queue);
+		zassert_equal(spsc_acquirable(&queue), 1);
+
+		for (size_t i = 0; i < 3; ++i) {
+			zassert_not_null(spsc_consume(&queue));
+			zassert_equal(spsc_acquirable(&queue), 1 + i);
+			spsc_release(&queue);
+			zassert_equal(spsc_acquirable(&queue), 2 + i);
+		}
+	}
+}
+
 /*&*
  * @brief Produce and Consume 3 items at a time in a spsc of size 4 to validate masking
  * and wrap around reads/writes.
