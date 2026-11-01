@@ -80,6 +80,16 @@ OPAMP
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
 
+Timers
+======
+
+* :kconfig:option:`CONFIG_CORTEX_M_SYSTICK` and :kconfig:option:`CONFIG_MCUX_OS_TIMER` now use
+  ``zephyr,system-timer`` in their Kconfig dependencies when the property is present. Existing
+  applications that define this property must ensure it references an enabled node supported by
+  the intended system timer driver. The NXP OS timer also uses the chosen instance instead of
+  instance zero. Update the chosen property if necessary to retain the intended timer and
+  instance. Configurations without this property retain their existing behavior.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
