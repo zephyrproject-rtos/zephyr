@@ -16,6 +16,14 @@
  * Specification and is stable across H2 versions.
  */
 
+#include <zephyr/devicetree.h>
+
+#if DT_HAS_CHOSEN(zephyr_console)
+#define HVM_CONSOLE_BASE       DT_REG_ADDR(DT_CHOSEN(zephyr_console))
+#define HVM_CONSOLE_MAP_BASE   (HVM_CONSOLE_BASE & 0xffc00000)
+#define HVM_CONSOLE_PDE_OFFSET ((HVM_CONSOLE_BASE >> 22) << 2)
+#endif
+
 #define HEXAGON_VM_vmversion   0
 #define HEXAGON_VM_vmrte       1
 #define HEXAGON_VM_vmsetvec    2
@@ -375,7 +383,7 @@ static inline int32_t hexagon_vm_newmap(void *addr, uint32_t type, uint32_t tlb_
 			 : "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",
 			   "r11", "r12", "r13", "r14", "r15", "r28", "r31",
 			   "sa0", "lc0", "sa1", "lc1", "m0", "m1", "usr",
-			   "p0", "p1", "p2", "p3");
+			   "p0", "p1", "p2", "p3", "memory");
 	return r0_val;
 }
 
