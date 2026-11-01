@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	test_client: test-client {
+		interrupt-parent = <&test_rp1>;
+		interrupts = <25 IRQ_TYPE_LEVEL>;
+	};
+
+	test_gic: interrupt-controller@1000 {
+		compatible = "arm,gic";
+		reg = <0x1000 0x1000>, <0x2000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <4>;
+	};
+
+	test_mip: msi-controller@3000 {
+		compatible = "brcm,bcm2712-mip";
+		reg = <0x3000 0xc0>;
+		msi-controller;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <2>;
+		interrupt-map = <31 IRQ_TYPE_EDGE &test_gic GIC_SPI 159 IRQ_TYPE_EDGE 0>,
+				<32 IRQ_TYPE_EDGE &test_gic GIC_SPI 160 IRQ_TYPE_EDGE 0>,
+				<33 IRQ_TYPE_EDGE &test_gic GIC_SPI 161 IRQ_TYPE_EDGE 0>;
+		brcm,msi-num-spis = <64>;
+		brcm,msi-pci-addr = <0xff 0xfffff000>;
+		brcm,msi-window-size = <0x1000>;
+		/* The test supplies RAM for the registers. */
+		status = "disabled";
+	};
+
+	test_rp1: interrupt-controller@4000 {
+		compatible = "raspberrypi,rp1-intc";
+		reg = <0x4000 0x1000>;
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <2>;
+		msi-parent = <&test_mip>;
+		interrupt-map = <25 IRQ_TYPE_LEVEL &test_mip 32 IRQ_TYPE_EDGE>,
+				<26 IRQ_TYPE_LEVEL &test_mip 31 IRQ_TYPE_EDGE>,
+				<27 IRQ_TYPE_LEVEL &test_mip 33 IRQ_TYPE_EDGE>;
+	};
+};
