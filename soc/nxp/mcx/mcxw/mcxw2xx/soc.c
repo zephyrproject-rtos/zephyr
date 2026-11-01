@@ -105,7 +105,7 @@ __weak void clock_init(void)
 
 	configure_32k_osc();
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ostimer0), nxp_os_timer, okay)
 	/*
 	 * OS event timer generally uses FRO 1 MHz clock.
 	 * When power management is enabled, uses 32K clock for lower power.
