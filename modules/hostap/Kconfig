@@ -197,6 +197,13 @@ config WIFI_NM_WPA_SUPPLICANT_RRM
 	default y
 endif
 
+config WIFI_NM_WPA_SUPPLICANT_NO_6GHZ
+	bool "Disable 6 GHz band support"
+	default y if WIFI_NRF70 || WIFI_NXP || WIFI_BFLB
+	help
+	  Disable support for operating in the 6 GHz band, for radios that
+	  only support the 2.4 GHz and 5 GHz bands.
+
 config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	bool "Legacy (non-FIPS) crypto for backward compatibility"
 	default y
@@ -816,6 +823,9 @@ config NO_RRM
 	bool
 
 config NO_WMM_AC
+	bool
+
+config NO_6GHZ
 	bool
 
 config DPP
