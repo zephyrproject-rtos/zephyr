@@ -87,3 +87,20 @@ Building for a simulated nrf52_bsim
    :board: nrf52_bsim
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+
+USB Audio input
+---------------
+
+With :kconfig:option:`CONFIG_USE_USB_AUDIO_INPUT` (enabled for ``nrf54lm20dk/nrf54lm20a/cpuapp``)
+the sample is a USB Audio Class 2 speaker that broadcasts the received 48 kHz stereo audio.
+The isochronous OUT endpoint is asynchronous and the broadcast is the clock master: the
+application measures the input buffer fill level each time an SDU is sent and reports an
+explicit feedback value that makes the host follow the Bluetooth clock. If the host does not
+follow the feedback, a single sample is dropped or repeated per SDU to keep the buffer bounded,
+so that no SDU is sent with missing audio. Statistics are printed every 10 seconds. With an
+audio input the broadcast source is not reset.
+
+The USB host can be emulated, for example in BabbleSim, with
+``-DEXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-emulated-input.conf"``. The emulated
+host clock offset is set with :kconfig:option:`CONFIG_AUDIO_INPUT_EMULATED_PPM`, and
+:kconfig:option:`CONFIG_AUDIO_INPUT_EMULATED_FEEDBACK` selects whether it follows the feedback.
