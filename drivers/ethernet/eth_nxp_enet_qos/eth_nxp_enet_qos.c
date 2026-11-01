@@ -651,11 +651,11 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
-	struct net_pkt *pkt = NULL;
+	struct net_pkt *pkt = rx_data->pkt;
 	struct net_buf *new_buf;
 	struct net_buf *buf;
 	size_t pkt_len;
-	size_t processed_len;
+	size_t processed_len = rx_data->processed_len;
 
 	LOG_DBG("RX work start: %p", work);
 
@@ -663,7 +663,17 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	 * DMA can use them for receiving again. We stop when we reach DMA owned part of ring.
 	 */
 	while (software_owns_descriptor(desc)) {
+		uint32_t status;
+
 		rx_data->next_desc_idx = (desc_idx + 1U) % NUM_RX_BUFDESC;
+		status = desc->write.control3;
+
+		if (pkt != NULL && (status & FIRST_DESCRIPTOR_FLAG) != 0U) {
+			/* A new frame resynchronizes an unterminated previous frame. */
+			net_pkt_unref(pkt);
+			pkt = NULL;
+			eth_stats_update_errors_rx(data->iface);
+		}
 
 		if (pkt == NULL) {
 			if ((desc->write.control3 & FIRST_DESCRIPTOR_FLAG) !=
@@ -701,14 +711,20 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				desc_idx + 1U, NUM_RX_BUFDESC, pkt);
 		}
 
-		/* Read the cumulative length of data in this buffer and previous buffers (if any).
-		 * The complete length is in a descriptor with the last descriptor flag set.
-		 * The MAC strips CRC from Type packets, so the packet passed to upper layers
-		 * does not include the FCS.
+		/* PL is valid only on LD. All preceding single-buffer descriptors
+		 * contain RBSZ bytes, regardless of the intermediate PL bits.
+		 * CST strips the FCS from Type frames before DMA, so do not subtract
+		 * it again here. Bound incomplete assembly by the MAC frame limit.
 		 */
-		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
-		if ((pkt_len < processed_len) ||
-			((pkt_len - processed_len) > ENET_QOS_RX_BUFFER_SIZE)) {
+		if ((status & LAST_DESCRIPTOR_FLAG) != 0U) {
+			pkt_len = status & DESC_RX_PKT_LEN;
+		} else {
+			pkt_len = processed_len + ENET_QOS_RX_BUFFER_SIZE;
+		}
+		if ((pkt_len <= processed_len) || (pkt_len > ENET_QOS_MAX_FRAME_LEN) ||
+		    ((pkt_len - processed_len) > ENET_QOS_RX_BUFFER_SIZE) ||
+		    (((status & LAST_DESCRIPTOR_FLAG) == 0U) &&
+		     (pkt_len >= ENET_QOS_MAX_FRAME_LEN))) {
 			LOG_WRN("Invalid packet length in descriptor: pkt_len=%u, processed_len=%u",
 				pkt_len, processed_len);
 			net_pkt_unref(pkt);
@@ -816,15 +832,12 @@ next:
 		desc = &desc_arr[desc_idx];
 	}
 
-	if (pkt != NULL) {
-		/* Looped through descriptors without reaching the final
-		 * fragment of the packet, deallocate the incomplete one
-		 */
-		LOG_DBG("Incomplete packet received, cleaning up");
-		net_pkt_unref(pkt);
-		pkt = NULL;
-		eth_stats_update_errors_rx(data->iface);
-	}
+	/* An OWN descriptor is a scheduling boundary, not a malformed frame.
+	 * Retain detached fragments until LD or a new FD arrives. Do not wait
+	 * for DMA: a subsequent receive interrupt continues the assembly.
+	 */
+	rx_data->pkt = pkt;
+	rx_data->processed_len = pkt != NULL ? processed_len : 0U;
 
 	/* now that we updated the descriptors, resume in case we are suspended */
 	enet_qos_dma_rx_resume(dev);

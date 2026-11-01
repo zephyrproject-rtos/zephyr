@@ -178,6 +178,8 @@ struct nxp_enet_qos_rx_data {
 	uint32_t next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc descriptors[NUM_RX_BUFDESC];
 	struct net_buf *reserved_bufs[NUM_RX_BUFDESC];
+	struct net_pkt *pkt;
+	size_t processed_len;
 };
 
 struct nxp_enet_qos_mac_data {
