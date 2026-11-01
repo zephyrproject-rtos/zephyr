@@ -146,6 +146,14 @@ Libraries / Subsystems
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
 
+* Networking
+
+  * HTTP server: accepted connections now have ``TCP_NODELAY`` set, so a response
+    sent in several pieces (every TLS response, every websocket frame) is no
+    longer held back by the client's delayed acknowledgements. Applications that
+    prefer Nagle's algorithm can disable
+    :kconfig:option:`CONFIG_HTTP_SERVER_TCP_NODELAY`.
+
 Devicetree
 **********
 
