@@ -22,10 +22,6 @@
 			clock-type = "internal-programmable";
 			frequency-control = "read-only";
 			sampling-frequencies = <48000>;
-			/* Falsely claim synchronous audio because we
-			 * currently don't calculate feedback value
-			 */
-			sof-synchronized;
 		};
 
 		/* USB Audio terminal from USB host to USB device */

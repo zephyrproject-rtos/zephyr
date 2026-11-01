@@ -61,6 +61,38 @@ config USE_USB_AUDIO_INPUT
 	depends on ENABLE_LC3
 	select USB_DEVICE_STACK_NEXT
 	select USBD_AUDIO2_CLASS
+	help
+	  Receive 48 kHz stereo audio from a USB host over an asynchronous UAC2 isochronous
+	  endpoint. The ISO stream is the clock master; the explicit feedback endpoint keeps
+	  the host sample rate locked to it.
+
+config AUDIO_INPUT_EMULATED
+	bool "Use an emulated USB host as input"
+	depends on ENABLE_LC3 && !USE_USB_AUDIO_INPUT
+	help
+	  Feed the audio input path from a timer that emulates a USB host delivering a
+	  400 Hz tone at 48 kHz with a configurable clock offset. Used to test the clock
+	  synchronization without USB hardware, e.g. in BabbleSim.
+
+if AUDIO_INPUT_EMULATED
+
+config AUDIO_INPUT_EMULATED_PPM
+	int "Emulated USB host clock offset in ppm"
+	default 0
+	range -1000 1000
+
+config AUDIO_INPUT_EMULATED_FEEDBACK
+	bool "Emulated USB host follows the explicit feedback"
+	default y
+	help
+	  When disabled, the emulated host behaves like a synchronous host that ignores
+	  feedback, exercising the sample drop and repeat fallback.
+
+endif # AUDIO_INPUT_EMULATED
+
+config AUDIO_INPUT_STREAM
+	bool
+	default y if USE_USB_AUDIO_INPUT || AUDIO_INPUT_EMULATED
 
 config BROADCAST_CODE
 	string "The broadcast code (if any) to use for encrypted broadcast"

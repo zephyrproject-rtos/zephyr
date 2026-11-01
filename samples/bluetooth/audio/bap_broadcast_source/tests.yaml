@@ -70,3 +70,10 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: samples_bluetooth_audio_bap_broadcast_source_prj_conf_overlay-interleaved_conf
+  sample.bluetooth.audio.bap_broadcast_source.emulated_input.bsim:
+    depends_on: bsim
+    build_only: true
+    platform_allow:
+      - nrf52_bsim
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-emulated-input.conf"
