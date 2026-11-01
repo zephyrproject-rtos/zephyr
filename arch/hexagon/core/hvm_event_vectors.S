@@ -173,7 +173,6 @@ _hang:
 	jump #_hang
 
 #ifdef CONFIG_MMU
-#define UART0_BASE         DT_REG_ADDR(DT_NODELABEL(uart0))
 #define HVM_KERNEL_BASE    DT_REG_ADDR(DT_NODELABEL(hvm_kernel))
 #define HVM_KERNEL_SIZE    DT_REG_SIZE(DT_NODELABEL(hvm_kernel))
 
@@ -242,21 +241,22 @@ _pte_loop:
 	} :endloop0
 
 _page_table_done:
-	/* Map PL011 UART device.
-	 * The shared bit bypasses H2's guestmap translation so the
-	 * guest physical address is used directly as the host address.
-	 * U is set as with the RAM mapping above: trap0 dispatch (e.g.
-	 * uart_poll_out()) runs at USER tier and needs it to access this page.
+#if DT_HAS_CHOSEN(zephyr_console)
+	/* Map the chosen console device. The shared bit bypasses H2's
+	 * guestmap translation so the guest physical address is used
+	 * directly as the host address. U is set because console output
+	 * runs at USER tier during trap0 dispatch.
 	 */
-	r0 = add(r5, #PDE_OFFSET(UART0_BASE))
-	r1.h = #PHYS_ADDR_HI16(UART0_BASE)
-	r1.l = #PHYS_ADDR_LO16(UART0_BASE)
+	r0 = add(r5, #HVM_CONSOLE_PDE_OFFSET)
+	r1.h = #(HVM_CONSOLE_MAP_BASE >> 16)
+	r1.l = #(HVM_CONSOLE_MAP_BASE & 0xffff)
 	r2 = #(__HVM_PTE_R | __HVM_PTE_W | __HVM_PTE_U | __HVM_PTE_SHARED)
 	r3 = #(__HEXAGON_C_DEV << 6)
 	r2 = or(r2, r3)
 	r2 = or(r2, #__HVM_PDE_S_4MB)
 	r1 = add(r1, r2)
 	memw(r0+#0) = r1
+#endif
 
 	/* Map H2 kernel code and data. */
 	r0 = add(r5, #PDE_OFFSET(HVM_KERNEL_BASE))
