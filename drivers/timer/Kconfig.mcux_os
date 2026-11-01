@@ -3,10 +3,15 @@
 # Copyright (c) 2019 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+
 config MCUX_OS_TIMER
 	bool "MCUX OS Event timer"
 	default y
 	depends on DT_HAS_NXP_OS_TIMER_ENABLED
+	depends on "$(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))" = "" || \
+		($(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER)) && \
+		$(dt_chosen_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER),$(DT_COMPAT_NXP_OS_TIMER)))
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select RESET
@@ -14,6 +19,7 @@ config MCUX_OS_TIMER
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.
+	  When zephyr,system-timer is present, it selects the timer instance.
 
 if MCUX_OS_TIMER
 
