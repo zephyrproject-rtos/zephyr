@@ -117,19 +117,20 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_6
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+#include "audio_in.h"
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
+
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
-#include <zephyr/sys/ring_buffer.h>
 
 #include <sample_usbd.h>
 
 /* USB Audio Data is downsampled from 48kHz to match broadcast preset when receiving data */
-#define USB_SAMPLE_RATE           48000U
-#define USB_DOWNSAMPLE_RATE       BROADCAST_SAMPLE_RATE
+#define USB_SAMPLE_RATE           AUDIO_IN_RATE_HZ
 #define USB_FRAME_DURATION_US     1000U
 #define USB_SAMPLE_CNT            ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
-#define USB_DOWNSSAMPLE_CNT       ((USB_FRAME_DURATION_US * USB_DOWNSAMPLE_RATE) / USEC_PER_SEC)
 #define USB_BYTES_PER_SAMPLE      2U
 #define USB_CHANNELS              2U
 #define USB_MONO_FRAME_SIZE       (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
@@ -137,11 +138,9 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_6
 #define USB_MAX_MONO_FRAME_SIZE   ((USB_SAMPLE_CNT + 1) * USB_BYTES_PER_SAMPLE)
 #define USB_STEREO_FRAME_SIZE     (USB_MONO_FRAME_SIZE * USB_CHANNELS)
 #define USB_MAX_STEREO_FRAME_SIZE (USB_MAX_MONO_FRAME_SIZE * USB_CHANNELS)
-#define USB_ENQUEUE_COUNT         30U /* 30 times 1ms frames => 30ms */
+#endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 
-#define RING_BUF_USB_FRAMES  20U
-#define AUDIO_RING_BUF_BYTES (USB_DOWNSSAMPLE_CNT * USB_BYTES_PER_SAMPLE * RING_BUF_USB_FRAMES)
-#else /* !defined(CONFIG_USE_USB_AUDIO_INPUT) */
+#if !defined(CONFIG_AUDIO_INPUT_STREAM)
 
 #include <math.h>
 
@@ -168,7 +167,7 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
 	}
 }
-#endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
+#endif /* !defined(CONFIG_AUDIO_INPUT_STREAM) */
 #endif /* defined(CONFIG_LIBLC3) */
 
 static struct broadcast_source_stream {
@@ -176,6 +175,10 @@ static struct broadcast_source_stream {
 	uint16_t seq_num;
 	uint8_t bis_number;
 	size_t sent_cnt;
+	/* SDUs queued to the controller and not yet completed */
+	atomic_t in_flight;
+	/* Completions that left the controller queue empty: possible on-air gap */
+	atomic_t queue_empty_cnt;
 
 #if defined(CONFIG_LIBLC3)
 	lc3_encoder_t lc3_encoder;
@@ -188,10 +191,6 @@ static struct broadcast_source_stream {
 #elif defined(CONFIG_BAP_BROADCAST_48_2_1) || defined(CONFIG_BAP_BROADCAST_48_6_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
 #endif
-#if defined(CONFIG_USE_USB_AUDIO_INPUT)
-	struct ring_buf audio_ring_buf;
-	uint8_t _ring_buffer_memory[AUDIO_RING_BUF_BYTES];
-#endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 #endif /* defined(CONFIG_LIBLC3) */
 } streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_broadcast_source *broadcast_source;
@@ -339,9 +338,16 @@ static int frames_per_sdu;
 static int octets_per_frame;
 
 static K_SEM_DEFINE(lc3_encoder_sem, 0U, TOTAL_BUF_NEEDED);
+
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+/* SDUs that fill the controller queue at start are silence; they are encoded back to back and
+ * would otherwise drain the input buffer below its target level.
+ */
+static atomic_t queue_fill_cnt;
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
 #endif
 
-static void send_data(struct broadcast_source_stream *source_stream)
+static void send_data(struct broadcast_source_stream *source_stream, const int16_t *pcm)
 {
 	struct bt_bap_stream *stream = &source_stream->stream;
 	struct net_buf *buf;
@@ -367,19 +373,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 		return;
 	}
 
-#if defined(CONFIG_USE_USB_AUDIO_INPUT)
-	uint32_t size = ring_buf_get(&source_stream->audio_ring_buf, (uint8_t *)send_pcm_data,
-				     sizeof(send_pcm_data));
-
-	if (size < sizeof(send_pcm_data)) {
-		const size_t padding_size = sizeof(send_pcm_data) - size;
-
-		printk("Not enough bytes ready, padding %d!\n", padding_size);
-		memset(&((uint8_t *)send_pcm_data)[size], 0, padding_size);
-	}
-#endif
-
-	ret = lc3_encode(source_stream->lc3_encoder, LC3_PCM_FORMAT_S16, send_pcm_data, 1,
+	ret = lc3_encode(source_stream->lc3_encoder, LC3_PCM_FORMAT_S16, pcm, 1,
 			 octets_per_frame, lc3_encoded_buffer);
 	if (ret == -1) {
 		printk("LC3 encoder failed - wrong parameters?: %d", ret);
@@ -389,7 +383,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 
 	net_buf_add_mem(buf, lc3_encoded_buffer, preset_active.qos.sdu);
 #else
-	net_buf_add_mem(buf, send_pcm_data, preset_active.qos.sdu);
+	net_buf_add_mem(buf, pcm, preset_active.qos.sdu);
 #endif /* defined(CONFIG_LIBLC3) */
 
 	ret = bt_bap_stream_send(stream, buf, source_stream->seq_num++);
@@ -400,10 +394,12 @@ static void send_data(struct broadcast_source_stream *source_stream)
 		return;
 	}
 
+	atomic_inc(&source_stream->in_flight);
 	source_stream->sent_cnt++;
 	if ((source_stream->sent_cnt % 1000U) == 0U) {
-		printk("Stream %p BIS_Number %u: Sent %u total ISO packets\n", stream,
-		       source_stream->bis_number, source_stream->sent_cnt);
+		printk("Stream %p BIS_Number %u: Sent %u total ISO packets, queue empty %ld\n",
+		       stream, source_stream->bis_number, source_stream->sent_cnt,
+		       atomic_get(&source_stream->queue_empty_cnt));
 	}
 }
 
@@ -450,7 +446,12 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 		return;
 	}
 
-#if !defined(CONFIG_USE_USB_AUDIO_INPUT)
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+	if ((frame_duration_us * freq_hz) != (MAX_NUM_SAMPLES * USEC_PER_SEC)) {
+		printk("Error: Audio input frame size mismatch\n");
+		return;
+	}
+#else
 	/* If USB is not used as a sound source, generate a sine wave */
 	fill_audio_buf_sin(send_pcm_data, frame_duration_us, AUDIO_TONE_FREQUENCY_HZ, freq_hz);
 #endif
@@ -472,9 +473,22 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 
 			__ASSERT_NO_MSG(err == 0);
 		}
-		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-			send_data(&streams[i]);
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+		static int16_t in_pcm[AUDIO_IN_CHANNELS][MAX_NUM_SAMPLES];
+
+		if ((atomic_get(&queue_fill_cnt) > 0) && (atomic_dec(&queue_fill_cnt) > 0)) {
+			(void)memset(in_pcm, 0, sizeof(in_pcm));
+		} else {
+			audio_in_get(in_pcm[0], in_pcm[1]);
 		}
+		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+			send_data(&streams[i], in_pcm[MIN(i, AUDIO_IN_CHANNELS - 1U)]);
+		}
+#else
+		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+			send_data(&streams[i], send_pcm_data);
+		}
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
 	}
 }
 
@@ -501,6 +515,7 @@ static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool 
 	ARG_UNUSED(user_data);
 
 	terminal_enabled = enabled;
+	audio_in_flush();
 }
 
 static void uac2_sof_cb(const struct device *dev, void *user_data)
@@ -509,6 +524,15 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 	ARG_UNUSED(user_data);
 
 	/* no-op, but has to be registered */
+}
+
+static uint32_t feedback_cb(const struct device *dev, uint8_t terminal, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
+	return audio_in_feedback_get();
 }
 
 static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_t size,
@@ -539,10 +563,7 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, uint16_t size,
 			 void *user_data)
 {
-	int16_t usb_pcm_data[USB_CHANNELS][USB_DOWNSSAMPLE_CNT];
-	int nsamples, ratio;
-	static int count;
-	int16_t *pcm;
+	static uint32_t count;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(terminal);
@@ -553,35 +574,14 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 		return;
 	}
 
-	pcm = (int16_t *)buf;
-
-	/* 'size' is in bytes, containing 1ms, 48kHz, stereo, 2 bytes per sample.
-	 * Do a simple downsample to 16kHz/24Khz matching the broadcast preset.
+	/* 'size' is in bytes, containing 1 ms of 48 kHz stereo 16-bit samples; the sample count
+	 * varies around 48 as the host follows the feedback value.
 	 */
-
-	ratio = USB_SAMPLE_RATE / USB_DOWNSAMPLE_RATE;
-	nsamples = size / (sizeof(int16_t) * USB_CHANNELS * ratio);
-	for (size_t i = 0U, j = 0U; i < nsamples; i++, j += USB_CHANNELS * ratio) {
-		usb_pcm_data[0][i] = pcm[j];
-		usb_pcm_data[1][i] = pcm[j + 1];
-	}
-
-	for (size_t i = 0U; i < MIN(ARRAY_SIZE(streams), 2); i++) {
-		const uint32_t size_put =
-			ring_buf_put(&(streams[i].audio_ring_buf), (uint8_t *)(usb_pcm_data[i]),
-				     nsamples * USB_BYTES_PER_SAMPLE);
-		if (size_put < nsamples * USB_BYTES_PER_SAMPLE) {
-			printk("Not enough room for samples in %s buffer: %u < %u, total capacity: "
-			       "%u\n",
-			       i == 0U ? "left" : "right", size_put,
-			       nsamples * USB_BYTES_PER_SAMPLE,
-			       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
-		}
-	}
+	audio_in_put((const int16_t *)buf, size / (USB_BYTES_PER_SAMPLE * USB_CHANNELS));
 
 	count++;
-	if ((count % 10000) == 0) {
-		printk("USB Data received (count = %d)\n", count);
+	if ((count % 10000U) == 0U) {
+		printk("USB Data received (count = %u)\n", count);
 	}
 
 	k_mem_slab_free(&usb_out_buf_pool, buf);
@@ -604,20 +604,28 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	source_stream->seq_num = 0U;
 	source_stream->sent_cnt = 0U;
+	atomic_clear(&source_stream->in_flight);
+	atomic_clear(&source_stream->queue_empty_cnt);
 	/* Store the BIS number for logging purposes */
 	source_stream->bis_number = info.broadcaster.bis_number;
 }
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
 {
+	struct broadcast_source_stream *source_stream =
+		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
+
+	/* Also called directly to prime the queue, when nothing is in flight */
+	if ((atomic_get(&source_stream->in_flight) > 0) &&
+	    (atomic_dec(&source_stream->in_flight) == 1) && !stopping) {
+		atomic_inc(&source_stream->queue_empty_cnt);
+	}
+
 #if defined(CONFIG_LIBLC3)
 	k_sem_give(&lc3_encoder_sem);
 #else
 	/* If no LC3 encoder is used, just send mock data directly */
-	struct broadcast_source_stream *source_stream =
-		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
-
-	send_data(source_stream);
+	send_data(source_stream, send_pcm_data);
 #endif
 }
 
@@ -913,6 +921,7 @@ int main(void)
 		.get_recv_buf = get_recv_buf_cb,
 		.data_recv_cb = data_recv_cb,
 		.sof_cb = uac2_sof_cb,
+		.feedback_cb = feedback_cb,
 	};
 	struct usbd_context *sample_usbd;
 
@@ -925,11 +934,10 @@ int main(void)
 
 	(void)memset(streams, 0, sizeof(streams));
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		ring_buf_init(&(streams[i].audio_ring_buf), sizeof(streams[i]._ring_buffer_memory),
-			      streams[i]._ring_buffer_memory);
-		printk("Initialized ring buf %zu: capacity: %u\n", i,
-		       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
+	err = audio_in_init(BROADCAST_SAMPLE_RATE, MAX_NUM_SAMPLES);
+	if (err != 0) {
+		printk("Failed to init audio input: %d\n", err);
+		return err;
 	}
 
 	usbd_uac2_set_ops(broadcaster_dev, &usb_audio_ops, NULL);
@@ -948,6 +956,14 @@ int main(void)
 
 	printk("USB initialized\n");
 
+#elif defined(CONFIG_AUDIO_INPUT_EMULATED)
+	err = audio_in_init(BROADCAST_SAMPLE_RATE, MAX_NUM_SAMPLES);
+	if (err != 0) {
+		printk("Failed to init audio input: %d\n", err);
+		return err;
+	}
+
+	audio_in_emulated_start();
 #endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 	k_thread_start(encoder);
 #endif /* defined(CONFIG_LIBLC3) */
@@ -1054,16 +1070,19 @@ int main(void)
 		printk("Broadcast source started\n");
 
 		/* Initialize sending */
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+		atomic_set(&queue_fill_cnt, BROADCAST_ENQUEUE_COUNT);
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 			for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
 				stream_sent_cb(&streams[i].stream);
 			}
 		}
 
-#if defined(CONFIG_LIBLC3) && defined(CONFIG_USE_USB_AUDIO_INPUT)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_AUDIO_INPUT_STREAM)
 		/* Never stop streaming when using USB Audio as input */
 		k_sleep(K_FOREVER);
-#endif /* defined(CONFIG_LIBLC3) && defined(CONFIG_USE_USB_AUDIO_INPUT) */
+#endif /* defined(CONFIG_LIBLC3) && defined(CONFIG_AUDIO_INPUT_STREAM) */
 		printk("Waiting %u seconds before stopped\n", BROADCAST_SOURCE_LIFETIME);
 		k_sleep(K_SECONDS(BROADCAST_SOURCE_LIFETIME));
 		printk("Stopping broadcast source\n");
