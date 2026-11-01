@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/interrupt-controller/rp1-irq.h>
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &test_pcie;
+	};
+
+	test_msi: msi-controller {
+		interrupt-controller;
+		#address-cells = <0>;
+		#interrupt-cells = <2>;
+	};
+
+	test_pcie: pcie {
+		rp1 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			test_rp1: interrupt-controller@4000 {
+				compatible = "raspberrypi,rp1-intc";
+				reg = <0x4000 0x1000>;
+				interrupt-controller;
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				msi-parent = <&test_msi>;
+				interrupt-map = <0 IRQ_TYPE_LEVEL &test_msi 0 IRQ_TYPE_EDGE>,
+						<1 IRQ_TYPE_LEVEL &test_msi 1 IRQ_TYPE_EDGE>,
+						<2 IRQ_TYPE_LEVEL &test_msi 2 IRQ_TYPE_EDGE>,
+						<3 IRQ_TYPE_LEVEL &test_msi 3 IRQ_TYPE_EDGE>,
+						<4 IRQ_TYPE_LEVEL &test_msi 4 IRQ_TYPE_EDGE>,
+						<5 IRQ_TYPE_LEVEL &test_msi 5 IRQ_TYPE_EDGE>,
+						<6 IRQ_TYPE_LEVEL &test_msi 6 IRQ_TYPE_EDGE>,
+						<7 IRQ_TYPE_LEVEL &test_msi 7 IRQ_TYPE_EDGE>,
+						<8 IRQ_TYPE_LEVEL &test_msi 8 IRQ_TYPE_EDGE>,
+						<9 IRQ_TYPE_LEVEL &test_msi 9 IRQ_TYPE_EDGE>,
+						<10 IRQ_TYPE_LEVEL &test_msi 10 IRQ_TYPE_EDGE>,
+						<11 IRQ_TYPE_LEVEL &test_msi 11 IRQ_TYPE_EDGE>,
+						<12 IRQ_TYPE_LEVEL &test_msi 12 IRQ_TYPE_EDGE>,
+						<13 IRQ_TYPE_LEVEL &test_msi 13 IRQ_TYPE_EDGE>,
+						<14 IRQ_TYPE_LEVEL &test_msi 14 IRQ_TYPE_EDGE>,
+						<15 IRQ_TYPE_LEVEL &test_msi 15 IRQ_TYPE_EDGE>,
+						<16 IRQ_TYPE_LEVEL &test_msi 16 IRQ_TYPE_EDGE>,
+						<17 IRQ_TYPE_LEVEL &test_msi 17 IRQ_TYPE_EDGE>,
+						<18 IRQ_TYPE_LEVEL &test_msi 18 IRQ_TYPE_EDGE>,
+						<19 IRQ_TYPE_LEVEL &test_msi 19 IRQ_TYPE_EDGE>,
+						<20 IRQ_TYPE_LEVEL &test_msi 20 IRQ_TYPE_EDGE>,
+						<21 IRQ_TYPE_LEVEL &test_msi 21 IRQ_TYPE_EDGE>,
+						<22 IRQ_TYPE_LEVEL &test_msi 22 IRQ_TYPE_EDGE>,
+						<23 IRQ_TYPE_LEVEL &test_msi 23 IRQ_TYPE_EDGE>,
+						<24 IRQ_TYPE_LEVEL &test_msi 24 IRQ_TYPE_EDGE>,
+						<25 IRQ_TYPE_LEVEL &test_msi 25 IRQ_TYPE_EDGE>,
+						<26 IRQ_TYPE_LEVEL &test_msi 26 IRQ_TYPE_EDGE>,
+						<27 IRQ_TYPE_LEVEL &test_msi 27 IRQ_TYPE_EDGE>,
+						<28 IRQ_TYPE_LEVEL &test_msi 28 IRQ_TYPE_EDGE>,
+						<29 IRQ_TYPE_LEVEL &test_msi 29 IRQ_TYPE_EDGE>,
+						<30 IRQ_TYPE_EDGE &test_msi 30 IRQ_TYPE_EDGE>,
+						<31 IRQ_TYPE_EDGE &test_msi 31 IRQ_TYPE_EDGE>,
+						<32 IRQ_TYPE_EDGE &test_msi 32 IRQ_TYPE_EDGE>,
+						<33 IRQ_TYPE_EDGE &test_msi 33 IRQ_TYPE_EDGE>,
+						<34 IRQ_TYPE_EDGE &test_msi 34 IRQ_TYPE_EDGE>,
+						<35 IRQ_TYPE_EDGE &test_msi 35 IRQ_TYPE_EDGE>,
+						<36 IRQ_TYPE_EDGE &test_msi 36 IRQ_TYPE_EDGE>,
+						<37 IRQ_TYPE_EDGE &test_msi 37 IRQ_TYPE_EDGE>,
+						<38 IRQ_TYPE_EDGE &test_msi 38 IRQ_TYPE_EDGE>,
+						<39 IRQ_TYPE_EDGE &test_msi 39 IRQ_TYPE_EDGE>,
+						<40 IRQ_TYPE_LEVEL &test_msi 40 IRQ_TYPE_EDGE>,
+						<41 IRQ_TYPE_LEVEL &test_msi 41 IRQ_TYPE_EDGE>,
+						<42 IRQ_TYPE_LEVEL &test_msi 42 IRQ_TYPE_EDGE>,
+						<43 IRQ_TYPE_LEVEL &test_msi 43 IRQ_TYPE_EDGE>,
+						<44 IRQ_TYPE_LEVEL &test_msi 44 IRQ_TYPE_EDGE>,
+						<45 IRQ_TYPE_LEVEL &test_msi 45 IRQ_TYPE_EDGE>,
+						<46 IRQ_TYPE_LEVEL &test_msi 46 IRQ_TYPE_EDGE>,
+						<47 IRQ_TYPE_LEVEL &test_msi 47 IRQ_TYPE_EDGE>,
+						<48 IRQ_TYPE_LEVEL &test_msi 48 IRQ_TYPE_EDGE>,
+						<49 IRQ_TYPE_LEVEL &test_msi 49 IRQ_TYPE_EDGE>,
+						<50 IRQ_TYPE_LEVEL &test_msi 50 IRQ_TYPE_EDGE>,
+						<51 IRQ_TYPE_LEVEL &test_msi 51 IRQ_TYPE_EDGE>,
+						<52 IRQ_TYPE_LEVEL &test_msi 52 IRQ_TYPE_EDGE>,
+						<53 IRQ_TYPE_LEVEL &test_msi 53 IRQ_TYPE_EDGE>,
+						<54 IRQ_TYPE_LEVEL &test_msi 54 IRQ_TYPE_EDGE>,
+						<55 IRQ_TYPE_LEVEL &test_msi 55 IRQ_TYPE_EDGE>,
+						<56 IRQ_TYPE_LEVEL &test_msi 56 IRQ_TYPE_EDGE>,
+						<57 IRQ_TYPE_LEVEL &test_msi 57 IRQ_TYPE_EDGE>,
+						<58 IRQ_TYPE_LEVEL &test_msi 58 IRQ_TYPE_EDGE>,
+						<59 IRQ_TYPE_LEVEL &test_msi 59 IRQ_TYPE_EDGE>,
+						<60 IRQ_TYPE_LEVEL &test_msi 60 IRQ_TYPE_EDGE>;
+				/* The test supplies RAM for the registers. */
+				status = "disabled";
+			};
+		};
+	};
+};
