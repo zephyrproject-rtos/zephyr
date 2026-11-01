@@ -461,6 +461,7 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 	int ret = 0;
 
 	/* Start transmission*/
+	k_sem_reset(&data->cmd_sem);
 	i2c_ll_update(data->hal.dev);
 	i2c_ll_start_trans(data->hal.dev);
 	data->cmd_idx = 0;
