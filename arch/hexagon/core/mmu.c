@@ -18,6 +18,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <hexagon_vm.h>
+#include <hexagon_mmu.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -51,7 +52,7 @@ BUILD_ASSERT(CONFIG_MMU_PAGE_SIZE == 0x1000U,
  * hexagon_decompose_region() itself, so that helper's "exact multiple
  * of a size class" invariant stays simple.
  */
-static void hexagon_align_region_to_page(uintptr_t *addr, size_t *size)
+void hexagon_align_region_to_page(uintptr_t *addr, size_t *size)
 {
 	uintptr_t start = ROUND_DOWN(*addr, CONFIG_MMU_PAGE_SIZE);
 	uintptr_t end = ROUND_UP(*addr + *size, CONFIG_MMU_PAGE_SIZE);
@@ -67,15 +68,15 @@ static void hexagon_align_region_to_page(uintptr_t *addr, size_t *size)
  * number of entries used.
  *
  * Never asserts or panics: a region too irregularly shaped or too
- * large for its budget just loses coverage for the uncovered tail
- * (logged) instead of crashing the kernel. A well-aligned region --
- * the common case -- needs exactly one entry. Callers must page-align
- * addr/size first (see hexagon_align_region_to_page()): the smallest
- * size class is 4KB, so an unaligned addr can never match any class.
+ * large for its budget just loses hardware coverage for the uncovered
+ * tail (logged) instead of crashing the kernel. A
+ * well-aligned region -- the common case -- needs exactly one entry.
+ * Callers must page-align addr/size first (see
+ * hexagon_align_region_to_page()): the smallest size class is 4KB, so
+ * an unaligned addr can never match any class.
  */
-static uint32_t hexagon_decompose_region(struct hexagon_linear_entry *entries,
-					 uint32_t max_entries, uintptr_t addr, size_t size,
-					 uint32_t xwru, uint32_t cache_attr)
+uint32_t hexagon_decompose_region(struct hexagon_linear_entry *entries, uint32_t max_entries,
+				  uintptr_t addr, size_t size, uint32_t xwru, uint32_t cache_attr)
 {
 	uint32_t n = 0;
 
@@ -119,6 +120,21 @@ static uint32_t hexagon_decompose_region(struct hexagon_linear_entry *entries,
 #define HEXAGON_RAM_CHUNK_SIZE 0x400000U
 
 /*
+ * Image RAM is mapped one 4KB page per entry, see hexagon_fixed_tail_init().
+ * This caps image RAM at 4MB, and a user thread's TLB miss on RAM
+ * outside its domain walks linearly through these pages. A page-table
+ * (VM_TRANS_TYPE_TABLE) map per domain would lift both limits.
+ */
+#define HEXAGON_FIXED_TAIL_MAX_RAM_PAGES 1024
+
+/*
+ * The gap from image end to the next 4MB boundary needs at most 15
+ * entries under greedy decomposition for every 4KB-aligned offset in
+ * the chunk. One entry remains as slack.
+ */
+#define HEXAGON_FIXED_TAIL_POST_IMAGE_ENTRIES 16
+
+/*
  * Text and rodata must be fully covered: an uncovered page faults in
  * kernel mode too. Greedy decomposition uses at most 3 entries per size
  * class on each side of the largest aligned chunk, so 2 * 3 * 6 classes
@@ -137,7 +153,10 @@ static uint32_t hexagon_decompose_region(struct hexagon_linear_entry *entries,
 #define HEXAGON_FIXED_TAIL_CONSOLE_ENTRIES 0
 #endif
 
-/* At most four 4MB entries, see the BUILD_ASSERTs below. */
+/*
+ * The configured H2 window is at most 16MB in 4MB multiples: at most
+ * 16MB / 4MB = four entries.
+ */
 #define HEXAGON_FIXED_TAIL_H2_ENTRIES 4
 
 BUILD_ASSERT((CONFIG_HEXAGON_H2_KERNEL_BASE % 0x400000U) == 0U,
@@ -148,17 +167,20 @@ BUILD_ASSERT((CONFIG_HEXAGON_H2_KERNEL_SIZE % 0x400000U) == 0U &&
 	     "CONFIG_HEXAGON_H2_KERNEL_SIZE must be a multiple of 4MB, at most 16MB");
 
 /*
- * Text/rodata carve-out entries + console device + H2-kernel entries +
- * one all-zero terminator.
+ * Text/rodata carve-out entries + image RAM pages + post-image RAM
+ * entries + console device + H2-kernel entries + one all-zero terminator.
  */
 #define HEXAGON_FIXED_TAIL_ENTRIES                                                               \
 	(HEXAGON_FIXED_TAIL_TEXT_ENTRIES + HEXAGON_FIXED_TAIL_RODATA_ENTRIES +                    \
+	 HEXAGON_FIXED_TAIL_MAX_RAM_PAGES + HEXAGON_FIXED_TAIL_POST_IMAGE_ENTRIES +              \
 	 HEXAGON_FIXED_TAIL_CONSOLE_ENTRIES + HEXAGON_FIXED_TAIL_H2_ENTRIES + 1)
 
 /*
- * Everything but RAM, at the same addresses and cache attributes the
- * boot Table map grants: kernel text, kernel rodata, the console, and the
- * H2 kernel image.
+ * Shared tail chained onto hexagon_kernel_map and every memory domain's
+ * list (see hexagon_mem_domain_rebuild()). Entries retain the boot table
+ * map's addresses and cache attributes.
+ *
+ * In list order, the tail grants:
  *
  *                     U   R   W   X
  *   Text              1   1   0   1
@@ -181,28 +203,22 @@ BUILD_ASSERT((CONFIG_HEXAGON_H2_KERNEL_SIZE % 0x400000U) == 0U &&
  * keep rodata non-executable. The console keeps U=1 because console output
  * runs at user tier during trap0 dispatch.
  */
-static struct hexagon_linear_entry hexagon_fixed_tail[HEXAGON_FIXED_TAIL_ENTRIES];
+struct hexagon_linear_entry hexagon_fixed_tail[HEXAGON_FIXED_TAIL_ENTRIES];
 
 /*
- * Map installed in place of the boot table: RAM from the end of the
- * kernel image's text/rodata to the next 4MB boundary, in the largest
+ * Map installed while no user thread's is: image RAM in the largest
  * aligned entries, then a chain to hexagon_fixed_tail for everything
- * else. RAM is read/write but never executable. Same 37-entry bound as
- * the text/rodata budgets.
+ * else. Nothing earlier in this list can overlap RAM, so the livelock
+ * that forces the tail's 4KB pages (see hexagon_fixed_tail_init())
+ * cannot happen here, and a kernel thread's RAM miss walks ~20 entries,
+ * not ~1100. Reuses the text/rodata budgets' 37 entries, but has no
+ * corresponding region-size guard: if decomposition exhausts the budget
+ * or cannot cover the remainder, it logs an error and leaves that tail
+ * unmapped rather than panicking.
  */
 #define HEXAGON_KERNEL_MAP_RAM_ENTRIES 37
 
-static struct hexagon_linear_entry hexagon_kernel_map[HEXAGON_KERNEL_MAP_RAM_ENTRIES + 1];
-
-/*
- * User threads run on this map too, so RAM stays user-accessible, as it
- * is in the boot table.
- */
-#ifdef CONFIG_USERSPACE
-#define HEXAGON_KERNEL_MAP_RAM_XWRU (__HVM_LINEAR_R | __HVM_LINEAR_W | __HVM_LINEAR_U)
-#else
-#define HEXAGON_KERNEL_MAP_RAM_XWRU (__HVM_LINEAR_R | __HVM_LINEAR_W)
-#endif
+struct hexagon_linear_entry hexagon_kernel_map[HEXAGON_KERNEL_MAP_RAM_ENTRIES + 1];
 
 static int hexagon_fixed_tail_init(void)
 {
@@ -213,8 +229,12 @@ static int hexagon_fixed_tail_init(void)
 	uintptr_t text_end = (uintptr_t)__text_region_end;
 	uintptr_t rodata_start = (uintptr_t)__rodata_region_start;
 	uintptr_t rodata_end = (uintptr_t)__rodata_region_end;
-	uintptr_t ram_start = ROUND_UP(MAX(text_end, rodata_end), 0x1000U);
-	uintptr_t ram_end = ROUND_UP((uintptr_t)_image_ram_end, 0x1000U);
+	uintptr_t ram_start = ROUND_UP(MAX(text_end, rodata_end), CONFIG_MMU_PAGE_SIZE);
+	uintptr_t ram_end = ROUND_UP((uintptr_t)_image_ram_end, CONFIG_MMU_PAGE_SIZE);
+
+	if ((ram_end - ram_start) / CONFIG_MMU_PAGE_SIZE > HEXAGON_FIXED_TAIL_MAX_RAM_PAGES) {
+		k_panic();
+	}
 
 	if (text_end > text_start) {
 		region_addr = text_start;
@@ -233,13 +253,10 @@ static int hexagon_fixed_tail_init(void)
 	 * Rodata usually starts mid-page right after text, and that page is
 	 * already mapped (readable) by the last text entry. Rounding rodata
 	 * down onto it again would let a larger rodata entry overlap that
-	 * page: H2 loads a matched linear entry into the TLB at the entry's
-	 * full size, and ctlbw refuses (without evicting) any entry
-	 * overlapping one already present for the same ASID, which livelocks
-	 * on TLB miss as soon as both are touched.
+	 * page, which livelocks on TLB miss (see the RAM pages below).
 	 */
 	if (rodata_start >= text_start) {
-		rodata_start = MAX(rodata_start, ROUND_UP(text_end, 0x1000U));
+		rodata_start = MAX(rodata_start, ROUND_UP(text_end, CONFIG_MMU_PAGE_SIZE));
 	}
 
 	if (rodata_end > rodata_start) {
@@ -253,6 +270,33 @@ static int hexagon_fixed_tail_init(void)
 			&hexagon_fixed_tail[idx], HEXAGON_FIXED_TAIL_RODATA_ENTRIES, region_addr,
 			region_size, __HVM_LINEAR_R | __HVM_LINEAR_U, __HEXAGON_C_WB_L2);
 	}
+
+	/*
+	 * H2 loads a matched entry at its full size. ctlbw refuses an
+	 * overlapping entry for the same ASID without evicting the old one,
+	 * so a large RAM entry partially covering an earlier mapping livelocks
+	 * when both are touched:
+	 *
+	 *   earlier mapping:  [----------------------]
+	 *   large RAM entry:         [----------------------]  overlap
+	 *
+	 * With 4KB RAM pages, each page is either contained by the earlier
+	 * mapping (which wins the walk) or disjoint from it:
+	 *
+	 *   earlier mapping:  [----------------------]
+	 *   4KB RAM pages:    [4K][4K][4K][4K][4K][4K]
+	 */
+	for (uintptr_t pa = ram_start; pa < ram_end; pa += CONFIG_MMU_PAGE_SIZE) {
+		hexagon_linear_entry_set(&hexagon_fixed_tail[idx], pa, pa, __HVM_LINEAR_SIZE_4KB,
+					 __HVM_LINEAR_R | __HVM_LINEAR_W, __HEXAGON_C_WB_L2, 0);
+		idx++;
+	}
+
+	/* Rest of the boot table's last RAM chunk: no per-thread entries here. */
+	idx += hexagon_decompose_region(&hexagon_fixed_tail[idx],
+					HEXAGON_FIXED_TAIL_POST_IMAGE_ENTRIES, ram_end,
+					ROUND_UP(ram_end, HEXAGON_RAM_CHUNK_SIZE) - ram_end,
+					__HVM_LINEAR_R | __HVM_LINEAR_W, __HEXAGON_C_WB_L2);
 
 #if DT_HAS_CHOSEN(zephyr_console)
 	uintptr_t console_base = HVM_CONSOLE_MAP_BASE;
@@ -275,7 +319,7 @@ static int hexagon_fixed_tail_init(void)
 	idx = hexagon_decompose_region(hexagon_kernel_map, HEXAGON_KERNEL_MAP_RAM_ENTRIES,
 				       ram_start,
 				       ROUND_UP(ram_end, HEXAGON_RAM_CHUNK_SIZE) - ram_start,
-				       HEXAGON_KERNEL_MAP_RAM_XWRU, __HEXAGON_C_WB_L2);
+				       __HVM_LINEAR_R | __HVM_LINEAR_W, __HEXAGON_C_WB_L2);
 	hexagon_linear_entry_set_chain(&hexagon_kernel_map[idx], hexagon_fixed_tail);
 
 	/* Replace the boot Table map: it is RWX everywhere. */

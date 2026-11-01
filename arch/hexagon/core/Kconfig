@@ -22,6 +22,17 @@ config PRIVILEGED_STACK_SIZE
 	# are reserved as FRAMELIMIT headroom for an event frame.
 	default 2048
 
+config HEXAGON_USER_STACK_ENTRIES
+	int "Linear-map entries per user thread for its own stack"
+	depends on USERSPACE
+	default 8
+	help
+	  Each user thread's linear list maps its own stack ahead of its
+	  memory domain's partitions. A stack takes one entry for each aligned
+	  4KB, 16KB, 64KB, ... chunk in its decomposition. Eight entries cover
+	  any stack below 64KB. Part of a stack that does not fit faults on access.
+	  Each entry adds 8 bytes to struct k_thread.
+
 if CPU_HAS_MMU
 
 config HEXAGON_MMU

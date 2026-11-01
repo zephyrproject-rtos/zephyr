@@ -182,6 +182,12 @@ SECTION_FUNC(TEXT, z_hexagon_thread_start)
 		call ##z_hexagon_mem_domain_switch
 	}
 #endif
+#ifdef CONFIG_USERSPACE
+	/* Install this thread's hardware memory-domain map, if needed. */
+	{
+		call ##z_hexagon_mem_domain_switch
+	}
+#endif
 	/* Enable interrupts for the new thread (vmsetie(1)) */
 	{
 		r0 = #1
