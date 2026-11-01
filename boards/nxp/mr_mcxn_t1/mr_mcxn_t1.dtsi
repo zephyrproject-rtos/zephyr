@@ -172,9 +172,9 @@ mr_mcxn_t1_flexio_adc: &lpadc1 {};
 /*
  * The board uses SYSTICK as the kernel timer.
  * To switch to the OS timer instead, replace
- * &systick with &os_timer.
+ * &systick with &ostimer0.
  */
-&os_timer {
+&ostimer0 {
 	status = "disabled";
 };
 
