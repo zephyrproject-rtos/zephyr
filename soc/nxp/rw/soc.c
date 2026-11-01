@@ -140,7 +140,7 @@ __weak __ramfunc void clock_init(void)
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ostimer0), nxp_os_timer, okay)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
 #endif
 
