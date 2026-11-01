@@ -74,7 +74,7 @@ static const struct modem_cellular_vendor_config telit_le910c1tx_vendor = {
 	.chat_filter = "\n",
 	.power_pulse_duration_ms = 1500,
 	.reset_pulse_duration_ms = 250,
-	.startup_time_ms = 20000,
+	.startup_time_ms = 30000,
 	.shutdown_time_ms = 5000,
 };
 
