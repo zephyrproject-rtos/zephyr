@@ -317,6 +317,21 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf)
 	CODE_UNREACHABLE;
 }
 
+void z_impl_hexagon_user_fault(unsigned int reason)
+{
+	if (reason != K_ERR_STACK_CHK_FAIL) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+	z_fatal_error(reason, NULL);
+	CODE_UNREACHABLE;
+}
+
+static void z_vrfy_hexagon_user_fault(unsigned int reason)
+{
+	z_impl_hexagon_user_fault(reason);
+}
+#include <zephyr/syscalls/hexagon_user_fault_mrsh.c>
+
 int arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
