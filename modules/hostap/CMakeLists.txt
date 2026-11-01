@@ -79,6 +79,10 @@ zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_RRM
 CONFIG_NO_RRM
 )
 
+zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NO_6GHZ
+  CONFIG_NO_6GHZ
+)
+
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_MBO
   CONFIG_MBO
 )
