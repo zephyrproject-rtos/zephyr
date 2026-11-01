@@ -1803,7 +1803,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 	} else {
 		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
 		z_sched_add_to_waitq_locked(_current, &thread->join_queue);
-		z_add_thread_timeout(_current, timeout);
+		z_add_thread_timeout(_current, z_thread_timeout, timeout);
 
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_thread, join, thread, timeout);
 		ret = z_swap_locked(key);

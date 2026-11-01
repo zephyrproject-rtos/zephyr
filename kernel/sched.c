@@ -6,6 +6,7 @@
 #include <zephyr/kernel.h>
 #include <kspinlock.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <zephyr/spinlock.h>
 #include <wait_q.h>
 #include <kthread.h>
@@ -279,14 +280,14 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 void z_sched_add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 	ALIAS_OF(add_to_waitq_locked);
 
-static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
-			k_timeout_t timeout)
+static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q, k_timeout_t timeout,
+			_timeout_func_t handler)
 {
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
-	z_add_thread_timeout(thread, timeout);
+	z_add_thread_timeout(thread, handler, timeout);
 }
 
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
@@ -294,7 +295,7 @@ void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	Z_SCHED_SPINLOCK {
-		pend_locked(thread, wait_q, timeout);
+		pend_locked(thread, wait_q, timeout, z_thread_timeout);
 	}
 }
 
@@ -324,11 +325,11 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-/* Timeout handler for *_thread_timeout() APIs */
-void z_thread_timeout(struct _timeout *timeout)
+bool z_sched_timeout_wake(struct _timeout *timeout)
 {
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
+	bool woke = false;
 
 	Z_SCHED_SPINLOCK {
 		/* A concurrent waker (e.g. a sem give on another CPU) may
@@ -340,13 +341,22 @@ void z_thread_timeout(struct _timeout *timeout)
 		 */
 		if (!z_timeout_inflight_superseded(timeout)) {
 			z_sched_wake_thread_locked(thread);
+			woke = true;
 		}
 	}
+
+	return woke;
+}
+
+/* Timeout handler for *_thread_timeout() APIs */
+void z_thread_timeout(struct _timeout *timeout)
+{
+	(void)z_sched_timeout_wake(timeout);
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 
-int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
-	       _wait_q_t *wait_q, k_timeout_t timeout)
+int z_pend_curr_handler(struct k_spinlock *lock, k_spinlock_key_t key, _wait_q_t *wait_q,
+			k_timeout_t timeout, _timeout_func_t handler)
 {
 	/* A blocking pend from ISR context is a programming error with no
 	 * safe recovery: it would sleep whatever thread was interrupted and,
@@ -373,9 +383,15 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	 * held.
 	 */
 	(void) z_sched_spinlock_lock();
-	pend_locked(_current, wait_q, timeout);
+	pend_locked(_current, wait_q, timeout, handler);
 	k_spin_release(lock);
 	return z_swap_locked(key);
+}
+
+int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key, _wait_q_t *wait_q,
+		k_timeout_t timeout)
+{
+	return z_pend_curr_handler(lock, key, wait_q, timeout, z_thread_timeout);
 }
 
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
