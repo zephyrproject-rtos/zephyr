@@ -54,7 +54,7 @@ static inline void thread_schedule_new(struct k_thread *thread, k_timeout_t dela
 	if (K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
 		k_thread_start(thread);
 	} else {
-		z_add_thread_timeout(thread, delay);
+		z_add_thread_timeout(thread, z_thread_timeout, delay);
 	}
 #else
 	if (!K_TIMEOUT_EQ(delay, K_FOREVER)) {

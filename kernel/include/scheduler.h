@@ -97,6 +97,16 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
 void z_sched_wake_thread_locked(struct k_thread *thread);
 
 /**
+ * Wake the thread of an expired timeout unless it was superseded.
+ *
+ * @param timeout Timeout embedded in the thread's base.
+ *
+ * @retval true Thread woken.
+ * @retval false Timeout superseded, nothing done.
+ */
+bool z_sched_timeout_wake(struct _timeout *timeout);
+
+/**
  * Wake up all threads pending on the provided wait queue
  *
  * Convenience function to invoke z_sched_wake() on all threads in the queue
