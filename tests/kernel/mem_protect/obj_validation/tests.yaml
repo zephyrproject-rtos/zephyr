@@ -3,8 +3,6 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     arch_exclude:
       - posix
-    platform_exclude:
-      - qemu_hexagon/qemu_hexagon_virt
     tags:
       - kernel
       - security
