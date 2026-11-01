@@ -17,3 +17,30 @@
 		};
 	};
 };
+
+/* Taken only by the PM scenario, which provides the PM hooks. */
+/ {
+	power-states {
+		cpu_idle: cpu-idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <0>;
+		};
+	};
+};
+
+&{/cpus/cpu@0} {
+	cpu-power-states = <&cpu_idle>;
+};
+
+&{/cpus/cpu@1} {
+	cpu-power-states = <&cpu_idle>;
+};
+
+&{/cpus/cpu@2} {
+	cpu-power-states = <&cpu_idle>;
+};
+
+&{/cpus/cpu@3} {
+	cpu-power-states = <&cpu_idle>;
+};
