@@ -735,11 +735,12 @@ void net_pkt_frag_unref(struct net_buf *frag)
 		/* A zero count must not be decremented, not even by an unref
 		 * racing with the last one: the borrow would go into the other
 		 * bytes of ref_word of a buffer that has already been freed.
+		 * A saturated count stays as it is, see net_buf_ref().
 		 */
 		do {
 			old_word = atomic_get(&frag->ref_word);
 			old_ref = (uint8_t)old_word;
-			if (old_ref == 0U) {
+			if ((old_ref == 0U) || (old_ref == UINT8_MAX)) {
 				break;
 			}
 		} while (!atomic_cas(&frag->ref_word, old_word, old_word - 1));
