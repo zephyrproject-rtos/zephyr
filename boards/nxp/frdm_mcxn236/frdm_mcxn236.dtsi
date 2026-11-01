@@ -386,7 +386,7 @@ arduino_spi: &flexcomm3_lpspi3 {
  * to use as the system timer can be controlled through
  * Kconfig option based on application requirements.
  */
-&os_timer {
+&ostimer0 {
 	status = "okay";
 };
 
