@@ -29,98 +29,94 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 void z_hexagon_mem_domain_switch(void);
 static void hexagon_mem_domain_enter(struct k_thread *thread);
 
+/* [start, start + size) inside [base, base + len), overflow-safe. */
+static inline bool hexagon_range_within(uintptr_t start, size_t size, uintptr_t base, size_t len)
+{
+	return start >= base && size <= len && (start - base) <= (len - size);
+}
+
+/*
+ * A supervisor thread has no installed user map. Allow access to its
+ * own stack, plus reads from global text/rodata.
+ */
+static bool hexagon_supervisor_buffer_ok(const struct k_thread *thread, uintptr_t start,
+					 size_t size, int write)
+{
+	if (hexagon_range_within(start, size, thread->stack_info.start, thread->stack_info.size)) {
+		return true;
+	}
+
+	if (write != 0) {
+		return false;
+	}
+
+	if (hexagon_range_within(start, size, (uintptr_t)__rom_region_start,
+				 (uintptr_t)__rom_region_end - (uintptr_t)__rom_region_start)) {
+		return true;
+	}
+
+	return hexagon_range_within(
+		start, size, (uintptr_t)__rodata_region_start,
+		(uintptr_t)__rodata_region_end - (uintptr_t)__rodata_region_start);
+}
+
+/*
+ * Walk the calling thread's own installed map -- the same one H2
+ * enforces on its user-mode accesses, so this check agrees with the
+ * hardware by construction. That covers the thread's stack, its
+ * domain's mappable partitions, and the fixed tail's U=1
+ * text/rodata/console entries.
+ */
 int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	struct k_thread *thread = k_current_get();
+	uint32_t need = __HVM_LINEAR_U | ((write != 0) ? __HVM_LINEAR_W : __HVM_LINEAR_R);
 	uintptr_t start = (uintptr_t)addr;
-	uintptr_t end;
+	uintptr_t va;
+	uintptr_t last;
+	k_spinlock_key_t key;
+	int ret = 0;
 
-	/*
-	 * No arch_is_user_context() shortcut: the trap0 path always clears
-	 * _hexagon_user_mode_active on entry, so always validate against the
-	 * calling thread's own bounds instead, like RISC-V and ARM.
-	 */
 	if (size > (UINTPTR_MAX - start)) {
 		return -EPERM;
 	}
-	end = start + size;
-
-	/* Check thread stack */
-	if (start >= thread->stack_info.start &&
-	    end <= thread->stack_info.start + thread->stack_info.size) {
-		return 0; /* Within thread stack */
-	}
+	/* Treat a zero-length request like a one-byte one: still confirm addr's page is mapped. */
+	last = start + ((size != 0U) ? (size - 1U) : 0U);
 
 	/*
-	 * Global rodata/text is not part of any thread's stack or domain
-	 * partition, but string literals passed to syscalls come from there
-	 * and must be readable without an explicit grant.
+	 * Only a thread that has dropped to user mode has a map. Also
+	 * hold z_mem_domain_lock across the walk: trap0 re-enables guest
+	 * interrupts, so a partition add/remove could otherwise rewrite
+	 * the domain list under it.
 	 */
-	if (!write) {
-		uintptr_t ro_start = (uintptr_t)__rom_region_start;
-		uintptr_t ro_end = (uintptr_t)__rom_region_end;
+	key = k_spin_lock(&z_mem_domain_lock);
 
-		if (ro_end > ro_start && start >= ro_start && end <= ro_end) {
-			return 0;
-		}
-
-		uintptr_t rodata_start = (uintptr_t)__rodata_region_start;
-		uintptr_t rodata_end = (uintptr_t)__rodata_region_end;
-
-		if (rodata_end > rodata_start && start >= rodata_start && end <= rodata_end) {
-			return 0;
-		}
+	if (thread->arch.priv_level == 0 || thread->mem_domain_info.mem_domain == NULL) {
+		ret = hexagon_supervisor_buffer_ok(thread, start, size, write) ? 0 : -EPERM;
+		goto out;
 	}
 
-	/* Check memory domain partitions */
-	if (thread->mem_domain_info.mem_domain != NULL) {
-		struct k_mem_domain *domain = thread->mem_domain_info.mem_domain;
-		int remaining_partitions;
-		k_spinlock_key_t key;
+	va = start;
+	while (true) {
+		const struct hexagon_linear_entry *entry =
+			hexagon_linear_lookup(thread->arch.map, va);
+		uintptr_t entry_end;
 
-		/*
-		 * z_mem_domain_lock also guards partitions[]/num_partitions
-		 * against concurrent k_mem_domain_add/remove_partition(): a
-		 * timer tick can preempt this scan since trap0 re-enables
-		 * guest interrupts.
-		 */
-		key = k_spin_lock(&z_mem_domain_lock);
-		remaining_partitions = domain->num_partitions;
-
-		/*
-		 * partitions[] can have unused holes (size == 0) left by a
-		 * removed partition, so scan the whole array rather than
-		 * assuming the first num_partitions entries are valid.
-		 */
-		for (int i = 0; remaining_partitions > 0 && i < CONFIG_MAX_DOMAIN_PARTITIONS;
-		     i++) {
-			const struct k_mem_partition *part = &domain->partitions[i];
-
-			if (part->size == 0) {
-				continue;
-			}
-			remaining_partitions--;
-
-			uintptr_t part_start = part->start;
-			uintptr_t part_end = part_start + part->size;
-
-			if (start < part_start || end > part_end) {
-				continue;
-			}
-
-			/* For a write access, the partition must be writable */
-			if (write && !K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
-				continue;
-			}
-
-			k_spin_unlock(&z_mem_domain_lock, key);
-			return 0; /* Within a valid partition */
+		if (entry == NULL || (hexagon_linear_entry_xwru(entry) & need) != need) {
+			ret = -EPERM;
+			break;
 		}
 
-		k_spin_unlock(&z_mem_domain_lock, key);
+		entry_end = hexagon_linear_entry_end(entry);
+		if (entry_end == 0U || last < entry_end) {
+			break;
+		}
+		va = entry_end;
 	}
 
-	return -EPERM;
+out:
+	k_spin_unlock(&z_mem_domain_lock, key);
+	return ret;
 }
 
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)

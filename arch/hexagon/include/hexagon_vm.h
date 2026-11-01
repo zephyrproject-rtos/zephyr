@@ -155,6 +155,61 @@ static inline void hexagon_linear_entry_set_chain(struct hexagon_linear_entry *e
 	entry->low = (uint32_t)(uintptr_t)next;
 	entry->high = __HVM_LINEAR_CHAIN;
 }
+
+/**
+ * @brief Find the entry a VM_TRANS_TYPE_LINEAR list translates an address by.
+ *
+ * Follows chain links and stops at the all-zero terminator, returning the
+ * first entry that contains va, the same one H2 uses on a TLB miss.
+ *
+ * @param list Translation list to walk.
+ * @param va Virtual address to look up.
+ *
+ * @return Matching entry, or NULL if the list does not map va.
+ */
+static inline const struct hexagon_linear_entry *
+hexagon_linear_lookup(const struct hexagon_linear_entry *list, uintptr_t va)
+{
+	const struct hexagon_linear_entry *entry = list;
+
+	while (true) {
+		if ((entry->high & __HVM_LINEAR_CHAIN) != 0U) {
+			entry = (const struct hexagon_linear_entry *)(uintptr_t)entry->low;
+			continue;
+		}
+		if (entry->low == 0U && entry->high == 0U) {
+			return NULL;
+		}
+
+		uintptr_t base = (uintptr_t)(entry->high & 0xFFFFFU) << 12;
+		uint32_t size = 0x1000U << (2U * ((entry->high >> 20) & 0xFU));
+
+		if (va - base < size) {
+			return entry;
+		}
+		entry++;
+	}
+}
+
+/**
+ * @brief First address past the region a linear entry maps.
+ *
+ * @param entry A non-chain, non-terminator entry.
+ *
+ * @return End address, 0 if the region reaches the top of the address space.
+ */
+static inline uintptr_t hexagon_linear_entry_end(const struct hexagon_linear_entry *entry)
+{
+	uintptr_t base = (uintptr_t)(entry->high & 0xFFFFFU) << 12;
+
+	return base + (0x1000U << (2U * ((entry->high >> 20) & 0xFU)));
+}
+
+/** @brief xwru nibble of a linear entry, as __HVM_LINEAR_{R,W,X,U} bits. */
+static inline uint32_t hexagon_linear_entry_xwru(const struct hexagon_linear_entry *entry)
+{
+	return entry->low >> 28;
+}
 #endif /* _ASMLANGUAGE */
 
 #define VM_CLOBBERLIST_ABIV2                                                                       \
