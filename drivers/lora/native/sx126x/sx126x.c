@@ -1627,8 +1627,17 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 static int sx126x_pm_action(const struct device *dev,
 			    enum pm_device_action action)
 {
+	struct sx126x_data *data = dev->data;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+		if (atomic_get(&data->state) != SX126X_REST_STATE) {
+			/*
+			 * Keep the RF path enabled while the radio operates autonomously.
+			 * System PM skips unsupported transitions without blocking CPU sleep.
+			 */
+			return -ENOTSUP;
+		}
 		sx126x_disconnect_rf_gpios(dev);
 		return 0;
 	case PM_DEVICE_ACTION_RESUME:
