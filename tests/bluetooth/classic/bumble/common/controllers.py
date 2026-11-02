@@ -11,7 +11,7 @@ import sys
 
 import bumble.logging
 from bt_sim_controller import bt_sim_controller as Controller
-from bt_sim_link import bt_sim_local_link
+from bumble.link import LocalLink
 from bumble.transport import open_transport
 from bumble.transport.tcp_server import open_tcp_server_transport_with_socket
 
@@ -148,7 +148,7 @@ async def async_sim_controllers():
         )
         return
 
-    link = bt_sim_local_link()
+    link = LocalLink()
     transports: list = []
     controllers: list = []
     bd_addresses: set = set()
