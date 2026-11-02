@@ -1265,29 +1265,38 @@ static struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
+	static struct k_spinlock state_lock;
 	bt_conn_state_t old_state;
+	k_spinlock_key_t key;
 
 	LOG_DBG("%s -> %s", state2str(conn->state), state2str(state));
 
-	if (conn->state == state) {
+	/* Application threads, bt_disable() and the Bluetooth work queue all
+	 * get here. Only one of them gets to act on a transition, and the
+	 * reference for the state is held as soon as the others can see the
+	 * state, or it is dropped twice or before it is taken.
+	 */
+	key = k_spin_lock(&state_lock);
+	old_state = conn->state;
+	conn->state = state;
+	/* Take a reference for the first state transition after
+	 * bt_conn_add_le() and keep it until reaching DISCONNECTED
+	 * again. The caller holds a reference, so the count is not zero,
+	 * and bt_conn_ref() is not for here: its logging can block.
+	 */
+	if (old_state == BT_CONN_DISCONNECTED && state != BT_CONN_DISCONNECTED &&
+	    !bt_conn_is_iso(conn)) {
+		(void)atomic_inc(&conn->ref);
+	}
+	k_spin_unlock(&state_lock, key);
+
+	if (old_state == state) {
 		LOG_WRN("no transition %s", state2str(state));
 		return;
 	}
 
-	old_state = conn->state;
-	conn->state = state;
-
 	/* Actions needed for exiting the old state */
 	switch (old_state) {
-	case BT_CONN_DISCONNECTED:
-		/* Take a reference for the first state transition after
-		 * bt_conn_add_le() and keep it until reaching DISCONNECTED
-		 * again.
-		 */
-		if (!bt_conn_is_iso(conn)) {
-			bt_conn_ref(conn);
-		}
-		break;
 	case BT_CONN_INITIATING:
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) && bt_conn_is_le(conn)) {
 			k_work_cancel_delayable(&conn->deferred_work);
@@ -1298,7 +1307,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 
 	/* Actions needed for entering the new state */
-	switch (conn->state) {
+	switch (state) {
 	case BT_CONN_CONNECTED:
 		if (bt_conn_is_sco(conn)) {
 			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
