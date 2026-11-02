@@ -234,6 +234,7 @@ static bool blocks;
 
 /* What the driver's send() is to return for a data packet */
 static int data_err;
+static int cmd_send_err;
 
 /* How long the controller takes to respond to a reset, as one at the other end
  * of a UART or USB link does.
@@ -463,6 +464,9 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 			/* The buffer stays with the caller */
 			return data_err;
 		}
+	} else if (cmd_send_err != 0) {
+		/* The buffer stays with the caller */
+		return cmd_send_err;
 	} else if (blocks) {
 		/* The command timeout of the Host is 10 s. */
 		k_sleep(K_SECONDS(15));
@@ -507,6 +511,7 @@ static void before(void *fixture)
 	close_err = 0;
 	silent = false;
 	data_err = 0;
+	cmd_send_err = 0;
 	reset_rsp_delay = K_NO_WAIT;
 	reset_status = BT_HCI_ERR_SUCCESS;
 	disconnect_rsp_delay = K_NO_WAIT;
@@ -639,6 +644,34 @@ static ZTEST(bt_disable, test_reset_failure)
 	reset_status = BT_HCI_ERR_SUCCESS;
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	zassert_equal(reset_count, 2U, "The controller was reset %u times", reset_count);
+	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
+}
+
+/* A driver that has lost its controller can fail every command. The reset then
+ * fails without reaching the controller, and that ends as when the controller
+ * fails it.
+ */
+static ZTEST(bt_disable, test_reset_send_failure)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	cmd_send_err = -EIO;
+
+	err = bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U);
+	zassert_equal(err, -EIO, "A command that cannot be sent gave %d (!= %d)", err, -EIO);
+
+	disable_reset_fails();
+	zassert_equal(reset_count, 0U, "The controller was reset %u times", reset_count);
+	zassert_equal(close_count, 1U, "close() was called %u times", close_count);
+	zassert_false(bt_is_ready(), "Bluetooth is ready after a disable");
+
+	cmd_send_err = 0;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	zassert_equal(reset_count, 1U, "The controller was reset %u times", reset_count);
 	zassert_true(bt_is_ready(), "Bluetooth is not ready after init");
 }
 
@@ -1110,6 +1143,32 @@ static ZTEST(bt_disable, test_reset_failure_with_conn)
 	bt_conn_drop(&test_conn);
 
 	reset_status = BT_HCI_ERR_SUCCESS;
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+	connect_as_peripheral();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_drop(&test_conn);
+}
+
+/* A connection is taken down too when the reset cannot be sent. */
+static ZTEST(bt_disable, test_reset_send_failure_with_conn)
+{
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	k_sem_reset(&disconnected_sem);
+
+	cmd_send_err = -EIO;
+	data_err = -EIO;
+	disable_reset_fails();
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
+
+	bt_conn_drop(&test_conn);
+
+	cmd_send_err = 0;
+	data_err = 0;
 	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
 	connect_as_peripheral();
 
