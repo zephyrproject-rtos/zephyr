@@ -96,8 +96,8 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				/* Some MPU architectures (ARMv7-M, older ARC) require regions
 				 * to be sized and aligned to the same power of two.
 				 */
-				uintptr_t block_sz =
-					max3(region_alloc, region_align, LLEXT_PAGE_SIZE);
+				uintptr_t block_sz = max3(region_alloc, region_align,
+					MAX(LLEXT_PAGE_SIZE, LLEXT_PMP_GRANULARITY));
 
 				block_sz = 1 << LOG2CEIL(block_sz); /* align to next power of two */
 				region_alloc = block_sz;
