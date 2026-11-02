@@ -79,9 +79,13 @@ Programming and Debugging
 Configuring a Console
 =====================
 
-Connect a USB cable from your PC to the USB-to-UART bridge connector, and use
-the serial terminal of your choice (minicom, putty, etc.) with the following
-settings:
+The on-board USB-to-UART bridge on the PRG USB connector is shared between the
+Secure Enclave UART (SE-UART) and the UART2 and UART4 user serial ports,
+selected by switch SW4. SW4 selects the SE-UART in its default position; move
+it to the UART2 or UART4 position to reach the Zephyr console.
+
+Connect a USB cable from your PC to the PRG USB connector, and use the serial
+terminal of your choice (minicom, putty, etc.) with the following settings:
 
 - Speed: 115200
 - Data: 8 bits
@@ -97,14 +101,19 @@ The default UART consoles are:
 Flashing
 ========
 
-Alif Ensemble E8 Development Kit can be programmed using the Alif Security
-Toolkit (SETOOLS). Refer to the `Ensemble E8 DevKit Product Page`_ for detailed
-instructions on using SETOOLS to program the board.
+Alif Ensemble E8 Development Kit is programmed with ``west flash`` through the
+Alif Security Toolkit (SETOOLS), using the :ref:`alif_flash runner
+<runner_alif_flash>`. Set up SETOOLS as described there, move SW4 to the SE-UART
+position and connect the PRG USB connector to your host computer. Pass the
+SE-UART device with ``--port`` if it differs from the SETOOLS configuration.
+Move SW4 back to the console position after flashing.
 
 Alternatively, the board can be flashed using a SEGGER J-Link debug probe with
-``west flash``. Connect the board to your host computer using the J-Link debug
-interface. The sample application :zephyr:code-sample:`hello_world` is used for
-this example.
+``west flash -r jlink``. Connect the board to your host computer using the
+J-Link debug interface.
+
+The sample application :zephyr:code-sample:`hello_world` is used for these
+examples.
 
 Building and flashing for the High Performance core (RTSS-HP):
 
@@ -132,7 +141,7 @@ On the serial terminal, you should see the following message:
 
    Hello World! ensemble_e8_dk/ae822fa0e5597ls0/rtss_he
 
-Building for the Application Processor (APSS):
+Building and flashing for the Application Processor (APSS):
 
 .. note::
 
@@ -143,14 +152,17 @@ Building for the Application Processor (APSS):
    and is currently maintained in Alif's public repository:
    `Alif Trusted Firmware-A`_.
 
-   The resulting image is programmed and launched using the Alif Security
-   Toolkit (SETOOLS); the ``west flash`` and ``west debug`` runners are not
-   supported for the APSS target.
+   The ``alif_flash`` runner programs the TF-A BL32 image together with the
+   Zephyr image; pass the BL32 image with ``--bl32-bin``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: ensemble_e8_dk/ae822fa0e5597ls0/apss
    :goals: build
+
+.. code-block:: console
+
+   west flash --bl32-bin=<path to bl32.bin>
 
 Debugging
 =========
