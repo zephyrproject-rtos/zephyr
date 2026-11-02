@@ -293,9 +293,12 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			LOG_ERR("Reading socket failed, errno %d", err);
-			(void)nsi_host_close(uc->fd);
-			uc->fd = -1;
-			return;
+			break;
+		}
+
+		if (len == 0) {
+			LOG_ERR("Connection closed by the peer");
+			break;
 		}
 
 		frame_size += len;
@@ -348,6 +351,11 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		k_yield();
 	}
+
+	if (nsi_host_close(uc->fd) < 0) {
+		LOG_ERR("Closing the socket failed, errno %d", nsi_host_get_errno());
+	}
+	uc->fd = -1;
 }
 
 static int uc_send(const struct device *dev, struct net_buf *buf)
@@ -409,8 +417,9 @@ static int uc_close(const struct device *dev)
 	struct uc_data *uc = dev->data;
 	int rc;
 
+	/* The RX thread has closed the socket and ended on losing the connection. */
 	if (uc->fd < 0) {
-		return -ENETDOWN;
+		return 0;
 	}
 
 	rc = nsi_host_close(uc->fd);
