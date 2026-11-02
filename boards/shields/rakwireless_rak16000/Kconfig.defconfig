@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_RAKWIRELESS_RAK16000
+
+# The module runs from the switched rail, which has to be up before the
+# INA219 driver reaches the device
+configdefault GPIO
+	default y
+
+configdefault POWER_DOMAIN
+	default y
+
+configdefault POWER_DOMAIN_GPIO_INIT_PRIORITY
+	default 45
+
+endif # SHIELD_RAKWIRELESS_RAK16000
