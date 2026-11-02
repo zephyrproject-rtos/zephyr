@@ -575,7 +575,7 @@ static enum ethernet_hw_caps netc_eth_vsi_get_capabilities(const struct device *
 	return netc_eth_get_capabilities(dev, iface) | ETHERNET_HW_FILTERING;
 }
 
-static const struct ethernet_api netc_eth_vsi_api = {
+static DEVICE_API(ethernet, netc_eth_vsi_api) = {
 	.iface_api.init = netc_eth_vsi_iface_init,
 	.get_capabilities = netc_eth_vsi_get_capabilities,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)

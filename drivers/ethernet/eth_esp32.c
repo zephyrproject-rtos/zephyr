@@ -826,7 +826,7 @@ static const struct device *eth_esp32_get_ptp_clock(const struct device *dev,
 }
 #endif
 
-static const struct ethernet_api eth_esp32_api = {
+static DEVICE_API(ethernet, eth_esp32_api) = {
 	.iface_api.init		= eth_esp32_iface_init,
 	.get_capabilities	= eth_esp32_caps,
 	.set_config		= eth_esp32_set_config,

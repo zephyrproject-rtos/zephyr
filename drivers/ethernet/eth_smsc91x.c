@@ -770,7 +770,7 @@ static void eth_initialize(struct net_if *iface)
 	}
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init   = eth_initialize,
 	.get_capabilities = eth_smsc_get_caps,
 	.get_phy          = eth_get_phy,

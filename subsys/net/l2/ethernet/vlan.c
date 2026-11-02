@@ -357,7 +357,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	struct vlan_context *vlan;
 	int ret;
 
@@ -443,7 +443,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 
 int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 {
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	const struct device *dev;
 	struct vlan_context *vlan;
 

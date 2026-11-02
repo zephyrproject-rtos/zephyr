@@ -293,7 +293,7 @@ static struct net_stats_eth *get_stats(const struct device *dev, struct net_if *
 }
 #endif
 
-static const struct ethernet_api e1000_api = {
+static DEVICE_API(ethernet, e1000_api) = {
 	.iface_api.init		= e1000_iface_init,
 #if defined(CONFIG_ETH_E1000_PTP_CLOCK)
 	.get_ptp_clock		= e1000_get_ptp_clock,

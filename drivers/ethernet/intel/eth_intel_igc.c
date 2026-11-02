@@ -1194,7 +1194,7 @@ static int eth_intel_igc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_intel_igc_iface_init,
 	.get_capabilities = eth_intel_igc_get_caps,
 	.set_config = eth_intel_igc_set_config,

@@ -201,7 +201,7 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	}
 }
 
-static const struct ethernet_api nxp_s32_eth_api = {
+static DEVICE_API(ethernet, nxp_s32_eth_api) = {
 	.iface_api.init = nxp_s32_eth_iface_init,
 	.get_capabilities = nxp_s32_eth_get_capabilities,
 	.get_phy = nxp_s32_eth_get_phy,

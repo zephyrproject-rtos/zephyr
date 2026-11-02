@@ -239,7 +239,7 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 		},
 	};
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -981,7 +981,7 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype = net_htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
@@ -1123,7 +1123,7 @@ arp_error:
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	struct net_linkaddr *mac_addr;
 	int ret;
 
@@ -1246,7 +1246,7 @@ void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 const struct device *net_eth_get_phy(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -1269,7 +1269,7 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
