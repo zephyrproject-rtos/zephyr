@@ -168,15 +168,6 @@ static void w6100_clear_pending(const struct device *dev)
 }
 
 static const struct wiznet_chip_ops w6100_ops = {
-	.api = {
-		.iface_api.init = wiznet_iface_init,
-		.get_capabilities = wiznet_get_capabilities,
-		.set_config = wiznet_set_config,
-		.start = wiznet_hw_start,
-		.stop = wiznet_hw_stop,
-		.get_phy = wiznet_get_phy,
-		.send = wiznet_tx,
-	},
 	.spi_read = w6100_spi_read,
 	.spi_write = w6100_spi_write,
 	.soft_reset = w6100_soft_reset,
