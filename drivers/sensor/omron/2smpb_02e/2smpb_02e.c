@@ -130,9 +130,9 @@ static int o2smpb_02e_sample_fetch(const struct device *dev, enum sensor_channel
 
 	uint8_t buffer[3];
 
-	/* Force mode */
+	/* Force mode, temperature and pressure averaged over 16 samples */
 	if (i2c_reg_write_byte_dt(&config->i2c, O2SMPB_02_REG_CTRL_MEAS,
-				  (uint8_t)(0x101 << 5 | 0x101 << 2 | 0x1)) < 0) {
+				  (5U << 5) | (5U << 2) | 0x1U) < 0) {
 		LOG_ERR("Could not set sensor to force mode");
 		return -EIO;
 	}
