@@ -1,6 +1,7 @@
 # Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=duplicate-code
 
 
 import asyncio
@@ -589,7 +590,7 @@ async def sm_init_005(hci_port, shell, dut, address, snoop_file) -> None:
                 identifier=request.identifier,
                 destination_cid=self.source_cid,
                 source_cid=self.destination_cid,
-                result=L2CAP_Connection_Response.CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
+                result=L2CAP_Connection_Response.Result.CONNECTION_REFUSED_NO_RESOURCES_AVAILABLE,
                 status=0x0000,
             )
         )
