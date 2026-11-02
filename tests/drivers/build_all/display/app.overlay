@@ -444,6 +444,15 @@
 				busy-gpios = <&test_gpio 0 0>;
 			};
 
+			test_mipi_dbi_tr230s: tr230s@1a {
+				compatible = "tdo,tr230s";
+				reg = <0x1a>;
+				width = <480>;
+				height = <960>;
+				wait-gpios = <&test_gpio 0 0>;
+				initial-brightness = <128>;
+			};
+
 			test_mipi_dbi_ed2208_gca: ed2208_gca@25 {
 				compatible = "eink,ed2208-gca";
 				reg = <0x25>;
