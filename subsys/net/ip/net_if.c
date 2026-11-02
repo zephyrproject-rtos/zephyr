@@ -448,7 +448,7 @@ void net_if_stats_reset_all(void)
 static inline void init_iface(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct net_if_api *api;
+	const struct net_if_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
