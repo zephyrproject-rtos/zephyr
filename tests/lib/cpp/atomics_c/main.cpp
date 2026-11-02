@@ -99,4 +99,59 @@ ZTEST(cxx_atomic, test_u32_compare_exchange_weak)
 	zassert_equal(expected, desired, "Expected should be updated to 0xDEADBEEF");
 }
 
+template <typename T> static void check_fetch_ops(std::atomic<T> &a)
+{
+	a.store(10);
+	zassert_equal(a.fetch_add(5), 10);
+	zassert_equal(a.load(), 15);
+	zassert_equal(a.fetch_sub(3), 15);
+	zassert_equal(a.load(), 12);
+	zassert_equal(a.fetch_and(0x0A), 12);
+	zassert_equal(a.load(), 0x08);
+	zassert_equal(a.fetch_or(0x05), 0x08);
+	zassert_equal(a.load(), 0x0D);
+	zassert_equal(a.fetch_xor(0x0F), 0x0D);
+	zassert_equal(a.load(), 0x02);
+	zassert_equal(a.exchange(0x46), 0x02);
+	zassert_equal(a.load(), 0x46);
+
+	zassert_equal(a += 3, 0x49);
+	zassert_equal(a -= 3, 0x46);
+	zassert_equal(a &= 0x0F, 0x06);
+	zassert_equal(a |= 0x30, 0x36);
+	zassert_equal(a ^= 0x06, 0x30);
+
+	a.store(static_cast<T>(-1));
+	zassert_equal(a.fetch_add(2), static_cast<T>(-1));
+	zassert_equal(a.load(), 1, "Addition should wrap around");
+}
+
+template <typename T> static void check_nand_ops(void)
+{
+	T v = 0x0F;
+
+	zassert_equal(__atomic_fetch_nand(&v, 0x05, __ATOMIC_SEQ_CST), 0x0F);
+	zassert_equal(v, static_cast<T>(~0x05));
+	zassert_equal(__atomic_nand_fetch(&v, 0x0F, __ATOMIC_SEQ_CST), static_cast<T>(~0x0A));
+	zassert_equal(v, static_cast<T>(~0x0A));
+}
+
+ZTEST(cxx_atomic, test_u8_fetch_ops)
+{
+	check_fetch_ops(atomic_u8);
+	check_nand_ops<uint8_t>();
+}
+
+ZTEST(cxx_atomic, test_u16_fetch_ops)
+{
+	check_fetch_ops(atomic_u16);
+	check_nand_ops<uint16_t>();
+}
+
+ZTEST(cxx_atomic, test_u32_fetch_ops)
+{
+	check_fetch_ops(atomic_u32);
+	check_nand_ops<uint32_t>();
+}
+
 ZTEST_SUITE(cxx_atomic, nullptr, nullptr, cxx_atomic_before, nullptr, nullptr);
