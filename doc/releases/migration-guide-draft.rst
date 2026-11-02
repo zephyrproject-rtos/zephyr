@@ -198,6 +198,15 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Watchdog
+========
+
+* :dtcompatible:`st,stm32-window-watchdog` now applies ``window.min`` of
+  :c:struct:`wdt_timeout_cfg`, which it previously ignored. A feed earlier than ``window.min``
+  after the previous one resets the MCU. Applications that set a non-zero ``window.min`` without
+  respecting it must set it to ``0``. :c:func:`wdt_install_timeout` now returns ``-EBUSY`` once
+  :c:func:`wdt_setup` has enabled the watchdog. (:github:`68572`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

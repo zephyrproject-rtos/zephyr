@@ -180,6 +180,46 @@ static void wwdg_stm32_convert_timeout(uint32_t pclk,
 	*prescaler_exp = WWDG_PRESCALER_EXPONENT_MAX;
 }
 
+/**
+ * @brief Compute the window value
+ *
+ * Once the WWDG counter is reloaded with @p counter after a feed, it
+ * cannot be fed again until it has reached the window value. Feeding
+ * earlier generates a reset. The number of ticks is rounded up.
+ *
+ * A feed does not reset the prescaler, so the first tick after a feed
+ * comes up to one tick early. The window can open up to one tick before
+ * @p min_timeout rounded up to whole ticks, and a feed is only
+ * guaranteed to be accepted once that rounded value has elapsed.
+ *
+ * @param pclk The WWDG bus clock rate in Hz.
+ * @param min_timeout Minimum time between two feeds in microseconds.
+ * @param prescaler_exp The prescaler exponent value(Base 2).
+ * @param counter The counter value.
+ * @param window Pointer to the window value.
+ * @retval 0 On success.
+ * @retval -EINVAL @p min_timeout leaves no tick to feed before the reset.
+ */
+static int wwdg_stm32_convert_window(uint32_t pclk,
+				     uint32_t min_timeout,
+				     uint32_t prescaler_exp,
+				     uint32_t counter,
+				     uint32_t *window)
+{
+	uint64_t ticks = wwdg_stm32_us_to_ticks(pclk, min_timeout, prescaler_exp);
+
+	/* A feed is accepted once the counter equals the window, so 0x40 still
+	 * leaves a one-tick window.
+	 */
+	if (ticks > (counter - WWDG_COUNTER_MIN)) {
+		return -EINVAL;
+	}
+
+	*window = counter - (uint32_t)ticks;
+
+	return 0;
+}
+
 static int wwdg_stm32_setup(const struct device *dev, uint8_t options)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
@@ -231,12 +271,28 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 {
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
-	uint32_t timeout = config->window.max * USEC_PER_MSEC;
 	uint32_t calculated_timeout;
 	uint32_t prescaler_exp = 0U;
 	uint32_t counter = 0U;
+	uint32_t window;
 	uint32_t pclk;
 	int ret;
+
+	/* Reloading the counter above a reduced window would reset the MCU */
+	if (LL_WWDG_IsEnabled(wwdg) != 0U) {
+		return -EBUSY;
+	}
+
+	if (config->window.max > (UINT32_MAX / USEC_PER_MSEC)) {
+		return -EINVAL;
+	}
+
+	if (config->window.min > config->window.max) {
+		return -EINVAL;
+	}
+
+	const uint32_t timeout = config->window.max * USEC_PER_MSEC;
+	const uint32_t window_start = config->window.min * USEC_PER_MSEC;
 
 	ret = wwdg_stm32_get_pclk(dev, &pclk);
 	if (ret < 0) {
@@ -261,6 +317,17 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 		return -EINVAL;
 	}
 
+	/* A zero minimum keeps the window equal to the counter, so the WWDG can
+	 * be fed immediately.
+	 */
+	ret = wwdg_stm32_convert_window(pclk, window_start, prescaler_exp, counter, &window);
+	if (ret < 0) {
+		return ret;
+	}
+
+	LOG_DBG("Desired window: %d us", window_start);
+	LOG_DBG("Set window:     %d (counter %d)", window, counter);
+
 	data->counter = counter;
 
 	/* Configure WWDG */
@@ -268,10 +335,7 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 	LL_WWDG_SetPrescaler(wwdg,
 		(prescaler_exp << WWDG_PRESCALER_POS) & WWDG_PRESCALER_MASK);
 
-	/* Set window the same as the counter to be able to feed the WWDG almost
-	 * immediately
-	 */
-	LL_WWDG_SetWindow(wwdg, counter);
+	LL_WWDG_SetWindow(wwdg, window);
 	LL_WWDG_SetCounter(wwdg, counter);
 
 	return 0;
