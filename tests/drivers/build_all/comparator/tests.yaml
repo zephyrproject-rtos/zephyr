@@ -154,6 +154,13 @@ tests:
       - CONFIG_MFD=y
     platform_allow:
       - kit_psc3m5_evk
+  drivers.comparator.build.infineon_hppass_csg.psc3m6:
+    extra_args:
+      - DTC_OVERLAY_FILE="infineon_hppass_csg/psc3m6.overlay"
+    extra_configs:
+      - CONFIG_MFD=y
+    platform_allow:
+      - kit_psc3m6_eval/psc3m6ges3ahq1
   drivers.comparator.build.wch_comp.ch5xx:
     extra_args:
       - DTC_OVERLAY_FILE="wch_comp/ch5xx.overlay"
