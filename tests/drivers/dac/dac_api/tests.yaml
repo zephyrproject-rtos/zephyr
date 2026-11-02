@@ -8,6 +8,13 @@ common:
 tests:
   drivers.dac.api:
     filter: dt_node_has_prop("/zephyr,user", "io-channels")
+  drivers.dac.api.infineon_csg:
+    extra_args:
+      - FILE_SUFFIX="csg"
+    extra_configs:
+      - CONFIG_MFD=y
+    platform_allow:
+      - kit_psc3m6_eval/psc3m6ges3ahq1
   drivers.dac.api.dac_channel0:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="dac-channel0.overlay"
