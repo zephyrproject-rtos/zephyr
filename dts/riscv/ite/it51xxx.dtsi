@@ -1111,6 +1111,14 @@
 			status = "disabled";
 		};
 
+		psa_crypto: psa-crypto@f03b00 {
+			compatible = "ite,it51xxx-crypto";
+			reg = <0xf03b00 0x00aa>;
+			interrupts = <IT51XXX_IRQ_CRYPTO IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		i3c0: i3c@f03c00 {
 			compatible = "ite,it51xxx-i3cm";
 			reg = <0x00f03c00 0x0053>;
