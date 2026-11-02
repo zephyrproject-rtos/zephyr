@@ -76,9 +76,14 @@ union ifx_hppass_stt_tt_cfg0 {
 	struct {
 		uint32_t _rsv0:4;       /* [3:0]   rsvd */
 		uint32_t sar_unlock:1;  /* [4] */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+		uint32_t _rsv1:2;       /* [6:5]   rsvd */
+		uint32_t csg_unlock:9;  /* [15:7] */
+#else
 		uint32_t _rsv1:3;       /* [7:5]   rsvd */
 		uint32_t csg_unlock:5;  /* [12:8]  per-CSG unlock (CSG_NUM=5) */
 		uint32_t _rsv2:3;       /* [15:13] rsvd */
+#endif
 		uint32_t dout_unlock:1; /* [16] */
 		uint32_t _rsv3:3;       /* [19:17] rsvd */
 		uint32_t dout:5;        /* [24:20] one bit per CSG channel (DOUT field is 5 wide) */
@@ -92,8 +97,13 @@ union ifx_hppass_stt_tt_cfg1 {
 	struct {
 		uint32_t br_addr:4;     /* [3:0] */
 		uint32_t _rsv0:4;       /* [7:4]   rsvd */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+		uint32_t cond:7;        /* [14:8] */
+		uint32_t _rsv1:1;       /* [15]   rsvd */
+#else
 		uint32_t cond:6;        /* [13:8] */
 		uint32_t _rsv1:2;       /* [15:14] rsvd */
+#endif
 		uint32_t action:3;      /* [18:16] */
 		uint32_t intr_set:1;    /* [19] */
 		uint32_t cnt:12;        /* [31:20] */
@@ -104,20 +114,24 @@ union ifx_hppass_stt_tt_cfg1 {
 /* TT_CFG2: per-CSG enable + DAC trigger lanes (TRM 002-39445 §20.1.73). */
 union ifx_hppass_stt_tt_cfg2 {
 	struct {
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+		uint32_t csg_enable:9;  /* [8:0] */
+		uint32_t csg_dac_tr:9;  /* [17:9] */
+		uint32_t _rsv0:14;      /* [31:18] rsvd */
+#else
 		uint32_t csg_enable:5;  /* [4:0]   per-CSG enable (CSG_NUM=5) */
 		uint32_t _rsv0:3;       /* [7:5]   rsvd */
 		uint32_t csg_dac_tr:5;  /* [12:8]  per-CSG DAC trigger (CSG_NUM=5) */
 		uint32_t _rsv1:19;      /* [31:13] rsvd */
+#endif
 	};
 	uint32_t raw;
 };
 
 /*
  * TT_CFG3: SAR trigger group mask, SAR enable, and analog-route mux control
- * for up to 4 muxes (one unlock bit + a 2-bit channel-index select per mux).
- * Per TRM 002-39445 §20.1.74.  SAR_AROUTE_SEL is 2 bits wide per the
- * Registers TRM; declared as explicit 2-bit fields so a channel index of
- * 2 or 3 is not silently truncated.
+ * for 4 muxes. Each mux has one unlock bit and a 2-bit route selector on
+ * PSC3M5 (TRM 002-39445 §20.1.74), widened to 3 bits on MCPASS v3.
  */
 union ifx_hppass_stt_tt_cfg3 {
 	struct {
@@ -128,17 +142,23 @@ union ifx_hppass_stt_tt_cfg3 {
 		uint32_t sar_aroute_tr1:1;  /* [13] */
 		uint32_t sar_aroute_tr2:1;  /* [14] */
 		uint32_t sar_aroute_tr3:1;  /* [15] */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+		uint32_t sar_aroute_sel0:3; /* [18:16] per-mux chan_idx */
+		uint32_t sar_aroute_sel1:3; /* [21:19] */
+		uint32_t sar_aroute_sel2:3; /* [24:22] */
+		uint32_t sar_aroute_sel3:3; /* [27:25] */
+		uint32_t _rsv1:4;          /* [31:28] rsvd */
+#else
 		uint32_t sar_aroute_sel0:2; /* [17:16] per-mux chan_idx */
 		uint32_t sar_aroute_sel1:2; /* [19:18] */
 		uint32_t sar_aroute_sel2:2; /* [21:20] */
 		uint32_t sar_aroute_sel3:2; /* [23:22] */
 		uint32_t _rsv1:8;           /* [31:24] rsvd */
+#endif
 	};
 	uint32_t raw;
 };
 
-BUILD_ASSERT(IFX_HPPASS_CSG_NUM == 5,
-	     "TT_CFG bitfield widths assume 5 CSG channels");
 BUILD_ASSERT(IFX_HPPASS_SAR_MUX_NUM == 4,
 	     "TT_CFG3 bitfield layout assumes 4 SAR muxes");
 
@@ -165,9 +185,15 @@ union ifx_hppass_infra_startup_cfg {
  */
 union ifx_hppass_mmio_tr_level_out {
 	struct {
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+		uint32_t comp_msk:9;     /* [8:0] CMP_TR */
+		uint32_t _rsv0:15;
+		uint32_t limit_msk:8;    /* [31:24] SAR_RANGE_TR */
+#else
 		uint32_t comp_msk:8;     /* [7:0]  CMP_TR */
 		uint32_t limit_msk:8;    /* [15:8] SAR_RANGE_TR */
 		uint32_t _rsv0:16;
+#endif
 	};
 	uint32_t raw;
 };
@@ -248,15 +274,13 @@ static inline bool ifx_hppass_ac_is_block_ready(const struct device *dev)
 
 /*
  * Replay the SFLASH-resident trim table into HPPASS infra registers, plus
- * the 16-entry SAR linearity calibration table.  Layout of SFLASH table is
- * fixed by silicon (Regs TRM 5.1.21).
+ * the SAR linearity calibration table when exposed by the device HAL.
+ * Layout of SFLASH table is fixed by silicon (Regs TRM 5.1.21).
  */
 #define IFX_HPPASS_TRIMS_ENTRIES_NUM 7
 
 static int ifx_hppass_apply_factory_trims(const struct device *dev)
 {
-	const struct ifx_hppass_mfd_config *config = dev->config;
-	mem_addr_t base = config->base;
 	struct trim_entry {
 		volatile uint32_t *addr;
 		uint32_t value;
@@ -276,9 +300,16 @@ static int ifx_hppass_apply_factory_trims(const struct device *dev)
 		*infra_trims->entry[i].addr = infra_trims->entry[i].value;
 	}
 
+#if defined(SFLASH_SAR_CAL_LIN_TABLE)
+	const struct ifx_hppass_mfd_config *config = dev->config;
+	mem_addr_t base = config->base;
+
 	for (uint8_t i = 0; i < IFX_HPPASS_SAR_CAL_LIN_TABLE_SIZE; i++) {
 		sys_write32(SFLASH_SAR_CAL_LIN_TABLE(i), base + IFX_HPPASS_SARADC_CALLIN(i));
 	}
+#else
+	ARG_UNUSED(dev);
+#endif
 
 	return 0;
 }
@@ -302,9 +333,9 @@ static void ifx_hppass_stt_pack_one(const struct device *dev, uint8_t idx,
 	union ifx_hppass_stt_tt_cfg1 cfg1 = {.raw = 0};
 	union ifx_hppass_stt_tt_cfg2 cfg2 = {.raw = 0};
 	union ifx_hppass_stt_tt_cfg3 cfg3 = {.raw = 0};
-	uint8_t csg_unlock_msk = 0;
-	uint8_t csg_enable_msk = 0;
-	uint8_t csg_dac_trig_msk = 0;
+	uint16_t csg_unlock_msk = 0;
+	uint16_t csg_enable_msk = 0;
+	uint16_t csg_dac_trig_msk = 0;
 
 	/*
 	 * Fold the three per-CSG-slice boolean arrays into packed bitmasks
@@ -313,13 +344,13 @@ static void ifx_hppass_stt_pack_one(const struct device *dev, uint8_t idx,
 	 */
 	for (uint8_t slice_idx = 0; slice_idx < IFX_HPPASS_CSG_NUM; slice_idx++) {
 		if (entry->csg_unlock[slice_idx]) {
-			csg_unlock_msk |= (uint8_t)BIT(slice_idx);
+			csg_unlock_msk |= (uint16_t)BIT(slice_idx);
 		}
 		if (entry->csg_enable[slice_idx]) {
-			csg_enable_msk |= (uint8_t)BIT(slice_idx);
+			csg_enable_msk |= (uint16_t)BIT(slice_idx);
 		}
 		if (entry->csg_dac_trig[slice_idx]) {
-			csg_dac_trig_msk |= (uint8_t)BIT(slice_idx);
+			csg_dac_trig_msk |= (uint16_t)BIT(slice_idx);
 		}
 	}
 
@@ -896,6 +927,10 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 #define _CSG_IS_USED_2(n) _CSG_SLICE_USED(n, comparator_b0080, dac_b0084)
 #define _CSG_IS_USED_3(n) _CSG_SLICE_USED(n, comparator_b00c0, dac_b00c4)
 #define _CSG_IS_USED_4(n) _CSG_SLICE_USED(n, comparator_b0100, dac_b0104)
+#define _CSG_IS_USED_5(n) _CSG_SLICE_USED(n, comparator_b0140, dac_b0144)
+#define _CSG_IS_USED_6(n) _CSG_SLICE_USED(n, comparator_b0180, dac_b0184)
+#define _CSG_IS_USED_7(n) _CSG_SLICE_USED(n, comparator_b01c0, dac_b01c4)
+#define _CSG_IS_USED_8(n) _CSG_SLICE_USED(n, comparator_b0200, dac_b0204)
 
 #define CSG_IS_USED(n, slice)                                                                  \
 	COND_CODE_1(DT_NODE_HAS_STATUS(CSG_NODE(n), okay),                                     \
@@ -923,6 +958,7 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
  */
 
 #define IFX_HPPASS_BASIC_NUM_STT 2
+#define IFX_HPPASS_CSG_USED_ENTRY(i, n) (bool)CSG_IS_USED(n, i)
 
 /*
  * Basic-mode STT: two-entry table (WAIT_FOR(BLOCK_READY) → STOP).  Builds
@@ -940,16 +976,12 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 			.gpio_out_unlock = false,                                              \
 			.gpio_out_msk = 0,                                                    \
 			.csg_unlock = {                                                        \
-				(bool)CSG_IS_USED(n, 0), (bool)CSG_IS_USED(n, 1),              \
-				(bool)CSG_IS_USED(n, 2), (bool)CSG_IS_USED(n, 3),              \
-				(bool)CSG_IS_USED(n, 4),                                       \
+				LISTIFY(IFX_HPPASS_CSG_NUM, IFX_HPPASS_CSG_USED_ENTRY, (,), n) \
 			},                                                                     \
 			.csg_enable = {                                                        \
-				(bool)CSG_IS_USED(n, 0), (bool)CSG_IS_USED(n, 1),              \
-				(bool)CSG_IS_USED(n, 2), (bool)CSG_IS_USED(n, 3),              \
-				(bool)CSG_IS_USED(n, 4),                                       \
+				LISTIFY(IFX_HPPASS_CSG_NUM, IFX_HPPASS_CSG_USED_ENTRY, (,), n) \
 			},                                                                     \
-			.csg_dac_trig = {false, false, false, false, false},                   \
+			.csg_dac_trig = {false},                                              \
 			.sar_unlock = SAR_IS_USED(n),                                          \
 			.sar_enable = SAR_IS_USED(n),                                          \
 			.sar_grp_msk = 0,                                                     \
@@ -963,9 +995,9 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 			.count = 1,                                                           \
 			.gpio_out_unlock = false,                                              \
 			.gpio_out_msk = 0,                                                    \
-			.csg_unlock = {false, false, false, false, false},                     \
-			.csg_enable = {false, false, false, false, false},                     \
-			.csg_dac_trig = {false, false, false, false, false},                   \
+			.csg_unlock = {false},                                                \
+			.csg_enable = {false},                                                \
+			.csg_dac_trig = {false},                                              \
 			.sar_unlock = false,                                                   \
 			.sar_enable = false,                                                   \
 			.sar_grp_msk = 0,                                                     \
@@ -975,18 +1007,21 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 
 /* Advanced-mode STT: built from ac-states phandle list. */
 
-/** Get the DT node id of the i-th ac-state phandle for instance n */
-#define AC_STATE_NODE(n, i) DT_INST_PHANDLE_BY_IDX(n, ac_states, i)
+/** Get the DT node id of the i-th ac-state phandle for HPPASS node n */
+#define AC_STATE_NODE(n, i) DT_PHANDLE_BY_IDX(n, ac_states, i)
 
 /** Number of AC states derived from the ac-states phandle list length */
 #define NUM_STT_STATES(n) DT_INST_PROP_LEN(n, ac_states)
+
+#define IFX_HPPASS_CSG_STATE_PROP(slice, node, prop) \
+	(bool)DT_PROP(node, csg##slice##_##prop)
 
 /**
  * Build one struct ifx_hppass_ac_stt_entry initialiser from an ac-state
  * node.  Packed into TT_CFG0..3 (TRM 002-39445 §20.1.71-74) by
  * stt_pack_one().
  */
-#define IFX_HPPASS_STT_ENTRY(i, n)                                                             \
+#define IFX_HPPASS_STT_ENTRY(n, prop, i)                                                       \
 	{                                                                                      \
 		.condition = (enum ifx_hppass_condition)DT_PROP(AC_STATE_NODE(n, i),           \
 								ac_condition),                 \
@@ -997,25 +1032,16 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 		.gpio_out_unlock = (bool)DT_PROP(AC_STATE_NODE(n, i), gpio_out_unlock),        \
 		.gpio_out_msk = (uint8_t)DT_PROP(AC_STATE_NODE(n, i), gpio_out_msk),           \
 		.csg_unlock = {                                                                \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg0_unlock),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg1_unlock),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg2_unlock),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg3_unlock),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg4_unlock),                       \
+			LISTIFY(IFX_HPPASS_CSG_NUM, IFX_HPPASS_CSG_STATE_PROP, (,),           \
+				AC_STATE_NODE(n, i), unlock)                                 \
 		},                                                                             \
 		.csg_enable = {                                                                \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg0_enable),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg1_enable),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg2_enable),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg3_enable),                       \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg4_enable),                       \
+			LISTIFY(IFX_HPPASS_CSG_NUM, IFX_HPPASS_CSG_STATE_PROP, (,),           \
+				AC_STATE_NODE(n, i), enable)                                 \
 		},                                                                             \
 		.csg_dac_trig = {                                                              \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg0_dac_trig),                     \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg1_dac_trig),                     \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg2_dac_trig),                     \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg3_dac_trig),                     \
-			(bool)DT_PROP(AC_STATE_NODE(n, i), csg4_dac_trig),                     \
+			LISTIFY(IFX_HPPASS_CSG_NUM, IFX_HPPASS_CSG_STATE_PROP, (,),           \
+				AC_STATE_NODE(n, i), dac_trig)                               \
 		},                                                                             \
 		.sar_unlock = (bool)DT_PROP(AC_STATE_NODE(n, i), sar_unlock),                  \
 		.sar_enable = (bool)DT_PROP(AC_STATE_NODE(n, i), sar_enable),                  \
@@ -1035,7 +1061,7 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 /** Generate the advanced-mode STT array from ac-states phandles */
 #define IFX_HPPASS_ADVANCED_STT(n)                                                             \
 	static const struct ifx_hppass_ac_stt_entry ifx_hppass_stt_##n[] = {                   \
-		LISTIFY(NUM_STT_STATES(n), IFX_HPPASS_STT_ENTRY, (,), n)                       \
+		DT_INST_FOREACH_PROP_ELEM_SEP(n, ac_states, IFX_HPPASS_STT_ENTRY, (,))         \
 	};
 
 /** Number of STT entries — basic or advanced */
@@ -1053,12 +1079,21 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 		((uint32_t)(bool)DT_INST_PROP_OR(n, startup_##idx##_csg_ready, 0) << 11)     \
 	}
 
-/* Packs MMIO_TR_LEVEL_OUT[idx] (TRM 002-39445 §20.1.101). */
+/* MCPASS v3 adds a ninth comparator trigger and moves the SAR-range triggers. */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+#define IFX_HPPASS_TR_LEVEL_COMP_MSK  GENMASK(8, 0)
+#define IFX_HPPASS_TR_LEVEL_LIMIT_MSK GENMASK(31, 24)
+#else
+#define IFX_HPPASS_TR_LEVEL_COMP_MSK  GENMASK(7, 0)
+#define IFX_HPPASS_TR_LEVEL_LIMIT_MSK GENMASK(15, 8)
+#endif
+
+/* Packs MMIO_TR_LEVEL_OUT[idx] from comparator and SAR-range masks. */
 #define IFX_HPPASS_TRIG_LEVEL(n, idx)                                                          \
 	{ .raw =                                                                              \
-		FIELD_PREP(GENMASK(7, 0),                                                     \
+		FIELD_PREP(IFX_HPPASS_TR_LEVEL_COMP_MSK,                                      \
 			   (uint32_t)DT_INST_PROP_OR(n, trig_level_##idx##_comp_msk, 0)) |    \
-		FIELD_PREP(GENMASK(15, 8),                                                    \
+		FIELD_PREP(IFX_HPPASS_TR_LEVEL_LIMIT_MSK,                                     \
 			   (uint32_t)DT_INST_PROP_OR(n, trig_level_##idx##_limit_msk, 0))     \
 	}
 

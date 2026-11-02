@@ -82,9 +82,9 @@ extern "C" {
 #define IFX_HPPASS_INFRA_TR_IN_SEL         0x000E0000U
 #if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
 /* v3 inserts TR_IN_SEL_2 and HW_TR_MODE_2, pushing the FW triggers down by 8. */
-#define IFX_HPPASS_INFRA_HW_TR_MODE  0x000E0008U
-#define IFX_HPPASS_INFRA_FW_TR_PULSE 0x000E0010U
-#define IFX_HPPASS_INFRA_FW_TR_LEVEL 0x000E0014U
+#define IFX_HPPASS_INFRA_HW_TR_MODE        0x000E0008U
+#define IFX_HPPASS_INFRA_FW_TR_PULSE       0x000E0010U
+#define IFX_HPPASS_INFRA_FW_TR_LEVEL       0x000E0014U
 #else
 #define IFX_HPPASS_INFRA_HW_TR_MODE        0x000E0004U
 #define IFX_HPPASS_INFRA_FW_TR_PULSE       0x000E0008U
@@ -103,7 +103,7 @@ extern "C" {
 #define IFX_HPPASS_MMIO_TR_LEVEL_OUT(n)    (0x000F0060U + (n) * 4U)
 #if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
 /* TR_LEVEL_OUT[] holds 16 slots on v3, so the pulse array starts 0x20 higher. */
-#define IFX_HPPASS_MMIO_TR_PULSE_OUT(n) (0x000F00A0U + (n) * 4U)
+#define IFX_HPPASS_MMIO_TR_PULSE_OUT(n)    (0x000F00A0U + (n) * 4U)
 #else
 #define IFX_HPPASS_MMIO_TR_PULSE_OUT(n)    (0x000F0080U + (n) * 4U)
 #endif
@@ -131,6 +131,13 @@ extern "C" {
 #define IFX_HPPASS_CSG_CMP_INTR_MASK       0x00000B18U
 #define IFX_HPPASS_CSG_CMP_INTR_MASKED     0x00000B1CU
 #define IFX_HPPASS_CSG_VDAC_OUT_BLANK      0x00000B20U
+
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+#define IFX_HPPASS_CSG_AROUTEMUX_SEL(i)     (0x00000B40U + (i) * 4U)
+#define IFX_HPPASS_CSG_SLICES_PER_GROUP     3U
+#define IFX_HPPASS_CSG_SLICE_DAC_MODE_START 0x08U
+#define IFX_HPPASS_CSG_SLICE_DAC_VAL_A      0x0CU
+#endif
 
 /**
  * @brief Composed value for AREFv2_AREF_CTRL "normal operation, internal
