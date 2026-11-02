@@ -40,7 +40,7 @@ struct sniffer_capture_msg {
 	uint8_t payload[IEEE802154_MAX_PHY_PACKET_SIZE];
 };
 
-static const struct ieee802154_radio_api *radio_api;
+static const struct ieee802154_radio_driver_api *radio_api;
 static const struct device *const radio = DEVICE_DT_GET(DT_CHOSEN(zephyr_ieee802154));
 static enum ieee802154_hw_caps caps;
 static uint16_t current_channel;

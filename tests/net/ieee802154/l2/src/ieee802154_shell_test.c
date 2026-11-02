@@ -461,7 +461,7 @@ ZTEST(ieee802154_l2_shell, test_up_after_scan_while_down)
 	/* Leave the interface up for the tests that follow */
 	if (!net_if_is_up(net_iface)) {
 		const struct device *dev = net_if_get_device(net_iface);
-		const struct ieee802154_radio_api *radio = dev->api;
+		const struct ieee802154_radio_driver_api *radio = dev->api;
 
 		(void)radio->stop(dev);
 		(void)net_if_up(net_iface);
