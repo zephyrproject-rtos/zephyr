@@ -31,7 +31,7 @@ static inline enum net_verdict canbus_recv(struct net_if *iface,
 static inline int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct canbus_api *api;
+	const struct canbus_driver_api *api;
 	int ret;
 
 	NET_ASSERT(dev != NULL);

@@ -396,7 +396,7 @@ static bool is_already_attached(struct socketcan_filter *sfilter,
 
 static int close_socket(struct net_context *ctx)
 {
-	const struct canbus_api *api;
+	const struct canbus_driver_api *api;
 	struct net_if *iface;
 	const struct device *dev;
 
@@ -531,7 +531,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 				     void *optval, net_socklen_t *optlen)
 {
 	if (level == NET_SOL_CAN_RAW) {
-		const struct canbus_api *api;
+		const struct canbus_driver_api *api;
 		struct net_if *iface;
 		const struct device *dev;
 
@@ -646,7 +646,7 @@ static void can_unregister_filters(struct net_if *iface,
 static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 				     const void *optval, net_socklen_t optlen)
 {
-	const struct canbus_api *api;
+	const struct canbus_driver_api *api;
 	struct net_if *iface;
 	const struct device *dev;
 	int ret;
