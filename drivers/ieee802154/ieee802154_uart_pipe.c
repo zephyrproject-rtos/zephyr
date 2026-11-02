@@ -384,7 +384,7 @@ static void upipe_iface_init(struct net_if *iface)
 
 static struct upipe_context upipe_context_data;
 
-static const struct ieee802154_radio_api upipe_radio_api = {
+static DEVICE_API(ieee802154_radio, upipe_radio_api) = {
 	.iface_api.init		= upipe_iface_init,
 
 	.get_capabilities	= upipe_get_capabilities,

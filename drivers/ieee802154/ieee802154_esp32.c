@@ -763,7 +763,7 @@ static void esp32_iface_init(struct net_if *iface)
 #endif
 }
 
-static const struct ieee802154_radio_api esp32_radio_api = {
+static DEVICE_API(ieee802154_radio, esp32_radio_api) = {
 	.iface_api.init = esp32_iface_init,
 	.get_time         = esp32_get_time,
 	.get_capabilities = esp32_get_capabilities,

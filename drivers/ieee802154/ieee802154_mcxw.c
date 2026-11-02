@@ -1874,7 +1874,7 @@ static void set_rx_state(void)
 	}
 }
 
-static const struct ieee802154_radio_api mcxw71_radio_api = {
+static DEVICE_API(ieee802154_radio, mcxw71_radio_api) = {
 	.iface_api.init = mcxw_iface_init,
 
 	.get_capabilities = mcxw_get_capabilities,
