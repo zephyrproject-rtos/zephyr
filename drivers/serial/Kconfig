@@ -31,6 +31,16 @@ config SERIAL_SUPPORT_INTERRUPT
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
 
+config SERIAL_SUPPORT_FIFO_READ_FLAGGED
+	bool
+	help
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver implements uart_fifo_read_flagged(),
+	  which reports the error condition of each received byte
+	  alongside the byte itself. Required by protocols that must
+	  determine which byte an error applies to, such as break-delimited
+	  protocols.
+
 config SERIAL_INIT_PRIORITY
 	int "Serial init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
@@ -121,6 +131,14 @@ config UART_WIDE_DATA
 	  This enables the API to process data longer than 8-bit.
 	  This is up to the driver to implement the necessary functions
 	  to properly support this.
+
+config UART_FIFO_READ_FLAGGED
+	bool "API to read received data with per-byte error flags"
+	depends on UART_INTERRUPT_DRIVEN
+	depends on SERIAL_SUPPORT_FIFO_READ_FLAGGED
+	help
+	  This enables uart_fifo_read_flagged(), which reports the error
+	  condition of each received byte alongside the byte itself.
 
 DT_CHOSEN_ZEPHYR_UART_PIPE := zephyr,uart-pipe
 
