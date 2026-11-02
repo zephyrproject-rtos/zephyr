@@ -31,6 +31,11 @@ def parse_args():
         action="store_true",
         help="Enable scratch registers for syscalls if needed",
     )
+    parser.add_argument(
+        "--syscall-scratch-force",
+        action="store_true",
+        help="Force to emit scratch registers for syscalls",
+    )
     parser.add_argument("coreisa", help="Path to preprocessed core-isa.h")
     parser.add_argument("outfile", help="Output file")
 
@@ -66,7 +71,9 @@ with open(coreisa) as infile:
 # Use MISC registers first if available, that's what they're for
 regs = [f"MISC{n}" for n in range(0, int(get("XCHAL_NUM_MISC_REGS")))]
 
-if args.syscall_scratch:
+if args.syscall_scratch_force:
+    NEEDED.append("SYSCALL_SCRATCH")
+elif args.syscall_scratch or args.syscall_scratch_force:
     # If there is no THREADPTR, we need to use syscall for
     # arch_is_user_context() where the code needs a scratch
     # register.

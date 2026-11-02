@@ -22,7 +22,12 @@
 .global	xtensa_do_syscall
 .align	4
 xtensa_do_syscall:
-#if XCHAL_HAVE_THREADPTR == 0
+#if (XCHAL_HAVE_THREADPTR == 0) || (defined(CONFIG_LLEXT) && defined(CONFIG_THREAD_LOCAL_STORAGE))
+	/* When thread local storage is enabled, LLEXT modules are going to use
+	 * this to determine whether they are in user mode instead of relying
+	 * thread variable is_user_mode due to compiler idiocy. See
+	 * arch_is_user_context() for more detailed explanation.
+	 */
 	wsr a2, ZSR_SYSCALL_SCRATCH
 	rsync
 

@@ -83,6 +83,14 @@ else()
   set(MAY_NEED_SYSCALL_SCRATCH_REG false)
 endif()
 
+if(CONFIG_USERSPACE AND CONFIG_LLEXT AND CONFIG_THREAD_LOCAL_STORAGE)
+  # This is needed as k_is_user_context() is going to call
+  # syscall helper xtensa_is_user_context() inside the LLEXT module.
+  set(MUST_HAVE_SYSCALL_SCRATCH_REG true)
+else()
+  set(MUST_HAVE_SYSCALL_SCRATCH_REG false)
+endif()
+
 if(CONFIG_KERNEL_COHERENCE)
   set(NEED_FLUSH_SCRATCH_REG true)
 else()
@@ -99,6 +107,7 @@ add_custom_command(OUTPUT ${ZSR_H} DEPENDS ${CORE_ISA_DM}
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gen_zsr.py
                                $<$<BOOL:${CONFIG_XTENSA_MMU}>:--mmu>
                                $<$<BOOL:${MAY_NEED_SYSCALL_SCRATCH_REG}>:--syscall-scratch>
+                               $<$<BOOL:${MUST_HAVE_SYSCALL_SCRATCH_REG}>:--syscall-scratch-force>
                                $<$<BOOL:${CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE}>:--load-store-emulation>
                                $<$<BOOL:${NEED_FLUSH_SCRATCH_REG}>:--flush-reg>
                                ${CORE_ISA_DM} ${ZSR_H})

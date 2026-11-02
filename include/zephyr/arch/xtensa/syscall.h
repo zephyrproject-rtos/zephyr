@@ -244,6 +244,25 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 static inline bool arch_is_user_context(void)
 {
 #if XCHAL_HAVE_THREADPTR
+#if defined(LL_EXTENSION_BUILD) && defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Xtensa compilers (both GNU and Cadence) really like to substitute
+	 * offset calculation to use L32R/ADD instead of simple MOVI/ADD pair,
+	 * even in hand-coded assembly. Because of this forced substitution,
+	 * the offset used to calculate the address to is_user_mode inside
+	 * k_is_user_context() is now stored in some literal sections (either
+	 * global or area just before a function). Since LLEXT modules are
+	 * built outside of Zephyr app, the toolchain has no idea how many
+	 * thread variables have already been allocated on base Zephyr.
+	 * This results in incorrect offset to is_user_mode when running code
+	 * in LLEXT modules. So under LLEXT, we use the syscall to determine
+	 * whether we are in user mode as it does not depend on thread variable.
+	 */
+	extern bool xtensa_is_user_context(void);
+
+	return xtensa_is_user_context();
+
+#else /* LL_EXTENSION_BUILD && CONFIG_THREAD_LOCAL_STORAGE */
+
 	uint32_t thread;
 
 	__asm__ volatile(
@@ -260,7 +279,8 @@ static inline bool arch_is_user_context(void)
 	return is_user_mode != 0;
 #else
 	return !!thread;
-#endif
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+#endif /* LL_EXTENSION_BUILD && CONFIG_THREAD_LOCAL_STORAGE */
 
 #else /* XCHAL_HAVE_THREADPTR */
 	extern bool xtensa_is_user_context(void);

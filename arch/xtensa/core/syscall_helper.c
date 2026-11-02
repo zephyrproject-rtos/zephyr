@@ -140,7 +140,7 @@ EXPORT_SYMBOL(xtensa_syscall_helper_args_0);
 
 #endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
 
-#if XCHAL_HAVE_THREADPTR == 0
+#if (XCHAL_HAVE_THREADPTR == 0) || (defined(CONFIG_LLEXT) && defined(CONFIG_THREAD_LOCAL_STORAGE))
 #include <xtensa/config/core-isa.h>
 #include <xtensa/config/core.h>
 
@@ -157,7 +157,7 @@ bool xtensa_is_user_context(void)
 	return ret != 0;
 }
 EXPORT_SYMBOL(xtensa_is_user_context);
-#endif /* XCHAL_HAVE_THREADPTR */
+#endif /* (XCHAL_HAVE_THREADPTR == 0) || (CONFIG_LLEXT && CONFIG_THREAD_LOCAL_STORAGE) */
 
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 {
