@@ -5,6 +5,14 @@
  */
 
 / {
+	spi1: spi@44a00000 {
+		compatible = "adi,axi-spi-engine";
+		reg = <0x44a00000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		adi,ref-clock-hz = <160000000>;
+	};
+
 	spi0: spi@88888888 {
 		compatible = "cdns,spi";
 		reg = <0x88888888 0x400>;
