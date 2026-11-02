@@ -2539,7 +2539,7 @@ static const struct wifi_mgmt_ops airoc_wifi_mgmt = {
 #endif
 };
 
-static const struct net_wifi_mgmt_offload airoc_api = {
+static DEVICE_API(wifi_native, airoc_api) = {
 	.wifi_iface.iface_api.init = airoc_mgmt_init,
 	.wifi_iface.send = airoc_mgmt_send,
 	.wifi_iface.get_capabilities = airoc_get_capabilities,

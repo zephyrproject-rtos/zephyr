@@ -417,7 +417,7 @@ static enum offloaded_net_if_types offload_get_type(void)
 	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
 }
 
-static const struct net_wifi_mgmt_offload offload_api = {
+static DEVICE_API(wifi_offload, offload_api) = {
 	.wifi_iface.iface_api.init = offload_iface_init,
 	.wifi_iface.get_type = offload_get_type,
 };

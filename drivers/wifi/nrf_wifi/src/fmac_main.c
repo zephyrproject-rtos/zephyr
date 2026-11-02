@@ -974,7 +974,7 @@ static const struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 
 
 #ifdef CONFIG_NET_L2_ETHERNET
-static const struct net_wifi_mgmt_offload wifi_offload_ops = {
+static DEVICE_API(wifi_native, wifi_offload_ops) = {
 	.wifi_iface.iface_api.init = nrf_wifi_if_init_zep,
 	.wifi_iface.start = nrf_wifi_if_start_zep,
 	.wifi_iface.stop = nrf_wifi_if_stop_zep,

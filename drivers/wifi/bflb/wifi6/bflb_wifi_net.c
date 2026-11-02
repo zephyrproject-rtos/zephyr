@@ -560,7 +560,7 @@ static int bflb_wifi_init(const struct device *dev)
 	return 0;
 }
 
-static const struct net_wifi_mgmt_offload bflb_wifi_api = {
+static DEVICE_API(wifi_native, bflb_wifi_api) = {
 	.wifi_iface.iface_api.init = bflb_wifi_iface_init,
 	.wifi_iface.get_capabilities = bflb_wifi_get_capabilities,
 	.wifi_iface.send = bflb_wifi_send,
