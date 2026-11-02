@@ -2357,7 +2357,8 @@ static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 			continue;
 		}
 
-		if (sco->sco.acl == conn) {
+		/* The type tells that the object has been set up that far */
+		if (bt_conn_is_sco(sco) && sco->sco.acl == conn) {
 			return sco;
 		}
 
@@ -2438,6 +2439,15 @@ static void deferred_work(struct k_work *work)
 			}
 
 			bt_sco_cleanup_acl(sco);
+
+			/* Without a handle no Disconnection Complete event
+			 * can take it down, and without the ACL connection no
+			 * Synchronous Connection Complete event can find it.
+			 */
+			if (sco->state == BT_CONN_INITIATING) {
+				sco->err = conn->err;
+				bt_conn_set_state(sco, BT_CONN_DISCONNECTED);
+			}
 
 			bt_conn_unref(sco);
 			sco = conn_lookup_sco(conn);
@@ -2528,29 +2538,20 @@ static struct bt_conn *sco_conn_new(void)
 
 struct bt_conn *bt_conn_lookup_addr_sco(const bt_addr_t *peer)
 {
-	int i;
+	struct bt_conn *acl = bt_conn_lookup_addr_br(peer);
+	struct bt_conn *sco;
 
-	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
-		struct bt_conn *conn = bt_conn_ref(&sco_conns[i]);
-
-		if (!conn) {
-			continue;
-		}
-
-		if (!bt_conn_is_sco(conn)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		if (!bt_addr_eq(peer, &conn->sco.acl->br.dst)) {
-			bt_conn_unref(conn);
-			continue;
-		}
-
-		return conn;
+	if (acl == NULL) {
+		return NULL;
 	}
 
-	return NULL;
+	/* An object that has lost its ACL connection, which the application
+	 * can still hold a reference to, does not match.
+	 */
+	sco = conn_lookup_sco(acl);
+	bt_conn_unref(acl);
+
+	return sco;
 }
 
 struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
