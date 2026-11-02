@@ -12,6 +12,61 @@ hardware supports them and your Zephyr board directory's :file:`board.cmake`
 file declares that support properly. See :ref:`west-build-flash-debug` for
 more information on these commands.
 
+.. _runner_alif_flash:
+
+Alif Security Toolkit (SETOOLS)
+*******************************
+
+The Alif Security Toolkit (SETOOLS) programs the MRAM of Alif Ensemble devices
+through the Secure Enclave UART (SE-UART). The ``alif_flash`` runner wraps SETOOLS: it generates
+an Application Table of Contents (ATOC) package for the core the application was built for with
+``app-gen-toc``, then writes it to MRAM with ``app-write-mram``. The runner supports
+``west flash`` only. Boards that use it debug through another runner, such as
+:ref:`runner_jlink`.
+
+Setting up SETOOLS:
+
+#. Download the SETOOLS release for your host from the "Kits & Software" tab of your kit's
+   product page and unpack it. The `Alif Security Toolkit Quick Start Guide`_ describes the
+   release contents.
+
+#. Point the runner to the unpacked release:
+
+   .. code-block:: console
+
+      export ALIF_SE_TOOLS_DIR=$HOME/app-release-exec-linux
+
+   The ``--tools-dir`` runner argument overrides ``ALIF_SE_TOOLS_DIR``.
+
+#. Connect the board's SE-UART to the host, then let SETOOLS probe the device and select the
+   matching part number and baud rate:
+
+   .. code-block:: console
+
+      cd $ALIF_SE_TOOLS_DIR
+      ./tools-config -a
+
+   SETOOLS defaults to the Ensemble E8, so this step is required for every other part. The part
+   can also be selected manually with ``./tools-config -p "<Part#>"``. The runner checks the
+   configured part against the board's ``--device`` argument and refuses to flash on a mismatch.
+
+How the SE-UART is selected depends on the board, typically with a switch or jumpers; see the
+board's documentation.
+
+Flash with:
+
+.. code-block:: console
+
+   west flash --port=/dev/ttyACM0
+
+``--port`` selects the SE-UART and is stored in the SETOOLS ISP configuration; on Linux,
+a value without the ``/dev/`` prefix is expanded to ``/dev/tty<value>``, so ``USB0`` selects
+``/dev/ttyUSB0``. Options for ``app-write-mram`` are passed with
+``--tool-opt``, for example ``--tool-opt="-b 55000"`` to override the baud rate. Images for the
+Cortex-A32 APSS cores also need a BL32 image built with Alif's TF-A, passed with ``--bl32-bin``.
+
+Refer to the `Alif Security Toolkit User Guide`_ for details on the tools.
+
 .. _runner_blackmagicprobe:
 
 Black Magic Probe
@@ -881,3 +936,9 @@ EWARM 10.10 or newer.
 
 .. _Realtek Supported Boards:
    https://docs.zephyrproject.org/latest/boards/realtek/index.html
+
+.. _Alif Security Toolkit Quick Start Guide:
+   https://alifsemi.com/download/AQSG0002
+
+.. _Alif Security Toolkit User Guide:
+   https://alifsemi.com/download/AUGD0005
