@@ -67,6 +67,13 @@ async def _wait_for_shell_response(dut, response, max_wait_sec=10):
     return found, lines
 
 
+async def _wait_for_dut_security(dut):
+    """The DUT cannot start a channel until it has finished its side of the pairing."""
+    _, lines = await _wait_for_shell_response(dut, "Security ")
+    line = next((line for line in lines if "Security " in line), "")
+    assert "Security changed" in line, f"DUT security: {line or 'no report'}"
+
+
 # interact between script and DUT
 async def send_cmd_to_iut(
     shell, dut, cmd, response=None, expect_to_find_resp=True, max_wait_sec=20, shell_ret=False
@@ -285,6 +292,7 @@ async def tc_rfcomm_c_1(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -383,6 +391,7 @@ async def tc_rfcomm_c_2(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -471,6 +480,7 @@ async def tc_rfcomm_c_3(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -483,6 +493,8 @@ async def tc_rfcomm_c_3(hci_port, shell, dut, address, snoop_file) -> None:
         logger.info('Step 1: BR connection disconnection')
         # Disconnect BR connection
         await connection.disconnect()
+        found, _ = await _wait_for_shell_response(dut, "Disconnected")
+        assert found is True, "DUT did not report the disconnection"
 
         logger.info('Step 2: Start DLC establishment process')
         await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", "Not connected", shell_ret=True)
@@ -538,6 +550,7 @@ async def tc_rfcomm_c_4(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -644,6 +657,7 @@ async def tc_rfcomm_c_5(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -717,6 +731,7 @@ async def tc_rfcomm_c_6(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -792,6 +807,7 @@ async def tc_rfcomm_c_7(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -859,6 +875,7 @@ async def tc_rfcomm_c_8(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -930,6 +947,7 @@ async def tc_rfcomm_c_9(hci_port, shell, dut, address, snoop_file) -> None:
         # Enable encryption
         logger.info('Initial Condition: Enabling encryption...')
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         # Create RFCOMM server
         logger.info('Initial Condition: Create RFCOMM client...')
@@ -956,6 +974,7 @@ async def tc_rfcomm_c_9(hci_port, shell, dut, address, snoop_file) -> None:
         assert found is True, "DUT did not report connection established"
         await connection.authenticate()
         await connection.encrypt()
+        await _wait_for_dut_security(dut)
 
         logger.info('Step 5: Initialize RFCOMM client and establish connection with the server')
         await send_cmd_to_iut(shell, dut, "rfcomm_s connect 9", " connected")
