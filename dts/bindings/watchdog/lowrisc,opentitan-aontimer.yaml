@@ -1,7 +1,11 @@
 # Copyright (c) 2023 Rivos Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: OpenTitan Always-On Timer driver
+description: |
+  OpenTitan Always-On Timer, version 1.0.
+
+  Use lowrisc,opentitan-aontimer-2.0.0 for version 2.0.0 and later, which
+  have a different register map.
 
 compatible: "lowrisc,opentitan-aontimer"
 
