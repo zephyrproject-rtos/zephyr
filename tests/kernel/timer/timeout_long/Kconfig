@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_TIMEOUT_LONG_CLOCK
+	bool
+	default y
+	depends on BOARD_MPS2_AN385
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+
+config TEST_TIMEOUT_LONG_RELOAD
+	bool "Use a relative reload for the controlled system clock"
+	default n

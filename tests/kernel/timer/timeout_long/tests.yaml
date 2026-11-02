@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - kernel
+    - timer
+  timeout: 30
+  platform_allow:
+    - mps2/an385
+  integration_platforms:
+    - mps2/an385
+tests:
+  kernel.timer.timeout_long.compare_exact: {}
+  kernel.timer.timeout_long.reload:
+    extra_configs:
+      - CONFIG_TEST_TIMEOUT_LONG_RELOAD=y
