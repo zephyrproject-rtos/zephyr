@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MAX96724
+	bool "ADI MAX96724 GMSL2 deserializer"
+	select I2C
+	depends on DT_HAS_ADI_MAX96724_ENABLED
+	default y
+	help
+	  Enable driver for the ADI MAX96724 quad GMSL2 deserializer.
+	  The MAX96724 receives video data over a GMSL2 coaxial link
+	  and outputs it via MIPI CSI-2 D-PHY.
+
+if VIDEO_MAX96724
+
+config VIDEO_MAX96724_INIT_PRIORITY
+	int "MAX96724 init priority"
+	default 56
+	help
+	  Initialization priority for the MAX96724 deserializer. Must run
+	  after the host I2C controller (typically priority 50) and before
+	  the MAX96717 serializer (default 58), so that the deserializer's
+	  I2C proxy is live when the serializer is initialized through it.
+	  Slot 57 belongs to the deserializer's I2C gate.
+
+endif
+
+config VIDEO_GMSL_RAW10_DOUBLE
+	bool "Carry RAW10 as 20-bit double pixels over the GMSL2 link"
+	depends on VIDEO_MAX96717 || VIDEO_MAX96724
+	default y
+	help
+	  Pixel-mode bit-depth doubling for 10-bit streams: the serializer packs
+	  two pixels per 20-bit word (bpp10dblz, soft bpp 20) and the
+	  deserializer unpacks them with its alternate memory map (ALT_MEM_MAP10).
+	  The pixel clock halves and the link overhead drops from one bit per
+	  pixel to one bit per pixel pair. Both drivers follow this option, so a
+	  link is doubled at both ends or at neither.
+
+	  Undoubled, an IMX219 at 912 Mbps per lane needs 2.23 Gbps of a 3 Gbps
+	  link and loses the end of every line; doubled, it needs 2.13 Gbps.
