@@ -57,6 +57,9 @@ class BumbleSidecar(Sidecar):
     - ``controllers_script``: path to ``controllers.py``, relative to
       ``ZEPHYR_BASE``. Defaults to the copy in the Bluetooth Classic
       simulation framework.
+    - ``pytest_args``: arguments for pytest, with the same placeholders, for a
+      test on the ``pytest`` harness that is itself a Bluetooth peer and needs
+      to be told its controller.
 
     The test keeps its normal harness (typically ``ztest``): the harness
     consumes the guest's console output while this sidecar provisions the
@@ -88,6 +91,7 @@ class BumbleSidecar(Sidecar):
         addresses: list[str] = field(default_factory=list)
         devices: list[str] = field(default_factory=list)
         controllers_script: str | None = None
+        pytest_args: list[str] = field(default_factory=list)
 
     def configure(self, instance: TestInstance):
         super().configure(instance)
@@ -190,6 +194,15 @@ class BumbleSidecar(Sidecar):
             )
             self._peers.append(Peer(proc, log, log_path))
             logger.debug(f"SIDECAR:{self.__class__.__name__}: started peer {i} (pid {proc.pid})")
+
+        # The harness starts pytest after this, with these on its command line.
+        try:
+            self.instance.handler.extra_pytest_args = [
+                self._resolve(arg) for arg in self.config.pytest_args
+            ]
+        except (KeyError, IndexError, ValueError) as err:
+            self._error(f"invalid pytest arguments: {err!r}")
+            return False
         return True
 
     def _wait_for_ports(self) -> bool:
