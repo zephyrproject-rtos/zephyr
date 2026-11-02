@@ -106,3 +106,17 @@ properties:
     description:
       Current at which charging terminates, as a percentage of maximum charge
       current. Default matches the register reset value.
+
+  safety-timer:
+    type: string
+    enum:
+      - "3h"
+      - "6h"
+      - "12h"
+      - "Disable"
+    default: "6h"
+    description:
+      Fast charge safety timer duration. Charging is suspended if the safety
+      timer expires before charge termination. The timer duration is doubled
+      while in DPM or thermal regulation. Default matches the register reset
+      value.

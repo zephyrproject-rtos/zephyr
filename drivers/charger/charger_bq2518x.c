@@ -62,7 +62,7 @@ enum bq2518x_device_id {
 #define BQ2518X_CHARGE_CTRL1_ILIM_INT_MASK       BIT(1)
 #define BQ2518X_CHARGE_CTRL1_VINDPM_INT_MASK     BIT(0)
 #define BQ2518X_IC_CTRL_WDOG_DISABLE             (BIT(0) | BIT(1))
-#define BQ2518X_IC_CTRL_SAFETY_6_HOUR            BIT(2)
+#define BQ2518X_IC_CTRL_SAFETY_OFFSET            2
 #define BQ2518X_IC_CTRL_VRCH_100                 0x00
 #define BQ2518X_IC_CTRL_VRCH_200                 BIT(5)
 #define BQ2518X_IC_CTRL_VLOWV_SEL_2_8            BIT(6)
@@ -430,7 +430,7 @@ static int bq2518x_init(const struct device *dev)
 	/* Setup register IC_CTRL.
 	 * Values from devicetree + device defaults
 	 */
-	val = BQ2518X_IC_CTRL_WDOG_DISABLE | BQ2518X_IC_CTRL_SAFETY_6_HOUR | cfg->reg_ic_ctrl;
+	val = BQ2518X_IC_CTRL_WDOG_DISABLE | cfg->reg_ic_ctrl;
 	ret = i2c_reg_write_byte_dt(&cfg->i2c, BQ2518X_IC_CTRL, val);
 	if (ret < 0) {
 		return ret;
@@ -511,7 +511,8 @@ static int bq2518x_init(const struct device *dev)
 				 : BQ2518X_IC_CTRL_VLOWV_SEL_3_0) |                                \
 			(DT_INST_PROP_OR(inst, ntc_charger_control_disable, 0)                     \
 				 ? BQ2518X_IC_CTRL_TS_AUTO_DIS                                     \
-				 : BQ2518X_IC_CTRL_TS_AUTO_EN),                                    \
+				 : BQ2518X_IC_CTRL_TS_AUTO_EN) |                                   \
+			(DT_INST_ENUM_IDX(inst, safety_timer) << BQ2518X_IC_CTRL_SAFETY_OFFSET),   \
 		.reg_charge_control1 =                                                             \
 			(DT_INST_ENUM_IDX(inst, battery_discharge_current_limit_milliamp)          \
 			 << BQ2518X_CHARGE_CTRL1_DISCHARGE_OFFSET) |                               \
