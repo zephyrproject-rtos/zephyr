@@ -193,8 +193,20 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	return key_size >= CONFIG_BT_BR_MIN_ENC_KEY_SIZE;
 }
 
+/* The flag comes first: TX completions run while the Host waits for the controller */
+static void br_sec_refuse(struct bt_conn *conn)
+{
+	atomic_set_bit(conn->flags, BT_CONN_BR_SEC_REFUSED);
+	bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+}
+
 bool bt_br_update_sec_level(struct bt_conn *conn)
 {
+	/* A refused link stays refused, whatever the controller reports next */
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		return false;
+	}
+
 	if (!conn->encrypt) {
 		conn->sec_level = BT_SECURITY_L1;
 		return true;
@@ -217,13 +229,13 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 
 	if (!br_sufficient_key_size(conn)) {
 		LOG_ERR("Encryption key size is not sufficient");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		br_sec_refuse(conn);
 		return false;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
 		LOG_ERR("Failed to set required security level");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+		br_sec_refuse(conn);
 		return false;
 	}
 
@@ -286,6 +298,7 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	conn->handle = handle;
 	conn->err = 0U;
+	atomic_clear_bit(conn->flags, BT_CONN_BR_SEC_REFUSED);
 	conn->encrypt = evt->encr_enabled;
 
 	if (!bt_br_update_sec_level(conn)) {
