@@ -10,6 +10,10 @@
 #include "it51xxx_crypto_sha.h"
 #endif /* CONFIG_IT51XXX_PSA_CRYPTO_SHA */
 
+#if CONFIG_IT51XXX_PSA_CRYPTO_RSA
+#include "it51xxx_crypto_rsa.h"
+#endif /* CONFIG_IT51XXX_PSA_CRYPTO_RSA */
+
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 
@@ -58,6 +62,13 @@ psa_status_t it51xxx_psa_crypto_init(void)
 		return status;
 	}
 #endif /* CONFIG_IT51XXX_PSA_CRYPTO_SHA */
+
+#if CONFIG_IT51XXX_PSA_CRYPTO_RSA
+	status = it51xxx_crypto_rsa_init();
+	if (status) {
+		return status;
+	}
+#endif /* CONFIG_IT51XXX_PSA_CRYPTO_RSA */
 
 	return status;
 }

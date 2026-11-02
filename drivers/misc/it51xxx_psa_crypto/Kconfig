@@ -24,4 +24,14 @@ config IT51XXX_PSA_CRYPTO_SHA
 	help
 	  This option enables it51xxx psa crypto sha driver.
 
+config IT51XXX_PSA_CRYPTO_RSA
+	bool "IT51XXX PSA crypto RSA driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_PSA_RSA_ENABLED
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	select PSA_WANT_ALG_RSA_PKCS1V15_SIGN
+	select PSA_WANT_ALG_RSA_PKCS1V15_CRYPT
+	help
+	  This option enables it51xxx psa crypto rsa driver.
+
 endif # IT51XXX_PSA_CRYPTO
