@@ -573,18 +573,29 @@ int bt_settings_delete_irk(void)
 	return bt_settings_delete("irk", 0, NULL);
 }
 
-void bt_settings_flush(void)
+static void store_flush(struct k_work *work, k_work_handler_t handler)
 {
 	struct k_work_sync sync;
 
+	if (!bt_is_work_thread()) {
+		(void)k_work_flush(work, &sync);
+	} else if (k_work_is_pending(work)) {
+		/* It runs on this very thread, so waiting for it would never end */
+		(void)k_work_cancel(work);
+		handler(work);
+	}
+}
+
+void bt_settings_flush(void)
+{
 	/* The store handlers read the identity state that bt_disable() is
 	 * about to reset. Running after the reset they would persist empty or
 	 * torn records, while canceling them would silently lose the latest
 	 * identity update. Complete any pending stores now, while the state
 	 * is still valid.
 	 */
-	(void)k_work_flush(&store_id_work, &sync);
-	(void)k_work_flush(&store_irk_work, &sync);
+	store_flush(&store_id_work, do_store_id);
+	store_flush(&store_irk_work, do_store_irk);
 }
 
 int bt_settings_store_link_key(const bt_addr_le_t *addr, const void *value, size_t val_len)
