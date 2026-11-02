@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
 / {
 	imx335_input_clock: imx335-input-clock {
 		compatible = "fixed-clock";
@@ -188,6 +190,44 @@
 				reg = <0xe>;
 				clocks = <&imx219_input_clock>;
 			};
+
+			test_i2c_max96724: max96724@f {
+				compatible = "adi,max96724";
+				reg = <0xf>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				ports {
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					port@0 {
+						reg = <0>;
+
+						t_gmsl_in: endpoint {
+							remote-endpoint-label = "t_gmsl_out";
+						};
+					};
+
+					port@4 {
+						reg = <4>;
+
+						endpoint {
+							remote-endpoint-label = "";
+							bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+							data-lanes = <1 2>;
+							link-frequencies = <700000000>;
+						};
+					};
+				};
+
+				test_i2c_max96724_gate: i2c-gate@0 {
+					compatible = "adi,max96724-i2c-gate";
+					reg = <0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+				};
+			};
 		};
 
 		test_video_emul_rx: video_emul_rx@10003000 {
@@ -208,6 +248,40 @@
 					remote-endpoint-label = "application";
 				};
 			};
+		};
+	};
+};
+
+/* The MAX96717 sits behind the deserializer gate, as on real hardware. */
+&test_i2c_max96724_gate {
+	test_i2c_max96717: max96717@10 {
+		compatible = "adi,max96717";
+		reg = <0x10>;
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@1 {
+				reg = <1>;
+
+				t_gmsl_out: endpoint {
+					remote-endpoint-label = "t_gmsl_in";
+				};
+			};
+		};
+
+		test_i2c_max96717_gate: i2c-gate {
+			compatible = "adi,max96717-i2c-gate";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		test_max96717_gpio: gpio {
+			compatible = "adi,max96717-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <11>;
 		};
 	};
 };

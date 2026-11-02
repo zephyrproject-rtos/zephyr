@@ -85,3 +85,8 @@ tests:
       - stm32u5g9j_dk1/stm32u5g9xx
     extra_configs:
       - CONFIG_VIDEO_ENCODER_JPEG=y
+  drivers.video.adi_gmsl2_camera_bridge.build:
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    extra_args:
+      - SHIELD=adi_gmsl2_camera_bridge
