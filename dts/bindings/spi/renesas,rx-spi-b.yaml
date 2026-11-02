@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RX SPI_B controller
+
+compatible: "renesas,rx-spi-b"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
+
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

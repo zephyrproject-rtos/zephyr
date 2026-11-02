@@ -41,3 +41,27 @@ config SPI_RENESAS_RX_16BITS_FRAME
 	bool "Test loopback: 16 bits"
 
 endif # SPI_RENESAS_RX
+
+config SPI_RENESAS_RX_SPI_B
+	bool "Renesas RX Series SPI-B Driver"
+	default y
+	depends on DT_HAS_RENESAS_RX_SPI_B_ENABLED
+	select USE_RX_FSP_SPI_B
+	help
+	  Enable Renesas RX series SPI-B driver
+
+if SPI_RENESAS_RX_SPI_B
+
+config SPI_RENESAS_RX_SPI_B_INTERRUPT
+	bool "Renesas RX SPI-B Interrupt Support"
+	default y
+	help
+	  Enable interrupt support for the SPI-B Driver of RX family.
+
+config SPI_RENESAS_RX_SPI_B_USE_HW_SS
+	bool "Renesas RX SPI-B Hardware Chip Select support"
+	default y
+	help
+	  Use Chip Select pin instead of software Chip Select.
+
+endif # SPI_RENESAS_RX_SPI_B
