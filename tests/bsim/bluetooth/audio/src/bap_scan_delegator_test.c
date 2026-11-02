@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -46,6 +47,7 @@ CREATE_FLAG(flag_broadcast_source_added);
 CREATE_FLAG(flag_broadcast_source_modified);
 CREATE_FLAG(flag_broadcast_source_removed);
 CREATE_FLAG(flag_remove_source_rejected);
+CREATE_FLAG(flag_ccc_enabled);
 
 static volatile uint32_t g_broadcast_id;
 static bool reject_control_op;
@@ -979,6 +981,62 @@ static void test_main_server_sync_server_rem(void)
 	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");
 }
 
+static void discover_retry_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	ARG_UNUSED(attr);
+
+	if (value == BT_GATT_CCC_NOTIFY) {
+		SET_FLAG(flag_ccc_enabled);
+	}
+}
+
+/* Not a characteristic of the Broadcast Audio Scan Service */
+#define UNKNOWN_CHRC_UUID BT_UUID_DECLARE_16(0x7FFFU)
+
+/* Discovery ends with -EBADMSG on the unknown characteristic, which arrives in the same response as
+ * the Receive State and so with the CCC discovery for the Receive State still in flight
+ */
+static struct bt_gatt_attr discover_retry_attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_BASS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_BASS_RECV_STATE, BT_GATT_CHRC_NOTIFY, BT_GATT_PERM_NONE,
+			       NULL, NULL, NULL),
+	BT_GATT_CCC(discover_retry_ccc_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(UNKNOWN_CHRC_UUID, BT_GATT_CHRC_READ, BT_GATT_PERM_NONE, NULL, NULL,
+			       NULL),
+};
+
+static void test_main_discover_retry(void)
+{
+	static struct bt_gatt_service svc = BT_GATT_SERVICE(discover_retry_attrs);
+	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	err = bt_gatt_service_register(&svc);
+	if (err != 0) {
+		FAIL("Could not register service (err %d)\n", err);
+		return;
+	}
+
+	setup_connectable_adv(&ext_adv);
+
+	WAIT_FOR_FLAG(flag_ccc_enabled);
+
+	/* An empty Receive State is reported to the client as a removed one */
+	err = bt_gatt_notify_uuid(NULL, BT_UUID_BASS_RECV_STATE, discover_retry_attrs, NULL, 0U);
+	if (err != 0) {
+		FAIL("Could not notify (err %d)\n", err);
+		return;
+	}
+
+	PASS("Discovery retry server passed\n");
+}
+
 static const struct bst_test_instance test_scan_delegator[] = {
 	{
 		.test_id = "bap_scan_delegator_client_sync",
@@ -997,6 +1055,12 @@ static const struct bst_test_instance test_scan_delegator[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
+	},
+	{
+		.test_id = "bap_scan_delegator_discover_retry",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_discover_retry,
 	},
 	BSTEST_END_MARKER
 };
