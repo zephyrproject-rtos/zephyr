@@ -40,6 +40,8 @@ Flash the images. Replace the device IDs with your board IDs::
    west flash -d build/mc_receiver --dev-id <receiver-id>
    west flash -d build/mc_sender --dev-id <sender-id>
 
-Open both VCOM0 consoles at 115200 baud. Reset the receiver, then the sender.
-Both consoles should print ``PROJECT EXECUTION SUCCESSFUL``. The test with
-high frame loss may take several minutes.
+Open both VCOM0 consoles at 115200 baud. Reset the receiver, then the sender
+promptly. Non-timeout UART transfers allow five seconds per operation for
+startup skew and injected faults. Both consoles should print
+``PROJECT EXECUTION SUCCESSFUL``. The test with high frame loss may take
+several minutes.
