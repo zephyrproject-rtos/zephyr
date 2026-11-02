@@ -63,4 +63,34 @@
 				 <RZT_PINMUX(PORT_16, 3, 1)>; /* XSPI0_RSTO0 */
 		};
 	};
+
+	/omit-if-no-ref/ eth2_default: eth2_default {
+		group1 {
+			pinmux = <RZT_PINMUX(PORT_00, 2, 0)>, /* ETH2_TXEN */
+				 <RZT_PINMUX(PORT_24, 1, 0)>, /* ETH2_RXCLK */
+				 <RZT_PINMUX(PORT_00, 1, 1)>, /* ETH2_RXDV */
+				 <RZT_PINMUX(PORT_23, 7, 0)>, /* ETH2_RXD0 */
+				 <RZT_PINMUX(PORT_24, 0, 0)>, /* ETH2_RXD1 */
+				 <RZT_PINMUX(PORT_24, 2, 0)>, /* ETH2_RXD2 */
+				 <RZT_PINMUX(PORT_00, 0, 0)>, /* ETH2_RXD3 */
+				 <RZT_PINMUX(PORT_00, 3, 1)>; /* ETH2_REFCLK */
+		};
+
+		group2 {
+			pinmux = <RZT_PINMUX(PORT_00, 6, 0)>, /* ETH2_TXCLK */
+				 <RZT_PINMUX(PORT_01, 5, 0)>, /* ETH2_TXD0 */
+				 <RZT_PINMUX(PORT_01, 4, 1)>, /* ETH2_TXD1 */
+				 <RZT_PINMUX(PORT_01, 3, 0)>, /* ETH2_TXD2 */
+				 <RZT_PINMUX(PORT_01, 2, 1)>; /* ETH2_TXD3 */
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	/omit-if-no-ref/ mdio_default: mdio_default {
+		group1 {
+			pinmux = <RZT_PINMUX(PORT_08, 7, 0)>, /* GMAC_MDC */
+				 <RZT_PINMUX(PORT_09, 0, 0)>; /* GMAC_MDIO */
+		};
+	};
 };
