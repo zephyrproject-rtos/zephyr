@@ -306,6 +306,8 @@ static bool get_next_rx_buffer(struct tdm_drv_data *drv_data, tdm_buffers_t *buf
 				    (void **)&buffers->p_rx_buffer);
 	if (ret < 0) {
 		LOG_ERR("Failed to prepare buffer: %d", ret);
+		k_mem_slab_free(drv_data->rx.cfg.mem_slab, buffers->p_rx_mem_slab);
+		buffers->p_rx_mem_slab = NULL;
 		return false;
 	}
 
@@ -722,6 +724,7 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 	}
 	ret = k_msgq_put(&drv_data->tx_queue, &buf, SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
 	if (ret < 0) {
+		(void)dmm_buffer_out_release(drv_cfg->mem_reg, buf.dmm_buf);
 		return ret;
 	}
 
