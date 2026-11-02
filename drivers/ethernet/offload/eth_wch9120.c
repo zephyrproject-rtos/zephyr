@@ -835,7 +835,7 @@ static void ch9120_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, ch9120_socket_create);
 }
 
-static const struct offloaded_if_api ch9120_if_apis = {
+static DEVICE_API(offloaded_if, ch9120_if_apis) = {
 	.iface_api.init = ch9120_iface_init,
 };
 

@@ -2492,7 +2492,7 @@ struct net_wifi_mgmt_offload {
 	struct ethernet_api wifi_iface;
 #else
 	/** Offloaded network device API */
-	struct offloaded_if_api wifi_iface;
+	struct offloaded_if_driver_api wifi_iface;
 #endif
 	/** Wi-Fi management API */
 	const struct wifi_mgmt_ops *const wifi_mgmt_api;
