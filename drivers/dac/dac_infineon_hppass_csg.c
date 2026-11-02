@@ -47,6 +47,16 @@ LOG_MODULE_REGISTER(dac_infineon_hppass_csg, CONFIG_DAC_LOG_LEVEL);
 		   DT_PROP(DT_INST_PARENT(n), infineon_slice_reg_spacing)))
 
 /* DAC_CFG field masks (Regs TRM §20.1.43). */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+/* MCPASS v3 widens trigger selectors and shifts the following control fields. */
+#define IFX_CSG_DAC_CFG_TR_START_SEL  GENMASK(4, 0)
+#define IFX_CSG_DAC_CFG_TR_UPDATE_SEL GENMASK(9, 5)
+#define IFX_CSG_DAC_CFG_MODE          GENMASK(12, 10)
+#define IFX_CSG_DAC_CFG_CONT          BIT(13)
+#define IFX_CSG_DAC_CFG_SKIP_TR_EN    BIT(14)
+#define IFX_CSG_DAC_CFG_CASCADE_EN    BIT(15)
+#define IFX_CSG_DAC_CFG_PARAM_SYNC_EN BIT(16)
+#else
 #define IFX_CSG_DAC_CFG_TR_START_SEL  GENMASK(3, 0)
 #define IFX_CSG_DAC_CFG_TR_UPDATE_SEL GENMASK(7, 4)
 #define IFX_CSG_DAC_CFG_MODE          GENMASK(10, 8)
@@ -54,6 +64,7 @@ LOG_MODULE_REGISTER(dac_infineon_hppass_csg, CONFIG_DAC_LOG_LEVEL);
 #define IFX_CSG_DAC_CFG_SKIP_TR_EN    BIT(13)
 #define IFX_CSG_DAC_CFG_CASCADE_EN    BIT(14)
 #define IFX_CSG_DAC_CFG_PARAM_SYNC_EN BIT(15)
+#endif
 #define IFX_CSG_DAC_CFG_STEP          GENMASK(25, 20)
 #define IFX_CSG_DAC_CFG_DEGLITCH      GENMASK(30, 28)
 
@@ -136,6 +147,14 @@ static int ifx_csg_dac_init(const struct device *dev)
 	/* Set initial DAC output value. */
 	sys_write32((uint32_t)cfg->initial_value & HPPASS_CSG_SLICE_DAC_VAL_VALUE_Msk,
 		    cfg->dac_base + IFX_HPPASS_CSG_SLICE_DAC_VAL);
+
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	/* v3 loads VAL_A on the initial firmware start, even in direct-write mode. */
+	sys_write32((uint32_t)cfg->initial_value & HPPASS_CSG_SLICE_DAC_VAL_A_VALUE_Msk,
+		    cfg->dac_base + IFX_HPPASS_CSG_SLICE_DAC_VAL_A);
+	sys_write32(HPPASS_CSG_SLICE_DAC_MODE_START_FW_START_Msk,
+		    cfg->dac_base + IFX_HPPASS_CSG_SLICE_DAC_MODE_START);
+#endif
 
 	return 0;
 } /* ifx_csg_dac_init() */
