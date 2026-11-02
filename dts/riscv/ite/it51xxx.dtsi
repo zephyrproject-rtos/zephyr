@@ -634,13 +634,13 @@
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01630 8     /* GPCR */
 			       NO_FUNC 1>;
-			func3-gcr = <0xf016f3 0xf016ed 0xf016ed 0xf016ed
+			func3-gcr = <0xf016fe 0xf016ed 0xf016ed 0xf016ed
 				     NO_FUNC 0xf016f0 0xf016fe 0xf016fe>;
-			func3-en-mask = <BIT(0) BIT(5) BIT(6) BIT(6)
+			func3-en-mask = <BIT(4) BIT(5) BIT(6) BIT(6)
 					 0 BIT(3) BIT(7) BIT(4)>;
-			func4-gcr = <0xf016fe NO_FUNC NO_FUNC NO_FUNC
+			func4-gcr = <NO_FUNC NO_FUNC NO_FUNC NO_FUNC
 				     NO_FUNC NO_FUNC 0xf016f5 NO_FUNC>;
-			func4-en-mask = <BIT(4) 0 0 0
+			func4-en-mask = <0 0 0 0
 					 0 0 BIT(1) 0>;
 			volt-sel = <0xf05041 0xf05043 0xf05045 0xf05047
 				    NO_FUNC 0xf0504b 0xf0504d 0xf0504f>;
