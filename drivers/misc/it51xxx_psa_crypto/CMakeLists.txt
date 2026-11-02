@@ -10,3 +10,4 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_IT51XXX_PSA_CRYPTO_SHA it51xxx_crypto_sha.c)
+zephyr_library_sources_ifdef(CONFIG_IT51XXX_PSA_CRYPTO_RSA it51xxx_crypto_rsa.c)
