@@ -130,20 +130,21 @@ void bt_hci_conn_req(struct net_buf *buf)
 		return;
 	}
 
-	err = accept_conn(evt);
-	if (err != BT_HCI_ERR_SUCCESS) {
-		LOG_ERR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
-		reject_conn(&evt->bdaddr, err);
-		bt_conn_unref(conn);
-		return;
-	}
-
 	/* The role is peripheral by default. If CONFIG_BT_ACCEPT_CONN_AS_CENTRAL is enabled,
 	 * the role will be updated by the role change event if the role switch is accepted by
 	 * the peer device.
 	 */
 	conn->role = BT_CONN_ROLE_PERIPHERAL;
+	/* From here on the address lookup finds the connection */
 	bt_conn_set_state(conn, BT_CONN_INITIATING);
+
+	err = accept_conn(evt);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		LOG_ERR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
+		reject_conn(&evt->bdaddr, err);
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	}
+
 	bt_conn_unref(conn);
 }
 
