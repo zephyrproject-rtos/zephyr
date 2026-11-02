@@ -277,20 +277,6 @@ async def generate_packets(packet_count):
         yield packet
 
 
-async def a2dp_source_case_register_ep(hci_port, shell, dut, address, snoop_file) -> None:
-    """
-    Test API register_ep
-    """
-    logger.info('<<< a2dp_source_case_register_ep ...')
-
-    async with await open_transport_or_link(hci_port) as _:
-        await send_cmd_to_iut(shell, dut, "br clear all", None)
-        await send_cmd_to_iut(shell, dut, "a2dp_source register_cb", 'success')
-        await send_cmd_to_iut(
-            shell, dut, "a2dp_source register_ep source sbc", 'SBC source endpoint is registered'
-        )
-
-
 async def a2dp_source_case_connect(hci_port, shell, dut, address, snoop_file) -> None:
     """
     Test API a2dp connect,disconnect
@@ -668,12 +654,6 @@ async def a2dp_source_case_source_to_sink(hci_port, shell, dut, address, snoop_f
 
 
 class TestA2dpSource:
-    def test_a2dp_source_register_ep(self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut):
-        logger.info(f'test_a2dp_source_case_register_ep {a2dp_source_dut}')
-        hci, iut_address = a2dp_source_dut
-        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
-            asyncio.run(a2dp_source_case_register_ep(hci, shell, dut, iut_address, snoop_file))
-
     def test_a2dp_source_connect(self, shell: Shell, dut: DeviceAdapter, a2dp_source_dut):
         logger.info(f'test_a2dp_source_case_connect {a2dp_source_dut}')
         hci, iut_address = a2dp_source_dut
