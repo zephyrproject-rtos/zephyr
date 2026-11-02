@@ -1139,7 +1139,7 @@ static const struct wifi_mgmt_ops winc1500_mgmt_ops = {
 	.ap_enable	= winc1500_mgmt_ap_enable,
 	.ap_disable	= winc1500_mgmt_ap_disable,
 };
-static const struct net_wifi_mgmt_offload winc1500_api = {
+static DEVICE_API(wifi_offload, winc1500_api) = {
 	.wifi_iface.iface_api.init = winc1500_iface_init,
 	.wifi_iface.get_type = winc1500_get_wifi_type,
 	.wifi_mgmt_api = &winc1500_mgmt_ops,
