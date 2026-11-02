@@ -21,7 +21,13 @@ struct mfd_max2221x_config {
 	struct spi_dt_spec spi;
 };
 
-int max2221x_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
+/*
+ * The device returns read data on the following SPI transaction, so a read
+ * needs two. SPI_LOCK_ON keeps the bus across both, preventing an unrelated
+ * transaction from consuming the pending result. The _norelease helpers leave
+ * the bus locked to be chained; callers must spi_release_dt().
+ */
+static int max2221x_reg_read_norelease(const struct device *dev, uint8_t addr, uint16_t *value)
 {
 	int ret;
 	const struct mfd_max2221x_config *config = dev->config;
@@ -67,11 +73,23 @@ int max2221x_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
 		return ret;
 	}
 
-	*value = sys_be16_to_cpu(*(uint16_t *)&rxbuffer[1]);
+	*value = sys_get_be16(&rxbuffer[1]);
 	return 0;
 }
 
-int max2221x_reg_write(const struct device *dev, uint8_t addr, uint16_t value)
+int max2221x_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
+{
+	const struct mfd_max2221x_config *config = dev->config;
+	int ret;
+
+	ret = max2221x_reg_read_norelease(dev, addr, value);
+
+	spi_release_dt(&config->spi);
+
+	return ret;
+}
+
+static int max2221x_reg_write_norelease(const struct device *dev, uint8_t addr, uint16_t value)
 {
 	const struct mfd_max2221x_config *config = dev->config;
 
@@ -97,19 +115,37 @@ int max2221x_reg_write(const struct device *dev, uint8_t addr, uint16_t value)
 	return spi_write_dt(&config->spi, &tx);
 }
 
+int max2221x_reg_write(const struct device *dev, uint8_t addr, uint16_t value)
+{
+	const struct mfd_max2221x_config *config = dev->config;
+	int ret;
+
+	ret = max2221x_reg_write_norelease(dev, addr, value);
+
+	spi_release_dt(&config->spi);
+
+	return ret;
+}
+
 int max2221x_reg_update(const struct device *dev, uint8_t addr, uint16_t mask, uint16_t val)
 {
+	const struct mfd_max2221x_config *config = dev->config;
 	uint16_t tmp;
 	int ret;
 
-	ret = max2221x_reg_read(dev, addr, &tmp);
+	ret = max2221x_reg_read_norelease(dev, addr, &tmp);
 	if (ret) {
-		return ret;
+		goto release;
 	}
 
 	tmp = (tmp & ~mask) | FIELD_PREP(mask, val);
 
-	return max2221x_reg_write(dev, addr, tmp);
+	ret = max2221x_reg_write_norelease(dev, addr, tmp);
+
+release:
+	spi_release_dt(&config->spi);
+
+	return ret;
 }
 
 static int max2221x_init(const struct device *dev)
@@ -126,7 +162,8 @@ static int max2221x_init(const struct device *dev)
 
 #define MAX2221X_DEFINE(inst)                                                                      \
 	static const struct mfd_max2221x_config mfd_max2221x_config_##inst = {                     \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),             \
+		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
+					    SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_LOCK_ON),     \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, max2221x_init, NULL, NULL, &mfd_max2221x_config_##inst,        \
