@@ -120,7 +120,7 @@ int bt_hci_connect_br_cancel(struct bt_conn *conn)
 	cp = net_buf_add(buf, sizeof(*cp));
 	memcpy(&cp->bdaddr, &conn->br.dst, sizeof(cp->bdaddr));
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT_CANCEL, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
@@ -246,7 +246,7 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role)
 	bt_addr_copy(&cp->bdaddr, &conn->br.dst);
 	cp->role = role;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_SWITCH_ROLE, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SWITCH_ROLE, net_buf_take(&buf), NULL);
 }
 
 static int bt_conn_br_read_link_policy_settings(const struct bt_conn *conn,
@@ -266,7 +266,7 @@ static int bt_conn_br_read_link_policy_settings(const struct bt_conn *conn,
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LINK_POLICY_SETTINGS, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LINK_POLICY_SETTINGS, net_buf_take(&buf), &rsp);
 	if (!err) {
 		rp = (void *)rsp->data;
 		*link_policy_settings = rp->link_policy_settings;
@@ -290,7 +290,7 @@ static int bt_conn_br_write_link_policy_settings(const struct bt_conn *conn,
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->link_policy_settings = link_policy_settings;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_POLICY_SETTINGS, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_POLICY_SETTINGS, net_buf_take(&buf), NULL);
 }
 
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable)
@@ -358,7 +358,8 @@ int bt_conn_br_get_supervision_timeout(struct bt_conn *conn, uint16_t *timeout)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LINK_SUPERVISION_TIMEOUT, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_LINK_SUPERVISION_TIMEOUT, net_buf_take(&buf),
+				   &rsp);
 	if (err != 0) {
 		return err;
 	}
@@ -399,7 +400,8 @@ int bt_conn_br_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout)
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->timeout = sys_cpu_to_le16(timeout);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT, net_buf_take(&buf),
+				    NULL);
 }
 
 int bt_conn_br_change_packet_type(const struct bt_conn *conn, uint16_t packet_type)
@@ -431,5 +433,5 @@ int bt_conn_br_change_packet_type(const struct bt_conn *conn, uint16_t packet_ty
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->packet_type = sys_cpu_to_le16(packet_type);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_CHANGE_CONN_PACKET_TYPE, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_CHANGE_CONN_PACKET_TYPE, net_buf_take(&buf), NULL);
 }

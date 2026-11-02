@@ -1414,7 +1414,7 @@ static int cmd_hci_cmd(const struct shell *sh, size_t argc, char *argv[])
 		net_buf_add_mem(buf, hex_data, len);
 	}
 
-	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), net_buf_take(&buf), &rsp);
 	if (err) {
 		shell_error(sh, "HCI command failed (err %d)", err);
 		return err;

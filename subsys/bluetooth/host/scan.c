@@ -188,7 +188,7 @@ static int cmd_le_set_ext_scan_enable(bool enable, bool filter_duplicates, uint1
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags, BT_DEV_SCANNING,
 				  enable == BT_HCI_LE_SCAN_ENABLE);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, net_buf_take(&buf), NULL);
 	if (err) {
 		return err;
 	}
@@ -216,7 +216,7 @@ static int cmd_le_set_scan_enable_legacy(bool enable, bool filter_duplicates)
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags, BT_DEV_SCANNING,
 				  enable == BT_HCI_LE_SCAN_ENABLE);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, net_buf_take(&buf), NULL);
 	if (err) {
 		return err;
 	}
@@ -328,7 +328,7 @@ static int start_le_scan_ext(struct bt_le_scan_param *scan_param)
 		net_buf_add_mem(buf, phy_coded, sizeof(*phy_coded));
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, net_buf_take(&buf), NULL);
 	if (err) {
 		return err;
 	}
@@ -375,7 +375,7 @@ static int start_le_scan_legacy(struct bt_le_scan_param *param)
 
 	net_buf_add_mem(buf, &set_param, sizeof(set_param));
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_PARAM, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_PARAM, net_buf_take(&buf), NULL);
 	if (err) {
 		return err;
 	}
@@ -1304,7 +1304,7 @@ static int per_adv_sync_terminate(uint16_t handle)
 
 	cp->handle = sys_cpu_to_le16(handle);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, net_buf_take(&buf), NULL);
 }
 
 static void per_adv_sync_terminated(struct bt_le_per_adv_sync *per_adv_sync, uint8_t reason)
@@ -1506,7 +1506,8 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 	cp->num_subevents = params->num_subevents;
 	net_buf_add_mem(buf, params->subevents, cp->num_subevents);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, net_buf_take(&buf),
+				    NULL);
 }
 
 int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
@@ -1553,7 +1554,8 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 
 	net_buf_add_mem(buf, data->data, cp->response_data_length);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, net_buf_take(&buf),
+				    NULL);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
@@ -2201,7 +2203,7 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	cp->skip = sys_cpu_to_le16(param->skip);
 	cp->sync_timeout = sys_cpu_to_le16(param->timeout);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, net_buf_take(&buf), NULL);
 	if (err) {
 		per_adv_sync_delete(per_adv_sync);
 		return err;
@@ -2253,7 +2255,8 @@ static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_s
 		return -ENOBUFS;
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, net_buf_take(&buf),
+				   NULL);
 	if (err) {
 		return err;
 	}
@@ -2381,7 +2384,7 @@ static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync
 	bt_hci_cmd_state_set_init(buf, &state, per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED,
 				  !enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE, net_buf_take(&buf), NULL);
 
 	if (err) {
 		return err;
@@ -2438,7 +2441,7 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->service_data = sys_cpu_to_le16(service_data);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, net_buf_take(&buf), NULL);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
@@ -2476,7 +2479,7 @@ static int past_param_set(const struct bt_conn *conn, uint8_t mode, uint16_t ski
 	cp->skip = sys_cpu_to_le16(skip);
 	cp->timeout = sys_cpu_to_le16(timeout);
 	cp->cte_type = cte_type;
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PAST_PARAM, net_buf_take(&buf), NULL);
 
 	return err;
 }
@@ -2499,7 +2502,7 @@ static int default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
 	cp->skip = sys_cpu_to_le16(skip);
 	cp->timeout = sys_cpu_to_le16(timeout);
 	cp->cte_type = cte_type;
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_DEFAULT_PAST_PARAM, net_buf_take(&buf), NULL);
 
 	return err;
 }
@@ -2624,7 +2627,7 @@ int bt_le_per_adv_list_add(const bt_addr_le_t *addr, uint8_t sid)
 	bt_addr_le_copy(&cp->addr, addr);
 	cp->sid = sid;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_PER_ADV_LIST, net_buf_take(&buf), NULL);
 	if (err) {
 		LOG_ERR("Failed to add device to periodic advertiser list");
 	}
@@ -2651,7 +2654,8 @@ int bt_le_per_adv_list_remove(const bt_addr_le_t *addr, uint8_t sid)
 	bt_addr_le_copy(&cp->addr, addr);
 	cp->sid = sid;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_PER_ADV_LIST, net_buf_take(&buf),
+				   NULL);
 	if (err) {
 		LOG_ERR("Failed to remove device from periodic advertiser list");
 		return err;

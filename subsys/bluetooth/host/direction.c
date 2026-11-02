@@ -129,7 +129,7 @@ static int hci_df_set_cl_cte_tx_params(const struct bt_le_ext_adv *adv,
 	}
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
-				    buf, NULL);
+				    net_buf_take(&buf), NULL);
 }
 
 /* @brief Function provides information about DF antennae number and
@@ -209,7 +209,7 @@ static int hci_df_set_adv_cte_tx_enable(struct bt_le_ext_adv *adv,
 				  enable);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE,
-				   buf, NULL);
+				   net_buf_take(&buf), NULL);
 }
 
 #if defined(CONFIG_BT_DF_CONNECTIONLESS_CTE_RX) || defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
@@ -333,7 +333,8 @@ static int hci_df_set_cl_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool ena
 
 	bt_hci_cmd_state_set_init(buf, &state, sync->flags, BT_PER_ADV_SYNC_CTE_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE, net_buf_take(&buf),
+				   &rsp);
 	if (err) {
 		return err;
 	}
@@ -524,7 +525,7 @@ static int hci_df_set_conn_cte_tx_param(struct bt_conn *conn,
 	 */
 	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_TX_PARAMS_SET, true);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_TX_PARAMS, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
@@ -617,7 +618,7 @@ static int hci_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 
 	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_RX_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
@@ -799,7 +800,7 @@ static int hci_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 
 	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_REQ_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
@@ -884,7 +885,7 @@ static int hci_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
 
 	bt_hci_cmd_state_set_init(buf, &state, conn->flags, BT_CONN_CTE_RSP_ENABLED, enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_RSP_ENABLE, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
