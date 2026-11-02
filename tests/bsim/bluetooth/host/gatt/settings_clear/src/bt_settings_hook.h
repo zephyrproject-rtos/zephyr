@@ -7,9 +7,12 @@
 #ifndef ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_GATT_SETTINGS_CLEAR_SRC_BT_SETTINGS_HOOK_H_
 #define ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_GATT_SETTINGS_CLEAR_SRC_BT_SETTINGS_HOOK_H_
 
+#include <stdbool.h>
+
 void start_settings_record(void);
 void stop_settings_record(void);
 void settings_list_cleanup(void);
 int get_settings_list_size(void);
+bool bt_settings_hash_stored(void);
 
 #endif /* ZEPHYR_TESTS_BSIM_BLUETOOTH_HOST_GATT_SETTINGS_CLEAR_SRC_BT_SETTINGS_HOOK_H_ */

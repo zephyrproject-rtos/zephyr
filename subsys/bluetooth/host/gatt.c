@@ -148,6 +148,7 @@ enum {
 	DB_HASH_VALID,       /* Database hash needs to be calculated */
 	DB_HASH_LOAD,        /* Database hash loaded from settings. */
 	DB_HASH_LOAD_PROC,   /* DB hash loaded from settings has been processed. */
+	DB_HASH_STORE,       /* DB hash differs from settings and is to be stored. */
 
 	/* Total number of flags - must be at the end of the enum */
 	SC_NUM_FLAGS,
@@ -441,6 +442,19 @@ static void set_change_aware(struct gatt_cf_cfg *cfg, bool aware)
 }
 
 static int bt_gatt_store_cf(uint8_t id, const bt_addr_le_t *peer);
+
+static void settings_store_all_cf(void)
+{
+	if (!IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		return;
+	}
+
+	ARRAY_FOR_EACH_PTR(cf_cfg, cfg) {
+		if (!bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
+			bt_gatt_store_cf(cfg->id, &cfg->peer);
+		}
+	}
+}
 
 static void set_all_change_unaware(void)
 {
@@ -805,11 +819,18 @@ static void do_db_hash(void)
 		 * executed the special case below once. we can now safely save
 		 * the calculated hash to settings (if it has changed).
 		 */
+		bool store = atomic_test_and_clear_bit(gatt_sc.flags, DB_HASH_STORE);
+
 		if (new_hash) {
 			set_all_change_unaware();
 			db_hash_store();
+		} else if (store) {
+			settings_store_all_cf();
+			db_hash_store();
 		}
 	} else {
+		int err;
+
 		/* this is only supposed to run once, on bootup, after the hash
 		 * has been loaded from settings.
 		 */
@@ -835,12 +856,28 @@ static void do_db_hash(void)
 		 */
 		sc_indicate(0x0001, 0xffff);
 
-		/* Hash did not match, overwrite with current hash.
-		 * Also immediately set all peers (in settings) as
-		 * change-unaware.
+		/* Hash did not match, so all peers are change-unaware from here
+		 * on. This runs in the thread that called settings_load(), so
+		 * leave storing the state of the peers and the current hash to
+		 * the work item.
 		 */
-		set_all_change_unaware();
-		db_hash_store();
+		ARRAY_FOR_EACH_PTR(cf_cfg, cfg) {
+			if (!bt_addr_le_eq(&cfg->peer, BT_ADDR_LE_ANY)) {
+				set_change_aware_no_store(cfg, false);
+			}
+		}
+
+		atomic_set_bit(gatt_sc.flags, DB_HASH_STORE);
+
+		if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
+			err = bt_long_wq_reschedule(&db_hash.work, K_NO_WAIT);
+		} else {
+			err = bt_work_reschedule(&db_hash.work, K_NO_WAIT);
+		}
+
+		if (err < 0) {
+			LOG_ERR("Failed to schedule storing the hash (err %d)", err);
+		}
 	}
 #endif /* defined(CONFIG_BT_SETTINGS) */
 }
@@ -863,9 +900,14 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	if (!atomic_test_bit(gatt_sc.flags, DB_HASH_VALID)) {
 		db_hash_gen();
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			atomic_clear_bit(gatt_sc.flags, DB_HASH_STORE);
 			set_all_change_unaware();
 			db_hash_store();
 		}
+	} else if (atomic_test_and_clear_bit(gatt_sc.flags, DB_HASH_STORE)) {
+		/* The work item that was to do this has just been canceled */
+		settings_store_all_cf();
+		db_hash_store();
 	}
 
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
@@ -6688,6 +6730,11 @@ static int db_hash_commit(void)
 	 * see commit_settings().
 	 */
 	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
+		return 0;
+	}
+
+	/* An earlier load left storing the hash to the work item, which is pending */
+	if (atomic_test_bit(gatt_sc.flags, DB_HASH_STORE)) {
 		return 0;
 	}
 
