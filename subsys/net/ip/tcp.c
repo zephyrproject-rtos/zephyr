@@ -2564,6 +2564,17 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		}
 
 		conn->accepted_conn = conn_old;
+
+		/* The buffer sizes set on the listener apply to the
+		 * connections it accepts. tcp_in() applies them before the
+		 * SYN-ACK is sent.
+		 */
+#if defined(CONFIG_NET_CONTEXT_RCVBUF)
+		conn->context->options.rcvbuf = conn_old->context->options.rcvbuf;
+#endif
+#if defined(CONFIG_NET_CONTEXT_SNDBUF)
+		conn->context->options.sndbuf = conn_old->context->options.sndbuf;
+#endif
 	}
 in:
 	if (conn) {
