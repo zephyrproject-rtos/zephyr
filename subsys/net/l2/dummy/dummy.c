@@ -19,7 +19,7 @@ static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct dummy_api *api;
+	const struct dummy_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
@@ -35,7 +35,7 @@ static inline enum net_verdict dummy_recv(struct net_if *iface,
 static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct dummy_api *api;
+	const struct dummy_driver_api *api;
 	size_t pkt_len;
 	int ret;
 
@@ -63,7 +63,7 @@ static inline int dummy_enable(struct net_if *iface, bool state)
 {
 	int ret = 0;
 	const struct device *dev = net_if_get_device(iface);
-	const struct dummy_api *api;
+	const struct dummy_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 

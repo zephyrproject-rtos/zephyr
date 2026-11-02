@@ -172,7 +172,7 @@ static void dummy_iface_init(struct net_if *iface)
 	}
 }
 
-static const struct dummy_api dummy_api_funcs = {
+static DEVICE_API(dummy, dummy_api_funcs) = {
 	.iface_api.init = dummy_iface_init,
 	.send = dummy_send,
 };

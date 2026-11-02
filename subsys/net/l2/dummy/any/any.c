@@ -74,7 +74,7 @@ drop:
 	return verdict;
 }
 
-static const struct dummy_api any_api = {
+static DEVICE_API(dummy, any_api) = {
 	.iface_api.init = any_iface_init,
 	.recv = any_recv,
 };
