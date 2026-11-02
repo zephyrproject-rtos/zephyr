@@ -232,7 +232,7 @@ static int virtnet_dev_init(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api virtnet_api = {
+static const struct ethernet_api virtnet_api = {
 	.iface_api.init = virtnet_if_init,
 	.get_capabilities = virtnet_get_capabilities,
 	.send = virtnet_send,
