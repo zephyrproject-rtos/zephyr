@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_cortex_m3
+  tags:
+    - drivers
+    - pcie
+
+tests:
+  drivers.pcie.endpoint: {}
