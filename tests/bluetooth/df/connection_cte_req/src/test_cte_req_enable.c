@@ -78,7 +78,7 @@ int send_conn_cte_req_enable(uint16_t conn_handle,
 		cp->requested_cte_type = data->requested_cte_type;
 	}
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CONN_CTE_REQ_ENABLE, net_buf_take(&buf), NULL);
 }
 
 ZTEST(test_hci_set_conn_cte_rx_params_with_conn_set,

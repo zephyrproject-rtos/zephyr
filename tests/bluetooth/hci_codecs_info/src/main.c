@@ -195,7 +195,7 @@ ZTEST(test_hci_codecs_info, test_read_codec_capabilities)
 	cp->direction = READ_CAPABS_DIRECTION;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CODEC_CAPABILITIES,
-				   buf, &rsp);
+				   net_buf_take(&buf), &rsp);
 	zassert_equal(err, 0,
 		      "Reading local supported codec capabilities failed");
 
@@ -280,7 +280,7 @@ ZTEST(test_hci_codecs_info, test_read_ctlr_delay)
 	memcpy(cp->codec_config, read_delay_codec_config,
 	       sizeof(read_delay_codec_config));
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CTLR_DELAY, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_CTLR_DELAY, net_buf_take(&buf), &rsp);
 	zassert_equal(err, 0,
 		      "Reading local supported controller delay failed");
 

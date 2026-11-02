@@ -73,7 +73,7 @@ void common_set_cl_cte_tx_params(void)
 
 	cp->switch_pattern_len = ARRAY_SIZE(ant_ids);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS, buf,
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS, net_buf_take(&buf),
 				   NULL);
 	zassert_equal(err, 0, "Failed to  set CTE parameters");
 }

@@ -83,7 +83,7 @@ int send_set_scan_cte_rx_enable(uint16_t sync_handle,
 	}
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_SAMPLING_ENABLE,
-				    buf, NULL);
+				    net_buf_take(&buf), NULL);
 }
 
 ZTEST(test_hci_set_scan_cte_rx_enable, test_set_scan_cte_rx_enable_invalid_scan_set_handle)
