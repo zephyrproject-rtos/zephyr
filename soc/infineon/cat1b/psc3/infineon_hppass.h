@@ -36,7 +36,11 @@ extern "C" {
 /** Maximum number of State Transition Table entries (Arch TRM §27.2.4.3). */
 #define IFX_HPPASS_AC_STT_SIZE   16
 /** Number of CSG slices. */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+#define IFX_HPPASS_CSG_NUM       9
+#else
 #define IFX_HPPASS_CSG_NUM       5
+#endif
 /** Number of SAR Muxed Sampler channels. */
 #define IFX_HPPASS_SAR_MUX_NUM   4
 /** Number of HW/FW triggers. */
@@ -129,6 +133,16 @@ enum ifx_hppass_condition {
 	IFX_HPPASS_CONDITION_SAR_QUEUE_HI_EMPTY = 23,
 	IFX_HPPASS_CONDITION_SAR_QUEUE_LO_EMPTY = 24,
 	IFX_HPPASS_CONDITION_SAR_QUEUES_EMPTY   = 25,
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	IFX_HPPASS_CONDITION_TRIG_0             = 26,
+	IFX_HPPASS_CONDITION_TRIG_1             = 27,
+	IFX_HPPASS_CONDITION_TRIG_2             = 28,
+	IFX_HPPASS_CONDITION_TRIG_3             = 29,
+	IFX_HPPASS_CONDITION_TRIG_4             = 30,
+	IFX_HPPASS_CONDITION_TRIG_5             = 31,
+	IFX_HPPASS_CONDITION_TRIG_6             = 32,
+	IFX_HPPASS_CONDITION_TRIG_7             = 33,
+#else
 	IFX_HPPASS_CONDITION_TRIG_0             = 32,
 	IFX_HPPASS_CONDITION_TRIG_1             = 33,
 	IFX_HPPASS_CONDITION_TRIG_2             = 34,
@@ -137,6 +151,7 @@ enum ifx_hppass_condition {
 	IFX_HPPASS_CONDITION_TRIG_5             = 37,
 	IFX_HPPASS_CONDITION_TRIG_6             = 38,
 	IFX_HPPASS_CONDITION_TRIG_7             = 39,
+#endif
 	IFX_HPPASS_CONDITION_FIFO_0_LEVEL       = 42,
 	IFX_HPPASS_CONDITION_FIFO_1_LEVEL       = 43,
 	IFX_HPPASS_CONDITION_FIFO_2_LEVEL       = 44,
@@ -146,11 +161,27 @@ enum ifx_hppass_condition {
 	IFX_HPPASS_CONDITION_CSG_2_DAC_DONE     = 50,
 	IFX_HPPASS_CONDITION_CSG_3_DAC_DONE     = 51,
 	IFX_HPPASS_CONDITION_CSG_4_DAC_DONE     = 52,
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	IFX_HPPASS_CONDITION_CSG_5_DAC_DONE     = 53,
+	IFX_HPPASS_CONDITION_CSG_6_DAC_DONE     = 54,
+	IFX_HPPASS_CONDITION_CSG_7_DAC_DONE     = 55,
+	IFX_HPPASS_CONDITION_CSG_8_DAC_DONE     = 56,
+	IFX_HPPASS_CONDITION_CSG_0_COMP         = 57,
+	IFX_HPPASS_CONDITION_CSG_1_COMP         = 58,
+	IFX_HPPASS_CONDITION_CSG_2_COMP         = 59,
+	IFX_HPPASS_CONDITION_CSG_3_COMP         = 60,
+	IFX_HPPASS_CONDITION_CSG_4_COMP         = 61,
+	IFX_HPPASS_CONDITION_CSG_5_COMP         = 62,
+	IFX_HPPASS_CONDITION_CSG_6_COMP         = 63,
+	IFX_HPPASS_CONDITION_CSG_7_COMP         = 64,
+	IFX_HPPASS_CONDITION_CSG_8_COMP         = 65,
+#else
 	IFX_HPPASS_CONDITION_CSG_0_COMP         = 56,
 	IFX_HPPASS_CONDITION_CSG_1_COMP         = 57,
 	IFX_HPPASS_CONDITION_CSG_2_COMP         = 58,
 	IFX_HPPASS_CONDITION_CSG_3_COMP         = 59,
 	IFX_HPPASS_CONDITION_CSG_4_COMP         = 60,
+#endif
 };
 
 /**
@@ -172,7 +203,7 @@ enum ifx_hppass_action {
  */
 struct ifx_hppass_stt_mux {
 	bool unlock;       /**< Unlock to apply chan_idx; ignored when false. */
-	uint8_t chan_idx;  /**< Muxed Sampler channel selection (0..3). */
+	uint8_t chan_idx;  /**< Route selector: 2 bits, or 3 on MCPASS v3. */
 };
 
 /**
