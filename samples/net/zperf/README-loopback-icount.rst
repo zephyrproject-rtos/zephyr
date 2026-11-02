@@ -138,7 +138,7 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   segment/ACK count and nearly halving IPv6 TCP throughput. Using 1220 keeps
   every write to a single full-sized segment for both families. The baseline UDP
   payload also stays under the MTU for both families, so those datagrams are not
-  IP-fragmented. Because the net_buf data size (1100) is below the MTU, each
+  IP-fragmented. Because the net_buf data size (1104) is below the MTU, each
   frame still spans two buffer fragments, which deliberately exercises the
   fragment-chain walk.
 - **IP fragmentation coverage.** :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT` and
