@@ -50,8 +50,13 @@ class bt_sim_controller(Controller):
     """
 
     # Not BR_EDR_NOT_SUPPORTED, which Bumble sets by default. Without Secure
-    # Connections, link keys are P-192 and encryption is E0.
-    lmp_features: hci.LmpFeatureMask = hci.LmpFeatureMask.LE_SUPPORTED_CONTROLLER
+    # Connections, link keys are P-192 and encryption is E0. Host support for
+    # Secure Simple Pairing follows from Write Simple Pairing Mode.
+    lmp_features: hci.LmpFeatureMask = (
+        hci.LmpFeatureMask.LE_SUPPORTED_CONTROLLER
+        | hci.LmpFeatureMask.EXTENDED_FEATURES
+        | hci.LmpFeatureMask.SECURE_SIMPLE_PAIRING_CONTROLLER_SUPPORT
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
