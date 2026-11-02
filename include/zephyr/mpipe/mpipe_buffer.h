@@ -54,6 +54,26 @@
 #include <zephyr/net_buf.h>
 
 /**
+ * @brief Buffer flags
+ */
+enum mpipe_buffer_flag {
+	/** Buffer contains initialization, header, or configuration data. */
+	BUFFER_FLAG_HEADER = BIT(0),
+	/** Buffer shall be discarded and not consumed as normal media data. */
+	BUFFER_FLAG_DROP = BIT(1),
+	/** Buffer does not complete the current logical media unit. */
+	BUFFER_FLAG_INCOMPLETE = BIT(2),
+	/** Buffer marks a boundary of a fragmented logical media unit. */
+	BUFFER_FLAG_MARKER = BIT(3),
+	/** Buffer is the final media buffer of the current stream. */
+	BUFFER_FLAG_EOS = BIT(4),
+	/** Buffer payload shall not be modified in place. */
+	BUFFER_FLAG_READ_ONLY = BIT(5),
+	/** First bit available for media-specific buffer flags. */
+	BUFFER_FLAG_MEDIA_SPECIFIC = BIT(16),
+};
+
+/**
  * @brief Buffer pool config structure
  */
 struct mpipe_buffer_pool_config {
@@ -130,10 +150,14 @@ struct mpipe_buffer_meta {
 	uint32_t bytes_used;
 	/** Timestamp in milliseconds. */
 	uint32_t timestamp;
+	/** Buffer flags. */
+	uint32_t buf_flags;
 	/** Pointer to the real driver-owned buffer. */
 	void *driver_buf;
 	/** Opaque pointer for plugin-specific usage. */
 	void *priv;
+	/** Size of the private data area. */
+	size_t priv_size;
 };
 
 /**
