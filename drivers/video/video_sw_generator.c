@@ -606,7 +606,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	k_work_reschedule(&data->work, K_NSEC(video_frmival_nsec(&data->vdev.frmival)));
 
-	vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	vbuf = video_buffer_next(data->vdev.dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (vbuf == NULL) {
 		return;
 	}

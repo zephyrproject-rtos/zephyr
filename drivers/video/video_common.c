@@ -283,6 +283,55 @@ void video_buffer_done(const struct device *dev, struct video_buffer *buf, int e
 	}
 }
 
+struct video_buffer *video_buffer_next(const struct device *dev, enum video_buf_type type,
+				       k_timeout_t timeout)
+{
+	struct video_device *vdev = dev->data;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		return k_fifo_get(&vdev->in_buf_submitted, timeout);
+	case VIDEO_BUF_TYPE_OUTPUT:
+		return k_fifo_get(&vdev->out_buf_submitted, timeout);
+	default:
+		LOG_ERR("Unexpected buffer type %u", type);
+		__ASSERT_NO_MSG(false);
+		return NULL;
+	}
+}
+
+struct video_buffer *video_buffer_peek(const struct device *dev, enum video_buf_type type)
+{
+	struct video_device *vdev = dev->data;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		return k_fifo_peek_head(&vdev->in_buf_submitted);
+	case VIDEO_BUF_TYPE_OUTPUT:
+		return k_fifo_peek_head(&vdev->out_buf_submitted);
+	default:
+		LOG_ERR("Unexpected buffer type %u", type);
+		__ASSERT_NO_MSG(false);
+		return NULL;
+	}
+}
+
+bool video_buffer_is_empty(const struct device *dev, enum video_buf_type type)
+{
+	struct video_device *vdev = dev->data;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		return k_fifo_is_empty(&vdev->in_buf_submitted);
+	case VIDEO_BUF_TYPE_OUTPUT:
+		return k_fifo_is_empty(&vdev->out_buf_submitted);
+	default:
+		LOG_ERR("Unexpected buffer type %u", type);
+		__ASSERT_NO_MSG(false);
+		return true;
+	}
+}
+
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,
 				uint8_t *buf_r, size_t size_r)
 {

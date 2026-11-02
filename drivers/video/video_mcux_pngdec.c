@@ -192,7 +192,7 @@ static int mcux_pngdec_trigger(const struct device *dev, enum video_buf_type typ
 	 * format as the first one, so the parsing is done only once.
 	 */
 	if (type == VIDEO_BUF_TYPE_INPUT) {
-		struct video_buffer *vbuf = k_fifo_get(&data->vdev.in_buf_submitted, K_FOREVER);
+		struct video_buffer *vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_FOREVER);
 
 		/*
 		 * Check if it is the first frame, if so parse the PNG header
@@ -302,8 +302,8 @@ static void mcux_pngdec_isr(const struct device *dev)
 {
 	const struct mcux_pngdec_config *config = dev->config;
 	struct mcux_pngdec_data *data = dev->data;
-	struct video_buffer *current_in = k_fifo_get(&data->vdev.in_buf_submitted, K_NO_WAIT);
-	struct video_buffer *current_out = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	struct video_buffer *current_in = video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_NO_WAIT);
+	struct video_buffer *current_out = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	uint32_t status_flags = PNGDEC_GetStatusFlags(config->base);
 
 	if ((status_flags & kPNGDEC_DecodePixelDoneFlag) != 0U) {

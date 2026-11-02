@@ -592,14 +592,14 @@ static int stm32_venc_trigger(const struct device *dev, enum video_buf_type type
 	H264EncOut enc_out = {0};
 	struct stm32_venc_ewl *inst = &ewl_instance;
 
-	if (k_fifo_is_empty(&data->vdev.in_buf_submitted) ||
-	    k_fifo_is_empty(&data->vdev.out_buf_submitted)) {
+	if (video_buffer_is_empty(dev, VIDEO_BUF_TYPE_INPUT) ||
+	    video_buffer_is_empty(dev, VIDEO_BUF_TYPE_OUTPUT)) {
 		/* Encoding deferred to next buffer queueing */
 		return 0;
 	}
 
-	input = k_fifo_get(&data->vdev.in_buf_submitted, K_NO_WAIT);
-	output = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	input = video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_NO_WAIT);
+	output = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 
 	if (data->encoder == NULL) {
 		ret = encoder_prepare(data);

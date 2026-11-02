@@ -197,7 +197,7 @@ static void nxp_flexio_camera_dma_callback(const struct device *dma_dev,
 	}
 
 	/* Last line completed — pop the active buffer and publish the frame */
-	vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (vbuf == NULL) {
 		return;
 	}

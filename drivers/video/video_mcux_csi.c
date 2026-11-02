@@ -56,7 +56,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t statu
 	}
 
 	/* Get matching vbuf by addr */
-	while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT))) {
+	while ((vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT))) {
 		if ((uint32_t)vbuf->buffer == buffer_addr) {
 			break;
 		}
@@ -262,7 +262,7 @@ static int video_mcux_csi_trigger(const struct device *dev, enum video_buf_type 
 {
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
-	struct video_buffer *vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
+	struct video_buffer *vbuf = video_buffer_peek(dev, VIDEO_BUF_TYPE_OUTPUT);
 	status_t ret;
 
 	ret = CSI_TransferSubmitEmptyBuffer(config->base, &data->csi_handle,
