@@ -744,10 +744,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	if (info.role == BT_CONN_ROLE_CENTRAL) {
-		if (default_conn != NULL) {
-			bt_conn_unref(default_conn);
-		}
-
+		bt_conn_drop(&default_conn);
 		default_conn = bt_conn_ref(conn);
 	} else if (info.role == BT_CONN_ROLE_PERIPHERAL) {
 		if (default_conn == NULL) {
@@ -3940,11 +3937,8 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (default_conn) {
-		bt_conn_unref(default_conn);
-	}
-
-	default_conn = conn;
+	bt_conn_drop(&default_conn);
+	default_conn = bt_conn_take(&conn);
 
 	shell_print(sh, "Selected conn is now: %s", bt_addr_le_str(&addr));
 
