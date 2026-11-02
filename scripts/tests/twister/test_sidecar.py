@@ -394,6 +394,54 @@ def test_bumble_setup_wires_guest_and_peers_to_reported_ports(tmp_path):
     assert controllers.stdout.closed
 
 
+def test_bumble_setup_gives_pytest_its_controller(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _bumble_instance(
+        tmp_path, {"bumble": {"pytest_args": ["--hci-transport=tcp-client:{ctrl1}", "--a={addr0}"]}}
+    )
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    controllers = _fake_controllers(b'HCI0 00:00:01:00:00:01 40001\nHCI1 00:00:01:00:00:02 40002\n')
+    with (
+        mock.patch("importlib.util.find_spec", return_value=mock.Mock()),
+        mock.patch("subprocess.Popen", return_value=controllers),
+    ):
+        assert sidecar.setup() is True
+
+    # The guest is on controller 0 and pytest gets the one nothing else uses.
+    assert instance.handler.extra_test_args == ['--bt-dev=127.0.0.1:40001']
+    assert instance.handler.extra_pytest_args == [
+        '--hci-transport=tcp-client:127.0.0.1:40002',
+        '--a=00:00:01:00:00:01',
+    ]
+
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
+
+def test_bumble_setup_rejects_unknown_placeholder_for_pytest(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _bumble_instance(tmp_path, {"bumble": {"pytest_args": ["--t={ctrl9}"]}})
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    controllers = _fake_controllers(b'HCI0 00:00:01:00:00:01 40001\nHCI1 00:00:01:00:00:02 40002\n')
+    with (
+        mock.patch("importlib.util.find_spec", return_value=mock.Mock()),
+        mock.patch("subprocess.Popen", return_value=controllers),
+    ):
+        assert sidecar.setup() is False
+
+    assert instance.status == TwisterStatus.ERROR
+    assert "invalid pytest arguments" in instance.reason
+
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
+
 def test_bumble_setup_errors_when_controllers_do_not_start(tmp_path):
     from twisterlib.sidecars.bumble import BumbleSidecar
 
