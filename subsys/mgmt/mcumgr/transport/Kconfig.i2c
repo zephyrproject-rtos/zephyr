@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2026 Aerlync Labs Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MCUMGR_TRANSPORT_I2C
+	bool "I2C MCUmgr SMP transport"
+	depends on MULTITHREADING && I2C && I2C_TARGET && DT_HAS_ZEPHYR_SMP_I2C_ENABLED
+	help
+	  Enable MCUmgr SMP transport over I2C. The device operates as an I2C
+	  target and exchanges raw SMP packets framed with a 2-byte big-endian
+	  length prefix. An optional data-ready GPIO (data-ready-gpios in DTS)
+	  signals the controller when a response is available.
+
+	  GPIO support is optional; if data-ready-gpios is omitted the controller
+	  polls by issuing 2-byte reads until a non-zero length is returned.
+
+if MCUMGR_TRANSPORT_I2C
+
+config MCUMGR_TRANSPORT_I2C_MTU
+	int "I2C SMP MTU (bytes)"
+	range 8 MCUMGR_TRANSPORT_NETBUF_SIZE
+	default 256
+	help
+	  Maximum size of one SMP payload per I2C transaction. The on-wire
+	  frame is MTU + 2 bytes (a 2-byte length prefix precedes the SMP
+	  payload). Must not exceed MCUMGR_TRANSPORT_NETBUF_SIZE.
+
+	  In buffer mode, the I2C target driver's own DMA/hardware buffer must
+	  be sized to at least MTU + 2; see the buffer-mode sizing note in
+	  doc/services/device_mgmt/smp_transport.rst. An undersized buffer is
+	  detected and the frame dropped at runtime.
+
+module = MCUMGR_TRANSPORT_I2C
+module-str = I2C MCUmgr SMP transport
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_TRANSPORT_I2C
