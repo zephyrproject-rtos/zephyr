@@ -857,7 +857,11 @@
 			startup-clk-div = <24>;
 			startup-0-count = <200>;
 			startup-0-sar = <1>;
+			startup-0-csg-chan = <1>;
 			startup-1-count = <50>;
+			startup-1-csg-slice = <1>;
+			startup-2-count = <1>;
+			startup-2-csg-ready = <1>;
 
 			/* The SAR driver starts conversions through this trigger. */
 			trig-in-0-type = <IFX_HPPASS_TR_FW_PULSE>;
@@ -872,6 +876,145 @@
 				#size-cells = <0>;
 				#io-channel-cells = <1>;
 				status = "disabled";
+			};
+
+			csg0: csg@b0000 {
+				compatible = "infineon,hppass-csg-v3", "infineon,hppass-csg";
+				reg = <0x000b0000 0x10000>;
+				ranges;
+				interrupts = <155 4>;
+				clk-dst = <0x1b>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				infineon,num-slices = <9>;
+				infineon,slice-reg-spacing = <0x40>;
+				status = "disabled";
+
+				comp0: comparator@b0000 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0000 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac0: dac@b0004 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0004 0x20>;
+					interrupts = <146 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp1: comparator@b0040 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0040 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac1: dac@b0044 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0044 0x20>;
+					interrupts = <147 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp2: comparator@b0080 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0080 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac2: dac@b0084 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0084 0x20>;
+					interrupts = <148 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp3: comparator@b00c0 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b00c0 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac3: dac@b00c4 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b00c4 0x20>;
+					interrupts = <149 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp4: comparator@b0100 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0100 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac4: dac@b0104 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0104 0x20>;
+					interrupts = <150 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp5: comparator@b0140 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0140 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac5: dac@b0144 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0144 0x20>;
+					interrupts = <151 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp6: comparator@b0180 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0180 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac6: dac@b0184 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0184 0x20>;
+					interrupts = <152 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp7: comparator@b01c0 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b01c0 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac7: dac@b01c4 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b01c4 0x20>;
+					interrupts = <153 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				comp8: comparator@b0200 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0200 0x40>;
+					status = "disabled";
+				};
+
+				csg_dac8: dac@b0204 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0204 0x20>;
+					interrupts = <154 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
 			};
 		};
 
