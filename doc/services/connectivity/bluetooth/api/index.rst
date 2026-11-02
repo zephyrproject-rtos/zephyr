@@ -18,6 +18,7 @@ Bluetooth Classic Host and profiles
    classic/goep.rst
    classic/bip.rst
    classic/ftp.rst
+   classic/opp.rst
 
 Bluetooth LE Audio
 ==================
