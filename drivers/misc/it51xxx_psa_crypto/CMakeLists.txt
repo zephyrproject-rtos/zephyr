@@ -8,3 +8,5 @@ zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 zephyr_library_sources(
   it51xxx_crypto.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_IT51XXX_PSA_CRYPTO_SHA it51xxx_crypto_sha.c)
