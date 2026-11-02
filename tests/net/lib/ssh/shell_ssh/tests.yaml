@@ -1,0 +1,9 @@
+common:
+  tags:
+    - ssh
+    - net
+    - shell
+  depends_on: netif
+  platform_allow: native_sim
+tests:
+  net.ssh.shell_ssh: {}
