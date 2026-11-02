@@ -184,10 +184,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 
 #if !defined(CONFIG_BT_L2CAP_SEG_RECV)
 	/* release netbuf on premature disconnection */
-	if (chan->pending_credit) {
-		net_buf_unref(chan->pending_credit);
-		chan->pending_credit = NULL;
-	}
+	net_buf_drop(&chan->pending_credit);
 #endif
 
 	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
@@ -314,10 +311,7 @@ static void br_disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 
 	/* release netbuf on premature disconnection */
 	ARRAY_FOR_EACH(chan->pending_credit, i) {
-		if (chan->pending_credit[i] != NULL) {
-			net_buf_unref(chan->pending_credit[i]);
-			chan->pending_credit[i] = NULL;
-		}
+		net_buf_drop(&chan->pending_credit[i]);
 	}
 
 	(void)memset(&ev, 0, sizeof(struct btp_l2cap_disconnected_ev));
