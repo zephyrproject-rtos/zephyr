@@ -79,7 +79,8 @@ child-binding:
     invert-output:
       type: boolean
       description: |
-        If set, invert the output value.
+        If set, invert the output value, mirroring it within out-min and
+        out-max.
 
 examples:
   - |
