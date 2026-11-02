@@ -857,7 +857,7 @@ void bt_hci_user_passkey_req(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void link_encr(const uint16_t handle)
+static int link_encr(const uint16_t handle)
 {
 	struct bt_hci_cp_set_conn_encrypt *encr;
 	struct net_buf *buf;
@@ -867,14 +867,14 @@ static void link_encr(const uint16_t handle)
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Out of command buffers");
-		return;
+		return -ENOBUFS;
 	}
 
 	encr = net_buf_add(buf, sizeof(*encr));
 	encr->handle = sys_cpu_to_le16(handle);
 	encr->encrypt = 0x01;
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
 }
 
 void bt_hci_auth_complete(struct net_buf *buf)
@@ -898,8 +898,10 @@ void bt_hci_auth_complete(struct net_buf *buf)
 		 */
 		bt_conn_security_changed(conn, evt->status,
 					 bt_security_err_get(evt->status));
-	} else {
-		link_encr(handle);
+	} else if (link_encr(handle) != 0) {
+		/* No Encryption Change follows a refused command */
+		LOG_ERR("Failed to start encryption");
+		bt_conn_security_changed(conn, BT_HCI_ERR_UNSPECIFIED, BT_SECURITY_ERR_UNSPECIFIED);
 	}
 
 	bt_conn_unref(conn);
