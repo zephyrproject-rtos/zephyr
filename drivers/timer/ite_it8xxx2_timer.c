@@ -63,6 +63,11 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 5, i
 /* Timer count threshold to prevent SoC from entering idle mode */
 #define IDLE_BLOCK_TIMER_TICKS	k_us_to_cyc_ceil32(150)
 
+#define FREE_RUN_TIMER_SYNC_DELAY_US	60U
+#define IT8XXX2_WN65K_DELAY_US		15U
+#define FREE_RUN_TIMER_SYNC_WAIT_COUNT \
+	DIV_ROUND_UP(FREE_RUN_TIMER_SYNC_DELAY_US, IT8XXX2_WN65K_DELAY_US)
+
 enum ext_timer_raw_cnt {
 	EXT_NOT_RAW_CNT = 0,
 	EXT_RAW_CNT,
@@ -332,6 +337,7 @@ uint64_t ite_ec_clock_get_sleep_ticks(void)
 
 static int sys_clock_driver_init(void)
 {
+	struct gctrl_it8xxx2_regs *const gctrl_regs = GCTRL_IT8XXX2_REGS_BASE;
 	int ret;
 
 
@@ -346,6 +352,11 @@ static int sys_clock_driver_init(void)
 	if (ret < 0) {
 		LOG_ERR("Init free run timer failed");
 		return ret;
+	}
+
+	/* Allow the free-running timer observation register to update. */
+	for (uint32_t count = 0; count < FREE_RUN_TIMER_SYNC_WAIT_COUNT; count++) {
+		gctrl_regs->GCTRL_WNCKR = IT8XXX2_GCTRL_WN65K;
 	}
 
 	/* Set 24-bit timer3 for timeout event */
