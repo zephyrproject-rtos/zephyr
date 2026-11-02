@@ -1070,13 +1070,18 @@ void bt_conn_foreach(enum bt_conn_type type,
 
 /** @brief Look up an existing connection by address.
  *
- *  Look up an existing connection based on the remote address.
+ *  Look up an existing connection based on the remote address. If several
+ *  connection objects match, an established connection is returned ahead of the
+ *  others. The object of a disconnected connection, which can stay referenced,
+ *  is returned only if no other matches: use bt_conn_get_info() to tell.
  *
  *  The caller gets a new reference to the connection object which must be
  *  released with bt_conn_unref() once done using the object.
  *
  *  @param id   Local identity (in most cases BT_ID_DEFAULT).
- *  @param peer Remote address.
+ *  @param peer Remote address: the identity address, or the address the peer
+ *              used when the connection was established, which can be a
+ *              resolvable private address.
  *
  *  @return Connection object or NULL if not found.
  */
