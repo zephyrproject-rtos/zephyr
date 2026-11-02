@@ -1969,21 +1969,6 @@ int bt_mcp_media_control_server_get_player_name(char *name, size_t name_size)
 	return 0;
 }
 
-static void set_player_name(const char *name)
-{
-	size_t len = strlen(name);
-
-	if (len >= sizeof(media_player.name)) {
-		LOG_DBG("Media Player Name is too long: %zu", len);
-		return;
-	}
-
-	if (strcmp(media_player.name, name) != 0) {
-		(void)memcpy(media_player.name, name, len + 1U);
-		bt_mcs_player_name_changed();
-	}
-}
-
 int bt_mcp_media_control_server_set_player_name(const char *name)
 {
 	size_t player_name_len;
@@ -2005,7 +1990,10 @@ int bt_mcp_media_control_server_set_player_name(const char *name)
 		return -ENOMEM;
 	}
 
-	set_player_name(name);
+	if (strcmp(media_player.name, name) != 0) {
+		(void)memcpy(media_player.name, name, player_name_len + 1U);
+		bt_mcs_player_name_changed();
+	}
 
 	return 0;
 }
@@ -3096,8 +3084,7 @@ int bt_mcp_media_control_server_register(void)
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	/* Set up the calls structure */
-	media_player.calls.get_player_name              = get_player_name;
-	media_player.calls.set_player_name              = set_player_name;
+	media_player.calls.get_player_name = get_player_name;
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 	media_player.calls.get_icon_id                  = get_icon_id;
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
