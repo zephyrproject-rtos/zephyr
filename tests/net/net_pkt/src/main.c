@@ -782,6 +782,107 @@ ZTEST(net_pkt_test_suite, test_net_pkt_pull)
 	net_pkt_unref(dummy_pkt);
 }
 
+/* Three buffers: two full ones and a partial third */
+#define PULL_MID_TEST_PKT_DATA_SIZE ((2 * CONFIG_NET_BUF_DATA_SIZE) + 64)
+
+/* Pulling from a cursor inside the packet removes exactly the requested bytes
+ * at the cursor and keeps the data in front of it and after it, wherever the
+ * pulled range starts and ends relative to the buffer boundaries.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_pull_from_cursor)
+{
+	static uint8_t pkt_data[PULL_MID_TEST_PKT_DATA_SIZE];
+	static uint8_t expected[PULL_MID_TEST_PKT_DATA_SIZE];
+	static uint8_t readback[PULL_MID_TEST_PKT_DATA_SIZE];
+	struct {
+		size_t skip;
+		size_t pull;
+	} cases[8];
+	struct net_pkt *pkt;
+	size_t total = sizeof(pkt_data);
+	size_t first_len;
+	size_t second_len;
+	size_t len;
+	size_t i;
+	int ret;
+
+	for (i = 0; i < total; i++) {
+		pkt_data[i] = (uint8_t)(i * 7U);
+	}
+
+	/* Find the buffer layout the allocator gives a packet of this size */
+	pkt = net_pkt_alloc_with_buffer(eth_if, total, NET_AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Pkt not allocated");
+	zassert_ok(net_pkt_write(pkt, pkt_data, total), "Write packet failed");
+	zassert_not_null(pkt->buffer->frags, "Packet needs at least three buffers");
+	zassert_not_null(pkt->buffer->frags->frags, "Packet needs at least three buffers");
+	first_len = pkt->buffer->len;
+	second_len = pkt->buffer->frags->len;
+	net_pkt_unref(pkt);
+
+	zassert_true(first_len > 16U, "First buffer too short (%zu)", first_len);
+	zassert_true((first_len + second_len + 8U) < total, "Packet too short");
+
+	/* Inside the first buffer */
+	cases[0].skip = 8U;
+	cases[0].pull = 8U;
+	/* Up to the end of the first buffer */
+	cases[1].skip = first_len - 8U;
+	cases[1].pull = 8U;
+	/* Across the end of the first buffer */
+	cases[2].skip = first_len - 2U;
+	cases[2].pull = 8U;
+	/* The front of the second buffer */
+	cases[3].skip = first_len;
+	cases[3].pull = 8U;
+	/* All of the second buffer */
+	cases[4].skip = first_len;
+	cases[4].pull = second_len;
+	/* The tail of the first, all of the second and the front of the third */
+	cases[5].skip = first_len - 4U;
+	cases[5].pull = second_len + 8U;
+	/* From the front of the second buffer to the end of the packet */
+	cases[6].skip = first_len;
+	cases[6].pull = total - first_len;
+	/* From inside the first buffer to the end of the packet */
+	cases[7].skip = first_len - 4U;
+	cases[7].pull = total - first_len + 4U;
+
+	ARRAY_FOR_EACH(cases, c) {
+		size_t skip = cases[c].skip;
+		size_t pull = cases[c].pull;
+
+		memcpy(expected, pkt_data, skip);
+		memcpy(expected + skip, pkt_data + skip + pull, total - skip - pull);
+
+		pkt = net_pkt_alloc_with_buffer(eth_if, total, NET_AF_UNSPEC, 0, K_NO_WAIT);
+		zassert_not_null(pkt, "Pkt not allocated");
+		zassert_ok(net_pkt_write(pkt, pkt_data, total), "Write packet failed");
+
+		net_pkt_cursor_init(pkt);
+		net_pkt_set_overwrite(pkt, true);
+		zassert_ok(net_pkt_skip(pkt, skip), "Skip failed");
+
+		ret = net_pkt_pull(pkt, pull);
+		zexpect_ok(ret, "Pull of %zu at %zu failed (%d)", pull, skip, ret);
+
+		len = net_pkt_get_len(pkt);
+		zexpect_equal(len, total - pull, "Pull of %zu at %zu left %zu bytes", pull, skip,
+			      len);
+
+		/* Compare what is there, so a short packet fails on content too */
+		net_pkt_cursor_init(pkt);
+		memset(readback, 0, sizeof(readback));
+		len = MIN(len, total - pull);
+		ret = net_pkt_read(pkt, readback, len);
+		zexpect_ok(ret, "Read after pull of %zu at %zu failed", pull, skip);
+		zexpect_mem_equal(readback, expected, total - pull,
+				  "Pull of %zu at %zu changed other data", pull, skip);
+
+		net_pkt_unref(pkt);
+	}
+}
+
 ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 {
 	uint8_t buf[26] = {"abcdefghijklmnopqrstuvwxyz"};
