@@ -5535,31 +5535,67 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			}
 			prev = node;
 		}
-	} else {
-		if (params->subscribe) {
-			params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
-		}
-
-		if (!params->value) {
-			/* Notify with NULL data to complete unsubscribe */
-			params->notify(conn, params, NULL, 0);
-		}
+	} else if (params->subscribe != NULL) {
+		params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
 	}
 }
 
-
-static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+static void gatt_unsub_ccc_rsp(struct bt_conn *conn, int err, const void *pdu, uint16_t length,
+			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+
+	LOG_DBG("err %d", err);
+
+	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+
+	/* An error there would read as a failed subscription */
+	if (err == 0 && params->subscribe != NULL) {
+		params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
+	}
+
+	/* The subscription is gone whatever became of the write. Notify with
+	 * NULL data to complete unsubscribe.
+	 */
+	params->notify(conn, params, NULL, 0);
+}
+
+static void gatt_write_ccc_encode(struct net_buf *buf, struct bt_gatt_subscribe_params *params,
+				  uint16_t value)
+{
 	struct bt_att_write_req *write_req;
 
 	write_req = net_buf_add(buf, sizeof(*write_req));
 	write_req->handle = sys_cpu_to_le16(params->ccc_handle);
-	net_buf_add_le16(buf, params->value);
+	net_buf_add_le16(buf, value);
 
 	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+}
+
+static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+{
+	struct bt_gatt_subscribe_params *params = user_data;
+
+	gatt_write_ccc_encode(buf, params, params->value);
 
 	return 0;
+}
+
+static int gatt_unsub_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+{
+	gatt_write_ccc_encode(buf, user_data, 0x0000U);
+
+	return 0;
+}
+
+static int gatt_unsub_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
+{
+	size_t len = sizeof(struct bt_att_write_req) + sizeof(uint16_t);
+
+	LOG_DBG("handle 0x%04x", params->ccc_handle);
+
+	return gatt_req_send(conn, gatt_unsub_ccc_rsp, params, gatt_unsub_ccc_buf,
+			     BT_ATT_OP_WRITE_REQ, len, BT_ATT_CHAN_OPT(params));
 }
 
 static int gatt_write_ccc(struct bt_conn *conn,
@@ -5843,11 +5879,12 @@ static int gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_param
 	if (!has_subscription) {
 		int err;
 
-		params->value = 0x0000;
-		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
-		if (err) {
+		err = gatt_unsub_ccc(conn, params);
+		if (err != 0) {
 			return err;
 		}
+
+		params->value = 0x0000;
 	}
 
 	sys_slist_find_and_remove(&sub->list, &params->node);
