@@ -90,10 +90,9 @@ void video_esp32_dma_rx_done(const struct device *dma_dev, void *user_data, uint
 		return;
 	}
 
-	data->active_buf->timestamp = k_uptime_get_32();
 	video_buffer_done(dev, data->active_vbuf, 0);
 
-	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	data->active_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (data->active_vbuf == NULL) {
 		LOG_WRN("Frame dropped. No buffer available");
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
@@ -161,7 +160,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		return -EBUSY;
 	}
 
-	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	data->active_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (!data->active_vbuf) {
 		LOG_ERR("No enqueued video buffers available.");
 		return -EAGAIN;
