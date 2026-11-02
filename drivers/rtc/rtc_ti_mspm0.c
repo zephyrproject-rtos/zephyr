@@ -546,6 +546,9 @@ static int rtc_ti_mspm0_init(const struct device *dev)
 				RTC_MSPM0_PWREN_MASK;
 		}
 	}
+
+	msp_delay_peripheral_startup();
+
 	/* Enable 32k clock supply */
 	cfg->regs->clkctl = RTC_MSPM0_CLKCTL_ENABLE;
 	/* Set clock format to binary */
