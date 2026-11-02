@@ -66,7 +66,7 @@ static void emul_rx_worker(struct k_work *work)
 	LOG_DBG("Queueing a frame of %u bytes in format %x %ux%u", fmt->pitch * fmt->height,
 		fmt->pixelformat, fmt->width, fmt->height);
 
-	while ((vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT)) != NULL) {
+	while ((vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT)) != NULL) {
 		vbuf->bytesused = fmt->pitch * fmt->height;
 		vbuf->line_offset = 0;
 

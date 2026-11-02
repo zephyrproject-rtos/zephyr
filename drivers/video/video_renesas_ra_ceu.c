@@ -76,7 +76,7 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 			video_buffer_done(dev, curr_vbuf, 0);
 		}
 
-		next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+		next_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 		if (next_vbuf == NULL) {
 			return;
 		}
@@ -181,7 +181,7 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 		return 0;
 	}
 
-	next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	next_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (next_vbuf == NULL) {
 		LOG_DBG("No enqueued video buffers available to start streaming");
 		return -EAGAIN;
@@ -228,7 +228,7 @@ static int video_renesas_ra_ceu_trigger(const struct device *dev, enum video_buf
 		return 0;
 	}
 
-	next_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	next_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (!next_vbuf) {
 		LOG_DBG("No enqueued video buffers available to restart streaming");
 		return -EAGAIN;

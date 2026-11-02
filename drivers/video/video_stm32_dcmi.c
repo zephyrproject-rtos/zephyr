@@ -250,7 +250,7 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	}
 
 	if (!data->ctrls.snapshot.val) {
-		data->vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+		data->vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 
 		if (data->vbuf == NULL) {
 			LOG_ERR("No buffers");
@@ -286,7 +286,7 @@ static int video_stm32_dcmi_snapshot(const struct device *dev)
 		return -EBUSY;
 	}
 
-	data->vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	data->vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (data->vbuf == NULL) {
 		LOG_WRN("Snapshot: No Buffers available!");
 		return -ENOMEM;

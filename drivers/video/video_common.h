@@ -141,6 +141,38 @@ int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volat
 void video_buffer_done(const struct device *dev, struct video_buffer *buf, int err);
 
 /**
+ * @brief Get the next input/output buffer in the queue
+ *
+ * @param dev Video device
+ * @param type Buffer type
+ * @param timeout Timeout duration
+ *
+ * @retval buffer if one is in the queue before the timeout or NULL
+ */
+struct video_buffer *video_buffer_next(const struct device *dev, enum video_buf_type type,
+				       k_timeout_t timeout);
+
+/**
+ * @brief Get the next buffer if any is present, without removing it
+ *
+ * @param dev Video device
+ * @param type Buffer type
+ *
+ * @retval buffer if one is in the queue or NULL
+ */
+struct video_buffer *video_buffer_peek(const struct device *dev, enum video_buf_type type);
+
+/**
+ * @brief Check the presence of a buffer in a queue
+ *
+ * @param dev Video device
+ * @param type Buffer type
+ *
+ * @retval true if the buffer queue for the given type is empty
+ */
+bool video_buffer_is_empty(const struct device *dev, enum video_buf_type type);
+
+/**
  * @}
  */
 
