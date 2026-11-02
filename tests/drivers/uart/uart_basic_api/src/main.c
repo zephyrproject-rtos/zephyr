@@ -17,6 +17,7 @@
 TC_CMD_DEFINE(test_uart_configure)
 TC_CMD_DEFINE(test_uart_config_get)
 TC_CMD_DEFINE(test_uart_poll_out)
+TC_CMD_DEFINE(test_uart_poll_out_blocking)
 TC_CMD_DEFINE(test_uart_poll_in)
 #if CONFIG_UART_INTERRUPT_DRIVEN
 TC_CMD_DEFINE(test_uart_fifo_read)
@@ -32,6 +33,8 @@ SHELL_CMD_REGISTER(test_uart_poll_in, NULL, NULL,
 			TC_CMD_ITEM(test_uart_poll_in));
 SHELL_CMD_REGISTER(test_uart_poll_out, NULL, NULL,
 			TC_CMD_ITEM(test_uart_poll_out));
+SHELL_CMD_REGISTER(test_uart_poll_out_blocking, NULL, NULL,
+			TC_CMD_ITEM(test_uart_poll_out_blocking));
 #if CONFIG_UART_INTERRUPT_DRIVEN
 SHELL_CMD_REGISTER(test_uart_fifo_read, NULL, NULL,
 			TC_CMD_ITEM(test_uart_fifo_read));
