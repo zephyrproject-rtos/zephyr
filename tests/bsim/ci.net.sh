@@ -12,4 +12,5 @@ set -uex
 
 TWISTER_OPTIONS="-vv --fixture bsim_multi_test --no-clean --force-color --inline-logs"
 
-${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/net/ ${TWISTER_OPTIONS}
+${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/net/ ${TWISTER_OPTIONS} \
+  -O twister-out-net

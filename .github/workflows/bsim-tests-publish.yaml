@@ -32,4 +32,4 @@ jobs:
           commit: ${{ github.event.workflow_run.head_sha }}
           event_file: event/event.json
           event_name: ${{ github.event.workflow_run.event }}
-          files: "bsim-test-results/**/bsim_results.xml"
+          files: "bsim-test-results/**/junit.xml"

@@ -16,9 +16,11 @@ echo "UART: Single device tests"
 echo " nRF52833 & 5340:"
 ${ZEPHYR_BASE}/scripts/twister -T tests/drivers/uart/ ${TWISTER_OPTIONS} \
   -p nrf52_bsim -p nrf5340bsim/nrf5340/cpuapp --fixture gpio_loopback --fixture uart_loopback \
+  -O twister-out-uart_1 \
   -- -uart0_loopback -uart1_loopback
 
 echo " nRF54L15:"
 ${ZEPHYR_BASE}/scripts/twister -T tests/drivers/uart/ ${TWISTER_OPTIONS} \
   -p nrf54l15bsim/nrf54l15/cpuapp --fixture gpio_loopback --fixture uart_loopback \
+  -O twister-out-uart_2 \
   -- -uart0_loopback -uart2_loopback
