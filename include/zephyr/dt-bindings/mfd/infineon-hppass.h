@@ -9,9 +9,11 @@
  * @file
  * @brief Devicetree binding constants for Infineon HPPASS Autonomous Controller.
  *
- * These constants match the PDL enum values and are intended for use in
- * devicetree properties that configure the AC State Transition Table,
- * trigger inputs, and trigger outputs.
+ * These constants configure the AC State Transition Table, trigger inputs,
+ * and trigger outputs. AC condition identifiers retain the HPPASS v1 values,
+ * with additional identifiers for v3-only conditions. The MFD driver maps
+ * them to the selected revision's hardware encoding. Other constants match
+ * the PDL enum values.
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_MFD_INFINEON_HPPASS_H_
@@ -80,6 +82,27 @@
 #define IFX_HPPASS_AC_COND_CSG_2_COMP         58 /**< CSG2 comparator trip */
 #define IFX_HPPASS_AC_COND_CSG_3_COMP         59 /**< CSG3 comparator trip */
 #define IFX_HPPASS_AC_COND_CSG_4_COMP         60 /**< CSG4 comparator trip */
+
+/* MCPASS v3 only. These identifiers are not hardware condition encodings. */
+#define IFX_HPPASS_AC_COND_CSG_5_COMP         61 /**< CSG5 comparator trip */
+#define IFX_HPPASS_AC_COND_CSG_6_COMP         62 /**< CSG6 comparator trip */
+#define IFX_HPPASS_AC_COND_CSG_7_COMP         63 /**< CSG7 comparator trip */
+#define IFX_HPPASS_AC_COND_CSG_8_COMP         64 /**< CSG8 comparator trip */
+#define IFX_HPPASS_AC_COND_CSG_5_DAC_DONE     65 /**< CSG5 DAC waveform done */
+#define IFX_HPPASS_AC_COND_CSG_6_DAC_DONE     66 /**< CSG6 DAC waveform done */
+#define IFX_HPPASS_AC_COND_CSG_7_DAC_DONE     67 /**< CSG7 DAC waveform done */
+#define IFX_HPPASS_AC_COND_CSG_8_DAC_DONE     68 /**< CSG8 DAC waveform done */
+#define IFX_HPPASS_AC_COND_TRIG_8            69 /**< HW/FW trigger 8 */
+#define IFX_HPPASS_AC_COND_TRIG_9            70 /**< HW/FW trigger 9 */
+#define IFX_HPPASS_AC_COND_TRIG_10           71 /**< HW/FW trigger 10 */
+#define IFX_HPPASS_AC_COND_TRIG_11           72 /**< HW/FW trigger 11 */
+#define IFX_HPPASS_AC_COND_TRIG_12           73 /**< HW/FW trigger 12 */
+#define IFX_HPPASS_AC_COND_TRIG_13           74 /**< HW/FW trigger 13 */
+#define IFX_HPPASS_AC_COND_TRIG_14           75 /**< HW/FW trigger 14 */
+#define IFX_HPPASS_AC_COND_TRIG_15           76 /**< HW/FW trigger 15 */
+#define IFX_HPPASS_AC_COND_REMAP_0           77 /**< CSG comparator output remap 0 */
+#define IFX_HPPASS_AC_COND_REMAP_1           78 /**< CSG comparator output remap 1 */
+#define IFX_HPPASS_AC_COND_REMAP_2           79 /**< CSG comparator output remap 2 */
 /** @} */
 
 /**
