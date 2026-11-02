@@ -379,6 +379,7 @@ board:
     expected_data = {
         'p1e1/s1': {
             'aliases': ['p1e1/s1', 'p1e1'],
+            'qualifiers': 's1',
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base + variant)
@@ -388,6 +389,7 @@ board:
         },
         'p1e2/s1': {
             'aliases': ['p1e2/s1', 'p1e2'],
+            'qualifiers': 's1',
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base + variant)
@@ -397,6 +399,7 @@ board:
         },
         'p1e1/s1/v1': {
             'aliases': ['p1e1/s1/v1'],
+            'qualifiers': 's1/v1',
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
@@ -407,6 +410,7 @@ board:
         },
         'p1e1/s1/v2': {
             'aliases': ['p1e1/s1/v2'],
+            'qualifiers': 's1/v2',
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
@@ -415,6 +419,7 @@ board:
         },
         'p1e2/s1/v1': {
             'aliases': ['p1e2/s1/v1'],
+            'qualifiers': 's1/v1',
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
@@ -423,6 +428,7 @@ board:
         },
         'p2/s1': {
             'aliases': ['p2/s1', 'p2'],
+            'qualifiers': 's1',
             # m0/boards/zephyr/p2/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p2/p2.yaml
@@ -432,12 +438,14 @@ board:
         },
         'p2/s1/v1': {
             'aliases': ['p2/s1/v1'],
+            'qualifiers': 's1/v1',
             # m0/boards/zephyr/p2/board.yml
             'vendor': 'zephyr',
             # m1/boards/zephyr/p2/p2_s1_v1.yaml
         },
         'p3@A/s2/c1': {
             'aliases': ['p3@A/s2/c1', 'p3/s2/c1'],
+            'qualifiers': 's2/c1',
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base + variant)
@@ -448,6 +456,7 @@ board:
         },
         'p3@B/s2/c1': {
             'aliases': ['p3@B/s2/c1'],
+            'qualifiers': 's2/c1',
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base + variant)
@@ -458,6 +467,7 @@ board:
         },
         'p3@A/s2/c2': {
             'aliases': ['p3@A/s2/c2', 'p3/s2/c2'],
+            'qualifiers': 's2/c2',
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base)
@@ -468,6 +478,7 @@ board:
         },
         'p3@B/s2/c2': {
             'aliases': ['p3@B/s2/c2'],
+            'qualifiers': 's2/c2',
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base)
@@ -477,6 +488,7 @@ board:
         },
         'p4/s1': {
             'aliases': ['p4/s1', 'p4'],
+            'qualifiers': 's1',
             # m2/boards/misc/board.yml
             'vendor': 'misc',
             # m2/boards/misc/twister.yaml (base)

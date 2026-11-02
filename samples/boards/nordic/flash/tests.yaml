@@ -10,11 +10,13 @@ common:
     type: one_line
     regex:
       - "Successfully completed flash write while radio was active"
-  platform_allow:
-    - nrf51dk/nrf51822
-    - nrf52dk/nrf52832
-    - nrf52840dk/nrf52840
-    - nrf54l15dk/nrf54l15/cpuapp
+  qualifiers_allow:
+    - nrf51822
+    - nrf52832
+    - nrf52840
+    - nrf54l15/cpuapp
+  platform_exclude:
+    - nrf54l15bsim/nrf54l15/cpuapp
   integration_platforms:
     - nrf51dk/nrf51822
     - nrf52840dk/nrf52840

@@ -1,6 +1,8 @@
 common:
   tags: llext
-  filter: not CONFIG_SOC_ESP32_APPCPU_TARGET
+  qualifiers_exclude:
+    - esp32/appcpu
+    - esp32s3/appcpu
   platform_exclude:
     # platforms with active issues
     - numaker_pfm_m487        # See #63167
