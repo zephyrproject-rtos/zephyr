@@ -4,3 +4,8 @@ boards:
   vendor: ebyte
   socs:
   - name: stm32f103x8
+- name: e80_900mbl_02
+  full_name: Ebyte E80 Module Development Board (LR2021, HF)
+  vendor: ebyte
+  socs:
+  - name: stm32f103x8

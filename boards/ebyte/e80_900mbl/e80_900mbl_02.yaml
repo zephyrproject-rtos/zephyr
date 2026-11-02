@@ -1,0 +1,15 @@
+identifier: e80_900mbl_02
+name: Ebyte E80 Module Development Board (LR2021, HF)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 20
+flash: 64
+supported:
+  - gpio
+  - spi
+  - watchdog
+  - lora
+vendor: ebyte
