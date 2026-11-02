@@ -213,7 +213,7 @@ static void net_tcp_iface_init(struct net_if *iface)
 
 struct net_tcp_context net_tcp_context_data;
 
-static struct dummy_api net_tcp_if_api = {
+static const struct dummy_api net_tcp_if_api = {
 	.iface_api.init = net_tcp_iface_init,
 	.send = tester_send,
 };

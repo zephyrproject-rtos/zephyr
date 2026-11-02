@@ -76,7 +76,7 @@ static int test_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api test_if_api = {
+static const struct dummy_api test_if_api = {
 	.iface_api.init = test_iface_init,
 	.send = test_send,
 };

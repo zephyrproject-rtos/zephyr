@@ -241,7 +241,7 @@ static struct net_route_test net_route_data_alt = {
 	.mac_addr = { 0x00U, 0x00U, 0x5EU, 0x00U, 0x53U, 0x02U },
 };
 
-static struct ethernet_api net_route_if_api = {
+static const struct ethernet_api net_route_if_api = {
 	.iface_api.init = net_route_iface_init,
 	.send = tester_send,
 };

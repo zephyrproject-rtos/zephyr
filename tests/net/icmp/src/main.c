@@ -130,12 +130,12 @@ static int test_receiver(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api send_if_api = {
+static const struct dummy_api send_if_api = {
 	.iface_api.init = test_iface_init,
 	.send = test_sender,
 };
 
-static struct dummy_api recv_if_api = {
+static const struct dummy_api recv_if_api = {
 	.iface_api.init = test_iface_init,
 	.send = test_receiver,
 };

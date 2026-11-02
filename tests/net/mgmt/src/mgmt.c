@@ -120,7 +120,7 @@ static int fake_iface_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api fake_iface_api = {
+static const struct dummy_api fake_iface_api = {
 	.iface_api.init = fake_iface_init,
 	.send = fake_iface_send,
 };

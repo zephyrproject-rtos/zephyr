@@ -74,7 +74,7 @@ static struct wifi_mgmt_ops wifi_mgmt_api = {
 	.scan		= wifi_scan,
 };
 
-static struct net_wifi_mgmt_offload api_funcs = {
+static const struct net_wifi_mgmt_offload api_funcs = {
 	.wifi_iface.iface_api.init = wifi_iface_init,
 	.wifi_mgmt_api = &wifi_mgmt_api,
 };

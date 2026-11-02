@@ -128,7 +128,7 @@ static int server_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct dummy_api server_if_api = {
+static const struct dummy_api server_if_api = {
 	.iface_api.init = server_iface_init,
 	.send = server_send,
 };
