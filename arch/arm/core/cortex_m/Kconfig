@@ -104,6 +104,19 @@ config CPU_CORTEX_M7
 	help
 	  This option signifies the use of a Cortex-M7 CPU
 
+config CPU_NAME
+	default "cortex-m0" if CPU_CORTEX_M0
+	default "cortex-m0plus" if CPU_CORTEX_M0PLUS
+	default "cortex-m1" if CPU_CORTEX_M1
+	default "cortex-m3" if CPU_CORTEX_M3
+	default "cortex-m4" if CPU_CORTEX_M4
+	default "cortex-m7" if CPU_CORTEX_M7
+	default "cortex-m23" if CPU_CORTEX_M23
+	default "cortex-m33" if CPU_CORTEX_M33
+	default "cortex-m52" if CPU_CORTEX_M52
+	default "cortex-m55" if CPU_CORTEX_M55
+	default "cortex-m85" if CPU_CORTEX_M85
+
 if CPU_CORTEX_M
 
 config CPU_CORTEX_M_HAS_SYSTICK
