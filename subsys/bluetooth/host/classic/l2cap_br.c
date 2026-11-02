@@ -5469,6 +5469,11 @@ int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt
 		return -ENOTCONN;
 	}
 
+	/* The TX processor holds this link back, so the data would only use up shared buffers */
+	if (atomic_test_bit(chan->conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		return -ENOTCONN;
+	}
+
 	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
 		return -ESHUTDOWN;
 	}
