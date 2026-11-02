@@ -51,8 +51,22 @@ def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
     return hci, bd_addr
 
 
+@pytest.fixture(name='registered', scope='session')
+def fixture_registered(initialize, shell: Shell, dut: DeviceAdapter):
+    """Register the callbacks and the SBC endpoint, which every test of the suite needs."""
+    shell.exec_command("br clear all")
+    for command, response in (
+        ("a2dp_source register_cb", "success"),
+        ("a2dp_source register_ep source sbc", "SBC source endpoint is registered"),
+    ):
+        lines = shell.exec_command(command)
+        if not any(response in line for line in lines):
+            dut.readlines_until(regex=response, timeout=10)
+    return initialize
+
+
 @pytest.fixture
-def a2dp_source_dut(initialize):
+def a2dp_source_dut(registered):
     logger.info('Start running testcase')
-    yield initialize
+    yield registered
     logger.info('Done')
