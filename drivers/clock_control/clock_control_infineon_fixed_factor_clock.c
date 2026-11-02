@@ -32,12 +32,12 @@ struct fixed_factor_clock_config {
 	uint32_t source_path;
 };
 
-#if defined(CONFIG_SOC_SERIES_PSE84) || defined(CONFIG_SOC_SERIES_PSC3)
+#if defined(CONFIG_SOC_SERIES_PSE8X) || defined(CONFIG_SOC_SERIES_PSC3)
 static int check_legal_max_min(const struct device *dev)
 {
 	const struct fixed_factor_clock_config *const config = dev->config;
 
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CONFIG_SOC_SERIES_PSE8X)
 	if (config->block == IFX_HF && config->instance == 0) {
 		if (Cy_SysClk_ClkHfGetFrequency(0) > MHZ(200)) {
 			LOG_ERR("clk_hf0 frequency is greater than legal max 200 MHz");
@@ -60,7 +60,7 @@ static int check_legal_max_min(const struct device *dev)
 static int fixed_factor_clk_init(const struct device *dev)
 {
 	const struct fixed_factor_clock_config *const config = dev->config;
-#if defined(CONFIG_SOC_SERIES_PSE84) || defined(CONFIG_SOC_SERIES_PSC3)
+#if defined(CONFIG_SOC_SERIES_PSE8X) || defined(CONFIG_SOC_SERIES_PSC3)
 	uint32_t rslt;
 #endif
 	int err;
@@ -122,7 +122,7 @@ static int fixed_factor_clk_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_PSE84) || defined(CONFIG_SOC_SERIES_PSC3)
+#if defined(CONFIG_SOC_SERIES_PSE8X) || defined(CONFIG_SOC_SERIES_PSC3)
 	rslt = check_legal_max_min(dev);
 #endif
 	return 0;
