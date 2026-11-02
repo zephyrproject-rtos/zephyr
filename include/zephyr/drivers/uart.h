@@ -19,7 +19,7 @@
  *        controllers.
  * @defgroup uart_interface UART
  * @since 1.0
- * @version 2.0.0
+ * @version 2.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -542,6 +542,86 @@ static inline int uart_fifo_read(const struct device *dev, uint8_t *rx_data, con
  * @retval -ENOTSUP API is not enabled.
  */
 static inline int uart_fifo_read_u16(const struct device *dev, uint16_t *rx_data, const int size);
+
+/**
+ * @brief Read data from FIFO together with per-byte error flags.
+ *
+ * @details Behaves like uart_fifo_read(), but additionally reports the error
+ * condition associated with each byte returned. Callers therefore do not need
+ * to know whether the underlying hardware makes error status available before
+ * or after a byte is read from the data register, which uart_err_check() alone
+ * does not specify. Required by protocols that must determine which byte an
+ * error applies to, such as break-delimited protocols.
+ *
+ * @p flags receives one entry per returned byte: a bitmask of
+ * @ref uart_rx_stop_reason values describing that byte, or 0 if the byte was
+ * received without error. A byte received in error is still returned in
+ * @p rx_data so that the stream stays aligned with @p flags, but when it is
+ * flagged with #UART_ERROR_FRAMING, #UART_ERROR_PARITY, #UART_ERROR_NOISE, or
+ * #UART_BREAK its value is hardware dependent and should not be relied upon.
+ * A byte received while the line was held in a break condition is typically
+ * 0x00 and is flagged with #UART_BREAK, #UART_ERROR_FRAMING, or both.
+ * #UART_ERROR_OVERRUN does not affect the value of the byte it is reported
+ * against; it indicates that data was lost at some point after that byte,
+ * though not necessarily immediately after it. It is not a count: several
+ * losses before an overrun is reported may be reported as one.
+ *
+ * Each flag other than #UART_ERROR_OVERRUN is reported against the byte the
+ * error applies to. Drivers whose hardware cannot attribute errors to
+ * individual received bytes do not implement this function. Some platforms
+ * may not be able to attribute flags to specific bytes in all cases; see the
+ * documentation of each platform.
+ *
+ * Drivers report #UART_BREAK when the hardware positively identifies a break
+ * condition (for example via dedicated break detection), and
+ * #UART_ERROR_FRAMING when a break can only be inferred from a framing error.
+ * Where the hardware supports it, #UART_BREAK distinguishes a real break from
+ * line noise.
+ *
+ * No error is reported twice. Error status consumed by this call is cleared,
+ * so a subsequent uart_err_check() does not report it again for the same
+ * bytes, and an error already reported by uart_err_check() is not reported
+ * again by this call.
+ *
+ * Errors of bytes read with other functions, such as uart_fifo_read() or
+ * uart_poll_in(), are left to uart_err_check(), which on some hardware only
+ * reports those of the last byte read. Once received data has been read with
+ * such a function, this function returns -EBUSY without reading anything
+ * until uart_err_check() is called. Data left unread keeps the RX interrupt
+ * pending, so an interrupt handler that receives -EBUSY must call
+ * uart_err_check() and read again.
+ *
+ * Drivers implementing this function return every received byte, including
+ * bytes received in error, together with its flags, and do not stop reception
+ * after an error once the affected bytes have been read.
+ *
+ * As with uart_fifo_read(), this function is expected to be called from the
+ * UART interrupt handler (ISR) when uart_irq_rx_ready() returns true, and must
+ * be called until it returns less data than was requested in order to drain
+ * all available data. Result of calling it outside an ISR is undefined
+ * (hardware-dependent).
+ *
+ * A @p size of 0 reads nothing, consumes no received data, and returns 0. This
+ * can be used to test whether a driver implements this operation without
+ * disturbing reception.
+ *
+ * Drivers implementing this function select
+ * @kconfig{CONFIG_SERIAL_SUPPORT_FIFO_READ_FLAGGED}.
+ *
+ * @param dev UART device instance.
+ * @param rx_data Data container.
+ * @param flags Container for per-byte error flags. Must have room for
+ *              @p size entries.
+ * @param size Container size.
+ *
+ * @return Number of bytes read.
+ * @retval -ENOSYS This function is not implemented.
+ * @retval -ENOTSUP API is not enabled.
+ * @retval -EBUSY Received data was read with another function since
+ *                uart_err_check() was last called.
+ */
+static inline int uart_fifo_read_flagged(const struct device *dev, uint8_t *rx_data,
+					 uint8_t *flags, const int size);
 
 /**
  * @brief Enable TX interrupt in IER.
