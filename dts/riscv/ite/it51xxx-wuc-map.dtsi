@@ -86,6 +86,39 @@
 			wucs = <&wuc4 BIT(6)>; /* GPE7 */
 		};
 
+		/* WUC group 5 */
+		/omit-if-no-ref/ wuc_wu50: wu50 {
+			wucs = <&wuc5 BIT(0)>; /* GPK0 */
+		};
+
+		/omit-if-no-ref/ wuc_wu51: wu51 {
+			wucs = <&wuc5 BIT(1)>; /* GPK1 */
+		};
+
+		/omit-if-no-ref/ wuc_wu52: wu52 {
+			wucs = <&wuc5 BIT(2)>; /* GPK2 */
+		};
+
+		/omit-if-no-ref/ wuc_wu53: wu53 {
+			wucs = <&wuc5 BIT(3)>; /* GPK3 */
+		};
+
+		/omit-if-no-ref/ wuc_wu54: wu54 {
+			wucs = <&wuc5 BIT(4)>; /* GPK4 */
+		};
+
+		/omit-if-no-ref/ wuc_wu55: wu55 {
+			wucs = <&wuc5 BIT(5)>; /* GPK5 */
+		};
+
+		/omit-if-no-ref/ wuc_wu56: wu56 {
+			wucs = <&wuc5 BIT(6)>; /* GPK6 */
+		};
+
+		/omit-if-no-ref/ wuc_wu57: wu57 {
+			wucs = <&wuc5 BIT(7)>; /* GPK7 */
+		};
+
 		/* WUC group 6 */
 		/omit-if-no-ref/ wuc_wu60: wu60 {
 			wucs = <&wuc6 BIT(0)>; /* GPH0 */
