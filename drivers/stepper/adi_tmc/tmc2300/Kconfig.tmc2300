@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Swarovski Optik AG & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC2300
+	bool "Activate trinamic tmc2300 stepper driver"
+	depends on DT_HAS_ADI_TMC2300_ENABLED
+	select STEP_DIR_STEPPER
+	select STEPPER_ADI_TMC_UART
+	default y
+	help
+	  Stepper driver for TMC2300, configured via single wire UART.
