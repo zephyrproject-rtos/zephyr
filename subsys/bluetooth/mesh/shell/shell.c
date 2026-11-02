@@ -628,13 +628,6 @@ static int output_numeric(bt_mesh_output_action_t action, uint8_t *numeric, size
 	return 0;
 }
 
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
-{
-	return output_numeric(action, (uint8_t *)&number, sizeof(number));
-}
-#endif
-
 static int output_string(const char *str)
 {
 	bt_shell_print("OOB String: %s", str);
@@ -690,11 +683,7 @@ struct bt_mesh_prov bt_mesh_shell_prov = {
 	.output_size = 6,
 	.output_actions = (BT_MESH_BLINK | BT_MESH_BEEP | BT_MESH_VIBRATE | BT_MESH_DISPLAY_NUMBER |
 			   BT_MESH_DISPLAY_STRING),
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-	.output_number = output_number,
-#else
 	.output_numeric = output_numeric,
-#endif
 	.output_string = output_string,
 	.input_size = 6,
 	.input_actions =
