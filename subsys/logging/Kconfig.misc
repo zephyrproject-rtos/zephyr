@@ -50,6 +50,16 @@ config LOG_ALWAYS_RUNTIME
 	  less stack than static message creation and speed has lower priority
 	  in that mode.
 
+	  Enable this option too in builds that feed a static analyzer or an
+	  IDE parser. With static message creation a two-argument LOG_* call
+	  can expand to roughly 80 KB of preprocessed source (measured with
+	  GCC), mostly _Generic selections from the cbprintf packaging. With
+	  this option the same call expands to roughly 1 KB and compile-time
+	  format string checking is kept. For tools that can be given the
+	  build configuration this replaces the __CDT_PARSER__ and
+	  __JETBRAINS_IDE__ guard in log.h, which hides the LOG_* macros from
+	  the parser entirely.
+
 config LOG_FMT_SECTION
 	bool "Keep log strings in dedicated section"
 	help
