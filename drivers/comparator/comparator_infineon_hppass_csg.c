@@ -93,9 +93,17 @@ LOG_MODULE_REGISTER(comparator_infineon_hppass_csg, CONFIG_COMPARATOR_LOG_LEVEL)
 #define IFX_CSG_CMP_CFG_POS_SEL      BIT(0)          /* [0]     positive-input select */
 #define IFX_CSG_CMP_CFG_NEG_SEL      GENMASK(3, 2)   /* [3:2]   negative-input select */
 #define IFX_CSG_CMP_CFG_BLANK_MODE   GENMASK(5, 4)   /* [5:4]   blank mode */
+
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+/* PSC3M6 widens blank-trigger selection and shifts edge mode and polarity. */
+#define IFX_CSG_CMP_CFG_BLANK_TR_SEL GENMASK(12, 8)  /* [12:8]  blank trigger select */
+#define IFX_CSG_CMP_CFG_EDGE_MODE    GENMASK(17, 16) /* [17:16] edge detection mode */
+#define IFX_CSG_CMP_CFG_POLARITY     BIT(18)         /* [18]    output polarity */
+#else
 #define IFX_CSG_CMP_CFG_BLANK_TR_SEL GENMASK(11, 8)  /* [11:8]  blank trigger select */
 #define IFX_CSG_CMP_CFG_EDGE_MODE    GENMASK(13, 12) /* [13:12] edge detection mode */
 #define IFX_CSG_CMP_CFG_POLARITY     BIT(16)         /* [16]    output polarity */
+#endif
 
 /*
  * CMP_CFG.CMP_EDGE_MODE encoding:
@@ -284,6 +292,7 @@ static int ifx_csg_comp_init(const struct device *dev)
  * disarmed.  The app re-arms its trigger via comparator_set_trigger() after
  * resume, matching how the CSG DAC restores its DT default and leaves the
  * runtime value to the app.  The callback binding is retained software state.
+ * The CSG MFD parent restores v3 analog routing before its children.
  */
 static int ifx_csg_comp_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -329,6 +338,12 @@ static int ifx_csg_comp_pm_action(const struct device *dev, enum pm_device_actio
 	BUILD_ASSERT(IFX_CSG_COMP_SLICE_OF(n) <                                           \
 			DT_PROP(IFX_CSG_COMP_PARENT(n), infineon_num_slices),             \
 		     "CSG comparator slice index out of range");                          \
+	BUILD_ASSERT(IFX_CSG_NEG_REG(DT_INST_STRING_UPPER_TOKEN(n, negative_input)) ==    \
+			     IFX_CSG_NEG_REG_DAC ||                                      \
+			     (IS_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3)                   \
+				      ? IFX_CSG_COMP_SLICE_OF(n) % 3U != 2U               \
+				      : IFX_CSG_COMP_SLICE_OF(n) != 4U),                  \
+		     "This CSG slice has no external negative input; select dac");        \
 	static struct ifx_csg_comp_data ifx_csg_comp_data_##n;                            \
 	static const struct ifx_csg_comp_config ifx_csg_comp_config_##n = {               \
 		.parent     = DEVICE_DT_GET(IFX_CSG_COMP_PARENT(n)),                      \
