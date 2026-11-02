@@ -96,7 +96,7 @@ enum sim7080_state mdm_sim7080_get_state(void)
 	return sim7080_get_state();
 }
 
-static const struct offloaded_if_api api_funcs = {
+static DEVICE_API(offloaded_if, api_funcs) = {
 	.iface_api.init = modem_net_iface_init,
 };
 
