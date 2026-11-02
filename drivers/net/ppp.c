@@ -1157,7 +1157,7 @@ static int ppp_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct ppp_api ppp_if_api = {
+static DEVICE_API(ppp, ppp_if_api) = {
 	.iface_api.init = ppp_iface_init,
 
 	.send = ppp_send,
