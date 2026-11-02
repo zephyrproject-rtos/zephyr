@@ -110,6 +110,11 @@ Bluetooth Classic
   :c:func:`bt_l2cap_br_echo_cb_unregister`, :c:func:`bt_l2cap_br_echo_req` and
   :c:func:`bt_l2cap_br_echo_rsp`. The stack answers a received ECHO request with an ECHO response
   without data, unless a registered ``req`` callback handles it.
+* :c:func:`bt_obex_abort` now returns ``-EBUSY`` while the response to the last request is due, as
+  an OBEX client sends an abort request after a response. Applications that abort at any time, and
+  those using the abort functions of the OBEX based profiles, need to call it again from the
+  response callback, in place of sending the next request, unless that response ended the
+  operation.
 
 Bluetooth Host
 ==============
