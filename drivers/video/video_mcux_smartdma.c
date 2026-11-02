@@ -76,7 +76,7 @@ static void nxp_video_sdma_callback(const struct device *smartdma_dev_not_video_
 		/* Save old framebuffer, we will dequeue it next interrupt */
 		data->active_buf = data->queued_buf;
 		/* Load new framebuffer */
-		data->queued_buf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+		data->queued_buf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 		if (data->queued_buf == NULL) {
 			data->stream_starved = true;
 		} else {
@@ -122,7 +122,7 @@ static int nxp_video_sdma_set_stream(const struct device *dev, bool enable,
 	/* SmartDMA continuously streams data once started. If user
 	 * has not provided a framebuffer, we can't start DMA.
 	 */
-	data->queued_buf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+	data->queued_buf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (data->queued_buf == NULL) {
 		return -EIO;
 	}

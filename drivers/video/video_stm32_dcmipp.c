@@ -567,7 +567,6 @@ static inline void stm32_dcmipp_compute_fmt_pitch(uint32_t pipe_id, struct video
 static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
-	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_mapping *mapping;
 	int ret = 0;
 
@@ -590,10 +589,10 @@ static int stm32_dcmipp_set_fmt(const struct device *dev, struct video_format *f
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
-		uint32_t post_isp_decimate_width = dcmipp->source_fmt.width /
-						   dcmipp->isp_dec_hratio;
-		uint32_t post_isp_decimate_height = dcmipp->source_fmt.height /
-						    dcmipp->isp_dec_vratio;
+		uint32_t post_isp_decimate_width = pipe->dcmipp->source_fmt.width /
+						   pipe->dcmipp->isp_dec_hratio;
+		uint32_t post_isp_decimate_height = pipe->dcmipp->source_fmt.height /
+						    pipe->dcmipp->isp_dec_vratio;
 
 		if (!IN_RANGE(fmt->width,
 			      post_isp_decimate_width / STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,
