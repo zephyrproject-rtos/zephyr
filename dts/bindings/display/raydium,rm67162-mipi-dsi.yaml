@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-title: Raydium RM67162 display controller
+title: Raydium RM67162 display controller on MIPI DSI bus
 
 description: |
     The Raydium RM67162 is a 16.7M colors OLED controller
@@ -12,7 +12,7 @@ description: |
 
 compatible: "raydium,rm67162"
 
-include: [mipi-dsi-device.yaml, display-controller.yaml]
+include: [mipi-dsi-device.yaml, "raydium,rm67162-common.yaml"]
 
 properties:
   reset-gpios:
