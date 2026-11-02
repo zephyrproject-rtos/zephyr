@@ -50,6 +50,15 @@ API Changes
 Removed APIs and options
 ========================
 
+* Bluetooth
+
+  * Mesh
+
+    * The deprecated function ``bt_mesh_input_number()``, the deprecated ``output_number``
+      callback of :c:struct:`bt_mesh_prov` and the ``CONFIG_BT_MESH_PROV_OOB_API_LEGACY``
+      Kconfig option were removed. Use :c:func:`bt_mesh_input_numeric` and
+      :c:member:`bt_mesh_prov.output_numeric` instead.
+
 Deprecated APIs and options
 ===========================
 

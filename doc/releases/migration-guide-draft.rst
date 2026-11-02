@@ -127,6 +127,19 @@ Bluetooth Host
   multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
   of the other connections.
 
+Bluetooth Mesh
+==============
+
+* The deprecated legacy provisioning OOB API was removed together with the
+  ``CONFIG_BT_MESH_PROV_OOB_API_LEGACY`` Kconfig option. The maximum numeric OOB
+  authentication size is now always 32 bytes. Applications must replace:
+
+  * ``bt_mesh_input_number()`` with :c:func:`bt_mesh_input_numeric`, which takes the
+    numeric value as a little-endian byte array and its size.
+  * The ``output_number`` callback of :c:struct:`bt_mesh_prov` with
+    :c:member:`bt_mesh_prov.output_numeric`, which receives the numeric value as a
+    little-endian byte array and its size.
+
 Networking
 **********
 

@@ -173,19 +173,6 @@ struct bt_mesh_prov {
 	 */
 	void         (*capabilities)(const struct bt_mesh_dev_capabilities *cap);
 
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-	/** @brief Output of a number is requested.
-	 *
-	 *  This callback notifies the application that it should
-	 *  output the given number using the given action.
-	 *
-	 *  @param act Action for outputting the number.
-	 *  @param num Number to be outputted.
-	 *
-	 *  @return Zero on success or negative error code otherwise
-	 */
-	int         (*output_number)(bt_mesh_output_action_t act, uint32_t num) __deprecated;
-#else
 	/** @brief Output of a numeric value is requested.
 	 *
 	 *  This callback notifies the application that it should
@@ -198,7 +185,6 @@ struct bt_mesh_prov {
 	 *  @return Zero on success or negative error code otherwise
 	 */
 	int         (*output_numeric)(bt_mesh_output_action_t act, uint8_t *numeric, size_t size);
-#endif
 
 	/** @brief Output of a string is requested.
 	 *
@@ -336,19 +322,6 @@ struct bt_mesh_rpr_node;
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_mesh_input_string(const char *str);
-
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-/** @brief Provide provisioning input OOB number.
- *
- *  This is intended to be called after the @ref bt_mesh_prov::input callback
- *  has been called with @ref BT_MESH_ENTER_NUMBER as the action.
- *
- *  @param num Number.
- *
- *  @return Zero on success or (negative) error code otherwise.
- */
-__deprecated int bt_mesh_input_number(uint32_t num);
-#endif
 
 /** @brief Provide provisioning input OOB numeric value.
  *

@@ -289,14 +289,7 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, size_
 		}
 
 		get_auth_number(rand_bytes, &size);
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-		uint32_t output_num;
-
-		memcpy(&output_num, rand_bytes, sizeof(output_num));
-		return bt_mesh_prov->output_number(output, output_num);
-#else
 		return bt_mesh_prov->output_numeric(output, rand_bytes, size);
-#endif
 
 	case AUTH_METHOD_INPUT:
 		input = input_action(action);
@@ -324,38 +317,12 @@ int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, size_
 
 		get_auth_number(rand_bytes, &size);
 		output = BT_MESH_DISPLAY_NUMBER;
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-		uint32_t input_num;
-
-		memcpy(&input_num, rand_bytes, sizeof(input_num));
-		return bt_mesh_prov->output_number(output, input_num);
-#else
 		return bt_mesh_prov->output_numeric(output, rand_bytes, size);
-#endif
 
 	default:
 		return -EINVAL;
 	}
 }
-
-#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
-int bt_mesh_input_number(uint32_t num)
-{
-	uint8_t auth_size = bt_mesh_prov_auth_size_get();
-
-	LOG_DBG("%u", num);
-
-	if (!atomic_test_and_clear_bit(bt_mesh_prov_link.flags, WAIT_NUMBER)) {
-		return -EINVAL;
-	}
-
-	sys_put_be32(num, &bt_mesh_prov_link.auth[auth_size - sizeof(num)]);
-
-	bt_mesh_prov_link.role->input_complete();
-
-	return 0;
-}
-#endif
 
 int bt_mesh_input_numeric(uint8_t *numeric, size_t size)
 {
