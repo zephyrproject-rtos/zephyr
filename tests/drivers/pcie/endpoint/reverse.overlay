@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&decl_a {
+	pcie-controller = <&ctrl_b>;
+};
+
+&decl_b {
+	pcie-controller = <&ctrl_a>;
+};

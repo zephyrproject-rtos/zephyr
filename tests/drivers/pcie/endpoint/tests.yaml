@@ -12,3 +12,11 @@ common:
 
 tests:
   drivers.pcie.endpoint: {}
+  drivers.pcie.endpoint.reverse:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=reverse.overlay
+  drivers.pcie.endpoint.unready:
+    extra_args: PCIE_TEST_FAIL_CTRL_B=ON
+  drivers.pcie.endpoint.unready_reverse:
+    extra_args:
+      - PCIE_TEST_FAIL_CTRL_B=ON
+      - EXTRA_DTC_OVERLAY_FILE=reverse.overlay

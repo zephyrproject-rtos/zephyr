@@ -19,6 +19,7 @@ struct fake_ctrl {
 	uint32_t table[1024];
 	uint32_t bus_address;
 	uint32_t reads;
+	uint32_t root_reads;
 	uint32_t status_reads;
 	uint32_t writes;
 	uint32_t write_attempts;
@@ -27,9 +28,26 @@ struct fake_ctrl {
 	int read_error;
 	int write_error;
 	bool translate;
+	bool reject_bus_zero;
 };
 
 static struct fake_ctrl ctrl_data_a, ctrl_data_b;
+static bool early_found[2];
+
+DEVICE_PCIE_ENDPOINT_DECLARE(DT_NODELABEL(decl_a));
+DEVICE_PCIE_ENDPOINT_DECLARE(DT_NODELABEL(decl_b));
+
+STRUCT_SECTION_ITERABLE(pcie_dev, zz_extra_a) = {
+	.bdf = PCIE_BDF_NONE,
+	.id = TEST_ID,
+	.ctrl = DEVICE_DT_GET(DT_NODELABEL(ctrl_a)),
+};
+
+STRUCT_SECTION_ITERABLE(pcie_dev, zz_extra_b) = {
+	.bdf = PCIE_BDF_NONE,
+	.id = TEST_ID,
+	.ctrl = DEVICE_DT_GET(DT_NODELABEL(ctrl_a)),
+};
 
 static void reset_ctrl(struct fake_ctrl *data, bool msix)
 {
@@ -55,6 +73,9 @@ static uint32_t fake_read(const struct device *dev, pcie_bdf_t bdf, unsigned int
 	struct fake_ctrl *data = dev->data;
 
 	data->reads++;
+	if (bdf == PCIE_BDF(0, 0, 0)) {
+		data->root_reads++;
+	}
 	if (bdf == PCIE_BDF(0, 0, 0) || bdf == PCIE_BDF(1, 1, 0)) {
 		switch (reg) {
 		case PCIE_CONF_ID:
@@ -67,7 +88,7 @@ static uint32_t fake_read(const struct device *dev, pcie_bdf_t bdf, unsigned int
 			return 0U;
 		}
 	}
-	if (bdf != TEST_BDF && bdf != PCIE_BDF(2, 0, 0)) {
+	if (bdf != TEST_BDF && bdf != PCIE_BDF(2, 0, 0) && bdf != PCIE_BDF(128, 0, 0)) {
 		return UINT32_MAX;
 	}
 	if (reg >= PCIE_CONF_BAR0 && reg <= PCIE_CONF_BAR5 &&
@@ -96,6 +117,9 @@ static int fake_read_status(const struct device *dev, pcie_bdf_t bdf, unsigned i
 	struct fake_ctrl *data = dev->data;
 
 	data->status_reads++;
+	if (data->reject_bus_zero && PCIE_BDF_TO_BUS(bdf) == 0U) {
+		return -ERANGE;
+	}
 	if (data->status_reads == data->fail_read_at) {
 		return -EIO;
 	}
@@ -161,12 +185,31 @@ static DEVICE_API(pcie_ctrl, empty_api) = {
 	.conf_read = NULL,
 };
 
+static bool early_scan(const struct pcie_endpoint *ep, pcie_id_t id, void *arg)
+{
+	bool *found = arg;
+
+	if (id == TEST_ID) {
+		*found = ep->bdf == TEST_BDF;
+		return false;
+	}
+	return true;
+}
+
 static int fake_init(const struct device *dev)
 {
 	struct fake_ctrl *data = dev->data;
+	struct pcie_scan_ctrl_opt opt = {
+		.cb = early_scan,
+		.cb_data = &early_found[dev == DEVICE_DT_GET(DT_NODELABEL(ctrl_b))],
+		.flags = PCIE_SCAN_RECURSIVE,
+	};
 
 	reset_ctrl(data, dev == DEVICE_DT_GET(DT_NODELABEL(ctrl_b)));
-	return 0;
+	if (IS_ENABLED(PCIE_TEST_FAIL_CTRL_B) && dev == DEVICE_DT_GET(DT_NODELABEL(ctrl_b))) {
+		return -EIO;
+	}
+	return pcie_scan_ctrl(dev, &opt);
 }
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ctrl_a), fake_init, NULL, &ctrl_data_a, NULL,
@@ -191,6 +234,9 @@ static const struct pcie_endpoint ep_empty = {
 static void before(void *fixture)
 {
 	ARG_UNUSED(fixture);
+	if (IS_ENABLED(PCIE_TEST_FAIL_CTRL_B)) {
+		ztest_test_skip();
+	}
 	reset_ctrl(&ctrl_data_a, false);
 	reset_ctrl(&ctrl_data_b, true);
 }
@@ -340,6 +386,166 @@ ZTEST(pcie_endpoint, test_legacy_bar_probe_preserves_status)
 	zassert_false(pcie_get_mbar(TEST_BDF, 0U, &bar));
 }
 
+struct scan_result {
+	const struct device *ctrl;
+	uint32_t count;
+	bool stop;
+};
+
+static bool scan_cb(const struct pcie_endpoint *ep, pcie_id_t id, void *arg)
+{
+	struct scan_result *result = arg;
+
+	zassert_equal_ptr(ep->ctrl, result->ctrl);
+	zassert_equal(id, TEST_ID);
+	result->count++;
+	return !result->stop;
+}
+
+static bool mask_bdf(const struct pcie_endpoint *ep, void *cb_data)
+{
+	ARG_UNUSED(cb_data);
+
+	zassert_equal_ptr(ep->ctrl, ep_b.ctrl);
+	return ep->bdf == PCIE_BDF(1, 1, 0);
+}
+
+ZTEST(pcie_endpoint, test_scan_recursion_mask_and_stop)
+{
+	struct scan_result result = {.ctrl = ep_b.ctrl};
+	struct pcie_scan_ctrl_opt opt = {
+		.cb = scan_cb, .cb_data = &result, .flags = PCIE_SCAN_RECURSIVE,
+	};
+
+	zassert_ok(pcie_scan_ctrl(ep_b.ctrl, &opt));
+	zassert_equal(result.count, 2U);
+	zassert_equal(ctrl_data_a.reads, 0U);
+	result.count = 0U;
+	opt.scan_masking_fn = mask_bdf;
+	zassert_ok(pcie_scan_ctrl(ep_b.ctrl, &opt));
+	zassert_equal(result.count, 1U);
+	result.count = 0U;
+	opt.scan_masking_fn = NULL;
+	result.stop = true;
+	zassert_ok(pcie_scan_ctrl(ep_b.ctrl, &opt));
+	zassert_equal(result.count, 1U);
+	zassert_equal(pcie_scan_ctrl(NULL, &opt), -EINVAL);
+	zassert_equal(pcie_scan_ctrl(ep_b.ctrl, NULL), -EINVAL);
+	zassert_equal(pcie_scan(NULL), -EINVAL);
+	ctrl_data_b.read_error = -EIO;
+	zassert_equal(pcie_scan_ctrl(ep_b.ctrl, &opt), -EIO);
+}
+
+static bool mask_root(const struct pcie_endpoint *ep, void *cb_data)
+{
+	ARG_UNUSED(cb_data);
+
+	return ep->bdf == PCIE_BDF(0, 0, 0);
+}
+
+ZTEST(pcie_endpoint, test_scan_nonzero_bus_does_not_access_bus_zero)
+{
+	struct scan_result result = {.ctrl = ep_b.ctrl};
+	struct pcie_scan_ctrl_opt opt = {
+		.bus = 128U, .cb = scan_cb, .cb_data = &result, .flags = PCIE_SCAN_RECURSIVE,
+	};
+
+	ctrl_data_b.reject_bus_zero = true;
+	zassert_ok(pcie_scan_ctrl(ep_b.ctrl, &opt));
+	zassert_equal(result.count, 1U);
+	zassert_equal(ctrl_data_b.root_reads, 0U);
+	zassert_equal(ctrl_data_a.reads, 0U);
+}
+
+ZTEST(pcie_endpoint, test_scan_masked_root_is_not_read)
+{
+	struct scan_result result = {.ctrl = ep_b.ctrl};
+	struct pcie_scan_ctrl_opt opt = {
+		.cb = scan_cb, .cb_data = &result, .flags = PCIE_SCAN_RECURSIVE,
+		.scan_masking_fn = mask_root,
+	};
+
+	zassert_ok(pcie_scan_ctrl(ep_b.ctrl, &opt));
+	zassert_equal(result.count, 0U);
+	zassert_equal(ctrl_data_b.root_reads, 0U);
+	zassert_equal(ctrl_data_a.reads, 0U);
+}
+
+ZTEST(pcie_binding, test_static_declarations_bind_only_to_owner)
+{
+	struct pcie_dev *a = &Z_DEVICE_PCIE_NAME(DT_NODELABEL(decl_a));
+	struct pcie_dev *b = &Z_DEVICE_PCIE_NAME(DT_NODELABEL(decl_b));
+	struct pcie_endpoint ep = pcie_dev_endpoint(a);
+
+	zassert_equal_ptr(a->ctrl, DEVICE_DT_GET(PCIE_DT_CONTROLLER(DT_NODELABEL(decl_a))));
+	zassert_equal_ptr(b->ctrl, DEVICE_DT_GET(PCIE_DT_CONTROLLER(DT_NODELABEL(decl_b))));
+	zassert_not_equal(a->ctrl, b->ctrl);
+	zassert_equal(a->bdf, device_is_ready(a->ctrl) ? TEST_BDF : PCIE_BDF_NONE);
+	zassert_equal(b->bdf, device_is_ready(b->ctrl) ? TEST_BDF : PCIE_BDF_NONE);
+	zassert_equal(ep.bdf, a->bdf);
+	zassert_equal_ptr(ep.ctrl, a->ctrl);
+	zassert_equal(zz_extra_a.bdf, PCIE_BDF(2, 0, 0));
+	zassert_equal(zz_extra_b.bdf, PCIE_BDF_NONE);
+}
+
+static void *suite_setup(void)
+{
+	zassert_true(early_found[0]);
+	zassert_equal(early_found[1], !IS_ENABLED(PCIE_TEST_FAIL_CTRL_B));
+	return NULL;
+}
+
+static bool legacy_scan_cb(pcie_bdf_t bdf, pcie_id_t id, void *arg)
+{
+	uint32_t *count = arg;
+
+	zassert_true(bdf == TEST_BDF || bdf == PCIE_BDF(2, 0, 0));
+	zassert_equal(id, TEST_ID);
+	(*count)++;
+	return true;
+}
+
+
+static bool legacy_scan_mask(pcie_bdf_t bdf)
+{
+	return bdf == PCIE_BDF(1, 1, 0);
+}
+
+
+ZTEST(pcie_endpoint, test_legacy_scan_mask_and_callback)
+{
+	uint32_t count = 0U;
+	struct pcie_scan_opt opt = {
+		.cb = legacy_scan_cb, .cb_data = &count, .flags = PCIE_SCAN_RECURSIVE,
+		.scan_masking_fn = legacy_scan_mask,
+	};
+
+	zassert_ok(pcie_scan(&opt));
+	zassert_equal(count, 1U);
+	zassert_equal(ctrl_data_b.reads, 0U);
+}
+
+
+static bool legacy_mask_root(pcie_bdf_t bdf)
+{
+	return bdf == PCIE_BDF(0, 0, 0);
+}
+
+ZTEST(pcie_endpoint, test_legacy_scan_masked_root_is_not_read)
+{
+	uint32_t count = 0U;
+	struct pcie_scan_opt opt = {
+		.cb = legacy_scan_cb, .cb_data = &count, .flags = PCIE_SCAN_RECURSIVE,
+		.scan_masking_fn = legacy_mask_root,
+	};
+
+	zassert_ok(pcie_scan(&opt));
+	zassert_equal(count, 0U);
+	zassert_equal(ctrl_data_a.root_reads, 0U);
+	zassert_equal(ctrl_data_b.reads, 0U);
+}
+
+ZTEST_SUITE(pcie_binding, NULL, suite_setup, NULL, NULL, NULL);
 ZTEST_SUITE(pcie_endpoint, NULL, NULL, before, NULL, NULL);
 
 ZTEST(pcie_endpoint, test_invalid_bdf_reads_are_rejected_before_access)

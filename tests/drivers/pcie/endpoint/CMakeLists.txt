@@ -6,3 +6,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(pcie_endpoint)
 
 target_sources(app PRIVATE src/main.c)
+
+if(PCIE_TEST_FAIL_CTRL_B)
+  target_compile_definitions(app PRIVATE PCIE_TEST_FAIL_CTRL_B=1)
+endif()
