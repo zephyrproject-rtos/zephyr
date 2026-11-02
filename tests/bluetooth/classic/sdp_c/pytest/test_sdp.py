@@ -331,11 +331,11 @@ SDP_SERVICE_RECORDS_A2DP_SINK = {
 SHELL_DECORATION = re.compile(r'\x1b\[[0-9;]*[A-Za-z]|uart:~\$ ')
 
 
-async def wait_for_shell_response(dut, message):
+async def wait_for_shell_response(dut, message, max_time=30):
     found = False
     lines = []
     try:
-        while found is False:
+        for _ in range(max_time):
             read_lines = [SHELL_DECORATION.sub('', line) for line in dut.readlines()]
             for line in read_lines:
                 logger.info(f'{str(line)}')
@@ -344,6 +344,8 @@ async def wait_for_shell_response(dut, message):
                     break
             lines = lines + read_lines
             await asyncio.sleep(1)
+            if found:
+                break
     except Exception as e:
         logger.error(f'{e}!', exc_info=True)
         raise e
