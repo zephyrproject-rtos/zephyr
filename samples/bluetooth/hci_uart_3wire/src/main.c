@@ -140,10 +140,7 @@ static struct k_poll_signal tx_queue_change =
 
 static void h5_reset_rx(void)
 {
-	if (h5.rx_buf) {
-		net_buf_unref(h5.rx_buf);
-		h5.rx_buf = NULL;
-	}
+	net_buf_drop(&h5.rx_buf);
 
 	h5.rx_state = START;
 }
@@ -396,8 +393,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 
 	process_unack();
 
-	buf = h5.rx_buf;
-	h5.rx_buf = NULL;
+	buf = net_buf_take(&h5.rx_buf);
 
 	switch (H5_HDR_PKT_TYPE(hdr)) {
 	case HCI_3WIRE_ACK_PKT:

@@ -192,10 +192,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				 * (-ENOTCONN): drop any partial frame and resync on the next
 				 * packet type byte once a new Host connects.
 				 */
-				if (buf != NULL) {
-					net_buf_unref(buf);
-					buf = NULL;
-				}
+				net_buf_drop(&buf);
 				state = ST_TYPE;
 				break;
 			}
@@ -223,10 +220,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 						    K_FOREVER, NULL, 0);
 				if (buf == NULL ||
 				    header_len(type) + remaining > net_buf_tailroom(buf)) {
-					if (buf != NULL) {
-						net_buf_unref(buf);
-						buf = NULL;
-					}
+					net_buf_drop(&buf);
 					LOG_WRN("Dropping HCI packet: no suitable buffer");
 					state = remaining > 0U ? ST_DISCARD : ST_TYPE;
 					break;
@@ -250,8 +244,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			}
 
 			if (state == ST_PAYLOAD && remaining == 0U) {
-				forward_to_controller(buf);
-				buf = NULL;
+				forward_to_controller(net_buf_take(&buf));
 				state = ST_TYPE;
 			}
 		}
