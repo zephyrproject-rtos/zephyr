@@ -66,7 +66,7 @@ static struct k_spinlock nsos_polls_lock;
 
 static int nsos_socket_offload_init(const struct device *arg);
 
-static struct offloaded_if_api nsos_iface_offload_api;
+static const struct offloaded_if_api nsos_iface_offload_api;
 
 NET_DEVICE_OFFLOAD_INIT(nsos_socket, "nsos_socket",
 			nsos_socket_offload_init,
@@ -1996,7 +1996,7 @@ static int nsos_iface_enable(const struct net_if *iface, bool enabled)
 	return 0;
 }
 
-static struct offloaded_if_api nsos_iface_offload_api = {
+static const struct offloaded_if_api nsos_iface_offload_api = {
 	.iface_api.init = nsos_iface_api_init,
 	.enable = nsos_iface_enable,
 };

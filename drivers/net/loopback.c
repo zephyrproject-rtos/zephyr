@@ -172,7 +172,7 @@ out:
 	return res;
 }
 
-static struct dummy_api loopback_api = {
+static const struct dummy_api loopback_api = {
 	.iface_api.init = loopback_init,
 
 	.send = loopback_send,
