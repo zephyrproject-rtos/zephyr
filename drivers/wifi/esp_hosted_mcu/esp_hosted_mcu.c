@@ -1029,7 +1029,7 @@ static const struct wifi_mgmt_ops esp_hosted_mcu_mgmt = {
 #endif
 };
 
-static const struct net_wifi_mgmt_offload esp_hosted_mcu_api = {
+static DEVICE_API(wifi_native, esp_hosted_mcu_api) = {
 	.wifi_iface.iface_api.init = esp_hosted_mcu_iface_init,
 	.wifi_iface.send = esp_hosted_mcu_send,
 	.wifi_mgmt_api = &esp_hosted_mcu_mgmt,

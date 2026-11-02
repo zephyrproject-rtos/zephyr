@@ -2646,7 +2646,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 };
 #endif
 
-static const struct net_wifi_mgmt_offload nxp_wifi_sta_apis = {
+static DEVICE_API(wifi_native, nxp_wifi_sta_apis) = {
 	.wifi_iface.iface_api.init = nxp_wifi_sta_init,
 	.wifi_iface.set_config = nxp_wifi_set_config,
 	.wifi_iface.get_config = nxp_wifi_get_config,
@@ -2692,7 +2692,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 DEFINE_WIFI_NM_INSTANCE(wifi_sap, &nxp_wifi_uap_mgmt);
 #endif
 
-static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
+static DEVICE_API(wifi_native, nxp_wifi_uap_apis) = {
 	.wifi_iface.iface_api.init = nxp_wifi_uap_init,
 	.wifi_iface.set_config = nxp_wifi_set_config,
 	.wifi_iface.get_config = nxp_wifi_get_config,

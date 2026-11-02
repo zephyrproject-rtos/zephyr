@@ -311,7 +311,7 @@ static const struct wifi_mgmt_ops hwsim_mgmt_ops = {
 	.iface_status = hwsim_mgmt_iface_status,
 };
 
-static const struct net_wifi_mgmt_offload hwsim_api = {
+static DEVICE_API(wifi_native, hwsim_api) = {
 	.wifi_iface = {
 		.iface_api.init = hwsim_iface_init,
 		.send = hwsim_send,
