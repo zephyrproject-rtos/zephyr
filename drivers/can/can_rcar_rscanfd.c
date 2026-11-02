@@ -298,7 +298,7 @@ LOG_MODULE_REGISTER(can_rcar_rscanfd, CONFIG_CAN_LOG_LEVEL);
 #define CAN_RCAR_RSCANFD_TDCO_MAX 255
 
 struct can_rcar_rscanfd_global_config {
-	uint32_t reg;
+	DEVICE_MMIO_ROM;
 	const struct device *clock_dev;
 	rcar_generic_clk_t global_clk;
 	rcar_generic_clk_t module_clk;
@@ -306,6 +306,7 @@ struct can_rcar_rscanfd_global_config {
 };
 
 struct can_rcar_rscanfd_global_data {
+	DEVICE_MMIO_RAM;
 	struct k_mutex list_mutex;
 	const struct device *channel_dev[CAN_RCAR_RSCANFD_CHANNELS_COUNT];
 	uint32_t enabled_channels_count;
@@ -314,7 +315,6 @@ struct can_rcar_rscanfd_global_data {
 struct can_rcar_rscanfd_config {
 	const struct can_driver_config common;
 	const struct device *global_dev;
-	uint32_t reg;
 	uint32_t channel;
 	const struct pinctrl_dev_config *pcfg;
 	void (*configure_irq)(void);
@@ -345,36 +345,36 @@ struct can_rcar_rscanfd_data {
 
 static int can_rcar_rscanfd_set_mode(const struct device *dev, can_mode_t mode);
 
-static inline uint32_t can_rcar_rscanfd_read(const struct device *dev, uint32_t offset)
+static inline uint32_t can_rcar_rscanfd_read(const struct device *global_dev, uint32_t offset)
 {
-	const struct can_rcar_rscanfd_config *config = dev->config;
-
-	return sys_read32(config->reg + offset);
+	return sys_read32(DEVICE_MMIO_GET(global_dev) + offset);
 }
 
-static inline void can_rcar_rscanfd_write(const struct device *dev,
-					  uint32_t offset, uint32_t value)
+static inline void can_rcar_rscanfd_write(const struct device *global_dev, uint32_t offset,
+					  uint32_t value)
 {
-	const struct can_rcar_rscanfd_config *config = dev->config;
-
-	sys_write32(value, config->reg + offset);
+	sys_write32(value, DEVICE_MMIO_GET(global_dev) + offset);
 }
 
 /* Note : this function can sleep, do not use it in interrupt context. */
-static inline int can_rcar_rscanfd_busy_wait(mem_addr_t reg, uint32_t bit_mask, bool expect_one)
+static inline int can_rcar_rscanfd_busy_wait(const struct device *global_dev, uint32_t offset,
+					     uint32_t bit_mask, bool expect_one)
 {
 	const int TIMEOUT = 2000; /* Don't wait for too long */
+	const uint32_t SLEEPING_DELAY_US = 10;
 	bool success;
 
 	if (expect_one) {
-		success = WAIT_FOR(sys_read32(reg) & bit_mask, TIMEOUT, k_sleep(K_USEC(10)));
+		success = WAIT_FOR(can_rcar_rscanfd_read(global_dev, offset) & bit_mask,
+			TIMEOUT, k_sleep(K_USEC(SLEEPING_DELAY_US)));
 	} else {
-		success = WAIT_FOR(!(sys_read32(reg) & bit_mask), TIMEOUT, k_sleep(K_USEC(10)));
+		success = WAIT_FOR(!(can_rcar_rscanfd_read(global_dev, offset) & bit_mask),
+			TIMEOUT, k_sleep(K_USEC(SLEEPING_DELAY_US)));
 	}
 
 	if (!success) {
-		LOG_DBG("Busy wait timed out. reg=0x%08lX, bit_mask=%08X, expect_one=%d",
-			reg, bit_mask, expect_one);
+		LOG_DBG("Busy wait timed out. addr=0x%08lX, bit_mask=%08X, expect_one=%d",
+			DEVICE_MMIO_GET(global_dev) + offset, bit_mask, expect_one);
 		return -EAGAIN;
 	}
 
@@ -382,41 +382,40 @@ static inline int can_rcar_rscanfd_busy_wait(mem_addr_t reg, uint32_t bit_mask, 
 }
 
 /* Note : the reset state is applied at controller level, impacting all channels. */
-static int can_rcar_rscanfd_enter_reset_mode(const struct can_rcar_rscanfd_global_config *config)
+static int can_rcar_rscanfd_enter_reset_mode(const struct device *global_dev)
 {
 	/* Request the global reset mode, resetting all other fields in the same time */
-	sys_write32(RSCANFD_CFDGCTR_GMDC_GLOBAL_RESET_MODE_REQUEST, config->reg + RSCANFD_CFDGCTR);
+	can_rcar_rscanfd_write(global_dev, RSCANFD_CFDGCTR,
+		RSCANFD_CFDGCTR_GMDC_GLOBAL_RESET_MODE_REQUEST);
 
-	return can_rcar_rscanfd_busy_wait(config->reg + RSCANFD_CFDGSTS,
-		RSCANFD_CFDGSTS_GRSTSTS, 1);
+	return can_rcar_rscanfd_busy_wait(global_dev, RSCANFD_CFDGSTS, RSCANFD_CFDGSTS_GRSTSTS, 1);
 }
 
 /* Note : the operation state is applied at controller level, impacting all channels. */
-static int can_rcar_rscanfd_enter_operation_mode(
-	const struct can_rcar_rscanfd_global_config *config)
+static int can_rcar_rscanfd_enter_operation_mode(const struct device *global_dev)
 {
 	uint32_t val;
 
-	val = sys_read32(config->reg + RSCANFD_CFDGCTR);
+	val = can_rcar_rscanfd_read(global_dev, RSCANFD_CFDGCTR);
 	val &= ~(RSCANFD_CFDGCTR_GMDC_MASK << RSCANFD_CFDGCTR_GMDC_SHIFT);
 	val |= RSCANFD_CFDGCTR_GMDC_GLOBAL_OPERATION_MODE_REQUEST << RSCANFD_CFDGCTR_GMDC_SHIFT;
-	sys_write32(val, config->reg + RSCANFD_CFDGCTR);
+	can_rcar_rscanfd_write(global_dev, RSCANFD_CFDGCTR, val);
 
-	return can_rcar_rscanfd_busy_wait(config->reg + RSCANFD_CFDGSTS,
-		RSCANFD_CFDGSTS_GRSTSTS, 0);
+	return can_rcar_rscanfd_busy_wait(global_dev, RSCANFD_CFDGSTS, RSCANFD_CFDGSTS_GRSTSTS, 0);
 }
 
 static int can_rcar_rscanfd_channel_leave_sleep_mode(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 	int ret;
 
 	/* Release the channel from sleep mode, resetting all other fields at the same time. */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR,
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR,
 		RSCANFD_CFDCNCTR_CHMDC_CHANNEL_RESET_REQUEST << RSCANFD_CFDCNCTR_CHMDC_SHIFT);
 
-	ret = can_rcar_rscanfd_busy_wait(config->reg + base_offset + RSCANFD_CFDCNSTS,
+	ret = can_rcar_rscanfd_busy_wait(global_dev, base_offset + RSCANFD_CFDCNSTS,
 		RSCANFD_CFDCNSTS_CSLPSTS, 0);
 	if (ret != 0) {
 		LOG_ERR("Leaving the sleep mode for %s took too long.", dev->name);
@@ -429,17 +428,18 @@ static int can_rcar_rscanfd_channel_leave_sleep_mode(const struct device *dev)
 static int can_rcar_rscanfd_channel_enter_reset_mode(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 	int ret;
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNCTR);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNCTR);
 	val &= ~(RSCANFD_CFDCNCTR_CHMDC_MASK << RSCANFD_CFDCNCTR_CHMDC_SHIFT);
 	val |= RSCANFD_CFDCNCTR_CHMDC_CHANNEL_RESET_REQUEST << RSCANFD_CFDCNCTR_CHMDC_SHIFT;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR, val);
 
-	ret = can_rcar_rscanfd_busy_wait(config->reg + base_offset + RSCANFD_CFDCNSTS,
+	ret = can_rcar_rscanfd_busy_wait(global_dev, base_offset + RSCANFD_CFDCNSTS,
 		RSCANFD_CFDCNSTS_CRSTSTS, 1);
 	if (ret != 0) {
 		LOG_ERR("Entering the reset mode for %s took too long.", dev->name);
@@ -453,39 +453,41 @@ static int can_rcar_rscanfd_channel_enter_reset_mode(const struct device *dev)
 static int can_rcar_rscanfd_channel_enter_halt_mode(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNCTR);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNCTR);
 	val &= ~(RSCANFD_CFDCNCTR_CHMDC_MASK << RSCANFD_CFDCNCTR_CHMDC_SHIFT);
 	val |= RSCANFD_CFDCNCTR_CHMDC_CHANNEL_HALT_REQUEST << RSCANFD_CFDCNCTR_CHMDC_SHIFT;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR, val);
 
-	return can_rcar_rscanfd_busy_wait(config->reg + base_offset + RSCANFD_CFDCNSTS,
+	return can_rcar_rscanfd_busy_wait(global_dev, base_offset + RSCANFD_CFDCNSTS,
 		RSCANFD_CFDCNSTS_CHLTSTS, 1);
 }
 
 static int can_rcar_rscanfd_channel_enter_operation_mode(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 	int ret;
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNCTR);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNCTR);
 	val &= ~(RSCANFD_CFDCNCTR_CHMDC_MASK << RSCANFD_CFDCNCTR_CHMDC_SHIFT);
 	val |= RSCANFD_CFDCNCTR_CHMDC_CHANNEL_OPERATION_REQUEST << RSCANFD_CFDCNCTR_CHMDC_SHIFT;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR, val);
 
-	ret = can_rcar_rscanfd_busy_wait(config->reg + base_offset + RSCANFD_CFDCNSTS,
+	ret = can_rcar_rscanfd_busy_wait(global_dev, base_offset + RSCANFD_CFDCNSTS,
 		RSCANFD_CFDCNSTS_CRSTSTS, 0);
 	if (ret != 0) {
 		LOG_ERR("Going from reset to operation mode for %s took too long.", dev->name);
 		return ret;
 	}
-	ret = can_rcar_rscanfd_busy_wait(config->reg + base_offset + RSCANFD_CFDCNSTS,
+	ret = can_rcar_rscanfd_busy_wait(global_dev, base_offset + RSCANFD_CFDCNSTS,
 		RSCANFD_CFDCNSTS_CHLTSTS, 0);
 	if (ret != 0) {
 		LOG_ERR("Going from halt to operation mode for %s took too long.", dev->name);
@@ -498,37 +500,38 @@ static int can_rcar_rscanfd_channel_enter_operation_mode(const struct device *de
 static void can_rcar_rscanfd_set_communication_enabled(const struct device *dev, bool enabled)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 
 	/* The first Common FIFO dedicated to the channel is used for reception */
 	base_offset = config->channel * sizeof(uint32_t) *
 		CAN_RCAR_RSCANFD_COMMON_FIFO_PER_CHANNEL;
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFCCN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFCCN);
 	if (enabled) {
 		val |= RSCANFD_CFDCFCCN_CFE;
 	} else {
 		val &= ~RSCANFD_CFDCFCCN_CFE;
 	}
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCFCCN, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCFCCN, val);
 
 	/* Enable the TX queue */
 	base_offset = config->channel * sizeof(uint32_t);
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDTXQCC0N);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDTXQCC0N);
 	if (enabled) {
 		val |= RSCANFD_CFDTXQCC0N_TXQE;
 	} else {
 		val &= ~RSCANFD_CFDTXQCC0N_TXQE;
 	}
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTXQCC0N, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTXQCC0N, val);
 
 	/* Enable the corresponding TX history list */
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDTHLCCN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDTHLCCN);
 	if (enabled) {
 		val |= RSCANFD_CFDTHLCCN_THLE;
 	} else {
 		val &= ~RSCANFD_CFDTHLCCN_THLE;
 	}
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTHLCCN, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTHLCCN, val);
 }
 
 /*
@@ -538,18 +541,19 @@ static void can_rcar_rscanfd_set_communication_enabled(const struct device *dev,
 static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val, shift;
 
 	/*
 	 * Enable write access for the page 0 (set the page index 0 value in the same time).
 	 * As all channels will use a single rule, only the first page is needed.
 	 */
-	can_rcar_rscanfd_write(dev, RSCANFD_CFDGAFLECTR, RSCANFD_CFDGAFLECTR_AFLDAE);
+	can_rcar_rscanfd_write(global_dev, RSCANFD_CFDGAFLECTR, RSCANFD_CFDGAFLECTR_AFLDAE);
 
 	/* There are two consecutive channel rules per CFDGAFLCFGn register */
 	base_offset = RSCANFD_CFDGAFLCFGN + (config->channel / 2) * sizeof(uint32_t);
 	/* Address the correct channel within the register */
-	val = can_rcar_rscanfd_read(dev, base_offset);
+	val = can_rcar_rscanfd_read(global_dev, base_offset);
 	if (config->channel & 1) { /* Odd channel */
 		shift = RSCANFD_CFDGAFLCFGN_RNC_CHANNEL_ODD_SHIFT;
 	} else {
@@ -558,45 +562,46 @@ static inline void can_rcar_rscanfd_configure_acceptance_filter_list(const struc
 	val &= ~(RSCANFD_CFDGAFLCFGN_RNC_CHANNEL_MASK << shift);
 	/* Configure one rule for the channel */
 	val |= 1 << shift;
-	can_rcar_rscanfd_write(dev, base_offset, val);
+	can_rcar_rscanfd_write(global_dev, base_offset, val);
 
 	/* A page contains 16 consecutive entries */
 	base_offset = config->channel * CAN_RCAR_RSCANFD_AFL_ENTRY_SIZE;
 	/* Clear the CAN ID as it won't be taken into account by the mask register */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDGAFLIDN, 0);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDGAFLIDN, 0);
 	/* Accept all received CAN frames */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDGAFLMN, 0);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDGAFLMN, 0);
 	/* Disable the DLC check */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDGAFLP0N, 0);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDGAFLP0N, 0);
 	/* Use the first Common FIFO dedicated to each channel as target for reception */
 	val = config->channel * CAN_RCAR_RSCANFD_COMMON_FIFO_PER_CHANNEL;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDGAFLP1N, 0x100 << val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDGAFLP1N, 0x100 << val);
 
 	/* Disable write access for page 0 */
-	can_rcar_rscanfd_write(dev, RSCANFD_CFDGAFLECTR, 0);
+	can_rcar_rscanfd_write(global_dev, RSCANFD_CFDGAFLECTR, 0);
 }
 
 static inline void can_rcar_rscanfd_configure_communication_path(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset;
 
 	/* Use the TX Queue 0 for transmission */
 	base_offset = config->channel * sizeof(uint32_t);
 
 	/* Configure the queue depth */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTXQCC0N,
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTXQCC0N,
 		RSCANFD_CFDTXQCC0N_TXQDC_DEPTH_32_MSG << RSCANFD_CFDTXQCC0N_TXQDC_SHIFT);
 
 	/* Configure the TX history list, which is used to identify the transmitted frames */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTHLCCN,
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTHLCCN,
 		RSCANFD_CFDTHLCCN_THLIE | /* Enable the TX History List interrupt */
 		RSCANFD_CFDTHLCCN_THLIM); /* Generate an interrupt for every stored entry */
 
 	/* Use the first Common FIFO for reception */
 	base_offset = config->channel * sizeof(uint32_t) *
 		CAN_RCAR_RSCANFD_COMMON_FIFO_PER_CHANNEL;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCFCCN,
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCFCCN,
 		RSCANFD_CFDCFCCN_CFDC_DEPTH_64 << RSCANFD_CFDCFCCN_CFDC_SHIFT |
 		RSCANFD_CFDCFCCN_CFIM_EVERY_MESSAGE << RSCANFD_CFDCFCCN_CFIM_SHIFT |
 		RSCANFD_CFDCFCCN_CFM_RX << RSCANFD_CFDCFCCN_CFM_SHIFT |
@@ -607,14 +612,15 @@ static inline void can_rcar_rscanfd_configure_communication_path(const struct de
 static inline void can_rcar_rscanfd_configure_errors(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNCTR);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNCTR);
 	val |= RSCANFD_CFDCNCTR_ALIE | RSCANFD_CFDCNCTR_BORIE | RSCANFD_CFDCNCTR_BOEIE |
 		RSCANFD_CFDCNCTR_EPIE | RSCANFD_CFDCNCTR_EWIE | RSCANFD_CFDCNCTR_BEIE;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR, val);
 }
 
 /*
@@ -634,7 +640,7 @@ static void can_rcar_rscanfd_configure_timing(const struct device *dev,
 	/* Each channel is handled by a group of four 4-byte registers */
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNNCFG,
+	can_rcar_rscanfd_write(config->global_dev, base_offset + RSCANFD_CFDCNNCFG,
 		(timing->phase_seg1 + timing->prop_seg - 1) << RSCANFD_CFDCNNCFG_NTSEG1_SHIFT |
 		(timing->phase_seg2 - 1) << RSCANFD_CFDCNNCFG_NTSEG2_SHIFT |
 		timing->sjw << RSCANFD_CFDCNNCFG_NSJW_SHIFT |
@@ -649,7 +655,7 @@ static void can_rcar_rscanfd_get_error_count(const struct device *dev,
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNSTS);
+	val = can_rcar_rscanfd_read(config->global_dev, base_offset + RSCANFD_CFDCNSTS);
 	err_cnt->tx_err_cnt = (val >> RSCANFD_CFDCNSTS_TEC_SHIFT) & RSCANFD_CFDCNSTS_TEC_MASK;
 	err_cnt->rx_err_cnt = (val >> RSCANFD_CFDCNSTS_REC_SHIFT) & RSCANFD_CFDCNSTS_REC_MASK;
 }
@@ -691,6 +697,7 @@ static int can_rcar_rscanfd_get_capabilities(const struct device *dev, can_mode_
 static int can_rcar_rscanfd_start(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	int ret;
 	uint32_t base_offset, val;
@@ -739,23 +746,23 @@ static int can_rcar_rscanfd_start(const struct device *dev)
 	/* Discard any previous channel interrupt, starting from the error-related ones */
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE +
 		RSCANFD_CFDCNERFL;
-	val = can_rcar_rscanfd_read(dev, base_offset);
+	val = can_rcar_rscanfd_read(global_dev, base_offset);
 	val &= (RSCANFD_CFDCNERFL_ALF | RSCANFD_CFDCNERFL_BORF | RSCANFD_CFDCNERFL_BOEF |
 		RSCANFD_CFDCNERFL_EPF | RSCANFD_CFDCNERFL_EWF | RSCANFD_CFDCNERFL_BEF);
-	can_rcar_rscanfd_write(dev, base_offset, val);
+	can_rcar_rscanfd_write(global_dev, base_offset, val);
 
 	/* Discard the previous transmission interrupts on the channel TX queue 0 history list */
 	base_offset = config->channel * sizeof(uint32_t);
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDTHLSTSN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDTHLSTSN);
 	val &= ~RSCANFD_CFDTHLSTSN_THLIF;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTHLSTSN, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTHLSTSN, val);
 
 	/* Discard the previous reception interrupts on the channel first Common FIFO */
 	base_offset = config->channel * sizeof(uint32_t) *
 		CAN_RCAR_RSCANFD_COMMON_FIFO_PER_CHANNEL;
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFSTSN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFSTSN);
 	val &= ~RSCANFD_CFDCFSTSN_CFRXIF;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCFSTSN, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCFSTSN, val);
 
 	/* Free all TX user callbacks array entries */
 	/* Clear the current stack content */
@@ -829,6 +836,7 @@ exit_unlock:
 static int can_rcar_rscanfd_set_mode(const struct device *dev, can_mode_t mode)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	uint32_t base_offset, val;
 	can_mode_t supported_mode;
@@ -861,7 +869,7 @@ static int can_rcar_rscanfd_set_mode(const struct device *dev, can_mode_t mode)
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 
 	/* Make sure to cancel any previously set mode */
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNCTR);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNCTR);
 	val &= ~((RSCANFD_CFDCNCTR_CTMS_MASK << RSCANFD_CFDCNCTR_CTMS_SHIFT) |
 		(RSCANFD_CFDCNCTR_CTME_MASK << RSCANFD_CFDCNCTR_CTME_SHIFT));
 
@@ -877,11 +885,11 @@ static int can_rcar_rscanfd_set_mode(const struct device *dev, can_mode_t mode)
 	} else {
 		val |= RSCANFD_CFDCNCTR_CTME_DISABLED << RSCANFD_CFDCNCTR_CTME_SHIFT;
 	}
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR, val);
 
 #ifdef CONFIG_CAN_FD_MODE
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CANFD_CHANNEL_REGISTERS_GROUP_SIZE;
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNFDCFG);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNFDCFG);
 
 	/* Configure the CAN FD to work alongside the CAN 2.0 */
 	if (mode & CAN_MODE_FD) {
@@ -905,7 +913,7 @@ static int can_rcar_rscanfd_set_mode(const struct device *dev, can_mode_t mode)
 		val |= RSCANFD_CFDCNFDCFG_CLOE;
 	}
 
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNFDCFG, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNFDCFG, val);
 #endif
 
 	data->common.mode = mode;
@@ -948,6 +956,7 @@ static int can_rcar_rscanfd_send(const struct device *dev, const struct can_fram
 				 void *user_data)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	uint32_t base_offset, val, index;
 
@@ -1041,10 +1050,10 @@ static int can_rcar_rscanfd_send(const struct device *dev, const struct can_fram
 	}
 	/* After sending the frame create an entry in the history list */
 	val |= RSCANFD_CFDTMIDBN_THLEN;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTMIDBN, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTMIDBN, val);
 
 	/* DLC */
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTMPTRBN,
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTMPTRBN,
 		(frame->dlc & RSCANFD_CFDTMPTRBN_TMDLC_MASK) << RSCANFD_CFDTMPTRBN_TMDLC_SHIFT);
 
 	/*
@@ -1062,17 +1071,18 @@ static int can_rcar_rscanfd_send(const struct device *dev, const struct can_fram
 	}
 	/* Add the user callback index to the TX Message Buffer Pointer field */
 	val |= (index & RSCANFD_CFDTMFDCTRBN_TMPTR_MASK) << RSCANFD_CFDTMFDCTRBN_TMPTR_SHIFT;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTMFDCTRBN, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTMFDCTRBN, val);
 
 	/* Data */
 	val = can_dlc_to_bytes(frame->dlc);
 	for (uint32_t i = 0; i < val; i++) {
-		sys_write8(frame->data[i], config->reg + base_offset + RSCANFD_CFDTMDF0BN + i);
+		sys_write8(frame->data[i],
+			DEVICE_MMIO_GET(global_dev) + base_offset + RSCANFD_CFDTMDF0BN + i);
 	}
 
 	/* Ask for message transmission */
 	base_offset = config->channel * sizeof(uint32_t);
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTXQPCTR0N, 0xFF);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTXQPCTR0N, 0xFF);
 
 	k_mutex_unlock(&data->inst_mutex);
 
@@ -1120,6 +1130,7 @@ static int can_rcar_rscanfd_add_rx_filter(const struct device *dev, can_rx_callb
 static int can_rcar_rscanfd_recover(const struct device *dev, k_timeout_t timeout)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	uint32_t base_offset, val;
 	int64_t start_ticks;
@@ -1143,14 +1154,14 @@ static int can_rcar_rscanfd_recover(const struct device *dev, k_timeout_t timeou
 
 	/* Request to return from bus off */
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNCTR);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNCTR);
 	val |= RSCANFD_CFDCNCTR_RTBO;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNCTR, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNCTR, val);
 
 	/* Wait for the controller to exit from the bus off state */
 	start_ticks = k_uptime_ticks();
 	base_offset += RSCANFD_CFDCNSTS;
-	while (can_rcar_rscanfd_read(dev, base_offset) & RSCANFD_CFDCNSTS_BOSTS) {
+	while (can_rcar_rscanfd_read(global_dev, base_offset) & RSCANFD_CFDCNSTS_BOSTS) {
 		if (k_uptime_ticks() - start_ticks >= timeout.ticks) {
 			goto exit_unlock;
 		}
@@ -1234,6 +1245,7 @@ static void can_rcar_rscanfd_configure_timing_data(const struct device *dev,
 						   const struct can_timing *timing)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 	uint8_t tdco;
 
@@ -1243,7 +1255,7 @@ static void can_rcar_rscanfd_configure_timing_data(const struct device *dev,
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CANFD_CHANNEL_REGISTERS_GROUP_SIZE;
 
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNDCFG,
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNDCFG,
 		(timing->phase_seg1 + timing->prop_seg - 1) << RSCANFD_CFDCNDCFG_DTSEG1_SHIFT |
 		(timing->phase_seg2 - 1) << RSCANFD_CFDCNDCFG_DTSEG2_SHIFT |
 		timing->sjw << RSCANFD_CFDCNDCFG_DSJW_SHIFT |
@@ -1257,10 +1269,10 @@ static void can_rcar_rscanfd_configure_timing_data(const struct device *dev,
 	if (tdco > CAN_RCAR_RSCANFD_TDCO_MIN) {
 		tdco--;
 	}
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNFDCFG);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNFDCFG);
 	val &= ~(RSCANFD_CFDCNFDCFG_TDCO_MASK << RSCANFD_CFDCNFDCFG_TDCO_SHIFT);
 	val |= (tdco & RSCANFD_CFDCNFDCFG_TDCO_MASK) << RSCANFD_CFDCNFDCFG_TDCO_SHIFT;
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNFDCFG, val);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCNFDCFG, val);
 }
 
 static int can_rcar_rscanfd_set_timing_data(const struct device *dev,
@@ -1297,6 +1309,7 @@ exit_unlock:
 static void can_rcar_rscanfd_clear_error_bit(const struct device *dev, uint32_t bit_mask)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	uint32_t base_offset, val;
 
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE +
@@ -1304,10 +1317,10 @@ static void can_rcar_rscanfd_clear_error_bit(const struct device *dev, uint32_t 
 
 	/* Set the bit to 0 until it effectively changes to 0 */
 	while (1) {
-		val = can_rcar_rscanfd_read(dev, base_offset);
+		val = can_rcar_rscanfd_read(global_dev, base_offset);
 		if (val & bit_mask) {
 			val &= ~bit_mask;
-			can_rcar_rscanfd_write(dev, base_offset, val);
+			can_rcar_rscanfd_write(global_dev, base_offset, val);
 		} else {
 			break;
 		}
@@ -1383,12 +1396,13 @@ static inline void can_rcar_rscanfd_error_isr(const struct device *dev, uint32_t
 	/* Clear the interrupt flag */
 	irq_flags &= ~(RSCANFD_CFDCNERFL_ALF | RSCANFD_CFDCNERFL_BORF | RSCANFD_CFDCNERFL_BOEF |
 		RSCANFD_CFDCNERFL_EPF | RSCANFD_CFDCNERFL_EWF | RSCANFD_CFDCNERFL_BEF);
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCNERFL, irq_flags);
+	can_rcar_rscanfd_write(config->global_dev, base_offset + RSCANFD_CFDCNERFL, irq_flags);
 }
 
 static inline void can_rcar_rscanfd_tx_isr(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	uint32_t val, base_offset, index;
 	struct can_rcar_rscanfd_tx_callback *tx_callback;
@@ -1396,7 +1410,7 @@ static inline void can_rcar_rscanfd_tx_isr(const struct device *dev)
 	/* Find the index of the first frame that has been transmitted */
 	base_offset = config->channel *
 		CAN_RCAR_RSCANFD_TX_HISTORY_LIST_ACCESS_REGISTERS_GROUP_SIZE;
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDTHLACC1N);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDTHLACC1N);
 	index = (val >> RSCANFD_CFDTHLACC1N_TID_SHIFT) & RSCANFD_CFDTHLACC1N_TID_MASK;
 
 	tx_callback = &data->tx_callbacks[index];
@@ -1407,12 +1421,13 @@ static inline void can_rcar_rscanfd_tx_isr(const struct device *dev)
 
 	/* Go to the next entry in the TX history list */
 	base_offset = config->channel * sizeof(uint32_t);
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTHLPCTRN, 0xFF);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTHLPCTRN, 0xFF);
 }
 
 static inline void can_rcar_rscanfd_rx_isr(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	uint32_t val, i, bytes_count, base_offset, source_addr;
 	struct can_frame frame, user_frame;
@@ -1424,7 +1439,7 @@ static inline void can_rcar_rscanfd_rx_isr(const struct device *dev)
 		CAN_RCAR_RSCANFD_CFMBCP_ENTRY_SIZE;
 
 	frame.flags = 0;
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFIDBN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFIDBN);
 	if (val & RSCANFD_CFDCFIDBN_CFIDE) {
 		frame.flags |= CAN_FRAME_IDE;
 	}
@@ -1436,10 +1451,10 @@ static inline void can_rcar_rscanfd_rx_isr(const struct device *dev)
 	}
 	frame.id = (val >> RSCANFD_CFDCFIDBN_CFID_SHIFT) & RSCANFD_CFDCFIDBN_CFID_MASK;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFPTRBN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFPTRBN);
 	frame.dlc = (val >> RSCANFD_CFDCFPTRBN_CFDLC_SHIFT) & RSCANFD_CFDCFPTRBN_CFDLC_MASK;
 
-	val = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFFDCSTSBN);
+	val = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFFDCSTSBN);
 	if (val & RSCANFD_CFDCFFDCSTSBN_CFESI) {
 		frame.flags |= CAN_FRAME_ESI;
 	}
@@ -1464,7 +1479,7 @@ static inline void can_rcar_rscanfd_rx_isr(const struct device *dev)
 	}
 
 	/* Retrieve the data */
-	source_addr = config->reg + base_offset + RSCANFD_CFDCFDF0BN;
+	source_addr = DEVICE_MMIO_GET(global_dev) + base_offset + RSCANFD_CFDCFDF0BN;
 	can_data = frame.data;
 	for (i = 0; i < bytes_count; i++) {
 		*can_data = sys_read8(source_addr);
@@ -1499,18 +1514,19 @@ exit_next_frame:
 	/* Increment the FIFO read pointer to get access to the next received frame */
 	base_offset = config->channel * CAN_RCAR_RSCANFD_COMMON_FIFO_PER_CHANNEL *
 		sizeof(uint32_t);
-	can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCFPCTR0, 0xFF);
+	can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCFPCTR0, 0xFF);
 }
 
 static void can_rcar_rscanfd_isr(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
+	const struct device *global_dev = config->global_dev;
 	struct can_rcar_rscanfd_data *data = dev->data;
 	uint32_t irq_flags, base_offset;
 
 	/* Error */
 	base_offset = config->channel * CAN_RCAR_RSCANFD_CAN_CHANNEL_REGISTERS_GROUP_SIZE;
-	irq_flags = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCNERFL);
+	irq_flags = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCNERFL);
 	if (irq_flags & (RSCANFD_CFDCNERFL_ALF | RSCANFD_CFDCNERFL_BORF | RSCANFD_CFDCNERFL_BOEF |
 		RSCANFD_CFDCNERFL_EPF | RSCANFD_CFDCNERFL_EWF | RSCANFD_CFDCNERFL_BEF)) {
 		can_rcar_rscanfd_error_isr(dev, irq_flags);
@@ -1521,49 +1537,50 @@ static void can_rcar_rscanfd_isr(const struct device *dev)
 	 * A frame is considered as transmitted when a new entry is added to the TX history list.
 	 */
 	base_offset = config->channel * sizeof(uint32_t);
-	irq_flags = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDTHLSTSN);
+	irq_flags = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDTHLSTSN);
 	if (irq_flags & RSCANFD_CFDTHLSTSN_THLIF) {
 		/* Handle all the frames that have been transmitted */
 		do {
 			can_rcar_rscanfd_tx_isr(dev);
 			k_sem_give(&data->tx_sem);
-		} while (!(can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDTHLSTSN)
+		} while (!(can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDTHLSTSN)
 			& RSCANFD_CFDTHLSTSN_THLEMP));
 
 		/* Clear the interrupt flag */
 		irq_flags &= ~RSCANFD_CFDTHLSTSN_THLIF;
-		can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDTHLSTSN, irq_flags);
+		can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDTHLSTSN, irq_flags);
 	}
 
 	/* Frame reception, using the first Common FIFO of the channel */
 	base_offset = config->channel * sizeof(uint32_t) *
 		CAN_RCAR_RSCANFD_COMMON_FIFO_PER_CHANNEL;
-	irq_flags = can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFSTSN);
+	irq_flags = can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFSTSN);
 	if (irq_flags & RSCANFD_CFDCFSTSN_CFRXIF) {
 		/* Handle all the messages contained in the FIFO */
 		do {
 			can_rcar_rscanfd_rx_isr(dev);
-		} while (!(can_rcar_rscanfd_read(dev, base_offset + RSCANFD_CFDCFSTSN)
+		} while (!(can_rcar_rscanfd_read(global_dev, base_offset + RSCANFD_CFDCFSTSN)
 			& RSCANFD_CFDCFSTSN_CFEMP));
 
 		/* Clear the interrupt flag */
 		irq_flags &= ~RSCANFD_CFDCFSTSN_CFRXIF;
-		can_rcar_rscanfd_write(dev, base_offset + RSCANFD_CFDCFSTSN, irq_flags);
+		can_rcar_rscanfd_write(global_dev, base_offset + RSCANFD_CFDCFSTSN, irq_flags);
 	}
 }
 
 static int can_rcar_rscanfd_init(const struct device *dev)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
-	const struct can_rcar_rscanfd_global_config *global_config = config->global_dev->config;
+	const struct device *global_dev = config->global_dev;
+	const struct can_rcar_rscanfd_global_config *global_config = global_dev->config;
 	struct can_rcar_rscanfd_data *data = dev->data;
-	struct can_rcar_rscanfd_global_data *global_data = config->global_dev->data;
+	struct can_rcar_rscanfd_global_data *global_data = global_dev->data;
 	struct can_timing timing;
 	int ret;
 
 	/* Ensure that the global controller is already initialized */
-	if (!device_is_ready(config->global_dev)) {
-		LOG_ERR_DEVICE_NOT_READY(config->global_dev);
+	if (!device_is_ready(global_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(global_dev);
 		return -ENODEV;
 	}
 
@@ -1621,7 +1638,7 @@ static int can_rcar_rscanfd_init(const struct device *dev)
 	/* Switch the controller to operation mode when all channels are initialized */
 	global_data->enabled_channels_count++;
 	if (global_data->enabled_channels_count == global_config->num_enabled_channels) {
-		ret = can_rcar_rscanfd_enter_operation_mode(global_config);
+		ret = can_rcar_rscanfd_enter_operation_mode(global_dev);
 		if (ret) {
 			LOG_ERR("Failed to put the controller in operation mode.");
 			return ret;
@@ -1730,7 +1747,6 @@ static DEVICE_API(can, can_rcar_rscanfd_driver_api) = {
 	static const struct can_rcar_rscanfd_config can_rcar_rscanfd_config_##n = {	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(n, 0, RSCANFD_MAX_BITRATE),	\
 		.global_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),				\
-		.reg = DT_REG_ADDR(DT_INST_PARENT(n)),					\
 		.channel = DT_INST_PROP(n, channel),					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.configure_irq = can_rcar_rscanfd_configure_irq_##n			\
@@ -1758,10 +1774,10 @@ DT_INST_FOREACH_STATUS_OKAY(RSCANFD_INIT);
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT renesas_rcar_rscanfd_global
 
-static int can_rcar_rscanfd_global_init(const struct device *dev)
+static int can_rcar_rscanfd_global_init(const struct device *global_dev)
 {
-	const struct can_rcar_rscanfd_global_config *config = dev->config;
-	struct can_rcar_rscanfd_global_data *data = dev->data;
+	const struct can_rcar_rscanfd_global_config *config = global_dev->config;
+	struct can_rcar_rscanfd_global_data *data = global_dev->data;
 	int ret;
 
 	if (!device_is_ready(config->clock_dev)) {
@@ -1790,23 +1806,24 @@ static int can_rcar_rscanfd_global_init(const struct device *dev)
 		return ret;
 	}
 
+	DEVICE_MMIO_MAP(global_dev, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
 	/* Wait for the CAN RAM initialization to terminate */
-	ret = can_rcar_rscanfd_busy_wait(config->reg + RSCANFD_CFDGSTS,
-		RSCANFD_CFDGSTS_GRAMINIT, 0);
+	ret = can_rcar_rscanfd_busy_wait(global_dev, RSCANFD_CFDGSTS, RSCANFD_CFDGSTS_GRAMINIT, 0);
 	if (ret != 0) {
 		LOG_ERR("Internal RAM initialization took too long.");
 		return ret;
 	}
 
 	/* The CAN module registers can be configured only in reset mode */
-	ret = can_rcar_rscanfd_enter_reset_mode(config);
+	ret = can_rcar_rscanfd_enter_reset_mode(global_dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enter the reset mode.");
 		return ret;
 	}
 
 	LOG_DBG("CAN controller IP version: 0x%08X, number of enabled channels: %u.",
-		sys_read32(config->reg + RSCANFD_CFDGIPV), config->num_enabled_channels);
+		can_rcar_rscanfd_read(global_dev, RSCANFD_CFDGIPV), config->num_enabled_channels);
 
 	k_mutex_init(&data->list_mutex);
 
@@ -1815,7 +1832,7 @@ static int can_rcar_rscanfd_global_init(const struct device *dev)
 
 #define RSCANFD_GLOBAL_INIT(n)									  \
 	static const struct can_rcar_rscanfd_global_config can_rcar_rscanfd_global_config_##n = { \
-		.reg = DT_INST_REG_ADDR(n),							  \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				  \
 		.global_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0),				  \
 		.module_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 1),				  \
