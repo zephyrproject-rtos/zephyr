@@ -2579,6 +2579,14 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 			continue;
 		}
 
+		/* The application can hold a reference to the object of a
+		 * connection that is gone while the peer connects again.
+		 */
+		if (conn->state == BT_CONN_DISCONNECTED) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
 		return conn;
 	}
 

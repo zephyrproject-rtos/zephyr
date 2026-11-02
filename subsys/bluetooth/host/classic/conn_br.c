@@ -78,8 +78,13 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 		return NULL;
 	}
 
+	/* From here on the address lookup finds the connection */
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
+	conn->role = BT_CONN_ROLE_CENTRAL;
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		bt_conn_unref(conn);
 		return NULL;
 	}
@@ -93,9 +98,6 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	cp->pscan_rep_mode = 0x02; /* R2 */
 	cp->allow_role_switch = param->allow_role_switch ? 0x01 : 0x00;
 	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
-
-	bt_conn_set_state(conn, BT_CONN_INITIATING);
-	conn->role = BT_CONN_ROLE_CENTRAL;
 
 	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
