@@ -215,6 +215,15 @@ Ethernet
   on every Ethernet interface when :kconfig:option:`CONFIG_NET_LLDP` is set. Out-of-tree Ethernet
   drivers must stop reporting it. (:github:`124787`)
 
+I2S
+===
+
+* :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH` are deprecated. Use
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`, which also accept ALSA devices. Without the
+  ALSA backend the old options still provide their default. (:github:`123474`)
+
 Modem
 =====
 
