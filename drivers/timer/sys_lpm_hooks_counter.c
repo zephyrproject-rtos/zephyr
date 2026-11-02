@@ -11,14 +11,12 @@
 #include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/pm/device.h>
 
-#define COMPANION_COUNTER_NODE DT_CHOSEN(zephyr_system_timer_companion)
-
-BUILD_ASSERT(DT_PROP(COMPANION_COUNTER_NODE, wakeup_source),
+BUILD_ASSERT(DT_PROP(SYSTEM_TIMER_COMPANION_NODE, wakeup_source),
 	"The Low-Power Companion counter (chosen `zephyr,system-timer-companion` at path: "
-	DT_NODE_PATH(COMPANION_COUNTER_NODE) ") must be marked as wake-up capable! "
+	DT_NODE_PATH(SYSTEM_TIMER_COMPANION_NODE) ") must be marked as wake-up capable! "
 	"(hint: add the `wakeup-source` property to the node)");
 
-static const struct device *lpm_counter = DEVICE_DT_GET(COMPANION_COUNTER_NODE);
+static const struct device *lpm_counter = DEVICE_DT_GET(SYSTEM_TIMER_COMPANION_NODE);
 
 /* Companion counter's value before entry in low-power state. */
 static uint32_t counter_pre_lpm_ticks;
