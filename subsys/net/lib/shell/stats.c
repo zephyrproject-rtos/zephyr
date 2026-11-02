@@ -654,7 +654,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 					defined(CONFIG_NET_STATISTICS_USER_API)
 	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		const struct device *dev = net_if_get_device(iface);
-		const struct ethernet_api *eth_api = dev->api;
+		const struct ethernet_driver_api *eth_api = dev->api;
 		struct net_stats_eth *eth_data = NULL;
 		uint32_t type = ETHERNET_STATS_TYPE_ALL;
 

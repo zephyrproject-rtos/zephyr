@@ -1136,7 +1136,7 @@ static int route_eth_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api route_eth_if_api = {
+static DEVICE_API(ethernet, route_eth_if_api) = {
 	.iface_api.init = route_eth_iface_init,
 	.send = route_eth_send,
 };

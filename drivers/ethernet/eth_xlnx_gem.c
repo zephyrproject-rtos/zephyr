@@ -79,7 +79,7 @@ static void eth_xlnx_gem_phy_cb(const struct device *phy,
 				struct phy_link_state *state,
 				void *eth_dev);
 
-static const struct ethernet_api eth_xlnx_gem_apis = {
+static DEVICE_API(ethernet, eth_xlnx_gem_apis) = {
 	.iface_api.init   = eth_xlnx_gem_iface_init,
 	.get_capabilities = eth_xlnx_gem_get_capabilities,
 	.get_phy	  = eth_xlnx_gem_get_phy,

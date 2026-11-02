@@ -45,7 +45,7 @@ static int eth_slip_tap_set_config(const struct device *dev __unused,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api slip_if_api = {
+static DEVICE_API(ethernet, slip_if_api) = {
 	.iface_api.init = slip_iface_init,
 
 	.get_capabilities = eth_capabilities,

@@ -17,7 +17,7 @@ static inline bool is_hw_caps_supported(const struct device *dev,
 					struct net_if *iface,
 					enum ethernet_hw_caps caps)
 {
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = dev->api;
 
 	if (!api->get_capabilities) {
 		return false;
@@ -32,7 +32,7 @@ static int ethernet_set_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
 	int ret;
@@ -228,7 +228,7 @@ static int ethernet_get_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;

@@ -276,7 +276,7 @@ static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev,
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	.get_ptp_clock = eth_stm32_get_ptp_clock,

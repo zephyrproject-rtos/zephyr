@@ -169,7 +169,7 @@ static struct net_stats_eth *eth_get_stats(const struct device *dev, struct net_
 	return &eth_stats;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_capabilities,

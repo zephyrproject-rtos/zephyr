@@ -52,7 +52,7 @@ static DEVICE_API(dummy, test_iface_api) = {
 	.send = test_iface_send,
 };
 
-static const struct ethernet_api dummy_eth_api = {
+static DEVICE_API(ethernet, dummy_eth_api) = {
 	.iface_api.init = test_eth_iface_init,
 };
 

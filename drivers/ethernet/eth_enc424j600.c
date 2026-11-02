@@ -628,7 +628,7 @@ static int enc424j600_stop_device(const struct device *dev, struct net_if *iface
 	return 0;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init		= enc424j600_iface_init,
 	.set_config		= enc424j600_set_config,
 	.get_capabilities	= enc424j600_get_capabilities,

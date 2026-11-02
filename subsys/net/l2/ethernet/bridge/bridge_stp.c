@@ -124,7 +124,7 @@ static void hw_port_config(struct net_if *iface, enum ethernet_config_type type,
 			   enum ethernet_stp_port_state state)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_driver_api *api = dev->api;
 	struct ethernet_config config = {.stp_port_state = state};
 	int ret = -ENOTSUP;
 

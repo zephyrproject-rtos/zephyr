@@ -190,7 +190,7 @@ static int dsa_get_config(const struct device *dev,
 	return dsa_switch_ctx->dapi->get_config(dev, type, config);
 }
 
-const struct ethernet_api dsa_eth_api = {
+DEVICE_API(ethernet, dsa_eth_api) = {
 	.iface_api.init = dsa_port_iface_init,
 	.get_phy = dsa_port_get_phy,
 	.send = dsa_xmit,

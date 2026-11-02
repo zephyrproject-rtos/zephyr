@@ -2489,7 +2489,7 @@ struct net_wifi_mgmt_offload {
 	 */
 #if defined(CONFIG_WIFI_USE_NATIVE_NETWORKING) || defined(__DOXYGEN__)
 	/** Ethernet API */
-	struct ethernet_api wifi_iface;
+	struct ethernet_driver_api wifi_iface;
 #else
 	/** Offloaded network device API */
 	struct offloaded_if_driver_api wifi_iface;

@@ -291,7 +291,7 @@ static void mesh_netif_iface_init(struct net_if *iface)
 	net_if_carrier_on(iface);
 }
 
-static const struct ethernet_api mesh_netif_api = {
+static DEVICE_API(ethernet, mesh_netif_api) = {
 	.iface_api.init = mesh_netif_iface_init,
 	.send = mesh_netif_send,
 };
