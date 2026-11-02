@@ -544,6 +544,13 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 		len = fs_read(&file, tmp, sizeof(tmp));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
+			ret = len;
+			goto out;
+		}
+
+		if (len == 0) {
+			LOG_ERR("File shorter than announced size (%d bytes left)", remaining);
+			ret = -EIO;
 			goto out;
 		}
 

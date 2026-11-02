@@ -806,6 +806,13 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 		len = fs_read(&file, http_response, sizeof(http_response));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
+			ret = len;
+			goto close;
+		}
+
+		if (len == 0) {
+			LOG_ERR("File shorter than announced size (%d bytes left)", remaining);
+			ret = -EIO;
 			goto close;
 		}
 

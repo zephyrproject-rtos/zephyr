@@ -1340,6 +1340,13 @@ static int h3_handle_static_fs_resource(
 			goto out;
 		}
 
+		if (len == 0) {
+			LOG_DBG("[%p] H3: file shorter than announced size (%d bytes left)",
+				client, remaining);
+			ret = -EIO;
+			goto out;
+		}
+
 		remaining -= len;
 
 		ret = h3_send_data_frame(client, tmp, len);
