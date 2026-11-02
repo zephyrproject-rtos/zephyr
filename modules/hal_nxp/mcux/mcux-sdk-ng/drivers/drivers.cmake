@@ -158,7 +158,6 @@ set_variable_ifdef(CONFIG_DMA_NXP_SDMA          CONFIG_MCUX_COMPONENT_driver.sdm
 set_variable_ifdef(CONFIG_ADC_MCUX_GAU          CONFIG_MCUX_COMPONENT_driver.cns_adc)
 set_variable_ifdef(CONFIG_DAC_MCUX_GAU          CONFIG_MCUX_COMPONENT_driver.cns_dac)
 set_variable_ifdef(CONFIG_DAI_NXP_ESAI          CONFIG_MCUX_COMPONENT_driver.esai)
-set_variable_ifdef(CONFIG_MCUX_LPCMP            CONFIG_MCUX_COMPONENT_driver.lpcmp)
 set_variable_ifdef(CONFIG_MCUX_SYSCTR_TIMER     CONFIG_MCUX_COMPONENT_driver.sysctr)
 if(CONFIG_NXP_RF_IMU)
     if(CONFIG_SOC_MCXW70AC)
