@@ -422,13 +422,6 @@ struct bt_mcs_cb {
 	const char *(*get_player_name)(void);
 
 	/**
-	 * @brief Set Media Player Name
-	 *
-	 * @param name    The new Media Player Name
-	 */
-	void (*set_player_name)(const char *name);
-
-	/**
 	 * @brief Read Icon Object ID
 	 *
 	 * Get an ID (48 bit) that can be used to retrieve the Icon
