@@ -608,9 +608,18 @@ static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 		if ((fwd_ports & BIT(i)) != 0U) {
 			/* Clone the packet if we have more than two interfaces in the bridge
 			 * because the first send might mess the data part of the message.
+			 * A bridged frame already carries its Ethernet header, a locally
+			 * originated packet gets it from the port, so let the port reserve
+			 * the header space for it.
 			 */
 			if (fwd_iface_num > 1) {
-				send_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+				if (net_pkt_is_l2_bridged(pkt)) {
+					send_pkt = net_pkt_tx_clone_raw(pkt, ctx->eth_iface[i],
+									K_NO_WAIT);
+				} else {
+					send_pkt =
+						net_pkt_tx_clone(pkt, ctx->eth_iface[i], K_NO_WAIT);
+				}
 				if (send_pkt == NULL) {
 					NET_DBG("DROP: clone failed");
 					break;
