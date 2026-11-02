@@ -292,7 +292,7 @@ static const struct ethernet_api net_arp_if_api = {
 #define _ETH_L2_LAYER ETHERNET_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #else
-static const struct dummy_api net_arp_if_api = {
+static DEVICE_API(dummy, net_arp_if_api) = {
 	.iface_api.init = net_arp_iface_init,
 	.send = tester_send,
 };

@@ -65,7 +65,7 @@ static const struct ethernet_api fake_dev_api = {
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #define L2_HDR_SIZE sizeof(struct net_eth_hdr)
 #else
-static const struct dummy_api fake_dev_api = {
+static DEVICE_API(dummy, fake_dev_api) = {
 	.iface_api.init = fake_dev_iface_init,
 	.send = fake_dev_send,
 };

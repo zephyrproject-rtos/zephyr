@@ -47,7 +47,7 @@ static int test_iface_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct dummy_api test_iface_api = {
+static DEVICE_API(dummy, test_iface_api) = {
 	.iface_api.init = test_iface_init,
 	.send = test_iface_send,
 };

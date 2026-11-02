@@ -102,7 +102,7 @@ static void test_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static const struct dummy_api test_iface_if_api = {
+static DEVICE_API(dummy, test_iface_if_api) = {
 	.iface_api.init = test_iface_init,
 	.send = test_iface_send,
 };
