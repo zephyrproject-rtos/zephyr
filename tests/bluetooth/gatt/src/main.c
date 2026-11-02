@@ -16,6 +16,7 @@
 #include <zephyr/settings/settings.h>
 
 #include "common/long_wq.h"
+#include "conn_internal.h"
 #include "gatt_internal.h"
 #include "settings.h"
 
@@ -691,7 +692,7 @@ static struct bt_gatt_attr hash_hold_attrs[] = {
 
 static struct bt_gatt_service hash_hold_svc = BT_GATT_SERVICE(hash_hold_attrs);
 
-static ssize_t read_db_hash(uint8_t hash[BT_GATT_DB_HASH_SIZE])
+static ssize_t read_db_hash_conn(struct bt_conn *conn, uint8_t hash[BT_GATT_DB_HASH_SIZE])
 {
 	const struct bt_gatt_attr *attr;
 
@@ -700,9 +701,15 @@ static ssize_t read_db_hash(uint8_t hash[BT_GATT_DB_HASH_SIZE])
 		return -ENOENT;
 	}
 
-	return attr->read(NULL, attr, hash, BT_GATT_DB_HASH_SIZE, 0U);
+	return attr->read(conn, attr, hash, BT_GATT_DB_HASH_SIZE, 0U);
 }
 
+static ssize_t read_db_hash(uint8_t hash[BT_GATT_DB_HASH_SIZE])
+{
+	return read_db_hash_conn(NULL, hash);
+}
+
+static struct bt_conn *hash_read_conn;
 static uint8_t hash_read_value[BT_GATT_DB_HASH_SIZE];
 static ssize_t hash_read_len;
 static K_SEM_DEFINE(hash_read_done, 0, 1);
@@ -711,7 +718,7 @@ static void hash_read_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	hash_read_len = read_db_hash(hash_read_value);
+	hash_read_len = read_db_hash_conn(hash_read_conn, hash_read_value);
 	k_sem_give(&hash_read_done);
 }
 
@@ -800,6 +807,17 @@ static void hash_svc_cleanup(struct bt_gatt_service *svc)
 	}
 }
 
+/* A peer that uses Robust Caching. The connection is not established, which
+ * the attribute handlers and the change-aware check do not need.
+ */
+static struct bt_conn hash_peer_conn = {
+	.type = BT_CONN_TYPE_LE,
+	.le.dst = {
+		.type = BT_ADDR_LE_RANDOM,
+		.a.val = { 0x01, 0x02, 0x03, 0x04, 0x05, 0xc6 },
+	},
+};
+
 /* Set to hold the next store of the hash, before it is written */
 static atomic_t hash_store_armed;
 
@@ -815,6 +833,7 @@ void bt_testing_settings_store_hook(const char *key, const void *value, size_t v
 static void test_gatt_db_hash_after(void *fixture)
 {
 	struct k_work_sync sync;
+	int err;
 
 	ARG_UNUSED(fixture);
 
@@ -828,6 +847,10 @@ static void test_gatt_db_hash_after(void *fixture)
 	k_sem_reset(&hash_held);
 	k_sem_reset(&hash_resume);
 	k_sem_reset(&hash_read_done);
+	hash_read_conn = NULL;
+
+	err = bt_gatt_clear(hash_peer_conn.id, &hash_peer_conn.le.dst);
+	zassert_equal(err, 0, "clearing the peer failed: %d", err);
 
 	hash_svc_cleanup(&hash_before_svc);
 	hash_svc_cleanup(&hash_hold_svc);
@@ -976,5 +999,58 @@ static ZTEST(test_gatt_db_hash, test_store_order)
 	zassert_equal(len, sizeof(expected), "hash read failed: %d", (int)len);
 	zassert_mem_equal(test_stored_hash, expected, sizeof(expected),
 			  "stored hash is not the current one");
+}
+
+/* A database change while a Database Hash read stores the hash, before it
+ * answers: the peer gets the hash of the database before the change and must
+ * stay change-unaware.
+ */
+static ZTEST(test_gatt_db_hash, test_change_during_read_store)
+{
+	const uint8_t robust_caching = BIT(0);
+	uint8_t hash[BT_GATT_DB_HASH_SIZE];
+	const struct bt_gatt_attr *attr;
+	ssize_t len;
+	int err;
+
+	attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_GATT_CLIENT_FEATURES);
+	zassert_not_null(attr, "no Client Supported Features");
+
+	len = attr->write(&hash_peer_conn, attr, &robust_caching, sizeof(robust_caching), 0U, 0U);
+	zassert_equal(len, sizeof(robust_caching), "write failed: %d", (int)len);
+
+	/* A change makes the peer change-unaware, and leaves the hash to
+	 * compute and store: the read does it.
+	 */
+	err = bt_gatt_service_register(&hash_before_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+
+	(void)atomic_set(&hash_store_armed, 1);
+	hash_read_conn = &hash_peer_conn;
+
+	err = k_work_submit(&hash_read_work);
+	zassert_true(err >= 0, "work submit failed: %d", err);
+
+	err = k_sem_take(&hash_held, K_SECONDS(1));
+	zassert_equal(err, 0, "hash store not held");
+
+	err = bt_gatt_service_register(&hash_hold_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+
+	k_sem_give(&hash_resume);
+
+	err = k_sem_take(&hash_read_done, K_SECONDS(1));
+	zassert_equal(err, 0, "hash read not done");
+	zassert_equal(hash_read_len, sizeof(hash_read_value), "hash read failed: %d",
+		      (int)hash_read_len);
+
+	zassert_false(bt_gatt_change_aware(&hash_peer_conn, true),
+		      "peer change-aware after reading the hash of an older database");
+
+	/* A read of the current hash does make it change-aware */
+	len = read_db_hash_conn(&hash_peer_conn, hash);
+	zassert_equal(len, sizeof(hash), "hash read failed: %d", (int)len);
+	zassert_true(bt_gatt_change_aware(&hash_peer_conn, true),
+		     "peer change-unaware after reading the current hash");
 }
 #endif /* CONFIG_SETTINGS_CUSTOM */
