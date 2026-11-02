@@ -27,6 +27,7 @@
  */
 
 #include <stddef.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 #include <zephyr/types.h>
@@ -38,14 +39,21 @@ extern "C" {
 #endif
 
 /**
- * @brief A unique PCI(e) endpoint (bus, device, function).
+ * @brief A PCI(e) bus, device, function tuple within one controller.
  *
- * A PCI(e) endpoint is uniquely identified topologically using a
- * (bus, device, function) tuple. The internal structure is documented
+ * Different controllers may expose the same tuple. The internal structure is documented
  * in include/dt-bindings/pcie/pcie.h: see PCIE_BDF() and friends, since
  * these tuples are referenced from devicetree.
  */
 typedef uint32_t pcie_bdf_t;
+
+/** Identity of an endpoint owned by a device-model PCIe controller. */
+struct pcie_endpoint {
+	/** Owning controller; NULL never selects the chosen controller. */
+	const struct device *ctrl;
+	/** Bus, device and function within the controller. */
+	pcie_bdf_t bdf;
+};
 
 /**
  * @brief A unique PCI(e) identifier (vendor ID, device ID).
@@ -163,6 +171,76 @@ struct pcie_bar {
 	uintptr_t phys_addr;
 	size_t size;
 };
+
+/**
+ * @brief Read a configuration word through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param reg Configuration word index, less than 1024.
+ * @param value Non-NULL output word. All-ones data is passed through unchanged.
+ * @retval 0 Word read.
+ * @retval -EINVAL Invalid endpoint, BDF encoding, index or output pointer.
+ * @retval -ENOTSUP Configuration reads are unsupported.
+ * @return Negative backend errno from a status-bearing callback on failure.
+ */
+int pcie_endpoint_conf_read(const struct pcie_endpoint *ep, unsigned int reg, uint32_t *value);
+
+/**
+ * @brief Write a configuration word through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param reg Configuration word index, less than 1024.
+ * @param value Word to write.
+ * @retval 0 Word written.
+ * @retval -EINVAL Invalid endpoint, BDF encoding or index.
+ * @retval -ENOTSUP Configuration writes are unsupported.
+ * @return Negative backend errno from a status-bearing callback on failure.
+ */
+int pcie_endpoint_conf_write(const struct pcie_endpoint *ep, unsigned int reg, uint32_t value);
+
+/**
+ * @brief Find a conventional capability through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param cap_id Capability ID to find.
+ * @param cap Non-NULL output word index; zero when absent.
+ * @retval 0 Query completed, including an absent capability.
+ * @retval -EINVAL Invalid endpoint, output pointer or capability chain.
+ * @retval -ENOTSUP Configuration reads are unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_get_cap(const struct pcie_endpoint *ep, uint32_t cap_id, uint32_t *cap);
+
+/**
+ * @brief Find an extended capability through the endpoint's controller.
+ * @param ep Endpoint with a non-NULL controller.
+ * @param cap_id Extended capability ID to find.
+ * @param cap Non-NULL output word index; zero when absent.
+ * @retval 0 Query completed, including an absent capability.
+ * @retval -EINVAL Invalid endpoint, output pointer or capability chain.
+ * @retval -ENOTSUP Configuration reads are unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_get_ext_cap(const struct pcie_endpoint *ep, uint32_t cap_id, uint32_t *cap);
+
+/**
+ * @brief Probe a memory BAR through the endpoint's controller.
+ *
+ * Configuration access and bus-to-CPU translation use the same controller.
+ * The caller must serialize BAR sizing against accesses to the device.
+ * Type 0 headers have six BAR registers; Type 1 headers have two. A 64-bit BAR
+ * must fit entirely within those registers. Other header types are unsupported.
+ *
+ * @param ep Endpoint with a non-NULL controller.
+ * @param bar_index BAR register index, from 0 to 5.
+ * @param bar Non-NULL output BAR descriptor.
+ * @retval 0 Memory BAR found and translated.
+ * @retval -EINVAL Invalid endpoint, BDF encoding, index above 5 or output pointer.
+ * @retval -ENOENT BAR is absent, unassigned, an I/O BAR or a 64-bit BAR's upper word.
+ *                 Also returned when the BAR index or a 64-bit BAR extends beyond
+ *                 the header's BAR registers.
+ * @retval -ENOTSUP Header type, access, translation or the BAR address/size is unsupported.
+ * @return Negative backend errno on failure.
+ */
+int pcie_endpoint_get_mbar(const struct pcie_endpoint *ep, unsigned int bar_index,
+			   struct pcie_bar *bar);
 
 /*
  * These functions are arch-, board-, or SoC-specific.

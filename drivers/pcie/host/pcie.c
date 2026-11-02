@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/sys/iterable_sections.h>
 
+#include "pcie_priv.h"
+
 #ifdef CONFIG_ACPI
 #include <zephyr/acpi/acpi.h>
 #endif
@@ -54,6 +56,9 @@ void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
 
 uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
+#ifdef CONFIG_PCIE_CONTROLLER
+	return pcie_ctrl_get_cap(DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller)), bdf, cap_id);
+#else
 	uint32_t reg = 0U;
 	uint32_t data;
 
@@ -74,10 +79,19 @@ uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	}
 
 	return reg;
+#endif
 }
 
 uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 {
+#ifdef CONFIG_PCIE_CONTROLLER
+	const struct pcie_endpoint ep = {
+		.ctrl = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller)), .bdf = bdf,
+	};
+	uint32_t cap;
+
+	return pcie_endpoint_get_ext_cap(&ep, cap_id, &cap) == 0 ? cap : 0U;
+#else
 	unsigned int reg = PCIE_CONF_EXT_CAPPTR; /* Start at end of the PCI configuration space */
 	uint32_t data;
 
@@ -99,6 +113,7 @@ uint32_t pcie_get_ext_cap(pcie_bdf_t bdf, uint32_t cap_id)
 	}
 
 	return reg;
+#endif
 }
 
 /**
@@ -115,33 +130,25 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 			 struct pcie_bar *bar,
 			 bool io)
 {
+#ifdef CONFIG_PCIE_CONTROLLER
+	const struct pcie_endpoint ep = z_pcie_legacy_endpoint(bdf);
+
+	return z_pcie_get_bar(&ep, bar_index, bar, io) == 0;
+#else
 	uint32_t reg = bar_index + PCIE_CONF_BAR0;
 	uint32_t cmd_reg;
 	bool ret = false;
-#ifdef CONFIG_PCIE_CONTROLLER
-	const struct device *dev;
-#endif
 	uintptr_t phys_addr;
 	size_t size;
-
-#ifdef CONFIG_PCIE_CONTROLLER
-	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller));
-	if (!dev) {
-		LOG_ERR("Failed to get PCIe root complex");
-		return false;
-	}
-#endif
 
 	if (reg > PCIE_CONF_BAR5) {
 		return false;
 	}
 
 	phys_addr = pcie_conf_read(bdf, reg);
-#ifndef CONFIG_PCIE_CONTROLLER
 	if ((PCIE_CONF_BAR_MEM(phys_addr) && io) || (PCIE_CONF_BAR_IO(phys_addr) && !io)) {
 		return false;
 	}
-#endif
 
 	if (PCIE_CONF_BAR_INVAL_FLAGS(phys_addr)) {
 		/* Discard on invalid flags */
@@ -191,19 +198,7 @@ static bool pcie_get_bar(pcie_bdf_t bdf,
 		}
 	}
 
-#ifdef CONFIG_PCIE_CONTROLLER
-	/* Translate to physical memory address from bus address */
-	if (!pcie_ctrl_region_translate(dev, bdf, PCIE_CONF_BAR_MEM(phys_addr),
-					PCIE_CONF_BAR_64(phys_addr),
-					PCIE_CONF_BAR_MEM(phys_addr) ?
-						PCIE_CONF_BAR_ADDR(phys_addr)
-						: PCIE_CONF_BAR_IO_ADDR(phys_addr),
-					&bar->phys_addr)) {
-		goto err_exit;
-	}
-#else
 	bar->phys_addr = PCIE_CONF_BAR_ADDR(phys_addr);
-#endif /* CONFIG_PCIE_CONTROLLER */
 	bar->size = size & ~(size-1);
 
 	ret = true;
@@ -211,6 +206,7 @@ err_exit:
 	pcie_conf_write(bdf, PCIE_CONF_CMDSTAT, cmd_reg);
 
 	return ret;
+#endif
 }
 
 /**
@@ -233,11 +229,16 @@ static bool pcie_probe_bar(pcie_bdf_t bdf,
 			   struct pcie_bar *bar,
 			   bool io)
 {
+	const struct pcie_endpoint ep = z_pcie_legacy_endpoint(bdf);
 	uint32_t reg;
 
 	for (reg = PCIE_CONF_BAR0;
 	     (index > 0) && (reg <= PCIE_CONF_BAR5); reg++, index--) {
-		uintptr_t addr = pcie_conf_read(bdf, reg);
+		uint32_t addr;
+
+		if (z_pcie_conf_read(&ep, reg, &addr) != 0) {
+			return false;
+		}
 
 		if (PCIE_CONF_BAR_MEM(addr) && PCIE_CONF_BAR_64(addr)) {
 			reg++;
@@ -255,7 +256,12 @@ bool pcie_get_mbar(pcie_bdf_t bdf,
 		   unsigned int bar_index,
 		   struct pcie_bar *mbar)
 {
+#ifdef CONFIG_PCIE_CONTROLLER
+	return pcie_ctrl_get_mbar(DEVICE_DT_GET(DT_CHOSEN(zephyr_pcie_controller)), bdf,
+				  bar_index, mbar);
+#else
 	return pcie_get_bar(bdf, bar_index, mbar, false);
+#endif
 }
 
 bool pcie_probe_mbar(pcie_bdf_t bdf,

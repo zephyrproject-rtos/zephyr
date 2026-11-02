@@ -67,6 +67,39 @@ typedef void (*pcie_ctrl_conf_write_t)(const struct device *dev, pcie_bdf_t bdf,
 					  unsigned int reg, uint32_t data);
 
 /**
+ * @brief Function called to read a configuration word with status reporting.
+ *
+ * Endpoint access prefers this optional callback over conf_read. The caller owns
+ * the output word, which is valid only on success.
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param bdf PCI(e) endpoint
+ * @param reg the configuration word index (not address), less than 1024
+ * @param value non-NULL pointer to the word read
+ *
+ * @retval 0 Word read
+ * @return Negative errno on failure
+ */
+typedef int (*pcie_ctrl_conf_read_status_t)(const struct device *dev, pcie_bdf_t bdf,
+					 unsigned int reg, uint32_t *value);
+
+/**
+ * @brief Function called to write a configuration word with status reporting.
+ *
+ * Endpoint access prefers this optional callback over conf_write.
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param bdf PCI(e) endpoint
+ * @param reg the configuration word index (not address), less than 1024
+ * @param value the value to write
+ *
+ * @retval 0 Word written
+ * @return Negative errno on failure
+ */
+typedef int (*pcie_ctrl_conf_write_status_t)(const struct device *dev, pcie_bdf_t bdf,
+					  unsigned int reg, uint32_t value);
+
+/**
  * @brief Function called to allocate a memory region subset for an endpoint Base Address Register.
  *
  * When enumerating PCIe Endpoints, Type0 endpoints can require up to 6 memory zones
@@ -132,6 +165,7 @@ typedef bool (*pcie_ctrl_region_translate_t)(const struct device *dev, pcie_bdf_
 #ifdef CONFIG_PCIE_MSI
 typedef uint8_t (*pcie_ctrl_msi_device_setup_t)(const struct device *dev, unsigned int priority,
 						msi_vector_t *vectors, uint8_t n_vector);
+
 #endif
 
 /**
@@ -197,6 +231,10 @@ __subsystem struct pcie_ctrl_driver_api {
 	 */
 	pcie_ctrl_msi_device_setup_t msi_device_setup;
 #endif
+	/** @driver_ops_optional @copybrief pcie_ctrl_conf_read_status_t */
+	pcie_ctrl_conf_read_status_t conf_read_status;
+	/** @driver_ops_optional @copybrief pcie_ctrl_conf_write_status_t */
+	pcie_ctrl_conf_write_status_t conf_write_status;
 };
 
 /** @} */
@@ -234,6 +272,32 @@ static inline void pcie_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf
 {
 	DEVICE_API_GET(pcie_ctrl, dev)->conf_write(dev, bdf, reg, data);
 }
+
+/**
+ * @brief Find a capability through a specific controller.
+ *
+ * @param ctrl PCI Express Controller device pointer; must not be NULL
+ * @param bdf PCI(e) endpoint
+ * @param cap_id capability ID to find
+ *
+ * @return Configuration word index of the matching capability
+ * @retval 0 No matching capability is present, or access failed
+ */
+uint32_t pcie_ctrl_get_cap(const struct device *ctrl, pcie_bdf_t bdf, uint32_t cap_id);
+
+/**
+ * @brief Probe a memory BAR through a specific controller.
+ *
+ * @param ctrl PCI Express Controller device pointer; must not be NULL
+ * @param bdf PCI(e) endpoint
+ * @param bar_index 0-based BAR index, from 0 to 5
+ * @param bar pointer to struct pcie_bar; must not be NULL
+ *
+ * @retval true Memory BAR found and translated
+ * @retval false BAR is absent or access failed
+ */
+bool pcie_ctrl_get_mbar(const struct device *ctrl, pcie_bdf_t bdf, unsigned int bar_index,
+			struct pcie_bar *bar);
 
 /**
  * @brief Allocate a memory region subset for an endpoint Base Address Register.
