@@ -2765,10 +2765,12 @@ enum l2cap_br_conn_security_result {
  */
 
 static enum l2cap_br_conn_security_result
-l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
+l2cap_br_conn_security(struct bt_conn *conn, struct bt_l2cap_chan *chan, const uint16_t psm)
 {
 	int check;
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	enum l2cap_br_conn_security_result result;
+	bt_security_t required_sec_level;
 
 	/* For SDP PSM there's no need to change existing security on link */
 	if (br_chan->required_sec_level == BT_SECURITY_L0) {
@@ -2779,8 +2781,7 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 	 * No link key needed for legacy devices (pre 2.1) and when low security
 	 * level is required.
 	 */
-	if (br_chan->required_sec_level == BT_SECURITY_L1 &&
-	    !BT_FEAT_HOST_SSP(chan->conn->br.features)) {
+	if (br_chan->required_sec_level == BT_SECURITY_L1 && !BT_FEAT_HOST_SSP(conn->br.features)) {
 		return L2CAP_CONN_SECURITY_PASSED;
 	}
 
@@ -2796,15 +2797,14 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 		 * remote supports SSP before any L2CAP CoC traffic. So preset
 		 * local to MEDIUM security to trigger it if needed.
 		 */
-		if (BT_FEAT_HOST_SSP(chan->conn->br.features)) {
+		if (BT_FEAT_HOST_SSP(conn->br.features)) {
 			br_chan->required_sec_level = BT_SECURITY_L2;
 		}
 		break;
 	}
 
-	if (chan->conn->sec_level < br_chan->required_sec_level &&
-	    chan->conn->encrypt && chan->conn->br.link_key &&
-	    (chan->conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED)) {
+	if (conn->sec_level < br_chan->required_sec_level && conn->encrypt && conn->br.link_key &&
+	    (conn->br.link_key->flags & BT_LINK_KEY_AUTHENTICATED)) {
 		/*
 		 * If the ACL link has been encrypted and it has a authenticated link key, it means
 		 * the pairing procedure has been done. And the security level of the link key can
@@ -2814,41 +2814,57 @@ l2cap_br_conn_security(struct bt_l2cap_chan *chan, const uint16_t psm)
 		return L2CAP_CONN_SECURITY_REJECT;
 	}
 
-	check = bt_conn_set_security(chan->conn, br_chan->required_sec_level);
+	required_sec_level = br_chan->required_sec_level;
 
-	/*
-	 * Check case when on existing connection security level already covers
-	 * channel (service) security requirements against link security and
-	 * bt_conn_set_security API returns 0 what implies also there was no
-	 * need to trigger authentication.
-	 */
-	if (check == 0 &&
-	    chan->conn->sec_level >= br_chan->required_sec_level) {
-		return L2CAP_CONN_SECURITY_PASSED;
+	check = bt_conn_set_security(conn, required_sec_level);
+	if (check != 0) {
+		/*
+		 * For any other values in 'check' it means there was internal
+		 * validation condition forbidding to start authentication at this
+		 * moment.
+		 */
+		return L2CAP_CONN_SECURITY_REJECT;
 	}
 
 	/*
-	 * If 'check' still holds 0, it means local host just sent HCI
-	 * authentication command to start procedure to increase link security
-	 * since service/profile requires that.
+	 * bt_l2cap_br_chan_connect() can get here with the result of the procedure
+	 * already handled by bt_workq, or the link gone. The channel only waits for
+	 * the result from the point where bt_workq can no longer have passed it by.
 	 */
-	if (check == 0) {
+	k_sched_lock();
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		result = L2CAP_CONN_SECURITY_REJECT;
+	} else if (conn->sec_level >= required_sec_level) {
 		/*
+		 * Check case when on existing connection security level already covers
+		 * channel (service) security requirements against link security and
+		 * bt_conn_set_security API returns 0 what implies also there was no
+		 * need to trigger authentication.
+		 */
+		result = L2CAP_CONN_SECURITY_PASSED;
+	} else if (conn->required_sec_level >= required_sec_level) {
+		/*
+		 * It means local host just sent HCI authentication command to start
+		 * procedure to increase link security since service/profile requires
+		 * that.
+		 *
 		 * General Bonding refers to the process of performing bonding
 		 * during connection setup or channel establishment procedures
 		 * as a precursor to accessing a service.
 		 * For current case, it is dedicated bonding.
 		 */
-		atomic_set_bit(chan->conn->flags, BT_CONN_BR_GENERAL_BONDING);
-		return L2CAP_CONN_SECURITY_PENDING;
+		atomic_set_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING);
+		atomic_set_bit(br_chan->flags, L2CAP_FLAG_CONN_PENDING);
+		result = L2CAP_CONN_SECURITY_PENDING;
+	} else {
+		/* The procedure ended without reaching the level */
+		result = L2CAP_CONN_SECURITY_REJECT;
 	}
 
-	/*
-	 * For any other values in 'check' it means there was internal
-	 * validation condition forbidding to start authentication at this
-	 * moment.
-	 */
-	return L2CAP_CONN_SECURITY_REJECT;
+	k_sched_unlock();
+
+	return result;
 }
 
 static void l2cap_br_conn_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
@@ -3115,7 +3131,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	BR_CHAN(chan)->rx.mtu = MIN(BR_CHAN(chan)->rx.mtu, BT_L2CAP_RX_MTU);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	switch (l2cap_br_conn_security(chan, psm)) {
+	switch (l2cap_br_conn_security(conn, chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
 		result = BT_L2CAP_BR_PENDING;
 		/* TODO: auth timeout */
@@ -5296,6 +5312,25 @@ static void l2cap_br_connect_req(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan
 	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CONN_TIMEOUT);
 }
 
+/* The disconnection can have taken the channel while the connect call was waiting */
+static void l2cap_br_chan_connect_abort(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+{
+	sys_snode_t *prev;
+	bool added;
+
+	/* Whoever takes the channel off the list releases it */
+	bt_dev_lock();
+	added = sys_slist_find(&conn->channels, &chan->node, &prev);
+	if (added) {
+		sys_slist_remove(&conn->channels, prev, &chan->node);
+	}
+	bt_dev_unlock();
+
+	if (added) {
+		bt_l2cap_br_chan_del(chan);
+	}
+}
+
 int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint16_t psm)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
@@ -5355,9 +5390,8 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 
 	br_chan->psm = psm;
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
-	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 
-	switch (l2cap_br_conn_security(chan, psm)) {
+	switch (l2cap_br_conn_security(conn, chan, psm)) {
 	case L2CAP_CONN_SECURITY_PENDING:
 		/*
 		 * Authentication was triggered, wait with sending request on
@@ -5368,19 +5402,16 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 		break;
 	case L2CAP_CONN_SECURITY_REJECT:
 	default:
-		l2cap_br_chan_cleanup(chan);
+		l2cap_br_chan_connect_abort(conn, chan);
 		return -EIO;
 	}
 
 	l2cap = l2cap_br_find_signal_channel(conn);
 	if (l2cap == NULL) {
 		LOG_ERR("Signaling channel not found");
-		l2cap_br_chan_cleanup(chan);
+		l2cap_br_chan_connect_abort(conn, chan);
 		return -ENOTCONN;
 	}
-
-	/* Clear `L2CAP_FLAG_CONN_PENDING` if the security level is matched */
-	atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 
 	bt_work_schedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_CONN_INIT_TIMEOUT);
 	l2cap_br_connect_req(l2cap, chan);
