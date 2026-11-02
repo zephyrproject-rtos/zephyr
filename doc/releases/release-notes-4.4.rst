@@ -366,8 +366,8 @@ Deprecated APIs and options
 
   * NXP
 
-    * Deprecated the ``mcux_lpcmp`` driver (:zephyr_file:`drivers/sensor/nxp/mcux_lpcmp/mcux_lpcmp.c`). It is
-      currently scheduled to be removed in Zephyr 4.6, along with the ``mcux_lpcmp`` sample. (:github:`100998`).
+    * Deprecated the ``mcux_lpcmp`` driver. It is currently scheduled to be removed in Zephyr 4.6,
+      along with the ``mcux_lpcmp`` sample. (:github:`100998`).
 
 * Timer
 

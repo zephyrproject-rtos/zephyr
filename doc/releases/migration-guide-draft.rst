@@ -114,6 +114,35 @@ Audio Codec
   When using a :dtcompatible:`fixed-clock` node,
   :kconfig:option:`CONFIG_CLOCK_CONTROL_FIXED_RATE_CLOCK` must be enabled.
 
+Comparator
+==========
+
+* The deprecated ``mcux_lpcmp`` sensor driver, its public header
+  ``zephyr/drivers/sensor/mcux_lpcmp.h``, the ``CONFIG_MCUX_LPCMP_TRIGGER`` option and its sample
+  have been removed. Applications using ``CONFIG_MCUX_LPCMP`` must enable
+  :kconfig:option:`CONFIG_COMPARATOR` and
+  :kconfig:option:`CONFIG_COMPARATOR_NXP_LPCMP` and migrate to the :ref:`comparator_api` instead of
+  the sensor API.
+
+  The :dtcompatible:`nxp,lpcmp` devicetree compatible is unchanged, but existing overlays must be
+  updated for the comparator driver. Legacy sensor properties remain in the binding but are not
+  consumed by the comparator driver:
+
+  * Replace ``hysteresis-level`` with ``hysteresis-mode``, converting integer values ``0`` through
+    ``3`` to strings ``"LEVEL0"`` through ``"LEVEL3"``.
+  * ``power-level = "low"`` becomes ``power-mode = "low_speed"`` and
+    ``power-level = "high"`` becomes ``power-mode = "high_speed"``. The old ``"nano"`` value has
+    no corresponding ``power-mode`` setting.
+  * Replace ``enable-output-pin`` with ``enable-pin-out``. Use ``invert-output`` for output
+    inversion.
+  * The ``function-clock`` property is not used by the comparator driver. Review the SoC clock
+    configuration and the standard ``clocks`` property separately; ``clocks`` is not a direct
+    replacement for the LPCMP internal functional clock-source selection.
+
+  Refer to :zephyr_file:`dts/bindings/comparator/nxp,lpcmp.yaml` for the property definitions. The
+  :zephyr_file:`tests/drivers/comparator/gpio_loopback` test provides an example of the comparator
+  API. (:github:`124232`).
+
 Ethernet
 ========
 
