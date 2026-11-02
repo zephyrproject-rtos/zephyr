@@ -542,7 +542,7 @@ TEST_CASES = (
 os_path_isfile = os.path.isfile
 
 def os_path_isfile_patch(filename):
-    if filename == RC_KERNEL_BIN:
+    if filename in (RC_KERNEL_BIN, RC_KERNEL_ELF, RC_KERNEL_HEX):
         return True
     return os_path_isfile(filename)
 
