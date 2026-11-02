@@ -7,6 +7,10 @@
 
 void test_peripheral_main(void);
 void test_central_main(void);
+void test_kept_keys_not_bonded_dut_main(void);
+void test_kept_keys_not_bonded_peer_main(void);
+void test_kept_keys_unpaired_dut_main(void);
+void test_kept_keys_unpaired_peer_main(void);
 
 static const struct bst_test_instance test_def[] = {
 	{
@@ -18,6 +22,26 @@ static const struct bst_test_instance test_def[] = {
 		.test_id = "central",
 		.test_descr = "Central expecting to be disconnected by the peripheral",
 		.test_main_f = test_central_main,
+	},
+	{
+		.test_id = "kept_keys_not_bonded_dut",
+		.test_descr = "A kept connection object after pairing without bonding",
+		.test_main_f = test_kept_keys_not_bonded_dut_main,
+	},
+	{
+		.test_id = "kept_keys_not_bonded_peer",
+		.test_descr = "Pairs without bonding, then bonds with another identity",
+		.test_main_f = test_kept_keys_not_bonded_peer_main,
+	},
+	{
+		.test_id = "kept_keys_unpaired_dut",
+		.test_descr = "A kept connection object after unpairing its peer",
+		.test_main_f = test_kept_keys_unpaired_dut_main,
+	},
+	{
+		.test_id = "kept_keys_unpaired_peer",
+		.test_descr = "Bonds, reconnects, then bonds with another identity",
+		.test_main_f = test_kept_keys_unpaired_peer_main,
 	},
 	BSTEST_END_MARKER,
 };
