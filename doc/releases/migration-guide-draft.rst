@@ -322,6 +322,28 @@ Networking
   :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to keep IPv4 first, for example with
   offloaded network interfaces, where reachability cannot be determined.
 
+* Network interface driver APIs are now device API classes. Out-of-tree network drivers must define
+  their API instances with :c:macro:`DEVICE_API` and use the renamed structs:
+
+  * ``struct net_if_api`` is now :c:struct:`net_if_driver_api`.
+  * ``struct ethernet_api`` is now :c:struct:`ethernet_driver_api`.
+  * ``struct dummy_api`` is now :c:struct:`dummy_driver_api`.
+  * ``struct ppp_api`` is now :c:struct:`ppp_driver_api`.
+  * ``struct canbus_api`` is now :c:struct:`canbus_driver_api`.
+  * ``struct offloaded_if_api`` is now :c:struct:`offloaded_if_driver_api`.
+  * ``struct virtual_interface_api`` is now :c:struct:`virtual_interface_driver_api`.
+  * ``struct hdlc_api`` is now :c:struct:`hdlc_driver_api`.
+  * ``struct ieee802154_radio_api`` is now :c:struct:`ieee802154_radio_driver_api`.
+
+  For example, ``static const struct ethernet_api api = {...}`` becomes
+  ``static DEVICE_API(ethernet, api) = {...}``. API instances are now always constant, and cannot
+  be modified at runtime. (:github:`124334`)
+
+* Wi-Fi drivers must define their API with ``DEVICE_API(wifi_native, name)`` when
+  :kconfig:option:`CONFIG_WIFI_USE_NATIVE_NETWORKING` is enabled, or with
+  ``DEVICE_API(wifi_offload, name)`` otherwise. ``struct net_wifi_mgmt_offload`` remains available
+  to refer to the selected type. (:github:`124334`)
+
 Other subsystems
 ****************
 
