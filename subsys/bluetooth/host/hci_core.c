@@ -1248,7 +1248,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	if (!bt_conn_is_le(conn)) {
 #if defined(CONFIG_BT_CLASSIC)
 		if (bt_conn_is_sco(conn)) {
-			bt_sco_cleanup(conn);
+			bt_sco_cleanup(bt_conn_take(&conn));
 			return;
 		}
 		/*
