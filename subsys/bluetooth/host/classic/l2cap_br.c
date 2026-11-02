@@ -5920,11 +5920,12 @@ static void l2cap_br_retry_handler(struct k_work *work)
 	}
 }
 
-static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
+/* Returns true when the channel was released and must not be touched any more */
+static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 			       uint8_t status)
 {
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
-		return;
+		return false;
 	}
 
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
@@ -5936,19 +5937,20 @@ static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 		 */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
 			l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
-			return;
+			return false;
 		}
 
 		/* Release channel allocated to outgoing connection request */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
 			l2cap_br_chan_cleanup(chan);
+			return true;
 		}
 
-		return;
+		return false;
 	}
 
 	if (chan->conn->encrypt == 0) {
-		return;
+		return false;
 	}
 
 	/*
@@ -5957,19 +5959,22 @@ static void l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 	 */
 	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
 		l2cap_br_pend_conn_req_reply_success(l2cap, chan);
-		return;
+		return false;
 	}
 
 	if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
 		l2cap_br_connect_req(l2cap, chan);
 	}
+
+	return false;
 }
 
 void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 {
-	struct bt_l2cap_chan *chan;
+	struct bt_l2cap_chan *chan, *next;
 	struct bt_l2cap_br *l2cap;
 	struct bt_l2cap_chan *sig_ch = bt_l2cap_br_lookup_tx_cid(conn, BT_L2CAP_CID_BR_SIG);
+	const sys_snode_t *last;
 
 	if (sig_ch == NULL) {
 		LOG_ERR("Invalid BR SIG channel");
@@ -5978,16 +5983,19 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 
 	l2cap = CONTAINER_OF(sig_ch, struct bt_l2cap_br, chan.chan);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		l2cap_br_conn_pend(l2cap, chan, hci_status);
+	/* A callback can start a channel, which then waits for a procedure of its own */
+	last = sys_slist_peek_tail(&conn->channels);
 
-		if (chan->conn == NULL) {
-			LOG_WRN("Invalid ACL conn for chan %p", chan);
-			continue;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		const bool is_last = (&chan->node == last);
+
+		if (!l2cap_br_conn_pend(l2cap, chan, hci_status) && chan->ops &&
+		    chan->ops->encrypt_change) {
+			chan->ops->encrypt_change(chan, hci_status);
 		}
 
-		if (chan->ops && chan->ops->encrypt_change) {
-			chan->ops->encrypt_change(chan, hci_status);
+		if (is_last) {
+			break;
 		}
 	}
 }
