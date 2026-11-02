@@ -803,7 +803,11 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	/* read and send file */
 	remaining = file_size;
 	while (remaining > 0) {
-		len = fs_read(&file, http_response, sizeof(http_response));
+		/* Never send more than the announced Content-Length, even if
+		 * the file has grown since fs_stat().
+		 */
+		len = fs_read(&file, http_response,
+			      MIN((size_t)remaining, sizeof(http_response)));
 		if (len < 0) {
 			LOG_ERR("Filesystem read error (%d)", len);
 			ret = len;
