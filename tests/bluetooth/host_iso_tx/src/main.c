@@ -41,6 +41,7 @@
 
 #define ACL_HANDLE 0x0001U
 #define CIS_HANDLE 0x0010U
+#define PEER_CIS_HANDLE 0x0011U
 
 /* An SDU that fits in one ISO data packet, and one that takes two */
 #define SHORT_SDU_LEN 10U
@@ -135,7 +136,8 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
-	sys_put_le64(BIT64(BT_LE_FEAT_BIT_CIS_CENTRAL), rp->features);
+	sys_put_le64(BIT64(BT_LE_FEAT_BIT_CIS_CENTRAL) | BIT64(BT_LE_FEAT_BIT_CIS_PERIPHERAL),
+		     rp->features);
 }
 
 static void le_read_buffer_size_v2(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -184,6 +186,22 @@ static void le_set_cig_params(struct net_buf *buf, struct net_buf **evt, uint8_t
 	rp->handle[0] = sys_cpu_to_le16(CIS_HANDLE);
 }
 
+/* The only CIS request in these tests is one the controller refuses to accept */
+static void le_accept_cis(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	struct bt_hci_evt_cmd_status *cs;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	*evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	evt_create(*evt, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
+	cs = net_buf_add(*evt, sizeof(*cs));
+	cs->status = BT_HCI_ERR_CMD_DISALLOWED;
+	cs->ncmd = 1U;
+	cs->opcode = sys_cpu_to_le16(opcode);
+}
+
 static const struct cmd_handler cmds[] = {
 	{
 		BT_HCI_OP_READ_LOCAL_FEATURES,
@@ -219,6 +237,11 @@ static const struct cmd_handler cmds[] = {
 		BT_HCI_OP_LE_SET_CIG_PARAMS,
 		sizeof(struct bt_hci_rp_le_set_cig_params),
 		le_set_cig_params,
+	},
+	{
+		BT_HCI_OP_LE_ACCEPT_CIS,
+		0U,
+		le_accept_cis,
 	},
 };
 
@@ -650,4 +673,89 @@ static ZTEST(iso_tx, test_unacked_sdu_on_disable)
 	zassert_equal(sent_count, 0U, "%u SDUs reported as sent", sent_count);
 	zassert_equal(send_failed_count, 1U, "%u SDUs reported as failed (!= 1)",
 		      send_failed_count);
+}
+
+static K_SEM_DEFINE(peer_cis_disconnected_sem, 0, 1);
+static uint8_t peer_cis_reason;
+
+static void peer_cis_connected(struct bt_iso_chan *chan)
+{
+	ARG_UNUSED(chan);
+
+	zassert_unreachable("A refused CIS reported as connected");
+}
+
+static void peer_cis_disconnected(struct bt_iso_chan *chan, uint8_t reason)
+{
+	ARG_UNUSED(chan);
+
+	peer_cis_reason = reason;
+	k_sem_give(&peer_cis_disconnected_sem);
+}
+
+static struct bt_iso_chan_ops peer_cis_ops = {
+	.connected = peer_cis_connected,
+	.disconnected = peer_cis_disconnected,
+};
+
+static struct bt_iso_chan peer_cis_chan = {
+	.ops = &peer_cis_ops,
+};
+
+static int peer_cis_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan)
+{
+	ARG_UNUSED(info);
+
+	*chan = &peer_cis_chan;
+
+	return 0;
+}
+
+static struct bt_iso_server peer_cis_server = {
+	.accept = peer_cis_accept,
+};
+
+static void cis_accept_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (!bt_is_ready()) {
+		start();
+	}
+
+	k_sem_reset(&peer_cis_disconnected_sem);
+	zassert_ok(bt_iso_server_register(&peer_cis_server), "Registering the server failed");
+}
+
+static void cis_accept_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	zassert_ok(bt_iso_server_unregister(&peer_cis_server), "Unregistering the server failed");
+}
+
+ZTEST_SUITE(iso_cis_accept, NULL, NULL, cis_accept_before, cis_accept_after, NULL);
+
+/* The application already has the channel when the controller refuses the CIS.
+ * The channel has to be told and let go of the connection object. Requesting as
+ * many times as there are objects shows that each one is free again.
+ */
+static ZTEST(iso_cis_accept, test_accept_refused)
+{
+	const struct bt_hci_evt_le_cis_req evt = {
+		.acl_handle = sys_cpu_to_le16(ACL_HANDLE),
+		.cis_handle = sys_cpu_to_le16(PEER_CIS_HANDLE),
+	};
+
+	for (uint8_t round = 0U; round < CONFIG_BT_ISO_MAX_CHAN; round++) {
+		le_meta_event(BT_HCI_EVT_LE_CIS_REQ, &evt, sizeof(evt));
+
+		zassert_ok(k_sem_take(&peer_cis_disconnected_sem, K_SECONDS(1)),
+			   "Round %u: channel not told about the refused CIS", round);
+		zassert_equal(peer_cis_reason, BT_HCI_ERR_UNSPECIFIED, "Round %u: reason 0x%02x",
+			      round, peer_cis_reason);
+		zassert_is_null(peer_cis_chan.iso, "Round %u: channel kept the connection", round);
+		zassert_equal(peer_cis_chan.state, BT_ISO_STATE_DISCONNECTED,
+			      "Round %u: channel in state %u", round, peer_cis_chan.state);
+	}
 }
