@@ -1905,7 +1905,7 @@ static const struct socket_dns_offload offload_dns_ops = {
 };
 #endif
 
-static struct offloaded_if_api api_funcs = {
+static const struct offloaded_if_api api_funcs = {
 	.iface_api.init = modem_net_iface_init,
 };
 

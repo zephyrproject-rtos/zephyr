@@ -1123,7 +1123,7 @@ static void modem_net_iface_init(struct net_if *iface)
 	net_if_socket_offload_set(iface, offload_socket);
 }
 
-static struct offloaded_if_api api_funcs = {
+static const struct offloaded_if_api api_funcs = {
 	.iface_api.init = modem_net_iface_init,
 };
 
