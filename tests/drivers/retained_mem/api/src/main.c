@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/cache.h>
 #include <zephyr/drivers/retained_mem.h>
 #include <zephyr/ztest.h>
 #include <errno.h>
@@ -112,6 +113,7 @@ ZTEST(a_retained_mem_api_reboot, test_reboot)
 		zassert_equal(rc, 0, "Return code should be success");
 
 		test_status = TEST_STATUS_REBOOT;
+		sys_cache_data_flush_range((void *)(uintptr_t)&test_status, sizeof(test_status));
 
 		sys_reboot(SYS_REBOOT_COLD);
 	}
