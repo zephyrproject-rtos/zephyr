@@ -5829,26 +5829,34 @@ done:
 	return 0;
 }
 
-static void l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
+/* Returns true when the channel was released and must not be touched any more */
+static bool l2cap_br_pend_conn_req_reply_sec_block(struct bt_l2cap_br *l2cap,
 						   struct bt_l2cap_chan *chan)
 {
 	/* Send response to connection request only when in acceptor role */
 	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-		return;
+		return false;
 	}
 
 	if (BR_CHAN(chan)->state != BT_L2CAP_CONNECTING) {
-		return;
+		return false;
 	}
 
 	if (!l2cap_br_allocate_buf(l2cap)) {
 		LOG_WRN("No buffers for conn rsp (sec block)");
+		/* The refusal replaces a success still waiting for a buffer */
+		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SUCCESS);
 		atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK);
-		bt_work_schedule(&BR_CHAN(chan)->retry_work, L2CAP_BR_RETRY_INTERVAL);
-		return;
+		bt_work_schedule(&l2cap->chan.retry_work, L2CAP_BR_RETRY_INTERVAL);
+		return false;
 	}
 
 	l2cap_br_conn_req_reply(l2cap, chan, BT_L2CAP_BR_ERR_SEC_BLOCK);
+
+	/* The refusal closes the channel, so the peer can retry with the same SCID */
+	l2cap_br_chan_cleanup(chan);
+
+	return true;
 }
 
 static void l2cap_br_pend_conn_req_reply_success(struct bt_l2cap_br *l2cap,
@@ -5899,6 +5907,26 @@ static void l2cap_br_retry_signaling_handler(struct bt_l2cap_br *l2cap)
 	}
 }
 
+/* Runs from the work of the signaling channel, as releasing a channel from its own work would have
+ * the kernel use the work item after the application got the channel back.
+ */
+static void l2cap_br_retry_sec_block(struct bt_l2cap_br *l2cap)
+{
+	struct bt_conn *conn = l2cap->chan.chan.conn;
+	struct bt_l2cap_chan *chan, *next;
+
+	if (conn == NULL) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
+					      L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
+			(void)l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
+		}
+	}
+}
+
 static void l2cap_br_retry_handler(struct k_work *work)
 {
 	struct bt_l2cap_br *l2cap = NULL;
@@ -5907,6 +5935,7 @@ static void l2cap_br_retry_handler(struct k_work *work)
 	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
 		l2cap = CONTAINER_OF(chan, struct bt_l2cap_br, chan);
 		LOG_DBG("Retry BR/EDR signalling channel handler");
+		l2cap_br_retry_sec_block(l2cap);
 		l2cap_br_retry_signaling_handler(l2cap);
 	}
 
@@ -5928,10 +5957,6 @@ static void l2cap_br_retry_handler(struct k_work *work)
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_SIG_INFO_FEAT_REQ)) {
 		l2cap_br_get_info_req(l2cap);
-	}
-
-	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
-		l2cap_br_pend_conn_req_reply_sec_block(l2cap, &chan->chan);
 	}
 
 	if (atomic_test_and_clear_bit(chan->flags, L2CAP_FLAG_CONN_RSP_SUCCESS)) {
@@ -5959,6 +5984,11 @@ static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 		return false;
 	}
 
+	/* A refusal waiting for a buffer stands, whatever the link gets to in the meantime */
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
+		return false;
+	}
+
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
 
 	if (status != 0) {
@@ -5967,8 +5997,7 @@ static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 		 * security violation only as channel acceptor.
 		 */
 		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-			l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
-			return false;
+			return l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
 		}
 
 		/* Release channel allocated to outgoing connection request */
