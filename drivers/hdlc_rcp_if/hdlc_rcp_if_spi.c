@@ -505,7 +505,7 @@ static int hdlc_deferred_init(void)
 }
 #endif /* CONFIG_HDLC_RCP_IF_SPI_DEFERRED_INIT */
 
-static const struct hdlc_api spi_hdlc_api = {
+static DEVICE_API(hdlc, spi_hdlc_api) = {
 	.iface_api.init = hdlc_iface_init,
 	.register_rx_cb = hdlc_register_rx_cb,
 	.send = hdlc_send,
