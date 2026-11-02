@@ -574,16 +574,14 @@ static inline void icm4268x_gyro_rads(const struct icm4268x_cfg *cfg, int32_t in
  */
 static inline void icm4268x_temp_c(int32_t in, int32_t *out_c, int32_t *out_uc)
 {
-	int64_t sensitivity = 13248; /* value equivalent for x100 1c */
+	const int32_t sensitivity = 13248;
+	int32_t temperature = in * 100 + 25 * sensitivity;
+	int32_t whole = temperature / sensitivity;
+	int32_t remainder = temperature - whole * sensitivity;
 
-	/* Offset by 25 degrees Celsius */
-	int64_t in100 = (in * 100) + (25 * sensitivity);
-
-	/* Whole celsius */
-	*out_c = in100 / sensitivity;
-
-	/* Micro celsius */
-	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
+	*out_c = whole;
+	/* 1000000 / 13248 = 15625 / 207 */
+	*out_uc = remainder * 15625 / 207;
 }
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM4268X_H_ */
