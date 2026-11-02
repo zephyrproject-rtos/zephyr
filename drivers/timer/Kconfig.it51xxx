@@ -13,7 +13,6 @@ config ITE_IT51XXX_TIMER
 config ITE_IT51XXX_TIMER_COUNTUP_IN_COMBINATION_MODE
 	bool
 	depends on ITE_IT51XXX_TIMER
-	default y if SOC_IT51526AW || SOC_IT51526BW
 	help
 	  Enable count-up mode for external timers when combination mode
 	  is used. This should be selected according to the hardware
