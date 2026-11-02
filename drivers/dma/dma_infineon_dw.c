@@ -12,6 +12,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/sys_io.h>
 
 LOG_MODULE_REGISTER(dma_ifx_dw, CONFIG_DMA_LOG_LEVEL);
@@ -377,6 +378,37 @@ static int ifx_dw_dma_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_dw_dma_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_dw_dma_config *config = dev->config;
+	mm_reg_t base = config->base;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		for (uint32_t ch = 0U; ch < config->num_channels; ch++) {
+			if ((sys_read32(base + DW_CH(ch) + DW_CH_STATUS) & DW_CH_STATUS_PENDING) !=
+			    0U) {
+				return -EBUSY;
+			}
+		}
+		sys_write32(sys_read32(base + DW_CTL) & ~DW_CTL_ENABLED, base + DW_CTL);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		sys_write32(sys_read32(base + DW_CTL) | DW_CTL_ENABLED, base + DW_CTL);
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		return ifx_dw_dma_init(dev);
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(dma, ifx_dw_dma_api) = {
 	.config = ifx_dw_dma_config,
 	.start = ifx_dw_dma_start,
@@ -421,8 +453,10 @@ static DEVICE_API(dma, ifx_dw_dma_api) = {
 		.enable_chaining = DT_INST_PROP(n, enable_chaining),                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_dw_dma_init, NULL, ifx_dw_dma_channels_##n,                   \
-			      &ifx_dw_dma_config_##n, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,      \
-			      &ifx_dw_dma_api);
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_dw_dma_pm_action);                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, ifx_dw_dma_init, PM_DEVICE_DT_INST_GET(n),                        \
+			      ifx_dw_dma_channels_##n, &ifx_dw_dma_config_##n, PRE_KERNEL_1,       \
+			      CONFIG_DMA_INIT_PRIORITY, &ifx_dw_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_DW_DMA_INIT)
