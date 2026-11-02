@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MCPASS v3 Comparator Slope Generator (CSG) with nine slices,
+  grouped power control and per-slice analog routing.
+
+  List infineon,hppass-csg as the fallback compatible so the shared driver
+  binds. The parent must use infineon,hppass-analog-v3; its revision selects
+  the shared HPPASS, CSG comparator and DAC register layouts.
+
+compatible: "infineon,hppass-csg-v3"
+
+include: infineon,hppass-csg.yaml
+
+properties:
+  infineon,aroute-inputs:
+    type: string-array
+    default: ["none", "none", "none", "none", "none", "none", "none", "none", "none"]
+    enum:
+      - "none"
+      - "ain-a"
+      - "ain-b"
+      - "ain-c"
+      - "ain-d"
+    description: |
+      Analog input selections for the nine CSG route muxes, in mux index
+      order 0 through 8. Each entry programs CSG_AROUTEMUX_SEL[index]:
+      "none" disconnects the mux; "ain-a" through "ain-d" select its
+      analog input A through D. Pin availability depends on the device
+      and package.
+
+      Mux outputs can feed neighboring comparators as well as their own
+      slice. All consumers of a mux share this selection. The CSG MFD
+      configures all nine muxes, regardless of which comparator nodes
+      are enabled, and restores them after power loss.

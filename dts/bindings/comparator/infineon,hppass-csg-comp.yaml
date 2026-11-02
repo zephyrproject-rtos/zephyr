@@ -1,5 +1,5 @@
-# Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,7 +10,7 @@ description: |
   node must be a child of an "infineon,hppass-csg" CSG MFD parent.
 
   The comparator's negative input may select either the paired in-slice
-  DAC output or one of two external analog inputs (AIN_NA, AIN_NB):
+  DAC output or an available external analog input path (AIN_NA, AIN_NB):
 
     - When negative-input = "dac", the paired DAC must also be configured
       and enabled.
@@ -18,7 +18,8 @@ description: |
       as a standalone analog-only comparator and the paired DAC is unused.
 
   The CSG MFD parent owns the combined comparator interrupt and dispatches
-  callbacks.
+  callbacks. On PSC3M6 it also configures the shared analog route muxes
+  through its infineon,aroute-inputs property.
 
 compatible: "infineon,hppass-csg-comp"
 
@@ -41,8 +42,15 @@ properties:
       - "ain-pb"
     description: |
       Selects the comparator's positive input source (CMP_CFG.CMP_POS_SEL):
-        - "ain-pa": external analog input AIN_PA
-        - "ain-pb": external analog input AIN_PB
+        - "ain-pa": positive analog input path AIN_PA
+        - "ain-pb": positive analog input path AIN_PB
+
+      On PSC3M5 these paths select the fixed external AIN_PA and AIN_PB
+      pins. On PSC3M6 the input paths use slice-dependent analog routing,
+      including CSG route-mux outputs. AIN_PB on slices 6-8 uses a
+      neighboring mux. Configure the mux inputs on the CSG parent with
+      infineon,aroute-inputs; enabling a neighboring comparator is not
+      required to configure its mux.
 
   negative-input:
     type: string
@@ -54,8 +62,19 @@ properties:
     description: |
       Selects the comparator's negative input source (CMP_CFG.CMP_NEG_SEL):
         - "dac":    paired in-slice DAC output (default operating mode)
-        - "ain-na": external analog input AIN_NA (standalone comparator)
-        - "ain-nb": external analog input AIN_NB (standalone comparator)
+        - "ain-na": negative analog input path AIN_NA (standalone comparator)
+        - "ain-nb": negative analog input path AIN_NB (standalone comparator)
+
+      On PSC3M5 the external negative input paths use fixed pins from
+      the next slice. On PSC3M6 slices 0, 1, 3, 4, 6 and 7, the external
+      negative input routing includes the next slice's route-mux output.
+      The AIN_NA/AIN_NB connections are slice-specific; consult the device
+      input-routing table and configure the shared muxes through the CSG
+      parent's infineon,aroute-inputs property.
+
+      PSC3M5 slice 4 and PSC3M6 slices 2, 5 and 8 have no external negative
+      input. They must select "dac"; "ain-na" and "ain-nb" cause a build
+      error on these slices.
 
   invert-output:
     type: boolean

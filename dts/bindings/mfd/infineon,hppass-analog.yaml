@@ -305,7 +305,9 @@ properties:
   trig-level-0-comp-msk:
     type: int
     default: 0
-    description: Trigger output level 0 CSG comparator mask (5 bits, one per CSG slice).
+    description: |
+      Trigger output level 0 CSG comparator mask, one bit per slice
+      (5 bits on PSC3M5, 9 bits on PSC3M6).
 
   trig-level-0-limit-msk:
     type: int
