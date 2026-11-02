@@ -85,7 +85,7 @@ static void fake_dev_iface_init(struct net_if *iface)
 
 struct fake_dev_context fake_dev_context_data;
 
-static const struct dummy_api fake_dev_if_api = {
+static DEVICE_API(dummy, fake_dev_if_api) = {
 	.iface_api.init = fake_dev_iface_init,
 	.send = fake_dev_send,
 };

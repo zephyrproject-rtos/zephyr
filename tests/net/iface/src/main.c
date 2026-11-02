@@ -156,7 +156,7 @@ struct net_if_test net_iface1_data;
 struct net_if_test net_iface2_data;
 struct net_if_test net_iface3_data;
 
-static const struct dummy_api net_iface_api = {
+static DEVICE_API(dummy, net_iface_api) = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
