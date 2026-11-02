@@ -47,15 +47,35 @@ static void semaphore_test(sem_t *sem)
 	/* TESTPOINT: Check if sema value is less than
 	 * CONFIG_POSIX_SEM_VALUE_MAX
 	 */
+	zassert_equal(sem_init(NULL, 0, 0), -1);
+	zassert_equal(errno, EINVAL);
+
+	zassert_equal(sem_init(sem, 1, 0), -1);
+	zassert_equal(errno, ENOSYS);
+
 	zassert_equal(sem_init(sem, 0, (CONFIG_POSIX_SEM_VALUE_MAX + 1)), -1,
 		      "value larger than %d\n", CONFIG_POSIX_SEM_VALUE_MAX);
 	zassert_equal(errno, EINVAL);
 
 	zassert_equal(sem_init(sem, 0, 0), 0, "sem_init failed");
 
+	/* TESTPOINT: Check parameter validation on sem_getvalue */
+	zassert_equal(sem_getvalue(NULL, &val), -1);
+	zassert_equal(errno, EINVAL);
+
+	zassert_equal(sem_getvalue(sem, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
 	/* TESTPOINT: Check if semaphore value is as set */
 	zassert_equal(sem_getvalue(sem, &val), 0);
 	zassert_equal(val, 0);
+
+	/* TESTPOINT: Check parameter validation on sem_trywait and sem_wait */
+	zassert_equal(sem_trywait(NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	zassert_equal(sem_wait(NULL), -1);
+	zassert_equal(errno, EINVAL);
 
 	/* TESTPOINT: Check if sema is acquired when it
 	 * is not available
@@ -71,13 +91,22 @@ static void semaphore_test(sem_t *sem)
 	timespec_add(&abstime, &(struct timespec){.tv_sec = WAIT_TIME_MS / MSEC_PER_SEC,
 						  (WAIT_TIME_MS % MSEC_PER_SEC) * NSEC_PER_MSEC});
 
-	/* TESPOINT: Wait to acquire sem given by thread1 */
+	/* TESTPOINT: Parameter validation on sem_timedwait */
+	zassert_equal(sem_timedwait(NULL, &abstime), -1);
+	zassert_equal(errno, EINVAL);
+
+	zassert_equal(sem_timedwait(sem, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* TESTPOINT: Wait to acquire sem given by thread1 */
 	zassert_equal(sem_timedwait(sem, &abstime), 0);
 
 	/* TESTPOINT: Semaphore is already acquired, check if
 	 * no semaphore is available
 	 */
-	zassert_equal(sem_timedwait(sem, &abstime), -1);
+	const struct timespec const_abstime = abstime;
+
+	zassert_equal(sem_timedwait(sem, &const_abstime), -1);
 	zassert_equal(errno, ETIMEDOUT);
 
 	zassert_equal(sem_destroy(sem), 0, "semaphore is not destroyed");
