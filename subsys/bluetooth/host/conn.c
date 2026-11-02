@@ -2897,22 +2897,24 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
+	bool exists;
 
-	if (conn) {
-		/* Connection object already exists.
-		 * If the connection state is not "disconnected",then the
-		 * connection was created but has not yet been disconnected.
-		 * If the connection state is "disconnected" then the connection
-		 * still has valid references. The last reference of the stack
-		 * is released after the disconnected callback.
-		 */
-		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
-			bt_addr_le_str(peer), state2str(conn->state));
-		bt_conn_unref(conn);
-		return true;
+	if (conn == NULL) {
+		return false;
 	}
 
-	return false;
+	/* An object in the "disconnected" state only has references left, from the application
+	 * or from the stack until after the disconnected callback. A new connection gets its own.
+	 */
+	exists = conn->state != BT_CONN_DISCONNECTED;
+	if (exists) {
+		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
+			bt_addr_le_str(peer), state2str(conn->state));
+	}
+
+	bt_conn_unref(conn);
+
+	return exists;
 }
 
 struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
