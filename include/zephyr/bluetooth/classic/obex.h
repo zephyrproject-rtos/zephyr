@@ -267,6 +267,9 @@ struct bt_obex_server_ops {
 	 *  If this callback is provided it will be called whenever the OBEX disconnect request
 	 *  is received.
 	 *
+	 *  The request can arrive during an operation, which it ends: no further request arrives
+	 *  for that operation and sending a response to it fails.
+	 *
 	 *  @param server The OBEX server object.
 	 *  @param buf Sequence of headers.
 	 */
