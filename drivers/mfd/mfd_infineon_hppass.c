@@ -26,6 +26,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/dt-bindings/mfd/infineon-hppass.h>
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -159,6 +160,8 @@ union ifx_hppass_stt_tt_cfg3 {
 	uint32_t raw;
 };
 
+BUILD_ASSERT(IFX_HPPASS_CSG_NUM == CY_HPPASS_CSG_NUM,
+	     "CSG topology must match the device's MCPASS revision");
 BUILD_ASSERT(IFX_HPPASS_SAR_MUX_NUM == 4,
 	     "TT_CFG3 bitfield layout assumes 4 SAR muxes");
 
@@ -1013,6 +1016,22 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 /** Number of AC states derived from the ac-states phandle list length */
 #define NUM_STT_STATES(n) DT_INST_PROP_LEN(n, ac_states)
 
+/* Translate DT identifiers only; the runtime STT API uses native condition codes. */
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+#define IFX_HPPASS_DT_CONDITION(cond)                                                         \
+	(IN_RANGE(cond, IFX_HPPASS_AC_COND_TRIG_0, IFX_HPPASS_AC_COND_TRIG_7)                 \
+		 ? IFX_HPPASS_CONDITION_TRIG_0 + (cond) - IFX_HPPASS_AC_COND_TRIG_0          \
+	 : IN_RANGE(cond, IFX_HPPASS_AC_COND_CSG_0_COMP, IFX_HPPASS_AC_COND_CSG_8_COMP)       \
+		 ? IFX_HPPASS_CONDITION_CSG_0_COMP + (cond) - IFX_HPPASS_AC_COND_CSG_0_COMP  \
+	 : IN_RANGE(cond, IFX_HPPASS_AC_COND_CSG_5_DAC_DONE,                                  \
+		    IFX_HPPASS_AC_COND_CSG_8_DAC_DONE)                                     \
+		 ? IFX_HPPASS_CONDITION_CSG_5_DAC_DONE + (cond) -                           \
+			   IFX_HPPASS_AC_COND_CSG_5_DAC_DONE                               \
+		 : (cond))
+#else
+#define IFX_HPPASS_DT_CONDITION(cond) (cond)
+#endif
+
 #define IFX_HPPASS_CSG_STATE_PROP(slice, node, prop) \
 	(bool)DT_PROP(node, csg##slice##_##prop)
 
@@ -1023,8 +1042,8 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
  */
 #define IFX_HPPASS_STT_ENTRY(n, prop, i)                                                       \
 	{                                                                                      \
-		.condition = (enum ifx_hppass_condition)DT_PROP(AC_STATE_NODE(n, i),           \
-								ac_condition),                 \
+		.condition = (enum ifx_hppass_condition)IFX_HPPASS_DT_CONDITION(              \
+			DT_PROP(AC_STATE_NODE(n, i), ac_condition)),                         \
 		.action = (enum ifx_hppass_action)DT_PROP(AC_STATE_NODE(n, i), ac_action),     \
 		.branch_state_idx = (uint8_t)DT_PROP(AC_STATE_NODE(n, i), branch_state_idx),   \
 		.interrupt = (bool)DT_PROP(AC_STATE_NODE(n, i), ac_interrupt),                 \
