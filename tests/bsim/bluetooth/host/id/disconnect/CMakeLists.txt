@@ -15,6 +15,7 @@ target_link_libraries(app PRIVATE babblekit)
 target_sources(app PRIVATE
   src/central.c
   src/dut.c
+  src/kept_keys.c
   src/main.c
 )
 
