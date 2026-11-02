@@ -775,7 +775,7 @@ static struct wg_peer *peer_lookup_by_iface(struct net_if *iface)
 static struct wg_peer *peer_lookup_by_virtual_iface(struct net_if *iface)
 {
 	struct virtual_interface_context *ctx, *tmp;
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct wg_peer *peer, *next;
 	sys_slist_t *interfaces;
 
@@ -1492,7 +1492,7 @@ static int interface_get_config(struct net_if *iface,
 	return -ENOTSUP;
 }
 
-static const struct virtual_interface_api wg_iface_api = {
+static DEVICE_API(virtual_interface, wg_iface_api) = {
 	.iface_api.init = iface_init,
 
 	.get_capabilities = get_capabilities,
