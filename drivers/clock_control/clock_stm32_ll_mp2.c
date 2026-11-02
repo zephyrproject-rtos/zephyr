@@ -174,6 +174,19 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = SystemCoreClock >> LL_RCC_Get_LSMCUDIVR();
 		break;
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mipi_dsi))
+	case STM32_CLOCK_PERIPH_DSI:
+		/* DSI PHY PLL reference clock (flexgen 28, ck_ker_dsiphy) */
+		*rate = LL_RCC_GetDSIClockFreq(LL_RCC_DSIPHY_CLKSOURCE);
+		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ltdc)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mipi_dsi))
+	case STM32_CLOCK_PERIPH_LTDC:
+		/* LTDC pixel clock (flexgen 27, ck_ker_ltdc) */
+		*rate = LL_RCC_GetDSIClockFreq(LL_RCC_DSIBLANE_CLKSOURCE);
+		break;
+#endif
 	case STM32_CLOCK_PERIPH_WWDG1:
 		/* The WWDG1 clock is derived from the APB3 clock */
 		*rate = SystemCoreClock >> (LL_RCC_Get_LSMCUDIVR() + LL_RCC_GetAPB3Prescaler());
