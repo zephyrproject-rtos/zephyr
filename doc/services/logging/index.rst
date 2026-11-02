@@ -947,6 +947,14 @@ Consider the following recommendations:
 
 * Enable :kconfig:option:`CONFIG_LOG_SPEED` to slightly speed up deferred logging at the
   cost of a slight increase in memory footprint.
+* Enable :kconfig:option:`CONFIG_LOG_ALWAYS_RUNTIME` in builds that feed a static analyzer or
+  an IDE parser. With static message creation a two-argument ``LOG_*`` call expands to about
+  80 KB of preprocessed source, mostly ``_Generic`` selections from the cbprintf packaging,
+  which is what makes analyzers that evaluate every branch slow. With runtime message creation
+  the same call expands to about 1 KB and the compile-time format string check is kept. For
+  tools that can be given the build configuration this replaces the ``__CDT_PARSER__`` and
+  ``__JETBRAINS_IDE__`` guard in :zephyr_file:`include/zephyr/logging/log.h`, which hides the
+  ``LOG_*`` macros from the parser entirely.
 * It is recommended to cast a pointer to ``const char *`` when it is used with a ``%s``
   format specifier and it points to a constant string.
 * It is recommended to cast a pointer to ``char *`` when it is used with a ``%s``
