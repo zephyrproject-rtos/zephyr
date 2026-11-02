@@ -312,6 +312,8 @@ enum smp_transport_type {
 	SMP_SPI_TRANSPORT,
 	/** SMP I2C */
 	SMP_I2C_TRANSPORT,
+	/** SMP I2C controller (client) */
+	SMP_I2C_CLIENT_TRANSPORT,
 
 	/** IDs up to 63 reserved for future in-tree transports */
 
