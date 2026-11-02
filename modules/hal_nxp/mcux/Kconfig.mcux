@@ -109,20 +109,21 @@ choice MCUX_NONCACHEABLE_PLACEMENT
 	default MCUX_NONCACHEABLE_NOCACHE if NOCACHE_MEMORY
 	default MCUX_NONCACHEABLE_CUSTOM
 	help
-	  Select where the MCUX SDK NonCacheable and NonCacheable.init
-	  input sections are placed.
+	  Select how MCUX SDK non-cacheable data is placed.
 
 config MCUX_NONCACHEABLE_NOCACHE
-	bool "Place NonCacheable sections in Zephyr nocache memory"
+	bool "Place MCUX non-cacheable data in Zephyr nocache memory"
 	depends on NOCACHE_MEMORY
 	help
-	  Place NonCacheable and NonCacheable.init input sections in the
-	  Zephyr nocache section. This preserves the existing behavior when
-	  nocache memory support is enabled.
+	  Map SDK common non-cacheable declarations to Zephyr nocache
+	  attributes, preserving explicit alignment and initial values.
+	  Also retain the linker bridge for legacy NonCacheable and
+	  NonCacheable.init input sections emitted by other SDK code.
 
 config MCUX_NONCACHEABLE_CUSTOM
 	bool "Use custom NonCacheable placement"
 	help
+	  Keep the SDK common non-cacheable declaration defaults.
 	  Do not add the default MCUX SDK linker snippet for NonCacheable
 	  and NonCacheable.init. The board or application must provide a
 	  linker snippet that consumes these input sections if needed.
