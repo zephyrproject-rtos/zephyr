@@ -482,6 +482,12 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 	return 0;
 }
 
+__weak void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_speed speed)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(speed);
+}
+
 static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state, void *user_data)
 {
@@ -507,6 +513,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 		}
 
 		DWMAC_REG_WRITE(DWMAC_MACCR, reg);
+		dwmac_platform_link_speed_changed(dev, state->speed);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
