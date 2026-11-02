@@ -3861,6 +3861,231 @@ ZTEST(server_function_tests, test_http1_static_fs_overlap)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(zephyr_ram_disk) */
 
+#if defined(CONFIG_FILE_SYSTEM)
+
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/fs_sys.h>
+
+/* A file system holding one file whose content does not match the size stat
+ * reports: reads deliver the first mock_fs_content_len bytes of MOCK_FS_CONTENT
+ * and then return mock_fs_read_result, a negative error or 0 for end of file.
+ */
+#define MOCK_FS_TYPE		FS_TYPE_EXTERNAL_BASE
+#define MOCK_FS_MNTP		"/mockfs"
+#define MOCK_FS_FILE		"/mismatch.html"
+#define MOCK_FS_FILE_SIZE	64U
+#define MOCK_FS_CONTENT_10	"0123456789"
+#define MOCK_FS_CONTENT		MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
+				MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
+				MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 MOCK_FS_CONTENT_10 \
+				MOCK_FS_CONTENT_10
+
+static size_t mock_fs_content_len;
+static ssize_t mock_fs_read_result;
+static size_t mock_fs_pos;
+
+static int mock_fs_mount(struct fs_mount_t *mountp)
+{
+	ARG_UNUSED(mountp);
+
+	return 0;
+}
+
+static int mock_fs_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
+{
+	ARG_UNUSED(mountp);
+
+	if (strcmp(path, MOCK_FS_MNTP MOCK_FS_FILE) != 0) {
+		return -ENOENT;
+	}
+
+	entry->type = FS_DIR_ENTRY_FILE;
+	entry->size = MOCK_FS_FILE_SIZE;
+
+	return 0;
+}
+
+static int mock_fs_open(struct fs_file_t *filp, const char *path, fs_mode_t flags)
+{
+	ARG_UNUSED(filp);
+	ARG_UNUSED(flags);
+
+	if (strcmp(path, MOCK_FS_MNTP MOCK_FS_FILE) != 0) {
+		return -ENOENT;
+	}
+
+	mock_fs_pos = 0U;
+
+	return 0;
+}
+
+static ssize_t mock_fs_read(struct fs_file_t *filp, void *dest, size_t nbytes)
+{
+	size_t len;
+
+	ARG_UNUSED(filp);
+
+	if (mock_fs_pos >= mock_fs_content_len) {
+		return mock_fs_read_result;
+	}
+
+	len = MIN(nbytes, mock_fs_content_len - mock_fs_pos);
+	memcpy(dest, &MOCK_FS_CONTENT[mock_fs_pos], len);
+	mock_fs_pos += len;
+
+	return len;
+}
+
+static int mock_fs_close(struct fs_file_t *filp)
+{
+	ARG_UNUSED(filp);
+
+	return 0;
+}
+
+static const struct fs_file_system_t mock_fs = {
+	.mount = mock_fs_mount,
+	.stat = mock_fs_stat,
+	.open = mock_fs_open,
+	.read = mock_fs_read,
+	.close = mock_fs_close,
+};
+
+static struct http_resource_detail_static_fs mock_fs_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+			.content_type = "text/html",
+		},
+	.fs_path = MOCK_FS_MNTP,
+};
+
+HTTP_RESOURCE_DEFINE(mock_fs_resource, test_http_service, MOCK_FS_FILE,
+		     &mock_fs_resource_detail);
+
+static void setup_mock_fs(size_t content_len, ssize_t read_result)
+{
+	static struct fs_mount_t mock_fs_mnt = {
+		.type = MOCK_FS_TYPE,
+		.mnt_point = MOCK_FS_MNTP,
+	};
+	static bool mounted;
+	int ret;
+
+	if (!mounted) {
+		ret = fs_register(MOCK_FS_TYPE, &mock_fs);
+		zassert_ok(ret, "Failed to register mock fs (%d)", ret);
+		ret = fs_mount(&mock_fs_mnt);
+		zassert_ok(ret, "Failed to mount mock fs (%d)", ret);
+		mounted = true;
+	}
+
+	zassert_true(content_len < sizeof(MOCK_FS_CONTENT), "Mock fs content too short");
+	mock_fs_content_len = content_len;
+	mock_fs_read_result = read_result;
+}
+
+static void test_http1_static_fs_short_read(ssize_t read_result)
+{
+	static const char http1_request[] =
+		"GET " MOCK_FS_FILE " HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 64\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		MOCK_FS_CONTENT_10;
+	size_t offset = 0;
+	int ret;
+
+	setup_mock_fs(strlen(MOCK_FS_CONTENT_10), read_result);
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+	test_consume_data(&offset, sizeof(expected_response) - 1);
+	zassert_equal(offset, 0, "Unexpected data after the partial body");
+
+	/* The body is shorter than the announced Content-Length, so the server
+	 * must close the connection rather than wait for another request.
+	 */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection not closed after a short body (%d, errno %d)", ret,
+		      errno);
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_read_error)
+{
+	test_http1_static_fs_short_read(-EIO);
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_read_eof)
+{
+	test_http1_static_fs_short_read(0);
+}
+
+/* HPACK-encoded "GET /mismatch.html" request, encoded as
+ * TEST_HTTP2_HEADERS_GET_STATIC_FS.
+ */
+#define TEST_HTTP2_HEADERS_GET_MOCK_FS(_stream_id) \
+	0x00, 0x00, 0x12, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x0e, 0x2f, 0x6d, 0x69, 0x73, 0x6d, 0x61, 0x74, 0x63, \
+	0x68, 0x2e, 0x68, 0x74, 0x6d, 0x6c
+
+static void test_http2_static_fs_short_read(ssize_t read_result)
+{
+	static const uint8_t request_get_mock_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_MOCK_FS(TEST_STREAM_ID_1),
+	};
+	size_t offset = 0;
+	int ret;
+
+	setup_mock_fs(strlen(MOCK_FS_CONTENT_10), read_result);
+
+	ret = zsock_send(client_fd, request_get_mock_fs, sizeof(request_get_mock_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, MOCK_FS_CONTENT_10,
+				strlen(MOCK_FS_CONTENT_10), 0);
+	zassert_equal(offset, 0, "Unexpected data after the partial body");
+
+	/* The stream cannot be completed, so the server must close the
+	 * connection rather than leave the stream open.
+	 */
+	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+	zassert_equal(ret, 0, "Connection not closed after a short body (%d, errno %d)", ret,
+		      errno);
+}
+
+ZTEST(server_function_tests, test_http2_static_fs_read_error)
+{
+	test_http2_static_fs_short_read(-EIO);
+}
+
+ZTEST(server_function_tests, test_http2_static_fs_read_eof)
+{
+	test_http2_static_fs_short_read(0);
+}
+
+#endif /* CONFIG_FILE_SYSTEM */
+
 static void http_server_tests_before(void *fixture)
 {
 	struct net_sockaddr_in sa;
