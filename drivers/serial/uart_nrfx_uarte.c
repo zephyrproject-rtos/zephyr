@@ -2755,9 +2755,23 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 
 	irq_unlock(key);
 
-	if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
-		key = wait_tx_ready(dev);
-		if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
+	if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_POLL_OUT_WAIT)) {
+		if (isr_mode) {
+			while (1) {
+				key = irq_lock();
+				if (is_tx_ready(dev)) {
+					break;
+				}
+
+				irq_unlock(key);
+				Z_SPIN_DELAY(3);
+			}
+		} else {
+			key = wait_tx_ready(dev);
+		}
+
+		if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ) &&
+		    !IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
 		    !(config->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
@@ -2765,14 +2779,17 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-			if (!(data->flags & UARTE_FLAG_POLL_OUT)) {
-				data->flags &= ~UARTE_FLAG_POLL_OUT;
-				pm_device_runtime_put(dev);
+		if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
+			if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+				if (data->flags & UARTE_FLAG_POLL_OUT) {
+					data->flags &= ~UARTE_FLAG_POLL_OUT;
+					pm_device_runtime_put(dev);
+				}
+			} else if (LOW_POWER_ENABLED(config)) {
+				uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 			}
-		} else if (LOW_POWER_ENABLED(config)) {
-			uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 		}
+
 		irq_unlock(key);
 	}
 }
