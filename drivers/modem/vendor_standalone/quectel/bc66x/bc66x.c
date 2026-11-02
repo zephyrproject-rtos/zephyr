@@ -1173,7 +1173,7 @@ DEVICE_API(cellular, bc66x_cellular_api) = {
 	.set_apn = bc66x_set_apn,
 };
 
-static struct offloaded_if_api bc66x_net_api_funcs = {
+static const struct offloaded_if_api bc66x_net_api_funcs = {
 	.iface_api.init = bc66x_iface_init,
 };
 
