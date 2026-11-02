@@ -264,6 +264,11 @@ else()
     "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
 endif()
 
+# The toolchain links the C library variant that matches the optimization level of the link
+if(CONFIG_PICOLIBC_LINK_SPEED_OPTIMIZED)
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SPEED_FLAG})
+endif()
+
 if(NOT CONFIG_ARCH_IS_SET)
   message(WARNING "\
 None of the CONFIG_<arch> (e.g. CONFIG_X86) symbols are set. \
