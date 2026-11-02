@@ -13,6 +13,18 @@ tests:
       - CONFIG_MINIMAL_LIBC=y
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
       - CONFIG_MINIMAL_LIBC_RAND=y
+  libraries.libc.common.minimal.long_double:
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED and CONFIG_CPU_HAS_FPU
+    tags: minimal_libc
+    extra_args: EXTRA_CPPFLAGS=-DTEST_LONG_DOUBLE
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+      - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
+      - CONFIG_MINIMAL_LIBC_RAND=y
+      - CONFIG_FPU=y
+    integration_platforms:
+      - native_sim/native/64
+      - qemu_x86/atom
   libraries.libc.common.newlib:
     toolchain_exclude:
       - zephyr/gnu

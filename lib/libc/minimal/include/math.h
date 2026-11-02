@@ -51,6 +51,16 @@ extern "C" {
 #define M_SQRT2     1.41421356237309504880
 #define M_SQRT1_2   0.70710678118654752440
 
+/**
+ * @brief Check whether a floating-point value is finite.
+ *
+ * @param x Value of type float, double, or long double, evaluated once.
+ *
+ * @return Nonzero if @p x is finite, including zero and subnormal values;
+ *         zero if @p x is infinite or NaN.
+ */
+#define isfinite(x) __builtin_isfinite(x)
+
 float sqrtf(float square);
 double sqrt(double square);
 
