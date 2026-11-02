@@ -10,5 +10,6 @@ cd ${ZEPHYR_BASE}
 
 set -uex
 
-${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/net/ \
-  --force-color --inline-logs -vv --fixture bsim_multi_test
+TWISTER_OPTIONS="-vv --fixture bsim_multi_test --no-clean --force-color --inline-logs"
+
+${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/net/ ${TWISTER_OPTIONS}
