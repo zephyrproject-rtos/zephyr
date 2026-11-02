@@ -2022,6 +2022,29 @@ void bt_conn_connected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_CLASSIC)
+void bt_conn_br_refuse(struct bt_conn *conn, uint8_t reason)
+{
+	int err;
+
+	/* Before the state that lets the priority handler find the handle and
+	 * set the reason of the disconnection.
+	 */
+	conn->err = reason;
+
+	/* Not the connected state, which would let the application use the
+	 * connection while the controller handles the command.
+	 */
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTING);
+
+	err = bt_hci_disconnect(conn->handle, reason);
+	if (err != 0) {
+		LOG_WRN("Failed to disconnect (err %d)", err);
+	}
+
+	/* The peer can send until the link is down, so L2CAP is not started */
+	notify_connected(conn);
+}
+
 void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {

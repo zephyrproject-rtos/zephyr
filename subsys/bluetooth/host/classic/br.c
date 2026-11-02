@@ -193,7 +193,7 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	return key_size >= CONFIG_BT_BR_MIN_ENC_KEY_SIZE;
 }
 
-bool bt_br_update_sec_level(struct bt_conn *conn)
+static bool br_sec_level_update(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
 		conn->sec_level = BT_SECURITY_L1;
@@ -217,12 +217,20 @@ bool bt_br_update_sec_level(struct bt_conn *conn)
 
 	if (!br_sufficient_key_size(conn)) {
 		LOG_ERR("Encryption key size is not sufficient");
-		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
 
 	if (conn->required_sec_level > conn->sec_level) {
 		LOG_ERR("Failed to set required security level");
+		return false;
+	}
+
+	return true;
+}
+
+bool bt_br_update_sec_level(struct bt_conn *conn)
+{
+	if (!br_sec_level_update(conn)) {
 		bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 		return false;
 	}
@@ -288,7 +296,8 @@ void bt_hci_conn_complete(struct net_buf *buf)
 	conn->err = 0U;
 	conn->encrypt = evt->encr_enabled;
 
-	if (!bt_br_update_sec_level(conn)) {
+	if (!br_sec_level_update(conn)) {
+		bt_conn_br_refuse(conn, BT_HCI_ERR_AUTH_FAIL);
 		bt_conn_unref(conn);
 		return;
 	}
