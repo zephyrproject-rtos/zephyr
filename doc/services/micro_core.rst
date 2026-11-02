@@ -148,6 +148,11 @@ state. The uncovered message line propagates a nested initialization error after
 configuration and storage size have already been validated. Both paths remain in place for
 defense; neither percentage proves that all error conditions have been tested.
 
+On 2026-11-01, two nRF54L15 DK boards also ran the UART tests. The communication and message
+integration tests each passed one case on both the sender and receiver. The communication stress
+suite passed eight cases on both boards. These hardware executions are separate from the
+build-only Twister configurations and do not contribute to the native simulator coverage above.
+
 Historical Micro Core Linux/UDP evidence
 ========================================
 

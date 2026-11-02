@@ -131,6 +131,11 @@ static int run_transfer(uint32_t iterations, uint8_t loss_rate, bool duplicate,
 	uint32_t timeout_us = allow_timeout ? 3000000U : 1000000U;
 	uint8_t retry_limit = allow_timeout ? 100U : 30U;
 
+	if (IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) && !allow_timeout) {
+		/* The two boards can enter a test phase at different times. */
+		timeout_us = 5000000U;
+	}
+
 	init_pair(loss_rate, duplicate, corrupt, shorten, disconnect, retry_limit);
 	if (loss_rate == 0U) {
 		int err = exchange(NULL, 0U, timeout_us);
