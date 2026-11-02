@@ -1,0 +1,62 @@
+#
+# Copyright (c) 2026 iomico
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Texas Instruments 8/12-Channel Shift-Register LED Driver.
+
+  Describe every physical chip as an enabled GPIO child. A chain supports
+  at most 255 chips, all with the same ngpios value. Child reg values must
+  be unique and cover positions 0 through the number of chips minus one.
+  Disabled children are not supported because their physical shift registers
+  still consume clock pulses.
+
+  SPI transfers use 8-bit words, most significant bit first. The farthest
+  chip's word is sent first. Leading zero bits pad the transfer to a whole
+  number of bytes without changing the physical chip positions. Connect the
+  SPI chip-select signal to the chain's latch input.
+
+  Example of two daisy-chained 12-output chips:
+
+    &spi0 {
+        shift_register: shift-register@0 {
+            compatible = "ti,tlc6c59xx";
+            reg = <0>;
+            spi-max-frequency = <1000000>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            gpio@0 {
+                compatible = "ti,tlc6c59xx-gpio";
+                reg = <0>;
+                gpio-controller;
+                #gpio-cells = <2>;
+                ngpios = <12>;
+            };
+
+            gpio@1 {
+                compatible = "ti,tlc6c59xx-gpio";
+                reg = <1>;
+                gpio-controller;
+                #gpio-cells = <2>;
+                ngpios = <12>;
+            };
+        };
+    };
+
+compatible: "ti,tlc6c59xx"
+
+include: spi-device.yaml
+
+bus: tlc6c59xx
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      An optional GPIO connected to the reset input of the shift register(s).
+      The driver configures it inactive, pulses it active, and leaves it
+      inactive during initialization. Use GPIO_ACTIVE_LOW for an active-low
+      reset input.
