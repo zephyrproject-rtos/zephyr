@@ -32,6 +32,7 @@
 
 #include "host/att_internal.h"
 #include "host/conn_internal.h"
+#include "host/keys.h"
 #include "host/l2cap_internal.h"
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
@@ -49,6 +50,9 @@
 #define CCC_HANDLE_A   0x0011U
 #define VALUE_HANDLE_B 0x0020U
 #define CCC_HANDLE_B   0x0021U
+
+/* What the writes that keep the ATT requests busy write */
+#define WRITE_VALUE 0xa5a5U
 
 static const bt_addr_le_t peer_addr = {
 	.type = BT_ADDR_LE_RANDOM,
@@ -443,8 +447,19 @@ static void connect_as_peripheral(void)
 	zassert_ok(k_sem_take(&connected_sem, K_SECONDS(1)), "No connection");
 }
 
-/* The remote ends the connection, which is then gone and released */
-static void disconnect(void)
+static void encrypt_change_send(void)
+{
+	const struct bt_hci_evt_encrypt_change evt = {
+		.status = BT_HCI_ERR_SUCCESS,
+		.handle = sys_cpu_to_le16(TEST_CONN_HANDLE),
+		.encrypt = 0x01U,
+	};
+
+	evt_send(BT_HCI_EVT_ENCRYPT_CHANGE, &evt, sizeof(evt));
+}
+
+/* The remote ends the connection */
+static void disconn_complete_send(void)
 {
 	const struct bt_hci_evt_disconn_complete evt = {
 		.status = BT_HCI_ERR_SUCCESS,
@@ -454,10 +469,25 @@ static void disconnect(void)
 
 	(void)atomic_set(&link_up, 0);
 	evt_send(BT_HCI_EVT_DISCONN_COMPLETE, &evt, sizeof(evt));
+}
 
+/* The connection is gone. A thread may hold a reference to it still. */
+static void disconnected_wait(void)
+{
 	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "The connection did not go");
 	bt_conn_drop(&test_conn);
+}
+
+static void recycled_wait(void)
+{
 	zassert_ok(k_sem_take(&recycled_sem, K_SECONDS(1)), "The connection was not released");
+}
+
+static void disconnect(void)
+{
+	disconn_complete_send();
+	disconnected_wait();
+	recycled_wait();
 }
 
 static bool pools_full(void)
@@ -497,6 +527,8 @@ struct test_sub {
 	/* The NULL callback subscribes again, as the params are free for reuse */
 	bool resubscribe;
 	int resubscribe_err;
+	/* The subscribe callback unsubscribes */
+	bool subscribe_unsubscribes;
 };
 
 static uint8_t sub_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
@@ -527,10 +559,16 @@ static void sub_subscribe(struct bt_conn *conn, uint8_t err,
 {
 	struct test_sub *sub = CONTAINER_OF(params, struct test_sub, params);
 
-	ARG_UNUSED(conn);
-
 	sub->subscribe_err = err;
 	(void)atomic_inc(&sub->subscribe_count);
+
+	if (sub->subscribe_unsubscribes) {
+		int unsub_err;
+
+		sub->subscribe_unsubscribes = false;
+		unsub_err = bt_gatt_unsubscribe(conn, params);
+		__ASSERT(unsub_err == 0, "The unsubscription returned %d", unsub_err);
+	}
 }
 
 static void sub_init(struct test_sub *sub, uint16_t value_handle, uint16_t ccc_handle)
@@ -568,15 +606,21 @@ static void sub_establish(struct test_sub *sub, uint16_t value_handle, uint16_t 
 	(void)atomic_clear(&sub->subscribe_count);
 }
 
-/* The application got the params back once, with this error */
-static void sub_handed_back_expect(const struct test_sub *sub, uint8_t err)
+/* The application got the params back once, and was told of this many write results */
+static void sub_handed_back_expect(const struct test_sub *sub, atomic_val_t subscribe_count)
 {
 	zassert_equal(atomic_get(&sub->unsubscribed_count), 1, "%ld NULL callbacks",
 		      atomic_get(&sub->unsubscribed_count));
-	zassert_equal(atomic_get(&sub->subscribe_count), 1, "%ld subscribe callbacks",
+	zassert_equal(atomic_get(&sub->subscribe_count), subscribe_count, "%ld subscribe callbacks",
 		      atomic_get(&sub->subscribe_count));
-	zassert_equal(sub->subscribe_err, err, "The subscribe callback got 0x%02x",
-		      sub->subscribe_err);
+}
+
+/* The peer refused the subscription */
+static void sub_refused_expect(const struct test_sub *sub)
+{
+	sub_handed_back_expect(sub, 1);
+	zassert_equal(sub->subscribe_err, BT_ATT_ERR_WRITE_NOT_PERMITTED,
+		      "The subscribe callback got 0x%02x", sub->subscribe_err);
 }
 
 static void *setup(void)
@@ -604,6 +648,9 @@ static void after(void *fixture)
 		disconnect();
 	}
 
+	/* A bond keeps its subscriptions */
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
+
 	unexpected = atomic_clear(&acl_unexpected);
 	(void)atomic_set(&peer_mode, PEER_HOLD);
 	k_msgq_purge(&write_req_msgq);
@@ -626,7 +673,9 @@ static ZTEST(host_gatt_sub, test_unsubscribe)
 	zassert_equal(atomic_get(&sub.unsubscribed_count), 0, "The params came back too early");
 
 	write_rsp_recv();
-	sub_handed_back_expect(&sub, BT_ATT_ERR_SUCCESS);
+	sub_handed_back_expect(&sub, 1);
+	zassert_equal(sub.subscribe_err, BT_ATT_ERR_SUCCESS, "The subscribe callback got 0x%02x",
+		      sub.subscribe_err);
 }
 
 /* Another subscription to the value remains, so the peer is not asked */
@@ -648,6 +697,303 @@ static ZTEST(host_gatt_sub, test_unsubscribe_value_still_subscribed)
 	notification_recv(VALUE_HANDLE_A);
 	zassert_equal(atomic_get(&sub_1.notify_count), 1, "The other subscription stopped");
 	zassert_equal(atomic_get(&sub_2.notify_count), 0, "The removed one was called");
+}
+
+/* The peer refuses the unsubscription of the only subscription it has from us */
+static ZTEST(host_gatt_sub, test_unsubscribe_refused)
+{
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub.params), "The unsubscription failed");
+	write_req_expect(0x0000U);
+
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	sub_handed_back_expect(&sub, 0);
+
+	/* It is not subscribed locally, whatever the peer does */
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub.notify_count), 0, "The removed subscription was called");
+
+	/* The params are free for reuse */
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+}
+
+/* The peer refuses the unsubscription, with another subscription left */
+static ZTEST(host_gatt_sub, test_unsubscribe_refused_other_left)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	sub_establish(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_establish(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub_a.params), "The unsubscription failed");
+	write_req_expect(0x0000U);
+
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	sub_handed_back_expect(&sub_a, 0);
+
+	notification_recv(VALUE_HANDLE_B);
+	zassert_equal(atomic_get(&sub_b.notify_count), 1, "The other subscription stopped");
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 0, "The other one was removed");
+}
+
+/* The connection is lost with the request of the unsubscription outstanding */
+static ZTEST(host_gatt_sub, test_unsubscribe_disconnection)
+{
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub.params), "The unsubscription failed");
+	write_req_expect(0x0000U);
+
+	disconnect();
+	sub_handed_back_expect(&sub, 0);
+}
+
+/* The connection is lost with the request of an unsubscription queued behind an outstanding one */
+static ZTEST(host_gatt_sub, test_unsubscribe_disconnection_queued)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	sub_establish(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_establish(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub_a.params), "The unsubscription failed");
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub_b.params), "The unsubscription failed");
+	write_req_expect(0x0000U);
+	zassert_equal(k_msgq_num_used_get(&write_req_msgq), 0U, "The second request was sent");
+
+	disconnect();
+	sub_handed_back_expect(&sub_a, 0);
+	sub_handed_back_expect(&sub_b, 0);
+}
+
+/* The application cancels the request of the unsubscription. A late response finds nothing. */
+static ZTEST(host_gatt_sub, test_unsubscribe_cancel)
+{
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub.params), "The unsubscription failed");
+	write_req_expect(0x0000U);
+
+	bt_gatt_cancel(test_conn, &sub.params);
+	sub_handed_back_expect(&sub, 0);
+
+	write_rsp_recv();
+	sub_handed_back_expect(&sub, 0);
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+}
+
+static void write_done(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	ARGS_UNUSED(conn, err, params);
+}
+
+/* Takes this many ATT requests for writes of WRITE_VALUE */
+static void requests_take(size_t count)
+{
+	static struct bt_gatt_write_params writes[CONFIG_BT_ATT_TX_COUNT];
+	static const uint16_t data = WRITE_VALUE;
+
+	for (size_t i = 0U; i < count; i++) {
+		writes[i] = (struct bt_gatt_write_params){
+			.func = write_done,
+			.handle = VALUE_HANDLE_B,
+			.data = &data,
+			.length = sizeof(data),
+		};
+		zassert_ok(bt_gatt_write(test_conn, &writes[i]), "The write failed");
+	}
+}
+
+/* The subscription that the system workqueue or the application thread works on, and the result */
+static struct test_sub *unsubscribe_sub;
+static int unsubscribe_err;
+static K_SEM_DEFINE(unsubscribe_sem, 0, 1);
+
+static void unsubscribe_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	unsubscribe_err = bt_gatt_unsubscribe(test_conn, &unsubscribe_sub->params);
+	k_sem_give(&unsubscribe_sem);
+}
+
+/* The Host has no ATT request left to send the unsubscription with, which the system workqueue does
+ * not wait for
+ */
+static void unsubscribe_not_queued(struct test_sub *sub)
+{
+	static K_WORK_DEFINE(unsubscribe_work, unsubscribe_handler);
+
+	requests_take(CONFIG_BT_ATT_TX_COUNT);
+	write_req_expect(WRITE_VALUE);
+
+	unsubscribe_sub = sub;
+	zassert_true(k_work_submit(&unsubscribe_work) >= 0, "The work was not submitted");
+	zassert_ok(k_sem_take(&unsubscribe_sem, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_equal(unsubscribe_err, -ENOMEM, "The unsubscription returned %d", unsubscribe_err);
+}
+
+/* An unsubscription that is not queued leaves the subscription as it was */
+static ZTEST(host_gatt_sub, test_unsubscribe_not_queued)
+{
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	unsubscribe_not_queued(&sub);
+
+	zassert_equal(sub.params.value, BT_GATT_CCC_NOTIFY, "The value became 0x%04x",
+		      sub.params.value);
+
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub.notify_count), 1, "The subscription stopped");
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 0, "The params came back");
+
+	disconnect();
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+}
+
+/* A subscription that stayed because the unsubscription was not queued is restored with its value
+ * on the next connection to a bonded peer
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_not_queued_bonded)
+{
+	static struct test_sub sub;
+	struct bt_keys *keys;
+
+	keys = bt_keys_get_addr(BT_ID_DEFAULT, &peer_addr);
+	zassert_not_null(keys, "No keys");
+	bt_keys_add_type(keys, BT_KEYS_LTK_P256);
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	unsubscribe_not_queued(&sub);
+
+	disconnect();
+	pools_full_expect();
+	connect_as_peripheral();
+	encrypt_change_send();
+
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+	write_rsp_recv();
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 0, "The params came back");
+
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub.notify_count), 1, "The subscription is not there");
+
+	disconnect();
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 0, "The params came back");
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+}
+
+/* A preemptible thread that uses the API, and has to wait for something */
+static struct k_thread app_thread;
+
+static void app_unsubscribe_entry(void *p1, void *p2, void *p3)
+{
+	struct bt_conn *conn = p1;
+
+	ARGS_UNUSED(p2, p3);
+
+	unsubscribe_err = bt_gatt_unsubscribe(conn, &unsubscribe_sub->params);
+	bt_conn_unref(conn);
+}
+
+static void app_thread_waiting_start(k_thread_entry_t entry, struct test_sub *sub)
+{
+	static K_THREAD_STACK_DEFINE(app_stack, 2048);
+
+	unsubscribe_sub = sub;
+	(void)k_thread_create(&app_thread, app_stack, K_THREAD_STACK_SIZEOF(app_stack), entry,
+			      bt_conn_ref(test_conn), NULL, NULL, K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+
+	zassert_equal(k_thread_join(&app_thread, K_MSEC(10)), -EAGAIN, "The thread did not wait");
+}
+
+/* The response to an earlier request frees one, which the thread then uses. The Host keeps running
+ * while the thread waits.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_for_request)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	sub_establish(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_establish(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+
+	requests_take(CONFIG_BT_ATT_TX_COUNT);
+	write_req_expect(WRITE_VALUE);
+	app_thread_waiting_start(app_unsubscribe_entry, &sub_a);
+
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub_a.notify_count), 1, "The Host did not run meanwhile");
+
+	write_rsp_recv();
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_ok(unsubscribe_err, "The unsubscription returned %d", unsubscribe_err);
+	zassert_equal(atomic_get(&sub_a.unsubscribed_count), 0, "The params came back too early");
+
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub_a.notify_count), 1, "The removed subscription was called");
+	notification_recv(VALUE_HANDLE_B);
+	zassert_equal(atomic_get(&sub_b.notify_count), 1, "The other subscription stopped");
+
+	disconnect();
+	sub_handed_back_expect(&sub_a, 0);
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_b.unsubscribed_count));
+}
+
+/* The connection is lost meanwhile, which removes the subscription: the thread gets an error, and
+ * the application gets the params back once
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_disconnection)
+{
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	requests_take(CONFIG_BT_ATT_TX_COUNT);
+	write_req_expect(WRITE_VALUE);
+	app_thread_waiting_start(app_unsubscribe_entry, &sub);
+
+	disconnect();
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_not_equal(unsubscribe_err, 0, "The unsubscription returned 0");
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+}
+
+/* The subscribe callback unsubscribes, which does not hand the params back yet */
+static ZTEST(host_gatt_sub, test_unsubscribe_in_subscribe_callback)
+{
+	static struct test_sub sub;
+
+	sub_init(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.subscribe_unsubscribes = true;
+
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+	write_rsp_recv();
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 0, "The params came back too early");
+
+	write_req_expect(0x0000U);
+	write_rsp_recv();
+	sub_handed_back_expect(&sub, 2);
 }
 
 /* The peer answers before the thread that unsubscribed runs again. The params are free for reuse
@@ -684,7 +1030,7 @@ static ZTEST(host_gatt_sub, test_subscribe_refused)
 	write_req_expect(BT_GATT_CCC_NOTIFY);
 
 	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
-	sub_handed_back_expect(&sub, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	sub_refused_expect(&sub);
 
 	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
 }
@@ -701,7 +1047,7 @@ static ZTEST(host_gatt_sub, test_subscribe_refused_before_return)
 
 	zassert_ok(bt_gatt_subscribe(test_conn, &sub.params), "The subscription failed");
 	write_req_expect(BT_GATT_CCC_NOTIFY);
-	sub_handed_back_expect(&sub, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	sub_refused_expect(&sub);
 
 	notification_recv(VALUE_HANDLE_A);
 	zassert_equal(atomic_get(&sub.notify_count), 0, "The refused subscription is linked");
