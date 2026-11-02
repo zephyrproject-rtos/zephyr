@@ -820,6 +820,25 @@
 			};
 		};
 
+		gmac: gmac@80100000 {
+			compatible = "renesas,rz-ethernet-gmac", "snps,dwmac";
+			reg = <0x80100000 0x2000>;
+			interrupts = <GIC_SPI 250 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 251 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 252 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "lpi", "pmt", "sbd";
+			/* CSR clock range 4: PCLKM (150 to 250 MHz) divided by 102 */
+			snps,clk-csr = <4>;
+			status = "disabled";
+
+			gmac_mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		xspi0: xspi@80220000 {
 			compatible = "renesas,rz-xspi";
 			reg = <0x80220000 0x1000>;
