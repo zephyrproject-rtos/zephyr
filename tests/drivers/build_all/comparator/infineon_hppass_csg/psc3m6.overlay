@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Build all six standalone comparators and every analog route mux encoding. */
+&peri0_group0_16bit_0 {
+	clock-div = <2>;
+	status = "okay";
+};
+
+&csg0 {
+	clocks = <&peri0_group0_16bit_0>;
+	infineon,aroute-inputs = "ain-a", "ain-b", "ain-c",
+				 "ain-d", "none", "ain-b",
+				 "ain-c", "ain-d", "ain-a";
+	status = "okay";
+};
+
+&comp0 {
+	positive-input = "ain-pa";
+	negative-input = "ain-na";
+	status = "okay";
+};
+
+&comp1 {
+	positive-input = "ain-pb";
+	negative-input = "ain-nb";
+	status = "okay";
+};
+
+&comp2 {
+	status = "disabled";
+};
+
+&comp3 {
+	positive-input = "ain-pb";
+	negative-input = "ain-nb";
+	status = "okay";
+};
+
+&comp4 {
+	positive-input = "ain-pa";
+	negative-input = "ain-na";
+	status = "okay";
+};
+
+&comp5 {
+	status = "disabled";
+};
+
+&comp6 {
+	positive-input = "ain-pa";
+	negative-input = "ain-na";
+	status = "okay";
+};
+
+&comp7 {
+	positive-input = "ain-pb";
+	negative-input = "ain-nb";
+	status = "okay";
+};
+
+&comp8 {
+	status = "disabled";
+};

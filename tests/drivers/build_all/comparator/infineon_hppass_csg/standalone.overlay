@@ -5,11 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Build coverage for the HPPASS CSG comparator in standalone (DAC-less)
- * mode.  Each slice selects an external analog input (AIN_NA) as the
+ * mode.  Slices 0-3 select an external analog input (AIN_NA) as the
  * negative input, so the comparator driver builds without the paired
  * in-slice DAC or CONFIG_DAC.  The CSG MFD parent is enabled by the board
  * dtsi; this overlay only retargets the comparator inputs and disables the
- * unused DAC slices.
+ * unused DAC slices. Slice 4 has no external negative input and is disabled.
  */
 
 &comp0 {
@@ -29,7 +29,7 @@
 };
 
 &comp4 {
-	negative-input = "ain-na";
+	status = "disabled";
 };
 
 &dac0 {
