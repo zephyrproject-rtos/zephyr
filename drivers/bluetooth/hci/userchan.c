@@ -373,7 +373,7 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 		return -EIO;
 	}
 
-	if (nsi_host_write(uc->fd, buf->data, buf->len) < 0) {
+	if (user_chan_send(uc->fd, buf->data, buf->len) < 0) {
 		return -nsi_host_get_errno();
 	}
 
