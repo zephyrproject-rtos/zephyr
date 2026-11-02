@@ -2437,6 +2437,13 @@ static void deferred_work(struct k_work *work)
 		bt_l2cap_disconnected(conn);
 		notify_disconnected(conn);
 
+		/* The application can keep this object, while the keys can be cleared and their
+		 * slot reused for another peer.
+		 */
+		if (bt_conn_is_le(conn)) {
+			conn->le.keys = NULL;
+		}
+
 		/* Release the reference we took for the very first
 		 * state transition.
 		 */
