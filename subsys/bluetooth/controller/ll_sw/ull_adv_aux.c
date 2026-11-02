@@ -55,8 +55,7 @@ static inline void aux_release(struct ll_adv_aux_set *aux);
 static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 			     const struct pdu_adv *pdu,
 			     uint8_t pdu_len, uint8_t pdu_scan_len);
-static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux);
-static uint32_t aux_time_min_get_with_pdu(const struct ll_adv_aux_set *aux,
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux,
 				 const struct pdu_adv *pdu, const struct pdu_adv *pdu_scan);
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan);
@@ -687,7 +686,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 
 			ticks_slot_overhead =
-				ull_adv_aux_evt_init(aux, &ticks_anchor);
+				ull_adv_aux_evt_init(aux, (void *)adv->lll.aux->data.pdu[sec_idx],
+									&ticks_anchor);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor,
 						ticks_slot_overhead);
@@ -2517,12 +2517,19 @@ uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 }
 
 uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
-			      uint32_t *ticks_anchor)
+				  const struct pdu_adv *pdu, uint32_t *ticks_anchor)
 {
+	const struct lll_adv_aux *lll_aux;
+	const struct pdu_adv *pdu_scan;
+	const struct lll_adv *lll;
 	uint32_t ticks_slot_overhead;
 	uint32_t time_us;
 
-	time_us = aux_time_min_get(aux);
+	lll_aux = &aux->lll;
+	lll = lll_aux->adv;
+	pdu_scan = lll_adv_scan_rsp_peek(lll);
+
+	time_us = aux_time_min_get(aux, pdu, pdu_scan);
 
 	aux->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
@@ -3065,7 +3072,7 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 	return time_us;
 }
 
-static uint32_t aux_time_min_get_with_pdu(const struct ll_adv_aux_set *aux,
+static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux,
 					const struct pdu_adv *pdu,
 					const struct pdu_adv *pdu_scan)
 {
@@ -3086,28 +3093,13 @@ static uint32_t aux_time_min_get_with_pdu(const struct ll_adv_aux_set *aux,
 	return aux_time_get(aux, pdu, pdu_len, pdu_scan_len);
 }
 
-static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
-{
-	const struct lll_adv_aux *lll_aux;
-	const struct pdu_adv *pdu_scan;
-	const struct lll_adv *lll;
-	const struct pdu_adv *pdu;
-
-	lll_aux = &aux->lll;
-	lll = lll_aux->adv;
-	pdu = lll_adv_aux_data_peek(lll_aux);
-	pdu_scan = lll_adv_scan_rsp_peek(lll);
-
-	return aux_time_min_get_with_pdu(aux, pdu, pdu_scan);
-}
-
 static uint8_t aux_time_update(struct ll_adv_aux_set *aux, struct pdu_adv *pdu,
 			       struct pdu_adv *pdu_scan)
 {
 	uint32_t time_ticks;
 	uint32_t time_us;
 
-	time_us = aux_time_min_get_with_pdu(aux, pdu, pdu_scan);
+	time_us = aux_time_min_get(aux, pdu, pdu_scan);
 	time_ticks = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
