@@ -154,3 +154,11 @@ zephyr_udc0: &usbotg_hs {
 &rng {
 	status = "okay";
 };
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
