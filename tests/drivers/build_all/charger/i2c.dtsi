@@ -52,6 +52,7 @@ bq25186@3 {
 	constant-charge-voltage-max-microvolt = <4200000>;
 	re-charge-threshold-millivolt = <200>;
 	vsys-target-regulation = "Vin Passthrough";
+	safety-timer = "Disable";
 };
 
 bq25188@4 {
