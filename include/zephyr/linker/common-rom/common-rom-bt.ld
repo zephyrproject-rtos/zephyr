@@ -2,6 +2,8 @@
 
 #include <zephyr/linker/iterable_sections.h>
 
+	ITERABLE_SECTION_ROM(bt_controller_cb, Z_LINK_ITERABLE_SUBALIGN)
+
 	ITERABLE_SECTION_ROM(bt_l2cap_fixed_chan, Z_LINK_ITERABLE_SUBALIGN)
 
 #if defined(CONFIG_BT_CLASSIC)

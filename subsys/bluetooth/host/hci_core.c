@@ -161,9 +161,15 @@ static void bt_workq_start(void)
 }
 
 static void init_work(struct k_work *work);
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+static void hci_state_work_handler(struct k_work *work);
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
 
 struct bt_dev bt_dev = {
 	.init          = Z_WORK_INITIALIZER(init_work),
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+	.state_work    = Z_WORK_INITIALIZER(hci_state_work_handler),
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
 #if defined(CONFIG_BT_PRIVACY)
 	.rpa_timeout   = CONFIG_BT_RPA_TIMEOUT,
 #endif
@@ -477,6 +483,13 @@ static void hci_cmd_sent_purge(void)
 	net_buf_unref(buf);
 }
 
+/* The HCI driver has reported its Controller gone, and the transport is still open */
+static bool hci_lost(void)
+{
+	return IS_ENABLED(CONFIG_BT_HCI_STATE_REPORT) &&
+	       atomic_test_bit(bt_dev.flags, BT_DEV_HCI_LOST);
+}
+
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	int err;
@@ -580,6 +593,10 @@ static bool close_silent_transport(void)
 		return false;
 	}
 
+	if (hci_lost()) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_HCI_LOST);
+	}
+
 	bt_dev_unlock();
 
 	/* A packet that came in before the close shows that the Controller
@@ -659,10 +676,13 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 */
 			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
 
-			if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+			if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) ||
+			    (IS_ENABLED(CONFIG_BT_HCI_STATE_REPORT) &&
+			     k_sem_count_get(&sync_sem) != 0U)) {
 				/* The transport was closed while draining: the queue
 				 * has been purged, completing this command with an
-				 * error, so there is nothing left to send.
+				 * error, so there is nothing left to send. After a
+				 * reported loss it may have been opened again by now.
 				 */
 				break;
 			}
@@ -2794,8 +2814,6 @@ static void le_ltk_request(struct net_buf *buf)
 
 static void hci_reset_complete(void)
 {
-	atomic_t flags;
-
 	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
 		bt_scan_reset();
 	}
@@ -2811,8 +2829,7 @@ static void hci_reset_complete(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
-	flags = (atomic_get(bt_dev.flags) & BT_DEV_PERSISTENT_FLAGS);
-	atomic_set(bt_dev.flags, flags);
+	(void)atomic_and(bt_dev.flags, BT_DEV_PERSISTENT_FLAGS);
 }
 
 static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_buf)
@@ -2843,6 +2860,12 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 			cmd(buf)->opcode);
 		buf = atomic_ptr_set((atomic_ptr_t *)&bt_dev.sent_cmd, buf);
 		__ASSERT_NO_MSG(!buf);
+
+		/* A report of a lost Controller found nothing to complete meanwhile */
+		if (hci_lost()) {
+			hci_cmd_sent_purge();
+		}
+
 		goto exit;
 	}
 
@@ -3567,6 +3590,15 @@ static void hci_core_send_cmd(void)
 	/* Get next command */
 	LOG_DBG("fetch cmd");
 	buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+
+	/* A reported loss wakes up a sender that waits for the credit, and the
+	 * disable can purge the queue before that sender gets to run.
+	 */
+	if (IS_ENABLED(CONFIG_BT_HCI_STATE_REPORT) && buf == NULL) {
+		k_sem_give(&bt_dev.ncmd_sem);
+		return;
+	}
+
 	BT_ASSERT(buf);
 
 	/* Clear out any existing sent command */
@@ -4956,6 +4988,13 @@ static int bt_recv(const struct device *dev, struct net_buf *buf)
  * either from bt_init() or, when the identity comes from settings, from
  * the settings commit handler.
  */
+static void hci_state_work_submit(void)
+{
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+	(void)bt_work_submit(&bt_dev.state_work);
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
+}
+
 void bt_finalize_init(int err)
 {
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
@@ -4976,7 +5015,13 @@ void bt_finalize_init(int err)
 		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	}
 
+	if (IS_ENABLED(CONFIG_BT_HCI_STATE_REPORT)) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_SETTINGS_WAIT);
+	}
+
 	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLING);
+
+	hci_state_work_submit();
 }
 
 static int bt_init(void)
@@ -5005,6 +5050,12 @@ static int bt_init(void)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		if (!bt_dev.id_count) {
 			LOG_INF("No ID address. App must call settings_load()");
+
+			if (IS_ENABLED(CONFIG_BT_HCI_STATE_REPORT)) {
+				atomic_set_bit(bt_dev.flags, BT_DEV_SETTINGS_WAIT);
+				hci_state_work_submit();
+			}
+
 			return 0;
 		}
 
@@ -5092,6 +5143,58 @@ void bt_testing_set_iso_mtu(uint16_t mtu)
 }
 #endif /* CONFIG_BT_TESTING && CONFIG_BT_ISO */
 
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+/* A synchronous sender is released here and not by the disable, as it may be what is keeping
+ * either workqueue from running, and the disable waits for the system workqueue when it takes a
+ * connection down. A command queued after this is taken back by its sender.
+ */
+static void hci_transport_lost(void)
+{
+	atomic_set_bit(bt_dev.flags, BT_DEV_HCI_LOST);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
+	hci_cmd_queue_purge();
+	hci_cmd_sent_purge();
+	k_sem_give(&bt_dev.ncmd_sem);
+}
+
+/* Called by the HCI driver from any context, so this only does what an ISR can. It stays in one
+ * piece because a disable and the next enable could otherwise pass through a preempted report,
+ * whose remainder would then end up in the next session.
+ */
+static void hci_state_cb(const struct device *dev, bool available)
+{
+	const struct bt_hci_driver_data *data = dev->data;
+
+	/* Set for this device only, and another one may have a user of its own */
+	if (dev != bt_dev.hci) {
+		LOG_ERR("State report for another HCI device: %s", dev->name);
+		return;
+	}
+
+	K_SPINLOCK(&bt_dev.state_lock) {
+		if (available) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_NOTIFY_AVAILABLE);
+		} else {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_NOTIFY_AVAILABLE);
+			atomic_set_bit(bt_dev.flags, BT_DEV_NOTIFY_UNAVAILABLE);
+
+			/* Set before the driver's open() is called, so this covers
+			 * a transport that is still being opened too.
+			 */
+			if (data->recv != NULL) {
+				hci_transport_lost();
+			}
+		}
+	}
+
+	if (hci_lost()) {
+		bt_tx_irq_raise();
+	}
+
+	hci_state_work_submit();
+}
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
+
 int bt_enable(bt_ready_cb_t cb)
 {
 	int err;
@@ -5105,7 +5208,7 @@ int bt_enable(bt_ready_cb_t cb)
 		return -EALREADY;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_DISABLING)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_DISABLING) || hci_lost()) {
 		err = -EAGAIN;
 		goto failed;
 	}
@@ -5127,6 +5230,14 @@ int bt_enable(bt_ready_cb_t cb)
 	 * host work may outlive an individual cycle.
 	 */
 	bt_workq_start();
+
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+	err = bt_hci_state_cb_set(bt_dev.hci, hci_state_cb);
+	if (err != 0) {
+		LOG_ERR("HCI device has another user (err %d)", err);
+		goto failed;
+	}
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		err = bt_settings_init();
@@ -5174,6 +5285,14 @@ int bt_enable(bt_ready_cb_t cb)
 	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
+
+		/* Lost during the open: with the open failed there is no
+		 * transport left to close.
+		 */
+		if (hci_lost()) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_HCI_LOST);
+		}
+
 		goto failed;
 	}
 
@@ -5190,33 +5309,22 @@ int bt_enable(bt_ready_cb_t cb)
 
 failed:
 	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLING);
+
+	hci_state_work_submit();
+
 	return err;
 }
 
-int bt_disable(void)
+/* The caller has set BT_DEV_DISABLING */
+static int disable_transport(void)
 {
 	int reset_err = 0;
 	int err;
-
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
-		return -EALREADY;
-	}
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
-		return -EAGAIN;
-	}
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
-		return -EALREADY;
-	}
 
 	/* A driver without a close() op cannot be disabled. Find that out
 	 * before anything is torn down, none of which can be undone.
 	 */
 	if (!bt_hci_can_close(bt_dev.hci)) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 		return -ENOSYS;
 	}
 
@@ -5268,9 +5376,10 @@ int bt_disable(void)
 	 * has the no-reset quirk: what has been torn down so far cannot be
 	 * brought back, and closing the transport is what lets bt_enable()
 	 * try again, which resets the Controller first. The caller is told, as
-	 * the Controller may go on with what it was doing.
+	 * the Controller may go on with what it was doing. A Controller that
+	 * the driver has reported lost is not there to reset.
 	 */
-	if (!drv_quirk_no_reset()) {
+	if (!drv_quirk_no_reset() && !hci_lost()) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
 		if (err == 0) {
 			hci_reset_complete();
@@ -5285,6 +5394,9 @@ int bt_disable(void)
 				bt_scan_softreset();
 			}
 		}
+	} else if (IS_ENABLED(CONFIG_BT_OBSERVER) && hci_lost()) {
+		/* A Controller that comes back can do so too */
+		bt_scan_softreset();
 	}
 
 	/* Tear down the connections after the reset, if any, until which the
@@ -5322,8 +5434,11 @@ int bt_disable(void)
 		 * again.
 		 */
 		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 		return err;
+	}
+
+	if (hci_lost()) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_HCI_LOST);
 	}
 
 	hci_cmd_sent_purge();
@@ -5358,9 +5473,102 @@ int bt_disable(void)
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
+	return reset_err;
+}
+
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+static void hci_state_work_handler(struct k_work *work)
+{
+	bool unavailable = false;
+	bool available = false;
+	int err;
+
+	/* Settings are not committed with the transport lost, so nothing else ends
+	 * an initialization that waits for them.
+	 */
+	if (hci_lost() && atomic_test_bit(bt_dev.flags, BT_DEV_SETTINGS_WAIT)) {
+		bt_finalize_init(-EHOSTDOWN);
+	}
+
+	if (hci_lost()) {
+		/* An enable or disable in progress submits this work when it ends */
+		if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
+			return;
+		}
+
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
+			return;
+		}
+
+		err = disable_transport();
+		if (err != 0) {
+			/* The driver breaks the contract of its report. All that
+			 * is left is the application trying bt_disable(), so it
+			 * is told all the same.
+			 */
+			LOG_ERR("Failed to close the HCI transport (err %d)", err);
+			atomic_clear_bit(bt_dev.flags, BT_DEV_HCI_LOST);
+		}
+
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
+
+		/* Behind the work of the connections, so that the disconnected
+		 * callbacks normally come first.
+		 */
+		(void)bt_work_submit(work);
+		return;
+	}
+
+	/* A disable that is yet to run or still running submits this work when it ends */
+	K_SPINLOCK(&bt_dev.state_lock) {
+		if (!hci_lost() && !atomic_test_bit(bt_dev.flags, BT_DEV_DISABLING)) {
+			unavailable = atomic_test_and_clear_bit(bt_dev.flags,
+								BT_DEV_NOTIFY_UNAVAILABLE);
+			available = atomic_test_and_clear_bit(bt_dev.flags,
+							      BT_DEV_NOTIFY_AVAILABLE);
+		}
+	}
+
+	if (unavailable) {
+		STRUCT_SECTION_FOREACH(bt_controller_cb, cb) {
+			if (cb->unavailable != NULL) {
+				cb->unavailable(&bt_dev);
+			}
+		}
+	}
+
+	if (available) {
+		STRUCT_SECTION_FOREACH(bt_controller_cb, cb) {
+			if (cb->available != NULL) {
+				cb->available(&bt_dev);
+			}
+		}
+	}
+}
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
+
+int bt_disable(void)
+{
+	int err;
+
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
+		return -EALREADY;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
+		err = -EAGAIN;
+	} else if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		err = -EALREADY;
+	} else {
+		err = disable_transport();
+	}
+
 	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 
-	return reset_err;
+	hci_state_work_submit();
+
+	return err;
 }
 
 bool bt_is_ready(void)
