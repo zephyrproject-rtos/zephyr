@@ -25,7 +25,7 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 				     struct net_pkt *pkt)
 {
 	struct virtual_interface_context *ctx, *tmp;
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct net_if *filtered_iface = NULL;
 	enum net_verdict verdict;
 	sys_slist_t *interfaces;
@@ -159,7 +159,7 @@ silent_drop:
 static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	size_t pkt_len;
 	int ret;
 
@@ -191,7 +191,7 @@ static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 
 static int virtual_enable(struct net_if *iface, bool state)
 {
-	const struct virtual_interface_api *virt;
+	const struct virtual_interface_driver_api *virt;
 	struct virtual_interface_context *ctx;
 	const struct device *dev;
 	int ret = 0;
@@ -280,7 +280,7 @@ static void random_linkaddr(uint8_t *linkaddr, size_t len)
 int net_virtual_interface_attach(struct net_if *virtual_iface,
 				 struct net_if *iface)
 {
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct virtual_interface_context *ctx;
 	const struct device *dev;
 	bool up = false;

@@ -53,7 +53,7 @@ struct vlan_context {
 	bool is_used;   /* Is there active config on this context */
 };
 
-static const struct virtual_interface_api vlan_iface_api = {
+static DEVICE_API(virtual_interface, vlan_iface_api) = {
 	.iface_api.init = vlan_iface_init,
 
 	.get_capabilities = vlan_get_capabilities,
