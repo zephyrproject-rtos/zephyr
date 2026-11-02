@@ -779,6 +779,15 @@
 			status = "disabled";
 		};
 
+		dac0: dac@f01a00 {
+			compatible = "ite,it51xxx-dac";
+			reg = <0x00f01a00 0x04>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		wuc1: wakeup-controller@f01b00 {
 			compatible = "ite,it51xxx-wuc";
 			reg = <0x00f01b00 1   /* WUEMR1 */
@@ -1106,6 +1115,14 @@
 		sha256: crypto@f03b00 {
 			compatible = "ite,it51xxx-sha";
 			reg = <0x00f03b00 0x6>;
+			interrupts = <IT51XXX_IRQ_CRYPTO IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		psa_crypto: psa-crypto@f03b00 {
+			compatible = "ite,it51xxx-crypto";
+			reg = <0xf03b00 0x00aa>;
 			interrupts = <IT51XXX_IRQ_CRYPTO IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
@@ -1586,15 +1603,6 @@
 			reg = <0x00f04780 0x20>;
 			interrupts = <IT51XXX_IRQ_TIMER1_DW IRQ_TYPE_EDGE_RISING>; /* Warn timer */
 			interrupt-parent = <&intc>;
-		};
-
-		dac0: dac@f01a00 {
-			compatible = "ite,it51xxx-dac";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x00f01a00 0x04>;
-			#io-channel-cells = <1>;
-			status = "disabled";
 		};
 	};
 };
