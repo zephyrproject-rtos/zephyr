@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SMP over console on the console UART, shared with logs, and raw SMP on USB CDC ACM */
+
+&uart0 {
+	smp-uart {
+		compatible = "zephyr,smp-uart";
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		hw-flow-control;
+
+		smp-uart-raw {
+			compatible = "zephyr,smp-uart-raw";
+		};
+	};
+};

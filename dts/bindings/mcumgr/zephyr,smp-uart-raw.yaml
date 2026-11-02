@@ -1,0 +1,32 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUmgr raw SMP transport on a UART
+
+description: |
+  Runs the MCUmgr raw UART transport, CONFIG_MCUMGR_TRANSPORT_RAW_UART, on the
+  parent UART. Packets are sent without encoding, so the UART must not carry
+  anything else.
+
+  The node must be the only enabled child of its UART.
+
+  The zephyr,uart-mcumgr chosen UART is used by the MCUmgr UART transports only
+  when no zephyr,smp-uart or zephyr,smp-uart-raw node of an enabled transport
+  exists. Nodes whose transport is disabled are ignored. Boards set the chosen
+  node; applications add these nodes to run MCUmgr on other or several UARTs.
+
+compatible: "zephyr,smp-uart-raw"
+
+include: uart-device.yaml
+
+examples:
+  - |
+    &zephyr_udc0 {
+        cdc_acm_uart0: cdc_acm_uart0 {
+            compatible = "zephyr,cdc-acm-uart";
+
+            smp-uart-raw {
+                compatible = "zephyr,smp-uart-raw";
+            };
+        };
+    };

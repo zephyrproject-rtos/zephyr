@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - mcumgr
+    - transport_uart
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  mgmt.mcumgr.transport.uart.chosen:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+  mgmt.mcumgr.transport.uart.chosen.raw:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay"
+    extra_configs:
+      - CONFIG_UART_MCUMGR_RAW_PROTOCOL=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+  mgmt.mcumgr.transport.uart.chosen.raw.console_node:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay;chosen-console-node.overlay"
+    extra_configs:
+      - CONFIG_UART_MCUMGR_RAW_PROTOCOL=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+  mgmt.mcumgr.transport.uart.mixed:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay;mixed.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+  mgmt.mcumgr.transport.uart.mixed.async:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay;mixed.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_MCUMGR_TRANSPORT_UART_ASYNC=y
+      # vnd,serial supports neither an RX timeout nor further RX buffers, so receive with no
+      # timeout into one buffer large enough for the whole suite
+      - CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_RX_TIMEOUT_US=-1
+      - CONFIG_MCUMGR_TRANSPORT_UART_ASYNC_BUF_SIZE=1024
+  mgmt.mcumgr.transport.uart.mixed.transport_mgmt:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay;mixed.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50
+      - CONFIG_MCUMGR_GRP_TRANSPORT=y
+  mgmt.mcumgr.transport.uart.multi:
+    extra_args: DTC_OVERLAY_FILE="chosen.overlay;mixed.overlay;multi.overlay"
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_CRC=y
+      - CONFIG_MCUMGR_TRANSPORT_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT=y
+      - CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS=50

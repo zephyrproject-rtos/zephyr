@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Enabled zephyr,smp-uart node. The scenario disables the SMP over console (UART) transport,
+ * so the raw UART transport must still use the chosen UART.
+ */
+&uart_chosen {
+	smp-uart {
+		compatible = "zephyr,smp-uart";
+	};
+};

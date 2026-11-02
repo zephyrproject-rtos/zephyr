@@ -31,8 +31,10 @@ static struct mcumgr_serial_rx_ctxt rx_ctxt;
 static struct net_buf *nb;
 
 /* Writes a framed request to the receive side of the emulated UART */
-static int uart_emul_rx_cb(const void *data, int len)
+static int uart_emul_rx_cb(const void *data, int len, void *ctx)
 {
+	ARG_UNUSED(ctx);
+
 	return uart_emul_put_rx_data(uart_dev, data, len) == len ? 0 : -ENOSPC;
 }
 
@@ -82,7 +84,7 @@ ZTEST(transport_uart_async, test_rx_restart)
 	zassert_true(ok, "Expected packet creation to be successful");
 
 	/* Test 1: Send an echo request and check the response */
-	rc = mcumgr_serial_tx_pkt(buffer_out, buffer_size, uart_emul_rx_cb);
+	rc = mcumgr_serial_tx_pkt(buffer_out, buffer_size, uart_emul_rx_cb, NULL);
 	zassert_equal(rc, 0, "Failed to send request: %d", rc);
 
 	k_sleep(SMP_RESPONSE_WAIT_TIME);
@@ -123,7 +125,7 @@ ZTEST(transport_uart_async, test_rx_restart)
 
 	k_sleep(SMP_RESPONSE_WAIT_TIME);
 
-	rc = mcumgr_serial_tx_pkt(buffer_out, buffer_size, uart_emul_rx_cb);
+	rc = mcumgr_serial_tx_pkt(buffer_out, buffer_size, uart_emul_rx_cb, NULL);
 	zassert_equal(rc, 0, "Failed to send request: %d", rc);
 
 	k_sleep(SMP_RESPONSE_WAIT_TIME);

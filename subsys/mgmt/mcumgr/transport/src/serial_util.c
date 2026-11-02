@@ -227,7 +227,7 @@ struct net_buf *mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt
  * Base64-encodes a small chunk of data and transmits it. The data must be no larger than three
  * bytes.
  */
-static int mcumgr_serial_tx_small(const void *data, int len, mcumgr_serial_tx_cb cb)
+static int mcumgr_serial_tx_small(const void *data, int len, mcumgr_serial_tx_cb cb, void *ctx)
 {
 	uint8_t b64[4 + 1]; /* +1 required for null terminator. */
 	size_t dst_len;
@@ -237,7 +237,7 @@ static int mcumgr_serial_tx_small(const void *data, int len, mcumgr_serial_tx_cb
 	__ASSERT_NO_MSG(rc == 0);
 	__ASSERT_NO_MSG(dst_len == 4);
 
-	return cb(b64, 4);
+	return cb(b64, 4, ctx);
 }
 
 /**
@@ -247,10 +247,11 @@ static int mcumgr_serial_tx_small(const void *data, int len, mcumgr_serial_tx_cb
  *                                  CRC.
  * @param len                   The size of the packet payload.
  * @param cb                    A callback used for transmitting raw data.
+ * @param ctx                   Context passed to @p cb.
  *
  * @return                      0 on success; negative error code on failure.
  */
-int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
+int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb, void *ctx)
 {
 	bool first = true;
 	bool last = false;
@@ -280,7 +281,7 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 		int max_input = (((MCUMGR_SERIAL_MAX_FRAME - 3) >> 2) * 3);
 
 		/* Send first frame or continuation frame marker */
-		rc = cb(&u16, sizeof(u16));
+		rc = cb(&u16, sizeof(u16), ctx);
 		if (rc != 0) {
 			return rc;
 		}
@@ -296,7 +297,7 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 			memcpy(raw, &u16, sizeof(u16));
 			raw[2] = data[0];
 
-			rc = mcumgr_serial_tx_small(raw, 3, cb);
+			rc = mcumgr_serial_tx_small(raw, 3, cb, ctx);
 			if (rc != 0) {
 				return rc;
 			}
@@ -336,7 +337,7 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 		 */
 		while (to_process >= 3) {
 			memcpy(raw, data + src_off, 3);
-			rc = mcumgr_serial_tx_small(raw, 3, cb);
+			rc = mcumgr_serial_tx_small(raw, 3, cb, ctx);
 			if (rc != 0) {
 				return rc;
 			}
@@ -353,7 +354,7 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 			case 0:
 				raw[0] = (crc & 0xff00) >> 8;
 				raw[1] = crc & 0x00ff;
-				rc = mcumgr_serial_tx_small(raw, 2, cb);
+				rc = mcumgr_serial_tx_small(raw, 2, cb, ctx);
 				break;
 
 			case 1:
@@ -361,7 +362,7 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 
 				raw[1] = (crc & 0xff00) >> 8;
 				raw[2] = crc & 0x00ff;
-				rc = mcumgr_serial_tx_small(raw, 3, cb);
+				rc = mcumgr_serial_tx_small(raw, 3, cb, ctx);
 				break;
 
 			case 2:
@@ -369,13 +370,13 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 				raw[1] = data[src_off++];
 
 				raw[2] = (crc & 0xff00) >> 8;
-				rc = mcumgr_serial_tx_small(raw, 3, cb);
+				rc = mcumgr_serial_tx_small(raw, 3, cb, ctx);
 				if (rc != 0) {
 					return rc;
 				}
 
 				raw[0] = crc & 0x00ff;
-				rc = mcumgr_serial_tx_small(raw, 1, cb);
+				rc = mcumgr_serial_tx_small(raw, 1, cb, ctx);
 				break;
 			}
 
@@ -384,7 +385,7 @@ int mcumgr_serial_tx_pkt(const uint8_t *data, int len, mcumgr_serial_tx_cb cb)
 			}
 		}
 
-		rc = cb("\n", 1);
+		rc = cb("\n", 1, ctx);
 		if (rc != 0) {
 			return rc;
 		}
