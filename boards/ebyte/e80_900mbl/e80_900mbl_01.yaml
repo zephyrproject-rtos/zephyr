@@ -1,5 +1,5 @@
 identifier: e80_900mbl_01
-name: Ebyte E80 Module Development Board (HF)
+name: Ebyte E80 Module Development Board (LR1121, HF)
 type: mcu
 arch: arm
 toolchain:

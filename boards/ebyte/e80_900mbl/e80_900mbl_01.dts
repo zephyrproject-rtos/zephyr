@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "e80_900mbl_common.dtsi"
+
+/ {
+	model = "Ebyte E80 Module Development Board (LR1121, HF)";
+
+	aliases {
+		lora0 = &lora0;
+	};
+};
+
+&spi1 {
+	lora0: lora@0 {
+		compatible = "semtech,lr1121";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		lf-clk = "XTAL";
+		rfsw-enable = <0x07>;
+		rfsw-standby = <0x00>;
+		rfsw-rx = <0x02>;
+		rfsw-tx = <0x03>;
+		rfsw-tx-hp = <0x01>;
+		rfsw-tx-hf = <0x00>;
+		rfsw-gnss = <0x04>;
+		rfsw-wifi = <0x00>;
+		tcxo-voltage = <1800>;
+		use-dcdc;
+		rx-boosted;
+		status = "okay";
+	};
+};

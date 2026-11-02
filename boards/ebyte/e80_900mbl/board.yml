@@ -1,0 +1,6 @@
+boards:
+- name: e80_900mbl_01
+  full_name: Ebyte E80 Module Development Board (LR1121, HF)
+  vendor: ebyte
+  socs:
+  - name: stm32f103x8
