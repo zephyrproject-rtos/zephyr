@@ -241,6 +241,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 		return BT_GATT_OTS_OACP_RES_OBJ_LOCKED;
 	}
 
+	ots->l2cap.closed = oacp_l2cap_closed;
 	ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_READ_OP_STATE;
 	ots->cur_obj->state.read_op.sent_len = 0;
 	memcpy(&ots->cur_obj->state.read_op.oacp_params, &proc->read_params,
@@ -507,7 +508,6 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	}
 
 	ots->l2cap.tx_done = oacp_read_proc_cb;
-	ots->l2cap.closed = oacp_l2cap_closed;
 	err = bt_gatt_ots_l2cap_send(&ots->l2cap, obj_chunk, len);
 	if (err) {
 		LOG_ERR("L2CAP CoC error: %d while trying to execute OACP "
