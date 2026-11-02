@@ -817,9 +817,10 @@ static int db_hash_gen(void)
 }
 
 /* Copy the hash of the database as it is now to hash, or the last one published
- * if the computation fails, and return whether it had to be computed.
+ * if the computation fails, and its generation to hash_generation, and return
+ * whether it had to be computed.
  */
-static bool db_hash_get(uint8_t hash[BT_GATT_DB_HASH_SIZE])
+static bool db_hash_get(uint8_t hash[BT_GATT_DB_HASH_SIZE], atomic_val_t *hash_generation)
 {
 	bool computed = false;
 	int err = 0;
@@ -832,6 +833,7 @@ static bool db_hash_get(uint8_t hash[BT_GATT_DB_HASH_SIZE])
 		bool valid = db_hash_is_valid();
 
 		(void)memcpy(hash, db_hash.hash, sizeof(db_hash.hash));
+		*hash_generation = atomic_get(&db_hash.hash_generation);
 		k_spin_unlock(&db_hash.lock, key);
 
 		if (valid || err != 0) {
@@ -848,7 +850,8 @@ static void sc_indicate(uint16_t start, uint16_t end);
 static void do_db_hash(void)
 {
 	uint8_t hash[BT_GATT_DB_HASH_SIZE];
-	__maybe_unused bool new_hash = db_hash_get(hash);
+	atomic_val_t hash_generation;
+	__maybe_unused bool new_hash = db_hash_get(hash, &hash_generation);
 
 #if defined(CONFIG_BT_SETTINGS)
 	bool hash_loaded_from_settings =
@@ -881,8 +884,18 @@ static void do_db_hash(void)
 		/* Check if hash matches then skip SC update */
 		if (!memcmp(db_hash.stored_hash, hash, sizeof(db_hash.stored_hash))) {
 			LOG_DBG("Database Hash matches");
-			k_work_cancel_delayable(&gatt_sc.work);
-			atomic_clear_bit(gatt_sc.flags, SC_RANGE_CHANGED);
+
+			/* Unless the database changed since: the range of that
+			 * change is to be indicated. Registrations change the
+			 * generation before they set the range.
+			 */
+			k_sched_lock();
+			if (atomic_get(&db_hash.db_generation) == hash_generation) {
+				(void)k_work_cancel_delayable(&gatt_sc.work);
+				atomic_clear_bit(gatt_sc.flags, SC_RANGE_CHANGED);
+			}
+			k_sched_unlock();
+
 			return;
 		}
 
@@ -918,12 +931,13 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 {
 	struct gatt_cf_cfg *cfg;
 	uint8_t hash[BT_GATT_DB_HASH_SIZE];
+	atomic_val_t hash_generation;
 
 	/* Check if db_hash is already pending in which case it shall be
 	 * generated immediately instead of waiting for the work to complete.
 	 */
 	(void)k_work_cancel_delayable_sync(&db_hash.work, &db_hash.sync);
-	if (db_hash_get(hash)) {
+	if (db_hash_get(hash, &hash_generation)) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 			set_all_change_unaware();
 			db_hash_store();
@@ -1765,10 +1779,10 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return 0;
 	}
 
+	db_changed();
+
 	sc_indicate(svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
-
-	db_changed();
 
 	k_sched_unlock();
 	bt_dev_unlock();
@@ -1811,9 +1825,9 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		return 0;
 	}
 
-	sc_indicate(sc_start_handle, sc_end_handle);
-
 	db_changed();
+
+	sc_indicate(sc_start_handle, sc_end_handle);
 
 	k_sched_unlock();
 	bt_dev_unlock();
