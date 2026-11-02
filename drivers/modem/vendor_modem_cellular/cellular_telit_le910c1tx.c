@@ -33,6 +33,16 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_init_chat_script, telit_le910c1tx_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_network_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=2", ok_match),
+			      /* V.24 RTS/DTR control can reset the CFUN state back to 4 */
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_network_chat_script,
+			 telit_le910c1tx_network_chat_script_cmds, dial_abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
@@ -54,6 +64,7 @@ static const struct modem_cellular_vendor_config telit_le910c1tx_vendor = {
 	/* clang-format off */
 	.scripts = {
 		.init = &telit_le910c1tx_init_chat_script,
+		.network = &telit_le910c1tx_network_chat_script,
 		.dial = &telit_le910c1tx_dial_chat_script,
 		.periodic = &telit_le910c1tx_periodic_chat_script,
 	},
