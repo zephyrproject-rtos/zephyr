@@ -32,6 +32,20 @@ LOG_MODULE_REGISTER(pcie, LOG_LEVEL_ERR);
 #include <zephyr/drivers/pcie/controller.h>
 #endif
 
+struct scan_context {
+	const struct device *ctrl;
+	const struct pcie_scan_ctrl_opt *opt;
+	const struct pcie_scan_opt *legacy_opt;
+	uint32_t visited[8];
+	int status;
+};
+
+struct scan_data {
+	size_t found;
+	size_t max_dev;
+	int status;
+};
+
 #ifdef CONFIG_PCIE_PRT
 /* platform interrupt are hardwired or can be dynamically allocated. */
 static bool prt_en;
@@ -374,144 +388,193 @@ void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 	irq_enable(irq);
 }
 
-static bool scan_flag(const struct pcie_scan_opt *opt, uint32_t flag)
+static bool scan_flag(const struct pcie_scan_ctrl_opt *opt, uint32_t flag)
 {
 	return ((opt->flags & flag) != 0U);
 }
 
-/* Forward declaration needed since scanning a device may reveal a bridge */
-static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt);
+static bool scan_bus(struct scan_context *ctx, uint8_t bus);
 
-static inline bool should_skip_masked_bdf(pcie_bdf_t bdf, uint8_t func,
-					  const struct pcie_scan_opt *opt)
+static uint32_t scan_read(struct scan_context *ctx, pcie_bdf_t bdf, unsigned int reg)
 {
-	ARG_UNUSED(func);
+	const struct pcie_endpoint ep = {.ctrl = ctx->ctrl, .bdf = bdf};
+	uint32_t value = UINT32_MAX;
 
-	if (opt != NULL && opt->scan_masking_fn != NULL) {
-		return opt->scan_masking_fn(bdf);
+	if (ctx->status == 0) {
+		ctx->status = z_pcie_conf_read(&ep, reg, &value);
 	}
-
-	return false;
+	return value;
 }
 
-static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
+static bool scan_dev(struct scan_context *ctx, uint8_t bus, uint8_t dev)
 {
+	const struct pcie_scan_ctrl_opt *opt = ctx->opt;
 	uint8_t deferred_buses[PCIE_MAX_FUNC + 1];
-	uint8_t deferred_count = 0;
-	uint8_t secondary = 0;
+	uint8_t deferred_count = 0U;
 
-	for (uint8_t func = 0; func <= PCIE_MAX_FUNC; func++) {
-		pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
+	for (uint8_t func = 0U; func <= PCIE_MAX_FUNC; func++) {
+		const struct pcie_endpoint ep = {
+			.ctrl = ctx->ctrl, .bdf = PCIE_BDF(bus, dev, func),
+		};
 		uint32_t id, type;
-		bool do_cb;
+		bool masked, do_cb;
 
-		/* Skip the scan loops if this BDF is registered in the mask */
-		if (should_skip_masked_bdf(bdf, func, opt)) {
+		masked = opt->scan_masking_fn != NULL &&
+			opt->scan_masking_fn(&ep, opt->cb_data);
+		if (masked) {
 			continue;
 		}
 
-		id = pcie_conf_read(bdf, PCIE_CONF_ID);
+		id = scan_read(ctx, ep.bdf, PCIE_CONF_ID);
+		if (ctx->status != 0) {
+			return false;
+		}
 		if (!PCIE_ID_IS_VALID(id)) {
 			continue;
 		}
-
-		type = pcie_conf_read(bdf, PCIE_CONF_TYPE);
-		switch (PCIE_CONF_TYPE_GET(type)) {
-		case PCIE_CONF_TYPE_STANDARD:
-			do_cb = true;
-			break;
-		case PCIE_CONF_TYPE_PCI_BRIDGE:
-			do_cb = scan_flag(opt, PCIE_SCAN_CB_ALL);
-			break;
-		default:
-			do_cb = scan_flag(opt, PCIE_SCAN_CB_ALL);
-			break;
-		}
-
-		if (do_cb && !opt->cb(bdf, id, opt->cb_data)) {
+		type = scan_read(ctx, ep.bdf, PCIE_CONF_TYPE);
+		if (ctx->status != 0) {
 			return false;
+		}
+		do_cb = PCIE_CONF_TYPE_GET(type) == PCIE_CONF_TYPE_STANDARD ||
+			scan_flag(opt, PCIE_SCAN_CB_ALL);
+		if (do_cb) {
+			bool keep_scanning = opt->cb(&ep, id, opt->cb_data);
+
+			if (!keep_scanning) {
+				return false;
+			}
 		}
 
 		if (PCIE_CONF_TYPE_GET(type) == PCIE_CONF_TYPE_PCI_BRIDGE &&
 		    scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
-			uint32_t num = pcie_conf_read(bdf, PCIE_BUS_NUMBER);
+			uint32_t num = scan_read(ctx, ep.bdf, PCIE_BUS_NUMBER);
+			uint8_t secondary = PCIE_BUS_SECONDARY_NUMBER(num);
 
-			secondary = PCIE_BUS_SECONDARY_NUMBER(num);
-
-			if (secondary != 0 && deferred_count <= PCIE_MAX_FUNC) {
+			if (ctx->status != 0) {
+				return false;
+			}
+			if (secondary != 0U) {
 				deferred_buses[deferred_count++] = secondary;
 			}
 		}
-
-		/* Only function 0 is valid for non-multifunction devices */
-		if (func == 0 && !PCIE_CONF_MULTIFUNCTION(type)) {
+		if (func == 0U && !PCIE_CONF_MULTIFUNCTION(type)) {
 			break;
 		}
 	}
-
-	for (uint8_t idx = 0; idx < deferred_count; idx++) {
-		if (!scan_bus(deferred_buses[idx], opt)) {
+	for (uint8_t idx = 0U; idx < deferred_count; idx++) {
+		if (!scan_bus(ctx, deferred_buses[idx])) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
-static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt)
+static bool scan_bus(struct scan_context *ctx, uint8_t bus)
 {
-	for (uint8_t dev = 0; dev <= PCIE_MAX_DEV; dev++) {
-		if (!scan_dev(bus, dev, opt)) {
+	if ((ctx->visited[bus / 32U] & BIT(bus % 32U)) != 0U) {
+		return true;
+	}
+	ctx->visited[bus / 32U] |= BIT(bus % 32U);
+	for (uint8_t dev = 0U; dev <= PCIE_MAX_DEV; dev++) {
+		if (!scan_dev(ctx, bus, dev)) {
 			return false;
 		}
 	}
-
 	return true;
 }
 
-int pcie_scan(const struct pcie_scan_opt *opt)
+static int scan(struct scan_context *ctx)
 {
-	uint32_t type;
-	bool multi;
+	const struct pcie_scan_ctrl_opt *opt = ctx->opt;
+	bool multi = false;
 
-	CHECKIF(opt->cb == NULL) {
-		return -EINVAL;
+	if (!IS_ENABLED(CONFIG_PCIE_CONTROLLER) && opt->bus == 0U &&
+	    scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
+		const struct pcie_endpoint ep = {.ctrl = ctx->ctrl, .bdf = PCIE_HOST_CONTROLLER(0)};
+
+		if (opt->scan_masking_fn == NULL || !opt->scan_masking_fn(&ep, opt->cb_data)) {
+			multi = PCIE_CONF_MULTIFUNCTION(scan_read(ctx, ep.bdf, PCIE_CONF_TYPE));
+		}
 	}
+	if (multi) {
+		for (uint8_t bus = 0U; bus <= PCIE_MAX_FUNC; bus++) {
+			const struct pcie_endpoint ep = {
+				.ctrl = ctx->ctrl, .bdf = PCIE_HOST_CONTROLLER(bus),
+			};
 
-	type = pcie_conf_read(PCIE_HOST_CONTROLLER(0), PCIE_CONF_TYPE);
-	multi = PCIE_CONF_MULTIFUNCTION(type);
-	if (opt->bus == 0 && scan_flag(opt, PCIE_SCAN_RECURSIVE) && multi) {
-		/* Each function on the host controller represents a portential bus */
-		for (uint8_t bus = 0; bus <= PCIE_MAX_FUNC; bus++) {
-			pcie_bdf_t bdf = PCIE_HOST_CONTROLLER(bus);
-
-			if (pcie_conf_read(bdf, PCIE_CONF_ID) == PCIE_ID_NONE) {
+			if (opt->scan_masking_fn != NULL &&
+			    opt->scan_masking_fn(&ep, opt->cb_data)) {
 				continue;
 			}
-
-			if (!scan_bus(bus, opt)) {
+			if (scan_read(ctx, ep.bdf, PCIE_CONF_ID) == PCIE_ID_NONE) {
+				continue;
+			}
+			if (!scan_bus(ctx, bus)) {
 				break;
 			}
 		}
 	} else {
-		/* Single PCI host controller */
-		scan_bus(opt->bus, opt);
+		scan_bus(ctx, opt->bus);
 	}
-
-	return 0;
+	return ctx->status;
 }
 
-struct scan_data {
-	size_t found;
-	size_t max_dev;
-};
+static bool legacy_scan_cb(const struct pcie_endpoint *ep, pcie_id_t id, void *cb_data)
+{
+	const struct scan_context *ctx = cb_data;
+	const struct pcie_scan_opt *opt = ctx->legacy_opt;
 
-static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+	return opt->cb(ep->bdf, id, opt->cb_data);
+}
+
+static bool legacy_scan_mask(const struct pcie_endpoint *ep, void *cb_data)
+{
+	const struct scan_context *ctx = cb_data;
+	const struct pcie_scan_opt *opt = ctx->legacy_opt;
+
+	return opt->scan_masking_fn != NULL && opt->scan_masking_fn(ep->bdf);
+}
+
+int pcie_scan(const struct pcie_scan_opt *opt)
+{
+	const struct pcie_endpoint ep = z_pcie_legacy_endpoint(0U);
+	struct scan_context ctx = {.ctrl = ep.ctrl, .legacy_opt = opt};
+
+	if (opt == NULL || opt->cb == NULL) {
+		return -EINVAL;
+	}
+	const struct pcie_scan_ctrl_opt ctrl_opt = {
+		.bus = opt->bus,
+		.cb = legacy_scan_cb,
+		.cb_data = &ctx,
+		.flags = opt->flags,
+		.scan_masking_fn = legacy_scan_mask,
+	};
+
+	ctx.opt = &ctrl_opt;
+	return scan(&ctx);
+}
+
+int pcie_scan_ctrl(const struct device *ctrl, const struct pcie_scan_ctrl_opt *opt)
+{
+	struct scan_context ctx = {.ctrl = ctrl, .opt = opt};
+
+	if (ctrl == NULL || opt == NULL || opt->cb == NULL) {
+		return -EINVAL;
+	}
+	if (!IS_ENABLED(CONFIG_PCIE_CONTROLLER)) {
+		return -ENOTSUP;
+	}
+	return scan(&ctx);
+}
+
+static bool pcie_dev_match(const struct pcie_endpoint *ep, pcie_id_t id, void *cb_data)
 {
 	struct scan_data *data = cb_data;
 
 	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
-		if (dev->bdf != PCIE_BDF_NONE) {
+		if (dev->bdf != PCIE_BDF_NONE || dev->ctrl != ep->ctrl) {
 			continue;
 		}
 
@@ -519,10 +582,19 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 			continue;
 		}
 
-		uint32_t class_rev = pcie_conf_read(bdf, PCIE_CONF_CLASSREV);
+		uint32_t class_rev;
+
+		if (ep->ctrl != NULL) {
+			data->status = pcie_endpoint_conf_read(ep, PCIE_CONF_CLASSREV, &class_rev);
+			if (data->status != 0) {
+				return false;
+			}
+		} else {
+			class_rev = pcie_conf_read(ep->bdf, PCIE_CONF_CLASSREV);
+		}
 
 		if (dev->class_rev == (class_rev & dev->class_rev_mask)) {
-			dev->bdf = bdf;
+			dev->bdf = ep->bdf;
 			dev->class_rev = class_rev;
 			data->found++;
 			break;
@@ -533,6 +605,15 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 	return (data->found != data->max_dev);
 }
 
+#ifndef CONFIG_PCIE_CONTROLLER
+static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
+{
+	const struct pcie_endpoint ep = {.bdf = bdf};
+
+	return pcie_dev_match(&ep, id, cb_data);
+}
+#endif
+
 #define PCIE_SCAN_EXTRA_BUS(node_id, prop, idx)                                \
 	if (data.found != data.max_dev) {                                          \
 		opt.bus = DT_PROP_BY_IDX(node_id, prop, idx);                     \
@@ -541,9 +622,15 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 
 static int pcie_init(void)
 {
-	struct scan_data data;
+	struct scan_data data = {0};
+#ifdef CONFIG_PCIE_CONTROLLER
+	int status = 0;
+	struct pcie_scan_ctrl_opt opt = {
+		.cb = pcie_dev_match,
+#else
 	struct pcie_scan_opt opt = {
 		.cb = pcie_dev_cb,
+#endif
 		.cb_data = &data,
 		.flags = PCIE_SCAN_RECURSIVE,
 	};
@@ -572,12 +659,48 @@ static int pcie_init(void)
 
 	data.found = 0;
 
+#ifdef CONFIG_PCIE_CONTROLLER
+	STRUCT_SECTION_FOREACH(pcie_dev, dev) {
+		bool scanned = false;
+		int ret;
+
+		STRUCT_SECTION_FOREACH(pcie_dev, prior) {
+			if (prior == dev) {
+				break;
+			}
+			if (prior->ctrl == dev->ctrl) {
+				scanned = true;
+				break;
+			}
+		}
+		if (scanned) {
+			continue;
+		}
+		if (dev->ctrl == NULL || !DEVICE_API_IS(pcie_ctrl, dev->ctrl)) {
+			ret = -EINVAL;
+		} else if (!device_is_ready(dev->ctrl)) {
+			ret = -ENODEV;
+		} else {
+			data.status = 0;
+			ret = pcie_scan_ctrl(dev->ctrl, &opt);
+			if (ret == 0) {
+				ret = data.status;
+			}
+		}
+		if (status == 0) {
+			status = ret;
+		}
+	}
+	return status;
+#else
 	/* Scan default bus 0 */
 	pcie_scan(&opt);
 
 	/* Scan additional buses defined in devicetree scan-buses property */
 #if DT_INST_NODE_HAS_PROP(0, scan_buses)
 	DT_INST_FOREACH_PROP_ELEM(0, scan_buses, PCIE_SCAN_EXTRA_BUS)
+#endif
+
 #endif
 
 	return 0;
