@@ -26,7 +26,7 @@
 static inline enum ieee802154_hw_caps ieee802154_radio_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -42,7 +42,7 @@ static inline enum ieee802154_hw_caps ieee802154_radio_get_hw_capabilities(struc
 static inline int ieee802154_radio_cca(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -58,7 +58,7 @@ static inline int ieee802154_radio_cca(struct net_if *iface)
 static inline int ieee802154_radio_set_channel(struct net_if *iface, uint16_t channel)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -74,7 +74,7 @@ static inline int ieee802154_radio_set_channel(struct net_if *iface, uint16_t ch
 static inline int ieee802154_radio_set_tx_power(struct net_if *iface, int16_t dbm)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -91,7 +91,7 @@ static inline int ieee802154_radio_tx(struct net_if *iface, enum ieee802154_tx_m
 				      struct net_pkt *pkt, struct net_buf *buf)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -107,7 +107,7 @@ static inline int ieee802154_radio_tx(struct net_if *iface, enum ieee802154_tx_m
 static inline int ieee802154_radio_start(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -123,7 +123,7 @@ static inline int ieee802154_radio_start(struct net_if *iface)
 static inline int ieee802154_radio_stop(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -141,7 +141,7 @@ static inline int ieee802154_radio_attr_get(struct net_if *iface,
 					    struct ieee802154_attr_value *value)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -163,7 +163,7 @@ static inline int ieee802154_radio_attr_get(struct net_if *iface,
 static inline void ieee802154_radio_filter_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -186,7 +186,7 @@ static inline void ieee802154_radio_filter_ieee_addr(struct net_if *iface, uint8
 static inline void ieee802154_radio_filter_short_addr(struct net_if *iface, uint16_t short_addr)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -209,7 +209,7 @@ static inline void ieee802154_radio_filter_short_addr(struct net_if *iface, uint
 static inline void ieee802154_radio_filter_pan_id(struct net_if *iface, uint16_t pan_id)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -232,7 +232,7 @@ static inline void ieee802154_radio_filter_pan_id(struct net_if *iface, uint16_t
 static inline void ieee802154_radio_filter_src_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -255,7 +255,7 @@ static inline void ieee802154_radio_filter_src_ieee_addr(struct net_if *iface, u
 static inline void ieee802154_radio_filter_src_short_addr(struct net_if *iface, uint16_t short_addr)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -278,7 +278,7 @@ static inline void ieee802154_radio_filter_src_short_addr(struct net_if *iface, 
 static inline void ieee802154_radio_remove_src_ieee_addr(struct net_if *iface, uint8_t *ieee_addr)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -301,7 +301,7 @@ static inline void ieee802154_radio_remove_src_ieee_addr(struct net_if *iface, u
 static inline void ieee802154_radio_remove_src_short_addr(struct net_if *iface, uint16_t short_addr)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 
@@ -325,7 +325,7 @@ static inline void ieee802154_radio_remove_src_short_addr(struct net_if *iface, 
 static inline void ieee802154_radio_remove_pan_id(struct net_if *iface, uint16_t pan_id)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 
 	NET_ASSERT(dev != NULL);
 

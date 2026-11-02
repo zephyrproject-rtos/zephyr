@@ -1196,7 +1196,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 PM_DEVICE_DT_INST_DEFINE(0, radio_pm_action);
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct ieee802154_radio_api stm32wba_802154_radio_api = {
+static DEVICE_API(ieee802154_radio, stm32wba_802154_radio_api) = {
 	.iface_api.init = stm32wba_802154_iface_init,
 	.get_capabilities = stm32wba_802154_get_capabilities,
 	.cca = stm32wba_802154_cca,

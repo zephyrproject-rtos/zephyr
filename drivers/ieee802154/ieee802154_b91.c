@@ -615,7 +615,7 @@ static int b91_attr_get(const struct device *dev, enum ieee802154_attr attr,
 }
 
 /* IEEE802154 driver APIs structure */
-static const struct ieee802154_radio_api b91_radio_api = {
+static DEVICE_API(ieee802154_radio, b91_radio_api) = {
 	.iface_api.init = b91_iface_init,
 	.get_capabilities = b91_get_capabilities,
 	.cca = b91_cca,
