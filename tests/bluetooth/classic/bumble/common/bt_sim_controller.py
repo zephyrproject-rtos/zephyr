@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 # Bumble's pairing always produces a 128-bit link key.
 ENCRYPTION_KEY_SIZE = 16
 
+# Set in the Authentication_Requirements of an IO capability exchange.
+MITM_PROTECTION_REQUIRED = 0x01
+
 
 @lmp.Packet.subclass
 @dataclasses.dataclass
@@ -38,7 +41,8 @@ class bt_sim_controller(Controller):
     configuration commands the Zephyr Host requires at bt_enable().
     """
 
-    # Not BR_EDR_NOT_SUPPORTED, which Bumble sets by default.
+    # Not BR_EDR_NOT_SUPPORTED, which Bumble sets by default. Without Secure
+    # Connections, link keys are P-192 and encryption is E0.
     lmp_features: hci.LmpFeatureMask = hci.LmpFeatureMask.LE_SUPPORTED_CONTROLLER
 
     def __init__(self, *args, **kwargs):
@@ -88,7 +92,40 @@ class bt_sim_controller(Controller):
             self.pairing_reported.add(packet.bd_addr)
         elif isinstance(packet, hci.HCI_Disconnection_Complete_Event):
             self.pending_authentication.discard(packet.connection_handle)
+        elif isinstance(packet, hci.HCI_Link_Key_Notification_Event):
+            # Bumble reports every key as an authenticated P-256 one.
+            packet = hci.HCI_Link_Key_Notification_Event(
+                bd_addr=packet.bd_addr,
+                link_key=packet.link_key,
+                key_type=self._link_key_type(self.classic_connections[packet.bd_addr]),
+            )
         super().send_hci_packet(packet)
+
+    @staticmethod
+    def _link_key_type(connection: Connection) -> int:
+        '''
+        See Bluetooth spec Vol 3, Part C - 5.2.2.6, Table 5.7
+        '''
+        io_capabilities = {
+            connection.ssp_state.local_io_capability,
+            connection.ssp_state.peer_io_capability,
+        }
+        if hci.IoCapability.NO_INPUT_NO_OUTPUT not in io_capabilities and (
+            hci.IoCapability.KEYBOARD_ONLY in io_capabilities
+            or io_capabilities == {hci.IoCapability.DISPLAY_YES_NO}
+        ):
+            return hci.LinkKeyType.AUTHENTICATED_COMBINATION_KEY_GENERATED_FROM_P_192
+        return hci.LinkKeyType.UNAUTHENTICATED_COMBINATION_KEY_GENERATED_FROM_P_192
+
+    def _start_ssp_exchange(self, connection: Connection) -> None:
+        # Bumble picks the association model from the IO capabilities alone. Without
+        # MITM protection on either side stage 1 functions as if both were DisplayOnly
+        # (Vol 3, Part C - 5.2.2.6). Both sides decide this from the same exchanged values.
+        ssp_state = connection.ssp_state
+        if not (ssp_state.local_auth_reqs | ssp_state.peer_auth_reqs) & MITM_PROTECTION_REQUIRED:
+            ssp_state.local_io_capability = hci.IoCapability.DISPLAY_ONLY
+            ssp_state.peer_io_capability = hci.IoCapability.DISPLAY_ONLY
+        super()._start_ssp_exchange(connection)
 
     def _start_pairing(self, connection: Connection, is_initiator: bool) -> None:
         # Bumble keeps the state of an earlier pairing on the link.
@@ -281,7 +318,11 @@ class bt_sim_controller(Controller):
         pending = self.classic_pending_commands.get(connection.peer_address, {}).get(
             lmp.Opcode.LMP_START_ENCRYPTION_REQ
         )
-        if command.encryption_enable == 0 or (pending is not None and not pending.done()):
+        if (
+            command.encryption_enable == 0
+            or connection.ssp_state.link_key is None
+            or (pending is not None and not pending.done())
+        ):
             self._send_hci_command_status(
                 hci.HCI_ErrorCode.COMMAND_DISALLOWED_ERROR, command.op_code
             )
@@ -312,7 +353,7 @@ class bt_sim_controller(Controller):
                 status=status,
                 connection_handle=connection_handle,
                 encryption_enabled=(
-                    enabled.AES_CCM if status == hci.HCI_ErrorCode.SUCCESS else enabled.OFF
+                    enabled.E0_OR_AES_CCM if status == hci.HCI_ErrorCode.SUCCESS else enabled.OFF
                 ),
             )
         )
