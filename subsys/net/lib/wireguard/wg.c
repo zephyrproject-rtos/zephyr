@@ -992,7 +992,7 @@ static int wg_ctrl_stop(const struct device *dev)
 	return 0;
 }
 
-static struct dummy_api wg_api = {
+static const struct dummy_api wg_api = {
 	.iface_api.init = wg_ctrl_iface_init,
 	.recv = wg_ctrl_recv,
 	.send = wg_ctrl_send,
