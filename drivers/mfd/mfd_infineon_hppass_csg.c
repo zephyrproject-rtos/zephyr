@@ -8,7 +8,7 @@
 /**
  * @brief MFD driver for the Infineon HPPASS CSG (Comparator Slope Generator).
  *
- * The CSG block contains five identical slices.  Each slice pairs a 10-bit,
+ * The CSG block contains five or nine slices.  Each slice pairs a 10-bit,
  * 30 Msps DAC with a high-speed comparator.  This MFD owns:
  *
  *   - the combined CSG comparator interrupt handler.
@@ -70,10 +70,14 @@ struct ifx_csg_config {
 	struct ifx_cat1_clock clock;
 	en_clk_dst_t clk_dst;
 	uint8_t dac_observe_blank;
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	uint8_t group_mask;
+	uint8_t aroute[IFX_HPPASS_CSG_NUM];
+#endif
 };
 
 /*
- * Combined CSG comparator interrupt handler.  All five slice comparators
+ * Combined CSG comparator interrupt handler.  All slice comparators
  * share a single hardware vector; the parent reads CMP_INTR_MASKED to
  * determine which slices fired and dispatches both the combined safety
  * callback and per-slice child callbacks.
@@ -97,7 +101,7 @@ static void ifx_hppass_csg_cmp_isr(const struct device *dev)
 
 	/* Combined callback runs first (lowest-latency safety/fault path, e.g. PWM trip). */
 	if (data->combined_cb != NULL) {
-		data->combined_cb(dev, (uint8_t)masked, data->combined_user);
+		data->combined_cb(dev, (ifx_hppass_csg_slice_mask_t)masked, data->combined_user);
 	}
 
 	for (uint8_t s = 0U; s < IFX_HPPASS_CSG_NUM_SLICES; s++) {
@@ -228,7 +232,7 @@ int ifx_hppass_csg_clear_cmp_intr(const struct device *dev, uint8_t slice)
 /*
  * Forward a CSG slice's DAC output onto the SAR ADC AROUTE MUX0
  * observability path.  Slice argument is 0-based; -1 disables the route
- * (VDAC_OUT_SEL = 0 = Hi-Z).  Hardware encoding is 1-based: 1=DAC0..5=DAC4.
+ * (VDAC_OUT_SEL = 0 = Hi-Z).  Hardware encoding is 1-based.
  */
 int mfd_infineon_hppass_csg_route_dac_to_adc(const struct device *dev, int slice)
 {
@@ -274,6 +278,17 @@ static int ifx_hppass_csg_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+	/* Power groups used by either child type, including DAC-only slices. */
+	sys_set_bits(base + IFX_HPPASS_CSG_CTRL,
+		     FIELD_PREP(HPPASS_CSG_CSG_CTRL_CSG_GRP_PWR_EN_Msk, cfg->group_mask));
+
+	/* Muxes may be used even when their own comparator is disabled. */
+	for (uint8_t i = 0; i < ARRAY_SIZE(cfg->aroute); i++) {
+		sys_write32(cfg->aroute[i], base + IFX_HPPASS_CSG_AROUTEMUX_SEL(i));
+	}
+#endif
+
 	/* All comparator interrupts masked until a child unmasks its slice. */
 	sys_write32(0U, base + IFX_HPPASS_CSG_CMP_INTR_MASK);
 
@@ -296,7 +311,7 @@ static int ifx_hppass_csg_init(const struct device *dev)
 /*
  * Regular DeepSleep retains the CSG block configuration; only a genuine power
  * loss (S2RAM warm boot) clears it, so the block is rebuilt from the TURN_ON
- * path alone.
+ * path alone, including all v3 analog route muxes.
  */
 static int ifx_hppass_csg_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -316,11 +331,36 @@ static int ifx_hppass_csg_pm_action(const struct device *dev, enum pm_device_act
 } /* ifx_hppass_csg_pm_action() */
 #endif /* CONFIG_PM_DEVICE */
 
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+#define IFX_CSG_CHILD_GROUP(node)                                                                  \
+	| BIT(((DT_REG_ADDR(node) - DT_REG_ADDR(DT_PARENT(node))) /                          \
+	       DT_PROP(DT_PARENT(node), infineon_slice_reg_spacing)) /                     \
+	      IFX_HPPASS_CSG_SLICES_PER_GROUP)
+
+#define IFX_CSG_AROUTE_REG_NONE  0U
+#define IFX_CSG_AROUTE_REG_AIN_A 1U
+#define IFX_CSG_AROUTE_REG_AIN_B 2U
+#define IFX_CSG_AROUTE_REG_AIN_C 4U
+#define IFX_CSG_AROUTE_REG_AIN_D 8U
+#define IFX_CSG_AROUTE_INIT(node, prop, i) \
+	CONCAT(IFX_CSG_AROUTE_REG_, DT_STRING_UPPER_TOKEN_BY_IDX(node, prop, i))
+#endif
+
 #define IFX_CSG_INIT(n)                                                                            \
+	BUILD_ASSERT(DT_INST_NODE_HAS_COMPAT(n, infineon_hppass_csg_v3) ==                         \
+			     IS_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3),                           \
+		     "CSG compatible must match the HPPASS parent revision");                    \
+	BUILD_ASSERT(DT_INST_PROP(n, infineon_num_slices) <=                                      \
+		     (IS_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3) ? 9 : 5),                        \
+		     "CSG slice count exceeds the hardware topology");                          \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, infineon_dac_observe_blank_cycles, 0) <=                   \
 			(HPPASS_CSG_VDAC_OUT_BLANK_BLANK_CNT_Msk >>                                \
 			 HPPASS_CSG_VDAC_OUT_BLANK_BLANK_CNT_Pos),                                 \
 		     "infineon,dac-observe-blank-cycles must fit in BLANK_CNT (0..31)");           \
+	IF_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3, (                                            \
+		BUILD_ASSERT(DT_INST_PROP_LEN(n, infineon_aroute_inputs) == IFX_HPPASS_CSG_NUM, \
+			     "infineon,aroute-inputs must contain one entry per CSG mux");    \
+	))                                                                                     \
 	static const struct ifx_csg_config ifx_csg_config_##n = {                                  \
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),                                           \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(n)),                                        \
@@ -332,6 +372,12 @@ static int ifx_hppass_csg_pm_action(const struct device *dev, enum pm_device_act
 		},                                                                                 \
 		.clk_dst = (en_clk_dst_t)DT_INST_PROP(n, clk_dst),                                 \
 		.dac_observe_blank = (uint8_t)DT_INST_PROP(n, infineon_dac_observe_blank_cycles),  \
+		IF_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3, (                                        \
+			.group_mask = (0 DT_INST_FOREACH_CHILD_STATUS_OKAY(                       \
+				n, IFX_CSG_CHILD_GROUP)),                                         \
+			.aroute = { DT_INST_FOREACH_PROP_ELEM_SEP(n, infineon_aroute_inputs,      \
+				IFX_CSG_AROUTE_INIT, (,)) },                                      \
+		))                                                                                 \
 	};                                                                                         \
                                                                                                    \
 	static struct ifx_csg_data ifx_csg_data_##n;                                               \
