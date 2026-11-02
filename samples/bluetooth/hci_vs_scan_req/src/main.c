@@ -65,7 +65,7 @@ static void enable_legacy_adv_scan_request_event(bool enable)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->enable = (uint8_t) enable;
 
-	err = bt_hci_cmd_send(BT_HCI_OP_VS_SET_SCAN_REQ_REPORTS, buf);
+	err = bt_hci_cmd_send(BT_HCI_OP_VS_SET_SCAN_REQ_REPORTS, net_buf_take(&buf));
 	if (err) {
 		printk("Set legacy cb err: %d\n", err);
 		return;

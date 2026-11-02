@@ -66,7 +66,7 @@ static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(handle);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_RSSI, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_RSSI, net_buf_take(&buf), &rsp);
 	if (err) {
 		printk("Read RSSI err: %d\n", err);
 		return;
@@ -98,7 +98,7 @@ static void set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_pwr_lvl
 	cp->tx_power_level = tx_pwr_lvl;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL,
-				   buf, &rsp);
+				   net_buf_take(&buf), &rsp);
 	if (err) {
 		printk("Set Tx power err: %d\n", err);
 		return;
@@ -129,7 +129,7 @@ static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lv
 	cp->handle_type = handle_type;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_TX_POWER_LEVEL,
-				   buf, &rsp);
+				   net_buf_take(&buf), &rsp);
 	if (err) {
 		printk("Read Tx power err: %d\n", err);
 		return;
