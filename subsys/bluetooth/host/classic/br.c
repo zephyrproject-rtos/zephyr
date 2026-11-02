@@ -209,6 +209,17 @@ static void br_sec_refuse(struct bt_conn *conn)
 	}
 }
 
+void bt_br_encryption_off(struct bt_conn *conn)
+{
+	/* Only a side without Pause Encryption stops encryption for a role switch or a link key
+	 * change (Core 6.3 Vol 2 Part H 1.1, 1.2). That feature bit is sent unencrypted, so it
+	 * cannot decide whether data goes on in the clear.
+	 */
+	LOG_WRN("Encryption turned off, disconnecting");
+	conn->sec_level = BT_SECURITY_L1;
+	br_sec_refuse(conn);
+}
+
 bool bt_br_update_sec_level(struct bt_conn *conn)
 {
 	/* A refused link stays refused, whatever the controller reports next */
