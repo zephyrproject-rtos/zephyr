@@ -792,13 +792,12 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 	inst->discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	inst->discover_params.func = vocs_discover_func;
 
-	inst->conn = ref;
+	inst->conn = bt_conn_take(&ref);
 
 	err = bt_gatt_discover(conn, &inst->discover_params);
 	if (err != 0) {
 		LOG_DBG("Discover failed (err %d)", err);
-		bt_conn_unref(ref);
-		inst->conn = NULL;
+		bt_conn_drop(&inst->conn);
 		goto cleanup;
 	}
 

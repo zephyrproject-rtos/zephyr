@@ -1033,12 +1033,11 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 	vol_ctlr->discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	vol_ctlr->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	vol_ctlr->conn = ref;
+	vol_ctlr->conn = bt_conn_take(&ref);
 
 	err = bt_gatt_discover(conn, &vol_ctlr->discover_params);
 	if (err != 0) {
-		bt_conn_unref(ref);
-		vol_ctlr->conn = NULL;
+		bt_conn_drop(&vol_ctlr->conn);
 		goto cleanup;
 	}
 

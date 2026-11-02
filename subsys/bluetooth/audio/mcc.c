@@ -2166,7 +2166,7 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 		goto cleanup;
 	}
 
-	mcs_inst->conn = ref;
+	mcs_inst->conn = bt_conn_take(&ref);
 
 	return 0;
 

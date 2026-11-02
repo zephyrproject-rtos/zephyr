@@ -752,13 +752,12 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 	inst->cli.discover_params.type = BT_GATT_DISCOVER_CHARACTERISTIC;
 	inst->cli.discover_params.func = aics_discover_func;
 
-	inst->cli.conn = ref;
+	inst->cli.conn = bt_conn_take(&ref);
 
 	err = bt_gatt_discover(conn, &inst->cli.discover_params);
 	if (err != 0) {
 		LOG_DBG("Discover failed (err %d)", err);
-		bt_conn_unref(ref);
-		inst->cli.conn = NULL;
+		bt_conn_drop(&inst->cli.conn);
 		goto cleanup;
 	}
 
