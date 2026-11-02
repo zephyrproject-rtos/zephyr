@@ -381,7 +381,7 @@ int netc_eth_init_common(const struct device *dev)
 	/* MSIX entry configuration */
 #ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 	int ret;
-	uint32_t msg_addr;
+	uint64_t msg_addr;
 
 	if (config->msi_dev == NULL) {
 		LOG_ERR("MSI device is not configured");
@@ -395,7 +395,7 @@ int netc_eth_init_common(const struct device *dev)
 	data->tx_intid = its_alloc_intid(config->msi_dev);
 	data->rx_intid = its_alloc_intid(config->msi_dev);
 
-	msg_addr = its_get_msi_addr(config->msi_dev);
+	msg_addr = its_get_msi_addr64(config->msi_dev);
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgData = NETC_TX_MSIX_ENTRY_IDX;

@@ -3717,7 +3717,10 @@ def _map_interrupt(
     # 'child_spec' through any 'interrupt-map' properties. Returns a
     # (<controller>, <data>) tuple with the final destination after mapping.
 
-    if "interrupt-controller" in parent.props:
+    # A node with an 'interrupt-map' is a nexus, even if it is also an
+    # interrupt controller for its own children. Map first in that case.
+    if ("interrupt-map" not in parent.props
+            and "interrupt-controller" in parent.props):
         return (parent, child_spec)
 
     def own_address_cells(node):
