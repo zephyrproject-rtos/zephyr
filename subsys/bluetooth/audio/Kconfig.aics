@@ -31,7 +31,8 @@ config BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 	default 32
 	range 0 512
 	help
-	  This option sets the maximum input description size in octets.
+	  This option sets the maximum input description size in octets,
+	  excluding the NULL terminator.
 
 endif # BT_AICS
 
