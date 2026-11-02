@@ -6,6 +6,10 @@
 
 #include "it51xxx_crypto.h"
 
+#if CONFIG_IT51XXX_PSA_CRYPTO_SHA
+#include "it51xxx_crypto_sha.h"
+#endif /* CONFIG_IT51XXX_PSA_CRYPTO_SHA */
+
 #include "psa_crypto_core.h"
 
 #include <zephyr/devicetree.h>
@@ -49,6 +53,13 @@ psa_status_t it51xxx_psa_crypto_init(void)
 	if (k_mutex_init(&it51xxx_psa_crypto_mutex)) {
 		return PSA_ERROR_GENERIC_ERROR;
 	}
+
+#if CONFIG_IT51XXX_PSA_CRYPTO_SHA
+	ret = it51xxx_crypto_sha_init();
+	if (ret) {
+		return mbedtls_to_psa_error(ret);
+	}
+#endif /* CONFIG_IT51XXX_PSA_CRYPTO_SHA */
 
 	return ret;
 }

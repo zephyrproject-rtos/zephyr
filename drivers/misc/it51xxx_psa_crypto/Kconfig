@@ -13,3 +13,15 @@ config IT51XXX_PSA_CRYPTO
 	default y
 	help
 	  This option enables the it51xxx psa crypto driver.
+
+if IT51XXX_PSA_CRYPTO
+
+config IT51XXX_PSA_CRYPTO_SHA
+	bool "IT51XXX PSA crypto SHA driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_PSA_SHA_ENABLED
+	select SOC_IT51XXX_CPU_IDLE_GATING
+	help
+	  This option enables it51xxx psa crypto sha driver.
+
+endif # IT51XXX_PSA_CRYPTO

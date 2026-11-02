@@ -1117,6 +1117,11 @@
 			interrupts = <IT51XXX_IRQ_CRYPTO IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			status = "disabled";
+
+			psa_sha: psa-crypto-sha {
+				compatible = "ite,it51xxx-psa-sha";
+				status = "disabled";
+			};
 		};
 
 		i3c0: i3c@f03c00 {
