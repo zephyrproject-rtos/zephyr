@@ -120,6 +120,16 @@ Libraries / Subsystems
     enabled, so a connection can use send and receive windows above 64 KB. The window size
     options, ``SO_RCVBUF`` and ``SO_SNDBUF`` then accept values up to 65535 << 14.
 
+* PCIe
+
+  * MSI and MSI-X target addresses above 4 GiB are supported through
+    :c:func:`pcie_msi_map`. Devices limited to 32-bit MSI addresses reject
+    targets they cannot represent.
+  * Controller-qualified host operations distinguish endpoints with the same
+    bus/device/function tuple on different controllers. Configuration access,
+    discovery, static binding and MSI operations use the endpoint's owning
+    controller. See :ref:`pcie_api`.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
