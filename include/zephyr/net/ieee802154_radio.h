@@ -1508,7 +1508,7 @@ struct ieee802154_radio_api {
 	 * therefore mandatory to place it at the top of the driver API struct so
 	 * that it can be cast to a network interface.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/**
 	 * @brief Get the device driver capabilities.

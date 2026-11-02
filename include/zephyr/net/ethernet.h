@@ -552,10 +552,10 @@ enum ethernet_stats_type {
 /** Ethernet L2 API operations. */
 struct ethernet_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Collect optional ethernet specific statistics. This pointer
 	 * should be set by driver if statistics needs to be collected

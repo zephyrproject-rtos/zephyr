@@ -45,10 +45,10 @@ extern "C" {
 /** PPP L2 API */
 struct ppp_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Start the device */
 	int (*start)(const struct device *dev);

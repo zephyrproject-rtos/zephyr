@@ -2484,8 +2484,8 @@ struct net_wifi_mgmt_offload {
 	/**
 	 * Mandatory to get in first position.
 	 * A network device should indeed provide a pointer on such
-	 * net_if_api structure. So we make current structure pointer
-	 * that can be casted to a net_if_api structure pointer.
+	 * net_if_driver_api structure. So we make current structure pointer
+	 * that can be casted to a net_if_driver_api structure pointer.
 	 */
 #if defined(CONFIG_WIFI_USE_NATIVE_NETWORKING) || defined(__DOXYGEN__)
 	/** Ethernet API */

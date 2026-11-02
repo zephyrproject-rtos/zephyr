@@ -32,10 +32,10 @@ extern "C" {
 /** Dummy L2 API operations. */
 struct dummy_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Send a network packet */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
