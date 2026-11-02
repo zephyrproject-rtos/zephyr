@@ -132,6 +132,13 @@ extern "C" {
 #define IFX_HPPASS_CSG_CMP_INTR_MASKED     0x00000B1CU
 #define IFX_HPPASS_CSG_VDAC_OUT_BLANK      0x00000B20U
 
+#if defined(CONFIG_MFD_INFINEON_HPPASS_V3)
+#define IFX_HPPASS_CSG_AROUTEMUX_SEL(i)     (0x00000B40U + (i) * 4U)
+#define IFX_HPPASS_CSG_SLICES_PER_GROUP     3U
+#define IFX_HPPASS_CSG_SLICE_DAC_MODE_START 0x08U
+#define IFX_HPPASS_CSG_SLICE_DAC_VAL_A      0x0CU
+#endif
+
 /**
  * @brief Composed value for AREFv2_AREF_CTRL "normal operation, internal
  *        Vref" mode.
