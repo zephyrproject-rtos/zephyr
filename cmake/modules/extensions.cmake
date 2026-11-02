@@ -2551,7 +2551,8 @@ function(zephyr_constants_library)
     ${ZEPHYR_BASE}/kernel/include
     ${ARG_INCLUDES}
   )
-  target_link_libraries(${lib_name} zephyr_interface)
+  target_link_libraries(${lib_name} $<COMPILE_ONLY:zephyr_interface>)
+  add_dependencies(${lib_name} zephyr_interface)
 
   set_source_files_properties(${ARG_SOURCE} PROPERTIES
     COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
