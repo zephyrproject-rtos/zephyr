@@ -12,4 +12,9 @@
 		compatible = "zephyr,bt-hci-test";
 		status = "okay";
 	};
+
+	bt_hci_test_other: bt_hci_test_other {
+		compatible = "zephyr,bt-hci-test";
+		status = "okay";
+	};
 };
