@@ -14,13 +14,13 @@ import shutil
 from pathlib import Path
 
 from runners.core import MissingProgram, RunnerCaps, RunnerConfig, ZephyrBinaryRunner
+from runners.st_common import STM32CubeCLI
 
 STLINK_GDB_SERVER_DEFAULT_PORT = 61234
 
 
 class STLinkGDBServerRunner(ZephyrBinaryRunner):
-    @classmethod
-    def _get_stm32cubeclt_paths(cls) -> tuple[Path, Path]:
+    def _get_stm32cubeclt_paths(self) -> tuple[Path, Path]:
         """
         Returns a tuple of two elements of class pathlib.Path:
             [0]: path to the ST-LINK_gdbserver executable
@@ -49,6 +49,15 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
             # Sort candidates and return the path to the most recent version
             most_recent_install = sorted(installations, key=lambda e: e[0], reverse=True)[0]
             return most_recent_install[1]
+
+        # Attempt to find using STM32CubeCLI
+        stm32cubecli = STM32CubeCLI.getTool(self.logger)
+        if stm32cubecli is not None:
+            stlink = stm32cubecli.search_tool("stlink-gdbserver")
+            programmer = stm32cubecli.search_tool("programmer")
+
+            if stlink is not None and programmer is not None:
+                return (stlink, programmer.parent)
 
         cur_platform = platform.system()
 
@@ -172,7 +181,7 @@ class STLinkGDBServerRunner(ZephyrBinaryRunner):
 
         gdb_args = ["-ex", f"target remote :{self._gdb_port}", elf_path]
 
-        (gdbserver_path, cubeprg_path) = STLinkGDBServerRunner._get_stm32cubeclt_paths()
+        (gdbserver_path, cubeprg_path) = self._get_stm32cubeclt_paths()
         gdbserver_cmd = [gdbserver_path.as_posix()]
         gdbserver_cmd += ["--stm32cubeprogrammer-path", str(cubeprg_path.absolute())]
         gdbserver_cmd += ["--port-number", str(self._gdb_port)]

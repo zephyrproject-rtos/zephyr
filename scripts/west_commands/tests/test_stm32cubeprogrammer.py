@@ -551,13 +551,14 @@ def os_path_isfile_patch(filename):
 @patch("runners.stm32cubeprogrammer.Path.home", return_value=HOME_PATH)
 @patch("runners.stm32cubeprogrammer.Path.exists")
 @patch("runners.stm32cubeprogrammer.shutil.which", return_value=None)
+@patch("runners.stm32cubeprogrammer.STM32CubeCLI.getTool", return_value=None)
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
 @patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_init(
     os_path_isfile_patch,
-    check_call, require, which, path_exists, path_home, system,
+    check_call, require, get_cubecli, which, path_exists, path_home, system,
     tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be initialized
@@ -597,13 +598,14 @@ def test_stm32cubeprogrammer_init(
 @patch("runners.stm32cubeprogrammer.Path.home", return_value=HOME_PATH)
 @patch("runners.stm32cubeprogrammer.Path.exists")
 @patch("runners.stm32cubeprogrammer.shutil.which", return_value=None)
+@patch("runners.stm32cubeprogrammer.STM32CubeCLI.getTool", return_value=None)
 @patch.dict("runners.stm32cubeprogrammer.os.environ", ENVIRON)
 @patch("runners.core.ZephyrBinaryRunner.require")
 @patch("runners.stm32cubeprogrammer.STM32CubeProgrammerBinaryRunner.check_call")
 @patch("os.path.isfile", side_effect=os_path_isfile_patch)
 def test_stm32cubeprogrammer_create(
     os_path_isfile_patch,
-    check_call, require, which, path_exists, path_home, system,
+    check_call, require, get_cubecli, which, path_exists, path_home, system,
     tc, runner_config
 ):
     """Tests that ``STM32CubeProgrammerBinaryRunner`` class can be created using
