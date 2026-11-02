@@ -57,6 +57,8 @@ async def _wait_for_shell_response(dut, response, max_wait_sec=10):
                     found = True
                     break
             lines = lines + read_lines
+            if found:
+                break
             await asyncio.sleep(1)
         logger.info(f'{str(lines)}')
     except Exception as e:
