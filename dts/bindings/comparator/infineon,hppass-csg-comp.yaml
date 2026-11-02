@@ -1,5 +1,5 @@
-# Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -56,6 +56,21 @@ properties:
         - "dac":    paired in-slice DAC output (default operating mode)
         - "ain-na": external analog input AIN_NA (standalone comparator)
         - "ain-nb": external analog input AIN_NB (standalone comparator)
+
+  infineon,aroute-input:
+    type: string
+    default: "none"
+    enum:
+      - "none"
+      - "ain-a"
+      - "ain-b"
+      - "ain-c"
+      - "ain-d"
+    description: |
+      MCPASS v3 (PSC3M6) per-slice analog route mux selection.
+      Selects analog input A, B, C or D using CSG_AROUTEMUX_SEL.
+      The default "none" disconnects the mux. Package availability
+      depends on the selected slice and device. Not used on PSC3M5.
 
   invert-output:
     type: boolean

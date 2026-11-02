@@ -8,8 +8,12 @@ description: |
   (PSOC Control C3M6/P6).
 
   v3 routes 16 triggers rather than 8, which moves the INFRA and MMIO
-  trigger registers.  Everything else follows infineon,hppass-analog, which
-  must be listed as the fallback compatible so the MFD driver still binds:
+  trigger registers. It has nine CSG slices rather than five, with wider
+  AC state fields and different trigger and CSG condition encodings. Use constants
+  from <dt-bindings/mfd/infineon-hppass.h> for ac-states; the MFD driver
+  translates condition identifiers to v3 hardware encodings.
+  The base binding infineon,hppass-analog must be listed as the fallback
+  compatible so the MFD driver still binds:
 
     compatible = "infineon,hppass-analog-v3", "infineon,hppass-analog";
 

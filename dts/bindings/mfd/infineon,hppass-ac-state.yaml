@@ -10,12 +10,14 @@ description: |
   Table (STT).  The node is referenced by phandle from the parent HPPASS
   device's ac-states property, which determines the state's index in the table.
 
-  This binding covers all STT fields: AC core, GPIO output, CSG (×5 slices),
+  This binding covers all STT fields: AC core, GPIO output, CSG (up to 9 slices),
   SAR, and SAR MUX (×4 channels).  All properties default to 0, so only the
   fields relevant to a particular state need to be specified.
 
   Use constants from <dt-bindings/mfd/infineon-hppass.h> for condition,
-  action, GPIO output, and SAR group mask values.
+  action, GPIO output, and SAR group mask values on both revisions.
+  The MFD driver translates condition identifiers to the hardware encoding
+  selected by the parent HPPASS compatible. Slices 5-8 are v3-only.
 
 compatible: "infineon,hppass-ac-state"
 
@@ -26,8 +28,8 @@ properties:
     type: int
     default: 0
     description: |
-      AC condition code. Use IFX_HPPASS_AC_COND_* constants
-      from <dt-bindings/mfd/infineon-hppass.h>.
+      AC condition identifier. Use IFX_HPPASS_AC_COND_* constants
+      from <dt-bindings/mfd/infineon-hppass.h>, not raw hardware encodings.
       Default: FALSE (0).
 
   ac-action:
@@ -80,7 +82,7 @@ properties:
       from <dt-bindings/mfd/infineon-hppass.h>.
       Can be OR'd for multiple outputs (e.g., GPIO_OUT_0 | GPIO_OUT_1).
 
-  # --- CSG fields (5 slices) ---
+  # --- CSG fields ---
 
   csg0-unlock:
     type: int
@@ -157,6 +159,66 @@ properties:
     default: 0
     description: CSG slice 4 DAC start/update trigger flag (0 or 1).
 
+  csg5-unlock:
+    type: int
+    default: 0
+    description: CSG slice 5 unlock flag (0 or 1, MCPASS v3 only).
+
+  csg5-enable:
+    type: int
+    default: 0
+    description: CSG slice 5 enable flag (0 or 1). Requires csg5-unlock = 1.
+
+  csg5-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 5 DAC start/update trigger flag (0 or 1).
+
+  csg6-unlock:
+    type: int
+    default: 0
+    description: CSG slice 6 unlock flag (0 or 1, MCPASS v3 only).
+
+  csg6-enable:
+    type: int
+    default: 0
+    description: CSG slice 6 enable flag (0 or 1). Requires csg6-unlock = 1.
+
+  csg6-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 6 DAC start/update trigger flag (0 or 1).
+
+  csg7-unlock:
+    type: int
+    default: 0
+    description: CSG slice 7 unlock flag (0 or 1, MCPASS v3 only).
+
+  csg7-enable:
+    type: int
+    default: 0
+    description: CSG slice 7 enable flag (0 or 1). Requires csg7-unlock = 1.
+
+  csg7-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 7 DAC start/update trigger flag (0 or 1).
+
+  csg8-unlock:
+    type: int
+    default: 0
+    description: CSG slice 8 unlock flag (0 or 1, MCPASS v3 only).
+
+  csg8-enable:
+    type: int
+    default: 0
+    description: CSG slice 8 enable flag (0 or 1). Requires csg8-unlock = 1.
+
+  csg8-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 8 DAC start/update trigger flag (0 or 1).
+
   # --- SAR fields ---
 
   sar-unlock:
@@ -192,7 +254,9 @@ properties:
   sar-mux0-chan-idx:
     type: int
     default: 0
-    description: SAR mux sampler 0 channel selection (0-3).
+    description: |
+      SAR mux sampler 0 route selector (2 bits on PSC3M5, 3 bits on PSC3M6).
+      Available routes depend on the device and sampler.
 
   sar-mux1-unlock:
     type: int
@@ -202,7 +266,9 @@ properties:
   sar-mux1-chan-idx:
     type: int
     default: 0
-    description: SAR mux sampler 1 channel selection (0-3).
+    description: |
+      SAR mux sampler 1 route selector (2 bits on PSC3M5, 3 bits on PSC3M6).
+      Available routes depend on the device and sampler.
 
   sar-mux2-unlock:
     type: int
@@ -212,7 +278,9 @@ properties:
   sar-mux2-chan-idx:
     type: int
     default: 0
-    description: SAR mux sampler 2 channel selection (0-3).
+    description: |
+      SAR mux sampler 2 route selector (2 bits on PSC3M5, 3 bits on PSC3M6).
+      Available routes depend on the device and sampler.
 
   sar-mux3-unlock:
     type: int
@@ -222,4 +290,6 @@ properties:
   sar-mux3-chan-idx:
     type: int
     default: 0
-    description: SAR mux sampler 3 channel selection (0-3).
+    description: |
+      SAR mux sampler 3 route selector (2 bits on PSC3M5, 3 bits on PSC3M6).
+      Available routes depend on the device and sampler.
