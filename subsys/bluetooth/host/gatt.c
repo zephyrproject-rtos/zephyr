@@ -5639,8 +5639,7 @@ static int gatt_ccc_discover(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 
-int bt_gatt_subscribe(struct bt_conn *conn,
-		      struct bt_gatt_subscribe_params *params)
+static int gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *tmp;
@@ -5713,6 +5712,22 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	return 0;
 }
 
+int bt_gatt_subscribe(struct bt_conn *conn,
+		      struct bt_gatt_subscribe_params *params)
+{
+	int err;
+
+	/* The RX workqueue uses the subscriptions without a lock and completes
+	 * the CCC write there: keep a preemptible caller cooperative until the
+	 * subscriptions match the queued write.
+	 */
+	k_sched_lock();
+	err = gatt_subscribe(conn, params);
+	k_sched_unlock();
+
+	return err;
+}
+
 int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 			     struct bt_gatt_subscribe_params *params)
 {
@@ -5723,8 +5738,12 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 	__ASSERT(params->value, "invalid parameters\n");
 	__ASSERT(params->ccc_handle, "invalid parameters\n");
 
+	/* See bt_gatt_subscribe() */
+	k_sched_lock();
+
 	sub = gatt_sub_add_by_addr(id, peer);
 	if (!sub) {
+		k_sched_unlock();
 		return -ENOMEM;
 	}
 
@@ -5733,11 +5752,15 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 		/* Fail if entry already exists */
 		if (tmp == params) {
 			gatt_sub_remove(NULL, sub, NULL, NULL);
+			k_sched_unlock();
 			return -EALREADY;
 		}
 	}
 
 	sys_slist_prepend(&sub->list, &params->node);
+
+	k_sched_unlock();
+
 	return 0;
 }
 
@@ -5765,12 +5788,15 @@ static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
 	bt_dev_unlock();
 
 	if (run_completion && func) {
+		/* As on the RX workqueue, where the completions normally run */
+		k_sched_lock();
 		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+		k_sched_unlock();
 	}
 }
 
-int bt_gatt_unsubscribe(struct bt_conn *conn,
-			struct bt_gatt_subscribe_params *params)
+static int gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+			    bool *completed)
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *tmp;
@@ -5830,12 +5856,28 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		gatt_sub_free(sub);
 	}
 
-	if (has_subscription) {
+	*completed = has_subscription;
+
+	return 0;
+}
+
+int bt_gatt_unsubscribe(struct bt_conn *conn,
+			struct bt_gatt_subscribe_params *params)
+{
+	bool completed = false;
+	int err;
+
+	/* See bt_gatt_subscribe() */
+	k_sched_lock();
+	err = gatt_unsubscribe(conn, params, &completed);
+	k_sched_unlock();
+
+	if (completed) {
 		/* Notify with NULL data to complete unsubscribe */
 		params->notify(conn, params, NULL, 0);
 	}
 
-	return 0;
+	return err;
 }
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
@@ -6775,8 +6817,12 @@ static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 	struct bt_gatt_subscribe_params *params, *tmp;
 	sys_snode_t *prev = NULL;
 
+	/* See bt_gatt_subscribe() */
+	k_sched_lock();
+
 	sub = find_gatt_sub(id, addr);
 	if (!sub) {
+		k_sched_unlock();
 		return;
 	}
 
@@ -6785,6 +6831,8 @@ static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 		params->value = 0U;
 		gatt_sub_remove(NULL, sub, prev, params);
 	}
+
+	k_sched_unlock();
 }
 
 int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr)
