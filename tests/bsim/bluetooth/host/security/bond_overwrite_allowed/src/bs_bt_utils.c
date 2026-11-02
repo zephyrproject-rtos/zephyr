@@ -70,6 +70,10 @@ static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 
 static void pairing_complete(struct bt_conn *conn, bool bonded)
 {
+	/* Completing a pairing stores keys, which does not belong on this queue */
+	TEST_ASSERT(k_current_get() != k_work_queue_thread_get(&k_sys_work_q),
+		    "Pairing completed on the system workqueue");
+
 	SET_FLAG(flag_pairing_complete);
 }
 
