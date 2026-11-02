@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 
 /* Create blank dummy and offloaded APIs */
-static const struct offloaded_if_api offload_dev_api;
+static DEVICE_API(offloaded_if, offload_dev_api) = {};
 static DEVICE_API(dummy, dummy_dev_api) = {};
 static struct offload_context {
 	void *none;

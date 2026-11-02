@@ -10,7 +10,7 @@
  * Notes:
  * - Two devices are instantiated per DT node, both sharing the same bc66x_data
  * and bc66x_config structs. This is necessary because NET_DEVICE_DT_INST_OFFLOAD_DEFINE
- * hard-wires dev->api to offloaded_if_api, leaving no room for cellular_driver_api.
+ * hard-wires dev->api to offloaded_if_driver_api, leaving no room for cellular_driver_api.
  * The control device (DEVICE_DT_INST_DEFINE) owns PM and exposes cellular_driver_api.
  * The net device (NET_DEVICE_DT_INST_OFFLOAD_DEFINE) owns the network interface and
  * socket offloading. The control device must initialise first (lower priority value).
@@ -1173,7 +1173,7 @@ DEVICE_API(cellular, bc66x_cellular_api) = {
 	.set_apn = bc66x_set_apn,
 };
 
-static const struct offloaded_if_api bc66x_net_api_funcs = {
+static DEVICE_API(offloaded_if, bc66x_net_api_funcs) = {
 	.iface_api.init = bc66x_iface_init,
 };
 
@@ -1422,7 +1422,7 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(BC66X_OFFLOAD_NODE, quectel_bc66) ||
 				     &BC66X_SYM(bc66x_data_, node_id), /* shared merged struct */  \
 				     &BC66X_SYM(bc66x_cfg_, node_id),  /* config */                \
 				     CONFIG_MODEM_QUECTEL_BC66X_NET_INIT_PRIORITY,                 \
-				     &bc66x_net_api_funcs, /* offloaded_if_api defined outside */  \
+				     &bc66x_net_api_funcs, /* offloaded_if API defined outside */  \
 				     BC66X_MTU);))                                                 \
 	DEVICE_DEFINE(BC66X_SYM(bc66x_ctrl_, node_id),                                 \
 		      "BC66X_CTRL_" STRINGIFY(DT_DEP_ORD(node_id)), bc66x_driver_init,     \
