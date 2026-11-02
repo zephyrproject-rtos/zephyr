@@ -285,12 +285,14 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		len = nsi_host_read(uc->fd, frame + frame_size, sizeof(frame) - frame_size);
 		if (len < 0) {
-			if (nsi_host_get_errno() == EINTR) {
+			const int err = nsi_host_get_errno();
+
+			if (err == EINTR) {
 				k_yield();
 				continue;
 			}
 
-			LOG_ERR("Reading socket failed, errno %d", errno);
+			LOG_ERR("Reading socket failed, errno %d", err);
 			(void)nsi_host_close(uc->fd);
 			uc->fd = -1;
 			return;
@@ -413,7 +415,7 @@ static int uc_close(const struct device *dev)
 
 	rc = nsi_host_close(uc->fd);
 	if (rc < 0) {
-		return -nsi_errno_from_mid(-rc);
+		return -nsi_host_get_errno();
 	}
 
 	uc->fd = -1;
