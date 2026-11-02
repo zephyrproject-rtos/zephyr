@@ -8,15 +8,19 @@
 #include <zephyr/drivers/pcie/controller.h>
 #include <zephyr/drivers/pcie/cap.h>
 #include <zephyr/ztest.h>
+#include <zephyr/ztest_error_hook.h>
 
 #define TEST_BDF PCIE_BDF(1, 0, 0)
 #define TEST_ID PCIE_ID(0x1234, 0x5678)
 #define TEST_CLASS 0x01080200U
 #define TEST_CAP 20U
+#define TEST_MSI_CAP 24U
+#define TEST_TARGET 0x123456789abcdef0ULL
+#define TEST_IRQ (IS_ENABLED(CONFIG_ARM64) ? 40U : 10U)
 
 struct fake_ctrl {
 	uint32_t config[1024];
-	uint32_t table[1024];
+	struct msix_vector table[256];
 	uint32_t bus_address;
 	uint32_t reads;
 	uint32_t root_reads;
@@ -25,14 +29,79 @@ struct fake_ctrl {
 	uint32_t write_attempts;
 	uint32_t fail_write_at;
 	uint32_t fail_read_at;
+	uint32_t old_setups;
+	uint32_t setups;
+	uint32_t irqs;
+	uint32_t mappings;
+	uint32_t table_maps;
+	uint32_t table_unmaps;
+	size_t last_unmap_size;
+	uint8_t *table_virt[2];
+	size_t table_size[2];
 	int read_error;
 	int write_error;
+	int fail_at;
+	int setup_error;
+	uint8_t bad_setup_count;
 	bool translate;
 	bool reject_bus_zero;
+	bool msi_allocated;
 };
 
 static struct fake_ctrl ctrl_data_a, ctrl_data_b;
 static bool early_found[2];
+
+#ifdef CONFIG_MMU
+void __real_k_mem_map_phys_bare(uint8_t **virt, uintptr_t phys, size_t size, uint32_t flags);
+void __real_k_mem_unmap_phys_bare(uint8_t *virt, size_t size);
+
+/* Map fake RAM with matching cache attributes while exercising real MMU ownership. */
+void __wrap_k_mem_map_phys_bare(uint8_t **virt, uintptr_t phys, size_t size, uint32_t flags)
+{
+	struct fake_ctrl *controllers[] = {&ctrl_data_a, &ctrl_data_b};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(controllers); i++) {
+		struct fake_ctrl *data = controllers[i];
+
+		if (phys == (uintptr_t)data->table) {
+			zassert_true(size <= sizeof(data->table));
+			zassert_equal(flags & K_MEM_DIRECT_MAP, 0U);
+			__real_k_mem_map_phys_bare(virt, phys, size,
+						 K_MEM_CACHE_WB | K_MEM_PERM_RW);
+			for (size_t j = 0U; j < ARRAY_SIZE(data->table_virt); j++) {
+				if (data->table_virt[j] == NULL) {
+					data->table_virt[j] = *virt;
+					data->table_size[j] = size;
+					data->table_maps++;
+					return;
+				}
+			}
+			zassert_unreachable("too many live fake table mappings");
+		}
+	}
+	__real_k_mem_map_phys_bare(virt, phys, size, flags);
+}
+
+void __wrap_k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
+{
+	struct fake_ctrl *controllers[] = {&ctrl_data_a, &ctrl_data_b};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(controllers); i++) {
+		struct fake_ctrl *data = controllers[i];
+
+		for (size_t j = 0U; j < ARRAY_SIZE(data->table_virt); j++) {
+			if (virt == data->table_virt[j]) {
+				__real_k_mem_unmap_phys_bare(virt, size);
+				data->table_virt[j] = NULL;
+				data->table_unmaps++;
+				data->last_unmap_size = size;
+				return;
+			}
+		}
+	}
+	__real_k_mem_unmap_phys_bare(virt, size);
+}
+#endif
 
 DEVICE_PCIE_ENDPOINT_DECLARE(DT_NODELABEL(decl_a));
 DEVICE_PCIE_ENDPOINT_DECLARE(DT_NODELABEL(decl_b));
@@ -51,14 +120,21 @@ STRUCT_SECTION_ITERABLE(pcie_dev, zz_extra_b) = {
 
 static void reset_ctrl(struct fake_ctrl *data, bool msix)
 {
+#ifdef CONFIG_MMU
+	for (size_t i = 0U; i < ARRAY_SIZE(data->table_virt); i++) {
+		if (data->table_virt[i] != NULL) {
+			__real_k_mem_unmap_phys_bare(data->table_virt[i], data->table_size[i]);
+		}
+	}
+#endif
 	memset(data, 0, sizeof(*data));
 	data->config[PCIE_CONF_ID] = TEST_ID;
 	data->config[PCIE_CONF_CLASSREV] = TEST_CLASS;
 	data->config[PCIE_CONF_CMDSTAT] = PCIE_CONF_CMDSTAT_CAPS | PCIE_CONF_CMDSTAT_MEM;
 	data->config[PCIE_CONF_CAPPTR] = msix ? TEST_CAP * 4U : 16U * 4U;
 	data->config[16] = PCI_CAP_ID_VNDR;
-	data->config[TEST_CAP] = PCI_CAP_ID_MSIX | (3U << 16U);
-	data->config[TEST_CAP + 1U] = 0U;
+	data->config[TEST_CAP] = PCI_CAP_ID_MSIX | (3U << PCIE_MSIX_MCR_TSIZE_SHIFT);
+	data->config[TEST_CAP + PCIE_MSIX_TR] = 0U;
 	data->config[PCIE_CONF_BAR0] = msix ? 0x20000000U : 0x10000000U;
 	data->bus_address = data->config[PCIE_CONF_BAR0];
 	data->config[PCIE_CONF_EXT_CAPPTR] = 0x00010001U | (0x110U << 20);
@@ -66,6 +142,8 @@ static void reset_ctrl(struct fake_ctrl *data, bool msix)
 	data->config[32] = msix ? 0xbbbbU : 0xaaaaU;
 	data->config[33] = UINT32_MAX;
 	data->translate = true;
+	data->fail_at = -1;
+	data->setup_error = -ENOSPC;
 }
 
 static uint32_t fake_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
@@ -161,10 +239,67 @@ static bool fake_translate(const struct device *dev, pcie_bdf_t bdf, bool mem, b
 	return true;
 }
 
+static int fake_setup(const struct device *dev, unsigned int priority, msi_vector_t *vectors,
+		      uint8_t count, uint8_t *allocated)
+{
+	struct fake_ctrl *data = dev->data;
+
+	data->setups++;
+	*allocated = 0U;
+	if (data->msi_allocated) {
+		return -EALREADY;
+	}
+	for (uint8_t i = 0U; i < count; i++) {
+		zassert_equal_ptr(vectors[i].ctrl, dev);
+		zassert_equal(vectors[i].bdf, TEST_BDF);
+		if (i == data->fail_at) {
+			/* Revoke every fake ITS mapping and IRQ acquired by this request. */
+			data->irqs -= i;
+			data->mappings -= i;
+			return data->setup_error;
+		}
+		data->irqs++;
+		data->mappings++;
+		vectors[i].arch.irq = TEST_IRQ + i;
+		vectors[i].arch.address = TEST_TARGET;
+		vectors[i].arch.eventid = i;
+		vectors[i].arch.priority = priority;
+	}
+	*allocated = count;
+	data->msi_allocated = true;
+	if (data->bad_setup_count == 1U) {
+		*allocated = count - 1U;
+	} else if (data->bad_setup_count == 2U) {
+		return -EIO;
+	}
+	return 0;
+}
+
+static uint8_t fake_old_setup(const struct device *dev, unsigned int priority,
+			      msi_vector_t *vectors, uint8_t count)
+{
+	struct fake_ctrl *data = dev->data;
+
+	data->old_setups++;
+	for (uint8_t i = 0U; i < count; i++) {
+		if (i == data->fail_at) {
+			return i;
+		}
+		data->irqs++;
+		vectors[i].arch.irq = TEST_IRQ + i;
+		vectors[i].arch.address = TEST_TARGET;
+		vectors[i].arch.eventid = i;
+		vectors[i].arch.priority = priority;
+	}
+	return count;
+}
+
 static DEVICE_API(pcie_ctrl, fake_api_a) = {
 	.conf_read = fake_read,
 	.conf_write = fake_write,
 	.region_translate = fake_translate,
+	.msi_device_setup = fake_old_setup,
+	.msi_device_setup_errno = fake_setup,
 };
 
 static DEVICE_API(pcie_ctrl, fake_api_b) = {
@@ -173,12 +308,15 @@ static DEVICE_API(pcie_ctrl, fake_api_b) = {
 	.region_translate = fake_translate,
 	.conf_read_status = fake_read_status,
 	.conf_write_status = fake_write_status,
+	.msi_device_setup = fake_old_setup,
+	.msi_device_setup_errno = fake_setup,
 };
 
 static DEVICE_API(pcie_ctrl, old_api) = {
 	.conf_read = fake_read,
 	.conf_write = fake_write,
 	.region_translate = fake_translate,
+	.msi_device_setup = fake_old_setup,
 };
 
 static DEVICE_API(pcie_ctrl, empty_api) = {
@@ -339,7 +477,6 @@ ZTEST(pcie_endpoint, test_bar_access_and_translation_use_owner)
 	zassert_equal(pcie_endpoint_get_mbar(&ep_b, 1U, &bar), -ENOENT);
 }
 
-
 ZTEST(pcie_endpoint, test_bar_restore_failure_keeps_decode_disabled)
 {
 	struct pcie_bar bar;
@@ -356,7 +493,6 @@ ZTEST(pcie_endpoint, test_bar_restore_failure_keeps_decode_disabled)
 	}
 }
 
-
 ZTEST(pcie_endpoint, test_bar_probe_error_restores_decode_after_bar_recovery)
 {
 	struct pcie_bar bar;
@@ -367,7 +503,6 @@ ZTEST(pcie_endpoint, test_bar_probe_error_restores_decode_after_bar_recovery)
 	zassert_equal(ctrl_data_b.config[PCIE_CONF_BAR0], ctrl_data_b.bus_address);
 	zassert_equal(ctrl_data_b.config[PCIE_CONF_CMDSTAT], command);
 }
-
 
 ZTEST(pcie_endpoint, test_legacy_bar_probe_preserves_status)
 {
@@ -488,11 +623,9 @@ ZTEST(pcie_binding, test_static_declarations_bind_only_to_owner)
 	zassert_equal(zz_extra_b.bdf, PCIE_BDF_NONE);
 }
 
-static void *suite_setup(void)
+static void handler(const void *arg)
 {
-	zassert_true(early_found[0]);
-	zassert_equal(early_found[1], !IS_ENABLED(PCIE_TEST_FAIL_CTRL_B));
-	return NULL;
+	ARG_UNUSED(arg);
 }
 
 static bool legacy_scan_cb(pcie_bdf_t bdf, pcie_id_t id, void *arg)
@@ -505,12 +638,10 @@ static bool legacy_scan_cb(pcie_bdf_t bdf, pcie_id_t id, void *arg)
 	return true;
 }
 
-
 static bool legacy_scan_mask(pcie_bdf_t bdf)
 {
 	return bdf == PCIE_BDF(1, 1, 0);
 }
-
 
 ZTEST(pcie_endpoint, test_legacy_scan_mask_and_callback)
 {
@@ -524,7 +655,6 @@ ZTEST(pcie_endpoint, test_legacy_scan_mask_and_callback)
 	zassert_equal(count, 1U);
 	zassert_equal(ctrl_data_b.reads, 0U);
 }
-
 
 static bool legacy_mask_root(pcie_bdf_t bdf)
 {
@@ -543,6 +673,306 @@ ZTEST(pcie_endpoint, test_legacy_scan_masked_root_is_not_read)
 	zassert_equal(count, 0U);
 	zassert_equal(ctrl_data_a.root_reads, 0U);
 	zassert_equal(ctrl_data_b.reads, 0U);
+}
+
+ZTEST(pcie_endpoint, test_legacy_msi_partial_allocation_and_enable)
+{
+	msi_vector_t vectors[4];
+	uint32_t command = ctrl_data_a.config[PCIE_CONF_CMDSTAT];
+
+	reset_ctrl(&ctrl_data_a, true);
+	ctrl_data_a.fail_at = 2;
+	zassert_equal(pcie_msi_vectors_allocate(TEST_BDF, 0U, vectors, 4U), 2U);
+	zassert_equal(ctrl_data_a.old_setups, 1U);
+	zassert_equal(ctrl_data_a.setups, 0U);
+	zassert_equal(ctrl_data_a.irqs, 2U);
+	zassert_equal_ptr(vectors[0].ctrl, ep_a.ctrl);
+	zassert_true(pcie_msi_vector_connect(TEST_BDF, &vectors[0], handler, NULL, 0U));
+	zassert_true(pcie_msi_enable(TEST_BDF, vectors, 2U, 0U));
+	irq_disable(TEST_IRQ);
+	irq_disable(TEST_IRQ + 1U);
+	zassert_equal(ctrl_data_a.table[1].msg_up_addr, (uint32_t)(TEST_TARGET >> 32));
+	zassert_equal(ctrl_data_a.config[PCIE_CONF_CMDSTAT], command | PCIE_CONF_CMDSTAT_MASTER);
+	zassert_equal(ctrl_data_b.reads, 0U);
+	reset_ctrl(&ctrl_data_a, false);
+	ctrl_data_a.config[PCIE_CONF_CAPPTR] = TEST_MSI_CAP * 4U;
+	ctrl_data_a.config[TEST_MSI_CAP] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 |
+		(2U << PCIE_MSI_MCR_MMC_SHIFT);
+	zassert_equal(pcie_msi_vectors_allocate(TEST_BDF, 0U, vectors, 4U), 4U);
+	zassert_true(pcie_msi_enable(TEST_BDF, vectors, 4U, 0U));
+	zassert_true(pcie_msi_enable(TEST_BDF, vectors, 1U, 0U));
+	zassert_equal(ctrl_data_a.config[TEST_MSI_CAP] & PCIE_MSI_MCR_MME, 0U);
+}
+
+ZTEST(pcie_endpoint, test_msi_old_only_backend_rejected_before_access)
+{
+	const struct pcie_endpoint ep = {.ctrl = DEVICE_GET(old_ctrl), .bdf = TEST_BDF};
+	msi_vector_t vector;
+	uint8_t count = 99U;
+
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep, 0U, &vector, 1U, &count), -ENOTSUP);
+	zassert_equal(count, 0U);
+	zassert_equal(ctrl_data_b.reads, 0U);
+	zassert_equal(ctrl_data_b.writes, 0U);
+	zassert_equal(ctrl_data_b.old_setups, 0U);
+}
+
+ZTEST(pcie_endpoint, test_msi_validation_precedes_backend)
+{
+	const struct pcie_endpoint unset = {.bdf = TEST_BDF};
+	msi_vector_t vector = {0};
+	uint8_t count = 99U;
+
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(NULL, 0U, &vector, 1U, &count), -EINVAL);
+	zassert_equal(count, 0U);
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&unset, 0U, &vector, 1U, &count), -EINVAL);
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_empty, 0U, NULL, 1U, &count), -EINVAL);
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_empty, 0U, &vector, 0U, &count),
+		      -EINVAL);
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_empty, 0U, &vector, 1U, NULL),
+		      -EINVAL);
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_empty, 0U, &vector, 1U, &count),
+		      -ENOTSUP);
+	zassert_equal(pcie_endpoint_msi_enable(&unset, &vector, 1U, 0U), -EINVAL);
+	zassert_equal(pcie_endpoint_msi_vector_connect(&unset, &vector, handler, NULL, 0U),
+		      -EINVAL);
+}
+
+ZTEST(pcie_endpoint, test_msix_lifecycle_uses_one_owner)
+{
+	msi_vector_t vectors[2];
+	uint8_t count;
+
+	zassert_ok(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 2U, &count));
+	zassert_equal(count, 2U);
+	zassert_equal_ptr(vectors[0].ctrl, ep_b.ctrl);
+	if (IS_ENABLED(CONFIG_MMU)) {
+		zassert_equal_ptr(vectors[0].msix_vector, ctrl_data_b.table_virt[0]);
+	} else {
+		zassert_equal_ptr(vectors[0].msix_vector, ctrl_data_b.table);
+	}
+	zassert_ok(pcie_endpoint_msi_vector_connect(&ep_b, &vectors[0], handler, NULL, 0U));
+	irq_disable(TEST_IRQ);
+	zassert_equal(ctrl_data_a.reads, 0U);
+	zassert_false(pcie_msi_vector_connect(TEST_BDF, &vectors[0], handler, NULL, 0U));
+	zassert_equal(pcie_endpoint_msi_vector_connect(&ep_a, &vectors[0], handler, NULL, 0U),
+		      -EINVAL);
+	ctrl_data_a.reads = 0U;
+	zassert_ok(pcie_endpoint_msi_enable(&ep_b, vectors, count, 0U));
+	zassert_equal(ctrl_data_a.reads, 0U);
+	zassert_equal(ctrl_data_a.writes, 0U);
+	zassert_equal(ctrl_data_b.table[0].msg_addr, (uint32_t)TEST_TARGET);
+	zassert_equal(ctrl_data_b.table[0].msg_up_addr, (uint32_t)(TEST_TARGET >> 32));
+	zassert_equal(ctrl_data_b.table[1].msg_data, 1U);
+	zassert_true((ctrl_data_b.config[TEST_CAP] & PCIE_MSIX_MCR_EN) != 0U);
+}
+
+ZTEST(pcie_endpoint, test_msi_failure_rolls_back_resources)
+{
+	msi_vector_t vectors[4];
+	uint8_t count;
+
+	for (int failure = 0; failure < 4; failure++) {
+		ctrl_data_b.fail_at = failure;
+		zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 4U, &count),
+			      -ENOSPC);
+		zassert_equal(count, 0U);
+		zassert_equal(ctrl_data_b.irqs, 0U);
+		zassert_equal(ctrl_data_b.mappings, 0U);
+		if (IS_ENABLED(CONFIG_MMU)) {
+			zassert_equal(ctrl_data_b.table_maps, failure + 1U);
+			zassert_equal(ctrl_data_b.table_unmaps, failure + 1U);
+			zassert_equal(ctrl_data_b.last_unmap_size,
+				      sizeof(struct msix_vector) * 4U);
+		}
+		for (uint8_t i = 0U; i < 4U; i++) {
+			zassert_is_null(vectors[i].ctrl);
+			zassert_is_null(vectors[i].msix_vector);
+		}
+	}
+	ctrl_data_b.fail_at = 0;
+	ctrl_data_b.setup_error = -ENOTSUP;
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 1U, &count), -ENOTSUP);
+	zassert_equal(count, 0U);
+}
+
+ZTEST(pcie_endpoint, test_enable_failure_keeps_allocated_vectors)
+{
+	msi_vector_t vector;
+	uint8_t count;
+
+	zassert_ok(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, &vector, 1U, &count));
+	ctrl_data_b.write_error = -EIO;
+	zassert_equal(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U), -EIO);
+	zassert_equal(ctrl_data_b.irqs, 1U);
+	zassert_equal(ctrl_data_b.mappings, 1U);
+	zassert_equal_ptr(vector.ctrl, ep_b.ctrl);
+	ctrl_data_b.write_error = 0;
+	zassert_ok(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U));
+}
+
+ZTEST(pcie_endpoint, test_late_enable_failure_keeps_connected_vectors)
+{
+	for (uint8_t mode = 0U; mode < 2U; mode++) {
+		bool msix = mode != 0U;
+		msi_vector_t vector, saved;
+		uint8_t count;
+
+		reset_ctrl(&ctrl_data_b, msix);
+		if (!msix) {
+			ctrl_data_b.config[PCIE_CONF_CAPPTR] = TEST_MSI_CAP * 4U;
+			ctrl_data_b.config[TEST_MSI_CAP] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64;
+		}
+		zassert_ok(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, &vector, 1U, &count));
+		zassert_ok(pcie_endpoint_msi_vector_connect(&ep_b, &vector, handler, NULL, 0U));
+		zassert_true(irq_is_enabled(TEST_IRQ));
+		memcpy(&saved, &vector, sizeof(saved));
+		ctrl_data_b.write_attempts = 0U;
+		/* Fail the bus-master write after enabling the interrupt source. */
+		ctrl_data_b.fail_write_at = msix ? 3U : 5U;
+		zassert_equal(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U), -EIO);
+		zassert_mem_equal(&vector, &saved, sizeof(vector));
+		zassert_equal(ctrl_data_b.irqs, 1U);
+		zassert_equal(ctrl_data_b.mappings, 1U);
+		zassert_true(irq_is_enabled(TEST_IRQ));
+		zassert_true((ctrl_data_b.config[msix ? TEST_CAP : TEST_MSI_CAP] &
+			      (msix ? PCIE_MSIX_MCR_EN : PCIE_MSI_MCR_EN)) != 0U);
+		if (msix) {
+			zassert_equal(ctrl_data_b.config[TEST_CAP] & PCIE_MSIX_MCR_FMASK, 0U);
+		}
+		zassert_equal(ctrl_data_b.config[PCIE_CONF_CMDSTAT] & PCIE_CONF_CMDSTAT_MASTER,
+			      0U);
+		ctrl_data_b.fail_write_at = 0U;
+		zassert_ok(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U));
+		zassert_true((ctrl_data_b.config[PCIE_CONF_CMDSTAT] &
+			      PCIE_CONF_CMDSTAT_MASTER) != 0U);
+		irq_disable(TEST_IRQ);
+	}
+}
+
+ZTEST(pcie_endpoint, test_msi_capacity_and_table_bounds)
+{
+	msi_vector_t vectors[5];
+	uint8_t count;
+
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 5U, &count), -ENOSPC);
+	zassert_equal(ctrl_data_b.setups, 0U);
+	ctrl_data_b.config[TEST_CAP + PCIE_MSIX_TR] = sizeof(ctrl_data_b.table) - 8U;
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 1U, &count), -EINVAL);
+	zassert_equal(count, 0U);
+	zassert_equal(ctrl_data_b.setups, 0U);
+}
+
+ZTEST(pcie_endpoint, test_msi_64bit_and_32bit_targets)
+{
+	msi_vector_t vector;
+	uint8_t count;
+
+	ctrl_data_b.config[PCIE_CONF_CAPPTR] = TEST_MSI_CAP * 4U;
+	ctrl_data_b.config[TEST_MSI_CAP] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64;
+	zassert_ok(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, &vector, 1U, &count));
+	zassert_ok(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U));
+	zassert_equal(ctrl_data_b.config[TEST_MSI_CAP + PCIE_MSI_MAP0], (uint32_t)TEST_TARGET);
+	zassert_equal(ctrl_data_b.config[TEST_MSI_CAP + PCIE_MSI_MAP1_64],
+		      (uint32_t)(TEST_TARGET >> 32));
+	ctrl_data_b.config[TEST_MSI_CAP] = PCI_CAP_ID_MSI;
+	ctrl_data_b.writes = 0U;
+	zassert_equal(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U), -ENOTSUP);
+	zassert_equal(ctrl_data_b.writes, 0U);
+	zassert_equal(ctrl_data_b.irqs, 1U);
+	vector.arch.address = 0xfee00000U;
+	zassert_ok(pcie_endpoint_msi_enable(&ep_b, &vector, 1U, 0U));
+}
+
+ZTEST(pcie_endpoint, test_msix_duplicate_allocation_is_rejected)
+{
+	msi_vector_t first, second, saved;
+	uint8_t count;
+
+	zassert_ok(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, &first, 1U, &count));
+	memcpy(&saved, &first, sizeof(saved));
+	zassert_equal(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, &second, 1U, &count),
+		      -EALREADY);
+	zassert_equal(count, 0U);
+	zassert_equal(ctrl_data_b.irqs, 1U);
+	zassert_equal(ctrl_data_b.mappings, 1U);
+	if (IS_ENABLED(CONFIG_MMU)) {
+		zassert_equal(ctrl_data_b.table_maps, 2U);
+		zassert_equal(ctrl_data_b.table_unmaps, 1U);
+		zassert_equal_ptr(first.msix_vector, ctrl_data_b.table_virt[0]);
+	} else {
+		zassert_equal_ptr(first.msix_vector, ctrl_data_b.table);
+	}
+	zassert_is_null(second.ctrl);
+	zassert_mem_equal(&first, &saved, sizeof(first));
+	zassert_ok(pcie_endpoint_msi_enable(&ep_b, &first, 1U, 0U));
+}
+
+ZTEST(pcie_endpoint, test_msi_multi_vector_layout)
+{
+	msi_vector_t vectors[4];
+	uint8_t count;
+
+	ctrl_data_b.config[PCIE_CONF_CAPPTR] = TEST_MSI_CAP * 4U;
+	ctrl_data_b.config[TEST_MSI_CAP] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 |
+		(2U << PCIE_MSI_MCR_MMC_SHIFT);
+	zassert_ok(pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 4U, &count));
+	zassert_ok(pcie_endpoint_msi_enable(&ep_b, vectors, count, 0U));
+	zassert_equal(ctrl_data_b.config[TEST_MSI_CAP] & PCIE_MSI_MCR_MME,
+		      2U << PCIE_MSI_MCR_MME_SHIFT);
+	for (uint8_t invalid = 0U; invalid < 3U; invalid++) {
+		for (uint8_t i = 0U; i < count; i++) {
+			vectors[i].arch.eventid = i;
+			vectors[i].arch.address = TEST_TARGET;
+		}
+		if (invalid == 0U) {
+			vectors[0].arch.eventid = 2U;
+		} else if (invalid == 1U) {
+			vectors[1].arch.eventid = 5U;
+		} else {
+			vectors[2].arch.address += 4U;
+		}
+		ctrl_data_b.writes = 0U;
+		zassert_equal(pcie_endpoint_msi_enable(&ep_b, vectors, count, 0U), -EINVAL);
+		zassert_equal(ctrl_data_b.writes, 0U);
+	}
+}
+
+void ztest_post_fatal_error_hook(unsigned int reason, const struct arch_esf *esf)
+{
+	ARG_UNUSED(esf);
+	zassert_equal(reason, K_ERR_KERNEL_PANIC);
+}
+
+ZTEST(pcie_endpoint, test_partial_setup_success_is_fatal)
+{
+	msi_vector_t vectors[2];
+	uint8_t count;
+
+	ctrl_data_b.bad_setup_count = 1U;
+	ztest_set_fault_valid(true);
+	pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 2U, &count);
+	ztest_set_fault_valid(false);
+	zassert_unreachable("partial success must not appear to be a clean allocation failure");
+}
+
+ZTEST(pcie_endpoint, test_setup_error_with_allocations_is_fatal)
+{
+	msi_vector_t vectors[2];
+	uint8_t count;
+
+	ctrl_data_b.bad_setup_count = 2U;
+	ztest_set_fault_valid(true);
+	pcie_endpoint_msi_vectors_allocate(&ep_b, 0U, vectors, 2U, &count);
+	ztest_set_fault_valid(false);
+	zassert_unreachable("an error with remaining allocations must not discard ownership");
+}
+
+static void *suite_setup(void)
+{
+	zassert_true(early_found[0]);
+	zassert_equal(early_found[1], !IS_ENABLED(PCIE_TEST_FAIL_CTRL_B));
+	return NULL;
 }
 
 ZTEST_SUITE(pcie_binding, NULL, suite_setup, NULL, NULL, NULL);
