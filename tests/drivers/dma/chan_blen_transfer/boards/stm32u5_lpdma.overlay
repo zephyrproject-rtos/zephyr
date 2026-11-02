@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &sram1;
+	};
+};
+
+&lpdma1 {
+	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&lpdma1>;
+	};
+};
