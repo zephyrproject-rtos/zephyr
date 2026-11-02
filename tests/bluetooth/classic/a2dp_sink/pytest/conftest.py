@@ -32,7 +32,7 @@ def fixture_initialize(request, shell: Shell, dut: DeviceAdapter):
     assert hci is not None
 
     shell.exec_command("bt init")
-    lines = dut.readlines_until("Bluetooth initialized")
+    lines = dut.readlines_until(regex="Bluetooth initialized")
     regex = r'Identity: *[PR]:(?P<bd_addr>([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2})'
     bd_addr = None
     for line in lines:
