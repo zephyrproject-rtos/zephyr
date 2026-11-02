@@ -40,6 +40,20 @@ uint8_t tmc_uart_calc_crc(const uint8_t *datagram, uint8_t len)
 	return crc;
 }
 
+/*
+ * Discard stale received data, e.g. a byte with framing error caught while the line was
+ * pulled low before the UART was enabled. Otherwise it would be taken as the echo of the
+ * first datagram byte and shift all following echoes by one byte.
+ */
+static void tmc_uart_flush_rx(const struct device *uart)
+{
+	uint8_t byte;
+
+	while (uart_poll_in(uart, &byte) == 0) {
+		/* Discard */
+	}
+}
+
 static int tmc_uart_send_byte_with_echo(const struct device *uart, uint8_t byte)
 {
 	uint8_t echo_byte;
@@ -74,6 +88,8 @@ int tmc_uart_write_register(const struct device *uart, uint8_t device_addr,
 	buffer[2] = register_address | ADI_TMC_UART_WRITE_BIT; /* Register address with write bit */
 	sys_put_be32(data, &buffer[3]);                        /* Write data */
 	buffer[7] = tmc_uart_calc_crc(buffer, ADI_TMC_UART_DATAGRAM_SIZE - 1U); /* CRC */
+
+	tmc_uart_flush_rx(uart);
 
 	/* Send datagram byte by byte using polling */
 	for (size_t i = 0; i < ADI_TMC_UART_DATAGRAM_SIZE; i++) {
@@ -111,6 +127,8 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 	write_buffer[1] = device_addr;            /* Device address */
 	write_buffer[2] = register_address;       /* Register address */
 	write_buffer[3] = tmc_uart_calc_crc(write_buffer, 3);
+
+	tmc_uart_flush_rx(uart);
 
 	/* Send read request byte by byte and wait for each echo */
 	for (size_t i = 0; i < ADI_TMC_UART_READ_REQ_DATAGRAM_SIZE; i++) {
