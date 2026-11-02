@@ -787,8 +787,7 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
 		      disconnect_count);
 	zassert_equal(data_count, 0U, "The controller was given %u data packets", data_count);
 
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 
 	/* The connection that was taken down with data queued for it has been
 	 * let go of, so that a new one can be had.
@@ -798,8 +797,7 @@ static ZTEST(bt_disable, test_data_sent_during_disable)
 	connect_as_peripheral();
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 }
 
 /* The application disconnects from a thread of its own. It cannot be the
@@ -867,8 +865,7 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 	zassert_equal(disconnect_err, -EIO, "bt_conn_disconnect() gave %d (!= %d)", disconnect_err,
 		      -EIO);
 
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 
 	/* Bluetooth comes up again and connects */
 	reset_rsp_delay = K_NO_WAIT;
@@ -877,8 +874,7 @@ static ZTEST(bt_disable, test_command_in_flight_at_close)
 	connect_as_peripheral();
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 }
 
 ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
@@ -917,8 +913,7 @@ static ZTEST(bt_conn_tx, test_data_send_failure)
 	zassert_equal(disconnect_count, 1U, "The controller was told to disconnect %u times",
 		      disconnect_count);
 
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 }
 
 /* A connection that the controller refuses to disconnect stays, and goes on
@@ -961,8 +956,7 @@ static ZTEST(bt_conn_tx, test_data_send_failure_disconnect_rejected)
 		      info.state);
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 }
 
 /* A dynamic LE L2CAP channel ID that no channel has: the Host drops what the
@@ -1051,7 +1045,6 @@ static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
 	expect_host_ncp(TEST_CONN_HANDLE, 1U);
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 }
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_GATT_CLIENT */

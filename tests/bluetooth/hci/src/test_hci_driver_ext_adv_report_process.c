@@ -97,8 +97,7 @@ static void allocate_all_bufs(void)
 static void free_all_bufs(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(allocated_bufs); i++) {
-		net_buf_unref(allocated_bufs[i]);
-		allocated_bufs[i] = NULL;
+		net_buf_drop(&allocated_bufs[i]);
 	}
 }
 
@@ -210,9 +209,8 @@ static ZTEST(hci_ext_adv_report_process, test_process_chain_status_success)
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, DEFAULT_SID,
 					BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, &buf);
 	zassert_true(retval);
@@ -246,9 +244,8 @@ static ZTEST(hci_ext_adv_report_process, test_process_chain_status_incomplete)
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, DEFAULT_SID,
 					BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, &buf);
 	zassert_true(retval);
@@ -310,11 +307,10 @@ static ZTEST(hci_ext_adv_report_process,
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
 	/* Second buffer is dropped. */
 	allocate_all_bufs();
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, DEFAULT_SID,
 					BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, &buf);
 	zassert_true(retval);
@@ -375,11 +371,10 @@ static ZTEST(hci_ext_adv_report_process,
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
 	allocate_all_bufs();
 
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, DEFAULT_SID,
 					BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, &buf);
 	zassert_true(retval);
@@ -439,10 +434,9 @@ static ZTEST(hci_ext_adv_report_process,
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
 	/* 4: Advertiser B: Last incomplete report. */
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, sid_second,
 					BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, &buf);
 	zassert_true(retval);
@@ -451,10 +445,9 @@ static ZTEST(hci_ext_adv_report_process,
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
 	/* 5: Advertiser A: New partial report */
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, sid_first, BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL,
 					&buf);
 	zassert_true(retval);
@@ -463,10 +456,9 @@ static ZTEST(hci_ext_adv_report_process,
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
 	/* 6: Advertiser A: Last partial report */
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, sid_first, BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL,
 					&buf);
 	zassert_true(retval);
@@ -518,11 +510,10 @@ static ZTEST(hci_ext_adv_report_process,
 	zassert_equal(info_from_report(buf)->length, DEFAULT_DATA_LEN);
 	zassert_equal(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info_from_report(buf)->evt_type),
 		      BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL);
-	net_buf_unref(buf);
+	net_buf_drop(&buf);
 
 	/* 2: Advertiser A: Last incomplete report. Fail to allocate data for it. */
 	allocate_all_bufs();
-	buf = NULL;
 	retval = process_adv_ext_report(&ctx, sid_first,
 					BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE, &buf);
 	zassert_true(retval);

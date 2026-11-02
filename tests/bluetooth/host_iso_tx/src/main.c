@@ -542,8 +542,7 @@ static void stop(void)
 {
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 
-	bt_conn_unref(acl);
-	acl = NULL;
+	bt_conn_drop(&acl);
 }
 
 static void before(void *fixture)

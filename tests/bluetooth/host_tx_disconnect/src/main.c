@@ -409,8 +409,7 @@ static int disconnected_wait(void)
 		return err;
 	}
 
-	bt_conn_unref(test_conn);
-	test_conn = NULL;
+	bt_conn_drop(&test_conn);
 
 	return k_sem_take(&recycled_sem, K_SECONDS(1));
 }
