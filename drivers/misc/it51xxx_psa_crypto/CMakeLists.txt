@@ -25,6 +25,15 @@ if(CONFIG_IT51XXX_PSA_CRYPTO_SHA)
   ")
 endif()
 
+if(CONFIG_IT51XXX_PSA_CRYPTO_RSA)
+  cmake_language(EVAL CODE "
+    cmake_language(DEFER DIRECTORY [[${ZEPHYR_BASE}]]
+      CALL target_compile_definitions [[${tfpsacrypto_target}]] PRIVATE
+        PSA_CRYPTO_DRIVER_ITE_IT51XXX_RSA
+    )
+  ")
+endif()
+
 zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 zephyr_library_include_directories(
@@ -33,6 +42,8 @@ zephyr_library_include_directories(
 
 zephyr_library_sources(
   it51xxx_crypto.c
+  it51xxx_psa_mbedtls_origin.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_IT51XXX_PSA_CRYPTO_SHA it51xxx_crypto_sha.c)
+zephyr_library_sources_ifdef(CONFIG_IT51XXX_PSA_CRYPTO_RSA it51xxx_crypto_rsa.c)

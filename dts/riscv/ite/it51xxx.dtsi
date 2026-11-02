@@ -1122,6 +1122,11 @@
 				compatible = "ite,it51xxx-psa-sha";
 				status = "disabled";
 			};
+
+			psa_rsa: psa-crypto-rsa {
+				compatible = "ite,it51xxx-psa-rsa";
+				status = "disabled";
+			};
 		};
 
 		i3c0: i3c@f03c00 {
