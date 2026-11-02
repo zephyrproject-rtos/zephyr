@@ -2569,6 +2569,12 @@ static void hci_encrypt_change(struct net_buf *buf)
 #endif /* CONFIG_BT_SMP */
 #if defined(CONFIG_BT_CLASSIC)
 	if (bt_conn_is_br(conn)) {
+		if (conn->encrypt == 0U) {
+			bt_br_encryption_off(conn);
+			bt_conn_unref(conn);
+			return;
+		}
+
 		if (!bt_br_update_sec_level(conn)) {
 			bt_conn_unref(conn);
 			return;
