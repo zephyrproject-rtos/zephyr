@@ -2680,6 +2680,20 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 	return 0;
 }
 
+/* What a request looks for: a record handle shares its storage with the UUID */
+static const char *sdp_client_req_str(const struct bt_sdp_discover_params *param)
+{
+	uint32_t handle;
+
+	if (param->type != BT_SDP_DISCOVER_SERVICE_ATTR) {
+		return bt_uuid_str(param->uuid);
+	}
+
+	handle = sys_cpu_to_be32(param->handle);
+
+	return bt_hex(&handle, sizeof(handle));
+}
+
 static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *buf)
 {
 	struct bt_sdp_pdu_cstate *cstate;
@@ -2742,7 +2756,7 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 	 * valid and this is the first response frame as well.
 	 */
 	if (!current_count && cstate->length == 0U && session->cstate.length == 0U) {
-		LOG_WRN("Service record handle 0x%x not found", session->param->handle);
+		LOG_WRN("Record for 0x%s not found", sdp_client_req_str(session->param));
 		return -EINVAL;
 	}
 
@@ -2773,7 +2787,7 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 
 	net_buf_pull(buf, sizeof(cstate->length));
 
-	LOG_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
+	LOG_DBG("0x%s resolved", sdp_client_req_str(session->param));
 	sdp_client_notify_result(session->chan.chan.conn, session, UUID_RESOLVED);
 	/* Get next UUID and start resolving it */
 	sdp_client_params_iterator(session);
@@ -2841,7 +2855,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	 * valid and this is the first response frame as well.
 	 */
 	if (frame_len == 2U && cstate->length == 0U && session->cstate.length == 0U) {
-		LOG_WRN("Record for UUID 0x%s not found", bt_uuid_str(session->param->uuid));
+		LOG_WRN("Record for 0x%s not found", sdp_client_req_str(session->param));
 		return -EINVAL;
 	}
 
@@ -2909,7 +2923,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 
 	net_buf_pull(buf, sizeof(cstate->length));
 
-	LOG_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
+	LOG_DBG("0x%s resolved", sdp_client_req_str(session->param));
 	sdp_client_notify_result(session->chan.chan.conn, session, UUID_RESOLVED);
 	/* Get next UUID and start resolving it */
 	sdp_client_params_iterator(session);
