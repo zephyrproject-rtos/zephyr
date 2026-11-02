@@ -25,6 +25,8 @@
 			reg = <0x0>;
 			device_type = "cpu";
 			enable-method = "psci";
+			d-cache-line-size = <64>;
+			i-cache-line-size = <64>;
 		};
 
 		cpu@100 {
@@ -32,6 +34,8 @@
 			reg = <0x100>;
 			device_type = "cpu";
 			enable-method = "psci";
+			d-cache-line-size = <64>;
+			i-cache-line-size = <64>;
 		};
 
 		cpu@200 {
@@ -39,6 +43,8 @@
 			reg = <0x200>;
 			device_type = "cpu";
 			enable-method = "psci";
+			d-cache-line-size = <64>;
+			i-cache-line-size = <64>;
 		};
 
 		cpu@300 {
@@ -46,6 +52,8 @@
 			reg = <0x300>;
 			device_type = "cpu";
 			enable-method = "psci";
+			d-cache-line-size = <64>;
+			i-cache-line-size = <64>;
 		};
 	};
 
