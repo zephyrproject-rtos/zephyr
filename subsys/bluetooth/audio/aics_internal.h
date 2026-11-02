@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,10 +21,11 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
+/* Set the buf size to include the NULL terminator */
 #if defined(CONFIG_BT_AICS)
-#define BT_AICS_MAX_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
+#define BT_AICS_DESC_BUF_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE + 1U
 #else
-#define BT_AICS_MAX_DESC_SIZE 1U
+#define BT_AICS_DESC_BUF_SIZE 1U
 #endif /* CONFIG_BT_AICS */
 
 /* AICS opcodes */
@@ -113,7 +114,7 @@ struct bt_aics_server {
 	uint8_t type;
 	uint8_t status;
 	struct bt_aics *inst;
-	char description[BT_AICS_MAX_DESC_SIZE];
+	char description[BT_AICS_DESC_BUF_SIZE];
 	struct bt_aics_cb *cb;
 
 	struct bt_gatt_service *service_p;
