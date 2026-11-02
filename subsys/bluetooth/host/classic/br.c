@@ -16,6 +16,7 @@
 #include <host/hci_core.h>
 #include <host/conn_internal.h>
 #include <host/keys.h>
+#include <host/l2cap_internal.h>
 #include "br.h"
 #include "sco_internal.h"
 
@@ -262,6 +263,14 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	bt_conn_unref(sco_conn);
 }
 
+/* Features that could not be read count as not supported */
+static void remote_features_done(struct bt_conn *conn)
+{
+	if (!atomic_test_and_set_bit(conn->flags, BT_CONN_BR_FEATURES_DONE)) {
+		bt_l2cap_br_remote_features_done(conn);
+	}
+}
+
 void bt_hci_conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_complete *evt = (void *)buf->data;
@@ -299,17 +308,22 @@ void bt_hci_conn_complete(struct net_buf *buf)
 
 	bt_conn_connected(conn);
 
-	bt_conn_unref(conn);
-
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
+		remote_features_done(conn);
+		bt_conn_unref(conn);
 		return;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = evt->handle;
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_FEATURES, buf, NULL);
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_FEATURES, buf, NULL) != 0) {
+		LOG_ERR("Failed to read remote features");
+		remote_features_done(conn);
+	}
+
+	bt_conn_unref(conn);
 }
 
 static int request_name(const bt_addr_t *addr, uint8_t pscan, uint16_t offset)
@@ -694,9 +708,15 @@ void bt_hci_read_remote_features_complete(struct net_buf *buf)
 	cp->handle = evt->handle;
 	cp->page = 0x01;
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, buf, NULL);
+	if (bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_EXT_FEATURES, buf, NULL) == 0) {
+		bt_conn_unref(conn);
+		return;
+	}
+
+	LOG_ERR("Failed to read remote extended features");
 
 done:
+	remote_features_done(conn);
 	bt_conn_unref(conn);
 }
 
@@ -717,6 +737,8 @@ void bt_hci_read_remote_ext_features_complete(struct net_buf *buf)
 	if (!evt->status && evt->page == 0x01) {
 		memcpy(conn->br.features[1], evt->features, sizeof(conn->br.features[1]));
 	}
+
+	remote_features_done(conn);
 
 	bt_conn_unref(conn);
 }

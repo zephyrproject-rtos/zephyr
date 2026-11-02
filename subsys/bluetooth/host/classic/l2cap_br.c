@@ -149,7 +149,7 @@ enum {
 	L2CAP_FLAG_CONN_LCONF_DONE,       /* local config accepted by remote */
 	L2CAP_FLAG_CONN_RCONF_DONE,       /* remote config accepted by local */
 	L2CAP_FLAG_CONN_ACCEPTOR,         /* getting incoming connection req */
-	L2CAP_FLAG_CONN_PENDING,          /* remote sent pending result in rsp */
+	L2CAP_FLAG_CONN_PENDING,          /* conn req waits for security or features */
 	L2CAP_FLAG_CONN_CONF_RSP_SENDING, /* waiting for config response sent */
 	L2CAP_FLAG_CONN_RSP_SEC_BLOCK,    /* retry conn rsp with sec block err */
 	L2CAP_FLAG_CONN_RSP_SUCCESS,      /* retry conn rsp without err */
@@ -2744,6 +2744,14 @@ static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 	l2cap_br_chan_send_req(BR_CHAN(chan), buf, L2CAP_BR_CFG_TIMEOUT);
 }
 
+/* A channel at this level never waits for a security procedure: that would have raised it */
+static bool l2cap_br_chan_waits_for_features(struct bt_l2cap_chan *chan)
+{
+	return (BR_CHAN(chan)->state == BT_L2CAP_CONNECTING) &&
+	       (BR_CHAN(chan)->required_sec_level == BT_SECURITY_L1) &&
+	       atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
+}
+
 enum l2cap_br_conn_security_result {
 	L2CAP_CONN_SECURITY_PASSED,
 	L2CAP_CONN_SECURITY_REJECT,
@@ -2757,7 +2765,8 @@ enum l2cap_br_conn_security_result {
  * - legacy (non SSP) devices connecting with low security requirements,
  * Returns L2CAP_CONN_SECURITY_PENDING if:
  * - channel connection process is on hold since there were valid security
- *   conditions triggering authentication indirectly in subcall.
+ *   conditions triggering authentication indirectly in subcall,
+ * - a channel at low security level needs the remote's features, which are not known yet.
  * Returns L2CAP_CONN_SECURITY_REJECT if:
  * - bt_conn_set_security API returns < 0,
  * - Or, the ACL connection has been encrypted, the security level of link key cannot be upgraded,
@@ -2775,6 +2784,27 @@ l2cap_br_conn_security(struct bt_conn *conn, struct bt_l2cap_chan *chan, const u
 	/* For SDP PSM there's no need to change existing security on link */
 	if (br_chan->required_sec_level == BT_SECURITY_L0) {
 		return L2CAP_CONN_SECURITY_PASSED;
+	}
+
+	/*
+	 * Only the remote's features tell whether this level needs encryption. The lock keeps
+	 * bt_l2cap_br_remote_features_done() from running between the test and the flag.
+	 */
+	if ((br_chan->required_sec_level == BT_SECURITY_L1) && (conn->encrypt == 0U)) {
+		bool wait;
+
+		k_sched_lock();
+
+		wait = !atomic_test_bit(conn->flags, BT_CONN_BR_FEATURES_DONE);
+		if (wait) {
+			atomic_set_bit(br_chan->flags, L2CAP_FLAG_CONN_PENDING);
+		}
+
+		k_sched_unlock();
+
+		if (wait) {
+			return L2CAP_CONN_SECURITY_PENDING;
+		}
 	}
 
 	/*
@@ -2904,7 +2934,8 @@ static void l2cap_br_send_conn_rsp(struct bt_l2cap_br *l2cap, uint16_t scid, uin
 	rsp->scid = sys_cpu_to_le16(scid);
 	rsp->result = sys_cpu_to_le16(result);
 
-	if (result == BT_L2CAP_BR_PENDING) {
+	if ((result == BT_L2CAP_BR_PENDING) &&
+	    !l2cap_br_chan_waits_for_features(bt_l2cap_br_lookup_rx_cid(conn, dcid))) {
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_AUTHEN_PEND);
 	} else {
 		rsp->status = sys_cpu_to_le16(BT_L2CAP_CS_NO_INFO);
@@ -5331,10 +5362,40 @@ static void l2cap_br_chan_connect_abort(struct bt_conn *conn, struct bt_l2cap_ch
 	}
 }
 
+static int l2cap_br_chan_connect_start(struct bt_conn *conn, struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br *l2cap;
+
+	switch (l2cap_br_conn_security(conn, chan, BR_CHAN(chan)->psm)) {
+	case L2CAP_CONN_SECURITY_PENDING:
+		/*
+		 * Authentication was triggered or the remote's features are awaited, wait with
+		 * sending request on the context of either.
+		 */
+		return 0;
+	case L2CAP_CONN_SECURITY_PASSED:
+		break;
+	case L2CAP_CONN_SECURITY_REJECT:
+	default:
+		l2cap_br_chan_connect_abort(conn, chan);
+		return -EIO;
+	}
+
+	l2cap = l2cap_br_find_signal_channel(conn);
+	if (l2cap == NULL) {
+		LOG_ERR("Signaling channel not found");
+		l2cap_br_chan_connect_abort(conn, chan);
+		return -ENOTCONN;
+	}
+
+	bt_work_schedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_CONN_INIT_TIMEOUT);
+	l2cap_br_connect_req(l2cap, chan);
+	return 0;
+}
+
 int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, uint16_t psm)
 {
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
-	struct bt_l2cap_br *l2cap;
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	int err;
 #endif /* CONFIG_BT_L2CAP_RET_FC */
@@ -5391,31 +5452,7 @@ int bt_l2cap_br_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan, u
 	br_chan->psm = psm;
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
 
-	switch (l2cap_br_conn_security(conn, chan, psm)) {
-	case L2CAP_CONN_SECURITY_PENDING:
-		/*
-		 * Authentication was triggered, wait with sending request on
-		 * connection security changed callback context.
-		 */
-		return 0;
-	case L2CAP_CONN_SECURITY_PASSED:
-		break;
-	case L2CAP_CONN_SECURITY_REJECT:
-	default:
-		l2cap_br_chan_connect_abort(conn, chan);
-		return -EIO;
-	}
-
-	l2cap = l2cap_br_find_signal_channel(conn);
-	if (l2cap == NULL) {
-		LOG_ERR("Signaling channel not found");
-		l2cap_br_chan_connect_abort(conn, chan);
-		return -ENOTCONN;
-	}
-
-	bt_work_schedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_CONN_INIT_TIMEOUT);
-	l2cap_br_connect_req(l2cap, chan);
-	return 0;
+	return l2cap_br_chan_connect_start(conn, chan);
 }
 
 static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
@@ -6028,9 +6065,13 @@ static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
 
-	/* A procedure that succeeded below the level of this channel does not help it */
-	if ((status != 0) || ((chan->conn->encrypt != 0U) &&
-			      (chan->conn->sec_level < BR_CHAN(chan)->required_sec_level))) {
+	/*
+	 * A channel waiting for the features is not waiting for a procedure that failed. A
+	 * procedure that succeeded below the level of a channel does not help it.
+	 */
+	if (!l2cap_br_chan_waits_for_features(chan) &&
+	    ((status != 0) || ((chan->conn->encrypt != 0U) &&
+			       (chan->conn->sec_level < BR_CHAN(chan)->required_sec_level)))) {
 		return l2cap_br_conn_sec_failed(l2cap, chan);
 	}
 
@@ -6043,6 +6084,7 @@ static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 	 * response and initiate configuration request.
 	 */
 	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
 		l2cap_br_pend_conn_req_reply_success(l2cap, chan);
 		return false;
 	}
@@ -6082,6 +6124,48 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status)
 		if (is_last) {
 			break;
 		}
+	}
+}
+
+static struct bt_l2cap_chan *l2cap_br_chan_waiting_for_features(struct bt_conn *conn)
+{
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (l2cap_br_chan_waits_for_features(chan)) {
+			return chan;
+		}
+	}
+
+	return NULL;
+}
+
+void bt_l2cap_br_remote_features_done(struct bt_conn *conn)
+{
+	struct bt_l2cap_br *l2cap = l2cap_br_find_signal_channel(conn);
+	struct bt_l2cap_chan *chan;
+
+	if (l2cap == NULL) {
+		return;
+	}
+
+	/* From the start of the list every time: starting a channel can block, and any other
+	 * channel can be gone by then. One that was handled does not wait any more.
+	 */
+	chan = l2cap_br_chan_waiting_for_features(conn);
+	while (chan != NULL) {
+		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING);
+
+		if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+			(void)l2cap_br_chan_connect_start(conn, chan);
+		} else if (BT_FEAT_HOST_SSP(conn->br.features) && (conn->encrypt == 0U)) {
+			/* The answer l2cap_br_conn_req() gives when it knows the features */
+			(void)l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
+		} else {
+			l2cap_br_pend_conn_req_reply_success(l2cap, chan);
+		}
+
+		chan = l2cap_br_chan_waiting_for_features(conn);
 	}
 }
 

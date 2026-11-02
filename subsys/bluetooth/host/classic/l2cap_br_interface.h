@@ -59,6 +59,9 @@ void l2cap_br_encrypt_change(struct bt_conn *conn, uint8_t hci_status);
 /* A security procedure was asked for and did not start */
 void bt_l2cap_br_security_not_started(struct bt_conn *conn);
 
+/* Continue the channels that wait for the remote's features */
+void bt_l2cap_br_remote_features_done(struct bt_conn *conn);
+
 /* Handle received data */
 void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf);
 
