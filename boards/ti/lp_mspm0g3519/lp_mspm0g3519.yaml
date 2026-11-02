@@ -9,10 +9,12 @@ toolchain:
 ram: 128
 flash: 512
 supported:
+  - adc
   - uart
   - gpio
   - can
   - dac
   - spi
   - vref
+  - dma
 vendor: ti

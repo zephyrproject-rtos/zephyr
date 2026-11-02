@@ -146,3 +146,12 @@ tests:
       - dma
     platform_allow:
       - sixg301_rb4407a
+  drivers.adc.dma_mspm0:
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-dma-mspm0.conf"
+    depends_on:
+      - dma
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
