@@ -86,6 +86,10 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* Kernel
+
+  * :c:enumerator:`K_ERR_WORK_TIMEOUT`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

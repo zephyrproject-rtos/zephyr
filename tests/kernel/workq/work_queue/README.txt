@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 Title: Workqueue APIs
 
 Description:
@@ -27,9 +30,6 @@ Ztest suites:
      work.
    - test_workq_resubmit_from_handler covers resubmitting a work item from
      within its own handler.
-
-4. workqueue_work_timeout (built with CONFIG_WORKQUEUE_WORK_TIMEOUT=y)
-   - test_workq_work_timeout verifies the per-work-item timeout behavior.
 
 ---------------------------------------------------------------------------
 
