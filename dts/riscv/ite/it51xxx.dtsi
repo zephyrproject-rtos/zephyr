@@ -408,6 +408,8 @@
 			       0x00f01658 8   /* GPCR */
 			       NO_FUNC 1>;
 			ngpios = <8>;
+			/* GPJ2 is unavailable as GPIO */
+			gpio-reserved-ranges = <2 1>;
 			gpio-controller;
 			interrupts = <IT51XXX_IRQ_WU128 IRQ_TYPE_LEVEL_HIGH
 				      IT51XXX_IRQ_WU129 IRQ_TYPE_LEVEL_HIGH
@@ -440,23 +442,23 @@
 			       0x00f01d2d 1>; /* KSOLFSELR */
 			ngpios = <8>;
 			gpio-controller;
-			interrupts = <NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0>;
+			interrupts = <IT51XXX_IRQ_WU50 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU51 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU52 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU53 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU54 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU55 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU56 IRQ_TYPE_LEVEL_HIGH
+				      IT51XXX_IRQ_WU57 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			wucctrl = <&wuc_no_func /* NO_FUNC */
-				   &wuc_no_func
-				   &wuc_no_func
-				   &wuc_no_func
-				   &wuc_no_func
-				   &wuc_no_func
-				   &wuc_no_func
-				   &wuc_no_func>;
+			wucctrl = <&wuc_wu50   /* GPK0 */
+				   &wuc_wu51   /* GPK1 */
+				   &wuc_wu52   /* GPK2 */
+				   &wuc_wu53   /* GPK3 */
+				   &wuc_wu54   /* GPK4 */
+				   &wuc_wu55   /* GPK5 */
+				   &wuc_wu56   /* GPK6 */
+				   &wuc_wu57>; /* GPK7 */
 			#gpio-cells = <2>;
 		};
 
@@ -528,23 +530,23 @@
 			       0x00f01d2c 1>; /* KSIFSELR */
 			ngpios = <8>;
 			gpio-controller;
-			interrupts = <IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH
-				      IT51XXX_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
 			interrupt-parent = <&intc>;
-			wucctrl = <&wuc_wu30   /* GPN0 */
-				   &wuc_wu31   /* GPN1 */
-				   &wuc_wu32   /* GPN2 */
-				   &wuc_wu33   /* GPN3 */
-				   &wuc_wu34   /* GPN4 */
-				   &wuc_wu35   /* GPN5 */
-				   &wuc_wu36   /* GPN6 */
-				   &wuc_wu37>; /* GPN7 */
+			wucctrl = <&wuc_no_func /* NO_FUNC */
+				   &wuc_no_func
+				   &wuc_no_func
+				   &wuc_no_func
+				   &wuc_no_func
+				   &wuc_no_func
+				   &wuc_no_func
+				   &wuc_no_func>;
 			#gpio-cells = <2>;
 		};
 
@@ -817,6 +819,16 @@
 			#wuc-cells = <1>;
 		};
 
+		wuc5: wakeup-controller@f01b0c {
+			compatible = "ite,it51xxx-wuc";
+			reg = <0x00f01b0c 1   /* WUEMR5 */
+			       0x00f01b0d 1   /* WUESR5 */
+			       IT51XXX_WUC_UNUSED_REG 1   /* WUENR5 */
+			       0x00f01b0f 1>; /* WULER5 */
+			wakeup-controller;
+			#wuc-cells = <1>;
+		};
+
 		wuc6: wakeup-controller@f01b10 {
 			compatible = "ite,it51xxx-wuc";
 			reg = <0x00f01b10 1   /* WUEMR6 */
@@ -1011,7 +1023,7 @@
 			reg = <0x00f02700 0x0020>;
 			current-speed = <115200>;
 			clock-frequency = <1843200>;
-			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <IT51XXX_IRQ_UART IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
 			status = "disabled";
@@ -1032,7 +1044,7 @@
 			reg = <0x00f02800 0x0020>;
 			current-speed = <460800>;
 			clock-frequency = <1843200>;
-			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <IT51XXX_IRQ_UART2 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
 			status = "disabled";
@@ -1424,7 +1436,7 @@
 			compatible = "ite,it51xxx-adc";
 			reg = <0xf04500 0xc1>;
 			channel-count = <8>;
-			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <IT51XXX_IRQ_ADC IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			#io-channel-cells = <1>;
 			status = "disabled";
