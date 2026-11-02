@@ -202,7 +202,7 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct ppp_context *ctx = net_if_l2_data(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	int ret;
 
 	NET_ASSERT(dev != NULL);
@@ -274,7 +274,7 @@ static void ppp_open_async(struct ppp_context *ctx)
 static int ppp_up(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *ppp;
+	const struct ppp_driver_api *ppp;
 
 	NET_ASSERT(dev != NULL);
 
@@ -338,7 +338,7 @@ static int ppp_down(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct ppp_context *ctx = net_if_l2_data(iface);
-	const struct ppp_api *ppp;
+	const struct ppp_driver_api *ppp;
 
 	NET_ASSERT(dev != NULL);
 

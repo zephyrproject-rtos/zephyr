@@ -22,7 +22,7 @@ static int ppp_stats_get(uint64_t mgmt_request, struct net_if *iface,
 {
 	size_t len_chk = 0;
 	void *src = NULL;
-	const struct ppp_api *ppp;
+	const struct ppp_driver_api *ppp;
 
 	if (NET_MGMT_GET_COMMAND(mgmt_request) ==
 	    NET_REQUEST_STATS_CMD_GET_PPP) {
