@@ -85,6 +85,11 @@ New APIs and options
     unsigned) or 2 cells (64-bit unsigned, high word first) and produces a
     scalar ``DT_PROP`` integer macro
 
+* I2S
+
+  * :c:enumerator:`I2S_STATE_UNKNOWN`
+  * :c:func:`i2s_get_state`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
