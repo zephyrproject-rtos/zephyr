@@ -623,12 +623,11 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mi
 	mic_ctlr->discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	mic_ctlr->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
-	mic_ctlr->conn = ref;
+	mic_ctlr->conn = bt_conn_take(&ref);
 
 	err = bt_gatt_discover(conn, &mic_ctlr->discover_params);
 	if (err != 0) {
-		bt_conn_unref(ref);
-		mic_ctlr->conn = NULL;
+		bt_conn_drop(&mic_ctlr->conn);
 		goto cleanup;
 	}
 

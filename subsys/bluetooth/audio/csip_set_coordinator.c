@@ -1505,7 +1505,7 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn)
 	for (size_t i = 0U; i < ARRAY_SIZE(client->set_member.insts); i++) {
 		client->set_member.insts[i].svc_inst = (void *)&client->svc_insts[i];
 	}
-	client->conn = ref;
+	client->conn = bt_conn_take(&ref);
 
 	return 0;
 

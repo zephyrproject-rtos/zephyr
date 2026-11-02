@@ -192,7 +192,7 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 		goto cleanup;
 	}
 
-	client->conn = ref;
+	client->conn = bt_conn_take(&ref);
 
 	err = bt_tbs_client_discover(conn);
 	if (err != 0) {
@@ -203,8 +203,7 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 			err = -ENOEXEC;
 		}
 
-		bt_conn_unref(ref);
-		client->conn = NULL;
+		bt_conn_drop(&client->conn);
 		goto cleanup;
 	}
 
