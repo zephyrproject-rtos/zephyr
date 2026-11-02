@@ -114,7 +114,7 @@ static int save_key(char setting_name[MAX_SETTINGS_NAME],
 		return ret;
 	}
 
-	return settings_save_one(setting_name, config->key_buf, config->key_buf_len);
+	return settings_save_one(setting_name, config->key_buf, ret);
 }
 
 static uint8_t *export_key(const struct net_config_ssh_key *config)
