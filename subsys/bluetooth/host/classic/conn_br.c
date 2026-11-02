@@ -98,6 +98,14 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	conn->role = BT_CONN_ROLE_CENTRAL;
 
 	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
+		/* A connection from the peer can have completed on the object
+		 * meanwhile, and another call can have been handed it
+		 */
+		if (conn->state == BT_CONN_INITIATING) {
+			conn->err = BT_HCI_ERR_UNSPECIFIED;
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		}
+
 		bt_conn_unref(conn);
 		return NULL;
 	}
