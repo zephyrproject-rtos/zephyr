@@ -373,7 +373,7 @@ Deprecated APIs and options
 
   * The legacy Cortex-M SysTick low-power companion compatibility macros
     :c:macro:`z_cms_lptim_hook_on_lpm_entry` and :c:macro:`z_cms_lptim_hook_on_lpm_exit`,
-    along with the compatibility header :zephyr_file:`drivers/timer/cortex_m_systick.h`,
+    along with the compatibility header ``drivers/timer/cortex_m_systick.h``,
     have been deprecated. Out-of-tree SoC/platform code should migrate to
     :c:func:`z_sys_clock_lpm_enter`, :c:func:`z_sys_clock_lpm_exit`, and
     :zephyr_file:`include/zephyr/drivers/timer/system_timer_lpm.h`.
