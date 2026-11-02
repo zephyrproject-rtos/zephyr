@@ -29,4 +29,12 @@
 			status = "okay";
 		};
 	};
+
+	euart2: uart-emul-latch {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <32>;
+		latch-buffer-size = <8>;
+		status = "okay";
+	};
 };
