@@ -125,20 +125,20 @@ static int dummy_dev_stop(const struct device *dev)
 	return 0;
 }
 
-static struct dummy_api slow_api = {
+static const struct dummy_api slow_api = {
 	.iface_api.init = dummy_iface_init,
 	.send = dummy_dev_send,
 	.start = slow_dev_start,
 	.stop = dummy_dev_stop,
 };
 
-static struct dummy_api fast_api = {
+static const struct dummy_api fast_api = {
 	.iface_api.init = dummy_iface_init,
 	.send = dummy_dev_send,
 	.stop = dummy_dev_stop,
 };
 
-static struct dummy_api dad_api = {
+static const struct dummy_api dad_api = {
 	.iface_api.init = dummy_iface_init,
 	.send = dummy_dev_send,
 	.stop = dummy_dev_stop,

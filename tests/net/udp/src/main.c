@@ -108,7 +108,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_udp_context net_udp_context_data;
 
-static struct dummy_api net_udp_if_api = {
+static const struct dummy_api net_udp_if_api = {
 	.iface_api.init = net_udp_iface_init,
 	.send = tester_send,
 };

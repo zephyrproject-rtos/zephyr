@@ -127,7 +127,7 @@ static const struct device *eth_get_ptp_clock(const struct device *dev,
 	return context->ptp_clock;
 }
 
-static struct ethernet_api api_funcs = {
+static const struct ethernet_api api_funcs = {
 	.iface_api.init = eth_iface_init,
 
 	.get_ptp_clock = eth_get_ptp_clock,

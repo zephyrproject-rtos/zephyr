@@ -120,7 +120,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 
 struct net_if_test net_iface1_data;
 
-static struct dummy_api net_iface_api = {
+static const struct dummy_api net_iface_api = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };

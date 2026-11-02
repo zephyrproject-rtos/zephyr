@@ -1115,7 +1115,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_dhcpv4_context net_dhcpv4_context_data;
 
-static struct dummy_api net_dhcpv4_if_api = {
+static const struct dummy_api net_dhcpv4_if_api = {
 	.iface_api.init = net_dhcpv4_iface_init,
 	.send = tester_send,
 };
