@@ -125,8 +125,10 @@ static const struct bt_mesh_comp comp = {
 };
 
 #if 0
-static int output_number(bt_mesh_output_action_t action, uint32_t number)
+static int output_numeric(bt_mesh_output_action_t action, uint8_t *numeric, size_t size)
 {
+	uint32_t number = sys_get_le32(numeric);
+
 	printk("OOB Number: %u\n", number);
 
 	board_output_number(action, number);
@@ -154,7 +156,7 @@ static const struct bt_mesh_prov prov = {
 #if 0
 	.output_size = 4,
 	.output_actions = BT_MESH_DISPLAY_NUMBER,
-	.output_number = output_number,
+	.output_numeric = output_numeric,
 #endif
 	.complete = prov_complete,
 	.reset = prov_reset,
