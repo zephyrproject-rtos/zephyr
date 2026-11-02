@@ -55,7 +55,7 @@ static int fake_eth_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api fake_eth_api = {
+static DEVICE_API(ethernet, fake_eth_api) = {
 	.iface_api.init = fake_eth_iface_init,
 	.get_capabilities = fake_eth_caps,
 	.send = fake_eth_send,

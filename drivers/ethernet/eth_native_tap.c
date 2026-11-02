@@ -492,7 +492,7 @@ static int set_config(const struct device *dev,
 	return ret;
 }
 
-static const struct ethernet_api eth_if_api = {
+static DEVICE_API(ethernet, eth_if_api) = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_native_tap_get_capabilities,

@@ -283,7 +283,7 @@ void dwmac_platform_link_speed_changed(const struct device *dev, enum phy_link_s
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface);
 #endif
-extern const struct ethernet_api dwmac_api;
+extern const struct ethernet_driver_api dwmac_api;
 
 /*
  * MAC Register Definitions

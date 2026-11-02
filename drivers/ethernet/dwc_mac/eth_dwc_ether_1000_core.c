@@ -735,7 +735,7 @@ int dwmac_probe(const struct device *dev)
 	return 0;
 }
 
-const struct ethernet_api dwmac_api = {
+DEVICE_API(ethernet, dwmac_api) = {
 	.iface_api.init = dwmac_iface_init,
 	.get_capabilities = dwmac_caps,
 	.set_config = dwmac_set_config,

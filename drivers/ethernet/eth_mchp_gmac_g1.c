@@ -1053,7 +1053,7 @@ static int eth_mchp_get_config(const struct device *dev, struct net_if *iface __
 	return retval;
 }
 
-static const struct ethernet_api eth_mchp_api = {
+static DEVICE_API(ethernet, eth_mchp_api) = {
 	.iface_api.init = eth_mchp_iface_init,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_mchp_get_stats,

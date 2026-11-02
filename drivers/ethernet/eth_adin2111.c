@@ -1518,7 +1518,7 @@ static int adin2111_init(const struct device *dev)
 	return ret;
 }
 
-static const struct ethernet_api adin2111_port_api = {
+static DEVICE_API(ethernet, adin2111_port_api) = {
 	.iface_api.init = adin2111_port_iface_init,
 	.get_capabilities = adin2111_port_get_capabilities,
 	.set_config = adin2111_port_set_config,

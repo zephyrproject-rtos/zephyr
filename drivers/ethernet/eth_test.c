@@ -125,7 +125,7 @@ static int vnd_ethernet_init(const struct device *dev)
 	return 0;
 }
 
-const struct ethernet_api vnd_ethernet_api = {
+DEVICE_API(ethernet, vnd_ethernet_api) = {
 	.iface_api.init = vnd_ethernet_iface_init,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = vnd_ethernet_get_stats,

@@ -238,7 +238,7 @@ static int eth_fake_set_config(const struct device *dev, struct net_if *iface,
 	return eth_filter_ret;
 }
 
-static const struct ethernet_api eth_fake_api_funcs = {
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
 	.iface_api.init = eth_fake_iface_init,
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
@@ -256,7 +256,7 @@ ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", NULL, NULL, &eth_fake_data2, NULL,
 /* The device still records a receive filter request, so that the tests can
  * see that it was not asked to filter.
  */
-static const struct ethernet_api eth_fake_no_filter_api_funcs = {
+static DEVICE_API(ethernet, eth_fake_no_filter_api_funcs) = {
 	.iface_api.init = eth_fake_iface_init,
 	.get_capabilities = eth_fake_get_no_capabilities,
 	.set_config = eth_fake_set_config,

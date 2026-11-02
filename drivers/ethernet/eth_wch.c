@@ -693,7 +693,7 @@ static int eth_wch_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_wch_iface_init,
 	.get_capabilities = eth_wch_get_capabilities,
 	.set_config = eth_wch_set_config,

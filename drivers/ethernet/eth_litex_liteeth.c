@@ -269,7 +269,7 @@ static enum ethernet_hw_caps eth_caps(const struct device *dev __unused,
 		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_iface_init,
 	.start = eth_start,
 	.stop = eth_stop,

@@ -17,7 +17,7 @@
 static inline struct net_stats_eth *eth_stats_get_common(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 
 	NET_ASSERT(dev != NULL);
 
