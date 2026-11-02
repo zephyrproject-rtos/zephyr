@@ -187,7 +187,7 @@ static int can_mspm0_canfd_init(const struct device *dev)
 
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)config->clock_subsys);
-	if (ret < 0 && ret != -ENOSYS) {
+	if (ret < 0 && ret != -ENOSYS && ret != -ENOTSUP) {
 		LOG_ERR("failed to enable CANCLK (err %d)", ret);
 		return ret;
 	}

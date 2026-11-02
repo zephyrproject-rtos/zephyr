@@ -25,5 +25,19 @@
 #define MSPM0_CLOCK_CLK_OUT		MSPM0_CLOCK(0x8, 0x0)
 /** @brief High frequency clock reference */
 #define MSPM0_CLOCK_HFCLK		MSPM0_CLOCK(0x9, 0x2)
+/** @brief High-speed clock reference (feeds MCLK) */
+#define MSPM0_CLOCK_HSCLK		MSPM0_CLOCK(0xA, 0x0)
+/** @brief System PLL block (reference mux, on/off, status) */
+#define MSPM0_CLOCK_SYSPLL       MSPM0_CLOCK(0xB, 0x0)
+/** @brief System PLL CLK0 output */
+#define MSPM0_CLOCK_SYSPLL_CLK0  MSPM0_CLOCK(0xC, 0x0)
+/** @brief System PLL CLK1 output */
+#define MSPM0_CLOCK_SYSPLL_CLK1  MSPM0_CLOCK(0xD, 0x0)
+/** @brief System PLL CLK2X output */
+#define MSPM0_CLOCK_SYSPLL_CLK2X MSPM0_CLOCK(0xE, 0x0)
+/** @brief MCLK2 output (MCLK divided by 1 or 2) */
+#define MSPM0_CLOCK_MCLK_DIV_2   MSPM0_CLOCK(0xF, 0x8)
+/** @brief MCLK4 output (MCLK divided by 1, 2, or 4) */
+#define MSPM0_CLOCK_MCLK_DIV_4   MSPM0_CLOCK(0x10, 0x8)
 
 #endif
