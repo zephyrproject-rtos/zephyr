@@ -301,8 +301,7 @@ static void central_test(void)
 	err = bt_conn_disconnect(connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	TEST_ASSERT(err == 0, "Cannot disconnect (%d)", err);
 	wait_for(&disconnected, "central disconnection");
-	bt_conn_unref(connection);
-	connection = NULL;
+	bt_conn_drop(&connection);
 	TEST_PASS("central GATT over Unix socket passed");
 }
 
@@ -324,8 +323,7 @@ static void peripheral_test(void)
 	}
 
 	wait_for(&disconnected, "peripheral disconnection");
-	bt_conn_unref(connection);
-	connection = NULL;
+	bt_conn_drop(&connection);
 	TEST_PASS("peripheral GATT over Unix socket passed");
 }
 

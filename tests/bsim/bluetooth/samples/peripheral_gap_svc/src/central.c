@@ -98,15 +98,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	struct bt_conn *conn_to_unref;
-
-	conn_to_unref = connected_conn;
-	connected_conn = NULL;
-	bt_conn_unref(conn_to_unref);
-
-	conn_to_unref = default_conn;
-	default_conn = NULL;
-	bt_conn_unref(conn_to_unref);
+	bt_conn_drop(&connected_conn);
+	bt_conn_drop(&default_conn);
 
 	start_scan();
 }
