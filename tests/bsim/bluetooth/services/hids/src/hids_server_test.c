@@ -106,8 +106,7 @@ static void server_disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(server_conn);
-	server_conn = NULL;
+	bt_conn_drop(&server_conn);
 
 	SET_FLAG(flag_disconnected);
 }

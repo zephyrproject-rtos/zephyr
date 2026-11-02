@@ -62,12 +62,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 void clear_g_conn(void)
 {
-	struct bt_conn *conn;
-
-	conn = g_conn;
-	g_conn = NULL;
-	TEST_ASSERT(conn, "Test error: No g_conn!\n");
-	bt_conn_unref(conn);
+	TEST_ASSERT(g_conn != NULL, "Test error: No g_conn!\n");
+	bt_conn_drop(&g_conn);
 }
 
 /* The following flags are raised by events and lowered by test code. */

@@ -327,8 +327,7 @@ static void send_cmd(uint16_t opcode, struct net_buf *cmd, struct net_buf **rsp)
 	if (rsp) {
 		*rsp = cmd_rsp;
 	} else {
-		net_buf_unref(cmd_rsp);
-		cmd_rsp = NULL;
+		net_buf_drop(&cmd_rsp);
 	}
 }
 
