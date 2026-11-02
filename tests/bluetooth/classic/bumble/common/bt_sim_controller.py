@@ -10,6 +10,7 @@ import logging
 import bt_sim_hci as sim_hci
 from bumble import hci, lmp
 from bumble.controller import Connection, Controller, SspState
+from bumble.core import PhysicalTransport
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,13 @@ ENCRYPTION_KEY_SIZE = 16
 
 # Set in the Authentication_Requirements of an IO capability exchange.
 MITM_PROTECTION_REQUIRED = 0x01
+
+# Set in Scan_Enable while a device answers pages.
+PAGE_SCAN_ENABLED = 0x02
+
+# Page_Timeout: its default, and its unit in seconds.
+DEFAULT_PAGE_TIMEOUT = 0x2000
+PAGE_TIMEOUT_UNIT = 0.000625
 
 
 @lmp.Packet.subclass
@@ -47,11 +55,18 @@ class bt_sim_controller(Controller):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.inquiry_task = None
+        self.page_tasks = {}
+        self.deferred_events = None
+        self._set_defaults()
+
+    def _set_defaults(self) -> None:
         self.iac_lap = [hci.HCI_GENERAL_INQUIRY_LAP]
         self.class_of_device = 0
         self.inquiry_mode = hci.HCI_STANDARD_INQUIRY_MODE
-        self.inquiry_task = None
-        self.deferred_events = None
+        self.page_timeout = DEFAULT_PAGE_TIMEOUT
+        self.classic_scan_enable = 0
+        self.lmp_features = type(self).lmp_features
         self.pending_authentication = set()
         self.pairing_reported = set()
 
@@ -150,15 +165,181 @@ class bt_sim_controller(Controller):
         See Bluetooth spec Vol 4, Part E - 7.3.2 Reset Command
         '''
         self._stop_inquiry()
+        for task in self.page_tasks.values():
+            task.cancel()
+        self.page_tasks.clear()
+        # The links go with the reset, which the peer sees as a disconnection or as
+        # the end of its connection attempt.
+        for peer_address, connection in self.classic_connections.items():
+            if connection.handle != 0 or connection.role == hci.Role.CENTRAL:
+                self.send_lmp_packet(
+                    peer_address,
+                    lmp.LmpDetach(hci.HCI_ErrorCode.REMOTE_USER_TERMINATED_CONNECTION_ERROR),
+                )
+            else:
+                self.send_lmp_packet(
+                    peer_address,
+                    lmp.LmpNotAccepted(
+                        lmp.Opcode.LMP_HOST_CONNECTION_REQ,
+                        hci.HCI_ErrorCode.CONNECTION_TIMEOUT_ERROR,
+                    ),
+                )
+        self.classic_connections.clear()
+        self.sco_links.clear()
+        self.classic_pending_commands.clear()
+        self._set_defaults()
         return super().on_hci_reset_command(command)
 
     def on_hci_write_page_timeout_command(
-        self, _command: hci.HCI_Write_Page_Timeout_Command
+        self, command: hci.HCI_Write_Page_Timeout_Command
     ) -> hci.HCI_StatusReturnParameters:
         '''
         See Bluetooth spec Vol 4, Part E - 7.3.16 Write Page Timeout Command
         '''
+        self.page_timeout = command.page_timeout
         return hci.HCI_StatusReturnParameters(hci.HCI_ErrorCode.SUCCESS)
+
+    def on_hci_create_connection_command(self, command: hci.HCI_Create_Connection_Command) -> None:
+        '''
+        See Bluetooth spec Vol 4, Part E - 7.1.5 Create Connection Command
+
+        Bumble connects whatever the peer's page scan. A real controller keeps
+        paging until Page Timeout, so a peer can still turn page scan on in time.
+        '''
+        if command.bd_addr in self.page_tasks or command.bd_addr in self.classic_connections:
+            self._send_hci_command_status(
+                hci.HCI_ErrorCode.CONNECTION_ALREADY_EXISTS_ERROR, command.op_code
+            )
+            return
+        self._send_hci_command_status(hci.HCI_COMMAND_STATUS_PENDING, command.op_code)
+        if self._answers_page(command.bd_addr):
+            self._connect(command)
+        else:
+            self.page_tasks[command.bd_addr] = asyncio.create_task(self._page(command))
+
+    def _answers_page(self, address: hci.Address) -> bool:
+        peer = self.link.find_classic_controller(address)
+        return peer is not None and bool(peer.classic_scan_enable & PAGE_SCAN_ENABLED)
+
+    async def _page(self, command: hci.HCI_Create_Connection_Command) -> None:
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + self.page_timeout * PAGE_TIMEOUT_UNIT
+        status = hci.HCI_ErrorCode.PAGE_TIMEOUT_ERROR
+        while loop.time() < deadline:
+            # The peer may have connected to this side meanwhile.
+            if command.bd_addr in self.classic_connections:
+                status = hci.HCI_ErrorCode.CONNECTION_ALREADY_EXISTS_ERROR
+                break
+            if self._answers_page(command.bd_addr):
+                del self.page_tasks[command.bd_addr]
+                self._connect(command)
+                return
+            await asyncio.sleep(0.01)
+        del self.page_tasks[command.bd_addr]
+        super().on_classic_connection_complete(command.bd_addr, status)
+
+    def _connect(self, command: hci.HCI_Create_Connection_Command) -> None:
+        connection = Connection(
+            controller=self,
+            handle=0,
+            role=hci.Role.CENTRAL,
+            self_address=self.public_address,
+            peer_address=command.bd_addr,
+            link=self.link,
+            transport=PhysicalTransport.BR_EDR,
+            link_type=hci.HCI_Connection_Complete_Event.LinkType.ACL,
+            classic_allow_role_switch=bool(command.allow_role_switch),
+        )
+        self.classic_connections[command.bd_addr] = connection
+
+        def on_response(future: asyncio.Future[int]) -> None:
+            if self.classic_connections.get(command.bd_addr) is connection:
+                self.on_classic_connection_complete(command.bd_addr, future.result())
+
+        future = self.send_lmp_packet(command.bd_addr, lmp.LmpHostConnectionReq())
+        future.add_done_callback(on_response)
+
+    def on_hci_create_connection_cancel_command(
+        self, command: hci.HCI_Create_Connection_Cancel_Command
+    ) -> hci.HCI_StatusAndAddressReturnParameters:
+        '''
+        See Bluetooth spec Vol 4, Part E - 7.1.7 Create Connection Cancel Command
+        '''
+        cancelled = hci.HCI_ErrorCode.UNKNOWN_CONNECTION_IDENTIFIER_ERROR
+        status = hci.HCI_ErrorCode.SUCCESS
+        task = self.page_tasks.pop(command.bd_addr, None)
+        connection = self.classic_connections.get(command.bd_addr)
+        if task is not None:
+            task.cancel()
+            super().on_classic_connection_complete(command.bd_addr, cancelled)
+        elif connection is None or connection.role != hci.Role.CENTRAL:
+            status = cancelled
+        elif connection.handle != 0:
+            status = hci.HCI_ErrorCode.CONNECTION_ALREADY_EXISTS_ERROR
+        else:
+            # The peer already answered the page: withdraw the request from its Host.
+            self.send_lmp_packet(
+                command.bd_addr,
+                lmp.LmpDetach(hci.HCI_ErrorCode.REMOTE_USER_TERMINATED_CONNECTION_ERROR),
+            )
+            self.on_classic_connection_complete(command.bd_addr, cancelled)
+        return hci.HCI_StatusAndAddressReturnParameters(status=status, bd_addr=command.bd_addr)
+
+    def on_classic_connection_request(self, peer_address: hci.Address, link_type: int) -> None:
+        if link_type == hci.HCI_Connection_Complete_Event.LinkType.ACL:
+            # Page scan may have gone off, or a reset come, while the page was on its way.
+            status = hci.HCI_ErrorCode.SUCCESS
+            if not self.classic_scan_enable & PAGE_SCAN_ENABLED:
+                status = hci.HCI_ErrorCode.PAGE_TIMEOUT_ERROR
+            elif peer_address in self.classic_connections:
+                status = hci.HCI_ErrorCode.CONNECTION_ALREADY_EXISTS_ERROR
+            if status != hci.HCI_ErrorCode.SUCCESS:
+                self.send_lmp_packet(
+                    peer_address, lmp.LmpNotAccepted(lmp.Opcode.LMP_HOST_CONNECTION_REQ, status)
+                )
+                return
+        super().on_classic_connection_request(peer_address, link_type)
+
+    def on_classic_connection_complete(self, peer_address: hci.Address, status: int) -> None:
+        # Bumble keeps the connection of a failed attempt, and would recreate one for
+        # an answer that arrives after a reset took the attempt away.
+        connection = self.classic_connections.get(peer_address)
+        if connection is None or connection.handle != 0:
+            return
+        if status != hci.HCI_ErrorCode.SUCCESS:
+            del self.classic_connections[peer_address]
+        super().on_classic_connection_complete(peer_address, status)
+
+    def classic_role_change(self, connection: Connection) -> None:
+        if self.classic_connections.get(connection.peer_address) is connection:
+            super().classic_role_change(connection)
+
+    def on_classic_disconnected(self, peer_address: hci.Address, reason: int) -> None:
+        # A detach during connection setup ends the attempt: no handle exists to report.
+        connection = self.classic_connections.get(peer_address)
+        if connection is not None and connection.handle == 0:
+            self.on_classic_connection_complete(peer_address, reason)
+            return
+        super().on_classic_disconnected(peer_address, reason)
+
+    def on_hci_reject_connection_request_command(
+        self, command: hci.HCI_Reject_Connection_Request_Command
+    ) -> None:
+        '''
+        See Bluetooth spec Vol 4, Part E - 7.1.9 Reject Connection Request Command
+        '''
+        connection = self.classic_connections.get(command.bd_addr)
+        if connection is None or connection.handle != 0 or connection.role != hci.Role.PERIPHERAL:
+            self._send_hci_command_status(
+                hci.HCI_ErrorCode.UNKNOWN_CONNECTION_IDENTIFIER_ERROR, command.op_code
+            )
+            return
+        self._send_hci_command_status(hci.HCI_COMMAND_STATUS_PENDING, command.op_code)
+        self.send_lmp_packet(
+            command.bd_addr,
+            lmp.LmpNotAccepted(lmp.Opcode.LMP_HOST_CONNECTION_REQ, command.reason),
+        )
+        self.on_classic_connection_complete(command.bd_addr, command.reason)
 
     def on_hci_read_default_link_policy_settings_command(
         self, _command: sim_hci.HCI_Read_Default_Link_Policy_Settings_Command
