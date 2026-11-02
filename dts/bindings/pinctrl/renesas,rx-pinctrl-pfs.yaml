@@ -96,13 +96,17 @@ child-binding:
       drive-strength:
         type: string
         enum:
-          - "low"
-          - "medium"
-          - "highspeed-high"
-          - "high"
-        default: "low"
+          - "DRV1"
+          - "DRV2"
+          - "DRV3"
+          - "DRV4"
+          - "DRV5"
+          - "DRV6"
+          - "DRV7"
+          - "DRV8"
+        default: "DRV1"
         description: |
-          The drive strength of a pin. The default value is low, as this
+          The drive strength of a pin. The default value is DRV1, as this
           is the power on reset value.
       renesas,analog-enable:
         type: boolean
