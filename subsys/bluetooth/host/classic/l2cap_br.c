@@ -1235,6 +1235,11 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 		return -ENOTCONN;
 	}
 
+	/* The TX processor holds this link back, so the PDU would only use up shared buffers */
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		return -ENOTCONN;
+	}
+
 	br_chan = CONTAINER_OF(ch, struct bt_l2cap_br_chan, chan);
 
 	LOG_DBG("chan %p buf %p len %u", br_chan, buf, buf->len);

@@ -193,11 +193,20 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	return key_size >= CONFIG_BT_BR_MIN_ENC_KEY_SIZE;
 }
 
-/* The flag comes first: TX completions run while the Host waits for the controller */
+/* The flag comes first: TX and its completions run while the Host waits for the controller */
 static void br_sec_refuse(struct bt_conn *conn)
 {
+	int err;
+
 	atomic_set_bit(conn->flags, BT_CONN_BR_SEC_REFUSED);
-	bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+
+	/* Unless the link is gone already, a failure leaves it silent until the application
+	 * disconnects it.
+	 */
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+	if ((err != 0) && (err != -ENOTCONN)) {
+		LOG_ERR("Failed to disconnect a refused link (err %d)", err);
+	}
 }
 
 bool bt_br_update_sec_level(struct bt_conn *conn)
