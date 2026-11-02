@@ -4033,6 +4033,53 @@ ZTEST(server_function_tests, test_http1_static_fs_read_eof)
 	test_http1_static_fs_short_read(0);
 }
 
+ZTEST(server_function_tests, test_http1_static_fs_grown_file)
+{
+	static const char http1_request[] =
+		"GET " MOCK_FS_FILE " HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"User-Agent: curl/7.68.0\r\n"
+		"Accept: */*\r\n"
+		"Connection: close\r\n"
+		"\r\n";
+	static const char expected_headers[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 64\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n";
+	const size_t headers_len = sizeof(expected_headers) - 1;
+	size_t offset = 0;
+	int ret;
+
+	/* The file holds more data than the size reported by stat, as if it
+	 * had grown after the server looked it up.
+	 */
+	setup_mock_fs(MOCK_FS_FILE_SIZE + 20U, 0);
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, headers_len + MOCK_FS_FILE_SIZE);
+	zassert_mem_equal(buf, expected_headers, headers_len,
+			  "Received headers don't match expected response");
+	zassert_mem_equal(buf + headers_len, MOCK_FS_CONTENT, MOCK_FS_FILE_SIZE,
+			  "Received body doesn't match the file content");
+	test_consume_data(&offset, headers_len + MOCK_FS_FILE_SIZE);
+
+	/* Collect everything up to the close: the body must end at the
+	 * announced Content-Length.
+	 */
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - offset, 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+		offset += ret;
+	} while (ret > 0);
+
+	zassert_equal(offset, 0, "%zu bytes sent past Content-Length", offset);
+}
+
 /* HPACK-encoded "GET /mismatch.html" request, encoded as
  * TEST_HTTP2_HEADERS_GET_STATIC_FS.
  */
