@@ -20,7 +20,7 @@ static int virtual_interface_set_config(uint64_t mgmt_request,
 	struct virtual_interface_req_params *params =
 				(struct virtual_interface_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct virtual_interface_config config = { 0 };
 	enum virtual_interface_config_type type;
 
@@ -96,7 +96,7 @@ static int virtual_interface_get_config(uint64_t mgmt_request,
 	struct virtual_interface_req_params *params =
 				(struct virtual_interface_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct virtual_interface_config config = { 0 };
 	enum virtual_interface_config_type type;
 	int ret = 0;

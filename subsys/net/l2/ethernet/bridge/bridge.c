@@ -781,7 +781,7 @@ static int bridge_iface_attach(struct net_if *br,
 	return -ENOTSUP;
 }
 
-static const struct virtual_interface_api bridge_iface_api = {
+static DEVICE_API(virtual_interface, bridge_iface_api) = {
 	.iface_api.init = bridge_iface_init,
 
 	.get_capabilities = bridge_get_capabilities,
