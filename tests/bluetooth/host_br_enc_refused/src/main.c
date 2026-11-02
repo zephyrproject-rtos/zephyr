@@ -4,9 +4,10 @@
  */
 
 /* The Host refuses an encrypted BR/EDR link at Encryption Change or Encryption Key
- * Refresh Complete when the key is too short or the link stays below the required
- * security level, and disconnects it. The peer can send until the link is down, and
- * nothing of that reaches L2CAP.
+ * Refresh Complete when the key is too short, the link stays below the required
+ * security level or encryption is turned off, and disconnects it. The peer can send
+ * until the link is down, and nothing of that reaches L2CAP. Nothing more goes out
+ * from the refusal on.
  */
 
 #include <errno.h>
@@ -62,7 +63,14 @@
 #define L2CAP_CONF_RSP 0x05U
 
 #define SMP_PAIRING_REQ 0x01U
+#define SMP_IDENT_INFO  0x08U
 #define SMP_DIST_ENC    0x01U
+#define SMP_DIST_ID     0x02U
+
+/* More PDUs than ACL_PKTS */
+#define CHAN_SEND_COUNT 6U
+
+#define BR_CHAN(_chan) CONTAINER_OF(_chan, struct bt_l2cap_br_chan, chan)
 
 /* Long enough for what the fake controller and the Host have to do */
 #define SETTLE         K_MSEC(10)
@@ -606,7 +614,7 @@ static void link_key_req(void)
 	bt_hci_recv(DEVICE_DT_INST_GET(0), buf);
 }
 
-static void encrypt_change(uint8_t encrypt)
+static void encrypt_change_status(uint8_t status, uint8_t encrypt)
 {
 	struct bt_hci_evt_encrypt_change *evt;
 	struct net_buf *buf;
@@ -614,10 +622,15 @@ static void encrypt_change(uint8_t encrypt)
 	buf = bt_buf_get_evt(BT_HCI_EVT_ENCRYPT_CHANGE, false, K_FOREVER);
 	evt_create(buf, BT_HCI_EVT_ENCRYPT_CHANGE, sizeof(*evt));
 	evt = net_buf_add(buf, sizeof(*evt));
-	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->status = status;
 	evt->handle = sys_cpu_to_le16(CONN_HANDLE);
 	evt->encrypt = encrypt;
 	bt_hci_recv(DEVICE_DT_INST_GET(0), buf);
+}
+
+static void encrypt_change(uint8_t encrypt)
+{
+	encrypt_change_status(BT_HCI_ERR_SUCCESS, encrypt);
 }
 
 static void key_refresh_complete(void)
@@ -717,6 +730,26 @@ static void peer_smp_pairing_req(uint8_t max_key_size)
 	peer_send(SMP_CID, req, sizeof(req));
 }
 
+/* A Pairing Request that has the peer distribute its identity key */
+static void peer_smp_pairing_req_id(void)
+{
+	const uint8_t req[] = {
+		SMP_PAIRING_REQ, 0U, 0U, 0U, KEY_SIZE_LONG, SMP_DIST_ID, 0U,
+	};
+
+	peer_send(SMP_CID, req, sizeof(req));
+}
+
+static void peer_smp_ident_info(void)
+{
+	uint8_t info[1U + sizeof(((struct bt_keys *)NULL)->irk.val)];
+
+	(void)memset(info, 0x55, sizeof(info));
+	info[0] = SMP_IDENT_INFO;
+
+	peer_send(SMP_CID, info, sizeof(info));
+}
+
 static void peer_connless_data(void)
 {
 	const uint8_t data[] = {
@@ -754,8 +787,9 @@ static uint32_t connless_recv_count;
 static uint32_t pairing_complete_count;
 static uint32_t security_changed_count;
 
-/* With accept_chan the server takes the connection request */
+/* With accept_chan the server takes the connection request, as this channel */
 static bool accept_chan;
+static struct bt_l2cap_chan *test_chan;
 
 static K_SEM_DEFINE(chan_connected_sem, 0, 1);
 static K_SEM_DEFINE(connected_sem, 0, 1);
@@ -805,6 +839,7 @@ static int server_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	(void)memset(&br_chan, 0, sizeof(br_chan));
 	br_chan.chan.ops = &ops;
 	br_chan.rx.mtu = 48U;
+	test_chan = &br_chan.chan;
 	*chan = &br_chan.chan;
 
 	return 0;
@@ -1342,6 +1377,269 @@ ZTEST(br_enc_refused, test_config_rsp_sent_after_refusal)
 	ncp_release();
 	k_sleep(SETTLE);
 	zexpect_not_equal(k_sem_take(&chan_connected_sem, K_NO_WAIT), 0, "Channel connected");
+
+	link_down();
+}
+
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, CHAN_SEND_COUNT, BT_L2CAP_BUF_SIZE(1U),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+
+/* An open channel with more to send than the controller takes without completions.
+ * Returns the number of ACL packets before these.
+ */
+static uint32_t chan_data_queued(void)
+{
+	uint32_t acl_count_start;
+
+	link_up();
+	encrypt_change(BT_HCI_ENCRYPTION_ON_BR_E0);
+	expect_kept();
+	chan_open();
+
+	acl_count_start = acl_count;
+	ncp_hold = true;
+	for (uint8_t i = 0U; i < CHAN_SEND_COUNT; i++) {
+		struct net_buf *buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+
+		zassert_not_null(buf, "No TX buffer");
+		net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+		net_buf_add_u8(buf, 0x55U);
+		zassert_ok(bt_l2cap_chan_send(test_chan, buf), "Send failed");
+	}
+	k_sleep(SETTLE);
+	zassert_not_equal(ncp_held, 0U, "Nothing sent");
+	zassert_false(sys_slist_is_empty(&BR_CHAN(test_chan)->_pdu_tx_queue), "Nothing queued");
+
+	return acl_count_start;
+}
+
+/* What is queued goes out once the controller has room again */
+ZTEST(br_enc_refused, test_queued_data_accepted)
+{
+	uint32_t acl_count_start = chan_data_queued();
+
+	ncp_release();
+	k_sleep(SETTLE);
+	zexpect_equal(acl_count - acl_count_start, CHAN_SEND_COUNT, "%u PDUs sent",
+		      acl_count - acl_count_start);
+
+	link_down();
+}
+
+/* But not on a link that is being refused */
+ZTEST(br_enc_refused, test_queued_data_refused)
+{
+	uint32_t acl_count_before;
+
+	(void)chan_data_queued();
+	acl_count_before = acl_count;
+
+	key_size = KEY_SIZE_SHORT;
+	disconnect_hold = true;
+	key_refresh_complete();
+	expect_refused();
+
+	ncp_release();
+	k_sleep(SETTLE);
+	zexpect_equal(acl_count, acl_count_before, "Data sent");
+
+	disconnect_respond();
+	k_sleep(SETTLE);
+	zexpect_equal(acl_count, acl_count_before, "Data sent");
+
+	link_down();
+}
+
+/* Encryption turned off with a channel open: the link is refused */
+ZTEST(br_enc_refused, test_encryption_off)
+{
+	uint32_t acl_count_before;
+
+	link_up();
+	encrypt_change(BT_HCI_ENCRYPTION_ON_BR_E0);
+	expect_kept();
+	chan_open();
+	acl_count_before = acl_count;
+	security_changed_count = 0U;
+
+	encrypt_change(0U);
+	expect_refused();
+	zexpect_equal(bt_conn_get_security(test_conn), BT_SECURITY_L1, "Security level %d",
+		      bt_conn_get_security(test_conn));
+
+	peer_chan_data();
+	peer_conn_req(L2CAP_SCID + 1U);
+	peer_connless_data();
+	k_sleep(SETTLE);
+	zexpect_equal(chan_recv_count, 0U, "%u PDUs received", chan_recv_count);
+	zexpect_equal(accept_count, 0U, "%u L2CAP accepts", accept_count);
+	zexpect_equal(connless_recv_count, 0U, "%u connectionless PDUs", connless_recv_count);
+	zexpect_equal(acl_count, acl_count_before, "Data sent");
+	zexpect_equal(security_changed_count, 0U, "%u security changes", security_changed_count);
+
+	link_down();
+}
+
+/* With data queued, while the controller has not taken the disconnection yet */
+ZTEST(br_enc_refused, test_encryption_off_queued_data)
+{
+	uint32_t acl_count_before;
+
+	(void)chan_data_queued();
+	acl_count_before = acl_count;
+
+	disconnect_hold = true;
+	encrypt_change(0U);
+	expect_refused();
+
+	ncp_release();
+	k_sleep(SETTLE);
+	zexpect_equal(acl_count, acl_count_before, "Data sent");
+
+	disconnect_respond();
+	link_down();
+}
+
+/* The controller rejects the disconnection: the link stays up and silent, and the
+ * application can still disconnect it.
+ */
+ZTEST(br_enc_refused, test_encryption_off_disconnect_rejected)
+{
+	uint32_t acl_count_before;
+	struct net_buf *buf;
+	int err;
+
+	(void)chan_data_queued();
+	acl_count_before = acl_count;
+
+	disconnect_hold = true;
+	encrypt_change(0U);
+	expect_refused();
+	disconnect_hold = false;
+	cmd_status(BT_HCI_OP_DISCONNECT, BT_HCI_ERR_CMD_DISALLOWED);
+	k_sleep(SETTLE);
+	zassert_equal(test_conn->state, BT_CONN_CONNECTED, "State %d", test_conn->state);
+
+	/* The channel takes no new data, which would stay queued */
+	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
+	zassert_not_null(buf, "No TX buffer");
+	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	net_buf_add_u8(buf, 0x55U);
+	err = bt_l2cap_chan_send(test_chan, buf);
+	zexpect_equal(err, -ENOTCONN, "Sending returned %d", err);
+	if (err != 0) {
+		net_buf_unref(buf);
+	}
+
+	ncp_release();
+	peer_chan_data();
+	k_sleep(SETTLE);
+	zexpect_equal(acl_count, acl_count_before, "Data sent");
+	zexpect_equal(chan_recv_count, 0U, "%u PDUs received", chan_recv_count);
+
+	zassert_ok(bt_conn_disconnect(test_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN),
+		   "Disconnecting failed");
+	expect_refused();
+	k_sleep(SETTLE);
+	zexpect_equal(acl_count, acl_count_before, "Data sent");
+
+	link_down();
+}
+
+/* Encryption coming back does not undo the refusal */
+ZTEST(br_enc_refused, test_encryption_off_and_on)
+{
+	link_up();
+	encrypt_change(BT_HCI_ENCRYPTION_ON_BR_E0);
+	expect_kept();
+	chan_open();
+
+	encrypt_change(0U);
+	expect_refused();
+	security_changed_count = 0U;
+
+	encrypt_change(BT_HCI_ENCRYPTION_ON_BR_E0);
+	k_sleep(SETTLE);
+	zexpect_equal(test_conn->encrypt, BT_HCI_ENCRYPTION_ON_BR_E0, "Encryption 0x%02x",
+		      test_conn->encrypt);
+	zexpect_equal(security_changed_count, 0U, "%u security changes", security_changed_count);
+	zexpect_equal(bt_conn_get_security(test_conn), BT_SECURITY_L1, "Security level %d",
+		      bt_conn_get_security(test_conn));
+
+	peer_chan_data();
+	k_sleep(SETTLE);
+	zexpect_equal(chan_recv_count, 0U, "%u PDUs received", chan_recv_count);
+
+	link_down();
+}
+
+/* SMP over BR/EDR that waits for the identity key of the peer */
+static bool smp_ident_info_stored(bool encryption_off)
+{
+	bt_addr_le_t le_addr;
+
+	bt_addr_le_copy_addr(&le_addr, &peer, BT_ADDR_LE_PUBLIC);
+
+	link_up();
+	link_key_add(BT_LINK_KEY_AUTHENTICATED);
+	encrypt_change(BT_HCI_ENCRYPTION_ON_BR_AES_CCM);
+	expect_kept();
+
+	peer_smp_pairing_req_id();
+	k_sleep(SETTLE);
+
+	if (encryption_off) {
+		encrypt_change(0U);
+		expect_refused();
+	}
+
+	peer_smp_ident_info();
+	k_sleep(SETTLE);
+
+	return bt_keys_find(BT_KEYS_IRK, BT_ID_DEFAULT, &le_addr) != NULL;
+}
+
+ZTEST(br_enc_refused, test_smp_ident_info_accepted)
+{
+	zexpect_true(smp_ident_info_stored(false), "Identity key not stored");
+
+	link_down();
+}
+
+ZTEST(br_enc_refused, test_smp_ident_info_encryption_off)
+{
+	zexpect_false(smp_ident_info_stored(true), "Identity key stored");
+
+	link_down();
+}
+
+/* An event with encryption off on a link that has none changes nothing */
+ZTEST(br_enc_refused, test_encryption_off_no_change)
+{
+	link_up();
+
+	encrypt_change(0U);
+	expect_kept();
+
+	link_down();
+}
+
+/* Nor does a failed change: the link stays encrypted */
+ZTEST(br_enc_refused, test_encryption_change_failed)
+{
+	link_up();
+	encrypt_change(BT_HCI_ENCRYPTION_ON_BR_E0);
+	expect_kept();
+	chan_open();
+
+	encrypt_change_status(BT_HCI_ERR_UNSPECIFIED, 0U);
+	expect_kept();
+	zexpect_equal(test_conn->encrypt, BT_HCI_ENCRYPTION_ON_BR_E0, "Encryption 0x%02x",
+		      test_conn->encrypt);
+
+	peer_chan_data();
+	k_sleep(SETTLE);
+	zexpect_equal(chan_recv_count, 1U, "%u PDUs received", chan_recv_count);
 
 	link_down();
 }
