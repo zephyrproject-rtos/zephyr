@@ -34,7 +34,9 @@ config BT_BR_MIN_ENC_KEY_SIZE
 	range 7 16
 	help
 	  This option sets the minimum encryption key size accepted during pairing
-	  for classic.
+	  for classic. The Host also sets it in a Controller that supports the HCI Set
+	  Min Encryption Key Size command, so that the Controller does not negotiate a
+	  shorter key.
 
 config BT_MAX_SCO_CONN
 	int "Maximum number of simultaneous SCO connections"
