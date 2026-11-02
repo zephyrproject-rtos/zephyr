@@ -88,6 +88,10 @@
 	};
 };
 
+&ioport2 {
+	status = "okay";
+};
+
 &ioport6 {
 	status = "okay";
 };
@@ -97,5 +101,19 @@
 };
 
 &ioportf {
+	status = "okay";
+};
+
+&group_irq_al1 {
+	status = "okay";
+};
+
+&spiclk {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };

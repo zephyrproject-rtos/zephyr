@@ -10,4 +10,14 @@
 				<RX_PSEL(RX_PSEL_SCI_12, 1, 15)>; /* RX */
 		};
 	};
+
+	spi1_default: spi1_default {
+		group1 {
+			psels = <RX_PSEL(RX_PSEL_SPI, 2, 7)>, /* MISO */
+				<RX_PSEL(RX_PSEL_SPI, 2, 6)>, /* MOSI */
+				<RX_PSEL(RX_PSEL_SPI, 2, 5)>, /* RSPCK */
+				<RX_PSEL(RX_PSEL_SPI, 2, 4)>; /* SSL */
+			drive-strength = "DRV4";
+		};
+	};
 };
