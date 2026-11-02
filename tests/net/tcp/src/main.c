@@ -129,6 +129,8 @@ static enum test_case_no {
 	TEST_CLIENT_WIN_SCALE = 28,
 	TEST_CLIENT_WIN_SCALE_NO_PEER = 29,
 	TEST_CLIENT_WIN_SCALE_CLAMP = 30,
+	TEST_SERVER_BUF_INHERIT = 31,
+	TEST_SERVER_WIN_SCALE = 32,
 } test_case_no;
 
 static enum test_state t_state;
@@ -143,6 +145,7 @@ static void handle_server_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_syn_ack_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_win_scale_client(struct net_pkt *pkt, struct tcphdr *th);
+static void handle_server_handshake(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
@@ -319,6 +322,12 @@ static uint8_t tester_options(uint8_t flags, const uint8_t **opts)
 		if ((flags & SYN) != 0) {
 			*opts = tcp_ws15_options;
 			return sizeof(tcp_ws15_options);
+		}
+		break;
+	case TEST_SERVER_WIN_SCALE:
+		if ((flags & SYN) != 0) {
+			*opts = tcp_options;
+			return sizeof(tcp_options);
 		}
 		break;
 	default:
@@ -742,6 +751,10 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case TEST_CLIENT_WIN_SCALE_NO_PEER:
 	case TEST_CLIENT_WIN_SCALE_CLAMP:
 		handle_win_scale_client(pkt, &th);
+		break;
+	case TEST_SERVER_BUF_INHERIT:
+	case TEST_SERVER_WIN_SCALE:
+		handle_server_handshake(pkt, &th);
 		break;
 	case TEST_ADVERTISED_RECV_WINDOW:
 		handle_advertised_recv_window(&th);
@@ -1551,6 +1564,143 @@ ZTEST(net_tcp, test_server_syn_ack_resend)
 	net_context_put(ctx);
 }
 
+static uint16_t srv_syn_ack_win;
+static int srv_syn_ack_shift;
+static uint16_t srv_ack_win;
+static uint32_t srv_ack_recv_win;
+
+/* Record the window and the window scale of the SYN-ACK and complete the
+ * handshake. In T_DATA_ACK, record the window of the ACK of data.
+ */
+static void handle_server_handshake(struct net_pkt *pkt, struct tcphdr *th)
+{
+	struct tcp *conn;
+	struct net_pkt *reply;
+	bool sack_perm;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN | ACK);
+		zassert_ok(read_tcp_options(pkt, th, &sack_perm, NULL, &srv_syn_ack_shift,
+					    NULL, NULL),
+			   "Cannot read TCP options");
+		srv_syn_ack_win = net_ntohs(th->th_win);
+		seq++;
+		ack = net_ntohl(th->th_seq) + 1U;
+		reply = prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), net_htons(PEER_PORT));
+		t_state = T_DATA;
+		break;
+	case T_DATA_ACK:
+		test_verify_flags(th, ACK);
+		srv_ack_win = net_ntohs(th->th_win);
+		conn = accepted_ctx->tcp;
+		srv_ack_recv_win = conn->recv_win;
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	default:
+		return;
+	}
+
+	zassert_not_null(reply, "Failed to prepare ACK");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send ACK");
+}
+
+/* Listen with the given buffer sizes, zero for none, send a SYN and return
+ * the listening context once the connection is accepted. The accepted
+ * context is in accepted_ctx.
+ */
+static struct net_context *server_accept(enum test_case_no tc, int rcvbuf, int sndbuf)
+{
+	struct net_context *ctx;
+	struct net_pkt *pkt;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = tc;
+	seq = ack = 0;
+	accepted_ctx = NULL;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	if (rcvbuf > 0) {
+		zassert_ok(net_context_set_option(ctx, NET_OPT_RCVBUF, &rcvbuf, sizeof(rcvbuf)),
+			   "Failed to set SO_RCVBUF");
+	}
+
+	if (sndbuf > 0) {
+		zassert_ok(net_context_set_option(ctx, NET_OPT_SNDBUF, &sndbuf, sizeof(sndbuf)),
+			   "Failed to set SO_SNDBUF");
+	}
+
+	ret = net_context_bind(ctx, (struct net_sockaddr *)&my_addr_s,
+			       sizeof(struct net_sockaddr_in));
+	zassert_equal(ret, 0, "Failed to bind net_context");
+
+	ret = net_context_listen(ctx, 1);
+	zassert_equal(ret, 0, "Failed to listen on net_context");
+
+	ret = net_context_accept(ctx, test_tcp_accept_cb, K_NO_WAIT, NULL);
+	zassert_equal(ret, 0, "Failed to set accept on net_context");
+
+	pkt = prepare_syn_packet(NET_AF_INET, net_htons(MY_PORT), net_htons(PEER_PORT));
+	zassert_not_null(pkt, "Failed to prepare SYN");
+	zassert_ok(net_recv_data(net_iface, pkt), "Failed to send SYN");
+
+	/* test_tcp_accept_cb releases the semaphore */
+	test_sem_take(K_MSEC(100), __LINE__);
+	zassert_not_null(accepted_ctx, "No connection accepted");
+
+	return ctx;
+}
+
+static void server_close(struct net_context *ctx)
+{
+	struct net_pkt *pkt;
+
+	pkt = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), net_htons(PEER_PORT));
+	zassert_not_null(pkt, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, pkt), "Failed to send RST");
+
+	k_msleep(10);
+
+	net_context_put(accepted_ctx);
+	net_context_put(ctx);
+}
+
+/* Test case scenario IPv4
+ *   set SO_RCVBUF and SO_SNDBUF on the listening socket,
+ *   send SYN,
+ *   expect a SYN ACK that advertises SO_RCVBUF,
+ *   expect the accepted connection to use both buffer sizes.
+ */
+ZTEST(net_tcp, test_server_buf_inherit)
+{
+	/* Below the window derived from the buffer pools in every scenario */
+	const int rcvbuf = 1000;
+	const int sndbuf = 1100;
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RCVBUF);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_SNDBUF);
+
+	ctx = server_accept(TEST_SERVER_BUF_INHERIT, rcvbuf, sndbuf);
+	conn = accepted_ctx->tcp;
+
+	zexpect_equal(srv_syn_ack_win, rcvbuf, "SYN-ACK window %u, SO_RCVBUF %d",
+		      srv_syn_ack_win, rcvbuf);
+	zexpect_equal(conn->recv_win_max, rcvbuf, "Receive window max %u, SO_RCVBUF %d",
+		      conn->recv_win_max, rcvbuf);
+	zexpect_equal(conn->send_win_max, sndbuf, "Send window max %u, SO_SNDBUF %d",
+		      conn->send_win_max, sndbuf);
+
+	server_close(ctx);
+}
+
 /* Shift count a TCP offering a window of win bytes has to use */
 static int test_win_shift(uint32_t win)
 {
@@ -1962,6 +2112,64 @@ ZTEST(net_tcp, test_client_win_scale_rcvbuf_before_connect)
 		      "ACK window %u for a window of %u", ws_ack_win, ws_ack_recv_win);
 
 	win_scale_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   set SO_RCVBUF above 64 KB on the listening socket,
+ *   send SYN with window scale,
+ *   expect SYN ACK with the window scale for SO_RCVBUF and a window that is
+ *   not scaled,
+ *   send ACK with a window field that is scaled,
+ *   send data,
+ *   expect both shift counts in use and the window of the ACK scaled.
+ */
+ZTEST(net_tcp, test_server_win_scale)
+{
+	const int rcvbuf = 400000;
+	struct net_context *ctx;
+	struct net_pkt *pkt;
+	struct tcp *conn;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_WINDOW_SCALE);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_CONTEXT_RCVBUF);
+
+	ctx = server_accept(TEST_SERVER_WIN_SCALE, rcvbuf, 0);
+	conn = accepted_ctx->tcp;
+
+	zexpect_equal(srv_syn_ack_shift, test_win_shift(rcvbuf),
+		      "Window scale %d in the SYN-ACK", srv_syn_ack_shift);
+	zexpect_equal(srv_syn_ack_win, UINT16_MAX, "SYN-ACK window %u", srv_syn_ack_win);
+	zexpect_true(conn->win_scale, "Window scaling not in use");
+	zexpect_equal(conn->send_win_shift, TESTER_WS_SHIFT, "Wrong send shift %u",
+		      conn->send_win_shift);
+	zexpect_equal(conn->recv_win_shift, test_win_shift(rcvbuf), "Wrong receive shift %u",
+		      conn->recv_win_shift);
+	zexpect_equal(conn->recv_win_max, rcvbuf, "Receive window max %u, SO_RCVBUF %d",
+		      conn->recv_win_max, rcvbuf);
+	zexpect_equal(conn->send_win,
+		      MIN((uint32_t)tester_win << TESTER_WS_SHIFT, conn->send_win_max),
+		      "Send window %u not scaled", conn->send_win);
+
+	zassert_ok(net_context_recv(accepted_ctx, test_tcp_recv_cb, K_NO_WAIT, NULL),
+		   "Failed to set the receive callback");
+
+	t_state = T_DATA_ACK;
+	pkt = prepare_data_packet(NET_AF_INET, net_htons(MY_PORT), net_htons(PEER_PORT), "A",
+				  1U);
+	zassert_not_null(pkt, "Failed to prepare data");
+	zassert_ok(net_recv_data(net_iface, pkt), "Failed to send data");
+
+	/* handle_server_handshake releases the semaphore on the ACK of the data */
+	test_sem_take(K_MSEC(100), __LINE__);
+	seq++;
+
+	zexpect_true(srv_ack_recv_win > UINT16_MAX, "Receive window %u fits 16 bits",
+		     srv_ack_recv_win);
+	zexpect_equal(srv_ack_win,
+		      DIV_ROUND_UP(srv_ack_recv_win, 1U << conn->recv_win_shift),
+		      "ACK window %u for a window of %u", srv_ack_win, srv_ack_recv_win);
+
+	server_close(ctx);
 }
 
 static void handle_advertised_recv_window(struct tcphdr *th)
