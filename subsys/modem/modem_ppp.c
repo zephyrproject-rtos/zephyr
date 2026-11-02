@@ -717,7 +717,7 @@ static void init_buf_stats(struct modem_ppp *ppp)
 }
 #endif
 
-const struct ppp_api modem_ppp_ppp_api = {
+DEVICE_API(ppp, modem_ppp_ppp_api) = {
 	.iface_api.init = modem_ppp_ppp_api_init,
 	.start = modem_ppp_ppp_api_start,
 	.stop = modem_ppp_ppp_api_stop,

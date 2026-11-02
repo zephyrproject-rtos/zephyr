@@ -17,12 +17,12 @@ static inline void ppp_stats_update_bytes_rx(struct net_if *iface,
 					     uint32_t bytes)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	struct net_stats_ppp *stats;
 
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ppp_api *)dev->api;
+	api = (const struct ppp_driver_api *)dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -42,12 +42,12 @@ static inline void ppp_stats_update_bytes_tx(struct net_if *iface,
 					     uint32_t bytes)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	struct net_stats_ppp *stats;
 
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ppp_api *)dev->api;
+	api = (const struct ppp_driver_api *)dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -66,12 +66,12 @@ static inline void ppp_stats_update_bytes_tx(struct net_if *iface,
 static inline void ppp_stats_update_pkts_rx(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	struct net_stats_ppp *stats;
 
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ppp_api *)dev->api;
+	api = (const struct ppp_driver_api *)dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -90,12 +90,12 @@ static inline void ppp_stats_update_pkts_rx(struct net_if *iface)
 static inline void ppp_stats_update_pkts_tx(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	struct net_stats_ppp *stats;
 
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ppp_api *)dev->api;
+	api = (const struct ppp_driver_api *)dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -114,12 +114,12 @@ static inline void ppp_stats_update_pkts_tx(struct net_if *iface)
 static inline void ppp_stats_update_drop_rx(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	struct net_stats_ppp *stats;
 
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ppp_api *)dev->api;
+	api = (const struct ppp_driver_api *)dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -138,12 +138,12 @@ static inline void ppp_stats_update_drop_rx(struct net_if *iface)
 static inline void ppp_stats_update_fcs_error_rx(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ppp_api *api;
+	const struct ppp_driver_api *api;
 	struct net_stats_ppp *stats;
 
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ppp_api *)dev->api;
+	api = (const struct ppp_driver_api *)dev->api;
 
 	NET_ASSERT(api != NULL);
 

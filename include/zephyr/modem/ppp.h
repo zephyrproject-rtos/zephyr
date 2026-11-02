@@ -182,7 +182,7 @@ int modem_ppp_init_internal(const struct device *dev);
  * @param _buf_size Size of partial PPP frame transmit and receive buffers
  */
 #define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _mtu, _buf_size)                            \
-	extern const struct ppp_api modem_ppp_ppp_api;                                             \
+	extern const struct ppp_driver_api modem_ppp_ppp_api;                                      \
                                                                                                    \
 	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
 	static uint8_t _CONCAT(_name, _transmit_buf)[_buf_size];                                   \
