@@ -3769,6 +3769,8 @@ static void read_supported_commands_complete(struct net_buf *buf)
 			  BT_CMD_TEST(cmds, 39, 2) != 0U);
 	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2,
 			  BT_CMD_TEST(cmds, 41, 5) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_SET_MIN_ENCRYPTION_KEY_SIZE,
+			  BT_CMD_TEST(cmds, 45, 7) != 0U);
 	atomic_set_bit_to(bt_dev.supported_commands,
 			  BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES,
 			  BT_READ_ALL_LOCAL_FEATURES_SUPPORTED(cmds) != 0U);

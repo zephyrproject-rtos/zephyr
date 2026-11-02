@@ -397,6 +397,8 @@ enum bt_dev_cmd {
 	BT_DEV_CMD_LE_SET_PRIVACY_MODE,
 	/* LE Read Buffer Size [v2] */
 	BT_DEV_CMD_LE_READ_BUFFER_SIZE_V2,
+	/* Set Min Encryption Key Size */
+	BT_DEV_CMD_SET_MIN_ENCRYPTION_KEY_SIZE,
 	/* LE Read All Local Supported Features */
 	BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES,
 	/* LE CS Read Local Supported Capabilities [v2] */
