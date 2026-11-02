@@ -106,10 +106,10 @@ struct virtual_interface_config {
 /** Virtual L2 API operations. */
 struct virtual_interface_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Get the virtual interface capabilities */
 	enum virtual_interface_caps (*get_capabilities)(struct net_if *iface);

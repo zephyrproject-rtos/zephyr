@@ -47,15 +47,15 @@ enum offloaded_net_if_types {
 };
 
 /**
- * @brief Extended net_if_api for offloaded ifaces/network devices, allowing handling of
+ * @brief Extended net_if_driver_api for offloaded ifaces/network devices, allowing handling of
  *	  admin up/down state changes
  */
 struct offloaded_if_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Enable or disable the device (in response to admin state change) */
 	int (*enable)(const struct net_if *iface, bool state);
@@ -64,7 +64,7 @@ struct offloaded_if_api {
 	enum offloaded_net_if_types (*get_type)(void);
 };
 
-/* Ensure offloaded_if_api is compatible with net_if_api */
+/* Ensure offloaded_if_api is compatible with net_if_driver_api */
 BUILD_ASSERT(offsetof(struct offloaded_if_api, iface_api) == 0);
 
 /**

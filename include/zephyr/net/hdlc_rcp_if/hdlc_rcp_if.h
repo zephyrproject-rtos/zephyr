@@ -33,7 +33,7 @@ struct hdlc_api {
 	/**
 	 * @brief HDLC interface API
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/**
 	 * @brief Register the Spinel HDLC RX callback.

@@ -26,10 +26,10 @@ extern "C" {
  */
 struct canbus_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Send a CAN packet by socket */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
