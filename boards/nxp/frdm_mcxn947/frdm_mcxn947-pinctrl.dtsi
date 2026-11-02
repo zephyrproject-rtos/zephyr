@@ -211,7 +211,7 @@
 				 <PIO0_5>,
 				 <PIO0_11>,
 				 <CLKOUT_PIO2_2>,
-				 <CLKOUT_PIO0_6>;
+				 <N9X_MUX('0', 6, 12)>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;
