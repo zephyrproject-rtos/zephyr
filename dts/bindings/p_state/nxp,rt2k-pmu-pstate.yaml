@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP RT2K PMU performance state (pstate): one of the run modes the PMU and the
+  power controller switch between.
+
+compatible: "nxp,rt2k-pmu-pstate"
+
+include:
+  - "zephyr,pstate.yaml"
+
+properties:
+  load-threshold:
+    required: true
+
+  cpu-frequency-level:
+    type: string
+    required: true
+    enum:
+      - low-leakage-run
+      - normal-run
+      - high-performance-run
+    description: |
+      Run mode of this performance state: Low Leakage Run, Normal Run or
+      High Performance Run.
