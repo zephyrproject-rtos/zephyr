@@ -3007,6 +3007,13 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("session %p chan %p disconnected", session, chan);
 
+	/* The channel was for the first pending request. Connecting again for it could fail the
+	 * same way, without end.
+	 */
+	if (session->state == SDP_CLIENT_CONNECTING) {
+		sdp_client_get_pending_req(session);
+	}
+
 	sdp_client_req_not_resolved(chan->conn, session);
 	sdp_client_cleanup(session);
 
