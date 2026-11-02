@@ -29,7 +29,8 @@ config BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 	default 32
 	range 0 512
 	help
-	  This option sets the maximum output description size in octets.
+	  This option sets the maximum output description size in octets,
+	  excluding the NULL terminator.
 
 endif # BT_VOCS
 
