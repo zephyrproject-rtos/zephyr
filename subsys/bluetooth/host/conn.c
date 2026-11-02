@@ -823,7 +823,39 @@ void bt_conn_cleanup_all(void)
 /* Returns true if L2CAP has data to send on this conn */
 static bool acl_has_data(struct bt_conn *conn)
 {
-	return sys_slist_peek_head(&conn->l2cap_data_ready) != NULL;
+	return conn->orphan_pdu != NULL || sys_slist_peek_head(&conn->l2cap_data_ready) != NULL;
+}
+
+bool bt_conn_tx_in_pdu(const struct bt_conn *conn, const sys_snode_t *chan_node)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	/* A channel stays at the head of the list until the last fragment of
+	 * its PDU has been sent.
+	 */
+	return conn->next_is_frag && conn->orphan_pdu == NULL &&
+	       sys_slist_peek_head(&conn->l2cap_data_ready) == chan_node;
+}
+
+void bt_conn_tx_orphan_pdu(struct bt_conn *conn, struct net_buf *pdu)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	__ASSERT_NO_MSG(pdu != NULL);
+	__ASSERT_NO_MSG(conn->orphan_pdu == NULL);
+
+	/* What a TX callback reports to may be gone with the channel */
+	make_closure(pdu->user_data, NULL, NULL);
+
+	conn->orphan_pdu = net_buf_take(&pdu);
+	bt_conn_data_ready(conn);
+}
+
+static void orphan_pdu_drop(struct bt_conn *conn)
+{
+	bt_dev_lock();
+	net_buf_drop(&conn->orphan_pdu);
+	bt_dev_unlock();
 }
 #endif	/* defined(CONFIG_BT_CONN) */
 
@@ -1044,6 +1076,24 @@ static void acl_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf,
 }
 #endif	/* defined(CONFIG_BT_CONN) */
 
+/* As for tx_data_pull */
+static struct net_buf *orphan_pdu_pull(struct bt_conn *conn, size_t amount, size_t *length)
+{
+	if (bt_buf_has_view(conn->orphan_pdu)) {
+		/* Destroying the view triggers the TX processor */
+		LOG_DBG("already have view on %p", conn->orphan_pdu);
+		return NULL;
+	}
+
+	*length = conn->orphan_pdu->len;
+
+	if (amount >= conn->orphan_pdu->len) {
+		return net_buf_take(&conn->orphan_pdu);
+	}
+
+	return net_buf_ref(conn->orphan_pdu);
+}
+
 static volatile bool _suspend_tx;
 
 #if defined(CONFIG_BT_TESTING)
@@ -1145,7 +1195,12 @@ void bt_conn_tx_processor(void)
 	/* now that we are guaranteed resources, we can pull data from the upper
 	 * layer (L2CAP or ISO).
 	 */
-	buf = conn->tx_data_pull(conn, conn_mtu(conn), &buf_len);
+	if (conn->orphan_pdu != NULL) {
+		buf = orphan_pdu_pull(conn, conn_mtu(conn), &buf_len);
+	} else {
+		buf = conn->tx_data_pull(conn, conn_mtu(conn), &buf_len);
+	}
+
 	if (!buf) {
 		/* Either there is no more data, or the buffer is already in-use
 		 * by a view on it. In both cases, the TX processor will be
@@ -2435,6 +2490,7 @@ static void deferred_work(struct k_work *work)
 		}
 #endif /* CONFIG_BT_CLASSIC */
 		bt_l2cap_disconnected(conn);
+		orphan_pdu_drop(conn);
 		notify_disconnected(conn);
 
 		/* Release the reference we took for the very first

@@ -323,7 +323,8 @@ struct bt_conn {
 
 	/* For ACL: List of data-ready L2 channels. Used by TX processor for
 	 * pulling HCI fragments. Channels are only ever removed from this list
-	 * when a whole PDU (ie all its frags) have been sent.
+	 * when a whole PDU (ie all its frags) have been sent, or when the rest
+	 * of the PDU moves to orphan_pdu.
 	 */
 	sys_slist_t		l2cap_data_ready;
 
@@ -342,6 +343,11 @@ struct bt_conn {
 
 	/* Next buffer should be an ACL/ISO HCI fragment */
 	bool			next_is_frag;
+
+	/* For ACL: the rest of a PDU whose L2CAP channel is gone. Sent ahead of
+	 * anything else, see bt_conn_tx_orphan_pdu().
+	 */
+	struct net_buf		*orphan_pdu;
 
 	/* Must be at the end so that everything else in the structure can be
 	 * memset to zero without affecting the ref.
@@ -611,3 +617,15 @@ void bt_conn_tx_processor(void);
  * - unref the conn when popping the conn from the slist
  */
 void bt_conn_data_ready(struct bt_conn *conn);
+
+/* Whether the L2CAP channel with this node on conn->l2cap_data_ready is in the
+ * middle of sending a PDU. The host lock must be held.
+ */
+bool bt_conn_tx_in_pdu(const struct bt_conn *conn, const sys_snode_t *chan_node);
+
+/* For an L2CAP channel that goes away in the middle of sending a PDU: the rest
+ * of it is sent all the same, with a reference to it moved in here, as all
+ * fragments of a PDU go to the Controller before any other fragment of the
+ * logical link (Core Vol 3, Part A, 7.2.1). The host lock must be held.
+ */
+void bt_conn_tx_orphan_pdu(struct bt_conn *conn, struct net_buf *pdu);
