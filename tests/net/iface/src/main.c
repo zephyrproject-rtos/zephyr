@@ -1899,4 +1899,18 @@ ZTEST(net_iface, test_ipv4_config_put)
 	net_if_up(iface3);
 }
 
+ZTEST(net_iface, test_device_api_classes)
+{
+	const struct device *dummy_dev = net_if_get_device(iface1);
+	const struct device *eth_dev = net_if_get_device(eth_iface);
+
+	zassert_true(DEVICE_API_IS(net_if, dummy_dev));
+	zassert_true(DEVICE_API_IS(dummy, dummy_dev));
+	zassert_false(DEVICE_API_IS(ethernet, dummy_dev));
+
+	zassert_true(DEVICE_API_IS(net_if, eth_dev));
+	zassert_true(DEVICE_API_IS(ethernet, eth_dev));
+	zassert_false(DEVICE_API_IS(dummy, eth_dev));
+}
+
 ZTEST_SUITE(net_iface, NULL, iface_setup, NULL, NULL, iface_teardown);
