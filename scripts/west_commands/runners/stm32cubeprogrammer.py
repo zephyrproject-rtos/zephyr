@@ -73,10 +73,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         self._reset = reset_system
 
         if extload:
-            p = (
-                STM32CubeProgrammerBinaryRunner._get_stm32cubeprogrammer_path().parent.resolve()
-                / 'ExternalLoader'
-            )
+            p = self._cli.parent.resolve() / 'ExternalLoader'
             self._extload = ['-el', str(p / extload)]
         else:
             self._extload = []
