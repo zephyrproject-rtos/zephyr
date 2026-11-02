@@ -1,0 +1,31 @@
+# Copyright (c) 2021-2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_ELAN_EM32
+	bool "Elan USB device controller driver"
+	depends on DT_HAS_ELAN_EM32_USBD_ENABLED
+	default y
+	help
+	  EM32 USB device controller driver.
+
+if UDC_ELAN_EM32
+
+config UDC_EM32_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 4096
+	help
+	  ELAN USB device controller driver internal thread stack size.
+
+config UDC_EM32_THREAD_PRIORITY
+	int "ELAN USB controller driver thread priority"
+	default 8
+	help
+	  ELAN USB device controller driver thread priority.
+
+config UDC_EM32_MSG_QUEUE_SIZE
+	int "UDC EM32 message queue size"
+	default 32
+	help
+	  Maximum number of messages the driver can queue for interrupt bottom half processing.
+
+endif # UDC_ELAN_EM32
