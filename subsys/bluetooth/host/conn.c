@@ -1423,29 +1423,53 @@ static struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
 
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
+	static struct k_spinlock state_lock;
 	bt_conn_state_t old_state;
+	k_spinlock_key_t key;
 
 	LOG_DBG("%s -> %s", state2str(conn->state), state2str(state));
 
-	if (conn->state == state) {
+	/* Application threads, bt_disable() and the Bluetooth work queue all
+	 * get here. Only one of them gets to act on a transition, and the
+	 * reference for the state is held as soon as the others can see the
+	 * state, or it is dropped twice or before it is taken.
+	 */
+	key = k_spin_lock(&state_lock);
+	old_state = conn->state;
+	conn->state = state;
+
+	if (old_state == state) {
+		k_spin_unlock(&state_lock, key);
 		LOG_WRN("no transition %s", state2str(state));
 		return;
 	}
 
-	old_state = conn->state;
-	conn->state = state;
+	/* Take a reference for the first state transition after
+	 * bt_conn_add_le() and keep it until reaching DISCONNECTED
+	 * again. The caller holds a reference, so the count is not zero,
+	 * and bt_conn_ref() is not for here: its logging can block.
+	 */
+	if (old_state == BT_CONN_DISCONNECTED && !bt_conn_is_iso(conn)) {
+		__ASSERT(atomic_get(&conn->ref) != 0, "Invalid conn %p", conn);
+
+		(void)atomic_inc(&conn->ref);
+	}
+
+#if defined(CONFIG_BT_CENTRAL)
+	/* Armed together with the state: the exit actions of a transition
+	 * that overtakes the entry actions below then find it armed and
+	 * cancel it, instead of it being armed on an object being torn down.
+	 */
+	if (state == BT_CONN_INITIATING && bt_conn_is_le(conn) &&
+	    bt_dev.create_param.timeout != 0U) {
+		(void)bt_work_schedule(&conn->deferred_work,
+				       K_MSEC(10 * bt_dev.create_param.timeout));
+	}
+#endif /* CONFIG_BT_CENTRAL */
+	k_spin_unlock(&state_lock, key);
 
 	/* Actions needed for exiting the old state */
 	switch (old_state) {
-	case BT_CONN_DISCONNECTED:
-		/* Take a reference for the first state transition after
-		 * bt_conn_add_le() and keep it until reaching DISCONNECTED
-		 * again.
-		 */
-		if (!bt_conn_is_iso(conn)) {
-			bt_conn_ref(conn);
-		}
-		break;
 	case BT_CONN_INITIATING:
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) && bt_conn_is_le(conn)) {
 			k_work_cancel_delayable(&conn->deferred_work);
@@ -1456,7 +1480,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	}
 
 	/* Actions needed for entering the new state */
-	switch (conn->state) {
+	switch (state) {
 	case BT_CONN_CONNECTED:
 		if (bt_conn_is_sco(conn)) {
 			if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
@@ -1592,20 +1616,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	case BT_CONN_ADV_DIR_CONNECTABLE:
 		break;
 	case BT_CONN_INITIATING:
-		if (bt_conn_is_sco(conn)) {
-			break;
-		}
-		/*
-		 * Timer is needed only for LE. For other link types controller
-		 * will handle connection timeout.
+		/* The LE timeout is armed with the state. For other link types
+		 * the controller handles the connection timeout.
 		 */
-#if defined(CONFIG_BT_CENTRAL)
-		if (bt_conn_is_le(conn) && bt_dev.create_param.timeout != 0U) {
-			bt_work_schedule(&conn->deferred_work,
-					 K_MSEC(10 * bt_dev.create_param.timeout));
-		}
-#endif /* CONFIG_BT_CENTRAL */
-
 		break;
 	case BT_CONN_DISCONNECTING:
 		break;
