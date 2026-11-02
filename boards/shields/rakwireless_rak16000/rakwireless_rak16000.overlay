@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * RAK16000 is a TI INA219BID on the WisBlock IO slot I2C bus.
+ * The default 7-bit address is 0x41. The module shunt is 100 milliohm,
+ * and the current LSB of 100 uA matches the 0 to 3 A range.
+ * The module supply is the base 3V3_S rail, switched by WisBlock IO2.
+ */
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	ina219_rak16000: ina219@41 {
+		compatible = "ti,ina219";
+		reg = <0x41>;
+		shunt-milliohm = <100>;
+		lsb-microamp = <100>;
+	};
+};
