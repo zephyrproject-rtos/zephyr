@@ -133,7 +133,12 @@ static int shell_ssh_write(const struct shell_transport *transport,
 
 	ret = ssh_channel_write(sh_ssh->ssh_channel, data, length);
 	if (ret < 0) {
-		return ret;
+		/* The channel is closed or detached: discard the output so
+		 * that the shell thread does not wait for room in a buffer
+		 * that is never drained again.
+		 */
+		*cnt = length;
+		return 0;
 	}
 
 	*cnt = ret;
@@ -326,6 +331,18 @@ static int sshd_channel_event_callback(struct ssh_channel *channel,
 	case SSH_CHANNEL_EVENT_CLOSED:
 		LOG_INF("Server channel closed");
 		if (ctx->sh != NULL) {
+			struct shell_ssh *sh_ssh = ctx->ssh;
+
+			/* The shell thread may be waiting for room in the channel
+			 * TX buffer, which is never drained again. Detach the
+			 * channel so that further output is discarded, and wake
+			 * the thread so that it can handle the uninit request.
+			 */
+			sh_ssh->ssh_channel = NULL;
+			if (sh_ssh->handler != NULL) {
+				sh_ssh->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_ssh->context);
+			}
+
 			shell_uninit(ctx->sh, NULL);
 			ssh_server_shell_instance_free(ctx->sh);
 			ctx->sh = NULL;
