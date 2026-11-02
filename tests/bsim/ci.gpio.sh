@@ -10,5 +10,7 @@ cd ${ZEPHYR_BASE}
 
 set -uex
 
+TWISTER_OPTIONS="-vv --fixture bsim_multi_test --no-clean --force-color --inline-logs"
+
 ${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/drivers/gpio/ \
-  --force-color --inline-logs -vv --fixture bsim_multi_test -O twister-out-gpio
+   ${TWISTER_OPTIONS} -O twister-out-gpio
