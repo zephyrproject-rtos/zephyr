@@ -1,0 +1,15 @@
+# Copyright (c) 2026 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+module = IT51XXX_PSA_CRYPTO
+module-str = it51xxx-psa-crypto
+source "subsys/logging/Kconfig.template.log_config"
+
+config IT51XXX_PSA_CRYPTO
+	bool "ITE IT51XXX PSA crypto device driver"
+	depends on DT_HAS_ITE_IT51XXX_CRYPTO_ENABLED
+	depends on PSA_CRYPTO
+	select SOC_IT51XXX_HW_CRYPTO_ACCELERATE
+	default y
+	help
+	  This option enables the it51xxx psa crypto driver.
