@@ -449,7 +449,6 @@ static int video_shell_print_frmival(const struct shell *sh, const struct device
 	struct video_frmival_enum fie = {.format = &fmt};
 
 	for (fie.index = 0; video_enum_frmival(dev, &fie) == 0; fie.index++) {
-
 		switch (fie.type) {
 		case VIDEO_FRMIVAL_TYPE_DISCRETE:
 			shell_print(sh, "\t\t\tInterval: "
@@ -468,7 +467,7 @@ static int video_shell_print_frmival(const struct shell *sh, const struct device
 			break;
 		default:
 			shell_error(sh, "Invalid type 0x%x", fie.type);
-			break;
+			return -EINVAL;
 		}
 	}
 
