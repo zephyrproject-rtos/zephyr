@@ -23,3 +23,12 @@ module-str = LED player
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # LED_PLAYER
+
+config STATUS_LED
+	bool "Status LED"
+	depends on LED_PLAYER
+	help
+	  Report statuses on a single LED, with one LED player animation per
+	  status. The animation of the active status with the highest priority
+	  is played, for example to show that the device is pairing, then that
+	  the pairing has succeeded or failed.
