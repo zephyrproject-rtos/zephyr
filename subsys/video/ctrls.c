@@ -97,6 +97,7 @@ int video_get_ctrl(const struct device *dev, struct video_control *control)
 	struct video_ctrl *ctrl = NULL;
 
 	if (dev == NULL || control == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)control);
 		return -EINVAL;
 	}
 
@@ -141,6 +142,7 @@ int video_set_ctrl(const struct device *dev, struct video_control *control)
 	int64_t val64 = 0;
 
 	if (dev == NULL || control == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)control);
 		return -EINVAL;
 	}
 
@@ -364,6 +366,7 @@ int video_query_ctrl(struct video_ctrl_query *cq)
 	struct video_ctrl *ctrl = NULL;
 
 	if (cq == NULL || cq->dev == NULL) {
+		LOG_ERR("Invalid parameters (%p)", (void *)cq);
 		return -EINVAL;
 	}
 
@@ -410,7 +413,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	int ret;
 
 	if (cq == NULL || cq->dev == NULL) {
-		LOG_ERR("%s - Invalid parameter given", __func__);
+		LOG_ERR("Invalid parameters (%p)", (void *)cq);
 		return;
 	}
 
