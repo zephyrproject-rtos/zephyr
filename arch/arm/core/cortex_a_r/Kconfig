@@ -148,9 +148,12 @@ config GEN_IRQ_VECTOR_TABLE
 	default n
 
 configdefault DCACHE_LINE_SIZE
+	default 64 if (CPU_CORTEX_A7 || CPU_CORTEX_A32) && \
+		!$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
 configdefault ICACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_A32 && !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 endif # CPU_AARCH32_CORTEX_A
