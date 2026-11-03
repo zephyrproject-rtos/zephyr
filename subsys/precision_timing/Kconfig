@@ -5,6 +5,7 @@
 
 config PRECISION_TIMING
 	bool "Precision timing infrastructure"
+	select REQUIRES_FULL_LIBC
 	help
 	  Enable protocol-neutral precision time arithmetic, clock operations,
 	  and a reusable proportional-integral controller.
