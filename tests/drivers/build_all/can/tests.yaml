@@ -82,6 +82,9 @@ tests:
   drivers.can.build_all.rcar_rscanfd:
     platform_allow:
       - rcar_ironhide_x5h/r8a78000/r52
+  drivers.can.build_all.realtek_ameba:
+    platform_allow:
+      - rtl8721f_evb
   drivers.can.build_all.realtek_bee:
     platform_allow:
       - rtl87x2g_evb_a/rtl8762gku
