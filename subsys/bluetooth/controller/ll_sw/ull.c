@@ -2445,6 +2445,42 @@ static bool is_prepare_dequeue_yield_skip(const struct lll_event *e)
 
 	return false;
 }
+
+/* Check if a deferred prepare is followed by a ready prepare of another state/role, which then
+ * uses the radio first. A deferred ISO Synchronized Receiver event is skipped only when it has
+ * drifted past the subevents of all its selected BIS, otherwise it yields in its prepare to a
+ * ready prepare that starts before it. Other deferred prepares are skipped when the preempt
+ * timeout of the ready prepare has expired, dispatching them first delays the ready prepare
+ * beyond its event overhead.
+ */
+static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_next)
+{
+	bool is_sync_iso;
+
+	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (e->prepare_param.defer == 0U)) {
+		return false;
+	}
+
+	is_sync_iso = (ull_sync_iso_lll_is_valid_get(e->prepare_param.param) != NULL);
+	if (is_sync_iso && !lll_sync_iso_is_defer_overflow(e)) {
+		return false;
+	}
+
+	while (e_next != NULL) {
+		const struct lll_event *iter = (void *)((uint8_t *)e_next + sizeof(void *));
+
+		/* The next prepare is the one dispatched instead */
+		if ((iter->is_aborted == 0U) && (iter->is_resume == 0U)) {
+			return (iter->prepare_param.defer == 0U) && (iter->is_yield == 0U) &&
+			       (iter->is_abort_cb != e->is_abort_cb) &&
+			       (is_sync_iso || lll_is_preempt_expired(iter));
+		}
+
+		e_next = *e_next;
+	}
+
+	return false;
+}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 void ull_prepare_dequeue(uint8_t caller_id)
@@ -2491,6 +2527,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	while (e_curr != NULL) {
 		struct lll_event *e;
 		uint8_t is_aborted;
+		bool is_skip = false;
 
 		/* Assert if we exceed iterations processing the prepare queue */
 		LL_ASSERT_ERR(loop);
@@ -2510,11 +2547,15 @@ void ull_prepare_dequeue(uint8_t caller_id)
 			   is_prepare_dequeue_yield_alt(e)) {
 			is_enqueued = 0U;
 		}
+
+		/* Skip a deferred prepare while a following ready prepare is due */
+		is_skip = (is_enqueued == 0U) && is_prepare_dequeue_defer_skip(e, *e_curr);
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 		/* Dequeue all aborted prepare and enqueue a normal prepare */
 		is_aborted = !!e->is_aborted;
-		if ((is_aborted != 0U) || ((is_enqueued == 0U) && (e->is_resume == 0U))) {
+		if ((is_aborted != 0U) ||
+		    ((is_enqueued == 0U) && (e->is_resume == 0U) && !is_skip)) {
 			void **head = e_curr;
 
 			/* Dequeue the aborted or normal prepare */

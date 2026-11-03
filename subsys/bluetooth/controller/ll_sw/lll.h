@@ -626,6 +626,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			struct lll_prepare_param *prepare_param,
 			uint8_t is_resume, uint8_t is_dequeue);
 bool lll_is_yield_early(const struct lll_event *e);
+bool lll_is_preempt_expired(const struct lll_event *e);
 
 struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      lll_abort_cb_t abort_cb,
