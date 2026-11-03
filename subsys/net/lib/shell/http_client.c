@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <strings.h>
 
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/http/client.h>
@@ -27,7 +28,9 @@ LOG_MODULE_DECLARE(net_shell);
 #define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
 #define HTTP_PORT_LEN     sizeof("65535")
-#define HTTP_HEADERS_LEN  3
+/* Custom headers given with -H, each followed by a CRLF entry, then the terminator. */
+#define HTTP_HEADERS_MAX  4
+#define HTTP_HEADERS_LEN  (2 * HTTP_HEADERS_MAX + 1)
 
 #if defined(CONFIG_HTTP_CLIENT)
 static K_SEM_DEFINE(l4_wait, 0, 1);
@@ -53,6 +56,9 @@ struct http_client_sh_ctx {
 	uint16_t payload_size;
 	uint8_t protocol[HTTP_PROTOCOL_LEN];
 	const char *headers[HTTP_HEADERS_LEN];
+	uint8_t num_headers;
+	/* A custom header sets the content type. */
+	bool has_content_type;
 	bool is_ssl_verifyhost;
 	int is_ssl_verifypeer;
 	int sec_tag;
@@ -495,9 +501,18 @@ static int http_client_args_to_params(struct http_client_sh_ctx *ctx, size_t arg
 			ctx->payload_size = strlen(state->optarg);
 			break;
 		case 'H':
-			ctx->headers[0] = state->optarg;
-			ctx->headers[1] = HTTP_CRLF;
-			ctx->headers[2] = NULL;
+			if (ctx->num_headers >= HTTP_HEADERS_MAX) {
+				PR_ERROR("At most %d custom headers\n", HTTP_HEADERS_MAX);
+				return -EINVAL;
+			}
+			if (strncasecmp(state->optarg,
+					"Content-Type:", sizeof("Content-Type:") - 1) == 0) {
+				ctx->has_content_type = true;
+			}
+			ctx->headers[2 * ctx->num_headers] = state->optarg;
+			ctx->headers[2 * ctx->num_headers + 1] = HTTP_CRLF;
+			ctx->num_headers++;
+			ctx->headers[2 * ctx->num_headers] = NULL;
 			break;
 		case 'p':
 			ret = snprintf(ctx->protocol, sizeof(ctx->protocol), "%s", state->optarg);
@@ -563,6 +578,9 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 	if (method == HTTP_POST || method == HTTP_PUT) {
 		req.payload = ctx->payload;
 		req.payload_len = ctx->payload_size;
+		if (ctx->payload != NULL && !ctx->has_content_type) {
+			req.content_type_value = "application/x-www-form-urlencoded";
+		}
 	}
 
 	ret = http_client_req(ctx->sockfd, &req, ctx->timeout, ctx);
