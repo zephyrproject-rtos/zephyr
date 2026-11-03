@@ -18,7 +18,10 @@
 #include <zephyr/precision_timing/precision_pi.h>
 #include <zephyr/precision_timing/precision_time.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+
+BUILD_ASSERT(IS_ENABLED(CONFIG_REQUIRES_FULL_LIBC), "Precision timing requires a full C library");
 
 #define zassert_double_close(actual, expected)                                                     \
 	zassert_true(fabs((actual) - (expected)) <= 0.000000001, "unexpected floating result")
