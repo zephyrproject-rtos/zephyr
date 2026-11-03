@@ -105,6 +105,9 @@
 		_clk_mux_list_start = .;
 		*(SORT(.clk_node_mux*))
 		_clk_mux_list_end = .;
+		_clk_virtual_list_start = .;
+		*(SORT(.clk_node_virtual*))
+		_clk_virtual_list_end = .;
 		_clk_leaf_list_start = .;
 		*(SORT(.clk_node_leaf*))
 		_clk_leaf_list_end = .;

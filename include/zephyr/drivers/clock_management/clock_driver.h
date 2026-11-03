@@ -144,6 +144,22 @@ struct clock_management_root_api {
 };
 
 /**
+ * @brief Virtual Clock Driver API
+ *
+ * This clock driver API is utilized for clocks that are configuration only.
+ * These clocks do not have a direct hardware representation and are used to
+ * manage software defined clocks via devicetree. A pointer to this structure
+ * should be passed to "CLOCK_DT_DEFINE_VIRTUAL" when defining the @ref clk
+ */
+struct clock_management_virtual_api {
+	/** Shared API. Must be first member of structure */
+	struct clock_management_shared_api shared;
+	/** Get configuration for clock this virtual clock might affect */
+	bool (*query)(const struct clk *clk_hw, const void *cfg,
+			   const struct clk *tgt_clk, void **data);
+};
+
+/**
  * @brief Configure a clock
  *
  * Configure a clock device using hardware specific data. Called by the clock
@@ -461,6 +477,38 @@ static inline int clock_mux_validate_parent(const struct clk *clk_hw,
 	return ret;
 }
 
+/**
+ * @brief Query a virtual clock for configuration settings
+ *
+ * Query a virtual clock to determine how a given configuration token
+ * would affect another clock in the system.
+ * @param clk_hw clock device to query
+ * @param cfg Configuration token for the virtual clock
+ * @param tgt_clk target clock configuration would affect
+ * @param data filled with hardware specific configuration data for @p tgt_clk
+ * @return true if @p cfg would affect @p tgt_clk, false otherwise
+ */
+static inline bool clock_virtual_query(const struct clk *clk_hw,
+				     const void *cfg,
+				     const struct clk *tgt_clk,
+				     void **data)
+{
+	bool ret;
+	const struct clock_management_virtual_api *api = clk_hw->api;
+
+	if (!(api) || !(api->query)) {
+		return false;
+	}
+	ret = api->query(clk_hw, cfg, tgt_clk, data);
+#ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
+	LOG_MODULE_DECLARE(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
+
+	LOG_DBG("Clock %s returned query %s for target clock %s", clk_hw->clk_name,
+		ret ? "true" : "false", tgt_clk->clk_name);
+#endif
+	return ret;
+}
+
 #else
 /* Stub functions to indicate recalc isn't supported */
 
@@ -482,6 +530,14 @@ static inline int clock_mux_configure_recalc(const struct clk *clk_hw, const voi
 
 static inline int clock_mux_validate_parent(const struct clk *clk_hw,
 					    clock_freq_t parent_freq, uint8_t new_idx)
+{
+	return -ENOTSUP;
+}
+
+static inline int clock_virtual_query(const struct clk *clk_hw,
+				     const void *cfg,
+				     const struct clk *tgt_clk,
+				     void **data)
 {
 	return -ENOTSUP;
 }

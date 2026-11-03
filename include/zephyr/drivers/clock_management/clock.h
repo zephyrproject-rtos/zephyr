@@ -61,6 +61,8 @@ typedef int32_t clock_freq_t;
 #define CLK_TYPE_ROOT 3
 /** @brief Identifier for a "leaf clock" with no children */
 #define CLK_TYPE_LEAF 4
+/** @brief Identifier for a "virtual clock" */
+#define CLK_TYPE_VIRTUAL 5
 
 /**
  * @brief Data used by the clock management subsystem
@@ -265,6 +267,18 @@ struct clk_mux_subsys_data {
  */
 #define Z_MUX_CLOCK_SECTION_NAME(clk_id)                                      \
 	_CONCAT(.clk_node_mux_, clk_id)
+
+/**
+ * @brief Section name for virtual clock object
+ *
+ * Section name for virtual clock object. Each clock object uses a named section
+ * so the linker can optimize unused clocks out of the build. Each type of clock
+ * is given a section name prefix, so that the type can be identified at
+ * runtime.
+ * @param clk_id  A globally unique identifier for the clock object.
+ */
+#define Z_VIRTUAL_CLOCK_SECTION_NAME(clk_id)                                  \
+	_CONCAT(.clk_node_virtual_, clk_id)
 
 /**
  * @brief Section name for leaf clock object
@@ -664,6 +678,66 @@ static inline clock_handle_t clk_handle_get(const struct clk *clk_hw)
 	Z_CLOCK_DEFINE_CHILDREN(clk_id, __VA_ARGS__);                          \
 	Z_CLOCK_DEFINE(clk_id, hw_data, api,                                   \
 			Z_ROOT_CLOCK_SECTION_NAME(clk_id),                     \
+			Z_CLOCK_CHILDREN_NAME(clk_id),                         \
+			STRINGIFY(clk_id));
+
+/**
+ * @brief Create a "virtual clock" object from a devicetree node identifier
+ *
+ * This macro defines a @ref clk. The global clock object's
+ * name as a C identifier is derived from the node's dependency ordinal.
+ *
+ * Note that users should not directly reference clock objects, but instead
+ * should use the clock management API. Clock objects are considered
+ * internal to the clock subsystem.
+ *
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id. For
+ * nodes defined in devicetree, this can be retrieved using
+ * `CLOCK_DT_CLK_ID(node_id)`. If absent, clock children will be initialized
+ * based on devicetree dependencies
+ *
+ * @param node_id The devicetree node identifier.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
+ */
+
+#define VIRTUAL_CLOCK_DT_DEFINE(node_id, hw_data, api, ...)                    \
+	Z_CLOCK_DT_DEFINE(node_id, hw_data, api,                                \
+			Z_VIRTUAL_CLOCK_SECTION_NAME(CLOCK_DT_CLK_ID(node_id)), \
+			__VA_ARGS__);
+
+/**
+ * @brief Like VIRTUAL_CLOCK_DT_DEFINE(), but uses an instance of `DT_DRV_COMPAT`
+ * compatible instead of a node identifier
+ * @param inst Instance number. The `node_id` argument to VIRTUAL_CLOCK_DT_DEFINE is
+ * set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by VIRTUAL_CLOCK_DT_DEFINE().
+ */
+#define VIRTUAL_CLOCK_DT_INST_DEFINE(inst, ...)                                   \
+	VIRTUAL_CLOCK_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Define a "virtual clock" object without a devicetree node identifier
+ *
+ * This macro defines a @ref clk. This clock does not correspond to a devicetree
+ * node, and thus cannot directly be configured by the user.
+ * Additional arguments to this macro are treated as children of the clock.
+ * children should be referenced using their @p clk_id, or node ordinal if
+ * defined by a devicetree node.
+ *
+ * @param clk_id Globally unique identifier for the clock object.
+ * @param hw_data Pointer to the clock's private data, which will be
+ * stored in the @ref clk.hw_data field. This data may be in ROM or RAM.
+ * @param api Pointer to the clock's API structure.
+ * @param ... Additional child clocks for this clock object.
+ */
+#define VIRTUAL_CLOCK_DEFINE(clk_id, hw_data, api, ...)                        \
+	Z_CLOCK_DEFINE_CHILDREN(clk_id, __VA_ARGS__);                          \
+	Z_CLOCK_DEFINE(clk_id, hw_data, api,                                   \
+			Z_VIRTUAL_CLOCK_SECTION_NAME(clk_id),                  \
 			Z_CLOCK_CHILDREN_NAME(clk_id),                         \
 			STRINGIFY(clk_id));
 
