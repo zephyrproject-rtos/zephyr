@@ -250,6 +250,12 @@ Modem
   notification each, so the default of 16 uses more RAM than the 256-byte heap it replaces.
   (:github:`120425`)
 
+* Sierra Wireless HL78xx: in builds without :kconfig:option:`CONFIG_HL78XX_GNSS`,
+  :c:func:`hl78xx_set_phone_functionality` now defers a request for full functionality made in
+  airplane mode on a modem session the driver has not configured: the driver runs its
+  initialization first, and the call returns 0 before the modem changes its functionality, as
+  it already did in builds with GNSS.
+
 OPAMP
 =====
 

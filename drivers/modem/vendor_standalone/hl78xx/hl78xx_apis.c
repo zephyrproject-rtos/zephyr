@@ -1197,18 +1197,21 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	struct hl78xx_evt event = {.type = HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE};
 	int ret = 0;
 
-#ifdef CONFIG_HL78XX_GNSS
+	/* A session that left airplane mode (or GNSS) before the init chain ran has an
+	 * unconfigured modem: a bare CFUN=1 would register without the identity, RAT and
+	 * power configuration, and hl78xx_on_cxreg() discards its registration URCs. The
+	 * restore path runs the init chain first. RUN_ENABLE_GPRS_SCRIPT is already the
+	 * deferred LTE restore path.
+	 */
 	if (!reset && functionality == HL78XX_FULLY_FUNCTIONAL &&
 	    data->status.phone_functionality.valid &&
 	    data->status.phone_functionality.functionality == HL78XX_AIRPLANE &&
 	    data->status.state != MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT &&
 	    data->status.boot.init_sequence_completed == false) {
-		/* RUN_ENABLE_GPRS_SCRIPT is already the deferred LTE restore path. */
-		LOG_INF("Restoring LTE after GNSS: delegating to modem_workq");
+		LOG_INF("Restoring LTE on an unconfigured session: delegating to modem_workq");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED);
 		return 0;
 	}
-#endif /* CONFIG_HL78XX_GNSS */
 	LOG_DBG("Setting phone functionality to %d with reset %d", functionality, reset);
 
 	/* Mark the transition in flight BEFORE the command goes out, not on its
