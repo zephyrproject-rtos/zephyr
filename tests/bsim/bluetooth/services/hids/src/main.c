@@ -8,8 +8,16 @@
 
 extern struct bst_test_list *test_hids_server_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_hids_client_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_hogp_device_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_hogp_report_host_install(struct bst_test_list *tests);
 
-bst_test_install_t test_installers[] = {test_hids_server_install, test_hids_client_install, NULL};
+bst_test_install_t test_installers[] = {
+	test_hids_server_install,
+	test_hids_client_install,
+	test_hogp_device_install,
+	test_hogp_report_host_install,
+	NULL,
+};
 
 int main(void)
 {
