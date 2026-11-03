@@ -1133,6 +1133,21 @@ def dt_node_parent(kconf, _, path):
 
     return node.parent.path if node.parent else ""
 
+def dt_first_enabled_cpu_path(kconf, _):
+    """
+    This function returns the path to the first CPU node (a /cpus/cpu@N
+    node, in devicetree order) whose status is "okay", or an empty string
+    if there is no such node.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    for node in edt.cpus:
+        if node.status == "okay":
+            return node.path
+
+    return ""
+
 def dt_gpio_hogs_enabled(kconf, _):
     """
     Return "y" if any GPIO hog node is enabled. Otherwise, return "n".
@@ -1408,6 +1423,7 @@ functions = {
         "dt_node_has_compat": (dt_node_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "dt_node_parent": (dt_node_parent, 1, 1),
+        "dt_first_enabled_cpu_path": (dt_first_enabled_cpu_path, 0, 0),
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
         "dt_node_array_prop_has_val": (dt_node_array_prop_has_val, 3, 3),
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
