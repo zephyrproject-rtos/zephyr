@@ -59,7 +59,7 @@
 #define BR_FEAT_ENH_RET       BIT(3)
 #define BR_OPT_RET_FC         0x04U
 #define BR_OPT_RET_FC_LEN     9U
-#define BR_TX_WINDOW          1U
+#define BR_TX_WINDOW          2U
 #define BR_MAX_TRANSMIT       1U
 #define BR_RET_TIMEOUT_MS     2000U
 #define BR_MONITOR_TIMEOUT_MS 12000U
@@ -84,7 +84,7 @@
 /* The Host waits for a buffer for up to the minimum RTX timeout */
 #define BUF_WAIT K_SECONDS(3)
 
-NET_BUF_POOL_FIXED_DEFINE(sdu_pool, 1, BT_L2CAP_SDU_CHAN_SEND_RESERVE + SDU_LEN,
+NET_BUF_POOL_FIXED_DEFINE(sdu_pool, 2, BT_L2CAP_SDU_CHAN_SEND_RESERVE + SDU_LEN,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 /* The PDUs that the Host sent and the test has not taken yet */
 NET_BUF_POOL_FIXED_DEFINE(sent_pool, 3, 2U * PEER_MTU, 0, NULL);
@@ -482,6 +482,17 @@ static void recv_disconn_req(uint16_t host_cid)
 	buf = sig_cmd(BT_L2CAP_DISCONN_REQ, PEER_IDENT);
 	net_buf_add_le16(buf, host_cid);
 	net_buf_add_le16(buf, PEER_CID);
+	recv_sig(buf);
+}
+
+/* The peer answers the disconnection of the channel */
+static void recv_disconn_rsp(uint8_t ident, uint16_t host_cid)
+{
+	struct net_buf *buf;
+
+	buf = sig_cmd(BT_L2CAP_DISCONN_RSP, ident);
+	net_buf_add_le16(buf, PEER_CID);
+	net_buf_add_le16(buf, host_cid);
 	recv_sig(buf);
 }
 
@@ -947,4 +958,90 @@ static ZTEST(host_l2cap_partial_pdu, test_br_eret_link_lost)
 
 	zassert_is_null(br_chan._pdu_buf);
 	zassert_equal(br_chan._pdu_remaining, 0U);
+}
+
+/* Disconnecting a channel finishes the K-frame in transmission and starts no later one */
+static ZTEST(host_l2cap_partial_pdu, test_le_local_disconnect)
+{
+	static struct bt_l2cap_le_chan le_chan;
+	uint8_t ident;
+
+	le_link_up();
+	le_chan_connect(&le_chan);
+	le_sdu_partly_sent(&le_chan);
+
+	zassert_ok(bt_l2cap_chan_disconnect(&le_chan.chan));
+
+	release();
+
+	le_expect_first_k_frame();
+	ident = tx_sig(BT_L2CAP_DISCONN_REQ);
+	expect_nothing_more();
+
+	recv_disconn_rsp(ident, le_chan.rx.cid);
+	zassert_equal(chan_disconnected_count, 1U);
+	expect_nothing_more();
+	expect_sdu_buf_free();
+}
+
+/* Basic mode: the PDU in transmission is finished and the next one in the queue not started */
+static ZTEST(host_l2cap_partial_pdu, test_br_basic_local_disconnect)
+{
+	struct net_buf *buf;
+	uint8_t ident;
+
+	br_link_up();
+	br_chan_connect(BT_L2CAP_BR_LINK_MODE_BASIC);
+
+	hold_tx();
+	zassert_true(bt_l2cap_chan_send(&br_chan.chan, sdu_alloc()) >= 0);
+	zassert_true(bt_l2cap_chan_send(&br_chan.chan, sdu_alloc()) >= 0);
+	expect_one_frag_out();
+
+	zassert_ok(bt_l2cap_chan_disconnect(&br_chan.chan));
+
+	release();
+
+	buf = tx(PEER_CID);
+	zassert_equal(buf->len, SDU_LEN);
+	expect_sdu_bytes(buf);
+	net_buf_unref(buf);
+
+	ident = tx_sig(BT_L2CAP_DISCONN_REQ);
+	expect_nothing_more();
+
+	recv_disconn_rsp(ident, br_chan.rx.cid);
+	zassert_equal(chan_disconnected_count, 1U);
+	expect_nothing_more();
+	expect_sdu_buf_free();
+}
+
+/* Enhanced Retransmission mode: the I-frame in transmission is finished and no later one started */
+static ZTEST(host_l2cap_partial_pdu, test_br_eret_local_disconnect)
+{
+	struct net_buf *buf;
+	uint8_t ident;
+
+	br_link_up();
+	br_chan_connect(BT_L2CAP_BR_LINK_MODE_ERET);
+
+	hold_tx();
+	zassert_true(bt_l2cap_chan_send(&br_chan.chan, sdu_alloc()) >= 0);
+	expect_one_frag_out();
+
+	zassert_ok(bt_l2cap_chan_disconnect(&br_chan.chan));
+
+	release();
+
+	buf = tx(PEER_CID);
+	zassert_true(buf->len > ACL_MAX_LEN, "I-frame of %u", buf->len);
+	net_buf_unref(buf);
+
+	ident = tx_sig(BT_L2CAP_DISCONN_REQ);
+	expect_nothing_more();
+
+	recv_disconn_rsp(ident, br_chan.rx.cid);
+	zassert_equal(chan_disconnected_count, 1U);
+	expect_nothing_more();
+	expect_sdu_buf_free();
 }
