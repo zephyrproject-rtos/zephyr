@@ -44,13 +44,19 @@ def test_family_series_layout(part, suffix, subdir):
     assert pinctrl_layout.resolve_subdir(part, suffix) == subdir
 
 
-def test_default_roots_and_clock_output():
+@pytest.mark.parametrize("zephyr_base", [None, "./", str(ZEPHYR)])
+def test_default_roots_and_clock_output(monkeypatch, zephyr_base):
+    monkeypatch.chdir(ZEPHYR)
+    if zephyr_base is None:
+        monkeypatch.delenv("ZEPHYR_BASE", raising=False)
+    else:
+        monkeypatch.setenv("ZEPHYR_BASE", zephyr_base)
     assert pinctrl_layout.output_root(".h") == (ZEPHYR / "include/zephyr/dt-bindings/pinctrl/nxp")
     assert pinctrl_layout.output_root(".dtsi") == ZEPHYR / "dts/arm/nxp"
     assert gen_ccm_rev3_ids.default_output(CONFIG) == (
         ZEPHYR / "include/zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h"
     )
-    assert dedup_pinctrl._find_zephyr(SCRIPTS) == ZEPHYR
+    assert dedup_pinctrl._find_zephyr(SCRIPTS).resolve() == ZEPHYR
 
 
 def test_all_committed_definitions_match_generated_paths():
