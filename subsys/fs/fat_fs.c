@@ -574,8 +574,6 @@ static const struct fs_file_system_t fatfs_fs = {
 	BUILD_ASSERT(DT_INST_PROP(inst, disk_access), "FATFS needs disk-access");                  \
 	BUILD_ASSERT(!DT_INST_PROP(inst, read_only),                                               \
 		     "READ_ONLY not supported for individual instances see FS_FATFS_READ_ONLY");   \
-	BUILD_ASSERT(!DT_INST_PROP(inst, no_format),                                               \
-		     "NO_FORMAT not supported for individual instanzes FS_FATFS_MKFS");            \
 	static FATFS fs_data_##inst;                                                               \
 	struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = {                                    \
 		.type = FS_FATFS,                                                                  \
