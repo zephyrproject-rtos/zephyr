@@ -50,14 +50,46 @@ void bt_sco_cleanup(struct bt_conn *sco_conn)
 	bt_conn_unref(sco_conn);
 }
 
+/* Held from the address lookup to the state change of a new object, by
+ * bt_conn_create_br() and for a connection request from the peer, so that
+ * only one of them adds an object for the peer. A mutex, as the lookup and
+ * the state change can block: both log.
+ */
+static K_MUTEX_DEFINE(create_lock);
+
+void bt_conn_br_create_lock(void)
+{
+	(void)k_mutex_lock(&create_lock, K_FOREVER);
+}
+
+void bt_conn_br_create_unlock(void)
+{
+	(void)k_mutex_unlock(&create_lock);
+}
+
+bool bt_conn_br_setup_abandoned(const struct bt_conn *conn)
+{
+	return conn->state == BT_CONN_INITIATING &&
+	       !atomic_test_bit(conn->flags, BT_CONN_BR_CREATE_PENDING) &&
+	       !atomic_test_bit(conn->flags, BT_CONN_BR_ACCEPT_PENDING);
+}
+
+void bt_conn_br_setup_cmd_failed(struct bt_conn *conn, int flag, uint8_t err)
+{
+	atomic_clear_bit(conn->flags, flag);
+
+	/* Only while it is being set up: a Connection Complete event can bring
+	 * it up meanwhile
+	 */
+	if (!atomic_test_bit(conn->flags, BT_CONN_BR_CREATE_PENDING) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_BR_ACCEPT_PENDING)) {
+		(void)bt_conn_set_disconnected_if(conn, BT_CONN_INITIATING, err);
+	}
+}
+
 struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 				  const struct bt_br_conn_param *param)
 {
-	/* Another call for the peer either finds the object or is found by the
-	 * lookup. A mutex, as the lookup and the state change can block: both
-	 * log.
-	 */
-	static K_MUTEX_DEFINE(create_lock);
 	struct bt_hci_cp_connect *cp;
 	struct bt_conn *conn;
 	struct net_buf *buf;
@@ -66,11 +98,14 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 		return NULL;
 	}
 
-	(void)k_mutex_lock(&create_lock, K_FOREVER);
+	/* Another call for the peer, or a connection request from it, either
+	 * finds the object or is found by the lookup
+	 */
+	bt_conn_br_create_lock();
 
 	conn = bt_conn_lookup_addr_br(peer);
 	if (conn) {
-		(void)k_mutex_unlock(&create_lock);
+		bt_conn_br_create_unlock();
 
 		switch (conn->state) {
 		case BT_CONN_INITIATING:
@@ -84,26 +119,22 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 
 	conn = bt_conn_add_br(peer);
 	if (!conn) {
-		(void)k_mutex_unlock(&create_lock);
+		bt_conn_br_create_unlock();
 		return NULL;
 	}
 
+	conn->role = BT_CONN_ROLE_CENTRAL;
+	atomic_set_bit(conn->flags, BT_CONN_BR_CREATE_PENDING);
 	/* From here on the address lookup finds the connection */
 	bt_conn_set_state(conn, BT_CONN_INITIATING);
-	conn->role = BT_CONN_ROLE_CENTRAL;
 
-	(void)k_mutex_unlock(&create_lock);
+	bt_conn_br_create_unlock();
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		/* A connection from the peer can have completed on the object
-		 * meanwhile, and another call can have been handed it
-		 */
-		if (conn->state == BT_CONN_INITIATING) {
-			conn->err = BT_HCI_ERR_UNSPECIFIED;
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		}
-
+		/* Another call can have been handed the object meanwhile */
+		bt_conn_br_setup_cmd_failed(conn, BT_CONN_BR_CREATE_PENDING,
+					    BT_HCI_ERR_UNSPECIFIED);
 		bt_conn_unref(conn);
 		return NULL;
 	}
@@ -119,14 +150,9 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	cp->clock_offset = 0x0000; /* TODO used cached clock offset */
 
 	if (bt_hci_cmd_send_sync(BT_HCI_OP_CONNECT, buf, NULL) < 0) {
-		/* A connection from the peer can have completed on the object
-		 * meanwhile, and another call can have been handed it
-		 */
-		if (conn->state == BT_CONN_INITIATING) {
-			conn->err = BT_HCI_ERR_UNSPECIFIED;
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		}
-
+		/* Another call can have been handed the object meanwhile */
+		bt_conn_br_setup_cmd_failed(conn, BT_CONN_BR_CREATE_PENDING,
+					    BT_HCI_ERR_UNSPECIFIED);
 		bt_conn_unref(conn);
 		return NULL;
 	}

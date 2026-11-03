@@ -1421,9 +1421,14 @@ static struct bt_conn *conn_lookup_handle(struct bt_conn *conns, size_t size,
 	return NULL;
 }
 
+/* Serializes the state transitions of all connections */
+static struct k_spinlock state_lock;
+
+static void conn_state_actions(struct bt_conn *conn, bt_conn_state_t old_state,
+			       bt_conn_state_t state);
+
 void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 {
-	static struct k_spinlock state_lock;
 	bt_conn_state_t old_state;
 	k_spinlock_key_t key;
 
@@ -1468,6 +1473,35 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 #endif /* CONFIG_BT_CENTRAL */
 	k_spin_unlock(&state_lock, key);
 
+	conn_state_actions(conn, old_state, state);
+}
+
+bool bt_conn_set_disconnected_if(struct bt_conn *conn, bt_conn_state_t from, uint8_t err)
+{
+	k_spinlock_key_t key;
+
+	__ASSERT_NO_MSG(from != BT_CONN_DISCONNECTED);
+
+	key = k_spin_lock(&state_lock);
+	if (conn->state != from) {
+		k_spin_unlock(&state_lock, key);
+		return false;
+	}
+
+	conn->err = err;
+	conn->state = BT_CONN_DISCONNECTED;
+	k_spin_unlock(&state_lock, key);
+
+	LOG_DBG("%s -> %s", state2str(from), state2str(BT_CONN_DISCONNECTED));
+
+	conn_state_actions(conn, from, BT_CONN_DISCONNECTED);
+
+	return true;
+}
+
+static void conn_state_actions(struct bt_conn *conn, bt_conn_state_t old_state,
+			       bt_conn_state_t state)
+{
 	/* Actions needed for exiting the old state */
 	switch (old_state) {
 	case BT_CONN_INITIATING:
@@ -2742,7 +2776,7 @@ struct bt_conn *bt_conn_lookup_addr_br(const bt_addr_t *peer)
 		/* The application can hold a reference to the object of a
 		 * connection that is gone while the peer connects again.
 		 */
-		if (conn->state == BT_CONN_DISCONNECTED) {
+		if (conn->state == BT_CONN_DISCONNECTED || bt_conn_br_setup_abandoned(conn)) {
 			bt_conn_unref(conn);
 			continue;
 		}
