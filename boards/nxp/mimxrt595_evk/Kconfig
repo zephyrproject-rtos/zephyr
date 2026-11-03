@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_MIMXRT595_EVK
-	select BOARD_EARLY_INIT_HOOK if BOARD_MIMXRT595_EVK_MIMXRT595S_CM33
+	select BOARD_EARLY_INIT_HOOK if \
+		BOARD_MIMXRT595_EVK_MIMXRT595S_CM33 || \
+		BOARD_MIMXRT595_EVK_MIMXRT595S_CM33_SRAM
 
 DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
 DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)
