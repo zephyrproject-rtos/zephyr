@@ -19,6 +19,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &sercom5;
 		zephyr,shell-uart = &sercom5;
+		zephyr,entropy = &trng;
 	};
 
 	aliases {
@@ -280,5 +281,9 @@
 	txpo = <0>;
 	pinctrl-0 = <&sercom5_uart_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
