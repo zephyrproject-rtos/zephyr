@@ -512,14 +512,14 @@ static int st7701_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Reset display failed! (%d)", ret);
 			return ret;
 		}
 
 		k_msleep(10);
-		ret = gpio_pin_set_dt(&cfg->reset, 1);
+		ret = gpio_pin_set_dt(&cfg->reset, 0);
 		if (ret < 0) {
 			LOG_ERR("Enable display failed! (%d)", ret);
 			return ret;
