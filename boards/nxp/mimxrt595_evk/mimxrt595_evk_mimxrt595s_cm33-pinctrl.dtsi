@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/imxrt/imxrt5xx/pinctrl/MIMXRT595SFFOC-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/nxp/imxrt/imxrt5xx/MIMXRT595SFFOC-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {

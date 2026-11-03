@@ -16,7 +16,7 @@ description: |
   would be invisible to them. Both identifiers are therefore packed into the one
   cell with IMX_CCM_CLK():
 
-      #include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
+      #include <zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h>
 
       lpuart0: serial@42190000 {
               compatible = "nxp,lpuart";
