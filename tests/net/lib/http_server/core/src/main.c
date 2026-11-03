@@ -1112,6 +1112,140 @@ ZTEST(server_function_tests, test_http1_static_upgrade_get)
 				HTTP2_FLAG_END_STREAM);
 }
 
+/* Send a request whose Upgrade the server ignores, followed by a GET for the
+ * static resource. The server must answer both requests over HTTP/1.1, with
+ * one response each.
+ */
+static void test_http1_upgrade_ignored(const char *request, const char *expected_response)
+{
+	static const char followup_request[] = "GET / HTTP/1.1\r\n"
+					       "Host: 127.0.0.1:8080\r\n"
+					       "\r\n";
+	static const char followup_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+	const size_t expected_len = strlen(expected_response);
+	const size_t total_len = expected_len + sizeof(followup_response) - 1;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	ret = zsock_send(client_fd, followup_request, sizeof(followup_request) - 1, 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, total_len);
+	zassert_mem_equal(buf, expected_response, expected_len,
+			  "Received data doesn't match expected response");
+	zassert_mem_equal(buf + expected_len, followup_response, sizeof(followup_response) - 1,
+			  "Received data doesn't match follow-up response");
+
+	/* Give any further response time to arrive */
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - offset, ZSOCK_MSG_DONTWAIT);
+	zassert_true(offset == total_len && ret < 0 && errno == EAGAIN,
+		     "Unexpected data after the responses");
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_unknown_get)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+
+	test_http1_upgrade_ignored("GET / HTTP/1.1\r\n"
+				   "Host: 127.0.0.1:8080\r\n"
+				   "Connection: Upgrade\r\n"
+				   "Upgrade: foo/1.0\r\n"
+				   "\r\n",
+				   expected_response);
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_websocket_disabled_get)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_HTTP_SERVER_WEBSOCKET);
+
+	test_http1_upgrade_ignored("GET / HTTP/1.1\r\n"
+				   "Host: 127.0.0.1:8080\r\n"
+				   "Connection: Upgrade\r\n"
+				   "Upgrade: websocket\r\n"
+				   "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+				   "Sec-WebSocket-Version: 13\r\n"
+				   "\r\n",
+				   expected_response);
+}
+
+ZTEST(server_function_tests, test_http1_upgrade_unknown_post)
+{
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+
+	test_http1_upgrade_ignored("POST /dynamic HTTP/1.1\r\n"
+				   "Host: 127.0.0.1:8080\r\n"
+				   "Connection: Upgrade\r\n"
+				   "Upgrade: foo/1.0\r\n"
+				   "Content-Length: 17\r\n"
+				   "\r\n"
+				   TEST_DYNAMIC_POST_PAYLOAD,
+				   expected_response);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http1_0_upgrade_ignored)
+{
+	static const char http1_request[] = "GET / HTTP/1.0\r\n"
+					    "Host: 127.0.0.1:8080\r\n"
+					    "Connection: Upgrade, HTTP2-Settings\r\n"
+					    "Upgrade: h2c\r\n"
+					    "HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+					    "\r\n";
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	/* The server closes the connection after the response to HTTP/1.0 */
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - 1 - offset, 0);
+		zassert_true(ret >= 0, "recv() failed (%d)", errno);
+		offset += (size_t)ret;
+	} while (ret > 0 && offset < sizeof(buf) - 1);
+
+	zassert_equal(offset, sizeof(expected_response) - 1, "Unexpected response length");
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
 ZTEST(server_function_tests, test_http1_static_get)
 {
 	static const char http1_request[] =
