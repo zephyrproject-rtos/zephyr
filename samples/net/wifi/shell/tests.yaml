@@ -121,6 +121,7 @@ tests:
       - esp32c5_devkitc/esp32c5/hpcore
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32c61_devkitc
+      - esp32s31_function_coreboard/esp32s31/hpcore
     integration_platforms:
       - esp32c6_devkitc/esp32c6/hpcore
   sample.net.wifi.siwx91x_offloaded:
