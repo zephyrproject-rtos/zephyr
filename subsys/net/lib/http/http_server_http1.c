@@ -1250,15 +1250,10 @@ int handle_http1_request(struct http_client_ctx *client)
 		client->data_len -= frag_headers_len;
 	}
 
+	/* An upgrade to a protocol that is not supported is ignored, and the
+	 * request is served over HTTP/1.1.
+	 */
 	if (client->has_upgrade_header) {
-		static const char upgrade_required[] =
-			"HTTP/1.1 426 Upgrade required\r\n"
-			"Upgrade: ";
-		static const char upgrade_msg[] =
-			"Content-Length: 13\r\n\r\n"
-			"Wrong upgrade";
-		const char *needed_upgrade = "h2c\r\n";
-
 		if (client->websocket_upgrade) {
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET)) {
 				detail = get_resource_detail(client->service, client->url_buffer,
@@ -1277,8 +1272,6 @@ int handle_http1_request(struct http_client_ctx *client)
 
 				return 0;
 			}
-
-			goto upgrade_not_found;
 		}
 
 		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
@@ -1288,30 +1281,6 @@ int handle_http1_request(struct http_client_ctx *client)
 			}
 
 			return 0;
-		}
-
-upgrade_not_found:
-		ret = http_server_sendall(client, upgrade_required,
-					  sizeof(upgrade_required) - 1);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			goto error;
-		}
-
-		client->http1_headers_sent = true;
-
-		ret = http_server_sendall(client, needed_upgrade,
-					  strlen(needed_upgrade));
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			goto error;
-		}
-
-		ret = http_server_sendall(client, upgrade_msg,
-					  sizeof(upgrade_msg) - 1);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-			goto error;
 		}
 	}
 
