@@ -1470,7 +1470,7 @@ static void adc_stm32_vrefint_enable_path(ADC_TypeDef *adc)
 				       path | LL_ADC_PATH_INTERNAL_VREFINT);
 
 #ifdef LL_ADC_DELAY_VREFINT_STAB_US
-	k_usleep(LL_ADC_DELAY_VREFINT_STAB_US);
+	k_busy_wait(LL_ADC_DELAY_VREFINT_STAB_US);
 #endif
 }
 
