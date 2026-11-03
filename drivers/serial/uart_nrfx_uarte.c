@@ -2837,14 +2837,14 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = dev->data;
-	bool already_enabled;
+	bool ref_owned;
 
 	pm_device_runtime_get(dev);
 
 	unsigned int key = irq_lock();
 
-	already_enabled = data->int_driven->tx_irq_enabled;
-	if (!already_enabled) {
+	ref_owned = data->int_driven->tx_irq_enabled || data->int_driven->disable_tx_irq;
+	if (!data->int_driven->tx_irq_enabled) {
 		data->int_driven->disable_tx_irq = false;
 		data->int_driven->tx_irq_enabled = true;
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
@@ -2852,7 +2852,7 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 
 	irq_unlock(key);
 
-	if (already_enabled) {
+	if (ref_owned) {
 		pm_device_runtime_put(dev);
 	}
 }
