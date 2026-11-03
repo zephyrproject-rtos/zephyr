@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI TCA9555 16-bit I2C GPIO expander. The device is register-compatible
+  with the PCA9555; use "nxp,pca9555" as a fallback compatible.
+
+compatible: "ti,tca9555"
+
+include: nxp,pca9555.yaml
