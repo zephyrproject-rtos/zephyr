@@ -21,35 +21,35 @@ ZTEST(airoc_wifi_connect_security, test_wep_maps_to_whd_wep_psk)
 ZTEST(airoc_wifi_connect_security, test_wpa_auto_personal_maps_to_whd_mixed)
 {
 	zassert_equal(WHD_SECURITY_WPA3_WPA2_PSK,
-		     convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL));
+		      convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL));
 }
 
 ZTEST(airoc_wifi_connect_security, test_psk_maps_to_whd_wpa2_aes_psk)
 {
 	zassert_equal(WHD_SECURITY_WPA2_AES_PSK,
-		     convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_PSK));
+		      convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_PSK));
 }
 
 ZTEST(airoc_wifi_connect_security, test_psk_sha256_maps_to_whd_wpa2_aes_psk_sha256)
 {
 	zassert_equal(WHD_SECURITY_WPA2_AES_PSK_SHA256,
-		     convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_PSK_SHA256));
+		      convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_PSK_SHA256));
 }
 
 ZTEST(airoc_wifi_connect_security, test_sae_maps_to_whd_wpa3_sae)
 {
 	zassert_equal(WHD_SECURITY_WPA3_SAE,
-		     convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_SAE));
+		      convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_SAE));
 }
 
 ZTEST(airoc_wifi_connect_security, test_wpa_psk_maps_to_whd_wpa_aes_psk)
 {
 	zassert_equal(WHD_SECURITY_WPA_AES_PSK,
-		     convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_WPA_PSK));
+		      convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_WPA_PSK));
 }
 
 ZTEST(airoc_wifi_connect_security, test_unsupported_security_returns_whd_unknown)
 {
 	zassert_equal(WHD_SECURITY_UNKNOWN,
-		     convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_EAP_TLS));
+		      convert_zephyr_security_to_whd(WIFI_SECURITY_TYPE_EAP_TLS));
 }
