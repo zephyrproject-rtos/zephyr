@@ -76,6 +76,7 @@ config UPDATEHUB_DTLS
 	select MBEDTLS_ENABLE_HEAP
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
+	select MBEDTLS_SSL_CLI_C if NET_NATIVE
 	help
 	  Enables DTLS communication between the UpdateHub
 	  client and the server
