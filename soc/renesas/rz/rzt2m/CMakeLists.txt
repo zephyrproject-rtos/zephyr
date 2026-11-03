@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
-# Copyright (c) 2025 Renesas Electronics Corporation
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources(
@@ -8,8 +8,8 @@ zephyr_sources(
   ../common/loader_program.S
 )
 
+zephyr_sources_ifdef(CONFIG_ARM_MPU mpu_regions.c)
+
 zephyr_include_directories(.)
 
-zephyr_linker_sources(SECTIONS sections.ld)
-
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_r/scripts/linker.ld CACHE INTERNAL "")
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/soc/renesas/rz/scripts/linker.ld CACHE INTERNAL "")

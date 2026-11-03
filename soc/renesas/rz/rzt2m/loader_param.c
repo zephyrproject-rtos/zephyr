@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #define DUMMY0_BMCFG_V       (0x00000000)
 #define BSC_FLG_xSPI_FLG     (0x00000000)
 #define LDR_ADDR_NML         (0x6000004C)
-#define LDR_SIZE_NML         (0x00006000)
+#define LDR_SIZE_NML         (0x0000C000)
 #define DEST_ADDR_NML        (0x00102000)
 #define DUMMY1               (0x00000000)
 #define DUMMY2               (0x00000000)
@@ -25,7 +25,7 @@
 #define DUMMY8               (0x00000000)
 #define DUMMY9               (0x00000000)
 #define DUMMY10_ACCESS_SPEED (0x00000006)
-#define CHECK_SUM            (0xE0A8)
+#define CHECK_SUM            (0x140A8)
 #define LOADER_PARAM_MAX     (19)
 
 #define __loader_param Z_GENERIC_SECTION(.loader_param)
