@@ -220,6 +220,40 @@ UART and the data can be verified before being passed, this option is not needed
 be enabled with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`, the timeout for
 this can be set with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS`.
 
+.. _mcumgr_smp_transport_i2c:
+
+I2C
+***
+
+The MCUmgr SMP transport over I2C carries the raw SMP packet with nothing added.
+The packet length is taken from the SMP header, so the transport adds no framing
+of its own. The I2C START and STOP conditions bound each transaction, so there
+is no CRC or byte-stuffing.
+
+The transport works in two roles, each selected by its own Kconfig option and
+devicetree compatible, and both can be enabled together. The target
+(``zephyr,smp-i2c``, :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_I2C`) answers SMP
+requests as an I2C target device. The controller (``zephyr,smp-i2c-client``,
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_I2C_CLIENT`) drives a remote target as
+the I2C master and is used through the SMP client API.
+
+A request can arrive in a single I2C write or be split over several writes,
+which the common reassembly code chains together into one message of up to
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE` bytes. The first write
+must contain the whole SMP header. A request that stays incomplete for
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_I2C_REASSEMBLY_TIMEOUT_MS` is dropped.
+A response is read back in a single transaction.
+
+A read issued before a response is staged returns an all-zero SMP header, which
+a real response never has. With an optional data-ready GPIO the target signals
+when a response is ready. Without it the controller polls the SMP header until
+it is non-zero.
+
+The transport supports both the per-byte and the buffer (DMA) I2C target
+callback styles, so it runs on either class of driver. In buffer mode the target
+driver's own buffer must be large enough to hold the largest response, since a
+response is read in one transaction.
+
 API Reference
 *************
 
