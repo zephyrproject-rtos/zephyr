@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -331,6 +331,29 @@
 		interrupts = <11 0 0>;
 
 		rx-channels = <4>;
+		status = "disabled";
+	};
+
+	/* SEMA42_4: compute domain (VDD2_COMP), CPU0 <-> HiFi4. Pairs with MU4.
+	 * Clock gate and reset live on clkctl0/rstctl0, which cm33_cpu0 owns.
+	 */
+	sema424: hwspinlock@18a000 {
+		compatible = "nxp,sema42";
+		reg = <0x18a000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
+
+	/* SEMA42_0: common domain (VDD1_COM), reachable from all cores.
+	 * Clock gate and reset live on clkctl3/rstctl3, which are not mapped
+	 * on this DSP core; cm33_cpu0 releases them.
+	 */
+	sema420: hwspinlock@206000 {
+		compatible = "nxp,sema42";
+		reg = <0x206000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
 		status = "disabled";
 	};
 };
