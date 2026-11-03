@@ -15,6 +15,7 @@ tests:
       - mimxrt685_aud_evk/mimxrt685s/cm33
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1064_evk
+      - mimxrt2660_evk/mimxrt2663/cm85
       - qemu_x86
       - native_sim
       - mimxrt1160_evk/mimxrt1166/cm7
