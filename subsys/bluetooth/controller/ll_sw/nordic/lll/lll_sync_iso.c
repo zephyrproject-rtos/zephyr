@@ -546,15 +546,14 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 					if (lll->abort_count < UINT8_MAX) {
 						lll->abort_count++;
 					}
-
-					radio_isr_set(lll_isr_early_abort, lll);
 				} else {
 					radio_tmr_start_save(lll->ticks_start);
 					radio_tmr_ready_save(lll->ready_us);
 					radio_tmr_aa_save(lll->aa_us);
-
-					radio_isr_set(isr_done, lll);
 				}
+
+				/* Generate lost ISO data for the payloads of the event */
+				radio_isr_set(isr_done, lll);
 
 				radio_disable();
 
