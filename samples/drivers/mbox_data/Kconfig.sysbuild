@@ -22,5 +22,8 @@ string
 	default "esp32c5_devkitc/esp32c5/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32c5_devkitc/esp32c5/hpcore"
 	default "esp32c6_devkitc/esp32c6/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32c6_devkitc/esp32c6/hpcore"
 	default "esp32p4x_function_ev_board/esp32p4/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32p4x_function_ev_board/esp32p4/hpcore"
+	default "kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p"
+	default "kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_1" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0"
+	default "kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_1"
 	default "versalnet_rpu" if SOC_AMD_VERSALNET_RPU
 	default "versal2_rpu" if SOC_AMD_VERSAL2_RPU
