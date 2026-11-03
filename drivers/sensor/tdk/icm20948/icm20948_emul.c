@@ -276,10 +276,14 @@ static const struct spi_emul_api icm20948_emul_spi_api = {
 	.io = icm20948_emul_io_spi,
 };
 
-#define ICM20948_EMUL_DEFINE(inst)                                                                 \
+#define ICM20948_EMUL_DEFINE_SPI(inst)                                                             \
 	static struct icm20948_emul_data icm20948_emul_data_##inst;                                \
                                                                                                    \
 	EMUL_DT_INST_DEFINE(inst, icm20948_emul_init, &icm20948_emul_data_##inst, NULL,            \
 			    &icm20948_emul_spi_api, NULL)
+
+/* shortcut: SPI only, I2C instances get no emulator; add an i2c_emul_api to test I2C */
+#define ICM20948_EMUL_DEFINE(inst)                                                                 \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ICM20948_EMUL_DEFINE_SPI(inst)), ())
 
 DT_INST_FOREACH_STATUS_OKAY(ICM20948_EMUL_DEFINE)
