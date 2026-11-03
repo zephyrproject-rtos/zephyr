@@ -227,6 +227,13 @@ static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
 	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
 }
 
+static void modem_ppp_carrier_off_handler(struct k_work *item)
+{
+	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, carrier_off_work);
+
+	net_if_carrier_off(ppp->iface);
+}
+
 static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 {
 	switch (ppp->receive_state) {
@@ -236,7 +243,8 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 				LOG_WRN("Received 'NO CARRIER' event");
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
-				net_if_carrier_off(ppp->iface);
+
+				k_work_submit(&ppp->carrier_off_work);
 				ppp_mgmt_raise_phase_dead_event(ppp->iface);
 			}
 			break;
@@ -674,6 +682,7 @@ void modem_ppp_release(struct modem_ppp *ppp)
 	}
 
 	net_if_carrier_off(ppp->iface);
+	(void)k_work_cancel(&ppp->carrier_off_work);
 	modem_pipe_release(ppp->pipe);
 	k_work_cancel_sync(&ppp->send_work, &sync);
 	k_work_cancel_sync(&ppp->process_work, &sync);
@@ -710,6 +719,7 @@ int modem_ppp_init_internal(const struct device *dev)
 	ring_buf_init(&ppp->transmit_rb, ppp->buf_size, ppp->transmit_buf);
 	k_work_init(&ppp->send_work, modem_ppp_send_handler);
 	k_work_init(&ppp->process_work, modem_ppp_process_handler);
+	k_work_init(&ppp->carrier_off_work, modem_ppp_carrier_off_handler);
 	k_fifo_init(&ppp->tx_pkt_fifo);
 
 #if CONFIG_MODEM_STATS
