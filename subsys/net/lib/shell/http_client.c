@@ -26,6 +26,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
+#define HTTP_PORT_LEN     sizeof("65535")
 #define HTTP_HEADERS_LEN  3
 
 #if defined(CONFIG_HTTP_CLIENT)
@@ -37,6 +38,7 @@ struct http_client_url_fields {
 	uint8_t hostname[ZSOCK_NI_MAXHOST];
 	uint8_t uri[CONFIG_NET_SHELL_HTTP_CLIENT_URL_LEN];
 	uint16_t port;
+	bool has_port;
 	bool is_ssl;
 };
 
@@ -72,8 +74,10 @@ static int http_client_url_fields_get(const uint8_t *url, const struct http_pars
 	}
 
 	if (url_field == UF_PATH) {
-		/* The request URI is the path with the query and fragment that follow it. */
-		len = strlen(url) - off;
+		/* The request target is the path and the query; the fragment is not sent. */
+		const uint8_t *hash = memchr(url + off, '#', strlen(url) - off);
+
+		len = (hash != NULL ? (size_t)(hash - url) : strlen(url)) - off;
 	}
 
 	if (len >= field_len) {
@@ -96,7 +100,7 @@ static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t 
 	uint16_t *port = &ctx->url_fields.port;
 	uint8_t *uri = ctx->url_fields.uri;
 	bool *is_ssl = &ctx->url_fields.is_ssl;
-	uint8_t port_ascii[6];
+	uint8_t port_ascii[HTTP_PORT_LEN];
 
 	http_parser_url_init(&purl);
 
@@ -125,6 +129,7 @@ static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t 
 	}
 
 	ret = http_client_url_fields_get(url, &purl, UF_PORT, port_ascii, sizeof(port_ascii));
+	ctx->url_fields.has_port = ret == 0;
 	if (ret < 0) {
 		if (*is_ssl) {
 			*port = DEFAULT_HTTPS_PORT;
@@ -530,7 +535,9 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 {
 	int ret;
 	struct http_request req;
+	uint8_t port_ascii[HTTP_PORT_LEN];
 
+	snprintf(port_ascii, sizeof(port_ascii), "%u", ctx->url_fields.port);
 	memset(&req, 0, sizeof(struct http_request));
 
 	ret = http_client_connect(ctx);
@@ -541,6 +548,7 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 	req.method = method;
 	req.url = ctx->url_fields.uri;
 	req.host = ctx->url_fields.hostname;
+	req.port = ctx->url_fields.has_port ? port_ascii : NULL;
 	req.header_fields = ctx->headers;
 	req.protocol = ctx->protocol;
 	req.response = ctx->cb;

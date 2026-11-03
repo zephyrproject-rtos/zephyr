@@ -308,28 +308,28 @@ ZTEST(net_shell_test_suite, test_net_shell_ping)
 ZTEST(net_shell_test_suite, test_net_shell_http_get_url_too_long)
 {
 	static char cmd[CONFIG_SHELL_CMD_BUFF_SIZE];
-	static const char prefix[] = "net http get http://a/p#";
+	static const char prefix[] = "net http get http://a/p";
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_HTTP_CLIENT)) {
 		ztest_test_skip();
 	}
 
-	/* A short path followed by a fragment that does not fit into the URL
-	 * buffer must be rejected instead of overflowing it.
+	/* A path that does not fit into the URL buffer must be rejected instead
+	 * of overflowing it. The fragment is not part of the request target.
 	 */
 	memcpy(cmd, prefix, sizeof(prefix) - 1);
 	memset(cmd + sizeof(prefix) - 1, 'x', sizeof(cmd) - sizeof(prefix));
 	cmd[sizeof(cmd) - 1] = '\0';
 
 	ret = shell_execute_cmd(NULL, cmd);
-	zassert_equal(ret, -ENOBUFS, "Long fragment accepted (%d)", ret);
+	zassert_equal(ret, -ENOBUFS, "Long path accepted (%d)", ret);
 
-	/* Same for a path that is too long on its own. */
-	cmd[sizeof(prefix) - 2] = 'x';
+	/* A fragment of the same length is not part of the request target. */
+	cmd[sizeof(prefix) - 1] = '#';
 
 	ret = shell_execute_cmd(NULL, cmd);
-	zassert_equal(ret, -ENOBUFS, "Long path accepted (%d)", ret);
+	zassert_not_equal(ret, -ENOBUFS, "Long fragment rejected (%d)", ret);
 }
 
 ZTEST(net_shell_test_suite, test_net_shell_http_get_query_too_long)
