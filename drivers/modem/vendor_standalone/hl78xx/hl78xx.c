@@ -173,6 +173,8 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 #endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	case MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED:
 		return "phone functionality changed";
+	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
+		return "lte restore requested";
 #ifdef CONFIG_HL78XX_GNSS
 	case MODEM_HL78XX_EVENT_GNSS_START_REQUESTED:
 		return "gnss event start requested";
@@ -192,8 +194,6 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "gnss mode enter requested";
 	case MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED:
 		return "gnss mode exit requested";
-	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
-		return "lte restore requested";
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	case MODEM_HL78XX_EVENT_DEVICE_ASLEEP:
@@ -3876,6 +3876,11 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 #endif /* CONFIG_HL78XX_GNSS */
 		break;
 
+	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
+		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
 		/* The modem restarted while it waited in airplane mode, and the new
 		 * session is not configured. Enter the state again: the entry sets
@@ -3903,11 +3908,6 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 		/* User explicitly requested GNSS mode while in airplane state */
 		LOG_INF("GNSS mode requested - transitioning to GNSS init state");
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
-		break;
-
-	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
-		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 #endif /* CONFIG_HL78XX_GNSS */
 
