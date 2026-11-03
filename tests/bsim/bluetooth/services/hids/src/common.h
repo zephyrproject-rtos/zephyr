@@ -111,4 +111,29 @@ static const uint8_t test_output_data[TEST_OUTPUT_REPORT_LEN] = {0x05};
 #define TEST_FEATURE_REPORT_LEN 1U
 static const uint8_t test_feature_data[TEST_FEATURE_REPORT_LEN] = {0x5A};
 
+/* Feature Report payload the HOGP Report Host writes */
+static const uint8_t test_feature_data_new[TEST_FEATURE_REPORT_LEN] = {0xA5};
+
+/* Every octet of the long Feature Report */
+#define TEST_LONG_REPORT_FILL 0x42U
+
+/* Report characteristics of the HID Service, in handle order */
+#define TEST_REPORT_COUNT 4U
+
+/* The second HID Device of the HOGP Report Host test, which notifies and holds other values */
+#define TEST_DEVICE_2_NAME "HOGP device 2"
+static const uint8_t test_input_data_2[TEST_INPUT_REPORT_LEN] = {0x02, 0x30, 0x40};
+static const uint8_t test_feature_data_2[TEST_FEATURE_REPORT_LEN] = {0x3C};
+
+/* The HID Device of the HOGP Report Host test that registers malformed HID Services, one per
+ * connection, in this order
+ */
+#define TEST_MALFORMED_NAME         "HOGP malformed"
+#define TEST_MALFORMED_EMPTY        0U
+#define TEST_MALFORMED_REPORT_LAST  1U
+#define TEST_MALFORMED_DUPLICATE    2U
+#define TEST_MALFORMED_DUPLICATE_ID 3U
+#define TEST_MALFORMED_CCC_REFUSED  4U
+#define TEST_MALFORMED_COUNT        5U
+
 #endif /* HIDS_TEST_COMMON_H_ */
