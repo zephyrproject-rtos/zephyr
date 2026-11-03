@@ -1196,11 +1196,30 @@ int enter_http1_request(struct http_client_ctx *client)
 	return 0;
 }
 
+/* An accepted protocol upgrade receives every piece of the request body. */
+static bool http1_upgrade_accepted(const struct http_client_ctx *client)
+{
+	int path_len;
+
+	if (!client->has_upgrade_header) {
+		return false;
+	}
+
+	if (client->websocket_upgrade) {
+		return IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET) &&
+		       get_resource_detail(client->service, client->url_buffer, &path_len,
+					   true) != NULL;
+	}
+
+	return IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade;
+}
+
 int handle_http1_request(struct http_client_ctx *client)
 {
 	int ret, path_len = 0;
 	struct http_resource_detail *detail;
 	bool skip_headers = (client->parser_state < HTTP1_RECEIVING_DATA_STATE);
+	bool upgrade_accepted;
 	size_t parsed;
 
 	LOG_DBG("HTTP_SERVER_REQUEST");
@@ -1249,7 +1268,22 @@ int handle_http1_request(struct http_client_ctx *client)
 		client->data_len -= frag_headers_len;
 	}
 
-	if (client->has_upgrade_header) {
+	upgrade_accepted = http1_upgrade_accepted(client);
+
+	/* The request body can arrive over several calls. Once a response has
+	 * been sent, only an accepted protocol upgrade or a dynamic resource
+	 * still receiving the body gets the rest of it. For any other resource
+	 * the response is complete, and the rest of the body is discarded.
+	 */
+	if (client->http1_headers_sent && !upgrade_accepted) {
+		detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
+		if (detail == NULL || detail->type != HTTP_RESOURCE_TYPE_DYNAMIC ||
+		    ((struct http_resource_detail_dynamic *)detail)->holder != client) {
+			goto consume;
+		}
+	}
+
+	if (client->has_upgrade_header && (upgrade_accepted || !client->http1_headers_sent)) {
 		static const char upgrade_required[] =
 			"HTTP/1.1 426 Upgrade required\r\n"
 			"Upgrade: ";
@@ -1351,6 +1385,7 @@ not_found: ; /* Add extra semicolon to make clang to compile when using label */
 		client->http1_headers_sent = true;
 	}
 
+consume:
 	client->cursor += parsed;
 	client->data_len -= parsed;
 
