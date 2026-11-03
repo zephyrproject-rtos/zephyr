@@ -459,6 +459,17 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 
 	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
 
+	if (ots->cur_obj == NULL) {
+		LOG_ERR("Invalid Current Object on OACP Read procedure");
+
+		err = bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
+		if (err != 0) {
+			LOG_WRN("Disconnecting L2CAP returned error %d", err);
+		}
+
+		return;
+	}
+
 	if (ots->cb->obj_read == NULL &&
 	    !(IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST)) {
 		ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
