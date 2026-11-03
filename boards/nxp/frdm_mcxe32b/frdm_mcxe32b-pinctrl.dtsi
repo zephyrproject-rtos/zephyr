@@ -26,6 +26,13 @@
 		};
 	};
 
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group1 {
+			pinmux = <PTE15_FXIO_D2_O>;
+			output-enable;
+		};
+	};
+
 	pinmux_emios0_pwm: pinmux_emios0_pwm {
 		group1 {
 			pinmux = <PTC22_EMIOS_0_CH8_X_O>;
