@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(CONFIG_BOARD_MIMXRT595_EVK_MIMXRT595S_CM33)
+if(CONFIG_BOARD_MIMXRT595_EVK_MIMXRT595S_CM33 OR
+   CONFIG_BOARD_MIMXRT595_EVK_MIMXRT595S_CM33_SRAM)
   zephyr_library()
   zephyr_library_sources(board.c)
   zephyr_library_include_directories(.)
