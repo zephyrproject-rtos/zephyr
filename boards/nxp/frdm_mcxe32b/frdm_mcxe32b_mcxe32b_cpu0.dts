@@ -190,6 +190,10 @@
 	status = "okay";
 };
 
+&flexio {
+	status = "okay";
+};
+
 &emios_0 {
 	global-prescaler = <16>;
 	status = "okay";
