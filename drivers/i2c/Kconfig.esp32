@@ -10,7 +10,9 @@ config I2C_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_I2C_ENABLED
 	select GPIO_ESP32
 	help
-	  Enables the ESP32 I2C driver.
+	  Enables the ESP32 I2C driver. When multithreading is disabled,
+	  controller transfers poll hardware events instead of using interrupts.
+	  I2C target mode requires multithreading.
 
 	  When CONFIG_I2C_TARGET is also enabled, the driver exposes I2C
 	  target callbacks. Target mode relies on the SCL stretch-cause
