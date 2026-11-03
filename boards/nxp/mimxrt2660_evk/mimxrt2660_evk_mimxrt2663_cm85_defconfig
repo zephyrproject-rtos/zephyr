@@ -12,16 +12,6 @@
 CONFIG_NXP_IMXRT_BOOT_HEADER=y
 CONFIG_EXTERNAL_MEM_CONFIG_DATA=y
 
-# XIP, FLASH_MCUX_XSPI_XIP, FLASH_BASE_ADDRESS and FLASH_SIZE are all derived
-# from the devicetree by soc/nxp/common/Kconfig.xspi_xip -- do not set them here.
-#
-# CODE_DATA_RELOCATION_SRAM would add an MPU entry for relocated code and pull in
-# the flash driver, which this target needs for nothing (it never writes flash and
-# carries no partitions) and which does not build for RT266x yet: the shared XSPI
-# drivers use xspi_config_t fields this part lacks and call
-# XSPI_Cache64_InvalidateCacheByRange, absent on a part whose cache is the LLC.
-CONFIG_CODE_DATA_RELOCATION_SRAM=n
-
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_SERIAL=y
