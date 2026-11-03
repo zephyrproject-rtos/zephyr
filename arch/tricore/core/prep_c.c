@@ -16,7 +16,6 @@
  * initialization is performed.
  */
 
-#include <kernel_internal.h>
 #include <zephyr/arch/common/init.h>
 #include <zephyr/arch/common/xip.h>
 

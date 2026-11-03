@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
-#include <zephyr/kernel.h>
+#include <zephyr/fatal.h>
 #include <zephyr/fatal_types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/tricore/exception.h>
