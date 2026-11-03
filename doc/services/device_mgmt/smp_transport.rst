@@ -220,6 +220,33 @@ UART and the data can be verified before being passed, this option is not needed
 be enabled with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`, the timeout for
 this can be set with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS`.
 
+.. _mcumgr_smp_transport_i2c:
+
+I2C
+***
+
+The MCUmgr SMP transport over I2C carries one SMP packet per I2C transaction,
+framed with a two byte big-endian length prefix in front of the raw SMP packet.
+The prefix lets the controller read the length in a short first read and then
+read the whole frame. The I2C START and STOP conditions bound the transaction,
+so there is no CRC or byte-stuffing.
+
+The transport works in two roles, each with its own module and devicetree
+compatible. The target (``zephyr,smp-i2c``) answers SMP requests as an I2C
+target device. The controller (``zephyr,smp-i2c-client``) drives a remote target
+as the I2C master and is used through the SMP client API.
+
+A read issued before a response is staged returns a zero length. With an
+optional data-ready GPIO the target signals when a response is ready. Without it
+the controller polls the length until it is non-zero.
+
+The transport supports both the per-byte and the buffer (DMA) I2C target
+callback styles, so it runs on either class of driver. In buffer mode the target
+driver's own DMA or hardware buffer must be at least
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_I2C_MTU` plus two bytes, to hold the
+length prefix and the largest SMP payload. An undersized buffer is detected at
+runtime and the frame is dropped.
+
 API Reference
 *************
 
