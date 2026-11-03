@@ -1705,14 +1705,19 @@ static int bass_register(void)
 	return 0;
 }
 
-static void bass_unregister(void)
+static int bass_unregister(void)
 {
-	__maybe_unused int err;
+	int err;
 
 	err = bt_gatt_service_unregister(&bass_svc);
-	__ASSERT(err == 0, "Failed to unregister BASS service (err %d)", err);
+	if (err != 0) {
+		LOG_DBG("Failed to unregister BASS service (err %d)", err);
+		return err;
+	}
 
 	LOG_DBG("BASS service unregistered");
+
+	return 0;
 }
 
 
@@ -1761,7 +1766,22 @@ int bt_bap_scan_delegator_unregister(void)
 		(void)k_work_cancel_delayable_sync(&internal_state->notify_work, &sync);
 	}
 
-	bass_unregister();
+	err = bass_unregister();
+	if (err != 0) {
+		atomic_clear_bit(scan_delegator_flags, SCAN_DELEGATOR_FLAG_UNREGISTERING);
+
+		/* Restart the work cancelled above, which only notifies the clients that have an
+		 * update pending
+		 */
+		ARRAY_FOR_EACH_PTR(scan_delegator.recv_states, internal_state) {
+			__maybe_unused int work_err;
+
+			work_err = k_work_schedule(&internal_state->notify_work, K_NO_WAIT);
+			__ASSERT(work_err >= 0, "Failed to schedule work: %d", work_err);
+		}
+
+		return err;
+	}
 
 	scan_delegator_cbs = NULL;
 
