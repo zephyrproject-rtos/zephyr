@@ -16,4 +16,5 @@ supported:
   - counter
   - dma
   - gpio
+  - watchdog
 vendor: nxp

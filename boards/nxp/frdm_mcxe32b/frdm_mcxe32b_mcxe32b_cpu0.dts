@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		watchdog0 = &swt_0;
 	};
 
 	chosen {
@@ -203,5 +204,9 @@
 };
 
 &pit_2 {
+	status = "okay";
+};
+
+&swt_0 {
 	status = "okay";
 };
