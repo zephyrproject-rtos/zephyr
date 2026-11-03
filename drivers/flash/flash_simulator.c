@@ -228,7 +228,9 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 			   cfg->flash_parameters->write_block_size)) {
 			FLASH_SIM_STATS_INC(flash_sim_stats, double_writes);
 #if !CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
-			return -EIO;
+			if (!cfg->flash_parameters->caps.no_explicit_erase) {
+				return -EIO;
+			}
 #endif
 		}
 	}
@@ -272,12 +274,14 @@ static int flash_sim_write(const struct device *dev, const off_t offset,
 		uint8_t data_val = *((const uint8_t *)data + i);
 
 #ifdef CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE
-		if (cfg->flash_parameters->erase_value == 0xff) {
-			/* only pull bits to zero */
-			data_val &= *(dev_data->mock_flash + offset + i);
-		} else {
-			/* only pull bits to one */
-			data_val |= *(dev_data->mock_flash + offset + i);
+		if (!cfg->flash_parameters->caps.no_explicit_erase) {
+			if (cfg->flash_parameters->erase_value == 0xff) {
+				/* only pull bits to zero */
+				data_val &= *(dev_data->mock_flash + offset + i);
+			} else {
+				/* only pull bits to one */
+				data_val |= *(dev_data->mock_flash + offset + i);
+			}
 		}
 #endif
 #ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
@@ -599,7 +603,7 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 			.base_offset = FLASH_SIMULATOR_BASE_OFFSET(n),                             \
 			.erase_unit = FLASH_SIMULATOR_ERASE_UNIT(n),                               \
 			.prog_unit = FLASH_SIMULATOR_PROG_UNIT(n),                                 \
-			.explicit_erase = IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE),       \
+			.explicit_erase = !FLASH_SIMULATOR_NO_EXPLICIT_ERASE(n),                   \
 			.erase_value = FLASH_SIMULATOR_ERASE_VALUE(n),                             \
 		};                                                                                 \
 	))                                                                                         \
