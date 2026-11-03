@@ -103,6 +103,7 @@ struct bt_gatt_ots_object_state {
 		struct bt_gatt_ots_object_read_op {
 			struct bt_gatt_ots_oacp_read_params oacp_params;
 			uint32_t sent_len;
+			bool started;
 		} read_op;
 		struct bt_gatt_ots_object_write_op {
 			struct bt_gatt_ots_oacp_write_params oacp_params;
