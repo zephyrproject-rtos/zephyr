@@ -1,0 +1,255 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP AHB SRAM Controller (AHB_SRAMC).
+
+  Controller for external asynchronous parallel SRAM (or SRAM-like FPGA)
+  devices.
+
+  Each chip select that carries an external device is described as a child
+  node whose "reg" is the chip-select index. Bus timings are per chip select;
+  the data-port width, address mode, ADV# polarity and AHB bus timeout are
+  properties of the controller.
+
+  Timings are given in nanoseconds, the driver converts each one into the
+  matching register field.
+
+  A chip select maps its device into a memory-mapped range of up to 128 KB
+  that the core reads and writes directly -- 0x25000000 for CS0 and
+  0x25020000 for CS1 on i.MX RT266x (RM 3.2, system memory map). That range
+  has to be a separate "zephyr,memory-region" node rather than the
+  chip-select node itself: the chip-select ranges are not inside the
+  peripheral address aperture this controller sits in, so they cannot be
+  address-translated as its children. Declaring them as regions is what gives
+  the external SRAM a linker MEMORY{} entry, an MPU region and
+  __<NAME>_start/_end symbols. Note that this driver runs at POST_KERNEL, so a
+  region here can host explicitly placed sections, a heap or a buffer pool,
+  but not anything the C runtime has to initialize before drivers come up.
+
+compatible: "nxp,ahb-sramc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      The controller's functional clock (hclk). Its rate is what every timing
+      field is counted in, so the driver reads it to convert the nanosecond
+      timings below.
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  port-size:
+    type: int
+    required: true
+    enum: [8, 16]
+    description: |
+      External data-port width in bits. Must match the data width of the
+      connected SRAM. Required because an 8-bit device driven at 16 bits is
+      silently corrupted, and the hardware has no way to detect the mismatch.
+
+  address-mode:
+    type: string
+    required: true
+    enum:
+      - "admux"
+      - "non-admux"
+    description: |
+      Whether the low address bits are multiplexed onto the data lines. In
+      admux mode address bits ADDR[15:0] ride the SRAMC_DA[15:0] data lines:
+      the data port has 16 pins but the address bus has 17 (SRAMC_ADDR[16:0]),
+      so only the low 16 bits are shared; the top bit ADDR[16] stays on its
+      dedicated SRAMC_ADDR[16] pin and only an 8-bit part addressed across the
+      full 128 KB range uses it.
+
+  adv-polarity:
+    type: string
+    default: "active-low"
+    enum:
+      - "active-low"
+      - "active-high"
+    description: |
+      Polarity of the ADV# address-valid strobe, used in admux mode only.
+
+  bus-timeout:
+    type: int
+    default: 0
+    min: 0
+    max: 255
+    description: |
+      AHB bus timeout, in units of 1024 hclk cycles. An AHB access that is
+      not granted within that many cycles completes with a bus error, which
+      reaches the CPU as a fault. Zero -- the register's power-on reset value
+      -- disables the timeout counter entirely.
+
+  function-clock-always-on:
+    type: boolean
+    description: |
+      Disable the controller's internal clock gating, so its functional clock
+      runs even when no access is in flight (MCR[CG_DIS]). Being a boolean
+      devicetree property, it is true when present and false when omitted;
+      omitting it leaves gating enabled, which is the reset behaviour and the
+      lower-power one.
+
+child-binding:
+  description: |
+    An external device on one of the controller's chip selects. All of its
+    timings are required: they come from the connected part's datasheet.
+  properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        Chip-select index this device is wired to. The number of chip selects
+        is SoC specific -- i.MX RT266x has two, CS0 and CS1.
+
+    memory-region:
+      type: phandle
+      required: true
+      description: |
+        The "zephyr,memory-region" node describing this chip select's
+        memory-mapped range.
+
+    ce-setup-time-ns:
+      type: int
+      required: true
+      description: |
+        Time CE# is asserted before the access starts (CFG0_CS[CES]). May be 0.
+
+    ce-hold-time-ns:
+      type: int
+      required: true
+      description: |
+        Time CE# stays asserted after the access ends (CFG0_CS[CEH]). May be 0.
+
+    address-setup-time-ns:
+      type: int
+      required: true
+      description: |
+        Time the address is driven before the access strobe (CFG0_CS[AS]).
+        May be 0, except in admux mode where the hardware always inserts one
+        clock cycle.
+
+    address-hold-time-ns:
+      type: int
+      required: true
+      description: |
+        Time the address is held after its setup phase (CFG0_CS[AH]). The
+        field counts from one granularity period, so 0 selects that minimum
+        rather than no hold at all.
+
+    turnaround-time-ns:
+      type: int
+      required: true
+      description: |
+        Dead time during which neither the controller nor the device drives
+        the data lines (CFG0_CS[TA]). Needed in admux mode, where the lines
+        change direction between address and data; the field counts from one
+        granularity period, so 0 selects that minimum.
+
+    write-enable-low-time-ns:
+      type: int
+      required: true
+      description: |
+        WE# asserted time, which is the write pulse width (CFG1_CS[WEL]).
+        Counts from one granularity period, so 0 selects that minimum.
+
+    write-enable-high-time-ns:
+      type: int
+      required: true
+      description: |
+        WE# deasserted time between writes (CFG1_CS[WEH]). Counts from one
+        granularity period, so 0 selects that minimum.
+
+    read-enable-low-time-ns:
+      type: int
+      required: true
+      description: |
+        OE# asserted time, which has to cover the part's access time
+        (CFG1_CS[REL]). Counts from one granularity period, so 0 selects that
+        minimum.
+
+    read-enable-high-time-ns:
+      type: int
+      required: true
+      description: |
+        OE# deasserted time between reads (CFG1_CS[REH]). Counts from one
+        granularity period, so 0 selects that minimum.
+
+    wait-pin:
+      type: int
+      min: 0
+      max: 3
+      description: |
+        Index of the SRAMC_WP wait pin this device drives. Setting it enables
+        wait-state monitoring for this chip select (CFG0_CS[WM_EN] and
+        [WP_MUX]) and makes wait-mode required; omit it for a device that does
+        not use a wait signal.
+
+    wait-mode:
+      type: int
+      enum: [0, 1, 2, 4, 5, 6]
+      description: |
+        What ends a wait state (CFG0_CS[WM_SEL]). The numbers are the register
+        encoding, and the MCUXpresso SDK's sramc_wait_mode_t uses the same
+        values, so what is written here reaches the HAL unchanged:
+        - 0 kSRAMC_WaitMode_Level (wait pin level alone)
+        - 1 kSRAMC_WaitMode_LevelAndCounter (level and counter must both end)
+        - 2 kSRAMC_WaitMode_LevelOrCounter (either one ends the wait)
+        - 4 kSRAMC_WaitMode_Edge (wait pin edge alone)
+        - 5 kSRAMC_WaitMode_EdgeAndCounter (edge and counter must both end)
+        - 6 kSRAMC_WaitMode_EdgeOrCounter (either one ends the wait)
+
+    wait-active-high:
+      type: boolean
+      description: |
+        The wait pin is asserted high (CFG0_CS[WP_POL]). Omit it for a
+        low-asserted wait pin, which is the reset behaviour. Ignored unless
+        wait-pin is set.
+
+examples:
+  - |
+      # A 16-bit ADMUX SRAM on chip select 0, 128 KB
+      # each:
+      &sramc {
+        pinctrl-0 = <&pinmux_sramc>;
+        pinctrl-names = "default";
+        port-size = <16>;
+        address-mode = "admux";
+        status = "okay";
+
+        sramc_cs0: sram@0 {
+            reg = <0>;
+            memory-region = <&ext_sram0>;
+
+            ce-setup-time-ns = <0>;
+            ce-hold-time-ns = <0>;
+            address-setup-time-ns = <10>;
+            address-hold-time-ns = <5>;
+            turnaround-time-ns = <10>;
+            write-enable-low-time-ns = <45>;
+            write-enable-high-time-ns = <10>;
+            read-enable-low-time-ns = <55>;
+            read-enable-high-time-ns = <10>;
+        };
+      };
+
+      / {
+          ext_sram0: memory@25000000 {
+              compatible = "zephyr,memory-region", "mmio-sram";
+              reg = <0x25000000 DT_SIZE_K(128)>;
+              zephyr,memory-region = "EXT_SRAM0";
+              zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+          };
+      };
