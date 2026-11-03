@@ -66,9 +66,11 @@ config ESP32_WIFI_AP_STA_MODE
 	  an access point simultaneously.
 
 config ESP32_WIFI_STA_RECONNECT
-	bool "WiFi connection retry"
+	bool "Wi-Fi station reconnection"
 	help
-	  Set auto WiFI reconnection when disconnected.
+	  Reconnect the station when an established connection is lost,
+	  retrying with the same backoff as a connection request until it
+	  succeeds or the application disconnects.
 
 config ESP32_WIFI_STA_SCAN_ALL
 	bool "Scan all available APs when connecting in station mode"

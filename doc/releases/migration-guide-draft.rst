@@ -316,6 +316,23 @@ Timers
   ``z_cms_lptim_hook_on_lpm_entry`` and ``z_cms_lptim_hook_on_lpm_exit`` with
   :c:func:`z_sys_clock_lpm_enter` and :c:func:`z_sys_clock_lpm_exit`, respectively. (:github:`124238`).
 
+Wi-Fi
+=====
+
+* :kconfig:option:`CONFIG_ESP32_WIFI_STA_RECONNECT` now only applies to an Espressif station
+  that loses an established connection. It reconnects with a growing backoff until it succeeds
+  or the application disconnects. While it reconnects, connection requests fail with
+  ``-EALREADY``. The option no longer changes how connection requests made by the application
+  are handled.
+
+* Espressif Wi-Fi connection requests now retry authentication and association failures, such as
+  an access point that rejects the first attempt after the station was reset, instead of failing
+  on the first rejection. A request that leaves the ``timeout`` field of
+  :c:struct:`wifi_connect_req_params` at 0 fails after three short retries. A request with a
+  timeout retries until it expires and then reports a connection timeout, and one with
+  ``SYS_FOREVER_MS`` retries until the application disconnects. A wrong WPA3-SAE password cannot
+  be told apart from such a rejection, so it is retried as well.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
