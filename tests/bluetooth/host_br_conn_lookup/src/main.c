@@ -6,6 +6,9 @@
 /* The application may keep a reference to the object of a BR/EDR or SCO connection after the
  * disconnection. That object is no longer the connection to the peer: the next connection with
  * the peer gets an object of its own, in either direction.
+ *
+ * Only one ACL connection can exist with a peer, so a request from the peer does not get a second
+ * object while a connection with it is being set up or is up.
  */
 
 #include <stdbool.h>
@@ -64,6 +67,7 @@ static const bt_addr_t peer = {
 };
 
 static K_SEM_DEFINE(accept_sem, 0, 1);
+static K_SEM_DEFINE(reject_sem, 0, 1);
 
 /* The status of the next command with this opcode. */
 static uint16_t refused_opcode;
@@ -73,6 +77,20 @@ static uint8_t refused_status;
  * command is answered.
  */
 static bool acl_lost_on_sco_setup;
+
+/* The Command Status of Create Connection waits for the test */
+static bool hold_connect_status;
+
+/* The Disconnection Complete event waits for the test */
+static bool hold_disconn_complete;
+
+/* The reason of the last Reject Connection Request */
+static uint8_t reject_reason;
+
+/* The last Disconnect command */
+static uint16_t disconnect_handle;
+static uint8_t disconnect_reason;
+static K_SEM_DEFINE(disconnect_sem, 0, 1);
 
 /* What a lookup finds while the Host accepts a connection */
 static bool lookup_on_accept;
@@ -101,7 +119,7 @@ static void *cmd_complete(struct net_buf **buf, uint8_t plen, uint16_t opcode)
 	return net_buf_add(*buf, plen);
 }
 
-static void cmd_status(uint16_t opcode)
+static void cmd_status_with(uint16_t opcode, uint8_t status)
 {
 	struct bt_hci_evt_cmd_status *cs;
 	struct net_buf *buf;
@@ -109,10 +127,15 @@ static void cmd_status(uint16_t opcode)
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
 	evt_create(buf, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
 	cs = net_buf_add(buf, sizeof(*cs));
-	cs->status = (opcode == refused_opcode) ? refused_status : BT_HCI_ERR_SUCCESS;
+	cs->status = status;
 	cs->ncmd = 1U;
 	cs->opcode = sys_cpu_to_le16(opcode);
 	bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&buf));
+}
+
+static void cmd_status(uint16_t opcode)
+{
+	cmd_status_with(opcode, (opcode == refused_opcode) ? refused_status : BT_HCI_ERR_SUCCESS);
 }
 
 static void generic_success(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
@@ -237,6 +260,35 @@ static void accept_req(struct net_buf *buf, struct net_buf **evt, uint8_t len, u
 	k_sem_give(&accept_sem);
 }
 
+static void reject_req(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	const struct bt_hci_cp_reject_conn_req *cp = (const void *)buf->data;
+
+	ARG_UNUSED(len);
+	ARG_UNUSED(evt);
+
+	reject_reason = cp->reason;
+	if (cp->reason < BT_HCI_ERR_INSUFFICIENT_RESOURCES ||
+	    cp->reason > BT_HCI_ERR_BD_ADDR_UNACCEPTABLE) {
+		cmd_status_with(opcode, BT_HCI_ERR_INVALID_PARAM);
+	} else {
+		cmd_status(opcode);
+	}
+
+	k_sem_give(&reject_sem);
+}
+
+static void create_conn(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(evt);
+
+	if (!hold_connect_status) {
+		cmd_status(opcode);
+	}
+}
+
 static void disconn_complete(uint16_t handle)
 {
 	struct bt_hci_evt_disconn_complete *evt;
@@ -303,8 +355,14 @@ static void disconnect(struct net_buf *buf, struct net_buf **evt, uint8_t len, u
 	ARG_UNUSED(len);
 	ARG_UNUSED(evt);
 
+	disconnect_handle = sys_le16_to_cpu(cp->handle);
+	disconnect_reason = cp->reason;
+	k_sem_give(&disconnect_sem);
+
 	cmd_status(opcode);
-	disconn_complete(sys_le16_to_cpu(cp->handle));
+	if (!hold_disconn_complete) {
+		disconn_complete(sys_le16_to_cpu(cp->handle));
+	}
 }
 
 static const struct cmd_handler cmds[] = {
@@ -340,7 +398,8 @@ static const struct cmd_handler cmds[] = {
 	},
 	{BT_HCI_OP_ACCEPT_CONN_REQ, 0U, accept_req},
 	{BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, 0U, accept_req},
-	{BT_HCI_OP_CONNECT, 0U, success_status},
+	{BT_HCI_OP_REJECT_CONN_REQ, 0U, reject_req},
+	{BT_HCI_OP_CONNECT, 0U, create_conn},
 	{BT_HCI_OP_SETUP_SYNC_CONN, 0U, setup_sync_conn},
 	{BT_HCI_OP_READ_REMOTE_FEATURES, 0U, success_status},
 	{BT_HCI_OP_DISCONNECT, 0U, disconnect},
@@ -442,6 +501,20 @@ static void conn_complete(uint16_t handle, uint8_t status)
 	bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&buf));
 }
 
+static void role_change(uint8_t role)
+{
+	struct bt_hci_evt_role_change *evt;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_ROLE_CHANGE, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_ROLE_CHANGE, sizeof(*evt));
+	evt = net_buf_add(buf, sizeof(*evt));
+	evt->status = BT_HCI_ERR_SUCCESS;
+	bt_addr_copy(&evt->bdaddr, &peer);
+	evt->role = role;
+	bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&buf));
+}
+
 static void sync_conn_complete(uint16_t handle, uint8_t link_type, uint8_t status)
 {
 	struct bt_hci_evt_sync_conn_complete *evt;
@@ -520,11 +593,16 @@ static struct bt_sco_chan sco_chan = {
 	.ops = &sco_ops,
 };
 
+/* For a request of the peer while the other channel has its connection */
+static struct bt_sco_chan sco_chan_other = {
+	.ops = &sco_ops,
+};
+
 static int sco_accept(const struct bt_sco_accept_info *info, struct bt_sco_chan **chan)
 {
 	ARG_UNUSED(info);
 
-	*chan = &sco_chan;
+	*chan = (sco_chan.sco != NULL) ? &sco_chan_other : &sco_chan;
 
 	return 0;
 }
@@ -689,6 +767,31 @@ static void cmd_bufs_release(void)
 	}
 }
 
+/* What the application replies to a connection request */
+static enum bt_br_conn_req_rsp conn_req_rsp;
+
+static K_SEM_DEFINE(conn_req_sem, 0, 1);
+
+static enum bt_br_conn_req_rsp conn_req(const bt_addr_t *addr, uint32_t cod)
+{
+	ARG_UNUSED(addr);
+	ARG_UNUSED(cod);
+
+	k_sem_give(&conn_req_sem);
+
+	return conn_req_rsp;
+}
+
+static bool conn_req_used;
+
+/* The application replies to a connection request with this */
+static void conn_req_reply_set(enum bt_br_conn_req_rsp rsp)
+{
+	conn_req_rsp = rsp;
+	conn_req_used = true;
+	zassert_ok(bt_br_set_connectable(true, conn_req), "Setting connectable failed");
+}
+
 static void work_nothing(struct k_work *work)
 {
 	ARG_UNUSED(work);
@@ -727,6 +830,14 @@ static void after(void *fixture)
 		creator_join();
 	}
 
+	if (conn_req_used) {
+		conn_req_used = false;
+		/* Setting connectable is what removes the callback, and the driver has no reset */
+		zassert_ok(bt_br_set_connectable(false, NULL), "Clearing connectable failed");
+		zassert_ok(bt_br_set_connectable(true, NULL), "Setting connectable failed");
+		zassert_ok(bt_br_set_connectable(false, NULL), "Clearing connectable failed");
+	}
+
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 
 	bt_conn_drop(&created_conn);
@@ -735,11 +846,17 @@ static void after(void *fixture)
 
 	refused_opcode = BT_OP_NOP;
 	acl_lost_on_sco_setup = false;
+	hold_connect_status = false;
+	hold_disconn_complete = false;
 	lookup_on_accept = false;
 	sco_chan.sco = NULL;
+	sco_chan_other.sco = NULL;
 	sco_disconnected_count = 0U;
 
 	k_sem_reset(&accept_sem);
+	k_sem_reset(&disconnect_sem);
+	k_sem_reset(&reject_sem);
+	k_sem_reset(&conn_req_sem);
 	k_sem_reset(&connected_sem);
 	k_sem_reset(&disconnected_sem);
 	k_sem_reset(&sco_connected_sem);
@@ -1137,12 +1254,686 @@ static ZTEST(host_br_conn_lookup, test_connect_refused)
 /* The controller refuses that the connection from the peer is accepted */
 static ZTEST(host_br_conn_lookup, test_accept_refused)
 {
+	struct bt_conn *conn;
+
 	refused_opcode = BT_HCI_OP_ACCEPT_CONN_REQ;
 	refused_status = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	peer_requests(BT_HCI_ACL);
-	host_settle();
+
+	/* bt_conn_create_br() can have handed out the object while the command was on its way */
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_INSUFFICIENT_RESOURCES, "Connected with 0x%02x",
+		      connected_err);
 	refused_opcode = BT_OP_NOP;
+	bt_conn_drop(&conn);
 
 	zassert_is_null(bt_conn_lookup_addr_br(&peer), "An object was left behind");
 	expect_all_objects_free();
+}
+
+/* Sets up a connection to the peer, and the request of the peer crosses it. Returns a reference to
+ * the object of the connection.
+ */
+static struct bt_conn *crossing_request(void)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_create_br(&peer, BT_BR_CONN_PARAM_DEFAULT);
+	zassert_not_null(conn, "Creating the connection failed");
+	peer_requests(BT_HCI_ACL);
+
+	return conn;
+}
+
+static void expect_no_connected_callback(void)
+{
+	host_settle();
+	zassert_equal(k_sem_take(&connected_sem, K_NO_WAIT), -EBUSY,
+		      "Unexpected connected callback");
+}
+
+static void expect_role(struct bt_conn *conn, uint8_t role)
+{
+	struct bt_conn_info info;
+
+	zassert_ok(bt_conn_get_info(conn, &info), "Getting the connection info failed");
+	zassert_equal(info.role, role, "Connection with role %u", info.role);
+}
+
+/* The connection is up on this object with this handle, and no other object has the peer */
+static void expect_up(struct bt_conn *conn, uint16_t handle)
+{
+	struct bt_conn *found;
+	uint16_t conn_handle;
+
+	host_settle();
+	expect_state(conn, BT_CONN_STATE_CONNECTED);
+	zassert_equal(k_sem_take(&disconnected_sem, K_NO_WAIT), -EBUSY, "Disconnected callback");
+	zassert_ok(bt_hci_get_conn_handle(conn, &conn_handle), "Getting the handle failed");
+	zassert_equal(conn_handle, handle, "Connection with handle %u", conn_handle);
+
+	found = bt_conn_lookup_addr_br(&peer);
+	zassert_equal(found, conn, "The lookup found another object");
+	bt_conn_unref(found);
+}
+
+/* The connected callback came with this error for this object, and the object is gone */
+static void expect_failed(struct bt_conn *conn, uint8_t err)
+{
+	struct bt_conn *failed;
+
+	failed = wait_connected();
+	zassert_equal(failed, conn, "The failure went to another object");
+	zassert_equal(connected_err, err, "Connected with 0x%02x", connected_err);
+	bt_conn_drop(&failed);
+	expect_state(conn, BT_CONN_STATE_DISCONNECTED);
+	zassert_is_null(bt_conn_lookup_addr_br(&peer), "An object was left behind");
+}
+
+/* The connection goes down, and with the reference the last object is gone */
+static void expect_gone_after_disconnection(struct bt_conn **conn, uint16_t handle)
+{
+	peer_disconnects(handle);
+	bt_conn_drop(conn);
+	expect_all_objects_free();
+}
+
+/* The controller reports one event for the two commands */
+static ZTEST(host_br_conn_lookup, test_crossing_one_success)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	expect_up(conn, ACL_HANDLE);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The connection is the one that the peer asked for */
+static ZTEST(host_br_conn_lookup, test_crossing_role)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	expect_role(conn, BT_CONN_ROLE_PERIPHERAL);
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	expect_role(conn, BT_CONN_ROLE_PERIPHERAL);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The attempt that lost is reported after the connection is up, which stays up */
+static ZTEST(host_br_conn_lookup, test_crossing_success_then_failure)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	conn_complete(0U, BT_HCI_ERR_CONN_ALREADY_EXISTS);
+	expect_up(conn, ACL_HANDLE);
+	expect_no_connected_callback();
+
+	zassert_ok(bt_conn_disconnect(conn, REASON), "Disconnecting failed");
+	zassert_ok(k_sem_take(&disconnected_sem, TIMEOUT), "No disconnected callback");
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* The attempt that lost is reported first, and the object waits for the other one */
+static ZTEST(host_br_conn_lookup, test_crossing_lost_then_success)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(0U, BT_HCI_ERR_CONN_ALREADY_EXISTS);
+	expect_no_connected_callback();
+	expect_state(conn, BT_CONN_STATE_CONNECTING);
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	expect_up(conn, ACL_HANDLE);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The attempt that lost is reported first, and the other one fails as well */
+static ZTEST(host_br_conn_lookup, test_crossing_lost_then_failure)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(0U, BT_HCI_ERR_CONN_ALREADY_EXISTS);
+	expect_no_connected_callback();
+
+	conn_complete(0U, BT_HCI_ERR_CONN_TIMEOUT);
+	expect_failed(conn, BT_HCI_ERR_CONN_TIMEOUT);
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* The controller reports one failure for the two commands: nothing waits for a second event */
+static ZTEST(host_br_conn_lookup, test_crossing_one_failure)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(0U, BT_HCI_ERR_CONN_TIMEOUT);
+	expect_failed(conn, BT_HCI_ERR_CONN_TIMEOUT);
+	expect_no_connected_callback();
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+
+	/* The next attempt pages again */
+	conn = bt_conn_create_br(&peer, BT_BR_CONN_PARAM_DEFAULT);
+	zassert_not_null(conn, "Creating the connection failed");
+	conn_complete(NEXT_ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	expect_gone_after_disconnection(&conn, NEXT_ACL_HANDLE);
+}
+
+/* A failure that can be about either command ends the object. The link that comes up after it gets
+ * a new one.
+ */
+static ZTEST(host_br_conn_lookup, test_crossing_failure_then_success)
+{
+	struct bt_conn *new_conn;
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(0U, BT_HCI_ERR_CONN_TIMEOUT);
+	expect_failed(conn, BT_HCI_ERR_CONN_TIMEOUT);
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	new_conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+	zassert_not_equal(new_conn, conn, "The link came up on the object of the failure");
+	expect_up(new_conn, ACL_HANDLE);
+	expect_role(new_conn, BT_CONN_ROLE_PERIPHERAL);
+	expect_state(conn, BT_CONN_STATE_DISCONNECTED);
+
+	bt_conn_drop(&conn);
+	expect_gone_after_disconnection(&new_conn, ACL_HANDLE);
+}
+
+/* The Create Connection fails before the request arrives: two attempts, one after the other. An
+ * Intel AX200 reports a crossing like this, with a Page Timeout long before the page timeout.
+ */
+static ZTEST(host_br_conn_lookup, test_failure_before_request)
+{
+	struct bt_conn *new_conn;
+	struct bt_conn *conn;
+
+	conn = bt_conn_create_br(&peer, BT_BR_CONN_PARAM_DEFAULT);
+	zassert_not_null(conn, "Creating the connection failed");
+	conn_complete(0U, BT_HCI_ERR_PAGE_TIMEOUT);
+	expect_failed(conn, BT_HCI_ERR_PAGE_TIMEOUT);
+
+	new_conn = peer_connects(ACL_HANDLE);
+	zassert_not_equal(new_conn, conn, "The link came up on the object of the failure");
+	expect_up(new_conn, ACL_HANDLE);
+
+	bt_conn_drop(&conn);
+	expect_gone_after_disconnection(&new_conn, ACL_HANDLE);
+}
+
+/* The application cancels its connection, while the request of the peer is being accepted */
+static ZTEST(host_br_conn_lookup, test_crossing_cancel)
+{
+	struct bt_conn *new_conn;
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	zassert_ok(bt_conn_disconnect(conn, REASON), "Cancelling failed");
+	conn_complete(0U, BT_HCI_ERR_UNKNOWN_CONN_ID);
+	expect_failed(conn, BT_HCI_ERR_UNKNOWN_CONN_ID);
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	new_conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+	expect_up(new_conn, ACL_HANDLE);
+
+	bt_conn_drop(&conn);
+	expect_gone_after_disconnection(&new_conn, ACL_HANDLE);
+}
+
+/* The application hears of the failure once */
+static ZTEST(host_br_conn_lookup, test_crossing_both_fail)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(0U, BT_HCI_ERR_PAGE_TIMEOUT);
+	expect_failed(conn, BT_HCI_ERR_PAGE_TIMEOUT);
+
+	conn_complete(0U, BT_HCI_ERR_CONN_TIMEOUT);
+	expect_no_connected_callback();
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* A second success can not take over the connection that is up */
+static ZTEST(host_br_conn_lookup, test_crossing_second_success)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	conn_complete(NEXT_ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_up(conn, ACL_HANDLE);
+	expect_no_connected_callback();
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The connection goes down before the attempt that lost is reported */
+static ZTEST(host_br_conn_lookup, test_crossing_late_failure)
+{
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	peer_disconnects(ACL_HANDLE);
+
+	conn_complete(0U, BT_HCI_ERR_CONN_ALREADY_EXISTS);
+	expect_no_connected_callback();
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* The other command brings up a link after the connection of the first one went down */
+static ZTEST(host_br_conn_lookup, test_crossing_success_after_disconnection)
+{
+	struct bt_conn *new_conn;
+	struct bt_conn *conn;
+
+	conn = crossing_request();
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	peer_disconnects(ACL_HANDLE);
+
+	conn_complete(NEXT_ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	new_conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+	zassert_not_equal(new_conn, conn, "The link came up on the old object");
+	expect_up(new_conn, NEXT_ACL_HANDLE);
+
+	bt_conn_drop(&conn);
+	expect_gone_after_disconnection(&new_conn, NEXT_ACL_HANDLE);
+}
+
+/* No object is left for a link that comes up after a failure: the Host takes the link down */
+static ZTEST(host_br_conn_lookup, test_success_without_free_object)
+{
+	struct bt_conn *conns[CONFIG_BT_MAX_CONN];
+
+	ARRAY_FOR_EACH(conns, i) {
+		conns[i] = bt_conn_add_br(&peer);
+		zassert_not_null(conns[i], "Object %zu is not free", i);
+	}
+
+	hold_disconn_complete = true;
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&disconnect_sem, TIMEOUT), "The link was not disconnected");
+	zassert_equal(disconnect_handle, ACL_HANDLE, "Disconnected handle %u", disconnect_handle);
+	zassert_equal(disconnect_reason, BT_HCI_ERR_REMOTE_LOW_RESOURCES,
+		      "Disconnected with 0x%02x", disconnect_reason);
+	expect_no_connected_callback();
+
+	ARRAY_FOR_EACH(conns, i) {
+		bt_conn_drop(&conns[i]);
+	}
+
+	expect_all_objects_free();
+}
+
+/* The application rejects a request: no object, and it does not hear of its own decision */
+static ZTEST(host_br_conn_lookup, test_request_rejected)
+{
+	conn_req_reply_set(BT_BR_CONN_REQ_REJECT_NO_RESOURCES);
+
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	expect_no_connected_callback();
+	zassert_is_null(bt_conn_lookup_addr_br(&peer), "An object was left behind");
+	expect_all_objects_free();
+}
+
+/* The application rejects the request of the peer, while the attempt of its own goes on */
+static ZTEST(host_br_conn_lookup, test_crossing_request_rejected)
+{
+	struct bt_conn *conn;
+
+	conn_req_reply_set(BT_BR_CONN_REQ_REJECT_NO_RESOURCES);
+
+	conn = bt_conn_create_br(&peer, BT_BR_CONN_PARAM_DEFAULT);
+	zassert_not_null(conn, "Creating the connection failed");
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	zassert_equal(reject_reason, BT_HCI_ERR_INSUFFICIENT_RESOURCES, "Rejected with 0x%02x",
+		      reject_reason);
+
+	conn_complete(0U, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+	expect_no_connected_callback();
+	expect_state(conn, BT_CONN_STATE_CONNECTING);
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	expect_up(conn, ACL_HANDLE);
+	expect_role(conn, BT_CONN_ROLE_CENTRAL);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The controller refuses the rejection, so only the attempt of its own has an event to come */
+static ZTEST(host_br_conn_lookup, test_crossing_reject_refused)
+{
+	struct bt_conn *failed;
+	struct bt_conn *conn;
+
+	conn_req_reply_set(BT_BR_CONN_REQ_REJECT_NO_RESOURCES);
+
+	refused_opcode = BT_HCI_OP_REJECT_CONN_REQ;
+	refused_status = BT_HCI_ERR_CMD_DISALLOWED;
+	conn = bt_conn_create_br(&peer, BT_BR_CONN_PARAM_DEFAULT);
+	zassert_not_null(conn, "Creating the connection failed");
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	host_settle();
+	refused_opcode = BT_OP_NOP;
+
+	conn_complete(0U, BT_HCI_ERR_PAGE_TIMEOUT);
+	failed = wait_connected();
+	zassert_equal(failed, conn, "The failure went to another object");
+	zassert_equal(connected_err, BT_HCI_ERR_PAGE_TIMEOUT, "Connected with 0x%02x",
+		      connected_err);
+	bt_conn_drop(&failed);
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* The controller refuses to accept the request of the peer */
+static ZTEST(host_br_conn_lookup, test_crossing_accept_refused)
+{
+	struct bt_conn *conn;
+
+	refused_opcode = BT_HCI_OP_ACCEPT_CONN_REQ;
+	refused_status = BT_HCI_ERR_CMD_DISALLOWED;
+	conn = crossing_request();
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	host_settle();
+	refused_opcode = BT_OP_NOP;
+	zassert_equal(reject_reason, BT_HCI_ERR_INSUFFICIENT_RESOURCES, "Rejected with 0x%02x",
+		      reject_reason);
+
+	conn_complete(0U, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+	expect_no_connected_callback();
+	expect_state(conn, BT_CONN_STATE_CONNECTING);
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	expect_connected(conn);
+	expect_up(conn, ACL_HANDLE);
+	expect_role(conn, BT_CONN_ROLE_CENTRAL);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The request reaches the Host while Create Connection waits for its status, which is a refusal,
+ * as seen from a CSR8510. The Accept follows, and the thread of Create Connection can run.
+ */
+static void crossing_connect_refused(void)
+{
+	conn_req_reply_set(BT_BR_CONN_REQ_ACCEPT_PERIPHERAL);
+
+	hold_connect_status = true;
+	creator_start(create_br);
+
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&conn_req_sem, TIMEOUT), "The request did not reach the Host");
+
+	refused_opcode = BT_HCI_OP_CONNECT;
+	refused_status = BT_HCI_ERR_CMD_DISALLOWED;
+	cmd_status(BT_HCI_OP_CONNECT);
+}
+
+/* The request arrives before Create Connection is refused: the connection comes up anyway */
+static ZTEST(host_br_conn_lookup, test_crossing_connect_refused)
+{
+	struct bt_conn *conn;
+
+	crossing_connect_refused();
+	creator_join();
+	zassert_is_null(created_conn, "Got a connection");
+	zassert_ok(k_sem_take(&accept_sem, TIMEOUT), "The connection was not accepted");
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+	expect_up(conn, ACL_HANDLE);
+	expect_role(conn, BT_CONN_ROLE_PERIPHERAL);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* Both commands are refused, so nothing is left to come: the failure is reported */
+static ZTEST(host_br_conn_lookup, test_crossing_connect_and_accept_refused)
+{
+	struct bt_conn *conn;
+
+	crossing_connect_refused();
+	refused_opcode = BT_HCI_OP_ACCEPT_CONN_REQ;
+
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_INSUFFICIENT_RESOURCES, "Connected with 0x%02x",
+		      connected_err);
+	creator_join();
+	zassert_is_null(created_conn, "Got a connection");
+	expect_no_connected_callback();
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* The accepted request fails after Create Connection has returned */
+static ZTEST(host_br_conn_lookup, test_crossing_connect_refused_then_failure)
+{
+	struct bt_conn *conn;
+
+	crossing_connect_refused();
+	creator_join();
+	zassert_ok(k_sem_take(&accept_sem, TIMEOUT), "The connection was not accepted");
+
+	conn_complete(0U, BT_HCI_ERR_CONN_TIMEOUT);
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_CONN_TIMEOUT, "Connected with 0x%02x",
+		      connected_err);
+	expect_no_connected_callback();
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* The accepted request fails before the thread of Create Connection has run */
+static ZTEST(host_br_conn_lookup, test_crossing_failure_then_connect_refused)
+{
+	struct bt_conn *conn;
+
+	crossing_connect_refused();
+	k_thread_priority_set(&creator_thread, K_LOWEST_APPLICATION_THREAD_PRIO);
+	zassert_ok(k_sem_take(&accept_sem, TIMEOUT), "The connection was not accepted");
+
+	conn_complete(0U, BT_HCI_ERR_CONN_TIMEOUT);
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_CONN_TIMEOUT, "Connected with 0x%02x",
+		      connected_err);
+
+	creator_join();
+	zassert_is_null(created_conn, "Got a connection");
+	expect_no_connected_callback();
+	bt_conn_drop(&conn);
+	expect_all_objects_free();
+}
+
+/* A request from a peer with a connection up is rejected, which does not touch that connection */
+static ZTEST(host_br_conn_lookup, test_request_while_connected)
+{
+	struct bt_conn *conn;
+
+	conn = peer_connects(ACL_HANDLE);
+
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	zassert_equal(reject_reason, BT_HCI_ERR_BD_ADDR_UNACCEPTABLE, "Rejected with 0x%02x",
+		      reject_reason);
+
+	conn_complete(0U, BT_HCI_ERR_BD_ADDR_UNACCEPTABLE);
+	expect_up(conn, ACL_HANDLE);
+	expect_no_connected_callback();
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The controller refuses the rejection, which does not touch the connection either */
+static ZTEST(host_br_conn_lookup, test_request_while_connected_reject_refused)
+{
+	struct bt_conn *conn;
+
+	conn = peer_connects(ACL_HANDLE);
+
+	refused_opcode = BT_HCI_OP_REJECT_CONN_REQ;
+	refused_status = BT_HCI_ERR_CMD_DISALLOWED;
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	expect_up(conn, ACL_HANDLE);
+	refused_opcode = BT_OP_NOP;
+
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* The same while the connection is going down */
+static ZTEST(host_br_conn_lookup, test_request_while_disconnecting)
+{
+	struct bt_conn *conn;
+
+	conn = peer_connects(ACL_HANDLE);
+
+	hold_disconn_complete = true;
+	zassert_ok(bt_conn_disconnect(conn, REASON), "Disconnecting failed");
+
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	conn_complete(0U, BT_HCI_ERR_BD_ADDR_UNACCEPTABLE);
+	expect_no_connected_callback();
+	expect_state(conn, BT_CONN_STATE_DISCONNECTING);
+	zassert_equal(k_sem_take(&disconnected_sem, K_NO_WAIT), -EBUSY, "Disconnected callback");
+
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* A second request while the first one is being accepted only gets a rejection */
+static ZTEST(host_br_conn_lookup, test_second_request_while_accepting)
+{
+	struct bt_conn *conn;
+
+	peer_requests(BT_HCI_ACL);
+
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	zassert_equal(reject_reason, BT_HCI_ERR_BD_ADDR_UNACCEPTABLE, "Rejected with 0x%02x",
+		      reject_reason);
+
+	conn_complete(0U, BT_HCI_ERR_BD_ADDR_UNACCEPTABLE);
+	expect_no_connected_callback();
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+	expect_up(conn, ACL_HANDLE);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+/* A role switch during the setup does not make the object look like one of this side */
+static ZTEST(host_br_conn_lookup, test_second_request_after_role_change)
+{
+	struct bt_conn *conn;
+
+	conn_req_reply_set(BT_BR_CONN_REQ_ACCEPT_CENTRAL);
+
+	peer_requests(BT_HCI_ACL);
+	role_change(BT_HCI_ROLE_CENTRAL);
+	host_settle();
+
+	conn_request(BT_HCI_ACL);
+	zassert_ok(k_sem_take(&reject_sem, TIMEOUT), "The connection was not rejected");
+	conn_complete(0U, BT_HCI_ERR_BD_ADDR_UNACCEPTABLE);
+	expect_no_connected_callback();
+
+	conn_complete(ACL_HANDLE, BT_HCI_ERR_SUCCESS);
+	conn = wait_connected();
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+	expect_up(conn, ACL_HANDLE);
+	expect_role(conn, BT_CONN_ROLE_CENTRAL);
+	expect_gone_after_disconnection(&conn, ACL_HANDLE);
+}
+
+static void expect_sco_handle(const struct bt_conn *sco, uint16_t handle)
+{
+	uint16_t conn_handle;
+
+	zassert_ok(bt_hci_get_conn_handle(sco, &conn_handle), "Getting the handle failed");
+	zassert_equal(conn_handle, handle, "SCO connection with handle %u", conn_handle);
+}
+
+/* An SCO connection of this side and a request from the peer: each gets its own connection */
+static ZTEST(host_br_conn_lookup, test_sco_crossing)
+{
+	struct bt_conn *sco;
+	struct bt_conn *acl;
+
+	acl = peer_connects(ACL_HANDLE);
+
+	sco = bt_conn_create_sco(&peer, &sco_chan);
+	zassert_not_null(sco, "Creating the SCO connection failed");
+	peer_requests(BT_HCI_ESCO);
+
+	sync_conn_complete(SCO_HANDLE, BT_HCI_ESCO, BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&sco_connected_sem, TIMEOUT), "No SCO connected callback");
+	sync_conn_complete(NEXT_SCO_HANDLE, BT_HCI_ESCO, BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&sco_connected_sem, TIMEOUT), "No SCO connected callback");
+
+	expect_state(sco_chan.sco, BT_CONN_STATE_CONNECTED);
+	expect_state(sco_chan_other.sco, BT_CONN_STATE_CONNECTED);
+	expect_sco_handle(sco_chan.sco, SCO_HANDLE);
+	expect_sco_handle(sco_chan_other.sco, NEXT_SCO_HANDLE);
+
+	disconn_complete(SCO_HANDLE);
+	zassert_ok(k_sem_take(&sco_disconnected_sem, TIMEOUT), "No SCO disconnected callback");
+	disconn_complete(NEXT_SCO_HANDLE);
+	zassert_ok(k_sem_take(&sco_disconnected_sem, TIMEOUT), "No SCO disconnected callback");
+	bt_conn_drop(&sco);
+	expect_all_sco_objects_free();
+
+	peer_disconnects(ACL_HANDLE);
+	bt_conn_unref(acl);
+}
+
+/* The failure of another attempt does not end the SCO connection that is up */
+static ZTEST(host_br_conn_lookup, test_sco_late_failure)
+{
+	struct bt_conn *acl;
+
+	acl = peer_connects(ACL_HANDLE);
+
+	peer_requests(BT_HCI_ESCO);
+	sync_conn_complete(SCO_HANDLE, BT_HCI_ESCO, BT_HCI_ERR_SUCCESS);
+	zassert_ok(k_sem_take(&sco_connected_sem, TIMEOUT), "No SCO connected callback");
+
+	sync_conn_complete(0U, BT_HCI_ESCO, BT_HCI_ERR_CONN_ALREADY_EXISTS);
+	host_settle();
+	expect_state(sco_chan.sco, BT_CONN_STATE_CONNECTED);
+	expect_sco_handle(sco_chan.sco, SCO_HANDLE);
+	zassert_equal(k_sem_take(&sco_disconnected_sem, K_NO_WAIT), -EBUSY,
+		      "SCO disconnected callback");
+
+	disconn_complete(SCO_HANDLE);
+	zassert_ok(k_sem_take(&sco_disconnected_sem, TIMEOUT), "No SCO disconnected callback");
+	expect_all_sco_objects_free();
+
+	peer_disconnects(ACL_HANDLE);
+	bt_conn_unref(acl);
 }
