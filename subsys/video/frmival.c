@@ -97,6 +97,7 @@ int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 	int ret;
 
 	if (dev == NULL || fie == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)fie);
 		return -EINVAL;
 	}
 
@@ -196,6 +197,7 @@ int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise
 int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
 	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)match);
 		return -EINVAL;
 	}
 

@@ -13,6 +13,7 @@ int video_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	if (dev == NULL || caps == NULL ||
 	    (caps->type != VIDEO_BUF_TYPE_INPUT && caps->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)caps);
 		return -EINVAL;
 	}
 
@@ -48,6 +49,8 @@ int video_transform_cap(const struct device *const dev,
 
 	if (dev == NULL || cap == NULL || res_cap == NULL ||
 	    (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %p, %p, %d, %u)",
+			(void *)dev, (void *)cap, (void *)res_cap, type, ind);
 		return -EINVAL;
 	}
 

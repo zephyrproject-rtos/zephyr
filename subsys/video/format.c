@@ -41,7 +41,8 @@ int video_set_selection(const struct device *dev, struct video_selection *sel)
 	struct video_caps caps = {.type = sel->type};
 	int ret;
 
-	if (dev == NULL || sel == NULL) {
+	if (dev == NULL || sel == NULL || sel->type == 0) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)sel);
 		return -EINVAL;
 	}
 
@@ -129,7 +130,8 @@ end:
 
 int video_get_selection(const struct device *dev, struct video_selection *sel)
 {
-	if (dev == NULL || sel == NULL) {
+	if (dev == NULL || sel == NULL || sel->type == 0) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)sel);
 		return -EINVAL;
 	}
 
@@ -284,7 +286,8 @@ int video_get_format(const struct device *dev, struct video_format *fmt)
 {
 	struct video_device *vdev;
 
-	if (dev == NULL || fmt == NULL) {
+	if (dev == NULL || fmt == NULL || fmt->type == 0) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)fmt);
 		return -EINVAL;
 	}
 
@@ -307,7 +310,8 @@ int video_get_format(const struct device *dev, struct video_format *fmt)
 
 int video_estimate_fmt_size(struct video_format *fmt)
 {
-	if (fmt == NULL) {
+	if (fmt == NULL || fmt->type == 0) {
+		LOG_ERR("Invalid parameters (%p)", (void *)fmt);
 		return -EINVAL;
 	}
 
