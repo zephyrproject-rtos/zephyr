@@ -13,7 +13,7 @@
 	model = "RZ/N2H Evaluation Board Kit";
 
 	chosen {
-		zephyr,sram = &atcm;
+		zephyr,sram = &sram0;
 		zephyr,flash = &at25sf128a;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &uart0;
