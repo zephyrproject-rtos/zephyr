@@ -45,8 +45,6 @@ Hardware
   - BMM150 Magnetometer
   - Dual BMP388 Barometer
   - Dual ICM-42688 6-axis IMU
-  - IST8310 3-axis Magnetometer
-  - U-blox NEO-M8N GNSS module
 
 - UART JST-GH connectors
 
@@ -423,6 +421,9 @@ described in :ref:`shields`:
 - GPS2: ``pixhawk_gps2_serial`` (LPUART5), ``pixhawk_gps2_i2c`` (LPI2C2) and
   ``pixhawk_gps2_connector``
 - CAN1 to CAN3: ``pixhawk_can1`` to ``pixhawk_can3`` (FLEXCAN1 to FLEXCAN3)
+
+The board does not describe the GNSS module plugged into GPS1, such as the u-blox NEO-M8N module
+with an IST8310 magnetometer shipped with the kit. Use a shield or an overlay for it.
 
 Serial Port
 ===========

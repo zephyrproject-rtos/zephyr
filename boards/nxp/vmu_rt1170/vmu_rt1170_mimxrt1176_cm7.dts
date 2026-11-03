@@ -8,7 +8,6 @@
 
 #include <nxp/imxrt/imxrt11xx/nxp_rt1170_cm7.dtsi>
 #include <zephyr/dt-bindings/gpio/pixhawk-connector.h>
-#include <zephyr/dt-bindings/led/led.h>
 #include "vmu_rt1170.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -21,9 +20,7 @@
 		led1 = &red_led;
 		watchdog0 = &wdog1;
 		sdhc0 = &usdhc1;
-		sw0 = &arming_button;
 		buzzer0 = &buzzer0;
-		mcuboot-button0 = &arming_button;
 	};
 
 	chosen {
@@ -38,17 +35,6 @@
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &lpuart1;
-	};
-
-	/* This is the Arming Button on the included GPS module for 10 pin JST-GH */
-	gpio_keys {
-		compatible = "gpio-keys";
-
-		arming_button: button_0 {
-			label = "Arming Switch";
-			gpios = <&gpio1 24 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-			zephyr,code = <INPUT_KEY_0>;
-		};
 	};
 
 	/* This regulator controls VDD_5V_PERIPH onboard supply */
@@ -393,24 +379,6 @@ pixhawk_can3: &flexcan3 {
 
 pixhawk_full_gps1_i2c: &lpi2c1 {
 	status = "okay";
-
-	ist8310: ist8310@e {
-		compatible = "isentek,ist8310";
-		reg = <0xe>;
-	};
-
-	ncp5623c: ncp5623c@39 {
-		compatible = "onnn,ncp5623";
-		reg = <0x39>;
-
-		led_0 {
-			label = "GNSS LED";
-			index = <0>;
-			color-mapping = <LED_COLOR_ID_RED>,
-					<LED_COLOR_ID_GREEN>,
-					<LED_COLOR_ID_BLUE>;
-		};
-	};
 };
 
 pixhawk_gps2_i2c: &lpi2c2 {
