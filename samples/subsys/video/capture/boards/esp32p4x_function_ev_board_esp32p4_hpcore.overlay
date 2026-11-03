@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The camera interface produces RGB565 frames */
+&ek79007 {
+	pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+};
+
+&dsi_display {
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+};

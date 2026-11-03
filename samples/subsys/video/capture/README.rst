@@ -36,6 +36,9 @@ Supported boards and camera modules include:
 - :zephyr:board:`xiao_esp32s3` ("sense" variant)
   with the :ref:`seeed_xiao_round_display` shield.
 
+- :zephyr:board:`esp32p4x_function_ev_board`
+  with the :ref:`espressif_sc2336_cam_module` camera module.
+
 Also :zephyr:board:`arduino_nicla_vision` can be used in this sample as capture device, in that case
 The user can transfer the captured frames through on board USB.
 
@@ -60,6 +63,9 @@ power, flashing and console output.
 
 On the :zephyr:board:`xiao_esp32s3`, connect the "sense" camera module and the
 :ref:`seeed_xiao_round_display` to their respective connectors.
+
+On the :zephyr:board:`esp32p4x_function_ev_board`, connect the :ref:`espressif_sc2336_cam_module`
+to the MIPI CSI connector. The frames are shown on the MIPI DSI display of the board.
 
 For :zephyr:board:`arduino_nicla_vision` there is no extra wiring required.
 
@@ -130,6 +136,16 @@ using the :ref:`seeed_xiao_round_display` shield:
    :zephyr-app: samples/subsys/video/capture
    :board: xiao_esp32s3/esp32s3/procpu/sense
    :shield: seeed_xiao_round_display
+   :goals: build
+   :compact:
+
+For :zephyr:board:`esp32p4x_function_ev_board`, build this sample application with the following
+commands, using the :ref:`espressif_sc2336_cam_module` camera module:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: esp32p4x_function_ev_board/esp32p4/hpcore
+   :shield: espressif_sc2336_cam_module
    :goals: build
    :compact:
 
