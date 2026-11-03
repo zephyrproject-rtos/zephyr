@@ -46,10 +46,13 @@ if SOC_SERIES_NRF71
 config SOC_SERIES_NRF71_SKIP_PREV_IMAGE_INIT
 	bool "Skip setup done by a previous boot image"
 	default y if BOOTLOADER_MCUBOOT
+	select NRF_SKIP_CLOCK_CONFIG
 	help
 	  Skip the setup that a previous boot image has already applied
-	  and locked: MPC overrides and OSCILLATORS/REGULATORS security
-	  attribution. GRTC and IPCT setup still run.
+	  and locked: MPC overrides, OSCILLATORS/REGULATORS security
+	  attribution, clock frequency, TAMPC, FICR trim, MRAM boot count, the
+	  APPROTECT workaround and LFXO load capacitance. GRTC, IPCT and WICR
+	  setup still run.
 
 	  Enable this in images started by a bootloader that performs this
 	  setup.
