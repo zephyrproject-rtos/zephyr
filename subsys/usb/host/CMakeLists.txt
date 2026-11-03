@@ -29,6 +29,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBH_CDC_NCM_CLASS
+  class/usbh_cdc_ncm.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBH_VIDEO_CLASS
   class/usbh_uvc.c
 )

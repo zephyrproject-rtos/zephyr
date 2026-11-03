@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_NCM_CLASS
+	bool "USB Communication Device Class (NCM) support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	help
+	  USB Host Communication Device Class - Network Control Model (CDC-NCM)
+	  implementation.
+
+	  Enables support for USB CDC-NCM devices (for example, USB Ethernet
+	  adapters) and exposes them as Ethernet network interfaces.
+
+if USBH_CDC_NCM_CLASS
+
+config USBH_CDC_NCM_ETH_DRV_NAME
+	string "Ethernet interface name"
+	default "usbh_cdc_ncm_eth"
+	help
+	  This option sets the driver name and name of the network interface
+	  in your host system. If there are multiple network interfaces
+	  defined, then this value is used as a prefix and the interface names
+	  will be usbh_cdc_ncm_eth0, usbh_cdc_ncm_eth1, etc.
+
+config USBH_CDC_NCM_MAX_NTB_SIZE
+	int "Maximum NTB size"
+	default 2048
+	range 2048 16384
+	help
+	  Size of the buffers used to build and receive the NCM Transfer Blocks
+	  (NTB).
+
+	  This is also used as the initial value for the maximum NTB size the
+	  device is allowed to send to the host (SetNtbInputSize), clamped to
+	  the maximum size reported by the device. The host shall select at
+	  least 2048 bytes (NCM100.pdf, 7.2.7).
+
+config USBH_CDC_NCM_RX_DOUBLE_BUFFERING
+	bool "NCM receive double buffering"
+	default y
+	help
+	  Allocate two bulk IN transfers instead of one to increase throughput by
+	  receiving the next NTB while the previous one is handed to the network
+	  stack. Without it the receive path leaves a short gap between NTBs.
+
+	  Enabling this costs one additional receive buffer of
+	  USBH_CDC_NCM_MAX_NTB_SIZE bytes per driver instance.
+
+config USBH_CDC_NCM_TX_WINDOW_US
+	int "Aggregation window in microseconds"
+	default 200
+	range 0 10000
+	help
+	  Maximum time in microseconds the driver waits for additional packets
+	  before transmitting the NTB it is building. A longer window
+	  aggregates more packets per NTB at the cost of latency. With 0 the
+	  NTB is transmitted as soon as the queue is non-empty.
+
+	  This is the equivalent of the Linux cdc_ncm "tx_timer_usecs" module
+	  parameter.
+
+module = USBH_CDC_NCM
+module-str = "usbh cdc_ncm"
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_CDC_NCM_CLASS
