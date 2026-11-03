@@ -199,19 +199,18 @@
 			 * SmartDMA pinmux is not defined by SOC header, so
 			 * we encode it manually
 			 */
-			pinmux = <N9X_MUX('1', 4, 7)>,
-				 <N9X_MUX('1', 5, 7)>,
-				 <N9X_MUX('1', 6, 7)>,
-				 <N9X_MUX('1', 7, 7)>,
-				 <N9X_MUX('3', 4, 7)>,
-				 <N9X_MUX('3', 5, 7)>,
-				 <N9X_MUX('1', 10, 7)>,
-				 <N9X_MUX('1', 11, 7)>,
+			pinmux = <SMARTDMA_PIO0_PIO1_4>,
+				 <SMARTDMA_PIO1_PIO1_5>,
+				 <SMARTDMA_PIO2_PIO1_6>,
+				 <SMARTDMA_PIO3_PIO1_7>,
+				 <SMARTDMA_PIO4_PIO3_4>,
+				 <SMARTDMA_PIO5_PIO3_5>,
+				 <SMARTDMA_PIO6_PIO1_10>,
+				 <SMARTDMA_PIO7_PIO1_11>,
 				 <PIO0_4>,
 				 <PIO0_5>,
 				 <PIO0_11>,
-				 <CLKOUT_PIO2_2>,
-				 <N9X_MUX('0', 6, 12)>;
+				 <CLKOUT_PIO2_2>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;
