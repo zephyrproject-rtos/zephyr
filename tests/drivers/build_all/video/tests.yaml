@@ -58,6 +58,11 @@ tests:
   drivers.video.esp32_dvp.build:
     platform_allow:
       - esp32s3_eye/esp32s3/procpu
+  drivers.video.esp32_csi.build:
+    platform_allow:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_args:
+      - SHIELD=espressif_sc2336_cam_module
   drivers.video.stm32_dcmipp.build:
     platform_allow:
       - stm32n6570_dk/stm32n657xx/sb
