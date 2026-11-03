@@ -65,6 +65,16 @@ static void other_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t valu
 {
 }
 
+static ssize_t no_clear_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				      uint16_t value)
+{
+	if (value == 0U) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+
+	return sizeof(value);
+}
+
 BT_GATT_SERVICE_DEFINE(test_svc,
 	BT_GATT_PRIMARY_SERVICE(TEST_SERVICE_UUID),
 	BT_GATT_CHARACTERISTIC(TEST_NOTIFY_CHRC_UUID, BT_GATT_CHRC_NOTIFY,
@@ -77,6 +87,10 @@ BT_GATT_SERVICE_DEFINE(test_svc,
 			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 	BT_GATT_CCC(other_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+	BT_GATT_CHARACTERISTIC(TEST_NO_CLEAR_CHRC_UUID, BT_GATT_CHRC_NOTIFY,
+			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
+	BT_GATT_CCC_WITH_WRITE_CB(other_ccc_cfg_changed, no_clear_ccc_cfg_write,
+				  BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 );
 
 /* A CCC with no characteristic declaration in front of it, to exercise the

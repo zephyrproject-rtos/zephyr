@@ -24,6 +24,8 @@ DEFINE_FLAG_STATIC(flag_write_complete);
 DEFINE_FLAG_STATIC(flag_subscribed);
 DEFINE_FLAG_STATIC(flag_notified);
 DEFINE_FLAG_STATIC(flag_indicated);
+DEFINE_FLAG_STATIC(flag_unsubscribe_failed);
+DEFINE_FLAG_STATIC(flag_unsubscribed);
 
 static struct bt_conn *g_conn;
 
@@ -31,9 +33,11 @@ static struct bt_conn *g_conn;
 static uint16_t notify_chrc_value_handle;
 static uint16_t indicate_chrc_value_handle;
 static uint16_t both_chrc_value_handle;
+static uint16_t no_clear_chrc_value_handle;
 static uint16_t notify_ccc_handle;
 static uint16_t indicate_ccc_handle;
 static uint16_t both_ccc_handle;
+static uint16_t no_clear_ccc_handle;
 static uint16_t bare_ccc_handle;
 
 /* Handle range of the most recently discovered service */
@@ -136,6 +140,8 @@ static uint8_t chrc_discover_func(struct bt_conn *conn,
 		indicate_chrc_value_handle = chrc->value_handle;
 	} else if (bt_uuid_cmp(chrc->uuid, TEST_BOTH_CHRC_UUID) == 0) {
 		both_chrc_value_handle = chrc->value_handle;
+	} else if (bt_uuid_cmp(chrc->uuid, TEST_NO_CLEAR_CHRC_UUID) == 0) {
+		no_clear_chrc_value_handle = chrc->value_handle;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -155,6 +161,7 @@ static uint8_t ccc_discover_func(struct bt_conn *conn,
 		{ notify_chrc_value_handle, &notify_ccc_handle },
 		{ indicate_chrc_value_handle, &indicate_ccc_handle },
 		{ both_chrc_value_handle, &both_ccc_handle },
+		{ no_clear_chrc_value_handle, &no_clear_ccc_handle },
 	};
 	uint16_t best_value_handle = 0;
 	uint16_t *ccc_handle = NULL;
@@ -239,8 +246,9 @@ static void gatt_discover(void)
 		 svc_start_handle, svc_end_handle, bare_ccc_discover_func);
 
 	if (notify_chrc_value_handle == 0 || indicate_chrc_value_handle == 0 ||
-	    both_chrc_value_handle == 0 || notify_ccc_handle == 0 ||
-	    indicate_ccc_handle == 0 || both_ccc_handle == 0 || bare_ccc_handle == 0) {
+	    both_chrc_value_handle == 0 || no_clear_chrc_value_handle == 0 ||
+	    notify_ccc_handle == 0 || indicate_ccc_handle == 0 || both_ccc_handle == 0 ||
+	    no_clear_ccc_handle == 0 || bare_ccc_handle == 0) {
 		TEST_FAIL("Did not discover all required attributes");
 	}
 }
@@ -332,6 +340,92 @@ static void subscribe(struct bt_gatt_subscribe_params *params, uint16_t value_ha
 	WAIT_FOR_FLAG(flag_subscribed);
 }
 
+/* Unsubscribes from the subscribe callback */
+static bool unsubscribe_from_cb;
+
+static void no_clear_subscribe_cb(struct bt_conn *conn, uint8_t err,
+				  struct bt_gatt_subscribe_params *params)
+{
+	if (params->value != 0U) {
+		if (err != 0) {
+			TEST_FAIL("Subscribe failed (err 0x%02x)", err);
+		}
+
+		if (unsubscribe_from_cb) {
+			err = bt_gatt_unsubscribe(conn, params);
+			if (err != 0) {
+				TEST_FAIL("bt_gatt_unsubscribe failed: %d", err);
+			}
+		}
+
+		SET_FLAG(flag_subscribed);
+		return;
+	}
+
+	if (err != BT_ATT_ERR_WRITE_NOT_PERMITTED) {
+		TEST_FAIL("Unsubscribe ended with 0x%02x, expected 0x%02x", err,
+			  BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+
+	if (IS_FLAG_SET(flag_unsubscribed)) {
+		TEST_FAIL("Unsubscribe reported after it completed");
+	}
+
+	SET_FLAG(flag_unsubscribe_failed);
+}
+
+static uint8_t no_clear_notify_func(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+				    const void *data, uint16_t length)
+{
+	if (data == NULL) {
+		SET_FLAG(flag_unsubscribed);
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+/* Unsubscribing from the only subscription of the connection, from a CCC that refuses to be
+ * cleared: the error is reported, and the unsubscribe completes so that the parameters can be
+ * reused. The last time it unsubscribes from the subscribe callback, which must not complete the
+ * unsubscribe before its CCC write does.
+ */
+static void unsubscribe_refused(void)
+{
+	static struct bt_gatt_subscribe_params params;
+	int err;
+
+	for (int i = 0; i < 3; i++) {
+		unsubscribe_from_cb = (i == 2);
+
+		params.ccc_handle = no_clear_ccc_handle;
+		params.value_handle = no_clear_chrc_value_handle;
+		params.value = BT_GATT_CCC_NOTIFY;
+		params.subscribe = no_clear_subscribe_cb;
+		params.notify = no_clear_notify_func;
+
+		UNSET_FLAG(flag_subscribed);
+		UNSET_FLAG(flag_unsubscribe_failed);
+		UNSET_FLAG(flag_unsubscribed);
+
+		err = bt_gatt_subscribe(g_conn, &params);
+		if (err != 0) {
+			TEST_FAIL("bt_gatt_subscribe failed: %d", err);
+		}
+
+		WAIT_FOR_FLAG(flag_subscribed);
+
+		if (!unsubscribe_from_cb) {
+			err = bt_gatt_unsubscribe(g_conn, &params);
+			if (err != 0) {
+				TEST_FAIL("bt_gatt_unsubscribe failed: %d", err);
+			}
+		}
+
+		WAIT_FOR_FLAG(flag_unsubscribe_failed);
+		WAIT_FOR_FLAG(flag_unsubscribed);
+	}
+}
+
 static void test_main(void)
 {
 	static struct bt_gatt_subscribe_params notify_params;
@@ -361,6 +455,8 @@ static void test_main(void)
 		  BT_ATT_ERR_CCC_IMPROPER_CONF);
 	ccc_write(indicate_ccc_handle, BT_GATT_CCC_NOTIFY,
 		  BT_ATT_ERR_CCC_IMPROPER_CONF);
+
+	unsubscribe_refused();
 
 	/* Supported configurations are accepted and delivered */
 	subscribe(&notify_params, notify_chrc_value_handle, notify_ccc_handle,
