@@ -12,6 +12,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FPU
 	default y
 
+configdefault ARM_MPU
+	default y
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
@@ -20,13 +23,5 @@ config FLASH_SIZE
 
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
-
-DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
-
-config BUILD_OUTPUT_ADJUST_LMA
-	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)))"
-
-config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
-	default "*;!.loader"
 
 endif # SOC_SERIES_RZT2H
