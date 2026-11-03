@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silergy SY6970 battery charger
+
+description: |
+  Silergy SY6970 I2C controlled 5 A single cell switching battery charger
+  with power path management and USB OTG boost. Register compatible with
+  the TI BQ2589X family. The fast charge current range is 0 A to 5.056 A.
+
+compatible: "silergy,sy6970"
+
+include: ti,bq2589x-common.yaml
+
+examples:
+  - |
+    charger: charger@6a {
+      compatible = "silergy,sy6970";
+      reg = <0x6a>;
+      constant-charge-current-max-microamp = <512000>;
+      constant-charge-voltage-max-microvolt = <4208000>;
+    };

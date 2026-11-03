@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ2589X
+	bool "BQ2589X battery charger"
+	default y
+	depends on DT_HAS_TI_BQ25896_ENABLED || DT_HAS_SILERGY_SY6970_ENABLED
+	select I2C
+	help
+	  Enable the driver for the TI BQ2589X family of single cell switching
+	  battery chargers.
+
+	  Supported devices include:
+	    - BQ25896
+	    - SY6970

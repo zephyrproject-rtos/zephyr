@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: tdisplay_s3_amoled_plus/esp32s3/procpu
+name: LilyGO T-Display S3 AMOLED Plus PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - charger
+  - counter
+  - display
+  - dma
+  - entropy
+  - gpio
+  - i2c
+  - input
+  - netif:wifi
+  - rtc
+  - sdhc
+  - spi
+  - watchdog
+vendor: lilygo
