@@ -455,15 +455,3 @@ config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
 	  The long term goal is to remove this option once all users are on the
 	  PSA Crypto API.
-
-config TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
-	bool "mldsa-native from the PQCP (post-quantum code package) driver [EXPERIMENTAL]"
-	select EXPERIMENTAL
-
-if TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
-
-config TF_PSA_CRYPTO_PQCP_MLDSA_87_ENABLED
-	bool "mldsa-native from the PQCP (post-quantum code package) driver for the security level 87 [EXPERIMENTAL]"
-	select EXPERIMENTAL
-
-endif # TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
