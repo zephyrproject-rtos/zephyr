@@ -192,7 +192,9 @@ struct gpio_pca_series_config {
 /** Runtime driver data */
 struct gpio_pca_series_data {
 	struct gpio_driver_data common; /** gpio_driver_data needs to be first */
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem lock;
+#endif
 	void *cache;  /** device specific reg cache
 			*  - if CONFIG_GPIO_PCA_SERIES_CACHE_ALL is set,
 			*    it points to device specific cache memory.
@@ -207,6 +209,24 @@ struct gpio_pca_series_data {
 	struct k_work int_work;       /** worker that fire callbacks */
 #endif
 };
+
+static inline void gpio_pca_series_lock(struct gpio_pca_series_data *data)
+{
+#ifdef CONFIG_MULTITHREADING
+	k_sem_take(&data->lock, K_FOREVER);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
+static inline void gpio_pca_series_unlock(struct gpio_pca_series_data *data)
+{
+#ifdef CONFIG_MULTITHREADING
+	k_sem_give(&data->lock);
+#else
+	ARG_UNUSED(data);
+#endif
+}
 
 /**
  * gpio_pca_reg_access_api
@@ -1055,7 +1075,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 
 	LOG_DBG("dev %s configure pin %d flag 0x%x", dev->name, pin, flags);
 
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 	/**
 	 * TODO: Only write 1 byte.
@@ -1195,7 +1215,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		PCA_REG_TYPE_1B_CONFIGURATION, (uint8_t *)&reg_value);
 
 out:
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 	LOG_DBG("dev %s configure return %d", dev->name, ret);
 	return ret;
 }
@@ -1231,7 +1251,7 @@ static int gpio_pca_series_port_read_standard(
 	ARG_UNUSED(data);
 	ARG_UNUSED(input_data);
 #else
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 	/* Read Input Register */
 	ret = gpio_pca_series_reg_read(dev,
@@ -1241,7 +1261,7 @@ static int gpio_pca_series_port_read_standard(
 	} else {
 		*value = (gpio_port_value_t)sys_le32_to_cpu(input_data);
 	}
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
 
 	LOG_DBG("dev %s standard_read return %d result 0x%8.8x",
@@ -1289,7 +1309,7 @@ static int gpio_pca_series_port_read_extended(
 	}
 
 	LOG_DBG("dev %s extended_read", dev->name);
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 	/* Read Input Status Register */
 	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INPUT_STATUS,
@@ -1300,7 +1320,7 @@ static int gpio_pca_series_port_read_extended(
 		*value = sys_le32_to_cpu(input_data);
 	}
 
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 	LOG_DBG("dev %s extended_read return %d result 0x%8.8x",
 		dev->name, ret, (uint32_t) *value);
 	return ret;
@@ -1321,7 +1341,7 @@ static int gpio_pca_series_port_write(const struct device *dev,
 
 	LOG_DBG("dev %s write mask 0x%8.8x value 0x%8.8x toggle 0x%8.8x",
 		dev->name, (uint32_t)mask, (uint32_t)value, (uint32_t)toggle);
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	/** get output register old value from reg cache */
@@ -1347,7 +1367,7 @@ static int gpio_pca_series_port_write(const struct device *dev,
 #endif /* CONFIG_GPIO_PCA_SERIES_CACHE_ALL */
 	}
 
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 
 	LOG_DBG("dev %s write return %d result 0x%8.8x", dev->name, ret, out);
 	return ret;
@@ -1410,7 +1430,7 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 		return -EWOULDBLOCK;
 	}
 
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 	/**
 	 * TODO: Only write 1 byte.
@@ -1501,7 +1521,7 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 	}
 
 out:
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 
 	if (ret) {
 		LOG_ERR("int config(s) error %d", ret);
@@ -1561,7 +1581,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 
 	LOG_DBG("int cfg(e) pin %d mode %d trig %d", pin, mode, trig);
 
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 	/**
 	 * TODO: Only write 1 byte.
@@ -1628,7 +1648,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	}
 
 out:
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 	return ret;
 }
 
@@ -1650,7 +1670,7 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 	uint32_t transitioned_pins = 0;
 	uint32_t int_status = 0;
 
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	/** read from cache even if this register is not present on device */
@@ -1710,7 +1730,7 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 				| (int_fall & transitioned_pins & (~input));
 
 out:
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 
 	if (input_value) {
 		*input_value = input;
@@ -1747,7 +1767,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 
 	LOG_DBG("enter int handler(e)");
 
-	k_sem_take(&data->lock, K_FOREVER);
+	gpio_pca_series_lock(data);
 
 	/** get transitioned_pins from interrupt_status register */
 	ret = gpio_pca_series_reg_read(dev, PCA_REG_TYPE_1B_INTERRUPT_STATUS,
@@ -1764,7 +1784,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 	}
 
 out:
-	k_sem_give(&data->lock);
+	gpio_pca_series_unlock(data);
 
 	if ((ret == 0) && (int_status)) {
 		int_status = sys_le32_to_cpu(int_status);
@@ -2626,7 +2646,8 @@ const struct gpio_pca_series_part_config gpio_pca_series_part_cfg_pcal6534 = {
 		(sizeof(struct gpio_pca_series_reg_cache_mini) /** false */ \
 		 ))]; \
 	static struct gpio_pca_series_data gpio_##part_no##_##inst##_data = { \
-		.lock = Z_SEM_INITIALIZER(gpio_##part_no##_##inst##_data.lock, 1, 1), \
+		IF_ENABLED(CONFIG_MULTITHREADING, \
+			(.lock = Z_SEM_INITIALIZER(gpio_##part_no##_##inst##_data.lock, 1, 1),)) \
 		.cache = (void *)gpio_##part_no##_##inst##_reg_cache, \
 	}; \
 	DEVICE_DT_INST_DEFINE(inst, gpio_pca_series_init, NULL, \
