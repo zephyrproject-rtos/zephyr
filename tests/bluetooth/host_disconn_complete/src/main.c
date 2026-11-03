@@ -428,20 +428,29 @@ static void conn_complete(uint16_t handle, uint8_t role)
 	le_meta_event(BT_HCI_EVT_LE_ENH_CONN_COMPLETE, &evt, sizeof(evt));
 }
 
-static void adv_set_terminated(uint16_t handle)
+static void adv_set_terminated_for(uint8_t adv_handle, uint16_t handle)
 {
 	const struct bt_hci_evt_le_adv_set_terminated evt = {
 		.status = BT_HCI_ERR_SUCCESS,
-		.adv_handle = last_adv_handle,
+		.adv_handle = adv_handle,
 		.conn_handle = sys_cpu_to_le16(handle),
 	};
 
 	le_meta_event(BT_HCI_EVT_LE_ADV_SET_TERMINATED, &evt, sizeof(evt));
 }
 
+static void adv_set_terminated(uint16_t handle)
+{
+	adv_set_terminated_for(last_adv_handle, handle);
+}
+
 /* What the callbacks were last called with */
 static uint8_t connected_err;
 static uint8_t disconnected_reason;
+
+/* The first connected callbacks of a test */
+static uint8_t connected_errs[2];
+static size_t connected_count;
 
 static K_SEM_DEFINE(connected_sem, 0, 1);
 static K_SEM_DEFINE(disconnected_sem, 0, 1);
@@ -452,6 +461,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	ARG_UNUSED(conn);
 
 	connected_err = err;
+
+	if (connected_count < ARRAY_SIZE(connected_errs)) {
+		connected_errs[connected_count] = err;
+		connected_count++;
+	}
+
 	k_sem_give(&connected_sem);
 }
 
@@ -521,6 +536,7 @@ static void before(void *fixture)
 	ARG_UNUSED(fixture);
 
 	read_phy_hold = false;
+	connected_count = 0U;
 	k_sem_reset(&read_phy_sem);
 	k_sem_reset(&disconnect_sem);
 
@@ -669,7 +685,7 @@ static ZTEST(disconn_complete, test_not_recorded)
 	expect_next_connection(OTHER_HANDLE);
 }
 
-static void start_adv(void)
+static struct bt_le_ext_adv *start_adv(void)
 {
 	struct bt_le_ext_adv *adv;
 
@@ -677,6 +693,53 @@ static void start_adv(void)
 		   "Creating the advertising set failed");
 	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
 		   "Starting the advertising set failed");
+
+	return adv;
+}
+
+/* Let the Host handle the events so far */
+static void events_handled(void)
+{
+	k_sleep(K_MSEC(10));
+}
+
+static void stop_adv(struct bt_le_ext_adv *adv)
+{
+	zassert_ok(bt_le_ext_adv_stop(adv), "Stopping the advertising set failed");
+	/* That freed the connection object of the advertiser */
+	k_sem_reset(&recycled_sem);
+}
+
+/* The connection came up, already marked as disconnected, and was taken down */
+static void expect_came_up_disconnected(uint8_t reason)
+{
+	expect_disconnected(reason);
+	zassert_equal(connected_err, reason, "Connected with 0x%02x", connected_err);
+	expect_recycled(NULL);
+}
+
+/* The peripheral connection that the advertising set terminated event has just
+ * completed stays up until the controller reports its disconnection.
+ */
+static void expect_adv_connection_up(uint16_t handle)
+{
+	zassert_ok(k_sem_take(&connected_sem, EVENT_TIMEOUT), "No connected callback");
+	zassert_equal(connected_err, BT_HCI_ERR_SUCCESS, "Connected with 0x%02x", connected_err);
+
+	disconn_complete(handle, REASON);
+	zassert_ok(k_sem_take(&disconnected_sem, EVENT_TIMEOUT), "No disconnected callback");
+	/* Another reason would mean that the Host took the connection down itself */
+	zassert_equal(disconnected_reason, REASON, "Disconnected with 0x%02x", disconnected_reason);
+	expect_recycled(NULL);
+}
+
+/* A peripheral connection that comes up with the handle afterwards stays up */
+static void expect_next_adv_connection(uint16_t handle)
+{
+	(void)start_adv();
+	conn_complete(handle, BT_HCI_ROLE_PERIPHERAL);
+	adv_set_terminated(handle);
+	expect_adv_connection_up(handle);
 }
 
 /* Bluetooth is disabled while the connection complete event of a peripheral
@@ -685,17 +748,20 @@ static void start_adv(void)
  */
 static ZTEST(disconn_complete, test_disable_cached_conn_complete)
 {
-	start_adv();
-	conn_complete(OTHER_HANDLE, BT_HCI_ROLE_PERIPHERAL);
-	/* Let the Host take the event */
-	k_sleep(K_MSEC(10));
+	(void)start_adv();
+
+	for (uint16_t i = 0U; i < CONFIG_BT_MAX_CONN; i++) {
+		conn_complete(OTHER_HANDLE + i, BT_HCI_ROLE_PERIPHERAL);
+	}
+
+	events_handled();
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	zassert_ok(bt_enable(NULL), "Bluetooth init failed");
 	/* The disable freed the connection object of the advertiser */
 	k_sem_reset(&recycled_sem);
 
-	start_adv();
+	(void)start_adv();
 	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
 	adv_set_terminated(CONN_HANDLE);
 	zassert_ok(k_sem_take(&connected_sem, EVENT_TIMEOUT), "No connected callback");
@@ -704,4 +770,196 @@ static ZTEST(disconn_complete, test_disable_cached_conn_complete)
 	disconn_complete(CONN_HANDLE, REASON);
 	zassert_ok(k_sem_take(&disconnected_sem, EVENT_TIMEOUT), "No disconnected callback");
 	expect_recycled(NULL);
+}
+
+/* A controller should not report a disconnection between the connection
+ * complete and advertising set terminated events. The connection comes up as
+ * disconnected once the set is known, and goes down with the usual callbacks.
+ */
+static ZTEST(disconn_complete, test_ahead_of_adv_set_terminated)
+{
+	(void)start_adv();
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	adv_set_terminated(CONN_HANDLE);
+
+	expect_came_up_disconnected(REASON);
+	expect_next_connection(CONN_HANDLE);
+	expect_next_adv_connection(CONN_HANDLE);
+}
+
+/* The same, and the Host drops the connection complete event since the
+ * advertiser has been stopped. The next connection with the handle stays up.
+ */
+static ZTEST(disconn_complete, test_ahead_of_adv_set_terminated_stopped)
+{
+	struct bt_le_ext_adv *adv = start_adv();
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	stop_adv(adv);
+	adv_set_terminated(CONN_HANDLE);
+	events_handled();
+
+	expect_next_connection(CONN_HANDLE);
+}
+
+/* The same, and the next connection gets the handle before the advertising set
+ * terminated event.
+ */
+static ZTEST(disconn_complete, test_ahead_of_adv_set_terminated_next_conn)
+{
+	(void)start_adv();
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	expect_next_connection(CONN_HANDLE);
+
+	adv_set_terminated(CONN_HANDLE);
+
+	expect_came_up_disconnected(REASON);
+}
+
+/* Two connections with one handle come and go before their advertising set
+ * terminated events. Each event takes one of them.
+ */
+static ZTEST(disconn_complete, test_ahead_of_adv_set_terminated_twice)
+{
+	uint8_t first_adv_handle;
+
+	(void)start_adv();
+	first_adv_handle = last_adv_handle;
+	(void)start_adv();
+
+	for (uint8_t i = 0U; i < 2U; i++) {
+		conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+		events_handled();
+		disconn_complete(CONN_HANDLE, REASON);
+		events_handled();
+	}
+
+	adv_set_terminated_for(first_adv_handle, CONN_HANDLE);
+	expect_came_up_disconnected(REASON);
+
+	adv_set_terminated(CONN_HANDLE);
+	expect_came_up_disconnected(REASON);
+
+	expect_next_connection(CONN_HANDLE);
+}
+
+/* The next connection gets the handle and goes down while the Host reads the
+ * PHY of the connection that went down ahead of its advertising set terminated
+ * event. That disconnection is left for the next connection.
+ */
+static ZTEST(disconn_complete, test_ahead_of_adv_set_terminated_during_read_phy)
+{
+	struct bt_conn *conn = NULL;
+
+	(void)start_adv();
+	zassert_ok(
+		bt_conn_le_create(&peer, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &conn),
+		"Creating the connection failed");
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	read_phy_hold = true;
+	adv_set_terminated(CONN_HANDLE);
+	zassert_ok(k_sem_take(&read_phy_sem, EVENT_TIMEOUT), "The PHY was not read");
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_CENTRAL);
+	disconn_complete(CONN_HANDLE, BT_HCI_ERR_CONN_TIMEOUT);
+
+	read_phy_hold = false;
+	read_phy_respond(BT_HCI_ERR_UNKNOWN_CONN_ID);
+	events_handled();
+
+	zassert_equal(connected_count, 2U, "%zu connected callbacks", connected_count);
+	zassert_equal(connected_errs[0], REASON, "Connected with 0x%02x", connected_errs[0]);
+	zassert_equal(connected_errs[1], BT_HCI_ERR_CONN_TIMEOUT, "Connected with 0x%02x",
+		      connected_errs[1]);
+	bt_conn_unref(conn);
+}
+
+/* The set of a connection that went down ahead of its advertising set
+ * terminated event is deleted, and another set gets a connection with the
+ * handle. The terminated event of the deleted set does not take that one.
+ */
+static ZTEST(disconn_complete, test_ahead_of_adv_set_terminated_deleted)
+{
+	struct bt_le_ext_adv *adv = start_adv();
+	const uint8_t deleted_adv_handle = last_adv_handle;
+	struct bt_le_ext_adv *next_adv;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &next_adv),
+		   "Creating the advertising set failed");
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	stop_adv(adv);
+	zassert_ok(bt_le_ext_adv_delete(adv), "Deleting the advertising set failed");
+	zassert_ok(bt_le_ext_adv_start(next_adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Starting the advertising set failed");
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+
+	adv_set_terminated_for(deleted_adv_handle, CONN_HANDLE);
+	adv_set_terminated(CONN_HANDLE);
+	expect_adv_connection_up(CONN_HANDLE);
+}
+
+/* The advertising set is gone when its terminated event comes. The Host does
+ * not keep the connection complete event for a later connection with the handle.
+ */
+static ZTEST(disconn_complete, test_adv_set_deleted)
+{
+	struct bt_le_ext_adv *adv = start_adv();
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+
+	stop_adv(adv);
+	zassert_ok(bt_le_ext_adv_delete(adv), "Deleting the advertising set failed");
+	adv_set_terminated(CONN_HANDLE);
+	events_handled();
+
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	expect_next_connection(CONN_HANDLE);
+	expect_next_adv_connection(CONN_HANDLE);
+}
+
+/* The advertiser is stopped before the advertising set terminated event, and
+ * the link goes down after it.
+ */
+static ZTEST(disconn_complete, test_adv_set_stopped)
+{
+	struct bt_le_ext_adv *adv = start_adv();
+
+	conn_complete(CONN_HANDLE, BT_HCI_ROLE_PERIPHERAL);
+	events_handled();
+
+	stop_adv(adv);
+	adv_set_terminated(CONN_HANDLE);
+	events_handled();
+
+	disconn_complete(CONN_HANDLE, REASON);
+	events_handled();
+
+	expect_next_connection(CONN_HANDLE);
 }
