@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Charles Dias
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_RASPBERRY_PI_CAMERA_MODULE_2
+
+configdefault VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT
+	default "pRAA"
+
+configdefault VIDEO_STM32_DCMIPP_SENSOR_WIDTH
+	default 3280
+
+configdefault VIDEO_STM32_DCMIPP_SENSOR_HEIGHT
+	default 2464
+
+endif # SHIELD_RASPBERRY_PI_CAMERA_MODULE_2
