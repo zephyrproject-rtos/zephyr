@@ -1,0 +1,18 @@
+/*
+ * Copyright 2026, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mimxrt595_evk_mimxrt595s_cm33.dts"
+
+&sram_code {
+	reg = <0x1b000 DT_SIZE_K(404)>;
+};
+
+/* Data region starts after sram_code (0x80000 aliased as 0x20080000) */
+&sram0 {
+	reg = <0x20080000 DT_SIZE_K(4096)>;
+};
