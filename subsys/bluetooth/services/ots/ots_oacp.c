@@ -244,6 +244,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 	ots->l2cap.closed = oacp_l2cap_closed;
 	ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_READ_OP_STATE;
 	ots->cur_obj->state.read_op.sent_len = 0;
+	ots->cur_obj->state.read_op.started = false;
 	memcpy(&ots->cur_obj->state.read_op.oacp_params, &proc->read_params,
 		sizeof(ots->cur_obj->state.read_op.oacp_params));
 
@@ -532,6 +533,8 @@ static void oacp_read_proc_execute(struct bt_ots *ots,
 	LOG_DBG("Executing Read procedure with offset: 0x%08X and "
 		"length: 0x%08X", params->offset, params->len);
 
+	ots->cur_obj->state.read_op.started = true;
+
 	oacp_read_proc_cb(&ots->l2cap, conn);
 }
 
@@ -622,6 +625,21 @@ static void oacp_ind_cb(struct bt_conn *conn,
 
 	switch (ots->cur_obj->state.type) {
 	case BT_GATT_OTS_OBJECT_READ_OP_STATE:
+		/* oacp_ind_send() indicates each response to every client subscribed to the OACP,
+		 * so this runs on the confirmation of each client, also for the responses to other
+		 * procedures. The read starts on the first confirmation from the client that has
+		 * the Object Transfer Channel, which is the client that asked for the read.
+		 */
+		if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn) ||
+		    ots->cur_obj->state.read_op.started) {
+			break;
+		}
+
+		if (err != 0U) {
+			ots->cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+			break;
+		}
+
 		oacp_read_proc_execute(ots, conn);
 		break;
 	case BT_GATT_OTS_OBJECT_WRITE_OP_STATE:

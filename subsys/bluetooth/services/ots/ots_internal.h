@@ -103,6 +103,10 @@ struct bt_gatt_ots_object_state {
 		struct bt_gatt_ots_object_read_op {
 			struct bt_gatt_ots_oacp_read_params oacp_params;
 			uint32_t sent_len;
+			/* The confirmation of the response has started the read. sent_len cannot
+			 * tell: it stays 0 when obj_read() gives an empty chunk.
+			 */
+			bool started;
 		} read_op;
 		struct bt_gatt_ots_object_write_op {
 			struct bt_gatt_ots_oacp_write_params oacp_params;
