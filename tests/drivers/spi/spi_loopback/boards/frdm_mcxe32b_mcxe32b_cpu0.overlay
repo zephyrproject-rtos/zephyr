@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect on the Arduino header:
+ * LPSPI0 MOSI (J2-8, D11, PTE2 LPSPI0_SOUT)
+ * --> LPSPI0 MISO (J2-10, D12, PTE0 LPSPI0_SIN)
+ */
+&lpspi_0 {
+	/* Guarantee SOUT data setup before the first capture edge in CPHA=0 */
+	pcs-sck-delay = <1000>;
+
+	slow@2 {
+		compatible = "test-spi-loopback-slow";
+		reg = <2>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@2 {
+		compatible = "test-spi-loopback-fast";
+		reg = <2>;
+		spi-max-frequency = <4000000>;
+	};
+};
