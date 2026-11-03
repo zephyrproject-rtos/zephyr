@@ -1,6 +1,7 @@
 # ARM64 core configuration options
 
 # Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config CPU_CORTEX_A
@@ -43,6 +44,14 @@ config CPU_AARCH64_CORTEX_R
 	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-R 64-bit family.
+
+config CPU_CORTEX_A35
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A35 CPU, which implements
+	  the ARMv8-A architecture.
 
 config CPU_CORTEX_A53
 	bool
