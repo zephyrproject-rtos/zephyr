@@ -114,6 +114,9 @@ struct lll_sync_iso {
 	/* Set by the current event that yields to this ready event */
 	uint8_t is_yield_to:1;
 
+	/* Placed in the pipeline as a yielded event that preempts at its next subevent */
+	uint8_t is_yielded:1;
+
 	/* HF clock was running when the event was prepared */
 	uint8_t is_hfclock_ready:1;
 
@@ -126,6 +129,9 @@ struct lll_sync_iso {
 	 */
 	uint32_t ticks_se_next;
 	uint8_t se_next;
+
+	/* Radio start ticks of the first subevent of the current event */
+	uint32_t ticks_se_first;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Last scheduled subevent and its access address sync */
@@ -149,6 +155,7 @@ int lll_sync_iso_reset(void);
 void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
+bool lll_sync_iso_is_defer_lossless(void *param, uint32_t ticks_duration);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso *ull_sync_iso_lll_is_valid_get(struct lll_sync_iso *lll);
