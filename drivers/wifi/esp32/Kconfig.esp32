@@ -771,6 +771,7 @@ config ESP32_WIFI_ENTERPRISE_MBEDTLS_TLS_CLIENT
 	bool "Use MbedTLS TLS client for WPA-Enterprise"
 	depends on ESP32_WIFI_ENTERPRISE
 	default y
+	select MBEDTLS_SSL_CLI_C
 	help
 	  Use the Espressif supplicant MbedTLS TLS backend for EAP TLS
 	  handshakes. This is the backend used by Espressif's enterprise Wi-Fi
