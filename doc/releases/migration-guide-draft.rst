@@ -184,5 +184,10 @@ Shell
 Modules
 *******
 
+* The `zephyr-lang-rust <https://github.com/zephyrproject-rtos/zephyr-lang-rust>`_ module providing
+  Rust language support is no longer an optional module of the Zephyr manifest. It is now an
+  :ref:`external module <external_module_rust>`; add it to the application manifest to keep using
+  Rust. The ``manifest.project-filter +zephyr-lang-rust`` west setting no longer has an effect.
+
 Architectures
 *************
