@@ -199,27 +199,47 @@ static int rtc_ti_mspm0_set_time(const struct device *dev,
 	return 0;
 }
 
-static int rtc_ti_mspm0_get_time(const struct device *dev,
-				 struct rtc_time *timeptr)
+static inline void rtc_ti_mspm0_read_calendar_regs(rtc_ti_mspm0_reg_t *regs, struct rtc_time *tm)
+{
+	tm->tm_sec = regs->sec & RTC_MSPM0_SEC_BIN_MASK;
+	tm->tm_min = regs->min & RTC_MSPM0_MIN_BIN_MASK;
+	tm->tm_hour = regs->hour & RTC_MSPM0_HOUR_BIN_MASK;
+	tm->tm_mday = FIELD_GET(RTC_MSPM0_MDAY_BIN_MASK, regs->day);
+	tm->tm_mon = (regs->mon & RTC_MSPM0_MON_BIN_MASK) - 1;
+	tm->tm_year = (regs->year &
+		      (RTC_MSPM0_YEARLOW_BIN_MASK | RTC_MSPM0_YEARHIGH_BIN_MASK)) -
+		      1900;
+	tm->tm_wday = FIELD_GET(RTC_MSPM0_WDAY_BIN_MASK, regs->day);
+}
+
+static int rtc_ti_mspm0_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
+	struct rtc_time previous = {0};
+	struct rtc_time current = {0};
 
 	if (timeptr == NULL) {
 		return -EINVAL;
 	}
 
 	K_SPINLOCK(&data->lock) {
-		timeptr->tm_sec = cfg->regs->sec & RTC_MSPM0_SEC_BIN_MASK;
-		timeptr->tm_min = cfg->regs->min & RTC_MSPM0_MIN_BIN_MASK;
-		timeptr->tm_hour = cfg->regs->hour & RTC_MSPM0_HOUR_BIN_MASK;
-		timeptr->tm_mday = FIELD_GET(RTC_MSPM0_MDAY_BIN_MASK, cfg->regs->day);
-		timeptr->tm_mon = (cfg->regs->mon & RTC_MSPM0_MON_BIN_MASK) - 1;
-		timeptr->tm_year = (cfg->regs->year &
-				    (RTC_MSPM0_YEARLOW_BIN_MASK | RTC_MSPM0_YEARHIGH_BIN_MASK)) -
-				   1900;
-		timeptr->tm_wday = FIELD_GET(RTC_MSPM0_WDAY_BIN_MASK, cfg->regs->day);
+		/*
+		 * The calendar registers are read one at a time, so a rollover can land
+		 * mid-read (e.g. seconds 59 -> 0 carrying into minutes) and pair the old
+		 * seconds with the new minutes, giving a time a whole minute off. The
+		 * same applies to minutes -> hours, hours -> days, etc. Read the full
+		 * set twice and retry until two consecutive reads match, which means no
+		 * update occurred in between.
+		 */
+		rtc_ti_mspm0_read_calendar_regs(cfg->regs, &current);
+		do {
+			previous = current;
+			rtc_ti_mspm0_read_calendar_regs(cfg->regs, &current);
+		} while (memcmp(&previous, &current, sizeof(current)) != 0);
 	}
+
+	*timeptr = current;
 
 	timeptr->tm_yday = -1;
 	timeptr->tm_nsec = 0;
