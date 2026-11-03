@@ -911,7 +911,8 @@ static int nrf_wifi_util_trigger_rpu_recovery(const struct shell *sh,
 		shell_fprintf(sh,
 			      SHELL_ERROR,
 			      "Failed to trigger RPU recovery\n");
-		return -ENOEXEC;
+		ret = -ENOEXEC;
+		goto unlock;
 	}
 
 	shell_fprintf(sh,
