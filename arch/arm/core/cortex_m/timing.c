@@ -26,6 +26,7 @@
  *
  * @return the cycle counter frequency value
  */
+__no_instrumentation__
 static inline uint64_t z_arm_dwt_freq_get(void)
 {
 #if defined(CONFIG_CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK)
@@ -111,16 +112,19 @@ timing_t arch_timing_counter_get(void)
 	return (timing_t)z_arm_dwt_get_cycles();
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_get(volatile timing_t *const start, volatile timing_t *const end)
 {
 	return ((uint32_t)*end - (uint32_t)*start);
 }
 
+__no_instrumentation__
 uint64_t arch_timing_freq_get(void)
 {
 	return z_arm_dwt_freq_get();
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
 	return (cycles) * (NSEC_PER_USEC) / arch_timing_freq_get_mhz();
@@ -131,6 +135,7 @@ uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)
 	return arch_timing_cycles_to_ns(cycles) / count;
 }
 
+__no_instrumentation__
 uint32_t arch_timing_freq_get_mhz(void)
 {
 	return (uint32_t)(arch_timing_freq_get() / 1000000U);

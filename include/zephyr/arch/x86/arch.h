@@ -317,6 +317,7 @@ static ALWAYS_INLINE uint32_t z_do_read_cpu_timestamp32(void)
  *  @brief read timestamp register ensuring serialization
  */
 
+__no_instrumentation__
 static inline uint64_t z_tsc_read(void)
 {
 	union {

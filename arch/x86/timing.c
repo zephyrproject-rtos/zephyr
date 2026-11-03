@@ -64,6 +64,7 @@ timing_t arch_timing_counter_get(void)
 	return z_tsc_read();
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 				volatile timing_t *const end)
 {
@@ -76,6 +77,7 @@ uint64_t arch_timing_freq_get(void)
 	return arch_timing_x86_freq_get();
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
 	/*

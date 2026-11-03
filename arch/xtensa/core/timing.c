@@ -43,6 +43,7 @@ uint64_t arch_timing_cycles_get(volatile timing_t *const start,
 	return (uint64_t) dt;
 }
 
+__no_instrumentation__
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
 	return cycles * 1000000000ULL / CONFIG_XTENSA_CCOUNT_HZ;

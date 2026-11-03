@@ -2283,6 +2283,7 @@ static inline int64_t k_uptime_delta(int64_t *reftime)
  *
  * @return Current hardware clock up-counter (in cycles).
  */
+__no_instrumentation__
 static inline uint32_t k_cycle_get_32(void)
 {
 	return arch_k_cycle_get_32();
@@ -2301,6 +2302,7 @@ static inline uint32_t k_cycle_get_32(void)
  *
  * @return Current hardware clock up-counter (in cycles).
  */
+__no_instrumentation__
 static inline uint64_t k_cycle_get_64(void)
 {
 	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
