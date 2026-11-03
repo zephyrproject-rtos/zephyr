@@ -6,7 +6,7 @@
 
 #include <mem.h>
 #include <freq.h>
-#include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
+#include <zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
@@ -89,7 +89,7 @@
  * Register/interrupt values are taken from the device header:
  *   devices/RT/RT2660/MIMXRT2663/MIMXRT2663_COMMON.h
  * Clock IDs are the LPCG enum values from that device's fsl_clock.h, exposed
- * via <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>.
+ * via <zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h>.
  *
  * Peripherals are left "disabled" by default; boards enable what they use.
  */

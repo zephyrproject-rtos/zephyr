@@ -109,6 +109,14 @@ Audio Codec
   When using a :dtcompatible:`fixed-clock` node,
   :kconfig:option:`CONFIG_CLOCK_CONTROL_FIXED_RATE_CLOCK` must be enabled.
 
+Clock Control
+=============
+
+* The generated NXP RT266x clock identifiers moved from ``hal_nxp`` into
+  :file:`include/zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h`. Replace
+  ``<nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>`` with
+  ``<zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h>``.
+
 Ethernet
 ========
 
@@ -137,6 +145,28 @@ OPAMP
   a runtime reference on the reference source while it measures an amplifier fed by it. Builds
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
+
+Pin Control
+===========
+
+* NXP SoC pin control definitions moved from ``hal_nxp`` into Zephyr:
+
+  * Binding ``.h`` files now live under
+    :file:`include/zephyr/dt-bindings/pinctrl/nxp/`, retaining the family/series
+    hierarchy but removing the intermediate ``pinctrl/`` directory. For example,
+    replace ``<nxp/mcx/mcxa/pinctrl/MCXA344VLL-pinctrl.h>`` with
+    ``<zephyr/dt-bindings/pinctrl/nxp/mcx/mcxa/MCXA344VLL-pinctrl.h>``.
+  * Node-bearing ``.dtsi`` files now live under
+    :file:`dts/arm/nxp/<family>/<series>/pinctrl/` (or
+    :file:`dts/arm/nxp/<family>/pinctrl/` for flat families). Their existing
+    ``<nxp/.../pinctrl/...-pinctrl.dtsi>`` include paths remain valid, now resolved
+    by Zephyr instead of the HAL module.
+
+  Board-level pin control groups remain in their board directories. The
+  explicitly invoked generation and deduplication tools moved to
+  :file:`modules/hal_nxp/scripts/pinctrl/`; clock generation tools moved to
+  :file:`modules/hal_nxp/scripts/clock/`. Normal builds consume committed files
+  without running these tools or requiring external Config Tools data packs.
 
 .. zephyr-keep-sorted-stop
 
