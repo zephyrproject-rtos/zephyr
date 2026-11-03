@@ -2346,8 +2346,12 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_CLASSIC)
+/* Several SCO connections can exist with a peer. One being set up comes first: the Synchronous
+ * Connection Complete event gives only the address.
+ */
 static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 {
+	struct bt_conn *found = NULL;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(sco_conns); i++) {
@@ -2358,14 +2362,25 @@ static struct bt_conn *conn_lookup_sco(struct bt_conn *conn)
 		}
 
 		/* The type tells that the object has been set up that far */
-		if (bt_conn_is_sco(sco) && sco->sco.acl == conn) {
+		if (!bt_conn_is_sco(sco) || sco->sco.acl != conn) {
+			bt_conn_unref(sco);
+			continue;
+		}
+
+		if (sco->state == BT_CONN_INITIATING) {
+			bt_conn_drop(&found);
 			return sco;
 		}
 
-		bt_conn_unref(sco);
+		if (found != NULL) {
+			bt_conn_unref(sco);
+			continue;
+		}
+
+		found = bt_conn_take(&sco);
 	}
 
-	return NULL;
+	return found;
 }
 #endif /* CONFIG_BT_CLASSIC */
 
