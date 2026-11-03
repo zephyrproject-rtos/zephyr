@@ -209,3 +209,15 @@
 &adc_0 {
 	status = "okay";
 };
+
+&pit_0 {
+	status = "okay";
+};
+
+&pit_1 {
+	status = "okay";
+};
+
+&pit_2 {
+	status = "okay";
+};
