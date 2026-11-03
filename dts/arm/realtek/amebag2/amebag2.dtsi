@@ -348,6 +348,22 @@
 			status = "disabled";
 		};
 
+		can0: can@41005000 {
+			compatible = "realtek,ameba-can";
+			reg = <0x41005000 0x400>;
+			clocks = <&rcc AMEBA_CAN0_CLK>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		can1: can@41006000 {
+			compatible = "realtek,ameba-can";
+			reg = <0x41006000 0x400>;
+			clocks = <&rcc AMEBA_CAN1_CLK>;
+			interrupts = <61 0>;
+			status = "disabled";
+		};
+
 		i2c0: i2c0@41008000 {
 			compatible = "realtek,ameba-i2c";
 			reg = <0x41008000 0x100>;
