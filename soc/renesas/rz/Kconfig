@@ -1,10 +1,27 @@
-# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_RENESAS_RZ
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 if SOC_FAMILY_RENESAS_RZ
+
+config SOC_FAMILY_RENESAS_RZ_TCM_LOADER
+	bool
+	help
+	  The image of the primary core (CPU0) is linked by
+	  soc/renesas/rz/scripts/linker.ld and booted from flash by the boot
+	  ROM and the loader program.
+
+config SOC_FAMILY_RENESAS_RZ_LOADER_DELAY
+	int "Loader program delay loop iterations"
+	depends on SOC_FAMILY_RENESAS_RZ_TCM_LOADER
+	default 0
+	help
+	  Number of iterations of a delay loop the loader program runs before
+	  copying the image, to leave time to attach a debugger. 0 disables
+	  the delay. 50000000 has been tested and leaves enough time to attach
+	  a debugger.
 
 rsource "*/Kconfig"
 
