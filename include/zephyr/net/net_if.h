@@ -1742,8 +1742,19 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface_raw(struct net_if *iface,
  *
  * @return Pointer to interface address, NULL if not found.
  */
+#if defined(CONFIG_NET_IPV6)
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 						     const struct net_in6_addr *addr);
+#else
+static inline struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(
+	struct net_if *iface, const struct net_in6_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Check if this IPv6 address belongs to one of the interface indices.
@@ -2702,8 +2713,19 @@ struct net_if_addr *net_if_ipv4_addr_lookup_by_iface_raw(struct net_if *iface,
  *
  * @return Pointer to interface address, NULL if not found.
  */
+#if defined(CONFIG_NET_IPV4)
 struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
 						     const struct net_in_addr *addr);
+#else
+static inline struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(
+	struct net_if *iface, const struct net_in_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return NULL;
+}
+#endif
 
 /**
  * @brief Add a IPv4 address to an interface
