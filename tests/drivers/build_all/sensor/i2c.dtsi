@@ -1735,3 +1735,8 @@ test_i2c_cht8305: cht8305@e0 {
 	heater;
 	disable-clock-stretching;
 };
+
+test_i2c_icm20948: icm20948@e1 {
+	compatible = "invensense,icm20948";
+	reg = <0xe1>;
+};

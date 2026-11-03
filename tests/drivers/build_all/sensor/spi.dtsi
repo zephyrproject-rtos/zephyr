@@ -558,3 +558,9 @@ test_spi_icm56686: icm56686@42 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_spi_icm20948: icm20948@43 {
+	compatible = "invensense,icm20948";
+	reg = <0x43>;
+	spi-max-frequency = <0>;
+};
