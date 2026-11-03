@@ -16,5 +16,6 @@ supported:
   - arduino_gpio
   - can
   - gpio
+  - i2s
   - pwm
 vendor: nxp

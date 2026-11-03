@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		i2s-node0 = &sai_0;
 	};
 
 	chosen {
@@ -120,6 +121,10 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
+&edma {
+	status = "okay";
+};
+
 &gpiob_h {
 	status = "okay";
 };
@@ -203,6 +208,13 @@
 };
 
 &adc_0 {
+	status = "okay";
+};
+
+&sai_0 {
+	pinctrl-0 = <&pinmux_sai_0>;
+	pinctrl-names = "default";
+	nxp,tx-channel = <1>;
 	status = "okay";
 };
 
