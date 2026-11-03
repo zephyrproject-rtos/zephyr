@@ -1190,13 +1190,15 @@ static void conn_handle_disconnected_drop(uint16_t handle)
 }
 
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
-/* Whether the connection complete event for the handle waits for its
+/* Leave a disconnection with the connection complete event that waits for its
  * advertising set terminated event, see bt_dev.cached_conn_complete.
  */
-static bool conn_complete_is_cached(uint16_t handle)
+static bool conn_complete_cached_disconnected(uint16_t handle, uint8_t reason)
 {
 	ARRAY_FOR_EACH_PTR(bt_dev.cached_conn_complete, cached) {
-		if (cached->valid && sys_le16_to_cpu(cached->evt.handle) == handle) {
+		if (cached->valid && cached->disconnect_reason == BT_HCI_ERR_SUCCESS &&
+		    sys_le16_to_cpu(cached->evt.handle) == handle) {
+			cached->disconnect_reason = reason;
 			return true;
 		}
 	}
@@ -1204,9 +1206,9 @@ static bool conn_complete_is_cached(uint16_t handle)
 	return false;
 }
 #else
-static bool conn_complete_is_cached(uint16_t handle)
+static bool conn_complete_cached_disconnected(uint16_t handle, uint8_t reason)
 {
-	ARG_UNUSED(handle);
+	ARGS_UNUSED(handle, reason);
 
 	return false;
 }
@@ -1240,37 +1242,22 @@ static void hci_disconn_complete_prio(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-static void hci_disconn_complete(struct net_buf *buf)
+void bt_hci_conn_disconnected(uint16_t handle, uint8_t reason)
 {
-	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
-	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
-
-	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x",
-		evt->status, bt_hci_err_to_str(evt->status), handle, evt->reason);
-
-	if (evt->status) {
-		return;
-	}
 
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
-		/* What the priority handler recorded for the handle is of no use
-		 * any more, unless a connection complete event waits for its
-		 * advertising set.
-		 */
-		if (!conn_complete_is_cached(handle)) {
-			conn_handle_disconnected_drop(handle);
+		if (!conn_complete_cached_disconnected(handle, reason)) {
+			LOG_ERR("Unable to look up conn with handle %u", handle);
 		}
 
-		LOG_ERR("Unable to look up conn with handle %u", handle);
 		return;
 	}
 
 	if (conn->state != BT_CONN_DISCONNECT_COMPLETE) {
 		/* The priority handler ran before the connection was set up */
-		conn_handle_disconnected_drop(handle);
-		conn->err = evt->reason;
+		conn->err = reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECT_COMPLETE);
 	}
 
@@ -1315,6 +1302,26 @@ static void hci_disconn_complete(struct net_buf *buf)
 #endif /* defined(CONFIG_BT_CENTRAL) && !defined(CONFIG_BT_FILTER_ACCEPT_LIST) */
 
 	bt_conn_unref(conn);
+}
+
+static void hci_disconn_complete(struct net_buf *buf)
+{
+	const struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+
+	LOG_DBG("status 0x%02x %s handle %u reason 0x%02x", evt->status,
+		bt_hci_err_to_str(evt->status), handle, evt->reason);
+
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		/* The link is still up */
+		LOG_ERR("Disconnecting handle %u failed, status 0x%02x", handle, evt->status);
+		return;
+	}
+
+	/* What the priority handler recorded for the handle is of no use any more */
+	conn_handle_disconnected_drop(handle);
+
+	bt_hci_conn_disconnected(handle, evt->reason);
 }
 
 int bt_hci_le_read_remote_features(struct bt_conn *conn)
@@ -1615,6 +1622,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 				(void)memcpy(&bt_dev.cached_conn_complete[i].evt,
 					evt,
 					sizeof(struct bt_hci_evt_le_enh_conn_complete));
+				bt_dev.cached_conn_complete[i].disconnect_reason =
+					BT_HCI_ERR_SUCCESS;
 				bt_dev.cached_conn_complete[i].valid = true;
 				return;
 			}
@@ -1626,7 +1635,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		return;
 	}
 #endif
-	bt_hci_le_enh_conn_complete(evt, NULL);
+	bt_hci_le_enh_conn_complete(evt, NULL, BT_HCI_ERR_SUCCESS);
 }
 
 static void translate_addrs(bt_addr_le_t *peer_addr, bt_addr_le_t *id_addr,
@@ -1665,7 +1674,8 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 }
 
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
-				 const struct bt_le_ext_adv *ext_adv)
+				 const struct bt_le_ext_adv *ext_adv,
+				 uint8_t cached_disconnect_reason)
 {
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
@@ -1792,7 +1802,9 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
 	/* Checked after the commands above, during which the controller may
 	 * have reported a disconnection.
 	 */
-	const uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
+	const uint8_t disconnect_reason = cached_disconnect_reason != BT_HCI_ERR_SUCCESS
+						  ? cached_disconnect_reason
+						  : conn_handle_is_disconnected(handle);
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
