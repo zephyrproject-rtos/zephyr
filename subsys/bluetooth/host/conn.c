@@ -2835,6 +2835,19 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 		/* keep the settings of the request already in flight */
 		conn->required_sec_level = prev_sec_level;
 		atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR, prev_force_pair);
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_br(conn) && (err != 0)) {
+		/* An earlier request can still be running, with channels waiting for it. Only if
+		 * nothing changed the level while this one waited for its command: that request
+		 * can have ended by now, or a newer one started.
+		 */
+		k_sched_lock();
+		if (conn->required_sec_level == sec) {
+			conn->required_sec_level = prev_sec_level;
+			atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR, prev_force_pair);
+		}
+		k_sched_unlock();
+
+		bt_l2cap_br_security_not_started(conn);
 	} else if (err) {
 		/* reset required security level in case of error */
 		conn->required_sec_level = conn->sec_level;
