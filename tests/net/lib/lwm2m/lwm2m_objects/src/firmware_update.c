@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Mustafa Abdullah Kus, Amazeng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,13 +31,14 @@ static uint8_t block[16];
 static uint8_t pull_buf[CONFIG_LWM2M_COAP_BLOCK_SIZE];
 static int server_fd = -1;
 static int write_calls;
+static int write_ret;
 static int cancel_calls;
 
 static int write_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id, uint8_t *data,
 		    uint16_t data_len, bool last_block, size_t total_size, size_t offset)
 {
 	write_calls++;
-	return 0;
+	return write_ret;
 }
 
 static int cancel_cb(uint16_t obj_inst_id)
@@ -175,8 +177,10 @@ static int pull_server_recv(struct pull_request *req, int timeout_ms)
 	return 0;
 }
 
-/* Answer a block request with a full block of an image that is not over yet */
-static void pull_server_send_block(const struct pull_request *req)
+/* Answer a block request: a full block of the image, the last one when so asked,
+ * or an error response without content.
+ */
+static void pull_server_reply(const struct pull_request *req, uint8_t code, bool last)
 {
 	static const uint8_t payload[CONFIG_LWM2M_COAP_BLOCK_SIZE];
 	uint8_t buf[CONFIG_LWM2M_COAP_BLOCK_SIZE + 32];
@@ -191,18 +195,41 @@ static void pull_server_send_block(const struct pull_request *req)
 	tkl = coap_header_get_token(&req->pkt, token);
 
 	zassert_ok(coap_packet_init(&rsp, buf, sizeof(buf), COAP_VERSION_1, COAP_TYPE_ACK, tkl,
-				    token, COAP_RESPONSE_CODE_CONTENT,
-				    coap_header_get_id(&req->pkt)));
-	/* Two blocks past the requested one keeps the M bit set */
-	coap_block_transfer_init(&ctx, coap_bytes_to_block_size(sizeof(payload)),
-				 (num + 2) * sizeof(payload));
-	ctx.current = num * sizeof(payload);
-	zassert_ok(coap_append_block2_option(&rsp, &ctx));
-	zassert_ok(coap_packet_append_payload_marker(&rsp));
-	zassert_ok(coap_packet_append_payload(&rsp, payload, sizeof(payload)));
+				    token, code, coap_header_get_id(&req->pkt)));
+	if (code == COAP_RESPONSE_CODE_CONTENT) {
+		/* An image that ends with this block clears the M bit, one block more sets it */
+		coap_block_transfer_init(&ctx, coap_bytes_to_block_size(sizeof(payload)),
+					 (num + (last ? 1 : 2)) * sizeof(payload));
+		ctx.current = num * sizeof(payload);
+		zassert_ok(coap_append_block2_option(&rsp, &ctx));
+		zassert_ok(coap_packet_append_payload_marker(&rsp));
+		zassert_ok(coap_packet_append_payload(&rsp, payload, sizeof(payload)));
+	}
 
 	zassert_equal(zsock_sendto(server_fd, rsp.data, rsp.offset, 0, &req->from, req->from_len),
 		      rsp.offset);
+}
+
+/* Answer a block request with a full block of an image that is not over yet */
+static void pull_server_send_block(const struct pull_request *req)
+{
+	pull_server_reply(req, COAP_RESPONSE_CODE_CONTENT, false);
+}
+
+/* Start a pull and wait for the client's first block request */
+static void pull_to_first_block(struct pull_request *req)
+{
+	zassert_ok(package_uri_write(PULL_URI));
+	zassert_equal(get_state(), STATE_DOWNLOADING);
+	zassert_ok(pull_server_recv(req, 1000));
+}
+
+/* The engine thread handles the reply that ends the pull; wait for its verdict */
+static void pull_wait_done(void)
+{
+	for (int i = 0; i < 100 && get_state() == STATE_DOWNLOADING; i++) {
+		k_sleep(K_MSEC(10));
+	}
 }
 
 /* Start a pull and serve it up to the client's request for the second block */
@@ -210,10 +237,7 @@ static void pull_to_second_block(struct pull_request *req)
 {
 	int writes = write_calls;
 
-	zassert_ok(package_uri_write(PULL_URI));
-	zassert_equal(get_state(), STATE_DOWNLOADING);
-
-	zassert_ok(pull_server_recv(req, 1000));
+	pull_to_first_block(req);
 	pull_server_send_block(req);
 	zassert_ok(pull_server_recv(req, 1000));
 	zassert_equal(write_calls, writes + 1);
@@ -251,6 +275,7 @@ static void test_before(void *fixture)
 
 	zassert_equal(get_state(), STATE_IDLE);
 	write_calls = 0;
+	write_ret = 0;
 	cancel_calls = 0;
 }
 
@@ -494,6 +519,36 @@ ZTEST(lwm2m_firmware_update, test_pull_reset_without_transfer)
 	zassert_equal(get_result(), RESULT_DEFAULT);
 	zassert_equal(cancel_calls, 2);
 	zassert_equal(write_calls, 0);
+}
+
+ZTEST(lwm2m_firmware_update, test_pull_refused_package_is_unsupported)
+{
+	struct pull_request req;
+
+	/* The application does not take the image: the pull ends with its verdict */
+	write_ret = -ENOMSG;
+	pull_to_first_block(&req);
+	pull_server_reply(&req, COAP_RESPONSE_CODE_CONTENT, true);
+	pull_wait_done();
+
+	zassert_equal(write_calls, 1);
+	zassert_equal(get_state(), STATE_IDLE);
+	zassert_equal(get_result(), RESULT_UNSUP_FW);
+	zassert_equal(cancel_calls, 0);
+}
+
+ZTEST(lwm2m_firmware_update, test_pull_error_response_is_connection_lost)
+{
+	struct pull_request req;
+
+	pull_to_first_block(&req);
+	pull_server_reply(&req, COAP_RESPONSE_CODE_NOT_FOUND, false);
+	pull_wait_done();
+
+	zassert_equal(write_calls, 0);
+	zassert_equal(get_state(), STATE_IDLE);
+	zassert_equal(get_result(), RESULT_CONNECTION_LOST);
+	zassert_equal(cancel_calls, 0);
 }
 
 ZTEST(lwm2m_firmware_update, test_pull_refused_without_write_cb)
