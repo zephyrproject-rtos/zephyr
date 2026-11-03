@@ -10,6 +10,8 @@
 #include <string.h>
 #include <strings.h>
 
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>
@@ -46,6 +48,7 @@
 #define QPACK_STATIC_METHOD_GET 17
 #define QPACK_STATIC_METHOD_POST 20
 #define QPACK_STATIC_STATUS_200 25
+#define QPACK_STATIC_STATUS_404 27
 #define QPACK_STATIC_STATUS_425 70
 #define QPACK_STATIC_USER_AGENT 95
 
@@ -524,6 +527,8 @@ static enum http_status h3_decode_response_status(const uint8_t *buf, size_t len
 	switch (status_index) {
 	case QPACK_STATIC_STATUS_200:
 		return HTTP_200_OK;
+	case QPACK_STATIC_STATUS_404:
+		return HTTP_404_NOT_FOUND;
 	case QPACK_STATIC_STATUS_425:
 		return HTTP_425_TOO_EARLY;
 	default:
@@ -1006,7 +1011,7 @@ static void start_h3_session(bool split_control_stream)
 	zassert_true(seen_qpack_decoder, "Did not accept server QPACK decoder stream");
 }
 
-static void expect_static_get_response(int stream_fd)
+static void expect_get_response(int stream_fd, const char *expected_body)
 {
 	uint8_t response[MAX_RESPONSE_SIZE];
 	size_t offset = 0;
@@ -1034,9 +1039,13 @@ static void expect_static_get_response(int stream_fd)
 
 	consumed = h3_decode_varint(response + offset, response_len - offset, &frame_len);
 	offset += consumed;
-	zassert_equal(frame_len, strlen(TEST_STATIC_PAYLOAD), "Unexpected DATA length");
-	zassert_mem_equal(response + offset, TEST_STATIC_PAYLOAD, frame_len,
-			  "Unexpected DATA payload");
+	zassert_equal(frame_len, strlen(expected_body), "Unexpected DATA length");
+	zassert_mem_equal(response + offset, expected_body, frame_len, "Unexpected DATA payload");
+}
+
+static void expect_static_get_response(int stream_fd)
+{
+	expect_get_response(stream_fd, TEST_STATIC_PAYLOAD);
 }
 
 static void expect_headers_only_response(int stream_fd)
@@ -2341,3 +2350,114 @@ ZTEST(server_h3_tests, test_h3_push_promise_on_request_stream_is_connection_erro
 ZTEST_SUITE(server_h3_function_tests, NULL, NULL, NULL, NULL, NULL);
 ZTEST_SUITE(server_h3_tests, NULL, http_server_h3_setup,
 	    http_server_h3_before, http_server_h3_after, http_server_h3_teardown);
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(test_fs_storage);
+
+#define TEST_FS_MNTP          "/lfs"
+#define TEST_FS_FALLBACK_FILE "index.html"
+#define TEST_FS_PAYLOAD       "<html>fallback</html>"
+
+static struct fs_mount_t test_fs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &test_fs_storage,
+	.storage_dev = (void *)PARTITION_ID(storage_partition),
+	.mnt_point = TEST_FS_MNTP,
+};
+
+static struct http_resource_detail_static_fs static_fs_fallback_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	.fs_path = TEST_FS_MNTP,
+	.fallback_file = TEST_FS_FALLBACK_FILE,
+};
+
+/* Neither path exists under TEST_FS_MNTP */
+HTTP_RESOURCE_DEFINE(static_fs_route_resource, test_http_service, "/route",
+		     &static_fs_fallback_detail);
+HTTP_RESOURCE_DEFINE(static_fs_asset_resource, test_http_service, "/missing.js",
+		     &static_fs_fallback_detail);
+
+static void setup_fallback_file(void)
+{
+	struct fs_file_t file;
+	ssize_t written;
+	int ret;
+
+	ret = fs_mount(&test_fs_mnt);
+	zassert_true(ret == 0 || ret == -EBUSY, "Failed to mount fs (%d)", ret);
+
+	fs_file_t_init(&file);
+	ret = fs_open(&file, TEST_FS_MNTP "/" TEST_FS_FALLBACK_FILE,
+		      FS_O_CREATE | FS_O_WRITE | FS_O_TRUNC);
+	zassert_ok(ret, "Failed to create fallback file (%d)", ret);
+
+	written = fs_write(&file, TEST_FS_PAYLOAD, strlen(TEST_FS_PAYLOAD));
+	zassert_equal(written, strlen(TEST_FS_PAYLOAD), "Failed to write fallback file");
+
+	ret = fs_close(&file);
+	zassert_ok(ret, "Failed to close fallback file (%d)", ret);
+}
+
+static int send_get(const char *path)
+{
+	uint8_t request[64];
+	size_t request_len;
+	int stream_fd;
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	request_len = build_headers_frame(request, HTTP_GET, path);
+	send_all(stream_fd, request, request_len);
+
+	return stream_fd;
+}
+
+/* Checks the status only, a 404 is followed by an empty DATA frame */
+static void expect_response_status(int stream_fd, enum http_status expected_status)
+{
+	uint8_t response[MAX_RESPONSE_SIZE];
+	size_t offset = 0;
+	size_t response_len;
+	uint64_t frame_type;
+	uint64_t frame_len;
+
+	response_len = read_stream_to_eof(stream_fd, response, sizeof(response));
+	zassert_true(response_len > 0, "Empty H3 response");
+
+	offset += h3_decode_varint(response + offset, response_len - offset, &frame_type);
+	zassert_equal(frame_type, H3_FRAME_HEADERS, "Expected HEADERS frame");
+
+	offset += h3_decode_varint(response + offset, response_len - offset, &frame_len);
+	zassert_true(offset + frame_len <= response_len, "HEADERS frame exceeds buffer");
+	zassert_equal(h3_decode_response_status(response + offset, frame_len), expected_status,
+		      "Unexpected HTTP/3 response status");
+}
+
+static void close_stream(int stream_fd)
+{
+	int ret;
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+/* A missing path without an extension gets the fallback file, a missing path with
+ * an extension still gets 404.
+ */
+ZTEST(server_h3_tests, test_h3_static_fs_fallback_file)
+{
+	int stream_fd;
+
+	setup_fallback_file();
+	start_h3_session(false);
+
+	stream_fd = send_get("/route");
+	expect_get_response(stream_fd, TEST_FS_PAYLOAD);
+	close_stream(stream_fd);
+
+	stream_fd = send_get("/missing.js");
+	expect_response_status(stream_fd, HTTP_404_NOT_FOUND);
+	close_stream(stream_fd);
+}
