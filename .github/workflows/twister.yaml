@@ -208,7 +208,7 @@ jobs:
       - name: Set up Zephyr environment
         uses: ./.github/actions/zephyr-ci-env
         with:
-          group-filter: '+ci,+optional,+testing'
+          group-filter: '+ci,+testing'
           base-ref: ${{ github.base_ref }}
           run-checks: 'true'
 
