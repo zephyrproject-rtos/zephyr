@@ -21,4 +21,5 @@ supported:
   - spi
   - timer
   - uart
+  - watchdog
 vendor: infineon

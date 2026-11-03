@@ -22,4 +22,5 @@ supported:
   - comparator
   - dac
   - rtc
+  - watchdog
 vendor: infineon
