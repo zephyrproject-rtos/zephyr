@@ -208,5 +208,6 @@ tests:
       - platform:frdm_mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b.overlay"
     platform_allow:
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0
     filter: dt_alias_exists("pwm-test")
     depends_on: pwm
