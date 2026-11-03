@@ -1476,6 +1476,7 @@ static void preempt(void *param)
 	lll_prepare_cb_t curr_resume_cb;
 	struct lll_event *ready;
 	uint8_t is_yield;
+	int err_yield;
 	void *idx;
 	int err;
 
@@ -1533,6 +1534,27 @@ static void preempt(void *param)
 
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &curr_resume_cb);
+	/* A yielded ready event preempts at its next subevent, or is enqueued back as deferred
+	 * event when the current event does not want to be cancelled or when the yielded event
+	 * does not want to cancel the current event.
+	 */
+	err_yield = 0;
+	if (is_yield != 0U) {
+		if ((err == -EBUSY) || (event.curr.param == ready->prepare_param.param)) {
+			err_yield = -EAGAIN;
+		} else {
+			lll_prepare_cb_t yield_resume_cb = ready->prepare_cb;
+
+			err_yield = ready->is_abort_cb(NULL, ready->prepare_param.param,
+						       &yield_resume_cb);
+			LL_ASSERT_ERR(yield_resume_cb == ready->prepare_cb);
+		}
+
+		if ((err_yield == -EAGAIN) && ((err == -ECANCELED) || (err == -EAGAIN))) {
+			err = 0;
+		}
+	}
+
 	if ((err == 0U) || (err == -EBUSY) || (err == -EINPROGRESS)) {
 		uint32_t ret;
 
@@ -1546,9 +1568,12 @@ static void preempt(void *param)
 		if (event.curr.param != ready->prepare_param.param) {
 			int err_ready;
 
-			/* Check if ready event want to continue, a yielded event resumes */
+			/* Check if ready event want to continue, a yielded event resumes unless the
+			 * current event does not want to be cancelled, then the yielded event is
+			 * enqueued back as deferred event.
+			 */
 			if (is_yield != 0U) {
-				err_ready = 0;
+				err_ready = err_yield;
 			} else {
 				err_ready = ready->is_abort_cb(NULL, ready->prepare_param.param,
 							       &ready_resume_cb);

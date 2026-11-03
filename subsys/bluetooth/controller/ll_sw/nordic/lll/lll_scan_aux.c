@@ -724,6 +724,17 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	* CONFIG_BT_CTLR_SYNC_PERIODIC_SKIP_ON_SCAN_AUX
 	*/
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* Do not abort, defer the ISO sync event when it can receive a repetition of its payloads
+	 * after the auxiliary event.
+	 */
+	const struct ull_hdr *hdr = HDR_LLL2ULL(curr);
+
+	if (lll_sync_iso_is_defer_lossless(next, hdr->ticks_slot)) {
+		return -EBUSY;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* Yield current auxiliary event to other than scan events */
 	return -ECANCELED;
 }

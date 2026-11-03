@@ -29,6 +29,7 @@
 #include "lll_df_types.h"
 #include "lll_scan.h"
 #include "lll_sync.h"
+#include "lll_sync_iso.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
@@ -569,6 +570,17 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		lll_sync_next = ull_sync_lll_is_valid_get(next);
 		if (!lll_sync_next) {
 			lll_sync_curr = curr;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+			/* Do not abort, defer the ISO sync event when it can receive a
+			 * repetition of its payloads after the periodic sync event.
+			 */
+			const struct ull_hdr *hdr = HDR_LLL2ULL(curr);
+
+			if (lll_sync_iso_is_defer_lossless(next, hdr->ticks_slot)) {
+				return -EBUSY;
+			}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 			/* Do not abort if near supervision timeout */
 			if (lll_sync_curr->forced) {
