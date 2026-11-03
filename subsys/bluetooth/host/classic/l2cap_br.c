@@ -5991,7 +5991,9 @@ static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 
 	LOG_DBG("chan %p status 0x%02x encr 0x%02x", chan, status, chan->conn->encrypt);
 
-	if (status != 0) {
+	/* A procedure that succeeded below the level of this channel does not help it */
+	if ((status != 0) || ((chan->conn->encrypt != 0U) &&
+			      (chan->conn->sec_level < BR_CHAN(chan)->required_sec_level))) {
 		/*
 		 * Security procedure status is non-zero so respond with
 		 * security violation only as channel acceptor.
