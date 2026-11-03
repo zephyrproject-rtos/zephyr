@@ -189,3 +189,29 @@
 	mux-0-dc-6-div = <1>;
 	status = "okay";
 };
+
+&emios_0 {
+	global-prescaler = <16>;
+	status = "okay";
+
+	emios0_pwm: pwm {
+		pinctrl-0 = <&pinmux_emios0_pwm>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm8 {
+			channel = <8>;
+			mode = "OPWFMB";
+			counter-bus-type = "BUS_INTERNAL";
+			prescaler = <1>;
+		};
+	};
+};
+
+&emios_1 {
+	status = "okay";
+};
+
+&emios_2 {
+	status = "okay";
+};
