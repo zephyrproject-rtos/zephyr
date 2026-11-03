@@ -89,6 +89,7 @@ struct adc_it51xxx_data {
 	struct k_sem sem;
 	/* Channel ID */
 	uint32_t ch;
+	uint32_t configured_channels;
 	/* Save ADC result to the buffer. */
 	uint16_t *buffer;
 	/*
@@ -113,6 +114,7 @@ static int adc_it51xxx_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_it51xxx_cfg *config = dev->config;
+	struct adc_it51xxx_data *data = dev->data;
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
@@ -134,6 +136,8 @@ static int adc_it51xxx_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
+
+	data->configured_channels |= BIT(channel_id);
 
 	LOG_DBG("Channel setup succeeded!");
 
@@ -286,6 +290,11 @@ static int adc_it51xxx_start_read(const struct device *dev, const struct adc_seq
 
 	if (sequence->oversampling) {
 		LOG_ERR("unsupported oversampling");
+		return -EINVAL;
+	}
+
+	if ((channel_mask & ~data->configured_channels) != 0U) {
+		LOG_ERR("Attempt to read unconfigured channel(s)");
 		return -EINVAL;
 	}
 
