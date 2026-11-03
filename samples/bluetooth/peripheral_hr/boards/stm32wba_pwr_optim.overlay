@@ -18,10 +18,6 @@
 	};
 };
 
-&lptim1 {
-	status = "okay";
-};
-
 /*
  * Reduce flash usage for the power-optimized setup so the full flash is
  * not used when it is not necessary, helping reduce power consumption.
