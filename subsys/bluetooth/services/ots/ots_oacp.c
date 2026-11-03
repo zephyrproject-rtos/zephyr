@@ -575,6 +575,11 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		return -ENODEV;
 	}
 
+	if (cur_obj->state.type != BT_GATT_OTS_OBJECT_WRITE_OP_STATE) {
+		LOG_WRN("Object data without an OACP Write procedure");
+		return -EINVAL;
+	}
+
 	if (!ots->cb->obj_write) {
 		LOG_ERR("OTS Write operation failed: "
 			"there is no OTS Write callback");
