@@ -22,6 +22,7 @@ int video_stream_start(const struct device *dev, enum video_buf_type type)
 	struct video_device *vdev;
 
 	if (dev == NULL || (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %d)", (void *)dev, type);
 		return -EINVAL;
 	}
 
@@ -60,6 +61,7 @@ int video_stream_stop(const struct device *dev, enum video_buf_type type)
 	int ret;
 
 	if (dev == NULL || (type != VIDEO_BUF_TYPE_INPUT && type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %d)", (void *)dev, type);
 		return -EINVAL;
 	}
 
