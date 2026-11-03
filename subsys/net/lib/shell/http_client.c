@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/http/client.h>
@@ -27,7 +28,7 @@ LOG_MODULE_DECLARE(net_shell);
 #define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
 #define HTTP_PORT_LEN     sizeof("65535")
-#define HTTP_HEADERS_LEN  3
+#define HTTP_HEADERS_LEN  (2 * CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS + 1)
 
 #if defined(CONFIG_HTTP_CLIENT)
 static K_SEM_DEFINE(l4_wait, 0, 1);
@@ -53,6 +54,8 @@ struct http_client_sh_ctx {
 	uint16_t payload_size;
 	uint8_t protocol[HTTP_PROTOCOL_LEN];
 	const char *headers[HTTP_HEADERS_LEN];
+	uint8_t num_headers;
+	bool has_content_type;
 	bool is_ssl_verifyhost;
 	int is_ssl_verifypeer;
 	int sec_tag;
@@ -419,14 +422,15 @@ static int http_client_handler(struct http_response *rsp, enum http_final_call f
 static int http_client_help(const struct shell *sh, size_t argc, char *argv[])
 {
 	if ((strcmp(argv[argc - 1], "-h") == 0) || (strcmp(argv[argc - 1], "--help") == 0)) {
-		PR("%s", "Usage: [options...]\n"
-			 "       -d, --data     <data>     HTTP POST data\n"
-			 "       -H, --header   <header>   Custom HTTP header\n"
-			 "       -p, --proto    <protocol> HTTP protocol version\n"
-			 "       -E, --cert     <tag>      TLS credential tag\n"
-			 "       -t, --timeout  <seconds>  Set connection timeout in seconds\n"
-			 "       -k, --insecure            Disable SSL certificate verification\n"
-			 "       -v, --verbose             Make the operation more talkative\n");
+		PR("Usage: [options...]\n"
+		   "       -d, --data     <data>     POST/PUT body, form-urlencoded unless -H sets a type\n"
+		   "       -H, --header   <header>   Custom HTTP header, up to %d of them\n"
+		   "       -p, --proto    <protocol> HTTP protocol version\n"
+		   "       -E, --cert     <tag>      TLS credential tag\n"
+		   "       -t, --timeout  <seconds>  Set connection timeout in seconds\n"
+		   "       -k, --insecure            Disable SSL certificate verification\n"
+		   "       -v, --verbose             Make the operation more talkative\n",
+		   CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS);
 		return -ENOEXEC;
 	}
 
@@ -465,6 +469,19 @@ static int http_client_init(struct http_client_sh_ctx *ctx, const uint8_t *url)
 	return 0;
 }
 
+static bool http_client_header_is_content_type(const char *header)
+{
+	static const char name[] = "content-type:";
+
+	for (size_t i = 0; i < sizeof(name) - 1; i++) {
+		if (tolower((unsigned char)header[i]) != name[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int http_client_args_to_params(struct http_client_sh_ctx *ctx, size_t argc, char *argv[])
 {
 	const struct shell *sh = ctx->sh;
@@ -490,9 +507,18 @@ static int http_client_args_to_params(struct http_client_sh_ctx *ctx, size_t arg
 			ctx->payload_size = strlen(state->optarg);
 			break;
 		case 'H':
-			ctx->headers[0] = state->optarg;
-			ctx->headers[1] = HTTP_CRLF;
-			ctx->headers[2] = NULL;
+			if (ctx->num_headers >= CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS) {
+				PR_ERROR("At most %d custom headers\n",
+					 CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS);
+				return -EINVAL;
+			}
+			if (http_client_header_is_content_type(state->optarg)) {
+				ctx->has_content_type = true;
+			}
+			ctx->headers[2 * ctx->num_headers] = state->optarg;
+			ctx->headers[2 * ctx->num_headers + 1] = HTTP_CRLF;
+			ctx->num_headers++;
+			ctx->headers[2 * ctx->num_headers] = NULL;
 			break;
 		case 'p':
 			ret = snprintf(ctx->protocol, sizeof(ctx->protocol), "%s", state->optarg);
@@ -558,6 +584,9 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 	if (method == HTTP_POST || method == HTTP_PUT) {
 		req.payload = ctx->payload;
 		req.payload_len = ctx->payload_size;
+		if (ctx->payload != NULL && !ctx->has_content_type) {
+			req.content_type_value = "application/x-www-form-urlencoded";
+		}
 	}
 
 	ret = http_client_req(ctx->sockfd, &req, ctx->timeout, ctx);
@@ -712,20 +741,20 @@ SHELL_SUBCMD_ADD((net, http), get, NULL,
 		 SHELL_HELP("Perform HTTP GET request",
 			    "[options...] <url>\n"
 			    "try '-h' for more information"),
-		 cmd_http_get, 2, 10);
+		 cmd_http_get, 2, 8 + 2 * CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS);
 SHELL_SUBCMD_ADD((net, http), post, NULL,
 		 SHELL_HELP("Perform HTTP POST request",
 			    "[options...] <url>\n"
 			    "try '-h' for more information"),
-		 cmd_http_post, 2, 12);
+		 cmd_http_post, 2, 10 + 2 * CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS);
 SHELL_SUBCMD_ADD((net, http), put, NULL,
 		 SHELL_HELP("Perform HTTP PUT request",
 			    "[options...] <url>\n"
 			    "try '-h' for more information"),
-		 cmd_http_put, 2, 12);
+		 cmd_http_put, 2, 10 + 2 * CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS);
 SHELL_SUBCMD_ADD((net, http), delete, NULL,
 		 SHELL_HELP("Perform HTTP DELETE request",
 			    "[options...] <url>\n"
 			    "try '-h' for more information"),
-		 cmd_http_delete, 2, 10);
+		 cmd_http_delete, 2, 8 + 2 * CONFIG_NET_SHELL_HTTP_CLIENT_MAX_HEADERS);
 /* clang-format on */
