@@ -13,6 +13,7 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - counter
   - dma
   - gpio
 vendor: nxp

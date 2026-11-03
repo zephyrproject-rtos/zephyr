@@ -193,3 +193,15 @@
 	mux-0-dc-6-div = <1>;
 	status = "okay";
 };
+
+&pit_0 {
+	status = "okay";
+};
+
+&pit_1 {
+	status = "okay";
+};
+
+&pit_2 {
+	status = "okay";
+};
