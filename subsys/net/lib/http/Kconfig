@@ -199,6 +199,23 @@ config HTTP_SERVER_MAX_HEADER_LEN
 	  internal header processing, and only needs to be increased if the
 	  application wishes to access headers of a greater length.
 
+config HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT
+	int "Number of HPACK dynamic tables shared by the HTTP/2 clients"
+	depends on HTTP_SERVER_VERSION_2
+	default 1
+	range 0 HTTP_SERVER_MAX_CLIENTS
+	help
+	  The server advertises an HPACK dynamic table size of 0, but a client
+	  may use the protocol default of 4096 bytes until it has acknowledged
+	  that, and browsers do so for the requests they send together with
+	  the connection preface. A client takes a table from this pool when
+	  such a request adds an entry and returns it with the acknowledgment,
+	  so one table serves every client but those setting up a connection
+	  at the same moment. Each table takes about 4 KB of RAM. While the
+	  pool is empty, the requests the server cannot decode are refused
+	  with RST_STREAM(REFUSED_STREAM), which makes the client retry them.
+	  0 disables the pool.
+
 config HTTP_SERVER_HTTP2_MAX_HEADER_FRAME_LEN
 	int "Maximum HTTP/2 response header frame length"
 	default 64
