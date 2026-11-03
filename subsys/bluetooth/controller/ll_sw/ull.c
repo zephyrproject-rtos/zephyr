@@ -2451,6 +2451,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 {
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
+	void **e_dispatch;
 	uint8_t is_enqueued;
 	void **e_prev;
 	void **e_curr;
@@ -2485,6 +2486,7 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 	e_prev = NULL;
 	e_curr = pipeline.head;
+	e_dispatch = NULL;
 	is_enqueued = 0U;
 	while (e_curr != NULL) {
 		struct lll_event *e;
@@ -2530,33 +2532,36 @@ void ull_prepare_dequeue(uint8_t caller_id)
 				e_curr = *e_prev;
 			}
 
-			/* Enqueue one normal prepare */
+			/* Enqueue one normal prepare, after all aborted prepare have been released,
+			 * as the LLL resume executes inline when called from LLL context and may
+			 * enqueue the prepare back into the pipeline.
+			 */
 			if (is_aborted == 0U) {
-				uint32_t ret;
-
 				/* A normal prepare is enqueued using lll_resume */
 				is_enqueued = 1U;
-
-				/* Trigger the LLL resume */
-				mfy.param = e;
-				ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0, &mfy);
-				LL_ASSERT_ERR(!ret);
-
-				/* Pipeline could be modified, restart at head to remove all aborted
-				 * prepare.
-				 */
-				e_prev = NULL;
-				e_curr = pipeline.head;
+				e_dispatch = head;
+			} else {
+				/* Free event memory */
+				mem_release(head, &pipeline.mem.free);
 			}
-
-			/* Free event memory */
-			mem_release(head, &pipeline.mem.free);
 
 		} else {
 			/* Traverse to next prepare in pipeline */
 			e_prev = e_curr;
 			e_curr = *e_curr;
 		}
+	}
+
+	if (e_dispatch != NULL) {
+		uint32_t ret;
+
+		/* Trigger the LLL resume */
+		mfy.param = (uint8_t *)e_dispatch + sizeof(void *);
+		ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT_ERR(!ret);
+
+		/* Free event memory */
+		mem_release(e_dispatch, &pipeline.mem.free);
 	}
 
 	/* We have not enqueued any normal prepare, if there are resume prepare then enqueue them */
