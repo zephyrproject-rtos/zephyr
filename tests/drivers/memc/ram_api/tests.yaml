@@ -5,6 +5,8 @@ tests:
       - memc
     filter: dt_alias_exists("memc0")
     build_only: true
+    extra_args:
+      - platform:mimxrt1060_evk:DTC_OVERLAY_FILE=boards/mimxrt1060_evk.overlay
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
       - mimxrt1060_evk/mimxrt1062/qspi
