@@ -2446,15 +2446,17 @@ static bool is_prepare_dequeue_yield_skip(const struct lll_event *e)
 	return false;
 }
 
-/* Check if a deferred prepare is followed by a ready prepare of another state/role, which then
- * uses the radio first. A deferred ISO Synchronized Receiver event is skipped only when it has
- * drifted past the subevents of all its selected BIS, otherwise it yields in its prepare to a
- * ready prepare that starts before it. Other deferred prepares are skipped when the preempt
- * timeout of the ready prepare has expired, dispatching them first delays the ready prepare
- * beyond its event overhead.
+/* Check if a deferred prepare, and deferred prepares of the same state/role following it, are
+ * followed by a ready prepare of another state/role, which then uses the radio first. A
+ * deferred ISO Synchronized Receiver event, directly followed by the ready prepare, that has
+ * drifted past the subevents of all its selected BIS is skipped. Other deferred prepares, and
+ * deferred ISO Synchronized Receiver events that would yield in their prepare to the ready
+ * prepare, are skipped when the preempt timeout of the ready prepare has expired, dispatching
+ * them first delays the ready prepare beyond its event overhead.
  */
 static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_next)
 {
+	bool is_overflow;
 	bool is_sync_iso;
 
 	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (e->prepare_param.defer == 0U)) {
@@ -2462,21 +2464,51 @@ static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_ne
 	}
 
 	is_sync_iso = (ull_sync_iso_lll_is_valid_get(e->prepare_param.param) != NULL);
-	if (is_sync_iso && !lll_sync_iso_is_defer_overflow(e)) {
-		return false;
-	}
+	is_overflow = is_sync_iso && lll_sync_iso_is_defer_overflow(e);
 
 	while (e_next != NULL) {
 		const struct lll_event *iter = (void *)((uint8_t *)e_next + sizeof(void *));
 
-		/* The next prepare is the one dispatched instead */
-		if ((iter->is_aborted == 0U) && (iter->is_resume == 0U)) {
-			return (iter->prepare_param.defer == 0U) && (iter->is_yield == 0U) &&
-			       (iter->is_abort_cb != e->is_abort_cb) &&
-			       (is_sync_iso || lll_is_preempt_expired(iter));
+		e_next = *e_next;
+
+		if ((iter->is_aborted != 0U) || (iter->is_resume != 0U)) {
+			continue;
 		}
 
-		e_next = *e_next;
+		/* Deferred prepares of the same state/role are skipped together, using the same
+		 * condition, otherwise a deferred ISO Synchronized Receiver event placed back
+		 * before the skipped event is dispatched and enqueues itself back after it.
+		 */
+		if (iter->prepare_param.defer != 0U) {
+			if (iter->is_abort_cb != e->is_abort_cb) {
+				return false;
+			}
+
+			is_overflow = false;
+
+			continue;
+		}
+
+		/* The next ready prepare is the one dispatched instead */
+		if ((iter->is_yield != 0U) || (iter->is_abort_cb == e->is_abort_cb)) {
+			return false;
+		}
+
+		if (is_overflow) {
+			return true;
+		}
+
+		/* An ISO Synchronized Receiver event does not yield to scanning, and a periodic
+		 * sync event does not preempt it while it has payload to receive.
+		 */
+		if (is_sync_iso &&
+		    ((ull_scan_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
+		     (ull_scan_aux_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
+		     (ull_sync_lll_is_valid_get(iter->prepare_param.param) != NULL))) {
+			return false;
+		}
+
+		return lll_is_preempt_expired(iter);
 	}
 
 	return false;
