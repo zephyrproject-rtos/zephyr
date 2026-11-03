@@ -2639,12 +2639,12 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 		}
 		chan = &session->br_chan.chan;
 		BR_CHAN(chan)->required_sec_level = dlc->required_sec_level;
+		session->state = BT_RFCOMM_STATE_CONNECTING;
 		ret = bt_l2cap_chan_connect(conn, chan, BT_L2CAP_PSM_RFCOMM);
 		if (ret < 0) {
 			session->state = BT_RFCOMM_STATE_IDLE;
 			goto fail;
 		}
-		session->state = BT_RFCOMM_STATE_CONNECTING;
 		break;
 	case BT_RFCOMM_STATE_CONNECTING:
 		break;
