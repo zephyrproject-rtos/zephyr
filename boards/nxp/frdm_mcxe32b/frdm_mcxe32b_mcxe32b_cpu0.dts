@@ -119,6 +119,10 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
+&edma {
+	status = "okay";
+};
+
 &gpiob_h {
 	status = "okay";
 };
