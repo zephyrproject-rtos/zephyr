@@ -52,6 +52,7 @@
 DEFINE_FLAG_STATIC(flag_security_updated);
 DEFINE_FLAG_STATIC(flag_discover_complete);
 DEFINE_FLAG_STATIC(flag_subscribed);
+DEFINE_FLAG_STATIC(flag_unsubscribed);
 DEFINE_FLAG_STATIC(flag_notified);
 
 struct report_chrc {
@@ -431,6 +432,7 @@ static uint8_t notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *
 	ARG_UNUSED(params);
 
 	if (data == NULL) {
+		SET_FLAG(flag_unsubscribed);
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -728,8 +730,11 @@ static void test_hids_client(void)
 	bk_sync_wait();
 
 	/* Reconnect: the server serves the same HID Service again */
+	UNSET_FLAG(flag_unsubscribed);
 	err = bt_gatt_unsubscribe(client_conn, &sub_params);
 	TEST_ASSERT(err == 0, "Failed to unsubscribe: %d", err);
+	/* The parameters are reused after reconnecting */
+	WAIT_FOR_FLAG(flag_unsubscribed);
 
 	disconnect_from_server();
 
