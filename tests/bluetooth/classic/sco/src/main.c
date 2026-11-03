@@ -247,7 +247,7 @@ ZTEST(sco_hooks, test_setup_send_error)
 ZTEST(sco_hooks, test_accept_send_error)
 {
 	send_result = -EIO;
-	zassert_equal(accept_connection(), BT_HCI_ERR_UNSPECIFIED);
+	zassert_equal(accept_connection(), BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 	zassert_equal(chan.state, BT_SCO_STATE_DISCONNECTED);
 	zassert_is_null(chan.sco);
 	zassert_equal(cleanup_count, 1);
