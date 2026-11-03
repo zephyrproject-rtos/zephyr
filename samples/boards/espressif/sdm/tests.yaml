@@ -1,0 +1,23 @@
+sample:
+  name: Espressif sigma-delta modulator sample
+common:
+  tags:
+    - drivers
+    - sdm
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Fading SDM channel ([0-9]+)"
+tests:
+  sample.boards.espressif.sdm:
+    build_only: true
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore

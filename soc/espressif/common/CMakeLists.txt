@@ -160,6 +160,7 @@ if(NOT CONFIG_SOC_ESP32C5_LPCORE AND NOT CONFIG_SOC_ESP32C6_LPCORE AND NOT CONFI
   zephyr_sources_ifdef(CONFIG_SOC_ESP32_PM_SLEEP_STATS pmstats.c)
 endif()
 zephyr_sources_ifdef(CONFIG_ESP32_PPA esp_ppa.c)
+zephyr_sources_ifdef(CONFIG_ESP32_SDM esp_sdm.c)
 zephyr_sources(instr_mem.c)
 
 if(CONFIG_SOC_HAS_TIMING_FUNCTIONS AND NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
