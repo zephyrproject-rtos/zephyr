@@ -192,6 +192,14 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 		return -EINVAL;
 	}
 
+	if (token_len > COAP_TOKEN_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	if (token_len > 0 && token == NULL) {
+		return -EINVAL;
+	}
+
 	memset(cpkt, 0, sizeof(*cpkt));
 
 	cpkt->data = data;
@@ -2289,6 +2297,14 @@ int coap_tcp_packet_init(struct coap_packet *cpkt, uint8_t *data,
 	bool res;
 
 	if (cpkt == NULL || data == NULL || max_len == 0) {
+		return -EINVAL;
+	}
+
+	if (token_len > COAP_TOKEN_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	if (token_len > 0 && token == NULL) {
 		return -EINVAL;
 	}
 
