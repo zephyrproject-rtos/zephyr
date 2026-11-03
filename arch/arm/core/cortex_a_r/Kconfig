@@ -147,11 +147,11 @@ config GEN_ISR_TABLES
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
-config DCACHE_LINE_SIZE
-	default 32
+configdefault DCACHE_LINE_SIZE
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
-config ICACHE_LINE_SIZE
-	default 32
+configdefault ICACHE_LINE_SIZE
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 endif # CPU_AARCH32_CORTEX_A
 
@@ -303,13 +303,13 @@ config DISABLE_TCM_ECC
 	help
 	  This option disables ECC checks on Tightly Coupled Memory.
 
-config DCACHE_LINE_SIZE
-	default 64 if CPU_CORTEX_R52
-	default 32
+configdefault DCACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_R52 && !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
-config ICACHE_LINE_SIZE
-	default 64 if CPU_CORTEX_R52
-	default 32
+configdefault ICACHE_LINE_SIZE
+	default 64 if CPU_CORTEX_R52 && !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 endif # CPU_AARCH32_CORTEX_R
 
