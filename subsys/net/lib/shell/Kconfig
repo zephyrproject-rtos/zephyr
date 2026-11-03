@@ -84,6 +84,13 @@ config NET_SHELL_HTTP_CLIENT_URL_LEN
 	int "HTTP client URL length"
 	default 128
 
+config NET_SHELL_HTTP_CLIENT_MAX_HEADERS
+	int "HTTP client custom headers"
+	default 4
+	range 1 32
+	help
+	  Number of -H headers a request can carry.
+
 config NET_SHELL_HTTP_CLIENT_CERTIFICATE
 	string "HTTP client SSL Certificate"
 	depends on TLS_CREDENTIALS
