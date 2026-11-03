@@ -1001,7 +1001,7 @@ static void expect_contains_header(const uint8_t *buffer, size_t len,
 	size_t consumed = 0;
 
 	while (consumed < len) {
-		ret = http_hpack_decode_header(buffer + consumed, len, &header_buf);
+		ret = http_hpack_decode_header(buffer + consumed, len, &header_buf, NULL);
 		zassert_true(ret >= 0, "Failed to decode header");
 		zassert_true(consumed + ret <= len, "Frame length exceeded");
 
@@ -1025,7 +1025,8 @@ static void expect_lacks_header(const uint8_t *buffer, size_t len, const char *n
 	int ret;
 
 	while (consumed < len) {
-		ret = http_hpack_decode_header(buffer + consumed, len - consumed, &header_buf);
+		ret = http_hpack_decode_header(buffer + consumed, len - consumed, &header_buf,
+					       NULL);
 		zassert_true(ret > 0, "Failed to decode header");
 		zassert_true(consumed + ret <= len, "Frame length exceeded");
 
