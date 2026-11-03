@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32H7P Power Controller
+
+description: |
+  The STM32H7P Power Controller (PWR) is responsible for system supply
+  voltage regulation, power supply supervision and power management.
+
+compatible: "st,stm32h7p-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  st,power-supply:
+    type: string
+    required: true
+    description: |
+      Power supply configuration
+
+      This property specifies the voltage regulators configuration
+      and indicates how the core domain voltage (Vcore) is generated.
+      Refer to your product's Datasheet and Reference Manual for details.
+
+      WARNING: If this property's value does not match the target board's
+      hardware configuration, the product will deadlock during boot which
+      prevents debugging or re-programming. If such a situation occurs,
+      configure the product to start execution in System memory instead
+      then erase the firmware with incorrect configuration.
+
+      internal-regulator: Internal regulator (LDO/SMPS)
+        The internal regulator is enabled and generates Vcore.
+        (Depending on product number, the internal regulator is LDO or SMPS)
+
+      external-source: Bypass
+        An external supply provides Vcore; the internal regulator is disabled.
+    enum:
+      - "internal-regulator"
+      - "external-source"
