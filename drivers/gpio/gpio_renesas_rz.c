@@ -44,11 +44,6 @@ LOG_MODULE_REGISTER(rz_gpio, CONFIG_GPIO_LOG_LEVEL);
 
 #ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
 #define NONSAFETY_PORT_START            13
-#define REG_PFC_READ(base, port)        sys_read64((base) + regs.pfc + (port) * 8)
-#define REG_PFC_WRITE(base, port, v)    sys_write64((v), (base) + regs.pfc + (port) * 8)
-#else /* CONFIG_GPIO_RENESAS_RZ_TYPE1 || CONFIG_GPIO_RENESAS_RZ_TYPE2 */
-#define REG_PFC_READ(base, port)        sys_read32((base) + regs.pfc + (port) * 4)
-#define REG_PFC_WRITE(base, port, v)    sys_write32((v), (base) + regs.pfc + (port) * 4)
 #endif /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
 
 #define PORT(port_pin) FIELD_GET(BIT_MASK(8) << 8, port_pin)
@@ -145,9 +140,13 @@ static inline uint32_t gpio_rz_get_mode(mem_addr_t base, uint8_t port, gpio_pin_
 static inline uint32_t gpio_rz_get_func(mem_addr_t base, uint8_t port, gpio_pin_t pin)
 {
 #ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
-	return FIELD_GET(BIT_MASK(6) << (pin * 8), REG_PFC_READ(base, port));
+	uint32_t pfc = sys_read32(base + regs.pfc + (port * 8U) + ROUND_DOWN(pin, 4U));
+
+	return FIELD_GET(BIT_MASK(6), pfc >> ((pin % 4U) * 8U));
 #else
-	return FIELD_GET(BIT_MASK(4) << (pin * 4), REG_PFC_READ(base, port));
+	uint32_t pfc = sys_read32(base + regs.pfc + (port * 4U));
+
+	return FIELD_GET(BIT_MASK(4) << (pin * 4), pfc);
 #endif
 }
 
