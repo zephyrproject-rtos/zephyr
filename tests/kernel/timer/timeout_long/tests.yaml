@@ -12,6 +12,9 @@ common:
     - mps2/an385
 tests:
   kernel.timer.timeout_long.compare_exact: {}
+  kernel.timer.timeout_long.compare_exact_64bit:
+    extra_configs:
+      - CONFIG_TEST_TIMEOUT_LONG_64BIT_COMPARE=y
   kernel.timer.timeout_long.reload:
     extra_configs:
       - CONFIG_TEST_TIMEOUT_LONG_RELOAD=y

@@ -13,3 +13,11 @@ config TEST_TIMEOUT_LONG_CLOCK
 config TEST_TIMEOUT_LONG_RELOAD
 	bool "Use a relative reload for the controlled system clock"
 	default n
+
+config TEST_TIMEOUT_LONG_64BIT_COMPARE
+	bool "Use a 64-bit compare clock for announce-budget tests"
+	depends on !TEST_TIMEOUT_LONG_RELOAD
+	default n
+	help
+	  Use a wide counter and comparator so the kernel announce budget,
+	  rather than the counter span, limits each wait.

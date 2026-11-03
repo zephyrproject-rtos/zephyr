@@ -9,14 +9,17 @@ real kernel timeout queue and application ``k_timer`` callbacks. The announce
 entry point is not replaced.
 
 The test application supplies its own system clock and disables the platform
-SysTick driver. Only the raw 32-bit counter and compare/reload writes are
-controlled. An independent 64-bit input timeline advances the counter to each
-armed alarm, and IRQ offload delivers the timer ISR in interrupt context.
+SysTick driver. Only the raw counter and compare/reload writes are controlled.
+The original compare/reload configurations use a 32-bit counter; the separate
+announce-budget configuration uses a 64-bit counter and comparator. An
+independent 64-bit input timeline advances the counter to each armed alarm,
+and IRQ offload delivers the timer ISR in interrupt context.
 The declared 4000 Hz counter has four cycles per kernel tick. QEMU icount is
 disabled so its one-second arm policy does not hide the counter-span boundary.
 
-Each long application timeout spans more than ``UINT32_MAX`` ticks, requiring
-multiple maintenance interrupts and raw-counter wraps. The first three
+In the 32-bit configurations, each long application timeout spans more than
+``UINT32_MAX`` ticks, requiring multiple maintenance interrupts and raw-counter
+wraps. The first three
 maintenance interrupts are delivered five cycles late to exercise retained
 fractional cycles as well as late-announce headroom. Final application
 deadlines are delivered without added latency.
@@ -35,13 +38,26 @@ both cycle getters against the input timeline. Callback counts, ordering,
 ISR context, and exact firing ticks/cycles are checked independently of the
 timer's reported expiry. The kernel queue is the default delta list.
 
-Build the two software configurations from the Zephyr tree with::
+The 64-bit compare configuration makes the kernel's ``SYS_CLOCK_MAX_WAIT``
+budget smaller than the counter span. It advances to 32 ticks before that
+budget is exhausted without delivering an intermediate announce or skipping
+an armed alarm, then restarts a far timer. Every interrupt in this scenario
+has zero added latency: deliberate latency would also contribute to the
+measured announce interval. The test records comparator writes and timer IRQ
+times, checks actual far expiry and a short successor, and verifies that
+rearming does not extend the announce interval beyond the kernel budget.
+It does not replace the announce entry point or wrap production functions.
+
+Build the three software configurations from the Zephyr tree with::
 
    west build -b mps2/an385 tests/kernel/timer/timeout_long -d build/long-compare
    west build -d build/long-compare -t run
    west build -b mps2/an385 tests/kernel/timer/timeout_long -d build/long-reload -- \
        -DCONFIG_TEST_TIMEOUT_LONG_RELOAD=y
    west build -d build/long-reload -t run
+   west build -b mps2/an385 tests/kernel/timer/timeout_long -d build/long-budget -- \
+       -DCONFIG_TEST_TIMEOUT_LONG_64BIT_COMPARE=y
+   west build -d build/long-budget -t run
 
 Use an independent host timeout of 30 seconds; the simulated clock must not
 be its own stall detector. The event pump also has a bounded interrupt count.
@@ -49,5 +65,6 @@ Reported ztest durations use the synthetic clock, not host elapsed time.
 
 Do not flash this image to a physical board: time advances only when the test
 requests it. This is not evidence for real register/IRQ behavior, natural
-hardware wrap, PM, tickful operation, other kernel queue backends, or an
-announce count near the interface's maximum.
+hardware wrap, PM, tickful operation, or other kernel queue backends. The
+wide scenario checks the kernel's half-range announce budget, not a full
+64-bit counter rollover or the absolute maximum of the announce interface.
