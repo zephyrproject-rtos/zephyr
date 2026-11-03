@@ -49,8 +49,8 @@ Programming & Debugging
 Using MCUboot
 =============
 If you want to boot a firmware with MCUboot, you need to build and flash MCUboot
-itself for the ``pic32cm_sg00_cpro/pic32cm5112sg00100`` target and the build
-your own firmware for the ``pic32cm_sg00_cpro/pic32cm5112sg00100/mcuboot``
+itself for the ``pic32cm_sg00_cpro/pic32cm5112sg00100/mcuboot`` target and the
+build your own firmware for the ``pic32cm_sg00_cpro/pic32cm5112sg00100/mcuboot``
 target.
 
 Flash Using MPLAB IPE

@@ -6,3 +6,9 @@
 
 /dts-v1/;
 #include "pic32cm_sg00_cpro.dts"
+
+/ {
+	chosen {
+		/delete-property/ zephyr,romstart;
+	};
+};
