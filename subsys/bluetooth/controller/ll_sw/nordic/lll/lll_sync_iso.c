@@ -272,6 +272,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
+	lll->chan_se = 0U;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	err = prepare_cb_common(p, false);
@@ -407,6 +408,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
+	lll->chan_se = 0U;
 
 	/* Start at the earliest subevent that can be received now */
 	prepare_early_start(p, lll);
@@ -449,6 +451,7 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 	uint8_t crc_init[3];
 	struct ull_hdr *ull;
 	uint32_t remainder;
+	bool is_chan_se;
 	uint32_t hcto;
 	uint32_t ret;
 	uint8_t phy;
@@ -505,6 +508,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 	}
 
 	const bool is_sequential_packing = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
+
+	is_chan_se = false;
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 	uint8_t skipped_bis;
@@ -624,6 +629,10 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 			return -EOVERFLOW;
 		}
 
+		/* Resume the channel selection from the subevent state saved in the same BIS */
+		is_chan_se = (lll->chan_se != 0U) && (lll->se >= lll->chan_se) &&
+			     ((lll->se / lll->nse) == (lll->chan_se / lll->nse));
+
 		/* Drift to next BIS subevent */
 		p->ticks_at_expire += HAL_TICKER_US_TO_TICKS(drift_us);
 
@@ -643,7 +652,8 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 		data_chan_id = lll_chan_id(access_addr);
 
 		/* Calculate the channel id for the next BIS subevent */
-		if (false) {
+		if (is_chan_se) {
+			/* Channel restored from the saved subevent state */
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SEQUENTIAL)
 		} else if (is_sequential_packing) {
@@ -677,6 +687,14 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 	/* Advance the channel calculation past skipped subevents */
+	uint8_t skip = skipped;
+
+	if (is_chan_se) {
+		data_chan_use = lll->chan_se_use;
+		lll->data_chan = lll->data_chan_se;
+		skip = lll->se - lll->chan_se;
+	}
+
 	if (skipped != 0U) {
 		uint8_t bn_irc;
 
@@ -695,19 +713,17 @@ static int prepare_cb_common(struct lll_prepare_param *p, bool is_resort)
 			lll->irc_curr = lll->irc;
 			lll->ptc_curr = skipped - bn_irc + 1U;
 		}
+	}
 
-		/* Calculate the radio channel to use for subevent */
-		uint8_t skip = skipped;
+	/* Calculate the radio channel to use for subevent */
+	while (skip != 0U) {
+		skip--;
 
-		while (skip != 0U) {
-			skip--;
-
-			data_chan_use = lll_chan_iso_subevent(data_chan_id,
-						lll->data_chan_map,
-						lll->data_chan_count,
-						&lll->data_chan.prn_s,
-						&lll->data_chan.remap_idx);
-		}
+		data_chan_use = lll_chan_iso_subevent(data_chan_id,
+					lll->data_chan_map,
+					lll->data_chan_count,
+					&lll->data_chan.prn_s,
+					&lll->data_chan.remap_idx);
 	}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
@@ -970,6 +986,7 @@ static int drift_prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
+	lll->chan_se = 0U;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Initialize the last access address sync subevent */
@@ -3171,6 +3188,11 @@ isr_rx_next_subevent:
 			lll->ticks_se_next = (radio_tmr_start_get() +
 					      HAL_TICKER_US_TO_TICKS(hcto - 1U)) &
 					     HAL_TICKER_CNTR_MASK;
+
+			/* Save the channel selection state of the next subevent */
+			lll->chan_se = nse;
+			lll->chan_se_use = data_chan_use;
+			lll->data_chan_se = lll->data_chan;
 
 			e = is_yield_to_pending(lll);
 			if (e != NULL) {
