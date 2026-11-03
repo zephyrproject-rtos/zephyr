@@ -82,16 +82,17 @@
 		status = "disabled";
 	};
 
-	sdmmc: sdmmc@10808000 {
-		compatible = "cdns,sdhc";
-		reg = <0x10808000 0x1000>,
-		      <0x10b92000 0x1000>;
-		reg-names = "reg_base", "combo_phy";
-		clock-frequency = <200000000>;
-		power-delay-ms = <1000>;
-		resets = <&reset RSTMGR_SDMMC_RSTLINE>,
-			 <&reset RSTMGR_SDMMCECC_RSTLINE>,
-			 <&reset RSTMGR_SOFTPHY_RSTLINE>;
+	sdmmc: mmc@10808000 {
+		compatible = "cdns,sd6hc", "cdns,sdhc";
+		reg = <0x10808000 0x100>, <0x10808200 0x80>;
+		reg-names = "host", "slot";
+		clocks = <&clock INTEL_SOCFPGA_CLOCK_MMC>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		resets = <&reset RSTMGR_SOFTPHY_RSTLINE>,
+			 <&reset RSTMGR_SDMMC_RSTLINE>,
+			 <&reset RSTMGR_SDMMCECC_RSTLINE>;
+		has-host;
 		status = "disabled";
 	};
 
