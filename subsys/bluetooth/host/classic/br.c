@@ -84,7 +84,7 @@ static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
 		case BT_BR_CONN_REQ_REJECT_ADDR:
 			return (uint8_t)rsp;
 		default:
-			return BT_HCI_ERR_UNSPECIFIED;
+			return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 		}
 	} else {
 		role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ?
@@ -102,7 +102,7 @@ static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
 	if (err != 0) {
-		return BT_HCI_ERR_UNSPECIFIED;
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	return BT_HCI_ERR_SUCCESS;

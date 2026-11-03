@@ -363,7 +363,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 
 	if (sco_server == NULL) {
 		LOG_ERR("No SCO server registered");
-		return BT_HCI_ERR_UNSPECIFIED;
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	sco_conn = bt_conn_add_sco(&evt->bdaddr, evt->link_type);
@@ -398,7 +398,7 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 		}
 
 		bt_sco_cleanup(sco_conn);
-		return BT_HCI_ERR_UNSPECIFIED;
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	sco_conn->role = BT_HCI_ROLE_PERIPHERAL;
