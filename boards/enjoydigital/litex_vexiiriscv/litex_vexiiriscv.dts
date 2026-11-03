@@ -32,6 +32,7 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(100)>;
 
 		cpu0: cpu@0 {
 			compatible = "litex,vexiiriscv-standard", "spinalhdl,vexiiriscv", "riscv";
