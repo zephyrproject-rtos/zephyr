@@ -5,7 +5,7 @@ config IS31FL319X
 	bool "IS31FL319x LED driver"
 	default y
 	depends on DT_HAS_ISSI_IS31FL3193_ENABLED || DT_HAS_ISSI_IS31FL3194_ENABLED || \
-		DT_HAS_ISSI_IS31FL3197_ENABLED
+		DT_HAS_ISSI_IS31FL3195_ENABLED || DT_HAS_ISSI_IS31FL3197_ENABLED
 	select I2C
 	help
 	  Enable LED driver for Lumissil Microsystems (a division of ISSI).
@@ -15,4 +15,5 @@ config IS31FL319X
 	  Supported models
 	  - IS31FL3193 (3 channels)
 	  - IS31FL3194 (3 channels)
+	  - IS31FL3195 (4 channels)
 	  - IS31FL3197 (4 channels)

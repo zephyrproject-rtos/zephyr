@@ -13,6 +13,7 @@
  * It currently supports:
  * The IS31FL3193 is a 3-channel LED driver that communicates over I2C.
  * The IS31FL3194 is a 3-channel LED driver that communicates over I2C.
+ * The IS31FL3195 is a 4-channel LED driver that communicates over I2C.
  * The IS31FL3197 is a 4-channel LED driver that communicates over I2C.
  */
 
@@ -137,6 +138,48 @@ static const struct is31f1319x_model is31f13194_model = {
 
 	/* channel output registers */
 	.led_channels = {IS31FL3194_OUT1_REG, IS31FL3194_OUT2_REG, IS31FL3194_OUT3_REG}
+};
+#endif
+
+#ifdef CONFIG_DT_HAS_ISSI_IS31FL3195_ENABLED
+/* IS31FL3195 model registers and values */
+#define IS31FL3195_PROD_ID_REG		0x00
+#define IS31FL3195_SHUTDOWN_REG		0x01
+#define IS31FL3195_MODE_CONFIG_REG	0x02
+#define IS31FL3195_CURRENT_BAND_REG	0x05
+#define IS31FL3195_OUT1_REG		0x10
+#define IS31FL3195_OUT2_REG		0x21
+#define IS31FL3195_OUT3_REG		0x32
+#define IS31FL3195_OUT4_REG		0x40
+#define IS31FL3195_UPDATE_REG		0x50
+
+#define IS31FL3195_SHUTDOWN_REG_VAL	0xf1 /* OUT1~OUT4 enabled, normal operation */
+#define IS31FL3195_MODE_CONFIG_REG_VAL	0x00 /* single mode, all outputs in current level mode */
+#define IS31FL3195_UPDATE_VAL		0xc5
+
+#define IS31FL3195_CHANNEL_COUNT 4
+
+static const struct is31f1319x_model is31f13195_model = {
+	.features = FEATURE_ID_IS_ADDR | FEATURE_SET_CURRENT,
+
+	/* register indexes */
+	.prod_id_reg = IS31FL3195_PROD_ID_REG,
+	.shutdown_reg = IS31FL3195_SHUTDOWN_REG,
+	.conf_reg = IS31FL3195_MODE_CONFIG_REG,
+	.current_reg = IS31FL3195_CURRENT_BAND_REG,
+	.update_reg = IS31FL3195_UPDATE_REG,
+
+	/* values for those registers */
+	.prod_id_val = 0xff,
+	.shutdown_reg_val = IS31FL3195_SHUTDOWN_REG_VAL,
+	.conf_enable = IS31FL3195_MODE_CONFIG_REG_VAL,
+	.update_val = IS31FL3195_UPDATE_VAL,
+	.led_ctrl_reg = REG_NOT_DEFINED,
+	.led_ctrl_val = 0,
+
+	/* channel output registers */
+	.led_channels = {IS31FL3195_OUT1_REG, IS31FL3195_OUT2_REG, IS31FL3195_OUT3_REG,
+			 IS31FL3195_OUT4_REG}
 };
 #endif
 
@@ -495,6 +538,11 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 3, IS31FL3193_CHANNEL_COUNT
 #define DT_DRV_COMPAT issi_is31fl3194
 DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 4, IS31FL3194_CHANNEL_COUNT,
 				  &is31f13194_model)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT issi_is31fl3195
+DT_INST_FOREACH_STATUS_OKAY_VARGS(IS31FL319X_DEVICE, 5, IS31FL3195_CHANNEL_COUNT,
+				  &is31f13195_model)
 #undef DT_DRV_COMPAT
 
 #define DT_DRV_COMPAT issi_is31fl3197
