@@ -7,12 +7,23 @@ config I2C_RENESAS_RX_RIIC
 	bool "Renesas RX I2C Controller"
 	default y
 	depends on DT_HAS_RENESAS_RX_I2C_ENABLED
+	depends on HAS_RENESAS_RX_RDP
 	select USE_RX_RDP_I2C
 	select PINCTRL
 	help
 	  Enable Renesas RX I2C Driver.
 
-if I2C_RENESAS_RX_RIIC
+config I2C_RENESAS_RX_SCI_B
+	bool "Renesas RX SCI-B I2C"
+	default y
+	depends on DT_HAS_RENESAS_RX_I2C_SCI_B_ENABLED
+	depends on HAS_RENESAS_RX_FSP
+	select USE_RX_FSP_SCI_B_I2C
+	select PINCTRL
+	help
+	  Enable Renesas RX SCI-B I2C Driver.
+
+if I2C_RENESAS_RX_RIIC || I2C_RENESAS_RX_SCI_B
 
 config I2C_RENESAS_RX_CALLBACK
 	bool "Renesas RX I2C Callback Support"
