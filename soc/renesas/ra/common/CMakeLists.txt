@@ -3,8 +3,8 @@
 
 zephyr_include_directories(.)
 
-# Let SystemInit() be called in place of soc_reset_hook() by default.
-zephyr_linker_symbol(SYMBOL soc_reset_hook EXPR "@SystemInit@")
+# Let renesas_ra_reset_hook() be called in place of soc_reset_hook() by default.
+zephyr_linker_symbol(SYMBOL soc_reset_hook EXPR "@renesas_ra_reset_hook@")
 
 # These files are used when the CMake linker script generator is disabled.
 if(CONFIG_CMAKE_LINKER_GENERATOR)
