@@ -1250,10 +1250,10 @@ int handle_http1_request(struct http_client_ctx *client)
 		client->data_len -= frag_headers_len;
 	}
 
-	/* An upgrade to a protocol that is not supported is ignored, and the
-	 * request is served over HTTP/1.1.
+	/* An upgrade to a protocol that is not supported, and any Upgrade in an
+	 * HTTP/1.0 request, is ignored, and the request is served over HTTP/1.
 	 */
-	if (client->has_upgrade_header) {
+	if (client->has_upgrade_header && !is_client_http10(client)) {
 		if (client->websocket_upgrade) {
 			if (IS_ENABLED(CONFIG_HTTP_SERVER_WEBSOCKET)) {
 				detail = get_resource_detail(client->service, client->url_buffer,
