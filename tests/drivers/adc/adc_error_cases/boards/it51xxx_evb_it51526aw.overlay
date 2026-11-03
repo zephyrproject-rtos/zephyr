@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&adc0 {
+	pinctrl-0 = <&adc0_ch0_gpi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
