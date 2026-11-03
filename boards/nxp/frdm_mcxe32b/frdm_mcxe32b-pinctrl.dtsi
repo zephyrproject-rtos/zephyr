@@ -35,4 +35,14 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_lpi2c_1: pinmux_lpi2c_1 {
+		group1 {
+			pinmux = <(PTC6_LPI2C1_SDA_I | PTC6_LPI2C1_SDA_O)>,
+				 <(PTC7_LPI2C1_SCL_I | PTC7_LPI2C1_SCL_O)>;
+			input-enable;
+			output-enable;
+			bias-pull-up;
+		};
+	};
 };
