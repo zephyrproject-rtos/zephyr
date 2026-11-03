@@ -82,11 +82,11 @@ static uint32_t z_tricore_create_context(struct k_thread *thread, k_thread_entry
 	lower->a5 = (uint32_t)p1;
 	lower->a6 = (uint32_t)p2;
 	lower->a7 = (uint32_t)p3;
-	lower->a11 = (uint32_t)z_thread_entry;
+	lower->a11 = (uint32_t)&z_thread_entry;
 	lower->pcxi |= (1UL << 21) | (1UL << 20); /* Set PIE and UL bits */
 
 	upper->a10 = (uint32_t)stack_ptr;
-	upper->a11 = (uint32_t)z_thread_entry;
+	upper->a11 = (uint32_t)&z_thread_entry;
 	upper->psw = (1UL << 7); /* Set CDE bit*/
 	upper->pcxi = 0;
 
