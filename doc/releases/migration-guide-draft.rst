@@ -175,6 +175,10 @@ Boards
   ``Kconfig.defconfig`` files must drop their ``choice SPIRAM_TYPE`` overrides. The flash size
   comes from the ``zephyr,flash`` devicetree node.
 
+* On LiteX SoCs, :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer falls back to the
+  CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
+  set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
+
 Device Drivers and Devicetree
 *****************************
 
