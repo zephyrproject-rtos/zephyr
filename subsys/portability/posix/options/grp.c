@@ -16,7 +16,10 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize
 	ARG_UNUSED(grp);
 	ARG_UNUSED(buffer);
 	ARG_UNUSED(bufsize);
-	ARG_UNUSED(result);
+
+	if (result != NULL) {
+		*result = NULL;
+	}
 
 	return ENOSYS;
 }
@@ -27,7 +30,10 @@ int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struc
 	ARG_UNUSED(grp);
 	ARG_UNUSED(buffer);
 	ARG_UNUSED(bufsize);
-	ARG_UNUSED(result);
+
+	if (result != NULL) {
+		*result = NULL;
+	}
 
 	return ENOSYS;
 }

@@ -11,8 +11,18 @@
 
 ZTEST(grp, test_grp_stubs)
 {
+	struct group grp;
+	struct group *result = &grp;
+
 	zassert_equal(getgrnam_r(NULL, NULL, NULL, 42, NULL), ENOSYS);
 	zassert_equal(getgrgid_r(42, NULL, NULL, 42, NULL), ENOSYS);
+
+	zassert_equal(getgrnam_r(NULL, NULL, NULL, 42, &result), ENOSYS);
+	zassert_is_null(result);
+
+	result = &grp;
+	zassert_equal(getgrgid_r(42, NULL, NULL, 42, &result), ENOSYS);
+	zassert_is_null(result);
 }
 
 ZTEST_SUITE(grp, NULL, NULL, NULL, NULL, NULL);
