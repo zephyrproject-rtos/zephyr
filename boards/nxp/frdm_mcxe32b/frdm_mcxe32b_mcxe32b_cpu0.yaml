@@ -15,4 +15,5 @@ supported:
   - arduino_gpio
   - gpio
   - i2c
+  - spi
 vendor: nxp

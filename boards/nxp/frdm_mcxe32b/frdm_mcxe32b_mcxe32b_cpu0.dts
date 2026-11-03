@@ -211,3 +211,9 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
+
+&lpspi_0 {
+	pinctrl-0 = <&pinmux_lpspi_0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
