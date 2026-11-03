@@ -1092,8 +1092,8 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		goto error;
 	}
 
-	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, params->psk,
-			     params->psk_length, chanspec) != 0) {
+	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, params->psk, params->psk_length,
+			     chanspec) != 0) {
 		LOG_ERR("Failed to init whd ap interface");
 		ret = -EAGAIN;
 		goto error;
