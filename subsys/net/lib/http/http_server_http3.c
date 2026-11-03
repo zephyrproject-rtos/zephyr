@@ -1306,20 +1306,9 @@ static int h3_handle_static_fs_resource(
 	}
 
 	/* Get filename and content-type from URL */
-	len = http_server_path_len_without_query((const char *)client->url_buffer);
-
-	if (len == 1) {
-		snprintk(fname, sizeof(fname), "%s/index.html",
-			 static_fs_detail->fs_path);
-	} else {
-		http_server_get_content_type_from_extension(
-			(char *)client->url_buffer, content_type,
-			sizeof(content_type));
-		snprintk(fname, sizeof(fname), "%s%.*s",
-			 static_fs_detail->fs_path, len, client->url_buffer);
-	}
-
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
+	ret = http_server_find_static_fs_file(static_fs_detail, (char *)client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, 0, NULL);
 	if (ret < 0) {
 		LOG_DBG("[%p] H3: file not found: %s (%d)", client, fname, ret);
 		return h3_send_404(client);

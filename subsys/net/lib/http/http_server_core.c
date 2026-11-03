@@ -1789,6 +1789,20 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 	return NULL;
 }
 
+/* Like fs_stat(), but only a regular file counts: a directory of that name
+ * is not something the server can serve.
+ */
+static int stat_file(const char *fname, struct fs_dirent *dirent)
+{
+	int ret = fs_stat(fname, dirent);
+
+	if ((ret == 0) && (dirent->type != FS_DIR_ENTRY_FILE)) {
+		return -ENOENT;
+	}
+
+	return ret;
+}
+
 int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 			  uint8_t supported_compression, enum http_compression *chosen_compression)
 {
@@ -1800,7 +1814,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		*chosen_compression = HTTP_NONE;
 		if (IS_BIT_SET(supported_compression, HTTP_BR)) {
 			snprintk(fname + len, fname_size - len, ".br");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_BR;
 				goto return_filename;
@@ -1808,7 +1822,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_GZIP)) {
 			snprintk(fname + len, fname_size - len, ".gz");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_GZIP;
 				goto return_filename;
@@ -1816,7 +1830,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_ZSTD)) {
 			snprintk(fname + len, fname_size - len, ".zst");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_ZSTD;
 				goto return_filename;
@@ -1824,7 +1838,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_COMPRESS)) {
 			snprintk(fname + len, fname_size - len, ".lzw");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_COMPRESS;
 				goto return_filename;
@@ -1832,7 +1846,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		}
 		if (IS_BIT_SET(supported_compression, HTTP_DEFLATE)) {
 			snprintk(fname + len, fname_size - len, ".zz");
-			ret = fs_stat(fname, &dirent);
+			ret = stat_file(fname, &dirent);
 			if (ret == 0) {
 				*chosen_compression = HTTP_DEFLATE;
 				goto return_filename;
@@ -1841,7 +1855,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 		/* No compressed file found, try the original filename */
 		fname[len] = '\0';
 	}
-	ret = fs_stat(fname, &dirent);
+	ret = stat_file(fname, &dirent);
 	if (ret != 0) {
 		return -ENOENT;
 	}
@@ -1849,6 +1863,54 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 return_filename:
 	*file_size = dirent.size;
 	return ret;
+}
+
+static bool path_has_extension(const char *path, int len)
+{
+	for (int i = len - 1; i >= 0 && path[i] != '/'; i--) {
+		if (path[i] == '.') {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+int http_server_find_static_fs_file(const struct http_resource_detail_static_fs *static_fs_detail,
+				    char *url, char *fname, size_t fname_size, char *content_type,
+				    size_t content_type_size, size_t *file_size,
+				    uint8_t supported_compression,
+				    enum http_compression *chosen_compression)
+{
+	int len = http_server_path_len_without_query(url);
+	int ret;
+
+	if (len == 1) {
+		/* url is just the leading slash, use index.html as filename */
+		snprintk(fname, fname_size, "%s/index.html", static_fs_detail->fs_path);
+	} else {
+		http_server_get_content_type_from_extension(url, content_type, content_type_size);
+		snprintk(fname, fname_size, "%s%.*s", static_fs_detail->fs_path, len, url);
+	}
+
+	ret = http_server_find_file(fname, fname_size, file_size, supported_compression,
+				    chosen_compression);
+	if (ret == 0 || static_fs_detail->fallback_file == NULL || path_has_extension(url, len)) {
+		return ret;
+	}
+
+	/* A path without an extension is a client-side route, serve the fallback file.
+	 * A missing asset keeps its 404.
+	 */
+	snprintk(fname, fname_size, "%s/%s", static_fs_detail->fs_path,
+		 static_fs_detail->fallback_file);
+	strncpy(content_type, "text/html", content_type_size);
+	http_server_get_content_type_from_extension(fname, content_type, content_type_size);
+
+	NET_DBG("%.*s not found, serving %s", len, url, fname);
+
+	return http_server_find_file(fname, fname_size, file_size, supported_compression,
+				     chosen_compression);
 }
 
 void http_server_get_content_type_from_extension(char *url, char *content_type,

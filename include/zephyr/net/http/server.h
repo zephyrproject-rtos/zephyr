@@ -136,6 +136,13 @@ struct http_resource_detail_static_fs {
 
 	/** Path in the local filesystem */
 	const char *fs_path;
+
+	/** File under @ref fs_path served instead of a 404 when the requested
+	 *  file does not exist and the last segment of the path has no file
+	 *  extension, for example the entry page of a single-page application.
+	 *  NULL answers 404.
+	 */
+	const char *fallback_file;
 };
 
 /** @brief HTTP compressions */
