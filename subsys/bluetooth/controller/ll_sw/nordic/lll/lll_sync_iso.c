@@ -1415,6 +1415,56 @@ bool lll_sync_iso_is_defer_lossless(void *param, uint32_t ticks_duration)
 	return is_se_skip_lossless(lll, latency, se, se_after);
 }
 
+/* Check if a deferred event, when prepared now, has drifted past the subevents of all its
+ * selected BIS, its prepare then only generates the lost payloads of the event. The drift is
+ * calculated as in prepare_early_start() and prepare_cb_common().
+ */
+bool lll_sync_iso_is_defer_overflow(const struct lll_event *e)
+{
+	const struct lll_prepare_param *p = &e->prepare_param;
+	uint32_t ticks_at_expire_anchor;
+	uint32_t ticks_at_expire;
+	struct lll_sync_iso *lll;
+	uint32_t ticks_drift;
+	uint32_t skipped_bis;
+	uint32_t ticks_diff;
+	uint32_t drift_us;
+
+	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (p->defer == 0U)) {
+		return false;
+	}
+
+	lll = ull_sync_iso_lll_is_valid_get(p->param);
+	if (lll == NULL) {
+		return false;
+	}
+
+	ticks_drift = p->ticks_drift;
+	ticks_at_expire_anchor = ticker_ticks_diff_get(p->ticks_at_expire, ticks_drift);
+	ticks_at_expire = ticker_ticks_diff_get(ticker_ticks_now_get(),
+						lll_event_offset_get(HDR_LLL2ULL(lll)));
+	ticks_diff = ticker_ticks_diff_get(ticks_at_expire, ticks_at_expire_anchor);
+	if (((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) && (ticks_diff > ticks_drift)) {
+		ticks_drift = ticks_diff;
+	}
+
+	if (ticks_drift == 0U) {
+		return false;
+	}
+
+	/* Interleaved packing is not resumed, any drift aborts the event */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_INTERLEAVED) &&
+	    (lll->bis_spacing < (lll->sub_interval * lll->nse))) {
+		return true;
+	}
+
+	/* One tick less than the drift, the prepare adds the ticker remainder to the drift */
+	drift_us = HAL_TICKER_TICKS_TO_US(ticks_drift - 1U);
+	skipped_bis = DIV_ROUND_UP(drift_us, lll->sub_interval) / lll->nse;
+
+	return skipped_bis >= lll->stream_count;
+}
+
 /* Time of the subevent, from now, of an event in the prepare pipeline after which a
  * payload that has not been received is lost, i.e. the deadline of the event.
  */

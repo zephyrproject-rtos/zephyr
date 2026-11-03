@@ -728,10 +728,8 @@ void lll_defer(lll_prepare_cb_t resume_cb, uint8_t is_resume, uint8_t is_yield,
 	*/
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
-/* Check if the preempt timeout of a yielded event is later than the overhead to resume
- * another event, i.e. another event can use the radio before the yielded event resumes.
- */
-bool lll_is_yield_early(const struct lll_event *e)
+/* Check if the preempt timeout of an event is later than the current ticks plus a margin */
+static bool is_preempt_after(const struct lll_event *e, uint32_t ticks_margin)
 {
 	uint32_t ticks_at_preempt;
 	uint32_t ticks_diff;
@@ -740,12 +738,26 @@ bool lll_is_yield_early(const struct lll_event *e)
 	ticks_at_preempt = e->prepare_param.ticks_at_expire +
 			   HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
 			   HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
-	ticks_now = ticker_ticks_now_get() + HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_RESUME_US);
+	ticks_now = ticker_ticks_now_get() + ticks_margin;
 
 	ticks_diff = ticker_ticks_diff_get(ticks_at_preempt & HAL_TICKER_CNTR_MASK,
 					   ticks_now & HAL_TICKER_CNTR_MASK);
 
 	return (ticks_diff != 0U) && ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U);
+}
+
+/* Check if the preempt timeout of a yielded event is later than the overhead to resume
+ * another event, i.e. another event can use the radio before the yielded event resumes.
+ */
+bool lll_is_yield_early(const struct lll_event *e)
+{
+	return is_preempt_after(e, HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_RESUME_US));
+}
+
+/* Check if the preempt timeout of a ready event has expired */
+bool lll_is_preempt_expired(const struct lll_event *e)
+{
+	return !is_preempt_after(e, 0U);
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
