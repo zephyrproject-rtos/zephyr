@@ -130,6 +130,14 @@ struct lll_sync_iso {
 	uint32_t ticks_se_next;
 	uint8_t se_next;
 
+	/* Channel selection state at subevent chan_se, used to resume at a later subevent
+	 * of the same BIS without repeating the channel selection from the BIS event start.
+	 * Zero chan_se when not valid.
+	 */
+	struct lll_sync_iso_data_chan data_chan_se;
+	uint8_t chan_se;
+	uint8_t chan_se_use;
+
 	/* Radio start ticks of the first subevent of the current event */
 	uint32_t ticks_se_first;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
