@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ipc0 {
+	status = "okay";
+};
+
+/ {
+	/*
+	 * Both cores describe the same two links:
+	 * channel 0: main -> remote on IPC channel 5, interrupt structure 1
+	 * channel 1: remote -> main on IPC channel 6, interrupt structure 2
+	 */
+	mbox0: mbox {
+		compatible = "infineon,mbox";
+		interrupt-parent = <&intmux_ch3>;
+		interrupts = <1 0>, <2 0>;
+		#mbox-cells = <1>;
+		ipc-configs = <&ipc0 5 1>, <&ipc0 6 2>;
+		status = "okay";
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+	};
+};
