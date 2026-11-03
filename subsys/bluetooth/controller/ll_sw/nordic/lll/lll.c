@@ -1739,6 +1739,13 @@ preempt_cancel_curr:
 		event.curr.has_margin = 1U;
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* Dequeue the preemptor first when the current event is done, deferred and normal
+	 * prepares placed before it would delay it beyond its event overhead.
+	 */
+	ull_prepare_dequeue_first_set(ready);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* Abort the current event */
 	event.curr.abort_cb(NULL, event.curr.param);
 
