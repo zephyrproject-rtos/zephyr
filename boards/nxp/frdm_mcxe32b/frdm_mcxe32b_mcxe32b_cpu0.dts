@@ -119,6 +119,10 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
+&edma {
+	status = "okay";
+};
+
 &gpiob_h {
 	status = "okay";
 };
@@ -187,6 +191,13 @@
 	mux-0-dc-4-div = <4>;
 	mux-0-dc-5-div = <4>;
 	mux-0-dc-6-div = <1>;
+	status = "okay";
+};
+
+&sai_0 {
+	pinctrl-0 = <&pinmux_sai_0>;
+	pinctrl-names = "default";
+	nxp,tx-channel = <1>;
 	status = "okay";
 };
 
