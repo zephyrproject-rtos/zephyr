@@ -89,3 +89,26 @@ Wi-Fi
 
 The IPv4 Wi-Fi support can be enabled in the sample with
 :ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.
+
+ESP32-S3-DevKitC-1 (N8R8)
+-------------------------
+
+``boards/esp32s3_devkitc_esp32s3_procpu_n8r8.conf`` and the matching
+devicetree overlay configure an :zephyr:board:`esp32s3_devkitc` with an N8R8
+module (8 MB quad-SPI flash, 8 MB octal PSRAM) for Wi-Fi TCP throughput:
+network buffers in PSRAM, QIO flash with a 32 KB instruction cache, 64 KB
+TCP windows and larger Wi-Fi aggregation windows. Select it with
+``FILE_SUFFIX``:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: esp32s3_devkitc/esp32s3/procpu
+   :gen-args: -DFILE_SUFFIX=n8r8
+   :goals: build flash
+
+For other ESP32-S3 boards or modules, start from these files and check:
+
+- the ``psram0`` size must match the PSRAM fitted on the module; a larger
+  value is only warned about at boot and then corrupts memory;
+- ``CONFIG_ESPTOOLPY_FLASHMODE_QIO`` must not be used with octal-flash
+  modules, for example ESP32-S3-WROOM-2.
