@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		zephyr,camera = &csi_capture_port;
+	};
+
+	sc2336_input_clock: sc2336-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+};
+
+&csi_interface {
+	status = "okay";
+
+	port {
+		csi_ep_in: endpoint {
+			remote-endpoint-label = "sc2336_ep_out";
+			bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+			data-lanes = <1 2>;
+		};
+	};
+};
+
+&csi_i2c {
+	sc2336: sc2336@30 {
+		compatible = "smartsens,sc2336";
+		reg = <0x30>;
+		clocks = <&sc2336_input_clock>;
+
+		port {
+			sc2336_ep_out: endpoint {
+				remote-endpoint-label = "csi_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
+};
