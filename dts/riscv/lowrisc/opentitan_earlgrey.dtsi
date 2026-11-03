@@ -40,7 +40,7 @@
 		#size-cells = <0x01>;
 
 		ram0: memory@10000000 {
-			reg = <0x10000000 0x10000>;
+			reg = <0x10000000 0x20000>;
 			device_type = "memory";
 		};
 
