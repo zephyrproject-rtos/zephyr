@@ -608,6 +608,11 @@ void http_server_release_client(struct http_client_ctx *client)
 
 	client_release_resources(client);
 
+#if defined(CONFIG_HTTP_SERVER_VERSION_2)
+	http_hpack_dynamic_table_free(client->hpack_table);
+	client->hpack_table = NULL;
+#endif
+
 	client->service->data->num_clients--;
 
 	for (i = 0; i < server_ctx.listen_fds; i++) {
@@ -756,6 +761,8 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 	client->preface_sent = false;
 	client->settings_acked = false;
 	client->window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
+	client->hpack_table = NULL;
+	client->hpack_table_missed = false;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
 		client->is_h3 = false;
