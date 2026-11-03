@@ -587,23 +587,35 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 {
 	uint8_t len;
 	uint8_t alloc_len;
+	bool is_stripped_imm_ack;
 	struct net_pkt *pkt;
 	int err = 0;
 
 	len = mcxw_radio->rx_ack_frame.length;
 
-	/* NBU firmware strips FCS on Imm-ACKs after hardware verification,
-	 * but Enh-ACKs are delivered with FCS included.
-	 * OpenThread expects the PSDU to always include FCS.
-	 * Append 2 dummy FCS bytes for Imm-ACKs only.
+	/* NBU firmware strips the FCS on Imm-ACKs after hardware verification,
+	 * whereas Enh-ACKs are delivered with their FCS included. OpenThread
+	 * expects the PSDU to always include the FCS. A stripped Imm-ACK has an
+	 * exact length of FC(2) + seq(1) = 3 bytes (IEEE802154_IMM_ACK_LENGTH -
+	 * IEEE802154_FCS_LENGTH). Matching both this exact length and the ACK
+	 * frame type (lowest 3 bits of the first Frame Control octet) before
+	 * appending the 2 dummy FCS bytes makes the intent explicit and avoids
+	 * altering any other short frame that happens to have the same length
+	 * but a different frame type.
 	 */
+	is_stripped_imm_ack =
+		(len == (IEEE802154_IMM_ACK_LENGTH - IEEE802154_FCS_LENGTH)) &&
+		((mcxw_radio->rx_ack_frame.psdu[0] & IEEE802154_FRM_TYPE_MASK) ==
+		 IEEE802154_FRM_TYPE_ACK);
+
 	alloc_len = len;
-	if (len > 0 && len < IEEE802154_IMM_ACK_LENGTH) {
+	if (is_stripped_imm_ack) {
 		alloc_len = len + IEEE802154_FCS_LENGTH;
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(mcxw_radio->iface, alloc_len,
 					   NET_AF_UNSPEC, 0, K_NO_WAIT);
+
 	if (!pkt) {
 		LOG_ERR("No free packet available.");
 		err = -ENOMEM;
@@ -616,7 +628,7 @@ static int handle_ack(struct mcxw_context *mcxw_radio)
 		goto free_ack;
 	}
 
-	if (len > 0 && len < IEEE802154_IMM_ACK_LENGTH) {
+	if (is_stripped_imm_ack) {
 		static const uint8_t dummy_fcs[IEEE802154_FCS_LENGTH] = {0};
 
 		if (net_pkt_write(pkt, dummy_fcs, IEEE802154_FCS_LENGTH) < 0) {
