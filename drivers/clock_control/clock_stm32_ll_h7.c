@@ -275,7 +275,7 @@ static uint32_t get_sysclk_frequency(void)
 				    STM32_PLL_M_DIVISOR,
 				    STM32_PLL_N_MULTIPLIER,
 				    STM32_PLL_FRACN_VALUE,
-				    STM32_PLL_R_DIVISOR);
+				    STM32_PLL_P_DIVISOR);
 #elif defined(STM32_SYSCLK_SRC_CSI)
 	return STM32_CSI_FREQ;
 #elif defined(STM32_SYSCLK_SRC_HSE)
