@@ -25,3 +25,4 @@ tests:
       - kit_psc3m5_evk/psc3m5fds2afq1
       - pic32cm_sg00_cpro
       - kit_psc3m6_eval/psc3m6ges3ahq1
+      - it51xxx_evb/it51526aw

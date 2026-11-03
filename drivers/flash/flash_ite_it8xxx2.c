@@ -93,6 +93,15 @@ static const struct flash_parameters flash_it8xxx2_parameters = {
 	.erase_value = 0xff,
 };
 
+static bool __soc_ram_code flash_it8xxx2_is_valid_range(off_t offset, size_t len)
+{
+	if ((offset < 0) || (offset >= (off_t)CHIP_FLASH_SIZE_BYTES)) {
+		return false;
+	}
+
+	return len <= (CHIP_FLASH_SIZE_BYTES - (size_t)offset);
+}
+
 void __soc_ram_code ramcode_reset_i_cache(void)
 {
 #ifdef CONFIG_SOC_SERIES_IT8XXX2
@@ -355,6 +364,14 @@ static int __soc_ram_code flash_it8xxx2_read(const struct device *dev, off_t off
 	uint8_t *data_t = data;
 	int i;
 
+	if (len == 0U) {
+		return 0;
+	}
+
+	if (!flash_it8xxx2_is_valid_range(offset, len)) {
+		return -EINVAL;
+	}
+
 	for (i = 0; i < len; i++) {
 		flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_INTERNAL_FLASH;
 		flash_regs->SMFI_ECINDAR2 = (offset >> 16) & GENMASK(7, 0);
@@ -380,6 +397,14 @@ static int __soc_ram_code flash_it8xxx2_write(const struct device *dev, off_t of
 	struct flash_it8xxx2_dev_data *data = dev->data;
 	int ret = -EINVAL;
 	unsigned int key;
+
+	if (len == 0U) {
+		return 0;
+	}
+
+	if (!flash_it8xxx2_is_valid_range(offset, len)) {
+		return -EINVAL;
+	}
 
 	/*
 	 * Check that the offset and length are multiples of the write
@@ -422,6 +447,14 @@ static int __soc_ram_code flash_it8xxx2_erase(const struct device *dev, off_t of
 	struct flash_it8xxx2_dev_data *data = dev->data;
 	int v_size = len, v_addr = offset, ret = -EINVAL;
 	unsigned int key;
+
+	if (len == 0U) {
+		return 0;
+	}
+
+	if (!flash_it8xxx2_is_valid_range(offset, len)) {
+		return -EINVAL;
+	}
 
 	/*
 	 * Check that the offset and length are multiples of the write
