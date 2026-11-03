@@ -2447,7 +2447,8 @@ static bool is_prepare_dequeue_yield_skip(const struct lll_event *e)
 }
 
 /* Check if a deferred prepare, and deferred prepares of the same state/role following it, are
- * followed by a ready prepare of another state/role, which then uses the radio first. A
+ * followed by a ready prepare of another state/role, which then uses the radio first. Late ISO
+ * Synchronized Receiver prepares, past their preempt timeout, are handled as deferred. A
  * deferred ISO Synchronized Receiver event, directly followed by the ready prepare, that has
  * drifted past the subevents of all its selected BIS is skipped. Other deferred prepares, and
  * deferred ISO Synchronized Receiver events that would yield in their prepare to the ready
@@ -2459,11 +2460,19 @@ static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_ne
 	bool is_overflow;
 	bool is_sync_iso;
 
-	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (e->prepare_param.defer == 0U)) {
+	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (e->is_yield != 0U)) {
 		return false;
 	}
 
 	is_sync_iso = (ull_sync_iso_lll_is_valid_get(e->prepare_param.param) != NULL);
+
+	/* A late ISO Synchronized Receiver prepare starts at a drifted subevent, like a
+	 * deferred one, and can yield in its prepare to the ready prepare.
+	 */
+	if ((e->prepare_param.defer == 0U) && (!is_sync_iso || !lll_is_preempt_expired(e))) {
+		return false;
+	}
+
 	is_overflow = is_sync_iso && lll_sync_iso_is_defer_overflow(e);
 
 	while (e_next != NULL) {
@@ -2475,11 +2484,14 @@ static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_ne
 			continue;
 		}
 
-		/* Deferred prepares of the same state/role are skipped together, using the same
-		 * condition, otherwise a deferred ISO Synchronized Receiver event placed back
-		 * before the skipped event is dispatched and enqueues itself back after it.
+		/* Deferred, and late ISO Synchronized Receiver, prepares of the same state/role
+		 * are skipped together, using the same condition, otherwise a deferred ISO
+		 * Synchronized Receiver event placed back before the skipped event is dispatched
+		 * and enqueues itself back after it.
 		 */
-		if (iter->prepare_param.defer != 0U) {
+		if ((iter->prepare_param.defer != 0U) ||
+		    (is_sync_iso && (iter->is_yield == 0U) &&
+		     (iter->is_abort_cb == e->is_abort_cb) && lll_is_preempt_expired(iter))) {
 			if (iter->is_abort_cb != e->is_abort_cb) {
 				return false;
 			}
@@ -2582,6 +2594,13 @@ void ull_prepare_dequeue(uint8_t caller_id)
 
 		/* Skip a deferred prepare while a following ready prepare is due */
 		is_skip = (is_enqueued == 0U) && is_prepare_dequeue_defer_skip(e, *e_curr);
+
+		/* A skipped late prepare is deferred, so that it is not the ready prepare that
+		 * the dispatched prepare yields to.
+		 */
+		if (is_skip) {
+			e->prepare_param.defer = 1U;
+		}
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 		/* Dequeue all aborted prepare and enqueue a normal prepare */
