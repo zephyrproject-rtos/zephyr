@@ -108,7 +108,7 @@ void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
 #if CONFIG_EXCEPTION_DEBUG
 	struct z_tricore_upper_context *upper = NULL;
 
-	if (lower != NULL && (lower->pcxi & 0xFFFFF) != 0) {
+	if (lower != NULL && (lower->pcxi & 0xFFFFFU) != 0) {
 		upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	}
 

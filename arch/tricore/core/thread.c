@@ -37,11 +37,11 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 
 void z_tricore_reclaim_csa(struct k_thread *thread)
 {
-	uint32_t pcxi = thread->callee_saved.pcxi & 0xFFFFF;
+	uint32_t pcxi = thread->callee_saved.pcxi & 0xFFFFFU;
 	struct z_tricore_lower_context *csa;
 	unsigned int key;
 
-	if (pcxi == 0) {
+	if (pcxi == 0U) {
 		return;
 	}
 
@@ -49,14 +49,14 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 	key = irq_lock();
 	__asm volatile("dsync" ::: "memory");
 
-	while (csa->pcxi != 0) {
-		csa->pcxi &= 0xFFFFF;
+	while (csa->pcxi != 0U) {
+		csa->pcxi &= 0xFFFFFU;
 		csa = UINT_TO_POINTER(z_tricore_pcx_to_addr(csa->pcxi));
 	}
 
 	csa->pcxi = cr_read(TRICORE_FCX);
 	cr_write(TRICORE_FCX, pcxi);
-	thread->callee_saved.pcxi = 0;
+	thread->callee_saved.pcxi = 0U;
 
 	irq_unlock(key);
 }
@@ -71,7 +71,7 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 	z_tricore_lower_context_t *lower = UINT_TO_POINTER(z_tricore_pcx_to_addr(fcx));
 	z_tricore_upper_context_t *upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	cr_write(TRICORE_FCX, upper->pcxi);
-	if (icr & 0x8000) {
+	if (icr & 0x8000U) {
 		__asm volatile("enable" ::: "memory");
 	}
 
@@ -80,14 +80,14 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 	lower->a6 = (uint32_t)p2;
 	lower->a7 = (uint32_t)p3;
 	lower->a11 = (uint32_t)z_thread_entry;
-	lower->pcxi |= (1 << 21) | (1 << 20); /* Set PIE and UL bits */
+	lower->pcxi |= (1UL << 21) | (1UL << 20); /* Set PIE and UL bits */
 
 	upper->a10 = (uint32_t)stack_ptr;
 	upper->a11 = (uint32_t)z_thread_entry;
-	upper->psw = (1 << 7); /* Set CDE bit*/
+	upper->psw = (1UL << 7); /* Set CDE bit*/
 	upper->pcxi = 0;
 
-	upper->psw |= (1 << 8) | (2 << 10); /* GW & Privileged mode */
+	upper->psw |= (1UL << 8) | (2UL << 10); /* GW & Privileged mode */
 
 	return fcx;
 }
