@@ -310,6 +310,13 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 		return;
 	}
 
+	if (sco_conn->state != BT_CONN_INITIATING) {
+		LOG_WRN("No SCO connection being set up with %s (status 0x%02x)",
+			bt_addr_str(&evt->bdaddr), evt->status);
+		bt_conn_unref(sco_conn);
+		return;
+	}
+
 	if (evt->status) {
 		sco_conn->err = evt->status;
 		bt_conn_set_state(sco_conn, BT_CONN_DISCONNECTED);
