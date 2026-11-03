@@ -27,3 +27,4 @@ tests:
       - cy8cproto_062s3_4343w/cy8c6245lqi_s3d72
       - pic32cm_sg00_cpro
       - kit_psc3m6_eval/psc3m6ges3ahq1
+      - it51xxx_evb/it51526aw
