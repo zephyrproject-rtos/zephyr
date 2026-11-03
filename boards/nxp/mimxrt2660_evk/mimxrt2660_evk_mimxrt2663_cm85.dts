@@ -90,8 +90,9 @@
 };
 
 /*
- * XIP NOR flash and PSRAM both initialized by boot ROM; no Zephyr driver
- * programs the controllers. xspi0 is enabled all the same:
+ * The boot ROM initializes XIP NOR flash and PSRAM. Zephyr's flash driver
+ * reconfigures XSPI0 for runtime flash operations; XSPI1 remains ROM-managed.
+ * xspi0 is enabled all the same:
  * DT_HAS_NXP_XSPI_ENABLED is what sources soc/nxp/common/Kconfig.xspi_xip and
  * makes BOOT_XSPI_NOR selectable, and those supply ROM_START_OFFSET and
  * XSPI_CONFIG_BLOCK_OFFSET. Disabling it drops both, which leaves the vector
@@ -99,6 +100,10 @@
  * boot_header.ld still emits.
  */
 &xspi0 {
+	status = "okay";
+};
+
+&w25h512_ctrl {
 	status = "okay";
 };
 

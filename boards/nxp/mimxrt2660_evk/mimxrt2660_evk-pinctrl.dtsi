@@ -30,4 +30,28 @@
 			input-enable;
 		};
 	};
+
+	pinmux_xspi0: pinmux_xspi0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio6_0_main_xspi0_sclk0>,
+				 <&main__iomuxc_pio6_1_main_xspi0_ss0_n>;
+			drive-strength = "33-ohm";
+		};
+
+		group1 {
+			pinmux = <&main__iomuxc_pio6_2_main_xspi0_data0>,
+				 <&main__iomuxc_pio6_3_main_xspi0_data1>,
+				 <&main__iomuxc_pio6_4_main_xspi0_data2>,
+				 <&main__iomuxc_pio6_5_main_xspi0_data3>;
+			drive-strength = "33-ohm";
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <&main__iomuxc_pio6_6_main_xspi0_dqs0>;
+			drive-strength = "33-ohm";
+			input-enable;
+			bias-pull-down;
+		};
+	};
 };

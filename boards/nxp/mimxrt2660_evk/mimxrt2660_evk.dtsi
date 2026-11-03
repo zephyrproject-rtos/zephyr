@@ -53,22 +53,27 @@
 /*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
  * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
- * configuration block (xip/); no Zephyr driver programs this node at runtime.
- * Left unpartitioned, so MCUboot, DFU and settings are out of scope.
+ * configuration block (xip/). Zephyr also exposes this NOR through the Flash
+ * API. A 64 KiB storage partition is reserved at offset 0xFF000; the board does
+ * not define a MCUboot or DFU image layout.
  */
 &xspi0 {
+	pinctrl-0 = <&pinmux_xspi0>;
+	pinctrl-names = "default";
+
 	w25h512_ctrl: flash-controller@0 {
 		compatible = "nxp,xspi-nor";
 		reg = <0>;
 		ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
 		device-name = "w25h512nweam";
 		size = <DT_SIZE_M(64)>;
+		sample-clk-source = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		status = "disabled";
 
 		w25h512: flash@0 {
-			compatible = "soc-nv-flash";
+			compatible = "winbond,w25h512nw", "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
 			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
@@ -76,6 +81,18 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				storage_partition: partition@ff000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x000ff000 0x00010000>;
+					label = "storage";
+				};
+			};
 		};
 	};
 };
