@@ -154,6 +154,14 @@ config MODEM_PPP
 
 if MODEM_PPP
 
+config MODEM_PPP_VERIFY_FCS
+	bool "Verify that received FCS is valid"
+	default y
+	help
+	  Verify that the FCS of a received frame is valid, and drop the
+	  frame if it is not. This can be disabled if the connection between
+	  the host and the modem is considered reliable.
+
 config MODEM_PPP_NET_BUF_FRAG_SIZE
 	int "Network buffer fragment size"
 	default NET_BUF_DATA_SIZE if NET_BUF_FIXED_DATA_SIZE
