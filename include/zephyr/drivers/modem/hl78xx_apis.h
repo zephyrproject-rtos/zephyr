@@ -1673,6 +1673,13 @@ static inline bool hl78xx_at_is_busy(const struct device *dev)
  * Configures the operational state of the modem (e.g., full, airplane, or minimum functionality).
  * Optionally, the modem can be reset during this transition.
  *
+ * A request for full functionality without a reset, made in airplane mode before the driver
+ * has configured the modem in the current session, is not sent at once: the driver runs its
+ * initialization and configuration first and enables full functionality at their end. The
+ * call then returns 0 before the modem changes its functionality. The driver performs this
+ * deferred restore from airplane mode, and from GNSS mode once a search has been started; a
+ * request made in GNSS mode before that is not acted on.
+ *
  * @param dev Pointer to the modem device instance.
  * @param functionality Desired phone functionality mode to be set.
  *                      (e.g., full, airplane, minimum – see enum hl78xx_phone_functionality)
