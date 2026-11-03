@@ -153,6 +153,7 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 
 	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %p)", dev, buf);
 		return -EINVAL;
 	}
 
@@ -197,6 +198,7 @@ int video_dequeue(const struct device *dev, struct video_buffer **vbuf,
 	struct k_fifo *fifo;
 
 	if (dev == NULL || vbuf == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", dev, vbuf);
 		return -EINVAL;
 	}
 
@@ -244,6 +246,7 @@ int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 	struct video_device *vdev;
 
 	if (dev == NULL || sig == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", dev, sig);
 		return -EINVAL;
 	}
 
