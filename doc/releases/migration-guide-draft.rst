@@ -61,6 +61,10 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* On LiteX SoCs, :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC` no longer falls back to the
+  CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
+  set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
+
 Device Drivers and Devicetree
 *****************************
 
