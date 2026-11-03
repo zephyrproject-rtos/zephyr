@@ -11,9 +11,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/tricore/exception.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
-
 #include "kernel_arch_data.h"
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static const char *const z_tricore_trap_cause_str(uint8_t trap_class, uint8_t tin)
 {
