@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MDIO controller of the Cadence MACB/GEM Ethernet MAC, a child node of
+  the MAC node whose registers it uses.
+
+compatible: "cdns,macb-mdio"
+
+include: mdio-controller.yaml

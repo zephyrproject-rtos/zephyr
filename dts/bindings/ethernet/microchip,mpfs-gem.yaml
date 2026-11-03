@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence GEM in the Microchip PolarFire SoC and PIC64GX MSS.
+
+  The GEM DMA reaches the cached DDR window through the CPU core complex
+  and is coherent with the caches of the cores. With SGMII the transmit
+  clock comes from the PCS, so no "tx_clk" is needed. The "resets"
+  property is the MSS peripheral reset of the MAC, which also gates its
+  clock.
+
+compatible: "microchip,mpfs-gem"
+
+include: cdns,gem.yaml

@@ -7,6 +7,7 @@
 #include <freq.h>
 #include <skeleton.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/reset/mchp_mss_reset.h>
 
 / {
 	#address-cells = <1>;
@@ -99,6 +100,20 @@
 		};
 	};
 
+	/* AHB/APB clock of the MSS peripherals */
+	ahbclk: ahb-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(150)>;
+		#clock-cells = <0>;
+	};
+
+	/* MSS reference clock, the clock of the GEM time stamp units */
+	refclk: mss-ref-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(125)>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		compatible = "simple-bus";
 		ranges;
@@ -152,6 +167,17 @@
 			interrupts = <90 1>;
 			reg-shift = <2>;
 			status = "disabled";
+		};
+
+		mss_top_sysreg: syscon@20002000 {
+			compatible = "syscon";
+			reg = <0x20002000 0x1000>;
+
+			reset: reset {
+				compatible = "microchip,mpfs-reset";
+				#reset-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		mmuart1: serial@20100000 {
@@ -240,6 +266,52 @@
 			#size-cells = <0>;
 			clock-frequency = <100000>;
 			status = "disabled";
+		};
+
+		mac0: ethernet@20110000 {
+			compatible = "microchip,pic64gx-gem", "microchip,mpfs-gem", "cdns,gem";
+			reg = <0x20110000 0x2000>;
+			interrupt-parent = <&plic>;
+			interrupts = <64 1>;
+			clocks = <&ahbclk>, <&ahbclk>, <&refclk>;
+			clock-names = "pclk", "hclk", "tsu_clk";
+			resets = <&reset MSS_RESET_ID_MAC0>;
+			status = "disabled";
+
+			mac0_mdio: mdio {
+				compatible = "cdns,macb-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			mac0_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
+		};
+
+		mac1: ethernet@20112000 {
+			compatible = "microchip,pic64gx-gem", "microchip,mpfs-gem", "cdns,gem";
+			reg = <0x20112000 0x2000>;
+			interrupt-parent = <&plic>;
+			interrupts = <70 1>;
+			clocks = <&ahbclk>, <&ahbclk>, <&refclk>;
+			clock-names = "pclk", "hclk", "tsu_clk";
+			resets = <&reset MSS_RESET_ID_MAC1>;
+			status = "disabled";
+
+			mac1_mdio: mdio {
+				compatible = "cdns,macb-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			mac1_ptp: ptp-clock {
+				compatible = "cdns,macb-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		gpio0: gpio@20120000 {

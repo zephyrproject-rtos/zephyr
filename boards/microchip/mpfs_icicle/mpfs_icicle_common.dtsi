@@ -87,3 +87,44 @@
 &rtc {
 	status = "okay";
 };
+
+&reset {
+	status = "okay";
+};
+
+&mac0 {
+	phy-handle = <&phy0>;
+	phy-connection-type = "sgmii";
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&mac1 {
+	phy-handle = <&phy1>;
+	phy-connection-type = "sgmii";
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&mac0_ptp {
+	status = "okay";
+};
+
+&mac1_ptp {
+	status = "okay";
+};
+
+/* Both PHYs are managed through the MDIO bus of the second GEM */
+&mac1_mdio {
+	status = "okay";
+
+	phy0: ethernet-phy@8 {
+		compatible = "ethernet-phy";
+		reg = <8>;
+	};
+
+	phy1: ethernet-phy@9 {
+		compatible = "ethernet-phy";
+		reg = <9>;
+	};
+};
