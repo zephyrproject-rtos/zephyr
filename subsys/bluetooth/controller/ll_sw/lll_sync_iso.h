@@ -165,6 +165,7 @@ void lll_sync_iso_prepare(void *param);
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
 bool lll_sync_iso_is_defer_lossless(void *param, uint32_t ticks_duration);
 bool lll_sync_iso_is_defer_overflow(const struct lll_event *e);
+bool lll_sync_iso_is_pending_optional(const struct lll_event *e);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso *ull_sync_iso_lll_is_valid_get(struct lll_sync_iso *lll);
