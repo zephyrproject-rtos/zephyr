@@ -7,6 +7,7 @@ menuconfig DISPLAY_ESP32_DSI
 	depends on DT_HAS_ESPRESSIF_ESP_DSI_DISPLAY_ENABLED
 	depends on SOC_SERIES_ESP32P4
 	select ESP_SPIRAM
+	select SOC_ESP32P4_DW_GDMA
 	select SHARED_MULTI_HEAP
 	select MIPI_DSI
 	help

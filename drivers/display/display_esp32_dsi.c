@@ -18,6 +18,7 @@
 
 #include <hal/mipi_dsi_brg_ll.h>
 #include <hal/dw_gdma_ll.h>
+#include <esp_dw_gdma.h>
 #include <soc/interrupts.h>
 #include <esp_intr_alloc.h>
 
@@ -25,7 +26,6 @@
 
 LOG_MODULE_REGISTER(display_esp32_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
-#define DISPLAY_ESP32_DSI_GDMA_CLK_TIMEOUT_US 1000
 
 /* A caller that renders into its own frames alternates between them, so each
  * one needs a link list item of its own. Rewriting a single shared item points
@@ -333,17 +333,13 @@ static int display_esp32_dsi_dma_setup(const struct device *dev)
 	struct display_esp32_dsi_data *data = dev->data;
 	dw_gdma_dev_t *dma = DW_GDMA_LL_GET_HW(0);
 	uint8_t ch = data->dma_channel;
+	int err;
 
-	dw_gdma_ll_enable_bus_clock(0, true);
-	if (!WAIT_FOR(dw_gdma_ll_is_bus_clock_enabled(0), DISPLAY_ESP32_DSI_GDMA_CLK_TIMEOUT_US,
-		      k_busy_wait(1))) {
-		LOG_ERR("GDMA bus clock did not come up");
-		return -ETIMEDOUT;
+	err = esp_dw_gdma_init();
+	if (err != 0) {
+		LOG_ERR("GDMA bring-up failed (%d)", err);
+		return err;
 	}
-	dw_gdma_ll_reset(dma);
-
-	dw_gdma_ll_enable_controller(dma, true);
-	dw_gdma_ll_enable_intr_global(dma, true);
 
 	dw_gdma_ll_channel_enable(dma, ch, false);
 
@@ -397,13 +393,13 @@ static int display_esp32_dsi_dma_setup(const struct device *dev)
 		true);
 
 	if (data->dma_intr == NULL) {
-		int err = esp_intr_alloc_intrstatus(
-			config->irq_source,
-			ESP_INTR_FLAG_SHARED | ESP_PRIO_TO_FLAGS(config->irq_priority) |
-				ESP_INT_FLAGS_CHECK(config->irq_flags),
-			(uint32_t)dw_gdma_ll_get_intr_status_reg(dma),
-			DW_GDMA_LL_CHANNEL_EVENT_MASK(ch), display_esp32_dsi_dma_isr, data,
-			&data->dma_intr);
+		err = esp_intr_alloc_intrstatus(config->irq_source,
+						ESP_INTR_FLAG_SHARED |
+							ESP_PRIO_TO_FLAGS(config->irq_priority) |
+							ESP_INT_FLAGS_CHECK(config->irq_flags),
+						(uint32_t)dw_gdma_ll_get_intr_status_reg(dma),
+						DW_GDMA_LL_CHANNEL_EVENT_MASK(ch),
+						display_esp32_dsi_dma_isr, data, &data->dma_intr);
 		if (err != 0) {
 			LOG_ERR("Failed to allocate DMA interrupt (%d)", err);
 			dw_gdma_ll_channel_enable(dma, ch, false);
