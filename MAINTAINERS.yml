@@ -5890,6 +5890,20 @@ Rockchip Platforms:
   labels:
     - "platform: Rockchip"
 
+Rust:
+  status: maintained
+  maintainers:
+    - d3zd3z
+  collaborators:
+    - felipebalbi
+    - kurtjd
+    - jerrysxie
+  files:
+    - doc/develop/languages/rust/
+    - modules/Kconfig.rust
+  labels:
+    - "area: Rust"
+
 SPARC arch:
   status: odd fixes
   collaborators:
@@ -7934,18 +7948,6 @@ West:
     - modules/zcbor/
   labels:
     - "area: CBOR"
-
-"West project: zephyr-lang-rust":
-  status: maintained
-  maintainers:
-    - d3zd3z
-  collaborators:
-    - felipebalbi
-    - kurtjd
-    - jerrysxie
-  files: []
-  labels:
-    - "area: Rust"
 
 "West project: zephyr-xenlib":
   status: maintained
