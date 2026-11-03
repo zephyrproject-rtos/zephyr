@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <bsp_api.h>
 #include <zephyr/init.h>
+#include <zephyr/cache.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/irq.h>
@@ -24,6 +25,10 @@ void soc_reset_hook(void)
 	__asm__ volatile("mcr p15, 0, r0, c15, c0, 0\n");
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
+
+	/* Enable i-cache and d-cache */
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
 }
 
 void soc_early_init_hook(void)

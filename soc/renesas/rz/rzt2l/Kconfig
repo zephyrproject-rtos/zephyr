@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Renesas Electronics Corporation
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_RZT2L
@@ -10,4 +10,6 @@ config SOC_SERIES_RZT2L
 	select HAS_RENESAS_RZ_FSP
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
+	select SOC_FAMILY_RENESAS_RZ_TCM_LOADER
 	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select CACHE_MANAGEMENT
