@@ -279,6 +279,7 @@ class Lcov(CoverageTool):
                 "--ignore-errors", "mismatch,mismatch",
                 "--ignore-errors", "gcov,gcov",
                 "--ignore-errors", "child,child",
+                "--ignore-errors", "source,source",
             ]
 
         cmd_str = " ".join(cmd)
@@ -308,6 +309,25 @@ class Lcov(CoverageTool):
         ] + parallel + args
         return self.run_command(cmd, coveragelog)
 
+    @staticmethod
+    def _tracefile_has_sources(path):
+        """True if path has at least one record with actual line coverage data.
+
+        genhtml only counts records that carry DA: lines ("Found N entries");
+        an SF: record that survived capture/remove with no DA: lines still
+        leaves N at 0, and genhtml then crashes internally with "unexpected
+        empty worklist??" instead of reporting a clean error. This is
+        independent of --prefix, which only affects how genhtml displays
+        matched paths, not which records it counts.
+        """
+        try:
+            with open(path, encoding="utf-8") as fp:
+                for line in fp:
+                    if line.startswith("DA:"):
+                        return True
+        except OSError:
+            pass
+        return False
 
     def _generate(self, outdir, coveragelog, build_dirs=None):
         coveragefile = os.path.join(outdir, "coverage.info")
@@ -345,42 +365,73 @@ class Lcov(CoverageTool):
             logger.error("LCOV capture report stage failed with %s", ret)
             return ret, {}
 
-        # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
+        # We want to remove tests/* and tests/ztest/test/* but save tests/ztest.
+        # This overlay is best-effort: builds with no tests/ztest/* coverage
+        # (nothing extracted) are the common case, not an error, and some lcov
+        # versions exit non-zero on an empty extract result despite the
+        # --ignore-errors empty above, so a failure here must not abort the
+        # whole report.
         cmd = ["--extract", coveragefile,
                os.path.join(self.base_dir, "tests", "ztest", "*"),
                "--output-file", ztestfile]
         ret = self.run_lcov(cmd, coveragelog)
         if ret:
-            logger.error("LCOV extract report stage failed with %s", ret)
-            return ret, {}
+            logger.debug("LCOV extract report stage found nothing to keep (%s)", ret)
 
         files = []
-        if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
+        if ret == 0 and os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             cmd = ["--remove", ztestfile,
                    os.path.join(self.base_dir, "tests/ztest/test/*"),
                    "--output-file", ztestfile]
             ret = self.run_lcov(cmd, coveragelog)
             if ret:
-                logger.error("LCOV remove ztest report stage failed with %s", ret)
-                return ret, {}
-
-            files = [coveragefile, ztestfile]
+                logger.debug("LCOV remove ztest report stage failed with %s", ret)
+                files = [coveragefile]
+            else:
+                files = [coveragefile, ztestfile]
         else:
             files = [coveragefile]
 
+        # Same best-effort reasoning as the ztest overlay above: a pattern
+        # that matches nothing in this particular build (or an lcov version
+        # that exits non-zero over it) must not drop the whole report.
+        # --output-file is a separate temp path so a failed attempt can
+        # never truncate/corrupt the still-valid coveragefile. The failure
+        # is still surfaced at warning level, since an exclude pattern that
+        # silently never applies would otherwise go unnoticed.
+        tmp_coveragefile = coveragefile + ".tmp"
         for i in self.ignores:
-            cmd = ["--remove", coveragefile, i, "--output-file", coveragefile]
+            cmd = ["--remove", coveragefile, i, "--output-file", tmp_coveragefile]
             ret = self.run_lcov(cmd, coveragelog)
             if ret:
-                logger.error("LCOV remove ignores report stage failed with %s", ret)
-                return ret, {}
+                logger.warning(
+                    "LCOV remove ignores report stage could not apply pattern "
+                    "'%s' (%s); continuing without it", i, ret)
+                with contextlib.suppress(OSError):
+                    os.remove(tmp_coveragefile)
+                continue
+            os.replace(tmp_coveragefile, coveragefile)
 
         if 'html' not in self.output_formats.split(','):
             return 0, {}
 
+        # genhtml can crash internally (rather than report a clean error) when
+        # every record it reads is empty, whether from an empty capture or an
+        # overly broad set of removes. Skip it visibly instead of letting that
+        # crash surface as an opaque failure.
+        if not any(self._tracefile_has_sources(f) for f in files):
+            logger.warning("LCOV genhtml report stage skipped: no coverage data to render")
+            return 0, { 'report': coveragefile, 'ztest': ztestfile, 'summary': None }
+
         cmd = ["genhtml", "--legend", "--branch-coverage",
                "--prefix", self.base_dir,
                "-output-directory", os.path.join(outdir, "coverage")]
+        # Some SF: entries (build-generated sources, headers pulled in via
+        # #line directives, etc.) no longer exist on disk by report time.
+        # Without --synthesize-missing, lcov treats that as a hard read error
+        # before it reaches the --ignore-errors source check at all.
+        if self.is_lcov_v2:
+            cmd.append("--synthesize-missing")
         # Note: per-test mode does not use --show-details; per-test attribution
         # is provided by test_matrix.json/the dashboard, and --show-details over
         # thousands of tests would dominate the run time.

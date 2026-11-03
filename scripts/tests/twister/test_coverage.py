@@ -8,8 +8,10 @@ Tests for the per-test coverage helpers in twisterlib.coverage
 
 import json
 import os
+from unittest import mock
 
 from twisterlib.coverage import (
+    Lcov,
     build_test_matrix,
     discover_per_test_semihost,
     gcov_json_to_tracefile,
@@ -248,3 +250,35 @@ def test_gcov_json_to_tracefile():
     # bar.c: 1 line found, none hit
     bar = tf.split("SF:/w/bar.c", 1)[1]
     assert "LF:1" in bar and "LH:0" in bar
+
+
+def test_tracefile_has_sources_requires_line_data(tmp_path):
+    """genhtml only counts records with DA: lines ("Found N entries"); a
+    tracefile whose only records lack them crashes genhtml internally with
+    "unexpected empty worklist??" instead of a clean error, regardless of
+    --prefix. _tracefile_has_sources() must reflect that, not just SF: presence.
+    """
+    empty = tmp_path / "empty.info"
+    empty.write_text("TN:\nSF:/z/empty.c\nend_of_record\n")
+    assert Lcov._tracefile_has_sources(str(empty)) is False
+
+    with_data = tmp_path / "with_data.info"
+    with_data.write_text("TN:\nSF:/z/real.c\nDA:1,1\nLF:1\nLH:1\nend_of_record\n")
+    assert Lcov._tracefile_has_sources(str(with_data)) is True
+
+    assert Lcov._tracefile_has_sources(str(tmp_path / "missing.info")) is False
+
+
+def test_run_command_lcov_v2_ignores_missing_source(tmp_path):
+    """lcov v2 raises a hard 'source' error for an SF: entry whose file no
+    longer exists on disk (e.g. a build-generated source), which --ignore-errors
+    empty/unused/etc. does not cover. run_command() must pass --ignore-errors
+    source,source as well, matching its own comment's stated intent.
+    """
+    lc = Lcov.__new__(Lcov)
+    lc.version = "2.1"
+    log = tmp_path / "coverage.log"
+    with mock.patch("subprocess.call", return_value=0) as call, open(log, "a") as fp:
+        lc.run_command(["genhtml", "coverage.info"], fp)
+    cmd = call.call_args.args[0]
+    assert "source,source" in cmd
