@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+/* qemu_x86 defines a VirtIO input device that this test does not emulate. */
+&virtio_input_pci {
+	status = "disabled";
+};
+
+/* x86 already supplies the PCI host configuration-space implementation. */
+/ {
+	chosen {
+		/delete-property/ zephyr,pcie-controller;
+	};
+};
