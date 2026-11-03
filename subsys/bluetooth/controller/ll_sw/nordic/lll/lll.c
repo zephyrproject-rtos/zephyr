@@ -1281,6 +1281,34 @@ static uint8_t volatile preempt_stop_req;
 static uint8_t preempt_stop_ack;
 static uint8_t preempt_req;
 static uint8_t volatile preempt_ack;
+static uint8_t volatile preempt_start_resched;
+
+/* Start the preempt timeout of the first ready prepare, requested while a preempt timeout
+ * ticker start was pending.
+ */
+static void preempt_resched(void *param)
+{
+	struct lll_event *ready;
+	uint32_t ret;
+	void *idx;
+
+	ARG_UNUSED(param);
+
+	/* Preempt timeout has expired, or a stop or start is pending */
+	if ((preempt_req == preempt_ack) || (preempt_start_req != preempt_start_ack) ||
+	    (preempt_stop_req != preempt_stop_ack)) {
+		return;
+	}
+
+	idx = NULL;
+	ready = prepare_dequeue_iter_ready_get(&idx);
+	if (ready == NULL) {
+		return;
+	}
+
+	ret = preempt_ticker_start(ready, NULL, ready);
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) || (ret == TICKER_STATUS_BUSY));
+}
 
 static void ticker_stop_op_cb(uint32_t status, void *param)
 {
@@ -1319,6 +1347,18 @@ static void ticker_start_op_cb(uint32_t status, void *param)
 	 */
 	LL_ASSERT_ERR(preempt_start_req != preempt_start_ack);
 	preempt_start_ack = preempt_start_req;
+
+	/* An earlier preempt timeout was requested while the start was pending */
+	if (preempt_start_resched != 0U) {
+		static memq_link_t link;
+		static struct mayfly mfy = {0, 0, &link, NULL, preempt_resched};
+		uint32_t ret;
+
+		preempt_start_resched = 0U;
+
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 0U, &mfy);
+		LL_ASSERT_ERR(!ret);
+	}
 }
 
 static void isr_radio_tmr_cb(void *param, uint8_t chain)
@@ -1377,6 +1417,14 @@ static uint32_t preempt_ticker_start(struct lll_event *first,
 		if (IS_ENABLED(CONFIG_BT_CTLR_RADIO_TIMER_ISR)) {
 			LL_ASSERT_ERR(preempt_ack != preempt_req);
 			preempt_ack = preempt_req;
+		} else if (preempt_start_req != preempt_start_ack) {
+			/* A pending preempt ticker start cannot be stopped, ticker_job processes
+			 * stop operations before start operations. Start the earlier preempt
+			 * timeout when the pending start has been handled.
+			 */
+			preempt_start_resched = 1U;
+
+			return TICKER_STATUS_SUCCESS;
 		} else {
 			/* Stop any scheduled preempt ticker */
 			ret = preempt_ticker_stop();
