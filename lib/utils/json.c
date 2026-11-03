@@ -546,12 +546,13 @@ static int decode_int32(const struct json_token *token, int32_t *num)
 	 */
 	char *endptr;
 	char prev_end;
+	long value;
 
 	prev_end = *token->end;
 	*token->end = '\0';
 
 	errno = 0;
-	*num = strtol(token->start, &endptr, 10);
+	value = strtol(token->start, &endptr, 10);
 
 	*token->end = prev_end;
 
@@ -562,6 +563,11 @@ static int decode_int32(const struct json_token *token, int32_t *num)
 	if (endptr != token->end) {
 		return -EINVAL;
 	}
+
+	if (value < INT32_MIN || value > INT32_MAX) {
+		return -ERANGE;
+	}
+	*num = value;
 
 	return 0;
 }
