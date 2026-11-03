@@ -3561,6 +3561,27 @@ void bt_iso_reset(void)
 	}
 #endif /* CONFIG_BT_ISO_CENTRAL */
 
+	if (IS_ENABLED(CONFIG_BT_ISO_PERIPHERAL)) {
+		/* The connection cleanup takes a connected CIS down, but would only release
+		 * one that has been accepted and is not established yet.
+		 */
+		ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+			struct bt_conn *iso = bt_conn_ref(iso_conn);
+
+			if (iso == NULL) {
+				continue;
+			}
+
+			if (iso->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL &&
+			    iso->state == BT_CONN_INITIATING) {
+				iso->err = BT_HCI_ERR_UNSPECIFIED;
+				bt_iso_disconnected(iso);
+			}
+
+			bt_conn_unref(iso);
+		}
+	}
+
 #if defined(CONFIG_BT_ISO_BROADCAST)
 	for (size_t i = 0U; i < ARRAY_SIZE(bigs); i++) {
 		struct bt_iso_big *big = &bigs[i];
