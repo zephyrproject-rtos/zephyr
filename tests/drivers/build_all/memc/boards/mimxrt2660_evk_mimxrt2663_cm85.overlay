@@ -1,0 +1,106 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Build-only coverage for the NXP AHB SRAM Controller driver.
+ *
+ * The MIMXRT2660-EVK carries no asynchronous parallel SRAM: its external
+ * memories are the XSPI0 NOR and the XSPI1 PSRAM. Nothing here has been run on
+ * hardware.
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+&pinctrl {
+	/*
+	 * CS0 in 16-bit admux mode. A 128 KB window of 16-bit words needs 16
+	 * address bits, and admux carries all of them over SRAMC_DA, so none
+	 * of the dedicated SRAMC_ADDR pins are routed; ADVB is what latches
+	 * them.
+	 *
+	 * SRAMC_DA is bidirectional and so needs input-enable, without which
+	 * the pad receiver stays off and every read returns a stuck level. The
+	 * strobes are outputs and do not. drive-strength is left out because
+	 * the PIO2 and PIO3 pads have no DRIVE field.
+	 */
+	pinmux_sramc: pinmux_sramc {
+		group_data {
+			pinmux = <&main__iomuxc_pio2_0_main_ahb_sramc_sramc_da00>,
+				 <&main__iomuxc_pio2_1_main_ahb_sramc_sramc_da01>,
+				 <&main__iomuxc_pio2_2_main_ahb_sramc_sramc_da02>,
+				 <&main__iomuxc_pio2_3_main_ahb_sramc_sramc_da03>,
+				 <&main__iomuxc_pio2_4_main_ahb_sramc_sramc_da04>,
+				 <&main__iomuxc_pio2_5_main_ahb_sramc_sramc_da05>,
+				 <&main__iomuxc_pio2_6_main_ahb_sramc_sramc_da06>,
+				 <&main__iomuxc_pio2_7_main_ahb_sramc_sramc_da07>,
+				 <&main__iomuxc_pio2_9_main_ahb_sramc_sramc_da08>,
+				 <&main__iomuxc_pio2_10_main_ahb_sramc_sramc_da09>,
+				 <&main__iomuxc_pio2_11_main_ahb_sramc_sramc_da10>,
+				 <&main__iomuxc_pio2_12_main_ahb_sramc_sramc_da11>,
+				 <&main__iomuxc_pio2_13_main_ahb_sramc_sramc_da12>,
+				 <&main__iomuxc_pio2_14_main_ahb_sramc_sramc_da13>,
+				 <&main__iomuxc_pio2_15_main_ahb_sramc_sramc_da14>,
+				 <&main__iomuxc_pio2_16_main_ahb_sramc_sramc_da15>;
+			slew-rate = "high";
+			input-enable;
+		};
+
+		group_control {
+			pinmux = <&main__iomuxc_pio2_8_main_ahb_sramc_sramc_lbb>,
+				 <&main__iomuxc_pio2_17_main_ahb_sramc_sramc_ubb>,
+				 <&main__iomuxc_pio2_18_main_ahb_sramc_sramc_web>,
+				 <&main__iomuxc_pio2_19_main_ahb_sramc_sramc_oeb>,
+				 <&main__iomuxc_pio3_17_main_ahb_sramc_sramc_advb>,
+				 <&main__iomuxc_pio3_18_main_ahb_sramc_sramc_cs0>;
+			slew-rate = "high";
+		};
+	};
+};
+
+/* CS0's window. Inside the memory aperture, so it follows the address view. */
+&memory {
+	ext_sram0: memory@25000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x25000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "EXT_SRAM0";
+		/*
+		 * Needed because this is neither the chosen zephyr,sram nor the
+		 * chosen zephyr,flash, so arm_mpu_regions.c does not cover it
+		 * and the MPU would fault on the window once enabled.
+		 */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+};
+
+&sramc {
+	pinctrl-0 = <&pinmux_sramc>;
+	pinctrl-names = "default";
+	port-size = <16>;
+	address-mode = "admux";
+	status = "okay";
+
+	/*
+	 * Timings of a nominal 128 KB (64K x 16) asynchronous SRAM with a 55 ns
+	 * access time, which is the slow end of what this interface is for. The
+	 * read strobe has to cover the access time; the write pulse is the
+	 * part's write-pulse width; the turnaround time is what admux needs to
+	 * hand SRAMC_DA over between the address and the data phase.
+	 */
+	sramc_cs0: sram@0 {
+		reg = <0>;
+		memory-region = <&ext_sram0>;
+
+		ce-setup-time-ns = <0>;
+		ce-hold-time-ns = <0>;
+		address-setup-time-ns = <10>;
+		address-hold-time-ns = <5>;
+		turnaround-time-ns = <10>;
+		write-enable-low-time-ns = <45>;
+		write-enable-high-time-ns = <10>;
+		read-enable-low-time-ns = <55>;
+		read-enable-high-time-ns = <10>;
+	};
+};
