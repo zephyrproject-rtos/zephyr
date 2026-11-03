@@ -53,7 +53,7 @@ static void set_update_result(uint16_t obj_inst_id, int error_code)
 		break;
 	}
 
-	lwm2m_firmware_set_update_result(result);
+	lwm2m_firmware_set_update_result_inst(obj_inst_id, result);
 }
 
 static struct requesting_object req = {
