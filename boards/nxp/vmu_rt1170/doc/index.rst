@@ -410,6 +410,20 @@ The MIMXRT1170 SoC has six pairs of pinmux/gpio controllers.
 | USB1_VBUS       | USB_OTG1_VBUS                  | VBUS                       |
 +-----------------+--------------------------------+----------------------------+
 
+Pixhawk Connectors
+==================
+
+The ports of the carrier board that follow the `Pixhawk Connector Standard`_ have the node labels
+described in :ref:`shields`:
+
+- GPS1 (full GPS port): ``pixhawk_full_gps1_serial`` (LPUART3), ``pixhawk_full_gps1_i2c``
+  (LPI2C1) and ``pixhawk_full_gps1_connector``
+- TELEM1: ``pixhawk_telem1`` (LPUART4) and ``pixhawk_telem1_connector``
+- TELEM2: ``pixhawk_telem2`` (LPUART8) and ``pixhawk_telem2_connector``
+- GPS2: ``pixhawk_gps2_serial`` (LPUART5), ``pixhawk_gps2_i2c`` (LPI2C2) and
+  ``pixhawk_gps2_connector``
+- CAN1 to CAN3: ``pixhawk_can1`` to ``pixhawk_can3`` (FLEXCAN1 to FLEXCAN3)
+
 Serial Port
 ===========
 
@@ -493,3 +507,6 @@ should see the following message in the terminal:
 
 .. _i.MX RT1170 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT1170RM
+
+.. _Pixhawk Connector Standard:
+   https://github.com/pixhawk/Pixhawk-Standards

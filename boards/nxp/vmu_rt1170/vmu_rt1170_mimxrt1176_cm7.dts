@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/imxrt/imxrt11xx/nxp_rt1170_cm7.dtsi>
+#include <zephyr/dt-bindings/gpio/pixhawk-connector.h>
 #include <zephyr/dt-bindings/led/led.h>
 #include "vmu_rt1170.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -130,6 +131,53 @@
 		compatible = "pwm-buzzer";
 		pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 	};
+
+	pixhawk_telem1_connector: telem1-connector {
+		compatible = "pixhawk-telem-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_TELEM_TX 0 &gpio4 27 0>,	/* GPIO_DISP_B1_06 */
+			   <PIXHAWK_TELEM_RX 0 &gpio4 25 0>,	/* GPIO_DISP_B1_04 */
+			   <PIXHAWK_TELEM_CTS 0 &gpio4 26 0>,	/* GPIO_DISP_B1_05 */
+			   <PIXHAWK_TELEM_RTS 0 &gpio4 28 0>;	/* GPIO_DISP_B1_07 */
+	};
+
+	pixhawk_telem2_connector: telem2-connector {
+		compatible = "pixhawk-telem-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_TELEM_TX 0 &gpio3 1 0>,	/* GPIO_AD_02 */
+			   <PIXHAWK_TELEM_RX 0 &gpio3 2 0>,	/* GPIO_AD_03 */
+			   <PIXHAWK_TELEM_CTS 0 &gpio3 3 0>,	/* GPIO_AD_04 */
+			   <PIXHAWK_TELEM_RTS 0 &gpio3 4 0>;	/* GPIO_AD_05 */
+	};
+
+	pixhawk_full_gps1_connector: gps1-connector {
+		compatible = "pixhawk-full-gps-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_FULL_GPS_TX 0 &gpio3 29 0>,		/* GPIO_AD_30 */
+			   <PIXHAWK_FULL_GPS_RX 0 &gpio3 30 0>,		/* GPIO_AD_31 */
+			   <PIXHAWK_FULL_GPS_SCL 0 &gpio3 7 0>,		/* GPIO_AD_08 */
+			   <PIXHAWK_FULL_GPS_SDA 0 &gpio3 8 0>,		/* GPIO_AD_09 */
+			   <PIXHAWK_FULL_GPS_SAFETY_SW 0 &gpio1 24 0>,	/* GPIO_EMC_B1_24 */
+			   <PIXHAWK_FULL_GPS_SAFETY_LED 0 &gpio1 3 0>,	/* GPIO_EMC_B1_03 */
+			   <PIXHAWK_FULL_GPS_BUZZER 0 &gpio2 19 0>;	/* GPIO_EMC_B2_09 */
+	};
+
+	pixhawk_gps2_connector: gps2-connector {
+		compatible = "pixhawk-gps-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <PIXHAWK_GPS_TX 0 &gpio3 27 0>,	/* GPIO_AD_28 */
+			   <PIXHAWK_GPS_RX 0 &gpio3 28 0>,	/* GPIO_AD_29 */
+			   <PIXHAWK_GPS_SCL 0 &gpio3 17 0>,	/* GPIO_AD_18 */
+			   <PIXHAWK_GPS_SDA 0 &gpio3 18 0>;	/* GPIO_AD_19 */
+	};
 };
 
 &gpio1 {
@@ -173,10 +221,14 @@
 	status = "okay";
 };
 
-&lpuart4 {
+pixhawk_full_gps1_serial: &lpuart3 {};
+
+pixhawk_telem1: &lpuart4 {
 	current-speed = <115200>;
 	status = "okay";
 };
+
+pixhawk_gps2_serial: &lpuart5 {};
 
 &lpuart6 {
 	single-wire;
@@ -218,7 +270,9 @@
 	};
 };
 
-&flexcan1 {
+pixhawk_telem2: &lpuart8 {};
+
+pixhawk_can1: &flexcan1 {
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -228,7 +282,7 @@
 	};
 };
 
-&flexcan2 {
+pixhawk_can2: &flexcan2 {
 	pinctrl-0 = <&pinmux_flexcan2>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -238,7 +292,7 @@
 	};
 };
 
-&flexcan3 {
+pixhawk_can3: &flexcan3 {
 	pinctrl-0 = <&pinmux_flexcan3>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -337,7 +391,7 @@
 	status = "okay";
 };
 
-&lpi2c1 {
+pixhawk_full_gps1_i2c: &lpi2c1 {
 	status = "okay";
 
 	ist8310: ist8310@e {
@@ -359,7 +413,7 @@
 	};
 };
 
-&lpi2c2 {
+pixhawk_gps2_i2c: &lpi2c2 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
