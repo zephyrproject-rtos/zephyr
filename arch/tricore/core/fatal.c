@@ -149,7 +149,7 @@ void z_tricore_fault(uint8_t trap_class, uint8_t tin)
 	z_tricore_fatal_error(K_ERR_CPU_EXCEPTION, lower);
 }
 
-void __weak z_tricore_fault_fcu(void)
+FUNC_NORETURN void __weak z_tricore_fault_fcu(void)
 {
 #if CONFIG_TEST
 	__asm("debug");

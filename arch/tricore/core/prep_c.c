@@ -26,7 +26,7 @@
  * This routine prepares for the execution of and runs C code.
  */
 
-void z_prep_c(void)
+FUNC_NORETURN void z_prep_c(void)
 {
 	arch_bss_zero();
 	arch_data_copy();
