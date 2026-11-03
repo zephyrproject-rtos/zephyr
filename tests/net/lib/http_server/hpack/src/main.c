@@ -271,7 +271,7 @@ static void test_hpack_verify_decode(const struct example_headers *example,
 		struct http_hpack_header_buf hdr;
 		int ret;
 
-		ret = http_hpack_decode_header(example[i].encoded, example[i].encoded_len, &hdr);
+		ret = http_hpack_decode_header(example[i].encoded, example[i].encoded_len, &hdr, NULL);
 		zassert_equal(ret, example[i].encoded_len, "Wrong decoding length");
 		zassert_equal(hdr.name_len, strlen(example[i].name),
 			      "Wrong decoded header name length");
@@ -530,7 +530,7 @@ ZTEST(http2_hpack, test_http2_hpack_long_value_encode_decode)
 	 * that covers an octet the encoder never produced does not only
 	 * lose this field, it takes the rest of the block with it.
 	 */
-	dec_ret = http_hpack_decode_header(test_long_buf, enc_ret, &dec);
+	dec_ret = http_hpack_decode_header(test_long_buf, enc_ret, &dec, NULL);
 	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
 
 	zexpect_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
@@ -554,7 +554,7 @@ ZTEST(http2_hpack, test_http2_hpack_empty_value_encode_decode)
 	enc_ret = http_hpack_encode_header(test_buf, sizeof(test_buf), &hdr);
 	zassert_true(enc_ret > 0, "Cannot encode the header (%d)", enc_ret);
 
-	dec_ret = http_hpack_decode_header(test_buf, enc_ret, &dec);
+	dec_ret = http_hpack_decode_header(test_buf, enc_ret, &dec, NULL);
 	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
 	zassert_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
 	zassert_mem_equal(dec.name, hdr.name, dec.name_len, "Header name wrongly decoded");
@@ -570,18 +570,18 @@ ZTEST(http2_hpack, test_http2_hpack_dynamic_table_size_update)
 	struct http_hpack_header_buf dec = { 0 };
 	int ret;
 
-	ret = http_hpack_decode_header(update_zero, sizeof(update_zero), &dec);
+	ret = http_hpack_decode_header(update_zero, sizeof(update_zero), &dec, NULL);
 	zassert_equal(ret, sizeof(update_zero), "Size update rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
 	zassert_equal(dec.table_size, 0, "Table size %u", dec.table_size);
 	zassert_equal(dec.name_len, 0, "Size update decoded as a field");
 
-	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec);
+	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec, NULL);
 	zassert_equal(ret, sizeof(update_100), "Size update rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
 	zassert_equal(dec.table_size, 100, "Table size %u", dec.table_size);
 
-	ret = http_hpack_decode_header(field, sizeof(field), &dec);
+	ret = http_hpack_decode_header(field, sizeof(field), &dec, NULL);
 	zassert_equal(ret, sizeof(field), "Field rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 }
@@ -611,7 +611,7 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field)
 	memcpy(entry + len, encoded, ret);
 	len += ret;
 
-	ret = http_hpack_decode_header(entry, len, &dec);
+	ret = http_hpack_decode_header(entry, len, &dec, NULL);
 	zassert_equal(ret, len, "Entry not consumed (%d, %zu bytes)", ret, len);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 	zassert_true(dec.oversized, "Field not reported as oversized");
@@ -645,7 +645,7 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field_invalid)
 	memcpy(entry + len, encoded, ret);
 	len += ret;
 
-	ret = http_hpack_decode_header(entry, len, &dec);
+	ret = http_hpack_decode_header(entry, len, &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "Invalid oversized string accepted (%d)", ret);
 }
 
@@ -663,16 +663,16 @@ ZTEST(http2_hpack, test_http2_hpack_integer_overflow)
 	struct http_hpack_header_buf dec = { 0 };
 	int ret;
 
-	ret = http_hpack_decode_header(at_limit, sizeof(at_limit), &dec);
+	ret = http_hpack_decode_header(at_limit, sizeof(at_limit), &dec, NULL);
 	zassert_equal(ret, -EAGAIN, "Largest integer rejected (%d)", ret);
 
-	ret = http_hpack_decode_header(high_group, sizeof(high_group), &dec);
+	ret = http_hpack_decode_header(high_group, sizeof(high_group), &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "High group accepted (%d)", ret);
 
-	ret = http_hpack_decode_header(six_bytes, sizeof(six_bytes), &dec);
+	ret = http_hpack_decode_header(six_bytes, sizeof(six_bytes), &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "Six-byte integer accepted (%d)", ret);
 
-	ret = http_hpack_decode_header(wrapped, sizeof(wrapped), &dec);
+	ret = http_hpack_decode_header(wrapped, sizeof(wrapped), &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "Wrapped integer accepted (%d)", ret);
 }
 
@@ -683,7 +683,7 @@ ZTEST(http2_hpack, test_http2_hpack_indexed_empty_value)
 	struct http_hpack_header_buf dec = { 0 };
 	int ret;
 
-	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec);
+	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec, NULL);
 	zassert_equal(ret, sizeof(indexed), "Indexed entry rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 	zassert_equal(dec.name_len, strlen("accept-charset"), "Name length %zu", dec.name_len);
