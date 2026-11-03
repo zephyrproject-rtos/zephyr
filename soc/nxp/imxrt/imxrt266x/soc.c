@@ -28,6 +28,8 @@
 #include <fsl_common.h>
 #include <fsl_powercon.h>
 #include <fsl_resetcon.h>
+#include <fsl_power.h>
+#include <fsl_trdc_soc.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -102,6 +104,19 @@ static void soc_llc_init(void)
 	llc->CCUCAOR = LLC_CCUCAOR_WRALLOCPARTIALEN(1U);
 }
 
+#ifdef CONFIG_NXP_NEUTRON
+static void soc_neutron_init(void)
+{
+	CMPT__TRDC->MDA_DFMT1[kTRDC_CMPT_MasterNPU].MDA_W_DFMT1[0] =
+		TRDC_MDA_W_DFMT1_DID(0) | TRDC_MDA_W_DFMT1_VLD_MASK;
+
+	POWER_SetDomainRunMode(kPOWER_DomainNpu, kPDCON_EventNoneOrActive);
+
+	CLOCK_EnableClock(kCLOCK_CMPT_npu_core);
+	CLOCK_EnableClock(kCLOCK_CMPT_npu_mem);
+}
+#endif /* CONFIG_NXP_NEUTRON */
+
 /*
  * Release the sleep hold, which comes out of reset set. It pins the CMC state
  * machine at its current step, so a WFI never completes: only a debugger halt
@@ -156,6 +171,9 @@ void soc_early_init_hook(void)
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+#ifdef CONFIG_NXP_NEUTRON
+	soc_neutron_init();
+#endif
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER

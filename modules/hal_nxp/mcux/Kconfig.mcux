@@ -259,7 +259,7 @@ config NXP_MCXW7X_BLE_CTRL
 
 config NXP_NEUTRON
 	bool "NXP NEUTRON NPU Driver"
-	depends on SOC_SERIES_IMXRT7XX || SOC_FAMILY_MCXN
+	depends on SOC_SERIES_IMXRT7XX || SOC_FAMILY_MCXN || SOC_SERIES_IMXRT266X
 	help
 	  Enable the NXP NEUTRON Neural Processing Unit driver.
 
