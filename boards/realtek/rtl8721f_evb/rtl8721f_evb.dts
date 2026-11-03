@@ -22,6 +22,8 @@
 		zephyr,flash-controller = &spic;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt;
+		zephyr,canbus = &can0;
+		zephyr,pinctrl = &pinctrl;
 	};
 };
 
@@ -80,5 +82,15 @@
 };
 
 &spic {
+	status = "okay";
+};
+
+&can0 {
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
 	status = "okay";
 };
