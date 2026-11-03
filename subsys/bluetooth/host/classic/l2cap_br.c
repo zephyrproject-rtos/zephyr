@@ -5907,6 +5907,26 @@ static void l2cap_br_retry_signaling_handler(struct bt_l2cap_br *l2cap)
 	}
 }
 
+/* Returns true when the channel was released and must not be touched any more */
+static bool l2cap_br_conn_sec_failed(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan)
+{
+	/*
+	 * Security procedure status is non-zero so respond with
+	 * security violation only as channel acceptor.
+	 */
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
+		return l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
+	}
+
+	/* Release channel allocated to outgoing connection request */
+	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
+		l2cap_br_chan_cleanup(chan);
+		return true;
+	}
+
+	return false;
+}
+
 /* Runs from the work of the signaling channel, as releasing a channel from its own work would have
  * the kernel use the work item after the application got the channel back.
  */
@@ -5920,10 +5940,27 @@ static void l2cap_br_retry_sec_block(struct bt_l2cap_br *l2cap)
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn->channels, chan, next, node) {
+		const bt_security_t required_sec_level = BR_CHAN(chan)->required_sec_level;
+
 		if (atomic_test_and_clear_bit(BR_CHAN(chan)->flags,
 					      L2CAP_FLAG_CONN_RSP_SEC_BLOCK)) {
 			(void)l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
+		} else if ((BR_CHAN(chan)->state == BT_L2CAP_CONNECTING) &&
+			   atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING) &&
+			   (conn->sec_level < required_sec_level) &&
+			   (conn->required_sec_level < required_sec_level)) {
+			/* What this channel waited for did not start: no result will come */
+			(void)l2cap_br_conn_sec_failed(l2cap, chan);
 		}
+	}
+}
+
+void bt_l2cap_br_security_not_started(struct bt_conn *conn)
+{
+	struct bt_l2cap_br *l2cap = l2cap_br_find_signal_channel(conn);
+
+	if (l2cap != NULL) {
+		bt_work_reschedule(&l2cap->chan.retry_work, K_NO_WAIT);
 	}
 }
 
@@ -5994,21 +6031,7 @@ static bool l2cap_br_conn_pend(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *
 	/* A procedure that succeeded below the level of this channel does not help it */
 	if ((status != 0) || ((chan->conn->encrypt != 0U) &&
 			      (chan->conn->sec_level < BR_CHAN(chan)->required_sec_level))) {
-		/*
-		 * Security procedure status is non-zero so respond with
-		 * security violation only as channel acceptor.
-		 */
-		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR)) {
-			return l2cap_br_pend_conn_req_reply_sec_block(l2cap, chan);
-		}
-
-		/* Release channel allocated to outgoing connection request */
-		if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_PENDING)) {
-			l2cap_br_chan_cleanup(chan);
-			return true;
-		}
-
-		return false;
+		return l2cap_br_conn_sec_failed(l2cap, chan);
 	}
 
 	if (chan->conn->encrypt == 0) {
