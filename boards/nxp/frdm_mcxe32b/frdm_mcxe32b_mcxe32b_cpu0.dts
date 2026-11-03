@@ -196,3 +196,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&adc_0 {
+	status = "okay";
+};
