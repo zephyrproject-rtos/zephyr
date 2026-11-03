@@ -21,20 +21,26 @@ Enabling Rust Support
 
 In order to enable Rust support in a Zephyr application, a few things need to be done:
 
-1.  As Rust is currently an optional module, the module needs to be enabled.  The easiest way to do
-    this is with west:
+1.  Rust support is provided by the external `zephyr-lang-rust`_ module, which is not part of the
+    Zephyr manifest. Add it as a West project in the application's manifest, or add a submanifest
+    (e.g. :file:`zephyr/submanifests/zephyr-lang-rust.yaml`) with the following content and run
+    ``west update``:
 
-    .. code-block:: shell
+    .. code-block:: yaml
 
-       west config manifest.project-filter +zephyr-lang-rust
-       west update
+       manifest:
+         projects:
+           - name: zephyr-lang-rust
+             url: https://github.com/zephyrproject-rtos/zephyr-lang-rust
+             revision: main
+             path: modules/lang/rust
 
-    This should cause the Rust language support to be placed in :samp:`modules/lang/rust` in your
-    Zephyr workspace.
+    This places the Rust language support in :file:`modules/lang/rust` in your Zephyr workspace.
+    See :ref:`external_module_rust` for details.
 
 2.  Enable Rust support, via :kconfig:option:`CONFIG_RUST` in the :file:`prj.conf`. The easiest way
     to do this (as well as the CMake setup from the next step) is to start with one of the samples
-    in :module_file:`modules/lang/rust/samples <zephyr-lang-rust:samples>`.
+    in :file:`modules/lang/rust/samples`.
 
 3.  Configure the application's :file:`CMakeLists.txt` file to support Rust.  Again this is easiest
     to copy from a sample, but this will look something like:
@@ -72,13 +78,15 @@ In order to enable Rust support in a Zephyr application, a few things need to be
     interface with Zephyr.
 
 5.  Build as you would any other Zephyr application.  Only a few targets currently support Rust
-    (these can be seen in the
-    :module_file:`modules/lang/rust/etc/platforms.txt <zephyr-lang-rust:etc/platforms.txt>` file).
+    (these can be seen in the :file:`modules/lang/rust/etc/platforms.txt` file).
 
 API Documentation
 *****************
 
 The `API Documentation`_ for the latest version in the module is kept on gh-pages.
+
+.. _`zephyr-lang-rust`:
+   https://github.com/zephyrproject-rtos/zephyr-lang-rust
 
 .. _`API Documentation`:
    https://zephyrproject-rtos.github.io/zephyr-lang-rust/nostd/zephyr/index.html
