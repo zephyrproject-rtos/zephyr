@@ -15,15 +15,15 @@
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
+		clock-frequency = <DT_FREQ_M(100)>;
 		timebase-frequency = <DT_FREQ_M(100)>;
+		riscv,isa-base = "rv32i";
+		riscv,isa-extensions = "i", "m", "zicsr", "zifencei";
 
 		cpu0: cpu@0 {
 			compatible = "litex,vexriscv-standard", "spinalhdl,vexriscv", "riscv";
 			reg = <0>;
-			clock-frequency = <100000000>;
 			device_type = "cpu";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "zicsr", "zifencei";
 			status = "okay";
 		};
 	};
