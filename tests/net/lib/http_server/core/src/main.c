@@ -278,8 +278,9 @@ BUILD_ASSERT(sizeof(long_payload) - 1 > CONFIG_HTTP_SERVER_CLIENT_BUFFER_SIZE,
 #define TEST_HTTP2_DATA_POST_ROOT_STREAM_1 TEST_HTTP2_DATA_POST_DYNAMIC_STREAM_1
 
 static uint16_t test_http_service_port = SERVER_PORT;
+/* Two concurrent clients, for the HPACK dynamic table pool test. */
 HTTP_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
-		    &test_http_service_port, 1, 10, NULL, NULL, NULL);
+		    &test_http_service_port, 2, 10, NULL, NULL, NULL);
 
 static const char static_resource_payload[] = TEST_STATIC_PAYLOAD;
 struct http_resource_detail_static static_resource_detail = {
@@ -1139,6 +1140,357 @@ ZTEST(server_function_tests, test_http2_get_concurrent_streams)
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, NULL, 0,
 				HTTP2_FLAG_END_STREAM);
+}
+
+#define TEST_STREAM_ID_3               7
+#define TEST_STREAM_ID_4               9
+
+/* GET / with user-agent: burst as a literal with incremental indexing (name
+ * index 58), which adds it to the dynamic table.
+ */
+#define TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(_stream_id) \
+	0x00, 0x00, 0x0a, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x84, 0x7a, 0x05, 0x62, 0x75, 0x72, 0x73, 0x74
+/* GET / with user-agent taken from the dynamic table (index 62). */
+#define TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA(_stream_id) \
+	0x00, 0x00, 0x04, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x84, 0xbe
+/* GET / with "accept: any" as a literal with incremental indexing (name
+ * index 19), which adds a second entry to the dynamic table.
+ */
+#define TEST_HTTP2_HEADERS_GET_ROOT_ADD_ACCEPT(_stream_id) \
+	0x00, 0x00, 0x08, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x84, 0x53, 0x03, 0x2a, 0x2f, 0x2a
+/* GET / with user-agent taken from the dynamic table as its second
+ * newest entry (index 63).
+ */
+#define TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA_63(_stream_id) \
+	0x00, 0x00, 0x04, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x84, 0xbf
+/* GET / starting with a dynamic table size update to 0, as a client sends
+ * after acknowledging the server's SETTINGS.
+ */
+#define TEST_HTTP2_HEADERS_GET_ROOT_TABLE_ZERO(_stream_id) \
+	0x00, 0x00, 0x04, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x20, 0x82, 0x86, 0x84
+
+static void expect_http2_rst_stream_frame(size_t *offset, int stream_id, uint32_t error_code)
+{
+	struct http2_frame frame;
+
+	test_get_frame_header(offset, &frame);
+
+	zassert_equal(frame.type, HTTP2_RST_STREAM_FRAME, "Expected RST_STREAM frame, got %u",
+		      frame.type);
+	zassert_equal(frame.stream_identifier, stream_id, "Invalid RST_STREAM frame stream ID");
+	zassert_equal(frame.length, HTTP2_RST_STREAM_FRAME_LEN, "Invalid RST_STREAM frame length");
+
+	test_read_data(offset, frame.length);
+	zassert_equal(sys_get_be32(buf), error_code, "Unexpected error code %u", sys_get_be32(buf));
+	test_consume_data(offset, frame.length);
+}
+
+static void expect_http2_static_root_response(size_t *offset, int stream_id)
+{
+	expect_http2_headers_frame(offset, stream_id, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(offset, stream_id, TEST_STATIC_PAYLOAD, strlen(TEST_STATIC_PAYLOAD),
+				HTTP2_FLAG_END_STREAM);
+}
+
+/* A browser sends its first requests before it has read the server's
+ * SETTINGS, so they use the default dynamic table: the first adds entries,
+ * the following ones refer to them. After the SETTINGS ACK the client
+ * shrinks the table to 0.
+ */
+ZTEST(server_function_tests, test_http2_hpack_dynamic_table_burst)
+{
+	static const uint8_t request_burst[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(TEST_STREAM_ID_1),
+		TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA(TEST_STREAM_ID_2),
+	};
+	static const uint8_t request_after_ack[] = {
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_ZERO(TEST_STREAM_ID_3),
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request_burst, sizeof(request_burst), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+	if (CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT > 0) {
+		expect_http2_static_root_response(&offset, TEST_STREAM_ID_2);
+	} else {
+		/* Without a pool the second request is refused and retried. */
+		expect_http2_rst_stream_frame(&offset, TEST_STREAM_ID_2,
+					      HTTP2_ERROR_REFUSED_STREAM);
+	}
+
+	ret = zsock_send(client_fd, request_after_ack, sizeof(request_after_ack), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_3);
+}
+
+static int connect_second_client(void)
+{
+	struct net_sockaddr_in sa;
+	int fd;
+
+	fd = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
+	zassert_true(fd >= 0, "Failed to create the second client socket (%d)", errno);
+
+	sa.sin_family = NET_AF_INET;
+	sa.sin_port = net_htons(SERVER_PORT);
+	zassert_equal(zsock_inet_pton(NET_AF_INET, SERVER_IPV4_ADDR, &sa.sin_addr.s_addr), 1,
+		      "inet_pton() failed");
+	zassert_ok(zsock_connect(fd, (struct net_sockaddr *)&sa, sizeof(sa)),
+		   "Failed to connect the second client (%d)", errno);
+
+	return fd;
+}
+
+/* With every dynamic table in use, a request that refers to one is refused
+ * and the client retries it after its SETTINGS ACK, without the table. The
+ * table the first client returns serves the next connection.
+ */
+ZTEST(server_function_tests, test_http2_hpack_dynamic_table_pool_empty)
+{
+	static const uint8_t request_take_table[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(TEST_STREAM_ID_1),
+	};
+	static const uint8_t request_burst[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(TEST_STREAM_ID_1),
+		TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA(TEST_STREAM_ID_2),
+	};
+	/* No GOAWAY here: closing the connection would release the table too. */
+	static const uint8_t request_release_table[] = {
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_ZERO(TEST_STREAM_ID_2),
+	};
+	static const uint8_t request_retry[] = {
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_ZERO(TEST_STREAM_ID_3),
+	};
+	static const uint8_t request_burst_new_client[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(TEST_STREAM_ID_1),
+		TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA(TEST_STREAM_ID_2),
+		TEST_HTTP2_GOAWAY,
+	};
+	int first_fd = client_fd;
+	int second_fd;
+	size_t offset = 0;
+	int ret;
+
+	/* One table in the pool, taken by the first client until it acknowledges. */
+	if (CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT != 1) {
+		ztest_test_skip();
+	}
+
+	ret = zsock_send(first_fd, request_take_table, sizeof(request_take_table), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+
+	/* The second client's first request decodes without a table, the
+	 * second one needs it and is refused.
+	 */
+	second_fd = connect_second_client();
+	client_fd = second_fd;
+	offset = 0;
+
+	ret = zsock_send(second_fd, request_burst, sizeof(request_burst), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+	expect_http2_rst_stream_frame(&offset, TEST_STREAM_ID_2, HTTP2_ERROR_REFUSED_STREAM);
+
+	/* The first client acknowledges and the table goes back to the pool.
+	 * Its next request is answered, so the ACK has been processed.
+	 */
+	client_fd = first_fd;
+	offset = 0;
+
+	ret = zsock_send(first_fd, request_release_table, sizeof(request_release_table), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_2);
+
+	/* The second client retries after its ACK, encoded without the table. */
+	client_fd = second_fd;
+	offset = 0;
+
+	ret = zsock_send(second_fd, request_retry, sizeof(request_retry), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_3);
+
+	/* A new connection in place of the second client gets the freed table. */
+	(void)zsock_close(second_fd);
+	second_fd = connect_second_client();
+	client_fd = second_fd;
+	offset = 0;
+
+	ret = zsock_send(second_fd, request_burst_new_client, sizeof(request_burst_new_client), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_2);
+
+	client_fd = first_fd;
+	(void)zsock_close(second_fd);
+}
+
+/* A client that added an entry while the pool was empty gets no table
+ * later, not even when one is freed before its SETTINGS ACK: that table
+ * would miss the entry, and a valid reference to it would be a decoding
+ * error instead of a refusal.
+ */
+ZTEST(server_function_tests, test_http2_hpack_dynamic_table_missed)
+{
+	static const uint8_t request_add_ua[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(TEST_STREAM_ID_1),
+	};
+	static const uint8_t request_release_table[] = {
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_ZERO(TEST_STREAM_ID_2),
+	};
+	/* The second entry on a client that missed the table, then a
+	 * reference to the first one.
+	 */
+	static const uint8_t request_refer_to_first[] = {
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_ACCEPT(TEST_STREAM_ID_2),
+		TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA_63(TEST_STREAM_ID_3),
+	};
+	static const uint8_t request_after_ack[] = {
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_TABLE_ZERO(TEST_STREAM_ID_4),
+		TEST_HTTP2_GOAWAY,
+	};
+	int first_fd = client_fd;
+	int second_fd;
+	size_t offset = 0;
+	int ret;
+
+	if (CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT != 1) {
+		ztest_test_skip();
+	}
+
+	/* The first client takes the only table. */
+	ret = zsock_send(first_fd, request_add_ua, sizeof(request_add_ua), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+
+	/* The second client adds an entry with the pool empty. */
+	second_fd = connect_second_client();
+	client_fd = second_fd;
+	offset = 0;
+
+	ret = zsock_send(second_fd, request_add_ua, sizeof(request_add_ua), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+
+	/* The first client acknowledges and the table goes back to the pool. */
+	client_fd = first_fd;
+	offset = 0;
+
+	ret = zsock_send(first_fd, request_release_table, sizeof(request_release_table), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_2);
+
+	/* The second client's reference to its first entry is refused, not
+	 * resolved in a table that never saw it.
+	 */
+	client_fd = second_fd;
+	offset = 0;
+
+	ret = zsock_send(second_fd, request_refer_to_first, sizeof(request_refer_to_first), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_2);
+	expect_http2_rst_stream_frame(&offset, TEST_STREAM_ID_3, HTTP2_ERROR_REFUSED_STREAM);
+
+	/* The connection is still up and serves the client after its ACK. */
+	ret = zsock_send(second_fd, request_after_ack, sizeof(request_after_ack), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_4);
+
+	client_fd = first_fd;
+	(void)zsock_close(second_fd);
+}
+
+/* After the SETTINGS ACK the dynamic table size is 0, so a reference to
+ * the table is a decoding error (RFC 7541, Section 2.3.3) and ends the
+ * connection (RFC 9113, Section 4.3): a client that never shrinks its
+ * table must not be left retrying refused streams.
+ */
+ZTEST(server_function_tests, test_http2_hpack_dynamic_table_reference_after_ack)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_HEADERS_GET_ROOT_ADD_UA(TEST_STREAM_ID_1),
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_ROOT_INDEXED_UA(TEST_STREAM_ID_2),
+	};
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "500"}
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, request, sizeof(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_static_root_response(&offset, TEST_STREAM_ID_1);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS,
+				   expected_headers, 1);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, NULL, 0, HTTP2_FLAG_END_STREAM);
+
+	do {
+		ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
+		zassert_not_equal(ret, -1, "recv() failed (%d)", errno);
+	} while (ret > 0);
+
+	zassert_equal(ret, 0, "Connection should've been closed");
 }
 
 ZTEST(server_function_tests, test_http2_static_get)
