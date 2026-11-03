@@ -177,9 +177,6 @@ jobs:
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
       LLVM_TOOLCHAIN_PATH: /usr/lib/llvm-20
       HEXAGON_TOOLCHAIN_PATH: /opt/toolchains/hexagon/host
-      # Module Rust samples have no Cargo.lock, so resolve crates to the
-      # newest versions that support the rustc in the CI image.
-      CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
     steps:
       - name: Print cloud service information
         run: |
