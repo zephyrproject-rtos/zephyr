@@ -737,8 +737,17 @@ static void process_events(struct k_poll_event *ev, int count)
 					net_buf_unref(buf);
 				}
 			} else if (ev->tag == 2) {
-				buf = k_fifo_get(&h5.tx_queue, K_FOREVER);
-				__ASSERT_NO_MSG(buf);
+				buf = k_fifo_get(&h5.tx_queue, K_NO_WAIT);
+				/* Emptied by a link restart while bt_send() above blocked */
+				if (buf == NULL) {
+					break;
+				}
+
+				/* Or queued after it: not sent, and takes no sequence number */
+				if (h5.link_state != ACTIVE) {
+					net_buf_unref(buf);
+					break;
+				}
 
 				type = h5_get_type(buf);
 

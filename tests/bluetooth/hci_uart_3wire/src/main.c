@@ -53,6 +53,11 @@ static K_FIFO_DEFINE(h2c);
 /* Sequence number of the next reliable packet to the sample */
 static uint8_t seq;
 
+/* The driver's send blocks until released, as it does for several HCI drivers */
+static bool send_blocks;
+static K_SEM_DEFINE(send_entered, 0, 1);
+static K_SEM_DEFINE(send_release, 0, 1);
+
 static int drv_open(const struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -65,6 +70,11 @@ static int drv_send(const struct device *dev, struct net_buf *buf)
 	ARG_UNUSED(dev);
 
 	k_fifo_put(&h2c, buf);
+
+	if (send_blocks) {
+		k_sem_give(&send_entered);
+		(void)k_sem_take(&send_release, K_FOREVER);
+	}
 
 	return 0;
 }
@@ -242,23 +252,29 @@ static void put_ack(uint8_t ack)
 	put(out, frame(out, hdr, NULL, 0U));
 }
 
-/* Returns the sequence number the sample sent the event with */
-static uint8_t send_evt(void)
+static void recv_evt(void)
 {
 	const struct device *hci = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
-	uint8_t expected[FRAME_MAX(sizeof(hw_err_evt))];
-	uint8_t hdr[HDR_LEN];
-	size_t expected_len;
 	struct net_buf *buf;
-	uint32_t tx_len;
-	uint8_t evt_seq;
-	uint8_t tx[64];
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_HARDWARE_ERROR, false, K_NO_WAIT);
 	zassert_not_null(buf);
 	net_buf_add_mem(buf, hw_err_evt, sizeof(hw_err_evt));
 	zassert_ok(bt_hci_recv_err(hci, buf));
 	k_sleep(K_MSEC(10));
+}
+
+/* Returns the sequence number the sample sent the event with */
+static uint8_t send_evt(void)
+{
+	uint8_t expected[FRAME_MAX(sizeof(hw_err_evt))];
+	uint8_t hdr[HDR_LEN];
+	size_t expected_len;
+	uint32_t tx_len;
+	uint8_t evt_seq;
+	uint8_t tx[64];
+
+	recv_evt();
 
 	/* Exactly the event, as a reliable packet with any sequence number */
 	tx_len = uart_emul_get_tx_data(uart, tx, sizeof(tx));
@@ -312,6 +328,48 @@ static size_t count_link_tx(const uint8_t *msg, size_t len)
 	return count_link(tx, tx_len, msg, len);
 }
 
+/* The link setup after a SYNC in the Active state restarted the link */
+static void finish_link_setup(void)
+{
+	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
+	/* Sliding window size 4 */
+	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
+	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
+
+	put_link(false, sync_rsp, sizeof(sync_rsp));
+	put_link(false, conf, sizeof(conf));
+	put_link(false, conf_rsp, sizeof(conf_rsp));
+
+	(void)uart_emul_flush_tx_data(uart);
+	seq = 0U;
+}
+
+/* Restarts the link with tx_thread() in the driver's send and an event polled for after it */
+static void restart_during_send(void)
+{
+	static const uint8_t sync[] = { 0x01, 0x7e };
+
+	k_sem_reset(&send_entered);
+	k_sem_reset(&send_release);
+	send_blocks = true;
+
+	put_cmd(true, seq, 1U);
+	next_seq();
+	zassert_ok(k_sem_take(&send_entered, K_MSEC(100)));
+
+	/* tx_thread() finds both when it polls next, and handles the command first */
+	put_cmd(true, seq, 2U);
+	next_seq();
+	recv_evt();
+	k_sem_give(&send_release);
+	zassert_ok(k_sem_take(&send_entered, K_MSEC(100)));
+
+	put_link(false, sync, sizeof(sync));
+
+	expect_cmd(1U);
+	expect_cmd(2U);
+}
+
 struct hci_uart_3wire_fixture {
 	/* The sample's output after the early SYNC */
 	uint8_t early_tx[64];
@@ -333,13 +391,13 @@ static void *setup(void)
 static void before(void *fixture)
 {
 	static const uint8_t sync[] = { 0x01, 0x7e };
-	static const uint8_t sync_rsp[] = { 0x02, 0x7d };
-	/* Sliding window size 4 */
-	static const uint8_t conf[] = { 0x03, 0xfc, 0x04 };
-	static const uint8_t conf_rsp[] = { 0x04, 0x7b };
 	struct net_buf *buf;
 
 	ARG_UNUSED(fixture);
+
+	/* In case a test failed with tx_thread() in the driver's send */
+	send_blocks = false;
+	k_sem_give(&send_release);
 
 	k_sleep(ACK_WAIT);
 
@@ -349,12 +407,7 @@ static void before(void *fixture)
 
 	/* A SYNC in the Active state restarts the link */
 	put_link(false, sync, sizeof(sync));
-	put_link(false, sync_rsp, sizeof(sync_rsp));
-	put_link(false, conf, sizeof(conf));
-	put_link(false, conf_rsp, sizeof(conf_rsp));
-
-	(void)uart_emul_flush_tx_data(uart);
-	seq = 0U;
+	finish_link_setup();
 }
 
 ZTEST_F(hci_uart_3wire, test_early_sync)
@@ -678,6 +731,39 @@ ZTEST(hci_uart_3wire, test_link_establishment)
 
 	/* Active: packets for the Host go out from sequence number 0 */
 	(void)uart_emul_flush_tx_data(uart);
+	evt_seq = send_evt();
+	zassert_equal(evt_seq, 0U);
+	put_ack(1U);
+	expect_no_tx();
+}
+
+/* The restart emptied the queue tx_thread() was about to take the event from */
+ZTEST(hci_uart_3wire, test_restart_during_send)
+{
+	restart_during_send();
+
+	send_blocks = false;
+	k_sem_give(&send_release);
+	finish_link_setup();
+
+	/* tx_thread() still passes on what the Host sends */
+	put_cmd(true, seq, 3U);
+	expect_cmd(3U);
+}
+
+/* An event queued after the restart is not sent, and takes no sequence number on the new link */
+ZTEST(hci_uart_3wire, test_event_after_restart_during_send)
+{
+	uint8_t evt_seq;
+
+	restart_during_send();
+	recv_evt();
+
+	send_blocks = false;
+	k_sem_give(&send_release);
+	k_sleep(K_MSEC(10));
+	finish_link_setup();
+
 	evt_seq = send_evt();
 	zassert_equal(evt_seq, 0U);
 	put_ack(1U);
