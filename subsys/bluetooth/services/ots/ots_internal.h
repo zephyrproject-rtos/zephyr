@@ -116,6 +116,10 @@ struct bt_gatt_ots_object {
 	uint64_t id;
 	struct bt_ots_obj_metadata metadata;
 	struct bt_gatt_ots_object_state state;
+	/* Reference to the connection that the object goes with, if it has no name by then:
+	 * the one whose OACP Create added it, or the one transferring it when that went down.
+	 */
+	struct bt_conn *creator;
 };
 
 struct bt_gatt_ots_indicate {
