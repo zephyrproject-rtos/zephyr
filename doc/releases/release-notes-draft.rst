@@ -64,6 +64,12 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* I3C
+
+  * The requested tCAS (clock after START) is configurable through
+    :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
+    Devicetree property.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region
