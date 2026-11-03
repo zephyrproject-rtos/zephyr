@@ -1465,6 +1465,21 @@ bool lll_sync_iso_is_defer_overflow(const struct lll_event *e)
 	return skipped_bis >= lll->stream_count;
 }
 
+/* Check if an event in the prepare pipeline has no payload remaining to be received from
+ * now, in which case it yields to an auxiliary scan or a periodic sync event.
+ */
+bool lll_sync_iso_is_pending_optional(const struct lll_event *e)
+{
+	uint32_t ticks_se;
+	uint8_t se;
+
+	if (!pending_ticks_se_now_get(e, &ticks_se, &se)) {
+		return true;
+	}
+
+	return is_se_optional(e->prepare_param.param, pending_latency_get(e), se);
+}
+
 /* Time of the subevent, from now, of an event in the prepare pipeline after which a
  * payload that has not been received is lost, i.e. the deadline of the event.
  */

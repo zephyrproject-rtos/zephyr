@@ -2458,6 +2458,7 @@ static bool is_prepare_dequeue_yield_skip(const struct lll_event *e)
 static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_next)
 {
 	bool is_overflow;
+	bool is_optional;
 	bool is_sync_iso;
 
 	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (e->is_yield != 0U)) {
@@ -2474,6 +2475,7 @@ static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_ne
 	}
 
 	is_overflow = is_sync_iso && lll_sync_iso_is_defer_overflow(e);
+	is_optional = is_sync_iso && lll_sync_iso_is_pending_optional(e);
 
 	while (e_next != NULL) {
 		const struct lll_event *iter = (void *)((uint8_t *)e_next + sizeof(void *));
@@ -2497,6 +2499,7 @@ static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_ne
 			}
 
 			is_overflow = false;
+			is_optional = is_optional && lll_sync_iso_is_pending_optional(iter);
 
 			continue;
 		}
@@ -2510,13 +2513,15 @@ static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_ne
 			return true;
 		}
 
-		/* An ISO Synchronized Receiver event does not yield to scanning, and a periodic
-		 * sync event does not preempt it while it has payload to receive.
+		/* An ISO Synchronized Receiver event does not yield to scanning, and an auxiliary
+		 * scan or a periodic sync event does not preempt it while it has payload to
+		 * receive.
 		 */
 		if (is_sync_iso &&
 		    ((ull_scan_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
-		     (ull_scan_aux_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
-		     (ull_sync_lll_is_valid_get(iter->prepare_param.param) != NULL))) {
+		     (!is_optional &&
+		      ((ull_scan_aux_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
+		       (ull_sync_lll_is_valid_get(iter->prepare_param.param) != NULL))))) {
 			return false;
 		}
 
