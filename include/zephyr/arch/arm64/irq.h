@@ -85,6 +85,59 @@ bool z_soc_irq_is_pending(unsigned int irq);
 #define z_arm64_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)
 
+/*
+ * SMP IPI hooks between arch/arm64/core/smp.c and the SoC layer. An SMP
+ * SoC must supply the soc_* transport and connect the arch-owned
+ * handlers to its IPI interrupt; a missing hook is a link error. The
+ * FPU hooks are only used with CONFIG_FPU_SHARING.
+ */
+
+/**
+ * @brief Raise a scheduler IPI on a core.
+ *
+ * @param target_mpidr MPIDR of the target core.
+ */
+void soc_sched_ipi(uint64_t target_mpidr);
+
+/**
+ * @brief Handle a scheduler IPI on the current core.
+ *
+ * @param unused Not used, for connecting as an ISR.
+ */
+void z_arm64_sched_ipi_handler(const void *unused);
+
+/**
+ * @brief Raise an FPU flush IPI on a core.
+ *
+ * @param target_mpidr MPIDR of the target core.
+ */
+void soc_flush_fpu_ipi(uint64_t target_mpidr);
+
+/**
+ * @brief Check for a pending FPU flush IPI on the current core.
+ *
+ * Polled by arch_spin_relax() with IRQs masked, so an FPU flush IPI
+ * must stay pending until its handler or
+ * soc_fpu_ipi_clear_pending() clears it.
+ *
+ * @return true if an FPU flush IPI is pending.
+ */
+bool soc_fpu_ipi_is_pending(void);
+
+/**
+ * @brief Clear a pending FPU flush IPI on the current core.
+ */
+void soc_fpu_ipi_clear_pending(void);
+
+/**
+ * @brief Handle an FPU flush IPI on the current core.
+ *
+ * Leaves IRQs masked, so it must be the last thing the ISR does.
+ *
+ * @param unused Not used, for connecting as an ISR.
+ */
+void z_arm64_flush_fpu_ipi_handler(const void *unused);
+
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 extern void z_arm64_interrupt_init(void);

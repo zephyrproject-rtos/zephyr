@@ -74,13 +74,27 @@
 #define BCM2836_L1_IRQ_PMU_BIT   9U
 
 /**
+ * @brief L1 IRQ_SOURCE bit position for the per-core mailbox 0.
+ *
+ * Also the Zephyr IRQ number for mailbox 0. SMP builds use mailbox 0
+ * as the IPI vehicle; bits within the mailbox word distinguish IPI
+ * types.
+ */
+#define BCM2836_L1_IRQ_MBOX0_BIT 4U
+
+/**
  * @brief Initialise the BCM2836 ARM-local interrupt controller.
  *
  * Maps the MMIO bank via @c device_map() and masks all locally-routed
- * sources for core 0. Invoked by the SoC's @c z_soc_irq_init() during
+ * sources for the boot core. Invoked by the SoC's @c z_soc_irq_init() during
  * arch boot, before any @c SYS_INIT priority.
  */
 void bcm2836_l1_intc_init(void);
+
+/**
+ * @brief Mask this core's TIMER and mailbox interrupt sources.
+ */
+void bcm2836_l1_intc_mask_core(void);
 
 /**
  * @brief Enable an L1 IRQ source.
@@ -116,6 +130,31 @@ int  bcm2836_l1_intc_irq_is_enabled(unsigned int irq);
  *         walk into bcm2835_armctrl_ic_irq_get_active() next.
  */
 unsigned int bcm2836_l1_intc_irq_get_active(void);
+
+/**
+ * @brief Raise mailbox-0 bits on a core (SMP IPI send).
+ *
+ * @param core Physical core id (MPIDR Aff0) of the target.
+ * @param bits Mailbox bits to set; each bit is one IPI type.
+ */
+void bcm2836_l1_intc_mbox0_raise(unsigned int core, uint32_t bits);
+
+/**
+ * @brief Peek this core's pending mailbox-0 bits without acking.
+ *
+ * The register clears by write-1, not by read, so the peek is
+ * side-effect free.
+ *
+ * @return The currently pending mailbox-0 bits.
+ */
+uint32_t bcm2836_l1_intc_mbox0_peek(void);
+
+/**
+ * @brief Acknowledge specific mailbox-0 bits on this core.
+ *
+ * @param bits Mailbox bits to clear; other pending bits stay set.
+ */
+void bcm2836_l1_intc_mbox0_clear(uint32_t bits);
 
 /**
  * @brief Initialise the BCM2835 ARMC peripheral interrupt controller.
