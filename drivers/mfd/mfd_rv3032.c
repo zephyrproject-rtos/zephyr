@@ -670,6 +670,6 @@ static int mfd_rv3032_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &mfd_rv3032_init, NULL, &mfd_rv3032_data##inst,                \
 			      &mfd_rv3032_config##inst, POST_KERNEL,                               \
-			      CONFIG_MFD_MICROCRYSTAL_RV3032_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_RV3032_DEFINE)
