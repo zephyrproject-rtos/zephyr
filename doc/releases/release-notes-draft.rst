@@ -126,6 +126,10 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* :abbr:`RTC (Real Time Clock)`
+
+  * :dtcompatible:`microchip,mcp7940n` (:github:`119309`)
+
 New Samples
 ***********
 
