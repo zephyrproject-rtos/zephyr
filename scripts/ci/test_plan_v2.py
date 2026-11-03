@@ -38,8 +38,9 @@ Current strategies (execution order)
    so the exact test suite is exercised end-to-end.
    Consumes matched files so downstream strategies do not inflate the plan.
 3. :class:`SnippetStrategy` - for changed files under ``snippets/``, reads
-   the snippet name from ``snippet.yml`` then finds and runs only the tests
-   that declare that snippet as a ``required_snippets`` dependency.
+   the snippet name from ``snippet.yml`` then finds and runs tests
+   that use that snippet through ``required_snippets`` or ``SNIPPET``
+   extra arguments (including sysbuild ``<image>_SNIPPET``).
    Consumes matched files.
 4. :class:`BoardStrategy` - for changed files under ``boards/``, uses
    ``scripts/list_boards.py`` to enumerate all board variants (SoC /
