@@ -1,0 +1,67 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/pixhawk-connector.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		gnss = &holybro_m10_gnss;
+		magn0 = &holybro_m10_mag;
+	};
+
+	holybro_m10_keys {
+		compatible = "gpio-keys";
+
+		holybro_m10_safety_switch: safety_switch {
+			label = "Safety switch";
+			gpios = <&pixhawk_full_gps1_connector PIXHAWK_FULL_GPS_SAFETY_SW
+				 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	holybro_m10_leds {
+		compatible = "gpio-leds";
+
+		holybro_m10_safety_led: safety_led {
+			label = "Safety switch LED";
+			gpios = <&pixhawk_full_gps1_connector PIXHAWK_FULL_GPS_SAFETY_LED
+				 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pixhawk_full_gps1_serial {
+	current-speed = <115200>;
+	status = "okay";
+
+	holybro_m10_gnss: gnss {
+		compatible = "u-blox,m10";
+		initial-baudrate = <115200>;
+	};
+};
+
+&pixhawk_full_gps1_i2c {
+	status = "okay";
+
+	holybro_m10_mag: ist8310@e {
+		compatible = "isentek,ist8310";
+		reg = <0x0e>;
+	};
+
+	holybro_m10_rgb_led: is31fl3195@54 {
+		compatible = "issi,is31fl3195";
+		reg = <0x54>;
+
+		led_0 {
+			label = "RGB LED";
+			color-mapping = <LED_COLOR_ID_RED>, <LED_COLOR_ID_GREEN>,
+					<LED_COLOR_ID_BLUE>;
+			current-limit = <20>;
+		};
+	};
+};
