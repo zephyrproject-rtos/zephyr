@@ -639,8 +639,11 @@ int http_client_req(int sock, struct http_request *req,
 	const char *method;
 	k_timeout_t req_timeout = (timeout == SYS_FOREVER_MS) ? K_FOREVER : K_MSEC(timeout);
 	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
+	const char *host_open;
+	const char *host_close;
+	struct net_in6_addr addr6;
 
-	if (sock < 0 || req == NULL || req->response == NULL ||
+	if (sock < 0 || req == NULL || req->host == NULL || req->response == NULL ||
 	    req->recv_buf == NULL || req->recv_buf_len == 0) {
 		return -EINVAL;
 	}
@@ -667,10 +670,13 @@ int http_client_req(int sock, struct http_request *req,
 
 	total_sent += ret;
 
+	host_open = (net_addr_pton(NET_AF_INET6, req->host, &addr6) == 0) ? "[" : "";
+	host_close = (host_open[0] != '\0') ? "]" : "";
+
 	if (req->port) {
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
-					&send_buf_pos, req_end_timepoint, "Host", ": ", req->host,
-					":", req->port, HTTP_CRLF, NULL);
+		ret = http_send_data(sock, send_buf, send_buf_max_len, &send_buf_pos,
+				     req_end_timepoint, "Host", ": ", host_open, req->host,
+				     host_close, ":", req->port, HTTP_CRLF, NULL);
 
 		if (ret < 0) {
 			goto out;
@@ -678,9 +684,9 @@ int http_client_req(int sock, struct http_request *req,
 
 		total_sent += ret;
 	} else {
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, req_end_timepoint, "Host", ": ", req->host,
-				     HTTP_CRLF, NULL);
+		ret = http_send_data(sock, send_buf, send_buf_max_len, &send_buf_pos,
+				     req_end_timepoint, "Host", ": ", host_open, req->host,
+				     host_close, HTTP_CRLF, NULL);
 
 		if (ret < 0) {
 			goto out;
