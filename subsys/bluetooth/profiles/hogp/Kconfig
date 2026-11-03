@@ -1,0 +1,40 @@
+# Bluetooth HID over GATT Profile (HOGP)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HOGP_REPORT_HOST
+	bool "HID over GATT Profile (HOGP) Report Host [EXPERIMENTAL]"
+	depends on BT_CENTRAL
+	depends on BT_GATT_CLIENT
+	depends on BT_SMP
+	select EXPERIMENTAL
+	help
+	  Enable part of the Report Host role of the HID over GATT Profile v1.2:
+	  discover the HID Service of a HID Device, hand its Report Map and HID
+	  Information to the application, subscribe to its Input Reports, and
+	  read and write its Reports. The API documentation lists what is not
+	  supported yet. The Boot Host role is not supported.
+
+	  HOGP requires the Report Host to use the GAP Central role and to bond
+	  with the HID Device.
+
+if BT_HOGP_REPORT_HOST
+
+config BT_HOGP_REPORT_HOST_MAX_REPORTS
+	int "Number of Report characteristics of a HID Service"
+	default 8
+	range 1 255
+	help
+	  The discovery fails on a HID Device with more Report characteristics.
+	  Each connection holds this many Report entries.
+
+config BT_HOGP_REPORT_HOST_MAX_REPORT_LEN
+	int "Maximum length of a Report read with bt_hogp_report_host_report_read()"
+	default 64
+	range 1 512
+	help
+	  A longer Report fails the read with -ENOMEM. Each connection holds a
+	  buffer of this size. Input Report notifications do not use it.
+
+endif # BT_HOGP_REPORT_HOST
