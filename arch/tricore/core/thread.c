@@ -7,11 +7,7 @@
  */
 
 #include "kernel_arch_data.h"
-#include "zephyr/arch/tricore/thread.h"
-#include "zephyr/sys/util_macro.h"
-#include <zephyr/kernel.h>
-#include <ksched.h>
-#include <sys/cdefs.h>
+#include <kthread.h>
 #include <zephyr/tracing/tracing.h>
 
 union z_tricore_context __kstackmem __aligned(4 * 16) z_tricore_csa[CONFIG_TRICORE_CSA_COUNT];
