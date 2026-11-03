@@ -2400,7 +2400,8 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *
  *  The Response comes in callback @p params->notify with NULL data,
  *  either from within this function or from a thread context chosen by
- *  the stack.
+ *  the stack. If the CCC is written, @p params->subscribe is called with
+ *  the result of the write first, also when the write fails.
  *
  *  @param conn Connection object.
  *  @param params Subscribe parameters. The parameters shall be a @ref bt_gatt_subscribe_params from

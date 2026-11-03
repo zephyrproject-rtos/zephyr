@@ -5504,11 +5504,26 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+	/* Read before the subscribe callback, which may unsubscribe and clear the value */
+	const bool unsubscribe = (params->value == 0U);
 	uint8_t att_err;
 
 	LOG_DBG("err %d", err);
 
 	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+
+	/* bt_gatt_unsubscribe() has already removed the subscription, and freed sub if it was
+	 * the last one, so the unsubscribe completes whether the write failed or not.
+	 */
+	if (unsubscribe) {
+		if (params->subscribe) {
+			params->subscribe(conn, att_err_from_int(err), params);
+		}
+
+		/* Notify with NULL data to complete unsubscribe */
+		params->notify(conn, params, NULL, 0);
+		return;
+	}
 
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
@@ -5535,15 +5550,8 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			}
 			prev = node;
 		}
-	} else {
-		if (params->subscribe) {
-			params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
-		}
-
-		if (!params->value) {
-			/* Notify with NULL data to complete unsubscribe */
-			params->notify(conn, params, NULL, 0);
-		}
+	} else if (params->subscribe) {
+		params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
 	}
 }
 
