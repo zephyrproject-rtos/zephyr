@@ -509,12 +509,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 
-		ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL,
-					 0, NULL, 0);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-		}
-		return ret;
+		return send_http2_404(client, frame);
 	}
 	fs_file_t_init(&file);
 	ret = fs_open(&file, fname, FS_O_READ);
