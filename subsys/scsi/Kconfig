@@ -13,6 +13,33 @@ menuconfig SCSI
 
 if SCSI
 
+config SCSI_TUR_RETRY_COUNT
+	int "TEST UNIT READY retries during probe"
+	default 5
+	help
+	  Number of times to retry TEST UNIT READY when the device returns
+	  NOT READY (typical for removable media after insertion).
+
+config SCSI_TUR_RETRY_DELAY_MS
+	int "Delay between TEST UNIT READY retries (ms)"
+	default 100
+	help
+	  Milliseconds to wait between TEST UNIT READY retries during probe.
+
+config SCSI_SYNC_CACHE_RETRY_COUNT
+	int "SYNCHRONIZE CACHE retries on I/O error"
+	default 5
+	help
+	  Number of times to retry SCSI SYNCHRONIZE CACHE (10) when the device
+	  returns CHECK CONDITION or a transport I/O error. Some USB thumb
+	  drives briefly stall on cache flush; retries improve FatFs fs_sync().
+
+config SCSI_SYNC_CACHE_RETRY_DELAY_MS
+	int "Delay between SYNCHRONIZE CACHE retries (ms)"
+	default 100
+	help
+	  Milliseconds to wait between SYNCHRONIZE CACHE retries.
+
 # Define the SCSI subsystem as a module
 module = SCSI
 module-str = scsi
