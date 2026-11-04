@@ -370,6 +370,11 @@ SECTIONS {
   .cached SEGSTART_CACHED : {
      _cached_start = .;
     *(.cached .cached.*)
+  #if defined(CONFIG_LLEXT) && defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_heap)
+    *(.llext_ext_heap)
+    *(.llext_metadata_heap)
+  #endif
 #ifdef CONFIG_USERSPACE
     z_user_stacks_start = .;
     *(.user_stacks*)
