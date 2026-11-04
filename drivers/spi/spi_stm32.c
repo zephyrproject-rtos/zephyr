@@ -184,6 +184,9 @@ LOG_MODULE_REGISTER(spi_stm32, CONFIG_SPI_LOG_LEVEL);
 #define STM32_SPI_SIMPLEX_RX			LL_SPI_SIMPLEX_RX
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 #define STM32_SPI_SIMPLEX_TX			LL_SPI_SIMPLEX_TX
+#else
+/* Simplex TX is only used with st,stm32h7-spi: never matches a transfer direction otherwise */
+#define STM32_SPI_SIMPLEX_TX			UINT32_MAX
 #endif
 
 #if defined(CONFIG_DCACHE) && !defined(CONFIG_NOCACHE_MEMORY)
@@ -498,7 +501,8 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 		LL_SPI_EnableDMAReq_RX(spi);
 		LL_SPI_EnableDMAReq_TX(spi);
-	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX ||
+		   transfer_dir == STM32_SPI_SIMPLEX_TX) {
 		LL_SPI_EnableDMAReq_TX(spi);
 	} else {
 		LL_SPI_EnableDMAReq_RX(spi);
@@ -515,7 +519,7 @@ static int spi_stm32_dma_load(const struct device *dev, uint32_t transfer_dir)
 		return spi_dma_move_buffers(dev, data->tx_len);
 	}
 
-	if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+	if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX || transfer_dir == STM32_SPI_SIMPLEX_TX) {
 		data->tx_len = data->ctx.tx_len;
 		return spi_dma_move_tx_buffers(dev, data->tx_len);
 	}
@@ -565,7 +569,8 @@ static void spi_stm32_dma_rx_done(const struct device *dev, const struct spi_con
 	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 		spi_context_update_tx(&data->ctx, dfs, data->tx_len);
 		spi_context_update_rx(&data->ctx, dfs, data->rx_len);
-	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX ||
+		   transfer_dir == STM32_SPI_SIMPLEX_TX) {
 		spi_context_update_tx(&data->ctx, dfs, data->tx_len);
 	} else {
 		spi_context_update_rx(&data->ctx, dfs, data->rx_len);
@@ -734,7 +739,8 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 			 */
 			spi_stm32_read_fifo(spi, data);
 		}
-	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX ||
+		   transfer_dir == STM32_SPI_SIMPLEX_TX) {
 		if (ll_tx_is_not_full(spi) && data->tx_len != 0U) {
 			/* Complete data packet can be sent.
 			 * Fill the TxFIFO until threshold is reached or all data for the transfer
@@ -744,7 +750,8 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		}
 	}
 
-	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX && LL_SPI_IsActiveFlag_EOT(spi)) {
+	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX && transfer_dir != STM32_SPI_SIMPLEX_TX &&
+	    LL_SPI_IsActiveFlag_EOT(spi)) {
 		/* Full-Duplex or Half-Duplex RX cases */
 		/* At the end of transfer, if transfer size is not a multiple of the FIFO
 		 * threshold, some data may remain in the RxFIFO and neither the DXP nor
@@ -790,8 +797,8 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 					ll_enable_int_tx_empty(spi);
 				}
 			}
-		} else if (dir == STM32_SPI_HALF_DUPLEX_TX) {
-			/* Half-duplex TX: TXE flag-based handling. */
+		} else if (dir == STM32_SPI_HALF_DUPLEX_TX || dir == STM32_SPI_SIMPLEX_TX) {
+			/* Half-duplex or simplex TX: TXE flag-based handling. */
 			if (ll_tx_is_not_full(spi) && data->tx_len != 0U) {
 				data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
 			}
@@ -959,7 +966,8 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 				ll_enable_int_rx_not_empty(spi);
 			}
 		} else {
-			if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
+			if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX &&
+			    transfer_dir != STM32_SPI_SIMPLEX_TX) {
 				ll_enable_int_rx_not_empty(spi);
 			}
 
@@ -1336,7 +1344,9 @@ static void spi_stm32_complete(const struct device *dev, int status)
 #endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 	}
 
-	if (ll_get_transfer_direction(spi) != STM32_SPI_FULL_DUPLEX &&
+	uint32_t transfer_dir = ll_get_transfer_direction(spi);
+
+	if (transfer_dir != STM32_SPI_FULL_DUPLEX && transfer_dir != STM32_SPI_SIMPLEX_TX &&
 	    spi_stm32_transfer_ongoing(data)) {
 		spi_stm32_half_duplex_switch_direction(dev);
 	} else {
@@ -1405,12 +1415,56 @@ static void spi_stm32_isr(const struct device *dev)
 
 	if (!ll_spi_is_busy(spi) &&
 	    (((transfer_dir == STM32_SPI_FULL_DUPLEX) && !spi_stm32_transfer_ongoing(data)) ||
-	     ((transfer_dir == STM32_SPI_HALF_DUPLEX_TX) && !spi_context_tx_on(&data->ctx)) ||
+	     ((transfer_dir == STM32_SPI_HALF_DUPLEX_TX || transfer_dir == STM32_SPI_SIMPLEX_TX) &&
+	      !spi_context_tx_on(&data->ctx)) ||
 	     ((transfer_dir == STM32_SPI_HALF_DUPLEX_RX) && !spi_context_rx_on(&data->ctx)))) {
 		spi_stm32_complete(dev, err);
 	}
 }
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
+
+/* A TX-only transfer can run in simplex TX: the receiver is disabled, so the transfer does
+ * not depend on received frames (e.g. when only MOSI is routed) and no RX DMA is needed.
+ */
+static bool spi_stm32_use_simplex_tx(const struct device *dev, const struct spi_config *config,
+				     bool write, bool read)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) && !defined(CONFIG_SPI_RTIO)
+	if (!write || read) {
+		return false;
+	}
+
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
+		return false;
+	}
+
+	/* With SPI_HOLD_ON_CS, SPE stays set until spi_release(). COMM is only writable
+	 * while SPE is cleared, so a later transfer of the held session could not switch
+	 * back to full-duplex and would run with the receiver disabled.
+	 */
+	if ((config->operation & SPI_HOLD_ON_CS) != 0U) {
+		return false;
+	}
+
+#if defined(CONFIG_SPI_STM32_DMA) && defined(CONFIG_SPI_ASYNC)
+	struct spi_stm32_data *data = dev->data;
+
+	/* The asynchronous DMA callback relies on the RX DMA completion */
+	if (data->ctx.asynchronous) {
+		return false;
+	}
+#endif /* CONFIG_SPI_STM32_DMA && CONFIG_SPI_ASYNC */
+
+	return true;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(config);
+	ARG_UNUSED(write);
+	ARG_UNUSED(read);
+
+	return false;
+#endif /* st_stm32h7_spi && !CONFIG_SPI_RTIO */
+}
 
 static void spi_stm32_set_transfer_direction(const struct device *dev,
 					     const struct spi_config *config,
@@ -1439,6 +1493,8 @@ static void spi_stm32_set_transfer_direction(const struct device *dev,
 				ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_TX);
 			}
 		}
+	} else if (spi_stm32_use_simplex_tx(dev, config, write, read)) {
+		ll_set_transfer_direction(spi, STM32_SPI_SIMPLEX_TX);
 	} else {
 		ll_set_transfer_direction(spi, STM32_SPI_FULL_DUPLEX);
 	}
@@ -1726,7 +1782,8 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 	    (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER)) {
 		uint32_t frames = transfer_dir != STM32_SPI_HALF_DUPLEX_RX ? tx_frames : rx_frames;
 
-		if (frames <= cfg->fifo_max_transfer_size) {
+		/* Simplex TX runs without TSIZE and ends on TXC, as with DMA */
+		if (frames <= cfg->fifo_max_transfer_size && transfer_dir != STM32_SPI_SIMPLEX_TX) {
 			if (LL_SPI_IsEnabled(spi)) {
 				/* SPI needs to be disabled to set the transfer size */
 				ll_disable_spi(spi);
@@ -1734,9 +1791,11 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 
 			ll_set_transfer_size(spi, (uint32_t)frames);
 		} else {
-			LOG_INF("Buffer size exceeds maximal supported value. "
-				"Falling back to non-FIFO mode. "
-				"This may result in performance degradation.");
+			if (frames > cfg->fifo_max_transfer_size) {
+				LOG_INF("Buffer size exceeds maximal supported value. "
+					"Falling back to non-FIFO mode. "
+					"This may result in performance degradation.");
+			}
 
 			if (ll_get_transfer_size(spi) != 0U || data->fifo_threshold != 1) {
 				if (LL_SPI_IsEnabled(spi)) {
@@ -1762,9 +1821,12 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 #if defined(CONFIG_SPI_STM32_DMA)
 #if !defined(CONFIG_SPI_RTIO)
 
-static int wait_dma_rx_tx_done(const struct device *dev)
+static int wait_dma_rx_tx_done(const struct device *dev, uint32_t transfer_dir)
 {
 	struct spi_stm32_data *data = dev->data;
+	/* In simplex TX the receiver is off: only the TX DMA runs */
+	uint32_t done_flags = (transfer_dir == STM32_SPI_SIMPLEX_TX) ?
+			      SPI_STM32_DMA_TX_DONE_FLAG : SPI_STM32_DMA_DONE_FLAG;
 	int res = -1;
 	k_timeout_t timeout;
 
@@ -1788,7 +1850,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 			return -EIO;
 		}
 
-		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) == SPI_STM32_DMA_DONE_FLAG) {
+		if ((data->status_flags & done_flags) == done_flags) {
 			return 0;
 		}
 	}
@@ -2012,7 +2074,7 @@ static int transceive_dma(const struct device *dev,
 		}
 #endif /* CONFIG_SPI_ASYNC */
 
-		ret = wait_dma_rx_tx_done(dev);
+		ret = wait_dma_rx_tx_done(dev, transfer_dir);
 		if (ret != 0) {
 			break;
 		}
