@@ -169,6 +169,7 @@ Default Zephyr Peripheral Mapping:
 - ADC1 channel 0 input: PA0
 - USART1 TX/RX : PB14/PB15 (Arduino USART1)
 - SPI1 SCK/MISO/MOSI/NSS: PA5/PA6/PA7/PC9
+- I2C1 SCL/SDA : PB6/PB7 (Arduino I2C)
 - UART2 TX/RX : PA2/PA3 (VCP)
 - USER_PB : PC13
 
