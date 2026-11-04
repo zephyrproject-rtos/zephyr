@@ -1390,6 +1390,13 @@ void *airoc_wifi_wpa_supp_dev_init(void *supp_drv_if_ctx, const char *iface_name
 	return data;
 }
 
+static void airoc_wifi_wpa_supp_dev_deinit(void *if_priv)
+{
+	struct airoc_wifi_data *data = if_priv;
+
+	data->supp_if_ctx = NULL;
+}
+
 int airoc_wifi_wpa_supp_get_capa(void *if_priv, struct wpa_driver_capa *capa)
 {
 	memset(capa, 0, sizeof(*capa));
@@ -2505,6 +2512,7 @@ out:
 
 static const struct zep_wpa_supp_dev_ops airoc_wifi_wpa_drv_ops = {
 	.init = airoc_wifi_wpa_supp_dev_init,
+	.deinit = airoc_wifi_wpa_supp_dev_deinit,
 	.scan2 = airoc_wifi_wpa_supp_scan2,
 	.scan_abort = airoc_wifi_wpa_supp_scan_abort,
 	.get_scan_results2 = airoc_wifi_wpa_supp_get_scan_results2,
