@@ -25,7 +25,10 @@ LOG_MODULE_REGISTER(video_imx335, CONFIG_VIDEO_LOG_LEVEL);
 #define IMX335_BIN_2X2_WIDTH	1296
 #define IMX335_BIN_2X2_HEIGHT	972
 
-#define IMX335_PIXEL_RATE	396000000
+#define IMX335_2DL_LINK_FREQ 445000000
+static const int64_t imx335_2dl_link_frequency[] = {
+	IMX335_2DL_LINK_FREQ,
+};
 
 enum imx335_res {
 	IMX335_RES_2592x1944,
@@ -50,7 +53,7 @@ struct imx335_config {
 struct imx335_ctrls {
 	struct video_ctrl gain;
 	struct video_ctrl exposure;
-	struct video_ctrl pixel_rate;
+	struct video_ctrl link_freq;
 	struct video_ctrl test_pattern;
 };
 
@@ -731,16 +734,13 @@ static int imx335_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	ret = video_init_ctrl(
-		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
-		(struct video_ctrl_range){
-			.min64 = IMX335_PIXEL_RATE,
-			.max64 = IMX335_PIXEL_RATE,
-			.step64 = 1,
-			.def64 = IMX335_PIXEL_RATE});
+	ret = video_init_int_menu_ctrl(&ctrls->link_freq, dev, VIDEO_CID_LINK_FREQ, 0,
+				       imx335_2dl_link_frequency,
+				       ARRAY_SIZE(imx335_2dl_link_frequency));
 	if (ret < 0) {
 		return ret;
 	}
+	ctrls->link_freq.flags |= VIDEO_CTRL_FLAG_READ_ONLY;
 
 	return video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
 				   imx335_test_pattern_menu);
