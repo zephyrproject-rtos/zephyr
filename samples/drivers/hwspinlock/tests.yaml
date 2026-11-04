@@ -21,6 +21,8 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - mimxrt1180_evk/mimxrt1189/cm33
       - frdm_imxrt1186/mimxrt1186/cm33
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1160_evk/mimxrt1166/cm7
     integration_platforms:
       - frdm_mcxn947/mcxn947/cpu0
     harness: console
