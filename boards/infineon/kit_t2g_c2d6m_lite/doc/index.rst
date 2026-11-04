@@ -75,6 +75,24 @@ Build for the Cortex®-M7 Core 1:
 
 .. note:: Per the CYT4DN start-up sequence, only the Cortex®-M0+ core is released from reset by ROM/flash boot. The Cortex®-M0+ application is responsible for enabling the Cortex®-M7 cores: it sets ``CLK_HF1`` for CM7_0 and CM7_1, programs the vector table bases (``CM7_0_VECTOR_TABLE_BASE`` at ``0x40200200`` and ``CM7_1_VECTOR_TABLE_BASE`` at ``0x40200600``), enables power for both M7 cores, clears ``CPU_WAIT``, and releases the cores from reset.
 
+Symmetric multiprocessing
+-------------------------
+
+The ``kit_t2g_c2d6m_lite/cyt4dnjbzs/m7/smp`` target runs one SMP kernel on both Cortex®-M7 cores.
+The Cortex®-M0+ starts Core 0, which then powers on Core 1. The system timer is a TCPWM counter,
+and the data cache is disabled since it is not coherent between the cores.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p
+   :gen-args: -DCONFIG_SOC_SERIES_CYT4DN_START_M7_0=y
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :board: kit_t2g_c2d6m_lite/cyt4dnjbzs/m7/smp
+   :goals: build
+
 Flashing
 ========
 

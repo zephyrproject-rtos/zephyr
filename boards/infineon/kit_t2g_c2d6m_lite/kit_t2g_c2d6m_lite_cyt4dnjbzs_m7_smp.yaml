@@ -1,0 +1,23 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: kit_t2g_c2d6m_lite/cyt4dnjbzs/m7/smp
+name: Kit T2G C2D6M Lite (M7 SMP)
+type: mcu
+arch: arm
+ram: 224
+flash: 2656
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - gpio
+  - i2c
+  - pwm
+  - smp
+  - uart
+vendor: infineon
