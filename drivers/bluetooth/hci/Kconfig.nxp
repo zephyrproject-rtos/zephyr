@@ -128,6 +128,10 @@ config HEAP_MEM_POOL_ADD_SIZE_BT_NXP
 	int
 	default 256
 
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_BT_NXP
+	int
+	default 2048
+
 config FLASH
 	default y
 
