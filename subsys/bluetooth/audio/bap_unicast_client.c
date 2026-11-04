@@ -2960,9 +2960,9 @@ static bool valid_unicast_group_param(struct bt_bap_unicast_group *unicast_group
 		return false;
 	}
 
-	if (param->params_count > UNICAST_GROUP_STREAM_CNT) {
+	if (param->params_count > UNICAST_GROUP_CIS_CNT) {
 		LOG_DBG("Too many streams provided: %u/%u", param->params_count,
-			UNICAST_GROUP_STREAM_CNT);
+			UNICAST_GROUP_CIS_CNT);
 		return false;
 	}
 
@@ -3049,15 +3049,15 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 				  const struct bt_bap_unicast_group_param *param)
 {
-	struct bt_iso_chan_io_qos rx_io_qos_backup[UNICAST_GROUP_STREAM_CNT];
-	struct bt_iso_chan_io_qos tx_io_qos_backup[UNICAST_GROUP_STREAM_CNT];
+	struct bt_iso_chan_io_qos rx_io_qos_backup[UNICAST_GROUP_CIS_CNT];
+	struct bt_iso_chan_io_qos tx_io_qos_backup[UNICAST_GROUP_CIS_CNT];
 	struct bt_bap_unicast_group_cig_param cig_param_backup;
 	struct bt_bap_stream *tmp_stream;
 	size_t idx;
 	int err;
 
 	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS,
-		   (uint8_t num_subevents_backup[UNICAST_GROUP_STREAM_CNT]));
+		   (uint8_t num_subevents_backup[UNICAST_GROUP_CIS_CNT]));
 
 	if (unicast_group == NULL) {
 		LOG_DBG("unicast_group is NULL");
@@ -3186,9 +3186,9 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
 		total_stream_cnt++;
 	}
 
-	if (total_stream_cnt > UNICAST_GROUP_STREAM_CNT) {
+	if (total_stream_cnt > UNICAST_GROUP_CIS_CNT) {
 		LOG_DBG("Too many streams provided: %u/%u", total_stream_cnt,
-			UNICAST_GROUP_STREAM_CNT);
+			UNICAST_GROUP_CIS_CNT);
 		return -EINVAL;
 	}
 

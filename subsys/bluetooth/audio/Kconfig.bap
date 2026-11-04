@@ -87,7 +87,7 @@ config BT_BAP_UNICAST_CLIENT_GROUP_COUNT
 	  This option sets the number of connected audio groups to support as
 	  the unicast client.
 
-config BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT
+config BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT
 	int "Basic Audio Profile Unicast Group Connected Isochronous Stream (CIS) count"
 	depends on BT_BAP_UNICAST_CLIENT_GROUP_COUNT > 0
 	default 1

@@ -87,7 +87,7 @@ static struct bt_conn *connected_conns[CAP_AC_MAX_CONN];
 static size_t connected_conn_cnt;
 static const struct named_lc3_preset *snk_named_preset;
 static const struct named_lc3_preset *src_named_preset;
-static struct bt_cap_stream *non_idle_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+static struct bt_cap_stream *non_idle_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 static size_t non_idle_streams_cnt;
 
 CREATE_FLAG(flag_discovered);

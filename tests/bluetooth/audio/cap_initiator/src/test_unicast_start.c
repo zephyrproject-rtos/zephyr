@@ -40,21 +40,21 @@
 
 BUILD_ASSERT(CONFIG_BT_MAX_CONN * (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
 				   CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT) >=
-	     CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
+	     CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT);
 
 /* Either BT_AUDIO_DIR_SINK or BT_AUDIO_DIR_SOURCE */
 #define INDEX_TO_DIR(_idx) (((_idx) & 1U) + 1U)
 
 struct cap_initiator_test_unicast_start_fixture {
 	struct bt_cap_unicast_group_stream_pair_param
-		group_pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
-	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+		group_pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
+	struct bt_cap_stream cap_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	struct bt_cap_unicast_group_stream_param
-		group_stream_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+		group_stream_param[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	struct bt_bap_ep *snk_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 	struct bt_bap_ep *src_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 	struct bt_cap_unicast_audio_start_stream_param
-		audio_start_stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+		audio_start_stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 	struct bt_cap_unicast_audio_start_param audio_start_param;
 	struct bt_cap_unicast_group *unicast_group;
 	struct bt_cap_unicast_group_param group_param;
@@ -150,7 +150,7 @@ static void init_default_params(struct cap_initiator_test_unicast_start_fixture 
 	}
 
 	fixture->audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
-	fixture->audio_start_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT;
+	fixture->audio_start_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT;
 	fixture->audio_start_param.stream_params = fixture->audio_start_stream_params;
 }
 
@@ -187,8 +187,7 @@ static void cap_initiator_test_unicast_start_after(void *f)
 	zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
 
 	if (fixture->unicast_group != NULL) {
-		struct bt_cap_stream
-			*cap_stream_ptrs[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
+		struct bt_cap_stream *cap_stream_ptrs[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT];
 		const struct bt_cap_unicast_audio_stop_param param = {
 			.type = BT_CAP_SET_TYPE_AD_HOC,
 			.count = ARRAY_SIZE(fixture->cap_streams),
@@ -328,7 +327,7 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 {
 	int err;
 
-	fixture->audio_start_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT + 1U;
+	fixture->audio_start_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_CIS_COUNT + 1U;
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
