@@ -143,6 +143,7 @@ enum {
 	SMP_FLAG_BOND,		/* if bonding */
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
+	SMP_FLAG_PAIRING_REQ,	/* if a start has claimed sending the Pairing Request */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as periph) */
 	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
 	SMP_FLAG_BR_CONNECTED,	/* if BR/EDR channel is connected */
@@ -2872,11 +2873,11 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 
 static int smp_init(struct bt_smp *smp)
 {
-	/* SMP_FLAG_SEC_REQ is claimed before this runs and has to stay set for
-	 * the whole procedure, so the flags are cleared without ever dropping
-	 * it.
+	/* SMP_FLAG_SEC_REQ and SMP_FLAG_PAIRING_REQ are claimed before this runs
+	 * and have to stay set for the whole procedure, so the flags are cleared
+	 * without ever dropping them.
 	 */
-	(void)atomic_and(smp->flags, BIT(SMP_FLAG_SEC_REQ));
+	(void)atomic_and(smp->flags, BIT(SMP_FLAG_SEC_REQ) | BIT(SMP_FLAG_PAIRING_REQ));
 
 	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
@@ -3364,6 +3365,7 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	struct bt_smp *smp;
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
+	int err;
 
 	LOG_DBG("");
 
@@ -3384,11 +3386,6 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return 0;
 	}
 
-	/* pairing is in progress */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
-		return -EBUSY;
-	}
-
 	/* Encryption is in progress */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
 		return -EBUSY;
@@ -3399,20 +3396,31 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
+	/* Claimed before the allocation below, which can block: a second start
+	 * meanwhile must not initialize the context and send its own request.
+	 * smp_reset() gives it up with the other flags.
+	 */
+	if (atomic_test_and_set_bit(smp->flags, SMP_FLAG_PAIRING_REQ)) {
+		return -EBUSY;
+	}
+
 	if (!conn->le.keys) {
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 		if (!conn->le.keys) {
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto not_started;
 		}
 	}
 
 	if (smp_init(smp)) {
-		return -ENOBUFS;
+		err = -ENOBUFS;
+		goto not_started;
 	}
 
 	req_buf = smp_create_pdu(smp, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
 	if (!req_buf) {
-		return -ENOBUFS;
+		err = -ENOBUFS;
+		goto not_started;
 	}
 
 	req = net_buf_add(req_buf, sizeof(*req));
@@ -3456,6 +3464,11 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
 	return 0;
+
+not_started:
+	atomic_clear_bit(smp->flags, SMP_FLAG_PAIRING_REQ);
+
+	return err;
 }
 
 static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
@@ -4358,6 +4371,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_security_request *req = (void *)buf->data;
 	uint8_t auth;
+	int err;
 
 	LOG_DBG("");
 
@@ -4445,7 +4459,13 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 pair:
-	if (smp_send_pairing_req(conn) < 0) {
+	err = smp_send_pairing_req(conn);
+	if (err == -EBUSY) {
+		/* An application thread got there first */
+		return 0;
+	}
+
+	if (err < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
