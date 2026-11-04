@@ -1016,7 +1016,7 @@ static struct bt_conn *get_conn_ready(void)
 			sys_slist_remove(&bt_dev.le.conn_ready, prev, &conn->_conn_ready);
 
 			/* Append connection to list if it is connected and still has data */
-			if (conn->has_data(conn) && (conn->state == BT_CONN_CONNECTED)) {
+			if ((conn->state == BT_CONN_CONNECTED) && conn->has_data(conn)) {
 				LOG_DBG("appending %p to back of TX queue", conn);
 				bt_conn_data_ready(conn);
 			}

@@ -531,6 +531,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		bt_iso_cleanup_acl(chan->iso);
 
 		if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
+			chan->iso->iso.chan = NULL;
 			bt_conn_drop(&chan->iso);
 #if defined(CONFIG_BT_ISO_CENTRAL)
 		} else {
@@ -580,7 +581,7 @@ void bt_iso_disconnected(struct bt_conn *iso)
 
 	chan = iso_chan(iso);
 	if (chan == NULL) {
-		LOG_ERR("Could not lookup chan from disconnected ISO");
+		LOG_DBG("No chan for disconnected ISO %p", iso);
 		return;
 	}
 
@@ -2479,7 +2480,7 @@ static bool iso_chans_connecting(void)
 		}
 
 		iso_chan = iso_chan(iso);
-		if (iso_chan->state == BT_ISO_STATE_CONNECTING) {
+		if (iso_chan != NULL && iso_chan->state == BT_ISO_STATE_CONNECTING) {
 			return true;
 		}
 	}
