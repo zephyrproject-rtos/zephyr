@@ -304,6 +304,31 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 	return ret;
 }
 
+/*
+ * Move a running TX stream to I2S_STATE_ERROR after an underrun, detected
+ * either by the TX DMA callback or by the SAI FIFO error interrupt. Per the
+ * I2S API, i2s_write() then fails with -EIO until a PREPARE or DROP trigger.
+ *
+ * Stop feeding the FIFO but keep the transmitter enabled, so the bit and
+ * frame clocks keep running for an RX stream (or an external device)
+ * clocked from this TX. Mask the FIFO error interrupt, which would otherwise
+ * fire on every frame while the FIFO is empty. The queued buffers are kept;
+ * the PREPARE/DROP trigger performs the full disable.
+ *
+ * Called in interrupt context.
+ */
+static void i2s_tx_stream_set_error(const struct device *dev)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+	struct stream *strm = &dev_data->tx;
+	I2S_Type *base = get_base(dev);
+
+	strm->state = I2S_STATE_ERROR;
+	SAI_TxDisableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
+	SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, false);
+	dma_stop(dev_data->dev_dma, strm->dma_channel);
+}
+
 /* This function is executed in the interrupt context */
 static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
 				int status)
@@ -316,6 +341,15 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 	int ret;
 
 	LOG_DBG("tx cb");
+
+	if (strm->state == I2S_STATE_ERROR) {
+		/*
+		 * The SAI ISR already flagged a TX underrun and stopped the DMA.
+		 * This is a completion that was pending at that point. Leave the
+		 * queues and the transmitter alone, PREPARE/DROP cleans them up.
+		 */
+		return;
+	}
 
 	ret = k_msgq_get(&strm->out_queue, &q_entry, K_NO_WAIT);
 	if (ret == 0) {
@@ -367,20 +401,13 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 		goto disabled_exit_no_drop;
 	}
 
-	LOG_WRN("TX input queue empty!");
-	if (strm->free_tx_dma_blocks >= MAX_TX_DMA_BLOCKS) {
-		/* In running state, no TX blocks for transferring, so stop
-		 * TX (This will disable bit clock to avoid dummy bits
-		 * received in RX side.
-		 */
-		I2S_Type *base = get_base(dev);
-
-		SAI_TxEnable(base, false);
-		strm->state = I2S_STATE_READY;
-		LOG_WRN("TX is paused.");
-	}
+	/*
+	 * RUNNING with every DMA block consumed and nothing queued: this is a
+	 * TX underrun.
+	 */
+	LOG_ERR("TX underrun");
+	i2s_tx_stream_set_error(dev);
 	goto enabled_exit;
-
 
 disabled_exit_no_drop:
 	i2s_tx_stream_disable(dev, false);
@@ -787,6 +814,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		dev_data->tx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->tx.dma_cfg.user_data = (void *)dev;
 		dev_data->tx.state = I2S_STATE_READY;
+		SAI_TxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
 	} else {
 		/* For RX, DMA reads from FIFO whenever data present */
 		config.fifo.fifoWatermark = 0;
@@ -938,6 +966,13 @@ static int i2s_tx_stream_start(const struct device *dev)
 	 * previous run of the stream
 	 */
 	base->TCSR |= I2S_TCSR_FR_MASK;
+
+	/*
+	 * A previous underrun masked the FIFO error interrupt. Clear any stale
+	 * FIFO error flag and unmask it again for the new run.
+	 */
+	SAI_TxClearStatusFlags(base, kSAI_FIFOErrorFlag);
+	SAI_TxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
 
 	/* Enable DMA enable bit */
 	SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
@@ -1222,28 +1257,16 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 		return ret;
 	}
 
-	if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks >= MAX_TX_DMA_BLOCKS) {
-		uint8_t blocks_queued = 0;
-		I2S_Type *base = get_base(dev);
-		/* As DMA has been stopped because reloading failure in TX callback,
-		 * here is a good place to reload it and resume TX.
-		 */
-		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
-		if (ret == 0 && blocks_queued > 0) {
-			SAI_TxEnable(base, true);
-			LOG_WRN("TX is resumed");
-		} else {
-			LOG_ERR("TX block reload err, TX is not resumed");
-			return ret;
-		}
-	} else if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks > 0) {
+	if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks > 0) {
 		uint8_t blocks_queued = 0;
 		/*
 		 * DMA is still running but has free TCD slots. Hand the new block
 		 * to the DMA now instead of waiting for the next TX callback.
 		 * Otherwise the DMA can finish its last queued block before the
-		 * callback reloads it and the TX FIFO underruns although the
-		 * application wrote data in time.
+		 * callback reloads it, the FIFO underruns and the stream moves to
+		 * I2S_STATE_ERROR although the application wrote data in time.
+		 * Once the DMA has run dry the stream is in I2S_STATE_ERROR and
+		 * the state check above already rejected the write.
 		 */
 		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
 		if (ret != 0) {
@@ -1261,9 +1284,19 @@ static void sai_driver_irq(const struct device *dev)
 	struct i2s_dev_data *dev_data = dev->data;
 
 	if ((base->TCSR & I2S_TCSR_FEF_MASK) == I2S_TCSR_FEF_MASK) {
+		struct stream *strm = &dev_data->tx;
+
+		/*
+		 * Handle the underrun exactly like the TX DMA callback does, so
+		 * that the outcome does not depend on which of the two detects
+		 * it first. Only PREPARE/DROP performs the full disable.
+		 */
+		if (strm->state == I2S_STATE_RUNNING) {
+			i2s_tx_stream_set_error(dev);
+		}
+
 		/* Clear FIFO error flag to continue transfer */
 		SAI_TxClearStatusFlags(base, I2S_TCSR_FEF_MASK);
-
 		/* Reset FIFO for safety */
 		SAI_TxSoftwareReset(base, kSAI_ResetTypeFIFO);
 
