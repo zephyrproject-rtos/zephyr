@@ -5195,7 +5195,7 @@ failed:
 
 int bt_disable(void)
 {
-	bool was_ready;
+	int reset_err = 0;
 	int err;
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
@@ -5220,9 +5220,9 @@ int bt_disable(void)
 		return -ENOSYS;
 	}
 
-	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
-	 * bt_enable() failed after opening the transport, in which case a
-	 * failed disable must not set it either.
+	/* Clear BT_DEV_READY before disabling HCI link. A failed disable
+	 * does not set it again: from here on, the Host tears down state that
+	 * cannot be brought back.
 	 *
 	 * The TX processor holds the host lock for a whole pass, so with the
 	 * lock held here no pass is under way in another thread when the
@@ -5230,7 +5230,7 @@ int bt_disable(void)
 	 * later one holds back what is queued for the connections.
 	 */
 	bt_dev_lock();
-	was_ready = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
 	bt_dev_unlock();
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -5264,22 +5264,27 @@ int bt_disable(void)
 		(void)k_work_cancel_sync(&rx_work, &sync);
 	}
 
-	/* Reset the Controller */
+	/* Reset the Controller. When that fails, go on as with a driver that
+	 * has the no-reset quirk: what has been torn down so far cannot be
+	 * brought back, and closing the transport is what lets bt_enable()
+	 * try again, which resets the Controller first. The caller is told, as
+	 * the Controller may go on with what it was doing.
+	 */
 	if (!drv_quirk_no_reset()) {
-
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Failed to reset BLE controller");
-			if (was_ready) {
-				atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-				/* Resume sending the data that was held back */
-				bt_tx_irq_raise();
-			}
-			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
-			return err;
-		}
+		if (err == 0) {
+			hci_reset_complete();
+		} else {
+			LOG_ERR("Failed to reset the Controller (err %d)", err);
+			reset_err = -EHOSTDOWN;
 
-		hci_reset_complete();
+			/* What the Controller reports before the next reset
+			 * must not reach the callback of a scan that ends here.
+			 */
+			if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+				bt_scan_softreset();
+			}
+		}
 	}
 
 	/* Tear down the connections after the reset, if any, until which the
@@ -5312,8 +5317,9 @@ int bt_disable(void)
 		/* The transport is still open, but what has been torn down
 		 * cannot be brought back: the connections are gone, and the
 		 * controller has been reset unless the driver has the
-		 * no-reset quirk. So the stack is left not ready, where all
-		 * that can be done is to try the disable again.
+		 * no-reset quirk or the reset failed. So the stack is left not
+		 * ready, where all that can be done is to try the disable
+		 * again.
 		 */
 		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
@@ -5354,7 +5360,7 @@ int bt_disable(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 
-	return 0;
+	return reset_err;
 }
 
 bool bt_is_ready(void)

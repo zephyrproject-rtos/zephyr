@@ -47,6 +47,7 @@ enum bt_le_scan_user {
 	BT_LE_SCAN_USER_NUM_FLAGS,
 };
 
+void bt_scan_softreset(void);
 void bt_scan_reset(void);
 
 bool bt_id_scan_random_addr_check(void);
