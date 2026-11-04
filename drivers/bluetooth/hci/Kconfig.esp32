@@ -12,7 +12,7 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	  Additional heap size reserved for Bluetooth driver usage.
 
 configdefault BT_HCI_ACL_FLOW_CONTROL
-	default y
+	default y if BT_BUF_ACL_RX_SIZE >= 255
 
 choice ESP_BT_HEAP
 	prompt "Bluetooth heap type"
