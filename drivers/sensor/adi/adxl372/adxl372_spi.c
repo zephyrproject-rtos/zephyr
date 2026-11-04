@@ -7,14 +7,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_adxl372
-
 #include <string.h>
 #include <zephyr/logging/log.h>
 
 #include "adxl372.h"
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#ifdef ADXL372_BUS_SPI
 
 LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -116,4 +114,4 @@ int adxl372_spi_init(const struct device *dev)
 	return 0;
 }
 
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+#endif /* ADXL372_BUS_SPI */

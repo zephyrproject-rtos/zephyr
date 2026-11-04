@@ -20,6 +20,22 @@
 
 LOG_MODULE_REGISTER(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
+const struct adxl372_chip_info adxl372_chip_info[] = {
+	[ADXL372_CHIP_ID] = {
+		.odr_hz = {400, 800, 1600, 3200, 6400},
+		.scale_mg = ADXL372_SCALE_MG,
+		.shift = 11,
+	},
+	[ADXL373_CHIP_ID] = {
+		.odr_hz = {320, 640, 1280, 2560, 5120},
+		.scale_mg = ADXL373_SCALE_MG,
+		.shift = 12,
+	},
+};
+
+BUILD_ASSERT(ARRAY_SIZE(adxl372_chip_info) == ADXL372_CHIP_COUNT,
+	     "adxl372_chip_info needs an entry for every chip id");
+
 /**
  * Set the threshold for activity detection for a single axis
  * @param dev - The device structure.
@@ -521,6 +537,7 @@ int adxl372_configure_fifo(const struct device *dev, enum adxl372_fifo_mode mode
 int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 			   struct adxl372_xyz_accel_data *accel_data)
 {
+	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_data *data = dev->data;
 	uint8_t buf[6];
 	uint8_t status1;
@@ -537,6 +554,7 @@ int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 #ifdef CONFIG_ADXL372_STREAM
 	accel_data->is_fifo = 0;
 #endif /* CONFIG_ADXL372_STREAM */
+	accel_data->chip_id = cfg->chip_id;
 	accel_data->x = (buf[0] << 8) | (buf[1] & 0xF0);
 	accel_data->y = (buf[2] << 8) | (buf[3] & 0xF0);
 	accel_data->z = (buf[4] << 8) | (buf[5] & 0xF0);
@@ -549,28 +567,23 @@ static int adxl372_attr_set_odr(const struct device *dev,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
-	enum adxl372_odr odr;
+	const struct adxl372_dev_config *cfg = dev->config;
+	const struct adxl372_chip_info *chip = &adxl372_chip_info[cfg->chip_id];
 	struct adxl372_data *data = dev->data;
+	enum adxl372_odr odr;
+	size_t i;
 
-	switch (val->val1) {
-	case 400:
-		odr = ADXL372_ODR_400HZ;
-		break;
-	case 800:
-		odr = ADXL372_ODR_800HZ;
-		break;
-	case 1600:
-		odr = ADXL372_ODR_1600HZ;
-		break;
-	case 3200:
-		odr = ADXL372_ODR_3200HZ;
-		break;
-	case 6400:
-		odr = ADXL372_ODR_6400HZ;
-		break;
-	default:
+	for (i = 0; i < ARRAY_SIZE(chip->odr_hz); i++) {
+		if (val->val1 == chip->odr_hz[i]) {
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(chip->odr_hz)) {
 		return -EINVAL;
 	}
+
+	odr = (enum adxl372_odr)i;
 
 	int ret = adxl372_set_odr(dev, odr);
 
@@ -593,7 +606,8 @@ static int adxl372_attr_set_thresh(const struct device *dev,
 	int64_t micro_ms2 = val->val1 * 1000000LL + val->val2;
 	uint8_t reg;
 
-	llvalue = llabs((micro_ms2 * 10) / SENSOR_G);
+	llvalue = llabs((micro_ms2 * 1000) /
+			((int64_t)SENSOR_G * adxl372_chip_info[cfg->chip_id].scale_mg));
 
 	if (llvalue > 2047) {
 		return -EINVAL;
@@ -652,13 +666,15 @@ static int adxl372_sample_fetch(const struct device *dev,
 				      &data->sample);
 }
 
-void adxl372_accel_convert(struct sensor_value *val, int16_t value)
+void adxl372_accel_convert(struct sensor_value *val, int16_t value, uint8_t chip_id)
 {
 	/*
-	 * Sensor resolution is 100mg/LSB, 12-bit value needs to be right
-	 * shifted by 4 or divided by 16. Overall this results in a scale of 160
+	 * Sensor resolution is scale_mg mg/LSB, 12-bit value needs to be right
+	 * shifted by 4 or divided by 16. For 100 mg/LSB this results in a
+	 * scale of 160.
 	 */
-	int32_t micro_ms2 = value * (SENSOR_G / (16 * 1000 / 100));
+	int64_t micro_ms2 =
+		value * (SENSOR_G / (16 * 1000 / adxl372_chip_info[chip_id].scale_mg));
 
 	val->val1 = micro_ms2 / 1000000;
 	val->val2 = micro_ms2 % 1000000;
@@ -668,22 +684,23 @@ static int adxl372_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
+	const struct adxl372_dev_config *cfg = dev->config;
 	struct adxl372_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
-		adxl372_accel_convert(val, data->sample.x);
+		adxl372_accel_convert(val, data->sample.x, cfg->chip_id);
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
-		adxl372_accel_convert(val, data->sample.y);
+		adxl372_accel_convert(val, data->sample.y, cfg->chip_id);
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
-		adxl372_accel_convert(val, data->sample.z);
+		adxl372_accel_convert(val, data->sample.z, cfg->chip_id);
 		break;
 	case SENSOR_CHAN_ACCEL_XYZ:
-		adxl372_accel_convert(val++, data->sample.x);
-		adxl372_accel_convert(val++, data->sample.y);
-		adxl372_accel_convert(val, data->sample.z);
+		adxl372_accel_convert(val++, data->sample.x, cfg->chip_id);
+		adxl372_accel_convert(val++, data->sample.y, cfg->chip_id);
+		adxl372_accel_convert(val, data->sample.z, cfg->chip_id);
 		break;
 	default:
 		return -ENOTSUP;
@@ -846,21 +863,31 @@ static int adxl372_init(const struct device *dev)
 	return 0;
 }
 
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
+#if DT_NUM_INST_STATUS_OKAY(adi_adxl372) + DT_NUM_INST_STATUS_OKAY(adi_adxl373) == 0
 #warning "ADXL372 driver enabled without any devices"
 #endif
+
+/* The activity thresholds are 11-bit codes of scale_mg each */
+#define ADXL372_THRESH_MAX	2047
+
+#define ADXL372_CHECK_THRESH(part)							\
+	BUILD_ASSERT(CONFIG_ADXL372_ACTIVITY_THRESHOLD / part##_SCALE_MG <=		\
+		     ADXL372_THRESH_MAX &&						\
+		     CONFIG_ADXL372_INACTIVITY_THRESHOLD / part##_SCALE_MG <=		\
+		     ADXL372_THRESH_MAX,						\
+		     "ADXL372 (in)activity threshold out of range for " #part)
 
 /*
  * Device creation macro, shared by ADXL372_DEFINE_SPI() and
  * ADXL372_DEFINE_I2C().
  */
 
-#define ADXL372_DEVICE_INIT(inst)					\
+#define ADXL372_DEVICE_INIT(inst, part)					\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			      adxl372_init,				\
 			      NULL,					\
-			      &adxl372_data_##inst,			\
-			      &adxl372_config_##inst,			\
+			      &adxl372_data_##part##_##inst,		\
+			      &adxl372_config_##part##_##inst,		\
 			      POST_KERNEL,				\
 			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &adxl372_api_funcs);
@@ -870,9 +897,9 @@ static int adxl372_init(const struct device *dev)
  */
 #define ADXL372_SPI_CFG SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
-#define ADXL372_RTIO_DEFINE(inst)                                                                 \
-	SPI_DT_IODEV_DEFINE(adxl372_iodev_##inst, DT_DRV_INST(inst), ADXL372_SPI_CFG);            \
-	RTIO_DEFINE(adxl372_rtio_ctx_##inst, 16, 16);
+#define ADXL372_RTIO_DEFINE(inst, part)                                                           \
+	SPI_DT_IODEV_DEFINE(adxl372_iodev_##part##_##inst, DT_DRV_INST(inst), ADXL372_SPI_CFG);   \
+	RTIO_DEFINE(adxl372_rtio_ctx_##part##_##inst, 16, 16);
 
 #ifdef CONFIG_ADXL372_TRIGGER
 #define ADXL372_CFG_IRQ(inst) \
@@ -881,20 +908,24 @@ static int adxl372_init(const struct device *dev)
 #define ADXL372_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL372_TRIGGER */
 
-#define ADXL372_CONFIG(inst)								\
+#define ADXL372_CONFIG(inst, part)							\
 		.bw = DT_INST_PROP(inst, bw),						\
 		.hpf = DT_INST_PROP(inst, hpf),						\
 		.odr = DT_INST_PROP(inst, odr),						\
+		.chip_id = part##_CHIP_ID,						\
 		.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),	\
 		.th_mode = ADXL372_INSTANT_ON_LOW_TH,					\
 		.autosleep = false,							\
+		/* wake-up rate code 0: 52 ms on the ADXL372, 65 ms on the ADXL373 */	\
 		.wur = ADXL372_WUR_52ms,						\
-		.activity_th.thresh = CONFIG_ADXL372_ACTIVITY_THRESHOLD / 100,		\
+		.activity_th.thresh =							\
+			CONFIG_ADXL372_ACTIVITY_THRESHOLD / part##_SCALE_MG,		\
 		.activity_th.referenced =						\
 			IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),	\
 		.activity_th.enable = 1,						\
 		.activity_time = CONFIG_ADXL372_ACTIVITY_TIME,				\
-		.inactivity_th.thresh = CONFIG_ADXL372_INACTIVITY_THRESHOLD / 100,	\
+		.inactivity_th.thresh =							\
+			CONFIG_ADXL372_INACTIVITY_THRESHOLD / part##_SCALE_MG,		\
 		.inactivity_th.referenced =						\
 			IS_ENABLED(CONFIG_ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE),	\
 		.inactivity_th.enable = 1,						\
@@ -907,51 +938,62 @@ static int adxl372_init(const struct device *dev)
 			DT_INST_PROP_OR(inst, fifo_watermark, 0x80),			\
 		.op_mode = ADXL372_FULL_BW_MEASUREMENT,					\
 
-#define ADXL372_CONFIG_SPI(inst)					\
+#define ADXL372_CONFIG_SPI(inst, part)					\
 	{								\
 		.bus_init = adxl372_spi_init,				\
 		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL372_SPI_CFG),	\
-		ADXL372_CONFIG(inst)					\
+		ADXL372_CONFIG(inst, part)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL372_CFG_IRQ(inst)), ())				\
 	}
 
-#define ADXL372_DEFINE_SPI(inst)					\
-	IF_ENABLED(CONFIG_ADXL372_STREAM, (ADXL372_RTIO_DEFINE(inst)));                          \
-	static struct adxl372_data adxl372_data_##inst = {			\
-	IF_ENABLED(CONFIG_ADXL372_STREAM, (.rtio_ctx = &adxl372_rtio_ctx_##inst,                  \
-				.iodev = &adxl372_iodev_##inst,)) \
+#define ADXL372_DEFINE_SPI(inst, part)					\
+	IF_ENABLED(CONFIG_ADXL372_STREAM, (ADXL372_RTIO_DEFINE(inst, part)));                    \
+	static struct adxl372_data adxl372_data_##part##_##inst = {		\
+	IF_ENABLED(CONFIG_ADXL372_STREAM, (.rtio_ctx = &adxl372_rtio_ctx_##part##_##inst,         \
+				.iodev = &adxl372_iodev_##part##_##inst,)) \
 	};     \
-	static const struct adxl372_dev_config adxl372_config_##inst =	\
-		ADXL372_CONFIG_SPI(inst);				\
-	ADXL372_DEVICE_INIT(inst)
+	static const struct adxl372_dev_config adxl372_config_##part##_##inst = \
+		ADXL372_CONFIG_SPI(inst, part);				\
+	ADXL372_DEVICE_INIT(inst, part)
 
 /*
  * Instantiation macros used when a device is on an I2C bus.
  */
 
-#define ADXL372_CONFIG_I2C(inst)					\
+#define ADXL372_CONFIG_I2C(inst, part)					\
 	{								\
 		.bus_init = adxl372_i2c_init,				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
-		ADXL372_CONFIG(inst)					\
+		ADXL372_CONFIG(inst, part)				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
 		(ADXL372_CFG_IRQ(inst)), ())				\
 	}
 
-#define ADXL372_DEFINE_I2C(inst)					\
-	static struct adxl372_data adxl372_data_##inst;			\
-	static const struct adxl372_dev_config adxl372_config_##inst =	\
-		ADXL372_CONFIG_I2C(inst);				\
-	ADXL372_DEVICE_INIT(inst)
+#define ADXL372_DEFINE_I2C(inst, part)					\
+	static struct adxl372_data adxl372_data_##part##_##inst;		\
+	static const struct adxl372_dev_config adxl372_config_##part##_##inst = \
+		ADXL372_CONFIG_I2C(inst, part);				\
+	ADXL372_DEVICE_INIT(inst, part)
 /*
  * Main instantiation macro. Use of COND_CODE_1() selects the right
  * bus-specific macro at preprocessor time.
  */
 
-#define ADXL372_DEFINE(inst)						\
+#define ADXL372_DEFINE(inst, part)					\
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				\
-		    (ADXL372_DEFINE_SPI(inst)),				\
-		    (ADXL372_DEFINE_I2C(inst)))
+		    (ADXL372_DEFINE_SPI(inst, part)),			\
+		    (ADXL372_DEFINE_I2C(inst, part)))
 
-DT_INST_FOREACH_STATUS_OKAY(ADXL372_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADXL372_DEFINE, ADXL372)
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+ADXL372_CHECK_THRESH(ADXL372);
+#endif
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_adxl373
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADXL372_DEFINE, ADXL373)
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+ADXL372_CHECK_THRESH(ADXL373);
+#endif
+#undef DT_DRV_COMPAT

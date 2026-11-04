@@ -6,21 +6,18 @@
 
 #include "adxl372.h"
 
-/* (1.0 / 10 (sensor sensitivity)) * (2^31 / 2^11 (sensor shift) ) * SENSOR_G */
+#define DT_DRV_COMPAT adi_adxl372
+
+/*
+ * (1.0 / 10 (sensor sensitivity)) * (2^31 / 2^11 (sensor shift) ) * SENSOR_G
+ * A part with twice the sensitivity per LSB uses a shift one larger, so the
+ * factor holds for every part in adxl372_chip_info[].
+ */
 #define SENSOR_QSCALE_FACTOR UINT32_C(1027604)
-#define ADXL372_ACCEL_SHIFT 11
 
 #ifdef CONFIG_ADXL372_STREAM
 
 #define ADXL372_COMPLEMENT         0xf000
-
-static const uint32_t accel_period_ns[] = {
-	[ADXL372_ODR_400HZ] = UINT32_C(1000000000) / 400,
-	[ADXL372_ODR_800HZ] = UINT32_C(1000000000) / 800,
-	[ADXL372_ODR_1600HZ] = UINT32_C(1000000000) / 1600,
-	[ADXL372_ODR_3200HZ] = UINT32_C(1000000000) / 3200,
-	[ADXL372_ODR_6400HZ] = UINT32_C(1000000000) / 6400,
-};
 
 static inline void adxl372_accel_convert_q31(q31_t *out, const uint8_t *buff)
 {
@@ -48,8 +45,10 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 
 	struct sensor_three_axis_data *data = (struct sensor_three_axis_data *)data_out;
 
+	const struct adxl372_chip_info *chip = &adxl372_chip_info[enc_data->chip_id];
+
 	memset(data, 0, sizeof(struct sensor_three_axis_data));
-	data->shift = 11; /* Sensor shift */
+	data->shift = chip->shift;
 
 	buffer += sizeof(struct adxl372_fifo_data);
 
@@ -59,7 +58,7 @@ static int adxl372_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		return -ENODATA;
 	}
 
-	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	uint64_t period_ns = NSEC_PER_SEC / chip->odr_hz[enc_data->accel_odr];
 	uint16_t total_samples = enc_data->fifo_byte_count / sample_set_size;
 
 	data->header.base_timestamp_ns =
@@ -249,7 +248,7 @@ static int adxl372_decode_sample(const struct adxl372_xyz_accel_data *data,
 	memset(out, 0, sizeof(*out));
 	out->header.base_timestamp_ns = k_ticks_to_ns_floor64(k_uptime_ticks());
 	out->header.reading_count = 1;
-	out->shift = ADXL372_ACCEL_SHIFT;
+	out->shift = adxl372_chip_info[data->chip_id].shift;
 
 	switch (chan_spec.chan_type) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -314,6 +313,7 @@ SENSOR_DECODER_API_DT_DEFINE() = {
 	.has_trigger = adxl372_decoder_has_trigger,
 };
 
+/* Both compatibles share the decoder ops: the encoded data names the part */
 int adxl372_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
 {
 	ARG_UNUSED(dev);
@@ -321,3 +321,12 @@ int adxl372_get_decoder(const struct device *dev, const struct sensor_decoder_ap
 
 	return 0;
 }
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_adxl373
+SENSOR_DECODER_API_DT_DEFINE() = {
+	.get_frame_count = adxl372_decoder_get_frame_count,
+	.decode = adxl372_decoder_decode,
+	.has_trigger = adxl372_decoder_has_trigger,
+};
+#undef DT_DRV_COMPAT
