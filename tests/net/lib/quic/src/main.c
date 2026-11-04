@@ -9010,4 +9010,143 @@ ZTEST(net_socket_quic, test_510_client_retry_rejects_late_retry_without_mutation
 			  "Late Retry must preserve peer CID");
 }
 
+/* Open the connection socket of a client, to get a connection context to
+ * hang test endpoints on. No handshake runs on it.
+ */
+static struct quic_context *open_test_client(int *sock, const char *local, const char *remote)
+{
+	struct net_sockaddr_storage local_addr;
+	struct net_sockaddr_storage remote_addr;
+	struct quic_context *ctx;
+	bool ok;
+
+	ok = net_ipaddr_parse(local, strlen(local), (struct net_sockaddr *)&local_addr);
+	zassert_true(ok, "Failed to parse address %s", local);
+	ok = net_ipaddr_parse(remote, strlen(remote), (struct net_sockaddr *)&remote_addr);
+	zassert_true(ok, "Failed to parse address %s", remote);
+
+	prepare_quic_socket(sock, (const struct net_sockaddr *)&remote_addr,
+			    (const struct net_sockaddr *)&local_addr);
+
+	ctx = quic_get_context(*sock);
+	zassert_not_null(ctx, "Could not get QUIC context");
+
+	return ctx;
+}
+
+/* Hand a payload with one CONNECTION_CLOSE frame to the frame parser, with
+ * the endpoint attached to the context.
+ */
+static int connection_close_from_peer(struct quic_endpoint *ep, struct quic_context *ctx,
+				      const uint8_t *payload, size_t len)
+{
+	bool ack_only = false;
+	int ret;
+
+	/* The parser drops a reference when it gives up on the connection */
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, len, len, &ack_only);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+ZTEST(net_socket_quic, test_553_peer_connection_close_is_kept)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint8_t app_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+		0x41, 0x00, /* Error code 0x100 */
+		0,          /* Reason phrase length */
+	};
+	const uint8_t transport_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		0x0a,       /* Error code PROTOCOL_VIOLATION */
+		0x08,       /* Frame type STREAM */
+		3, 'b', 'a', 'd',
+	};
+	struct quic_peer_close close;
+	struct quic_context *ctx;
+	net_socklen_t optlen;
+	int sock;
+	int ret;
+
+	ctx = open_test_client(&sock, "127.0.0.1:19958", "127.0.0.1:54358");
+
+	/* Nothing to read before the peer closes */
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_equal(ret, -1, "Peer close read before any close (%d)", ret);
+	zassert_equal(errno, ENOTCONN, "Expected ENOTCONN before any close (%d)", errno);
+
+	ret = connection_close_from_peer(ep, ctx, app_close, sizeof(app_close));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_ok(ret, "Failed to read the peer close (%d)", -errno);
+	zassert_equal(optlen, sizeof(close), "Unexpected option length %u", optlen);
+	zassert_true(close.application, "Expected an application close");
+	zassert_equal(close.error_code, 0x100, "Error code 0x%" PRIx64, close.error_code);
+	zassert_equal(close.frame_type, 0, "Frame type 0x%" PRIx64, close.frame_type);
+
+	/* The connection is draining after the first close, a later one
+	 * does not replace it.
+	 */
+	ep = reset_test_ep(&test_ep_a);
+	ret = connection_close_from_peer(ep, ctx, transport_close, sizeof(transport_close));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_ok(ret, "Failed to read the peer close (%d)", -errno);
+	zassert_true(close.application, "The first close was replaced");
+	zassert_equal(close.error_code, 0x100, "Error code 0x%" PRIx64, close.error_code);
+
+	/* A buffer too small for the answer is refused */
+	optlen = sizeof(close) - 1;
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_equal(ret, -1, "Peer close read into a short buffer (%d)", ret);
+	zassert_equal(errno, ENOBUFS, "Expected ENOBUFS for a short buffer (%d)", errno);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+
+	/* A transport close carries the type of the frame that caused it */
+	ctx = open_test_client(&sock, "127.0.0.1:19957", "127.0.0.1:54358");
+
+	ep = reset_test_ep(&test_ep_a);
+	ret = connection_close_from_peer(ep, ctx, transport_close, sizeof(transport_close));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_ok(ret, "Failed to read the peer close (%d)", -errno);
+	zassert_false(close.application, "Expected a transport close");
+	zassert_equal(close.error_code, 0x0a, "Error code 0x%" PRIx64, close.error_code);
+	zassert_equal(close.frame_type, 0x08, "Frame type 0x%" PRIx64, close.frame_type);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+
+	/* A connection that closes before it is accepted is still on the
+	 * listening context, which does not report its close.
+	 */
+	ctx = open_test_listener(&sock, "127.0.0.1:54358");
+
+	ep = reset_test_ep(&test_ep_a);
+	ret = connection_close_from_peer(ep, ctx, app_close, sizeof(app_close));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_equal(ret, -1, "Listening socket reports the close of a connection (%d)", ret);
+	zassert_equal(errno, ENOTCONN, "Expected ENOTCONN on a listening socket (%d)", errno);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
