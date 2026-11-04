@@ -1535,10 +1535,12 @@ static void le_conn_complete_adv_timeout(void)
 		struct bt_conn *conn;
 
 		/* Handle advertising timeout after high duty cycle directed
-		 * advertising.
+		 * advertising. The advertiser is gone if bt_disable() has let
+		 * go of it and failed to close the transport.
 		 */
-
-		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+		if (adv != NULL) {
+			atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+		}
 
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 		    !BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
@@ -4721,6 +4723,14 @@ static void le_conn_complete_prio(uint8_t role)
 	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
+
+		/* bt_disable() lets go of the advertiser before the controller
+		 * has stopped advertising.
+		 */
+		if (adv == NULL) {
+			return;
+		}
+
 		/* Clear advertising even if we are not able to add connection
 		 * object to keep host in sync with controller state.
 		 */

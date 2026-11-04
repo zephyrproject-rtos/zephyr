@@ -490,6 +490,11 @@ static ZTEST(bt_disable, test_command_response_too_long)
 	struct net_buf *rsp = NULL;
 	int err;
 
+	/* The commands of extended advertising make the buffers long enough */
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		ztest_test_skip();
+	}
+
 	err = bt_hci_cmd_send_sync(TEST_OP_LONG_RSP, NULL, &rsp);
 	zassert_equal(err, -EIO, "Unexpected result %d for a response that is too long", err);
 	zassert_is_null(rsp, "A response was handed over");
@@ -708,7 +713,10 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static void connect_as_peripheral(void)
+/* The controller reports a connection to its advertiser or, with an error
+ * status, the end of its directed advertising.
+ */
+static void conn_complete_recv(uint8_t status)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const bt_addr_le_t peer = {
@@ -719,22 +727,27 @@ static void connect_as_peripheral(void)
 	struct bt_hci_evt_le_meta_event *meta;
 	struct net_buf *buf;
 
-	zassert_ok(bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0U, NULL, 0U),
-		   "Advertising failed to start");
-
 	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
 	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta) + sizeof(*evt));
 	meta = net_buf_add(buf, sizeof(*meta));
 	meta->subevent = BT_HCI_EVT_LE_CONN_COMPLETE;
 	evt = net_buf_add(buf, sizeof(*evt));
 	(void)memset(evt, 0, sizeof(*evt));
-	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->status = status;
 	evt->handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
 	evt->role = BT_HCI_ROLE_PERIPHERAL;
 	bt_addr_le_copy(&evt->peer_addr, &peer);
 	evt->interval = sys_cpu_to_le16(BT_GAP_INIT_CONN_INT_MIN);
 	evt->supv_timeout = sys_cpu_to_le16(BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
 	bt_hci_recv(dev, buf);
+}
+
+static void connect_as_peripheral(void)
+{
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0U, NULL, 0U),
+		   "Advertising failed to start");
+
+	conn_complete_recv(BT_HCI_ERR_SUCCESS);
 
 	zassert_ok(k_sem_take(&connected_sem, K_SECONDS(1)), "No connection");
 }
@@ -921,6 +934,66 @@ static ZTEST(bt_disable, test_disconnection_at_open)
 
 	zassert_ok(bt_disable(), "Bluetooth disable failed");
 	bt_conn_drop(&test_conn);
+}
+
+static atomic_t conn_complete_sent;
+
+static void conn_complete_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	conn_complete_recv(BT_HCI_ERR_SUCCESS);
+	atomic_set(&conn_complete_sent, 1);
+}
+
+static K_WORK_DELAYABLE_DEFINE(conn_complete_work, conn_complete_handler);
+
+/* bt_disable() lets go of the advertiser, while the controller goes on
+ * advertising until it is reset and can report a connection until then. With
+ * extended advertising built in and a controller without it, the Host has no
+ * advertiser left to look at.
+ */
+static ZTEST(bt_disable, test_connection_during_disable)
+{
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0U, NULL, 0U),
+		   "Advertising failed to start");
+
+	atomic_clear(&conn_complete_sent);
+	reset_rsp_delay = K_MSEC(20);
+	(void)k_work_schedule(&conn_complete_work, K_MSEC(10));
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_true(atomic_get(&conn_complete_sent) != 0, "The connection was not reported");
+}
+
+/* The same for the end of directed advertising, which arrives once the driver
+ * has failed to close the transport and the Host processes what it receives
+ * again.
+ */
+static ZTEST(bt_disable, test_adv_timeout_after_close_failure)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U),
+		   "Advertising failed to start");
+
+	close_err = -EIO;
+	err = bt_disable();
+	zassert_equal(err, -EIO, "bt_disable() gave %d (!= %d)", err, -EIO);
+
+	conn_complete_recv(BT_HCI_ERR_ADV_TIMEOUT);
+	k_sleep(K_MSEC(10));
+
+	close_err = 0;
+	zassert_ok(bt_disable(), "Retrying the disable failed");
 }
 
 ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
