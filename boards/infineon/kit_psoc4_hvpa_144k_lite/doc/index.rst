@@ -91,6 +91,20 @@ system clock source. The clock path is:
 - **CLK_HF**: 48 MHz (system clock)
 - **CLK_PUMP**: IMO (analog pump clock)
 
+The delta-sigma ADC modulator clock (3 MHz) is generated from CLK_HF by the
+peripheral divider ``peri_clk_div1`` (divide by 16), which must be enabled
+together with ``adc0``.
+
+ADC
+===
+
+The PSOC™ 4 HVPA 144K delta-sigma ADC (PACSS) is supported through the standard
+Zephyr ADC API. Each ADC channel maps to one of the four digital channels and is
+configured with the standard ``zephyr,*`` channel properties. Input selection
+values are defined in :zephyr_file:`include/zephyr/dt-bindings/adc/infineon-dsadc.h`.
+See :zephyr_file:`samples/drivers/adc/adc_dt/boards/kit_psoc4_hvpa_144k_lite.overlay`
+for an example.
+
 SRAM ECC
 ========
 
