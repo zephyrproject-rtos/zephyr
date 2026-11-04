@@ -55,6 +55,7 @@ tests:
       - nucleo_h753zi
       - nucleo_l152re
       - stm32n6570_dk/stm32n657xx/sb
+      - pic32cm_sg00_cpro
     integration_platforms:
       - nrf54h20dk/nrf54h20/cpuapp
   drivers.uart.uart_elementary.esp.pm:
@@ -125,7 +126,7 @@ tests:
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
       - CONFIG_SETUP_MISMATCH_TEST=y
-  drivers.uart.uart_elementary_dual_nrf54l:
+  drivers.uart.uart_elementary_dual:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
@@ -142,6 +143,7 @@ tests:
       - nrf7120dk/nrf7120e/cpuflpr
       - ophelia4ev/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuflpr
+      - pic32cm_sg00_cpro
     extra_args:
       - FILE_SUFFIX="dual_uart"
     extra_configs:

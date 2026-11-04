@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ *   PB15 (SERCOM0 TX, EXT1 PIN14) <-> PB16 (SERCOM0 RX, EXT1 PIN13)
+ */
+
+dut: &sercom0 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom0_uart_default>;
+	dmas = <&dmac 2 4>, <&dmac 3 5>;
+	dma-names = "rx", "tx";
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PB15D_SERCOM0_PAD0>,
+				 <PB16D_SERCOM0_PAD1>;
+		};
+	};
+};
