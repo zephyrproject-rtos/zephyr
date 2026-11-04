@@ -65,36 +65,13 @@ struct video_esp32_data {
 	struct dma_block_config dma_blocks[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
 };
 
-static int video_esp32_reload_dma(struct video_esp32_data *data)
-{
-	const struct video_esp32_config *cfg = data->config;
-	int ret = 0;
-
-	if (data->active_vbuf == NULL) {
-		LOG_ERR("No video buffer available. Enqueue some buffers first.");
-		return -EAGAIN;
-	}
-
-	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
-			 data->active_vbuf->bytesused);
-	if (ret < 0) {
-		LOG_ERR("Unable to reload DMA (%d)", ret);
-		return ret;
-	}
-
-	ret = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
-	if (ret < 0) {
-		LOG_ERR("Unable to start DMA (%d)", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t channel,
+void video_esp32_dma_rx_done(const struct device *dma_dev, void *user_data, uint32_t channel,
 			     int status)
 {
 	struct video_esp32_data *data = user_data;
+	const struct device *dev = data->vdev.dev;
+	const struct video_esp32_config *cfg = dev->config;
+	int ret;
 
 	if (status == DMA_STATUS_BLOCK) {
 		LOG_DBG("received block");
@@ -115,14 +92,26 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 
 	data->active_buf->timestamp = k_uptime_get_32();
 	video_buffer_done(dev, data->active_vbuf, 0);
-	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 
+	data->active_vbuf = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (data->active_vbuf == NULL) {
 		LOG_WRN("Frame dropped. No buffer available");
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
 		return;
 	}
-	video_esp32_reload_dma(data);
+
+	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
+			 data->vdev.out_fmt.size);
+	if (ret < 0) {
+		LOG_ERR("Unable to reload DMA (%d)", ret);
+		return;
+	}
+
+	ret = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
+	if (ret < 0) {
+		LOG_ERR("Unable to start DMA (%d)", ret);
+		return;
+	}
 }
 
 static int video_esp32_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -132,7 +121,7 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	struct dma_status dma_status = {0};
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config *dma_block_iter = data->dma_blocks;
-	uint32_t buffer_size = 0;
+	uint32_t buffer_size = data->vdev.out_fmt.size;
 	int error = 0;
 
 	if (!enable) {
@@ -178,7 +167,6 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		return -EAGAIN;
 	}
 
-	buffer_size = data->active_vbuf->bytesused;
 	memset(data->dma_blocks, 0, sizeof(data->dma_blocks));
 	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
 		dma_block_iter->dest_address =
@@ -233,7 +221,6 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 static int video_esp32_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct video_esp32_config *config = dev->config;
 	struct video_esp32_data *data = dev->data;
 
 	/* Two buffers are needed to perform transfers */
