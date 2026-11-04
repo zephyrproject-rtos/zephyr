@@ -1,11 +1,18 @@
 # Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+config SOC_ESP32_LPCORE_TARGET
+	bool
+	default y if SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || SOC_ESP32P4_LPCORE
+	help
+	  This hidden configuration defines that the build targets the
+	  LP core image of an Espressif SoC.
+
 menu "Ultra Low Power (ULP) Coprocessor"
 
 config ESP32_ULP_COPROC_ENABLED
 	bool "Ultra Low Power (ULP) Coprocessor"
-	default y if SOC_ESP32C5_LPCORE || SOC_ESP32C6_LPCORE || SOC_ESP32P4_LPCORE || MBOX_ESP32
+	default y if SOC_ESP32_LPCORE_TARGET || MBOX_ESP32
 	select SOC_LATE_INIT_HOOK if SOC_ESP32C5_HPCORE || SOC_ESP32C6_HPCORE || SOC_ESP32P4_HPCORE
 	help
 	  Enable this feature if you plan to use the ULP Coprocessor.
