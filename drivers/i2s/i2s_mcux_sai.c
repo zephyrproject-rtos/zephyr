@@ -187,8 +187,8 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	dma_stop(dev_dma, strm->dma_channel);
 
-	/* wait for TX FIFO to drain before disabling, if not disabled already */
-	if ((base->TCSR & I2S_TCSR_TE_MASK) != 0UL) {
+	if (!drop && ((base->TCSR & I2S_TCSR_TE_MASK) != 0UL)) {
+		/* wait for TX FIFO to drain before disabling, if not disabled already */
 		while ((base->TCSR & I2S_TCSR_FWF_MASK) == 0) {
 			;
 		}
@@ -208,6 +208,10 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	/* purge buffers queued in the stream */
 	i2s_purge_stream_buffers(strm, dev_data->tx.cfg.mem_slab, drop, drop);
+	if (drop) {
+		strm->free_tx_dma_blocks = MAX_TX_DMA_BLOCKS;
+		strm->last_block = false;
+	}
 }
 
 static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool out_drop)
@@ -821,60 +825,89 @@ const struct i2s_config *i2s_mcux_config_get(const struct device *dev, enum i2s_
 static int i2s_tx_stream_start(const struct device *dev)
 {
 	int ret = 0;
-	struct i2s_q_entry q_entry = {0};
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
 	const struct device *dev_dma = dev_data->dev_dma;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = get_base(dev);
+	struct i2s_q_entry pending[CONFIG_I2S_TX_BLOCK_COUNT];
+	size_t pending_cnt = 0;
+	struct dma_block_config *blk_cfg = &strm->dma_block;
+	uint32_t data_path = strm->start_channel;
+	uint8_t blocks_queued;
 
-	/* retrieve entry from input queue */
-	ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
-	if (ret != 0) {
-		LOG_ERR("No entry in input queue to start");
-		return -EIO;
+	/* 1) If STOP left pending buffers in out_queue, collect them */
+	while (k_msgq_get(&strm->out_queue, &pending[pending_cnt], K_NO_WAIT) == 0) {
+		pending_cnt++;
+		if (pending_cnt >= ARRAY_SIZE(pending)) {
+			break;
+		}
 	}
 
-	LOG_DBG("tx stream start");
+	/* 2) If no pending buffers, use normal start from in_queue */
+	if (pending_cnt == 0) {
+		ret = k_msgq_get(&strm->in_queue, &pending[pending_cnt], K_NO_WAIT);
+		if (ret != 0) {
+			LOG_ERR("No entry in input queue to start");
+			return -EIO;
+		}
+		pending_cnt++;
+	}
 
-	/* Driver keeps track of how many DMA blocks can be loaded to the DMA */
+	/*
+	 * 3) Put the pending buffers back on out_queue, in the order the TX DMA
+	 * callback frees them. Do this before any call that can fail, so that
+	 * the START error path (i2s_tx_stream_disable() with drop) returns them
+	 * to the slab instead of leaking them.
+	 */
+	for (size_t i = 0; i < pending_cnt; i++) {
+		ret = k_msgq_put(&strm->out_queue, &pending[i], K_NO_WAIT);
+		if (ret != 0) {
+			LOG_ERR("failed to rebuild out_queue (%d)", ret);
+			return ret;
+		}
+	}
+
+	/* 4) Reset DMA bookkeeping */
 	strm->free_tx_dma_blocks = MAX_TX_DMA_BLOCKS;
 
-	/* Configure the DMA with the first TX block */
-	struct dma_block_config *blk_cfg = &strm->dma_block;
-
-	memset(blk_cfg, 0, sizeof(struct dma_block_config));
-
-	uint32_t data_path = strm->start_channel;
-
+	/* 5) Configure DMA with first pending buffer */
+	memset(blk_cfg, 0, sizeof(*blk_cfg));
 	blk_cfg->dest_address = (uintptr_t)&base->TDR[data_path];
-	blk_cfg->source_address = (uintptr_t)q_entry.mem_block;
-	blk_cfg->block_size = q_entry.size;
+	blk_cfg->source_address = (uintptr_t)pending[0].mem_block;
+	blk_cfg->block_size = pending[0].size;
 	blk_cfg->dest_scatter_en = 1;
 
 	strm->dma_cfg.block_count = 1;
-
-	strm->dma_cfg.head_block = &strm->dma_block;
+	strm->dma_cfg.head_block = blk_cfg;
 	strm->dma_cfg.user_data = (void *)dev;
 
-	(strm->free_tx_dma_blocks)--;
-	dma_config(dev_dma, strm->dma_channel, &strm->dma_cfg);
-
-	/* put entry in output queue */
-	ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
+	strm->free_tx_dma_blocks--;
+	ret = dma_config(dev_dma, strm->dma_channel, &strm->dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("failed to put entry in output queue");
+		LOG_ERR("dma_config() failed with error 0x%x", ret);
 		return ret;
 	}
 
-	uint8_t blocks_queued;
+	/* 6) Reload remaining pending buffers (pending[1..]) into DMA first */
+	for (size_t i = 1; i < pending_cnt && strm->free_tx_dma_blocks; i++) {
+		ret = dma_reload(dev_dma, strm->dma_channel, (uintptr_t)pending[i].mem_block,
+				 (uintptr_t)&base->TDR[data_path], pending[i].size);
+		if (ret != 0) {
+			LOG_ERR("dma_reload(pending) failed (0x%x)", ret);
+			return ret;
+		}
+		strm->free_tx_dma_blocks--;
+	}
 
+	/* 7) Then queue new blocks from in_queue as usual */
 	ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
 	if (ret) {
 		LOG_ERR("i2s_tx_reload_multiple_dma_blocks() failed (%d)", ret);
 		return ret;
 	}
 
+	LOG_DBG("Starting DMA Ch%u", strm->dma_channel);
 	ret = dma_start(dev_dma, strm->dma_channel);
 	if (ret < 0) {
 		LOG_ERR("dma_start failed (%d)", ret);
@@ -1071,6 +1104,10 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 		strm->state = I2S_STATE_STOPPING;
 		strm->last_block = true;
+		if (strm->free_tx_dma_blocks == MAX_TX_DMA_BLOCKS && dir == I2S_DIR_TX) {
+			i2s_tx_stream_disable(dev, true);
+			strm->state = I2S_STATE_READY;
+		}
 		break;
 
 	case I2S_TRIGGER_DRAIN:
