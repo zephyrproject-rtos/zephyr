@@ -192,7 +192,7 @@ static inline void gpio0_int_handler(const struct device *port,
 static void enable_gpio0_interrupt(const struct device *dev, bool enable)
 {
 	const struct cc1200_config *cfg = dev->config;
-	gpio_flags_t mode = enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE;
+	gpio_flags_t mode = enable ? GPIO_INT_EDGE_BOTH : GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, mode);
 }
