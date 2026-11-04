@@ -12,7 +12,7 @@
 #elif defined(CONFIG_RISCV)
 #include <hal/nrf_vpr_clic.h>
 #elif defined(CONFIG_ARCH_POSIX)
-#include <cmsis.h>
+#include <soc.h>
 #else
 #error "Unsupported CPU."
 #endif
