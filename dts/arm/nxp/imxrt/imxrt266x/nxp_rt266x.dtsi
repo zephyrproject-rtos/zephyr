@@ -95,6 +95,159 @@
  */
 
 &peripheral {
+	/* Non-core masters default to the CPU's domain; boards and overlays may override them. */
+	trdc_main: trdc@40040000 {
+		compatible = "nxp,trdc";
+		reg = <0x40040000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trdc_main_edma5_ch0_1: master@0 {
+			reg = <0>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch2_3: master@1 {
+			reg = <1>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch4_5: master@2 {
+			reg = <2>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch6_7: master@3 {
+			reg = <3>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch8_9: master@4 {
+			reg = <4>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch10_11: master@5 {
+			reg = <5>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch12_13: master@6 {
+			reg = <6>;
+			domain-id = <0>;
+		};
+
+		trdc_main_edma5_ch14_15: master@7 {
+			reg = <7>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch0_1: master@8 {
+			reg = <8>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch2_3: master@9 {
+			reg = <9>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch4_5: master@a {
+			reg = <10>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch6_7: master@b {
+			reg = <11>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch8_9: master@c {
+			reg = <12>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch10_11: master@d {
+			reg = <13>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch12_13: master@e {
+			reg = <14>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch14_15: master@f {
+			reg = <15>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch16_17: master@10 {
+			reg = <16>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch18_19: master@11 {
+			reg = <17>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch20_21: master@12 {
+			reg = <18>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch22_23: master@13 {
+			reg = <19>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch24_25: master@14 {
+			reg = <20>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch26_27: master@15 {
+			reg = <21>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch28_29: master@16 {
+			reg = <22>;
+			domain-id = <0>;
+		};
+
+		trdc_main_medma3_ch30_31: master@17 {
+			reg = <23>;
+			domain-id = <0>;
+		};
+
+		trdc_main_dap_ahbp: master@1a {
+			reg = <26>;
+			domain-id = <0>;
+		};
+
+		trdc_main_etr: master@1b {
+			reg = <27>;
+			domain-id = <0>;
+		};
+
+		trdc_main_wake_ss: master@1e {
+			reg = <30>;
+			domain-id = <0>;
+		};
+
+		trdc_main_mtr: master@20 {
+			reg = <32>;
+			domain-id = <0>;
+		};
+
+		trdc_main_testport: master@21 {
+			reg = <33>;
+			domain-id = <0>;
+		};
+	};
+
 	/*
 	 * Clock distribution: seven CCM instances, one per subsystem. The HAL reaches
 	 * all of them through one flat identifier space, so any instance resolves any
@@ -1404,6 +1557,28 @@
 		status = "disabled";
 	};
 
+	trdc_cmpt: trdc@44040000 {
+		compatible = "nxp,trdc";
+		reg = <0x44040000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trdc_cmpt_llc_rd: master@4 {
+			reg = <4>;
+			domain-id = <0>;
+		};
+
+		trdc_cmpt_llc_wr: master@5 {
+			reg = <5>;
+			domain-id = <0>;
+		};
+
+		trdc_cmpt_npu: master@6 {
+			reg = <6>;
+			domain-id = <0>;
+		};
+	};
+
 	cmpt_ccm: clock-controller@44060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x44060000 0x4000>;
@@ -1420,6 +1595,33 @@
 			clock-mux = <IMX_CCM_MUX_SYSTICK0_SXOSC>;
 			clock-div = <1>;
 			nxp,root-id = <IMX_CCM_ROOT_CMPT_SYSTICK_CLK0>;
+		};
+	};
+
+	trdc_wake: trdc@46040000 {
+		compatible = "nxp,trdc";
+		reg = <0x46040000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trdc_wake_wedma3_ch0_1: master@0 {
+			reg = <0>;
+			domain-id = <0>;
+		};
+
+		trdc_wake_wedma3_ch2_3: master@1 {
+			reg = <1>;
+			domain-id = <0>;
+		};
+
+		trdc_wake_wedma3_ch4_5: master@2 {
+			reg = <2>;
+			domain-id = <0>;
+		};
+
+		trdc_wake_wedma3_ch6_7: master@3 {
+			reg = <3>;
+			domain-id = <0>;
 		};
 	};
 
@@ -1704,6 +1906,33 @@
 		};
 	};
 
+	trdc_audio: trdc@48040000 {
+		compatible = "nxp,trdc";
+		reg = <0x48040000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trdc_audio_aedma3_ch0_1: master@0 {
+			reg = <0>;
+			domain-id = <0>;
+		};
+
+		trdc_audio_aedma3_ch2_3: master@1 {
+			reg = <1>;
+			domain-id = <0>;
+		};
+
+		trdc_audio_aedma3_ch4_5: master@2 {
+			reg = <2>;
+			domain-id = <0>;
+		};
+
+		trdc_audio_aedma3_ch6_7: master@3 {
+			reg = <3>;
+			domain-id = <0>;
+		};
+	};
+
 	audio_ccm: clock-controller@48060000 {
 		compatible = "nxp,imx-ccm-rev3";
 		reg = <0x48060000 0x4000>;
@@ -1763,6 +1992,53 @@
 			     <275 0>, <276 0>, <277 0>, <278 0>;
 		nxp,version = <4>;
 		status = "disabled";
+	};
+
+	trdc_comm: trdc@4a040000 {
+		compatible = "nxp,trdc";
+		reg = <0x4a040000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trdc_comm_sdhc0: master@0 {
+			reg = <0>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_sdhc1: master@1 {
+			reg = <1>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_usb0: master@2 {
+			reg = <2>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_usb1: master@3 {
+			reg = <3>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_enet0: master@4 {
+			reg = <4>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_enet1_m0r: master@5 {
+			reg = <5>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_enet1_m0t: master@6 {
+			reg = <6>;
+			domain-id = <0>;
+		};
+
+		trdc_comm_xspi_resp: master@7 {
+			reg = <7>;
+			domain-id = <0>;
+		};
 	};
 
 	comm_ccm: clock-controller@4a060000 {
@@ -1874,6 +2150,88 @@
 		compatible = "nxp,usbphy";
 		reg = <0x4a0f0000 0x1000>;
 		status = "disabled";
+	};
+
+	trdc_media: trdc@4c040000 {
+		compatible = "nxp,trdc";
+		reg = <0x4c040000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		trdc_media_dcif_layer0: master@0 {
+			reg = <0>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer1: master@1 {
+			reg = <1>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer2: master@2 {
+			reg = <2>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer3: master@3 {
+			reg = <3>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer4: master@4 {
+			reg = <4>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer5: master@5 {
+			reg = <5>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer6: master@6 {
+			reg = <6>;
+			domain-id = <0>;
+		};
+
+		trdc_media_dcif_layer7: master@7 {
+			reg = <7>;
+			domain-id = <0>;
+		};
+
+		trdc_media_isi: master@8 {
+			reg = <8>;
+			domain-id = <0>;
+		};
+
+		trdc_media_isi_u: master@9 {
+			reg = <9>;
+			domain-id = <0>;
+		};
+
+		trdc_media_isi_v: master@a {
+			reg = <10>;
+			domain-id = <0>;
+		};
+
+		trdc_media_csi: master@b {
+			reg = <11>;
+			domain-id = <0>;
+		};
+
+		trdc_media_gpu_dma: master@c {
+			reg = <12>;
+			domain-id = <0>;
+		};
+
+		trdc_media_gpu_ccd: master@d {
+			reg = <13>;
+			domain-id = <0>;
+		};
+
+		trdc_media_jpeg: master@e {
+			reg = <14>;
+			domain-id = <0>;
+		};
 	};
 
 	media_ccm: clock-controller@4c060000 {
