@@ -1,0 +1,17 @@
+/*
+ * Copyright 2026, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mimxrt700_evk_mimxrt798s_cm33_cpu0.dts"
+
+&xspi0 {
+	reg = <0x50184000 0x1000>, <0x28000000 0x08000000>; /* 128 MB */
+};
+
+&sram0 {
+	reg = <0x20080000 0x005fe000>; /* 6136 KB */
+};
