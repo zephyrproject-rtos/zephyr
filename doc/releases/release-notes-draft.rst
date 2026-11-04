@@ -103,6 +103,11 @@ New APIs and options
   * Added PSA Protected Storage backend, enable with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
 
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -145,6 +150,11 @@ Libraries / Subsystems
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
+
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
 
 Devicetree
 **********
