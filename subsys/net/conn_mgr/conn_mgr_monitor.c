@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/dns_resolve.h>
 #include "conn_mgr_private.h"
+#include "net_private.h"
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
@@ -52,6 +53,12 @@ static struct net_if *last_blame_ipv6;
 /* Last reported DNS readiness */
 static bool last_dns_ready;
 
+/* Readiness gain counter, 0 until the first gain and skipping 0 on wrap, and its value at
+ * the last gain of each flag, indexed by flag bit. 0 in flag_gain_seq means never gained.
+ */
+static uint32_t gain_seq;
+static uint32_t flag_gain_seq[LOG2(CONN_MGR_READY_DNS) + 1];
+
 /* Address families of the configured unicast DNS servers: unbound and per interface */
 static uint32_t dns_unbound_families;
 static uint32_t dns_bound_families[CONN_MGR_IFACE_MAX];
@@ -61,6 +68,9 @@ K_SEM_DEFINE(conn_mgr_mon_updated, 1, 1);
 
 /* Used to protect conn_mgr_monitor state */
 K_MUTEX_DEFINE(conn_mgr_mon_lock);
+
+/* Signaled when a flag is gained */
+static K_CONDVAR_DEFINE(conn_mgr_mon_ready_gained);
 
 uint16_t *conn_mgr_if_state_internal(void)
 {
@@ -161,6 +171,63 @@ static bool conn_mgr_mon_iface_has_dns(int idx)
 	       ((iface_states[idx] & CONN_MGR_IF_READY_IPV6) && (families & BIT(NET_AF_INET6)));
 }
 
+/* Records a gain of flag. Must be called with conn_mgr_mon_lock held */
+static void conn_mgr_mon_record_gain(uint32_t flag)
+{
+	/* Skip 0 on wrap: it means "nothing seen yet" */
+	if (++gain_seq == 0U) {
+		gain_seq = 1U;
+	}
+	flag_gain_seq[find_lsb_set(flag) - 1] = gain_seq;
+
+	/* A gain of either IP family is a gain of any IP family */
+	if ((flag & (CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6)) != 0U) {
+		flag_gain_seq[find_lsb_set(CONN_MGR_READY_IP_ANY) - 1] = gain_seq;
+	}
+}
+
+/* True if a flag in mask was gained since last_seen. Must be called with conn_mgr_mon_lock held */
+static bool conn_mgr_mon_gained_since(uint32_t mask, uint32_t last_seen)
+{
+	while (mask != 0U) {
+		int i = find_lsb_set(mask) - 1;
+
+		/* Signed difference stays correct across counter wrap */
+		if ((flag_gain_seq[i] != 0U) &&
+		    ((last_seen == 0U) || ((int32_t)(flag_gain_seq[i] - last_seen) > 0))) {
+			return true;
+		}
+
+		mask &= ~BIT(i);
+	}
+
+	return false;
+}
+
+/* Must be called with conn_mgr_mon_lock held */
+static uint32_t conn_mgr_mon_ready_flags(void)
+{
+	uint32_t flags = 0U;
+
+	if (last_ready_count_ipv4 > 0U) {
+		flags |= CONN_MGR_READY_IPV4;
+	}
+
+	if (last_ready_count_ipv6 > 0U) {
+		flags |= CONN_MGR_READY_IPV6;
+	}
+
+	if ((flags & (CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6)) != 0U) {
+		flags |= CONN_MGR_READY_IP_ANY;
+	}
+
+	if (last_dns_ready) {
+		flags |= CONN_MGR_READY_DNS;
+	}
+
+	return flags;
+}
+
 static void conn_mgr_mon_handle_update(void)
 {
 	int idx;
@@ -179,14 +246,21 @@ static void conn_mgr_mon_handle_update(void)
 	int ready_count = 0;
 	int ready_count_ipv4 = 0;
 	int ready_count_ipv6 = 0;
+	uint64_t l4_event = 0U;
+	uint64_t ipv4_event = 0U;
+	uint64_t ipv6_event = 0U;
+	uint64_t dns_event = 0U;
 	struct net_if *blame = NULL;
 	struct net_if *blame_ipv4 = NULL;
 	struct net_if *blame_ipv6 = NULL;
 	bool dns_ready = false;
+	uint32_t prev_gain_seq;
 
 	conn_mgr_mon_dns_snapshot();
 
 	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+
+	prev_gain_seq = gain_seq;
 
 	for (idx = 0; idx < ARRAY_SIZE(iface_states); idx++) {
 		if (iface_states[idx] == 0) {
@@ -238,6 +312,14 @@ static void conn_mgr_mon_handle_update(void)
 			blame_ipv4 = conn_mgr_mon_get_if_by_index(idx);
 		}
 
+		/* Every iface becoming ready is a gain, also when the family already was */
+		if (is_ipv4_ready && !was_ipv4_ready) {
+			conn_mgr_mon_record_gain(CONN_MGR_READY_IPV4);
+		}
+		if (is_ipv6_ready && !was_ipv6_ready) {
+			conn_mgr_mon_record_gain(CONN_MGR_READY_IPV6);
+		}
+
 		/* Update readiness state flags with the (possibly) new values */
 		conn_mgr_mon_set_ready(idx, is_l4_ready, is_ipv4_ready, is_ipv6_ready);
 
@@ -250,10 +332,10 @@ static void conn_mgr_mon_handle_update(void)
 	if (ready_count != last_ready_count) {
 		if (ready_count == 0) {
 			/* We just lost connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_DISCONNECTED, blame);
+			l4_event = NET_EVENT_L4_DISCONNECTED;
 		} else if (last_ready_count == 0) {
 			/* We just gained connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_CONNECTED, blame);
+			l4_event = NET_EVENT_L4_CONNECTED;
 		}
 		last_ready_count = ready_count;
 		last_blame = blame;
@@ -263,10 +345,10 @@ static void conn_mgr_mon_handle_update(void)
 	if (ready_count_ipv4 != last_ready_count_ipv4) {
 		if (ready_count_ipv4 == 0) {
 			/* We just lost IPv4 connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_IPV4_DISCONNECTED, blame_ipv4);
+			ipv4_event = NET_EVENT_L4_IPV4_DISCONNECTED;
 		} else if (last_ready_count_ipv4 == 0) {
 			/* We just gained IPv4 connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_IPV4_CONNECTED, blame_ipv4);
+			ipv4_event = NET_EVENT_L4_IPV4_CONNECTED;
 		}
 		last_ready_count_ipv4 = ready_count_ipv4;
 		last_blame_ipv4 = blame_ipv4;
@@ -276,10 +358,10 @@ static void conn_mgr_mon_handle_update(void)
 	if (ready_count_ipv6 != last_ready_count_ipv6) {
 		if (ready_count_ipv6 == 0) {
 			/* We just lost IPv6 connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_IPV6_DISCONNECTED, blame_ipv6);
+			ipv6_event = NET_EVENT_L4_IPV6_DISCONNECTED;
 		} else if (last_ready_count_ipv6 == 0) {
 			/* We just gained IPv6 connectivity */
-			net_mgmt_event_notify(NET_EVENT_L4_IPV6_CONNECTED, blame_ipv6);
+			ipv6_event = NET_EVENT_L4_IPV6_CONNECTED;
 		}
 		last_ready_count_ipv6 = ready_count_ipv6;
 		last_blame_ipv6 = blame_ipv6;
@@ -288,8 +370,31 @@ static void conn_mgr_mon_handle_update(void)
 	/* Notify DNS availability */
 	if (dns_ready != last_dns_ready) {
 		last_dns_ready = dns_ready;
-		net_mgmt_event_notify(dns_ready ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_DNS_LOST,
-				      NULL);
+		if (dns_ready) {
+			conn_mgr_mon_record_gain(CONN_MGR_READY_DNS);
+		}
+		dns_event = dns_ready ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_DNS_LOST;
+	}
+
+	/* Notify only after all last_* state is updated,
+	 * allowing direct callbacks to read up-to-date readiness
+	 */
+	if (l4_event != 0U) {
+		net_mgmt_event_notify(l4_event, blame);
+	}
+	if (ipv4_event != 0U) {
+		net_mgmt_event_notify(ipv4_event, blame_ipv4);
+	}
+	if (ipv6_event != 0U) {
+		net_mgmt_event_notify(ipv6_event, blame_ipv6);
+	}
+	if (dns_event != 0U) {
+		net_mgmt_event_notify(dns_event, NULL);
+	}
+
+	/* Only gains can satisfy a waiter */
+	if (gain_seq != prev_gain_seq) {
+		k_condvar_broadcast(&conn_mgr_mon_ready_gained);
 	}
 
 	k_mutex_unlock(&conn_mgr_mon_lock);
@@ -354,6 +459,77 @@ bool conn_mgr_dns_is_ready(void)
 	/* Return the last reported value */
 	ret = last_dns_ready;
 	k_mutex_unlock(&conn_mgr_mon_lock);
+
+	return ret;
+}
+
+uint32_t conn_mgr_get_readiness(void)
+{
+	uint32_t flags;
+
+	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+	flags = conn_mgr_mon_ready_flags();
+	k_mutex_unlock(&conn_mgr_mon_lock);
+
+	return flags;
+}
+
+int conn_mgr_wait_ready(uint32_t mask, uint32_t *last_seen, k_timeout_t timeout)
+{
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+	uint32_t none_seen = 0U;
+	bool waited = false;
+	int ret;
+
+	if ((mask == 0U) || ((mask & ~(CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6 |
+				       CONN_MGR_READY_DNS | CONN_MGR_READY_IP_ANY)) != 0U)) {
+		return -EINVAL;
+	}
+
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) && net_mgmt_is_event_context()) {
+		LOG_ERR("Cannot wait for readiness from net_mgmt event context");
+		return -EDEADLK;
+	}
+
+	/* NULL behaves like a pointer to 0, without write-back */
+	if (last_seen == NULL) {
+		last_seen = &none_seen;
+	}
+
+	k_mutex_lock(&conn_mgr_mon_lock, K_FOREVER);
+
+	/* Recheck after every wake-up, including the one at timeout */
+	while (true) {
+		bool expired = sys_timepoint_expired(end);
+		bool ready = (conn_mgr_mon_ready_flags() & mask) == mask;
+
+		if (ready && (expired || conn_mgr_mon_gained_since(mask, *last_seen))) {
+			ret = 0;
+			break;
+		}
+
+		if (expired) {
+			ret = -EAGAIN;
+			break;
+		}
+
+		/* Log only when blocking on a mask not met, not for a retry delay while ready */
+		if (!ready && !waited) {
+			LOG_DBG("Waiting for network...");
+			waited = true;
+		}
+
+		(void)k_condvar_wait(&conn_mgr_mon_ready_gained, &conn_mgr_mon_lock,
+				     sys_timepoint_timeout(end));
+	}
+
+	*last_seen = gain_seq;
+
+	k_mutex_unlock(&conn_mgr_mon_lock);
+
+	if (waited && (ret == 0)) {
+		LOG_DBG("Network ready");
+	}
 
 	return ret;
 }
