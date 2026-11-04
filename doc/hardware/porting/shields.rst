@@ -248,6 +248,36 @@ Relevant devicetree node labels:
 - ``pico_spi``
 
 
+Pixhawk
+-------
+
+The `Pixhawk Connector Standard`_ defines the JST-GH ports found on flight controllers and
+their peripherals: two 6-pin ports (TELEM and GPS), the 10-pin full GPS port and two 4-pin
+ports (I2C and CAN). The
+``N`` in the labels below is the port number used by the board documentation, for example
+``pixhawk_telem1`` or ``pixhawk_can2``.
+
+Relevant devicetree node labels:
+
+- ``pixhawk_telemN_connector`` See :dtcompatible:`pixhawk-telem-connector` for GPIO pin
+  definitions.
+- ``pixhawk_telemN`` Serial port with hardware flow control.
+- ``pixhawk_gpsN_connector`` See :dtcompatible:`pixhawk-gps-connector` for GPIO pin definitions.
+- ``pixhawk_gpsN_serial``
+- ``pixhawk_gpsN_i2c``
+- ``pixhawk_full_gpsN_connector`` See :dtcompatible:`pixhawk-full-gps-connector` for GPIO pin
+  definitions.
+- ``pixhawk_full_gpsN_serial``
+- ``pixhawk_full_gpsN_i2c``
+- ``pixhawk_i2cN_connector`` See :dtcompatible:`pixhawk-i2c-connector` for GPIO pin definitions.
+- ``pixhawk_i2cN``
+- ``pixhawk_canN`` CAN controller wired to a CAN port (VCC, CAN_H, CAN_L, GND). The port has no
+  GPIO-capable pins, so it has no connector node.
+
+.. _Pixhawk Connector Standard:
+   https://github.com/pixhawk/Pixhawk-Standards
+
+
 ST Morpho
 ---------
 

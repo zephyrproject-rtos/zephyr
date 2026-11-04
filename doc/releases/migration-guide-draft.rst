@@ -56,6 +56,11 @@ Boards
   instead. ``stm32_min_dev_defconfig`` was renamed accordingly to
   :file:`stm32_min_dev_stm32f103x8_defconfig`.
 
+* :zephyr:board:`vmu_rt1170` no longer describes the GNSS module plugged into its GPS1 port: the
+  ``ist8310`` magnetometer and ``ncp5623c`` LED driver nodes, the ``arming_button`` key and the
+  ``sw0`` and ``mcuboot-button0`` aliases were removed. Describe the module with a shield or an
+  overlay that uses the ``pixhawk_full_gps1_i2c`` and ``pixhawk_full_gps1_connector`` node labels.
+
 Device Drivers and Devicetree
 *****************************
 
