@@ -63,7 +63,7 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 	irq_unlock(key);
 }
 
-unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
+static unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
 				      void *p2, void *p3, char *stack_ptr)
 {
 	ARG_UNUSED(thread);
