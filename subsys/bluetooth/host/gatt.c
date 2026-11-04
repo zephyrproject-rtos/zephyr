@@ -4030,6 +4030,11 @@ static void gatt_find_type_rsp(struct bt_conn *conn, int err,
 
 		LOG_DBG("start_handle 0x%04x end_handle 0x%04x", start_handle, end_handle);
 
+		if (start_handle == 0U || end_handle < start_handle) {
+			LOG_WRN("Invalid service range 0x%04x-0x%04x", start_handle, end_handle);
+			goto done;
+		}
+
 		uuid_svc.uuid.type = BT_UUID_TYPE_16;
 		if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 			uuid_svc.val = BT_UUID_GATT_PRIMARY_VAL;
@@ -4245,6 +4250,13 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		value.start_handle = sys_le16_to_cpu(incl->start_handle);
 		value.end_handle = sys_le16_to_cpu(incl->end_handle);
 
+		if (handle > params->end_handle || value.start_handle == 0U ||
+		    value.end_handle < value.start_handle) {
+			LOG_WRN("Skipping include 0x%04x of range 0x%04x-0x%04x", handle,
+				value.start_handle, value.end_handle);
+			continue;
+		}
+
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
 			value.uuid = &u.uuid;
@@ -4327,11 +4339,23 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		struct bt_gatt_chrc value;
 		const struct bt_att_data *data = pdu;
 		struct gatt_chrc *chrc = (void *)data->value;
+		uint16_t value_handle;
 
 		handle = sys_le16_to_cpu(data->handle);
 		/* Handle 0 is invalid */
 		if (!handle) {
 			goto done;
+		}
+
+		/* The value follows its declaration, inside the range the client asked for. Skip
+		 * rather than end the discovery: the client may have requests in flight for
+		 * characteristics already found in this PDU.
+		 */
+		value_handle = sys_le16_to_cpu(chrc->value_handle);
+		if (value_handle <= handle || value_handle > params->end_handle) {
+			LOG_WRN("Skipping characteristic 0x%04x with value handle 0x%04x", handle,
+				value_handle);
+			continue;
 		}
 
 		switch (u.uuid.type) {
@@ -4351,9 +4375,8 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 			continue;
 		}
 
-		value = (struct bt_gatt_chrc)BT_GATT_CHRC_INIT(
-			&u.uuid, sys_le16_to_cpu(chrc->value_handle),
-			chrc->properties);
+		value = (struct bt_gatt_chrc)BT_GATT_CHRC_INIT(&u.uuid, value_handle,
+							       chrc->properties);
 
 		attr = (struct bt_gatt_attr) {
 			.uuid = BT_UUID_GATT_CHRC,
@@ -4767,6 +4790,11 @@ static void gatt_find_info_rsp(struct bt_conn *conn, int err,
 
 		info.i16 = pdu;
 		handle = sys_le16_to_cpu(info.i16->handle);
+		/* Handle 0 is invalid */
+		if (handle == 0U) {
+			LOG_WRN("Invalid attribute handle 0x0000");
+			goto done;
+		}
 
 		if (skip) {
 			skip = false;
