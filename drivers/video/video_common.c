@@ -268,9 +268,11 @@ void video_buffer_done(const struct device *dev, struct video_buffer *buf, int e
 
 	switch (buf->type) {
 	case VIDEO_BUF_TYPE_INPUT:
+		LOG_DBG("%s is returning input buffer %p", dev->name, (void *)buf);
 		k_fifo_put(&vdev->in_buf_completed, buf);
 		break;
 	case VIDEO_BUF_TYPE_OUTPUT:
+		LOG_DBG("%s is returning output buffer %p", dev->name, (void *)buf);
 		k_fifo_put(&vdev->out_buf_completed, buf);
 		break;
 	default:
@@ -290,8 +292,10 @@ struct video_buffer *video_buffer_next(const struct device *dev, enum video_buf_
 
 	switch (type) {
 	case VIDEO_BUF_TYPE_INPUT:
+		LOG_DBG("%s is requesting next input buffer", dev->name);
 		return k_fifo_get(&vdev->in_buf_submitted, timeout);
 	case VIDEO_BUF_TYPE_OUTPUT:
+		LOG_DBG("%s is requesting next output buffer", dev->name);
 		return k_fifo_get(&vdev->out_buf_submitted, timeout);
 	default:
 		LOG_ERR("Unexpected buffer type %u", type);

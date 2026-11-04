@@ -157,6 +157,8 @@ int video_enqueue(const struct device *dev, struct video_buffer *buf)
 		return -EINVAL;
 	}
 
+	LOG_DBG("%s is enqueueing buffer %p", dev->name, (void *)buf);
+
 	vdev = dev->data;
 
 	video_buf[buf->index].type = buf->type;
@@ -218,6 +220,11 @@ int video_dequeue(const struct device *dev, struct video_buffer **vbuf,
 	}
 
 	*vbuf = k_fifo_get(fifo, timeout);
+	if (*vbuf == NULL) {
+		return -ETIMEDOUT;
+	}
+
+	LOG_DBG("%s is dequeueing buffer %p", dev->name, (void *)*vbuf);
 
 	return 0;
 }
