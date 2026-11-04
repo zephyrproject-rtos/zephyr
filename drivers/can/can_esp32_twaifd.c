@@ -11,13 +11,17 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
 #include <soc.h>
 #include <esp_clk_tree.h>
+#include <esp_rom_gpio.h>
+#include <hal/gpio_ll.h>
 #include <hal/twai_hal.h>
+#include <hal/twai_periph.h>
 #include <hal/twaifd_ll.h>
 #include <hal/twai_types.h>
 
@@ -112,7 +116,12 @@ static int can_esp32_twaifd_get_max_filters(const struct device *dev, bool ide)
 
 static int can_esp32_twaifd_set_mode(const struct device *dev, can_mode_t mode)
 {
+	const struct can_esp32_twaifd_config *cfg = dev->config;
 	struct can_esp32_twaifd_data *data = dev->data;
+	const twai_signal_conn_t *sig;
+	const struct pinctrl_state *state;
+	uint32_t rx_sig = ESP_SIG_INVAL;
+	int32_t tx_pin = -1;
 	can_mode_t caps = 0;
 	int err;
 
@@ -127,6 +136,39 @@ static int can_esp32_twaifd_set_mode(const struct device *dev, can_mode_t mode)
 
 	if ((mode & ~caps) != 0) {
 		return -ENOTSUP;
+	}
+
+	if ((mode & CAN_MODE_LOOPBACK) != 0U) {
+		err = pinctrl_lookup_state(cfg->pcfg, PINCTRL_STATE_DEFAULT, &state);
+		if (err != 0) {
+			return err;
+		}
+
+		sig = &twai_periph_signals[cfg->controller_id];
+
+		for (uint8_t i = 0U; i < state->pin_cnt; i++) {
+			uint32_t pinmux = state->pins[i].pinmux;
+
+			if (ESP32_PIN_SIGO(pinmux) == (uint32_t)sig->tx_sig) {
+				tx_pin = ESP32_PIN_NUM(pinmux);
+			}
+			if (ESP32_PIN_SIGI(pinmux) == (uint32_t)sig->rx_sig) {
+				rx_sig = ESP32_PIN_SIGI(pinmux);
+			}
+		}
+
+		if (tx_pin < 0 || rx_sig == ESP_SIG_INVAL) {
+			return -ENOTSUP;
+		}
+
+		/* Feed the RX input from the TX pad so loopback needs no external wiring */
+		gpio_ll_input_enable(GPIO_LL_GET_HW(0), tx_pin);
+		esp_rom_gpio_connect_in_signal(tx_pin, rx_sig, false);
+	} else {
+		err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
