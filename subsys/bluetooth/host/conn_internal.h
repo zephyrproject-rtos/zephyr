@@ -161,6 +161,17 @@ struct bt_conn_br {
 
 	struct bt_keys_link_key	*link_key;
 
+	/* Flush timeout in milliseconds that the Automatic Flush Timeout of the
+	 * link was set to, 0 if it was not. Set once, by the first flushable
+	 * channel, and kept until the link is disconnected.
+	 */
+	uint16_t		auto_flush_to;
+
+	/* Whether the L2CAP PDU being sent is automatically flushable. This is
+	 * an attribute of that PDU only, taken from its channel.
+	 */
+	bool			tx_pdu_flushable;
+
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 	/* For power mode */
 	uint8_t mode;
