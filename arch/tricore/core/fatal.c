@@ -103,7 +103,7 @@ static const char *const z_tricore_trap_cause_str(uint8_t trap_class, uint8_t ti
 	return trap_class_cause_str[trap_class][tin];
 }
 
-void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
+void z_tricore_fatal_error(uint32_t reason, const struct arch_esf *lower)
 {
 #if CONFIG_EXCEPTION_DEBUG
 	struct z_tricore_upper_context *upper = NULL;
