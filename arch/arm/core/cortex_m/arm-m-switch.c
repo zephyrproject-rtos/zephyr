@@ -173,7 +173,7 @@ uint32_t arm_m_switch_stack_buffer =
 uint32_t arm_m_switch_stack_buffer = sizeof(struct z_frame) - sizeof(struct hw_frame_base);
 #endif
 
-struct arm_m_cs_ptrs arm_m_cs_ptrs;
+struct arm_m_cs_ptrs arm_m_cs_ptrs[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_LTO
 /* Toolchain workaround: when building with LTO, gcc seems unable to
@@ -209,8 +209,8 @@ void *arm_m_lto_refs[2];
 /* Unit test hook, unused in production */
 void *arm_m_last_switch_handle;
 
-/* Global holder for the location of the saved LR in the entry frame. */
-uint32_t *arm_m_exc_lr_ptr;
+/* Per-CPU holder for the location of the saved LR in the entry frame. */
+uint32_t *arm_m_exc_lr_ptr[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Dummy used in arch_switch() when USERSPACE=y */
 uint32_t arm_m_switch_control;
@@ -397,6 +397,7 @@ bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr)
  */
 static void *arm_m_switch_to_cpu(void *sp)
 {
+	struct arm_m_cs_ptrs *cs = &arm_m_cs_ptrs[arm_m_cpu()];
 	union frame *f;
 	uint32_t splim;
 	bool padded;
@@ -455,21 +456,21 @@ static void *arm_m_switch_to_cpu(void *sp)
 	 */
 #ifdef CONFIG_FPU
 	if (have_fpu && padded) {
-		arm_m_cs_ptrs.in = &f->synth_fp_a.r7;
-		arm_m_cs_ptrs.fpu_in = &f->synth_fp_a.s_regs[0];
+		cs->in = &f->synth_fp_a.r7;
+		cs->fpu_in = &f->synth_fp_a.s_regs[0];
 		return &f->synth_fp_a.base.base.base;
 	} else if (have_fpu) {
-		arm_m_cs_ptrs.in = &f->synth_fp.r7;
-		arm_m_cs_ptrs.fpu_in = &f->synth_fp.s_regs[0];
+		cs->in = &f->synth_fp.r7;
+		cs->fpu_in = &f->synth_fp.s_regs[0];
 		return &f->synth_fp.base.base;
 	}
-	arm_m_cs_ptrs.fpu_in = NULL;
+	cs->fpu_in = NULL;
 #endif
 
 	if (padded) {
-		arm_m_cs_ptrs.in = &f->synth_a.r7;
+		cs->in = &f->synth_a.r7;
 	} else {
-		arm_m_cs_ptrs.in = &f->z.u.hw.r7;
+		cs->in = &f->z.u.hw.r7;
 	}
 
 	return padded ? &f->synth_a.base.base : &f->z.u.hw.base;
@@ -488,6 +489,7 @@ static void fpu_cs_copy(struct hw_frame_fpu *src, struct z_frame_fpu *dst)
  */
 static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 {
+	struct arm_m_cs_ptrs *cs = &arm_m_cs_ptrs[arm_m_cpu()];
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
 	bool padded = (base->apsr & XPSR_SPREALIGN_Msk);
@@ -557,12 +559,12 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 #endif
 
 	/* Mark the callee-saved pointer for the fixup assembly */
-	arm_m_cs_ptrs.out = &f->z.u.sw.r4;
+	cs->out = &f->z.u.sw.r4;
 
 #ifdef CONFIG_FPU
 	/* s16-s31 are stored by arm_m_exc_exit, see arm_m_switch_to_cpu() */
 	if (fpu) {
-		arm_m_cs_ptrs.fpu_out = &f->zfp.s_regs[16];
+		cs->fpu_out = &f->zfp.s_regs[16];
 		f->zfp.fpscr = fpscr;
 #ifdef CONFIG_ARMV8_1_M_MVEI
 		f->zfp.vpr = vpr;
@@ -572,7 +574,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 		f->zfp.have_fpu = true;
 		return &f->zfp.have_fpu;
 	}
-	arm_m_cs_ptrs.fpu_out = NULL;
+	cs->fpu_out = NULL;
 	f->z.have_fpu = false;
 	return &f->z.have_fpu;
 #else
@@ -587,7 +589,7 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 	uint32_t baddr;
 
 #ifdef CONFIG_LTO
-	arm_m_lto_refs[0] = &arm_m_cs_ptrs;
+	arm_m_lto_refs[0] = arm_m_cs_ptrs;
 	arm_m_lto_refs[1] = arm_m_must_switch;
 #endif
 
@@ -597,11 +599,14 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 	 * variables for use by arm_m_exc_tail().  Should move to arch
 	 * init somewhere once arch_switch is better integrated
 	 */
-	char *stack = (char *)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]);
-	uint32_t *s_top = (uint32_t *)(stack + K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
+	for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		char *stack = (char *)K_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		uint32_t *s_top =
+			(uint32_t *)(stack + K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]));
 
-	arm_m_exc_lr_ptr = &s_top[-1];
-	arm_m_cs_ptrs.lr_fixup = (void *)(1 | (uint32_t)arm_m_exc_exit); /* thumb bit! */
+		arm_m_exc_lr_ptr[i] = &s_top[-1];
+		arm_m_cs_ptrs[i].lr_fixup = (void *)(1 | (uint32_t)arm_m_exc_exit); /* thumb bit! */
+	}
 #endif
 
 	baddr = ((uint32_t)base + 7) & ~7;
@@ -637,8 +642,10 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 
 bool arm_m_do_switch(struct k_thread *last_thread, void *next);
 
-bool arm_m_must_switch(void)
+uintptr_t arm_m_must_switch(void)
 {
+	struct arm_m_cs_ptrs *cs = &arm_m_cs_ptrs[arm_m_cpu()];
+
 	/* This lock is held until the end of the context switch, at
 	 * which point it will be dropped unconditionally. Save a few
 	 * cycles by skipping the needless bits of arch_irq_lock().
@@ -653,25 +660,27 @@ bool arm_m_must_switch(void)
 	 * and returning to thread mode.
 	 */
 	if ((IS_ENABLED(CONFIG_ARM_SECURE_FIRMWARE) || IS_ENABLED(CONFIG_ARM_NONSECURE_FIRMWARE)) &&
-	    !is_thread_return((uint32_t)arm_m_cs_ptrs.lr_save)) {
-		return false;
+	    !is_thread_return((uint32_t)cs->lr_save)) {
+		return (uintptr_t)cs;
 	}
 
-	struct k_thread *last_thread = _current;
+	/* On SMP, a _current read can be moved past z_sched_next_handle() */
+	struct k_thread *last_thread = _raw_current;
 	void *next = z_sched_next_handle(last_thread);
 
 	if (next == NULL) {
-		return false;
+		return (uintptr_t)cs;
 	}
 
 	arm_m_do_switch(last_thread, next);
-	return true;
+	return (uintptr_t)cs | 1;
 }
 
 bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 {
 	void *last;
-	bool fpu = fpu_state_pushed((uint32_t)arm_m_cs_ptrs.lr_save);
+	struct k_thread *next_thread = _raw_current;
+	bool fpu = fpu_state_pushed((uint32_t)arm_m_cs_ptrs[arm_m_cpu()].lr_save);
 
 	last = (void *)__get_PSP();
 
@@ -699,7 +708,7 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	}
 
 	control.w = __get_CONTROL();
-	control.b.nPRIV = _current->arch.mode & 1;
+	control.b.nPRIV = next_thread->arch.mode & 1;
 	__set_CONTROL(control.w);
 #endif
 
@@ -710,12 +719,12 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	/* Undo a UDF fixup applied at interrupt time, no need: we're
 	 * restoring EPSR via interrupt.
 	 */
-	if (_current->arch.iciit_pc) {
+	if (next_thread->arch.iciit_pc) {
 		struct hw_frame_base *n = next;
 
-		n->pc = _current->arch.iciit_pc;
-		n->apsr = _current->arch.iciit_apsr;
-		_current->arch.iciit_pc = 0;
+		n->pc = next_thread->arch.iciit_pc;
+		n->apsr = next_thread->arch.iciit_apsr;
+		next_thread->arch.iciit_pc = 0;
 	}
 
 #if !defined(CONFIG_MULTITHREADING)
@@ -725,11 +734,11 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 #endif
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD)
-	z_arm_configure_dynamic_mpu_regions(_current);
+	z_arm_configure_dynamic_mpu_regions(next_thread);
 #endif
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	z_arm_tls_ptr = _current->tls;
+	z_arm_tls_ptr = next_thread->tls;
 #endif
 	return true;
 }
@@ -774,7 +783,8 @@ BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_in) == 20);
 __attribute__((naked)) void arm_m_exc_exit(void)
 {
 	__asm__("  bl arm_m_must_switch;"
-		"  ldr r2, =arm_m_cs_ptrs;"
+		"  bic r2, r0, #1;"    /* this CPU's arm_m_cs_ptrs */
+		"  and r0, r0, #1;"    /* switch flag */
 		"  mov r3, #0;"
 		"  ldr lr, [r2, #8];" /* lr_save */
 		"  cbz r0, 1f;"
