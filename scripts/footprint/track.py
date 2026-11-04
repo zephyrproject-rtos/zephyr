@@ -5,7 +5,7 @@
 
 import csv
 import subprocess
-from git import Git
+from git import Git, GitCommandError
 import pathlib
 import shutil
 import argparse
@@ -18,10 +18,17 @@ def parse_args():
 
     return parser.parse_args()
 
+def get_version(g):
+    try:
+        return g.describe("--abbrev=12")
+    except GitCommandError:
+        # No tags reachable from HEAD (e.g. shallow clone): fall back to the commit hash.
+        return g.rev_parse("--short=12", "HEAD")
+
 def main():
     args = parse_args()
     g = Git(".")
-    version = g.describe("--abbrev=12")
+    version = get_version(g)
     pathlib.Path(f'footprint_data/{version}').mkdir(exist_ok=True, parents=True)
 
     with open(args.plan) as csvfile:
