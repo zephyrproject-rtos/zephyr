@@ -128,6 +128,7 @@ static int gpio_xlnx_axi_pin_configure(const struct device *dev, gpio_pin_t pin,
 		data->tri &= ~BIT(pin);
 		break;
 	default:
+		irq_unlock(key);
 		return -ENOTSUP;
 	}
 
