@@ -13,7 +13,7 @@ It is compatible with the Feather board form factor, and has a USB type C connec
 Hardware
 ********
 
-- Microcontroller Raspberry Pi RP2040, with a max frequency of 133 MHz
+- Microcontroller Raspberry Pi RP2040, with a max frequency of 200 MHz
 - Dual ARM Cortex M0+ cores
 - 264 kByte SRAM
 - 8 Mbyte QSPI flash

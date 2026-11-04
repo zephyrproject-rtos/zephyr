@@ -18,7 +18,7 @@ via two 3-pin connectors, and the board has a USB micro B connector.
 Hardware
 ********
 
-- Microcontroller Raspberry Pi RP2040, with a max frequency of 133 MHz
+- Microcontroller Raspberry Pi RP2040, with a max frequency of 200 MHz
 - Dual ARM Cortex M0+ cores
 - 264 kByte SRAM
 - 2 Mbyte QSPI flash

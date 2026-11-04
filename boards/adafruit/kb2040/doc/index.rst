@@ -10,7 +10,7 @@ it to be flashed without any adapter, in a drag-and-drop manner.
 
 Hardware
 ********
-- Dual core Arm Cortex-M0+ processor running up to 133MHz
+- Dual core Arm Cortex-M0+ processor running up to 200MHz
 - 264KB on-chip SRAM
 - 8MB on-board QSPI flash with XIP capabilities
 - 18 GPIO pins

@@ -9,7 +9,7 @@ The Framework Laptop 16 compatible LED Matrix module is based on an RP2040 MCU a
 Hardware
 ********
 
-* Dual core Arm Cortex-M0+ processor running up to 133MHz
+* Dual core Arm Cortex-M0+ processor running up to 200MHz
 * 264KB on-chip SRAM
 * 1MB on-board QSPI flash with XIP capabilities
 * Built-in 9x36 white LED matrix
