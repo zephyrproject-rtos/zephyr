@@ -114,6 +114,8 @@ static void iso_connected(struct bt_iso_chan *chan)
 	err = bt_iso_chan_get_info(chan, &info);
 	TEST_ASSERT(err == 0, "Failed to get CIS info: %d", err);
 
+	expect_cis_peer_addr(chan);
+
 	TEST_ASSERT(info.type == BT_ISO_CHAN_TYPE_PERIPHERAL);
 	TEST_ASSERT(IN_RANGE(info.iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX),
 		    "Invalid ISO interval 0x%04x", info.iso_interval);
