@@ -10559,4 +10559,92 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+/* Read exactly len bytes from a stream */
+static void recv_exactly(int fd, size_t len)
+{
+	uint8_t buf[32];
+	size_t total = 0;
+	int ret;
+
+	while (total < len) {
+		wait_for_revents(fd, ZSOCK_POLLIN, "the data");
+		ret = zsock_recv(fd, buf, MIN(sizeof(buf), len - total), 0);
+		zassert_true(ret > 0, "Failed to receive (%d)", -errno);
+		total += ret;
+	}
+}
+
+struct stream_lookup {
+	uint64_t id;
+	bool is_server;
+	struct quic_stream *stream;
+};
+
+static void stream_lookup_cb(struct quic_stream *stream, void *user_data)
+{
+	struct stream_lookup *lookup = user_data;
+
+	if (stream->id == lookup->id && stream->ep != NULL &&
+	    stream->ep->is_server == lookup->is_server) {
+		lookup->stream = stream;
+	}
+}
+
+/* The stream with the given id at the server or the client end */
+static struct quic_stream *find_stream(uint64_t id, bool is_server)
+{
+	struct stream_lookup lookup = {
+		.id = id,
+		.is_server = is_server,
+	};
+
+	quic_stream_foreach(stream_lookup_cb, &lookup);
+	zassert_not_null(lookup.stream, "Stream %" PRIu64 " not found", id);
+
+	return lookup.stream;
+}
+
+ZTEST(net_socket_quic, test_571_reset_stream_carries_final_size)
+{
+	struct reset_test_peers peers;
+	struct quic_stream *stream;
+	const uint8_t data[] = "a few more bytes";
+	uint64_t code = 0x10c;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54356", "127.0.0.1:19956");
+
+	ret = quic_test_send_all(peers.client_stream, data, sizeof(data));
+	zassert_ok(ret, "Failed to send on the client stream (%d)", ret);
+	recv_exactly(peers.server_stream, 1 + sizeof(data));
+
+	/* The server asks the client to stop sending. The client answers
+	 * with a RESET_STREAM that carries the code and, as the final size,
+	 * the number of bytes it sent on the stream.
+	 */
+	ret = zsock_setsockopt(peers.server_stream, ZSOCK_SOL_QUIC,
+			       ZSOCK_QUIC_SO_STOP_SENDING_CODE, &code, sizeof(code));
+	zassert_ok(ret, "Failed to set the STOP_SENDING code (%d)", -errno);
+
+	ret = zsock_shutdown(peers.server_stream, ZSOCK_SHUT_RD);
+	zassert_ok(ret, "Failed to shut the read half down (%d)", -errno);
+
+	wait_for_revents(peers.server_stream, ZSOCK_POLLIN | ZSOCK_POLLHUP, "the reset");
+
+	stream = find_stream(0, true);
+	zassert_true(stream->rx_reset, "The server stream was not reset");
+	zassert_equal(stream->peer_reset_error_code, code,
+		      "RESET_STREAM with error code 0x%" PRIx64, stream->peer_reset_error_code);
+	zassert_equal(stream->peer_final_size, 1 + sizeof(data),
+		      "RESET_STREAM with final size %" PRIu64 ", expected %zu",
+		      stream->peer_final_size, 1 + sizeof(data));
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+
+	reset_test_disconnect(&peers);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
