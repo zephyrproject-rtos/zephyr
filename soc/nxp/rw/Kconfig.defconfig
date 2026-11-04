@@ -34,9 +34,6 @@ config BT_LONG_WQ_STACK_SIZE
 	default 5120 if (WIFI || IEEE802154)
 	default 2560
 
-config SYSTEM_WORKQUEUE_STACK_SIZE
-	default 2048
-
 config BT_BUF_EVT_RX_COUNT
 	default 12
 
@@ -124,9 +121,6 @@ if HAS_MCUX_ELS_PKC && MBEDTLS_PSA_CRYPTO_C
 # These are defaults only, so an application remains free to lower or raise them.
 configdefault MAIN_STACK_SIZE
 	default 4096
-
-configdefault SYSTEM_WORKQUEUE_STACK_SIZE
-	default 2048
 
 endif # HAS_MCUX_ELS_PKC && MBEDTLS_PSA_CRYPTO_C
 
