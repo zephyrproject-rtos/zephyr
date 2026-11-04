@@ -16,3 +16,22 @@ config INTC_MCHP_EIC_G1
 	help
 	  Enable EIC driver for Microchip EIC G1 peripherals. This is required for
 	  GPIO interrupt support.
+
+config INTC_MCHP_EIC_G1_TRUSTZONE
+	bool "TrustZone-aware EIC driver (secure/non-secure partitioning)"
+	depends on INTC_MCHP_EIC_G1
+	depends on ARM_TRUSTZONE_M
+	help
+	  Enables secure/non-secure line partitioning (EIC_NONSEC),
+	  mismatch detection (EIC_NSCHK), and IRQ target-state routing
+	  for TrustZone-capable Microchip SoCs whose EIC peripheral
+	  provides the NONSEC/NSCHK registers.
+
+config INTC_MCHP_EIC_G1_NMI
+	bool "NMI support for EIC pins"
+	depends on INTC_MCHP_EIC_G1
+	select RUNTIME_NMI
+	help
+	  Support GPIO pins that are routed to EIC NMI instead of
+	  regular EXTINT lines. For example, on PIC32CK, PD2 is connected to NMI.
+	  This requires CONFIG_RUNTIME_NMI to allow custom NMI handlers.
