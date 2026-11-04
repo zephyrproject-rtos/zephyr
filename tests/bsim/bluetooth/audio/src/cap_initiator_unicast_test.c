@@ -67,6 +67,7 @@ struct cap_initiator_ac_param {
 	size_t src_chan_cnt;
 	const struct named_lc3_preset *snk_named_preset;
 	const struct named_lc3_preset *src_named_preset;
+	bool sync_before_stop;
 };
 
 extern enum bst_result_t bst_result;
@@ -1828,6 +1829,11 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 		wait_for_data();
 	}
 
+	if (param->sync_before_stop) {
+		/* Let the acceptors know that we are about to stop the streams */
+		backchannel_sync_send_all();
+	}
+
 	cap_initiator_unicast_audio_stop(unicast_group);
 
 	unicast_group_delete(unicast_group);
@@ -2105,6 +2111,27 @@ static void test_cap_initiator_ac_11_ii(void)
 	test_cap_initiator_ac(&param);
 }
 
+/* Single acceptor with two sink ASEs and one source ASE. The acceptor autonomously disables
+ * its second sink ASE while the first one is being disabled by the CAP stop procedure, which
+ * makes the CAP initiator receive a disabled callback for a stream it has not initiated yet.
+ */
+static void test_cap_initiator_unicast_stop_acceptor_disable(void)
+{
+	const struct cap_initiator_ac_param param = {
+		.name = "stop_acceptor_disable",
+		.sync_before_stop = true,
+		.conn_cnt = 1U,
+		.snk_cnt = {2U},
+		.src_cnt = {1U},
+		.snk_chan_cnt = 1U,
+		.src_chan_cnt = 1U,
+		.snk_named_preset = snk_named_preset,
+		.src_named_preset = src_named_preset,
+	};
+
+	test_cap_initiator_ac(&param);
+}
+
 static void test_args(int argc, char *argv[])
 {
 	for (size_t argn = 0U; argn < argc; argn++) {
@@ -2168,6 +2195,13 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_cancel_in_subproc,
+	},
+	{
+		.test_id = "cap_initiator_unicast_stop_acceptor_disable",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_unicast_stop_acceptor_disable,
+		.test_args_f = test_args,
 	},
 	{
 		.test_id = "cap_initiator_ac_1",

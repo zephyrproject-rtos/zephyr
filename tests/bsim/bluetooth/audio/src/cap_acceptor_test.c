@@ -1255,6 +1255,67 @@ static void test_cap_acceptor_unicast_cancel_in_subproc(void)
 	PASS("CAP acceptor unicast cancel in subproc passed\n");
 }
 
+static void test_cap_acceptor_unicast_server_disable(void)
+{
+	struct bt_bap_stream *sink_stream = NULL;
+	int err;
+
+	init();
+
+	test_start_adv();
+
+	auto_start_sink_streams = true;
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	/* Wait until initiator is done starting streams */
+	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
+
+	if (expect_rx) {
+		wait_for_data();
+	}
+
+	/* let initiator know we have received what we wanted */
+	backchannel_sync_send(CAP_INITIATOR_DEV_ID);
+
+	/* Wait until the initiator is about to start the CAP stop procedure */
+	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
+
+	/* Autonomously disable the last streaming sink ASE, so that the initiator gets the state
+	 * change for it while the CAP stop procedure is disabling the first ASE
+	 */
+	ARRAY_FOR_EACH_PTR(unicast_streams, test_stream) {
+		struct bt_bap_stream *stream = bap_stream_from_audio_test_stream(test_stream);
+		struct bt_bap_ep_info info;
+
+		if (stream->ep == NULL || bt_bap_ep_get_info(stream->ep, &info) != 0) {
+			continue;
+		}
+
+		if (info.dir == BT_AUDIO_DIR_SINK && info.state == BT_BAP_EP_STATE_STREAMING) {
+			sink_stream = stream;
+		}
+	}
+
+	if (sink_stream == NULL) {
+		FAIL("No streaming sink stream to disable\n");
+		return;
+	}
+
+	LOG_INF("Autonomously disabling sink stream %p", sink_stream);
+	SET_FLAG(audio_test_stream_from_bap_stream(sink_stream)->stopping);
+
+	err = bt_bap_stream_disable(sink_stream);
+	if (err != 0) {
+		FAIL("Failed to disable stream %p: %d\n", sink_stream, err);
+		return;
+	}
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("CAP acceptor unicast server disable passed\n");
+}
+
 static void pa_sync_to_broadcaster(void)
 {
 	int err;
@@ -1442,6 +1503,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast_cancel_in_subproc,
+	},
+	{
+		.test_id = "cap_acceptor_unicast_server_disable",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_unicast_server_disable,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast",
