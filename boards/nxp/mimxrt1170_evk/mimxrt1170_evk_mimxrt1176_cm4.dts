@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023 NXP
+ * Copyright 2021,2023,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,5 +71,10 @@
 };
 
 &mailbox_b {
+	status = "okay";
+};
+
+&sema4 {
+	domain-id = <1>;
 	status = "okay";
 };
