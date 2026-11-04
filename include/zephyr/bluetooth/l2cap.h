@@ -538,6 +538,18 @@ struct bt_l2cap_br_chan {
 	/** Helps match request context during CoC */
 	uint8_t                         ident;
 	bt_security_t                   required_sec_level;
+	/** Send the PDUs automatically flushable, set before connecting. The
+	 *  configuration announces @kconfig{CONFIG_BT_L2CAP_TX_FLUSH_TO} as flush
+	 *  timeout, and once the peer accepted it the Automatic Flush Timeout of
+	 *  the ACL link is set to it, so that the Controller discards the PDUs it
+	 *  could not deliver in time. A peer that proposes another flush timeout
+	 *  gets it, 0xffff for none. The Automatic Flush Timeout applies to the
+	 *  whole link, but the PDUs of the other channels stay non-flushable.
+	 *  Ignored if @kconfig{CONFIG_BT_L2CAP_TX_FLUSH_TO} is 0, if the channel
+	 *  is not in Basic mode, or if the Controller does not support the
+	 *  Non-flushable Packet Boundary Flag.
+	 */
+	bool                            flushable;
 
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_work_delayable	        rtx_work;
@@ -556,6 +568,8 @@ struct bt_l2cap_br_chan {
 	atomic_t                        _pdu_ready_lock;
 	/** @internal List of net bufs not yet sent to lower layer */
 	sys_slist_t                     _pdu_tx_queue;
+	/** @internal Flush Timeout option in milliseconds, 0 for none, 0xffff if not flushed */
+	uint16_t                        _flush_timeout;
 
 #if defined(CONFIG_BT_L2CAP_RET_FC) || defined(__DOXYGEN__)
 	/** @internal Holds the remaining length of current sending buffer */
