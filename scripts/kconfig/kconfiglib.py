@@ -206,6 +206,14 @@ value of the symbol. The lower bound is determined by the value of the
 select*ing* symbol. 'select' does not respect visibility, so non-visible
 symbols can be forced to a particular (minimum) value by a select as well.
 
+Dependency loops are allowed if each of them goes through a 'select' or
+'imply', for example a GPIO driver that selects SPI and a SPI driver that
+selects GPIO. The symbols in such a loop must be non-choice bool/tristate
+symbols that don't appear negated or in comparisons in each other's
+definitions. They get the smallest values that satisfy all definitions: a
+symbol in the loop is n unless something outside the loop (a user value, a
+default, ...) makes it non-n. Other dependency loops are errors.
+
 For non-bool/tristate symbols, it only matters whether the visibility is n or
 non-n: m visibility acts the same as y visibility.
 
@@ -1104,7 +1112,8 @@ class Kconfig(object):
         # Build Symbol._dependents for all symbols and choices
         self._build_dep()
 
-        # Check for dependency loops
+        # Check for dependency loops that don't go through a 'select' or
+        # 'imply'
         check_dep_loop_sym = _check_dep_loop_sym  # Micro-optimization
         for sym in self.unique_defined_syms:
             check_dep_loop_sym(sym, False)
@@ -1112,6 +1121,10 @@ class Kconfig(object):
         # Add extra dependencies from choices to choice symbols that get
         # awkward during dependency loop detection
         self._add_choice_deps()
+
+        # Check and prepare the remaining loops, which go through a 'select'
+        # or 'imply'
+        self._check_select_loops()
 
     @property
     def mainmenu_text(self):
@@ -3495,8 +3508,13 @@ class Kconfig(object):
         #
         # The calculated sets might be larger than necessary as we don't do any
         # complex analysis of the expressions.
+        #
+        # The _hard_dependents sets leave out the dependencies from 'select'
+        # and 'imply'. Only loops in that graph are errors. See
+        # _check_select_loops().
 
         depend_on = _depend_on  # Micro-optimization
+        depend_on_soft = _depend_on_soft
 
         # Only calculate _dependents for defined symbols. Constant and
         # undefined symbols could theoretically be selected/implied, but it
@@ -3515,8 +3533,8 @@ class Kconfig(object):
                 depend_on(sym, cond)
 
             # The reverse and weak reverse dependencies
-            depend_on(sym, sym.rev_dep)
-            depend_on(sym, sym.weak_rev_dep)
+            depend_on_soft(sym, sym.rev_dep)
+            depend_on_soft(sym, sym.weak_rev_dep)
 
             # The ranges along with their conditions
             for low, high, cond, _ in sym.ranges:
@@ -3561,6 +3579,61 @@ class Kconfig(object):
         for choice in self.unique_choices:
             for sym in choice.syms:
                 sym._dependents.add(choice)
+
+    def _check_select_loops(self):
+        # Finds the dependency loops that go through a 'select' or 'imply'
+        # (the others are errors, see _check_dep_loop_sym()) and marks their
+        # symbols for evaluation with _solve_select_loop().
+        #
+        # The strongly connected components of the dependency graph are the
+        # loops. A choice and its own choice symbols always form one, and are
+        # handled by the choice code instead.
+        #
+        # The symbols in a loop must be non-choice bool/tristate symbols that
+        # only appear in non-negated form in each other's expressions. Their
+        # values can then only grow during the evaluation, which gives the
+        # least solution: a symbol in a loop is n unless something outside the
+        # loop (a user value, a default, ...) makes it non-n.
+
+        for scc in _sccs(self.unique_defined_syms + self.unique_choices):
+            if len(scc) == 1:
+                if scc[0] not in scc[0]._dependents:
+                    continue
+            elif scc[0].__class__ is Choice or scc[0].choice:
+                choice = scc[0] if scc[0].__class__ is Choice else \
+                         scc[0].choice
+                if all(item is choice or
+                       item.__class__ is Symbol and item.choice is choice
+                       for item in scc):
+                    continue
+
+            members = frozenset(scc)
+            for item in scc:
+                if item.__class__ is Choice or item.choice:
+                    _select_loop_error(scc, "{} is part of a choice"
+                                            .format(item.name_and_loc))
+
+                if item.orig_type not in _BOOL_TRISTATE or \
+                   item is self.modules:
+                    _select_loop_error(scc, "{} is not a bool symbol"
+                                            .format(item.name_and_loc))
+
+                exprs = [node.prompt[1] for node in item.nodes if node.prompt]
+                for value, cond, _ in item.defaults:
+                    exprs.append(value)
+                    exprs.append(cond)
+                exprs += (item.rev_dep, item.weak_rev_dep, item.direct_dep)
+
+                for expr in exprs:
+                    bad = _select_loop_bad_ref(expr, members, False)
+                    if bad:
+                        _select_loop_error(
+                            scc, "{} is negated or compared in the definition "
+                                 "of {}".format(bad.name, item.name_and_loc))
+
+            scc = tuple(scc)
+            for sym in scc:
+                sym._scc = scc
 
     def _invalidate_all(self):
         # Undefined symbols never change value and don't need to be
@@ -4282,8 +4355,10 @@ class Symbol(object):
         "_cached_tri_val",
         "_cached_vis",
         "_dependents",
+        "_hard_dependents",
         "_old_val",
         "_origin",
+        "_scc",
         "_visited",
         "_was_set",
         "_write_to_conf",
@@ -4479,6 +4554,17 @@ class Symbol(object):
         if self._cached_tri_val is not None:
             return self._cached_tri_val
 
+        if self._scc:
+            _solve_select_loop(self._scc)
+            return self._cached_tri_val
+
+        self._cached_tri_val = val = self._calc_tri_value(True)
+        return val
+
+    def _calc_tri_value(self, warn):
+        # Worker function for the 'tri_value' attribute. 'warn' is False to
+        # skip the warning about unsatisfied dependencies of a selected symbol.
+
         if self.orig_type not in _BOOL_TRISTATE:
             if self.orig_type:  # != UNKNOWN
                 # Would take some work to give the location here
@@ -4487,7 +4573,6 @@ class Symbol(object):
                     "somewhere. It will always evaluate to n."
                     .format(TYPE_TO_STR[self.orig_type], self.name_and_loc))
 
-            self._cached_tri_val = 0
             return 0
 
         # Warning: See Symbol._rec_invalidate(), and note that this is a hidden
@@ -4529,7 +4614,7 @@ class Symbol(object):
             # Reverse (select-related) dependencies take precedence
             dep_val = expr_value(self.rev_dep)
             if dep_val:
-                if expr_value(self.direct_dep) < dep_val:
+                if warn and expr_value(self.direct_dep) < dep_val:
                     self._warn_select_unsatisfied_deps()
 
                 val = max(dep_val, val)
@@ -4554,7 +4639,6 @@ class Symbol(object):
             # Visible choice symbol in m-mode choice, with set non-0 user value
             val = 1
 
-        self._cached_tri_val = val
         return val
 
     @property
@@ -4889,6 +4973,7 @@ class Symbol(object):
         self.choice = \
         self.env_var = \
         self._origin = \
+        self._scc = \
         self._cached_str_val = self._cached_tri_val = self._cached_vis = \
         self._cached_assignable = None
 
@@ -4901,6 +4986,7 @@ class Symbol(object):
 
         # See Kconfig._build_dep()
         self._dependents = set()
+        self._hard_dependents = set()
 
     def _assignable(self):
         # Worker function for the 'assignable' attribute
@@ -5247,6 +5333,7 @@ class Choice(object):
         "_cached_selection",
         "_cached_vis",
         "_dependents",
+        "_hard_dependents",
         "_origin",
         "_visited",
         "_was_set",
@@ -5502,6 +5589,7 @@ class Choice(object):
 
         # See Kconfig._build_dep()
         self._dependents = set()
+        self._hard_dependents = set()
 
     def _assignable(self):
         # Worker function for the 'assignable' attribute
@@ -6456,6 +6544,21 @@ def _depend_on(sc, expr):
     elif not expr.is_constant:
         # Non-constant symbol, or choice
         expr._dependents.add(sc)
+        expr._hard_dependents.add(sc)
+
+
+def _depend_on_soft(sc, expr):
+    # Like _depend_on(), but for the dependencies from 'select' and 'imply',
+    # which are left out of the _hard_dependents sets
+
+    if expr.__class__ is tuple:
+        _depend_on_soft(sc, expr[1])
+
+        if expr[0] is not NOT:
+            _depend_on_soft(sc, expr[2])
+
+    elif not expr.is_constant:
+        expr._dependents.add(sc)
 
 
 def _parenthesize(expr, type_, sc_expr_str_fn):
@@ -6682,7 +6785,9 @@ def _finalize_choice(node):
 
 def _check_dep_loop_sym(sym, ignore_choice):
     # Detects dependency loops using depth-first search on the dependency graph
-    # (which is calculated earlier in Kconfig._build_dep()).
+    # (which is calculated earlier in Kconfig._build_dep()). Dependencies from
+    # 'select' and 'imply' are left out, as loops through them are allowed.
+    # See Kconfig._check_select_loops().
     #
     # Algorithm:
     #
@@ -6718,7 +6823,7 @@ def _check_dep_loop_sym(sym, ignore_choice):
 
         sym._visited = 1
 
-        for dep in sym._dependents:
+        for dep in sym._hard_dependents:
             # Choices show up in Symbol._dependents when the choice has the
             # symbol in a 'prompt' or 'default' condition (e.g.
             # 'default ... if SYM').
@@ -6836,6 +6941,126 @@ def _found_dep_loop(loop, cur):
     msg += "...depends again on " + loop[0].name_and_loc
 
     raise KconfigError(msg)
+
+
+def _sccs(items):
+    # Returns the strongly connected components of the dependency graph
+    # (Symbol/Choice._dependents) as lists, using an iterative version of
+    # Tarjan's algorithm. Recursion would get too deep on large trees.
+
+    index = {}
+    low = {}
+    stack = []
+    on_stack = set()
+    sccs = []
+
+    for root in items:
+        if root in index:
+            continue
+
+        index[root] = low[root] = len(index)
+        stack.append(root)
+        on_stack.add(root)
+        work = [(root, iter(root._dependents))]
+
+        while work:
+            item, deps = work[-1]
+
+            for dep in deps:
+                if dep not in index:
+                    index[dep] = low[dep] = len(index)
+                    stack.append(dep)
+                    on_stack.add(dep)
+                    work.append((dep, iter(dep._dependents)))
+                    break
+
+                if dep in on_stack and index[dep] < low[item]:
+                    low[item] = index[dep]
+            else:
+                work.pop()
+                if work:
+                    parent = work[-1][0]
+                    if low[item] < low[parent]:
+                        low[parent] = low[item]
+
+                if low[item] == index[item]:
+                    scc = []
+                    while True:
+                        dep = stack.pop()
+                        on_stack.remove(dep)
+                        scc.append(dep)
+                        if dep is item:
+                            break
+                    sccs.append(scc)
+
+    return sccs
+
+
+def _select_loop_bad_ref(expr, members, negated):
+    # Returns a symbol from 'members' that appears negated or in a relation in
+    # 'expr', or None. 'negated' is True if 'expr' is under an odd number of
+    # NOTs.
+
+    if expr.__class__ is tuple:
+        if expr[0] is NOT:
+            return _select_loop_bad_ref(expr[1], members, not negated)
+
+        if expr[0] in _RELATIONS:
+            for op in expr[1:]:
+                if op in members:
+                    return op
+            return None
+
+        return _select_loop_bad_ref(expr[1], members, negated) or \
+               _select_loop_bad_ref(expr[2], members, negated)
+
+    if negated and expr in members:
+        return expr
+    return None
+
+
+def _select_loop_error(scc, reason):
+    # Raises an error for a dependency loop through a 'select' or 'imply' that
+    # can't be evaluated
+
+    raise KconfigError(
+        "\nDependency loop through 'select'/'imply'\n"
+        "========================================\n\n"
+        "{}\n\nwith the symbols:\n\n{}"
+        .format(reason, "\n".join("  " + item.name_and_loc for item in scc)))
+
+
+def _solve_select_loop(scc):
+    # Evaluates the symbols of a dependency loop through a 'select' or 'imply'
+    # (see Kconfig._check_select_loops()). All symbols start out as n and are
+    # re-evaluated until no value changes. Warnings about selected symbols with
+    # unsatisfied dependencies are only generated in a final pass, as
+    # intermediate values can give bogus ones.
+
+    for sym in scc:
+        sym._cached_tri_val = 0
+
+    changed = True
+    while changed:
+        changed = False
+        for sym in scc:
+            sym._cached_vis = None
+            val = sym._calc_tri_value(False)
+            if val < sym._cached_tri_val:
+                _select_loop_error(scc, "{} changes from {} to {} while "
+                                        "evaluating the loop".format(
+                                            sym.name_and_loc,
+                                            TRI_TO_STR[sym._cached_tri_val],
+                                            TRI_TO_STR[val]))
+            if val != sym._cached_tri_val:
+                sym._cached_tri_val = val
+                changed = True
+
+    # Final pass. The values don't change anymore, but _write_to_conf and
+    # _origin get updated.
+    for sym in scc:
+        sym._cached_vis = sym._cached_str_val = sym._cached_assignable = None
+        sym._calc_tri_value(True)
 
 
 def _decoding_error(e, filename, macro_linenr=None):
