@@ -261,7 +261,7 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 	z_arm_configure_dynamic_mpu_regions(_current);
 #endif
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_SMP)
 	z_arm_tls_ptr = _current->tls;
 #endif
 
