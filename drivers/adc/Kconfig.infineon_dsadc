@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon Delta-Sigma ADC configuration options
+
+config ADC_INFINEON_DSADC
+	bool "Infineon Delta-Sigma ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_DSADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select USE_INFINEON_DSADC
+	help
+	  Enable the Delta-Sigma ADC (PACSS) driver for Infineon PSOC4 HVPA devices.
