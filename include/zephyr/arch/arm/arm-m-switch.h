@@ -148,6 +148,10 @@ struct arm_m_cs_ptrs {
 	 */
 	void *fpu_out, *fpu_in;
 #endif
+#ifdef CONFIG_SMP
+	/** Outgoing thread's switch handle, set once the frame is saved */
+	void **switched_from, *switch_handle;
+#endif
 };
 /** @endcond */
 
@@ -350,6 +354,9 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			  * interruptible code (running in the incoming thread) once
 			  * the stack is valid.
 			  */
+#ifdef CONFIG_SMP
+			 "dmb;"
+#endif
 			 "str sp, [r5];"
 			 "mov sp, r4;"
 			 "msr basepri, r0;"

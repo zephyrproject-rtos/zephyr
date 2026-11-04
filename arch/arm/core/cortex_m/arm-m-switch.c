@@ -731,6 +731,10 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 
 #if !defined(CONFIG_MULTITHREADING)
 	arm_m_last_switch_handle = last;
+#elif defined(CONFIG_SMP)
+	/* Set by arm_m_exc_exit once r4-r11 are saved */
+	arm_m_cs_ptrs[arm_m_cpu()].switched_from = &last_thread->switch_handle;
+	arm_m_cs_ptrs[arm_m_cpu()].switch_handle = last;
 #elif defined(CONFIG_USE_SWITCH)
 	last_thread->switch_handle = last;
 #endif
@@ -781,6 +785,16 @@ BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, lr_save) == 8);
 BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_out) == 16);
 BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, fpu_in) == 20);
 #endif
+#ifdef CONFIG_SMP
+#ifdef CONFIG_FPU
+#define CS_SWITCHED_FROM "24"
+#else
+#define CS_SWITCHED_FROM "16"
+#endif
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, switched_from) == (IS_ENABLED(CONFIG_FPU) ? 24 : 16));
+BUILD_ASSERT(offsetof(struct arm_m_cs_ptrs, switch_handle) ==
+	     offsetof(struct arm_m_cs_ptrs, switched_from) + 4);
+#endif
 
 __attribute__((naked)) void arm_m_exc_exit(void)
 {
@@ -793,13 +807,20 @@ __attribute__((naked)) void arm_m_exc_exit(void)
 		"  mov lr, #0xfffffffd;" /* integer-only LR */
 		"  ldm r2, {r0, r1};"    /* fields: out, in */
 		"  stm r0, {r4-r11};"    /* out is a switch_frame */
-		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
-		"  ldm r1, {r4-r6};"
 #ifdef CONFIG_FPU
 		"  ldr r0, [r2, #16];" /* fpu_out */
 		"  cbz r0, 2f;"
 		"  vstm r0, {s16-s31};"
 		"2:\n"
+#endif
+#ifdef CONFIG_SMP
+		"  ldrd r0, r12, [r2, #" CS_SWITCHED_FROM "];" /* switched_from, switch_handle */
+		"  dmb;"
+		"  str r12, [r0];"
+#endif
+		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
+		"  ldm r1, {r4-r6};"
+#ifdef CONFIG_FPU
 		"  ldr r1, [r2, #20];" /* fpu_in */
 		"  cbz r1, 1f;"
 		"  vldm r1, {s16-s31};"
