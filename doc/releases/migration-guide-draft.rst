@@ -472,6 +472,12 @@ Modem
   initialization first, and the call returns 0 before the modem changes its functionality, as
   it already did in builds with GNSS.
 
+* Sierra Wireless HL78xx: :c:func:`hl78xx_get_network_info` returns ``-ENODATA`` for
+  ``HL78XX_NETWORK_INFO_SINR`` after a modem restart or power cycle until the new session has
+  measured, instead of the value of the ended session. In the same way,
+  :c:func:`cellular_get_registration_status` reports ``CELLULAR_REGISTRATION_NOT_REGISTERED``
+  from a modem restart or power-up until the new session reports its status.
+
 OPAMP
 =====
 

@@ -1202,6 +1202,16 @@ void hl78xx_reset_modem_session_state(struct hl78xx_data *data)
 	data->status.phone_functionality.valid = false;
 	data->status.phone_functionality.in_progress = false;
 	data->status.phone_functionality.functionality = HL78XX_FULLY_FUNCTIONAL;
+	/* The new session attaches for the first time. No wake follows its
+	 * registration to bring the +KCELLMEAS URC that turns the carrier on, so
+	 * the registration wait has to request it. The status the ended session
+	 * reported last goes with it: kept, it made the first report of the new
+	 * session a repeat, which hl78xx_on_cxreg() does not process.
+	 */
+	data->status.kcellmeas.bootstrap_done = false;
+	data->status.registration.is_registered_currently = false;
+	data->status.registration.is_registered_previously = false;
+	data->status.registration.network_state_current = CELLULAR_REGISTRATION_NOT_REGISTERED;
 }
 
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp)

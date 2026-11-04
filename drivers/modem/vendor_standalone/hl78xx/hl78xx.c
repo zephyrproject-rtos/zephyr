@@ -4087,12 +4087,20 @@ static bool hl78xx_power_off_backstop_expired(struct hl78xx_data *data)
 /* pwroff script moved to hl78xx_chat.c */
 static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 {
+	/* The modem has yet to report the detach of this power-off, a change
+	 * against the status of this session only: that status is kept until
+	 * the next session starts.
+	 */
+	enum cellular_registration_status reg_status =
+		data->status.registration.network_state_current;
+
 	/* This session is ending: whatever the driver believed about the
 	 * modem's functionality or GNSS engine must not survive into the next
 	 * power-up (the pwroff script below also changes CFUN without going
 	 * through the cache).
 	 */
 	hl78xx_reset_modem_session_state(data);
+	data->status.registration.network_state_current = reg_status;
 	data->status.power_off_backstop_armed = false;
 #ifdef CONFIG_HL78XX_GNSS
 	hl78xx_gnss_reset_session_state(data);
