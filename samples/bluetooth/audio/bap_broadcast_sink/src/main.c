@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
@@ -30,13 +31,25 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
+
+#include "lc3.h"
+
+#if defined(CONFIG_BOARD_NRF54L15DK_NRF54L15_CPUAPP) && defined(CONFIG_LIBLC3)
+#define TLV320_AUDIO_OUTPUT_ENABLED 1
+#else
+#define TLV320_AUDIO_OUTPUT_ENABLED 0
+#endif
+#define SDU_METRICS_INTERVAL_SECONDS 10U
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <nrfx_clock.h>
@@ -45,24 +58,129 @@
 #include "chan_metrics.h"
 #include "vs_fatal.h"
 
-#include "lc3.h"
-#include "stream_rx.h"
-#include "usb.h"
-#include "hw_codec.h"
+#if TLV320_AUDIO_OUTPUT_ENABLED
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <nrfx_i2s.h>
+#if defined(NRF54L15_XXAA)
+#include <hal/nrf_clock.h>
+#endif /* NRF54L15_XXAA */
+
+#include <lc3.h>
+
+#define I2C_NODE DT_NODELABEL(tlv320)
+#define I2S_NL   DT_NODELABEL(i2s20)
+
+/* TLV320 DAC output is fixed to 48 kHz stereo, 16-bit samples */
+#define DAC_SAMPLE_RATE_HZ     48000U
+#define DAC_CHAN_CNT           2U
+#define DAC_FRAME_DURATION_US  10000U
+#define DAC_FRAME_SAMPLES      ((DAC_FRAME_DURATION_US * DAC_SAMPLE_RATE_HZ) / USEC_PER_SEC)
+/* Samples per channel in each 1 ms I2S block */
+#define I2S_SAMPLES_NUM        48U
+#define I2S_BLOCK_SIZE         (I2S_SAMPLES_NUM * DAC_CHAN_CNT * sizeof(int16_t))
+/* Number of 1 ms I2S blocks buffered between LC3 decoder and I2S */
+#define BUFFER_SPACE           60U
+#define RING_BUF_SIZE          (I2S_BLOCK_SIZE * BUFFER_SPACE)
+
+#define JITTER_BUFFER_SIZE  6U
+#define JITTER_BUFFER_CHECK 4U
+
+#define CHAN_LEFT  0U
+#define CHAN_RIGHT 1U
+
+/* TLV320 DAC digital volume in 0.5 dB steps: start at -30 dB, 3 dB per button press */
+#define DAC_VOL_INIT (-60)
+#define DAC_VOL_STEP 6
+#define DAC_VOL_MIN  (-127)
+#define DAC_VOL_MAX  0
+/* Digital volume register limit, +24 dB, reached with the equalizer make-up gain */
+#define DAC_VOL_REG_MAX 48
+
+/* Page 8 register 1, DAC coefficient RAM control: adaptive filtering and buffer switch */
+#define DAC_COEF_PAGE_LEFT     0x08U
+#define DAC_COEF_PAGE_RIGHT    0x09U
+#define DAC_COEF_REG_FIRST     0x02U
+#define DAC_COEF_RAM_CTRL      0x01U
+#define DAC_COEF_ADAPTIVE      BIT(2)
+#define DAC_COEF_SWITCH        BIT(0)
+#define DAC_BIQUAD_COUNT       3U
+#define DAC_BIQUAD_COEF_COUNT  5U
+
+static const struct gpio_dt_spec dac_rst = GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios);
+static const struct i2c_dt_spec dev_i2c = I2C_DT_SPEC_GET(I2C_NODE);
+
+PINCTRL_DT_DEFINE(I2S_NL);
+static nrfx_i2s_t i2s_inst = NRFX_I2S_INSTANCE(NRF_I2S20);
+static nrfx_i2s_config_t i2s_cfg = {
+	/* Pins are configured by pinctrl. */
+	.skip_gpio_cfg = true,
+	.skip_psel_cfg = true,
+	.irq_priority = DT_IRQ(I2S_NL, priority),
+	.mode = NRF_I2S_MODE_SLAVE,
+	.format = NRF_I2S_FORMAT_I2S,
+	.alignment = NRF_I2S_ALIGN_LEFT,
+	.prescalers = {
+		.ratio = NRF_I2S_RATIO_64X,
+		.mck_setup = NRF_I2S_MCK_32MDIV2,
+	},
+	.sample_width = NRF_I2S_SWIDTH_16BIT,
+	.channels = NRF_I2S_CHANNELS_STEREO,
+};
+
+static int16_t i2s_tx_buf_a[I2S_SAMPLES_NUM * DAC_CHAN_CNT] __aligned(4);
+static int16_t i2s_tx_buf_b[I2S_SAMPLES_NUM * DAC_CHAN_CNT] __aligned(4);
+static int16_t i2s_rx_buf_a[I2S_SAMPLES_NUM * DAC_CHAN_CNT] __aligned(4);
+static int16_t i2s_rx_buf_b[I2S_SAMPLES_NUM * DAC_CHAN_CNT] __aligned(4);
+RING_BUF_DECLARE(i2s_tx_ring_buf, RING_BUF_SIZE);
+
+struct recv_pkt_info {
+	uint32_t ts;
+	bool bad_frame;
+	uint16_t size;
+	uint8_t buf[CONFIG_BT_ISO_RX_MTU];
+};
+
+K_MSGQ_DEFINE(recv_pkt_msgq_l, sizeof(struct recv_pkt_info), JITTER_BUFFER_SIZE, 4U);
+K_MSGQ_DEFINE(recv_pkt_msgq_r, sizeof(struct recv_pkt_info), JITTER_BUFFER_SIZE, 4U);
+static struct k_msgq *const recv_pkt_msgq[DAC_CHAN_CNT] = {&recv_pkt_msgq_l, &recv_pkt_msgq_r};
+
+struct audio_sink {
+	uint8_t chan;
+	lc3_decoder_t decoder;
+	lc3_decoder_mem_48k_t decoder_mem;
+};
+
+static struct audio_sink sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+/* Sink stream playing each DAC channel, NULL when the channel is not streaming */
+static struct audio_sink *chan_sink[DAC_CHAN_CNT];
+/* Maximum SDU timestamp difference for left and right SDUs to be played together */
+static uint32_t pair_tolerance_us;
+/* Last ring buffer free space in percent, reported with the SDU metrics */
+static uint8_t ring_buf_free_percent;
+
+/* LC3 decoding and DAC playback run in a dedicated thread, not in the BT RX thread */
+#define AUDIO_THREAD_STACK_SIZE 4096U
+#define AUDIO_THREAD_PRIO       K_PRIO_PREEMPT(4)
+
+K_SEM_DEFINE(audio_sem, 0U, K_SEM_MAX_LIMIT);
+/* Protects chan_sink, the jitter buffers and the decoders against the audio thread */
+K_MUTEX_DEFINE(audio_lock);
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+#define MAX_SAMPLE_RATE	      48000
+#define MAX_FRAME_DURATION_US 10000
+#define MAX_NUM_SAMPLES	      ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
 
-#define SEM_TIMEOUT                 K_SECONDS(60U)
-#define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120U) /* 2 minutes */
-
 #define LOG_INTERVAL 1000U
-
-#if defined(CONFIG_SCAN_SELF)
-#define ADV_TIMEOUT K_SECONDS(CONFIG_SCAN_DELAY)
-#else /* !CONFIG_SCAN_SELF */
-#define ADV_TIMEOUT K_FOREVER
-#endif /* CONFIG_SCAN_SELF */
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                      5U
@@ -76,7 +194,6 @@ static K_SEM_DEFINE(sem_broadcaster_found, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
 static K_SEM_DEFINE(sem_base_received, 0U, 1U);
 static K_SEM_DEFINE(sem_syncable, 0U, 1U);
-static K_SEM_DEFINE(sem_pa_sync_lost, 0U, 1U);
 static K_SEM_DEFINE(sem_broadcast_code_received, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_request, 0U, 1U);
 static K_SEM_DEFINE(sem_past_request, 0U, 1U);
@@ -100,8 +217,19 @@ static struct bt_le_ext_adv *ext_adv;
 static uint8_t acl_conn_count;
 
 static volatile bool pa_synced;
+/* The Broadcast Sink was created on a PA sync that has since been lost */
+static bool sink_pa_stale;
+static bool bcode_received;
+static uint32_t sync_bitfield;
+static K_SEM_DEFINE(sem_link_event, 0U, 1U);
+static atomic_t powering_off;
+/* Scanning explicitly enabled by the user stays active until disabled by the user, scanning
+ * started to (re-)establish the PA sync stops once both the PA and the BIG are synced.
+ */
+static volatile bool scan_user = IS_ENABLED(CONFIG_SCAN_BACKGROUND);
+static volatile bool scanning;
 
-/* Red blinks until PA and BIG are synced, then green blinks; blue blinks while connected */
+/* Red blinks while scanning, blue while the BIG is synced and green while connected */
 #if DT_NODE_EXISTS(DT_ALIAS(led_red))
 #define LED_RED_NODE DT_ALIAS(led_red)
 #else
@@ -156,11 +284,9 @@ static void led_work_handler(struct k_work *work)
 
 static void leds_update(void)
 {
-	const bool synced = pa_synced && big_synced;
-
-	led_blink[LED_RED] = !synced;
-	led_blink[LED_GREEN] = synced;
-	led_blink[LED_BLUE] = (acl_conn_count > 0U);
+	led_blink[LED_RED] = scanning;
+	led_blink[LED_GREEN] = (acl_conn_count > 0U);
+	led_blink[LED_BLUE] = big_synced;
 }
 
 static void leds_init(void)
@@ -176,13 +302,984 @@ static void leds_init(void)
 	(void)k_work_reschedule(&led_work, K_NO_WAIT);
 }
 
+static void leds_off(void)
+{
+	struct k_work_sync sync;
+
+	(void)k_work_cancel_delayable_sync(&led_work, &sync);
+
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if (led_ready[i]) {
+			(void)gpio_pin_set_dt(&leds[i], 0);
+		}
+	}
+}
+
+/* Called from any thread, the main thread starts or stops scanning */
+static void scan_user_set(bool enable)
+{
+	scan_user = enable;
+
+	if (enable) {
+		printk("Scanning enabled\n");
+	} else if (!big_synced) {
+		printk("Scanning disabled, stops once the BIG is synced\n");
+	} else {
+		printk("Scanning disabled\n");
+	}
+
+	k_sem_give(&sem_link_event);
+}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+static bool dac_present;
+static int8_t dac_volume;
+static uint8_t dac_eq_mode;
+static void dac_volume_set(int16_t vol);
+static void dac_eq_set(uint8_t mode);
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+/* sw0/sw1 change the TLV320 volume, sw2 enables or disables scanning,
+ * a short sw3 press selects the next TLV320 equalizer mode and holding sw3 powers off;
+ * wake-up from System OFF by a sw3 press is a reset
+ */
+#define BUTTON_DEBOUNCE         K_MSEC(30)
+#define BUTTON_POLL_INTERVAL    K_MSEC(50)
+#define BUTTON_POWER_HOLD_MS    3000
+
+enum button_id {
+	BUTTON_VOL_UP,
+	BUTTON_VOL_DOWN,
+	BUTTON_SCAN,
+	BUTTON_POWER,
+	BUTTON_COUNT,
+};
+
+static const struct gpio_dt_spec buttons[BUTTON_COUNT] = {
+	[BUTTON_VOL_UP] = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0), gpios, {0}),
+	[BUTTON_VOL_DOWN] = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw1), gpios, {0}),
+	[BUTTON_SCAN] = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw2), gpios, {0}),
+	[BUTTON_POWER] = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw3), gpios, {0}),
+};
+static struct gpio_callback button_cb_data[BUTTON_COUNT];
+static struct k_work_delayable button_work[BUTTON_COUNT];
+
+static bool eq_available(void)
+{
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	return dac_present;
+#else
+	return false;
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+}
+
+/* Poll sw3 after the debounced press: a release selects the next equalizer mode, holding it
+ * for BUTTON_POWER_HOLD_MS powers off
+ */
+static void button_power_handler(struct k_work_delayable *dwork)
+{
+	static int64_t pressed_at;
+	static bool tracking;
+	const bool pressed = (gpio_pin_get_dt(&buttons[BUTTON_POWER]) > 0);
+
+	if (!tracking) {
+		if (pressed) {
+			tracking = true;
+			pressed_at = k_uptime_get();
+			(void)k_work_reschedule(dwork, BUTTON_POLL_INTERVAL);
+		}
+
+		return;
+	}
+
+	if (!pressed) {
+		tracking = false;
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+		if (dac_present) {
+			dac_eq_set((uint8_t)(dac_eq_mode + 1U));
+		}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_POWEROFF) && (k_uptime_get() - pressed_at) >= BUTTON_POWER_HOLD_MS) {
+		tracking = false;
+
+		printk("Power off requested\n");
+		(void)atomic_set(&powering_off, 1);
+		k_sem_give(&sem_link_event);
+
+		return;
+	}
+
+	(void)k_work_reschedule(dwork, BUTTON_POLL_INTERVAL);
+}
+
+static void button_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	const size_t id = (size_t)(dwork - &button_work[0]);
+
+	if (id == BUTTON_POWER) {
+		button_power_handler(dwork);
+		return;
+	}
+
+	if (gpio_pin_get_dt(&buttons[id]) <= 0) {
+		return;
+	}
+
+	switch (id) {
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	case BUTTON_VOL_UP:
+		dac_volume_set((int16_t)dac_volume + DAC_VOL_STEP);
+		break;
+	case BUTTON_VOL_DOWN:
+		dac_volume_set((int16_t)dac_volume - DAC_VOL_STEP);
+		break;
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+	case BUTTON_SCAN:
+		scan_user_set(!scanning);
+		break;
+	default:
+		break;
+	}
+}
+
+static void button_isr(const struct device *port, struct gpio_callback *cb, gpio_port_pins_t pins)
+{
+	const size_t id = (size_t)(cb - &button_cb_data[0]);
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	(void)k_work_reschedule(&button_work[id], BUTTON_DEBOUNCE);
+}
+
+static void button_init(enum button_id id)
+{
+	const struct gpio_dt_spec *btn = &buttons[id];
+	int err;
+
+	if (btn->port == NULL || !gpio_is_ready_dt(btn)) {
+		return;
+	}
+
+	err = gpio_pin_configure_dt(btn, GPIO_INPUT);
+	if (err != 0) {
+		printk("Failed to configure button %d: %d\n", id, err);
+		return;
+	}
+
+	k_work_init_delayable(&button_work[id], button_work_handler);
+	gpio_init_callback(&button_cb_data[id], button_isr, BIT(btn->pin));
+
+	err = gpio_add_callback_dt(btn, &button_cb_data[id]);
+	if (err != 0) {
+		printk("Failed to add button %d callback: %d\n", id, err);
+		return;
+	}
+
+	err = gpio_pin_interrupt_configure_dt(btn, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err != 0) {
+		printk("Failed to configure button %d interrupt: %d\n", id, err);
+	}
+}
+
+static void buttons_init(void)
+{
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	if (dac_present) {
+		button_init(BUTTON_VOL_UP);
+		button_init(BUTTON_VOL_DOWN);
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
+		button_init(BUTTON_SCAN);
+	}
+
+	if (IS_ENABLED(CONFIG_POWEROFF) || eq_available()) {
+		button_init(BUTTON_POWER);
+	}
+}
+
+static struct bt_bap_stream bis_stream[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static uint32_t configured_sampling_freq;
+static int stream_num_get(struct bt_bap_stream *stream);
+
+struct sdu_reception_metrics {
+	uint64_t received_cnt;
+	uint64_t valid_cnt;
+	uint64_t invalid_cnt;
+	uint64_t empty_cnt;
+	uint64_t error_cnt;
+	uint64_t lost_cnt;
+	uint64_t duplicate_ts_cnt;
+	uint64_t duplicate_seq_cnt;
+	uint64_t bytes_cnt;
+	uint32_t last_ts;
+	uint16_t last_seq;
+	bool has_last;
+};
+
+static struct sdu_reception_metrics
+	sdu_metrics[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static int64_t sdu_metrics_next_report_ms;
+
+static void sdu_metrics_maybe_log(void)
+{
+	const int64_t now_ms = k_uptime_get();
+
+	if (now_ms < sdu_metrics_next_report_ms) {
+		return;
+	}
+
+	printk("SDU reception metrics (%u s interval)\n", SDU_METRICS_INTERVAL_SECONDS);
+	for (size_t i = 0U; i < ARRAY_SIZE(sdu_metrics); i++) {
+		const struct sdu_reception_metrics *metrics = &sdu_metrics[i];
+
+		printk("  stream[%u]: rx=%llu valid=%llu invalid=%llu empty=%llu "
+		       "error=%llu lost=%llu dup_ts=%llu dup_seq=%llu bytes=%llu\n",
+		       (unsigned int)i,
+		       (unsigned long long)metrics->received_cnt,
+		       (unsigned long long)metrics->valid_cnt,
+		       (unsigned long long)metrics->invalid_cnt,
+		       (unsigned long long)metrics->empty_cnt,
+		       (unsigned long long)metrics->error_cnt,
+		       (unsigned long long)metrics->lost_cnt,
+		       (unsigned long long)metrics->duplicate_ts_cnt,
+		       (unsigned long long)metrics->duplicate_seq_cnt,
+		       (unsigned long long)metrics->bytes_cnt);
+	}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	if (dac_present) {
+		printk("  I2S ring buffer free %u %%\n", ring_buf_free_percent);
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+	sdu_metrics_next_report_ms = now_ms + ((int64_t)SDU_METRICS_INTERVAL_SECONDS * MSEC_PER_SEC);
+}
+
+static void sdu_metrics_update(struct bt_bap_stream *bap_stream,
+			       const struct bt_iso_recv_info *info, struct net_buf *buf)
+{
+	const int stream_idx = stream_num_get(bap_stream);
+	struct sdu_reception_metrics *metrics;
+
+	if (stream_idx < 0 || stream_idx >= (int)ARRAY_SIZE(sdu_metrics)) {
+		return;
+	}
+
+	metrics = &sdu_metrics[stream_idx];
+	metrics->received_cnt++;
+	metrics->bytes_cnt += buf->len;
+
+	if ((info->flags & BT_ISO_FLAGS_VALID) != 0U) {
+		if (buf->len == 0U) {
+			metrics->empty_cnt++;
+		} else {
+			metrics->valid_cnt++;
+		}
+	} else {
+		metrics->invalid_cnt++;
+	}
+
+	if ((info->flags & BT_ISO_FLAGS_ERROR) != 0U) {
+		metrics->error_cnt++;
+	}
+
+	if ((info->flags & BT_ISO_FLAGS_LOST) != 0U) {
+		metrics->lost_cnt++;
+	}
+
+	if (metrics->has_last) {
+		if (metrics->last_ts == info->ts) {
+			metrics->duplicate_ts_cnt++;
+		}
+
+		if (metrics->last_seq == info->seq_num) {
+			metrics->duplicate_seq_cnt++;
+		}
+	}
+
+	metrics->has_last = true;
+	metrics->last_ts = info->ts;
+	metrics->last_seq = info->seq_num;
+
+	sdu_metrics_maybe_log();
+}
+
+static void sdu_metrics_reset(void)
+{
+	(void)memset(sdu_metrics, 0, sizeof(sdu_metrics));
+	sdu_metrics_next_report_ms =
+		k_uptime_get() + ((int64_t)SDU_METRICS_INTERVAL_SECONDS * MSEC_PER_SEC);
+}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+static void audio_i2s_set_next_buf(int16_t *tx_buf, int16_t *rx_buf)
+{
+	const nrfx_i2s_buffers_t i2s_buf = {
+		.p_rx_buffer = (uint32_t *)rx_buf,
+		.p_tx_buffer = (uint32_t *)tx_buf,
+		/* Buffer size in 32-bit words, i.e. stereo 16-bit samples */
+		.buffer_size = I2S_SAMPLES_NUM,
+	};
+	int ret;
+
+	ret = nrfx_i2s_next_buffers_set(&i2s_inst, &i2s_buf);
+	if (ret != 0) {
+		printk("Failed to set next I2S buffers: %d\n", ret);
+	}
+}
+
+static void i2s_fill_tx_buf(int16_t *tx_buf)
+{
+	uint32_t len;
+
+	len = ring_buf_get(&i2s_tx_ring_buf, (uint8_t *)tx_buf, I2S_BLOCK_SIZE);
+
+	if (len != I2S_BLOCK_SIZE) {
+		/* Underrun, play silence */
+		(void)memset(tx_buf, 0, I2S_BLOCK_SIZE);
+	}
+}
+
+static void i2s_comp_handler(nrfx_i2s_buffers_t const *released_bufs, uint32_t status)
+{
+	if (status != NRFX_I2S_STATUS_NEXT_BUFFERS_NEEDED) {
+		return;
+	}
+
+	if ((int16_t *)released_bufs->p_tx_buffer == i2s_tx_buf_a) {
+		i2s_fill_tx_buf(i2s_tx_buf_a);
+		audio_i2s_set_next_buf(i2s_tx_buf_a, i2s_rx_buf_a);
+	} else if ((int16_t *)released_bufs->p_tx_buffer == i2s_tx_buf_b) {
+		i2s_fill_tx_buf(i2s_tx_buf_b);
+		audio_i2s_set_next_buf(i2s_tx_buf_b, i2s_rx_buf_b);
+	}
+}
+
+static int audio_i2s_start(void)
+{
+	const nrfx_i2s_buffers_t i2s_buf = {
+		.p_rx_buffer = (uint32_t *)i2s_rx_buf_a,
+		.p_tx_buffer = (uint32_t *)i2s_tx_buf_a,
+		.buffer_size = I2S_SAMPLES_NUM,
+	};
+	int ret;
+
+	ret = pinctrl_apply_state(PINCTRL_DT_DEV_CONFIG_GET(I2S_NL), PINCTRL_STATE_DEFAULT);
+	if (ret != 0) {
+		printk("Failed to apply I2S pinctrl state: %d\n", ret);
+		return ret;
+	}
+
+	IRQ_CONNECT(DT_IRQN(I2S_NL), DT_IRQ(I2S_NL, priority), nrfx_i2s_irq_handler, &i2s_inst, 0);
+	irq_enable(DT_IRQN(I2S_NL));
+
+	ret = nrfx_i2s_init(&i2s_inst, &i2s_cfg, i2s_comp_handler);
+	if (ret != 0) {
+		printk("Failed to initialize I2S: %d\n", ret);
+		return ret;
+	}
+
+	ret = nrfx_i2s_start(&i2s_inst, &i2s_buf, 0);
+	if (ret != 0) {
+		printk("Failed to start I2S: %d\n", ret);
+		return ret;
+	}
+
+	audio_i2s_set_next_buf(i2s_tx_buf_b, i2s_rx_buf_b);
+
+	return 0;
+}
+
+static int clocks_start(void)
+{
+	const struct device *xo = DEVICE_DT_GET(DT_NODELABEL(xo));
+	int err;
+
+#if defined(NRF54L15_XXAA)
+	/* MLTPAN-20 */
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_PLLSTART);
+#endif /* NRF54L15_XXAA */
+
+	if (!device_is_ready(xo)) {
+		printk("XO clock device not ready\n");
+		return -ENXIO;
+	}
+
+	err = nrf_clock_control_request_sync(xo, NULL, K_FOREVER);
+	if (err < 0) {
+		printk("HF clock could not be started: %d\n", err);
+		return err;
+	}
+
+	printk("HF clock started\n");
+
+	return 0;
+}
+
+static void dac_i2c_write(uint8_t reg, uint8_t value)
+{
+	const uint8_t config[2] = {reg, value};
+	int ret;
+
+	ret = i2c_write_dt(&dev_i2c, config, sizeof(config));
+	if (ret != 0) {
+		printk("Failed to write to I2C device address %x at reg. %x\n", dev_i2c.addr, reg);
+	}
+}
+
+/* TLV320 PLL D value, D[13:8] and nominal, faster and slower D[7:0] */
+#define DAC_PLL_D_MSB      0x0EU
+#define DAC_PLL_D_LSB_NOM  0xB0U
+#define DAC_PLL_D_LSB_FAST 0xDAU
+#define DAC_PLL_D_LSB_SLOW 0x86U
+
+static int tlv320_setup(void)
+{
+	static const uint8_t page0_select[] = {0x00, 0x00};
+	int err;
+
+	if (!device_is_ready(dev_i2c.bus)) {
+		printk("I2C bus %s is not ready\n", dev_i2c.bus->name);
+		return -ENODEV;
+	}
+
+	err = gpio_pin_configure_dt(&dac_rst, GPIO_OUTPUT);
+	if (err != 0) {
+		printk("Failed to configure TLV320 reset GPIO: %d\n", err);
+		return err;
+	}
+
+	/* Reset the TLV320 */
+	(void)gpio_pin_set_dt(&dac_rst, 0);
+	k_sleep(K_MSEC(1));
+	(void)gpio_pin_set_dt(&dac_rst, 1);
+	k_sleep(K_MSEC(1));
+
+	/* Probe by selecting page 0; an absent TLV320 does not acknowledge its address */
+	err = i2c_write_dt(&dev_i2c, page0_select, sizeof(page0_select));
+	if (err != 0) {
+		printk("TLV320 not found at I2C address 0x%02x (err %d)\n", dev_i2c.addr, err);
+		(void)gpio_pin_set_dt(&dac_rst, 0);
+
+		return -ENODEV;
+	}
+
+	/* Page 0, software reset */
+	dac_i2c_write(0x01, 0x01);
+	k_sleep(K_MSEC(10));
+
+	/* Clock and PLL setup */
+	dac_i2c_write(0x04, 0x03);
+	dac_i2c_write(0x05, (0x1 << 4) | 0x1);
+	dac_i2c_write(0x06, 0x05);
+	dac_i2c_write(0x07, DAC_PLL_D_MSB);
+	dac_i2c_write(0x08, DAC_PLL_D_LSB_NOM);
+	dac_i2c_write(0x05, BIT(7) | (0x1 << 4) | 0x1);
+	k_sleep(K_MSEC(15));
+
+	/* NDAC, MDAC, DOSR */
+	dac_i2c_write(0x0B, 0x87);
+	dac_i2c_write(0x0C, 0x82);
+	dac_i2c_write(0x0D, 0x00);
+	dac_i2c_write(0x0E, 0x80);
+
+	/* Audio interface, BCLK, processing block */
+	dac_i2c_write(0x1B, 0x0C);
+	dac_i2c_write(0x1E, 0x84);
+	dac_i2c_write(0x1D, 0x01);
+	dac_i2c_write(0x3C, 0x01);
+	dac_i2c_write(0x74, 0x00);
+
+	/* Page 8, adaptive filtering to update the biquads while the DAC is powered up */
+	dac_i2c_write(0x00, DAC_COEF_PAGE_LEFT);
+	dac_i2c_write(DAC_COEF_RAM_CTRL, DAC_COEF_ADAPTIVE);
+
+	/* Page 1, output drivers */
+	dac_i2c_write(0x00, 0x01);
+	dac_i2c_write(0x1F, 0x00);
+	dac_i2c_write(0x21, (0x7 << 3) | (0x3 << 1));
+	dac_i2c_write(0x23, 0x44);
+	dac_i2c_write(0x24, 0x80);
+	dac_i2c_write(0x25, 0x80);
+	dac_i2c_write(0x28, 0x06);
+	dac_i2c_write(0x29, 0x06);
+	dac_i2c_write(0x1F, 0xC0);
+	k_sleep(K_MSEC(300));
+
+	/* Page 0, DAC power up, volume and unmute */
+	dac_i2c_write(0x00, 0x00);
+	dac_i2c_write(0x3F, 0xD4);
+	dac_i2c_write(0x41, (uint8_t)DAC_VOL_INIT);
+	dac_i2c_write(0x42, (uint8_t)DAC_VOL_INIT);
+	dac_i2c_write(0x40, 0x00);
+
+	return 0;
+}
+
+/* Serializes TLV320 register accesses, the equalizer selects other register pages */
+static K_MUTEX_DEFINE(dac_i2c_lock);
+static int8_t dac_volume = DAC_VOL_INIT;
+
+struct dac_eq_preset {
+	const char *name;
+	/* Digital volume make-up gain in 0.5 dB steps, restores the 1 kHz level */
+	uint8_t makeup;
+	/* N0, N1, N2, D1 and D2 of each biquad in Q15,
+	 * H(z) = (N0 + 2 * N1 * z^-1 + N2 * z^-2) / (2^15 - 2 * D1 * z^-1 - D2 * z^-2)
+	 */
+	int16_t coef[DAC_BIQUAD_COUNT][DAC_BIQUAD_COEF_COUNT];
+};
+
+/* Biquads A, B and C of PRB_P1 at 48 kHz, each scaled to at most 0 dB */
+static const struct dac_eq_preset dac_eq_presets[] = {
+	{"Flat", 0U, {
+		{32767, 0, 0, 0, 0},
+		{32767, 0, 0, 0, 0},
+		{32767, 0, 0, 0, 0},
+	}},
+	/* Low shelf 150 Hz +9 dB */
+	{"Bass boost", 18U, {
+		{11593, -11386, 11185, 32417, -32073},
+		{32767, 0, 0, 0, 0},
+		{32767, 0, 0, 0, 0},
+	}},
+	/* High shelf 4 kHz +6 dB */
+	{"Treble boost", 12U, {
+		{28634, -19843, 15302, 18975, -13748},
+		{32767, 0, 0, 0, 0},
+		{32767, 0, 0, 0, 0},
+	}},
+	/* Low shelf 150 Hz +8 dB, high shelf 6 kHz +5 dB */
+	{"Loudness", 26U, {
+		{12996, -12771, 12552, 32407, -32053},
+		{27854, -14836, 10580, 13264, -9500},
+		{32767, 0, 0, 0, 0},
+	}},
+	/* High-pass 150 Hz, peak 2.5 kHz +5 dB Q 1, low shelf 400 Hz -3 dB */
+	{"Voice", 8U, {
+		{31993, -31993, 31993, 32313, -31871},
+		{19768, -15416, 12791, 27692, -25719},
+		{32233, -31139, 30117, 31446, -30227},
+	}},
+};
+
+/* Caller holds dac_i2c_lock with page 0 selected */
+static void dac_volume_write(void)
+{
+	const int16_t vol = MIN((int16_t)dac_volume + dac_eq_presets[dac_eq_mode].makeup,
+				DAC_VOL_REG_MAX);
+
+	dac_i2c_write(0x41, (uint8_t)vol);
+	dac_i2c_write(0x42, (uint8_t)vol);
+}
+
+/* Called from the system workqueue, vol in 0.5 dB steps is clamped to the volume range */
+static void dac_volume_set(int16_t vol)
+{
+	uint16_t mag;
+
+	vol = CLAMP(vol, DAC_VOL_MIN, DAC_VOL_MAX);
+	if (vol == dac_volume) {
+		return;
+	}
+
+	mag = (vol < 0) ? (uint16_t)-vol : (uint16_t)vol;
+
+	(void)k_mutex_lock(&dac_i2c_lock, K_FOREVER);
+	dac_volume = (int8_t)vol;
+	dac_volume_write();
+	(void)k_mutex_unlock(&dac_i2c_lock);
+
+	printk("Volume %s%u.%u dB\n", (vol < 0) ? "-" : "", mag / 2U, (mag % 2U) * 5U);
+}
+
+/* Caller holds dac_i2c_lock; leaves the coefficient page selected */
+static int dac_coef_write(uint8_t page, const struct dac_eq_preset *preset)
+{
+	uint8_t buf[1U + (DAC_BIQUAD_COUNT * DAC_BIQUAD_COEF_COUNT * sizeof(uint16_t))];
+	size_t i = 0U;
+
+	buf[i++] = DAC_COEF_REG_FIRST;
+	for (size_t b = 0U; b < DAC_BIQUAD_COUNT; b++) {
+		for (size_t c = 0U; c < DAC_BIQUAD_COEF_COUNT; c++) {
+			sys_put_be16((uint16_t)preset->coef[b][c], &buf[i]);
+			i += sizeof(uint16_t);
+		}
+	}
+
+	dac_i2c_write(0x00, page);
+
+	return i2c_write_dt(&dev_i2c, buf, sizeof(buf));
+}
+
+/* Caller holds dac_i2c_lock; leaves the left coefficient page selected */
+static int dac_coef_load(const struct dac_eq_preset *preset)
+{
+	int err;
+
+	err = dac_coef_write(DAC_COEF_PAGE_RIGHT, preset);
+	if (err == 0) {
+		err = dac_coef_write(DAC_COEF_PAGE_LEFT, preset);
+	}
+
+	return err;
+}
+
+/* Called from the system workqueue, mode wraps around to the first preset */
+static void dac_eq_set(uint8_t mode)
+{
+	const struct dac_eq_preset *preset;
+	uint8_t makeup_prev;
+	uint8_t ctrl = 0U;
+	int err;
+
+	(void)k_mutex_lock(&dac_i2c_lock, K_FOREVER);
+
+	mode = (uint8_t)(mode % ARRAY_SIZE(dac_eq_presets));
+	if (mode == dac_eq_mode) {
+		(void)k_mutex_unlock(&dac_i2c_lock);
+		return;
+	}
+
+	makeup_prev = dac_eq_presets[dac_eq_mode].makeup;
+	dac_eq_mode = mode;
+	preset = &dac_eq_presets[dac_eq_mode];
+
+	/* Lower the make-up gain before, and raise it after, the new coefficients are active */
+	if (preset->makeup < makeup_prev) {
+		dac_volume_write();
+	}
+
+	/* With adaptive filtering the coefficients are written to the inactive buffer. Switch
+	 * buffers, the switch bit clears at the next audio frame, then write the coefficients
+	 * again so that both buffers hold them.
+	 */
+	err = dac_coef_load(preset);
+	if (err == 0) {
+		dac_i2c_write(DAC_COEF_RAM_CTRL, DAC_COEF_ADAPTIVE | DAC_COEF_SWITCH);
+
+		for (uint8_t n = 0U; n < 10U; n++) {
+			err = i2c_reg_read_byte_dt(&dev_i2c, DAC_COEF_RAM_CTRL, &ctrl);
+			if (err != 0 || (ctrl & DAC_COEF_SWITCH) == 0U) {
+				break;
+			}
+
+			k_sleep(K_MSEC(1));
+		}
+
+		if (err == 0 && (ctrl & DAC_COEF_SWITCH) != 0U) {
+			err = -ETIMEDOUT;
+		}
+	}
+
+	if (err == 0) {
+		err = dac_coef_load(preset);
+	}
+
+	dac_i2c_write(0x00, 0x00);
+
+	if (preset->makeup >= makeup_prev) {
+		dac_volume_write();
+	}
+
+	(void)k_mutex_unlock(&dac_i2c_lock);
+
+	if (err != 0) {
+		printk("Failed to set equalizer %s: %d\n", preset->name, err);
+	} else {
+		printk("Equalizer %s\n", preset->name);
+	}
+}
+
+/* Track the source clock drift by adjusting the TLV320 PLL using the ring buffer fill level */
+static void dac_pll_track(void)
+{
+	static uint8_t d_lsb_cur = DAC_PLL_D_LSB_NOM;
+	uint32_t space;
+	uint8_t d_lsb;
+
+	space = ring_buf_space_get(&i2s_tx_ring_buf);
+
+	ring_buf_free_percent = (uint8_t)((space * 100U) / RING_BUF_SIZE);
+
+	if (ring_buf_free_percent < 45U) {
+		d_lsb = DAC_PLL_D_LSB_FAST;
+	} else if (ring_buf_free_percent <= 55U) {
+		d_lsb = DAC_PLL_D_LSB_NOM;
+	} else {
+		d_lsb = DAC_PLL_D_LSB_SLOW;
+	}
+
+	if (d_lsb != d_lsb_cur && k_mutex_lock(&dac_i2c_lock, K_NO_WAIT) == 0) {
+		/* Retried on the next SDU while an equalizer update holds the lock */
+		d_lsb_cur = d_lsb;
+		dac_i2c_write(0x07, DAC_PLL_D_MSB);
+		dac_i2c_write(0x08, d_lsb);
+		(void)k_mutex_unlock(&dac_i2c_lock);
+	}
+}
+
+static void dac_buf_reset(void)
+{
+	k_msgq_purge(&recv_pkt_msgq_l);
+	k_msgq_purge(&recv_pkt_msgq_r);
+
+	ring_buf_reset(&i2s_tx_ring_buf);
+}
+
+static uint8_t chan_from_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
+{
+	enum bt_audio_location loc;
+	int err;
+
+	err = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &loc, false);
+	if (err == 0 && (loc & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0U &&
+	    (loc & BT_AUDIO_LOCATION_FRONT_LEFT) == 0U) {
+		return CHAN_RIGHT;
+	}
+
+	return CHAN_LEFT;
+}
+
+static void dac_sink_start(struct audio_sink *sink, const struct bt_bap_stream *stream)
+{
+	(void)k_mutex_lock(&audio_lock, K_FOREVER);
+
+	if (chan_sink[sink->chan] != NULL && chan_sink[sink->chan] != sink) {
+		/* Both streams have the same location, use the other channel */
+		sink->chan = (sink->chan == CHAN_LEFT) ? CHAN_RIGHT : CHAN_LEFT;
+	}
+
+	if (chan_sink[sink->chan] == NULL) {
+		chan_sink[sink->chan] = sink;
+		pair_tolerance_us = stream->qos->interval / 2U;
+		dac_buf_reset();
+		printk("  Playing on %s channel\n", (sink->chan == CHAN_LEFT) ? "left" : "right");
+	}
+
+	(void)k_mutex_unlock(&audio_lock);
+}
+
+static void dac_sink_stop(struct audio_sink *sink)
+{
+	(void)k_mutex_lock(&audio_lock, K_FOREVER);
+
+	if (chan_sink[sink->chan] == sink) {
+		chan_sink[sink->chan] = NULL;
+	}
+
+	sink->decoder = NULL;
+	dac_buf_reset();
+
+	(void)k_mutex_unlock(&audio_lock);
+}
+
+static int dac_decoder_setup(struct audio_sink *sink, const struct bt_audio_codec_cfg *codec_cfg)
+{
+	int frame_duration_us;
+	int freq_hz;
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+	if (freq_hz < 0) {
+		return freq_hz;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+	if (frame_duration_us < 0) {
+		return frame_duration_us;
+	}
+
+	/* Upsample to the DAC sample rate */
+	sink->decoder = lc3_setup_decoder(frame_duration_us, freq_hz, DAC_SAMPLE_RATE_HZ,
+					  &sink->decoder_mem);
+	if (sink->decoder == NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void dac_decode(struct audio_sink *sink, const struct recv_pkt_info *pkt, int16_t *pcm)
+{
+	int err;
+
+	/* Passing NULL performs PLC */
+	err = lc3_decode(sink->decoder, pkt->bad_frame ? NULL : pkt->buf, pkt->size,
+			 LC3_PCM_FORMAT_S16, pcm, DAC_CHAN_CNT);
+	if (err < 0) {
+		printk("LC3 decoder failed - wrong parameters?: %d\n", err);
+	}
+}
+
+static void dac_play(const int16_t *pcm)
+{
+	dac_pll_track();
+
+	(void)ring_buf_put(&i2s_tx_ring_buf, (const uint8_t *)pcm,
+			   DAC_FRAME_SAMPLES * DAC_CHAN_CNT * sizeof(int16_t));
+}
+
+/* Queue a received SDU for the audio thread; decoding is kept out of the BT RX thread */
+static void stream_recv_tlv320(struct audio_sink *sink, const struct bt_iso_recv_info *info,
+			       struct net_buf *buf)
+{
+	/* Only called from the BT RX thread; static to save stack */
+	static struct recv_pkt_info drop;
+	static struct recv_pkt_info pkt;
+	struct k_msgq *msgq;
+
+	if (sink->decoder == NULL || chan_sink[sink->chan] != sink ||
+	    buf->len > sizeof(pkt.buf)) {
+		return;
+	}
+
+	pkt.ts = info->ts;
+	pkt.size = buf->len;
+	pkt.bad_frame = (buf->len == 0U) || ((info->flags & BT_ISO_FLAGS_VALID) == 0U);
+	(void)memcpy(pkt.buf, buf->data, buf->len);
+
+	msgq = recv_pkt_msgq[sink->chan];
+	if (k_msgq_put(msgq, &pkt, K_NO_WAIT) != 0) {
+		printk("%c: jitter buffer full\n", (sink->chan == CHAN_LEFT) ? 'L' : 'R');
+		(void)k_msgq_get(msgq, &drop, K_NO_WAIT);
+		(void)k_msgq_put(msgq, &pkt, K_NO_WAIT);
+	}
+
+	k_sem_give(&audio_sem);
+}
+
+static void audio_play_mono(void)
+{
+	/* Only called from the audio thread; static to save stack */
+	static int16_t pcm[DAC_FRAME_SAMPLES * DAC_CHAN_CNT];
+	static struct recv_pkt_info pkt;
+	struct audio_sink *sink;
+
+	sink = (chan_sink[CHAN_LEFT] != NULL) ? chan_sink[CHAN_LEFT] : chan_sink[CHAN_RIGHT];
+	if (sink == NULL || sink->decoder == NULL) {
+		return;
+	}
+
+	/* Single stream, play the same audio on both channels */
+	while (k_msgq_get(recv_pkt_msgq[sink->chan], &pkt, K_NO_WAIT) == 0) {
+		dac_decode(sink, &pkt, &pcm[0]);
+		for (size_t i = 0U; i < DAC_FRAME_SAMPLES; i++) {
+			pcm[(i * DAC_CHAN_CNT) + 1U] = pcm[i * DAC_CHAN_CNT];
+		}
+		dac_play(pcm);
+	}
+}
+
+static void audio_play_stereo(void)
+{
+	/* Only called from the audio thread; static to save stack */
+	static int16_t pcm[DAC_FRAME_SAMPLES * DAC_CHAN_CNT];
+	static struct recv_pkt_info pkt_l;
+	static struct recv_pkt_info pkt_r;
+
+	if (chan_sink[CHAN_LEFT]->decoder == NULL || chan_sink[CHAN_RIGHT]->decoder == NULL) {
+		return;
+	}
+
+	while (k_msgq_num_used_get(&recv_pkt_msgq_l) >= JITTER_BUFFER_CHECK &&
+	       k_msgq_num_used_get(&recv_pkt_msgq_r) >= JITTER_BUFFER_CHECK) {
+		int32_t diff;
+
+		(void)k_msgq_peek(&recv_pkt_msgq_l, &pkt_l);
+		(void)k_msgq_peek(&recv_pkt_msgq_r, &pkt_r);
+
+		diff = (int32_t)(pkt_l.ts - pkt_r.ts);
+		if (diff > (int32_t)pair_tolerance_us) {
+			(void)k_msgq_get(&recv_pkt_msgq_r, &pkt_r, K_NO_WAIT);
+			printk("drop R %u (L %u)\n", pkt_r.ts, pkt_l.ts);
+			continue;
+		} else if (diff < -(int32_t)pair_tolerance_us) {
+			(void)k_msgq_get(&recv_pkt_msgq_l, &pkt_l, K_NO_WAIT);
+			printk("drop L %u (R %u)\n", pkt_l.ts, pkt_r.ts);
+			continue;
+		}
+
+		(void)k_msgq_get(&recv_pkt_msgq_l, &pkt_l, K_NO_WAIT);
+		(void)k_msgq_get(&recv_pkt_msgq_r, &pkt_r, K_NO_WAIT);
+
+		dac_decode(chan_sink[CHAN_LEFT], &pkt_l, &pcm[CHAN_LEFT]);
+		dac_decode(chan_sink[CHAN_RIGHT], &pkt_r, &pcm[CHAN_RIGHT]);
+		dac_play(pcm);
+
+		break;
+	}
+}
+
+static void audio_thread_func(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		(void)k_sem_take(&audio_sem, K_FOREVER);
+
+		(void)k_mutex_lock(&audio_lock, K_FOREVER);
+		if (chan_sink[CHAN_LEFT] != NULL && chan_sink[CHAN_RIGHT] != NULL) {
+			audio_play_stereo();
+		} else {
+			audio_play_mono();
+		}
+		(void)k_mutex_unlock(&audio_lock);
+	}
+}
+
+K_THREAD_DEFINE(audio_thread, AUDIO_THREAD_STACK_SIZE, audio_thread_func, NULL, NULL, NULL,
+		AUDIO_THREAD_PRIO, 0, 0);
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+static int stream_num_get(struct bt_bap_stream *stream)
+{
+	for (int i = 0; i < CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT; i++) {
+		if (bap_streams_p[i] == stream) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+/* LC3 is decoded and upsampled to the 48 kHz DAC rate. Up to 155 octets per frame accepts the
+ * 48_5 and 48_6 configurations.
+ */
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ |
-	 BT_AUDIO_CODEC_CAP_FREQ_48KHZ),
+	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ |
+		BT_AUDIO_CODEC_CAP_FREQ_32KHZ | BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
+	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 155u,
+	CONFIG_MAX_CODEC_FRAMES_PER_SDU,
+	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED|BT_AUDIO_CONTEXT_TYPE_NONE));
+#else
+static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ | BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
 	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 120u,
 	CONFIG_MAX_CODEC_FRAMES_PER_SDU,
-	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
-	 BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA | BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED|BT_AUDIO_CONTEXT_TYPE_NONE));
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
 
 /**
  * The base_recv_cb() function will populate struct bis_audio_allocation with channel allocation
@@ -250,30 +1347,34 @@ static void stream_disconnected_cb(struct bt_bap_stream *bap_stream, uint8_t rea
 		printk("Failed to take sem_stream_connected: %d\n", err);
 	}
 }
-
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
 {
 	struct bt_iso_info info;
 	int err;
 
-	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
-		err = hw_codec_open();
-		if (err != 0) {
-			printk("Audio codec open failed (err %d)\n", err);
-			return;
-		}
-	}
+	printk("Stream %p started\n", bap_stream);
 
 	err = bt_iso_chan_get_info(bap_stream->iso, &info);
-	__ASSERT(err == 0, "Failed to get ISO chan info: %d", err);
-
-	printk("Stream %p started with BIG_Handle %u and BIS_Number %u\n", bap_stream,
-	       info.sync_receiver.big_handle, info.sync_receiver.bis_number);
-
-	err = stream_rx_started(bap_stream);
-	if (err != 0) {
-		printk("stream_rx_started returned error: %d\n", err);
+	if (err == 0) {
+		printk("  ISO interval %u us, latency %u us\n", info.iso_interval * 1250U,
+		       info.sync_receiver.latency);
 	}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const int stream_idx = stream_num_get(bap_stream);
+
+	if (dac_present && stream_idx >= 0) {
+		struct audio_sink *sink = &sink_streams[stream_idx];
+
+		sink->chan = chan_from_codec_cfg(bap_stream->codec_cfg);
+		err = dac_decoder_setup(sink, bap_stream->codec_cfg);
+		if (err != 0) {
+			printk("Failed to setup LC3 decoder: %d\n", err);
+		} else {
+			dac_sink_start(sink, bap_stream);
+		}
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
 
 	k_sem_give(&sem_stream_started);
 }
@@ -284,28 +1385,33 @@ static void stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reason)
 
 	printk("Stream %p stopped with reason 0x%02X\n", bap_stream, reason);
 
-	err = stream_rx_stopped(bap_stream);
-	if (err != 0) {
-		printk("stream_rx_stopped returned error: %d\n", err);
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const int stream_idx = stream_num_get(bap_stream);
+
+	if (dac_present && stream_idx >= 0) {
+		dac_sink_stop(&sink_streams[stream_idx]);
 	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
 
 	err = k_sem_take(&sem_stream_started, K_NO_WAIT);
 	if (err != 0) {
 		printk("Failed to take sem_stream_started: %d\n", err);
 	}
-
-	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
-		err = hw_codec_close();
-		if (err != 0) {
-			printk("Audio codec close failed (err %d)\n", err);
-		}
-	}
 }
+
 
 static void stream_recv_cb(struct bt_bap_stream *bap_stream, const struct bt_iso_recv_info *info,
 			   struct net_buf *buf)
 {
-	stream_rx_recv(bap_stream, info, buf);
+	sdu_metrics_update(bap_stream, info, buf);
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const int stream_idx = stream_num_get(bap_stream);
+
+	if (dac_present && stream_idx >= 0) {
+		stream_recv_tlv320(&sink_streams[stream_idx], info, buf);
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
 }
 
 static struct bt_bap_stream_ops stream_ops = {
@@ -370,13 +1476,19 @@ static bool subgroup_get_valid_bis_indexes_cb(const struct bt_bap_base_subgroup 
 	struct base_subgroup_data *base_subgroup_bis = &data->subgroup_bis[data->subgroup_cnt];
 	struct bt_audio_codec_cfg codec_cfg;
 	int err;
+	int ret;
 
 	err = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	if (err != 0) {
 		printk("Could not get codec configuration: %d\n", err);
 		goto next_subgroup;
 	}
-
+	ret = bt_audio_codec_cfg_get_freq(&codec_cfg);
+	if (ret >= 0) {
+		ret = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+		configured_sampling_freq = ret;
+	}
+	printk("------sampling freq------: %d\n", ret);
 	if (codec_cfg.id != BT_HCI_CODING_FORMAT_LC3) {
 		printk("Only LC3 codec supported (%u)\n", codec_cfg.id);
 		goto next_subgroup;
@@ -498,6 +1610,7 @@ static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_
 	leds_update();
 
 	k_sem_give(&sem_broadcast_sink_stopped);
+	k_sem_give(&sem_link_event);
 }
 
 static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
@@ -669,6 +1782,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	req_recv_state = recv_state;
 
 	(void)memcpy(sink_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	bcode_received = true;
 
 	k_sem_give(&sem_broadcast_code_received);
 }
@@ -761,6 +1875,199 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 	.bis_sync_req = bis_sync_req_cb,
 };
 
+/* Vendor control service: volume as int8 in 0.5 dB steps (-127 to 0), scanning state as uint8
+ * (0 or 1, reads back whether scanning is active) and equalizer mode as uint8 preset index.
+ */
+#define CTRL_UUID_VAL(n) BT_UUID_128_ENCODE(0x8e7f1a00U + (n), 0x4b2cU, 0x11eeU, 0xbe56U, \
+					    0x0242ac120002ULL)
+
+static const struct bt_uuid_128 ctrl_svc_uuid = BT_UUID_INIT_128(CTRL_UUID_VAL(0U));
+static const struct bt_uuid_128 ctrl_volume_uuid = BT_UUID_INIT_128(CTRL_UUID_VAL(1U));
+static const struct bt_uuid_128 ctrl_scan_uuid = BT_UUID_INIT_128(CTRL_UUID_VAL(2U));
+static const struct bt_uuid_128 ctrl_eq_uuid = BT_UUID_INIT_128(CTRL_UUID_VAL(3U));
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+static int16_t dac_volume_req;
+static uint8_t dac_eq_req;
+
+/* I2C transfers to the TLV320 are done in the system workqueue, not in the BT RX thread */
+static void dac_volume_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	dac_volume_set(dac_volume_req);
+}
+
+static void dac_eq_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	dac_eq_set(dac_eq_req);
+}
+
+static K_WORK_DEFINE(dac_volume_work, dac_volume_work_handler);
+static K_WORK_DEFINE(dac_eq_work, dac_eq_work_handler);
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+static ssize_t ctrl_u8_write_check(uint16_t len, uint16_t offset)
+{
+	if (offset != 0U) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if (len != sizeof(uint8_t)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	return 0;
+}
+
+static ssize_t ctrl_volume_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+				uint16_t len, uint16_t offset)
+{
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const int8_t vol = dac_volume;
+
+	if (dac_present) {
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, &vol, sizeof(vol));
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+}
+
+static ssize_t ctrl_volume_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	ssize_t err;
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
+	err = ctrl_u8_write_check(len, offset);
+	if (err != 0) {
+		return err;
+	}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const int8_t vol = *(const int8_t *)buf;
+
+	if (dac_present) {
+		if (vol < DAC_VOL_MIN || vol > DAC_VOL_MAX) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		dac_volume_req = vol;
+		(void)k_work_submit(&dac_volume_work);
+
+		return len;
+	}
+#else /* !TLV320_AUDIO_OUTPUT_ENABLED */
+	ARG_UNUSED(buf);
+#endif /* !TLV320_AUDIO_OUTPUT_ENABLED */
+
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+}
+
+static ssize_t ctrl_scan_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			      uint16_t len, uint16_t offset)
+{
+	const uint8_t val = scanning ? 1U : 0U;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &val, sizeof(val));
+}
+
+static ssize_t ctrl_scan_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			       const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	ssize_t err;
+	uint8_t val;
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
+	err = ctrl_u8_write_check(len, offset);
+	if (err != 0) {
+		return err;
+	}
+
+	val = *(const uint8_t *)buf;
+	if (val > 1U) {
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	scan_user_set(val != 0U);
+
+	return len;
+}
+
+static ssize_t ctrl_eq_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			    uint16_t len, uint16_t offset)
+{
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const uint8_t mode = dac_eq_mode;
+
+	if (dac_present) {
+		return bt_gatt_attr_read(conn, attr, buf, len, offset, &mode, sizeof(mode));
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+}
+
+static ssize_t ctrl_eq_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			     const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+	ssize_t err;
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(attr);
+	ARG_UNUSED(flags);
+
+	err = ctrl_u8_write_check(len, offset);
+	if (err != 0) {
+		return err;
+	}
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	const uint8_t mode = *(const uint8_t *)buf;
+
+	if (dac_present) {
+		if (mode >= ARRAY_SIZE(dac_eq_presets)) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		dac_eq_req = mode;
+		(void)k_work_submit(&dac_eq_work);
+
+		return len;
+	}
+#else /* !TLV320_AUDIO_OUTPUT_ENABLED */
+	ARG_UNUSED(buf);
+#endif /* !TLV320_AUDIO_OUTPUT_ENABLED */
+
+	return BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+}
+
+BT_GATT_SERVICE_DEFINE(ctrl_svc,
+	BT_GATT_PRIMARY_SERVICE(&ctrl_svc_uuid),
+	BT_GATT_CHARACTERISTIC(&ctrl_volume_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, ctrl_volume_read,
+			       ctrl_volume_write, NULL),
+	BT_GATT_CUD("Volume (int8, 0.5 dB, -127 to 0)", BT_GATT_PERM_READ),
+	BT_GATT_CHARACTERISTIC(&ctrl_scan_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, ctrl_scan_read,
+			       ctrl_scan_write, NULL),
+	BT_GATT_CUD("Scanning (0 off, 1 on)", BT_GATT_PERM_READ),
+	BT_GATT_CHARACTERISTIC(&ctrl_eq_uuid.uuid, BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE, ctrl_eq_read,
+			       ctrl_eq_write, NULL),
+	BT_GATT_CUD("Equalizer (0 Flat, 1 Bass, 2 Treble, 3 Loudness, 4 Voice)",
+		    BT_GATT_PERM_READ),
+);
+
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err != 0U) {
@@ -801,7 +2108,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void recycled(void)
 {
-	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
+	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD) && atomic_get(&powering_off) == 0) {
 		int err;
 
 		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
@@ -876,6 +2183,11 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
 	       bt_addr_le_str(info->addr), info->sid);
+
+	/* While the BIG is synced, only a PA of the same broadcast can be used */
+	if (big_synced && broadcast_id != broadcaster_broadcast_id) {
+		return false;
+	}
 
 	if (broadcast_assistant_conn == NULL /* Not requested by Broadcast Assistant */ ||
 	    (req_recv_state != NULL && bt_addr_le_eq(info->addr, &req_recv_state->addr) &&
@@ -1024,19 +2336,18 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 		pa_synced = false;
 		leds_update();
 
-		k_sem_give(&sem_pa_sync_lost);
+		/* The BIG, if synced, keeps playing; the sink is recreated on the new PA sync
+		 * once the BIG is lost.
+		 */
+		if (broadcast_sink != NULL) {
+			sink_pa_stale = true;
+		}
 
-		if (info->reason != BT_HCI_ERR_LOCALHOST_TERM_CONN && req_recv_state != NULL) {
+		k_sem_give(&sem_link_event);
+
+		if (info->reason != BT_HCI_ERR_LOCALHOST_TERM_CONN && req_recv_state != NULL &&
+		    !big_synced) {
 			int err;
-
-			if (big_synced) {
-				err = bt_bap_broadcast_sink_stop(broadcast_sink);
-				if (err != 0) {
-					printk("Failed to stop Broadcast Sink: %d\n", err);
-
-					return;
-				}
-			}
 
 			err = bt_bap_scan_delegator_rem_src(req_recv_state->src_id);
 			if (err != 0) {
@@ -1129,18 +2440,9 @@ static int init(void)
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 	bt_le_scan_cb_register(&bap_scan_cb);
 
-	stream_rx_get_streams(bap_streams_p);
-
 	for (size_t i = 0U; i < CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT; i++) {
+		bap_streams_p[i] = &bis_stream[i];
 		bt_bap_stream_cb_register(bap_streams_p[i], &stream_ops);
-	}
-
-	if (IS_ENABLED(CONFIG_LIBLC3)) {
-		lc3_init();
-	}
-
-	if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
-		usb_init();
 	}
 
 	return 0;
@@ -1155,6 +2457,9 @@ static int reset(void)
 	req_recv_state = NULL;
 	big_synced = false;
 	pa_synced = false;
+	sink_pa_stale = false;
+	bcode_received = false;
+	sync_bitfield = 0U;
 	base_received = false;
 	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
 	(void)memset(&requested_bis_sync, 0, sizeof(requested_bis_sync));
@@ -1162,6 +2467,7 @@ static int reset(void)
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
 	broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	sdu_metrics_reset();
 	leds_update();
 
 	if (broadcast_sink != NULL) {
@@ -1190,7 +2496,6 @@ static int reset(void)
 	k_sem_reset(&sem_pa_synced);
 	k_sem_reset(&sem_base_received);
 	k_sem_reset(&sem_syncable);
-	k_sem_reset(&sem_pa_sync_lost);
 	k_sem_reset(&sem_broadcast_code_received);
 	k_sem_reset(&sem_bis_sync_requested);
 	k_sem_reset(&sem_stream_connected);
@@ -1392,8 +2697,332 @@ static uint32_t select_bis_sync_bitfield(struct base_data *base_sg_data,
 	return result;
 }
 
+#define WAIT_POLL_MS    100U
+#define SEM_TIMEOUT_MS  (60U * MSEC_PER_SEC)
+
+static int scan_stop(void);
+static void scan_update(void);
+
+/* Wait for sem; abort early on a power off request, or on PA sync loss if need_pa is set */
+static int sem_take_or_abort(struct k_sem *sem, bool need_pa)
+{
+	for (uint32_t waited_ms = 0U; waited_ms < SEM_TIMEOUT_MS; waited_ms += WAIT_POLL_MS) {
+		if (k_sem_take(sem, K_MSEC(WAIT_POLL_MS)) == 0) {
+			return 0;
+		}
+
+		scan_update();
+
+		if (atomic_get(&powering_off) != 0 || (need_pa && !pa_synced)) {
+			return -ECANCELED;
+		}
+	}
+
+	return -EAGAIN;
+}
+
+static void conn_disconnect(struct bt_conn *conn, void *data)
+{
+	ARG_UNUSED(data);
+
+	(void)bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_POWER_OFF);
+}
+
+static void system_off(void)
+{
+	const struct gpio_dt_spec *btn = &buttons[BUTTON_POWER];
+	int err;
+
+	printk("Stopping and entering System OFF\n");
+
+	if (broadcast_sink != NULL && big_synced) {
+		k_sem_reset(&sem_broadcast_sink_stopped);
+		err = bt_bap_broadcast_sink_stop(broadcast_sink);
+		if (err != 0) {
+			printk("Failed to stop Broadcast Sink: %d\n", err);
+		} else {
+			(void)k_sem_take(&sem_broadcast_sink_stopped, K_SECONDS(1));
+		}
+	}
+
+	if (pa_sync != NULL) {
+		err = bt_le_per_adv_sync_delete(pa_sync);
+		if (err != 0) {
+			printk("Failed to delete PA sync: %d\n", err);
+		}
+	}
+
+	err = scan_stop();
+	if (err != 0) {
+		printk("Failed to stop scanning: %d\n", err);
+	}
+
+	if (ext_adv != NULL) {
+		(void)stop_adv();
+	}
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, conn_disconnect, NULL);
+	k_sleep(K_MSEC(100));
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	if (dac_present) {
+		nrfx_i2s_stop(&i2s_inst);
+	}
+
+	/* Hold the TLV320 in reset */
+	(void)gpio_pin_set_dt(&dac_rst, 0);
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+	leds_off();
+
+	/* Arm wake-up only once released, a held button wakes the board immediately */
+	while (gpio_pin_get_dt(btn) > 0) {
+		k_sleep(K_MSEC(10));
+	}
+
+	err = gpio_pin_interrupt_configure_dt(btn, GPIO_INT_LEVEL_ACTIVE);
+	if (err != 0) {
+		printk("Failed to configure wake-up button: %d\n", err);
+	}
+
+	printk("System OFF, press sw3 to restart\n");
+	log_panic();
+
+	sys_poweroff();
+}
+
+/* Continuous active scanning, the 1M and the Coded PHY scan windows together cover the scan
+ * interval. No duplicate filtering, so that every auxiliary PDU is received.
+ */
+static int scan_start(void)
+{
+	struct bt_le_scan_param scan_param = {
+		.type           = BT_LE_SCAN_TYPE_ACTIVE,
+		.options        = BT_LE_SCAN_OPT_CODED,
+		.interval       = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+		.window         = BT_GAP_SCAN_FAST_WINDOW,
+		.interval_coded = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+		.window_coded   = BT_GAP_SCAN_FAST_WINDOW,
+	};
+	int err;
+
+	if (scanning) {
+		return 0;
+	}
+
+	err = bt_le_scan_start(&scan_param, NULL);
+	if (err != 0 && err != -EALREADY) {
+		printk("Unable to start scan for broadcast sources: %d\n", err);
+		return err;
+	}
+
+	scanning = true;
+	leds_update();
+
+	return 0;
+}
+
+static int scan_stop(void)
+{
+	int err;
+
+	err = bt_le_scan_stop();
+	if (err != 0 && err != -EALREADY) {
+		return err;
+	}
+
+	scanning = false;
+	leds_update();
+
+	return 0;
+}
+
+/* Called from the main thread to apply the user scan state */
+static void scan_update(void)
+{
+	int err;
+
+	if (scan_user) {
+		if (!scanning) {
+			err = scan_start();
+			if (err == 0) {
+				printk("Scanning started\n");
+			}
+		}
+	} else if (scanning && pa_synced && big_synced) {
+		err = scan_stop();
+		if (err != 0) {
+			printk("Failed to stop scanning: %d\n", err);
+		} else {
+			printk("Scanning stopped\n");
+		}
+	}
+}
+
+/* Establish the PA sync. A fresh advertising report is required as the broadcaster may have
+ * restarted with a new address or SID.
+ */
+static int pa_sync_establish(void)
+{
+	int err;
+
+	if (pa_sync == NULL) {
+		if (strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
+			printk("Scanning for broadcast sources containing "
+			       "`" CONFIG_TARGET_BROADCAST_NAME "`\n");
+		} else {
+			printk("Scanning for broadcast sources\n");
+		}
+
+		k_sem_reset(&sem_broadcaster_found);
+
+		err = scan_start();
+		if (err != 0) {
+			return err;
+		}
+
+		printk("Waiting for Broadcaster\n");
+		err = sem_take_or_abort(&sem_broadcaster_found, false);
+		if (err != 0) {
+			printk("sem_broadcaster_found failed: %d\n", err);
+			return err;
+		}
+
+		printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",
+		       broadcaster_broadcast_id);
+		k_sem_reset(&sem_pa_synced);
+		err = pa_sync_create();
+		if (err != 0) {
+			printk("Could not create Broadcast PA sync: %d\n", err);
+			return err;
+		}
+	}
+
+	printk("Waiting for PA synced\n");
+	err = sem_take_or_abort(&sem_pa_synced, false);
+	if (err != 0) {
+		printk("sem_pa_synced failed: %d\n", err);
+
+		if (pa_sync != NULL && !pa_synced) {
+			/* Cancel the pending PA sync */
+			(void)bt_le_per_adv_sync_delete(pa_sync);
+			pa_sync = NULL;
+		}
+
+		return err;
+	}
+
+	return 0;
+}
+
+/* Create the Broadcast Sink on the PA sync and select the BISes to sync to */
+static int broadcast_sink_establish(void)
+{
+	int err;
+
+	if (sink_pa_stale) {
+		printk("Recreating Broadcast Sink on the new PA sync\n");
+		err = bt_bap_broadcast_sink_delete(broadcast_sink);
+		if (err != 0) {
+			printk("Deleting broadcast sink failed (err %d)\n", err);
+			return err;
+		}
+
+		broadcast_sink = NULL;
+		sink_pa_stale = false;
+	}
+
+	if (broadcast_sink == NULL) {
+		base_received = false;
+		sync_bitfield = 0U;
+		k_sem_reset(&sem_base_received);
+
+		printk("Broadcast source PA synced, creating Broadcast Sink\n");
+		err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id,
+						   &broadcast_sink);
+		if (err != 0) {
+			printk("Failed to create broadcast sink: %d\n", err);
+			return err;
+		}
+
+		printk("Broadcast Sink created, waiting for BASE\n");
+		err = sem_take_or_abort(&sem_base_received, true);
+		if (err != 0) {
+			printk("sem_base_received failed: %d\n", err);
+			return err;
+		}
+	}
+
+	printk("Waiting for syncable\n");
+	k_sem_reset(&sem_syncable);
+	err = sem_take_or_abort(&sem_syncable, true);
+	if (err != 0) {
+		printk("sem_syncable failed: %d\n", err);
+		return err;
+	}
+
+	/* sem_broadcast_code_received is also given if the broadcast is not encrypted */
+	if (!bcode_received) {
+		printk("Waiting for broadcast code\n");
+		err = sem_take_or_abort(&sem_broadcast_code_received, true);
+		if (err != 0) {
+			printk("sem_broadcast_code_received failed: %d\n", err);
+			return err;
+		}
+	}
+
+	if (sync_bitfield == 0U) {
+		printk("Waiting for BIS sync request\n");
+		err = sem_take_or_abort(&sem_bis_sync_requested, true);
+		if (err != 0) {
+			printk("sem_bis_sync_requested failed: %d\n", err);
+			return err;
+		}
+
+		sync_bitfield = select_bis_sync_bitfield(&base_recv_data, requested_bis_sync);
+		if (sync_bitfield == 0U) {
+			printk("No valid BIS sync found\n");
+			return -ENOENT;
+		}
+	}
+
+	return 0;
+}
+
+static int big_sync_establish(void)
+{
+	int err;
+
+	printk("Syncing to broadcast with bitfield: 0x%08x, stream_count = %u\n", sync_bitfield,
+	       get_stream_count(sync_bitfield));
+
+	k_sem_reset(&sem_big_synced);
+	err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p,
+					 sink_broadcast_code);
+	if (err != 0) {
+		printk("Unable to sync to broadcast source: %d\n", err);
+		return err;
+	}
+
+	printk("Waiting for stream(s) started\n");
+	err = sem_take_or_abort(&sem_big_synced, false);
+	if (err != 0) {
+		printk("sem_big_synced failed: %d\n", err);
+
+		if (!big_synced) {
+			/* Cancel the pending BIG sync */
+			(void)bt_bap_broadcast_sink_stop(broadcast_sink);
+		}
+
+		return err;
+	}
+
+	return 0;
+}
+
 int main(void)
 {
+	bool full_reset = true;
 	int err;
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
@@ -1404,6 +3033,25 @@ int main(void)
 		return 0;
 	}
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
+
+#if TLV320_AUDIO_OUTPUT_ENABLED
+	err = clocks_start();
+	if (err != 0) {
+		return 0;
+	}
+
+	err = tlv320_setup();
+	if (err == 0) {
+		err = audio_i2s_start();
+		dac_present = (err == 0);
+	}
+
+	if (!dac_present) {
+		printk("TLV320 audio output disabled\n");
+	}
+#endif /* TLV320_AUDIO_OUTPUT_ENABLED */
+
+	buttons_init();
 
 	err = init();
 	if (err != 0) {
@@ -1420,211 +3068,54 @@ int main(void)
 		}
 	}
 
+	/* Re-establish whichever of the PA sync and the BIG sync is lost. The BIG keeps
+	 * playing while the PA sync is re-established; everything is reset only when
+	 * neither can be re-established.
+	 */
 	while (true) {
-		uint8_t stream_count;
-		uint32_t sync_bitfield;
-
-		err = reset();
-		if (err != 0) {
-			printk("Resetting failed: %d - Aborting\n", err);
-
-			return 0;
+		if (IS_ENABLED(CONFIG_POWEROFF) && atomic_get(&powering_off) != 0) {
+			system_off();
 		}
 
-		if (IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
-			if (broadcast_assistant_conn == NULL) {
-				k_sem_reset(&sem_connected);
+		if (full_reset && !big_synced) {
+			err = reset();
+			if (err != 0) {
+				printk("Resetting failed: %d - Aborting\n", err);
 
-				printk("Starting advertising\n");
-				/* Stop advertising before starting if needed */
-				if (ext_adv != NULL) {
-					err = stop_adv();
-					if (err != 0) {
-						printk("Unable to stop advertising: %d\n", err);
-
-						return 0;
-					}
-				}
-				err = start_adv();
-				if (err != 0) {
-					printk("Unable to start advertising connectable: %d\n",
-					       err);
-
-					return 0;
-				}
-
-				printk("Waiting for Broadcast Assistant\n");
-				err = k_sem_take(&sem_connected, ADV_TIMEOUT);
-				if (err != 0) {
-					printk("No Broadcast Assistant connected\n");
-
-					err = stop_adv();
-					if (err != 0) {
-						printk("Unable to stop advertising: %d\n", err);
-
-						return 0;
-					}
-				}
-			}
-
-			if (broadcast_assistant_conn != NULL) {
-				k_sem_reset(&sem_pa_request);
-				k_sem_reset(&sem_past_request);
-				k_sem_reset(&sem_disconnected);
-
-				/* Wait for the PA request to determine if we
-				 * should start scanning, or wait for PAST
-				 */
-				printk("Waiting for PA sync request\n");
-				err = k_sem_take(&sem_pa_request, BROADCAST_ASSISTANT_TIMEOUT);
-				if (err != 0) {
-					printk("sem_pa_request timed out, resetting\n");
-					continue;
-				}
-
-				if (k_sem_take(&sem_past_request, K_NO_WAIT) == 0) {
-					goto wait_for_pa_sync;
-				} /* else continue with scanning below */
-			}
-		}
-
-		if (strlen(CONFIG_TARGET_BROADCAST_NAME) > 0U) {
-			printk("Scanning for broadcast sources containing "
-			       "`" CONFIG_TARGET_BROADCAST_NAME "`\n");
-		} else {
-			printk("Scanning for broadcast sources\n");
-		}
-
-		static bool scanning;
-
-		if (!scanning) {
-			struct bt_le_scan_param scan_param = {
-				.type           = BT_LE_SCAN_TYPE_ACTIVE,
-				.options        = BT_LE_SCAN_OPT_CODED,
-				.interval       = BT_GAP_SCAN_FAST_INTERVAL_MIN,
-				.window         = BT_GAP_SCAN_FAST_WINDOW,
-				.interval_coded = BT_GAP_SCAN_FAST_INTERVAL_MIN,
-				.window_coded   = BT_GAP_SCAN_FAST_WINDOW,
-			};
-
-			err = bt_le_scan_start(&scan_param, NULL);
-			if (err != 0 && err != -EALREADY) {
-				printk("Unable to start scan for broadcast sources: %d\n",
-				       err);
 				return 0;
 			}
 
-			scanning = true;
+			full_reset = false;
 		}
 
-		printk("Waiting for Broadcaster\n");
-		err = k_sem_take(&sem_broadcaster_found, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_broadcaster_found timed out, resetting\n");
-			continue;
-		}
-
-		if (!IS_ENABLED(CONFIG_SCAN_BACKGROUND)) {
-			err = bt_le_scan_stop();
-			if (err != 0) {
-				printk("bt_le_scan_stop failed with %d, resetting\n", err);
+		if (!pa_synced) {
+			err = pa_sync_establish();
+			if (err == -ECANCELED) {
+				continue;
+			} else if (err != 0) {
+				full_reset = true;
 				continue;
 			}
-
-			scanning = false;
 		}
 
-		printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",
-		       broadcaster_broadcast_id);
-		err = pa_sync_create();
-		if (err != 0) {
-			printk("Could not create Broadcast PA sync: %d, resetting\n", err);
-			continue;
+		if (!big_synced) {
+			err = broadcast_sink_establish();
+			if (err == 0) {
+				err = big_sync_establish();
+			}
+
+			if (err == -ECANCELED || (err != 0 && !pa_synced)) {
+				continue;
+			} else if (err != 0) {
+				full_reset = true;
+				continue;
+			}
 		}
 
-wait_for_pa_sync:
-		printk("Waiting for PA synced\n");
-		err = k_sem_take(&sem_pa_synced, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_pa_synced timed out, resetting\n");
-			continue;
-		}
+		scan_update();
 
-		printk("Broadcast source PA synced, creating Broadcast Sink\n");
-		err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id,
-						   &broadcast_sink);
-		if (err != 0) {
-			printk("Failed to create broadcast sink: %d\n", err);
-			continue;
-		}
-
-		printk("Broadcast Sink created, waiting for BASE\n");
-		err = k_sem_take(&sem_base_received, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_base_received timed out, resetting\n");
-			continue;
-		}
-
-		printk("BASE received, waiting for syncable\n");
-		err = k_sem_take(&sem_syncable, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_syncable timed out, resetting\n");
-			continue;
-		}
-
-		/* sem_broadcast_code_received is also given if the
-		 * broadcast is not encrypted
-		 */
-		printk("Waiting for broadcast code\n");
-		err = k_sem_take(&sem_broadcast_code_received, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_broadcast_code_received timed out, resetting\n");
-			continue;
-		}
-
-		printk("Waiting for BIS sync request\n");
-		err = k_sem_take(&sem_bis_sync_requested, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_bis_sync_requested timed out, resetting\n");
-			continue;
-		}
-
-		/* Select BIS'es to sync to */
-		sync_bitfield = select_bis_sync_bitfield(&base_recv_data, requested_bis_sync);
-		if (sync_bitfield == 0U) {
-			printk("No valid BIS sync found, resetting\n");
-			continue;
-		}
-
-		stream_count = get_stream_count(sync_bitfield);
-
-		printk("Syncing to broadcast with bitfield: 0x%08x, stream_count = %u\n",
-		       sync_bitfield, stream_count);
-
-		err = bt_bap_broadcast_sink_sync(broadcast_sink, sync_bitfield, bap_streams_p,
-						 sink_broadcast_code);
-		if (err != 0) {
-			printk("Unable to sync to broadcast source: %d\n", err);
-			return 0;
-		}
-
-		printk("Waiting for stream(s) started\n");
-		err = k_sem_take(&sem_big_synced, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_big_synced timed out, resetting\n");
-			continue;
-		}
-
-		printk("Waiting for PA disconnected\n");
-		err = k_sem_take(&sem_pa_sync_lost, K_FOREVER);
-		__ASSERT_NO_MSG(err == 0);
-
-		printk("Waiting for sink to stop\n");
-		err = k_sem_take(&sem_broadcast_sink_stopped, SEM_TIMEOUT);
-		if (err != 0) {
-			printk("sem_broadcast_sink_stopped timed out, resetting\n");
-			continue;
-		}
+		printk("Waiting for PA sync or BIG sync loss\n");
+		(void)k_sem_take(&sem_link_event, K_FOREVER);
 	}
 
 	return 0;

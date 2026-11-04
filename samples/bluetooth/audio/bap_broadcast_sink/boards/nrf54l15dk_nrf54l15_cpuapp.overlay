@@ -18,3 +18,74 @@
 &uart20 {
 	status = "disabled";
 };
+
+&hfpll {
+	clock-frequency = <DT_FREQ_M(128)>;
+};
+
+/ {
+	aliases {
+		i2s-node0 = &i2s20;
+		i2c-slave = &i2c22;
+		led-red = &led0;
+		led-green = &led2;
+		led-blue = &led1;
+	};
+};
+
+&pinctrl {
+	i2s20_default: i2s20_default {
+		group1 {
+			psels = <NRF_PSEL(I2S_MCK, 1, 7)>,
+				<NRF_PSEL(I2S_SCK_S, 1, 6)>,
+				<NRF_PSEL(I2S_LRCK_S, 1, 5)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 4)>;
+		};
+	};
+
+	i2s20_sleep: i2s20_sleep {
+		group1 {
+			psels = <NRF_PSEL(I2S_MCK, 1, 7)>,
+				<NRF_PSEL(I2S_SCK_S, 1, 6)>,
+				<NRF_PSEL(I2S_LRCK_S, 1, 5)>,
+				<NRF_PSEL(I2S_SDOUT, 1, 4)>;
+			low-power-enable;
+		};
+	};
+
+	i2c21_default_alt: i2c21_default_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+		};
+	};
+
+	i2c21_sleep_alt: i2c21_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 11)>,
+				<NRF_PSEL(TWIM_SCL, 1, 12)>;
+			low-power-enable;
+		};
+	};
+
+};
+
+&i2s20 {
+	status = "okay";
+	pinctrl-0 = <&i2s20_default>;
+	pinctrl-1 = <&i2s20_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&i2c21 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c21_default_alt>;
+	pinctrl-1 = <&i2c21_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	tlv320: tlv320@18 {
+	        compatible = "i2c-device";
+	        status = "okay";
+		reg = <0x18>;
+	};
+};

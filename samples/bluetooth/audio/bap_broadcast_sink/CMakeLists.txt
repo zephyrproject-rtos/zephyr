@@ -6,7 +6,6 @@ project(bap_broadcast_sink)
 
 target_sources(app PRIVATE
   src/main.c
-  src/stream_rx.c
 )
 
 target_sources_ifdef(CONFIG_ENABLE_LC3 app PRIVATE src/lc3.c)

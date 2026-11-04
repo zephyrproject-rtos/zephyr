@@ -33,7 +33,9 @@ config SCAN_BACKGROUND
 	bool "Keep background scanning"
 	depends on SCAN_SELF
 	help
-	  Keep scanning in the background.
+	  Keep scanning in the background after the PA and BIG are synced. Background
+	  scanning is enabled or disabled at runtime by sw2 or the vendor GATT scanning
+	  characteristic. When disabled, scanning stops once the PA and BIG are synced.
 
 config TARGET_BROADCAST_NAME
 	string "Target Broadcast Device Name"
@@ -94,7 +96,7 @@ config USE_SPECIFIC_BROADCAST_CHANNEL
 config TARGET_BROADCAST_CHANNEL
 	int "Broadcast Channel Audio Location to sync to"
 	range 0 3
-	default 1
+	default 3
 	depends on USE_SPECIFIC_BROADCAST_CHANNEL
 	help
 	  Channel Audio Location to sync to. These corresponds to the bt_audio_location,
