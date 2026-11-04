@@ -17,6 +17,7 @@ target_sources(app PRIVATE
   "src/scan_req_tgta.c"
   "src/anonymous.c"
   "src/connect.c"
+  "src/test_aux_connect.c"
 )
 
 zephyr_include_directories(
