@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST STHS34PF80 infrared presence and motion detection sensor
+
+compatible: "st,sths34pf80"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  odr:
+    type: int
+    default: 3
+    description: |
+      Output data rate selection. Valid values are:
+      0 = power-down, 1 = 0.25 Hz, 2 = 0.5 Hz, 3 = 1 Hz,
+      4 = 2 Hz, 5 = 4 Hz, 6 = 8 Hz, 7 = 15 Hz, 8 = 30 Hz.
+      Default is 3 (1 Hz), a safe power-up rate.
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
