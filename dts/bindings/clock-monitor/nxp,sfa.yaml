@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Signal Frequency Analyser (SFA).
+
+  Measures a clock under test (the clock_monitor target) against a reference
+  clock with two 32-bit counters. Both clock_monitor modes are supported:
+
+    - MEASURE: one-shot frequency measurement.
+    - WINDOW: the SFA monitor mode with the low/high limits.
+
+  The reference and target inputs are fixed per instance; select another pair
+  in a board overlay.
+
+  Selector values for each SoC are in
+  <zephyr/dt-bindings/clock-monitor/nxp-sfa.h>.
+
+compatible: "nxp,sfa"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      SFA peripheral gate clock.
+
+  reference-select:
+    type: int
+    required: true
+    description: |
+      Reference clock (NXP_SFA_*_REF_*).
+
+  reference-frequency:
+    type: int
+    required: true
+    description: |
+      Reference clock rate in Hz.
+
+  target-select:
+    type: int
+    required: true
+    description: |
+      Clock under test (NXP_SFA_*_CUT_*).
+
+  target-frequency:
+    type: int
+    description: |
+      Nominal rate of the clock under test in Hz.

@@ -5,6 +5,7 @@
  */
 
 #include "nxp_mcxw7x_common.dtsi"
+#include <zephyr/dt-bindings/clock-monitor/nxp-sfa.h>
 
 /* TSTMR is removed from MCXW72 due to SIRC clock source instability. */
 /delete-node/ &tstmr0;
@@ -75,6 +76,20 @@
 
 &pbridge2 {
 	reg = <0x0 0x54000>;
+
+	sfa0: clock-monitor@1d000 {
+		compatible = "nxp,sfa";
+		reg = <0x1d000 0x38>;
+		interrupts = <26 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x74, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+		reference-select = <NXP_SFA_MCXW72_SFA0_REF_CPU_CLK>;
+		reference-frequency = <DT_FREQ_M(96)>;
+		target-select = <NXP_SFA_MCXW72_SFA0_CUT_32K>;
+		target-frequency = <32768>;
+		status = "disabled";
+	};
 };
 
 &porta {
