@@ -1,0 +1,22 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sama7d65_cpro
+name: SAMA7D65 Curiosity Pro Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - crypto
+  - eeprom
+  - entropy
+  - gpio
+  - i2c
+  - kernel
+  - led
+  - logging
+  - rtc
+  - uart
+vendor: microchip
