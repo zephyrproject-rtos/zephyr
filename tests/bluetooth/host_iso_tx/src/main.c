@@ -393,9 +393,26 @@ static void connect_acl(void)
 	zassert_ok(k_sem_take(&acl_connected_sem, K_SECONDS(1)), "No ACL connection");
 }
 
+static void num_completed_evt(uint16_t handle)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_num_completed_packets *evt;
+	const size_t evt_len = sizeof(*evt) + sizeof(evt->h[0]);
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, evt_len);
+	evt = net_buf_add(buf, evt_len);
+	evt->num_handles = 1U;
+	evt->h[0].handle = sys_cpu_to_le16(handle);
+	evt->h[0].count = sys_cpu_to_le16(1U);
+	bt_hci_recv(dev, buf);
+}
+
 /* What the CIS has reported about the SDUs given to it */
 static unsigned int sent_count;
 static unsigned int send_failed_count;
+static bool ack_on_send_failed;
 
 static K_SEM_DEFINE(iso_connected_sem, 0, 1);
 static K_SEM_DEFINE(iso_disconnected_sem, 0, 1);
@@ -428,6 +445,11 @@ static void iso_send_failed(struct bt_iso_chan *chan, int err)
 
 	zassert_equal(err, -ESHUTDOWN, "Send failed with %d", err);
 	send_failed_count++;
+
+	if (ack_on_send_failed) {
+		ack_on_send_failed = false;
+		num_completed_evt(CIS_HANDLE);
+	}
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -615,6 +637,8 @@ static void after(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	ack_on_send_failed = false;
+
 	if (iso_chan.state != BT_ISO_STATE_DISCONNECTED) {
 		disconnect_cis();
 	}
@@ -697,6 +721,71 @@ static ZTEST(iso_tx, test_unacked_sdu_on_disable)
 	zassert_equal(sent_count, 0U, "%u SDUs reported as sent", sent_count);
 	zassert_equal(send_failed_count, 1U, "%u SDUs reported as failed (!= 1)",
 		      send_failed_count);
+}
+
+static K_SEM_DEFINE(workq_held_sem, 0, 1);
+
+static void hold_workq(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	k_sem_give(&workq_held_sem);
+	k_sleep(K_MSEC(100));
+}
+
+static K_WORK_DEFINE(hold_workq_work, hold_workq);
+
+/* An SDU the controller has acknowledged is reported as sent, also when bt_disable()
+ * gets to the CIS before the TX notification work does. That work runs on the system
+ * workqueue, which is kept busy for longer than bt_disable() takes on this controller.
+ */
+static ZTEST(iso_tx, test_acked_sdu_on_disable)
+{
+	send_sdu(SHORT_SDU_LEN);
+	expect_iso_packets(1U);
+
+	zassert_true(k_work_submit(&hold_workq_work) >= 0, "Holding the workqueue failed");
+	zassert_ok(k_sem_take(&workq_held_sem, K_SECONDS(1)), "Workqueue not held");
+	num_completed_evt(CIS_HANDLE);
+
+	stop();
+
+	zassert_equal(sent_count, 1U, "%u SDUs reported as sent (!= 1)", sent_count);
+	zassert_equal(send_failed_count, 0U, "%u SDUs reported as failed", send_failed_count);
+}
+
+/* The controller can still acknowledge an SDU while another one is being reported
+ * as failed, and that one has to be reported before the object is released too.
+ */
+static ZTEST(iso_tx, test_sdu_acked_during_disable)
+{
+	send_sdu(SHORT_SDU_LEN);
+	send_sdu(SHORT_SDU_LEN);
+	expect_iso_packets(2U);
+
+	ack_on_send_failed = true;
+	stop();
+
+	zassert_equal(sent_count, 1U, "%u SDUs reported as sent (!= 1)", sent_count);
+	zassert_equal(send_failed_count, 1U, "%u SDUs reported as failed (!= 1)",
+		      send_failed_count);
+}
+
+/* A reference kept to the CIS does not get the channel told a second time */
+static ZTEST(iso_tx, test_reference_kept_on_disable)
+{
+	struct bt_conn *kept = bt_conn_ref(iso_chan.iso);
+
+	stop();
+
+	zassert_ok(k_sem_take(&iso_disconnected_sem, K_SECONDS(1)),
+		   "Channel not told about the CIS");
+	zassert_is_null(iso_chan.iso, "Channel kept the connection");
+
+	start();
+
+	zassert_equal(k_sem_count_get(&iso_disconnected_sem), 0U, "Channel told twice");
+	bt_conn_unref(kept);
 }
 
 static K_SEM_DEFINE(peer_cis_connected_sem, 0, 1);
