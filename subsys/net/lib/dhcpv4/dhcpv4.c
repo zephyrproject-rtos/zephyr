@@ -49,11 +49,6 @@ static sys_slist_t dhcpv4_ifaces;
 static void dhcpv4_timeout(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(timeout_work, dhcpv4_timeout);
 
-static struct net_mgmt_event_callback mgmt4_if_cb;
-#if defined(CONFIG_NET_IPV4_ACD)
-static struct net_mgmt_event_callback mgmt4_acd_cb;
-#endif
-
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 static sys_slist_t option_callbacks = SYS_SLIST_STATIC_INIT(&option_callbacks);
 static int unique_types_in_callbacks;
@@ -2010,8 +2005,9 @@ drop:
 	return verdict;
 }
 
-static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
-				       uint64_t mgmt_event, struct net_if *iface)
+static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface,
+				       void *info __unused, size_t info_length __unused,
+				       void *user_data __unused)
 {
 	sys_snode_t *node = NULL;
 
@@ -2072,9 +2068,18 @@ out:
 	k_mutex_unlock(&lock);
 }
 
+/* Catch network interface UP or DOWN events and renew the address
+ * if interface is coming back up again.
+ */
+NET_MGMT_REGISTER_EVENT_HANDLER(dhcpv4_iface_events,
+				IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
+				(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN,
+				dhcpv4_iface_event_handler, NULL);
+
 #if defined(CONFIG_NET_IPV4_ACD)
-static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
-				     uint64_t mgmt_event, struct net_if *iface)
+static void dhcpv4_acd_event_handler(uint64_t mgmt_event, struct net_if *iface,
+				     void *info, size_t info_length,
+				     void *user_data __unused)
 {
 	sys_snode_t *node = NULL;
 	struct net_in_addr *addr;
@@ -2084,11 +2089,11 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (cb->info_length != sizeof(struct net_in_addr)) {
+	if (info_length != sizeof(struct net_in_addr)) {
 		return;
 	}
 
-	addr = (struct net_in_addr *)cb->info;
+	addr = (struct net_in_addr *)info;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -2128,6 +2133,10 @@ static void dhcpv4_acd_event_handler(struct net_mgmt_event_callback *cb,
 out:
 	k_mutex_unlock(&lock);
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(dhcpv4_acd_events,
+				NET_EVENT_IPV4_ACD_FAILED | NET_EVENT_IPV4_ACD_CONFLICT,
+				dhcpv4_acd_event_handler, NULL);
 #endif /* CONFIG_NET_IPV4_ACD */
 
 const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
@@ -2220,13 +2229,6 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		}
 
 		NET_DBG("wait timeout=%us", timeout);
-
-		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
-			net_mgmt_add_event_callback(&mgmt4_if_cb);
-#if defined(CONFIG_NET_IPV4_ACD)
-			net_mgmt_add_event_callback(&mgmt4_acd_cb);
-#endif
-		}
 
 		sys_slist_append(&dhcpv4_ifaces,
 				 &iface->config.dhcpv4.node);
@@ -2348,10 +2350,6 @@ void net_dhcpv4_stop(struct net_if *iface)
 			 * cancellation is unsuccessful.
 			 */
 			(void)k_work_cancel_delayable(&timeout_work);
-			net_mgmt_del_event_callback(&mgmt4_if_cb);
-#if defined(CONFIG_NET_IPV4_ACD)
-			net_mgmt_del_event_callback(&mgmt4_acd_cb);
-#endif
 		}
 
 		dhcpv4_leave_lease(iface, NET_DHCPV4_DISABLED,
@@ -2393,9 +2391,6 @@ int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 
 int net_dhcpv4_init(void)
 {
-	uint64_t events =
-		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
-		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
 	struct net_sockaddr_storage local_addr_storage = { 0 };
 	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
@@ -2417,17 +2412,6 @@ int net_dhcpv4_init(void)
 		NET_DBG("UDP callback registration failed");
 		return ret;
 	}
-
-	/* Catch network interface UP or DOWN events and renew the address
-	 * if interface is coming back up again.
-	 */
-	net_mgmt_init_event_callback(&mgmt4_if_cb, dhcpv4_iface_event_handler,
-				     events);
-#if defined(CONFIG_NET_IPV4_ACD)
-	net_mgmt_init_event_callback(&mgmt4_acd_cb, dhcpv4_acd_event_handler,
-				     NET_EVENT_IPV4_ACD_FAILED |
-				     NET_EVENT_IPV4_ACD_CONFLICT);
-#endif
 
 	return 0;
 }
