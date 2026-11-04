@@ -21,6 +21,7 @@ config ENTROPY_INIT_PRIORITY
 	  Entropy driver device initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/entropy/Kconfig.aesc"
 source "drivers/entropy/Kconfig.ambiq"
 source "drivers/entropy/Kconfig.ameba"
 source "drivers/entropy/Kconfig.arm64"
