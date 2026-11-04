@@ -244,12 +244,19 @@ static inline bool lpspi_rtio_next_tx_fill(const struct device *dev)
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	struct lpspi_data *data = dev->data;
 	struct lpspi_driver_data *lpspi_data = (struct lpspi_driver_data *)data->driver_data;
-	int fifo_remaining_len = config->tx_fifo_size - tx_fifo_cur_len(base);
-	int fill_len = MIN(lpspi_data->total.words_to_clock - lpspi_data->total.words_clocked_tx,
-			   fifo_remaining_len);
+	/* Keep an entry for the command that ends the transfer: written to a full FIFO, it is lost
+	 * and the last word is never clocked out.
+	 */
+	int fifo_remaining_len = config->tx_fifo_size - tx_fifo_cur_len(base) - 1;
+	int words_left = lpspi_data->total.words_to_clock - lpspi_data->total.words_clocked_tx;
+	int fill_len = MIN(words_left, fifo_remaining_len);
+
+	if (words_left <= 0) {
+		return false;
+	}
 
 	if (fill_len <= 0) {
-		return false;
+		return true;
 	}
 
 	int bytes_left = fill_len;
