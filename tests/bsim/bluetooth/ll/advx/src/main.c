@@ -1881,12 +1881,14 @@ struct bst_test_list *test_advx_install(struct bst_test_list *tests)
 struct bst_test_list *test_scan_req_tgta_install(struct bst_test_list *tests);
 struct bst_test_list *test_anonymous_install(struct bst_test_list *tests);
 struct bst_test_list *test_connect_install(struct bst_test_list *tests);
+struct bst_test_list *test_aux_connect_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
 	test_advx_install,
 	test_scan_req_tgta_install,
 	test_anonymous_install,
 	test_connect_install,
+	test_aux_connect_install,
 	NULL
 };
 
