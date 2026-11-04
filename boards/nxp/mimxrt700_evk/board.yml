@@ -10,3 +10,6 @@ board:
     - name: "w25q512nw"
   socs:
   - name: mimxrt798s
+    variants:
+    - name: extmem
+      cpucluster: cm33_cpu0
