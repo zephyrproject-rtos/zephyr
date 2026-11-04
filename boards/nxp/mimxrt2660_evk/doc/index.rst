@@ -77,6 +77,34 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+TRDC Master Assignments
+=======================
+
+The SoC devicetree assigns all non-core TRDC masters to domain 0 by default, matching the
+CPU's access-control domain. Boards and application overlays can override these assignments.
+Each child of a ``trdc_*`` node describes one hardware
+Master Domain Assignment Controller (MDAC). DMA channel pairs share an MDAC: for example,
+``trdc_main_edma5_ch0_1`` configures both eDMA5 channels 0 and 1, not two independent
+assignments.
+
+An application overlay can change one master without replacing the other SoC defaults:
+
+.. code-block:: devicetree
+
+   &trdc_main_edma5_ch0_1 {
+           domain-id = <1>;
+   };
+
+   &trdc_media_jpeg {
+           domain-id = <1>;
+   };
+
+The RT266x supports four domains, so the domain ID must be between 0 and 3.
+Assigning a master to another domain does not grant that domain memory or peripheral
+access; the corresponding resource permissions
+must already allow its transactions. Disable or delete an assignment child to leave its
+register unchanged.
+
 Connections and I/Os
 ====================
 

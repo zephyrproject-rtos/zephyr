@@ -52,8 +52,15 @@ FUNC_NORETURN void soc_early_init_failed(enum soc_early_init_step step);
 		}                                                                                  \
 	} while (false)
 
-/* Hand the Resource Domain Controller and the DMA masters to the CPU's domain. */
-void soc_trdc_setup(void);
+/* Hand the Resource Domain Controller to the CPU's domain. Call first. */
+void soc_ele_release_rdc(void);
+
+/*
+ * Apply devicetree master domains, except LLC assignments executed in soc_ele_release_rdc,
+ * to ensure sys_cache_data_enable success. Touches MEDIA__TRDC, which requires
+ * mediabus_rootclk to be running -- call after soc_clock_init().
+ */
+void soc_trdc_assign_masters(void);
 
 #ifdef __cplusplus
 }
