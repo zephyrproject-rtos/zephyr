@@ -749,6 +749,19 @@ uint32_t radio_is_address(void)
 #if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
 static radio_tmr_isr_cb_t isr_radio_tmr_cb;
 static void *isr_radio_tmr_cb_param;
+
+/* Keep GRTC SYSCOUNTER active while the radio timer ISR is armed. A sleeping
+ * SYSCOUNTER is woken by the first counter read in the radio timer ISR, which
+ * busy waits for up to a few LFCLK periods.
+ */
+static inline void radio_tmr_isr_syscounter_active_set(bool active)
+{
+#if defined(CONFIG_BT_CTLR_NRF_GRTC) && !defined(CONFIG_NRF_GRTC_ALWAYS_ON)
+	nrf_grtc_sys_counter_active_set(NRF_GRTC, active);
+#else /* !CONFIG_BT_CTLR_NRF_GRTC || CONFIG_NRF_GRTC_ALWAYS_ON */
+	ARG_UNUSED(active);
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC || CONFIG_NRF_GRTC_ALWAYS_ON */
+}
 #endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
@@ -795,6 +808,7 @@ uint32_t radio_is_done(void)
 
 				cb = isr_radio_tmr_cb;
 				isr_radio_tmr_cb = NULL;
+				radio_tmr_isr_syscounter_active_set(false);
 
 				cb(isr_radio_tmr_cb_param, 1U);
 			}
@@ -1480,6 +1494,7 @@ void isr_radio_tmr(void)
 
 		cb = isr_radio_tmr_cb;
 		isr_radio_tmr_cb = NULL;
+		radio_tmr_isr_syscounter_active_set(false);
 
 		cb(isr_radio_tmr_cb_param, 0U);
 	}
@@ -1493,6 +1508,7 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param
 
 	isr_radio_tmr_cb_param = param;
 	isr_radio_tmr_cb = cb;
+	radio_tmr_isr_syscounter_active_set(true);
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
@@ -1555,6 +1571,7 @@ uint32_t radio_tmr_isr_clear(void **param)
 
 	isr_radio_tmr_cb_param = NULL;
 	isr_radio_tmr_cb = NULL;
+	radio_tmr_isr_syscounter_active_set(false);
 
 	prev_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
 
@@ -1829,6 +1846,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 				cb = isr_radio_tmr_cb;
 				isr_radio_tmr_cb = NULL;
+				radio_tmr_isr_syscounter_active_set(false);
 
 				cb(isr_radio_tmr_cb_param, 1U);
 			}
@@ -1837,6 +1855,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 			cb = isr_radio_tmr_cb;
 			isr_radio_tmr_cb = NULL;
+			radio_tmr_isr_syscounter_active_set(false);
 
 			cb(isr_radio_tmr_cb_param, 1U);
 		}
@@ -2001,6 +2020,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 
 				cb = isr_radio_tmr_cb;
 				isr_radio_tmr_cb = NULL;
+				radio_tmr_isr_syscounter_active_set(false);
 
 				cb(isr_radio_tmr_cb_param, 1U);
 			}
@@ -2009,6 +2029,7 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 
 			cb = isr_radio_tmr_cb;
 			isr_radio_tmr_cb = NULL;
+			radio_tmr_isr_syscounter_active_set(false);
 
 			cb(isr_radio_tmr_cb_param, 1U);
 		}
