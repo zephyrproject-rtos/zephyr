@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# SCSI mid-layer configuration
+# Transport-neutral command execution, sense handling, and device probe.
+# Transports (e.g. USB MSC host) implement scsi_driver_api.
+
+menuconfig SCSI
+	bool "SCSI mid-layer"
+	help
+	  Transport-neutral SCSI command execution, sense handling, and device
+	  probe. Bus drivers implement scsi_driver_api and bind struct scsi_device.
+
+if SCSI
+
+# Define the SCSI subsystem as a module
+module = SCSI
+module-str = scsi
+
+# Include additional logging configuration for SCSI subsystem
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SCSI
