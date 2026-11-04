@@ -1735,3 +1735,11 @@ test_i2c_cht8305: cht8305@e0 {
 	heater;
 	disable-clock-stretching;
 };
+
+test_i2c_tsl2522: tsl2522@e1 {
+	compatible = "ams,tsl2522";
+	reg = <0xe1>;
+	measurement-time-steps = <180>;
+	number-of-samples = <256>;
+	int-gpios = <&test_gpio 0 0>;
+};
