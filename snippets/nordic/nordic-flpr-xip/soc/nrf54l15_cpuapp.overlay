@@ -4,7 +4,7 @@
  */
 
 &cpuapp_sram_app {
-	reg = <0x60 (DT_SIZE_K(188) - 0x60)>;
+	reg = <0x60 (DT_SIZE_K(187) - 0x60)>;
 };
 
 &cpuapp_rram {
