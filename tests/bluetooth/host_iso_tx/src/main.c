@@ -976,3 +976,56 @@ static ZTEST(iso_cis_accept, test_connect_from_accept)
 
 	stop();
 }
+
+/* Nothing more is reported about an accepted CIS once bt_disable() has reset the
+ * controller. The channel has to be told, and the connection object has to let go
+ * of the ACL connection and be free for the next CIS.
+ */
+static ZTEST(iso_cis_accept, test_disable_before_established)
+{
+	accept_cis_status = BT_HCI_ERR_SUCCESS;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&accept_cis_sem, K_SECONDS(1)), "CIS request not accepted");
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, K_SECONDS(1)),
+		   "Channel not told about the CIS");
+	zassert_equal(peer_cis_reason, BT_HCI_ERR_UNSPECIFIED, "Reason 0x%02x", peer_cis_reason);
+	zassert_is_null(peer_cis_chan.iso, "Channel kept the connection");
+	zassert_equal(peer_cis_chan.state, BT_ISO_STATE_DISCONNECTED, "Channel in state %u",
+		      peer_cis_chan.state);
+
+	start();
+
+	accept_cis_status = BT_HCI_ERR_CMD_DISALLOWED;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, K_SECONDS(1)),
+		   "No connection object for the next CIS");
+	zassert_equal(k_sem_count_get(&peer_cis_connected_sem), 0U,
+		      "A CIS that was not established reported as connected");
+}
+
+/* The same with a reference kept to the object, which the connection cleanup of
+ * bt_disable() then finds as well.
+ */
+static ZTEST(iso_cis_accept, test_disable_with_reference_kept)
+{
+	struct bt_conn *kept;
+
+	accept_cis_status = BT_HCI_ERR_SUCCESS;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&accept_cis_sem, K_SECONDS(1)), "CIS request not accepted");
+	kept = bt_conn_ref(peer_cis_chan.iso);
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, K_SECONDS(1)),
+		   "Channel not told about the CIS");
+	zassert_is_null(peer_cis_chan.iso, "Channel kept the connection");
+
+	start();
+
+	zassert_equal(k_sem_count_get(&peer_cis_disconnected_sem), 0U, "Channel told twice");
+	bt_conn_unref(kept);
+}
