@@ -151,6 +151,16 @@
 		status = "disabled";
 	};
 
+	nrf_radio_coex: nrf71-coex {
+		compatible = "nordic,nrf71-coex";
+		ipct = <&ipct10>;
+		rx-channels = <0 1>;
+		tx-channels = <2 3>;
+		rx-client = <4>;
+		tx-client = <5>;
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
