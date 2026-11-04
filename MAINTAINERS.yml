@@ -3526,6 +3526,14 @@ Hexagon arch:
     - include/zephyr/arch/hexagon/
     - boards/qemu/hexagon/
 
+ID8 Engineering AB:
+  status: maintained
+  maintainers:
+    - mirzak
+    - Dexter9532
+  files:
+    - boards/id8/
+
 IPC:
   status: maintained
   maintainers:
