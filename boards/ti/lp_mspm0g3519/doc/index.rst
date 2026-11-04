@@ -84,6 +84,21 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+ADC
+===
+
+``adc0`` is enabled in the board file with the MSPM0 ADC12 clock settings (ULPCLK at 40 MHz,
+divided by 8) and with PA25, ADC0 channel 2, routed to the converter. Applications describe their
+channels in an overlay; see ``samples/drivers/adc/adc_dt/boards/lp_mspm0g3519.overlay``.
+
+BoosterPack I2C
+===============
+
+The I2C2 peripheral is on BoosterPack pin 9 (SCL, PC2) and pin 10 (SDA, PC3), pin function 2
+(PINCM76 and PINCM77). The board file defines the pin groups ``i2c2_scl_pc2`` and
+``i2c2_sda_pc3`` for them. Enable an ``i2c2`` node that uses these groups once the MSPM0 I2C driver
+is available.
+
 Building and Flashing
 *********************
 
