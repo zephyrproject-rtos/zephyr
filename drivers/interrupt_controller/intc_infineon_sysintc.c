@@ -45,6 +45,8 @@ static void sysintc_mux_isr(void)
 #define _SYSINTC_REGISTER_DISPATCHER(node_id)                                                      \
 	IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), sysintc_mux_isr, NULL, 0)
 
+#define SYSINTC_ENABLE_MUX(node_id) arm_irq_enable(DT_IRQN(node_id))
+
 #define SYSINTC_REGISTER_DISPATCHERS(parent_id)                                                    \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(parent_id, _SYSINTC_REGISTER_DISPATCHER, (;))
 
@@ -61,8 +63,14 @@ void z_soc_irq_enable(unsigned int irq)
 	parent = irq_parent_level_2(irq);
 	sys_int = irq_from_level_2(irq);
 
+#if defined(CONFIG_SMP)
+	CPUSS_CM7_0_SYSTEM_INT_CTL[sys_int] =
+		_VAL2FLD(CPUSS_CM7_0_SYSTEM_INT_CTL_CPU_INT_IDX, parent) |
+		CPUSS_CM7_0_SYSTEM_INT_CTL_CPU_INT_VALID_Msk;
+#else
 	Cy_SysInt_SetInterruptSource(parent, sys_int);
 	arm_irq_enable(parent);
+#endif
 }
 
 void z_soc_irq_disable(unsigned int irq)
@@ -72,7 +80,12 @@ void z_soc_irq_disable(unsigned int irq)
 		return;
 	}
 
+#if defined(CONFIG_SMP)
+	CPUSS_CM7_0_SYSTEM_INT_CTL[irq_from_level_2(irq)] &=
+		~CPUSS_CM7_0_SYSTEM_INT_CTL_CPU_INT_VALID_Msk;
+#else
 	Cy_SysInt_DisableSystemInt(irq_from_level_2(irq));
+#endif
 }
 
 int z_soc_irq_is_enabled(unsigned int irq)
@@ -88,6 +101,9 @@ int z_soc_irq_is_enabled(unsigned int irq)
 #if defined(CONFIG_CPU_CORTEX_M0PLUS)
 	return (CPUSS_CM0_SYSTEM_INT_CTL[sys_int] &
 		CPUSS_CM0_SYSTEM_INT_CTL_CPU_INT_VALID_Msk) != 0;
+#elif defined(CONFIG_SMP)
+	return (CPUSS_CM7_0_SYSTEM_INT_CTL[sys_int] &
+		CPUSS_CM7_0_SYSTEM_INT_CTL_CPU_INT_VALID_Msk) != 0;
 #else
 	if (CY_IS_CM7_CORE_0 != 0) {
 		return (CPUSS_CM7_0_SYSTEM_INT_CTL[sys_int] &
@@ -118,6 +134,10 @@ static int sysintc_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	SYSINTC_REGISTER_DISPATCHERS(DT_NODELABEL(cpuss_intc));
+
+#if defined(CONFIG_SMP)
+	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_NODELABEL(cpuss_intc), SYSINTC_ENABLE_MUX, (;));
+#endif
 
 	return 0;
 }
