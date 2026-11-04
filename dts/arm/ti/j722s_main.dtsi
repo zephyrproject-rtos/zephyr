@@ -279,4 +279,12 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	spinlock0: hwspinlock@2a000000 {
+		compatible = "ti,k3-hwspinlock";
+		reg = <0x2a000000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <256>;
+		status = "disabled";
+	};
 };
