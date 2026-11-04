@@ -93,6 +93,11 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Build system
+
+  * Added the :ref:`wisblock-console-uart0 <snippet-wisblock-console-uart0>` and
+    :ref:`wisblock-console-uart1 <snippet-wisblock-console-uart1>` snippets.
+
 * Devicetree
 
   * New ``var-uint64`` binding property type for variable-length unsigned
