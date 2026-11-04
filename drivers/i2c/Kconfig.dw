@@ -54,4 +54,11 @@ config I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 	  Enable this option only if your hardware IP supports this specific latency
 	  reduction feature.
 
+config I2C_DW_BUS_CLEAR
+	bool "DesignWare I2C bus clear feature"
+	default y
+	help
+	  Enable the DesignWare I2C hardware bus clear feature (IC_CON.BUS_CLEAR)
+	  and SDA stuck-at-low timeout recovery.
+
 endif # I2C_DW
