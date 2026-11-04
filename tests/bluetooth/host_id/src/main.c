@@ -970,6 +970,38 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 	zassert_ok(stop_err, "Failed to stop advertising");
 	zassert_ok(unpair_err, "Failed to remove the test bond");
 }
+
+/* A connection that waits for its peer to show up in the scan keeps the
+ * scanner running. Giving it up leaves the scanner with no reason to run.
+ */
+static ZTEST(bt_id_public_api, test_conn_create_disconnect_stops_scan)
+{
+	bt_addr_le_t remote = test_addr(0x49U);
+	struct bt_conn *conn = NULL;
+	struct bt_keys *keys;
+	bool still_scanning;
+	int unpair_err;
+	int err;
+
+	/* As above: the bond makes the Host resolve the peer's address */
+	keys = bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &remote);
+	zassert_not_null(keys, "Failed to create a test bond");
+	bt_id_add(keys);
+
+	err = bt_conn_le_create(&remote, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT, &conn);
+	zassert_ok(err, "Creating the connection gave %d", err);
+	zassert_true(scan_enabled, "The scanner was not started for the connection");
+
+	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	bt_conn_unref(conn);
+	still_scanning = scan_enabled;
+
+	unpair_err = bt_unpair(BT_ID_DEFAULT, NULL);
+
+	zassert_ok(err, "Giving up the connection gave %d", err);
+	zassert_false(still_scanning, "The scanner kept running for a connection that is gone");
+	zassert_ok(unpair_err, "Failed to remove the test bond");
+}
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP) */
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 

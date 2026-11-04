@@ -2075,9 +2075,6 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 	case BT_CONN_SCAN_BEFORE_INITIATING:
 		conn->err = reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-			return bt_le_scan_user_add(BT_LE_SCAN_USER_CONN);
-		}
 		return 0;
 	case BT_CONN_INITIATING:
 		if (bt_conn_is_le(conn)) {
