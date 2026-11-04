@@ -74,7 +74,23 @@
 #define SWEEP_ARMS 400
 #define SWEEP_FIRE_BOUND_MS (5 * MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC + 10)
 
-static K_TIMER_DEFINE(churn_timer, NULL, NULL);
+static atomic_t churn_expiries;
+
+static void churn_expiry_fn(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+	(void)atomic_inc(&churn_expiries);
+}
+
+static K_TIMER_DEFINE(churn_timer, churn_expiry_fn, NULL);
+
+static void timeout_churn_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	k_timer_stop(&churn_timer);
+	(void)atomic_clear(&churn_expiries);
+}
 static struct k_sem done_sem;
 static K_THREAD_STACK_DEFINE(partner_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread partner_thread;
@@ -266,7 +282,84 @@ ZTEST(timeout_churn, test_timeout_churn_near_tick_arms)
 }
 
 /**
+ * @brief Verify restarting an overdue timer fires promptly.
+ *
+ * @details
+ * A k_timer started for a timepoint already in the past must expire
+ * promptly, even if it is restarted back-to-back before the expiry is
+ * processed.
+ *
+ * Test steps:
+ * - Busy-wait one tick so time advances without blocking.
+ * - Start and immediately restart an already-due absolute k_timer, then
+ *   wait for expiry with k_timer_status_sync().
+ *
+ * Expected result:
+ * - The timer fires within SWEEP_FIRE_BOUND_MS.
+ *
+ * @see k_timer_start()
+ * @see k_timer_status_sync()
+ * @see k_busy_wait()
+ */
+ZTEST(timeout_churn, test_timeout_churn_overdue_rearm)
+{
+	k_busy_wait(k_ticks_to_us_ceil32(1U));
+
+	int64_t t0 = k_uptime_get();
+
+	k_timer_start(&churn_timer, K_TIMEOUT_ABS_TICKS(0), K_NO_WAIT);
+	k_timer_start(&churn_timer, K_TIMEOUT_ABS_TICKS(0), K_NO_WAIT);
+	k_timer_status_sync(&churn_timer);
+
+	zassert_true((k_uptime_get() - t0) < SWEEP_FIRE_BOUND_MS);
+}
+
+/**
+ * @brief Verify sustained restarts of an overdue timer do not starve it.
+ *
+ * @details
+ * Repeatedly restarting an already-due k_timer in a tight non-blocking loop
+ * must not postpone its expiration indefinitely: once real time advances,
+ * the timer interrupt must still get through.
+ *
+ * Test steps:
+ * - Busy-wait one tick so time advances without blocking.
+ * - Repeatedly start an already-due absolute k_timer in a non-blocking loop
+ *   until its expiry callback runs or the fire bound elapses, then stop the
+ *   timer.
+ *
+ * Expected result:
+ * - The timer expires within SWEEP_FIRE_BOUND_MS.
+ *
+ * @see k_timer_start()
+ * @see k_timer_stop()
+ * @see k_busy_wait()
+ */
+ZTEST(timeout_churn, test_timeout_churn_overdue_starvation)
+{
+	/* inf_clock SoC executes CPU loops in zero simulated time. */
+	Z_TEST_SKIP_IFDEF(CONFIG_SOC_POSIX);
+
+	/* Legacy drivers not yet on system_timer_generic restart or push out
+	 * their minimum delay floor on every sys_clock_set_timeout().
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_ARCV2_TIMER);
+	Z_TEST_SKIP_IFDEF(CONFIG_XLNX_PSTTC_TIMER);
+
+	k_busy_wait(k_ticks_to_us_ceil32(1U));
+
+	int64_t t0 = k_uptime_get();
+
+	while (atomic_get(&churn_expiries) == 0 && (k_uptime_get() - t0) < SWEEP_FIRE_BOUND_MS) {
+		k_timer_start(&churn_timer, K_TIMEOUT_ABS_TICKS(0), K_NO_WAIT);
+	}
+	k_timer_stop(&churn_timer);
+
+	zassert_true(atomic_get(&churn_expiries) > 0, "overdue timer starved");
+}
+
+/**
  * @}
  */
 
-ZTEST_SUITE(timeout_churn, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(timeout_churn, NULL, NULL, timeout_churn_before, NULL, NULL);
