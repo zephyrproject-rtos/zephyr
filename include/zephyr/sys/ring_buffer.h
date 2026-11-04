@@ -31,6 +31,12 @@ extern "C" {
  *
  * @brief Simple, header-only ring buffer implementation.
  *
+ * @note A single producer and a single consumer (threads or ISRs, on one CPU or
+ * on SMP) can use a ring buffer concurrently without external synchronization:
+ * the API orders the index and data accesses itself with acquire/release
+ * semantics. Multiple producers or multiple consumers must be serialized by
+ * the application.
+ *
  * @{
  */
 
@@ -87,6 +93,25 @@ static ALWAYS_INLINE ring_buf_idx_t rb_idx_advance(size_t value, ring_buf_size_t
 	return (ring_buf_idx_t)(value >= lim ? value - lim : value);
 }
 
+/*
+ * Index accessors for the single-producer/single-consumer protocol.
+ *
+ * On SMP, the index of the opposite side is read with an acquire load and the
+ * own index is published with a release store, which orders the data accesses
+ * across CPUs.
+ *
+ * On a single CPU, producer and consumer (thread/thread or thread/ISR) observe
+ * each other's accesses in program order, so only the compiler must be kept
+ * from reordering, caching or tearing the accesses. This is done like
+ * READ_ONCE()/WRITE_ONCE() in Linux: a volatile access combined with a
+ * compiler barrier. Note that this is not an atomic access in the C11 sense;
+ * lock-free atomics are not available on every target (for example ARMv6-M
+ * with Clang would need __atomic_*() library calls that are not provided).
+ *
+ * rb_load_relaxed() is only used for the index that the calling side itself
+ * owns (write_idx in the producer, read_idx in the consumer). No other context
+ * writes it, so a plain load is sufficient.
+ */
 static ALWAYS_INLINE ring_buf_idx_t rb_load_acquire(const ring_buf_idx_t *p)
 {
 	ring_buf_idx_t v;
@@ -94,7 +119,7 @@ static ALWAYS_INLINE ring_buf_idx_t rb_load_acquire(const ring_buf_idx_t *p)
 #if IS_ENABLED(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	v = __atomic_load_n(p, __ATOMIC_ACQUIRE);
 #else
-	v = *p;
+	v = *(const volatile ring_buf_idx_t *)p;
 	compiler_barrier();
 #endif
 	return v;
@@ -115,7 +140,7 @@ static ALWAYS_INLINE void rb_store_release(ring_buf_idx_t *p, ring_buf_idx_t v)
 	__atomic_store_n(p, v, __ATOMIC_RELEASE);
 #else
 	compiler_barrier();
-	*p = v;
+	*(volatile ring_buf_idx_t *)p = v;
 #endif
 }
 
