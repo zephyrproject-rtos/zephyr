@@ -204,30 +204,3 @@ int virtq_add_buffer_chain(
 
 	return 0;
 }
-
-int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout)
-{
-	stack_data_t desc;
-
-	int ret = k_stack_pop(&v->free_desc_stack, &desc, timeout);
-
-	if (ret == 0) {
-		*desc_idx = (uint16_t)desc;
-		K_SPINLOCK(&v->lock) {
-			v->free_desc_n--;
-		}
-	}
-
-	return ret;
-}
-
-void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx)
-{
-	if (k_stack_push(&v->free_desc_stack, desc_idx) != 0) {
-		return;
-	}
-
-	K_SPINLOCK(&v->lock) {
-		v->free_desc_n++;
-	}
-}

@@ -258,25 +258,6 @@ int virtq_add_buffer_chain(
 );
 
 /**
- * @brief adds free descriptor back
- *
- * @param v virtqueue it operates on
- * @param desc_idx index of returned descriptor
- */
-void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx);
-
-/**
- * @brief gets next free descriptor
- *
- * @param v virtqueue it operates on
- * @param desc_idx address where index of descriptor will be stored
- * @param timeout amount of time it will wait for free descriptor, with K_NO_WAIT it
- * can be called from isr
- * @return 0 or error code on failure
- */
-int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout);
-
-/**
  * @}
  */
 
