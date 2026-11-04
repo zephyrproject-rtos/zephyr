@@ -5978,6 +5978,9 @@ static int gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_param
 		}
 
 		params->value = 0x0000;
+
+		/* A clear during the waits can move the params to another slot */
+		sub = gatt_sub_find_params(conn, params);
 	}
 
 	sub_next_skip(params);
@@ -6947,9 +6950,10 @@ static struct gatt_sub *find_gatt_sub(uint8_t id, const bt_addr_le_t *addr)
 
 static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 {
+	struct bt_gatt_subscribe_params *params;
 	struct gatt_sub *sub;
-	struct bt_gatt_subscribe_params *params, *tmp;
-	sys_snode_t *prev = NULL;
+	sys_snode_t *node;
+	sys_slist_t list;
 
 	/* See bt_gatt_subscribe() */
 	k_sched_lock();
@@ -6960,13 +6964,22 @@ static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp,
-					  node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
+		sub_next_skip(params);
 		params->value = 0U;
-		gatt_sub_remove(NULL, sub, prev, params);
 	}
 
+	/* The callbacks may subscribe again, and block */
+	sys_slist_init(&list);
+	sys_slist_merge_slist(&list, &sub->list);
+	gatt_sub_remove(NULL, sub, NULL, NULL);
+
 	k_sched_unlock();
+
+	while ((node = sys_slist_get(&list)) != NULL) {
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params, node);
+		params->notify(NULL, params, NULL, 0);
+	}
 }
 
 int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr)
