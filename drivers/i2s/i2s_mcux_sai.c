@@ -496,7 +496,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	enum i2s_state *tx_state = &(dev_data->tx.state);
 	enum i2s_state *rx_state = &(dev_data->rx.state);
 	uint8_t word_size_bits = i2s_cfg->word_size;
-	uint8_t word_size_bytes = word_size_bits / 8;
+	uint8_t word_size_bytes = (word_size_bits == 24U) ? 4U : (word_size_bits / 8U);
 	uint8_t num_words = i2s_cfg->channels;
 	sai_transceiver_t config;
 	struct stream *strm;
