@@ -550,6 +550,10 @@ ZTEST(ec_host_cmd, test_unknown_command)
 static enum ec_host_cmd_status
 ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 {
+	if (args->input_buf_size == 0) {
+		return EC_HOST_CMD_SUCCESS;
+	}
+
 	const struct ec_params_unbounded *const request = args->input_buf;
 	const uint8_t *in_buffer = args->input_buf;
 	uint8_t *out_buffer = args->output_buf;
@@ -838,6 +842,94 @@ ZTEST(ec_host_cmd, test_log_on_request_max_version)
 		      "Unexpected request hexdump length");
 
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
+}
+
+/*
+ * Command lookup, version/size validation, and multi-byte output buffer
+ * clearing in ec_host_cmd_process() are covered by the simulator tests above
+ * via ec_host_cmd_thread(). The tests below cover direct invocation and
+ * pointer/zero-length buffer cases that ec_host_cmd_thread() never passes.
+ */
+ZTEST(ec_host_cmd, test_process_direct)
+{
+	struct ec_params_add req = {.in_data = 0x10203040};
+	struct ec_response_add rsp = {.out_data = 0xffffffff};
+	struct ec_host_cmd_handler_args args = {
+		.command = EC_CMD_HELLO,
+		.version = 0,
+		.input_buf = &req,
+		.input_buf_size = sizeof(req),
+		.output_buf = &rsp,
+		.output_buf_max = sizeof(rsp),
+	};
+
+	zassert_equal(ec_host_cmd_process(&args), EC_HOST_CMD_SUCCESS);
+	zassert_equal(args.output_buf_size, sizeof(rsp));
+	zassert_equal(rsp.out_data, hello_v0_resp(req.in_data));
+}
+
+ZTEST(ec_host_cmd, test_process_direct_invalid_pointers)
+{
+	uint8_t buf = 0;
+	struct ec_host_cmd_handler_args null_input_args = {
+		.command = EC_CMD_UNBOUNDED,
+		.version = 0,
+		.input_buf = NULL,
+		.input_buf_size = sizeof(buf),
+		.output_buf = &buf,
+		.output_buf_max = sizeof(buf),
+	};
+	struct ec_host_cmd_handler_args null_output_args = {
+		.command = EC_CMD_UNBOUNDED,
+		.version = 0,
+		.input_buf = &buf,
+		.input_buf_size = sizeof(buf),
+		.output_buf = NULL,
+		.output_buf_max = sizeof(buf),
+	};
+
+	zassert_equal(ec_host_cmd_process(NULL), EC_HOST_CMD_INVALID_PARAM);
+	zassert_equal(ec_host_cmd_process(&null_input_args), EC_HOST_CMD_INVALID_PARAM);
+	zassert_equal(ec_host_cmd_process(&null_output_args), EC_HOST_CMD_INVALID_PARAM);
+}
+
+ZTEST(ec_host_cmd, test_process_direct_empty_buffers)
+{
+	uint8_t out_byte = UINT8_MAX;
+	struct ec_host_cmd_handler_args null_empty_args = {
+		.command = EC_CMD_UNBOUNDED,
+		.version = 0,
+		.input_buf = NULL,
+		.input_buf_size = 0,
+		.output_buf = NULL,
+		.output_buf_max = 0,
+		.output_buf_size = UINT16_MAX,
+	};
+	struct ec_host_cmd_handler_args non_null_zero_max_args = {
+		.command = EC_CMD_UNBOUNDED,
+		.version = 0,
+		.input_buf = NULL,
+		.input_buf_size = 0,
+		.output_buf = &out_byte,
+		.output_buf_max = 0,
+	};
+	struct ec_host_cmd_handler_args one_byte_output_args = {
+		.command = EC_CMD_UNBOUNDED,
+		.version = 0,
+		.input_buf = NULL,
+		.input_buf_size = 0,
+		.output_buf = &out_byte,
+		.output_buf_max = sizeof(out_byte),
+	};
+
+	zassert_equal(ec_host_cmd_process(&null_empty_args), EC_HOST_CMD_SUCCESS);
+	zassert_equal(null_empty_args.output_buf_size, 0);
+
+	zassert_equal(ec_host_cmd_process(&non_null_zero_max_args), EC_HOST_CMD_SUCCESS);
+	zassert_equal(out_byte, UINT8_MAX);
+
+	zassert_equal(ec_host_cmd_process(&one_byte_output_args), EC_HOST_CMD_SUCCESS);
+	zassert_equal(out_byte, 0);
 }
 
 static void *ec_host_cmd_tests_setup(void)
