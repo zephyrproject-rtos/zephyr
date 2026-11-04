@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/clock_control_rpi_pico.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/drivers/regulator.h>
 #if defined(CONFIG_SOC_SERIES_RP2040)
 #include <zephyr/dt-bindings/clock/rpi_pico_rp2040_clock.h>
 #else
@@ -44,6 +45,8 @@
 #define PLL_FB_DIV_MAX   320
 #define PLL_POST_DIV_MIN 1
 #define PLL_POST_DIV_MAX 7
+#define RP2040_VREG_BOOST_THRESHOLD_HZ 133000000
+#define RP2040_VREG_SETTLE_US 1000
 
 #define ROSC_PHASE_PASSWD_VALUE_PASS _u(0xAA)
 
@@ -680,6 +683,32 @@ int clock_control_rpi_pico_reconfigure(const struct device *dev)
 	while (clocks_hw->clk[RPI_PICO_CLKID_CLK_REF].selected != 0x1) {
 		;
 	}
+
+#if defined(CONFIG_SOC_SERIES_RP2040) && CLOCK_FREQ_clk_sys > RP2040_VREG_BOOST_THRESHOLD_HZ
+	BUILD_ASSERT(IS_ENABLED(CONFIG_REGULATOR_RPI_PICO),
+		     "RP2040 clocks above 133 MHz require the core regulator driver");
+
+	const struct device *vreg = DEVICE_DT_GET(DT_NODELABEL(vreg));
+	int32_t voltage_uv;
+
+	if (!device_is_ready(vreg)) {
+		return -ENODEV;
+	}
+
+	int ret = regulator_get_voltage(vreg, &voltage_uv);
+
+	if (ret != 0) {
+		return ret;
+	}
+	if (voltage_uv < 1150000) {
+		return -EINVAL;
+	}
+
+	const uint32_t settle_cycles =
+		(uint32_t)((RP2040_VREG_SETTLE_US * (uint64_t)CLOCK_FREQ_xosc) / 1000000);
+
+	busy_wait_at_least_cycles(settle_cycles);
+#endif
 
 	/* Configure pll */
 	for (uint32_t i = 0; i < RPI_PICO_PLL_COUNT; i++) {
