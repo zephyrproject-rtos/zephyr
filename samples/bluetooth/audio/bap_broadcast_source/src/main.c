@@ -173,6 +173,28 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 #endif /* !defined(CONFIG_AUDIO_INPUT_STREAM) */
 #endif /* defined(CONFIG_LIBLC3) */
 
+#define SDU_METRICS_INTERVAL_SECONDS 10U
+#define SDU_METRICS_INTERVAL_MS      ((int64_t)SDU_METRICS_INTERVAL_SECONDS * MSEC_PER_SEC)
+
+/* SDU transmission metrics of one stream over a metrics interval */
+struct sdu_tx_metrics {
+	/* Sending context */
+	uint32_t sent;
+	uint32_t bytes;
+	uint32_t send_err;
+	int32_t in_flight_min;
+	int32_t in_flight_max;
+	atomic_val_t queue_empty_ref;
+	/* Sent callback context; cleared there when cb_clear is set */
+	atomic_t cb_clear;
+	bool cb_valid;
+	uint32_t cb_last;
+	uint32_t cb_n;
+	uint32_t cb_sum;
+	uint32_t cb_min;
+	uint32_t cb_max;
+};
+
 static struct broadcast_source_stream {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
@@ -182,6 +204,7 @@ static struct broadcast_source_stream {
 	atomic_t in_flight;
 	/* Completions that left the controller queue empty: possible on-air gap */
 	atomic_t queue_empty_cnt;
+	struct sdu_tx_metrics metrics;
 
 #if defined(CONFIG_LIBLC3)
 	lc3_encoder_t lc3_encoder;
@@ -354,6 +377,7 @@ static void send_data(struct broadcast_source_stream *source_stream, const int16
 {
 	struct bt_bap_stream *stream = &source_stream->stream;
 	struct net_buf *buf;
+	int32_t in_flight;
 	int ret;
 
 	if (stopping) {
@@ -394,16 +418,17 @@ static void send_data(struct broadcast_source_stream *source_stream, const int16
 		/* This will end broadcasting on this stream. */
 		printk("Unable to broadcast data on %p: %d\n", stream, ret);
 		net_buf_unref(buf);
+		source_stream->metrics.send_err++;
 		return;
 	}
 
-	atomic_inc(&source_stream->in_flight);
+	/* SDUs queued in the controller, including this one */
+	in_flight = (int32_t)atomic_inc(&source_stream->in_flight) + 1;
 	source_stream->sent_cnt++;
-	if ((source_stream->sent_cnt % 1000U) == 0U) {
-		printk("Stream %p BIS_Number %u: Sent %u total ISO packets, queue empty %ld\n",
-		       stream, source_stream->bis_number, source_stream->sent_cnt,
-		       atomic_get(&source_stream->queue_empty_cnt));
-	}
+	source_stream->metrics.sent++;
+	source_stream->metrics.bytes += preset_active.qos.sdu;
+	source_stream->metrics.in_flight_min = MIN(source_stream->metrics.in_flight_min, in_flight);
+	source_stream->metrics.in_flight_max = MAX(source_stream->metrics.in_flight_max, in_flight);
 }
 
 #if defined(CONFIG_AUDIO_INPUT_TIMED)
@@ -412,7 +437,7 @@ static void send_data(struct broadcast_source_stream *source_stream, const int16
  * on the SDU interval grid, so one anchor gives the air time of every SDU. It is refreshed
  * periodically to keep the sequence number difference small and to check its consistency.
  */
-#define TX_SYNC_REFRESH_SDUS 1000U
+#define TX_SYNC_REFRESH_SDUS 100U
 #define TX_SYNC_RETRY_SDUS   10U
 
 static struct tx_sync {
@@ -422,6 +447,16 @@ static struct tx_sync {
 	uint16_t next_seq;
 } tx_sync;
 static atomic_t tx_sync_reset;
+
+/* TX sync metrics over a metrics interval, encoder context */
+static struct tx_sync_metrics {
+	uint32_t reads;
+	uint32_t fails;
+	int32_t dev_min;
+	int32_t dev_max;
+	int64_t dev_sum;
+	uint32_t dev_sdus;
+} tx_sync_m = {.dev_min = INT32_MAX, .dev_max = INT32_MIN};
 
 /* Air time, in controller microseconds, of the SDU with host sequence number seq */
 static uint32_t tx_sync_time(uint16_t seq)
@@ -455,13 +490,19 @@ static void tx_sync_update(uint16_t seq)
 	err = bt_bap_stream_get_tx_sync(&streams[0].stream, &info);
 	if (err != 0) {
 		tx_sync.next_seq = seq + TX_SYNC_RETRY_SDUS;
+		tx_sync_m.fails++;
 		return;
 	}
 
+	tx_sync_m.reads++;
 	if (tx_sync.valid) {
+		/* Air time against the one predicted from the previous anchor */
 		const int32_t dev = (int32_t)(info.ts - tx_sync_time(info.seq_num - 1U));
 
-		printk("TX sync: seq %u ts %u deviation %d us\n", info.seq_num, info.ts, dev);
+		tx_sync_m.dev_min = MIN(tx_sync_m.dev_min, dev);
+		tx_sync_m.dev_max = MAX(tx_sync_m.dev_max, dev);
+		tx_sync_m.dev_sum += dev;
+		tx_sync_m.dev_sdus += (uint16_t)(info.seq_num - tx_sync.sn);
 	} else {
 		printk("TX sync: seq %u ts %u\n", info.seq_num, info.ts);
 	}
@@ -471,7 +512,140 @@ static void tx_sync_update(uint16_t seq)
 	tx_sync.ts = info.ts;
 	tx_sync.next_seq = seq + TX_SYNC_REFRESH_SDUS;
 }
+
+static void tx_sync_metrics_print(void)
+{
+	char s1[24];
+
+	if (!tx_sync.valid) {
+		printk("  ISO TX sync: no anchor, %u failed\n", tx_sync_m.fails);
+	} else if (tx_sync_m.dev_sdus == 0U) {
+		printk("  ISO TX sync: anchor seq %u ts %u us, %u reads, %u failed\n", tx_sync.sn,
+		       tx_sync.ts, tx_sync_m.reads, tx_sync_m.fails);
+	} else {
+		/* SDU air times against the nominal SDU interval in the local clock */
+		const int64_t cppm = (tx_sync_m.dev_sum * 100000000LL) /
+				     ((int64_t)tx_sync_m.dev_sdus * preset_active.qos.interval);
+
+		printk("  ISO TX sync: anchor seq %u ts %u us, %u reads, %u failed, deviation "
+		       "%d..%d us over %u SDUs, SDU interval %s ppm\n",
+		       tx_sync.sn, tx_sync.ts, tx_sync_m.reads, tx_sync_m.fails, tx_sync_m.dev_min,
+		       tx_sync_m.dev_max, tx_sync_m.dev_sdus,
+		       audio_in_centi_str(s1, sizeof(s1), cppm));
+	}
+
+	tx_sync_m = (struct tx_sync_metrics){.dev_min = INT32_MAX, .dev_max = INT32_MIN};
+}
 #endif /* CONFIG_AUDIO_INPUT_TIMED */
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED) && defined(CONFIG_USE_USB_AUDIO_INPUT)
+/* USB SOF callbacks, and those without a captured SOF time stamp */
+static atomic_t usb_sof_cnt;
+static atomic_t usb_sof_no_ts_cnt;
+#endif /* CONFIG_AUDIO_INPUT_TIMED && CONFIG_USE_USB_AUDIO_INPUT */
+
+static int64_t sdu_metrics_next_report_ms;
+static atomic_t sdu_metrics_restart;
+
+static void sdu_metrics_clear(struct sdu_tx_metrics *m)
+{
+	m->sent = 0U;
+	m->bytes = 0U;
+	m->send_err = 0U;
+	m->in_flight_min = INT32_MAX;
+	m->in_flight_max = 0;
+}
+
+/* Sent callback context, for each SDU completed by the controller */
+static void sdu_metrics_sent(struct sdu_tx_metrics *m)
+{
+	const uint32_t now = k_cycle_get_32();
+
+	if (atomic_cas(&m->cb_clear, 1, 0)) {
+		m->cb_n = 0U;
+		m->cb_sum = 0U;
+		m->cb_min = UINT32_MAX;
+		m->cb_max = 0U;
+	}
+
+	if (m->cb_valid) {
+		const uint32_t dt = k_cyc_to_us_near32(now - m->cb_last);
+
+		m->cb_n++;
+		m->cb_sum += dt;
+		m->cb_min = MIN(m->cb_min, dt);
+		m->cb_max = MAX(m->cb_max, dt);
+	}
+
+	m->cb_valid = true;
+	m->cb_last = now;
+}
+
+/* Sending context */
+static void sdu_metrics_maybe_log(void)
+{
+	const int64_t now_ms = k_uptime_get();
+
+	if (atomic_cas(&sdu_metrics_restart, 1, 0)) {
+		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+			struct sdu_tx_metrics *m = &streams[i].metrics;
+
+			sdu_metrics_clear(m);
+			m->queue_empty_ref = atomic_get(&streams[i].queue_empty_cnt);
+		}
+
+		sdu_metrics_next_report_ms = now_ms + SDU_METRICS_INTERVAL_MS;
+		return;
+	}
+
+	if (now_ms < sdu_metrics_next_report_ms) {
+		return;
+	}
+
+	sdu_metrics_next_report_ms = now_ms + SDU_METRICS_INTERVAL_MS;
+
+	printk("SDU transmission metrics (%u s interval)\n", SDU_METRICS_INTERVAL_SECONDS);
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		struct sdu_tx_metrics *m = &streams[i].metrics;
+		const atomic_val_t queue_empty = atomic_get(&streams[i].queue_empty_cnt);
+		/* Read before the sent callback clears them */
+		const uint32_t cb_n = m->cb_n;
+		const uint32_t cb_sum = m->cb_sum;
+		const uint32_t cb_min = m->cb_min;
+		const uint32_t cb_max = m->cb_max;
+		const int32_t cb_avg = (cb_n > 0U) ? (int32_t)(cb_sum / cb_n) : 0;
+
+		(void)atomic_set(&m->cb_clear, 1);
+
+		printk("  stream[%zu] BIS %u: tx=%u total=%u seq=%u bytes=%u err=%u "
+		       "queue_empty=%ld in_flight=%d..%d\n",
+		       i, streams[i].bis_number, m->sent, streams[i].sent_cnt, streams[i].seq_num,
+		       m->bytes, m->send_err, (long)(queue_empty - m->queue_empty_ref),
+		       (m->sent > 0U) ? m->in_flight_min : 0, m->in_flight_max);
+
+		if (cb_n > 0U) {
+			printk("  stream[%zu] sent cb: interval %d us, %u..%u us (jitter %d..%+d "
+			       "us)\n",
+			       i, cb_avg, cb_min, cb_max, (int32_t)cb_min - cb_avg,
+			       (int32_t)cb_max - cb_avg);
+		}
+
+		m->queue_empty_ref = queue_empty;
+		sdu_metrics_clear(m);
+	}
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	tx_sync_metrics_print();
+#if defined(CONFIG_USE_USB_AUDIO_INPUT)
+	printk("  USB SOF capture: %ld SOF, %ld without time stamp\n",
+	       (long)atomic_clear(&usb_sof_cnt), (long)atomic_clear(&usb_sof_no_ts_cnt));
+#endif /* CONFIG_USE_USB_AUDIO_INPUT */
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+	audio_in_metrics_print();
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
+}
 
 #if defined(CONFIG_LIBLC3)
 static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
@@ -572,6 +746,7 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 			send_data(&streams[i], send_pcm_data);
 		}
 #endif /* CONFIG_AUDIO_INPUT_STREAM */
+		sdu_metrics_maybe_log();
 	}
 }
 
@@ -609,8 +784,11 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 #if defined(CONFIG_AUDIO_INPUT_TIMED)
 	uint32_t t_us;
 
+	atomic_inc(&usb_sof_cnt);
 	if (usb_sof_read(&t_us) == 0) {
 		audio_in_sof(t_us);
+	} else {
+		atomic_inc(&usb_sof_no_ts_cnt);
 	}
 #endif /* CONFIG_AUDIO_INPUT_TIMED */
 }
@@ -652,8 +830,6 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, uint16_t size,
 			 void *user_data)
 {
-	static uint32_t count;
-
 	ARG_UNUSED(dev);
 	ARG_UNUSED(terminal);
 	ARG_UNUSED(user_data);
@@ -667,11 +843,6 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 	 * varies around 48 as the host follows the feedback value.
 	 */
 	audio_in_put((const int16_t *)buf, size / (USB_BYTES_PER_SAMPLE * USB_CHANNELS));
-
-	count++;
-	if ((count % 10000U) == 0U) {
-		printk("USB Data received (count = %u)\n", count);
-	}
 
 	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
@@ -695,6 +866,9 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	source_stream->sent_cnt = 0U;
 	atomic_clear(&source_stream->in_flight);
 	atomic_clear(&source_stream->queue_empty_cnt);
+	source_stream->metrics.cb_valid = false;
+	(void)atomic_set(&source_stream->metrics.cb_clear, 1);
+	(void)atomic_set(&sdu_metrics_restart, 1);
 	/* Store the BIS number for logging purposes */
 	source_stream->bis_number = info.broadcaster.bis_number;
 
@@ -709,9 +883,12 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
 
 	/* Also called directly to prime the queue, when nothing is in flight */
-	if ((atomic_get(&source_stream->in_flight) > 0) &&
-	    (atomic_dec(&source_stream->in_flight) == 1) && !stopping) {
-		atomic_inc(&source_stream->queue_empty_cnt);
+	if (atomic_get(&source_stream->in_flight) > 0) {
+		sdu_metrics_sent(&source_stream->metrics);
+
+		if ((atomic_dec(&source_stream->in_flight) == 1) && !stopping) {
+			atomic_inc(&source_stream->queue_empty_cnt);
+		}
 	}
 
 #if defined(CONFIG_LIBLC3)
@@ -719,6 +896,7 @@ static void stream_sent_cb(struct bt_bap_stream *stream)
 #else
 	/* If no LC3 encoder is used, just send mock data directly */
 	send_data(source_stream, send_pcm_data);
+	sdu_metrics_maybe_log();
 #endif
 }
 
