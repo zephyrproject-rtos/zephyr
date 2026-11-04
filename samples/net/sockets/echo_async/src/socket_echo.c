@@ -32,6 +32,7 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #ifdef CONFIG_NET_IPV6
@@ -136,7 +137,11 @@ int main(void)
 	};
 #endif
 
-	wait_for_network();
+#if defined(__ZEPHYR__)
+	printf("Waiting for network...\n");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6, K_FOREVER);
+	printf("Network ready\n");
+#endif
 
 #if !defined(USE_IPV6) || !(CONFIG_SOC_SERIES_CC32XX)
 	serv4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

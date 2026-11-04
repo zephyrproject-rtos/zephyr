@@ -73,8 +73,6 @@ Sample output
     [00:00:00.000,000] <inf> net_config: IPv4 address: 192.0.2.1
     [00:00:00.110,000] <inf> net_config: IPv6 address: 2001:db8::1
     [00:00:00.110,000] <inf> net_config: IPv6 address: 2001:db8::1
-    [00:00:00.110,000] <inf> net_samples_common: Network connectivity established and IP address assigned
-    [00:00:00.110,000] <inf> net_samples_common: Waiting for network...
     [00:00:00.110,000] <inf> coap_upload:
     [00:00:00.110,000] <inf> coap_upload: * Starting CoAP upload using IPv4
     [00:00:00.110,000] <inf> coap_upload:

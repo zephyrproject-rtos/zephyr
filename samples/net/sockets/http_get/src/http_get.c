@@ -31,6 +31,7 @@
 #include "ca_certificate.h"
 #endif
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #endif
@@ -67,7 +68,11 @@ int main(void)
 	struct addrinfo *res;
 	int st, sock;
 
-	wait_for_network();
+#if defined(__ZEPHYR__)
+	printf("Waiting for network...\n");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, K_FOREVER);
+	printf("Network ready\n");
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
