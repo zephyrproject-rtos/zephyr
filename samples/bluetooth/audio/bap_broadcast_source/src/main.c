@@ -119,6 +119,9 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_6
 
 #if defined(CONFIG_AUDIO_INPUT_STREAM)
 #include "audio_in.h"
+#if defined(CONFIG_AUDIO_INPUT_TIMED) && defined(CONFIG_USE_USB_AUDIO_INPUT)
+#include "usb_sof.h"
+#endif /* CONFIG_AUDIO_INPUT_TIMED && CONFIG_USE_USB_AUDIO_INPUT */
 #endif /* CONFIG_AUDIO_INPUT_STREAM */
 
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
@@ -403,6 +406,73 @@ static void send_data(struct broadcast_source_stream *source_stream, const int16
 	}
 }
 
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+/* LE Read ISO TX Sync returns the sequence number and BIG anchor point of the last SDU given
+ * to the controller. The controller numbers SDUs from 1 and the host from 0, and keeps each SDU
+ * on the SDU interval grid, so one anchor gives the air time of every SDU. It is refreshed
+ * periodically to keep the sequence number difference small and to check its consistency.
+ */
+#define TX_SYNC_REFRESH_SDUS 1000U
+#define TX_SYNC_RETRY_SDUS   10U
+
+static struct tx_sync {
+	bool valid;
+	uint16_t sn;
+	uint32_t ts;
+	uint16_t next_seq;
+} tx_sync;
+static atomic_t tx_sync_reset;
+
+/* Air time, in controller microseconds, of the SDU with host sequence number seq */
+static uint32_t tx_sync_time(uint16_t seq)
+{
+	const int16_t sdus = (int16_t)(uint16_t)(seq + 1U - tx_sync.sn);
+
+	return tx_sync.ts + (uint32_t)((int32_t)sdus * (int32_t)preset_active.qos.interval);
+}
+
+/* Encoder thread: the anchor is invalid after the stream (re)starts */
+static bool tx_sync_valid(void)
+{
+	if (atomic_cas(&tx_sync_reset, 1, 0)) {
+		tx_sync.valid = false;
+		tx_sync.next_seq = 0U;
+	}
+
+	return tx_sync.valid;
+}
+
+/* Encoder thread, with the host sequence number of the next SDU */
+static void tx_sync_update(uint16_t seq)
+{
+	struct bt_iso_tx_info info;
+	int err;
+
+	if ((int16_t)(uint16_t)(seq - tx_sync.next_seq) < 0) {
+		return;
+	}
+
+	err = bt_bap_stream_get_tx_sync(&streams[0].stream, &info);
+	if (err != 0) {
+		tx_sync.next_seq = seq + TX_SYNC_RETRY_SDUS;
+		return;
+	}
+
+	if (tx_sync.valid) {
+		const int32_t dev = (int32_t)(info.ts - tx_sync_time(info.seq_num - 1U));
+
+		printk("TX sync: seq %u ts %u deviation %d us\n", info.seq_num, info.ts, dev);
+	} else {
+		printk("TX sync: seq %u ts %u\n", info.seq_num, info.ts);
+	}
+
+	tx_sync.valid = true;
+	tx_sync.sn = info.seq_num;
+	tx_sync.ts = info.ts;
+	tx_sync.next_seq = seq + TX_SYNC_REFRESH_SDUS;
+}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
 #if defined(CONFIG_LIBLC3)
 static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -479,11 +549,24 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 		if ((atomic_get(&queue_fill_cnt) > 0) && (atomic_dec(&queue_fill_cnt) > 0)) {
 			(void)memset(in_pcm, 0, sizeof(in_pcm));
 		} else {
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+			if (tx_sync_valid()) {
+				audio_in_get_timed(in_pcm[0], in_pcm[1],
+						   tx_sync_time(streams[0].seq_num));
+			} else {
+				audio_in_get(in_pcm[0], in_pcm[1]);
+			}
+#else
 			audio_in_get(in_pcm[0], in_pcm[1]);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 		}
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 			send_data(&streams[i], in_pcm[MIN(i, AUDIO_IN_CHANNELS - 1U)]);
 		}
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+		/* After sending, so that the HCI command does not delay the SDU */
+		tx_sync_update(streams[0].seq_num);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 #else
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 			send_data(&streams[i], send_pcm_data);
@@ -523,7 +606,13 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(user_data);
 
-	/* no-op, but has to be registered */
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	uint32_t t_us;
+
+	if (usb_sof_read(&t_us) == 0) {
+		audio_in_sof(t_us);
+	}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 }
 
 static uint32_t feedback_cb(const struct device *dev, uint8_t terminal, void *user_data)
@@ -608,6 +697,10 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	atomic_clear(&source_stream->queue_empty_cnt);
 	/* Store the BIS number for logging purposes */
 	source_stream->bis_number = info.broadcaster.bis_number;
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	(void)atomic_set(&tx_sync_reset, 1);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 }
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
@@ -939,6 +1032,13 @@ int main(void)
 		printk("Failed to init audio input: %d\n", err);
 		return err;
 	}
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	err = usb_sof_init();
+	if (err != 0) {
+		printk("USB SOF time stamps unavailable (err %d)\n", err);
+	}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 	usbd_uac2_set_ops(broadcaster_dev, &usb_audio_ops, NULL);
 

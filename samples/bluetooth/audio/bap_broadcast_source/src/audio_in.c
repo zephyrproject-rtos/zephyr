@@ -9,6 +9,13 @@
  * before each take, integrates the rate difference between producer and consumer and drives
  * a PI loop that sets the UAC2 explicit feedback value. If the host does not follow the
  * feedback, a single sample is dropped or repeated per SDU to keep the buffer within bounds.
+ *
+ * With CONFIG_AUDIO_INPUT_TIMED the USB SOF times and the SDU transmission times share the
+ * controller time base. The feedback value is then the measured number of samples per SOF
+ * period at the ISO stream rate, and a slow proportional loop holds the buffer level at the
+ * nominal encode time of each SDU, interpolated from the SOF timeline, on the target. This
+ * level is free of USB packet and thread scheduling jitter, so the buffer stays at its target
+ * without dropped or repeated samples.
  */
 
 #include <errno.h>
@@ -22,6 +29,10 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+#include <zephyr/drivers/timer/nrf_grtc_timer.h>
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 #include "audio_in.h"
 
@@ -45,6 +56,32 @@
 
 #define STATS_PERIOD_S 10U
 
+/* SOF timeline: one entry per SOF, (time, samples written). The consumer reads back at most
+ * TL_DEPTH entries so that the producer does not overwrite an entry being read.
+ */
+#define TL_SIZE  32U
+#define TL_DEPTH (TL_SIZE - 4U)
+
+#define SOF_PERIOD_US 1000U
+/* A longer SOF gap (bus suspend, host stall) restarts the SOF rate measurement */
+#define SOF_GAP_US    100000U
+
+/* Rate measured over the last RATE_WINDOW..2*RATE_WINDOW SOF periods, ~0.5 ppm resolution with
+ * 1 us time stamps; a first estimate is used after RATE_MIN_FRAMES.
+ */
+#define RATE_WINDOW_FRAMES 2048U
+#define RATE_MIN_FRAMES    128U
+
+/* The buffer level is evaluated this long before the average encode time, so that it is
+ * interpolated between SOF time stamps already received.
+ */
+#define PHASE_GUARD_US     2000
+/* Encode lead time average: 1/16 weight per SDU */
+#define LEAD_EMA_WEIGHT    0.0625f
+/* Phase loop gain, error in 48 kHz samples, output in Q10.14 LSB: ~4 s time constant */
+#define PHASE_KP           4.0f
+#define PHASE_LIMIT_PPM    200
+
 static struct ring_buf rings[AUDIO_IN_CHANNELS];
 static uint8_t ring_mem[AUDIO_IN_CHANNELS][RING_BYTES];
 
@@ -62,6 +99,8 @@ static atomic_t flush_req;
 static int32_t dec_acc[AUDIO_IN_CHANNELS];
 static uint32_t dec_cnt;
 static atomic_t overruns;
+/* Samples per channel written to the ring buffer, wrapping */
+static uint32_t written;
 
 /* Consumer state */
 static bool primed;
@@ -76,6 +115,43 @@ static uint32_t underruns;
 static uint32_t slips;
 static uint32_t repeats;
 static uint32_t primes;
+/* Samples per channel removed from the ring buffer, wrapping */
+static uint32_t removed;
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+struct tl_entry {
+	uint32_t t;
+	uint32_t s;
+};
+
+/* Producer timed state */
+static struct tl_entry tl[TL_SIZE];
+static atomic_t tl_head;
+static bool sof_valid;
+static uint32_t sof_last_t;
+static uint32_t sof_frames;
+static uint32_t rate_a_t;
+static uint32_t rate_a_k;
+static uint32_t rate_b_t;
+static uint32_t rate_b_k;
+static atomic_t fb_rate;
+static atomic_t sof_skipped;
+static atomic_t sof_restarts;
+
+/* Consumer timed state */
+static bool lead_valid;
+static float lead_us;
+static int32_t lead_ref;
+static bool aligned;
+static float phase_sum;
+static uint32_t phase_n;
+static float phase_min = (float)INT32_MAX;
+static float phase_max = (float)INT32_MIN;
+static int32_t lead_min = INT32_MAX;
+static uint32_t late;
+static uint32_t no_timeline;
+static uint32_t aligns;
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 int audio_in_init(uint32_t rate_hz, size_t frame_samples)
 {
@@ -145,8 +221,118 @@ void audio_in_put(const int16_t *pcm, size_t frames)
 		for (size_t ch = 0U; ch < AUDIO_IN_CHANNELS; ch++) {
 			(void)ring_buf_put(&rings[ch], (uint8_t *)out[ch], bytes);
 		}
+		written += (uint32_t)n;
 	}
 }
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+static void sof_restart(uint32_t t_us)
+{
+	sof_valid = true;
+	sof_last_t = t_us;
+	sof_frames = 0U;
+	rate_a_t = t_us;
+	rate_a_k = 0U;
+	rate_b_t = t_us;
+	rate_b_k = 0U;
+	atomic_inc(&sof_restarts);
+}
+
+void audio_in_sof(uint32_t t_us)
+{
+	const uint32_t dt = t_us - sof_last_t;
+	uint32_t frames;
+	uint32_t dk;
+
+	if (!sof_valid || (dt > SOF_GAP_US)) {
+		sof_restart(t_us);
+		return;
+	}
+
+	if (dt < (SOF_PERIOD_US / 2U)) {
+		return;
+	}
+
+	/* The capture may be read late or be from a later SOF than the one being handled;
+	 * the frame count follows from the time stamps.
+	 */
+	dk = (dt + (SOF_PERIOD_US / 2U)) / SOF_PERIOD_US;
+	sof_frames += dk;
+	sof_last_t = t_us;
+
+	if (dk == 1U) {
+		const atomic_val_t head = atomic_get(&tl_head);
+
+		tl[(uint32_t)head % TL_SIZE] = (struct tl_entry){.t = t_us, .s = written};
+		(void)atomic_set(&tl_head, head + 1);
+	} else {
+		/* Samples written are not known at the captured SOF; use it for rate only */
+		atomic_inc(&sof_skipped);
+	}
+
+	if ((sof_frames - rate_b_k) >= RATE_WINDOW_FRAMES) {
+		rate_a_t = rate_b_t;
+		rate_a_k = rate_b_k;
+		rate_b_t = t_us;
+		rate_b_k = sof_frames;
+	}
+
+	frames = sof_frames - rate_a_k;
+	if (frames >= RATE_MIN_FRAMES) {
+		/* Samples per SOF period at exactly AUDIO_IN_RATE_HZ in the controller time base */
+		const uint64_t num = (uint64_t)AUDIO_IN_FB_NOMINAL * (t_us - rate_a_t);
+		const uint64_t den = (uint64_t)frames * SOF_PERIOD_US;
+
+		(void)atomic_set(&fb_rate, (atomic_val_t)((num + (den / 2U)) / den));
+	}
+}
+
+/* Buffer level at time t_us for the samples removed so far, interpolated on the SOF timeline */
+static bool level_at(uint32_t t_us, float *level)
+{
+	const atomic_val_t head = atomic_get(&tl_head);
+	const uint32_t n = MIN((uint32_t)head, TL_DEPTH);
+	struct tl_entry a;
+	struct tl_entry b;
+	bool found = false;
+
+	if (n < 2U) {
+		return false;
+	}
+
+	b = tl[(uint32_t)(head - 1) % TL_SIZE];
+	if ((int32_t)(t_us - b.t) >= 0) {
+		/* Later than the last SOF: no extrapolation */
+		*level = (float)(int32_t)(b.s - removed);
+		found = true;
+	}
+
+	for (uint32_t i = 2U; !found && (i <= n); i++) {
+		a = tl[(uint32_t)(head - (atomic_val_t)i) % TL_SIZE];
+		if ((int32_t)(t_us - a.t) >= 0) {
+			const float frac = (float)(int32_t)(t_us - a.t) /
+					   (float)(int32_t)(b.t - a.t);
+
+			*level = (float)(int32_t)(a.s - removed) +
+				 ((float)(int32_t)(b.s - a.s) * frac);
+			found = true;
+		}
+		b = a;
+	}
+
+	/* Entries read may have been overwritten meanwhile */
+	if ((uint32_t)(atomic_get(&tl_head) - head) > (TL_SIZE - TL_DEPTH)) {
+		return false;
+	}
+
+	return found;
+}
+#else
+void audio_in_sof(uint32_t t_us)
+{
+	ARG_UNUSED(t_us);
+}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 static uint32_t fill_get(void)
 {
@@ -155,17 +341,61 @@ static uint32_t fill_get(void)
 
 static void discard(uint32_t samples)
 {
+	samples = MIN(samples, fill_get());
+
 	for (size_t ch = 0U; ch < AUDIO_IN_CHANNELS; ch++) {
-		ring_buf_consume(&rings[ch], MIN(samples * sizeof(int16_t),
-						 ring_buf_size_get(&rings[ch])));
+		ring_buf_consume(&rings[ch], samples * sizeof(int16_t));
 	}
+
+	removed += samples;
 }
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+static bool control_update_timed(void)
+{
+	const float fb_limit = (float)AUDIO_IN_FB_NOMINAL * FB_LIMIT_PPM / 1000000.0f;
+	const float phase_limit = (float)AUDIO_IN_FB_NOMINAL * PHASE_LIMIT_PPM / 1000000.0f;
+	const int32_t rate = (int32_t)atomic_get(&fb_rate);
+	float err;
+	float fb;
+
+	if ((phase_n == 0U) || (rate == 0)) {
+		phase_sum = 0.0f;
+		phase_n = 0U;
+		return false;
+	}
+
+	/* Error in 48 kHz samples */
+	err = (phase_sum / (float)phase_n) * (float)ratio;
+	phase_sum = 0.0f;
+	phase_n = 0U;
+
+	fb = (float)(rate - (int32_t)AUDIO_IN_FB_NOMINAL) +
+	     CLAMP(-(PHASE_KP * err), -phase_limit, phase_limit);
+	fb = CLAMP(fb, -fb_limit, fb_limit);
+
+	atomic_set(&feedback, (atomic_val_t)((int32_t)AUDIO_IN_FB_NOMINAL + (int32_t)fb));
+
+	/* Continue from the same value if the time stamps are lost */
+	pi_integral = -fb;
+
+	return true;
+}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 static void control_update(void)
 {
 	const float fb_limit = (float)AUDIO_IN_FB_NOMINAL * FB_LIMIT_PPM / 1000000.0f;
 	float err;
 	float fb;
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	if (primed && control_update_timed()) {
+		fill_sum = 0U;
+		fill_sum_n = 0U;
+		return;
+	}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 	if ((fill_sum_n == 0U) || !primed) {
 		fill_sum = 0U;
@@ -197,9 +427,51 @@ static void stats_print(void)
 
 	fill_min = UINT32_MAX;
 	fill_max = 0U;
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	const int32_t rate = (int32_t)atomic_get(&fb_rate);
+
+	if (rate != 0) {
+		printk("Audio in: rate %d (%d ppm) level err %d..%d lead %d us ref %d us min %d us "
+		       "late %u align %u no timeline %u sof skip %u restart %u\n",
+		       rate,
+		       ((rate - (int32_t)AUDIO_IN_FB_NOMINAL) * 1000000) /
+			       (int32_t)AUDIO_IN_FB_NOMINAL,
+		       (int32_t)phase_min, (int32_t)phase_max, (int32_t)lead_us, lead_ref, lead_min,
+		       late, aligns, no_timeline, (uint32_t)atomic_get(&sof_skipped),
+		       (uint32_t)atomic_get(&sof_restarts));
+	}
+
+	phase_min = (float)INT32_MAX;
+	phase_max = (float)INT32_MIN;
+	lead_min = INT32_MAX;
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 }
 
-void audio_in_get(int16_t *left, int16_t *right)
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+static void phase_update(float err, uint32_t *fill)
+{
+	if (!aligned) {
+		/* One time phase alignment after priming, before the loop takes over */
+		if (err > (float)(frame_n / 4U)) {
+			const uint32_t excess = MIN((uint32_t)err, *fill - frame_n);
+
+			discard(excess);
+			*fill -= excess;
+			err -= (float)excess;
+			aligns++;
+		}
+		aligned = true;
+	}
+
+	phase_sum += err;
+	phase_n++;
+	phase_min = MIN(phase_min, err);
+	phase_max = MAX(phase_max, err);
+}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
+static void get_frame(int16_t *left, int16_t *right, bool timed, uint32_t t_level)
 {
 	int16_t *out[AUDIO_IN_CHANNELS] = {left, right};
 	uint32_t fill;
@@ -209,6 +481,12 @@ void audio_in_get(int16_t *left, int16_t *right)
 		discard(fill_get());
 		primed = false;
 	}
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	if (!primed) {
+		aligned = false;
+	}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 	fill = fill_get();
 
@@ -240,6 +518,21 @@ void audio_in_get(int16_t *left, int16_t *right)
 		goto silence;
 	}
 
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	if (timed) {
+		float level;
+
+		if (level_at(t_level, &level)) {
+			phase_update(level - (float)target, &fill);
+		} else {
+			no_timeline++;
+		}
+	}
+#else
+	ARG_UNUSED(timed);
+	ARG_UNUSED(t_level);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
 	fill_sum += fill;
 	fill_sum_n++;
 
@@ -257,6 +550,7 @@ void audio_in_get(int16_t *left, int16_t *right)
 			out[ch][n] = out[ch][n - 1U];
 		}
 	}
+	removed += (uint32_t)n;
 
 	goto account;
 
@@ -278,6 +572,46 @@ account:
 	}
 }
 
+void audio_in_get(int16_t *left, int16_t *right)
+{
+	get_frame(left, right, false, 0U);
+}
+
+void audio_in_get_timed(int16_t *left, int16_t *right, uint32_t t_tx_us)
+{
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	const uint32_t now = (uint32_t)z_nrf_grtc_timer_read();
+	const int32_t lead = (int32_t)(t_tx_us - now);
+
+	/* Encode lead time before the SDU is sent on air */
+	if (!lead_valid) {
+		lead_us = (float)lead;
+		lead_valid = true;
+	} else {
+		lead_us += ((float)lead - lead_us) * LEAD_EMA_WEIGHT;
+	}
+
+	lead_min = MIN(lead_min, lead);
+	if (lead <= 0) {
+		late++;
+	}
+
+	/* Freeze the reference once aligned so the encode wakeup jitter does not move the
+	 * point where the level is measured.
+	 */
+	if (!aligned) {
+		lead_ref = (int32_t)lead_us;
+	}
+
+	/* Level at a fixed lead before the SDU air time, independent of this wakeup's latency */
+	get_frame(left, right, true, t_tx_us - (uint32_t)(lead_ref + PHASE_GUARD_US));
+#else
+	ARG_UNUSED(t_tx_us);
+
+	get_frame(left, right, false, 0U);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+}
+
 void audio_in_flush(void)
 {
 	(void)atomic_set(&flush_req, 1);
@@ -297,43 +631,53 @@ uint32_t audio_in_feedback_get(void)
 
 static int16_t emu_tone[EMU_TONE_PERIOD];
 static uint32_t emu_phase;
-static int64_t emu_last_ticks;
-static int64_t emu_acc;
+static uint64_t emu_t0;
+static uint64_t emu_frame;
+static uint32_t emu_acc;
+
+static uint64_t emu_now_us(void)
+{
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	return z_nrf_grtc_timer_read();
+#else
+	return k_ticks_to_us_floor64((uint64_t)k_uptime_ticks());
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+}
 
 static void emu_timer_handler(struct k_timer *timer)
 {
-	/* frames = (dticks / ticks_per_s) * 1000 * (fb / 2^14) * (1e6 + ppm) / 1e6, accumulated
-	 * with the remainder carried so that tick rounding does not bias the rate.
-	 */
-	const int64_t den = (int64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC * BIT(AUDIO_IN_FB_SHIFT);
 	int16_t pcm[PUT_CHUNK_MAX * AUDIO_IN_CHANNELS];
-	const int64_t now = k_uptime_ticks();
-	uint32_t fb;
-	int64_t frames;
+	const uint64_t now = emu_now_us();
 
 	ARG_UNUSED(timer);
 
-	fb = IS_ENABLED(CONFIG_AUDIO_INPUT_EMULATED_FEEDBACK) ? audio_in_feedback_get()
-							       : AUDIO_IN_FB_NOMINAL;
+	/* Emulate an asynchronous UAC2 host: each host frame, of 1 ms at the host clock, carries
+	 * the samples of the accumulated feedback value.
+	 */
+	while (true) {
+		const uint64_t host_scale = (uint64_t)(1000000 + CONFIG_AUDIO_INPUT_EMULATED_PPM);
+		const uint64_t t_sof = emu_t0 +
+				       ((emu_frame * USEC_PER_MSEC * 1000000ULL) / host_scale);
+		uint32_t frames;
 
-	emu_acc += (now - emu_last_ticks) * (int64_t)fb *
-		   (1000000LL + CONFIG_AUDIO_INPUT_EMULATED_PPM) / 1000LL;
-	emu_last_ticks = now;
+		if (t_sof > now) {
+			break;
+		}
 
-	frames = emu_acc / den;
-	emu_acc -= frames * den;
+		emu_acc += IS_ENABLED(CONFIG_AUDIO_INPUT_EMULATED_FEEDBACK) ?
+				   audio_in_feedback_get() : AUDIO_IN_FB_NOMINAL;
+		frames = MIN(emu_acc >> AUDIO_IN_FB_SHIFT, PUT_CHUNK_MAX);
+		emu_acc &= BIT_MASK(AUDIO_IN_FB_SHIFT);
 
-	while (frames > 0) {
-		const size_t chunk = MIN((size_t)frames, PUT_CHUNK_MAX);
-
-		for (size_t i = 0U; i < chunk; i++) {
+		for (uint32_t i = 0U; i < frames; i++) {
 			pcm[i * AUDIO_IN_CHANNELS] = emu_tone[emu_phase];
 			pcm[(i * AUDIO_IN_CHANNELS) + 1U] = emu_tone[emu_phase];
 			emu_phase = (emu_phase + 1U) % EMU_TONE_PERIOD;
 		}
 
-		audio_in_put(pcm, chunk);
-		frames -= (int64_t)chunk;
+		audio_in_sof((uint32_t)t_sof);
+		audio_in_put(pcm, frames);
+		emu_frame++;
 	}
 }
 
@@ -349,7 +693,7 @@ void audio_in_emulated_start(void)
 	printk("Emulated USB host: %d ppm, feedback %s\n", CONFIG_AUDIO_INPUT_EMULATED_PPM,
 	       IS_ENABLED(CONFIG_AUDIO_INPUT_EMULATED_FEEDBACK) ? "on" : "off");
 
-	emu_last_ticks = k_uptime_ticks();
+	emu_t0 = emu_now_us();
 	k_timer_start(&emu_timer, K_MSEC(1), K_MSEC(1));
 }
 #else
