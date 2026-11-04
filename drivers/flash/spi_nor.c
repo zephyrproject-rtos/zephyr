@@ -330,7 +330,7 @@ static void spi_nor_delay_ms(uint32_t delay_ms)
 		return;
 	}
 
-	if (k_can_yield()) {
+	if (!IS_ENABLED(CONFIG_MULTITHREADING) || k_can_yield()) {
 		k_sleep(K_MSEC(delay_ms));
 	} else {
 		k_busy_wait(delay_ms * USEC_PER_MSEC);
