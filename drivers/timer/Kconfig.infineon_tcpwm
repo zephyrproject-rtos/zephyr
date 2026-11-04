@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_TCPWM_TIMER
+	bool "Infineon TCPWM system timer"
+	default y
+	depends on DT_HAS_INFINEON_TCPWM_SYSTEM_TIMER_ENABLED
+	select USE_INFINEON_TIMER
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  Use a 32-bit TCPWM counter as the system timer.
