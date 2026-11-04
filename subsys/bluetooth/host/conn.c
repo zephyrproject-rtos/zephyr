@@ -2368,9 +2368,7 @@ static void deferred_work(struct k_work *work)
 	LOG_DBG("conn %p", conn);
 
 	if (conn->state == BT_CONN_DISCONNECTED) {
-#if defined(CONFIG_BT_ISO_UNICAST)
-		bool acl_coupled_with_cis;
-
+#if defined(CONFIG_BT_ISO)
 		if (bt_conn_is_iso(conn)) {
 			/* bt_iso_disconnected is responsible for unref'ing the
 			 * connection pointer, as it is conditional on whether
@@ -2379,6 +2377,9 @@ static void deferred_work(struct k_work *work)
 			bt_iso_disconnected(conn);
 			return;
 		}
+#endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_ISO_UNICAST)
+		bool acl_coupled_with_cis;
 
 		/* Mark all CIS still associated with the ACL conn as disconnecting.
 		 * If any CIS are associated with the ACL, we postpone the disconnect work until

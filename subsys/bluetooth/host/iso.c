@@ -275,6 +275,17 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 	LOG_DBG("iso %p chan %p", iso, chan);
 }
 
+static void bt_iso_chan_del(struct bt_iso_chan *chan)
+{
+	struct bt_conn *iso = bt_conn_take(&chan->iso);
+
+	if (iso != NULL) {
+		/* A reference held elsewhere can keep the object past the channel */
+		iso->iso.chan = NULL;
+		bt_conn_unref(iso);
+	}
+}
+
 static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, uint8_t dir,
 					      const struct bt_iso_chan_path *path)
 {
@@ -531,8 +542,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		bt_iso_cleanup_acl(chan->iso);
 
 		if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
-			chan->iso->iso.chan = NULL;
-			bt_conn_drop(&chan->iso);
+			bt_iso_chan_del(chan);
 #if defined(CONFIG_BT_ISO_CENTRAL)
 		} else {
 			bool is_chan_connected;
@@ -2074,7 +2084,7 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	struct bt_iso_chan *cis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
-		bt_conn_drop(&cis->iso);
+		bt_iso_chan_del(cis);
 
 		sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 	}
@@ -2316,7 +2326,7 @@ static void restore_cig(struct bt_iso_cig *cig, uint8_t existing_num_cis)
 		 * bt_iso_cig_reconfigure was called
 		 */
 		if (cis->iso != NULL && cis->iso->iso.info.unicast.cis_id >= existing_num_cis) {
-			bt_conn_drop(&cis->iso);
+			bt_iso_chan_del(cis);
 
 			sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 			cig->num_cis--;
@@ -2612,7 +2622,7 @@ static void cleanup_big(struct bt_iso_big *big)
 	struct bt_iso_chan *bis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis_channels, bis, tmp, node) {
-		bt_conn_drop(&bis->iso);
+		bt_iso_chan_del(bis);
 
 		sys_slist_remove(&big->bis_channels, NULL, &bis->node);
 	}
