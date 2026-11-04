@@ -689,7 +689,10 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	}
 
 	mcxw_radio->tx_frame.length = payload_len + IEEE802154_FCS_LENGTH;
-	memcpy(mcxw_radio->tx_frame.psdu, payload, payload_len);
+	/* Work on the caller's frame so that the header updates (CSL IE, Frame
+	 * Counter reported by the NBU) are visible to the upper layer.
+	 */
+	mcxw_radio->tx_frame.psdu = payload;
 
 	mcxw_radio->tx_frame.sec_processed = net_pkt_ieee802154_frame_secured(pkt);
 	mcxw_radio->tx_frame.hdr_updated = net_pkt_ieee802154_mac_hdr_rdy(pkt);
@@ -715,10 +718,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	msg->msgData.dataReq.CCABeforeTx = gPhyNoCCABeforeTx_c;
 	msg->msgData.dataReq.startTime = gPhySeqStartAsap_c;
 
-	/* tx_frame.psdu will point to tx_frame.tx_data data buffer after macToPdDataMessage_t
-	 * structure
-	 */
-	msg->msgData.dataReq.pPsdu = mcxw_radio->tx_frame.psdu;
+	/* The PHY transport requires the PSDU right after the request header */
+	msg->msgData.dataReq.pPsdu = mcxw_radio->tx_data + sizeof(macToPdDataMessage_t);
 
 	if (ieee802154_is_ar_flag_set(frag)) {
 		msg->msgData.dataReq.ackRequired = gPhyRxAckRqd_c;
@@ -815,6 +816,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 
 #endif
 
+	memcpy(msg->msgData.dataReq.pPsdu, payload, payload_len);
+
 	k_sem_reset(&mcxw_radio->tx_wait);
 
 	mcxw_radio_state tmp_state = mcxw_radio->state;
@@ -826,10 +829,16 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 		mcxw_tx_started(dev, pkt, frag);
 	} else {
 		mcxw_radio->state = tmp_state;
+		mcxw_radio->tx_frame.psdu = NULL;
+		mcxw_radio->tx_frame.length = 0;
 		return -EIO;
 	}
 
 	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
+
+	/* The caller's frame is no longer owned by the driver */
+	mcxw_radio->tx_frame.psdu = NULL;
+	mcxw_radio->tx_frame.length = 0;
 
 	/* Propagate the security flags back to the net_pkt so that the
 	 * OT platform layer (radio.c) can report the correct values to
@@ -1585,7 +1594,8 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 	case gPlmeAbortInd_c:
 		/* TX Packet was loaded into TX Packet RAM but the TX/TR seq did not ended ok */
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
-		if (is_keyid_mode_1(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length) &&
+		if (RADIO_STATE_TRANSMIT == mcxw_ctx.state &&
+		    is_keyid_mode_1(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length) &&
 		    !mcxw_ctx.tx_frame.sec_processed && !mcxw_ctx.tx_frame.hdr_updated) {
 			set_frame_counter(mcxw_ctx.tx_frame.psdu, mcxw_ctx.tx_frame.length,
 					  plme_msg->fc);
@@ -1781,8 +1791,6 @@ static int mcxw_init(const struct device *dev)
 	rf_set_channel(DEFAULT_CHANNEL);
 
 	mcxw_radio->tx_frame.length = 0;
-	/* Make the psdu point to the space after macToPdDataMessage_t in the data buffer */
-	mcxw_radio->tx_frame.psdu = mcxw_radio->tx_data + sizeof(macToPdDataMessage_t);
 
 	/* Use the board-provided dedicated counter for radio timestamps. */
 	mcxw_radio->counter = DEVICE_DT_GET(MCXW_TIMESTAMP_COUNTER_NODE);
