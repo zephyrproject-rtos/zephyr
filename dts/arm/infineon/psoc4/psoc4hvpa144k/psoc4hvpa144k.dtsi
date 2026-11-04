@@ -148,6 +148,17 @@
 			clk-dst = <0x0>;
 			status = "disabled";
 		};
+
+		adc0: adc@40300000 {
+			compatible = "infineon,dsadc";
+			reg = <0x40300000 0x100000>;
+			/* Digital channel 0 to 3 interrupts */
+			interrupts = <20 3>, <21 3>, <22 3>, <23 3>;
+			#io-channel-cells = <1>;
+			clocks = <&peri_clk_div1>;
+			clk-dst = <0x7>;
+			status = "disabled";
+		};
 	};
 
 	sram0: memory@20000000 {
