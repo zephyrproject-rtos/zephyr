@@ -17,6 +17,7 @@ config SOC_CYT4DNJBZS_M7_0
 	select CPU_HAS_FPU
 	select SOC_PREP_HOOK
 	select SOC_EARLY_INIT_HOOK
+	select ATOMIC_OPERATIONS_ARCH if SMP
 
 config SOC_CYT4DNJBZS_M7_1
 	select ARM

@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <soc.h>
 #include <cy_sysclk.h>
 #include <cy_wdt.h>
 
@@ -53,6 +54,10 @@ static void cm7_core_init(volatile uint32_t *cm7_ctl)
 
 void soc_prep_hook(void)
 {
+#ifdef CONFIG_ATOMIC_OPERATIONS_ARCH
+	cyt4dn_atomic_init();
+#endif
+
 #ifdef CONFIG_SOC_CYT4DNJBZS_M7_1
 	cm7_core_init(&CPUSS->CM7_1_CTL);
 #elif CONFIG_SOC_CYT4DNJBZS_M7_0
