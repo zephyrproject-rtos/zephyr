@@ -2608,6 +2608,7 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 		return NULL;
 	}
 
+	bt_addr_copy(&sco_conn->sco.dst, peer);
 	sco_conn->type = BT_CONN_TYPE_SCO;
 
 	if (link_type == BT_HCI_SCO) {
@@ -3050,11 +3051,7 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 		(void)bt_addr_to_str(&conn->br.dst, val.str, sizeof(val.str));
 		break;
 	case BT_CONN_TYPE_SCO:
-		if (conn->sco.acl != NULL) {
-			(void)bt_addr_to_str(&conn->sco.acl->br.dst, val.str, sizeof(val.str));
-		} else {
-			val.str[0] = '\0';
-		}
+		(void)bt_addr_to_str(&conn->sco.dst, val.str, sizeof(val.str));
 		break;
 #endif /* CONFIG_BT_CLASSIC */
 	case BT_CONN_TYPE_LE:
@@ -3062,10 +3059,11 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 		break;
 #if defined(CONFIG_BT_ISO_UNICAST)
 	case BT_CONN_TYPE_ISO:
-		if (conn->iso.acl != NULL) {
-			(void)bt_addr_le_to_str(&conn->iso.acl->le.dst, val.str, sizeof(val.str));
-		} else {
+		/* No peer: a BIS, or a CIS that has not been connected */
+		if (bt_addr_le_eq(&conn->iso.dst, BT_ADDR_LE_ANY)) {
 			val.str[0] = '\0';
+		} else {
+			(void)bt_addr_le_to_str(&conn->iso.dst, val.str, sizeof(val.str));
 		}
 		break;
 #endif /* CONFIG_BT_ISO_UNICAST */
@@ -3160,9 +3158,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #if defined(CONFIG_BT_ISO_UNICAST)
 		if ((conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
 		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
-		    conn->iso.acl != NULL) {
-			info->le.dst = &conn->iso.acl->le.dst;
-			info->le.src = &bt_dev.id_addr[conn->iso.acl->id];
+		    !bt_addr_le_eq(&conn->iso.dst, BT_ADDR_LE_ANY)) {
+			info->le.dst = &conn->iso.dst;
+			info->le.src = &bt_dev.id_addr[conn->id];
 		} else {
 			info->le.src = BT_ADDR_LE_NONE;
 			info->le.dst = BT_ADDR_LE_NONE;
