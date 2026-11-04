@@ -59,3 +59,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&spinlock0 {
+	status = "okay";
+};
