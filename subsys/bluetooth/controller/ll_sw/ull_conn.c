@@ -1383,7 +1383,12 @@ void ull_conn_done(struct node_rx_event_done *done)
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		}
 
-		ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+		/* Limit reservation to the connection interval so that the ticker does not
+		 * skip its own expiries, events longer than the interval continue using the
+		 * is_abort_cb mechanism.
+		 */
+		ticks_slot = MIN(HAL_TICKER_US_TO_TICKS_CEIL(slot_us),
+				 HAL_TICKER_US_TO_TICKS(lll->interval * CONN_INT_UNIT_US));
 		if (ticks_slot > conn->ull.ticks_slot) {
 			ticks_slot_plus = ticks_slot - conn->ull.ticks_slot;
 		} else {
@@ -2444,7 +2449,9 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		}
 
-		conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+		/* Limit reservation to the connection interval, refer to ull_conn_done() */
+		conn->ull.ticks_slot = MIN(HAL_TICKER_US_TO_TICKS_CEIL(slot_us),
+					   HAL_TICKER_US_TO_TICKS(interval * CONN_INT_UNIT_US));
 
 	} else {
 		conn_interval_new = interval + 1U;
