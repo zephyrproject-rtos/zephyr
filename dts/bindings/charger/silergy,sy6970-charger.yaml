@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silergy SY6970 battery charger function
+
+description: |
+  Battery charger function of the Silergy SY6970, described as a child node
+  of the "silergy,sy6970" node. The fast charge current range is 0 A to
+  5.056 A.
+
+compatible: "silergy,sy6970-charger"
+
+include: ti,bq2589x-charger-common.yaml
+
+examples:
+  - |
+    sy6970@6a {
+      compatible = "silergy,sy6970";
+      reg = <0x6a>;
+
+      charger {
+        compatible = "silergy,sy6970-charger";
+        constant-charge-current-max-microamp = <512000>;
+        constant-charge-voltage-max-microvolt = <4208000>;
+      };
+    };
