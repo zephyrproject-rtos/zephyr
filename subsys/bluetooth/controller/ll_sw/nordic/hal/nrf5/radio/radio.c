@@ -1909,9 +1909,16 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 	/* NOTE: HERE, we have cntr_h and cntr_l in sync. */
 
-	/* Handle rollover between current and expected value */
-	if (ticks_start < cntr_l) {
-		cntr_h++;
+	/* Handle rollover between current and expected value. A start value
+	 * that is already in the past is set in the past, so that the compare
+	 * triggers immediately instead of after a counter rollover.
+	 */
+	if (((ticks_start - cntr_l) & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		if (ticks_start < cntr_l) {
+			cntr_h++;
+		}
+	} else if (ticks_start > cntr_l) {
+		cntr_h--;
 	}
 
 	/* Clear compare event, if any */
@@ -1921,9 +1928,6 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	nrf_grtc_sys_counter_cc_set(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO,
 				    ((((uint64_t)cntr_h & GRTC_CC_CCH_CCH_Msk) << 32) |
 				     ticks_start));
-
-	/* Enable compare */
-	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
@@ -1962,6 +1966,14 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	 */
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* Enable compare after the (D)PPI setup, a compare value that is
+	 * already in the past generates the event immediately, and it must
+	 * start the event timer and the radio.
+	 */
+	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
+#endif /* CONFIG_BT_CTLR_NRF_GRTC */
 
 	return remainder_us;
 }
@@ -2092,9 +2104,16 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 
 	/* NOTE: HERE, we have cntr_h and cntr_l in sync. */
 
-	/* Handle rollover between current and expected value */
-	if (ticks_start < cntr_l) {
-		cntr_h++;
+	/* Handle rollover between current and expected value. A start value
+	 * that is already in the past is set in the past, so that the compare
+	 * triggers immediately instead of after a counter rollover.
+	 */
+	if (((ticks_start - cntr_l) & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		if (ticks_start < cntr_l) {
+			cntr_h++;
+		}
+	} else if (ticks_start > cntr_l) {
+		cntr_h--;
 	}
 
 	/* Clear compare event, if any */
@@ -2104,9 +2123,6 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	nrf_grtc_sys_counter_cc_set(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO,
 				    ((((uint64_t)cntr_h & GRTC_CC_CCH_CCH_Msk) << 32) |
 				     ticks_start));
-
-	/* Enable compare */
-	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
@@ -2140,6 +2156,14 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	* CONFIG_SOC_SERIES_NRF54H
 	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* Enable compare after the (D)PPI setup, a compare value that is
+	 * already in the past generates the event immediately, and it must
+	 * start the event timer and the radio.
+	 */
+	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
+#endif /* CONFIG_BT_CTLR_NRF_GRTC */
 
 	return remainder_us;
 }
