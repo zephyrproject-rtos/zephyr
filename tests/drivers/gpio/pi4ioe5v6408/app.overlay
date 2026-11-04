@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	expander: gpio@43 {
+		compatible = "diodes,pi4ioe5v6408";
+		reg = <0x43>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+	};
+
+	polled: gpio@44 {
+		compatible = "diodes,pi4ioe5v6408";
+		reg = <0x44>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+};
