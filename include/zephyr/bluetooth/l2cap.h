@@ -556,6 +556,8 @@ struct bt_l2cap_br_chan {
 	atomic_t                        _pdu_ready_lock;
 	/** @internal List of net bufs not yet sent to lower layer */
 	sys_slist_t                     _pdu_tx_queue;
+	/** @internal PDUs are sent automatically flushable */
+	bool                            _flushable;
 
 #if defined(CONFIG_BT_L2CAP_RET_FC) || defined(__DOXYGEN__)
 	/** @internal Holds the remaining length of current sending buffer */

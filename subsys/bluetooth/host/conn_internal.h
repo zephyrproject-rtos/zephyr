@@ -158,6 +158,9 @@ struct bt_conn_br {
 
 	struct bt_keys_link_key	*link_key;
 
+	/* The PDU being sent is automatically flushable */
+	bool			tx_flushable;
+
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 	/* For power mode */
 	uint8_t mode;

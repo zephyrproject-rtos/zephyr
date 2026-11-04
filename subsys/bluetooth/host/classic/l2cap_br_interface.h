@@ -44,6 +44,12 @@ int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt_conn_tx_cb_t cb,
 			     void *user_data);
 
+/* Send the PDUs of a channel automatically flushable or not. Flushable PDUs are
+ * discarded by the Controller once the Automatic Flush Timeout of the ACL link
+ * expires, see bt_conn_br_set_auto_flush_timeout().
+ */
+int bt_l2cap_br_chan_set_flushable(struct bt_l2cap_chan *chan, bool flushable);
+
 /* Send a single PDU over a BR channel.
  * Used by e.g. SMP.
  */
