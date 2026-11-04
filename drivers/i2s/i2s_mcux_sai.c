@@ -142,6 +142,24 @@ static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem
 {
 	struct i2s_q_entry q_entry;
 
+	/*
+	 * mem_slab may be NULL when cleaning up NOT_READY or failed configuration
+	 * paths. Drain queues but do not free buffers in that case.
+	 */
+	if (mem_slab == NULL) {
+		if (in_drop) {
+			while (k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT) == 0) {
+				/* drain only */
+			}
+		}
+		if (out_drop) {
+			while (k_msgq_get(&strm->out_queue, &q_entry, K_NO_WAIT) == 0) {
+				/* drain only */
+			}
+		}
+		return;
+	}
+
 	if (in_drop) {
 		while (k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT) == 0) {
 			k_mem_slab_free(mem_slab, q_entry.mem_block);
