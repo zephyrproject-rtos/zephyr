@@ -103,6 +103,18 @@ New APIs and options
   * Added PSA Protected Storage backend, enable with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
 
+* SCSI
+
+  * :ref:`SCSI mid-layer <scsi_midlayer>` (:c:func:`scsi_exec`, :c:func:`scsi_device_probe`,
+    CDB builders in :zephyr_file:`include/zephyr/scsi/scsi_cmd.h`)
+  * :c:func:`scsi_disk_register` (:kconfig:option:`CONFIG_DISK_DRIVER_SCSI`) and
+    optional :c:func:`scsi_partition_walk` (:kconfig:option:`CONFIG_SCSI_DISK_PARTITION`)
+
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -145,6 +157,14 @@ Libraries / Subsystems
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
     the HID Device role of the HID over GATT Profile is built on.
+
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+  * :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution, SCSI :ref:`disk_access <disk_access_api>` volumes, and generic partition
+    table parsing on block devices.
 
 Devicetree
 **********
