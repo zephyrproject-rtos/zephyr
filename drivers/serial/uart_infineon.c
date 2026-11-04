@@ -759,11 +759,13 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 	unsigned int key = irq_lock();
 
 	if (data->async.dma_rx.dev == NULL) {
-		return -ENODEV;
+		err = -ENODEV;
+		goto unlock;
 	}
 
 	if (data->async.dma_rx.buf_len != 0) {
-		return -EBUSY;
+		err = -EBUSY;
+		goto unlock;
 	}
 
 	/* Store information about data buffer need to send */
@@ -784,11 +786,12 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 	}
 	err = dma_get_status(data->async.dma_rx.dev, data->async.dma_rx.dma_channel, &dma_status);
 	if (err) {
-		return err;
+		goto unlock;
 	}
 
 	if (dma_status.busy) {
-		return -EBUSY;
+		err = -EBUSY;
+		goto unlock;
 	}
 
 	/* Configure timeout */
