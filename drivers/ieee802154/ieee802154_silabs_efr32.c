@@ -653,6 +653,11 @@ static int sl_802154_security_process_tx(struct sl_802154_data *data, uint8_t *b
 #define SL_802154_RX_TO_ENH_ACK_TX_US          256
 #define SL_802154_PHR_DURATION_US              (SL_802154_PHR_BYTES * OT_RADIO_SYMBOL_TIME * 2)
 #define SL_802154_CSMA_BACKOFF_TIME_US         150
+/*
+ * How long to keep RX on after a data-request ACK with frame pending, matching
+ * OpenThread's OPENTHREAD_CONFIG_MAC_DATA_POLL_TIMEOUT default (100 ms).
+ */
+#define SL_802154_PENDING_DATA_TIMEOUT_US      (100U * USEC_PER_MSEC)
 
 #define SL_802154_FLAG_ONGOING_TX_DATA      0
 #define SL_802154_FLAG_ONGOING_TX_ACK       1
@@ -796,6 +801,117 @@ static void sl_802154_set_radio_to_idle(sl_rail_handle_t handle)
 {
 	if (sl_rail_get_radio_state(handle) != SL_RAIL_RF_STATE_IDLE) {
 		sl_802154_idle_radio(handle);
+	}
+}
+
+/*
+ * An idle period has started when rx_on_when_idle is clear, no transmit is
+ * in progress, no scheduled receive is pending or started, and the driver is
+ * not waiting for a frame announced by frame pending. Idling during a
+ * transmit, including the ACK wait after it, suppresses the ACK and the ACK
+ * timeout. A CSL window or a pending-data wait must keep the receiver up.
+ */
+static bool sl_802154_is_idle_period(struct sl_802154_data *data)
+{
+	return !data->radio_data.rx_on_when_idle &&
+	       !data->mac_data.em_pending_data &&
+	       !sl_802154_state_is_rx_scheduled(&data->radio_data.state) &&
+	       !sl_802154_state_is_scheduled_rx_started(&data->radio_data.state) &&
+	       !sl_802154_state_is_tx_data_ongoing(&data->radio_data.state);
+}
+
+/*
+ * Release the radio after an operation. Idle only when an idle period has
+ * started: sl_rail_idle() is enough to leave receive current when the radio
+ * would otherwise return to RX. Yield always. Yield matters when
+ * sl_802154_set_radio_to_idle() skips sl_rail_idle() because the radio is
+ * already idle, e.g. after a scheduled RX window has ended. Callers that must
+ * not yield during a CSL window call this only when sl_802154_is_idle_period()
+ * is true.
+ */
+static void sl_802154_end_radio_operation(struct sl_802154_data *data)
+{
+	if (sl_802154_is_idle_period(data)) {
+		sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+	}
+	(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+}
+
+static void sl_802154_pending_data_timeout_callback(struct sl_rail_multi_timer *tmr,
+						    sl_rail_time_t expected_time,
+						    void *callback_arg);
+
+static void sl_802154_pending_data_timer_cancel(struct sl_802154_data *data)
+{
+	if (!data->radio_data.rail_initialized) {
+		return;
+	}
+
+	(void)sl_rail_cancel_multi_timer(data->radio_data.rail_handle,
+					 &data->radio_data.pending_data_timer);
+}
+
+static void sl_802154_pending_data_clear(struct sl_802154_data *data)
+{
+	if (!data->mac_data.em_pending_data) {
+		return;
+	}
+
+	data->mac_data.em_pending_data = false;
+	sl_802154_pending_data_timer_cancel(data);
+}
+
+/*
+ * Keep RX on after a data-request ACK with frame pending until the queued
+ * frame arrives or this timeout fires (ieee802154_radio.h RX_ON_WHEN_IDLE).
+ */
+static void sl_802154_pending_data_start(struct sl_802154_data *data)
+{
+	sl_rail_status_t status;
+	uint8_t seq;
+
+	data->mac_data.pending_data_seq++;
+	seq = data->mac_data.pending_data_seq;
+	data->mac_data.em_pending_data = true;
+
+	if (!data->radio_data.rail_initialized) {
+		return;
+	}
+
+	(void)sl_rail_cancel_multi_timer(data->radio_data.rail_handle,
+					 &data->radio_data.pending_data_timer);
+	status = sl_rail_set_multi_timer(data->radio_data.rail_handle,
+					 &data->radio_data.pending_data_timer,
+					 SL_802154_PENDING_DATA_TIMEOUT_US, SL_RAIL_TIME_DELAY,
+					 sl_802154_pending_data_timeout_callback,
+					 UINT_TO_POINTER(seq));
+	if (status != SL_RAIL_STATUS_NO_ERROR) {
+		/* Cannot wait: drop the pending-data hold and idle if allowed. */
+		data->mac_data.em_pending_data = false;
+		sl_802154_end_radio_operation(data);
+	}
+}
+
+static void sl_802154_pending_data_timeout_callback(struct sl_rail_multi_timer *tmr,
+						    sl_rail_time_t expected_time,
+						    void *callback_arg)
+{
+	struct sl_802154_radio_data *radio_data =
+		CONTAINER_OF(tmr, struct sl_802154_radio_data, pending_data_timer);
+	struct sl_802154_data *data =
+		CONTAINER_OF(radio_data, struct sl_802154_data, radio_data);
+	uint8_t seq = (uint8_t)POINTER_TO_UINT(callback_arg);
+
+	ARG_UNUSED(expected_time);
+
+	if (!data->mac_data.em_pending_data || seq != data->mac_data.pending_data_seq) {
+		return;
+	}
+
+	data->mac_data.em_pending_data = false;
+	/* end_radio_operation always yields; only call it when an idle period has started. */
+	if (sl_802154_is_idle_period(data)) {
+		sl_802154_end_radio_operation(data);
 	}
 }
 
@@ -1598,7 +1714,7 @@ static void sl_802154_resume_background_rx_if_idle_enabled(struct sl_802154_data
 static void sl_802154_handle_tx_failed(struct sl_802154_data *data)
 {
 	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
-	sl_802154_yield_radio(data->radio_data.rail_handle);
+	sl_802154_end_radio_operation(data);
 }
 
 static void sl_802154_handle_ack_timeout(struct sl_802154_data *data)
@@ -1609,8 +1725,8 @@ static void sl_802154_handle_ack_timeout(struct sl_802154_data *data)
 	sl_802154_state_set_waiting_for_ack(&data->radio_data.state, false);
 	data->ack_errno = -ENOMSG;
 	k_sem_give(&data->ack_wait);
-	sl_802154_yield_radio(data->radio_data.rail_handle);
-	data->mac_data.em_pending_data = false;
+	sl_802154_pending_data_clear(data);
+	sl_802154_end_radio_operation(data);
 }
 
 static void sl_802154_handle_rx_failed(const struct device *dev,
@@ -1750,13 +1866,18 @@ ack_free:
 ack_complete:
 	k_sem_give(&data->ack_wait);
 	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
+	/*
+	 * A valid ACK of a MAC command with frame pending set must stay awake
+	 * for the queued frame until it arrives or the pending-data timeout
+	 * fires. Every other ACK, including a MAC command with frame pending
+	 * clear, has nothing left to receive.
+	 */
 	if (tx_is_data_request && data->rx_mhr.fs->fc.frame_pending) {
-		data->mac_data.em_pending_data = true;
+		sl_802154_pending_data_start(data);
+		return;
 	}
 invalid_ack:
-	if (!tx_is_data_request) {
-		sl_802154_yield_radio(data->radio_data.rail_handle);
-	}
+	sl_802154_end_radio_operation(data);
 }
 
 static void sl_802154_handle_rx_data(const struct device *dev, uint16_t length,
@@ -1778,13 +1899,13 @@ static void sl_802154_handle_rx_data(const struct device *dev, uint16_t length,
 	if (!pkt) {
 		LOG_ERR("No pkt available");
 		sl_802154_handle_rx_failed(dev, IEEE802154_RX_FAIL_OTHER);
-		return;
+		goto rx_done;
 	}
 	if (net_pkt_write(pkt, data->rx_buffer, length) < 0) {
 		LOG_ERR("Failed to write to a packet.");
 		sl_802154_handle_rx_failed(dev, IEEE802154_RX_FAIL_OTHER);
 		net_pkt_unref(pkt);
-		return;
+		goto rx_done;
 	}
 	net_pkt_set_ieee802154_lqi(pkt, pkt_details->lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, pkt_details->rssi_dbm);
@@ -1797,23 +1918,35 @@ static void sl_802154_handle_rx_data(const struct device *dev, uint16_t length,
 	net_pkt_cursor_init(pkt);
 
 	net_status = net_recv_data(data->iface, pkt);
-
 	if (net_status < 0) {
 		LOG_ERR("RCV Packet dropped by NET stack: %d", net_status);
 		net_pkt_unref(pkt);
-		return;
 	}
 
+rx_done:
+	/*
+	 * Delivered or not: AR frames leave the radio up for the auto-ACK
+	 * (ended on TXACK_PACKET_SENT / TXACK failure). Everything else ends
+	 * the operation here when an idle period has started.
+	 */
 	if (data->rx_mhr.fs->fc.ar) {
+		if (data->mac_data.em_pending_data) {
+			/* Frame arrived; stop the wait timer. Clear the hold
+			 * after the auto-ACK finishes.
+			 */
+			sl_802154_pending_data_timer_cancel(data);
+		}
 		sl_802154_state_set_tx_ack_ongoing(&data->radio_data.state, true);
 	} else if (data->mac_data.em_pending_data) {
-		/* We received a frame that does not require an ACK as result of a data
-		 * poll: we yield the radio here.
+		/* Unacknowledged frame after a MAC command whose ACK had frame
+		 * pending set: the transaction is done, so yield the radio.
 		 */
-		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
-		data->mac_data.em_pending_data = false;
+		sl_802154_pending_data_clear(data);
+		sl_802154_end_radio_operation(data);
+	} else if (sl_802154_is_idle_period(data)) {
+		sl_802154_end_radio_operation(data);
 	} else {
-		/* Plain unacknowledged frame outside a data poll: nothing to do. */
+		/* CSL window or receiver kept on: nothing to do. */
 	}
 }
 
@@ -1923,7 +2056,7 @@ static void sl_802154_handle_tx_completion(struct sl_802154_data *data, sl_rail_
 				sl_802154_state_set_waiting_for_ack(&data->radio_data.state, true);
 			} else {
 				sl_802154_state_set_tx_data_ongoing(&data->radio_data.state, false);
-				(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+				sl_802154_end_radio_operation(data);
 			}
 			data->tx_errno = 0;
 		}
@@ -1970,7 +2103,14 @@ static void sl_802154_rail_events_callback(sl_rail_handle_t handle, sl_rail_even
 
 	/* Process scheduled events for Thread 1.2+ */
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_THREAD_VERSION_1_1)) {
-		if (events & SL_RAIL_EVENT_RX_SCHEDULED_RX_STARTED) {
+		/*
+		 * SL_RAIL_EVENT_RX_SCHEDULED_RX_STARTED has the same value as
+		 * SL_RAIL_EVENT_TX_SCHEDULED_TX_STARTED. Starting a transmit
+		 * cancels a scheduled receive, so this is a receive start only
+		 * while one is still pending.
+		 */
+		if (((events & SL_RAIL_EVENT_RX_SCHEDULED_RX_STARTED) != 0U) &&
+		    sl_802154_state_is_rx_scheduled(&data->radio_data.state)) {
 			sl_802154_state_set_scheduled_rx_started(&data->radio_data.state, true);
 		}
 
@@ -1983,7 +2123,7 @@ static void sl_802154_rail_events_callback(sl_rail_handle_t handle, sl_rail_even
 			} else if (data->event_handler != NULL) {
 				data->event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
 			} else {
-				sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+				sl_802154_end_radio_operation(data);
 			}
 		}
 	}
@@ -1994,23 +2134,22 @@ static void sl_802154_rail_events_callback(sl_rail_handle_t handle, sl_rail_even
 	}
 
 	/* Process ACK events */
-	if (events & SL_RAIL_EVENT_TXACK_PACKET_SENT) {
+	if ((events & (SL_RAIL_EVENT_TXACK_PACKET_SENT | SL_RAIL_EVENT_TXACK_ABORTED |
+		       SL_RAIL_EVENT_TXACK_UNDERFLOW | SL_RAIL_EVENT_TXACK_BLOCKED)) != 0U) {
 		sl_802154_state_set_tx_ack_ongoing(&data->radio_data.state, false);
-		/* We successfully sent out an ACK.
-		 * We acked the packet we received after a poll: we can yield now.
+		/*
+		 * Auto-ACK finished (sent or failed). Clear a pending-data hold
+		 * from the preceding poll, then idle when an idle period has
+		 * started.
 		 */
 		if (data->mac_data.em_pending_data) {
-			(void)sl_802154_yield_radio(data->radio_data.rail_handle);
-			data->mac_data.em_pending_data = false;
+			sl_802154_pending_data_clear(data);
+			sl_802154_end_radio_operation(data);
+		} else if (sl_802154_is_idle_period(data)) {
+			sl_802154_end_radio_operation(data);
+		} else {
+			/* CSL window or receiver kept on: nothing to do. */
 		}
-	}
-
-	if (events & (SL_RAIL_EVENT_TXACK_ABORTED | SL_RAIL_EVENT_TXACK_UNDERFLOW)) {
-		sl_802154_state_set_tx_ack_ongoing(&data->radio_data.state, false);
-	}
-
-	if (events & SL_RAIL_EVENT_TXACK_BLOCKED) {
-		/* Do nothing */
 	}
 
 	/* Deal with ACK timeout after possible RX completion in case RAIL
@@ -2242,8 +2381,12 @@ static sl_rail_status_t sl_802154_schedule_next_reading(sl_rail_handle_t handle,
 				       SL_RAIL_TIME_DELAY, sl_802154_rail_timer_callback, handle);
 }
 
-/* Teardown without callback; for sync-error paths that return an errno. */
-static void sl_802154_energy_scan_cleanup(sl_rail_handle_t handle, struct sl_802154_data *data)
+/*
+ * Teardown without callback. radio_in_scan_rx is true when sl_rail_start_rx()
+ * for the scan succeeded and left the radio in receive.
+ */
+static void sl_802154_energy_scan_cleanup(sl_rail_handle_t handle, struct sl_802154_data *data,
+					  bool radio_in_scan_rx)
 {
 	sl_rail_cancel_multi_timer(handle, &data->radio_data.rail_timer);
 	data->ed_scan_data.in_progress = false;
@@ -2251,6 +2394,21 @@ static void sl_802154_energy_scan_cleanup(sl_rail_handle_t handle, struct sl_802
 
 	(void)sl_rail_config_rx_options(handle, SL_RAIL_RX_OPTION_DISABLE_FRAME_DETECTION,
 					SL_RAIL_RX_OPTIONS_NONE);
+
+	if (!radio_in_scan_rx) {
+		return;
+	}
+
+	/*
+	 * start_rx() for the scan leaves the radio in RX with frame detection
+	 * disabled. Restore idle-period / rx_on_when_idle behavior once the
+	 * scan ends or fails after RX was started.
+	 */
+	if (data->radio_data.rx_on_when_idle) {
+		sl_802154_resume_background_rx_if_idle_enabled(data);
+	} else {
+		sl_802154_end_radio_operation(data);
+	}
 }
 
 /* Async termination; always invokes the user callback. */
@@ -2262,7 +2420,7 @@ static void sl_802154_energy_scan_finalize(sl_rail_handle_t handle)
 	energy_scan_done_cb_t cb = data->ed_scan_data.energy_scan_done;
 	int8_t result = data->ed_scan_data.max_reading;
 
-	sl_802154_energy_scan_cleanup(handle, data);
+	sl_802154_energy_scan_cleanup(handle, data, true);
 
 	if (cb != NULL) {
 		cb(dev, result);
@@ -2493,7 +2651,8 @@ static void sl_802154_cancel_scheduled_rx(struct sl_802154_data *data)
 		return;
 	}
 
-	sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+	/* A scheduled RX that has not started leaves the radio state IDLE; idle anyway. */
+	(void)sl_802154_idle_radio(data->radio_data.rail_handle);
 	sl_802154_state_set_scheduled_rx_pending(&data->radio_data.state, false);
 	sl_802154_state_set_scheduled_rx_started(&data->radio_data.state, false);
 }
@@ -2700,13 +2859,21 @@ static int silabs_efr32_stop(const struct device *dev)
 		return -EBUSY;
 	}
 
-	if (data->radio_data.rail_initialized) {
-		sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
-	}
-
+	sl_802154_pending_data_clear(data);
 	sl_802154_state_set_rx_started(&data->radio_data.state, false);
 	sl_802154_state_set_scheduled_rx_pending(&data->radio_data.state, false);
 	sl_802154_state_set_scheduled_rx_started(&data->radio_data.state, false);
+
+	if (data->radio_data.rail_initialized) {
+		/*
+		 * Always idle on stop, even when rx_on_when_idle is still set.
+		 * Yield for the already-idle case; see
+		 * sl_802154_end_radio_operation().
+		 */
+		sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+	}
+
 	return 0;
 }
 
@@ -2874,14 +3041,14 @@ static int silabs_efr32_energy_scan_start(const struct device *dev, uint16_t dur
 
 	status = sl_rail_start_rx(handle, data->current_channel, &rx_scheduler_info);
 	if (status != SL_RAIL_STATUS_NO_ERROR) {
-		sl_802154_energy_scan_cleanup(handle, data);
+		sl_802154_energy_scan_cleanup(handle, data, false);
 		return -EIO;
 	}
 
 	/* Schedule initial timer for first sample */
 	status = sl_802154_schedule_next_reading(handle, &data->radio_data.rail_timer);
 	if (status != SL_RAIL_STATUS_NO_ERROR) {
-		sl_802154_energy_scan_cleanup(handle, data);
+		sl_802154_energy_scan_cleanup(handle, data, true);
 		return -EBUSY;
 	}
 
@@ -3018,9 +3185,8 @@ static int sl_802154_configure_rx_on_when_idle(struct sl_802154_data *data, bool
 		return 0;
 	}
 
-	if (!sl_802154_state_is_rx_scheduled(&data->radio_data.state) &&
-	    !sl_802154_state_is_scheduled_rx_started(&data->radio_data.state)) {
-		sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+	if (sl_802154_is_idle_period(data)) {
+		sl_802154_end_radio_operation(data);
 	}
 
 	return 0;
