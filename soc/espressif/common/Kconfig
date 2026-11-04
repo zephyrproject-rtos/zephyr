@@ -67,6 +67,14 @@ config ESP32_SW_COEXIST_ENABLE
 
 endif
 
+if BT_ESP32
+
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_ESP32_BT
+	int
+	default 2048 if BT_SETTINGS
+
+endif # BT_ESP32
+
 rsource "Kconfig.amp"
 rsource "Kconfig.console"
 rsource "Kconfig.efuse"
