@@ -543,6 +543,11 @@ struct test_sub {
 	uint8_t overwrite_value;
 	/* The subscribe callback unsubscribes */
 	bool subscribe_unsubscribes;
+	/* The notify callback unsubscribes this one, and cancels that if asked to */
+	struct test_sub *notify_unsubscribes;
+	bool notify_cancels;
+	/* The notify callback asks to be unsubscribed */
+	bool notify_stops;
 };
 
 static uint8_t sub_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
@@ -554,7 +559,21 @@ static uint8_t sub_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 
 	if (data != NULL) {
 		(void)atomic_inc(&sub->notify_count);
-		return BT_GATT_ITER_CONTINUE;
+
+		if (sub->notify_unsubscribes != NULL) {
+			struct bt_gatt_subscribe_params *other = &sub->notify_unsubscribes->params;
+			int err = bt_gatt_unsubscribe(conn, other);
+
+			__ASSERT(err == 0, "The unsubscription returned %d", err);
+
+			if (sub->notify_cancels) {
+				bt_gatt_cancel(conn, other);
+			}
+
+			sub->notify_unsubscribes = NULL;
+		}
+
+		return sub->notify_stops ? BT_GATT_ITER_STOP : BT_GATT_ITER_CONTINUE;
 	}
 
 	(void)atomic_inc(&sub->unsubscribed_count);
@@ -1246,6 +1265,90 @@ static ZTEST(host_gatt_sub, test_unsubscribe_in_subscribe_callback)
 	sub_handed_back_expect(&sub, 2);
 }
 
+/* The notify callback unsubscribes the next subscription in the list, of a value that another
+ * subscription still needs, which hands the params back at once. The Host leaves them alone and
+ * goes on with the others.
+ */
+static ZTEST(host_gatt_sub, test_notify_unsubscribes_next)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+	static struct test_sub sub_c;
+
+	/* Each new subscription goes first in the list */
+	sub_establish(&sub_c, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_init(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_b.overwrite = true;
+	sub_b.overwrite_value = 0xffU;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_b.params), "The subscription failed");
+	sub_init(&sub_a, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_a.notify_unsubscribes = &sub_b;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_a.params), "The subscription failed");
+
+	notification_recv(VALUE_HANDLE_B);
+	zassert_equal(atomic_get(&sub_a.notify_count), 1, "The first subscription was not called");
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_b.unsubscribed_count));
+	sub_not_overwritten_expect(&sub_b);
+	zassert_equal(atomic_get(&sub_c.notify_count), 1, "The last subscription was not called");
+}
+
+/* The notify callback unsubscribes the next subscription in the list and asks to be unsubscribed
+ * itself. The last one still gets the notification.
+ */
+static ZTEST(host_gatt_sub, test_notify_stops_and_unsubscribes_next)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+	static struct test_sub sub_c;
+
+	/* Each new subscription goes first in the list */
+	sub_establish(&sub_c, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_init(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_b.overwrite = true;
+	sub_b.overwrite_value = 0xffU;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_b.params), "The subscription failed");
+	sub_init(&sub_a, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_a.overwrite = true;
+	sub_a.overwrite_value = 0xffU;
+	sub_a.notify_unsubscribes = &sub_b;
+	sub_a.notify_stops = true;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_a.params), "The subscription failed");
+
+	notification_recv(VALUE_HANDLE_B);
+	zassert_equal(atomic_get(&sub_a.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_a.unsubscribed_count));
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_b.unsubscribed_count));
+	zassert_equal(atomic_get(&sub_c.notify_count), 1, "The last subscription was not called");
+}
+
+/* The notify callback unsubscribes the next subscription in the list and cancels the write, which
+ * hands the params back at once
+ */
+static ZTEST(host_gatt_sub, test_notify_cancels_next)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	sub_establish(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_b.overwrite = true;
+	sub_b.overwrite_value = 0xffU;
+	sub_establish(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_a.notify_unsubscribes = &sub_b;
+	sub_a.notify_cancels = true;
+
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub_a.notify_count), 1, "The first subscription was not called");
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_b.unsubscribed_count));
+	sub_not_overwritten_expect(&sub_b);
+
+	/* The request was on its way, and the response finds nothing */
+	write_req_expect(0x0000U);
+	write_rsp_recv();
+}
+
 /* bt_workq waits for the host lock to resubscribe the first of two subscriptions to a value, as
  * when the TX processor is in a driver's send(). Unsubscribing that one hands the params back at
  * once. The resubscription leaves them alone.
@@ -1279,6 +1382,12 @@ static ZTEST(host_gatt_sub, test_resubscribe_waits_unsubscribed)
 	bt_dev_unlock();
 
 	sub_not_overwritten_expect(&sub_a);
+
+	/* The walk goes on to the other one */
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+	write_rsp_recv();
+	zassert_equal(atomic_get(&sub_b.subscribe_count), 1, "%ld subscribe callbacks",
+		      atomic_get(&sub_b.subscribe_count));
 }
 
 /* The thread waits for the host lock to send its unsubscription while bt_workq queues a
