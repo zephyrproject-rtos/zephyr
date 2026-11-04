@@ -252,6 +252,8 @@ config ARMV7_R_FP
 config AARCH32_ARMV8_R
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
+	select ISA_ARM
+	select ISA_THUMB2
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
 	help
