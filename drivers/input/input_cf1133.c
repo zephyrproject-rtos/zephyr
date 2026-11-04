@@ -287,16 +287,10 @@ static int cf1133_process(const struct device *dev)
 		y = (uint16_t)(buffer[1 + XY_COORD_H] & 0x07) << 8 | buffer[1 + Y_COORD_L];
 		data->pressed = true;
 
-		if (!data->pressed_old) {
-			/* Finger pressed */
-			input_touchscreen_report_pos(dev, x, y, K_FOREVER);
-			input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-			LOG_DBG("Finger is touching x = %i y = %i", x, y);
-		} else if (data->pressed_old) {
-			/* Continuous pressed */
-			input_touchscreen_report_pos(dev, x, y, K_FOREVER);
-			LOG_DBG("Finger keeps touching x = %i y = %i", x, y);
-		}
+		input_touchscreen_report_pos(dev, x, y, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+		LOG_DBG("Finger %s x = %i y = %i",
+			data->pressed_old ? "keeps touching" : "is touching", x, y);
 	} else {
 		data->pressed = false;
 
