@@ -18,6 +18,7 @@ Hardware
 - 352 KB RAM
 - USB high-speed (Host/Device) with on-chip HS PHY. HS USB Type-C connectors
 - 8x LP Flexcomms each supporting SPI, I2C, UART
+- 8 MB external QSPI flash (Winbond W25Q64JVSSIQ) on LP Flexcomm 6
 - 2x FlexCAN with FD, 2x I3Cs, 2x SAI
 - On-board MCU-Link debugger with CMSIS-DAP
 - Arduino Header, FlexIO/LCD Header, SmartDMA/Camera Header, mikroBUS
@@ -60,6 +61,27 @@ can be used to configure the functionality of a pin.
 +------------+-----------------+----------------------------+
 | P1_PIO1_9  | UART            | UART TX                    |
 +------------+-----------------+----------------------------+
+| P0_PIO3_20 | SPI             | QSPI flash SDO (IO0)       |
++------------+-----------------+----------------------------+
+| P1_PIO3_21 | SPI             | QSPI flash SCK             |
++------------+-----------------+----------------------------+
+| P2_PIO3_22 | SPI             | QSPI flash SDI (IO1)       |
++------------+-----------------+----------------------------+
+| P3_PIO3_23 | SPI             | QSPI flash CS              |
++------------+-----------------+----------------------------+
+
+External Flash
+==============
+
+The on-board Winbond W25Q64JVSSIQ (64 Mbit) QSPI flash is connected to LP
+Flexcomm 6 and is exposed as a ``jedec,spi-nor`` device (node label
+``w25q64jvssiq``) driven by the generic SPI NOR driver in single-bit SPI mode.
+The ``spi_flash`` sample exercises it:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/spi_flash
+   :board: frdm_mcxn236
+   :goals: build flash
 
 System Clock
 ============

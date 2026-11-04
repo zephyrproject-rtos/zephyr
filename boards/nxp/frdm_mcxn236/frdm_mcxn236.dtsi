@@ -244,6 +244,14 @@
 	status = "okay";
 };
 
+&flexcomm6 {
+	status = "okay";
+};
+
+&flexcomm6_lpspi6 {
+	status = "okay";
+};
+
 &wwdt0 {
 	status = "okay";
 };
@@ -344,6 +352,33 @@ arduino_spi: &flexcomm3_lpspi3 {
 	pinctrl-0 = <&pinmux_flexcomm5_lpi2c>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&flexcomm6_lpspi6 {
+	pinctrl-0 = <&pinmux_flexcomm6_lpspi>;
+	pinctrl-names = "default";
+
+	/*
+	 * On-board 64 Mbit (8 MB) Winbond W25Q64JVSSIQ QSPI flash (U12), wired to
+	 * LP Flexcomm 6. Only the single-bit SPI signals are routed through
+	 * pinctrl: IO2 (/WP) and IO3 (/HOLD) are pulled up on the board.
+	 */
+	w25q64jvssiq: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		/*
+		 * Flexcomm 6 runs from FRO_HF_DIV (48 MHz, see board.c), which limits
+		 * the LPSPI SCK to 24 MHz; the flash itself allows 50 MHz for the
+		 * Read Data (03h) instruction used by the driver.
+		 */
+		spi-max-frequency = <DT_FREQ_M(24)>;
+		jedec-id = [ef 40 17];
+		size = <DT_SIZE_M(64)>;
+		has-dpd;
+		/* tDP and tRES1 from the W25Q64JV datasheet */
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <3000>;
+	};
 };
 
 /* The MCXN236 can use ostimer as the kernel timer.
