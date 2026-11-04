@@ -1228,6 +1228,20 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 			LOG_ERR("TX block reload err, TX is not resumed");
 			return ret;
 		}
+	} else if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks > 0) {
+		uint8_t blocks_queued = 0;
+		/*
+		 * DMA is still running but has free TCD slots. Hand the new block
+		 * to the DMA now instead of waiting for the next TX callback.
+		 * Otherwise the DMA can finish its last queued block before the
+		 * callback reloads it and the TX FIFO underruns although the
+		 * application wrote data in time.
+		 */
+		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
+		if (ret != 0) {
+			LOG_ERR("TX block reload err (%d)", ret);
+			return ret;
+		}
 	}
 
 	return ret;
