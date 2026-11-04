@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS47L63
+	bool "CS47L63 audio codec [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_CIRRUS_CS47L63_ENABLED
+	select EXPERIMENTAL
+	select SPI
+	select GPIO
+	help
+	  Cirrus Logic CS47L63 low-power audio codec. SPI control, I2S audio
+	  on ASP1 or ASP2 (cirrus,asp), headphone output, analog line input
+	  and PDM microphone, through the audio_codec API. The on-chip DSP
+	  cores and their loadable firmware are not supported.
+
+config AUDIO_CODEC_CS47L63_GPIO
+	bool "CS47L63 GPIO pin access"
+	default y
+	depends on AUDIO_CODEC_CS47L63 && DT_HAS_CIRRUS_CS47L63_GPIO_ENABLED
+	help
+	  Pin access for the CS47L63 GPIO controller child node: a pin set
+	  up through it is written again each time the audio driver resets
+	  the part. An output is released from the reset until that write,
+	  held only by the pin's bus keeper.
