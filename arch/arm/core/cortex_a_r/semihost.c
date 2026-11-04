@@ -18,7 +18,7 @@ long semihost_exec(enum semihost_instr instr, void *args)
 	register void *r1 __asm__ ("r1") = args;
 	register long ret __asm__ ("r0");
 
-	if (IS_ENABLED(CONFIG_ISA_THUMB2)) {
+	if (IS_ENABLED(CONFIG_COMPILER_ISA_THUMB2)) {
 		__asm__ volatile ("svc 0xab"
 				      : "=r" (ret) : "r" (r0), "r" (r1) : "memory");
 	} else {
