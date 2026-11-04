@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/mux/infineon-trigmux-pse84.h>
 
 / {
 	socmem {
@@ -18,6 +19,14 @@
 	};
 
 	soc {
+		trigmux0: mux-controller@42008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x42008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		dma0: dw@42270000 {
 			compatible = "infineon,dma";
 			reg = <0x42270000 0x10000>;
@@ -1275,6 +1284,14 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+		};
+
+		trigmux1: mux-controller@44008000 {
+			compatible = "infineon,trigmux";
+			reg = <0x44008000 0x8000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
 		};
 
 		axidmac: axidmac@441a0000 {
