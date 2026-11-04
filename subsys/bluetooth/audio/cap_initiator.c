@@ -2926,7 +2926,19 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		int err;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		if (proc_param == NULL) {
+			/* The stream was disabled by the remote device and all the remaining
+			 * streams already have a disable operation in progress, so wait for those
+			 * to complete
+			 */
+			__ASSERT(active_proc->proc_initiated_cnt + active_proc->proc_done_cnt >=
+					 active_proc->proc_cnt,
+				 "proc is not done, but could not get next proc_param");
+			bt_cap_common_unlock_proc();
+
+			return;
+		}
+
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
