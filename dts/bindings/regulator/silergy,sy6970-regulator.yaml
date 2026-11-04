@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silergy SY6970 USB OTG boost regulator
+
+description: |
+  USB OTG boost regulator of the Silergy SY6970, described as a child node
+  of the "silergy,sy6970" node. The current limits are 0.5 A, 0.75 A,
+  1.2 A, 1.4 A, 1.65 A, 1.875 A, 2.15 A and 2.45 A.
+
+  Boost mode also needs the OTG pin of the device to be high.
+
+compatible: "silergy,sy6970-regulator"
+
+include: ti,bq2589x-regulator-common.yaml
+
+examples:
+  - |
+    sy6970@6a {
+      compatible = "silergy,sy6970";
+      reg = <0x6a>;
+
+      usb_otg_vbus: regulator {
+        compatible = "silergy,sy6970-regulator";
+        regulator-init-microvolt = <4998000>;
+        regulator-init-microamp = <500000>;
+      };
+    };

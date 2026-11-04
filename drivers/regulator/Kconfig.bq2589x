@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_BQ2589X
+	bool "BQ2589X USB OTG boost regulator driver"
+	default y
+	depends on DT_HAS_TI_BQ25896_REGULATOR_ENABLED || DT_HAS_SILERGY_SY6970_REGULATOR_ENABLED
+	depends on DT_HAS_TI_BQ25896_ENABLED || DT_HAS_SILERGY_SY6970_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the driver for the USB OTG boost regulator of the TI BQ2589X
+	  family of single cell switching battery chargers.
+
+	  Supported devices include:
+	    - BQ25896
+	    - SY6970
+
+if REGULATOR_BQ2589X
+
+config REGULATOR_BQ2589X_INIT_PRIORITY
+	int "BQ2589X USB OTG boost regulator driver init priority"
+	default 85
+	help
+	  Init priority for the BQ2589X USB OTG boost regulator driver. It must
+	  be greater than MFD_INIT_PRIORITY.
+
+endif
