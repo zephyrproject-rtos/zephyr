@@ -97,8 +97,8 @@ The isochronous OUT endpoint is asynchronous and the broadcast is the clock mast
 application measures the input buffer fill level each time an SDU is sent and reports an
 explicit feedback value that makes the host follow the Bluetooth clock. If the host does not
 follow the feedback, a single sample is dropped or repeated per SDU to keep the buffer bounded,
-so that no SDU is sent with missing audio. Statistics are printed every 10 seconds. With an
-audio input the broadcast source is not reset.
+so that no SDU is sent with missing audio. With an audio input the broadcast source is not
+reset.
 
 With :kconfig:option:`CONFIG_AUDIO_INPUT_TIMED` (default on ``nrf54lm20dk/nrf54lm20a/cpuapp``
 with the Zephyr Bluetooth Controller) the feedback is derived from time stamps in the
@@ -113,9 +113,32 @@ controller's GRTC time base instead of the instantaneous fill level:
   the target.
 
 Once locked, no sample is dropped or repeated. The fill level loop with slip and repeat
-remains the fallback when time stamps are not available. An additional statistics line
-reports the measured rate, the level error range, the encode lead time and the number of late
-SDUs.
+remains the fallback when time stamps are not available.
+
+SDU transmission metrics
+------------------------
+
+Every 10 seconds the sample prints SDU transmission metrics for the last interval:
+
+* Per stream: SDUs and bytes sent, send errors, completions that left the controller queue
+  empty (a possible on-air gap) and the range of SDUs queued in the controller, and the
+  interval and jitter of the sent callbacks.
+* With an audio input: the feedback value, the buffer fill range, and the silent, underrun,
+  overrun, slipped and repeated SDU counts; the USB packet count and size range, and the input
+  sample rate in the host clock.
+
+With :kconfig:option:`CONFIG_AUDIO_INPUT_TIMED` the metrics also include:
+
+* ISO TX sync: the anchor sequence number and time, the deviation of each anchor from the air
+  time predicted from the previous one, and the SDU interval error in ppm against the local
+  clock.
+* USB SOF: the number of SOF events and those without a captured time stamp, the mean, range
+  and jitter of the captured SOF period, and the host clock offset from the controller clock.
+* Clock drift: the host clock offset over the rate measurement window and its change since the
+  last interval, and the USB input sample rate in the controller clock, which is 48000 Hz when
+  locked.
+* Encode lead time before the SDU air time, its range and jitter, and the number of late SDUs,
+  and the range of the buffer level error.
 
 The USB host can be emulated, for example in BabbleSim, with
 ``-DEXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-emulated-input.conf"``. The emulated

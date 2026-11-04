@@ -54,6 +54,11 @@ config ISO_PACKING_INTERLEAVED
 	help
 	  Use interleaved packing between BIS ISO stream subevents.
 
+config SDU_METRICS_PRINT_INTERVAL
+	int "SDU transmission metrics print interval in seconds"
+	default 10
+	range 1 3600
+
 config USE_USB_AUDIO_INPUT
 	bool "Use USB Audio as input"
 	# By default, use the USB Audio path is disabled.

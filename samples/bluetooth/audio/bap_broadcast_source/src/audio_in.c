@@ -54,8 +54,6 @@
 #define PI_KI        0.5f
 #define FB_LIMIT_PPM 1000
 
-#define STATS_PERIOD_S 10U
-
 /* SOF timeline: one entry per SOF, (time, samples written). The consumer reads back at most
  * TL_DEPTH entries so that the producer does not overwrite an entry being read.
  */
@@ -102,11 +100,21 @@ static atomic_t overruns;
 /* Samples per channel written to the ring buffer, wrapping */
 static uint32_t written;
 
+/* Producer input metrics, cleared by the producer when the consumer requests it */
+struct in_metrics {
+	uint32_t packets;
+	uint32_t samples;
+	uint32_t pkt_min;
+	uint32_t pkt_max;
+};
+static struct in_metrics in_m = {.pkt_min = UINT32_MAX};
+static atomic_t in_m_clear;
+
 /* Consumer state */
 static bool primed;
 static float pi_integral;
 static uint32_t period_cnt;
-static uint32_t sec_cnt;
+static uint32_t silent;
 static uint64_t fill_sum;
 static uint32_t fill_sum_n;
 static uint32_t fill_min = UINT32_MAX;
@@ -138,6 +146,22 @@ static atomic_t fb_rate;
 static atomic_t sof_skipped;
 static atomic_t sof_restarts;
 
+/* SOF time stamp metrics, in the controller time base; cleared like in_m */
+struct sof_metrics {
+	bool valid;
+	uint32_t t_first;
+	uint32_t t_last;
+	/* SOF periods between t_first and t_last */
+	uint32_t frames;
+	/* Single period intervals and their range */
+	uint32_t periods;
+	uint32_t dt_min;
+	uint32_t dt_max;
+};
+static struct sof_metrics sof_m = {.dt_min = UINT32_MAX};
+static atomic_t sof_m_clear;
+static int32_t rate_ppm_prev;
+
 /* Consumer timed state */
 static bool lead_valid;
 static float lead_us;
@@ -148,6 +172,9 @@ static uint32_t phase_n;
 static float phase_min = (float)INT32_MAX;
 static float phase_max = (float)INT32_MIN;
 static int32_t lead_min = INT32_MAX;
+static int32_t lead_max = INT32_MIN;
+static int64_t lead_sum;
+static uint32_t lead_n;
 static uint32_t late;
 static uint32_t no_timeline;
 static uint32_t aligns;
@@ -180,6 +207,16 @@ int audio_in_init(uint32_t rate_hz, size_t frame_samples)
 void audio_in_put(const int16_t *pcm, size_t frames)
 {
 	int16_t out[AUDIO_IN_CHANNELS][PUT_CHUNK_MAX];
+
+	if (atomic_cas(&in_m_clear, 1, 0)) {
+		in_m = (struct in_metrics){.pkt_min = UINT32_MAX};
+	}
+
+	/* One call per USB packet */
+	in_m.packets++;
+	in_m.samples += (uint32_t)frames;
+	in_m.pkt_min = MIN(in_m.pkt_min, (uint32_t)frames);
+	in_m.pkt_max = MAX(in_m.pkt_max, (uint32_t)frames);
 
 	while (frames > 0U) {
 		const size_t chunk = MIN(frames, PUT_CHUNK_MAX);
@@ -244,9 +281,24 @@ void audio_in_sof(uint32_t t_us)
 	uint32_t frames;
 	uint32_t dk;
 
+	if (atomic_cas(&sof_m_clear, 1, 0)) {
+		sof_m = (struct sof_metrics){.dt_min = UINT32_MAX};
+	}
+
 	if (!sof_valid || (dt > SOF_GAP_US)) {
 		sof_restart(t_us);
+		/* Measure the host clock from here on */
+		sof_m.valid = true;
+		sof_m.t_first = t_us;
+		sof_m.t_last = t_us;
+		sof_m.frames = 0U;
 		return;
+	}
+
+	if (!sof_m.valid) {
+		sof_m.valid = true;
+		sof_m.t_first = sof_last_t;
+		sof_m.t_last = sof_last_t;
 	}
 
 	if (dt < (SOF_PERIOD_US / 2U)) {
@@ -260,8 +312,15 @@ void audio_in_sof(uint32_t t_us)
 	sof_frames += dk;
 	sof_last_t = t_us;
 
+	sof_m.frames += dk;
+	sof_m.t_last = t_us;
+
 	if (dk == 1U) {
 		const atomic_val_t head = atomic_get(&tl_head);
+
+		sof_m.periods++;
+		sof_m.dt_min = MIN(sof_m.dt_min, dt);
+		sof_m.dt_max = MAX(sof_m.dt_max, dt);
 
 		tl[(uint32_t)head % TL_SIZE] = (struct tl_entry){.t = t_us, .s = written};
 		(void)atomic_set(&tl_head, head + 1);
@@ -414,37 +473,118 @@ static void control_update(void)
 	atomic_set(&feedback, (atomic_val_t)((int32_t)AUDIO_IN_FB_NOMINAL + (int32_t)fb));
 }
 
-static void stats_print(void)
+/* x / nominal - 1 in hundredths of ppm */
+static int64_t centi_ppm(int64_t x, int64_t nominal)
 {
-	const int32_t fb = (int32_t)atomic_get(&feedback);
-	const int32_t ppm = ((fb - (int32_t)AUDIO_IN_FB_NOMINAL) * 1000000) /
-			    (int32_t)AUDIO_IN_FB_NOMINAL;
-
-	printk("Audio in: fb %d (%d ppm) fill %u..%u target %u primed %u underrun %u "
-	       "overrun %u slip %u repeat %u\n",
-	       fb, ppm, fill_min, fill_max, target, primes, underruns,
-	       (uint32_t)atomic_get(&overruns), slips, repeats);
-
-	fill_min = UINT32_MAX;
-	fill_max = 0U;
+	return ((x - nominal) * 100000000LL) / nominal;
+}
 
 #if defined(CONFIG_AUDIO_INPUT_TIMED)
+static void metrics_print_timed(const struct in_metrics *in)
+{
+	const struct sof_metrics sof = sof_m;
 	const int32_t rate = (int32_t)atomic_get(&fb_rate);
+	char s1[24];
+	char s2[24];
+
+	(void)atomic_set(&sof_m_clear, 1);
+
+	if (sof.valid && (sof.frames > 0U) && (sof.t_last != sof.t_first)) {
+		const uint32_t span = sof.t_last - sof.t_first;
+		/* Mean SOF period in ns, controller clock */
+		const uint32_t mean_ns = (uint32_t)(((uint64_t)span * 1000U) / sof.frames);
+		const int32_t mean_us = (int32_t)((mean_ns + 500U) / 1000U);
+
+		/* Host clock relative to the controller clock: nominal / measured SOF period */
+		printk("  USB SOF: %u frames, period %u.%03u us, min %u max %u us (jitter %d..%+d "
+		       "us), host clock %s ppm\n",
+		       sof.frames, mean_ns / 1000U, mean_ns % 1000U,
+		       (sof.periods > 0U) ? sof.dt_min : 0U, sof.dt_max,
+		       (sof.periods > 0U) ? ((int32_t)sof.dt_min - mean_us) : 0,
+		       (sof.periods > 0U) ? ((int32_t)sof.dt_max - mean_us) : 0,
+		       audio_in_centi_str(s1, sizeof(s1),
+					  centi_ppm((int64_t)sof.frames * SOF_PERIOD_US,
+						    (int64_t)span)));
+
+		if (in->packets > 0U) {
+			/* Samples per packet times packets per controller second */
+			const uint64_t c_hz = ((uint64_t)in->samples * sof.frames * 100000000ULL) /
+					      ((uint64_t)in->packets * span);
+
+			printk("  USB input rate %u.%02u Hz in controller clock (%s ppm)\n",
+			       (uint32_t)(c_hz / 100U), (uint32_t)(c_hz % 100U),
+			       audio_in_centi_str(s1, sizeof(s1),
+						  centi_ppm((int64_t)c_hz,
+							    (int64_t)AUDIO_IN_RATE_HZ * 100)));
+		}
+	} else {
+		printk("  USB SOF: no time stamps\n");
+	}
 
 	if (rate != 0) {
-		printk("Audio in: rate %d (%d ppm) level err %d..%d lead %d us ref %d us min %d us "
-		       "late %u align %u no timeline %u sof skip %u restart %u\n",
-		       rate,
-		       ((rate - (int32_t)AUDIO_IN_FB_NOMINAL) * 1000000) /
-			       (int32_t)AUDIO_IN_FB_NOMINAL,
-		       (int32_t)phase_min, (int32_t)phase_max, (int32_t)lead_us, lead_ref, lead_min,
-		       late, aligns, no_timeline, (uint32_t)atomic_get(&sof_skipped),
-		       (uint32_t)atomic_get(&sof_restarts));
+		/* SOF period over the rate window, as host clock offset */
+		const int32_t host_cppm = (int32_t)-centi_ppm(rate, AUDIO_IN_FB_NOMINAL);
+
+		printk("  clock drift: host %s ppm over %u..%u ms, change %s ppm, sof skip %u "
+		       "restart %u\n",
+		       audio_in_centi_str(s1, sizeof(s1), host_cppm), RATE_WINDOW_FRAMES,
+		       2U * RATE_WINDOW_FRAMES,
+		       audio_in_centi_str(s2, sizeof(s2), (int64_t)host_cppm - rate_ppm_prev),
+		       (uint32_t)atomic_get(&sof_skipped), (uint32_t)atomic_get(&sof_restarts));
+		rate_ppm_prev = host_cppm;
+	}
+
+	if (lead_n > 0U) {
+		printk("  encode lead: %d..%d avg %d us (jitter %d us), level ref %d us, late %u\n",
+		       lead_min, lead_max, (int32_t)(lead_sum / lead_n), lead_max - lead_min,
+		       lead_ref, late);
+	}
+
+	if (phase_max >= phase_min) {
+		printk("  level err %d..%d samples, align %u, no timeline %u\n",
+		       (int32_t)phase_min, (int32_t)phase_max, aligns, no_timeline);
 	}
 
 	phase_min = (float)INT32_MAX;
 	phase_max = (float)INT32_MIN;
 	lead_min = INT32_MAX;
+	lead_max = INT32_MIN;
+	lead_sum = 0;
+	lead_n = 0U;
+}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
+void audio_in_metrics_print(void)
+{
+	const int32_t fb = (int32_t)atomic_get(&feedback);
+	const struct in_metrics in = in_m;
+	char s1[24];
+
+	/* The producer clears its metrics at its next call */
+	(void)atomic_set(&in_m_clear, 1);
+
+	printk("  audio in: fb %d (%s ppm) fill %u..%u target %u silent %u underrun %u "
+	       "overrun %u slip %u repeat %u prime %u\n",
+	       fb, audio_in_centi_str(s1, sizeof(s1), centi_ppm(fb, AUDIO_IN_FB_NOMINAL)),
+	       (fill_min <= fill_max) ? fill_min : 0U, fill_max, target, silent, underruns,
+	       (uint32_t)atomic_get(&overruns), slips, repeats, primes);
+
+	if (in.packets > 0U) {
+		/* Average samples per 1 ms packet: the rate in the host clock */
+		const uint64_t h_hz = ((uint64_t)in.samples * 100000ULL) / in.packets;
+
+		printk("  USB input: %u packets, %u..%u samples/packet, %u.%02u Hz in host clock\n",
+		       in.packets, in.pkt_min, in.pkt_max, (uint32_t)(h_hz / 100U),
+		       (uint32_t)(h_hz % 100U));
+	} else {
+		printk("  USB input: no data\n");
+	}
+
+	fill_min = UINT32_MAX;
+	fill_max = 0U;
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	metrics_print_timed(&in);
 #endif /* CONFIG_AUDIO_INPUT_TIMED */
 }
 
@@ -555,6 +695,7 @@ static void get_frame(int16_t *left, int16_t *right, bool timed, uint32_t t_leve
 	goto account;
 
 silence:
+	silent++;
 	(void)memset(left, 0, frame_n * sizeof(int16_t));
 	(void)memset(right, 0, frame_n * sizeof(int16_t));
 
@@ -563,12 +704,6 @@ account:
 	if (period_cnt >= sdus_per_sec) {
 		period_cnt = 0U;
 		control_update();
-
-		sec_cnt++;
-		if (sec_cnt >= STATS_PERIOD_S) {
-			sec_cnt = 0U;
-			stats_print();
-		}
 	}
 }
 
@@ -592,6 +727,9 @@ void audio_in_get_timed(int16_t *left, int16_t *right, uint32_t t_tx_us)
 	}
 
 	lead_min = MIN(lead_min, lead);
+	lead_max = MAX(lead_max, lead);
+	lead_sum += lead;
+	lead_n++;
 	if (lead <= 0) {
 		late++;
 	}
