@@ -9,14 +9,42 @@
 #define ZEPHYR_DRIVERS_SENSOR_ICM20948_H_
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
+
+#define DT_DRV_COMPAT invensense_icm20948
 
 /* No bank has been selected yet, or the last attempt to select one failed */
 #define ICM20948_BANK_UNKNOWN 0xFF
 
-struct icm20948_config {
+union icm20948_bus {
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_dt_spec spi;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	struct i2c_dt_spec i2c;
+#endif
+};
+
+/* Raw transfers on the host interface. addr is the in-bank register address. */
+struct icm20948_bus_io {
+	int (*check)(const union icm20948_bus *bus);
+	int (*read)(const union icm20948_bus *bus, uint8_t addr, uint8_t *buf, size_t len);
+	int (*write)(const union icm20948_bus *bus, uint8_t addr, uint8_t val);
+};
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+extern const struct icm20948_bus_io icm20948_bus_io_spi;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+extern const struct icm20948_bus_io icm20948_bus_io_i2c;
+#endif
+
+struct icm20948_config {
+	union icm20948_bus bus;
+	const struct icm20948_bus_io *bus_io;
 	uint8_t gyro_fs;
 	uint8_t accel_fs;
 	uint8_t gyro_dlpf;

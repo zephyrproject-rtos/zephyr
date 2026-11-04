@@ -5,11 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT invensense_icm20948
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
@@ -26,6 +23,68 @@ LOG_MODULE_REGISTER(ICM20948, CONFIG_SENSOR_LOG_LEVEL);
 #define ICM20948_SPI_CFG                                                                           \
 	(SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) |                \
 	 SPI_TRANSFER_MSB)
+
+static int icm20948_select_bank(const struct device *dev, uint16_t reg)
+{
+	const struct icm20948_config *cfg = dev->config;
+	struct icm20948_data *data = dev->data;
+	uint8_t bank = FIELD_GET(REG_BANK_MASK, reg);
+	int ret;
+
+	if (bank == data->bank) {
+		return 0;
+	}
+
+	ret = cfg->bus_io->write(&cfg->bus, REG_BANK_SEL, FIELD_PREP(MASK_USER_BANK, bank));
+	if (ret < 0) {
+		LOG_ERR("failed to select user bank %u: %d", bank, ret);
+		data->bank = ICM20948_BANK_UNKNOWN;
+		return ret;
+	}
+
+	data->bank = bank;
+
+	return 0;
+}
+
+int icm20948_read(const struct device *dev, uint16_t reg, uint8_t *buf, size_t len)
+{
+	const struct icm20948_config *cfg = dev->config;
+	int ret;
+
+	ret = icm20948_select_bank(dev, reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return cfg->bus_io->read(&cfg->bus, FIELD_GET(REG_ADDRESS_MASK, reg), buf, len);
+}
+
+int icm20948_write(const struct device *dev, uint16_t reg, uint8_t val)
+{
+	const struct icm20948_config *cfg = dev->config;
+	int ret;
+
+	ret = icm20948_select_bank(dev, reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return cfg->bus_io->write(&cfg->bus, FIELD_GET(REG_ADDRESS_MASK, reg), val);
+}
+
+int icm20948_update(const struct device *dev, uint16_t reg, uint8_t mask, uint8_t val)
+{
+	uint8_t old;
+	int ret;
+
+	ret = icm20948_read(dev, reg, &old, sizeof(old));
+	if (ret < 0) {
+		return ret;
+	}
+
+	return icm20948_write(dev, reg, (old & ~mask) | FIELD_PREP(mask, val));
+}
 
 /* The datasheet gives 100 ms as the worst case start-up time for register access */
 #define ICM20948_RESET_DELAY_MS 100
@@ -202,9 +261,10 @@ static int icm20948_init(const struct device *dev)
 	uint8_t id;
 	int ret;
 
-	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI bus is not ready");
-		return -ENODEV;
+	ret = cfg->bus_io->check(&cfg->bus);
+	if (ret < 0) {
+		LOG_ERR("bus is not ready");
+		return ret;
 	}
 
 	k_sem_init(&data->lock, 1, 1);
@@ -240,17 +300,21 @@ static int icm20948_init(const struct device *dev)
 		return ret;
 	}
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	/*
 	 * The part picks its host interface by watching the bus and the reset
 	 * above threw that choice away. Disabling the primary I2C slave pins
 	 * it to SPI, and the auxiliary I2C master needs the pins that slave
 	 * would otherwise hold.
 	 */
-	ret = icm20948_update(dev, REG_USER_CTRL, BIT_I2C_IF_DIS, 1);
-	if (ret < 0) {
-		LOG_ERR("failed to select the SPI interface: %d", ret);
-		return ret;
+	if (cfg->bus_io == &icm20948_bus_io_spi) {
+		ret = icm20948_update(dev, REG_USER_CTRL, BIT_I2C_IF_DIS, 1);
+		if (ret < 0) {
+			LOG_ERR("failed to select the SPI interface: %d", ret);
+			return ret;
+		}
 	}
+#endif
 
 	ret = icm20948_write(dev, REG_GYRO_CONFIG_1,
 			     FIELD_PREP(MASK_GYRO_DLPFCFG, cfg->gyro_dlpf) |
@@ -285,11 +349,20 @@ static DEVICE_API(sensor, icm20948_driver_api) = {
 	.channel_get = icm20948_channel_get,
 };
 
+#define ICM20948_BUS(inst)                                                                         \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),                                                     \
+		    ({.spi = SPI_DT_SPEC_INST_GET(inst, ICM20948_SPI_CFG)}),                       \
+		    ({.i2c = I2C_DT_SPEC_INST_GET(inst)}))
+
+#define ICM20948_BUS_IO(inst)                                                                      \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (&icm20948_bus_io_spi), (&icm20948_bus_io_i2c))
+
 #define ICM20948_DEFINE(inst)                                                                      \
 	static struct icm20948_data icm20948_data_##inst;                                          \
                                                                                                    \
 	static const struct icm20948_config icm20948_config_##inst = {                             \
-		.spi = SPI_DT_SPEC_INST_GET(inst, ICM20948_SPI_CFG),                               \
+		.bus = ICM20948_BUS(inst),                                                         \
+		.bus_io = ICM20948_BUS_IO(inst),                                                   \
 		.gyro_fs = DT_INST_ENUM_IDX(inst, gyro_fs),                                        \
 		.accel_fs = DT_INST_ENUM_IDX(inst, accel_fs),                                      \
 		.gyro_dlpf = DT_INST_ENUM_IDX(inst, gyro_dlpf),                                    \
