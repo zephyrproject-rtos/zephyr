@@ -183,6 +183,14 @@ Libraries / Subsystems
   * Dual-role ports can prefer the Sink role through the Try.SNK and TryWait.SRC states
     (:kconfig:option:`CONFIG_USBC_CSM_DRP_TRY_SNK`).
 
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+  * :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution, SCSI :ref:`disk_access <disk_access_api>` volumes, and generic partition
+    table parsing on block devices.
+
 * Utilities
 
   * :c:func:`utf8_is_valid` checks a given number of bytes for well-formed UTF-8
