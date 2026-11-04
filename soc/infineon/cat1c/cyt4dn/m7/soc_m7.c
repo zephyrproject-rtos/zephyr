@@ -22,18 +22,13 @@
 #define IFX_DTCMCR_ADDR		0xE000EF94U
 #define IFX_TCMCR_INIT_VAL	0x2FU
 
-void soc_prep_hook(void)
+/* CM7_0_CTL and CM7_1_CTL have the same layout */
+static void cm7_core_init(volatile uint32_t *cm7_ctl)
 {
 	/* Allow write access to Vector Table Offset Register and ITCM/DTCM configuration register
 	 * (CPUSS_CM7_X_CTL.PPB_LOCK[3] and CPUSS_CM7_X_CTL.PPB_LOCK[1:0])
 	 */
-#ifdef CONFIG_SOC_CYT4DNJBZS_M7_1
-	CPUSS->CM7_1_CTL &= ~(0xB);
-#elif CONFIG_SOC_CYT4DNJBZS_M7_0
-	CPUSS->CM7_0_CTL &= ~(0xB);
-#else
-#error "Not valid"
-#endif
+	*cm7_ctl &= ~(0xB);
 
 	__DSB();
 	__ISB();
@@ -42,19 +37,10 @@ void soc_prep_hook(void)
 	SCB->ITCMCR = SCB->ITCMCR | 0x7; /* Set ITCMCR.EN, .RMW and .RETEN fields */
 	SCB->DTCMCR = SCB->DTCMCR | 0x7; /* Set DTCMCR.EN, .RMW and .RETEN fields */
 
-#ifdef CONFIG_SOC_CYT4DNJBZS_M7_0
-	CPUSS_CM7_0_CTL |= (0x1 << CPUSS_CM7_0_CTL_INIT_TCM_EN_Pos);
-	CPUSS_CM7_0_CTL |= (0x2 << CPUSS_CM7_0_CTL_INIT_TCM_EN_Pos);
-	CPUSS_CM7_0_CTL |= (0x1 << CPUSS_CM7_0_CTL_INIT_RMW_EN_Pos);
-	CPUSS_CM7_0_CTL |= (0x2 << CPUSS_CM7_0_CTL_INIT_RMW_EN_Pos);
-#elif CONFIG_SOC_CYT4DNJBZS_M7_1
-	CPUSS_CM7_1_CTL |= (0x1 << CPUSS_CM7_1_CTL_INIT_TCM_EN_Pos);
-	CPUSS_CM7_1_CTL |= (0x2 << CPUSS_CM7_1_CTL_INIT_TCM_EN_Pos);
-	CPUSS_CM7_1_CTL |= (0x1 << CPUSS_CM7_1_CTL_INIT_RMW_EN_Pos);
-	CPUSS_CM7_1_CTL |= (0x2 << CPUSS_CM7_1_CTL_INIT_RMW_EN_Pos);
-#else
-#error "Not valid"
-#endif
+	*cm7_ctl |= (0x1 << CPUSS_CM7_0_CTL_INIT_TCM_EN_Pos);
+	*cm7_ctl |= (0x2 << CPUSS_CM7_0_CTL_INIT_TCM_EN_Pos);
+	*cm7_ctl |= (0x1 << CPUSS_CM7_0_CTL_INIT_RMW_EN_Pos);
+	*cm7_ctl |= (0x2 << CPUSS_CM7_0_CTL_INIT_RMW_EN_Pos);
 
 	/* ITCMCR EN/RMW/RETEN enabled to access ITCM */
 	__UNALIGNED_UINT32_WRITE((void const *)IFX_ITCMCR_ADDR, IFX_TCMCR_INIT_VAL);
@@ -63,6 +49,17 @@ void soc_prep_hook(void)
 
 	__DSB();
 	__ISB();
+}
+
+void soc_prep_hook(void)
+{
+#ifdef CONFIG_SOC_CYT4DNJBZS_M7_1
+	cm7_core_init(&CPUSS->CM7_1_CTL);
+#elif CONFIG_SOC_CYT4DNJBZS_M7_0
+	cm7_core_init(&CPUSS->CM7_0_CTL);
+#else
+#error "Not valid"
+#endif
 
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(3, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(4, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
