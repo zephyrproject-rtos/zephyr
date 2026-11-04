@@ -354,6 +354,8 @@ static int avdtp_media_connect(struct bt_avdtp *session, struct bt_avdtp_sep *se
 	sep->chan.rx.mtu = BT_L2CAP_RX_MTU;
 	sep->chan.chan.ops = &stream_chan_ops;
 	sep->chan.required_sec_level = BT_SECURITY_L2;
+	/* Media a sink can no longer play may be discarded */
+	sep->chan.flushable = (sep->sep_info.tsep == BT_AVDTP_SOURCE);
 
 	return bt_l2cap_chan_connect(session->br_chan.chan.conn, &sep->chan.chan,
 				     BT_L2CAP_PSM_AVDTP);
@@ -2291,6 +2293,8 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 			session->current_sep->chan.chan.ops = &stream_chan_ops;
 			session->current_sep->chan.rx.mtu = BT_L2CAP_RX_MTU;
 			session->current_sep->chan.required_sec_level = BT_SECURITY_L2;
+			session->current_sep->chan.flushable =
+				(session->current_sep->sep_info.tsep == BT_AVDTP_SOURCE);
 			*chan = &session->current_sep->chan.chan;
 			session->current_sep = NULL;
 		} else {
