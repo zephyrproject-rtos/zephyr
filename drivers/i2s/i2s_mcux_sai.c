@@ -542,6 +542,21 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		goto invalid_config;
 	}
 
+	/*
+	 * Validate the format before any clock or pin setting is touched.
+	 * Bits of i2s_cfg->format that are not decoded below are ignored.
+	 */
+	if ((i2s_cfg->format & I2S_FMT_DATA_ORDER_LSB) != 0U) {
+		LOG_ERR("LSB first data order not supported");
+		goto invalid_config;
+	}
+
+	if (((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_I2S) &&
+	    (num_words > 2U)) {
+		LOG_ERR("I2S format supports at most 2 channels");
+		goto invalid_config;
+	}
+
 	memset(&config, 0, sizeof(config));
 
 	if (dev_cfg->mclk_control_base) {
