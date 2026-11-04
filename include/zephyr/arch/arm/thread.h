@@ -66,6 +66,11 @@ struct _preempt_float {
 	float  s29;
 	float  s30;
 	float  s31;
+#if defined(CONFIG_USE_SWITCH) && (defined(CONFIG_CPU_AARCH32_CORTEX_A) || \
+				   defined(CONFIG_CPU_AARCH32_CORTEX_R))
+	uint32_t fpscr;
+	uint32_t fpexc;
+#endif
 #endif /* !_ARM_M_SWITCH */
 };
 #endif

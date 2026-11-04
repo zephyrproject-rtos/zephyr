@@ -252,6 +252,21 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	sub r1, r1, #1
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 
+#if defined(CONFIG_FPU_SHARING)
+	/* Enable VFP access while restoring a possibly disabled context. */
+	mov r0, #FPEXC_EN
+	vmsr fpexc, r0
+	mov r2, sp
+	vldmia r2!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	vldmia r2!, {d16-d31}
+#endif
+	ldm r2, {r0, r1}
+	vmsr fpscr, r0
+	vmsr fpexc, r1
+	add sp, sp, #___fpu_t_SIZEOF
+#endif
+
 	/*
 	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
 	 * and return to the current thread.

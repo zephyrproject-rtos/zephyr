@@ -40,6 +40,17 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 
 	stm r2, {r4-r11, sp, lr}
 
+#if defined(CONFIG_FPU_SHARING)
+	vmrs r3, fpexc
+	mov r2, #FPEXC_EN
+	vmsr fpexc, r2
+	ldr r2, =_thread_offset_to_preempt_float
+	add r2, r1, r2
+	vstmia r2!, {s16-s31}
+	vmrs ip, fpscr
+	stm r2, {ip, r3}
+#endif
+
 	/* save current thread's exception depth */
 	get_cpu r2
 	ldrb r3, [r2, #_cpu_offset_to_exc_depth]
@@ -81,11 +92,19 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 #endif
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
-	push {lr}
+	push {r0, lr}
 	bl z_thread_mark_switched_in
-	pop {lr}
+	pop {r0, lr}
 #endif
 
+#if defined(CONFIG_FPU_SHARING)
+	ldr r2, =_thread_offset_to_preempt_float
+	add r2, r0, r2
+	vldmia r2!, {s16-s31}
+	ldm r2, {ip, r3}
+	vmsr fpscr, ip
+	vmsr fpexc, r3
+#endif
 	bx lr
 
 /**

@@ -56,6 +56,21 @@
 	cps #MODE_SYS
 	push {r0-r3, r12, lr}
 
+#if defined(CONFIG_FPU_SHARING)
+	/* Save the interrupted FP state before exception handlers can use it. */
+	sub sp, sp, #___fpu_t_SIZEOF
+	vmrs r1, fpexc
+	mov r0, #FPEXC_EN
+	vmsr fpexc, r0
+	vmrs r0, fpscr
+	mov r2, sp
+	vstmia r2!, {s0-s15}
+#ifdef CONFIG_VFP_FEATURE_REGS_S64_D32
+	vstmia r2!, {d16-d31}
+#endif
+	stm r2, {r0, r1}
+#endif
+
 	/* TODO: EXTRA_EXCEPTION_INFO */
 	mov r0, sp
 
