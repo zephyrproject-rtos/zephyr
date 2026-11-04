@@ -37,4 +37,72 @@
 			drive-strength = "normal";
 		};
 	};
+
+	/* FLEXCOMM3 LPI2C, audio codec and MCU-Link bus */
+	pinmux_flexcomm3_lpi2c: pinmux_flexcomm3_lpi2c {
+		group0 {
+			pinmux = <LP_FLEXCOMM3_P0_PIO1_18>,
+				 <LP_FLEXCOMM3_P1_PIO1_17>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+			drive-open-drain;
+		};
+	};
+
+	/* FLEXCOMM8 LPI2C on J6-9 (SDA) and J6-10 (SCL), Arduino header */
+	pinmux_flexcomm8_lpi2c: pinmux_flexcomm8_lpi2c {
+		group0 {
+			pinmux = <LP_FLEXCOMM8_P0_PIO0_6>,
+				 <LP_FLEXCOMM8_P1_PIO0_7>;
+			bias-pull-up;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "high";
+			drive-open-drain;
+		};
+	};
+
+	/* LPSPI16 on J6-3 to J6-6 (Arduino) and J22-3 to J22-6 (mikroBUS) */
+	pinmux_lpspi16: pinmux_lpspi16 {
+		group0 {
+			pinmux = <LPSPI16_SOUT_PIO2_2>,
+				 <LPSPI16_SCK_PIO2_3>,
+				 <LPSPI16_SIN_PIO2_4>,
+				 <LPSPI16_PCS0_PIO2_5>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
+
+	/*
+	 * SAI0 to the WM8962 codec. Only the TX bit clock and frame sync
+	 * reach the codec as assembled, so the receiver runs synchronous
+	 * to the transmitter.
+	 */
+	pinmux_sai0: pinmux_sai0 {
+		group0 {
+			pinmux = <CLKCTL0_MCLK_PIO0_21>,
+				 <SAI0_TX_BCLK_PIO0_3>,
+				 <SAI0_TX_SYNC_PIO0_5>,
+				 <SAI0_TX_DATA0_PIO0_4>,
+				 <SAI0_RX_DATA0_PIO0_2>;
+			drive-strength = "high";
+			slew-rate = "normal";
+			input-enable;
+		};
+	};
+
+	/* MICFIL to the on-board PDM microphones U66/U67 */
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <PDM_CLK_PIO10_8>,
+				 <PDM_DATA0_PIO10_9>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };
