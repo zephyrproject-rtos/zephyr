@@ -149,9 +149,11 @@ int stm32_gpioport_configure_pin(const struct device *port,
 				 pinctrl_soc_pin_t config,
 				 bool apply_out_level)
 {
+	struct gpio_stm32_data *dev_data = (struct gpio_stm32_data *)port->data;
 	const struct gpio_stm32_config *dev_cfg = port->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)dev_cfg->base;
 	uint32_t pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
+	k_spinlock_key_t key = k_spin_lock(&dev_data->configure_lock);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	const uint32_t cnfmode = config & STM32_CNFMODE_Msk;
@@ -280,6 +282,7 @@ int stm32_gpioport_configure_pin(const struct device *port,
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
 
+	k_spin_unlock(&dev_data->configure_lock, key);
 	return 0;
 }
 
@@ -367,8 +370,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 			   (.pclken = STM32_CLOCK_INFO(0, __node),))		\
 	};									\
 										\
-	IF_ENABLED(CONFIG_GPIO_STM32,						\
-		(static struct gpio_stm32_data gpio_stm32_data_## __suffix;))	\
+	static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
 										\
 	PM_DEVICE_DT_DEFINE(__node, stm32_gpioport_pm_action);			\
 										\
@@ -377,9 +379,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 				     (stm32_gpioport_init),			\
 				     (NULL)),					\
 			 PM_DEVICE_DT_GET(__node),				\
-			 COND_CODE_1(CONFIG_GPIO_STM32,				\
-				     (&gpio_stm32_data_## __suffix),		\
-				     (NULL)),					\
+			 &gpio_stm32_data_## __suffix,				\
 			 &gpio_stm32_cfg_## __suffix,				\
 			 PRE_KERNEL_1,						\
 			 GPIO_PORT_INIT_PRIORITY)
