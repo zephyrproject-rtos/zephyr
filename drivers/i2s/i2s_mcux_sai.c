@@ -1033,6 +1033,12 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 		if (ret < 0) {
 			LOG_DBG("START trigger failed %d", ret);
+			/* Ensure no partial DMA or buffers survive */
+			if (dir == I2S_DIR_TX) {
+				i2s_tx_stream_disable(dev, true);
+			} else {
+				i2s_rx_stream_disable(dev, true, true);
+			}
 			ret = -EIO;
 			break;
 		}
