@@ -4,14 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION
-	bool "Wait DNS server addition before considering connection to be up"
-	depends on MODEM_HL7800 || MODEM_HL78XX
-	depends on DNS_RESOLVER_AUTO_INIT
-	depends on !DNS_SERVER_IP_ADDRESSES
+config NET_SAMPLE_COMMON_WAIT_DNS
+	bool "Wait for a DNS server before resolving a hostname"
+	default y
+	depends on NET_CONNECTION_MANAGER
 	help
-	  Make sure we get DNS server addresses from the network
-	  before considering the connection to be up.
+	  Wait until a unicast DNS server is available before resolving a
+	  hostname. Disable it when hostnames are resolved only with mDNS or
+	  LLMNR, which do not need a DNS server.
 
 config NET_SAMPLE_COMMON_VLAN_SETUP_1
 	string "VLAN setup for the 1st VLAN interface"

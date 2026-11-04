@@ -15,6 +15,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/arpa/inet.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 LOG_MODULE_REGISTER(coap_upload, LOG_LEVEL_INF);
@@ -207,8 +208,6 @@ int main(void)
 	static struct coap_client client;
 	int ret;
 
-	wait_for_network();
-
 	ret = coap_client_init(&client, NULL);
 	if (ret) {
 		LOG_ERR("Failed to init CoAP client, err %d", ret);
@@ -216,25 +215,36 @@ int main(void)
 	}
 
 	struct sockaddr sa;
+	uint32_t ready;
+
+	LOG_INF("Waiting for network...");
+	/* Wait for any family, then skip the ones that are not ready */
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_FOREVER);
+	LOG_INF("Network ready");
+	ready = conn_mgr_get_readiness();
 
 #if defined(CONFIG_NET_IPV4)
 	struct sockaddr_in *addr4 = (struct sockaddr_in *)&sa;
 
-	addr4->sin_family = AF_INET;
-	addr4->sin_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
-	inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &addr4->sin_addr);
+	if ((ready & CONN_MGR_READY_IPV4) != 0U) {
+		addr4->sin_family = AF_INET;
+		addr4->sin_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
+		inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &addr4->sin_addr);
 
-	coap_upload(&client, &sa, sizeof(struct sockaddr_in));
+		coap_upload(&client, &sa, sizeof(struct sockaddr_in));
+	}
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&sa;
 
-	addr6->sin6_family = AF_INET6;
-	addr6->sin6_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
-	inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &addr6->sin6_addr);
+	if ((ready & CONN_MGR_READY_IPV6) != 0U) {
+		addr6->sin6_family = AF_INET6;
+		addr6->sin6_port = htons(CONFIG_NET_SAMPLE_COAP_SERVER_PORT);
+		inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &addr6->sin6_addr);
 
-	coap_upload(&client, &sa, sizeof(struct sockaddr_in6));
+		coap_upload(&client, &sa, sizeof(struct sockaddr_in6));
+	}
 #endif
 
 	return 0;

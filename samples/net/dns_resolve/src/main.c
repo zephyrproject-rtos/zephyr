@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_dns_resolve_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/dns_resolve.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #if defined(CONFIG_MDNS_RESOLVER)
@@ -397,7 +398,9 @@ int main(void)
 
 	LOG_INF("Starting DNS resolve sample");
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_FOREVER);
+	LOG_INF("Network ready");
 
 	setup_ipv4(iface);
 
