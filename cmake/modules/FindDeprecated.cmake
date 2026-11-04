@@ -52,6 +52,26 @@ if("soc_vars" IN_LIST Deprecated_FIND_COMPONENTS)
   variable_watch(SOC_V2_DIR deprecated_soc_var)
 endif()
 
+if("ENV_CLANG_ROOT_DIR" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code has been deprecated after Zephyr 4.5
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS ENV_CLANG_ROOT_DIR)
+
+  if(DEFINED ENV{CLANG_ROOT_DIR})
+    message(DEPRECATION "CLANG_ROOT_DIR is deprecated, set LLVM_TOOLCHAIN_PATH instead.")
+    set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
+  endif()
+endif()
+
+if("CLANG_ROOT_DIR" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code has been deprecated after Zephyr 4.5
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS CLANG_ROOT_DIR)
+
+  if(DEFINED CLANG_ROOT_DIR)
+    message(DEPRECATION "CLANG_ROOT_DIR is deprecated, set LLVM_TOOLCHAIN_PATH instead.")
+    set(LLVM_TOOLCHAIN_PATH ${CLANG_ROOT_DIR} CACHE PATH "clang install directory")
+  endif()
+endif()
+
 if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(STATUS "The following deprecated component(s) could not be found: "
     "${Deprecated_FIND_COMPONENTS}")
