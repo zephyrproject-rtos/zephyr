@@ -838,6 +838,18 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			sys_snode_t *node;
 			unsigned int key;
 
+			/* The unacknowledged packets are returned when the
+			 * connection goes down, which may be under way in a
+			 * thread that this one has preempted, or over in one
+			 * that ran while a callback below blocked: bt_disable()
+			 * takes the connections down while a controller that
+			 * has not been reset goes on reporting.
+			 */
+			if (conn->state != BT_CONN_CONNECTED &&
+			    conn->state != BT_CONN_DISCONNECTING) {
+				break;
+			}
+
 			/* move the next TX context from the `pending` list to
 			 * the `complete` list.
 			 */
@@ -5270,22 +5282,22 @@ int bt_disable(void)
 		hci_reset_complete();
 	}
 
-	/* Tear down the connections only after the controller has been reset:
-	 * until then it still owns the packets in flight and reports their
-	 * completion, which must find the TX bookkeeping intact. What is left
-	 * afterwards is completed by the host with an error. Neither the ISO
-	 * nor the connection cleanup sends HCI commands.
+	/* Tear down the connections after the reset, if any, until which the
+	 * controller owns the packets in flight and reports their completion.
+	 * What is left afterwards is completed by the host with an error. This
+	 * comes before the transport is closed, as the disconnected callback of
+	 * an ISO channel may send a command.
 	 */
 	if (IS_ENABLED(CONFIG_BT_ISO)) {
 		bt_iso_reset();
 	}
 
-#if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		bt_pub_key_hci_disrupted();
 	}
+
+#if defined(CONFIG_BT_CONN)
 	bt_conn_cleanup_all();
-	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
 	/* Mark the transport closed before purging the command queue: a
@@ -5309,6 +5321,15 @@ int bt_disable(void)
 	}
 
 	hci_cmd_sent_purge();
+
+#if defined(CONFIG_BT_CONN)
+	/* Only now that nothing more is received: a controller that has not
+	 * been reset can report a disconnection until the transport is closed,
+	 * which would otherwise be taken for one of the next connection that
+	 * gets the same handle.
+	 */
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
 
 	/* Some functions rely on checking this bitfield */
 	ARRAY_FOR_EACH(bt_dev.supported_commands, i) {
