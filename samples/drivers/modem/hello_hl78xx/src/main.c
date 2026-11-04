@@ -21,11 +21,9 @@
 #endif
 
 /* Macros used to subscribe to specific Zephyr NET management events. */
-#if defined(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION)
-#define L4_EVENT_MASK (NET_EVENT_DNS_SERVER_ADD | NET_EVENT_L4_DISCONNECTED)
-#else
-#define L4_EVENT_MASK (NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED)
-#endif
+#define WAIT_FOR_DNS  IS_ENABLED(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS)
+#define NET_UP_EVENT  (WAIT_FOR_DNS ? NET_EVENT_L4_DNS_READY : NET_EVENT_L4_CONNECTED)
+#define L4_EVENT_MASK (NET_UP_EVENT | NET_EVENT_L4_DISCONNECTED)
 #define CONN_LAYER_EVENT_MASK (NET_EVENT_CONN_IF_FATAL_ERROR)
 
 #define TEST_SERVER_PORT     6000
@@ -162,11 +160,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 			     struct net_if *iface)
 {
 	switch (event) {
-#if defined(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS_SERVER_ADDITION)
-	case NET_EVENT_DNS_SERVER_ADD:
-#else
-	case NET_EVENT_L4_CONNECTED:
-#endif
+	case NET_UP_EVENT:
 		LOG_INF("IP Up");
 		on_net_event_l4_connected();
 		break;

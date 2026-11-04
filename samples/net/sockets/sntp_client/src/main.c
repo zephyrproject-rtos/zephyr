@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 static K_SEM_DEFINE(sntp_async_received, 0, 1);
@@ -130,12 +131,29 @@ end:
 
 int main(void)
 {
-	wait_for_network();
+	uint32_t mask = CONN_MGR_READY_IP_ANY;
+	uint32_t ready;
 
-	do_sntp(AF_INET);
+	/* A hostname server also needs a DNS server */
+	if (IS_ENABLED(CONFIG_NET_SAMPLE_COMMON_WAIT_DNS) &&
+	    is_hostname(CONFIG_NET_SAMPLE_SNTP_SERVER_ADDRESS)) {
+		mask |= CONN_MGR_READY_DNS;
+	}
+
+	LOG_INF("Waiting for network...");
+	/* Wait for any family, then skip the ones that are not ready */
+	(void)conn_mgr_wait_ready(mask, NULL, K_FOREVER);
+	LOG_INF("Network ready");
+	ready = conn_mgr_get_readiness();
+
+	if ((ready & CONN_MGR_READY_IPV4) != 0U) {
+		do_sntp(AF_INET);
+	}
 
 #if defined(CONFIG_NET_IPV6)
-	do_sntp(AF_INET6);
+	if ((ready & CONN_MGR_READY_IPV6) != 0U) {
+		do_sntp(AF_INET6);
+	}
 #endif
 
 	return 0;

@@ -12,4 +12,5 @@ config NET_SAMPLE_SNTP_SERVER_TIMEOUT_MS
 	int "Duration to wait for response"
 	default 2000
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

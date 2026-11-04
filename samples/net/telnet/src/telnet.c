@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_telnet_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #if defined(CONFIG_NET_IPV6)
@@ -46,7 +47,9 @@ int main(void)
 {
 	LOG_INF("Starting Telnet sample");
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_FOREVER);
+	LOG_INF("Network ready");
 	setup_ipv6();
 	return 0;
 }

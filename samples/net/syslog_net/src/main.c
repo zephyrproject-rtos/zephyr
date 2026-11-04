@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_syslog, LOG_LEVEL_DBG);
 
 #include <stdlib.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 BUILD_ASSERT(IS_ENABLED(CONFIG_LOG_BACKEND_NET), "syslog backend not enabled");
@@ -27,7 +28,9 @@ int main(void)
 
 	LOG_DBG("Starting");
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_FOREVER);
+	LOG_INF("Network ready");
 
 	if (!IS_ENABLED(CONFIG_LOG_BACKEND_NET_AUTOSTART)) {
 		/* Example how to start the backend if autostart is disabled.

@@ -31,4 +31,5 @@ config NET_SAMPLE_SNTP_SERVER_PORT
 	help
 	  SNTP server port to get the time from network
 
+source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

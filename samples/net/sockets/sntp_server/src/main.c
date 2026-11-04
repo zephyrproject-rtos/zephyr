@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(sntp_demo, LOG_LEVEL_DBG);
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/sntp_server.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #define FRAC2NS(x) (uint32_t)((((uint64_t)(x)) * NSEC_PER_SEC) >> 32)
@@ -25,8 +26,9 @@ int main(void)
 	struct timespec tp;
 	int ret;
 
-	LOG_INF("waiting for network");
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IP_ANY, NULL, K_FOREVER);
+	LOG_INF("Network ready");
 
 	/* Empty string literal, so the option was left at its default */
 	if (sizeof(CONFIG_NET_SAMPLE_SNTP_UPSTREAM_ADDRESS) == 1) {
