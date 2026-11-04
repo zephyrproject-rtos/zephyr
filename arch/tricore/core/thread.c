@@ -14,6 +14,8 @@ union z_tricore_context __kstackmem __aligned(4 * 16) z_tricore_csa[CONFIG_TRICO
 
 int arch_coprocessors_disable(struct k_thread *thread)
 {
+	ARG_UNUSED(thread);
+
 	return -ENOTSUP;
 }
 
@@ -64,6 +66,7 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
 				      void *p2, void *p3, char *stack_ptr)
 {
+	ARG_UNUSED(thread);
 	uint32_t icr = cr_read(TRICORE_ICR);
 
 	__asm volatile("disable" ::: "memory");
@@ -95,6 +98,8 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(stack);
+
 	thread->callee_saved.pcxi = z_tricore_create_context(thread, entry, p1, p2, p3, stack_ptr);
 
 	/* our switch handle is the thread pointer itself */

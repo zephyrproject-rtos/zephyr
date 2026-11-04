@@ -35,6 +35,8 @@ void z_tricore_irq_config(unsigned int irq, unsigned int prio, unsigned int flag
 
 FUNC_NORETURN void z_irq_spurious(const void *unused)
 {
+	ARG_UNUSED(unused);
+
 #ifdef CONFIG_EMPTY_IRQ_SPURIOUS
 	while (1) {
 	}
