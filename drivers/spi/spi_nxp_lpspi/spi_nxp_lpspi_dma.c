@@ -315,6 +315,13 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 
 	case LPSPI_TRANSFER_STATE_TX_DONE:
 	case LPSPI_TRANSFER_STATE_RX_DONE:
+		/* End this channel like the one that finished first */
+		if (channel == dma_data->dma_tx.channel) {
+			spi_mcux_issue_TCR(spi_dev);
+			base->DER &= ~LPSPI_DER_TDDE_MASK;
+		} else {
+			base->DER &= ~LPSPI_DER_RDDE_MASK;
+		}
 		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
 		/* TX and RX both done here. */
 		/* Not after spi_context_wait_for_completion(), which does not
