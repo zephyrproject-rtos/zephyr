@@ -51,8 +51,7 @@ extern "C" {
  * calls the callbacks without holding any lock of its own, so a callback can
  * call the API.
  *
- * Not supported yet: Boot Protocol Mode, that is the Protocol Mode
- * characteristic and the Boot Keyboard and Boot Mouse Report characteristics,
+ * Not supported yet: the Boot Keyboard and Boot Mouse Report characteristics,
  * which the HID Service makes mandatory for a keyboard and for a mouse;
  * multiple HID Service instances; and the "Include" of external services whose
  * characteristics are described in the Report Map together with the External
@@ -81,6 +80,19 @@ enum bt_hids_report_type {
 
 	/** Feature Report */
 	BT_HIDS_REPORT_TYPE_FEATURE = 0x03U,
+};
+
+/**
+ * @brief HID Protocol Mode values.
+ *
+ * Defined by the HID Service, Protocol Mode characteristic.
+ */
+enum bt_hids_protocol_mode {
+	/** Boot Protocol Mode */
+	BT_HIDS_PROTOCOL_BOOT = 0x00U,
+
+	/** Report Protocol Mode */
+	BT_HIDS_PROTOCOL_REPORT = 0x01U,
 };
 
 /**
@@ -113,40 +125,64 @@ enum bt_hids_ctrl_point {
 	BT_HIDS_CTRL_EXIT_SUSPEND = 0x01U,
 };
 
+/**
+ * @brief Callback for a Host writing an Output or Feature Report.
+ *
+ * A write longer than @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN} is rejected with
+ * an ATT Invalid Attribute Value Length error and the callback is not called.
+ *
+ * @param conn        Connection of the Host that wrote the Report.
+ * @param report_type Report Type of the Report written, either
+ *                    @ref BT_HIDS_REPORT_TYPE_OUTPUT or
+ *                    @ref BT_HIDS_REPORT_TYPE_FEATURE.
+ * @param report_id   Report ID of the Report written, as supplied to
+ *                    bt_hids_register().
+ * @param data        Report payload, excluding the Report ID byte. Valid for
+ *                    the duration of the callback only.
+ * @param len         Length of @p data in bytes, at most
+ *                    @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN}.
+ */
+typedef void (*bt_hids_set_report_cb)(struct bt_conn *conn, enum bt_hids_report_type report_type,
+				      uint8_t report_id, const uint8_t *data, uint16_t len);
+
+/**
+ * @brief Callback for a Host changing the Protocol Mode.
+ *
+ * Only called when the Protocol Mode characteristic is part of the service, see
+ * @kconfig{CONFIG_BT_HIDS_PROTOCOL_MODE}, and not when the Host writes the
+ * Protocol Mode that is already selected. The service has already updated its
+ * internal state, so bt_hids_protocol_mode_get() returns @p protocol for
+ * @p conn.
+ *
+ * @param conn     Connection of the Host that wrote the characteristic.
+ * @param protocol Protocol Mode the Host selected.
+ */
+typedef void (*bt_hids_protocol_mode_changed_cb)(struct bt_conn *conn,
+						 enum bt_hids_protocol_mode protocol);
+
+/**
+ * @brief Callback for a Host writing the HID Control Point.
+ *
+ * The service has already applied what the command implies, so the Suspend
+ * state of @ref BT_HIDS_CTRL_SUSPEND and @ref BT_HIDS_CTRL_EXIT_SUSPEND is
+ * already visible through bt_hids_suspend_state_get().
+ *
+ * @param conn Connection of the Host that wrote the characteristic.
+ * @param cmd  Command the Host wrote. The commands the service does not
+ *             implement are rejected and never reach this callback.
+ */
+typedef void (*bt_hids_ctrl_point_cb)(struct bt_conn *conn, enum bt_hids_ctrl_point cmd);
+
 /** HID Service callbacks */
 struct bt_hids_cb {
-	/**
-	 * @brief Called when a Host writes an Output or Feature Report.
-	 *
-	 * A write longer than @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN} is
-	 * rejected with an ATT Invalid Attribute Value Length error and this
-	 * callback is not called.
-	 *
-	 * @param conn        Connection of the Host that wrote the Report.
-	 * @param report_type Report Type of the Report written, either
-	 *                    @ref BT_HIDS_REPORT_TYPE_OUTPUT or
-	 *                    @ref BT_HIDS_REPORT_TYPE_FEATURE.
-	 * @param report_id   Report ID of the Report written, as supplied to
-	 *                    bt_hids_register().
-	 * @param data        Report payload, excluding the Report ID byte. Valid
-	 *                    for the duration of the callback only.
-	 * @param len         Length of @p data in bytes, at most
-	 *                    @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN}.
-	 */
-	void (*set_report)(struct bt_conn *conn, enum bt_hids_report_type report_type,
-			   uint8_t report_id, const uint8_t *data, uint16_t len);
+	/** Called when a Host writes an Output or Feature Report */
+	bt_hids_set_report_cb set_report;
 
-	/**
-	 * @brief Called when a Host writes the HID Control Point.
-	 *
-	 * The Suspend state is per Host, and the service does not keep it, so
-	 * an application that acts on it tracks it per @p conn.
-	 *
-	 * @param conn Connection of the Host that wrote the characteristic.
-	 * @param cmd  Command the Host wrote. The commands the service does not
-	 *             implement are rejected and never reach this callback.
-	 */
-	void (*ctrl_point)(struct bt_conn *conn, enum bt_hids_ctrl_point cmd);
+	/** Called when a Host changes the Protocol Mode */
+	bt_hids_protocol_mode_changed_cb protocol_mode_changed;
+
+	/** Called when a Host writes the HID Control Point */
+	bt_hids_ctrl_point_cb ctrl_point;
 };
 
 /** HID Service registration parameters */
@@ -372,6 +408,45 @@ int bt_hids_report_get(enum bt_hids_report_type report_type, uint8_t report_id, 
  */
 int bt_hids_send_report(struct bt_conn *conn, uint8_t report_id, const uint8_t *data, uint16_t len,
 			bt_gatt_complete_func_t func, void *user_data);
+
+/**
+ * @brief Get the Protocol Mode of a Host.
+ *
+ * The Protocol Mode is tracked per connection and reset to
+ * @ref BT_HIDS_PROTOCOL_REPORT every time the service starts tracking a Host
+ * and when the service is unregistered. It stays at its default value when the
+ * Protocol Mode characteristic is not present, see
+ * @kconfig{CONFIG_BT_HIDS_PROTOCOL_MODE}.
+ *
+ * @param[in]  conn Connection to the Host.
+ * @param[out] mode Protocol Mode.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ESRCH Service not registered.
+ * @retval -ENOTCONN The Host is not connected over LE, or its link does not
+ *                   have the security level the characteristics require.
+ */
+int bt_hids_protocol_mode_get(struct bt_conn *conn, enum bt_hids_protocol_mode *mode);
+
+/**
+ * @brief Get the Suspend state of a Host.
+ *
+ * The Suspend state is tracked per connection and reset every time the service
+ * starts tracking a Host and when the service is unregistered. It is set when
+ * the Host writes Suspend to the HID Control Point, and cleared when the Host
+ * writes Exit Suspend.
+ *
+ * @param[in]  conn      Connection to the Host.
+ * @param[out] suspended true if the Host suspended the Device.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ESRCH Service not registered.
+ * @retval -ENOTCONN The Host is not connected over LE, or its link does not
+ *                   have the security level the characteristics require.
+ */
+int bt_hids_suspend_state_get(struct bt_conn *conn, bool *suspended);
 
 /**
  * @}
