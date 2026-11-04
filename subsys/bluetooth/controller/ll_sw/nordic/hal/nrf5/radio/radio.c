@@ -806,6 +806,12 @@ uint32_t radio_is_done(void)
 			} else {
 				radio_tmr_isr_cb_t cb;
 
+				nrf_timer_int_disable(EVENT_TIMER,
+						      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+				nrf_timer_event_clear(EVENT_TIMER,
+						      HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+				cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
 				cb = isr_radio_tmr_cb;
 				isr_radio_tmr_cb = NULL;
 				radio_tmr_isr_syscounter_active_set(false);
@@ -1844,6 +1850,12 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 			} else {
 				radio_tmr_isr_cb_t cb;
 
+				nrf_timer_int_disable(EVENT_TIMER,
+						      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+				nrf_timer_event_clear(EVENT_TIMER,
+						      HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+				cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
 				cb = isr_radio_tmr_cb;
 				isr_radio_tmr_cb = NULL;
 				radio_tmr_isr_syscounter_active_set(false);
@@ -1852,6 +1864,11 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 			}
 		} else {
 			radio_tmr_isr_cb_t cb;
+
+			nrf_timer_int_disable(EVENT_TIMER,
+					      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+			nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+			cpu_irq_pending_clear(EVENT_TIMER_IRQn);
 
 			cb = isr_radio_tmr_cb;
 			isr_radio_tmr_cb = NULL;
@@ -2018,6 +2035,12 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 			} else {
 				radio_tmr_isr_cb_t cb;
 
+				nrf_timer_int_disable(EVENT_TIMER,
+						      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+				nrf_timer_event_clear(EVENT_TIMER,
+						      HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+				cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
 				cb = isr_radio_tmr_cb;
 				isr_radio_tmr_cb = NULL;
 				radio_tmr_isr_syscounter_active_set(false);
@@ -2026,6 +2049,11 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 			}
 		} else {
 			radio_tmr_isr_cb_t cb;
+
+			nrf_timer_int_disable(EVENT_TIMER,
+					      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+			nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+			cpu_irq_pending_clear(EVENT_TIMER_IRQn);
 
 			cb = isr_radio_tmr_cb;
 			isr_radio_tmr_cb = NULL;
