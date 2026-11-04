@@ -48,6 +48,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     platform_allow:
+      - frdm_mcxn236/mcxn236
       - sam_e54_xpro
 
   drivers.spi.spi_mode2:
@@ -66,6 +67,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
     platform_allow:
+      - frdm_mcxn236/mcxn236
       - sam_e54_xpro
 
   drivers.spi.spi_mode0.incorrect_sck_state:

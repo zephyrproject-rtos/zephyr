@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2026 Mission Embedded GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * LPSPI3 is the controller, with DMA and a GPIO chip select.
+ * LPSPI2 is the peripheral. Connect on the Arduino header:
+ *   D13 (P1_1,  LPSPI3 SCK) -> A5 (P4_13, LPSPI2 SCK)
+ *   D11 (P1_0,  LPSPI3 SDO) -> A2 (P4_16, LPSPI2 SDI)
+ *   D12 (P1_2,  LPSPI3 SDI) <- A4 (P4_12, LPSPI2 SDO)
+ *   D10 (P1_3,  GPIO CS)    -> A3 (P4_17, LPSPI2 PCS0)
+ */
+
+&pinctrl {
+	pinmux_flexcomm3_lpspi_gpio_cs: pinmux_flexcomm3_lpspi_gpio_cs {
+		group0 {
+			pinmux = <FC3_P0_PIO1_0>,
+				 <FC3_P1_PIO1_1>,
+				 <FC3_P2_PIO1_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcomm2_lpspi: pinmux_flexcomm2_lpspi {
+		group0 {
+			pinmux = <FC2_P0_PIO4_12>,
+				 <FC2_P1_PIO4_13>,
+				 <FC2_P2_PIO4_16>,
+				 <FC2_P3_PIO4_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};
+
+&flexcomm3_lpspi3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpspi_gpio_cs>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+	dmas = <&edma0 6 75>, <&edma0 7 76>;
+	dma-names = "rx", "tx";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+	};
+};
+
+/* LPSPI2 shares its LP_FLEXCOMM with these */
+&flexcomm2_lpuart2 {
+	status = "disabled";
+};
+
+&flexcomm2_lpi2c2 {
+	status = "disabled";
+};
+
+dut_spis: &flexcomm2_lpspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm2_lpspi>;
+	pinctrl-names = "default";
+	/* The DMA driver is controller only */
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+};
+
+/* The peripheral must serve its FIFOs ahead of the controller and its DMA */
+&flexcomm3 {
+	interrupts = <38 1>;
+};
+
+&edma0 {
+	interrupts = <1 1>, <2 1>, <3 1>, <4 1>,
+		     <5 1>, <6 1>, <7 1>, <8 1>,
+		     <9 1>, <10 1>, <11 1>, <12 1>,
+		     <13 1>, <14 1>, <15 1>, <16 1>;
+};
