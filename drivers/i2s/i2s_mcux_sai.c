@@ -407,8 +407,15 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	LOG_DBG("RX cb");
 
 	if (strm->state == I2S_STATE_ERROR) {
-		LOG_ERR("State = I2S_STATE_ERROR");
-		i2s_rx_stream_disable(dev, true, true);
+		/*
+		 * The SAI ISR flagged an RX overrun. Stop reception and release
+		 * the blocks still owned by the DMA, but keep the blocks already
+		 * received so that i2s_read() can still return them, as the I2S
+		 * API requires for the ERROR state.
+		 */
+		LOG_ERR("RX overrun, stopping RX stream");
+		i2s_rx_stream_disable(dev, true, false);
+		return;
 	}
 
 	if (strm->state != I2S_STATE_STOPPING && strm->state != I2S_STATE_RUNNING) {
@@ -806,6 +813,7 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		dev_data->rx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->rx.dma_cfg.user_data = (void *)dev;
 		dev_data->rx.state = I2S_STATE_READY;
+		SAI_RxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
 	}
 
 	return 0;
@@ -1250,6 +1258,7 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 static void sai_driver_irq(const struct device *dev)
 {
 	I2S_Type *base = get_base(dev);
+	struct i2s_dev_data *dev_data = dev->data;
 
 	if ((base->TCSR & I2S_TCSR_FEF_MASK) == I2S_TCSR_FEF_MASK) {
 		/* Clear FIFO error flag to continue transfer */
@@ -1262,6 +1271,12 @@ static void sai_driver_irq(const struct device *dev)
 	}
 
 	if ((base->RCSR & I2S_RCSR_FEF_MASK) == I2S_RCSR_FEF_MASK) {
+		struct stream *strm = &dev_data->rx;
+
+		if (strm->state == I2S_STATE_RUNNING) {
+			strm->state = I2S_STATE_ERROR;
+		}
+
 		/* Clear FIFO error flag to continue transfer */
 		SAI_RxClearStatusFlags(base, I2S_RCSR_FEF_MASK);
 
