@@ -77,6 +77,18 @@ New APIs and options
     * :c:func:`bt_addr_matches_irk`
     * :c:func:`bt_l2cap_server_unregister`
 
+  * Profiles
+
+    * :kconfig:option:`CONFIG_BT_HOGP_REPORT_HOST`
+    * :c:func:`bt_hogp_report_host_cb_register`
+    * :c:func:`bt_hogp_report_host_cb_unregister`
+    * :c:func:`bt_hogp_report_host_discover`
+    * :c:func:`bt_hogp_report_host_services_get`
+    * :c:func:`bt_hogp_report_host_conn_get`
+    * :c:func:`bt_hogp_report_host_reports_get`
+    * :c:func:`bt_hogp_report_host_report_read`
+    * :c:func:`bt_hogp_report_host_report_write`
+
   * Services
 
     * :kconfig:option:`CONFIG_BT_HIDS`
