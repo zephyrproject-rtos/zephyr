@@ -18,7 +18,22 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 }
 #else
 
-#ifndef CONFIG_SMP
+#if defined(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS > 1)
+/**
+ * @brief Return the index of the executing CPU.
+ *
+ * Implemented by the SoC. It is called from z_arm_reset before the stack
+ * is set up, so it may only use r0-r3.
+ */
+uint32_t soc_cpu_index(void);
+#endif
+
+#ifdef CONFIG_SMP
+static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
+{
+	return &_kernel.cpus[soc_cpu_index()];
+}
+#else
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 	/* Dummy implementation always return the first cpu */
