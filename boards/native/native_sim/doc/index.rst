@@ -457,12 +457,9 @@ Here are more details on the peripherals that are currently provided with this b
   Both can also be overridden from the command line with the ``--wifi-if=<name>``
   and ``--wifi-mac-addr=<mac>`` options.
 
-  64-bit ``native_sim`` (``native_sim/native/64``) is not supported yet, as the
-  hostap sources the driver pulls in do not build cleanly for 64-bit, so the
-  driver can only be built for a 32-bit ``native_sim`` image on a Linux host.
   The build links the host ``libnl``, which has to match the word size of the
-  image, so it requires the 32-bit ``libnl`` development libraries; on a
-  Debian/Ubuntu host:
+  image. The default 32-bit ``native_sim`` target requires the 32-bit ``libnl``
+  development libraries; on a Debian/Ubuntu host:
 
   .. code-block:: console
 
@@ -470,6 +467,13 @@ Here are more details on the peripherals that are currently provided with this b
      $ sudo apt update
      $ sudo apt install gcc-multilib pkg-config libnl-3-dev:i386 libnl-genl-3-dev:i386
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+  For :ref:`64bit native_sim<native_sim32_64>` builds the 64-bit version is
+  needed instead:
+
+  .. code-block:: console
+
+     $ sudo apt install pkg-config libnl-3-dev libnl-genl-3-dev
 
   The simulated radio and the access points it connects to are created on the
   host with the ``net-setup.sh`` script and the ``zwifi`` configuration from the

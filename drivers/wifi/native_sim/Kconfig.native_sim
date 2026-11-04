@@ -7,12 +7,6 @@ menuconfig WIFI_NATIVE_SIM
 	bool "Simple WiFi driver for native-sim board"
 	default y
 	depends on ARCH_POSIX
-	# 64-bit native_sim (native_sim/native/64) is not supported yet: the hostap
-	# sources this driver pulls in use "%d" for size_t in several printf calls,
-	# which warns (and fails under warnings-as-errors) on 64-bit. The host libnl
-	# the driver links against has to match the word size of the native_sim
-	# image, so a 64-bit build also needs the 64-bit libnl.
-	depends on !64BIT
 	depends on WIFI_NM_WPA_SUPPLICANT
 	# Opt-in: the driver is only built when a "zephyr,native-sim-wifi" node is
 	# present in the devicetree (add one via an overlay to enable it). The MAC
