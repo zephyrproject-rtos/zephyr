@@ -28,7 +28,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	return intc_aurix_ir_irq_is_enabled(irq);
 }
 
-void z_tricore_irq_config(unsigned int irq, unsigned int prio, unsigned int flags)
+void z_tricore_irq_config(uint32_t irq, uint32_t prio, uint32_t flags)
 {
 	intc_aurix_ir_irq_config(irq, prio, flags);
 }
@@ -43,7 +43,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	CODE_UNREACHABLE;
 #else
-	unsigned int irq = intc_aurix_ir_get_active();
+	uint32_t irq = intc_aurix_ir_get_active();
 
 	LOG_ERR("Spurious interrupt detected! IRQ: %d", irq);
 

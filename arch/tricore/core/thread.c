@@ -41,7 +41,7 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 {
 	uint32_t pcxi = thread->callee_saved.pcxi & 0xFFFFFU;
 	struct z_tricore_lower_context *csa;
-	unsigned int key;
+	uint32_t key;
 
 	if (pcxi == 0U) {
 		return;
@@ -63,7 +63,7 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 	irq_unlock(key);
 }
 
-static unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
+static uint32_t z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
 				      void *p2, void *p3, char *stack_ptr)
 {
 	ARG_UNUSED(thread);
@@ -109,7 +109,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	bool self_abort = (thread == _current);
-	unsigned int key = 0U;
+	uint32_t key = 0U;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
