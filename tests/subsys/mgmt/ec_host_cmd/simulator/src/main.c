@@ -542,6 +542,10 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 	}
 
 	/* Version 0 (and 2) write request bytes if it can fit */
+	if (request->bytes_to_write == 0) {
+		return EC_HOST_CMD_SUCCESS;
+	}
+
 	if (request->bytes_to_write > args->output_buf_max) {
 		return EC_HOST_CMD_OVERFLOW;
 	}
@@ -556,6 +560,53 @@ ec_host_cmd_unbounded(struct ec_host_cmd_handler_args *args)
 }
 EC_HOST_CMD_HANDLER_UNBOUND(EC_CMD_UNBOUNDED, ec_host_cmd_unbounded,
 			    BIT(0) | BIT(1) | BIT(2));
+
+ZTEST(ec_host_cmd, test_unbounded_output_cleared)
+{
+	const struct tx_structure *const tx = (void *)sent->buf;
+
+	/*
+	 * First call writes 0x11223344 to tx->add.out_data and sets
+	 * output_buf_size = 4.
+	 */
+	*host_to_dut = (struct rx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.cmd_id = EC_CMD_HELLO,
+				.data_len = sizeof(host_to_dut->add),
+			},
+		.add.in_data = 0x10203040,
+	};
+	*expected_dut_to_host = (struct tx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.data_len = sizeof(expected_dut_to_host->add),
+			},
+		.add.out_data = 0x11223344,
+	};
+	simulate_rx_data();
+	verify_tx_data();
+	zassert_equal(tx->add.out_data, 0x11223344);
+
+	/*
+	 * With bytes_to_write == 0, the handler returns without modifying
+	 * output_buf or output_buf_size, verifying that both were reset to 0
+	 * before the handler was called.
+	 */
+	*host_to_dut = (struct rx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.cmd_id = EC_CMD_UNBOUNDED,
+				.data_len = sizeof(host_to_dut->unbounded),
+			},
+		.unbounded.bytes_to_write = 0,
+	};
+	simulate_rx_data();
+
+	expected_dut_to_host->header.data_len = 0;
+	verify_tx_data();
+	zassert_equal(tx->add.out_data, 0);
+}
 
 ZTEST(ec_host_cmd, test_unbounded_handler_error_return)
 {
