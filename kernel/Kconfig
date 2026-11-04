@@ -531,6 +531,23 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 4096 if COVERAGE_GCOV || WIFI_NRF70
 	default 2560 if WIFI_NM_WPA_SUPPLICANT
 	default 1024
+	help
+	  At compile time, this setting specifies the baseline stack size of
+	  the system workqueue. Subsystems and drivers can specify minimum stack
+	  requirements via CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_* symbols, and
+	  the build system will automatically adjust the final stack size to the
+	  maximum required value unless CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN
+	  is enabled.
+
+config SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN
+	bool "Ignore minimum stack size requirements from subsystems"
+	help
+	  If selected, the system workqueue stack size will be strictly set to
+	  CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, ignoring any minimum stack size
+	  requirements requested by subsystems via CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_*.
+	  This is useful for deeply constrained systems where an application developer
+	  has verified that the system workqueue usage in their specific workload does
+	  not exceed the configured size.
 
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"

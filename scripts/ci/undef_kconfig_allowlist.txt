@@ -175,6 +175,7 @@ SRAM2  # Referenced in a comment in samples/application_development
 STACK_SIZE  # Used as an example in the Kconfig docs
 STD_CPP  # Referenced in CMake comment
 SYMBOL # used as an example in ci scripts
+SYSTEM_WORKQUEUE_MIN_STACK_SIZE_  # Used as an option matching prefix
 TEST1
 TEST_EXTRA_DEFINE  # Bogus define used by twister blackbox tests to exercise -x
 TFM_SPM_BACKEND_IPC  # Used in TFM sample dummy partition - belongs to TFM
