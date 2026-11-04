@@ -583,6 +583,11 @@ int lll_prepare_done(void *param)
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
 }
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT) && !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+/* Prepares are being cancelled while the current event is being aborted */
+static bool is_done_dequeue_defer;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT && !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+
 int lll_done(void *param)
 {
 	struct lll_event *next;
@@ -627,8 +632,19 @@ int lll_done(void *param)
 #if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, mfy_ull_prepare_dequeue};
+	bool is_dequeue = true;
 
-	(void)mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
+	/* A prepare cancelled while the current event is being aborted is dequeued when the
+	 * aborted current event is done, a dequeue before that would only place the ready
+	 * prepare back in the pipeline.
+	 */
+	is_dequeue = !is_done_dequeue_defer || (event.curr.abort_cb == NULL);
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
+
+	if (is_dequeue) {
+		(void)mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+	}
 #else /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 	done_inc();
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
@@ -1812,6 +1828,9 @@ preempt_cancel_curr:
 		ticks_at_expire = event.curr.ticks_at_expire;
 
 		/* Abort any duplicates so that they get dequeued */
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+		is_done_dequeue_defer = true;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 		iter_idx = NULL;
 		iter = ull_prepare_dequeue_iter(&iter_idx);
 		while (iter) {
@@ -1833,6 +1852,9 @@ preempt_cancel_curr:
 
 			iter = ull_prepare_dequeue_iter(&iter_idx);
 		}
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
+		is_done_dequeue_defer = false;
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 
 		/* Enqueue as resume event */
 		iter = resume_enqueue(is_abort_cb, abort_cb, curr_resume_cb, curr_param,
