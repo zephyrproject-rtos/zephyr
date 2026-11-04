@@ -22,7 +22,7 @@ config SPI_SILABS_EUSART_DMA
 	default y if SPI_ASYNC
 
 config SPI_SILABS_EUSART_DMA_MAX_BLOCKS
-	int "Silabs EUSART SPI controller driver maximum DMA transfer block per channel for a transaction."
+	int "Silabs EUSART SPI controller driver max DMA transfer blocks per channel"
 	depends on SPI_SILABS_EUSART_DMA
 	default 8
 	help
