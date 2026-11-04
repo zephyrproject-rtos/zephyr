@@ -143,6 +143,7 @@ enum {
 	SMP_FLAG_BOND,		/* if bonding */
 	SMP_FLAG_SC_DEBUG_KEY,	/* if Secure Connection are using debug key */
 	SMP_FLAG_SEC_REQ,	/* if Security Request was sent/received */
+	SMP_FLAG_STARTING,	/* if a local start of pairing or encryption is under way */
 	SMP_FLAG_DHCHECK_WAIT,	/* if waiting for remote DHCheck (as periph) */
 	SMP_FLAG_DERIVE_LK,	/* if Link Key should be derived */
 	SMP_FLAG_BR_CONNECTED,	/* if BR/EDR channel is connected */
@@ -2872,11 +2873,11 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 
 static int smp_init(struct bt_smp *smp)
 {
-	/* SMP_FLAG_SEC_REQ is claimed before this runs and has to stay set for
-	 * the whole procedure, so the flags are cleared without ever dropping
-	 * it.
+	/* SMP_FLAG_SEC_REQ and SMP_FLAG_STARTING are claimed before this runs
+	 * and have to stay set until their holders give them up, so the flags
+	 * are cleared without ever dropping them.
 	 */
-	(void)atomic_and(smp->flags, BIT(SMP_FLAG_SEC_REQ));
+	(void)atomic_and(smp->flags, BIT(SMP_FLAG_SEC_REQ) | BIT(SMP_FLAG_STARTING));
 
 	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
@@ -3359,11 +3360,34 @@ static uint8_t sc_send_public_key(struct bt_smp *smp)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
+/* Claims the start of pairing or encryption for one local start at a time. It
+ * is held while the start can block, in the allocation of the Pairing Request
+ * or in the command that starts encryption, and given up once SMP_FLAG_PAIRING
+ * or SMP_FLAG_ENC_PENDING is set, which refuses a later start: a claim that
+ * finds either of them set is given up at once. smp_reset() clears it with the
+ * other flags.
+ */
+static int smp_start_claim(struct bt_smp *smp)
+{
+	if (atomic_test_and_set_bit(smp->flags, SMP_FLAG_STARTING)) {
+		return -EBUSY;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING) ||
+	    atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
+		atomic_clear_bit(smp->flags, SMP_FLAG_STARTING);
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
 static int smp_send_pairing_req(struct bt_conn *conn)
 {
 	struct bt_smp *smp;
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
+	int err;
 
 	LOG_DBG("");
 
@@ -3384,35 +3408,37 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return 0;
 	}
 
-	/* pairing is in progress */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_PAIRING)) {
-		return -EBUSY;
-	}
-
-	/* Encryption is in progress */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_ENC_PENDING)) {
-		return -EBUSY;
+	/* Before the checks of this start, so that a second start is refused
+	 * as such and does not fail on its own settings.
+	 */
+	err = smp_start_claim(smp);
+	if (err != 0) {
+		return err;
 	}
 
 	/* early verify if required sec level if reachable */
 	if (!sec_level_reachable(smp)) {
-		return -EINVAL;
+		err = -EINVAL;
+		goto not_started;
 	}
 
 	if (!conn->le.keys) {
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
 		if (!conn->le.keys) {
-			return -ENOMEM;
+			err = -ENOMEM;
+			goto not_started;
 		}
 	}
 
 	if (smp_init(smp)) {
-		return -ENOBUFS;
+		err = -ENOBUFS;
+		goto not_started;
 	}
 
 	req_buf = smp_create_pdu(smp, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
 	if (!req_buf) {
-		return -ENOBUFS;
+		err = -ENOBUFS;
+		goto not_started;
 	}
 
 	req = net_buf_add(req_buf, sizeof(*req));
@@ -3454,8 +3480,39 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
+	atomic_clear_bit(smp->flags, SMP_FLAG_STARTING);
 
 	return 0;
+
+not_started:
+	atomic_clear_bit(smp->flags, SMP_FLAG_STARTING);
+
+	return err;
+}
+
+/* Starts encryption with the LTK of the bond, claimed as a Pairing Request is
+ * in smp_send_pairing_req(): the command can block.
+ */
+static int smp_start_enc(struct bt_smp *smp)
+{
+	struct bt_conn *conn = smp->chan.chan.conn;
+	int err;
+
+	err = smp_start_claim(smp);
+	if (err != 0) {
+		return err;
+	}
+
+	/* LE SC LTK and legacy central LTK are stored in same place */
+	err = bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand, conn->le.keys->ltk.ediv,
+					  conn->le.keys->ltk.val, conn->le.keys->enc_size);
+	if (err == 0) {
+		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
+	}
+
+	atomic_clear_bit(smp->flags, SMP_FLAG_STARTING);
+
+	return err;
 }
 
 static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
@@ -4358,6 +4415,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_smp_security_request *req = (void *)buf->data;
 	uint8_t auth;
+	int err;
 
 	LOG_DBG("");
 
@@ -4433,19 +4491,26 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 		goto pair;
 	}
 
-	if (bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand,
-					conn->le.keys->ltk.ediv,
-					conn->le.keys->ltk.val,
-					conn->le.keys->enc_size) < 0) {
+	err = smp_start_enc(smp);
+	if (err == -EBUSY) {
+		/* An application thread got there first */
+		return 0;
+	}
+
+	if (err < 0) {
 		LOG_ERR("Failed to start encryption");
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
-
 	return 0;
 pair:
-	if (smp_send_pairing_req(conn) < 0) {
+	err = smp_send_pairing_req(conn);
+	if (err == -EBUSY) {
+		/* An application thread got there first */
+		return 0;
+	}
+
+	if (err < 0) {
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
@@ -6308,18 +6373,12 @@ int bt_smp_start_security(struct bt_conn *conn)
 			return smp_send_pairing_req(conn);
 		}
 
-		/* LE SC LTK and legacy central LTK are stored in same place */
-		err = bt_conn_le_start_encryption(conn,
-						  conn->le.keys->ltk.rand,
-						  conn->le.keys->ltk.ediv,
-						  conn->le.keys->ltk.val,
-						  conn->le.keys->enc_size);
+		err = smp_start_enc(smp);
 		if (err) {
 			return err;
 		}
 
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_SECURITY_REQUEST);
-		atomic_set_bit(smp->flags, SMP_FLAG_ENC_PENDING);
 		return 0;
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_SMP */
