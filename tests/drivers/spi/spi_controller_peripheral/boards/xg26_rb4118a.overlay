@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg26-pinctrl.h>
+
+/*
+ * Four loopbacks are required:
+ * PB7 - PD8: eusart2 TX to eusart3 TX
+ * PB6 - PD9: eusart2 RX to eusart3 RX
+ * PB5 - PD7: eusart2 SCLK to eusart3 SCLK
+ * PB8 - PD10: eusart2 cs-gpios to eusart3 CS
+ */
+
+/* Use a clock that gives a valid divider for the 250 kHz SPI clock of the spi_mode0 test */
+&em01grpcclk {
+	clocks = <&hfxo>;
+};
+
+&pinctrl {
+	eusart2_default: eusart2_default {
+		group0 {
+			pins = <EUSART2_TX_PB7>, <EUSART2_SCLK_PB5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART2_RX_PB6>;
+			input-enable;
+		};
+	};
+
+	eusart3_default: eusart3_default {
+		group0 {
+			pins = <EUSART3_RX_PD9>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART3_TX_PD8>, <EUSART3_SCLK_PD7>, <EUSART3_CS_PD10>;
+			input-enable;
+		};
+	};
+};
+
+&eusart2 {
+	compatible = "silabs,eusart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(10)>;
+	cs-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+	dmas = <&dma0 DMA_REQSEL_EUSART2TXFL>,
+	       <&dma0 DMA_REQSEL_EUSART2RXFL>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&eusart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
+	};
+};
+
+dut_spis: &eusart3 {
+	compatible = "silabs,eusart-spi";
+	/delete-property/ cs-gpios;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dmas = <&dma0 DMA_REQSEL_EUSART3TXFL>,
+	       <&dma0 DMA_REQSEL_EUSART3RXFL>;
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&eusart3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};

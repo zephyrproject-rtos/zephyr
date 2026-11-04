@@ -47,6 +47,11 @@ tests:
       - pic32cz_ca80_cult
       - pic32cm_sg00_cpro
       - pic32cm_jh01_cpro
+      - sixg301_rb4407a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg26_rb4118a
+      - xg28_rb4401c
 
   drivers.spi.spi_mode1:
     extra_configs:
@@ -59,6 +64,11 @@ tests:
       - pic32cz_ca80_cult
       - pic32cm_sg00_cpro
       - pic32cm_jh01_cpro
+      - sixg301_rb4407a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg26_rb4118a
+      - xg28_rb4401c
 
   drivers.spi.spi_mode2:
     extra_configs:
@@ -71,6 +81,11 @@ tests:
       - pic32cz_ca80_cult
       - pic32cm_sg00_cpro
       - pic32cm_jh01_cpro
+      - sixg301_rb4407a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg26_rb4118a
+      - xg28_rb4401c
 
   drivers.spi.spi_mode3:
     extra_configs:
@@ -83,6 +98,11 @@ tests:
       - pic32cz_ca80_cult
       - pic32cm_sg00_cpro
       - pic32cm_jh01_cpro
+      - sixg301_rb4407a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg26_rb4118a
+      - xg28_rb4401c
 
   drivers.spi.spi_mode0.incorrect_sck_state:
     extra_configs:
@@ -155,6 +175,11 @@ tests:
       - sam_e54_xpro
       - pic32cz_ca80_cult
       - pic32cm_jh01_cpro
+      - sixg301_rb4407a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg26_rb4118a
+      - xg28_rb4401c
 
   drivers.spi.spi_8MHz:
     extra_configs:
@@ -165,6 +190,11 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cz_ca80_cult
+      - sixg301_rb4407a
+      - xg23_rb4210a
+      - xg24_rb4187c
+      - xg26_rb4118a
+      - xg28_rb4401c
 
   drivers.spi.spi_half_duplex:
     extra_args: EXTRA_DTC_OVERLAY_FILE="half-duplex.overlay"
