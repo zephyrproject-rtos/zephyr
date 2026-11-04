@@ -408,8 +408,8 @@ BUILD_ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_CYC_PER_TICK,
  * TIMER_CORE_MAX_UNANNOUNCED_CYCLES) is in flight. Programming a reload restarts the
  * counter, so a stream of set_timeout() calls arriving faster than the floor
  * would rewrite the reload before it can expire and postpone the announce
- * indefinitely; while this is set, timer_core_arm() leaves the hardware alone
- * so the pending fire gets through. Cleared by the announce.
+ * indefinitely; while this is set, timer_core_arm() does nothing until the
+ * announce clears it.
  */
 static bool timer_core_catchup;
 
@@ -526,6 +526,10 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
 static void timer_core_arm(uint32_t ticks)
 {
 #if defined(TIMER_CORE_BACKEND_RELOAD)
+	if (timer_core_catchup) {
+		return;
+	}
+
 	uint64_t deadline_tick = timer_core_last_tick + timer_core_last_elapsed + ticks;
 
 	if (deadline_tick == timer_core_armed_deadline) {
@@ -580,17 +584,13 @@ static void timer_core_arm(uint32_t ticks)
 	if (rel < TIMER_CORE_ALARM_MIN_CYCLES) {
 		/*
 		 * The announce is due (or overdue): fire as soon as the floor
-		 * allows. If a floored reload is already in flight, leave it
-		 * to expire rather than restart the counter, or a set_timeout()
-		 * stream arriving faster than the floor (e.g. timeslice resets
-		 * from a syscall-heavy thread) would push the fire point out
-		 * forever and freeze announced time for the storm's duration.
-		 * No incoming deadline can need to fire sooner than the floor
-		 * anyway.
+		 * allows, and hold off further arms until it gets through, or
+		 * a set_timeout() stream arriving faster than the floor would
+		 * keep restarting the counter and freeze announced time for
+		 * the storm's duration. No incoming deadline can fire sooner
+		 * than the floor, and a later one will be armed when the
+		 * kernel reprograms at the end of the announce.
 		 */
-		if (timer_core_catchup) {
-			return;
-		}
 		timer_core_catchup = true;
 		rel = TIMER_CORE_ALARM_MIN_CYCLES;
 	}
