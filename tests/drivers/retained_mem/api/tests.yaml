@@ -15,6 +15,9 @@ tests:
       - qemu_cortex_m3
       - frdm_mcxc242
       - frdm_mcxc444
+      - frdm_mcxw70
+      - frdm_mcxw71
+      - frdm_mcxw72
       - gd32f450i_eval
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp

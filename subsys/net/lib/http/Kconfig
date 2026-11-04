@@ -258,6 +258,19 @@ config HTTP_SERVER_WEBSOCKET
 	  handler that is called after upgrading to handle the Websocket network
 	  traffic.
 
+config HTTP_SERVER_TCP_NODELAY
+	bool "Disable Nagle's algorithm on accepted connections"
+	default y
+	help
+	  Set TCP_NODELAY on every accepted TCP connection. The server sends
+	  a response in more than one piece whenever the socket cannot gather
+	  them, which is the case for every TLS socket, where each piece
+	  becomes its own record. With Nagle's algorithm enabled the second
+	  piece waits until the client acknowledges the first, and a client
+	  that delays its acknowledgements holds every response back by that
+	  delay, typically 40 ms or more. Disable this option to keep Nagle's
+	  algorithm and send fewer, larger segments at the cost of latency.
+
 config HTTP_SERVER_RESOURCE_WILDCARD
 	bool "Allow wildcard matching of resources"
 	# The POSIX_C_LIB_EXT will get fnmatch() support

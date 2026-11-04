@@ -97,6 +97,9 @@ struct net_dhcpv6_params {
  *  Once the negotiation is complete, IPv6 address/prefix details will be added
  *  to the interface.
  *
+ *  If the client was started automatically by a Router Advertisement
+ *  (@kconfig{CONFIG_NET_DHCPV6_START_ON_RA}), it is restarted with @p params.
+ *
  *  @param iface A valid pointer to a network interface
  *  @param params DHCPv6 client configuration parameters.
  */
@@ -108,6 +111,9 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params);
  *  @details Stop DHCPv6 client on a given interface. DHCPv6 client
  *  will remove all configuration obtained from a DHCP server from the
  *  interface and stop any further negotiation with the server.
+ *  The client is not started automatically by Router Advertisements
+ *  (@kconfig{CONFIG_NET_DHCPV6_START_ON_RA}) on the interface until
+ *  DHCPv6 is started again with net_dhcpv6_start().
  *
  *  @param iface A valid pointer to a network interface
  */

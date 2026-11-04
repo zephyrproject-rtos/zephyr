@@ -215,6 +215,7 @@ struct mcux_acmp_config {
 	void (*irq_init)(void);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_cfg;
 	const struct comp_mcux_acmp_mode_config mode_config;
 	const struct comp_mcux_acmp_input_config input_config;
 	const struct comp_mcux_acmp_filter_config filter_config;
@@ -499,9 +500,19 @@ int comp_mcux_acmp_set_dm_config(const struct device *dev,
 	const struct mcux_acmp_config *dev_config = dev->config;
 	acmp_discrete_mode_config_t acmp_dm_config;
 
+#if defined(FSL_FEATURE_ACMP_HAS_CONTINUOUS_MODE) && (FSL_FEATURE_ACMP_HAS_CONTINUOUS_MODE == 0U)
+	/*
+	 * Always in discrete mode; the resistor divider is enabled per channel by
+	 * not bypassing it.
+	 */
+	acmp_dm_config.bypassPositiveChannelResistorDivider = !config->enable_resistor_divider;
+	acmp_dm_config.bypassNegativeChannelResistorDivider = !config->enable_resistor_divider;
+	acmp_dm_config.enableHysteresisDivider = false;
+#else
 	acmp_dm_config.enablePositiveChannelDiscreteMode = config->enable_positive_channel;
 	acmp_dm_config.enableNegativeChannelDiscreteMode = config->enable_negative_channel;
 	acmp_dm_config.enableResistorDivider = config->enable_resistor_divider;
+#endif
 	acmp_dm_config.clockSource = (acmp_discrete_clock_source_t)config->clock_source;
 	acmp_dm_config.sampleTime = (acmp_discrete_sample_time_t)config->sample_time;
 	acmp_dm_config.phase1Time = (acmp_discrete_phase_time_t)config->phase1_time;
@@ -583,6 +594,14 @@ static int mcux_acmp_init(const struct device *dev)
 			return -ENODEV;
 		}
 
+		if (config->clock_cfg != NULL) {
+			ret = clock_control_configure(config->clock_dev, config->clock_cfg, NULL);
+			if (ret != 0) {
+				LOG_ERR("failed to set %s", "clock source");
+				return ret;
+			}
+		}
+
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret != 0) {
 			LOG_ERR("failed to set %s", "clock");
@@ -648,6 +667,9 @@ static int mcux_acmp_init(const struct device *dev)
 		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),		\
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),		\
 			((clock_control_subsys_t)0U)),						\
+		.clock_cfg = (clock_control_subsys_t)COND_CODE_1(				\
+			DT_INST_CLOCKS_HAS_NAME(inst, source),					\
+			(DT_INST_CLOCKS_CELL_BY_NAME(inst, source, name)), (0U)),		\
 		.mode_config = MCUX_ACMP_DT_INST_MODE_CONFIG_INIT(inst),			\
 		.input_config = MCUX_ACMP_DT_INST_INPUT_CONFIG_INIT(inst),			\
 		.filter_config = MCUX_ACMP_DT_INST_FILTER_CONFIG_INIT(inst),			\

@@ -73,7 +73,10 @@
 #define XILINX_ADMA_DESC_CTRL_SIZE_256 0x2
 #define XILINX_ADMA_DESC_CTRL_COHRNT   0x1
 
-#define XILINX_ADMA_START 0x1
+#define XILINX_ADMA_START          0x1
+#define XILINX_ADMA_STS_STATE_MASK GENMASK(1, 0)
+#define XILINX_ADMA_STS_STATE_BUSY 0x2
+#define XILINX_ADMA_STS_STATE_ERR  0x3
 
 /* Interrupt Mask specific definitions */
 #define XILINX_ADMA_INT_ERR                                                                        \
@@ -177,6 +180,9 @@ struct __attribute__((__packed__)) dma_xilinx_adma_registers {
 
 LOG_MODULE_REGISTER(dma_xilinx_adma, CONFIG_DMA_LOG_LEVEL);
 
+BUILD_ASSERT(XILINX_ADMA_DIR_WRITE_ONLY <= DMA_CHANNEL_DIRECTION_MAX,
+	     "XILINX_ADMA_DIR_WRITE_ONLY does not fit in dma_config.channel_direction");
+
 /* global configuration per DMA device */
 struct dma_xilinx_adma_config {
 	DEVICE_MMIO_ROM;
@@ -247,6 +253,7 @@ static void dma_xilinx_adma_isr(const struct device *dev)
 	int callback_status = DMA_STATUS_COMPLETE;
 	k_spinlock_key_t key;
 	uint32_t status;
+	uint32_t chan_state;
 
 	key = k_spin_lock(&data->lock);
 
@@ -264,8 +271,10 @@ static void dma_xilinx_adma_isr(const struct device *dev)
 	(void)adma_read_reg(&reg->chan_irq_src_acct);
 	(void)adma_read_reg(&reg->chan_irq_dst_acct);
 
-	if (status & XILINX_ADMA_INT_ERR) {
-		LOG_ERR("DMA AXI error occurred:0x%x", status);
+	/* A DONE interrupt can also accompany a transfer that ended with errors. */
+	chan_state = adma_read_reg(&reg->chan_sts) & XILINX_ADMA_STS_STATE_MASK;
+	if ((status & XILINX_ADMA_INT_ERR) || chan_state == XILINX_ADMA_STS_STATE_ERR) {
+		LOG_ERR("DMA error occurred: IRQ=0x%x STATE=0x%x", status, chan_state);
 		callback_status = -EIO;
 	} else if ((status & XILINX_ADMA_INT_OVRFL) && !(status & XILINX_ADMA_INT_DONE)) {
 		LOG_ERR("DMA overflow error occurred: 0x%x", status);
@@ -409,7 +418,7 @@ static int dma_xilinx_adma_get_status(const struct device *dev, uint32_t channel
 	key = k_spin_lock(&data->lock);
 
 	status = adma_read_reg(&reg->chan_sts);
-	stat->busy = !!(status & XILINX_ADMA_START);
+	stat->busy = (status & XILINX_ADMA_STS_STATE_MASK) == XILINX_ADMA_STS_STATE_BUSY;
 	stat->dir = MEMORY_TO_MEMORY;
 
 	k_spin_unlock(&data->lock, key);
@@ -436,6 +445,13 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 
 	if (!dma_cfg->head_block) {
 		return -EINVAL;
+	}
+
+	for (struct dma_block_config *block = current_block; block; block = block->next_block) {
+		if (block->block_size == 0U) {
+			LOG_ERR("DMA block size must be nonzero");
+			return -EINVAL;
+		}
 	}
 
 	if (dma_cfg->dest_data_size != dma_cfg->source_data_size) {
@@ -523,7 +539,7 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		}
 
 		val = adma_read_reg(&reg->chan_cntrl0);
-		val |= XILINX_ADMA_POINT_TYPE_SG;
+		val = (val & ~XILINX_ADMA_MODE_MASK) | XILINX_ADMA_POINT_TYPE_SG;
 		adma_write_reg(val, &reg->chan_cntrl0);
 
 		LOG_DBG("Configured SG mode with %d descriptors", desc_count);
@@ -534,9 +550,9 @@ static int dma_xilinx_adma_configure(const struct device *dev, uint32_t channel,
 		data->chan.block = current_block->block_size;
 
 		val = adma_read_reg(&reg->chan_cntrl0);
-		val &= ~XILINX_ADMA_POINT_TYPE_SG;
+		val &= ~(XILINX_ADMA_POINT_TYPE_SG | XILINX_ADMA_MODE_MASK);
 		if (dma_cfg->channel_direction == XILINX_ADMA_DIR_WRITE_ONLY) {
-			val = (val & ~XILINX_ADMA_MODE_MASK) | XILINX_ADMA_WRONLY_MASK;
+			val |= XILINX_ADMA_WRONLY_MASK;
 		}
 		adma_write_reg(val, &reg->chan_cntrl0);
 	}

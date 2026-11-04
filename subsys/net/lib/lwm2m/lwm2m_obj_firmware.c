@@ -89,6 +89,7 @@ static int64_t push_deadline[MAX_INSTANCE_COUNT];
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
+extern int lwm2m_firmware_cancel_transfer(void);
 #endif
 
 static void push_timeout_service(struct k_work *work);
@@ -154,6 +155,18 @@ static void download_cancel(uint16_t obj_inst_id, uint8_t result)
 {
 	lwm2m_firmware_set_update_result_inst(obj_inst_id, result);
 	cancel_notify(obj_inst_id);
+}
+
+/* Stop a pull before the state machine resets, so no late block reaches the application */
+static void pull_cancel(void)
+{
+#ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	int ret = lwm2m_firmware_cancel_transfer();
+
+	if (ret < 0) {
+		LOG_DBG("Firmware pull not cancelled: %d", ret);
+	}
+#endif
 }
 
 static void push_timeout_service(struct k_work *work)
@@ -356,6 +369,7 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 {
 	uint8_t state;
 	bool pull;
+	bool reset;
 	int ret = 0;
 	lwm2m_engine_set_data_cb_t write_callback;
 
@@ -363,13 +377,18 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
 	pull = state == STATE_DOWNLOADING && !push_active[obj_inst_id];
 	lwm2m_registry_unlock();
+	reset = state != STATE_UPDATING && is_reset_write(data, data_len, offset);
 
-	if (pull) {
+	if (pull && !reset) {
 		LOG_DBG("Package is not writable while a pull is in progress");
 		return -EPERM;
 	}
 
-	if (state != STATE_UPDATING && is_reset_write(data, data_len, offset)) {
+	if (reset) {
+		if (pull) {
+			pull_cancel();
+		}
+
 		if (state == STATE_IDLE) {
 			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
 		} else {
@@ -485,10 +504,14 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	empty_uri = data_len == 0 || strnlen(data, data_len) == 0;
 
 	if (empty_uri) {
-		/* Nothing can stop a pull or an update yet; tell the server rather than pretend */
-		if (pull || state == STATE_UPDATING) {
+		/* Nothing can stop an update; tell the server rather than pretend */
+		if (state == STATE_UPDATING) {
 			LOG_DBG("Package URI cannot be reset: state = %d", state);
 			return -EPERM;
+		}
+
+		if (pull) {
+			pull_cancel();
 		}
 
 		if (state == STATE_IDLE) {

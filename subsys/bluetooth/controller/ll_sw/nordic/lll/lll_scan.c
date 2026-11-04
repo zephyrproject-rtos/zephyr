@@ -32,6 +32,7 @@
 #include "lll_clock.h"
 #include "lll_df_types.h"
 #include "lll_scan.h"
+#include "lll_scan_aux.h"
 #include "lll_sync.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
@@ -190,49 +191,46 @@ bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 			     const struct pdu_adv *pdu, uint8_t rl_idx,
 			     bool *const dir_report)
 {
-	const uint8_t *adva;
-	const uint8_t *tgta;
-	uint8_t is_directed;
-	uint8_t tx_addr;
-	uint8_t rx_addr;
+	const struct pdu_adv_com_ext_adv *com_hdr = &pdu->adv_ext_ind;
+	const struct pdu_adv_ext_hdr *hdr = &com_hdr->ext_hdr;
+	bool is_directed = false;
+	uint8_t adva_size = 0U;
+	bool has_aux = false;
 
-	if (pri && !pdu->adv_ext_ind.ext_hdr.adv_addr) {
-		return true;
+	/* The ULL and HCI read the fields that the flags announce */
+	if (!ull_scan_aux_lll_ext_hdr_is_complete(pdu)) {
+		return false;
 	}
 
-	/* The AUX_ADV_IND of connectable and scannable advertising has the
-	 * AdvA (Core Spec v6.3, Vol 6, Part B, Tables 2.4 and 2.5)
+	/* Without an extended header, there are no flags either */
+	if (com_hdr->ext_hdr_len != 0U) {
+		adva_size = (hdr->adv_addr != 0U) ? ADVA_SIZE : 0U;
+		is_directed = (hdr->tgt_addr != 0U);
+		has_aux = (hdr->aux_ptr != 0U);
+	}
+
+	if (adva_size == 0U) {
+		/* Connectable and scannable advertising has the AdvA in the
+		 * AUX_ADV_IND that the AuxPtr of its ADV_EXT_IND points to (Core
+		 * Spec v6.3, Vol 6, Part B, Tables 2.4 and 2.5), and the
+		 * connection and scan requests take it from there
+		 */
+		if ((pri && is_init && !has_aux) ||
+		    (!pri && (com_hdr->adv_mode != 0U))) {
+			return false;
+		}
+	} else if (is_init && ((lll->filter_policy & SCAN_FP_FILTER) == 0U) &&
+		   !lll_scan_adva_check(lll, pdu->tx_addr,
+					&hdr->data[ADVA_OFFSET], rl_idx)) {
+		return false;
+	}
+
+	/* TargetA follows the AdvA, if any. An ADV_EXT_IND may have it while
+	 * the AdvA is in its AUX_ADV_IND, which then has no TargetA.
 	 */
-	if (!pri && (pdu->adv_ext_ind.adv_mode != 0U) &&
-	    ((pdu->adv_ext_ind.ext_hdr_len == 0U) ||
-	     !pdu->adv_ext_ind.ext_hdr.adv_addr)) {
-		return false;
-	}
-
-	if (pdu->len <
-	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
-	    ADVA_SIZE) {
-		return false;
-	}
-
-	is_directed = pdu->adv_ext_ind.ext_hdr.tgt_addr;
-	if (is_directed && (pdu->len < PDU_AC_EXT_HEADER_SIZE_MIN +
-				       sizeof(struct pdu_adv_ext_hdr) +
-				       ADVA_SIZE + TARGETA_SIZE)) {
-		return false;
-	}
-
-	tx_addr = pdu->tx_addr;
-	rx_addr = pdu->rx_addr;
-	adva = &pdu->adv_ext_ind.ext_hdr.data[ADVA_OFFSET];
-	tgta = &pdu->adv_ext_ind.ext_hdr.data[TGTA_OFFSET];
-	return ((!is_init ||
-		 ((lll->filter_policy & SCAN_FP_FILTER) != 0U) ||
-		 lll_scan_adva_check(lll, tx_addr, adva, rl_idx)) &&
-		((!is_directed) ||
-		 (is_directed &&
-		  isr_scan_tgta_check(lll, is_init, rx_addr, tgta, rl_idx,
-				      dir_report))));
+	return !is_directed ||
+	       isr_scan_tgta_check(lll, is_init, pdu->rx_addr,
+				   &hdr->data[adva_size], rl_idx, dir_report);
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -252,7 +250,10 @@ void lll_scan_prepare_connect_req(struct lll_scan *lll, struct pdu_adv *pdu_tx,
 	/* Note: this code is also valid for AUX_CONNECT_REQ */
 	pdu_tx->type = PDU_ADV_TYPE_CONNECT_IND;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+	/* ChSel is RFU in AUX_CONNECT_REQ, as Channel Selection Algorithm #2
+	 * is used anyway.
+	 */
+	if ((phy == PHY_LEGACY) && IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu_tx->chan_sel = 1;
 	} else {
 		pdu_tx->chan_sel = 0;

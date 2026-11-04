@@ -815,7 +815,6 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 		}
 		remaining -= len;
 	}
-	ret = http_server_sendall(client, "\r\n\r\n", 4);
 
 close:
 	/* close file */

@@ -224,6 +224,8 @@ static inline uint8_t lsm6dsv16x_bus_reg(rtio_bus_type bus, uint8_t addr)
 
 int lsm6dsv16x_accel_set_odr_raw(const struct device *dev, uint8_t odr);
 int lsm6dsv16x_gyro_set_odr_raw(const struct device *dev, uint8_t odr);
+int lsm6dsv16x_sample_fetch_all_raw(const struct device *dev, int16_t acc[3], int16_t gyro[3],
+				    int16_t *temp);
 
 #if defined(CONFIG_LSM6DSV16X_SENSORHUB)
 int lsm6dsv16x_shub_init(const struct device *dev);

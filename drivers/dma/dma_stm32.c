@@ -901,6 +901,8 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	/* When reloading the dma, the stream is busy again before enabling */
 	stream->busy = true;
 
+	/* The flags of the last transfer must be cleared before the stream is enabled */
+	dma_stm32_clear_stream_irq(dev, id);
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;

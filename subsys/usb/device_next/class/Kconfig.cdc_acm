@@ -28,6 +28,15 @@ config USBD_CDC_ACM_STACK_SIZE
 	help
 	  USB CDC ACM workqueue stack size.
 
+config USBD_CDC_ACM_WORKQUEUE_PRIORITY
+	int "USB CDC ACM workqueue priority"
+	depends on USBD_CDC_ACM_WORKQUEUE
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  USB CDC ACM workqueue thread priority. A preemptible priority below
+	  that of the threads writing to the port lets their writes accumulate
+	  into fewer, larger USB transfers.
+
 config USBD_CDC_ACM_TX_DELAY_MS
 	int
 	default 100

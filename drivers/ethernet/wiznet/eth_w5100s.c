@@ -166,15 +166,6 @@ static void w5100s_memory_configure(const struct device *dev)
 }
 
 static const struct wiznet_chip_ops w5100s_ops = {
-	.api = {
-		.iface_api.init = wiznet_iface_init,
-		.get_capabilities = wiznet_get_capabilities,
-		.set_config = wiznet_set_config,
-		.start = wiznet_hw_start,
-		.stop = wiznet_hw_stop,
-		.get_phy = wiznet_get_phy,
-		.send = wiznet_tx,
-	},
 	.spi_read = w5100s_spi_read,
 	.spi_write = w5100s_spi_write,
 	.soft_reset = w5100s_soft_reset,

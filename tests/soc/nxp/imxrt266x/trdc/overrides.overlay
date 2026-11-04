@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&trdc_main_edma5_ch0_1 {
+	domain-id = <1>;
+};
+
+&trdc_main_edma5_ch2_3 {
+	status = "disabled";
+};
+
+&trdc_main_medma3_ch0_1 {
+	domain-id = <2>;
+};
+
+&trdc_cmpt_npu {
+	domain-id = <1>;
+};
+
+&trdc_wake_wedma3_ch0_1 {
+	domain-id = <3>;
+};
+
+&trdc_audio_aedma3_ch0_1 {
+	domain-id = <2>;
+};
+
+&trdc_comm_sdhc1 {
+	domain-id = <3>;
+};
+
+&trdc_comm_enet0 {
+	status = "disabled";
+};
+
+&trdc_media_jpeg {
+	domain-id = <3>;
+};

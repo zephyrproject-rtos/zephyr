@@ -275,7 +275,7 @@ static uint32_t get_sysclk_frequency(void)
 				    STM32_PLL_M_DIVISOR,
 				    STM32_PLL_N_MULTIPLIER,
 				    STM32_PLL_FRACN_VALUE,
-				    STM32_PLL_R_DIVISOR);
+				    STM32_PLL_P_DIVISOR);
 #elif defined(STM32_SYSCLK_SRC_CSI)
 	return STM32_CSI_FREQ;
 #elif defined(STM32_SYSCLK_SRC_HSE)
@@ -415,15 +415,17 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PLL3_Q) && IS_ENABLED(STM32_PLL3_Q_ENABLED)) ||
 	    (src_clk == STM32_SRC_TIMPCLK1) ||
 	    (src_clk == STM32_SRC_TIMPCLK2) ||
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	    (src_clk == STM32_SRC_HCLK1) ||
-	    (src_clk == STM32_SRC_HCLK2) ||
-	    (src_clk == STM32_SRC_HCLK3) ||
-	    (src_clk == STM32_SRC_HCLK4) ||
-	    (src_clk == STM32_SRC_HCLK5) ||
 	    (src_clk == STM32_SRC_PCLK1) ||
 	    (src_clk == STM32_SRC_PCLK2) ||
 	    (src_clk == STM32_SRC_PCLK4) ||
+	    (src_clk == STM32_SRC_HCLK3) ||
+#if !defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	    (src_clk == STM32_SRC_PCLK3) ||
+#else
+	    (src_clk == STM32_SRC_HCLK1) ||
+	    (src_clk == STM32_SRC_HCLK2) ||
+	    (src_clk == STM32_SRC_HCLK4) ||
+	    (src_clk == STM32_SRC_HCLK5) ||
 	    (src_clk == STM32_SRC_PCLK5) ||
 	    ((src_clk == STM32_SRC_PLL2_S) && IS_ENABLED(STM32_PLL2_S_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL2_T) && IS_ENABLED(STM32_PLL2_T_ENABLED)) ||
@@ -553,11 +555,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 	case STM32_CLOCK_BUS_AHB2:
 	case STM32_CLOCK_BUS_AHB3:
 	case STM32_CLOCK_BUS_AHB4:
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* HCLKn is a possible source clock for some peripherals */
+	case STM32_SRC_HCLK3:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	case STM32_SRC_HCLK1:
 	case STM32_SRC_HCLK2:
-	case STM32_SRC_HCLK3:
 	case STM32_SRC_HCLK4:
 	case STM32_SRC_HCLK5:
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
@@ -565,29 +567,25 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		break;
 	case STM32_CLOCK_BUS_APB1:
 	case STM32_CLOCK_BUS_APB1_2:
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* PCLK1 is a possible source clock for some peripherals */
 	case STM32_SRC_PCLK1:
-#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		*rate = apb1_clock;
 		break;
 	case STM32_CLOCK_BUS_APB2:
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	/* PCLK2 is a possible source clock for some peripherals */
 	case STM32_SRC_PCLK2:
-#endif
 		*rate = apb2_clock;
 		break;
 #if !defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	case STM32_CLOCK_BUS_APB3:
+	/* PCLK3 is a possible source clock for some peripherals */
+	case STM32_SRC_PCLK3:
 		*rate = apb3_clock;
 		break;
 #endif /* !CONFIG_SOC_SERIES_STM32H7RSX */
 	case STM32_CLOCK_BUS_APB4:
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	/* PCLK2 is a possible source clock for some peripherals */
+	/* PCLK4 is a possible source clock for some peripherals */
 	case STM32_SRC_PCLK4:
-#endif
 		*rate = apb4_clock;
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)

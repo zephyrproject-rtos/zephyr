@@ -743,6 +743,18 @@ int dns_resolve_close(struct dns_resolve_context *ctx);
 bool dns_resolve_is_active(struct dns_resolve_context *ctx);
 
 /**
+ * @brief Get the address families of the unicast DNS servers of a context.
+ *
+ * @param ctx DNS context that dns_resolve_init() has been called on, or NULL.
+ * @param if_index Interface index the servers are bound to, or 0 for servers
+ *                 not bound to an interface.
+ *
+ * @return Bitmask of BIT(NET_AF_INET) and BIT(NET_AF_INET6), 0 if the context
+ *         is not active or ctx is NULL.
+ */
+uint32_t dns_resolve_get_server_families(struct dns_resolve_context *ctx, int if_index);
+
+/**
  * @brief Reconfigure DNS resolving context.
  *
  * @details Reconfigures DNS context with new server list.

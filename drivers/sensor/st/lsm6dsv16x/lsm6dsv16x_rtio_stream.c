@@ -131,9 +131,6 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	 */
 	lsm6dsv16x_fifo_watermark_set(ctx, config->fifo_wtm);
 
-	/* Turn on/off FIFO */
-	lsm6dsv16x_fifo_mode_set(ctx, fifo_mode);
-
 	/* Set FIFO batch rates */
 	lsm6dsv16x_fifo_xl_batch_set(ctx, xl_batch);
 	lsm6dsv16x->accel_batch_odr = xl_batch;
@@ -208,6 +205,9 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	/* Enable I2C Master. */
 	lsm6dsv16x_sh_master_set(ctx, PROPERTY_ENABLE);
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
+
+	/* Turn the FIFO on last */
+	lsm6dsv16x_fifo_mode_set(ctx, fifo_mode);
 
 	/* Set pin interrupt (fifo_th could be on or off), preserving already routed sources */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {

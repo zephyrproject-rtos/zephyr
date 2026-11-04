@@ -86,3 +86,8 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+/* This configuration only covers I2S2 */
+&adc1 {
+	status = "disabled";
+};

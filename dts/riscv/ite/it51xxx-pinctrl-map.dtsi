@@ -103,7 +103,7 @@
 	};
 
 	/omit-if-no-ref/ i2c4_clk_gpe0_default: i2c4_clk_gpe0_default {
-		pinmuxs = <&pinctrle 0 IT8XXX2_ALT_FUNC_4>;
+		pinmuxs = <&pinctrle 0 IT8XXX2_ALT_FUNC_3>;
 	};
 
 	/omit-if-no-ref/ i2c4_data_gpe7_default: i2c4_data_gpe7_default {

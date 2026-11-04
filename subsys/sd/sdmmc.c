@@ -591,14 +591,6 @@ static int sdmmc_init_hs(struct sd_card *card)
 		LOG_ERR("Failed to switch card to HS mode");
 		return ret;
 	}
-	if (card->host_props.bus_4_bit_support && (card->flags & SD_4BITS_WIDTH)) {
-		/* Raise bus width to 4 bits */
-		ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
-		if (ret) {
-			LOG_ERR("Failed to change card bus width to 4 bits");
-			return ret;
-		}
-	}
 	return 0;
 }
 
@@ -773,6 +765,16 @@ int sdmmc_card_init(struct sd_card *card)
 		ret = sdmmc_init_hs(card);
 		if (ret) {
 			LOG_ERR("HS card init failed");
+			return ret;
+		}
+		/* Bus width is independent of high-speed timing support. */
+		if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) && !card->host_props.is_spi &&
+		    card->host_props.bus_4_bit_support && (card->flags & SD_4BITS_WIDTH) != 0U) {
+			ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
+			if (ret != 0) {
+				LOG_ERR("Failed to change card bus width to 4 bits");
+				return ret;
+			}
 		}
 	}
 	return ret;

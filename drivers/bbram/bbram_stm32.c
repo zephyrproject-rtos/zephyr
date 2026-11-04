@@ -48,8 +48,8 @@ static int bbram_stm32_read(const struct device *dev, size_t offset, size_t size
 		return -EFAULT;
 	}
 
-	/* On H7RSx: PWR_CR1.DBP must also be set for read access to backup registers */
-	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+	/* RTC backup registers are covered by the RTC read protection */
+	if (IS_ENABLED(CONFIG_HAS_STM32_RTC_READ_GATED_BY_BKP_DOMAIN)) {
 		stm32_backup_domain_enable_access();
 	}
 
@@ -60,7 +60,7 @@ static int bbram_stm32_read(const struct device *dev, size_t offset, size_t size
 		bytecpy(data + read, (uint8_t *)&reg + begin, to_copy);
 	}
 
-	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+	if (IS_ENABLED(CONFIG_HAS_STM32_RTC_READ_GATED_BY_BKP_DOMAIN)) {
 		stm32_backup_domain_disable_access();
 	}
 

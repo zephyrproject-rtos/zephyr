@@ -52,6 +52,8 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	struct rtio_iodev_sqe *iodev_sqe;
 	int error;
+	const uint8_t *buf;
+	uint32_t buf_len;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
@@ -75,15 +77,14 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 		}
 		break;
 	case RTIO_OP_TINY_TX:
-		error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						   sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
-						   dt_spec->addr);
-		break;
 	case RTIO_OP_TX:
+		buf = sqe->op == RTIO_OP_TX ? sqe->tx.buf : sqe->tiny_tx.buf;
+		buf_len = sqe->op == RTIO_OP_TX ? sqe->tx.buf_len : sqe->tiny_tx.buf_len;
+
 		/* If buffer is not accessible by DMA, copy it into the internal driver buffer */
-		if (!nrf_dma_accessible_check(&config->common.twim, sqe->tx.buf)) {
+		if (!nrf_dma_accessible_check(&config->common.twim, buf)) {
 			/* Validate buffer will fit */
-			if (sqe->tx.buf_len > config->common.msg_buf_size) {
+			if (buf_len > config->common.msg_buf_size) {
 				LOG_ERR("Need to use the internal driver "
 					"buffer but its size is insufficient "
 					"(%u > %u). "
@@ -91,17 +92,16 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 					"zephyr,flash-buf-max-size property "
 					"(the one with greater value) in the "
 					"\"%s\"' node.",
-					sqe->tx.buf_len, config->common.msg_buf_size, dev->name);
+					buf_len, config->common.msg_buf_size, dev->name);
 				error = -ENOSPC;
 				break;
 			}
 
-			memcpy(config->common.msg_buf, sqe->tx.buf, sqe->tx.buf_len);
-			sqe->tx.buf = config->common.msg_buf;
+			memcpy(config->common.msg_buf, buf, buf_len);
+			buf = config->common.msg_buf;
 		}
 		error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						   (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
-						   dt_spec->addr);
+						   (uint8_t *)buf, buf_len, dt_spec->addr);
 		break;
 	case RTIO_OP_I2C_CONFIGURE:
 		*status = i2c_nrfx_twim_configure(dev, sqe->i2c_config);

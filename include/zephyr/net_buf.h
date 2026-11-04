@@ -1074,12 +1074,13 @@ struct net_buf {
 	 * ref/unref; `ref`, `flags`, `pool_id` and `user_data_size` are
 	 * byte-level views into the same storage.
 	 *
-	 * atomic_inc/dec on ref_word add/subtract 1 to/from the whole
-	 * word, but because the byte-struct layout below places `ref`
-	 * at the least-significant byte of `ref_word` regardless of
-	 * endianness, and because the ref count never overflows past
-	 * 254 (already implicit in its uint8_t domain), only the ref
-	 * byte changes -- the other three bytes are untouched.
+	 * Incrementing and decrementing ref_word adds or subtracts 1
+	 * to/from the whole word, but because the byte-struct layout
+	 * below places `ref` at the least-significant byte of `ref_word`
+	 * regardless of endianness, and because net_buf_ref() leaves a
+	 * count of 255 alone and net_buf_unref() a count of 255 or 0,
+	 * only the ref byte changes -- the other three bytes are
+	 * untouched.
 	 *
 	 * On 32-bit architectures atomic_t is 4 bytes and the byte
 	 * struct fills the slot exactly. On 64-bit, atomic_t is 8 bytes;
@@ -1725,6 +1726,8 @@ void net_buf_fifo_purge(struct k_fifo *fifo);
  * @brief Decrements the reference count of a buffer.
  *
  * The buffer is put back into the pool if the reference count reaches zero.
+ * A saturated reference count (see net_buf_ref()) is left as it is, and the
+ * buffer is not put back.
  *
  * @param buf A valid pointer on a buffer
  */
@@ -1738,6 +1741,9 @@ void net_buf_unref(struct net_buf *buf);
 
 /**
  * @brief Increment the reference count of a buffer.
+ *
+ * The reference count tracks up to 254 references. At 255 it saturates: it
+ * no longer changes, and the buffer is never put back into its pool.
  *
  * @param buf A valid pointer on a buffer
  *

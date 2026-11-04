@@ -1536,4 +1536,45 @@ ZTEST(net_pkt_test_suite, test_net_pkt_frag_double_free)
 		      user_data_size, frag->user_data_size);
 }
 
+ZTEST(net_pkt_test_suite, test_net_pkt_frag_ref_saturated)
+{
+	struct net_buf_pool *tx_data;
+	struct net_buf *frag;
+	atomic_val_t avail;
+
+	if (IS_ENABLED(CONFIG_ASSERT)) {
+		/* An assertion catches the saturation before it returns */
+		ztest_test_skip();
+	}
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	frag = net_pkt_get_reserve_tx_data(16, K_NO_WAIT);
+	zassert_not_null(frag, "Failed to get fragment");
+
+	/* One reference more than the count can hold */
+	for (size_t i = 0; i < UINT8_MAX; i++) {
+		zassert_equal_ptr(net_pkt_frag_ref(frag), frag);
+	}
+
+	avail = atomic_get(&tx_data->avail_count);
+
+	/* The count no longer tells when the last reference is dropped, so the
+	 * fragment is never freed.
+	 */
+	for (size_t i = 0; i <= UINT8_MAX; i++) {
+		net_pkt_frag_unref(frag);
+	}
+
+	zassert_equal(atomic_get(&tx_data->avail_count), avail,
+		      "Fragment freed with a saturated reference count");
+	zassert_equal(frag->ref, UINT8_MAX, "Reference count changed to %u", frag->ref);
+	zexpect_equal(frag->flags, 0U, "Flags changed to 0x%02x", frag->flags);
+
+	/* All references have been dropped: give the fragment back to its pool */
+	frag->ref = 1U;
+	net_pkt_frag_unref(frag);
+	zassert_equal(atomic_get(&tx_data->avail_count), avail + 1, "Fragment not freed");
+}
+
 ZTEST_SUITE(net_pkt_test_suite, NULL, NULL, NULL, NULL, NULL);

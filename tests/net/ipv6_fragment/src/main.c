@@ -2219,6 +2219,11 @@ static uint8_t ipv6_reass_frag2[] = {
 
 static uint16_t test_recv_payload_len = 1300U;
 
+/* Length of the Hop-by-Hop Options header in front of the fragment header of
+ * the first fragment, 0 when there is none.
+ */
+static uint16_t test_recv_hbh_len;
+
 static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 					       struct net_pkt *pkt,
 					       struct net_icmp_ip_hdr *ip_hdr,
@@ -2227,8 +2232,12 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 {
 	const struct net_ipv6_hdr *hdr = NET_IPV6_HDR(pkt);
 	uint8_t verify_buf[NET_IPV6H_LEN];
-	size_t expected_pkt_length = NET_IPV6H_LEN + ECHO_REPLY_H_LEN + test_recv_payload_len;
-	uint16_t expected_icmpv6_length = net_htons(test_recv_payload_len + ECHO_REPLY_H_LEN);
+	size_t expected_pkt_length =
+		NET_IPV6H_LEN + test_recv_hbh_len + ECHO_REPLY_H_LEN + test_recv_payload_len;
+	uint16_t expected_ipv6_length =
+		net_htons(test_recv_hbh_len + test_recv_payload_len + ECHO_REPLY_H_LEN);
+	uint8_t expected_nexthdr =
+		(test_recv_hbh_len > 0U) ? NET_IPV6_NEXTHDR_HBHO : NET_IPPROTO_ICMPV6;
 	uint16_t i;
 	uint8_t expected_data = 0;
 	uint16_t chksum = 0;
@@ -2250,8 +2259,8 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		      "IPv6 header tcflow mismatch");
 	zassert_mem_equal(&hdr->flow, &ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, flow)],
 			  sizeof(hdr->flow), "IPv6 header flow mismatch");
-	zassert_equal(hdr->len, expected_icmpv6_length, "IPv6 header len mismatch");
-	zassert_equal(hdr->nexthdr, NET_IPPROTO_ICMPV6, "IPv6 header nexthdr mismatch");
+	zassert_equal(hdr->len, expected_ipv6_length, "IPv6 header len mismatch");
+	zassert_equal(hdr->nexthdr, expected_nexthdr, "IPv6 header nexthdr mismatch");
 	zassert_equal(hdr->hop_limit, ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, hop_limit)],
 		      "IPv6 header hop_limit mismatch");
 	zassert_mem_equal(hdr->src, &ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, src)],
@@ -2259,9 +2268,30 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	zassert_mem_equal(hdr->dst, &ipv6_reass_frag1[offsetof(struct net_ipv6_hdr, dst)],
 			  NET_IPV6_ADDR_SIZE, "IPv6 header destination IP mismatch");
 
-	/* Verify Echo Reply header is valid */
 	net_pkt_cursor_init(pkt);
 	net_pkt_read(pkt, verify_buf, NET_IPV6H_LEN);
+
+	/* Verify the Hop-by-Hop header now leads to the ICMPv6 header and
+	 * still carries a single PadN option.
+	 */
+	if (test_recv_hbh_len > 0U) {
+		uint8_t hbh_hdr[4];
+		uint8_t pad;
+
+		net_pkt_read(pkt, hbh_hdr, sizeof(hbh_hdr));
+		zassert_equal(hbh_hdr[0], NET_IPPROTO_ICMPV6, "HBH nexthdr mismatch");
+		zassert_equal(hbh_hdr[1], (test_recv_hbh_len / 8U) - 1U, "HBH length mismatch");
+		zassert_equal(hbh_hdr[2], NET_IPV6_EXT_HDR_OPT_PADN, "HBH option mismatch");
+		zassert_equal(hbh_hdr[3], test_recv_hbh_len - sizeof(hbh_hdr),
+			      "HBH PadN length mismatch");
+
+		for (i = sizeof(hbh_hdr); i < test_recv_hbh_len; i++) {
+			net_pkt_read_u8(pkt, &pad);
+			zassert_equal(pad, 0U, "HBH padding mismatch");
+		}
+	}
+
+	/* Verify Echo Reply header is valid */
 	net_pkt_read(pkt, verify_buf, ECHO_REPLY_H_LEN);
 
 	zassert_equal(verify_buf[0], NET_ICMPV6_ECHO_REPLY,
@@ -2277,7 +2307,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 			  "Echo reply header invalid sequence");
 
 	/* Verify data is valid */
-	i = NET_IPV6H_LEN + ECHO_REPLY_H_LEN;
+	i = NET_IPV6H_LEN + test_recv_hbh_len + ECHO_REPLY_H_LEN;
 	while (i < net_pkt_get_len(pkt)) {
 		uint8_t data;
 
@@ -2293,11 +2323,14 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	return NET_OK;
 }
 
-/* Builds a fragment from an IPv6 plus fragment header template followed by
+/* Builds a fragment from a template holding the IPv6 header, any extension
+ * headers and the fragment header at offset frag_start, followed by
  * payload_len bytes of a running counter, positioned for
- * net_ipv6_handle_fragment_hdr(). Copies the IPv6 header to hdr.
+ * net_ipv6_handle_fragment_hdr(). hdr_prev is the offset of the nexthdr field
+ * that points to the fragment header. Copies the IPv6 header to hdr.
  */
 static struct net_pkt *build_reass_fragment(const uint8_t *tmpl, size_t tmpl_len,
+					    uint16_t frag_start, uint16_t hdr_prev,
 					    uint16_t payload_len, uint8_t *data,
 					    struct net_ipv6_hdr *hdr)
 {
@@ -2315,13 +2348,12 @@ static struct net_pkt *build_reass_fragment(const uint8_t *tmpl, size_t tmpl_len
 
 	memcpy(hdr, tmpl, sizeof(struct net_ipv6_hdr));
 
-	ret = net_pkt_write(pkt, tmpl, sizeof(struct net_ipv6_hdr) + 1);
+	ret = net_pkt_write(pkt, tmpl, frag_start + 1U);
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_cursor_backup(pkt, &backup);
 
-	ret = net_pkt_write(pkt, tmpl + sizeof(struct net_ipv6_hdr) + 1,
-			    tmpl_len - sizeof(struct net_ipv6_hdr) - 1);
+	ret = net_pkt_write(pkt, tmpl + frag_start + 1U, tmpl_len - frag_start - 1U);
 	zassert_true(ret == 0, "IPv6 fragment header append failed");
 
 	while (payload_len--) {
@@ -2329,8 +2361,8 @@ static struct net_pkt *build_reass_fragment(const uint8_t *tmpl, size_t tmpl_len
 		zassert_true(ret == 0, "IPv6 payload append failed");
 	}
 
-	net_pkt_set_ipv6_hdr_prev(pkt, offsetof(struct net_ipv6_hdr, nexthdr));
-	net_pkt_set_ipv6_fragment_start(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_hdr_prev(pkt, hdr_prev);
+	net_pkt_set_ipv6_fragment_start(pkt, frag_start);
 	net_pkt_set_overwrite(pkt, true);
 
 	net_pkt_cursor_restore(pkt, &backup);
@@ -2338,13 +2370,23 @@ static struct net_pkt *build_reass_fragment(const uint8_t *tmpl, size_t tmpl_len
 	return pkt;
 }
 
-ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
+/* Feeds the two fragments of the echo reply to the reassembly and waits for
+ * handle_ipv6_echo_reply() to verify the result. frag1 carries
+ * test_recv_hbh_len bytes of Hop-by-Hop Options header in front of its
+ * fragment header; frag2 has none. Returns the length of the first buffer of
+ * the first fragment.
+ */
+static size_t recv_reass_fragments(const uint8_t *frag1, size_t frag1_len, const uint8_t *frag2,
+				   size_t frag2_len)
 {
 	struct net_ipv6_hdr ipv6_hdr;
 	struct net_pkt *pkt1;
 	struct net_pkt *pkt2;
 	uint16_t payload1_len;
 	uint16_t payload2_len;
+	uint16_t frag_start;
+	uint16_t hdr_prev;
+	size_t first_buf_len;
 	uint8_t data;
 	int ret;
 	struct net_icmp_ctx ctx;
@@ -2355,18 +2397,24 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 		      STRINGIFY(NET_ICMPV6_ECHO_REPLY), ret);
 
 	data = 0U;
-	payload1_len = NET_IPV6_MTU - sizeof(ipv6_reass_frag1);
+	payload1_len = NET_IPV6_MTU - frag1_len;
 	payload2_len = test_recv_payload_len - payload1_len;
 
-	pkt1 = build_reass_fragment(ipv6_reass_frag1, sizeof(ipv6_reass_frag1),
-				    payload1_len, &data, &ipv6_hdr);
+	frag_start = NET_IPV6H_LEN + test_recv_hbh_len;
+	hdr_prev =
+		(test_recv_hbh_len > 0U) ? NET_IPV6H_LEN : offsetof(struct net_ipv6_hdr, nexthdr);
+
+	pkt1 = build_reass_fragment(frag1, frag1_len, frag_start, hdr_prev, payload1_len, &data,
+				    &ipv6_hdr);
+	first_buf_len = pkt1->buffer->len;
 
 	ret = net_ipv6_handle_fragment_hdr(pkt1, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
 	zassert_true(ret == NET_OK, "IPv6 frag1 reassembly failed");
 
-	pkt2 = build_reass_fragment(ipv6_reass_frag2, sizeof(ipv6_reass_frag2),
-				    payload2_len, &data, &ipv6_hdr);
+	pkt2 = build_reass_fragment(frag2, frag2_len, NET_IPV6H_LEN,
+				    offsetof(struct net_ipv6_hdr, nexthdr), payload2_len, &data,
+				    &ipv6_hdr);
 
 	ret = net_ipv6_handle_fragment_hdr(pkt2, &ipv6_hdr,
 					   NET_IPV6_NEXTHDR_FRAG);
@@ -2378,6 +2426,93 @@ ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
 	}
 
 	net_icmp_cleanup_ctx(&ctx);
+
+	return first_buf_len;
+}
+
+ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment)
+{
+	test_recv_hbh_len = 0U;
+
+	(void)recv_reass_fragments(ipv6_reass_frag1, sizeof(ipv6_reass_frag1), ipv6_reass_frag2,
+				   sizeof(ipv6_reass_frag2));
+}
+
+/* Hop-by-Hop header lengths for test_recv_ipv6_fragment_hbh: a short one, one
+ * that ends the fragment header exactly at the end of the first buffer, and
+ * one that moves the fragment header to the start of the second buffer.
+ */
+#define REASS_HBH_SHORT_LEN      8U
+#define REASS_HBH_FIRST_BUF_LEN  (CONFIG_NET_BUF_DATA_SIZE - NET_IPV6H_LEN - NET_IPV6_FRAGH_LEN)
+#define REASS_HBH_SECOND_BUF_LEN (CONFIG_NET_BUF_DATA_SIZE - NET_IPV6H_LEN)
+
+BUILD_ASSERT((CONFIG_NET_BUF_DATA_SIZE % 8) == 0, "HBH lengths must be multiples of 8");
+BUILD_ASSERT(REASS_HBH_SECOND_BUF_LEN <= (255U + 4U), "HBH padding must fit one PadN option");
+BUILD_ASSERT(REASS_HBH_FIRST_BUF_LEN >= REASS_HBH_SHORT_LEN, "Buffer too small for the test");
+
+/* Builds the echo reply fragments with a Hop-by-Hop Options header of hbh_len
+ * bytes, holding one PadN option, in front of the fragment header of the
+ * first fragment. The fragmentable part keeps the same contents, so the ICMPv6
+ * checksum in the template stays valid.
+ */
+static void build_hbh_fragments(uint16_t hbh_len, uint8_t *frag1, size_t *frag1_len, uint8_t *frag2)
+{
+	uint16_t payload1_len = NET_IPV6_MTU - sizeof(ipv6_reass_frag1) - hbh_len;
+	uint16_t payload2_len = test_recv_payload_len - payload1_len;
+	uint16_t frag2_offset = ECHO_REPLY_H_LEN + payload1_len;
+	uint8_t *hbh = frag1 + NET_IPV6H_LEN;
+
+	memcpy(frag1, ipv6_reass_frag1, NET_IPV6H_LEN);
+	frag1[offsetof(struct net_ipv6_hdr, nexthdr)] = NET_IPV6_NEXTHDR_HBHO;
+
+	memset(hbh, 0, hbh_len);
+	hbh[0] = NET_IPV6_NEXTHDR_FRAG;
+	hbh[1] = (hbh_len / 8U) - 1U;
+	hbh[2] = NET_IPV6_EXT_HDR_OPT_PADN;
+	hbh[3] = hbh_len - 4U;
+
+	memcpy(hbh + hbh_len, ipv6_reass_frag1 + NET_IPV6H_LEN,
+	       sizeof(ipv6_reass_frag1) - NET_IPV6H_LEN);
+	*frag1_len = sizeof(ipv6_reass_frag1) + hbh_len;
+
+	memcpy(frag2, ipv6_reass_frag2, sizeof(ipv6_reass_frag2));
+	sys_put_be16(NET_IPV6_FRAGH_LEN + payload2_len, frag2 + offsetof(struct net_ipv6_hdr, len));
+	sys_put_be16(frag2_offset, frag2 + NET_IPV6H_LEN + 2U);
+}
+
+/* Reassembly removes the fragment header from between the Hop-by-Hop header
+ * and the payload. The result must be the original datagram whether the
+ * fragment header lies in the first buffer of the first fragment or not.
+ */
+ZTEST(net_ipv6_fragment, test_recv_ipv6_fragment_hbh)
+{
+	static const struct {
+		uint16_t hbh_len;
+		bool in_first_buf;
+	} cases[] = {
+		{REASS_HBH_SHORT_LEN, true},
+		{REASS_HBH_FIRST_BUF_LEN, true},
+		{REASS_HBH_SECOND_BUF_LEN, false},
+	};
+	uint8_t frag1[sizeof(ipv6_reass_frag1) + REASS_HBH_SECOND_BUF_LEN];
+	uint8_t frag2[sizeof(ipv6_reass_frag2)];
+	size_t first_buf_len;
+	size_t frag1_len;
+
+	ARRAY_FOR_EACH(cases, i) {
+		test_recv_hbh_len = cases[i].hbh_len;
+
+		build_hbh_fragments(cases[i].hbh_len, frag1, &frag1_len, frag2);
+
+		first_buf_len = recv_reass_fragments(frag1, frag1_len, frag2, sizeof(frag2));
+
+		zassert_equal(
+			(NET_IPV6H_LEN + cases[i].hbh_len + NET_IPV6_FRAGH_LEN) <= first_buf_len,
+			cases[i].in_first_buf,
+			"HBH %u: fragment header not where the case expects it", cases[i].hbh_len);
+	}
+
+	test_recv_hbh_len = 0U;
 }
 
 /* Reassembly timeout-vs-completion race test state */
@@ -2470,8 +2605,9 @@ ZTEST(net_ipv6_fragment, test_reassembly_timeout_race)
 	payload2_len = test_recv_payload_len - payload1_len;
 
 	/* First fragment arms the slot timeout. */
-	pkt1 = build_reass_fragment(ipv6_reass_frag1, sizeof(ipv6_reass_frag1),
-				    payload1_len, &data, &hdr1);
+	pkt1 = build_reass_fragment(ipv6_reass_frag1, sizeof(ipv6_reass_frag1), NET_IPV6H_LEN,
+				    offsetof(struct net_ipv6_hdr, nexthdr), payload1_len, &data,
+				    &hdr1);
 	ret = net_ipv6_handle_fragment_hdr(pkt1, &hdr1, NET_IPV6_NEXTHDR_FRAG);
 	zassert_equal(ret, NET_OK, "IPv6 frag1 reassembly failed");
 
@@ -2484,10 +2620,9 @@ ZTEST(net_ipv6_fragment, test_reassembly_timeout_race)
 	zassert_not_null(race_timer, "Reassembly slot timer not found");
 
 	/* Prepare the final fragment for delivery from the worker thread. */
-	race_final_frag = build_reass_fragment(ipv6_reass_frag2,
-					       sizeof(ipv6_reass_frag2),
-					       payload2_len, &data,
-					       &race_final_hdr);
+	race_final_frag = build_reass_fragment(
+		ipv6_reass_frag2, sizeof(ipv6_reass_frag2), NET_IPV6H_LEN,
+		offsetof(struct net_ipv6_hdr, nexthdr), payload2_len, &data, &race_final_hdr);
 
 	race_armed = true;
 

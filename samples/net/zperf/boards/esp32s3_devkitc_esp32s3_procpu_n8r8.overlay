@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Henry Zhang
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* N8R8 module: 8 MB octal PSRAM */
+&psram0 {
+	size = <DT_SIZE_M(8)>;
+};

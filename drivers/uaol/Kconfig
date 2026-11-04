@@ -19,6 +19,13 @@ config UAOL_INIT_PRIORITY
 	help
 	  UAOL driver device initialization priority.
 
+config UAOL_USERSPACE
+	bool "UAOL user-space support"
+	depends on USERSPACE
+	help
+	  Expose the UAOL rate adjustment and feedback interpretation
+	  interface to user-space threads via syscalls.
+
 config UAOL_INTEL_ADSP
 	bool "Intel ADSP UAOL driver."
 	default y

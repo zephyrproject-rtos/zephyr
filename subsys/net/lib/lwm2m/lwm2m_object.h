@@ -388,6 +388,7 @@ struct lwm2m_engine_res_inst {
 	uint16_t data_len;
 	uint16_t res_inst_id; /* 65535 == not "created" */
 	uint8_t  data_flags;
+	bool app_buf; /* data_ptr came from lwm2m_set_res_buf(); cleared only on delete */
 };
 
 struct lwm2m_engine_res {

@@ -53,6 +53,14 @@ config HAS_STM32_UNCACHED_ACCESS_ONLY_OTP
 	  Hidden option selected by SoCs where the OTP/read-only areas of NVM
 	  must be accessed using uncached operations (else a bus fault occurs).
 
+# This option is consumed by various drivers which access the RTC registers.
+config HAS_STM32_RTC_READ_GATED_BY_BKP_DOMAIN
+	bool
+	help
+	  Hidden symbol selected by SoCs where the RTC registers are read-protected
+	  when the backup domain protection is not disabled. Usually, the RTC registers
+	  will read as 0 in this situation.
+
 # This option is consumed by external flash drivers
 config STM32_APP_IN_EXT_FLASH
 	bool
