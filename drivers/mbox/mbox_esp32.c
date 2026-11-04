@@ -11,8 +11,7 @@
  * SoCs where the HP and LP cores communicate through the PMU software
  * interrupt build either the HP or the LP image separately.
  */
-#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE) ||                    \
-	defined(CONFIG_SOC_ESP32P4_LPCORE)
+#if defined(CONFIG_SOC_ESP32_LPCORE_TARGET)
 #define MBOX_ESP32_LPCORE 1
 #endif
 
