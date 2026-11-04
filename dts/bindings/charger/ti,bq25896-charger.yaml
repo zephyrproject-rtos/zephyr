@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: TI BQ25896 battery charger function
+
+description: |
+  Battery charger function of the TI BQ25896, described as a child node of
+  the "ti,bq25896" node. The fast charge current range is 0 A to 3.008 A.
+
+compatible: "ti,bq25896-charger"
+
+include: ti,bq2589x-charger-common.yaml
+
+examples:
+  - |
+    bq25896@6b {
+      compatible = "ti,bq25896";
+      reg = <0x6b>;
+
+      charger {
+        compatible = "ti,bq25896-charger";
+        constant-charge-current-max-microamp = <512000>;
+        constant-charge-voltage-max-microvolt = <4208000>;
+      };
+    };
