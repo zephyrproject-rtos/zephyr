@@ -1117,6 +1117,10 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	    (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN ||
 	     dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED)) {
 		pn->credits = MIN(dlc->rx_credit_limit, RFCOMM_PN_MAX_RX_CREDITS);
+		/* The peer only gets what fits in the PN, so count that. The rest
+		 * is sent in a credit frame once the DLC is connected.
+		 */
+		dlc->rx_credit = pn->credits;
 		if (cr) {
 			pn->flow_ctrl = BT_RFCOMM_PN_CFC_CMD;
 		} else {
@@ -1397,26 +1401,13 @@ static void rfcomm_dlc_fc_check_and_on(struct bt_rfcomm_dlc *dlc)
 	}
 }
 
-static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
+/* Give the peer the credits up to the available RX window */
+static void rfcomm_dlc_grant_credits(struct bt_rfcomm_dlc *dlc)
 {
 	uint8_t credits;
 	uint8_t credit_available;
 	int err;
 
-	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
-		/* FC Check and on if required */
-		rfcomm_dlc_fc_check_and_on(dlc);
-		return;
-	}
-
-	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
-
-	/* Only give more credits if it went below the defined threshold */
-	if (dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) {
-		return;
-	}
-
-	/* Restore credits */
 	credit_available = rfcomm_dlc_get_available_credits(dlc);
 	if (credit_available > dlc->rx_credit) {
 		credits = credit_available - dlc->rx_credit;
@@ -1439,6 +1430,25 @@ static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 			rfcomm_dlc_close(dlc);
 		}
 	}
+}
+
+static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
+{
+	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		/* FC Check and on if required */
+		rfcomm_dlc_fc_check_and_on(dlc);
+		return;
+	}
+
+	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
+
+	/* Only give more credits if it went below the defined threshold */
+	if (dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) {
+		return;
+	}
+
+	/* Restore credits */
+	rfcomm_dlc_grant_credits(dlc);
 }
 
 static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
@@ -1466,6 +1476,11 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	k_work_cancel_delayable(&dlc->rtx_work);
 
 	k_fifo_init(&dlc->tx_queue);
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+		/* The PN carried at most 7 credits, give the rest of the window */
+		rfcomm_dlc_grant_credits(dlc);
+	}
 
 	if (dlc->ops != NULL && dlc->ops->connected != NULL) {
 		dlc->ops->connected(dlc);
