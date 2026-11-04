@@ -2901,3 +2901,457 @@ ZTEST_F(zms, test_zms_iter_next_all_data_in_ate)
 	zassert_true(saw_data, "did not encounter the live in-ATE entry");
 	zassert_true(saw_delete, "did not encounter the delete marker");
 }
+
+#ifdef CONFIG_ZMS_PHYSICAL_DELETE
+/* Count the occurrences of a byte pattern in the whole ZMS partition */
+static uint32_t count_in_flash(struct zms_fs *fs, const uint8_t *pattern, size_t plen)
+{
+	uint8_t buf[plen];
+	uint32_t count = 0;
+	off_t end = fs->offset + (off_t)fs->sector_size * fs->sector_count;
+
+	for (off_t off = fs->offset; off + plen <= end; off++) {
+		zassert_equal(flash_read(fs->flash_device, off, buf, plen), 0);
+		if (memcmp(buf, pattern, plen) == 0) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+ZTEST_F(zms, test_zms_delete_physical)
+{
+	int err;
+	ssize_t len;
+	uint8_t big[2][40];
+	uint8_t small[2][ZMS_DATA_IN_ATE_SIZE];
+	uint8_t keep[40];
+	uint8_t rd[40];
+
+	fixture->fs.sector_count = 3;
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, 0, "zms_mount call failure: %d", err);
+
+	memset(big[0], 0xA5, sizeof(big[0]));
+	memset(big[1], 0x5A, sizeof(big[1]));
+	memset(small[0], 0xC3, sizeof(small[0]));
+	memset(small[1], 0x3C, sizeof(small[1]));
+	memset(keep, 0x77, sizeof(keep));
+
+	/* Several versions of IDs 10 (big) and 11 (in ATE) and an unrelated entry */
+	for (int i = 0; i < 2; i++) {
+		len = zms_write(&fixture->fs, 10, big[i], sizeof(big[i]));
+		zassert_equal(len, sizeof(big[i]));
+		len = zms_write(&fixture->fs, 11, small[i], sizeof(small[i]));
+		zassert_equal(len, sizeof(small[i]));
+	}
+	len = zms_write(&fixture->fs, 12, keep, sizeof(keep));
+	zassert_equal(len, sizeof(keep));
+
+	zassert_true(count_in_flash(&fixture->fs, big[0], 8) > 0);
+	zassert_true(count_in_flash(&fixture->fs, small[0], sizeof(small[0])) > 0);
+
+	err = zms_delete_physical(&fixture->fs, 10);
+	zassert_equal(err, 0, "zms_delete_physical failed: %d", err);
+	err = zms_delete_physical(&fixture->fs, 11);
+	zassert_equal(err, 0, "zms_delete_physical failed: %d", err);
+	/* Idempotent, and a non-existing ID is not an error */
+	err = zms_delete_physical(&fixture->fs, 10);
+	zassert_equal(err, 0, "zms_delete_physical failed: %d", err);
+	err = zms_delete_physical(&fixture->fs, 99);
+	zassert_equal(err, 0, "zms_delete_physical failed: %d", err);
+
+	for (int i = 0; i < 2; i++) {
+		zassert_equal(count_in_flash(&fixture->fs, big[i], 8), 0, "big data %d left", i);
+		zassert_equal(count_in_flash(&fixture->fs, small[i], sizeof(small[i])), 0,
+			      "small data %d left", i);
+	}
+	zassert_equal(zms_read(&fixture->fs, 10, rd, sizeof(rd)), -ENOENT);
+	zassert_equal(zms_read(&fixture->fs, 11, rd, sizeof(rd)), -ENOENT);
+
+	/* Remount: the file system must recover, other entries stay intact and writable */
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, 0, "remount failed: %d", err);
+	len = zms_read(&fixture->fs, 12, rd, sizeof(rd));
+	zassert_equal(len, sizeof(keep));
+	zassert_mem_equal(rd, keep, sizeof(keep));
+	zassert_equal(zms_read(&fixture->fs, 10, rd, sizeof(rd)), -ENOENT);
+	zassert_equal(zms_read(&fixture->fs, 11, rd, sizeof(rd)), -ENOENT);
+
+	len = zms_write(&fixture->fs, 13, big[0], sizeof(big[0]));
+	zassert_equal(len, sizeof(big[0]));
+	len = zms_read(&fixture->fs, 13, rd, sizeof(rd));
+	zassert_equal(len, sizeof(big[0]));
+	zassert_mem_equal(rd, big[0], sizeof(big[0]));
+}
+
+ZTEST_F(zms, test_zms_delete_physical_multi_sector)
+{
+	int err;
+	ssize_t len;
+	uint8_t val[100];
+	uint8_t small[ZMS_DATA_IN_ATE_SIZE];
+	uint8_t other[60];
+	uint8_t rd[100];
+	uint8_t last_val = 0;
+
+	fixture->fs.sector_count = 4;
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, 0, "zms_mount call failure: %d", err);
+
+	memset(other, 0x11, sizeof(other));
+
+	/* Interleave versions of ID 20 with other entries so that they spread over sectors,
+	 * stay below the point where GC would drop the old versions.
+	 */
+	for (int i = 1; i <= 12; i++) {
+		last_val = (uint8_t)(0xC0 + i);
+		memset(val, last_val, sizeof(val));
+		memset(small, last_val, sizeof(small));
+		len = zms_write(&fixture->fs, 20, val, sizeof(val));
+		zassert_equal(len, sizeof(val));
+		len = zms_write(&fixture->fs, 21, small, sizeof(small));
+		zassert_equal(len, sizeof(small));
+		len = zms_write(&fixture->fs, 30 + i, other, sizeof(other));
+		zassert_equal(len, sizeof(other));
+	}
+
+	err = zms_delete_physical(&fixture->fs, 20);
+	zassert_equal(err, 0, "zms_delete_physical failed: %d", err);
+	err = zms_delete_physical(&fixture->fs, 21);
+	zassert_equal(err, 0, "zms_delete_physical failed: %d", err);
+
+	/* No version of ID 20 or 21 may survive. Versions already dropped by GC are fine */
+	for (int i = 1; i <= 12; i++) {
+		memset(val, 0xC0 + i, sizeof(val));
+		zassert_equal(count_in_flash(&fixture->fs, val, 16), 0, "version %d left", i);
+	}
+	zassert_equal(zms_read(&fixture->fs, 20, rd, sizeof(rd)), -ENOENT);
+	zassert_equal(zms_read(&fixture->fs, 21, rd, sizeof(rd)), -ENOENT);
+
+	err = zms_mount(&fixture->fs);
+	zassert_equal(err, 0, "remount failed: %d", err);
+	zassert_equal(zms_read(&fixture->fs, 20, rd, sizeof(rd)), -ENOENT);
+	for (int i = 1; i <= 12; i++) {
+		len = zms_read(&fixture->fs, 30 + i, rd, sizeof(rd));
+		zassert_equal(len, sizeof(other), "entry %d lost: %d", 30 + i, len);
+		zassert_mem_equal(rd, other, sizeof(other));
+	}
+
+	/* The file system is still writable until GC has to run */
+	for (int i = 0; i < 40; i++) {
+		len = zms_write(&fixture->fs, 100 + (i % 4), val, sizeof(val));
+		zassert_equal(len, sizeof(val), "write after scrub failed: %d", len);
+	}
+}
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+#define PD_ID_BIG   40
+#define PD_ID_SMALL 41
+#define PD_ID_KEEP  42
+
+static void pd_populate(struct zms_fs *fs)
+{
+	uint8_t big[48];
+	uint8_t small[ZMS_DATA_IN_ATE_SIZE];
+	uint8_t keep[48];
+
+	memset(keep, 0x77, sizeof(keep));
+	zassert_equal(zms_write(fs, PD_ID_KEEP, keep, sizeof(keep)), sizeof(keep));
+	for (int i = 1; i <= 3; i++) {
+		memset(big, 0xA0 + i, sizeof(big));
+		memset(small, 0xB0 + i, sizeof(small));
+		zassert_equal(zms_write(fs, PD_ID_BIG, big, sizeof(big)), sizeof(big));
+		zassert_equal(zms_write(fs, PD_ID_SMALL, small, sizeof(small)), sizeof(small));
+	}
+}
+
+/* Check that no version of the deleted IDs is left in flash */
+static void pd_check_scrubbed(struct zms_fs *fs, uint32_t cut, uint32_t torn)
+{
+	uint8_t big[48];
+	uint8_t small[ZMS_DATA_IN_ATE_SIZE];
+
+	for (int i = 1; i <= 3; i++) {
+		memset(big, 0xA0 + i, sizeof(big));
+		memset(small, 0xB0 + i, sizeof(small));
+		zassert_equal(count_in_flash(fs, big, 16), 0,
+			      "big version %d left (cut %u torn %u)", i, cut, torn);
+		zassert_equal(count_in_flash(fs, small, sizeof(small)), 0,
+			      "small version %d left (cut %u torn %u)", i, cut, torn);
+	}
+}
+
+/* Cut the power at every flash write issued by zms_delete_physical() in turn, with either a
+ * dropped write or a torn one. After the remount the file system must be consistent, the
+ * unrelated entry intact and a second call must finish the erasure.
+ */
+ZTEST_F(zms, test_zms_delete_physical_power_loss)
+{
+	uint32_t *write_calls;
+	uint32_t *max_write_calls;
+	uint32_t *max_len;
+	uint32_t total_writes;
+	uint8_t keep[48];
+	uint8_t rd[48];
+
+	memset(keep, 0x77, sizeof(keep));
+
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &write_calls);
+	max_len = max_write_calls + 2;
+
+	/* Measure the number of flash writes of an uninterrupted run */
+	zassert_equal(zms_mount(&fixture->fs), 0);
+	pd_populate(&fixture->fs);
+	*write_calls = 0;
+	zassert_equal(zms_delete_physical(&fixture->fs, PD_ID_BIG), 0);
+	zassert_equal(zms_delete_physical(&fixture->fs, PD_ID_SMALL), 0);
+	total_writes = *write_calls;
+	pd_check_scrubbed(&fixture->fs, 0, 0);
+	zassert_true(total_writes > 4, "unexpected number of writes: %u", total_writes);
+	zassert_equal(zms_clear(&fixture->fs), 0);
+
+	for (uint32_t torn = 0; torn <= 3; torn += 3) {
+		for (uint32_t cut = 1; cut <= total_writes; cut++) {
+			zassert_equal(zms_mount(&fixture->fs), 0);
+			pd_populate(&fixture->fs);
+
+			*write_calls = 0;
+			*max_write_calls = cut;
+			*max_len = torn;
+			(void)zms_delete_physical(&fixture->fs, PD_ID_BIG);
+			(void)zms_delete_physical(&fixture->fs, PD_ID_SMALL);
+			*max_write_calls = 0;
+			*max_len = 0;
+
+			/* Power cycle */
+			memset(&fixture->fs, 0, sizeof(fixture->fs));
+			(void)setup();
+			zassert_equal(zms_mount(&fixture->fs), 0,
+				      "remount failed (cut %u torn %u)", cut, torn);
+
+			zassert_equal(zms_read(&fixture->fs, PD_ID_KEEP, rd, sizeof(rd)),
+				      sizeof(keep), "kept entry lost (cut %u torn %u)", cut, torn);
+			zassert_mem_equal(rd, keep, sizeof(keep));
+
+			zassert_equal(zms_delete_physical(&fixture->fs, PD_ID_BIG), 0);
+			zassert_equal(zms_delete_physical(&fixture->fs, PD_ID_SMALL), 0);
+			pd_check_scrubbed(&fixture->fs, cut, torn);
+			zassert_equal(zms_read(&fixture->fs, PD_ID_BIG, rd, sizeof(rd)), -ENOENT);
+			zassert_equal(zms_read(&fixture->fs, PD_ID_SMALL, rd, sizeof(rd)),
+				      -ENOENT);
+
+			/* Still usable */
+			zassert_equal(zms_write(&fixture->fs, 50, keep, sizeof(keep)),
+				      sizeof(keep));
+			zassert_equal(zms_clear(&fixture->fs), 0);
+		}
+	}
+}
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
+#define PD_IN_ATE      BIT(0) /* data stored inside the ATE */
+#define PD_REWRITE     BIT(1) /* write the ID again after the delete */
+#define PD_CLOSE_FIRST BIT(2) /* the versions are in a closed sector when they are deleted */
+
+/* Write versions of an entry in sector 0, delete it and recycle sector 0. Return how much the
+ * cycle count of sector 0 grew.
+ */
+static uint32_t pd_cycles_of_one_recycle(struct zms_fixture *fixture, bool physical,
+					 uint32_t flags)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint8_t val[40];
+	uint32_t before;
+	uint32_t after;
+	size_t len = (flags & PD_IN_ATE) ? ZMS_DATA_IN_ATE_SIZE : sizeof(val);
+
+	fs->sector_count = 3;
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_clear(fs), 0);
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_get_sector_num_cycles(fs, 0, &before), 0);
+
+	for (int i = 1; i <= 2; i++) {
+		memset(val, 0xC0 + i, sizeof(val));
+		zassert_equal(zms_write(fs, 60, val, len), len);
+	}
+	zassert_equal(zms_write(fs, 61, val, sizeof(val)), sizeof(val));
+
+	if (flags & PD_CLOSE_FIRST) {
+		zassert_equal(zms_sector_use_next(fs), 0);
+	}
+
+	zassert_equal(physical ? zms_delete_physical(fs, 60) : zms_delete(fs, 60), 0);
+
+	if (flags & PD_REWRITE) {
+		memset(val, 0xE0, sizeof(val));
+		zassert_equal(zms_write(fs, 60, val, len), len);
+	}
+
+	/* sector 0 is closed, then erased by the garbage collection of the next advance */
+	zassert_equal(zms_sector_use_next(fs), 0);
+	if (!(flags & PD_CLOSE_FIRST)) {
+		zassert_equal(zms_sector_use_next(fs), 0);
+	}
+	zassert_equal(zms_get_sector_num_cycles(fs, 0, &after), 0);
+
+	/* the cycle count of 64-bit IDs is a uint8_t that wraps */
+	return IS_ENABLED(CONFIG_ZMS_ID_64BIT) ? (uint8_t)(after - before) : after - before;
+}
+
+/* The scrub writes memory cells a second time: it must count as one more cycle of the sector,
+ * and only one whatever the number of entries scrubbed, even if the ID is written again before
+ * the sector is erased.
+ */
+ZTEST_F(zms, test_zms_delete_physical_cycle_count)
+{
+	static const uint32_t cases[] = {
+		0,
+		PD_IN_ATE,
+		PD_REWRITE,
+		PD_IN_ATE | PD_REWRITE,
+		PD_CLOSE_FIRST,
+		PD_CLOSE_FIRST | PD_REWRITE,
+		PD_CLOSE_FIRST | PD_IN_ATE | PD_REWRITE,
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(cases); i++) {
+		uint32_t regular = pd_cycles_of_one_recycle(fixture, false, cases[i]);
+		uint32_t scrubbed = pd_cycles_of_one_recycle(fixture, true, cases[i]);
+
+		zassert_true(regular > 0, "sector 0 was not recycled (flags 0x%x)", cases[i]);
+		zassert_equal(scrubbed, regular + 1, "flags 0x%x: %u vs %u", cases[i], scrubbed,
+			      regular);
+	}
+}
+
+/* The ATE of the last entry written in the open sector is overwritten: the mount must still
+ * recover the data write address, otherwise new data would be written over scrubbed bytes.
+ */
+ZTEST_F(zms, test_zms_delete_physical_data_end_recovery)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint8_t first[40];
+	uint8_t last[40];
+	uint8_t next[40];
+	uint8_t rd[40];
+
+	memset(first, 0x11, sizeof(first));
+	memset(last, 0x22, sizeof(last));
+	memset(next, 0x33, sizeof(next));
+
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_write(fs, 70, first, sizeof(first)), sizeof(first));
+	zassert_equal(zms_write(fs, 71, last, sizeof(last)), sizeof(last));
+	zassert_equal(zms_delete_physical(fs, 71), 0);
+	zassert_equal(count_in_flash(fs, last, sizeof(last)), 0);
+
+	/* Power cycle */
+	memset(fs, 0, sizeof(*fs));
+	(void)setup();
+	zassert_equal(zms_mount(fs), 0);
+
+	zassert_equal(zms_write(fs, 72, next, sizeof(next)), sizeof(next));
+	zassert_equal(zms_read(fs, 70, rd, sizeof(rd)), sizeof(first));
+	zassert_mem_equal(rd, first, sizeof(first));
+	zassert_equal(zms_read(fs, 72, rd, sizeof(rd)), sizeof(next));
+	zassert_mem_equal(rd, next, sizeof(next), "new data written over scrubbed data");
+	zassert_equal(zms_read(fs, 71, rd, sizeof(rd)), -ENOENT);
+}
+static int flash_sim_erase_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
+				      uint16_t off)
+{
+	if (!strcmp(name, "flash_erase_calls")) {
+		uint32_t **flash_erase_stat = (uint32_t **)arg;
+		*flash_erase_stat = (uint32_t *)((uint8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+/* Power loss at every flash write of the garbage collection of a sector holding scrubbed data.
+ * The mount completes the erase and the extra write must be accounted for in all cases: when the
+ * garbage collection is restarted, and when it is only the erase that is completed. Erases that
+ * the power loss would have prevented are blocked in the simulator.
+ */
+ZTEST_F(zms, test_zms_delete_physical_cycle_count_power_loss)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint32_t *write_calls;
+	uint32_t *erase_calls;
+	uint32_t *max_write_calls;
+	uint32_t *max_erase_calls;
+	uint32_t *max_len;
+	uint32_t total_writes = 0;
+	uint32_t regular = 0;
+	uint8_t val[40];
+	uint32_t before;
+	uint32_t after;
+
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_erase_calls_find, &erase_calls);
+	max_erase_calls = max_write_calls + 1;
+	max_len = max_write_calls + 2;
+
+	/* phase 0: regular delete, phase 1: physical delete */
+	for (int phase = 0; phase < 2; phase++) {
+		for (uint32_t cut = 0; cut <= total_writes; cut++) {
+			fs->sector_count = 3;
+			zassert_equal(zms_mount(fs), 0);
+			zassert_equal(zms_clear(fs), 0);
+			zassert_equal(zms_mount(fs), 0);
+			zassert_equal(zms_get_sector_num_cycles(fs, 0, &before), 0);
+
+			memset(val, 0xC1, sizeof(val));
+			zassert_equal(zms_write(fs, 60, val, sizeof(val)), sizeof(val));
+			memset(val, 0xC2, sizeof(val));
+			zassert_equal(zms_write(fs, 60, val, sizeof(val)), sizeof(val));
+			zassert_equal(zms_write(fs, 61, val, sizeof(val)), sizeof(val));
+			zassert_equal(phase ? zms_delete_physical(fs, 60) : zms_delete(fs, 60), 0);
+			zassert_equal(zms_sector_use_next(fs), 0);
+
+			/* This advance garbage collects sector 0 */
+			*write_calls = 0;
+			*erase_calls = 0;
+			if (cut > 0) {
+				*max_write_calls = cut;
+				*max_len = 0;
+				*max_erase_calls = 1;
+			}
+			(void)zms_sector_use_next(fs);
+			if (cut == 0) {
+				total_writes = *write_calls;
+			}
+			*max_write_calls = 0;
+			*max_erase_calls = 0;
+
+			/* Power cycle */
+			memset(fs, 0, sizeof(*fs));
+			(void)setup();
+			fs->sector_count = 3;
+			zassert_equal(zms_mount(fs), 0, "remount failed");
+			zassert_equal(zms_get_sector_num_cycles(fs, 0, &after), 0);
+
+			if (cut == 0 && phase == 0) {
+				regular = after - before;
+				zassert_true(regular > 0, "sector 0 was not recycled");
+			}
+			if (cut == total_writes) {
+				/* Only the erase and the empty ATE are missing, the mount finishes
+				 * the garbage collection from its gc_done ATE.
+				 */
+				zassert_not_equal(after, before, "sector 0 was not recycled");
+			}
+			if (after == before) {
+				/* The power loss came before the garbage collection started */
+				continue;
+			}
+			zassert_equal(after - before, regular + phase,
+				      "phase %d cut %u/%u: %u cycles, expected %u", phase, cut,
+				      total_writes, after - before, regular + phase);
+		}
+	}
+}
+#endif /* CONFIG_ZMS_PHYSICAL_DELETE */
