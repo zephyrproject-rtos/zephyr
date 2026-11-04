@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Avago APDS9960 light, proximity and gesture sensor on the board's I2C bus with its
+  interrupt line on a GPIO: built in on reel_board, the adafruit_apds9960 shield on
+  adafruit_qt_py_rp2040, the mikroe_ir_gesture_click shield on mikroe_clicker_ra4m1.

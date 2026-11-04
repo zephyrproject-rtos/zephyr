@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A temperature sensor aliased as ambient-temp0, built in or attached as the board overlay
+  describes: an MCP9700A on AIN7 of nrf52840dk, TCN75A on frdm_k22f, an NTC thermistor on
+  robokit1, ADT7420 on adi_eval_adin1110ebz, P3T1755 on frdm_rw612, or the p3t1755dp_ard_i2c
+  shield on other NXP boards.

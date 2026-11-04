@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An ST X-NUCLEO-EEPRMA2 shield on the Arduino header (SHIELD=x_nucleo_eeprma2), providing
+  M24C02, M24256 and M24M01 I2C EEPROMs at 0x54, 0x55 and 0x56.

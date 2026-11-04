@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An SD memory card inserted in the slot of the host controller selected by the sdhc0 alias or
+  zephyr,sdmmc-disk (uSDHC on i.MX RT boards, the SPI SD slot or pmod_sd shield on Renesas RA
+  boards). The tests do destructive I/O on the card; the file system sample needs it FAT-
+  formatted.
+notes: >-
+  The SDIO test needs an SDIO card under the same name. fixture_sdcard means the same setup.

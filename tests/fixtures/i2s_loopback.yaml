@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On nrf54h20dk, a jumper from P1.04 to P1.05, the SDOUT and SDIN pins of the TDM130 instance
+  used by the I2S tests. The gpio_basic_api cpurad scenario reuses the same pair as GPIO output
+  and input.
+notes: >-
+  The same SDOUT-SDIN wiring on other nRF boards is gated by gpio_loopback.

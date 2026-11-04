@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A FAT-formatted SD card in the zephyr,sdmmc-disk slot, exposed to the USB host by the USB mass
+  storage sample, so the USB device port must be connected to the host as well.
+notes: >-
+  Same card setup as fixture_sdhc.

@@ -36,6 +36,7 @@ from devicetree import edtlib  # pylint: disable=unused-import
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
+from twisterlib.fixtures import FIXTURES_REGISTRY_PATH, FixtureRegistry
 from twisterlib.hardwaremap import HardwareMap
 from twisterlib.modulevars import expand_zephyr_vars
 from twisterlib.platform import Platform, generate_platforms
@@ -189,6 +190,7 @@ class TestPlan:
         self.scenarios = []
 
         self.hwm: HardwareMap = env.hwm
+        self._fixture_registry: FixtureRegistry | None = None
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = [module.get('name') for module in self.env.modules]
@@ -198,6 +200,26 @@ class TestPlan:
         self.test_config =  None
 
         self.name = "unnamed"
+
+    @property
+    def fixture_registry(self) -> FixtureRegistry:
+        """The fixtures test suites may request: the in-tree registry plus
+        the files given with --fixture-registry."""
+        if self._fixture_registry is None:
+            extra = self.options.fixture_registry or []
+            self._fixture_registry = FixtureRegistry([FIXTURES_REGISTRY_PATH, *extra])
+        return self._fixture_registry
+
+    def check_hardware_map_fixtures(self) -> None:
+        """Warn about hardware map fixtures no test suite can request."""
+        if not self.hwm:
+            return
+        for dut in self.hwm.duts:
+            for fixture in self.fixture_registry.unknown(dut.fixtures):
+                logger.warning(
+                    f"{dut.platform} ({dut.id}): fixture '{fixture}' is not listed in the "
+                    "fixture registry"
+                )
 
     def find_subtests(self):
         sub_tests = self.options.sub_test
@@ -218,6 +240,7 @@ class TestPlan:
         self.test_config = TestConfiguration(self.env.test_config)
 
         self.add_configurations()
+        self.check_hardware_map_fixtures()
         num = self.add_testsuites(testsuite_filter=self.options.test,
                                 testsuite_pattern=self.options.test_pattern)
 
@@ -679,6 +702,7 @@ class TestPlan:
                             data=suite_dict,
                             detailed_test_id=self.options.detailed_test_id
                         )
+                        self.fixture_registry.check_suite(suite, suite_yaml_path)
 
                         if not self._is_testsuite_selected(suite, testsuite_filter,
                                                        testsuite_patterns_r):

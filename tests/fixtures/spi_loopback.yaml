@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  For the spi_loopback test, MISO wired to MOSI on the SPI instance named in the board overlay
+  (nrf54l15dk: P2.08 to P2.09), plus the CS line wired to the cs-loopback-gpios pin where the
+  overlay defines one. The spis_wakeup and SPI RTIO samples use the same name for a SPI
+  controller wired to a SPI peripheral of the same board (SCK, MOSI, MISO, CS, and WAKE for
+  spis_wakeup).
+notes: >-
+  Two different wirings share this name; the controller-to-peripheral one is the same as
+  gpio_spi_loopback.

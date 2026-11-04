@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  On nrf54l15dk and nrf7120dk, UARTE21 routed to port 2 pins with TX P2.08 wired to RX P2.07 and
+  RTS P2.10 wired to CTS P2.09, to exercise pins outside the instance's own power domain.
+notes: >-
+  All four pins are on port 2; the name refers to the instance being moved from its default port
+  1 pins.

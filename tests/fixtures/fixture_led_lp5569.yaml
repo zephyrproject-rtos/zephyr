@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A TI LP5569 nine-channel LED controller with LEDs attached, at address 0x32 on I2C0 of an
+  nrf52840dk.

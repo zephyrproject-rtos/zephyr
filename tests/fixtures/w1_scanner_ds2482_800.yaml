@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A DS2482-800 bridge at address 0x18 on the Arduino I2C header of an nrf52840dk, channel 0
+  used, with any number of 1-Wire devices on the bus.

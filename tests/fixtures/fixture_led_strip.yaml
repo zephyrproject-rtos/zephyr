@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An addressable LED strip (WS2812, APA102 or LPD8806) on the pin the board overlay assigns to
+  the led-strip alias (SPI, I2S, GPIO or ESP32 RMT output), with common ground, a suitable power
+  supply and a level shifter where needed.

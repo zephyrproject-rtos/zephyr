@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A Hitachi HD44780-compatible 20x4 character LCD wired to a nucleo_f746zg in 4-bit mode as the
+  sample's board overlay lists: RS PB8, E PB9, D4 to D7 on PA5, PA6, PA7 and PD14.

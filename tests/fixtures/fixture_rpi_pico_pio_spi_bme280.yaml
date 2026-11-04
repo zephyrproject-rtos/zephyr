@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  A BME280 wired to a Raspberry Pi Pico and driven by a PIO-based SPI controller: SDI GPIO12, CS
+  GPIO13, CLK GPIO14, SDO GPIO15.

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  The Arduino serial UART as 1-Wire master (zephyr,w1-serial) with TX and RX joined and pulled
+  up (about 5 kOhm) and no devices on the bus, as the test's board overlays describe
+  (nrf52840dk: RX P1.01 and TX P1.02; nucleo_g0b1re: USART1 TX PC4 open-drain).

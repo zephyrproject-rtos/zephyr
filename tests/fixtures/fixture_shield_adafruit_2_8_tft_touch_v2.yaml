@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: >-
+  An Adafruit 2.8 inch TFT Touch Shield v2 (ILI9341) on the Arduino header with a FAT-formatted
+  microSD card in its slot (SPI, CS on D4). The file system sample uses only the card slot.
