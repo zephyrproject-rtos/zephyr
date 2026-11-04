@@ -124,6 +124,9 @@ Libraries / Subsystems
 
   * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
     :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+  * :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution, SCSI :ref:`disk_access <disk_access_api>` volumes, and generic partition
+    table parsing on block devices.
 
 Devicetree
 **********
