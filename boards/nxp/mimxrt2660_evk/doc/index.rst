@@ -66,11 +66,9 @@ configuration data for the PSRAM.
    the container carries an empty signature block.
 
 .. note::
-   The flash is used for execution only: this target carries no flash driver and
-   no partitions, so the flash API, MCUboot and settings-on-flash are not
-   available. Enabling the flash driver requires portability work in Zephyr's
-   shared XSPI drivers, which use ``xspi_config_t`` fields this SoC does not
-   implement.
+   The XSPI0 NOR is available through the Zephyr Flash API. Applications
+   must preserve the boot header and XIP image when erasing or programming
+   the device.
 
 Supported Features
 ==================
@@ -120,8 +118,9 @@ Connections and I/Os
 | User SW   | WAKE GPIO0 0    | PIO1_0 (WAKE_SS_BTN)               |
 +-----------+-----------------+------------------------------------+
 | XSPI0     | SCLK0, SS0_N,   | PIO6_0, PIO6_1, PIO6_2..PIO6_5     |
-|           | DATA0..DATA3    | (quad; the flash is not wired      |
+|           | DATA0..DATA3,   | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |
+|           | DQS0            | PIO6_6 (DQS pad loopback sample)   |
 +-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.

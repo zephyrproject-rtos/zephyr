@@ -16,6 +16,7 @@ flash: 65536
 supported:
   - gpio
   - hwinfo
+  - spi
   - uart
   - video
 vendor: nxp
