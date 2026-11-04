@@ -78,6 +78,42 @@ properties:
       aligned for fused 6-DoF data. Use lower values to reduce power and
       bandwidth, or higher values when faster gyro updates are required.
 
+  accel-lpf-enable:
+    type: boolean
+    description: |
+      Enable the accelerometer low-pass filter.
+      Disabled if omitted.
+
+  accel-lpf-mode:
+    type: int
+    min: 0
+    max: 4
+    description: |
+      Accelerometer low-pass filter cutoff frequency configuration.
+      Only applies if accel-lpf-enable is set.
+      0: cutoff 2.66% of ODR
+      1: cutoff 3.63% of ODR
+      2: cutoff 5.39% of ODR
+      3: cutoff 13.37% of ODR
+
+  gyro-lpf-enable:
+    type: boolean
+    description: |
+      Enable the gyroscope low-pass filter.
+      Disabled if omitted.
+
+  gyro-lpf-mode:
+    type: int
+    min: 0
+    max: 4
+    description: |
+      Gyroscope low-pass filter cutoff frequency configuration.
+      Only applies if gyro-lpf-enable is set.
+      0: cutoff 2.66% of ODR
+      1: cutoff 3.63% of ODR
+      2: cutoff 5.39% of ODR
+      3: cutoff 13.37% of ODR
+
 examples:
   - |
     #include <zephyr/dt-bindings/gpio.h>
@@ -89,6 +125,10 @@ examples:
       gyro-fs = <512>;
       accel-odr = <896>;
       gyro-odr = <896>;
+      accel-lpf-enable;
+      accel-lpf-mode = <2>;
+      gyro-lpf-enable;
+      gyro-lpf-mode = <0>;
       int-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
       int-pin = <2>;
     };
