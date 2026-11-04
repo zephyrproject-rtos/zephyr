@@ -24,9 +24,6 @@
 
 void soc_prep_hook(void)
 {
-	/* disable global interrupt */
-	__disable_irq();
-
 	/* Allow write access to Vector Table Offset Register and ITCM/DTCM configuration register
 	 * (CPUSS_CM7_X_CTL.PPB_LOCK[3] and CPUSS_CM7_X_CTL.PPB_LOCK[1:0])
 	 */
