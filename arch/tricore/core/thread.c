@@ -74,7 +74,7 @@ static uint32_t z_tricore_create_context(struct k_thread *thread, k_thread_entry
 	z_tricore_lower_context_t *lower = UINT_TO_POINTER(z_tricore_pcx_to_addr(fcx));
 	z_tricore_upper_context_t *upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	cr_write(TRICORE_FCX, upper->pcxi);
-	if (icr & 0x8000U) {
+	if ((icr & 0x8000U) != 0U) {
 		__asm volatile("enable" ::: "memory");
 	}
 
