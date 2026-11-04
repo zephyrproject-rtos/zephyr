@@ -25,7 +25,7 @@ void arch_irq_disable(unsigned int irq)
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	return intc_aurix_ir_irq_is_enabled(irq);
+	return intc_aurix_ir_irq_is_enabled(irq) ? 1 : 0;
 }
 
 void z_tricore_irq_config(uint32_t irq, uint32_t prio, uint32_t flags)
@@ -48,7 +48,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	LOG_ERR("Spurious interrupt detected! IRQ: %d", irq);
 
 	extern void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower);
-	z_tricore_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+	z_tricore_fatal_error((uint32_t)K_ERR_SPURIOUS_IRQ, NULL);
 	CODE_UNREACHABLE;
 #endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
 }

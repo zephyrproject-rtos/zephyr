@@ -146,7 +146,7 @@ void z_tricore_fault(uint8_t trap_class, uint8_t tin)
 	LOG_ERR("TriCore Trap: Class %u TIN %u (%s)", trap_class, tin,
 		z_tricore_trap_cause_str(trap_class, tin));
 
-	z_tricore_fatal_error(K_ERR_CPU_EXCEPTION, lower);
+	z_tricore_fatal_error((uint32_t)K_ERR_CPU_EXCEPTION, lower);
 }
 
 FUNC_NORETURN void __weak z_tricore_fault_fcu(void)
