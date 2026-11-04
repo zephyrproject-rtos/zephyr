@@ -288,7 +288,15 @@
 	};
 };
 
+&eic {
+	status = "okay";
+};
+
 &portb {
+	status = "okay";
+};
+
+&portc {
 	status = "okay";
 };
 
