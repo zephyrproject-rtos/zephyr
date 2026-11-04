@@ -26,11 +26,14 @@ target_include_directories(app PUBLIC ${CMAKE_CURRENT_LIST_DIR}/test_lib)
 # Relocate library code
 zephyr_code_relocate(LIBRARY test_lib LOCATION SRAM2)
 
-# Test support for a simple generator expression to relocate two files
+# Test support for a simple generator expression to relocate two files. LTO cannot be
+# disabled for files given as a generator expression, so they are not relocated with LTO.
 set(reloc_files src/test_file4.c src/test_file5.c)
 set(genex_expr
   ${CMAKE_CURRENT_LIST_DIR}/$<JOIN:${reloc_files},$<SEMICOLON>${CMAKE_CURRENT_LIST_DIR}/>)
-zephyr_code_relocate(FILES ${genex_expr} LOCATION SRAM2)
+if(NOT CONFIG_LTO)
+  zephyr_code_relocate(FILES ${genex_expr} LOCATION SRAM2)
+endif()
 
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_LITERAL)
 zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)

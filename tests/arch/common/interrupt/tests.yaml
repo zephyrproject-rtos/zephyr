@@ -103,12 +103,11 @@ tests:
       - CONFIG_TEST_USERSPACE=n
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
       - CONFIG_LTO=y
-    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
     # In S-mode only SSIP (IRQ 1) can be triggered from software; the
     # shared interrupt test requires two independent triggerable IRQ lines.
     filter: >
       not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
-      and not CONFIG_CODE_DATA_RELOCATION and not CONFIG_RISCV_S_MODE
+      and not CONFIG_RISCV_S_MODE
   arch.shared_interrupt.lto.speed:
     <<: *shared-interrupt-lto
     extra_configs:
