@@ -44,6 +44,10 @@
 				reg = <0x1>;
 				spi-max-frequency = <0>;
 				status = "okay";
+
+				test_tle927x_hwinfo: hwinfo {
+					compatible = "infineon,tle927x-hwinfo";
+				};
 			};
 		};
 
