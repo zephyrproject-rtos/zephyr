@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT sony_imx219
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -93,6 +94,9 @@ struct imx219_data {
 
 struct imx219_config {
 	struct i2c_dt_spec i2c;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	struct gpio_dt_spec reset_gpio;
+#endif
 	uint32_t input_clk_hz;
 };
 
@@ -518,7 +522,31 @@ static int imx219_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("%s: device %s is not ready", dev->name,
+				cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_sleep(K_MSEC(1));
+
+		ret = gpio_pin_set_dt(&cfg->reset_gpio, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_sleep(K_MSEC(10));
+	}
+#else
 	k_sleep(K_MSEC(1));
+#endif
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX219_CCI_SOFTWARE_RESET, 1);
 	if (ret < 0) {
@@ -567,11 +595,18 @@ static int imx219_init(const struct device *dev)
 	return imx219_init_ctrls(dev);
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define IMX219_GET_RESET_GPIO(n) .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#else
+#define IMX219_GET_RESET_GPIO(n)
+#endif
+
 #define IMX219_INIT(n)                                                                             \
 	static struct imx219_data imx219_data_##n;                                                 \
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		IMX219_GET_RESET_GPIO(n)                                                           \
 		.input_clk_hz = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
 	};                                                                                         \
                                                                                                    \

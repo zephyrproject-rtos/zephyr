@@ -4,6 +4,13 @@ compatible: "sony,imx219"
 
 include: i2c-device.yaml
 
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The XCLR pin is asserted to cause a hard reset. The sensor
+      receives this as an active-low signal.
+
 child-binding:
   child-binding:
     include: video-interfaces.yaml
