@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Foss Analytical A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCF85263A RTC
+
+compatible: "nxp,pcf85263a"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  inta-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PCF85263A INTA interrupt output. This signal is open-drain, active low.
+
+  quartz-load-femtofarads:
+    type: int
+    default: 7000
+    enum:
+      - 6000
+      - 7000
+      - 12500
+    description: |
+      Quartz crystal load capacitance in femtofarads, written to CL[1:0] of the
+      Oscillator register (25h). Defaults to the chip reset value of 7000 (7 pF).
