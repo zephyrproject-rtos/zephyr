@@ -438,6 +438,8 @@ static int stm32_dcmipp_conf_csi(const struct device *dev, uint32_t dcmipp_csi_b
 	}
 
 	phy_bitrate /= MHZ(1);
+	/* CSI use DDR hence each lane bitrate is twice the frequency */
+	phy_bitrate *= 2;
 
 	for (i = 0; i < ARRAY_SIZE(stm32_dcmipp_bitrate); i++) {
 		if (stm32_dcmipp_bitrate[i].rate >= phy_bitrate) {
