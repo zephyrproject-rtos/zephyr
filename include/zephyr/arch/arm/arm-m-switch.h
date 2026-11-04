@@ -70,6 +70,8 @@
 void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *arg1, void *arg2,
 		      void *arg3);
 
+struct arm_m_cs_ptrs;
+
 /**
  * @brief Evaluate whether an interrupt should trigger a context switch.
  *
@@ -78,10 +80,10 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
  * pointers in ::arm_m_cs_ptrs and initiates the hand-off to
  * `arm_m_do_switch()`.
  *
- * @retval true  A switch was performed or scheduled.
- * @retval false No switch requested; continue returning from the interrupt.
+ * @return This CPU's ::arm_m_cs_ptrs entry, with bit 0 set if a switch
+ *         was done.
  */
-bool arm_m_must_switch(void);
+uintptr_t arm_m_must_switch(void);
 
 /**
  * @brief Assembly stub that completes the Cortex-M context restore.
@@ -120,8 +122,8 @@ bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr);
  */
 void arm_m_iciit_stub(void);
 
-/** Pointer to the stacked LR word used by the ISR tail fixup path. */
-extern uint32_t *arm_m_exc_lr_ptr;
+/** Per-CPU pointer to the stacked LR word used by the ISR tail fixup path. */
+extern uint32_t *arm_m_exc_lr_ptr[CONFIG_MP_MAX_NUM_CPUS];
 
 void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
 
@@ -132,7 +134,7 @@ extern uintptr_t z_arm_tls_ptr;
 extern uint32_t arm_m_switch_stack_buffer;
 
 /** @cond INTERNAL_HIDDEN */
-/* Global pointers to the frame locations for the callee-saved
+/* Per-CPU pointers to the frame locations for the callee-saved
  * registers.  Set in arm_m_must_switch(), and used by the fixup
  * assembly in arm_m_exc_exit.
  */
@@ -149,8 +151,17 @@ struct arm_m_cs_ptrs {
 };
 /** @endcond */
 
-/** Global instance with current callee-saved frame pointers. */
-extern struct arm_m_cs_ptrs arm_m_cs_ptrs;
+/** Per-CPU instances with current callee-saved frame pointers. */
+extern struct arm_m_cs_ptrs arm_m_cs_ptrs[CONFIG_MP_MAX_NUM_CPUS];
+
+static ALWAYS_INLINE unsigned int arm_m_cpu(void)
+{
+#ifdef CONFIG_SMP
+	return _current_cpu->id;
+#else
+	return 0;
+#endif
+}
 
 /**
  * @brief ISR-tail helper that patches the stacked LR for deferred switch fixup.
@@ -207,9 +218,11 @@ static inline void arm_m_exc_tail(void)
 	}
 #endif
 
-	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
+	struct arm_m_cs_ptrs *cs = &arm_m_cs_ptrs[arm_m_cpu()];
+	uint32_t *lr_ptr = arm_m_exc_lr_ptr[arm_m_cpu()];
+	void *isr_lr = (void *)*lr_ptr;
 
-	if (isr_lr != arm_m_cs_ptrs.lr_fixup) {
+	if (isr_lr != cs->lr_fixup) {
 		/* We need to return to arm_m_exc_exit only if an exception is returning to thread
 		 * mode with PSP. Note that it is possible to get an exception in arm_m_exc_exit
 		 * after interrupts are enabled but, before branching to lr (0xFFFFFFFD) and, at
@@ -220,8 +233,8 @@ static inline void arm_m_exc_tail(void)
 		 */
 		if ((((uint32_t)isr_lr & 0xFFFFFF00U) == 0xFFFFFF00U)
 				&& (((uint32_t)isr_lr & 0xC) == 0xC)) {
-			arm_m_cs_ptrs.lr_save = isr_lr;
-			*arm_m_exc_lr_ptr = (uint32_t)arm_m_cs_ptrs.lr_fixup;
+			cs->lr_save = isr_lr;
+			*lr_ptr = (uint32_t)cs->lr_fixup;
 		}
 	}
 #endif
