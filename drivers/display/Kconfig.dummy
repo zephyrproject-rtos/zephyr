@@ -9,3 +9,13 @@ config DUMMY_DISPLAY
 	depends on DT_HAS_ZEPHYR_DUMMY_DC_ENABLED
 	help
 	  Enable dummy display driver compliant with display driver API.
+
+config DUMMY_DISPLAY_PLANES
+	int "Planes of the dummy display"
+	depends on DUMMY_DISPLAY
+	default 4
+	range 0 8
+	help
+	  Number of planes the dummy display reports and accepts
+	  through display_set_plane(). With 0 the plane operations are not
+	  implemented and return -ENOSYS, as on a display without planes.
