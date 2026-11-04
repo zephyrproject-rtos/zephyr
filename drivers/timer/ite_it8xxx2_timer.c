@@ -168,6 +168,7 @@ static void evt_timer_enable(void)
 #define TIMER_CORE_BACKEND_RELOAD
 #define TIMER_CORE_COUNTER_WIDTH 32
 #define TIMER_CORE_ALARM_MAX_CYCLES EVENT_TIMER_MAX_CNT
+#define TIMER_CORE_ALARM_MIN_CYCLES IDLE_BLOCK_TIMER_TICKS
 
 static inline uint32_t timer_driver_cycle_get(void)
 {
