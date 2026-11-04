@@ -33,6 +33,7 @@ supported:
   - sdhc
   - spi
   - usb_device
+  - usbh
   - watchdog
   - edac
   - crc
