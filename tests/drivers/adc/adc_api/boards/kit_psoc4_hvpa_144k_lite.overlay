@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ADC channels used for testing (no external wiring required):
+ *
+ * Channel	Front-end	Input (V+)	Input (V-)
+ * Channel 0	ACHAN1		VDDA / 4	VSSA (single-ended)
+ * Channel 1	ACHAN0		RSH0		RSL0 (differential)
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-dsadc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>, <&adc0 1>;
+	};
+};
+
+&peri_clk_div1 {
+	status = "okay";
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <IFX_DSADC_POS_VDDA_DIV_4>;
+		zephyr,resolution = <16>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,differential;
+		zephyr,input-positive = <IFX_DSADC_POS_RSH_0>;
+		zephyr,input-negative = <IFX_DSADC_NEG_RSL_0>;
+		zephyr,resolution = <16>;
+	};
+};
