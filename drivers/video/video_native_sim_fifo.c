@@ -156,17 +156,6 @@ static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 	return 0;
 }
 
-static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct video_buffer *vbuf)
-{
-	struct video_buffer *popped = k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
-
-	/* Only flush(true) takes buffers out of fifo_in, and it holds the lock */
-	__ASSERT_NO_MSG(popped == vbuf);
-	ARG_UNUSED(popped);
-
-	video_buffer_done(dev, vbuf, 0);
-}
-
 static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
@@ -208,7 +197,11 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			if (data->discard) {
 				data->discard = false;
 			} else {
-				video_nsi_fifo_deliver(data, vbuf);
+				__maybe_unused struct video_buffer *popped =
+					k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+
+				__ASSERT_NO_MSG(popped == vbuf);
+				video_buffer_done(data->vdev.dev, vbuf, 0);
 			}
 			k_mutex_unlock(&data->lock);
 			continue;
