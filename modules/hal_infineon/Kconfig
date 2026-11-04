@@ -26,6 +26,11 @@ config USE_INFINEON_SAR2_ADC
 	help
 	  Enable the SAR2 ADC (cy_sar2) PDL library support for Infineon Traveo T2G devices
 
+config USE_INFINEON_DSADC
+	bool
+	help
+	  Enable Delta-Sigma ADC (DSADC) PDL driver for Infineon devices
+
 config USE_INFINEON_LPCOMP
 	bool
 	help
