@@ -1509,16 +1509,25 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
-	/* start_us could be the current count in the timer */
-	uint32_t now_us = start_us;
+	/* start_us could be in the past, then retry at the current count plus
+	 * the latency of one compare setup iteration. Do not add the lateness
+	 * of start_us, that would delay the compare by twice the lateness.
+	 */
+	uint32_t prev_us = 0U;
+	uint32_t now_us = 0U;
 	uint32_t actual_us;
+	bool retry = false;
 
 	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
 	/* Setup timer compare while determining the latency in doing so */
 	do {
-		/* Set start to be, now plus the determined latency */
-		start_us = (now_us << 1) - start_us;
+		uint32_t sample_us;
+
+		if (retry) {
+			/* Set start to be, now plus the determined latency */
+			start_us = (now_us << 1) - prev_us;
+		}
 
 		/* Setup compare event with min. 1 us offset */
 		actual_us = start_us + 1U;
@@ -1531,7 +1540,10 @@ uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 
-		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+		sample_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+		prev_us = retry ? now_us : sample_us;
+		now_us = sample_us;
+		retry = true;
 	} while ((now_us > start_us) &&
 		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET] == 0U));
 
