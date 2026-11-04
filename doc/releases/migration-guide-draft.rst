@@ -61,6 +61,34 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* The RAKwireless ``rak11160`` board is renamed to :zephyr:board:`rak11162`. It
+  was named after the WisDuo stamp module it carries rather than the board it
+  describes, which is the RAK11162 WisBlock Core Module. The other carrier for
+  the same module is the new :zephyr:board:`rak11161` Breakout Board.
+  :file:`boards/deprecated.cmake` keeps ``-b rak11160`` working with a warning,
+  but out-of-tree code testing ``CONFIG_BOARD_RAK11160`` must switch to
+  ``CONFIG_BOARD_RAK11162``.
+
+* :zephyr:board:`rak11162` no longer defines ``led0``. LED1 and LED2 are
+  WisBlock connector pins reaching LEDs on the base board rather than on the
+  module. Applications that relied on the alias, such as
+  :zephyr:code-sample:`blinky`, need an overlay naming the LEDs of the base
+  board in use.
+
+* On :zephyr:board:`rak11162` the WisBlock I2C1 and SPI buses are no longer
+  enabled by default. They are connector signals that nothing on the board
+  drives, so the shield that uses one enables it. An application that reached
+  ``i2c2`` or ``spi1`` without a shield needs an overlay setting their
+  ``status``.
+
+* On :zephyr:board:`rak11162` the console moved from ``usart1`` to ``usart2``.
+  USART1 is the module's internal link to the ESP8684 co-processor and reaches
+  no module pin. The ESP-AT node on that bus is renamed from ``espc2`` to
+  ``esp-at`` and gains the node label ``wifi``, and the ``esp8684_enable``
+  regulator is gone: the pin it held is now the ``power-gpios`` of the ESP-AT
+  node. An overlay still naming ``espc2`` adds a second node instead of
+  extending the existing one.
+
 Device Drivers and Devicetree
 *****************************
 
