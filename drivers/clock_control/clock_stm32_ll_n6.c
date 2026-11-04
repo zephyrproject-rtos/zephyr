@@ -975,9 +975,11 @@ int stm32_clock_control_init(const struct device *dev)
 	 * retained clock configuration, and refresh the CMSIS clock value.
 	 *
 	 * The application's devicetree must describe the retained clock and
-	 * external-memory configuration.
+	 * external-memory configuration. dev is NULL when called on exit from
+	 * STOP mode, where the clock tree must be restored: only preserve the
+	 * boot configuration at init.
 	 */
-	if (IS_ENABLED(CONFIG_CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG)) {
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_PRESERVE_BOOT_CONFIG) && (dev != NULL)) {
 		SystemCoreClockUpdate();
 		return 0;
 	}
