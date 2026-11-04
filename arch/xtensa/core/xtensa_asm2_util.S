@@ -468,7 +468,8 @@ DEF_EXCINT XCHAL_NMILEVEL, _handle_excint, xtensa_nmi_c
 DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 #endif
 
-#ifdef CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 #include "emulate_load_store.S"
 .pushsection .iram.text, "ax"
 _Level1RealVectorExtended:
@@ -488,7 +489,9 @@ _Level1RealVectorExtended:
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
-#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
+#endif /* defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	* defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+	*/
 	wsr a0, ZSR_A0SAVE
 	rsync
 	rsr.exccause a0
@@ -556,13 +559,16 @@ _syscall:
 #endif /* CONFIG_USERSPACE */
 .popsection
 
-#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE)
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
 	j _Level1RealVectorExtended
 .popsection
-#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
+#endif /* defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE) || \
+	* defined(CONFIG_XTENSA_SMALL_VECTOR_TABLE_ENTRY)
+	*/
 
 /* In theory you can have levels up to 15, but known hardware only uses 7. */
 #if XCHAL_NMILEVEL > 7
