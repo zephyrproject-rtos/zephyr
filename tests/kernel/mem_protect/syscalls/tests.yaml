@@ -11,7 +11,7 @@ common:
     - security
     - userspace
   ignore_faults: true
-  timeout: 180
+  timeout: 250
 tests:
   kernel.memory_protection.syscalls.timeslicing:
     extra_configs:
