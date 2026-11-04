@@ -76,6 +76,7 @@ New APIs and options
 
     * :c:func:`bt_addr_matches_irk`
     * :c:func:`bt_l2cap_server_unregister`
+    * :c:func:`bt_le_ext_adv_foreach`
 
   * Services
 
