@@ -292,8 +292,9 @@ static int gpio_stm32_port_toggle_bits(const struct device *dev,
 static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
-	int err;
+	int err = 0;
 	bool apply_out_level;
+	k_spinlock_key_t key;
 	pinctrl_soc_pin_t pincfg;
 	struct gpio_stm32_data *data = dev->data;
 
@@ -305,12 +306,15 @@ static int gpio_stm32_config(const struct device *dev,
 		return err;
 	}
 
+	/* Acquire GPIO port configuration lock */
+	key = k_spin_lock(&data->configure_lock);
+
 	/* Enable device clock before configuration (requires bank writes) */
 	if ((((flags & GPIO_OUTPUT) != 0) || ((flags & GPIO_INPUT) != 0)) &&
 	    !(data->pin_has_clock_enabled & BIT(pin))) {
 		err = pm_device_runtime_get(dev);
 		if (err < 0) {
-			return err;
+			goto exit;
 		}
 		data->pin_has_clock_enabled |= BIT(pin);
 	}
@@ -323,7 +327,7 @@ static int gpio_stm32_config(const struct device *dev,
 		apply_out_level = false;
 	}
 
-	stm32_gpioport_configure_pin(dev, pin, pincfg, apply_out_level);
+	stm32_gpioport_configure_pin_locked(dev, pin, pincfg, apply_out_level);
 
 #ifdef CONFIG_STM32_WKUP_PINS
 	if (flags & STM32_GPIO_WKUP) {
@@ -344,18 +348,20 @@ static int gpio_stm32_config(const struct device *dev,
 			 */
 			LOG_ERR("STM32WBA: wake-up pin must be configured as "
 				"output, or input+pull-up/pull-down");
-			return -EINVAL;
+			err = -EINVAL;
+			goto exit;
 		}
 
 		err = stm32_pwrc_enable_wakeup_pin(cfg->port, pin, flags);
 		if (err == -ENODEV) {
 			LOG_ERR("No wake-up pin found associated to GPIO%c pin %d",
 				('A' + cfg->port), pin);
-			return -EINVAL;
+			err = -EINVAL;
+			goto exit;
 		} else if (err < 0) {
 			LOG_ERR("Failed to configure GPIO%c pin %d as wake-up source",
 				('A' + cfg->port), pin);
-			return err;
+			goto exit;
 		}
 	}
 #endif /* CONFIG_STM32_WKUP_PINS */
@@ -365,12 +371,14 @@ static int gpio_stm32_config(const struct device *dev,
 	    (data->pin_has_clock_enabled & BIT(pin))) {
 		err = pm_device_runtime_put(dev);
 		if (err < 0) {
-			return err;
+			goto exit;
 		}
 		data->pin_has_clock_enabled &= ~BIT(pin);
 	}
 
-	return 0;
+exit:
+	k_spin_unlock(&data->configure_lock, key);
+	return err;
 }
 
 #if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
