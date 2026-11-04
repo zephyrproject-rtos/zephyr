@@ -80,6 +80,8 @@ static void iso_connected(struct bt_iso_chan *chan)
 	err = bt_iso_chan_get_info(chan, &info);
 	TEST_ASSERT(err == 0, "Failed to get CIS info: %d", err);
 
+	expect_cis_peer_addr(chan);
+
 	TEST_ASSERT(info.type == BT_ISO_CHAN_TYPE_CENTRAL);
 	TEST_ASSERT(info.can_send || info.can_recv);
 	TEST_ASSERT(IN_RANGE(info.iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX),
@@ -217,6 +219,7 @@ static void set_cig_defaults(void)
 static void create_cig(size_t iso_channels)
 {
 	struct bt_iso_chan *channels[ARRAY_SIZE(iso_chans)];
+	struct bt_conn_info conn_info;
 	int err;
 
 	for (size_t i = 0U; i < iso_channels; i++) {
@@ -233,6 +236,12 @@ static void create_cig(size_t iso_channels)
 
 		return;
 	}
+
+	/* No ACL connection yet, so no address */
+	err = bt_conn_get_info(default_chan->iso, &conn_info);
+	TEST_ASSERT(err == 0, "Failed to get the connection info: %d", err);
+	TEST_ASSERT(bt_addr_le_eq(conn_info.le.dst, BT_ADDR_LE_NONE),
+		    "A CIS that is not connected reports a peer address");
 }
 
 static int reconfigure_cig_interval(void)
