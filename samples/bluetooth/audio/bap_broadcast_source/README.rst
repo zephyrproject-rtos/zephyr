@@ -100,6 +100,23 @@ follow the feedback, a single sample is dropped or repeated per SDU to keep the 
 so that no SDU is sent with missing audio. Statistics are printed every 10 seconds. With an
 audio input the broadcast source is not reset.
 
+With :kconfig:option:`CONFIG_AUDIO_INPUT_TIMED` (default on ``nrf54lm20dk/nrf54lm20a/cpuapp``
+with the Zephyr Bluetooth Controller) the feedback is derived from time stamps in the
+controller's GRTC time base instead of the instantaneous fill level:
+
+* Every USB start-of-frame event captures the GRTC counter through DPPI. The SOF period
+  measured over about two seconds gives the host sample rate relative to the Bluetooth clock,
+  which is reported as the feedforward feedback value.
+* The HCI LE Read ISO TX Sync command gives the air time of each SDU. The buffer level is
+  sampled from the SOF time line at a fixed lead before that air time, so the measurement does
+  not depend on the encoder thread or USB transfer latency, and a slow phase loop holds it at
+  the target.
+
+Once locked, no sample is dropped or repeated. The fill level loop with slip and repeat
+remains the fallback when time stamps are not available. An additional statistics line
+reports the measured rate, the level error range, the encode lead time and the number of late
+SDUs.
+
 The USB host can be emulated, for example in BabbleSim, with
 ``-DEXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-emulated-input.conf"``. The emulated
 host clock offset is set with :kconfig:option:`CONFIG_AUDIO_INPUT_EMULATED_PPM`, and
