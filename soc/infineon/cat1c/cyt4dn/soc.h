@@ -19,6 +19,10 @@
 #ifdef CONFIG_ATOMIC_OPERATIONS_ARCH
 void cyt4dn_atomic_init(void);
 #endif
+
+#ifdef CONFIG_SMP
+void cyt4dn_smp_cpu_init(void);
+#endif
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _SOC__H_ */

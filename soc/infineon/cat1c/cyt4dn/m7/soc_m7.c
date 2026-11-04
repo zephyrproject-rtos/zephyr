@@ -74,6 +74,19 @@ void soc_prep_hook(void)
 	(void)Cy_SysClk_PeriGroupSetSlaveCtl(9, CY_SYSCLK_PERI_GROUP_SL_CTL, 0xFFFFU);
 }
 
+#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
+void soc_per_core_init_hook(void)
+{
+	if (soc_cpu_index() != 0U) {
+		cm7_core_init(&CPUSS->CM7_1_CTL);
+	}
+
+#ifdef CONFIG_SMP
+	cyt4dn_smp_cpu_init();
+#endif
+}
+#endif
+
 void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
