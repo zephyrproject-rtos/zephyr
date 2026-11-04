@@ -25,10 +25,16 @@ LOG_MODULE_REGISTER(rtp_socket, CONFIG_RTP_LOG_LEVEL);
 #endif
 
 #include "rtp_packet.h"
+#include "rtp_srtp.h"
 #include "rtp_transport.h"
 
 #define CTX_LOCK_TIMEOUT   K_MSEC(1)
 #define RTP_SOCKET_MAX_FDS CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS
+
+#ifdef CONFIG_SRTP
+BUILD_ASSERT(CONFIG_RTP_TRANSPORT_SOCKET_BUF_SIZE > RTP_MIN_HEADER_LEN + SRTP_TRAILER_MAX_LEN,
+	     "Socket buffer too small for SRTP protected packets");
+#endif /* CONFIG_SRTP */
 
 struct rtp_socket_context {
 	struct zsock_pollfd fds[RTP_SOCKET_MAX_FDS];
@@ -107,6 +113,27 @@ static void rtp_socket_svc_handler(struct net_socket_service_event *pev)
 #endif
 
 	(void)k_mutex_unlock(&ctx->lock);
+
+#ifdef CONFIG_SRTP
+	struct srtp_session_ctx *srtp_ctx;
+
+	ret = rtp_srtp_rx_get(session, &srtp_ctx);
+	if (ret == 0) {
+		size_t plain_len;
+
+		ret = rtp_srtp_ctx_unprotect(srtp_ctx, data, len, &plain_len);
+		rtp_srtp_rx_put(srtp_ctx);
+		if (ret < 0) {
+			NET_DBG("Dropping unauthenticated SRTP packet (%d)", ret);
+			return;
+		}
+
+		len = plain_len;
+	} else if (ret != -ENOENT) {
+		NET_DBG("Failed to acquire SRTP context (%d)", ret);
+		return;
+	}
+#endif /* CONFIG_SRTP */
 
 	if (rtp_packet_deserialize(&packet, data, len) < 0) {
 		return;
@@ -496,6 +523,7 @@ int rtp_transport_socket_send(struct rtp_session *session, struct rtp_packet *rt
 {
 	int fd = session->transport.socket_tx_fd;
 	uint8_t buf[CONFIG_RTP_TRANSPORT_SOCKET_BUF_SIZE];
+	size_t budget = sizeof(buf);
 	ssize_t ret;
 	int len;
 
@@ -504,10 +532,37 @@ int rtp_transport_socket_send(struct rtp_session *session, struct rtp_packet *rt
 		return -ENOTCONN;
 	}
 
-	len = rtp_packet_serialize(rtp_pkt, padding, buf, sizeof(buf));
+#ifdef CONFIG_SRTP
+	/* Snapshot the decision: a concurrent rtp_session_clear_srtp() must
+	 * fail the send instead of falling back to an unprotected packet.
+	 */
+	const bool srtp_tx = rtp_srtp_tx_enabled(session);
+
+	if (srtp_tx) {
+		/* Leave room for the SRTP authentication tag */
+		budget -= SRTP_TRAILER_MAX_LEN;
+	}
+#endif /* CONFIG_SRTP */
+
+	len = rtp_packet_serialize(rtp_pkt, padding, buf, budget);
 	if (len < 0) {
 		return len;
 	}
+
+#ifdef CONFIG_SRTP
+	if (srtp_tx) {
+		size_t protected_len;
+		int err;
+
+		err = rtp_srtp_protect(session, buf, len, sizeof(buf), &protected_len);
+		if (err < 0) {
+			NET_DBG("Failed to protect RTP packet (%d)", err);
+			return err;
+		}
+
+		len = protected_len;
+	}
+#endif /* CONFIG_SRTP */
 
 	ret = zsock_send(fd, buf, len, 0);
 	if (ret < 0) {
