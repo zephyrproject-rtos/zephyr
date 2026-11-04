@@ -743,7 +743,7 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 	z_arm_configure_dynamic_mpu_regions(next_thread);
 #endif
 
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_SMP)
 	z_arm_tls_ptr = next_thread->tls;
 #endif
 	return true;
