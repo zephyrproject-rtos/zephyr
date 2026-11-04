@@ -19,6 +19,7 @@
 		zephyr,code-partition = &code_partition;
 		zephyr,console = &sercom5;
 		zephyr,shell-uart = &sercom5;
+		zephyr,romstart = &boot_partition;
 	};
 
 	aliases {
@@ -66,9 +67,10 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
+			compatible = "zephyr,memory-region", "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(128)>;
 			label = "boot_flash";
+			zephyr,memory-region = "BOOT_FLASH";
 		};
 	};
 };
