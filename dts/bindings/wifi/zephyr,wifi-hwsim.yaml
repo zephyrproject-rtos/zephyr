@@ -10,6 +10,13 @@ compatible: "zephyr,wifi-hwsim"
 include: ethernet-controller.yaml
 
 properties:
+  nan-management:
+    type: boolean
+    description: |
+      Dedicated NAN management interface for lifecycle simulation. Requires
+      CONFIG_WIFI_HWSIM_NAN. This interface supports start, cluster events,
+      and stop only; it does not exchange frames with the hwsim medium for now.
+
   radio-index:
     type: int
     required: true

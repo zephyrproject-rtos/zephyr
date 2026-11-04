@@ -22,6 +22,10 @@
 #include <drivers/driver_zephyr.h>
 #include <string.h>
 
+#ifdef CONFIG_WIFI_HWSIM_NAN
+#include <utils/eloop.h>
+#endif
+
 LOG_MODULE_DECLARE(wifi_hwsim, CONFIG_WIFI_HWSIM_LOG_LEVEL);
 
 #define SSID_IE_ID   0
@@ -48,6 +52,10 @@ struct hwsim_supp_ctx {
 	struct zep_wpa_supp_dev_callbk_fns callbk_fns;
 	struct k_work scan_done_work;
 	atomic_t scan_aborted;
+#ifdef CONFIG_WIFI_HWSIM_NAN
+	bool nan_started;
+	uint8_t nan_cluster_id[HWSIM_ETH_ALEN];
+#endif
 };
 
 static struct hwsim_radio *hwsim_dev_to_radio(const struct device *dev)
@@ -130,6 +138,25 @@ static void *hwsim_supp_init(void *supp_drv_if_ctx, const char *iface_name,
 	if (radio == NULL) {
 		return NULL;
 	}
+
+#ifdef CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE
+	/*
+	 * net_if_get_device() resolves to the same device (and the same
+	 * radio->supp_ctx slot) for both roles of a shared device. Route the
+	 * secondary (NAN) role to its own shadow radio so each role's
+	 * wpa_supplicant driver instance gets an independent supp_ctx; without
+	 * this, whichever role's init()/deinit() runs second would clobber or
+	 * free the other role's context.
+	 */
+	{
+		const struct hwsim_config *cfg =
+			(const struct hwsim_config *)net_if_get_device(iface)->config;
+
+		if (cfg->secondary_iface != NULL && iface == cfg->secondary_iface) {
+			radio = cfg->secondary_radio;
+		}
+	}
+#endif
 
 	ctx = k_malloc(sizeof(*ctx));
 	if (ctx == NULL) {
@@ -921,3 +948,197 @@ const struct zep_wpa_supp_dev_ops hwsim_wpa_supp_ops = {
 	.cancel_remain_on_channel = hwsim_supp_cancel_remain_on_channel,
 	.set_p2p_powersave = hwsim_supp_set_p2p_powersave,
 };
+
+#ifdef CONFIG_WIFI_HWSIM_NAN
+/* NAN operations and timers run on the supplicant eloop thread. */
+static void hwsim_nan_cluster_join(void *eloop_ctx, void *timeout_ctx)
+{
+	struct hwsim_supp_ctx *ctx = eloop_ctx;
+
+	ARG_UNUSED(timeout_ctx);
+
+	if (ctx->nan_started) {
+		/* The callback owns the queued event's copy of the cluster ID. */
+		ctx->callbk_fns.nan_cluster_join(ctx->if_ctx, ctx->nan_cluster_id, true);
+	}
+}
+
+static void *hwsim_nan_init(void *supp_drv_if_ctx, const char *iface_name,
+			    struct zep_wpa_supp_dev_callbk_fns *callbk_fns)
+{
+	struct hwsim_radio *radio;
+	struct hwsim_supp_ctx *ctx;
+
+	if (callbk_fns->nan_cluster_join == NULL) {
+		return NULL;
+	}
+
+	radio = hwsim_supp_init(supp_drv_if_ctx, iface_name, callbk_fns);
+	if (radio == NULL) {
+		return NULL;
+	}
+
+	ctx = radio->supp_ctx;
+	ctx->nan_started = false;
+	memset(ctx->nan_cluster_id, 0, sizeof(ctx->nan_cluster_id));
+	return radio;
+}
+
+static int hwsim_nan_start(void *if_priv, const struct nan_cluster_config *conf)
+{
+	static const uint8_t cluster_prefix[] = {0x50, 0x6f, 0x9a, 0x01};
+	struct hwsim_radio *radio = if_priv;
+	struct hwsim_supp_ctx *ctx = radio->supp_ctx;
+	int ret;
+
+	if (ctx == NULL || conf == NULL || conf->master_pref == 0U ||
+	    conf->master_pref == UINT8_MAX) {
+		return -EINVAL;
+	}
+	if (conf->dual_band != 0U || conf->enable_dw_notif || conf->extra_nan_attrs_len != 0U ||
+	    conf->vendor_elems_len != 0U) {
+		return -ENOTSUP;
+	}
+	if (ctx->nan_started) {
+		return -EALREADY;
+	}
+
+	if (is_zero_ether_addr(conf->cluster_id)) {
+		memcpy(ctx->nan_cluster_id, cluster_prefix, sizeof(cluster_prefix));
+		ctx->nan_cluster_id[4] = 0U;
+		ctx->nan_cluster_id[5] = radio->idx + 1U;
+	} else {
+		if (memcmp(conf->cluster_id, cluster_prefix, sizeof(cluster_prefix)) != 0) {
+			return -EINVAL;
+		}
+		memcpy(ctx->nan_cluster_id, conf->cluster_id, sizeof(ctx->nan_cluster_id));
+	}
+
+	/* Model a new cluster; no beacon exchange or master election is performed. */
+	ret = eloop_register_timeout(CONFIG_WIFI_HWSIM_NAN_CLUSTER_EVENT_DELAY_MS / 1000,
+				     (CONFIG_WIFI_HWSIM_NAN_CLUSTER_EVENT_DELAY_MS % 1000) * 1000,
+				     hwsim_nan_cluster_join, ctx, NULL);
+	if (ret != 0) {
+		return -ENOMEM;
+	}
+	ctx->nan_started = true;
+	return 0;
+}
+
+static void hwsim_nan_stop(void *if_priv)
+{
+	struct hwsim_radio *radio = if_priv;
+	struct hwsim_supp_ctx *ctx = radio->supp_ctx;
+
+	if (ctx != NULL) {
+		ctx->nan_started = false;
+		(void)eloop_cancel_timeout(hwsim_nan_cluster_join, ctx, NULL);
+	}
+}
+
+static void hwsim_nan_deinit(void *if_priv)
+{
+	hwsim_nan_stop(if_priv);
+	hwsim_supp_deinit(if_priv);
+}
+
+static int hwsim_nan_get_capa(void *if_priv, struct wpa_driver_capa *capa)
+{
+	ARG_UNUSED(if_priv);
+
+	memset(capa, 0, sizeof(*capa));
+	capa->flags2 = WPA_DRIVER_FLAGS2_SUPPORT_NAN;
+	capa->nan_capa.drv_flags = WPA_DRIVER_FLAGS_NAN_SUPPORT_SYNC_CONFIG;
+	capa->nan_capa.num_radios = 1U;
+	capa->nan_capa.num_antennas = 1U;
+	return 0;
+}
+
+/* Keep station/AP operations and capabilities in their original table. */
+const struct zep_wpa_supp_dev_ops hwsim_nan_wpa_supp_ops = {
+	.init = hwsim_nan_init,
+	.deinit = hwsim_nan_deinit,
+	/* Common supplicant initialization clears keys and closes the port. */
+	.set_key = hwsim_supp_set_key,
+	.set_supp_port = hwsim_supp_set_supp_port,
+	.get_capa = hwsim_nan_get_capa,
+	.get_wiphy = hwsim_supp_get_wiphy,
+	.get_country = hwsim_supp_get_country,
+	.set_country = hwsim_supp_set_country,
+	.register_frame = hwsim_supp_register_frame,
+	.register_mgmt_frame = hwsim_supp_register_mgmt_frame,
+	.nan_start = hwsim_nan_start,
+	.nan_stop = hwsim_nan_stop,
+};
+
+#if defined(CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE)
+/*
+ * Route init/get_capa by iface identity: the NAN role on a shared device
+ * needs hwsim_nan_init()'s nan_cluster_join precondition and shadow-radio
+ * substitution (done inside hwsim_supp_init(), see above); the STA role
+ * must not go through hwsim_nan_init(), since its wpa_supplicant
+ * registration never supplies callbk_fns->nan_cluster_join.
+ */
+static void *hwsim_shared_supp_init(void *supp_drv_if_ctx, const char *iface_name,
+				    struct zep_wpa_supp_dev_callbk_fns *callbk_fns)
+{
+	struct zep_drv_if_ctx *if_ctx = (struct zep_drv_if_ctx *)supp_drv_if_ctx;
+	const struct hwsim_config *cfg =
+		(const struct hwsim_config *)net_if_get_device(if_ctx->iface)->config;
+
+	if (cfg->secondary_iface != NULL && if_ctx->iface == cfg->secondary_iface) {
+		return hwsim_nan_init(supp_drv_if_ctx, iface_name, callbk_fns);
+	}
+	return hwsim_supp_init(supp_drv_if_ctx, iface_name, callbk_fns);
+}
+
+static int hwsim_shared_get_capa(void *if_priv, struct wpa_driver_capa *capa)
+{
+	const struct hwsim_radio *radio = (const struct hwsim_radio *)if_priv;
+
+	if (radio != NULL && radio->is_secondary) {
+		return hwsim_nan_get_capa(if_priv, capa);
+	}
+	return hwsim_supp_get_capa(if_priv, capa);
+}
+
+/*
+ * Merged table for CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE: every field below is
+ * either identical in hwsim_wpa_supp_ops/hwsim_nan_wpa_supp_ops already, or
+ * (init/deinit/get_capa) routed by the wrappers above / hwsim_nan_deinit
+ * (itself safe for a role that never registered a NAN timeout).
+ */
+const struct zep_wpa_supp_dev_ops hwsim_shared_wpa_supp_ops = {
+	.init = hwsim_shared_supp_init,
+	.deinit = hwsim_nan_deinit,
+	.scan2 = hwsim_supp_scan2,
+	.scan_abort = hwsim_supp_scan_abort,
+	.get_scan_results2 = hwsim_supp_get_scan_results2,
+	.deauthenticate = hwsim_supp_deauthenticate,
+	.authenticate = hwsim_supp_authenticate,
+	.associate = hwsim_supp_associate,
+	.init_ap = hwsim_supp_init_ap,
+	.deinit_ap = hwsim_supp_deinit_ap,
+	.start_ap = hwsim_supp_start_ap,
+	.set_supp_port = hwsim_supp_set_supp_port,
+	.sta_add = hwsim_supp_sta_add,
+	.sta_remove = hwsim_supp_sta_remove,
+	.sta_set_flags = hwsim_supp_sta_set_flags,
+	.set_key = hwsim_supp_set_key,
+	.signal_poll = hwsim_supp_signal_poll,
+	.send_mlme = hwsim_supp_send_mlme,
+	.get_wiphy = hwsim_supp_get_wiphy,
+	.register_frame = hwsim_supp_register_frame,
+	.register_mgmt_frame = hwsim_supp_register_mgmt_frame,
+	.get_capa = hwsim_shared_get_capa,
+	.get_conn_info = hwsim_supp_get_conn_info,
+	.set_country = hwsim_supp_set_country,
+	.get_country = hwsim_supp_get_country,
+	.remain_on_channel = hwsim_supp_remain_on_channel,
+	.cancel_remain_on_channel = hwsim_supp_cancel_remain_on_channel,
+	.set_p2p_powersave = hwsim_supp_set_p2p_powersave,
+	.nan_start = hwsim_nan_start,
+	.nan_stop = hwsim_nan_stop,
+};
+#endif /* CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE */
+#endif /* CONFIG_WIFI_HWSIM_NAN */

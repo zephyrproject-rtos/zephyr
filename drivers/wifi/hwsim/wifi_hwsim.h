@@ -7,7 +7,9 @@
 #ifndef ZEPHYR_DRIVERS_WIFI_HWSIM_H_
 #define ZEPHYR_DRIVERS_WIFI_HWSIM_H_
 
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi.h>
 
@@ -53,11 +55,42 @@ struct hwsim_radio {
 
 	/* Set by wpa_supplicant driver when CONFIG_WIFI_NM_WPA_SUPPLICANT */
 	void       *supp_ctx;
+
+	/*
+	 * True only for the synthetic shadow radio used to carry the NAN
+	 * role's own supp_ctx on a CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE device
+	 * (see struct hwsim_config.secondary_radio) -- never true for a real,
+	 * medium-registered radio.
+	 */
+	bool       is_secondary;
+};
+
+struct hwsim_config {
+	uint8_t radio_index;
+	struct net_eth_mac_config mac;
+	bool nan_management;
+
+	/*
+	 * CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE only: the second net_if of this
+	 * device (NAN role) and the shadow radio that carries its own,
+	 * independent supp_ctx -- see hwsim_supp_init()/hwsim_shared_get_capa()
+	 * in wifi_hwsim_supp.c. NULL/NULL for every other topology.
+	 */
+	struct net_if *secondary_iface;
+	struct hwsim_radio *secondary_radio;
 };
 
 /* Called from RX path for 802.11 mgmt frames when supp_ctx is set. Weak stub. */
 void hwsim_supp_mgmt_rx(struct hwsim_radio *radio, const uint8_t *data,
 			unsigned int len, unsigned int freq_mhz, int rssi_dbm);
+
+/*
+ * Returns the NAN-role net_if of a CONFIG_WIFI_HWSIM_NAN_SHARED_IFACE device, or
+ * NULL for any other topology. net_if_lookup_by_dev() cannot be used for this --
+ * it is ambiguous once a device backs more than one net_if, and always resolves
+ * to the primary (STA) role here.
+ */
+struct net_if *hwsim_get_secondary_iface(const struct device *dev);
 
 int  hwsim_medium_register(struct hwsim_radio *radio, uint8_t idx);
 /*
