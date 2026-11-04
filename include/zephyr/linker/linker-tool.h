@@ -23,7 +23,7 @@
 #elif defined(__LLD_LINKER_CMD__)
 #include <zephyr/linker/linker-tool-lld.h>
 #elif defined(__ELD_LINKER_CMD__)
-#include <zephyr/linker/linker-tool-gcc.h>
+#include <zephyr/linker/linker-tool-eld.h>
 #else
 #error "Unknown toolchain"
 #endif
