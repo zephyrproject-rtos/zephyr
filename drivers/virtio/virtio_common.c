@@ -48,6 +48,7 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 					vq->recv_cbs[chain_head];
 
 				uint16_t next = chain_head;
+				uint16_t freed = 0;
 				bool last = false;
 
 				/*
@@ -63,7 +64,16 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 					next = sys_le16_to_cpu(vq->desc[curr].next);
 					last = (sys_le16_to_cpu(vq->desc[curr].flags) &
 						VIRTQ_DESC_F_NEXT) == 0U;
-					virtq_add_free_desc(vq, curr);
+					if (k_stack_push(&vq->free_desc_stack, curr) == 0) {
+						freed++;
+					}
+				}
+
+				if (freed > 0U) {
+					/* Settle the count once for the whole chain. */
+					K_SPINLOCK(&vq->lock) {
+						vq->free_desc_n += freed;
+					}
 				}
 
 				vq->last_used_idx++;

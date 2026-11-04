@@ -189,7 +189,10 @@ struct virtq {
 	struct k_stack free_desc_stack;
 
 	/**
-	 * amount of free descriptors in the free_desc_stack
+	 * Approximate amount of free descriptors in the free_desc_stack.
+	 *
+	 * It is settled once per descriptor chain, so it can be stale while a chain is
+	 * being assembled and must not be used to decide whether allocation can succeed.
 	 */
 	uint16_t free_desc_n;
 
