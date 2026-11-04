@@ -48,10 +48,17 @@ typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 #define I2C_DW_NACK        (1 << 5)
 #define I2C_DW_SCL_STUCK   (1 << 6)
 #define I2C_DW_SDA_STUCK   (1 << 7)
+#define I2C_DW_TX_ABRT     (1U << 8)
 
-#define I2C_DW_ERR_MASK (I2C_DW_CMD_ERROR | I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_NACK)
+#define I2C_DW_ERR_MASK                                                                            \
+	(I2C_DW_CMD_ERROR | I2C_DW_TX_ABRT | I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_NACK)
 
 #define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_USER_ABRT)
+
+#define I2C_DW_FLUSH_ADDR           0x7fU
+#define I2C_DW_MAX_RECOVERY_RETRIES (IS_ENABLED(CONFIG_I2C_DW_BUS_CLEAR) ? 8U : 1U)
+#define I2C_DW_SDA_RECOV_POLL_COUNT 20U
+#define I2C_DW_SDA_RECOV_DELAY_US   10U
 
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 #define DW_ENABLE_TX_INT_I2C_CONTROLLER                                                            \
@@ -161,6 +168,7 @@ struct i2c_dw_rom_config {
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
 	k_timeout_t transfer_timeout;
+	uint32_t sda_timeout_value;
 
 #if I2C_DW_PINCTRL_ENABLED
 	const struct pinctrl_dev_config *pcfg;
@@ -182,7 +190,6 @@ struct i2c_dw_rom_config {
 #endif
 
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
-	uint32_t sda_timeout_value;
 	uint32_t scl_timeout_value;
 #endif
 };
@@ -200,11 +207,12 @@ struct i2c_dw_dev_config {
 	uint16_t hcnt;
 	uint16_t lcnt;
 
-	volatile uint8_t state; /* last direction of transfer */
+	volatile uint16_t state; /* last direction of transfer */
 	uint32_t request_bytes;
 	uint8_t xfr_flags;
 	bool support_hs_mode;
 	bool read_in_progress;
+	bool in_flush;
 #ifdef CONFIG_I2C_DW_LPSS_DMA
 	uintptr_t phy_addr;
 	uintptr_t base_addr;
