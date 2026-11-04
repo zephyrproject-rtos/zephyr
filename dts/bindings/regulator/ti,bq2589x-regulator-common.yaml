@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties of the TI BQ2589X family USB OTG boost regulator.
+
+  The boost converter supplies VBUS from the battery. Its output voltage
+  range is 4.55 V to 5.51 V in 64 mV steps.
+
+include:
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-init-microamp
+      - regulator-min-microamp
+      - regulator-max-microamp
+      - regulator-always-on
+      - regulator-boot-on
+      - regulator-boot-off
+      - startup-delay-us
+      - off-on-delay-us
