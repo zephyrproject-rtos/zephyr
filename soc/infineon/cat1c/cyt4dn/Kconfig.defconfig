@@ -80,4 +80,7 @@ config CLOCK_CONTROL
 config ARM_MPU
 	default y
 
+config PM_CPU_OPS
+	default y if MP_MAX_NUM_CPUS > 1
+
 endif # SOC_SERIES_CYT4DN
