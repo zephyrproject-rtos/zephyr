@@ -1390,6 +1390,98 @@ ZTEST(conn_mgr_monitor, test_cycle_states_simple_ipv64)
 	cycle_iface_states(if_simp_a, IPV6_FIRST);
 }
 
+/* Polling reports the current state, and a mask without IP family is rejected */
+ZTEST(conn_mgr_monitor, test_wait_ready_poll)
+{
+	uint32_t gen;
+
+	zassert_equal(conn_mgr_get_readiness(&gen), 0U, "No flag should be set.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_DNS, K_NO_WAIT), -EINVAL,
+		      "A mask without IP family should be rejected.");
+	zassert_equal(conn_mgr_wait_ready_change(0U, gen, K_NO_WAIT), -EINVAL,
+		      "A mask without IP family should be rejected.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, K_NO_WAIT), -EAGAIN,
+		      "Network should not be ready.");
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+
+	zassert_equal(conn_mgr_get_readiness(NULL), CONN_MGR_READY_IPV4,
+		      "Only IPv4 should be ready.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6, K_NO_WAIT),
+		   "Any requested IP family should be enough.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV6, K_NO_WAIT), -EAGAIN,
+		      "IPv6 should not be ready.");
+	zassert_equal(conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, K_NO_WAIT),
+		      -EAGAIN, "Name resolution should not be ready.");
+}
+
+static void wait_ready_up_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* Checked by the waiter, which fails if the iface does not come up */
+	(void)net_if_up(if_simp_a);
+}
+
+/* Waiting blocks until the network becomes ready */
+ZTEST(conn_mgr_monitor, test_wait_ready_blocks)
+{
+	static K_WORK_DELAYABLE_DEFINE(up_work, wait_ready_up_handler);
+	const int64_t delay_ms = 100;
+	int64_t start;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	start = k_uptime_get();
+	zassert_true(k_work_schedule(&up_work, K_MSEC(delay_ms)) >= 0,
+		     "Failed to schedule iface up.");
+
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, K_SECONDS(1)),
+		   "IPv4 should become ready.");
+	zassert_true(k_uptime_get() - start >= delay_ms, "Wait should have blocked.");
+}
+
+/* Waiting for a change returns only once a requested flag became ready again */
+ZTEST(conn_mgr_monitor, test_wait_ready_change)
+{
+	uint32_t gen;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+
+	(void)conn_mgr_get_readiness(&gen);
+	zassert_equal(conn_mgr_wait_ready_change(CONN_MGR_READY_IPV4, gen, K_NO_WAIT), -EAGAIN,
+		      "Nothing changed since the snapshot.");
+
+	/* Another family becoming ready is not a change of IPv4 */
+	net_if_ipv6_addr_add(if_simp_a, &test_ipv6_a, NET_ADDR_MANUAL, 0);
+	zassert_ok(conn_mgr_wait_ready_change(CONN_MGR_READY_IPV6, gen, DAD_WAIT_TIME),
+		   "IPv6 should become ready.");
+	zassert_equal(conn_mgr_wait_ready_change(CONN_MGR_READY_IPV4, gen, K_NO_WAIT), -EAGAIN,
+		      "IPv6 becoming ready should not change IPv4.");
+
+	/* Another iface becoming ready for an already ready family is a change */
+	net_if_ipv4_addr_add(if_simp_b, &test_ipv4_b, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_b), 0, "net_if_up should succeed for if_simp_b.");
+	zassert_ok(conn_mgr_wait_ready_change(CONN_MGR_READY_IPV4, gen, EVENT_WAIT_TIME),
+		   "A second IPv4 iface should be a change.");
+
+	/* Losing and regaining IPv4 after the snapshot is a change */
+	(void)conn_mgr_get_readiness(&gen);
+	zassert_equal(net_if_down(if_simp_b), 0, "net_if_down should succeed for if_simp_b.");
+	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_DISCONNECTED, EVENT_WAIT_TIME);
+	zassert_equal(conn_mgr_wait_ready_change(CONN_MGR_READY_IPV4, gen, K_NO_WAIT), -EAGAIN,
+		      "Losing IPv4 should not satisfy the wait.");
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready_change(CONN_MGR_READY_IPV4, gen, EVENT_WAIT_TIME),
+		   "Regaining IPv4 should be a change.");
+}
+
 /* L4 connectivity alone must not report name resolution as available */
 ZTEST(conn_mgr_monitor, test_dns_not_ready_without_servers)
 {
@@ -1557,6 +1649,33 @@ ZTEST(conn_mgr_monitor, test_dns_resend_status)
 	stats = get_reset_stats();
 	zassert_equal(stats.conn_count_dns, 1, "NET_EVENT_L4_DNS_READY should be resent.");
 	zassert_equal(stats.event_count_dns, 1, "Only NET_EVENT_L4_DNS_READY should be resent.");
+}
+
+/* Waiting for name resolution follows DNS server configuration */
+ZTEST(conn_mgr_monitor, test_wait_ready_dns)
+{
+	const uint32_t mask = CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS;
+	uint32_t gen;
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+	zassert_equal(conn_mgr_wait_ready(mask, K_NO_WAIT), -EAGAIN,
+		      "Name resolution should not be ready without servers.");
+
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+	zassert_ok(conn_mgr_wait_ready(mask, EVENT_WAIT_TIME), "Name resolution should be ready.");
+	zassert_equal(conn_mgr_get_readiness(&gen), mask, "IPv4 and DNS should be ready.");
+
+	/* Losing and regaining name resolution is a change, with IPv4 unchanged */
+	test_dns_set_server(NULL);
+	wait_for_events(TEST_EXPECT_L4_DNS_LOST, EVENT_WAIT_TIME);
+	zassert_equal(conn_mgr_wait_ready_change(mask, gen, K_NO_WAIT), -EAGAIN,
+		      "Name resolution should not be ready.");
+	test_dns_set_server(TEST_DNS_IPV4_SERVER);
+	zassert_ok(conn_mgr_wait_ready_change(mask, gen, EVENT_WAIT_TIME),
+		   "Regaining name resolution should be a change.");
 }
 #endif /* CONFIG_DNS_RESOLVER */
 
