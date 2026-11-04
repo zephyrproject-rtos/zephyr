@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/sys/printk.h>
+
 /* Input stream: 48 kHz, 16-bit, interleaved stereo, delivered in 1 ms USB frames */
 #define AUDIO_IN_RATE_HZ  48000U
 #define AUDIO_IN_CHANNELS 2U
@@ -66,6 +68,31 @@ void audio_in_flush(void);
 
 /** @brief Current feedback value in Q10.14 samples per 1 ms frame. */
 uint32_t audio_in_feedback_get(void);
+
+/**
+ * @brief Consumer: print and restart the audio input metrics.
+ *
+ * Call from the consumer context, once per metrics interval.
+ */
+void audio_in_metrics_print(void);
+
+/**
+ * @brief Format a value in hundredths as a signed decimal, for metrics output.
+ *
+ * @param buf Output buffer.
+ * @param len Size of @p buf.
+ * @param v Value in hundredths.
+ *
+ * @return @p buf
+ */
+static inline const char *audio_in_centi_str(char *buf, size_t len, int64_t v)
+{
+	const uint64_t a = (v < 0) ? (uint64_t)(-v) : (uint64_t)v;
+
+	(void)snprintk(buf, len, "%c%llu.%02llu", (v < 0) ? '-' : '+', a / 100U, a % 100U);
+
+	return buf;
+}
 
 /** @brief Start the emulated USB host (CONFIG_AUDIO_INPUT_EMULATED). */
 void audio_in_emulated_start(void);
