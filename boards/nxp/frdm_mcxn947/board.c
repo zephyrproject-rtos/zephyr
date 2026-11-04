@@ -259,6 +259,14 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Dac1);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac2))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac2);
+	CLOCK_SetClkDiv(kCLOCK_DivDac2Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC2);
+
+	CLOCK_EnableClock(kCLOCK_Dac2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS) || defined(CONFIG_PTP_CLOCK_DWC_MAC)
