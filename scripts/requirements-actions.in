@@ -1,6 +1,7 @@
 # zephyr-keep-sorted-start
 anytree
 awscli
+bsworld==1.1.4
 canopen
 clang-format>=15.0.0
 elasticsearch<9
