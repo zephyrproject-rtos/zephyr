@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: rp2040-200mhz
+description: Configure RP2040 system clock for 200 MHz.
+append:
+  EXTRA_CONF_FILE: rp2040-200mhz.conf
+  EXTRA_DTC_OVERLAY_FILE: rp2040-200mhz.overlay
