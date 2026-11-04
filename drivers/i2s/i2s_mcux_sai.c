@@ -1087,7 +1087,7 @@ static int i2s_mcux_read(const struct device *dev, void **mem_block, size_t *siz
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->rx;
 	struct i2s_q_entry q_entry = {0};
-	int status, ret = 0;
+	int status;
 
 	LOG_DBG("i2s_mcux_read");
 	if (strm->state == I2S_STATE_NOT_READY) {
@@ -1097,13 +1097,24 @@ static int i2s_mcux_read(const struct device *dev, void **mem_block, size_t *siz
 
 	status = k_msgq_get(&strm->out_queue, &q_entry, SYS_TIMEOUT_MS(strm->cfg.timeout));
 	if (status != 0) {
-		if (strm->state == I2S_STATE_ERROR) {
-			ret = -EIO;
-		} else {
-			LOG_DBG("need retry");
-			ret = -EAGAIN;
+		/*
+		 * Map k_msgq_get() results to I2S API:
+		 *  -EBUSY : returned immediately without waiting (K_NO_WAIT/timeout==0)
+		 *  -EAGAIN: waited and timed out
+		 *  -EIO   : in ERROR state and no more blocks are available
+		 */
+		if (status == -ENOMSG) {
+			/* No message and did not wait */
+			return (strm->state == I2S_STATE_ERROR) ? -EIO : -EBUSY;
 		}
-		return ret;
+
+		if (status == -EAGAIN) {
+			/* Timed out while waiting */
+			return (strm->state == I2S_STATE_ERROR) ? -EIO : -EAGAIN;
+		}
+
+		/* Propagate unexpected errors */
+		return status;
 	}
 
 	*mem_block = q_entry.mem_block;
