@@ -213,6 +213,41 @@ If this is not feasible, you can instead request that connectivity monitoring re
      conn_mgr_mon_resend_status();
    }
 
+.. _conn_mgr_monitoring_waiting:
+
+Waiting for readiness
+=====================
+
+Instead of listening for events, a thread can block until the network is ready by calling :c:func:`conn_mgr_wait_ready`.
+Its mask combines :c:macro:`CONN_MGR_READY_IPV4`, :c:macro:`CONN_MGR_READY_IPV6` and :c:macro:`CONN_MGR_READY_DNS`.
+The call returns once at least one of the requested address families is ready.
+If the mask includes :c:macro:`CONN_MGR_READY_DNS`, name resolution must also be available.
+
+.. code-block:: c
+
+   /* Wait until IPv4 and name resolution are available */
+   (void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, K_FOREVER);
+
+To retry after a failed connection attempt, wait between attempts with :c:func:`conn_mgr_wait_ready_change`.
+The wait lasts for the given timeout and ends early on a readiness change.
+This includes an iface becoming ready for an address family that was already ready, and an address family or name resolution that was lost and regained.
+
+.. code-block:: c
+
+   const uint32_t mask = CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS;
+   uint32_t gen;
+
+   (void)conn_mgr_wait_ready(mask, K_FOREVER);
+   (void)conn_mgr_get_readiness(&gen);
+
+   while (connect_to_server() != 0) {
+           (void)conn_mgr_wait_ready_change(mask, gen, K_SECONDS(60));
+           (void)conn_mgr_get_readiness(&gen);
+   }
+
+.. note::
+   Do not call these functions with a non-zero timeout from a :ref:`network management <net_mgmt_interface>` event callback.
+
 .. _conn_mgr_monitoring_ignoring_ifaces:
 
 Ignoring ifaces

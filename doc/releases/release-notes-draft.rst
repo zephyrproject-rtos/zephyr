@@ -83,6 +83,10 @@ Libraries / Subsystems
   * The connection manager tracks name resolution readiness, see
     :ref:`conn_mgr_monitoring_dns`: :c:macro:`NET_EVENT_L4_DNS_READY`,
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
+  * Threads can block until the network is ready with :c:func:`conn_mgr_wait_ready`,
+    instead of tracking connection manager events, see :ref:`conn_mgr_monitoring_waiting`.
+    :c:func:`conn_mgr_wait_ready_change` waits for readiness to change after a failed
+    connection attempt, using a snapshot from :c:func:`conn_mgr_get_readiness`.
   * :c:func:`dns_resolve_get_server_families` reports the address families of the
     available unicast DNS servers.
 
