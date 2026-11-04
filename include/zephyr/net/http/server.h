@@ -520,6 +520,11 @@ struct http_client_ctx {
 	 */
 	int http1_frag_data_len;
 
+	/** Offset of the payload from the cursor in the currently processed
+	 * request fragment (HTTP/1 only).
+	 */
+	size_t http1_frag_data_offset;
+
 	/** Client inactivity timer. The client connection is closed by the
 	 *  server when it expires.
 	 */
