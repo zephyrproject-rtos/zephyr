@@ -165,6 +165,9 @@ Libraries / Subsystems
     prefer Nagle's algorithm can disable
     :kconfig:option:`CONFIG_HTTP_SERVER_TCP_NODELAY`.
 
+  * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
+    (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
+
 Devicetree
 **********
 
