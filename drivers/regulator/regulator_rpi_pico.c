@@ -198,7 +198,7 @@ static DEVICE_API(regulator, api) = {
 	static struct regulator_rpi_pico_data data_##inst;                                         \
                                                                                                    \
 	static const struct regulator_rpi_pico_config config_##inst = {                            \
-		.common = REGULATOR_DT_COMMON_CONFIG_INIT(inst),                                   \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.reg = (REG_PICO_TYPE * const)DT_INST_REG_ADDR(inst),                              \
 		.brown_out_detection = DT_INST_PROP(inst, raspberrypi_brown_out_detection),        \
 		.brown_out_threshold = DT_INST_ENUM_IDX(inst, raspberrypi_brown_out_threshold),    \
