@@ -1379,11 +1379,12 @@ void hl78xx_enter_lte_restore_state(struct hl78xx_data *data);
  * Must be called at every hardware session boundary: cold power-on
  * (AWAIT_POWER_ON entry), graceful power-down (INIT_POWER_OFF entry) and
  * detected unexpected restart (+KSUP while already booted). The modem's RAM
- * state is gone at these points, so any driver-side record of it — the cached
- * phone functionality and the GNSS engine/search latches — is stale and must
- * not survive into the next session. (Leaving them set is what made GNSS
- * permanently unstartable: a gnss_start_status latched true could only be
- * cleared by a +GNSSEV stop URC that a powered-off modem can never send.)
+ * state is gone at these points, so any driver-side record of it is stale and
+ * must not survive into the next session: the cached phone functionality, the
+ * first-attach state and the GNSS engine/search latches. (Leaving the latches
+ * set is what made GNSS permanently unstartable: a gnss_start_status latched
+ * true could only be cleared by a +GNSSEV stop URC that a powered-off modem
+ * can never send.)
  *
  * Deliberately does NOT touch request/intent flags (gnss_mode_enter_pending):
  * those record what the caller wants, not what the hardware was doing, and the

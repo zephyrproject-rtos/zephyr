@@ -1202,6 +1202,12 @@ void hl78xx_reset_modem_session_state(struct hl78xx_data *data)
 	data->status.phone_functionality.valid = false;
 	data->status.phone_functionality.in_progress = false;
 	data->status.phone_functionality.functionality = HL78XX_FULLY_FUNCTIONAL;
+	/* The new session attaches for the first time. No wake follows its
+	 * registration to bring the +KCELLMEAS URC that turns the carrier on, so
+	 * the registration wait has to request it.
+	 */
+	data->status.kcellmeas.bootstrap_done = false;
+	data->status.registration.is_registered_currently = false;
 }
 
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp)
