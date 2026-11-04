@@ -74,6 +74,19 @@
 		};
 	};
 
+	/* On-board W25Q64JVSSIQ QSPI flash (U12), used in single-bit SPI mode */
+	pinmux_flexcomm6_lpspi: pinmux_flexcomm6_lpspi {
+		group0 {
+			pinmux = <FC6_P0_PIO3_20>,
+				 <FC6_P1_PIO3_21>,
+				 <FC6_P2_PIO3_22>,
+				 <FC6_P3_PIO3_23>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
 		group0 {
 			pinmux = <PWM1_A0_PIO3_12>,
