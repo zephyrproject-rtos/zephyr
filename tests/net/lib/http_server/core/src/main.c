@@ -940,7 +940,8 @@ static void expect_contains_header(const uint8_t *buffer, size_t len,
 		zassert_true(ret >= 0, "Failed to decode header");
 		zassert_true(consumed + ret <= len, "Frame length exceeded");
 
-		if (strncasecmp(header_buf.name, header->name, header_buf.name_len) == 0 &&
+		/* HTTP/2 field names are lowercase, so the name has to match exactly */
+		if (strncmp(header_buf.name, header->name, header_buf.name_len) == 0 &&
 		    strncasecmp(header_buf.value, header->value, header_buf.value_len) == 0) {
 			found = true;
 			break;
