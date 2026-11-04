@@ -189,3 +189,8 @@
 	mux-0-dc-6-div = <1>;
 	status = "okay";
 };
+
+&sema42 {
+	domain-id = <0>;
+	status = "okay";
+};
