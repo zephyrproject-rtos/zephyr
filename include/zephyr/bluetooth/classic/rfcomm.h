@@ -228,9 +228,9 @@ struct bt_rfcomm_dlc {
 	/** Number of receive credits remaining for this DLC.
 	 *
 	 *  Tracks how many additional UIH frames the local side may accept from the remote
-	 *  before flow control must be applied.
-	 *  Initialized from @p rx_credit_limit at connection setup and decremented as frames are
-	 *  received; refilled by sending credit grants to the remote.
+	 *  before flow control must be applied: the credits given to the remote, first in the
+	 *  PN, which carries at most 7, and then in credit frames once the DLC is connected.
+	 *  Decremented as frames are received; refilled by sending credit grants to the remote.
 	 *
 	 *  Only meaningful when CFC is enabled.
 	 */

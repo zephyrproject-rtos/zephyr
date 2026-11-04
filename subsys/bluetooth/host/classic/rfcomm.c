@@ -1117,6 +1117,10 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	    (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN ||
 	     dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED)) {
 		pn->credits = MIN(dlc->rx_credit_limit, RFCOMM_PN_MAX_RX_CREDITS);
+		/* The peer only gets what fits in the PN, so count that. The rest
+		 * is sent in a credit frame once the DLC is connected.
+		 */
+		dlc->rx_credit = pn->credits;
 		if (cr) {
 			pn->flow_ctrl = BT_RFCOMM_PN_CFC_CMD;
 		} else {
@@ -1411,33 +1415,47 @@ static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 
 	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
 
-	/* Only give more credits if it went below the defined threshold */
-	if (dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) {
+	/* Only give more credits if it went below the defined threshold, or
+	 * if credits are requested: the rest of the window after the PN, or
+	 * a retry of a credit frame that could not be sent.
+	 */
+	if ((dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) &&
+	    !atomic_test_bit(&dlc->flags, RFCOMM_FLAG_CREDITS_REQ)) {
 		return;
 	}
 
 	/* Restore credits */
 	credit_available = rfcomm_dlc_get_available_credits(dlc);
-	if (credit_available > dlc->rx_credit) {
-		credits = credit_available - dlc->rx_credit;
-		dlc->rx_credit += credits;
-		err = rfcomm_send_credit(dlc, credits);
-		if (err == 0) {
-			k_work_cancel_delayable(&dlc->retry_timeout_work);
-			return;
-		}
+	if (credit_available <= dlc->rx_credit) {
+		/* Nothing to give, as after a PN that carried the whole window */
+		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_CREDITS_REQ);
+		return;
+	}
 
-		LOG_ERR("Failed to send credit (%d)", err);
-		dlc->rx_credit -= credits;
+	credits = credit_available - dlc->rx_credit;
+	dlc->rx_credit += credits;
+	err = rfcomm_send_credit(dlc, credits);
+	if (err == 0) {
+		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_CREDITS_REQ);
+		k_work_cancel_delayable(&dlc->retry_timeout_work);
+		return;
+	}
 
-		/* Retry. */
-		if (err == -ENOBUFS) {
-			bt_work_schedule(&dlc->retry_timeout_work, RFCOMM_RETRY_TIMEOUT);
-			bt_work_schedule(&dlc->tx_work, RFCOMM_RETRY_INTERVAL);
-		} else {
-			/* Disconnected*/
-			rfcomm_dlc_close(dlc);
-		}
+	LOG_ERR("Failed to send credit (%d)", err);
+	dlc->rx_credit -= credits;
+
+	/* Retry. */
+	if (err == -ENOBUFS) {
+		/* The retry from the TX work must send these credits even
+		 * when the count is above the threshold, as it is after the
+		 * PN, or the retry timeout ends the DLC.
+		 */
+		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_CREDITS_REQ);
+		bt_work_schedule(&dlc->retry_timeout_work, RFCOMM_RETRY_TIMEOUT);
+		bt_work_schedule(&dlc->tx_work, RFCOMM_RETRY_INTERVAL);
+	} else {
+		/* Disconnected*/
+		rfcomm_dlc_close(dlc);
 	}
 }
 
@@ -1466,6 +1484,23 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	k_work_cancel_delayable(&dlc->rtx_work);
 
 	k_fifo_init(&dlc->tx_queue);
+
+	if (dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		/* Sending the MSC above failed and the DLC is being closed. As
+		 * for any other failed connection, the application only gets
+		 * disconnected().
+		 */
+		LOG_DBG("DLC %p closed while connecting", dlc);
+		return;
+	}
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
+		/* The PN carried at most 7 credits, let the TX work give the
+		 * rest of the window.
+		 */
+		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_CREDITS_REQ);
+		rfcomm_dlc_tx_trigger(dlc);
+	}
 
 	if (dlc->ops != NULL && dlc->ops->connected != NULL) {
 		dlc->ops->connected(dlc);
