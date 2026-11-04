@@ -505,6 +505,26 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 	}
 }
 
+#ifndef CONFIG_SPI_RTIO
+static int spi_stm32_dma_load(const struct device *dev, uint32_t transfer_dir)
+{
+	struct spi_stm32_data *data = dev->data;
+
+	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
+		data->tx_len = data->rx_len = spi_context_max_continuous_chunk(&data->ctx);
+		return spi_dma_move_buffers(dev, data->tx_len);
+	}
+
+	if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+		data->tx_len = data->ctx.tx_len;
+		return spi_dma_move_tx_buffers(dev, data->tx_len);
+	}
+
+	data->rx_len = data->ctx.rx_len;
+	return spi_dma_move_rx_buffers(dev, data->rx_len);
+}
+#endif /* !CONFIG_SPI_RTIO */
+
 static void spi_stm32_dma_tx_done(const struct device *dev)
 {
 	const struct spi_stm32_config *cfg = dev->config;
@@ -1984,17 +2004,7 @@ static int transceive_dma(const struct device *dev,
 
 	do {
 		data->status_flags = 0;
-
-		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
-			data->tx_len = data->rx_len = spi_context_max_continuous_chunk(&data->ctx);
-			ret = spi_dma_move_buffers(dev, data->tx_len);
-		} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
-			data->tx_len = data->ctx.tx_len;
-			ret = spi_dma_move_tx_buffers(dev, data->tx_len);
-		} else {
-			data->rx_len = data->ctx.rx_len;
-			ret = spi_dma_move_rx_buffers(dev, data->rx_len);
-		}
+		ret = spi_stm32_dma_load(dev, transfer_dir);
 
 #ifdef CONFIG_SPI_ASYNC
 		if (data->ctx.asynchronous) {
