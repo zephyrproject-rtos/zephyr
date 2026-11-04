@@ -3539,6 +3539,11 @@ void bt_iso_reset(void)
 				cis->iso->err = BT_HCI_ERR_UNSPECIFIED;
 
 				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
+
+				/* No Disconnection Complete comes to report what
+				 * the controller has acknowledged
+				 */
+				bt_conn_tx_notify(cis->iso, true);
 			}
 		}
 
