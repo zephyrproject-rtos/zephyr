@@ -18,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.10.0
+ * @version 0.11.0
  * @ingroup io_interfaces
  * @{
  *
@@ -266,6 +266,34 @@ enum display_pixel_format {
 	 * which is what makes it worth writing pictures out in.
 	 */
 	PIXEL_FORMAT_YUYV = BIT(15),
+
+	/**
+	 * @brief 2-plane YUV 4:2:0 format.
+	 *
+	 * A full-resolution Y (luma) plane followed immediately by a
+	 * half-resolution, interleaved U/V (chroma) plane.
+	 * The chroma plane is subsampled by 2 in each direction, thus the
+	 * frame size shall be even in width and height.
+	 *
+	 * Below shows how data are organized in memory, for a 4x2 image.
+	 * Each row of the U/V plane has lower-half padding to keep consistent
+	 * pitch value with the Y plane.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   | Byte 2   | Byte 3   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | (row 0, Y plane)
+	 *   Byte 4   | Byte 5   | Byte 6   | Byte 7   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | (row 1, Y plane)
+	 *   Byte 8   | Byte 9   | Byte 10   | Byte 11   |
+	 *   7......0   7......0   7......0   7......0
+	 * | Uuuuuuuu | Vvvvvvvv | Xxxxxxxx | Xxxxxxxx | (row 0, interleaved U/V plane)
+	 *   7......0   7......0   7......0   7......0
+	 * | Uuuuuuuu | Vvvvvvvv | Xxxxxxxx | Xxxxxxxx | (row 1, interleaved U/V plane)
+	 * @endcode
+	 */
+	PIXEL_FORMAT_NV12 = BIT(16),
 };
 
 /**
@@ -291,7 +319,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
 	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U) +				\
-	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U))
+	(((fmt & PIXEL_FORMAT_YUYV) >> 15) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_NV12) >> 16) * 16U))
 
 /**
  * @brief Display screen information
