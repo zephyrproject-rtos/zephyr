@@ -69,7 +69,7 @@ static void regulator_rpi_pico_wait_powman(const struct device *dev)
 	const struct regulator_rpi_pico_config *config = dev->config;
 
 	while (config->reg->vreg & POWMAN_VREG_UPDATE_IN_PROGRESS_BITS) {
-		k_usleep(10);
+		;
 	}
 }
 #endif
@@ -205,7 +205,7 @@ static DEVICE_API(regulator, api) = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, regulator_rpi_pico_init, NULL, &data_##inst, &config_##inst,   \
-			      POST_KERNEL, CONFIG_REGULATOR_RPI_PICO_INIT_PRIORITY, &api);         \
+			      PRE_KERNEL_1, CONFIG_REGULATOR_RPI_PICO_INIT_PRIORITY, &api);        \
 	IF_ENABLED(CONFIG_SOC_SERIES_RP2040,                                                       \
 		   (BUILD_ASSERT(DT_INST_ENUM_IDX(inst, raspberrypi_brown_out_threshold) < 16,     \
 		   "On RP2040, BOD threshold must be lower than 1161000");))                       \
