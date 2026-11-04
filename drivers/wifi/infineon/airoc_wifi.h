@@ -86,6 +86,8 @@ struct airoc_wifi_data {
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 	wl_bss_info_t scan_bss_info;
 	void *supp_if_ctx;
+	/* Held while supp_if_ctx is changed and across the event callbacks that use it */
+	struct k_mutex supp_if_ctx_lock;
 	void *hapd_if_ctx;
 	struct zep_wpa_supp_dev_callbk_fns airoc_wifi_wpa_supp_dev_callbk_fns;
 	struct wpa_scan_results supp_scan_res;
