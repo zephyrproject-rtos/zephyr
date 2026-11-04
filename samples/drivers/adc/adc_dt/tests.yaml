@@ -39,6 +39,8 @@ tests:
       - esp32s2_devkitc
       - esp32c3_devkitc
       - gd32l233r_eval
+      - lpcxpresso55s06
+      - lpcxpresso55s16
       - lpcxpresso55s36
       - mr_canhubk3
       - longan_nano
