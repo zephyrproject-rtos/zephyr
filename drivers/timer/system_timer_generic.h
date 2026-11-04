@@ -313,8 +313,8 @@ BUILD_ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_CYC_PER_TICK,
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 /* Set when timer_core_arm() writes a minimum reload because the deadline is
- * already due. Until the announce clears it, later calls that are also due
- * skip the write, so they don't keep restarting the counter.
+ * already due. While it is set, timer_core_arm() does nothing until the
+ * announce clears it.
  */
 static bool timer_core_catchup;
 
@@ -408,6 +408,10 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
 static void timer_core_arm(uint32_t ticks)
 {
 #if defined(TIMER_CORE_BACKEND_RELOAD)
+	if (timer_core_catchup) {
+		return;
+	}
+
 	uint64_t deadline_tick = timer_core_last_tick + timer_core_last_elapsed + ticks;
 
 	if (deadline_tick == timer_core_armed_deadline) {
@@ -450,16 +454,14 @@ static void timer_core_arm(uint32_t ticks)
 
 	if (rel < TIMER_CORE_ALARM_MIN_CYCLES) {
 		/*
-		 * Due now: fire as soon as possible. If a minimum reload is
-		 * already pending, let it fire rather than restart the counter.
-		 * Otherwise set_timeout() calls coming faster than the minimum
-		 * reload (e.g. timeslice resets from a syscall-heavy thread)
-		 * would push it back for as long as they keep coming, and time
-		 * would stop. Nothing can be due sooner than the minimum anyway.
+		 * Due now: fire as soon as possible, and ignore further arms
+		 * until the announce runs. Otherwise set_timeout() calls
+		 * coming faster than the minimum reload (e.g. timeslice resets
+		 * from a syscall-heavy thread) would keep restarting or
+		 * replacing it, and time would stop. Nothing can be due sooner
+		 * than the minimum anyway, and a later deadline will be armed
+		 * when the kernel reprograms at the end of the announce.
 		 */
-		if (timer_core_catchup) {
-			return;
-		}
 		timer_core_catchup = true;
 		rel = TIMER_CORE_ALARM_MIN_CYCLES;
 	}
