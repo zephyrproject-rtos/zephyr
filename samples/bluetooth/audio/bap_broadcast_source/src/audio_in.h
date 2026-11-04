@@ -43,6 +43,24 @@ void audio_in_put(const int16_t *pcm, size_t frames);
  */
 void audio_in_get(int16_t *left, int16_t *right);
 
+/**
+ * @brief Consumer: get one SDU frame per channel, with the time the SDU is sent on air.
+ *
+ * Same as audio_in_get(). With CONFIG_AUDIO_INPUT_TIMED, @p t_tx_us in GRTC microseconds
+ * (low 32 bits, the time base of the SOF time stamps) anchors the buffer level control to
+ * the ISO stream timing.
+ */
+void audio_in_get_timed(int16_t *left, int16_t *right, uint32_t t_tx_us);
+
+/**
+ * @brief Producer: report a USB Start-of-Frame.
+ *
+ * Call from the producer context for each SOF, before the data received in that frame.
+ *
+ * @param t_us SOF time in GRTC microseconds (low 32 bits).
+ */
+void audio_in_sof(uint32_t t_us);
+
 /** @brief Request a flush of buffered audio; any context. */
 void audio_in_flush(void);
 

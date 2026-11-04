@@ -94,6 +94,22 @@ config AUDIO_INPUT_STREAM
 	bool
 	default y if USE_USB_AUDIO_INPUT || AUDIO_INPUT_EMULATED
 
+config AUDIO_INPUT_TIMED
+	bool "Time-stamped audio input clock recovery"
+	default y
+	depends on AUDIO_INPUT_STREAM && BT_CTLR_NRF_GRTC && NRF_GRTC_TIMER
+	depends on AUDIO_INPUT_EMULATED || SOC_NRF54LM20A
+	select NRFX_GPPI if USE_USB_AUDIO_INPUT
+	help
+	  Time stamp each USB Start-of-Frame in the GRTC, the time base of the
+	  Bluetooth controller, and obtain the transmission time of each SDU with
+	  the HCI LE Read ISO TX Sync command. The feedback value is computed from
+	  the measured SOF period and a slow phase loop holds the input buffer
+	  level at the nominal SDU encode time, so that no SDU is late and no
+	  sample needs to be dropped or repeated. On nRF54LM20 the USBHS SOF event
+	  triggers a GRTC capture through DPPI; the emulated host provides exact
+	  SOF time stamps.
+
 config BROADCAST_CODE
 	string "The broadcast code (if any) to use for encrypted broadcast"
 	default ""

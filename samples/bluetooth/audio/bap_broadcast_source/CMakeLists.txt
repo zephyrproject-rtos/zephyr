@@ -10,6 +10,10 @@ target_sources(app PRIVATE
 
 target_sources_ifdef(CONFIG_AUDIO_INPUT_STREAM app PRIVATE src/audio_in.c)
 
+if(CONFIG_AUDIO_INPUT_TIMED AND CONFIG_USE_USB_AUDIO_INPUT)
+  target_sources(app PRIVATE src/usb_sof_nrf.c)
+endif()
+
 if(CONFIG_USE_USB_AUDIO_INPUT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 endif()
