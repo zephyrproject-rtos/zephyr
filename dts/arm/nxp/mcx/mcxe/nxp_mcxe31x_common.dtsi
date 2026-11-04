@@ -1218,6 +1218,8 @@
 	sema42: sema42@460000 {
 		compatible = "nxp,sema42";
 		reg = <0x460000 0x52>;
+		num-locks = <16>;
+		#hwlock-cells = <1>;
 		status = "disabled";
 	};
 
