@@ -54,6 +54,24 @@ extern
 extern void __sw_isr_table get_isr_entry(int irq_number, struct _isr_table_entry *entry);
 #endif /* CONFIG_GEN_SW_ISR_TABLE_ARRAY */
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE)
+/*
+ * Read an entry of the software ISR table, hiding whether it was generated as
+ * an array or as a switch-case function. Any index below IRQ_TABLE_SIZE is
+ * valid; entries without a registered ISR read back as z_irq_spurious.
+ *
+ * The index is the IRQ line minus CONFIG_GEN_IRQ_START_VECTOR.
+ */
+static inline void z_sw_isr_table_lookup(unsigned int table_idx, struct _isr_table_entry *entry)
+{
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
+	*entry = _sw_isr_table[table_idx];
+#else
+	get_isr_entry(table_idx, entry);
+#endif
+}
+#endif /* CONFIG_GEN_SW_ISR_TABLE */
+
 struct _irq_parent_entry {
 	const struct device *dev;
 	unsigned int level;

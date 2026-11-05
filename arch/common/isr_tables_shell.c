@@ -26,10 +26,13 @@ static void dump_isr_table_entry(const struct shell *sh, int idx,
 
 static int cmd_sw_isr_table(const struct shell *sh, size_t argc, char **argv)
 {
-	shell_print(sh, "_sw_isr_table[%d]\n", IRQ_TABLE_SIZE);
+	shell_print(sh, "sw_isr_table[%d]\n", IRQ_TABLE_SIZE);
 
 	for (int idx = 0; idx < IRQ_TABLE_SIZE; idx++) {
-		dump_isr_table_entry(sh, idx, &_sw_isr_table[idx]);
+		struct _isr_table_entry entry;
+
+		z_sw_isr_table_lookup(idx, &entry);
+		dump_isr_table_entry(sh, idx, &entry);
 	}
 
 	return 0;
