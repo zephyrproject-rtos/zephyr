@@ -110,6 +110,11 @@ New APIs and options
   * Added PSA Protected Storage backend, enable with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`
 
+* I3C
+
+  * :c:member:`i3c_config_controller.tcas_ps`
+  * ``tcas-ps`` I3C controller Devicetree property
+
 * Networking
 
   * Add :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` to start the DHCPv6
