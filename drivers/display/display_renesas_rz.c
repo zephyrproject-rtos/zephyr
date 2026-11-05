@@ -193,6 +193,13 @@ static int rz_display_blanking_off(const struct device *dev)
 	return ret;
 }
 
+static const pixel_format_t rz_display_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
 static void rz_display_get_capabilities(const struct device *dev,
 					struct display_capabilities *capabilities)
 {
@@ -203,7 +210,7 @@ static void rz_display_get_capabilities(const struct device *dev,
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->supported_pixel_formats =
-		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_565;
+		rz_display_supported_pixel_formats;
 	capabilities->current_pixel_format = data->current_pixel_format;
 	capabilities->screen_info = 0U;
 }

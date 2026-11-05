@@ -152,7 +152,7 @@ static void ili98xx_dsi_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = cfg->pixel_format;
+	capabilities->supported_pixel_formats = cfg->supported_pixel_formats;
 	capabilities->current_pixel_format = cfg->pixel_format;
 }
 
@@ -248,6 +248,8 @@ static int ili98xx_dsi_init(const struct device *dev)
 #define INST_DT_ILI98XX_DSI(n, t) DT_INST(n, ilitek_ili##t)
 
 #define ILI98XX_DSI_INIT(n, t)                                                                     \
+	static const pixel_format_t ili##t##_dsi_formats_##n[] = {                                \
+		DT_PROP(INST_DT_ILI98XX_DSI(n, t), pixel_format), 0};                              \
 	static const struct ili98xx_dsi_config ili##t##_dsi_config_##n = {                         \
 		.mipi_dsi = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI98XX_DSI(n, t))),                   \
 		.reset = GPIO_DT_SPEC_GET_OR(INST_DT_ILI98XX_DSI(n, t), reset_gpios, {0}),         \
@@ -257,6 +259,7 @@ static int ili98xx_dsi_init(const struct device *dev)
 		.height = DT_PROP(INST_DT_ILI98XX_DSI(n, t), height),                              \
 		.channel = DT_REG_ADDR(INST_DT_ILI98XX_DSI(n, t)),                                 \
 		.pixel_format = DT_PROP(INST_DT_ILI98XX_DSI(n, t), pixel_format),                  \
+		.supported_pixel_formats = ili##t##_dsi_formats_##n, \
 		.regs_init_fn = ili##t##_dsi_regs_init,                                            \
 	};                                                                                         \
                                                                                                    \

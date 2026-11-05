@@ -245,6 +245,16 @@ out:
 	return ret;
 }
 
+static const pixel_format_t st7735r_alternative_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
+static const pixel_format_t st7735r_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565X,
+	0,
+};
+
 static void st7735r_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -262,10 +272,10 @@ static void st7735r_get_capabilities(const struct device *dev,
 	 * It is a workaround for supporting buggy modules that display RGB as BGR.
 	 */
 	if (!(config->madctl & ST7735R_MADCTL_BGR) != !config->rgb_is_inverted) {
-		capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
+		capabilities->supported_pixel_formats = st7735r_supported_pixel_formats;
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565X;
 	} else {
-		capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
+		capabilities->supported_pixel_formats = st7735r_alternative_supported_pixel_formats;
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 	}
 

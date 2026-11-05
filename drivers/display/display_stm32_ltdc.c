@@ -50,6 +50,17 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #define STM32_LTDC_HAS_YUV 1
 #endif
 
+static const pixel_format_t stm32_ltdc_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_L_8,
+#if defined(STM32_LTDC_HAS_YUV)
+	PIXEL_FORMAT_YUYV,
+#endif
+	0,
+};
+
 #define STM32_LTDC_INIT_PIXEL_SIZE	DISPLAY_BITS_PER_PIXEL(DISPLAY_INIT_PIXEL_FORMAT) \
 					/ BITS_PER_BYTE
 
@@ -304,11 +315,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 				     data->hltdc.LayerCfg[0].WindowX0;
 	capabilities->y_resolution = data->hltdc.LayerCfg[0].WindowY1 -
 				     data->hltdc.LayerCfg[0].WindowY0;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
-					PIXEL_FORMAT_RGB_888 |
-					PIXEL_FORMAT_RGB_565 |
-					PIXEL_FORMAT_L_8 |
-					(IS_ENABLED(STM32_LTDC_HAS_YUV) ? PIXEL_FORMAT_YUYV : 0);
+	capabilities->supported_pixel_formats = stm32_ltdc_supported_pixel_formats;
 	capabilities->screen_info = 0;
 
 	capabilities->current_pixel_format = data->current_pixel_format;

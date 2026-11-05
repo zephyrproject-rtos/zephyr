@@ -266,6 +266,12 @@ static int nt35510_set_brightness(const struct device *dev, const uint8_t bright
 	return nt35510_write_reg(dev, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &brightness, 1);
 }
 
+static const pixel_format_t nt35510_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void nt35510_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -274,7 +280,7 @@ static void nt35510_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = nt35510_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = data->orientation;
 }

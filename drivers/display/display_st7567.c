@@ -365,6 +365,12 @@ static int st7567_set_contrast(const struct device *dev, const uint8_t contrast)
 	return st7567_write_cmd_bus(dev, cmd_buf, sizeof(cmd_buf));
 }
 
+static const pixel_format_t st7567_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO10,
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void st7567_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct st7567_config *config = dev->config;
@@ -372,7 +378,7 @@ static void st7567_get_capabilities(const struct device *dev, struct display_cap
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10 | PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = st7567_supported_pixel_formats;
 	caps->current_pixel_format = data->pf;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;

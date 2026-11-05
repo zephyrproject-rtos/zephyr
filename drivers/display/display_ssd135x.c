@@ -233,13 +233,18 @@ static int ssd135x_set_contrast(const struct device *dev, const uint8_t contrast
 				      3);
 }
 
+static const pixel_format_t ssd135x_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
 static void ssd135x_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ssd135x_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
+	caps->supported_pixel_formats = ssd135x_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_RGB_565;
 	caps->screen_info = 0;
 }

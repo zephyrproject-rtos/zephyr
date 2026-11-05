@@ -437,6 +437,11 @@ static void *display_smartbond_get_framebuffer(const struct device *dev)
 	return ((void *)data->buffer);
 }
 
+static const pixel_format_t display_smartbond_supported_pixel_formats[] = {
+	DT_INST_PROP(0, pixel_format),
+	0,
+};
+
 static void display_smartbond_get_capabilities(const struct device *dev,
 			struct display_capabilities *capabilities)
 {
@@ -449,7 +454,7 @@ static void display_smartbond_get_capabilities(const struct device *dev,
 	 * format is defined based on the pixel-format property dictated by lcd-controller
 	 * bindings.
 	 */
-	capabilities->supported_pixel_formats = DT_INST_PROP(0, pixel_format);
+	capabilities->supported_pixel_formats = display_smartbond_supported_pixel_formats;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->current_pixel_format = DT_INST_PROP(0, pixel_format);
 	capabilities->x_resolution = DT_INST_PROP(0, width);

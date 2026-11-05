@@ -243,13 +243,18 @@ static int cplx_set_brightness(const struct device *dev, uint8_t brightness)
 	return 0;
 }
 
+static const pixel_format_t cplx_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void cplx_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct cplx_config *cfg = dev->config;
 
 	caps->x_resolution = cfg->width;
 	caps->y_resolution = cfg->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = cplx_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }

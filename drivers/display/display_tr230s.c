@@ -536,6 +536,11 @@ static int tr230s_set_orientation(const struct device *dev,
 	return tr230s_unlock_mutex(&data->access_mutex, ret);
 }
 
+static const pixel_format_t tr230s_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565X,
+	0,
+};
+
 static void tr230s_get_capabilities(const struct device *dev,
 				    struct display_capabilities *capabilities)
 {
@@ -553,7 +558,7 @@ static void tr230s_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = logical_width_pixels;
 	capabilities->y_resolution = logical_height_pixels;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
+	capabilities->supported_pixel_formats = tr230s_supported_pixel_formats;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565X;
 	capabilities->current_orientation = data->orientation;
 }

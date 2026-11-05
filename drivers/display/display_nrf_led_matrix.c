@@ -211,12 +211,17 @@ static int api_set_orientation(const struct device *dev,
 	}
 }
 
+static const pixel_format_t api_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void api_get_capabilities(const struct device *dev,
 				 struct display_capabilities *caps)
 {
 	caps->x_resolution = X_PIXELS;
 	caps->y_resolution = Y_PIXELS;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = api_supported_pixel_formats;
 	caps->screen_info = 0;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
