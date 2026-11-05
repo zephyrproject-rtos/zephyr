@@ -28,3 +28,9 @@
 	domain-id = <1>;
 	status = "okay";
 };
+
+&micfil {
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
+	status = "okay";
+};
