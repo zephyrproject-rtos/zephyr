@@ -12,5 +12,9 @@ tests:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC and dt_compat_enabled("zephyr,power-state")
     platform_allow:
       - b_u585i_iot02a
+      - nucleo_c5a3zg
+      - nucleo_g071rb
+      - nucleo_u385rg_q
+      - nucleo_wb55rg
     integration_platforms:
       - b_u585i_iot02a

@@ -1,0 +1,39 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
+&cpu0 {
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+dut: &lpuart1 {
+	/* Connect PC1 (TX) to PC0 (RX). */
+	clocks = <&rcc STM32_CLOCK(APB1_2, 0)>,
+		 <&rcc STM32_SRC_HSI LPUART1_SEL(2)>;
+	current-speed = <19200>;
+	wakeup-source;
+	/delete-property/ hw-flow-control;
+	dmas = <&dmamux1 0 17 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 1 16 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
