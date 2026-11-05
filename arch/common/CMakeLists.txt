@@ -34,6 +34,9 @@ zephyr_library_sources_ifdef(
 
 zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)
 
+zephyr_library_sources_ifdef(CONFIG_IRQ_DISPATCH_WRAPPER irq_dispatch.c)
+zephyr_library_sources_ifdef(CONFIG_IRQ_STORM_DETECTION irq_storm.c)
+
 if(NOT CONFIG_ARCH_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_SOC_HAS_TIMING_FUNCTIONS AND
     NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
