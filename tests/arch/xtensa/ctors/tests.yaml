@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  arch.xtensa.ctors:
+    arch_allow: xtensa
+    timeout: 20
+    integration_platforms:
+      - qemu_xtensa/dc233c
+    tags:
+      - cpp
+      - linker
