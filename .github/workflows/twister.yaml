@@ -169,8 +169,8 @@ jobs:
       CCACHE_REMOTE_ONLY: "true"
       # `--specs` is ignored because ccache is unable to resolve the toolchain specs file path.
       CCACHE_IGNOREOPTIONS: '-specs=* --specs=*'
-      BSIM_OUT_PATH: /opt/bsim/
-      BSIM_COMPONENTS_PATH: /opt/bsim/components
+      BSIM_OUT_PATH: /opt/bsim_west/bsim/
+      BSIM_COMPONENTS_PATH: /opt/bsim_west/bsim/components
       TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 2 --timeout-multiplier 2 --post-build-checks '
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
       PR_OPTIONS: ' --clobber-output --integration -j 16'
