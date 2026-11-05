@@ -10,7 +10,10 @@ target_sources(app PRIVATE
 )
 
 if(CONFIG_TEST_MC_STRESS_UART)
-  target_sources(app PRIVATE src/transport_uart.c)
+  target_sources(app PRIVATE
+    ../console_prefix.c
+    src/transport_uart.c
+  )
 else()
   target_sources(app PRIVATE src/transport_native.c)
 endif()

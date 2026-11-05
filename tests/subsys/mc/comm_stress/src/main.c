@@ -20,6 +20,8 @@
 #define TEST_MESSAGE_SIZE 4096U
 #define TEST_SEND_FRAME_SIZE 1157U
 #define TEST_RECEIVE_FRAME_SIZE 59U
+#define TEST_PHASE_SETTLE_MS    500U
+#define TEST_STARTUP_TIMEOUT_US 300000000U
 
 static uint8_t sender_storage[TEST_STORAGE_SIZE] __aligned(8);
 static uint8_t receiver_storage[TEST_STORAGE_SIZE] __aligned(8);
@@ -125,8 +127,35 @@ static int transfer_iteration(uint32_t seed, uint32_t timeout_us)
 	return exchange(&tiny, sizeof(tiny), timeout_us);
 }
 
-static int run_transfer(uint32_t iterations, uint8_t loss_rate, bool duplicate,
-			bool corrupt, bool shorten, bool disconnect, bool allow_timeout)
+static int finish_uart_phase(uint32_t timeout_us)
+{
+	const uint8_t marker = 0xa5U;
+	int64_t deadline;
+	int err = exchange(&marker, sizeof(marker), timeout_us);
+
+	if (err != 0) {
+		return err;
+	}
+	if (IS_ENABLED(CONFIG_TEST_MC_STRESS_SENDER)) {
+		k_msleep(TEST_PHASE_SETTLE_MS);
+		return 0;
+	}
+
+	deadline = k_uptime_get() + TEST_PHASE_SETTLE_MS;
+
+	/* A final acknowledgment may be lost, so answer retransmissions before resetting. */
+	while (k_uptime_get() < deadline) {
+		err = mc_comm_update(receiver_comm);
+		if (err != 0 && err != -EAGAIN && err != -EBADMSG) {
+			return err;
+		}
+		k_msleep(1U);
+	}
+	return 0;
+}
+
+static int run_transfer(uint32_t iterations, uint8_t loss_rate, bool duplicate, bool corrupt,
+			bool shorten, bool disconnect, bool allow_timeout, bool wait_for_peer)
 {
 	uint32_t timeout_us = allow_timeout ? 3000000U : 1000000U;
 	uint8_t retry_limit = allow_timeout ? 100U : 30U;
@@ -138,7 +167,14 @@ static int run_transfer(uint32_t iterations, uint8_t loss_rate, bool duplicate,
 
 	init_pair(loss_rate, duplicate, corrupt, shorten, disconnect, retry_limit);
 	if (loss_rate == 0U) {
-		int err = exchange(NULL, 0U, timeout_us);
+		uint32_t first_timeout_us = timeout_us;
+		int err;
+
+		if (wait_for_peer && IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) &&
+		    !IS_ENABLED(CONFIG_TEST_MC_STRESS_SENDER)) {
+			first_timeout_us = TEST_STARTUP_TIMEOUT_US;
+		}
+		err = exchange(NULL, 0U, first_timeout_us);
 
 		if (err != 0) {
 			return err;
@@ -160,6 +196,9 @@ static int run_transfer(uint32_t iterations, uint8_t loss_rate, bool duplicate,
 		if (err != 0) {
 			return err;
 		}
+	}
+	if (IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) && !allow_timeout) {
+		return finish_uart_phase(timeout_us);
 	}
 	return mc_comm_flush(IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) &&
 				     !IS_ENABLED(CONFIG_TEST_MC_STRESS_SENDER) ?
@@ -216,28 +255,28 @@ ZTEST(mc_comm_stress, test_04_singly_direction)
 {
 	uint32_t iterations = IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) ? 200U : 20U;
 
-	zassert_ok(run_transfer(iterations, 0U, false, false, false, false, false), NULL);
+	zassert_ok(run_transfer(iterations, 0U, false, false, false, false, false, true), NULL);
 }
 
 ZTEST(mc_comm_stress, test_05_singly_repetitive)
 {
 	uint32_t iterations = IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) ? 200U : 20U;
 
-	zassert_ok(run_transfer(iterations, 0U, true, false, false, false, false), NULL);
+	zassert_ok(run_transfer(iterations, 0U, true, false, false, false, false, false), NULL);
 }
 
 ZTEST(mc_comm_stress, test_06_singly_low_lossy)
 {
 	uint32_t iterations = IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) ? 200U : 20U;
 
-	zassert_ok(run_transfer(iterations, 20U, true, true, true, true, false), NULL);
+	zassert_ok(run_transfer(iterations, 20U, true, true, true, true, false, false), NULL);
 }
 
 ZTEST(mc_comm_stress, test_07_singly_high_lossy)
 {
 	uint32_t iterations = IS_ENABLED(CONFIG_TEST_MC_STRESS_UART) ? 100U : 3U;
 
-	zassert_ok(run_transfer(iterations, 96U, true, true, true, true, true), NULL);
+	zassert_ok(run_transfer(iterations, 96U, true, true, true, true, true, false), NULL);
 }
 
 ZTEST(mc_comm_stress, test_08_singly_timed_out)

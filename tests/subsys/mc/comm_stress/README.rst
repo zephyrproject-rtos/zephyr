@@ -136,15 +136,22 @@ Build one image for each board from the Zephyr directory::
 
 Connect P1.04 (TX) on each board to P1.05 (RX) on the other board. Connect
 their grounds. UART20 uses 1 Mbaud. Disable VCOM1 on both boards because it
-shares the UART20 pins. Keep VCOM0 for the console.
+shares the UART20 pins. Keep VCOM0 for both consoles.
 
-Flash the images. Replace the device IDs with your board IDs::
+Flash the receiver first, then the sender. Replace the device IDs with your
+board IDs::
 
    west flash -d build/mc_receiver --dev-id <receiver-id>
    west flash -d build/mc_sender --dev-id <sender-id>
 
-Open both VCOM0 consoles at 115200 baud. Reset the receiver, then the sender
-promptly. Non-timeout UART transfers allow five seconds per operation for
-startup skew and injected faults. Both consoles should print
+The receiver waits up to five minutes at the first transfer for the sender
+to start. Open both VCOM0 consoles at 115200 baud. To rerun, open both
+monitors and reset the receiver, then the sender promptly. Both logs should print
 ``PROJECT EXECUTION SUCCESSFUL``. The test with high frame loss may take
 several minutes.
+
+Use only one monitor per console. Two readers on the same serial port split
+its bytes, leaving missing characters in both logs. On Linux,
+``fuser -v /dev/ttyACM*`` shows processes using serial ports and
+``ls -l /dev/serial/by-id/`` identifies each board's VCOM0 port. UART20's
+1 Mbaud setting applies only to the wire between the boards.
