@@ -108,4 +108,10 @@ if SOC_SERIES_BSIM_NRF53X
 # Let's reuse the RTC sync options so applications which use it can be reused as is
 source "soc/nordic/nrf53/Kconfig.sync_rtc"
 
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+	default 4096 if NRF_802154_SER_HOST && BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	default 4096 if NRF_802154_SER_RADIO && BOARD_NRF5340BSIM_NRF5340_CPUNET
+
 endif # SOC_SERIES_BSIM_NRF53X
