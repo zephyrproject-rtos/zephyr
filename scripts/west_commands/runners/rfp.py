@@ -168,8 +168,6 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         load_image = ['-run']
         if self.erase:
             load_image += ['-erase']
-        else:
-            load_image += ['-noerase']
 
         if self.verify:
             load_image += ['-v']
