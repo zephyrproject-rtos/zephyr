@@ -33,6 +33,12 @@ config GEN_SW_ISR_TABLE
 config RISCV_SOC_INTERRUPT_INIT
 	default y
 
+configdefault TF_PSA_CRYPTO_DISPATCH_DIR
+	default "$(ZEPHYR_BASE)/drivers/misc/it51xxx_psa_crypto/dispatch" if IT51XXX_PSA_CRYPTO
+
+configdefault TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	default "it51xxx_crypto_config.h" if IT51XXX_PSA_CRYPTO
+
 rsource "Kconfig.defconfig.it51*"
 
 endif # SOC_SERIES_IT51XXX
