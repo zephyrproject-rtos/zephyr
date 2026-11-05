@@ -75,6 +75,12 @@ config SOC_NRF7120_WICR_SETUP
 	  WICR is an NVM region for configuring Wi-Fi related settings and
 	  values.
 
+config SOC_SERIES_NRF71_READ_ICR
+	bool "nRF71 ICR fallback reader"
+	help
+	  Enable the nRF71 API for reading allowlisted configuration values from
+	  UICR, with fallback to FICR and a caller-provided default.
+
 config SOC_NRF71_WIFI_DAP
 	bool "nRF71 Wi-Fi Debug access port for debugging"
 	help
