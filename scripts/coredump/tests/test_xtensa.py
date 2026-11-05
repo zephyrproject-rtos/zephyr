@@ -5,6 +5,7 @@ import importlib
 import struct
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import Mock
 
 import pytest
 
@@ -15,10 +16,10 @@ def xtensa(monkeypatch):
     return importlib.import_module("gdbstubs.arch.xtensa")
 
 
-def make_stub(xtensa, soc, toolchain, version=2, extra=b"", extra_valid=0):
+def make_stub(xtensa, soc, toolchain, version=2, extra=b"", extra_valid=0, exccause=63):
     definition = xtensa.get_gdb_reg_definition(soc, toolchain)
     values = list(range(struct.calcsize(definition.ARCH_DATA_BLK_STRUCT_REGS) // 4))
-    values[1] = 63  # Z_EXCEPT_REASON
+    values[1] = exccause
     header = struct.pack("<BH", soc.value, version)
     if version != 1:
         header += bytes([toolchain.value])
@@ -193,3 +194,25 @@ def test_missing_extra_registers_in_gdb(xtensa, version):
     assert packets.pop() == b"xxxxxxxx"
     stub.handle_register_group_read_packet()
     assert packets.pop()[66 * 8 : 67 * 8] == b"xxxxxxxx"
+
+
+@pytest.mark.parametrize("soc,version", [(2, 1), (6, 2), (6, 3)])
+@pytest.mark.parametrize(
+    "cause,signal",
+    [
+        (0, 4),
+        *((cause, 7) for cause in (2, 5, 9, 12, 13)),
+        *((cause, 11) for cause in (3, 8, 14, 15, 16, 17, 18, 20, 24, 25, 26, 28, 29)),
+        *((cause, 8) for cause in (6, *range(32, 40))),
+        (63, 6),
+    ],
+)
+def test_stop_signal(xtensa, soc, version, cause, signal):
+    stub = make_stub(
+        xtensa, xtensa.XtensaSoc(soc), xtensa.XtensaToolchain.ZEPHYR, version, exccause=cause
+    )
+    assert stub.exception_code == cause
+    stub.socket = Mock()
+    stub.handle_signal_query_packet()
+    packet = f"S{signal:02X}".encode()
+    stub.socket.send.assert_called_once_with(b"$" + packet + f"#{sum(packet) % 256:02X}".encode())
