@@ -82,3 +82,34 @@ config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
 	  This should be lower than the priority of fixed factor clock driver
 	  to ensure the clock paths are initialized before.
 endif # CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
+
+config CLOCK_CONTROL_IFX_SRSS
+	bool "Infineon SRSS clock control driver"
+	default y
+	depends on DT_HAS_INFINEON_CLK_SRSS_ENABLED
+	help
+	  Native clock control driver for the oscillators, FLL, PLLs, clock
+	  paths and CLK_HF roots of the Infineon SRSS block.
+
+if CLOCK_CONTROL_IFX_SRSS
+
+config CLOCK_CONTROL_IFX_SRSS_CONFIGURE
+	bool "Configure the SRSS clocks"
+	default y if SOC_FAMILY_INFINEON_CAT1C && CPU_CORTEX_M0PLUS
+	default y if (SOC_SERIES_PSC3 || SOC_SERIES_PSE84) && \
+		     TRUSTED_EXECUTION_SECURE
+	help
+	  Program the clocks from the devicetree at init. Enable it only in
+	  the image that owns the clocks. Without it the driver only reads
+	  the clock rates.
+
+config CLOCK_CONTROL_IFX_SRSS_MXS40SRSS
+	def_bool SOC_FAMILY_INFINEON_CAT1C
+
+config CLOCK_CONTROL_IFX_SRSS_MXS40SSRSS
+	def_bool SOC_SERIES_PSC3
+
+config CLOCK_CONTROL_IFX_SRSS_MXS22SRSS
+	def_bool SOC_SERIES_PSE84
+
+endif # CLOCK_CONTROL_IFX_SRSS
