@@ -116,12 +116,21 @@ set_property(TARGET bintools PROPERTY strip_flag_outfile -o )
 # This is using readelf from bintools.
 set_property(TARGET bintools PROPERTY readelf_command ${CMAKE_READELF})
 
-set_property(TARGET bintools PROPERTY readelf_flag "")
-set_property(TARGET bintools PROPERTY readelf_flag_final "")
-set_property(TARGET bintools PROPERTY readelf_flag_headers -e)
+if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  set_property(TARGET bintools PROPERTY readelf_flag "")
+  set_property(TARGET bintools PROPERTY readelf_flag_final "")
+  set_property(TARGET bintools PROPERTY readelf_flag_headers "")
 
-set_property(TARGET bintools PROPERTY readelf_flag_infile "")
-set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
+  set_property(TARGET bintools PROPERTY readelf_flag_infile "")
+  set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
+else()
+  set_property(TARGET bintools PROPERTY readelf_flag "")
+  set_property(TARGET bintools PROPERTY readelf_flag_final "")
+  set_property(TARGET bintools PROPERTY readelf_flag_headers -e)
+
+  set_property(TARGET bintools PROPERTY readelf_flag_infile "")
+  set_property(TARGET bintools PROPERTY readelf_flag_outfile ">;" )
+endif()
 
 # Example on how to support dwarfdump instead of readelf
 #set_property(TARGET bintools PROPERTY readelf_command dwarfdump)
