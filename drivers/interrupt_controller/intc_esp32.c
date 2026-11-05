@@ -230,7 +230,10 @@ static bool intr_has_handler(int intr, int cpu)
 	intr += CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET;
 #endif
 
-	return _sw_isr_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].isr != z_irq_spurious;
+	struct _isr_table_entry entry;
+
+	z_isr_get_entry(intr * CONFIG_MP_MAX_NUM_CPUS + cpu, &entry);
+	return entry.isr != z_irq_spurious;
 }
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)

@@ -1,5 +1,8 @@
 # Copyright (c) 2024 Synopsys
 # SPDX-License-Identifier: Apache-2.0
 
+config ISR_TABLES_LOCAL_DECLARATION
+	default n
+
 config PICOLIBC_SUPPORTED
 	default n

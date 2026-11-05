@@ -109,7 +109,7 @@ uint32_t riscv_aplic_get_num_sources(const struct device *dev)
 		.num_sources = DT_INST_PROP(inst, riscv_num_sources),                              \
 		.max_prio = DT_INST_PROP(inst, riscv_max_priority),                                \
 		.irq_config_func = aplic_irq_config_func_##inst,                                   \
-		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(inst)],                       \
+		.isr_table_offset = INTC_INST_ISR_TBL_OFFSET(inst),                       \
 	};                                                                                         \
 	APLIC_INTC_IRQ_FUNC_DEFINE(inst)                                                           \
 	DEVICE_DT_INST_DEFINE(inst, aplic_init, NULL, &aplic_data_##inst, &aplic_cfg_##inst,       \

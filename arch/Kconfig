@@ -21,6 +21,7 @@ osource "$(KCONFIG_BINARY_DIR)/Kconfig.arch"
 config ARC
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_SUPPORTS_ROM_START
@@ -82,6 +83,7 @@ config ARM64
 config MIPS
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ATOMIC_OPERATIONS_C
 	help
 	  MIPS architecture
@@ -89,6 +91,7 @@ config MIPS
 config OPENRISC
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ATOMIC_OPERATIONS_BUILTIN
 	select BIG_ENDIAN
 	select USE_SWITCH
@@ -101,6 +104,7 @@ config OPENRISC
 config SPARC
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select BIG_ENDIAN
@@ -179,6 +183,7 @@ config RISCV
 config XTENSA
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select ARCH_HAS_CODE_DATA_RELOCATION
@@ -198,6 +203,7 @@ config XTENSA
 config TRICORE
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select ATOMIC_OPERATIONS_BUILTIN if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
@@ -232,6 +238,7 @@ config ARCH_POSIX
 config HEXAGON
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
@@ -243,6 +250,7 @@ config HEXAGON
 config RX
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ATOMIC_OPERATIONS_C
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
@@ -591,25 +599,27 @@ config TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	bool
 	default y
-	# Userspace is currently not supported
-	depends on !USERSPACE
 	# List of currently supported architectures
 	depends on ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	# List of currently supported toolchains
-	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "cross-compile" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "host" || \
+		"$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || \
+		TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
+	default y
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
-	depends on GEN_IRQ_VECTOR_TABLE
+	depends on GEN_ISR_TABLES
 	help
-	  Enable new scheme of interrupt tables generation.
-	  This is totally different generator that would create tables entries locally
-	  where the IRQ_CONNECT macro is called and then use the linker script to position it
-	  in the right place in memory.
-	  The most important advantage of such approach is that the generated interrupt tables
-	  are LTO compatible.
-	  The drawback is that the support on the architecture port is required.
+	  Keep interrupt table entries in the compilation unit containing
+	  IRQ_CONNECT and arrange them with the linker. Function and argument
+	  references are resolved during the final link, including with LTO.
+	  Architecture and toolchain defaults select this on supported combinations.
+	  Disable it to use the legacy generator that copies prelinked addresses.
 
 config DYNAMIC_INTERRUPTS
 	bool "Installation of IRQs at runtime"

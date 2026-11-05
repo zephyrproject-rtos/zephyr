@@ -115,7 +115,9 @@
 
 /* imports */
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
+#ifdef CONFIG_GEN_SW_ISR_TABLE_ARRAY
 GDATA(_sw_isr_table)
+#endif
 #endif
 GDATA(_kernel)
 GTEXT(__soc_handle_irq)
@@ -801,7 +803,10 @@ on_irq_stack:
 	 */
 	jal ra, __soc_handle_irq
 
-#if defined CONFIG_GEN_SW_ISR_TABLE
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	call z_isr_invoke
+#else
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
 	 * (table is 2-word wide, we should shift index accordingly)
@@ -824,6 +829,7 @@ on_irq_stack:
 
 	/* Call ISR function */
 	jalr ra, t1, 0
+#endif /* CONFIG_GEN_SW_ISR_TABLE_SWITCH */
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit

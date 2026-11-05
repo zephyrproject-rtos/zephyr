@@ -37,7 +37,7 @@ struct thejas32_intc_config {
 	mem_addr_t base;
 	uint32_t nr_irqs;
 	uint32_t irq;
-	const struct _isr_table_entry *isr_table;
+	uint32_t isr_table_offset;
 	void (*irq_config_func)(void);
 };
 
@@ -89,7 +89,7 @@ static void thejas32_intc_irq_handler(const struct device *dev)
 
 	while (status != 0U) {
 		const uint32_t local_irq = find_lsb_set(status) - 1;
-		const struct _isr_table_entry *ite = &config->isr_table[local_irq];
+		struct _isr_table_entry entry;
 
 		status &= ~BIT(local_irq);
 
@@ -97,7 +97,8 @@ static void thejas32_intc_irq_handler(const struct device *dev)
 			z_irq_spurious(NULL);
 		}
 
-		ite->isr(ite->arg);
+		z_isr_get_entry(config->isr_table_offset + local_irq, &entry);
+		entry.isr(entry.arg);
 	}
 }
 
@@ -126,7 +127,7 @@ static int thejas32_intc_init(const struct device *dev)
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.nr_irqs = THEJAS32_INTC_NR_IRQS(n),                                               \
 		.irq = DT_INST_IRQN(n),                                                            \
-		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(n)],                          \
+		.isr_table_offset = INTC_INST_ISR_TBL_OFFSET(n),                          \
 		.irq_config_func = thejas32_intc_irq_config_func_##n,                              \
 	};                                                                                         \
 	IRQ_PARENT_ENTRY_DEFINE(thejas32_intc_##n, DEVICE_DT_INST_GET(n), DT_INST_IRQN(n),         \

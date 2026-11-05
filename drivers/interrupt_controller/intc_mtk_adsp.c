@@ -45,7 +45,10 @@ static void intc_isr(const void *arg)
 		uint32_t irq = find_msb_set(irqs) - 1;
 		uint32_t off = cfg->sw_isr_off + irq;
 
-		_sw_isr_table[off].isr(_sw_isr_table[off].arg);
+		struct _isr_table_entry entry;
+
+		z_isr_get_entry(off, &entry);
+		entry.isr(entry.arg);
 		irqs &= ~BIT(irq);
 	}
 }

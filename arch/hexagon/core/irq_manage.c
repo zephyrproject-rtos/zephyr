@@ -126,9 +126,13 @@ static void z_hexagon_interrupt_handler(struct event_context *ctx)
 
 	/* Call ISR from SW ISR table */
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	z_isr_invoke(irq_num);
+#else
 	const struct _isr_table_entry *entry = &_sw_isr_table[irq_num];
 
 	entry->isr(entry->arg);
+#endif
 #else
 	ARG_UNUSED(irq_num);
 	z_irq_spurious(NULL);

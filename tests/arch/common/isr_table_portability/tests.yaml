@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - kernel
+    - interrupt
+    - isr_table
+tests:
+  arch.isr_table_portability.array.static:
+    platform_allow: &array_platforms
+      - qemu_cortex_a53
+      - qemu_cortex_m3
+    integration_platforms: *array_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_portability.array.dynamic:
+    platform_allow: *array_platforms
+    integration_platforms: *array_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=y
+  arch.isr_table_portability.array.lto:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_LTO=y
+  arch.isr_table_portability.array.shared.static:
+    platform_allow: *array_platforms
+    integration_platforms: *array_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_portability.array.shared.dynamic:
+    platform_allow: *array_platforms
+    integration_platforms: *array_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=y
+  arch.isr_table_portability.switch.static:
+    platform_allow: *array_platforms
+    integration_platforms: *array_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_portability.switch.shared.static:
+    platform_allow: *array_platforms
+    integration_platforms: *array_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=n

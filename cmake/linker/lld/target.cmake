@@ -10,55 +10,63 @@ list(APPEND TOOLCHAIN_LD_FLAGS -fuse-ld=lld)
 list(APPEND CMAKE_REQUIRED_FLAGS -fuse-ld=lld)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
+include(${ZEPHYR_BASE}/cmake/linker/ld/configure.cmake)
+
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
-  set(template_script_defines ${linker_pass_define})
-  list(TRANSFORM template_script_defines PREPEND "-D")
-
-  # Different generators deal with depfiles differently.
-  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-    # Note that the IMPLICIT_DEPENDS option is currently supported only
-    # for Makefile generators and will be ignored by other generators.
-    set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-    # Using DEPFILE with other generators than Ninja is an error.
-    set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
+  if(CONFIG_CMAKE_LINKER_GENERATOR)
+    zephyr_linker_generate_cmake_script(${linker_script_gen} "${linker_pass_define}"
+      LLD DEPENDS ${extra_dependencies}
+    )
   else()
-    # TODO: How would the linker script dependencies work for non-linker
-    # script generators.
-    message(WARNING "This generator is not well supported. The
-                    Linker script may not be regenerated when it should.")
-    set(linker_script_dep "")
+    set(template_script_defines ${linker_pass_define})
+    list(TRANSFORM template_script_defines PREPEND "-D")
+
+    # Different generators deal with depfiles differently.
+    if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+      # Note that the IMPLICIT_DEPENDS option is currently supported only
+      # for Makefile generators and will be ignored by other generators.
+      set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
+    elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+      # Using DEPFILE with other generators than Ninja is an error.
+      set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
+    else()
+      # TODO: How would the linker script dependencies work for non-linker
+      # script generators.
+      message(WARNING "This generator is not well supported. The
+                      Linker script may not be regenerated when it should.")
+      set(linker_script_dep "")
+    endif()
+
+    zephyr_get_include_directories_for_lang(C current_includes)
+
+    add_custom_command(
+      OUTPUT ${linker_script_gen}
+      DEPENDS
+      ${LINKER_SCRIPT}
+      ${extra_dependencies}
+      # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
+      ${linker_script_dep}
+      COMMAND ${CMAKE_C_COMPILER}
+      -x assembler-with-cpp
+      ${NOSYSDEF_CFLAG}
+      -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
+      -D_LINKER
+      -D_ASMLANGUAGE
+      -D__LLD_LINKER_CMD__
+      -imacros ${AUTOCONF_H}
+      ${current_includes}
+      ${template_script_defines}
+      -E ${LINKER_SCRIPT}
+      -P # Prevent generation of debug `#line' directives.
+      -o ${linker_script_gen}
+      VERBATIM
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMAND_EXPAND_LISTS
+    )
   endif()
-
-  zephyr_get_include_directories_for_lang(C current_includes)
-
-  add_custom_command(
-    OUTPUT ${linker_script_gen}
-    DEPENDS
-    ${LINKER_SCRIPT}
-    ${extra_dependencies}
-    # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
-    ${linker_script_dep}
-    COMMAND ${CMAKE_C_COMPILER}
-    -x assembler-with-cpp
-    ${NOSYSDEF_CFLAG}
-    -MD -MF ${linker_script_gen}.dep -MT ${linker_script_gen}
-    -D_LINKER
-    -D_ASMLANGUAGE
-    -D__LLD_LINKER_CMD__
-    -imacros ${AUTOCONF_H}
-    ${current_includes}
-    ${template_script_defines}
-    -E ${LINKER_SCRIPT}
-    -P # Prevent generation of debug `#line' directives.
-    -o ${linker_script_gen}
-    VERBATIM
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    COMMAND_EXPAND_LISTS
-  )
 endmacro()
 
 # Force symbols to be entered in the output file as undefined symbols

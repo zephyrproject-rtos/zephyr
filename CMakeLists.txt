@@ -84,9 +84,11 @@ zephyr_linker_include_var(VAR CMAKE_VERBOSE_MAKEFILE VALUE ${CMAKE_VERBOSE_MAKEF
 # existing variable to allow slowly cleanup of linking stage handling.
 # Three stage linking active: pre0 -> pre1 -> final, this will correspond to `pre1`
 # Two stage linking active:   pre0 -> final, this will correspond to `pre0`
-if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
+if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS OR CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+  set(extra_link_pass TRUE)
   set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre1)
 else()
+  set(extra_link_pass FALSE)
   set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_pre0)
 endif()
 set(ZEPHYR_FINAL_EXECUTABLE zephyr_final)
@@ -1399,7 +1401,10 @@ if(CONFIG_USERSPACE)
   endforeach()
 endif()
 
-if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
+include(isr_tables)
+zephyr_isr_tables_generate(${ZEPHYR_PREBUILT_EXECUTABLE})
+
+if(extra_link_pass)
   configure_linker_script(
     ${ZEPHYR_CURRENT_LINKER_CMD}
     "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
@@ -1421,7 +1426,10 @@ if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
     ${ZEPHYR_INCLUDE_DIRS}
     )
 
-  add_executable(${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c)
+  add_executable(${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    misc/empty_file.c
+    ${ISR_TABLES_DISCOVERY_SOURCES}
+  )
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
@@ -1437,7 +1445,9 @@ if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
   target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
                     BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
   )
-  set_property(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD})
+  set_property(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS
+    ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
+  )
   add_dependencies(${ZEPHYR_LINK_STAGE_EXECUTABLE} linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script)
 
   math(EXPR ZEPHYR_CURRENT_LINKER_PASS "1 + ${ZEPHYR_CURRENT_LINKER_PASS}")
@@ -1446,35 +1456,6 @@ endif()
 set(ZEPHYR_CURRENT_LINKER_CMD  linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}.cmd)
 set(ZEPHYR_LINK_STAGE_EXECUTABLE zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS})
 list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_ZEPHYR_PREBUILT")
-
-if(CONFIG_GEN_ISR_TABLES)
-  if(CONFIG_GEN_SW_ISR_TABLE)
-    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --sw-isr-table)
-  endif()
-
-  if(CONFIG_GEN_IRQ_VECTOR_TABLE)
-    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
-  endif()
-
-  # isr_tables.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
-  # gen_isr_tables.py
-  add_custom_command(
-    OUTPUT isr_tables.c isr_tables_vt.ld isr_tables_swi.ld
-    COMMAND ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/build/gen_isr_tables.py
-    --output-source isr_tables.c
-    --linker-output-files isr_tables_vt.ld isr_tables_swi.ld
-    --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
-    --intlist-section .intList
-    --intlist-section intList
-    $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
-    ${GEN_ISR_TABLE_EXTRA_ARG}
-    DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-    COMMAND_EXPAND_LISTS
-    )
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
-endif()
 
 if(CONFIG_SYMTAB)
   add_custom_command(
@@ -1619,6 +1600,7 @@ configure_linker_script(
   "${LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE}"
   ${APP_SMEM_ALIGNED_DEP}
   ${KOBJECT_LINKER_DEP}
+  ${ISR_TABLES_LINKER_DEPENDENCIES}
   ${CODE_RELOCATION_DEP}
   zephyr_generated_headers
   )
@@ -1641,7 +1623,11 @@ get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
 # FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       ${ZEPHYR_LINK_STAGE_EXECUTABLE} misc/empty_file.c ${GASF})
+add_executable(${ZEPHYR_LINK_STAGE_EXECUTABLE}
+  misc/empty_file.c
+  ${GASF}
+  ${ISR_TABLES_GENERATED_SOURCES}
+)
 toolchain_ld_link_elf(
   TARGET_ELF            ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
@@ -1659,14 +1645,14 @@ target_byproducts(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE}
 set(BYPRODUCT_KERNEL_ELF_NAME "${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}" CACHE FILEPATH "Kernel elf file" FORCE)
 set_property(TARGET
   ${ZEPHYR_LINK_STAGE_EXECUTABLE}
-  PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
+  APPEND PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD}
   )
 add_dependencies(
   ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   linker_zephyr_prebuilt_script_target
   )
 
-set(generated_kernel_files ${GKSF} ${GKOF})
+set(generated_kernel_files ${GKSF} ${GKOF} ${ISR_TABLES_GENERATED_SOURCES})
 if(NOT generated_kernel_files)
   # Use the prebuilt elf as the final elf since we don't have a
   # generation stage.
@@ -1680,6 +1666,7 @@ else()
     "LINKER_ZEPHYR_FINAL"
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+    ${ISR_TABLES_LINKER_DEPENDENCIES}
     zephyr_generated_headers
     )
 
@@ -1694,7 +1681,12 @@ else()
     ${ZEPHYR_INCLUDE_DIRS}
   )
 
-  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GASF} ${GKSF})
+  add_executable(${ZEPHYR_FINAL_EXECUTABLE}
+    misc/empty_file.c
+    ${GASF}
+    ${GKSF}
+    ${ISR_TABLES_GENERATED_SOURCES}
+  )
   toolchain_ld_link_elf(
     TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
     OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_FINAL_EXECUTABLE}.map
@@ -1705,12 +1697,16 @@ else()
   )
   target_link_libraries_ifdef(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID ${ZEPHYR_FINAL_EXECUTABLE}
                             $<TARGET_PROPERTY:linker,no_check_sections>)
-  set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
+  set_property(TARGET ${ZEPHYR_FINAL_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS
+    ${PROJECT_BINARY_DIR}/linker.cmd
+  )
   add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} linker_zephyr_final_script_target)
 
   # Use the pass2 elf as the final elf
   set(logical_target_for_zephyr_elf ${ZEPHYR_FINAL_EXECUTABLE})
 endif()
+
+zephyr_isr_tables_check(${logical_target_for_zephyr_elf})
 
 # Export the variable to the application's scope to allow the
 # application to know what the name of the final elf target is.

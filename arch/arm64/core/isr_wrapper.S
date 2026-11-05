@@ -18,7 +18,9 @@
 
 _ASM_FILE_PROLOGUE
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_ARRAY
 GDATA(_sw_isr_table)
+#endif
 
 /*
  * Wrapper around ISRs when inserted in software ISR table
@@ -91,9 +93,16 @@ oob:
 	b.hi	spurious_continue
 
 	/* Retrieve the interrupt service routine */
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	sub	sp, sp, #16
+	mov	x1, sp
+	bl	get_isr_entry
+	ldp	x0, x3, [sp], #16
+#else
 	ldr	x1, =_sw_isr_table
 	add	x1, x1, x0, lsl #4	/* table is 16-byte wide */
 	ldp	x0, x3, [x1] /* arg in x0, ISR in x3 */
+#endif
 
 	/*
 	 * Call the ISR. Unmask and mask again the IRQs to support nested

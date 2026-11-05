@@ -17,7 +17,11 @@
 
 #define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
 #define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
+#if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+#define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME) __used
+#else
 #define __irq_vector_table	Z_GENERIC_SECTION(_IRQ_VECTOR_TABLE_SECTION_NAME)
+#endif
 #define __sw_isr_table		Z_GENERIC_SECTION(_SW_ISR_TABLE_SECTION_NAME)
 
 #ifdef CONFIG_SHARED_INTERRUPTS

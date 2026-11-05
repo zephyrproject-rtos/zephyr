@@ -69,6 +69,14 @@
 #endif
 
 /**
+ * @brief Place a declaration in a section whose name is a string expression.
+ * @param name Section name, including concatenated string literals.
+ */
+#ifndef Z_GENERIC_SECTION_LITERAL
+#define Z_GENERIC_SECTION_LITERAL(name) __attribute__((section(name)))
+#endif
+
+/**
  * @def __noasan
  * @brief Disable address sanitizer
  *

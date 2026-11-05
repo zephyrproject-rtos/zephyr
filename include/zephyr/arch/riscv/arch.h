@@ -217,9 +217,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE
-#define ARCH_IRQ_VECTOR_JUMP_CODE(v) "j " STRINGIFY(v)
-#endif
+#include <zephyr/arch/riscv/irq_vector.h>
 
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).

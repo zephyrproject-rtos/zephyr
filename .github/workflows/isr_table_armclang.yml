@@ -1,0 +1,123 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ISR native Arm Compiler tests
+
+on:
+  push:
+    branches: [main, v*-branch]
+    paths: &arm_isr_paths
+      - '.github/workflows/isr_table_armclang.yml'
+      - 'CMakeLists.txt'
+      - 'arch/Kconfig'
+      - 'arch/common/**'
+      - 'arch/arm/**'
+      - 'cmake/compiler/**'
+      - 'cmake/gcc-m-cpu.cmake'
+      - 'cmake/gcc-m-fpu.cmake'
+      - 'cmake/modules/extensions.cmake'
+      - 'cmake/modules/isr_tables.cmake'
+      - 'cmake/linker/**'
+      - 'cmake/linker_script/**'
+      - 'cmake/toolchain/armclang/**'
+      - 'include/zephyr/arch/**'
+      - 'include/zephyr/linker/**'
+      - 'include/zephyr/toolchain.h'
+      - 'include/zephyr/irq*.h'
+      - 'include/zephyr/sw_isr_table.h'
+      - 'include/zephyr/isr_table_metadata.h'
+      - 'include/zephyr/toolchain/**'
+      - 'scripts/build/**'
+      - 'scripts/ci/run_isr_table_armclang.py'
+      - 'west.yml'
+      - 'SDK_VERSION'
+      - 'tests/arch/common/isr_table_runtime/**'
+      - 'tests/arch/common/gen_isr_table/**'
+  pull_request:
+    branches: [main, v*-branch]
+    paths: *arm_isr_paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  armclang:
+    name: Native armclang/armlink Cortex-M IRQ tests
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.29.4
+    timeout-minutes: 30
+    env:
+      ARM_COMPILER_SHA256: 55cdfa20b2588ea52222d9f836258b0e01c220251ddf46d39605939ce07e9117
+      ARMLM_CACHED_LICENSES_LOCATION: ${{ runner.temp }}/isr-arm-license
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install fixed Arm Compiler release
+        shell: bash
+        run: |
+          archive="${RUNNER_TEMP}/arm-compiler-6.24.tar.gz"
+          url="https://artifacts.tools.arm.com/arm-compiler/6.24/19"
+          curl --fail --location --retry 3 \
+            "${url}/standalone-linux-x86_64-rel.tar.gz" -o "${archive}"
+          printf '%s  %s\n' "${ARM_COMPILER_SHA256}" "${archive}" | sha256sum --check
+          mkdir -p "${RUNNER_TEMP}/isr-armclang"
+          tar -xzf "${archive}" -C "${RUNNER_TEMP}/isr-armclang"
+          echo "${RUNNER_TEMP}/isr-armclang/bin" >> "${GITHUB_PATH}"
+          rm "${archive}"
+
+      # Arm's AVH CI documentation permits this Community path for open-source use:
+      # https://arm-software.github.io/AVH/main/infrastructure/html/avh_gh_actions.html
+      - name: Activate official Community OSS tools
+        uses: ARM-software/cmsis-actions/armlm@16a86e3e90c3749fda898fffd9f9bb548b0c3044
+        with:
+          product: KEMDK-COM0
+          server: https://mdk-preview.keil.arm.com
+
+      - name: Prepare fixed manifest modules
+        shell: bash
+        run: |
+          if ! west topdir >/dev/null 2>&1; then
+            west init -l .
+          fi
+          test "$(west topdir)" = "$(dirname "${GITHUB_WORKSPACE}")"
+          test "$(west config manifest.path)" = "$(basename "${GITHUB_WORKSPACE}")"
+          west update --narrow cmsis cmsis_6
+
+      - name: Build and execute real ISR kernels
+        shell: bash
+        run: |
+          export ZEPHYR_SDK_INSTALL_DIR="/opt/toolchains/zephyr-sdk-$(cat SDK_VERSION)"
+          python scripts/ci/run_isr_table_armclang.py \
+            --toolchain "${RUNNER_TEMP}/isr-armclang" \
+            --qemu "${ZEPHYR_SDK_INSTALL_DIR}/hosttools/usr/bin/qemu-system-arm" \
+            --output "${RUNNER_TEMP}/isr-armclang-tests"
+
+      - name: Upload test evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: isr-native-armclang
+          if-no-files-found: error
+          include-hidden-files: true
+          path: |
+            ${{ runner.temp }}/isr-armclang-tests/result.json
+            ${{ runner.temp }}/isr-armclang-tests/*/build.log
+            ${{ runner.temp }}/isr-armclang-tests/*/qemu.log
+            ${{ runner.temp }}/isr-armclang-tests/*/zephyr/.config
+            ${{ runner.temp }}/isr-armclang-tests/*/zephyr/isr_tables*.json
+            ${{ runner.temp }}/isr-armclang-tests/*/zephyr/*.elf
+            ${{ runner.temp }}/isr-armclang-tests/*/zephyr/*.elf.*.json
+
+      - name: Remove job-owned license cache
+        if: always()
+        shell: bash
+        run: rm -rf -- "${ARMLM_CACHED_LICENSES_LOCATION}"

@@ -27,8 +27,8 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 void z_sparc_enter_irq(uint32_t irl)
 {
-#if defined(CONFIG_GEN_SW_ISR_TABLE)
-	struct _isr_table_entry *ite;
+#if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	const struct _isr_table_entry *ite;
 #endif
 
 	_current_cpu->nested++;
@@ -37,8 +37,12 @@ void z_sparc_enter_irq(uint32_t irl)
 	if (irl != 141U) {
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
 		irl = intc_irqmp_get_source(irl);
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+		z_isr_invoke(irl);
+#else
 		ite = &_sw_isr_table[irl];
 		ite->isr(ite->arg);
+#endif
 #else
 		z_irq_spurious(NULL);
 #endif
@@ -49,8 +53,12 @@ void z_sparc_enter_irq(uint32_t irl)
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
 	/* Get the actual interrupt source from the interrupt controller */
 	irl = intc_irqmp_get_source(irl);
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	z_isr_invoke(irl);
+#else
 	ite = &_sw_isr_table[irl];
 	ite->isr(ite->arg);
+#endif
 #else
 	ARG_UNUSED(irl);
 	z_irq_spurious(NULL);

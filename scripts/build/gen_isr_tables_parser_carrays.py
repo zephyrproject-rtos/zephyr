@@ -221,7 +221,7 @@ typedef void (* ISR)(const void *);
         fp.write("};\n")
 
     def __write_shared_table(self, fp):
-        if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
+        if not self.__config.check_sym("CONFIG_SRAM_SW_ISR_TABLE"):
             fp.write("const ")
         fp.write(
             "struct z_shared_isr_table_entry __shared_sw_isr_table"
@@ -263,7 +263,7 @@ typedef void (* ISR)(const void *);
     def write_isr_case_block(self, fp, i, isr, arg):
         fp.write(f"\t\tcase {i}:\n")
         fp.write("\t\t{\n")
-        fp.write(f"\t\t\tentry->isr = (ISR){isr:#x};\n")
+        fp.write(f"\t\t\tentry->isr = (ISR){hex(isr) if isinstance(isr, int) else isr};\n")
         fp.write(f"\t\t\tentry->arg = (const void *){arg};\n")
         fp.write("\t\t\tbreak;\n")
         fp.write("\t\t}\n")
@@ -305,7 +305,7 @@ typedef void (* ISR)(const void *);
         self.write_isr_case_default_block(fp)
 
     def write_isr_table_array(self, fp):
-        if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
+        if not self.__config.check_sym("CONFIG_SRAM_SW_ISR_TABLE"):
             fp.write("const ")
         fp.write(f"struct _isr_table_entry __sw_isr_table _sw_isr_table[{self.__nv}] = {{\n")
 

@@ -14,18 +14,11 @@ zephyr_linker_section_obj_level(SECTION init LEVEL SMP)
 zephyr_iterable_section(NAME device NUMERIC KVMA RAM_REGION GROUP RODATA_REGION)
 
 if(CONFIG_GEN_SW_ISR_TABLE AND NOT CONFIG_SRAM_SW_ISR_TABLE)
-  # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
-  zephyr_linker_section(NAME sw_isr_table KVMA FLASH GROUP RODATA_REGION NOINPUT)
-  zephyr_linker_section_configure(
-    SECTION sw_isr_table
-    INPUT ".gnu.linkonce.sw_isr_table*"
+  include(${CMAKE_CURRENT_LIST_DIR}/isr-tables.cmake)
+  zephyr_linker_sw_isr_tables(
+    PLACEMENT KVMA FLASH GROUP RODATA_REGION
+    LEGACY_ATTRIBUTES NOINPUT
   )
-  if(CONFIG_SHARED_INTERRUPTS)
-    zephyr_linker_section_configure(
-      SECTION sw_isr_table
-      INPUT ".gnu.linkonce.shared_sw_isr_table*"
-    )
-  endif()
 endif()
 
 zephyr_linker_section(NAME initlevel_error KVMA RAM_REGION GROUP RODATA_REGION NOINPUT)

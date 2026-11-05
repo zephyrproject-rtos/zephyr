@@ -29,6 +29,16 @@ Common
 Build System
 ************
 
+* :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION` is now enabled by default on
+  supported architecture and toolchain combinations. The ``IRQ_CONNECT`` and
+  ``IRQ_DIRECT_CONNECT`` interfaces are unchanged. Out-of-tree linker scripts must
+  collect the generated ISR placement fragments instead of relying on implicit
+  replacement of ``.gnu.linkonce`` tables. Set the option to ``n`` to retain the
+  legacy generator while updating a custom linker script. Arm Compiler Cortex-M is
+  included in the new default. IAR, MetaWare, XCC, and Xtensa Clang profiles retain
+  the legacy default and allow local declarations to be enabled explicitly.
+  GCC-based XCC requires a builtin ``__COUNTER__`` to enable local declarations.
+
 * The minimum required CMake version is now 3.28.0. CMake 3.28.3 is shipped in the Ubuntu 24.04 LTS
   package repositories. Users of distributions providing an older CMake, such as Ubuntu 22.04 LTS,
   can get a recent version from the `Kitware APT repository <https://apt.kitware.com/>`_ or with

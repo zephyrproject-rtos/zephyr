@@ -31,8 +31,10 @@ static ALWAYS_INLINE void dw_ictl_dispatch_child_isrs(uint32_t intr_status,
 		intr_bitpos = find_lsb_set(intr_status) - 1;
 		intr_status &= ~(1 << intr_bitpos);
 		intr_offset = isr_base_offset + intr_bitpos - CONFIG_GEN_IRQ_START_VECTOR;
-		_sw_isr_table[intr_offset].isr(
-			_sw_isr_table[intr_offset].arg);
+		struct _isr_table_entry entry;
+
+		z_isr_get_entry(intr_offset, &entry);
+		entry.isr(entry.arg);
 	}
 }
 

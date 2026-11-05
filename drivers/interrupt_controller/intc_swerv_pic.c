@@ -125,7 +125,7 @@ static void swerv_pic_irq_handler(const void *arg)
 {
 	uint32_t tmp;
 	uint32_t irq;
-	const struct _isr_table_entry *ite;
+	struct _isr_table_entry entry;
 
 	/* trigger the capture of the interrupt source ID */
 	__asm__ swerv_pic_writecsr(meicpct, 0);
@@ -141,9 +141,9 @@ static void swerv_pic_irq_handler(const void *arg)
 	irq += CONFIG_SWERV_PIC_MAX_GENERIC_IRQ;
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = (const struct _isr_table_entry *)&_sw_isr_table[irq];
-	if (ite->isr) {
-		ite->isr(ite->arg);
+	z_isr_get_entry(irq, &entry);
+	if (entry.isr != NULL) {
+		entry.isr(entry.arg);
 	}
 
 	swerv_pic_write(SWERV_PIC_meigwclr(irq), 0);

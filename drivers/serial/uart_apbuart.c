@@ -125,7 +125,9 @@ struct apbuart_regs {
 
 struct apbuart_dev_cfg {
 	struct apbuart_regs *regs;
-	int interrupt;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	void (*irq_config_func)(void);
+#endif
 };
 
 struct apbuart_dev_data {
@@ -502,9 +504,7 @@ static int apbuart_init(const struct device *dev)
 	regs->status = 0;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	irq_connect_dynamic(config->interrupt,
-			    0, (void (*)(const void *))apbuart_isr, dev, 0);
-	irq_enable(config->interrupt);
+	config->irq_config_func();
 #endif
 
 	return 0;
@@ -534,12 +534,25 @@ static DEVICE_API(uart, apbuart_driver_api) = {
 #endif
 };
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#define APBUART_IRQ_CONFIG(index)                                            \
+	static void apbuart##index##_irq_config(void)                        \
+	{                                                                  \
+		IRQ_CONNECT(DT_INST_IRQN(index), 0, apbuart_isr,             \
+			    DEVICE_DT_INST_GET(index), 0);                 \
+		irq_enable(DT_INST_IRQN(index));                            \
+	}
+#else
+#define APBUART_IRQ_CONFIG(index)
+#endif
+
 #define APBUART_INIT(index)						\
+	APBUART_IRQ_CONFIG(index)                                        \
 	static const struct apbuart_dev_cfg apbuart##index##_config = {	\
 		.regs           = (struct apbuart_regs *)		\
 				  DT_INST_REG_ADDR(index),		\
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,		\
-			(.interrupt      = DT_INST_IRQN(index),))	\
+			(.irq_config_func = apbuart##index##_irq_config,)) \
 	};								\
 									\
 	static struct apbuart_dev_data apbuart##index##_data = {	\

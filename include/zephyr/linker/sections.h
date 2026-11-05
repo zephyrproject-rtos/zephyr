@@ -31,6 +31,14 @@
 #define _UNDEFINED_SECTION_NAME undefined
 
 /* Interrupts */
+#if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+#define _IRQ_VECTOR_TABLE_SECTION_NAME .isr_vector_table
+#define _IRQ_VECTOR_TABLE_SECTION_SYMS .isr_vector_table*
+#define _SW_ISR_TABLE_SECTION_NAME .text.isr_table_dispatch
+#define _SW_ISR_TABLE_SECTION_SYMS .text.isr_table_dispatch*
+#define _SHARED_SW_ISR_TABLE_SECTION_NAME .isr_shared_table
+#define _SHARED_SW_ISR_TABLE_SECTION_SYMS .isr_shared_table*
+#else
 #define _IRQ_VECTOR_TABLE_SECTION_NAME	.gnu.linkonce.irq_vector_table
 #define _IRQ_VECTOR_TABLE_SECTION_SYMS	.gnu.linkonce.irq_vector_table*
 
@@ -41,6 +49,7 @@
 #define _SHARED_SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.shared_sw_isr_table
 #define _SHARED_SW_ISR_TABLE_SECTION_SYMS	.gnu.linkonce.shared_sw_isr_table*
 #endif /* CONFIG_SHARED_INTERRUPTS */
+#endif /* CONFIG_ISR_TABLES_LOCAL_DECLARATION */
 
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)

@@ -18,6 +18,7 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_ARM_SCMI */
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_SRAM_SW_ISR_TABLE)
+#if !defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION) || defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
 		/*
@@ -26,14 +27,21 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(_SW_ISR_TABLE_SECTION_SYMS)
+		#include <zephyr/linker/isr-table-swi.ld>
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
+#if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION) && defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	SECTION_DATA_PROLOGUE(isr_entries,,)
+	{
+		#include <zephyr/linker/isr-table-entries.ld>
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
 
 #if defined(CONFIG_SHARED_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(shared_sw_isr_table,,)
 	{
-		/* TODO: does this section require alignment? */
-		KEEP(*(_SHARED_SW_ISR_TABLE_SECTION_SYMS))
+		#include <zephyr/linker/isr-table-shared.ld>
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 

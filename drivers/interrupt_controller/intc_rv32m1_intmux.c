@@ -43,7 +43,7 @@ struct rv32m1_intmux_config {
 	INTMUX_Type *regs;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	const struct _isr_table_entry *isr_base;
+	uint32_t isr_table_offset;
 };
 
 #define DEV_REGS(dev) (((const struct rv32m1_intmux_config *)(dev->config))->regs)
@@ -112,8 +112,8 @@ static void rv32m1_intmux_isr(const void *arg)
 	INTMUX_Type *regs = DEV_REGS(dev);
 	uint32_t channel = POINTER_TO_UINT(arg);
 	uint32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
-	const struct _isr_table_entry *isr_base = config->isr_base;
-	const struct _isr_table_entry *entry;
+	const uint32_t isr_table_offset = config->isr_table_offset;
+	struct _isr_table_entry entry;
 
 	/*
 	 * Make sure the vector is valid, there is a note of page 1243~1244
@@ -127,8 +127,8 @@ static void rv32m1_intmux_isr(const void *arg)
 		return;
 	}
 
-	entry = &isr_base[ISR_ENTRY(channel, (line - VECN_OFFSET))];
-	entry->isr(entry->arg);
+	z_isr_get_entry(isr_table_offset + ISR_ENTRY(channel, (line - VECN_OFFSET)), &entry);
+	entry.isr(entry.arg);
 }
 
 /*
@@ -146,7 +146,7 @@ static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
 	.regs = (INTMUX_Type *)DT_INST_REG_ADDR(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = UINT_TO_POINTER(DT_INST_CLOCKS_CELL(0, name)),
-	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
+	.isr_table_offset = CONFIG_2ND_LVL_ISR_TBL_OFFSET,
 };
 
 static int rv32m1_intmux_init(const struct device *dev)

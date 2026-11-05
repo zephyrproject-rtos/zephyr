@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  build_only: true
+  tags:
+    - interrupt
+    - isr_table
+tests:
+  arch.isr_table_manual_vectors.array.lto:
+    platform_allow: &platforms
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m7_0
+    integration_platforms: *platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+  arch.isr_table_manual_vectors.switch.lto:
+    platform_allow: *platforms
+    integration_platforms: *platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+  arch.isr_table_manual_vectors.switch.cmake.lto:
+    platform_allow:
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p
+    integration_platforms:
+      - kit_t2g_c2d6m_lite/cyt4dnjbzs/m0p
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

@@ -74,6 +74,7 @@ config GEN_IRQ_START_VECTOR
 
 config DYNAMIC_INTERRUPTS
 	default y
+	depends on !GEN_SW_ISR_TABLE_SWITCH
 
 config MAIN_STACK_SIZE
 	default 1024

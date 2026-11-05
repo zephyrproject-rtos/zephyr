@@ -21,26 +21,16 @@ if(CONFIG_CPP_EXCEPTIONS AND CRTBEGIN_PATH AND CRTEND_PATH)
       "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${CRTBEGIN_PATH} <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${CRTEND_PATH}")
 endif()
 
+include(${ZEPHYR_BASE}/cmake/linker/ld/configure.cmake)
+
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
-
   if(CONFIG_CMAKE_LINKER_GENERATOR)
-    add_custom_command(
-      OUTPUT ${linker_script_gen}
-      COMMAND ${CMAKE_COMMAND}
-        -DPASS="${linker_pass_define}"
-        -DFORMAT="$<TARGET_PROPERTY:linker,FORMAT>"
-        -DENTRY="$<TARGET_PROPERTY:linker,ENTRY>"
-        -DMEMORY_REGIONS="$<TARGET_PROPERTY:linker,MEMORY_REGIONS>"
-        -DGROUPS="$<TARGET_PROPERTY:linker,GROUPS>"
-        -DSECTIONS="$<TARGET_PROPERTY:linker,SECTIONS>"
-        -DSECTION_SETTINGS="$<TARGET_PROPERTY:linker,SECTION_SETTINGS>"
-        -DSYMBOLS="$<TARGET_PROPERTY:linker,SYMBOLS>"
-        -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
-        -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
-      )
+    zephyr_linker_generate_cmake_script(${linker_script_gen} "${linker_pass_define}"
+      DEPENDS ${extra_dependencies}
+    )
   else()
     set(template_script_defines ${linker_pass_define})
     list(TRANSFORM template_script_defines PREPEND "-D")

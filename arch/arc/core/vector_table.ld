@@ -8,3 +8,9 @@
 
 KEEP(*(.exc_vector_table))
 KEEP(*(".exc_vector_table.*"))
+
+#if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && \
+	(defined(LINKER_ZEPHYR_PREBUILT) || defined(LINKER_ZEPHYR_FINAL))
+/* IRQs follow the sixteen architecture exception vectors. */
+INCLUDE isr_tables_vt.ld
+#endif

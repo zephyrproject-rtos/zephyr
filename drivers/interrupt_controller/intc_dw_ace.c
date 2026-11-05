@@ -150,10 +150,11 @@ static void dwint_isr(const void *arg)
 	while (fs) {
 		uint32_t bit = find_lsb_set(fs) - 1;
 		uint32_t offset = CONFIG_2ND_LVL_ISR_TBL_OFFSET + bit;
-		const struct _isr_table_entry *ent = &_sw_isr_table[offset];
+		struct _isr_table_entry entry;
 
 		fs &= ~BIT(bit);
-		ent->isr(ent->arg);
+		z_isr_get_entry(offset, &entry);
+		entry.isr(entry.arg);
 	}
 }
 

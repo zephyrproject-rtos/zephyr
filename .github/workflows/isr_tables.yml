@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: ISR table tests
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+    paths: &isr_paths
+      - '.github/workflows/isr_tables.yml'
+      - 'CMakeLists.txt'
+      - 'arch/**'
+      - 'cmake/compiler/**'
+      - 'cmake/linker/**'
+      - 'cmake/linker_script/**'
+      - 'cmake/modules/extensions.cmake'
+      - 'cmake/modules/isr_tables.cmake'
+      - 'cmake/toolchain/**'
+      - 'include/zephyr/arch/**'
+      - 'include/zephyr/isr_table_metadata.h'
+      - 'include/zephyr/irq*.h'
+      - 'include/zephyr/linker/**'
+      - 'include/zephyr/sw_isr_table.h'
+      - 'include/zephyr/toolchain*'
+      - 'include/zephyr/toolchain/**'
+      - 'scripts/build/**'
+      - 'scripts/ci/run_isr_table_tests.py'
+      - 'scripts/requirements-actions.txt'
+      - 'scripts/tests/isr_tables/**'
+      - 'scripts/tests/linker/**'
+      - 'SDK_VERSION'
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+    paths: *isr_paths
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isr-tables:
+    name: ISR ELF and linker regressions
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci:v0.29.4
+    timeout-minutes: 30
+    env:
+      CPULLVM_VERSION: '22.1.1'
+      CPULLVM_SHA256: eb8544e61ffdd1bc8abbd5f13b65d272eb54e12f9ae9079c4431c4928d1d1129
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Python test dependencies
+        run: pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Cache ELD
+        id: eld-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/isr-eld
+          key: isr-eld-linux-x64-${{ env.CPULLVM_SHA256 }}
+
+      - name: Install verified ELD release
+        if: steps.eld-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          archive="${RUNNER_TEMP}/cpullvm.tar.xz"
+          prefix="cpullvm-${CPULLVM_VERSION}-Linux-x86_64-Ubuntu24"
+          url="https://github.com/qualcomm/cpullvm-toolchain/releases/download"
+          curl --fail --location --retry 3 \
+            "${url}/cpullvm-${CPULLVM_VERSION}/${prefix}.tar.xz" -o "${archive}"
+          printf '%s  %s\n' "${CPULLVM_SHA256}" "${archive}" | sha256sum --check
+          mkdir -p "${RUNNER_TEMP}/isr-eld"
+          tar -xJf "${archive}" --strip-components=1 -C "${RUNNER_TEMP}/isr-eld" \
+            "${prefix}/bin/ld.eld" "${prefix}/lib/libLW.so.4"
+          "${RUNNER_TEMP}/isr-eld/bin/ld.eld" --version
+          rm "${archive}"
+
+      - name: Run all ISR and linker tests without skips
+        shell: bash
+        run: |
+          python scripts/ci/run_isr_table_tests.py \
+            --sdk "/opt/toolchains/zephyr-sdk-$(cat SDK_VERSION)" \
+            --llvm /usr/lib/llvm-20 \
+            --eld "${RUNNER_TEMP}/isr-eld/bin/ld.eld" \
+            --output "${RUNNER_TEMP}/isr-tests"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: isr-table-tests
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/isr-tests/junit.xml
+            ${{ runner.temp }}/isr-tests/result.json
+            ${{ runner.temp }}/isr-tests/pytest.log
+
+      - name: Upload failed link fixtures
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: isr-table-failed-fixtures
+          if-no-files-found: ignore
+          path: ${{ runner.temp }}/isr-tests/fixtures

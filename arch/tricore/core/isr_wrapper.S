@@ -14,7 +14,11 @@
 #include <offsets_short.h>
 
 GDATA(_kernel)
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+GTEXT(z_isr_invoke)
+#else
 GDATA(_sw_isr_table)
+#endif
 GTEXT(_isr_wrapper)
 #if CONFIG_MULTITHREADING
 GTEXT(z_get_next_switch_handle)
@@ -51,6 +55,10 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	/* Get current irq number */
 	call	intc_aurix_ir_get_active
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	/* First integer argument: software ISR table index. */
+	mov	%d4, %d2
+#else
 	/* Load isr table entry */
 	movh.a	%a13, hi:_sw_isr_table
 	lea	%a13, [%a13], lo:_sw_isr_table
@@ -62,6 +70,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #else
         ld.da   %a4, [%a13]
 #endif
+#endif
 
 	/* Re-enable interrupts so a higher priority source can nest. The
 	 * active source has already been latched above; the CSA mechanism
@@ -71,7 +80,11 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	enable
 
 	/* Call ISR */
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	call	z_isr_invoke
+#else
 	calli	%a5
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call	sys_trace_isr_exit

@@ -189,7 +189,7 @@ static int sys_clock_driver_init(void)
 		gptimer_ctrl_clear_ip = GPTIMER_CTRL_IP;
 	}
 
-	irq_connect_dynamic(timer_interrupt, 0, timer_isr, NULL, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), 0, timer_isr, NULL, 0);
 	irq_enable(timer_interrupt);
 
 	/* Seed the announce baseline from the free-running counter. In tickless

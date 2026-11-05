@@ -450,6 +450,15 @@ static const uint32_t xtensa_lvl_mask[MAX_INTR_LEVEL][GRP_COUNT] = {
 #endif
 };
 
+static ALWAYS_INLINE void xtensa_invoke_isr(unsigned int irq)
+{
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	z_isr_invoke(irq);
+#else
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+#endif
+}
+
 /* Handles all interrupts for given IRQ Level.
  * - Supports up to 128 interrupts (max supported by Xtensa)
  * - Supports all IRQ levels
@@ -467,7 +476,7 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][0];
 	while (irq_mask) {
 		irq = __builtin_ctz(irq_mask);
-		_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+		xtensa_invoke_isr(irq);
 		__asm__ volatile("wsr.intclear %0" : : "r"(BIT(irq)));
 		irq_mask ^= BIT(irq);
 	}
@@ -479,7 +488,7 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][1];
 	while (irq_mask) {
 		irq = __builtin_ctz(irq_mask);
-		_sw_isr_table[irq + 32].isr(_sw_isr_table[irq + 32].arg);
+		xtensa_invoke_isr(irq + 32);
 		__asm__ volatile("wsr.intclear1 %0" : : "r"(BIT(irq)));
 		irq_mask ^= BIT(irq);
 	}
@@ -492,7 +501,7 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][2];
 	while (irq_mask) {
 		irq = __builtin_ctz(irq_mask);
-		_sw_isr_table[irq + 64].isr(_sw_isr_table[irq + 64].arg);
+		xtensa_invoke_isr(irq + 64);
 		__asm__ volatile("wsr.intclear2 %0" : : "r"(BIT(irq)));
 		irq_mask ^= BIT(irq);
 	}
@@ -505,7 +514,7 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 
 	while (irq_mask) {
 		irq = __builtin_ctz(irq_mask);
-		_sw_isr_table[irq + 96].isr(_sw_isr_table[irq + 96].arg);
+		xtensa_invoke_isr(irq + 96);
 		__asm__ volatile("wsr.intclear3 %0" : : "r"(BIT(irq)));
 		irq_mask ^= BIT(irq);
 	}
@@ -549,8 +558,7 @@ DEF_INT_C_HANDLER(7)
 __unused void *xtensa_nmi_c(void *interrupted_stack)
 {
 	usage_stop();
-	_sw_isr_table[XCHAL_NMI_INTERRUPT].isr(
-		_sw_isr_table[XCHAL_NMI_INTERRUPT].arg);
+	xtensa_invoke_isr(XCHAL_NMI_INTERRUPT);
 	return return_to(interrupted_stack);
 }
 #endif

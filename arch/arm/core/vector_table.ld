@@ -52,7 +52,8 @@ _vector_start = .;
 KEEP(*(.exc_vector_table))
 KEEP(*(".exc_vector_table.*"))
 
-#if LINKER_ZEPHYR_FINAL && defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+#if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && \
+	(defined(LINKER_ZEPHYR_PREBUILT) || defined(LINKER_ZEPHYR_FINAL))
 INCLUDE isr_tables_vt.ld
 #else
 KEEP(*(.vectors))

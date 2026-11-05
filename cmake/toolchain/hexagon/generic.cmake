@@ -21,6 +21,6 @@ set(TOOLCHAIN_HAS_LIBCXX OFF CACHE BOOL
     "True if toolchain supports libc++" FORCE
 )
 
-set(TOOLCHAIN_KCONFIG_DIR ${ZEPHYR_BASE}/cmake/toolchain/host/llvm)
+set(TOOLCHAIN_KCONFIG_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 message(STATUS "Found toolchain: hexagon (${HEXAGON_TOOLCHAIN_PATH})")

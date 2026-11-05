@@ -93,7 +93,7 @@ struct plic_config {
 	uint32_t nr_irqs;
 	uint32_t irq;
 	riscv_plic_irq_config_func_t irq_config_func;
-	const struct _isr_table_entry *isr_table;
+	uint32_t isr_table_offset;
 	const uint32_t *const hart_context;
 };
 
@@ -507,7 +507,7 @@ static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
 	mem_addr_t claim_complete_addr = get_claim_complete_addr(dev);
-	const struct _isr_table_entry *ite;
+	struct _isr_table_entry entry;
 	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
@@ -566,8 +566,8 @@ static void plic_irq_handler(const struct device *dev)
 #endif /* CONFIG_PLIC_SUPPORTS_TRIG_EDGE */
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = &config->isr_table[local_irq];
-	ite->isr(ite->arg);
+	z_isr_get_entry(config->isr_table_offset + local_irq, &entry);
+	entry.isr(entry.arg);
 
 	/*
 	 * Write to claim_complete register to indicate to
@@ -691,14 +691,17 @@ static int cmd_stats_get(const struct shell *sh, size_t argc, char *argv[])
 			/* If there's > 1 CPU, print the total hit count at the end */
 			shell_fprintf(sh, SHELL_NORMAL, "  %5d", *total_count);
 		}
+		struct _isr_table_entry entry;
+
+		z_isr_get_entry(config->isr_table_offset + i, &entry);
 #ifdef CONFIG_SYMTAB
 		const char *name =
-			symtab_find_symbol_name((uintptr_t)config->isr_table[i].isr, NULL);
+			symtab_find_symbol_name((uintptr_t)entry.isr, NULL);
 
-		shell_fprintf(sh, SHELL_NORMAL, "\t%s(%p)\n", name, config->isr_table[i].arg);
+		shell_fprintf(sh, SHELL_NORMAL, "\t%s(%p)\n", name, entry.arg);
 #else
-		shell_fprintf(sh, SHELL_NORMAL, "\t%p(%p)\n", (void *)config->isr_table[i].isr,
-			      config->isr_table[i].arg);
+		shell_fprintf(sh, SHELL_NORMAL, "\t%p(%p)\n", (void *)entry.isr,
+			      entry.arg);
 #endif /* CONFIG_SYMTAB */
 	}
 	shell_print(sh, "");
@@ -945,7 +948,7 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 		.nr_irqs = PLIC_MIN_IRQ_NUM(n),                                                    \
 		.irq = DT_INST_IRQN(n),                                                            \
 		.irq_config_func = plic_irq_config_func_##n,                                       \
-		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(n)],                          \
+		.isr_table_offset = INTC_INST_ISR_TBL_OFFSET(n),                          \
 		.hart_context = plic_hart_contexts_##n,                                            \
 	};                                                                                         \
 	PLIC_INTC_IRQ_FUNC_DEFINE(n)

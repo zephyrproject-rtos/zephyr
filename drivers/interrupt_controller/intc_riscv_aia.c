@@ -157,13 +157,13 @@ void riscv_aia_enable_source(uint32_t irq)
 void riscv_aia_dispatch_eiid(uint32_t eiid)
 {
 	const struct device *aplic = riscv_aplic_get_dev();
-	const struct _isr_table_entry *ite;
+	struct _isr_table_entry entry;
 
 	if (!riscv_aia_src_is_valid(aplic, eiid)) {
 		/* A call to z_irq_spurious will not return. */
 		z_irq_spurious(NULL);
 	}
 
-	ite = &_sw_isr_table[APLIC_ISR_TABLE_OFFSET + eiid];
-	ite->isr(ite->arg);
+	z_isr_get_entry(APLIC_ISR_TABLE_OFFSET + eiid, &entry);
+	entry.isr(entry.arg);
 }

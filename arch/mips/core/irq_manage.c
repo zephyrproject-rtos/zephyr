@@ -71,7 +71,9 @@ void z_mips_enter_irq(uint32_t ipending)
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
 	while (ipending) {
 		int index;
+#if !defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
 		const struct _isr_table_entry *ite;
+#endif
 
 		if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 			sys_trace_isr_enter();
@@ -80,9 +82,12 @@ void z_mips_enter_irq(uint32_t ipending)
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~BIT(index);
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+		z_isr_invoke(index);
+#else
 		ite = &_sw_isr_table[index];
-
 		ite->isr(ite->arg);
+#endif
 
 		if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 			sys_trace_isr_exit();

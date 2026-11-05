@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
+	default y if XTENSA && "$(ZEPHYR_XCC_HAS_BUILTIN_COUNTER)" = "y"

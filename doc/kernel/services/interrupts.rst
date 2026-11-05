@@ -495,41 +495,24 @@ Implementation Details
 ======================
 
 Interrupt tables are set up at build time using some special build tools.  The
-details laid out here apply to all architectures except x86, which are
-covered in the `x86 Details`_ section below.
+details laid out here apply to architectures using the generic ISR table generator.
+The x86 implementation is covered in the `x86 Details`_ section below.
 
-The invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
-struct _isr_list which is placed in a special .intList section.
-This section is placed in compiled code on precompilation stages only.
-It is meant to be used by Zephyr script to generate interrupt tables
-and is removed from the final build.
-The script implements different parsers to process the data from .intList section
-and produce the required output.
+With :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION`, interrupt registrations
+keep typed handler and argument references in their original object files. The generator
+reads IRQ numbers and input section names from ``.intList`` and arranges entries using
+linker scripts. This is the default on supported architecture, SoC, and toolchain
+combinations and preserves references during link-time optimization.
 
-The default parser generates C arrays filled with arguments and interrupt
-handlers in a form of addresses directly taken from .intList section entries.
-It works with all the architectures and compilers (with the exception mentioned above).
-The limitation of this parser is the fact that after the arrays are generated
-it is expected for the code not to relocate.
-Any relocation on this stage may lead to the situation where the entry in the interrupt array
-is no longer pointing to the function that was expected.
-It means that this parser, being more compatible, is limiting us from using Link Time Optimization.
+When local declarations are disabled, the legacy parser reads function and argument
+addresses from a prelinked ELF and emits C initializers containing those numeric addresses.
+Those addresses must remain unchanged during the final link.
 
-The local ISR declaration parser uses a different approach to construct
-the same arrays at the binary level.
-All the entries to the arrays are declared and defined locally,
-directly in the file where :c:macro:`IRQ_CONNECT` is used.
-They are placed in a section with a unique, synthesized name.
-The name of that section is then placed in the .intList section, which is used to
-generate a linker script fragment placing the entry at the right address.
-This parser is currently limited to the supported architectures and toolchains,
-but in return, it preserves the information about object relations for the linker,
-thus enabling Link Time Optimization.
+Legacy implementation using C arrays
+------------------------------------
 
-Implementation using C arrays
------------------------------
-
-This is the default configuration available for all Zephyr supported architectures.
+This generator is selected when
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION` is disabled.
 
 Any invocation of :c:macro:`IRQ_CONNECT` will declare an instance of
 struct _isr_list which is placed in a special .intList section:
@@ -544,7 +527,7 @@ struct _isr_list which is placed in a special .intList section:
         /** ISR to call */
         void *func;
         /** Parameter for non-direct IRQs */
-        void *param;
+        const void *param;
     };
 
 Zephyr is built in two phases; the first phase of the build produces
@@ -554,11 +537,9 @@ the .intList section preceded by a header:
 .. code-block:: c
 
     struct {
-        void *spurious_irq_handler;
-        void *sw_irq_handler;
-        uint32_t num_isrs;
-        uint32_t num_vectors;
-        struct _isr_list isrs[];  <- of size num_isrs
+        uint32_t table_size;
+        uint32_t offset;
+        struct _isr_list isrs[];
     };
 
 This data consisting of the header and instances of struct _isr_list inside
@@ -606,8 +587,8 @@ This is an array of struct _isr_table_entry:
 .. code-block:: c
 
     struct _isr_table_entry {
-        void *arg;
-        void (*isr)(void *);
+        const void *arg;
+        void (*isr)(const void *);
     };
 
 This is used by the common software IRQ handler to look up the ISR and its
@@ -631,87 +612,96 @@ lines. Whenever an interrupt line becomes shared, :c:func:`z_shared_isr` will
 replace the currently registered ISR in _sw_isr_table. This special ISR will
 iterate through the list of registered clients and invoke the ISRs.
 
-Implementation using linker script
-----------------------------------
+Implementation using linker scripts
+-----------------------------------
 
-This way of prepare and parse .isrList section to implement interrupt vectors arrays
-is called local ISR declaration.
-The name comes from the fact that all the entries to the arrays that would create
-interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
-Then automatically generated linker scripts are used to place it in the right place in the memory.
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION` is enabled by default when the
+architecture, SoC, and toolchain defaults select it. Each :c:macro:`IRQ_CONNECT` keeps a typed
+``struct _isr_table_entry`` in its original compilation unit. The entry references the
+handler and argument directly. The generated linker script places these entries at their
+IRQ indices, and the final linker resolves their references.
 
-This option requires enabling by the choose of :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION`.
-If this configuration is supported by the used architecture and toolchaing the
-:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
-See details of this option for the information about currently supported configurations.
-
-Any invocation of :c:macro:`IRQ_CONNECT` or :c:macro:`IRQ_DIRECT_CONNECT` will declare an instance
-of ``struct _isr_list_sname`` which is placed in a special .intList section:
+Each registration also emits a record in the ``.intList`` input section. This record
+contains a fixed-width header followed by the input section name and its terminating NUL:
 
 .. code-block:: c
 
-    struct _isr_list_sname {
-        /** IRQ line number */
+    struct z_isr_local_record {
+        uint32_t record_size;
         int32_t irq;
-        /** Flags for this IRQ, see ISR_FLAG_* definitions */
-        int32_t flags;
-        /** The section name */
-        const char sname[];
+        uint32_t flags;
+        uint32_t name_size;
     };
 
-Note that the section name is placed in flexible array member.
-It means that the size of the initialized structure will vary depending on the
-structure name length.
-The whole entry is used by the script during the build of the application
-and has all the information needed for proper interrupt placement.
+``record_size`` includes the header, name, and trailing alignment padding. ``name_size``
+includes the terminating NUL. The generator reads records using the target ELF byte order.
+A separate metadata header describes target structure sizes, field offsets, and alignments;
+the host Python interpreter does not infer the target C ABI.
 
-Beside of the _isr_list_sname the :c:macro:`IRQ_CONNECT` macro generates an entry
-that would be the part of the interrupt array:
+The build has three link stages::
 
-.. code-block:: c
+    original objects + discovery tables
+                   |
+                  pre0
+                   |
+        read registration records and ABI metadata
+                   |
+        generate placement rules and default/shared entries
+                   |
+        compile the generated C object once
+                   |
+        original objects + generated object -> pre1
+                   |
+        generate final address-dependent kernel data
+                   |
+        original objects + same generated object -> final
 
-    struct _isr_table_entry {
-        const void *arg;
-        void (*isr)(const void *);
-    };
+Discovery tables belong only to ``pre0``. The generator does not copy handler or argument
+addresses from that ELF into C integer constants. ``pre1`` and the final link use the same
+ISR object and placement rules. For userspace builds, kobject capacity estimation remains
+between ``pre0`` and ``pre1``; the final kobject address hash is generated from ``pre1``.
 
-This array is placed in a section with the name saved in _isr_list_sname structure.
+Software arrays are writable when :kconfig:option:`CONFIG_SRAM_SW_ISR_TABLE` is enabled.
+Otherwise they are read-only. Shared entries retain the target structure layout and client
+count. With :kconfig:option:`CONFIG_GEN_SW_ISR_TABLE_SWITCH`, the generator emits a lookup
+function referencing compact, typed entries instead of a full array. Dynamic installation
+requires a writable array and cannot be combined with switch generation.
 
-The values created by :c:macro:`IRQ_DIRECT_CONNECT` macro depends on the architecture.
-It can be changed to variable that points to a interrupt handler:
-
-.. code-block:: c
-
-    static uintptr_t <unique name> = ((uintptr_t)func);
-
-Or to actually naked function that implements a jump to the interrupt handler:
-
-.. code-block:: c
-
-    static void <unique name>(void)
-    {
-        __asm(ARCH_IRQ_VECTOR_JUMP_CODE(func));
-    }
-
-Similar like for :c:macro:`IRQ_CONNECT`, the created variable or function is placed
-in a section, saved in _isr_list_sname section.
+For :c:macro:`IRQ_DIRECT_CONNECT`, an address vector holds a typed function reference.
+Instruction vectors use architecture-specific jump instructions. RISC-V registrations use
+an assembly operand referencing the handler so the compiler can preserve and rename it
+during LTO. A discarded local label reference prevents cloning the registration's owner;
+that containing function cannot be inlined, cloned, or imported by ThinLTO.
 
 Files generated by the script
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The interrupt tables generator script creates 3 files:
-:file:`isr_tables.c`, :file:`isr_tables_swi.ld`, and :file:`isr_tables_vt.ld`.
+The generator produces:
 
-The :file:`isr_tables.c` will contain all the structures for interrupts, direct interrupts and
-shared interrupts (if enabled). This file implements only all the structures that
-are not implemented by the application, leaving a comment where the interrupt
-not implemented here can be found.
+* ``isr_tables.c``: default entries, shared counts and padding, and the switch lookup
+  function when selected.
+* ``isr_tables_vt.ld``: hardware vector placement.
+* ``isr_tables_swi.ld``: software array placement.
+* ``isr_tables_shared.ld``: shared table placement.
+* ``isr_tables_entries.ld``: compact entries used by switch lookup.
+* ``isr_tables_layout.cmake``: equivalent placement records for the CMake linker generator.
+* ``isr_tables_layout.json``: target ABI, expected offsets, sizes, and permissions used by
+  the final ELF checker.
 
-Then two linker files are used. The :file:`isr_tables_vt.ld` file is included in place
-where the interrupt vectors are required to be placed in the selected architecture.
-The :file:`isr_tables_swi.ld` file describes the placement of the software interrupt table
-elements. The separated file is required as it might be placed in writable or nonwritable
-section, depending on the current configuration.
+The architecture's linker integration selects the appropriate generated fragments.
+``check_isr_tables.py`` runs after the final link. It checks table boundaries, individual
+input extents, alignment, permissions, and the absence of discovery objects. Metadata is
+removed, or retained as nonallocated data outside every load segment on backends that
+use nonallocated metadata.
+It also checks SoC-owned C vector objects and compares public function and object identities
+between ``pre1`` and the final ELF,
+with explicit checks for the reserved userspace lookup functions and capacities.
+
+The Arm Compiler Cortex-M profile enables local declarations by default. IAR, MetaWare,
+XCC, and Xtensa Clang profiles retain the legacy default while allowing local declarations
+to be enabled explicitly. Unsupported combinations retain the legacy generator. Explicitly setting
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION` to ``n`` also selects that generator.
+The x86 IDT and native interrupt implementations use their own registration mechanisms.
 
 x86 Details
 -----------

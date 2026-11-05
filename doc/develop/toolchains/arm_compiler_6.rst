@@ -12,8 +12,9 @@ Arm Compiler 6
    - Set :envvar:`ARMCLANG_TOOLCHAIN_PATH` to the toolchain installation
      directory.
 
-#. The Arm Compiler 6 needs the :envvar:`ARMLMD_LICENSE_FILE` environment
-   variable to point to your license file or server.
+#. For a FlexNet license, set the :envvar:`ARMLMD_LICENSE_FILE` environment
+   variable to your license file or server. Arm also documents a
+   `Community license for open-source CI`_ using its ``armlm`` activation tool.
 
 For example:
 
@@ -51,4 +52,33 @@ For example:
       that relies on GNU intrinsics and have not yet been updated to work fully
       with ``armclang``.
 
+Local ISR table generation
+**************************
+
+The Cortex-M integration enables :kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION`
+by default on supported configurations. Set it to ``n`` to select the legacy generator.
+
+With local declarations, armlink retains executable relocations and places registration
+metadata in a dedicated overlay. Before the ELF is consumed by the next build step,
+``isr_metadata_finalize.py`` makes that metadata nonallocated and nonloadable. The script
+rejects overlays containing runtime sections or references to metadata from runtime code.
+All other loaded bytes, addresses, and permissions must remain unchanged.
+
+``armlink_symbol_export.py`` restores public names removed by armlink's ``RESOLVE``
+steering commands. Runtime references are resolved by armlink; the script exports values
+from that same completed link into the nonallocated ELF symbol table. It preserves
+absolute symbols as absolute symbols and verifies that the load image is unchanged.
+
+The native Arm CI job uses a fixed Compiler 6.24 release and the official Community
+activation action. It runs the default configuration, array and switch tables, an
+LTO-enabled kernel, dynamic and shared registration, and NVIC-triggered ordinary and
+direct interrupts on QEMU.
+The same test runner is :file:`scripts/ci/run_isr_table_armclang.py`.
+
+Runtime references are checked through retained relocations. ARM branch veneers and
+branch addends that hide the original target are rejected. TARGET1 entries are checked
+as both ABS32 and REL32; the build fails if either interpretation reaches metadata.
+
 .. _Arm Compiler 6: https://developer.arm.com/tools-and-software/embedded/arm-compiler/downloads/version-6
+
+.. _Community license for open-source CI: https://arm-software.github.io/AVH/main/infrastructure/html/avh_gh_actions.html

@@ -207,19 +207,22 @@ function(section_to_string)
 
   set(SECTION_TYPE_NOLOAD NOLOAD)
   set(SECTION_TYPE_BSS    NOLOAD)
-  if(DEFINED type)
+  set(SECTION_TYPE_INFO   INFO)
+  if(DEFINED type AND DEFINED SECTION_TYPE_${type})
     set(type " (${SECTION_TYPE_${type}})")
+  else()
+    set(type "")
   endif()
 
   set(TEMP "${TEMP} :")
   set(secalign "")
 
-  if(align_in)
+  # LLD uses -N to preserve VMA/LMA offsets, matching linker-tool-lld.h.
+  # ALIGN_WITH_INPUT and ALIGN are mutually exclusive in GNU ld.
+  if(align_in AND NOT LINKER_IS_LLD)
     set(secalign " ALIGN_WITH_INPUT")
-  endif()
-
-  if(DEFINED align)
-    set(secalign "${secalign} ALIGN(${align})")
+  elseif(DEFINED align)
+    set(secalign " ALIGN(${align})")
   endif()
 
   if(DEFINED subalign)
@@ -264,6 +267,10 @@ function(section_to_string)
     get_property(input    GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_INPUT)
     get_property(symbols  GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_SYMBOLS)
     get_property(offset   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_OFFSET)
+    set(offset_expr "${offset}")
+    if(LINKER_IS_LLD)
+      set(offset_expr "ADDR(${name}) + ${offset}")
+    endif()
     get_property(min_size   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MIN_SIZE)
     get_property(max_size   GLOBAL PROPERTY ${STRING_SECTION}_SETTING_${idx}_MAX_SIZE)
 
@@ -290,7 +297,7 @@ function(section_to_string)
     endif()
 
     if(DEFINED offset AND NOT ("${offset}" STREQUAL "${current_offset}"))
-      set(TEMP "${TEMP}\n  . = ${offset}; /* OFFSET */")
+      set(TEMP "${TEMP}\n  . = ${offset_expr}; /* OFFSET */")
       set(current_offset ${offset})
     endif()
 
@@ -300,7 +307,7 @@ function(section_to_string)
 
     foreach(setting ${input})
       if(DEFINED offset AND NOT ("${offset}" STREQUAL "${current_offset}"))
-        set(TEMP "${TEMP}\n  . = ${offset};")
+        set(TEMP "${TEMP}\n  . = ${offset_expr};")
         set(current_offset ${offset})
       endif()
 

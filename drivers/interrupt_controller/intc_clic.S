@@ -48,6 +48,10 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 
 GTEXT(__soc_handle_all_irqs)
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+GTEXT(z_isr_invoke)
+#endif
+
 #ifdef CONFIG_TRACING
 /* imports */
 GTEXT(sys_trace_isr_enter)
@@ -72,10 +76,14 @@ irq_loop:
 	call sys_trace_isr_enter
 #endif
 
-	/* Call corresponding registered function in _sw_isr_table. a0 is offset in pointer with
-	 * the mtvt, sw irq table is 2-pointer wide -> shift by one. */
+	/* Convert the mtvt slot address to its byte offset. */
 	csrr t0, CSR_MTVT
 	sub a0, a0, t0
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	srli a0, a0, RV_REGSHIFT
+	call z_isr_invoke
+#else
+	/* The software table contains two pointers per vector slot. */
 	la t0, _sw_isr_table
 	slli a0, a0, (1)
 	add t0, t0, a0
@@ -88,6 +96,7 @@ irq_loop:
 
 	/* Call ISR function */
 	jalr ra, t1, 0
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit

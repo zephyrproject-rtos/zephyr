@@ -27,7 +27,9 @@
 
 _ASM_FILE_PROLOGUE
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_ARRAY
 GDATA(_sw_isr_table)
+#endif
 
 GTEXT(_isr_wrapper)
 GTEXT(z_arm_int_exit)
@@ -223,12 +225,20 @@ oob:
 	cmp r0, r1
 	bge spurious_continue
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	sub sp, sp, #8
+	mov r1, sp
+	bl get_isr_entry
+	ldm sp, {r0, r3}
+	add sp, sp, #8
+#else
 	lsl r0, r0, #3	/* table is 8-byte wide */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
 			 * in thumb mode */
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
+#endif
 
 	/*
 	 * Enable interrupts only while the registered ISR runs to allow
@@ -371,11 +381,19 @@ oob:
 	cmp r0, r1
 	bge spurious_continue
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	sub sp, sp, #8
+	mov r1, sp
+	bl get_isr_entry
+	ldm sp, {r0, r3}
+	add sp, sp, #8
+#else
 	lsl r0, r0, #3	/* table is 8-byte wide */
 	ldr r1, =_sw_isr_table
 	add r1, r1, r0	/* table entry: ISRs must have their MSB set to stay
 			 * in thumb mode */
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
+#endif
 
 	/*
 	 * Enable and disable interrupts again to allow nested in exception handlers.

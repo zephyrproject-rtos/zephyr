@@ -6230,7 +6230,7 @@ function(zephyr_linker_group)
 endfunction()
 
 #[=======================================================================[.rst:
-.. cmake:signature:: zephyr_linker_section(NAME <name> [GROUP <group>] [VMA <region|group>] [LMA <region|group>] [ADDRESS <address>] [ALIGN <alignment>] [SUBALIGN <alignment>] [FLAGS <flags>] [MIN_SIZE <size>] [MAX_SIZE <size>] [HIDDEN] [NOINPUT] [NOINIT] [PASS [NOT] <name>...])
+.. cmake:signature:: zephyr_linker_section(NAME <name> [GROUP <group>] [VMA <region|group>] [LMA <region|group>] [ADDRESS <address>] [ALIGN <alignment>] [SUBALIGN <alignment>] [FLAGS <flags>] [MIN_SIZE <size>] [MAX_SIZE <size>] [HIDDEN] [NOINPUT] [NOINIT] [NOSYMBOLS] [PASS [NOT] <name>...])
 
    Zephyr linker output section. This function specifies an output section for the linker.
 
@@ -6303,6 +6303,10 @@ endfunction()
      No default input sections will be defined, to setup input sections for section ``<name>``, the
      corresponding :cmake:command:`zephyr_linker_section_configure` must be used.
 
+   ``NOSYMBOLS``
+     Suppress the automatically generated section boundary and load symbols. Explicit symbols
+     configured with :cmake:command:`zephyr_linker_section_configure` are still generated.
+
    ``PASS [NOT] <name>...``
      Linker pass where this section should be active. By default a section will be present during
      all linker passes.
@@ -6317,12 +6321,15 @@ endfunction()
      Tag section for special treatment.
 
      * ``NOLOAD``, ``BSS`` - Ensure that the section is NOLOAD
+     * ``INFO`` - Non-allocated build metadata in GNU-compatible ELF linkers
+     * ``BUILD_ONLY`` - Typed discovery input placed outside target memory by the
+       armlink and IAR backends. Use ``PASS`` to restrict it to the discovery link.
      * ``LINKER_SCRIPT_FOOTER`` - One single section to be generated last
 
    Note: ``VMA`` and ``LMA`` are mutual exclusive with ``GROUP``
 #]=======================================================================]
 function(zephyr_linker_section)
-  set(options     "ALIGN_WITH_INPUT;HIDDEN;NOINIT;NOINPUT")
+  set(options     "ALIGN_WITH_INPUT;HIDDEN;NOINIT;NOINPUT;NOSYMBOLS")
   set(single_args "ADDRESS;ALIGN;ENDALIGN;GROUP;KVMA;LMA;NAME;SUBALIGN;TYPE;VMA;MIN_SIZE;MAX_SIZE")
   set(multi_args  "PASS")
   cmake_parse_arguments(SECTION "${options}" "${single_args}" "${multi_args}" ${ARGN})

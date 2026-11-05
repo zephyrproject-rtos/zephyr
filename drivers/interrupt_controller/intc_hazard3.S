@@ -9,6 +9,9 @@
 #include "hardware/regs/rvcsr.h"
 
 /* imports */
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+GTEXT(z_isr_invoke)
+#endif
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
 GTEXT(sys_trace_isr_exit)
@@ -32,6 +35,11 @@ irq_loop:
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_enter
 #endif
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	/* MEINEXT contains the table index shifted left by two. */
+	srli a0, a0, 2
+	call z_isr_invoke
+#else
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
 	 * Value from MEINEXT is index left shifted by 2, so shift
@@ -49,6 +57,7 @@ irq_loop:
 
 	/* Call ISR function */
 	jalr ra, t1, 0
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit

@@ -209,7 +209,10 @@ static void imsic_mext_isr(const void *arg)
 		return;
 	}
 
-	_sw_isr_table[eiid].isr(_sw_isr_table[eiid].arg);
+	struct _isr_table_entry entry;
+
+	z_isr_get_entry(eiid, &entry);
+	entry.isr(entry.arg);
 #endif
 }
 

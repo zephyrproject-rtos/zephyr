@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+common:
+  tags:
+    - kernel
+    - interrupt
+    - isr_table
+  filter: CONFIG_ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION and CONFIG_GEN_ISR_TABLES
+  platform_allow: &runtime_platforms
+    - qemu_cortex_a53
+    - qemu_cortex_m3
+    - qemu_cortex_a9
+    - qemu_cortex_r5
+    - qemu_arc/qemu_arc_hs
+    - qemu_arc/qemu_arc_hs6x
+    - qemu_xtensa/dc233c
+    - qemu_malta
+    - qemu_malta/qemu_malta/be
+    - qemu_leon3
+    - qemu_or1k
+    - qemu_rx
+    - qemu_hexagon
+    - qemu_tc3x
+    - qemu_tc4x
+    - qemu_riscv32
+    - qemu_riscv64
+    - qemu_riscv32/qemu_virt_riscv32/aia-direct
+    - qemu_riscv32/qemu_virt_riscv32/aia-imsic
+  integration_platforms: *runtime_platforms
+tests:
+  arch.isr_table_runtime.defaults:
+    # These toolchain profiles deliberately retain the legacy default.
+    toolchain_exclude:
+      - arcmwdt
+      - iar
+      - xcc
+      - xt-clang
+    extra_args:
+      - CONF_FILE=default.conf
+      - ISR_TABLE_TEST_DEFAULTS=ON
+  arch.isr_table_runtime.array.static:
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_runtime.array.dynamic:
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=y
+  arch.isr_table_runtime.array.shared.static:
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_runtime.switch.static:
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_runtime.switch.shared.static:
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+  arch.isr_table_runtime.uart.array:
+    platform_allow: &uart_platforms
+      - qemu_or1k
+      - qemu_leon3
+      - qemu_riscv32
+      - qemu_riscv64
+      - qemu_riscv32/qemu_virt_riscv32/aia-direct
+      - qemu_riscv32/qemu_virt_riscv32/aia-imsic
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+  arch.isr_table_runtime.uart.switch:
+    platform_allow: *uart_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_SHARED_INTERRUPTS=n
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+  arch.isr_table_runtime.uart.array.shared:
+    platform_allow: *uart_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_ARRAY=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+  arch.isr_table_runtime.uart.switch.shared:
+    platform_allow: *uart_platforms
+    extra_configs:
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+      - CONFIG_SHARED_INTERRUPTS=y
+      - CONFIG_SHARED_IRQ_MAX_NUM_CLIENTS=3
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_UART_INTERRUPT_DRIVEN=y

@@ -14,29 +14,15 @@ if((${CMAKE_LINKER} STREQUAL "${CROSS_COMPILE}ld.bfd") OR
   string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 endif()
 
+include(${ZEPHYR_BASE}/cmake/linker/ld/configure.cmake)
+
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
 # NOTE: ${linker_script_gen} will be produced at build-time; not at configure-time
 macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
-  set(cmake_linker_script_settings
-      ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${linker_pass_define}.cmake
-  )
-
   if(CONFIG_CMAKE_LINKER_GENERATOR)
-
-    zephyr_linker_generate_linker_settings_file(${cmake_linker_script_settings})
-
-    add_custom_command(
-      OUTPUT ${linker_script_gen}
-      DEPENDS
-        ${extra_dependencies}
-        ${cmake_linker_script_settings}
-        ${DEVICE_API_LD_TARGET}
-      COMMAND ${CMAKE_COMMAND}
-        -C ${cmake_linker_script_settings}
-        -DPASS="${linker_pass_define}"
-        -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
-        -P ${ZEPHYR_BASE}/cmake/linker/ld/ld_script.cmake
+    zephyr_linker_generate_cmake_script(${linker_script_gen} "${linker_pass_define}"
+      DEPENDS ${extra_dependencies}
     )
   else()
     set(template_script_defines ${linker_pass_define})

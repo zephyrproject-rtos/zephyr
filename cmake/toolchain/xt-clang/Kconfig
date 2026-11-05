@@ -1,6 +1,9 @@
 # Copyright (c) 2026 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
+	default y if XTENSA
+
 if DT_HAS_CDNS_TENSILICA_XTENSA_LX7_ENABLED
 
 choice COMPILER_CODEGEN_VLIW

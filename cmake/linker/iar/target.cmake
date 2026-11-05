@@ -15,6 +15,14 @@ if(CONFIG_IAR_DATA_INIT)
 endif()
 
 add_custom_target(${IAR_LINKER})
+foreach(init_mode CONFIG_IAR_DATA_INIT CONFIG_IAR_ZEPHYR_INIT)
+  if(${init_mode})
+    zephyr_linker_include_var(VAR ${init_mode} VALUE TRUE)
+  else()
+    zephyr_linker_include_var(VAR ${init_mode} VALUE FALSE)
+  endif()
+endforeach()
+
 set(ILINK_THUMB_CALLS_WARNING_SUPPRESSED)
 set(IAR_LIB_USED)
 function(toolchain_ld_force_undefined_symbols "")
@@ -28,8 +36,12 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
   set(STEERING_FILE "${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}.xcl")
   set(STEERING_FILE_ARG "-DSTEERING_FILE=${STEERING_FILE}")
+  get_filename_component(script_path "${linker_script_gen}" ABSOLUTE
+    BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+  )
+  string(SHA256 script_id "${script_path}")
   set(cmake_linker_script_settings
-    ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${linker_pass_define}.cmake
+    ${PROJECT_BINARY_DIR}/include/generated/ld_script_settings_${script_id}.cmake
   )
   if("${linker_pass_define}" STREQUAL "LINKER_ZEPHYR_PREBUILT")
     set(ILINK_THUMB_CALLS_WARNING_SUPPRESSED "--diag_suppress=Lt056")
@@ -51,14 +63,17 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
       ${extra_dependencies}
       ${cmake_linker_script_settings}
       ${DEVICE_API_LD_TARGET}
+      ${ZEPHYR_BASE}/cmake/linker/iar/config_file_script.cmake
+      ${ZEPHYR_BASE}/cmake/linker/linker_script_common.cmake
     COMMAND
       ${CMAKE_COMMAND}
       -C ${cmake_linker_script_settings}
-      -DPASS="${linker_pass_define}"
+      "-DPASS=${linker_pass_define}"
       ${STEERING_FILE_ARG}
       -DOUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/${linker_script_gen}
       ${IAR_LIB_USED}
       -P ${ZEPHYR_BASE}/cmake/linker/iar/config_file_script.cmake
+    VERBATIM
   )
 
 endmacro()

@@ -28,9 +28,13 @@ static ALWAYS_INLINE void enter_irq(unsigned int irq)
 		sys_trace_isr_enter();
 	}
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	z_isr_invoke(irq);
+#else
 	const struct _isr_table_entry *const ite = _sw_isr_table + irq;
 
 	ite->isr(ite->arg);
+#endif
 
 	if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 		sys_trace_isr_exit();

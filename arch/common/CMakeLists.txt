@@ -9,8 +9,10 @@ zephyr_library_property(ALLOW_EMPTY TRUE)
 
 if(CONFIG_GEN_ISR_TABLES)
   zephyr_library_sources(
+    isr_metadata.c
     sw_isr_common.c
   )
+  zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE_SWITCH isr_dispatch.c)
   zephyr_library_sources_ifdef(
     CONFIG_DYNAMIC_INTERRUPTS
     dynamic_isr.c
@@ -52,6 +54,7 @@ zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
 zephyr_linker_sources_ifdef(CONFIG_ISR_TABLES_LOCAL_DECLARATION
   SECTIONS
   ${ZEPHYR_BASE}/include/zephyr/linker/isr-local-drop-unused.ld
+  ${ZEPHYR_BASE}/include/zephyr/linker/isr-pre0-entries.ld
 )
 
 zephyr_linker_sources_ifdef(CONFIG_GEN_IRQ_VECTOR_TABLE
@@ -61,21 +64,7 @@ zephyr_linker_sources_ifdef(CONFIG_GEN_IRQ_VECTOR_TABLE
 )
 
 if(CONFIG_GEN_ISR_TABLES)
-  # IAR Toolchain is having problems with discarding .intList
-  # This will always keep .intList in a harmless location
-  # until we can implement a proper DISCARD.
-  if(ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "iar")
-    zephyr_linker_section(NAME .intList GROUP RODATA_REGION NOINPUT)
-    zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".irq_info" FIRST)
-    zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".intList")
-  else()
-    zephyr_linker_section(NAME .intList VMA IDT_LIST LMA IDT_LIST NOINPUT PASS NOT LINKER_ZEPHYR_FINAL)
-    zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".irq_info" FIRST)
-    zephyr_linker_section_configure(SECTION .intList KEEP INPUT ".intList")
-
-    zephyr_linker_section_configure(SECTION /DISCARD/ KEEP INPUT ".irq_info" PASS LINKER_ZEPHYR_FINAL)
-    zephyr_linker_section_configure(SECTION /DISCARD/ KEEP INPUT ".intList"  PASS LINKER_ZEPHYR_FINAL)
-  endif()
+  include(${CMAKE_CURRENT_LIST_DIR}/isr_tables.cmake)
 endif()
 
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".note.GNU-stack")
@@ -110,21 +99,6 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources(
   instr_mem.c
 )
-
-# isr_tables is a normal CMake library and not a zephyr_library because it
-# should not be --whole-archive'd
-if(CONFIG_GEN_ISR_TABLES)
-  add_library(isr_tables
-    isr_tables.c
-  )
-
-  add_dependencies(isr_tables zephyr_generated_headers)
-  target_link_libraries(isr_tables zephyr_interface)
-  zephyr_library_link_libraries(isr_tables)
-
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_sw_isr_table)
-  zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_irq_vector_table)
-endif()
 
 if(CONFIG_COVERAGE)
   zephyr_compile_options($<TARGET_PROPERTY:compiler,coverage>)

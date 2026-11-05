@@ -3,21 +3,11 @@
 # Please keep in sync
 
 if(CONFIG_GEN_SW_ISR_TABLE AND CONFIG_SRAM_SW_ISR_TABLE)
-  # ld align has been changed to subalign to provide identical behavior scatter vs. ld.
-  zephyr_linker_section(NAME sw_isr_table
-    GROUP DATA_REGION
-    ${XIP_ALIGN_WITH_INPUT} SUBALIGN ${CONFIG_ARCH_SW_ISR_TABLE_ALIGN}
+  include(${CMAKE_CURRENT_LIST_DIR}/isr-tables.cmake)
+  zephyr_linker_sw_isr_tables(
+    PLACEMENT GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT}
+    LEGACY_ATTRIBUTES SUBALIGN ${CONFIG_ARCH_SW_ISR_TABLE_ALIGN}
   )
-  zephyr_linker_section_configure(
-    SECTION sw_isr_table
-    INPUT ".gnu.linkonce.sw_isr_table*"
-  )
-  if(CONFIG_SHARED_INTERRUPTS)
-    zephyr_linker_section_configure(
-      SECTION sw_isr_table
-      INPUT ".gnu.linkonce.shared_sw_isr_table*"
-    )
-  endif()
 endif()
 
 zephyr_linker_section(NAME device_states GROUP DATA_REGION NOINPUT ${XIP_ALIGN_WITH_INPUT})

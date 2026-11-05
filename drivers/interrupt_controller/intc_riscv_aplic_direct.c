@@ -139,7 +139,7 @@ const struct device *riscv_aplic_get_saved_dev(void)
 void aplic_irq_handler(const struct device *dev)
 {
 	const struct aplic_cfg *cfg = dev->config;
-	const struct _isr_table_entry *ite;
+	struct _isr_table_entry entry;
 
 	/* Claim the interrupt - Clears pending bit if possible */
 	const uint32_t claimi_offset = aplic_claimi_off(arch_proc_id());
@@ -164,8 +164,8 @@ void aplic_irq_handler(const struct device *dev)
 	}
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
-	ite = &cfg->isr_table[local_irq];
-	ite->isr(ite->arg);
+	z_isr_get_entry(cfg->isr_table_offset + local_irq, &entry);
+	entry.isr(entry.arg);
 }
 
 int aplic_direct_init(const struct device *dev)

@@ -79,7 +79,9 @@ zephyr_linker(ENTRY ${CONFIG_KERNEL_ENTRY})
 
 zephyr_linker_memory(NAME FLASH    FLAGS rx START ${FLASH_ADDR} SIZE ${FLASH_SIZE})
 zephyr_linker_memory(NAME RAM      FLAGS wx START ${RAM_ADDR}   SIZE ${RAM_SIZE})
-zephyr_linker_memory(NAME IDT_LIST FLAGS wx START 0xFFFF8000    SIZE 2K)
+if(NOT CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+  zephyr_linker_memory(NAME IDT_LIST FLAGS wx START 0xFFFF8000 SIZE 2K)
+endif()
 
 # If ROMSTART relocation is enabled, create a *separate* load/exec memory region
 # for the vector table. This must be separate for armlink,
@@ -254,18 +256,7 @@ if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
   endif()
 endif()
 
-zephyr_linker_section_configure(
-  SECTION .rom_start
-  INPUT ".exc_vector_table*"
-        ".gnu.linkonce.irq_vector_table*"
-        ".vectors"
-  OFFSET ${CONFIG_ROM_START_OFFSET}
-  KEEP FIRST
-  SYMBOLS _vector_start _vector_end
-  ALIGN ${VECTOR_ALIGN}
-  PRIO 50
-  ${vector_table_min_size_arg}
-)
+include(${CMAKE_CURRENT_LIST_DIR}/cortex-m-vectors.cmake)
 
 dt_chosen(chosen_itcm PROPERTY "zephyr,itcm")
 if(DEFINED chosen_itcm)

@@ -141,7 +141,11 @@ static ALWAYS_INLINE void handle_interrupt(uint8_t irq)
 {
 	ISR_DIRECT_HEADER();
 #if defined(CONFIG_GEN_SW_ISR_TABLE)
+#if defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	z_isr_invoke(irq);
+#else
 	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+#endif
 #else
 	ARG_UNUSED(irq);
 	z_irq_spurious(NULL);

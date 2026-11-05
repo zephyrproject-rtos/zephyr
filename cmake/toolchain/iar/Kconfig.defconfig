@@ -2,6 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+config ISR_TABLES_LOCAL_DECLARATION
+	default n
+
 config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
 	default n
 

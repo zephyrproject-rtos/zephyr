@@ -775,7 +775,10 @@ static void irqsteer_isr_dispatcher(const void *data)
 			table_idx = z_get_sw_isr_table_idx(zephyr_irq);
 
 			/* Call child's ISR */
-			_sw_isr_table[table_idx].isr(_sw_isr_table[table_idx].arg);
+			struct _isr_table_entry entry;
+
+			z_isr_get_entry(table_idx, &entry);
+			entry.isr(entry.arg);
 		}
 		status >>= 1;
 	}

@@ -45,4 +45,13 @@ For example:
 
     - TrustedFirmware is not supported
 
+Local ISR table generation
+**************************
+
+:kconfig:option:`CONFIG_ISR_TABLES_LOCAL_DECLARATION` can be enabled explicitly.
+This toolchain retains the legacy default. Metadata headers and registration records use
+``__no_alloc`` storage and nonloaded linker placement. These records may remain in the
+ELF for build-time analysis, but must not be allocated or overlap a load segment.
+The final ELF checker verifies those constraints independently of the generated tables.
+
 .. _IAR Arm Toolchain: https://www.iar.com/products/architectures/arm/

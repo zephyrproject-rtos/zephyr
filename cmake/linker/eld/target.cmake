@@ -39,6 +39,7 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     OUTPUT ${linker_script_gen}
     DEPENDS
     ${LINKER_SCRIPT}
+    ${AUTOCONF_H}
     ${extra_dependencies}
     # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
     ${linker_script_dep}

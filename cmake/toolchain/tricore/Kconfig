@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "../cross-compile/Kconfig"
+
+config TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
+	default y

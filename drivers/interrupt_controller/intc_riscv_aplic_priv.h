@@ -26,7 +26,7 @@ struct aplic_cfg {
 #ifdef CONFIG_RISCV_APLIC_DIRECT
 	uint32_t max_prio;
 	riscv_aplic_irq_config_func_t irq_config_func;
-	const struct _isr_table_entry *isr_table;
+	uint32_t isr_table_offset;
 #endif
 };
 
