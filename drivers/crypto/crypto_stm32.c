@@ -38,9 +38,19 @@ LOG_MODULE_REGISTER(crypto_stm32);
 #define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(uint32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
 
-#if defined(CRYP_KEYSIZE_192B)
+#if defined(CRYP_KEYSIZE_192B) || defined(HAL_AES_KEY_SIZE_192BIT)
 #define STM32_CRYPTO_KEYSIZE_192B_SUPPORT
 #endif
+
+#ifdef CONFIG_STM32_HAL2
+#define STM32_HAL_CRYPT_KEY_SIZE_128BIT		HAL_AES_KEY_SIZE_128BIT
+#define STM32_HAL_CRYPT_KEY_SIZE_192BIT		HAL_AES_KEY_SIZE_192BIT
+#define STM32_HAL_CRYPT_KEY_SIZE_256BIT		HAL_AES_KEY_SIZE_256BIT
+#else
+#define STM32_HAL_CRYPT_KEY_SIZE_128BIT		CRYP_KEYSIZE_128B
+#define STM32_HAL_CRYPT_KEY_SIZE_192BIT		CRYP_KEYSIZE_192B
+#define STM32_HAL_CRYPT_KEY_SIZE_256BIT		CRYP_KEYSIZE_256B
+#endif /* CONFIG_STM32_HAL2 */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
 #define STM32_CRYPTO_TYPEDEF            CRYP_TypeDef
@@ -832,6 +842,27 @@ static bool hal_cryp_state_is_reset(hal_crypt_handle_t *hcryp)
 }
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes) */
 
+static uint32_t get_stm32_hal_key_size_id(uint32_t key_len, uint32_t *key_size_id)
+{
+	switch (key_len) {
+	case 16U:
+		*key_size_id = STM32_HAL_CRYPT_KEY_SIZE_128BIT;
+		break;
+#if defined(STM32_CRYPTO_KEYSIZE_192B_SUPPORT)
+	case 24U:
+		*key_size_id = STM32_HAL_CRYPT_KEY_SIZE_192BIT;
+		break;
+#endif
+	case 32U:
+		*key_size_id = STM32_HAL_CRYPT_KEY_SIZE_256BIT;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int crypto_stm32_session_setup(const struct device *dev,
 				      struct cipher_ctx *ctx,
 				      enum cipher_algo algo,
@@ -839,6 +870,7 @@ static int crypto_stm32_session_setup(const struct device *dev,
 				      enum cipher_op op_type)
 {
 	int ctx_idx, ret;
+	uint32_t key_size_id;
 	struct crypto_stm32_session *session;
 
 	if (ctx->flags & ~(CRYP_SUPPORT)) {
@@ -861,16 +893,10 @@ static int crypto_stm32_session_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* The STM32F4 CRYP peripheral supports key sizes of 128, 192 and 256
-	 * bits.
-	 */
-	if ((ctx->keylen != 16U) &&
-#if defined(STM32_CRYPTO_KEYSIZE_192B_SUPPORT)
-	    (ctx->keylen != 24U) &&
-#endif
-	    (ctx->keylen != 32U)) {
+	ret = get_stm32_hal_key_size_id(ctx->keylen, &key_size_id);
+	if (ret != 0) {
 		LOG_ERR("%u key size is not supported", ctx->keylen);
-		return -ENOTSUP;
+		return ret;
 	}
 
 	ctx_idx = crypto_stm32_get_unused_session_index(dev);
@@ -976,27 +1002,14 @@ static int crypto_stm32_session_setup(const struct device *dev,
 	}
 
 #ifdef CONFIG_STM32_HAL2
-	if (HAL_AES_SetNormalKey(&CRYPTO_STM32_DATA(dev)->hcryp, ctx->keylen, session->key) !=
+	if (HAL_AES_SetNormalKey(&CRYPTO_STM32_DATA(dev)->hcryp, key_size_id, session->key) !=
 	    HAL_OK) {
 		return -EIO;
 	}
 
 	session->config.mode = mode;
 #else
-	switch (ctx->keylen) {
-	case 16U:
-		session->config.KeySize = CRYP_KEYSIZE_128B;
-		break;
-#if defined(STM32_CRYPTO_KEYSIZE_192B_SUPPORT)
-	case 24U:
-		session->config.KeySize = CRYP_KEYSIZE_192B;
-		break;
-#endif
-	case 32U:
-		session->config.KeySize = CRYP_KEYSIZE_256B;
-		break;
-	}
-
+	session->config.KeySize = key_size_id;
 	session->config.pKey = CAST_VEC(session->key);
 	session->config.DataType = CRYP_DATATYPE_8B;
 
