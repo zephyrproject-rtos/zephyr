@@ -145,6 +145,13 @@ REGION_ALIAS("rtc_data_seg", rtc_iram_seg );
 REGION_ALIAS("rtc_slow_seg", rtc_iram_seg );
 REGION_ALIAS("rtc_data_location", rtc_iram_seg );
 
+#if defined(CONFIG_ESP_SPIRAM)
+/* Target of zephyr_code_relocate(... LOCATION EXTMEM_NOINIT), named as the
+ * external memory region in devicetree.
+ */
+REGION_ALIAS("EXTMEM", ext_dram_seg);
+#endif
+
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
@@ -381,6 +388,7 @@ SECTIONS
 
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
+    *libcode_relocation_source_lib.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
@@ -776,6 +784,36 @@ SECTIONS
 
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+#include <linker_relocate.ld>
+  /* PSRAM is initialized at PRE_KERNEL_1, after .bss is zeroed, and nothing
+   * copies .data to it: only NOINIT sections can be relocated to EXTMEM.
+   * Kernel objects with a .noinit buffer that the kernel fills before the
+   * PSRAM is up (K_HEAP_DEFINE, K_MEM_SLAB_DEFINE) must stay out too: select
+   * sections with the FILTER argument of zephyr_code_relocate().
+   */
+  ASSERT(!DEFINED(__extmem_text_reloc_start) && !DEFINED(__extmem_rodata_reloc_start) &&
+         !DEFINED(__extmem_data_reloc_start) && !DEFINED(__extmem_bss_reloc_start),
+         "Only NOINIT can be relocated to EXTMEM: PSRAM is initialized after .bss is zeroed")
+#if !defined(CONFIG_ESP_SPIRAM)
+  /* Without PSRAM there is no EXTMEM region: ld only warns that it is not
+   * declared and links the section at address 0.
+   */
+  ASSERT(!DEFINED(__extmem_noinit_reloc_start),
+         "Relocation to EXTMEM needs CONFIG_ESP_SPIRAM=y")
+#endif
+  /* The default RAM region of zephyr_code_relocate() is RAM. This script
+   * declares no such region and does not include the SRAM relocation hooks:
+   * ld would only warn that the region is not declared. The relocation
+   * script defines _ram_mpu_ro_region_start for any copied relocation to
+   * the default RAM region; a relocation without COPY defines only the
+   * text and rodata symbols.
+   */
+  ASSERT(!DEFINED(_ram_mpu_ro_region_start) && !DEFINED(__ram_text_reloc_start) &&
+         !DEFINED(__ram_rodata_reloc_start),
+         "Relocation to RAM is not supported on ESP32-P4")
+#endif
   /* snippets-ram-sections.ld pulls in the generic arch/common/nocache.ld,
    * which links the .nocache section into RAMABLE_REGION. Point RAMABLE_REGION
    * at the reserved nocache window for the duration of that include. The bytes
