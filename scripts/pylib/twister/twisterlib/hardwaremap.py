@@ -11,6 +11,7 @@ import logging
 import os
 import platform
 import re
+import warnings
 from dataclasses import dataclass
 from multiprocessing import Lock, Value
 from pathlib import Path
@@ -273,24 +274,60 @@ class HardwareMap:
             }
         return hooks
 
+    @staticmethod
+    def _resolve_hook_scripts(hooks, hwmap_dir):
+        """Resolve relative hook script paths against the hardware map directory."""
+        for hook_type, hook in hooks.items():
+            if isinstance(hook, str):
+                hooks[hook_type] = str(hwmap_dir / hook) if not os.path.isabs(hook) else hook
+            elif isinstance(hook, dict) and 'script' in hook:
+                script = hook['script']
+                if not os.path.isabs(script):
+                    hook['script'] = str(hwmap_dir / script)
+
     def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)
         duts = scl.yaml_load_verify(map_file, hwm_schema)
+        hwmap_dir = Path(map_file).resolve().parent
         for dut in duts:
-            # deprecated fields are still supported for backward compatibility
             pre_script = dut.get('pre_script')
             script_param = dut.get('script_param')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
-            # prepare hooks dictionary for forward compatibility
-            _hooks = self._prepare_hooks_from_scripts(
-                pre_script=pre_script,
-                post_script=post_script,
-                post_flash_script=post_flash_script,
-                script_param=script_param,
-            )
-            # get hooks from hardware map if available
-            hooks = dut.get('hooks', _hooks)
+            has_legacy = any([pre_script, post_script, post_flash_script, script_param])
+            has_hooks = 'hooks' in dut
+
+            if has_legacy and has_hooks:
+                raise ValueError(
+                    f"DUT '{dut.get('id', '?')}': cannot mix legacy script fields "
+                    f"(pre_script, post_script, post_flash_script, script_param) "
+                    f"with 'hooks'; use 'hooks' only"
+                )
+
+            if has_legacy:
+                for field_name in ('pre_script', 'post_script',
+                                   'post_flash_script', 'script_param'):
+                    if dut.get(field_name):
+                        warnings.warn(
+                            f"DUT '{dut.get('id', '?')}': '{field_name}' is "
+                            f"deprecated, use 'hooks' instead",
+                            DeprecationWarning,
+                            stacklevel=2,
+                        )
+
+            if has_hooks:
+                hooks = dut['hooks']
+            elif has_legacy:
+                hooks = self._prepare_hooks_from_scripts(
+                    pre_script=pre_script,
+                    post_script=post_script,
+                    post_flash_script=post_flash_script,
+                    script_param=script_param,
+                )
+            else:
+                hooks = {}
+
+            self._resolve_hook_scripts(hooks, hwmap_dir)
 
             flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
 
