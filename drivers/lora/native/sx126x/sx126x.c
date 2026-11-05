@@ -710,6 +710,18 @@ static int sx126x_set_sleep(const struct device *dev)
 		return ret;
 	}
 
+	/*
+	 * The radio raises no IRQ in standby. Drop any raised while the
+	 * operation was being stopped, so DIO1 is low for the next operation
+	 * and no interrupt work is left queued for it.
+	 */
+	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
+	if (ret < 0) {
+		LOG_ERR("Failed to clear IRQs: %d", ret);
+		return ret;
+	}
+	(void)k_work_cancel(&data->irq_work);
+
 	if (!IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
 		atomic_set(&data->state, SX126X_STATE_IDLE);
 		return 0;
@@ -741,29 +753,22 @@ static int sx126x_ensure_ready(const struct device *dev)
 {
 	int ret;
 
+	if (IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
+		/*
+		 * Wake the chip from sleep by sending GET_STATUS. The NSS edge
+		 * wakes the chip which then initializes into STDBY_RC (warm start
+		 * retains configuration). Cannot use sx126x_set_standby() here
+		 * because the HAL waits for BUSY LOW before sending the SPI command,
+		 * but BUSY stays HIGH until the chip is woken by an NSS edge.
+		 */
+		ret = sx126x_hal_wakeup(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* Re-enable DIO1 interrupt */
-	ret = sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (!IS_ENABLED(CONFIG_LORA_SX126X_NATIVE_SLEEP)) {
-		return 0;
-	}
-
-	/*
-	 * Wake the chip from sleep by sending GET_STATUS. The NSS edge
-	 * wakes the chip which then initializes into STDBY_RC (warm start
-	 * retains configuration). Cannot use sx126x_set_standby() here
-	 * because the HAL waits for BUSY LOW before sending the SPI command,
-	 * but BUSY stays HIGH until the chip is woken by an NSS edge.
-	 */
-	ret = sx126x_hal_wakeup(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
+	return sx126x_hal_set_dio1_callback(dev, sx126x_dio1_callback);
 }
 
 static void sx126x_complete_tx(const struct device *dev, int status)
