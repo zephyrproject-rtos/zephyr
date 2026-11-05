@@ -127,25 +127,53 @@ static enum ec_host_cmd_status test_cmd_handler(struct ec_host_cmd_handler_args 
 EC_HOST_CMD_HANDLER(CMD_TEST_ID, test_cmd_handler, BIT(0), struct test_req_payload,
 		    struct test_resp_payload);
 
-static void send_usb_host_cmd_request(uint8_t prtcl_ver, uint16_t cmd_id,
-				      const void *payload, uint16_t payload_len)
+static void init_usb_host_cmd_header(struct ec_host_cmd_request_header *hdr,
+				     uint8_t prtcl_ver, uint16_t cmd_id,
+				     const void *payload, uint16_t payload_len)
 {
-	struct ec_host_cmd_request_header hdr = {
+	*hdr = (struct ec_host_cmd_request_header){
 		.prtcl_ver = prtcl_ver,
 		.cmd_id = cmd_id,
 		.data_len = payload_len,
 	};
+	hdr->checksum = calc_checksum((const uint8_t *)hdr, sizeof(*hdr));
+	if (payload != NULL && payload_len > 0) {
+		hdr->checksum += calc_checksum(payload, payload_len);
+	}
+}
+
+static void send_usb_out_transfer(const void *data, size_t len)
+{
 	struct net_buf *out_buf = mock_ep_out_buf;
-	size_t total_len = sizeof(hdr) + payload_len;
+
+	zassert_not_null(out_buf, "EP OUT must be armed before sending a transfer");
+	memcpy(out_buf->data, data, len);
+	out_buf->len = len;
+	zassert_ok(test_c_data->api->request(test_c_data, out_buf, 0));
+}
+
+static void send_usb_host_cmd_header(uint8_t prtcl_ver, uint16_t cmd_id,
+				     const void *payload, uint16_t payload_len)
+{
+	struct ec_host_cmd_request_header hdr;
+
+	init_usb_host_cmd_header(&hdr, prtcl_ver, cmd_id, payload, payload_len);
+	send_usb_out_transfer(&hdr, sizeof(hdr));
+}
+
+static void send_usb_host_cmd_request(uint8_t prtcl_ver, uint16_t cmd_id,
+				      const void *payload, uint16_t payload_len)
+{
+	struct ec_host_cmd_request_header hdr;
+	struct net_buf *out_buf = mock_ep_out_buf;
 
 	zassert_not_null(out_buf, "EP OUT must be armed before sending a request");
+	init_usb_host_cmd_header(&hdr, prtcl_ver, cmd_id, payload, payload_len);
 	memcpy(out_buf->data, &hdr, sizeof(hdr));
 	if (payload_len > 0) {
 		memcpy(out_buf->data + sizeof(hdr), payload, payload_len);
 	}
-	((struct ec_host_cmd_request_header *)out_buf->data)->checksum =
-		calc_checksum(out_buf->data, total_len);
-	out_buf->len = total_len;
+	out_buf->len = sizeof(hdr) + payload_len;
 	zassert_ok(test_c_data->api->request(test_c_data, out_buf, 0));
 }
 
@@ -209,13 +237,9 @@ ZTEST(ec_host_cmd_usb, test_usb_valid_request_succeeds)
 
 ZTEST(ec_host_cmd_usb, test_usb_short_header_triggers_reset)
 {
-	const size_t short_header_len = sizeof(struct ec_host_cmd_request_header) - 1;
-	struct net_buf *out_buf = mock_ep_out_buf;
+	const uint8_t short_hdr[sizeof(struct ec_host_cmd_request_header) - 1] = { 0 };
 
-	zassert_not_null(out_buf, "EP OUT must be armed");
-	memset(out_buf->data, 0, short_header_len);
-	out_buf->len = short_header_len;
-	zassert_ok(test_c_data->api->request(test_c_data, out_buf, 0));
+	send_usb_out_transfer(short_hdr, sizeof(short_hdr));
 
 	/* Wait for reset_work to execute and re-arm the OUT endpoint */
 	zassert_true(WAIT_FOR(mock_ep_out_enqueue_count == 2, 1000 * USEC_PER_MSEC, k_msleep(1)),
@@ -227,7 +251,7 @@ ZTEST(ec_host_cmd_usb, test_usb_short_header_triggers_reset)
 
 ZTEST(ec_host_cmd_usb, test_usb_exact_header_fail_truncated)
 {
-	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, NULL, 0);
+	send_usb_host_cmd_header(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, NULL, 0);
 	complete_usb_in_transfers(EC_HOST_CMD_REQUEST_TRUNCATED, NULL, 0);
 	zassert_equal(mock_ep_out_enqueue_count, 2);
 	zassert_not_null(mock_ep_out_buf);
@@ -235,7 +259,7 @@ ZTEST(ec_host_cmd_usb, test_usb_exact_header_fail_truncated)
 
 static void verify_invalid_protocol_version(uint8_t version)
 {
-	send_usb_host_cmd_request(version, CMD_TEST_ID, NULL, 0);
+	send_usb_host_cmd_header(version, CMD_TEST_ID, NULL, 0);
 	complete_usb_in_transfers(EC_HOST_CMD_INVALID_HEADER, NULL, 0);
 	zassert_equal(mock_ep_out_enqueue_count, 2);
 	zassert_not_null(mock_ep_out_buf);
@@ -259,8 +283,7 @@ ZTEST(ec_host_cmd_usb, test_usb_invalid_prtcl_ver_max_fail_invalid_header)
 ZTEST(ec_host_cmd_usb, test_usb_out_transfer_while_disabled_ignored)
 {
 	test_c_data->api->disable(test_c_data);
-	mock_ep_out_buf->len = sizeof(struct ec_host_cmd_request_header);
-	zassert_ok(test_c_data->api->request(test_c_data, mock_ep_out_buf, 0));
+	send_usb_host_cmd_header(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, NULL, 0);
 
 	zassert_is_null(mock_ep_in_buf);
 	zassert_is_null(mock_ep_out_buf);
