@@ -4,8 +4,9 @@
 title: Rockchip RK3588 CRU Clock Controller
 
 description: |
-  Clock gate controller for the Rockchip RK3588 CRU. Clock IDs are defined
-  in include/zephyr/dt-bindings/clock/rk3588-cru.h.
+  Clock controller for the Rockchip RK3588 CRU. It gates the peripheral clocks
+  and selects the divider and parent of the ComboPHY0 reference clock. Clock IDs
+  are defined in include/zephyr/dt-bindings/clock/rk3588-cru.h.
 
 compatible: "rockchip,rk3588-cru-clk"
 

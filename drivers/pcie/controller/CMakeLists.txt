@@ -5,5 +5,7 @@ zephyr_library()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_PCIE_BRCMSTB pcie_brcmstb.c)
+zephyr_library_sources_ifdef(CONFIG_PCIE_DW pcie_dw_common.c)
+zephyr_library_sources_ifdef(CONFIG_PCIE_DW_ROCKCHIP pcie_dw_rockchip.c)
 zephyr_library_sources_ifdef(CONFIG_PCIE_ECAM pcie_ecam.c)
 # zephyr-keep-sorted-stop

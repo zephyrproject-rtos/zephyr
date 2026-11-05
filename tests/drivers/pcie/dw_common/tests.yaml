@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.pcie.dw_common:
+    platform_allow:
+      - native_sim/native/64
+    tags:
+      - drivers
+      - pcie
