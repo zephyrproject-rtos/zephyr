@@ -29,7 +29,8 @@ Then, from another terminal, run the tests:
 ```sh
 twister -c -p nrf54l15dk/nrf54l15/cpuapp \
 	-T tests/net/socket/tls_configurations \
-	--device-testing --device-serial /dev/ttyACM1
+	--device-testing --device-serial /dev/ttyACM1 \
+	--fixture net_host_link
 ```
 
 ## Ethernet-over-USB
@@ -57,7 +58,8 @@ Then run the tests:
 ```sh
 twister -c -p nrf54lm20dk/nrf54lm20a/cpuapp \
 	-T tests/net/socket/tls_configurations \
-	--device-testing --device-serial /dev/ttyACM1
+	--device-testing --device-serial /dev/ttyACM1 \
+	--fixture net_host_link
 ```
 
 Once done, the connection profile can be removed with:
