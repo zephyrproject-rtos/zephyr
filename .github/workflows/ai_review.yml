@@ -1,0 +1,62 @@
+name: Zephyr AI Review
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: read      # ci_status: check runs on the head commit
+  actions: read     # ci_failure_logs: failed job logs
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review
+    # Gate on the label here so an unlabeled pull request event does not provision a runner.
+    if: >-
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'ai-review') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ai-review')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out the base branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 200
+          persist-credentials: false
+
+      # The action fetches the head commit and the merge base by SHA itself when they are missing,
+      # so a shallow checkout is enough. A deeper fetch-depth only improves file_history and blame.
+
+      - name: Review
+        id: review
+        uses: zephyrproject-rtos/zephyr-review-agent@3de989ecdf4c57e73301a16d1d9f847c91c861dc # v0.2
+        with:
+          openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          pipeline: multi-stage
+          # Models come from repository variables so they can change without a workflow edit:
+          # AI_REVIEW_MODEL verifies and finalizes, AI_REVIEW_DRAFT_ENSEMBLE (comma-separated) runs
+          # the specialist passes. The literals are the defaults when a variable is unset.
+          model: ${{ vars.AI_REVIEW_MODEL || 'google/gemini-3.8-flash' }}
+          draft_ensemble: ${{ vars.AI_REVIEW_DRAFT_ENSEMBLE || 'deepseek/deepseek-v4.1-flash,z-ai/glm-5.3-flash' }}
+          provider: '{"data_collection": "deny"}'
+          specialist_max_steps: "25"
+          # Checked again by the action in case the label was removed before the run started.
+          required_labels: ai-review
+          skip_reviewed: same-head
+          quiet: "true"
+
+      - name: Upload review artifacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ai-review-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: review-output/
+          retention-days: 30
