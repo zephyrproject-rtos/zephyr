@@ -99,4 +99,8 @@ config NRF52_ANOMALY_219_WORKAROUND
 	  the I2C specification at 400 kHz. This workaround configures the I2C
 	  frequency to 390 kHz instead of 400 kHz.
 
+config NRF52_ANOMALY_132_WORKAROUND
+	bool
+	default y if SOC_NRF52832_QFAB || SOC_NRF52832_QFAA  || SOC_NRF52832_CIAA
+
 endif # SOC_SERIES_NRF52
