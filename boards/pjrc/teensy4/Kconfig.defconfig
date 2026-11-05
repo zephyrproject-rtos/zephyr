@@ -6,8 +6,7 @@
 
 if BOARD_TEENSY40 || BOARD_TEENSY41 || BOARD_TEENSYMM
 
-config BUILD_OUTPUT_HEX
-	bool
+configdefault BUILD_OUTPUT_HEX
 	default y
 
 configdefault ETH_DRIVER
