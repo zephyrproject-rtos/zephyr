@@ -1,0 +1,9 @@
+tests:
+  authentication.fido2.cred_protect:
+    tags: fido2
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_NATIVE_EXTRA_CMDLINE_ARGS="--flash_in_ram"
