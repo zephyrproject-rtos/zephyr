@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
+#include <zephyr/net/mdio.h>
 #include <zephyr/drivers/mdio.h>
 #include <string.h>
 #include <zephyr/sys/util_macro.h>
@@ -90,6 +91,7 @@ struct rt_rtl8211f_config {
 	enum phy_link_speed default_speeds;
 	enum rt_rtl8211f_rgmii_delay rgmii_delay;
 	enum rt_rtl8211f_timing_role timing_role;
+	bool disable_eee;
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
@@ -568,6 +570,36 @@ static void phy_rt_rtl8211f_monitor_work_handler(struct k_work *work)
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 }
 
+static int phy_rt_rtl8211f_mmd_set_device(const struct device *dev, uint8_t devad, uint16_t addr)
+{
+	int ret;
+
+	ret = phy_rt_rtl8211f_write(dev, MII_MMD_ACR, devad);
+	if (ret) {
+		return ret;
+	}
+
+	ret = phy_rt_rtl8211f_write(dev, MII_MMD_AADR, addr);
+	if (ret) {
+		return ret;
+	}
+
+	return phy_rt_rtl8211f_write(dev, MII_MMD_ACR, MII_MMD_ACR_DATA_NO_POS_INC | devad);
+}
+
+static int phy_rt_rtl8211f_mmd_write(const struct device *dev, uint8_t devad, uint16_t addr,
+				     uint32_t data)
+{
+	int ret;
+
+	ret = phy_rt_rtl8211f_mmd_set_device(dev, devad, addr);
+	if (ret) {
+		return ret;
+	}
+
+	return phy_rt_rtl8211f_write(dev, MII_MMD_AADR, data);
+}
+
 static int phy_rt_rtl8211f_init(const struct device *dev)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
@@ -604,6 +636,15 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 	ret = phy_rt_rtl8211f_cfg_rgmii_delay(dev);
 	if (ret) {
 		return ret;
+	}
+
+	/* Do not advertise EEE when requested */
+	if (config->disable_eee) {
+		ret = phy_rt_rtl8211f_mmd_write(dev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, 0);
+		if (ret) {
+			LOG_ERR("Error writing phy (%d) EEE advertisement", config->addr);
+			return ret;
+		}
 	}
 
 	k_work_init_delayable(&data->phy_monitor_work, phy_rt_rtl8211f_monitor_work_handler);
@@ -730,6 +771,7 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 		.rgmii_delay = DT_INST_ENUM_IDX(n, realtek_rgmii_delay),	\
 		.timing_role = DT_INST_ENUM_IDX_OR(n, timing_role,		\
 						   RT_RTL8211F_TIMING_ROLE_AUTO),\
+		.disable_eee = DT_INST_PROP(n, eee_disable),			\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\
