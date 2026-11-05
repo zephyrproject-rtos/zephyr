@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	aliases {
+		ambient-temp0 = &adt7422_mikroe_surface_temp_2_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	adt7422_mikroe_surface_temp_2_click: adt7422@48 {
+		compatible = "adi,adt7422";
+		reg = <0x48>;
+		int-gpios = <&mikrobus_header MIKROBUS_INT (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		ct-gpios = <&mikrobus_header MIKROBUS_PWM (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+};
