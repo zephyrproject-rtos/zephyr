@@ -258,6 +258,15 @@ config RX
 	help
 	  Renesas RX architecture
 
+config RH850
+	bool
+	select ARCH_IS_SET
+	select ATOMIC_OPERATIONS_C
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  Renesas RH850 architecture
+
 config ARCH_IS_SET
 	bool
 	help
@@ -351,7 +360,8 @@ config XIP
 	  option disabled.
 
 
-if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE
+if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE || \
+	RH850
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -374,7 +384,8 @@ config FLASH_BASE_ADDRESS
 	  normally set by the board's defconfig file and the user should generally
 	  avoid modifying it via the menu configuration.
 
-endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE
+endif # ARM || ARM64 || ARC || X86 || RISCV || RX || OPENRISC || ARCH_POSIX || HEXAGON || TRICORE \
+		|| RH850
 
 if ARCH_HAS_TRUSTED_EXECUTION
 
