@@ -638,14 +638,66 @@ static int eic_mchp_init(const struct device *dev)
 
 #define EIC_MCHP_DATA_DEFN(n)        static struct eic_mchp_dev_data eic_mchp_data_##n
 #define EIC_MCHP_IRQ_HANDLER_DECL(n) static void eic_irq_connect_##n(void)
-/* Cap at 16 lines (secure EIC has 17 IRQs but only 16 EIC_LINE enums exist) */
-#define EIC_MCHP_MAX_LINES           16
-#define EIC_MCHP_NUM_LINES(n)                                                                      \
-	COND_CODE_1(UTIL_BOOL(DT_NUM_IRQS(DT_DRV_INST(n)) > EIC_MCHP_MAX_LINES), \
-		    (EIC_MCHP_MAX_LINES), (DT_NUM_IRQS(DT_DRV_INST(n))))
-#define EIC_MCHP_CREATE_HANDLERS(n) LISTIFY(EIC_MCHP_NUM_LINES(n), EIC_MCHP_CB_INIT, (;),)
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+/* A single ISR is kept because in this family we only have a single IRQ line for all the
+ * interrupts
+ */
+#define EIC_MCHP_CREATE_HANDLERS(n)
+#define EIC_NIBS_BIT_COUNT 4
+#define EIC_INT_NIBS       4
+#define EIC_NIBS_MASK      0xf
+
+static void eic_mchp_isr(const struct device *dev)
+{
+	const struct eic_mchp_dev_cfg *eic_cfg = dev->config;
+	struct eic_mchp_dev_data *eic_data = dev->data;
+	uint16_t eic_int_flag = eic_cfg->regs->EIC_INTFLAG;
+	uint8_t eic_line = 0;
+
+	eic_cfg->regs->EIC_INTFLAG = eic_int_flag;
+	/* Divides the interrupt flag into nibbles and
+	 *checks whether it has a set bit inside it
+	 */
+	for (int nibs = 0; nibs < EIC_INT_NIBS; nibs++) {
+		if ((eic_int_flag & (EIC_NIBS_MASK << eic_line)) == 0) {
+			eic_line += EIC_NIBS_BIT_COUNT;
+			continue;
+		}
+		/* find the set eic line from within the nibble
+		 * and call the callback as expected
+		 */
+		for (int i = 0; i < EIC_NIBS_BIT_COUNT; i++) {
+			if ((eic_int_flag & BIT(eic_line)) == 0) {
+				eic_line++;
+				continue;
+			}
+			uint8_t port_id = eic_data->lines[eic_line].port;
+
+			if (eic_data->eic_line_callback != NULL) {
+				uint32_t pins = BIT(eic_data->lines[eic_line].pin);
+
+				eic_data->eic_line_callback(pins, eic_data->gpio_data[port_id]);
+			}
+			eic_int_flag &= ~BIT(eic_line);
+			eic_line++;
+		}
+	}
+}
 
 /* clang-format off */
+#define EIC_MCHP_IRQ_CONNECT(eic_line, inst)                                                    \
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, eic_line), (					\
+	do {											\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, eic_line, irq),				\
+				DT_INST_IRQ_BY_IDX(inst, eic_line, priority), eic_mchp_isr,	\
+				DEVICE_DT_INST_GET(inst), inst);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(inst, eic_line, irq));				\
+	} while (false);									\
+			))
+#else
+
+#define EIC_MCHP_CREATE_HANDLERS(n)  LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), EIC_MCHP_CB_INIT, (;),)
 #define EIC_MCHP_CB_INIT(eic_line, _)							\
 	static void eic_mchp_isr_##eic_line(const struct device *dev)			\
 	{										\
@@ -664,12 +716,12 @@ static int eic_mchp_init(const struct device *dev)
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, eic_line), (					\
 	do {											\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, eic_line, irq),				\
-			    DT_INST_IRQ_BY_IDX(inst, eic_line, priority), eic_mchp_isr_##eic_line,\
-			    DEVICE_DT_INST_GET(inst), inst);					\
+			DT_INST_IRQ_BY_IDX(inst, eic_line, priority), eic_mchp_isr_##eic_line,	\
+			DEVICE_DT_INST_GET(inst), inst);					\
 		irq_enable(DT_INST_IRQ_BY_IDX(inst, eic_line, irq));				\
 	} while (false);									\
 			))
-
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 #define EIC_MCHP_CLOCK_DEFN(n)                                                                  \
 	.eic_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                              \
@@ -689,7 +741,7 @@ static int eic_mchp_init(const struct device *dev)
 	{                                                       \
 		/** Connect all IRQs for this instance */	\
 		LISTIFY(					\
-			EIC_MCHP_NUM_LINES(n),			\
+			DT_NUM_IRQS(DT_DRV_INST(n)),		\
 			EIC_MCHP_IRQ_CONNECT,			\
 			(),					\
 			n					\
