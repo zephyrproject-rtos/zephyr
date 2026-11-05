@@ -58,6 +58,7 @@ $defs:
           - nios2
           - openrisc
           - posix
+          - rh850
           - riscv
           - rx
           - sparc
