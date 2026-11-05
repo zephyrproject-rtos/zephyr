@@ -25,6 +25,12 @@
 #endif
 #include <soc.h>
 
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+#define OS_TIMER_NODE DT_CHOSEN(zephyr_system_timer)
+#else
+#define OS_TIMER_NODE DT_DRV_INST(0)
+#endif
+
 #define CYC_PER_TICK                                                                               \
 	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
 		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
@@ -35,7 +41,7 @@
 
 static struct k_spinlock lock;
 static uint64_t last_count;
-static OSTIMER_Type *base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
+static OSTIMER_Type *base = (OSTIMER_Type *)DT_REG_ADDR(OS_TIMER_NODE);
 /* Total cycles of the timer compensated to include the time lost in "sleep/deep sleep" modes.
  * This maintains the timer count to account for the case if the OS Timer is reset in
  * certain deep sleep modes and the time elapsed when it is powered off.
@@ -60,7 +66,7 @@ static bool lpm_companion_armed;
 #define MCUX_OS_TIMER_LPM_LEGACY 1
 /* This is the counter device used when OS timer is not available in standby mode. */
 static const struct device *counter_dev =
-	DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, deep_sleep_counter));
+	DEVICE_DT_GET_OR_NULL(DT_PHANDLE(OS_TIMER_NODE, deep_sleep_counter));
 /* Indicates if the counter is running. */
 static bool counter_running;
 static uint32_t counter_max_val;
@@ -295,11 +301,11 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
  * the companion. Driven by "handoff-power-states"; the legacy deep-sleep-counter
  * path (no such property) falls back to PM_STATE_STANDBY.
  */
-#if DT_INST_NODE_HAS_PROP(0, handoff_power_states)
+#if DT_NODE_HAS_PROP(OS_TIMER_NODE, handoff_power_states)
 #define OS_TIMER_HANDOFF_STATE(node_id, prop, idx) \
 	PM_STATE_DT_INIT(DT_PHANDLE_BY_IDX(node_id, prop, idx)),
 static const enum pm_state os_timer_handoff_states[] = {
-	DT_INST_FOREACH_PROP_ELEM(0, handoff_power_states, OS_TIMER_HANDOFF_STATE)
+	DT_FOREACH_PROP_ELEM(OS_TIMER_NODE, handoff_power_states, OS_TIMER_HANDOFF_STATE)
 };
 static bool os_timer_state_needs_handoff(enum pm_state state)
 {
@@ -477,12 +483,13 @@ static int sys_clock_driver_init(void)
 	OSTIMER_SetMatchValue(base, last_count + CYC_PER_TICK, NULL);
 
 	/* Configure and enable event timer interrupt */
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_lpc_ostick_isr, NULL, 0);
-	irq_enable(DT_INST_IRQN(0));
+	IRQ_CONNECT(DT_IRQN(OS_TIMER_NODE), DT_IRQ(OS_TIMER_NODE, priority),
+		    mcux_lpc_ostick_isr, NULL, 0);
+	irq_enable(DT_IRQN(OS_TIMER_NODE));
 
 /* On some SoC's, OS Timer cannot wakeup from low power mode in standby modes */
 #if defined(MCUX_OS_TIMER_LPM_LEGACY)
-	counter_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, deep_sleep_counter));
+	counter_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(OS_TIMER_NODE, deep_sleep_counter));
 	if (NULL != counter_dev) {
 		counter_max_val = counter_get_max_top_value(counter_dev);
 	}
@@ -492,8 +499,8 @@ static int sys_clock_driver_init(void)
 	z_sys_clock_lpm_init();
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 
-#if (DT_INST_PROP(0, wakeup_source))
-	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(0));
+#if DT_PROP(OS_TIMER_NODE, wakeup_source)
+	NXP_ENABLE_WAKEUP_SIGNAL(DT_IRQN(OS_TIMER_NODE));
 #endif
 	return 0;
 }
