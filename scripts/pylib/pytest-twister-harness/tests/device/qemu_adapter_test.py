@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Generator
 from unittest.mock import patch
@@ -11,7 +14,7 @@ from unittest import mock
 import pytest
 
 from twister_harness.device.binary_adapter import QemuAdapter
-from twister_harness.exceptions import TwisterHarnessException
+from twister_harness.exceptions import TwisterHarnessException, TwisterHarnessTimeoutException
 from twister_harness.twister_harness_config import DeviceConfig
 
 
@@ -77,3 +80,124 @@ def test_if_qemu_adapter_raise_exception_due_to_no_fifo_connection(device: QemuA
     device.close()
     assert not os.path.exists(device.connections[0]._fifo_connection._fifo_out_path)
     assert not os.path.exists(device.connections[0]._fifo_connection._fifo_in_path)
+
+
+@pytest.fixture
+def coverage_device(resources, device: QemuAdapter):
+    device.command = [
+        sys.executable,
+        str(resources / 'coverage_fifo.py'),
+        str(device.device_config.build_dir / 'qemu-fifo'),
+    ]
+    device.launch()
+    device.write(b'ready\n')
+    device.readlines_until(regex='READY')
+    return device
+
+
+def test_close_waits_for_coverage_before_disconnecting(coverage_device):
+    device = coverage_device
+    connection = device.connections[0]
+    device.write(b'start\n')
+    device.readlines_until(regex='GCOV_COVERAGE_DUMP_START')
+    waiting = threading.Event()
+    wait_for_coverage = connection.wait_for_coverage
+
+    def wait(timeout):
+        waiting.set()
+        return wait_for_coverage(timeout)
+
+    with (
+        patch.object(connection, 'wait_for_coverage', side_effect=wait),
+        ThreadPoolExecutor(max_workers=1) as executor,
+    ):
+        closing = executor.submit(device.close)
+        assert waiting.wait(2)
+        assert not closing.done()
+        assert device.is_device_connected()
+        assert device._process.poll() is None
+        device.write(b'end\n')
+        closing.result(timeout=5)
+
+    assert 'GCOV_COVERAGE_DUMP_END' in connection.log_path.read_text()
+    assert device._process is None
+    assert not device.is_reader_started()
+
+
+def test_close_preserves_delayed_coverage_end_in_log(coverage_device):
+    device = coverage_device
+    device.write(b'delayed-end\n')
+    device.readlines_until(regex='GCOV_COVERAGE_DUMP_START')
+    device.close()
+    assert 'GCOV_COVERAGE_DUMP_END' in device.connections[0].log_path.read_text()
+
+
+def test_incomplete_coverage_reports_timeout_and_cleans_up(coverage_device, caplog):
+    device = coverage_device
+    connection = device.connections[0]
+    process = device._process
+    reader_thread = connection._reader_thread
+    device.write(b'start\n')
+    device.readlines_until(regex='GCOV_COVERAGE_DUMP_START')
+    device.base_timeout = 0.05
+
+    with pytest.raises(TwisterHarnessTimeoutException, match='GCOV_COVERAGE_DUMP_END'):
+        device.close()
+
+    assert str(connection.log_path) in caplog.text
+    assert 'incomplete coverage' in caplog.text
+    assert process.poll() is not None
+    assert device._process is None
+    assert not device.is_reader_started()
+    assert not os.path.exists(connection._fifo_connection._fifo_out_path)
+    assert not os.path.exists(connection._fifo_connection._fifo_in_path)
+    reader_thread.join(timeout=1)
+    assert not reader_thread.is_alive()
+    device.close()  # Repeated teardown must not wait or raise again.
+
+
+@pytest.mark.parametrize('completed', [False, True])
+def test_close_without_pending_coverage_does_not_block(coverage_device, completed):
+    device = coverage_device
+    connection = device.connections[0]
+    if completed:
+        device.write(b'start\nend\n')
+        device.readlines_until(regex='GCOV_COVERAGE_DUMP_END')
+    assert connection.wait_for_coverage(0)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        closing = executor.submit(device.close)
+        closing.result(timeout=2)
+    assert device._process is None
+
+
+def test_coverage_state_is_reset_when_device_is_relaunched(coverage_device):
+    device = coverage_device
+    connection = device.connections[0]
+    device.write(b'start\n')
+    device.readlines_until(regex='GCOV_COVERAGE_DUMP_START')
+    device.base_timeout = 0.2
+    with pytest.raises(TwisterHarnessTimeoutException, match='GCOV_COVERAGE_DUMP_END'):
+        device.close()
+
+    device.base_timeout = 5.0
+    device.launch()
+    device.write(b'ready\n')
+    device.readlines_until(regex='READY')
+    assert connection.wait_for_coverage(0)
+    device.write(b'start\n')
+    device.readlines_until(regex='GCOV_COVERAGE_DUMP_START')
+    assert not connection.wait_for_coverage(0)
+    device.write(b'end\n')
+    device.readlines_until(regex='GCOV_COVERAGE_DUMP_END')
+
+
+def test_each_coverage_dump_requires_its_own_end_marker(coverage_device):
+    device = coverage_device
+    connection = device.connections[0]
+    for _ in range(2):
+        device.write(b'start\n')
+        device.readlines_until(regex='GCOV_COVERAGE_DUMP_START')
+        assert not connection.wait_for_coverage(0)
+        device.write(b'end\n')
+        device.readlines_until(regex='GCOV_COVERAGE_DUMP_END')
+        assert connection.wait_for_coverage(0)
