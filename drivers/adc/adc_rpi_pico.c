@@ -62,6 +62,8 @@ struct adc_rpi_data {
 	uint16_t *repeat_buf;
 	/** Mask with channels that will be sampled */
 	uint32_t channels;
+	/** Mask with channels configured by adc_channel_setup() */
+	uint32_t configured_channels;
 };
 
 static inline void adc_start_once(void)
@@ -100,6 +102,7 @@ static int adc_rpi_channel_setup(const struct device *dev,
 				 const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_rpi_config *config = dev->config;
+	struct adc_rpi_data *data = dev->data;
 
 	if (channel_cfg->channel_id >= config->num_channels) {
 		LOG_ERR("unsupported channel id '%d'", channel_cfg->channel_id);
@@ -120,6 +123,8 @@ static int adc_rpi_channel_setup(const struct device *dev,
 		LOG_ERR("Gain is not valid");
 		return -EINVAL;
 	}
+
+	data->configured_channels |= BIT(channel_cfg->channel_id);
 
 	return 0;
 }
@@ -166,6 +171,8 @@ static int adc_rpi_check_buffer_size(const struct device *dev,
  * @param sequence ADC sequence description
  *
  * @return 0 on success
+ * @return -EINVAL if no channel is selected or a selected channel is not
+ *         configured
  * @return -ENOTSUP if requested resolution or channel is out side of supported
  *         range
  * @return -ENOMEM if buffer is not big enough
@@ -185,10 +192,21 @@ static int adc_rpi_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (sequence->channels == 0U) {
+		LOG_ERR("no channels selected");
+		return -EINVAL;
+	}
+
 	if (find_msb_set(sequence->channels) > config->num_channels) {
 		LOG_ERR("unsupported channels in mask: 0x%08x",
 			sequence->channels);
 		return -ENOTSUP;
+	}
+
+	if ((sequence->channels & ~data->configured_channels) != 0U) {
+		LOG_ERR("channels not configured in mask: 0x%08x",
+			sequence->channels & ~data->configured_channels);
+		return -EINVAL;
 	}
 
 	err = adc_rpi_check_buffer_size(dev, sequence);
