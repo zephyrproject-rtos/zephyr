@@ -86,11 +86,54 @@ Verification
 The Zephyr tests under ``tests/subsys/mc`` cover configuration errors, transfers, message
 dispatch, signals, malformed frames, loss, corruption, reordered and duplicate frames,
 timeouts, and guarded storage. The native stress suite also exercises repeated transfers and
-disconnections. Build and run the communication and message suites in a west workspace with the
-host toolchain::
+disconnections. From this Zephyr checkout in a west workspace, run all three suites on the
+host native simulator::
 
-   ZEPHYR_BASE=$PWD ZEPHYR_TOOLCHAIN_VARIANT=host west twister \
-     -p native_sim/native/64 -s mc.comm -s mc.msg -s mc.comm.stress.native -i
+   export ZEPHYR_BASE="$PWD"
+   export ZEPHYR_TOOLCHAIN_VARIANT=host
+   unset PYTHONHOME PYTHONPATH
+   west twister -p native_sim/native/64 \
+     -s mc.comm -s mc.msg -s mc.comm.stress.native \
+     -i -O ../build/mc-native-all
+   find ../build/mc-native-all -name handler.log -exec cat {} +
+
+For the x86 QEMU stress scenarios, see
+:zephyr_file:`tests/subsys/mc/comm_stress/README.rst`. Set ``ZEPHYR_BASE`` to this checkout
+when an SDK environment points to a different Zephyr tree. Its direct ``west build`` and
+``west build -t run`` commands print each ztest case in the terminal. The x86 board is selected
+by ``-b``; the test CMake file uses the in-memory transport when UART is disabled.
+
+To run the same suites on each x86 QEMU board, set ``ZEPHYR_SDK_INSTALL_DIR`` to a Zephyr SDK
+with the x86 GNU target and QEMU host tools. Run the 32-bit board separately::
+
+   export ZEPHYR_BASE="$PWD"
+   export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+   export ZEPHYR_SDK_INSTALL_DIR=/path/to/zephyr-sdk
+   unset PYTHONHOME PYTHONPATH
+   west twister -p qemu_x86/atom \
+     -s mc.comm -s mc.msg -s mc.comm.stress.qemu_x86 \
+     -i -O ../build/mc-qemu-x86-all
+   find ../build/mc-qemu-x86-all -name handler.log -exec cat {} +
+
+Run the 64-bit board with its own stress scenario and output directory::
+
+   west twister -p qemu_x86_64/atom \
+     -s mc.comm -s mc.msg -s mc.comm.stress.qemu_x86_64 \
+     -i -O ../build/mc-qemu-x86-64-all
+   find ../build/mc-qemu-x86-64-all -name handler.log -exec cat {} +
+
+Twister prints the full ztest output only for failures with ``-i``. The
+``handler.log`` files show each case after a successful run. The direct
+``west build -t run`` commands in the stress test README print the cases in the terminal.
+For each of the three Twister commands above, a complete passing run reports::
+
+   3 of 3 executed test configurations passed (100.00%)
+   25 of 25 executed test cases passed (100.00%)
+
+The three configurations are ``mc.comm``, ``mc.msg``, and the selected
+platform's ``mc.comm.stress`` scenario. These are execution results, not
+build-only results. The stress suite contains eight cases; its
+``handler.log`` shows the per-case names and pass or fail status.
 
 The original Linux/UDP scenario categories have these Zephyr equivalents:
 
@@ -119,8 +162,8 @@ Run coverage with ``gcovr`` installed::
    python3 tests/subsys/mc/coverage_report.py \
      ../build/mc-coverage/coverage/coverage.xml --min-line-percent 97
 
-On 2026-11-01, the native simulator run passed 25 of 25 tests. The gcovr XML report measured
-the following production-source coverage:
+The native simulator suites passed 25 of 25 tests again on 2026-11-03. The 2026-11-01 gcovr
+XML report measured the following production-source coverage:
 
 .. list-table:: Zephyr Micro Core coverage
    :header-rows: 1
@@ -152,6 +195,11 @@ On 2026-11-01, two nRF54L15 DK boards also ran the UART tests. The communication
 integration tests each passed one case on both the sender and receiver. The communication stress
 suite passed eight cases on both boards. These hardware executions are separate from the
 build-only Twister configurations and do not contribute to the native simulator coverage above.
+
+On 2026-11-03, separate runs of the communication, message, and stress suites passed 25 of 25
+cases on ``qemu_x86/atom`` and 25 of 25 on ``qemu_x86_64/atom`` using Zephyr SDK 1.0.1. Each
+board ran three configurations, including eight stress cases. These QEMU runs are execution
+results; they do not add to the native simulator coverage measurement.
 
 Historical Micro Core Linux/UDP evidence
 ========================================
