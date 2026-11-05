@@ -8,6 +8,11 @@ tests:
     tags:
       - timing
       - arch
+    extra_args:
+      - platform:nrf54h20:CONFIG_DEBUG_DRIVER=y
+      - platform:nrf54h20:DTC_OVERLAY_FILE=nrf_coresight.overlay
+      - platform:nrf92:CONFIG_DEBUG_DRIVER=y
+      - platform:nrf92:DTC_OVERLAY_FILE=nrf_coresight.overlay
   arch.common.timing.smp:
     filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1
     tags:
