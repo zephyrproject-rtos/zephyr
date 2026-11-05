@@ -251,6 +251,28 @@ the board, and the sample prints:
    *** Booting Zephyr OS build v4.5.0 ***
    Hello World! mimxrt2660_evk/mimxrt2663/cm85
 
+Display Support
+***************
+
+The mimxrt2660_evk board supports following in-tree display module(s). Setup for
+each module is described below.
+
+NXP LCD_PAR_S035
+================
+
+The :ref:`lcd_par_s035` connects to the board's LCD socket J94 directly, but some
+modifications are required. See
+:zephyr_file:`boards/shields/lcd_par_s035/boards/mimxrt2660_evk_mimxrt2663_cm85.overlay`.
+Select J6 1&2 to use external power supply. The display sample can be built for this
+module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt2660_evk/mimxrt2663/cm85
+   :shield: lcd_par_s035_8080
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
 References
 **********
 
