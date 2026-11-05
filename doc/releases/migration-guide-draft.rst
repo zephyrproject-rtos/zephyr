@@ -61,6 +61,10 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* LiteX: The deprecated ``CONFIG_LITEX_CSR_DATA_WIDTH`` Kconfig option has been removed. Only the
+  32 bit CSR data width is supported. Designs that use an 8 bit CSR data width must be rebuilt with
+  a 32 bit CSR data width. (:github:`124793`)
+
 Device Drivers and Devicetree
 *****************************
 
