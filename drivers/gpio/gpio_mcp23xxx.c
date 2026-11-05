@@ -24,6 +24,7 @@
 LOG_MODULE_REGISTER(gpio_mcp23xxx);
 
 #define MCP23XXX_RESET_TIME_US 2
+#define MCP23XXX_IOCON_HAEN    0x08
 
 /**
  * @brief Reads given register from mcp23xxx.
@@ -35,7 +36,7 @@ LOG_MODULE_REGISTER(gpio_mcp23xxx);
  * @param reg The register to be read.
  * @param buf The buffer to read data to.
  * @return 0 if successful.
- *		   Otherwise <0 will be returned.
+ *                 Otherwise <0 will be returned.
  */
 static int read_port_regs(const struct device *dev, uint8_t reg, uint16_t *buf)
 {
@@ -80,6 +81,7 @@ static int write_port_regs(const struct device *dev, uint8_t reg, uint16_t value
  *
  * @param dev The mcp23xxx device.
  * @param value the IOCON value to write
+ * @param no_addr Do not add chip address during write
  *
  * @return 0 if successful. Otherwise <0 will be returned.
  */
@@ -88,8 +90,9 @@ static int write_iocon(const struct device *dev, uint8_t value)
 	struct mcp23xxx_drv_data *drv_data = dev->data;
 
 	uint16_t extended_value = value | (value << 8);
-	int ret = write_port_regs(dev, REG_IOCON, extended_value);
+	int ret;
 
+	ret = write_port_regs(dev, REG_IOCON, extended_value);
 	if (ret == 0) {
 		drv_data->reg_cache.iocon = extended_value;
 	}
@@ -524,16 +527,46 @@ int gpio_mcp23xxx_init(const struct device *dev)
 		}
 	}
 
+	/* Open drain device does not support HAEN */
+	if (!config->is_open_drain) {
+		/* Has the HAEN support been requested by providing an addr value? */
+		if (config->addr != REG_NO_ADDR) {
+			/* This driver needs to send address bits. Ensure that HAEN
+			 * in the IOCON register is set.
+			 * There are two 'states' that this chip could in:
+			 * (1) The chip has just powered on or the RESET line was pulsed, above.
+			 * (2) Another chip on the same SPI bus has already requested HAEN support.
+			 *
+			 * For case (1), this driver needs to set HAEN in this chip. When this is
+			 * done _all_ other chips on the same bus without HAEN bit set will also set
+			 * their IOCON value to the new value. For case (2), this bit is already set
+			 * by a previous command.
+			 *
+			 * The logic below will set the bit (again) in (at least) the chip
+			 * controlled by the processed config data.
+			 */
+			uint8_t port = drv_data->reg_cache.iocon | REG_IOCON_HAEN;
+
+			err = write_iocon(dev, port);
+			if (err != 0) {
+				LOG_ERR("Failed to set HAEN in IOCON: %d", err);
+				return -EIO;
+			}
+			drv_data->reg_cache.iocon = port;
+		}
+	}
+
 	/* If the INT line is available, configure the callback for it. */
 	if (config->gpio_int.port) {
 		if (config->ngpios == 16) {
+			uint8_t port = drv_data->reg_cache.iocon | REG_IOCON_MIRROR;
 			/* send both ports' interrupts through one IRQ pin */
-			err = write_iocon(dev, REG_IOCON_MIRROR);
-
+			err = write_iocon(dev, port);
 			if (err != 0) {
 				LOG_ERR("Failed to enable mirrored IRQ pins: %d", err);
 				return -EIO;
 			}
+			drv_data->reg_cache.iocon = port;
 		}
 
 		if (!gpio_is_ready_dt(&config->gpio_int)) {

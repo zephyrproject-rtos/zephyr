@@ -8,4 +8,4 @@ description: Microchip MCP23S08 SPI GPIO Expander.
 
 compatible: "microchip,mcp23s08"
 
-include: ["microchip,mcp23xxx.yaml", spi-device.yaml]
+include: ["microchip,mcp23sxx.yaml", spi-device.yaml]
