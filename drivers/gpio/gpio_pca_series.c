@@ -347,7 +347,7 @@ static inline int gpio_pca_series_reg_cache_update(const struct device *dev,
  * @param reg_type      value from enum gpio_pca_series_reg_type
  * @param buf           pointer to data in little-endian byteorder
  * @return int 0        if success
- *             -EFAULT  if register is not supported
+ *             -ENOTSUP if register is not supported
  *             -EIO     if i2c failure
  */
 static inline int gpio_pca_series_reg_read(const struct device *dev,
@@ -395,7 +395,7 @@ static inline int gpio_pca_series_reg_read(const struct device *dev,
  * @param reg_type      value from enum gpio_pca_series_reg_type
  * @param buf           pointer to data in little-endian byteorder
  * @return int 0        if success
- *             -EFAULT  if register is not supported
+ *             -ENOTSUP if register is not supported
  *             -EIO     if i2c failure
  */
 static inline int gpio_pca_series_reg_write(const struct device *dev,
