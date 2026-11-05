@@ -1,12 +1,12 @@
 # Copyright (c) 2026 Seeed Technology Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-config HW_STACK_PROTECTION
+configdefault HW_STACK_PROTECTION
 	default ARCH_HAS_STACK_PROTECTION
 
 if SPI_NOR
 
-config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+configdefault SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
 
 endif # SPI_NOR
@@ -17,7 +17,7 @@ if BOARD_XIAO_NRF54LM20B_NRF54LM20B_CPUAPP
 # updater, so link them for its slot0 even in plain, non-sysbuild builds.
 # The corresponding 0x800 ROM_START_OFFSET comes from the nRF54L SoC
 # Kconfig default for BOOTLOADER_MCUBOOT.
-config BOOTLOADER_MCUBOOT
+configdefault BOOTLOADER_MCUBOOT
 	default y if !MCUBOOT
 
 # The nPM1300 charger raises the VBUS current limit from the 100 mA power-on
@@ -28,12 +28,10 @@ config BOOTLOADER_MCUBOOT
 # compiled in at all (drivers/sensor/Kconfig gates it behind `if SENSOR`).
 if !MCUBOOT
 
-config SENSOR
-	bool
+configdefault SENSOR
 	default y
 
-config REGULATOR
-	bool
+configdefault REGULATOR
 	default y
 
 endif # !MCUBOOT
@@ -42,12 +40,10 @@ if REGULATOR_NPM13XX
 
 # Both must stay after the charger (90) and INIT must stay greater than
 # COMMON, hence the 91/92 pair.
-config REGULATOR_NPM13XX_COMMON_INIT_PRIORITY
-	int
+configdefault REGULATOR_NPM13XX_COMMON_INIT_PRIORITY
 	default 91
 
-config REGULATOR_NPM13XX_INIT_PRIORITY
-	int
+configdefault REGULATOR_NPM13XX_INIT_PRIORITY
 	default 92
 
 endif # REGULATOR_NPM13XX
