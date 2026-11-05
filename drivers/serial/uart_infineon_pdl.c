@@ -1010,8 +1010,8 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 		goto exit;
 	}
 
-	/* Configure timeout */
-	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
+	/* Configure timeout - per Zephyr API, valid only if flow control is enabled */
+	if (data->cfg.flow_ctrl && (timeout != SYS_FOREVER_US) && (timeout != 0)) {
 		k_work_reschedule(&dma_tx->timeout_work, K_USEC(timeout));
 	}
 
@@ -1033,12 +1033,21 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 	struct dma_status stat;
 	int err = 0;
 
+	if (dma_tx->dma_dev == NULL) {
+		return -ENODEV;
+	}
+
 	unsigned int key = irq_lock();
+
+	if (dma_tx->buf == NULL) {
+		err = -EFAULT;
+		goto unlock;
+	}
 
 	k_work_cancel_delayable(&dma_tx->timeout_work);
 
 	err = dma_stop(dma_tx->dma_dev, dma_tx->dma_channel);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Error stopping Tx DMA (%d)", err);
 		irq_unlock(key);
 		/* Not stopped; keep the ref, the DMA completion path releases it. */
@@ -1046,14 +1055,20 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 	}
 
 	err = dma_get_status(dma_tx->dma_dev, dma_tx->dma_channel, &stat);
-	if (err) {
-		LOG_ERR("Error stopping Tx DMA (%d)", err);
-		goto unlock;
+	if (err != 0) {
+		LOG_WRN("Error getting Tx DMA status (%d), assuming 0 bytes sent", err);
+		evt.data.tx.len = 0;
+		err = 0;
+	} else {
+		if (dma_tx->buf_len >= stat.pending_length) {
+			evt.data.tx.len = dma_tx->buf_len - stat.pending_length;
+		} else {
+			evt.data.tx.len = 0;
+		}
 	}
 
 	evt.type = UART_TX_ABORTED;
 	evt.data.tx.buf = dma_tx->buf;
-	evt.data.tx.len = 0;
 
 	if (async->cb) {
 		async->cb(dev, &evt, async->user_data);
@@ -1079,6 +1094,11 @@ static void dma_callback_tx_done(const struct device *dma_dev, void *arg, uint32
 	struct ifx_cat1_dma_stream_tx *const dma_tx = &async->dma_tx;
 
 	unsigned int key = irq_lock();
+
+	if (dma_tx->buf == NULL) {
+		irq_unlock(key);
+		return;
+	}
 
 	if (status == 0) {
 
