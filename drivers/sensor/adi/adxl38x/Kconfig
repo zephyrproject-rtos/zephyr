@@ -1,0 +1,72 @@
+# Copyright (c) 2026 Analog Devices Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "ADXL38X options"
+
+config ADXL38X
+	bool "ADXL380/ADXL382 SPI accelerometer"
+	default y
+	depends on DT_HAS_ADI_ADXL380_ENABLED || DT_HAS_ADI_ADXL382_ENABLED
+	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable driver for ADXL380/ADXL382 accelerometers.
+
+if ADXL38X
+
+choice ADXL38X_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ADXL38X_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL38X_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL38X_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL38X_TRIGGER
+
+config ADXL38X_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL38X_TRIGGER
+
+endchoice
+
+config ADXL38X_TRIGGER
+	bool
+
+config ADXL38X_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL38X_TRIGGER_OWN_THREAD && ADXL38X_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL38X_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL38X_TRIGGER_OWN_THREAD && ADXL38X_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config ADXL38X_INIT_PRIORITY
+	int "Init priority"
+	default SENSOR_INIT_PRIORITY
+	help
+	  Device initialization priority for ADXL38X.
+
+config ADXL38X_STREAM
+	bool "Use FIFO to stream data"
+	select ADXL38X_TRIGGER
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
+
+endif # ADXL38X
+
+endmenu
