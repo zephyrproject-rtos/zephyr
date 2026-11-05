@@ -14,7 +14,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 /* Include package pinmux file for the spi modem settings */
-#include <nxp/kinetis/kwx/pinctrl/MKW24D512VHA5-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/nxp/kinetis/kwx/MKW24D512VHA5-pinctrl.h>
 
 / {
 	aliases {

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/k6x/pinctrl/MK66FN2M0VMD18-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/nxp/kinetis/k6x/MK66FN2M0VMD18-pinctrl.h>
 
 &pinctrl {
 	enet_default: enet_default {

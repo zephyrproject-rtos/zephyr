@@ -39,7 +39,7 @@
  *
  * The identifier values themselves are SoC-specific and generated into the
  * hal_nxp module beside the fsl_clock.h they are derived from, for example
- * <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>.
+ * <zephyr/dt-bindings/clock/imx_ccm_rev3_rt266x.h>.
  */
 
 /** Width of each identifier field, in bits. */

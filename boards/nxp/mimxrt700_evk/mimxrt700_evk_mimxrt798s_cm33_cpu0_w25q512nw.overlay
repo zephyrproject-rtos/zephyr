@@ -9,7 +9,7 @@
  * chosen nodes are unchanged.
  */
 
-#include <nxp/imxrt/imxrt7xx/pinctrl/MIMXRT798SGFOB-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/nxp/imxrt/imxrt7xx/MIMXRT798SGFOB-pinctrl.h>
 
 &ext_flash_ctrl {
 	/*

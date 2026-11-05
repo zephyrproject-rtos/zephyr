@@ -16,6 +16,10 @@ on:
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
       - 'scripts/tests/hardenconfig/**'
+      - 'modules/hal_nxp/scripts/**'
+      - 'include/zephyr/dt-bindings/pinctrl/nxp/**'
+      - 'include/zephyr/dt-bindings/clock/imx_ccm_rev3*.h'
+      - 'dts/arm/nxp/**/pinctrl/**'
       - '.github/workflows/scripts_tests.yml'
   pull_request:
     branches:
@@ -29,6 +33,10 @@ on:
       - 'scripts/kconfig/**'
       - 'scripts/schemas/hardening-schema.yaml'
       - 'scripts/tests/hardenconfig/**'
+      - 'modules/hal_nxp/scripts/**'
+      - 'include/zephyr/dt-bindings/pinctrl/nxp/**'
+      - 'include/zephyr/dt-bindings/clock/imx_ccm_rev3*.h'
+      - 'dts/arm/nxp/**/pinctrl/**'
       - '.github/workflows/scripts_tests.yml'
 
 permissions:
@@ -85,4 +93,4 @@ jobs:
           ZEPHYR_BASE: ./
         run: |
           echo "Run script tests"
-          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig
+          pytest ./scripts/build ./scripts/checkpatch ./scripts/cmake ./scripts/kconfig ./scripts/tests/hardenconfig ./modules/hal_nxp/scripts/tests
