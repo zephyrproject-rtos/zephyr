@@ -132,6 +132,10 @@ Ethernet
   ``reset-deassertion-timeout-ms`` with ``reset-deassert-us``, multiplying its value by 1000 as
   it is now in microseconds. (:github:`124061`)
 
+* The ``ETHERNET_DSA_USER_PORT`` and ``ETHERNET_DSA_CONDUIT_PORT`` values of
+  :c:enum:`ethernet_hw_caps` have been removed. Use :c:func:`net_eth_get_dsa_port_type` to get the
+  DSA port type of an interface instead. (:github:`124790`)
+
 OPAMP
 =====
 
