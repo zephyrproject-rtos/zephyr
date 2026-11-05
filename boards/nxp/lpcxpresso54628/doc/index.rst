@@ -72,6 +72,9 @@ this probe with Zephyr, you need to install the :ref:`linkserver-debug-host-tool
 and make sure they are in your search path. Refer to the detailed overview about
 :ref:`application_debugging` for additional information.
 
+The on-board LPC-Link2 can also be used as a J-Link probe with a firmware
+update, as described in :ref:`lpclink2-jlink-onboard-debug-probe`.
+
 Configuring a Console
 =====================
 
@@ -83,6 +86,22 @@ settings:
 - Data: 8 bits
 - Parity: None
 - Stop bits: 1
+
+Using SWO
+---------
+
+SWO is routed from P0_10 to the on-board LPC-Link2 and to the SWD connector P1.
+It can be used as a logging backend by setting ``CONFIG_LOG_BACKEND_SWO=y``.
+Configure your SWO viewer with a CPU frequency of 220 MHz and an SWO frequency
+of 2 MHz.
+
+The CMSIS-DAP firmware of the on-board LPC-Link2 does not provide SWO data to
+other tools than the MCUXpresso IDE, so use the LPC-Link2 with J-Link firmware
+or an external J-Link on P1, for example:
+
+.. code-block:: console
+
+   JLinkSWOViewerCLExe -device LPC54628J512 -cpufreq 220000000 -swofreq 2000000 -itmmask 0x1
 
 Flashing
 ========
