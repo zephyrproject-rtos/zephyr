@@ -703,16 +703,35 @@ class DeviceHandler(Handler):
 
         return ser_pty_process
 
-    def _handle_robot_test(self, harness, hardware, command, serial_device, serial_pty,
-                            flash_timeout):
-        """Flash device and run Robot Framework test directly without serial monitoring."""
-        start_time = time.time()
+    def _hook_extra_env(self):
+        env = {}
+        if self.instance.build_dir:
+            env['TWISTER_BUILD_DIR'] = str(self.instance.build_dir)
+        if self.instance.testsuite:
+            env['TWISTER_TEST_NAME'] = self.instance.testsuite.name
+        if self.options.hardware_map:
+            env['TWISTER_HARDWARE_MAP'] = str(self.options.hardware_map)
+        return env
+
+    def _flash(self, hardware, command, flash_timeout, halt_monitor_evt=None):
+        """Run the flash subprocess with pre_flash/post_flash hooks.
+
+        Returns the failure type so callers can decide what to do next.
+        """
+        extra_env = self._hook_extra_env()
         d_log = f"{self.instance.build_dir}/device.log"
+
+        if hardware.run_hook("pre_flash", extra_env=extra_env) is False:
+            self.instance.status = TwisterStatus.ERROR
+            self.instance.reason = "pre_flash hook failed"
+            if halt_monitor_evt:
+                halt_monitor_evt.set()
+            return Handler.FailureType.FLASH
+
         logger.debug(f'Flash command: {command}')
         failure_type = Handler.FailureType.NONE
-        stderr = b""
-
         try:
+            stdout = stderr = None
             with subprocess.Popen(
                 command, stderr=subprocess.PIPE, stdout=subprocess.PIPE
             ) as proc:
@@ -725,23 +744,40 @@ class DeviceHandler(Handler):
                         failure_type = Handler.FailureType.FLASH
                         with open(d_log, "w") as dlog_fp:
                             dlog_fp.write(stderr.decode())
+                        if halt_monitor_evt:
+                            halt_monitor_evt.set()
                 except subprocess.TimeoutExpired:
                     logger.warning("Flash operation timed out.")
                     self.terminate(proc)
-                    proc.communicate()
+                    stdout, stderr = proc.communicate()
                     self.instance.status = TwisterStatus.ERROR
                     self.instance.reason = "Device issue (Flash timeout)"
                     failure_type = Handler.FailureType.FLASH
+
+            with open(d_log, "w") as dlog_fp:
+                dlog_fp.write(stderr.decode())
+
         except subprocess.CalledProcessError:
+            if halt_monitor_evt:
+                halt_monitor_evt.set()
             self.instance.status = TwisterStatus.ERROR
             self.instance.reason = "Device issue (Flash error)"
             failure_type = Handler.FailureType.FLASH
 
-        if stderr:
-            with open(d_log, "w") as dlog_fp:
-                dlog_fp.write(stderr.decode())
+        if hardware.run_hook("post_flash", extra_env=extra_env) is False:
+            self.instance.status = TwisterStatus.ERROR
+            self.instance.reason = "post_flash hook failed"
+            failure_type = Handler.FailureType.FLASH
 
-        hardware.run_hook("post_flash")
+        return failure_type
+
+    def _handle_robot_test(self, harness, hardware, command, serial_device, serial_pty,
+                            flash_timeout):
+        """Flash device and run Robot Framework test directly without serial monitoring."""
+        extra_env = self._hook_extra_env()
+        start_time = time.time()
+
+        failure_type = self._flash(hardware, command, flash_timeout)
 
         self.execution_time = time.time() - start_time
 
@@ -752,14 +788,18 @@ class DeviceHandler(Handler):
                              "--variable", f"BUILD_DIR:{self.build_dir}"]
             harness.run_robot_test(robot_command, self)
 
-        hardware.run_hook("post")
+        hardware.run_hook("post", extra_env=extra_env)
 
     def handle(self, harness):
         robot_test = getattr(harness, "is_robot_test", False) is True
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
+        extra_env = self._hook_extra_env()
 
-        # Run pre-script BEFORE starting serial PTY to avoid conflicts
-        hardware.run_hook("pre")
+        if hardware.run_hook("pre", extra_env=extra_env) is False:
+            self.instance.status = TwisterStatus.ERROR
+            self.instance.reason = "pre hook failed"
+            hardware.run_hook("post", extra_env=extra_env)
+            return
 
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
@@ -812,43 +852,7 @@ class DeviceHandler(Handler):
         start_time = time.time()
         t.start()
 
-        d_log = f"{self.instance.build_dir}/device.log"
-        hardware.run_hook("pre_flash")
-        logger.debug(f'Flash command: {command}', )
-        failure_type = Handler.FailureType.NONE
-        try:
-            stdout = stderr = None
-            with subprocess.Popen(command, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-                try:
-                    (stdout, stderr) = proc.communicate(timeout=flash_timeout)
-                    # ignore unencodable unicode chars
-                    logger.debug(stdout.decode(errors="ignore"))
-
-                    if proc.returncode != 0:
-                        self.instance.status = TwisterStatus.ERROR
-                        self.instance.reason = "Device issue (Flash error?)"
-                        failure_type = Handler.FailureType.FLASH
-                        with open(d_log, "w") as dlog_fp:
-                            dlog_fp.write(stderr.decode())
-                        halt_monitor_evt.set()
-                except subprocess.TimeoutExpired:
-                    logger.warning("Flash operation timed out.")
-                    self.terminate(proc)
-                    (stdout, stderr) = proc.communicate()
-                    self.instance.status = TwisterStatus.ERROR
-                    self.instance.reason = "Device issue (Timeout)"
-                    failure_type = Handler.FailureType.FLASH
-
-            with open(d_log, "w") as dlog_fp:
-                dlog_fp.write(stderr.decode())
-
-        except subprocess.CalledProcessError:
-            halt_monitor_evt.set()
-            self.instance.status = TwisterStatus.ERROR
-            self.instance.reason = "Device issue (Flash error)"
-            failure_type = Handler.FailureType.FLASH
-
-        hardware.run_hook("post_flash")
+        failure_type = self._flash(hardware, command, flash_timeout, halt_monitor_evt)
 
         # Connect to device after flashing it
         if hardware.flash_before:
@@ -921,7 +925,7 @@ class DeviceHandler(Handler):
 
         self._final_handle_actions(harness)
 
-        hardware.run_hook("post")
+        hardware.run_hook("post", extra_env=extra_env)
 
 
 class QEMUHandlerBase(Handler):
