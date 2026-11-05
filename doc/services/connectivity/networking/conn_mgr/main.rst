@@ -262,10 +262,27 @@ Losing readiness or adding a DNS server while name resolution is already availab
                    return err;
            }
 
-                   if (connect_to_server() == 0) {
+           /* Resolves with conn_mgr_get_ready_addr_family() on every attempt, as it may change */
+           if (connect_to_server() == 0) {
                    break;
            }
    }
+
+.. _conn_mgr_monitoring_addr_family:
+
+Resolving for a ready address family
+====================================
+
+A hostname can resolve to addresses of an address family that is not ready.
+To get only addresses of a ready address family, set the ``ai_family`` field of the :c:func:`zsock_getaddrinfo` hints using :c:func:`conn_mgr_get_ready_addr_family`.
+It returns ``NET_AF_INET`` or ``NET_AF_INET6`` if only that address family is ready, and ``NET_AF_UNSPEC`` otherwise.
+
+.. code-block:: c
+
+   struct zsock_addrinfo hints = {
+           .ai_family = conn_mgr_get_ready_addr_family(),
+           .ai_socktype = NET_SOCK_STREAM,
+   };
 
 .. _conn_mgr_monitoring_ignoring_ifaces:
 
