@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import csv
 import logging
+import warnings
 import pytest
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -126,7 +127,12 @@ class TwisterHarnessConfig:
                     dut.entries.append(core_dut)
             test_params.duts.append(dut)
 
+        hooks_from_cli = cls._hooks_from_deprecated_options(config)
+
         for dut_number, dut in enumerate(test_params.duts):
+            if hooks_from_cli and not dut.hooks:
+                dut.hooks = hooks_from_cli
+
             serial_configs: list[DeviceSerialConfig] = []
             for _dut in [dut] + dut.entries:
                 serial_configs.append(
@@ -160,6 +166,25 @@ class TwisterHarnessConfig:
             devices.append(device)
 
         return cls(devices=devices, test_params=test_params)
+
+    @staticmethod
+    def _hooks_from_deprecated_options(config: pytest.Config) -> dict:
+        hooks = {}
+        for opt, hook_type in (
+            ('pre_script', 'pre'),
+            ('post_flash_script', 'post_flash'),
+            ('post_script', 'post'),
+        ):
+            value = getattr(config.option, opt, None)
+            if value:
+                warnings.warn(
+                    f"--{opt.replace('_', '-')} is deprecated, "
+                    f"use 'hooks' in the hardware map instead",
+                    DeprecationWarning,
+                    stacklevel=3,
+                )
+                hooks[hook_type] = {'script': str(value), 'args': [], 'timeout': 60}
+        return hooks
 
 
 def get_test_param_file(config: pytest.Config) -> Path | None:
