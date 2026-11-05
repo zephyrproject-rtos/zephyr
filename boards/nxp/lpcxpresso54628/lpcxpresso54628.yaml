@@ -17,6 +17,8 @@ supported:
   - counter
   - crc
   - gpio
+  - hwinfo
+  - pwm
   - uart
   - watchdog
 vendor: nxp
