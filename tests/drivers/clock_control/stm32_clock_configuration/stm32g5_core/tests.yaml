@@ -1,0 +1,18 @@
+common:
+  timeout: 5
+  tags: clock_control
+  platform_allow:
+    - nucleo_g564re
+  integration_platforms:
+    - nucleo_g564re
+tests:
+  drivers.clock.stm32_clock_configuration.g5.sysclksrc_hse24:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse24.overlay"
+  drivers.clock.stm32_clock_configuration.g5.sysclksrc_hsi_64:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_64.overlay"
+  drivers.clock.stm32_clock_configuration.g5.pll_hse24_160:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse24_160.overlay"
+  drivers.clock.stm32_clock_configuration.g5.pll_hse24_100:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse24_100.overlay"
+  drivers.clock.stm32_clock_configuration.g5.pll_hse24_ahb_2_80:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse24_ahb_2_80.overlay"
