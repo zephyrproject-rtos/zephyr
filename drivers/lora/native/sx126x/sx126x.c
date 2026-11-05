@@ -794,20 +794,19 @@ static void sx126x_handle_irq_tx_done(const struct device *dev)
 static void sx126x_rx_restart(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
+	int ret;
 
-	if (atomic_get(&data->state) == SX126X_STATE_RX_DUTY_CYCLE) {
-		int ret;
+	/* Continuous reception keeps listening; duty cycle falls back to standby */
+	if (atomic_get(&data->state) != SX126X_STATE_RX_DUTY_CYCLE) {
+		return;
+	}
 
-		ret = sx126x_set_rx_duty_cycle(dev,
-					       data->duty_cycle.rx_period,
-					       data->duty_cycle.sleep_period);
-		if (ret < 0) {
-			data->rx_cb = NULL;
-			data->rx_cb_user_data = NULL;
-			sx126x_set_sleep(dev);
-		}
-	} else {
-		sx126x_set_rx(dev, 0);
+	ret = sx126x_set_rx_duty_cycle(dev, data->duty_cycle.rx_period,
+				       data->duty_cycle.sleep_period);
+	if (ret < 0) {
+		data->rx_cb = NULL;
+		data->rx_cb_user_data = NULL;
+		sx126x_set_sleep(dev);
 	}
 }
 
