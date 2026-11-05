@@ -52,7 +52,7 @@ void my_fn(void *a, void *b, void *c, void *d)
 	register int D = 14;
 	register int E = 15;
 
-#ifdef CONFIG_CPU_HAS_FPU
+#ifdef CONFIG_FPU
 	register float FA = 11.0f;
 	register float FB = 12.0f;
 	register float FC = 13.0f;
@@ -76,7 +76,7 @@ void my_fn(void *a, void *b, void *c, void *d)
 		zassert_equal(C, 13);
 		zassert_equal(D, 14);
 		zassert_equal(E, 15);
-#ifdef CONFIG_CPU_HAS_FPU
+#ifdef CONFIG_FPU
 		zassert_equal(FA, 11.0f);
 		zassert_equal(FB, 12.0f);
 		zassert_equal(FC, 13.0f);
@@ -96,7 +96,7 @@ void my_svc(void)
 
 ZTEST(arm_switch_coop, test_smoke)
 {
-	vector_hijack(my_svc);
+	void *saved_vtor = vector_hijack(my_svc);
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_SPLIM
 	void *psplim = (void *)__get_PSPLIM();
@@ -114,7 +114,7 @@ ZTEST(arm_switch_coop, test_smoke)
 	register int D = 4;
 	register int E = 5;
 
-#ifdef CONFIG_CPU_HAS_FPU
+#ifdef CONFIG_FPU
 	/* Prime all the FPU registers with something I can recognize in a debugger */
 	uint32_t sregs[32];
 
@@ -140,7 +140,7 @@ ZTEST(arm_switch_coop, test_smoke)
 	zassert_equal(C, 3);
 	zassert_equal(D, 4);
 	zassert_equal(E, 5);
-#ifdef CONFIG_CPU_HAS_FPU
+#ifdef CONFIG_FPU
 	zassert_equal(FA, 1.0f);
 	zassert_equal(FB, 2.0f);
 	zassert_equal(FC, 3.0f);
@@ -163,12 +163,16 @@ ZTEST(arm_switch_coop, test_smoke)
 		zassert_equal(C, 3);
 		zassert_equal(D, 4);
 		zassert_equal(E, 5);
-#ifdef CONFIG_CPU_HAS_FPU
+#ifdef CONFIG_FPU
 		zassert_equal(FA, 1.0f);
 		zassert_equal(FB, 2.0f);
 		zassert_equal(FC, 3.0f);
 #endif
 	}
+
+	SCB->VTOR = (uint32_t)saved_vtor;
+	__DSB();
+	__ISB();
 }
 
 ZTEST_SUITE(arm_switch_coop, NULL, NULL, NULL, NULL, NULL);
