@@ -30,7 +30,6 @@ static size_t frame_length;
 static bool frame_started;
 static bool frame_escaped;
 static bool frame_discarded;
-static bool uart_ready;
 static uint32_t random_state;
 static uint32_t frame_count;
 static uint8_t current_loss_rate;
@@ -63,9 +62,6 @@ static void uart_rx_callback(const struct device *device, void *user_data)
 
 int stress_transport_init(void)
 {
-	if (uart_ready) {
-		return 0;
-	}
 	if (!device_is_ready(uart)) {
 		return -ENODEV;
 	}
@@ -75,7 +71,6 @@ int stress_transport_init(void)
 		return err;
 	}
 	uart_irq_rx_enable(uart);
-	uart_ready = true;
 	return 0;
 }
 

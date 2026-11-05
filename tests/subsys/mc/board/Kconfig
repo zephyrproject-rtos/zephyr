@@ -1,0 +1,25 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MC two-board tests"
+
+source "Kconfig.zephyr"
+
+config MC_BOARD_COMBINED
+	bool
+	default y
+
+config MC_UART_SENDER
+	bool "Run the sender role"
+	help
+	  Initiate the UART communication and message tests.
+
+config TEST_MC_STRESS_UART
+	bool
+	default y
+	depends on SERIAL
+
+config TEST_MC_STRESS_SENDER
+	bool
+	default MC_UART_SENDER
+	depends on TEST_MC_STRESS_UART
