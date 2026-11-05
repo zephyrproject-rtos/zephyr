@@ -20,6 +20,7 @@ struct hx8394_config {
 	const struct gpio_dt_spec bl_gpio;
 	uint8_t num_of_lanes;
 	uint8_t pixel_format;
+	const pixel_format_t *supported_pixel_formats;
 	uint16_t panel_width;
 	uint16_t panel_height;
 	uint8_t channel;
@@ -518,7 +519,7 @@ static void hx8394_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = config->pixel_format;
+	capabilities->supported_pixel_formats = config->supported_pixel_formats;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
@@ -787,12 +788,16 @@ static int hx8394_init(const struct device *dev)
 }
 
 #define HX8394_PANEL(id)							\
+	static const pixel_format_t hx8394_supported_pixel_formats_##id[] = {	\
+		(DT_INST_PROP(id, pixel_format) == MIPI_DSI_PIXFMT_RGB565)	\
+			? PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888, 0};	\
 	static const struct hx8394_config hx8394_config_##id = {		\
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(id)),			\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(id, reset_gpios, {0}),	\
 		.bl_gpio = GPIO_DT_SPEC_INST_GET_OR(id, bl_gpios, {0}),		\
 		.num_of_lanes = DT_INST_PROP_BY_IDX(id, data_lanes, 0),		\
 		.pixel_format = DT_INST_PROP(id, pixel_format),			\
+		.supported_pixel_formats = hx8394_supported_pixel_formats_##id,	\
 		.panel_width = DT_INST_PROP(id, width),				\
 		.panel_height = DT_INST_PROP(id, height),			\
 		.channel = DT_INST_REG_ADDR(id),				\

@@ -46,6 +46,12 @@ struct rpi_bcm2711_fb_data {
 	struct display_fb_common_data common;
 };
 
+static const pixel_format_t rpi_bcm2711_fb_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_ABGR_8888,
+	0,
+};
+
 static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 					    struct display_capabilities *capabilities)
 {
@@ -53,7 +59,7 @@ static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->common.width;
 	capabilities->y_resolution = config->common.height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_ABGR_8888;
+	capabilities->supported_pixel_formats = rpi_bcm2711_fb_supported_pixel_formats;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->screen_info = 0;
 }

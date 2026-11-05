@@ -155,6 +155,16 @@ static int nxp_dcif_write(const struct device *dev, const uint16_t x, const uint
 	return 0;
 }
 
+static const pixel_format_t nxp_dcif_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_BGR_888,
+	PIXEL_FORMAT_ABGR_8888,
+	PIXEL_FORMAT_NV12,
+	0,
+};
+
 static void nxp_dcif_get_capabilities(const struct device *dev,
 				       struct display_capabilities *capabilities)
 {
@@ -165,9 +175,7 @@ static void nxp_dcif_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->output_config.width;
 	capabilities->y_resolution = config->output_config.height;
-	capabilities->supported_pixel_formats =
-		(PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888 |
-		 PIXEL_FORMAT_BGR_888 | PIXEL_FORMAT_ABGR_8888 | PIXEL_FORMAT_NV12);
+	capabilities->supported_pixel_formats = nxp_dcif_supported_pixel_formats;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 
 	switch (data->format) {

@@ -368,13 +368,18 @@ static int ssd1320_set_contrast(const struct device *dev, const uint8_t contrast
 	return config->write_cmd(dev, SSD1320_SET_CONTRAST_CTRL, &contrast, 1);
 }
 
+static const pixel_format_t ssd1320_supported_pixel_formats[] = {
+	PIXEL_FORMAT_L_8,
+	0,
+};
+
 static void ssd1320_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ssd1320_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_L_8;
+	caps->supported_pixel_formats = ssd1320_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_L_8;
 	caps->screen_info = 0;
 }

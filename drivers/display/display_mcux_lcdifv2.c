@@ -32,6 +32,12 @@ K_HEAP_DEFINE(display_heap, CONFIG_MCUX_LCDIFV2_FB_NUM * CONFIG_MCUX_LCDIFV2_FB_
 
 static const uint32_t mcux_lcdifv2_supported_fmts =
 	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
+static const pixel_format_t mcux_lcdifv2_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
 
 struct mcux_lcdifv2_config {
 	LCDIFV2_Type *base;
@@ -218,7 +224,7 @@ static void mcux_lcdifv2_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->display_config.panelWidth;
 	capabilities->y_resolution = config->display_config.panelHeight;
-	capabilities->supported_pixel_formats = mcux_lcdifv2_supported_fmts;
+	capabilities->supported_pixel_formats = mcux_lcdifv2_supported_pixel_formats;
 	capabilities->current_pixel_format = ((struct mcux_lcdifv2_data *)dev->data)->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }

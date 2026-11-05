@@ -48,6 +48,7 @@ struct display_esp32_dsi_config {
 	uint16_t width;
 	uint16_t height;
 	pixel_format_t pixel_format;
+	const pixel_format_t *supported_pixel_formats;
 };
 
 struct display_esp32_dsi_data {
@@ -864,7 +865,7 @@ static void display_esp32_dsi_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-	capabilities->supported_pixel_formats = config->pixel_format;
+	capabilities->supported_pixel_formats = config->supported_pixel_formats;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->supported_events = DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_FRAME_DONE;
@@ -1023,6 +1024,8 @@ static int display_esp32_dsi_init(const struct device *dev)
 	static struct display_esp32_dsi_data display_esp32_dsi_data_##inst;                        \
 	static const struct device *const display_esp32_dsi_panels_##inst[] = {                    \
 		DISPLAY_ESP32_DSI_PANEL(inst)};                                                    \
+	static const pixel_format_t esp32_dsi_supported_formats_##inst[] = {                       \
+		DT_INST_PROP(inst, pixel_format), 0};                                              \
 	static const struct display_esp32_dsi_config display_esp32_dsi_config_##inst = {           \
 		.dma_channel = DT_INST_PROP(inst, dma_channel),                                    \
 		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
@@ -1034,6 +1037,7 @@ static int display_esp32_dsi_init(const struct device *dev)
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
+		.supported_pixel_formats = esp32_dsi_supported_formats_##inst,                     \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, display_esp32_dsi_init, NULL, &display_esp32_dsi_data_##inst,  \
 			      &display_esp32_dsi_config_##inst, POST_KERNEL,                       \
