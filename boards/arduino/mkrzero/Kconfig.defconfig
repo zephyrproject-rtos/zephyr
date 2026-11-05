@@ -5,10 +5,10 @@
 
 if DISK_DRIVERS
 
-config SPI
+configdefault SPI
 	default y
 
-config GPIO
+configdefault GPIO
 	default y
 
 endif # DISK_DRIVERS
