@@ -446,8 +446,8 @@ void benchmark_item_put_data(bool pow2)
 	for (uintptr_t i = 0; i < repeat; i++) {
 		test_ext_item.data_ext.hdr.data = i;
 		test_ext_item.data_ext.data = (void *)i;
-		mpsc_pbuf_put_data(&buffer, (uint32_t *)&test_ext_item,
-				    PUT_EXT_LEN);
+		(void)mpsc_pbuf_write_data(&buffer, (uint32_t *)&test_ext_item,
+				    PUT_EXT_LEN, K_NO_WAIT);
 	}
 
 	cyc = get_cyc() - cyc;
@@ -502,7 +502,7 @@ void item_put_data_overwrite(bool pow2)
 		item.hdr.data = i;
 		vitem = (uint32_t *)&item;
 		zassert_true(IS_PTR_ALIGNED(vitem, uint32_t), "unaligned ptr");
-		mpsc_pbuf_put_data(&buffer, (uint32_t *)vitem, len);
+		(void)mpsc_pbuf_write_data(&buffer, (uint32_t *)vitem, len, K_NO_WAIT);
 	}
 
 	zassert_equal(drop_cnt, exp_drop_cnt,
@@ -1313,8 +1313,8 @@ static void check_usage(struct mpsc_pbuf_buffer *buffer,
 	int err;
 
 	mpsc_pbuf_get_utilization(buffer, &size, &usage);
-	zassert_equal(size / sizeof(int), buffer->size - 1, "%d: got:%d, exp:%d",
-			line, (uint32_t)(size / sizeof(int)), buffer->size - 1);
+	zassert_equal(size / sizeof(int), buffer->size, "%d: got:%d, exp:%d",
+			line, (uint32_t)(size / sizeof(int)), buffer->size);
 	zassert_equal(usage, now, "%d: got:%d, exp:%d", line, usage, now);
 
 	err = mpsc_pbuf_get_max_utilization(buffer, &usage);
@@ -1397,7 +1397,7 @@ ZTEST(log_buffer, test_utilization)
 		}
 	};
 
-	mpsc_pbuf_put_data(&buffer, (uint32_t *)&test_ext_item2, PUT_EXT_LEN);
+	(void)mpsc_pbuf_write_data(&buffer, (uint32_t *)&test_ext_item2, PUT_EXT_LEN, K_NO_WAIT);
 
 	CHECK_USAGE(&buffer, PUT_EXT_LEN, 1 + PUT_EXT_LEN);
 
