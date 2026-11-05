@@ -173,10 +173,17 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 }
 
 #if defined(CONFIG_SOC_SERIES_NRF54H)
-static volatile uint8_t mram_no_latency_start_req;
-static volatile uint8_t mram_no_latency_stop_req;
-static uint8_t mram_no_latency_start_ack;
-static uint8_t mram_no_latency_stop_ack;
+/* MRAM no latency states, transitions are atomic as the Radio HAL (LLL
+ * context) preempts the onoff callback (thread context).
+ */
+enum {
+	MRAM_NO_LATENCY_OFF,
+	MRAM_NO_LATENCY_REQ,
+	MRAM_NO_LATENCY_REQ_STOP,
+	MRAM_NO_LATENCY_ON,
+};
+
+static atomic_t mram_state = ATOMIC_INIT(MRAM_NO_LATENCY_OFF);
 static struct onoff_client mram_cli;
 static atomic_val_t mram_refcnt;
 
@@ -190,26 +197,18 @@ static void mram_no_latency_callback(struct onoff_manager *mgr,
 	LL_ASSERT_ERR(res == 0);
 	LL_ASSERT_ERR(state == ONOFF_STATE_ON);
 
-	/* There shall be an outstanding request to acknowledge */
-	LL_ASSERT_ERR(mram_no_latency_start_ack != mram_no_latency_start_req);
-	mram_no_latency_start_ack++;
+	if (atomic_cas(&mram_state, MRAM_NO_LATENCY_REQ, MRAM_NO_LATENCY_ON)) {
+		return;
+	}
 
-	/* Count the requests and releases */
-	uint8_t req = mram_no_latency_start_req - mram_no_latency_start_ack;
-	uint8_t rel = mram_no_latency_stop_req - mram_no_latency_stop_ack;
-
-	/* Reset requests and releases */
-	mram_no_latency_start_ack = mram_no_latency_start_req;
-	mram_no_latency_stop_ack = mram_no_latency_stop_req;
-
-	/* Handle cancel or release */
-	if (rel > req) {
+	/* Release requested before this callback */
+	if (atomic_cas(&mram_state, MRAM_NO_LATENCY_REQ_STOP, MRAM_NO_LATENCY_OFF)) {
 		int ret;
 
 		ret = mram_no_latency_cancel_or_release(&mram_cli);
 		LL_ASSERT_ERR(ret == ONOFF_STATE_ON);
 	} else {
-		/* No cancel or release before this callback */
+		LL_ASSERT_ERR(0);
 	}
 }
 #endif /* CONFIG_SOC_SERIES_NRF54H */
@@ -303,27 +302,19 @@ void radio_reset(void)
 	/* Check and request mram no latency if we are the first instance */
 	refcnt = atomic_inc(&mram_refcnt);
 	if (refcnt == 0) {
-		uint8_t old = mram_no_latency_start_req;
-		uint8_t ack = mram_no_latency_start_ack;
-		uint8_t req = old + 1U;
-
-		/* Check rollover condition, which shall not happen by design */
-		LL_ASSERT_ERR(req != ack);
-
-		/* Mark for mram no latency requested */
-		mram_no_latency_start_req = req;
-
-		if (mram_no_latency_stop_req == mram_no_latency_stop_ack) {
+		/* Retain the outstanding request, if a release was requested
+		 * before its callback.
+		 */
+		if (!atomic_cas(&mram_state, MRAM_NO_LATENCY_REQ_STOP, MRAM_NO_LATENCY_REQ)) {
 			int ret;
+
+			LL_ASSERT_ERR(atomic_get(&mram_state) == MRAM_NO_LATENCY_OFF);
+			atomic_set(&mram_state, MRAM_NO_LATENCY_REQ);
 
 			sys_notify_init_callback(&mram_cli.notify, mram_no_latency_callback);
 
 			ret = mram_no_latency_request(&mram_cli);
 			LL_ASSERT_ERR(ret >= 0);
-		} else {
-			/* We leave the request marked so that the callback will
-			 * retain the mram_no_latency.
-			 */
 		}
 	} else {
 		/* Nothing to do, reference count increased. */
@@ -393,30 +384,20 @@ void radio_stop(void)
 	if (refcnt > 0) {
 		refcnt = atomic_dec(&mram_refcnt);
 		if (refcnt == 1) {
-			uint8_t old = mram_no_latency_stop_req;
-			uint8_t ack = mram_no_latency_stop_ack;
-			uint8_t req = old + 1U;
-
-			/* Mark for cancel or release being requested */
-			LL_ASSERT_ERR(req != ack);
-			mram_no_latency_stop_req = req;
-
-			if (mram_no_latency_start_req == mram_no_latency_start_ack) {
+			if (atomic_cas(&mram_state, MRAM_NO_LATENCY_ON, MRAM_NO_LATENCY_OFF)) {
 				int ret;
 
 				ret = mram_no_latency_cancel_or_release(&mram_cli);
-				LL_ASSERT_ERR((ret == ONOFF_STATE_TO_ON) ||
-					      (ret == ONOFF_STATE_ON));
-
-				/* Unmark cancel or release, as its handled here
-				 * with successful value being returned.
-				 */
-				mram_no_latency_stop_req = old;
+				LL_ASSERT_ERR(ret == ONOFF_STATE_ON);
 			} else {
-				/* Nothing to do, mram_no_latency not started
-				 * yet, cancel or release will be performed in
-				 * the callback when mram_no_latency is started.
+				bool is_req;
+
+				/* Not started yet, the callback will release
+				 * when mram_no_latency is started.
 				 */
+				is_req = atomic_cas(&mram_state, MRAM_NO_LATENCY_REQ,
+						    MRAM_NO_LATENCY_REQ_STOP);
+				LL_ASSERT_ERR(is_req);
 			}
 		} else {
 			/* Nothing to do, reference count decremented. */
