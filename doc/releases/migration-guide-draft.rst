@@ -150,6 +150,13 @@ OPAMP
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
 
+USB
+===
+
+* :c:macro:`HID_KEYBOARD_REPORT_DESC` now requires the maximum supported key usage ID as an
+  argument. Pass ``HID_KEY_MENU`` to preserve the previous report descriptor behavior.
+  (:github:`114344`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
