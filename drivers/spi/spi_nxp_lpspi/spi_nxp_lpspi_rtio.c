@@ -17,11 +17,6 @@ LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/cache.h>
 #include <zephyr/sys/barrier.h>
 
-#if defined(CONFIG_DCACHE) && !defined(CONFIG_RTIO_SQE_PLACEMENT_DTCM) &&                          \
-	!defined(CONFIG_RTIO_SQE_PLACEMENT_NOCACHE)
-#define RTIO_SQE_CACHED 1
-#endif
-
 #define Z_SRAM_NODE DT_CHOSEN(zephyr_sram)
 
 #if DT_NODE_EXISTS(Z_SRAM_NODE) && DT_NODE_HAS_COMPAT(Z_SRAM_NODE, nxp_imx_dtcm)
@@ -314,6 +309,14 @@ static inline struct dma_block_config *lpspi_rtio_dma_load_blk_cfg(struct spi_dm
 	return blk_cfg;
 }
 
+/* eDMA is not coherent with the D-cache. Clean too: a buffer not aligned to the line size shares
+ * its first and last lines with other data.
+ */
+static inline void lpspi_rtio_dma_rx_cache_sync(uint8_t *buf, size_t len)
+{
+	sys_cache_data_flush_and_invd_range(buf, len);
+}
+
 static int lpspi_rtio_dma_tx_load(const struct device *dev, struct rtio_sqe *sqe)
 {
 	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
@@ -337,11 +340,7 @@ static int lpspi_rtio_dma_tx_load(const struct device *dev, struct rtio_sqe *sqe
 			blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		} else {
 			blk_cfg->source_address = (uint32_t)buf;
-#if RTIO_SQE_CACHED
-			if (sqe->op == RTIO_OP_TINY_TX) {
-				sys_cache_data_flush_range((void *)sqe, sizeof(struct rtio_sqe));
-			}
-#endif
+			sys_cache_data_flush_range((void *)buf, blk_cfg->block_size);
 		}
 
 		blk_cfg->dest_address = (uint32_t)(&base->TDR);
@@ -389,6 +388,7 @@ static int lpspi_rtio_dma_rx_load(const struct device *dev, struct rtio_sqe *sqe
 			blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		} else {
 			blk_cfg->dest_address = (uint32_t)buf;
+			lpspi_rtio_dma_rx_cache_sync(buf, blk_cfg->block_size);
 		}
 
 		blk_cfg->source_address = (uint32_t)(&base->RDR);
@@ -411,6 +411,18 @@ static int lpspi_rtio_dma_rx_load(const struct device *dev, struct rtio_sqe *sqe
 
 	return dma_config(lpspi_data->dma_rx.dma_dev, lpspi_data->dma_rx.channel,
 			  &lpspi_data->dma_rx.dma_cfg);
+}
+
+/* The CPU may have fetched the lines of the RX buffers again during the transfer */
+static void lpspi_rtio_dma_rx_done_cache_sync(struct rtio_sqe *sqe)
+{
+	for (; sqe != NULL; sqe = get_next_sqe(sqe)) {
+		uint8_t *buf = get_sqe_rx_buf(sqe);
+
+		if (buf != NULL) {
+			lpspi_rtio_dma_rx_cache_sync(buf, get_sqe_words_len(sqe));
+		}
+	}
 }
 
 /* Return values:
@@ -503,6 +515,7 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	 * all data has been transmitted and corresponding RX data received.
 	 */
 	if (channel == lpspi_data->dma_rx.channel) {
+		lpspi_rtio_dma_rx_done_cache_sync(lpspi_data->rx_curr.sqe);
 		lpspi_rtio_iodev_complete(spi_dev, 0);
 		lpspi_data->dma_rx.blk_idx = 0;
 		lpspi_data->dma_tx.blk_idx = 0;
