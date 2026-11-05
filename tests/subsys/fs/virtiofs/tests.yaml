@@ -5,10 +5,14 @@ common:
   harness: ztest
   sidecar: virtiofs
   filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
+  platform_allow:
+    - qemu_x86
+    - qemu_x86_64
+  integration_platforms:
+    - qemu_x86_64
 tests:
-  filesystem.virtiofs:
-    platform_allow:
-      - qemu_x86
-      - qemu_x86_64
-    integration_platforms:
-      - qemu_x86_64
+  filesystem.virtiofs: {}
+  filesystem.virtiofs.legacy_fallback:
+    extra_configs:
+      - CONFIG_VIRTIOFS_READDIR_BUFFERS=0
+      - CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS=0
