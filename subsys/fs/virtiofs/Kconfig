@@ -26,6 +26,39 @@ config VIRTIOFS_MAX_VQUEUE_SIZE
 	help
 	  Maximum size of virtqueue
 
+config VIRTIOFS_ASYNC_FORGET_BUFFERS
+	int "Virtiofs asynchronous FORGET buffers"
+	default 8
+	range 0 32
+	help
+	  Number of preallocated request buffers used to submit FUSE_FORGET
+	  requests without waiting for their completion. FUSE_FORGET has no
+	  reply, so the caller does not have to wait; the preallocated buffer
+	  keeps the request valid while the device owns it. When the pool is
+	  empty or the queue has no free descriptor, the driver falls back to
+	  the synchronous path. Set to 0 to disable asynchronous FORGET
+	  entirely.
+
+config VIRTIOFS_READDIR_BUFSIZE
+	int "Virtiofs READDIR response buffer size"
+	default 1024
+	range 512 4096
+	help
+	  Size in bytes of the per-directory buffer used to receive a
+	  FUSE_READDIR response. A larger buffer lets a single request return
+	  more directory entries. Must be a multiple of 8; the value must also
+	  be large enough for a maximum-length directory entry.
+
+config VIRTIOFS_READDIR_BUFFERS
+	int "Virtiofs READDIR response buffers"
+	default 4
+	range 0 16
+	help
+	  Number of per-directory READDIR response buffers. Directories that
+	  get a buffer batch directory entries; once the pool is exhausted the
+	  driver falls back to one entry per request. The static RAM cost is
+	  VIRTIOFS_READDIR_BUFSIZE * VIRTIOFS_READDIR_BUFFERS bytes.
+
 config VIRTIOFS_NO_NOTIFICATION_QUEUE_SLOT
 	bool "Omit notification queue (idx 1) and assume that idx 1 is the first request queue"
 	default y

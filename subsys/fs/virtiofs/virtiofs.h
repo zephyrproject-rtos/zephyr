@@ -43,7 +43,7 @@ int virtiofs_rename(
 int virtiofs_statfs(const struct device *dev, struct fuse_kstatfs *response);
 int virtiofs_readdir(
 	const struct device *dev, uint64_t inode, uint64_t fh, uint64_t offset,
-	uint8_t *dirent_buf, uint32_t dirent_size, uint8_t *name_buf, uint32_t name_size);
+	uint8_t *buf, uint32_t size);
 void virtiofs_forget(const struct device *dev, uint64_t inode, uint64_t nlookup);
 
 #endif /* ZEPHYR_SUBSYS_FS_VIRTIOFS_VIRTIOFS_H_ */
