@@ -456,3 +456,19 @@ config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
 	  The long term goal is to remove this option once all users are on the
 	  PSA Crypto API.
+
+config MBEDTLS_THREADING_C
+	bool "Mbed TLS threading abstraction layer"
+	default y
+	depends on MULTITHREADING && (MBEDTLS_BUILTIN || MBEDTLS_PSA_CRYPTO_C)
+	help
+	  Enable the Mbed TLS and TF-PSA-Crypto threading abstraction layer.
+
+config MBEDTLS_THREADING_ALT
+	bool "Mbed TLS threading support via Zephyr kernel primitives"
+	default y
+	depends on MBEDTLS_THREADING_C
+	help
+	  Implement the Mbed TLS and TF-PSA-Crypto threading abstraction layer
+	  using Zephyr kernel mutexes and condition variables. Direct calls to
+	  Mbed TLS and PSA Crypto APIs must be made from supervisor mode.
