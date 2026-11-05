@@ -1,0 +1,10 @@
+tests:
+  canbus.canopen.shell:
+    tags:
+      - can
+      - canopen
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

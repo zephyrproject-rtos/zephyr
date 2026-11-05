@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_LED_BICOLOR
+	bool "Drive the RUN and ERR LEDs as one bicolor LED"
+
+source "Kconfig.zephyr"

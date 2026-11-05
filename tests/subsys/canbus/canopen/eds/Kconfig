@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_OD_FROM_EDS
+	bool "Generate the object dictionary from test.eds"
+
+source "Kconfig.zephyr"

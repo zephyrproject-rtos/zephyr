@@ -1,0 +1,34 @@
+common:
+  tags:
+    - can
+    - canopen
+  depends_on: can
+  filter: dt_chosen_enabled("zephyr,canbus")
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  harness: pytest
+  harness_config:
+    pytest_root:
+      - "pytest/test_eds.py"
+tests:
+  canbus.canopen.eds.from_eds:
+    extra_configs:
+      - CONFIG_TEST_OD_FROM_EDS=y
+  canbus.canopen.eds.from_c:
+    extra_configs:
+      - CONFIG_CANOPEN_MASTER=y
+      - CONFIG_CANOPEN_TIME=y
+      - CONFIG_CAN_ACCEPT_RTR=y
+      - CONFIG_CANOPEN_NODE_GUARDING=y
+      - CONFIG_SETTINGS=y
+      - CONFIG_SETTINGS_NONE=y
+      - CONFIG_CANOPEN_TPDO_COUNT=5
+      - CONFIG_CANOPEN_RPDO_COUNT=3
+      - CONFIG_CANOPEN_PDO_MAPPED_MAX=8
+      - CONFIG_CANOPEN_EMCY_HISTORY_SIZE=3
+      - CONFIG_CANOPEN_HB_CONSUMER_COUNT=3
+      - CONFIG_CANOPEN_DEVICE_NAME=""
+      - CONFIG_CANOPEN_SW_VERSION="2.1"
