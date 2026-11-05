@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/linker/linker-defs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <errno.h>
@@ -93,51 +94,70 @@ void virtiofs_recv_cb(void *opaque, uint32_t used_len)
 /* Largest buffer chain built by any of the FUSE requests below. */
 #define VIRTIOFS_MAX_CHAIN_BUFS 4
 
+static bool virtiofs_buffer_is_direct(const struct virtq_buf *buf)
+{
+	uintptr_t addr = POINTER_TO_UINT(buf->addr);
+#ifdef CONFIG_MMU
+	uintptr_t start = POINTER_TO_UINT(z_mapped_start);
+	uintptr_t end = POINTER_TO_UINT(z_mapped_end);
+#else
+	uintptr_t start = DT_CHOSEN_SRAM_ADDR;
+	uintptr_t end = start + DT_CHOSEN_SRAM_SIZE;
+#endif
+
+	/* Runtime mappings and pageable buffers need not retain their boot physical address. */
+	return buf->addr != NULL && !IS_ENABLED(CONFIG_DEMAND_PAGING) && addr >= start &&
+	       addr < end && buf->len <= end - addr;
+}
+
 static int virtiofs_send_receive_checked(const struct device *dev, uint16_t virtq,
 					 struct virtq_buf *bufs, uint16_t bufs_size,
 					 uint16_t device_readable, uint32_t *used_len)
 {
 	struct virtq *virtqueue = virtio_get_virtqueue(dev, virtq);
 	struct recv_cb_param cb_arg;
-	struct virtq_buf bounce_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
+	struct virtq_buf mapped_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
 	size_t total_len = 0;
+	uint8_t *bounce = NULL;
 
-	__ASSERT(bufs_size <= ARRAY_SIZE(bounce_bufs),
+	__ASSERT(bufs_size <= ARRAY_SIZE(mapped_bufs),
 		 "buffer chain longer than VIRTIOFS_MAX_CHAIN_BUFS");
 
 	for (uint16_t i = 0; i < bufs_size; i++) {
-		total_len += bufs[i].len;
+		mapped_bufs[i] = bufs[i];
+		if (!virtiofs_buffer_is_direct(&bufs[i])) {
+			mapped_bufs[i].addr = NULL;
+			/* Even an empty descriptor needs an address k_mem_phys_addr() accepts. */
+			total_len += MAX(bufs[i].len, 1U);
+		}
 	}
 
-	/*
-	 * The buffers supplied by callers frequently live on a thread stack,
-	 * which the device cannot reach: the virtqueue programs descriptors with
-	 * k_mem_phys_addr(), which is only valid for the kernel's permanent RAM
-	 * mapping. Bounce every buffer through a heap allocation (part of that
-	 * mapping, and what the virtqueue itself uses) so requests issued from
-	 * any thread work.
-	 */
-	uint8_t *bounce = k_malloc(total_len);
-
-	if (bounce == NULL) {
-		LOG_ERR("failed to allocate %zu byte bounce buffer", total_len);
-		return -ENOMEM;
+	/* Only buffers outside the permanent RAM mapping need a bounce allocation. */
+	if (total_len > 0U) {
+		bounce = k_malloc(total_len);
+		if (bounce == NULL) {
+			LOG_ERR("failed to allocate %zu byte bounce buffer", total_len);
+			return -ENOMEM;
+		}
 	}
 
 	size_t offset = 0;
 
 	for (uint16_t i = 0; i < bufs_size; i++) {
-		bounce_bufs[i].addr = bounce + offset;
-		bounce_bufs[i].len = bufs[i].len;
-		if (i < device_readable) {
+		if (mapped_bufs[i].addr != NULL) {
+			continue;
+		}
+
+		mapped_bufs[i].addr = bounce + offset;
+		if (i < device_readable && bufs[i].len > 0U) {
 			memcpy(bounce + offset, bufs[i].addr, bufs[i].len);
 		}
-		offset += bufs[i].len;
+		offset += MAX(bufs[i].len, 1U);
 	}
 
 	k_sem_init(&cb_arg.sem, 0, 1);
 
-	int ret = virtq_add_buffer_chain(virtqueue, bounce_bufs, bufs_size, device_readable,
+	int ret = virtq_add_buffer_chain(virtqueue, mapped_bufs, bufs_size, device_readable,
 					 virtiofs_recv_cb, &cb_arg, K_FOREVER);
 
 	if (ret != 0) {
@@ -151,13 +171,10 @@ static int virtiofs_send_receive_checked(const struct device *dev, uint16_t virt
 	k_sem_take(&cb_arg.sem, K_FOREVER);
 	*used_len = cb_arg.used_len;
 
-	/* Propagate whatever the device wrote back to the caller's buffers. */
-	offset = 0;
-	for (uint16_t i = 0; i < bufs_size; i++) {
-		if (i >= device_readable) {
-			memcpy(bufs[i].addr, bounce + offset, bufs[i].len);
+	for (uint16_t i = device_readable; i < bufs_size; i++) {
+		if (mapped_bufs[i].addr != bufs[i].addr && bufs[i].len > 0U) {
+			memcpy(bufs[i].addr, mapped_bufs[i].addr, bufs[i].len);
 		}
-		offset += bufs[i].len;
 	}
 
 	k_free(bounce);
