@@ -247,6 +247,13 @@ Libraries / Subsystems
     as defined in :rfc:`3629`; overlong sequences, UTF-16 surrogates and code
     points above U+10FFFF are refused.
 
+* Video
+
+  * Controls can be buttons (:c:enumerator:`VIDEO_CTRL_TYPE_BUTTON`): command-like controls that
+    hold no value, such as a reset or a one-shot capture trigger, for which the driver is called on
+    each write. :c:macro:`VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE` makes a control with a value, such as
+    a relative pan or zoom step, call the driver on each write even when the value does not change.
+
 * Shell
 
   * With :kconfig:option:`CONFIG_SHELL_WILDCARD` enabled, an argument containing ``*`` or ``?``
