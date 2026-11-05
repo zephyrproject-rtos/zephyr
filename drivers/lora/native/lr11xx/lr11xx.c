@@ -576,6 +576,18 @@ static int lr11xx_set_sleep(const struct device *dev)
 		return ret;
 	}
 
+	/*
+	 * The radio raises no IRQ in standby. Drop any raised while the
+	 * operation was being stopped, so the IRQ line is low for the next
+	 * operation and no interrupt work is left queued for it.
+	 */
+	ret = lr11xx_clear_irq_status(dev, LR11XX_IRQ_ALL);
+	if (ret < 0) {
+		LOG_ERR("Failed to clear IRQs: %d", ret);
+		return ret;
+	}
+	(void)k_work_cancel(&data->irq_work);
+
 	if (!IS_ENABLED(CONFIG_LORA_LR11XX_NATIVE_SLEEP)) {
 		atomic_set(&data->state, LR11XX_STATE_IDLE);
 		return 0;
