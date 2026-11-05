@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RLIN3_RH850
+	bool "Renesas RH850 RLIN3 UART"
+	default y
+	depends on DT_HAS_RENESAS_RH850_RLIN3_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select USE_RH850_FSP_RLIN3_UART
+	select PINCTRL
+	help
+	  Enable Renesas RH850 RLIN3 UART Driver.
