@@ -366,10 +366,6 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 
 	eth = dev->api;
 
-	if (!eth) {
-		return -ENOENT;
-	}
-
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return -EINVAL;
 	}
