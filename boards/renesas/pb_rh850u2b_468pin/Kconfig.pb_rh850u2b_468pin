@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PB_RH850U2B_468PIN
+	select SOC_R7F70254XAFABG_C if BOARD_PB_RH850U2B_468PIN_R7F70254XAFABG_C

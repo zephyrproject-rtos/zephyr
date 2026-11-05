@@ -1,0 +1,6 @@
+board:
+  name: pb_rh850u2b_468pin
+  full_name: Piggy Board RH850 U2B 468pin
+  vendor: renesas
+  socs:
+  - name: r7f70254xafabg-c
