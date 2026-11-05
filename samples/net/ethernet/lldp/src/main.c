@@ -188,7 +188,6 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 
 static int init_app(void)
 {
-	enum ethernet_hw_caps caps;
 	struct net_if *iface;
 	int ret;
 
@@ -201,13 +200,6 @@ static int init_app(void)
 	ret = init_vlan(iface);
 	if (ret < 0) {
 		LOG_WRN("Cannot setup VLAN (%d)", ret);
-	}
-
-	caps = net_eth_get_hw_capabilities(iface);
-	if (!(caps & ETHERNET_LLDP)) {
-		LOG_ERR("Interface %p does not support %s", iface, "LLDP");
-		LOG_ERR("Cannot continue!");
-		return -ENOENT;
 	}
 
 	set_optional_tlv(iface);

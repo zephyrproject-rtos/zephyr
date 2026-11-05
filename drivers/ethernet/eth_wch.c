@@ -565,9 +565,6 @@ static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev _
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	       | ETHERNET_PROMISC_MODE
 #endif
-#if defined(CONFIG_NET_LLDP)
-	       | ETHERNET_LLDP
-#endif
 		;
 }
 

@@ -20,9 +20,6 @@ static enum ethernet_hw_caps eth_capabilities(const struct device *dev __unused,
 					      struct net_if *iface __unused)
 {
 	return ETHERNET_HW_VLAN
-#if defined(CONFIG_NET_LLDP)
-	       | ETHERNET_LLDP
-#endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	       | ETHERNET_PROMISC_MODE
 #endif
