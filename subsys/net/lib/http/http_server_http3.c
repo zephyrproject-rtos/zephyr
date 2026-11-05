@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -912,7 +913,11 @@ static int h3_encode_response_headers(uint8_t *buf, size_t buflen,
 			return -ENOSPC;
 		}
 
-		memcpy(buf + pos, hdr->name, name_len);
+		/* Field names are lowercase in HTTP/3 (RFC 9114, Section 4.2) */
+		for (size_t j = 0; j < name_len; j++) {
+			buf[pos + j] = tolower((unsigned char)hdr->name[j]);
+		}
+
 		pos += name_len;
 
 		/* Value: no Huffman */
