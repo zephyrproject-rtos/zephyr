@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siddhant Modi
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config WIFI_TEST_ENABLE
+	bool "Enable Wi-Fi test"
+	default y
+	select WIFI
+	select WIFI_USE_NATIVE_NETWORKING
