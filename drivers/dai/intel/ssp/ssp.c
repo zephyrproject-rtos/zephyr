@@ -2614,7 +2614,7 @@ static void ssp_release_ip(struct dai_intel_ssp *dp)
 		/* disable SSP port if no users */
 		if (dp->state[DAI_DIR_CAPTURE] == DAI_STATE_PRE_RUNNING &&
 		    dp->state[DAI_DIR_PLAYBACK] == DAI_STATE_PRE_RUNNING &&
-		    COND_CODE_1(CONFIG_INTEL_ADSP_CAVS,
+		    COND_CODE_1(CONFIG_SOC_SERIES_INTEL_ADSP_CAVS,
 				(!(ssp->clk_active & SSP_CLK_BCLK_ES_REQ)), (true))) {
 			dai_ssp_update_bits(dp, SSCR0, SSCR0_SSE, 0);
 			LOG_INF("%s SSE clear SSP%d", __func__, ssp->ssp_index);

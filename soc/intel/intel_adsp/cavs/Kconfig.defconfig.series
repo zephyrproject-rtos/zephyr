@@ -4,9 +4,6 @@
 
 if SOC_SERIES_INTEL_ADSP_CAVS
 
-config INTEL_ADSP_CAVS
-	def_bool y
-
 rsource "Kconfig.defconfig.cavs*"
 
 config INTEL_ADSP_CACHED_REGION
