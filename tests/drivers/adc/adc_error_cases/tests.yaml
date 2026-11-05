@@ -38,3 +38,6 @@ tests:
       - pic32cz_ca90_cult
       - kit_psc3m6_eval/psc3m6ges3ahq1
       - it51xxx_evb/it51526aw
+      - rpi_pico
+      - rpi_pico2/rp2350a/hazard3_0
+      - rpi_pico2/rp2350a/m33_0
