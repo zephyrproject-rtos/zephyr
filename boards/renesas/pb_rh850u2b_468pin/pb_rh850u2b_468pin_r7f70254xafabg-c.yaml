@@ -1,0 +1,15 @@
+identifier: pb_rh850u2b_468pin/r7f70254xafabg-c
+name: Renesas RH850 U2B 468pin
+type: mcu
+arch: rh850
+ram: 480
+flash: 10240
+toolchain:
+  - iar
+supported:
+  - gpio
+  - interrupt_controller
+  - pinctrl
+  - timer
+  - uart
+vendor: renesas
