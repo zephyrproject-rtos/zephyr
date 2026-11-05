@@ -4464,6 +4464,10 @@ int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb)
 		return 0;
 	}
 
+	if (bt_auth == cb) {
+		return -EEXIST;
+	}
+
 	if (bt_auth) {
 		return -EALREADY;
 	}
