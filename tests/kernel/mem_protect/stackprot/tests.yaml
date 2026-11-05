@@ -5,6 +5,7 @@ tests:
       - posix
       - sparc
       - rx
+      - rh850
     tags:
       - kernel
       - userspace
