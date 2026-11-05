@@ -8,7 +8,7 @@
 
 /* Makes a copy of the vector table in writable RAM (it's generally in
  * a ROM section), redirects it, and hooks the SVC interrupt with our
- * own code above so we can catch direct interrupts.
+ * own code above so we can catch direct interrupts. Returns the original VTOR.
  */
 void *vector_hijack(void (*my_svc_handler)(void));
 
