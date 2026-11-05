@@ -92,6 +92,15 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 }
 
 /**
+ * @brief Dispatch pending SoC interrupts.
+ *
+ * Called from the external interrupt exception when
+ * CONFIG_OPENRISC_SOC_IRQ_DISPATCH is enabled. The SoC calls
+ * z_openrisc_enter_irq() for each pending line.
+ */
+void z_soc_irq_dispatch(void);
+
+/**
  * @brief Enable interrupt on OpenRISC core.
  *
  * @param irq Interrupt to be enabled.
