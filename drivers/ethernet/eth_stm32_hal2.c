@@ -374,9 +374,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
 		;
 }
 

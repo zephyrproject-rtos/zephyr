@@ -1227,9 +1227,6 @@ static enum ethernet_hw_caps adin2111_port_get_capabilities(const struct device 
 
 	caps = ETHERNET_LINK_10BASE |
 		ETHERNET_HW_FILTERING
-#if defined(CONFIG_NET_LLDP)
-		| ETHERNET_LLDP
-#endif
 		| ETHERNET_PROMISC_MODE;
 
 	/* The two ports forward frames with an unknown destination to each

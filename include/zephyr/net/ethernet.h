@@ -181,9 +181,6 @@ enum ethernet_hw_caps {
 	/** MAC address filtering supported */
 	ETHERNET_HW_FILTERING		= BIT(12),
 
-	/** Link Layer Discovery Protocol supported */
-	ETHERNET_LLDP			= BIT(13),
-
 	/** VLAN Tag stripping */
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
 
