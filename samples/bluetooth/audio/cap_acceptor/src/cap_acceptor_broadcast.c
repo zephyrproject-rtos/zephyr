@@ -58,10 +58,10 @@ enum broadcast_flag {
 ATOMIC_DEFINE(flags, FLAG_NUM);
 
 static struct broadcast_sink {
+	struct bt_cap_stream broadcast_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 	const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 	uint8_t sink_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 	struct bt_bap_broadcast_sink *bap_broadcast_sink;
-	struct bt_cap_stream broadcast_stream;
 	struct bt_le_per_adv_sync *pa_sync;
 	uint8_t received_base[UINT8_MAX];
 	uint32_t requested_bis_sync;
@@ -162,7 +162,7 @@ static int create_broadcast_sink(void)
 /** Performs a series of checks to see if we are ready to sync the broadcast sink */
 static void check_sync_broadcast(void)
 {
-	struct bt_bap_stream *sync_stream = &broadcast_sink.broadcast_stream.bap_stream;
+	struct bt_bap_stream *sync_streams[ARRAY_SIZE(broadcast_sink.broadcast_streams)];
 	uint32_t sync_bitfield;
 	int err;
 
@@ -224,9 +224,13 @@ static void check_sync_broadcast(void)
 
 	LOG_INF("Syncing to broadcast with bitfield 0x%08X", sync_bitfield);
 
+	ARRAY_FOR_EACH(broadcast_sink.broadcast_streams, i) {
+		sync_streams[i] = &broadcast_sink.broadcast_streams[i].bap_stream;
+	}
+
 	/* Sync the BIG */
 	err = bt_bap_broadcast_sink_sync(broadcast_sink.bap_broadcast_sink, sync_bitfield,
-					 &sync_stream, broadcast_sink.sink_broadcast_code);
+					 sync_streams, broadcast_sink.sink_broadcast_code);
 	if (err != 0) {
 		LOG_ERR("Failed to sync the broadcast sink: %d", err);
 	} else {
@@ -518,9 +522,11 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	LOG_INF("BIS sync request received for %p: 0x%08x", recv_state, bis_sync_req[0]);
 
 	if (new_bis_sync_req != BT_BAP_BIS_SYNC_NO_PREF &&
-	    sys_count_bits(&new_bis_sync_req, sizeof(new_bis_sync_req)) > 1U) {
-		LOG_WRN("Rejecting BIS sync request for 0x%08X as we do not support that",
-			new_bis_sync_req);
+	    sys_count_bits(&new_bis_sync_req, sizeof(new_bis_sync_req)) >
+		    CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT) {
+		LOG_WRN("Rejecting BIS sync request for 0x%08X as we do not support that "
+			"(max %d streams)",
+			new_bis_sync_req, CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT);
 
 		return -ENOMEM;
 	}
@@ -814,7 +820,10 @@ int init_cap_acceptor_broadcast(void)
 			return -ENOEXEC;
 		}
 
-		bt_cap_stream_ops_register(&broadcast_sink.broadcast_stream, &broadcast_stream_ops);
+		ARRAY_FOR_EACH_PTR(broadcast_sink.broadcast_streams, stream) {
+			bt_cap_stream_ops_register(stream, &broadcast_stream_ops);
+		}
+
 		bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 
 		if (IS_ENABLED(CONFIG_SAMPLE_SCAN_SELF)) {
