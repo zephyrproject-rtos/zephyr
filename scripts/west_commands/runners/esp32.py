@@ -161,6 +161,14 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         if self.device is not None:
             cmd_flash.extend(['--port', self.device])
 
+        if self.reset:
+            after = self.reset_type or 'hard-reset'
+        else:
+            after = 'no-reset'
+        if self.reset_type is not None and not self.reset:
+            self.logger.warning(
+                '--reset-type is ignored because reset is disabled (--no-reset)')
+
         if self.erase is True:
             cmd_erase = cmd_flash + ['erase-flash']
             self.check_call(cmd_erase)
@@ -169,11 +177,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_flash.extend(['--no-stub'])
         cmd_flash.extend(['--baud', self.baud])
         cmd_flash.extend(['--before', 'default-reset'])
-        if self.reset_type is not None and not self.reset:
-            self.logger.warning(
-                '--reset-type is ignored because reset is disabled (--no-reset)')
-        if self.reset:
-            cmd_flash.extend(['--after', self.reset_type or 'hard-reset'])
+        cmd_flash.extend(['--after', after])
         cmd_flash.extend(['write-flash', '-u'])
         cmd_flash.extend(['--flash-mode', self.flash_mode])
         cmd_flash.extend(['--flash-freq', self.flash_freq])
