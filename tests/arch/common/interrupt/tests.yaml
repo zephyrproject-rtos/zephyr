@@ -57,6 +57,8 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
+      # Writing MIP does not pend Espressif CLIC external interrupt lines
+      - esp32s31_function_coreboard/esp32s31/hpcore
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
