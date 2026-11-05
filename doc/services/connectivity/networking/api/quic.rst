@@ -169,6 +169,17 @@ descriptor for a new stream initiated by a peer.
    }
 
 
+Socket Options of the Connection
+--------------------------------
+
+A connection socket answers the ``ZSOCK_SOL_QUIC`` and ``ZSOCK_SOL_TLS`` options
+itself. Every other socket option is applied to the UDP socket underneath,
+which a client connection creates in :c:func:`quic_connection_open` and a
+server's accepted connections share with the listening socket. To bind a
+connection to a network interface, set ``ZSOCK_SO_BINDTODEVICE`` on the
+connection socket before the first stream is opened, or on the listening
+socket of a server.
+
 Closing a Connection
 --------------------
 
