@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 #include <string.h>
 #include "virtiofs.h"
@@ -44,6 +45,19 @@ struct virtio_fs_config {
 	char tag[36];
 	uint32_t num_request_queues;
 };
+
+#if CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS > 0
+/*
+ * The FUSE client has no per-mount driver context: the virtio device owns the
+ * request queue and virtiofs_forget() only receives that device. Keep the
+ * pool in one driver-wide structure; a busy device can at worst exhaust the
+ * pool and make another device fall back to the synchronous path.
+ */
+static struct {
+	struct fuse_forget_req slots[CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS];
+	struct k_stack free;
+} forget_pool;
+#endif /* CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS > 0 */
 
 static int virtiofs_validate_response(
 	const struct fuse_out_header *header, uint32_t opcode, uint32_t used_len,
@@ -92,6 +106,85 @@ void virtiofs_recv_cb(void *opaque, uint32_t used_len)
 
 /* Largest buffer chain built by any of the FUSE requests below. */
 #define VIRTIOFS_MAX_CHAIN_BUFS 4
+
+#if CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS > 0
+static void virtiofs_forget_slot_release(stack_data_t slot_idx)
+{
+	int ret = k_stack_push(&forget_pool.free, slot_idx);
+
+	if (ret != 0) {
+		LOG_ERR("FORGET slot pool overflow");
+	}
+}
+
+static void virtiofs_forget_pool_init(void)
+{
+	static stack_data_t free_idx[CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS];
+	static bool ready;
+
+	if (ready) {
+		return;
+	}
+
+	k_stack_init(&forget_pool.free, free_idx, (uint32_t)ARRAY_SIZE(free_idx));
+	for (size_t i = 0; i < ARRAY_SIZE(free_idx); i++) {
+		if (k_stack_push(&forget_pool.free, (stack_data_t)i) != 0) {
+			LOG_ERR("failed to initialize the FORGET slot pool");
+			return;
+		}
+	}
+
+	ready = true;
+}
+
+static void virtiofs_forget_complete(void *opaque, uint32_t used_len)
+{
+	struct fuse_forget_req *req = opaque;
+
+	ARG_UNUSED(used_len);
+
+	virtiofs_forget_slot_release((stack_data_t)(req - forget_pool.slots));
+}
+
+/*
+ * Submit FUSE_FORGET without waiting for the device. FUSE_FORGET has no
+ * reply, so the caller only needs the request buffer to stay valid until the
+ * device returns the descriptor chain.
+ */
+static bool virtiofs_forget_async(const struct device *dev, uint64_t inode, uint64_t nlookup)
+{
+	struct virtq *vq = virtio_get_virtqueue(dev, REQUEST_QUEUE);
+	struct fuse_forget_req *req;
+	struct virtq_buf buf;
+	stack_data_t slot_idx;
+	int ret;
+
+	if (vq == NULL) {
+		return false;
+	}
+
+	if (k_stack_pop(&forget_pool.free, &slot_idx, K_NO_WAIT) != 0) {
+		return false;
+	}
+
+	req = &forget_pool.slots[slot_idx];
+	fuse_fill_header(&req->in_header, (uint32_t)sizeof(*req), FUSE_FORGET, inode);
+	req->forget_in.nlookup = nlookup;
+
+	buf.addr = req;
+	buf.len = (uint32_t)sizeof(*req);
+
+	ret = virtq_add_buffer_chain(vq, &buf, 1, 1, virtiofs_forget_complete, req, K_NO_WAIT);
+	if (ret != 0) {
+		virtiofs_forget_slot_release(slot_idx);
+		return false;
+	}
+
+	virtio_notify_virtqueue(dev, REQUEST_QUEUE);
+
+	return true;
+}
+#endif /* CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS > 0 */
 
 static int virtiofs_send_receive_checked(const struct device *dev, uint16_t virtq,
 					 struct virtq_buf *bufs, uint16_t bufs_size,
@@ -201,6 +294,10 @@ int virtiofs_init(const struct device *dev, struct fuse_init_out *response)
 		LOG_ERR("no request queue present");
 		return -ENODEV;
 	}
+
+#if CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS > 0
+	virtiofs_forget_pool_init();
+#endif
 
 	ret = virtio_commit_feature_bits(dev);
 	if (ret != 0) {
@@ -820,27 +917,24 @@ int virtiofs_statfs(const struct device *dev, struct fuse_kstatfs *response)
 	return 0;
 }
 
-int virtiofs_readdir(
-	const struct device *dev, uint64_t inode, uint64_t fh, uint64_t offset,
-	uint8_t *dirent_buf, uint32_t dirent_size, uint8_t *name_buf, uint32_t name_size)
+int virtiofs_readdir(const struct device *dev, uint64_t inode, uint64_t fh, uint64_t offset,
+		     uint8_t *buf, uint32_t size)
 {
 	struct fuse_read_req req;
 
-	fuse_create_read_req(&req, inode, fh, offset, dirent_size + name_size, FUSE_DIR);
+	fuse_create_read_req(&req, inode, fh, offset, size, FUSE_DIR);
 
-	struct virtq_buf buf[] = {
-		{ .addr = &req.in_header, .len = req.in_header.len },
-		{ .addr = &req.out_header, .len = sizeof(struct fuse_out_header) },
-		{ .addr = dirent_buf, .len = dirent_size },
-		{ .addr = name_buf, .len = name_size }
+	struct virtq_buf bufs[] = {
+		{.addr = &req.in_header, .len = req.in_header.len},
+		{.addr = &req.out_header, .len = (uint32_t)sizeof(struct fuse_out_header)},
+		{.addr = buf, .len = size},
 	};
 
-	LOG_INF(
-		"sending FUSE_READDIR, nodeid=%" PRIu64 ", fh=%" PRIu64 ", offset=%" PRIu64
+	LOG_INF("sending FUSE_READDIR, nodeid=%" PRIu64 ", fh=%" PRIu64 ", offset=%" PRIu64
 		", size=%" PRIu32 ", unique=%" PRIu64,
-		inode, fh, offset, dirent_size + name_size, req.in_header.unique
-	);
-	uint32_t used_len = virtiofs_send_receive(dev, REQUEST_QUEUE, buf, 4, 1);
+		inode, fh, offset, size, req.in_header.unique);
+	uint32_t used_len =
+		virtiofs_send_receive(dev, REQUEST_QUEUE, bufs, (uint16_t)ARRAY_SIZE(bufs), 1);
 
 	LOG_INF("received FUSE_READDIR response, unique=%" PRIu64, req.out_header.unique);
 
@@ -852,13 +946,13 @@ int virtiofs_readdir(
 
 	/*
 	 * out_header.len is host-controlled; guard against underflow (smaller
-	 * than the header) and against returning more bytes than the dirent and
-	 * name buffers can hold.
+	 * than the header) and against returning more bytes than the response
+	 * buffer can hold.
 	 */
 	if (req.out_header.len < sizeof(req.out_header) ||
-	    (req.out_header.len - sizeof(req.out_header)) > dirent_size + name_size) {
-		LOG_ERR("FUSE_READDIR response length 0x%x invalid for buffers %u",
-			req.out_header.len, dirent_size + name_size);
+	    (req.out_header.len - sizeof(req.out_header)) > size) {
+		LOG_ERR("FUSE_READDIR response length 0x%x invalid for buffer %u",
+			req.out_header.len, size);
 		return -EIO;
 	}
 
@@ -870,6 +964,12 @@ void virtiofs_forget(const struct device *dev, uint64_t inode, uint64_t nlookup)
 	if (inode == FUSE_ROOT_INODE) {
 		return;
 	}
+
+#if CONFIG_VIRTIOFS_ASYNC_FORGET_BUFFERS > 0
+	if (virtiofs_forget_async(dev, inode, nlookup)) {
+		return;
+	}
+#endif
 
 	struct fuse_forget_req req;
 
