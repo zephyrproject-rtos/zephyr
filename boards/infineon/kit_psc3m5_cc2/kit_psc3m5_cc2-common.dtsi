@@ -211,76 +211,57 @@ mikrobus_spi: &scb3 {};
  * No 32.768 kHz watch crystal is fitted on this board. P0.0 and P0.1, which
  * are the fixed WCO pins on the die, are routed to the mikroBUS socket.
  */
-&clk_wco {
+&wco {
 	status = "disabled";
 };
 
-&fll0 {
-	clock-frequency = <96000000>;
+&fll {
+	clocks = <&iho>;
+	clock-frequency = <DT_FREQ_M(96)>;
 	status = "okay";
 };
 
-&dpll_lp0 {
-	clock-frequency = <180000000>;
-
+&pll0 {
+	clocks = <&iho>;
 	feedback-div = <45>;
 	reference-div = <6>;
 	output-div = <2>;
-	fraction-div = <0>;
-	dco-mode-enable;
+	clock-frequency = <DT_FREQ_M(180)>;
 	status = "okay";
 };
 
-&dpll_lp1 {
-	clock-frequency = <240000000>;
-
+&pll1 {
+	clocks = <&iho>;
 	feedback-div = <60>;
 	reference-div = <6>;
 	output-div = <2>;
-	fraction-div = <0>;
-	dco-mode-enable;
-	status = "okay";
-};
-
-&path_mux0 {
-	status = "okay";
-};
-
-&path_mux1 {
-	status = "okay";
-};
-
-&path_mux2 {
-	status = "okay";
-};
-
-&path_mux3 {
+	clock-frequency = <DT_FREQ_M(240)>;
 	status = "okay";
 };
 
 &clk_hf0 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	clocks = <&pll0>;
 	status = "okay";
 };
 
 &clk_hf1 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH1>;
+	clocks = <&pll0>;
 	status = "okay";
 };
 
 /*
  * CLK_HF2 feeds peripheral group 4 (UART, CAN FD, SPI). Sourcing it from
- * dpll_lp1 (240 MHz) divided by 3 gives 80 MHz, which supports CiA 601-3
+ * pll1 (240 MHz) divided by 3 gives 80 MHz, which supports CiA 601-3
  * compliant CAN FD bit rates.
  */
 &clk_hf2 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
-	clock-div = <IFX_CLK_HF_DIVIDE_BY_3>;
+	clocks = <&pll1>;
+	clock-div = <3>;
 	status = "okay";
 };
 
 &clk_hf3 {
-	source-path = <IFX_CLK_HF_IN_CLKPATH2>;
+	clocks = <&pll1>;
 	status = "okay";
 };
 

@@ -38,10 +38,10 @@ config SYSTEM_TIMER_RESET_BY_LPM
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
-	default $(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency) if USE_INFINEON_LPTIMER
+	default $(dt_nodelabel_int_prop,wco,clock-frequency) if USE_INFINEON_LPTIMER
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default $(div,$(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency),4) \
+	default $(div,$(dt_nodelabel_int_prop,wco,clock-frequency),4) \
 		if USE_INFINEON_LPTIMER && !CORTEX_M_SYSTICK
 
 # Both device PM models are enabled by default because this SoC needs both.
