@@ -89,7 +89,7 @@ static int resolve_peer_addr(struct sockaddr_storage *addr, socklen_t *addrlen)
 	const char *peer = CONFIG_NET_SAMPLE_COAP_CLIENT_PEER;
 	struct sockaddr_storage parsed_addr = { 0 };
 	struct addrinfo hints = {
-		.ai_family = AF_UNSPEC,
+		.ai_family = conn_mgr_get_ready_addr_family(),
 		.ai_socktype = SOCK_DGRAM,
 		.ai_protocol = IPPROTO_UDP,
 	};
@@ -175,14 +175,6 @@ static int resolve_peer_addr(struct sockaddr_storage *addr, socklen_t *addrlen)
 
 	for (entry = res; entry != NULL; entry = entry->ai_next) {
 		if (entry->ai_addrlen > sizeof(*addr)) {
-			continue;
-		}
-
-		if (entry->ai_family == AF_INET && !IS_ENABLED(CONFIG_NET_IPV4)) {
-			continue;
-		}
-
-		if (entry->ai_family == AF_INET6 && !IS_ENABLED(CONFIG_NET_IPV6)) {
 			continue;
 		}
 
