@@ -41,6 +41,7 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - pic32cm_gc00_cpro
+      - pic32ck_gc01_cult
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
