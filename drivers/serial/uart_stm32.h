@@ -101,6 +101,7 @@ struct uart_stm32_data {
 	void *async_user_data;
 	struct uart_dma_stream dma_rx;
 	struct uart_dma_stream dma_tx;
+	uint8_t *rx_complete_buffer;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
 #endif
