@@ -251,6 +251,23 @@ static int enqueue_rx_buf(struct usbd_class_data *const c_data,
 	return 0;
 }
 
+static int arm_rx(struct usbd_class_data *const c_data)
+{
+	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
+	int ret;
+
+	set_usb_state(ctx, USB_EC_HOST_CMD_STATE_READY_TO_RX);
+
+	/* Enqueue OUT transfer to receive a host command request. */
+	ret = enqueue_rx_buf(c_data, EP_BULK_SIZE, ctx->rx_ctx->buf);
+	if (ret != 0) {
+		set_usb_state(ctx, USB_EC_HOST_CMD_STATE_DISABLED);
+		return ret;
+	}
+
+	return 0;
+}
+
 static int handle_out_transfer(struct usbd_class_data *const c_data)
 {
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
@@ -346,12 +363,10 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 
 	if (bi->ep == ec_host_cmd_get_in_bulk_ep(c_data)) {
 		k_work_cancel_delayable(&ctx->reset_work);
-		if (enqueue_rx_buf(c_data, EP_BULK_SIZE, ctx->rx_ctx->buf) != 0) {
+		if (arm_rx(c_data) != 0) {
 			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
-
-		set_usb_state(ctx, USB_EC_HOST_CMD_STATE_READY_TO_RX);
 	}
 
 	if (bi->ep == ec_host_cmd_get_in_int_ep(c_data)) {
@@ -388,12 +403,9 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	bi = udc_get_buf_info(ctx->usb_tx_buf);
 	bi->ep = ec_host_cmd_get_in_bulk_ep(c_data);
 
-	/* Enqueue OUT transfer to receive a host command request. */
-	if (enqueue_rx_buf(c_data, EP_BULK_SIZE, ctx->rx_ctx->buf) != 0) {
-		set_usb_state(ctx, USB_EC_HOST_CMD_STATE_DISABLED);
+	if (arm_rx(c_data) != 0) {
 		return;
 	}
-	set_usb_state(ctx, USB_EC_HOST_CMD_STATE_READY_TO_RX);
 
 	if (atomic_test_bit(&ctx->flags, EC_HOST_CMD_EVENT_PENDING)) {
 		ec_host_cmd_signal_event(c_data);
