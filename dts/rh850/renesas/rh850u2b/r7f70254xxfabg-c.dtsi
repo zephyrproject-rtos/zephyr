@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <rh850/renesas/rh850u2b/r7f70254.dtsi>
+
+/* Peripheral definition following RH850/U2B10 468pin devices */
+/ {
+	soc {
+		flash0: flash@0 {
+			reg = <0x0 DT_SIZE_M(10)>;
+		};
+
+		code_flash: code-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(10)>;
+			ranges = <0x0 0x0 DT_SIZE_M(10)>;
+			write-block-size = <516>;
+			erase-block-size = <DT_SIZE_K(64)>;
+		};
+
+		sram0: memory@fe000000 {
+			reg = <0xfe000000 DT_SIZE_K(480)>;
+		};
+	};
+};
