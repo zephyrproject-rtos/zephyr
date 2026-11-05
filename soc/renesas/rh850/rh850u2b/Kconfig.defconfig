@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RH850U2B
+
+configdefault CLOCK_CONTROL_INIT_PRIORITY
+	default 30
+
+configdefault NUM_IRQS
+	default 1024
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency)
+
+configdefault BUILD_OUTPUT_HEX
+	default y
+
+configdefault BUILD_OUTPUT_BIN
+	default y
+
+configdefault BUILD_OUTPUT_S19
+	default y
+
+configdefault DYNAMIC_INTERRUPTS
+	default y
+
+configdefault MULTITHREADING
+	default y
+
+# Address of the reset cause register used to determine memory initialization.
+configdefault RH850_RESET_CAUSE_REG_ADDR
+	default $(add_hex,$(dt_nodelabel_reg_addr_hex,sys_reset),0x7d00)
+
+# Mask used to evaluate reset cause for memory initialization.
+configdefault RH850_RESET_CAUSE_MASK
+	default 0x305D0
+
+# Set to the minimal size of data which can be written.
+configdefault FLASH_FILL_BUFFER_SIZE
+	default 128
+
+endif # SOC_SERIES_RH850U2B
