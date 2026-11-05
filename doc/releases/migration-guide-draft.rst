@@ -150,6 +150,15 @@ OPAMP
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
 
+Serial
+======
+
+* The :kconfig:option:`CONFIG_UART_XLNX_PS` Kconfig option has been removed in favour of
+  :kconfig:option:`CONFIG_UART_CDNS`. Nodes with :dtcompatible:`xlnx,xuartps` must add
+  :dtcompatible:`cdns,uart`; The :dtcompatible:`xlnx,xuartps` remains valid as a hardware identifier;
+  the unified driver matches on :dtcompatible:`cdns,uart`. The ``bdiv`` property has been removed;
+  baud rate is now computed automatically from clock-frequency and current-speed. (:github:`114729`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
