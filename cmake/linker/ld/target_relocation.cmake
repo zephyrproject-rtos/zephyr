@@ -27,8 +27,8 @@ macro(toolchain_ld_relocation)
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/build/gen_relocate_app.py
       $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-      -d ${APPLICATION_BINARY_DIR}
       -i ${DICT_FILE}
+      -f ${CMAKE_BINARY_DIR}/compile_commands.json
       -o ${MEM_RELOCATION_LD}
       -s ${MEM_RELOCATION_SRAM_DATA_LD}
       -b ${MEM_RELOCATION_SRAM_BSS_LD}
@@ -39,6 +39,7 @@ macro(toolchain_ld_relocation)
       kernel
       ${ZEPHYR_LIBS_PROPERTY}
       ${DICT_FILE}
+      ${CMAKE_BINARY_DIR}/compile_commands.json
   )
 
   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATION_CODE})
