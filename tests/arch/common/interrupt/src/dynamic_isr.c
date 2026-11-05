@@ -49,13 +49,13 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 	int i;
 	const void *argval;
 
-	for (i = 0; i < (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR); i++) {
-		if (_sw_isr_table[i].isr == z_irq_spurious) {
+	for (i = 0; i < (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR - IRQ_OFFSET); i++) {
+		if (_sw_isr_table[i + IRQ_OFFSET].isr == z_irq_spurious) {
 			break;
 		}
 	}
 
-	zassert_true(_sw_isr_table[i].isr == z_irq_spurious,
+	zassert_true(_sw_isr_table[i + IRQ_OFFSET].isr == z_irq_spurious,
 		     "could not find slot for dynamic isr");
 
 	printk("installing dynamic ISR for IRQ %d\n",
