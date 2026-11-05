@@ -445,6 +445,21 @@ uint32_t conn_mgr_get_readiness(uint32_t *gen)
 	return flags;
 }
 
+net_sa_family_t conn_mgr_get_ready_addr_family(void)
+{
+	uint32_t ip = conn_mgr_get_readiness(NULL) & (CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6);
+
+	if (ip == CONN_MGR_READY_IPV4) {
+		return NET_AF_INET;
+	}
+
+	if (ip == CONN_MGR_READY_IPV6) {
+		return NET_AF_INET6;
+	}
+
+	return NET_AF_UNSPEC;
+}
+
 /* Must be called with conn_mgr_mon_lock held */
 static bool conn_mgr_mon_is_ready(uint32_t mask, const uint32_t *gen)
 {

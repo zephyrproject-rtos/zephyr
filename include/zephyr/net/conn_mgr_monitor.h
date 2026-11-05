@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
@@ -86,6 +87,20 @@ bool conn_mgr_dns_is_ready(void);
  * @return Bitmask of @ref CONN_MGR_READY_FLAGS "readiness flags" currently set.
  */
 uint32_t conn_mgr_get_readiness(uint32_t *gen);
+
+/**
+ * @brief Get the getaddrinfo() hints ai_family matching network readiness.
+ *
+ * Only addresses of a ready IP family are then returned.
+ * Without CONFIG_NET_CONNECTION_MANAGER, this returns NET_AF_UNSPEC.
+ *
+ * Must not be called from an ISR.
+ *
+ * @retval NET_AF_INET Only IPv4 is ready.
+ * @retval NET_AF_INET6 Only IPv6 is ready.
+ * @retval NET_AF_UNSPEC Both or neither IP family is ready.
+ */
+net_sa_family_t conn_mgr_get_ready_addr_family(void);
 
 /**
  * @brief Wait until the network is ready.
@@ -205,6 +220,11 @@ static inline uint32_t conn_mgr_get_readiness(uint32_t *gen)
 	}
 
 	return CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6 | CONN_MGR_READY_DNS;
+}
+
+static inline net_sa_family_t conn_mgr_get_ready_addr_family(void)
+{
+	return NET_AF_UNSPEC;
 }
 
 static inline int conn_mgr_wait_ready(uint32_t mask, k_timeout_t timeout)

@@ -87,6 +87,9 @@ Libraries / Subsystems
     instead of tracking connection manager events, see :ref:`conn_mgr_monitoring_waiting`.
     :c:func:`conn_mgr_wait_ready_change` waits for readiness to change after a failed
     connection attempt, using a snapshot from :c:func:`conn_mgr_get_readiness`.
+  * :c:func:`conn_mgr_get_ready_addr_family` gives the ``ai_family`` to pass to
+    :c:func:`zsock_getaddrinfo` so that hostnames resolve only to addresses of a ready
+    address family, see :ref:`conn_mgr_monitoring_addr_family`.
   * :c:func:`dns_resolve_get_server_families` reports the address families of the
     available unicast DNS servers.
 
