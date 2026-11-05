@@ -1079,6 +1079,7 @@ struct bt_hci_rp_configure_data_path {
 #define BT_HCI_VERSION_6_1                      0x0fU /**< 6.1  */
 #define BT_HCI_VERSION_6_2                      0x10U /**< 6.2  */
 #define BT_HCI_VERSION_6_3                      0x11U /**< 6.3  */
+#define BT_HCI_VERSION_7_0                      0x12U /**< 7.0  */
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001) /* 0x1001 */
 struct bt_hci_rp_read_local_version_info {
