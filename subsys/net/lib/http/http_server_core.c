@@ -1974,6 +1974,28 @@ bool http_response_is_provided(struct http_response_ctx *rsp)
 	return false;
 }
 
+bool http_server_is_connection_specific_header(const char *name)
+{
+	/* Connection-specific fields that HTTP/2 and HTTP/3 forbid
+	 * (RFC 9113, Section 8.2.2 and RFC 9114, Section 4.2).
+	 */
+	static const char *const fields[] = {
+		"connection",
+		"keep-alive",
+		"proxy-connection",
+		"transfer-encoding",
+		"upgrade",
+	};
+
+	ARRAY_FOR_EACH(fields, i) {
+		if (strcasecmp(name, fields[i]) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void populate_request_ctx(struct http_request_ctx *req_ctx, uint8_t *data, size_t len,
 			  struct http_header_capture_ctx *header_ctx)
 {
