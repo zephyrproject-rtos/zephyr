@@ -216,6 +216,38 @@ static int mpu_validate_dt_region(const struct mem_attr_region_t *region,
 	return 0;
 }
 
+#if defined(CONFIG_ZTEST) && \
+	(defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R))
+int z_arm_mpu_dt_region_attr(uint32_t addr, uint32_t size, uint32_t attr,
+			     arm_mpu_region_attr_t *result)
+{
+	struct mem_attr_region_t region = {
+		.dt_name = "test-region",
+		.dt_addr = addr,
+		.dt_size = size,
+		.dt_attr = attr,
+	};
+	struct arm_mpu_region region_conf;
+
+	if (mpu_region_from_generic_policy(&region, &region_conf) < 0) {
+		return -EINVAL;
+	}
+
+	if (mpu_validate_dt_region(&region, &region_conf) < 0) {
+		return -EINVAL;
+	}
+	if (result != NULL) {
+		*result = region_conf.attr;
+	}
+	return 0;
+}
+
+int z_arm_mpu_validate_dt_region(uint32_t addr, uint32_t size, uint32_t attr)
+{
+	return z_arm_mpu_dt_region_attr(addr, size, attr, NULL);
+}
+#endif
+
 /* This internal function programs MPU regions defined by the DT
  * `zephyr,memory-attr` property. R-profile CPUs accept generic permission
  * policies in addition to the legacy ARM-specific memory types.
@@ -339,7 +371,12 @@ static int mpu_validate_boot_regions(uint8_t num_regions)
 	return 0;
 }
 
-
+#if defined(CONFIG_ZTEST)
+int z_arm_mpu_validate_boot_regions(void)
+{
+	return mpu_validate_boot_regions(get_num_regions());
+}
+#endif
 #endif
 
 /* This internal function programs an MPU region

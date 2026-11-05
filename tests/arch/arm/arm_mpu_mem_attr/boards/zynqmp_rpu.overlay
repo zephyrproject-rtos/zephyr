@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	test_mpu_region: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 0x1000>;
+		zephyr,memory-region = "TEST_MPU_REGION";
+		zephyr,memory-attr = <(DT_MEM_EXPLICIT_PERMS | DT_MEM_K_READABLE |
+				       DT_MEM_NON_CACHEABLE | DT_MEM_NON_VOLATILE)>;
+	};
+
+	legacy_mpu_region: memory@70001000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70001000 0x1000>;
+		zephyr,memory-region = "LEGACY_MPU_REGION";
+		/* Without the marker, the ARM type controls permissions. */
+		zephyr,memory-attr = <(DT_MEM_ARM_MPU_RAM_NOCACHE | DT_MEM_K_READABLE)>;
+	};
+};

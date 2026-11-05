@@ -76,6 +76,16 @@ struct arm_mpu_config {
  */
 extern const struct arm_mpu_config mpu_config;
 
+#if defined(CONFIG_ZTEST) && \
+	(defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R))
+int z_arm_mpu_validate_dt_region(uint32_t addr, uint32_t size, uint32_t attr);
+int z_arm_mpu_dt_region_attr(uint32_t addr, uint32_t size, uint32_t attr,
+			     arm_mpu_region_attr_t *result);
+#if defined(CONFIG_AARCH32_ARMV8_R)
+int z_arm_mpu_validate_boot_regions(void);
+#endif
+#endif
+
 #if defined(CONFIG_CPU_CORTEX_M)
 /**
  * @brief MPU context structure to retain MPU register state across deep sleep.
