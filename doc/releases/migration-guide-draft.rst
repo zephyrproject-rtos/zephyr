@@ -603,6 +603,15 @@ Timers
   now uses the generic system timer core, which keeps the match value at least 16 timer cycles
   ahead of the counter. Remove the option from application and board configurations.
 
+Video
+=====
+
+* The driver-side control helpers ``video_init_ctrl()``, ``video_init_menu_ctrl()`` and
+  ``video_init_int_menu_ctrl()`` are replaced by ``video_register_ctrl()`` and
+  ``video_register_ctrls()``. The control fields (``id``, ``type``, ``flags``, ``range``,
+  ``menu``) are now set directly on the :c:struct:`video_ctrl` before registering it, usually at
+  compile time in the driver data. (:github:`96393`)
+
 W1
 ==
 
