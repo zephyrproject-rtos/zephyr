@@ -303,6 +303,12 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		config->base->MATCHREL[period_event] = period_cycles - 1U;
 		config->base->MATCH[period_event + 1] = pulse_cycles - 1U;
 		config->base->MATCHREL[period_event + 1] = pulse_cycles - 1U;
+		/* A counter already past the new period match would only reach
+		 * it again after wrapping around, so restart the period.
+		 */
+		if (config->base->COUNT >= period_cycles - 1U) {
+			config->base->COUNT = 0U;
+		}
 		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
 		data->match_period = period_cycles;
 	} else {
