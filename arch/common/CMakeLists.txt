@@ -122,8 +122,15 @@ if(CONFIG_GEN_ISR_TABLES)
   target_link_libraries(isr_tables zephyr_interface)
   zephyr_library_link_libraries(isr_tables)
 
+  if(CONFIG_RH850)
+    # The IAR C/C++ Compiler for RH850 adds a leading underscore to C symbol names,
+    # so the ISR tables are named __sw_isr_table and __irq_vector_table in the object files.
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>__sw_isr_table)
+    zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>__irq_vector_table)
+  else()
   zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_sw_isr_table)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,undefined>_irq_vector_table)
+  endif()
 endif()
 
 if(CONFIG_COVERAGE)
