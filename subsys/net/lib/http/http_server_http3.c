@@ -892,6 +892,11 @@ static int h3_encode_response_headers(uint8_t *buf, size_t buflen,
 		size_t name_len = strlen(hdr->name);
 		size_t val_len = strlen(hdr->value);
 
+		if (http_server_is_connection_specific_header(hdr->name)) {
+			LOG_DBG("Connection-specific header '%s' dropped", hdr->name);
+			continue;
+		}
+
 		if (strcasecmp(hdr->name, "content-type") == 0) {
 			content_type_sent = true;
 		}

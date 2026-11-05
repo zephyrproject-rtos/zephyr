@@ -124,6 +124,7 @@ int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 void http_client_timer_restart(struct http_client_ctx *client);
 bool http_response_is_final(struct http_response_ctx *rsp, enum http_transaction_status status);
 bool http_response_is_provided(struct http_response_ctx *rsp);
+bool http_server_is_connection_specific_header(const char *name);
 
 /* TODO Could be static, but currently used in tests. */
 int parse_http_frame_header(struct http_client_ctx *client, const uint8_t *buffer, size_t buflen);
