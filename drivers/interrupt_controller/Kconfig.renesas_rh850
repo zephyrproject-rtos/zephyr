@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RH850_EXT_IRQ
+	bool "Renesas RH850 external interrupt controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RH850_EXT_IRQ_ENABLED
+	select USE_RH850_FSP_EXT_IRQ
+	select PINCTRL
+	help
+	  Renesas RH850 external interrupt controller driver
+
+config RENESAS_RH850_INTIF_ORED
+	bool "Renesas RH850 U2x series ORed interrupt function (ORed Interrupt)"
+	default y
+	depends on DT_HAS_RENESAS_RH850_INTIF_ORED_ENABLED
+	help
+	  Renesas RH850 U2x series ORed interrupt function (ORed Interrupt)
+
+config RENESAS_RH850_INTIF_INTSEL
+	bool "Renesas RH850 U2x series interrupt selection feature (INTSEL)"
+	default y
+	depends on DT_HAS_RENESAS_RH850_INTIF_INTSEL_ENABLED
+	help
+	  Renesas RH850 U2x series interrupt selection feature (INTSEL)
+
+config RENESAS_RH850_INTC
+	bool "Renesas RH850 interrupt controller (INTC1/INTC2/FEINC)"
+	default y
+	depends on DT_HAS_RENESAS_RH850_INTC1_ENABLED
+	depends on DT_HAS_RENESAS_RH850_INTC2_ENABLED
+	depends on !RH850_CUSTOM_INTERRUPT_CONTROLLER
+	help
+	  Driver for the Renesas RH850 G4MH/G4KH interrupt controllers: the
+	  PE-local INTC1, the shared INTC2 and the FE level interrupt controller
+	  (FEINC). Provides the interrupt enable, disable and priority control
+	  used by the architecture interrupt API.

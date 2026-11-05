@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 Peripheral Interrupt Ored
+compatible: "renesas,rh850-intif-ored"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 0
+
+  channel:
+    type: int
+    required: true
+    description: |
+      Indicates the number of ORed interrupt selection
