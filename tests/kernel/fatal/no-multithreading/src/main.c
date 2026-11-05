@@ -35,6 +35,8 @@ static void entry_cpu_exception(void)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
+#elif defined(CONFIG_RH850)
+	__asm__ volatile ("rie");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on RISCV
 	 * and xtensa
