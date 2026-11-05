@@ -193,7 +193,7 @@ int main(void)
 	}
 
 	display_get_capabilities(dev, &caps);
-	if (!(caps.supported_pixel_formats & PIXEL_FORMAT_MONO01)) {
+	if (!display_is_pixel_format_supported(&caps, PIXEL_FORMAT_MONO01)) {
 		printk("Expected pixel format not supported\n");
 		return 0;
 	}

@@ -33,6 +33,12 @@ K_HEAP_DEFINE(display_heap, CONFIG_MCUX_ELCDIF_FB_NUM * CONFIG_MCUX_ELCDIF_FB_SI
 
 static const uint32_t supported_fmts =
 	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_XRGB_8888 | PIXEL_FORMAT_RGB_888;
+static const pixel_format_t mcux_elcdif_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_XRGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
@@ -340,7 +346,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
 	capabilities->y_resolution = config->rgb_mode.panelHeight;
-	capabilities->supported_pixel_formats = supported_fmts;
+	capabilities->supported_pixel_formats = mcux_elcdif_supported_pixel_formats;
 	capabilities->current_pixel_format = ((struct mcux_elcdif_data *)dev->data)->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 	capabilities->supported_events =

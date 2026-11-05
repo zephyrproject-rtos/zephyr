@@ -187,13 +187,26 @@ static int st7796s_write(const struct device *dev,
 				      &mipi_desc, pixfmt);
 }
 
+static const pixel_format_t st7796s_supported_pixel_formats_rgb565[] = {
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
+static const pixel_format_t st7796s_supported_pixel_formats_rgb565x[] = {
+	PIXEL_FORMAT_RGB_565X,
+	0,
+};
+
 static void st7796s_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	const struct st7796s_config *config = dev->config;
 
 	capabilities->current_pixel_format = st7796s_get_pixelfmt(dev);
-	capabilities->supported_pixel_formats = capabilities->current_pixel_format;
+	capabilities->supported_pixel_formats =
+		(capabilities->current_pixel_format == PIXEL_FORMAT_RGB_565)
+			? st7796s_supported_pixel_formats_rgb565
+			: st7796s_supported_pixel_formats_rgb565x;
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;

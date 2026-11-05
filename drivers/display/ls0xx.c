@@ -273,12 +273,17 @@ static int ls0xx_write(const struct device *dev, const uint16_t x,
 	return ls0xx_update_display(dev, y + 1, desc->height, buf);
 }
 
+static const pixel_format_t ls0xx_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void ls0xx_get_capabilities(const struct device *dev,
 				   struct display_capabilities *caps)
 {
 	caps->x_resolution = LS0XX_PANEL_WIDTH;
 	caps->y_resolution = LS0XX_PANEL_HEIGHT;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = ls0xx_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->screen_info = SCREEN_INFO_X_ALIGNMENT_WIDTH;
 }

@@ -152,6 +152,12 @@ static int pcd8544_init(const struct device *dev)
 	return 0;
 }
 
+static const pixel_format_t pcd8544_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	PIXEL_FORMAT_MONO10,
+	0,
+};
+
 static void pcd8544_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	memset(caps, 0, sizeof(struct display_capabilities));
@@ -159,7 +165,7 @@ static void pcd8544_get_capabilities(const struct device *dev, struct display_ca
 	caps->x_resolution = DISPLAY_WIDTH;
 	caps->y_resolution = DISPLAY_HEIGHT;
 
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_MONO10;
+	caps->supported_pixel_formats = pcd8544_supported_pixel_formats;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 }

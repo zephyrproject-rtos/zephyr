@@ -394,6 +394,12 @@ static int ac057tc1_blanking_off(const struct device *dev)
 	return 0;
 }
 
+static const pixel_format_t ac057tc1_supported_pixel_formats[] = {
+	PIXEL_FORMAT_I_4,
+	COLOR_DITHER_SUPPORTED_FORMATS,
+	0,
+};
+
 static void ac057tc1_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ac057tc1_config *config = dev->config;
@@ -402,7 +408,7 @@ static void ac057tc1_get_capabilities(const struct device *dev, struct display_c
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_I_4;
+	caps->supported_pixel_formats = ac057tc1_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_I_4;
 	caps->screen_info = SCREEN_INFO_EPD;
 	display_color_dither_patch_caps(&data->color_dither, caps);

@@ -51,6 +51,7 @@ struct ili98xx_dsi_config {
 	const struct gpio_dt_spec reset;
 	const struct gpio_dt_spec backlight;
 	pixel_format_t pixel_format;
+	const pixel_format_t *supported_pixel_formats;
 	uint8_t data_lanes;
 	uint16_t width;
 	uint16_t height;

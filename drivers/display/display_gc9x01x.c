@@ -564,13 +564,19 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	return 0;
 }
 
+static const pixel_format_t gc9x01x_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void gc9x01x_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	struct gc9x01x_data *data = dev->data;
 	const struct gc9x01x_config *config = dev->config;
 
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = gc9x01x_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 
 	if (data->orientation == DISPLAY_ORIENTATION_NORMAL ||
