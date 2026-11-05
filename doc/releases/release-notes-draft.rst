@@ -127,6 +127,11 @@ New APIs and options
 
     * :c:func:`dns_resolve_get_server_families`
 
+* Relay
+
+  * Added the :ref:`Relay <relay_api>` driver class, a hardware-agnostic
+    on/off relay output API.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
@@ -158,6 +163,11 @@ New Drivers
 * :abbr:`RTC (Real Time Clock)`
 
   * :dtcompatible:`microchip,mcp7940n` (:github:`119309`)
+
+* Relay
+
+  * :dtcompatible:`zephyr,gpio-relay`
+  * :dtcompatible:`zephyr,pwm-relay`
 
 New Samples
 ***********

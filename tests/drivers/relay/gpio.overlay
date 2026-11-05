@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Siemens AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	test_gpio: test-gpio {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <2>;
+		status = "okay";
+	};
+
+	relay0: relay-0 {
+		compatible = "zephyr,gpio-relay";
+		gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	relay1: relay-1 {
+		compatible = "zephyr,gpio-relay";
+		gpios = <&test_gpio 1 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};

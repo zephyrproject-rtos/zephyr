@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO-driven relay.
+
+  A relay switched by a single GPIO, implementing the relay on/off API. The
+  coil's active level comes from the flags in the "gpios" specifier. A board
+  with several relays instantiates one node per relay.
+
+compatible: "zephyr,gpio-relay"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The GPIO driving the relay coil. The active level is taken from the
+      specifier flags (GPIO_ACTIVE_HIGH / GPIO_ACTIVE_LOW).
