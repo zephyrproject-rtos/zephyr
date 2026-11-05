@@ -1,0 +1,30 @@
+# MIMX8MN6 SoC defconfig
+
+# Copyright 2024 NXP
+# Copyright (c) 2026 Televic NV
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX8MN6_M7
+
+config GPIO
+	default y
+
+config IPM_IMX
+	default y
+	depends on IPM
+
+if CODE_ITCM
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/itcm@0,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/itcm@0)
+
+endif # CODE_ITCM
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 128
+
+endif # SOC_MIMX8MN6_M7
