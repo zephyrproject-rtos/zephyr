@@ -165,6 +165,10 @@ Ethernet
   on every Ethernet interface when :kconfig:option:`CONFIG_NET_LLDP` is set. Out-of-tree Ethernet
   drivers must stop reporting it. (:github:`124787`)
 
+* The ``ETHERNET_DSA_USER_PORT`` and ``ETHERNET_DSA_CONDUIT_PORT`` values of
+  :c:enum:`ethernet_hw_caps` have been removed. Use :c:func:`net_eth_get_dsa_port_type` to get the
+  DSA port type of an interface instead. (:github:`124790`)
+
 OPAMP
 =====
 
