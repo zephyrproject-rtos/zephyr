@@ -243,6 +243,10 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
