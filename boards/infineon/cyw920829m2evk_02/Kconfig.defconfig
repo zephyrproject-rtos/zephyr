@@ -7,10 +7,5 @@ choice AIROC_PART
 	default CYW20829 if BT
 endchoice
 
-# Heap Pool Size
-config HEAP_MEM_POOL_ADD_SIZE_BOARD
-	int
-	default 10096
-
 config ROM_START_OFFSET
 	default 0x0 if BOOTLOADER_MCUBOOT
