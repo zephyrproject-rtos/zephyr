@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
 #define UART_SUCCESS                 0
 /* 65536 * 16 = 1 << 20 */
 #define SAMPLING_RATE_16X_ARITHMETIC 20U
+#define UART_TXPO_RTS_CTS            2U
 
 /******************************************************************************
  * @brief Data type definitions
@@ -362,12 +363,18 @@ static int uart_config_stop_bits(sercom_registers_t *regs, bool is_clock_externa
  * @brief Configure the UART pinout.
  *
  * @param cfg Pointer to the uart_mchp_dev_cfg_t structure.
+ * @param flow_ctrl Hardware flow control configuration.
  */
-static void uart_config_pinout(const uart_mchp_dev_cfg_t *const cfg)
+static void uart_config_pinout(const uart_mchp_dev_cfg_t *const cfg, uint8_t flow_ctrl)
 {
 	sercom_registers_t *regs = cfg->regs;
 	uint32_t rxpo = cfg->rxpo;
 	uint32_t txpo = cfg->txpo;
+
+	if ((txpo == UART_TXPO_RTS_CTS) && (flow_ctrl == UART_CFG_FLOW_CTRL_NONE)) {
+		/* TX remains on PAD0 when RTS/CTS on PAD2/PAD3 is disabled. */
+		txpo = 0U;
+	}
 
 	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, cfg->is_clock_external);
 	uint32_t reg_value = usart->SERCOM_CTRLA;
@@ -1146,7 +1153,9 @@ static int uart_mchp_init(const struct device *dev)
 
 	uart_disable_interrupts(regs, is_clock_external);
 
-	dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	dev_data->config_cache.flow_ctrl = cfg->txpo == UART_TXPO_RTS_CTS
+					 ? UART_CFG_FLOW_CTRL_RTS_CTS
+					 : UART_CFG_FLOW_CTRL_NONE;
 
 	retval = uart_config_data_bits(regs, is_clock_external, cfg->data_bits);
 	if (retval != UART_SUCCESS) {
@@ -1163,7 +1172,7 @@ static int uart_mchp_init(const struct device *dev)
 	}
 	dev_data->config_cache.stop_bits = cfg->stop_bits;
 
-	uart_config_pinout(cfg);
+	uart_config_pinout(cfg, dev_data->config_cache.flow_ctrl);
 	uart_set_clock_polarity(regs, is_clock_external, false);
 	uart_set_clock_source(regs, is_clock_external);
 	uart_set_lsb_first(regs, is_clock_external, true);
@@ -1231,14 +1240,17 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 		/* Forcefully disable UART before configuring. run_in_standby is ignored here */
 		uart_enable(regs, is_clock_external, false, false);
 
-		if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-			/* Flow control not yet supported though in principle possible
-			 * on this soc family.
-			 */
-			retval = -ENOTSUP;
+		switch (new_cfg->flow_ctrl) {
+		case UART_CFG_FLOW_CTRL_NONE:
 			break;
+		case UART_CFG_FLOW_CTRL_RTS_CTS:
+			if (cfg->txpo != UART_TXPO_RTS_CTS) {
+				retval = -ENOTSUP;
+			}
+			break;
+		default:
+			retval = -ENOTSUP;
 		}
-		dev_data->config_cache.flow_ctrl = new_cfg->flow_ctrl;
 
 		switch (new_cfg->parity) {
 		case UART_CFG_PARITY_NONE:
@@ -1276,6 +1288,9 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 			break;
 		}
 		dev_data->config_cache.baudrate = new_cfg->baudrate;
+
+		uart_config_pinout(cfg, new_cfg->flow_ctrl);
+		dev_data->config_cache.flow_ctrl = new_cfg->flow_ctrl;
 
 		uart_enable(regs, is_clock_external, (cfg->run_in_standby_en == 1) ? true : false,
 			    true);
