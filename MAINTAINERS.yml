@@ -5523,6 +5523,18 @@ RAKwireless Platforms:
   labels:
     - "platform: RAKwireless"
 
+RH850 arch:
+  status: maintained
+  maintainers:
+    - tuandopx
+    - vinhdaowr
+    - phuclera
+  files:
+    - arch/rh850/
+    - include/zephyr/arch/rh850/
+  labels:
+    - "area: RH850"
+
 RISCV Platforms:
   status: maintained
   maintainers:
