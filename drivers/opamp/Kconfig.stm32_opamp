@@ -1,4 +1,5 @@
 # Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# Copyright (c) 2026 Witekio
 # SPDX-License-Identifier: Apache-2.0
 
 config OPAMP_STM32
@@ -6,3 +7,12 @@ config OPAMP_STM32
 	default y
 	select PINCTRL
 	depends on DT_HAS_ST_STM32_OPAMP_ENABLED
+
+config OPAMP_LL_API_VER
+	int
+	depends on OPAMP_STM32
+	range 1 2
+	default 1 if SOC_SERIES_STM32G4X
+	default 2 if SOC_SERIES_STM32U5X
+	help
+	  Version of the STM32 LL OPAMP API of the series
