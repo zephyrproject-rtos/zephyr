@@ -80,6 +80,7 @@ enum esp32_state_flag {
 	ESP32_STA_CONNECTING,
 	ESP32_STA_CONNECTED,
 	ESP32_STA_ROAMING,
+	ESP32_STA_DISCONNECTING,
 	ESP32_AP_STARTED,
 	ESP32_AP_CONNECTED,
 	ESP32_AP_DISCONNECTED,
@@ -107,6 +108,14 @@ struct esp32_wifi_runtime {
 	struct net_if *scan_iface;
 	uint8_t state;
 	uint8_t ap_connection_cnt;
+	uint8_t connect_failures;
+	enum wifi_conn_status connect_abort_status;
+	bool connect_in_backoff;
+	bool connect_auto;
+	bool connect_leave_pending;
+	atomic_t connect_seq;
+	struct k_work_delayable connect_retry_work;
+	struct k_work_delayable connect_timeout_work;
 	struct k_mutex send_lock;
 	struct k_sem tx_done_sem;
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
@@ -188,31 +197,40 @@ struct esp32_wifi_event {
  * of these instead and the event task performs the transition, which keeps
  * every state change on a single thread.
  */
-static const char esp32_wifi_internal_event[] __maybe_unused = "esp32_wifi_internal";
+static const char esp32_wifi_internal_event[] = "esp32_wifi_internal";
 #define ESP32_WIFI_INTERNAL_EVENT ((esp_event_base_t)esp32_wifi_internal_event)
 
 enum esp32_wifi_internal_event_id {
 	ESP32_WIFI_EVENT_ROAM_TIMEOUT,
 	ESP32_WIFI_EVENT_RSSI_RECOVER,
+	ESP32_WIFI_EVENT_CONNECT_RETRY,
+	ESP32_WIFI_EVENT_CONNECT_TIMEOUT,
+	ESP32_WIFI_EVENT_CONNECT_CANCEL,
 };
+
+#define ESP32_WIFI_CONNECT_ABORT_TIMEOUT_MS 2000
+#define ESP32_WIFI_EVENT_REPOST_MS          100
 
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
-#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT) || defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
-static void esp32_wifi_post_internal_event(enum esp32_wifi_internal_event_id id)
+static int esp32_wifi_post_internal_event(enum esp32_wifi_internal_event_id id)
 {
+	uint32_t seq = (uint32_t)atomic_get(&esp32_data.connect_seq);
 	struct esp32_wifi_event evt = {
 		.base = ESP32_WIFI_INTERNAL_EVENT,
 		.id = id,
-		.data_size = 0,
+		.data_size = sizeof(seq),
 	};
 
+	memcpy(evt.data, &seq, sizeof(seq));
 	if (k_msgq_put(&esp32_wifi_event_msgq, &evt, K_NO_WAIT) != 0) {
 		LOG_WRN("Event queue full, internal event %d dropped", id);
+		return -ENOMSG;
 	}
+
+	return 0;
 }
-#endif
 
 /*
  * Set the station IPv4 address in the Wi-Fi stack. The address is only reported
@@ -609,7 +627,7 @@ static void esp32_wifi_rssi_recover_work(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_RSSI_RECOVER);
+	(void)esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_RSSI_RECOVER);
 }
 
 /* Runs on the event task; see esp32_wifi_internal_event. */
@@ -668,7 +686,7 @@ static void esp32_wifi_roam_timeout_work(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_ROAM_TIMEOUT);
+	(void)esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_ROAM_TIMEOUT);
 }
 
 /* Runs on the event task; see esp32_wifi_internal_event. */
@@ -695,6 +713,8 @@ static void esp32_wifi_handle_roam_timeout(void)
 	}
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT)) {
+		esp32_data.connect_auto = true;
+		esp32_data.connect_in_backoff = false;
 		esp32_data.state = ESP32_STA_CONNECTING;
 		esp_wifi_connect();
 	} else {
@@ -703,9 +723,163 @@ static void esp32_wifi_handle_roam_timeout(void)
 }
 #endif /* CONFIG_ESP32_WIFI_WNM_SUPPORT */
 
+static void esp32_wifi_connect_retry_work(struct k_work *work)
+{
+	if (esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_CONNECT_RETRY) != 0) {
+		(void)k_work_reschedule(k_work_delayable_from_work(work),
+					K_MSEC(ESP32_WIFI_EVENT_REPOST_MS));
+	}
+}
+
+static void esp32_wifi_connect_timeout_work(struct k_work *work)
+{
+	if (esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_CONNECT_TIMEOUT) != 0) {
+		(void)k_work_reschedule(k_work_delayable_from_work(work),
+					K_MSEC(ESP32_WIFI_EVENT_REPOST_MS));
+	}
+}
+
+static void esp32_wifi_connect_end(void)
+{
+	(void)k_work_cancel_delayable(&esp32_data.connect_retry_work);
+	(void)k_work_cancel_delayable(&esp32_data.connect_timeout_work);
+}
+
+static void esp32_wifi_connect_abort_done(void)
+{
+	esp32_wifi_connect_end();
+	esp32_data.state = ESP32_STA_STARTED;
+	if (!esp32_data.connect_auto) {
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface,
+						     esp32_data.connect_abort_status);
+	}
+}
+
+/* Reports the result once the attempt in flight, if any, has ended. */
+static void esp32_wifi_connect_abort(enum wifi_conn_status status)
+{
+	esp32_data.connect_abort_status = status;
+
+	if (esp32_data.connect_in_backoff) {
+		esp32_wifi_connect_abort_done();
+		return;
+	}
+
+	esp32_wifi_connect_end();
+	esp32_data.state = ESP32_STA_DISCONNECTING;
+	k_work_reschedule(&esp32_data.connect_timeout_work,
+			  K_MSEC(ESP32_WIFI_CONNECT_ABORT_TIMEOUT_MS));
+	(void)esp_wifi_disconnect();
+}
+
+/* Runs on the event task, see esp32_wifi_internal_event. */
+static void esp32_wifi_handle_connect_retry(void)
+{
+	if (esp32_data.state != ESP32_STA_CONNECTING) {
+		return;
+	}
+
+	esp32_data.connect_in_backoff = false;
+
+	if (esp_wifi_connect() != ESP_OK) {
+		esp32_wifi_connect_end();
+		esp32_data.state = ESP32_STA_STARTED;
+		if (!esp32_data.connect_auto) {
+			wifi_mgmt_raise_connect_result_event(esp32_wifi_iface,
+							     WIFI_STATUS_CONN_FAIL);
+		}
+	}
+}
+
+/* Runs on the event task, see esp32_wifi_internal_event. */
+static void esp32_wifi_handle_connect_cancel(void)
+{
+	if (esp32_data.state == ESP32_STA_CONNECTING) {
+		esp32_wifi_connect_abort(WIFI_STATUS_CONN_FAIL);
+	} else if (esp32_data.state == ESP32_STA_CONNECTED ||
+		   esp32_data.state == ESP32_STA_ROAMING) {
+		(void)esp_wifi_disconnect();
+	}
+}
+
+/* Runs on the event task, see esp32_wifi_internal_event. */
+static void esp32_wifi_handle_connect_timeout(void)
+{
+	if (esp32_data.state == ESP32_STA_DISCONNECTING) {
+		esp32_data.connect_leave_pending = true;
+		esp32_wifi_connect_abort_done();
+	} else if (esp32_data.state == ESP32_STA_CONNECTING) {
+		esp32_wifi_connect_abort(WIFI_STATUS_CONN_TIMEOUT);
+	}
+}
+
+/* Failures that may clear on the next attempt. A missing access point is
+ * reported once a second scan does not find it either.
+ */
+static bool esp32_wifi_is_connect_retry_reason(uint8_t reason)
+{
+	switch (reason) {
+	case WIFI_REASON_NO_AP_FOUND:
+		return esp32_data.connect_failures == 0;
+	case WIFI_REASON_AUTH_EXPIRE:
+	case WIFI_REASON_ASSOC_TOOMANY:
+	case WIFI_REASON_AUTH_FAIL:
+	case WIFI_REASON_ASSOC_FAIL:
+	case WIFI_REASON_CONNECTION_FAIL:
+	case WIFI_REASON_ASSOC_COMEBACK_TIME_TOO_LONG:
+		return true;
+	default:
+		return false;
+	}
+}
+
+/* Scan backoff per failure, then a temporary network disable once more than
+ * three consecutive attempts have failed.
+ */
+static void esp32_wifi_schedule_connect_retry(void)
+{
+	static const uint16_t backoff_ms[] = {100, 500, 1000, 5000, 10000};
+	uint32_t delay_ms;
+	uint8_t disables;
+
+	if (esp32_data.connect_failures < UINT8_MAX) {
+		esp32_data.connect_failures++;
+	}
+
+	delay_ms = backoff_ms[MIN(esp32_data.connect_failures, ARRAY_SIZE(backoff_ms)) - 1U];
+
+	if (esp32_data.connect_failures > 3U) {
+		disables = esp32_data.connect_failures - 3U;
+
+		if (disables > 50U) {
+			delay_ms = 300000U;
+		} else if (disables > 10U) {
+			delay_ms = 120000U;
+		} else if (disables > 5U) {
+			delay_ms = 90000U;
+		} else if (disables > 3U) {
+			delay_ms = 60000U;
+		} else if (disables > 2U) {
+			delay_ms = 30000U;
+		} else if (disables > 1U) {
+			delay_ms = 20000U;
+		} else {
+			delay_ms = 10000U;
+		}
+	}
+
+	esp32_data.connect_in_backoff = true;
+	k_work_reschedule(&esp32_data.connect_retry_work, K_MSEC(delay_ms));
+}
+
 static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
 	ARG_UNUSED(event_data);
+
+	if (esp32_data.state == ESP32_STA_DISCONNECTING) {
+		LOG_DBG("Connected while aborting the attempt");
+		return;
+	}
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 	bool roamed = (esp32_data.state == ESP32_STA_ROAMING);
 
@@ -714,6 +888,10 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 	}
 #endif
 
+	esp32_wifi_connect_end();
+	esp32_data.connect_failures = 0;
+	esp32_data.connect_in_backoff = false;
+	esp32_data.connect_leave_pending = false;
 	esp32_data.state = ESP32_STA_CONNECTED;
 	net_if_dormant_off(esp32_wifi_iface);
 	esp32_wifi_set_sta_ip();
@@ -764,6 +942,7 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	struct wifi_status result;
 	bool roaming = esp32_wifi_is_roaming_reason(event->reason) &&
 		       esp32_data.state == ESP32_STA_CONNECTED;
+	bool link_lost = false;
 
 #if defined(CONFIG_WIFI_ESP32_MESH)
 	/* The mesh stack owns the station link and reconnects on its own. */
@@ -771,6 +950,23 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 		return;
 	}
 #endif
+
+	if (esp32_data.state == ESP32_STA_DISCONNECTING) {
+		if (event->reason == WIFI_REASON_ASSOC_LEAVE ||
+		    event->reason == WIFI_REASON_STA_LEAVING) {
+			esp32_wifi_connect_abort_done();
+		}
+		LOG_DBG("Aborted connection attempt ended (%d)", event->reason);
+		return;
+	}
+
+	if (esp32_data.state == ESP32_STA_CONNECTING && esp32_data.connect_leave_pending &&
+	    (event->reason == WIFI_REASON_ASSOC_LEAVE ||
+	     event->reason == WIFI_REASON_STA_LEAVING)) {
+		esp32_data.connect_leave_pending = false;
+		LOG_DBG("Late leave of an aborted attempt (%d)", event->reason);
+		return;
+	}
 
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 	if (roaming) {
@@ -796,6 +992,7 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	 * rather than a failed connection attempt.
 	 */
 	if (esp32_data.state == ESP32_STA_CONNECTED || esp32_data.state == ESP32_STA_ROAMING) {
+		link_lost = true;
 		net_if_dormant_on(esp32_wifi_iface);
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
@@ -815,7 +1012,14 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 			break;
 		}
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, result.status);
-	} else {
+	} else if (esp32_data.state == ESP32_STA_CONNECTING &&
+		   (esp32_wifi_is_connect_retry_reason(event->reason) ||
+		    (esp32_data.connect_auto && event->reason != WIFI_REASON_ASSOC_LEAVE))) {
+		LOG_DBG("Connection attempt failed (%d), retrying", event->reason);
+		esp32_wifi_schedule_connect_retry();
+		return;
+	} else if (esp32_data.state == ESP32_STA_CONNECTING) {
+		esp32_wifi_connect_end();
 		switch (event->reason) {
 		case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
 			result.conn_status = WIFI_STATUS_CONN_WRONG_PASSWORD;
@@ -836,7 +1040,9 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 			result.conn_status = WIFI_STATUS_CONN_FAIL;
 			break;
 		}
-		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, result.status);
+		if (!esp32_data.connect_auto) {
+			wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, result.status);
+		}
 	}
 	LOG_DBG("Disconnect reason: %d", event->reason);
 
@@ -844,8 +1050,10 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	 * it reports back or the transition times out.
 	 */
 	if (!roaming) {
-		if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
+		if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) && link_lost &&
 		    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
+			esp32_data.connect_auto = true;
+			esp32_data.connect_in_backoff = false;
 			esp32_data.state = ESP32_STA_CONNECTING;
 			esp_wifi_connect();
 		} else {
@@ -1248,7 +1456,7 @@ static int esp32_wifi_enterprise_creds(const struct device *dev,
 
 	if (data->enterprise_enabled) {
 		if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED ||
-		    data->state == ESP32_STA_ROAMING) {
+		    data->state == ESP32_STA_ROAMING || data->state == ESP32_STA_DISCONNECTING) {
 			LOG_ERR("Enterprise connection in use, disconnect first");
 			ret = -EBUSY;
 			goto out;
@@ -1303,9 +1511,15 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	struct net_if *iface_ap = esp32_wifi_iface;
 	struct esp32_wifi_runtime *ap_data = &esp32_data;
 #endif
+	uint32_t seq;
 
-#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT) || defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
 	if (event_base == ESP32_WIFI_INTERNAL_EVENT) {
+		memcpy(&seq, event_data, sizeof(seq));
+		if (event_id >= ESP32_WIFI_EVENT_CONNECT_RETRY &&
+		    seq != (uint32_t)atomic_get(&esp32_data.connect_seq)) {
+			return;
+		}
+
 		switch (event_id) {
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 		case ESP32_WIFI_EVENT_ROAM_TIMEOUT:
@@ -1317,12 +1531,20 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 			esp32_wifi_handle_rssi_recover();
 			break;
 #endif
+		case ESP32_WIFI_EVENT_CONNECT_RETRY:
+			esp32_wifi_handle_connect_retry();
+			break;
+		case ESP32_WIFI_EVENT_CONNECT_TIMEOUT:
+			esp32_wifi_handle_connect_timeout();
+			break;
+		case ESP32_WIFI_EVENT_CONNECT_CANCEL:
+			esp32_wifi_handle_connect_cancel();
+			break;
 		default:
 			break;
 		}
 		return;
 	}
-#endif
 
 	LOG_DBG("Wi-Fi event: %d", event_id);
 	switch (event_id) {
@@ -1331,6 +1553,15 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		k_sem_give(&esp32_sta_started_sem);
 		break;
 	case WIFI_EVENT_STA_STOP:
+		if (esp32_data.state == ESP32_STA_DISCONNECTING) {
+			esp32_wifi_connect_abort_done();
+		} else if (esp32_data.state == ESP32_STA_CONNECTING) {
+			esp32_wifi_connect_end();
+			if (!esp32_data.connect_auto) {
+				wifi_mgmt_raise_connect_result_event(esp32_wifi_iface,
+								     WIFI_STATUS_CONN_FAIL);
+			}
+		}
 		esp32_data.state = ESP32_STA_STOPPED;
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 		(void)k_work_cancel_delayable(&esp32_data.roam_timeout_work);
@@ -1520,6 +1751,14 @@ static int esp32_wifi_disconnect(const struct device *dev __unused, struct net_i
 	}
 #endif
 
+	if (esp32_data.state == ESP32_STA_CONNECTING) {
+		if (esp32_wifi_post_internal_event(ESP32_WIFI_EVENT_CONNECT_CANCEL) != 0) {
+			return -EAGAIN;
+		}
+
+		return 0;
+	}
+
 	int ret = esp_wifi_disconnect();
 
 	if (ret != ESP_OK) {
@@ -1577,6 +1816,10 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	}
 #endif
 
+	if (data->state == ESP32_STA_DISCONNECTING) {
+		return -EBUSY;
+	}
+
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED ||
 	    data->state == ESP32_STA_ROAMING) {
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
@@ -1623,6 +1866,11 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	/* Ends any transition still in flight, so a stalled one cannot skip the
 	 * address configuration of this connect.
 	 */
+	esp32_wifi_connect_end();
+	atomic_inc(&esp32_data.connect_seq);
+	esp32_data.connect_failures = 0;
+	esp32_data.connect_in_backoff = false;
+	esp32_data.connect_auto = false;
 	data->state = ESP32_STA_CONNECTING;
 #if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
 	(void)k_work_cancel_delayable(&data->roam_timeout_work);
@@ -1786,6 +2034,10 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
 		data->state = ESP32_STA_STARTED;
 		return -EAGAIN;
+	}
+
+	if (params->timeout > 0) {
+		k_work_reschedule(&esp32_data.connect_timeout_work, K_SECONDS(params->timeout));
 	}
 
 	return 0;
@@ -2053,6 +2305,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 		status->state = WIFI_STATE_INACTIVE;
 		break;
 	case ESP32_STA_STARTED:
+	case ESP32_STA_DISCONNECTING:
 	case ESP32_AP_DISCONNECTED:
 		status->state = WIFI_STATE_DISCONNECTED;
 		break;
@@ -2487,6 +2740,8 @@ static int esp32_wifi_dev_init(const struct device *dev)
 
 	k_mutex_init(&esp32_data.send_lock);
 	k_sem_init(&esp32_data.tx_done_sem, 0, 1);
+	k_work_init_delayable(&esp32_data.connect_retry_work, esp32_wifi_connect_retry_work);
+	k_work_init_delayable(&esp32_data.connect_timeout_work, esp32_wifi_connect_timeout_work);
 #if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
 	esp32_data.enable_11k = true;
 #endif

@@ -150,6 +150,22 @@ OPAMP
   without device runtime PM are unaffected: the device is resumed at init and the instance comes
   up enabled as before. (:github:`122135`)
 
+Wi-Fi
+=====
+
+* :kconfig:option:`CONFIG_ESP32_WIFI_STA_RECONNECT` is now enabled by default. An Espressif
+  station that loses an established connection reconnects on its own, with a growing backoff,
+  until it succeeds or the application disconnects. Set the option to ``n`` to keep the station
+  disconnected instead. The option no longer changes how connection requests made by the
+  application are handled.
+
+* Espressif Wi-Fi connection requests now retry authentication and association failures, such as
+  an access point that rejects the first attempt after the station was reset, instead of failing
+  on the first rejection. The retries are bounded by the ``timeout`` field of
+  ``wifi_connect_req_params`` and go on until the application disconnects when no timeout is
+  set. Applications that relied on an immediate failure, for example to try another network,
+  must set a timeout.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
