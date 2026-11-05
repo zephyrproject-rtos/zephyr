@@ -25,10 +25,6 @@ static inline enum net_verdict dummy_recv(struct net_if *iface,
 
 	api = dev->api;
 
-	if (api == NULL) {
-		return NET_DROP;
-	}
-
 	if (api->recv == NULL) {
 		return NET_CONTINUE;
 	}
@@ -46,10 +42,6 @@ static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 	NET_ASSERT(dev != NULL);
 
 	api = dev->api;
-
-	if (!api) {
-		return -ENOENT;
-	}
 
 	/* Get the length before sending: a loopback driver hands the
 	 * packet over to the RX path which may consume it as soon as it
@@ -76,10 +68,6 @@ static inline int dummy_enable(struct net_if *iface, bool state)
 	NET_ASSERT(dev != NULL);
 
 	api = dev->api;
-
-	if (!api) {
-		return -ENOENT;
-	}
 
 	if (!state) {
 		if (api->stop) {

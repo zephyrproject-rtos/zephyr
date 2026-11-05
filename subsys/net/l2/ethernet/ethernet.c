@@ -254,7 +254,7 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	if (!api || !api->set_config) {
+	if (api->set_config == NULL) {
 		return -ENOTSUP;
 	}
 

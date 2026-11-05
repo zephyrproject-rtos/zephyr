@@ -1077,7 +1077,7 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 	NET_ASSERT(dev != NULL);
 
 	api = (const struct ethernet_api *)dev->api;
-	if (api == NULL || api->get_capabilities == NULL) {
+	if (api->get_capabilities == NULL) {
 		return caps;
 	}
 

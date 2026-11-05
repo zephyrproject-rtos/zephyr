@@ -422,7 +422,7 @@ static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 		return nm->ops;
 	}
 #endif /* CONFIG_WIFI_NM */
-	return off_api ? off_api->wifi_mgmt_api : NULL;
+	return off_api->wifi_mgmt_api;
 }
 
 static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,

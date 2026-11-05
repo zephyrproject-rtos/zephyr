@@ -787,7 +787,7 @@ static struct wg_peer *peer_lookup_by_virtual_iface(struct net_if *iface)
 		}
 
 		api = net_if_get_device(ctx->virtual_iface)->api;
-		if (api == NULL || api->recv == NULL) {
+		if (api->recv == NULL) {
 			continue;
 		}
 

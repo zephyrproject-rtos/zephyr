@@ -32,10 +32,6 @@ static inline enum ieee802154_hw_caps ieee802154_radio_get_hw_capabilities(struc
 
 	radio = dev->api;
 
-	if (!radio) {
-		return 0;
-	}
-
 	return radio->get_capabilities(dev);
 }
 
@@ -47,10 +43,6 @@ static inline int ieee802154_radio_cca(struct net_if *iface)
 	NET_ASSERT(dev != NULL);
 
 	radio = dev->api;
-
-	if (!radio) {
-		return -ENOENT;
-	}
 
 	return radio->cca(dev);
 }
@@ -64,10 +56,6 @@ static inline int ieee802154_radio_set_channel(struct net_if *iface, uint16_t ch
 
 	radio = dev->api;
 
-	if (!radio) {
-		return -ENOENT;
-	}
-
 	return radio->set_channel(dev, channel);
 }
 
@@ -79,10 +67,6 @@ static inline int ieee802154_radio_set_tx_power(struct net_if *iface, int16_t db
 	NET_ASSERT(dev != NULL);
 
 	radio = dev->api;
-
-	if (!radio) {
-		return -ENOENT;
-	}
 
 	return radio->set_txpower(dev, dbm);
 }
@@ -97,10 +81,6 @@ static inline int ieee802154_radio_tx(struct net_if *iface, enum ieee802154_tx_m
 
 	radio = dev->api;
 
-	if (!radio) {
-		return -ENOENT;
-	}
-
 	return radio->tx(dev, mode, pkt, buf);
 }
 
@@ -113,10 +93,6 @@ static inline int ieee802154_radio_start(struct net_if *iface)
 
 	radio = dev->api;
 
-	if (!radio) {
-		return -ENOENT;
-	}
-
 	return radio->start(dev);
 }
 
@@ -128,10 +104,6 @@ static inline int ieee802154_radio_stop(struct net_if *iface)
 	NET_ASSERT(dev != NULL);
 
 	radio = dev->api;
-
-	if (!radio) {
-		return -ENOENT;
-	}
 
 	return radio->stop(dev);
 }
@@ -147,7 +119,7 @@ static inline int ieee802154_radio_attr_get(struct net_if *iface,
 
 	radio = dev->api;
 
-	if (!radio || !radio->attr_get) {
+	if (radio->attr_get == NULL) {
 		return -ENOENT;
 	}
 
@@ -169,8 +141,7 @@ static inline void ieee802154_radio_filter_ieee_addr(struct net_if *iface, uint8
 
 	radio = dev->api;
 
-	if (radio && (radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.ieee_addr = ieee_addr;
@@ -192,8 +163,7 @@ static inline void ieee802154_radio_filter_short_addr(struct net_if *iface, uint
 
 	radio = dev->api;
 
-	if (radio && (radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.short_addr = short_addr;
@@ -215,8 +185,7 @@ static inline void ieee802154_radio_filter_pan_id(struct net_if *iface, uint16_t
 
 	radio = dev->api;
 
-	if (radio && (radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.pan_id = pan_id;
@@ -238,8 +207,7 @@ static inline void ieee802154_radio_filter_src_ieee_addr(struct net_if *iface, u
 
 	radio = dev->api;
 
-	if (radio && (radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.ieee_addr = ieee_addr;
@@ -261,8 +229,7 @@ static inline void ieee802154_radio_filter_src_short_addr(struct net_if *iface, 
 
 	radio = dev->api;
 
-	if (radio && (radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.short_addr = short_addr;
@@ -284,8 +251,7 @@ static inline void ieee802154_radio_remove_src_ieee_addr(struct net_if *iface, u
 
 	radio = dev->api;
 
-	if (radio && (radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.ieee_addr = ieee_addr;
@@ -307,9 +273,8 @@ static inline void ieee802154_radio_remove_src_short_addr(struct net_if *iface, 
 
 	radio = dev->api;
 
-	if (radio && (short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED) &&
-		(radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((short_addr != IEEE802154_SHORT_ADDRESS_NOT_ASSOCIATED) &&
+	    ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0)) {
 		struct ieee802154_filter filter;
 
 		filter.short_addr = short_addr;
@@ -331,9 +296,8 @@ static inline void ieee802154_radio_remove_pan_id(struct net_if *iface, uint16_t
 
 	radio = dev->api;
 
-	if (radio && (pan_id != IEEE802154_PAN_ID_NOT_ASSOCIATED) &&
-		(radio->get_capabilities(dev) &
-		      IEEE802154_HW_FILTER)) {
+	if ((pan_id != IEEE802154_PAN_ID_NOT_ASSOCIATED) &&
+	    ((radio->get_capabilities(dev) & IEEE802154_HW_FILTER) != 0)) {
 		struct ieee802154_filter filter;
 
 		filter.pan_id = pan_id;

@@ -43,7 +43,7 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 		NET_ASSERT(dev != NULL);
 
 		api = dev->api;
-		if (!api || api->recv == NULL) {
+		if (api->recv == NULL) {
 			continue;
 		}
 
@@ -117,7 +117,7 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 	NET_ASSERT(dev != NULL);
 
 	api = dev->api;
-	if (!api || api->recv == NULL) {
+	if (api->recv == NULL) {
 		goto drop;
 	}
 
@@ -167,10 +167,6 @@ static int virtual_send(struct net_if *iface, struct net_pkt *pkt)
 
 	api = dev->api;
 
-	if (!api) {
-		return -ENOENT;
-	}
-
 	if (!net_if_is_up(iface)) {
 		NET_DBG("Interface %d is down.",
 			net_if_get_by_iface(iface));
@@ -205,9 +201,6 @@ static int virtual_enable(struct net_if *iface, bool state)
 	NET_ASSERT(dev != NULL);
 
 	virt = dev->api;
-	if (!virt) {
-		return -ENOENT;
-	}
 
 	ctx = net_if_l2_data(iface);
 
@@ -306,7 +299,7 @@ int net_virtual_interface_attach(struct net_if *virtual_iface,
 	NET_ASSERT(dev != NULL);
 
 	api = dev->api;
-	if (api == NULL || api->attach == NULL) {
+	if (api->attach == NULL) {
 		return -ENOENT;
 	}
 
