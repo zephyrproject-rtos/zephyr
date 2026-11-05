@@ -566,11 +566,14 @@ static void subscribe_to_service(struct bt_conn *conn, void *data)
 	 */
 	if (atomic_test_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED)) {
 		err = bt_gatt_subscribe(conn, &conn_info_ref->subscribe_params);
-		if (err != -ENOMEM) {
-			__ASSERT(!err, "Subscription failed");
-		} else {
+		if (err == -ENOMEM) {
 			return;
 		}
+
+		__ASSERT(!err, "Subscription failed (err %d)", err);
+
+		/* Sent: do not send it again before the response arrives */
+		atomic_clear_bit(conn_info_ref->flags, CONN_INFO_SUBSCRIPTION_FAILED);
 	}
 
 	/* start subscription procedure if:
