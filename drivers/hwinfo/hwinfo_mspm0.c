@@ -122,6 +122,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		return 0;
 	}
 
+	*cause = 0;
 	reason = sys_read32(MSPM0_SYSCTL_RSTCAUSE) & MSPM0_RSTCAUSE_ID_MASK;
 	switch (reason) {
 	case MSPM0_RSTCAUSE_PORHWFAIL:
