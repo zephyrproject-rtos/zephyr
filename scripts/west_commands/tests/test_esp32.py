@@ -51,20 +51,70 @@ def test_flash_after(cc, req, runner_config, reset_type, expected):
     assert RC_KERNEL_BIN in cmd
 
 
-@pytest.mark.parametrize('reset_type', ['hard-reset', 'watchdog-reset'])
+@pytest.mark.parametrize('reset_type', [None, 'hard-reset', 'watchdog-reset'])
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_esptool)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_no_reset_ignores_reset_type(cc, req, runner_config, caplog, reset_type):
-    '''--no-reset drops --after and warns for any explicit --reset-type.'''
-    args = parse_args('--no-reset', '--reset-type', reset_type)
+    '''--no-reset passes --after no-reset and warns for any explicit --reset-type.'''
+    extra = ['--no-reset']
+    if reset_type is not None:
+        extra += ['--reset-type', reset_type]
+    args = parse_args(*extra)
     runner = Esp32BinaryRunner.create(runner_config, args)
     with caplog.at_level(logging.WARNING, logger='runners.esp32'):
         runner.run('flash')
 
     cmd = cc.call_args_list[-1].args[0]
-    assert '--after' not in cmd
-    assert 'write-flash' in cmd
-    assert any('reset is disabled' in r.message for r in caplog.records)
+    assert after_value(cmd) == 'no-reset'
+    assert cmd.index('--after') < cmd.index('write-flash')
+    if reset_type is not None:
+        assert any('reset is disabled' in r.message for r in caplog.records)
+    else:
+        assert not any('reset is disabled' in r.message for r in caplog.records)
+
+
+@pytest.mark.parametrize(
+    'extra, write_after',
+    [
+        (['--erase', '--no-reset'], 'no-reset'),
+        (['--erase'], 'hard-reset'),
+        (['--erase', '--reset-type', 'hard-reset'], 'hard-reset'),
+        (['--erase', '--reset-type', 'watchdog-reset'], 'watchdog-reset'),
+    ],
+)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_esptool)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_erase_leaves_after_to_esptool(cc, req, runner_config, extra, write_after):
+    '''erase-flash omits --after; write-flash keeps the requested reset.'''
+    runner = Esp32BinaryRunner.create(runner_config, parse_args(*extra))
+    runner.run('flash')
+
+    erase_cmd = cc.call_args_list[0].args[0]
+    write_cmd = cc.call_args_list[-1].args[0]
+    assert '--after' not in erase_cmd
+    assert 'erase-flash' in erase_cmd
+    assert after_value(write_cmd) == write_after
+
+
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_esptool)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_no_reset_warns_before_erase(cc, req, runner_config, caplog):
+    '''--reset-type is reported ignored before erase-flash runs.'''
+    runner = Esp32BinaryRunner.create(
+        runner_config, parse_args('--erase', '--no-reset', '--reset-type', 'hard-reset')
+    )
+
+    def check(cmd):
+        if 'erase-flash' in cmd:
+            assert any('reset is disabled' in r.message for r in caplog.records)
+
+    cc.side_effect = check
+    with caplog.at_level(logging.WARNING, logger='runners.esp32'):
+        runner.run('flash')
+
+    erase_cmd = cc.call_args_list[0].args[0]
+    assert '--after' not in erase_cmd
+    assert 'erase-flash' in erase_cmd
 
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_esptool)
