@@ -127,6 +127,11 @@ New APIs and options
 
     * :c:func:`dns_resolve_get_server_families`
 
+* Video
+
+  * :c:macro:`VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE`
+  * :c:enumerator:`VIDEO_CTRL_TYPE_BUTTON`
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
