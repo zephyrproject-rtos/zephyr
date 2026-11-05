@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-FileCopyrightText: 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,8 +11,7 @@
 void *vector_hijack(void (*my_svc_handler)(void))
 {
 	static uint32_t __aligned(1024) vectors[256];
-	uint32_t *vtor_p = (void *)0xe000ed08;
-	uint32_t *vtor = (void *)*vtor_p;
+	uint32_t *vtor = (uint32_t *)SCB->VTOR;
 
 	printk("VTOR @%p\n", vtor);
 
@@ -22,8 +21,8 @@ void *vector_hijack(void (*my_svc_handler)(void))
 	for (int i = 0; i < nv; i++) {
 		vectors[i] = vtor[i];
 	}
-	*vtor_p = (uint32_t)&vectors[0];
-	vtor = (void *)*vtor_p;
+	SCB->VTOR = (uint32_t)&vectors[0];
+	vtor = (uint32_t *)SCB->VTOR;
 	printk("VTOR now @%p\n", vtor);
 
 	/* And hook the SVC call with our own function above, allowing
