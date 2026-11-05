@@ -69,10 +69,14 @@ Available Emulators
   * Note: For native targets it is also possible to keep the content as a file on the host
     filesystem. Check :ref:`the native_sim flash simulator section <nsim_per_flash_simu>`.
 
+.. _gpio_emul:
+
 **GPIO emulator**
   * Emulated GPIO controllers which can be driven from SW
   * Main Kconfig option: :kconfig:option:`CONFIG_GPIO_EMUL`
   * DT binding: :dtcompatible:`zephyr,gpio-emul`
+  * Note: individual pins can be forced to fail with
+    :c:func:`gpio_emul_set_pin_fault`, for testing GPIO error-handling paths.
 
 **I2C emulator**
   * Emulated I2C bus. See :ref:`bus emulators <bus_emul>`.

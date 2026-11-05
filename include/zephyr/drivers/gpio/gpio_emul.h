@@ -175,6 +175,25 @@ static inline int gpio_emul_flags_get_dt(const struct gpio_dt_spec *spec, gpio_f
 }
 
 /**
+ * @brief Force operations touching specific pin(s) to fail
+ *
+ * While armed, @ref gpio_pin_configure, @ref gpio_pin_interrupt_configure, and
+ * any raw port read/write/toggle call that touches at least one pin in
+ * @p pins returns @p err instead of performing its normal emulated behavior.
+ * Pins not in @p pins, and other gpio_emul instances, are unaffected.
+ *
+ * Each call replaces the previously armed fault mask and error on @p port;
+ * faults are not merged across calls. Pass @p pins as 0 to clear all faults
+ * on @p port.
+ *
+ * @param port The emulated GPIO port
+ * @param pins Bitmask of pins to fault, or 0 to clear all faults on @p port
+ * @param err Negative errno to return for operations touching @p pins,
+ *            ignored if @p pins is 0
+ */
+void gpio_emul_set_pin_fault(const struct device *port, gpio_port_pins_t pins, int err);
+
+/**
  * @}
  */
 
