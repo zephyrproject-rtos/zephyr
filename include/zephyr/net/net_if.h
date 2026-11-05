@@ -668,6 +668,9 @@ struct net_if_dhcpv4 {
 	/** Number of attempts made for REQUEST and RENEWAL messages */
 	uint8_t attempts;
 
+	/** Network events received and not yet acted on */
+	uint8_t pending_events;
+
 	/** Gateway the client installed, unspecified if it installed none */
 	struct net_in_addr gw;
 

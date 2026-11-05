@@ -49,6 +49,23 @@ static sys_slist_t dhcpv4_ifaces;
 static void dhcpv4_timeout(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(timeout_work, dhcpv4_timeout);
 
+/* Network event handlers can run in the thread raising the event, with the
+ * locks it holds for it, while the client raises events and calls into the
+ * interface with lock held. The handlers therefore only record the event
+ * under pending_lock and leave acting on it to event_work. The requested
+ * address is written under both locks, so that the address conflict
+ * handler can read it under pending_lock.
+ */
+#define DHCPV4_EVENT_IF_DOWN      BIT(0)
+#define DHCPV4_EVENT_IF_UP        BIT(1)
+#define DHCPV4_EVENT_ACD_FAILED   BIT(2)
+#define DHCPV4_EVENT_ACD_CONFLICT BIT(3)
+#define DHCPV4_EVENT_ACD          (DHCPV4_EVENT_ACD_FAILED | DHCPV4_EVENT_ACD_CONFLICT)
+
+static struct k_spinlock pending_lock;
+static void dhcpv4_event_work(struct k_work *work);
+static K_WORK_DEFINE(event_work, dhcpv4_event_work);
+
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 static sys_slist_t option_callbacks = SYS_SLIST_STATIC_INIT(&option_callbacks);
 static int unique_types_in_callbacks;
@@ -718,6 +735,39 @@ fail:
 	}
 }
 
+/* A conflict reported on the address being replaced no longer concerns the
+ * client. Must be invoked with lock held.
+ */
+static void dhcpv4_set_requested_ip(struct net_if *iface, const struct net_in_addr *addr)
+{
+	K_SPINLOCK(&pending_lock) {
+		iface->config.dhcpv4.requested_ip = *addr;
+		iface->config.dhcpv4.pending_events &= (uint8_t)~DHCPV4_EVENT_ACD;
+	}
+}
+
+/* Take @p events off those pending and return the ones that were. */
+static uint8_t dhcpv4_take_events(struct net_if *iface, uint8_t events)
+{
+	uint8_t taken = 0U;
+
+	K_SPINLOCK(&pending_lock) {
+		taken = iface->config.dhcpv4.pending_events & events;
+		iface->config.dhcpv4.pending_events &= (uint8_t)~events;
+	}
+
+	return taken;
+}
+
+static void dhcpv4_post_events(struct net_if *iface, uint8_t events)
+{
+	K_SPINLOCK(&pending_lock) {
+		iface->config.dhcpv4.pending_events |= events;
+	}
+
+	(void)k_work_submit(&event_work);
+}
+
 /* The leased address sits on the interface for as long as the client is in
  * one of the bound states.
  */
@@ -840,7 +890,7 @@ static void dhcpv4_enter_selecting(struct net_if *iface)
 	 * so, because a handler for what it raises can start the client.
 	 */
 	addr = iface->config.dhcpv4.requested_ip;
-	iface->config.dhcpv4.requested_ip.s_addr = NET_INADDR_ANY;
+	dhcpv4_set_requested_ip(iface, net_ipv4_unspecified_address());
 
 	dhcpv4_leave_lease(iface, NET_DHCPV4_SELECTING, &addr);
 }
@@ -868,13 +918,15 @@ static uint32_t dhcpv4_restart_with_discover(struct net_if *iface)
 
 static void dhcpv4_enter_requesting(struct net_if *iface, struct dhcp_msg *msg)
 {
+	struct net_in_addr offered;
+
 	iface->config.dhcpv4.attempts = 0U;
 	iface->config.dhcpv4.state = NET_DHCPV4_REQUESTING;
 	NET_DBG("enter state=%s",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
-	memcpy(iface->config.dhcpv4.requested_ip.s4_addr,
-	       msg->yiaddr, sizeof(msg->yiaddr));
+	memcpy(offered.s4_addr, msg->yiaddr, sizeof(msg->yiaddr));
+	dhcpv4_set_requested_ip(iface, &offered);
 
 	dhcpv4_send_request(iface);
 }
@@ -2005,36 +2057,39 @@ drop:
 	return verdict;
 }
 
-static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface,
-				       void *info __unused, size_t info_length __unused,
-				       void *user_data __unused)
+/* Must be invoked with lock held. */
+static void dhcpv4_handle_conflict(struct net_if *iface, bool remove_addr)
 {
-	sys_snode_t *node = NULL;
+	NET_DBG("Conflict on DHCP assigned address %s, starting over",
+		net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
 
-	switch (mgmt_event) {
-#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
-	case NET_EVENT_IF_UP:
-		break;
-#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
-	case NET_EVENT_IF_DOWN:
-		break;
-	default:
-		return;
+	iface->config.dhcpv4.state = NET_DHCPV4_DECLINE;
+
+	dhcpv4_drop_config(iface);
+
+	if (remove_addr) {
+		/* Need to remove address explicitly in this case. */
+		dhcpv4_remove_addr(iface, &iface->config.dhcpv4.requested_ip);
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
-
-	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
-		if (node == &iface->config.dhcpv4.node) {
-			break;
-		}
+	/* A callback on what the line above raised can have taken the client
+	 * elsewhere, and then there is no decline left to send.
+	 */
+	if (iface->config.dhcpv4.state == NET_DHCPV4_DECLINE) {
+		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
+}
 
-	if (node == NULL) {
-		goto out;
-	}
+/* Act on the events recorded for @p iface, each taken just before it is
+ * acted on: a callback on what one of them raises can stop the client,
+ * which drops the rest.
+ * Must be invoked with lock held.
+ */
+static void dhcpv4_handle_events(struct net_if *iface)
+{
+	uint8_t events;
 
-	if (mgmt_event == NET_EVENT_IF_DOWN) {
+	if (dhcpv4_take_events(iface, DHCPV4_EVENT_IF_DOWN) != 0U) {
 		NET_DBG("Interface %p going down", iface);
 
 		if (dhcpv4_has_bound_addr(iface)) {
@@ -2052,20 +2107,59 @@ static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface
 					   : NET_DHCPV4_INIT,
 					   &iface->config.dhcpv4.requested_ip);
 		}
-	} else if (IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) &&
-		   (mgmt_event == NET_EVENT_IF_UP)) {
+	}
+
+	/* An interface that went down again since has nothing to send on. */
+	if (dhcpv4_take_events(iface, DHCPV4_EVENT_IF_UP) != 0U && net_if_is_up(iface)) {
 		NET_DBG("Interface %p coming up", iface);
 
-		/* We should not call dhcpv4_send_request() directly here as
-		 * the CONFIG_NET_MGMT_EVENT_STACK_SIZE is not large
-		 * enough. Instead we can force a request timeout
-		 * which will then call dhcpv4_send_request() automatically.
-		 */
+		/* The timeout handler sends the request. */
 		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
 	}
 
-out:
+	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
+		events = dhcpv4_take_events(iface, DHCPV4_EVENT_ACD);
+		if (events != 0U) {
+			dhcpv4_handle_conflict(iface, (events & DHCPV4_EVENT_ACD_CONFLICT) != 0U);
+		}
+	}
+}
+
+static void dhcpv4_event_work(struct k_work *work)
+{
+	struct net_if_dhcpv4 *current, *next;
+
+	ARG_UNUSED(work);
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dhcpv4_ifaces, current, next, node) {
+		struct net_if *iface = CONTAINER_OF(
+			CONTAINER_OF(current, struct net_if_config, dhcpv4),
+			struct net_if, config);
+
+		dhcpv4_handle_events(iface);
+	}
+
 	k_mutex_unlock(&lock);
+}
+
+static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface,
+				       void *info __unused, size_t info_length __unused,
+				       void *user_data __unused)
+{
+	switch (mgmt_event) {
+#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
+	case NET_EVENT_IF_UP:
+		dhcpv4_post_events(iface, DHCPV4_EVENT_IF_UP);
+		break;
+#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
+	case NET_EVENT_IF_DOWN:
+		dhcpv4_post_events(iface, DHCPV4_EVENT_IF_DOWN);
+		break;
+	default:
+		break;
+	}
 }
 
 /* Catch network interface UP or DOWN events and renew the address
@@ -2081,11 +2175,17 @@ static void dhcpv4_acd_event_handler(uint64_t mgmt_event, struct net_if *iface,
 				     void *info, size_t info_length,
 				     void *user_data __unused)
 {
-	sys_snode_t *node = NULL;
-	struct net_in_addr *addr;
+	uint8_t event;
+	bool requested = false;
 
-	if (mgmt_event != NET_EVENT_IPV4_ACD_FAILED &&
-	    mgmt_event != NET_EVENT_IPV4_ACD_CONFLICT) {
+	switch (mgmt_event) {
+	case NET_EVENT_IPV4_ACD_FAILED:
+		event = DHCPV4_EVENT_ACD_FAILED;
+		break;
+	case NET_EVENT_IPV4_ACD_CONFLICT:
+		event = DHCPV4_EVENT_ACD_CONFLICT;
+		break;
+	default:
 		return;
 	}
 
@@ -2093,45 +2193,20 @@ static void dhcpv4_acd_event_handler(uint64_t mgmt_event, struct net_if *iface,
 		return;
 	}
 
-	addr = (struct net_in_addr *)info;
-
-	k_mutex_lock(&lock, K_FOREVER);
-
-	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
-		if (node == &iface->config.dhcpv4.node) {
-			break;
+	/* Compared and recorded in one go, so that a conflict is never
+	 * recorded for an address the client has since moved away from.
+	 */
+	K_SPINLOCK(&pending_lock) {
+		requested = net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip,
+					      (const struct net_in_addr *)info);
+		if (requested) {
+			iface->config.dhcpv4.pending_events |= event;
 		}
 	}
 
-	if (node == NULL) {
-		goto out;
+	if (requested) {
+		(void)k_work_submit(&event_work);
 	}
-
-	if (!net_ipv4_addr_cmp(&iface->config.dhcpv4.requested_ip, addr)) {
-		goto out;
-	}
-
-	NET_DBG("Conflict on DHCP assigned address %s, starting over",
-		net_sprint_ipv4_addr(addr));
-
-	iface->config.dhcpv4.state = NET_DHCPV4_DECLINE;
-
-	dhcpv4_drop_config(iface);
-
-	if (mgmt_event == NET_EVENT_IPV4_ACD_CONFLICT) {
-		/* Need to remove address explicitly in this case. */
-		dhcpv4_remove_addr(iface, &iface->config.dhcpv4.requested_ip);
-	}
-
-	/* A callback on what the line above raised can have taken the client
-	 * elsewhere, and then there is no decline left to send.
-	 */
-	if (iface->config.dhcpv4.state == NET_DHCPV4_DECLINE) {
-		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
-	}
-
-out:
-	k_mutex_unlock(&lock);
 }
 
 NET_MGMT_REGISTER_EVENT_HANDLER(dhcpv4_acd_events,
@@ -2229,6 +2304,9 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		}
 
 		NET_DBG("wait timeout=%us", timeout);
+
+		/* Events from before the start are not this client's. */
+		(void)dhcpv4_take_events(iface, UINT8_MAX);
 
 		sys_slist_append(&dhcpv4_ifaces,
 				 &iface->config.dhcpv4.node);
@@ -2344,6 +2422,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 		 */
 		sys_slist_find_and_remove(&dhcpv4_ifaces,
 					  &iface->config.dhcpv4.node);
+		(void)dhcpv4_take_events(iface, UINT8_MAX);
 
 		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
 			/* Best effort cancel.  Handler is safe to invoke if
@@ -2381,7 +2460,7 @@ int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 	if (iface->config.dhcpv4.state != NET_DHCPV4_DISABLED) {
 		ret = -EBUSY;
 	} else {
-		iface->config.dhcpv4.requested_ip = *requested_ip;
+		dhcpv4_set_requested_ip(iface, requested_ip);
 	}
 
 	k_mutex_unlock(&lock);
