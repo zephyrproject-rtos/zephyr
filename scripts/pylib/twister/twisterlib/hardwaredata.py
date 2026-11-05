@@ -44,18 +44,37 @@ class HardwareData:
         # Remove falsy values to keep config file clean
         return {k: v for k, v in result.items() if v}
 
-    def run_hook(self, hook_type):
+    def _hook_env(self, hook_type, extra_env=None):
+        env = os.environ.copy()
+        env['TWISTER_HOOK'] = hook_type
+        if self.platform:
+            env['TWISTER_PLATFORM'] = str(self.platform)
+        if self.id:
+            env['TWISTER_DUT_ID'] = str(self.id)
+        if self.serial:
+            env['TWISTER_DUT_SERIAL'] = str(self.serial)
+        if self.runner:
+            env['TWISTER_RUNNER'] = str(self.runner)
+        if extra_env:
+            env.update(extra_env)
+        return env
+
+    def run_hook(self, hook_type, extra_env=None):
+        """Run hook script. Returns True on success, False on failure, None if no hook."""
         hook = self.hooks.get(hook_type)
         if hook is None:
-            return
+            return None
+
+        if isinstance(hook, str):
+            hook = {'script': hook}
 
         script = os.path.expandvars(hook.get('script'))
-        args = hook.get('args', [])
+        args = [os.path.expandvars(str(a)) for a in hook.get('args', [])]
         cmd = [script] + args
         timeout = hook.get('timeout', 60)
 
         logger.info(f"Running command {cmd}....")
-        env = os.environ.copy()
+        env = self._hook_env(hook_type, extra_env)
         try:
             with subprocess.Popen(
                 cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env
@@ -65,14 +84,19 @@ class HardwareData:
                     logger.debug(stdout.decode(errors='ignore'))
                     if proc.returncode != 0:
                         logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
+                        return False
                 except subprocess.TimeoutExpired:
                     proc.kill()
                     proc.communicate()
                     logger.error(f"{script} timed out")
+                    return False
         except FileNotFoundError:
             logger.error(f"Hook script not found: {script}")
+            return False
         except subprocess.SubprocessError as e:
             logger.error(f"Hook script failed: {e}")
+            return False
+        return True
 
 
 @dataclass
