@@ -7650,6 +7650,7 @@ West:
     - ithinuel
   files:
     - modules/mbedtls/
+    - tests/crypto/mbedtls_threading/
     - tests/crypto/psa/
     - tests/crypto/secp256r1/
     - tests/benchmarks/psa_crypto/
@@ -7659,6 +7660,7 @@ West:
     - benchmark.crypto.psa
     - secure_storage.psa
     - crypto.mbedtls_psa
+    - crypto.mbedtls_threading
     - crypto.secp256r1
     - crypto.psa
 
