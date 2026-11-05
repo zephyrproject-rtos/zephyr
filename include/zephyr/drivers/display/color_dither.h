@@ -60,10 +60,16 @@
  *           // ...existing I_4-only body, unchanged...
  *   }
  *
+ *   static uint32_t foo_pixel_formats_caps[] = {
+ *           // ... existing population of supported formats
+ *           COLOR_DITHER_SUPPORTED_FORMATS
+ *           0
+ *   };
  *   static void foo_get_capabilities(const struct device *dev, struct display_capabilities *caps)
  *   {
  *           struct foo_data *data = dev->data;
  *
+ *           caps->supported_pixel_formats = foo_pixel_formats_caps;
  *           // ... existing population of caps (advertising I_4, plus maybe other formats) ...
  *           display_color_dither_patch_caps(&data->color_dither, caps);
  *   }
@@ -156,6 +162,9 @@ struct display_color_dither_rgb_error {
 #define COLOR_DITHER_ERRDIFF_R2(tag) NULL
 #endif
 
+#define COLOR_DITHER_SUPPORTED_FORMATS                                                         \
+	IF_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565, (PIXEL_FORMAT_RGB_565,))            \
+	IF_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888, (PIXEL_FORMAT_RGB_888,))
 /** @endcond */
 
 /**

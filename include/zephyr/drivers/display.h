@@ -122,8 +122,8 @@ struct display_capabilities {
 	uint16_t x_resolution;
 	/** Display resolution in the Y direction */
 	uint16_t y_resolution;
-	/** Bitwise or of pixel formats supported by the display */
-	uint32_t supported_pixel_formats;
+	/** Pointer to 0 terminated table of pixel formats supported by the display */
+	uint32_t *supported_pixel_formats;
 	/** Information about display panel */
 	uint32_t screen_info;
 	/** Currently active pixel format for the display */
@@ -579,6 +579,32 @@ static inline void display_get_capabilities(const struct device *dev,
 	__ASSERT(capabilities != NULL, "display_capabilities struct is NULL");
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	DEVICE_API_GET(display, dev)->get_capabilities(dev, capabilities);
+}
+
+/**
+ * @brief Check pixel_format support
+ *
+ * @param capabilities Pointer to capabilities structure retrieved via display_get_capabilities
+ * @param pixel_format Pixel format support to be checked
+ */
+static inline bool display_is_pixel_format_supported(
+		const struct display_capabilities *capabilities,
+		const uint32_t pixel_format)
+{
+	size_t i = 0;
+
+	__ASSERT(capabilities != NULL, "display_capabilities struct is NULL");
+	__ASSERT(capabilities->supported_pixel_formats != NULL,
+		 "supported_pixel_format pointer is NULL");
+
+	while (capabilities->supported_pixel_formats[i] != 0) {
+		if (capabilities->supported_pixel_formats[i] == pixel_format) {
+			return true;
+		}
+		i++;
+	}
+
+	return false;
 }
 
 /**

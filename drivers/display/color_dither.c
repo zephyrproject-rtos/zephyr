@@ -392,10 +392,6 @@ static int convert_ordered(const struct display_buffer_descriptor *desc,
 	return 0;
 }
 
-#define COLOR_DITHER_SUPPORTED_FORMATS                                                             \
-	((IS_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565) ? PIXEL_FORMAT_RGB_565 : 0) |       \
-	 (IS_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888) ? PIXEL_FORMAT_RGB_888 : 0))
-
 int display_color_dither_set_input_format(struct display_color_dither_state *state,
 					  uint32_t pf)
 {
@@ -418,7 +414,10 @@ int display_color_dither_set_input_format(struct display_color_dither_state *sta
 		return -ENOTSUP;
 	}
 
-	if (!IS_POWER_OF_TWO(pf) || (pf & COLOR_DITHER_SUPPORTED_FORMATS) == 0U) {
+	if (!((IS_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB565) &&
+	       pf == PIXEL_FORMAT_RGB_565) ||
+	      (IS_ENABLED(CONFIG_DISPLAY_COLOR_DITHER_INPUT_RGB888) &&
+	       pf == PIXEL_FORMAT_RGB_888))) {
 		return -ENOTSUP;
 	}
 
@@ -440,8 +439,6 @@ void display_color_dither_patch_caps(struct display_color_dither_state *state,
 	if (state == NULL || state->converted_buf == NULL) {
 		return;
 	}
-
-	caps->supported_pixel_formats |= COLOR_DITHER_SUPPORTED_FORMATS;
 
 	/*
 	 * Only override the driver-reported current format when the helper is actively converting.

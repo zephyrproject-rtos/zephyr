@@ -1252,6 +1252,25 @@ static int sdl_display_blanking_on(const struct device *dev)
 	return 0;
 }
 
+static uint32_t sdl_display_supported_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_XRGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_BGR_888,
+	PIXEL_FORMAT_ABGR_8888,
+	PIXEL_FORMAT_RGBA_8888,
+	PIXEL_FORMAT_BGRA_8888,
+	PIXEL_FORMAT_MONO01,
+	PIXEL_FORMAT_MONO10,
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_565X,
+	PIXEL_FORMAT_L_8,
+	PIXEL_FORMAT_AL_88,
+	PIXEL_FORMAT_I_4,
+	COLOR_DITHER_SUPPORTED_FORMATS
+	0
+};
+
 static void sdl_display_get_capabilities(
 	const struct device *dev, struct display_capabilities *capabilities)
 {
@@ -1263,20 +1282,7 @@ static void sdl_display_get_capabilities(
 #endif /* CONFIG_DISPLAY_COLOR_PALETTE */
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
-		PIXEL_FORMAT_XRGB_8888 |
-		PIXEL_FORMAT_RGB_888 |
-		PIXEL_FORMAT_BGR_888 |
-		PIXEL_FORMAT_ABGR_8888 |
-		PIXEL_FORMAT_RGBA_8888 |
-		PIXEL_FORMAT_BGRA_8888 |
-		PIXEL_FORMAT_MONO01 |
-		PIXEL_FORMAT_MONO10 |
-		PIXEL_FORMAT_RGB_565 |
-		PIXEL_FORMAT_RGB_565X |
-		PIXEL_FORMAT_L_8 |
-		PIXEL_FORMAT_AL_88 |
-		PIXEL_FORMAT_I_4;
+	capabilities->supported_pixel_formats = sdl_display_supported_formats;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info =
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |

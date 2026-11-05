@@ -30,7 +30,8 @@ ZTEST(charlieplex, test_capabilities)
 	display_get_capabilities(disp, &caps);
 	zassert_equal(caps.x_resolution, MATRIX_W, "wrong x resolution");
 	zassert_equal(caps.y_resolution, MATRIX_H, "wrong y resolution");
-	zassert_true(caps.supported_pixel_formats & PIXEL_FORMAT_MONO01, "MONO01 not advertised");
+	zassert_true(display_is_pixel_format_supported(&caps, PIXEL_FORMAT_MONO01),
+		     "MONO01 not advertised");
 	zassert_equal(caps.current_pixel_format, PIXEL_FORMAT_MONO01, "wrong current format");
 }
 
