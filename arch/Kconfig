@@ -1103,6 +1103,16 @@ config ARCH_HAS_PMU
 	  Cortex-A profiles select this option; enable CONFIG_ARM64_PMUV3 to build
 	  the ARMv8-A PMUv3 driver backend.
 
+config PMU_MAX_COUNTERS
+	int "Maximum number of PMU event counters"
+	depends on ARCH_HAS_PMU
+	default 8
+	range 1 32
+	help
+	  Upper bound on the number of logical event counters the PMU API
+	  can describe, used to size per-counter configuration arrays. A
+	  backend may implement fewer hardware counters.
+
 #
 # Hidden CPU family configs
 #
