@@ -66,6 +66,8 @@ The following net-shell commands are implemented:
    :kconfig:option:`CONFIG_NET_L2_PPP` and :kconfig:option:`CONFIG_NET_PPP` are set."
    "net ptp", "Print information about PTP support. Use ``net ptp <port>`` for detailed
    per-port view. Only available if :kconfig:option:`CONFIG_PTP` is set."
+   "net qbu", "Show and configure IEEE 802.1Qbu / IEEE 802.3br frame preemption
+   information. Only available if :kconfig:option:`CONFIG_NET_QBU` is set."
    "net qbv", "Show and configure IEEE 802.1Qbv Time-Aware Shaper (TAS) information.
    Only available if :kconfig:option:`CONFIG_NET_QBV` is set."
    "net quic", "Show and configure QUIC transport.
