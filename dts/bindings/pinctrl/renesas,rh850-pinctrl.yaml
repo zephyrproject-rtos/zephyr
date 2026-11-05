@@ -1,0 +1,143 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Renesas RH850 Pin Controller
+
+description: |
+    Node responsible for controlling pin function selection and pin properties.
+
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+      /* include pre-defined combinations for the SoC variant used by the board */
+      #include <dt-bindings/pinctrl/renesas/pinctrl-u2b.h>
+
+      &pinctrl {
+        /* configuration for the rlin30 "default" state */
+          rlin30_default: rlin30_default {
+          group1 {
+            /* tx */
+            psels = <RH850_PSEL(PORT_02, 6, ALT_OUT8)>;
+            drive-strength = "medium";
+          };
+          group2 {
+            /* rx */
+            psels = <RH850_PSEL(PORT_02, 5, ALT_IN11)>;
+          };
+        };
+      };
+
+    The 'rlin30_default' child node encodes the pin configurations for a
+    particular state of a device; in this case, the default (that is, active)
+    state.
+
+    As shown, pin configurations are organized in groups within each child node.
+    Each group can specify a list of pin function selections in the 'psels'
+    property.
+
+    A group can also specify shared pin properties common to all the specified
+    pins, such as the 'input-enable' property in group 2. Here is a list of
+    supported standard pin properties:
+
+    - bias-pull-up: Enable pull-up resistor.
+    - bias-pull-down: Enable pull-down resistor.
+
+    - drive-push-pull: Specify push-pull output buffer function (default is push-pull)
+    - drive-open-drain: Specify open-drain output buffer function
+    - drive-open-source: Specify open-source output buffer function
+    Only one of the above drive mode properties shall be specified, as they are mutually
+    exclusive. If none is provided, push-pull mode is used by default.
+
+    - input-enable: Enable input from the pin.
+    - output-high: Set the initial output to high.
+    - drive-strength: Set the drive strength of the pin. Possible
+      values are: very low, low, medium, high.
+    - renesas,direct-control: Enable direct I/O control.
+    - renesas,bidirect-control: Enable bi-direction mode.
+
+    To link pin configurations with a device, use a pinctrl-N property for some
+    number N, like this example you could place in your board's DTS file:
+
+       #include "board-pinctrl.dtsi"
+
+       &rlin30 {
+             pinctrl-0 = <&rlin30_default>;
+             pinctrl-1 = <&rlin30_sleep>;
+             pinctrl-names = "default", "sleep";
+       };
+
+compatible: "renesas,rh850-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-push-pull
+          - drive-open-drain
+          - drive-open-source
+          - input-enable
+          - output-high
+    properties:
+      psels:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.
+
+      drive-strength:
+        type: string
+        enum:
+          - "very low"
+          - "low"
+          - "medium"
+          - "high"
+        default: "low"
+        description: |
+          The drive strength of a pin. The default value is low, as this
+          is the power on reset value.
+
+      renesas,direct-control:
+        type: boolean
+        description: |
+          Set in alternative functions that require direct control
+          of the I/O direction.
+
+      renesas,bidirect-control:
+        type: boolean
+        description: |
+          Enable/Disable the Bi-direction mode that enable input buffer
+          when a pin is used in output mode.
+
+      renesas,input-buffer-selection:
+        type: string
+        enum:
+          - "disable"
+          - "schmitt1"
+          - "schmitt4"
+          - "ttl"
+          - "schmittmsc"
+        default: "disable"
+        description: |
+          Set the input buffer charecteristics that require input buffer pin.
+          Default value "disable" reflects the hardware reset state.
