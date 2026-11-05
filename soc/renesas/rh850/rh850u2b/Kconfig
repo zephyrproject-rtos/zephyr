@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RH850U2B
+	select RH850
+	select CPU_G4MH
+	select XIP
+	select HAS_RENESAS_RH850_FSP
+	select SOC_EARLY_INIT_HOOK
+	select HAS_FLASH_LOAD_OFFSET
+	select CPU_HAS_FPU
+	select MULTITHREADING
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select RH850_RAM_INIT
+	select RH850_RAM_INIT_CHECK_RESET
