@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/video/video.h>
+#include <zephyr/logging/log.h>
 
 #include <fsl_csi.h>
 
@@ -20,6 +21,8 @@
 #endif
 
 #include "video_common.h"
+
+LOG_MODULE_REGISTER(video_mcux_csi, CONFIG_VIDEO_LOG_LEVEL);
 
 struct video_mcux_csi_config {
 	CSI_Type *base;
@@ -31,7 +34,6 @@ struct video_mcux_csi_data {
 	const struct device *dev;
 	csi_config_t csi_config;
 	csi_handle_t csi_handle;
-	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_poll_signal *sig;
@@ -102,28 +104,27 @@ done:
 }
 
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
-K_HEAP_DEFINE(csi_heap, 1000);
-static struct video_format_cap *fmts;
+static struct video_format_cap fmts[CONFIG_VIDEO_MCUX_MIPI_CSI2_MAX_FORMATS];
 /*
  * On i.MX RT11xx SoCs which have MIPI CSI-2 Rx, image data from the camera sensor after passing
  * through the pipeline (MIPI CSI-2 Rx --> Video Mux --> CSI) will be implicitly converted to a
  * 32-bits pixel format. For example, an input in RGB565 or YUYV (2-bytes format) will become a
  * BGRX32 or XYUV32 (4-bytes format) respectively, at the output of the CSI.
  */
-static inline void video_pix_fmt_convert(struct video_format *fmt, bool isGetFmt)
+static inline void video_pix_fmt_convert(uint32_t *pixelformat, bool isGetFmt)
 {
-	switch (fmt->pixelformat) {
+	switch (*pixelformat) {
 	case VIDEO_PIX_FMT_BGRX32:
-		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_BGRX32 : VIDEO_PIX_FMT_RGB565;
+		*pixelformat = isGetFmt ? VIDEO_PIX_FMT_BGRX32 : VIDEO_PIX_FMT_RGB565;
 		break;
 	case VIDEO_PIX_FMT_XYUV32:
-		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
+		*pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
 		break;
 	case VIDEO_PIX_FMT_RGB565:
-		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_BGRX32 : VIDEO_PIX_FMT_RGB565;
+		*pixelformat = isGetFmt ? VIDEO_PIX_FMT_BGRX32 : VIDEO_PIX_FMT_RGB565;
 		break;
 	case VIDEO_PIX_FMT_YUYV:
-		fmt->pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
+		*pixelformat = isGetFmt ? VIDEO_PIX_FMT_XYUV32 : VIDEO_PIX_FMT_YUYV;
 		break;
 	}
 }
@@ -142,7 +143,7 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 	if (fmt->pixelformat != VIDEO_PIX_FMT_BGRX32 && fmt->pixelformat != VIDEO_PIX_FMT_XYUV32) {
 		return -ENOTSUP;
 	}
-	video_pix_fmt_convert(&format, false);
+	video_pix_fmt_convert(&format.pixelformat, false);
 	data->csi_config.dataBus = kCSI_DataBus24Bit;
 #else
 	data->csi_config.dataBus = kCSI_DataBus8Bit;
@@ -167,16 +168,21 @@ static int video_mcux_csi_set_fmt(const struct device *dev, struct video_format 
 		return -EIO;
 	}
 
-	data->fmt = *fmt;
-
 	return 0;
 }
 
 static int video_mcux_csi_get_fmt(const struct device *dev, struct video_format *fmt)
 {
-	struct video_mcux_csi_data *data = dev->data;
+	const struct video_mcux_csi_config *config = dev->config;
+	int ret;
 
-	*fmt = data->fmt;
+	ret = video_get_format(config->source_dev, fmt);
+	if (ret < 0) {
+		LOG_ERR("Failed to get %s format", config->source_dev->name);
+		return ret;
+	}
+
+	video_pix_fmt_convert(&fmt->pixelformat, true);
 
 	return 0;
 }
@@ -294,22 +300,14 @@ static int video_mcux_csi_get_caps(const struct device *dev, struct video_caps *
 		 * respectively, at the output of the CSI. So, we change the pixel formats of the
 		 * source caps to reflect this.
 		 */
-		int ind = 0;
-
-		while (caps->format_caps[ind].pixelformat) {
-			ind++;
-		}
-		k_heap_free(&csi_heap, fmts);
-		fmts = k_heap_alloc(&csi_heap, (ind + 1) * sizeof(struct video_format_cap),
-				    K_FOREVER);
-
-		for (int i = 0; i <= ind; i++) {
-			memcpy(&fmts[i], &caps->format_caps[i], sizeof(fmts[i]));
-			if (fmts[i].pixelformat == VIDEO_PIX_FMT_RGB565) {
-				fmts[i].pixelformat = VIDEO_PIX_FMT_BGRX32;
-			} else if (fmts[i].pixelformat == VIDEO_PIX_FMT_YUYV) {
-				fmts[i].pixelformat = VIDEO_PIX_FMT_XYUV32;
+		for (int i = 0; caps->format_caps[i].pixelformat != 0; i++) {
+			if (i + 1 > CONFIG_VIDEO_MCUX_MIPI_CSI2_MAX_FORMATS) {
+				LOG_WRN("Out of format capability slots, formats will be missing");
+				break;
 			}
+
+			memcpy(&fmts[i], &caps->format_caps[i], sizeof(fmts[i]));
+			video_pix_fmt_convert(&fmts[i].pixelformat, true);
 		}
 		caps->format_caps = fmts;
 #endif
@@ -393,7 +391,7 @@ static int video_mcux_csi_enum_frmival(const struct device *dev, struct video_fr
 #if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
 	struct video_format converted_fmt = *fie->format;
 
-	video_pix_fmt_convert(&converted_fmt, false);
+	video_pix_fmt_convert(&converted_fmt.pixelformat, false);
 	fie->format = &converted_fmt;
 #endif
 
