@@ -903,6 +903,15 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	uint16_t irq_status = 0;
 	int ret;
 
+	/*
+	 * Work already running when the operation was stopped finds the radio
+	 * at rest, its IRQs cleared. The radio holds BUSY high while asleep, so
+	 * reading the status would stall the workqueue.
+	 */
+	if (atomic_get(&data->state) == SX126X_REST_STATE) {
+		return;
+	}
+
 	ret = sx126x_get_irq_status(dev, &irq_status);
 	if (ret < 0) {
 		LOG_ERR("Failed to get IRQ status");
