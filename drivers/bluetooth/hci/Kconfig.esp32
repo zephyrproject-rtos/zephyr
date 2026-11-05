@@ -253,6 +253,16 @@ config ESP32_BT_CTLR_CHECK_CONNECT_IND_ACCESS_ADDRESS
 	help
 	  Perform strict validation of Access Address in CONNECT_IND PDUs to improve security.
 
+config ESP32_BT_CTLR_LE_MIN_CONN_INTERVAL
+	bool "Allow connection intervals below 7.5 ms"
+	depends on SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3
+	imply BT_CONN_PARAM_ANY
+	help
+	  Allow the controller to accept connection intervals down to
+	  3.75 ms, below the 7.5 ms minimum of the Bluetooth Core
+	  specification. Short intervals leave little time per connection
+	  event, so avoid large payloads when such an interval is in use.
+
 choice ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM
 	prompt "Coexistence PHY coded TX/RX time limit"
 	depends on ESP32_SW_COEXIST_ENABLE
