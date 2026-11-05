@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <rh850/renesas/rh850u2b/r7f70255.dtsi>
+
+/* Peripheral definition following RH850/U2B6 292pin devices */
+/ {
+	soc {
+		flash0: flash@0 {
+			reg = <0x0 DT_SIZE_M(6)>;
+		};
+
+		sram0: memory@fe000000 {
+			reg = <0xfe000000 DT_SIZE_K(384)>;
+		};
+	};
+};
