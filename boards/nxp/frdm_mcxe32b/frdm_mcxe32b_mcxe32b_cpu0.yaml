@@ -13,5 +13,8 @@ toolchain:
   - gnuarmemb
 supported:
   - arduino_gpio
+  - counter
+  - dma
   - gpio
+  - watchdog
 vendor: nxp
