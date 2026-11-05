@@ -16,6 +16,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
@@ -91,6 +92,23 @@ bool conn_mgr_dns_is_ready(void);
  * @return Bitmask of @ref CONN_MGR_READY_FLAGS "readiness flags" currently set.
  */
 uint32_t conn_mgr_get_readiness(void);
+
+/**
+ * @brief Get the address family to use in getaddrinfo() hints.
+ *
+ * Set the ai_family field of the getaddrinfo() hints to the returned value.
+ * getaddrinfo() then returns only addresses of the IP family that is ready.
+ * If both IP families are ready, or none is ready, getaddrinfo() returns
+ * addresses of all families.
+ * Without @kconfig{CONFIG_NET_CONNECTION_MANAGER}, this returns NET_AF_UNSPEC.
+ *
+ * The function takes an internal lock and can block for a short time on it.
+ *
+ * @retval NET_AF_INET Only IPv4 is ready.
+ * @retval NET_AF_INET6 Only IPv6 is ready.
+ * @retval NET_AF_UNSPEC Both or neither IP family is ready.
+ */
+net_sa_family_t conn_mgr_get_ready_addr_family(void);
 
 /**
  * @brief Wait until it is time to try to connect.
@@ -199,6 +217,11 @@ static inline uint32_t conn_mgr_get_readiness(void)
 {
 	return CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6 | CONN_MGR_READY_DNS |
 	       CONN_MGR_READY_IP_ANY;
+}
+
+static inline net_sa_family_t conn_mgr_get_ready_addr_family(void)
+{
+	return NET_AF_UNSPEC;
 }
 
 static inline int conn_mgr_wait_ready(uint32_t mask, uint32_t *last_seen, k_timeout_t timeout)
