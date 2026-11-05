@@ -15,12 +15,25 @@ set_compiler_property(PROPERTY optimization_size_aggressive -Ohz)
 set_compiler_property(PROPERTY optimization_fast --no_size_constraints)
 
 # IAR uses the GNU assembler so the options differ from the compiler
-set_property(TARGET asm PROPERTY no_optimization -O0)
-set_property(TARGET asm PROPERTY optimization_debug -Og)
-set_property(TARGET asm PROPERTY optimization_speed -O2)
-set_property(TARGET asm PROPERTY optimization_size -Os)
-set_property(TARGET asm PROPERTY optimization_size_aggressive -Oz)
-set_property(TARGET asm PROPERTY optimization_fast -Ofast)
+if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
+  set_property(TARGET asm PROPERTY no_optimization -O0)
+  set_property(TARGET asm PROPERTY optimization_debug -Og)
+  set_property(TARGET asm PROPERTY optimization_speed -O2)
+  set_property(TARGET asm PROPERTY optimization_size -Os)
+  set_property(TARGET asm PROPERTY optimization_size_aggressive -Oz)
+  set_property(TARGET asm PROPERTY optimization_fast -Ofast)
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+# The Renesas RH850 family uses the IAR assembler. Since IAR assembler does not support optimization flags,
+# we prevent the top-level CMakeLists.txt from applying compiler optimization flags to assembly,
+# by defining the symbol __IASMRH850__ as placeholder. This symbol can also be used in assembly files
+# to detect when they are being assembled with the IAR assembler.
+  set_property(TARGET asm PROPERTY no_optimization -D__IASMRH850__=1)
+  set_property(TARGET asm PROPERTY optimization_debug -D__IASMRH850__=1)
+  set_property(TARGET asm PROPERTY optimization_speed -D__IASMRH850__=1)
+  set_property(TARGET asm PROPERTY optimization_size -D__IASMRH850__=1)
+  set_property(TARGET asm PROPERTY optimization_size_aggressive -D__IASMRH850__=1)
+  set_property(TARGET asm PROPERTY optimization_fast -D__IASMRH850__=1)
+endif()
 
 #######################################################
 # This section covers flags related to warning levels #
@@ -172,7 +185,11 @@ set_compiler_property(PROPERTY no_common)
 # Flags for imacros. The specific header must be appended by user.
 set_property(TARGET compiler PROPERTY imacros --preinclude)
 set_property(TARGET compiler-cpp PROPERTY imacros --preinclude)
-set_property(TARGET asm PROPERTY imacros -imacros)
+if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
+  set_property(TARGET asm PROPERTY imacros -imacros)
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  set_property(TARGET asm PROPERTY imacros --preinclude)
+endif()
 
 # Compiler flag for turning off thread-safe initialization of local statics
 set_property(TARGET compiler-cpp PROPERTY no_threadsafe_statics)
