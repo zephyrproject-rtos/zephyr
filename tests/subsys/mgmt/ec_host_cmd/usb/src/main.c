@@ -360,4 +360,26 @@ ZTEST(ec_host_cmd_usb, test_usb_enqueue_rx_buf_fail_releases_buf)
 	zassert_not_null(mock_ep_out_buf);
 }
 
+ZTEST(ec_host_cmd_usb, test_usb_in_bulk_arm_rx_failure_triggers_reset)
+{
+	const struct test_req_payload req = { .val = 0x15 };
+	const struct test_resp_payload expected_resp = { .val_doubled = req.val * 2U };
+
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+	zassert_ok(k_sem_take(&handler_done_sem, K_SECONDS(1)));
+	zassert_ok(test_c_data->api->request(test_c_data, mock_ep_int_buf, 0));
+
+	mock_ep_out_enqueue_err = -EIO;
+	zassert_ok(test_c_data->api->request(test_c_data, mock_ep_in_buf, 0));
+
+	/* Wait for reset_work to execute and re-arm the OUT endpoint. */
+	zassert_true(WAIT_FOR(mock_ep_out_enqueue_count == 2, 1000 * USEC_PER_MSEC, k_msleep(1)),
+		     "Timeout waiting for reset_work to re-arm EP OUT");
+	zassert_not_null(mock_ep_out_buf);
+
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_resp, sizeof(expected_resp));
+	zassert_equal(mock_ep_out_enqueue_count, 3);
+}
+
 ZTEST_SUITE(ec_host_cmd_usb, NULL, usb_test_setup, usb_test_before, NULL, NULL);
