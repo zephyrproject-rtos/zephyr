@@ -737,6 +737,10 @@ Bluetooth Host
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
   :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
 
+* :c:func:`bt_conn_auth_cb_register` now returns ``-EEXIST`` when the callbacks structure passed is
+  already the registered one. ``-EALREADY`` is still returned when another callbacks structure is
+  registered. (:github:`124803`)
+
 Bluetooth Mesh
 ==============
 
