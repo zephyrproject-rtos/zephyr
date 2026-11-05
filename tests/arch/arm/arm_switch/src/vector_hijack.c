@@ -16,20 +16,20 @@ void *vector_hijack(void (*my_svc_handler)(void))
 	printk("VTOR @%p\n", vtor);
 
 	/* Vector count: _vector_start/end set by the linker. */
-	int nv = (&_vector_end[0] - &_vector_start[0]) / sizeof(uint32_t);
+	size_t nv = ((uintptr_t)_vector_end - (uintptr_t)_vector_start) / sizeof(uint32_t);
 
-	for (int i = 0; i < nv; i++) {
+	if (nv > ARRAY_SIZE(vectors)) {
+		TC_ERROR("vector table exceeds test buffer\n");
+		ztest_test_fail();
+		return vtor;
+	}
+	for (size_t i = 0; i < nv; i++) {
 		vectors[i] = vtor[i];
 	}
+	vectors[11] = (uint32_t)my_svc_handler;
 	SCB->VTOR = (uint32_t)&vectors[0];
-	vtor = (uint32_t *)SCB->VTOR;
-	printk("VTOR now @%p\n", vtor);
+	__DSB();
+	__ISB();
 
-	/* And hook the SVC call with our own function above, allowing
-	 * us direct access to interrupt entry
-	 */
-	vtor[11] = (int)my_svc_handler;
-	printk("vtor[11] == %p (my_svc == %p)\n", (void *)vtor[11], my_svc_handler);
-
-	return NULL;
+	return vtor;
 }
