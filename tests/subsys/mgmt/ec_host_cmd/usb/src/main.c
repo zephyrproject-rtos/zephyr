@@ -27,12 +27,20 @@ struct test_resp_payload {
 	uint8_t val_doubled;
 } __packed;
 
+enum handler_reconfig_action {
+	HANDLER_ACTION_NONE = 0,
+	HANDLER_ACTION_DISABLE_AND_ENABLE,
+	HANDLER_ACTION_DISABLE_ONLY,
+};
+
 static struct usbd_class_data *test_c_data;
 static struct net_buf *mock_ep_out_buf;
 static struct net_buf *mock_ep_in_buf;
 static struct net_buf *mock_ep_int_buf;
 static int mock_ep_out_enqueue_count;
 static int mock_ep_out_enqueue_err;
+static enum handler_reconfig_action test_handler_action;
+static int ep_out_count_after_mid_handler_enable;
 static struct k_sem handler_done_sem;
 
 static struct net_buf **get_ep_buf_slot(uint8_t ep)
@@ -126,7 +134,18 @@ static enum ec_host_cmd_status test_cmd_handler(struct ec_host_cmd_handler_args 
 {
 	const struct test_req_payload *req = args->input_buf;
 	struct test_resp_payload *resp = args->output_buf;
+	uint8_t captured_val = req->val;
 
+	if (test_handler_action == HANDLER_ACTION_DISABLE_AND_ENABLE) {
+		test_c_data->api->disable(test_c_data);
+		test_c_data->api->enable(test_c_data);
+		ep_out_count_after_mid_handler_enable = mock_ep_out_enqueue_count;
+	} else if (test_handler_action == HANDLER_ACTION_DISABLE_ONLY) {
+		test_c_data->api->disable(test_c_data);
+		k_sem_give(&handler_done_sem);
+	}
+
+	zassert_equal(req->val, captured_val, "Request buffer mutated during handler");
 	resp->val_doubled = (uint8_t)(req->val * 2U);
 	args->output_buf_size = sizeof(*resp);
 	return EC_HOST_CMD_SUCCESS;
@@ -220,6 +239,8 @@ static void *usb_test_setup(void)
 static void usb_test_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
+	test_handler_action = HANDLER_ACTION_NONE;
+	ep_out_count_after_mid_handler_enable = -1;
 	k_sem_reset(&handler_done_sem);
 	usbd_ep_dequeue(NULL, EP_OUT_ADDR);
 	usbd_ep_dequeue(NULL, EP_IN_BULK_ADDR);
@@ -379,6 +400,141 @@ ZTEST(ec_host_cmd_usb, test_usb_in_bulk_arm_rx_failure_triggers_reset)
 
 	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
 	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_resp, sizeof(expected_resp));
+	zassert_equal(mock_ep_out_enqueue_count, 3);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_reenable_during_processing_defers_ep_out_rearm)
+{
+	const struct test_req_payload req = { .val = 0x21 };
+	const struct test_req_payload next_req = { .val = 0x10 };
+	const struct test_resp_payload expected_next_resp = { .val_doubled = next_req.val * 2U };
+
+	test_handler_action = HANDLER_ACTION_DISABLE_AND_ENABLE;
+
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+
+	/*
+	 * Because the USB class was disabled and re-enabled while req was processing,
+	 * send() must drop the stale response and immediately re-arm EP OUT.
+	 */
+	zassert_true(WAIT_FOR(mock_ep_out_enqueue_count == 2, 1000 * USEC_PER_MSEC, k_msleep(1)),
+		     "Timeout waiting for send() to drop stale response and re-arm EP OUT");
+
+	zassert_equal(ep_out_count_after_mid_handler_enable, 1,
+		      "EP OUT must not be re-armed by enable() while command is processing");
+	zassert_is_null(mock_ep_in_buf,
+			"Stale response from prior command must not be sent on Bulk IN");
+	zassert_is_null(mock_ep_int_buf,
+			"Stale RESP_READY notification must not be sent on INT IN");
+	zassert_not_null(mock_ep_out_buf, "EP OUT must be re-armed for the next command");
+
+	test_handler_action = HANDLER_ACTION_NONE;
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &next_req,
+				  sizeof(next_req));
+	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_next_resp,
+				  sizeof(expected_next_resp));
+	zassert_equal(mock_ep_out_enqueue_count, 3);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_drop_response_arm_rx_failure_triggers_reset)
+{
+	const struct test_req_payload req = { .val = 0x21 };
+	const struct test_req_payload next_req = { .val = 0x10 };
+	const struct test_resp_payload expected_next_resp = { .val_doubled = next_req.val * 2U };
+
+	test_handler_action = HANDLER_ACTION_DISABLE_AND_ENABLE;
+	mock_ep_out_enqueue_err = -EIO;
+
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+
+	/*
+	 * When re-arming EP OUT fails while dropping the stale response in send(),
+	 * reset_work must be scheduled to recover and re-arm EP OUT.
+	 */
+	zassert_true(WAIT_FOR(mock_ep_out_enqueue_count == 2, 1000 * USEC_PER_MSEC, k_msleep(1)),
+		     "Timeout waiting for reset_work to re-arm EP OUT after re-arm failure");
+	zassert_equal(ep_out_count_after_mid_handler_enable, 1);
+	zassert_is_null(mock_ep_in_buf);
+	zassert_is_null(mock_ep_int_buf);
+	zassert_not_null(mock_ep_out_buf);
+
+	test_handler_action = HANDLER_ACTION_NONE;
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &next_req,
+				  sizeof(next_req));
+	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_next_resp,
+				  sizeof(expected_next_resp));
+	zassert_equal(mock_ep_out_enqueue_count, 3);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_disable_during_processing_then_enable_rearms)
+{
+	const struct test_req_payload req = { .val = 0x33 };
+	const struct test_req_payload next_req = { .val = 0x07 };
+	const struct test_resp_payload expected_next_resp = { .val_doubled = next_req.val * 2U };
+
+	test_handler_action = HANDLER_ACTION_DISABLE_ONLY;
+
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+
+	zassert_ok(k_sem_take(&handler_done_sem, K_SECONDS(1)));
+	zassert_true(WAIT_FOR(ec_host_cmd_get_hc()->state == EC_HOST_CMD_STATE_RECEIVING,
+			      1000 * USEC_PER_MSEC, k_msleep(1)),
+		     "Timeout waiting for host command thread to finish send()");
+
+	zassert_is_null(mock_ep_in_buf);
+	zassert_equal(mock_ep_out_enqueue_count, 1);
+
+	test_c_data->api->enable(test_c_data);
+	zassert_equal(mock_ep_out_enqueue_count, 2,
+		      "enable() after failed send must arm EP OUT (no buffer lock deadlock)");
+	zassert_not_null(mock_ep_out_buf);
+
+	test_handler_action = HANDLER_ACTION_NONE;
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &next_req,
+				  sizeof(next_req));
+	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_next_resp,
+				  sizeof(expected_next_resp));
+	zassert_equal(mock_ep_out_enqueue_count, 3);
+}
+
+ZTEST(ec_host_cmd_usb, test_usb_disable_during_sending_then_enable_rearms)
+{
+	const struct test_req_payload req = { .val = 0x44 };
+	const struct test_req_payload next_req = { .val = 0x55 };
+	const struct test_resp_payload expected_next_resp = { .val_doubled = next_req.val * 2U };
+
+	test_handler_action = HANDLER_ACTION_NONE;
+
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &req, sizeof(req));
+	zassert_ok(k_sem_take(&handler_done_sem, K_SECONDS(1)));
+
+	/* At this point, the handler has finished processing and called send().
+	 * The state is USB_EC_HOST_CMD_STATE_SENDING. mock_ep_in_buf has the response.
+	 */
+	zassert_not_null(mock_ep_in_buf);
+	zassert_not_null(mock_ep_int_buf);
+
+	/* Simulate disable occurring while in SENDING state */
+	test_c_data->api->disable(test_c_data);
+
+	/* UDC driver flushes/cancels endpoints on disable */
+	usbd_ep_dequeue(NULL, EP_IN_BULK_ADDR);
+	usbd_ep_dequeue(NULL, EP_IN_INT_ADDR);
+
+	zassert_equal(mock_ep_out_enqueue_count, 1, "EP OUT should not be armed while disabled");
+	zassert_is_null(mock_ep_out_buf);
+
+	/* Enable should re-arm EP OUT to accept the next command */
+	test_c_data->api->enable(test_c_data);
+	zassert_equal(mock_ep_out_enqueue_count, 2,
+		      "enable() after cancelled SENDING must re-arm EP OUT");
+	zassert_not_null(mock_ep_out_buf);
+
+	/* Next command should work normally */
+	send_usb_host_cmd_request(EC_HOST_REQUEST_VERSION, CMD_TEST_ID, &next_req,
+				  sizeof(next_req));
+	complete_usb_in_transfers(EC_HOST_CMD_SUCCESS, &expected_next_resp,
+				  sizeof(expected_next_resp));
 	zassert_equal(mock_ep_out_enqueue_count, 3);
 }
 
