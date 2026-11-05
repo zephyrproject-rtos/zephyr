@@ -22,6 +22,14 @@
 #define SDIF_SD_D7_PIO5_0  IOCON_MUX(160, IOCON_TYPE_D, 2)
 
 &pinctrl {
+	/* SWO on P0_10, routed to the on-board Link2 debug probe (SWO_TRGT). */
+	pinmux_swo: pinmux_swo {
+		group0 {
+			pinmux = <SWO_PIO0_10>;
+			slew-rate = "standard";
+		};
+	};
+
 	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
 		group0 {
 			pinmux = <FC0_RXD_SDA_MOSI_PIO0_29>,

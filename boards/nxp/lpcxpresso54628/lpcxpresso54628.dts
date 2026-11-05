@@ -73,6 +73,12 @@
 	clock-frequency = <DT_FREQ_M(220)>;
 };
 
+&itm {
+	pinctrl-0 = <&pinmux_swo>;
+	pinctrl-names = "default";
+	swo-ref-frequency = <DT_FREQ_M(220)>;
+};
+
 /*
  * Default for this board is to use the full 160 KB of contiguous main SRAM
  * (SRAM0-3) as a single region; an application can provide its own devicetree
