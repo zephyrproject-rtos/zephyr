@@ -187,8 +187,10 @@ static bool all_synced(const struct eth_rstp_port *p)
 			if (q != p) {
 				return false;
 			}
-		} else if (q->role != ETH_RSTP_ROLE_ROOT) {
-			return false;
+		} else {
+			if (q->role != ETH_RSTP_ROLE_ROOT) {
+				return false;
+			}
 		}
 	}
 
@@ -631,6 +633,8 @@ static void updt_roles_tree(struct eth_rstp_bridge *br)
 				q->updt_info = true;
 			}
 			break;
+		default:
+			break;
 		}
 	}
 }
@@ -688,6 +692,8 @@ static void prx_enter(struct eth_rstp_port *p, enum prx_state state)
 		p->rcvd_bpdu = false;
 		p->edge_delay_while = ETH_RSTP_MIGRATE_TIME;
 		break;
+	default:
+		break;
 	}
 }
 
@@ -724,6 +730,8 @@ static void ppm_enter(struct eth_rstp_port *p, enum ppm_state state)
 	case PPM_SENSING:
 		p->rcvd_rstp = false;
 		p->rcvd_stp = false;
+		break;
+	default:
 		break;
 	}
 }
@@ -790,6 +798,8 @@ static bool bdm_run(struct eth_rstp_port *p)
 			return true;
 		}
 		break;
+	default:
+		break;
 	}
 
 	return false;
@@ -828,6 +838,8 @@ static void ptx_enter(struct eth_rstp_port *p, enum ptx_state state)
 		break;
 	case PTX_IDLE:
 		p->hello_when = hello_time(p);
+		break;
+	default:
 		break;
 	}
 }
@@ -946,6 +958,8 @@ static void pim_enter(struct eth_rstp_port *p, enum pim_state state)
 	case PIM_OTHER:
 		p->rcvd_msg = false;
 		break;
+	default:
+		break;
 	}
 }
 
@@ -1052,6 +1066,8 @@ static void prs_enter(struct eth_rstp_bridge *br, enum prs_state state)
 				br->ports[i]->selected = true;
 			}
 		}
+		break;
+	default:
 		break;
 	}
 }
@@ -1203,6 +1219,8 @@ static void prt_enter(struct eth_rstp_port *p, enum prt_state state)
 		p->rr_while = 0U;
 		p->sync = false;
 		p->re_root = false;
+		break;
+	default:
 		break;
 	}
 }
@@ -1413,6 +1431,8 @@ static bool pst_run(struct eth_rstp_port *p)
 			return true;
 		}
 		break;
+	default:
+		break;
 	}
 
 	return false;
@@ -1461,6 +1481,8 @@ static void tcm_enter(struct eth_rstp_port *p, enum tcm_state state)
 	case TCM_ACKNOWLEDGED:
 		p->tc_while = 0U;
 		p->rcvd_tc_ack = false;
+		break;
+	default:
 		break;
 	}
 }
