@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.disk.virtio_blk_pool:
+    platform_allow:
+      - qemu_x86_64
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_x86_64
+      - qemu_cortex_a53
+    tags:
+      - disk
+      - virtio
