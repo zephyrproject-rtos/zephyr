@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay clears clocks back to a state equivalent to what could
+ * be found in stm32g5.dtsi (all disabled, no properties set).
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ clock-frequency;
+	/delete-property/ hse-bypass;
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_lsi {
+	status = "disabled";
+};
+
+&clk_hsi48 {
+	status = "disabled";
+};
+
+&pll {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	hpre = <1>;
+	ppre1 = <1>;
+	ppre2 = <1>;
+	ppre3 = <1>;
+};
