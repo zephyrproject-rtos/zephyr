@@ -474,6 +474,21 @@ uint32_t conn_mgr_get_readiness(void)
 	return flags;
 }
 
+net_sa_family_t conn_mgr_get_ready_addr_family(void)
+{
+	uint32_t ip = conn_mgr_get_readiness() & (CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6);
+
+	if (ip == CONN_MGR_READY_IPV4) {
+		return NET_AF_INET;
+	}
+
+	if (ip == CONN_MGR_READY_IPV6) {
+		return NET_AF_INET6;
+	}
+
+	return NET_AF_UNSPEC;
+}
+
 int conn_mgr_wait_ready(uint32_t mask, uint32_t *last_seen, k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
