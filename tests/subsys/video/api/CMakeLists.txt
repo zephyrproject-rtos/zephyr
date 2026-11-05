@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(integration)
 
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/video)
 target_sources(app PRIVATE src/video_common.c)
+target_sources(app PRIVATE src/video_ctrls.c)
 target_sources(app PRIVATE src/video_emul.c)
 target_sources(app PRIVATE src/video_formats.c)
