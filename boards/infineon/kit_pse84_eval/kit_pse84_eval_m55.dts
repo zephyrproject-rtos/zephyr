@@ -42,6 +42,10 @@
 	};
 };
 
+&clocks {
+	status = "disabled";
+};
+
 &i2c0 {
 	ft5406: ft5406@38 {
 		compatible = "focaltech,ft5336";
