@@ -4493,7 +4493,7 @@ static const char *vs_hw_variant(uint16_t platform, uint16_t variant)
 {
 #if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
 	static const char * const nordic_str[] = {
-		"reserved", "nRF51x", "nRF52x", "nRF53x", "nRF54Hx", "nRF54Lx"
+		"reserved", "nRF51x", "nRF52x", "nRF53x", "nRF54Hx", "nRF54Lx", "nRF71x"
 	};
 
 	if (platform == BT_HCI_VS_HW_PLAT_NORDIC && variant < ARRAY_SIZE(nordic_str)) {
