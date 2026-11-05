@@ -39,6 +39,11 @@
 	};
 
 	soc {
+		uuid: uuid@1000100 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x01000100 0x10>;
+		};
+
 		sramx: memory@4000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x04000000 DT_SIZE_K(32)>;
