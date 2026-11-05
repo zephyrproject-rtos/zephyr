@@ -11,3 +11,16 @@
 
 /* Includes the specifics for the RT1150 family */
 #include <nxp/imxrt/imxrt11xx/nxp_rt115x.dtsi>
+
+/* GC355 2D GPU */
+/ {
+	soc {
+		gpu: gpu@41800000 {
+			compatible = "vsi,gpu-gc355";
+			reg = <0x41800000 0x4000>;
+			interrupts = <60 0>;
+			clocks = <&ccm 128 0 0>;
+			status = "disabled";
+		};
+	};
+};
