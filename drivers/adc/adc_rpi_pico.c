@@ -255,6 +255,9 @@ static void adc_rpi_isr(const struct device *dev)
 		return;
 	}
 
+	/* The ADC always converts at 12 bits, scale down to the requested resolution. */
+	result >>= ADC_RPI_MAX_RESOLUTION - data->ctx.sequence.resolution;
+
 	/* Copy to buffer and mark this channel as completed to channels bitmap. */
 	*data->buf++ = result;
 	data->channels &= ~(BIT(ainsel));
