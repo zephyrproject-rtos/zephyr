@@ -175,6 +175,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		*cause = RESET_DEBUG;
 		break;
 	default:
+		*cause = 0;
 		break;
 	}
 
