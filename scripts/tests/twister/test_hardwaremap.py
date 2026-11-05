@@ -815,13 +815,14 @@ def dut_with_hooks():
 
 
 def test_run_hook_no_matching_hook():
-    """run_hook should return immediately when no hook matches."""
+    """run_hook should return None when no hook matches."""
     dut = DUT(platform='p', id='1', serial='s', product='pr',
               runner='r', connected=True, hooks={})
 
     with mock.patch('subprocess.Popen') as popen_mock:
-        dut.run_hook('pre')
+        result = dut.run_hook('pre')
         popen_mock.assert_not_called()
+    assert result is None
 
 
 def test_run_hook_no_matching_type(dut_with_hooks):
@@ -956,3 +957,196 @@ def test_run_hook_subprocess_error(caplog, dut_with_hooks):
         dut_with_hooks.run_hook('pre')
 
     assert 'Hook script failed: unexpected error' in caplog.text
+
+
+def test_run_hook_string_shorthand():
+    """A hook defined as a plain string should be treated as {'script': string}."""
+    dut = DUT(platform='p', id='1', serial='s', product='pr',
+              runner='r', connected=True,
+              hooks={'pre': '/usr/bin/my_hook.sh'})
+
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock:
+        dut.run_hook('pre')
+
+    popen_mock.assert_called_once_with(
+        ['/usr/bin/my_hook.sh'],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=mock.ANY,
+    )
+    proc_mock.communicate.assert_called_once_with(timeout=60)
+
+
+def test_run_hook_expandvars():
+    """Environment variables in script path and args should be expanded."""
+    dut = DUT(platform='p', id='1', serial='s', product='pr',
+              runner='r', connected=True,
+              hooks={'pre': {
+                  'script': '$MY_DIR/hook.sh',
+                  'args': ['--out=$OUT'],
+                  'timeout': 5,
+              }})
+
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock, \
+         mock.patch.dict('os.environ', {'MY_DIR': '/opt', 'OUT': '/tmp/out'}):
+        dut.run_hook('pre')
+
+    popen_mock.assert_called_once_with(
+        ['/opt/hook.sh', '--out=/tmp/out'],
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        env=mock.ANY,
+    )
+
+
+def test_run_hook_extra_env(dut_with_hooks):
+    """extra_env should be merged into the subprocess environment."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock) as popen_mock:
+        dut_with_hooks.run_hook('pre', extra_env={'TWISTER_BUILD_DIR': '/b'})
+
+    call_env = popen_mock.call_args.kwargs['env']
+    assert call_env['TWISTER_BUILD_DIR'] == '/b'
+
+
+def test_hook_env_sets_dut_fields():
+    """_hook_env should set TWISTER_HOOK, PLATFORM, DUT_ID, DUT_SERIAL, RUNNER."""
+    dut = DUT(platform='nrf52dk', id='abc123', serial='/dev/ttyACM0',
+              product='pr', runner='jlink', connected=True)
+
+    with mock.patch.dict('os.environ', {}, clear=True):
+        env = dut._hook_env('pre_flash')
+
+    assert env['TWISTER_HOOK'] == 'pre_flash'
+    assert env['TWISTER_PLATFORM'] == 'nrf52dk'
+    assert env['TWISTER_DUT_ID'] == 'abc123'
+    assert env['TWISTER_DUT_SERIAL'] == '/dev/ttyACM0'
+    assert env['TWISTER_RUNNER'] == 'jlink'
+
+
+def test_hook_env_skips_none_fields():
+    """_hook_env should not set env vars for DUT fields that are None."""
+    dut = DUT(platform=None, id=None, serial=None,
+              product='pr', runner=None, connected=True)
+
+    with mock.patch.dict('os.environ', {}, clear=True):
+        env = dut._hook_env('pre')
+
+    assert env['TWISTER_HOOK'] == 'pre'
+    assert 'TWISTER_PLATFORM' not in env
+    assert 'TWISTER_DUT_ID' not in env
+    assert 'TWISTER_DUT_SERIAL' not in env
+    assert 'TWISTER_RUNNER' not in env
+
+
+# ── _resolve_hook_scripts tests ────────────────────────────────────────────
+
+def test_resolve_hook_scripts_relative_dict():
+    """Relative script paths in dict hooks should be resolved against hwmap dir."""
+    hooks = {
+        'pre': {'script': 'hooks/pre.sh', 'args': [], 'timeout': 10},
+        'post': {'script': '/abs/post.sh', 'args': [], 'timeout': 10},
+    }
+    HardwareMap._resolve_hook_scripts(hooks, Path('/home/user/maps'))
+
+    assert hooks['pre']['script'] == '/home/user/maps/hooks/pre.sh'
+    assert hooks['post']['script'] == '/abs/post.sh'
+
+
+def test_resolve_hook_scripts_relative_string():
+    """Relative script paths in string hooks should be resolved against hwmap dir."""
+    hooks = {
+        'pre': './pre.sh',
+        'post': '/abs/post.sh',
+    }
+    HardwareMap._resolve_hook_scripts(hooks, Path('/maps'))
+
+    assert hooks['pre'] == '/maps/pre.sh'
+    assert hooks['post'] == '/abs/post.sh'
+
+
+def test_resolve_hook_scripts_empty():
+    """Empty hooks dict should be handled without error."""
+    hooks = {}
+    HardwareMap._resolve_hook_scripts(hooks, Path('/maps'))
+    assert hooks == {}
+
+
+# ── run_hook return value tests ────────────────────────────────────────────
+
+def test_run_hook_returns_true_on_success(dut_with_hooks):
+    """run_hook should return True when the script exits with code 0."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'')
+    proc_mock.returncode = 0
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock):
+        result = dut_with_hooks.run_hook('pre')
+
+    assert result is True
+
+
+def test_run_hook_returns_false_on_nonzero(dut_with_hooks):
+    """run_hook should return False when the script exits with non-zero code."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.return_value = (b'', b'error')
+    proc_mock.returncode = 1
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock):
+        result = dut_with_hooks.run_hook('pre')
+
+    assert result is False
+
+
+def test_run_hook_returns_false_on_timeout(dut_with_hooks):
+    """run_hook should return False on timeout."""
+    proc_mock = mock.Mock()
+    proc_mock.communicate.side_effect = [
+        subprocess.TimeoutExpired(cmd='cmd', timeout=10),
+        (b'', b''),
+    ]
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock(return_value=False)
+
+    with mock.patch('subprocess.Popen', return_value=proc_mock):
+        result = dut_with_hooks.run_hook('pre')
+
+    assert result is False
+
+
+def test_run_hook_returns_false_on_file_not_found(dut_with_hooks):
+    """run_hook should return False when the script is not found."""
+    with mock.patch('subprocess.Popen', side_effect=FileNotFoundError):
+        result = dut_with_hooks.run_hook('pre')
+
+    assert result is False
+
+
+def test_run_hook_returns_none_for_missing_type(dut_with_hooks):
+    """run_hook should return None for a hook type not in hooks."""
+    with mock.patch('subprocess.Popen') as popen_mock:
+        result = dut_with_hooks.run_hook('nonexistent')
+        popen_mock.assert_not_called()
+
+    assert result is None

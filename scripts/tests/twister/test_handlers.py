@@ -1060,7 +1060,7 @@ TESTDATA_17 = [
     (False, True, False, None, False, False,
      TwisterStatus.ERROR, 'Device issue (Flash error)', []),
     (False, False, True, None, False, False,
-     TwisterStatus.ERROR, 'Device issue (Timeout)', ['Flash operation timed out.']),
+     TwisterStatus.ERROR, 'Device issue (Flash timeout)', ['Flash operation timed out.']),
     (False, False, False, 1, False, False,
      TwisterStatus.ERROR, 'Device issue (Flash error?)', []),
     (False, False, False, 0, True, False,
@@ -1229,9 +1229,9 @@ def test_devicehandler_handle_robot_test(mocked_instance):
          mock.patch('subprocess.Popen', return_value=popen_ctx):
         handler.handle(harness)
 
-    hardware.run_hook.assert_any_call("pre")
-    hardware.run_hook.assert_any_call("post_flash")
-    hardware.run_hook.assert_any_call("post")
+    hardware.run_hook.assert_any_call("pre", extra_env=mock.ANY)
+    hardware.run_hook.assert_any_call("post_flash", extra_env=mock.ANY)
+    hardware.run_hook.assert_any_call("post", extra_env=mock.ANY)
 
 
 TESTDATA_18 = [
