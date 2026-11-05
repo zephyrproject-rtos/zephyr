@@ -23,7 +23,9 @@ GTEXT(z_openrisc_fault)
 GTEXT(z_get_next_switch_handle)
 GTEXT(z_openrisc_handle_irqs)
 GTEXT(z_openrisc_switch)
+#ifdef CONFIG_OPENRISC_TICK_TIMER
 GTEXT(z_openrisc_timer_isr)
+#endif
 
 #if defined(CONFIG_SOC_RESET_HOOK)
 GTEXT(soc_reset_hook)
@@ -422,8 +424,17 @@ exception_label \num, \label
 exception_label 0x5, tick_timer
 	isr_head
 
+#ifdef CONFIG_OPENRISC_TICK_TIMER
 	/* Handle the tick timer and jump to _isr_tail on return. */
 	chain_call z_openrisc_timer_isr, _isr_tail
+#else
+	/* Tick timer not in use: stop it and leave through _isr_tail. */
+	l.mtspr r0, r0, SPR_TTMR
+	l.j _isr_tail
+#ifndef __OR1K_NODELAY__
+	 l.nop
+#endif
+#endif
 .endm
 
 
