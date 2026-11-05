@@ -493,6 +493,12 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
+static const pixel_format_t rm67162_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void rm67162_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
@@ -501,8 +507,7 @@ static void rm67162_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 |
-						PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = rm67162_supported_pixel_formats;
 	switch (data->pixel_format) {
 	case MIPI_DSI_PIXFMT_RGB565:
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;

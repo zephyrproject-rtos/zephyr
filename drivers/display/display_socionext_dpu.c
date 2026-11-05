@@ -22,6 +22,12 @@ LOG_MODULE_REGISTER(display_socionext_dpu, CONFIG_DISPLAY_LOG_LEVEL);
 
 static const uint32_t dpu_supported_fmts =
 	PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888;
+static const pixel_format_t dpu_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	PIXEL_FORMAT_ARGB_8888,
+	0,
+};
 
 struct dpu_config {
 	DISPLAY_SEERIS_Type *base;
@@ -144,7 +150,7 @@ static void dpu_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->display_timing.width;
 	capabilities->y_resolution = config->display_timing.height;
-	capabilities->supported_pixel_formats = dpu_supported_fmts;
+	capabilities->supported_pixel_formats = dpu_supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }

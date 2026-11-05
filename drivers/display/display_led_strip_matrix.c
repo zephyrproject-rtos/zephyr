@@ -190,6 +190,12 @@ static int led_strip_matrix_read(const struct device *dev, const uint16_t x, con
 	return 0;
 }
 
+static const pixel_format_t led_strip_matrix_supported_pixel_formats[] = {
+	PIXEL_FORMAT_ARGB_8888,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void led_strip_matrix_get_capabilities(const struct device *dev,
 					      struct display_capabilities *caps)
 {
@@ -197,7 +203,7 @@ static void led_strip_matrix_get_capabilities(const struct device *dev,
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_888;
+	caps->supported_pixel_formats = led_strip_matrix_supported_pixel_formats;
 	caps->current_pixel_format = config->pixel_format;
 	caps->screen_info = 0;
 }

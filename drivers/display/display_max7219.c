@@ -242,13 +242,18 @@ static int max7219_set_orientation(const struct device *dev,
 	}
 }
 
+static const pixel_format_t max7219_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	0,
+};
+
 static void max7219_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct max7219_config *dev_config = dev->config;
 
 	caps->x_resolution = MAX7219_SEGMENTS_PER_DIGIT;
 	caps->y_resolution = MAX7219_DIGITS_PER_DEVICE * dev_config->num_cascading;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->supported_pixel_formats = max7219_supported_pixel_formats;
 	caps->screen_info = 0;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;

@@ -129,6 +129,7 @@ struct st7701_config {
 	uint8_t gip_ef_len;
 	uint8_t pvgamctrl_len;
 	uint8_t nvgamctrl_len;
+	const pixel_format_t *supported_pixel_formats;
 };
 
 struct st7701_data {
@@ -467,7 +468,7 @@ static void st7701_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = cfg->width;
 	capabilities->y_resolution = cfg->height;
-	capabilities->supported_pixel_formats = data->pixel_format;
+	capabilities->supported_pixel_formats = cfg->supported_pixel_formats;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = data->orientation;
 }
@@ -595,6 +596,9 @@ static int st7701_init(const struct device *dev)
 		     "devicetree property " #prop " is too long for " #field)
 
 #define ST7701_DEVICE(inst)                                                                        \
+	static const pixel_format_t st7701_pf_##inst[] = { \
+		DT_INST_PROP(inst, pixel_format) == MIPI_DSI_PIXFMT_RGB565 ? \
+			PIXEL_FORMAT_RGB_565 : PIXEL_FORMAT_RGB_888, 0}; \
 	BUILD_ASSERT((DT_INST_PROP(inst, height) % 2) == 0,                                        \
 		     "Panel height must be even for the line setting encoding");                   \
 	ST7701_ASSERT_LEN(inst, bk3_ef, bk3_ef);                                                   \
@@ -687,6 +691,7 @@ static int st7701_init(const struct device *dev)
 		.gip_ef_len = DT_INST_PROP_LEN_OR(inst, gip_ef, 0),                                \
 		.pvgamctrl_len = DT_INST_PROP_LEN_OR(inst, pvgamctrl, 0),                          \
 		.nvgamctrl_len = DT_INST_PROP_LEN_OR(inst, nvgamctrl, 0),                          \
+		.supported_pixel_formats = st7701_pf_##inst, \
 	};                                                                                         \
 	static struct st7701_data st7701_data_##inst = {                                           \
 		.dsi_pixel_format = DT_INST_PROP(inst, pixel_format),                              \

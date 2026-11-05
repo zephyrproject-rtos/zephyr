@@ -422,6 +422,12 @@ static int co5300_set_brightness(const struct device *dev, const uint8_t contras
 	return config->cmd_write(dev, MIPI_DCS_SET_DISPLAY_BRIGHTNESS, &contrast, 1);
 }
 
+static const pixel_format_t co5300_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	PIXEL_FORMAT_RGB_888,
+	0,
+};
+
 static void co5300_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
@@ -430,7 +436,7 @@ static void co5300_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->panel_width;
 	capabilities->y_resolution = config->panel_height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_RGB_888;
+	capabilities->supported_pixel_formats = co5300_supported_pixel_formats;
 
 	switch (data->pixel_format) {
 	case CO5300_PIXFMT_RGB565:

@@ -313,6 +313,12 @@ static int st75256_set_contrast(const struct device *dev, const uint8_t contrast
 	return st75256_write_command(dev, ST75256_SET_VOP, contrast_out, sizeof(contrast_out));
 }
 
+static const pixel_format_t st75256_supported_pixel_formats[] = {
+	PIXEL_FORMAT_MONO01,
+	PIXEL_FORMAT_L_8,
+	0,
+};
+
 static void st75256_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct st75256_config *config = dev->config;
@@ -320,7 +326,7 @@ static void st75256_get_capabilities(const struct device *dev, struct display_ca
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01 | PIXEL_FORMAT_L_8;
+	caps->supported_pixel_formats = st75256_supported_pixel_formats;
 	caps->current_pixel_format = data->current_pixel_format;
 	caps->screen_info = data->current_screen_info;
 }

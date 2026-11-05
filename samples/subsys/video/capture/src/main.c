@@ -59,11 +59,10 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 	display_get_capabilities(display_dev, &capabilities);
 
 	LOG_INF("- Capabilities:");
-	LOG_INF("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u"
+	LOG_INF("  x_resolution = %u, y_resolution = %u"
 		"  current_pixel_format = %u, current_orientation = %u",
 		capabilities.x_resolution, capabilities.y_resolution,
-		capabilities.supported_pixel_formats, capabilities.current_pixel_format,
-		capabilities.current_orientation);
+		capabilities.current_pixel_format, capabilities.current_orientation);
 
 	/* Set display pixel format to match the one in use by the camera */
 	switch (pixfmt) {

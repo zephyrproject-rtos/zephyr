@@ -178,13 +178,18 @@ static int lpm_write(const struct device *dev, const uint16_t x, const uint16_t 
 	return 0;
 }
 
+static const pixel_format_t lpm_supported_pixel_formats[] = {
+	PIXEL_FORMAT_RGB_565,
+	0,
+};
+
 static void lpm_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct lpm013m126_config *cfg = dev->config;
 
 	caps->x_resolution = cfg->width;
 	caps->y_resolution = cfg->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
+	caps->supported_pixel_formats = lpm_supported_pixel_formats;
 	caps->current_pixel_format = PIXEL_FORMAT_RGB_565;
 	caps->screen_info = SCREEN_INFO_X_ALIGNMENT_WIDTH;
 }
