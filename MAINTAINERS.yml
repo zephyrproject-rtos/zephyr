@@ -7609,6 +7609,7 @@ West:
   collaborators:
     - pdgendt
     - uLipe
+    - AndreCostaaa
   files:
     - modules/lvgl/
     - tests/lib/gui/lvgl/
