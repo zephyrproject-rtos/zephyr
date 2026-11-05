@@ -19,14 +19,34 @@ config DISK_VIRTIO_BLK_MAX_SEGMENTS
 	help
 	  Maximum number of scatter-gather data segments a single block request
 	  may carry. This is the data segment budget, not the final virtqueue
-	  size. The driver keeps one request in flight at a time and sizes the
-	  request virtqueue by rounding (MAX_SEGMENTS + 2) up to a power of two;
-	  the two extra descriptors hold the request header and status byte. The
-	  default value of 14 therefore uses a 16-entry virtqueue, and the
-	  maximum value uses a 256-entry virtqueue.
+	  size. The request queue is sized for (MAX_SEGMENTS + 2) descriptors
+	  times MAX_INFLIGHT, rounded up to a power of two; the two extra
+	  descriptors hold the request header and status byte. The default of
+	  14 segments with 4 requests in flight uses a 64-entry queue.
+
+	  The request queue is limited to 256 entries. When the configured
+	  combination would need more, the driver lowers the effective number of
+	  in-flight requests at build time, so every MAX_SEGMENTS value in its
+	  range still builds.
 
 	  This bounds how physically fragmented a single transfer can be before
 	  the driver splits it into several device requests.
+
+config DISK_VIRTIO_BLK_MAX_INFLIGHT
+	int "VIRTIO block max in-flight requests"
+	default 4
+	range 1 16
+	help
+	  Number of requests the driver can keep in flight. Each request needs
+	  its own header, status byte and completion semaphore. The request
+	  queue is sized for this many maximum-length requests, rounded up to a
+	  power of two and capped at 256 entries. This value is an upper bound:
+	  when (MAX_SEGMENTS + 2) * MAX_INFLIGHT would exceed 256, the driver
+	  lowers the effective number of in-flight requests at build time. If the
+	  device advertises a smaller queue, that size is used.
+
+	  The default of 4 raises the default request queue from 16 to 64
+	  entries. Set to 1 to keep the previous single-request behavior.
 
 config DISK_VIRTIO_BLK_SECTOR_SIZE
 	int "VIRTIO block fallback logical block size"

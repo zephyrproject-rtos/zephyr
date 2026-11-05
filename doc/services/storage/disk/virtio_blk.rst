@@ -21,21 +21,27 @@ top of the generic VirtIO API. A ``virtio,blk`` node is a child of a VirtIO
 transport device (``DT_INST_PARENT``), so the same code serves a PCI or an MMIO
 device without change.
 
-Single in-flight request
-========================
+Request pool
+============
 
-The ``disk_access`` read/write API is synchronous and blocking. The driver also
-serializes callers with a mutex, so each device keeps exactly one request in
-flight: it adds a single descriptor chain to the request virtqueue, notifies the
-device, and blocks on a semaphore that the completion callback signals from
-interrupt context.
+The ``disk_access`` read/write API is synchronous and blocking, but the driver
+keeps up to :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT` requests in
+flight. Each request owns its header, status byte, completion semaphore and
+slot in the free-index pool, and the completion callback signals only that
+request. The caller blocks on its own semaphore and returns the slot after
+reading the status.
 
-Because there is no request pipelining, the whole virtqueue is spent on a single
-request's scatter-gather chain. The user-facing knob is the maximum number of
-data segments per request
-(:kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_SEGMENTS`); the driver sizes the
-virtqueue by rounding ``MAX_SEGMENTS + 2`` up to a power of two, leaving room
-for the request header and the status byte.
+Chain construction is serialized by a mutex. The virtqueue hands out
+descriptors one at a time and may block partway through a chain, so two
+builders could otherwise each hold descriptors the other one needs.
+Completions are not serialized, so submitted requests still overlap.
+
+The request queue is sized for ``(MAX_SEGMENTS + 2) * MAX_INFLIGHT``
+descriptors, rounded up to a power of two and capped at 256 entries; the two
+extra descriptors per request hold the request header and the status byte. When
+the configured combination would need more than 256 entries, the driver lowers
+the effective number of in-flight requests at build time. If the device
+advertises a smaller ``seg_max`` or queue size, that limit applies instead.
 
 Block size
 ==========
@@ -129,6 +135,7 @@ Options
 
 * :kconfig:option:`CONFIG_DISK_DRIVER_VIRTIO_BLK`
 * :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_SEGMENTS`
+* :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT`
 * :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_SECTOR_SIZE`
 
 QEMU options
@@ -146,9 +153,13 @@ code; the ``qemu_cortex_a53`` board attaches an MMIO ``virtio-blk-device`` to
 Limitations
 ***********
 
-* Exactly one request is in flight at a time. This matches the synchronous
-  ``disk_access`` contract, so it costs that consumer no throughput, but the
-  driver provides no request pipelining.
+* Each ``disk_access`` call blocks until its request completes. The driver
+  overlaps requests from different threads, but a single caller cannot
+  pipeline transfers.
+* The effective number of in-flight requests can be lower than
+  :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT` when the request queue
+  would otherwise exceed 256 descriptors. A device that advertises a smaller
+  queue or ``seg_max`` also lowers the achievable concurrency.
 * Like the rest of Zephyr's VirtIO subsystem, the driver assumes coherent DMA
   and performs no cache maintenance on descriptors, rings, or data buffers.
 * Under an MMU the logical block size cannot exceed the MMU page size.

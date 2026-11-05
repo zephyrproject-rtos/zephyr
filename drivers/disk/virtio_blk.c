@@ -16,20 +16,29 @@
 #define VIRTIO_BLK_QUEUE_IDX 0
 
 /*
- * The single request virtqueue holds one descriptor for the request header, up
- * to VIRTIO_BLK_MAX_DATA_SEGS scatter-gather data descriptors, and one for the
- * status byte.  VIRTIO_BLK_MAX_DATA_SEGS also bounds the size of the on-stack
- * scatter-gather segment array.
+ * The request virtqueue holds one descriptor for the request header, up to
+ * VIRTIO_BLK_MAX_DATA_SEGS scatter-gather data descriptors and one for the
+ * status byte, for up to VIRTIO_BLK_MAX_INFLIGHT requests. The segment count
+ * also bounds the on-stack scatter-gather array.
+ *
+ * The request queue is limited to 256 entries, and MAX_SEGMENTS alone is
+ * allowed to reach 254. Keep the configured in-flight count when it fits and
+ * lower it otherwise, so any MAX_SEGMENTS value still builds; one request
+ * always fits because MAX_SEGMENTS <= 254 leaves room for the header and the
+ * status byte.
  */
 #if defined(CONFIG_MMU)
 #define VIRTIO_BLK_MAX_DATA_SEGS CONFIG_DISK_VIRTIO_BLK_MAX_SEGMENTS
 #else
 #define VIRTIO_BLK_MAX_DATA_SEGS 1
 #endif
-#define VIRTIO_BLK_REQUEST_QUEUE_SIZE Z_POW2_CEIL(VIRTIO_BLK_MAX_DATA_SEGS + 2)
+#define VIRTIO_BLK_MAX_INFLIGHT                                                                    \
+	MIN((uint32_t)CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT,                                         \
+	    256U / ((uint32_t)VIRTIO_BLK_MAX_DATA_SEGS + 2U))
+#define VIRTIO_BLK_REQUEST_QUEUE_SIZE                                                              \
+	Z_POW2_CEIL((VIRTIO_BLK_MAX_DATA_SEGS + 2U) * VIRTIO_BLK_MAX_INFLIGHT)
 
-BUILD_ASSERT(VIRTIO_BLK_REQUEST_QUEUE_SIZE <= 256,
-	     "VIRTIO block request virtqueue must not exceed 256 entries");
+BUILD_ASSERT(VIRTIO_BLK_REQUEST_QUEUE_SIZE <= 256, "the request queue must not exceed 256 entries");
 
 /* Feature bits from VirtIO 1.3, section 5.2.3 */
 #define VIRTIO_BLK_F_SIZE_MAX     1
@@ -100,19 +109,25 @@ struct virtio_blk_drv_config {
 	const char *disk_name;
 };
 
+struct virtio_blk_request {
+	struct virtio_blk_req_hdr hdr;
+	uint8_t status;
+	struct k_sem sem;
+};
+
 struct virtio_blk_data {
 	const struct device *vdev;
 	struct disk_info info;
-	struct k_sem sem;
-	struct k_mutex lock;
+	struct k_mutex submit_lock;
+	struct virtio_blk_request requests[VIRTIO_BLK_MAX_INFLIGHT];
+	stack_data_t free_idx[VIRTIO_BLK_MAX_INFLIGHT];
+	struct k_stack free;
 	uint64_t capacity;
 	uint32_t sector_size;
 	uint32_t sectors_per_block;
 	uint16_t max_data_segs;
 	bool read_only;
 	bool flush;
-	uint8_t status;
-	struct virtio_blk_req_hdr req_hdr;
 };
 
 /*
@@ -133,7 +148,8 @@ static uint16_t virtio_blk_enum_queues_cb(uint16_t q_index, uint16_t q_size_max,
 	struct virtio_blk_data *data = opaque;
 
 	if (q_index == VIRTIO_BLK_QUEUE_IDX) {
-		uint16_t request_queue_size = Z_POW2_CEIL(data->max_data_segs + 2U);
+		uint16_t request_queue_size =
+			(uint16_t)Z_POW2_CEIL((data->max_data_segs + 2U) * VIRTIO_BLK_MAX_INFLIGHT);
 
 		return MIN(request_queue_size, q_size_max);
 	}
@@ -143,11 +159,33 @@ static uint16_t virtio_blk_enum_queues_cb(uint16_t q_index, uint16_t q_size_max,
 
 static void virtio_blk_complete(void *priv, uint32_t used_len)
 {
-	struct virtio_blk_data *data = priv;
+	struct virtio_blk_request *req = priv;
 
 	ARG_UNUSED(used_len);
 
-	k_sem_give(&data->sem);
+	k_sem_give(&req->sem);
+}
+
+static void virtio_blk_request_get(struct virtio_blk_data *data, struct virtio_blk_request **req)
+{
+	stack_data_t idx;
+	int ret = k_stack_pop(&data->free, &idx, K_FOREVER);
+
+	/* The pool has one slot per request, so a pop cannot fail. */
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
+
+	*req = &data->requests[idx];
+}
+
+static void virtio_blk_request_put(struct virtio_blk_data *data, struct virtio_blk_request *req)
+{
+	stack_data_t idx = (stack_data_t)(req - data->requests);
+	int ret = k_stack_push(&data->free, idx);
+
+	/* Every slot is returned exactly once, so the push cannot fail. */
+	__ASSERT_NO_MSG(ret == 0);
+	ARG_UNUSED(ret);
 }
 
 /*
@@ -184,10 +222,10 @@ static int virtio_blk_negotiate_feature(const struct device *vdev, int bit, bool
 }
 
 /*
- * Submit a single descriptor chain: request header, zero or more caller data
- * segments, and the status byte.  Serialized by data->lock because req_hdr,
- * status and the completion semaphore are shared per device (single in-flight
- * request); disk_access does not serialize concurrent read/write callers.
+ * Submit one descriptor chain: request header, zero or more caller data
+ * segments, and the status byte. Each in-flight request has its own header,
+ * status byte and completion semaphore, so concurrent callers do not share
+ * state. The slot is recycled only after the waiter has read the status.
  *
  * sector is expressed in 512-byte VirtIO sectors, as required by the protocol.
  */
@@ -196,6 +234,7 @@ static int virtio_blk_submit(struct virtio_blk_data *data, uint32_t type, uint64
 {
 	struct virtq *vq = virtio_get_virtqueue(data->vdev, VIRTIO_BLK_QUEUE_IDX);
 	struct virtq_buf bufs[VIRTIO_BLK_MAX_DATA_SEGS + 2];
+	struct virtio_blk_request *req;
 	uint16_t dev_readable_count;
 	uint16_t bufs_count = 0;
 	uint8_t status;
@@ -205,22 +244,24 @@ static int virtio_blk_submit(struct virtio_blk_data *data, uint32_t type, uint64
 		return -ENODEV;
 	}
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-	data->req_hdr.type = sys_cpu_to_le32(type);
-	data->req_hdr.reserved = 0;
-	data->req_hdr.sector = sys_cpu_to_le64(sector);
-	data->status = 0xff;
+	virtio_blk_request_get(data, &req);
 
-	bufs[bufs_count].addr = &data->req_hdr;
-	bufs[bufs_count].len = sizeof(data->req_hdr);
+	req->hdr.type = sys_cpu_to_le32(type);
+	req->hdr.reserved = 0;
+	req->hdr.sector = sys_cpu_to_le64(sector);
+	req->status = 0xff;
+	k_sem_reset(&req->sem);
+
+	bufs[bufs_count].addr = &req->hdr;
+	bufs[bufs_count].len = sizeof(req->hdr);
 	bufs_count++;
 
 	for (uint16_t i = 0; i < n_segs; i++) {
 		bufs[bufs_count++] = data_segs[i];
 	}
 
-	bufs[bufs_count].addr = &data->status;
-	bufs[bufs_count].len = sizeof(data->status);
+	bufs[bufs_count].addr = &req->status;
+	bufs[bufs_count].len = sizeof(req->status);
 	bufs_count++;
 
 	/*
@@ -229,26 +270,33 @@ static int virtio_blk_submit(struct virtio_blk_data *data, uint32_t type, uint64
 	 */
 	dev_readable_count = is_write ? (uint16_t)(1U + n_segs) : 1U;
 
+	/*
+	 * Chain construction pops descriptors one at a time with K_FOREVER.
+	 * Serialize it so two callers cannot each hold part of a chain while
+	 * waiting for descriptors the other one holds. The completion callback
+	 * does not take this lock, so submitted requests still overlap.
+	 */
+	k_mutex_lock(&data->submit_lock, K_FOREVER);
 	ret = virtq_add_buffer_chain(vq, bufs, bufs_count, dev_readable_count, virtio_blk_complete,
-				     data, K_FOREVER);
+				     req, K_FOREVER);
+	k_mutex_unlock(&data->submit_lock);
 	if (ret != 0) {
 		LOG_ERR("failed to submit request: %d", ret);
-		k_mutex_unlock(&data->lock);
+		virtio_blk_request_put(data, req);
 		return ret;
 	}
 
 	virtio_notify_virtqueue(data->vdev, VIRTIO_BLK_QUEUE_IDX);
-	k_sem_take(&data->sem, K_FOREVER);
+	k_sem_take(&req->sem, K_FOREVER);
 
-	if (data->status != VIRTIO_BLK_S_OK) {
-		status = data->status;
-		k_mutex_unlock(&data->lock);
+	status = req->status;
+	virtio_blk_request_put(data, req);
+
+	if (status != VIRTIO_BLK_S_OK) {
 		LOG_ERR("request failed, status=%u", status);
 
 		return (status == VIRTIO_BLK_S_UNSUPP) ? -ENOTSUP : -EIO;
 	}
-
-	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -516,8 +564,13 @@ static int virtio_blk_dev_init(const struct device *dev)
 	data->info.name = cfg->disk_name;
 	data->info.ops = &virtio_blk_ops;
 	data->info.dev = dev;
-	k_sem_init(&data->sem, 0, 1);
-	k_mutex_init(&data->lock);
+	k_mutex_init(&data->submit_lock);
+	k_stack_init(&data->free, data->free_idx, ARRAY_SIZE(data->free_idx));
+	for (size_t i = 0; i < ARRAY_SIZE(data->free_idx); i++) {
+		k_sem_init(&data->requests[i].sem, 0, 1);
+		ret = k_stack_push(&data->free, (stack_data_t)i);
+		__ASSERT_NO_MSG(ret == 0);
+	}
 
 	/*
 	 * Negotiate feature bits before committing them; the device-specific
