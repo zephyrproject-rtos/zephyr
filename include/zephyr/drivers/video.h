@@ -78,6 +78,8 @@ struct video_device *video_find_vdev(const struct device *dev);
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
 /** Control that affects other controls, e.g. the primary control of a cluster */
 #define VIDEO_CTRL_FLAG_UPDATE     BIT(4)
+/** Control executed on each write: the driver is called even if the value does not change */
+#define VIDEO_CTRL_FLAG_EXECUTE_ON_WRITE BIT(5)
 
 /**
  * @brief Type of video control
@@ -97,14 +99,46 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_STRING = 5,
 	/** Menu integer type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+	/** Button type, triggers an action when written and holds no value */
+	VIDEO_CTRL_TYPE_BUTTON = 7,
 };
 
 /**
  * @brief Storage type for video controls
  *
+ * The driver sets the first group of fields, then registers the control with
+ * video_register_ctrl(). The remaining fields are owned by the framework.
+ *
  * @see video_control for the struct used in public API
  */
 struct video_ctrl {
+	/** Control ID, see @ref video_control_ids */
+	uint32_t id;
+	/** Type of the control, derived from @ref id for standard controls */
+	enum video_ctrl_type type;
+	/** Flags associated with this control */
+	unsigned long flags;
+	/** Acceptable range of values for this control */
+	struct video_ctrl_range range;
+	/** Reference to list of possible values for menu controls types */
+	union {
+		/** Used for menu control types */
+		const char *const *menu;
+		/** Used for integer menu control types */
+		const int64_t *int_menu;
+	};
+	/** Name of the control, only needed for private controls */
+	const char *name;
+	/** Current value of this control, set to the default value at registration */
+	union {
+		/** Used for 32-bit control types */
+		int32_t val;
+		/** Used for 64-bit control types */
+		int64_t val64;
+	};
+
+	/** Video device associated with this control */
+	const struct video_device *vdev;
 	/** Internal use for video control grouping */
 	struct video_ctrl *cluster;
 	/** Internal use for video control grouping */
@@ -113,31 +147,6 @@ struct video_ctrl {
 	bool is_auto;
 	/** Internal use for volatile control handling */
 	bool has_volatiles;
-
-	/** Video device associated with this control */
-	const struct video_device *vdev;
-	/** Control ID, see @ref video_control_ids */
-	uint32_t id;
-	/** Type of the control */
-	enum video_ctrl_type type;
-	/** Flags associated with this control */
-	unsigned long flags;
-	/** Acceptable range of values for this control */
-	struct video_ctrl_range range;
-	/** Current value of this control */
-	union {
-		/** Used for 32-bit control types */
-		int32_t val;
-		/** Used for 64-bit control types */
-		int64_t val64;
-	};
-	/** Reference to list of possible values for menu controls types */
-	union {
-		/** Used for menu control types */
-		const char *const *menu;
-		/** Used for integer menu control types */
-		const int64_t *int_menu;
-	};
 	/** Node place this control in a list */
 	sys_dnode_t node;
 };

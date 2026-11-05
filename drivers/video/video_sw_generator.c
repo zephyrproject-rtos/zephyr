@@ -792,16 +792,9 @@ static DEVICE_API(video, video_sw_generator_driver_api) = {
 static int video_sw_generator_init_controls(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
-	int ret;
 
-	ret = video_init_menu_ctrl(&data->ctrls.test_pattern, dev, VIDEO_CID_TEST_PATTERN,
-				   0, test_pattern_menu);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return video_init_ctrl(&data->ctrls.hflip, dev, VIDEO_CID_HFLIP,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+	return video_register_ctrls((struct video_ctrl *)&data->ctrls,
+				    sizeof(data->ctrls) / sizeof(struct video_ctrl), dev);
 }
 
 static int video_sw_generator_init(const struct device *dev)
@@ -824,6 +817,10 @@ static int video_sw_generator_init(const struct device *dev)
 		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
 		.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                        \
 		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
+		.ctrls = {                                                                         \
+			.hflip = {.id = VIDEO_CID_HFLIP},                                          \
+			.test_pattern = {.id = VIDEO_CID_TEST_PATTERN, .menu = test_pattern_menu}, \
+		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &video_sw_generator_init, NULL, &video_sw_generator_data_##n,     \
