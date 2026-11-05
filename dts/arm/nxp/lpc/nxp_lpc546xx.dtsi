@@ -133,6 +133,14 @@
 			num-inputs = <64>;
 		};
 
+		inputmux0: inputmux@40005000 {
+			compatible = "nxp,inputmux";
+			reg = <0x40005000 0x1000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+			status = "disabled";
+		};
+
 		ctimer0: ctimer@40008000 {
 			compatible = "nxp,lpc-ctimer";
 			reg = <0x40008000 0x1000>;
