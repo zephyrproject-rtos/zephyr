@@ -1,0 +1,152 @@
+# Renesas RH850 architecture configuration options
+
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Renesas RH850 Options"
+	depends on RH850
+
+config ARCH
+	string
+	default "rh850"
+
+config HAS_EXCEPT_VECTOR_TABLE
+	bool
+	help
+	  Set if the processor has the exception vector table.
+
+config CPU_G4MH
+	bool
+	help
+	  Set if the processor supports the Renesas G4MH instruction set.
+
+config CPU_G4KH
+	bool
+	help
+	  Set if the processor supports the Renesas G4KH instruction set.
+
+config RH850_CUSTOM_INTERRUPT_CONTROLLER
+	bool
+	help
+	  This option indicates that the RH850 CPU is connected to a custom
+	  interrupt controller.
+
+if CPU_HAS_MPU
+
+config RH850_MPU_REGION_MIN_ALIGN_AND_SIZE
+	int
+	default 4
+	help
+	  Minimum size (and alignment) of an RH850 MPU region. Use this
+	  symbol to guarantee minimum size and alignment of MPU regions.
+	  A minimum 4-byte alignment is enforced in RH850 builds without
+	  support for Memory Protection.
+
+endif # CPU_HAS_MPU
+
+config CPU_HAS_FXU
+	bool
+	depends on CPU_G4MH
+	help
+	  This option is enabled when the CPU has hardware Extended
+	  floating-point operation unit.
+
+config FXU
+	bool "Extended floating-point operation unit (FXU)"
+	depends on CPU_HAS_FXU
+	help
+	  This option enables the hardware Extended floating-point operation unit (FPU),
+	  in order to support using the floating point registers and instructions.
+
+	  The execution of one extended floating-point operation
+	  instruction allows the execution of four single-precision
+	  floating-point (vector data) operations.
+	  This is an operation generally referred to as an
+	  SIMD(Single Instruction Multiple Data) operation.
+
+	  Note: The use of FXU instructions depends on compiler support.
+	  Ensure your compiler is configured to generate FXU instructions when
+	  targeting this feature.
+
+config XIP
+	default y
+
+config NUM_IRQ_PRIO_LEVELS
+	int "Number of supported interrupt priority levels"
+	range 1 16
+	default 16
+	help
+	  Interrupt priorities available will be 0 to NUM_IRQ_PRIO_LEVELS-1. The
+	  minimum value is 1. The BSP must provide a valid default for proper
+	  operation.
+
+config NUM_IRQS
+	int
+	default 1024
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default y
+
+config GEN_IRQ_START_VECTOR
+	default 0
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 512
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config INITIALIZATION_STACK_SIZE
+	int "Initialization stack size (in bytes)"
+	default 512
+	help
+	  Stack size for initialization process of kernel (in bytes)
+
+config RH850_RAM_INIT
+	bool "RAM initialization"
+	help
+	  Enable RAM initialization at system startup.
+
+config RH850_RAM_INIT_CHECK_RESET
+	bool "Check reset cause before RAM initialization"
+	depends on RH850_RAM_INIT
+	help
+	  Enable checking the reset cause before performing RAM initialization.
+
+	  When enabled, the system may check the reset cause to decide whether
+	  RAM should be initialized.
+	  Skip the RAM initialization at startup when the reset cause register
+	  reports one of the reset causes selected by RH850_RESET_CAUSE_MASK,
+	  so that RAM contents are kept across those resets.
+
+config RH850_RESET_CAUSE_REG_ADDR
+	hex "Reset Cause register address"
+	depends on RH850_RAM_INIT_CHECK_RESET
+	help
+	  Address of the hardware reset cause register.
+
+	  This register is read to determine the cause of the hard reset, is used
+	  in checking reset cause before processing RAM initialization.
+
+config RH850_RESET_CAUSE_MASK
+	hex "Reset Cause mask"
+	depends on RH850_RAM_INIT_CHECK_RESET
+	help
+	  Bit mask value to evaluate the reset cause register specified by
+	  RH850_RESET_CAUSE_REG_ADDR.
+
+	  Ram initialization is performed if any bit selected by this mask
+	  is set in the reset cause register.
+	  RAM initialization is skipped if any bit selected by this mask is
+	  set in the reset cause register, and performed otherwise.
+
+endmenu
