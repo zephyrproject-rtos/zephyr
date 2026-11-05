@@ -1482,6 +1482,32 @@ ZTEST(conn_mgr_monitor, test_wait_ready_change)
 		   "Regaining IPv4 should be a change.");
 }
 
+/* The ai_family is restricted only when a single IP family is ready */
+ZTEST(conn_mgr_monitor, test_get_ready_addr_family)
+{
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_UNSPEC,
+		      "No family ready should give NET_AF_UNSPEC.");
+
+	net_if_ipv4_addr_add(if_simp_a, &test_ipv4_a, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_a), 0, "net_if_up should succeed for if_simp_a.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV4, EVENT_WAIT_TIME),
+		   "IPv4 should become ready.");
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_INET,
+		      "Only IPv4 ready should give NET_AF_INET.");
+
+	net_if_ipv6_addr_add(if_simp_b, &test_ipv6_b, NET_ADDR_MANUAL, 0);
+	zassert_equal(net_if_up(if_simp_b), 0, "net_if_up should succeed for if_simp_b.");
+	zassert_ok(conn_mgr_wait_ready(CONN_MGR_READY_IPV6, EVENT_WAIT_TIME),
+		   "IPv6 should become ready.");
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_UNSPEC,
+		      "Both families ready should give NET_AF_UNSPEC.");
+
+	zassert_equal(net_if_down(if_simp_a), 0, "net_if_down should succeed for if_simp_a.");
+	wait_for_events(TEST_EXPECT_L4_IPV4_DISCONNECTED, EVENT_WAIT_TIME);
+	zassert_equal(conn_mgr_get_ready_addr_family(), NET_AF_INET6,
+		      "Only IPv6 ready should give NET_AF_INET6.");
+}
+
 /* L4 connectivity alone must not report name resolution as available */
 ZTEST(conn_mgr_monitor, test_dns_not_ready_without_servers)
 {
