@@ -124,6 +124,11 @@ static int adc_rpi_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (channel_cfg->reference != ADC_REF_INTERNAL) {
+		LOG_ERR("Reference is not valid");
+		return -EINVAL;
+	}
+
 	data->configured_channels |= BIT(channel_cfg->channel_id);
 
 	return 0;
@@ -171,10 +176,10 @@ static int adc_rpi_check_buffer_size(const struct device *dev,
  * @param sequence ADC sequence description
  *
  * @return 0 on success
- * @return -EINVAL if no channel is selected or a selected channel is not
- *         configured
- * @return -ENOTSUP if requested resolution or channel is out side of supported
- *         range
+ * @return -EINVAL if requested resolution is out of supported range,
+ *         oversampling is requested, no channel is selected or a selected
+ *         channel is not configured
+ * @return -ENOTSUP if requested channel is out side of supported range
  * @return -ENOMEM if buffer is not big enough
  *         (see @ref adc_rpi_check_buffer_size)
  * @return other error code returned by adc_context_wait_for_completion
@@ -189,7 +194,12 @@ static int adc_rpi_start_read(const struct device *dev,
 	if (sequence->resolution > ADC_RPI_MAX_RESOLUTION ||
 	    sequence->resolution == 0) {
 		LOG_ERR("unsupported resolution %d", sequence->resolution);
-		return -ENOTSUP;
+		return -EINVAL;
+	}
+
+	if (sequence->oversampling != 0U) {
+		LOG_ERR("oversampling is not supported");
+		return -EINVAL;
 	}
 
 	if (sequence->channels == 0U) {
