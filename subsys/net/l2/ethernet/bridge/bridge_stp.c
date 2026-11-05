@@ -344,7 +344,6 @@ static void link_params(struct net_if *iface, uint32_t *cost, bool *full_duplex)
 	enum ethernet_hw_caps caps;
 	struct phy_link_state state;
 
-	*cost = ETH_RSTP_DEFAULT_PATH_COST;
 	*full_duplex = true;
 
 	if (phy != NULL && phy_get_link_state(phy, &state) == 0 && state.is_up) {
@@ -360,6 +359,8 @@ static void link_params(struct net_if *iface, uint32_t *cost, bool *full_duplex)
 			*cost = speed_to_cost(2500U);
 		} else if ((state.speed & LINK_FULL_5000BASE) != 0) {
 			*cost = speed_to_cost(5000U);
+		} else {
+			*cost = ETH_RSTP_DEFAULT_PATH_COST;
 		}
 
 		return;
@@ -377,6 +378,8 @@ static void link_params(struct net_if *iface, uint32_t *cost, bool *full_duplex)
 		*cost = speed_to_cost(100U);
 	} else if ((caps & ETHERNET_LINK_10BASE) != 0) {
 		*cost = speed_to_cost(10U);
+	} else {
+		*cost = ETH_RSTP_DEFAULT_PATH_COST;
 	}
 }
 
