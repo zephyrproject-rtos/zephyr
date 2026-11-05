@@ -1687,14 +1687,17 @@ The ``hooks`` object uses lifecycle point names as keys. Supported keys are:
 - ``post`` – runs after the test finishes and the serial connection is
   closed.
 
-Each value is an object with the following properties:
+Each value can be either a plain string (the script path) or an object
+with the following properties:
 
 - ``script`` *(required)*: Path to the script or executable to run.
-- ``args`` *(optional)*: A list of string arguments passed to the script.
+  Relative paths are resolved against the directory containing the
+  hardware map file.
+- ``args`` *(optional)*: A list of arguments passed to the script.
   Defaults to an empty list.
 - ``timeout`` *(optional)*: Maximum time in seconds to wait for the script
   to complete. Defaults to 60 seconds. If the timeout is exceeded, the
-  process is killed and an error is logged.
+  process is killed and the hook is treated as failed.
 
 Example hardware map entry with hooks:
 
@@ -1719,13 +1722,24 @@ Example hardware map entry with hooks:
        post_flash:
          script: /path/to/verify_flash.sh
          timeout: 15
-       post:
-         script: /path/to/cleanup.sh
+       post: /path/to/cleanup.sh
 
-The hooks are executed in the context of the running test. Environment
-variables from the test environment are passed to the hook scripts. If the
-script exits with a non-zero return code, an error is logged but test
-execution continues.
+Hook scripts receive the following environment variables:
+
+- ``TWISTER_HOOK``: The hook type being executed (``pre``, ``pre_flash``,
+  ``post_flash``, or ``post``).
+- ``TWISTER_PLATFORM``: The platform name of the DUT.
+- ``TWISTER_DUT_ID``: The hardware ID of the DUT.
+- ``TWISTER_DUT_SERIAL``: The serial port of the DUT.
+- ``TWISTER_RUNNER``: The flash runner being used.
+- ``TWISTER_BUILD_DIR``: The build output directory.
+- ``TWISTER_TEST_NAME``: The name of the test being run.
+- ``TWISTER_HARDWARE_MAP``: The path to the hardware map file.
+
+If a ``pre`` or ``pre_flash`` hook fails (non-zero exit, timeout, or
+script not found), the test instance is set to ERROR and execution stops.
+A ``post_flash`` failure also sets ERROR but allows the test run to
+complete.  The ``post`` hook always runs for cleanup.
 
 Legacy Script Fields (Deprecated)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1776,7 +1790,13 @@ The equivalent configuration using the new ``hooks`` format:
          timeout: 15
 
 If both ``hooks`` and legacy script fields are present in a hardware map
-entry, the ``hooks`` field takes precedence.
+entry, a ``ValueError`` is raised.  Migrate to the ``hooks`` format and
+remove the legacy fields.
+
+The legacy fields ``pre_script``, ``post_script``, ``post_flash_script``
+and ``script_param`` emit ``DeprecationWarning`` when loaded.  The
+``--pre-script``, ``--post-script`` and ``--post-flash-script`` CLI options
+in ``pytest-twister-harness`` are also deprecated.
 
 .. _twister_fixtures:
 
