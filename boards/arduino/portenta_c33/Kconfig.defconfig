@@ -3,7 +3,7 @@
 
 if BOARD_ARDUINO_PORTENTA_C33
 
-config USE_DT_CODE_PARTITION
+configdefault USE_DT_CODE_PARTITION
 	default y
 
 configdefault ETH_DRIVER
