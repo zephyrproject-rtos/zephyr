@@ -7,7 +7,9 @@
 #define DT_DRV_COMPAT microchip_xec_rtos_timer
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -286,7 +288,47 @@ void arch_busy_wait(uint32_t usec_to_wait)
 		}
 	}
 }
-#endif
+
+/* Reset the basic timer and start it counting up at 1 MHz from 0 */
+static void btmr_start(void)
+{
+	uint32_t btmr_ctrl = (BIT(BTMR_CR_ACTV_POS) | BIT(BTMR_CR_ARS_POS) |
+			      BIT(BTMR_CR_CNT_UP_POS) | BTMR_CR_PS_SET(47u));
+
+	sys_write32(BIT(BTMR_CR_SOFT_RST_POS), BTMR_BASE + BTMR_CR_OFS);
+	sys_write32(btmr_ctrl, BTMR_BASE + BTMR_CR_OFS);
+	sys_write32(UINT32_MAX, BTMR_BASE + BTMR_PRLD_OFS);
+	sys_set_bit(BTMR_BASE + BTMR_CR_OFS, BTMR_CR_START_POS);
+}
+
+#ifdef CONFIG_PM_DEVICE
+/*
+ * The basic timer runs on the 48 MHz clock domain and keeps its clock
+ * request asserted while active, which blocks deep sleep. Stop and
+ * deactivate it on suspend. The RTOS timer is left running: it is on the
+ * 32 KHz always-on clock and is the kernel's wake source.
+ * arch_busy_wait() must not be called while suspended.
+ */
+static int xec_rtos_timer_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		btmr_start();
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		sys_clear_bit(BTMR_BASE + BTMR_CR_OFS, BTMR_CR_START_POS);
+		sys_clear_bit(BTMR_BASE + BTMR_CR_OFS, BTMR_CR_ACTV_POS);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
 
 static int sys_clock_driver_init(void)
 {
@@ -300,13 +342,7 @@ static int sys_clock_driver_init(void)
 	sys_write32(BIT(TIMER_GIRQ_BITPOS), TIMER_GIRQ_BASE + GIRQ_ENSET_OFS);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-	uint32_t btmr_ctrl = (BIT(BTMR_CR_ACTV_POS) | BIT(BTMR_CR_ARS_POS) |
-			      BIT(BTMR_CR_CNT_UP_POS) | BTMR_CR_PS_SET(47u));
-
-	sys_write32(BIT(BTMR_CR_SOFT_RST_POS), BTMR_BASE + BTMR_CR_OFS);
-	sys_write32(btmr_ctrl, BTMR_BASE + BTMR_CR_OFS);
-	sys_write32(UINT32_MAX, BTMR_BASE + BTMR_PRLD_OFS);
-	sys_set_bit(BTMR_BASE + BTMR_CR_OFS, BTMR_CR_START_POS);
+	btmr_start();
 
 	timer_restart(cached_icr);
 	/* wait for RTOS timer to load count register from preload */
@@ -324,3 +360,14 @@ static int sys_clock_driver_init(void)
 }
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT) && defined(CONFIG_PM_DEVICE)
+/*
+ * Device instance only for power management of the busy-wait timer; the
+ * hardware is initialized by sys_clock_driver_init() above.
+ */
+PM_DEVICE_DT_INST_DEFINE(0, xec_rtos_timer_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, NULL, PM_DEVICE_DT_INST_GET(0), NULL, NULL, PRE_KERNEL_2,
+		      CONFIG_SYSTEM_CLOCK_INIT_PRIORITY, NULL);
+#endif
