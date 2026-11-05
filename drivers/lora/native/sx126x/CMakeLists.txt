@@ -19,3 +19,7 @@ zephyr_library_sources_ifdef(CONFIG_LORA_SX126X_NATIVE_STANDALONE
 zephyr_library_sources_ifdef(CONFIG_LORA_SX126X_NATIVE_STM32WL
   sx126x_hal_stm32wl.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_EMUL_SX126X
+  sx126x_emul.c
+)

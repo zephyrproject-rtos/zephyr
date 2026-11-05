@@ -43,3 +43,16 @@ config LORA_SX126X_NATIVE_STANDALONE
 		|| DT_HAS_SEMTECH_SX1268_ENABLED || DT_HAS_SEMTECH_LLCC68_ENABLED
 	help
 	  Standalone support for the native SX126x driver.
+
+config EMUL_SX126X
+	bool "Emulator for the SX126x transceiver"
+	default y
+	depends on LORA_SX126X_NATIVE_STANDALONE
+	depends on EMUL
+	depends on SPI_EMUL
+	depends on GPIO_EMUL
+	help
+	  Enable the hardware emulator for the SX1261, SX1262, SX1268 and
+	  LLCC68. It sits on an emulated SPI bus, drives BUSY and DIO1 through
+	  emulated GPIOs and counts commands that break the datasheet's rules,
+	  so the native driver can be exercised without hardware.
