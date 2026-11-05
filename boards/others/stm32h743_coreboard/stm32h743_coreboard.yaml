@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Davi Alexandre Volcan <davi.volcan2@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: stm32h743_coreboard
+name: STM32H743IIT6 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 2048
+supported:
+  - eeprom
+  - flash
+  - gpio
+  - i2c
+  - input
+  - memc
+  - rtc
+  - uart
+vendor: others
