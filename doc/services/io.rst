@@ -14,3 +14,4 @@ moving data efficiently between application code and hardware.
    input/index.rst
    rtio/index.rst
    formatted_output.rst
+   micro_core.rst

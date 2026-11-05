@@ -21,12 +21,20 @@
 #error "MC UART test requires a mc-uart devicetree alias"
 #endif
 
+#define MC_UART_STARTUP_WAIT_MS 300000U
+
+#if defined(CONFIG_MC_BOARD_COMBINED)
+#define MC_UART_MSG_SUITE mc_board_msg
+#else
+#define MC_UART_MSG_SUITE mc_uart
+#endif
+
 static const struct device *const uart = DEVICE_DT_GET(MC_UART_NODE);
 static bool message_received;
 static bool signal_received;
 static uint8_t uart_rx_buffer[128];
 static size_t uart_rx_length;
-RING_BUF_DECLARE(uart_rx_ring, 256);
+RING_BUF_DECLARE(msg_uart_rx_ring, 256);
 
 static void uart_rx_callback(const struct device *dev, void *user_data)
 {
@@ -40,7 +48,7 @@ static void uart_rx_callback(const struct device *dev, void *user_data)
 		if (length <= 0) {
 			break;
 		}
-		(void)ring_buf_put(&uart_rx_ring, buffer, (uint32_t)length);
+		(void)ring_buf_put(&msg_uart_rx_ring, buffer, (uint32_t)length);
 	}
 }
 
@@ -49,8 +57,8 @@ static int uart_receive(void *context, uint8_t *data, size_t capacity)
 	ARG_UNUSED(context);
 
 	while (uart_rx_length < sizeof(uart_rx_buffer)) {
-		uint32_t received = ring_buf_get(&uart_rx_ring,
-			&uart_rx_buffer[uart_rx_length], 1U);
+		uint32_t received =
+			ring_buf_get(&msg_uart_rx_ring, &uart_rx_buffer[uart_rx_length], 1U);
 
 		if (received == 0U) {
 			break;
@@ -62,13 +70,13 @@ static int uart_receive(void *context, uint8_t *data, size_t capacity)
 	       (uart_rx_buffer[0] != 0xc7U || uart_rx_buffer[1] != 0xe9U)) {
 		memmove(uart_rx_buffer, &uart_rx_buffer[1], --uart_rx_length);
 	}
-	if (uart_rx_length < 8U) {
+	if (uart_rx_length < 12U) {
 		return -EAGAIN;
 	}
 
-	size_t payload_length = ((size_t)uart_rx_buffer[4] << 8U) |
-		uart_rx_buffer[5];
-	size_t frame_length = 8U + payload_length;
+	size_t payload_length = ((size_t)uart_rx_buffer[8] << 8U) |
+		uart_rx_buffer[9];
+	size_t frame_length = 12U + payload_length;
 
 	if (frame_length > capacity || frame_length > sizeof(uart_rx_buffer)) {
 		memmove(uart_rx_buffer, &uart_rx_buffer[1], --uart_rx_length);
@@ -110,10 +118,18 @@ static void on_message(void *context, uint16_t id, const uint8_t *data,
 
 static bool wait_for_receive(struct mc_msg *msg)
 {
-	int64_t deadline = k_uptime_get() + 5000;
+	int64_t deadline = k_uptime_get() + MC_UART_STARTUP_WAIT_MS;
 
-	while ((!message_received || !signal_received) &&
-		k_uptime_get() < deadline) {
+	while (!message_received && k_uptime_get() < deadline) {
+		(void)mc_msg_update(msg);
+		k_msleep(1U);
+	}
+	if (!message_received) {
+		return false;
+	}
+
+	deadline = k_uptime_get() + 5000U;
+	while (!signal_received && k_uptime_get() < deadline) {
 		(void)mc_msg_update(msg);
 		k_msleep(1U);
 	}
@@ -121,23 +137,29 @@ static bool wait_for_receive(struct mc_msg *msg)
 	return message_received && signal_received;
 }
 
-ZTEST(mc_uart, test_message_transport)
+ZTEST(MC_UART_MSG_SUITE, test_message_transport)
 {
-	static uint8_t storage[512] __aligned(8);
+	static uint8_t storage[1024] __aligned(8);
 	struct mc_msg *msg;
-	struct mc_msg_config config = {
+	struct mc_msg_cfg config = {
 		.comm = {
-			.receive = uart_receive,
-			.transmit = uart_transmit,
-			.frame_size = 64U,
+			.io.receive = uart_receive,
+			.io.transmit = uart_transmit,
+			.recv.size = 64U,
+			.send.size = 64U,
 			.receive_capacity = 64U,
 		},
-		.message_capacity = 32U,
-		.subscription_capacity = 2U,
+		.pool_size = 32U,
+		.ids_capacity = 2U,
 	};
 
 	zassert_true(device_is_ready(uart), NULL);
+	uart_irq_rx_disable(uart);
 	zassert_ok(uart_irq_callback_user_data_set(uart, uart_rx_callback, NULL), NULL);
+	ring_buf_reset(&msg_uart_rx_ring);
+	uart_rx_length = 0U;
+	message_received = false;
+	signal_received = false;
 	uart_irq_rx_enable(uart);
 	zassert_ok(mc_msg_init(&msg, storage, sizeof(storage), &config), NULL);
 	zassert_ok(mc_msg_subscribe(msg, 0x42U, on_message, NULL), NULL);
@@ -154,4 +176,4 @@ ZTEST(mc_uart, test_message_transport)
 	}
 }
 
-ZTEST_SUITE(mc_uart, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(MC_UART_MSG_SUITE, NULL, NULL, NULL, NULL, NULL);
