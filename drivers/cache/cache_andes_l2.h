@@ -276,14 +276,25 @@ static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size)
 	__asm__ volatile ("fence.i");
 	sys_write32(l2c_ctrl, L2C_CTRL);
 
-	if (IS_ENABLED(CONFIG_SMP)) {
-		if (l2_cache_cfg.size) {
-			l2c_ctrl = sys_read32(L2C_CTRL);
+	if (l2_cache_cfg.size) {
+		l2c_ctrl = sys_read32(L2C_CTRL);
 
-			if (!(l2c_ctrl & L2C_CTRL_CEN)) {
+		if (IS_ENABLED(CONFIG_DCACHE)) {
+			/*
+			 * The GEN1 L2 cache is disabled by default. Enable it with
+			 * a second write after the prefetch depth is configured.
+			 */
+			if (l2_cache_cfg.version < 16) {
 				WRITE_BIT(l2c_ctrl, 0, true);
 				sys_write32(l2c_ctrl, L2C_CTRL);
 			}
+		} else {
+			/*
+			 * The GEN2 L2 cache is enabled by default. Disable it to
+			 * prevent DMA from accessing it through IOCP.
+			 */
+			WRITE_BIT(l2c_ctrl, 0, false);
+			sys_write32(l2c_ctrl, L2C_CTRL);
 		}
 	}
 
