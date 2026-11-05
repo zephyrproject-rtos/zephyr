@@ -11,6 +11,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 #include <rtc.h>
 #include <wrap_max32_lp.h>
@@ -246,6 +247,22 @@ static int configure_sqw(uint16_t sqw_freq)
 	return 0;
 }
 
+static int counter_max32_rtc_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int rtc_max32_init(const struct device *dev)
 {
 	int ret;
@@ -276,7 +293,7 @@ static int rtc_max32_init(const struct device *dev)
 
 	cfg->irq_func();
 
-	return 0;
+	return pm_device_driver_init(dev, counter_max32_rtc_pm_action);
 }
 
 static DEVICE_API(counter, counter_rtc_max32_driver_api) = {
@@ -315,9 +332,9 @@ static DEVICE_API(counter, counter_rtc_max32_driver_api) = {
 		.sqw_freq = DT_INST_PROP(_num, sqw_frequency),                               \
 		.irq_func = max32_rtc_irq_init_##_num,                                             \
 	};                                                                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(_num, &rtc_max32_init, NULL, &rtc_max32_data_##_num,                 \
-			      &rtc_max32_config_##_num, PRE_KERNEL_1,                              \
+	PM_DEVICE_DT_INST_DEFINE(_num, counter_max32_rtc_pm_action);                               \
+	DEVICE_DT_INST_DEFINE(_num, &rtc_max32_init, PM_DEVICE_DT_INST_GET(_num),                  \
+			      &rtc_max32_data_##_num, &rtc_max32_config_##_num, PRE_KERNEL_1,      \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_rtc_max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_RTC_MAX32_INIT)
