@@ -4,6 +4,7 @@
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 from pathlib import Path
 from typing import Generator, Type, Callable
 
@@ -40,6 +41,13 @@ def device_object(twister_harness_config: TwisterHarnessConfig) -> Generator[Dev
         device_object.close()
 
 
+def _close_devices(devices: list[DeviceAdapter]) -> None:
+    with ExitStack() as stack:
+        # Register in reverse order because callbacks are run last-in, first-out.
+        for device in reversed(devices):
+            stack.callback(device.close)
+
+
 @pytest.fixture(scope='session')
 def device_objects(
     twister_harness_config: TwisterHarnessConfig
@@ -53,8 +61,7 @@ def device_objects(
             device_objects.append(device_object)
         yield device_objects
     finally:  # to make sure we close all running processes execution
-        for device_object in device_objects:
-            device_object.close()
+        _close_devices(device_objects)
 
 
 def determine_scope(fixture_name, config):
@@ -85,8 +92,7 @@ def unlaunched_duts(
             device_object.initialize_log_files(request.node.name)
         yield device_objects
     finally:
-        for device_object in device_objects:
-            device_object.close()
+        _close_devices(device_objects)
 
 
 @pytest.fixture(scope=determine_scope)

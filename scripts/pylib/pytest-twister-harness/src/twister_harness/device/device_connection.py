@@ -36,6 +36,8 @@ class DeviceConnection(abc.ABC):
         self.timeout = timeout
         self._device_read_queue: queue.Queue[str] = queue.Queue()
         self._reader_thread: threading.Thread | None = None
+        self._coverage_complete = threading.Event()
+        self._coverage_complete.set()
         # Prefix for log messages to differentiate between multiple connections
         self.log_prefix: str = ''
 
@@ -61,6 +63,11 @@ class DeviceConnection(abc.ABC):
     def _clear_internal_resources(self) -> None:
         self._reader_thread = None
         self._device_read_queue = queue.Queue()
+        self._coverage_complete.set()
+
+    def wait_for_coverage(self, timeout: float) -> bool:
+        """Wait for an observed console coverage dump, or return immediately if none is pending."""
+        return self._coverage_complete.wait(timeout)
 
     def _handle_device_output(self, reader_started: threading.Event) -> None:
         """
@@ -72,9 +79,16 @@ class DeviceConnection(abc.ABC):
                 if self.is_device_connected():
                     output = self._read_device_output().decode(errors='replace').rstrip("\r\n")
                     if output:
-                        self._device_read_queue.put(output)
                         log_file.write(f'{output}\n')
                         log_file.flush()
+                        # Publish coverage state before a test can consume the line and close
+                        # the device. Writing the log first also ensures the end marker is saved
+                        # by the time the completion event is set.
+                        if output.startswith('GCOV_COVERAGE_DUMP_START'):
+                            self._coverage_complete.clear()
+                        elif output.startswith('GCOV_COVERAGE_DUMP_END'):
+                            self._coverage_complete.set()
+                        self._device_read_queue.put(output)
                 else:
                     # ignore output from device
                     self._flush_device_output()

@@ -10,7 +10,7 @@ import subprocess
 
 from twister_harness.device.device_adapter import DeviceAdapter
 from twister_harness.device.utils import log_command, terminate_process
-from twister_harness.exceptions import TwisterHarnessException
+from twister_harness.exceptions import TwisterHarnessException, TwisterHarnessTimeoutException
 from twister_harness.twister_harness_config import DeviceConfig
 
 logger = logging.getLogger(__name__)
@@ -121,11 +121,23 @@ class QemuAdapter(BinaryAdapterBase):
     """Simulator adapter to run QEMU"""
 
     def close(self) -> None:
-        """Stop QEMU before closing the console FIFO."""
-        self._stop_subprocess()
-        self.stop_reader()
-        self.disconnect()
-        self._clear_internal_resources()
+        """Finish pending console coverage collection before stopping QEMU."""
+        try:
+            if self.is_reader_started():
+                for connection in self.connections:
+                    if not connection.wait_for_coverage(self.base_timeout):
+                        msg = (
+                            f'Timed out after {self.base_timeout}s waiting for '
+                            f'GCOV_COVERAGE_DUMP_END before stopping QEMU; '
+                            f'incomplete coverage in {connection.log_path}'
+                        )
+                        logger.error(msg)
+                        raise TwisterHarnessTimeoutException(msg)
+        finally:
+            self._stop_subprocess()
+            self.stop_reader()
+            self.disconnect()
+            self._clear_internal_resources()
 
     def generate_command(self) -> None:
         """Set command to run."""
