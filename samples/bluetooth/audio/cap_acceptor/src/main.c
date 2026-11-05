@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -42,6 +43,12 @@ LOG_MODULE_REGISTER(cap_acceptor, LOG_LEVEL_INF);
 #define MAX_SDU            155U
 #define MIN_SDU            30U
 #define FRAMES_PER_SDU     2U
+
+#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
+BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT <= CONFIG_BT_ISO_MAX_CHAN,
+	     "CONFIG_BT_ISO_MAX_CHAN is not large enough to support "
+	     "CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT active streams");
+#endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
