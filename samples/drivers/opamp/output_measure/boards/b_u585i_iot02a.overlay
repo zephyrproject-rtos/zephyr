@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Witekio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+		adc-read-delay-ms = <100>;
+		io-channels = <&adc1 15>;
+	};
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@f {
+		reg = <15>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <14>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&opamp2 {
+	pinctrl-0 = <&opamp2_vinp_pa6>;
+	pinctrl-names = "default";
+	functional-mode = "non_inverting";
+	inp = "VINP0";
+	st,enable-self-calibration;
+	status = "okay";
+};

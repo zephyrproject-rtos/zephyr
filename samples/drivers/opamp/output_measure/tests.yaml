@@ -20,3 +20,4 @@ tests:
       - lpcxpresso55s36
       - nucleo_g474re/stm32g474xx
       - frdm_mcxa344
+      - b_u585i_iot02a
