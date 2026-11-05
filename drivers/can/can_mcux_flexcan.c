@@ -71,6 +71,8 @@ struct mcux_flexcan_config {
 	uint8_t max_filters;
 #ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
 	bool flexcan_fd;
+	flexcan_mb_size_t fd_mb_size;
+	uint8_t fd_mb_payload_size;
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 	void (*irq_config_func)(const struct device *dev);
 	void (*irq_enable_func)(void);
@@ -714,6 +716,14 @@ static int mcux_flexcan_send(const struct device *dev,
 		if ((frame->flags & CAN_FRAME_FDF) != 0) {
 			max_dlc = CANFD_MAX_DLC;
 		}
+
+#ifdef CONFIG_CAN_MCUX_FLEXCAN_FD
+		if (can_dlc_to_bytes(frame->dlc) > config->fd_mb_payload_size) {
+			LOG_ERR("frame of %d bytes exceeds the %d byte message buffer",
+				can_dlc_to_bytes(frame->dlc), config->fd_mb_payload_size);
+			return -EINVAL;
+		}
+#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 	} else {
 		if ((frame->flags & ~(CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0) {
 			LOG_ERR("unsupported CAN frame flags 0x%02x", frame->flags);
@@ -1274,7 +1284,7 @@ static int mcux_flexcan_init(const struct device *dev)
 		flexcan_config.timingConfig.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
 		flexcan_config.timingConfig.fphaseSeg2 = data->timing_data.phase_seg2 - 1U;
 
-		FLEXCAN_FDInit(base, &flexcan_config, clock_freq, kFLEXCAN_64BperMB, true);
+		FLEXCAN_FDInit(base, &flexcan_config, clock_freq, config->fd_mb_size, true);
 	} else {
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
 		FLEXCAN_Init(base, &flexcan_config, clock_freq);
@@ -1469,11 +1479,25 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 #define FLEXCAN_DRIVER_API(id) mcux_flexcan_driver_api
 #endif /* !CONFIG_CAN_MCUX_FLEXCAN_FD */
 
-/* Each 512-byte RAM region can contain up to 32 x 8-byte MBs or 7 x 64-byte MBs (CAN FD). */
+/* A 512-byte region holds 32, 21, 12 or 7 buffers at 8, 16, 32 or 64 bytes. */
+#define FLEXCAN_INST_FD_PAYLOAD(id) DT_INST_PROP_OR(id, fd_mb_payload_size, 64)
+
+#define FLEXCAN_INST_FD_MB_COUNT(id)						\
+	((FLEXCAN_INST_FD_PAYLOAD(id) == 8) ? 32U :				\
+	 (FLEXCAN_INST_FD_PAYLOAD(id) == 16) ? 21U :				\
+	 (FLEXCAN_INST_FD_PAYLOAD(id) == 32) ? 12U : 7U)
+
+#define FLEXCAN_INST_FD_MB_SIZE(id)						\
+	((FLEXCAN_INST_FD_PAYLOAD(id) == 8) ? kFLEXCAN_8BperMB :		\
+	 (FLEXCAN_INST_FD_PAYLOAD(id) == 16) ? kFLEXCAN_16BperMB :		\
+	 (FLEXCAN_INST_FD_PAYLOAD(id) == 32) ? kFLEXCAN_32BperMB :		\
+	 kFLEXCAN_64BperMB)
+
 #define FLEXCAN_INST_NUMBER_OF_MB(id)						\
 	COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),		\
 			DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT)),	\
-		((DT_INST_PROP(id, number_of_mb) * 7U) / 32U),			\
+		((DT_INST_PROP(id, number_of_mb) * FLEXCAN_INST_FD_MB_COUNT(id))\
+			/ 32U),						\
 		(DT_INST_PROP(id, number_of_mb)))
 
 /*
@@ -1545,6 +1569,8 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 		.max_filters = FLEXCAN_INST_MAX_FILTERS(id),		\
 		IF_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD, (		\
 			.flexcan_fd = DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT), \
+			.fd_mb_size = FLEXCAN_INST_FD_MB_SIZE(id),	\
+			.fd_mb_payload_size = FLEXCAN_INST_FD_PAYLOAD(id), \
 		))							\
 		.irq_config_func = mcux_flexcan_irq_config_##id,	\
 		.irq_enable_func = mcux_flexcan_irq_enable_##id,	\
