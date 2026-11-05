@@ -904,18 +904,25 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	int ret;
 
 	/*
+	 * Serialise with the API, which may be stopping the operation this
+	 * IRQ belongs to: talking to the radio while it is put to sleep
+	 * would wait on BUSY until the timeout.
+	 */
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/*
 	 * Work already running when the operation was stopped finds the radio
 	 * at rest, its IRQs cleared. The radio holds BUSY high while asleep, so
 	 * reading the status would stall the workqueue.
 	 */
 	if (atomic_get(&data->state) == SX126X_REST_STATE) {
-		return;
+		goto out;
 	}
 
 	ret = sx126x_get_irq_status(dev, &irq_status);
 	if (ret < 0) {
 		LOG_ERR("Failed to get IRQ status");
-		return;
+		goto out;
 	}
 
 	LOG_DBG("IRQ status: 0x%04x", irq_status);
@@ -939,6 +946,9 @@ static void sx126x_irq_work_handler(struct k_work *work)
 	if (atomic_get(&data->state) != SX126X_REST_STATE) {
 		sx126x_hal_dio1_irq_enable(dev);
 	}
+
+out:
+	k_mutex_unlock(&data->lock);
 }
 
 static int sx126x_set_configured_packet_params(const struct device *dev, uint8_t payload_len,
@@ -1192,7 +1202,9 @@ static int sx126x_lora_send(const struct device *dev,
 	if (ret < 0) {
 		LOG_ERR("TX timeout");
 		/* Chip is still transmitting, abort first */
+		k_mutex_lock(&data->lock, K_FOREVER);
 		sx126x_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
 		return -ETIMEDOUT;
 	}
 
@@ -1258,7 +1270,9 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	if (ret < 0) {
 		LOG_DBG("RX timeout");
 		/* Chip is still receiving, abort first */
+		k_mutex_lock(&data->lock, K_FOREVER);
 		sx126x_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
 		return -EAGAIN;
 	}
 
@@ -1479,7 +1493,9 @@ static int sx126x_lora_recv_duty_cycle(const struct device *dev,
 	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
 	if (ret < 0) {
 		LOG_DBG("RX duty cycle timeout");
+		k_mutex_lock(&data->lock, K_FOREVER);
 		sx126x_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
 		return -EAGAIN;
 	}
 
