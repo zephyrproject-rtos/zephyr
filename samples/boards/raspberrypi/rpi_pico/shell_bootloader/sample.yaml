@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Vincent Jardin <vjardin@free.fr>, Free Mobile
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Shell Bootloader
+  description: |
+    Shell sample with USB BOOTSEL reboot support for RP2040/RP2350.
+    Provides a "reboot bootloader" shell command and a 1200-baud USB
+    trigger to enter BOOTSEL mode without pressing the physical button.
+tests:
+  sample.boards.raspberrypi.rpi_pico.shell_bootloader:
+    tags:
+      - shell
+      - usb
+    platform_allow:
+      - rpi_pico
+      - rpi_pico2/rp2350a/m33
+    build_only: true
+    required_snippets:
+      - cdc-acm-console
