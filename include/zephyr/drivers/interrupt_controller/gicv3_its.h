@@ -16,6 +16,23 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
 
+/**
+ * @defgroup gicv3_its GICv3 Interrupt Translation Service
+ * @ingroup io_interfaces
+ */
+
+/**
+ * @brief First INTID in the LPI range.
+ * @ingroup gicv3_its
+ */
+#define GIC_LPI_INT_BASE 8192U
+
+/**
+ * @brief No LPI INTID is available for allocation.
+ * @ingroup gicv3_its
+ */
+#define ITS_INTID_INVALID 0U
+
 typedef unsigned int (*its_api_alloc_intid_t)(const struct device *dev);
 typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t device_id,
 					unsigned int nites);
@@ -32,6 +49,18 @@ __subsystem struct its_driver_api {
 	its_api_get_msi_addr_t get_msi_addr;
 };
 
+/**
+ * @brief Allocate an LPI INTID.
+ * @ingroup gicv3_its
+ *
+ * INTIDs are shared by all ITS instances and cannot be freed. The range is
+ * limited by the GIC, the LPI tables and @kconfig{CONFIG_NUM_IRQS}.
+ *
+ * @param dev ITS device instance. Must not be @c NULL.
+ *
+ * @return Allocated LPI INTID on success.
+ * @retval ITS_INTID_INVALID No LPI INTIDs remain.
+ */
 static inline int its_alloc_intid(const struct device *dev)
 {
 	return DEVICE_API_GET(its, dev)->alloc_intid(dev);
