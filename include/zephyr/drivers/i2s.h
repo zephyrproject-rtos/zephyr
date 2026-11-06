@@ -145,6 +145,17 @@ typedef uint8_t i2s_fmt_t;
  */
 #define I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED (4 << I2S_FMT_DATA_FORMAT_SHIFT)
 
+/**
+ * @brief Pulse Density Modulation Data Format.
+ *
+ * Memory blocks hold PCM samples in two's complement, laid out as for the
+ * other formats. The controller converts them to a 1-bit pulse density
+ * modulated stream on the SD line. @ref i2s_config.frame_clk_freq is the PCM
+ * sample rate. The PDM bit clock rate, the WS signal and the support for
+ * transmit and receive directions depend on the controller.
+ */
+#define I2S_FMT_DATA_FORMAT_PDM (5 << I2S_FMT_DATA_FORMAT_SHIFT)
+
 /** Send MSB first */
 #define I2S_FMT_DATA_ORDER_MSB              (0 << 3)
 /** Send LSB first */
