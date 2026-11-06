@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RAK11721
+	select SOC_APOLLO3_BLUE

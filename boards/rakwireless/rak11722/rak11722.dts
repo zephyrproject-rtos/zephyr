@@ -5,14 +5,13 @@
  */
 
 /dts-v1/;
-#include <ambiq/ambiq_apollo3_blue.dtsi>
-#include <zephyr/dt-bindings/lora/sx126x.h>
-#include "rak11720_apollo3-pinctrl.dtsi"
+#include <rakwireless/rak11720.dtsi>
+#include "rak11722-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	compatible = "ambiq,rak11720";
-	model = "RAKwireless RAK11720 WisBlock LPWAN Module";
+	compatible = "rakwireless,rak11722";
+	model = "RAK11722 WisBlock Core Module";
 
 	chosen {
 		zephyr,itcm = &tcm;
@@ -29,24 +28,7 @@
 
 	aliases {
 		watchdog0 = &wdt0;
-		led0 = &blue_led;
-		led1 = &green_led;
 		lora0 = &lora;
-		mcuboot-led0 = &blue_led;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		blue_led: led_2 {
-			gpios = <&gpio32_63 13 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
-		};
-
-		green_led: led_1 {
-			gpios = <&gpio32_63 12 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
 	};
 };
 
@@ -80,23 +62,12 @@
 			label = "image-1";
 		};
 
-		/* Set 16KB of storage at the end of the 1024KB of flash */
 		storage_partition: partition@fc000 {
 			compatible = "zephyr,mapped-partition";
 			reg = <0x000fc000 0x4000>;
 			label = "storage";
 		};
 	};
-};
-
-&stimer0 {
-	clk-source = <3>;
-};
-
-&bleif {
-	pinctrl-0 = <&bleif_default>;
-	pinctrl-names = "default";
-	status = "okay";
 };
 
 &uart0 {
@@ -116,7 +87,7 @@
 		pinctrl-0 = <&i2c2_default>;
 		pinctrl-names = "default";
 		clock-frequency = <I2C_BITRATE_STANDARD>;
-		status = "okay";
+		status = "disabled";
 	};
 };
 
@@ -127,31 +98,7 @@
 		pinctrl-names = "default";
 		cs-gpios = <&gpio0_31 1 GPIO_ACTIVE_LOW>;
 		clock-frequency = <DT_FREQ_M(1)>;
-		status = "okay";
-	};
-};
-
-&iom1 {
-	spi1: spi {
-		compatible = "ambiq,spi";
-		pinctrl-0 = <&spi1_default>;
-		pinctrl-names = "default";
-		clock-frequency = <DT_FREQ_M(1)>;
-		cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
-		status = "okay";
-
-		lora: lora@0 {
-			compatible = "semtech,sx1262";
-			reg = <0>;
-			reset-gpios = <&gpio0_31 17 GPIO_ACTIVE_LOW>;
-			busy-gpios = <&gpio0_31 16 GPIO_ACTIVE_HIGH>;
-			dio1-gpios = <&gpio0_31 15 GPIO_ACTIVE_HIGH>;
-			antenna-enable-gpios = <&gpio0_31 18 GPIO_ACTIVE_LOW>;
-			dio2-tx-enable;
-			dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V3>;
-			tcxo-power-startup-delay-ms = <5>;
-			spi-max-frequency = <DT_FREQ_M(1)>;
-		};
+		status = "disabled";
 	};
 };
 
@@ -197,10 +144,19 @@
 	};
 };
 
-&gpio0_31 {
+&timer3 {
+	pwm3: pwm {
+		pinctrl-0 = <&pwm3_default>;
+		pinctrl-names = "default";
+		timer-segment = "SEGMENT_A";
+		pwm-type = "PWM_REPEAT";
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
-&gpio32_63 {
-	status = "okay";
-};
+#include "wisblock.dtsi"

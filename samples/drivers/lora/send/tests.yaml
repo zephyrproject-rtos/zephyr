@@ -20,7 +20,7 @@ tests:
       dt_compat_enabled("semtech,sx1276")
     integration_platforms:
       - b_l072z_lrwan1
-      - rak11720
+      - rak11722
     extra_configs:
       - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
   sample.drivers.lora.send.native:
@@ -46,7 +46,7 @@ tests:
       - CONFIG_LORA_GFSK=y
       - CONFIG_SAMPLE_LORA_GFSK=y
     integration_platforms:
-      - rak11720
+      - rak11722
   sample.drivers.lora.send.gfsk.lbm:
     filter: dt_compat_enabled("semtech,sx1261") or
       dt_compat_enabled("semtech,sx1262") or
@@ -58,7 +58,7 @@ tests:
       - CONFIG_LORA_GFSK=y
       - CONFIG_SAMPLE_LORA_GFSK=y
     integration_platforms:
-      - rak11720
+      - rak11722
   sample.drivers.lora.send.gfsk.native:
     filter: dt_compat_enabled("st,stm32wl-subghz-radio")
     build_only: true
