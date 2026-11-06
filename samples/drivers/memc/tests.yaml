@@ -28,6 +28,14 @@ tests:
     build_only: true
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
+  sample.drivers.memc.silabs_qspi:
+    filter: dt_alias_exists("psram0")
+    platform_allow:
+      - siwx917_dk2605a
+      - siwx917_ek2708a
+      - siwx917_rb4342a
+    integration_platforms:
+      - siwx917_rb4342a
   sample.drivers.memc.stm32_mspi:
     tags: mspi
     platform_allow:
