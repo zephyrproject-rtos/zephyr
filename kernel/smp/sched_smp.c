@@ -24,6 +24,8 @@
 #include <usage.h>
 #include <kernel_arch_func.h>
 
+ZASSERT_MODULE(KERNEL);
+
 static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 	bool ipi_idle_target_rebound = false;
@@ -138,7 +140,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	Z_SCHED_SPINLOCK {
 		struct k_thread *old_thread = _current, *new_thread;
 
-		__ASSERT(old_thread->switch_handle == NULL || is_thread_dummy(old_thread),
+		ZASSERT(old_thread->switch_handle == NULL || is_thread_dummy(old_thread),
 			"old thread handle should be null.");
 
 		new_thread = next_up();

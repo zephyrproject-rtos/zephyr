@@ -8,6 +8,8 @@
 #include <zephyr/kernel.h>
 #include <kthread.h>
 
+ZASSERT_MODULE(KERNEL);
+
 struct k_spinlock z_thread_monitor_lock;
 /*
  * Remove a thread from the kernel's list of active threads.
@@ -43,10 +45,10 @@ static void thread_foreach_helper(k_thread_user_cb_t user_cb, void *user_data,
 	struct k_thread *thread;
 	k_spinlock_key_t key;
 
-	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
+	ZASSERT(user_cb != NULL, "user_cb can not be NULL");
 
 	if (filter_by_cpu) {
-		__ASSERT(cpu < CONFIG_MP_MAX_NUM_CPUS, "cpu filter out of bounds");
+		ZASSERT(cpu < CONFIG_MP_MAX_NUM_CPUS, "cpu filter out of bounds");
 	}
 
 	key = k_spin_lock(&z_thread_monitor_lock);

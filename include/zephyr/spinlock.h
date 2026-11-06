@@ -17,7 +17,7 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/zassert.h>
 #include <zephyr/sys/time_units.h>
 
 #ifdef __cplusplus
@@ -140,7 +140,8 @@ static ALWAYS_INLINE void z_spinlock_validate_pre(struct k_spinlock *l)
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_lock_valid(l), "Invalid spinlock %p", l);
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(z_spin_lock_valid(l), "Invalid spinlock %p", l);
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(z_spin_lock_mem_coherent(l));
 #endif
@@ -320,12 +321,13 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 
 #if defined(CONFIG_SPIN_LOCK_TIME_LIMIT) && (CONFIG_SPIN_LOCK_TIME_LIMIT != 0)
 	uint32_t delta = sys_clock_cycle_get_32() - l->lock_time;
 
-	__ASSERT(delta < CONFIG_SPIN_LOCK_TIME_LIMIT,
+	ZASSERT(delta < CONFIG_SPIN_LOCK_TIME_LIMIT,
 		 "Spin lock %p held %u cycles, longer than limit of %u cycles",
 		 l, delta, CONFIG_SPIN_LOCK_TIME_LIMIT);
 #endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
@@ -385,7 +387,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 {
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
-	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
 #endif
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
@@ -399,7 +402,8 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 #if defined(CONFIG_SPIN_VALIDATE) && defined(__GNUC__)
 static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
 {
-	__ASSERT(k->key, "K_SPINLOCK exited with goto, break or return, "
+	ZASSERT_MODULE(KERNEL);
+	ZASSERT(k->key, "K_SPINLOCK exited with goto, break or return, "
 			 "use K_SPINLOCK_BREAK instead.");
 }
 #define K_SPINLOCK_ONEXIT __attribute__((__cleanup__(z_spin_onexit)))
