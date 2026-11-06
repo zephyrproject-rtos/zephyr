@@ -78,6 +78,8 @@ enum {
 	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
 	BT_CONN_BR_GENERAL_BONDING,           /* BR general bonding */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
+	BT_CONN_BR_CREATE_PENDING,            /* Setup includes Create Connection */
+	BT_CONN_BR_ACCEPT_PENDING,            /* Setup includes an accepted request */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
 	BT_CONN_TX_FAILED,                    /* Sending failed, pending disconnect */
 	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
@@ -158,6 +160,9 @@ struct bt_conn_br {
 
 	struct bt_keys_link_key	*link_key;
 
+	/* The Connection Complete event of this reason is that of a rejected request */
+	uint8_t			reject_reason;
+
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 	/* For power mode */
 	uint8_t mode;
@@ -167,6 +172,9 @@ struct bt_conn_br {
 struct bt_conn_sco {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Address of the peer at setup, as the reference can go away at any time */
+	bt_addr_t               dst;
 
 	/* Reference to the struct bt_sco_chan */
 	struct bt_sco_chan      *chan;
@@ -182,6 +190,9 @@ struct bt_conn_iso {
 #if defined(CONFIG_BT_ISO_UNICAST)
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Address of the peer at setup, as the reference can go away at any time */
+	bt_addr_le_t            dst;
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 	/* Reference to the struct bt_iso_chan */
@@ -437,6 +448,12 @@ void bt_iso_reset(void);
 
 /* Add a new BR/EDR connection */
 struct bt_conn *bt_conn_add_br(const bt_addr_t *peer);
+
+/* In connection setup with neither command left, on its way out */
+bool bt_conn_br_setup_abandoned(const struct bt_conn *conn);
+
+/* A command of the connection setup will not get a Connection Complete event */
+void bt_conn_br_setup_cmd_failed(struct bt_conn *conn, int flag);
 
 /* Add a new SCO connection */
 struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type);
