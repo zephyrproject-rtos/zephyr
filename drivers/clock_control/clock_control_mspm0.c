@@ -28,6 +28,18 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define MSPM0_HAS_RAM_WAIT_STATES 1
 #endif
 
+/*
+ * AM13E has no HSCLKEN.HFXTEN/HFCLKCLKCFG.HFXTRSEL; the XTAL is powered up
+ * via XTALCR.OSCOFF and its startup is confirmed by polling X1CNT for
+ * saturation instead of CLKSTATUS.HFCLKGOOD
+ * Same HFCLKCLKCFG.XTALTIME/HFCLKFLTCHK bits either way.
+ */
+#if defined(CONFIG_SOC_SERIES_AM13E)
+#define MSPM0_HFXT_VIA_XTALCR 1
+/* Repeat X1CNT check 4 times, as mentioned in the TRM */
+#define MSPM0_HFXT_X1CNT_ROUNDS 4
+#endif
+
 #if defined(CONFIG_SOC_SERIES_MSPM0L) || defined(CONFIG_SOC_SERIES_MSPM0G)
 #define MSPM0_HAS_CPUSS 1
 #endif
@@ -1254,6 +1266,35 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 	switch (source) {
 #if DT_HFXT_OKAY
 	case MSPM0_CLOCK_SRC_HFXT:
+		/* set HFXT startup time */
+		ret = syscon_update_bits(sysctl, SYSCTL_HFCLKCLKCFG_OFFSET,
+					 SYSCTL_HFCLKCLKCFG_HFXTTIME,
+					 SYSCTL_HFCLKCLKCFG_HFXTTIME_VAL(MSPM0_HFXT_STARTUP_US));
+		if (ret < 0) {
+			return ret;
+		}
+
+#if defined(MSPM0_HFXT_VIA_XTALCR)
+		ret = syscon_update_bits(sysctl, SYSCTL_XTALCR_OFFSET, SYSCTL_XTALCR_OSCOFF, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		for (int i = 0; i < MSPM0_HFXT_X1CNT_ROUNDS; i++) {
+			ret = syscon_write_reg(sysctl, SYSCTL_X1CNT_OFFSET, SYSCTL_X1CNT_CLR);
+			if (ret < 0) {
+				return ret;
+			}
+
+			ret = clock_mspm0_wait_reg(
+				sysctl, SYSCTL_X1CNT_OFFSET, SYSCTL_X1CNT_CNT,
+				SYSCTL_X1CNT_SATURATED,
+				MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_HFXT_STARTUP_US));
+			if (ret < 0) {
+				return ret;
+			}
+		}
+#else
 		/* disable HFXT */
 		ret = syscon_update_bits(sysctl, SYSCTL_HSCLKEN_OFFSET, SYSCTL_HSCLKEN_HFXTEN, 0);
 		if (ret < 0) {
@@ -1267,14 +1308,7 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 		if (ret < 0) {
 			return ret;
 		}
-
-		/* set HFXT startup time */
-		ret = syscon_update_bits(sysctl, SYSCTL_HFCLKCLKCFG_OFFSET,
-					 SYSCTL_HFCLKCLKCFG_HFXTTIME,
-					 SYSCTL_HFCLKCLKCFG_HFXTTIME_VAL(MSPM0_HFXT_STARTUP_US));
-		if (ret < 0) {
-			return ret;
-		}
+#endif /* defined(MSPM0_HFXT_VIA_XTALCR) */
 
 		/* set HFXT input as HFCLK source */
 		ret = syscon_update_bits(sysctl, SYSCTL_HSCLKEN_OFFSET, SYSCTL_HSCLKEN_USEEXTHFCLK,
@@ -1283,12 +1317,14 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 			return ret;
 		}
 
+#if !defined(MSPM0_HFXT_VIA_XTALCR)
 		/* enable HFXT */
 		ret = syscon_update_bits(sysctl, SYSCTL_HSCLKEN_OFFSET, SYSCTL_HSCLKEN_HFXTEN,
 					 SYSCTL_HSCLKEN_HFXTEN);
 		if (ret < 0) {
 			return ret;
 		}
+#endif /* !defined(MSPM0_HFXT_VIA_XTALCR) */
 
 		/* enable HFXT startup monitor */
 		ret = syscon_update_bits(sysctl, SYSCTL_HFCLKCLKCFG_OFFSET,
