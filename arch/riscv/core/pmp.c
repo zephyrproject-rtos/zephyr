@@ -119,6 +119,7 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 			      const char *banner)
 {
 	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+	char perm[4];
 	unsigned int index;
 
 	LOG_DBG("PMP %s:", banner);
@@ -132,13 +133,11 @@ static void print_pmp_entries(unsigned int pmp_start, unsigned int pmp_end,
 				pmp_addr[index],
 				pmp_n_cfg[index]);
 		} else {
+			arch_pmp_perm_str(pmp_n_cfg[index], perm);
 			LOG_DBG("%3d: "PR_ADDR" 0x%02x --> "
-				PR_ADDR"-"PR_ADDR" %c%c%c%s",
+				PR_ADDR"-"PR_ADDR" %s%s",
 				index, pmp_addr[index], pmp_n_cfg[index],
-				start, end,
-				(pmp_n_cfg[index] & PMP_R) ? 'R' : '-',
-				(pmp_n_cfg[index] & PMP_W) ? 'W' : '-',
-				(pmp_n_cfg[index] & PMP_X) ? 'X' : '-',
+				start, end, perm,
 				(pmp_n_cfg[index] & PMP_L) ? " LOCKED" : "");
 		}
 	}
