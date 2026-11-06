@@ -44,7 +44,7 @@ static void bridge_add_iface_cb(struct net_if *iface, void *user_data)
 
 	eth_ctx = net_if_l2_data(iface);
 
-	if ((net_eth_get_hw_capabilities(iface) & ETHERNET_DSA_USER_PORT) != 0) {
+	if (net_eth_get_dsa_port_type(iface) == DSA_USER_PORT) {
 		u->iface[i] = iface;
 	} else {
 		return;

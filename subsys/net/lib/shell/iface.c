@@ -62,10 +62,6 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 #endif
 	EC(ETHERNET_PRIORITY_QUEUES,      "Priority queues"),
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
-#ifdef CONFIG_NET_DSA
-	EC(ETHERNET_DSA_USER_PORT,        "DSA user port"),
-	EC(ETHERNET_DSA_CONDUIT_PORT,     "DSA conduit port"),
-#endif
 	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
 };
 
@@ -83,6 +79,16 @@ static void print_supported_ethernet_capabilities(
 #ifdef CONFIG_PTP_CLOCK
 	if (net_eth_get_ptp_clock(iface) != NULL) {
 		PR("\t%s\n", "IEEE 1588 PTP clock");
+	}
+#endif
+
+#ifdef CONFIG_NET_DSA
+	if (net_eth_get_dsa_port_type(iface) == DSA_USER_PORT) {
+		PR("\t%s\n", "DSA user port");
+	} else if (net_eth_get_dsa_port_type(iface) == DSA_CONDUIT_PORT) {
+		PR("\t%s\n", "DSA conduit port");
+	} else {
+		/* Not a DSA user or conduit port */
 	}
 #endif
 }
