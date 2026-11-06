@@ -91,6 +91,30 @@ The Ironhide board is providing two serial ports through CN44:
 - HSCIF0 for the A720AE core running Linux,
 - HSCIF1 for the R52 core running a RTOS.
 
+Watchdog (A720)
+---------------
+
+The A720 devicetree describes WWDT0 through WWDT19, disabled by default.
+To use one, enable :kconfig:option:`CONFIG_WATCHDOG` and provide an application
+overlay with its bus and counter clock frequencies in Hz. See
+:dtcompatible:`renesas,rcar-gen5-wwdt` for an example.
+
+Platform firmware must reserve the selected watchdog for Zephyr from the last
+peripheral reset, leave it stopped with its mode register unwritten, maintain
+its clocks, and configure a reset route with the required SoC reset scope.
+The driver checks the route but does not configure or clear it. An armed
+watchdog cannot be stopped by the driver.
+
+If setup finds the watchdog already running or fails after writing the mode
+register, the driver prevents further setup and feeding. The watchdog may be
+armed and may expire during recovery. Before reuse, platform recovery must
+reset the peripheral and reinitialize the driver state.
+
+The driver does not support callbacks or debugger-pause options. The unmodified
+:zephyr:code-sample:`watchdog` requests debugger pause. Adapt the application
+to use no setup options and a supported timeout and feed window before running
+it.
+
 Programming and Debugging (R52)
 *******************************
 
