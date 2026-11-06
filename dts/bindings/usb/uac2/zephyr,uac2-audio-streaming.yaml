@@ -86,3 +86,13 @@ properties:
       speed this could be clamped to 1ms or 32768ms depending on the value. For
       USB high speed this could be clamped to 125us or 4096ms depending on the
       value.
+
+  feedback-polling-period-us:
+    type: int
+    description: |
+      Explicit feedback endpoint polling period in microseconds, rounded down
+      to a power of two frames (full speed) or microframes (high speed).
+      Clamped to 1ms - 32768ms at full speed and 125us - 4096ms at high speed.
+      Defaults to 1ms at full speed and 125us at high speed. Only used by OUT
+      interfaces without implicit-feedback whose clock source is not
+      sof-synchronized. See USB 2.0 section 5.12.4.2.
