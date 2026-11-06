@@ -138,14 +138,15 @@ static int emul_init(const struct emul *target, const struct device *parent)
 EMUL_DT_DEFINE(DT_NODELABEL(pmic), emul_init, NULL, NULL, &emul_api, NULL);
 
 struct subscriber {
-	struct gpio_callback cb;
+	struct mfd_npm13xx_event_callback cb;
 	uint32_t index;
 	bool remove_self;
 };
 
 static struct subscriber subscribers[3];
 
-static void handler(const struct device *dev, struct gpio_callback *cb, uint32_t events)
+static void handler(const struct device *dev, struct mfd_npm13xx_event_callback *cb,
+		    npm13xx_event_t events)
 {
 	struct subscriber *sub = CONTAINER_OF(cb, struct subscriber, cb);
 	uint32_t pending = 0U;
@@ -154,7 +155,7 @@ static void handler(const struct device *dev, struct gpio_callback *cb, uint32_t
 	zassert_equal_ptr(k_current_get(), k_work_queue_thread_get(&k_sys_work_q));
 	zassert_not_equal(events, 0U);
 	zassert_equal(events & (events - 1U), 0U, "Expected one event per call");
-	zassert_equal(events & ~cb->pin_mask, 0U);
+	zassert_equal(events & ~cb->event_mask, 0U);
 	zassert_true(call_count < ARRAY_SIZE(calls));
 	for (size_t i = 0; i < ARRAY_SIZE(event_registers); i++) {
 		uint8_t latched = registers.pending[event_registers[i].offset];
@@ -194,7 +195,7 @@ static void dispatch(void)
 static void subscribe(size_t index, uint32_t mask)
 {
 	subscribers[index].cb.handler = handler;
-	subscribers[index].cb.pin_mask = mask;
+	subscribers[index].cb.event_mask = mask;
 	subscribers[index].index = index;
 	zassert_ok(mfd_npm13xx_add_callback(pmic, &subscribers[index].cb));
 	for (size_t i = 0; i < ARRAY_SIZE(event_registers); i++) {
