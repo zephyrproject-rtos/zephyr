@@ -352,11 +352,14 @@ static int init_timer_obj_core_list(void)
 	z_obj_type_init(&obj_type_timer, K_OBJ_TYPE_TIMER_ID,
 			offsetof(struct k_timer, obj_core));
 
-	/* Initialize and link statically defined timers */
+	/* Initialize statically defined timers */
 
 	STRUCT_SECTION_FOREACH(k_timer, timer) {
-		k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
+		k_obj_core_init(K_OBJ_CORE(timer), &obj_type_timer);
 	}
+
+	k_obj_type_init_range(&obj_type_timer, STRUCT_SECTION_START(k_timer),
+			      STRUCT_SECTION_END(k_timer), sizeof(struct k_timer), false);
 
 	return 0;
 }

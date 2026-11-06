@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <zephyr/ztest.h>
 #include <zephyr/sys/mem_blocks.h>
 
@@ -58,6 +59,7 @@ K_THREAD_STACK_DEFINE(thread2_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 struct obj_core_find_data {
 	struct k_obj_core *obj_core;    /* Object core to search for */
+	int count;                      /* Number of times it was reported */
 };
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -281,6 +283,115 @@ ZTEST(obj_core, test_obj_core_sem)
 
 	common_obj_core_test(K_OBJ_TYPE_SEM_ID, "semaphore",
 			     K_OBJ_CORE(&sem1), K_OBJ_CORE(&sem2));
+}
+
+static int obj_core_count_op(struct k_obj_core *obj_core, void *data)
+{
+	struct obj_core_find_data *find_data = data;
+
+	if (find_data->obj_core == obj_core) {
+		find_data->count++;
+	}
+
+	return 0;
+}
+
+static int count_walk(uint32_t type_id, struct k_obj_core *obj_core)
+{
+	struct obj_core_find_data walk_data = { .obj_core = obj_core, .count = 0 };
+
+	k_obj_type_walk_locked(k_obj_type_find(type_id), obj_core_count_op, &walk_data);
+
+	return walk_data.count;
+}
+
+ZTEST(obj_core, test_obj_core_reinit)
+{
+	/* Re-initializing a static object and a registered object leaves each
+	 * reported exactly once, with the other objects still present.
+	 */
+	k_mutex_init(&mutex1);
+	k_mutex_init(&mutex2);
+	k_mutex_init(&mutex2);
+
+	common_obj_core_test(K_OBJ_TYPE_MUTEX_ID, "mutex",
+			     K_OBJ_CORE(&mutex1), K_OBJ_CORE(&mutex2));
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
+}
+
+ZTEST(obj_core, test_obj_core_unlink)
+{
+	k_mutex_init(&mutex2);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
+
+	k_obj_core_unlink(K_OBJ_CORE(&mutex2));
+	k_obj_core_unlink(K_OBJ_CORE(&mutex2));
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex1)), 1);
+
+	k_obj_core_link(K_OBJ_CORE(&mutex2));
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
+}
+
+static union {
+	struct k_sem sem;
+	struct k_mutex mutex;
+} reused_storage;
+
+ZTEST(obj_core, test_obj_core_storage_reuse)
+{
+	/* An object discarded without being unregistered leaves a stale entry
+	 * that is dropped once its storage holds something else.
+	 */
+	k_sem_init(&reused_storage.sem, 0, 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&reused_storage.sem)), 1);
+
+	memset(&reused_storage, 0, sizeof(reused_storage));
+	k_mutex_init(&reused_storage.mutex);
+
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&reused_storage.sem)), 0);
+	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&reused_storage.mutex)), 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+
+	k_obj_core_unlink(K_OBJ_CORE(&reused_storage.mutex));
+}
+
+static struct k_sem fill_sems[CONFIG_OBJ_CORE_MAX_DYNAMIC_OBJECTS];
+static struct k_sem extra_sem;
+
+ZTEST(obj_core, test_obj_core_registry_full)
+{
+	struct k_obj_type *type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	uint32_t dropped = type->dropped;
+
+	/* The registry already holds the kernel's own objects, so filling it
+	 * with as many semaphores as it has entries overflows it.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(fill_sems); i++) {
+		k_sem_init(&fill_sems[i], 0, 1);
+	}
+	zassert_true(type->dropped > dropped, "no registration refused");
+
+	dropped = type->dropped;
+	k_sem_init(&extra_sem, 0, 1);
+	zassert_equal(type->dropped, dropped + 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&extra_sem)), 0);
+
+	/* The kernel's objects and the static ones are still reported */
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&sem1)), 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_THREAD_ID, K_OBJ_CORE(k_current_get())), 1);
+
+	/* Freeing one entry lets the next registration through */
+	k_obj_core_unlink(K_OBJ_CORE(&fill_sems[0]));
+	k_sem_init(&extra_sem, 0, 1);
+	zassert_equal(type->dropped, dropped + 1);
+	zassert_equal(count_walk(K_OBJ_TYPE_SEM_ID, K_OBJ_CORE(&extra_sem)), 1);
+
+	k_obj_core_unlink(K_OBJ_CORE(&extra_sem));
+	for (size_t i = 1; i < ARRAY_SIZE(fill_sems); i++) {
+		k_obj_core_unlink(K_OBJ_CORE(&fill_sems[i]));
+	}
 }
 
 ZTEST_SUITE(obj_core, NULL, NULL,
