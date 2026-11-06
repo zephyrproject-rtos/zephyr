@@ -23,7 +23,7 @@ UICR_COMPATIBLE = "nordic,nrf71-uicr"
 #   property – DTS property name (must match the binding YAML)
 #   offset   – byte offset from UICR base
 #   mask     – bit mask of the field within the 32-bit register
-#   encoding – maps DTS string values to integer field values
+#   encoding – optional mapping from DTS string values to integer field values
 #   reset    – 32-bit reset value
 #
 # The full register word is computed as:
@@ -40,6 +40,12 @@ UICR_FIELDS = [
             "external": 1,
             "high-load": 2,
         },
+        "reset": 0xFFFFFFFF,
+    },
+    {
+        "property": "xtalcomp-offset",
+        "offset": 0x440,
+        "mask": 0xFFFFFFFF,
         "reset": 0xFFFFFFFF,
     },
 ]
@@ -76,14 +82,19 @@ def parse_uicr(args):
         if prop is None:
             continue
 
-        val_str = prop.val
-        encoding = field["encoding"]
-        if val_str not in encoding:
-            valid = ", ".join(f'"{k}"' for k in encoding)
-            sys.exit(f"Unknown value '{val_str}' for '{field['property']}'. Expected: {valid}")
-
+        value = prop.val
+        encoding = field.get("encoding")
         mask = field["mask"]
-        word = (field["reset"] & ~mask) | (encoding[val_str] & mask)
+        if encoding is not None:
+            if value not in encoding:
+                valid = ", ".join(f'"{k}"' for k in encoding)
+                sys.exit(f"Unknown value '{value}' for '{field['property']}'. Expected: {valid}")
+            value = encoding[value]
+
+        if value < 0 or value != (value & mask):
+            sys.exit(f"Value 0x{value:x} for '{field['property']}' exceeds mask 0x{mask:x}")
+
+        word = (field["reset"] & ~mask) | (value & mask)
         addr = base + field["offset"]
         ih.puts(addr, struct.pack("<I", word))
 
