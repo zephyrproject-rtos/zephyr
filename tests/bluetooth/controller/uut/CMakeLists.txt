@@ -13,7 +13,6 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_conn.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ll_feat.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_conn_upd.c
-  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_cc.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_pdu.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_remote.c
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_local.c
@@ -25,6 +24,12 @@ add_library(uut STATIC
 if(CONFIG_BT_CTLR_PHY)
   target_sources(uut PRIVATE
     ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_phy.c
+  )
+endif()
+
+if(CONFIG_BT_CTLR_PERIPHERAL_ISO OR CONFIG_BT_CTLR_CENTRAL_ISO)
+  target_sources(uut PRIVATE
+    ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_cc.c
   )
 endif()
 

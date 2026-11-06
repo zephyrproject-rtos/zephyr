@@ -92,11 +92,15 @@ helper_pdu_encode_func_t *const helper_pdu_encode[] = {
 	[LL_CTE_RSP] = helper_pdu_encode_cte_rsp,
 	[LL_CLOCK_ACCURACY_REQ] = helper_pdu_encode_sca_req,
 	[LL_CLOCK_ACCURACY_RSP] = helper_pdu_encode_sca_rsp,
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	[LL_CIS_REQ] = helper_pdu_encode_cis_req,
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 	[LL_CIS_RSP] = helper_pdu_encode_cis_rsp,
 	[LL_CIS_IND] = helper_pdu_encode_cis_ind,
 	[LL_CIS_TERMINATE_IND] = helper_pdu_encode_cis_terminate_ind,
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 	[LL_PERIODIC_SYNC_IND] = helper_pdu_encode_periodic_sync_ind,
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER || CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 	[LL_ZERO] = helper_pdu_encode_zero,
 };
 
@@ -131,11 +135,15 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	[LL_CTE_RSP] = helper_pdu_verify_cte_rsp,
 	[LL_CLOCK_ACCURACY_REQ] = helper_pdu_verify_sca_req,
 	[LL_CLOCK_ACCURACY_RSP] = helper_pdu_verify_sca_rsp,
+#if defined(CONFIG_BT_CTLR_CONN_ISO)
 	[LL_CIS_REQ] = helper_pdu_verify_cis_req,
+#endif /* CONFIG_BT_CTLR_CONN_ISO */
 	[LL_CIS_RSP] = helper_pdu_verify_cis_rsp,
 	[LL_CIS_IND] = helper_pdu_verify_cis_ind,
 	[LL_CIS_TERMINATE_IND] = helper_pdu_verify_cis_terminate_ind,
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) || defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
 	[LL_PERIODIC_SYNC_IND] = helper_pdu_verify_periodic_sync_ind,
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER || CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 };
 
 helper_pdu_ntf_verify_func_t *const helper_pdu_ntf_verify[] = {
