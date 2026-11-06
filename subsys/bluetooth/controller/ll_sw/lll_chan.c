@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/sys/minmax.h>
+#include <zephyr/sys/util.h>
 #include <string.h>
 
 #include "hal/ccm.h"
@@ -323,6 +324,7 @@ static uint8_t chan_d(uint8_t n)
 #include "hal/cpu.h"
 
 #define CHM_SURVEY_CHAN_COUNT_MAX 37U
+#define CHM_SURVEY_CHAN_MAP_SIZE  5U
 
 static struct {
 	struct chan_metrics_chan {
@@ -331,14 +333,21 @@ static struct {
 		uint16_t good;  /* Total good tx acknowledgments */
 	} chan[CHM_SURVEY_CHAN_COUNT_MAX];
 
+	/* Channel map used by a peer Central, excluded channels are reported as bad */
+	uint8_t chan_map[CHM_SURVEY_CHAN_MAP_SIZE];
+
 	/* Differential state, context-safe, to notify upper layer */
 	uint8_t req;
 	uint8_t ack;
-} chan_metrics;
+} chan_metrics = {
+	.chan_map = {0xFF, 0xFF, 0xFF, 0xFF, 0x1F},
+};
 
 void lll_chan_metrics_init(void)
 {
 	(void)memset((void *)&chan_metrics, 0U, sizeof(chan_metrics));
+	(void)memset(chan_metrics.chan_map, 0xFF, sizeof(chan_metrics.chan_map));
+	chan_metrics.chan_map[CHM_SURVEY_CHAN_MAP_SIZE - 1U] = 0x1F;
 }
 
 bool lll_chan_metrics_is_notify(void)
@@ -465,6 +474,66 @@ void lll_chan_metrics_print(void)
 		}
 		printk("\n");
 	}
+}
+
+/* Channel map of a Peripheral connection, set by the peer Central, called from ULL context. */
+void lll_chan_metrics_chan_map_set(const uint8_t *chan_map)
+{
+	if (memcmp(chan_metrics.chan_map, chan_map, sizeof(chan_metrics.chan_map)) != 0) {
+		(void)memcpy(chan_metrics.chan_map, chan_map, sizeof(chan_metrics.chan_map));
+
+		(void)chan_metrics_notify_set();
+	}
+}
+
+/* Per channel success percentage since the previous call, and the peer Central channel map,
+ * called from thread context.
+ */
+void lll_chan_metrics_get(uint8_t *success, uint8_t count, uint8_t *chan_map)
+{
+	static struct {
+		uint16_t count;
+		uint16_t good;
+	} last[CHM_SURVEY_CHAN_COUNT_MAX];
+	const uint8_t max = 100U;
+
+	for (uint8_t i = 0U; i < count; i++) {
+		uint16_t delta_count;
+		uint16_t delta_good;
+		uint16_t chan_count;
+		uint16_t chan_good;
+
+		if (i >= CHM_SURVEY_CHAN_COUNT_MAX) {
+			success[i] = UINT8_MAX;
+
+			continue;
+		}
+
+		chan_good = chan_metrics.chan[i].good;
+		chan_count = chan_metrics.chan[i].count;
+
+		/* Counts are halved on overflow, use the current value as the delta */
+		if ((chan_count < last[i].count) || (chan_good < last[i].good)) {
+			delta_count = chan_count;
+			delta_good = chan_good;
+		} else {
+			delta_count = chan_count - last[i].count;
+			delta_good = chan_good - last[i].good;
+		}
+
+		last[i].count = chan_count;
+		last[i].good = chan_good;
+
+		if ((chan_metrics.chan_map[i >> 3] & BIT(i & 0x07U)) == 0U) {
+			success[i] = 0U;
+		} else if (delta_count == 0U) {
+			success[i] = UINT8_MAX;
+		} else {
+			success[i] = MIN((uint32_t)delta_good * max / delta_count, max);
+		}
+	}
+
+	(void)memcpy(chan_map, chan_metrics.chan_map, sizeof(chan_metrics.chan_map));
 }
 #endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 

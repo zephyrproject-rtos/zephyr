@@ -319,6 +319,23 @@ struct bt_hci_evt_vs_le_connection_iq_report {
 	struct bt_hci_le_iq_sample16 sample[0];
 } __packed;
 
+#define BT_HCI_EVT_VS_CHAN_METRICS                0x07
+#define BT_HCI_VS_CHAN_METRICS_CHAN_COUNT         37
+#define BT_HCI_VS_CHAN_METRICS_NO_SAMPLES         0xFF
+struct bt_hci_evt_vs_chan_metrics {
+	/* Per channel percentage, 0 to 100, of successful receptions and
+	 * received acknowledgments since the previous event, or
+	 * BT_HCI_VS_CHAN_METRICS_NO_SAMPLES. Reception timeouts and CRC errors
+	 * are failures.
+	 * Channels excluded by the peer chan_map are reported as 0.
+	 */
+	uint8_t success[BT_HCI_VS_CHAN_METRICS_CHAN_COUNT];
+	/* Channel map last set by a peer Central, in the CONNECT_IND PDU or
+	 * a Channel Map Update procedure, of a Peripheral connection.
+	 */
+	uint8_t chan_map[5];
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_MASK_VS_FATAL_ERROR             BT_EVT_BIT(1)
@@ -326,11 +343,12 @@ struct bt_hci_evt_vs_le_connection_iq_report {
 #define BT_EVT_MASK_VS_SCAN_REQ_RX             BT_EVT_BIT(3)
 #define BT_EVT_MASK_VS_LE_CONNECTIONLESS_IQ_REPORT BT_EVT_BIT(4)
 #define BT_EVT_MASK_VS_LE_CONNECTION_IQ_REPORT	   BT_EVT_BIT(5)
+#define BT_EVT_MASK_VS_CHAN_METRICS                BT_EVT_BIT(6)
 
 #define DEFAULT_VS_EVT_MASK                                                                        \
 	BT_EVT_MASK_VS_FATAL_ERROR | BT_EVT_MASK_VS_TRACE_INFO | BT_EVT_MASK_VS_SCAN_REQ_RX |      \
 		BT_EVT_MASK_VS_LE_CONNECTIONLESS_IQ_REPORT |                                       \
-		BT_EVT_MASK_VS_LE_CONNECTION_IQ_REPORT
+		BT_EVT_MASK_VS_LE_CONNECTION_IQ_REPORT | BT_EVT_MASK_VS_CHAN_METRICS
 
 /* Mesh HCI commands */
 #define BT_HCI_MESH_REVISION                   0x01

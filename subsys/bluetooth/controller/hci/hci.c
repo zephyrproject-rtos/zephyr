@@ -8480,6 +8480,20 @@ static void le_scan_req_received(struct pdu_data *pdu_data,
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
+static void le_vs_chan_metrics(struct net_buf *buf)
+{
+	struct bt_hci_evt_vs_chan_metrics *sep;
+
+	if (!(vs_events_mask & BT_EVT_MASK_VS_CHAN_METRICS)) {
+		return;
+	}
+
+	sep = vs_event(buf, BT_HCI_EVT_VS_CHAN_METRICS, sizeof(*sep));
+	lll_chan_metrics_get(sep->success, ARRAY_SIZE(sep->success), sep->chan_map);
+}
+#endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
+
 #if defined(CONFIG_BT_CTLR_VS_SCAN_REQ_RX)
 static void le_vs_scan_req_received(struct pdu_data *pdu,
 				    struct node_rx_pdu *node_rx,
@@ -8990,7 +9004,7 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_CHAN_METRICS_EVENT)
 	case NODE_RX_TYPE_CHAN_METRICS:
-		lll_chan_metrics_print();
+		le_vs_chan_metrics(buf);
 		return;
 #endif /* CONFIG_BT_CTLR_CHAN_METRICS_EVENT */
 

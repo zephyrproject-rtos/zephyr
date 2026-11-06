@@ -30,6 +30,8 @@ LLL_CHAN_METRICS void lll_chan_metrics_chan_good(uint8_t chan_idx);
 LLL_CHAN_METRICS bool lll_chan_metrics_is_notify(void);
 LLL_CHAN_METRICS bool lll_chan_metrics_notify_clear(void);
 LLL_CHAN_METRICS void lll_chan_metrics_print(void);
+LLL_CHAN_METRICS void lll_chan_metrics_chan_map_set(const uint8_t *chan_map);
+LLL_CHAN_METRICS void lll_chan_metrics_get(uint8_t *success, uint8_t count, uint8_t *chan_map);
 
 void lll_chan_sel_2_ut(void);
 
@@ -57,6 +59,14 @@ LLL_CHAN_METRICS bool lll_chan_metrics_notify_clear(void)
 }
 
 LLL_CHAN_METRICS void lll_chan_metrics_print(void)
+{
+}
+
+LLL_CHAN_METRICS void lll_chan_metrics_chan_map_set(const uint8_t *chan_map)
+{
+}
+
+LLL_CHAN_METRICS void lll_chan_metrics_get(uint8_t *success, uint8_t count, uint8_t *chan_map)
 {
 }
 #endif /* !CONFIG_BT_CTLR_CHAN_METRICS_EVENT */

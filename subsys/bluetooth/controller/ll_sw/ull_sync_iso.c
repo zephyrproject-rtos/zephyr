@@ -939,6 +939,9 @@ void ull_sync_iso_done(struct node_rx_event_done *done)
 		}
 	}
 
+	/* Channels excluded by the BIG channel map are reported as bad */
+	lll_chan_metrics_chan_map_set(lll->data_chan_map);
+
 #if defined(CONFIG_BT_CONN)
 	/* Notification uses the PDU Rx pool of connections */
 	if (lll_chan_metrics_is_notify()) {

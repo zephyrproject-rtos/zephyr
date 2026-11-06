@@ -2728,6 +2728,11 @@ void ull_conn_chan_map_set(struct ll_conn *conn, const uint8_t chm[5])
 
 	memcpy(lll->data_chan_map, chm, sizeof(lll->data_chan_map));
 	lll->data_chan_count = util_ones_count_get(lll->data_chan_map, sizeof(lll->data_chan_map));
+
+	/* Channels excluded by a peer Central are reported as bad channels */
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && (lll->role == BT_HCI_ROLE_PERIPHERAL)) {
+		lll_chan_metrics_chan_map_set(lll->data_chan_map);
+	}
 }
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)

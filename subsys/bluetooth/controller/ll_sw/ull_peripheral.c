@@ -167,6 +167,9 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		return;
 	}
 
+	/* Channels excluded by the peer Central are reported as bad channels */
+	lll_chan_metrics_chan_map_set(lll->data_chan_map);
+
 	((struct lll_adv *)ftr->param)->conn = NULL;
 
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);

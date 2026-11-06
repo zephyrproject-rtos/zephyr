@@ -1266,12 +1266,14 @@ config BT_CTLR_CONN_RSSI_EVENT
 
 config BT_CTLR_CHAN_METRICS_EVENT
 	bool "Channel Metrics event"
-	depends on BT_CONN
+	depends on BT_HCI_VS && BT_CONN
 	help
-	  Generate events for channel usage metrics of connections, Connected
+	  Generate the Zephyr vendor-specific Channel Metrics event with the
+	  per channel reception success percentage of connections, Connected
 	  Isochronous Streams, synchronized Broadcast Isochronous Groups,
-	  periodic advertising synchronizations and auxiliary channel scanning.
-	  Reception timeouts and CRC errors are reception failures.
+	  periodic advertising synchronizations and auxiliary channel scanning,
+	  when consecutive reception failures on a channel exceed the bad count
+	  threshold. Reception timeouts and CRC errors are reception failures.
 
 config BT_CTLR_CHAN_METRICS_BAD_COUNT
 	int "Channel bad count threshold"
