@@ -39,5 +39,4 @@ python-dotenv
 strictdoc>=0.28.1
 
 # Used by the licensing extension
-reuse @ https://github.com/fsfe/reuse-tool/archive/f94ae0b1bb1d4d2ea91f49df88f3184c5d781a1d.tar.gz \
-       --hash=sha256:aa155da6b54c41b0bb7a5652a571a9187c019d71f3b1bb63469acc738cf4e811
+reuse>=6.3.0
