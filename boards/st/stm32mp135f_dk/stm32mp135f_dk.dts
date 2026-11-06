@@ -194,6 +194,82 @@
 	scl-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+
+	pmic: stpmic@33 {
+		compatible = "st,stpmic1";
+		reg = <0x33>;
+
+		vddcpu: buck1 {
+			regulator-name = "vddcpu";
+			regulator-min-microvolt = <1250000>;
+			regulator-max-microvolt = <1350000>;
+			regulator-always-on;
+		};
+
+		vdd_ddr: buck2 {
+			regulator-name = "vdd_ddr";
+			regulator-min-microvolt = <1350000>;
+			regulator-max-microvolt = <1350000>;
+			regulator-always-on;
+		};
+
+		vdd: buck3 {
+			regulator-name = "vdd";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
+
+		vddcore: buck4 {
+			regulator-name = "vddcore";
+			regulator-min-microvolt = <1250000>;
+			regulator-max-microvolt = <1250000>;
+			regulator-always-on;
+		};
+
+		vdd_adc: ldo1 {
+			regulator-name = "vdd_adc";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-boot-on;
+		};
+
+		vdd_usb: ldo4 {
+			regulator-name = "vdd_usb";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-boot-on;
+		};
+
+		vdd_sd: ldo5 {
+			regulator-name = "vdd_sd";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-boot-on;
+		};
+
+		v1v8_periph: ldo6 {
+			regulator-name = "v1v8_periph";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-boot-on;
+		};
+
+		vref_ddr: vref_ddr {
+			regulator-name = "vref_ddr";
+			regulator-always-on;
+		};
+
+		bst_out: boost {
+			regulator-name = "bst_out";
+		};
+
+		v3v3_sw: pwr_sw2 {
+			regulator-name = "v3v3_sw";
+			regulator-boot-on;
+			regulator-active-discharge = <1>;
+		};
+	};
 };
 
 csi_i2c: &i2c5 {
