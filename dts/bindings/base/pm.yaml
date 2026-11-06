@@ -26,3 +26,20 @@ properties:
     type: phandles
     description: |
       List of power states that will disable this device power.
+
+  zephyr,wakeup-disabling-power-states:
+    type: phandles
+    description: |
+      List of power states this device cannot wake the system from, even when
+      it is enabled as a wake up source.
+
+      Absent, the device can wake the system from every state, which is what
+      pm_device_wakeup_enable() has always meant, so nothing changes for a node
+      that does not use this property.
+
+      zephyr,disabling-power-states already implies this for the states it
+      names: a device that has lost its power cannot wake the system.
+      pm_device_wakeup_is_capable_from_state() reads both properties, so only
+      the states missed by that rule need listing here: a state that keeps the
+      device powered but that it still cannot wake from, for instance because
+      the clock it counts from is not running there.
