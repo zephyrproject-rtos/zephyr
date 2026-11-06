@@ -18,3 +18,15 @@ tests:
     platform_allow:
       - native_sim
       - qemu_x86
+  net.http.server.websocket:
+    # Without NET_TEST, other QEMU boards connect to a host network that the
+    # test does not have.
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_HTTP_SERVER_WEBSOCKET=y
+      # With NET_TEST, the WebSocket library sends through a hook that only
+      # tests/net/socket/websocket provides.
+      - CONFIG_NET_TEST=n
+      - CONFIG_NET_SLIP_TAP=n

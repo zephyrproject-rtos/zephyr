@@ -12,6 +12,7 @@
 
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/websocket.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/ztest.h>
 
@@ -1802,6 +1803,288 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_delete)
 				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM,
 				   NULL, 0);
 }
+
+/* Send the headers of a request and then its body in pieces. The server
+ * processes each part before the next one arrives.
+ */
+static void send_request_in_pieces(const char *const pieces[], size_t count)
+{
+	int ret;
+
+	for (size_t i = 0; i < count; i++) {
+		ret = zsock_send(client_fd, pieces[i], strlen(pieces[i]), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+		k_msleep(100);
+	}
+}
+
+/* Client connection preface, sent after the response to an upgrade request */
+static const uint8_t upgrade_client_preface[] = {
+	TEST_HTTP2_MAGIC,
+	TEST_HTTP2_SETTINGS,
+};
+
+/* The server acknowledges the client settings and sends nothing else. */
+static void expect_http2_settings_ack_only(size_t *offset)
+{
+	int ret;
+
+	expect_http2_settings_frame(offset, true);
+	zexpect_equal(*offset, 0, "%zu bytes received after the settings ACK", *offset);
+
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_true(ret < 0 && errno == EAGAIN, "Unexpected data or close (%d)", ret);
+}
+
+/* After the response to the upgrade request, send the client connection
+ * preface.
+ */
+static void expect_http2_after_upgrade_response(size_t *offset)
+{
+	int ret;
+
+	ret = zsock_send(client_fd, upgrade_client_preface, sizeof(upgrade_client_preface), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_ack_only(offset);
+}
+
+ZTEST(server_function_tests, test_http1_static_upgrade_get_body_in_pieces)
+{
+	static const char *const request[] = {
+		"GET / HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 8\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"abcd",
+		"efgh",
+	};
+	size_t offset = 0;
+
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_STATIC_PAYLOAD,
+				strlen(TEST_STATIC_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	expect_http2_after_upgrade_response(&offset);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_get_body_in_pieces)
+{
+	static const char *const request[] = {
+		"GET /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 8\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"abcd",
+		"efgh",
+	};
+	size_t offset = 0;
+
+	dynamic_payload_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
+	memcpy(dynamic_payload, TEST_DYNAMIC_GET_PAYLOAD, dynamic_payload_len);
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, UPGRADE_STREAM_ID, TEST_DYNAMIC_GET_PAYLOAD,
+				strlen(TEST_DYNAMIC_GET_PAYLOAD), HTTP2_FLAG_END_STREAM);
+	expect_http2_after_upgrade_response(&offset);
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_body_in_pieces)
+{
+	static const char *const request[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 17\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"Test dyn",
+		"amic POST",
+	};
+	size_t offset = 0;
+
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+	expect_http2_after_upgrade_response(&offset);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+/* The client sends the connection preface as soon as it has sent the body,
+ * so the last piece of the body and the preface can arrive together.
+ */
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_body_with_preface)
+{
+	static const char *const request[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Content-Length: 17\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n",
+		"Test dyn",
+	};
+	static const char body_end[] = "amic POST";
+	uint8_t data[sizeof(body_end) - 1 + sizeof(upgrade_client_preface)];
+	size_t offset = 0;
+	int ret;
+
+	memcpy(data, body_end, sizeof(body_end) - 1);
+	memcpy(data + sizeof(body_end) - 1, upgrade_client_preface,
+	       sizeof(upgrade_client_preface));
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+
+	ret = zsock_send(client_fd, data, sizeof(data), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+	expect_http2_settings_ack_only(&offset);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+#if defined(CONFIG_HTTP_SERVER_WEBSOCKET)
+static K_SEM_DEFINE(ws_connected, 0, 1);
+static int ws_sock = -1;
+static size_t ws_connect_count;
+
+static int ws_cb(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
+{
+	ARG_UNUSED(request_ctx);
+	ARG_UNUSED(user_data);
+
+	ws_sock = ws_socket;
+	ws_connect_count++;
+	k_sem_give(&ws_connected);
+
+	return 0;
+}
+
+static uint8_t ws_buffer[64];
+
+static struct http_resource_detail_websocket ws_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_WEBSOCKET,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+	},
+	.cb = ws_cb,
+	.data_buffer = ws_buffer,
+	.data_buffer_len = sizeof(ws_buffer),
+};
+
+HTTP_RESOURCE_DEFINE(ws_resource, test_http_service, "/ws", &ws_detail);
+
+ZTEST(server_function_tests, test_http1_websocket_upgrade_body_in_pieces)
+{
+	static const char *const request[] = {
+		"GET /ws HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Upgrade: websocket\r\n"
+		"Connection: Upgrade\r\n"
+		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+		"Sec-WebSocket-Version: 13\r\n"
+		"Content-Length: 8\r\n"
+		"\r\n",
+		"abcd",
+		"efgh",
+	};
+	static const char switching_protocols[] = "HTTP/1.1 101 Switching Protocols\r\n";
+	/* Accept value for the key above, RFC 6455 section 1.3 */
+	static const char accept[] = "Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\r\n";
+	/* Masked text frame carrying "Hello", RFC 6455 section 5.7 */
+	static const uint8_t ws_hello[] = {
+		0x81, 0x85, 0x37, 0xfa, 0x21, 0x3d, 0x7f, 0x9f, 0x4d, 0x51, 0x58,
+	};
+	uint8_t msg[sizeof("Hello")];
+	uint32_t message_type = 0;
+	uint64_t remaining = 0;
+	size_t offset = 0;
+	char *end;
+	int ret;
+
+	ws_sock = -1;
+	ws_connect_count = 0;
+	k_sem_reset(&ws_connected);
+	memset(buf, 0, sizeof(buf));
+
+	send_request_in_pieces(request, ARRAY_SIZE(request));
+
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - 1 - offset, 0);
+		zassert_true(ret > 0, "recv() failed (%d)", errno);
+		offset += ret;
+		end = strstr((char *)buf, "\r\n\r\n");
+	} while (end == NULL);
+
+	zexpect_mem_equal(buf, switching_protocols, strlen(switching_protocols),
+			  "Unexpected response:\n%s", (char *)buf);
+	zexpect_not_null(strstr((char *)buf, accept), "No valid Sec-WebSocket-Accept");
+	zexpect_equal(offset, (size_t)(end + 4 - (char *)buf), "Data after the 101 response:\n%s",
+		      (char *)buf);
+
+	zassert_ok(k_sem_take(&ws_connected, K_SECONDS(1)), "WebSocket callback not called");
+
+	/* The client sends WebSocket data on the switched connection */
+	ret = zsock_send(client_fd, ws_hello, sizeof(ws_hello), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	ret = websocket_recv_msg(ws_sock, msg, sizeof(msg), &message_type, &remaining,
+				 MSEC_PER_SEC);
+	zexpect_equal(ret, strlen("Hello"), "Wrong WebSocket message length (%d)", ret);
+	zexpect_mem_equal(msg, "Hello", strlen("Hello"), "Wrong WebSocket message");
+	zexpect_true((message_type & WEBSOCKET_FLAG_TEXT) != 0, "Not a text message");
+
+	k_msleep(100);
+
+	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+	zexpect_true(ret < 0 && errno == EAGAIN, "Unexpected data or close (%d)", ret);
+	zexpect_equal(ws_connect_count, 1, "WebSocket callback called %zu times", ws_connect_count);
+
+	(void)websocket_unregister(ws_sock);
+}
+#endif /* CONFIG_HTTP_SERVER_WEBSOCKET */
 
 ZTEST(server_function_tests, test_http1_dynamic_delete)
 {
