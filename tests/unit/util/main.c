@@ -1118,6 +1118,55 @@ ZTEST(util, test_utf8_trunc_zero_length)
 	zassert_str_equal(test_str, expected_result, "Failed to truncate");
 }
 
+ZTEST(util, test_utf8_trunc_stray_continuation)
+{
+	/* Continuation bytes without a starting byte are removed, the characters before them
+	 * are kept
+	 */
+	struct {
+		char input[20];
+		char expected[20];
+	} tests[] = {
+		{"abc\x80", "abc"},     /* continuation byte after ASCII */
+		{"abc\x80\x80", "abc"}, /* continuation bytes after ASCII */
+		{"éa\x80", "éa"},       /* continuation byte after ASCII after UTF-8 */
+		{"a\x80", "a"},         /* single ASCII at start */
+		{"é\x80", "é"},         /* two-byte character */
+		{"é\x80\x80", "é"},     /* multiple stray bytes */
+		{"€\x80", "€"},         /* three-byte character */
+		{"𐍈\x80", "𐍈"},         /* four-byte character */
+		{"Café\x80", "Café"},   /* preserve preceding text */
+		{"\x80\x80", ""},       /* continuation bytes only */
+		{"\x80", ""},           /* continuation byte only */
+	};
+	char copied[sizeof(tests[0].input)];
+
+	for (size_t i = 0; i < ARRAY_SIZE(tests); i++) {
+		utf8_lcpy(copied, tests[i].input, sizeof(copied));
+		zassert_str_equal(copied, tests[i].expected, "Failed to copy");
+		utf8_trunc(tests[i].input);
+		zassert_str_equal(tests[i].input, tests[i].expected, "Failed to truncate");
+	}
+}
+
+ZTEST(util, test_utf8_trunc_many_continuations)
+{
+	/* The final character and trailing bytes exceed an 8-bit count. */
+	char input[258];
+	char copied[sizeof(input)];
+	static const char expected[] = "é";
+	size_t prefix_len = strlen(expected);
+
+	memcpy(input, expected, prefix_len);
+	memset(input + prefix_len, 0x80, sizeof(input) - prefix_len - 1);
+	input[sizeof(input) - 1] = '\0';
+
+	utf8_lcpy(copied, input, sizeof(copied));
+	zassert_str_equal(copied, expected, "Failed to copy a long continuation run");
+	utf8_trunc(input);
+	zassert_str_equal(input, expected, "Failed to truncate a long continuation run");
+}
+
 ZTEST(util, test_utf8_lcpy_truncated)
 {
 	/* dest_str size is based on storing 2 * € plus the null terminator plus an extra space to
