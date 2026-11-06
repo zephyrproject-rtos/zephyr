@@ -61,6 +61,14 @@ fcb_elem_crc8(struct fcb *_fcb, struct fcb_entry *loc, uint8_t *c8p)
 		}
 		crc8 = crc8_ccitt(crc8, tmp_str, blk_sz);
 	}
+#if defined(CONFIG_FCB_ENDMARKER_NEVER_ERASED)
+	/* An end marker equal to the erased value would also match an entry whose
+	 * marker was never written (power lost after its data): use another value.
+	 */
+	if (crc8 == _fcb->f_erase_value) {
+		crc8 = (uint8_t)~crc8;
+	}
+#endif
 	*c8p = crc8;
 
 	return 0;
