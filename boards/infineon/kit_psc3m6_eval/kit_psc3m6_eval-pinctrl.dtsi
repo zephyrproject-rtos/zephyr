@@ -55,3 +55,8 @@
 &p7_0_scb2_spi_m_clk {
 	drive-push-pull;
 };
+
+/* PWM (TCPWM0_6) pin drive mode */
+&p5_0_pwm0_6 {
+	drive-push-pull;
+};
