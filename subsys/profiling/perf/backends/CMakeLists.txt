@@ -22,3 +22,7 @@ zephyr_sources_ifdef(CONFIG_PROFILING_PERF_BACKEND_X86_64
 zephyr_sources_ifdef(CONFIG_PROFILING_PERF_BACKEND_ARM64
   perf_arm64.c
 )
+
+zephyr_sources_ifdef(CONFIG_PROFILING_PERF_BACKEND_TRICORE
+  perf_tricore.c
+)
