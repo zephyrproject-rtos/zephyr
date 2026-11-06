@@ -271,7 +271,8 @@ static void test_hpack_verify_decode(const struct example_headers *example,
 		struct http_hpack_header_buf hdr;
 		int ret;
 
-		ret = http_hpack_decode_header(example[i].encoded, example[i].encoded_len, &hdr);
+		ret = http_hpack_decode_header(example[i].encoded, example[i].encoded_len, &hdr,
+					       NULL);
 		zassert_equal(ret, example[i].encoded_len, "Wrong decoding length");
 		zassert_equal(hdr.name_len, strlen(example[i].name),
 			      "Wrong decoded header name length");
@@ -530,7 +531,7 @@ ZTEST(http2_hpack, test_http2_hpack_long_value_encode_decode)
 	 * that covers an octet the encoder never produced does not only
 	 * lose this field, it takes the rest of the block with it.
 	 */
-	dec_ret = http_hpack_decode_header(test_long_buf, enc_ret, &dec);
+	dec_ret = http_hpack_decode_header(test_long_buf, enc_ret, &dec, NULL);
 	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
 
 	zexpect_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
@@ -554,7 +555,7 @@ ZTEST(http2_hpack, test_http2_hpack_empty_value_encode_decode)
 	enc_ret = http_hpack_encode_header(test_buf, sizeof(test_buf), &hdr);
 	zassert_true(enc_ret > 0, "Cannot encode the header (%d)", enc_ret);
 
-	dec_ret = http_hpack_decode_header(test_buf, enc_ret, &dec);
+	dec_ret = http_hpack_decode_header(test_buf, enc_ret, &dec, NULL);
 	zassert_equal(dec_ret, enc_ret, "Decoded %d of the %d bytes encoded", dec_ret, enc_ret);
 	zassert_equal(dec.name_len, hdr.name_len, "Wrong decoded header name length");
 	zassert_mem_equal(dec.name, hdr.name, dec.name_len, "Header name wrongly decoded");
@@ -570,18 +571,18 @@ ZTEST(http2_hpack, test_http2_hpack_dynamic_table_size_update)
 	struct http_hpack_header_buf dec = { 0 };
 	int ret;
 
-	ret = http_hpack_decode_header(update_zero, sizeof(update_zero), &dec);
+	ret = http_hpack_decode_header(update_zero, sizeof(update_zero), &dec, NULL);
 	zassert_equal(ret, sizeof(update_zero), "Size update rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
 	zassert_equal(dec.table_size, 0, "Table size %u", dec.table_size);
 	zassert_equal(dec.name_len, 0, "Size update decoded as a field");
 
-	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec);
+	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec, NULL);
 	zassert_equal(ret, sizeof(update_100), "Size update rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_TABLE_SIZE_UPDATE, "Entry type %d", dec.type);
 	zassert_equal(dec.table_size, 100, "Table size %u", dec.table_size);
 
-	ret = http_hpack_decode_header(field, sizeof(field), &dec);
+	ret = http_hpack_decode_header(field, sizeof(field), &dec, NULL);
 	zassert_equal(ret, sizeof(field), "Field rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 }
@@ -611,7 +612,7 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field)
 	memcpy(entry + len, encoded, ret);
 	len += ret;
 
-	ret = http_hpack_decode_header(entry, len, &dec);
+	ret = http_hpack_decode_header(entry, len, &dec, NULL);
 	zassert_equal(ret, len, "Entry not consumed (%d, %zu bytes)", ret, len);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 	zassert_true(dec.oversized, "Field not reported as oversized");
@@ -645,7 +646,7 @@ ZTEST(http2_hpack, test_http2_hpack_oversized_field_invalid)
 	memcpy(entry + len, encoded, ret);
 	len += ret;
 
-	ret = http_hpack_decode_header(entry, len, &dec);
+	ret = http_hpack_decode_header(entry, len, &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "Invalid oversized string accepted (%d)", ret);
 }
 
@@ -663,16 +664,16 @@ ZTEST(http2_hpack, test_http2_hpack_integer_overflow)
 	struct http_hpack_header_buf dec = { 0 };
 	int ret;
 
-	ret = http_hpack_decode_header(at_limit, sizeof(at_limit), &dec);
+	ret = http_hpack_decode_header(at_limit, sizeof(at_limit), &dec, NULL);
 	zassert_equal(ret, -EAGAIN, "Largest integer rejected (%d)", ret);
 
-	ret = http_hpack_decode_header(high_group, sizeof(high_group), &dec);
+	ret = http_hpack_decode_header(high_group, sizeof(high_group), &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "High group accepted (%d)", ret);
 
-	ret = http_hpack_decode_header(six_bytes, sizeof(six_bytes), &dec);
+	ret = http_hpack_decode_header(six_bytes, sizeof(six_bytes), &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "Six-byte integer accepted (%d)", ret);
 
-	ret = http_hpack_decode_header(wrapped, sizeof(wrapped), &dec);
+	ret = http_hpack_decode_header(wrapped, sizeof(wrapped), &dec, NULL);
 	zassert_equal(ret, -EBADMSG, "Wrapped integer accepted (%d)", ret);
 }
 
@@ -683,12 +684,528 @@ ZTEST(http2_hpack, test_http2_hpack_indexed_empty_value)
 	struct http_hpack_header_buf dec = { 0 };
 	int ret;
 
-	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec);
+	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec, NULL);
 	zassert_equal(ret, sizeof(indexed), "Indexed entry rejected (%d)", ret);
 	zassert_equal(dec.type, HTTP_HPACK_ENTRY_FIELD, "Entry type %d", dec.type);
 	zassert_equal(dec.name_len, strlen("accept-charset"), "Name length %zu", dec.name_len);
 	zassert_mem_equal(dec.name, "accept-charset", dec.name_len, "Wrong name");
 	zassert_equal(dec.value_len, 0, "Decoded a %zu byte value", dec.value_len);
+}
+
+/* RFC 7541, Appendix C.3 and C.4: three requests on one connection, without
+ * and with Huffman coding, and C.5: three responses with a 256 byte table.
+ */
+static const uint8_t rfc_c31[] = {
+	0x82, 0x86, 0x84, 0x41, 0x0f, 0x77, 0x77, 0x77, 0x2e, 0x65, 0x78, 0x61,
+	0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d
+};
+
+static const uint8_t rfc_c32[] = {
+	0x82, 0x86, 0x84, 0xbe, 0x58, 0x08, 0x6e, 0x6f, 0x2d, 0x63, 0x61, 0x63,
+	0x68, 0x65
+};
+
+static const uint8_t rfc_c33[] = {
+	0x82, 0x87, 0x85, 0xbf, 0x40, 0x0a, 0x63, 0x75, 0x73, 0x74, 0x6f, 0x6d,
+	0x2d, 0x6b, 0x65, 0x79, 0x0c, 0x63, 0x75, 0x73, 0x74, 0x6f, 0x6d, 0x2d,
+	0x76, 0x61, 0x6c, 0x75, 0x65
+};
+
+static const uint8_t rfc_c41[] = {
+	0x82, 0x86, 0x84, 0x41, 0x8c, 0xf1, 0xe3, 0xc2, 0xe5, 0xf2, 0x3a, 0x6b,
+	0xa0, 0xab, 0x90, 0xf4, 0xff
+};
+
+static const uint8_t rfc_c42[] = {
+	0x82, 0x86, 0x84, 0xbe, 0x58, 0x86, 0xa8, 0xeb, 0x10, 0x64, 0x9c, 0xbf
+};
+
+static const uint8_t rfc_c43[] = {
+	0x82, 0x87, 0x85, 0xbf, 0x40, 0x88, 0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xa9,
+	0x7d, 0x7f, 0x89, 0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xb8, 0xe8, 0xb4, 0xbf
+};
+
+static const uint8_t rfc_c51[] = {
+	0x48, 0x03, 0x33, 0x30, 0x32, 0x58, 0x07, 0x70, 0x72, 0x69, 0x76, 0x61,
+	0x74, 0x65, 0x61, 0x1d, 0x4d, 0x6f, 0x6e, 0x2c, 0x20, 0x32, 0x31, 0x20,
+	0x4f, 0x63, 0x74, 0x20, 0x32, 0x30, 0x31, 0x33, 0x20, 0x32, 0x30, 0x3a,
+	0x31, 0x33, 0x3a, 0x32, 0x31, 0x20, 0x47, 0x4d, 0x54, 0x6e, 0x17, 0x68,
+	0x74, 0x74, 0x70, 0x73, 0x3a, 0x2f, 0x2f, 0x77, 0x77, 0x77, 0x2e, 0x65,
+	0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x2e, 0x63, 0x6f, 0x6d
+};
+
+static const uint8_t rfc_c52[] = {
+	0x48, 0x03, 0x33, 0x30, 0x37, 0xc1, 0xc0, 0xbf
+};
+
+static const uint8_t rfc_c53[] = {
+	0x88, 0xc1, 0x61, 0x1d, 0x4d, 0x6f, 0x6e, 0x2c, 0x20, 0x32, 0x31, 0x20,
+	0x4f, 0x63, 0x74, 0x20, 0x32, 0x30, 0x31, 0x33, 0x20, 0x32, 0x30, 0x3a,
+	0x31, 0x33, 0x3a, 0x32, 0x32, 0x20, 0x47, 0x4d, 0x54, 0xc0, 0x5a, 0x04,
+	0x67, 0x7a, 0x69, 0x70, 0x77, 0x38, 0x66, 0x6f, 0x6f, 0x3d, 0x41, 0x53,
+	0x44, 0x4a, 0x4b, 0x48, 0x51, 0x4b, 0x42, 0x5a, 0x58, 0x4f, 0x51, 0x57,
+	0x45, 0x4f, 0x50, 0x49, 0x55, 0x41, 0x58, 0x51, 0x57, 0x45, 0x4f, 0x49,
+	0x55, 0x3b, 0x20, 0x6d, 0x61, 0x78, 0x2d, 0x61, 0x67, 0x65, 0x3d, 0x33,
+	0x36, 0x30, 0x30, 0x3b, 0x20, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e,
+	0x3d, 0x31
+};
+
+struct expected_field {
+	const char *name;
+	const char *value;
+};
+
+static const struct expected_field rfc_c3_fields_1[] = {
+	{ ":method", "GET" }, { ":scheme", "http" }, { ":path", "/" },
+	{ ":authority", "www.example.com" },
+};
+
+static const struct expected_field rfc_c3_fields_2[] = {
+	{ ":method", "GET" }, { ":scheme", "http" }, { ":path", "/" },
+	{ ":authority", "www.example.com" }, { "cache-control", "no-cache" },
+};
+
+static const struct expected_field rfc_c3_fields_3[] = {
+	{ ":method", "GET" }, { ":scheme", "https" }, { ":path", "/index.html" },
+	{ ":authority", "www.example.com" }, { "custom-key", "custom-value" },
+};
+
+static const struct expected_field rfc_c5_fields_1[] = {
+	{ ":status", "302" }, { "cache-control", "private" },
+	{ "date", "Mon, 21 Oct 2013 20:13:21 GMT" }, { "location", "https://www.example.com" },
+};
+
+static const struct expected_field rfc_c5_fields_2[] = {
+	{ ":status", "307" }, { "cache-control", "private" },
+	{ "date", "Mon, 21 Oct 2013 20:13:21 GMT" }, { "location", "https://www.example.com" },
+};
+
+static const struct expected_field rfc_c5_fields_3[] = {
+	{ ":status", "200" }, { "cache-control", "private" },
+	{ "date", "Mon, 21 Oct 2013 20:13:22 GMT" }, { "location", "https://www.example.com" },
+	{ "content-encoding", "gzip" },
+	{ "set-cookie", "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1" },
+};
+
+static void expect_field(const struct http_hpack_header_buf *dec,
+			 const struct expected_field *field)
+{
+	zassert_equal(dec->type, HTTP_HPACK_ENTRY_FIELD, "Not a field");
+	zassert_false(dec->unresolved, "Field %s unresolved", field->name);
+	zassert_equal(dec->name_len, strlen(field->name), "Name length of %s", field->name);
+	zassert_mem_equal(dec->name, field->name, dec->name_len, "Name of %s", field->name);
+	zassert_equal(dec->value_len, strlen(field->value), "Value length of %s", field->name);
+	zassert_mem_equal(dec->value, field->value, dec->value_len, "Value of %s", field->name);
+}
+
+/* Decodes a whole header block and checks every field. */
+static void decode_block(struct http_hpack_dynamic_table *table, const uint8_t *block,
+			 size_t block_len, const struct expected_field *fields, size_t count)
+{
+	struct http_hpack_header_buf dec = { 0 };
+	size_t consumed = 0;
+	int ret;
+
+	for (size_t i = 0; i < count; i++) {
+		ret = http_hpack_decode_header(block + consumed, block_len - consumed, &dec, table);
+		zassert_true(ret > 0, "Field %zu rejected (%d)", i, ret);
+		consumed += ret;
+		expect_field(&dec, &fields[i]);
+	}
+
+	zassert_equal(consumed, block_len, "Block not fully consumed");
+}
+
+/* Decodes one indexed field and checks it. */
+static void expect_indexed(struct http_hpack_dynamic_table *table, uint32_t index,
+			   const struct expected_field *field)
+{
+	/* Indices below 127 fit the 7-bit prefix. */
+	uint8_t indexed[] = { 0x80 | index };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	ret = http_hpack_decode_header(indexed, sizeof(indexed), &dec, table);
+	zassert_equal(ret, sizeof(indexed), "Index %u rejected (%d)", index, ret);
+	expect_field(&dec, field);
+}
+
+static void expect_table(const struct http_hpack_dynamic_table *table, uint16_t count,
+			 uint32_t size)
+{
+	zassert_equal(table->count, count, "Table has %u entries", table->count);
+	zassert_equal(table->size, size, "Table size is %u", table->size);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_pool)
+{
+#if HTTP_HPACK_DYNAMIC_TABLE_COUNT > 0
+	struct http_hpack_dynamic_table *tables[HTTP_HPACK_DYNAMIC_TABLE_COUNT];
+
+	ARRAY_FOR_EACH(tables, i) {
+		tables[i] = http_hpack_dynamic_table_alloc();
+		zassert_not_null(tables[i], "Table %zu not available", i);
+		zassert_equal(tables[i]->max_size, HTTP_HPACK_DYNAMIC_TABLE_SIZE,
+			      "Table max size %u", tables[i]->max_size);
+		expect_table(tables[i], 0, 0);
+	}
+
+	zassert_is_null(http_hpack_dynamic_table_alloc(), "Pool not exhausted");
+
+	http_hpack_dynamic_table_free(NULL);
+	zassert_is_null(http_hpack_dynamic_table_alloc(), "Pool not exhausted");
+
+	http_hpack_dynamic_table_free(tables[0]);
+	zassert_equal_ptr(http_hpack_dynamic_table_alloc(), tables[0], "Freed table not reused");
+
+	ARRAY_FOR_EACH(tables, i) {
+		http_hpack_dynamic_table_free(tables[i]);
+	}
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_rfc_requests)
+{
+	struct http_hpack_dynamic_table *table;
+
+	/* Appendix C.3, no Huffman coding */
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	decode_block(table, rfc_c31, sizeof(rfc_c31), rfc_c3_fields_1, ARRAY_SIZE(rfc_c3_fields_1));
+	expect_table(table, 1, 57);
+	decode_block(table, rfc_c32, sizeof(rfc_c32), rfc_c3_fields_2, ARRAY_SIZE(rfc_c3_fields_2));
+	expect_table(table, 2, 110);
+	decode_block(table, rfc_c33, sizeof(rfc_c33), rfc_c3_fields_3, ARRAY_SIZE(rfc_c3_fields_3));
+	expect_table(table, 3, 164);
+
+	expect_indexed(table, 62, &rfc_c3_fields_3[4]);
+	expect_indexed(table, 63, &rfc_c3_fields_2[4]);
+	expect_indexed(table, 64, &rfc_c3_fields_1[3]);
+
+	http_hpack_dynamic_table_free(table);
+
+	/* Appendix C.4, the same with Huffman coding */
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	decode_block(table, rfc_c41, sizeof(rfc_c41), rfc_c3_fields_1, ARRAY_SIZE(rfc_c3_fields_1));
+	expect_table(table, 1, 57);
+	decode_block(table, rfc_c42, sizeof(rfc_c42), rfc_c3_fields_2, ARRAY_SIZE(rfc_c3_fields_2));
+	expect_table(table, 2, 110);
+	decode_block(table, rfc_c43, sizeof(rfc_c43), rfc_c3_fields_3, ARRAY_SIZE(rfc_c3_fields_3));
+	expect_table(table, 3, 164);
+
+	expect_indexed(table, 62, &rfc_c3_fields_3[4]);
+	expect_indexed(table, 64, &rfc_c3_fields_1[3]);
+
+	http_hpack_dynamic_table_free(table);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_rfc_responses_eviction)
+{
+	/* Dynamic table size update to 256 */
+	static const uint8_t update_256[] = { 0x3f, 0xe1, 0x01 };
+	/* Index 65, the oldest entry after the third response is 64 */
+	static const uint8_t index_65[] = { 0xc1 };
+	struct http_hpack_dynamic_table *table;
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	ret = http_hpack_decode_header(update_256, sizeof(update_256), &dec, table);
+	zassert_equal(ret, sizeof(update_256), "Size update rejected (%d)", ret);
+	zassert_equal(table->max_size, 256, "Table max size %u", table->max_size);
+
+	/* Appendix C.5 */
+	decode_block(table, rfc_c51, sizeof(rfc_c51), rfc_c5_fields_1, ARRAY_SIZE(rfc_c5_fields_1));
+	expect_table(table, 4, 222);
+
+	/* The new :status evicts the old one. */
+	decode_block(table, rfc_c52, sizeof(rfc_c52), rfc_c5_fields_2, ARRAY_SIZE(rfc_c5_fields_2));
+	expect_table(table, 4, 222);
+	expect_indexed(table, 62, &rfc_c5_fields_2[0]);
+	expect_indexed(table, 63, &rfc_c5_fields_1[3]);
+	expect_indexed(table, 65, &rfc_c5_fields_1[1]);
+
+	/* Three insertions, three evictions. */
+	decode_block(table, rfc_c53, sizeof(rfc_c53), rfc_c5_fields_3, ARRAY_SIZE(rfc_c5_fields_3));
+	expect_table(table, 3, 215);
+	expect_indexed(table, 62, &rfc_c5_fields_3[5]);
+	expect_indexed(table, 63, &rfc_c5_fields_3[4]);
+	expect_indexed(table, 64, &rfc_c5_fields_3[2]);
+
+	ret = http_hpack_decode_header(index_65, sizeof(index_65), &dec, table);
+	zassert_equal(ret, -EBADMSG, "Evicted entry still resolved (%d)", ret);
+
+	http_hpack_dynamic_table_free(table);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_without_table)
+{
+	/* Indexed field, index 62 */
+	static const uint8_t indexed_62[] = { 0xbe };
+	/* Literal with incremental indexing, name index 62, value "burst" */
+	static const uint8_t literal_62[] = { 0x7e, 0x05, 'b', 'u', 'r', 's', 't' };
+	/* Literal without indexing, name index 62, value "burst" */
+	static const uint8_t literal_no_index_62[] = { 0x0f, 0x2f, 0x05, 'b', 'u', 'r', 's', 't' };
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	/* The first request decodes, the field to add is dropped. */
+	decode_block(NULL, rfc_c31, sizeof(rfc_c31), rfc_c3_fields_1, ARRAY_SIZE(rfc_c3_fields_1));
+
+	/* References to the table are consumed and reported. */
+	ret = http_hpack_decode_header(indexed_62, sizeof(indexed_62), &dec, NULL);
+	zassert_equal(ret, sizeof(indexed_62), "Indexed field not consumed (%d)", ret);
+	zassert_true(dec.unresolved, "Indexed field resolved without a table");
+	zassert_equal(dec.name_len, 0, "Unresolved field has a name");
+
+	ret = http_hpack_decode_header(literal_62, sizeof(literal_62), &dec, NULL);
+	zassert_equal(ret, sizeof(literal_62), "Literal not consumed (%d)", ret);
+	zassert_true(dec.unresolved, "Literal name resolved without a table");
+	zassert_equal(dec.value_len, 0, "Unresolved field has a value");
+
+	ret = http_hpack_decode_header(literal_no_index_62, sizeof(literal_no_index_62), &dec,
+				       NULL);
+	zassert_equal(ret, sizeof(literal_no_index_62), "Literal not consumed (%d)", ret);
+	zassert_true(dec.unresolved, "Literal name resolved without a table");
+
+	/* A static field in between is unaffected. */
+	ret = http_hpack_decode_header(rfc_c31, 1, &dec, NULL);
+	zassert_equal(ret, 1, "Static field rejected (%d)", ret);
+	expect_field(&dec, &rfc_c3_fields_1[0]);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_bounds)
+{
+	static const uint8_t indexed_62[] = { 0xbe };
+	static const uint8_t indexed_63[] = { 0xbf };
+	/* Literal with incremental indexing, name index 62, value "burst" */
+	static const uint8_t literal_62[] = { 0x7e, 0x05, 'b', 'u', 'r', 's', 't' };
+	static const uint8_t update_4096[] = { 0x3f, 0xe1, 0x1f };
+	static const uint8_t update_4097[] = { 0x3f, 0xe2, 0x1f };
+	static const uint8_t update_40[] = { 0x3f, 0x09 };
+	static const uint8_t update_0[] = { 0x20 };
+	struct http_hpack_dynamic_table *table;
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	/* Nothing in the table yet. */
+	ret = http_hpack_decode_header(indexed_62, sizeof(indexed_62), &dec, table);
+	zassert_equal(ret, -EBADMSG, "Empty table resolved an index (%d)", ret);
+	ret = http_hpack_decode_header(literal_62, sizeof(literal_62), &dec, table);
+	zassert_equal(ret, -EBADMSG, "Empty table resolved a name index (%d)", ret);
+
+	/* One entry: 62 resolves, 63 does not. */
+	decode_block(table, rfc_c31, sizeof(rfc_c31), rfc_c3_fields_1, ARRAY_SIZE(rfc_c3_fields_1));
+	expect_indexed(table, 62, &rfc_c3_fields_1[3]);
+	ret = http_hpack_decode_header(indexed_63, sizeof(indexed_63), &dec, table);
+	zassert_equal(ret, -EBADMSG, "Index past the table resolved (%d)", ret);
+
+	/* The protocol default is the largest size update accepted. */
+	ret = http_hpack_decode_header(update_4096, sizeof(update_4096), &dec, table);
+	zassert_equal(ret, sizeof(update_4096), "Size update to 4096 rejected (%d)", ret);
+	zassert_equal(table->max_size, 4096, "Table max size %u", table->max_size);
+	ret = http_hpack_decode_header(update_4097, sizeof(update_4097), &dec, table);
+	zassert_equal(ret, -EBADMSG, "Size update to 4097 accepted (%d)", ret);
+	expect_table(table, 1, 57);
+
+	/* A size update below the content evicts. */
+	ret = http_hpack_decode_header(update_40, sizeof(update_40), &dec, table);
+	zassert_equal(ret, sizeof(update_40), "Size update to 40 rejected (%d)", ret);
+	expect_table(table, 0, 0);
+
+	/* An entry larger than the table is decoded but not stored (RFC 7541, 4.4). */
+	ret = http_hpack_decode_header(rfc_c33 + 4, sizeof(rfc_c33) - 4, &dec, table);
+	zassert_equal(ret, sizeof(rfc_c33) - 4, "Oversized entry rejected (%d)", ret);
+	expect_field(&dec, &rfc_c3_fields_3[4]);
+	expect_table(table, 0, 0);
+
+	ret = http_hpack_decode_header(update_0, sizeof(update_0), &dec, table);
+	zassert_equal(ret, sizeof(update_0), "Size update to 0 rejected (%d)", ret);
+	zassert_equal(table->max_size, 0, "Table max size %u", table->max_size);
+
+	http_hpack_dynamic_table_free(table);
+}
+
+/* RFC 7541, Section 4.4: the name of a new entry may come from the entry
+ * its insertion evicts.
+ */
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_name_from_evicted_entry)
+{
+	/* Dynamic table size update to 100 */
+	static const uint8_t update_100[] = { 0x3f, 0x45 };
+	/* custom-key: v1 with incremental indexing, 44 bytes in the table */
+	static const uint8_t add_first[] = { 0x40, 0x0a, 'c', 'u', 's', 't', 'o', 'm', '-', 'k',
+					     'e', 'y', 0x02, 'v', '1' };
+	/* other-key: v2 with incremental indexing, 43 bytes in the table */
+	static const uint8_t add_second[] = { 0x40, 0x09, 'o', 't', 'h', 'e', 'r', '-', 'k', 'e',
+					      'y', 0x02, 'v', '2' };
+	/* Name index 63 (custom-key, the oldest entry), value "value-three",
+	 * 53 bytes: only fits once custom-key: v1 is evicted.
+	 */
+	static const uint8_t add_third[] = { 0x7f, 0x00, 0x0b, 'v', 'a', 'l', 'u', 'e', '-',
+					     't', 'h', 'r', 'e', 'e' };
+	static const struct expected_field first = { "custom-key", "v1" };
+	static const struct expected_field second = { "other-key", "v2" };
+	static const struct expected_field third = { "custom-key", "value-three" };
+	struct http_hpack_dynamic_table *table;
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	ret = http_hpack_decode_header(update_100, sizeof(update_100), &dec, table);
+	zassert_equal(ret, sizeof(update_100), "Size update rejected (%d)", ret);
+	decode_block(table, add_first, sizeof(add_first), &first, 1);
+	decode_block(table, add_second, sizeof(add_second), &second, 1);
+	expect_table(table, 2, 87);
+
+	decode_block(table, add_third, sizeof(add_third), &third, 1);
+	expect_table(table, 2, 96);
+	expect_indexed(table, 62, &third);
+	expect_indexed(table, 63, &second);
+
+	http_hpack_dynamic_table_free(table);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_oversized_entry_keeps_name)
+{
+	/* Dynamic table size update to 150 */
+	static const uint8_t update_150[] = { 0x3f, 0x77 };
+	static const uint8_t add_first[] = { 0x40, 0x0a, 'c', 'u', 's', 't', 'o', 'm', '-', 'k',
+					     'e', 'y', 0x02, 'v', '1' };
+	static const uint8_t add_second[] = { 0x40, 0x09, 'o', 't', 'h', 'e', 'r', '-', 'k', 'e',
+					      'y', 0x02, 'v', '2' };
+	static const uint8_t add_third[] = { 0x40, 0x09, 't', 'h', 'i', 'r', 'd', '-', 'k', 'e',
+					     'y', 0x02, 'v', '3' };
+	static const struct expected_field first = { "custom-key", "v1" };
+	static const struct expected_field second = { "other-key", "v2" };
+	static const struct expected_field third = { "third-key", "v3" };
+	/* Name index 63 (other-key, the middle entry), a 110 byte value:
+	 * 151 bytes, larger than the table, so it empties the table.
+	 */
+	uint8_t add_oversized[3 + 110] = { 0x7f, 0x00, 110 };
+	char value[110 + 1];
+	struct expected_field oversized = { "other-key", value };
+	struct http_hpack_dynamic_table *table;
+	struct http_hpack_header_buf dec = { 0 };
+	int ret;
+
+	memset(&add_oversized[3], 'x', 110);
+	memset(value, 'x', 110);
+	value[110] = '\0';
+
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	ret = http_hpack_decode_header(update_150, sizeof(update_150), &dec, table);
+	zassert_equal(ret, sizeof(update_150), "Size update rejected (%d)", ret);
+	decode_block(table, add_first, sizeof(add_first), &first, 1);
+	decode_block(table, add_second, sizeof(add_second), &second, 1);
+	decode_block(table, add_third, sizeof(add_third), &third, 1);
+	expect_table(table, 3, 130);
+
+	decode_block(table, add_oversized, sizeof(add_oversized), &oversized, 1);
+	expect_table(table, 0, 0);
+
+	http_hpack_dynamic_table_free(table);
+}
+
+/* Writes a string length with a 7-bit prefix (RFC 7541, Section 5.1). */
+static size_t put_string_len(uint8_t *buf, uint8_t flags, size_t str_len)
+{
+	size_t len = 0;
+
+	if (str_len < 0x7f) {
+		buf[len++] = (uint8_t)(flags | str_len);
+		return len;
+	}
+
+	buf[len++] = (uint8_t)(flags | 0x7f);
+	str_len -= 0x7f;
+
+	while (str_len >= 0x80) {
+		buf[len++] = (uint8_t)((str_len % 0x80) | 0x80);
+		str_len /= 0x80;
+	}
+
+	buf[len++] = (uint8_t)str_len;
+
+	return len;
+}
+
+ZTEST(http2_hpack, test_http2_hpack_dynamic_table_name_too_long_for_buffer)
+{
+	/* A name that leaves 4 bytes of the decoding buffer, and a value
+	 * that decodes to 8.
+	 */
+	static uint8_t name[HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE - 4];
+	static uint8_t add_long_name[8 + sizeof(name)];
+	static const uint8_t value[8] = "aaaaaaaa";
+	uint8_t encoded[sizeof(value)];
+	uint8_t add_reference[2 + sizeof(encoded)];
+	struct http_hpack_dynamic_table *table;
+	struct http_hpack_header_buf dec = { 0 };
+	size_t len = 0;
+	int ret;
+
+	memset(name, 'n', sizeof(name));
+	add_long_name[len++] = 0x40;
+	len += put_string_len(&add_long_name[len], 0x00, sizeof(name));
+	memcpy(&add_long_name[len], name, sizeof(name));
+	len += sizeof(name);
+	add_long_name[len++] = 0x01;
+	add_long_name[len++] = 'v';
+
+	table = http_hpack_dynamic_table_alloc();
+	zassert_not_null(table, "No table");
+
+	ret = http_hpack_decode_header(add_long_name, len, &dec, table);
+	zassert_equal(ret, len, "Long name rejected (%d)", ret);
+	zassert_false(dec.oversized, "Long name reported as oversized");
+	expect_table(table, 1, sizeof(name) + 1 + HTTP_HPACK_DYNAMIC_TABLE_ENTRY_OVERHEAD);
+
+	/* Name index 62 (the long name) with incremental indexing */
+	ret = http_hpack_huffman_encode(value, sizeof(value), encoded, sizeof(encoded));
+	zassert_true(ret > 0, "Cannot Huffman-encode the value (%d)", ret);
+	len = 0;
+	add_reference[len++] = 0x7e;
+	len += put_string_len(&add_reference[len], 0x80, ret);
+	memcpy(&add_reference[len], encoded, ret);
+	len += ret;
+
+	ret = http_hpack_decode_header(add_reference, len, &dec, table);
+	zassert_equal(ret, len, "Entry not consumed (%d, %zu bytes)", ret, len);
+	zassert_true(dec.oversized, "Field not reported as oversized");
+	expect_table(table, 1, sizeof(name) + 1 + HTTP_HPACK_DYNAMIC_TABLE_ENTRY_OVERHEAD);
+
+	http_hpack_dynamic_table_free(table);
+}
+
+ZTEST(http2_hpack, test_http2_hpack_entry_adds_to_table)
+{
+	static const uint8_t literal_indexing[] = { 0x41 };
+	static const uint8_t indexed[] = { 0x82 };
+	static const uint8_t literal_no_index[] = { 0x04 };
+	static const uint8_t literal_never[] = { 0x14 };
+	static const uint8_t size_update[] = { 0x20 };
+
+	zassert_true(http_hpack_entry_adds_to_table(literal_indexing, 1), "Literal with indexing");
+	zassert_false(http_hpack_entry_adds_to_table(indexed, 1), "Indexed");
+	zassert_false(http_hpack_entry_adds_to_table(literal_no_index, 1), "Without indexing");
+	zassert_false(http_hpack_entry_adds_to_table(literal_never, 1), "Never indexed");
+	zassert_false(http_hpack_entry_adds_to_table(size_update, 1), "Size update");
+	zassert_false(http_hpack_entry_adds_to_table(literal_indexing, 0), "No data");
 }
 
 ZTEST_SUITE(http2_hpack, NULL, NULL, NULL, NULL, NULL);

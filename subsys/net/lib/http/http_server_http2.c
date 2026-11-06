@@ -22,11 +22,6 @@
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
-/* Dynamic table size an HPACK decoder has to accept until its own
- * SETTINGS_HEADER_TABLE_SIZE is acknowledged (RFC 7541, Section 6.3).
- */
-#define HTTP2_DEFAULT_HEADER_TABLE_SIZE 4096U
-
 #include "headers/server_internal.h"
 
 static const char content_404[] = {
@@ -290,6 +285,25 @@ int send_settings_frame(struct http_client_ctx *client, bool ack)
 	}
 
 	ret = http_server_sendall(client, settings_frame, len);
+	if (ret < 0) {
+		LOG_DBG("Cannot write to socket (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int send_rst_stream_frame(struct http_client_ctx *client, uint32_t stream_id,
+				 uint32_t error_code)
+{
+	uint8_t rst_stream_frame[HTTP2_FRAME_HEADER_SIZE + HTTP2_RST_STREAM_FRAME_LEN];
+	int ret;
+
+	encode_frame_header(rst_stream_frame, HTTP2_RST_STREAM_FRAME_LEN, HTTP2_RST_STREAM_FRAME, 0,
+			    stream_id);
+	sys_put_be32(error_code, rst_stream_frame + HTTP2_FRAME_HEADER_SIZE);
+
+	ret = http_server_sendall(client, rst_stream_frame, sizeof(rst_stream_frame));
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		return ret;
@@ -971,6 +985,7 @@ static int enter_http_frame_headers_state(struct http_client_ctx *client)
 	}
 
 	client->current_stream = stream;
+	client->hpack_unresolved = false;
 
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
 		client->expect_continuation = true;
@@ -1653,7 +1668,24 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		struct http_hpack_header_buf *header = &client->header_field;
 		size_t datalen = MIN(client->data_len, frame->length);
 
-		ret = http_hpack_decode_header(client->cursor, datalen, header);
+		/* Until the client has acknowledged the server's table size of
+		 * 0, it may add entries to a dynamic table of the protocol
+		 * default size and refer to them (RFC 7541, Section 4.2). A
+		 * client that found the pool empty gets no table later: the
+		 * entries it added meanwhile would be missing from it.
+		 */
+		if (client->hpack_table == NULL && !client->settings_acked &&
+		    !client->hpack_table_missed &&
+		    http_hpack_entry_adds_to_table(client->cursor, datalen)) {
+			client->hpack_table = http_hpack_dynamic_table_alloc();
+			if (client->hpack_table == NULL) {
+				LOG_DBG("No HPACK dynamic table free for the client");
+				client->hpack_table_missed = true;
+			}
+		}
+
+		ret = http_hpack_decode_header(client->cursor, datalen, header,
+					       client->hpack_table);
 		if (ret <= 0) {
 			if (ret == -EAGAIN) {
 				ret = handle_incomplete_http_header(client);
@@ -1683,8 +1715,8 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 			 * client acknowledges that, the protocol default is the
 			 * limit (RFC 7541, Section 6.3). No field to process.
 			 */
-			uint32_t limit = client->settings_acked ? 0U :
-							  HTTP2_DEFAULT_HEADER_TABLE_SIZE;
+			uint32_t limit =
+				client->settings_acked ? 0U : HTTP_HPACK_DYNAMIC_TABLE_SIZE;
 
 			if (header->table_size > limit) {
 				LOG_ERR("Dynamic table size update above the limit");
@@ -1692,6 +1724,25 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 				goto error;
 			}
 
+			continue;
+		}
+
+		if (header->unresolved) {
+			if (client->settings_acked) {
+				/* The table size is 0 since the ack, so the
+				 * index is beyond both tables: a decoding error
+				 * (RFC 7541, Section 2.3.3), which ends the
+				 * connection (RFC 9113, Section 4.3).
+				 */
+				LOG_ERR("Dynamic table reference after the table size update");
+				ret = -EBADMSG;
+				goto error;
+			}
+
+			/* Decoded for its length only, the stream is refused
+			 * once the block is complete.
+			 */
+			client->hpack_unresolved = true;
 			continue;
 		}
 
@@ -1714,6 +1765,23 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		/* More headers to come in the continuation frame. */
 		client->server_state = HTTP_SERVER_FRAME_HEADER_STATE;
 		return 0;
+	}
+
+	if (client->hpack_unresolved) {
+		/* The client used a dynamic table the server could not give
+		 * it. The stream is refused, the client retries it once it has
+		 * seen the server's SETTINGS.
+		 */
+		LOG_DBG("Refusing stream %u, no HPACK dynamic table", frame->stream_identifier);
+
+		ret = send_rst_stream_frame(client, frame->stream_identifier,
+					    HTTP2_ERROR_REFUSED_STREAM);
+		if (ret < 0) {
+			goto error;
+		}
+
+		release_http_stream_context(client, frame->stream_identifier);
+		goto out;
 	}
 
 	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
@@ -1758,6 +1826,7 @@ int handle_http_frame_headers(struct http_client_ctx *client)
 		}
 	}
 
+out:
 	if (frame->padding_len > 0) {
 		client->server_state = HTTP_SERVER_FRAME_PADDING_STATE;
 	} else {
@@ -1857,6 +1926,12 @@ int handle_http_frame_settings(struct http_client_ctx *client)
 
 	if (is_header_flag_set(frame->flags, HTTP2_FLAG_SETTINGS_ACK)) {
 		client->settings_acked = true;
+
+		/* Every header block from now on is encoded for a table size
+		 * of 0, so the table can go back to the pool.
+		 */
+		http_hpack_dynamic_table_free(client->hpack_table);
+		client->hpack_table = NULL;
 	} else {
 		int ret;
 

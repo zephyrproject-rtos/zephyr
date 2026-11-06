@@ -12,6 +12,9 @@ common:
     - qemu_x86
 tests:
   net.http.server.core: {}
+  net.http.server.core.no_hpack_table:
+    extra_configs:
+      - CONFIG_HTTP_SERVER_HPACK_DYNAMIC_TABLE_COUNT=0
   net.http.server.static.fs:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
