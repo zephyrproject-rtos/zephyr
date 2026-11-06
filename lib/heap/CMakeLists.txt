@@ -23,6 +23,7 @@ zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_ARRAY_SIZE heap_array.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_SANITIZER_ASAN heap_sanitizer_asan.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_KASAN heap_kasan.c)
+zephyr_sources_ifdef(CONFIG_SYS_SYNC_HEAP sync_heap.c)
 
 if(CONFIG_SYS_HEAP_SANITIZER_ASAN)
   # The heap implementation owns the bytes it poisons (chunk headers,
