@@ -197,6 +197,35 @@ use of it.
     work items being executed in a cooperative context. Therefore, a separate
     workqueue with lower priority may be appropriate for low-priority tasks.
 
+System Workqueue Stack Sizing
+=============================
+
+The baseline stack size of the system workqueue is configured using
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`. Subsystems, drivers, or
+boards that submit work items requiring a larger stack must not override the
+default value of :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` directly.
+Instead, each component should declare its minimum stack size requirement by
+defining a hidden Kconfig symbol with the prefix
+``CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_`` (in bytes). For example:
+
+.. code-block:: kconfig
+
+   config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_MY_SUBSYS
+       int
+       default 2048 if MY_SUBSYS
+
+During configuration, the build system aggregates all active
+``CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_*`` symbols, determines the maximum
+across all requested minimums, and compares it against
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`. The larger of the values is
+used for the compiled stack size. If an explicitly configured
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` is less than a subsystem
+requirement, a build warning is emitted and the stack size is automatically raised.
+
+To bypass subsystem minimum requirements and strictly force the system workqueue
+to use the configured :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`, enable
+:kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`.
+
 How to Use Workqueues
 *********************
 
@@ -525,6 +554,7 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`
+* :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`
 * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_PRIORITY`
 * :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_NO_YIELD`
 

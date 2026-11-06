@@ -183,6 +183,18 @@ Kernel
   internally by :c:struct:`k_futex`. Callers might have to add an explicit
   cast if the compiler does not implicitly cast the value.
 
+* The system workqueue stack size is now determined by a ``K_SYSTEM_WORKQUEUE_STACK_SIZE``
+  define instead of using :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` directly.
+  Subsystems and drivers specify their minimum stack requirements by defining Kconfig
+  options with the prefix ``CONFIG_SYSTEM_WORKQUEUE_MIN_STACK_SIZE_``. The build system
+  evaluates the maximum across all requested minimums and compares it against
+  :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`; the larger of the values is used.
+  If an explicitly set :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` is less than a
+  subsystem requirement, a build warning is emitted and the stack size is automatically raised.
+  To force the configured :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE` to be used
+  without adjustment, enable :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE_IGNORE_MIN`.
+  (:github:`124231`)
+
 Boards
 ******
 

@@ -91,4 +91,8 @@ config SOC_FAMILY_MCXA_DEBUG_IN_LOW_POWER
 	  Power modes that gate the whole core power domain, such as Deep Power
 	  Down, lose the debug logic regardless of this option.
 
+config SYSTEM_WORKQUEUE_MIN_STACK_SIZE_MCUX_SGI_PKC
+	int
+	default 2048 if HAS_MCUX_SGI_PKC && MBEDTLS_PSA_CRYPTO_C
+
 endif # SOC_FAMILY_MCXA
