@@ -457,7 +457,7 @@ static int uhc_renesas_ra_ep_enqueue(const struct device *dev, struct uhc_transf
 			.bEndpointAddress = xfer->ep,
 			.Attributes = {.transfer = xfer->type},
 			.wMaxPacketSize = xfer->mps,
-			.bInterval = xfer->interval,
+			.bInterval = xfer->microframe_interval,
 		};
 
 		ret = uhc_renesas_ra_open_pipe(dev, xfer->udev->addr, xfer->ep, &desc);

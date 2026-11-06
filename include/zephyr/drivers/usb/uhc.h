@@ -141,10 +141,23 @@ struct uhc_transfer {
 	uint8_t type;
 	/** Maximum packet size */
 	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
-	/** Start frame, used for periodic transfers only */
-	uint16_t start_frame;
+	/**
+	 * Tick interval converted from the bInterval, used for periodic transfers only.
+	 * For Low Speed and Full Speed interrupt endpoints its equal to bInterval * 8
+	 * For Full Speed isochronous endpoints its equal to 2^(bInterval - 1) * 8
+	 * For High Speed and Super Speed endpoints its equal to 2^(bInterval - 1)
+	 * 1 tick = 125 microseconds
+	 */
+	uint32_t microframe_interval;
+	/** Unconverted bInterval, used for periodic transfers only */
+	uint16_t bInterval;
+	/**
+	 * @brief Start microframe, used for periodic transfers only.
+	 *
+	 * Frames are counted as 8 microframes even for full-speed and low-speed which lack
+	 * microframes.
+	 */
+	uint32_t start_microframe;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
 	/** Control stage status, up to the driver to use it or not */
@@ -263,6 +276,10 @@ struct uhc_data {
 	sys_dlist_t ctrl_xfers;
 	/** dlist for bulk transfers */
 	sys_dlist_t bulk_xfers;
+	/** dlist for periodic transfers, sorted in descending order by start_frame */
+	sys_dlist_t periodic_xfers;
+	/** dlist for active transfers taken out of the other lists and used by the driver */
+	sys_dlist_t active_xfers;
 	/** Callback to submit an UHC event to upper layer */
 	uhc_event_cb_t event_cb;
 	/** Opaque pointer to store higher layer context */
@@ -430,6 +447,9 @@ static inline int uhc_bus_resume(const struct device *dev)
  * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
  * @param[in] cb_priv Completion callback callback private data
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated transfer or NULL on error.
  */
@@ -437,7 +457,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
 				    void *const cb,
-				    void *const cb_priv);
+				    void *const cb_priv,
+				    const k_timeout_t timeout);
 
 /**
  * @brief Allocate UHC transfer with buffer
@@ -450,6 +471,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  * @param[in] cb      Transfer completion callback
  * @param[in] cb_priv Completion callback callback private data
  * @param[in] size    Size of the buffer
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated transfer or NULL on error.
  */
@@ -458,8 +482,30 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 					     struct usb_device *const udev,
 					     void *const cb,
 					     void *const cb_priv,
-					     size_t size);
+					     size_t size,
+					     const k_timeout_t timeout);
 
+/**
+ * @brief Query the properties of an endpoint, if found
+ *
+ * The pointers are filled with the values from the device and configuration descriptors,
+ * only available after successful enumeration.
+ *
+ * @param[in] dev         Pointer to UHC device
+ * @param[in] udev        Pointer to USB device
+ * @param[in] ep          Endpoint address
+ * @param[out] mps_p      If not NULL, receives the max packet size value
+ * @param[out] interval_p If not NULL, receives the interval value
+ * @param[out] type_p     If not NULL, receives the type value
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_get_ep_properties(const struct device *dev,
+			  struct usb_device *const udev,
+			  const uint8_t ep,
+			  uint16_t *const mps_p,
+			  uint32_t *const interval_p,
+			  uint8_t *const type_p);
 /**
  * @brief Increment the UHC transfer reference
  *
@@ -512,13 +558,17 @@ int uhc_xfer_buf_add(const struct device *dev,
  * Allocate a new buffer from common request buffer pool and
  * assign it to the transfer if the xfer parameter is not NULL.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] size   Size of the request buffer
+ * @param[in] dev     Pointer to device struct of the driver instance
+ * @param[in] size    Size of the request buffer
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated request or NULL on error.
  */
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   const size_t size);
+				   const size_t size,
+				   const k_timeout_t timeout);
 
 /**
  * @brief Free UHC request buffer
