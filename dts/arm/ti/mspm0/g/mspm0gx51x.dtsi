@@ -133,3 +133,8 @@
 &rtc {
 	ti,rtc-x;
 };
+
+&flashctl {
+	ti,num-banks = <2>;
+	ti,no-weprota;
+};
