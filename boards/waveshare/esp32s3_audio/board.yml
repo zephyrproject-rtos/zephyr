@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: esp32s3_audio
+  full_name: ESP32-S3-AUDIO-Board
+  vendor: waveshare
+  socs:
+    - name: esp32s3
