@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon TCPWM counter used as the system timer
+
+    &tcpwm2_0 {
+            status = "okay";
+
+            system-timer {
+                    compatible = "infineon,tcpwm-system-timer";
+                    clocks = <&peri0_group0_16bit_0>;
+                    status = "okay";
+            };
+    };
+
+compatible: "infineon,tcpwm-system-timer"
+
+include: base.yaml
+
+properties:
+  clocks:
+    required: true
+    description: Peripheral clock divider feeding the counter

@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "kit_t2g_c2d6m_lite_cyt4dnjbzs_m7_0.dts"
+
+/ {
+	model = "Infineon Evaluation board for CYT4DNJBZS M7 SMP";
+
+	chosen {
+		/delete-property/ zephyr,dtcm;
+		/delete-property/ zephyr,itcm;
+	};
+};
+
+/* The M0+ does not run the SMP kernel */
+/delete-node/ &m0;
+
+&m7_1 {
+	status = "okay";
+};
+
+&systick {
+	status = "disabled";
+};
+
+&peri0_group0_16bit_0 {
+	clock-div = <10>;
+	status = "okay";
+};
+
+&tcpwm2_0 {
+	status = "okay";
+
+	system-timer {
+		compatible = "infineon,tcpwm-system-timer";
+		clocks = <&peri0_group0_16bit_0>;
+		status = "okay";
+	};
+};

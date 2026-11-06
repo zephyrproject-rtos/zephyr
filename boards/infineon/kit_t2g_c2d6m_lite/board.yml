@@ -4,3 +4,6 @@ board:
   vendor: infineon
   socs:
   - name: cyt4dnjbzs
+    variants:
+    - name: smp
+      cpucluster: m7
