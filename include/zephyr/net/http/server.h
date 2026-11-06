@@ -586,6 +586,9 @@ struct http_client_ctx {
 	/** Flag indicating that HTTP1 headers were sent. */
 	bool http1_headers_sent : 1;
 
+	/** Flag indicating that the HTTP1 response status does not allow a body. */
+	bool http1_no_body : 1;
+
 	/** Flag indicating that upgrade header was present in the request. */
 	bool has_upgrade_header : 1;
 

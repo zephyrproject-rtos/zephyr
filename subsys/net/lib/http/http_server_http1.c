@@ -434,8 +434,9 @@ static int http1_add_headers(struct http_client_ctx *client, struct http1_header
 		return -EINVAL;
 	}
 
-	header_template = is_client_http10(client) ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
-						   : RESPONSE_TEMPLATE_DYNAMIC_PART1;
+	header_template = is_client_http10(client) || client->http1_no_body
+				  ? RESPONSE_TEMPLATE_DYNAMIC_HTTP_10_COMPATIBLE
+				  : RESPONSE_TEMPLATE_DYNAMIC_PART1;
 
 	/* Response code and transfer encoding, the buffer is still empty here */
 	snprintk(buf->data, sizeof(buf->data), header_template, status,
@@ -516,6 +517,10 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			rsp->status = 200;
 		}
 
+		/* These responses end with the header section, see RFC 9112, section 6.3 */
+		client->http1_no_body = rsp->status == HTTP_204_NO_CONTENT ||
+					rsp->status == HTTP_304_NOT_MODIFIED;
+
 		ret = http1_add_headers(client, &header_buf, rsp->status, rsp->headers,
 					rsp->header_count, dynamic_detail);
 		if (ret < 0) {
@@ -534,8 +539,12 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 			(struct net_iovec){.iov_base = header_buf.data, .iov_len = header_buf.len};
 	}
 
+	if (client->http1_no_body && rsp->body != NULL && rsp->body_len > 0) {
+		LOG_WRN("Response status does not allow a body, dropping body data");
+	}
+
 	/* Send body data if provided */
-	if (rsp->body != NULL && rsp->body_len > 0) {
+	if (rsp->body != NULL && rsp->body_len > 0 && !client->http1_no_body) {
 
 		/* Check if the client expects HTTP/1.0 compatible response */
 		if (!is_client_http10(client)) {
@@ -553,8 +562,9 @@ static int http1_dynamic_response(struct http_client_ctx *client, struct http_re
 		}
 	}
 
-	/* HTTP/1.0 client does not expect the terminating chunk */
-	if (http_response_is_final(rsp, status) && !is_client_http10(client)) {
+	/* HTTP/1.0 client and a response without body do not expect the terminating chunk */
+	if (http_response_is_final(rsp, status) && !is_client_http10(client) &&
+	    !client->http1_no_body) {
 		iov[iovlen++] = (struct net_iovec){.iov_base = (void *)final_chunk,
 						   .iov_len = sizeof(final_chunk) - 1};
 	}
@@ -1185,6 +1195,7 @@ int enter_http1_request(struct http_client_ctx *client)
 	client->parser_settings.on_message_complete = on_message_complete;
 	client->parser_state = HTTP1_INIT_HEADER_STATE;
 	client->http1_headers_sent = false;
+	client->http1_no_body = false;
 
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_CAPTURE_HEADERS)) {
 		client->header_capture_ctx.store_next_value = false;

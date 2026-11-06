@@ -464,6 +464,12 @@ enum dynamic_response_headers_variant {
 	/* Send a 422 response code */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_422,
 
+	/* Send a 204 response code with body data, which the server drops */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_204,
+
+	/* Send a 304 response code with body data, which the server drops */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_304,
+
 	/* Send an extra header on top of server defaults */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_EXTRA_HEADER,
 
@@ -487,10 +493,19 @@ enum dynamic_response_headers_variant {
 
 	/* Send body data before all request data is received, nothing on final data */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY,
+
+	/* Send a 204 response code before all request data is received, nothing on final data */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY,
+
+	/* Send a 204 response code before all request data is received, body data on final
+	 * data, which the server drops
+	 */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY,
 };
 
 static uint8_t dynamic_response_headers_variant;
 static uint8_t dynamic_response_headers_buffer[sizeof(long_payload)];
+static K_SEM_DEFINE(dynamic_response_headers_done, 0, 1);
 
 static int dynamic_response_headers_cb(struct http_client_ctx *client,
 				       enum http_transaction_status status,
@@ -521,13 +536,16 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
 	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
 		offset = 0;
+		k_sem_give(&dynamic_response_headers_done);
 		return 0;
 	}
 
 	if (status != HTTP_SERVER_REQUEST_DATA_FINAL &&
 	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_LONG &&
-	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY) {
-		/* Long body and early body variants are the only ones which need to take some
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY &&
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY &&
+	    dynamic_response_headers_variant != DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY) {
+		/* Long body and early variants are the only ones which need to take some
 		 * action before final data has been received from server
 		 */
 		return 0;
@@ -539,6 +557,20 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 
 	case DYNAMIC_RESPONSE_HEADERS_VARIANT_422:
 		response_ctx->status = 422;
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204:
+		response_ctx->status = HTTP_204_NO_CONTENT;
+		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(response_ctx->body);
+		response_ctx->final_chunk = true;
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_304:
+		response_ctx->status = HTTP_304_NOT_MODIFIED;
+		response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+		response_ctx->body_len = strlen(response_ctx->body);
 		response_ctx->final_chunk = true;
 		break;
 
@@ -626,6 +658,22 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
 			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
 			response_ctx->body_len = strlen(response_ctx->body);
+		}
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY:
+		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
+			response_ctx->status = HTTP_204_NO_CONTENT;
+		}
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY:
+		if (status == HTTP_SERVER_REQUEST_DATA_MORE) {
+			response_ctx->status = HTTP_204_NO_CONTENT;
+		} else {
+			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
+			response_ctx->body_len = strlen(response_ctx->body);
+			response_ctx->final_chunk = true;
 		}
 		break;
 	}
@@ -2274,7 +2322,8 @@ ZTEST(server_function_tests, test_http2_header_concurrent)
 	zassert_equal(0, ret, "Header strings did not match");
 }
 
-static void test_http1_dynamic_response_headers(const char *request, const char *expected_response)
+static size_t test_http1_dynamic_response_headers(const char *request,
+						  const char *expected_response)
 {
 	int ret;
 	size_t offset = 0;
@@ -2284,9 +2333,11 @@ static void test_http1_dynamic_response_headers(const char *request, const char 
 
 	test_read_data(&offset, strlen(expected_response));
 	zassert_mem_equal(buf, expected_response, strlen(expected_response));
+
+	return offset;
 }
 
-static void test_http1_dynamic_response_headers_default(const char *expected_response, bool post)
+static size_t test_http1_dynamic_response_headers_default(const char *expected_response, bool post)
 {
 	static const char http1_get_response_headers_request[] =
 		"GET /response_headers HTTP/1.1\r\n"
@@ -2300,7 +2351,7 @@ static void test_http1_dynamic_response_headers_default(const char *expected_res
 	const char *request =
 		post ? http1_post_response_headers_request : http1_get_response_headers_request;
 
-	test_http1_dynamic_response_headers(request, expected_response);
+	return test_http1_dynamic_response_headers(request, expected_response);
 }
 
 static void test_http2_dynamic_response_headers(const uint8_t *request, size_t request_len,
@@ -2417,6 +2468,80 @@ ZTEST(server_function_tests, test_http1_dynamic_get_response_header_422)
 ZTEST(server_function_tests, test_http1_dynamic_post_response_header_422)
 {
 	test_http1_dynamic_response_header_422(true);
+}
+
+/* Wait for the transaction on /response_headers to complete, then check that the
+ * response to the next request on the connection starts where the previous
+ * response ended.
+ */
+static void test_http1_next_response_in_sync(void)
+{
+	static const char request[] = "GET / HTTP/1.1\r\n"
+				      "Host: 127.0.0.1:8080\r\n"
+				      "\r\n";
+	static const char response[] = "HTTP/1.1 200 OK\r\n"
+				       "Content-Type: text/html\r\n"
+				       "Content-Length: 13\r\n"
+				       "\r\n" TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	ret = k_sem_take(&dynamic_response_headers_done, K_SECONDS(TIMEOUT_S));
+	zassert_ok(ret, "Transaction not completed");
+
+	ret = zsock_send(client_fd, request, strlen(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response));
+	zassert_mem_equal(buf, response, strlen(response), "Connection out of sync");
+}
+
+/* A 204 or 304 response ends with the header section, so it must be neither
+ * chunked nor followed by body data or a terminating chunk, see RFC 9112,
+ * section 6.3.
+ */
+static void test_http1_dynamic_response_header_no_body(uint8_t variant, const char *response,
+						       bool post)
+{
+	size_t offset;
+
+	dynamic_response_headers_variant = variant;
+	k_sem_reset(&dynamic_response_headers_done);
+
+	offset = test_http1_dynamic_response_headers_default(response, post);
+	zassert_equal(offset, strlen(response), "Unexpected data after the headers");
+
+	test_http1_next_response_in_sync();
+}
+
+static void test_http1_dynamic_response_header_204(bool post)
+{
+	static const char response[] = "HTTP/1.1 204\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n";
+
+	test_http1_dynamic_response_header_no_body(DYNAMIC_RESPONSE_HEADERS_VARIANT_204, response,
+						   post);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_204)
+{
+	test_http1_dynamic_response_header_204(false);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_header_204)
+{
+	test_http1_dynamic_response_header_204(true);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_response_header_304)
+{
+	static const char response[] = "HTTP/1.1 304\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n";
+
+	test_http1_dynamic_response_header_no_body(DYNAMIC_RESPONSE_HEADERS_VARIANT_304, response,
+						   false);
 }
 
 static void test_http2_dynamic_response_header_422(bool post)
@@ -2988,6 +3113,51 @@ ZTEST(server_function_tests, test_http1_dynamic_post_response_early_body)
 
 	ret = zsock_recv(client_fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
 	zassert_true(offset == 0 && ret < 0 && errno == EAGAIN, "Unexpected trailing data");
+}
+
+/* A 204 response is sent while request data is still arriving, so the server
+ * must remember not to send body data or a terminating chunk once the request
+ * is complete.
+ */
+static void test_http1_dynamic_post_response_early_no_body(uint8_t variant)
+{
+	static const char request_part1[] = "POST /response_headers HTTP/1.1\r\n"
+					    "Accept: */*\r\n"
+					    "Content-Length: 17\r\n"
+					    "\r\n"
+					    "Test dyn";
+	static const char request_part2[] = "amic POST";
+	static const char response[] = "HTTP/1.1 204\r\n"
+				       "Content-Type: text/plain\r\n"
+				       "\r\n";
+	size_t offset = 0;
+	int ret;
+
+	dynamic_response_headers_variant = variant;
+	k_sem_reset(&dynamic_response_headers_done);
+
+	ret = zsock_send(client_fd, request_part1, strlen(request_part1), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_read_data(&offset, strlen(response));
+	zassert_mem_equal(buf, response, strlen(response));
+	zassert_equal(offset, strlen(response), "Unexpected data after the headers");
+
+	ret = zsock_send(client_fd, request_part2, strlen(request_part2), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	test_http1_next_response_in_sync();
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_early_204)
+{
+	test_http1_dynamic_post_response_early_no_body(DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_response_early_204_body)
+{
+	test_http1_dynamic_post_response_early_no_body(
+		DYNAMIC_RESPONSE_HEADERS_VARIANT_204_EARLY_BODY);
 }
 
 ZTEST(server_function_tests, test_http1_409_method_not_allowed)
