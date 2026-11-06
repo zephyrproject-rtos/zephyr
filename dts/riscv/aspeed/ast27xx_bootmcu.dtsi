@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2026 ASPEED Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/ast27xx_clock.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		timebase-frequency = <DT_FREQ_M(1)>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "lowrisc,ibex", "riscv";
+			reg = <0>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* The boot ROM patch locks SRAM offsets 244 KB to 248 KB */
+		sram: memory@14b80000 {
+			compatible = "mmio-sram";
+			reg = <0x14b80000 DT_SIZE_K(244)>;
+		};
+
+		syscon1: syscon@14c02000 {
+			compatible = "syscon";
+			reg = <0x14c02000 0x2000>;
+
+			sysclk1: system-clock {
+				compatible = "aspeed,ast27xx-scu1-clock";
+				#clock-cells = <1>;
+			};
+		};
+
+		uart12: serial@14c33b00 {
+			compatible = "ns16550";
+			reg = <0x14c33b00 0x100>;
+			reg-shift = <2>;
+			clocks = <&sysclk1 SCU1_CLK_GATE_UART12CLK>;
+			status = "disabled";
+		};
+
+		mtimer: timer@14c36000 {
+			compatible = "aspeed,ast2700-bootmcu-timer";
+			reg = <0x14c36000 0x40>;
+			interrupts-extended = <&hlic 7>;
+		};
+	};
+};

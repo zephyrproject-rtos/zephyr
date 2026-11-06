@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 ASPEED Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <aspeed/ast27xx_bootmcu.dtsi>
+
+/ {
+	model = "Aspeed AST2700 Evaluation Board BootMCU";
+	compatible = "aspeed,ast2700-evb";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &uart12;
+		zephyr,shell-uart = &uart12;
+	};
+};
+
+&uart12 {
+	current-speed = <115200>;
+	status = "okay";
+};

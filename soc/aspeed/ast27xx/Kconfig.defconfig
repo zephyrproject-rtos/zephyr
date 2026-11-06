@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 ASPEED Technology Inc.
+
+if SOC_AST2700_BOOTMCU
+
+configdefault NUM_IRQS
+	default 16
+
+configdefault CLOCK_CONTROL
+	default y
+
+# The SCU1 clock controller accesses its registers through the parent syscon device.
+configdefault CLOCK_CONTROL_INIT_PRIORITY
+	default SYSCON_INIT_PRIORITY
+
+endif # SOC_AST2700_BOOTMCU
