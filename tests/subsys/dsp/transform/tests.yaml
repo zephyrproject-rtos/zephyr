@@ -1,0 +1,37 @@
+common:
+  arch_allow:
+    - arm
+    - posix
+tests:
+  zdsp.transform:
+    filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
+    integration_platforms:
+      # One board per distinct code path: host C, Armv7-M DSP extension,
+      # Armv8-M, and Armv8.1-M, the only one where the f16 tests build.
+      - native_sim
+      - frdm_k64f
+      - mps2/an521/cpu0
+      - mps3/corstone300/fvp
+    tags: zdsp
+    # The CMSIS twiddle tables for every supported length dominate the image.
+    min_flash: 448
+    min_ram: 64
+  zdsp.transform.fpu:
+    filter: (CONFIG_CPU_HAS_FPU and CONFIG_FULL_LIBC_SUPPORTED) or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - frdm_k64f
+      - mps2/an521/cpu1
+    tags:
+      - zdsp
+      - fpu
+    extra_configs:
+      - CONFIG_FPU=y
+    # The CMSIS twiddle tables for every supported length dominate the image.
+    min_flash: 448
+    min_ram: 64
+  zdsp.transform.arcmwdt:
+    filter: CONFIG_ISA_ARCV2
+    toolchain_allow: arcmwdt
+    platform_allow: nsim/nsim_em11d
+    extra_args: CONF_FILE=prj_arc.conf
+    tags: zdsp
