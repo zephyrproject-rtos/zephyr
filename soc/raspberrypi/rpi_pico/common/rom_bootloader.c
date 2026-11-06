@@ -7,7 +7,7 @@
 #include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/retention/retention.h>
-#include <zephyr/retention/bootmode.h>
+#include <zephyr/bootmode.h>
 #include <pico/bootrom.h>
 
 #if DT_HAS_CHOSEN(zephyr_rpi_pico_boot_led)

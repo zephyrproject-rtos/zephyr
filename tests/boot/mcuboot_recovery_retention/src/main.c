@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/retention/bootmode.h>
+#include <zephyr/bootmode.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 

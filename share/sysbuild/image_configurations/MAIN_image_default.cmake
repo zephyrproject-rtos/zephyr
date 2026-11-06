@@ -58,7 +58,7 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
       set_config_bool(${ZCMAKE_APPLICATION} CONFIG_REBOOT y)
       set_config_bool(${ZCMAKE_APPLICATION} CONFIG_RETAINED_MEM y)
       set_config_bool(${ZCMAKE_APPLICATION} CONFIG_RETENTION y)
-      set_config_bool(${ZCMAKE_APPLICATION} CONFIG_RETENTION_BOOT_MODE y)
+      set_config_bool(${ZCMAKE_APPLICATION} CONFIG_BOOT_MODE y)
     endif()
   endif()
 

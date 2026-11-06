@@ -36,6 +36,7 @@ add_subdirectory(usb)
 
 add_subdirectory_ifdef(CONFIG_ARM_SIP_SVC_SUBSYS sip_svc)
 add_subdirectory_ifdef(CONFIG_BINDESC bindesc)
+add_subdirectory_ifdef(CONFIG_BOOT_MODE bootmode)
 add_subdirectory_ifdef(CONFIG_BT bluetooth)
 add_subdirectory_ifdef(CONFIG_CHARACTER_FRAMEBUFFER fb)
 add_subdirectory_ifdef(CONFIG_CONSOLE_SUBSYS console)

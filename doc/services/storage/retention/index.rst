@@ -135,68 +135,10 @@ with each other. Note that to use this, retention driver mutex support must
 also be disabled by enabling
 :kconfig:option:`CONFIG_RETAINED_MEM_MUTEX_FORCE_DISABLE`.
 
-.. _boot_mode_api:
-
 Boot mode
 *********
 
-An addition to the retention subsystem is a boot mode interface, this can be
-used to dynamically change the state of an application or run a different
-application with a minimal set of functions when a device is rebooted (an
-example is to have a buttonless way of entering mcuboot's serial recovery
-feature from the main application).
-
-To use the boot mode feature, a data retention entry must exist in the device
-tree, which is dedicated for use as the boot mode selection (the user area data
-size only needs to be a single byte), and this area be assigned to the chosen
-node of ``zephyr,boot-mode``. See the following example:
-
-.. code-block:: devicetree
-
-	/ {
-		sram@2003FFFF {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x2003FFFF 0x1>;
-			zephyr,memory-region = "RetainedMem";
-			status = "okay";
-
-			retainedmem {
-				compatible = "zephyr,retained-ram";
-				status = "okay";
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				retention0: retention@0 {
-					compatible = "zephyr,retention";
-					status = "okay";
-					reg = <0x0 0x1>;
-				};
-			};
-		};
-
-		chosen {
-			zephyr,boot-mode = &retention0;
-		};
-	};
-
-	/* Reduce SRAM0 usage by 1 byte to account for non-init area */
-	&sram0 {
-		reg = <0x20000000 0x3FFFF>;
-	};
-
-The boot mode interface can be enabled with
-:kconfig:option:`CONFIG_RETENTION_BOOT_MODE` and then accessed by using the
-boot mode functions. If using mcuboot with serial recovery, it can be built
-with ``CONFIG_MCUBOOT_SERIAL`` and ``CONFIG_BOOT_SERIAL_BOOT_MODE`` enabled
-which will allow rebooting directly into the serial recovery mode by using:
-
-.. code-block:: C
-
-	#include <zephyr/retention/bootmode.h>
-	#include <zephyr/sys/reboot.h>
-
-	bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
-	sys_reboot(0);
+A retention area can store the boot mode of the :ref:`boot_mode_api`.
 
 Retention system modules
 ************************
@@ -216,8 +158,3 @@ Retention system API
 ====================
 
 .. doxygengroup:: retention_api
-
-Boot mode interface
-===================
-
-.. doxygengroup:: boot_mode_interface
