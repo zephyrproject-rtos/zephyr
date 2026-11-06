@@ -24,6 +24,7 @@
 #include <zephyr/net/udp.h>
 #include <zephyr/net/coap.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
@@ -88,7 +89,7 @@ static int resolve_peer_addr(struct sockaddr_storage *addr, socklen_t *addrlen)
 	const char *peer = CONFIG_NET_SAMPLE_COAP_CLIENT_PEER;
 	struct sockaddr_storage parsed_addr = { 0 };
 	struct addrinfo hints = {
-		.ai_family = AF_UNSPEC,
+		.ai_family = conn_mgr_get_ready_addr_family(),
 		.ai_socktype = SOCK_DGRAM,
 		.ai_protocol = IPPROTO_UDP,
 	};
@@ -791,7 +792,16 @@ int main(void)
 	int r;
 
 	LOG_DBG("Start CoAP-client sample");
-	wait_for_network();
+	uint32_t ready_mask = CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6;
+
+	/* A hostname peer also needs name resolution */
+	if (!is_ip_literal(CONFIG_NET_SAMPLE_COAP_CLIENT_PEER)) {
+		ready_mask |= CONN_MGR_READY_DNS;
+	}
+
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(ready_mask, K_FOREVER);
+	LOG_INF("Network ready");
 
 	r = start_coap_client();
 	if (r < 0) {

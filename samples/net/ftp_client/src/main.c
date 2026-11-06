@@ -9,13 +9,16 @@ LOG_MODULE_REGISTER(ftp_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 int main(void)
 {
 	LOG_INF("Starting FTP client sample");
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6, K_FOREVER);
+	LOG_INF("Network ready");
 
 	LOG_INF("Network connectivity established.");
 	LOG_INF("You can interact with FTP server via shell.");

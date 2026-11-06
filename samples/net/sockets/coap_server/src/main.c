@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(net_coap_service_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/coap_service.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 #ifdef CONFIG_NET_IPV6
@@ -166,7 +167,9 @@ int main(void)
 {
 	int ret;
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_IPV6, K_FOREVER);
+	LOG_INF("Network ready");
 
 	ret = setup_dtls();
 	if (ret < 0) {

@@ -24,6 +24,7 @@
 #include <zephyr/data/json.h>
 #include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 
@@ -461,7 +462,9 @@ int main(void)
 {
 	setup_credentials();
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4 | CONN_MGR_READY_DNS, K_FOREVER);
+	LOG_INF("Network ready");
 
 	for (;;) {
 		resolve_broker_addr(&aws_broker);

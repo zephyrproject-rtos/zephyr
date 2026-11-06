@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_ipv4_autoconf_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include <zephyr/net/conn_mgr_monitor.h>
 #include "net_sample_common.h"
 
 static struct net_mgmt_event_callback mgmt_cb;
@@ -62,7 +63,9 @@ int main(void)
 {
 	LOG_INF("Run ipv4 autoconf client");
 
-	wait_for_network();
+	LOG_INF("Waiting for network...");
+	(void)conn_mgr_wait_ready(CONN_MGR_READY_IPV4, K_FOREVER);
+	LOG_INF("Network ready");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
