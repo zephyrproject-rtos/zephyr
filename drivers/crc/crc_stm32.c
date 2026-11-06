@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT      st_stm32_crc
-
 #include <soc.h>
 #include <stm32_ll_crc.h>
 #include <stm32_ll_dma.h>
@@ -18,9 +16,17 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/bit_rev.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crc_stm32, CONFIG_CRC_LOG_LEVEL);
+
+#if IS_ENABLED(CONFIG_CRC_STM32F1)
+#define DT_DRV_COMPAT st_stm32f1_crc
+#else
+#define DT_DRV_COMPAT st_stm32_crc
+#endif
 
 #ifdef CONFIG_STM32_HAL2
 #define STM32_CRC_POLY_SIZE_32B		LL_CRC_POLY_SIZE_32B
@@ -34,6 +40,12 @@ LOG_MODULE_REGISTER(crc_stm32, CONFIG_CRC_LOG_LEVEL);
 #define STM32_CRC_POLY_SIZE_7B		LL_CRC_POLYLENGTH_7B
 #endif /* CONFIG_STM32_HAL2 */
 
+/*
+ * Early implementations of the CRC IP only implemented CRC-32 as defined by Ethernet, Wi-Fi, SATA,
+ * MPEG-2, Gzip, HDMI and others.
+ */
+#define STM32_CRC_V1_POLYNOMIAL 0x04c11db7
+
 struct crc_stm32_config {
 	CRC_TypeDef *base;
 	struct stm32_pclken pclken[1];
@@ -46,6 +58,10 @@ struct crc_stm32_config {
 
 struct crc_stm32_data {
 	struct k_sem dev_lock;
+#if IS_ENABLED(CONFIG_CRC_STM32F1)
+	uint8_t nb_pending;
+	uint8_t pending_bytes[3];
+#endif
 #if defined(CONFIG_CRC_STM32_DMA)
 	struct k_sem dma_sync;
 	int dma_transfer_status;
@@ -53,6 +69,8 @@ struct crc_stm32_data {
 	struct dma_block_config dma_block;
 #endif /* CONFIG_CRC_STM32_DMA */
 };
+
+#if IS_ENABLED(CONFIG_CRC_STM32)
 
 #if defined(CONFIG_CRC_STM32_DMA)
 static void crc_stm32_dma_callback(const struct device *dma, void *user_data,
@@ -99,6 +117,8 @@ static int crc_stm32_get_poly_size(struct crc_ctx *ctx, uint32_t *size)
 	return res;
 }
 
+#endif /* IS_ENABLED(CONFIG_CRC_STM32) */
+
 static void crc_stm32_release(const struct device *dev, struct crc_ctx *ctx)
 {
 	struct crc_stm32_data *data = dev->data;
@@ -114,6 +134,9 @@ static int crc_stm32_begin(const struct device *dev, struct crc_ctx *ctx)
 {
 	const struct crc_stm32_config *config = dev->config;
 	struct crc_stm32_data *data = dev->data;
+
+#if IS_ENABLED(CONFIG_CRC_STM32)
+
 	uint32_t poly_size;
 	int ret;
 
@@ -150,10 +173,63 @@ static int crc_stm32_begin(const struct device *dev, struct crc_ctx *ctx)
 	/* Reset CRC unit and load seed as initial value */
 	LL_CRC_ResetCRCCalculationUnit(config->base);
 
+#elif IS_ENABLED(CONFIG_CRC_STM32F1)
+
+	if (ctx->polynomial != STM32_CRC_V1_POLYNOMIAL) {
+		return -ENOTSUP;
+	}
+
+	switch (ctx->type) {
+	case CRC32_IEEE:
+	case CRC32_MPEG2:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if ((ctx->seed != 0) && (ctx->seed != 0xffffffff)) {
+		/*
+		 * The old IP forces 0xffffffff, but CRC-32(0xffffffff) = 0, so we can hack a 0 see
+		 * too. If another value is needed, it's probably more reasonable not to use this
+		 * module.
+		 */
+		return -ENOTSUP;
+	}
+
+	/* Take ownership of CRC peripheral */
+	k_sem_take(&data->dev_lock, K_FOREVER);
+
+	/* Reset CRC unit */
+	LL_CRC_ResetCRCCalculationUnit(config->base);
+
+	if (ctx->seed == 0) {
+		/*
+		 * CRC-32(0xffffffff) = 0, so we can fake this as a seed.
+		 * If another value is needed, it's probably more reasonable not to use this module.
+		 */
+		LL_CRC_FeedData32(config->base, 0xffffffff);
+	}
+
+	data->nb_pending = 0;
+#endif
+
 	ctx->state = CRC_STATE_IN_PROGRESS;
 
 	return 0;
 }
+
+#if IS_ENABLED(CONFIG_CRC_STM32F1)
+static void crc_stm32_feed_word(struct crc_ctx *ctx, CRC_TypeDef *base, uint32_t word)
+{
+	if ((ctx->reversed & CRC_FLAG_REVERSE_INPUT) != 0) {
+		word = sys_bit_rev32(word);
+	} else {
+		word = sys_cpu_to_be32(word);
+	}
+
+	LL_CRC_FeedData32(base, word);
+}
+#endif
 
 static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const void *buffer,
 				 size_t bufsize)
@@ -164,6 +240,8 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 	if (ctx->state != CRC_STATE_IN_PROGRESS) {
 		return -EINVAL;
 	}
+
+#if IS_ENABLED(CONFIG_CRC_STM32)
 
 #if defined(CONFIG_CRC_STM32_DMA)
 	/*
@@ -201,11 +279,62 @@ static int crc_stm32_update(const struct device *dev, struct crc_ctx *ctx, const
 		return 0;
 	} /* else: perform a busy CPU copy */
 #endif /* CONFIG_CRC_STM32_DMA */
+
 	const uint8_t *buf = buffer;
 
 	for (size_t i = 0; i < bufsize; i++) {
 		LL_CRC_FeedData8(config->base, buf[i]);
 	}
+
+#elif IS_ENABLED(CONFIG_CRC_STM32F1)
+
+	struct crc_stm32_data *data = dev->data;
+	/* We may need an intermediate buffer to realign everything. */
+	uint32_t word;
+	/* The original IP can only be fed a word at a time. */
+	const void *tail;
+
+	if ((data->nb_pending > 0) || ((uintptr_t)buffer % sizeof(uint32_t) != 0)) {
+		uint8_t *buf8 = (uint8_t *)&word;
+		const size_t nb_words = (bufsize + data->nb_pending) / sizeof(word);
+
+		memcpy(buf8, data->pending_bytes, data->nb_pending);
+		memcpy(buf8 + data->nb_pending, buffer,
+		       MIN(bufsize, sizeof(word) - data->nb_pending));
+
+		if (nb_words > 0) {
+			crc_stm32_feed_word(ctx, config->base, word);
+
+			uint8_t *src = (uint8_t *)buffer + sizeof(word) - data->nb_pending;
+
+			for (size_t i = 1; i < nb_words; i++) {
+				memcpy(buf8, src, sizeof(word));
+				crc_stm32_feed_word(ctx, config->base, word);
+				src += sizeof(word);
+			}
+
+			tail = src;
+			data->nb_pending = (uint8_t *)buffer + bufsize - tail;
+		} else {
+			tail = buf8;
+			data->nb_pending += bufsize;
+		}
+	} else {
+		/* Data can be fed directly from the input buffer. */
+		const uint32_t *buf32 = buffer;
+		const size_t nb_words = bufsize / sizeof(uint32_t);
+
+		for (size_t i = 0; i < nb_words; i++) {
+			crc_stm32_feed_word(ctx, config->base, buf32[i]);
+		}
+
+		data->nb_pending = bufsize % sizeof(uint32_t);
+		tail = buf32 + nb_words;
+	}
+
+	memcpy(data->pending_bytes, tail, data->nb_pending);
+
+#endif
 
 	return 0;
 }
@@ -218,7 +347,25 @@ static int crc_stm32_finish(const struct device *dev, struct crc_ctx *ctx)
 		return -EINVAL;
 	}
 
+#if IS_ENABLED(CONFIG_CRC_STM32F1)
+	struct crc_stm32_data *data = dev->data;
+
+	/*
+	 * Check there are no pending bytes at this stage, as the original IP can only
+	 * process full words.
+	 */
+	if (data->nb_pending > 0) {
+		return -EINVAL;
+	}
+#endif
+
 	ctx->result = LL_CRC_ReadData32(config->base);
+
+#if IS_ENABLED(CONFIG_CRC_STM32F1)
+	if ((ctx->reversed & CRC_FLAG_REVERSE_OUTPUT) != 0) {
+		ctx->result = sys_bit_rev32(ctx->result);
+	}
+#endif
 
 	/* Post-process result as required by some algorithms */
 	if (ctx->type == CRC32_IEEE) {

@@ -14,6 +14,7 @@ supported:
   - spi
   - i2c
   - can
+  - crc
   - backup_sram
 ram: 128
 flash: 512

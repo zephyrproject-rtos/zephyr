@@ -397,6 +397,14 @@
 				max-erase-time = <40>;
 			};
 		};
+
+		crc: crc@40023000 {
+			compatible = "st,stm32f1-crc";
+			reg = <0x40023000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
+			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {

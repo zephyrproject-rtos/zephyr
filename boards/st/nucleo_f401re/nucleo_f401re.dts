@@ -190,6 +190,10 @@
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &adc123_common {
 	st,adc-prescaler = <2>;
 	status = "okay";
