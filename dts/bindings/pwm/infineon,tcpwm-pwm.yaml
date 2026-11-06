@@ -10,6 +10,11 @@ compatible: "infineon,tcpwm-pwm"
 include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
 
 properties:
+  clocks:
+    required: true
+    description: |
+      Peripheral clock divider feeding the counter.
+
   "#pwm-cells":
     const: 3
     description: |
