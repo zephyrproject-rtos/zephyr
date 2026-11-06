@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_HOLYBRO_M10
+	def_bool $(shields_list_contains,holybro_m10)

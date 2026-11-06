@@ -324,6 +324,7 @@ hit	Hitachi Ltd.
 hitex	Hitex Development Tools
 holt	Holt Integrated Circuits, Inc.
 holtek	Holtek Semiconductor, Inc.
+holybro	Holybro
 holyiot	Shenzhen Holyiot Technology Co., Ltd.
 honestar	Honestar Technologies Co., Ltd.
 honeywell	Honeywell
