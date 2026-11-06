@@ -63,6 +63,8 @@
 #define TSL2540_CFG3_ADDR 0xAB
 #define TSL2540_CFG3_MASK (BIT(7) | BIT(4))
 #define TSL2540_CFG3_CONF (BIT(7) | BIT(4))
+/* No sleep-after-interrupt, but INT_READ_CLEAR kept so a STATUS read acknowledges AINT */
+#define TSL2540_CFG3_NO_SAI_CONF (BIT(7))
 #define TSL2540_CFG3_DFLT (0)
 
 /* INTENAB(0xDD: 0x00): ASIEN:7 | Reserved:6:5 | AIEN:4 | Reserved:3:0 */
