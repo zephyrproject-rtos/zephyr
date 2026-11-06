@@ -907,37 +907,6 @@ static int cmd_bus_resume(const struct shell *sh,
 		shell_print(sh, "host: USB bus resumed");
 	}
 
-	err = uhc_sof_enable(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to start SoF generator %d", err);
-	}
-
-	return err;
-}
-
-static int cmd_bus_reset(const struct shell *sh,
-			 size_t argc, char **argv)
-{
-	struct usbh_context *uhs_ctx;
-	int err;
-
-	uhs_ctx = get_uhs_ctx_or_error(sh);
-	if (uhs_ctx == NULL) {
-		return -ENODEV;
-	}
-
-	err = uhc_bus_reset(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to perform bus reset %d", err);
-	} else {
-		shell_print(sh, "host: USB bus reset");
-	}
-
-	err = uhc_sof_enable(uhs_ctx->dev);
-	if (err) {
-		shell_error(sh, "host: Failed to start SoF generator %d", err);
-	}
-
 	return err;
 }
 
@@ -1220,8 +1189,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bus_cmds,
 		      cmd_bus_suspend, 1, 0),
 	SHELL_CMD_ARG(resume, NULL, "[none]",
 		      cmd_bus_resume, 1, 0),
-	SHELL_CMD_ARG(reset, NULL, "[none]",
-		      cmd_bus_reset, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

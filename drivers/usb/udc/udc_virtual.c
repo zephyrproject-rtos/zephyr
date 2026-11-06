@@ -39,6 +39,8 @@ struct udc_vrt_data {
 	struct k_fifo fifo;
 	struct k_thread thread_data;
 	uint8_t addr;
+	uint16_t frame_number;
+	enum uvb_speed bus_speed;
 };
 
 struct udc_vrt_event {
@@ -251,11 +253,15 @@ static void vrt_submit_uvb_event(const struct device *dev,
 
 static void udc_vrt_uvb_cb(const void *const vrt_priv,
 			   const enum uvb_event_type type,
+			   const struct uvb_node *const source,
 			   const void *data)
 {
 	const struct device *dev = vrt_priv;
 	struct udc_vrt_data *priv = udc_get_private(dev);
 	struct uvb_packet *const pkt = (void *)data;
+
+	/* source is unused in downstream messaging  */
+	ARG_UNUSED(source);
 
 	switch (type) {
 	case UVB_EVT_VBUS_REMOVED:
@@ -268,10 +274,20 @@ static void udc_vrt_uvb_cb(const void *const vrt_priv,
 	case UVB_EVT_SUSPEND:
 		__fallthrough;
 	case UVB_EVT_RESUME:
-		__fallthrough;
-	case UVB_EVT_RESET:
 		if (udc_is_enabled(dev)) {
 			vrt_submit_uvb_event(dev, type, NULL);
+		}
+		break;
+	case UVB_EVT_RESET:
+		if (udc_is_enabled(dev)) {
+			priv->bus_speed = POINTER_TO_INT(data);
+			vrt_submit_uvb_event(dev, type, NULL);
+		}
+		break;
+	case UVB_EVT_SOF:
+		priv->frame_number = (uint16_t)POINTER_TO_INT(data);
+		if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) && udc_is_enabled(dev)) {
+			udc_submit_sof_event(dev);
 		}
 		break;
 	case UVB_EVT_REQUEST:
@@ -365,10 +381,22 @@ static int udc_vrt_host_wakeup(const struct device *dev)
 
 static enum udc_bus_speed udc_vrt_device_speed(const struct device *dev)
 {
-	struct udc_data *data = dev->data;
+	struct udc_vrt_data *priv = udc_get_private(dev);
 
-	/* FIXME: get actual device speed */
-	return data->caps.hs ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
+	switch (priv->bus_speed) {
+	case UVB_SPEED_FS:
+		return UDC_BUS_SPEED_FS;
+	case UVB_SPEED_HS:
+		return UDC_BUS_SPEED_HS;
+	case UVB_SPEED_SS:
+		return UDC_BUS_SPEED_SS;
+	case UVB_SPEED_LS:
+		__fallthrough;
+	default:
+		break;
+	}
+
+	return UDC_BUS_UNKNOWN;
 }
 
 static int udc_vrt_enable(const struct device *dev)
@@ -407,6 +435,7 @@ static int udc_vrt_disable(const struct device *dev)
 static int udc_vrt_init(const struct device *dev)
 {
 	const struct udc_vrt_config *config = dev->config;
+	int ret;
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
@@ -420,7 +449,13 @@ static int udc_vrt_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return uvb_subscribe(config->uhc_name, config->dev_node);
+	ret = uvb_subscribe(config->uhc_name, config->dev_node);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return uvb_to_host(config->dev_node, UVB_EVT_DEVICE_ACT,
+			   INT_TO_POINTER(UVB_DEVICE_ACT_CONNECTED));
 }
 
 static int udc_vrt_shutdown(const struct device *dev)

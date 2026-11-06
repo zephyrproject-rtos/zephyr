@@ -1,15 +1,6 @@
 # SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config USBH_HUB_CLASS
-	bool "USB Host Hub Class Driver"
-	default y
-	help
-	  Enable USB Host Hub Class driver support.
-	  This allows connecting USB hubs and managing downstream devices.
-
-if USBH_HUB_CLASS
-
 config USBH_HUB_MAX_LEVELS
 	int "Maximum Hub chain depth"
 	default 5
@@ -68,5 +59,3 @@ module-str = usbh hub
 default-count = 7
 source "subsys/logging/Kconfig.template.log_config"
 source "subsys/usb/common/Kconfig.template.instances_count"
-
-endif # USBH_HUB_CLASS

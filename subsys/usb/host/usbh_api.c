@@ -61,6 +61,11 @@ int usbh_enable(struct usbh_context *uhs_ctx)
 		goto enable_exit;
 	}
 
+	ret = usbh_root_hub_init(uhs_ctx);
+	if (ret != 0) {
+		uhc_disable(uhs_ctx->dev);
+	}
+
 enable_exit:
 	usbh_host_unlock(uhs_ctx);
 	return ret;
