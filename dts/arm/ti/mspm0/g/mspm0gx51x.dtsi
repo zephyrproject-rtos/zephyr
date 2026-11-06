@@ -43,7 +43,6 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg8: counterg8 {
 				compatible = "ti,mspm0-timer-counter";
@@ -59,7 +58,6 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg9: counterg9 {
 				compatible = "ti,mspm0-timer-counter";
@@ -75,7 +73,6 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg14: counterg14 {
 				compatible = "ti,mspm0-timer-counter";

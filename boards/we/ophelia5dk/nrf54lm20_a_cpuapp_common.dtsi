@@ -47,9 +47,13 @@
 	load-capacitance-femtofarad = <13000>;
 };
 
-&vregmain {
+&regulators {
 	status = "okay";
+};
+
+&vregmain {
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
 };
 
 &vregusb {
@@ -112,8 +116,8 @@ temp_sensor: &temp {
 };
 
 &lfclk {
-	status = "okay";
 	k32src = "rc";
+	status = "okay";
 };
 
 &xo24m {
@@ -141,11 +145,11 @@ zephyr_uhc0: &usbhs {
 };
 
 &spi00 {
-	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &adc {

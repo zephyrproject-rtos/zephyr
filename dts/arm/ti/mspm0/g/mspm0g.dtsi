@@ -53,7 +53,6 @@
 			interrupts = <16 0>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
@@ -113,7 +112,6 @@
 			interrupts = <18 0>;
 			ti,clk-prescaler = <0>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			pwma0: pwma0 {
 				compatible = "ti,mspm0-timer-pwm";
@@ -129,7 +127,6 @@
 			interrupts = <19 0>;
 			ti,clk-prescaler = <0>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			pwma1: pwma1 {
 				compatible = "ti,mspm0-timer-pwm";
@@ -145,7 +142,6 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg6: counterg6 {
 				compatible = "ti,mspm0-timer-counter";
@@ -161,7 +157,6 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg7: counterg7 {
 				compatible = "ti,mspm0-timer-counter";
@@ -177,7 +172,6 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			ti,clk-prescaler = <0>; /* None */
 			ti,clk-div = <1>;
-			status = "disabled";
 
 			counterg12: counterg12 {
 				compatible = "ti,mspm0-timer-counter";
