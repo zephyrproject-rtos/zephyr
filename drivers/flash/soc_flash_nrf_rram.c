@@ -58,11 +58,12 @@ LOG_MODULE_REGISTER(flash_nrf_rram, CONFIG_FLASH_LOG_LEVEL);
 #ifdef CONFIG_MULTITHREADING
 static struct k_sem sem_lock;
 #define SYNC_INIT()   k_sem_init(&sem_lock, 1, 1)
-#define SYNC_LOCK()   k_sem_take(&sem_lock, K_FOREVER)
+/* Writes may come from ISR context (e.g. a fatal-error coredump), where blocking is not allowed. */
+#define SYNC_LOCK()   k_sem_take(&sem_lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER)
 #define SYNC_UNLOCK() k_sem_give(&sem_lock)
 #else
 #define SYNC_INIT()
-#define SYNC_LOCK()
+#define SYNC_LOCK()   0
 #define SYNC_UNLOCK()
 #endif /* CONFIG_MULTITHREADING */
 
@@ -282,7 +283,9 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 
 	LOG_DBG("Write: %p:%zu", (void *)(uintptr_t)addr, len);
 
-	SYNC_LOCK();
+	if (SYNC_LOCK() != 0) {
+		return -EBUSY;
+	}
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Enable RRAMC write mode once for the whole API call.
