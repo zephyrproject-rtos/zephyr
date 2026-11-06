@@ -117,6 +117,17 @@ properties:
     min: 0
     max: 31
 
+  st,refresh:
+    type: int
+    default: 0
+    description: |
+      Refresh rate in number of memory clock cycles. The chip select is
+      released every refresh + 1 clock cycles for writes and refresh + 4
+      clock cycles for reads, also while the memory-mapped prefetch holds
+      it low. Required by PSRAM devices with a maximum chip select low time
+      (tCEM). Set it below tCEM expressed in memory clock cycles.
+      A value of 0 means the feature is disabled.
+
   st,dqs-port:
     type: int
     enum:

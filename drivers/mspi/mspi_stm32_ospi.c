@@ -1588,6 +1588,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 				.DeviceSize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26),            \
 				.MemoryType = MSPI_STM32_HAL_MEMTYPE(index),                       \
 				.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE,                   \
+				.Refresh = DT_INST_PROP(index, st_refresh),                        \
 			},                                                                         \
 		},                                                                                 \
 		.memmap_base_addr = DT_INST_REG_ADDR_BY_IDX(index, 1),                             \
