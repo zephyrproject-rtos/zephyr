@@ -104,12 +104,12 @@ struct virtual_interface_config {
 /** @endcond */
 
 /** Virtual L2 API operations. */
-struct virtual_interface_api {
+__subsystem struct virtual_interface_driver_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Get the virtual interface capabilities */
 	enum virtual_interface_caps (*get_capabilities)(struct net_if *iface);
@@ -145,10 +145,9 @@ struct virtual_interface_api {
 			  struct virtual_interface_config *config);
 };
 
-/* Make sure that the network interface API is properly setup inside
- * Virtual API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct virtual_interface_api, iface_api) == 0);
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(virtual_interface, net_if, iface_api);
+/** @endcond */
 
 /** Virtual L2 context that is needed to binding to the real network interface
  */
@@ -309,11 +308,11 @@ static inline enum virtual_interface_caps
 net_virtual_get_iface_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct virtual_interface_api *virt;
+	const struct virtual_interface_driver_api *virt;
 
 	NET_ASSERT(dev != NULL);
 
-	virt = (const struct virtual_interface_api *)dev->api;
+	virt = (const struct virtual_interface_driver_api *)dev->api;
 
 	NET_ASSERT(virt != NULL);
 

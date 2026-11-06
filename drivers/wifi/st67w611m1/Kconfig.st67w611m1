@@ -16,7 +16,7 @@ menuconfig WIFI_ST67W611M1
 	select SPI_STM32_DMA if SOC_FAMILY_STM32 && $(DT_STM32_SPI_HAS_DMA)
 	select NET_L2_ETHERNET # Wifi driver is defined as an Ethernet interface
 	select NET_L2_WIFI_MGMT
-	select WIFI_USE_NATIVE_NETWORKING # Set net_wifi_mgmt_offload as an ethernet_api
+	select WIFI_USE_NATIVE_NETWORKING # Set the Wi-Fi driver API as an ethernet_driver_api
 
 if WIFI_ST67W611M1
 

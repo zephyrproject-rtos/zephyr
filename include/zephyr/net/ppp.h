@@ -43,12 +43,12 @@ extern "C" {
 #define PPP_INTERFACE_IDENTIFIER_LEN 8
 
 /** PPP L2 API */
-struct ppp_api {
+__subsystem struct ppp_driver_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Start the device */
 	int (*start)(const struct device *dev);
@@ -68,10 +68,9 @@ struct ppp_api {
 #endif
 };
 
-/* Make sure that the network interface API is properly setup inside
- * PPP API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct ppp_api, iface_api) == 0);
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(ppp, net_if, iface_api);
+/** @endcond */
 
 /**
  * PPP protocol types.

@@ -529,7 +529,7 @@ static void sy1xx_mac_rx_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
-const struct ethernet_api sy1xx_mac_driver_api = {
+DEVICE_API(ethernet, sy1xx_mac_driver_api) = {
 	.start = sy1xx_mac_start,
 	.stop = sy1xx_mac_stop,
 	.iface_api.init = sy1xx_mac_iface_init,

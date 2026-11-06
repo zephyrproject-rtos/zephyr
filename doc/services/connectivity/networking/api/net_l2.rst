@@ -68,7 +68,7 @@ basis. Please refer to :ref:`device_model_api`.
 
 There are, however, two differences:
 
-- The driver_api pointer must point to a valid :c:struct:`net_if_api`
+- The driver_api pointer must point to a valid :c:struct:`net_if_driver_api`
   pointer.
 
 - The network device driver must use :c:macro:`NET_DEVICE_INIT_INSTANCE()`
@@ -115,9 +115,9 @@ Device drivers for IEEE 802.15.4 L2 work basically the same as for
 Ethernet. What has been described above, especially for ``recv()``, applies
 here as well. There are two specific differences however:
 
-- It requires a dedicated device driver API: :c:struct:`ieee802154_radio_api`,
-  which overloads :c:struct:`net_if_api`. This is because 802.15.4 L2 needs more from the device
-  driver than just ``send()`` and ``recv()`` functions.  This dedicated API is
+- It requires a dedicated device driver API: :c:struct:`ieee802154_radio_driver_api`,
+  which overloads :c:struct:`net_if_driver_api`. This is because 802.15.4 L2 needs more from
+  the device driver than just ``send()`` and ``recv()`` functions.  This dedicated API is
   declared in :zephyr_file:`include/zephyr/net/ieee802154_radio.h`. Each and every
   IEEE 802.15.4 device driver must provide a valid pointer on such
   relevantly filled-in API structure.
@@ -132,14 +132,14 @@ here as well. There are two specific differences however:
   medium access (e.g. CSMA/CA), frame retransmission, encryption and other pre-processing
   procedures (e.g. addition of information elements) that individual
   radio drivers should not have to care about. This is why the
-  :c:struct:`ieee802154_radio_api` requires a tx function pointer which differs
-  from the :c:struct:`net_if_api` send function pointer. Zephyr's native
+  :c:struct:`ieee802154_radio_driver_api` requires a tx function pointer which differs
+  from the :c:struct:`net_if_driver_api` send function pointer. Zephyr's native
   IEEE 802.15.4 L2 implementation provides a generic :c:func:`ieee802154_send`
   instead, meant to be given as :c:type:`net_if` send function. The implementation
   of :c:func:`ieee802154_send` takes care of IEEE 802.15.4 standard packet
   preparation procedures, splitting the packet into possibly compressed,
   encrypted and otherwise pre-processed fragment buffers, sending one buffer
-  at a time through :c:struct:`ieee802154_radio_api` tx function and unreferencing
+  at a time through :c:struct:`ieee802154_radio_driver_api` tx function and unreferencing
   the network packet only when the transmission as a whole was either successful
   or failed.
 
@@ -148,7 +148,7 @@ Interaction between IEEE 802.15.4 radio device drivers and L2 is bidirectional:
 - L2 -> L1: Methods as :c:func:`ieee802154_send` and several IEEE 802.15.4 net
   management calls will call into the driver, e.g. to send a packet over the
   radio link or re-configure the driver at runtime. These incoming calls will
-  all be handled by the methods in the :c:struct:`ieee802154_radio_api`.
+  all be handled by the methods in the :c:struct:`ieee802154_radio_driver_api`.
 
 - L1 -> L2: There are several situations in which the driver needs to initiate
   calls into the L2/MAC layer. Zephyr's IEEE 802.15.4 L1 -> L2 adaptation API
@@ -161,7 +161,7 @@ Interaction between IEEE 802.15.4 radio device drivers and L2 is bidirectional:
   as well as other hardware-related configuration to L2. Similarly, drivers may
   indicate performance or timing critical radio events to L2 that require close
   integration with the hardware (e.g. :c:func:`ieee802154_handle_ack`). Calls
-  from L1 into L2 are not implemented as methods in :c:struct:`ieee802154_radio_api`
+  from L1 into L2 are not implemented as methods in :c:struct:`ieee802154_radio_driver_api`
   but are standalone functions declared and documented as such in
   :zephyr_file:`include/zephyr/net/ieee802154_radio.h`. The API documentation will
   clearly state which functions must be implemented by all L2 stacks as part

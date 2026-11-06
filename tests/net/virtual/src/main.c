@@ -169,7 +169,7 @@ static struct net_stats_eth *eth_get_stats(const struct device *dev, struct net_
 	return &eth_stats;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_capabilities,
@@ -244,7 +244,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 struct net_if_test net_iface1_data;
 struct net_if_test net_iface2_data;
 
-static const struct dummy_api net_iface_api = {
+static DEVICE_API(dummy, net_iface_api) = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };

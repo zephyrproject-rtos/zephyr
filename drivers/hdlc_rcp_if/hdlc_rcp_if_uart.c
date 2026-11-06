@@ -199,7 +199,7 @@ static int hdlc_deinit(void)
 	return 0;
 }
 
-static const struct hdlc_api uart_hdlc_api = {
+static DEVICE_API(hdlc, uart_hdlc_api) = {
 	.iface_api.init = hdlc_iface_init,
 	.register_rx_cb = hdlc_register_rx_cb,
 	.send = hdlc_send,

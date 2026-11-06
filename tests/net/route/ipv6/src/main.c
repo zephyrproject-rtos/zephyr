@@ -293,12 +293,12 @@ static void reset_send_state(void)
 struct net_route_test net_route_data;
 struct net_route_test net_route_data_peer;
 
-static const struct dummy_api net_route_if_api = {
+static DEVICE_API(dummy, net_route_if_api) = {
 	.iface_api.init = net_route_iface_init,
 	.send = tester_send,
 };
 
-static const struct dummy_api net_route_if_api_peer = {
+static DEVICE_API(dummy, net_route_if_api_peer) = {
 	.iface_api.init = net_route_iface_init,
 	.send = tester_send_peer,
 };
@@ -1136,7 +1136,7 @@ static int route_eth_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static const struct ethernet_api route_eth_if_api = {
+static DEVICE_API(ethernet, route_eth_if_api) = {
 	.iface_api.init = route_eth_iface_init,
 	.send = route_eth_send,
 };

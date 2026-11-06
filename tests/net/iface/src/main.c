@@ -156,7 +156,7 @@ struct net_if_test net_iface1_data;
 struct net_if_test net_iface2_data;
 struct net_if_test net_iface3_data;
 
-static const struct dummy_api net_iface_api = {
+static DEVICE_API(dummy, net_iface_api) = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
@@ -265,7 +265,7 @@ static int eth_fake_set_config(const struct device *dev,
 	return 0;
 }
 
-static const struct ethernet_api eth_fake_api_funcs = {
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
 	.iface_api.init = eth_fake_iface_init,
 
 	.get_capabilities = eth_fake_get_capabilities,
@@ -309,7 +309,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	    net_if_get_by_iface(iface));
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		const struct ethernet_api *api =
+		const struct ethernet_driver_api *api =
 			net_if_get_device(iface)->api;
 
 		/* As native_sim board will introduce another ethernet
@@ -1897,6 +1897,20 @@ ZTEST(net_iface, test_ipv4_config_put)
 		      "Stale TTL in re-used config");
 
 	net_if_up(iface3);
+}
+
+ZTEST(net_iface, test_device_api_classes)
+{
+	const struct device *dummy_dev = net_if_get_device(iface1);
+	const struct device *eth_dev = net_if_get_device(eth_iface);
+
+	zassert_true(DEVICE_API_IS(net_if, dummy_dev));
+	zassert_true(DEVICE_API_IS(dummy, dummy_dev));
+	zassert_false(DEVICE_API_IS(ethernet, dummy_dev));
+
+	zassert_true(DEVICE_API_IS(net_if, eth_dev));
+	zassert_true(DEVICE_API_IS(ethernet, eth_dev));
+	zassert_false(DEVICE_API_IS(dummy, eth_dev));
 }
 
 ZTEST_SUITE(net_iface, NULL, iface_setup, NULL, NULL, iface_teardown);

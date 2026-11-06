@@ -24,12 +24,12 @@ extern "C" {
 /**
  * CAN L2 network driver API.
  */
-struct canbus_api {
+__subsystem struct canbus_driver_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Send a CAN packet by socket */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
@@ -48,12 +48,9 @@ struct canbus_api {
 			  const void *optval, net_socklen_t *optlen);
 };
 
-/* Make sure that the network interface API is properly setup inside
- * CANBUS API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct canbus_api, iface_api) == 0);
-
 /** @cond INTERNAL_HIDDEN */
+
+DEVICE_API_EXTENDS(canbus, net_if, iface_api);
 
 struct z_net_canbus_context {
 	struct net_if *iface;
@@ -65,7 +62,7 @@ struct z_net_canbus_config {
 
 int z_net_canbus_init(const struct device *dev);
 
-extern const struct canbus_api z_net_canbus_api;
+extern const struct canbus_driver_api z_net_canbus_api;
 
 /*
  * Network interface of a CAN controller, defined by CAN_DEVICE_DT_DEFINE() next to the

@@ -58,7 +58,7 @@ FAKE_VALUE_FUNC(enum ieee802154_hw_caps, get_capabilities_caps_mock, const struc
 static enum ieee802154_hw_caps get_capabilities(const struct device *dev);
 
 /* mocks */
-static const struct ieee802154_radio_api rapi = {
+static DEVICE_API(ieee802154_radio, rapi) = {
 	.get_capabilities = get_capabilities_caps_mock,
 	.cca = cca_mock,
 	.set_channel = set_channel_mock,

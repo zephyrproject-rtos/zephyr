@@ -2023,7 +2023,7 @@ static const struct device *eth_sam_gmac_get_ptp_clock(const struct device *dev,
 }
 #endif
 
-static const struct ethernet_api eth_api = {
+static DEVICE_API(ethernet, eth_api) = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_sam_gmac_get_capabilities,

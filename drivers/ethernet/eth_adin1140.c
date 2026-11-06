@@ -981,7 +981,7 @@ static int adin1140_init(const struct device *dev)
 	return rc;
 }
 
-static const struct ethernet_api adin1140_eth_api = {
+static DEVICE_API(ethernet, adin1140_eth_api) = {
 	.iface_api.init = adin1140_iface_init,
 	.get_capabilities = adin1140_get_capabilities,
 	.set_config = adin1140_set_config,

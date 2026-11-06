@@ -509,7 +509,7 @@ static int renesas_ra_eth_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethernet_api eth_renesas_ra_api = {
+static DEVICE_API(ethernet, eth_renesas_ra_api) = {
 	.iface_api.init = eth_renesas_ra_init_iface,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_renesas_ra_get_stats,

@@ -375,7 +375,7 @@ out:
 static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ieee802154_radio_api *radio;
+	const struct ieee802154_radio_driver_api *radio;
 	enum net_verdict verdict = NET_CONTINUE;
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_mpdu mpdu;

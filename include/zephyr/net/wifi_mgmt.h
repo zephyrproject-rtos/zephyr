@@ -2479,21 +2479,10 @@ struct wifi_mgmt_ops {
 	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
 };
 
-/** Wi-Fi management offload API */
-struct net_wifi_mgmt_offload {
-	/**
-	 * Mandatory to get in first position.
-	 * A network device should indeed provide a pointer on such
-	 * net_if_api structure. So we make current structure pointer
-	 * that can be casted to a net_if_api structure pointer.
-	 */
-#if defined(CONFIG_WIFI_USE_NATIVE_NETWORKING) || defined(__DOXYGEN__)
-	/** Ethernet API */
-	struct ethernet_api wifi_iface;
-#else
-	/** Offloaded network device API */
-	struct offloaded_if_api wifi_iface;
-#endif
+/** Wi-Fi driver API for devices using the native network stack */
+__subsystem struct wifi_native_driver_api {
+	/** Ethernet API, must be the first member */
+	struct ethernet_driver_api wifi_iface;
 	/** Wi-Fi management API */
 	const struct wifi_mgmt_ops *const wifi_mgmt_api;
 
@@ -2503,16 +2492,49 @@ struct net_wifi_mgmt_offload {
 #endif
 };
 
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(wifi_native, ethernet, wifi_iface);
+/** @endcond */
+
+/** Wi-Fi driver API for devices offloading the network stack */
+__subsystem struct wifi_offload_driver_api {
+	/** Offloaded network device API, must be the first member */
+	struct offloaded_if_driver_api wifi_iface;
+	/** Wi-Fi management API */
+	const struct wifi_mgmt_ops *const wifi_mgmt_api;
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) || defined(__DOXYGEN__)
+	/** Wi-Fi supplicant driver API */
+	const void *wifi_drv_ops;
+#endif
+};
+
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(wifi_offload, offloaded_if, wifi_iface);
+/** @endcond */
+
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 /* Make sure wifi_drv_ops is after wifi_mgmt_api */
-BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_mgmt_api) <
-	     offsetof(struct net_wifi_mgmt_offload, wifi_drv_ops));
+BUILD_ASSERT(offsetof(struct wifi_native_driver_api, wifi_mgmt_api) <
+	     offsetof(struct wifi_native_driver_api, wifi_drv_ops));
+BUILD_ASSERT(offsetof(struct wifi_offload_driver_api, wifi_mgmt_api) <
+	     offsetof(struct wifi_offload_driver_api, wifi_drv_ops));
 #endif
 
-/* Make sure that the network interface API is properly setup inside
- * Wifi mgmt offload API struct (it is the first one).
+/* Common Wi-Fi code accesses the API of the class selected by Kconfig. Drivers must define their
+ * API with that class.
  */
-BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_iface) == 0);
+/** @cond INTERNAL_HIDDEN */
+BUILD_ASSERT(!(IS_ENABLED(CONFIG_WIFI_USE_NATIVE_NETWORKING) && IS_ENABLED(CONFIG_WIFI_OFFLOAD)),
+	     "CONFIG_WIFI_USE_NATIVE_NETWORKING and CONFIG_WIFI_OFFLOAD are mutually exclusive");
+/** @endcond */
+
+#if defined(CONFIG_WIFI_USE_NATIVE_NETWORKING) || defined(__DOXYGEN__)
+/** Wi-Fi driver API type selected by Kconfig */
+#define net_wifi_mgmt_offload wifi_native_driver_api
+#else
+#define net_wifi_mgmt_offload wifi_offload_driver_api
+#endif
 
 /** Wi-Fi management connect result event
  *

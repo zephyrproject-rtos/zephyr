@@ -655,7 +655,7 @@ static const struct usbd_class_api usbd_cdc_ecm_api = {
 	.get_desc = usbd_cdc_ecm_get_desc,
 };
 
-static const struct ethernet_api cdc_ecm_eth_api = {
+static DEVICE_API(ethernet, cdc_ecm_eth_api) = {
 	.iface_api.init = cdc_ecm_iface_init,
 	.set_config = cdc_ecm_set_config,
 	.get_capabilities = cdc_ecm_get_capabilities,

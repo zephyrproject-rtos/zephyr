@@ -775,7 +775,7 @@ static struct wg_peer *peer_lookup_by_iface(struct net_if *iface)
 static struct wg_peer *peer_lookup_by_virtual_iface(struct net_if *iface)
 {
 	struct virtual_interface_context *ctx, *tmp;
-	const struct virtual_interface_api *api;
+	const struct virtual_interface_driver_api *api;
 	struct wg_peer *peer, *next;
 	sys_slist_t *interfaces;
 
@@ -1006,7 +1006,7 @@ static int wg_ctrl_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct dummy_api wg_api = {
+static DEVICE_API(dummy, wg_api) = {
 	.iface_api.init = wg_ctrl_iface_init,
 	.recv = wg_ctrl_recv,
 	.send = wg_ctrl_send,
@@ -1161,7 +1161,7 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	struct net_pkt *pkt_encrypted;
 	struct net_if *target_iface;
 	struct net_buf *buf;
-	const struct dummy_api *api;
+	const struct dummy_driver_api *api;
 	struct wg_keypair *keypair;
 	struct wg_peer *peer;
 	size_t pkt_len, copied, padded_len;
@@ -1492,7 +1492,7 @@ static int interface_get_config(struct net_if *iface,
 	return -ENOTSUP;
 }
 
-static const struct virtual_interface_api wg_iface_api = {
+static DEVICE_API(virtual_interface, wg_iface_api) = {
 	.iface_api.init = iface_init,
 
 	.get_capabilities = get_capabilities,
@@ -1669,7 +1669,7 @@ out:
  */
 static int send_data(struct wg_iface_context *ctx, struct net_pkt *pkt)
 {
-	const struct dummy_api *api = net_if_get_device(ctx->attached_to)->api;
+	const struct dummy_driver_api *api = net_if_get_device(ctx->attached_to)->api;
 
 	return net_l2_send(api->send, net_if_get_device(ctx->attached_to),
 			   ctx->attached_to, pkt);

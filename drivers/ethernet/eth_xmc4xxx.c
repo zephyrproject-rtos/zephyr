@@ -1053,7 +1053,7 @@ int eth_xmc4xxx_vlan_setup(const struct device *dev, struct net_if *iface, uint1
 }
 #endif
 
-static const struct ethernet_api eth_xmc4xxx_api = {
+static DEVICE_API(ethernet, eth_xmc4xxx_api) = {
 	.iface_api.init = eth_xmc4xxx_iface_init,
 	.send = eth_xmc4xxx_send,
 	.set_config = eth_xmc4xxx_set_config,

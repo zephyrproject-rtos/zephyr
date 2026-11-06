@@ -723,7 +723,7 @@ static const struct wifi_mgmt_ops esp_hosted_mgmt = {
 	.get_version = esp_hosted_get_version,
 };
 
-static const struct net_wifi_mgmt_offload esp_hosted_api = {
+static DEVICE_API(wifi_native, esp_hosted_api) = {
 	.wifi_iface.iface_api.init = esp_hosted_init,
 	.wifi_iface.send = esp_hosted_send,
 	.wifi_mgmt_api = &esp_hosted_mgmt,

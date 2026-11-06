@@ -68,7 +68,7 @@ static void send_error_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr), NET_LINK_ETHERNET);
 }
 
-static const struct dummy_api send_error_if_api = {
+static DEVICE_API(dummy, send_error_if_api) = {
 	.iface_api.init = send_error_iface_init,
 	.send = tester_send,
 };

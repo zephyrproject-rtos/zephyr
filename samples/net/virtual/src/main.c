@@ -152,7 +152,7 @@ static int virtual_test_interface_attach(struct net_if *virtual_iface,
 	return 0;
 }
 
-static const struct virtual_interface_api virtual_test_iface_api = {
+static DEVICE_API(virtual_interface, virtual_test_iface_api) = {
 	.iface_api.init = virtual_test_iface_init,
 
 	.get_capabilities = virtual_test_get_capabilities,

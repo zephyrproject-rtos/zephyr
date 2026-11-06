@@ -29,11 +29,11 @@ extern "C" {
 typedef void (*hdlc_rx_callback_t)(const uint8_t *data, uint16_t len, void *param);
 
 /** HDLC interface configuration data. */
-struct hdlc_api {
+__subsystem struct hdlc_driver_api {
 	/**
 	 * @brief HDLC interface API
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/**
 	 * @brief Register the Spinel HDLC RX callback.
@@ -77,10 +77,9 @@ struct hdlc_api {
 	int (*deferred_init)(void);
 };
 
-/* Make sure that the interface API is properly setup inside
- * HDLC interface API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct hdlc_api, iface_api) == 0);
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(hdlc, net_if, iface_api);
+/** @endcond */
 
 #ifdef __cplusplus
 }

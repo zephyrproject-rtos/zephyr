@@ -1324,7 +1324,7 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static const struct ethernet_api api_funcs = {
+static DEVICE_API(ethernet, api_funcs) = {
 	.iface_api.init = eth_nxp_enet_qos_iface_init,
 	.send = eth_nxp_enet_qos_tx,
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,

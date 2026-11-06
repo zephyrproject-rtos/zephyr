@@ -582,12 +582,12 @@ enum ethernet_stats_type {
 };
 
 /** Ethernet L2 API operations. */
-struct ethernet_api {
+__subsystem struct ethernet_driver_api {
 	/**
-	 * The net_if_api must be placed in first position in this
+	 * The net_if_driver_api must be placed in first position in this
 	 * struct so that we are compatible with network interface API.
 	 */
-	struct net_if_api iface_api;
+	struct net_if_driver_api iface_api;
 
 	/** Collect optional ethernet specific statistics. This pointer
 	 * should be set by driver if statistics needs to be collected
@@ -651,10 +651,7 @@ struct ethernet_api {
 
 /** @cond INTERNAL_HIDDEN */
 
-/* Make sure that the network interface API is properly setup inside
- * Ethernet API struct (it is the first one).
- */
-BUILD_ASSERT(offsetof(struct ethernet_api, iface_api) == 0);
+DEVICE_API_EXTENDS(ethernet, net_if, iface_api);
 
 struct net_eth_hdr {
 	struct net_eth_addr dst;
@@ -1096,7 +1093,7 @@ static inline
 enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api;
+	const struct ethernet_driver_api *api;
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 #if defined(CONFIG_NET_DSA)
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
@@ -1111,7 +1108,7 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 #endif
 	NET_ASSERT(dev != NULL);
 
-	api = (const struct ethernet_api *)dev->api;
+	api = (const struct ethernet_driver_api *)dev->api;
 	if (api == NULL || api->get_capabilities == NULL) {
 		return caps;
 	}
@@ -1133,11 +1130,11 @@ int net_eth_get_hw_config(struct net_if *iface, enum ethernet_config_type type,
 			 struct ethernet_config *config)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 
 	NET_ASSERT(dev != NULL);
 
-	eth = (const struct ethernet_api *)dev->api;
+	eth = (const struct ethernet_driver_api *)dev->api;
 
 	NET_ASSERT(eth != NULL);
 

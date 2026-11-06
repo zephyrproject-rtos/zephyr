@@ -121,7 +121,7 @@ int wiznet_get_link_state(const struct device *dev, struct phy_link_state *state
 
 int wiznet_init(const struct device *dev);
 
-extern const struct ethernet_api wiznet_api;
+extern const struct ethernet_driver_api wiznet_api;
 
 #define WIZNET_DEVICE_DEFINE(node, init_fn, phy_api, chip_ops, chip_regs, reset_pulse,             \
 			     reset_delay)                                                          \
