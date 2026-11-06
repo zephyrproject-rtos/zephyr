@@ -42,6 +42,15 @@ tests:
       - pic32cx_sg41_cult
       - pic32cm_gc00_cpro
       - pic32cz_ca80_cult
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+      - esp8684_devkitm
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
