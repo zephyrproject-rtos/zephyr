@@ -6,6 +6,8 @@ zephyr_include_directories(./)
 
 zephyr_library_sources_ifdef(CONFIG_WIFI_AIROC
   airoc_wifi.c
+  airoc_wifi_security.c
+  airoc_wifi_connect_security.c
   airoc_whd_hal_common.c
 )
 zephyr_library_sources_ifdef(CONFIG_AIROC_WIFI_BUS_SDIO airoc_whd_hal_sdio.c)
