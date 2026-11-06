@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_TI_K3
+	bool "TI K3 hwinfo"
+	default y
+	depends on DT_HAS_TI_K3_JTAGID_ENABLED
+	depends on DT_HAS_TI_K3_RST_SRC_ENABLED
+	select HWINFO_HAS_DRIVER
+	select SYSCON
+	help
+	  Enable the TI K3 hwinfo driver. The device ID is read from the
+	  JTAGID register and the reset cause from the RST_SRC register of
+	  the wakeup MMR, both through the parent syscon.

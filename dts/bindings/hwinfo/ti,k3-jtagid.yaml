@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments K3 JTAGID register.
+
+  Must be a child of a syscon node. The hwinfo device ID backend reads the
+  register through the parent syscon.
+
+compatible: "ti,k3-jtagid"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

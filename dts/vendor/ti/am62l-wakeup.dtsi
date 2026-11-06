@@ -68,4 +68,30 @@
 		clock-names = "fck";
 		status = "disabled";
 	};
+
+	wkup_mmr_cfg0: syscon@43000000 {
+		compatible = "syscon";
+		reg = <0x43000000 DT_SIZE_K(64)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		jtagid: jtagid@14 {
+			compatible = "ti,k3-jtagid";
+			reg = <0x14 0x4>;
+		};
+	};
+
+	wkup_mmr_cfg5: syscon@43050000 {
+		compatible = "syscon";
+		reg = <0x43050000 DT_SIZE_K(64)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reset_status: rst-src@4010 {
+			compatible = "ti,k3-rst-src";
+			reg = <0x4010 0x4>;
+		};
+	};
 };
