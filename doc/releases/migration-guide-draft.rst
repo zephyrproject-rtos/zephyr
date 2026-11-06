@@ -286,3 +286,10 @@ Modules
 
 Architectures
 *************
+
+* On ARM Cortex-A/R with :kconfig:option:`CONFIG_USE_SWITCH`, ISRs run in SYS mode instead of
+  IRQ mode, and nested interrupts and the handlers they call use the per-CPU interrupt stack
+  rather than the interrupted thread's stack. Boards and applications that sized
+  :kconfig:option:`CONFIG_ISR_STACK_SIZE` for the outermost ISR frame alone may need a larger
+  interrupt stack, and code or debuggers that inspect the processor mode inside an ISR see SYS
+  mode. (:github:`123041`)
