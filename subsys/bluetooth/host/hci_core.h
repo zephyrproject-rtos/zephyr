@@ -25,6 +25,8 @@
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
 
+#define HCI_CMD_TIMEOUT K_SECONDS(10)
+
 #if defined(CONFIG_BT_CLASSIC)
 #define LMP_FEAT_PAGES_COUNT	3
 #else
