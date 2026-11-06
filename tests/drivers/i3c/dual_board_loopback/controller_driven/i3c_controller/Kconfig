@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "I3C loopback test (controller)"
+
+source "Kconfig.zephyr"
+
+menu "I3C loopback bench options"
+
+config I3C_DUAL_BOARD_LOOPBACK_META_TESTS
+	bool "Build the meta tests that exercise the loopback fixture"
+	help
+	  Build the ``meta_*`` ZTESTs in test_harness.c.  These test the
+	  fixture in main.c rather than the I3C driver: they deliberately
+	  corrupt the target descriptor to prove the recovery path in
+	  dual_board_loopback_heal_target() puts it back.  Because they run before
+	  the driver tests and mutate shared bus state, a regression in the
+	  fixture makes them cascade into every later test, so keep them off
+	  for routine runs and enable them when changing the harness.
+
+endmenu
