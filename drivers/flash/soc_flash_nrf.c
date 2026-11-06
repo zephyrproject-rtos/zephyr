@@ -91,6 +91,24 @@ static void restore_pofwarn(void);
 static int write(off_t addr, const void *data, size_t len);
 static int erase(uint32_t addr, uint32_t size);
 
+static inline void nvmc_op_begin(void)
+{
+#if defined(CONFIG_MULTITHREADING)
+	if (!k_is_in_isr()) {
+		k_sched_lock();
+	}
+#endif
+}
+
+static inline void nvmc_op_end(void)
+{
+#if defined(CONFIG_MULTITHREADING)
+	if (!k_is_in_isr()) {
+		k_sched_unlock();
+	}
+#endif
+}
+
 static inline bool is_aligned_32(uint32_t data)
 {
 	return (data & 0x3) ? false : true;
@@ -389,7 +407,9 @@ static int erase_op(void *context)
 			return -ECANCELED;
 		}
 
+		nvmc_op_begin();
 		(void)nrfx_nvmc_uicr_erase();
+		nvmc_op_end();
 		RESUME_POFWARN();
 		return FLASH_OP_DONE;
 	}
@@ -407,12 +427,16 @@ static int erase_op(void *context)
 			e_ctx->flash_addr_next += pg_size;
 		}
 
+		nvmc_op_begin();
 		if (nrfx_nvmc_page_partial_erase_continue()) {
 			e_ctx->len -= pg_size;
 			e_ctx->flash_addr += pg_size;
 		}
+		nvmc_op_end();
 #else
+		nvmc_op_begin();
 		(void)nrfx_nvmc_page_erase(e_ctx->flash_addr);
+		nvmc_op_end();
 		e_ctx->len -= pg_size;
 		e_ctx->flash_addr += pg_size;
 #endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
@@ -466,9 +490,11 @@ static int write_op(void *context)
 			return -ECANCELED;
 		}
 
+		nvmc_op_begin();
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
 				      (const void *)w_ctx->data_addr,
 				      count);
+		nvmc_op_end();
 
 		RESUME_POFWARN();
 		shift_write_context(count, w_ctx);
@@ -489,8 +515,10 @@ static int write_op(void *context)
 			return -ECANCELED;
 		}
 
+		nvmc_op_begin();
 		nrfx_nvmc_word_write(w_ctx->flash_addr,
 				     UNALIGNED_GET((uint32_t *)w_ctx->data_addr));
+		nvmc_op_end();
 		RESUME_POFWARN();
 		shift_write_context(sizeof(uint32_t), w_ctx);
 
@@ -512,9 +540,11 @@ static int write_op(void *context)
 			return -ECANCELED;
 		}
 
+		nvmc_op_begin();
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
 				      (const void *)w_ctx->data_addr,
 				      w_ctx->len);
+		nvmc_op_end();
 		RESUME_POFWARN();
 		shift_write_context(w_ctx->len, w_ctx);
 	}
