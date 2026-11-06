@@ -40,11 +40,11 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s3_devkitc/esp32s3/procpu
     extra_args:
-      - EXTRA_CONF_FILE="overlay-ot-rcp-host-esp.conf"
+      - EXTRA_CONF_FILE="ot-rcp-host-esp.conf"
   sample.net.openthread.ftd.coap.server.esp_rcp_host:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s3_devkitc/esp32s3/procpu
     extra_args:
-      - EXTRA_CONF_FILE="overlay-ot-rcp-host-esp.conf"
+      - EXTRA_CONF_FILE="ot-rcp-host-esp.conf"
       - CONFIG_OT_COAP_SAMPLE_SERVER=y
