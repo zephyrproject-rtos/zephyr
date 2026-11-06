@@ -35,7 +35,7 @@ static inline void *udc_get_private(const struct device *dev)
  * This function can be used by the driver to set suspended status
  *
  * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] values True to set suspended status
+ * @param[in] value  True to set suspended status
  */
 void udc_set_suspended(const struct device *dev, const bool value);
 
@@ -77,7 +77,7 @@ void udc_ep_set_busy(struct udc_ep_config *const ep_cfg,
  *
  * @param[in] ep_cfg Pointer to endpoint configuration
  *
- * @return pointer to UDC request or NULL on error.
+ * @return pointer to UDC request or NULL if the endpoint FIFO is empty.
  */
 struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg);
 
@@ -89,7 +89,7 @@ struct net_buf *udc_buf_get(struct udc_ep_config *const ep_cfg);
  *
  * @param[in] ep_cfg Pointer to endpoint configuration
  *
- * @return pointer to request or NULL on error.
+ * @return pointer to request or NULL if the endpoint FIFO is empty.
  */
 struct net_buf *udc_buf_peek(struct udc_ep_config *const ep_cfg);
 
@@ -98,22 +98,19 @@ struct net_buf *udc_buf_peek(struct udc_ep_config *const ep_cfg);
  *
  * @param[in] ep_cfg Pointer to endpoint configuration
  * @param[in] buf    Pointer to UDC request buffer
- *
- * @return pointer to request or NULL on error.
  */
 void udc_buf_put(struct udc_ep_config *const ep_cfg,
 		 struct net_buf *const buf);
 /**
  * @brief Helper function to send UDC event to a higher level.
  *
- * The callback would typically sends UDC even to a message queue (k_msgq).
+ * The callback would typically send UDC events to a message queue (k_msgq).
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] type   Event type
  * @param[in] status Event status
  *
  * @return 0 on success, all other values should be treated as error.
- * @retval -EPERM controller is not initialized
  */
 int udc_submit_event(const struct device *dev,
 		     const enum udc_event_type type,
@@ -123,7 +120,7 @@ int udc_submit_event(const struct device *dev,
  * @brief Helper function to send UDC endpoint event to a higher level.
  *
  * Type of this event is hardcoded to UDC_EVT_EP_REQUEST.
- * The callback would typically sends UDC even to a message queue (k_msgq).
+ * The callback would typically send UDC events to a message queue (k_msgq).
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] buf    Pointer to UDC request buffer
@@ -170,7 +167,8 @@ static inline void udc_submit_sof_event(const struct device *dev)
  * @param[in] interval   Polling interval (same as bInterval)
  *
  * @return 0 on success, all other values should be treated as error.
- * @retval -ENODEV endpoint is not assigned or no configuration found
+ * @retval -ENODEV endpoint is not assigned, no configuration found or
+ *                 configuration is not valid
  * @retval -EALREADY endpoint is already enabled
  */
 int udc_ep_enable_internal(const struct device *dev,
@@ -189,7 +187,7 @@ int udc_ep_enable_internal(const struct device *dev,
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -ENODEV endpoint is not assigned or no configuration found
- * @retval -EALREADY endpoint is already enabled
+ * @retval -EALREADY endpoint is already disabled
  */
 int udc_ep_disable_internal(const struct device *dev,
 			    const uint8_t ep);
@@ -278,7 +276,7 @@ static inline int udc_lock_internal(const struct device *dev,
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  *
- * @return values provided by k_mutex_lock()
+ * @return values provided by k_mutex_unlock()
  */
 static inline int udc_unlock_internal(const struct device *dev)
 {
@@ -290,7 +288,7 @@ static inline int udc_unlock_internal(const struct device *dev)
 /**
  * @brief Allocate UDC control transfer buffer
  *
- * Allocate a new buffer from common control transfer buffer pool.
+ * Allocate a new buffer from common request buffer pool.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] ep     Endpoint address
