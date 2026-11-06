@@ -34,6 +34,8 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define FIDO2_WRAP_PAYLOAD_SIZE (sizeof(uint32_t) + FIDO2_SHA256_SIZE)
 /* tag (16) */
 #define FIDO2_WRAP_TAG_SIZE     PSA_AEAD_TAG_LENGTH(PSA_KEY_TYPE_AES, 256, PSA_ALG_GCM)
+/* rp_id_hash (32) || credProtect level (1) */
+#define FIDO2_WRAP_AAD_MAX_SIZE (FIDO2_SHA256_SIZE + 1)
 
 static psa_status_t ensure_wrap_key(void)
 {
@@ -295,14 +297,39 @@ int fido2_crypto_destroy_key(uint32_t key_id)
 	return status;
 }
 
+/*
+ * The AAD is rp_id_hash for credentials without a credProtect level above
+ * userVerificationOptional, which keeps the format of credential IDs issued
+ * before the level was bound, and rp_id_hash || level otherwise.
+ */
+static size_t wrap_aad(const uint8_t rp_id_hash[FIDO2_SHA256_SIZE], uint8_t cred_protect,
+		       uint8_t aad[FIDO2_WRAP_AAD_MAX_SIZE])
+{
+	memcpy(aad, rp_id_hash, FIDO2_SHA256_SIZE);
+
+	if (cred_protect <= FIDO2_CRED_PROTECT_UV_OPTIONAL) {
+		return FIDO2_SHA256_SIZE;
+	}
+
+	aad[FIDO2_SHA256_SIZE] = cred_protect;
+
+	return FIDO2_WRAP_AAD_MAX_SIZE;
+}
+
 int fido2_crypto_wrap_credential(uint32_t key_id, const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
-				 uint8_t *cred_id_out)
+				 uint8_t cred_protect, uint8_t *cred_id_out)
 {
 	uint8_t nonce[FIDO2_WRAP_NONCE_SIZE];
 	uint8_t plaintext[FIDO2_WRAP_PAYLOAD_SIZE];
 	uint8_t ciphertext_w_tag[FIDO2_WRAP_PAYLOAD_SIZE + FIDO2_WRAP_TAG_SIZE];
 	size_t ciphertext_w_tag_len;
+	uint8_t aad[FIDO2_WRAP_AAD_MAX_SIZE];
+	size_t aad_len;
 	psa_status_t status;
+
+	if (cred_protect > FIDO2_CRED_PROTECT_UV_REQUIRED) {
+		return PSA_ERROR_INVALID_ARGUMENT;
+	}
 
 	sys_put_be32(key_id, plaintext);
 	memcpy(plaintext + sizeof(key_id), rp_id_hash, FIDO2_SHA256_SIZE);
@@ -312,11 +339,11 @@ int fido2_crypto_wrap_credential(uint32_t key_id, const uint8_t rp_id_hash[FIDO2
 		return PSA_ERROR_INSUFFICIENT_ENTROPY;
 	}
 
-	/* rp_id_hash is also used as AAD */
-	status =
-		psa_aead_encrypt(FIDO2_WRAP_KEY_PSA_ID, PSA_ALG_GCM, nonce, sizeof(nonce),
-				 rp_id_hash, FIDO2_SHA256_SIZE, plaintext, sizeof(plaintext),
-				 ciphertext_w_tag, sizeof(ciphertext_w_tag), &ciphertext_w_tag_len);
+	aad_len = wrap_aad(rp_id_hash, cred_protect, aad);
+
+	status = psa_aead_encrypt(FIDO2_WRAP_KEY_PSA_ID, PSA_ALG_GCM, nonce, sizeof(nonce), aad,
+				  aad_len, plaintext, sizeof(plaintext), ciphertext_w_tag,
+				  sizeof(ciphertext_w_tag), &ciphertext_w_tag_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("GCM wrap failed: %d", status);
 		return status;
@@ -331,19 +358,29 @@ int fido2_crypto_wrap_credential(uint32_t key_id, const uint8_t rp_id_hash[FIDO2
 
 int fido2_crypto_unwrap_credential(const uint8_t *cred_id,
 				   const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
-				   uint32_t *key_id_out)
+				   uint32_t *key_id_out, uint8_t *cred_protect_out)
 {
 	uint8_t plaintext[FIDO2_WRAP_PAYLOAD_SIZE];
 	size_t plaintext_len;
-	psa_status_t status;
+	uint8_t aad[FIDO2_WRAP_AAD_MAX_SIZE];
+	size_t aad_len;
+	psa_status_t status = PSA_ERROR_INVALID_SIGNATURE;
 
-	status =
-		psa_aead_decrypt(FIDO2_WRAP_KEY_PSA_ID, PSA_ALG_GCM, cred_id, FIDO2_WRAP_NONCE_SIZE,
-				 rp_id_hash, FIDO2_SHA256_SIZE, cred_id + FIDO2_WRAP_NONCE_SIZE,
-				 FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE - FIDO2_WRAP_NONCE_SIZE,
-				 plaintext, sizeof(plaintext), &plaintext_len);
-	if (status == PSA_SUCCESS) {
-		*key_id_out = sys_get_be32(plaintext);
+	/* The level is authenticated, not stored: try each one until the tag verifies. */
+	for (uint8_t level = FIDO2_CRED_PROTECT_UV_OPTIONAL;
+	     level <= FIDO2_CRED_PROTECT_UV_REQUIRED; level++) {
+		aad_len = wrap_aad(rp_id_hash, level, aad);
+
+		status = psa_aead_decrypt(
+			FIDO2_WRAP_KEY_PSA_ID, PSA_ALG_GCM, cred_id, FIDO2_WRAP_NONCE_SIZE, aad,
+			aad_len, cred_id + FIDO2_WRAP_NONCE_SIZE,
+			FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE - FIDO2_WRAP_NONCE_SIZE, plaintext,
+			sizeof(plaintext), &plaintext_len);
+		if (status == PSA_SUCCESS) {
+			*key_id_out = sys_get_be32(plaintext);
+			*cred_protect_out = level;
+			break;
+		}
 	}
 
 	return status;
