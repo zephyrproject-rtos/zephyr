@@ -11,6 +11,40 @@ compatible: "nxp,flexcan-fd"
 include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
           "nxp,rdc-policy.yaml"]
 
+properties:
+  fd-mb-payload-size:
+    type: int
+    default: 64
+    enum: [8, 16, 32, 64]
+    description: |
+      Payload size in bytes of each message buffer in CAN FD mode. The buffer
+      RAM is partitioned by this size, giving 32, 21, 12 or 7 buffers for 8, 16,
+      32 or 64 bytes. RX filters take the first buffers and the rest are used
+      for TX, so a smaller payload yields more of both. A buffer is copied in
+      whole payload words regardless of DLC. Frames longer than this are
+      rejected.
+
+  enhanced-rx-fifo:
+    type: boolean
+    description: |
+      Receive through the enhanced Rx FIFO instead of giving each filter its
+      own message buffer.
+
+      The FIFO holds twelve messages behind a thirty two element filter table,
+      so one interrupt can carry a whole burst, each read moves only the words
+      the frame's DLC covers rather than a full message buffer, and every
+      message buffer is left free for transmission.
+
+      The filter table is laid out as extended elements followed by standard
+      ones and is written in freeze mode, so adding or removing a filter
+      rebuilds the whole table and briefly interrupts reception. Filters are
+      otherwise unchanged, including masks.
+
+      Needs a FlexCAN with an enhanced Rx FIFO. The build fails where there
+      is none.
+
+      Only available on instances whose hardware provides the enhanced Rx FIFO.
+
 examples:
   - |
     flexcan3: can@401d8000 {
