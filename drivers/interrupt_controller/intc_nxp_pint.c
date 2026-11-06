@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 NXP
+ * Copyright (c) 2026 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +11,30 @@
 #include <zephyr/irq.h>
 #include <errno.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+#include <fsl_syscon.h>
+#else
 #include <fsl_inputmux.h>
+#endif
 #include <soc.h>
 
 #define DT_DRV_COMPAT nxp_pint
+
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+/*
+ * Hardware limitation: On LPC84x, PINT channels 6 and 7 share NVIC vectors
+ * with UART3 and UART4 respectively. Enabling both will cause spurious ISR calls.
+ */
+BUILD_ASSERT(!(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))),
+	     "Hardware conflict: PINT (channel 6) and UART3 share IRQ 30. Both cannot be enabled "
+	     "simultaneously.");
+BUILD_ASSERT(!(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))),
+	     "Hardware conflict: PINT (channel 7) and UART4 share IRQ 31. Both cannot be enabled "
+	     "simultaneously.");
+#endif
 
 static PINT_Type *pint_base = (PINT_Type *)DT_INST_REG_ADDR(0);
 
@@ -35,24 +54,29 @@ static struct pint_irq_slot pint_irq_cfg[DT_INST_PROP(0, num_lines)];
 /* Tracks pint interrupt source selected for each pin */
 static uint8_t pin_pint_id[DT_INST_PROP(0, num_inputs)];
 
-#define PIN_TO_INPUT_MUX_CONNECTION(pin) \
-	((PINTSEL_PMUX_ID << PMUX_SHIFT) + (pin))
+#define PIN_TO_INPUT_MUX_CONNECTION(pin) ((PINTSEL_PMUX_ID << PMUX_SHIFT) + (pin))
 
 /* Attaches pin to PINT IRQ slot using INPUTMUX */
 static void attach_pin_to_pint(uint8_t pin, uint8_t pint_slot)
 {
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+	syscon_connection_t conn =
+		(syscon_connection_t)(pin + ((uint32_t)PINTSEL_ID << SYSCON_SHIFT));
+
+	SYSCON_AttachSignal(SYSCON, pint_slot, conn);
+#else
 	INPUTMUX_Init(INPUTMUX);
 
 	/* Three parameters here- INPUTMUX base, the ID of the PINT slot,
 	 * and a integer describing the GPIO pin.
 	 */
-	INPUTMUX_AttachSignal(INPUTMUX, pint_slot,
-			      PIN_TO_INPUT_MUX_CONNECTION(pin));
+	INPUTMUX_AttachSignal(INPUTMUX, pint_slot, PIN_TO_INPUT_MUX_CONNECTION(pin));
 
 	/* Disable INPUTMUX after making changes, this gates clock and
 	 * saves power.
 	 */
 	INPUTMUX_Deinit(INPUTMUX);
+#endif
 }
 
 /**
@@ -91,6 +115,20 @@ int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger, bool wake)
 	pint_irq_cfg[slot].pin = pin;
 	/* Attach pin to interrupt slot using INPUTMUX */
 	attach_pin_to_pint(pin, slot);
+
+	/* Disable interrupt in PINT first to avoid spurious triggers
+	 * while reconfiguring
+	 */
+	pint_base->CIENR = 1UL << slot;
+	pint_base->CIENF = 1UL << slot;
+
+	if (trigger == NXP_PINT_HIGH) {
+		/* Pre-set active level to HIGH in IENF before
+		 * PINT_PinInterruptConfig enables SIENR
+		 */
+		pint_base->SIENF = 1UL << slot;
+	}
+
 	/* Now configure the interrupt. No need to install callback, this
 	 * driver handles the IRQ
 	 */
@@ -104,7 +142,6 @@ int nxp_pint_pin_enable(uint8_t pin, enum nxp_pint_trigger trigger, bool wake)
 
 	return 0;
 }
-
 
 /**
  * @brief disable PINT interrupt source.
@@ -127,6 +164,7 @@ void nxp_pint_pin_disable(uint8_t pin)
 	pin_pint_id[pin] = NO_PINT_ID;
 	/* Remove this pin from the PINT slot if one was in use */
 	pint_irq_cfg[slot].used = false;
+	pint_irq_cfg[slot].callback = NULL;
 	PINT_PinInterruptConfig(pint_base, slot, kPINT_PinIntEnableNone, NULL);
 }
 
@@ -199,7 +237,7 @@ static void nxp_pint_isr(uint8_t *slot)
 	PINT_PinInterruptClrStatus(pint_base, *slot);
 	if (pint_irq_cfg[*slot].used && pint_irq_cfg[*slot].callback) {
 		pint_irq_cfg[*slot].callback(pint_irq_cfg[*slot].pin,
-					pint_irq_cfg[*slot].user_data);
+					     pint_irq_cfg[*slot].user_data);
 	}
 }
 
@@ -213,6 +251,22 @@ static int intc_nxp_pm_action(const struct device *dev, enum pm_device_action ac
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
+#if DT_INST_NODE_HAS_PROP(0, clocks)
+	{
+		const struct device *clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
+
+		if (!device_is_ready(clock_dev)) {
+			return -ENODEV;
+		}
+
+		int err = clock_control_on(clock_dev,
+					   (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, name));
+
+		if (err < 0) {
+			return err;
+		}
+	}
+#endif
 		PINT_Init(pint_base);
 		break;
 	default:
@@ -223,7 +277,7 @@ static int intc_nxp_pm_action(const struct device *dev, enum pm_device_action ac
 }
 
 /* Defines PINT IRQ handler for a given irq index */
-#define NXP_PINT_IRQ(idx, node_id)						\
+#define NXP_PINT_IRQ(idx, node_id)                                                                 \
 	IF_ENABLED(DT_IRQ_HAS_IDX(node_id, idx),				\
 	(static uint8_t nxp_pint_idx_##idx = idx;				\
 	do {									\
@@ -248,5 +302,5 @@ static int intc_nxp_pint_init(const struct device *dev)
 
 PM_DEVICE_DT_INST_DEFINE(0, intc_nxp_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, NULL);

@@ -10,11 +10,12 @@
 #include <zephyr/sys/util.h>
 
 #ifdef CONFIG_SOC_LPC845
-#ifndef CPU_LPC845M301JBD64
-#define CPU_LPC845M301JBD64
+#ifndef CPU_LPC845M301JBD48
+#define CPU_LPC845M301JBD48
 #endif
 #endif
 
 #include <fsl_device_registers.h>
+#include <soc_common.h>
 
 #endif /* ZEPHYR_SOC_ARM_NXP_LPC_LPC84X_SOC_H_ */
