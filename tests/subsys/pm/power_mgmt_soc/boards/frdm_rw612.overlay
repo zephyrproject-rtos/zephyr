@@ -1,9 +1,34 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 &standby {
 	status = "okay";
+};
+
+&hsgpio1 {
+	/*
+	 * GPIO0 and GPIO1 share CONFIG_GPIO_MCUX_LPC. Keep GPIO0 for sleep
+	 * pinctrl and disable only the unused GPIO1 instance. CONFIG_NXP_PINT
+	 * controls pin interrupts, not GPIO port initialization.
+	 */
+	status = "disabled";
+};
+
+&pinmux_hsgpio0 {
+	group0 {
+		/* Pull up unused GPIO11/18/21 inputs to reduce sleep current. */
+		bias-pull-up;
+	};
+};
+
+&wwdt {
+	/*
+	 * SoC initialization uses this node's status to select the watchdog
+	 * clock and enable its reset source, independently of CONFIG_WATCHDOG.
+	 * Disable the node to deselect the clock and leave the reset source off.
+	 */
+	status = "disabled";
 };

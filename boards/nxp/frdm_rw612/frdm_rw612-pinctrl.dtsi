@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,20 @@
 				  IO_MUX_GPIO1
 				  IO_MUX_GPIO12>;
 			slew-rate = "normal";
+			/* Keep the active-low RGB LEDs off when the pins are inputs. */
+			bias-pull-up;
+			sleep-output = "high";
+		};
+	};
+
+	/* Keep the active-low RGB LEDs off while GPIO0 is suspended. */
+	pinmux_hsgpio0_sleep: pinmux_hsgpio0_sleep {
+		group0 {
+			pinmux = <IO_MUX_GPIO0
+				  IO_MUX_GPIO1
+				  IO_MUX_GPIO12>;
+			slew-rate = "normal";
+			bias-pull-up;
 			sleep-output = "high";
 		};
 	};

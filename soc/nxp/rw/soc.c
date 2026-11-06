@@ -1,8 +1,10 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <errno.h>
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
@@ -81,6 +83,66 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 };
 #endif /* CONFIG_NXP_RW6XX_BOOT_HEADER */
 
+static int init_svc_voltage(void)
+{
+	uint64_t svc;
+	uint32_t pack;
+	uint32_t dro;
+	status_t status;
+	status_t deinit_status;
+
+	status = OCOTP_OtpInit();
+	if (status != kStatus_Success) {
+		return -EIO;
+	}
+	status = OCOTP_ReadSVC(&svc);
+	if (status == kStatus_Success) {
+		status = OCOTP_ReadPackage(&pack);
+		deinit_status = OCOTP_OtpDeinit();
+		if (status != kStatus_Success || deinit_status != kStatus_Success) {
+			return -EIO;
+		}
+
+		dro = ((SOCCTRL->CHIP_INFO & SOCCIU_CHIP_INFO_REV_NUM_MASK) == 2U)
+			      ? (uint32_t)svc >> 16
+			      : 0U;
+		/* The HAL indexes its 19-entry voltage table with 36 - dro / 1000. */
+		if (pack > 2U || (dro != 0U && (dro / 1000U < 18U || dro / 1000U > 36U))) {
+			return -EINVAL;
+		}
+		POWER_InitVoltage(dro, pack);
+		return 0;
+	}
+
+	deinit_status = OCOTP_OtpDeinit();
+	if (status != kStatus_Fail || deinit_status != kStatus_Success) {
+		return -EIO;
+	}
+
+	/* Match the SDK's non-CES voltage policy when no SVC record is found. */
+	BUCK11->BUCK_CTRL_EIGHTEEN_REG = 0x6U;
+	PMU->PMIP_BUCK_LVL = PMU_PMIP_BUCK_LVL_SLEEP_BUCK18_SEL(0x60U) |
+			     PMU_PMIP_BUCK_LVL_SLEEP_BUCK11_SEL(0x22U) |
+			     PMU_PMIP_BUCK_LVL_NORMAL_BUCK18_SEL(0x60U) |
+			     PMU_PMIP_BUCK_LVL_NORMAL_BUCK11_SEL(0x54U);
+	SystemCoreClockUpdate();
+	/* Wait for BUCK settling before the system timer is initialized. */
+	SDK_DelayAtLeastUs(600U, SystemCoreClock);
+	return 0;
+}
+
+static void rw6xx_configure_t3_cau_power_save(void)
+{
+	if (IS_ENABLED(CONFIG_SOC_SERIES_RW6XX_T3_CAU_POWER_SAVE)) {
+		uint32_t clk32k = PMU->CLK_AON & PMU_CLK_AON_CLK_32K_AON_MASK;
+
+		/* RC32K and XTAL32K do not require the CAU NCO bias in sleep. */
+		POWER_ConfigCauInSleep(clk32k <= 1U);
+		CLOCK_DisableClock(kCLOCK_T3PllMci256mClk);
+		CLOCK_DeinitT3RefClk();
+	}
+}
+
 /**
  * @brief Initialize the system clocks and peripheral clocks
  *
@@ -114,6 +176,11 @@ __weak __ramfunc void clock_init(void)
 	/* First let M33 run on SOSC */
 	CLOCK_AttachClk(kSYSOSC_to_MAIN_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivSysCpuAhbClk, 1);
+
+	/* Apply chip voltage and sensor thresholds before switching to 260 MHz. */
+	if (init_svc_voltage() != 0) {
+		k_panic();
+	}
 
 	/* tcpu_mci_clk configured to 260MHz, tcpu_mci_flexspi_clk 312MHz. */
 	CLOCK_InitTcpuRefClk(3120000000UL, kCLOCK_TcpuFlexspiDiv10);
@@ -323,6 +390,8 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_DeinitTddrRefClk();
 #endif
 
+	/* CPU and FlexSPI no longer use T3 after clock restoration. */
+	rw6xx_configure_t3_cau_power_save();
 }
 
 extern void nxp_rw6xx_power_init(void);

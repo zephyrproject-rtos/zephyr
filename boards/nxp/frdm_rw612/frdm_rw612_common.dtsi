@@ -137,7 +137,8 @@ mikrobus_serial: &flexcomm0 {};
 
 &hsgpio0 {
 	pinctrl-0 = <&pinmux_hsgpio0>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&pinmux_hsgpio0_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
 
