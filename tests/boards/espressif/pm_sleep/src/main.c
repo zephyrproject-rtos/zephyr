@@ -42,7 +42,7 @@ static const uint32_t sleep_duration_ms[] = {20U, 50U, 100U};
  * wake_margin_us = wake - deadline (+late / -early).
  * Pass if margin <= 0 (not late) and margin >= -WAKE_EARLY_MAX_US.
  */
-#define WAKE_EARLY_MAX_US ((int64_t)CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US + 2000LL)
+#define WAKE_EARLY_MAX_US ((int64_t)CONFIG_SOC_FAMILY_ESPRESSIF_PM_WAKEUP_MARGIN_US + 2000LL)
 
 #define TC_BLANK() TC_PRINT("%s\n", " ")
 
@@ -265,14 +265,16 @@ ZTEST(pm_sleep, test_domain_power_down)
 	ztest_test_skip();
 #else
 	struct esp32_sleep_window w;
-	bool expect_top = IS_ENABLED(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP);
-	bool expect_flash = IS_ENABLED(CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH);
-	bool expect_cpu = IS_ENABLED(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP);
+	bool expect_top =
+		IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP);
+	bool expect_flash = IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH);
+	bool expect_cpu = IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP);
 	const char *cpu_reason = "power down not enabled";
 	const char *top_reason = "power down not enabled";
-	const char *flash_reason = IS_ENABLED(CONFIG_SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP)
-					   ? "unsupported: SoC requires flash to stay ON"
-					   : "power down not enabled";
+	const char *flash_reason =
+		IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_PM_FLASH_KEEP_POWER_IN_LSLP)
+			? "unsupported: SoC requires flash to stay ON"
+			: "power down not enabled";
 
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 	uint32_t chip_rev = efuse_hal_chip_revision();

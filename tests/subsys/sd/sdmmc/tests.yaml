@@ -36,6 +36,6 @@ tests:
     extra_args:
       - SNIPPET=espressif-pm
     extra_configs:
-      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
     platform_allow:
       - esp32p4_function_ev_board/esp32p4/hpcore

@@ -89,7 +89,7 @@
  * the linker uses the full virtual range the MMU can map, not the physical
  * chip size. Shares the same bus as IROM/DROM (unified cache). Physical
  * PSRAM size is enforced by the ext_ram-overflow ASSERT in default.ld
- * using CONFIG_ESP_SPIRAM_SIZE.
+ * using CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE.
  */
 #define EXTRAM_START DT_REG_ADDR(DT_NODELABEL(ext_ram))
 #define EXTRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(ext_ram))

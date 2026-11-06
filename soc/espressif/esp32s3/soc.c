@@ -31,7 +31,7 @@ static void IRAM_ATTR esp_errata(void)
 	REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETTING);
 
 	/* Handle the Dcache case following the IDF startup code */
-#if CONFIG_ESP32S3_DATA_CACHE_16KB
+#if CONFIG_SOC_ESP32S3_DATA_CACHE_16KB
 	Cache_Invalidate_DCache_All();
 	Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
 #endif
@@ -58,7 +58,7 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_efuse_init_virtual();
 
-#if CONFIG_ESP_SPIRAM
+#if CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
 	esp_init_psram();
 
 #if CONFIG_SHARED_MULTI_HEAP

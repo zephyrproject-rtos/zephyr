@@ -7,8 +7,8 @@ common:
 tests:
   boards.espressif.pm_sleep:
     extra_configs:
-      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
-      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitc
@@ -19,17 +19,17 @@ tests:
       - esp32h2_devkitm
   boards.espressif.pm_sleep.periph_pd:
     extra_configs:
-      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
-      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
-      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT=y
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
       - esp32p4x_function_ev_board/esp32p4/hpcore
   boards.espressif.pm_sleep.periph_pd.noflash:
     extra_configs:
-      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
-      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT=y
     platform_allow:
       - esp32c5_devkitc/esp32c5/hpcore
       - esp32p4_function_ev_board/esp32p4/hpcore

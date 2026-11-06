@@ -20,7 +20,7 @@ tests:
     integration_platforms:
       - esp32s3_devkitc/esp32s3/procpu
     extra_configs:
-      - CONFIG_SPIRAM_SPEED_80M=y
+      - CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SPEED_80M=y
   boards.esp32.cache_coex.reloc:
     platform_allow:
       - esp32s2_devkitc

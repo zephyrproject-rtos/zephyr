@@ -449,12 +449,13 @@ int display_esp32_dsi_start(const struct device *dev, uint32_t bits_per_pixel)
 
 	data->bytes_per_pixel = bits_per_pixel / 8;
 	data->fb_size = config->width * config->height * data->bytes_per_pixel;
-	data->fb_size = ROUND_UP(data->fb_size, CONFIG_ESP32_CACHE_L2_LINE_SIZE);
+	data->fb_size = ROUND_UP(data->fb_size, CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE);
 	data->fb_count = CONFIG_DISPLAY_ESP32_DSI_FB_NUM;
 
 	for (uint8_t i = 0; i < data->fb_count; i++) {
-		data->fb[i] = shared_multi_heap_aligned_alloc(
-			SMH_REG_ATTR_EXTERNAL, CONFIG_ESP32_CACHE_L2_LINE_SIZE, data->fb_size);
+		data->fb[i] = shared_multi_heap_aligned_alloc(SMH_REG_ATTR_EXTERNAL,
+							      CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE,
+							      data->fb_size);
 		if (data->fb[i] == NULL) {
 			LOG_ERR("Failed to allocate framebuffer %u (%u bytes)", i, data->fb_size);
 			for (uint8_t j = 0; j < i; j++) {
@@ -606,7 +607,7 @@ static int display_esp32_dsi_write_locked(const struct device *dev, const uint16
 		 * own instead of copying it into a driver framebuffer.
 		 */
 		if (index < 0 && desc->buf_size >= data->fb_size &&
-		    ((uintptr_t)buf % CONFIG_ESP32_CACHE_L2_LINE_SIZE) == 0) {
+		    ((uintptr_t)buf % CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE) == 0) {
 			int8_t ext = display_esp32_dsi_ext_claim(data, buf);
 
 			if (ext < 0) {

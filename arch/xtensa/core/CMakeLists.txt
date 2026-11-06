@@ -39,7 +39,7 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
 endif()
 
 # ...where to find core-isa.h for custom compilation commands below.
-if(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+if(CONFIG_SOC_FAMILY_ESPRESSIF)
   set(XTENSA_CONFIG_HAL_INCLUDE_DIR
       -I${ZEPHYR_HAL_ESPRESSIF_MODULE_DIR}/components/xtensa/${CONFIG_SOC}/include
      )

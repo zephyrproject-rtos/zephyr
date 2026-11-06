@@ -24,7 +24,7 @@ void z_sys_poweroff(void)
 	esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
 #endif
 
-#if CONFIG_ESP32_ULP_COPROC_ENABLED
+#if CONFIG_SOC_FAMILY_ESPRESSIF_ULP_ENABLED
 	esp_sleep_enable_ulp_wakeup();
 	/* Clear pending LP core trigger from initial boot kick */
 	pmu_ll_hp_clear_sw_intr_status(&PMU);

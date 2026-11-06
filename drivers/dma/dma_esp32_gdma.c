@@ -34,7 +34,8 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/pm/policy.h>
 
-#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#if CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                         \
+	SOC_GDMA_SUPPORT_SLEEP_RETENTION
 #define GDMA_SLEEP_RETENTION_ENABLED 1
 #else
 #define GDMA_SLEEP_RETENTION_ENABLED 0
@@ -117,10 +118,10 @@ typedef dma_descriptor_t esp_dma_desc_t;
  * uses, so take the widest line in this build.
  */
 #if defined(CONFIG_DCACHE)
-#if defined(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
-#define DMA_ESP32_SOC_CACHE_LINE CONFIG_ESP32_CACHE_L2_LINE_SIZE
-#elif defined(CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE)
-#define DMA_ESP32_SOC_CACHE_LINE CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE
+#if defined(CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE)
+#define DMA_ESP32_SOC_CACHE_LINE CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE
+#elif defined(CONFIG_SOC_ESP32S3_DATA_CACHE_LINE_SIZE)
+#define DMA_ESP32_SOC_CACHE_LINE CONFIG_SOC_ESP32S3_DATA_CACHE_LINE_SIZE
 #else
 #define DMA_ESP32_SOC_CACHE_LINE 0
 #endif
@@ -601,7 +602,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 
 			bool dma_capable = esp_ptr_dma_capable((uint32_t *)target_address);
 
-#if defined(CONFIG_ESP_SPIRAM)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
 			dma_capable =
 				dma_capable || esp_ptr_dma_ext_capable((uint32_t *)target_address);
 #endif
@@ -769,7 +770,7 @@ static void dma_esp32_set_burst(struct dma_esp32_data *data, uint32_t channel_id
 /* Largest burst length, up to the requested one, that an RX buffer is aligned to */
 static uint32_t dma_esp32_rx_burst(uint32_t burst_length, uint32_t addr, uint32_t size)
 {
-#if defined(CONFIG_ESP_SPIRAM) && defined(GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM) && defined(GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT)
 	if (esp_ptr_dma_ext_capable((void *)addr)) {
 		while (burst_length > 16 && ((addr | size) & (burst_length - 1)) != 0) {
 			burst_length /= 2;
@@ -1157,7 +1158,7 @@ static int IRAM_ATTR dma_esp32_tx_append(struct dma_esp32_data *data,
 	}
 
 	dma_capable = esp_ptr_dma_capable((uint32_t *)src);
-#if defined(CONFIG_ESP_SPIRAM)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
 	dma_capable = dma_capable || esp_ptr_dma_ext_capable((uint32_t *)src);
 #endif
 #if defined(SOC_DMA_CAN_ACCESS_FLASH)

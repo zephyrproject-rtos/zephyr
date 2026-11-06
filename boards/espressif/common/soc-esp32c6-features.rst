@@ -83,7 +83,7 @@ the following configuration to the project:
 
 .. code:: cfg
 
-   CONFIG_ESP32_ULP_COPROC_ENABLED=y
+   CONFIG_SOC_FAMILY_ESPRESSIF_ULP_ENABLED=y
 
 See :zephyr:code-sample-category:`lp-core` folder as code reference.
 
