@@ -1650,12 +1650,8 @@ int http_server_path_len_without_query(const char *path)
 	return len;
 }
 
-static bool skip_this(struct http_resource_desc *resource, bool is_websocket)
+static bool skip_this(const struct http_resource_detail *detail, bool is_websocket)
 {
-	struct http_resource_detail *detail;
-
-	detail = (struct http_resource_detail *)resource->detail;
-
 	if (is_websocket) {
 		if (detail->type != HTTP_RESOURCE_TYPE_WEBSOCKET) {
 			return true;
@@ -1746,7 +1742,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 						 const char *path, int *path_len, bool is_websocket)
 {
 	HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
-		if (skip_this(resource, is_websocket)) {
+		if (skip_this(resource->detail, is_websocket)) {
 			continue;
 		}
 
@@ -1762,7 +1758,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
 			int ret;
 
-			if (skip_this(resource, is_websocket)) {
+			if (skip_this(resource->detail, is_websocket)) {
 				continue;
 			}
 
@@ -1774,7 +1770,7 @@ struct http_resource_detail *get_resource_detail(const struct http_service_desc 
 		}
 	}
 
-	if (service->res_fallback != NULL) {
+	if (service->res_fallback != NULL && !skip_this(service->res_fallback, is_websocket)) {
 		*path_len = http_server_path_len_without_query(path);
 		return service->res_fallback;
 	}
