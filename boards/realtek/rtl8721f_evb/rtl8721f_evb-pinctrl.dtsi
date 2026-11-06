@@ -88,6 +88,30 @@
 		};
 	};
 
+can0_default: can0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 25, AMEBA_CAN0_TX)>,
+				 <AMEBA_PINMUX('A', 26, AMEBA_CAN0_RX)>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <AMEBA_PINMUX('A', 3, AMEBA_GPIO)>;
+			bias-pull-down;
+		};
+	};
+
+	can1_default: can1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 17, AMEBA_CAN1_TX)>,
+				 <AMEBA_PINMUX('B', 18, AMEBA_CAN1_RX)>;
+			bias-pull-up;
+		};
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 19, AMEBA_GPIO)>;
+			bias-pull-down;
+		};
+	};
+
 	uart0_default: uart0_default {
 		group1 {
 			pinmux = <AMEBA_PINMUX('A', 18, AMEBA_UART0_TXD)>,
