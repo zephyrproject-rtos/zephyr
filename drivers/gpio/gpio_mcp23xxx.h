@@ -22,21 +22,23 @@
 #endif /* CONFIG_GPIO_MCP23SXX */
 
 /* Register definitions */
-#define REG_IODIR 0x00
-#define REG_IPOL 0x01
+#define REG_IODIR   0x00
+#define REG_IPOL    0x01
 #define REG_GPINTEN 0x02
-#define REG_DEFVAL 0x03
-#define REG_INTCON 0x04
-#define REG_IOCON 0x05
-#define REG_GPPU 0x06
-#define REG_INTF 0x07
-#define REG_INTCAP 0x08
-#define REG_GPIO 0x09
-#define REG_OLAT 0x0A
+#define REG_DEFVAL  0x03
+#define REG_INTCON  0x04
+#define REG_IOCON   0x05
+#define REG_GPPU    0x06
+#define REG_INTF    0x07
+#define REG_INTCAP  0x08
+#define REG_GPIO    0x09
+#define REG_OLAT    0x0A
 
 #define REG_IOCON_MIRROR BIT(6)
+#define REG_IOCON_HAEN   BIT(3)
 
-#define MCP23SXX_ADDR 0x40
+#define REG_NO_ADDR      0x80
+#define MCP23SXX_ADDR    0x40
 #define MCP23SXX_READBIT 0x01
 
 typedef int (*mcp23xxx_read_port_regs)(const struct device *dev, uint8_t reg, uint16_t *buf);
@@ -60,6 +62,7 @@ struct mcp23xxx_config {
 	struct gpio_dt_spec gpio_int;
 	struct gpio_dt_spec gpio_reset;
 
+	uint8_t addr;
 	uint8_t ngpios;
 	bool is_open_drain;
 	mcp23xxx_read_port_regs read_fn;
