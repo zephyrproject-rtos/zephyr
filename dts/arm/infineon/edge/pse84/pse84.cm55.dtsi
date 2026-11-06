@@ -50,6 +50,15 @@
 		};
 	};
 
+	/*
+	 * Dedicated Hibernate wakeup sources.  Disabled by default; a board or
+	 * application enables this node and selects the trigger(s) it needs.
+	 */
+	hibernate_wakeup: hibernate-wakeup {
+		compatible = "infineon,hibernate-wakeup";
+		status = "disabled";
+	};
+
 	itcm: itcm@0 {
 		compatible = "zephyr,memory-region", "arm,itcm";
 		reg = <0x00000000 DT_SIZE_K(256)>;
