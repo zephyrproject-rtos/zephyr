@@ -40,6 +40,10 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_FS_INT_EP_INTERVAL	USB_FS_INT_EP_INTERVAL(10000U)
 #define CDC_ACM_HS_INT_EP_INTERVAL	USB_HS_INT_EP_INTERVAL(10000U)
 
+/* Global ZLP buffer pool with one buffer per CDC ACM instance */
+NET_BUF_POOL_DEFINE(cdc_acm_zlp_pool, DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT),
+		    0, sizeof(struct udc_buf_info), NULL);
+
 #define CDC_ACM_CLASS_ENABLED		0
 #define CDC_ACM_CLASS_SUSPENDED		1
 #define CDC_ACM_IRQ_RX_ENABLED		2
@@ -55,9 +59,24 @@ struct cdc_acm_rx_uart_fifo {
 struct cdc_acm_tx_uart_fifo {
 	struct net_buf_pool *pool;
 	struct net_buf *current;
-	uint32_t enqueued;
+	sys_slist_t tx_queue;
+	uint32_t queued;
 	bool irq;
-	bool altered;
+};
+
+enum cdc_acm_tx_state {
+	/* Echo mitigation ZLP not enqueued yet */
+	CDC_ACM_TX_PROBE,
+	/* Waiting for host to issue IN tokens */
+	CDC_ACM_TX_PROBE_PENDING,
+	/* Host read echo mitigation ZLP, wait before sending actual data */
+	CDC_ACM_TX_DELAY,
+	/* Normal operation, data can be enqueued */
+	CDC_ACM_TX_READY,
+	/* ZLP after wMaxPacketSize packet is enqueued */
+	CDC_ACM_TX_ZLP_PENDING,
+	/* Class disabled while ZLP was enqueued */
+	CDC_ACM_TX_ZLP_CANCEL,
 };
 
 struct usbd_cdc_acm_desc {
@@ -112,11 +131,11 @@ struct cdc_acm_uart_data {
 	 */
 	bool flow_ctrl;
 	/* Used to enqueue a ZLP transfer when the previous IN transfer length
-	 * was a multiple of the endpoint MPS and no more data is added to
-	 * the TX FIFO during the user callback execution.
+	 * was a multiple of the endpoint MPS and no more data was written
+	 * while the transfer was on the bulk IN endpoint.
 	 */
 	bool zlp_needed;
-	bool echo_mitigated;
+	enum cdc_acm_tx_state tx_state;
 	/* UART API IRQ callback */
 	uart_irq_callback_user_data_t cb;
 	/* UART API user callback data */
@@ -244,37 +263,31 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 	return 64U;
 }
 
-static size_t cdc_acm_tx_current_tailroom_locked(struct cdc_acm_uart_data *const data)
-{
-	size_t tailroom = 0;
-
-	if (data->tx_fifo.current != NULL) {
-		tailroom = net_buf_tailroom(data->tx_fifo.current);
-	}
-
-	return tailroom;
-}
-
 static uint32_t cdc_acm_tx_fifo_space_get(struct cdc_acm_uart_data *const data)
 {
 	const uint32_t count = data->tx_fifo.pool->buf_count;
+	struct net_buf *current;
 	k_spinlock_key_t key;
-	uint32_t available;
+	uint32_t free_bufs;
 	uint32_t space;
 
 	key = k_spin_lock(&data->lock);
 
-	available = count - data->tx_fifo.enqueued;
+	current = data->tx_fifo.current;
+	free_bufs = count - data->tx_fifo.queued;
+	if (current != NULL) {
+		free_bufs--;
+	}
 
-	if (available == 0) {
-		space = 0;
-	} else if (available == 1 || !data->echo_mitigated) {
-		space = cdc_acm_tx_current_tailroom_locked(data);
-	} else {
-		/* Use available - 1 to prevent sudden drop of available
-		 * size when a partially filled buffer is enqueued.
+	if (free_bufs != 0) {
+		/* Ignore current buffer tailroom to prevent sudden drop of
+		 * available size when a partially filled buffer is enqueued.
 		 */
-		space = USBD_MAX_BULK_MPS * (available - 1);
+		space = USBD_MAX_BULK_MPS * free_bufs;
+	} else if (current != NULL) {
+		space = net_buf_tailroom(current);
+	} else {
+		space = 0;
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -282,30 +295,74 @@ static uint32_t cdc_acm_tx_fifo_space_get(struct cdc_acm_uart_data *const data)
 	return space;
 }
 
+static bool cdc_acm_tx_can_enqueue_locked(struct cdc_acm_uart_data *const data)
+{
+	/* Data can be enqueued on IN endpoint after host echo is mitigated */
+	return data->tx_state == CDC_ACM_TX_READY ||
+	       data->tx_state == CDC_ACM_TX_ZLP_PENDING;
+}
+
+static bool cdc_acm_tx_idle_locked(struct cdc_acm_uart_data *const data)
+{
+	/* Partial data or trailing ZLP can only be enqueued after host read
+	 * all queued data.
+	 */
+	return data->tx_state == CDC_ACM_TX_READY && data->tx_fifo.queued == 0;
+}
+
 static void cdc_acm_tx_schedule_leftover_locked(struct cdc_acm_uart_data *const data)
 {
-	uint32_t len = 0;
-
-	if (data->tx_fifo.enqueued == 0) {
-		if (data->tx_fifo.current != NULL) {
-			len = data->tx_fifo.current->len;
-		}
-		if (data->zlp_needed || len != 0) {
-			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
-		}
+	/* Current buffer is never empty, it is allocated on first write */
+	if ((cdc_acm_tx_can_enqueue_locked(data) &&
+	     !sys_slist_is_empty(&data->tx_fifo.tx_queue)) ||
+	    (cdc_acm_tx_idle_locked(data) &&
+	     (data->tx_fifo.current != NULL || data->zlp_needed))) {
+		cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 	}
 }
 
-static void cdc_acm_tx_buf_recycle_locked(struct cdc_acm_uart_data *const data,
-					  struct net_buf *const buf)
+static struct net_buf *cdc_acm_tx_zlp_alloc(void)
 {
-	if (data->tx_fifo.current == NULL) {
-		net_buf_reset(buf);
-		data->tx_fifo.current = buf;
+	struct net_buf *buf;
+
+	buf = net_buf_alloc(&cdc_acm_zlp_pool, K_NO_WAIT);
+	__ASSERT_NO_MSG(buf != NULL);
+
+	return buf;
+}
+
+static bool cdc_acm_tx_buf_is_zlp(const struct net_buf *const buf)
+{
+	return net_buf_pool_get(buf->pool_id) == &cdc_acm_zlp_pool;
+}
+
+static void cdc_acm_tx_complete_locked(struct cdc_acm_uart_data *const data,
+				       struct net_buf *const buf, const int err)
+{
+	if (!cdc_acm_tx_buf_is_zlp(buf)) {
+		data->tx_fifo.queued--;
+	} else if (data->tx_state == CDC_ACM_TX_PROBE_PENDING) {
+		if (err == 0) {
+			/* Give the host some time to disable ECHO. */
+			data->tx_state = CDC_ACM_TX_DELAY;
+			cdc_acm_work_schedule(&data->tx_fifo_work,
+					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS));
+		} else {
+			data->tx_state = CDC_ACM_TX_PROBE;
+			if (err == -ECONNABORTED) {
+				cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			}
+		}
+	} else if (data->tx_state == CDC_ACM_TX_ZLP_PENDING) {
+		data->tx_state = CDC_ACM_TX_READY;
 	} else {
-		net_buf_unref(buf);
+		__ASSERT(data->tx_state == CDC_ACM_TX_ZLP_CANCEL, "Unexpected ZLP completion");
+		data->tx_state = CDC_ACM_TX_PROBE;
 	}
+
+	net_buf_unref(buf);
+
+	cdc_acm_tx_schedule_leftover_locked(data);
 }
 
 static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
@@ -330,8 +387,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 		if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 			key = k_spin_lock(&data->lock);
-			data->tx_fifo.enqueued--;
-			cdc_acm_tx_buf_recycle_locked(data, buf);
+			cdc_acm_tx_complete_locked(data, buf, err);
 			k_spin_unlock(&data->lock, key);
 			goto ep_buf_already_handled;
 		}
@@ -369,21 +425,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		}
 
 		key = k_spin_lock(&data->lock);
-
-		data->tx_fifo.enqueued--;
-		cdc_acm_tx_buf_recycle_locked(data, buf);
-
-		if (!data->echo_mitigated) {
-			/* If mitigation was not yet applied give the host some
-			 * time to disable ECHO.
-			 */
-			cdc_acm_work_schedule(&data->tx_fifo_work,
-					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS));
-			data->echo_mitigated = true;
-		} else {
-			cdc_acm_tx_schedule_leftover_locked(data);
-		}
-
+		cdc_acm_tx_complete_locked(data, buf, 0);
 		k_spin_unlock(&data->lock, key);
 
 		goto ep_buf_already_handled;
@@ -422,7 +464,10 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 		/* Allow cdc_acm_poll_in to receive */
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
-	data->zlp_needed = true;
+
+	/* USB stack should complete all transfers before re-enable */
+	__ASSERT_NO_MSG(data->tx_state == CDC_ACM_TX_PROBE);
+
 	cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 }
 
@@ -430,10 +475,27 @@ static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
+	struct k_work_sync sync;
+	k_spinlock_key_t key;
 
-	data->echo_mitigated = false;
+	key = k_spin_lock(&data->lock);
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
+
+	if (data->tx_state == CDC_ACM_TX_PROBE_PENDING ||
+	    data->tx_state == CDC_ACM_TX_ZLP_PENDING) {
+		/* The ZLP is the next bulk IN transfer to complete */
+		data->tx_state = CDC_ACM_TX_ZLP_CANCEL;
+	} else if (data->tx_state != CDC_ACM_TX_ZLP_CANCEL) {
+		data->tx_state = CDC_ACM_TX_PROBE;
+	}
+
+	data->zlp_needed = false;
+	k_spin_unlock(&data->lock, key);
+
+	/* Ensure TX work handler does not run before class is re-enabled */
+	(void)k_work_cancel_delayable_sync(&data->tx_fifo_work, &sync);
+
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
 	LOG_INF("Configuration disabled");
 }
@@ -692,13 +754,51 @@ static uint32_t cdc_acm_tx_put_locked(const struct device *dev, const uint8_t *c
 
 	buf = data->tx_fifo.current;
 	if (buf == NULL) {
-		return 0;
+		buf = net_buf_alloc(data->tx_fifo.pool, K_NO_WAIT);
+		if (buf == NULL) {
+			return 0;
+		}
+
+		data->tx_fifo.current = buf;
 	}
 
 	written = MIN(len, net_buf_tailroom(buf));
 	net_buf_add_mem(buf, src, written);
 
+	if (net_buf_tailroom(buf) == 0) {
+		if (cdc_acm_tx_idle_locked(data)) {
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		}
+
+		sys_slist_append(&data->tx_fifo.tx_queue, &buf->node);
+		data->tx_fifo.queued++;
+		data->tx_fifo.current = NULL;
+	}
+
 	return written;
+}
+
+static void cdc_acm_tx_submit(const struct device *dev, struct net_buf *const buf)
+{
+	struct cdc_acm_uart_data *const data = dev->data;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_class_data *c_data = cfg->c_data;
+	struct udc_buf_info *bi;
+	k_spinlock_key_t key;
+	int ret;
+
+	bi = udc_get_buf_info(buf);
+	bi->ep = cdc_acm_get_bulk_in(c_data);
+
+	ret = usbd_ep_enqueue(c_data, buf);
+	if (ret != 0) {
+		LOG_ERR("Failed to enqueue");
+
+		/* Data is dropped, handle it like a failed transfer */
+		key = k_spin_lock(&data->lock);
+		cdc_acm_tx_complete_locked(data, buf, ret);
+		k_spin_unlock(&data->lock, key);
+	}
 }
 
 static void cdc_acm_tx_fifo_enqueue(const struct device *dev)
@@ -706,76 +806,82 @@ static void cdc_acm_tx_fifo_enqueue(const struct device *dev)
 	struct cdc_acm_uart_data *const data = dev->data;
 	const struct cdc_acm_uart_config *cfg = dev->config;
 	struct usbd_class_data *c_data = cfg->c_data;
-	struct udc_buf_info *bi;
+	const size_t mps = cdc_acm_get_bulk_mps(c_data);
 	k_spinlock_key_t key;
 	struct net_buf *buf;
-	struct net_buf *new_buf;
-	int ret;
+	sys_snode_t *node;
 
+	key = k_spin_lock(&data->lock);
+
+	/* Checked with the lock held, because disable clears the bit and
+	 * resets the echo state in a single critical section.
+	 */
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		k_spin_unlock(&data->lock, key);
 		LOG_DBG("USB configuration is not enabled");
 		return;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
+		k_spin_unlock(&data->lock, key);
 		LOG_INF("USB support is suspended (FIXME: submit rwup)");
 		return;
 	}
 
-	new_buf = net_buf_alloc(data->tx_fifo.pool, K_NO_WAIT);
+	if (data->tx_state == CDC_ACM_TX_PROBE) {
+		/* Nothing is on the bulk IN endpoint when the class is enabled,
+		 * because the stack completes all cancelled transfers before
+		 * the class is enabled. Enqueue the echo mitigation ZLP first.
+		 */
+		buf = cdc_acm_tx_zlp_alloc();
+		data->tx_state = CDC_ACM_TX_PROBE_PENDING;
+		k_spin_unlock(&data->lock, key);
 
-	key = k_spin_lock(&data->lock);
-
-	if (data->echo_mitigated) {
-		/* Echo was mitigated, can enqueue current buffer with data. */
-		buf = data->tx_fifo.current;
-		data->tx_fifo.current = new_buf;
-	} else {
-		/* Echo not yet mitigated, enqueue new (empty, zero length) buffer */
-		buf = new_buf;
-	}
-
-	k_spin_unlock(&data->lock, key);
-
-	if (buf == NULL) {
-		if (data->zlp_needed) {
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
-		}
+		cdc_acm_tx_submit(dev, buf);
 		return;
 	}
 
-	if (buf->len == 0 && !data->zlp_needed) {
-		net_buf_unref(buf);
-		LOG_DBG("ZLP not needed and no data to send");
-		return;
+	if (data->tx_state == CDC_ACM_TX_DELAY) {
+		/* Only the echo mitigation ZLP completion schedules the work */
+		data->tx_state = CDC_ACM_TX_READY;
 	}
 
-	data->zlp_needed = buf->len != 0 && buf->len % cdc_acm_get_bulk_mps(c_data) == 0;
+	/* Disable changes the TX state, keep tx_queue for the next echo
+	 * mitigation if it happens while the lock is released.
+	 */
+	while (cdc_acm_tx_can_enqueue_locked(data) &&
+	       (node = sys_slist_get(&data->tx_fifo.tx_queue)) != NULL) {
+		buf = CONTAINER_OF(node, struct net_buf, node);
+		data->zlp_needed = buf->len % mps == 0;
+		k_spin_unlock(&data->lock, key);
 
-	bi = udc_get_buf_info(buf);
-	bi->ep = cdc_acm_get_bulk_in(c_data);
-
-	key = k_spin_lock(&data->lock);
-	data->tx_fifo.enqueued++;
-	k_spin_unlock(&data->lock, key);
-
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		LOG_ERR("Failed to enqueue");
-		net_buf_unref(buf);
+		cdc_acm_tx_submit(dev, buf);
 
 		key = k_spin_lock(&data->lock);
+	}
 
-		data->tx_fifo.enqueued--;
-		/* Because of brief over reporting of `enqueued` in failing
-		 * case this can race with the decrement in usbd_cdc_acm_request.
-		 * Meaning, that leftover data might not be scheduled there.
-		 * Since we can't keep spinlock over usbd_ep_enqueue it's
-		 * necessary to make sure that leftover data gets scheduled here.
-		 */
-		cdc_acm_tx_schedule_leftover_locked(data);
+	/* Partially filled buffer and ZLP are enqueued only when nothing is
+	 * on the endpoint. Otherwise the transfer completion schedules the
+	 * work and more data can be collected in the meantime.
+	 */
+	buf = NULL;
+	if (cdc_acm_tx_idle_locked(data)) {
+		if (data->tx_fifo.current != NULL) {
+			buf = data->tx_fifo.current;
+			data->tx_fifo.current = NULL;
+			data->zlp_needed = buf->len % mps == 0;
+			data->tx_fifo.queued++;
+		} else if (data->zlp_needed) {
+			buf = cdc_acm_tx_zlp_alloc();
+			data->zlp_needed = false;
+			data->tx_state = CDC_ACM_TX_ZLP_PENDING;
+		}
+	}
 
-		k_spin_unlock(&data->lock, key);
+	k_spin_unlock(&data->lock, key);
+
+	if (buf != NULL) {
+		cdc_acm_tx_submit(dev, buf);
 	}
 }
 
@@ -895,31 +1001,17 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	}
 
 	while (done < len) {
-		bool enqueue = false;
 		uint32_t written;
 
 		key = k_spin_lock(&data->lock);
-
 		written = cdc_acm_tx_put_locked(dev, &tx_data[done], len - done);
-		if (written != 0) {
-			done += written;
-			enqueue = data->echo_mitigated &&
-				  net_buf_tailroom(data->tx_fifo.current) == 0;
-		}
-
 		k_spin_unlock(&data->lock, key);
 
 		if (written == 0) {
 			break;
 		}
 
-		if (enqueue) {
-			cdc_acm_tx_fifo_enqueue(dev);
-		}
-	}
-
-	if (done) {
-		data->tx_fifo.altered = true;
+		done += written;
 	}
 
 	LOG_INF("UART dev %p, len %d, remaining space %u", dev, len,
@@ -1067,7 +1159,6 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		return;
 	}
 
-	data->tx_fifo.altered = false;
 	data->rx_fifo.altered = false;
 	data->rx_fifo.irq = false;
 	data->tx_fifo.irq = false;
@@ -1083,15 +1174,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	key = k_spin_lock(&data->lock);
-	if (data->tx_fifo.enqueued == 0) {
-		if (data->tx_fifo.altered) {
-			LOG_DBG("tx fifo altered, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
-		} else if (data->zlp_needed) {
-			LOG_DBG("zlp needed, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
-		}
-	}
+	cdc_acm_tx_schedule_leftover_locked(data);
 	k_spin_unlock(&data->lock, key);
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -1141,33 +1224,37 @@ static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
+	const bool can_wait = !k_is_in_isr() && data->flow_ctrl;
 	k_spinlock_key_t key;
 	uint32_t wrote;
 
 	while (true) {
 		key = k_spin_lock(&data->lock);
+
 		wrote = cdc_acm_tx_put_locked(dev, &c, 1);
+
+		/* Schedule with minimal timeout to make it possible to send
+		 * more than one byte per USB transfer. The latency increase is
+		 * negligible while the increased throughput and reduced CPU
+		 * usage is easily observable. If anything is on the endpoint,
+		 * the transfer completion schedules the work.
+		 */
+		if (wrote == 1 && cdc_acm_tx_idle_locked(data)) {
+			cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+		}
+
 		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
 			break;
 		}
 
-		if (k_is_in_isr() || !data->flow_ctrl) {
+		if (!can_wait) {
 			LOG_WRN_ONCE("No TX buffer available, discard data");
-			goto cdc_acm_poll_out_schedule;
+			break;
 		}
 
 		k_msleep(1);
-	}
-
-	/* Schedule with minimal timeout to make it possible to send more than
-	 * one byte per USB transfer. The latency increase is negligible while
-	 * the increased throughput and reduced CPU usage is easily observable.
-	 */
-cdc_acm_poll_out_schedule:
-	if (data->echo_mitigated) {
-		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 	}
 }
 
@@ -1278,7 +1365,7 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 
 	cdc_acm_update_uart_cfg(data);
 
-	data->tx_fifo.current = net_buf_alloc(data->tx_fifo.pool, K_NO_WAIT);
+	sys_slist_init(&data->tx_fifo.tx_queue);
 
 	return 0;
 }
