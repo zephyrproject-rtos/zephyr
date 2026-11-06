@@ -14,13 +14,6 @@ choice UART_NS16550_VARIANT
 	default UART_NS16550_VARIANT_NS16450
 endchoice
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	# The machine timer's mtime register increments at the core clock divided
-	# by 4000, i.e. 100 MHz / 4000 = 25 kHz. This is not documented anywhere;
-	# it was measured on hardware against the mcycle CSR (exact 4000:1 ratio)
-	# and matches C-DAC's FreeRTOS port, which uses SYS_CLK_FREQ / 4000.
-	default $(dt_node_int_prop_int,/soc/timer@20010580,clock-frequency)
-
 config SYS_CLOCK_TICKS_PER_SEC
 	# mtime advances only 25 times per millisecond; a 1 kHz tick keeps a
 	# sensible number of timer counts per tick.

@@ -1,7 +1,11 @@
 # Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
-description: RISC-V Machine Timer.
+title: RISC-V Machine Timer.
+
+description: |
+  The standard RISC-V machine timer. Takes 2 registers mtime and mtimecmp, or only mtimecmp if the
+  target provides a 64-bit TIME CSR instead of a register.
 
 compatible: "riscv,machine-timer"
 
@@ -10,10 +14,15 @@ include: base.yaml
 properties:
   reg:
     required: true
+
   reg-names:
     required: true
+
   interrupts-extended:
     required: true
-  clock-frequency:
-    type: int
-    description: Clock frequency in Hz
+
+  32bit-mmio-mtimecmp:
+    type: boolean
+    description: |
+      Some RISC-V implementations do not support atomic 64-bit MMIO stores to mtimecmp.
+      This enables using the 32-bit write sequence (high=max, low=val, high=val) on 64-bit targets.
