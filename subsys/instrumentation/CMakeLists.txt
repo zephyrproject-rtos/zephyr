@@ -4,8 +4,18 @@
 zephyr_sources_ifdef(CONFIG_INSTRUMENTATION
   common/instr_common.c
   timestamp/timestamp.c
-  transport/uart.c
 )
+
+zephyr_sources_ifdef(CONFIG_INSTRUMENTATION_BACKEND_UART transport/uart.c)
+zephyr_sources_ifdef(CONFIG_INSTRUMENTATION_BACKEND_RAM transport/ram.c)
+zephyr_sources_ifdef(CONFIG_INSTRUMENTATION_BACKEND_SEMIHOST transport/semihost.c)
+
+if(CONFIG_INSTRUMENTATION_BACKEND_ITM)
+  zephyr_sources(transport/itm.c)
+  # The descriptor is only read from the ELF by a host tool; keep the
+  # symbol against gc-sections.
+  zephyr_link_libraries(-Wl,-u,itm_instr_descriptor)
+endif()
 
 zephyr_sources_ifdef(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH ringbuffer/ringbuffer.c)
 
