@@ -26,6 +26,14 @@ config VIRTIOFS_MAX_VQUEUE_SIZE
 	help
 	  Maximum size of virtqueue
 
+config VIRTIOFS_MAX_INSTANCES
+	int "Virtiofs max instances"
+	default 1
+	range 1 255
+	help
+	  Maximum number of virtio devices virtiofs can be mounted from. The virtqueues
+	  of every instance are allocated statically.
+
 config VIRTIOFS_NO_NOTIFICATION_QUEUE_SLOT
 	bool "Omit notification queue (idx 1) and assume that idx 1 is the first request queue"
 	default y

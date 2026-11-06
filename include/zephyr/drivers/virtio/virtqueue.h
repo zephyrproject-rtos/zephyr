@@ -162,7 +162,11 @@ struct virtq {
 	 */
 	uint16_t num;
 	/**
-	 * array with descriptors
+	 * biggest size the storage of the virtqueue can hold
+	 */
+	uint16_t max_num;
+	/**
+	 * array with descriptors, also the start of the memory shared with the device
 	 */
 	struct virtq_desc *desc;
 	/**
@@ -187,6 +191,10 @@ struct virtq {
 	 * easily determine next free descriptor
 	 */
 	struct k_stack free_desc_stack;
+	/**
+	 * buffer of the free_desc_stack
+	 */
+	stack_data_t *free_desc_buf;
 
 	/**
 	 * amount of free descriptors in the free_desc_stack
@@ -199,22 +207,74 @@ struct virtq {
 	struct virtq_receive_callback_entry *recv_cbs;
 };
 
+/**
+ * @brief offset of the available ring in the memory shared with the device
+ *
+ * @param num size of the virtqueue
+ */
+#define VIRTQ_AVAIL_RING_OFFSET(num) (16U * (num))
+
+/**
+ * @brief offset of the used ring in the memory shared with the device
+ *
+ * @param num size of the virtqueue
+ */
+#define VIRTQ_USED_RING_OFFSET(num) ROUND_UP(VIRTQ_AVAIL_RING_OFFSET(num) + 2U * (num) + 6U, 4U)
+
+/**
+ * @brief size of the memory shared with the device
+ *
+ * It holds the descriptor table, the available ring and the used ring, for their sizes
+ * and alignments see the table in spec 2.7.
+ *
+ * @param num size of the virtqueue
+ */
+#define VIRTQ_RING_AREA_SIZE(num) (VIRTQ_USED_RING_OFFSET(num) + 8U * (num) + 6U)
+
+/**
+ * @brief defines the storage of a virtqueue
+ *
+ * The virtqueue using it is initialized with VIRTQ_INITIALIZER().
+ *
+ * @param name name of the storage
+ * @param _max_num biggest size of the virtqueue, a power of two not greater than 32768 or 0
+ * for a virtqueue that is enumerated but not used
+ */
+#define VIRTQ_STORAGE_DEFINE(name, _max_num)                                                       \
+	BUILD_ASSERT((_max_num) == 0 || ((_max_num) <= 32768 && IS_POWER_OF_TWO(_max_num)),        \
+		     "virtqueue size must be 0 or a power of two not greater than 32768");         \
+	static uint8_t __aligned(16) name##_ring[VIRTQ_RING_AREA_SIZE(_max_num)];                  \
+	static struct virtq_receive_callback_entry name##_recv_cbs[MAX(_max_num, 1)];              \
+	static stack_data_t name##_free_desc[MAX(_max_num, 1)]
+
+/**
+ * @brief initializer of a virtqueue
+ *
+ * The virtqueue is usually a member of the data structure of the driver using it.
+ *
+ * @param name name of the storage defined with VIRTQ_STORAGE_DEFINE()
+ * @param _max_num biggest size of the virtqueue, same as passed to VIRTQ_STORAGE_DEFINE()
+ */
+#define VIRTQ_INITIALIZER(name, _max_num)                                                          \
+	{                                                                                          \
+		.max_num = (_max_num),                                                             \
+		.desc = (struct virtq_desc *)name##_ring,                                          \
+		.free_desc_buf = name##_free_desc,                                                 \
+		.recv_cbs = name##_recv_cbs,                                                       \
+	}
 
 /**
  * @brief creates virtqueue
  *
- * @param v virtqueue to be created
- * @param size size of the virtqueue
- * @return 0 or error code on failure
- */
-int virtq_create(struct virtq *v, size_t size);
-
-/**
- * @brief frees virtqueue
+ * The virtqueue is set up in the storage it was initialized with, see VIRTQ_INITIALIZER().
+ * Its size is the one it was defined with, limited to the maximum size the device supports.
  *
- * @param v virtqueue to be freed
+ * @param v virtqueue to be created
+ * @param max_size maximum size the device supports for the virtqueue
+ * @retval 0 Success
+ * @retval -EINVAL The resulting size is not a valid virtqueue size
  */
-void virtq_free(struct virtq *v);
+int virtq_create(struct virtq *v, size_t max_size);
 
 /**
  * @brief single buffer passed to virtq_add_buffer_chain

@@ -31,6 +31,11 @@ LOG_MODULE_REGISTER(gpio_virtio, CONFIG_GPIO_LOG_LEVEL);
 #define VIRTIO_GPIO_REQUESTQ 0
 #define VIRTIO_GPIO_EVENTQ   1
 
+/* a single request is in flight at a time, and takes two descriptors */
+#define VIRTIO_GPIO_REQUESTQ_SIZE 2
+/* every line may have a buffer chain of its own queued up */
+#define VIRTIO_GPIO_EVENTQ_SIZE(inst) NHPOT(2 * DT_INST_PROP(inst, ngpios))
+
 #define VIRTIO_GPIO_F_IRQ 0
 
 #define VIRTIO_GPIO_MSG_GET_DIRECTION 0x0002
@@ -98,8 +103,7 @@ struct gpio_virtio_config {
 
 struct gpio_virtio_data {
 	struct gpio_driver_data common;
-	struct virtq *requestq;
-	struct virtq *eventq;
+	struct virtq vqs[2];
 	/* serializes the single in-flight request and the state tracked below */
 	struct k_sem lock;
 	struct k_sem done;
@@ -155,7 +159,7 @@ static int gpio_virtio_request(const struct device *dev, uint16_t type, gpio_pin
 	 * The lock keeps a single request in flight, and the transport returns
 	 * the descriptors before completing it, so the queue never runs out.
 	 */
-	ret = virtq_add_buffer_chain(data->requestq, bufs, ARRAY_SIZE(bufs), 1,
+	ret = virtq_add_buffer_chain(&data->vqs[VIRTIO_GPIO_REQUESTQ], bufs, ARRAY_SIZE(bufs), 1,
 				     gpio_virtio_request_cb, data, K_NO_WAIT);
 	if (ret != 0) {
 		LOG_ERR("failed to queue request %u for pin %u: %d", type, pin, ret);
@@ -426,8 +430,8 @@ static int gpio_virtio_arm_irq(const struct device *dev, struct gpio_virtio_irq_
 
 	line->req.gpio = sys_cpu_to_le16(line->pin);
 
-	ret = virtq_add_buffer_chain(data->eventq, bufs, ARRAY_SIZE(bufs), 1, gpio_virtio_event_cb,
-				     line, K_NO_WAIT);
+	ret = virtq_add_buffer_chain(&data->vqs[VIRTIO_GPIO_EVENTQ], bufs, ARRAY_SIZE(bufs), 1,
+				     gpio_virtio_event_cb, line, K_NO_WAIT);
 	if (ret != 0) {
 		LOG_ERR("failed to queue event buffer for pin %u: %d", line->pin, ret);
 		return ret;
@@ -575,22 +579,6 @@ static DEVICE_API(gpio, gpio_virtio_api) = {
 #endif
 };
 
-static uint16_t gpio_virtio_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *opaque)
-{
-	struct gpio_virtio_data *data = opaque;
-
-	switch (q_index) {
-	case VIRTIO_GPIO_REQUESTQ:
-		/* a single request is in flight at a time, and takes two descriptors */
-		return min(2, q_size_max);
-	case VIRTIO_GPIO_EVENTQ:
-		/* every line may have a buffer chain of its own queued up */
-		return min(NHPOT(2 * data->ngpio), q_size_max);
-	default:
-		return 0;
-	}
-}
-
 static int gpio_virtio_init(const struct device *dev)
 {
 	const struct gpio_virtio_config *cfg = dev->config;
@@ -640,26 +628,13 @@ static int gpio_virtio_init(const struct device *dev)
 
 	data->ngpio = ngpio;
 
-	ret = virtio_init_virtqueues(cfg->vdev, data->irq_supported ? 2 : 1,
-				     gpio_virtio_enum_queues_cb, data);
+	ret = virtio_init_virtqueues(cfg->vdev, data->vqs, data->irq_supported ? 2 : 1);
 	if (ret != 0) {
 		LOG_ERR("virtio_init_virtqueues failed: %d", ret);
 		return ret;
 	}
 
-	data->requestq = virtio_get_virtqueue(cfg->vdev, VIRTIO_GPIO_REQUESTQ);
-	if (data->requestq == NULL) {
-		LOG_ERR("failed to get the request virtqueue");
-		return -ENODEV;
-	}
-
 	if (data->irq_supported) {
-		data->eventq = virtio_get_virtqueue(cfg->vdev, VIRTIO_GPIO_EVENTQ);
-		if (data->eventq == NULL) {
-			LOG_ERR("failed to get the event virtqueue");
-			return -ENODEV;
-		}
-
 		for (gpio_pin_t pin = 0; pin < ngpio; pin++) {
 			cfg->irq_lines[pin].dev = dev;
 			cfg->irq_lines[pin].pin = pin;
@@ -677,7 +652,18 @@ static int gpio_virtio_init(const struct device *dev)
 #define GPIO_VIRTIO_DEFINE(inst)                                                                   \
 	static struct gpio_virtio_irq_line                                                         \
 		gpio_virtio_irq_lines_##inst[DT_INST_PROP(inst, ngpios)];                          \
-	static struct gpio_virtio_data gpio_virtio_data_##inst;                                    \
+	VIRTQ_STORAGE_DEFINE(gpio_virtio_requestq_##inst, VIRTIO_GPIO_REQUESTQ_SIZE);              \
+	VIRTQ_STORAGE_DEFINE(gpio_virtio_eventq_##inst, VIRTIO_GPIO_EVENTQ_SIZE(inst));            \
+	static struct gpio_virtio_data gpio_virtio_data_##inst = {                                 \
+		.vqs = {                                                                           \
+			[VIRTIO_GPIO_REQUESTQ] =                                                   \
+				VIRTQ_INITIALIZER(gpio_virtio_requestq_##inst,                     \
+						  VIRTIO_GPIO_REQUESTQ_SIZE),                      \
+			[VIRTIO_GPIO_EVENTQ] =                                                     \
+				VIRTQ_INITIALIZER(gpio_virtio_eventq_##inst,                       \
+						  VIRTIO_GPIO_EVENTQ_SIZE(inst)),                  \
+		},                                                                                 \
+	};                                                                                         \
 	static const struct gpio_virtio_config gpio_virtio_config_##inst = {                       \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.vdev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                       \
