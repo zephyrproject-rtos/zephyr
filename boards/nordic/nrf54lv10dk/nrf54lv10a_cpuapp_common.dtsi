@@ -93,10 +93,6 @@
 	status = "okay";
 };
 
-&bt_hci_controller {
-	status = "okay";
-};
-
 &ieee802154 {
 	status = "okay";
 };
