@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_BCM2712
+	bool "Broadcom BCM2712 SD host controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2712_SDHCI_ENABLED
+	select SDHC_STANDARD_CORE
+	select SDHC_SUPPORTS_UHS
+	select SDHC_SUPPORTS_NATIVE_MODE
+	select EVENTS
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+	select PINCTRL
+	select GPIO
+	select REGULATOR
+	help
+	  Enable the BCM2712 SD host controller with PIO fallback, 3.3 V
+	  legacy/HS and optional 1.8 V SDR50/SDR104 signalling up to 208 MHz.
+	  Enable UHS modes through devicetree on boards with a switchable I/O supply.
+	  SDR104 multi-block transfers require a card that supports CMD23.
+	  Configure main-bank SDIO pins through pinctrl. Dedicated EMMC pads used
+	  by the SD card slot must retain the boot firmware configuration.
+	  Use interrupts when devicetree provides an interrupt specifier;
+	  otherwise poll for completion. Support SD memory and SDIO requests.
+	  Requests are limited to 512 bytes per block, including SDIO.
+	  SDIO card interrupts require a devicetree interrupt specifier.
+	  eMMC-specific modes are not implemented.
+	  Tuning, I/O-transition, Auto CMD23 and controller recovery failures
+	  latch the host until the application calls sdhc_hw_reset() and
+	  reinitializes the card. The SD stack does not reset the host itself.
+
+config SDHC_BCM2712_DMA
+	bool "BCM2712 ADMA2 transfers"
+	default y
+	depends on SDHC_BCM2712
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  Use v3-compatible 64-bit ADMA2 when the controller advertises support.
+	  Otherwise, or when a buffer is unsuitable for DMA, use PIO.
+
+config SDHC_BCM2712_DMA_DESC_COUNT
+	int "BCM2712 ADMA2 descriptors"
+	default 8
+	range 1 128
+	depends on SDHC_BCM2712_DMA
+	help
+	  Each descriptor covers up to 64 KiB of contiguous memory. Requests
+	  exceeding the table capacity use PIO.
+
+config SDHC_BCM2712_DMA_BUFFER_SIZE
+	int "BCM2712 ADMA2 bounce buffer size"
+	default 4096
+	range 64 65536
+	depends on SDHC_BCM2712_DMA
+	help
+	  Allocate this many bytes per host for DMA transfers that need an
+	  aligned buffer. Round the allocation up to the cache-line alignment.
+	  Transfers exceeding the buffer capacity use PIO when direct DMA
+	  is unsuitable.
