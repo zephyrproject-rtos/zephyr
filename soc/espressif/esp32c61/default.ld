@@ -100,6 +100,11 @@ MEMORY
 #endif
 }
 
+#if defined(CONFIG_ESP_SPIRAM)
+/* Target of zephyr_code_relocate(... LOCATION EXTMEM_NOINIT) */
+REGION_ALIAS("EXTMEM", ext_dram_seg);
+#endif
+
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
@@ -228,6 +233,7 @@ SECTIONS
     *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
+    *libcode_relocation_source_lib.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
@@ -669,6 +675,52 @@ SECTIONS
     __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#if defined(CONFIG_ESP_SPIRAM)
+  /* This section is required to skip flash content because ext_dram_seg
+   * and irom0_0_seg/drom0_0_seg share the same bus (unified cache).
+   * The MMU reserves pages for both IROM and DROM from the same address
+   * region, so the dummy must account for both to match the runtime
+   * free_head used by esp_mmu_map_reserve_block_with_caps(). It is the
+   * first section of ext_dram_seg and precedes the relocated EXTMEM
+   * sections. */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
+    . += ALIGN(_rodata_reserved_end - _rodata_reserved_start, CACHE_ALIGN);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+#endif /* CONFIG_ESP_SPIRAM */
+
+#ifdef CONFIG_CODE_DATA_RELOCATION
+  /* Placed before .dram0.noinit, whose wildcards would otherwise take the
+   * relocated .noinit input sections.
+   */
+#include <linker_relocate.ld>
+  /* Nothing copies .data to PSRAM or zeroes .bss there: only NOINIT
+   * sections can be relocated to EXTMEM.
+   */
+  ASSERT(!DEFINED(__extmem_text_reloc_start) && !DEFINED(__extmem_rodata_reloc_start) &&
+         !DEFINED(__extmem_data_reloc_start) && !DEFINED(__extmem_bss_reloc_start),
+         "Only NOINIT can be relocated to EXTMEM")
+#if defined(CONFIG_ESP_SPIRAM)
+  /* The relocated sections precede _ext_ram_start */
+  ASSERT(!DEFINED(__extmem_noinit_reloc_start) ||
+         ((_ext_ram_end - __extmem_noinit_reloc_start) <= CONFIG_ESP_SPIRAM_SIZE),
+         "External SPIRAM overflowed.")
+#else
+  /* Without PSRAM there is no EXTMEM region: ld only warns that it is not
+   * declared and links the section at address 0.
+   */
+  ASSERT(!DEFINED(__extmem_noinit_reloc_start),
+         "Relocation to EXTMEM needs CONFIG_ESP_SPIRAM=y")
+#endif
+  /* The default RAM region of zephyr_code_relocate() is RAM, which this
+   * script does not declare.
+   */
+  ASSERT(!DEFINED(_ram_mpu_ro_region_start) && !DEFINED(__ram_text_reloc_start) &&
+         !DEFINED(__ram_rodata_reloc_start),
+         "Relocation to RAM is not supported on ESP32-C61")
+#endif /* CONFIG_CODE_DATA_RELOCATION */
+
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
@@ -929,17 +981,6 @@ SECTIONS
   /* --- START OF SPIRAM --- */
 
 #if defined(CONFIG_ESP_SPIRAM)
-  /* This section is required to skip flash content because ext_dram_seg
-   * and irom0_0_seg/drom0_0_seg share the same bus (unified cache).
-   * The MMU reserves pages for both IROM and DROM from the same address
-   * region, so the dummy must account for both to match the runtime
-   * free_head used by esp_mmu_map_reserve_block_with_caps(). */
-  .ext_ram.dummy (NOLOAD):
-  {
-    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
-    . += ALIGN(_rodata_reserved_end - _rodata_reserved_start, CACHE_ALIGN);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram.data (NOLOAD) :
   {
