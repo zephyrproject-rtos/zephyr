@@ -255,8 +255,107 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 }
 
 #if !DT_INST_PROP(0, no_error_irq)
+#if defined(CONFIG_DMA_MCUX_EDMA)
+/**
+ * @brief Handle a channel that has its error flag set.
+ *
+ * The eDMA does not disable a channel that has an error. The next service
+ * request of the channel gives the same error again (i.MX RT1170 RM rev. 5,
+ * 6.3.3). Thus the driver stops a busy channel and tells its client.
+ *
+ * A channel that is not busy has no transfer to stop and no client that
+ * waits. The driver clears only its error flag, so that the error interrupt
+ * does not stay active. It does not abort the channel: the abort sets CITER
+ * to 0, and a later start of the channel through a channel link then gives a
+ * configuration error.
+ *
+ * @param dev DMA device.
+ * @param channel DMA API channel index, before dma_mcux_edma_add_channel_gap().
+ */
+static void dma_mcux_edma_handle_channel_error(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+
+	LOG_ERR("channel %d error status is 0x%x", hw_channel,
+		EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
+
+	if (!data->busy) {
+		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, kEDMA_ErrorFlag);
+		return;
+	}
+
+	/* Disable the request before the flags are cleared, so the error does not come back */
+	EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
+	EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel,
+				     kEDMA_DoneFlag | kEDMA_ErrorFlag | kEDMA_InterruptFlag);
+	data->busy = false;
+
+	/* dma_config() clears the callback if the client gives none */
+	if (data->dma_callback != NULL) {
+		data->dma_callback(dev, data->user_data, channel, -EIO);
+	}
+}
+
+/**
+ * @brief Let the eDMA start channels again after an error.
+ *
+ * With halt-on-error (CR[HOE], the HAL default), an error sets CR[HALT], and
+ * the eDMA starts no channel until software writes 0 to HALT (i.MX RT1170 RM
+ * rev. 5, 6.5.5.2). Call this function only after the channels with an error
+ * are stopped, else they start again and give the same error. On the
+ * i.MX RT1170, the eDMA also clears HALT when the last error flag is cleared.
+ *
+ * @param dev DMA device.
+ */
+static void dma_mcux_edma_clear_halt(const struct device *dev)
+{
+	DEV_BASE(dev)->CR &= ~DMA_CR_HALT_MASK;
+}
+
+/**
+ * @brief Handle only the channels that have their error flag set.
+ *
+ * The error interrupt is shared by all channels. The other busy channels
+ * continue, because the driver clears HALT after it stopped the channels
+ * with an error.
+ *
+ * @param dev DMA device.
+ */
+static void dma_mcux_edma_handle_errors(const struct device *dev)
+{
+	bool error_handled = false;
+	uint32_t hw_channel;
+	uint32_t flags;
+
+	for (uint32_t i = 0; i < (uint32_t)DEV_CFG(dev)->dma_channels; i++) {
+		hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
+		flags = EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel);
+		if ((flags & kEDMA_ErrorFlag) == 0U) {
+			continue;
+		}
+
+		dma_mcux_edma_handle_channel_error(dev, i);
+		error_handled = true;
+	}
+
+	/* Without an error flag, the driver did not remove the cause of the halt */
+	if (error_handled) {
+		dma_mcux_edma_clear_halt(dev);
+	}
+}
+#endif /* CONFIG_DMA_MCUX_EDMA */
+
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
+#if defined(CONFIG_DMA_MCUX_EDMA)
+	dma_mcux_edma_handle_errors(dev);
+#else
+	/*
+	 * eDMA v3 and v4: HALT is MP_CSR[HALT], and the HAL has no function to
+	 * clear it. The per-channel handling of eDMA v2 was not tested on these
+	 * versions, thus the driver stops all busy channels, as before.
+	 */
 	int i = 0;
 	uint32_t hw_channel;
 
@@ -270,6 +369,7 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 			DEV_CHANNEL_DATA(dev, i)->busy = false;
 		}
 	}
+#endif
 
 #if defined(CONFIG_CPU_CORTEX_M4)
 	barrier_dsync_fence_full();
