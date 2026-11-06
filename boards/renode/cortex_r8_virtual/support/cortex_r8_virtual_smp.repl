@@ -1,0 +1,19 @@
+// SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+// SPDX-License-Identifier: Apache-2.0
+
+using "./cortex_r8_virtual.repl"
+
+cpu1: CPU.ARMv7R @ sysbus
+    cpuType: "cortex-r8"
+    genericInterruptController: gic
+    numberOfMPURegions: 24
+    cpuId: 1
+
+gic:
+    [4,5] -> cpu1@[0,1]
+
+privateTimer1: Timers.ARM_PrivateTimer @ {
+        sysbus new Bus.BusPointRegistration { address: 0xae000600; cpu: cpu1 }
+    }
+    -> gic#1@29
+    frequency: 667000000

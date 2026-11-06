@@ -140,6 +140,9 @@ offload:
     bhi 1f
     mov r0, sp
     cps #MODE_IRQ
+    mov r1, sp
+    cps #MODE_SYS
+    mov sp, r1
     push {r0}
 
 1:
@@ -157,6 +160,7 @@ _oops:
     mov r1, #0
     mov r2, #0
     bl z_do_kernel_oops
+    b z_arm_cortex_ar_exit_exc
 
 inv:
     mov r0, #0 /* K_ERR_CPU_EXCEPTION */
