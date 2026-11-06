@@ -17,3 +17,18 @@ properties:
 
   reg:
     required: true
+
+  reg-io-width:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 4
+      - 8
+    description: |
+      Width in bytes of each access to the register block. When width is greater than 1,
+      the base address and size must be multiples of it.
+      Reads and writes that do not cover whole words are read-modify-write,
+      this is not atomic over multiple CPUs and in ISRs,
+      and over multiple threads when not using retained_mem mutexes.
+      A width of 8 is only supported on 64-bit targets.
