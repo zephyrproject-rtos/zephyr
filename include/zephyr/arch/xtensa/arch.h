@@ -22,7 +22,7 @@
 #include <zephyr/types.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/common/sys_bitops.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/xtensa/sys_io.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/arch/xtensa/syscall.h>
