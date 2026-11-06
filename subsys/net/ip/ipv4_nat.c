@@ -244,11 +244,13 @@ static bool conn_track_new(struct net_pkt *pkt,
 	struct net_conn_tuple *in = &entry->tuple[NET_NAT_DIR_ORIGIN];
 	struct net_conn_tuple *out = &entry->tuple[NET_NAT_DIR_REPLY];
 	struct net_if *reply = entry->iface[NET_NAT_DIR_REPLY];
-	struct net_if_addr *ifaddr;
+	struct net_in_addr dst;
+	const struct net_in_addr *src;
 	uint16_t ext_port;
 
-	ifaddr = net_if_ipv4_addr_get_first_by_index(net_if_get_by_iface(reply));
-	if (ifaddr == NULL) {
+	net_ipv4_addr_copy_raw(dst.s4_addr, iphdr->dst);
+	src = net_if_ipv4_select_src_addr(reply, &dst);
+	if (src == NULL || net_ipv4_is_addr_unspecified(src)) {
 		return false;
 	}
 
@@ -289,7 +291,7 @@ static bool conn_track_new(struct net_pkt *pkt,
 	net_ipv4_addr_copy_raw(in->src, iphdr->src);
 	net_ipv4_addr_copy_raw(in->dst, iphdr->dst);
 	net_ipv4_addr_copy_raw(out->src, iphdr->dst);
-	net_ipv4_addr_copy_raw(out->dst, ifaddr->address.in_addr.s4_addr);
+	net_ipv4_addr_copy_raw(out->dst, src->s4_addr);
 
 	if (!conn_track_alloc_port(entry, &ext_port)) {
 		NET_DBG("No free external port");
@@ -347,6 +349,19 @@ static inline bool conn_track_is_expired(struct net_nat4_entry *entry)
 	return sys_timepoint_expired(entry->end);
 }
 
+static inline bool conn_track_addr_valid(struct net_nat4_entry *entry)
+{
+	struct net_if_addr *ifaddr;
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface_raw(entry->iface[NET_NAT_DIR_REPLY],
+						      entry->tuple[NET_NAT_DIR_REPLY].dst);
+	if (ifaddr == NULL) {
+		return false;
+	}
+
+	return ifaddr->is_added && ifaddr->addr_state != NET_ADDR_DEPRECATED;
+}
+
 static int conn_track_match(struct net_pkt *pkt,
 			    struct net_ipv4_hdr *iphdr,
 			    void *l4hdr,
@@ -361,6 +376,12 @@ static int conn_track_match(struct net_pkt *pkt,
 
 		if (conn_track_match_origin(pkt, iphdr,
 		    l4hdr, &iptables.table[i])) {
+			if (!conn_track_addr_valid(&iptables.table[i])) {
+				NET_DBG("conn track %d external address removed", i);
+				conn_track_free(&iptables.table[i]);
+				return NET_NAT_DIR_NUM;
+			}
+
 			NET_DBG("find IN conn track %d", i);
 			conn_track_refresh(&iptables.table[i],
 					   iptables.table[i].state == CONN_TRACK_ESTABLISHED ?
@@ -372,6 +393,12 @@ static int conn_track_match(struct net_pkt *pkt,
 
 		if (conn_track_match_reply(pkt, iphdr,
 		    l4hdr, &iptables.table[i].tuple[NET_NAT_DIR_REPLY])) {
+			if (!conn_track_addr_valid(&iptables.table[i])) {
+				NET_DBG("conn track %d external address removed", i);
+				conn_track_free(&iptables.table[i]);
+				return NET_NAT_DIR_NUM;
+			}
+
 			NET_DBG("find OUT conn track %d", i);
 			conn_track_confirm(&iptables.table[i]);
 			*entry = &iptables.table[i];
