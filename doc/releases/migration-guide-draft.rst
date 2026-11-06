@@ -61,6 +61,35 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* The Espressif SoC family is renamed from ``espressif_esp32`` to ``esp32``, so
+  ``CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESP32`.
+
+* The Kconfig options defined by the Espressif SoCs in :file:`soc/espressif` now use the SoC
+  symbol prefixes required by the Kconfig naming conventions. Options shared by the ESP32 family
+  use ``SOC_FAMILY_ESP32_`` and options that belong to a single SoC use ``SOC_<SoC>_``. The former
+  ``ESP_``, ``ESP32_``, ``ESP32<SoC>_`` and ``SOC_ESP32_`` prefixes are dropped, and options that
+  had no vendor prefix, such as ``SPIRAM_*``, ``SPI_FLASH_*`` and ``BOOTLOADER_*``, gain the family
+  prefix. The flash options lose the ``ESPTOOLPY_`` tool name (``FLASHFREQ``, ``FLASHMODE`` and
+  ``FLASHSIZE`` become ``FLASH_FREQ``, ``FLASH_MODE`` and ``FLASH_SIZE``), and a few redundant
+  words are dropped. Application configuration files, board files and code that reference these
+  options must be updated, for example:
+
+  * ``CONFIG_ESP_SPIRAM`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_SPIRAM`.
+  * ``CONFIG_SPIRAM_MODE_OCT`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_SPIRAM_MODE_OCT`.
+  * ``CONFIG_ESPTOOLPY_FLASHFREQ_80M`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_FLASH_FREQ_80M`.
+  * ``CONFIG_ESPTOOLPY_OCT_FLASH`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_FLASH_OCTAL`.
+  * ``CONFIG_ESP32_ULP_COPROC_ENABLED`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_ULP_ENABLED`.
+  * ``CONFIG_ESP_CONSOLE_UART_NUM`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_CONSOLE_UART_NUM`.
+  * ``CONFIG_SOC_ESP32_PM_SUPPORT_CPU_PD`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESP32_PM_SUPPORT_CPU_PD`.
+  * ``CONFIG_ESP32S3_DATA_CACHE_64KB`` is now :kconfig:option:`CONFIG_SOC_ESP32S3_DATA_CACHE_64KB`.
+  * ``CONFIG_ESP32_CACHE_L2_512KB`` is now :kconfig:option:`CONFIG_SOC_ESP32P4_CACHE_L2_512KB`.
+  * ``CONFIG_ESP32C6_UNIVERSAL_MAC_ADDRESSES_FOUR`` is now
+    :kconfig:option:`CONFIG_SOC_ESP32C6_UNIVERSAL_MAC_ADDRESSES_FOUR`.
+
 Device Drivers and Devicetree
 *****************************
 
