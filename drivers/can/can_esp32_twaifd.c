@@ -526,9 +526,14 @@ static void IRAM_ATTR can_esp32_twaifd_handle_rx(const struct device *dev)
 			      (header.fdf ? CAN_FRAME_FDF : 0) | (header.brs ? CAN_FRAME_BRS : 0) |
 			      (header.esi ? CAN_FRAME_ESI : 0);
 
+		/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+		if ((frame.flags & CAN_FRAME_FDF) == 0U && frame.dlc > CAN_MAX_DLC) {
+			frame.dlc = CAN_MAX_DLC;
+		}
+
 		if (!header.rtr) {
 			memcpy(frame.data, buffer,
-			       MIN(can_dlc_to_bytes(header.dlc), sizeof(frame.data)));
+			       MIN(can_dlc_to_bytes(frame.dlc), sizeof(frame.data)));
 		}
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP

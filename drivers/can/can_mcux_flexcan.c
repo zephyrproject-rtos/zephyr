@@ -551,6 +551,12 @@ static void mcux_flexcan_to_can_frame(const flexcan_frame_t *src,
 	}
 
 	dest->dlc = src->length;
+
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if (dest->dlc > CAN_MAX_DLC) {
+		dest->dlc = CAN_MAX_DLC;
+	}
+
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	dest->timestamp = src->timestamp;
 #endif /* CAN_RX_TIMESTAMP */
@@ -628,6 +634,11 @@ static void mcux_flexcan_fd_to_can_frame(const flexcan_fd_frame_t *src,
 	}
 
 	dest->dlc = src->length;
+
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if ((dest->flags & CAN_FRAME_FDF) == 0U && dest->dlc > CAN_MAX_DLC) {
+		dest->dlc = CAN_MAX_DLC;
+	}
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	dest->timestamp = src->timestamp;
