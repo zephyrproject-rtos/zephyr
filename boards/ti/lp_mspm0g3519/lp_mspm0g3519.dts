@@ -162,3 +162,7 @@
 &trng {
 	status = "okay";
 };
+
+&aes {
+	status = "okay";
+};
