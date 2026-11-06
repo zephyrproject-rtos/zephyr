@@ -73,6 +73,7 @@ rsource "Kconfig.efuse"
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
+rsource "Kconfig.i2s_cam"
 rsource "Kconfig.lcd_cam"
 rsource "Kconfig.ppa"
 

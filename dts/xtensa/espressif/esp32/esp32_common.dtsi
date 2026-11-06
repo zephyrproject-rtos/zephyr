@@ -258,8 +258,6 @@
 		i2s0: i2s@3ff4f000 {
 			compatible = "espressif,esp32-i2s";
 			reg = <0x3ff4f000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
 				     <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-names = "rx", "tx";
@@ -267,6 +265,11 @@
 			clocks = <&clock ESP32_I2S0_MODULE>;
 			unit = <0>;
 			status = "disabled";
+
+			i2s0_cam: i2s0_cam {
+				compatible = "espressif,esp32-i2s-cam";
+				status = "disabled";
+			};
 		};
 
 		uart1: uart@3ff50000 {
