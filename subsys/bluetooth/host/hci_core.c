@@ -847,6 +847,18 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			sys_snode_t *node;
 			unsigned int key;
 
+			/* The unacknowledged packets are returned when the
+			 * connection goes down, which may be under way in a
+			 * thread that this one has preempted, or over in one
+			 * that ran while a callback below blocked: bt_disable()
+			 * takes the connections down while a controller that
+			 * has not been reset goes on reporting.
+			 */
+			if (conn->state != BT_CONN_CONNECTED &&
+			    conn->state != BT_CONN_DISCONNECTING) {
+				break;
+			}
+
 			/* move the next TX context from the `pending` list to
 			 * the `complete` list.
 			 */
@@ -1544,10 +1556,12 @@ static void le_conn_complete_adv_timeout(void)
 		struct bt_conn *conn;
 
 		/* Handle advertising timeout after high duty cycle directed
-		 * advertising.
+		 * advertising. The advertiser is gone if bt_disable() has let
+		 * go of it and failed to close the transport.
 		 */
-
-		atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+		if (adv != NULL) {
+			atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
+		}
 
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 		    !BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
@@ -2798,6 +2812,13 @@ static void hci_reset_complete(void)
 #if defined(CONFIG_BT_CLASSIC)
 	bt_br_discovery_reset();
 #endif /* CONFIG_BT_CLASSIC */
+
+#if defined(CONFIG_BT_CONN)
+	/* A disconnection that the Controller reported before the reset ended
+	 * a connection of its own, not one that is yet to be reported.
+	 */
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
 
 	flags = (atomic_get(bt_dev.flags) & BT_DEV_PERSISTENT_FLAGS);
 	atomic_set(bt_dev.flags, flags);
@@ -4723,6 +4744,14 @@ static void le_conn_complete_prio(uint8_t role)
 	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 		struct bt_le_ext_adv *adv = bt_le_adv_lookup_legacy();
+
+		/* bt_disable() lets go of the advertiser before the controller
+		 * has stopped advertising.
+		 */
+		if (adv == NULL) {
+			return;
+		}
+
 		/* Clear advertising even if we are not able to add connection
 		 * object to keep host in sync with controller state.
 		 */
@@ -5175,7 +5204,7 @@ failed:
 
 int bt_disable(void)
 {
-	bool was_ready;
+	int reset_err = 0;
 	int err;
 
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
@@ -5200,9 +5229,9 @@ int bt_disable(void)
 		return -ENOSYS;
 	}
 
-	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
-	 * bt_enable() failed after opening the transport, in which case a
-	 * failed disable must not set it either.
+	/* Clear BT_DEV_READY before disabling HCI link. A failed disable
+	 * does not set it again: from here on, the Host tears down state that
+	 * cannot be brought back.
 	 *
 	 * The TX processor holds the host lock for a whole pass, so with the
 	 * lock held here no pass is under way in another thread when the
@@ -5210,7 +5239,7 @@ int bt_disable(void)
 	 * later one holds back what is queued for the connections.
 	 */
 	bt_dev_lock();
-	was_ready = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
 	bt_dev_unlock();
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -5244,40 +5273,45 @@ int bt_disable(void)
 		(void)k_work_cancel_sync(&rx_work, &sync);
 	}
 
-	/* Reset the Controller */
+	/* Reset the Controller. When that fails, go on as with a driver that
+	 * has the no-reset quirk: what has been torn down so far cannot be
+	 * brought back, and closing the transport is what lets bt_enable()
+	 * try again, which resets the Controller first. The caller is told, as
+	 * the Controller may go on with what it was doing.
+	 */
 	if (!drv_quirk_no_reset()) {
-
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Failed to reset BLE controller");
-			if (was_ready) {
-				atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-				/* Resume sending the data that was held back */
-				bt_tx_irq_raise();
-			}
-			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
-			return err;
-		}
+		if (err == 0) {
+			hci_reset_complete();
+		} else {
+			LOG_ERR("Failed to reset the Controller (err %d)", err);
+			reset_err = -EHOSTDOWN;
 
-		hci_reset_complete();
+			/* What the Controller reports before the next reset
+			 * must not reach the callback of a scan that ends here.
+			 */
+			if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+				bt_scan_softreset();
+			}
+		}
 	}
 
-	/* Tear down the connections only after the controller has been reset:
-	 * until then it still owns the packets in flight and reports their
-	 * completion, which must find the TX bookkeeping intact. What is left
-	 * afterwards is completed by the host with an error. Neither the ISO
-	 * nor the connection cleanup sends HCI commands.
+	/* Tear down the connections after the reset, if any, until which the
+	 * controller owns the packets in flight and reports their completion.
+	 * What is left afterwards is completed by the host with an error. This
+	 * comes before the transport is closed, as the disconnected callback of
+	 * an ISO channel may send a command.
 	 */
 	if (IS_ENABLED(CONFIG_BT_ISO)) {
 		bt_iso_reset();
 	}
 
-#if defined(CONFIG_BT_CONN)
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
 		bt_pub_key_hci_disrupted();
 	}
+
+#if defined(CONFIG_BT_CONN)
 	bt_conn_cleanup_all();
-	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
 	/* Mark the transport closed before purging the command queue: a
@@ -5292,8 +5326,9 @@ int bt_disable(void)
 		/* The transport is still open, but what has been torn down
 		 * cannot be brought back: the connections are gone, and the
 		 * controller has been reset unless the driver has the
-		 * no-reset quirk. So the stack is left not ready, where all
-		 * that can be done is to try the disable again.
+		 * no-reset quirk or the reset failed. So the stack is left not
+		 * ready, where all that can be done is to try the disable
+		 * again.
 		 */
 		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
@@ -5301,6 +5336,15 @@ int bt_disable(void)
 	}
 
 	hci_cmd_sent_purge();
+
+#if defined(CONFIG_BT_CONN)
+	/* Only now that nothing more is received: a controller that has not
+	 * been reset can report a disconnection until the transport is closed,
+	 * which would otherwise be taken for one of the next connection that
+	 * gets the same handle.
+	 */
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
 
 	/* Some functions rely on checking this bitfield */
 	ARRAY_FOR_EACH(bt_dev.supported_commands, i) {
@@ -5325,7 +5369,7 @@ int bt_disable(void)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 
-	return 0;
+	return reset_err;
 }
 
 bool bt_is_ready(void)
