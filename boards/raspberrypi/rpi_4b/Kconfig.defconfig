@@ -18,8 +18,14 @@ endif # PM_DEVICE
 
 if NET_L2_ETHERNET
 
-configdefault NET_BUF_RX_COUNT
-	default 270
+configdefault NET_L2_ETHERNET_RESERVE_HEADER
+	default y
+
+configdefault NET_BUF_DATA_SIZE
+	default 1536
+
+configdefault NET_TX_STACK_SIZE
+	default 2048
 
 configdefault NET_RX_STACK_SIZE
 	default 3072
@@ -29,6 +35,9 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 
 configdefault NET_TCP_WORKQ_STACK_SIZE
 	default 2048
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 3072
 
 endif # NET_L2_ETHERNET
 
