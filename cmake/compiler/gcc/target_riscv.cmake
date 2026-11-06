@@ -55,7 +55,10 @@ if(CONFIG_RISCV_ISA_EXT_C)
   string(APPEND riscv_march "c")
 endif()
 
-if(CONFIG_RISCV_ISA_EXT_ZICNTR)
+# Zicntr defines CSRs but no instructions, and Clang accepts the counter CSR
+# names without it. The Zephyr SDK LLVM multilib configuration matches no
+# -march containing it, so it is left out for Clang.
+if(CONFIG_RISCV_ISA_EXT_ZICNTR AND NOT COMPILER STREQUAL "clang")
   string(APPEND riscv_march "_zicntr")
 endif()
 
