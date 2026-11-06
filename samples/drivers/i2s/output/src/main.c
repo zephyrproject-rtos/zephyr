@@ -71,7 +71,8 @@ int main(void)
 	/* Configure I2S stream */
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;
-	i2s_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
+	i2s_cfg.format = IS_ENABLED(CONFIG_SAMPLE_I2S_FORMAT_PDM) ? I2S_FMT_DATA_FORMAT_PDM
+								  : I2S_FMT_DATA_FORMAT_I2S;
 	i2s_cfg.frame_clk_freq = 44100;
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = 2000;
