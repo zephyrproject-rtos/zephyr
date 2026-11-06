@@ -114,7 +114,7 @@ ZTEST(fastmath_f16, test_arm_sqrt_f16)
 			((float16_t *)in_sqrt)[index], &output[index]);
 
 		/* Validate operation status */
-		if (((float16_t *)in_sqrt)[index] < 0.0f) {
+		if ((float)((float16_t *)in_sqrt)[index] < 0.0f) {
 			zassert_equal(status, ARM_MATH_ARGUMENT_ERROR,
 				"square root did fail with an input value "
 				"of '0'");
