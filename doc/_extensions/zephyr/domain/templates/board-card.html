@@ -3,6 +3,25 @@
   SPDX-License-Identifier: Apache-2.0
 #}
 
+{#- Hardware capabilities and compatibles that are backed by at least one devicetree node with
+    an "okay" status, ie. nodes that are actually enabled on the board. -#}
+{%- set enabled_feature_types = [] -%}
+{%- set enabled_compatibles = [] -%}
+{%- for target in board.supported_features.values() -%}
+  {%- for feature_type, feature_compatibles in target.features.items() -%}
+    {%- for compatible, feature in feature_compatibles.items() -%}
+      {%- if feature.okay_nodes -%}
+        {%- if feature_type not in enabled_feature_types -%}
+          {%- set _ = enabled_feature_types.append(feature_type) -%}
+        {%- endif -%}
+        {%- if compatible not in enabled_compatibles -%}
+          {%- set _ = enabled_compatibles.append(compatible) -%}
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+  {%- endfor -%}
+{%- endfor -%}
+
 <a
   class="board-card"
   {% if board.doc_page -%}
@@ -27,6 +46,7 @@
     {%- endfor -%}
     {{- feature_types|join(' ') -}}
   "
+  data-supported-features-enabled="{{ enabled_feature_types|join(' ') }}"
   data-compatibles="
     {%- set all_compatibles = [] -%}
     {%- for target_compatibles in board.compatibles.values() -%}
@@ -38,6 +58,7 @@
     {%- endfor -%}
     {{- all_compatibles|join(' ') -}}
   "
+  data-compatibles-enabled="{{ enabled_compatibles|join(' ') }}"
   data-maintained="{{ board.maintained | tojson }}"
   tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
