@@ -487,6 +487,11 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 				}
 			}
 
+			if (accumulator_buffer.count == 0) {
+				++ch.chan_idx;
+				continue;
+			}
+
 			/* Print the accumulated value average */
 			switch (ch.chan_type) {
 			case SENSOR_CHAN_ACCEL_XYZ:

@@ -15,7 +15,8 @@ menuconfig BME680
 	select SPI_RTIO if SENSOR_ASYNC_API && $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME680),spi)
 	select RTIO_OP_DELAY if SENSOR_ASYNC_API
 	help
-	  Enable driver for BME680 I2C- or SPI- based temperature, pressure, humidity and gas sensor.
+	  Enable driver for BME680, BME688 and BME690 I2C- or SPI- based temperature,
+	  pressure, humidity and gas sensors.
 
 if BME680
 
