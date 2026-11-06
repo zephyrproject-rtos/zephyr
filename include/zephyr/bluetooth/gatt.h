@@ -2402,17 +2402,22 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *  either from within this function or from a thread context chosen by
  *  the stack.
  *
+ *  Once this function returns 0 the subscription is removed, and the callback
+ *  with NULL data comes also if the write to the Client Characteristic
+ *  Configuration then fails, for example because the connection is lost. The
+ *  server may then still consider the client subscribed.
+ *
  *  @param conn Connection object.
  *  @param params Subscribe parameters. The parameters shall be a @ref bt_gatt_subscribe_params from
  *                a previous call to bt_gatt_subscribe().
  *
- *  @retval 0 Successfully queued request. Will call @p params->write on
- *  resolution.
+ *  @retval 0 Successfully queued request. Will call @p params->notify with NULL
+ *  data on resolution.
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
  *  from a separate thread to get blocking behavior. Queue size is controlled
- *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}. The subscription remains.
  */
 int bt_gatt_unsubscribe(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params);
