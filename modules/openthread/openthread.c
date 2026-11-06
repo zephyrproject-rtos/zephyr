@@ -130,6 +130,23 @@ static otInstance *openthread_instance;
 static sys_slist_t openthread_state_change_cbs = SYS_SLIST_STATIC_INIT(openthread_state_change_cbs);
 static struct k_work_q openthread_work_q;
 
+#if defined(CONFIG_OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE) && \
+	!defined(CONFIG_OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE)
+#if CONFIG_OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS > 0
+static otNetifAddress ext_unicast_addr_pool[CONFIG_OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS];
+#define OT_EXT_UNICAST_ADDR_POOL ext_unicast_addr_pool
+#else
+#define OT_EXT_UNICAST_ADDR_POOL NULL
+#endif
+
+#if CONFIG_OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS > 0
+static otNetifMulticastAddress ext_multicast_addr_pool[CONFIG_OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS];
+#define OT_EXT_MULTICAST_ADDR_POOL ext_multicast_addr_pool
+#else
+#define OT_EXT_MULTICAST_ADDR_POOL NULL
+#endif
+#endif
+
 static K_WORK_DEFINE(openthread_work, openthread_process);
 static K_MUTEX_DEFINE(openthread_lock);
 K_KERNEL_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
@@ -352,6 +369,19 @@ int openthread_init(void)
 	openthread_instance = otInstanceInitSingle();
 
 	__ASSERT(openthread_instance, "OT instance initialization failed");
+
+#if defined(CONFIG_OPENTHREAD_IP6_INIT_EXT_ADDR_POOL_ENABLE) && \
+	!defined(CONFIG_OPENTHREAD_CLI_IFCONFIG_INIT_ENABLE)
+	error = otIp6Init(openthread_instance, OT_EXT_UNICAST_ADDR_POOL,
+			  CONFIG_OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS,
+			  OT_EXT_MULTICAST_ADDR_POOL,
+			  CONFIG_OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS);
+	if (error != OT_ERROR_NONE) {
+		LOG_ERR("Failed to initialize external IPv6 address pools: %d", error);
+		openthread_mutex_unlock();
+		return -EIO;
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_SHELL)) {
 		platformShellInit(openthread_instance);
