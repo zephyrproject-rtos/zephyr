@@ -148,6 +148,20 @@
 			status = "okay";
 		};
 
+		comp0: comp@400e0000 {
+			compatible = "ti,mspm0-comparator";
+			reg = <0x400e0000 0x2000>;
+			interrupts = <38 0>;
+			status = "disabled";
+		};
+
+		comp1: comp@400e2000 {
+			compatible = "ti,mspm0-comparator";
+			reg = <0x400e2000 0x2000>;
+			interrupts = <39 0>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@400f0000 {
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x400f0000 0x6000>;
