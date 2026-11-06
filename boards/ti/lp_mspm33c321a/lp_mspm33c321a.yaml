@@ -7,5 +7,6 @@ toolchain:
 ram: 256
 flash: 1024
 supported:
+  - hwinfo
   - watchdog
 vendor: ti
