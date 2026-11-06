@@ -40,9 +40,9 @@
 
 #include "ll_sw/lll.h"
 #include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
+#include "ll_sw/lll_adv_types.h"
 #include "ll_sw/lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include "ll_sw/lll_adv_pdu.h"
 #include "ll_sw/lll_scan.h"
 #include "lll/lll_df_types.h"
 #include "ll_sw/lll_sync.h"

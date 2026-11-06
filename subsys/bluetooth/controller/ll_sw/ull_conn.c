@@ -61,7 +61,7 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_central_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
-#include "lll/lll_adv_types.h"
+#include "lll_adv_types.h"
 #include "lll_adv.h"
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
