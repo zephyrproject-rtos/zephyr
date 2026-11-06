@@ -12,3 +12,10 @@ tests:
       - qemu_x86
       - bbc_microbit
     tags: bluetooth
+  sample.bluetooth.mesh_demo.no_blobs:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+    tags: bluetooth
+    build_only: true
