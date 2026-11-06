@@ -345,10 +345,13 @@ static int init_pipe_obj_core_list(void)
 	z_obj_type_init(&obj_type_pipe, K_OBJ_TYPE_PIPE_ID,
 			offsetof(struct k_pipe, obj_core));
 
-	/* Initialize and link statically defined pipes */
+	/* Initialize statically defined pipes */
 	STRUCT_SECTION_FOREACH(k_pipe, pipe) {
-		k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
+		k_obj_core_init(K_OBJ_CORE(pipe), &obj_type_pipe);
 	}
+
+	k_obj_type_init_range(&obj_type_pipe, STRUCT_SECTION_START(k_pipe),
+			      STRUCT_SECTION_END(k_pipe), sizeof(struct k_pipe), false);
 
 	return 0;
 }
