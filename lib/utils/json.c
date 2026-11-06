@@ -904,12 +904,30 @@ static int arr_parse(struct json_obj *obj,
 
 static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val);
 
+/*
+ * The numeric decoders temporarily NUL-terminate the token in place, so the
+ * token must be followed by a byte that belongs to the payload. A number that
+ * ends at the end of the payload does not have one: the lexer stops there
+ * because it ran out of input, so the document is truncated and the parse is
+ * going to fail anyway. Reject such a token instead of letting the decoders
+ * access payload[len].
+ */
+static bool number_token_truncated(const struct json_obj *obj,
+				   const struct json_token *token)
+{
+	return token->type == JSON_TOK_NUMBER && token->end >= obj->lex.end;
+}
+
 static int64_t decode_value(struct json_obj *obj,
 			    const struct json_obj_descr *descr,
 			    struct json_token *value, void *field, void *val)
 {
 
 	if (!equivalent_types(value->type, descr->type)) {
+		return -EINVAL;
+	}
+
+	if (number_token_truncated(obj, value)) {
 		return -EINVAL;
 	}
 
@@ -2037,6 +2055,10 @@ static int64_t decode_mixed_value(struct json_obj *obj,
 				  void *field, void *val)
 {
 	if (!equivalent_types(value->type, elem->type)) {
+		return -EINVAL;
+	}
+
+	if (number_token_truncated(obj, value)) {
 		return -EINVAL;
 	}
 

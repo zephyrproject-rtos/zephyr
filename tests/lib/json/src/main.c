@@ -3148,6 +3148,56 @@ ZTEST(lib_json_test, test_json_polymorphic_complex_type_error_handling)
 }
 
 /*
+ * A number that ends at the end of the payload used to make the numeric
+ * decoders access payload[len] while NUL-terminating the token in place. Copy
+ * the text without a terminator so that an out-of-bounds access is caught by
+ * ASAN; without ASAN only the parse result is observable.
+ */
+ZTEST(lib_json_test, test_json_obj_parse_number_at_end)
+{
+	static const char text[] = "{\"nested_int\":123";
+	char payload[sizeof(text) - 1];
+	struct test_nested val = {0};
+	int64_t ret;
+
+	memcpy(payload, text, sizeof(payload));
+
+	ret = json_obj_parse(payload, sizeof(payload), nested_descr,
+			     ARRAY_SIZE(nested_descr), &val);
+
+	zassert_true(ret < 0, "truncated number must be rejected, got %d", (int)ret);
+}
+
+ZTEST(lib_json_test, test_json_arr_parse_number_at_end)
+{
+	static const char text[] = "[1,2";
+	char payload[sizeof(text) - 1];
+	struct test_mixed_arr val = {0};
+	int ret;
+
+	memcpy(payload, text, sizeof(payload));
+
+	ret = json_arr_parse(payload, sizeof(payload), test_mixed_arr_descr_arr, &val);
+
+	zassert_true(ret < 0, "truncated number must be rejected, got %d", ret);
+}
+
+ZTEST(lib_json_test, test_json_mixed_arr_parse_number_at_end)
+{
+	static const char text[] = "[\"x\",5";
+	char payload[sizeof(text) - 1];
+	struct test_mixed_arr val = {0};
+	int ret;
+
+	memcpy(payload, text, sizeof(payload));
+
+	ret = json_mixed_arr_parse(payload, sizeof(payload), test_mixed_arr_descr,
+				   ARRAY_SIZE(test_mixed_arr_descr), &val);
+
+	zassert_true(ret < 0, "truncated number must be rejected, got %d", ret);
+}
+
+/*
  * Tests for the top-level object-member walker
  * (json_obj_separate_parse_init / json_obj_next_key_value).
  */
