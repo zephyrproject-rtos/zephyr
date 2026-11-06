@@ -15,6 +15,8 @@ def parse_args():
                 description="Generate footprint data based on a predefined plan.",
                 allow_abbrev=False)
     parser.add_argument("-p", "--plan", help="Path of test plan", required=True)
+    parser.add_argument("--timeout", type=int, default=120,
+                         help="Per-build subprocess timeout in seconds (default: 120)")
 
     return parser.parse_args()
 
@@ -50,7 +52,7 @@ def main():
 
 
             try:
-                subprocess.check_output(cmd, stderr=subprocess.STDOUT, timeout=120, universal_newlines=True)
+                subprocess.check_output(cmd, stderr=subprocess.STDOUT, timeout=args.timeout, universal_newlines=True)
                 print("Copying files...")
                 pathlib.Path(f'footprint_data/{version}/{name}/{feature}/{board}').mkdir(parents=True, exist_ok=True)
 
