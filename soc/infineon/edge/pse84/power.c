@@ -10,6 +10,7 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/sys/poweroff.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/logging/log.h>
 
@@ -54,7 +55,12 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			Cy_SysPm_SetDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
 		} else {
 			LOG_DBG("Entering PM state soft-off (Hibernate)");
+#if defined(CONFIG_POWEROFF)
+			__enable_irq();
+			sys_poweroff();
+#else
 			Cy_SysPm_SystemEnterHibernate();
+#endif
 		}
 		break;
 	default:
