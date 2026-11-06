@@ -31,4 +31,5 @@ tests:
 
   drivers.audio.build.dmic:
     platform_allow:
+      - stm32f469i_disco
       - stm32u5g9j_dk2/stm32u5g9xx
