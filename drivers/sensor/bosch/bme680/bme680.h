@@ -59,7 +59,7 @@ extern const struct bme680_bus_io bme680_bus_io_i2c;
 
 /*
  * Raw field-0 data registers as they appear in the sensor.
- * Registers 0x1F-0x2B (13 bytes).
+ * Registers 0x1F-0x2D (15 bytes).
  */
 struct bme_data_regs  {
 	uint8_t pressure[3];
@@ -67,6 +67,7 @@ struct bme_data_regs  {
 	uint8_t humidity[2];
 	uint8_t padding[3];
 	uint8_t gas[2];
+	uint8_t gas_high[2];
 } __packed;
 
 #define BME680_FIELD0_DATA_LEN  sizeof(struct bme_data_regs)
@@ -82,6 +83,9 @@ struct bme680_config {
 };
 
 #define BME680_CHIP_ID                  0x61
+
+#define BME680_VARIANT_GAS_LOW  0x00
+#define BME680_VARIANT_GAS_HIGH 0x01
 
 #define BME680_LEN_COEFF_ALL            42
 #define BME680_LEN_COEFF1               23
@@ -106,6 +110,7 @@ struct bme680_config {
 #define BME680_REG_COEFF2               0xe1
 #define BME680_REG_CHIP_ID		0xd0
 #define BME680_REG_SOFT_RESET           0xe0
+#define BME680_REG_VARIANT_ID           0xf0
 
 #define BME680_MSK_NEW_DATA             0x80
 #define BME680_MSK_GAS_RANGE            0x0f
@@ -196,7 +201,8 @@ struct bme680_config {
 #define BME680_CTRL_MEAS_VAL    (BME680_PRESS_OVER | BME680_TEMP_OVER \
 				 | BME680_MODE_FORCED)
 #define BME680_CONFIG_VAL               BME680_FILTER
-#define BME680_CTRL_GAS_1_VAL   0x10
+#define BME680_CTRL_GAS_1_RUN_GAS_LOW   0x10
+#define BME680_CTRL_GAS_1_RUN_GAS_HIGH  0x20
 
 #define BME680_CONCAT_BYTES(msb, lsb) (((uint16_t)msb << 8) | (uint16_t)lsb)
 
@@ -244,6 +250,7 @@ struct bme680_data {
 	int32_t t_fine;
 
 	uint8_t chip_id;
+	uint8_t variant;
 
 #if BME680_BUS_SPI
 	uint8_t mem_page;
@@ -299,7 +306,7 @@ struct bme680_encoded_data {
 #define BME680_TEMP_SHIFT     10  /* Q21.10 for temperature */
 #define BME680_PRESS_SHIFT    8   /* Q24.8 for pressure */
 #define BME680_HUM_SHIFT      10  /* Q22.10 for humidity */
-#define BME680_GAS_SHIFT      24  /* Q7.24 for gas resistance, up to ~16.7M ohms */
+#define BME680_GAS_SHIFT      27  /* Q4.27 for gas resistance, up to ~134M ohms */
 
 /* Function declarations */
 int bme680_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);

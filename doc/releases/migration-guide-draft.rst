@@ -309,6 +309,10 @@ Sensors
   applications must handle a missing gas reading, for example when the heater does not reach
   its target temperature within the configured heating duration.
 
+* :dtcompatible:`bosch,bme680`: BME688 parts now use the high-range gas measurement, so
+  :c:enumerator:`SENSOR_CHAN_GAS_RES` values on boards with a BME688, such as Thingy:53, differ
+  from earlier releases.
+
 Timers
 ======
 
