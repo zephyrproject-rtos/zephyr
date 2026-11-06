@@ -1421,8 +1421,9 @@ requests==2.34.2 \
     #   html2pdf4doc
     #   sphinx
     #   webdriver-manager
-reuse @ https://github.com/fsfe/reuse-tool/archive/f94ae0b1bb1d4d2ea91f49df88f3184c5d781a1d.tar.gz \
-    --hash=sha256:aa155da6b54c41b0bb7a5652a571a9187c019d71f3b1bb63469acc738cf4e811
+reuse==6.3.0 \
+    --hash=sha256:5a6ca437057c07ca22a67256520e2783ab03b5524d3a4535603c3d49e3d4b001 \
+    --hash=sha256:be6b598aa6d5cdf44af0da265572a72f0adcd30033857af874fd8607188259c1
     # via -r requirements.in
 robotframework==7.5 \
     --hash=sha256:5a194db36524604fafa1da89adebc837db9a95adf15ffd746e09ce98251e6c68 \
