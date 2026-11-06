@@ -1,0 +1,23 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * RAK1901 is a Sensirion SHTC3 on the WisBlock sensor I2C bus.
+ */
+
+/ {
+	aliases {
+		dht0 = &shtc3_rak1901;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	shtc3_rak1901: shtc3@70 {
+		compatible = "sensirion,shtc3", "sensirion,shtcx";
+		reg = <0x70>;
+		measure-mode = "normal";
+		clock-stretching;
+	};
+};
