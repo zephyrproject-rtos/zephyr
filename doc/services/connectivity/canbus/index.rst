@@ -7,3 +7,4 @@ Controller Area Network (CAN) Bus Protocols
    :maxdepth: 2
 
    isotp.rst
+   j1939.rst
