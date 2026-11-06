@@ -42,6 +42,7 @@
 	};
 
 	aliases {
+		i2s-tx = &i2s1;
 		led0 = &green_led_2;
 		sw0 = &user_button;
 	};
@@ -116,6 +117,7 @@
 &i2s1 {
 	pinctrl-0 = <&i2s1_ck_pa5 &i2s1_sd_pa7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi1 {

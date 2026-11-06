@@ -725,6 +725,15 @@ static void schedule_and_start_adc_sequence(ADC_TypeDef *adc, struct adc_stm32wb
 	data->dma_block_config.dest_address = (uint32_t)data->next_sample_ptr;
 	data->dma_block_config.block_size = data->sequence_length * sizeof(uint16_t);
 
+	/* DMA channel has not been initialized */
+	if (config->dma_channel < 0 || config->dma_channel == STM32_DMA_CHANNEL_AUTO) {
+		config->dma_channel = dma_request_channel(config->dmac, NULL);
+		if (config->dma_channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", config->dma_channel);
+			return -ENODEV;
+		}
+	}
+
 	err = dma_config(config->dmac, config->dma_channel, &data->dmac_config);
 	if (err < 0) {
 		LOG_ERR("%s: FAIL - dma_config returns %d", __func__, err);
@@ -1186,7 +1195,7 @@ static const struct adc_stm32wb0_config adc_config = {
 	.ana_clk = STM32_CLOCK_INFO(1, ADC_NODE),
 #if defined(CONFIG_ADC_STM32_DMA)
 	.dmac = DEVICE_DT_GET(DT_DMAS_CTLR_BY_IDX(ADC_NODE, 0)),
-	.dma_channel = DT_DMAS_CELL_BY_IDX(ADC_NODE, 0, channel),
+	.dma_channel = DT_DMAS_CELL_BY_IDX_OR(ADC_NODE, 0, channel, -1),
 #endif
 };
 

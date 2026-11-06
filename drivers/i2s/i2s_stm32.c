@@ -519,6 +519,15 @@ static int start_dma(const struct device *dev_dma, uint32_t channel,
 
 	dcfg->head_block = &blk_cfg;
 
+	/* DMA channel has not been initialized */
+	if (channel < 0 || channel == STM32_DMA_CHANNEL_AUTO) {
+		channel = dma_request_channel(dev_dma, NULL);
+		if (channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", channel);
+			return -ENODEV;
+		}
+	}
+
 	ret = dma_config(dev_dma, channel, dcfg);
 	if (ret < 0) {
 		return ret;
@@ -933,7 +942,8 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 #define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
 	.dir = {								\
 		.dev_dma = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
-		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
+		.dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),	\
+				(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)), \
 		.dma_cfg = {							\
 			.block_count = 2,					\
 			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),		\
