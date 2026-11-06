@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	dma-channels = <4>;
+	status = "okay";
+};
+
+tst_dma0: &dma {};
+
+/ {
+	/* Allocation tests never configure these channels. */
+	tst_dma_alloc: dma-alloc {
+		compatible = "zephyr,dma-emul";
+		#dma-cells = <1>;
+		dma-channels = <2>;
+		stack-size = <4096>;
+		status = "okay";
+	};
+};
