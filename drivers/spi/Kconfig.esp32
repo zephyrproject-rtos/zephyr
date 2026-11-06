@@ -17,6 +17,19 @@ config SPI_ESP32_INTERRUPT
 	help
 	  Enables interrupt support for ESP32 SPI driver.
 
+config SPI_ESP32_TX_BOUNCE_BUFFER_SIZE
+	int "Size of the DMA transmit bounce buffers"
+	default 0
+	range 0 4092
+	help
+	  Size of each of the two internal RAM buffers that every instance
+	  with dma-enabled sends from when the DMA cannot read the transmit
+	  data, in PSRAM or flash for instance. The next chunk is copied to
+	  one buffer while the other one is sent, and such data is sent in
+	  chunks of at most this size. With 0, a buffer is allocated from the
+	  system heap for each such transfer instead, and every chunk is
+	  copied to it before being sent.
+
 config ESP32_SPI_TARGET
 	bool "ESP32 SPI target mode"
 	select SPI_PERIPHERAL
