@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Clock controller emulation (cell:clkid)
+
+  The subsystem selector is the cell value itself, carried in the
+  clock_control_subsys_t pointer rather than pointed to by it. A consumer
+  builds one with a plain cast:
+
+      clock_control_on(dev, (clock_control_subsys_t)DT_CLOCKS_CELL(node, clkid));
+
+  The driver recovers it with (uint32_t)(uintptr_t)sys and looks it up in
+  clock-ids.
+
+include: ["zephyr,clock-controller-emul-common.yaml"]
+
+compatible: "zephyr,clock-controller-emul-clkid"
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid
