@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config PULSE_IO_STM32_TIMER
+	bool "STM32 timer Pulse IO driver"
+	default y
+	depends on DT_HAS_ST_STM32_PULSE_IO_ENABLED
+	select USE_STM32_LL_TIM
+	select DMA
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  Enable the Pulse IO driver for STM32 timers. It transmits fixed-period
+	  cells on a timer channel in PWM mode, a DMA transfer loading the duty
+	  cycle of each period.
