@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: control_n1
+name: 3DR Control N1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 1920
+supported:
+  - adc
+  - can
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - sdhc
+  - spi
+  - uart
+  - watchdog
+vendor: 3dr
