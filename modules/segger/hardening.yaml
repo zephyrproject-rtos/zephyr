@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for SEGGER RTT.
+
+rules:
+  USE_SEGGER_RTT:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Places an RTT control block in RAM that a debug probe locates and polls to exchange data with
+      the running target, so every console, log or shell backend routed over RTT is reachable
+      through the debug port. On STM32 it also selects CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP, which
+      keeps that port alive in sleep and stop modes.
+    references: [CWE-489]
