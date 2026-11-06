@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for UpdateHub.
+
+rules:
+  UPDATEHUB_DTLS:
+    value: y
+    rationale: |
+      Without DTLS the UpdateHub client exchanges probes, update metadata and image blocks as
+      plaintext CoAP that anyone on the network path can read and rewrite, down to the SHA-256
+      digest the downloaded image is checked against.
+    references: [CWE-319]
