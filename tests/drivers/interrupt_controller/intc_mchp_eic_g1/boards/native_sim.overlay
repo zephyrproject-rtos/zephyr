@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The line tables of pic32cm_sg_gc.dtsi */
+/ {
+	eic: zephyr,user {
+		porta-eic-lines = [10 32 54 76 98 ba dc fe 10 32 04 00 00 00 00 00];
+		portb-eic-lines = [10 32 54 86 a9 cb e2 0f 21 00 00 00 00 00 00 00];
+		portc-eic-lines = [10 32 54 06 90 ba dc fe 10 32 00 00 00 00 00 00];
+		portd-eic-lines = [10 00 32 40 65 98 ba dc fe 10 02 00 00 00 00 00];
+	};
+};
