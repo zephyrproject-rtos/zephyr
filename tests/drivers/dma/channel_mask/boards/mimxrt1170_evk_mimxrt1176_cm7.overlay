@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Powersoft S.p.A.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Reserve channels 3, 20 and 31. On this SoC channels n and n + 16 share
+ * one interrupt line, so channels 4, 15 and 19 share a line with a reserved
+ * channel. Channels 0 and 1 stay usable: the board gives them to lpspi1.
+ */
+tst_dma0: &edma0 {
+	dma-channel-mask = <0x7feffff7>;
+};

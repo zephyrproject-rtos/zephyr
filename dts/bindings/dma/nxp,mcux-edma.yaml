@@ -34,6 +34,29 @@ properties:
       DMAMUX. This value is used to validate the request source index provided in the
       DMA specifier.
 
+  dma-channel-mask:
+    description: |
+      Bitmask of the channels that Zephyr can use. Bit n is channel n of the
+      DMA API, that is the channel index before the channel-gap is applied.
+      If this property is not set, Zephyr can use all the channels.
+
+      A channel with its bit clear is reserved for the firmware, the
+      application or another core. dma_request_channel() does not return it,
+      the DMA API returns -EINVAL for it, and the driver interrupt handler
+      does not touch it.
+
+      The mask has 32 bits, so dma-channels must be 32 or less when this
+      property is set.
+
+      The driver still connects and enables the interrupt lines of all the
+      channels, and a line can be shared by a reserved channel and a Zephyr
+      channel. The driver does not clear the flags of a reserved channel, so
+      do not enable the interrupts of a reserved channel on these lines.
+
+      On eDMA v2, EDMA_Init() clears the request enable, interrupt and error
+      flags of all the channels. Start a reserved channel only after the
+      driver initialization.
+
   has-dmamux:
     type: boolean
     description: |
