@@ -44,6 +44,19 @@ add_custom_target(
   DEPENDS ram_report rom_report
   )
 
+add_custom_target(
+  syscall_stack_report
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/footprint/syscall_stack_usage.py
+  --elf-file ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+  --output-file ${CMAKE_BINARY_DIR}/syscall_stack_usage.txt
+  --build-dir ${CMAKE_BINARY_DIR}
+  DEPENDS ${logical_target_for_zephyr_elf}
+          $<TARGET_PROPERTY:zephyr_property_target,syscall_stack_report_DEPENDENCIES>
+  USES_TERMINAL
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+
 if(CONFIG_BUILD_WITH_TFM)
   foreach(report ram rom)
     add_custom_target(
