@@ -280,6 +280,16 @@
 		#size-cells = <1>;
 	};
 
+	sramc: main_ahb_sramc: memory-controller@40080000 {
+		compatible = "nxp,ahb-sramc";
+		reg = <0x40080000 0x10000>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_SRAMC,
+					   IMX_CCM_ROOT_CGU_MAIN_ROOTCLK)>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	/* eDMA3 (MAIN domain) version 4. Channels 0..31 = IRQ 29..60. */
 	edma0: main_edma3: dma-controller@400e0000 {
 		compatible = "nxp,mcux-edma";
