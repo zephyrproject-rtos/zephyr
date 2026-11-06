@@ -1062,7 +1062,9 @@ static int uart_max32_pm_suspend(const struct max32_uart_config *const cfg)
 
 	/* Disable clock */
 	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-	if (ret != 0) {
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	} else if (ret != 0) {
 		LOG_ERR("cannot disable UART clock");
 	}
 
