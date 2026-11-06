@@ -1,5 +1,6 @@
 tests:
   zdsp.utils:
+    filter: not CONFIG_CPU_ARM9
     integration_platforms:
       - native_sim
     tags:
