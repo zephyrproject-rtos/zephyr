@@ -49,6 +49,51 @@ See :zephyr_file:`include/zephyr/dt-bindings/memory-attr/memory-attr-arm.h` and
 for more details about MPU usage. Also see :ref:`cache_guide` for details on how
 Zephyr handles caching.
 
+ARMv7-R and ARMv8-R MPU permissions can also be expressed using generic,
+composable memory attributes when :kconfig:option:`CONFIG_ARM_MPU` and
+:kconfig:option:`CONFIG_MEM_ATTR` are enabled. ``DT_MEM_EXPLICIT_PERMS`` selects
+this interpretation: each clear kernel (privileged) or user (unprivileged)
+R/W/X permission bit denies that access, including when all six bits are clear.
+Without the marker, the existing ARM-specific memory attributes retain their
+legacy handling. For example:
+
+.. code-block:: devicetree
+
+   text_region: memory@10000000 {
+       reg = <0x10000000 0x10000>;
+       zephyr,memory-attr =
+           <(DT_MEM_EXPLICIT_PERMS | DT_MEM_K_READABLE |
+              DT_MEM_K_EXECUTABLE | DT_MEM_CACHEABLE)>;
+   };
+
+   ipc_region: memory@20000000 {
+       reg = <0x20000000 0x10000>;
+       zephyr,memory-attr =
+           <(DT_MEM_EXPLICIT_PERMS | DT_MEM_K_READABLE | DT_MEM_K_WRITABLE |
+              DT_MEM_U_READABLE | DT_MEM_U_WRITABLE |
+              DT_MEM_NON_CACHEABLE | DT_MEM_SHAREABLE)>;
+   };
+
+Explicit policies must select exactly one of ``DT_MEM_CACHEABLE`` and
+``DT_MEM_NON_CACHEABLE``. Shareability is independent of permissions and does
+not grant user access. On ARMv7-R, ``DT_MEM_SHAREABLE`` selects normal shareable
+memory; on ARMv8-R it selects outer-shareable memory.
+
+Both architectures support kernel RO or RW with user access denied, kernel/user
+RO, and kernel/user RW. ARMv7-R additionally supports kernel RW/user RO and
+all-access-denied regions. ARMv8-R cannot encode those two policies and rejects
+them. Writes and execution require read permission at the corresponding
+privilege level, and user access cannot exceed kernel access. When users can
+read a region, kernel and user execution permissions must match because these
+MPU encodings use a common execute-never bit. Unsupported policies fail MPU
+initialization rather than granting additional access.
+
+ARMv7-R regions must have a power-of-two size of at least the MPU minimum and
+an address aligned to that size. ARMv8-R regions must have addresses and sizes
+aligned to the MPU minimum. At boot, all enabled ARMv8-R static and DT MPU
+regions are checked for overlaps before the MPU is enabled. Each distinct MPU
+range and policy requires a separate devicetree node and consumes one MPU region.
+
 The conventional and recommended way to deal and manage with memory regions
 marked with attributes is by using the provided ``mem-attr`` helper library by
 enabling :kconfig:option:`CONFIG_MEM_ATTR`. When this option is enabled the

@@ -52,6 +52,26 @@
 #define  DT_MEM_OOO			BIT(2)
 /** @brief Memory is usable for DMA. */
 #define  DT_MEM_DMA			BIT(3)
+/** @brief Memory is readable from privileged mode. */
+#define DT_MEM_K_READABLE        BIT(4)
+/** @brief Memory is writable from privileged mode. */
+#define DT_MEM_K_WRITABLE        BIT(5)
+/** @brief Memory is executable from privileged mode. */
+#define DT_MEM_K_EXECUTABLE      BIT(6)
+/** @brief Memory is readable from unprivileged mode. */
+#define DT_MEM_U_READABLE        BIT(7)
+/** @brief Memory is writable from unprivileged mode. */
+#define DT_MEM_U_WRITABLE        BIT(8)
+/** @brief Memory is executable from unprivileged mode. */
+#define DT_MEM_U_EXECUTABLE      BIT(9)
+/** @brief Interpret bits 4–9 as explicit permissions; clear bits deny access.
+ * Without this marker, legacy architecture-specific handling applies.
+ */
+#define DT_MEM_EXPLICIT_PERMS    BIT(10)
+/** @brief Memory has architecture-defined shareability. */
+#define DT_MEM_SHAREABLE         BIT(11)
+/** @brief Memory is explicitly non-cacheable. */
+#define DT_MEM_NON_CACHEABLE     BIT(12)
 /** @brief Generic memory attributes are unknown. */
 #define  DT_MEM_UNKNOWN			BIT(15)
 /* to be continued */
