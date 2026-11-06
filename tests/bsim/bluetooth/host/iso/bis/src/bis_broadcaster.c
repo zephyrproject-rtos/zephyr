@@ -48,6 +48,7 @@ static struct bt_iso_chan_qos iso_qos = {
 };
 
 DEFINE_FLAG_STATIC(flag_iso_connected);
+DEFINE_FLAG_STATIC(flag_big_active);
 
 static void iso_connected_cb(struct bt_iso_chan *chan)
 {
@@ -126,6 +127,21 @@ static void iso_disconnected_cb(struct bt_iso_chan *chan, uint8_t reason)
 	}
 }
 
+static void big_started_cb(struct bt_iso_big *big)
+{
+	ARG_UNUSED(big);
+
+	SET_FLAG(flag_big_active);
+}
+
+static void big_stopped_cb(struct bt_iso_big *big, uint8_t reason)
+{
+	ARG_UNUSED(big);
+	ARG_UNUSED(reason);
+
+	UNSET_FLAG(flag_big_active);
+}
+
 static void init(void)
 {
 	static struct bt_iso_chan_ops iso_ops = {
@@ -133,6 +149,10 @@ static void init(void)
 		.connected = iso_connected_cb,
 		.sent = iso_tx_sent_cb,
 		.send_failed = iso_tx_send_failed_cb,
+	};
+	static struct bt_iso_big_cb big_cb = {
+		.started = big_started_cb,
+		.stopped = big_stopped_cb,
 	};
 	struct bt_le_local_features local_features;
 	int err;
@@ -142,6 +162,9 @@ static void init(void)
 
 	err = bt_le_get_local_features(&local_features);
 	TEST_ASSERT(err == 0, "Getting local features failed: %d", err);
+
+	err = bt_iso_big_register_cb(&big_cb);
+	TEST_ASSERT(err == 0, "Failed to register BIG callbacks: %d", err);
 
 	TEST_ASSERT(local_features.iso_mtu >= BT_HCI_ISO_SDU_HDR_SIZE + 1,
 		    "Invalid ISO MTU: %u < %d", local_features.iso_mtu,
@@ -193,6 +216,23 @@ static void start_ext_adv(struct bt_le_ext_adv *adv)
 	TEST_ASSERT(err == 0, "Failed to enable periodic advertising: %d", err);
 }
 
+static void terminate_ext_adv(struct bt_le_ext_adv **adv)
+{
+	int err;
+
+	LOG_INF("Terminating extended and periodic advertising");
+
+	err = bt_le_per_adv_stop(*adv);
+	TEST_ASSERT(err == 0, "Failed to stop per_adv: %d", err);
+
+	err = bt_le_ext_adv_stop(*adv);
+	TEST_ASSERT(err == 0, "Failed to stop ext_adv: %d", err);
+
+	err = bt_le_ext_adv_delete(*adv);
+	TEST_ASSERT(err == 0, "Failed to delete ext_adv: %d", err);
+	*adv = NULL;
+}
+
 static void create_big(struct bt_le_ext_adv *adv, size_t cnt, struct bt_iso_big **out_big)
 {
 	struct bt_iso_chan *channels[ARRAY_SIZE(iso_chans)];
@@ -217,6 +257,7 @@ static void create_big(struct bt_le_ext_adv *adv, size_t cnt, struct bt_iso_big 
 	TEST_ASSERT(err == 0, "Failed to create BIG: %d", err);
 
 	WAIT_FOR_FLAG(flag_iso_connected);
+	WAIT_FOR_FLAG(flag_big_active);
 }
 
 static void terminate_big(struct bt_iso_big *big)
@@ -227,6 +268,8 @@ static void terminate_big(struct bt_iso_big *big)
 
 	err = bt_iso_big_terminate(big);
 	TEST_ASSERT(err == 0, "Failed to terminate BIG: %d", err);
+
+	WAIT_FOR_FLAG_UNSET(flag_big_active);
 
 	big = NULL;
 }
@@ -262,37 +305,62 @@ static void test_main(void)
 	terminate_big(big);
 	big = NULL;
 
+	terminate_ext_adv(&adv);
+
 	TEST_PASS("Test passed");
 }
 
 static void test_main_disable(void)
 {
-	struct bt_le_ext_adv *adv;
-	struct bt_iso_big *big;
+	struct bt_le_ext_adv *adv = NULL;
+	struct bt_iso_big *big = NULL;
 
 	init();
 
-	/* Create advertising set and BIG */
-	create_ext_adv(&adv);
-	create_big(adv, ARRAY_SIZE(iso_chans), &big);
+	/* Perform this loop for each state in DISABLE_STATE_COUNT */
+	for (enum disable_states i = 0; i < DISABLE_STATE_COUNT; i++) {
+		LOG_INF("Running iteration %d", i);
 
-	/* Reset BT to see if we can set it up again */
-	reset_bluetooth();
+		/* Sync with sync receiver before doing the next step */
+		bk_sync_send();
+		bk_sync_wait();
 
-	/* After a disable, all advertising sets and BIGs are removed */
-	big = NULL;
-	adv = NULL;
+		/* Create advertising set and BIG */
+		create_ext_adv(&adv);
 
-	/* Set everything up again to see if everything still works as expected */
-	create_ext_adv(&adv);
-	create_big(adv, ARRAY_SIZE(iso_chans), &big);
-	start_ext_adv(adv);
+		create_big(adv, ARRAY_SIZE(iso_chans), &big);
 
-	/* Wait for receiver to tell us to terminate */
-	bk_sync_wait();
+		start_ext_adv(adv);
 
-	terminate_big(big);
-	big = NULL;
+		/* Wait for sync receiver to have received data */
+		bk_sync_wait();
+
+		if (i == DISABLE_STATE_BROADCASTER) {
+			reset_bluetooth();
+			/* After a disable, all advertising sets and BIGs are removed */
+			big = NULL;
+			adv = NULL;
+		} else if (i == DISABLE_STATE_SYNC_RECEIVER) {
+			/* no-op we just keep the broadcast alive */
+		} else if (i == DISABLE_STATE_BOTH) {
+			reset_bluetooth();
+			/* After a disable, all advertising sets and BIGs are removed */
+			big = NULL;
+			adv = NULL;
+		}
+
+		/* Wait for receiver to tell us to continue to the next test step */
+		bk_sync_wait();
+
+		if (big != NULL) {
+			terminate_big(big);
+			big = NULL;
+		}
+
+		if (adv != NULL) {
+			terminate_ext_adv(&adv);
+		}
+	}
 
 	TEST_PASS("Disable test passed");
 }
@@ -334,6 +402,8 @@ static void test_main_fragment(void)
 
 	terminate_big(big);
 	big = NULL;
+
+	terminate_ext_adv(&adv);
 
 	TEST_PASS("Test passed");
 }
