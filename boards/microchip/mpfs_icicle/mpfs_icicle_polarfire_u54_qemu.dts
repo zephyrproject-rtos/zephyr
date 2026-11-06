@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * PolarFire SoC Icicle Kit as emulated by the microchip-icicle-kit machine of QEMU.
+ */
+
+#include "mpfs_icicle_polarfire_u54.dts"
+#include "mpfs_icicle_qemu.dtsi"
+
+/ {
+	/* The console of QEMU is on MMUART0 */
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};

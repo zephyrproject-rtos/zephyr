@@ -7,4 +7,15 @@ choice SPI_NOR_SFDP
 	default SPI_NOR_SFDP_RUNTIME
 endchoice
 
+if QEMU_TARGET
+
+# The harts do not run concurrently with icount
+configdefault QEMU_ICOUNT
+	default n if SMP
+
+configdefault QEMU_ICOUNT_SHIFT
+	default 6
+
+endif # QEMU_TARGET
+
 endif
