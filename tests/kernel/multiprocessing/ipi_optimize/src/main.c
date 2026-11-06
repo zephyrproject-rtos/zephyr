@@ -7,6 +7,8 @@
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 #include <ksched.h>
 #include <ipi.h>
 #include <run_q.h>
@@ -743,12 +745,108 @@ ZTEST(ipi, test_thread_coop_no_ipis)
 	}
 }
 
+#ifdef CONFIG_TEST_IPI_PM_HOOKS
+extern atomic_t pm_cpus_in_state;
+
+static void pm_force_entry(void *p1, void *p2, void *p3)
+{
+	static const struct pm_state_info runtime_idle = {
+		.state = PM_STATE_RUNTIME_IDLE,
+	};
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* Pinned to the CPU it forces: its exit leads straight into the idle
+	 * entry that takes the state, so no idle entry can consume the force
+	 * first.
+	 */
+	zassert_true(pm_state_force(arch_curr_cpu()->id, &runtime_idle),
+		     "PM state not forced");
+}
+
+static void pm_target_entry(void *p1, void *p2, void *p3)
+{
+	int key;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	key = arch_irq_lock();
+	atomic_set(&alt_cpu, (atomic_val_t)_current_cpu->id);
+	arch_irq_unlock(key);
+}
+
+/**
+ * Verify that a thread made ready for a CPU that idles in a PM state wakes
+ * that CPU. pm_system_suspend() holds the scheduler lock on the idle thread
+ * while the CPU is in the state, so the idle thread is not preemptible there.
+ */
+ZTEST(ipi, test_thread_wakes_cpu_in_pm_state)
+{
+	uint32_t set[CONFIG_MP_MAX_NUM_CPUS];
+	unsigned int target;
+	unsigned int id;
+	int priority = k_thread_priority_get(k_current_get());
+	int key;
+	bool ok;
+
+	key = arch_irq_lock();
+	id = _current_cpu->id;
+	arch_irq_unlock(key);
+	target = (id + 1U) % arch_num_cpus();
+
+	/* Run a thread on the target so that its next idle takes the state. */
+	k_thread_create(&alt_thread, alt_stack, STACK_SIZE,
+			pm_force_entry, NULL, NULL, NULL,
+			priority + 1, 0, K_FOREVER);
+	alt_thread_created = true;
+	zassert_ok(k_thread_cpu_pin(&alt_thread, target));
+	k_thread_start(&alt_thread);
+
+	ok = WAIT_FOR((atomic_get(&pm_cpus_in_state) & BIT(target)) != 0,
+		      WAIT_FOR_IPIS_US, k_busy_wait(10));
+	if (!ok) {
+		/* Wake the target so that the suite can go on. */
+		arch_sched_broadcast_ipi();
+	}
+	zassert_true(ok, "CPU%u did not enter the PM state", target);
+
+	clear_ipi_counts();
+	atomic_set(&alt_cpu, CPU_UNSET);
+	k_thread_create(&thread[0], stack[0], STACK_SIZE,
+			pm_target_entry, NULL, NULL, NULL,
+			priority + 1, 0, K_FOREVER);
+	zassert_ok(k_thread_cpu_pin(&thread[0], target));
+	k_thread_start(&thread[0]);
+
+	ok = WAIT_FOR(atomic_get(&alt_cpu) != CPU_UNSET,
+		      WAIT_FOR_IPIS_US, k_busy_wait(10));
+	get_ipi_counts(set, CONFIG_MP_MAX_NUM_CPUS);
+	if (!ok) {
+		/* Wake the target so that the suite can go on. */
+		arch_sched_broadcast_ipi();
+	}
+
+	zassert_true(ok, "Thread pinned to CPU%u did not run while CPU%u was in a PM state",
+		     target, target);
+	zassert_true(set[target] != 0, "CPU%u received no scheduling IPI", target);
+}
+#endif /* CONFIG_TEST_IPI_PM_HOOKS */
+
 static void *ipi_tests_setup(void)
 {
 	/*
 	 * Sleep a bit to guarantee that all CPUs enter an idle thread
 	 * from which they can exit correctly to run the test.
 	 */
+
+#ifdef CONFIG_TEST_IPI_PM_HOOKS
+	/* Only a forced state is taken: the other tests expect plain idle. */
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+#endif
 
 	k_sleep(K_MSEC(20));
 
