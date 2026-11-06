@@ -1665,16 +1665,25 @@ static bool skip_this(const struct http_resource_detail *detail, bool is_websock
 	return false;
 }
 
-/* Resolves '.' / '..' in the path portion of the URL (everything before the first '?' or '#')
- * so the caller-visible buffer holds a canonical form. The query/fragment portion is preserved
- * unchanged. The output is always shorter or equal in length, so the in-place rewrite is safe.
+/* Drops a fragment, which is not part of a request target (RFC 9112 section 3.2.1), and resolves
+ * '.' / '..' in the path portion of the URL (everything before the first '?') so the
+ * caller-visible buffer holds a canonical form. The query portion is preserved unchanged. The
+ * output is always shorter or equal in length, so the in-place rewrite is safe.
  */
 void http_server_remove_dot_segments(char *path)
 {
+	char *fragment = strchr(path, '#');
 	char *in = path;
 	char *out = path;
-	char *query = strpbrk(path, "?#");
-	size_t qtail_len = (query != NULL) ? strlen(query) : 0;
+	char *query;
+	size_t qtail_len;
+
+	if (fragment != NULL) {
+		*fragment = '\0';
+	}
+
+	query = strchr(path, '?');
+	qtail_len = (query != NULL) ? strlen(query) : 0;
 
 	while ((*in != '\0') && (in != query)) {
 		if (in[0] == '.') {
