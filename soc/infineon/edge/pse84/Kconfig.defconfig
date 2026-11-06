@@ -26,6 +26,18 @@ endchoice
 config SYSTEM_TIMER_RESET_BY_LPM
 	default y if PM
 
+config PM_DEVICE
+	default y if PM
+
+config PM_DEVICE_RUNTIME
+	default y if PM_DEVICE
+
+config PM_DEVICE_SYSTEM_MANAGED
+	default y if PM_DEVICE
+
+config PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE_RUNTIME
+
 choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
 endchoice
