@@ -231,7 +231,7 @@ static int eeprom_target_buf_read_requested(struct i2c_target_config *config,
 						config);
 
 	*ptr = &data->buffer[data->buffer_idx];
-	*len = data->buffer_size;
+	*len = data->buffer_size - data->buffer_idx;
 
 	return 0;
 }
@@ -253,7 +253,7 @@ static int eeprom_target_unregister(const struct device *dev)
 	return i2c_target_unregister(cfg->bus.bus, &data->config);
 }
 
-static const struct i2c_target_driver_api api_funcs = {
+static DEVICE_API(i2c_target, api_funcs) = {
 	.driver_register = eeprom_target_register,
 	.driver_unregister = eeprom_target_unregister,
 };
