@@ -7,7 +7,7 @@
 / {
 	zephyr,user {
 		io-channels = <&adc 0>;
-		reference-mv = <1300>;
+		reference-mv = <1800>;
 		expected-accuracy = <64>;
 	};
 };
@@ -25,7 +25,7 @@
 
 	channel@0 {
 		reg = <0>;
-		zephyr,gain = "ADC_GAIN_1";
+		zephyr,gain = "ADC_GAIN_1_2";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,input-positive = <NRF_SAADC_AIN7>;
