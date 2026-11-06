@@ -24,13 +24,6 @@ config IPC_SERVICE_BACKEND_ICBMSG_NUM_EP
 	  backend. The number of endpoints are applied to all the instances,
 	  so this value should be maximum number among all the instances.
 
-config IPC_SERVICE_BACKEND_ICBMSG_MAX_ACTIVE_COUNT
-	int "Maximum number of active buffers"
-	range 16 32
-	default 16
-	help
-	  Maximum number of concurrently active buffers in the message queues.
-
 config IPC_SERVICE_BACKEND_ICBMSG_DEINIT
 	bool "Support closing and deregistering endpoints"
 	help
