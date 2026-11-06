@@ -89,6 +89,7 @@ struct sdhc_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
 	const struct gpio_dt_spec pwr_gpio;
+	const struct gpio_dt_spec cd_gpio;
 	/*
 	 * Pins below are only defined for ESP32. For SoC's with GPIO matrix feature
 	 * please use pinctrl for pin configuration.
@@ -1611,6 +1612,10 @@ static int sdhc_esp32_get_card_present(const struct device *dev)
 	const struct sdhc_esp32_config *cfg = dev->config;
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
 
+	if (cfg->cd_gpio.port != NULL) {
+		return gpio_pin_get_dt(&cfg->cd_gpio);
+	}
+
 	return sdmmc_ll_is_card_detected(sdio_hw, cfg->slot);
 }
 
@@ -1797,6 +1802,18 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	/* Pin configuration */
 
+	if (cfg->cd_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure SDHC card detect pin");
+			return ret;
+		}
+	}
+
 	if (cfg->pwr_gpio.port) {
 		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
 
@@ -1971,6 +1988,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.pcfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                         \
 			  (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),                      \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.clk_pin = DT_INST_PROP_OR(n, clk_pin, GPIO_NUM_NC),                               \
 		.cmd_pin = DT_INST_PROP_OR(n, cmd_pin, GPIO_NUM_NC),                               \
 		.d0_pin = DT_INST_PROP_OR(n, d0_pin, GPIO_NUM_NC),                                 \

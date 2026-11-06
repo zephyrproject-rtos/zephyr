@@ -130,6 +130,9 @@ Devicetree
 * :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
   including chargers without a software-controlled enable pin.
 
+* ESP32 SDHC slots support GPIO-based card detection, including GPIOs on external expanders.
+  Configure the optional ``cd-gpios`` property in :dtcompatible:`espressif,esp32-sdhc-slot`.
+
 Other notable changes
 *********************
 
