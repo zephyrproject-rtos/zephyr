@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/sensor/afbr_s50.h>
+#include <zephyr/dt-bindings/sensor/icm42688.h>
+#include <zephyr/dt-bindings/sensor/icm45686.h>
+
+/ {
+	aliases {
+		argus-stream-0 = &afbr_s50;
+		optical-flow-stream-0 = &paa3905;
+	};
+};
+
+/*
+ * The optical-flow board rides four SPI buses on the stacking header. The
+ * base board leaves the FlexCOMM parents and their SPI children disabled;
+ * enable each parent and child here. Board-side pin routing (including the
+ * AFBR-S50 priv_start bit-bang state) is carried by the labeled bus nodes.
+ *
+ * Sensor interrupt lines come through the stacking-header GPIO nexus
+ * (mr_mcxn_t1_header). The AFBR-S50 SPI-in-GPIO-mode pins (MOSI/SCK/MISO) and
+ * its chip select are the FlexCOMM3 SPI signals reused in GPIO mode, so they
+ * are named on the SoC GPIO controller alongside their bus rather than the
+ * control-line nexus.
+ */
+&flexcomm3 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flow_spi_argus {
+	status = "okay";
+	cs-gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+
+	afbr_s50: afbr_s50@0 {
+		compatible = "brcm,afbr-s50";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
+		odr = <50>;
+		dual-freq-mode = <AFBR_S50_DT_DFM_MODE_4X>;
+		measurement-mode = <AFBR_S50_DT_MODE_SHORT_RANGE>;
+		int-gpios = <&mr_mcxn_t1_header 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		spi-mosi-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;
+		spi-sck-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		spi-miso-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&flexcomm6 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flow_spi_imu42688 {
+	status = "okay";
+
+	icm42688: icm42688@0 {
+		compatible = "invensense,icm42688", "invensense,icm4268x";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
+		int-gpios = <&mr_mcxn_t1_header 1 GPIO_ACTIVE_HIGH>;
+		accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
+		accel-odr = <ICM42688_DT_ACCEL_ODR_1000>;
+		accel-fs = <ICM42688_DT_ACCEL_FS_16>;
+		gyro-pwr-mode = <ICM42688_DT_GYRO_LN>;
+		gyro-odr = <ICM42688_DT_GYRO_ODR_1000>;
+		gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
+		fifo-hires;
+	};
+};
+
+&flexcomm7 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flow_spi_imu45686 {
+	status = "okay";
+
+	icm45686_1: icm45686@0 {
+		compatible = "invensense,icm45686";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
+		int-gpios = <&mr_mcxn_t1_header 2 GPIO_ACTIVE_HIGH>;
+		accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;
+		accel-fs = <ICM45686_DT_ACCEL_FS_2>;
+		accel-odr = <ICM45686_DT_ACCEL_ODR_400>;
+		accel-lpf = <ICM45686_DT_ACCEL_LPF_BW_1_32>;
+		gyro-pwr-mode = <ICM45686_DT_GYRO_LN>;
+		gyro-fs = <ICM45686_DT_GYRO_FS_4000>;
+		gyro-odr = <ICM45686_DT_GYRO_ODR_400>;
+		gyro-lpf = <ICM45686_DT_GYRO_LPF_BW_1_32>;
+		fifo-watermark = <1>;
+	};
+};
+
+&flexcomm9 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flow_spi_flow {
+	status = "okay";
+
+	paa3905: paa3905@0 {
+		compatible = "pixart,paa3905";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
+		int-gpios = <&mr_mcxn_t1_header 3 GPIO_ACTIVE_LOW>;
+	};
+};
