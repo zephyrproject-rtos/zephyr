@@ -1,0 +1,285 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# HMC7044 -- 14-output, dual-PLL, SPI-programmed jitter-attenuating clock
+# generator, modelled as a Zephyr clock controller.
+#
+# Property names follow ADI's Linux binding so that a
+# devicetree written for ADI Linux transfers with only syntax changes. The
+# subset here is what the single-chip HMC7044 (non-HMC7043) PLL1/PLL2/VCO/
+# output-divider/SYSREF programming path actually consumes.
+#
+# Output clocks are addressed as clock-controller subsystems. The subsystem
+# handle is the output number biased by one -- see HMC7044_CLK_OUT() in
+# <zephyr/drivers/clock_control/hmc7044.h> -- because output 0 exists and a raw
+# 0 handle would collide with CLOCK_CONTROL_SUBSYS_ALL.
+#
+# INIT LEVEL: unlike most clock providers this driver cannot be PRE_KERNEL_1.
+# It is SPI-attached, and Zephyr SPI controllers initialise at POST_KERNEL
+# (CONFIG_SPI_INIT_PRIORITY). It therefore runs at POST_KERNEL with an init
+# priority after SPI, and *every consumer of its rates must also be
+# POST_KERNEL or later*. A PRE_KERNEL consumer calling
+# clock_control_get_rate() on this device would read an unprogrammed chip.
+#
+# NOT IMPLEMENTED: set_rate, async_on and configure are deliberately absent
+# (left NULL, so the public wrappers return -ENOSYS). Retuning an output
+# divider under a live JESD204 link would break the link, so rates are
+# programmed once from this devicetree.
+
+description: |
+  Analog Devices HMC7044 dual-PLL clock generator / SYSREF distributor.
+
+  Each used output is described by a child node. Outputs without a child node
+  are left disabled by the driver.
+
+compatible: "adi,hmc7044"
+
+include:
+  - name: spi-device.yaml
+  - name: clock-controller.yaml
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  adi,pll1-clkin-frequencies:
+    type: array
+    required: true
+    description: |
+      Frequency in Hz of each of the four PLL1 reference inputs, in the order
+      CLKIN0, CLKIN1, CLKIN2, CLKIN3. A zero disables that reference path;
+      the driver derives REF_PATH_EN and the input prescalers from which
+      entries are non-zero.
+
+  adi,vcxo-frequency:
+    type: int
+    required: true
+    description: VCXO frequency in Hz (the PLL1 output / PLL2 reference).
+
+  adi,pll2-output-frequency:
+    type: int
+    required: true
+    description: |
+      Desired PLL2 VCO output frequency in Hz. Must land inside one of the two
+      VCO ranges (2.15-2.88 GHz low, 2.65-3.2 GHz high); the driver picks the
+      range and refuses -EINVAL outside them. Every output rate is this
+      frequency divided by that output's adi,divider.
+
+  adi,pll1-loop-bandwidth-hz:
+    type: int
+    default: 200
+    description: |
+      PLL1 loop bandwidth in Hz. Sets the lock-detect timer threshold and the
+      settling delay the driver waits before re-reading PLL1 lock. 200 Hz is
+      ADI's default and the value their reference designs use.
+
+  adi,pfd1-maximum-limit-frequency-hz:
+    type: int
+    description: |
+      Upper bound in Hz for the PLL1 phase-frequency-detector rate. The driver
+      searches for an N1/R1 pair whose PFD1 rate is at or below this. Omitted
+      means the recommended 10 MHz. Clamped to 1 kHz - 50 MHz.
+
+  adi,pll1-charge-pump-current-ua:
+    type: int
+    default: 1080
+    description: |
+      PLL1 charge pump current in microamps. Quantised to 120 uA steps over
+      120-1920 uA. 1080 uA is ADI's default.
+
+  adi,pll1-ref-prio-ctrl:
+    type: int
+    default: 0xe4
+    description: |
+      Raw PLL1 reference priority register (0x14) value, encoding the CLKINx
+      failover order. 0xe4 is the non-MCS default (CLKIN0 highest).
+
+  adi,pll1-ref-autorevert-enable:
+    type: boolean
+    description: |
+      Revert PLL1 to the highest-priority reference as soon as it becomes
+      available again, rather than staying on the failover reference.
+
+  adi,sysref-timer-divider:
+    type: int
+    default: 1024
+    description: |
+      Divider for the internal master timer that paces SYSREF and pulse
+      generator events. Must be a submultiple of the lowest SYSREF output
+      frequency and no faster than 4 MHz. 1024 is ADI's default.
+
+  adi,pulse-generator-mode:
+    type: int
+    default: 0
+    description: |
+      Pulse generator mode selection, register 0x5A bits [2:0]. Only relevant
+      to outputs using adi,startup-mode-dynamic-enable.
+
+  adi,sync-pin-mode:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3]
+    description: |
+      SYNC pin behaviour: 0 disabled, 1 SYNC carried through PLL2 (the value
+      used for multichip synchronisation), 2 pulse generator request,
+      3 SYNC if an alarm exists else pulse generator.
+
+  adi,clkin0-rf-sync-enable:
+    type: boolean
+    description: CLKIN0 carries an external RF sync rather than a reference clock.
+
+  adi,clkin1-vco-in-enable:
+    type: boolean
+    description: |
+      CLKIN1 carries an external VCO, bypassing PLL2's internal VCO. Not
+      implemented by this driver -- selecting it fails a build assertion.
+
+  adi,high-performance-mode-clock-dist-enable:
+    type: boolean
+    description: |
+      Keep the high-performance clock distribution path powered after the
+      startup calibration, trading power for phase noise.
+
+  adi,rf-reseeder-disable:
+    type: boolean
+    description: |
+      Disable RF reseeding of SYSREF. Note the inverted sense: absent means
+      the reseeder is enabled, which is what JESD204 subclass 1 wants.
+
+  adi,clkin0-buffer-mode:
+    type: int
+    default: 0
+    description: |
+      Raw CLKIN0 input buffer control (register 0x0A): buffer mode in bits
+      [4:1], buffer enable in bit [0]. 0x07 is AC-coupled differential,
+      0x15 is DC-coupled for a CMOS/LVDS driver.
+
+  adi,clkin1-buffer-mode:
+    type: int
+    default: 0
+    description: Raw CLKIN1 input buffer control (register 0x0B). See adi,clkin0-buffer-mode.
+
+  adi,clkin2-buffer-mode:
+    type: int
+    default: 0
+    description: Raw CLKIN2 input buffer control (register 0x0C). See adi,clkin0-buffer-mode.
+
+  adi,clkin3-buffer-mode:
+    type: int
+    default: 0
+    description: Raw CLKIN3 input buffer control (register 0x0D). See adi,clkin0-buffer-mode.
+
+  adi,oscin-buffer-mode:
+    type: int
+    default: 0
+    description: Raw OSCIN input buffer control (register 0x0E). See adi,clkin0-buffer-mode.
+
+  adi,gpi-controls:
+    type: array
+    required: true
+    description: |
+      Four raw GPI control register values (0x46-0x49), one per GPI pin:
+      selection in bits [4:1], enable in bit [0].
+
+  adi,gpo-controls:
+    type: array
+    required: true
+    description: |
+      Four raw GPO control register values (0x50-0x53), one per GPO pin:
+      selection in bits [7:2], mode in bit [1], enable in bit [0].
+
+child-binding:
+  description: |
+    One HMC7044 clock output. Outputs with no child node are disabled.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Output number, 0-13.
+
+    adi,divider:
+      type: int
+      required: true
+      description: |
+        Output divide ratio applied to adi,pll2-output-frequency. Even ratios
+        2-4094 are supported, plus the odd ratios 1, 3 and 5.
+
+    adi,driver-mode:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3]
+      description: |
+        Output driver mode: 0 CML, 1 LVPECL, 2 LVDS, 3 CMOS.
+
+    adi,driver-impedance-mode:
+      type: int
+      default: 0
+      enum: [0, 1, 3]
+      description: |
+        Output driver internal termination: 0 disabled, 1 internal 100 ohm per
+        pin, 3 internal 50 ohm per pin.
+
+    adi,extended-name:
+      type: string
+      description: |
+        Descriptive name for this output, used in the driver's log lines. This
+        is what makes a boot log readable -- prefer the net name from the
+        board schematic, e.g. "FPGA_REFCLK".
+
+    adi,high-performance-mode-disable:
+      type: boolean
+      description: Disable the high-performance (lower phase noise, higher power) output mode.
+
+    adi,startup-mode-dynamic-enable:
+      type: boolean
+      description: |
+        Start this output from a pulse generator event rather than
+        asynchronously at channel enable.
+
+    adi,dynamic-driver-enable:
+      type: boolean
+      description: |
+        Gate the output driver with pulse generator events. Only meaningful
+        together with adi,startup-mode-dynamic-enable.
+
+    adi,force-mute-enable:
+      type: boolean
+      description: Force the output to logic 0 while not generating pulses in dynamic mode.
+
+    adi,coarse-digital-delay:
+      type: int
+      default: 0
+      description: |
+        Coarse phase adjustment of the divider output, in half-cycles of the
+        VCO, 0-17.
+
+    adi,fine-analog-delay:
+      type: int
+      default: 0
+      description: Fine delay of the divider output in 25 ps steps, 0-23.
+
+    adi,output-mux-mode:
+      type: int
+      default: 0
+      enum: [0, 1, 2, 3]
+      description: |
+        Output mux source: 0 divider channel, 1 analog delay, 2 the other
+        channel of the pair, 3 the input VCO clock.
+
+    adi,jesd204-sysref-chan:
+      type: boolean
+      description: |
+        This output carries SYSREF rather than a device or fabric clock.
+        SYSREF is a subclass-1 alignment pulse whose phase relative to the
+        link matters, so it is not exposed through clock_control_on()/off();
+        see hmc7044_sysref_request() in
+        <zephyr/drivers/clock_control/hmc7044.h>.
+
+# Consumers name an output as `clocks = <&hmc7044 N>`, matching ADI's Linux
+# devicetrees for this chip. N is the raw output number 0-13, so it is not the
+# clock_control subsystem handle -- see HMC7044_CLK_OUT() in
+# <zephyr/drivers/clock_control/hmc7044.h>, which biases it by one because
+# output 0 exists and a raw 0 handle would collide with
+# CLOCK_CONTROL_SUBSYS_ALL.
+clock-cells:
+  - output
