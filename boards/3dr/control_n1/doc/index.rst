@@ -6,7 +6,8 @@ Overview
 The 3DR Control N1 is a 17.6 mm x 28 mm flight controller module built around an STM32H743VI
 microcontroller. It carries two IMUs, a magnetometer, a barometer, a page EEPROM and a microSD
 card socket, and exposes its interfaces on three Hirose DF40 board-to-board connectors. Carrier
-boards such as the :ref:`3dr_n1_longy` provide the connectors for peripherals.
+boards such as the :ref:`3dr_n1_longy` and the :ref:`3dr_n1_fpv` provide the connectors for
+peripherals.
 
 More information about the module can be found in the `Control N1 documentation`_.
 
