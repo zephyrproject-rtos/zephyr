@@ -5,7 +5,9 @@ description: Motorcomm YT8521 Ethernet PHY
 
 compatible: "motorcomm,yt8521"
 
-include: ethernet-phy-common.yaml
+include:
+  - name: ethernet-phy-common.yaml
+  - name: ethernet-phy-reset-gpios.yaml
 
 properties:
   motorcomm,rx-delay-sel:

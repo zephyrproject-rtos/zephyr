@@ -193,7 +193,7 @@ arduino_serial: &lpuart2 {
 	enet1g_phy: phy@1 {
 		compatible = "realtek,rtl8211f";
 		reg = <1>;
-		reset-gpios = <&gpio11 14 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio11 14 GPIO_ACTIVE_LOW>;
 		int-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
 		status = "disabled";
 	};
