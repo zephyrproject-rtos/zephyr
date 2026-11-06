@@ -85,16 +85,70 @@ class TestShuffleTests:
     @pytest.mark.parametrize(
         'seed, subset, expected_names',
         [
-            ('123', '1/2', ['dummy.agnostic.group1.subgroup2', 'dummy.device.group']),
-            ('123', '2/2', ['dummy.agnostic.group2', 'dummy.agnostic.group1.subgroup1']),
-            ('321', '1/2', ['dummy.agnostic.group1.subgroup2', 'dummy.agnostic.group1.subgroup1']),
-            ('321', '2/2', ['dummy.agnostic_cpp.group2', 'dummy.device.group']),
-            ('123', '1/3', ['dummy.agnostic.group1.subgroup2', 'dummy.device.group']),
-            ('123', '2/3', ['dummy.agnostic.group2']),
-            ('123', '3/3', ['dummy.agnostic.group1.subgroup1']),
-            ('321', '1/3', ['dummy.agnostic.group1.subgroup1', 'dummy.agnostic.group1.subgroup2']),
-            ('321', '2/3', ['dummy.device.group']),
-            ('321', '3/3', ['dummy.agnostic_cpp.group2']),
+            (
+                '123',
+                '1/2',
+                [
+                    'dummy.agnostic.group1.subgroup2',
+                    'dummy.agnostic_cpp.group1.subgroup2',
+                    'dummy.agnostic.group2',
+                    'dummy.agnostic_cpp.group2',
+                ],
+            ),
+            (
+                '123',
+                '2/2',
+                [
+                    'dummy.device.group',
+                    'dummy.agnostic_cpp.group1.subgroup1',
+                    'dummy.agnostic.group1.subgroup1',
+                ],
+            ),
+            (
+                '321',
+                '1/2',
+                [
+                    'dummy.agnostic_cpp.group1.subgroup2',
+                    'dummy.agnostic.group1.subgroup1',
+                    'dummy.device.group',
+                    'dummy.agnostic_cpp.group1.subgroup1',
+                ],
+            ),
+            (
+                '321',
+                '2/2',
+                [
+                    'dummy.agnostic.group1.subgroup2',
+                    'dummy.agnostic.group2',
+                    'dummy.agnostic_cpp.group2',
+                ],
+            ),
+            (
+                '123',
+                '1/3',
+                [
+                    'dummy.agnostic.group1.subgroup2',
+                    'dummy.agnostic_cpp.group1.subgroup1',
+                    'dummy.agnostic_cpp.group2',
+                ],
+            ),
+            ('123', '2/3', ['dummy.device.group', 'dummy.agnostic.group2']),
+            (
+                '123',
+                '3/3',
+                ['dummy.agnostic_cpp.group1.subgroup2', 'dummy.agnostic.group1.subgroup1'],
+            ),
+            (
+                '321',
+                '1/3',
+                [
+                    'dummy.agnostic_cpp.group1.subgroup2',
+                    'dummy.agnostic.group2',
+                    'dummy.agnostic_cpp.group1.subgroup1',
+                ],
+            ),
+            ('321', '2/3', ['dummy.agnostic.group1.subgroup2', 'dummy.device.group']),
+            ('321', '3/3', ['dummy.agnostic.group1.subgroup1', 'dummy.agnostic_cpp.group2']),
         ],
         ids=[
             'seed123-half1',
