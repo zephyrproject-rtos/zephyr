@@ -9,6 +9,7 @@
 #include <soc.h>
 #include <stm32_ll_lptim.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_exti.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
@@ -145,6 +146,52 @@ static void lptim_enable_autonomous_mode(void)
 		/* Note: LPTIM2, LPTIM5, LPTIM6 do not support autonomous mode */
 		break;
 	}
+}
+
+/**
+ * @brief Enable EXTI wake-up for the LPTIM instance in use
+ *
+ * Enables EXTI wake-up for whichever LPTIM instance is configured as the system
+ * timer.
+ */
+static void lptim_enable_exti_wakeup(void)
+{
+#ifdef CONFIG_SOC_SERIES_STM32WLX
+	/* Enable the LPTIM wakeup EXTI line */
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_29);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	const uint32_t lptim_base = (uint32_t)LPTIM;
+
+	switch (lptim_base) {
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim1))
+	case DT_REG_ADDR(DT_NODELABEL(lptim1)):
+		LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_47);
+		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim2))
+	case DT_REG_ADDR(DT_NODELABEL(lptim2)):
+		LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_48);
+		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim3))
+	case DT_REG_ADDR(DT_NODELABEL(lptim3)):
+		LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_50);
+		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim4))
+	case DT_REG_ADDR(DT_NODELABEL(lptim4)):
+		LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_52);
+		break;
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(lptim5))
+	case DT_REG_ADDR(DT_NODELABEL(lptim5)):
+		LL_EXTI_EnableIT_32_63(LL_EXTI_LINE_53);
+		break;
+#endif
+	default:
+		break;
+	}
+#endif
 }
 
 /**
@@ -633,10 +680,7 @@ static int sys_clock_driver_init(void)
 		    lptim_irq_handler, 0, 0);
 	irq_enable(DT_IRQN(LPTIM_SYSTIMER_NODE));
 
-#ifdef CONFIG_SOC_SERIES_STM32WLX
-	/* Enable the LPTIM wakeup EXTI line */
-	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_29);
-#endif
+	lptim_enable_exti_wakeup();
 
 	/* configure the LPTIM counter */
 	LL_LPTIM_SetClockSource(LPTIM, LL_LPTIM_CLK_SOURCE_INTERNAL);
