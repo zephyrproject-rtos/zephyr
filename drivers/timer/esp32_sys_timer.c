@@ -12,6 +12,7 @@
 #include <esp_private/systimer.h>
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
+#include <esp_cpu.h>
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -35,18 +36,31 @@ static bool timeout_idle;
 /* Systimer HAL layer object */
 static systimer_hal_context_t systimer_hal;
 
-static void set_systimer_alarm(uint64_t time)
+/*
+ * SYSTIMER_COUNTER_OS_TICK is shared by both cores, and each core has its
+ * own alarm channel (SYSTIMER_ALARM_OS_TICK_CORE0/1) and interrupt. Under
+ * CONFIG_SMP, arm and acknowledge the alarm of the calling core.
+ */
+static inline uint32_t core_alarm_id(void)
 {
-	systimer_hal_select_alarm_mode(&systimer_hal,
-		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
+	if (IS_ENABLED(CONFIG_SMP)) {
+		return SYSTIMER_ALARM_OS_TICK_CORE0 + esp_cpu_get_core_id();
+	}
+
+	return SYSTIMER_ALARM_OS_TICK_CORE0;
+}
+
+static void set_systimer_alarm(uint32_t alarm_id, uint64_t time)
+{
+	systimer_hal_select_alarm_mode(&systimer_hal, alarm_id, SYSTIMER_ALARM_MODE_ONESHOT);
 
 	systimer_counter_value_t alarm = {.val = time};
 
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
-	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, alarm.val);
-	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
-	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
-	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
+	systimer_ll_enable_alarm(systimer_hal.dev, alarm_id, false);
+	systimer_ll_set_alarm_target(systimer_hal.dev, alarm_id, alarm.val);
+	systimer_ll_apply_alarm_value(systimer_hal.dev, alarm_id);
+	systimer_ll_enable_alarm(systimer_hal.dev, alarm_id, true);
+	systimer_ll_enable_alarm_int(systimer_hal.dev, alarm_id, true);
 }
 
 static uint64_t get_systimer_alarm(void)
@@ -91,7 +105,7 @@ static void timer_driver_set_compare(uint64_t cycles)
 		return;
 	}
 
-	set_systimer_alarm(cycles);
+	set_systimer_alarm(core_alarm_id(), cycles);
 }
 
 #include "system_timer_generic.h"
@@ -99,7 +113,7 @@ static void timer_driver_set_compare(uint64_t cycles)
 static void IRAM_ATTR sys_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
+	systimer_ll_clear_alarm_int(systimer_hal.dev, core_alarm_id());
 
 	timer_core_announce();
 }
@@ -114,6 +128,10 @@ void sys_clock_disable(void)
 }
 
 #if defined(CONFIG_PM)
+/*
+ * systimer_pre_idle, lptim_pre_idle and timeout_idle are not per-core.
+ * CONFIG_PM has not been tested together with CONFIG_SMP.
+ */
 void sys_clock_idle_enter(uint32_t ticks)
 {
 	sys_clock_set_timeout(ticks, false);
@@ -193,6 +211,34 @@ static int sys_clock_driver_init(void)
 	timer_core_init();
 	return 0;
 }
+
+#if defined(CONFIG_SMP)
+/*
+ * Called on the secondary CPU from smp_init_top(). esp_intr_alloc() routes
+ * the interrupt to the calling CPU, so core1's alarm interrupt is allocated
+ * here. Its alarm channel is connected to the same counter as core0's.
+ */
+void smp_timer_init(void)
+{
+	int ret;
+
+	ret = esp_intr_alloc(
+		DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 1, irq),
+		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 1, priority)) |
+			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 1, flags)) |
+			ESP_INTR_FLAG_IRAM,
+		sys_timer_isr, NULL, NULL);
+	__ASSERT(ret == 0, "systimer core1 IRQ allocation failed: %d", ret);
+
+	systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_ALARM_OS_TICK_CORE1,
+					   SYSTIMER_COUNTER_OS_TICK);
+
+	k_spinlock_key_t key = sys_clock_lock();
+
+	timer_core_smp_prime();
+	sys_clock_unlock(key);
+}
+#endif /* CONFIG_SMP */
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

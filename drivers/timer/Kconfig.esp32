@@ -17,3 +17,9 @@ config ESP32_SYS_TIMER
 	help
 	  This option enables the system timer driver for the Espressif ESP32Cx
 	  and provides the standard "system clock driver" interface.
+
+	  With CONFIG_SMP, each CPU arms and acknowledges its own alarm
+	  channel (TARGET0 for CPU0, TARGET1 for CPU1) on the shared
+	  counter, and the systimer devicetree node must describe the
+	  interrupt of both channels. No SoC in the tree enables this
+	  driver together with CONFIG_SMP yet.
