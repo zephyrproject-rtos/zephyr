@@ -163,8 +163,6 @@ int lorawan_join(const struct lorawan_join_config *config)
 		.dev_nonce = config->otaa.dev_nonce,
 	};
 
-	atomic_clear_bit(lwan_ctx.flags, LWAN_FLAG_JOINED);
-
 	msg = LWAN_REQ(LWAN_REQ_JOIN, &join_req);
 
 	ret = engine_post_req_wait(&msg);
@@ -189,10 +187,6 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 
 	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
 		return -EPERM;
-	}
-
-	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
-		return -ENETDOWN;
 	}
 
 	if (len > 0 && data == NULL) {
@@ -389,12 +383,6 @@ int lorawan_request_link_check(bool force_request)
 
 	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
 		return -EPERM;
-	}
-
-	/* The forced empty uplink needs an established session */
-	if (force_request &&
-	    !atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
-		return -ENETDOWN;
 	}
 
 	return engine_post_req_wait(&msg);
