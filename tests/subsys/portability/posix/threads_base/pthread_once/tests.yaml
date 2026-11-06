@@ -1,0 +1,55 @@
+common:
+  tags: posix
+  min_ram: 64
+  platform_key:
+    - arch
+    - simulation
+  filter: not CONFIG_NATIVE_LIBC
+tests:
+  posix.threads_base.pthread_once:
+    filter: CONFIG_ARCH_POSIX
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+  posix.threads_base.pthread_once.userspace:
+    filter: CONFIG_ARCH_POSIX
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  posix.threads_base.pthread_once.minimal:
+    filter: CONFIG_ARCH_POSIX
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  posix.threads_base.pthread_once.newlib:
+    filter: CONFIG_ARCH_POSIX and TOOLCHAIN_HAS_NEWLIB == 1
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  posix.threads_base.pthread_once.picolibc:
+    filter: CONFIG_ARCH_POSIX and CONFIG_PICOLIBC_SUPPORTED
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
