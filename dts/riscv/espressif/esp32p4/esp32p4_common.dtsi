@@ -732,6 +732,20 @@
 			status = "disabled";
 		};
 
+		lp_i2s: i2s@50125000 {
+			compatible = "espressif,esp32-lp-i2s";
+			reg = <0x50125000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <LP_I2S_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_LP_I2S0_MODULE>;
+			bck-pin = <4>;
+			ws-pin = <5>;
+			sd-pin = <6>;
+			status = "disabled";
+		};
+
 		trng0: trng@50126000 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x50126000 0x4>;
