@@ -38,6 +38,12 @@ properties:
       The default preserves operation without an enable signal. Set this to
       the receiver's wake-up time when enable-gpios is used.
 
+  counter-captures:
+    type: phandle-array
+    description: |
+      Capture channel the timepulse output is wired to. With it,
+      gnss_get_latest_timepulse() reports when the last pulse arrived.
+
 examples:
   - |
     &uart0 {

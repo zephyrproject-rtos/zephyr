@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - gnss
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+tests:
+  drivers.gnss.timepulse: {}
+  drivers.gnss.timepulse.pm:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
