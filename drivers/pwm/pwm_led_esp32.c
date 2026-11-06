@@ -137,22 +137,68 @@ static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_
 {
 	/**
 	 * Max duty resolution can be obtained with
-	 * max_res = log2(CLK_FREQ/FREQ)
+	 * max_res = log2(CLK_FREQ/FREQ), up to the timer's width. The clock
+	 * divider makes up the rest, so a clock much faster than the frequency
+	 * still fits if the divider is in range.
 	 */
 	uint32_t max_precision_n = channel->clock_src_hz / channel->freq;
+	uint8_t resolution = 0;
+	uint64_t prescaler;
 
-	for (uint8_t i = 0; i <= SOC_LEDC_TIMER_BIT_WIDTH; i++) {
-		max_precision_n /= 2;
-		if (!max_precision_n) {
-			channel->resolution = i;
-			return 0;
-		}
+	while ((max_precision_n > 1U) && (resolution < SOC_LEDC_TIMER_BIT_WIDTH)) {
+		max_precision_n /= 2U;
+		resolution++;
 	}
-	return -EINVAL;
+
+	prescaler = ((uint64_t)channel->clock_src_hz << 8) / channel->freq / BIT(resolution);
+	if (prescaler > 0x3FFFFU) {
+		return -EINVAL;
+	}
+
+	channel->resolution = resolution;
+	return 0;
 }
 
-static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *channel)
+/* The global clock that a low-speed timer clocked from clock_src needs */
+static ledc_clk_src_t pwm_led_esp32_global_clk(ledc_clk_src_t clock_src)
 {
+#if SOC_LEDC_SUPPORT_REF_TICK
+	/* A timer clocked from REF_TICK needs the global clock set to APB_CLK */
+	return (clock_src == LEDC_REF_TICK) ? LEDC_SLOW_CLK_APB : clock_src;
+#else
+	return clock_src;
+#endif
+}
+
+/**
+ * Whether another running low-speed timer needs a different global clock
+ * than clock_src: the low-speed timers share it, so switching it would change
+ * that timer's frequency.
+ */
+static bool pwm_led_esp32_global_clk_conflict(const struct device *dev,
+					      const struct pwm_ledc_esp32_channel_config *channel,
+					      ledc_clk_src_t clock_src)
+{
+	const struct pwm_ledc_esp32_config *config = dev->config;
+
+	for (int i = 0; i < config->channel_len; ++i) {
+		const struct pwm_ledc_esp32_channel_config *ch = &config->channel_config[i];
+
+		if ((ch->freq != 0U) && (ch->speed_mode == LEDC_LOW_SPEED_MODE) &&
+		    (ch->timer_num != channel->timer_num) &&
+		    (pwm_led_esp32_global_clk(ch->clock_src) !=
+		     pwm_led_esp32_global_clk(clock_src))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static int pwm_led_esp32_timer_config(const struct device *dev,
+				      struct pwm_ledc_esp32_channel_config *channel)
+{
+	const ledc_clk_src_t prev_clock_src = channel->clock_src;
+	const uint32_t prev_clock_src_hz = channel->clock_src_hz;
 	const int *clock_src;
 	int clock_src_num;
 
@@ -177,6 +223,11 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 	 * Try each clock source available depending on the device and channel type.
 	 */
 	for (int i = 0; i < clock_src_num; i++) {
+		if ((channel->speed_mode == LEDC_LOW_SPEED_MODE) &&
+		    pwm_led_esp32_global_clk_conflict(dev, channel, clock_src[i])) {
+			continue;
+		}
+
 		if (clock_src[i] == LEDC_SLOW_CLK_RC_FAST) {
 			uint32_t rc_fast_freq = 0;
 
@@ -202,14 +253,11 @@ static int pwm_led_esp32_timer_config(struct pwm_ledc_esp32_channel_config *chan
 		}
 	}
 
-	/* Frequency is too low for this device, so even though best precision can't
-	 * be achieved we can set max resolution and consider that the previous
-	 * loop selects clock from fastest to slowest, so this is the best
-	 * configuration achievable.
-	 */
-	channel->resolution = SOC_LEDC_TIMER_BIT_WIDTH;
+	LOG_ERR("No clock source for %u Hz on timer %d", channel->freq, channel->timer_num);
+	channel->clock_src = prev_clock_src;
+	channel->clock_src_hz = prev_clock_src_hz;
 
-	return 0;
+	return -EINVAL;
 }
 
 static int pwm_led_esp32_timer_set(const struct device *dev,
@@ -229,17 +277,7 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 	}
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-#if SOC_LEDC_SUPPORT_REF_TICK
-		/* When the source clock of LOW_SPEED timer is timer-specific
-		 * (REF_TICK), global clock MUST be set to APB_CLK.
-		 */
-		ledc_clk_src_t global_clk = channel->clock_src == LEDC_REF_TICK
-						    ? LEDC_SLOW_CLK_APB
-						    : channel->clock_src;
-#else
-		ledc_clk_src_t global_clk = channel->clock_src;
-#endif
-		ledc_hal_set_slow_clk_sel(&data->hal, global_clk);
+		ledc_hal_set_slow_clk_sel(&data->hal, pwm_led_esp32_global_clk(channel->clock_src));
 	}
 
 	ledc_hal_set_clock_divider(&data->hal, channel->speed_mode, channel->timer_num, prescaler);
@@ -323,7 +361,11 @@ static int pwm_led_esp32_channel_update_frequency(const struct device *dev,
 		}
 	}
 
-	pwm_led_esp32_timer_config(channel);
+	ret = pwm_led_esp32_timer_config(dev, channel);
+	if (ret < 0) {
+		channel->freq = 0;
+		return ret;
+	}
 
 	ret = pwm_led_esp32_timer_set(dev, channel);
 
