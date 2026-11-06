@@ -26,3 +26,9 @@ zephyr_include_directories(.)
 if(CONFIG_SOC_SERIES_IMXRT266X_CM85)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 endif()
+
+# The AHAB container is retained by the linker script, but LTO discards its
+# unreferenced symbol before the linker sees the input section.
+if(CONFIG_LTO AND CONFIG_NXP_IMXRT_BOOT_HEADER)
+  target_link_options(app INTERFACE "LINKER:--undefined=boot_header")
+endif()
