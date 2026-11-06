@@ -299,27 +299,26 @@ static int us915_validate_tx_power(uint8_t tx_power_idx)
  * fields covering channel numbers 0 to 79, and a cleared bit disables its
  * channel. Bits above 71 are RFU on a device that stores 72 channels.
  */
-#define CFLIST_TYPE_CH_MASK  1
-#define CFLIST_CH_MASK_COUNT 5
 
 #define US915_CH_BLOCK_SIZE 16
 
-static bool us915_cflist_bit(const uint8_t cflist[16], size_t idx)
+static bool us915_cflist_bit(const uint8_t cflist[LWAN_CFLIST_SIZE], size_t idx)
 {
 	uint16_t mask = sys_get_le16(&cflist[(idx / US915_CH_BLOCK_SIZE) * 2]);
 
 	return (mask & BIT(idx % US915_CH_BLOCK_SIZE)) != 0;
 }
 
-static int us915_apply_cflist(const uint8_t cflist[16], struct lwan_channel *ch, size_t *count)
+static int us915_apply_cflist(const uint8_t cflist[LWAN_CFLIST_SIZE], struct lwan_channel *ch,
+			      size_t *count)
 {
 	size_t span = MIN(*count, (size_t)US915_UL_CH_COUNT);
 	uint8_t cflist_type;
 	bool any = false;
 
-	cflist_type = cflist[15];
+	cflist_type = cflist[LWAN_CFLIST_TYPE_OFFSET];
 
-	if (cflist_type != CFLIST_TYPE_CH_MASK) {
+	if (cflist_type != LWAN_CFLIST_TYPE_CH_MASK) {
 		LOG_WRN("Unsupported CFList type: %u", cflist_type);
 		return 0;
 	}
