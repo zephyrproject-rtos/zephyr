@@ -534,20 +534,43 @@ class TestPlan:
 
         return testcases
 
+    def _get_testsuites_for_listing(self):
+        platform_filter = [] if self.options.all else self.options.platform
+        if not platform_filter and not self.options.exclude_platform:
+            yield from self.testsuites.values()
+            return
+
+        selected = self.verify_platforms_existence(platform_filter, "platform_filter")
+        platforms = {
+            p.name for p in self.platforms
+            if (not selected or p.name in selected)
+            and (self.options.force_platform
+                 or not self.check_platform(p, self.options.exclude_platform))
+        }
+        for suite in self.testsuites.values():
+            allowed = platforms
+            if not self.options.force_platform:
+                if suite.platform_allow:
+                    allowed = allowed.intersection(suite.platform_allow)
+                allowed = allowed.difference(suite.platform_exclude)
+            if allowed:
+                yield suite
+
     def get_tests_list(self):
         testcases = []
+        testsuites = list(self._get_testsuites_for_listing())
         if tag_filter := self.options.tag:
-            for _, ts in self.testsuites.items():
+            for ts in testsuites:
                 if ts.tags.intersection(tag_filter):
                     for case in ts.testcases:
                         testcases.append(case.name)
         else:
-            for _, ts in self.testsuites.items():
+            for ts in testsuites:
                 for case in ts.testcases:
                     testcases.append(case.name)
 
         if exclude_tag := self.options.exclude_tag:
-            for _, ts in self.testsuites.items():
+            for ts in testsuites:
                 if ts.tags.intersection(exclude_tag):
                     for case in ts.testcases:
                         if case.name in testcases:
@@ -588,17 +611,26 @@ class TestPlan:
                     return True
         return False
 
+    def _resolve_platform_filter(self, platform_names, log_info):
+        """Normalize metadata filters without requiring boards outside explicit targets."""
+        if not self.options.platform or self.options.all:
+            return self.verify_platforms_existence(platform_names, log_info)
+
+        resolved = []
+        for name in platform_names:
+            platform = self.get_platform(name)
+            # Keep unknown names so an allow list cannot become unrestricted.
+            resolved.append(platform.name if platform else name)
+        return resolved
+
     def _resolve_suite_platform_names(self, suite: TestSuite) -> None:
-        """Resolve all platform name fields in a suite to fully qualified names."""
-        suite.integration_platforms = self.verify_platforms_existence(
-            suite.integration_platforms,
-            f"integration_platforms in {suite.name}")
-        suite.platform_exclude = self.verify_platforms_existence(
-            suite.platform_exclude,
-            f"platform_exclude in {suite.name}")
-        suite.platform_allow = self.verify_platforms_existence(
-            suite.platform_allow,
-            f"platform_allow in {suite.name}")
+        """Resolve platform filters and required application/device targets."""
+        suite.integration_platforms = self._resolve_platform_filter(
+            suite.integration_platforms, f"integration_platforms in {suite.name}")
+        suite.platform_exclude = self._resolve_platform_filter(
+            suite.platform_exclude, f"platform_exclude in {suite.name}")
+        suite.platform_allow = self._resolve_platform_filter(
+            suite.platform_allow, f"platform_allow in {suite.name}")
 
         for req_dev in suite.harness_config.required_devices:
             if req_dev.platform:
@@ -639,6 +671,9 @@ class TestPlan:
         test_roots: list[str] | None = None
     ) -> int:
         """Scan test_roots and register matching testsuite definitions."""
+
+        if self.options.platform and not self.options.all:
+            self.verify_platforms_existence(self.options.platform, "platform_filter")
 
         testsuite_filter = testsuite_filter or []
         testsuite_pattern = testsuite_pattern or []
