@@ -1013,15 +1013,21 @@ void bt_mesh_proxy_gatt_disconnect(void)
 
 int bt_mesh_proxy_gatt_disable(void)
 {
+	int err;
+
 	LOG_DBG("");
 
 	if (!service_registered) {
 		return -EALREADY;
 	}
 
+	err = bt_gatt_service_unregister(&proxy_svc);
+	if (err != 0 && err != -ENOENT) {
+		return err;
+	}
+
 	bt_mesh_proxy_gatt_disconnect();
 
-	bt_gatt_service_unregister(&proxy_svc);
 	service_registered = false;
 
 	return 0;
@@ -1118,9 +1124,12 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	struct bt_conn_info info;
 	int err;
 
+	/* The service can still be registered on a node that is not provisioned,
+	 * if unregistering it was refused when the node was reset.
+	 */
 	err = bt_conn_get_info(conn, &info);
 	if (err || info.role != BT_CONN_ROLE_PERIPHERAL || !service_registered ||
-	    info.id != BT_ID_DEFAULT) {
+	    info.id != BT_ID_DEFAULT || !bt_mesh_is_provisioned()) {
 		return;
 	}
 

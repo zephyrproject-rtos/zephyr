@@ -242,6 +242,12 @@ Bluetooth HCI
 Bluetooth Host
 ==============
 
+* :c:func:`bt_gatt_service_unregister` now returns ``-EBUSY`` and leaves the service registered
+  while the stack is calling back for an attribute of the service in another thread. Once it
+  returns 0, the memory of the service can be freed or reused, once the calling thread has returned
+  from any such callback that it is in itself, and unless the application still uses it. Applications
+  have to handle ``-EBUSY`` by trying again later, for instance from a work item.
+
 * The ATT prepare write buffers (:kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT`) are now shared
   equally between connections: a single connection holds at most
   :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` of them, which defaults to
