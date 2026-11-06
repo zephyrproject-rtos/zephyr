@@ -6,6 +6,9 @@
  */
 
 #include "test_gpio.h"
+#ifdef CONFIG_GPIO_EMUL
+#include <zephyr/drivers/gpio/gpio_emul.h>
+#endif
 
 #define ALL_BITS ((gpio_port_value_t)-1)
 
@@ -696,3 +699,49 @@ ZTEST_USER(gpio_port, test_gpio_port)
 			      "pin_get_config failed");
 	}
 }
+
+#ifdef CONFIG_GPIO_EMUL
+ZTEST(gpio_port, test_gpio_emul_tristate)
+{
+	/* Configure PIN_IN as input first, then disconnect PIN_OUT so PIN_IN is Hi-Z */
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure(dev_out, PIN_OUT, GPIO_DISCONNECTED));
+
+	/* Invalid input values should return -EINVAL */
+	zassert_equal(gpio_emul_input_set(dev_in, PIN_IN, -1), -EINVAL);
+	zassert_equal(gpio_emul_input_set(dev_in, PIN_IN, 3), -EINVAL);
+
+	/* Driven low (0) overrides internal pull-up and pull-down */
+	zassert_ok(gpio_emul_input_set(dev_in, PIN_IN, 0));
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN));
+	zassert_equal(raw_in(), false, "driven low pin with pull-down should read low");
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_UP));
+	zassert_equal(raw_in(), false, "driven low pin with pull-up should read low");
+
+	/* Driven high (1) overrides internal pull-up and pull-down */
+	zassert_ok(gpio_emul_input_set(dev_in, PIN_IN, 1));
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN));
+	zassert_equal(raw_in(), true, "driven high pin with pull-down should read high");
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_UP));
+	zassert_equal(raw_in(), true, "driven high pin with pull-up should read high");
+
+	/* Hi-Z (tristate) follows internal pull-up and pull-down */
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN));
+	zassert_equal(raw_in(), true);
+	zassert_ok(gpio_emul_input_set(dev_in, PIN_IN, GPIO_EMUL_INPUT_HI_Z));
+	zassert_equal(raw_in(), false, "Hi-Z pin with pull-down should read low");
+
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_UP));
+	zassert_equal(raw_in(), true, "Hi-Z pin with pull-up should read high");
+
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_DOWN));
+	zassert_equal(raw_in(), false, "Hi-Z pin with pull-down should read low");
+
+	/* Transitioning from driven low to Hi-Z while pull-up is enabled */
+	zassert_ok(gpio_pin_configure(dev_in, PIN_IN, GPIO_INPUT | GPIO_PULL_UP));
+	zassert_ok(gpio_emul_input_set(dev_in, PIN_IN, 0));
+	zassert_equal(raw_in(), false);
+	zassert_ok(gpio_emul_input_set(dev_in, PIN_IN, GPIO_EMUL_INPUT_HI_Z));
+	zassert_equal(raw_in(), true, "Hi-Z pin with pull-up should read high");
+}
+#endif
