@@ -44,6 +44,8 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 					    uintptr_t *location,
 					    bool page_fault)
 {
+	ARG_UNUSED(page_fault);
+
 	/* Simply returns the virtual address */
 	*location = POINTER_TO_UINT(k_mem_page_frame_to_virt(pf));
 
@@ -52,7 +54,7 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 
 void k_mem_paging_backing_store_location_free(uintptr_t location)
 {
-	/* Nothing to do */
+	ARG_UNUSED(location);
 }
 
 void k_mem_paging_backing_store_page_out(uintptr_t location)
@@ -70,7 +72,8 @@ void k_mem_paging_backing_store_page_in(uintptr_t location)
 void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location)
 {
-	/* Nothing to do */
+	ARG_UNUSED(pf);
+	ARG_UNUSED(location);
 }
 
 void k_mem_paging_backing_store_init(void)

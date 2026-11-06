@@ -43,6 +43,8 @@ static void *mah_choice(struct sys_multi_heap *m_heap, void *cfg, size_t align, 
 	uint32_t attr;
 	void *block;
 
+	ARG_UNUSED(m_heap);
+
 	if (size == 0) {
 		return NULL;
 	}
