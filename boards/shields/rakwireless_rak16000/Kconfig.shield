@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RAKWIRELESS_RAK16000
+	def_bool $(shields_list_contains,rakwireless_rak16000)
