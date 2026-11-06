@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect the PC9 to PC8 */
+
+dut: &sercom2 {
+	compatible = "microchip,sercom-g1-uart";
+	/delete-property/ dipo;
+	/delete-property/ dopo;
+	/delete-property/ cs-gpios;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+
+	rxpo = <1>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom2_uart_default: sercom2_uart_default {
+		group1 {
+			pinmux = <PC8D_SERCOM2_PAD0>,
+				 <PC9D_SERCOM2_PAD1>;
+		};
+	};
+};
