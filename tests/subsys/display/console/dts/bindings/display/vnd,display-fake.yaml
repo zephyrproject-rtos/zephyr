@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Display that counts the writes it receives and checks their size, for tests
+
+compatible: "vnd,display-fake"
+
+include: display-controller.yaml
+
+properties:
+  x-alignment-width:
+    type: boolean
+    description: Accept full-width writes only, as reported with SCREEN_INFO_X_ALIGNMENT_WIDTH.
+
+  pixel-format:
+    type: string
+    default: "rgb565"
+    enum:
+      - "rgb565"
+      - "rgb888"
+      - "argb8888"
+      - "l8"
+      - "mono01"
+      - "mono10"
+    description: Pixel format reported and expected in the writes.
+
+  mono-vtiled:
+    type: boolean
+    description: Report SCREEN_INFO_MONO_VTILED with a monochrome format.
