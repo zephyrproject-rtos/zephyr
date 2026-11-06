@@ -3367,6 +3367,7 @@ Espressif Platforms:
     - drivers/*/*esp32*
     - drivers/*/*/*esp32*
     - boards/espressif/
+    - boards/shields/bosch_bmi270_bmm350_shuttle/
     - cmake/emu/espressif_qemu.cmake
     - cmake/emu/espressif_qemu/
     - soc/espressif/
