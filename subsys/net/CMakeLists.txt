@@ -20,3 +20,7 @@ add_subdirectory(lib)
 if(CONFIG_NET_CONNECTION_MANAGER)
   add_subdirectory(conn_mgr)
 endif()
+
+if(CONFIG_NET_UNITY_BUILD)
+  zephyr_library_unity()
+endif()
