@@ -15,6 +15,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm7
       - mcx_n5xx_evk/mcxn547/cpu0
       - lpcxpresso55s69/lpc55s69/cpu0
+      - lpcxpresso54628
       - rd_rw612_bga
       - m5stack_cores3/esp32s3/procpu
     harness: console
