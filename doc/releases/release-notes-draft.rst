@@ -81,10 +81,11 @@ Libraries / Subsystems
 
 * LoRaWAN
 
-  * The native backend now supports the KR920, AS923 and US915 regions
-    (:kconfig:option:`CONFIG_LORAWAN_REGION_KR920`,
+  * The native backend now supports the KR920, AS923, US915 and RU864
+    regions (:kconfig:option:`CONFIG_LORAWAN_REGION_KR920`,
     :kconfig:option:`CONFIG_LORAWAN_REGION_AS923`,
-    :kconfig:option:`CONFIG_LORAWAN_REGION_US915`).
+    :kconfig:option:`CONFIG_LORAWAN_REGION_US915`,
+    :kconfig:option:`CONFIG_LORAWAN_REGION_RU864`).
   * The LoRaWAN services restore the device class that was in use before a
     multicast class C session started, instead of always reverting to class A.
     The current class can be read with :c:func:`lorawan_get_class`.

@@ -55,7 +55,6 @@ config LORAWAN_REGION_US915
 
 config LORAWAN_REGION_RU864
 	bool "Russia 864MHz Frequency band"
-	depends on !LORA_MODULE_BACKEND_NATIVE
 
 endmenu
 
