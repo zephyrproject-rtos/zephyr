@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 #include "flash_priv.h"
@@ -110,6 +111,17 @@ static int flash_numaker_erase(const struct device *dev, off_t offset, size_t le
 			addr += FMC_FLASH_PAGE_SIZE;
 		}
 	}
+
+	/* Keep cache coherency */
+	addr = dev_data->flash_block_base + offset;
+
+#if defined(CONFIG_SOC_SERIES_M333X) || defined(CONFIG_SOC_SERIES_M335X)
+	CACHE_Flush();
+#endif
+
+	/* Become no-op if not support */
+	sys_cache_instr_invd_range((void *)addr, len);
+	sys_cache_data_invd_range((void *)addr, len);
 
 done:
 	SYS_LockReg();
@@ -219,6 +231,17 @@ static int flash_numaker_write(const struct device *dev, off_t offset, const voi
 		addr += block_size;
 		blocks--;
 	}
+
+	/* Keep cache coherency */
+	addr = dev_data->flash_block_base + offset;
+
+#if defined(CONFIG_SOC_SERIES_M333X) || defined(CONFIG_SOC_SERIES_M335X)
+	CACHE_Flush();
+#endif
+
+	/* Become no-op if not support */
+	sys_cache_instr_invd_range((void *)addr, len);
+	sys_cache_data_invd_range((void *)addr, len);
 
 done:
 	irq_unlock(key);
