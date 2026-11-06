@@ -38,3 +38,20 @@ config I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS
 	  Allowed deferral time for processing an empty tx queue in milliseconds
 
 endif
+
+config I2S_ESP32_LP
+	bool "ESP32 LP I2S driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_LP_I2S_ENABLED
+	help
+	  Enable the ESP32-P4 low-power I2S receiver.
+
+if I2S_ESP32_LP
+
+config I2S_ESP32_LP_RX_BLOCK_COUNT
+	int "ESP32 LP I2S RX block count"
+	default 5
+	help
+	  Maximum number of received blocks waiting to be read.
+
+endif
