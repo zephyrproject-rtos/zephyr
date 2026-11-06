@@ -1,0 +1,10 @@
+sample:
+  description: Synopsys DWC3 xHCI host controller build smoke test
+  name: DWC3 xHCI host (versal_apu)
+tests:
+  sample.subsys.usb.dwc3_host:
+    build_only: true
+    platform_allow:
+      - versal_apu
+    tags:
+      - usb

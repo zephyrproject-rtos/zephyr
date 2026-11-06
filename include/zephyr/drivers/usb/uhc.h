@@ -29,11 +29,17 @@
  * @{
  */
 
-/** USB device state */
+/**
+ * @brief USB device state (Chapter 9)
+ */
 enum usb_device_state {
+	/** Device is not connected or has been detached */
 	USB_STATE_NOTCONNECTED,
+	/** Device is connected but has not been assigned an address */
 	USB_STATE_DEFAULT,
+	/** Device has been assigned an address but is not configured */
 	USB_STATE_ADDRESSED,
+	/** Device has an active configuration */
 	USB_STATE_CONFIGURED,
 };
 
@@ -55,6 +61,9 @@ enum usb_device_speed {
 
 #define UHC_INTERFACES_MAX 32
 
+/**
+ * @brief Host-side view of a USB interface alternate setting
+ */
 struct usb_host_interface {
 	/** Pointer to the interface descriptor */
 	struct usb_desc_header *dhp;
@@ -64,19 +73,32 @@ struct usb_host_interface {
 	uint8_t alternate;
 };
 
+/**
+ * @brief Host-side view of a USB endpoint
+ */
 struct usb_host_ep {
 	/** Pointer to the endpoint descriptor */
 	struct usb_ep_descriptor *desc;
 };
 
 /**
- * Host representation of a USB device
+ * @brief Host representation of a USB device
+ *
+ * Hub topology (@a parent, @a hub_port, @a depth) and @a slot_id are populated
+ * by the host stack and HCD during enumeration. Existing UDC-only users ignore
+ * these fields (zero-initialized or partial init).
  */
 struct usb_device {
 	/** dlist node */
 	sys_dnode_t node;
 	/** An opaque pointer to the host context to which this device belongs */
 	void *ctx;
+	/** Parent hub device, or NULL when attached to the host controller root */
+	struct usb_device *parent;
+	/** 1-based downstream port on @a parent; host root port index when @a parent is NULL */
+	uint8_t hub_port;
+	/** Number of hub tiers above this device (0 = root tier) */
+	uint8_t depth;
 	/** Device mutex */
 	struct k_mutex mutex;
 	/** USB device descriptor */
@@ -89,6 +111,8 @@ struct usb_device {
 	uint8_t actual_cfg;
 	/** Device address */
 	uint8_t addr;
+	/** Host controller device slot (e.g. xHCI slot ID); 0 when unassigned */
+	uint8_t slot_id;
 	/** Pointer to actual device configuration descriptor */
 	void *cfg_desc;
 	/** Pointers to device interfaces */
@@ -97,14 +121,8 @@ struct usb_device {
 	struct usb_host_ep ep_out[16];
 	/** Pointers to device IN endpoints */
 	struct usb_host_ep ep_in[16];
-	/** Pointer to the hub to which this device is connected */
-	struct usb_device *hub;
-	/** Device's hub Think Time */
+	/** Hub think time (USB 2.0 wHubCharacteristics); hub devices only */
 	uint16_t tt;
-	/** Device's hub port */
-	uint8_t hub_port;
-	/** Device's level (root device = 1) */
-	uint8_t level;
 };
 
 /**
@@ -117,7 +135,7 @@ enum uhc_control_stage {
 };
 
 /**
- * UHC endpoint buffer info
+ * @brief UHC endpoint transfer context
  *
  * This structure is mandatory for all UHC request.
  * It contains the meta data about the request and FIFOs
@@ -174,6 +192,8 @@ enum uhc_event_type {
 	UHC_EVT_DEV_CONNECTED_FS,
 	/** High speed device connected */
 	UHC_EVT_DEV_CONNECTED_HS,
+	/** SuperSpeed device connected (emitted by integrated xHCI HCDs) */
+	UHC_EVT_DEV_CONNECTED_SS,
 	/** Device (peripheral) removed */
 	UHC_EVT_DEV_REMOVED,
 	/** Bus reset operation finished */
@@ -194,7 +214,7 @@ enum uhc_event_type {
 };
 
 /**
- * USB host controller event
+ * @brief USB host controller event
  *
  * Common structure for all events that originate from
  * the UHC driver and are passed to higher layer using
@@ -230,7 +250,7 @@ typedef int (*uhc_event_cb_t)(const struct device *dev,
 			      const struct uhc_event *const event);
 
 /**
- * USB host controller capabilities
+ * @brief USB host controller capabilities
  *
  * This structure is mainly intended for the USB host stack.
  */
@@ -249,7 +269,7 @@ struct uhc_device_caps {
 #define UHC_STATUS_ENABLED		1
 
 /**
- * Common UHC driver data structure
+ * @brief Common UHC driver data structure
  *
  * Mandatory structure for each UHC controller driver.
  * To be implemented as device's private data (device->data).
@@ -322,6 +342,44 @@ __subsystem struct uhc_driver_api {
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
+	/**
+	 * Optional: program endpoint contexts after SET_CONFIGURATION (hc_driver
+	 * bandwidth / endpoint setup). NULL is a no-op success.
+	 */
+	int (*add_endpoints)(const struct device *dev, struct usb_device *udev);
+
+	/*
+	 * Optional endpoint recovery and diagnostics (integrated xHCI HCDs).
+	 * NULL => no-op / success where documented on the wrappers below.
+	 */
+	int (*eps_verify_steady)(const struct device *dev, struct usb_device *udev);
+	int (*ep_sync_after_clear_feature)(const struct device *dev, struct usb_device *udev);
+	bool (*post_configure_steady)(const struct device *dev);
+	/**
+	 * Optional: assign a USB device address (xHCI Address Device BSR=0).
+	 *
+	 * Integrated xHCI host controllers select the wire address; the chosen
+	 * value is written to @a addr_out. NULL means the host stack must use
+	 * CH9 SET_ADDRESS (@c -ENOTSUP from @ref uhc_assign_address).
+	 */
+	int (*assign_address)(const struct device *dev, struct usb_device *udev, uint8_t *addr_out);
+	/**
+	 * Optional: note @a udev before @ref uhc_bus_reset (xHCI root enumeration).
+	 */
+	int (*prepare_enum)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: enable xHCI slot + Address Device (BSR=1) for a hub child.
+	 */
+	int (*attach_device)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: Disable Slot for one @a udev (hub child disconnect).
+	 */
+	void (*release_device)(const struct device *dev, struct usb_device *udev);
+	/**
+	 * Optional: tear down active device slot/context on disconnect (hc_driver
+	 * free_dev). Called from the host bus thread, not the UHC ISR.
+	 */
+	void (*free_dev)(const struct device *dev);
 };
 /**
  * @endcond
@@ -545,15 +603,16 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
 int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
- * @brief Remove a USB host controller transfers from queue
+ * @brief Remove a USB host controller transfer from the queue
  *
- * Not implemented yet.
+ * Stop Endpoint and wake waiter with -ECONNRESET.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] xfer   Pointer to UHC transfer
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
+ * @retval -ENOENT HCD-specific: transfer is not active on the endpoint
  */
 int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
@@ -611,6 +670,191 @@ int uhc_disable(const struct device *dev);
  * @retval -EALREADY controller is already uninitialized
  */
 int uhc_shutdown(const struct device *dev);
+
+/**
+ * @brief Notify UHC after SET_CONFIGURATION (descriptor tree parsed)
+ *
+ * Invoked when the host stack has read the full configuration descriptor and
+ * walked interfaces and endpoint descriptors. HCDs program non-EP0 endpoint
+ * contexts here (xHCI Configure Endpoint - hc_driver add_endpoints).
+ *
+ * @param dev  UHC device
+ * @param udev USB device with ep_in/ep_out and ifaces populated
+ *
+ * @return 0 on success or if the driver has no optional hook; negative errno on failure.
+ * @retval -EINVAL Invalid @a dev or @a udev
+ * @retval -EPERM controller is not initialized
+ */
+int uhc_add_endpoints(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: verify configured endpoint contexts appear steady (HCD-defined).
+ *
+ * @param dev UHC device
+ * @param udev USB device with configured endpoints
+ *
+ * @retval 0 Endpoints steady, or hook not implemented
+ * @retval -EINVAL Invalid @a dev or @a udev
+ * @retval -EPERM controller is not initialized
+ * @retval negative errno when verification detects mismatch
+ */
+int uhc_eps_verify_steady(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: resync HCD endpoint state after CLEAR_FEATURE(ENDPOINT_HALT).
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ *
+ * @retval 0 Sync completed, or hook not implemented
+ * @retval -EINVAL Invalid @a dev or @a udev
+ * @retval -EPERM controller is not initialized
+ * @retval negative errno on programming failure
+ */
+int uhc_ep_sync_after_clear_feature(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: query whether the HCD is steady since add_endpoints().
+ *
+ * @param dev UHC device
+ *
+ * @retval true Hook is unset or reports steady state
+ * @retval false @a dev is NULL or the controller is not initialized
+ */
+bool uhc_post_configure_steady(const struct device *dev);
+
+/**
+ * @brief Optional: HCD cleanup after device disconnect (free_dev).
+ *
+ * Invokes the driver @c free_dev hook when the controller is initialized.
+ * No-op when @a dev is NULL, the hook is unset, or the controller is not
+ * initialized.
+ *
+ * @param dev UHC device
+ */
+void uhc_free_dev(const struct device *dev);
+
+/**
+ * @brief Optional: bind @a udev before root @ref uhc_bus_reset (xHCI).
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ *
+ * @retval 0 Success, or hook not implemented
+ * @retval -EINVAL Invalid @a dev or @a udev
+ * @retval -EPERM Controller is not initialized
+ * @retval negative errno HCD failure
+ */
+static inline int uhc_prepare_enum(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret = 0;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	if (!uhc_is_initialized(dev)) {
+		return -EPERM;
+	}
+
+	if (api->prepare_enum != NULL) {
+		api->lock(dev);
+		ret = api->prepare_enum(dev, udev);
+		api->unlock(dev);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Optional: xHCI slot setup for a hub-tier device (no root port reset).
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ *
+ * @retval 0 Success
+ * @retval -ENOTSUP Hook not implemented
+ * @retval -EINVAL Invalid @a dev or @a udev
+ * @retval -EPERM Controller is not initialized
+ * @retval negative errno HCD failure
+ */
+static inline int uhc_attach_device(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret;
+
+	if (dev == NULL || udev == NULL) {
+		return -EINVAL;
+	}
+
+	if (api->attach_device == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!uhc_is_initialized(dev)) {
+		return -EPERM;
+	}
+
+	api->lock(dev);
+	ret = api->attach_device(dev, udev);
+	api->unlock(dev);
+
+	return ret;
+}
+
+/**
+ * @brief Optional: release one device's xHCI slot on disconnect.
+ *
+ * Invokes the driver @c release_device hook when the controller is initialized.
+ * No-op when @a dev or @a udev is NULL, the hook is unset, or the controller
+ * is not initialized.
+ *
+ * @param dev UHC device
+ * @param udev USB device whose HCD slot should be released
+ */
+static inline void uhc_release_device(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+
+	if (dev == NULL || udev == NULL) {
+		return;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->release_device == NULL) {
+		return;
+	}
+
+	if (!uhc_is_initialized(dev)) {
+		return;
+	}
+
+	api->lock(dev);
+	api->release_device(dev, udev);
+	api->unlock(dev);
+}
+
+/**
+ * @brief Optional: assign USB device address via HCD (xHCI Address Device).
+ *
+ * When implemented, the HCD runs address assignment (xHCI Address Device with
+ * BSR=0) and returns the wire address in @a addr_out. When the hook is unset,
+ * returns @c -ENOTSUP so the host stack may use CH9 SET_ADDRESS instead.
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ * @param addr_out On success, USB address selected by the HCD (1–127)
+ *
+ * @retval 0 Address assigned; @a addr_out is valid
+ * @retval -ENOTSUP Hook not implemented (use CH9 SET_ADDRESS)
+ * @retval -EINVAL Invalid @a dev, @a udev, or @a addr_out
+ * @retval -EPERM Controller is not initialized
+ * @retval -EBUSY Requested address already in use (HCD-specific)
+ * @retval negative errno Other HCD failure
+ */
+int uhc_assign_address(const struct device *dev, struct usb_device *udev, uint8_t *addr_out);
 
 /**
  * @brief Get USB host controller capabilities

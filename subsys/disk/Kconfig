@@ -9,6 +9,15 @@ menuconfig DISK_ACCESS
 
 if DISK_ACCESS
 
+config DISK_PARTITION
+	bool "MBR/GPT FAT volume discovery helpers"
+	default y if DISK_DRIVER_SCSI
+	help
+	  Transport-neutral partition table parsing to locate a FAT/exFAT volume
+	  on block media (:c:func:`disk_partition_walk`,
+	  :c:func:`disk_partition_find_fat_volume`). Enabled by
+	  default when the SCSI disk_access backend is used.
+
 module = DISK
 module-str = disk
 source "subsys/logging/Kconfig.template.log_config"
