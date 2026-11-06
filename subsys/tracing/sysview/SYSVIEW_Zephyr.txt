@@ -8,6 +8,10 @@ NamedType Bool          0=false 1=true
 
 NamedType TimeOut       *="%u ticks" 0=TIMEOUT_NO_WAIT 4294967295=FOREVER
 
+# Sleep timeouts are signed. A negative value other than -1 is an absolute
+# deadline, encoded by Z_TICK_ABS() as -2 - deadline_ticks.
+NamedType SleepTicks    *="%d ticks" 0=K_NO_WAIT -1=K_FOREVER
+
 
 NamedType ErrCodePosix  *=%i 0=ESUCCESS  -1=EPERM        -2=ENOENT       -3=ESRCH         -4=EINTR            -5=EIO              -6=ENXIO       -7=E2BIG         -8=ENOEXEC       -9=EBADF       -10=ECHILD         -11=EAGAIN       -12=ENOMEM   -13=EACCES -14=EFAULT -15=ENOTEMPTY    -16=EBUSY   -17=EEXIST -18=EXDEV -19=ENODEV -20=ENOTDIR -21=EISDIR -22=EINVAL -23=ENFILE -24=EMFILE -25=ENOTTY -26=ENAMETOOLONG -27=EFBIG -28=ENOSPC -29=ESPIPE -30=EROFS -31=EMLINK -32=EPIPE -33=EDEADLK -34=ENOLCK -35=ENOTSUP -36=EMSGSIZE -72=ECANCELED -81=ERRMAX
 NamedType ErrCodeMath   *=%i 0=ESUCCESS -37=EDOM         -38=ERANGE
@@ -97,7 +101,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 93  timer->expiry_fn           timer=%I
 94  timer->stop_fn             timer=%I
 
-169 k_sleep_ticks              ticks=%u | Returns %u
+169 k_sleep_ticks              ticks=%SleepTicks | Returns %u
 
 98  k_thread_priority_set      thread=%t, priority=%u
 99  k_thread_wakeup
