@@ -153,6 +153,27 @@ static void populate_connected_conns(struct bt_conn *conn, void *data)
 	}
 }
 
+int cap_unicast_group_cfg_apply(struct bt_cap_unicast_group_param *param)
+{
+	struct unicast_group_cfg group_cfg;
+	int err;
+
+	err = unicast_group_cfg_get(&group_cfg);
+	if (err != 0) {
+		return err;
+	}
+
+	param->packing = group_cfg.packing;
+	param->sca = group_cfg.sca;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	param->iso_interval = group_cfg.iso_interval;
+	param->c_to_p_ft = group_cfg.c_to_p_ft;
+	param->p_to_c_ft = group_cfg.p_to_c_ft;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+	return 0;
+}
+
 static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_conn *connected_conns[CONFIG_BT_MAX_CONN] = {0};
@@ -348,7 +369,11 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 
 	cap_initiator_unicast_audio_start_param.count = stream_cnt;
 
-	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	err = cap_unicast_group_cfg_apply(&cap_initiator_unicast_group_param);
+	if (err != 0) {
+		return -ENOEXEC;
+	}
+
 	cap_initiator_unicast_group_param.params_count = pair_cnt;
 	cap_initiator_unicast_group_param.params = cap_initiator_unicast_group_pair_params;
 
@@ -856,7 +881,11 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 		}
 	}
 
-	cap_initiator_unicast_group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	err = cap_unicast_group_cfg_apply(&cap_initiator_unicast_group_param);
+	if (err != 0) {
+		return err;
+	}
+
 	cap_initiator_unicast_group_param.params = cap_initiator_unicast_group_pair_params;
 	cap_initiator_unicast_group_param.params_count = pair_cnt;
 
@@ -1630,6 +1659,15 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 	cap_initiator_broadcast_create_param.subgroup_params =
 		&cap_initiator_broadcast_subgroup_param;
 	cap_initiator_broadcast_create_param.qos = &default_source.qos;
+	cap_initiator_broadcast_create_param.packing = default_broadcast_group_cfg.packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	if (default_broadcast_group_cfg.iso_interval != 0U) {
+		cap_initiator_broadcast_create_param.irc = default_broadcast_group_cfg.irc;
+		cap_initiator_broadcast_create_param.pto = default_broadcast_group_cfg.pto;
+		cap_initiator_broadcast_create_param.iso_interval =
+			default_broadcast_group_cfg.iso_interval;
+	}
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 	err = bt_cap_initiator_broadcast_audio_create(&cap_initiator_broadcast_create_param,
 						      &default_source.cap_source);

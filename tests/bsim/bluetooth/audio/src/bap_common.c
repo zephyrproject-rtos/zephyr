@@ -118,9 +118,17 @@ void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 
 void print_qos(const struct bt_bap_qos_cfg *qos)
 {
-	LOG_DBG("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
-		"rtn %u latency %u pd %u",
-		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
+	LOG_DBG("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u pd %u",
+		qos->interval, qos->framing, qos->phy, qos->sdu, qos->pd);
+
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
+	LOG_DBG("  rtn %u latency %u", qos->rtn, qos->latency);
+#endif
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	LOG_DBG("  max_pdu %u burst_number %u num_subevents %u", qos->max_pdu,
+		qos->burst_number, qos->num_subevents);
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 
 void copy_unicast_stream_preset(struct unicast_stream *stream,
