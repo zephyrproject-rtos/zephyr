@@ -370,7 +370,7 @@ static int esp32_set_txpower(const struct device *dev, int16_t dbm)
 
 	LOG_DBG("TX power: %u dBm", dbm);
 
-	if (dbm > CONFIG_ESP32_PHY_MAX_TX_POWER) {
+	if (dbm > CONFIG_SOC_FAMILY_ESP32_PHY_MAX_TX_POWER) {
 		return -EINVAL;
 	}
 
