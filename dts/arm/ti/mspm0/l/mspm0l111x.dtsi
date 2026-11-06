@@ -8,6 +8,75 @@
 #include <mem.h>
 #include <ti/mspm0/l/mspm0l.dtsi>
 
+&pinctrl {
+	gpio_none: gpio_none {
+		pinmux = <0>;
+	};
+};
+
+&gpioa {
+	pinmux = <&gpio_pa0>,
+		 <&gpio_pa1>,
+		 <&gpio_pa2>,
+		 <&gpio_pa3>,
+		 <&gpio_pa4>,
+		 <&gpio_pa5>,
+		 <&gpio_pa6>,
+		 <&gpio_pa7>,
+		 <&gpio_pa8>,
+		 <&gpio_pa9>,
+		 <&gpio_pa10>,
+		 <&gpio_pa11>,
+		 <&gpio_pa12>,
+		 <&gpio_pa13>,
+		 <&gpio_pa14>,
+		 <&gpio_pa15>,
+		 <&gpio_pa16>,
+		 <&gpio_pa17>,
+		 <&gpio_pa18>,
+		 <&gpio_pa19>,
+		 <&gpio_pa20>,
+		 <&gpio_pa21>,
+		 <&gpio_pa22>,
+		 <&gpio_pa23>,
+		 <&gpio_pa24>,
+		 <&gpio_pa25>,
+		 <&gpio_pa26>,
+		 <&gpio_pa27>,
+		 <&gpio_pa28>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_pa31>;
+};
+
+&gpiob {
+	pinmux = <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_pb2>,
+		 <&gpio_pb3>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_pb6>,
+		 <&gpio_pb7>,
+		 <&gpio_pb8>,
+		 <&gpio_pb9>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_pb14>,
+		 <&gpio_pb15>,
+		 <&gpio_pb16>,
+		 <&gpio_pb17>,
+		 <&gpio_pb18>,
+		 <&gpio_pb19>,
+		 <&gpio_pb20>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_none>,
+		 <&gpio_pb24>;
+};
+
 / {
 	soc {
 		sram0: memory@20000000 {
