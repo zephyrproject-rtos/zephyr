@@ -1,6 +1,11 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
-description: NXP PCAL6534 I2C GPIO expander
+description: |
+  NXP PCAL6534 I2C GPIO expander
+
+  This node covers pins 0-31 (P0_0..P3_7). Pins 32-33 (P4_0, P4_1) are
+  exposed by an optional "nxp,pca-series-gpio-port" child node, which
+  requires #address-cells = <1> and #size-cells = <0> on this node.
 
 compatible: "nxp,pcal6534"
 
