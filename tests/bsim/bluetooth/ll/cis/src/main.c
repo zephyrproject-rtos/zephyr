@@ -256,6 +256,7 @@ static void iso_print_data(uint8_t *data, size_t data_len)
 	printk("\t %s\n", data_str);
 }
 
+static uint16_t offset_seq_num[CONFIG_BT_ISO_MAX_CHAN];
 static uint16_t expected_seq_num[CONFIG_BT_ISO_MAX_CHAN];
 
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
@@ -270,14 +271,19 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	       chan, index, info->flags, info->seq_num, info->ts, buf->len);
 	iso_print_data(buf->data, buf->len);
 
-	seq_num = sys_get_le32(buf->data);
+	seq_num = (buf->len >= sizeof(uint32_t)) ?
+		  (uint16_t)sys_get_le32(buf->data) :
+		  (uint16_t)(info->seq_num - offset_seq_num[index]);
 	if (info->flags & BT_ISO_FLAGS_VALID) {
 		if (seq_num != expected_seq_num[index]) {
+			printk("%s: info seq_num %u incoming seq_num %u\n", __func__, info->seq_num,
+			       seq_num);
 			if (expected_seq_num[index]) {
 				FAIL("ISO data miss match, expected %u actual %u\n",
 				     expected_seq_num[index], seq_num);
 			}
 			expected_seq_num[index] = seq_num;
+			offset_seq_num[index] = info->seq_num - seq_num;
 		}
 
 		expected_seq_num[index] += 1U;
@@ -287,10 +293,26 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 #elif defined(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)
 		expected_seq_num[index] += ((CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT - 1U) * 2U);
 #endif
+
+#if defined(CONFIG_TEST_FT_PER_SKIP_SUBEVENTS)
+	} else if ((info->seq_num - offset_seq_num[index]) >=
+		   (expected_seq_num[index] - ((CONFIG_TEST_FT_PER_SKIP_EVENTS_COUNT - 1U) * 2U)) &&
+		   (info->seq_num - offset_seq_num[index]) < expected_seq_num[index]) {
+		/* Accepted lost data due to skipped subevents */
+#endif
+
+#if defined(CONFIG_TEST_FT_CEN_SKIP_SUBEVENTS)
+	} else if ((info->seq_num - offset_seq_num[index]) >=
+		   (expected_seq_num[index] - ((CONFIG_TEST_FT_CEN_SKIP_EVENTS_COUNT - 1U) * 2U)) &&
+		   (info->seq_num - offset_seq_num[index]) < expected_seq_num[index]) {
+		/* Accepted lost data due to skipped subevents */
+#endif
+
 	} else if (expected_seq_num[index] &&
 		   expected_seq_num[index] < SEQ_NUM_MAX) {
 		FAIL("%s: Invalid ISO data after valid ISO data reception.\n"
-		     "Expected %u\n", __func__, expected_seq_num[index]);
+		     "Chan %u, Expected %u Actual %u info %u.\n", __func__, index,
+		     expected_seq_num[index], seq_num, info->seq_num);
 	}
 }
 
@@ -312,6 +334,18 @@ static void iso_connected(struct bt_iso_chan *chan)
 	if (err != 0) {
 		FAIL("Failed to get ISO info: %d\n", err);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_TEST_CIS_MIXED_RTN) &&
+	    (iso_info.type == BT_ISO_CHAN_TYPE_CENTRAL)) {
+		size_t index = chan - iso_chan;
+		uint8_t expected_nse = chan->qos->tx->rtn + 1U;
+
+		if (iso_info.max_subevent != expected_nse) {
+			FAIL("CIS %zu: expected NSE %u, got %u\n", index,
+			     expected_nse, iso_info.max_subevent);
+			return;
+		}
 	}
 
 	printk("ISO Channel %p connected\n", chan);
@@ -398,6 +432,9 @@ static void test_cis_central(void)
 		iso_tx[i].phy = BT_GAP_LE_PHY_2M;
 		if (IS_ENABLED(CONFIG_TEST_FT_SKIP_SUBEVENTS)) {
 			iso_tx[i].rtn = 2U;
+		} else if (IS_ENABLED(CONFIG_TEST_CIS_MIXED_RTN)) {
+			iso_tx[i].rtn = IS_ENABLED(CONFIG_TEST_CIS_MIXED_RTN_REVERSE) ?
+					2U - (i % 3U) : i % 3U;
 		} else {
 			iso_tx[i].rtn = 0U;
 		}
@@ -432,7 +469,9 @@ static void test_cis_central(void)
 	cig_param.cis_channels = channels;
 	cig_param.num_cis = ARRAY_SIZE(channels);
 	cig_param.sca = BT_GAP_SCA_UNKNOWN;
-	cig_param.packing = 0U;
+	cig_param.packing = IS_ENABLED(CONFIG_TEST_CIS_PACKING_INTERLEAVED) ?
+			    BT_ISO_PACKING_INTERLEAVED :
+			    BT_ISO_PACKING_SEQUENTIAL;
 	cig_param.framing = 0U;
 	cig_param.c_to_p_interval = ISO_INTERVAL_US;
 	cig_param.p_to_c_interval = ISO_INTERVAL_US;
@@ -460,7 +499,7 @@ static void test_cis_central(void)
 	}
 #endif
 
-#if !defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if !defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	for (int i = 0; i < CONFIG_BT_MAX_CONN; i++) {
 #else
 		int i = 0;
@@ -522,7 +561,7 @@ static void test_cis_central(void)
 	     (conn_index < conn_count) && (chan < CONFIG_BT_ISO_MAX_CHAN);
 	     conn_index++, chan++) {
 
-#elif defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#elif defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	for (int chan = 0, conn_index = 0;
 	     (chan < CONFIG_BT_ISO_MAX_CHAN); chan++) {
 #endif
@@ -611,7 +650,7 @@ static void test_cis_central(void)
 
 	bt_conn_foreach(BT_CONN_TYPE_LE, disconnect, NULL);
 
-#if !defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if !defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	for (int i = 0; i < CONFIG_BT_MAX_CONN; i++) {
 #endif
 
@@ -623,7 +662,7 @@ static void test_cis_central(void)
 		}
 		printk("Disconnected from peer device %d.\n", i);
 
-#if !defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if !defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	}
 #endif
 
@@ -756,7 +795,7 @@ static void test_cis_peripheral(void)
 	}
 	printk("connected to peer central.\n");
 
-#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	for (int chan = 0; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
 #endif
 
@@ -768,7 +807,7 @@ static void test_cis_peripheral(void)
 		}
 		printk("connected to peer ISO channel.\n");
 
-#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	}
 #endif
 
@@ -810,7 +849,7 @@ static void test_cis_peripheral(void)
 		}
 	}
 
-#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	for (int chan = 0; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
 #endif
 
@@ -822,7 +861,7 @@ static void test_cis_peripheral(void)
 		}
 		printk("disconnected to peer ISO channel.\n");
 
-#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	}
 #endif
 
@@ -835,7 +874,7 @@ static void test_cis_peripheral(void)
 	printk("disconnected from peer device.\n");
 
 #if !defined(CONFIG_TEST_FT_SKIP_SUBEVENTS) || defined(CONFIG_TEST_FT_PER_SKIP_SUBEVENTS)
-#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	for (int chan = 0; chan < CONFIG_BT_ISO_MAX_CHAN; chan++) {
 #else
 		int  chan = 0;
@@ -845,7 +884,7 @@ static void test_cis_peripheral(void)
 			     SEQ_NUM_MAX);
 			return;
 		}
-#if defined(CONFIG_TEST_MULTIPLE_PERIPERAL_CIS)
+#if defined(CONFIG_TEST_MULTIPLE_PERIPHERAL_CIS)
 	}
 #endif
 #endif

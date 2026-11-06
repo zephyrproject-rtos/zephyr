@@ -17,12 +17,15 @@
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/usb/usb_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -57,7 +60,15 @@ BUILD_ASSERT(CONFIG_BT_ISO_TX_BUF_COUNT >= TOTAL_BUF_NEEDED,
 	     "CONFIG_BT_ISO_TX_BUF_COUNT should be at least "
 	     "BROADCAST_ENQUEUE_COUNT * CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT");
 
-#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+#if defined(CONFIG_BAP_BROADCAST_8_2_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_8_2_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#define BROADCAST_SAMPLE_RATE 8000
+
+#elif defined(CONFIG_BAP_BROADCAST_16_2_1)
 
 static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
@@ -81,13 +92,23 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 
 #define BROADCAST_SAMPLE_RATE 48000U
 
+#elif defined(CONFIG_BAP_BROADCAST_48_6_1)
+
+static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_6_1(
+	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
+
+#define BROADCAST_SAMPLE_RATE 48000
+
 #endif
 
-#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+#if defined(CONFIG_BAP_BROADCAST_8_2_1)
+#define MAX_SAMPLE_RATE 8000U
+#elif defined(CONFIG_BAP_BROADCAST_16_2_1)
 #define MAX_SAMPLE_RATE 16000U
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 #define MAX_SAMPLE_RATE 24000U
-#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1) || defined(CONFIG_BAP_BROADCAST_48_6_1)
 #define MAX_SAMPLE_RATE 48000U
 #endif
 #define MAX_FRAME_DURATION_US 10000U
@@ -96,19 +117,23 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+#include "audio_in.h"
+#if defined(CONFIG_AUDIO_INPUT_TIMED) && defined(CONFIG_USE_USB_AUDIO_INPUT)
+#include "usb_sof.h"
+#endif /* CONFIG_AUDIO_INPUT_TIMED && CONFIG_USE_USB_AUDIO_INPUT */
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
+
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
-#include <zephyr/sys/ring_buffer.h>
 
 #include <sample_usbd.h>
 
 /* USB Audio Data is downsampled from 48kHz to match broadcast preset when receiving data */
-#define USB_SAMPLE_RATE           48000U
-#define USB_DOWNSAMPLE_RATE       BROADCAST_SAMPLE_RATE
+#define USB_SAMPLE_RATE           AUDIO_IN_RATE_HZ
 #define USB_FRAME_DURATION_US     1000U
 #define USB_SAMPLE_CNT            ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
-#define USB_DOWNSSAMPLE_CNT       ((USB_FRAME_DURATION_US * USB_DOWNSAMPLE_RATE) / USEC_PER_SEC)
 #define USB_BYTES_PER_SAMPLE      2U
 #define USB_CHANNELS              2U
 #define USB_MONO_FRAME_SIZE       (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
@@ -116,11 +141,9 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 #define USB_MAX_MONO_FRAME_SIZE   ((USB_SAMPLE_CNT + 1) * USB_BYTES_PER_SAMPLE)
 #define USB_STEREO_FRAME_SIZE     (USB_MONO_FRAME_SIZE * USB_CHANNELS)
 #define USB_MAX_STEREO_FRAME_SIZE (USB_MAX_MONO_FRAME_SIZE * USB_CHANNELS)
-#define USB_ENQUEUE_COUNT         30U /* 30 times 1ms frames => 30ms */
+#endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 
-#define RING_BUF_USB_FRAMES  20U
-#define AUDIO_RING_BUF_BYTES (USB_DOWNSSAMPLE_CNT * USB_BYTES_PER_SAMPLE * RING_BUF_USB_FRAMES)
-#else /* !defined(CONFIG_USE_USB_AUDIO_INPUT) */
+#if !defined(CONFIG_AUDIO_INPUT_STREAM)
 
 #include <math.h>
 
@@ -147,28 +170,53 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
 	}
 }
-#endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
+#endif /* !defined(CONFIG_AUDIO_INPUT_STREAM) */
 #endif /* defined(CONFIG_LIBLC3) */
+
+#define SDU_METRICS_INTERVAL_SECONDS 10U
+#define SDU_METRICS_INTERVAL_MS      ((int64_t)SDU_METRICS_INTERVAL_SECONDS * MSEC_PER_SEC)
+
+/* SDU transmission metrics of one stream over a metrics interval */
+struct sdu_tx_metrics {
+	/* Sending context */
+	uint32_t sent;
+	uint32_t bytes;
+	uint32_t send_err;
+	int32_t in_flight_min;
+	int32_t in_flight_max;
+	atomic_val_t queue_empty_ref;
+	/* Sent callback context; cleared there when cb_clear is set */
+	atomic_t cb_clear;
+	bool cb_valid;
+	uint32_t cb_last;
+	uint32_t cb_n;
+	uint32_t cb_sum;
+	uint32_t cb_min;
+	uint32_t cb_max;
+};
 
 static struct broadcast_source_stream {
 	struct bt_bap_stream stream;
 	uint16_t seq_num;
 	uint8_t bis_number;
 	size_t sent_cnt;
+	/* SDUs queued to the controller and not yet completed */
+	atomic_t in_flight;
+	/* Completions that left the controller queue empty: possible on-air gap */
+	atomic_t queue_empty_cnt;
+	struct sdu_tx_metrics metrics;
 
 #if defined(CONFIG_LIBLC3)
 	lc3_encoder_t lc3_encoder;
-#if defined(CONFIG_BAP_BROADCAST_16_2_1)
+#if defined(CONFIG_BAP_BROADCAST_8_2_1)
+	lc3_encoder_mem_16k_t lc3_encoder_mem;
+#elif defined(CONFIG_BAP_BROADCAST_16_2_1)
 	lc3_encoder_mem_16k_t lc3_encoder_mem;
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
-#elif defined(CONFIG_BAP_BROADCAST_48_2_1)
+#elif defined(CONFIG_BAP_BROADCAST_48_2_1) || defined(CONFIG_BAP_BROADCAST_48_6_1)
 	lc3_encoder_mem_48k_t lc3_encoder_mem;
 #endif
-#if defined(CONFIG_USE_USB_AUDIO_INPUT)
-	struct ring_buf audio_ring_buf;
-	uint8_t _ring_buffer_memory[AUDIO_RING_BUF_BYTES];
-#endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 #endif /* defined(CONFIG_LIBLC3) */
 } streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 static struct bt_bap_broadcast_source *broadcast_source;
@@ -179,9 +227,133 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, TOTAL_BUF_NEEDED, BT_ISO_SDU_BUF_SIZE(CONFIG_
 static int16_t send_pcm_data[MAX_NUM_SAMPLES];
 static uint16_t seq_num;
 static bool stopping;
+static uint8_t acl_conn_count;
 
 static K_SEM_DEFINE(sem_started, 0U, 1U);
 static K_SEM_DEFINE(sem_stopped, 0U, 1U);
+
+#define LED1_NODE DT_ALIAS(led0)
+#define LED2_NODE DT_ALIAS(led1)
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE) || DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+#define LED_BLINK_INTERVAL K_MSEC(250)
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+static const struct gpio_dt_spec led_iso = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
+static struct k_work_delayable led_iso_work;
+static bool led_iso_is_on;
+static bool led_iso_blinking;
+static bool led_iso_ready;
+
+static void led_iso_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!led_iso_blinking) {
+		return;
+	}
+
+	led_iso_is_on = !led_iso_is_on;
+	(void)gpio_pin_set_dt(&led_iso, (int)led_iso_is_on);
+	(void)k_work_reschedule(&led_iso_work, LED_BLINK_INTERVAL);
+}
+
+static void led_iso_blink_set(bool enable)
+{
+	if (!led_iso_ready) {
+		return;
+	}
+
+	led_iso_blinking = enable;
+
+	if (!enable) {
+		(void)k_work_cancel_delayable(&led_iso_work);
+		led_iso_is_on = false;
+		(void)gpio_pin_set_dt(&led_iso, 0);
+		return;
+	}
+
+	(void)k_work_reschedule(&led_iso_work, K_NO_WAIT);
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+static const struct gpio_dt_spec led_acl = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
+static struct k_work_delayable led_acl_work;
+static bool led_acl_is_on;
+static bool led_acl_blinking;
+static bool led_acl_ready;
+
+static void led_acl_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (!led_acl_blinking) {
+		return;
+	}
+
+	led_acl_is_on = !led_acl_is_on;
+	(void)gpio_pin_set_dt(&led_acl, (int)led_acl_is_on);
+	(void)k_work_reschedule(&led_acl_work, LED_BLINK_INTERVAL);
+}
+
+static void led_acl_blink_set(bool enable)
+{
+	if (!led_acl_ready) {
+		return;
+	}
+
+	led_acl_blinking = enable;
+
+	if (!enable) {
+		(void)k_work_cancel_delayable(&led_acl_work);
+		led_acl_is_on = false;
+		(void)gpio_pin_set_dt(&led_acl, 0);
+		return;
+	}
+
+	(void)k_work_reschedule(&led_acl_work, K_NO_WAIT);
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
+
+static void leds_init(void)
+{
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	if (gpio_is_ready_dt(&led_iso)) {
+		int err;
+
+		err = gpio_pin_configure_dt(&led_iso, GPIO_OUTPUT_INACTIVE);
+		if (err == 0) {
+			k_work_init_delayable(&led_iso_work, led_iso_work_handler);
+			led_iso_ready = true;
+		}
+	}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+	if (gpio_is_ready_dt(&led_acl)) {
+		int err;
+
+		err = gpio_pin_configure_dt(&led_acl, GPIO_OUTPUT_INACTIVE);
+		if (err == 0) {
+			k_work_init_delayable(&led_acl_work, led_acl_work_handler);
+			led_acl_ready = true;
+		}
+	}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
+}
+
+#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
+static void update_acl_led(void)
+{
+	led_acl_blink_set(acl_conn_count > 0U);
+}
+#else
+static void update_acl_led(void)
+{
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
 
 #define BROADCAST_SOURCE_LIFETIME 120U /* seconds */
 
@@ -192,12 +364,20 @@ static int frames_per_sdu;
 static int octets_per_frame;
 
 static K_SEM_DEFINE(lc3_encoder_sem, 0U, TOTAL_BUF_NEEDED);
+
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+/* SDUs that fill the controller queue at start are silence; they are encoded back to back and
+ * would otherwise drain the input buffer below its target level.
+ */
+static atomic_t queue_fill_cnt;
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
 #endif
 
-static void send_data(struct broadcast_source_stream *source_stream)
+static void send_data(struct broadcast_source_stream *source_stream, const int16_t *pcm)
 {
 	struct bt_bap_stream *stream = &source_stream->stream;
 	struct net_buf *buf;
+	int32_t in_flight;
 	int ret;
 
 	if (stopping) {
@@ -220,19 +400,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 		return;
 	}
 
-#if defined(CONFIG_USE_USB_AUDIO_INPUT)
-	uint32_t size = ring_buf_get(&source_stream->audio_ring_buf, (uint8_t *)send_pcm_data,
-				     sizeof(send_pcm_data));
-
-	if (size < sizeof(send_pcm_data)) {
-		const size_t padding_size = sizeof(send_pcm_data) - size;
-
-		printk("Not enough bytes ready, padding %d!\n", padding_size);
-		memset(&((uint8_t *)send_pcm_data)[size], 0, padding_size);
-	}
-#endif
-
-	ret = lc3_encode(source_stream->lc3_encoder, LC3_PCM_FORMAT_S16, send_pcm_data, 1,
+	ret = lc3_encode(source_stream->lc3_encoder, LC3_PCM_FORMAT_S16, pcm, 1,
 			 octets_per_frame, lc3_encoded_buffer);
 	if (ret == -1) {
 		printk("LC3 encoder failed - wrong parameters?: %d", ret);
@@ -242,7 +410,7 @@ static void send_data(struct broadcast_source_stream *source_stream)
 
 	net_buf_add_mem(buf, lc3_encoded_buffer, preset_active.qos.sdu);
 #else
-	net_buf_add_mem(buf, send_pcm_data, preset_active.qos.sdu);
+	net_buf_add_mem(buf, pcm, preset_active.qos.sdu);
 #endif /* defined(CONFIG_LIBLC3) */
 
 	ret = bt_bap_stream_send(stream, buf, source_stream->seq_num++);
@@ -250,14 +418,233 @@ static void send_data(struct broadcast_source_stream *source_stream)
 		/* This will end broadcasting on this stream. */
 		printk("Unable to broadcast data on %p: %d\n", stream, ret);
 		net_buf_unref(buf);
+		source_stream->metrics.send_err++;
 		return;
 	}
 
+	/* SDUs queued in the controller, including this one */
+	in_flight = (int32_t)atomic_inc(&source_stream->in_flight) + 1;
 	source_stream->sent_cnt++;
-	if ((source_stream->sent_cnt % 1000U) == 0U) {
-		printk("Stream %p BIS_Number %u: Sent %u total ISO packets\n", stream,
-		       source_stream->bis_number, source_stream->sent_cnt);
+	source_stream->metrics.sent++;
+	source_stream->metrics.bytes += preset_active.qos.sdu;
+	source_stream->metrics.in_flight_min = MIN(source_stream->metrics.in_flight_min, in_flight);
+	source_stream->metrics.in_flight_max = MAX(source_stream->metrics.in_flight_max, in_flight);
+}
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+/* LE Read ISO TX Sync returns the sequence number and BIG anchor point of the last SDU given
+ * to the controller. The controller numbers SDUs from 1 and the host from 0, and keeps each SDU
+ * on the SDU interval grid, so one anchor gives the air time of every SDU. It is refreshed
+ * periodically to keep the sequence number difference small and to check its consistency.
+ */
+#define TX_SYNC_REFRESH_SDUS 100U
+#define TX_SYNC_RETRY_SDUS   10U
+
+static struct tx_sync {
+	bool valid;
+	uint16_t sn;
+	uint32_t ts;
+	uint16_t next_seq;
+} tx_sync;
+static atomic_t tx_sync_reset;
+
+/* TX sync metrics over a metrics interval, encoder context */
+static struct tx_sync_metrics {
+	uint32_t reads;
+	uint32_t fails;
+	int32_t dev_min;
+	int32_t dev_max;
+	int64_t dev_sum;
+	uint32_t dev_sdus;
+} tx_sync_m = {.dev_min = INT32_MAX, .dev_max = INT32_MIN};
+
+/* Air time, in controller microseconds, of the SDU with host sequence number seq */
+static uint32_t tx_sync_time(uint16_t seq)
+{
+	const int16_t sdus = (int16_t)(uint16_t)(seq + 1U - tx_sync.sn);
+
+	return tx_sync.ts + (uint32_t)((int32_t)sdus * (int32_t)preset_active.qos.interval);
+}
+
+/* Encoder thread: the anchor is invalid after the stream (re)starts */
+static bool tx_sync_valid(void)
+{
+	if (atomic_cas(&tx_sync_reset, 1, 0)) {
+		tx_sync.valid = false;
+		tx_sync.next_seq = 0U;
 	}
+
+	return tx_sync.valid;
+}
+
+/* Encoder thread, with the host sequence number of the next SDU */
+static void tx_sync_update(uint16_t seq)
+{
+	struct bt_iso_tx_info info;
+	int err;
+
+	if ((int16_t)(uint16_t)(seq - tx_sync.next_seq) < 0) {
+		return;
+	}
+
+	err = bt_bap_stream_get_tx_sync(&streams[0].stream, &info);
+	if (err != 0) {
+		tx_sync.next_seq = seq + TX_SYNC_RETRY_SDUS;
+		tx_sync_m.fails++;
+		return;
+	}
+
+	tx_sync_m.reads++;
+	if (tx_sync.valid) {
+		/* Air time against the one predicted from the previous anchor */
+		const int32_t dev = (int32_t)(info.ts - tx_sync_time(info.seq_num - 1U));
+
+		tx_sync_m.dev_min = MIN(tx_sync_m.dev_min, dev);
+		tx_sync_m.dev_max = MAX(tx_sync_m.dev_max, dev);
+		tx_sync_m.dev_sum += dev;
+		tx_sync_m.dev_sdus += (uint16_t)(info.seq_num - tx_sync.sn);
+	} else {
+		printk("TX sync: seq %u ts %u\n", info.seq_num, info.ts);
+	}
+
+	tx_sync.valid = true;
+	tx_sync.sn = info.seq_num;
+	tx_sync.ts = info.ts;
+	tx_sync.next_seq = seq + TX_SYNC_REFRESH_SDUS;
+}
+
+static void tx_sync_metrics_print(void)
+{
+	char s1[24];
+
+	if (!tx_sync.valid) {
+		printk("  ISO TX sync: no anchor, %u failed\n", tx_sync_m.fails);
+	} else if (tx_sync_m.dev_sdus == 0U) {
+		printk("  ISO TX sync: anchor seq %u ts %u us, %u reads, %u failed\n", tx_sync.sn,
+		       tx_sync.ts, tx_sync_m.reads, tx_sync_m.fails);
+	} else {
+		/* SDU air times against the nominal SDU interval in the local clock */
+		const int64_t cppm = (tx_sync_m.dev_sum * 100000000LL) /
+				     ((int64_t)tx_sync_m.dev_sdus * preset_active.qos.interval);
+
+		printk("  ISO TX sync: anchor seq %u ts %u us, %u reads, %u failed, deviation "
+		       "%d..%d us over %u SDUs, SDU interval %s ppm\n",
+		       tx_sync.sn, tx_sync.ts, tx_sync_m.reads, tx_sync_m.fails, tx_sync_m.dev_min,
+		       tx_sync_m.dev_max, tx_sync_m.dev_sdus,
+		       audio_in_centi_str(s1, sizeof(s1), cppm));
+	}
+
+	tx_sync_m = (struct tx_sync_metrics){.dev_min = INT32_MAX, .dev_max = INT32_MIN};
+}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED) && defined(CONFIG_USE_USB_AUDIO_INPUT)
+/* USB SOF callbacks, and those without a captured SOF time stamp */
+static atomic_t usb_sof_cnt;
+static atomic_t usb_sof_no_ts_cnt;
+#endif /* CONFIG_AUDIO_INPUT_TIMED && CONFIG_USE_USB_AUDIO_INPUT */
+
+static int64_t sdu_metrics_next_report_ms;
+static atomic_t sdu_metrics_restart;
+
+static void sdu_metrics_clear(struct sdu_tx_metrics *m)
+{
+	m->sent = 0U;
+	m->bytes = 0U;
+	m->send_err = 0U;
+	m->in_flight_min = INT32_MAX;
+	m->in_flight_max = 0;
+}
+
+/* Sent callback context, for each SDU completed by the controller */
+static void sdu_metrics_sent(struct sdu_tx_metrics *m)
+{
+	const uint32_t now = k_cycle_get_32();
+
+	if (atomic_cas(&m->cb_clear, 1, 0)) {
+		m->cb_n = 0U;
+		m->cb_sum = 0U;
+		m->cb_min = UINT32_MAX;
+		m->cb_max = 0U;
+	}
+
+	if (m->cb_valid) {
+		const uint32_t dt = k_cyc_to_us_near32(now - m->cb_last);
+
+		m->cb_n++;
+		m->cb_sum += dt;
+		m->cb_min = MIN(m->cb_min, dt);
+		m->cb_max = MAX(m->cb_max, dt);
+	}
+
+	m->cb_valid = true;
+	m->cb_last = now;
+}
+
+/* Sending context */
+static void sdu_metrics_maybe_log(void)
+{
+	const int64_t now_ms = k_uptime_get();
+
+	if (atomic_cas(&sdu_metrics_restart, 1, 0)) {
+		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+			struct sdu_tx_metrics *m = &streams[i].metrics;
+
+			sdu_metrics_clear(m);
+			m->queue_empty_ref = atomic_get(&streams[i].queue_empty_cnt);
+		}
+
+		sdu_metrics_next_report_ms = now_ms + SDU_METRICS_INTERVAL_MS;
+		return;
+	}
+
+	if (now_ms < sdu_metrics_next_report_ms) {
+		return;
+	}
+
+	sdu_metrics_next_report_ms = now_ms + SDU_METRICS_INTERVAL_MS;
+
+	printk("SDU transmission metrics (%u s interval)\n", SDU_METRICS_INTERVAL_SECONDS);
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+		struct sdu_tx_metrics *m = &streams[i].metrics;
+		const atomic_val_t queue_empty = atomic_get(&streams[i].queue_empty_cnt);
+		/* Read before the sent callback clears them */
+		const uint32_t cb_n = m->cb_n;
+		const uint32_t cb_sum = m->cb_sum;
+		const uint32_t cb_min = m->cb_min;
+		const uint32_t cb_max = m->cb_max;
+		const int32_t cb_avg = (cb_n > 0U) ? (int32_t)(cb_sum / cb_n) : 0;
+
+		(void)atomic_set(&m->cb_clear, 1);
+
+		printk("  stream[%zu] BIS %u: tx=%u total=%u seq=%u bytes=%u err=%u "
+		       "queue_empty=%ld in_flight=%d..%d\n",
+		       i, streams[i].bis_number, m->sent, streams[i].sent_cnt, streams[i].seq_num,
+		       m->bytes, m->send_err, (long)(queue_empty - m->queue_empty_ref),
+		       (m->sent > 0U) ? m->in_flight_min : 0, m->in_flight_max);
+
+		if (cb_n > 0U) {
+			printk("  stream[%zu] sent cb: interval %d us, %u..%u us (jitter %d..%+d "
+			       "us)\n",
+			       i, cb_avg, cb_min, cb_max, (int32_t)cb_min - cb_avg,
+			       (int32_t)cb_max - cb_avg);
+		}
+
+		m->queue_empty_ref = queue_empty;
+		sdu_metrics_clear(m);
+	}
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	tx_sync_metrics_print();
+#if defined(CONFIG_USE_USB_AUDIO_INPUT)
+	printk("  USB SOF capture: %ld SOF, %ld without time stamp\n",
+	       (long)atomic_clear(&usb_sof_cnt), (long)atomic_clear(&usb_sof_no_ts_cnt));
+#endif /* CONFIG_USE_USB_AUDIO_INPUT */
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+	audio_in_metrics_print();
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
 }
 
 #if defined(CONFIG_LIBLC3)
@@ -303,7 +690,12 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 		return;
 	}
 
-#if !defined(CONFIG_USE_USB_AUDIO_INPUT)
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+	if ((frame_duration_us * freq_hz) != (MAX_NUM_SAMPLES * USEC_PER_SEC)) {
+		printk("Error: Audio input frame size mismatch\n");
+		return;
+	}
+#else
 	/* If USB is not used as a sound source, generate a sine wave */
 	fill_audio_buf_sin(send_pcm_data, frame_duration_us, AUDIO_TONE_FREQUENCY_HZ, freq_hz);
 #endif
@@ -325,9 +717,36 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 
 			__ASSERT_NO_MSG(err == 0);
 		}
-		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-			send_data(&streams[i]);
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+		static int16_t in_pcm[AUDIO_IN_CHANNELS][MAX_NUM_SAMPLES];
+
+		if ((atomic_get(&queue_fill_cnt) > 0) && (atomic_dec(&queue_fill_cnt) > 0)) {
+			(void)memset(in_pcm, 0, sizeof(in_pcm));
+		} else {
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+			if (tx_sync_valid()) {
+				audio_in_get_timed(in_pcm[0], in_pcm[1],
+						   tx_sync_time(streams[0].seq_num));
+			} else {
+				audio_in_get(in_pcm[0], in_pcm[1]);
+			}
+#else
+			audio_in_get(in_pcm[0], in_pcm[1]);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 		}
+		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+			send_data(&streams[i], in_pcm[MIN(i, AUDIO_IN_CHANNELS - 1U)]);
+		}
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+		/* After sending, so that the HCI command does not delay the SDU */
+		tx_sync_update(streams[0].seq_num);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+#else
+		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
+			send_data(&streams[i], send_pcm_data);
+		}
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
+		sdu_metrics_maybe_log();
 	}
 }
 
@@ -341,7 +760,8 @@ K_THREAD_DEFINE(encoder, LC3_ENCODER_STACK_SIZE, init_lc3_thread, NULL, NULL, NU
 /* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
  * errors when USB host decides to perform rapid terminal enable/disable cycles.
  */
-K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_MAX_STEREO_FRAME_SIZE, 3, UDC_BUF_ALIGN);
+K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, ROUND_UP(USB_MAX_STEREO_FRAME_SIZE, UDC_BUF_ALIGN), 3,
+			 UDC_BUF_ALIGN);
 static bool terminal_enabled;
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
@@ -353,6 +773,7 @@ static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool 
 	ARG_UNUSED(user_data);
 
 	terminal_enabled = enabled;
+	audio_in_flush();
 }
 
 static void uac2_sof_cb(const struct device *dev, void *user_data)
@@ -360,7 +781,25 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(user_data);
 
-	/* no-op, but has to be registered */
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	uint32_t t_us;
+
+	atomic_inc(&usb_sof_cnt);
+	if (usb_sof_read(&t_us) == 0) {
+		audio_in_sof(t_us);
+	} else {
+		atomic_inc(&usb_sof_no_ts_cnt);
+	}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
+}
+
+static uint32_t feedback_cb(const struct device *dev, uint8_t terminal, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
+	return audio_in_feedback_get();
 }
 
 static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_t size,
@@ -391,11 +830,6 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, uint16_t size,
 			 void *user_data)
 {
-	int16_t usb_pcm_data[USB_CHANNELS][USB_DOWNSSAMPLE_CNT];
-	int nsamples, ratio;
-	static int count;
-	int16_t *pcm;
-
 	ARG_UNUSED(dev);
 	ARG_UNUSED(terminal);
 	ARG_UNUSED(user_data);
@@ -405,36 +839,10 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 		return;
 	}
 
-	pcm = (int16_t *)buf;
-
-	/* 'size' is in bytes, containing 1ms, 48kHz, stereo, 2 bytes per sample.
-	 * Do a simple downsample to 16kHz/24Khz matching the broadcast preset.
+	/* 'size' is in bytes, containing 1 ms of 48 kHz stereo 16-bit samples; the sample count
+	 * varies around 48 as the host follows the feedback value.
 	 */
-
-	ratio = USB_SAMPLE_RATE / USB_DOWNSAMPLE_RATE;
-	nsamples = size / (sizeof(int16_t) * USB_CHANNELS * ratio);
-	for (size_t i = 0U, j = 0U; i < nsamples; i++, j += USB_CHANNELS * ratio) {
-		usb_pcm_data[0][i] = pcm[j];
-		usb_pcm_data[1][i] = pcm[j + 1];
-	}
-
-	for (size_t i = 0U; i < MIN(ARRAY_SIZE(streams), 2); i++) {
-		const uint32_t size_put =
-			ring_buf_put(&(streams[i].audio_ring_buf), (uint8_t *)(usb_pcm_data[i]),
-				     nsamples * USB_BYTES_PER_SAMPLE);
-		if (size_put < nsamples * USB_BYTES_PER_SAMPLE) {
-			printk("Not enough room for samples in %s buffer: %u < %u, total capacity: "
-			       "%u\n",
-			       i == 0U ? "left" : "right", size_put,
-			       nsamples * USB_BYTES_PER_SAMPLE,
-			       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
-		}
-	}
-
-	count++;
-	if ((count % 10000) == 0) {
-		printk("USB Data received (count = %d)\n", count);
-	}
+	audio_in_put((const int16_t *)buf, size / (USB_BYTES_PER_SAMPLE * USB_CHANNELS));
 
 	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
@@ -456,20 +864,39 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 	source_stream->seq_num = 0U;
 	source_stream->sent_cnt = 0U;
+	atomic_clear(&source_stream->in_flight);
+	atomic_clear(&source_stream->queue_empty_cnt);
+	source_stream->metrics.cb_valid = false;
+	(void)atomic_set(&source_stream->metrics.cb_clear, 1);
+	(void)atomic_set(&sdu_metrics_restart, 1);
 	/* Store the BIS number for logging purposes */
 	source_stream->bis_number = info.broadcaster.bis_number;
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	(void)atomic_set(&tx_sync_reset, 1);
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 }
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
 {
+	struct broadcast_source_stream *source_stream =
+		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
+
+	/* Also called directly to prime the queue, when nothing is in flight */
+	if (atomic_get(&source_stream->in_flight) > 0) {
+		sdu_metrics_sent(&source_stream->metrics);
+
+		if ((atomic_dec(&source_stream->in_flight) == 1) && !stopping) {
+			atomic_inc(&source_stream->queue_empty_cnt);
+		}
+	}
+
 #if defined(CONFIG_LIBLC3)
 	k_sem_give(&lc3_encoder_sem);
 #else
 	/* If no LC3 encoder is used, just send mock data directly */
-	struct broadcast_source_stream *source_stream =
-		CONTAINER_OF(stream, struct broadcast_source_stream, stream);
-
-	send_data(source_stream);
+	send_data(source_stream, send_pcm_data);
+	sdu_metrics_maybe_log();
 #endif
 }
 
@@ -533,13 +960,180 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 static void source_started_cb(struct bt_bap_broadcast_source *source)
 {
 	printk("Broadcast source %p started\n", source);
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(true);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
 	k_sem_give(&sem_started);
 }
 
 static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
 {
 	printk("Broadcast source %p stopped with reason 0x%02X\n", source, reason);
+
+#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
+	led_iso_blink_set(false);
+#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+
 	k_sem_give(&sem_stopped);
+}
+
+/* Two additional advertising sets run in parallel with the LE Audio
+ * broadcast so that a remote central can connect/disconnect repeatedly
+ * without interrupting the broadcast stream:
+ *   - conn_ext_adv:    connectable extended advertising
+ *   - conn_legacy_adv: connectable legacy advertising
+ * Each advertising set uses a distinct device name in its advertising
+ * data so the peer can distinguish between them.
+ */
+static struct bt_le_ext_adv *conn_ext_adv;
+static struct bt_le_ext_adv *conn_legacy_adv;
+
+#define CONN_EXT_ADV_NAME    "BAP Ext Connectable"
+#define CONN_LEGACY_ADV_NAME "BAP Legacy Connectable"
+
+static const struct bt_data conn_ext_ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONN_EXT_ADV_NAME, sizeof(CONN_EXT_ADV_NAME) - 1),
+};
+
+static const struct bt_data conn_legacy_ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONN_LEGACY_ADV_NAME,
+		sizeof(CONN_LEGACY_ADV_NAME) - 1),
+};
+
+/* Extended connectable advertising parameters (undirected, extended PDUs). */
+#define BT_LE_ADV_CONN_EXT                                                                         \
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV,                                \
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+static void conn_adv_start_work_handler(struct k_work *work)
+{
+	int err;
+
+	if (conn_ext_adv != NULL) {
+		err = bt_le_ext_adv_start(conn_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0 && err != -EALREADY) {
+			printk("Failed to restart connectable extended advertising (err %d)\n",
+			       err);
+		} else if (err == 0) {
+			printk("Connectable extended advertising restarted\n");
+		}
+	}
+
+	if (conn_legacy_adv != NULL) {
+		err = bt_le_ext_adv_start(conn_legacy_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0 && err != -EALREADY) {
+			printk("Failed to restart connectable legacy advertising (err %d)\n",
+			       err);
+		} else if (err == 0) {
+			printk("Connectable legacy advertising restarted\n");
+		}
+	}
+}
+
+static K_WORK_DEFINE(conn_adv_start_work, conn_adv_start_work_handler);
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+	if (err != 0) {
+		printk("Failed to connect to %s (err 0x%02X)\n", addr, err);
+		/* Advertising sets that failed to establish a connection stop;
+		 * re-start them so the central can retry.
+		 */
+		k_work_submit(&conn_adv_start_work);
+		return;
+	}
+
+	printk("Connected to %s (broadcast continues)\n", addr);
+	acl_conn_count++;
+	update_acl_led();
+
+	/* When one advertising set produces a connection, the other stays
+	 * advertising. Re-start any advertising set the stack stopped so a
+	 * second central (up to CONFIG_BT_MAX_CONN) can also connect.
+	 */
+	k_work_submit(&conn_adv_start_work);
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+
+	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	printk("Disconnected from %s (reason 0x%02X)\n", addr, reason);
+	if (acl_conn_count > 0U) {
+		acl_conn_count--;
+	}
+	update_acl_led();
+
+	/* Restart the connectable advertising sets so the central can
+	 * reconnect. Both sets are restarted; -EALREADY is treated as OK for
+	 * the set that was never stopped.
+	 */
+	k_work_submit(&conn_adv_start_work);
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
+
+static int conn_adv_setup_and_start(void)
+{
+	int err;
+
+	/* Connectable extended advertising set. */
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_EXT, NULL, &conn_ext_adv);
+	if (err != 0) {
+		printk("Failed to create connectable extended adv set (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_set_data(conn_ext_adv, conn_ext_ad, ARRAY_SIZE(conn_ext_ad),
+				     NULL, 0);
+	if (err != 0) {
+		printk("Failed to set connectable extended adv data (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_start(conn_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		printk("Failed to start connectable extended advertising (err %d)\n", err);
+		return err;
+	}
+
+	printk("Connectable extended advertising started as \"%s\"\n", CONN_EXT_ADV_NAME);
+
+	/* Connectable legacy advertising set. */
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &conn_legacy_adv);
+	if (err != 0) {
+		printk("Failed to create connectable legacy adv set (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_set_data(conn_legacy_adv, conn_legacy_ad,
+				     ARRAY_SIZE(conn_legacy_ad), NULL, 0);
+	if (err != 0) {
+		printk("Failed to set connectable legacy adv data (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_le_ext_adv_start(conn_legacy_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		printk("Failed to start connectable legacy advertising (err %d)\n", err);
+		return err;
+	}
+
+	printk("Connectable legacy advertising started as \"%s\"\n", CONN_LEGACY_ADV_NAME);
+
+	return 0;
 }
 
 int main(void)
@@ -560,6 +1154,8 @@ int main(void)
 	}
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
+	leds_init();
+
 	err = bt_enable(NULL);
 	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
@@ -570,6 +1166,16 @@ int main(void)
 	err = bt_bap_broadcast_source_register_cb(&broadcast_source_cb);
 	if (err != 0) {
 		printk("Failed to register broadcast source callbacks (err %d)\n", err);
+		return 0;
+	}
+
+	/* Bring up a connectable extended advertising set that runs alongside
+	 * the LE Audio broadcast, so a remote central can connect and
+	 * disconnect repeatedly while the broadcast continues.
+	 */
+	err = conn_adv_setup_and_start();
+	if (err != 0) {
+		printk("Unable to start connectable advertiser: %d\n", err);
 		return 0;
 	}
 
@@ -586,6 +1192,7 @@ int main(void)
 		.get_recv_buf = get_recv_buf_cb,
 		.data_recv_cb = data_recv_cb,
 		.sof_cb = uac2_sof_cb,
+		.feedback_cb = feedback_cb,
 	};
 	struct usbd_context *sample_usbd;
 
@@ -598,12 +1205,18 @@ int main(void)
 
 	(void)memset(streams, 0, sizeof(streams));
 
-	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		ring_buf_init(&(streams[i].audio_ring_buf), sizeof(streams[i]._ring_buffer_memory),
-			      streams[i]._ring_buffer_memory);
-		printk("Initialized ring buf %zu: capacity: %u\n", i,
-		       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
+	err = audio_in_init(BROADCAST_SAMPLE_RATE, MAX_NUM_SAMPLES);
+	if (err != 0) {
+		printk("Failed to init audio input: %d\n", err);
+		return err;
 	}
+
+#if defined(CONFIG_AUDIO_INPUT_TIMED)
+	err = usb_sof_init();
+	if (err != 0) {
+		printk("USB SOF time stamps unavailable (err %d)\n", err);
+	}
+#endif /* CONFIG_AUDIO_INPUT_TIMED */
 
 	usbd_uac2_set_ops(broadcaster_dev, &usb_audio_ops, NULL);
 
@@ -621,6 +1234,14 @@ int main(void)
 
 	printk("USB initialized\n");
 
+#elif defined(CONFIG_AUDIO_INPUT_EMULATED)
+	err = audio_in_init(BROADCAST_SAMPLE_RATE, MAX_NUM_SAMPLES);
+	if (err != 0) {
+		printk("Failed to init audio input: %d\n", err);
+		return err;
+	}
+
+	audio_in_emulated_start();
 #endif /* defined(CONFIG_USE_USB_AUDIO_INPUT) */
 	k_thread_start(encoder);
 #endif /* defined(CONFIG_LIBLC3) */
@@ -727,16 +1348,19 @@ int main(void)
 		printk("Broadcast source started\n");
 
 		/* Initialize sending */
+#if defined(CONFIG_AUDIO_INPUT_STREAM)
+		atomic_set(&queue_fill_cnt, BROADCAST_ENQUEUE_COUNT);
+#endif /* CONFIG_AUDIO_INPUT_STREAM */
 		for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 			for (unsigned int j = 0U; j < BROADCAST_ENQUEUE_COUNT; j++) {
 				stream_sent_cb(&streams[i].stream);
 			}
 		}
 
-#if defined(CONFIG_LIBLC3) && defined(CONFIG_USE_USB_AUDIO_INPUT)
+#if defined(CONFIG_LIBLC3) && defined(CONFIG_AUDIO_INPUT_STREAM)
 		/* Never stop streaming when using USB Audio as input */
 		k_sleep(K_FOREVER);
-#endif /* defined(CONFIG_LIBLC3) && defined(CONFIG_USE_USB_AUDIO_INPUT) */
+#endif /* defined(CONFIG_LIBLC3) && defined(CONFIG_AUDIO_INPUT_STREAM) */
 		printk("Waiting %u seconds before stopped\n", BROADCAST_SOURCE_LIFETIME);
 		k_sleep(K_SECONDS(BROADCAST_SOURCE_LIFETIME));
 		printk("Stopping broadcast source\n");

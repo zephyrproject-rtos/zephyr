@@ -106,7 +106,9 @@
 				  (TICKER_ID_ADV_SYNC_BASE) + 1)
 #if defined(CONFIG_BT_CTLR_ADV_ISO)
 #define BT_ADV_ISO_TICKER_NODES ((TICKER_ID_ADV_ISO_LAST) - \
-				  (TICKER_ID_ADV_ISO_BASE) + 1)
+				  (TICKER_ID_ADV_ISO_BASE) + 1 + \
+				  (TICKER_ID_ADV_ISO_RESUME_LAST) - \
+				  (TICKER_ID_ADV_ISO_RESUME_BASE) + 1)
 #else /* !CONFIG_BT_CTLR_ADV_ISO */
 #define BT_ADV_ISO_TICKER_NODES 0
 #endif /* !CONFIG_BT_CTLR_ADV_ISO */
@@ -302,6 +304,9 @@ BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
 #define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
+/* NOTE: As ticker job will execute as immediate function call in ULL_LOW
+ *       context, no need for extra ULL_LOW operation queue element.
+ */
 #define TICKER_USER_ULL_LOW_OPS  (1 + TICKER_USER_ULL_LOW_VENDOR_OPS + 1)
 
 /* NOTE: Extended Advertising needs one extra ticker operation being enqueued
@@ -312,16 +317,37 @@ BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
  *       scan window is stopping the two scan tickers, stopping one scan stop
  *       ticker and starting one new ticker for establishing an ACL connection.
  */
+#define TICKER_USER_ULL_HIGH_ADV_OPS BT_CTLR_ADV_SET
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#define TICKER_USER_ULL_HIGH_OPS (4 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+#if !defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+#define TICKER_USER_ULL_HIGH_SCAN_AUX_OPS 1
+#else /* CONFIG_BT_OBSERVER && !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#define TICKER_USER_ULL_HIGH_SCAN_AUX_OPS CONFIG_BT_CTLR_SCAN_AUX_SET
+#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#define TICKER_USER_ULL_HIGH_OPS (4 + \
+				  TICKER_USER_ULL_HIGH_ADV_OPS + \
+				  TICKER_USER_ULL_HIGH_SCAN_AUX_OPS + \
+				  TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-#define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+#define TICKER_USER_ULL_HIGH_OPS (3 + \
+				  TICKER_USER_ULL_HIGH_ADV_OPS + \
+				  TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
 #define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
+#else /* !CONFIG_BT_CTLR_LOW_LAT */
+/* NOTE: The value below covers cases where the scanner has enqueued a stop
+ *       request, the preempt has a start request enqueued and the preemption
+ *       on a new ticker expiry will enqueue addition stop and a new start
+ *       request.
+ */
+#define TICKER_USER_LLL_OPS      (5 + TICKER_USER_LLL_VENDOR_OPS + 1)
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
+/* Total elements for all operation queues */
 #define TICKER_USER_OPS           (TICKER_USER_LLL_OPS + \
 				   TICKER_USER_ULL_HIGH_OPS + \
 				   TICKER_USER_ULL_LOW_OPS + \
@@ -346,7 +372,16 @@ static struct k_sem *sem_recv;
  */
 #define EVENT_PIPELINE_MAX (7U + (EVENT_DEFER_MAX))
 
-static MFIFO_DEFINE(prep, sizeof(struct lll_event), EVENT_PIPELINE_MAX);
+#define EVENT_PIPELINE_EVENT_SIZE (sizeof(struct lll_event) + sizeof(void *))
+
+static struct {
+	struct {
+		void *free;
+		uint8_t pool[EVENT_PIPELINE_MAX * EVENT_PIPELINE_EVENT_SIZE];
+	} mem;
+	void **head;
+	void **tail;
+} pipeline;
 
 /* Declare done-event RXFIFO. This is a composite pool-backed MFIFO for rx_nodes.
  * The declaration constructs the following data structures:
@@ -812,6 +847,10 @@ int ll_init(struct k_sem *sem_rx)
 						(TEST_TICKER_TICKS_SLOT_US));
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		test_ticker_ext[ticker_id].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
 		ret = ticker_start_ext(
 #else /* !CONFIG_BT_TICKER_EXT */
 		ret = ticker_start(
@@ -959,9 +998,6 @@ void ll_reset(void)
 	}
 
 	/* Re-initialize ULL internals */
-
-	/* Re-initialize the prep mfifo */
-	MFIFO_INIT(prep);
 
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
@@ -2212,12 +2248,15 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      uint8_t is_resume)
 {
 	struct lll_event *e;
-	uint8_t idx;
+	void **next;
 
-	idx = MFIFO_ENQUEUE_GET(prep, (void **)&e);
-	if (!e) {
+	/* Allocate lll_event */
+	next = mem_acquire(&pipeline.mem.free);
+	if (!next) {
 		return NULL;
 	}
+
+	e = (void *)((uint8_t *)next + sizeof(void *));
 
 	memcpy(&e->prepare_param, prepare_param, sizeof(e->prepare_param));
 	e->prepare_cb = prepare_cb;
@@ -2225,31 +2264,282 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 	e->abort_cb = abort_cb;
 	e->is_resume = is_resume;
 	e->is_aborted = 0U;
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	e->is_yield = 0U;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
-	MFIFO_ENQUEUE(prep, idx);
+	/* Enqueue lll_event */
+	*next = NULL;
+	if (pipeline.tail) {
+		struct lll_event *e_curr;
+		uint32_t diff;
+
+		/* Should the prepare be placed as the tail? */
+		e_curr = (void *)((uint8_t *)pipeline.tail + sizeof(void *));
+		diff = ticker_ticks_diff_get(prepare_param->ticks_at_expire,
+					     e_curr->prepare_param.ticks_at_expire);
+		if (is_resume ||
+		    (!e_curr->is_aborted && !e_curr->is_resume &&
+		     ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U))) {
+			*pipeline.tail = next;
+			pipeline.tail = next;
+		} else {
+			/* Should the prepare be placed as the head? */
+			e_curr = (void *)((uint8_t *)pipeline.head + sizeof(void *));
+			diff = ticker_ticks_diff_get(e_curr->prepare_param.ticks_at_expire,
+						     prepare_param->ticks_at_expire);
+			if (!e_curr->is_aborted &&
+			    (e_curr->is_resume ||
+			     (diff && ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)))) {
+				*next = pipeline.head;
+				pipeline.head = next;
+			} else {
+				void **prev;
+				void **curr;
+
+				prev = NULL;
+				curr = pipeline.head;
+				e_curr = (void *)((uint8_t *)curr + sizeof(void *));
+				do {
+					if (!e_curr->is_aborted && !e_curr->is_resume) {
+						prev = curr;
+					}
+
+					curr = *curr;
+					if (!curr) {
+						break;
+					}
+
+					e_curr = (void *)((uint8_t *)curr + sizeof(void *));
+					diff = ticker_ticks_diff_get(
+							prepare_param->ticks_at_expire,
+							e_curr->prepare_param.ticks_at_expire);
+				} while (!e_curr->is_resume &&
+					 (e_curr->is_aborted ||
+					  ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)));
+
+				if (!prev) {
+					*next = pipeline.head;
+					pipeline.head = next;
+					if (!*next) {
+						pipeline.tail = next;
+					}
+				} else {
+					*next = *prev;
+					*prev = next;
+					if (!*next) {
+						pipeline.tail = next;
+					}
+				}
+			}
+		}
+	} else {
+		pipeline.head = next;
+		pipeline.tail = next;
+	}
 
 	return e;
 }
 
 void *ull_prepare_dequeue_get(void)
 {
-	return MFIFO_DEQUEUE_GET(prep);
+	void *e;
+
+	/* peak lll_event */
+	if (pipeline.head) {
+		e = (uint8_t *)pipeline.head + sizeof(void *);
+	} else {
+		e = NULL;
+	}
+
+	return e;
 }
 
-void *ull_prepare_dequeue_iter(uint8_t *idx)
+void *ull_prepare_dequeue_iter(void **idx)
 {
-	return MFIFO_DEQUEUE_ITER_GET(prep, idx);
+	void *e;
+
+	/* Start at the head */
+	if (!*idx) {
+		*idx = pipeline.head;
+	}
+
+	/* No more in the list */
+	if (!*idx) {
+		return NULL;
+	}
+
+	/* Peak lll_event */
+	e = (uint8_t *)*idx + sizeof(void *);
+
+	/* Proceed to next */
+	*idx = *((void **)*idx);
+
+	return e;
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+void ull_prepare_dequeue_first_set(struct lll_event *e)
+{
+	void **e_prev;
+	void **e_curr;
+
+	e_prev = NULL;
+	e_curr = pipeline.head;
+	while ((e_curr != NULL) && (((uint8_t *)e_curr + sizeof(void *)) != (uint8_t *)e)) {
+		e_prev = e_curr;
+		e_curr = *e_curr;
+	}
+
+	LL_ASSERT_ERR(e_curr != NULL);
+
+	/* Already at the head */
+	if (e_prev == NULL) {
+		return;
+	}
+
+	/* Unlink */
+	*e_prev = *e_curr;
+	if (*e_prev == NULL) {
+		pipeline.tail = e_prev;
+	}
+
+	/* Link at the head */
+	*e_curr = pipeline.head;
+	pipeline.head = e_curr;
+}
+
+/* Check if a prepare can use the radio before a yielded event, i.e. a resume prepare or a
+ * deferred scan prepare.
+ */
+static bool is_prepare_dequeue_yield_alt(const struct lll_event *e)
+{
+	return (e->is_aborted == 0U) &&
+	       ((e->is_resume != 0U) ||
+		((e->prepare_param.defer != 0U) &&
+		 (ull_scan_lll_is_valid_get(e->prepare_param.param) != NULL)));
+}
+
+/* Check if a yielded event, waiting in the prepare pipeline to be resumed at its next subevent,
+ * shall be skipped so that another prepare uses the radio until the yielded event preempts it.
+ */
+static bool is_prepare_dequeue_yield_skip(const struct lll_event *e)
+{
+	struct lll_event *iter;
+	void *idx;
+
+	if ((e->is_yield == 0U) || !lll_is_yield_early(e)) {
+		return false;
+	}
+
+	idx = NULL;
+	while ((iter = ull_prepare_dequeue_iter(&idx)) != NULL) {
+		if (is_prepare_dequeue_yield_alt(iter)) {
+			return true;
+		}
+
+		if (idx == NULL) {
+			break;
+		}
+	}
+
+	return false;
+}
+
+/* Check if a deferred prepare, and deferred prepares of the same state/role following it, are
+ * followed by a ready prepare of another state/role, which then uses the radio first. Late ISO
+ * Synchronized Receiver prepares, past their preempt timeout, are handled as deferred. A
+ * deferred ISO Synchronized Receiver event, directly followed by the ready prepare, that has
+ * drifted past the subevents of all its selected BIS is skipped. Other deferred prepares, and
+ * deferred ISO Synchronized Receiver events that would yield in their prepare to the ready
+ * prepare, are skipped when the preempt timeout of the ready prepare has expired, dispatching
+ * them first delays the ready prepare beyond its event overhead.
+ */
+static bool is_prepare_dequeue_defer_skip(const struct lll_event *e, void **e_next)
+{
+	bool is_overflow;
+	bool is_optional;
+	bool is_sync_iso;
+
+	if ((e->is_aborted != 0U) || (e->is_resume != 0U) || (e->is_yield != 0U)) {
+		return false;
+	}
+
+	is_sync_iso = (ull_sync_iso_lll_is_valid_get(e->prepare_param.param) != NULL);
+
+	/* A late ISO Synchronized Receiver prepare starts at a drifted subevent, like a
+	 * deferred one, and can yield in its prepare to the ready prepare.
+	 */
+	if ((e->prepare_param.defer == 0U) && (!is_sync_iso || !lll_is_preempt_expired(e))) {
+		return false;
+	}
+
+	is_overflow = is_sync_iso && lll_sync_iso_is_defer_overflow(e);
+	is_optional = is_sync_iso && lll_sync_iso_is_pending_optional(e);
+
+	while (e_next != NULL) {
+		const struct lll_event *iter = (void *)((uint8_t *)e_next + sizeof(void *));
+
+		e_next = *e_next;
+
+		if ((iter->is_aborted != 0U) || (iter->is_resume != 0U)) {
+			continue;
+		}
+
+		/* Deferred, and late ISO Synchronized Receiver, prepares of the same state/role
+		 * are skipped together, using the same condition, otherwise a deferred ISO
+		 * Synchronized Receiver event placed back before the skipped event is dispatched
+		 * and enqueues itself back after it.
+		 */
+		if ((iter->prepare_param.defer != 0U) ||
+		    (is_sync_iso && (iter->is_yield == 0U) &&
+		     (iter->is_abort_cb == e->is_abort_cb) && lll_is_preempt_expired(iter))) {
+			if (iter->is_abort_cb != e->is_abort_cb) {
+				return false;
+			}
+
+			is_overflow = false;
+			is_optional = is_optional && lll_sync_iso_is_pending_optional(iter);
+
+			continue;
+		}
+
+		/* The next ready prepare is the one dispatched instead */
+		if ((iter->is_yield != 0U) || (iter->is_abort_cb == e->is_abort_cb)) {
+			return false;
+		}
+
+		if (is_overflow) {
+			return true;
+		}
+
+		/* An ISO Synchronized Receiver event does not yield to scanning, and an auxiliary
+		 * scan or a periodic sync event does not preempt it while it has payload to
+		 * receive.
+		 */
+		if (is_sync_iso &&
+		    ((ull_scan_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
+		     (!is_optional &&
+		      ((ull_scan_aux_lll_is_valid_get(iter->prepare_param.param) != NULL) ||
+		       (ull_sync_lll_is_valid_get(iter->prepare_param.param) != NULL))))) {
+			return false;
+		}
+
+		return lll_is_preempt_expired(iter);
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 void ull_prepare_dequeue(uint8_t caller_id)
 {
-	uint32_t param_normal_head_ticks = 0U;
-	uint32_t param_normal_next_ticks = 0U;
-	void *param_normal_head = NULL;
-	void *param_normal_next = NULL;
-	void *param_resume_head = NULL;
-	void *param_resume_next = NULL;
-	struct lll_event *next;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_resume};
+	void **e_dispatch;
+	uint8_t is_enqueued;
+	void **e_prev;
+	void **e_curr;
 	uint8_t loop;
 
 	/* Development assertion check to ensure the below loop processing
@@ -2279,87 +2569,145 @@ void ull_prepare_dequeue(uint8_t caller_id)
 	 */
 	loop = (EVENT_PIPELINE_MAX + 3U);
 
-	next = ull_prepare_dequeue_get();
-	while (next) {
-		uint32_t ticks = next->prepare_param.ticks_at_expire;
-		void *param = next->prepare_param.param;
-		uint8_t is_aborted = next->is_aborted;
-		uint8_t is_resume = next->is_resume;
+	e_prev = NULL;
+	e_curr = pipeline.head;
+	e_dispatch = NULL;
+	is_enqueued = 0U;
+	while (e_curr != NULL) {
+		struct lll_event *e;
+		uint8_t is_aborted;
+		bool is_skip = false;
 
-		/* Assert if we exceed iterations processing the prepare queue
-		 */
+		/* Assert if we exceed iterations processing the prepare queue */
 		LL_ASSERT_ERR(loop);
 		loop--;
 
-		/* Let LLL invoke the `prepare` interface if radio not in active
-		 * use. Otherwise, enqueue at end of the prepare pipeline queue.
-		 */
-		if (!is_aborted) {
-			static memq_link_t link;
-			static struct mayfly mfy = {0, 0, &link, NULL,
-						    lll_resume};
-			uint32_t ret;
+		/* Get reference to the event structure */
+		e = (void *)((uint8_t *)e_curr + sizeof(void *));
 
-			mfy.param = next;
-			ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0,
-					     &mfy);
-			LL_ASSERT_ERR(!ret);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		/* Skip a yielded event, and normal prepares thereafter except a deferred scan
+		 * prepare, when another prepare can use the radio before the yielded event.
+		 */
+		if ((is_enqueued == 0U) && (e->is_aborted == 0U) && (e->is_resume == 0U) &&
+		    is_prepare_dequeue_yield_skip(e)) {
+			is_enqueued = 2U;
+		} else if ((is_enqueued == 2U) && (e->is_resume == 0U) &&
+			   is_prepare_dequeue_yield_alt(e)) {
+			is_enqueued = 0U;
 		}
 
-		MFIFO_DEQUEUE(prep);
+		/* Skip a deferred prepare while a following ready prepare is due */
+		is_skip = (is_enqueued == 0U) && is_prepare_dequeue_defer_skip(e, *e_curr);
 
-		/* Check for anymore more prepare elements in queue */
-		next = ull_prepare_dequeue_get();
-		if (!next) {
-			break;
-		}
-
-		/* A valid prepare element has its `prepare` invoked or was
-		 * enqueued back into prepare pipeline.
+		/* A skipped late prepare is deferred, so that it is not the ready prepare that
+		 * the dispatched prepare yields to.
 		 */
-		if (!is_aborted) {
-			/* The prepare element was not a resume event, it would
-			 * use the radio or was enqueued back into prepare
-			 * pipeline with a preempt timeout being set.
-			 *
-			 * Remember the first encountered and the next element
-			 * in the prepare pipeline so that we do not infinitely
-			 * loop through the resume events in prepare pipeline.
-			 */
-			if (!is_resume) {
-				if (!param_normal_head) {
-					param_normal_head = param;
-					param_normal_head_ticks = ticks;
-				} else if (!param_normal_next) {
-					param_normal_next = param;
-					param_normal_next_ticks = ticks;
+		if (is_skip) {
+			e->prepare_param.defer = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+		/* Dequeue all aborted prepare and enqueue a normal prepare */
+		is_aborted = !!e->is_aborted;
+		if ((is_aborted != 0U) ||
+		    ((is_enqueued == 0U) && (e->is_resume == 0U) && !is_skip)) {
+			void **head = e_curr;
+
+			/* Dequeue the aborted or normal prepare */
+			if (!e_prev) {
+				pipeline.head = *pipeline.head;
+				if (!pipeline.head) {
+					pipeline.tail = NULL;
 				}
+				e_curr = pipeline.head;
 			} else {
-				if (!param_resume_head) {
-					param_resume_head = param;
-				} else if (!param_resume_next) {
-					param_resume_next = param;
+				*e_prev = *e_curr;
+				if (!*e_prev) {
+					pipeline.tail = e_prev;
 				}
+				e_curr = *e_prev;
 			}
 
-			/* Stop traversing the prepare pipeline when we reach
-			 * back to the first or next event where we
-			 * initially started processing the prepare pipeline.
+			/* Enqueue one normal prepare, after all aborted prepare have been released,
+			 * as the LLL resume executes inline when called from LLL context and may
+			 * enqueue the prepare back into the pipeline.
 			 */
-			if (!next->is_aborted &&
-			    ((!next->is_resume &&
-			      (((next->prepare_param.param == param_normal_head) &&
-				(next->prepare_param.ticks_at_expire ==
-				 param_normal_head_ticks)) ||
-			       ((next->prepare_param.param == param_normal_next) &&
-				(next->prepare_param.ticks_at_expire ==
-				 param_normal_next_ticks)))) ||
-			     (next->is_resume && !param_normal_next &&
-			      ((next->prepare_param.param == param_resume_head) ||
-			       (next->prepare_param.param == param_resume_next))))) {
-				break;
+			if (is_aborted == 0U) {
+				/* A normal prepare is enqueued using lll_resume */
+				is_enqueued = 1U;
+				e_dispatch = head;
+			} else {
+				/* Free event memory */
+				mem_release(head, &pipeline.mem.free);
+			}
+
+		} else {
+			/* Traverse to next prepare in pipeline */
+			e_prev = e_curr;
+			e_curr = *e_curr;
+		}
+	}
+
+	if (e_dispatch != NULL) {
+		uint32_t ret;
+
+		/* Trigger the LLL resume */
+		mfy.param = (uint8_t *)e_dispatch + sizeof(void *);
+		ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT_ERR(!ret);
+
+		/* Free event memory */
+		mem_release(e_dispatch, &pipeline.mem.free);
+	}
+
+	/* We have not enqueued any normal prepare, if there are resume prepare then enqueue them */
+	if ((is_enqueued != 1U) && pipeline.head) {
+		struct lll_event *e;
+		uint32_t ret;
+		void **head;
+
+		e_prev = NULL;
+		head = pipeline.head;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		/* Skipped yielded event is before the resume prepare */
+		if (is_enqueued != 0U) {
+			e = (void *)((uint8_t *)head + sizeof(void *));
+			while (e->is_resume == 0U) {
+				e_prev = head;
+				head = *head;
+				LL_ASSERT_ERR(head);
+
+				e = (void *)((uint8_t *)head + sizeof(void *));
 			}
 		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+		/* Dequeue the resume prepare */
+		if (e_prev == NULL) {
+			pipeline.head = *pipeline.head;
+			if (!pipeline.head) {
+				pipeline.tail = NULL;
+			}
+		} else {
+			*e_prev = *head;
+			if (*e_prev == NULL) {
+				pipeline.tail = e_prev;
+			}
+		}
+
+		/* Get reference to the event structure */
+		e = (void *)((uint8_t *)head + sizeof(void *));
+		LL_ASSERT_ERR(!e->is_aborted && e->is_resume);
+
+		/* Trigger the LLL resume */
+		mfy.param = e;
+		ret = mayfly_enqueue(caller_id, TICKER_USER_ID_LLL, 0, &mfy);
+		LL_ASSERT_ERR(!ret);
+
+		/* Release the memory to pool */
+		mem_release(head, &pipeline.mem.free);
 	}
 }
 
@@ -2492,6 +2840,11 @@ static void test_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift, uint3
 static inline int init_reset(void)
 {
 	memq_link_t *link;
+
+	/* Initialize prepare pipeline list */
+	mem_init(pipeline.mem.pool, EVENT_PIPELINE_EVENT_SIZE,
+		 sizeof(pipeline.mem.pool) / EVENT_PIPELINE_EVENT_SIZE,
+		 &pipeline.mem.free);
 
 	/* Initialize and allocate done pool */
 	RXFIFO_INIT_ALLOC(done);

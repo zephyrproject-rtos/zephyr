@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Must match boards/nrf54l15dk_nrf54l15_cpuapp.overlay of the samples using
+ * this image on FLPR.
+ *
+ * RRAM: 1204 (APP) + 320 (FLPR) = 1524KB
+ * RAM:  156 (APP) + 4 (IPC) + 95 (FLPR) + 1 (unused) = 256KB
+ */
+
+/delete-node/ &{/soc/reserved-memory};
+/delete-node/ &cpuflpr_sram;
+/delete-node/ &cpuflpr_rram;
+
+/ {
+	chosen {
+		zephyr,bt-hci-ipc = &ipc0;
+		zephyr,console = &uart20;
+	};
+
+	reserved-memory {
+		sram_tx: memory@20027000 {
+			reg = <0x20027000 DT_SIZE_K(2)>;
+		};
+
+		sram_rx: memory@20027800 {
+			reg = <0x20027800 DT_SIZE_K(2)>;
+		};
+	};
+
+	soc {
+		cpuflpr_sram: memory@20028000 {
+			compatible = "mmio-sram";
+			reg = <0x20028000 DT_SIZE_K(95)>;
+			ranges = <0x0 0x20028000 DT_SIZE_K(95)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			tx-blocks = <16>;
+			rx-blocks = <16>;
+			dcache-alignment = <32>;
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			mboxes = <&cpuflpr_vevif_rx 21>, <&cpuflpr_vevif_tx 20>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+		};
+	};
+};
+
+&rram_controller {
+	cpuflpr_rram: rram@12d000 {
+		compatible = "soc-nv-flash";
+		reg = <0x12d000 DT_SIZE_K(320)>;
+		ranges = <0x0 0x12d000 DT_SIZE_K(320)>;
+		erase-block-size = <4096>;
+		write-block-size = <16>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			cpuflpr_code_partition: partition@0 {
+				label = "image-0";
+				reg = <0x0 DT_SIZE_K(320)>;
+			};
+		};
+	};
+};
+
+&uart30 {
+	status = "disabled";
+};
+
+&uart20 {
+	current-speed = <1000000>;
+	status = "okay";
+};
+
+&cpuflpr_vevif_rx {
+	status = "okay";
+};
+
+&cpuflpr_vevif_tx {
+	status = "okay";
+};

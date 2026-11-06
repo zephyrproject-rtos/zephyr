@@ -45,6 +45,11 @@ struct lll_sync_iso {
 	uint8_t  next_chan_use;
 	uint8_t  ctrl_chan_use;
 
+	/* Counter used by LLL abort of event when in unreserved time space to
+	 * provide near fair scheduling of overlapping multiple Sync ISO sets.
+	 */
+	uint8_t abort_count;
+
 	uint64_t payload_count:39;
 	uint64_t framing:1;
 	uint64_t enc:1;
@@ -97,6 +102,55 @@ struct lll_sync_iso {
 	uint8_t payload_count_max;
 	uint8_t payload_tail;
 
+	uint8_t trx_cnt;
+	uint8_t crc_ok_anchor:1;
+
+	/* Flag to stop events in LLL pipeline */
+	uint8_t is_lll_stop:1;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	uint8_t is_lll_resume:1;
+
+	/* Set by the current event that yields to this ready event */
+	uint8_t is_yield_to:1;
+
+	/* Placed in the pipeline as a yielded event that preempts at its next subevent */
+	uint8_t is_yielded:1;
+
+	/* HF clock was running when the event was prepared */
+	uint8_t is_hfclock_ready:1;
+
+	uint32_t ticks_start;
+	uint32_t ready_us;
+	uint32_t aa_us;
+
+	/* Next subevent to receive and its radio start ticks, used to
+	 * yield the radio while idle and to resume at this subevent.
+	 */
+	uint32_t ticks_se_next;
+	uint8_t se_next;
+
+	/* Channel selection state at subevent chan_se, used to resume at a later subevent
+	 * of the same BIS without repeating the channel selection from the BIS event start.
+	 * Zero chan_se when not valid.
+	 */
+	struct lll_sync_iso_data_chan data_chan_se;
+	uint8_t chan_se;
+	uint8_t chan_se_use;
+
+	/* Radio start ticks of the first subevent of the current event */
+	uint32_t ticks_se_first;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+	/* Last scheduled subevent and its access address sync */
+	uint32_t aa_se;
+	uint8_t se;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	/* Subevent whose radio enable is pre-armed back-to-back */
+	uint8_t se_b2b;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 	uint32_t window_widening_periodic_us;
 	uint32_t window_widening_max_us;
 	uint32_t window_widening_prepare_us;
@@ -109,8 +163,12 @@ int lll_sync_iso_reset(void);
 void lll_sync_iso_create_prepare(void *param);
 void lll_sync_iso_prepare(void *param);
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
+bool lll_sync_iso_is_defer_lossless(void *param, uint32_t ticks_duration);
+bool lll_sync_iso_is_defer_overflow(const struct lll_event *e);
+bool lll_sync_iso_is_pending_optional(const struct lll_event *e);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
+extern struct lll_sync_iso *ull_sync_iso_lll_is_valid_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);
 extern void ll_rx_sched(void);

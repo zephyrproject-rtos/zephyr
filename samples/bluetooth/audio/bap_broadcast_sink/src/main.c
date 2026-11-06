@@ -25,6 +25,9 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
@@ -34,6 +37,10 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrfx_clock.h>
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 #include "lc3.h"
 #include "stream_rx.h"
@@ -56,7 +63,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                      5U
-#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1U
+#define NAME_LEN                          MAX((sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1U), 128U)
 #define BROADCAST_DATA_ELEMENT_SIZE       sizeof(int16_t)
 
 static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
@@ -87,12 +94,92 @@ static volatile bool big_synced;
 static volatile bool base_received;
 static struct bt_conn *broadcast_assistant_conn;
 static struct bt_le_ext_adv *ext_adv;
+static uint8_t acl_conn_count;
+
+static volatile bool pa_synced;
+
+/* Red blinks until PA and BIG are synced, then green blinks; blue blinks while connected */
+#if DT_NODE_EXISTS(DT_ALIAS(led_red))
+#define LED_RED_NODE DT_ALIAS(led_red)
+#else
+#define LED_RED_NODE DT_ALIAS(led0)
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led_green))
+#define LED_GREEN_NODE DT_ALIAS(led_green)
+#else
+#define LED_GREEN_NODE DT_ALIAS(led1)
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led_blue))
+#define LED_BLUE_NODE DT_ALIAS(led_blue)
+#else
+#define LED_BLUE_NODE DT_ALIAS(led2)
+#endif
+
+#define LED_BLINK_INTERVAL K_MSEC(250)
+
+enum led_id {
+	LED_RED,
+	LED_GREEN,
+	LED_BLUE,
+	LED_COUNT,
+};
+
+static const struct gpio_dt_spec leds[LED_COUNT] = {
+	[LED_RED] = GPIO_DT_SPEC_GET_OR(LED_RED_NODE, gpios, {0}),
+	[LED_GREEN] = GPIO_DT_SPEC_GET_OR(LED_GREEN_NODE, gpios, {0}),
+	[LED_BLUE] = GPIO_DT_SPEC_GET_OR(LED_BLUE_NODE, gpios, {0}),
+};
+static bool led_ready[LED_COUNT];
+static volatile bool led_blink[LED_COUNT];
+static bool led_phase_on;
+
+static void led_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(led_work, led_work_handler);
+
+static void led_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	led_phase_on = !led_phase_on;
+
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if (led_ready[i]) {
+			(void)gpio_pin_set_dt(&leds[i], (int)(led_phase_on && led_blink[i]));
+		}
+	}
+
+	(void)k_work_reschedule(&led_work, LED_BLINK_INTERVAL);
+}
+
+static void leds_update(void)
+{
+	const bool synced = pa_synced && big_synced;
+
+	led_blink[LED_RED] = !synced;
+	led_blink[LED_GREEN] = synced;
+	led_blink[LED_BLUE] = (acl_conn_count > 0U);
+}
+
+static void leds_init(void)
+{
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if (leds[i].port != NULL && gpio_is_ready_dt(&leds[i]) &&
+		    gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE) == 0) {
+			led_ready[i] = true;
+		}
+	}
+
+	leds_update();
+	(void)k_work_reschedule(&led_work, K_NO_WAIT);
+}
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ,
-	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 60u,
+	(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_24KHZ |
+	 BT_AUDIO_CODEC_CAP_FREQ_48KHZ),
+	BT_AUDIO_CODEC_CAP_DURATION_10, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), 40u, 120u,
 	CONFIG_MAX_CODEC_FRAMES_PER_SDU,
-	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA));
 
 /**
  * The base_recv_cb() function will populate struct bis_audio_allocation with channel allocation
@@ -395,6 +482,8 @@ static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
 	printk("Broadcast sink %p started\n", sink);
 
 	big_synced = true;
+	leds_update();
+
 	k_sem_give(&sem_big_synced);
 }
 
@@ -403,6 +492,8 @@ static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_
 	printk("Broadcast sink %p stopped with reason 0x%02X\n", sink, reason);
 
 	big_synced = false;
+	leds_update();
+
 	k_sem_give(&sem_broadcast_sink_stopped);
 }
 
@@ -678,6 +769,9 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	printk("Connected: %s\n", bt_conn_dst_str(conn));
+	acl_conn_count++;
+	leds_update();
+
 	broadcast_assistant_conn = bt_conn_ref(conn);
 
 	k_sem_give(&sem_connected);
@@ -685,6 +779,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (acl_conn_count > 0U) {
+		acl_conn_count--;
+	}
+	leds_update();
+
 	if (conn != broadcast_assistant_conn) {
 		return;
 	}
@@ -697,14 +796,56 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_sem_give(&sem_disconnected);
 }
 
+static void recycled(void)
+{
+	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
+		int err;
+
+		err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+		if (err != 0) {
+			printk("Unable to restart advertising connectable: %d\n", err);
+		}
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled,
 };
 
 static struct bt_pacs_cap cap = {
 	.codec_cap = &codec_cap,
 };
+
+static bool data_name_cb(struct bt_data *data, void *user_data)
+{
+	char *name = user_data;
+	uint8_t len;
+
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
+		len = MIN(data->data_len, NAME_LEN - 1);
+		(void)memcpy(name, data->data, len);
+		name[len] = '\0';
+		return false;
+	default:
+		return true;
+	}
+}
+
+static const char *phy2str(uint8_t phy)
+{
+	switch (phy) {
+	case BT_GAP_LE_PHY_NONE: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
+	}
+}
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
@@ -795,6 +936,35 @@ static bool data_cb(struct bt_data *data, void *user_data)
 
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	struct net_buf_simple buf;
+	char name[NAME_LEN];
+	uint8_t data_status;
+	uint16_t data_len;
+
+	(void)memset(name, 0, sizeof(name));
+
+	data_len = ad->len;
+	net_buf_simple_clone(ad, &buf);
+	bt_data_parse(&buf, data_name_cb, name);
+
+	data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info->adv_props);
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i "
+	       "Data status: %u, AD data len: %u Name: %s "
+	       "C:%u S:%u D:%u SR:%u E:%u Pri PHY: %s, Sec PHY: %s, "
+	       "Interval: 0x%04x (%u ms), SID: %u\n",
+	       le_addr, info->adv_type, info->tx_power, info->rssi,
+	       data_status, data_len, name,
+	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
+	       info->interval, info->interval * 5 / 4, info->sid);
+
 	if (info->interval != 0U) {
 		/* call to bt_data_parse consumes netbufs so shallow clone for verbose output */
 
@@ -834,6 +1004,9 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			pa_sync = sync;
 		}
 
+		pa_synced = true;
+		leds_update();
+
 		k_work_cancel_delayable(&pa_timer);
 		k_sem_give(&sem_pa_synced);
 	}
@@ -845,6 +1018,8 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 	if (sync == pa_sync) {
 		printk("PA sync %p lost with reason 0x%02X\n", sync, info->reason);
 		pa_sync = NULL;
+		pa_synced = false;
+		leds_update();
 
 		k_sem_give(&sem_pa_sync_lost);
 
@@ -890,6 +1065,8 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	leds_init();
 
 	err = bt_pacs_register(&pacs_param);
 	if (err != 0) {
@@ -938,6 +1115,7 @@ static int reset(void)
 
 	req_recv_state = NULL;
 	big_synced = false;
+	pa_synced = false;
 	base_received = false;
 	(void)memset(&base_recv_data, 0, sizeof(base_recv_data));
 	(void)memset(&requested_bis_sync, 0, sizeof(requested_bis_sync));
@@ -945,6 +1123,7 @@ static int reset(void)
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
 	broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	leds_update();
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
@@ -1178,10 +1357,28 @@ int main(void)
 {
 	int err;
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	/* Use this to turn on 128 MHz clock for the nRF5340 cpu_app */
+	err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
+	if (err != 0) {
+		printk("Failed to set 128 MHz: %d\n", err);
+		return 0;
+	}
+#endif /* CONFIG_SOC_NRF5340_CPUAPP */
+
 	err = init();
 	if (err != 0) {
 		printk("Init failed (err %d)\n", err);
 		return 0;
+	}
+
+	if (!IS_ENABLED(CONFIG_SCAN_OFFLOAD)) {
+		err = start_adv();
+		if (err != 0) {
+			printk("Unable to start advertising connectable: %d\n", err);
+
+			return 0;
+		}
 	}
 
 	while (true) {
@@ -1259,10 +1456,26 @@ int main(void)
 			printk("Scanning for broadcast sources\n");
 		}
 
-		err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
-		if (err != 0 && err != -EALREADY) {
-			printk("Unable to start scan for broadcast sources: %d\n", err);
-			return 0;
+		static bool scanning;
+
+		if (!scanning) {
+			struct bt_le_scan_param scan_param = {
+				.type           = BT_LE_SCAN_TYPE_ACTIVE,
+				.options        = BT_LE_SCAN_OPT_CODED,
+				.interval       = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+				.window         = BT_GAP_SCAN_FAST_WINDOW,
+				.interval_coded = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+				.window_coded   = BT_GAP_SCAN_FAST_WINDOW,
+			};
+
+			err = bt_le_scan_start(&scan_param, NULL);
+			if (err != 0 && err != -EALREADY) {
+				printk("Unable to start scan for broadcast sources: %d\n",
+				       err);
+				return 0;
+			}
+
+			scanning = true;
 		}
 
 		printk("Waiting for Broadcaster\n");
@@ -1272,10 +1485,14 @@ int main(void)
 			continue;
 		}
 
-		err = bt_le_scan_stop();
-		if (err != 0) {
-			printk("bt_le_scan_stop failed with %d, resetting\n", err);
-			continue;
+		if (!IS_ENABLED(CONFIG_SCAN_BACKGROUND)) {
+			err = bt_le_scan_stop();
+			if (err != 0) {
+				printk("bt_le_scan_stop failed with %d, resetting\n", err);
+				continue;
+			}
+
+			scanning = false;
 		}
 
 		printk("Attempting to PA sync to the broadcaster with id 0x%06X\n",
