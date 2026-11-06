@@ -3216,12 +3216,17 @@ struct bt_conn_auth_info_cb {
 
 /** @brief Register authentication callbacks.
  *
- *  Register callbacks to handle authenticated pairing. Passing NULL
- *  unregisters a previous callbacks structure.
+ *  Register callbacks to handle authenticated pairing. Only one callbacks
+ *  structure can be registered at a time. Passing NULL unregisters the
+ *  current callbacks structure.
  *
  *  @param cb Callback struct.
  *
- *  @return Zero on success or negative error code otherwise
+ *  @retval 0 Success.
+ *  @retval -EEXIST @p cb is already registered.
+ *  @retval -EALREADY Another callbacks structure is already registered.
+ *  @retval -EINVAL @p cb provides interactive callbacks without a
+ *          @c cancel callback.
  */
 int bt_conn_auth_cb_register(const struct bt_conn_auth_cb *cb);
 

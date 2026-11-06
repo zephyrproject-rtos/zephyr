@@ -255,6 +255,10 @@ Bluetooth Host
   multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
   of the other connections.
 
+* :c:func:`bt_conn_auth_cb_register` now returns ``-EEXIST`` when the callbacks structure passed is
+  already the registered one. ``-EALREADY`` is still returned when another callbacks structure is
+  registered.
+
 Networking
 **********
 
