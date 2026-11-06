@@ -50,7 +50,7 @@ int send_set_cl_cte_tx_enable(uint8_t adv_handle, atomic_t *adv_flags,
 				  enable);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_ENABLE,
-				    buf, NULL);
+				    net_buf_take(&buf), NULL);
 }
 
 ZTEST(test_set_cl_cte_tx_enable, test_set_cl_cte_tx_enable_invalid_adv_set_handle)

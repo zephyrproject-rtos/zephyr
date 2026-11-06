@@ -76,7 +76,8 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout);
   * is desired, the bt_hci_cmd_send_sync() API should be used instead.
   *
   * @param opcode Command OpCode.
-  * @param buf    Command buffer or NULL (if no parameters).
+  * @param buf    Command buffer or NULL (if no parameters). The function takes
+  *               ownership of the buffer on every return, errors included.
   *
   * @return 0 on success (the command has been queued), negative errno value on failure.
   * @retval -EHOSTDOWN The HCI transport is not open, i.e. Bluetooth is not enabled.
@@ -97,7 +98,8 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf);
   * the response parameters.
   *
   * @param opcode Command OpCode.
-  * @param buf    Command buffer or NULL (if no parameters).
+  * @param buf    Command buffer or NULL (if no parameters). The function takes
+  *               ownership of the buffer on every return, errors included.
   * @param rsp    Place to store a reference to the command response. May
   *               be NULL if the caller is not interested in the response
   *               parameters. If non-NULL is passed the caller is responsible

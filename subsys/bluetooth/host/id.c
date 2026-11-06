@@ -148,7 +148,7 @@ static int set_random_address(const bt_addr_t *addr)
 
 	net_buf_add_mem(buf, addr, sizeof(*addr));
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, net_buf_take(&buf), NULL);
 	if (err) {
 		if (err == -EACCES) {
 			/* If we are here we probably tried to set a random
@@ -207,7 +207,7 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 	cp->handle = adv->handle;
 	bt_addr_copy(&cp->bdaddr, addr);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR, buf,
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR, net_buf_take(&buf),
 				   NULL);
 	if (err) {
 		return err;
@@ -327,7 +327,7 @@ static void le_rpa_timeout_update(void)
 
 		cp = net_buf_add(buf, sizeof(*cp));
 		cp->rpa_timeout = sys_cpu_to_le16(bt_dev.rpa_timeout);
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf, NULL);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, net_buf_take(&buf), NULL);
 		if (err) {
 			LOG_ERR("Failed to send HCI RPA timeout command");
 			goto submit;
@@ -889,7 +889,7 @@ static int le_set_privacy_mode(const bt_addr_le_t *addr, uint8_t mode)
 
 	net_buf_add_mem(buf, &cp, sizeof(cp));
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PRIVACY_MODE, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PRIVACY_MODE, net_buf_take(&buf), NULL);
 	if (err) {
 		return err;
 	}
@@ -911,7 +911,7 @@ static int addr_res_enable(uint8_t enable)
 	net_buf_add_u8(buf, enable);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADDR_RES_ENABLE,
-				    buf, NULL);
+				    net_buf_take(&buf), NULL);
 }
 
 static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16])
@@ -940,7 +940,7 @@ static int hci_id_add(uint8_t id, const bt_addr_le_t *addr, uint8_t peer_irk[16]
 	(void)memset(cp->local_irk, 0, 16);
 #endif
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, net_buf_take(&buf), NULL);
 }
 
 /* Peer identities whose resolving list removal was deferred */
@@ -1211,7 +1211,7 @@ static int hci_id_del(const bt_addr_le_t *addr)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->peer_id_addr, addr);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, net_buf_take(&buf), NULL);
 }
 
 static void pending_id_del_set(const bt_addr_le_t *addr, struct bt_keys *keys)

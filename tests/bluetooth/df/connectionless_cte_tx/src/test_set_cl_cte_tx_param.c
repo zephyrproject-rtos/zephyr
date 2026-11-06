@@ -71,7 +71,7 @@ int send_set_cl_cte_tx_params(uint8_t adv_handle, uint8_t cte_len,
 	cp->switch_pattern_len = switch_pattern_len;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CL_CTE_TX_PARAMS,
-				    buf, NULL);
+				    net_buf_take(&buf), NULL);
 }
 
 ZTEST(test_set_cl_cte_tx_param, test_set_cl_cte_tx_params_with_correct_aod_2us)

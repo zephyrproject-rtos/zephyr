@@ -71,7 +71,7 @@ int send_set_conn_cte_rx_params(uint16_t conn_handle,
 		cp->switch_pattern_len = params->switch_pattern_len;
 	}
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_CONN_CTE_RX_PARAMS, net_buf_take(&buf), NULL);
 }
 
 ZTEST(test_hci_set_conn_cte_rx_params, test_set_conn_cte_rx_params_enable_with_invalid_conn_handle)

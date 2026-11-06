@@ -343,7 +343,7 @@ void bt_send_one_host_num_completed_packets(uint16_t handle)
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count  = sys_cpu_to_le16(1);
 
-	err = bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
+	err = bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, net_buf_take(&buf));
 	BT_ASSERT_MSG(err == 0, "Unable to send Host NCP (err %d)", err);
 }
 
@@ -413,7 +413,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	hc->handle = sys_cpu_to_le16(handle);
 	hc->count  = sys_cpu_to_le16(1);
 
-	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, buf);
+	bt_hci_cmd_send(BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS, net_buf_take(&buf));
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
@@ -622,6 +622,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		/* `cmd(buf)` depends on this  */
 		if (net_buf_pool_get(buf->pool_id) != &hci_cmd_pool) {
 			__ASSERT_NO_MSG(false);
+			net_buf_unref(buf);
 			return -EINVAL;
 		}
 	}
@@ -1014,7 +1015,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, true);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN, net_buf_take(&buf), NULL);
 }
 
 int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_adv *adv,
@@ -1062,7 +1063,7 @@ int bt_le_create_conn_synced(const struct bt_conn *conn, const struct bt_le_ext_
 
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags, BT_DEV_INITIATING, true);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN_V2, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_EXT_CREATE_CONN_V2, net_buf_take(&buf), NULL);
 }
 
 static int bt_le_create_conn_legacy(const struct bt_conn *conn)
@@ -1120,7 +1121,7 @@ static int bt_le_create_conn_legacy(const struct bt_conn *conn)
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, true);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, net_buf_take(&buf), NULL);
 }
 
 int bt_le_create_conn(const struct bt_conn *conn)
@@ -1146,7 +1147,7 @@ int bt_le_create_conn_cancel(void)
 	bt_hci_cmd_state_set_init(buf, &state, bt_dev.flags,
 				  BT_DEV_INITIATING, false);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, net_buf_take(&buf), NULL);
 }
 #endif /* CONFIG_BT_CENTRAL */
 
@@ -1164,7 +1165,7 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 	disconn->handle = sys_cpu_to_le16(handle);
 	disconn->reason = reason;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_DISCONNECT, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_DISCONNECT, net_buf_take(&buf), NULL);
 }
 
 static uint16_t disconnected_handles[CONFIG_BT_MAX_CONN];
@@ -1308,7 +1309,7 @@ int bt_hci_le_read_remote_features(struct bt_conn *conn)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	/* Results in BT_HCI_EVT_LE_REMOTE_FEAT_COMPLETE */
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_REMOTE_FEATURES, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_REMOTE_FEATURES, net_buf_take(&buf), NULL);
 }
 
 int bt_hci_read_remote_version(struct bt_conn *conn)
@@ -1333,7 +1334,7 @@ int bt_hci_read_remote_version(struct bt_conn *conn)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_VERSION_INFO, buf,
+	return bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_VERSION_INFO, net_buf_take(&buf),
 				    NULL);
 }
 
@@ -1355,7 +1356,7 @@ int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_tim
 	cp->tx_octets = sys_cpu_to_le16(tx_octets);
 	cp->tx_time = sys_cpu_to_le16(tx_time);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DATA_LEN, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DATA_LEN, net_buf_take(&buf), NULL);
 }
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
@@ -1374,7 +1375,7 @@ static int hci_le_read_phy(struct bt_conn *conn)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_PHY, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_PHY, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
@@ -1403,7 +1404,7 @@ int bt_le_set_default_phy(uint8_t all_phys, uint8_t pref_tx_phy, uint8_t pref_rx
 	cp->tx_phys = pref_tx_phy;
 	cp->rx_phys = pref_rx_phy;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_PHY, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_DEFAULT_PHY, net_buf_take(&buf), NULL);
 }
 
 int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
@@ -1424,7 +1425,7 @@ int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 	cp->rx_phys = pref_rx_phy;
 	cp->phy_opts = phy_opts;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PHY, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PHY, net_buf_take(&buf), NULL);
 }
 
 static struct bt_conn *find_pending_connect(uint8_t role, const bt_addr_le_t *peer_addr,
@@ -2201,7 +2202,7 @@ static void le_conn_param_neg_reply(uint16_t handle, uint8_t reason)
 	cp->handle = sys_cpu_to_le16(handle);
 	cp->reason = sys_cpu_to_le16(reason);
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY, buf);
+	bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY, net_buf_take(&buf));
 }
 
 static int le_conn_param_req_reply(uint16_t handle,
@@ -2224,7 +2225,7 @@ static int le_conn_param_req_reply(uint16_t handle,
 	cp->latency = sys_cpu_to_le16(param->latency);
 	cp->timeout = sys_cpu_to_le16(param->timeout);
 
-	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, buf);
+	return bt_hci_cmd_send(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY, net_buf_take(&buf));
 }
 
 static void le_conn_param_req(struct net_buf *buf)
@@ -2388,7 +2389,7 @@ static int set_flow_control(void)
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
 	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, net_buf_take(&buf), NULL);
 	if (err) {
 		return err;
 	}
@@ -2734,7 +2735,7 @@ static void le_ltk_neg_reply(uint16_t handle)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(handle);
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
+	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, net_buf_take(&buf));
 }
 
 static void le_ltk_reply(uint16_t handle, uint8_t *ltk)
@@ -2752,7 +2753,7 @@ static void le_ltk_reply(uint16_t handle, uint8_t *ltk)
 	cp->handle = sys_cpu_to_le16(handle);
 	memcpy(cp->ltk, ltk, sizeof(cp->ltk));
 
-	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
+	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, net_buf_take(&buf));
 }
 
 static void le_ltk_request(struct net_buf *buf)
@@ -3754,7 +3755,7 @@ static int le_set_host_feature(uint8_t bit_number, uint8_t bit_value)
 	cp->bit_number = bit_number;
 	cp->bit_value = bit_value;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_FEATURE, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_FEATURE, net_buf_take(&buf), NULL);
 }
 
 static void read_supported_commands_complete(struct net_buf *buf)
@@ -3846,7 +3847,7 @@ __maybe_unused static int set_conn_accept_timeout(uint16_t timeout)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->conn_accept_timeout = sys_cpu_to_le16(timeout);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, net_buf_take(&buf), NULL);
 }
 
 static int common_init(void)
@@ -4093,7 +4094,7 @@ static int le_set_event_mask(void)
 	}
 
 	sys_put_le64(mask, cp_mask->events);
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EVENT_MASK, net_buf_take(&buf), NULL);
 }
 
 static int le_init_iso(void)
@@ -4209,7 +4210,7 @@ static int le_init(void)
 		/* Explicitly enable LE for dual-mode controllers */
 		cp_le->le = 0x01;
 		cp_le->simul = 0x00;
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, buf,
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_LE_HOST_SUPP, net_buf_take(&buf),
 					   NULL);
 		if (err) {
 			return err;
@@ -4250,7 +4251,7 @@ static int le_init(void)
 		cp->max_tx_time = sys_cpu_to_le16(tx_time);
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
-					   buf, NULL);
+					   net_buf_take(&buf), NULL);
 		if (err) {
 			return err;
 		}
@@ -4268,7 +4269,7 @@ static int le_init(void)
 
 		cp = net_buf_add(buf, sizeof(*cp));
 		cp->rpa_timeout = sys_cpu_to_le16(bt_dev.rpa_timeout);
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, buf,
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RPA_TIMEOUT, net_buf_take(&buf),
 					   NULL);
 		if (err) {
 			return err;
@@ -4415,7 +4416,7 @@ static int set_event_mask(void)
 	}
 
 	sys_put_le64(mask, ev->events);
-	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_EVENT_MASK, net_buf_take(&buf), NULL);
 }
 
 const char *bt_hci_get_ver_str(uint8_t core_version)
@@ -4622,7 +4623,7 @@ static int hci_vs_write_bd_addr(bt_addr_t *bdaddr)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_BD_ADDR, buf, NULL);
+	return bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_BD_ADDR, net_buf_take(&buf), NULL);
 }
 #endif /* CONFIG_BT_HCI_VS */
 
@@ -5469,7 +5470,7 @@ int bt_le_filter_accept_list_add(const bt_addr_le_t *addr)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->addr, addr);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_FAL, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_FAL, net_buf_take(&buf), NULL);
 	if (err) {
 		LOG_ERR("Failed to add device to filter accept list");
 
@@ -5497,7 +5498,7 @@ int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_le_copy(&cp->addr, addr);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_FAL, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_FAL, net_buf_take(&buf), NULL);
 	if (err) {
 		LOG_ERR("Failed to remove device from filter accept list");
 		return err;
@@ -5550,7 +5551,7 @@ int bt_le_set_chan_map(uint8_t chan_map[5])
 	cp->ch_map[4] = chan_map[4] & BIT_MASK(5);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
-				    buf, NULL);
+				    net_buf_take(&buf), NULL);
 }
 
 #if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
@@ -5593,7 +5594,7 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 		(void)memcpy(cp->vs_config, vs_config, vs_config_len);
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONFIGURE_DATA_PATH, buf, &rsp);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_CONFIGURE_DATA_PATH, net_buf_take(&buf), &rsp);
 	if (err) {
 		return err;
 	}
