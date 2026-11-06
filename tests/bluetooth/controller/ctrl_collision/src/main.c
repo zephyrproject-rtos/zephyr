@@ -754,4 +754,182 @@ ZTEST(collision, test_phy_conn_update_central_loc_collision)
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+/*
+ * (A) Peripheral-initiated Connection Parameters Request procedure, rejected by
+ *     the central.
+ * (B) Later, a peripheral-initiated LE Ping procedure.
+ * (C) Before answering the ping, the central sends LL_CHANNEL_MAP_IND.
+ *
+ * The rejected CPR (A) must not leave a stale collision state behind that
+ * makes (C) cancel the unrelated ping (B): its LL_PING_RSP would then be
+ * expected by no procedure and the link would be terminated (0x24).
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           | (A)
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->| (A)
+ *    |                           |         LL_REJECT_EXT_IND |
+ *    |                           |<--------------------------| (A)
+ *    |      LE Connection Update |                           |
+ *    |                  Complete |                           |
+ *    |<--------------------------|                           | (A)
+ *    |                           |                           |
+ *    | Start LE Ping Proc.       |                           |
+ *    |-------------------------->|                           | (B)
+ *    |                           | LL_LE_PING_REQ            |
+ *    |                           |-------------------------->| (B)
+ *    |                           |        LL_CHAN_MAP_IND    |
+ *    |                           |<--------------------------| (C)
+ *    |                           |            LL_LE_PING_RSP |
+ *    |                           |<--------------------------| (B)
+ *    |                           |                           |
+ *    |                           |  (instant: new chan map)  | (C)
+ */
+ZTEST(collision, test_ping_chmu_after_rejected_periph_cpr)
+{
+	uint8_t err;
+	uint16_t instant;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_UNACCEPT_CONN_PARAM };
+	struct pdu_data_llctrl_conn_param_req conn_param_req = {
+		.interval_min = INTVL_MIN,
+		.interval_max = INTVL_MAX,
+		.latency = LATENCY,
+		.timeout = TIMEOUT,
+		.preferred_periodicity = 0U,
+		.reference_conn_event_count = 0u,
+		.offset0 = 0x0000U,
+		.offset1 = 0xffffU,
+		.offset2 = 0xffffU,
+		.offset3 = 0xffffU,
+		.offset4 = 0xffffU,
+		.offset5 = 0xffffU
+	};
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+		.error_code = BT_HCI_ERR_UNACCEPT_CONN_PARAM
+	};
+	struct pdu_data_llctrl_ping_req ping_req = {};
+	struct pdu_data_llctrl_ping_rsp ping_rsp = {};
+	uint8_t chm[5] = { 0x00, 0x04, 0x05, 0x06, 0x00 };
+	struct pdu_data_llctrl_chan_map_ind chmu_ind = {
+		.chm = { 0x00, 0x04, 0x05, 0x06, 0x00 },
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* (A) Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx: the central rejects the CPR */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	/* (B) Initiate an LE Ping Procedure */
+	err = ull_cp_le_ping(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_LE_PING_REQ, &conn, &tx, &ping_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* (C) Rx: a channel map update overtakes the ping response */
+	instant = event_counter(&conn) + 6U;
+	chmu_ind.instant = instant;
+	lt_tx(LL_CHAN_MAP_UPDATE_IND, &conn, &chmu_ind);
+	lt_tx(LL_LE_PING_RSP, &conn, &ping_rsp);
+
+	/* Done */
+	event_done(&conn);
+
+	/* The link must not be terminated */
+	zassert_equal(conn.llcp_terminate.reason_final, 0U, "Terminate reason 0x%02x",
+		      conn.llcp_terminate.reason_final);
+
+	/* There should be no host notification */
+	ut_rx_q_is_empty();
+
+	/* spin conn events up to the instant */
+	while (!is_instant_reached(&conn, instant)) {
+		/* Prepare */
+		event_prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty(&conn);
+
+		/* Done */
+		event_done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* The new channel map is in use */
+	zassert_mem_equal(conn.lll.data_chan_map, chm, sizeof(conn.lll.data_chan_map),
+			  "Channel map invalid");
+
+	zassert_equal(conn.llcp_terminate.reason_final, 0U, "Terminate reason 0x%02x",
+		      conn.llcp_terminate.reason_final);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 ZTEST_SUITE(collision, NULL, NULL, collision_setup, NULL, NULL);
