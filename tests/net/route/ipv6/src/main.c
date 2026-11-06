@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_ROUTE_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/virtual.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -90,6 +91,19 @@ static struct net_in6_addr generic_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0,
 static struct net_if *recipient;
 static struct net_if *my_iface;
 static struct net_if *peer_iface;
+static struct net_if *vpn_iface;
+
+/* Tunnel address of the VPN interface (no prefix configured, so its subnet is
+ * the /64), an address in that subnet, and an off-link address (for example
+ * the VPN peer endpoint) that shares a longer prefix with the tunnel address
+ * than with the addresses of the other interfaces.
+ */
+static struct net_in6_addr vpn_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0x77, 0, 0,
+					   0, 0, 0, 0, 0, 0, 0, 0x20 } } };
+static struct net_in6_addr vpn_peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0x77, 0, 0,
+						0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct net_in6_addr vpn_endpoint_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0x77, 0, 0x1,
+						    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
 static struct net_route_entry *route_entry;
 
@@ -319,6 +333,36 @@ NET_DEVICE_INIT_INSTANCE(net_route_test_peer, "net_route_test_peer", peer,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_route_if_api_peer, _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE, 127);
+
+static void vpn_iface_init(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+
+static enum virtual_interface_caps vpn_get_capabilities(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return VIRTUAL_INTERFACE_VPN;
+}
+
+static int vpn_send(struct net_if *iface, struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+
+	return -ENOTSUP;
+}
+
+static DEVICE_API(virtual_interface, vpn_iface_api) = {
+	.iface_api.init = vpn_iface_init,
+	.get_capabilities = vpn_get_capabilities,
+	.send = vpn_send,
+};
+
+/* Named to sort after the dummy interfaces, which test_init() finds by position */
+NET_VIRTUAL_INTERFACE_INIT(route_vpn_test, "route_vpn_test", NULL, NULL, NULL, NULL,
+			   CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &vpn_iface_api, NET_IPV6_MTU);
 
 static void test_init(void)
 {
@@ -665,6 +709,61 @@ static void test_route_ipv6_select_src_iface_uses_explicit_route(void)
 
 	zassert_ok(net_route_ipv6_del(route), "Selection route del failed");
 	zassert_true(net_if_ipv6_router_rm(router), "Default router del failed");
+}
+
+static void test_route_ipv6_select_src_vpn_iface(void)
+{
+	const struct net_in6_addr *src_addr;
+	struct net_route_entry *route;
+	struct net_if_addr *ifaddr;
+	struct net_if *iface;
+
+	vpn_iface = net_if_lookup_by_dev(DEVICE_GET(route_vpn_test));
+	zassert_not_null(vpn_iface, "VPN interface is NULL");
+
+	if (!net_if_is_up(vpn_iface)) {
+		zassert_ok(net_if_up(vpn_iface), "Cannot take VPN interface up");
+	}
+
+	ifaddr = net_if_ipv6_addr_add(vpn_iface, &vpn_addr, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add VPN IPv6 address");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	/* Neither a route nor a default router covers the destination, so
+	 * the tunnel address must not be selected for it.
+	 */
+	src_addr = net_if_ipv6_select_src_addr(NULL, &vpn_endpoint_addr);
+	zassert_false(src_addr == net_ipv6_unspecified_address(),
+		      "Source address selection failed");
+	zassert_false(net_ipv6_addr_cmp(src_addr, &vpn_addr),
+		      "Tunnel address selected for an off-link destination");
+
+	iface = net_if_ipv6_select_src_iface(&vpn_endpoint_addr);
+	zassert_not_equal(iface, vpn_iface, "VPN interface selected for an off-link destination");
+
+	/* The tunnel subnet is still reached through the VPN interface */
+	src_addr = net_if_ipv6_select_src_addr(NULL, &vpn_peer_addr);
+	zassert_true(net_ipv6_addr_cmp(src_addr, &vpn_addr),
+		     "Tunnel address not selected for the tunnel subnet");
+
+	iface = net_if_ipv6_select_src_iface(&vpn_peer_addr);
+	zassert_equal_ptr(iface, vpn_iface, "VPN interface not selected for the tunnel subnet");
+
+	/* An explicit route through the VPN interface still selects it */
+	route = net_route_ipv6_add(vpn_iface, &vpn_endpoint_addr, 128, &vpn_peer_addr,
+				   NET_IPV6_ND_INFINITE_LIFETIME, NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "VPN route add failed");
+
+	src_addr = net_if_ipv6_select_src_addr(NULL, &vpn_endpoint_addr);
+	zassert_true(net_ipv6_addr_cmp(src_addr, &vpn_addr),
+		     "Tunnel address not selected for a route through the VPN");
+
+	iface = net_if_ipv6_select_src_iface(&vpn_endpoint_addr);
+	zassert_equal_ptr(iface, vpn_iface,
+			  "VPN interface not selected for a route through the VPN");
+
+	zassert_ok(net_route_ipv6_del(route), "VPN route del failed");
+	zassert_true(net_if_ipv6_addr_rm(vpn_iface, &vpn_addr), "Cannot remove VPN IPv6 address");
 }
 
 static void test_route_ipv6_packet_without_neighbor_ll(void)
@@ -1044,6 +1143,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_lifetime();
 	test_route_ipv6_preference();
 	test_route_ipv6_select_src_iface_uses_explicit_route();
+	test_route_ipv6_select_src_vpn_iface();
 	test_route_ipv6_packet_without_neighbor_ll();
 	test_route_ipv6_packet_without_iface();
 	test_route_ipv6_input_route_same_iface();
