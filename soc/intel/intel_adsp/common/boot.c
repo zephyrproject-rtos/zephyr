@@ -156,6 +156,19 @@ __imr void boot_core0(void)
 	CAVS_SHIM.l2mecs = 0;
 #endif
 
+#ifdef CONFIG_XTENSA_MMU
+	uint32_t dtlbcfg = XTENSA_RSR("DTLBCFG");
+
+	/*
+	 * Bit 16:17 == 0, way 4 to have 1MB page size.
+	 * Bit 20 == 0, way 5 to have 128MB page size.
+	 * Bit 24 == 0, way 6 to have 256MB page size.
+	 */
+	dtlbcfg &= ~(BIT(16) | BIT(17) | BIT(20) | BIT(24));
+
+	XTENSA_WSR("DTLBCFG", dtlbcfg);
+#endif
+
 	hp_sram_init(L2_SRAM_SIZE);
 	lp_sram_init();
 	parse_manifest();
