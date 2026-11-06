@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026, Analog Devices
+
+rsource "../common/emul_clock_drivers/Kconfig"
+source "Kconfig.zephyr"

@@ -1,0 +1,16 @@
+# Copyright 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MANAGEMENT_EMUL_DIV
+	bool "Emulated divider clock driver"
+	default y
+	depends on DT_HAS_VND_EMUL_CLOCK_DIV_ENABLED
+	help
+	  Emulated divider clock driver. Divides the input clock frequency
+
+config CLOCK_MANAGEMENT_EMUL_MUX
+	bool "Emulated multiplexer clock driver"
+	default y
+	depends on DT_HAS_VND_EMUL_CLOCK_MUX_ENABLED
+	help
+	  Emulated multiplexer clock driver. Selects one of the input clocks

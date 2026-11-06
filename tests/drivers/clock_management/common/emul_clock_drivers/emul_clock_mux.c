@@ -6,24 +6,18 @@
  */
 
 #include <zephyr/drivers/clock_management/clock_driver.h>
-#include <stdlib.h>
+#include "emul_clock_internal.h"
 
 #define DT_DRV_COMPAT vnd_emul_clock_mux
 
-struct emul_clock_mux {
-	MUX_CLK_SUBSYS_DATA_DEFINE
-	uint8_t src_count;
-	uint8_t src_sel;
-};
-
-static int emul_clock_mux_get_parent(const struct clk *clk_hw)
+int emul_clock_mux_get_parent(const struct clk *clk_hw)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 
 	return data->src_sel;
 }
 
-static int emul_clock_mux_configure(const struct clk *clk_hw, const void *mux)
+int emul_clock_mux_configure(const struct clk *clk_hw, const void *mux)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 	uint32_t mux_val = (uint32_t)(uintptr_t)mux;
@@ -39,8 +33,8 @@ static int emul_clock_mux_configure(const struct clk *clk_hw, const void *mux)
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static int emul_clock_mux_configure_recalc(const struct clk *clk_hw,
-					       const void *mux)
+int emul_clock_mux_configure_recalc(const struct clk *clk_hw,
+				    const void *mux)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 	uint32_t mux_val = (uint32_t)(uintptr_t)mux;
@@ -52,9 +46,9 @@ static int emul_clock_mux_configure_recalc(const struct clk *clk_hw,
 	return mux_val;
 }
 
-static int emul_clock_mux_validate_parent(const struct clk *clk_hw,
-					  clock_freq_t parent_freq,
-					  uint8_t new_idx)
+int emul_clock_mux_validate_parent(const struct clk *clk_hw,
+				   clock_freq_t parent_freq,
+				   uint8_t new_idx)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 
@@ -69,8 +63,8 @@ static int emul_clock_mux_validate_parent(const struct clk *clk_hw,
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
 
-static int emul_clock_mux_set_parent(const struct clk *clk_hw,
-				     uint8_t new_idx)
+int emul_clock_mux_set_parent(const struct clk *clk_hw,
+			      uint8_t new_idx)
 {
 	struct emul_clock_mux *data = clk_hw->hw_data;
 
@@ -84,7 +78,7 @@ static int emul_clock_mux_set_parent(const struct clk *clk_hw,
 }
 #endif
 
-const struct clock_management_mux_api emul_mux_api = {
+static const struct clock_management_mux_api emul_mux_api = {
 	.shared.configure = emul_clock_mux_configure,
 	.get_parent = emul_clock_mux_get_parent,
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
@@ -103,7 +97,7 @@ const struct clock_management_mux_api emul_mux_api = {
 	const struct clk *const emul_clock_mux_parents_##inst[] = {            \
 		DT_INST_FOREACH_PROP_ELEM(inst, inputs, GET_MUX_INPUT)         \
 	};                                                                     \
-	struct emul_clock_mux emul_clock_mux_##inst = {                        \
+	static struct emul_clock_mux emul_clock_mux_##inst = {                 \
 		MUX_CLK_SUBSYS_DATA_INIT(emul_clock_mux_parents_##inst,        \
 					 DT_INST_PROP_LEN(inst, inputs))       \
 		.src_count = DT_INST_PROP_LEN(inst, inputs),                   \

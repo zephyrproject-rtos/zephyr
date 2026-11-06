@@ -6,16 +6,11 @@
  */
 
 #include <zephyr/drivers/clock_management/clock_driver.h>
+#include "emul_clock_internal.h"
 
 #define DT_DRV_COMPAT vnd_emul_clock_div
 
-struct emul_clock_div {
-	STANDARD_CLK_SUBSYS_DATA_DEFINE
-	uint8_t div_max;
-	uint8_t div_val;
-};
-
-static int emul_clock_div_configure(const struct clk *clk_hw, const void *div_cfg)
+int emul_clock_div_configure(const struct clk *clk_hw, const void *div_cfg)
 {
 	struct emul_clock_div *data = clk_hw->hw_data;
 	uint32_t div_val = (uint32_t)(uintptr_t)div_cfg;
@@ -25,8 +20,8 @@ static int emul_clock_div_configure(const struct clk *clk_hw, const void *div_cf
 	return 0;
 }
 
-static clock_freq_t emul_clock_div_recalc_rate(const struct clk *clk_hw,
-				      clock_freq_t parent_rate)
+clock_freq_t emul_clock_div_recalc_rate(const struct clk *clk_hw,
+					clock_freq_t parent_rate)
 {
 	struct emul_clock_div *data = clk_hw->hw_data;
 
@@ -34,9 +29,9 @@ static clock_freq_t emul_clock_div_recalc_rate(const struct clk *clk_hw,
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
-static clock_freq_t emul_clock_div_configure_recalc(const struct clk *clk_hw,
-					   const void *div_cfg,
-					   clock_freq_t parent_rate)
+clock_freq_t emul_clock_div_configure_recalc(const struct clk *clk_hw,
+					     const void *div_cfg,
+					     clock_freq_t parent_rate)
 {
 	struct emul_clock_div *data = clk_hw->hw_data;
 	uint32_t div_val = (uint32_t)(uintptr_t)div_cfg;
@@ -50,10 +45,10 @@ static clock_freq_t emul_clock_div_configure_recalc(const struct clk *clk_hw,
 #endif
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_SET_RATE)
-static clock_freq_t emul_clock_div_best_rate(const struct clk *clk_hw,
-					     clock_freq_t req_rate,
-					     clock_freq_t parent_rate,
-					     bool commit)
+clock_freq_t emul_clock_div_best_rate(const struct clk *clk_hw,
+				      clock_freq_t req_rate,
+				      clock_freq_t parent_rate,
+				      bool commit)
 {
 	struct emul_clock_div *data = clk_hw->hw_data;
 	int div_val = CLAMP((parent_rate / req_rate), 1, (data->div_max + 1));
@@ -77,7 +72,7 @@ static clock_freq_t emul_clock_div_best_rate(const struct clk *clk_hw,
 }
 #endif
 
-const struct clock_management_standard_api emul_div_api = {
+static const struct clock_management_standard_api emul_div_api = {
 	.recalc_rate = emul_clock_div_recalc_rate,
 	.shared.configure = emul_clock_div_configure,
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
@@ -89,7 +84,7 @@ const struct clock_management_standard_api emul_div_api = {
 };
 
 #define EMUL_CLOCK_DEFINE(inst)                                                \
-	struct emul_clock_div emul_clock_div_##inst = {                        \
+	static struct emul_clock_div emul_clock_div_##inst = {                  \
 		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))) \
 		.div_max = DT_INST_PROP(inst, max_div) - 1,                    \
 		.div_val = 0,                                                  \
