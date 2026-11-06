@@ -387,6 +387,20 @@ How to rerun locally pytest tests without rebuilding application by Twister?
       samples/subsys/testsuite/pytest/shell/pytest
 
 
+How is console coverage collected when a QEMU test ends?
+=======================================================
+
+Once the harness reads the ``GCOV_COVERAGE_DUMP_START`` marker from the console, QEMU
+teardown waits for ``GCOV_COVERAGE_DUMP_END`` before disconnecting the console and stopping
+the process. The wait is bounded by the device's ``base_timeout`` (``--base-timeout`` when
+running pytest directly). If the dump does not finish, teardown reports a timeout and still
+cleans up QEMU.
+
+An absent or already completed dump does not delay teardown. Semihosting does not use these
+console markers and retains its existing behavior. The application must trigger the dump;
+if it has not started yet, the test should wait for the start marker before returning.
+
+
 Is this possible to run pytest tests in parallel?
 =================================================
 
