@@ -29,6 +29,20 @@ extern "C" {
 #define Z_CLOCK_MANAGEMENT_DATA_GET_vnd_emul_clock_div(node_id, prop, idx)           \
 	DT_PHA_BY_IDX(node_id, prop, idx, divider)
 
+#define VIRT_MUX_MASK (0xFF << VIRT_MUX_SHIFT)
+#define VIRT_DIV_MASK (0xFF << VIRT_DIV_SHIFT)
+#define VIRT_MULT_MASK (0xFF << VIRT_MULT_SHIFT)
+#define VIRT_MUX_SHIFT 0
+#define VIRT_DIV_SHIFT 8
+#define VIRT_MULT_SHIFT 16
+
+/* No data structure needed for virtual clock */
+#define Z_CLOCK_MANAGEMENT_DATA_DEFINE_vnd_emul_clock_virt(node_id, prop, idx)
+#define Z_CLOCK_MANAGEMENT_DATA_GET_vnd_emul_clock_virt(node_id, prop, idx)           \
+	(((DT_PHA_BY_IDX(node_id, prop, idx, multiplexer) << VIRT_MUX_SHIFT) & VIRT_MUX_MASK) | \
+	((DT_PHA_BY_IDX(node_id, prop, idx, divider) << VIRT_DIV_SHIFT) & VIRT_DIV_MASK) | \
+	((DT_PHA_BY_IDX(node_id, prop, idx, multiplier) << VIRT_MULT_SHIFT) & VIRT_MULT_MASK))
+
 /** @endcond */
 
 #ifdef __cplusplus

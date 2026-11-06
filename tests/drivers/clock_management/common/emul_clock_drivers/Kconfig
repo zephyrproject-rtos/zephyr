@@ -14,3 +14,10 @@ config CLOCK_MANAGEMENT_EMUL_MUX
 	depends on DT_HAS_VND_EMUL_CLOCK_MUX_ENABLED
 	help
 	  Emulated multiplexer clock driver. Selects one of the input clocks
+
+config CLOCK_MANAGEMENT_EMUL_VIRT
+	bool "Emulated virtual clock driver"
+	default y
+	depends on DT_HAS_VND_EMUL_CLOCK_VIRT_ENABLED
+	help
+	  Emulated virtual clock driver.

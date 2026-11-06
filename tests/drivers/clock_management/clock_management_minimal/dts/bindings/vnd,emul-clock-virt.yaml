@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Analog Devices Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated virtual clock node. This node represents a virtual clock,
+  which defines a multiplexer, multiplier, and divider internally. The specifiers
+  have the following meaning:
+  - multiplexer: selects which input clock mux should use
+  - multiplier: selects the multiplier value for mult
+  - divider: selects the divider value for div
+
+  The clock is structured like so internally:
+
+
+   ───┐
+      │  ┌─────┐    ┌────┐     ┌─────┐   ┌────────┐
+      ┼─►│ mux ├─┬─►│mult├────►│ div ├──►│virt-div│
+      │  └─────┘ │  └────┘     └─────┘   └────────┘
+   ───┘          │
+                 │                       ┌────────┐
+                 └──────────────────────►│virt-mux│
+                                         └────────┘
+
+
+  The virtual clock must have child nodes named virt-div and virt-mux, which
+  the outputs will be connected to.
+
+compatible: "vnd,emul-clock-virt"
+
+include: [clock-node.yaml]
+
+properties:
+  inputs:
+    type: phandles
+    required: true
+    description: |
+      Input clock sources available for this multiplexer, connected to mux
+
+  "#clock-cells":
+    const: 3
+
+clock-cells:
+  - multiplexer
+  - multiplier
+  - divider
