@@ -1,0 +1,32 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DMA for the SPI controller/peripheral test.
+ * DMAMUX1 requests match SPI1 (RX 10 / TX 11) used by the loopback test:
+ * SPI2 RX 12, SPI2 TX 13, SPI3 RX 14, SPI3 TX 15.
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&spi2 {
+	dmas = <&dmamux1 0 13 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 1 12 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+};
+
+&spi3 {
+	dmas = <&dmamux1 2 15 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dmamux1 3 14 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+};
