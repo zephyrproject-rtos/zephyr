@@ -1107,6 +1107,24 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 		goto cleanup;
 	}
 
+	/*
+	 * A reload goes out as one descriptor; refuse what CITER cannot hold.
+	 * The looped path counts in destination units, the dynamic one in
+	 * bursts.
+	 */
+	uint32_t unit = data->transfer_settings.cyclic
+				? MAX(data->transfer_settings.dest_data_size, 1U)
+				: MAX(data->transfer_settings.source_burst_length, 1U);
+	size_t loops = size / unit + ((size % unit) != 0U);
+
+	if (loops > EDMA_MAX_MAJOR_LOOP) {
+		LOG_ERR("reload of %zu bytes needs %zu major loops, %u is the most "
+			"a descriptor holds",
+			size, loops, EDMA_MAX_MAJOR_LOOP);
+		ret = -EINVAL;
+		goto cleanup;
+	}
+
 	/* A split block keeps its pieces in the pool until the last one ends. */
 	if (data->transfer_settings.split) {
 		if (data->busy) {
