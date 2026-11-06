@@ -8,3 +8,5 @@ set(SOC_LINKER_SCRIPT
   ${ZEPHYR_BASE}/include/zephyr/arch/tricore/linker.ld
   CACHE INTERNAL ""
 )
+
+zephyr_include_directories(${ZEPHYR_BASE}/soc/infineon/aurix/common)
