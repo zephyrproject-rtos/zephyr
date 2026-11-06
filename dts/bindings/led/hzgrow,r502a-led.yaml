@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: HZ-Grow R502A fingerprint sensor LED
+
+description: |
+  The built-in LED ring of an HZ-Grow R502A fingerprint sensor.
+
+  The driver controls the LED through the hzgrow,r502a sensor with the same
+  instance number, so the node takes no properties.
+
+compatible: "hzgrow,r502a-led"
+
+class: led
+
+examples:
+  - |
+    &uart2 {
+            led {
+                    compatible = "hzgrow,r502a-led";
+            };
+    };
