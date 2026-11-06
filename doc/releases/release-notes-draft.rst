@@ -138,6 +138,8 @@ New Samples
   Same as above, this will also be recomputed at the time of the release.
   Just link the sample, further details go in the sample documentation itself.
 
+* :zephyr:code-sample:`zms-physical-delete`
+
 Libraries / Subsystems
 **********************
 
