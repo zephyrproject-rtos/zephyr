@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon SCB UART
+
+  Serial communication block (SCB) in UART mode.
+
+    uart7: &scb7 {
+        compatible = "infineon,scb-uart";
+        current-speed = <115200>;
+        clocks = <&peri0_group1_8bit_1>;
+        pinctrl-0 = <&p9_0_scb7_uart_rx &p9_1_scb7_uart_tx>;
+        pinctrl-names = "default";
+    };
+
+compatible: "infineon,scb-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: Peripheral clock divider that clocks the SCB
+
+  clk-dst:
+    type: int
+    required: true
+    description: Peripheral clock destination ID of the SCB instance
+
+  current-speed:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
