@@ -2026,6 +2026,13 @@ static uint8_t discover_primary_func(struct bt_conn *conn,
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 		LOG_DBG("UUID: %s", bt_uuid_str(prim_service->uuid));
 
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("GMCS without characteristics");
+			discovery_complete(conn, -ENODATA);
+
+			return BT_GATT_ITER_STOP;
+		}
+
 		mcs_inst->start_handle = attr->handle + 1;
 		mcs_inst->end_handle = prim_service->end_handle;
 

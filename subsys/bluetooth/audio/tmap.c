@@ -114,6 +114,18 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 	}
 
 	if (!bt_uuid_cmp(discover_params[conn_id].uuid, BT_UUID_TMAS)) {
+		const struct bt_gatt_service_val *service = attr->user_data;
+
+		if (attr->handle == service->end_handle) {
+			LOG_WRN("TMAS without characteristics");
+			(void)memset(params, 0, sizeof(*params));
+			if (cb->discovery_complete) {
+				cb->discovery_complete(0, conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
+			}
+
+			return BT_GATT_ITER_STOP;
+		}
+
 		LOG_DBG("Discovered TMAS\n");
 		tmas_found = true;
 		memcpy(&uuid[conn_id], BT_UUID_GATT_TMAPR, sizeof(uuid[conn_id]));

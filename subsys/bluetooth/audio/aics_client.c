@@ -606,7 +606,8 @@ static int store_attr_handle_and_subscribe(struct bt_aics_client *client_inst, s
 		LOG_DBG("Unknown characteristic %s", bt_uuid_str(chrc->uuid));
 	}
 
-	if (sub_params != NULL) {
+	/* There is no room for a CCC after a value at the last handle */
+	if (sub_params != NULL && chrc->value_handle < BT_ATT_LAST_ATTRIBUTE_HANDLE) {
 		int err;
 
 		sub_params->value = BT_GATT_CCC_NOTIFY;

@@ -1834,6 +1834,12 @@ static uint8_t primary_discover_tbs_cb(struct bt_conn *conn, const struct bt_gat
 
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("TBS without characteristics");
+
+			return BT_GATT_ITER_CONTINUE;
+		}
+
 		srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt];
 		srv_inst->inst_cnt++;
 		srv_inst->current_inst->start_handle = attr->handle + 1;
@@ -1887,9 +1893,13 @@ static uint8_t primary_discover_gtbs_cb(struct bt_conn *conn, const struct bt_ga
 
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
-		srv_inst->current_inst = &srv_inst->gtbs_inst;
-		srv_inst->current_inst->start_handle = attr->handle + 1;
-		srv_inst->current_inst->end_handle = prim_service->end_handle;
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("GTBS without characteristics");
+		} else {
+			srv_inst->current_inst = &srv_inst->gtbs_inst;
+			srv_inst->current_inst->start_handle = attr->handle + 1;
+			srv_inst->current_inst->end_handle = prim_service->end_handle;
+		}
 	}
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
