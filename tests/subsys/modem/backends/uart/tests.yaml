@@ -3,13 +3,13 @@
 
 common:
   harness: ztest
-  harness_config:
-    fixture: gpio_loopback
 
 tests:
   modem.backends.uart.async:
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
+    harness_config:
+      fixture: gpio_loopback
     platform_allow:
       - b_u585i_iot02a
       - nrf5340dk/nrf5340/cpuapp
@@ -19,12 +19,31 @@ tests:
       - CONFIG_UART_ASYNC_API=y
       - CONFIG_MODEM_BACKEND_UART_ASYNC_HWFC=y
       - CONFIG_TEST_HW_FLOW_CONTROL=y
+    harness_config:
+      fixture: gpio_loopback
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
 
   modem.backends.uart.isr:
     extra_configs:
       - CONFIG_UART_INTERRUPT_DRIVEN=y
+    harness_config:
+      fixture: gpio_loopback
     platform_allow:
       - b_u585i_iot02a
       - nrf5340dk/nrf5340/cpuapp
+
+  modem.backends.uart.isr.overrun:
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=n
+      - CONFIG_TEST_HW_FLOW_CONTROL=y
+      - CONFIG_ZTEST_SHUFFLE=n
+      - CONFIG_ZTEST_SUITE_REPEAT_COUNT=1
+      - CONFIG_ZTEST_TEST_REPEAT_COUNT=1
+    extra_args:
+      - DTC_OVERLAY_FILE=uart_emul_loopback.overlay
+    # The deterministic FIFO-overrun scenario uses the native UART emulator.
+    platform_allow:
+      - native_sim
