@@ -1,0 +1,17 @@
+common:
+  arch_allow: arm
+  filter: CONFIG_CPU_CORTEX_R52 and CONFIG_MP_MAX_NUM_CPUS > 1 and not CONFIG_XIP
+  tags:
+    - arm
+    - cache
+    - smp
+  integration_platforms:
+    - fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
+tests:
+  arch.arm.cortex_r52_coherence: {}
+  arch.arm.cortex_r52_coherence.nocache:
+    extra_configs:
+      - CONFIG_NOCACHE_MEMORY=y
+  arch.arm.cortex_r52_coherence.stack_sentinel:
+    extra_configs:
+      - CONFIG_STACK_SENTINEL=y

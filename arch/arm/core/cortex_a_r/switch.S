@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	add r2, r0, r2
 	ldm r2, {r4-r11, sp, lr}
 
-#if defined (CONFIG_ARM_MPU)
+#if defined(CONFIG_ARM_MPU) && (defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE))
 	/* Re-program dynamic memory map */
 	push {r0, lr}
 	bl z_arm_configure_dynamic_mpu_regions

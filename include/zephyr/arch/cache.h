@@ -355,6 +355,8 @@ void *arch_cache_uncached_ptr_get(void __sparse_cache *ptr);
 void arch_cache_init(void);
 
 #if defined(CONFIG_CACHE_CAN_SAY_MEM_COHERENCE) || defined(__DOXYGEN__)
+/** Implementation of @ref sys_cache_is_mem_coherent. */
+bool arch_mem_coherent(void *ptr);
 #define cache_is_mem_coherent(ptr) arch_mem_coherent(ptr)
 #endif
 

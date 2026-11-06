@@ -65,12 +65,16 @@
 
 #if defined(CONFIG_KERNEL_COHERENCE)
 #define __incoherent __in_section_unique(cached)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#define __kstackmem __in_section_unique(cached_stacks)
+#else
+#define __kstackmem __incoherent
+#endif
 #if defined(CONFIG_USERSPACE)
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)
 #else
-#define __stackmem __incoherent
+#define __stackmem __kstackmem
 #endif /* CONFIG_USERSPACE */
-#define __kstackmem __incoherent
 #else
 #define __incoherent
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)
