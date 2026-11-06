@@ -1,0 +1,27 @@
+tests:
+  bluetooth.classic.l2cap.test_l2cap_psm_reconnect.b2b:
+    platform_allow:
+      - native_sim
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - l2cap
+      - b2b
+    build_only: false
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    timeout: 1800
+  bluetooth.classic.l2cap.test_l2cap_psm_reconnect.b2b.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - l2cap
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 1800
+    build_only: true
