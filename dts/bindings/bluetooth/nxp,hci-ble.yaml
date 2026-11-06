@@ -1,14 +1,23 @@
-# Copyright 2023 NXP
+# Copyright 2023, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP BLE HCI information
 
 compatible: "nxp,hci-ble"
 
-include: bt-hci.yaml
+include: [bt-hci.yaml, nvmem-consumer.yaml]
 
 properties:
   bt-hci-name:
     default: "BT NXP"
   bt-hci-bus:
     default: "ipc"
+
+  nvmem-cells:
+    description: |
+      Optional list of NVMEM cells holding a Bluetooth device address (6 bytes,
+      most significant byte first). Cells are tried in the order listed and the
+      first one that is readable and provisioned (neither all 0x00 nor all
+      0xff) is used as public address. If none is usable, the address is
+      derived from the unique ID of the device. Only used when no public
+      address is set by the application (CONFIG_BT_HCI_SET_PUBLIC_ADDR).

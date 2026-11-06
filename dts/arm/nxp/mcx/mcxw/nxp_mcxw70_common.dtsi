@@ -119,12 +119,39 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/* CFPA CUST_BD_ADDR (6 bytes, MSB first, 0xff when not provisioned) */
+		bd_addr_ifr0: bd-addr@1000150 {
+			reg = <0x1000150 0x6>;
+			#nvmem-cell-cells = <0>;
+			read-only;
+		};
+
 		/* CFPA CUST_802_15_4_MAC_ADDR0/1 (CFPA base 0x1000010 + 0x148) */
 		ieee802154_eui64_ifr0: ieee802154-eui64@1000158 {
 			reg = <0x1000158 0x8>;
 			#nvmem-cell-cells = <0>;
 			read-only;
 			status = "disabled";
+		};
+
+		/* TODO: add XTAL32K trim, XTAL32M trim fields */
+	};
+
+	ifr1: flash@1100000 {
+		compatible = "nxp,mcxw-ifr";
+		reg = <0x1100000 DT_SIZE_K(8)>;
+		write-block-size = <16>;
+		erase-block-size = <DT_SIZE_K(8)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* NMPA fields - to be used if corresponding CFPA not provisioned */
+
+		/* NMPA factory BD_ADDR (6 bytes, MSB first) */
+		bd_addr_ifr1: bd-addr@1100a00 {
+			reg = <0x1100a00 0x6>;
+			#nvmem-cell-cells = <0>;
+			read-only;
 		};
 	};
 };
@@ -395,6 +422,8 @@
 
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
+		/* Tried in order, first provisioned (not blank) cell is used */
+		nvmem-cells = <&bd_addr_ifr0>, <&bd_addr_ifr1>;
 		status = "okay";
 	};
 

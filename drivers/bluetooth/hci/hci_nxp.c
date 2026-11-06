@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <soc.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/nvmem.h>
 
 #include <fwk_platform_ble.h>
 #include <fwk_platform.h>
@@ -311,6 +312,62 @@ static int bt_nxp_set_calibration_data_annex100(void)
 #endif /* CONFIG_HCI_NXP_SET_CAL_DATA */
 
 #if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells)
+#define BD_ADDR_NVMEM_CELL(node_id, prop, idx) NVMEM_CELL_GET_BY_IDX(node_id, idx),
+
+/* Candidate BD address cells (MSB first), in order of precedence */
+static const struct nvmem_cell bd_addr_cells[] = {
+	DT_FOREACH_PROP_ELEM(DT_DRV_INST(0), nvmem_cells, BD_ADDR_NVMEM_CELL)};
+
+/**
+ * @brief Get the BD address provisioned in non-volatile memory
+ *
+ * Cells are tried in the order given by the nvmem-cells property. A cell is skipped
+ * if it cannot be read or if it is blank (all 0x00 or all 0xff).
+ *
+ * @param addr Buffer for the address, least significant byte first
+ * @return 0 if a provisioned address was found, negative errno otherwise
+ */
+static int bt_nxp_get_provisioned_addr(uint8_t addr[BT_ADDR_SIZE])
+{
+	uint8_t raw[BT_ADDR_SIZE];
+
+	for (size_t i = 0; i < ARRAY_SIZE(bd_addr_cells); i++) {
+		const struct nvmem_cell *cell = &bd_addr_cells[i];
+		bool blank_00 = true;
+		bool blank_ff = true;
+		int ret;
+
+		if (cell->size != BT_ADDR_SIZE) {
+			LOG_WRN("BD address cell %zu has unexpected size %zu", i, cell->size);
+			continue;
+		}
+
+		ret = nvmem_cell_read(cell, raw, 0, sizeof(raw));
+		if (ret < 0) {
+			LOG_DBG("BD address cell %zu not readable: %d", i, ret);
+			continue;
+		}
+
+		for (size_t j = 0; j < sizeof(raw); j++) {
+			blank_00 &= (raw[j] == 0x00U);
+			blank_ff &= (raw[j] == 0xFFU);
+		}
+
+		if (blank_00 || blank_ff) {
+			LOG_DBG("BD address cell %zu not provisioned", i);
+			continue;
+		}
+
+		/* Stored MSB first, HCI expects LSB first */
+		sys_memcpy_swap(addr, raw, sizeof(raw));
+		return 0;
+	}
+
+	return -ENOENT;
+}
+#endif /* DT_INST_NODE_HAS_PROP(0, nvmem_cells) */
+
 static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 {
 	uint8_t bleDeviceAddress[BT_ADDR_SIZE] = {0};
@@ -327,6 +384,12 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	 * from the device's UID (unique ID)
 	 */
 	if (bt_addr_eq(public_addr, BT_ADDR_ANY) || bt_addr_eq(public_addr, BT_ADDR_NONE)) {
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells)
+		if (bt_nxp_get_provisioned_addr(bleDeviceAddress) == 0) {
+			LOG_INF("Using BD address provisioned in NVM");
+			goto send;
+		}
+#endif
 		PLATFORM_GetMCUUid(uid, &uuidLen);
 
 		if (uuidLen > 0) {
@@ -349,6 +412,9 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 		bt_addr_copy((bt_addr_t *)bleDeviceAddress, public_addr);
 	}
 
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells)
+send:
+#endif
 	memcpy(&params[2], (const void *)bleDeviceAddress,
 	       BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
 
