@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+config BIOMETRICS_AI10
+	bool "AI-10 biometrics driver"
+	default y
+	depends on DT_HAS_HILINK_AI10_ENABLED
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable the Hi-Link AI-10 face and palm recognition module.
+	  Supports device-managed enrollment and continuous identification.
+
+if BIOMETRICS_AI10
+
+config BIOMETRICS_AI10_STACK_SIZE
+	int "Worker thread stack size"
+	default 2048
+	range 1024 65536
+	help
+	  Stack size for protocol processing and application event callbacks.
+
+config BIOMETRICS_AI10_THREAD_PRIORITY
+	int "Worker thread priority"
+	default 5
+	range 0 15
+	help
+	  Preemptible priority of the protocol and event callback thread.
+
+endif # BIOMETRICS_AI10
