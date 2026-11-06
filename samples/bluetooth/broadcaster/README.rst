@@ -13,6 +13,15 @@ a manufacturer data element. The content of the data is a single byte
 indicating how many advertising packets the device has sent
 (the number will roll back to 0 after 255).
 
+Optionally, the sample can periodically disable Bluetooth. When
+:kconfig:option:`CONFIG_SAMPLE_BT_USE_DISABLE` is enabled, the sample enables
+Bluetooth and broadcasts for
+:kconfig:option:`CONFIG_SAMPLE_BT_BROADCAST_DURATION_MS` milliseconds, then
+disables Bluetooth for
+:kconfig:option:`CONFIG_SAMPLE_BT_DISABLE_DURATION_MS` milliseconds, and
+repeats the cycle. When this option is not enabled (the default), Bluetooth
+stays enabled and the sample broadcasts continuously.
+
 Requirements
 ************
 
