@@ -13,6 +13,17 @@ tests:
       pytest_dut_scope: session
       fixture: usb_hci
     timeout: 180
+  bluetooth.classic.a2dp_source.flush_timeout:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - a2dp
+    extra_configs:
+      - CONFIG_BT_A2DP_SOURCE_FLUSH_TIMEOUT=20
+    build_only: true
   bluetooth.classic.a2dp_source.no_blobs:
     platform_allow:
       - mimxrt1170_evk@B/mimxrt1176/cm7

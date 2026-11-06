@@ -402,6 +402,31 @@ int bt_conn_br_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT, buf, NULL);
 }
 
+int bt_conn_br_set_auto_flush_timeout(struct bt_conn *conn, uint16_t timeout)
+{
+	struct bt_hci_cp_write_auto_flush_timeout *cp;
+	struct net_buf *buf;
+
+	if (conn == NULL || !bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		return -EINVAL;
+	}
+
+	if (timeout > BT_HCI_AUTO_FLUSH_TIMEOUT_MAX) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->timeout = sys_cpu_to_le16(timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_AUTO_FLUSH_TIMEOUT, buf, NULL);
+}
+
 int bt_conn_br_change_packet_type(const struct bt_conn *conn, uint16_t packet_type)
 {
 	struct bt_hci_cp_change_conn_packet_type *cp;

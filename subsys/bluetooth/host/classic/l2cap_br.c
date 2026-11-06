@@ -1918,6 +1918,11 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 
 	br_chan = CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
 
+	/* Fragments of different PDUs are not interleaved, so this holds until
+	 * the PDU returned here has been sent.
+	 */
+	conn->br.tx_flushable = br_chan->_flushable;
+
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
 		struct net_buf *buf;
@@ -5479,6 +5484,27 @@ int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt
 int bt_l2cap_br_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	return bt_l2cap_br_chan_send_cb(chan, buf, NULL, NULL);
+}
+
+int bt_l2cap_br_chan_set_flushable(struct bt_l2cap_chan *chan, bool flushable)
+{
+	if (chan == NULL) {
+		return -EINVAL;
+	}
+
+	/* Without the Non-flushable Packet Boundary Flag the Controller cannot
+	 * tell flushable PDUs from the others.
+	 */
+	if (flushable && !BT_FEAT_NON_FLUSH_PB(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
+	/* Serialize with l2cap_br_data_pull() */
+	bt_dev_lock();
+	BR_CHAN(chan)->_flushable = flushable;
+	bt_dev_unlock();
+
+	return 0;
 }
 
 static struct bt_l2cap_br_chan *bt_l2cap_br_lookup_ident(struct bt_conn *conn, uint8_t ident)

@@ -533,6 +533,20 @@ config BT_A2DP_SOURCE
 	help
 	  This option enables the A2DP profile source function
 
+config BT_A2DP_SOURCE_FLUSH_TIMEOUT
+	int "A2DP source media flush timeout in milliseconds"
+	depends on BT_A2DP_SOURCE
+	default 0
+	range 0 1279
+	help
+	  Send the media of A2DP source streams automatically flushable and set
+	  the Automatic Flush Timeout of the ACL link to this value, so that the
+	  Controller discards media it could not deliver in time instead of
+	  retransmitting it. Keep it below the jitter buffer of the sink. 0
+	  disables flushing. The timeout applies to the whole ACL link, but
+	  only the media channels are sent flushable. Requires a Controller
+	  that supports the Non-flushable Packet Boundary Flag.
+
 config BT_A2DP_SINK
 	bool "Bluetooth A2DP Profile Sink Function"
 	help

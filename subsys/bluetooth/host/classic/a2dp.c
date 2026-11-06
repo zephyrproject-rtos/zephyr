@@ -45,6 +45,7 @@
 #include <host/conn_internal.h>
 #include <host/l2cap_internal.h>
 #include "avdtp_internal.h"
+#include "conn_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_A2DP_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -1477,8 +1478,31 @@ static void stream_disconnected(struct bt_avdtp_sep *sep)
 	}
 }
 
+static void source_stream_connected(struct bt_avdtp_sep *sep)
+{
+#if defined(CONFIG_BT_A2DP_SOURCE_FLUSH_TIMEOUT) && (CONFIG_BT_A2DP_SOURCE_FLUSH_TIMEOUT > 0)
+	/* In 0.625 ms units */
+	const uint16_t timeout = CONFIG_BT_A2DP_SOURCE_FLUSH_TIMEOUT * 8 / 5;
+	struct bt_l2cap_chan *chan = &sep->chan.chan;
+	int err;
+
+	if (sep->sep_info.tsep == BT_AVDTP_SOURCE) {
+		err = bt_l2cap_br_chan_set_flushable(chan, true);
+		if (err == 0) {
+			err = bt_conn_br_set_auto_flush_timeout(chan->conn, timeout);
+		}
+
+		if (err != 0) {
+			LOG_WRN("Media of sep %p is not flushed (err %d)", sep, err);
+		}
+	}
+#endif /* CONFIG_BT_A2DP_SOURCE_FLUSH_TIMEOUT */
+
+	stream_connected(sep);
+}
+
 static const struct bt_avdtp_sep_ops source_sep_ops = {
-	.connected = stream_connected,
+	.connected = source_stream_connected,
 	.disconnected = stream_disconnected,
 };
 
