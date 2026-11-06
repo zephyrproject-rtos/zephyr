@@ -664,15 +664,13 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 			type = opts->type;
 		}
 
-		if (eth_api != NULL) {
-			/* Use get_stats_type if available for type filtering */
-			if (eth_api->get_stats_type != NULL) {
-				eth_data = eth_api->get_stats_type(
-					dev, iface, type);
-			} else if (eth_api->get_stats != NULL) {
-				eth_data = eth_api->get_stats(
-					dev, iface);
-			}
+		/* Use get_stats_type if available for type filtering */
+		if (eth_api->get_stats_type != NULL) {
+			eth_data = eth_api->get_stats_type(dev, iface, type);
+		} else if (eth_api->get_stats != NULL) {
+			eth_data = eth_api->get_stats(dev, iface);
+		} else {
+			/* No statistics support */
 		}
 
 		if (eth_data != NULL) {

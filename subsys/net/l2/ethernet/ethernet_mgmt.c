@@ -41,10 +41,6 @@ static int ethernet_set_config(uint64_t mgmt_request,
 
 	api = dev->api;
 
-	if (!api) {
-		return -ENOENT;
-	}
-
 	if (!api->set_config) {
 		return -ENOTSUP;
 	}
@@ -240,10 +236,6 @@ static int ethernet_get_config(uint64_t mgmt_request,
 	NET_ASSERT(dev != NULL);
 
 	api = dev->api;
-
-	if (!api) {
-		return -ENOENT;
-	}
 
 	if (!api->get_config) {
 		return -ENOTSUP;

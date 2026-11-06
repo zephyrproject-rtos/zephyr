@@ -38,10 +38,6 @@ static inline int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 
 	api = dev->api;
 
-	if (!api) {
-		return -ENOENT;
-	}
-
 	ret = net_l2_send(api->send, dev, iface, pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);

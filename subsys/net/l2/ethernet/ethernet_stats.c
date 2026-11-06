@@ -32,8 +32,7 @@ static int eth_stats_get(uint64_t mgmt_request, struct net_if *iface,
 		}
 
 		eth = dev->api;
-		if (eth == NULL ||
-		    (eth->get_stats == NULL && eth->get_stats_type == NULL)) {
+		if (eth->get_stats == NULL && eth->get_stats_type == NULL) {
 			return -ENOENT;
 		}
 

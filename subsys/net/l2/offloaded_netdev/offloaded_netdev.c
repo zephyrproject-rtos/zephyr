@@ -17,7 +17,7 @@ static inline int offloaded_netdev_if_enable(struct net_if *iface, bool state)
 
 	off_if = dev->api;
 
-	if (!off_if || !(off_if->enable)) {
+	if (off_if->enable == NULL) {
 		return 0;
 	}
 
