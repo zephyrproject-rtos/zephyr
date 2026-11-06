@@ -91,7 +91,3 @@
 	dma-names = "tx";
 	status = "okay";
 };
-
-&dma1 {
-	status = "okay";
-};
