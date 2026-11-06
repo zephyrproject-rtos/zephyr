@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &veml7700_rak12010;
+	};
+};
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	veml7700_rak12010: veml7700@10 {
+		compatible = "vishay,veml7700";
+		reg = <0x10>;
+		power-domains = <&wisblock_3v3_s>;
+	};
+};
