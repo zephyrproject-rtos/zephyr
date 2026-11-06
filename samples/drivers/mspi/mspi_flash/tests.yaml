@@ -24,6 +24,7 @@ tests:
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
     platform_allow:
+      - adi_eval_adin1110ebz
       - apollo3p_evb
       - apollo510_evb
       - fk7b0m1_vbt6
