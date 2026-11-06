@@ -268,6 +268,11 @@ struct bt_conn {
 	 */
 	struct k_work_delayable	deferred_work;
 
+#if defined(CONFIG_BT_ISO_PERIPHERAL)
+	/* Uptime at which a disconnected ACL stops waiting for a pending CIS, 0 if not waiting */
+	int64_t			pending_cis_deadline;
+#endif /* CONFIG_BT_ISO_PERIPHERAL */
+
 	union {
 		struct bt_conn_le	le;
 #if defined(CONFIG_BT_CLASSIC)

@@ -302,6 +302,19 @@ config BT_ISO_PERIPHERAL
 	  This option enables support for Bluetooth Unicast
 	  Isochronous channels for the peripheral role.
 
+config BT_ISO_PERIPHERAL_PENDING_CIS_TIMEOUT_MS
+	int "Time to wait for a pending peripheral CIS to end after its ACL is lost (ms)"
+	depends on BT_ISO_PERIPHERAL
+	default 1000
+	range 0 60000
+	help
+	  When an ACL disconnects while a CIS accepted on it has not yet been
+	  established, the ACL's disconnected callback waits for the controller
+	  to report the end of that CIS. If the controller has reported neither
+	  LE CIS Established nor Disconnection Complete for it after this time,
+	  the host ends the CIS locally as failed to establish, which releases
+	  the ACL. 0 waits for the controller indefinitely.
+
 config BT_ISO_CENTRAL
 	bool "Bluetooth Isochronous Channel Unicast Central Support"
 	depends on !HAS_BT_CTLR || BT_CTLR_CENTRAL_ISO_SUPPORT
