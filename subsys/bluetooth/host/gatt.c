@@ -5632,6 +5632,8 @@ static int gatt_ccc_discover(struct bt_conn *conn,
 	err = bt_gatt_discover(conn, params->disc_params);
 	if (err) {
 		LOG_DBG("CCC Discovery failed (err %d)", err);
+		/* The next bt_gatt_subscribe() would take this as still in progress */
+		(void)memset(params->disc_params, 0, sizeof(*params->disc_params));
 		return err;
 	}
 	return 0;

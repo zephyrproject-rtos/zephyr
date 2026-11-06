@@ -989,6 +989,81 @@ static void test_main_server_sync_server_rem(void)
 	PASS("BAP Broadcast Assistant Server Sync Passed\n");
 }
 
+static void discover_retry_discover_cb(struct bt_conn *conn, int err, uint8_t recv_state_count)
+{
+	static bool retried;
+	int retry_err;
+
+	ARG_UNUSED(recv_state_count);
+
+	if (err != -EBADMSG) {
+		FAIL("Unexpected discovery result (err %d)\n", err);
+		return;
+	}
+
+	if (retried) {
+		SET_FLAG(flag_discovery_complete);
+		return;
+	}
+
+	retried = true;
+
+	retry_err = bt_bap_broadcast_assistant_discover(conn);
+	if (retry_err != 0) {
+		FAIL("Could not retry discovery (err %d)\n", retry_err);
+	}
+}
+
+static void test_main_discover_retry(void)
+{
+	static struct bt_bap_broadcast_assistant_cb cb = {
+		.discover = discover_retry_discover_cb,
+		.recv_state_removed = bap_broadcast_assistant_recv_state_removed_cb,
+	};
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+		return;
+	}
+
+	err = bt_bap_broadcast_assistant_register_cb(&cb);
+	if (err != 0) {
+		FAIL("Could not register callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_scan_cb_register(&common_scan_cb);
+	if (err != 0) {
+		FAIL("Could not register scan callbacks (err %d)\n", err);
+		return;
+	}
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+	if (err != 0) {
+		FAIL("Scanning failed to start (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_connected);
+
+	update_security(default_conn);
+
+	err = bt_bap_broadcast_assistant_discover(default_conn);
+	if (err != 0) {
+		FAIL("Discovery failed to start (err %d)\n", err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_discovery_complete);
+
+	/* Only arrives through the subscription made by the retried discovery */
+	WAIT_FOR_FLAG(flag_recv_state_removed);
+
+	PASS("Discovery retry passed\n");
+}
+
 static const struct bst_test_instance test_bass[] = {
 	{
 		.test_id = "bap_broadcast_assistant_client_sync",
@@ -1013,6 +1088,12 @@ static const struct bst_test_instance test_bass[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_server_sync_server_rem,
+	},
+	{
+		.test_id = "bap_broadcast_assistant_discover_retry",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_discover_retry,
 	},
 	BSTEST_END_MARKER,
 };
