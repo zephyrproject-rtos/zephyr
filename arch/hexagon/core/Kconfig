@@ -14,6 +14,28 @@ config PRIVILEGED_STACK_SIZE
 	# everything hit so far but is an empirical, not proven, bound.
 	default 2048
 
+config HEXAGON_USER_STACK_ENTRIES
+	int "Linear-map entries per user thread for its own stack"
+	depends on USERSPACE
+	default 8
+	help
+	  Each user thread's linear list maps its own stack ahead of its
+	  memory domain's partitions. A stack takes one entry for each aligned
+	  4KB, 16KB, 64KB, ... chunk in its decomposition. Eight entries cover
+	  any stack below 64KB. Part of a stack that does not fit faults on access.
+	  Each entry adds 8 bytes to struct k_thread.
+
+config HEXAGON_MEM_DOMAIN_PARTITION_ENTRIES
+	int "Linear-map entries per memory domain partition"
+	depends on USERSPACE
+	default 4
+	help
+	  Each memory domain partition takes one entry for each aligned 4KB,
+	  16KB, 64KB, ... chunk in its decomposition. Increase this for partitions
+	  that need more entries; adding a partition that exceeds the budget fails.
+	  Each additional entry per partition adds 8 bytes per possible partition
+	  in every memory domain.
+
 if CPU_HAS_MMU
 
 config HEXAGON_MMU
@@ -26,5 +48,21 @@ config HEXAGON_MMU
 	  The HVM/H2 hypervisor maintains a single flat identity-mapped page
 	  table, so mappings require virt == phys and KERNEL_DIRECT_MAP is
 	  mandatory here.
+
+config HEXAGON_HOST_KERNEL_BASE
+	hex "Hypervisor host kernel image base address"
+	depends on HEXAGON_MMU
+	default 0x9b800000
+	help
+	  Guest-visible address of the host kernel image. The kernel's linear
+	  map keeps it mapped RWX for guest mode only. Must be 4MB-aligned.
+
+config HEXAGON_HOST_KERNEL_SIZE
+	hex "Hypervisor host kernel image size"
+	depends on HEXAGON_MMU
+	default 0x800000
+	help
+	  Size of the host kernel image window at HEXAGON_HOST_KERNEL_BASE. Must
+	  be a non-zero multiple of 4MB, at most 16MB.
 
 endif # CPU_HAS_MMU

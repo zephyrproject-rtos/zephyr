@@ -9,13 +9,14 @@
  * @brief Hexagon MMU management via the H2 hypervisor page table interface.
  *
  * The boot-time reset handler already identity-maps all of SRAM, RAM and
- * the MMIO window into the one page table H2 ever installs
- * (hvm_event_vectors.S:_setup_page_table). With CONFIG_KERNEL_DIRECT_MAP
- * every arch_mem_map() request resolves virt == phys and is already
- * covered, so arch_mem_map()/arch_mem_unmap() have nothing left to do;
- * building a second table here previously left vmclrmap() invalidating
- * TLB state for a range whose only mapping lived in that unused table,
- * corrupting unrelated translations.
+ * the MMIO window (hvm_event_vectors.S:_setup_page_table), and mmu.c's
+ * kernel linear map replaces that table early in boot with one covering
+ * the same ranges. With CONFIG_KERNEL_DIRECT_MAP every arch_mem_map()
+ * request resolves virt == phys and is already covered, so
+ * arch_mem_map()/arch_mem_unmap() have nothing left to do. Building a
+ * second table here previously left vmclrmap() invalidating TLB state
+ * for a range whose only mapping lived in that unused table, corrupting
+ * unrelated translations.
  */
 
 #include <zephyr/kernel.h>
