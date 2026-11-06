@@ -5,7 +5,6 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper.h)
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper_ctrl.h)
 
 zephyr_library()
-zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
 add_subdirectory(adi_tmc)
