@@ -38,11 +38,13 @@ LOG_MODULE_REGISTER(acp_intc, CONFIG_INTC_AMD_ACP_LOG_LEVEL);
 #ifdef CONFIG_SOC_ACP_7_X
 /* dsp_interrupt_routing_ctrl *_intr_level field values. */
 #define ACP_INTR_ROUTE_LEVEL_3 0
+#define ACP_INTR_ROUTE_LEVEL_4 1
 #define ACP_INTR_ROUTE_LEVEL_5 2
+
 /*
- * Route the generic DMA interrupt to EXT_LEVEL3 and the host->DSP
- * software (IPC) interrupt to EXT_LEVEL5, so the log DMA completion
- * (EXT_LEVEL3) and IPC (EXT_LEVEL5) use independent Xtensa lines.
+ * Route the generic DMA interrupt to EXT_LEVEL3, External Timer1 to
+ * EXT_LEVEL4 and the host->DSP software (IPC) interrupt to EXT_LEVEL5,
+ * so log DMA completion, the system tick and IPC use independent lines.
  */
 static void acp_intr_route(void)
 {
@@ -52,6 +54,7 @@ static void acp_intr_route(void)
 	rout0 = (dsp_interrupt_routing_ctrl_0_t)io_reg_read(PU_REGISTER_BASE +
 							    ACP_DSP_INTERRUPT_ROUTING_CTRL_0);
 	rout0.bits.dma_intr_level = ACP_INTR_ROUTE_LEVEL_3;
+	rout0.bits.ext_timer1_intr_level = ACP_INTR_ROUTE_LEVEL_4;
 	io_reg_write(PU_REGISTER_BASE + ACP_DSP_INTERRUPT_ROUTING_CTRL_0, rout0.u32all);
 
 	rout1 = (dsp_interrupt_routing_ctrl_1_t)io_reg_read(PU_REGISTER_BASE +
@@ -59,14 +62,19 @@ static void acp_intr_route(void)
 	rout1.bits.host_to_dsp_intr1_level = ACP_INTR_ROUTE_LEVEL_5;
 	io_reg_write(PU_REGISTER_BASE + ACP_DSP_INTERRUPT_ROUTING_CTRL_1, rout1.u32all);
 }
+
+/* Unmask the External Timer1 timeout interrupt */
+static void acp_ext_timer1_intr_enable(void)
+{
+	uint32_t intr_cntl;
+
+	intr_cntl = io_reg_read(PU_REGISTER_BASE + ACP_DSP0_INTR_CNTL);
+	intr_cntl |= ACP_EXT_TIMER1_INTR_BIT;
+	io_reg_write(PU_REGISTER_BASE + ACP_DSP0_INTR_CNTL, intr_cntl);
+}
 #else
 /* Other ACP SoCs keep IPC on EXT_LEVEL3 and program no routing. */
 #define IRQ_NUM_EXT_LEVEL5 IRQ_NUM_EXT_LEVEL3
-
-static inline void acp_intr_route(void)
-{
-	/* No interrupt routing required on non-ACP-7.X SoCs. */
-}
 #endif /* CONFIG_SOC_ACP_7_X */
 
 /* Enable ACP DSP software interrupt */
@@ -100,13 +108,19 @@ void acp_dsp_sw_intr_disable(void)
 int acp_intc_init(void)
 {
 	acp_external_intr_enb_t ext_interrupt_enb;
-	/* Route DMA -> EXT_LEVEL3, IPC (host->DSP sw intr) -> EXT_LEVEL5. */
+
+#ifdef CONFIG_SOC_ACP_7_X
 	acp_intr_route();
+#endif
 
 	/* Enable the ACP to Host interrupts */
 	ext_interrupt_enb.bits.acpextintrenb = 1;
 	io_reg_write((PU_REGISTER_BASE + ACP_EXTERNAL_INTR_ENB), ext_interrupt_enb.u32all);
 	acp_dsp_sw_intr_enable();
+
+#if defined(CONFIG_SOC_ACP_7_X) && defined(CONFIG_AMD_ACP_TIMER)
+	acp_ext_timer1_intr_enable();
+#endif
 
 	return 0;
 }
