@@ -6,3 +6,4 @@ board:
   - name: ae350
     variants:
     - name: clic
+    - name: smp
