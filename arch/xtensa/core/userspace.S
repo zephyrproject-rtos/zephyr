@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Intel Corporation
+ * Copyright (c) 2022, 2026 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +12,45 @@
 
 #include <xtensa/config/core-isa.h>
 
+/* Macros to abstract away ABI differences */
+#if __XTENSA_CALL0_ABI__
+#define CALL			call0
+#define CALLX			callx0
+#define ARG1			a2
+#define ARG2			a3
+#define ARG3			a4
+#define ARG4			a5
+#define SYSCALL_DEST		a0
+#define SYSCALL_OUTARG2		a3
+#define SYSCALL_RETURN		a2
+#define THREADPTR_SCRATCH	a2
+#else
+#define CALL			call4
+#define CALLX			callx4
+#define ARG1			a6
+#define ARG2			a7
+#define ARG3			a8
+#define ARG4			a9
+#define SYSCALL_DEST		a2
+#define SYSCALL_OUTARG2		a7
+#define SYSCALL_RETURN		a6
+#define THREADPTR_SCRATCH	a0
+#endif /* __XTENSA_CALL0_ABI__ */
+
+#ifdef CONFIG_XTENSA_MMU
+#define THREAD_ENTER_RING	2
+#endif
+#ifdef CONFIG_XTENSA_MPU
+/* MPU only has RING 0 and 1. */
+#define THREAD_ENTER_RING	1
+#endif
+
+
 /**
  *  syscall number     arg1, arg2, arg3, arg4, arg5, arg6
  *  --------------     ----------------------------------
- *  a2                 a6,   a3,   a4,   a5,   a8,   a9
+ *  a2                 a6,   a3,   a4,   a5,   a8,   a9  (WINDOWED ABI)
+ *  a2                 a8,   a3,   a4,   a5,   a6,   a7  (CALL0 ABI)
  *
  **/
 .pushsection .text.xtensa_do_syscall, "ax"
@@ -86,19 +121,23 @@ _not_checking_user_context:
 	addi a3, a3, 3
 	s32i a3, a0, ___xtensa_irq_bsa_t_pc_OFFSET
 
-	/* Need to setup PS so we can spill all registers.
-	 * EXCM and RING bits need to be cleared as CPU
-	 * needs to run in kernel and non-exception modes
-	 * for window rotation to work.
+	/* Change to kernel mode and move to use privileged stack.
+	 * Removing EXCM to enable nested interrupt.
 	 */
 	rsr.ps a3
 	movi a2, ~(PS_EXCM | PS_RING_MASK)
 	and a3, a3, a2
 	wsr.ps a3
 	rsync
+#if !__XTENSA_CALL0_ABI__
+	/* For windowed ABI, EXCM and RING bits need to be
+	 * cleared as CPU needs to run in kernel and non-exception
+	 * mode for window rotation to work.
+	 */
 	l32i a2, a0, ___xtensa_irq_bsa_t_a2_OFFSET
 	l32i a3, a0, ___xtensa_irq_bsa_t_a3_OFFSET
 	SPILL_ALL_WINDOWS
+#endif /* !__XTENSA_CALL0_ABI__ */
 
 	rsr a0, ZSR_CPU
 	l32i a0, a0, ___cpu_t_current_OFFSET
@@ -120,7 +159,8 @@ _id_ok:
 	/* Find the function handler for the given syscall id. */
 	movi a3, _k_syscall_table
 	addx4 a2, a2, a3
-	l32i a2, a2, 0
+
+	l32i SYSCALL_DEST, a2, 0
 
 #if XCHAL_HAVE_THREADPTR
 	/* Clear up the threadptr because it is used
@@ -129,18 +169,30 @@ _id_ok:
 	 * thinking it is possibly running in user mode.
 	 */
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
-	movi a0, is_user_mode@tpoff
+	movi THREADPTR_SCRATCH, is_user_mode@tpoff
 	rur.THREADPTR a3
-	add a0, a3, a0
+	add THREADPTR_SCRATCH, a3, THREADPTR_SCRATCH
 
 	movi a3, 0
-	s32i a3, a0, 0
+	s32i a3, THREADPTR_SCRATCH, 0
 #else
-	movi a0, 0
-	wur.THREADPTR a0
+	movi THREADPTR_SCRATCH, 0
+	wur.THREADPTR THREADPTR_SCRATCH
 #endif
 #endif /* XCHAL_HAVE_THREADPTR */
 
+#if __XTENSA_CALL0_ABI__
+	/* Set syscall parameters by moving them into place before we do
+	 * a call0 for the syscall function itself.
+	 * arg1 = a8
+	 * arg2 = a3 (clobbered above, so we need to reload it)
+	 * arg3 = a4
+	 * arg4 = a5
+	 * arg5 = a6
+	 * arg6 = a7
+	 */
+	mov a2, a8
+#else
 	/* Set syscall parameters by moving them into place before we do
 	 * a call4 for the syscall function itself.
 	 * arg1 = a6
@@ -154,6 +206,7 @@ _id_ok:
 	mov a11, a9
 	mov a8, a4
 	mov a9, a5
+#endif /* __XTENSA_CALL0_ABI__ */
 
 	/* Stack frame pointer is the 7th argument to z_mrsh_*()
 	 * as ssf, and must be put on stack to be consumed.
@@ -165,17 +218,21 @@ _id_ok:
 	s32i a3, a1, 0
 
 	l32i a3, a1, 16
-	l32i a7, a3, ___xtensa_irq_bsa_t_a3_OFFSET
-
+	l32i SYSCALL_OUTARG2, a3, ___xtensa_irq_bsa_t_a3_OFFSET
 
 	/* Since we are unmasking EXCM, we need to set RING bits to kernel
 	 * mode, otherwise we won't be able to run the exception handler in C.
 	 */
+#if __XTENSA_CALL0_ABI__
+	movi a8, PS_UM|PS_INTLEVEL(0)
+	wsr.ps a8
+#else
 	movi a0, PS_WOE|PS_CALLINC(0)|PS_UM|PS_INTLEVEL(0)
 	wsr.ps a0
+#endif /* __XTENSA_CALL0_ABI__ */
 	rsync
 
-	callx4 a2
+	CALLX SYSCALL_DEST
 
 	/* Going back before stack frame pointer on stack to
 	 * actual the stack frame. So restoration of registers
@@ -188,7 +245,7 @@ _id_ok:
          * xtensa_restore_high_regs
 	 */
 	l32i a3, a1, 0
-	s32i a6, a3, ___xtensa_irq_bsa_t_a2_OFFSET
+	s32i SYSCALL_RETURN, a3, ___xtensa_irq_bsa_t_a2_OFFSET
 
 _syscall_returned:
 	/* Disable interrupts as we are restoring context. */
@@ -240,6 +297,7 @@ _bad_syscall:
 .type xtensa_userspace_enter, @function
 .align 4
 xtensa_userspace_enter:
+#if !__XTENSA_CALL0_ABI__
 	/* Call entry to set a bit in the windowstart and
 	 * do the rotation, but we are going to set our own
 	 * stack.
@@ -247,6 +305,7 @@ xtensa_userspace_enter:
 	entry a1, 16
 
 	SPILL_ALL_WINDOWS
+#endif /* !__XTENSA_CALL0_ABI__ */
 
 	/* We have to switch to kernel stack before spill kernel data and
 	 * erase user stack to avoid leak from previous context.
@@ -265,19 +324,19 @@ xtensa_userspace_enter:
 	s32i a6, a1, 4
 	s32i a7, a1, 0
 
-	l32i a6, a1, 24
-	call4 xtensa_user_stack_perms
+	l32i ARG1, a1, 24
+	CALL xtensa_user_stack_perms
 
-	l32i a6, a1, 24
+	l32i ARG1, a1, 24
 #ifdef CONFIG_XTENSA_MMU
 #ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
-	call4 xtensa_swap_update_page_tables
+	call0 xtensa_swap_update_page_tables
 #else
-	SWAP_PAGE_TABLE a6, a3, a7
+	SWAP_PAGE_TABLE ARG1, a3, a7
 #endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_thread_map_write
+	CALL xtensa_mpu_thread_map_write
 #endif
 
 #if XCHAL_HAVE_THREADPTR
@@ -297,10 +356,10 @@ xtensa_userspace_enter:
 	/* Set now z_thread_entry parameters, we are simulating a call4
 	 * call, so parameters start at a6, a7, ...
 	 */
-	l32i a6, a1, 20
-	l32i a7, a1, 16
-	l32i a8, a1, 12
-	l32i a9, a1, 8
+	l32i ARG1, a1, 20
+	l32i ARG2, a1, 16
+	l32i ARG3, a1, 12
+	l32i ARG4, a1, 8
 
 	/* Go back to user stack */
 	l32i a1, a1, 4
@@ -315,13 +374,11 @@ xtensa_userspace_enter:
 	 * We have to set callinc as well, since the called
 	 * function will do "entry"
 	 */
-#ifdef CONFIG_XTENSA_MMU
-	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(2)
-#endif
-#ifdef CONFIG_XTENSA_MPU
-	/* MPU only has RING 0 and 1. */
-	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(1)
-#endif
+#if __XTENSA_CALL0_ABI__
+	movi a0, PS_UM|PS_RING(THREAD_ENTER_RING)
+#else
+	movi a0, PS_WOE|PS_CALLINC(1)|PS_UM|PS_RING(THREAD_ENTER_RING)
+#endif /* __XTENSA_CALL0_ABI__ */
 
 	wsr.ZSR_EPS a0
 
