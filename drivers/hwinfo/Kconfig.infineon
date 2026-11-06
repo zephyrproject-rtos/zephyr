@@ -3,11 +3,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Verified on Edge and CAT1B (PSC3).
+# Verified on Edge, CAT1B (PSC3), and Traveo cyt4dn.
 config HWINFO_INFINEON
 	bool "Infineon unique device ID"
 	default y
 	depends on SOC_FAMILY_INFINEON_EDGE || \
+		(SOC_FAMILY_INFINEON_CAT1C && SOC_SERIES_CYT4DN) || \
 		(SOC_FAMILY_INFINEON_CAT1B && !SOC_SERIES_CYW20829)
 	select HWINFO_HAS_DRIVER
 	help
