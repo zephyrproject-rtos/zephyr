@@ -7,6 +7,7 @@ project(lorawan_native_region)
 
 target_sources_ifdef(CONFIG_LORAWAN_REGION_AS923 app PRIVATE src/as923.c)
 target_sources_ifdef(CONFIG_LORAWAN_REGION_KR920 app PRIVATE src/kr920.c)
+target_sources_ifdef(CONFIG_LORAWAN_REGION_US915 app PRIVATE src/us915.c)
 
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/subsys/lorawan/native
