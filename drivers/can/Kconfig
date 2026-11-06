@@ -69,6 +69,12 @@ config CAN_SHELL_RX_QUEUE_SIZE
 	help
 	  Maximum number of CAN frames in the CAN shell receive queue.
 
+config CAN_SHELL_WORKQUEUE_STACK_SIZE
+	int "CAN shell work queue stack size"
+	default 1024
+	help
+	  Stack size of the work queue printing the CAN shell transmit and receive events.
+
 config CAN_SHELL_SCRIPTING_FRIENDLY
 	bool "Produce scripting-friendly output"
 	help
