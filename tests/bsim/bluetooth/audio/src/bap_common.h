@@ -56,7 +56,7 @@
 #define BAP_RETRY_WAIT K_MSEC(100U)
 
 struct unicast_stream {
-	struct audio_test_stream stream;
+	struct audio_test_stream *stream;
 	struct bt_audio_codec_cfg codec_cfg;
 	struct bt_bap_qos_cfg qos;
 };
