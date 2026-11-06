@@ -37,6 +37,14 @@ config IPC_SERVICE_BACKEND_ICBMSG_DEINIT
 	  Enable support for closing and deregistering endpoints. Disabled by
 	  by default to reduce the code size.
 
+config IPC_SERVICE_BACKEND_ICBMSG_HANDLE_PENDING_MESSAGES
+	bool "Handle pending messages on open"
+	default y if BOARD_NRF5340BSIM_NRF5340_CPUNET
+	help
+	  Enable handling of pending messages on open. It should be enabled with care
+	  as it may lead to unexpected behavior if shared memory content is not properly
+	  initialized.
+
 config IPC_SERVICE_BACKEND_ICBMSG_SHELL
 	bool "ICBMsg shell commands"
 	depends on SHELL
