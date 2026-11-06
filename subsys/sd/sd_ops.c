@@ -539,6 +539,17 @@ static int card_read(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 	return 0;
 }
 
+/*
+ * Overflow aware check to ensure that the range starting at block start_block and
+ * finishing immediately before (start_block + num_blocks) fits on the card
+ */
+static inline bool card_block_range_valid(const struct sd_card *card, uint32_t start_block,
+					  uint32_t num_blocks)
+{
+	return (num_blocks <= card->block_count) &&
+	       (start_block <= (card->block_count - num_blocks));
+}
+
 /* Reads data from SD card memory card */
 int card_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, uint32_t num_blocks)
 {
@@ -547,7 +558,7 @@ int card_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 	uint32_t sector;
 	uint8_t *buf_offset;
 
-	if ((start_block + num_blocks) > card->block_count) {
+	if (!card_block_range_valid(card, start_block, num_blocks)) {
 		return -EINVAL;
 	}
 	if (card->type == CARD_SDIO) {
@@ -714,7 +725,7 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 	uint32_t sector;
 	const uint8_t *buf_offset;
 
-	if ((start_block + num_blocks) > card->block_count) {
+	if (!card_block_range_valid(card, start_block, num_blocks)) {
 		return -EINVAL;
 	}
 	if (card->type == CARD_SDIO) {
@@ -829,8 +840,7 @@ int card_erase_blocks(struct sd_card *card, uint32_t start_block, uint32_t num_b
 {
 	int ret;
 
-	/* Overflow aware ((start_block + num_blocks) > card->block_count) */
-	if (num_blocks > card->block_count || (card->block_count - num_blocks) < start_block) {
+	if (!card_block_range_valid(card, start_block, num_blocks)) {
 		return -EINVAL;
 	}
 	if (card->type == CARD_SDIO) {
