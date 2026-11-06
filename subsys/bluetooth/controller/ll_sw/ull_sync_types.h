@@ -82,7 +82,7 @@ struct ll_sync_set {
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 	struct {
-		struct node_rx_pdu *node_rx_estab;
+		struct node_rx_pdu *node_rx_terminate;
 
 		/* Non-Null when creating sync, reset in ISR context on
 		 * synchronisation state and checked in Thread context when
