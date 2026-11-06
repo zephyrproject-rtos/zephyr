@@ -87,34 +87,40 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 
 static void wwdg_stm32_irq_config(const struct device *dev);
 
-static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
+/**
+ * @brief Get the WWDG bus clock rate.
+ *
+ * @param dev Pointer to device structure.
+ * @param pclk Pointer to the clock rate in Hz.
+ * @retval 0 On success.
+ * @retval -EIO The clock rate could not be read.
+ */
+static int wwdg_stm32_get_pclk(const struct device *dev, uint32_t *pclk)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
-	uint32_t pclk_rate;
 
-	if (clock_control_get_rate(clk, (clock_control_subsys_t) &cfg->pclken,
-			       &pclk_rate) < 0) {
+	if ((clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken, pclk) < 0) ||
+	    (*pclk == 0U)) {
 		LOG_ERR("Failed call clock_control_get_rate");
 		return -EIO;
 	}
 
-	return pclk_rate;
+	return 0;
 }
 
 /**
  * @brief Calculates the timeout in microseconds.
  *
- * @param dev Pointer to device structure.
+ * @param pclk The WWDG bus clock rate in Hz.
  * @param prescaler_exp The prescaler exponent value(Base 2).
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */
-static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
+static uint32_t wwdg_stm32_get_timeout(uint32_t pclk,
 				       uint32_t prescaler_exp,
 				       uint32_t counter)
 {
-	uint32_t pclk = wwdg_stm32_get_pclk(dev);
 	uint32_t ticks = (counter & 0x3FU) + 1U;
 	uint64_t divider = WWDG_INTERNAL_DIVIDER << prescaler_exp;
 	uint64_t num = (uint64_t)ticks * divider * (uint64_t)USEC_PER_SEC;
@@ -128,17 +134,16 @@ static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
 /**
  * @brief Calculates prescaler & counter values.
  *
- * @param dev Pointer to device structure.
+ * @param pclk The WWDG bus clock rate in Hz.
  * @param timeout Timeout value in microseconds.
  * @param prescaler_exp Pointer to prescaler exponent value(Base 2).
  * @param counter Pointer to counter value.
  */
-static void wwdg_stm32_convert_timeout(const struct device *dev,
+static void wwdg_stm32_convert_timeout(uint32_t pclk,
 				       uint32_t timeout,
 				       uint32_t *prescaler_exp,
 				       uint32_t *counter)
 {
-	uint32_t pclk = wwdg_stm32_get_pclk(dev);
 	uint32_t psc_exp;
 	uint32_t count;
 
@@ -216,13 +221,20 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 	uint32_t calculated_timeout;
 	uint32_t prescaler_exp = 0U;
 	uint32_t counter = 0U;
+	uint32_t pclk;
+	int ret;
+
+	ret = wwdg_stm32_get_pclk(dev, &pclk);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (config->callback != NULL) {
 		data->callback = config->callback;
 	}
 
-	wwdg_stm32_convert_timeout(dev, timeout, &prescaler_exp, &counter);
-	calculated_timeout = wwdg_stm32_get_timeout(dev, prescaler_exp, counter);
+	wwdg_stm32_convert_timeout(pclk, timeout, &prescaler_exp, &counter);
+	calculated_timeout = wwdg_stm32_get_timeout(pclk, prescaler_exp, counter);
 
 	LOG_DBG("prescaler: %d", (1 << prescaler_exp));
 	LOG_DBG("Desired WDT: %d us", timeout);
