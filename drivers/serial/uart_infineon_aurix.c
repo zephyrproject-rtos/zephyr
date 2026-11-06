@@ -8,14 +8,20 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
 
+#include <aurix_endinit.h>
+
 #define DT_DRV_COMPAT infineon_asclin_uart
 
 #define UART_ASCLIN_FIFO_SIZE 16
+
+#define ASCLIN_CLC 0x00
 
 #if CONFIG_SOC_SERIES_TC3X
 #define ASCLIN_TXFIFOCON   0x0C
@@ -43,6 +49,8 @@
 #define ASCLIN_CSR         0x13C
 #endif
 
+#define CLC_DISR            BIT(0)
+#define CLC_DISS            BIT(1)
 #define BITCON_PRESCALER    GENMASK(11, 0)
 #define BITCON_OVERSAMPLING GENMASK(19, 16)
 #define BITCON_SAMPLEPOINT  GENMASK(27, 24)
@@ -74,7 +82,9 @@ struct uart_asclin_data {
 
 struct uart_asclin_config {
 	mem_addr_t base;
-	uint32_t clock_freq;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+	const struct pinctrl_dev_config *pcfg;
 	uint16_t prescaler;
 	uint8_t oversampling;
 	uint8_t samplepoint;
@@ -111,6 +121,19 @@ static inline void uart_asclin_set_bittime(mem_addr_t base, uint8_t oversampling
 			  (median_filter ? BITCON_SM : 0);
 
 	sys_write32(bitcon, base + ASCLIN_BITCON);
+}
+
+/* Leave the module disable state; CLC is CPU ENDINIT protected on TC3x */
+static int uart_asclin_enable_module(mem_addr_t base)
+{
+	unsigned int key = aurix_endinit_cpu_unlock();
+
+	sys_write32(sys_read32(base + ASCLIN_CLC) & ~CLC_DISR, base + ASCLIN_CLC);
+	aurix_endinit_cpu_lock(key);
+
+	return WAIT_FOR((sys_read32(base + ASCLIN_CLC) & CLC_DISS) == 0, 1000, k_busy_wait(1))
+		       ? 0
+		       : -ETIMEDOUT;
 }
 
 static inline int uart_asclin_set_clk(mem_addr_t base, uint8_t clksel)
@@ -234,6 +257,23 @@ static int uart_asclin_init(const struct device *dev)
 {
 	const struct uart_asclin_config *cfg = dev->config;
 	const struct uart_asclin_data *data = dev->data;
+	uint32_t clock_freq;
+	int ret;
+
+	if (!device_is_ready(cfg->clock_dev)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+	if (ret == 0) {
+		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &clock_freq);
+	}
+	if (ret == 0) {
+		ret = uart_asclin_enable_module(cfg->base);
+	}
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (uart_asclin_set_clk(cfg->base, UART_ASCLIN_CLKSEL_OFF)) {
 		return -ETIMEDOUT;
@@ -242,7 +282,7 @@ static int uart_asclin_init(const struct device *dev)
 
 	uart_asclin_set_bittime(cfg->base, cfg->oversampling, cfg->prescaler, cfg->samplepoint,
 				cfg->median_filter);
-	uart_asclin_set_baudrate(cfg->base, data->uart_cfg->baudrate, cfg->clock_freq,
+	uart_asclin_set_baudrate(cfg->base, data->uart_cfg->baudrate, clock_freq,
 				 cfg->oversampling);
 	uart_asclin_set_framecfg(cfg->base, data->uart_cfg->data_bits + 4,
 				 data->uart_cfg->stop_bits,
@@ -256,6 +296,11 @@ static int uart_asclin_init(const struct device *dev)
 		return -ETIMEDOUT;
 	}
 
+	/* Route the pins once the module drives its idle levels */
+	if (IS_ENABLED(CONFIG_PINCTRL) && cfg->pcfg != NULL) {
+		return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	}
+
 	return 0;
 }
 
@@ -265,6 +310,7 @@ static DEVICE_API(uart, uart_asclin_driver_api) = {
 };
 
 #define UART_ASCLIN_DEVICE_INIT(n)                                                                 \
+	IF_ENABLED(DT_INST_PINCTRL_HAS_IDX(n, 0), (PINCTRL_DT_INST_DEFINE(n);))                    \
 	static struct uart_config uart_cfg_##n = {                                                 \
 		.baudrate = DT_INST_PROP_OR(n, current_speed, 115200),                             \
 		.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),                    \
@@ -276,7 +322,10 @@ static DEVICE_API(uart, uart_asclin_driver_api) = {
 	static struct uart_asclin_data uart_asclin_dev_data_##n = {.uart_cfg = &uart_cfg_##n};     \
 	static const struct uart_asclin_config uart_asclin_dev_cfg_##n = {                         \
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),                                           \
-		.clock_freq = DT_INST_PROP(n, clock_frequency),                                    \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, id),                \
+		.pcfg = COND_CODE_1(DT_INST_PINCTRL_HAS_IDX(n, 0),                                 \
+				    (PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL)),                  \
 		.oversampling = DT_INST_PROP_OR(n, oversampling, 16),                              \
 		.samplepoint = DT_INST_PROP_OR(n, samplepoint, 8),                                 \
 		.median_filter = DT_INST_PROP(n, median_filter),                                   \
