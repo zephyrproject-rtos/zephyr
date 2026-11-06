@@ -55,3 +55,23 @@ tests:
       regex:
         - "Address of sample(.*)"
         - "Hello sysbuild with mcuboot!(.*)"
+
+  sample.sysbuild.with_mcuboot.nxp_ethernet:
+    sysbuild: true
+    # Build the MCUboot sysbuild sample with Ethernet enabled on NXP targets.
+    # This keeps coverage for Ethernet configurations affected by #108399.
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga/rw612/ethernet
+      - mimxrt1064_evk
+    integration_platforms:
+      - frdm_rw612
+    tags:
+      - mcuboot
+      - ethernet
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Address of sample(.*)"
+        - "Hello sysbuild with mcuboot!(.*)"
