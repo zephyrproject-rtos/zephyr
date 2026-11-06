@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Sensry GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_SENSRY_SENSOR_ADDON
+
+rsource "boards/Kconfig.defconfig"
+
+config GPIO_PCA_SERIES_INTERRUPT
+	default n
+
+if GPIO
+
+# Initialize chip-select GPIOs before the SPI and sensor drivers.
+config GPIO_INIT_PRIORITY
+	default 0
+
+endif # GPIO
+
+# Initialize sensors before the DMIC driver.
+if SENSOR
+
+config SENSOR_INIT_PRIORITY
+	default 70
+
+endif # SENSOR
+
+if AUDIO_DMIC
+
+config AUDIO_DMIC_INIT_PRIORITY
+	default 80
+
+endif # AUDIO_DMIC
+
+endif # SHIELD_SENSRY_SENSOR_ADDON
