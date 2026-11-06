@@ -31,4 +31,5 @@ tests:
 
   drivers.audio.build.dmic:
     platform_allow:
+      - nucleo_f413zh
       - stm32u5g9j_dk2/stm32u5g9xx

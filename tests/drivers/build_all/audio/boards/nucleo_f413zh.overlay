@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
+/* PLLI2S = 35 MHz */
+&plli2s {
+	div-m = <8>;
+	mul-n = <245>;
+	div-r = <7>;
+	post-div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&dfsdm1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+		 <&rcc STM32_SRC_PLLI2S_R CKDFSDM1A_SEL(0)>;
+	clock-names = "pclk", "aclk";
+	status = "okay";
+
+	dmic_dev: filter@0 {
+		pinctrl-0 = <&dfsdm1_ckout_pe9 &dfsdm1_datin2_pe7>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		channel@2 {
+			reg = <2>;
+		};
+	};
+};
