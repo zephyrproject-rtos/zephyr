@@ -40,6 +40,24 @@ Hardware
 - Advanced security including TrustZone(R) isolation and cryptographic engine protection
 
 
+Hardware Revisions
+==================
+
+The board is available in two hardware revisions:
+
+* Revision 1.0.0 (default): the original board, with an on-board SAMD11
+  USB-UART debugger providing the console, a 64 Mbit PY25Q64HA SPI NOR
+  flash, and a plain single-image internal flash layout.
+* Revision 2.0.0: reuses the XIAO nRF54LM20B PCB with the nRF54LM20A SoC.
+  The SAMD11 debugger is removed and the nRF54 native USB CDC ACM device
+  is the console; the SPI NOR is the 128 Mbit PY25Q128HA; and the internal
+  RRAM uses the factory MCUboot firmware-loader layout (24 KiB bootloader,
+  1784 KiB image-0 slot, 116 KiB image-1 USB loader slot, 16 KiB storage).
+
+Select the revision in the board target name, for example
+``west build -b xiao_nrf54lm20a@2.0.0/nrf54lm20a/cpuapp``.
+
+
 For more information about the nRF54LM20A SoC and XIAO nRF54LM20A board, refer to these
 documents:
 
@@ -136,6 +154,11 @@ Programming and Debugging
 
 The XIAO nRF54LM20A contains a SAMD11 with CMSIS-DAP, allowing flashing, debugging, logging, etc. over
 the USB port.
+
+On revision 2.0.0 boards the SAMD11 debugger is absent: flashing and debugging require an
+external debug probe, and the console is the nRF54 native USB CDC ACM port. Applications for
+revision 2.0.0 are loaded by the factory MCUboot firmware updater and must be built for its
+image slot.
 
 Flashing
 ========

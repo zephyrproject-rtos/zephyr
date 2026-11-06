@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2026 Seeed Technology Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * XIAO nRF54LM20A V2.0 hardware deltas, merged on top of the V1.0 board
+ * definition. V2.0 reuses the XIAO nRF54LM20B PCB with the nRF54LM20A SoC:
+ * the on-board SAMD11 USB-UART debugger is removed and the nRF54 native USB
+ * CDC ACM device replaces it as the console; the SPI NOR is the 128 Mbit
+ * PY25Q128HA; and the flash layout matches the shipped MCUboot firmware-
+ * loader scheme (identical to the XIAO nRF54LM20B).
+ *
+ * V1.0 inputs are unchanged: the default revision is 1.0.0 and this overlay
+ * is only applied for BOARD=xiao_nrf54lm20a@2.0.0/nrf54lm20a/cpuapp.
+ *
+ * Back-pad mapping (V2.0): EX_RX / EX_TX = &uart20 (P1.10 / P1.11),
+ * LDO2 = &ldo2 (nPM1300 LDO2 rail, off by default), BTN = &button0 / sw0
+ * (P0.09).
+ */
+
+#include <zephyr/dt-bindings/regulator/npm13xx.h>
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+/ {
+	chosen {
+		zephyr,boot-mode = &boot_mode0;
+	};
+
+	aliases {
+		/* Button 0 drives the MCUboot firmware-loader entrance. */
+		mcuboot-button0 = &button0;
+	};
+};
+
+/*
+ * USB firmware-loader boot-mode retention register, identical to the
+ * XIAO nRF54LM20B scheme: the application raises this bit to ask MCUboot
+ * to chain the slot1 USB MCUmgr loader instead of the slot0 application
+ * (the firmware-update boot mode).
+ */
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
+};
+
+/*
+ * nRF54 native USB CDC ACM replaces the V1 SAMD11 USB-UART bridge: enable
+ * the USB HS chain the console rides on.  The V1 base already enables the
+ * device controller alias and the 24 MHz oscillator; V2 adds the supply
+ * regulator, the wrapper, the host alias, and BC1.2 (same set as the
+ * XIAO nRF54LM20B).
+ */
+&vregusb {
+	status = "okay";
+};
+
+&usbhs_wrapper {
+	status = "okay";
+};
+
+zephyr_uhc0: &usbhs {
+	status = "okay";
+};
+
+&usbhs_bc12 {
+	status = "okay";
+};
+
+/* V2.0 matches the 20B PCB load capacitors (V1.0 board: 17 pF). */
+&lfxo {
+	load-capacitance-femtofarad = <16000>;
+};
+
+/*
+ * V2.0 flash layout: MCUboot firmware-loader scheme, identical to the
+ * shipped XIAO nRF54LM20B. Delete the SoC-default single-image layout
+ * (nrf54lm20_a_b_cpuapp_partition.dtsi) and re-create the four factory
+ * partitions: mcuboot (24K) + slot0 image-0 (1784K) + slot1 image-1
+ * (116K USB loader) + storage (16K).
+ */
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&cpuapp_rram {
+	partitions {
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(24)>;
+		};
+
+		slot0_partition: partition@6000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x6000 DT_SIZE_K(1784)>;
+		};
+
+		slot1_partition: partition@1c4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x1c4000 DT_SIZE_K(116)>;
+		};
+
+		storage_partition: partition@1e1000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x1e1000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+/* SPI NOR: PY25Q128HA (128 Mbit), the part on the 20B PCB. */
+/delete-node/ &py25q64;
+
+&spi00 {
+	py25q128: py25q128ha@0 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		jedec-id = [85 20 18];
+		sfdp-bfp = [e5 20 f9 ff
+			    ff ff ff 07
+			    44 eb 08 6b
+			    08 3b 80 bb
+			    fe ff ff ff
+			    ff ff 00 ff
+			    ff ff 44 eb
+			    0c 20 0f 52
+			    10 d8 00 81];
+		size = <134217728>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <30000>;
+		requires-ulbpr;
+		use-fast-read;
+		hold-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		wp-gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+/*
+ * BUCK2 (VSYS_3V3) is the protected always-on system rail powering the
+ * nRF54 itself. V2.0 has no SAMD11 USB debugger, so the rail no longer
+ * powers an external debugger -- it is kept always-on for the nRF54 alone.
+ * Properties re-state the V1.0 values; the block exists to carry the V2
+ * comment alongside the (20B-mirroring) PMIC edits below.
+ */
+&vsys_3v3 {
+	regulator-always-on;
+	regulator-min-microvolt = <3300000>;
+	regulator-max-microvolt = <3300000>;
+};
+
+/*
+ * nPM1300 LDO2 is exposed on the LDO2 back pad and is off by default; the
+ * application enables it when the external circuit needs a 3.3 V rail. The
+ * &pmic { regulators { ... } } merge is the established idiom (see the LDO1
+ * write-up in the zephyr-imu sample overlay).
+ */
+&pmic {
+	regulators {
+		ldo2: LDO2 {
+			regulator-init-microvolt = <3300000>;
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-initial-mode = <NPM13XX_LDSW_MODE_LDO>;
+		};
+	};
+};

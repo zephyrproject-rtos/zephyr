@@ -2,37 +2,43 @@ board:
   name: xiao_nrf54lm20a
   full_name: XIAO nRF54LM20A
   vendor: seeed
+  revision:
+    format: major.minor.patch
+    default: "1.0.0"
+    revisions:
+      - name: "1.0.0"
+      - name: "2.0.0"
   socs:
-  - name: nrf54lm20a
+    - name: nrf54lm20a
 runners:
   run_once:
     '--recover':
-    - runners:
-      - nrfjprog
-      - nrfutil
-      run: first
-      groups:
-      - boards:
-        - xiao_nrf54lm20a/nrf54lm20a/cpuapp
-        - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
+      - runners:
+          - nrfjprog
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - xiao_nrf54lm20a/nrf54lm20a/cpuapp
+              - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
     '--erase':
-    - runners:
-      - nrfjprog
-      - jlink
-      - nrfutil
-      - openocd
-      run: first
-      groups:
-      - boards:
-        - xiao_nrf54lm20a/nrf54lm20a/cpuapp
-        - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+          - openocd
+        run: first
+        groups:
+          - boards:
+              - xiao_nrf54lm20a/nrf54lm20a/cpuapp
+              - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
     '--reset':
-    - runners:
-      - nrfjprog
-      - jlink
-      - nrfutil
-      run: last
-      groups:
-      - boards:
-        - xiao_nrf54lm20a/nrf54lm20a/cpuapp
-        - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - xiao_nrf54lm20a/nrf54lm20a/cpuapp
+              - xiao_nrf54lm20a/nrf54lm20a/cpuflpr
