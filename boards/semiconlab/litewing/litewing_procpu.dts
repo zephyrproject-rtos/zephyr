@@ -1,0 +1,201 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <espressif/esp32s3/esp32s3.dtsi>
+#include <espressif/partitions_0x0_amp_8M.dtsi>
+#include <zephyr/dt-bindings/battery/battery.h>
+#include "litewing-pinctrl.dtsi"
+
+/ {
+	model = "SemiconLab Litewing PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		fuel-gauge0 = &fuel_gauge;
+		i2c-0 = &i2c0;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
+		pwm-led2 = &pwm_led2;
+		motor-pwm = &mcpwm0;
+		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button;
+		accel0 = &mpu6050;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	keys: keys {
+		compatible = "gpio-keys";
+		debounce-interval-ms = <10>;
+
+		button: button {
+			gpios = <&gpio0 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&ledc0 0 PWM_HZ(1000) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led1: pwm_led1 {
+			pwms = <&ledc0 1 PWM_HZ(1000) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_led2: pwm_led2 {
+			pwms = <&ledc0 2 PWM_HZ(1000) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	pwmmotors {
+		compatible = "pwm-leds";
+
+		pwm_motor0: pwm_motor0 {
+			pwms = <&mcpwm0 0 PWM_HZ(25000) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_motor1: pwm_motor1 {
+			pwms = <&mcpwm0 1 PWM_HZ(25000) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_motor2: pwm_motor2 {
+			pwms = <&mcpwm0 2 PWM_HZ(25000) PWM_POLARITY_NORMAL>;
+		};
+
+		pwm_motor3: pwm_motor3 {
+			pwms = <&mcpwm0 3 PWM_HZ(25000) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 1>;
+		output-ohms = <100000>;
+		full-ohms = <(100000 + 100000)>;
+		skip-calibration;
+	};
+
+	fuel_gauge: fuel_gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		status = "okay";
+		source-primary = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <1000000>;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	mpu6050: mpu6050@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+		int-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
+&ledc0 {
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+
+	channel0@1 {
+		reg = <0x1>;
+		timer = <0>;
+	};
+
+	channel0@2 {
+		reg = <0x2>;
+		timer = <0>;
+	};
+};
+
+&mcpwm0 {
+	status = "okay";
+	pinctrl-0 = <&mcpwm0_default>;
+	pinctrl-names = "default";
+	prescale = <0>;
+	prescale-timer0 = <0>;
+	prescale-timer1 = <0>;
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
