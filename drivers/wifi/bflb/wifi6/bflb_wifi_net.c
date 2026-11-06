@@ -29,6 +29,7 @@
 #include <wl_api.h>
 #include "timeout.h"
 #include "macsw_config.h"
+#include "macsw_config_shim.h"
 #include "macsw_plat.h"
 #include "mac_types.h"
 #include "mac_frame.h"
@@ -72,6 +73,7 @@ LOG_MODULE_REGISTER(bflb_wifi, CONFIG_WIFI_LOG_LEVEL);
 struct bflb_wifi_event {
 	int code;
 	int value;
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
 };
 
 struct tx_ctx {
@@ -305,18 +307,13 @@ static void event_work_handler(struct k_work *work)
 			break;
 
 		case WL80211_EVT_AP_STA_DEL: {
-			uint8_t idx = evt.value;
 			struct wifi_ap_sta_info sta_info = {0};
-			bool valid_sta = false;
+			bool valid_sta;
 
-			if (idx < ARRAY_SIZE(wl80211_glb.aid_list) &&
-			    wl80211_glb.aid_list[idx].used) {
-				memcpy(sta_info.mac, wl80211_glb.aid_list[idx].mac,
-				       WIFI_MAC_ADDR_LEN);
-				sta_info.mac_length = WIFI_MAC_ADDR_LEN;
-				valid_sta = !net_eth_is_addr_unspecified(
+			memcpy(sta_info.mac, evt.mac, WIFI_MAC_ADDR_LEN);
+			sta_info.mac_length = WIFI_MAC_ADDR_LEN;
+			valid_sta = !net_eth_is_addr_unspecified(
 					(struct net_eth_addr *)sta_info.mac);
-			}
 			if (valid_sta) {
 				wifi_mgmt_raise_ap_sta_disconnected_event(wdev->iface, &sta_info);
 			}
@@ -578,6 +575,18 @@ int bflb_wifi_wait_eapol_tx_done(k_timeout_t timeout)
 void wl80211_post_event(int code1, int code2)
 {
 	struct bflb_wifi_event evt = {.code = code1, .value = code2};
+
+	if (k_msgq_put(&wifi_event_msgq, &evt, K_NO_WAIT) != 0) {
+		LOG_WRN("WiFi event queue full, event %d dropped", code1);
+	}
+	k_work_submit(&event_work);
+}
+
+void wl80211_post_event_with_mac(int code1, int code2, const uint8_t mac[WIFI_MAC_ADDR_LEN])
+{
+	struct bflb_wifi_event evt = {.code = code1, .value = code2};
+
+	memcpy(evt.mac, mac, WIFI_MAC_ADDR_LEN);
 
 	if (k_msgq_put(&wifi_event_msgq, &evt, K_NO_WAIT) != 0) {
 		LOG_WRN("WiFi event queue full, event %d dropped", code1);

@@ -18,6 +18,7 @@
 #include <assert.h>
 #include "timeout.h"
 #include "macsw_config.h"
+#include "macsw_config_shim.h"
 #include "macsw_plat.h"
 #include "mac_types.h"
 #include "mac_frame.h"
@@ -32,15 +33,16 @@
 
 LOG_MODULE_REGISTER(wl80211_plat, CONFIG_WIFI_LOG_LEVEL);
 
-#ifndef CFG_REORD_BUF
-#define CFG_REORD_BUF CONFIG_WIFI_BFLB_WIFI6_BA_REORDER_BUF
+#ifdef CFG_REORD_BUF
+BUILD_ASSERT(CONFIG_WIFI_BFLB_WIFI6_BA_REORDER_BUF <= CFG_REORD_BUF,
+	"WIFI_BFLB_WIFI6_BA_REORDER_BUF cannot be greater than available Reorder Buffer slots");
 #endif
 
 #ifndef MACSW_MAX_BA_RX
-#define MACSW_MAX_BA_RX CONFIG_WIFI_BFLB_WIFI6_BA_RX
+BUILD_ASSERT(CONFIG_WIFI_BFLB_WIFI6_BA_RX <= MACSW_MAX_BA_RX,
+	"WIFI_BFLB_WIFI6_BA_RX cannot be greater than available RX Block Ack slots");
 #endif
 
-#define MACSW_AMPDU_RX_BUF_SIZE CFG_REORD_BUF
 #define WL80211_RX_BUF_EXTRA    2
 
 #ifndef ETH_ADDR_LOCAL_ADMIN_BIT
@@ -51,7 +53,8 @@ LOG_MODULE_REGISTER(wl80211_plat, CONFIG_WIFI_LOG_LEVEL);
 	(sizeof(struct wl80211_mac_rx_desc) + CO_ALIGN4_HI(RX_MAX_AMSDU_SUBFRAME_LEN + 1))
 
 #define WL80211_RX_BUF_MEM_LEN                                                                     \
-	((MACSW_MAX_BA_RX * MACSW_AMPDU_RX_BUF_SIZE + WL80211_RX_BUF_EXTRA) *                      \
+	((CONFIG_WIFI_BFLB_WIFI6_BA_RX * CONFIG_WIFI_BFLB_WIFI6_BA_REORDER_BUF                     \
+	  + WL80211_RX_BUF_EXTRA) *                                                                \
 	 WL80211_RX_DESC_MPDU_LEN)
 
 const struct platform_feature wl80211_platform_feature[] = {
