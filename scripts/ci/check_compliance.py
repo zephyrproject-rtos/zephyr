@@ -1879,6 +1879,58 @@ flagged.
 {undef_desc}""")
 
 
+class KconfigDefconfigCheck(ComplianceTest):
+    """
+    Checks that defconfig Kconfig files do not declare new Kconfigs
+    """
+
+    name = "KconfigDefconfig"
+    doc = zephyr_doc_detail_builder("/contribute/style/kconfig.html")
+    kconfig_types = tuple(
+        ['bool', 'string', 'int', 'hex', 'def_bool', 'def_string', 'def_int', 'def_hex']
+    )
+
+    def run(self):
+        start_prefix_len = 7
+
+        for file in get_files(filter="d"):
+            if Path(file).name.startswith("Kconfig") and "defconfig" in Path(file).name:
+                diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+
+                for patch in unidiff.PatchSet.from_string(diff):
+                    for hunk in patch:
+                        for line in hunk:
+                            if (
+                                not line.is_added
+                                or line.target_line_no is None
+                                or not line.value.strip().startswith(self.kconfig_types)
+                            ):
+                                continue
+
+                            i = line.target_line_no - 1
+                            kconfig_name = ""
+
+                            with open(file) as fp:
+                                file_data = fp.readlines()
+
+                                while i > 0:
+                                    if file_data[i].startswith("config "):
+                                        kconfig_name = file_data[i][start_prefix_len::]
+                                        break
+
+                                    i = i - 1
+
+                            self.fmtd_failure(
+                                "error",
+                                "KconfigDefconfigCheck",
+                                file,
+                                line.target_line_no,
+                                desc=f"""
+Kconfig defconfig declares a new Kconfig item: {kconfig_name}
+""",
+                            )
+
+
 class KconfigBasicCheck(KconfigCheck):
     """
     Checks if we are introducing any new warnings/errors with Kconfig,
