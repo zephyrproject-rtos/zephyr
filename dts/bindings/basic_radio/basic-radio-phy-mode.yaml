@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Vendor-neutral description of one PHY operating mode (waveform and frame
+  format). Vendor PHY catalog bindings include this file for their mode
+  nodes and add the vendor properties that map the mode to radio settings.
+
+  A PHY child of a basic-radio-base node selects a mode with its
+  phy-mode phandle. BASIC_RADIO_CONFIG_DT() reads these properties from that
+  mode node into struct basic_radio_config.
+
+properties:
+  modulation:
+    type: string
+    required: true
+    enum:
+      - "2-gfsk"
+      - "4-gfsk"
+      - "2-fsk"
+      - "ook"
+      - "msk"
+      - "oqpsk"
+      - "ofdm"
+    description: Modulation scheme. The order matches enum basic_radio_modulation.
+
+  datarate-bps:
+    type: int
+    required: true
+    description: |
+      Over-the-air bitrate in bits per second. For spread waveforms
+      (O-QPSK, DSSS) this is the data rate, not the chip rate.
+
+  deviation-hz:
+    type: int
+    description: FSK / GFSK frequency deviation in Hz.
+
+  frequency-min-hz:
+    type: int
+    required: true
+    description: Lowest characterized carrier frequency in Hz.
+
+  frequency-max-hz:
+    type: int
+    required: true
+    description: Highest characterized carrier frequency in Hz.
+
+  sync-word-length:
+    type: int
+    description: Sync word length on air in bytes.
+
+  preamble-length:
+    type: int
+    description: Preamble length in bytes.
+
+  crc-enable:
+    type: boolean
+    description: The PHY generates and checks a hardware CRC.
+
+  whitening-enable:
+    type: boolean
+    description: The PHY whitens the payload.
+
+  variable-length:
+    type: boolean
+    description: Frames carry an explicit length field.
