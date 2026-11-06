@@ -1,0 +1,23 @@
+common:
+  arch_allow: x86
+  filter: CONFIG_X86_64
+  # The test deliberately triggers a fatal CPU exception.
+  ignore_faults: true
+  tags:
+    - kernel
+    - interrupt
+    - exception
+  integration_platforms:
+    - qemu_x86_64
+tests:
+  # Exceptions use trap gates when KPTI is disabled; the interrupted IRQ state
+  # is preserved by the hardware.
+  arch.interrupt.x86_exception_irq_state:
+    extra_configs:
+      - CONFIG_USERSPACE=n
+  # KPTI exception entry has to re-enable interrupts explicitly, and must do so
+  # only when the interrupted context had them enabled.
+  arch.interrupt.x86_exception_irq_state.kpti:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_X86_KPTI=y

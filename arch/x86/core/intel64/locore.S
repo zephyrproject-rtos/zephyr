@@ -671,8 +671,21 @@ except: /*
 	pushq (%r11)	/* Stashed R11 */
 	movq $0, (%r11) /* Cover our tracks */
 
-	/* We're done, it's safe to re-enable interrupts. */
+	/*
+	 * The exception frame is fully built, but interrupts may only be
+	 * re-enabled if they were enabled in the interrupted context.
+	 * Kernel code holding the IRQ lock must not be preempted by an
+	 * interrupt taken while the exception is being serviced. This
+	 * matches the 32-bit x86 policy (see _exception_enter in
+	 * ia32/excstub.S).
+	 *
+	 * In the transplanted frame RFLAGS is at offset 40(%rsp), and
+	 * the IF bit is bit 1 of its second byte.
+	 */
+	testb $0x2, 41(%rsp)
+	jz 2f
 	sti
+2:
 #endif /* CONFIG_X86_KPTI */
 #endif /* CONFIG_USERSPACE */
 
