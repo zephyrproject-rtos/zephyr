@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
+#include <zephyr/pm/policy.h>
 #if defined(CONFIG_PTP_CLOCK_ESP32)
 #include <zephyr/drivers/ptp_clock.h>
 #endif
@@ -27,6 +28,18 @@
 #include <soc/gpio_sig_map.h>
 #include <soc/soc.h>
 #include <clk_ctrl_os.h>
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) &&                               \
+	defined(SOC_EMAC_SUPPORT_SLEEP_RETENTION)
+#define ETH_ESP32_SLEEP_RETENTION_ENABLED 1
+#else
+#define ETH_ESP32_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if ETH_ESP32_SLEEP_RETENTION_ENABLED
+#include <esp_private/esp_regdma.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -81,6 +94,7 @@ struct eth_esp32_dev_data {
 #endif
 	struct k_sem int_sem;
 	struct k_sem tx_sem;
+	bool pm_lock_held;
 
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_ESP32_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
@@ -98,31 +112,13 @@ static const struct eth_esp32_config eth_esp32_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-static eth_dma_rx_descriptor_t *rx_desc_next(struct eth_esp32_dev_data *dev_data,
-					     eth_dma_rx_descriptor_t *desc)
+static eth_dma_rx_descriptor_t *rx_desc_next(eth_dma_rx_descriptor_t *desc)
 {
-	if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-		eth_dma_rx_descriptor_t *base =
-			(eth_dma_rx_descriptor_t *)dev_data->dma->descriptors;
-		uint32_t idx = desc - base;
-
-		return &base[(idx + 1) % CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM];
-	}
 	return ADDR_DMA_TO_CPU(desc->Buffer2NextDescAddr);
 }
 
-static eth_dma_tx_descriptor_t *tx_desc_next(struct eth_esp32_dev_data *dev_data,
-					     eth_dma_tx_descriptor_t *desc)
+static eth_dma_tx_descriptor_t *tx_desc_next(eth_dma_tx_descriptor_t *desc)
 {
-	if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-		eth_dma_tx_descriptor_t *base =
-			(eth_dma_tx_descriptor_t *)(dev_data->dma->descriptors +
-						    sizeof(eth_dma_rx_descriptor_t) *
-							    CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM);
-		uint32_t idx = desc - base;
-
-		return &base[(idx + 1) % CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM];
-	}
 	return ADDR_DMA_TO_CPU(desc->Buffer2NextDescAddr);
 }
 
@@ -134,50 +130,32 @@ static void eth_esp32_reset_desc_chain(struct eth_esp32_dev_data *dev_data)
 							sizeof(eth_dma_rx_descriptor_t) *
 								CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM);
 
-	/* Initialize RX descriptor chain/ring */
+	/* Initialize RX descriptor chain */
 	for (int i = 0; i < CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM; i++) {
 		dev_data->rx_desc[i].RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 		dev_data->rx_desc[i].RDES1.ReceiveBuffer1Size = CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		dev_data->rx_desc[i].RDES1.DisableInterruptOnComplete = 0;
 		dev_data->rx_desc[i].Buffer1Addr = ADDR_CPU_TO_DMA(dev_data->dma_rx_buf[i]);
-
-		if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-			/* Ring mode: DMA strides sequentially, wraps at end-of-ring */
-			dev_data->rx_desc[i].RDES1.SecondAddressChained = 0;
-			if (i == CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM - 1) {
-				dev_data->rx_desc[i].RDES1.ReceiveEndOfRing = 1;
-			}
-		} else {
-			/* Chain mode: DMA follows Buffer2NextDescAddr */
-			dev_data->rx_desc[i].RDES1.SecondAddressChained = 1;
+		dev_data->rx_desc[i].RDES1.SecondAddressChained = 1;
+		dev_data->rx_desc[i].Buffer2NextDescAddr =
+			ADDR_CPU_TO_DMA(dev_data->rx_desc + i + 1);
+		if (i == CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM - 1) {
 			dev_data->rx_desc[i].Buffer2NextDescAddr =
-				ADDR_CPU_TO_DMA(dev_data->rx_desc + i + 1);
-			if (i == CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM - 1) {
-				dev_data->rx_desc[i].Buffer2NextDescAddr =
-					ADDR_CPU_TO_DMA(dev_data->rx_desc);
-			}
+				ADDR_CPU_TO_DMA(dev_data->rx_desc);
 		}
 	}
 
-	/* Initialize TX descriptor chain/ring */
+	/* Initialize TX descriptor chain */
 	for (int i = 0; i < CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM; i++) {
 		dev_data->tx_desc[i].TDES0.Own = EMAC_LL_DMADESC_OWNER_CPU;
 		dev_data->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		dev_data->tx_desc[i].Buffer1Addr = ADDR_CPU_TO_DMA(dev_data->dma_tx_buf[i]);
-
-		if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-			dev_data->tx_desc[i].TDES0.SecondAddressChained = 0;
-			if (i == CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM - 1) {
-				dev_data->tx_desc[i].TDES0.TransmitEndRing = 1;
-			}
-		} else {
-			dev_data->tx_desc[i].TDES0.SecondAddressChained = 1;
+		dev_data->tx_desc[i].TDES0.SecondAddressChained = 1;
+		dev_data->tx_desc[i].Buffer2NextDescAddr =
+			ADDR_CPU_TO_DMA(dev_data->tx_desc + i + 1);
+		if (i == CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM - 1) {
 			dev_data->tx_desc[i].Buffer2NextDescAddr =
-				ADDR_CPU_TO_DMA(dev_data->tx_desc + i + 1);
-			if (i == CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM - 1) {
-				dev_data->tx_desc[i].Buffer2NextDescAddr =
-					ADDR_CPU_TO_DMA(dev_data->tx_desc);
-			}
+				ADDR_CPU_TO_DMA(dev_data->tx_desc);
 		}
 	}
 
@@ -244,13 +222,13 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 			       CONFIG_ETH_ESP32_DMA_BUFFER_SIZE);
 			sentout += CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		}
-		desc_iter = tx_desc_next(dev_data, desc_iter);
+		desc_iter = tx_desc_next(desc_iter);
 	}
 
 	/* Give descriptors to DMA */
 	for (size_t i = 0; i < bufcount; i++) {
 		dev_data->tx_desc->TDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		dev_data->tx_desc = tx_desc_next(dev_data, dev_data->tx_desc);
+		dev_data->tx_desc = tx_desc_next(dev_data->tx_desc);
 	}
 	emac_hal_transmit_poll_demand(&dev_data->hal);
 
@@ -286,15 +264,14 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 	return sentout;
 }
 
-static void eth_esp32_flush_rx_frame(struct eth_esp32_dev_data *dev_data,
-				     eth_dma_rx_descriptor_t *first_desc,
+static void eth_esp32_flush_rx_frame(eth_dma_rx_descriptor_t *first_desc,
 				     eth_dma_rx_descriptor_t *last_desc)
 {
 	eth_dma_rx_descriptor_t *desc = first_desc;
 
 	while (desc != last_desc) {
 		desc->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc = rx_desc_next(dev_data, desc);
+		desc = rx_desc_next(desc);
 	}
 	desc->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 }
@@ -304,8 +281,8 @@ static void eth_esp32_drop_rx_frame(struct eth_esp32_dev_data *dev_data,
 				    eth_dma_rx_descriptor_t *first_desc,
 				    eth_dma_rx_descriptor_t *last_desc)
 {
-	eth_esp32_flush_rx_frame(dev_data, first_desc, last_desc);
-	dev_data->rx_desc = rx_desc_next(dev_data, last_desc);
+	eth_esp32_flush_rx_frame(first_desc, last_desc);
+	dev_data->rx_desc = rx_desc_next(last_desc);
 	emac_hal_receive_poll_demand(&dev_data->hal);
 }
 
@@ -394,7 +371,7 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 				}
 			}
 		}
-		desc_iter = rx_desc_next(dev_data, desc_iter);
+		desc_iter = rx_desc_next(desc_iter);
 	}
 
 	*frames_remaining = (frame_count > 1) ? (frame_count - 1) : 0;
@@ -414,14 +391,14 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 		buf += CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		remaining -= CONFIG_ETH_ESP32_DMA_BUFFER_SIZE;
 		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc_iter = rx_desc_next(dev_data, desc_iter);
+		desc_iter = rx_desc_next(desc_iter);
 	}
 	memcpy(buf, ADDR_DMA_TO_CPU(desc_iter->Buffer1Addr), remaining);
 
 	/* Return descriptors including any that held CRC */
 	while (!desc_iter->RDES0.LastDescriptor) {
 		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
-		desc_iter = rx_desc_next(dev_data, desc_iter);
+		desc_iter = rx_desc_next(desc_iter);
 	}
 
 #if defined(CONFIG_PTP_CLOCK_ESP32)
@@ -441,7 +418,7 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 
 	desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 
-	dev_data->rx_desc = rx_desc_next(dev_data, desc_iter);
+	dev_data->rx_desc = rx_desc_next(desc_iter);
 	emac_hal_receive_poll_demand(&dev_data->hal);
 
 	return copy_len;
@@ -609,14 +586,97 @@ static int generate_mac_addr(uint8_t mac_addr[6])
 	return res;
 }
 
+/*
+ * Ethernet cannot keep the link up across light sleep, so block sleep while
+ * the link is up. Sleep retention does not cover the PTP registers, so a PTP
+ * build never sleeps.
+ */
+static void eth_esp32_pm_policy_sync_lock(struct eth_esp32_dev_data *dev_data, bool link_up)
+{
+	bool must_lock = link_up || IS_ENABLED(CONFIG_PTP_CLOCK_ESP32);
+
+	if (must_lock && !dev_data->pm_lock_held) {
+		dev_data->pm_lock_held = true;
+		pm_policy_state_all_lock_get();
+	} else if (!must_lock && dev_data->pm_lock_held) {
+		dev_data->pm_lock_held = false;
+		pm_policy_state_all_lock_put();
+	}
+}
+
 static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state,
 				   void *user_data)
 {
 	struct net_if *iface = (struct net_if *)user_data;
+	struct eth_esp32_dev_data *dev_data = net_if_get_device(iface)->data;
 
+	if (state->is_up) {
+		bool is_100m = PHY_LINK_IS_SPEED_100M(state->speed);
+
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+		/* The RMII reference clock is 50 MHz; RX/TX need 25 MHz or 2.5 MHz. */
+		if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
+			emac_hal_clock_rmii_rx_tx_div(&dev_data->hal, is_100m ? 1 : 19);
+		}
+#endif
+		emac_hal_set_speed(&dev_data->hal, is_100m ? ETH_SPEED_100M : ETH_SPEED_10M);
+		emac_hal_set_duplex(&dev_data->hal, PHY_LINK_IS_FULL_DUPLEX(state->speed)
+							    ? ETH_DUPLEX_FULL
+							    : ETH_DUPLEX_HALF);
+	}
+
+	eth_esp32_pm_policy_sync_lock(dev_data, state->is_up);
 	net_eth_carrier_set(iface, state->is_up);
 }
+
+#if ETH_ESP32_SLEEP_RETENTION_ENABLED
+static esp_err_t eth_esp32_create_sleep_retention_cb(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	return sleep_retention_entries_create(emac_reg_retention_info.entry_array,
+					      emac_reg_retention_info.array_size,
+					      REGDMA_LINK_PRI_EMAC,
+					      emac_reg_retention_info.module_id);
+}
+
+static void eth_esp32_sleep_retention_init(void)
+{
+	sleep_retention_module_t module = emac_reg_retention_info.module_id;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = eth_esp32_create_sleep_retention_cb}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
+	}
+
+	if (err != ESP_OK) {
+		LOG_WRN("EMAC sleep retention unavailable (err %d), "
+			"peripheral power domain will stay on",
+			err);
+		return;
+	}
+
+	/*
+	 * The entries that restart MAC and DMA after restore are created
+	 * skipped. The MAC runs from init onwards, so restart it on every wake.
+	 */
+	for (int i = 0; i < EMAC_REGDMA_LINK_EMAC_START_CNT; i++) {
+		int id = emac_reg_retention_info.entry_array[EMAC_REGDMA_LINK_EMAC_START_BEGIN + i]
+				 .config.id;
+
+		regdma_link_set_skip_flag(sleep_retention_find_link_by_id(id), true, false);
+	}
+}
+#endif /* ETH_ESP32_SLEEP_RETENTION_ENABLED */
 
 int eth_esp32_initialize(const struct device *dev)
 {
@@ -751,16 +811,6 @@ int eth_esp32_initialize(const struct device *dev)
 						  EMAC_LL_INTR_RECEIVE_BUFF_UNAVAILABLE_ENABLE |
 						  EMAC_LL_INTR_ABNORMAL_SUMMARY_ENABLE);
 
-	/*
-	 * The HAL sets desc_skip_len=0 assuming 32-byte descriptors.
-	 * On SoCs with cache-aligned descriptors (64B on P4), tell
-	 * the DMA to skip the padding between descriptors.
-	 */
-	if (EMAC_HAL_DMA_DESC_SIZE > 32) {
-		emac_ll_set_desc_skip_len(dev_data->hal.dma_regs,
-					  (EMAC_HAL_DMA_DESC_SIZE - 32) / 4);
-	}
-
 	res = generate_mac_addr(dev_data->mac_addr);
 	if (res != 0) {
 		goto err;
@@ -777,6 +827,11 @@ int eth_esp32_initialize(const struct device *dev)
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
 		k_thread_name_set(tid, "esp32_eth");
 	}
+
+#if ETH_ESP32_SLEEP_RETENTION_ENABLED
+	eth_esp32_sleep_retention_init();
+#endif
+	eth_esp32_pm_policy_sync_lock(dev_data, false);
 
 	emac_hal_start(&dev_data->hal);
 
