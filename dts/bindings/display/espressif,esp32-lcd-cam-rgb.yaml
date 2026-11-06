@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: ESP32 LCD-CAM parallel RGB display interface
+
+description: |
+  The LCD output block of the ESP32 LCD-CAM controller in RGB mode, driving a
+  parallel RGB panel over a 16-bit RGB565 bus. The framebuffers are in PSRAM,
+  and the panel is refreshed from them continuously.
+
+  The panel timings go in a display-timings child node with the
+  zephyr,panel-timing compatible. Its clock-frequency sets the pixel clock.
+
+compatible: "espressif,esp32-lcd-cam-rgb"
+
+include: lcd-controller.yaml
+
+properties:
+  pixel-format:
+    enum:
+      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+
+  dmas:
+    description: |
+      Optional GDMA channel pairs for memory-to-memory copies, which the CPU
+      makes otherwise: "refill" copies the frame on the panel into the
+      bounce buffers the panel is refreshed from, and "write" copies rows
+      into the frame being drawn, the written ones as well as those carried
+      over from the previous frame.
+
+  dma-names:
+    description: |
+      "refill" and "write", for the channel pairs in dmas.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/display/panel.h>
+
+    &lcd_cam_rgb {
+      status = "okay";
+      width = <800>;
+      height = <480>;
+      pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+      dmas = <&dma 0>, <&dma 8>;
+      dma-names = "refill", "write";
+
+      display-timings {
+        compatible = "zephyr,panel-timing";
+        clock-frequency = <15000000>;
+        hsync-len = <48>;
+        hback-porch = <40>;
+        hfront-porch = <88>;
+        vsync-len = <6>;
+        vback-porch = <26>;
+        vfront-porch = <30>;
+        hsync-active = <0>;
+        vsync-active = <0>;
+        de-active = <1>;
+        pixelclk-active = <0>;
+      };
+    };
