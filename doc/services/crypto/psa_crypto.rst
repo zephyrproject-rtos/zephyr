@@ -167,6 +167,45 @@ Cleaning up after use
 
   * Destroying keys that are no longer used.
 
+
+Stack size optimization
+***********************
+
+The PSA Crypto API is, in relative terms, a stack-hungry API. This is not specific to PSA Crypto,
+but rather a general property of cryptographic libraries. On constrained devices this poses a
+challenge: without mitigation every thread that calls a cryptographic function must size its own
+stack for the deepest call it makes.
+
+To mitigate this, Zephyr provides a function call offloader.
+:kconfig:option:`CONFIG_OFFLOADER_PSA` redirects the offloaded PSA Crypto calls to a pool of
+system-wide worker threads that execute them on the caller's behalf.
+This allows the caller to use a much smaller stack than it would otherwise need. This saves memory
+whenever the worker pool is smaller than the number of threads that call PSA Crypto. The set of
+offloaded calls is the one covered by ``<zephyr/offloader/psa.h>``.
+
+A worker runs the offloaded call at the priority of the caller. When several callers are queued it
+runs at the highest waiters priority. This bounds priority inversion.
+
+:kconfig:option:`CONFIG_OFFLOADER_PSA_WORKERS` sets the number of worker threads. Each worker
+handles one offloaded call at a time, so the pool runs up to that many calls concurrently and
+further calls queue until a worker is free. More workers add concurrency at the cost of RAM.
+
+The trade-offs are:
+
+* A small latency penalty per call.
+* Offloaded calls can no longer be made from an ISR context.
+
+Enabling the offloader is a build configuration change:
+
+.. code-block:: cfg
+
+   CONFIG_OFFLOADER_PSA=y
+   CONFIG_OFFLOADER_PSA_WORKERS=1
+   CONFIG_OFFLOADER_PSA_STACK_SIZE=3072
+
+The call sites themselves are visually unchanged. The calls are invisibly redirected to the worker
+pool.
+
 References
 **********
 

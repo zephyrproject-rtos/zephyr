@@ -1,0 +1,8 @@
+tests:
+  libraries.offloader.engine:
+    tags:
+      - offloader
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
