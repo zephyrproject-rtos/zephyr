@@ -70,6 +70,12 @@ config SOC_MIMX8MN6_A53
 	help
 	  NXP i.MX8MN A53
 
+config SOC_MIMX8MN6_M7
+	bool
+	select SOC_MIMX8MN6
+	help
+	  NXP i.MX8MN M7
+
 config SOC
 	default "mimx8mm6" if SOC_MIMX8MM6
 	default "mimx8mn6" if SOC_MIMX8MN6

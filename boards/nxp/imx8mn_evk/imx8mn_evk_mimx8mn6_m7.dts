@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Televic NV
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imx/nxp_imx8mn_m7.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "imx8mn_evk-pinctrl.dtsi"
+
+/ {
+	compatible = "nxp,mimx8mn_evk";
+	model = "NXP i.MX8M Nano EVK board";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+			label = "Status LED";
+		};
+	};
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
