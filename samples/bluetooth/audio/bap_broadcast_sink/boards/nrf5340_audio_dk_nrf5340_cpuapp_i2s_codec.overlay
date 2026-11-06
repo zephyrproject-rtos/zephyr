@@ -1,0 +1,30 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		codec0 = &cs47l63;
+		i2s-codec-tx = &i2s0;
+	};
+};
+
+&clock {
+	hfclkaudio-frequency = <12288000>;
+};
+
+&hfclkaudio {
+	hfclkaudio-frequency = <12288000>;
+};
+
+&i2s0 {
+	clock-source = "ACLK";
+};
+
+&button3 {
+	zephyr,code = <INPUT_KEY_MUTE>;
+};
