@@ -243,6 +243,112 @@ static void i2s_rx_receiver_off(const struct device *dev)
 	base->RCSR &= ~I2S_RCSR_SR_MASK;
 }
 
+/*
+ * Wait for the next frame start on a side that is still enabled. WDFL is left
+ * at 0, so the word start flag (WSF, the same bit in TCSR and RCSR) sets at the
+ * first word of each frame. A channel enabled right after that has almost a
+ * whole frame before it takes effect at the frame end: enough for the DMA to
+ * fill the TX FIFO, and no data word of the running frame is involved.
+ */
+static void i2s_wait_frame_start(volatile uint32_t *csr, uint32_t timeout_us)
+{
+	*csr = (*csr & ~I2S_CSR_W1C_MASK) | I2S_TCSR_WSF_MASK;
+
+	if (!WAIT_FOR((*csr & I2S_TCSR_WSF_MASK) != 0UL, timeout_us, k_busy_wait(1))) {
+		LOG_WRN("no frame start");
+	}
+}
+
+/*
+ * The channel FIFO reset (TCR3[CFR], RCR3[CFR]) may be used on a disabled
+ * channel while the transmitter or receiver stays enabled. Only instances with
+ * more than one channel have it; the others have the global FIFO reset
+ * (TCSR[FR], RCSR[FR]) only, which needs the side disabled.
+ */
+static bool i2s_has_channel_fifo_reset(I2S_Type *base)
+{
+#if defined(I2S_TCR3_CFR_MASK) && defined(I2S_RCR3_CFR_MASK)
+	return (int)FSL_FEATURE_SAI_CHANNEL_COUNTn(base) > 1;
+#else
+	ARG_UNUSED(base);
+	return false;
+#endif
+}
+
+/* A channel FIFO is empty when its read and write pointers are equal */
+static bool i2s_channel_fifo_empty(I2S_Type *base, enum i2s_dir dir, uint32_t channel)
+{
+#if defined(I2S_TFR_RFP_MASK) && defined(I2S_TFR_WFP_MASK) && defined(I2S_RFR_RFP_MASK) &&         \
+	defined(I2S_RFR_WFP_MASK)
+	uint32_t fr;
+
+	if (dir == I2S_DIR_TX) {
+		fr = base->TFR[channel];
+		return ((fr & I2S_TFR_RFP_MASK) >> I2S_TFR_RFP_SHIFT) ==
+		       ((fr & I2S_TFR_WFP_MASK) >> I2S_TFR_WFP_SHIFT);
+	}
+
+	fr = base->RFR[channel];
+	return ((fr & I2S_RFR_RFP_MASK) >> I2S_RFR_RFP_SHIFT) ==
+	       ((fr & I2S_RFR_WFP_MASK) >> I2S_RFR_WFP_SHIFT);
+#else
+	ARG_UNUSED(base);
+	ARG_UNUSED(dir);
+	ARG_UNUSED(channel);
+	return true;
+#endif
+}
+
+/*
+ * Empty the FIFO of a stream that stops while its side stays enabled for the
+ * clocks of the opposite stream, so that its next run starts with its own
+ * data. The global FIFO reset needs the side disabled.
+ *
+ * The channel is masked already. A mask change takes effect at the end of a
+ * frame, so wait for two frame starts: the second one follows a whole frame
+ * with the channel masked, and no word moves into or out of its FIFO any
+ * more. Then reset the channel FIFO. Without a channel FIFO reset, RX reads
+ * out the words left, as a read of RDR on a masked channel still advances the
+ * read pointer, and TX has sent its words out before the channel was masked.
+ */
+static void i2s_channel_fifo_flush(const struct device *dev, enum i2s_dir dir)
+{
+	I2S_Type *base = get_base(dev);
+	struct i2s_dev_data *dev_data = dev->data;
+	const struct i2s_mcux_config *dev_cfg = dev->config;
+	struct stream *strm = (dir == I2S_DIR_TX) ? &dev_data->tx : &dev_data->rx;
+	volatile uint32_t *csr = (dir == I2S_DIR_TX) ? &base->TCSR : &base->RCSR;
+	uint32_t timeout_us = i2s_stream_wind_down_us(dev, strm);
+	uint32_t channel = strm->start_channel;
+
+	i2s_wait_frame_start(csr, timeout_us);
+	i2s_wait_frame_start(csr, timeout_us);
+
+#if defined(I2S_TCR3_CFR_MASK) && defined(I2S_RCR3_CFR_MASK)
+	if (i2s_has_channel_fifo_reset(base)) {
+		if (dir == I2S_DIR_TX) {
+			base->TCR3 |= I2S_TCR3_CFR(dev_cfg->tx_channel);
+		} else {
+			base->RCR3 |= I2S_RCR3_CFR(dev_cfg->tx_channel);
+		}
+	}
+#else
+	ARG_UNUSED(dev_cfg);
+#endif
+
+	if (dir == I2S_DIR_RX) {
+		for (uint32_t i = 0U; (i < (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base)) &&
+				      !i2s_channel_fifo_empty(base, dir, channel);
+		     i++) {
+			(void)base->RDR[channel];
+		}
+	}
+
+	if (!i2s_channel_fifo_empty(base, dir, channel)) {
+		LOG_WRN("%s FIFO not empty", (dir == I2S_DIR_TX) ? "TX" : "RX");
+	}
+}
+
 static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab, bool in_drop,
 				     bool out_drop)
 {
@@ -285,6 +391,9 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
 	const struct device *dev_dma = dev_data->dev_dma;
+	/* the transmitter stays enabled for the clocks of a running RX */
+	bool keep_te = i2s_rx_sync_to_tx(base) && i2s_rx_needs_clocks(dev_data);
+	bool te_on = (base->TCSR & I2S_TCSR_TE_MASK) != 0UL;
 
 	LOG_DBG("Stopping DMA channel %u for TX stream", strm->dma_channel);
 
@@ -296,8 +405,14 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	dma_stop(dev_dma, strm->dma_channel);
 
-	if (!drop && ((base->TCSR & I2S_TCSR_TE_MASK) != 0UL)) {
-		/* wait for TX FIFO to drain before disabling, if not disabled already */
+	/*
+	 * On STOP and DRAIN, let the words in the FIFO go out before the
+	 * channel is masked. On DROP they are discarded: by the FIFO reset when
+	 * the transmitter goes off, or by the channel FIFO reset when it stays
+	 * enabled for RX. Without a channel FIFO reset a masked channel keeps
+	 * its words, so they are sent out then too.
+	 */
+	if (te_on && (!drop || (keep_te && !i2s_has_channel_fifo_reset(base)))) {
 		if (!WAIT_FOR((base->TCSR & I2S_TCSR_FWF_MASK) != 0UL,
 			      i2s_stream_wind_down_us(dev, strm), k_busy_wait(1))) {
 			LOG_WRN("TX FIFO did not drain");
@@ -309,10 +424,13 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	/*
 	 * Disable the transmitter, unless it provides the clocks of an RX
-	 * stream that still needs them. The RX disable turns it off then.
+	 * stream that still needs them. The RX disable turns it off then; flush
+	 * the channel FIFO for now.
 	 */
-	if (!i2s_rx_sync_to_tx(base) || !i2s_rx_needs_clocks(dev_data)) {
+	if (!keep_te) {
 		i2s_tx_transmitter_off(dev);
+	} else if (te_on) {
+		i2s_channel_fifo_flush(dev, I2S_DIR_TX);
 	}
 
 	/*
@@ -354,10 +472,13 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 
 	/*
 	 * Disable the receiver, unless it provides the clocks of a TX stream
-	 * that still needs them. The TX disable turns it off then.
+	 * that still needs them. The TX disable turns it off then; flush the
+	 * channel FIFO for now.
 	 */
 	if (!i2s_tx_sync_to_rx(base) || !i2s_tx_needs_clocks(dev_data)) {
 		i2s_rx_receiver_off(dev);
+	} else if ((base->RCSR & I2S_RCSR_RE_MASK) != 0UL) {
+		i2s_channel_fifo_flush(dev, I2S_DIR_RX);
 	}
 
 	/*
@@ -972,6 +1093,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		/* set bit clock divider */
 		SAI_RxSetConfig(base, &config);
 		dev_data->rx.start_channel = config.startChannel;
+		/* Disable the channel FIFO */
+		SAI_RxSetChannelFIFOMask(base, 0);
 		SAI_RxSetBitClockRate(base, mclk, i2s_cfg->frame_clk_freq, word_size_bits,
 				      i2s_cfg->channels);
 		LOG_DBG("rx start_channel = %d", dev_data->rx.start_channel);
@@ -1023,6 +1146,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	struct dma_block_config *blk_cfg = &strm->dma_block;
 	uint32_t data_path = strm->start_channel;
 	uint8_t blocks_queued;
+	bool te_on;
 
 	/* 1) If STOP left pending buffers in out_queue, collect them */
 	while (k_msgq_get(&strm->out_queue, &pending[pending_cnt], K_NO_WAIT) == 0) {
@@ -1102,10 +1226,16 @@ static int i2s_tx_stream_start(const struct device *dev)
 		return ret;
 	}
 
-	/* reset the FIFO pointers, which may hold stale words from a
-	 * previous run of the stream
+	/*
+	 * Reset the FIFO pointers, which may hold stale words from a previous
+	 * run of the stream. The FIFO reset is only allowed with the
+	 * transmitter disabled. When it stays enabled for the clocks of a
+	 * synchronous RX, the channel FIFO was flushed when the stream stopped.
 	 */
-	base->TCSR |= I2S_TCSR_FR_MASK;
+	te_on = (base->TCSR & I2S_TCSR_TE_MASK) != 0UL;
+	if (!te_on) {
+		base->TCSR = (base->TCSR & ~I2S_CSR_W1C_MASK) | I2S_TCSR_FR_MASK;
+	}
 
 	/*
 	 * The FIFO error interrupt is enabled only while the stream runs. An
@@ -1119,7 +1249,13 @@ static int i2s_tx_stream_start(const struct device *dev)
 	/* Enable DMA enable bit */
 	SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
 
-	/* Enable the channel FIFO */
+	/*
+	 * Enable the channel FIFO. On a running transmitter this takes effect
+	 * at the end of the current frame, so do it at a frame start.
+	 */
+	if (te_on) {
+		i2s_wait_frame_start(&base->TCSR, i2s_stream_wind_down_us(dev, strm));
+	}
 	SAI_TxSetChannelFIFOMask(base, dev_cfg->tx_channel);
 
 	/* Enable SAI Tx clock */
@@ -1138,6 +1274,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = get_base(dev);
 	uint32_t num_of_bufs;
+	bool re_on;
 
 	num_of_bufs = k_mem_slab_num_free_get(strm->cfg.mem_slab);
 
@@ -1219,10 +1356,16 @@ static int i2s_rx_stream_start(const struct device *dev)
 		return ret;
 	}
 
-	/* reset the FIFO pointers, which may hold stale words from a
-	 * previous run of the stream
+	/*
+	 * Reset the FIFO pointers, which may hold stale words from a previous
+	 * run of the stream. The FIFO reset is only allowed with the receiver
+	 * disabled. When it stays enabled for the clocks of a synchronous TX,
+	 * the channel FIFO was flushed when the stream stopped.
 	 */
-	base->RCSR |= I2S_RCSR_FR_MASK;
+	re_on = (base->RCSR & I2S_RCSR_RE_MASK) != 0UL;
+	if (!re_on) {
+		base->RCSR = (base->RCSR & ~I2S_CSR_W1C_MASK) | I2S_RCSR_FR_MASK;
+	}
 
 	/*
 	 * The FIFO error interrupt is enabled only while the stream runs.
@@ -1234,7 +1377,13 @@ static int i2s_rx_stream_start(const struct device *dev)
 	/* Enable DMA enable bit */
 	SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
 
-	/* Enable the channel FIFO */
+	/*
+	 * Enable the channel FIFO. On a running receiver this takes effect at
+	 * the end of the current frame, so do it at a frame start.
+	 */
+	if (re_on) {
+		i2s_wait_frame_start(&base->RCSR, i2s_stream_wind_down_us(dev, strm));
+	}
 	SAI_RxSetChannelFIFOMask(base, dev_cfg->tx_channel);
 
 	/* Enable SAI Rx clock */
