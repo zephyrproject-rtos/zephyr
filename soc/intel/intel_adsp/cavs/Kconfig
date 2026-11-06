@@ -16,8 +16,14 @@ config SOC_SERIES_INTEL_ADSP_CAVS
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select INTEL_ADSP_MEMORY_IS_MIRRORED
 	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
+	select INTEL_ADSP_CAVS
 
 config SOC_CAVSV25
+	select SOC_SERIES_INTEL_CAVS_V25
 	select XTENSA_WAITI_BUG
 	select ARCH_HAS_DIRECTED_IPIS
 	select SCHED_IPI_SUPPORTED if SMP
+
+# For backward compatibility as downstream still uses this.
+config INTEL_ADSP_CAVS
+	bool

@@ -18,20 +18,14 @@ config XTENSA_CCOUNT_HZ
 	default 614400000 if BOARD_INTEL_ADSP_ACE30_WCL || BOARD_INTEL_ADSP_ACE30_WCL_SIM
 	default 442368000 if BOARD_INTEL_ADSP_ACE30_PTL || BOARD_INTEL_ADSP_ACE30_PTL_SIM
 
-config CPU_HAS_MMU
-	def_bool y
-
-config XTENSA_MMU
-	def_bool y
-
-config XTENSA_MMU_NUM_L2_TABLES
+configdefault XTENSA_MMU_NUM_L2_TABLES
 	# Need to have enough to accommodate samples and tests.
 	# Also need to have some room for future expansions or
 	# else we will be chasing changes all the time.
-	default 64
+	default 64 if XTENSA_MMU
 
-config XTENSA_MMU_USE_DEFAULT_MAPPINGS
-	default n
+configdefault XTENSA_MMU_USE_DEFAULT_MAPPINGS
+	default n if XTENSA_MMU
 
 # xt-clang seems to generate some memory access patterns which
 # result in the simulator accessing incorrect memory or
