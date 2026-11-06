@@ -1,0 +1,13 @@
+tests:
+  drivers.dma.mcux_edma_priority:
+    tags:
+      - drivers
+      - dma
+    depends_on: dma
+    harness: ztest
+    filter: dt_nodelabel_enabled("tst_dma0") and CONFIG_DMA_MCUX_EDMA
+    platform_allow:
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
