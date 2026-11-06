@@ -9,7 +9,6 @@ config SOC_FLASH_NRF_MRAM
 	default y
 	depends on DT_HAS_NORDIC_MRAM_ENABLED
 	depends on HAS_NRFX
-	depends on !RISCV_CORE_NORDIC_VPR
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
@@ -23,14 +22,48 @@ config SOC_FLASH_NRF_MRAM
 	  pre-erased area is faster. Hence, the erase API is not required, but
 	  it can be used to amortize write performance for some use cases.
 
+if SOC_FLASH_NRF_MRAM
+
 config NRF_MRAM_MAX_RETRIES
 	int "Maximum number of retries for MRAM write/erase operations"
 	default 20
 	range 1 255
-	depends on SOC_FLASH_NRF_MRAM
 	help
 	  This option sets the maximum number of retry attempts for MRAM
 	  write and erase operations when verification fails. Each retry
 	  attempts to rewrite or re-erase the data to ensure reliability.
 	  Higher values increase reliability but may impact performance
 	  in case of persistent failures.
+
+config NRF_MRAM_CHECK_READY_BIT
+	bool "Check MRAMC READY bit before write or erase operation"
+	default y if MRAM_LATENCY && (SOC_SERIES_NRF54H || SOC_SERIES_NRF92)
+	help
+	  Before each MRAM word write or erase, and after it completes, wait
+	  until the MRAMC of the addressed bank reports it is ready (READY).
+
+config NRF_MRAM_CHECK_READYNEXT_BIT
+	bool "Check MRAMC READYNEXT bit before write or erase operation."
+	default y if NRF_MRAM_CHECK_READY_BIT
+	help
+	  After each MRAM word write or erase, wait until the MRAMC reports it
+	  can accept the next write operation (READYNEXT).
+
+config NRF_MRAM_READY_MAX_SPINS
+	int "Maximum MRAMC READY/READYNEXT poll iterations"
+	default 1000000
+	range 1 2147483647
+	depends on NRF_MRAM_CHECK_READY_BIT || NRF_MRAM_CHECK_READYNEXT_BIT
+	help
+	  Number of times the MRAMC READY/READYNEXT status is polled before
+	  a write or erase gives up and fails with -ETIMEDOUT.
+
+config NRF_MRAM_USE_MUTEX_HW
+	bool "Use hardware mutexes to serialize MRAM access across CPU domains"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_MRAM),nordic-mutexes)
+	help
+	  When enabled, the driver claims a per-bank hardware mutex around each
+	  MRAM write and erase transaction, using the controller's
+	  "nordic,mutexes" list and each bank's "nordic,mutex-index".
+
+endif # SOC_FLASH_NRF_MRAM
