@@ -48,3 +48,39 @@ config SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP
 config SOC_ESP32_ETM_SUPPORTED
 	bool
 	default y
+
+config SOC_ESP32_FLASH_ENCRYPTION_XTS_AES
+	bool
+	default y
+
+config SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+	bool
+	default y
+
+config SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_128
+	bool
+	default y
+
+config SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_256
+	bool
+	default y
+
+config SOC_ESP32_EFUSE_XTS_AES_KEY_128
+	bool
+	default y
+
+config SOC_ESP32_SUPPORTS_SECURE_DL_MODE
+	bool
+	default y
+
+config SOC_ESP32_ECDSA_SUPPORT_CURVE_P384
+	bool
+	default y
+
+config SOC_ESP32_EFUSE_DIS_ICACHE
+	bool
+	default y
+
+config SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+	bool
+	default y

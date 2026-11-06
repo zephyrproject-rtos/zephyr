@@ -30,7 +30,8 @@ With flash encryption enabled, the following types of data are encrypted by defa
 * Application area
 * Storage area
 
-For more details, check `ESP32 Flash Encryption`_ and `MCUBoot Readme`_.
+For more details, check `ESP32 Flash Encryption`_ and
+:ref:`hardware_flash_encryption`.
 
 Software Requirements
 *********************
@@ -45,7 +46,8 @@ Setup
 
 This sample code isn't enough to enable flash encryption as it only consists on displaying
 encrypted/decrypted data. It requires MCUBoot bootloader previously configured to enable the
-feature. Follow the instructions provided at `MCUBoot Readme`_ prior to running this sample.
+feature. Follow the instructions provided at :ref:`hardware_flash_encryption` prior to
+running this sample.
 
 .. warning::
   When enabling the Flash Encryption, user can encrypt the content either using a device
@@ -107,6 +109,3 @@ memory reading using proper spi_flash call, which decrypts the content as expect
 
 .. _ESP32 Flash Encryption:
    https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/flash-encryption.html
-
-.. _MCUBoot Readme:
-   https://docs.mcuboot.com/readme-espressif
