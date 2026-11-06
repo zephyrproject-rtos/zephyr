@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: iSentek IST8308 3-axis magnetometer
+
+compatible: "isentek,ist8308"
+
+include: [i2c-device.yaml, sensor-device.yaml]
