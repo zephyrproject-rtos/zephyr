@@ -59,13 +59,19 @@ int pmu_configure_counters(const struct pmu_counter_config *configs, uint32_t nu
 /**
  * @brief Copy @a src into @a counter_configs and call @ref pmu_configure_counters.
  *
- * @return true on success, false if @a n exceeds @ref PMU_MAX_COUNTERS or
- *         configuration fails
+ * @param counter_configs Destination buffer of at least
+ *                        @kconfig{CONFIG_PMU_MAX_COUNTERS} entries.
+ * @param src Counter configurations to apply.
+ * @param n Number of entries in @a src.
+ *
+ * @retval true Counters configured.
+ * @retval false @a n exceeds @kconfig{CONFIG_PMU_MAX_COUNTERS}.
+ * @retval false Counter configuration failed.
  */
 static inline bool pmu_apply_counter_group(struct pmu_counter_config *counter_configs,
 					   const struct pmu_counter_config *src, size_t n)
 {
-	if (n > PMU_MAX_COUNTERS) {
+	if (n > CONFIG_PMU_MAX_COUNTERS) {
 		return false;
 	}
 
@@ -93,6 +99,11 @@ static inline uint32_t pmu_cpu_freq_mhz(void)
 
 /**
  * @brief Human-readable PMU event name for logging (benchmark / diag only).
+ *
+ * @param event Architectural event code.
+ *
+ * @return Event name string, or "UNKNOWN" if @a event is not recognized or
+ *         @c CONFIG_ARM64_PMUV3 is off. Never NULL.
  */
 static inline const char *pmu_event_name(uint32_t event)
 {
