@@ -154,8 +154,8 @@ static int i2c_write_from_buffer(const struct shell *sh,
 			buf + MAX_BYTES_FOR_REGISTER_INDEX - reg_addr_bytes,
 			reg_addr_bytes + data_length, dev_addr);
 	if (ret < 0) {
-		shell_error(sh, "Failed to write to device: %s", s_dev_addr);
-		return -EIO;
+		shell_error(sh, "Failed to write to device: %s (error %d)", s_dev_addr, ret);
+		return ret;
 	}
 
 	return 0;
@@ -211,8 +211,8 @@ static int i2c_read_to_buffer(const struct shell *sh,
 	}
 
 	if (ret < 0) {
-		shell_error(sh, "Failed to read from device: %s", s_dev_addr);
-		return -EIO;
+		shell_error(sh, "Failed to read from device: %s (error %d)", s_dev_addr, ret);
+		return ret;
 	}
 
 	return 0;
@@ -312,8 +312,8 @@ static int cmd_i2c_speed(const struct shell *sh, size_t argc, char **argv)
 
 	ret = i2c_configure(dev, dev_config);
 	if (ret < 0) {
-		shell_error(sh, "I2C: Failed to configure device: %s", s_dev_name);
-		return -EIO;
+		shell_error(sh, "I2C: Failed to configure device: %s (error %d)", s_dev_name, ret);
+		return ret;
 	}
 	return 0;
 }
