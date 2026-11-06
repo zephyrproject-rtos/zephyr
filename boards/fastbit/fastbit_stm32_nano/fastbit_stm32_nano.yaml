@@ -1,0 +1,14 @@
+identifier: fastbit_stm32_nano
+name: Fastbit STM32 Nano
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 40
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - spi
+vendor: fastbit

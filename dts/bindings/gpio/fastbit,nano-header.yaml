@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Fastbit Embedded Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on the Fastbit STM32 Nano 2x5 expansion headers.
+
+    The board provides three 2x5 (10 pin) headers, called P1, P2 and P3 in
+    the schematic. In every header the odd pins form one column and the even
+    pins form the other column, with pin 1 being the 3V3 or first signal pin.
+
+    This binding provides a nexus mapping where the parent pin index is
+    (header number - 1) * 10 + (header pin number - 1). Power pins (3V3 and
+    GND) are not mapped. The mapped pins are:
+
+        P1 (indices 0 to 9)         P2 (indices 10 to 19)
+         1 3V3                       1 PB0   (10)
+         2 PC13  (1)                 2 PB1   (11)
+         3 PA1   (2)                 3 PB10  (12)
+         4 PA2   (3)                 4 PB11  (13)
+         5 PA3   (4)                 5 PB12  (14)
+         6 PA4   (5)                 6 PB13  (15)
+         7 PA5   (6)                 7 PB14  (16)
+         8 PA6   (7)                 8 PB15  (17)
+         9 PA7   (8)                 9 PA9   (18)
+        10 GND                      10 PA10  (19)
+
+        P3 (indices 20 to 29)
+         1 3V3
+         2 PA8   (21)
+         3 PA15  (22)
+         4 PB4   (23)
+         5 PB5   (24)
+         6 PB6   (25)
+         7 PB7   (26)
+         8 PB8   (27)
+         9 PB9   (28)
+        10 GND
+
+compatible: "fastbit,nano-header"
+
+include: [gpio-nexus.yaml, base.yaml]
