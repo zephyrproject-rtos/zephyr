@@ -337,6 +337,26 @@ static void i2s_tx_stream_set_error(const struct device *dev)
 	dma_stop(dev_data->dev_dma, strm->dma_channel);
 }
 
+/*
+ * Move an active RX stream to I2S_STATE_ERROR. Used for every RX error: an
+ * overrun detected by the SAI FIFO error interrupt or by the RX DMA callback
+ * (no room left in out_queue or in the memory slab), a DMA error and a
+ * failed DMA reload.
+ *
+ * Stop reception and release the blocks still owned by the DMA, but keep the
+ * blocks already received so that i2s_read() can still return them, as the
+ * I2S API requires for the ERROR state. PREPARE/DROP releases the rest.
+ *
+ * Called in interrupt context.
+ */
+static void i2s_rx_stream_set_error(const struct device *dev)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+
+	dev_data->rx.state = I2S_STATE_ERROR;
+	i2s_rx_stream_disable(dev, true, false);
+}
+
 /* This function is executed in the interrupt context */
 static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
 				int status)
@@ -432,32 +452,35 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 
 	LOG_DBG("RX cb");
 
-	if (strm->state == I2S_STATE_ERROR) {
+	if (strm->state != I2S_STATE_STOPPING && strm->state != I2S_STATE_RUNNING) {
 		/*
-		 * The SAI ISR flagged an RX overrun. Stop reception and release
-		 * the blocks still owned by the DMA, but keep the blocks already
-		 * received so that i2s_read() can still return them, as the I2S
-		 * API requires for the ERROR state.
+		 * A completion that was pending when the stream was stopped, by a
+		 * trigger or by an error. The stream is already disabled.
 		 */
-		LOG_ERR("RX overrun, stopping RX stream");
-		i2s_rx_stream_disable(dev, true, false);
 		return;
 	}
 
-	if (strm->state != I2S_STATE_STOPPING && strm->state != I2S_STATE_RUNNING) {
-		LOG_ERR("Invalid state (%d)", strm->state);
-		return;
+	if (status < 0) {
+		LOG_ERR("RX DMA error %d", status);
+		goto error;
 	}
 
 	/* retrieve entry from input queue */
 	ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
-	__ASSERT_NO_MSG(ret == 0);
+	if (ret != 0) {
+		LOG_ERR("RX in_queue empty for channel %u", channel);
+		goto error;
+	}
 
 	/* put entry to output queue */
 	ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
-		LOG_ERR("buffer %p -> out_queue %p err %d", q_entry.mem_block, &strm->out_queue,
-			ret);
+		/*
+		 * RX overrun: the application does not read fast enough. Drop
+		 * the block just received, the queued ones stay readable.
+		 */
+		LOG_ERR("RX overrun, out_queue full");
+		k_mem_slab_free(strm->cfg.mem_slab, q_entry.mem_block);
 		goto error;
 	}
 
@@ -473,6 +496,7 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	/* allocate new buffer for next audio frame */
 	ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 	if (ret != 0) {
+		/* RX overrun: the application holds every block of the slab */
 		LOG_ERR("buffer alloc from slab %p err %d", strm->cfg.mem_slab, ret);
 		goto error;
 	}
@@ -485,19 +509,18 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 			 q_entry.size);
 	if (ret != 0) {
 		LOG_ERR("dma_reload() failed with error 0x%x", ret);
+		k_mem_slab_free(strm->cfg.mem_slab, q_entry.mem_block);
 		goto error;
 	}
 
+	/* in_queue holds the NUM_DMA_BLOCKS_RX_PREP blocks owned by the DMA */
 	ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
-	if (ret != 0) {
-		LOG_ERR("%p -> in_queue %p err %d", q_entry.mem_block, &strm->in_queue, ret);
-	}
+	__ASSERT(ret == 0, "RX in_queue full");
 
 	return;
 
 error:
-	i2s_rx_stream_disable(dev, false, false);
-	strm->state = I2S_STATE_ERROR;
+	i2s_rx_stream_set_error(dev);
 }
 
 static void enable_mclk_direction(const struct device *dev, bool dir)
@@ -1003,14 +1026,14 @@ static int i2s_rx_stream_start(const struct device *dev)
 	 * for reliable DMA reception.
 	 */
 	if (num_of_bufs < NUM_DMA_BLOCKS_RX_PREP) {
-		return -EINVAL;
+		return -ENOMEM;
 	}
 
 	/* allocate 1st receive entry from SLAB */
 	ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 	if (ret != 0) {
 		LOG_DBG("entry alloc from mem_slab failed (%d)", ret);
-		return ret;
+		return -ENOMEM;
 	}
 	q_entry.size = strm->cfg.block_size;
 
@@ -1031,12 +1054,18 @@ static int i2s_rx_stream_start(const struct device *dev)
 	strm->dma_cfg.head_block = &strm->dma_block;
 	strm->dma_cfg.user_data = (void *)dev;
 
-	dma_config(dev_dma, strm->dma_channel, &strm->dma_cfg);
-
-	/* put entry in input queue */
+	/*
+	 * Track every allocated block on in_queue before any call that can
+	 * fail, so that the START error path (i2s_rx_stream_disable() with
+	 * drop) returns it to the slab. in_queue holds at least
+	 * NUM_DMA_BLOCKS_RX_PREP entries, so the put cannot fail.
+	 */
 	ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
+	__ASSERT(ret == 0, "RX in_queue full");
+
+	ret = dma_config(dev_dma, strm->dma_channel, &strm->dma_cfg);
 	if (ret != 0) {
-		LOG_ERR("failed to put entry in input queue, ret1 %d", ret);
+		LOG_ERR("dma_config() failed with error 0x%x", ret);
 		return ret;
 	}
 
@@ -1047,7 +1076,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 		ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 		if (ret != 0) {
 			LOG_ERR("entry alloc from mem_slab failed (%d)", ret);
-			return ret;
+			return -ENOMEM;
 		}
 		q_entry.size = blk_cfg->block_size;
 
@@ -1055,15 +1084,12 @@ static int i2s_rx_stream_start(const struct device *dev)
 				 (uintptr_t)q_entry.mem_block, q_entry.size);
 		if (ret != 0) {
 			LOG_ERR("dma_reload() failed with error 0x%x", ret);
+			k_mem_slab_free(strm->cfg.mem_slab, q_entry.mem_block);
 			return ret;
 		}
 
-		/* put entry in input queue */
 		ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
-		if (ret != 0) {
-			LOG_ERR("failed to put entry in input queue, ret2 %d", ret);
-			return ret;
-		}
+		__ASSERT(ret == 0, "RX in_queue full");
 	}
 
 	LOG_DBG("Starting DMA Ch%u", strm->dma_channel);
@@ -1133,7 +1159,8 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 			} else {
 				i2s_rx_stream_disable(dev, true, true);
 			}
-			ret = -EIO;
+			/* -ENOMEM is a documented trigger result, report it as is */
+			ret = (ret == -ENOMEM) ? -ENOMEM : -EIO;
 			break;
 		}
 
@@ -1323,8 +1350,12 @@ static void sai_driver_irq(const struct device *dev)
 	if ((base->RCSR & I2S_RCSR_FEF_MASK) == I2S_RCSR_FEF_MASK) {
 		struct stream *strm = &dev_data->rx;
 
-		if (strm->state == I2S_STATE_RUNNING) {
-			strm->state = I2S_STATE_ERROR;
+		/*
+		 * Handle the overrun like the RX DMA callback does. Only
+		 * PREPARE/DROP releases the blocks already received.
+		 */
+		if (strm->state == I2S_STATE_RUNNING || strm->state == I2S_STATE_STOPPING) {
+			i2s_rx_stream_set_error(dev);
 		}
 
 		/* Clear FIFO error flag to continue transfer */
