@@ -1054,4 +1054,37 @@ static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
 }
+
+/* A packet that carries less data than its ACL header says is dropped, and
+ * reported as completed for its connection.
+ */
+static ZTEST(bt_host_ncp, test_length_mismatch_reported)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_acl_hdr *hdr;
+	struct net_buf *buf;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE) ||
+	    !IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	host_ncp_reset();
+
+	/* An L2CAP PDU of one byte, without that byte */
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(TEST_CONN_HANDLE, BT_ACL_START));
+	hdr->len = sys_cpu_to_le16(BT_L2CAP_HDR_SIZE + 1U);
+	net_buf_add_le16(buf, 1U);
+	net_buf_add_le16(buf, TEST_UNKNOWN_CID);
+	bt_hci_recv(dev, buf);
+
+	expect_host_ncp(TEST_CONN_HANDLE, 1U);
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_GATT_CLIENT */
