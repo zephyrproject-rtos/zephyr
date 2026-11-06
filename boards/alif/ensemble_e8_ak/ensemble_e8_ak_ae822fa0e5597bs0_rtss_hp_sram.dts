@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "ensemble_e8_ak_ae822fa0e5597bs0_rtss_hp.dts"
+
+/* Ethernet DMA to DTCM is not supported */
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+&eth {
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+};
+
+&phy {
+	status = "okay";
+};
+
+&ptp_clock {
+	status = "okay";
+};

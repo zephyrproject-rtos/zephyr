@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ensemble_e8_ak/ae822fa0e5597bs0/rtss_hp/sram
+name: Alif Ensemble E8 AppKit AE822FA0E5597BS0 RTSS-HP MCU (SRAM)
+type: mcu
+arch: arm
+vendor: alif
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - netif:eth
+  - ptp_clock
