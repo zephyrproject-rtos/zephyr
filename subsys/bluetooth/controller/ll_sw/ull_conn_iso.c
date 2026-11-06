@@ -77,6 +77,14 @@ static void cis_lazy_fill(struct ll_conn_iso_stream *cis);
 static void mfy_cis_lazy_fill(void *param);
 static void ticker_next_slot_get_op_cb(uint32_t status, void *param);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+/* Ticker priority of CIG events, higher than the default of other roles */
+#define TICKER_PRIORITY_CIG (-1)
+/* Ticker priority of successive CIS reservations, a role skipped once in favor
+ * of a CIG event is skipped again in favor of a successive CIS reservation.
+ */
+#define TICKER_PRIORITY_CIS_RESUME (-2)
+#define TICKER_PRIORITY_CIS_RESUME_PERIPHERAL (1)
+
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
@@ -1331,6 +1339,32 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	}
 	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
 		      (ticker_status == TICKER_STATUS_BUSY));
+
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
+	/* Isochronous events have precedence over ACL events of equal latency */
+	ticker_status = ticker_priority_set(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH, ticker_id,
+					    TICKER_PRIORITY_CIG,
+					    ticker_start_op_cb, NULL);
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	ticker_status = ticker_priority_set(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH,
+					    (TICKER_ID_CONN_ISO_RESUME_BASE +
+					     ll_conn_iso_group_handle_get(cig)),
+					    (IS_PERIPHERAL(cig) ?
+					     TICKER_PRIORITY_CIS_RESUME_PERIPHERAL :
+					     TICKER_PRIORITY_CIS_RESUME),
+					    ticker_start_op_cb, NULL);
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+#endif /* CONFIG_BT_TICKER_PRIORITY_SET */
 
 	/* Set CIG and the first CIS state as active */
 	cig->state = CIG_STATE_ACTIVE;

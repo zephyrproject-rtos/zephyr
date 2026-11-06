@@ -836,6 +836,20 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 			return -ECANCELED;
 		}
 
+		struct lll_conn_iso_stream *cis_lll;
+
+		cis_lll = ull_conn_iso_lll_stream_get(cis_handle_curr);
+		if ((cig_lll->packing == 0U) && (cis_lll->rx.bn != 0U) &&
+		    (se_curr > MAX(cis_lll->tx.bn, cis_lll->rx.bn)) &&
+		    (se_curr <= cis_lll->nse) &&
+		    (cis_lll->rx.bn_curr <= cis_lll->rx.bn) &&
+		    ((cis_lll->rx.payload_count / cis_lll->rx.bn) <= cis_lll->event_count)) {
+			/* The burst was not received. Keep the remaining subevents
+			 * available for recovery instead of yielding them to another role.
+			 */
+			return -EBUSY;
+		}
+
 		/* A different role preempted this CIG event; request the
 		 * pipeline to re-enqueue this event to be resumed after the
 		 * preempting role.
