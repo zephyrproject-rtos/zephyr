@@ -1,7 +1,7 @@
-# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SR100
+config SOC_SR100_M55
 	select ARM
 	select ARM_MPU
 	select ARMV8_M_DSP
@@ -21,7 +21,20 @@ config SOC_SR100
 	select SERIAL_SUPPORT_ASYNC
 	select HAS_CMSIS_CORE
 	select SOC_EARLY_INIT_HOOK
+	select SOC_LATE_INIT_HOOK
 	select RESET
 
-config SOC_PART_NUMBER
-	default "SR100" if SOC_SR100
+config SOC_SR100_M4
+	select ARM
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ICACHE
+	select CPU_HAS_FPU
+	select DYNAMIC_INTERRUPTS
+	select UART_NS16550_ACCESS_WORD_ONLY if UART_NS16550
+	select SERIAL_SUPPORT_ASYNC
+	select HAS_CMSIS_CORE
+	select SOC_EARLY_INIT_HOOK
+	select RESET
