@@ -204,16 +204,17 @@ static int sd_command_init(struct sd_card *card)
 	 */
 	sd_delay(1);
 
-
-	/*
-	 * Start card initialization and identification
-	 * flow described in section 3.6 of SD specification
-	 * Common to SDIO and SDMMC. Some eMMC chips break the
-	 * specification and expect something like this too.
-	 */
-	ret = sd_common_init(card);
-	if (ret) {
-		return ret;
+	if (!card->host_props.skip_sd_common_init) {
+		/*
+		 * Start card initialization and identification
+		 * flow described in section 3.6 of SD specification
+		 * Common to SDIO and SDMMC. Some eMMC chips break the
+		 * specification and expect something like this too.
+		 */
+		ret = sd_common_init(card);
+		if (ret) {
+			return ret;
+		}
 	}
 #ifdef CONFIG_MMC_STACK
 	/*
