@@ -107,7 +107,7 @@ int sem_destroy(sem_t *semaphore)
  */
 int sem_getvalue(sem_t *semaphore, int *value)
 {
-	if (semaphore == NULL) {
+	if (semaphore == NULL || value == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -123,16 +123,15 @@ int sem_getvalue(sem_t *semaphore, int *value)
  */
 int sem_init(sem_t *semaphore, int pshared, unsigned int value)
 {
-	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
+	if (semaphore == NULL || value > CONFIG_POSIX_SEM_VALUE_MAX) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	/*
-	 * Zephyr has no concept of process, so only thread shared
-	 * semaphore makes sense in here.
-	 */
-	__ASSERT(pshared == 0, "pshared should be 0");
+	if (pshared != 0) {
+		errno = ENOSYS;
+		return -1;
+	}
 
 	k_sem_init(semaphore, value, CONFIG_POSIX_SEM_VALUE_MAX);
 
@@ -160,9 +159,9 @@ int sem_post(sem_t *semaphore)
  *
  * See IEEE 1003.1
  */
-int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
+int sem_timedwait(sem_t *semaphore, const struct timespec *abstime)
 {
-	if ((abstime == NULL) || !timespec_is_valid(abstime)) {
+	if (semaphore == NULL || abstime == NULL || !timespec_is_valid(abstime)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -182,12 +181,17 @@ int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
  */
 int sem_trywait(sem_t *semaphore)
 {
+	if (semaphore == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	if (k_sem_take(semaphore, K_NO_WAIT) == -EBUSY) {
 		errno = EAGAIN;
 		return -1;
-	} else {
-		return 0;
 	}
+
+	return 0;
 }
 
 /**
@@ -197,6 +201,11 @@ int sem_trywait(sem_t *semaphore)
  */
 int sem_wait(sem_t *semaphore)
 {
+	if (semaphore == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	/* With K_FOREVER, may return only success. */
 	(void)k_sem_take(semaphore, K_FOREVER);
 	return 0;
