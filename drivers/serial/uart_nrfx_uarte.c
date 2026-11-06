@@ -395,6 +395,7 @@ struct uarte_nrfx_config {
 #ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 	/* None-zero in case of high speed instances. Baudrate is adjusted by that ratio. */
 	uint32_t clock_freq;
+	bool use_baudrate_formula;
 #else
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	uint32_t baudrate;
@@ -593,7 +594,7 @@ static int baudrate_set(const struct device *dev, uint32_t baudrate)
 	nrf_uarte_baudrate_t nrf_baudrate;
 
 	/* calculated baudrate divisor */
-	if (UARTE_ANY_HIGH_SPEED && (config->clock_freq > NRF_UARTE_BASE_FREQUENCY_16MHZ)) {
+	if (config->use_baudrate_formula) {
 		nrf_baudrate = UARTE_GET_CUSTOM_BAUDRATE(config->clock_freq, baudrate);
 	} else {
 		nrf_baudrate = NRF_BAUDRATE(baudrate);
@@ -3427,14 +3428,15 @@ static int uarte_instance_deinit(const struct device *dev)
  * must have baudrate adjust to the ratio between UARTE clocking frequency and 16 MHz.
  * Additionally, >1Mbaud speeds are calculated using a formula.
  */
-#define UARTE_GET_BAUDRATE2(f_pclk, current_speed)					\
-	((f_pclk > NRF_UARTE_BASE_FREQUENCY_16MHZ) && (current_speed > 1000000)) ?	\
-		UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed) :			\
-		(NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
+#define UARTE_GET_BAUDRATE2(idx, f_pclk, current_speed)                                            \
+	!UARTE_PROP(idx, current_speed_is_enum)                                                    \
+	? UARTE_GET_CUSTOM_BAUDRATE(f_pclk, current_speed)                                         \
+	: (NRF_BAUDRATE(current_speed) / UARTE_GET_BAUDRATE_DIV(f_pclk))
 
 /* Convert DT current-speed to a value that is written to the BAUDRATE register. */
-#define UARTE_GET_BAUDRATE(idx) \
-	UARTE_GET_BAUDRATE2(NRF_PERIPH_GET_FREQUENCY(UARTE(idx)), UARTE_PROP(idx, current_speed))
+#define UARTE_GET_BAUDRATE(idx)                                                                    \
+	UARTE_GET_BAUDRATE2(idx, NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),                             \
+			    UARTE_PROP(idx, current_speed))
 
 /* Macro for setting nRF specific configuration structures. */
 #define UARTE_NRF_CONFIG(idx) {							\
@@ -3545,7 +3547,8 @@ static int uarte_instance_deinit(const struct device *dev)
 			      "Unsupported baudrate");))		       \
 	static MAYBE_CONST struct uarte_nrfx_config uarte_##idx##z_config = {  \
 		COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,		       \
-			(.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),), \
+			(.clock_freq = NRF_PERIPH_GET_FREQUENCY(UARTE(idx)),   \
+			.use_baudrate_formula = !UARTE_PROP(idx, current_speed_is_enum),),\
 		    (IF_ENABLED(UARTE_HAS_FRAME_TIMEOUT,		       \
 			(.baudrate = UARTE_PROP(idx, current_speed),))	       \
 		     .nrf_baudrate = UARTE_GET_BAUDRATE(idx),		       \
