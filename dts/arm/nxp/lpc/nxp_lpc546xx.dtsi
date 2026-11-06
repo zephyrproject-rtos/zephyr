@@ -39,6 +39,11 @@
 	};
 
 	soc {
+		uuid: uuid@1000100 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x01000100 0x10>;
+		};
+
 		sramx: memory@4000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x04000000 DT_SIZE_K(32)>;
@@ -126,6 +131,14 @@
 				     <32 2>, <33 2>, <34 2>, <35 2>;
 			num-lines = <8>;
 			num-inputs = <64>;
+		};
+
+		inputmux0: inputmux@40005000 {
+			compatible = "nxp,inputmux";
+			reg = <0x40005000 0x1000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+			status = "disabled";
 		};
 
 		ctimer0: ctimer@40008000 {
@@ -252,6 +265,15 @@
 			interrupts = <28 1>;
 			num-bidir-endpoints = <5>;
 			maximum-speed = "full-speed";
+			status = "disabled";
+		};
+
+		sc_timer: pwm@40085000 {
+			compatible = "nxp,sctimer-pwm";
+			reg = <0x40085000 0x1000>;
+			interrupts = <12 0>;
+			clocks = <&syscon MCUX_SCTIMER_CLK>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
