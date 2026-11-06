@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXS22IOSS pin controller
+
+  Variant of the IOSS pin controller found on PSOC Edge devices. The
+  slew rate and drive strength of each pin are set in the CFG_SLEW_EXT
+  and CFG_DRIVE_EXT registers, and all eight drive strength levels are
+  supported. A high impedance pin also has its CFG_OUT3 drive mode
+  cleared.
+
+  The HSIOM and GPIO regions of the SMIF GPIO ports are described as
+  "smif0_hsiom", "smif0_gpio", "smif1_hsiom" and "smif1_gpio". Their
+  pins use the port numbers IFX_SMIF0_PORT0 to IFX_SMIF1_PORT2.
+
+    pinctrl: pinctrl@42800000 {
+        compatible = "infineon,mxs22-ioss-pinctrl", "infineon,ioss-pinctrl";
+        reg = <0x42800000 0x4000>, <0x42810000 0x10000>,
+              <0x44464000 0x4000>, <0x44470000 0x10000>,
+              <0x444a4000 0x4000>, <0x444b0000 0x10000>;
+        reg-names = "hsiom", "gpio",
+                    "smif0_hsiom", "smif0_gpio",
+                    "smif1_hsiom", "smif1_gpio";
+    };
+
+compatible: "infineon,mxs22-ioss-pinctrl"
+
+include: "infineon,ioss-pinctrl.yaml"

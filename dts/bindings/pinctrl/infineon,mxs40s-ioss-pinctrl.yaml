@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXS40SIOSS pin controller
+
+  Variant of the IOSS pin controller found on PSOC Control C3 devices.
+  The slew rate and drive strength of each pin are set in the
+  CFG_SLEW_EXT and CFG_DRIVE_EXT registers. The supported drive
+  strength levels are full, half, one-fourth and one-eighth.
+
+    pinctrl: pinctrl@42400000 {
+        compatible = "infineon,mxs40s-ioss-pinctrl", "infineon,ioss-pinctrl";
+        reg = <0x42400000 0x4000>, <0x42410000 0x10000>;
+        reg-names = "hsiom", "gpio";
+    };
+
+compatible: "infineon,mxs40s-ioss-pinctrl"
+
+include: "infineon,ioss-pinctrl.yaml"

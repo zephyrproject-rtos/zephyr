@@ -10,3 +10,28 @@ config PINCTRL_INFINEON_CAT1
 	depends on DT_HAS_INFINEON_PINCTRL_ENABLED
 	help
 	  Enable Pin controller driver for Infineon CAT1 MCUs
+
+config PINCTRL_INFINEON_IOSS
+	bool "Infineon IOSS pin controller driver"
+	default y
+	depends on DT_HAS_INFINEON_IOSS_PINCTRL_ENABLED
+	help
+	  Enable the register level pin controller driver for the Infineon
+	  IOSS block, which programs the HSIOM function selection and the
+	  GPIO port drive mode of each pin.
+
+config PINCTRL_INFINEON_IOSS_MXS40S
+	bool
+	default y if DT_HAS_INFINEON_MXS40S_IOSS_PINCTRL_ENABLED
+	depends on PINCTRL_INFINEON_IOSS
+	help
+	  The IOSS is the MXS40SIOSS variant, which supports the full, half,
+	  one-fourth and one-eighth drive strength levels.
+
+config PINCTRL_INFINEON_IOSS_MXS22
+	bool
+	default y if DT_HAS_INFINEON_MXS22_IOSS_PINCTRL_ENABLED
+	depends on PINCTRL_INFINEON_IOSS
+	help
+	  The IOSS is the MXS22IOSS variant, which supports eight drive
+	  strength levels and has the CFG_OUT3 drive mode register.
