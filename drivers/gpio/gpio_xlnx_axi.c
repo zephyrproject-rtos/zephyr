@@ -198,6 +198,46 @@ static int gpio_xlnx_axi_port_toggle_bits(const struct device *dev, gpio_port_pi
 	return 0;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_xlnx_axi_port_get_direction(const struct device *dev, gpio_port_pins_t map,
+					    gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_xlnx_axi_config *config = dev->config;
+	const struct gpio_xlnx_axi_data *data = dev->data;
+	gpio_port_pins_t input_pins;
+	gpio_port_pins_t output_pins;
+
+	map &= config->common.port_pin_mask;
+
+	/* Shadow TRI: bit=1 means INPUT (tristated), bit=0 means OUTPUT (driven) */
+	input_pins = map & data->tri;
+	output_pins = map & ~data->tri;
+
+	/*
+	 * A channel generated with all-inputs or all-outputs has a fixed
+	 * direction that TRI does not reflect, so report the direction from
+	 * the IP configuration instead of the shadow TRI value.
+	 */
+	if (config->all_inputs) {
+		input_pins = map;
+		output_pins = 0;
+	} else if (config->all_outputs) {
+		input_pins = 0;
+		output_pins = map;
+	}
+
+	if (inputs != NULL) {
+		*inputs = input_pins;
+	}
+
+	if (outputs != NULL) {
+		*outputs = output_pins;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 /**
  * Enables interrupts for the given pins on the channel
@@ -373,6 +413,9 @@ static DEVICE_API(gpio, gpio_xlnx_axi_driver_api) = {
 	.port_set_bits_raw = gpio_xlnx_axi_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_xlnx_axi_port_clear_bits_raw,
 	.port_toggle_bits = gpio_xlnx_axi_port_toggle_bits,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_xlnx_axi_port_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 	.pin_interrupt_configure = gpio_xlnx_axi_pin_interrupt_configure,
 	.manage_callback = gpio_xlnx_axi_manage_callback,
