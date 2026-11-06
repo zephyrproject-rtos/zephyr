@@ -134,6 +134,11 @@ Connections and I/Os
 | GPIO test | VBAT GPIO0 2,   | PIO0_2 (J51 pin 2),                |
 |           | VBAT GPIO0 3    | PIO0_3 (J51 pin 3)                 |
 +-----------+-----------------+------------------------------------+
+| LPADC0    | ADC0 CH0A input | PIO3_0 (ball R2), J94 pin 13       |
+|           |                 | Input range 0-1.8 V                |
++-----------+-----------------+------------------------------------+
+| LPDAC     | DAC_OUT         | ball L5, test point TP29           |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
 
@@ -190,7 +195,7 @@ LPUART0 uses PERI3 divided by 5 (80 MHz):
                                            IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
    };
 
-Only the LPUART driver reads that second entry today. A peripheral whose driver does
+Only the LPUART and LPADC drivers read that second entry today. A peripheral whose driver does
 not yet apply it keeps its root at the reset value, so adding the entry alone changes
 nothing for LPSPI, LPI2C or the others.
 
