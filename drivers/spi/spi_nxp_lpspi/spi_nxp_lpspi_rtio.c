@@ -480,6 +480,8 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
+		lpspi_data->dma_rx.blk_idx = 0;
+		lpspi_data->dma_tx.blk_idx = 0;
 		lpspi_rtio_iodev_complete(spi_dev, -EIO);
 		spi_context_cs_control(&data->ctx, false);
 		return;
@@ -503,9 +505,10 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	 * all data has been transmitted and corresponding RX data received.
 	 */
 	if (channel == lpspi_data->dma_rx.channel) {
-		lpspi_rtio_iodev_complete(spi_dev, 0);
+		/* Completing the transfer may start the next one */
 		lpspi_data->dma_rx.blk_idx = 0;
 		lpspi_data->dma_tx.blk_idx = 0;
+		lpspi_rtio_iodev_complete(spi_dev, 0);
 	}
 }
 #endif
