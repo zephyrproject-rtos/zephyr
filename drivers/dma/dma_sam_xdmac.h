@@ -122,6 +122,11 @@ struct sam_xdmac_linked_list_desc_view3 {
 	uint32_t mbr_dus;
 };
 
+struct sam_xdmac_cache_range {
+	uint32_t address;
+	size_t size;
+};
+
 #ifdef __cplusplus
 }
 #endif
