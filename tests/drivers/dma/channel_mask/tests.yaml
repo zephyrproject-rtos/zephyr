@@ -1,0 +1,10 @@
+tests:
+  drivers.dma.channel_mask:
+    tags:
+      - drivers
+      - dma
+    depends_on: dma
+    filter: dt_nodelabel_enabled("tst_dma0") and
+      dt_nodelabel_prop_enabled("tst_dma0", "dma-channel-mask")
+    integration_platforms:
+      - mimxrt1170_evk/mimxrt1176/cm7
