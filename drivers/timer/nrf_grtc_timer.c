@@ -685,7 +685,10 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	uint64_t prev_cc_val = cc_value;
 	uint64_t now = last_count + last_elapsed;
 
-	cc_value = now + cyc;
+	/* Kernel passes ticks relative to the last whole tick, so anchor CC on
+	 * a tick boundary rather than on the raw counter value.
+	 */
+	cc_value = last_count + (last_elapsed / CYC_PER_TICK) * CYC_PER_TICK + cyc;
 
 	/* In case of timeout abort it may happen that CC is being set to a value
 	 * that later than previous CC. If previous CC value is not far in the
