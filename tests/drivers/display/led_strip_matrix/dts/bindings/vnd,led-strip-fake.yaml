@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake LED strip for matrix display tests
+
+compatible: "vnd,led-strip-fake"
+
+include: base.yaml
+
+properties:
+  chain-length:
+    type: int
+    required: true
+    description: Number of pixels in the strip
