@@ -21,4 +21,13 @@ config TEST_SEND_BLOCKS
 	  the command timeout of the Host. The Host asserts in that test, so no
 	  other test can run after it.
 
+config TEST_DISABLE_ON_SYSWQ
+	bool "Run only the test that disables Bluetooth on the system workqueue"
+	depends on !BT_TX_PROCESSOR_THREAD
+	help
+	  Run only the test where bt_disable() is called on the system
+	  workqueue, which transmits the HCI commands of the Host when there is
+	  no TX processor thread. The configuration is there for that test
+	  alone: the system workqueue has to run above the Bluetooth workqueue.
+
 source "Kconfig.zephyr"
