@@ -415,10 +415,11 @@ void bt_sco_cleanup_acl(struct bt_conn *sco)
 	bt_conn_drop(&sco->sco.acl);
 }
 
-static int sco_setup_sync_conn(struct bt_conn *sco_conn)
+static int sco_setup_sync_conn(struct bt_conn *sco_conn, const bt_addr_t *peer)
 {
 	struct net_buf *buf;
 	struct bt_hci_cp_setup_sync_conn *cp;
+	struct bt_conn *acl;
 	int err;
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
@@ -426,13 +427,27 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 		return -ENOBUFS;
 	}
 
+	/* The ACL connection can have gone down while waiting for the buffer.
+	 * As long as the object points at the connection found here, that is
+	 * the connection it was set up on.
+	 */
+	acl = bt_conn_lookup_addr_br(peer);
+	if (sco_conn->sco.acl != acl) {
+		bt_conn_drop(&acl);
+	}
+
+	if (acl == NULL) {
+		net_buf_unref(buf);
+		return -ENOTCONN;
+	}
+
 	cp = net_buf_add(buf, sizeof(*cp));
 
 	(void)memset(cp, 0, sizeof(*cp));
 
-	LOG_DBG("handle : %x", sco_conn->sco.acl->handle);
+	LOG_DBG("handle : %x", acl->handle);
 
-	cp->handle = sys_cpu_to_le16(sco_conn->sco.acl->handle);
+	cp->handle = sys_cpu_to_le16(acl->handle);
 	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
 	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
 	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
@@ -440,7 +455,8 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
 	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
 
-	notify_setup_sco_cmd(sco_conn->sco.acl, cp);
+	notify_setup_sco_cmd(acl, cp);
+	bt_conn_drop(&acl);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf, NULL);
 	if (err < 0) {
@@ -480,13 +496,22 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 	sco_conn->sco.link_type = link_type;
 
 	bt_sco_chan_add(sco_conn, chan);
-	bt_conn_set_state(chan->sco, BT_CONN_INITIATING);
+	/* In this order: the connection can go down with its ACL connection
+	 * from the moment its state is set.
+	 */
 	bt_sco_chan_set_state(chan, BT_SCO_STATE_CONNECTING);
+	bt_conn_set_state(sco_conn, BT_CONN_INITIATING);
 
-	if (sco_setup_sync_conn(sco_conn) < 0) {
-		bt_conn_set_state(chan->sco, BT_CONN_DISCONNECTED);
+	if (sco_setup_sync_conn(sco_conn, peer) < 0 && sco_conn->state != BT_CONN_DISCONNECTED) {
+		bt_conn_set_state(sco_conn, BT_CONN_DISCONNECTED);
 		bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
-		bt_sco_cleanup(sco_conn);
+	}
+
+	/* Also when it went down with its ACL connection meanwhile, which
+	 * clears chan->sco.
+	 */
+	if (sco_conn->state == BT_CONN_DISCONNECTED) {
+		bt_sco_cleanup(bt_conn_take(&sco_conn));
 		return NULL;
 	}
 
