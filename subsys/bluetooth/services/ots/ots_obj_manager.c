@@ -11,6 +11,7 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/byteorder.h>
 
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 
@@ -213,6 +214,8 @@ int bt_gatt_ots_obj_manager_obj_delete(struct bt_gatt_ots_object *obj)
 	    obj->id == OTS_OBJ_ID_DIR_LIST) {
 		return -EINVAL;
 	}
+
+	bt_conn_drop(&obj->creator);
 
 	item->is_allocated = false;
 	sys_dlist_remove(&item->dnode);

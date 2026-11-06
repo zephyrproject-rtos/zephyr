@@ -650,7 +650,22 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 		 */
 		err = bt_gatt_ots_obj_manager_next_obj_get(ots->obj_manager, obj, &next_obj);
 
+		if (obj->creator != conn) {
+			continue;
+		}
+
+		bt_conn_drop(&obj->creator);
+
 		if (strlen(obj->metadata.name) == 0) {
+			/* The channel of this connection is closed, so another client is
+			 * transferring an object that is not idle.
+			 */
+			if (obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE &&
+			    ots->l2cap.ot_chan.chan.conn != NULL) {
+				obj->creator = bt_conn_ref(ots->l2cap.ot_chan.chan.conn);
+				continue;
+			}
+
 			bt_ots_obj_id_to_str(obj->id, id_str, sizeof(id_str));
 			LOG_DBG("Deleting object with %s ID due to empty name", id_str);
 

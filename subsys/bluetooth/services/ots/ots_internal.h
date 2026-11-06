@@ -119,6 +119,12 @@ struct bt_gatt_ots_object {
 	uint64_t id;
 	struct bt_ots_obj_metadata metadata;
 	struct bt_gatt_ots_object_state state;
+	/* The connection that deletes the object when it goes down, if the object still has no
+	 * name then (OTS 1.0 section 3.7). It is the one that created the object with OACP Create,
+	 * or the one transferring it when that one went down. Holds a reference; NULL for an
+	 * object that the application added.
+	 */
+	struct bt_conn *creator;
 };
 
 struct bt_gatt_ots_indicate {

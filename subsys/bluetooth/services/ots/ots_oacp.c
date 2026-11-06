@@ -98,6 +98,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_create_proc_validate(
 		goto exit;
 	}
 
+	obj->creator = bt_conn_ref(conn);
 	ots->cur_obj[bt_conn_index(conn)] = obj;
 	obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 
