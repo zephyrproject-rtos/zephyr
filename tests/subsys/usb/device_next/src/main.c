@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/usb/class/usbd_mtp.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/usb/usbh.h>
 
@@ -36,6 +38,13 @@ USBD_DEVICE_DEFINE(test_usbd,
 		   0x2fe3, 0xffff);
 
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+
+#if DT_NODE_EXISTS(DT_NODELABEL(lfs1))
+USBD_MTP_DEFINE_INSTANCE(lfs1, "ZEPHYR", "Zephyr USB Test", "1.0",
+			 "0123456789ABCDEF0123456789ABCDEF",
+			 USBD_MTP_STORAGE_ENTRY(DT_PROP(DT_NODELABEL(lfs1), mount_point),
+						DT_PROP(DT_NODELABEL(lfs1), read_only)));
+#endif
 
 static int test_cmp_string_desc(struct net_buf *const buf, const int idx)
 {
