@@ -1084,7 +1084,8 @@ static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 
 	switch (id) {
 	case VIDEO_CID_EXPOSURE_AUTO:
-		return arducam_mega_set_exposure_enable(dev, drv_data->ctrls.exp_auto.val);
+		return arducam_mega_set_exposure_enable(
+			dev, drv_data->ctrls.exp_auto.val == VIDEO_EXPOSURE_AUTO);
 	case VIDEO_CID_EXPOSURE:
 		return arducam_mega_set_exposure(dev, drv_data->ctrls.exposure.val);
 	case VIDEO_CID_AUTOGAIN:
@@ -1191,7 +1192,10 @@ static int arducam_mega_init_controls(const struct device *dev)
 		}
 	}
 	ret = video_init_ctrl(&ctrls->exp_auto, dev, VIDEO_CID_EXPOSURE_AUTO,
-			      (struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
+			      (struct video_ctrl_range){.min = VIDEO_EXPOSURE_AUTO,
+							.max = VIDEO_EXPOSURE_MANUAL,
+							.step = 1,
+							.def = VIDEO_EXPOSURE_AUTO});
 	if (ret < 0) {
 		return ret;
 	}
