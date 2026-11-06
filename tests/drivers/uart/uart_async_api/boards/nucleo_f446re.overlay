@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Daniel Kampert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Loopback: connect D8 (PA9, USART1_TX) to D2 (PA10, USART1_RX) */
+dut: &usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	dmas = <&dma2 7 4 0x28440 0x03>,
+	       <&dma2 2 4 0x28480 0x03>;
+	dma-names = "tx", "rx";
+};
+
+&dma2 {
+	status = "okay";
+};
