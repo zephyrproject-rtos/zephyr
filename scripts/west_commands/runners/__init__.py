@@ -28,6 +28,7 @@ _names = [
     # zephyr-keep-sorted-start
     'alif_flash',
     'amebaflash',
+    'ap_bootloader',
     'bflb_flash_command',
     'bflb_mcu_tool',
     'blackmagicprobe',
