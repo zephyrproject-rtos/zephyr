@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/classic/classic.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -64,20 +65,122 @@ LOG_MODULE_REGISTER(bt_gatt);
 
 static uint16_t last_static_handle;
 
+#if defined(CONFIG_BT_ATT_BR)
+/* GATT state is keyed by bt_addr_le_t. A BR/EDR peer is stored with its
+ * BD_ADDR as a public address, the same convention as the BR/EDR link keys
+ * in the settings (classic/keys_br.c). These two functions are the only
+ * place where the conversion is done.
+ */
+static void gatt_br_addr_to_peer(const bt_addr_t *addr, bt_addr_le_t *peer)
+{
+	peer->type = BT_ADDR_LE_PUBLIC;
+	bt_addr_copy(&peer->a, addr);
+}
+
+/* BD_ADDR of a stored peer, or NULL if the peer cannot be a BR/EDR peer */
+static const bt_addr_t *gatt_br_peer_to_addr(uint8_t id, const bt_addr_le_t *peer)
+{
+	if (id != BT_ID_DEFAULT || peer->type != BT_ADDR_LE_PUBLIC) {
+		return NULL;
+	}
+
+	return &peer->a;
+}
+
+/* Storage for the peer addresses returned by gatt_br_conn_dst() */
+static bt_addr_le_t br_peer_addr[CONFIG_BT_MAX_CONN];
+
+static const bt_addr_le_t *gatt_br_conn_dst(const struct bt_conn *conn)
+{
+	bt_addr_le_t *peer = &br_peer_addr[bt_conn_index(conn)];
+
+	gatt_br_addr_to_peer(&conn->br.dst, peer);
+
+	return peer;
+}
+
+static bool gatt_br_conn_is_peer(const struct bt_conn *conn, uint8_t id, const bt_addr_le_t *peer)
+{
+	const bt_addr_t *addr = gatt_br_peer_to_addr(id, peer);
+
+	return addr != NULL && id == conn->id && bt_addr_eq(addr, &conn->br.dst);
+}
+
+static bool gatt_br_bond_exists(uint8_t id, const bt_addr_le_t *peer)
+{
+	const bt_addr_t *addr = gatt_br_peer_to_addr(id, peer);
+
+	return addr != NULL && bt_br_bond_exists(addr);
+}
+
+/* A BR/EDR connection is a GATT peer only while its ATT bearer is connected */
+static struct bt_conn *gatt_br_conn_lookup(uint8_t id, const bt_addr_le_t *peer)
+{
+	const bt_addr_t *addr = gatt_br_peer_to_addr(id, peer);
+	struct bt_conn *conn;
+
+	if (addr == NULL) {
+		return NULL;
+	}
+
+	conn = bt_conn_lookup_addr_br(addr);
+	if (conn != NULL && !bt_att_br_chan_connected(conn)) {
+		bt_conn_drop(&conn);
+	}
+
+	return conn;
+}
+
+/* bt_gatt_clear() is called from bt_unpair() for LE bonds only */
+static void gatt_br_bond_deleted(const bt_addr_t *addr)
+{
+	bt_addr_le_t peer;
+
+	gatt_br_addr_to_peer(addr, &peer);
+
+	/* The LE bond of a dual-mode peer uses the same state */
+	if (bt_le_bond_exists(BT_ID_DEFAULT, &peer)) {
+		return;
+	}
+
+	(void)bt_gatt_clear(BT_ID_DEFAULT, &peer);
+}
+#endif /* CONFIG_BT_ATT_BR */
+
 /* Accessors for the peer identity that GATT state is keyed by */
 static const bt_addr_le_t *gatt_conn_dst(const struct bt_conn *conn)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (bt_conn_is_br(conn)) {
+		return gatt_br_conn_dst(conn);
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return &conn->le.dst;
 }
 
 static bool gatt_conn_is_peer(const struct bt_conn *conn, uint8_t id, const bt_addr_le_t *peer)
 {
+#if defined(CONFIG_BT_ATT_BR)
+	if (bt_conn_is_br(conn)) {
+		return gatt_br_conn_is_peer(conn, id, peer);
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
 	return bt_conn_is_peer_addr_le(conn, id, peer);
 }
 
 static bool gatt_bond_exists(uint8_t id, const bt_addr_le_t *peer)
 {
-	return bt_le_bond_exists(id, peer);
+	if (bt_le_bond_exists(id, peer)) {
+		return true;
+	}
+
+#if defined(CONFIG_BT_ATT_BR)
+	return gatt_br_bond_exists(id, peer);
+#else
+	return false;
+#endif /* CONFIG_BT_ATT_BR */
 }
 
 static bool gatt_conn_bonded(const struct bt_conn *conn)
@@ -85,14 +188,43 @@ static bool gatt_conn_bonded(const struct bt_conn *conn)
 	return gatt_bond_exists(conn->id, gatt_conn_dst(conn));
 }
 
+/* Look up a connection with an ATT bearer to a peer of the GATT state */
 static struct bt_conn *gatt_conn_lookup(uint8_t id, const bt_addr_le_t *peer)
 {
-	return bt_conn_lookup_addr_le(id, peer);
+	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
+
+#if defined(CONFIG_BT_ATT_BR)
+	/* A pending or disconnected LE connection does not hide a BR/EDR one */
+	if (conn == NULL || conn->state != BT_CONN_CONNECTED) {
+		struct bt_conn *br_conn = gatt_br_conn_lookup(id, peer);
+
+		if (br_conn != NULL) {
+			if (conn != NULL) {
+				bt_conn_unref(conn);
+			}
+
+			conn = br_conn;
+		}
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return conn;
 }
 
 static struct bt_conn *gatt_conn_lookup_connected(uint8_t id, const bt_addr_le_t *peer)
 {
-	return bt_conn_lookup_state_le(id, peer, BT_CONN_CONNECTED);
+	struct bt_conn *conn = bt_conn_lookup_state_le(id, peer, BT_CONN_CONNECTED);
+
+#if defined(CONFIG_BT_ATT_BR)
+	if (conn == NULL) {
+		conn = gatt_br_conn_lookup(id, peer);
+		if (conn != NULL && conn->state != BT_CONN_CONNECTED) {
+			bt_conn_drop(&conn);
+		}
+	}
+#endif /* CONFIG_BT_ATT_BR */
+
+	return conn;
 }
 
 /* Persistent storage format for GATT CCC */
@@ -1527,6 +1659,15 @@ void bt_gatt_init(void)
 	 */
 	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_ATT_BR)
+	/* The state of a bonded peer is kept in RAM without settings too */
+	static struct bt_conn_auth_info_cb gatt_br_auth_info_cb = {
+		.br_bond_deleted = gatt_br_bond_deleted,
+	};
+
+	bt_conn_auth_info_cb_register(&gatt_br_auth_info_cb);
+#endif /* CONFIG_BT_ATT_BR */
 
 	if (IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
 		static struct bt_conn_auth_info_cb central_addr_res_auth_info_cb = {
@@ -3982,6 +4123,11 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
+	/* Core v6.2 Vol 3 Part G 4.3.1: not used on a BR/EDR physical link */
+	if (!bt_conn_is_le(conn)) {
+		return -ENOTSUP;
+	}
+
 	/* This request shall only be sent once during a connection by the client. */
 	if (atomic_test_and_set_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED)) {
 		return -EALREADY;
@@ -6204,13 +6350,23 @@ void bt_gatt_connected(struct bt_conn *conn)
 	}
 
 #if defined(CONFIG_BT_GATT_AUTO_UPDATE_MTU)
-	int err;
+	if (bt_conn_is_le(conn)) {
+		int err;
 
-	err = bt_gatt_exchange_mtu(conn, &gatt_exchange_params);
-	if (err) {
-		LOG_WRN("MTU Exchange failed (err %d)", err);
+		err = bt_gatt_exchange_mtu(conn, &gatt_exchange_params);
+		if (err != 0) {
+			LOG_WRN("MTU Exchange failed (err %d)", err);
+		}
 	}
 #endif /* CONFIG_BT_GATT_AUTO_UPDATE_MTU */
+
+	/* The ATT bearer over BR/EDR connects on an encrypted link only, so the
+	 * encryption change was before the bearer could be used (resubscription,
+	 * Service Changed for a change-unaware peer), or there was none at all.
+	 */
+	if (IS_ENABLED(CONFIG_BT_ATT_BR) && bt_conn_is_br(conn)) {
+		bt_gatt_encrypt_change(conn);
+	}
 }
 
 void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
@@ -6339,6 +6495,14 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 	struct conn_data data;
 
 	LOG_DBG("conn %p", conn);
+
+	/* A BR/EDR link is encrypted before the ATT bearer connects (Core v6.2
+	 * Vol 3 Part G 5.1.2), this is called again from bt_gatt_connected().
+	 */
+	if (IS_ENABLED(CONFIG_BT_ATT_BR) && bt_conn_is_br(conn) &&
+	    !bt_att_br_chan_connected(conn)) {
+		return;
+	}
 
 	data.conn = conn;
 	data.sec = BT_SECURITY_L1;
