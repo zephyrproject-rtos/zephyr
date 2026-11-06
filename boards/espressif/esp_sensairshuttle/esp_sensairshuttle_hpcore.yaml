@@ -1,0 +1,20 @@
+identifier: esp_sensairshuttle/esp32c5/hpcore
+name: ESP-SensairShuttle HP Core
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - display
+  - dma
+  - entropy
+  - gpio
+  - i2c
+  - input
+  - netif:openthread
+  - netif:wifi
+  - spi
+  - uart
+  - watchdog
