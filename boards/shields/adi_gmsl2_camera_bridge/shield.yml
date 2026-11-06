@@ -1,0 +1,6 @@
+shields:
+  - name: adi_gmsl2_camera_bridge
+    full_name: ADI GMSL2 Camera Bridge
+    vendor: adi
+    supported_features:
+      - video
