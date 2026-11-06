@@ -37,6 +37,23 @@
 			label = "ACT";
 		};
 	};
+
+	reserved-memory {
+		ranges;
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		/* Keep firmware transactions outside the kernel RAM region. */
+		vc_mem: memory@280000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 0x280000 0x1000>;
+			zephyr,memory-region = "VC_SHARED_RAM";
+		};
+	};
+};
+
+&mbox0 {
+	status = "okay";
 };
 
 &gio_aon {
@@ -48,6 +65,15 @@
 	pinctrl-0 = <&uart10_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	power-domains = <&usb_hcd>;
+	status = "okay";
+};
+
+&usb_hcd {
+	zephyr,pm-device-runtime-auto;
 };
 
 &gpio0_0 {
