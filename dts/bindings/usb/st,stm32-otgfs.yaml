@@ -33,3 +33,8 @@ properties:
 
   clocks:
     required: true
+
+  st,vbus-sensing:
+    type: boolean
+    description: |
+      Enable VBUS sensing for host device detection
