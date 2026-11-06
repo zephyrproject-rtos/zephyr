@@ -14,6 +14,7 @@
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
+#include "virtio_pci.h"
 #include "assert.h"
 
 #define DT_DRV_COMPAT virtio_pci
@@ -87,6 +88,7 @@ struct virtio_pci_data {
 	void *device_specific_cfg;
 	volatile uint8_t *isr_status;
 	volatile uint8_t *notify_cfg;
+	uint32_t notify_len;
 	uint32_t notify_off_multiplier;
 
 	struct virtq *virtqueues;
@@ -192,6 +194,8 @@ static void virtio_pci_reset(const struct device *dev)
 static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx)
 {
 	struct virtio_pci_data *data = dev->data;
+	uint16_t queue_notify_off;
+	bool notified;
 
 	k_spinlock_key_t key = k_spin_lock(&data->notify_lock);
 
@@ -199,21 +203,22 @@ static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx
 	barrier_dmem_fence_full();
 	/*
 	 * Because currently we are not negotiating VIRTIO_F_NOTIFICATION_DATA
-	 * and VIRTIO_F_NOTIF_CONFIG_DATA, in order to notify the queue we have
-	 * to write its index to notify_cfg at the offset
-	 * cap.offset + queue_notify_off * notify_off_multiplier,
-	 * which here is reduced to queue_notify_off * notify_off_multiplier,
-	 * because data->notify_cfg was mapped in virtio_pci_map_cap() to start
-	 * at cap.offset. See spec 4.1.4.4 for the offset formula, and spec
-	 * 4.1.5.2 and spec 4.1.5.2.1 for the value written
+	 * and VIRTIO_F_NOTIF_CONFIG_DATA, the notification value is the queue
+	 * index and the address is queue_notify_off * notify_off_multiplier
+	 * relative to notify_cfg, which was mapped at cap.offset. Both values
+	 * come from the device, so validate the complete write against the
+	 * NOTIFY capability length before forming the MMIO address. Read the
+	 * offset once and use the same value for validation and the write.
 	 */
-	size_t notify_off =
-		sys_le16_to_cpu(data->common_cfg->queue_notify_off) * data->notify_off_multiplier;
-	volatile uint16_t *notify_addr = (uint16_t *)(data->notify_cfg + notify_off);
-
-	*notify_addr = sys_cpu_to_le16(queue_idx);
+	queue_notify_off = sys_le16_to_cpu(data->common_cfg->queue_notify_off);
+	notified = virtio_pci_notify_write(data->notify_cfg, data->notify_len, queue_notify_off,
+					   data->notify_off_multiplier, queue_idx);
 
 	k_spin_unlock(&data->notify_lock, key);
+
+	if (!notified) {
+		LOG_ERR("invalid notification offset for virtqueue %u", queue_idx);
+	}
 }
 
 /*
@@ -459,11 +464,18 @@ static int virtio_pci_init_common(const struct device *dev)
 	}
 
 	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_NOTIFY_CFG, &vpnc, sizeof(vpnc))) {
+		if (vpnc.cap.length < sizeof(uint16_t)) {
+			LOG_ERR("VIRTIO_PCI_CAP_NOTIFY_CFG is too small for a notification: "
+				"%u bytes",
+				vpnc.cap.length);
+			return 1;
+		}
 		if (!virtio_pci_map_cap(
 				conf->pcie->bdf, (struct virtio_pci_cap *)&vpnc,
 				(void **)&data->notify_cfg)) {
 			return 1;
 		}
+		data->notify_len = vpnc.cap.length;
 		data->notify_off_multiplier = sys_le32_to_cpu(vpnc.notify_off_multiplier);
 	} else {
 		LOG_ERR(
