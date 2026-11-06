@@ -2441,6 +2441,13 @@ static void deferred_work(struct k_work *work)
 		bt_l2cap_disconnected(conn);
 		notify_disconnected(conn);
 
+		/* The application can keep this object, while the keys can be cleared and their
+		 * slot reused for another peer.
+		 */
+		if (bt_conn_is_le(conn)) {
+			conn->le.keys = NULL;
+		}
+
 		/* Release the reference we took for the very first
 		 * state transition.
 		 */
@@ -2894,22 +2901,24 @@ int bt_conn_cb_unregister(struct bt_conn_cb *cb)
 bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
+	bool exists;
 
-	if (conn) {
-		/* Connection object already exists.
-		 * If the connection state is not "disconnected",then the
-		 * connection was created but has not yet been disconnected.
-		 * If the connection state is "disconnected" then the connection
-		 * still has valid references. The last reference of the stack
-		 * is released after the disconnected callback.
-		 */
-		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
-			bt_addr_le_str(peer), state2str(conn->state));
-		bt_conn_unref(conn);
-		return true;
+	if (conn == NULL) {
+		return false;
 	}
 
-	return false;
+	/* An object in the "disconnected" state only has references left, from the application
+	 * or from the stack until after the disconnected callback. A new connection gets its own.
+	 */
+	exists = conn->state != BT_CONN_DISCONNECTED;
+	if (exists) {
+		LOG_WRN("Found valid connection (%p) with address %s in %s state ", conn,
+			bt_addr_le_str(peer), state2str(conn->state));
+	}
+
+	bt_conn_unref(conn);
+
+	return exists;
 }
 
 struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer)
@@ -2958,6 +2967,7 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
 
 struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
 {
+	struct bt_conn *found = NULL;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(acl_conns); i++) {
@@ -2977,10 +2987,24 @@ struct bt_conn *bt_conn_lookup_addr_le(uint8_t id, const bt_addr_le_t *peer)
 			continue;
 		}
 
-		return conn;
+		if (conn->state == BT_CONN_CONNECTED) {
+			bt_conn_drop(&found);
+			return conn;
+		}
+
+		/* The application can keep the object of a connection that is gone, and the peer
+		 * can connect during an outgoing attempt, so several objects can match.
+		 */
+		if (found == NULL ||
+		    (found->state == BT_CONN_DISCONNECTED && conn->state != BT_CONN_DISCONNECTED)) {
+			bt_conn_drop(&found);
+			found = bt_conn_take(&conn);
+		} else {
+			bt_conn_unref(conn);
+		}
 	}
 
-	return NULL;
+	return found;
 }
 
 struct bt_conn *bt_conn_lookup_state_le(uint8_t id, const bt_addr_le_t *peer,

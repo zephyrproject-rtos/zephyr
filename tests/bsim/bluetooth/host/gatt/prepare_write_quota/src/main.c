@@ -37,6 +37,16 @@ static const struct bst_test_instance entrypoints[] = {
 		.test_delete_f = test_end_cb,
 		.test_main_f = writer_procedure,
 	},
+	{
+		.test_id = "kept_conn_dut",
+		.test_delete_f = test_end_cb,
+		.test_main_f = kept_conn_dut_procedure,
+	},
+	{
+		.test_id = "kept_conn_peer",
+		.test_delete_f = test_end_cb,
+		.test_main_f = kept_conn_peer_procedure,
+	},
 	BSTEST_END_MARKER,
 };
 
