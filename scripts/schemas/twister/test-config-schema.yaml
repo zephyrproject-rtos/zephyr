@@ -4,6 +4,10 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 type: object
 properties:
+  includes:
+    type: array
+    items:
+      type: string
   options:
     type: object
     properties:
