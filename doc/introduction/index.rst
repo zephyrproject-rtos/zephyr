@@ -17,6 +17,7 @@ The Zephyr kernel supports multiple architectures, including:
  - Qualcomm Hexagon
  - Intel x86 (32- and 64-bit)
  - MIPS (MIPS32 Release 1 specification)
+ - Motorola 68000 and 68010
  - OpenRISC (32-bit)
  - Renesas RX
  - RISC-V (32- and 64-bit)

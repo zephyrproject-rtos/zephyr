@@ -23,6 +23,8 @@
 #include <zephyr/arch/riscv/arch.h>
 #elif defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/arch.h>
+#elif defined(CONFIG_M68K)
+#include <zephyr/arch/m68k/arch.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/arch.h>
 #elif defined(CONFIG_OPENRISC)

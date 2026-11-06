@@ -168,6 +168,8 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 #include <zephyr/arch/riscv/exception.h>
 #elif defined(CONFIG_XTENSA)
 #include <zephyr/arch/xtensa/exception.h>
+#elif defined(CONFIG_M68K)
+#include <zephyr/arch/m68k/exception.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/exception.h>
 #elif defined(CONFIG_OPENRISC)

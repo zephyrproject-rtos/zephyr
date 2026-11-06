@@ -51,6 +51,8 @@
 #endif
 #elif defined(CONFIG_XTENSA)
 	/* Not needed */
+#elif defined(CONFIG_M68K)
+	/* GNU ld infers m68k output architecture from input objects. */
 #elif defined(CONFIG_MIPS)
 	OUTPUT_ARCH("mips")
 #elif defined(CONFIG_ARCH_POSIX)

@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+config GOLDFISH_PIC
+	bool "Google Goldfish programmable interrupt controller"
+	default y
+	depends on DT_HAS_GOOGLE_GOLDFISH_PIC_ENABLED
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Second-level interrupt aggregator used by the QEMU m68k virt
+	  machine. Each instance demultiplexes up to 32 device interrupt
+	  sources onto one autovectored CPU interrupt level.
+
+if GOLDFISH_PIC
+
+# Each PIC owns a 32-entry _sw_isr_table slice.
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+endif # GOLDFISH_PIC

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Google Goldfish TTY
+
+compatible: "google,goldfish-tty"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  big-endian:
+    type: boolean
+    description: |
+      MMIO registers use big-endian byte order. If absent, registers use the
+      little-endian Goldfish byte order.
