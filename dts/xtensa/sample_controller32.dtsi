@@ -25,15 +25,15 @@
 		#size-cells = <1>;
 	};
 
-	sram0: memory@60000000 {
+	srom0: memory@50000000 {
 		compatible = "mmio-sram";
-		reg = <0x60000000 0x4000000>;
+		reg = <0x50000000 0x1000000>;
 		device_type = "memory";
 	};
 
-	srom0: memory@fe000000 {
+	sram0: memory@60000000 {
 		compatible = "mmio-sram";
-		reg = <0x50000000 0x1000000>;
+		reg = <0x60000000 0x4000000>;
 		device_type = "memory";
 	};
 };
