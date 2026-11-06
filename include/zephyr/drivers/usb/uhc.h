@@ -60,13 +60,32 @@ struct usb_host_interface {
 	struct usb_desc_header *dhp;
 	/** Pointer to the association interface descriptor, if any */
 	struct usb_association_descriptor *iad;
-	/** Alternate setting selected for this interface */
-	uint8_t alternate;
+	/** Alternate setting selected for this interface, negative if none */
+	int16_t alternate;
 };
 
+/**
+ * USB host endpoint
+ *
+ * Host side representation of an endpoint of a connected USB device. The
+ * attributes are taken from the endpoint descriptor of the device, or from the
+ * device descriptor for endpoint 0.
+ */
 struct usb_host_ep {
-	/** Pointer to the endpoint descriptor */
-	struct usb_ep_descriptor *desc;
+	/** Pointer to the USB device the endpoint belongs to */
+	struct usb_device *udev;
+	/** Driver private endpoint data */
+	void *priv;
+	/** Endpoint address (same as bEndpointAddress) */
+	uint8_t addr;
+	/** Endpoint attributes (same as bmAttributes) */
+	uint8_t attributes;
+	/** Maximum packet size (same as wMaxPacketSize) */
+	uint16_t mps;
+	/** Polling interval (same as bInterval) */
+	uint8_t interval;
+	/** Endpoint is enabled at the controller level */
+	bool enabled;
 };
 
 /**
@@ -108,6 +127,29 @@ struct usb_device {
 };
 
 /**
+ * @brief Get USB device endpoint by endpoint address.
+ *
+ * Endpoint 0 has an entry per direction, because the two directions of a
+ * control endpoint carry the stages of a transfer in opposite directions.
+ *
+ * @param[in] udev Pointer to USB device instance
+ * @param[in] ep   Endpoint address
+ *
+ * @return Pointer to the IN or OUT endpoint.
+ */
+static inline struct usb_host_ep *uhc_get_udev_ep(struct usb_device *const udev,
+						  const uint8_t ep)
+{
+	uint8_t idx = USB_EP_GET_IDX(ep) & 0xFU;
+
+	if (USB_EP_DIR_IS_IN(ep)) {
+		return &udev->ep_in[idx];
+	} else {
+		return &udev->ep_out[idx];
+	}
+}
+
+/**
  * @brief USB control transfer stage
  */
 enum uhc_control_stage {
@@ -136,12 +178,12 @@ struct uhc_transfer {
 	/** Transfer data buffer */
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
-	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
+	struct usb_host_ep *ep;
+	/**
+	 * Polling interval requested for this transfer, used for periodic
+	 * transfers only. Taken from the endpoint when the transfer is
+	 * allocated, a caller may request a different one.
+	 */
 	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
@@ -318,6 +360,9 @@ __subsystem struct uhc_driver_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
+	/* Optional, drivers without per-endpoint controller resources omit these */
+	int (*ep_enable)(const struct device *dev, struct usb_host_ep *const ep);
+	int (*ep_disable)(const struct device *dev, struct usb_host_ep *const ep);
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
@@ -529,6 +574,45 @@ struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
  * @param[in] buf    Pointer to UHC request buffer
  */
 void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
+
+/**
+ * @brief Enable a device endpoint at the controller level
+ *
+ * Prepare the controller resources required to communicate with an endpoint of
+ * a USB device. The endpoint attributes must be assigned before this call.
+ * Drivers without per-endpoint controller resources treat this as a no-op.
+ *
+ * Each direction of an endpoint is enabled on its own. A driver whose
+ * controller shares one resource between both directions of the control
+ * endpoint claims it for the OUT direction, which is enabled first.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -EALREADY endpoint is already enabled
+ */
+int uhc_ep_enable(const struct device *dev, struct usb_device *const udev, const uint8_t ep);
+
+/**
+ * @brief Disable a device endpoint at the controller level
+ *
+ * Release the controller resources claimed by uhc_ep_enable(). Each direction
+ * of an endpoint is disabled on its own, and the control endpoint is disabled
+ * in the reverse order of the enable, so that no direction accepts a transfer
+ * after a resource both share is released.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EPERM controller is not initialized
+ * @retval -EALREADY endpoint is not enabled
+ */
+int uhc_ep_disable(const struct device *dev, struct usb_device *const udev, const uint8_t ep);
 
 /**
  * @brief Queue USB host controller transfer

@@ -700,6 +700,7 @@ static int usbh_hub_probe(struct usbh_class_data *const c_data,
 	const void *desc_start;
 	const void *desc_end;
 	uint8_t target_iface;
+	int ret;
 
 	if (udev->level > CONFIG_USBH_HUB_MAX_LEVELS) {
 		LOG_ERR("Hub chain depth limit exceeded (%d > %d)",
@@ -755,6 +756,16 @@ static int usbh_hub_probe(struct usbh_class_data *const c_data,
 		}
 
 		header = usbh_desc_get_next(header);
+	}
+
+	/*
+	 * The interface is in its default alternate after Set Configuration.
+	 * Select it to enable the endpoints of the interface.
+	 */
+	ret = usbh_device_interface_set(udev, target_iface, 0, true);
+	if (ret != 0) {
+		LOG_ERR("Failed to select interface %u alternate 0", target_iface);
+		return ret;
 	}
 
 	hub_data->connected = true;

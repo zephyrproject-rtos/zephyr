@@ -848,7 +848,7 @@ static inline void ch_process_control(const struct device *dev,
 	}
 
 	/* Calculate new packet count */
-	pkt_cnt  = calc_packet_count(size, xfer->mps);
+	pkt_cnt  = calc_packet_count(size, xfer->ep->mps);
 
 	if (next_dir_is_in) {
 		sys_set_bits((mem_addr_t)&ch->regs->hcchar, USB_DWC2_HCCHAR_EPDIR);
@@ -882,7 +882,7 @@ static inline void ch_process_control(const struct device *dev,
 
 static bool xfer_is_done(const struct uhc_transfer *xfer)
 {
-	return xfer->type != USB_EP_TYPE_CONTROL ||
+	return uhc_ep_type(xfer->ep) != USB_EP_TYPE_CONTROL ||
 	       xfer->stage == UHC_CONTROL_STAGE_STATUS;
 }
 
@@ -1082,6 +1082,7 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 				     struct uhc_dwc2_channel *const ch)
 {
 	struct uhc_transfer *const xfer = ch->xfer;
+	const uint8_t type = uhc_ep_type(xfer->ep);
 	uint32_t ch_events;
 	uint32_t hcint;
 
@@ -1117,15 +1118,15 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 		ch->hcint_cplt_pending = 0U;
 	}
 
-	if (xfer->type == USB_EP_TYPE_BULK || xfer->type == USB_EP_TYPE_CONTROL) {
+	if (type == USB_EP_TYPE_BULK || type == USB_EP_TYPE_CONTROL) {
 		/* Bulk & Control */
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ch_events = ch_handle_in_bulk_control(dev, ch, hcint);
 		} else {
 			ch_events = ch_handle_out_bulk_control(dev, ch, hcint);
 		}
-	} else if (xfer->type == USB_EP_TYPE_INTERRUPT) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	} else if (type == USB_EP_TYPE_INTERRUPT) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ch_events = ch_handle_in_interrupt(ch, hcint);
 		} else {
 			LOG_ERR("Interrupt OUT isn't supported yet");
@@ -1133,7 +1134,7 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 				    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
 		}
 	} else {
-		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", xfer->type, hcint);
+		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", type, hcint);
 		ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
 			    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
 	}
@@ -1227,30 +1228,31 @@ static int ch_claim(const struct device *const dev,
 		}
 
 		if (cand->xfer->udev->addr == xfer->udev->addr &&
-		    cand->xfer->ep == xfer->ep) {
+		    cand->xfer->ep->addr == xfer->ep->addr) {
 			LOG_DBG("Endpoint 0x%02x on addr %u already busy",
-				xfer->ep, xfer->udev->addr);
+				xfer->ep->addr, xfer->udev->addr);
 			return -EBUSY;
 		}
 	}
 
 	if (ch == NULL) {
-		LOG_DBG("No free channel for ep 0x%02x", xfer->ep);
+		LOG_DBG("No free channel for ep 0x%02x", xfer->ep->addr);
 		return -EBUSY;
 	}
 
 	LOG_DBG("Claimed channel%d for ep 0x%02x, xfer=%p, channel=%p",
-		ch->index, xfer->ep, (void *)xfer, (void *)ch);
+		ch->index, xfer->ep->addr, (void *)xfer, (void *)ch);
 
 	ch->error_count = 0U;
 	ch->hcint_cplt_pending = 0U;
 
 	/* Save channel characteristics of the underlying channel */
 	ch->xfer = xfer;
-	ch->data = ch_data_get(priv, xfer->udev, xfer->ep);
+	ch->data = ch_data_get(priv, xfer->udev, xfer->ep->addr);
 
 	if (ch->data == NULL) {
-		LOG_ERR("No channel data slot for addr %u ep 0x%02x", xfer->udev->addr, xfer->ep);
+		LOG_ERR("No channel data slot for addr %u ep 0x%02x",
+			xfer->udev->addr, xfer->ep->addr);
 		return -ENOMEM;
 	}
 
@@ -1292,13 +1294,13 @@ static int ch_configure(const struct device *const dev, struct uhc_dwc2_channel 
 	sys_write32(hcintmsk, (mem_addr_t)&ch->regs->hcintmsk);
 
 	/* Configure the channel main properties */
-	hcchar = usb_dwc2_set_hcchar_mps(xfer->mps);
-	hcchar |= usb_dwc2_set_hcchar_epnum(USB_EP_GET_IDX(xfer->ep));
-	hcchar |= usb_dwc2_set_hcchar_eptype(xfer->type);
+	hcchar = usb_dwc2_set_hcchar_mps(xfer->ep->mps);
+	hcchar |= usb_dwc2_set_hcchar_epnum(USB_EP_GET_IDX(xfer->ep->addr));
+	hcchar |= usb_dwc2_set_hcchar_eptype(uhc_ep_type(xfer->ep));
 	hcchar |= usb_dwc2_set_hcchar_ec(1UL /* TODO: ep_config->mult */);
 	hcchar |= usb_dwc2_set_hcchar_devaddr(udev->addr);
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		hcchar |= USB_DWC2_HCCHAR_EPDIR;
 	}
 
@@ -1320,7 +1322,7 @@ static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *
 	uint32_t remaining;
 
 	/* Add net buffer after IN stage */
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		hctsiz = sys_read32((mem_addr_t)&ch->regs->hctsiz);
 		remaining = usb_dwc2_get_hctsiz_xfersize(hctsiz);
 
@@ -1331,12 +1333,12 @@ static void ch_complete_data(const struct device *dev, struct uhc_dwc2_channel *
 	}
 
 	/* Precalculate next pid based on the packets actually transferred */
-	pkt_cnt = calc_packet_count(actual_len, xfer->mps);
+	pkt_cnt = calc_packet_count(actual_len, xfer->ep->mps);
 	ch->data->next_pid = calc_next_pid(ch->data->next_pid, pkt_cnt);
 
 	LOG_DBG("Data on channel%u, prog=%u, act=%u, len=%u, mps=%u, next_pid=%u",
 		ch->index, ch->length, actual_len, xfer->buf->len,
-		xfer->mps, ch->data->next_pid);
+		xfer->ep->mps, ch->data->next_pid);
 }
 
 static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const ch)
@@ -1344,7 +1346,7 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *const
 	struct uhc_transfer *const xfer = ch->xfer;
 	const struct usb_setup_packet *setup;
 
-	switch (xfer->type) {
+	switch (uhc_ep_type(xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		/* Apply a delay if request was Set Address */
 		setup = (const struct usb_setup_packet *)xfer->setup_pkt;
@@ -1440,7 +1442,7 @@ static void ch_start_control(const struct device *dev,
 	/* Control stage is always OUT */
 	sys_clear_bits((mem_addr_t)&ch->regs->hcchar, USB_DWC2_HCCHAR_EPDIR);
 
-	pkt_cnt  = calc_packet_count(sizeof(struct usb_setup_packet), xfer->mps);
+	pkt_cnt  = calc_packet_count(sizeof(struct usb_setup_packet), xfer->ep->mps);
 	hctsiz = usb_dwc2_set_hctsiz_pid(USB_DWC2_HCTSIZ_PID_SETUP) |
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(sizeof(struct usb_setup_packet));
@@ -1477,7 +1479,7 @@ static void ch_start_bulk(const struct device *dev,
 
 	/* TODO: Do split */
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		/* For IN, receive into the buffer tailroom */
 		ch->length = net_buf_tailroom(xfer->buf);
 		dma_addr = (mem_addr_t)(net_buf_tail(xfer->buf));
@@ -1491,14 +1493,14 @@ static void ch_start_bulk(const struct device *dev,
 		LOG_HEXDUMP_DBG(xfer->buf->data, ch->length, "BULK OUT");
 	}
 
-	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+	pkt_cnt = calc_packet_count(ch->length, xfer->ep->mps);
 
 	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(ch->length);
 
 	if (ch->length > 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			sys_cache_data_invd_range((void *)dma_addr, ch->length);
 		} else {
 			sys_cache_data_flush_range((void *)dma_addr, ch->length);
@@ -1561,19 +1563,19 @@ static void ch_start_interrupt(const struct device *dev,
 	uint32_t hfnum;
 	uint16_t frame;
 
-	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
+	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->ep->mps);
 	dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
 
 	LOG_DBG("INT IN, ch=%u, ep=%02Xh, mps=%u, interval=%u, size=%u, pid=%u, frame=%u",
 		ch->index,
-		xfer->ep,
-		xfer->mps,
+		xfer->ep->addr,
+		xfer->ep->mps,
 		xfer->interval,
 		ch->length,
 		ch->data->next_pid,
 		ch->data->scheduled_frame);
 
-	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
+	pkt_cnt = calc_packet_count(ch->length, xfer->ep->mps);
 
 	/* TODO: Do not forget to flush pids on the device disconnection */
 
@@ -1582,7 +1584,7 @@ static void ch_start_interrupt(const struct device *dev,
 		 usb_dwc2_set_hctsiz_xfersize(ch->length);
 
 	if (ch->length > 0) {
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			sys_cache_data_invd_range((void *)dma_addr, ch->length);
 		} else {
 			sys_cache_data_flush_range((void *)dma_addr, ch->length);
@@ -1626,7 +1628,7 @@ static void ch_reinit(const struct device *dev,
 
 	/* TODO: check, if it might be a good this to do anything before the re-init */
 
-	switch (ch->xfer->type) {
+	switch (uhc_ep_type(ch->xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		/* Re-enable the channel using the already-programmed HCTSIZ/HCDMA. */
 		hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
@@ -1642,7 +1644,8 @@ static void ch_reinit(const struct device *dev,
 		ch_start_interrupt(dev, ch);
 		break;
 	default:
-		LOG_ERR("Reinit channel with type=%u isn't supported yet", ch->xfer->type);
+		LOG_ERR("Reinit channel with type=%u isn't supported yet",
+			uhc_ep_type(ch->xfer->ep));
 		break;
 	}
 }
@@ -1740,15 +1743,15 @@ static int validate_control_xfer(const struct uhc_transfer *xfer)
 	uint16_t wLength;
 
 	/* Only via EP0 */
-	if (USB_EP_GET_IDX(xfer->ep) != 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) != 0) {
 		LOG_ERR("Control transfer must use endpoint 0");
 		return -EINVAL;
 	}
 
 	/* Has correct MPS */
-	if ((xfer->mps != 8) && (xfer->mps != 16) &&
-	    (xfer->mps != 32) && (xfer->mps != 64)) {
-		LOG_ERR("Invalid control MPS %u", xfer->mps);
+	if ((xfer->ep->mps != 8) && (xfer->ep->mps != 16) &&
+	    (xfer->ep->mps != 32) && (xfer->ep->mps != 64)) {
+		LOG_ERR("Invalid control MPS %u", xfer->ep->mps);
 		return -EINVAL;
 	}
 
@@ -1805,20 +1808,20 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 {
 	uint32_t size;
 
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		LOG_ERR("Bulk transfer cannot use endpoint 0");
 		return -EINVAL;
 	}
 
-	if (xfer->mps == 0) {
+	if (xfer->ep->mps == 0) {
 		LOG_ERR("Bulk transfer MPS is zero");
 		return -EINVAL;
 	}
 
-	if ((xfer->mps != 8) && (xfer->mps != 16) &&
-	    (xfer->mps != 32) && (xfer->mps != 64) &&
-	    (xfer->mps != 512)) {
-		LOG_ERR("Invalid bulk MPS %u", xfer->mps);
+	if ((xfer->ep->mps != 8) && (xfer->ep->mps != 16) &&
+	    (xfer->ep->mps != 32) && (xfer->ep->mps != 64) &&
+	    (xfer->ep->mps != 512)) {
+		LOG_ERR("Invalid bulk MPS %u", xfer->ep->mps);
 		return -EINVAL;
 	}
 
@@ -1827,7 +1830,7 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 		return -EINVAL;
 	}
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		size = net_buf_tailroom(xfer->buf);
 
 		if (size == 0) {
@@ -1862,7 +1865,7 @@ static int validate_bulk_xfer(const struct uhc_transfer *xfer)
 
 static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 {
-	if (USB_EP_GET_IDX(xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(xfer->ep->addr) == 0) {
 		LOG_ERR("Interrupt transfer cannot use endpoint 0");
 		return -EINVAL;
 	}
@@ -1872,18 +1875,18 @@ static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 		return -EINVAL;
 	}
 	/* TODO: Support only IN EP for now */
-	if (!USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (!USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		LOG_ERR("Interrupt OUT is not supported yet");
 		return -ENOTSUP;
 	}
 
-	if (xfer->mps == 0U || xfer->mps > 1024U) {
-		LOG_ERR("Invalid interrupt MPS %u", xfer->mps);
+	if (xfer->ep->mps == 0U || xfer->ep->mps > 1024U) {
+		LOG_ERR("Invalid interrupt MPS %u", xfer->ep->mps);
 		return -EINVAL;
 	}
 
 	/* TODO: Support High-bandwidth with several transactions per microframe */
-	if (USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps) != 0U) {
+	if (USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->ep->mps) != 0U) {
 		LOG_ERR("High-bandwidth interrupt endpoints are not supported yet");
 		return -ENOTSUP;
 	}
@@ -1918,10 +1921,10 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	int ret;
 
 	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
-		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
+		xfer->udev->addr, xfer->ep->addr, xfer->ep->mps, xfer->interval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
-	switch (xfer->type) {
+	switch (uhc_ep_type(xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		ret = validate_control_xfer(xfer);
 		break;
@@ -1932,12 +1935,12 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		ret = validate_interrupt_xfer(xfer);
 		break;
 	default:
-		LOG_ERR("Submit xfer with type=%u isn't supported yet", xfer->type);
+		LOG_ERR("Submit xfer with type=%u isn't supported yet", uhc_ep_type(xfer->ep));
 		return -EINVAL;
 	}
 
 	if (ret != 0) {
-		LOG_ERR("Invalid xfer for transfer: type=%u, err=%d", xfer->type, ret);
+		LOG_ERR("Invalid xfer for transfer: type=%u, err=%d", uhc_ep_type(xfer->ep), ret);
 		return ret;
 	}
 
@@ -1956,7 +1959,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		return ret;
 	}
 
-	switch (xfer->type) {
+	switch (uhc_ep_type(xfer->ep)) {
 	case USB_EP_TYPE_CONTROL:
 		ch_start_control(dev, ch);
 		break;
@@ -1968,7 +1971,7 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 		ch_start_interrupt(dev, ch);
 		break;
 	default:
-		LOG_ERR("Start channel with type %d isn't supported yet", xfer->type);
+		LOG_ERR("Start channel with type %d isn't supported yet", uhc_ep_type(xfer->ep));
 		ch_release(dev, ch);
 		return -EINVAL;
 	}

@@ -267,16 +267,16 @@ static int max3421e_xfer_data(const struct device *dev,
 			      struct net_buf *const buf,
 			      struct uhc_transfer *const xfer)
 {
-	const uint8_t ep_idx = USB_EP_GET_IDX(xfer->ep);
+	const uint8_t ep_idx = USB_EP_GET_IDX(xfer->ep->addr);
 	int ret;
 
-	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+	if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 		LOG_DBG("bulk in %p %u", buf, net_buf_tailroom(buf));
 		ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_BULKIN(ep_idx));
 	} else {
 		size_t len;
 
-		len = MIN(xfer->mps, buf->len);
+		len = MIN(xfer->ep->mps, buf->len);
 		LOG_DBG("bulk out %p %u", buf, len);
 
 		ret = max3421e_write(dev, MAX3421E_REG_SNDFIFO, buf->data, len);
@@ -337,7 +337,7 @@ static int max3421e_xfer_control(const struct device *dev,
 
 	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
 		LOG_DBG("Handle STATUS stage");
-		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		if (USB_EP_DIR_IS_IN(xfer->ep->addr)) {
 			ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_HSOUT(0));
 		} else {
 			ret = max3421e_hxfr_start(dev, MAX3421E_HXFR_HSIN(0));
@@ -397,7 +397,7 @@ static int max3421e_schedule_xfer(const struct device *dev)
 	 * TODO: currently we only support control transfers and
 	 * treat all others as bulk.
 	 */
-	if (USB_EP_GET_IDX(priv->last_xfer->ep) == 0) {
+	if (USB_EP_GET_IDX(priv->last_xfer->ep->addr) == 0) {
 		return max3421e_xfer_control(dev, priv->last_xfer, hrsl);
 	}
 
@@ -468,7 +468,7 @@ static int max3421e_hrslt_success(const struct device *dev)
 	case MAX3421E_HXFR_TYPE_BULKOUT:
 		if (buf->len == 0) {
 			LOG_INF("hrslt bulk out %u", buf->len);
-			if (xfer->ep == USB_CONTROL_EP_OUT) {
+			if (xfer->ep->addr == USB_CONTROL_EP_OUT) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;
 			} else {
 				finished = true;
@@ -495,9 +495,9 @@ static int max3421e_hrslt_success(const struct device *dev)
 
 		LOG_INF("bc %u tr %u", bc, net_buf_tailroom(buf));
 
-		if (bc < xfer->mps || !net_buf_tailroom(buf)) {
+		if (bc < xfer->ep->mps || !net_buf_tailroom(buf)) {
 			LOG_INF("hrslt bulk in %u, %u", bc, len);
-			if (xfer->ep == USB_CONTROL_EP_IN) {
+			if (xfer->ep->addr == USB_CONTROL_EP_IN) {
 				xfer->stage = UHC_CONTROL_STAGE_STATUS;
 			} else {
 				finished = true;

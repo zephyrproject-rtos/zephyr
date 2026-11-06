@@ -59,6 +59,19 @@ static inline int uhc_unlock_internal(const struct device *dev)
 }
 
 /**
+ * @brief Get the transfer type of a USB host endpoint.
+ *
+ * @param[in] ep Pointer to USB host endpoint
+ *
+ * @return Endpoint transfer type, one of USB_EP_TYPE_CONTROL,
+ *         USB_EP_TYPE_ISO, USB_EP_TYPE_BULK or USB_EP_TYPE_INTERRUPT.
+ */
+static inline uint8_t uhc_ep_type(const struct usb_host_ep *const ep)
+{
+	return ep->attributes & USB_EP_TRANSFER_TYPE_MASK;
+}
+
+/**
  * @brief Helper function to return UHC transfer to a higher level.
  *
  * Function to dequeue transfer and send UHC event to a higher level.
