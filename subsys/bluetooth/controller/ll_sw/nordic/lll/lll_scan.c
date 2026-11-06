@@ -335,10 +335,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
+	uint32_t ticks_offset;
 	struct ull_hdr *ull;
+	uint32_t ticks_now;
 
 	ull = HDR_LLL2ULL(p->param);
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
+	ticks_offset = lll_event_offset_get(ull);
+	ticks_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US - EVENT_OVERHEAD_RESUME_US);
+	ticks_now = ticker_ticks_now_get();
+
+	p->ticks_at_expire = ticker_ticks_diff_get(ticks_now, ticks_offset);
 	p->remainder = 0;
 	p->lazy = 0;
 
@@ -475,10 +481,10 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event or extended scan to schedule auxiliary channel
-	 * reception.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 	/* scanner always measures RSSI */
@@ -554,7 +560,14 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	struct lll_scan *lll = curr;
+	struct lll_scan *lll;
+
+	/* Prepare being cancelled (no resume for scan) */
+	if (next == NULL) {
+		return 0;
+	}
+
+	lll = curr;
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Irrespective of same state/role (initiator radio event) or different
@@ -575,8 +588,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		if (unlikely(!lll->duration_reload || lll->duration_expire))
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		{
-			/* Put back to resume state for continuous scanning */
-			if (!lll->ticks_window) {
+			/* Put back to resume state for continuous scanning if not being stopped. */
+			if ((lll->ticks_window == 0U) && (lll->is_stop == 0U)) {
 				int err;
 
 				/* Set the resume prepare function to use for
@@ -662,7 +675,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	err = lll_hfclock_off();
 	LL_ASSERT_ERR(err >= 0);
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
@@ -850,7 +863,7 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
+	hcto += radio_rx_address_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 
@@ -950,9 +963,10 @@ static void isr_done(void *param)
 	radio_rx_enable();
 #endif /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 }
 
@@ -1002,9 +1016,10 @@ static void isr_window(void *param)
 	remainder_us = radio_tmr_start_now(0);
 #endif /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
@@ -1668,10 +1683,17 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;
 				ftr->ticks_anchor = radio_tmr_start_get();
-				ftr->radio_end_us =
-					radio_tmr_end_get() -
-					radio_rx_chain_delay_get(lll->phy,
-								 phy_flags_rx);
+
+				uint32_t aa_delay_us;
+				uint32_t aa_us;
+
+				aa_us = radio_tmr_aa_get();
+				aa_delay_us = radio_rx_address_delay_get(lll->phy, phy_flags_rx);
+				aa_delay_us += addr_us_get(lll->phy);
+				LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u",
+					      aa_us, aa_delay_us);
+
+				ftr->radio_end_us = aa_us - aa_delay_us;
 				ftr->phy_flags = phy_flags_rx;
 				ftr->aux_lll_sched =
 					lll_scan_aux_setup(pdu_adv_rx, lll->phy,

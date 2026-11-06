@@ -243,6 +243,11 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	/* Treat lost SDUs as a failure condition again for the newly started stream */
+	UNSET_FLAG(test_stream->stopping);
+
 	bap_common_stream_started_cb(stream);
 
 	SET_FLAG(flag_stream_started);
@@ -466,9 +471,14 @@ static int unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_DBG("Disable: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
@@ -484,9 +494,14 @@ static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_
 
 static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_DBG("Release: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
@@ -819,6 +834,13 @@ static void test_cap_handover_peripheral_unicast_to_broadcast(void)
 	backchannel_sync_wait(CAP_INITIATOR_DEV_ID);
 
 	wait_for_data();
+
+	/* The initiator starts the handover once synced, during which lost SDUs are expected
+	 * (e.g. CIS events skipped by the initiator), hence mark the streams as stopping.
+	 */
+	ARRAY_FOR_EACH_PTR(streams, test_stream) {
+		SET_FLAG(test_stream->stopping);
+	}
 
 	/* let initiator know we have received what we wanted */
 	backchannel_sync_send(CAP_INITIATOR_DEV_ID);

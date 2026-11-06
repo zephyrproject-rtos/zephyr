@@ -66,10 +66,17 @@
 #endif
 
 /* CIS Create Procedure uses 3 PDU transmissions, and one connection interval to process the LLCP
- * requested, hence minimum relative instant not be less than 4. I.e. the CIS_REQ PDU will be
- * transmitted in the next ACL interval.
- * The +1 also helps with the fact that currently we do not have Central implementation to handle
- * event latencies at the instant. Refer to `ull_conn_iso_start()` implementation.
+ * requested, hence ideally set the minimum relative instant not less than 4. I.e. the CIS_REQ PDU
+ * will be transmitted in the next ACL interval and the instant will be at the 4th ACL interval.
+ * This way both Central and Peripheral does not need to exercise any ACL interval latencies when
+ * establishing the CIG/CIS.
+ *
+ * BLUETOOTH CORE SPECIFICATION Version 6.2 | Vol 6, Part B, Section 2.4.2.29 LL_CIS_REQ
+ * "connEventCount should be set to a value greater than currEvent of the event in which the
+ * LL_CIS_REQ PDU is first transmitted."
+ *
+ * NOTE: The implementation can handle ACL latencies establishing the CIG/CIS with relative instant
+ *       of 0.
  */
 #define CIS_CREATE_INSTANT_DELTA_MIN 4U
 
@@ -220,7 +227,16 @@ uint8_t ll_cig_parameters_commit(uint8_t cig_id, uint16_t *handles)
 	cig->lll.handle = ll_conn_iso_group_handle_get(cig);
 	cig->lll.role = BT_HCI_ROLE_CENTRAL;
 	cig->lll.resume_cis = LLL_HANDLE_INVALID;
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	cig->lll.cis_handle_resume = LLL_HANDLE_INVALID;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 	cig->lll.num_cis = num_cis;
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	cig->lll.packing = (cig->central.packing == BT_ISO_PACKING_INTERLEAVED);
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 	force_framed = false;
 
 	if (!cig->central.test) {
@@ -440,12 +456,14 @@ ll_cig_parameters_commit_retry:
 	/* 1) Prepare calculation of the flush timeout by adding up the total time needed to
 	 *    transfer all payloads, including retransmissions.
 	 */
+#if defined(CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL)
 	if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 		/* Sequential CISes - add up the total duration */
 		for (uint8_t i = 0U; i < num_cis; i++) {
 			total_time += se[i].total_count * se[i].length;
 		}
 	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
 
 	handle_iter = UINT16_MAX;
 	cig_sync_delay = 0U;
@@ -465,12 +483,68 @@ ll_cig_parameters_commit_retry:
 
 		if (!cig->central.test) {
 #if defined(CONFIG_BT_CTLR_CONN_ISO_LOW_LATENCY_POLICY)
-			/* TODO: Only implemented for sequential packing */
-			LL_ASSERT_ERR(cig->central.packing == BT_ISO_PACKING_SEQUENTIAL);
+#if defined(CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL)
+			if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
+				/* Use symmetric flush timeout */
+				cis->lll.tx.ft = DIV_ROUND_UP(total_time, iso_interval_us);
+				cis->lll.rx.ft = cis->lll.tx.ft;
+			}
+#else /* !CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
+			/* Sequential packing support is not compiled in */
+			if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
+				err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+				goto ll_cig_parameters_commit_cleanup;
+			}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
 
-			/* Use symmetric flush timeout */
-			cis->lll.tx.ft = DIV_ROUND_UP(total_time, iso_interval_us);
-			cis->lll.rx.ft = cis->lll.tx.ft;
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+#if defined(CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY)
+			/* For interleaved packing with low latency policy, use reliability
+			 * policy approach to calculate flush timeout. This requires the
+			 * reliability policy to be enabled.
+			 *
+			 * Set CIG_Sync_Delay = ISO_Interval as the maximum allowed value.
+			 * This provides maximum scheduling flexibility for interleaved
+			 * subevents across multiple CISes while respecting the
+			 * Max_Transport_Latency.
+			 */
+			if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
+				uint32_t cig_sync_delay_us_max = iso_interval_us;
+
+				cis->lll.tx.ft = ll_cis_calculate_ft(cig_sync_delay_us_max,
+								     iso_interval_us,
+								     cig->c_sdu_interval,
+								     cig->c_latency,
+								     cis->framed);
+
+				cis->lll.rx.ft = ll_cis_calculate_ft(cig_sync_delay_us_max,
+								     iso_interval_us,
+								     cig->p_sdu_interval,
+								     cig->p_latency,
+								     cis->framed);
+
+				if ((cis->lll.tx.ft == 0U) || (cis->lll.rx.ft == 0U)) {
+					/* Invalid FT caused by invalid combination of parameters */
+					err = BT_HCI_ERR_INVALID_PARAM;
+					goto ll_cig_parameters_commit_cleanup;
+				}
+			}
+#else /* !CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY */
+			/* Interleaved packing with low latency policy requires reliability
+			 * policy to be enabled for flush timeout calculation
+			 */
+			if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
+				err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+				goto ll_cig_parameters_commit_cleanup;
+			}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY */
+#else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+			/* Interleaved packing support is not compiled in */
+			if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
+				err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+				goto ll_cig_parameters_commit_cleanup;
+			}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 
 #elif defined(CONFIG_BT_CTLR_CONN_ISO_RELIABILITY_POLICY)
 			/* Utilize Max_Transport_latency */
@@ -502,11 +576,22 @@ ll_cig_parameters_commit_retry:
 			cis->lll.nse = DIV_ROUND_UP(se[i].total_count, cis->lll.tx.ft);
 		}
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL)
 		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 			/* Accumulate CIG sync delay for sequential CISes */
 			cis->lll.sub_interval = MAX(SUB_INTERVAL_MIN, se[i].length);
 			cig_sync_delay += cis->lll.nse * cis->lll.sub_interval;
-		} else {
+		}
+#else /* !CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
+		/* Sequential packing support is not compiled in */
+		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
+			err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			goto ll_cig_parameters_commit_cleanup;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+		if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
 			/* For interleaved CISes, offset each CIS by a fraction of a subinterval,
 			 * positioning them evenly within the subinterval.
 			 */
@@ -515,6 +600,13 @@ ll_cig_parameters_commit_retry:
 					     (cis->lll.nse * cis->lll.sub_interval) +
 					     (i * cis->lll.sub_interval / num_cis));
 		}
+#else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+		/* Interleaved packing support is not compiled in */
+		if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
+			err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			goto ll_cig_parameters_commit_cleanup;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 	}
 
 	cig->sync_delay = cig_sync_delay;
@@ -581,15 +673,33 @@ ll_cig_parameters_commit_retry:
 		c_max_latency = MAX(c_max_latency, c_latency);
 		p_max_latency = MAX(p_max_latency, p_latency);
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL)
 		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
 			/* Distribute CISes sequentially */
 			cis->sync_delay = cig_sync_delay;
 			cig_sync_delay -= cis->lll.nse * cis->lll.sub_interval;
-		} else {
+		}
+#else /* !CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
+		/* Sequential packing support is not compiled in */
+		if (cig->central.packing == BT_ISO_PACKING_SEQUENTIAL) {
+			err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			goto ll_cig_parameters_commit_cleanup;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_SEQUENTIAL */
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+		if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
 			/* Distribute CISes interleaved */
 			cis->sync_delay = cig_sync_delay;
 			cig_sync_delay -= (cis->lll.sub_interval / num_cis);
 		}
+#else /* !CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+		/* Interleaved packing support is not compiled in */
+		if (cig->central.packing == BT_ISO_PACKING_INTERLEAVED) {
+			err = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+			goto ll_cig_parameters_commit_cleanup;
+		}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 
 		if (cis->lll.nse <= 1) {
 			cis->lll.sub_interval = 0U;

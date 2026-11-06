@@ -27,6 +27,7 @@ void radio_pkt_tx_set(void *tx_packet);
 uint32_t radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_tx_chain_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
+uint32_t radio_rx_address_delay_get(uint8_t phy, uint8_t flags);
 uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags);
 void radio_rx_enable(void);
 void radio_tx_enable(void);
