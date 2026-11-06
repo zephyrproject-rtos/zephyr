@@ -177,12 +177,12 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 		   image_header.drom_size, image_header.drom_size);
 
 	struct rom_segments rom = {
-		image_header.drom_map_addr,
-		image_header.drom_flash_offset + fa_offset,
-		image_header.drom_size,
-		image_header.irom_map_addr,
-		image_header.irom_flash_offset + fa_offset,
-		image_header.irom_size,
+		.irom_map_addr = image_header.irom_map_addr,
+		.irom_flash_offset = image_header.irom_flash_offset + fa_offset,
+		.irom_size = image_header.irom_size,
+		.drom_map_addr = image_header.drom_map_addr,
+		.drom_flash_offset = image_header.drom_flash_offset + fa_offset,
+		.drom_size = image_header.drom_size,
 	};
 
 	map_rom_segments(1, &rom);
