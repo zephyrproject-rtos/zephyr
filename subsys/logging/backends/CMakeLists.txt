@@ -94,3 +94,8 @@ zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_ACP
   log_backend_acp.c
 )
+
+zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_WHISPER
+  log_backend_whisper.c
+)
