@@ -8,6 +8,9 @@ compatible: "telit,le910c1tx"
 include: zephyr,cellular-modem-device.yaml
 
 properties:
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_resume", "toggle_on_recovery"]
+
   mdm-power-gpios:
     type: phandle-array
     required: true
