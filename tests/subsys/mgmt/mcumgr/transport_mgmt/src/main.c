@@ -1694,6 +1694,60 @@ ZTEST(transport_mgmt, test_connection_reverse_incoming)
 	zassert_equal(decoded, 0, "Expected to receive 0 decoded zcbor elements");
 }
 
+ZTEST(transport_mgmt, test_connect_bridge_function)
+{
+	uint8_t buffer[ZCBOR_BUFFER_SIZE] = { 0 };
+	uint8_t buffer_out[OUTPUT_BUFFER_SIZE] = { 0 };
+	int rc;
+	struct cbor_nb_reader input_data = { 0 };
+	struct cbor_nb_writer output_data = { 0 };
+	struct smp_transport *dummy = smp_client_transport_get(SMP_SERIAL_TRANSPORT);
+	struct smp_transport *raw_dummy = smp_client_transport_get(SMP_RAW_SERIAL_TRANSPORT);
+
+	zassert_not_null(dummy, "Expected dummy transport to be registered");
+	zassert_not_null(raw_dummy, "Expected raw dummy transport to be registered");
+
+	/* The dummy transports take no connection parameters */
+	zcbor_new_decode_state(input_data.zs, ARRAY_SIZE(input_data.zs), buffer, 0, 1, NULL, 0);
+	zcbor_new_encode_state(output_data.zs, ARRAY_SIZE(output_data.zs), buffer_out,
+			       ARRAY_SIZE(buffer_out), 0);
+
+	/* Test 1: Bridge dummy transport to raw dummy transport */
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, 0, "Expected bridge to be connected");
+
+	/* Check each transport of the bridge gets the other one */
+	zassert_equal(transport_mgmt_get_other_transport(dummy, TRANSPORT_MGMT_DIRECTION_INCOMING),
+		      raw_dummy, "Expected the raw dummy transport as the other transport");
+	zassert_equal(
+		transport_mgmt_get_other_transport(raw_dummy, TRANSPORT_MGMT_DIRECTION_OUTGOING),
+		dummy, "Expected the dummy transport as the other transport");
+
+	/* Test 2: Bridge the same transports again */
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, -EISCONN, "Expected transports to be already bridged");
+
+	/* Test 3: Invalid arguments */
+	rc = transport_mgmt_connect_bridge(NULL, raw_dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, -EINVAL, "Expected NULL incoming transport to be rejected");
+	rc = transport_mgmt_connect_bridge(dummy, NULL, 0, &input_data, &output_data);
+	zassert_equal(rc, -EINVAL, "Expected NULL outgoing transport to be rejected");
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, NULL, &output_data);
+	zassert_equal(rc, -EINVAL, "Expected NULL input data to be rejected");
+	rc = transport_mgmt_connect_bridge(dummy, raw_dummy, 0, &input_data, NULL);
+	zassert_equal(rc, -EINVAL, "Expected NULL output data to be rejected");
+
+	/* Test 4: Bridge refused by the transport */
+	rc = transport_mgmt_disconnect_all();
+	zassert_equal(rc, 0, "Expected bridge to be disconnected");
+
+	rc = transport_mgmt_connect_bridge(dummy, dummy, 0, &input_data, &output_data);
+	zassert_equal(rc, -ECONNREFUSED, "Expected transport to refuse the bridge");
+	zassert_is_null(
+		transport_mgmt_get_other_transport(dummy, TRANSPORT_MGMT_DIRECTION_INCOMING),
+		"Expected dummy transport not to be bridged");
+}
+
 ZTEST(transport_mgmt, test_status)
 {
 	uint8_t buffer[ZCBOR_BUFFER_SIZE];
