@@ -91,12 +91,14 @@ enum fido2_status fido2_clientpin_cmd_get_key_agreement(uint8_t *cbor_out, size_
  * @param new_pin_enc Encrypted new pin.
  * @param new_pin_enc_len Length of @p new_pin_enc in bytes.
  * @param pin_uv_auth_param Result of calling authenticate(shared secret, newPinEnc).
+ * @param pin_uv_auth_param_len Length of @p pin_uv_auth_param in bytes.
  * @return FIDO2_OK on success, FIDO2_ERR_* on failure.
  */
 enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *platform_key,
 					      size_t platform_key_len, const uint8_t *new_pin_enc,
 					      size_t new_pin_enc_len,
-					      const uint8_t *pin_uv_auth_param);
+					      const uint8_t *pin_uv_auth_param,
+					      size_t pin_uv_auth_param_len);
 
 /**
  * Handle changePIN.
@@ -109,6 +111,7 @@ enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *p
  * @param new_pin_enc Encrypted new pin.
  * @param new_pin_enc_len Length of @p new_pin_enc in bytes.
  * @param pin_uv_auth_param Result of calling authenticate(shared secret, newPinEnc).
+ * @param pin_uv_auth_param_len Length of @p pin_uv_auth_param in bytes.
  * @return FIDO2_OK on success, FIDO2_ERR_* on failure.
  */
 enum fido2_status fido2_clientpin_cmd_change_pin(uint8_t protocol, const uint8_t *platform_key,
@@ -116,7 +119,8 @@ enum fido2_status fido2_clientpin_cmd_change_pin(uint8_t protocol, const uint8_t
 						 const uint8_t *pin_hash_enc,
 						 size_t pin_hash_enc_len,
 						 const uint8_t *new_pin_enc, size_t new_pin_enc_len,
-						 const uint8_t *pin_uv_auth_param);
+						 const uint8_t *pin_uv_auth_param,
+						 size_t pin_uv_auth_param_len);
 
 /**
  * Handle getPinToken / getPinUvAuthTokenUsingPinWithPermissions.
