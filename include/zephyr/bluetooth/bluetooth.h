@@ -1348,7 +1348,9 @@ struct bt_le_per_adv_param {
  *                 advertiser.
  * @retval -ENOTSUP @ref BT_LE_ADV_OPT_DIR_ADDR_RPA was used and the peer is
  *                  known not to support address resolution, as reported by
- *                  @ref bt_le_bond_addr_res_support.
+ *                  @ref bt_le_bond_addr_res_support, or the advertising data
+ *                  has the @ref BT_LE_AD_LIMITED flag and
+ *                  @kconfig{CONFIG_BT_LIM_ADV} is disabled.
  * @return -ECONNREFUSED When connectable advertising is requested and there
  *                       is already maximum number of connections established
  *                       in the controller.
@@ -1371,6 +1373,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
  * @param sd_len Number of elements in sd
  *
  * @return Zero on success or (negative) error code otherwise.
+ * @retval -ENOTSUP The advertising data has the @ref BT_LE_AD_LIMITED flag and
+ *                  @kconfig{CONFIG_BT_LIM_ADV} is disabled.
  */
 int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 			  const struct bt_data *sd, size_t sd_len);
