@@ -14,8 +14,10 @@ toolchain:
 ram: 32768
 flash: 65536
 supported:
+  - display
   - gpio
   - hwinfo
+  - i2c
   - uart
   - video
   - dma
