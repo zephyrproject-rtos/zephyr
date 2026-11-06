@@ -828,6 +828,25 @@ static void lower_data_ready(struct bt_l2cap_le_chan *le_chan)
 	__ASSERT_NO_MSG(s == &le_chan->_pdu_ready);
 }
 
+/* Host lock held. No more of the SDU follows the K-frame in transmission. */
+static void orphan_partly_sent_pdu(struct bt_l2cap_le_chan *le_chan)
+{
+	struct bt_conn *conn = le_chan->chan.conn;
+	struct net_buf *pdu;
+
+	if (conn == NULL || !bt_conn_tx_in_pdu(conn, &le_chan->_pdu_ready)) {
+		return;
+	}
+
+	pdu = k_fifo_get(&le_chan->tx_queue, K_NO_WAIT);
+	__ASSERT_NO_MSG(pdu != NULL);
+
+	pdu->len = le_chan->_pdu_remaining;
+	le_chan->_pdu_remaining = 0U;
+
+	bt_conn_tx_orphan_pdu(conn, net_buf_take(&pdu));
+}
+
 static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	struct bt_conn *conn = le_chan->chan.conn;
@@ -839,6 +858,8 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 	 * while we are removing the channel from it (see raise_data_ready()).
 	 */
 	bt_dev_lock();
+
+	orphan_partly_sent_pdu(le_chan);
 
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &le_chan->_pdu_ready);
@@ -1026,6 +1047,15 @@ static bool chan_has_credits(struct bt_l2cap_le_chan *lechan)
 #endif
 }
 
+static bool chan_is_disconnecting(const struct bt_l2cap_le_chan *lechan)
+{
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	return lechan->state == BT_L2CAP_DISCONNECTING;
+#else
+	return false;
+#endif
+}
+
 __weak void bt_test_l2cap_data_pull_spy(struct bt_conn *conn,
 					struct bt_l2cap_le_chan *lechan,
 					size_t amount,
@@ -1072,6 +1102,16 @@ struct net_buf *l2cap_data_pull(struct bt_conn *conn,
 
 	if (bt_buf_has_view(fifo_pdu)) {
 		LOG_ERR("already have view on %p", fifo_pdu);
+		return NULL;
+	}
+
+	if (lechan->_pdu_remaining == 0 && chan_is_disconnecting(lechan)) {
+		/* Nothing new after a Disconnection Request: what is left goes
+		 * with the channel. Another channel may have data to send.
+		 */
+		LOG_DBG("no new K-frame on disconnecting %p", lechan);
+		lower_data_ready(lechan);
+		bt_tx_irq_raise();
 		return NULL;
 	}
 
@@ -2649,6 +2689,12 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 	 */
 	bt_dev_lock();
 	atomic_set_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN);
+
+	/* Under the lock too, for the TX processor not to start on a PDU that
+	 * is then removed
+	 */
+	orphan_partly_sent_pdu(le_chan);
+	net_buf_fifo_purge(&le_chan->tx_queue);
 	bt_dev_unlock();
 
 	/* Destroy segmented SDU if it exists */
@@ -2656,9 +2702,6 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 		net_buf_drop(&le_chan->_sdu);
 		le_chan->_sdu_len = 0U;
 	}
-
-	/* Remove buffers on the TX queue */
-	net_buf_fifo_purge(&le_chan->tx_queue);
 
 	/* Remove buffers on the RX queue */
 	net_buf_fifo_purge(&le_chan->rx_queue);
@@ -3599,8 +3642,9 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	req->dcid = sys_cpu_to_le16(le_chan->tx.cid);
 	req->scid = sys_cpu_to_le16(le_chan->rx.cid);
 
-	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
+	/* Ahead of the request, as no new PDU is to follow it */
 	l2cap_chan_set_state(chan, BT_L2CAP_DISCONNECTING);
+	l2cap_chan_send_req(chan, buf, L2CAP_DISC_TIMEOUT);
 
 	return 0;
 }
