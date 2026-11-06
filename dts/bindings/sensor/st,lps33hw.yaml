@@ -1,0 +1,21 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LPS33HW pressure and temperature sensor
+
+compatible: "st,lps33hw"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  odr:
+    type: int
+    default: 25
+    enum:
+      - 1
+      - 10
+      - 25
+      - 50
+      - 75
+    description: |
+      Sensor output data rate expressed in samples per second.
