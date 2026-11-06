@@ -274,7 +274,7 @@ int mfd_rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask,
 	return 0;
 }
 
-int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
+static int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
 	uint8_t status = 0;
 	int err;
@@ -301,43 +301,12 @@ int mfd_rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 	return 0;
 }
 
-int mfd_rv3028_exit_eerd(const struct device *dev)
+static int mfd_rv3028_exit_eerd(const struct device *dev)
 {
 	return mfd_rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD, 0);
 }
 
-int mfd_rv3028_enter_eerd(const struct device *dev)
-{
-	uint8_t ctrl1;
-	bool eerd;
-	int ret;
-
-	ret = mfd_rv3028_read_reg8(dev, RV3028_REG_CONTROL1, &ctrl1);
-	if (ret) {
-		return ret;
-	}
-
-	eerd = ctrl1 & RV3028_CONTROL1_EERD;
-	if (eerd) {
-		return 0;
-	}
-
-	ret = mfd_rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
-				     RV3028_CONTROL1_EERD);
-	if (ret) {
-		return ret;
-	}
-
-	ret = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
-	if (ret) {
-		mfd_rv3028_exit_eerd(dev);
-		return ret;
-	}
-
-	return ret;
-}
-
-int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command)
+static int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command)
 {
 	int err;
 
@@ -349,68 +318,153 @@ int mfd_rv3028_eeprom_command(const struct device *dev, uint8_t command)
 	return mfd_rv3028_write_reg8(dev, RV3028_REG_EEPROM_COMMAND, command);
 }
 
-int mfd_rv3028_update(const struct device *dev)
+static int mfd_rv3028_eeprom_run(const struct device *dev, uint8_t command, int poll_ms)
 {
 	int err;
 
-	err = mfd_rv3028_eeprom_command(dev, RV3028_EEPROM_CMD_UPDATE);
-	if (err) {
-		goto exit_eerd;
+	err = mfd_rv3028_eeprom_command(dev, command);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Give the command time to start before checking EEbusy */
+	k_msleep(poll_ms);
+
+	return mfd_rv3028_eeprom_wait_busy(dev, poll_ms);
+}
+
+int mfd_rv3028_eeprom_end(const struct device *dev)
+{
+	const struct mfd_rv3028_config *config = dev->config;
+	int err;
+	int err_eerd;
+
+	/* Enable switchover again only once the EEPROM is idle */
+	err = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
+	if (err == 0) {
+		err = mfd_rv3028_update_reg8(dev, RV3028_REG_BACKUP, RV3028_BACKUP_BSM,
+					     config->backup);
+	}
+
+	if (err != 0) {
+		LOG_ERR("backup switchover not restored (err %d)", err);
+	}
+
+	/* Clear EERD in any case, so the daily refresh restores RAM from EEPROM */
+	err_eerd = mfd_rv3028_exit_eerd(dev);
+
+	return (err != 0) ? err : err_eerd;
+}
+
+int mfd_rv3028_eeprom_begin(const struct device *dev)
+{
+	int err;
+
+	err = mfd_rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
+				     RV3028_CONTROL1_EERD);
+	if (err != 0) {
+		return err;
 	}
 
 	err = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
+	if (err != 0) {
+		(void)mfd_rv3028_exit_eerd(dev);
+		return err;
+	}
 
-exit_eerd:
-	mfd_rv3028_exit_eerd(dev);
+	/* The EEPROM must not be read or written with backup switchover enabled */
+	err = mfd_rv3028_update_reg8(dev, RV3028_REG_BACKUP, RV3028_BACKUP_BSM,
+				     FIELD_PREP(RV3028_BACKUP_BSM, RV3028_BSM_DISABLED));
+	if (err != 0) {
+		(void)mfd_rv3028_eeprom_end(dev);
+	}
 
 	return err;
 }
 
-int mfd_rv3028_refresh(const struct device *dev)
+int mfd_rv3028_eeprom_read(const struct device *dev, uint8_t addr, uint8_t *val)
 {
 	int err;
 
-	err = mfd_rv3028_eeprom_command(dev, RV3028_EEPROM_CMD_REFRESH);
-	if (err) {
-		goto exit_eerd;
+	err = mfd_rv3028_write_reg8(dev, RV3028_REG_EEPROM_ADDRESS, addr);
+	if (err != 0) {
+		return err;
 	}
 
-	err = mfd_rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_READ_POLL_MS);
+	err = mfd_rv3028_eeprom_run(dev, RV3028_EEPROM_CMD_READ, RV3028_EEBUSY_READ_POLL_MS);
+	if (err != 0) {
+		return err;
+	}
 
-exit_eerd:
-	mfd_rv3028_exit_eerd(dev);
+	return mfd_rv3028_read_reg8(dev, RV3028_REG_EEPROM_DATA, val);
+}
 
-	return err;
+int mfd_rv3028_eeprom_write(const struct device *dev, uint8_t addr, uint8_t val)
+{
+	int err;
+
+	err = mfd_rv3028_write_reg8(dev, RV3028_REG_EEPROM_ADDRESS, addr);
+	if (err != 0) {
+		return err;
+	}
+
+	err = mfd_rv3028_write_reg8(dev, RV3028_REG_EEPROM_DATA, val);
+	if (err != 0) {
+		return err;
+	}
+
+	return mfd_rv3028_eeprom_run(dev, RV3028_EEPROM_CMD_WRITE, RV3028_EEBUSY_WRITE_POLL_MS);
 }
 
 int mfd_rv3028_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
 {
-	uint8_t val_old, val_new;
+	uint8_t stored;
+	uint8_t ram;
 	int err;
+	int err_end;
 
-	err = mfd_rv3028_read_reg8(dev, addr, &val_old);
-	if (err) {
-		return err;
+	mfd_rv3028_lock_sem(dev);
+
+	err = mfd_rv3028_eeprom_begin(dev);
+	if (err != 0) {
+		goto unlock;
 	}
 
-	val_new = (val_old & ~mask) | (val & mask);
-	if (val_new == val_old) {
-		return 0;
+	/*
+	 * Write the single byte rather than run an Update of all configuration registers:
+	 * an Update would store the disabled switchover mode from RAM, and would rewrite the
+	 * factory trimmed offset and the password registers.
+	 */
+	err = mfd_rv3028_eeprom_read(dev, addr, &stored);
+	if ((err == 0) && (((stored ^ val) & mask) != 0U)) {
+		err = mfd_rv3028_eeprom_write(dev, addr, (stored & ~mask) | (val & mask));
 	}
 
-	err = mfd_rv3028_enter_eerd(dev);
-
-	if (err) {
-		return err;
+	/* Load RAM from EEPROM, which also restores the stored switchover mode */
+	if (err == 0) {
+		err = mfd_rv3028_eeprom_run(dev, RV3028_EEPROM_CMD_REFRESH,
+					    RV3028_EEBUSY_READ_POLL_MS);
 	}
 
-	err = mfd_rv3028_write_reg8(dev, addr, val_new);
-	if (err) {
-		mfd_rv3028_exit_eerd(dev);
-		return err;
+	if (err == 0) {
+		err = mfd_rv3028_read_reg8(dev, addr, &ram);
 	}
 
-	return mfd_rv3028_update(dev);
+	if ((err == 0) && (((ram ^ val) & mask) != 0U)) {
+		LOG_ERR("reg addr 0x%02x reads 0x%02x after refresh, expected 0x%02x (mask 0x%02x)",
+			addr, ram, val & mask, mask);
+		err = -EIO;
+	}
+
+	err_end = mfd_rv3028_eeprom_end(dev);
+	if (err == 0) {
+		err = err_end;
+	}
+
+unlock:
+	mfd_rv3028_unlock_sem(dev);
+
+	return err;
 }
 
 static int mfd_rv3028_init(const struct device *dev)
@@ -488,16 +542,6 @@ static int mfd_rv3028_init(const struct device *dev)
 		LOG_WRN("an backup switch flag was detected");
 	}
 
-	/* Refresh the settings in the RAM with the settings from the EEPROM */
-	err = mfd_rv3028_enter_eerd(dev);
-	if (err) {
-		return -ENODEV;
-	}
-	err = mfd_rv3028_refresh(dev);
-	if (err) {
-		return -ENODEV;
-	}
-
 	/* Configure the CLKOUT register */
 	val = FIELD_PREP(RV3028_CLKOUT_FD, config->cof) |
 	      (config->cof != RV3028_CLKOUT_FD_LOW ? RV3028_CLKOUT_CLKOE : 0);
@@ -508,7 +552,8 @@ static int mfd_rv3028_init(const struct device *dev)
 	}
 
 	err = mfd_rv3028_update_cfg(dev, RV3028_REG_BACKUP,
-				    RV3028_BACKUP_TCE | RV3028_BACKUP_TCR | RV3028_BACKUP_BSM,
+				    RV3028_BACKUP_TCE | RV3028_BACKUP_FEDE | RV3028_BACKUP_TCR |
+					    RV3028_BACKUP_BSM,
 				    config->backup);
 	if (err) {
 		return -ENODEV;
@@ -523,7 +568,8 @@ static int mfd_rv3028_init(const struct device *dev)
 #define RV3028_BACKUP_FROM_DT_INST(inst)                                                           \
 	((FIELD_PREP(RV3028_BACKUP_BSM, RV3028_BSM_FROM_DT_INST(inst))) |                          \
 	 (FIELD_PREP(RV3028_BACKUP_TCR, DT_INST_ENUM_IDX_OR(inst, trickle_resistor_ohms, 0))) |    \
-	 (DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms) ? RV3028_BACKUP_TCE : 0))
+	 (DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms) ? RV3028_BACKUP_TCE : 0) |            \
+	 RV3028_BACKUP_FEDE)
 
 #define MFD_RV3028_DEFINE(inst)                                                                    \
 	static const struct mfd_rv3028_config mfd_rv3028_config##inst = {                          \
