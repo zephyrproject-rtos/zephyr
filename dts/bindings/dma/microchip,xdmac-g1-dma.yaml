@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip XDMAC G1 DMA Controller
+
+description: |
+  Microchip XDMAC G1 DMA controller driver.
+
+  Group G1 DMA driver supports following hardware peripherals:
+    - module name="XDMAC" id="11161" version="M"
+    - module name="XDMAC" id="11161" version="293"
+    - module name="XDMAC" id="11161" version="475"
+
+compatible: "microchip,xdmac-g1-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: |
+      Specifies the base address and size of the XDMAC controller memory-mapped
+      registers.
+
+  interrupts:
+    type: array
+    required: true
+    description: |
+      Specifies the interrupt numbers associated with the XDMAC controller.
+
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Specifies the clock reference for this XDMAC instance.
+
+  "#dma-cells":
+    type: int
+    const: 2
+
+dma-cells:
+  - channel
+  - perid
