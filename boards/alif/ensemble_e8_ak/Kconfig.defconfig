@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Default configurations applied to the E8 AK boards
+
+if BOARD_ENSEMBLE_E8_AK
+
+configdefault ETH_DRIVER
+	default y if $(dt_nodelabel_enabled,eth)
+
+endif # BOARD_ENSEMBLE_E8_AK

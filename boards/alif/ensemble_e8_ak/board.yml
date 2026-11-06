@@ -4,3 +4,8 @@ board:
   vendor: alif
   socs:
   - name: ae822fa0e5597bs0
+    variants:
+    - name: sram
+      cpucluster: rtss_he
+    - name: sram
+      cpucluster: rtss_hp
