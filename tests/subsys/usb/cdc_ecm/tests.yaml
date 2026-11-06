@@ -1,0 +1,13 @@
+common:
+  tags:
+    - net
+    - usb
+    - cdc_ecm
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  timeout: 180
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="app.overlay"
+tests:
+  usb.cdc_ecm: {}
