@@ -69,6 +69,8 @@ struct dma_mcux_channel_transfer_edma_settings {
 	bool valid;
 	/* This var indicate it is dynamic SG mode or loop SG mode. */
 	bool cyclic;
+	/* Cyclic with scatter/gather, which runs the ring of TCDs */
+	bool sg_loop;
 	/* These parameters are for cyclic mode only.
 	 * Next empty TCD idx which can be used for transfer
 	 */
@@ -165,6 +167,17 @@ struct dma_mcux_edma_data {
 				   EDMA_TCD_TYPE((void *)DEV_BASE(dev)))
 #endif
 
+/* Hardware request of a channel, which a TCD with DREQ set disables when it completes */
+#if defined(CONFIG_DMA_MCUX_EDMA)
+#define EDMA_HW_REQUEST_ENABLED(dev, ch) ((DEV_BASE(dev)->ERQ & BIT(ch)) != 0U)
+#elif defined(CONFIG_DMA_MCUX_EDMA_V3)
+#define EDMA_HW_REQUEST_ENABLED(dev, ch)                                                           \
+	((DEV_BASE(dev)->CH[ch].CH_CSR & DMA_CH_CSR_ERQ_MASK) != 0U)
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4)
+#define EDMA_HW_REQUEST_ENABLED(dev, ch)                                                           \
+	((EDMA_CHANNEL_BASE((void *)DEV_BASE(dev), ch)->CH_CSR & DMA_CH_CSR_ERQ_MASK) != 0U)
+#endif
+
 #if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
 #define EDMA_MMAP_ADDR(addr) MEMORY_ConvertMemoryMapAddress(addr, kMEMORY_Local2DMA)
 #else
@@ -204,15 +217,59 @@ static bool data_size_valid(const size_t data_size)
 	       (data_size <= CONFIG_DMA_MCUX_MAX_DATA_SIZE);
 }
 
+/*
+ * Loop SG mode: the queued TCDs from the oldest one up to the one the hardware holds have finished.
+ * After the last queued TCD the hardware holds the next one, with its request disabled, so a full
+ * ring that ran out holds its oldest TCD, as it does while it is still running it.
+ */
+static uint32_t edma_n_finished_loop_tcds(const struct device *dev, uint32_t channel)
+{
+	struct dma_mcux_channel_transfer_edma_settings *settings =
+		&DEV_CHANNEL_DATA(dev, channel)->transfer_settings;
+	uint32_t n_queued = CONFIG_DMA_TCD_QUEUE_SIZE - settings->empty_tcds;
+	uint32_t oldest = (settings->write_idx + CONFIG_DMA_TCD_QUEUE_SIZE - n_queued) %
+			  CONFIG_DMA_TCD_QUEUE_SIZE;
+	uint32_t next_tcd = EDMA_GetNextTCDAddress(DEV_EDMA_HANDLE(dev, channel));
+	uint32_t held;
+	uint32_t n_finished;
+
+	/* The TCD the hardware holds links to the same next TCD as its copy in the pool */
+	for (held = 0U; held < CONFIG_DMA_TCD_QUEUE_SIZE; held++) {
+		edma_tcd_t *tcd = &DEV_CFG(dev)->tcdpool[channel][held];
+
+		if (EDMA_TCD_DLAST_SGA(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) == next_tcd) {
+			break;
+		}
+	}
+
+	if (held == CONFIG_DMA_TCD_QUEUE_SIZE) {
+		LOG_ERR("channel %d holds no TCD of its ring", channel);
+		return MIN(1U, n_queued);
+	}
+
+	n_finished = (held + CONFIG_DMA_TCD_QUEUE_SIZE - oldest) % CONFIG_DMA_TCD_QUEUE_SIZE;
+	if (n_finished == 0U && n_queued == CONFIG_DMA_TCD_QUEUE_SIZE &&
+	    !EDMA_HW_REQUEST_ENABLED(dev, dma_mcux_edma_add_channel_gap(dev, channel))) {
+		n_finished = n_queued;
+	}
+
+	return MIN(n_finished, n_queued);
+}
+
 static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferDone,
 			      uint32_t tcds)
 {
 	int ret = -EIO;
 	struct call_back *data = (struct call_back *)param;
 	uint32_t channel = dma_mcux_edma_remove_channel_gap(data->dev, handle->channel);
+	uint32_t n_callbacks = 1U;
 
 	if (data->transfer_settings.cyclic) {
-		data->transfer_settings.empty_tcds++;
+		if (data->transfer_settings.sg_loop) {
+			/* None for the interrupt of a block that an earlier one counted already */
+			n_callbacks = edma_n_finished_loop_tcds(data->dev, channel);
+		}
+		data->transfer_settings.empty_tcds += n_callbacks;
 		/*In loop mode, DMA is always busy*/
 		data->busy = true;
 		ret = DMA_STATUS_COMPLETE;
@@ -222,7 +279,15 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 		ret = DMA_STATUS_COMPLETE;
 	}
 	LOG_DBG("transfer %d", tcds);
-	data->dma_callback(data->dev, data->user_data, channel, ret);
+
+	for (uint32_t i = 0U; i < n_callbacks; i++) {
+		data->dma_callback(data->dev, data->user_data, channel, ret);
+
+		/* Stopped by the client */
+		if (!data->transfer_settings.valid) {
+			break;
+		}
+	}
 }
 
 static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
@@ -532,6 +597,8 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 	bool sg_mode = block_config->source_gather_en || block_config->dest_scatter_en;
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
+	data->transfer_settings.sg_loop = sg_mode && config->cyclic;
+
 	dma_mcux_edma_configure_muxes(dev, channel, config);
 
 	if (transfer_type == kEDMA_MemoryToMemory && !DT_INST_PROP(0, nxp_a_on) &&
@@ -540,7 +607,7 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 		return -ENOTSUP;
 	}
 
-	if (sg_mode && config->cyclic) {
+	if (data->transfer_settings.sg_loop) {
 		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
 	} else if (sg_mode) {
 		dma_mcux_edma_configure_sg_dynamic(dev, channel, config, transfer_type);
