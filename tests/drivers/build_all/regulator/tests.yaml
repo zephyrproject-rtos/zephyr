@@ -8,6 +8,8 @@ common:
   build_only: true
 tests:
   drivers.regulator.build:
+    extra_configs:
+      - CONFIG_SPI=y
     platform_allow:
       - native_sim
   drivers.regulator.stm32_vrefbuf.build:
