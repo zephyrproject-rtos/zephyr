@@ -1359,6 +1359,15 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
+#ifdef CONFIG_COUNTER_MCUX_GPT
+	static const struct device *const gpt_devs[] = {DEVS_FOR_DT_COMPAT(nxp_imx_gpt)};
+
+	for (size_t i = 0; i < ARRAY_SIZE(gpt_devs); i++) {
+		if (dev == gpt_devs[i]) {
+			return true;
+		}
+	}
+#endif
 #ifdef CONFIG_COUNTER_RENESAS_RZ_GTM
 	if (single_channel_alarm_capable(dev)) {
 		return true;
