@@ -4,6 +4,7 @@
 tests:
   settings.file.raw:
     platform_allow:
+      - mps2/an385
       - nrf52840dk/nrf52840
       - native_sim
       - native_sim/native/64
@@ -15,6 +16,7 @@ tests:
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
     integration_platforms:
+      - mps2/an385
       - native_sim
     tags:
       - settings
