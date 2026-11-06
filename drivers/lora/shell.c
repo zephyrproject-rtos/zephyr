@@ -202,6 +202,8 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 		case BW_31_KHZ:
 		case BW_41_KHZ:
 		case BW_62_KHZ:
+		case BW_83_KHZ:
+		case BW_100_KHZ:
 		case BW_125_KHZ:
 		case BW_200_KHZ:
 		case BW_250_KHZ:

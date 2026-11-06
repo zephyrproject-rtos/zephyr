@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_E80_900MBL_01
+if BOARD_E80_900MBL_01 || BOARD_E80_900MBL_02
 
 if LORA
 
@@ -11,4 +11,4 @@ endchoice
 
 endif # LORA
 
-endif # BOARD_E80_900MBL_01
+endif # BOARD_E80_900MBL_01 || BOARD_E80_900MBL_02
