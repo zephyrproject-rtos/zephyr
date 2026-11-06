@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.virtqueue:
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_riscv32
+    tags:
+      - drivers
+      - virtio

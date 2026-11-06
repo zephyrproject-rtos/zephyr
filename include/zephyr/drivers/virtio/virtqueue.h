@@ -189,7 +189,10 @@ struct virtq {
 	struct k_stack free_desc_stack;
 
 	/**
-	 * amount of free descriptors in the free_desc_stack
+	 * Approximate amount of free descriptors in the free_desc_stack.
+	 *
+	 * It is settled once per descriptor chain, so it can be stale while a chain is
+	 * being assembled and must not be used to decide whether allocation can succeed.
 	 */
 	uint16_t free_desc_n;
 
@@ -253,25 +256,6 @@ int virtq_add_buffer_chain(
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque,
 	k_timeout_t timeout
 );
-
-/**
- * @brief adds free descriptor back
- *
- * @param v virtqueue it operates on
- * @param desc_idx index of returned descriptor
- */
-void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx);
-
-/**
- * @brief gets next free descriptor
- *
- * @param v virtqueue it operates on
- * @param desc_idx address where index of descriptor will be stored
- * @param timeout amount of time it will wait for free descriptor, with K_NO_WAIT it
- * can be called from isr
- * @return 0 or error code on failure
- */
-int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout);
 
 /**
  * @}
