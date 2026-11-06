@@ -434,4 +434,12 @@ static void *suite_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(lorawan_as923_region, NULL, suite_setup, NULL, NULL, NULL);
+/* Zero airtime leaves no off-time, clearing what an earlier test recorded. */
+static void open_the_band(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	as923->record_tx(AS923_FREQ_CH0, 0);
+}
+
+ZTEST_SUITE(lorawan_as923_region, NULL, suite_setup, open_the_band, NULL, NULL);
