@@ -11,7 +11,7 @@
 
 #define REGION_EXECUTABLE_RAM_ATTR(limit)                                      \
 	{                                                                      \
-		.rbar = P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, SH */        \
+		.rbar = P_RW_U_RW_Msk | NON_SHAREABLE_Msk, /* AP, SH */        \
 		.mair_idx = MPU_MAIR_INDEX_SRAM,           /* Cacheable */     \
 		.r_limit = limit - 1                       /* Region Limit */  \
 	}
