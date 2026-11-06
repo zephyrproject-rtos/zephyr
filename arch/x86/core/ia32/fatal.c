@@ -38,6 +38,7 @@ void z_x86_spurious_irq(const struct arch_esf *esf)
 	}
 
 	z_x86_fatal_error(K_ERR_SPURIOUS_IRQ, esf);
+	k_fatal_halt(K_ERR_SPURIOUS_IRQ);
 }
 
 void arch_syscall_oops(void *ssf)
@@ -55,6 +56,7 @@ void arch_syscall_oops(void *ssf)
 	}
 
 	z_x86_fatal_error(K_ERR_KERNEL_OOPS, &oops);
+	k_fatal_halt(K_ERR_KERNEL_OOPS);
 }
 
 extern void (*_kernel_oops_handler)(void);
@@ -180,6 +182,7 @@ static __used void df_handler_bottom(void)
 	}
 #endif
 	z_x86_fatal_error(reason, (struct arch_esf *)&_df_esf);
+	k_fatal_halt(reason);
 }
 
 static FUNC_NORETURN __used void df_handler_top(void)

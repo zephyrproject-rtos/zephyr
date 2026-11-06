@@ -47,5 +47,6 @@ void arch_syscall_oops(void *ssf_ptr)
 	EXCEPTION_DUMP("Bad system call from RIP 0x%lx", ssf->rip);
 
 	z_x86_fatal_error(K_ERR_KERNEL_OOPS, NULL);
+	k_fatal_halt(K_ERR_KERNEL_OOPS);
 }
 #endif /* CONFIG_USERSPACE */

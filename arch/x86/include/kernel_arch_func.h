@@ -52,10 +52,12 @@ FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
 						 const struct arch_esf *esf);
 
 /* Called upon unrecoverable error; dump registers and transfer control to
- * kernel via z_fatal_error()
+ * kernel via z_fatal_error(). Returns if k_sys_fatal_error_handler()
+ * returned and the faulting context survives: an ISR, or a thread that was
+ * already dead, as for the panic raised when an essential thread ends.
+ * Callers that cannot resume the faulting context halt in that case.
  */
-FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
-				     const struct arch_esf *esf);
+void z_x86_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /* Common handling for page fault exceptions */
 void z_x86_page_fault_handler(struct arch_esf *esf);
