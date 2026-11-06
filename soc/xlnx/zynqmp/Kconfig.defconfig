@@ -6,6 +6,9 @@ if SOC_XILINX_ZYNQMP
 
 if SOC_XILINX_ZYNQMP_RPU
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
