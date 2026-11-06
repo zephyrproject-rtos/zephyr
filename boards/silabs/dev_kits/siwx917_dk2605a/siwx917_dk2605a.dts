@@ -33,6 +33,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		adc0 = &adc0;
+		psram0 = &psram;
 	};
 
 	leds {
