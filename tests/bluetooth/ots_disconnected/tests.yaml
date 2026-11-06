@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - ots
+
+tests:
+  bluetooth.ots_disconnected:
+    {}
+  bluetooth.ots_disconnected.tx_notify_wq:
+    extra_configs:
+      - CONFIG_BT_CONN_TX_NOTIFY_WQ=y

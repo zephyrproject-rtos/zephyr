@@ -103,6 +103,7 @@ struct bt_gatt_ots_object_state {
 		struct bt_gatt_ots_object_read_op {
 			struct bt_gatt_ots_oacp_read_params oacp_params;
 			uint32_t sent_len;
+			bool started;
 		} read_op;
 		struct bt_gatt_ots_object_write_op {
 			struct bt_gatt_ots_oacp_write_params oacp_params;
@@ -115,6 +116,10 @@ struct bt_gatt_ots_object {
 	uint64_t id;
 	struct bt_ots_obj_metadata metadata;
 	struct bt_gatt_ots_object_state state;
+	/* Reference to the connection that the object goes with, if it has no name by then:
+	 * the one whose OACP Create added it, or the one transferring it when that went down.
+	 */
+	struct bt_conn *creator;
 };
 
 struct bt_gatt_ots_indicate {
@@ -128,7 +133,8 @@ struct bt_gatt_ots_indicate {
 
 struct bt_ots {
 	struct bt_ots_feat features;
-	struct bt_gatt_ots_object *cur_obj;
+	/* The Current Object of each connection, by bt_conn_index() (OTS 1.0 section 1.12.1) */
+	struct bt_gatt_ots_object *cur_obj[CONFIG_BT_MAX_CONN];
 	struct bt_gatt_service *service;
 	struct bt_gatt_ots_indicate oacp_ind;
 	struct bt_gatt_ots_indicate olcp_ind;
