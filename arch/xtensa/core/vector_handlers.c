@@ -645,6 +645,7 @@ static inline DEF_INT_C_HANDLER(1)
  *
  * @return Switch handle of the context to return to.
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 void *xtensa_excint1_c(void *esf)
 {
 	int cause, reason;
