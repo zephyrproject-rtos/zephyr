@@ -1,0 +1,13 @@
+sample:
+  description: Microchip XEC EVB I2C V3 port switching sample
+  name: mec_assy6941_xec_i2c_v3_ctrl_port_switch
+tests:
+  sample.board.microchip.evb.i2c_v3:
+    harness: i2c
+    platform_allow:
+      - mec_assy6941/mec1653b_nsz
+      - mec_assy6941/mec1753_qsz
+    tags: i2c
+    depends_on:
+      - i2c
+      - gpio
