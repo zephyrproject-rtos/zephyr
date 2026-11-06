@@ -107,19 +107,29 @@
 			};
 		};
 
+		virt_clock: emul-virt-clock {
+			compatible = "vnd,emul-clock-virt";
+			#clock-cells = <3>;
+			inputs = <&emul_mux1 &emul_source3>;
+
+			virt_div: virt-div {};
+
+			virt_mux: virt-mux {};
+		};
+
 		emul_mux2: emul-mux2 {
 			compatible = "vnd,emul-clock-mux";
-			inputs = <&emul_mux1 &emul_source3 &emul_source4>;
+			inputs = <&virt_mux &virt_div &emul_source3 &emul_source4>;
 			#clock-cells = <1>;
 
 			emul_dev2_out: emul-dev2-out {
 				compatible = "clock-output";
 				#clock-cells = <0>;
 
-				/* Expect a clock frequency of 100 MHz */
-				dev2_100mhz: dev2-100mhz {
+				/* Expect a clock frequency of 200 MHz */
+				dev2_200mhz: dev2-200mhz {
 					compatible = "clock-state";
-					clocks = <&emul_mux2 1>;
+					clocks = <&emul_mux2 1 &virt_clock 1 2 1>;
 				};
 
 				/* Expect error when applying this invalid state */
@@ -160,19 +170,19 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&emul_dev2_out>;
 			clock-output-names = "default";
-			clock-request-0 = <&dev2_100mhz>;
-			default-freq = <100000000>;
+			clock-request-0 = <&dev2_200mhz>;
+			default-freq = <200000000>;
 			clock-request-1 = <&invalid_dev2>;
 			clock-request-2 = <&shared_dev2 &shared_dev1>;
-			shared-freq = <50000000>;
-			ranked-freq = <100000000>;
-			clock-request-3 = <&dev2_100mhz>;
+			shared-freq = <100000000>;
+			ranked-freq = <200000000>;
+			clock-request-3 = <&dev2_200mhz>;
 			/* This state will fail to apply when the first consumer has
 			 * locked clocks
 			 */
 			clock-request-4 = <&shared_dev2 &dev1_3mhz>;
 			freq-req-1 = <750000>;
-			req-freq-1 = <1500000>;
+			req-freq-1 = <746268>;
 			clock-request-names = "default", "invalid", "shared",
 					      "ranked", "locked";
 		};

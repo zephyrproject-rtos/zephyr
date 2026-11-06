@@ -77,25 +77,44 @@
 			};
 		};
 
+		virt_clock: emul-virt-clock {
+			compatible = "vnd,emul-clock-virt";
+			#clock-cells = <3>;
+			inputs = <&emul_mux1 &emul_source3>;
+
+			virt_div: virt-div {};
+
+			virt_mux: virt-mux {};
+		};
+
 		emul_mux2: emul-mux2 {
 			compatible = "vnd,emul-clock-mux";
-			inputs = <&emul_mux1 &emul_source3 &emul_div2>;
+			inputs = <&virt_mux &virt_div &emul_source3 &emul_div2>;
 			#clock-cells = <1>;
 
 			dev1_out_fast: dev1-out-fast {
 				compatible = "clock-output";
 				#clock-cells = <0>;
 
-				/* Expect a clock frequency of 100 MHz */
-				dev1_100mhz: dev1-100mhz {
+				/* Expect a clock frequency of 200 MHz */
+				dev1_200mhz: dev1-200mhz {
 					compatible = "clock-state";
-					clocks = <&emul_mux2 1>;
+					clocks = <&emul_mux2 1 &virt_clock 1 2 1>;
+				};
+
+				/* Expect a clock frequency of 50 MHz */
+				dev1_50mhz: dev1-50mhz {
+					compatible = "clock-state";
+					clocks = <&emul_mux2 0
+						  &emul_mux1 1
+						  &emul_div2 1
+						  &virt_clock 0 1 1>;
 				};
 
 				/* Expect a clock frequency of 25 MHz */
 				dev1_25mhz: dev1-25mhz {
 					compatible = "clock-state";
-					clocks = <&emul_mux2 2
+					clocks = <&emul_mux2 3
 						  &emul_div2 2>;
 				};
 			};
@@ -108,9 +127,9 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&dev1_out_slow &dev1_out_fast>;
 			clock-output-names = "slow", "fast";
-			clock-request-0 = <&dev1_10mhz &dev1_100mhz>;
+			clock-request-0 = <&dev1_10mhz &dev1_200mhz>;
 			slow-default-freq = <DT_FREQ_M(10)>;
-			fast-default-freq = <DT_FREQ_M(100)>;
+			fast-default-freq = <DT_FREQ_M(200)>;
 			slow-sleep-freq = <3333333>;
 			fast-sleep-freq = <DT_FREQ_M(25)>;
 			clock-request-1 = <&dev1_3mhz &dev1_25mhz>;
