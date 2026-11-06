@@ -139,14 +139,65 @@ if("${BOARD_QUALIFIERS}" STREQUAL "")
 else()
   set(board_deprecated_key ${BOARD}/${BOARD_QUALIFIERS})
 endif()
+
+set(board_deprecated_input "${board_deprecated_key}")
+set(board_deprecated_suffix "")
+if("${BOARD_QUALIFIERS}" MATCHES "^/" AND NOT DEFINED ${board_deprecated_key}_DEPRECATED)
+  # The deprecated board or SoC may no longer exist. Use the deprecation keys,
+  # rather than board discovery, to match targets with an omitted SoC.
+  get_cmake_property(board_deprecated_variables VARIABLES)
+  list(FILTER board_deprecated_variables INCLUDE REGEX "^[^/]+/[^/]+.*_DEPRECATED$")
+endif()
+
+# Match the most specific target first, then try board and SoC renames.
+while(board_deprecated_key AND NOT DEFINED ${board_deprecated_key}_DEPRECATED)
+  set(board_deprecated_matches "")
+  foreach(variable IN LISTS board_deprecated_variables)
+    if(NOT ${variable})
+      continue()
+    endif()
+    string(REGEX REPLACE "_DEPRECATED$" "" deprecated_target "${variable}")
+    string(REGEX REPLACE "^([^/]+)/[^/]+" "\\1/" deprecated_short "${deprecated_target}")
+    if(board_deprecated_key STREQUAL deprecated_short)
+      list(APPEND board_deprecated_matches "${deprecated_target}")
+    endif()
+  endforeach()
+  list(LENGTH board_deprecated_matches board_deprecated_count)
+  if(board_deprecated_count GREATER 1)
+    message(FATAL_ERROR
+      "Ambiguous deprecated BOARD=${board_deprecated_input}. Specify the SoC.\n"
+      "Matching deprecated targets: ${board_deprecated_matches}"
+    )
+  elseif(board_deprecated_count EQUAL 1)
+    set(board_deprecated_key "${board_deprecated_matches}")
+    set(board_deprecated_shorthand TRUE)
+    break()
+  endif()
+
+  string(REGEX REPLACE "(/[^/]*|[^/]+)$" "" board_deprecated_key "${board_deprecated_key}")
+  string(PREPEND board_deprecated_suffix "${CMAKE_MATCH_1}")
+endwhile()
+
 if(${board_deprecated_key}_DEPRECATED)
-  set(BOARD_DEPRECATED ${board_deprecated_key} CACHE STRING "Deprecated BOARD, provided by user")
+  set(board_deprecated_target "${${board_deprecated_key}_DEPRECATED}")
+  if(BOARD_QUALIFIERS STREQUAL "/")
+    set(board_deprecated_suffix "")
+  elseif(board_deprecated_target MATCHES "/" AND board_deprecated_suffix MATCHES "^//")
+    # A board-only mapping can already supply the omitted SoC.
+    string(SUBSTRING "${board_deprecated_suffix}" 1 -1 board_deprecated_suffix)
+  elseif(NOT board_deprecated_target MATCHES "/" AND board_deprecated_key MATCHES "/"
+         AND board_deprecated_suffix)
+    # A qualified mapping can leave the replacement board's SoC implicit.
+    string(PREPEND board_deprecated_suffix "/")
+  endif()
+  string(APPEND board_deprecated_target "${board_deprecated_suffix}")
+  set(BOARD_DEPRECATED "${board_deprecated_input}" CACHE STRING "Deprecated BOARD, provided by user")
   message(WARNING
     "Deprecated BOARD=${BOARD_DEPRECATED} specified, "
-    "board automatically changed to: ${${board_deprecated_key}_DEPRECATED}."
+    "board automatically changed to: ${board_deprecated_target}."
   )
   parse_board_components(
-    ${board_deprecated_key}_DEPRECATED
+    board_deprecated_target
     BOARD BOARD_DEPRECATED_REVISION BOARD_QUALIFIERS
   )
   if(DEFINED BOARD_DEPRECATED_REVISION)
@@ -311,10 +362,16 @@ endif()
 if(LIST_BOARD_QUALIFIERS)
   # Allow users to omit the SoC when building for a board with a single SoC.
   list(LENGTH LIST_BOARD_SOCS socs_length)
+  if(board_deprecated_shorthand AND NOT socs_length EQUAL 1)
+    message(FATAL_ERROR
+      "Cannot omit the SoC in deprecated BOARD=${board_deprecated_input}.\n"
+      "Board '${BOARD}' does not have a single SoC. Specify the full deprecated target."
+    )
+  endif()
   if(socs_length EQUAL 1)
     set(BOARD_SINGLE_SOC TRUE)
     set(BOARD_${BOARD}_SINGLE_SOC TRUE)
-    if(NOT DEFINED BOARD_QUALIFIERS)
+    if(NOT DEFINED BOARD_QUALIFIERS OR BOARD_QUALIFIERS STREQUAL "/")
       set(BOARD_QUALIFIERS "${LIST_BOARD_SOCS}")
     elseif("/${BOARD_QUALIFIERS}" MATCHES "^//.*")
       string(REGEX REPLACE "^/" "${LIST_BOARD_SOCS}/" BOARD_QUALIFIERS "${BOARD_QUALIFIERS}")
