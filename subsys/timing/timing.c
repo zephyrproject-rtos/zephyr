@@ -75,6 +75,7 @@ void timing_stop(void)
 #endif
 }
 
+__no_instrumentation__
 uint64_t timing_ns_get(void)
 {
 	static struct k_spinlock lock;

@@ -119,6 +119,7 @@ static inline int z_arm_dwt_init_cycle_counter(void)
  *
  * @return the cycle counter value
  */
+__no_instrumentation__
 static inline uint32_t z_arm_dwt_get_cycles(void)
 {
 	return DWT->CYCCNT;
