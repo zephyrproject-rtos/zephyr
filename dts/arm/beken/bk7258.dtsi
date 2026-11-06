@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2026 Beken Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+
+/*
+ * The NVIC priority field is 3 bits wide, as in the vendor CMSIS device header.
+ * The value has to be stated here: armv8-m.dtsi only supplies the nvic node
+ * skeleton, while the binding marks the property as required.
+ */
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			/*
+			 * The frequency the core runs at once the SoC init has
+			 * switched it from the 26 MHz crystal to the 480 MHz PLL
+			 * divided by four. CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC is
+			 * taken from this property.
+			 */
+			clock-frequency = <120000000>;
+		};
+	};
+
+	/*
+	 * SRAM available to this image. The SoC has 640 KB of shared SRAM in
+	 * total; 256 KB of it is claimed here. The 64 KB bank below this one
+	 * (0x28000000) is where the first stage keeps its stack.
+	 */
+	sram0: memory@28010000 {
+		compatible = "mmio-sram";
+		reg = <0x28010000 0x40000>;
+	};
+
+	/*
+	 * Code region. The vector table sits at the start of it, so offset 0 of
+	 * the objcopy -O binary output is the start of the application slot in
+	 * flash. Fetches from this window are handled by hardware, so
+	 * soc-nv-flash is enough to run from here.
+	 *
+	 * This is the application slot, not the whole flash: the first stage
+	 * that starts the application sits in the same window at 0x02000000,
+	 * which is why the application is linked here rather than at the window
+	 * base.
+	 */
+	flash0: flash@2150000 {
+		compatible = "soc-nv-flash";
+		reg = <0x02150000 0x121000>;   /* 1156 KB */
+		erase-block-size = <0x1000>;
+		write-block-size = <4>;
+	};
+
+	/* 26 MHz on-board crystal */
+	xtal26m: clock-xtal26m {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <26000000>;
+	};
+
+	soc {
+		/*
+		 * UART0: the console. Base 0x44820000, NVIC IRQ 4, TX on GPIO11
+		 * and RX on GPIO10, both function 0.
+		 */
+		uart0: serial@44820000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x44820000 0x1000>;
+			interrupts = <4 0>;
+			clock-frequency = <26000000>;
+			current-speed = <115200>;
+			clock-source = "xtal";
+			tx-pin = <11>;
+			rx-pin = <10>;
+			tx-func = <0>;
+			rx-func = <0>;
+			status = "disabled";   /* enabled by the board dts */
+		};
+
+		/* UART1: 0x45830000, IRQ 15, GPIO0 = TX / GPIO1 = RX */
+		uart1: serial@45830000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x45830000 0x1000>;
+			interrupts = <15 0>;
+			clock-frequency = <26000000>;
+			current-speed = <115200>;
+			clock-source = "xtal";
+			tx-pin = <0>;
+			rx-pin = <1>;
+			tx-func = <0>;
+			rx-func = <0>;
+			status = "disabled";
+		};
+
+		/* UART2: 0x45840000, IRQ 16, GPIO31 = TX / GPIO30 = RX */
+		uart2: serial@45840000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x45840000 0x1000>;
+			interrupts = <16 0>;
+			clock-frequency = <26000000>;
+			current-speed = <115200>;
+			clock-source = "xtal";
+			tx-pin = <31>;
+			rx-pin = <30>;
+			tx-func = <0>;
+			rx-func = <0>;
+			status = "disabled";
+		};
+	};
+};
