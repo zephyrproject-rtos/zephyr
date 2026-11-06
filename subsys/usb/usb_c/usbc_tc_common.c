@@ -90,8 +90,16 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 			tc->cc2 = TC_CC_VOLT_OPEN;
 		}
 
-		/* Detect polarity */
-		tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
+		/*
+		 * Detect polarity. Not during a Power Role Swap: the plug has not
+		 * moved, and while the ports trade terminations both briefly
+		 * present Rd, so both lines read open and this would pick CC2.
+		 * Attached.SRC or Attached.SNK then programs that into the TCPC,
+		 * and the new Source sends PS_RDY on the wrong line.
+		 */
+		if (!pe_is_pr_swap_in_progress(dev)) {
+			tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
+		}
 
 		/* Execute any asynchronous Device Policy Manager Requests */
 		if (dpm_request == REQUEST_TC_ERROR_RECOVERY) {
@@ -253,9 +261,60 @@ void tc_pd_enable(const struct device *dev, const bool enable)
 	}
 }
 
+#ifdef CONFIG_USBC_CSM_DRP
 /**
- * @brief TCPC CC/Rp management
+ * @brief Move an attached port to the other power role, terminations included
+ *
+ * Attached.SNK and Attached.SRC sit outside the CC super states, so entering
+ * them does not touch the terminations: a swap that only changed state left
+ * the old Rp or Rd on CC. The new Sink then never saw SinkTxOk and waited in
+ * PRL_Tx_Snk_Pending for good, so no contract formed after the swap.
+ *
+ * The order follows 8.3.3.6: a Source going to Sink turns its supply off
+ * (Attached.SRC's exit) before it asserts Rd, and a Sink going to Source
+ * asserts Rp before its supply comes on (Attached.SRC's entry).
+ *
+ * The TCPC's own power role moves with the terminations: it goes into the
+ * GoodCRC the TCPC sends by itself, and is otherwise left at the old role.
  */
+void tc_swap_power_role(const struct device *dev, bool sink)
+{
+	struct usbc_port_data *data = dev->data;
+	const struct device *tcpc = data->tcpc;
+	enum tc_rp_value rp = TC_RP_USB;
+	int ret;
+
+	if (sink) {
+		tc_set_state(dev, TC_ATTACHED_SNK_STATE);
+		tcpc_set_roles(tcpc, TC_ROLE_SINK, pe_get_data_role(dev));
+		ret = tcpc_set_cc(tcpc, TC_CC_RD);
+		if (ret != 0) {
+			LOG_ERR("Couldn't set CC lines to Rd: %d", ret);
+			tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		}
+		return;
+	}
+
+	if (data->policy_cb_get_src_rp) {
+		data->policy_cb_get_src_rp(dev, &rp);
+	}
+	ret = tcpc_select_rp_value(tcpc, rp);
+	if (ret != 0 && ret != -ENOTSUP) {
+		LOG_ERR("Couldn't set Rp value to %d: %d", rp, ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
+	ret = tcpc_set_cc(tcpc, TC_CC_RP);
+	if (ret != 0) {
+		LOG_ERR("Couldn't set CC lines to Rp: %d", ret);
+		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+		return;
+	}
+	tc_set_state(dev, TC_ATTACHED_SRC_STATE);
+	tcpc_set_roles(tcpc, TC_ROLE_SOURCE, pe_get_data_role(dev));
+}
+#endif /* CONFIG_USBC_CSM_DRP */
+
 void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp)
 {
 	struct usbc_port_data *data = dev->data;

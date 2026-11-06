@@ -102,6 +102,24 @@ enum usbc_pe_state {
 
 	/** PE_Send_Not_Supported */
 	PE_SEND_NOT_SUPPORTED,
+#ifdef CONFIG_USBC_CSM_DRP
+	/** PE_PRS_SRC_SNK_Evaluate_Swap */
+	PE_PRS_SRC_SNK_EVALUATE_SWAP,
+	/** PE_PRS_SRC_SNK_Transition_to_off */
+	PE_PRS_SRC_SNK_TRANSITION_TO_OFF,
+	/** PE_PRS_SRC_SNK_Assert_Rd */
+	PE_PRS_SRC_SNK_ASSERT_RD,
+	/** PE_PRS_SRC_SNK_Wait_Source_on */
+	PE_PRS_SRC_SNK_WAIT_SOURCE_ON,
+	/** PE_PRS_SNK_SRC_Evaluate_Swap */
+	PE_PRS_SNK_SRC_EVALUATE_SWAP,
+	/** PE_PRS_SNK_SRC_Transition_to_off */
+	PE_PRS_SNK_SRC_TRANSITION_TO_OFF,
+	/** PE_PRS_SNK_SRC_Assert_Rp */
+	PE_PRS_SNK_SRC_ASSERT_RP,
+	/** PE_PRS_SNK_SRC_Source_on */
+	PE_PRS_SNK_SRC_SOURCE_ON,
+#endif /* CONFIG_USBC_CSM_DRP */
 	/** PE_DRS_Evaluate_Swap */
 	PE_DRS_EVALUATE_SWAP,
 	/** PE_DRS_Send_Swap */
@@ -186,6 +204,12 @@ enum pe_flags {
 	PE_FLAGS_PROTOCOL_ERROR_NO_SOFT_RESET = 17,
 	/* This flag is set when the first AMS message is sent */
 	PE_FLAGS_FIRST_MSG_SENT = 18,
+	/**
+	 * A Power Role Swap is under way. The Type-C layer suppresses detach
+	 * detection while this is set, because the swap deliberately leaves
+	 * VBUS off for up to PSSourceOn with the port still attached.
+	 */
+	PE_FLAGS_PR_SWAP_IN_PROGRESS = 19,
 	/** Number of PE Flags */
 	PE_FLAGS_COUNT
 };
@@ -240,6 +264,10 @@ struct policy_engine {
 
 	/** tSenderResponse timer */
 	struct usbc_timer_t pd_t_sender_response;
+	/** PSSourceOff, waiting for the old Source to stop */
+	struct usbc_timer_t pd_t_ps_source_off;
+	/** PSSourceOn, waiting for the new Source to start */
+	struct usbc_timer_t pd_t_ps_source_on;
 	/** tChunkingNotSupported timer */
 	struct usbc_timer_t pd_t_chunking_not_supported;
 	/** Time to wait before resending message after WAIT reception */
@@ -587,6 +615,18 @@ void pe_invalidate_explicit_contract(const struct device *dev);
  * @param dev Pointer to the device structure for the driver instance
  */
 bool pe_dpm_initiated_ams(const struct device *dev);
+
+/**
+ * @brief Is a Power Role Swap under way
+ *
+ * The Type-C layer uses this to hold off detach detection, which would
+ * otherwise tear the port down during the window where VBUS is off and the
+ * terminations are crossing over.
+ *
+ * @param dev Runtime device structure
+ * @retval true if a swap is in progress
+ */
+bool pe_is_pr_swap_in_progress(const struct device *dev);
 
 /**
  * @brief Get the current data role

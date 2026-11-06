@@ -230,4 +230,20 @@ bool tc_is_in_attached_state(const struct device *dev);
  */
 void tc_select_src_collision_rp(const struct device *dev, enum tc_rp_value rp);
 
+#ifdef CONFIG_USBC_CSM_DRP
+/**
+ * @brief Move the port between Attached.SRC and Attached.SNK without detaching
+ *
+ * Used by the Power Role Swap states. Entering the target state applies the
+ * matching termination through its super state and drives the supply through
+ * that state's own entry and exit handlers, so power and termination move
+ * together. Detach detection is suppressed by the policy engine's
+ * PE_FLAGS_PR_SWAP_IN_PROGRESS for the duration.
+ *
+ * @param dev  Runtime device structure
+ * @param sink true to become the Sink, false to become the Source
+ */
+void tc_swap_power_role(const struct device *dev, bool sink);
+#endif /* CONFIG_USBC_CSM_DRP */
+
 #endif /* ZEPHYR_SUBSYS_USBC_TC_COMMON_INTERNAL_H_ */

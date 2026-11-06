@@ -465,6 +465,11 @@ enum smf_state_result pe_src_ready_run(void *obj)
 			case PD_CTRL_DR_SWAP:
 				pe_set_state(dev, PE_DRS_EVALUATE_SWAP);
 				break;
+#ifdef CONFIG_USBC_CSM_DRP
+			case PD_CTRL_PR_SWAP:
+				pe_set_state(dev, PE_PRS_SRC_SNK_EVALUATE_SWAP);
+				break;
+#endif /* CONFIG_USBC_CSM_DRP */
 			/*
 			 * USB PD 3.0 6.8.1:
 			 * Receiving an unexpected message shall be responded

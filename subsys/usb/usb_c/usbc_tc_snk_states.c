@@ -227,10 +227,16 @@ void tc_attached_snk_entry(void *obj)
 
 	LOG_INF("Attached.SNK");
 
-	/* Initial roles are sink and UFP */
-	tcpc_set_roles(tcpc, TC_ROLE_SINK, TC_ROLE_UFP);
-	policy_notify(dev, POWER_ROLE_IS_SINK);
-	policy_notify(dev, DATA_ROLE_IS_UFP);
+	/*
+	 * Initial roles are sink and UFP. A Power Role Swap keeps the data
+	 * role, and tc_swap_power_role() and the Policy Engine set and report
+	 * the power role themselves.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev)) {
+		tcpc_set_roles(tcpc, TC_ROLE_SINK, TC_ROLE_UFP);
+		policy_notify(dev, POWER_ROLE_IS_SINK);
+		policy_notify(dev, DATA_ROLE_IS_UFP);
+	}
 
 	/* Clear cached CC voltage */
 	tc->cc_voltage = TC_CC_VOLT_OPEN;
@@ -244,7 +250,14 @@ void tc_attached_snk_entry(void *obj)
 	}
 
 	/* Enable PD */
-	tc_pd_enable(dev, true);
+	/*
+	 * Not during a Power Role Swap: prl_start() and pe_start() would reset
+	 * the layers this crossover is trying to carry through intact, and the
+	 * policy engine is mid-sequence in PE_PRS_*.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev)) {
+		tc_pd_enable(dev, true);
+	}
 
 	/* Enable sink path for the PPC */
 	if (data->ppc != NULL) {
@@ -265,8 +278,12 @@ enum smf_state_result tc_attached_snk_run(void *obj)
 	struct usbc_port_data *data = dev->data;
 	const struct device *vbus = data->vbus;
 
-	/* Detach detection */
-	if (usbc_vbus_check_level(vbus, TC_VBUS_REMOVED)) {
+	/*
+	 * Detach detection. A Power Role Swap takes VBUS away on purpose and
+	 * the partner is still attached throughout, so the swap suppresses
+	 * this rather than being torn down by it.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev) && usbc_vbus_check_level(vbus, TC_VBUS_REMOVED)) {
 		usbc_vbus_enable(vbus, false);
 		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
 		return SMF_EVENT_PROPAGATE;
@@ -289,8 +306,10 @@ void tc_attached_snk_exit(void *obj)
 	struct usbc_port_data *data = dev->data;
 	int ret;
 
-	/* Disable PD */
-	tc_pd_enable(dev, false);
+	/* Kept alive across a Power Role Swap, as in Attached.SRC's exit. */
+	if (!pe_is_pr_swap_in_progress(dev)) {
+		tc_pd_enable(dev, false);
+	}
 
 	/* Inform Device Policy Manager of the sink power change */
 	policy_notify(dev, POWER_CHANGE_0A0);

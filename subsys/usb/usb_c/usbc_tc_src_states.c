@@ -277,10 +277,16 @@ void tc_attached_src_entry(void *obj)
 
 	LOG_INF("Attached.SRC");
 
-	/* Initial roles are source and DFP */
-	tcpc_set_roles(tcpc, TC_ROLE_SOURCE, TC_ROLE_DFP);
-	policy_notify(dev, POWER_ROLE_IS_SOURCE);
-	policy_notify(dev, DATA_ROLE_IS_DFP);
+	/*
+	 * Initial roles are source and DFP. A Power Role Swap keeps the data
+	 * role, and tc_swap_power_role() and the Policy Engine set and report
+	 * the power role themselves.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev)) {
+		tcpc_set_roles(tcpc, TC_ROLE_SOURCE, TC_ROLE_DFP);
+		policy_notify(dev, POWER_ROLE_IS_SOURCE);
+		policy_notify(dev, DATA_ROLE_IS_DFP);
+	}
 
 	/* Set cc polarity */
 	ret = tcpc_set_cc_polarity(tcpc, tc->cc_polarity);
@@ -305,7 +311,14 @@ void tc_attached_src_entry(void *obj)
 	}
 
 	/* Enable PD */
-	tc_pd_enable(dev, true);
+	/*
+	 * Not during a Power Role Swap: prl_start() and pe_start() would reset
+	 * the layers this crossover is trying to carry through intact, and the
+	 * policy engine is mid-sequence in PE_PRS_*.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev)) {
+		tc_pd_enable(dev, true);
+	}
 
 	/* Enable the VBUS sourcing by the PPC */
 	if (data->ppc != NULL) {
@@ -321,8 +334,12 @@ enum smf_state_result tc_attached_src_run(void *obj)
 	struct tc_sm_t *tc = (struct tc_sm_t *)obj;
 	const struct device *dev = tc->dev;
 
-	/* Monitor for CC disconnection */
-	if (tcpc_is_cc_open(tc->cc1, tc->cc2)) {
+	/*
+	 * Monitor for CC disconnection. Suppressed during a Power Role Swap:
+	 * the terminations on both ends change as the roles cross over and the
+	 * partner is still attached throughout.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev) && tcpc_is_cc_open(tc->cc1, tc->cc2)) {
 		/*
 		 * A Source that is supplying VCONN or has yielded VCONN source
 		 * responsibility to the Sink through USBPD VCONN_Swap messaging
@@ -357,8 +374,17 @@ void tc_attached_src_exit(void *obj)
 	const struct device *tcpc = data->tcpc;
 	int ret;
 
-	/* Disable PD */
-	tc_pd_enable(dev, false);
+	/*
+	 * Disable PD, unless this exit is a Power Role Swap crossing over to
+	 * Attached.SNK. The connection survives the swap and the protocol
+	 * layer has to survive with it: suspending it here discards the
+	 * PS_RDY that PE_PRS_SRC_SNK_Wait_Source_on is about to queue, and
+	 * the partner then waits out PSSourceOn for a message that never
+	 * arrives.
+	 */
+	if (!pe_is_pr_swap_in_progress(dev)) {
+		tc_pd_enable(dev, false);
+	}
 
 	/* Stop sourcing VBUS */
 	if (usbc_policy_src_en(dev, tcpc, false) != 0) {
