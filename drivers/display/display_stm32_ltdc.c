@@ -273,6 +273,17 @@ static int stm32_ltdc_set_pixel_format(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(STM32_LTDC_HAS_YUV)
+	/*
+	 * HAL_LTDC_SetPixelFormat never clears the YCEN bit, which leaves
+	 * the YUV conversion on (if YUV was enabled before). Clear YCEN
+	 * bit here before switching to RGB formats.
+	 */
+	if (data->current_pixel_format == PIXEL_FORMAT_YUYV) {
+		CLEAR_BIT(LTDC_LAYER(&data->hltdc, LTDC_LAYER_1)->PCR, LTDC_LxPCR_YCEN);
+	}
+#endif
+
 	hal_ret = HAL_LTDC_SetPixelFormat(&data->hltdc, ltdc_pix_fmt, 0);
 	if (hal_ret != HAL_OK) {
 		return -EIO;
