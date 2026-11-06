@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
 /*
@@ -58,25 +59,23 @@ struct gpio_stm32_config {
 	struct stm32_pclken pclken;
 };
 
-#if defined(CONFIG_GPIO_STM32)
-/*
- * Fields in the instance data are only useful to the GPIO driver.
- * If not enabled, we don't create the instance data: don't define
- * the structure to prevent accidental usage (which would be wrong).
- */
 struct gpio_stm32_data {
+#if defined(CONFIG_GPIO_STM32)
 	struct gpio_driver_data common;
 
 	/*
 	 * Keeps track of pins which are used as GPIOs
 	 * and need the GPIO port clock to remain enabled.
+	 * This is protected by configure_lock.
 	 */
 	gpio_port_pins_t pin_has_clock_enabled;
 
 	/* User callbacks list */
 	sys_slist_t cb;
-};
 #endif /* CONFIG_GPIO_STM32 */
+	/* Spinlock held during pin configuration */
+	struct k_spinlock configure_lock;
+};
 
 /**
  * @brief Translate pin to pinval that the LL library needs
@@ -122,6 +121,8 @@ const struct device *stm32_gpioport_get(uint32_t port_index);
 /**
  * @brief Configure specific pin on GPIO port
  *
+ * @pre The <tt>configure_lock</tt> of @p port device must be held.
+ *
  * @param port GPIO port device
  * @param pin Pin to configure
  * @param config Pin configuration
@@ -132,10 +133,33 @@ const struct device *stm32_gpioport_get(uint32_t port_index);
  *
  * @return 0 on success, negative errno value otherwise
  */
-int stm32_gpioport_configure_pin(const struct device *port,
+int stm32_gpioport_configure_pin_locked(const struct device *port,
 				 gpio_pin_t pin,
 				 pinctrl_soc_pin_t config,
 				 bool apply_out_level);
+
+/**
+ * @brief Configure specific pin on GPIO port (with automatic locking)
+ *
+ * This function acquires the <tt>configure_lock</tt> of the @p port device
+ * automatically before configuring the pin and releases it afterwards.
+ *
+ * @see stm32_gpioport_configure_pin_locked
+ */
+static inline int stm32_gpioport_configure_pin(const struct device *port,
+						gpio_pin_t pin,
+						pinctrl_soc_pin_t config,
+						bool apply_out_level)
+{
+	struct gpio_stm32_data *dev_data = (struct gpio_stm32_data *)port->data;
+	k_spinlock_key_t key = k_spin_lock(&dev_data->configure_lock);
+	int ret;
+
+	ret = stm32_gpioport_configure_pin_locked(port, pin, config, apply_out_level);
+
+	k_spin_unlock(&dev_data->configure_lock, key);
+	return ret;
+}
 
 /*
  * GPIO port device API
