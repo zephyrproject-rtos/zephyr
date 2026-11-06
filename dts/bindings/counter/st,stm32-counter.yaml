@@ -7,6 +7,17 @@ compatible: "st,stm32-counter"
 
 include: [base.yaml, pinctrl-device.yaml]
 
+properties:
+  dmas:
+    description: |
+      DMA specifiers for buffered capture channels. Each entry streams one
+      timer capture/compare register into an application timestamp buffer.
+
+  dma-names:
+    description: |
+      Names matching the DMA specifiers. Use "cc1" through "cc4" to associate
+      each DMA entry with a timer capture/compare channel.
+
 counter-capture-cells:
   - channel
   - flags
