@@ -1843,12 +1843,24 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 	struct i3c_driver_data *data;
 	enum i3c_addr_slot_status slot;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
+	uint8_t lvr = FIELD_PREP(I3C_LVR_I2C_MODE_MASK, I3C_LVR_I2C_FM_PLUS_MODE);
 
 	dev = shell_device_get_binding(argv[ARGV_DEV]);
 
 	if (!dev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
+	}
+
+	if (argc > 2) {
+		if (strcmp(argv[2], "fm") == 0) {
+			lvr = FIELD_PREP(I3C_LVR_I2C_MODE_MASK, I3C_LVR_I2C_FM_MODE);
+		} else if (strcmp(argv[2], "fmp") == 0) {
+			lvr = FIELD_PREP(I3C_LVR_I2C_MODE_MASK, I3C_LVR_I2C_FM_PLUS_MODE);
+		} else {
+			shell_error(sh, "I3C: Invalid mode %s. Use 'fm' or 'fmp'.", argv[2]);
+			return -EINVAL;
+		}
 	}
 
 	data = (struct i3c_driver_data *)dev->data;
@@ -1870,7 +1882,7 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 				struct i3c_i2c_device_desc desc = {
 					.bus = dev,
 					.addr = i + j,
-					.lvr = 0x00,
+					.lvr = lvr,
 				};
 
 				ret = i3c_attach_i2c_device(&desc);
@@ -2471,8 +2483,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_i3c_i2c_detach, 3, 0),
 	SHELL_CMD_ARG(i2c_scan, &dsub_i3c_device_name,
 		      SHELL_HELP("Scan I2C devices",
-				 "<device>"),
-		      cmd_i3c_i2c_scan, 2, 0),
+				 "<device> [fm|fmp]"),
+		      cmd_i3c_i2c_scan, 2, 1),
 	SHELL_CMD_ARG(ccc, &sub_i3c_ccc_cmds,
 		      SHELL_HELP("Send I3C CCC",
 				 "<sub cmd>"),
