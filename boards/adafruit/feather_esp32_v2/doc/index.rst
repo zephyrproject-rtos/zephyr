@@ -1,9 +1,9 @@
-.. zephyr:board:: adafruit_feather_esp32
+.. zephyr:board:: adafruit_feather_esp32_v2
 
 Overview
 ********
 
-The Adafruit ESP32 Feather is an ESP32-based development board using the
+The Adafruit ESP32 Feather V2 is an ESP32-based development board using the
 Feather standard layout.
 
 Hardware
@@ -62,7 +62,7 @@ sample program.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: adafruit_feather_esp32/esp32/procpu
+   :board: adafruit_feather_esp32_v2/esp32/procpu
    :goals: build flash
 
 NeoPixel
@@ -72,7 +72,7 @@ Test the on-board NeoPixel using the led_strip sample program.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led/led_strip
-   :board: adafruit_feather_esp32/esp32/procpu
+   :board: adafruit_feather_esp32_v2/esp32/procpu
    :goals: build flash
 
 User button
@@ -82,7 +82,7 @@ Test the button labeled SW38 using the button input sample program.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/button
-   :board: adafruit_feather_esp32/esp32/procpu
+   :board: adafruit_feather_esp32_v2/esp32/procpu
    :goals: build flash
 
 Wi-Fi
@@ -95,7 +95,7 @@ Test ESP32 Wi-Fi functionality using the Wi-Fi shell module.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi/shell
-   :board: adafruit_feather_esp32/esp32/procpu
+   :board: adafruit_feather_esp32_v2/esp32/procpu
    :goals: build flash
 
 References
