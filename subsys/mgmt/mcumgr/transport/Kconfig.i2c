@@ -1,0 +1,80 @@
+#
+# Copyright (c) 2026 Aerlync Labs Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MCUMGR_TRANSPORT_I2C
+	bool "I2C MCUmgr SMP transport"
+	depends on MULTITHREADING && I2C && I2C_TARGET && DT_HAS_ZEPHYR_SMP_I2C_ENABLED
+	help
+	  Enable MCUmgr SMP transport over I2C. The device operates as an I2C
+	  target and exchanges raw SMP packets framed with a 2-byte big-endian
+	  length prefix. An optional data-ready GPIO (data-ready-gpios in DTS)
+	  signals the controller when a response is available.
+
+	  GPIO support is optional; if data-ready-gpios is omitted the controller
+	  polls by issuing 2-byte reads until a non-zero length is returned.
+
+if MCUMGR_TRANSPORT_I2C
+
+config MCUMGR_TRANSPORT_I2C_MTU
+	int "I2C SMP MTU (bytes)"
+	range 8 MCUMGR_TRANSPORT_NETBUF_SIZE
+	default 256
+	help
+	  Maximum size of one SMP payload per I2C transaction. The on-wire
+	  frame is MTU + 2 bytes (a 2-byte length prefix precedes the SMP
+	  payload). Must not exceed MCUMGR_TRANSPORT_NETBUF_SIZE.
+
+	  In buffer mode, the I2C target driver's own DMA/hardware buffer must
+	  be sized to at least MTU + 2; see the buffer-mode sizing note in
+	  doc/services/device_mgmt/smp_transport.rst. An undersized buffer is
+	  detected and the frame dropped at runtime.
+
+module = MCUMGR_TRANSPORT_I2C
+module-str = I2C MCUmgr SMP transport
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_TRANSPORT_I2C
+
+menuconfig MCUMGR_TRANSPORT_I2C_CLIENT
+	bool "I2C controller MCUmgr SMP transport"
+	depends on MULTITHREADING && I2C && SMP_CLIENT && DT_HAS_ZEPHYR_SMP_I2C_CLIENT_ENABLED
+	help
+	  Enable MCUmgr SMP transport over I2C in controller mode. The device
+	  operates as an I2C controller and communicates with a remote target
+	  running zephyr,smp-i2c.
+
+if MCUMGR_TRANSPORT_I2C_CLIENT
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_MTU
+	int "I2C SMP client MTU (bytes)"
+	range 8 MCUMGR_TRANSPORT_NETBUF_SIZE
+	default 256
+	help
+	  Maximum size of one SMP payload per I2C transaction.
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_POLL_MS
+	int "I2C client poll interval (ms)"
+	default 5
+	help
+	  Interval between 2-byte polling reads when DRDY GPIO is not used.
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_POLL_RETRIES
+	int "I2C client poll retries"
+	default 1000
+	help
+	  Maximum polling attempts before timing out (e.g. during target flash erase).
+
+config MCUMGR_TRANSPORT_I2C_CLIENT_DRDY_TIMEOUT_MS
+	int "I2C client DRDY timeout (ms)"
+	default 5000
+	help
+	  Maximum wait time in milliseconds for the DRDY GPIO interrupt.
+
+module = MCUMGR_TRANSPORT_I2C_CLIENT
+module-str = I2C MCUmgr SMP client transport
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_TRANSPORT_I2C_CLIENT

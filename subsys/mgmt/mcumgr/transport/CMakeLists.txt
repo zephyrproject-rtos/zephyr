@@ -31,6 +31,12 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_UDP
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_SPI
   src/smp_spi.c
 )
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_I2C
+  src/smp_i2c.c
+)
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_I2C_CLIENT
+  src/smp_i2c_client.c
+)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_LORAWAN
   src/smp_lorawan.c
 )

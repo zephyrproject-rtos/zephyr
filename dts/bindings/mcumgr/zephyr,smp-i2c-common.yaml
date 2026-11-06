@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Properties shared by the SMP-over-I2C target (zephyr,smp-i2c) and controller
+  (zephyr,smp-i2c-client) nodes. Not matched directly; included by both.
+
+include: i2c-device.yaml
+
+properties:
+  data-ready-gpios:
+    type: phandle-array
+    min-len: 1
+    max-len: 1
+    description: |
+      Optional single GPIO signalling that an SMP response is ready. The
+      target node describes the pin it drives high when a response is
+      buffered; the controller node describes the pin it samples with a
+      rising-edge interrupt. When omitted, the controller polls with 2-byte
+      reads until a non-zero length is returned.
