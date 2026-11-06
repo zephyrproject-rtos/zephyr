@@ -73,6 +73,22 @@ properties:
     description: |
       If the SoCs don't have a separate interrupt id for error IRQ.
 
+  nxp,no-halt-on-error:
+    type: boolean
+    description: |
+      Do not halt the eDMA when a channel has an error.
+
+      Without this property, the driver keeps the MCUX HAL default and
+      enables halt-on-error (CR[HOE]). An error on any channel then sets
+      the HALT bit, and the eDMA ignores the service requests of all
+      channels while HALT is set.
+
+      With this property, an error does not set HALT, and the eDMA
+      continues to serve the other channels.
+
+      Supported on eDMA v2 only (nxp,version = <2>). The build fails if a
+      node of another version has this property.
+
   nxp,version:
     type: int
     enum:
