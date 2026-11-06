@@ -30,6 +30,8 @@
 #include <zephyr/dt-bindings/pinctrl/esp32h2-gpio-sigmap.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <zephyr/dt-bindings/pinctrl/esp32p4-gpio-sigmap.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+#include <zephyr/dt-bindings/pinctrl/esp32s31-gpio-sigmap.h>
 #endif
 
 LOG_MODULE_REGISTER(pulse_io_esp32_rmt, CONFIG_PULSE_IO_LOG_LEVEL);
