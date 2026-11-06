@@ -113,6 +113,16 @@ tests:
       - SHIELD=tcan4550evm
     platform_allow:
       - frdm_k64f
+  drivers.can.build_all.tle927x:
+    extra_configs:
+      - CONFIG_CAN_LOOPBACK=n
+      - CONFIG_SPI=y
+    extra_dtc_overlay_files:
+      - fake.overlay
+      - tle927x.overlay
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
   drivers.can.build_all.xmc4xxx:
     platform_allow:
       - xmc47_relax_kit
