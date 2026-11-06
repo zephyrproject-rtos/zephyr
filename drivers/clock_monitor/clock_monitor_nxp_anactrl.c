@@ -14,6 +14,32 @@
  * running before configure()/start(). Where the SoC gates a source into the
  * measurement block (SYSCON CLOCK_CTRL on MCXW2xx), that gate is the
  * application's responsibility too.
+ *
+ * Power management
+ * ----------------
+ * The clock to the analog controller module is enabled during boot time by
+ * the bootloader and must always remain enabled(MCXW23, RM 11.2).
+ * SUSPEND clears FREQ_ME_CTRL, cancels the deferred poll and releases the
+ * power lock; a MEASURE cycle interrupted by SUSPEND is not restarted on
+ * RESUME, the caller must call clock_monitor_start() again.
+ *
+ * While a cycle is in flight the driver holds the device power lock derived
+ * from the node's "zephyr,disabling-power-states"; it is taken in start() and
+ * released on completion, on timeout and on stop().
+ *
+ * With CONFIG_PM_DEVICE_RUNTIME the consumer holds the runtime reference:
+ * pm_device_runtime_get() before configure(), kept until the monitor is no
+ * longer needed. configure() and start() return -EBUSY while the device is not
+ * PM-active; get_rate() always answers from RAM.
+ *
+ * Only SUSPEND and RESUME are implemented; TURN_ON and TURN_OFF return
+ * -ENOTSUP. The first bring-up (gate clock + INPUTMUX routes) is therefore done
+ * by the RESUME that pm_device_driver_init() issues from init(), and RESUME
+ * repeats it after a low-power state.
+ *
+ * The INPUTMUX routes are outside the ANACTRL block, do not survive a system
+ * standby and reset to the 12 MHz FRO (RM tables 523/524); start() and RESUME
+ * re-assert them.
  */
 
 #define DT_DRV_COMPAT nxp_anactrl_freqme
@@ -25,6 +51,8 @@
 #include <zephyr/drivers/mux.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <fsl_anactrl.h>
@@ -65,6 +93,10 @@ struct nxp_anactrl_config {
 	clock_control_subsys_t  gate_clk_subsys;
 	const struct nxp_anactrl_source *ref_src;
 	const struct nxp_anactrl_source *tar_src;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	/* The node declares "zephyr,disabling-power-states". */
+	bool pm_device_constraints;
+#endif
 };
 
 enum nxp_anactrl_state {
@@ -89,9 +121,53 @@ struct nxp_anactrl_data {
 	bool has_rate;
 	/* CLOCK_LOST latched since configure(). */
 	bool clock_lost;
+	/* Register access is permitted: PM-active and brought up. */
+	bool hw_active;
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	bool power_locked;
+#endif
 	struct k_work_delayable poll_work;
 	const struct device *dev;
 };
+
+static void nxp_anactrl_power_lock_get(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	const struct nxp_anactrl_config *config = dev->config;
+	struct nxp_anactrl_data *data = dev->data;
+
+	if (config->pm_device_constraints && !data->power_locked) {
+		pm_policy_device_power_lock_get(dev);
+		data->power_locked = true;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static void nxp_anactrl_power_lock_put(const struct device *dev)
+{
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	struct nxp_anactrl_data *data = dev->data;
+
+	if (data->power_locked) {
+		pm_policy_device_power_lock_put(dev);
+		data->power_locked = false;
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+/* True when the device is PM-active; always true without CONFIG_PM_DEVICE. */
+static bool nxp_anactrl_is_active(const struct device *dev)
+{
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+
+	return state == PM_DEVICE_STATE_ACTIVE;
+}
 
 /*
  * Convert a measurement window (ns) into the SCALE exponent. The ANACTRL window
@@ -157,7 +233,11 @@ static int nxp_anactrl_route(const struct nxp_anactrl_source *src)
 	return mux_state_apply(src->mux_dev, src->mux_state);
 }
 
-/* Apply the reference and target INPUTMUX routes. */
+/*
+ * Re-apply the reference and target INPUTMUX routes. The routes live outside the
+ * ANACTRL block and a system standby resets them to the 12 MHz FRO (RM tables
+ * 523/524).
+ */
 static int nxp_anactrl_apply_routes(const struct device *dev)
 {
 	const struct nxp_anactrl_config *config = dev->config;
@@ -179,8 +259,9 @@ static int nxp_anactrl_apply_routes(const struct device *dev)
 }
 
 /*
- * Open the peripheral gate and apply both INPUTMUX routes. Must not be called
- * with data->lock held: the mux and clock_control calls are not spinlock-safe.
+ * Open the peripheral gate and re-apply both INPUTMUX routes. Called from init()
+ * and from RESUME. Must not be called with data->lock held: the mux and
+ * clock_control calls are not spinlock-safe.
  */
 static int nxp_anactrl_hw_bringup(const struct device *dev)
 {
@@ -200,8 +281,9 @@ static int nxp_anactrl_hw_bringup(const struct device *dev)
 }
 
 /*
- * Terminate a running cycle. The caller holds data->lock. Clearing FREQ_ME_CTRL
- * drops PROG without loading CAPVAL; the clock gate stays open.
+ * Terminate a running cycle. The caller holds data->lock and has established
+ * that register access is permitted. Clearing FREQ_ME_CTRL drops PROG without
+ * loading CAPVAL; the clock gate stays open.
  */
 static void nxp_anactrl_hw_stop(const struct device *dev)
 {
@@ -253,12 +335,20 @@ static int nxp_anactrl_configure(const struct device *dev,
 	uint8_t scale;
 	int ret;
 
-	/* ANACTRL freq-measure hardware supports one-shot measurement only. */
 	if (cfg->mode != CLOCK_MONITOR_MODE_MEASURE) {
 		return -ENOTSUP;
 	}
 	if (cfg->measure.window_ns == 0U) {
 		return -EINVAL;
+	}
+
+	/* The reference rate query below needs the device PM-active: a suspended
+	 * device can legitimately report 0 Hz, which would surface as -EIO instead
+	 * of the real reason.
+	 */
+	if (!nxp_anactrl_is_active(dev)) {
+		LOG_ERR("%s: device is not active", dev->name);
+		return -EBUSY;
 	}
 
 	ret = nxp_anactrl_src_rate(config->ref_src, &ref_hz);
@@ -278,6 +368,11 @@ static int nxp_anactrl_configure(const struct device *dev,
 	key = k_spin_lock(&data->lock);
 
 	/* Nothing was written to hardware above, so there is nothing to undo. */
+	if (!data->hw_active) {
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("%s: hardware is not available", dev->name);
+		return -EBUSY;
+	}
 	if (data->state == NXP_ANACTRL_STATE_RUNNING) {
 		k_spin_unlock(&data->lock, key);
 		return -EBUSY;
@@ -302,8 +397,25 @@ static int nxp_anactrl_start(const struct device *dev)
 	struct nxp_anactrl_data *data = dev->data;
 	k_timeout_t delay;
 	k_spinlock_key_t key;
+	int ret;
+
+	if (!nxp_anactrl_is_active(dev)) {
+		LOG_ERR("%s: device is not active", dev->name);
+		return -EBUSY;
+	}
+
+	/* A standby since the last cycle may have reset the routes. */
+	ret = nxp_anactrl_apply_routes(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	key = k_spin_lock(&data->lock);
+	if (!data->hw_active) {
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("%s: hardware is not available", dev->name);
+		return -EBUSY;
+	}
 	if (data->state != NXP_ANACTRL_STATE_CONFIGURED) {
 		enum nxp_anactrl_state st = data->state;
 
@@ -315,12 +427,16 @@ static int nxp_anactrl_start(const struct device *dev)
 	data->state = NXP_ANACTRL_STATE_RUNNING;
 	data->retries_left = ANACTRL_POLL_RETRIES;
 
+	/* Held until completion, timeout or stop(). */
+	nxp_anactrl_power_lock_get(dev);
+
 	/* Arm the one-shot measurement and capture this cycle's poll delay. */
 	config->base->FREQ_ME_CTRL =
 		ANACTRL_FREQ_ME_CTRL_PROG_MASK | ANACTRL_FREQ_ME_CTRL_CAPVAL_SCALE(data->scale);
 	delay = K_USEC(data->meas_us);
 	k_spin_unlock(&data->lock, key);
 
+	/* A SUSPEND before this call leaves a queued poll; it exits on hw_active. */
 	(void)k_work_reschedule(&data->poll_work, delay);
 	return 0;
 }
@@ -330,13 +446,15 @@ static int nxp_anactrl_stop(const struct device *dev)
 	struct nxp_anactrl_data *data = dev->data;
 	k_spinlock_key_t key;
 
-	/* A poll that lost the race to stop() lands here:
-	 * k_work_cancel_delayable() cannot stop a handler that already started.
-	 */
+	/* An already-running handler exits on the hw_active/state check. */
 	(void)k_work_cancel_delayable(&data->poll_work);
 
 	key = k_spin_lock(&data->lock);
-	nxp_anactrl_hw_stop(dev);
+	nxp_anactrl_power_lock_put(dev);
+	if (data->state == NXP_ANACTRL_STATE_RUNNING && data->hw_active &&
+	    nxp_anactrl_is_active(dev)) {
+		nxp_anactrl_hw_stop(dev);
+	}
 	k_spin_unlock(&data->lock, key);
 	return 0;
 }
@@ -360,10 +478,8 @@ static void nxp_anactrl_poll_work(struct k_work *work)
 
 	key = k_spin_lock(&data->lock);
 
-	/* A poll that lost the race to stop() lands here:
-	 * k_work_cancel_delayable() cannot stop a handler that already started.
-	 */
-	if (data->state != NXP_ANACTRL_STATE_RUNNING) {
+	/* Nothing may touch the block unless the device is active and armed. */
+	if (!data->hw_active || data->state != NXP_ANACTRL_STATE_RUNNING) {
 		k_spin_unlock(&data->lock, key);
 		return;
 	}
@@ -420,6 +536,7 @@ static void nxp_anactrl_poll_work(struct k_work *work)
 
 	/* Auto-disarm before the callback so it may restart from the callback. */
 	data->state = NXP_ANACTRL_STATE_CONFIGURED;
+	nxp_anactrl_power_lock_put(dev);
 	cb = data->cfg.callback;
 	user_data = data->cfg.user_data;
 	k_spin_unlock(&data->lock, key);
@@ -453,6 +570,7 @@ static int nxp_anactrl_get_rate(const struct device *dev, uint32_t *rate_hz)
 	k_spinlock_key_t key;
 	int ret;
 
+	/* Answered from dev->data only; valid while suspended. */
 	key = k_spin_lock(&data->lock);
 	if (data->clock_lost) {
 		ret = -EIO;
@@ -466,6 +584,47 @@ static int nxp_anactrl_get_rate(const struct device *dev, uint32_t *rate_hz)
 	return ret;
 }
 
+static int nxp_anactrl_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct nxp_anactrl_data *data = dev->data;
+	k_spinlock_key_t key;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* The gate and the routes do not survive every low-power state. */
+		ret = nxp_anactrl_hw_bringup(dev);
+		if (ret != 0) {
+			return ret;
+		}
+
+		key = k_spin_lock(&data->lock);
+		data->hw_active = true;
+		k_spin_unlock(&data->lock, key);
+
+		/* An aborted cycle is not restarted; the caller re-arms. */
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		key = k_spin_lock(&data->lock);
+		if (data->hw_active) {
+			nxp_anactrl_hw_stop(dev);
+			data->hw_active = false;
+		}
+		nxp_anactrl_power_lock_put(dev);
+		k_spin_unlock(&data->lock, key);
+
+		/* A running handler exits on the hw_active check. */
+		(void)k_work_cancel_delayable(&data->poll_work);
+
+		/* The clock gate is intentionally left open. */
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int nxp_anactrl_init(const struct device *dev)
 {
 	const struct nxp_anactrl_config *config = dev->config;
@@ -475,15 +634,18 @@ static int nxp_anactrl_init(const struct device *dev)
 	data->state = NXP_ANACTRL_STATE_IDLE;
 	k_work_init_delayable(&data->poll_work, nxp_anactrl_poll_work);
 
-	/* Enable the ANACTRL peripheral gate (ANACTRL_Init() equivalent) and
-	 * route both sources.
-	 */
 	if (!device_is_ready(config->gate_clk_dev)) {
 		LOG_ERR("%s: gate clock device not ready", dev->name);
 		return -ENODEV;
 	}
 
-	return nxp_anactrl_hw_bringup(dev);
+	/* Bring-up is left to PM_DEVICE_ACTION_RESUME: pm_device_driver_init()
+	 * runs it as soon as the device is meant to be active. Doing it here as
+	 * well would open the gate and write the routes twice, and would leave the
+	 * block powered while the PM core records the device as suspended (the
+	 * configuration that enables device runtime PM at init time).
+	 */
+	return pm_device_driver_init(dev, nxp_anactrl_pm_action);
 }
 
 static DEVICE_API(clock_monitor, nxp_anactrl_api) = {
@@ -545,6 +707,14 @@ static DEVICE_API(clock_monitor, nxp_anactrl_api) = {
 #define NXP_ANACTRL_REF_NODE(inst) DT_INST_CHILD(inst, reference_source)
 #define NXP_ANACTRL_TAR_NODE(inst) DT_INST_CHILD(inst, target_source)
 
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define NXP_ANACTRL_PM_DEVICE_CONSTRAINTS_INIT(inst)                           \
+	.pm_device_constraints =                                               \
+		DT_INST_NODE_HAS_PROP(inst, zephyr_disabling_power_states),
+#else
+#define NXP_ANACTRL_PM_DEVICE_CONSTRAINTS_INIT(inst)
+#endif
+
 #define NXP_ANACTRL_DEVICE_INIT(inst)                                          \
 	BUILD_ASSERT(DT_NODE_EXISTS(NXP_ANACTRL_REF_NODE(inst)),               \
 		     "nxp,anactrl-freqme: missing reference-source node");     \
@@ -566,8 +736,11 @@ static DEVICE_API(clock_monitor, nxp_anactrl_api) = {
 			DT_INST_CLOCKS_CELL(inst, name),                       \
 		.ref_src = &nxp_anactrl_ref_src_##inst,                        \
 		.tar_src = &nxp_anactrl_tar_src_##inst,                        \
+		NXP_ANACTRL_PM_DEVICE_CONSTRAINTS_INIT(inst)                   \
 	};                                                                     \
-	DEVICE_DT_INST_DEFINE(inst, nxp_anactrl_init, NULL,                    \
+	PM_DEVICE_DT_INST_DEFINE(inst, nxp_anactrl_pm_action);                 \
+	DEVICE_DT_INST_DEFINE(inst, nxp_anactrl_init,                          \
+			      PM_DEVICE_DT_INST_GET(inst),                     \
 			      &nxp_anactrl_data_##inst, &nxp_anactrl_cfg_##inst, \
 			      POST_KERNEL, CONFIG_CLOCK_MONITOR_INIT_PRIORITY, \
 			      &nxp_anactrl_api);
