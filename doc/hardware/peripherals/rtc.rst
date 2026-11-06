@@ -96,6 +96,20 @@ Related configuration options:
 * :kconfig:option:`CONFIG_RTC_UPDATE`
 * :kconfig:option:`CONFIG_RTC_CALIBRATION`
 
+Shell commands
+**************
+
+.. zephyr:shell-module:: rtc
+   :kconfig: CONFIG_RTC_SHELL
+   :depends: CONFIG_RTC
+
+   The ``rtc`` command allows getting and setting the current UTC time of a real-time clock
+   device.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
+
 API Reference
 *************
 

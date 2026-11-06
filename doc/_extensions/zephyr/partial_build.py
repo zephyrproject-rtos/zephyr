@@ -37,6 +37,7 @@ _LAYERS = {
     "skip_doxygen": "Doxygen / C API reference",
     "skip_kconfig": "Kconfig option reference and search",
     "skip_external_content": "external board / sample / snippet pages",
+    "skip_shell_reference": "shell command references extracted from firmware builds",
 }
 
 
