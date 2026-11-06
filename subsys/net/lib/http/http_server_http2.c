@@ -181,6 +181,11 @@ static int send_headers_frame(struct http_client_ctx *client, enum http_status s
 	for (size_t i = 0; i < extra_headers_count; i++) {
 		const struct http_header *hdr = &extra_headers[i];
 
+		if (http_server_is_connection_specific_header(hdr->name)) {
+			LOG_DBG("Connection-specific header '%s' dropped", hdr->name);
+			continue;
+		}
+
 		if (strcasecmp(hdr->name, "content-encoding") == 0) {
 			content_encoding_sent = true;
 		}

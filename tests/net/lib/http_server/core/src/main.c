@@ -487,9 +487,13 @@ enum dynamic_response_headers_variant {
 
 	/* Send body data before all request data is received, nothing on final data */
 	DYNAMIC_RESPONSE_HEADERS_VARIANT_BODY_EARLY,
+
+	/* Send connection_specific_header_name along with an end-to-end header */
+	DYNAMIC_RESPONSE_HEADERS_VARIANT_CONNECTION_SPECIFIC,
 };
 
 static uint8_t dynamic_response_headers_variant;
+static const char *connection_specific_header_name;
 static uint8_t dynamic_response_headers_buffer[sizeof(long_payload)];
 
 static int dynamic_response_headers_cb(struct http_client_ctx *client,
@@ -516,6 +520,11 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 		{.name = "Test-Header", .value = "test_data"},
 		{.name = "Test-Long-Header", .value = TEST_LONG_PAYLOAD_CHUNK_1},
 		{.name = "Test-Header2", .value = "test_data2"},
+	};
+
+	static struct http_header connection_specific_headers[] = {
+		{.name = NULL, .value = "1"},
+		{.name = "test-header", .value = "test_data"},
 	};
 
 	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
@@ -627,6 +636,13 @@ static int dynamic_response_headers_cb(struct http_client_ctx *client,
 			response_ctx->body = TEST_DYNAMIC_GET_PAYLOAD;
 			response_ctx->body_len = strlen(response_ctx->body);
 		}
+		break;
+
+	case DYNAMIC_RESPONSE_HEADERS_VARIANT_CONNECTION_SPECIFIC:
+		connection_specific_headers[0].name = connection_specific_header_name;
+		response_ctx->headers = connection_specific_headers;
+		response_ctx->header_count = ARRAY_SIZE(connection_specific_headers);
+		response_ctx->final_chunk = true;
 		break;
 	}
 
@@ -951,6 +967,25 @@ static void expect_contains_header(const uint8_t *buffer, size_t len,
 	}
 
 	zassert_true(found, "Header '%s: %s' not found", header->name, header->value);
+}
+
+static void expect_lacks_header(const uint8_t *buffer, size_t len, const char *name)
+{
+	struct http_hpack_header_buf header_buf;
+	size_t consumed = 0;
+	int ret;
+
+	while (consumed < len) {
+		ret = http_hpack_decode_header(buffer + consumed, len - consumed, &header_buf);
+		zassert_true(ret > 0, "Failed to decode header");
+		zassert_true(consumed + ret <= len, "Frame length exceeded");
+
+		zexpect_false(header_buf.name_len == strlen(name) &&
+				      strncasecmp(header_buf.name, name, header_buf.name_len) == 0,
+			      "Header '%s' sent", name);
+
+		consumed += ret;
+	}
 }
 
 static void expect_http2_headers_frame(size_t *offset, int stream_id, uint8_t flags,
@@ -2490,6 +2525,66 @@ ZTEST(server_function_tests, test_http2_dynamic_get_response_header_extra)
 ZTEST(server_function_tests, test_http2_dynamic_post_response_header_extra)
 {
 	test_http2_dynamic_response_header_extra(true);
+}
+
+/* HTTP/2 forbids connection-specific header fields (RFC 9113, Section 8.2.2) */
+static void test_http2_dynamic_response_header_connection_specific(const char *name)
+{
+	static const uint8_t request[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_RESPONSE_HEADERS_STREAM_1,
+		TEST_HTTP2_GOAWAY,
+	};
+	static const struct http_header kept = {.name = "test-header", .value = "test_data"};
+	struct http2_frame frame;
+	size_t offset = 0;
+	int ret;
+
+	dynamic_response_headers_variant = DYNAMIC_RESPONSE_HEADERS_VARIANT_CONNECTION_SPECIFIC;
+	connection_specific_header_name = name;
+
+	ret = zsock_send(client_fd, request, sizeof(request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+
+	test_get_frame_header(&offset, &frame);
+	zassert_equal(frame.type, HTTP2_HEADERS_FRAME, "Expected headers frame, got frame type %u",
+		      frame.type);
+	test_read_data(&offset, frame.length);
+
+	expect_lacks_header(buf, frame.length, name);
+	expect_contains_header(buf, frame.length, &kept);
+
+	test_consume_data(&offset, frame.length);
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_connection)
+{
+	test_http2_dynamic_response_header_connection_specific("Connection");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_keep_alive)
+{
+	test_http2_dynamic_response_header_connection_specific("keep-alive");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_proxy_connection)
+{
+	test_http2_dynamic_response_header_connection_specific("proxy-connection");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_transfer_encoding)
+{
+	test_http2_dynamic_response_header_connection_specific("transfer-encoding");
+}
+
+ZTEST(server_function_tests, test_http2_dynamic_response_header_upgrade)
+{
+	test_http2_dynamic_response_header_connection_specific("upgrade");
 }
 
 static void test_http1_dynamic_response_header_override(bool post)

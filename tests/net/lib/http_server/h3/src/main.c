@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <string.h>
+#include <strings.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/http/server.h>
@@ -246,6 +247,46 @@ static struct http_resource_detail_dynamic streaming_resource_detail = {
 
 HTTP_RESOURCE_DEFINE(streaming_resource, test_http_service, "/streaming",
 		     &streaming_resource_detail);
+
+static int connection_specific_cb(struct http_client_ctx *client,
+				  enum http_transaction_status status,
+				  const struct http_request_ctx *request_ctx,
+				  struct http_response_ctx *response_ctx, void *user_data)
+{
+	static const struct http_header headers[] = {
+		{.name = "Connection", .value = "1"},
+		{.name = "keep-alive", .value = "1"},
+		{.name = "proxy-connection", .value = "1"},
+		{.name = "transfer-encoding", .value = "1"},
+		{.name = "upgrade", .value = "1"},
+		{.name = "test-header", .value = "test_data"},
+	};
+
+	ARG_UNUSED(client);
+	ARG_UNUSED(request_ctx);
+	ARG_UNUSED(user_data);
+
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+		response_ctx->headers = headers;
+		response_ctx->header_count = ARRAY_SIZE(headers);
+		response_ctx->final_chunk = true;
+	}
+
+	return 0;
+}
+
+static struct http_resource_detail_dynamic connection_specific_resource_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		.content_type = "text/plain",
+	},
+	.cb = connection_specific_cb,
+	.user_data = NULL,
+};
+
+HTTP_RESOURCE_DEFINE(connection_specific_resource, test_http_service, "/connection_specific",
+		     &connection_specific_resource_detail);
 
 struct test_headers_clone {
 	uint8_t buffer[CONFIG_HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE];
@@ -489,6 +530,54 @@ static enum http_status h3_decode_response_status(const uint8_t *buf, size_t len
 		zassert_unreachable("Unexpected status index %" PRIu64, status_index);
 		return HTTP_500_INTERNAL_SERVER_ERROR;
 	}
+}
+
+/* Walk the field lines of a response field section and report whether one of
+ * them carries a literal name equal to name, ignoring case. The server only
+ * emits indexed static fields, literals with a static name reference and
+ * literals without a name reference, none of them Huffman coded.
+ */
+static bool h3_field_section_has_name(const uint8_t *buf, size_t len, const char *name)
+{
+	uint64_t ignored;
+	uint64_t name_len;
+	uint64_t value_len;
+	bool found = false;
+	size_t pos = 0;
+
+	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 8, &ignored);
+	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 7, &ignored);
+
+	while (pos < len) {
+		if ((buf[pos] & 0xc0U) == 0xc0U) {
+			pos += qpack_decode_prefixed_int(buf + pos, len - pos, 6, &ignored);
+			continue;
+		}
+
+		if ((buf[pos] & 0xf0U) == 0x50U) {
+			pos += qpack_decode_prefixed_int(buf + pos, len - pos, 4, &ignored);
+		} else {
+			zassert_equal(buf[pos] & 0xf8U, 0x20U, "Unexpected field line 0x%02x",
+				      buf[pos]);
+			pos += qpack_decode_prefixed_int(buf + pos, len - pos, 3, &name_len);
+			zassert_true(name_len <= len - pos, "Field name exceeds the section");
+
+			if (name_len == strlen(name) &&
+			    strncasecmp((const char *)buf + pos, name, name_len) == 0) {
+				found = true;
+			}
+
+			pos += name_len;
+		}
+
+		zassert_true(pos < len, "Missing field value");
+		zassert_equal(buf[pos] & 0x80U, 0U, "Unexpected Huffman coded value");
+		pos += qpack_decode_prefixed_int(buf + pos, len - pos, 7, &value_len);
+		zassert_true(value_len <= len - pos, "Field value exceeds the section");
+		pos += value_len;
+	}
+
+	return found;
 }
 
 static size_t build_headers_frame(uint8_t *buf,
@@ -1447,6 +1536,50 @@ ZTEST(server_h3_tests, test_h3_reuses_connection_for_multiple_get_streams)
 /* More rounds than the server has QUIC contexts, streams or clients, so
  * that anything left behind by a round stops a later one.
  */
+/* HTTP/3 forbids connection-specific fields (RFC 9114, Section 4.2) */
+ZTEST(server_h3_tests, test_h3_response_drops_connection_specific_headers)
+{
+	static const char *const dropped[] = {
+		"connection", "keep-alive", "proxy-connection", "transfer-encoding", "upgrade",
+	};
+	uint8_t request[32];
+	uint8_t response[MAX_RESPONSE_SIZE];
+	size_t request_len;
+	size_t response_len;
+	size_t offset = 0;
+	uint64_t frame_type;
+	uint64_t frame_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	request_len = build_headers_frame(request, HTTP_GET, "/connection_specific");
+	send_all(stream_fd, request, request_len);
+	shutdown_stream_send(stream_fd);
+
+	response_len = read_stream_to_eof(stream_fd, response, sizeof(response));
+	zassert_true(response_len > 0, "Empty H3 response");
+
+	offset += h3_decode_varint(response + offset, response_len - offset, &frame_type);
+	zassert_equal(frame_type, H3_FRAME_HEADERS, "Expected HEADERS frame");
+	offset += h3_decode_varint(response + offset, response_len - offset, &frame_len);
+	zassert_true(frame_len <= response_len - offset, "HEADERS frame exceeds buffer");
+
+	ARRAY_FOR_EACH(dropped, i) {
+		zexpect_false(h3_field_section_has_name(response + offset, frame_len, dropped[i]),
+			      "Header '%s' sent", dropped[i]);
+	}
+
+	zexpect_true(h3_field_section_has_name(response + offset, frame_len, "test-header"),
+		     "End-to-end header not sent");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close GET stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
 #define REJECTED_UNI_STREAM_ROUNDS 8
 #define SERVER_STALL_MS 200
 
