@@ -561,8 +561,6 @@ only the image from this domain::
 
   west flash --domain hello_world
 
-.. _west-debugging:
-
 Configuration Options
 =====================
 
@@ -579,35 +577,66 @@ You can :ref:`configure <west-config-cmd>` ``west flash`` using these options.
    * - ``flash.rebuild``
      - Boolean, default ``true``. If ``false``, do not rebuild on west flash.
 
-Debugging: ``west debug``, ``west debugserver``
-***********************************************
+.. _west-debugging:
+
+Debugging: ``west debug``, ``west debugserver``, ``west attach``
+****************************************************************
 
 .. tip::
 
-   Run ``west debug -h`` or ``west debugserver -h`` for additional help.
+   Run ``west debug -h``, ``west debugserver -h``, or ``west attach -h`` for additional help.
 
 Basics
 ======
 
-From a Zephyr build directory, to attach a debugger to your board and
-open up a debug console (e.g. a GDB session)::
+From a Zephyr build directory, flash the application and start an interactive
+debugger, such as GDB::
 
   west debug
 
-To attach a debugger to your board and open up a local network port
-you can connect a debugger to (e.g. an IDE debugger)::
+To start a debug server for a separate debugger, such as an IDE::
 
   west debugserver
+
+To debug the application already flashed on the board, use :ref:`west-attach`.
 
 To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
   west debug --build-dir path/to/build/directory
   west debugserver --build-dir path/to/build/directory
+  west attach --build-dir path/to/build/directory
 
 If you don't specify the build directory, these commands search for one in
 :file:`build`, then the current working directory. If you set the
 ``build.dir-fmt`` configuration option (see :ref:`west-building-dirs`), ``west
-debug`` searches there instead of :file:`build`.
+debug``, ``west debugserver``, and ``west attach`` search there instead of :file:`build`.
+
+.. _west-attach:
+
+Attaching to a running application
+==================================
+
+``west attach`` starts an interactive debugger without flashing the board.
+The debugger uses symbols from the build directory, which must match the
+firmware on the board. From that build directory, run::
+
+  west attach
+
+To skip rebuilding before attaching, use::
+
+  west attach --no-rebuild
+
+By default, ``west attach`` should halt the CPU without resetting the target,
+preserving the current execution state for inspection.
+
+Options for attaching without halting are runner-specific. For example, the
+OpenOCD runner provides ``--no-halt`` to omit its halt command::
+
+  west attach --runner openocd --no-halt
+
+Use ``--context`` to list the attach options supported by a runner::
+
+  west attach --context --runner openocd
 
 Choosing a Runner
 =================
@@ -620,12 +649,15 @@ override the default with::
 
   west debug --runner jlink
   west debugserver --runner jlink
+  west attach --runner jlink
 
 See :ref:`west-runner` below for more information on the ``runner``
 library used by West. The list of runners which support debugging can
 be obtained with ``west debug -H``; if run from a build directory or
 with ``--build-dir``, this will print additional information on
 available runners for your board.
+
+Use ``west attach -H`` to list runners that support attaching.
 
 Configuration Overrides
 =======================
@@ -641,6 +673,7 @@ other debug configuration at default values::
 
   west debug --elf-file path/to/some/other.elf
   west debugserver --elf-file path/to/some/other.elf
+  west attach --elf-file path/to/some/other.elf
 
 The ``west debug -h`` output includes a complete list of overrides
 supported by all runners.
@@ -711,8 +744,8 @@ to debug::
 Configuration Options
 =====================
 
-You can :ref:`configure <west-config-cmd>` ``west debug`` and
-:ref:`configure <west-config-cmd>` ``west debugserver`` using these options.
+You can :ref:`configure <west-config-cmd>` ``west debug``, ``west debugserver``,
+and ``west attach`` using these options.
 
 .. NOTE: docs authors: keep this table sorted alphabetically
 
@@ -722,6 +755,8 @@ You can :ref:`configure <west-config-cmd>` ``west debug`` and
 
    * - Option
      - Description
+   * - ``attach.rebuild``
+     - Boolean, default ``true``. If ``false``, do not rebuild on west attach.
    * - ``debug.rebuild``
      - Boolean, default ``true``. If ``false``, do not rebuild on west debug.
    * - ``debugserver.rebuild``
