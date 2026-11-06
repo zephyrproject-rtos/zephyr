@@ -27,6 +27,7 @@ tests:
       - lp_mspm0g3507
       - lp_mspm0g3519
       - lp_mspm0l2228
+      - lp_am13e230
     integration_platforms:
       - frdm_k64f
       - native_sim
