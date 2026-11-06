@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_oled_c_click
+  full_name: OLED C Click
+  vendor: mikroe
+  supported_features:
+    - display
