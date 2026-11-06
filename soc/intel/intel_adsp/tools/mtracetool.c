@@ -74,7 +74,7 @@
 static const unsigned int ACE15[] = { 0x7728, 0x7f50, 0x7e28 };
 static const unsigned int ACE20[] = { 0xa828 };
 static const unsigned int ACE30[] = { 0xe428, 0x4d28 };
-static const unsigned int ACE40[] = { 0x6e50 };
+static const unsigned int ACE40[] = { 0x6e50, 0xd328 };
 
 static volatile sig_atomic_t g_stop;
 
