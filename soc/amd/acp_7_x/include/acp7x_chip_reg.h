@@ -24,6 +24,7 @@ typedef union acp_dma_cntl_0 {
 } acp_dma_cntl_0_t;
 typedef union acp_dma_ch_sts {
 	struct {
+		/* ACP 7.x host DMA run status covers channels 9:0. */
 		unsigned int dmachrunsts: 10;
 		unsigned int: 22;
 	} bits;
@@ -789,14 +790,23 @@ struct dmic_context {
 	uint32_t dma_channel;
 	uint32_t index;
 };
+
+/** Host DMA probe extractor context, stored in acp_dma_dev_data::probe_ctx. */
+struct acp_host_probe_data {
+	uint32_t channel;
+};
+
 /* Device run time data */
-struct acp_dma_dev_data {
+struct acp7x_dma_dev_data {
 	struct dma_context dma_ctx;
 	struct acp_dma_chan_data chan_data[ACP_DMA_CHAN_COUNT];
 	ATOMIC_DEFINE(atomic, ACP_DMA_CHAN_COUNT);
 	struct dma_config *dma_config;
 	void *dai_index_ptr;
+	void *probe_ctx;
 };
+/* tag alias: ACP 7.0 and ACP 7.X headers are mutually exclusive, never both included */
+#define acp_dma_dev_data acp7x_dma_dev_data
 
 /* Device constant configuration parameters */
 struct acp_dma_dev_cfg {
