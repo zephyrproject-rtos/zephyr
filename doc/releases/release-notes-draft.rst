@@ -183,6 +183,12 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Sensors
+
+  * :dtcompatible:`bosch,bme680` also supports the BME688 and BME690, detected at runtime from
+    the variant ID register, including the BME690 compensation and the high-range gas
+    measurement of both parts.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

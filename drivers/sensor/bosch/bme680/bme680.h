@@ -86,6 +86,7 @@ struct bme680_config {
 
 #define BME680_VARIANT_GAS_LOW  0x00
 #define BME680_VARIANT_GAS_HIGH 0x01
+#define BME680_VARIANT_BME690   0x02
 
 #define BME680_LEN_COEFF_ALL            42
 #define BME680_LEN_COEFF1               23
@@ -206,31 +207,60 @@ struct bme680_config {
 
 #define BME680_CONCAT_BYTES(msb, lsb) (((uint16_t)msb << 8) | (uint16_t)lsb)
 
+/* BME690 temperature, pressure and humidity compensation parameters. */
+struct bme690_comp_par {
+	uint16_t t1;
+	uint16_t t2;
+	int8_t t3;
+	uint16_t p1;
+	uint16_t p2;
+	int8_t p3;
+	int8_t p4;
+	int16_t p5;
+	int16_t p6;
+	int8_t p7;
+	int8_t p8;
+	int16_t p9;
+	int8_t p10;
+	int8_t p11;
+	int16_t h1;
+	int8_t h2;
+	uint8_t h3;
+	int8_t h4;
+	int16_t h5;
+	uint8_t h6;
+};
+
 struct bme680_data {
 	/* Compensation parameters. */
-	uint16_t par_h1;
-	uint16_t par_h2;
-	int8_t par_h3;
-	int8_t par_h4;
-	int8_t par_h5;
-	uint8_t par_h6;
-	int8_t par_h7;
+	union {
+		struct {
+			uint16_t par_h1;
+			uint16_t par_h2;
+			int8_t par_h3;
+			int8_t par_h4;
+			int8_t par_h5;
+			uint8_t par_h6;
+			int8_t par_h7;
+			uint16_t par_t1;
+			int16_t par_t2;
+			int8_t par_t3;
+			uint16_t par_p1;
+			int16_t par_p2;
+			int8_t par_p3;
+			int16_t par_p4;
+			int16_t par_p5;
+			int8_t par_p6;
+			int8_t par_p7;
+			int16_t par_p8;
+			int16_t par_p9;
+			uint8_t par_p10;
+		};
+		struct bme690_comp_par bme690;
+	};
 	int8_t par_gh1;
 	int16_t par_gh2;
 	int8_t par_gh3;
-	uint16_t par_t1;
-	int16_t par_t2;
-	int8_t par_t3;
-	uint16_t par_p1;
-	int16_t par_p2;
-	int8_t par_p3;
-	int16_t par_p4;
-	int16_t par_p5;
-	int8_t par_p6;
-	int8_t par_p7;
-	int16_t par_p8;
-	int16_t par_p9;
-	uint8_t par_p10;
 	uint8_t res_heat_range;
 	int8_t res_heat_val;
 	int8_t range_sw_err;
