@@ -1,14 +1,14 @@
 # Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_ESPRESSIF_ESP32
+if SOC_FAMILY_ESPRESSIF
 
 menu "Espressif PM Config"
 
-config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+config SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	bool "Power down CPU in light sleep"
-	depends on SOC_ESP32_PM_SUPPORT_CPU_PD
-	select ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
+	depends on SOC_FAMILY_ESPRESSIF_PM_SUPPORT_CPU_PD
+	select SOC_ESP32S3_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if SOC_ESP32S3_DATA_CACHE_16KB
 	default y
 	help
 	  Allow the CPU power domain to switch off in light sleep. Hardware
@@ -18,27 +18,27 @@ config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	  A small amount of internal memory is used for the retention image.
 	  Light-sleep current is reduced compared to keeping the CPU domain on.
 
-choice ESP32_PM_CPU_RETENTION_STRATEGY
+choice SOC_FAMILY_ESPRESSIF_PM_CPU_RETENTION_STRATEGY
 	prompt "Retentive memory allocation strategy for light sleep"
-	depends on SOC_ESP32_PM_CPU_RETENTION_BY_SW
-	depends on ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-	default ESP32_PM_CPU_RETENTION_DYNAMIC
+	depends on SOC_FAMILY_ESPRESSIF_PM_CPU_RETENTION_BY_SW
+	depends on SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	default SOC_FAMILY_ESPRESSIF_PM_CPU_RETENTION_DYNAMIC
 
-config ESP32_PM_CPU_RETENTION_DYNAMIC
+config SOC_FAMILY_ESPRESSIF_PM_CPU_RETENTION_DYNAMIC
 	bool "Dynamically allocate memory"
 	help
 	  Allocate retention data when preparing to enter light sleep.
 
-config ESP32_PM_CPU_RETENTION_STATIC
+config SOC_FAMILY_ESPRESSIF_PM_CPU_RETENTION_STATIC
 	bool "Statically allocate memory"
 	help
 	  Pre-allocate all required retention memory during system initialization.
 
 endchoice
 
-config ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
+config SOC_ESP32S3_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 	bool "Restore I/D-cache tag memory after CPU power-down light sleep"
-	depends on SOC_SERIES_ESP32S3 && ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	depends on SOC_SERIES_ESP32S3 && SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	default y
 	help
 	  Cache tag memory and the CPU share the CPU power domain. When enabled,
@@ -48,10 +48,10 @@ config ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 	  When disabled, the D-cache is write-back before sleep and invalidated
 	  after wake; external memory accesses miss in cache until repopulated.
 
-config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+config SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	bool "Power down digital peripherals in light sleep (EXPERIMENTAL)"
-	depends on SOC_ESP32_PM_SUPPORT_TOP_PD && SOC_ESP32_PAU_SUPPORTED
-	select ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	depends on SOC_FAMILY_ESPRESSIF_PM_SUPPORT_TOP_PD && SOC_FAMILY_ESPRESSIF_PAU_SUPPORTED
+	select SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	help
 	  Allow the main digital (TOP) peripheral power domain to switch off
 	  in light sleep. The PAU and REGDMA hardware save and restore
@@ -72,20 +72,21 @@ config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	  lengthen the path to sleep. If tickless idle misbehaves after wake,
 	  consider increasing the minimum idle time before sleep.
 
-config ESP32_PM_ESP_SLEEP_POWER_DOWN_CPU
+config SOC_FAMILY_ESPRESSIF_PM_SLEEP_POWER_DOWN_CPU
 	bool
-	default y if ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	default y if SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
-config SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT
+config SOC_FAMILY_ESPRESSIF_PM_SLP_DEFAULT_PARAMS_OPT
 	bool
 
-config SOC_ESP32_PM_WAKEUP_MARGIN_US
+config SOC_FAMILY_ESPRESSIF_PM_WAKEUP_MARGIN_US
 	int "Light sleep RTC wake pad (us)"
 	range 0 2000
 	default 1000 if SOC_SERIES_ESP32C5 && \
-			ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && ESP32_PM_SLP_IRAM_OPT
-	default 2000 if SOC_SERIES_ESP32C5 && ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
-	default 0 if ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+			SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && \
+			SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT
+	default 2000 if SOC_SERIES_ESP32C5 && SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	default 0 if SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	default 300
 	help
 	  Extra time subtracted when programming the RTC wake timer for light
@@ -111,23 +112,23 @@ config SOC_ESP32_PM_WAKEUP_MARGIN_US
 	  optimization shortens it by keeping the early wake path independent
 	  of the flash cache.
 
-config ESP32_TIMER_IN_IRAM
+config SOC_FAMILY_ESPRESSIF_TIMER_IN_IRAM
 	bool
 
-config ESP32_PM_SLP_IRAM_OPT
+config SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT
 	bool "Put light sleep path code in internal RAM"
-	select ESP32_TIMER_IN_IRAM
+	select SOC_FAMILY_ESPRESSIF_TIMER_IN_IRAM
 	help
 	  Places part of the light sleep sequence in IRAM so it can run while the
 	  cache is suspended. Enable when using SPI flash deep power-down or
 	  flash supply power-down in light sleep (options below). Uses roughly
 	  2 KB of IRAM.
 
-config ESP32_SLEEP_POWER_DOWN_FLASH
+config SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH
 	bool "Power down flash supply in light sleep (VDDSDIO path)"
-	depends on !SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP
-	depends on !ESP_SPIRAM
-	select ESP32_PM_SLP_IRAM_OPT
+	depends on !SOC_FAMILY_ESPRESSIF_PM_FLASH_KEEP_POWER_IN_LSLP
+	depends on !SOC_FAMILY_ESPRESSIF_SPIRAM
+	select SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT
 	help
 	  Power down the flash supply during light sleep when the hardware allows
 	  (VDDSDIO / flash domain). Higher wake latency and stricter constraints
@@ -136,10 +137,10 @@ config ESP32_SLEEP_POWER_DOWN_FLASH
 
 	  See Espressif sleep documentation for risks and board requirements.
 
-config ESP32_SLEEP_SET_FLASH_DPD
+config SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD
 	bool "SPI flash deep power-down mode in light sleep"
-	depends on !ESP32_SLEEP_POWER_DOWN_FLASH
-	select ESP32_PM_SLP_IRAM_OPT
+	depends on !SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH
+	select SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT
 	help
 	  Puts the main SPI flash into deep power-down (typically command B9h)
 	  during light sleep when sleep duration is long enough. Saves roughly
@@ -152,29 +153,29 @@ config ESP32_SLEEP_SET_FLASH_DPD
 
 	  Mutually exclusive with "Power down flash supply" above.
 
-config ESP32_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
+config SOC_FAMILY_ESPRESSIF_SLEEP_SPI_FLASH_ENTER_DPD_MODE_DELAY
 	int "SPI flash enter deep power-down delay (us)"
-	depends on ESP32_SLEEP_SET_FLASH_DPD
+	depends on SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD
 	default 25
 	range 0 100
 	help
 	  Time CS must stay high after the enter-DPD command (tDP in datasheets).
 
-config ESP32_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
+config SOC_FAMILY_ESPRESSIF_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
 	int "SPI flash exit deep power-down delay (us)"
-	depends on ESP32_SLEEP_SET_FLASH_DPD
+	depends on SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD
 	default 40
 	range 0 100
 	help
 	  Time CS must stay high after the exit-DPD command (tRES1 in datasheets).
 
-config SOC_ESP32_SLEEP_DEBUG
+config SOC_FAMILY_ESPRESSIF_SLEEP_DEBUG
 	bool
 
-config SOC_ESP32_PM_SLEEP_STATS
+config SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS
 	bool "Log light sleep statistics"
 	depends on LOG
-	select SOC_ESP32_SLEEP_DEBUG
+	select SOC_FAMILY_ESPRESSIF_SLEEP_DEBUG
 	help
 	  Log one line per light sleep window with requested and executed time,
 	  fragment count, power down flags and error code. Useful to check on
@@ -186,6 +187,6 @@ endmenu # Espressif PM Config
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP32_PM
 	int
-	default 16384 if ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+	default 16384 if SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 
-endif # SOC_FAMILY_ESPRESSIF_ESP32
+endif # SOC_FAMILY_ESPRESSIF

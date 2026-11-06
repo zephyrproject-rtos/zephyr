@@ -68,7 +68,7 @@ BUILD_ASSERT(ESP_HOSTED_MCU_FRAME_SIZE % 4 == 0,
 #endif
 
 /* On an Espressif host the transport ISR must run with the flash cache off. */
-#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF
 #include <esp_attr.h>
 #define ESP_HOSTED_MCU_ISR_ATTR IRAM_ATTR
 #else

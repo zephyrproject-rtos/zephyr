@@ -56,7 +56,7 @@ config ESP_FLASH_ASYNC_IPM
 
 config ESP_FLASH_REMOTE
 	bool "Remote IPM flash driver"
-	default y if (SOC_ESP32_APPCPU_TARGET || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
+	default y if (SOC_FAMILY_ESPRESSIF_APPCPU_TARGET || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
 
 config ESP_FLASH_HOST
 	bool "Host functionality flash driver"
@@ -103,7 +103,7 @@ DT_FLASH_WRITE_BLOCK_SIZE := $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),writ
 
 config ESP32_FLASH_ENCRYPTION
 	bool "Hardware flash encryption compatibility"
-	depends on !ESP_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
+	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
 	help
 	  Enable Espressif's hardware flash encryption compatibility with MCUboot
 	  Espressif Port.
@@ -112,7 +112,7 @@ config ESP32_FLASH_ENCRYPTION
 
 config ESP_FLASH_ENCRYPTION
 	bool "Hardware flash encryption compatibility [DEPRECATED]"
-	depends on !ESP_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
+	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
 	select DEPRECATED
 	imply ESP32_FLASH_ENCRYPTION
 	help

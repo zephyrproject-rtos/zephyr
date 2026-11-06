@@ -110,5 +110,5 @@ For other ESP32-S3 boards or modules, start from these files and check:
 
 - the ``psram0`` size must match the PSRAM fitted on the module; a larger
   value is only warned about at boot and then corrupts memory;
-- ``CONFIG_ESPTOOLPY_FLASHMODE_QIO`` must not be used with octal-flash
+- ``CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_MODE_QIO`` must not be used with octal-flash
   modules, for example ESP32-S3-WROOM-2.

@@ -1,5 +1,5 @@
 family:
-- name: espressif_esp32
+- name: espressif
   series:
   - name: esp32
     socs:
