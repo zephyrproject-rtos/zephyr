@@ -207,9 +207,12 @@ config NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	default y
 
 config NRF70_REG_DOMAIN
-	string "The ISO/IEC alpha2 country code for the country in which this device is currently operating. Default 00 (World regulatory)"
-	# 00 is used for World regulatory
+	string "Regulatory domain country code"
 	default "00"
+	help
+	  ISO/IEC alpha2 country code for the country in which this device
+	  is currently operating. The default "00" selects the World
+	  regulatory domain.
 
 # Making calls to RPU from net_mgmt callbacks.
 #
@@ -698,8 +701,12 @@ config NRF_WIFI_SCAN_MAX_BSS_CNT
 	  Maximum number of scan results to return. 0 represents unlimited number of BSSes.
 
 config NRF_WIFI_BEAMFORMING
-	bool "Wi-Fi beamforming. Enabling beamforming can provide a slight improvement in performance, whereas disabling it can provide better power savings in low network activity applications"
+	bool "Wi-Fi beamforming"
 	default y
+	help
+	  Enabling beamforming can provide a slight improvement in
+	  performance, whereas disabling it can provide better power
+	  savings in low network activity applications.
 
 config WIFI_NRF70_SCAN_TIMEOUT_S
 	int "Scan timeout in seconds"
@@ -962,7 +969,7 @@ config NRF_WIFI_DISPLAY_SCAN_BSS_LIMIT
 	  Number of BSS entries in scan result.
 
 config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
-	bool "Force disable priority window for scan in the case of coexistence with Short Range radio"
+	bool "Disable coexistence priority window for scan"
 	help
 	  Enable this configuration to disable priority window for scan
 	  in the case of coexistence with Short Range radio.
