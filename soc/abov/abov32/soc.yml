@@ -1,0 +1,6 @@
+family:
+  - name: abov32
+    series:
+      - name: a31c15x
+        socs:
+          - name: a31c156
