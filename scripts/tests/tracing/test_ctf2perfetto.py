@@ -54,7 +54,7 @@ def sample_trace(metadata_file, event_defs):
     whose shape is easy to state.
     """
     tb = TraceBuilder(event_defs)
-    tb.event(MAIN_IN, "thread_switched_in", thread_id=MAIN, name="main")
+    tb.event(MAIN_IN, "thread_switched_in", thread_id=MAIN, name="main", prio=0)
     tb.event(ISR_ENTER, "isr_enter")
     tb.event(ISR_EXIT, "isr_exit")
     tb.event(SEM_TAKE, "semaphore_take_enter", id=SEM, timeout=0)
@@ -62,10 +62,10 @@ def sample_trace(metadata_file, event_defs):
     tb.event(NAMED, "named_event", name="app_signal", arg0=7, arg1=8)
     tb.event(SYSCALL, "syscall_enter", id=42, name="k_sem_take")
     tb.event(GPIO_SET, "gpio_port_set_bits_raw_enter", port=GPIO_PORT, pins=3)
-    tb.event(MAIN_OUT, "thread_switched_out", thread_id=MAIN, name="main")
-    tb.event(WORKER_IN, "thread_switched_in", thread_id=WORKER, name="worker")
+    tb.event(MAIN_OUT, "thread_switched_out", thread_id=MAIN, name="main", prio=0)
+    tb.event(WORKER_IN, "thread_switched_in", thread_id=WORKER, name="worker", prio=5)
     tb.event(WORKER_SLEEP, "k_sleep_enter", timeout=5)
-    tb.event(WORKER_OUT, "thread_switched_out", thread_id=WORKER, name="worker")
+    tb.event(WORKER_OUT, "thread_switched_out", thread_id=WORKER, name="worker", prio=5)
 
     path = metadata_file.parent / "channel0_0"
     path.write_bytes(tb.data)
@@ -88,9 +88,9 @@ def open_tail_events(metadata_file, event_defs):
     thread must stay on the lane that was running when it was recorded.
     """
     tb = TraceBuilder(event_defs)
-    tb.event(MAIN_IN, "thread_switched_in", thread_id=MAIN, name="main")
+    tb.event(MAIN_IN, "thread_switched_in", thread_id=MAIN, name="main", prio=0)
     tb.event(ISR_ENTER, "isr_enter")
-    tb.event(WORKER_IN, "thread_switched_in", thread_id=WORKER, name="worker")
+    tb.event(WORKER_IN, "thread_switched_in", thread_id=WORKER, name="worker", prio=5)
     tb.event(OPEN_END, "k_sleep_enter", timeout=5)
 
     path = metadata_file.parent / "channel0_0"
@@ -237,9 +237,9 @@ def test_undescribed_event_is_fatal(sample_trace, tmp_path):
 
 def test_trace_without_timestamps(metadata_file, event_defs, tmp_path):
     tb = TraceBuilder(event_defs, has_ts=False)
-    tb.event(None, "thread_switched_in", thread_id=MAIN, name="main")
+    tb.event(None, "thread_switched_in", thread_id=MAIN, name="main", prio=0)
     tb.event(None, "semaphore_take_enter", id=SEM, timeout=0)
-    tb.event(None, "thread_switched_out", thread_id=MAIN, name="main")
+    tb.event(None, "thread_switched_out", thread_id=MAIN, name="main", prio=0)
     path = metadata_file.parent / "channel0_0"
     path.write_bytes(tb.data)
 
@@ -252,7 +252,7 @@ def test_trace_without_timestamps(metadata_file, event_defs, tmp_path):
 
 def test_undescribed_event_without_timestamps_is_fatal(metadata_file, event_defs, tmp_path):
     tb = TraceBuilder(event_defs, has_ts=False)
-    tb.event(None, "thread_switched_in", thread_id=MAIN, name="main")
+    tb.event(None, "thread_switched_in", thread_id=MAIN, name="main", prio=0)
     path = metadata_file.parent / "channel0_0"
     path.write_bytes(tb.data + trace_viewer.HDR_NO_TS.pack(0xBAD))
 
