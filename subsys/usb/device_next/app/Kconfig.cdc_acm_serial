@@ -23,6 +23,13 @@ config CDC_ACM_SERIAL_ENABLE_AT_BOOT
 	  When disabled, the application is responsible for enabling/disabling
 	  the USB device.
 
+config CDC_ACM_SERIAL_INIT_PRIORITY
+	int "USB device and CDC ACM UART initialization priority"
+	default 95
+	help
+	  Initialization priority, at the POST_KERNEL level, of the USB device
+	  and CDC ACM UART. It must be greater than USBD_THREAD_INIT_PRIO.
+
 config CDC_ACM_SERIAL_MANUFACTURER_STRING
 	string "USB device manufacturer string descriptor"
 	default "Zephyr Project"

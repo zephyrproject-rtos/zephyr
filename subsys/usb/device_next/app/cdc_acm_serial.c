@@ -14,6 +14,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_serial, CONFIG_USBD_LOG_LEVEL);
 
+BUILD_ASSERT(CONFIG_CDC_ACM_SERIAL_INIT_PRIORITY > CONFIG_USBD_THREAD_INIT_PRIO,
+	     "CDC ACM serial must be initialized after the USB device stack thread");
+
 /*
  * This is intended for use with cdc-acm-snippet or as a default serial backend
  * only in applications where no other USB features are required, configured,
@@ -133,4 +136,4 @@ static int cdc_acm_serial_init_device(void)
 	return 0;
 }
 
-SYS_INIT(cdc_acm_serial_init_device, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(cdc_acm_serial_init_device, POST_KERNEL, CONFIG_CDC_ACM_SERIAL_INIT_PRIORITY);
