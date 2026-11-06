@@ -19,6 +19,7 @@
 #include "i2s_native_sim_bottom.h"
 #include "soc.h"
 
+#include <zephyr/audio/audio_caps.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/kernel.h>
@@ -698,6 +699,42 @@ static int ns_i2s_write(const struct device *dev, void *mem_block, size_t size)
 
 	return 0;
 }
+static int ns_i2s_get_caps(const struct device *dev, struct audio_caps *caps, enum i2s_dir dir)
+{
+	const struct ns_i2s_config *cfg = dev->config;
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	if (!ns_i2s_supports_dir(cfg, dir)) {
+		return (dir == I2S_DIR_BOTH) ? -ENOSYS : -EINVAL;
+	}
+
+	memset(caps, 0, sizeof(*caps));
+	caps->min_total_channels = 1U;
+	caps->max_total_channels = UINT8_MAX;
+	caps->supported_sample_rates =
+		AUDIO_SAMPLE_RATE_7350 | AUDIO_SAMPLE_RATE_8000 | AUDIO_SAMPLE_RATE_11025 |
+		AUDIO_SAMPLE_RATE_12000 | AUDIO_SAMPLE_RATE_14700 | AUDIO_SAMPLE_RATE_16000 |
+		AUDIO_SAMPLE_RATE_20000 | AUDIO_SAMPLE_RATE_22050 | AUDIO_SAMPLE_RATE_24000 |
+		AUDIO_SAMPLE_RATE_29400 | AUDIO_SAMPLE_RATE_32000 | AUDIO_SAMPLE_RATE_44100 |
+		AUDIO_SAMPLE_RATE_48000 | AUDIO_SAMPLE_RATE_50000 | AUDIO_SAMPLE_RATE_50400 |
+		AUDIO_SAMPLE_RATE_64000 | AUDIO_SAMPLE_RATE_88200 | AUDIO_SAMPLE_RATE_96000 |
+		AUDIO_SAMPLE_RATE_100800 | AUDIO_SAMPLE_RATE_128000 |
+		AUDIO_SAMPLE_RATE_176400 | AUDIO_SAMPLE_RATE_192000 |
+		AUDIO_SAMPLE_RATE_352800 | AUDIO_SAMPLE_RATE_384000 |
+		AUDIO_SAMPLE_RATE_705600 | AUDIO_SAMPLE_RATE_768000;
+	caps->supported_bit_widths =
+		AUDIO_BIT_WIDTH_8 | AUDIO_BIT_WIDTH_16 | AUDIO_BIT_WIDTH_18 |
+		AUDIO_BIT_WIDTH_20 | AUDIO_BIT_WIDTH_24 | AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = CONFIG_I2S_NATIVE_SIM_QUEUE_SIZE;
+	caps->min_frame_interval = 1U;
+	caps->max_frame_interval = UINT32_MAX;
+	caps->interleaved = true;
+
+	return 0;
+}
 
 static int ns_i2s_trigger_single(const struct device *dev, struct ns_i2s_data *data,
 					 struct ns_i2s_stream *stream,
@@ -856,6 +893,7 @@ static DEVICE_API(i2s, ns_i2s_driver_api) = {
 	.trigger = ns_i2s_trigger,
 	.read = ns_i2s_read,
 	.write = ns_i2s_write,
+	.get_caps = ns_i2s_get_caps,
 };
 
 static int ns_i2s_init(const struct device *dev)
