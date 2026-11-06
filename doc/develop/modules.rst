@@ -169,6 +169,66 @@ The main advantages of this approach is that the upstream repository history
 downside of this approach is that two additional merge commits are generated in
 the downstream main branch.
 
+.. _modules_hals:
+
+Hardware Abstraction Layer (HAL) modules
+****************************************
+
+If SoC support or vendor-specific drivers use a HAL module, the following
+guidelines apply in addition to the general requirements for modules.
+
+* A HAL module should provide, at a minimum, the register definitions needed to
+  support the vendor hardware (SoC). It may also provide abstraction routines
+  of varying complexity to implement vendor-specific drivers in Zephyr.
+
+* A HAL module that uses binary blobs must follow the :ref:`binary blob
+  requirements <bin-blobs>` and describe the blobs in
+  :file:`zephyr/module.yml`, see :ref:`modules-bin-blobs`.
+
+* A HAL module must not contain or introduce vendor-specific solutions that
+  conflict with or prevent the generic solutions of the Zephyr project.
+  Similarly, it should not introduce solutions that duplicate Zephyr ones.
+
+* A HAL module must not contain source code that is written exclusively for
+  Zephyr. This also includes Kconfig options defined and used in the Zephyr
+  main tree and devicetree macros. Zephyr-specific code belongs in
+  :file:`modules/hal_<vendor>/` in the Zephyr main tree, see
+  :ref:`modules_module_ext_root`. The exceptions are:
+
+  * The module integration files in the :file:`zephyr/` folder of the HAL
+    module repository, such as :file:`module.yml`, see
+    :ref:`modules_integration_files`.
+
+  * Minimal conditional compilation guards, such as ``#ifndef __ZEPHYR__``,
+    as long as the guarded code does not use Zephyr APIs, Kconfig options or
+    devicetree macros.
+
+* A HAL module should be self-contained. It must not depend on other software
+  packages, such as Python or NPM, or on other libraries. The exceptions are:
+
+  * Programming languages' standard libraries and the toolchain supported by
+    Zephyr.
+
+  * Scripts that only maintain the HAL module repository and are not required
+    to build an application.
+
+  * West extension commands that are not required to build an application.
+
+  .. note::
+
+     Even where an exception applies, HAL module maintainers should keep
+     dependencies to a minimum and follow security best practices. Every
+     dependency must stay maintainable for the lifetime of the Zephyr LTS
+     releases that ship the module.
+
+.. note::
+
+   These guidelines apply immediately to new HAL modules and to new code in
+   existing HAL modules. Existing HAL modules that do not comply are brought
+   into compliance one module at a time, and each module is tracked in a
+   GitHub issue. Existing violations of these guidelines should be fixed by a
+   release agreed with the Architecture Working Group.
+
 
 Contributing to Zephyr modules
 ******************************
@@ -494,6 +554,8 @@ Here is an example for the Zephyr module ``foo``:
    As example, the Zephyr module located in :file:`<workspace>/modules/bar` will
    use ``bar`` as its module name if nothing is specified in
    :file:`zephyr/module.yml`.
+
+.. _modules_integration_files:
 
 Module integration files (in-module)
 ====================================
