@@ -13,6 +13,8 @@ extern "C" {
 /**
  * @defgroup mdf_interface_npm2100 MFD NPM2100 Interface
  * @ingroup mfd_interfaces
+ * @since 4.1
+ * @version 0.1.0
  * @{
  */
 
@@ -20,7 +22,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/slist.h>
 
 enum mfd_npm2100_event {
 	NPM2100_EVENT_SYS_DIETEMP_WARN,
@@ -45,6 +47,41 @@ enum mfd_npm2100_event {
 	NPM2100_EVENT_LDOSW_OCP,
 	NPM2100_EVENT_LDOSW_VINTFAIL,
 	NPM2100_EVENT_MAX
+};
+
+/** @brief Mask of BIT(NPM2100_EVENT_*) values. */
+typedef uint32_t npm2100_event_t;
+
+struct mfd_npm2100_event_callback;
+
+/**
+ * @brief Handler for nPM2100 events.
+ *
+ * Called from the system workqueue with one matching event per invocation,
+ * before clearing the PMIC events. A failed clear can repeat a notification.
+ *
+ * @param dev nPM2100 MFD device.
+ * @param cb Callback that owns this handler.
+ * @param events Mask containing the single event being reported.
+ */
+typedef void (*npm2100_callback_handler_t)(const struct device *dev,
+					   struct mfd_npm2100_event_callback *cb,
+					   npm2100_event_t events);
+
+/**
+ * @brief nPM2100 event callback.
+ *
+ * Keep the callback valid while registered and during dispatch. A handler
+ * may remove its own callback, but not another callback. List updates from
+ * other threads must be serialized with each other and with dispatch.
+ */
+struct mfd_npm2100_event_callback {
+	/** Internal list node. */
+	sys_snode_t node;
+	/** Events to subscribe to, as a bitwise OR of BIT(NPM2100_EVENT_*) values. */
+	npm2100_event_t event_mask;
+	/** Handler called for a matching event. */
+	npm2100_callback_handler_t handler;
 };
 
 enum mfd_npm2100_timer_mode {
@@ -108,7 +145,7 @@ int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_
  * @param callback callback
  * @return 0 on success, negative errno value on failure.
  */
-int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm2100_add_callback(const struct device *dev, struct mfd_npm2100_event_callback *callback);
 
 /**
  * @brief Remove npm2100 event callback
@@ -117,7 +154,8 @@ int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *cal
  * @param callback callback
  * @return 0 on success, negative errno value on failure.
  */
-int mfd_npm2100_remove_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm2100_remove_callback(const struct device *dev,
+				struct mfd_npm2100_event_callback *callback);
 
 /** @} */
 
