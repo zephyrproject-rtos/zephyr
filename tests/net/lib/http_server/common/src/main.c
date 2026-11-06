@@ -421,6 +421,31 @@ ZTEST(http_service, test_HTTP_RESOURCE_DEFAULT)
 	zassert_equal(res, RES(0), "Resource mismatch");
 }
 
+ZTEST(http_service, test_HTTP_RESOURCE_DEFAULT_TYPE)
+{
+	struct http_service_desc service = service_E;
+	struct http_resource_detail *res;
+	int len;
+
+	/* A fallback resource that is not a WebSocket one is not used for a WebSocket request */
+	len = 0;
+	res = get_resource_detail(&service, NON_EXISTING_PATH, &len, true);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	/* A WebSocket fallback resource is used only for a WebSocket request */
+	service.res_fallback = DETAIL(2);
+
+	res = CHECK_PATH(service, NON_EXISTING_PATH, &len);
+	zassert_is_null(res, "Resource found");
+	zassert_equal(len, 0, "Length set");
+
+	len = 0;
+	res = get_resource_detail(&service, NON_EXISTING_PATH, &len, true);
+	zassert_equal(res, RES(2), "Resource mismatch");
+	zassert_equal(len, strlen(NON_EXISTING_PATH), "Length incorrect");
+}
+
 extern void http_server_get_content_type_from_extension(char *url, char *content_type,
 							size_t content_type_size);
 
