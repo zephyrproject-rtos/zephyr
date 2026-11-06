@@ -416,6 +416,8 @@
 			interrupts = <20 0>;
 			clocks = <&syscon MCUX_FLEXCOMM6_CLK>;
 			resets = <&reset NXP_SYSCON_RESET(1, 17)>;
+			dmas = <&dma0 12>, <&dma0 13>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
@@ -425,6 +427,8 @@
 			interrupts = <21 0>;
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			resets = <&reset NXP_SYSCON_RESET(1, 18)>;
+			dmas = <&dma0 14>, <&dma0 15>;
+			dma-names = "rx", "tx";
 			status = "disabled";
 		};
 
