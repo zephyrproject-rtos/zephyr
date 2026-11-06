@@ -13,6 +13,7 @@
 
 #ifndef ZEPHYR_VIRTIO_VIRTQUEUE_H_
 #define ZEPHYR_VIRTIO_VIRTQUEUE_H_
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <zephyr/kernel.h>
@@ -345,6 +346,27 @@ int virtq_add_buffer_chain(
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque,
 	k_timeout_t timeout
 );
+
+/**
+ * @brief check whether a buffer range is in the linear RAM mapping
+ *
+ * The whole range must lie in the boot-time RAM mapping used by
+ * k_mem_phys_addr(): the kernel image or all RAM on MMU systems, and the
+ * chosen SRAM region on systems without an MMU.
+ *
+ * With demand paging enabled, all ranges are rejected. A NULL address or a
+ * range whose end overflows is also rejected. A zero-length range must start
+ * strictly inside the region.
+ *
+ * Device address windows, IOMMU mappings and cache coherency are not checked.
+ * The caller must keep the buffer mapping valid while the device uses it.
+ *
+ * @param addr start of the buffer
+ * @param len length of the buffer in bytes
+ * @retval true The whole range is in the boot-time RAM mapping.
+ * @retval false The range is outside the boot mapping or cannot be validated.
+ */
+bool virtio_buf_is_in_linear_mapping(const void *addr, size_t len);
 
 /**
  * @}
