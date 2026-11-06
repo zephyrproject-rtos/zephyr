@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config HWSPINLOCK_K3
+	bool "TI K3 SPINLOCK HW spinlock driver"
+	default y
+	depends on DT_HAS_TI_K3_HWSPINLOCK_ENABLED
+	help
+	  Enable the TI K3 SPINLOCK hardware spinlock driver.

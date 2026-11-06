@@ -67,3 +67,7 @@
 &mcu_rti0 {
 	status = "okay";
 };
+
+&spinlock0 {
+	status = "okay";
+};
