@@ -46,6 +46,11 @@ GTEXT(z_arm_int_exit)
  *
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_signal_frame
+	.cfi_return_column pc
+	.cfi_undefined sp
 
 #if defined(CONFIG_USERSPACE)
 	/* See comment below about svc stack usage */
@@ -82,6 +87,7 @@ isr_system_thread:
 	 * thread.
 	 */
 	sub lr, lr, #4
+	.cfi_register pc, lr
 	srsdb #MODE_SYS!
 	cps #MODE_SYS
 	push {r0-r3, r12, lr}
@@ -240,10 +246,22 @@ oob:
 	 * interrupts are handled after the active interrupt is acknowledged;
 	 * this is done through the `get_active` interrupt controller
 	 * interface function.
+	 *
+	 * Publish the post-frame system SP for cfi_irq_unwind_thread_frame.
+	 * r4-r11 are not in the iframe and z_arm_int_exit does not restore
+	 * them, so a callee-saved register cannot be used as the temporary.
+	 * r0 and r3 are the ISR argument and address. Push a pair so the
+	 * system SP is at [sp] and the SVC stack stays 8-byte aligned.
 	 */
+	cps #MODE_SYS
+	mov r2, sp
+	cps #MODE_SVC
+	push {r2, r12}
+	cfi_irq_unwind_thread_frame
 	cpsie i
 	blx r3		/* call ISR */
 	cpsid i
+	pop {r2, r12}
 
 spurious_continue:
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
@@ -269,6 +287,7 @@ spurious_continue:
 	 * z_arm_int_exit() */
 	ldr r1, =z_arm_int_exit
 	bx r1
+	.cfi_endproc
 
 #else
 /**
