@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-
-#include "ai_m61_32s.dtsi"
-#include "aipi_eyes_s2_common.dtsi"
-
 &clk_aupll {
 	/* Increased PLL top output frequency to 480 MHz */
 	top-frequency = <BL61X_TOP_FREQ_OC1>;
