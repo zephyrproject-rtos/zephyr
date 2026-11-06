@@ -112,6 +112,7 @@ struct bme680_config {
 #define BME680_MSK_RH_RANGE             0x30
 #define BME680_MSK_RANGE_SW_ERR         0xf0
 #define BME680_MSK_HEATR_STAB           0x10
+#define BME680_MSK_GAS_VALID            0x20
 
 #define BME680_SPI_MEM_PAGE_MSK         0x10
 #define BME680_SPI_MEM_PAGE_POS         4
@@ -237,6 +238,7 @@ struct bme680_data {
 
 	/* Additional information */
 	uint8_t heatr_stab;
+	bool gas_valid;
 
 	/* Carryover between temperature and pressure/humidity compensation. */
 	int32_t t_fine;
@@ -272,6 +274,7 @@ struct bme680_reading {
 	uint32_t comp_press;
 	uint32_t comp_humidity;
 	uint32_t comp_gas;
+	bool gas_valid;
 };
 
 #ifdef CONFIG_SENSOR_ASYNC_API

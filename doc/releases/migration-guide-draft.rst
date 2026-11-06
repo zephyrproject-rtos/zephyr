@@ -300,6 +300,15 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Sensors
+=======
+
+* :dtcompatible:`bosch,bme680`: :c:enumerator:`SENSOR_CHAN_GAS_RES` is now reported only when the
+  sensor flags the gas measurement as valid and the heater as stable. Otherwise
+  :c:func:`sensor_channel_get` returns ``-ENODATA`` and the decoder omits the channel, so
+  applications must handle a missing gas reading, for example when the heater does not reach
+  its target temperature within the configured heating duration.
+
 Timers
 ======
 
