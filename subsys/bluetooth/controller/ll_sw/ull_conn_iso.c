@@ -856,6 +856,32 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	cis->lll.offset = cig->sync_delay - cis->sync_delay;
 	cis->lll.handle = cis_handle;
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	/* A later CIS anchor inside an earlier CIS subinterval indicates interleaving.
+	 * Check every started CIS, since the first CIS can have NSE=1.
+	 */
+	if (cig->lll.role == BT_HCI_ROLE_PERIPHERAL && cig->lll.num_cis > 1U) {
+		struct ll_conn_iso_stream *cis_other;
+		uint16_t handle_iter = UINT16_MAX;
+
+		while ((cis_other = ll_conn_iso_stream_get_by_group(cig, &handle_iter)) != NULL) {
+			if ((cis_other == cis) || !cis_other->lll.active) {
+				continue;
+			}
+
+			if (((cis->lll.offset > cis_other->lll.offset) &&
+			     ((cis->lll.offset - cis_other->lll.offset) <
+			      cis_other->lll.sub_interval)) ||
+			    ((cis_other->lll.offset > cis->lll.offset) &&
+			     ((cis_other->lll.offset - cis->lll.offset) <
+			      cis->lll.sub_interval))) {
+				cig->lll.packing = 1U;
+				break;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->lll.enc_tx) {
 		/* copy the Session Key */
@@ -1066,13 +1092,15 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	uint32_t ticks_slot_offset;
 
 	/* Calculate time reservations for sequential and interleaved packing as
-	 * configured.
+	 * configured. The sub_interval and nse values are already calculated correctly
+	 * by ULL for both packing modes, so the same formula works for both.
 	 */
 	if (IS_PERIPHERAL(cig)) {
 		uint32_t slot_us;
 
-		/* FIXME: Time reservation for interleaved packing */
-		/* Below is time reservation for sequential packing */
+		/* Time reservation works for both sequential and interleaved packing because
+		 * sub_interval is calculated differently for each mode in ULL
+		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) {
 			slot_us = cis->lll.sub_interval * cis->lll.nse;
 		} else {
@@ -1232,8 +1260,14 @@ static void mfy_cis_lazy_fill(void *param)
 	 * is incremented in ull_conn_iso_ticker_cb().
 	 */
 	cis->lll.prepared = 0U;
-	cis->lll.active = 1U;
+
+	/* Set lazy_active before active to prevent race with
+	 * ull_conn_iso_ticker_cb which runs at higher priority
+	 * (ULL_HIGH) and checks active flag before using lazy_active
+	 * to adjust event_count_prepare.
+	 */
 	cis->lll.lazy_active = lazy;
+	cis->lll.active = 1U;
 }
 
 static void ticker_next_slot_get_op_cb(uint32_t status, void *param)
