@@ -6,6 +6,13 @@ tests:
     min_ram: 32
     integration_platforms:
       - native_sim
+  shell.core.no_assert:
+    min_flash: 64
+    min_ram: 32
+    extra_configs:
+      - CONFIG_ASSERT=n
+    integration_platforms:
+      - native_sim
   shell.core.metakeys:
     min_flash: 64
     min_ram: 32
