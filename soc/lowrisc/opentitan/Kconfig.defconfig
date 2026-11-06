@@ -13,7 +13,7 @@ config 2ND_LVL_INTR_00_OFFSET
 	default 11
 
 config MAX_IRQ_PER_AGGREGATOR
-	default 182
+	default 186
 
 config NUM_IRQS
 	default 256

@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  OpenTitan Always-On Timer, version 2.0.0.
+
+  Version 2.0.0 widened the wakeup counter to 64 bits, which moved the
+  watchdog registers up by 8 bytes. Use lowrisc,opentitan-aontimer for
+  version 1.0.
+
+compatible: "lowrisc,opentitan-aontimer-2.0.0"
+
+include: lowrisc,opentitan-aontimer.yaml

@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT lowrisc_opentitan_aontimer
-
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/watchdog.h>
@@ -13,12 +11,26 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_opentitan, CONFIG_WDT_LOG_LEVEL);
 
-#define OT_REG_WDOG_REGWEN_OFFSET 0x10
-#define OT_REG_WDOG_CTRL_OFFSET 0x14
+#if DT_HAS_COMPAT_STATUS_OKAY(lowrisc_opentitan_aontimer_2_0_0)
+#define DT_DRV_COMPAT lowrisc_opentitan_aontimer_2_0_0
+
+/* Version 2.0.0 has a 64-bit wakeup counter, which moves the watchdog registers up by 8 bytes. */
+#define OT_REG_WDOG_REGWEN_OFFSET     0x18
+#define OT_REG_WDOG_CTRL_OFFSET       0x1C
+#define OT_REG_WDOG_BARK_THOLD_OFFSET 0x20
+#define OT_REG_WDOG_BITE_THOLD_OFFSET 0x24
+#define OT_REG_WDOG_COUNT_OFFSET      0x28
+#define OT_REG_INTR_STATE_OFFSET      0x2C
+#else
+#define DT_DRV_COMPAT lowrisc_opentitan_aontimer
+
+#define OT_REG_WDOG_REGWEN_OFFSET     0x10
+#define OT_REG_WDOG_CTRL_OFFSET       0x14
 #define OT_REG_WDOG_BARK_THOLD_OFFSET 0x18
 #define OT_REG_WDOG_BITE_THOLD_OFFSET 0x1C
-#define OT_REG_WDOG_COUNT_OFFSET 0x20
-#define OT_REG_INTR_STATE_OFFSET 0x24
+#define OT_REG_WDOG_COUNT_OFFSET      0x20
+#define OT_REG_INTR_STATE_OFFSET      0x24
+#endif
 
 struct wdt_ot_aontimer_cfg {
 	uintptr_t regs;
