@@ -24,6 +24,7 @@ extern struct bst_test_list *test_adv_install(struct bst_test_list *test);
 extern struct bst_test_list *test_suspend_install(struct bst_test_list *test);
 extern struct bst_test_list *test_beacon_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_provision_install(struct bst_test_list *tests);
+extern struct bst_test_list *test_gatt_srv_install(struct bst_test_list *tests);
 #elif defined(CONFIG_BT_CTLR_LOW_LAT)
 extern struct bst_test_list *test_transport_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_friendship_install(struct bst_test_list *tests);
@@ -66,6 +67,7 @@ bst_test_install_t test_installers[] = {
 	test_suspend_install,
 	test_beacon_install,
 	test_provision_install,
+	test_gatt_srv_install,
 #elif defined(CONFIG_BT_CTLR_LOW_LAT)
 	test_transport_install,
 	test_friendship_install,
