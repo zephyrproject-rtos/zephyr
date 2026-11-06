@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Aleksandr Senin
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to the raw Ethernet transport of the MCUmgr
+# subsystem and provides Kconfig options to control aspects of the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_ETHERNET_
+
+menuconfig MCUMGR_TRANSPORT_ETHERNET
+	bool "Raw Ethernet MCUmgr SMP transport [EXPERIMENTAL]"
+	depends on NET_L2_ETHERNET
+	select EXPERIMENTAL
+	help
+	  Enable the experimental raw Ethernet SMP transport. Each SMP packet
+	  is carried in one Ethernet frame with the configured EtherType,
+	  without IP encapsulation. Unicast requests are accepted on any
+	  Ethernet interface. Replies use the receiving interface's MAC address
+	  and are sent to the sender.
+	  Broadcast and multicast requests are dropped regardless of the
+	  interface's hardware MAC filter configuration.
+	  Any host on the same Ethernet segment can send requests to this
+	  transport. The transport does not provide authentication.
+
+if MCUMGR_TRANSPORT_ETHERNET
+
+config MCUMGR_TRANSPORT_ETHERNET_ETHERTYPE
+	hex "EtherType used for SMP frames"
+	range 0x0000 0xFFFF
+	default 0x0000
+	help
+	  Set the EtherType explicitly to a value in 0x0600 through 0xFFFF.
+	  Zero is an unset value and causes a build error. This numeric range
+	  is not a pool of freely available identifiers; use an EtherType
+	  assigned for the protocol in production deployments.
+	  For development on a controlled experimental network, 0x88B5 and
+	  0x88B6 are IEEE Local Experimental EtherTypes. These values must not
+	  be used in shipped products. The sample uses 0x88B5. Configure the
+	  host client to use the same EtherType as the device.
+
+config MCUMGR_TRANSPORT_ETHERNET_AUTOMATIC_INIT
+	bool "Ethernet SMP autostart"
+	default y
+	help
+	  Enable starting the Ethernet SMP transport at boot time without
+	  needing any code in the application to do this, otherwise will need
+	  the user application to manually start and stop the transport using
+	  `smp_ethernet_open` and `smp_ethernet_close`.
+
+endif # MCUMGR_TRANSPORT_ETHERNET

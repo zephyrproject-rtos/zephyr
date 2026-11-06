@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Ethernet SMP transport tests"
+
+config TEST_ETH_HW_FILTERING
+	bool "Advertise hardware MAC filtering on the test interfaces"
+	help
+	  Exercise destination rejection when the driver advertises hardware
+	  MAC filtering. The test interfaces still deliver group frames to L2.
+
+source "Kconfig.zephyr"
