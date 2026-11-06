@@ -1124,7 +1124,9 @@ static int cmd_notify(const struct shell *sh, size_t argc, char *argv[])
 	notify_data.data = data;
 	notify_data.data_len = data_len;
 
-	bt_conn_foreach(BT_CONN_TYPE_LE, notify_conn_cb, &notify_data);
+	bt_conn_foreach(IS_ENABLED(CONFIG_BT_ATT_BR) ? (BT_CONN_TYPE_LE | BT_CONN_TYPE_BR)
+						     : BT_CONN_TYPE_LE,
+			notify_conn_cb, &notify_data);
 
 	return 0;
 }

@@ -1785,6 +1785,9 @@ struct bt_gatt_exchange_params {
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  *
  *  @retval -EALREADY The MTU exchange procedure has been already performed.
+ *
+ *  @retval -ENOTSUP @p conn is not an LE connection. On BR/EDR the ATT_MTU is
+ *  negotiated by L2CAP configuration.
  */
 int bt_gatt_exchange_mtu(struct bt_conn *conn,
 			 struct bt_gatt_exchange_params *params);
