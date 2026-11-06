@@ -154,64 +154,79 @@
 &autanalog {
 	interrupts = <36 4>, <37 4>;
 	interrupt-names = "autanalog", "autanalog_fifo";
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb0 {
 	interrupts = <22 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb2 {
 	interrupts = <121 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb3 {
 	interrupts = <122 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb4 {
 	interrupts = <123 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb5 {
 	interrupts = <124 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb6 {
 	interrupts = <125 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb7 {
 	interrupts = <126 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb8 {
 	interrupts = <127 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb9 {
 	interrupts = <128 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb10 {
 	interrupts = <129 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb11 {
 	interrupts = <130 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &scb1 {
 	interrupts = <120 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &i2s0 {
 	interrupts = <135 4>, /* RX Structure */
 		     <136 4>; /* TX Structure */
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &i2s1 {
 	interrupts = <137 4>, /* RX Structure */
 		     <138 4>; /* TX Structure */
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &dmic0 {
@@ -221,10 +236,12 @@
 		     <145 4>, /* Channel 3 */
 		     <146 4>, /* Channel 4 */
 		     <147 4>; /* Channel 5 */
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &i3c0 {
 	interrupts = <153 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &watchdog0 {
@@ -241,10 +258,12 @@
 
 &can0 {
 	interrupts = <84 4>, <85 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &can1 {
 	interrupts = <86 4>, <87 4>;
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &tcpwm0_0 {
@@ -423,11 +442,13 @@
 &sdhc0 {
 	interrupts = <132 4>, /* SDIO wakeup interrupt for mxsdhc */
 		     <131 6>; /* Consolidated interrupt for mxsdhc */
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &sdhc1 {
 	interrupts = <134 4>, /* SDIO wakeup interrupt for mxsdhc */
 		     <133 6>; /* Consolidated interrupt for mxsdhc */
+	zephyr,disabling-power-states = <&deepsleep>;
 };
 
 &lpcomp0 {
@@ -441,4 +462,5 @@
 &usbhs {
 	interrupts = <151 4>, /* usbhs_ctrl_irqn */
 		     <152 4>; /* usbhss_irqn */
+	zephyr,disabling-power-states = <&deepsleep>;
 };
