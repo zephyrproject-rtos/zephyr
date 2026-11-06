@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <rh850/renesas/rh850u2b/r7f70255.dtsi>
+
+/* Peripheral definition following RH850/U2B10 devices */
+/ {
+	cpus {
+		cpu3: cpu@3 {
+			status = "disabled";
+		};
+	};
+
+	soc {
+		ostm3: ostm3@ff89a300 {
+			compatible = "renesas,rh850-ostm";
+			reg = <0xff89a300 0x20>;
+			channel = <3>;
+			interrupt-names = "overflow";
+			interrupts = <842 1>;
+			interrupt-parent = <&intc2>;
+			status = "disabled";
+
+			timer {
+				compatible = "renesas,rh850-ostm-timer";
+				status = "disabled";
+			};
+		};
+
+		ioport15: gpio@ffd903c0 {
+			compatible = "renesas,rh850-gpio";
+			reg = <0xffd903c0 0x40>;
+			port = <15>;
+			protected-write-mask = <8>;
+			port-type = "port";
+			#gpio-cells = <2>;
+			gpio-controller;
+			status = "disabled";
+		};
+
+		ioport24: gpio@ffd90600 {
+			compatible = "renesas,rh850-gpio";
+			reg = <0xffd90600 0x40>;
+			port = <24>;
+			protected-write-mask = <13>;
+			port-type = "port";
+			#gpio-cells = <2>;
+			gpio-controller;
+			status = "disabled";
+		};
+
+		ioport30: gpio@ffd90780 {
+			compatible = "renesas,rh850-gpio";
+			reg = <0xffd90780 0x40>;
+			port = <30>;
+			protected-write-mask = <17>;
+			port-type = "port";
+			#gpio-cells = <2>;
+			gpio-controller;
+			status = "disabled";
+		};
+
+		ioport31: gpio@ffd907c0 {
+			compatible = "renesas,rh850-gpio";
+			reg = <0xffd907c0 0x40>;
+			port = <31>;
+			protected-write-mask = <18>;
+			port-type = "port";
+			#gpio-cells = <2>;
+			gpio-controller;
+			status = "disabled";
+		};
+	};
+};

@@ -5522,6 +5522,19 @@ RAKwireless Platforms:
   labels:
     - "platform: RAKwireless"
 
+RH850 arch:
+  status: maintained
+  maintainers:
+    - tuandopx
+    - vinhdaowr
+    - phuclera
+  files:
+    - arch/rh850/
+    - include/zephyr/arch/rh850/
+    - dts/rh850/
+  labels:
+    - "area: RH850"
+
 RISCV Platforms:
   status: maintained
   maintainers:
@@ -5815,6 +5828,25 @@ Renesas RA Platforms:
   tests:
     - boards.renesas.elc.renesas_elc_api
     - sample.boards.renesas
+
+Renesas RH850 Platforms:
+  status: maintained
+  maintainers:
+    - tuandopx
+    - vinhdaowr
+    - phuclera
+  files:
+    - boards/renesas/*rh850*/
+    - drivers/**/*renesas_rh850*
+    - drivers/pinctrl/renesas/rh850/
+    - dts/bindings/*/*renesas,rh850*
+    - include/zephyr/dt-bindings/pinctrl/renesas/pinctrl-rh850*
+    - soc/renesas/rh850/
+  labels:
+    - "platform: Renesas RH850"
+  description: >-
+    Renesas RH850 MCUs, dts files, and related drivers. Boards based
+    on Renesas RH850 MCUs.
 
 Renesas RX Platform:
   status: maintained

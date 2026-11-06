@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 OSTM
+
+compatible: "renesas,rh850-ostm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: |
+      Initial input clock frequency of the OSTM counter in Hz.

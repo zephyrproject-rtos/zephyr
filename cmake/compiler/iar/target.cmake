@@ -36,6 +36,12 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
     arm-zephyr-eabi-gcc
     PATHS ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin
     NO_DEFAULT_PATH )
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  find_program(CMAKE_ASM_COMPILER
+    iasmrh850
+    PATHS ${TOOLCHAIN_HOME}
+    PATH_SUFFIXES bin
+    NO_DEFAULT_PATH )
 else()
   find_program(CMAKE_ASM_COMPILER
     riscv64-zephyr-elf-gcc
@@ -56,6 +62,9 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
   # Map KConfig option to icc cpu/fpu
   include(${ICC_BASE}/iccarm-cpu.cmake)
   include(${ICC_BASE}/iccarm-fpu.cmake)
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  # Map KConfig option to icc cpu/fpu
+  include(${ICC_BASE}/iccrh850-cpu.cmake)
 endif()
 
 set(IAR_COMMON_FLAGS)
@@ -82,6 +91,11 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
                            # dereferencing elements in such an array has
                            # undefined behavior
   )
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  list(APPEND IAR_COMMON_FLAGS
+    --data_model=large
+    --core=${ICCRH850_CPU}
+  )
 endif()
 
 # Enable VLA if CONFIG_MISRA_SANE is not set and warnings are not enabled.
@@ -96,10 +110,16 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
     -mabi=aapcs
     -DRTT_USE_ASM=0       #WA for VAAK-232
     )
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  list(APPEND IAR_ASM_FLAGS
+    --core=${ICCRH850_CPU}
+    )
 endif()
 
-# IAR needs Dwarf 4 output
-list(APPEND IAR_ASM_FLAGS -gdwarf-4)
+if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
+  # IAR needs Dwarf 4 output
+  list(APPEND IAR_ASM_FLAGS -gdwarf-4)
+endif()
 
 if(DEFINED CONFIG_ARM_SECURE_FIRMWARE)
   list(APPEND IAR_COMMON_FLAGS --cmse)
@@ -142,6 +162,24 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
     # library, for example error numbers, errno.h.
     list(APPEND IAR_COMMON_FLAGS -D__AEABI_PORTABILITY_LEVEL=1)
   endif()
+elseif("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccrh850")
+  if(CONFIG_FPU)
+    if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
+      list(APPEND IAR_COMMON_FLAGS --fpu=double)
+      list(APPEND IAR_ASM_FLAGS --fpu=double)
+    else()
+      list(APPEND IAR_COMMON_FLAGS --fpu=single)
+      list(APPEND IAR_ASM_FLAGS --fpu=single)
+    endif()
+  else()
+    list(APPEND IAR_COMMON_FLAGS --fpu=none)
+  endif()
+
+  if(CONFIG_IAR_LIBC)
+    # Zephyr requires AEABI portability to ensure correct functioning of the C
+    # library, for example error numbers, errno.h.
+    list(APPEND IAR_COMMON_FLAGS -D__AEABI_PORTABILITY_LEVEL=1)
+  endif()
 endif()
 
 if(CONFIG_IAR_LIBC)
@@ -150,6 +188,8 @@ if(CONFIG_IAR_LIBC)
   # only has it for full LIBC support, so always choose
   # full libc when using IAR C libraries.
   list(APPEND IAR_COMMON_FLAGS --dlib_config full)
+else()
+  list(APPEND IAR_COMMON_FLAGS --dlib_config normal)
 endif()
 
 foreach(F ${IAR_COMMON_FLAGS})

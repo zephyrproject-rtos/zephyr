@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RH850U2B
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default 30
+
+config NUM_IRQS
+	default 1024
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 80000000
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config BUILD_OUTPUT_BIN
+	default y
+
+config BUILD_OUTPUT_S19
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config MULTITHREADING
+	default y
+
+# Address of the reset cause register used to determine memory initialization.
+config RH850_RESET_CAUSE_REG_ADDR
+	default 0xFF988500
+
+# Mask used to evaluate reset cause for memory initialization.
+config RH850_RESET_CAUSE_MASK
+	default 0x305D0
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 128
+
+endif # SOC_SERIES_RH850U2B

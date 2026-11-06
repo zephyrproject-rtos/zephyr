@@ -92,6 +92,8 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_TRICORE)
 	/* Null pointer call triggers PSE trap (Class 4) */
 	((void (*)(void))0xF0000000)();
+#elif defined(CONFIG_RH850)
+	__asm__ volatile ("rie");
 #else
 	/* Triggers usage fault on ARM, illegal instruction on
 	 * xtensa, TLB exception (instruction fetch) on MIPS.
@@ -139,6 +141,8 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	 * Misaligned word store triggers ALN trap (Class 2 TIN 4).
 	 */
 	*(volatile int *)1 = 0;
+#elif defined(CONFIG_RH850)
+	__asm__ volatile ("rie");
 #else
 	/* used to create a divide by zero error on X86 and MIPS */
 	volatile int error;
