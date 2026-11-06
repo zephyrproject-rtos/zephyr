@@ -14,6 +14,8 @@ zephyr_sources_ifdef(CONFIG_STM32N6_NPU
   npu/npu_cache_stm32n6.c
 )
 
+zephyr_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_SOC cpu_freq_scale.c)
+
 zephyr_include_directories(.)
 
 if(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)

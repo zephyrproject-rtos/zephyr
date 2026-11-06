@@ -119,6 +119,26 @@ config CLOCK_STM32_MCO_HAS_ENABLE_BIT
 	help
 	  Hidden option indicating the series has a dedicated bit to enable MCO output
 
+config CLOCK_STM32_N6_CPU_SCALING
+	bool "STM32N6 CPU clock scaling"
+	depends on SOC_SERIES_STM32N6X && !TRUSTED_EXECUTION_NONSECURE
+	depends on STM32_LPTIM_TIMER
+	depends on !TIMING_FUNCTIONS
+	depends on !FLASH_STM32_XSPI_RAM_RELOCATION
+	help
+	  Allow exact CPU rates by changing only the active IC1 divider.
+	  The CPU must use IC1 with an undivided HSI or HSE PLL source.
+	  The system timer must use a fixed LPTIM clock independent of the CPU.
+	  The PLL and all bus and peripheral clocks remain fixed.
+	  Timing functions are unsupported because the DWT frequency is cached.
+	  XSPI RAM relocation is unsupported because its DWT-based HAL timeout
+	  assumes a fixed CPU frequency.
+
+	  Rates are limited to 800 MHz and the cpusw devicetree boot frequency.
+	  The boot voltage must safely support that frequency and remain fixed.
+	  The retained clock tree must match devicetree when preserving boot
+	  configuration.
+
 config CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG
 	bool "Preserve STM32N6 boot clock configuration"
 	depends on SOC_SERIES_STM32N6X
