@@ -86,7 +86,9 @@ Shuttle Boards
 
 The Shuttle Board connector shares the I2C bus with the touch controller and the I2C header.
 Only one shuttle board can be attached at a time. The shuttle supply jumper must be fitted,
-otherwise the shuttle board is not powered.
+otherwise the shuttle board is not powered. The shuttle boards are supported as shields:
+
+- :ref:`bosch_bmi270_bmm350_shuttle`
 
 Supported Features
 ==================

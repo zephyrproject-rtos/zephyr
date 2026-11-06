@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &bmi270;
+		magn0 = &bmm350;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	bmm350: bmm350@14 {
+		compatible = "bosch,bmm350";
+		reg = <0x14>;
+	};
+
+	bmi270: bmi270@69 {
+		compatible = "bosch,bmi270";
+		reg = <0x69>;
+	};
+};
