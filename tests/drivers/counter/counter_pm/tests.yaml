@@ -1,0 +1,39 @@
+common:
+  tags:
+    - drivers
+    - counter
+    - pm
+  depends_on: counter
+  harness: ztest
+tests:
+  drivers.counter.pm.esp:
+    extra_dtc_overlay_files:
+      - boards/espressif.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+  drivers.counter.pm.esp.periph_pd:
+    extra_dtc_overlay_files:
+      - boards/espressif.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y

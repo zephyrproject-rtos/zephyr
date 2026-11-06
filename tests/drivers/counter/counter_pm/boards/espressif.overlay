@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	status = "okay";
+
+	gptimer_counter: counter {
+		status = "okay";
+	};
+};
+
+&rtc_timer {
+	wakeup-source;
+	status = "okay";
+};
+
+/ {
+	aliases {
+		counter-pm-gptimer = &gptimer_counter;
+		counter-pm-lptimer = &rtc_timer;
+	};
+};
