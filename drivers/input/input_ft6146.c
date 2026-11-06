@@ -135,14 +135,14 @@ static void ft6146_poll_timer_handler(struct k_timer *timer)
 {
 	struct ft6146_data *data = CONTAINER_OF(timer, struct ft6146_data, poll_timer);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #else
 static void ft6146_isr_handler(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	struct ft6146_data *data = CONTAINER_OF(cb, struct ft6146_data, int_cb);
 
-	k_work_submit(&data->work);
+	input_work_submit(&data->work);
 }
 #endif
 

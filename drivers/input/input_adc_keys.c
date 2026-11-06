@@ -157,7 +157,7 @@ static void adc_keys_work_handler(struct k_work *work)
 
 	adc_keys_process(dev);
 
-	k_work_schedule(&data->dwork, K_MSEC(cfg->sample_period_ms));
+	input_work_schedule(&data->dwork, K_MSEC(cfg->sample_period_ms));
 }
 
 static int adc_keys_init(const struct device *dev)
@@ -194,7 +194,7 @@ static int adc_keys_init(const struct device *dev)
 		}
 	}
 
-	k_work_schedule(&data->dwork, K_MSEC(cfg->sample_period_ms));
+	input_work_schedule(&data->dwork, K_MSEC(cfg->sample_period_ms));
 
 	return 0;
 }
