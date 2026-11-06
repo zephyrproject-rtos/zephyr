@@ -127,3 +127,9 @@ set(kit_psc3m6_evk_DEPRECATED
 set(kit_psc3m6_evk/psc3m6ges3ahq1_DEPRECATED
     kit_psc3m6_eval/psc3m6ges3ahq1
 )
+set(stm32h7_renode_reference_board_DEPRECATED
+    stm32h7_renode_reference_platform
+)
+set(stm32h7_renode_reference_board/stm32h753xx_DEPRECATED
+    stm32h7_renode_reference_platform/stm32h753xx
+)
