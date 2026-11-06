@@ -20,11 +20,6 @@ properties:
     description: |
       UARTE has the DMAEND task and FRAMETIMEOUT_DMAEND HW short.
 
-  default-gpio-port:
-    type: phandle
-    description: |
-      UARTE default GPIO port.
-
   cross-domain-pins-supported:
     type: boolean
     description: |
