@@ -28,7 +28,7 @@ typedef struct {
 	uint32_t round_threshold_ms;
 } wdt_ignore_bits_data_t;
 
-#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS)
+#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS) || defined(CONFIG_WDT_INFINEON_HVMS)
 #define ifx_wdt_lock()   Cy_WDT_Lock()
 #define ifx_wdt_unlock() Cy_WDT_Unlock()
 #else
@@ -46,6 +46,8 @@ typedef struct {
 #endif
 #elif defined(COMPONENT_CAT1B) || defined(CY_IP_S8SRSSLT)
 #define IFX_WDT_MATCH_BITS (16)
+#elif defined(CONFIG_WDT_INFINEON_HVMS)
+#define IFX_WDT_MATCH_BITS (32)
 #else
 #error Unhandled device type
 #endif
@@ -208,7 +210,7 @@ static const wdt_ignore_bits_data_t ifx_wdt_ignore_data[] = {
 	/* 28 bit(s): min period: 1ms, max period: 1ms, round up from 1+ms */
 	{1, 1},
 };
-#else
+#elif !defined(CONFIG_WDT_INFINEON_HVMS)
 #error "Device not supported"
 #endif
 
@@ -229,6 +231,31 @@ struct ifx_cat1_wdt_data {
 
 static struct ifx_cat1_wdt_data wdt_data;
 
+#if defined(CONFIG_WDT_INFINEON_HVMS)
+/* Converts a timeout to clk_lf ticks, failing if clk_lf is off or the counter can't hold it. */
+static int ifx_wdt_hvms_timeout_to_ticks(uint32_t timeout_ms, uint32_t *ticks)
+{
+	uint32_t lf_freq = Cy_SysClk_ClkLfGetFrequency();
+	uint64_t ticks64;
+
+	if (lf_freq == 0U) {
+		LOG_ERR("clk_lf is not running");
+		return -EIO;
+	}
+
+	ticks64 = ((uint64_t)timeout_ms * lf_freq) / 1000U;
+	if (ticks64 == 0U || ticks64 > UINT32_MAX) {
+		LOG_ERR("Invalid timeout");
+		return -ENOTSUP;
+	}
+
+	*ticks = (uint32_t)ticks64;
+
+	return 0;
+}
+#endif
+
+#if !defined(CONFIG_WDT_INFINEON_HVMS)
 #if !defined(CY_IP_S8SRSSLT)
 #define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
 #define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
@@ -275,6 +302,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 	}
 	return IFX_WDT_MAX_IGNORE_BITS; /* Ideally should never reach this */
 }
+#endif /* !CONFIG_WDT_INFINEON_HVMS */
 
 #ifdef IFX_WDT_IS_IRQ_EN
 static void ifx_cat1_wdt_isr_handler(const struct device *dev)
@@ -292,11 +320,20 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 {
 	struct ifx_cat1_wdt_data *dev_data = dev->data;
 
+#if defined(CONFIG_WDT_INFINEON_HVMS)
+	uint32_t upper_limit_ticks;
+	int ret = ifx_wdt_hvms_timeout_to_ticks(dev_data->timeout, &upper_limit_ticks);
+
+	if (ret < 0) {
+		return ret;
+	}
+#else
 	/* Initialize the WDT */
 	if ((dev_data->timeout == 0) || (dev_data->timeout > IFX_WDT_MAX_TIMEOUT_MS)) {
 		LOG_ERR("Invalid timeout");
 		return -ENOTSUP;
 	}
+#endif
 
 	if (dev_data->wdt_initialized) {
 		LOG_ERR("Already initialized");
@@ -352,6 +389,28 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 	Cy_WDT_SetUpperLimit(ifx_wdt_timeout_to_match(dev_data->wdt_initial_timeout_ms,
 						      dev_data->wdt_ignore_bits, dev_data));
 	Cy_WDT_SetUpperAction(CY_WDT_LOW_UPPER_LIMIT_ACTION_RESET);
+#elif defined(CONFIG_WDT_INFINEON_HVMS)
+	Cy_WDT_SetUpperLimit(upper_limit_ticks);
+	Cy_WDT_SetUpperAction(CY_WDT_LOW_UPPER_LIMIT_ACTION_RESET);
+
+#ifdef IFX_WDT_IS_IRQ_EN
+	if (dev_data->callback) {
+		/* Fire a warning interrupt at 75% of the timeout, ahead of the
+		 * upper-limit reset, so the installed callback can run.
+		 */
+		Cy_WDT_SetWarnLimit((upper_limit_ticks / 4U) * 3U);
+		Cy_WDT_SetWarnAction(CY_WDT_WARN_ACTION_INT);
+	} else
+#endif
+	{
+		Cy_WDT_SetWarnLimit(CY_WDT_DEFAULT_WARN_LIMIT);
+		Cy_WDT_SetWarnAction(CY_WDT_WARN_ACTION_NONE);
+	}
+
+	Cy_WDT_SetDeepSleepPause((options & WDT_OPT_PAUSE_IN_SLEEP) ? CY_WDT_ENABLE
+								      : CY_WDT_DISABLE);
+	Cy_WDT_SetDebugRun((options & WDT_OPT_PAUSE_HALTED_BY_DBG) ? CY_WDT_DISABLE
+								    : CY_WDT_ENABLE);
 #else
 	dev_data->wdt_ignore_bits = ifx_wdt_timeout_to_ignore_bits(&dev_data->timeout);
 	dev_data->wdt_rounded_timeout_ms = dev_data->timeout;
@@ -379,6 +438,17 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 
 	ifx_wdt_unlock();
 	Cy_WDT_Enable();
+#if defined(CONFIG_WDT_INFINEON_HVMS)
+	/* Enabling the WDT takes up to 3 clk_lf cycles to synchronize
+	 * before Cy_WDT_IsEnabled() reflects the new state.
+	 */
+	uint32_t enable_wait_start = k_cycle_get_32();
+	uint32_t enable_wait_timeout_cycles = k_ms_to_cyc_ceil32(1);
+
+	while (!Cy_WDT_IsEnabled() &&
+	       ((k_cycle_get_32() - enable_wait_start) <= enable_wait_timeout_cycles)) {
+	}
+#endif
 	ifx_wdt_lock();
 
 	dev_data->wdt_initialized = true;
@@ -463,8 +533,14 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 	ifx_wdt_unlock();
 	Cy_WDT_ClearWatchdog(); /* Clear to prevent reset from WDT */
 
+#if defined(CONFIG_WDT_INFINEON_HVMS)
+	ARG_UNUSED(data);
+	/* Resets the free-running counter to 0 */
+	Cy_WDT_SetService();
+#else
 	Cy_WDT_SetMatch(ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms,
 						 data->wdt_ignore_bits, data));
+#endif
 
 	ifx_wdt_lock();
 
