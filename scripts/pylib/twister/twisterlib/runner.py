@@ -1688,6 +1688,8 @@ class ProjectBuilder(FilterBuilder):
             harness: Harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
             try:
                 harness.configure(instance)
+                # A harness that runs several things at once takes its extra jobs from here
+                harness.jobserver = self.jobserver
             except ConfigurationError as error:
                 instance.status = TwisterStatus.ERROR
                 instance.reason = str(error)

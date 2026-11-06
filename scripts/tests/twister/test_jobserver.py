@@ -291,6 +291,56 @@ def test_gnumakejobclient_from_environ(
 
 
 
+def test_jobhandle_release_once():
+    release = mock.Mock()
+    job = JobHandle(release, 1, key=2)
+
+    job.release()
+    job.release()
+    with job:
+        pass
+
+    release.assert_called_once_with(1, key=2)
+
+
+def test_jobclient_try_get_job():
+    assert JobClient().try_get_job() is None
+
+
+@pytest.mark.parametrize(
+    "selected, read_result, expect_job",
+    [
+        ([], None, False),
+        ([mock.Mock(fd=42, data=43)], BlockingIOError, False),
+        ([mock.Mock(fd=42, data=43)], b'+', True),
+    ],
+    ids=["nothing free", "taken meanwhile", "free job"],
+)
+def test_gnumakejobclient_try_get_job(selected, read_result, expect_job):
+    selector_mock = mock.Mock()
+    selector_mock().select = mock.Mock(return_value=[(item, 0) for item in selected])
+    read_mock = mock.Mock(side_effect=read_result if isinstance(read_result, type)
+                          else [read_result])
+    write_mock = mock.Mock()
+
+    with mock.patch('selectors.DefaultSelector', selector_mock), \
+         mock.patch('os.set_blocking', mock.Mock()), \
+         mock.patch('os.close', mock.Mock()), \
+         mock.patch('os.read', read_mock), \
+         mock.patch('os.write', write_mock):
+        gmjc = GNUMakeJobClient((42, 43), 4)
+        job = gmjc.try_get_job()
+        if expect_job:
+            assert job is not None
+            job.release()
+            write_mock.assert_called_once_with(43, b'+')
+        else:
+            assert job is None
+        selector_mock().select.assert_called_once_with(0)
+        # the destructor closes the pipe: keep it inside the patched os.close
+        del gmjc
+
+
 def test_gnumakejobclient_get_job():
     inherit_read_fd = mock.Mock()
     inherit_write_fd = mock.Mock()
