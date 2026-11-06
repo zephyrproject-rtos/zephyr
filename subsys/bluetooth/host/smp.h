@@ -114,10 +114,8 @@ struct bt_smp_ident_addr_info {
 	bt_addr_le_t addr;
 } __packed;
 
+/* Signing Information, removed with data signing in Core Specification 6.3 */
 #define BT_SMP_CMD_SIGNING_INFO			0x0a
-struct bt_smp_signing_info {
-	uint8_t csrk[16];
-} __packed;
 
 #define BT_SMP_CMD_SECURITY_REQUEST		0x0b
 struct bt_smp_security_request {
@@ -168,24 +166,6 @@ int bt_smp_le_oob_set_sc_data(struct bt_conn *conn,
 int bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data **oobd_local,
 			      const struct bt_le_oob_sc_data **oobd_remote);
-
-/** brief Verify signed message
- *
- *  @param conn Bluetooth connection
- *  @param buf received packet buffer with message and signature
- *
- *  @return 0 in success, error code otherwise
- */
-int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
-
-/** brief Sign message
- *
- *  @param conn Bluetooth connection
- *  @param buf message buffer
- *
- *  @return 0 in success, error code otherwise
- */
-int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
 
 /** Converts a SMP error to string.
  *

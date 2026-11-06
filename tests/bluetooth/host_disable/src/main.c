@@ -965,6 +965,33 @@ static ZTEST(bt_conn_tx, test_data_send_failure_disconnect_rejected)
 	test_conn = NULL;
 }
 
+/* Data signing has been removed: a Write Without Response that asks for it on
+ * a connection that is not encrypted fails, and what is sent after it still
+ * goes out.
+ */
+static ZTEST(bt_conn_tx, test_write_without_response_signed)
+{
+	const uint8_t value = 0U;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+
+	zassert_equal(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), true),
+		      -ENOTSUP, "Signing was not refused");
+	zassert_ok(bt_gatt_write_without_response(test_conn, 1U, &value, sizeof(value), false),
+		   "Failed to queue the write");
+
+	(void)k_sleep(K_MSEC(10));
+	zassert_equal(data_count, 1U, "The driver was given %u data packets", data_count);
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
 /* A dynamic LE L2CAP channel ID that no channel has: the Host drops what the
  * peer sends on it, once it has received it.
  */
