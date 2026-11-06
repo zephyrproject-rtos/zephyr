@@ -294,6 +294,12 @@ Other notable changes
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
 
+* I2S
+
+  * New :c:macro:`I2S_FMT_DATA_FORMAT_PDM` data format for controllers that convert PCM samples
+    to a pulse density modulated stream. :dtcompatible:`espressif,esp32-i2s` supports it for
+    transmit on I2S0 of the SoCs with a PCM to PDM converter, except the ESP32.
+
 * Interrupt controllers
 
   * GIC v3 LPI and ITS tables use bounded static storage, making their memory requirements
