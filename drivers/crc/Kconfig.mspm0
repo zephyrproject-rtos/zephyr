@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_TI_MSPM0
+	bool "TI MSPM0 CRC driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_CRC_ENABLED
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	help
+	  Enable CRC hardware driver for Texas Instruments MSP
+	  microcontrollers.
+
+config CRC_TI_MSPM0_CRCP
+	bool "TI MSPM0 CRC-P driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_CRCP_ENABLED
+	select CRC_DRIVER_HAS_CRC16
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC16_REFLECT
+	select CRC_DRIVER_HAS_CRC16_ANSI
+	select CRC_DRIVER_HAS_CRC16_ITU_T
+	select CRC_DRIVER_HAS_CRC32_C
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	select CRC_DRIVER_HAS_CRC32_K_4_2
+	select CRC_DRIVER_HAS_CRC32_MPEG2
+	help
+	  Enable CRCP hardware driver for Texas Instruments MSP
+	  microcontrollers.
