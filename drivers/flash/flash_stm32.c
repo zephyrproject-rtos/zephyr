@@ -19,6 +19,7 @@
 #include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_flash.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
 #include <zephyr/logging/log.h>
@@ -34,11 +35,6 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_FLASH_KEY1	FLASH_KEY1
 #define STM32_FLASH_KEY2	FLASH_KEY2
 #endif /* CONFIG_STM32_HAL2 */
-
-/* Let's wait for double the max erase time to be sure that the operation is
- * completed.
- */
-#define STM32_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
 
 static const struct flash_parameters flash_stm32_parameters = {
 	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
@@ -65,7 +61,7 @@ int __weak flash_stm32_check_configuration(void)
 	return 0;
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32WBX)
+#if !defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(CONFIG_SOC_SERIES_STM32H7PX)
 static int flash_stm32_check_status(const struct device *dev)
 {
 
@@ -80,8 +76,9 @@ static int flash_stm32_check_status(const struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_SOC_SERIES_STM32WBX */
+#endif /* !CONFIG_SOC_SERIES_STM32WBX && !CONFIG_SOC_SERIES_STM32H7PX */
 
+#if !defined(CONFIG_SOC_SERIES_STM32H7PX)
 int flash_stm32_wait_flash_idle(const struct device *dev)
 {
 	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(STM32_FLASH_TIMEOUT));
@@ -116,6 +113,7 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 
 	return 0;
 }
+#endif /* !CONFIG_SOC_SERIES_STM32H7PX */
 
 static void flash_stm32_flush_caches(const struct device *dev, off_t offset, size_t len)
 {
@@ -354,6 +352,22 @@ int flash_stm32_cr_lock(const struct device *dev, bool enable)
 		if (regs->CR & FLASH_CR_LOCK) {
 			regs->KEYR = STM32_FLASH_KEY1;
 			regs->KEYR = STM32_FLASH_KEY2;
+		}
+	}
+#elif defined(FLASH_ACR_LOCK)
+	/* lock/unlock both banks */
+	if (enable) {
+		LL_FLASH_Lock(regs, LL_FLASH_BANK_1);
+		LL_FLASH_Lock(regs, LL_FLASH_BANK_2);
+	} else {
+		if (LL_FLASH_IsLocked(regs, LL_FLASH_BANK_1)) {
+			LL_FLASH_SetUnlockKey(regs, LL_FLASH_BANK_1, LL_FLASH_KEY1);
+			LL_FLASH_SetUnlockKey(regs, LL_FLASH_BANK_1, LL_FLASH_KEY2);
+		}
+
+		if (LL_FLASH_IsLocked(regs, LL_FLASH_BANK_2)) {
+			LL_FLASH_SetUnlockKey(regs, LL_FLASH_BANK_2, LL_FLASH_KEY1);
+			LL_FLASH_SetUnlockKey(regs, LL_FLASH_BANK_2, LL_FLASH_KEY2);
 		}
 	}
 #else
