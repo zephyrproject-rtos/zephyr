@@ -800,6 +800,20 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 	/* Check CRC and generate Periodic Advertising Report */
 	if (crc_ok) {
 		struct node_rx_pdu *node_rx;
+		struct pdu_adv *pdu;
+
+		node_rx = ull_pdu_rx_alloc_peek(1U);
+		LL_ASSERT_DBG(node_rx != NULL);
+
+		/* Only AUX_SYNC_IND and AUX_CHAIN_IND PDUs (PDU Type 0b0111) form a periodic
+		 * advertising train (Vol 6, Part B, Section 4.4.5.1). Any other PDU received with
+		 * the train's Access Address and CRCInit, for example an AUX_CONNECT_REQ of a PAwR
+		 * advertiser, is ignored as if not received.
+		 */
+		pdu = (void *)node_rx->pdu;
+		if (pdu->type != PDU_ADV_TYPE_AUX_SYNC_IND) {
+			return -EINVAL;
+		}
 
 		/* Verify if there are free RX buffers for:
 		 * - reporting just received PDU
@@ -819,7 +833,6 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 
 		if (node_rx) {
 			struct node_rx_ftr *ftr;
-			struct pdu_adv *pdu;
 
 			ull_pdu_rx_alloc();
 
@@ -843,8 +856,6 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 				ftr->extra = ull_pdu_rx_alloc();
 			}
 
-			pdu = (void *)node_rx->pdu;
-
 			ftr->aux_lll_sched = lll_scan_aux_setup(pdu, lll->phy,
 								phy_flags_rx,
 								isr_aux_setup,
@@ -854,6 +865,7 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 					lll->is_aux_sched = 1U;
 				}
 
+				/* Busy receiving chained PDU, LLL scheduled */
 				err = -EBUSY;
 			} else {
 				err = 0;
@@ -968,29 +980,63 @@ static void isr_rx_adv_sync_estab(void *param)
 		err = isr_rx(lll, NODE_RX_TYPE_SYNC, crc_ok, phy_flags_rx,
 			     cte_ready, rssi_ready, SYNC_STAT_ALLOWED);
 		if (err == -EBUSY) {
+			/* Busy receiving chained PDU, LLL scheduled */
 			return;
+		} else if (err == -EINVAL) {
+			/* Invalidate CRC */
+			crc_ok = 0U;
+			/* Do not drift compensate */
+			trx_cnt = 0U;
+			/* Fall through, done with the radio event */
+		} else {
+			/* Fall through, done with the radio event */
 		}
-	} else if (sync_ok == SYNC_STAT_TERM) {
+	} else {
 		struct node_rx_pdu *node_rx;
+		struct pdu_adv *pdu;
 
-		/* Verify if there are free RX buffers for:
-		 * - reporting just received PDU
-		 * - a buffer for receiving data in a connection
-		 * - a buffer for receiving empty PDU
+		node_rx = ull_pdu_rx_alloc_peek(1U);
+		LL_ASSERT_DBG(node_rx != NULL);
+
+		/* Only AUX_SYNC_IND and AUX_CHAIN_IND PDUs (PDU Type 0b0111) form a periodic
+		 * advertising train (Vol 6, Part B, Section 4.4.5.1). Any other PDU received with
+		 * the train's Access Address and CRCInit, for example an AUX_CONNECT_REQ of a PAwR
+		 * advertiser, is ignored as if not received.
 		 */
-		node_rx = ull_pdu_rx_alloc_peek(3);
-		if (node_rx) {
-			struct node_rx_ftr *ftr;
+		pdu = (void *)node_rx->pdu;
+		if ((crc_ok == 0U) || (pdu->type != PDU_ADV_TYPE_AUX_SYNC_IND)) {
+			/* Invalidate CRC and reset sync status */
+			crc_ok = 0U;
+			sync_ok = SYNC_STAT_ALLOWED;
+			/* Do not drift compensate */
+			trx_cnt = 0U;
+			/* Fall through, done with the radio event */
+			goto isr_rx_done;
+		}
 
-			ull_pdu_rx_alloc();
+		if (sync_ok == SYNC_STAT_TERM) {
+			/* Verify if there are free RX buffers for:
+			 * - reporting just received PDU
+			 * - a buffer for receiving data in a connection
+			 * - a buffer for receiving empty PDU
+			 */
+			node_rx = ull_pdu_rx_alloc_peek(3U);
+			if (node_rx) {
+				struct node_rx_ftr *ftr;
 
-			node_rx->hdr.type = NODE_RX_TYPE_SYNC;
+				ull_pdu_rx_alloc();
 
-			ftr = &node_rx->rx_ftr;
-			ftr->param = lll;
-			ftr->sync_status = SYNC_STAT_TERM;
+				node_rx->hdr.type = NODE_RX_TYPE_SYNC;
 
-			ull_rx_put_sched(node_rx->hdr.link, node_rx);
+				ftr = &node_rx->rx_ftr;
+				ftr->param = lll;
+				ftr->sync_status = SYNC_STAT_TERM;
+
+				ull_rx_put_sched(node_rx->hdr.link, node_rx);
+			}
+		} else {
+			LL_ASSERT_DBG(sync_ok == SYNC_STAT_CONT_SCAN);
+			/* Fall through, done with the radio event */
 		}
 	}
 
@@ -1055,7 +1101,16 @@ static void isr_rx_adv_sync(void *param)
 	err = isr_rx(lll, NODE_RX_TYPE_SYNC_REPORT, crc_ok, phy_flags_rx, cte_ready, rssi_ready,
 		     SYNC_STAT_READY);
 	if (err == -EBUSY) {
+		/* Busy receiving chained PDU, LLL scheduled */
 		return;
+	} else if (err == -EINVAL) {
+		/* Invalidate CRC */
+		crc_ok = 0U;
+		/* Do not drift compensate */
+		trx_cnt = 0U;
+		/* Fall through, done with the radio event */
+	} else {
+		/* Fall through, done with the radio event */
 	}
 
 isr_rx_done:
@@ -1126,7 +1181,16 @@ static void isr_rx_aux_chain(void *param)
 	err = isr_rx(lll, NODE_RX_TYPE_EXT_AUX_REPORT, crc_ok, phy_flags_rx, cte_ready, rssi_ready,
 		     SYNC_STAT_READY);
 	if (err == -EBUSY) {
+		/* Busy receiving chained PDU, LLL scheduled */
 		return;
+	} else if (err == -EINVAL) {
+		/* Invalidate CRC, we do not reset trx_cnt so that drift compensation is applied
+		 * based on parent PDU received
+		 */
+		crc_ok = 0U;
+		/* Fall through, done with the radio event */
+	} else {
+		/* Fall through, done with the radio event */
 	}
 
 isr_rx_aux_chain_done:
