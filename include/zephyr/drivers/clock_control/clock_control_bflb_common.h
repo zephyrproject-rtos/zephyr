@@ -32,7 +32,7 @@
 /** @} */
 
 /** @brief Busy-wait for a few CPU cycles to let a clock change settle. */
-static inline void clock_bflb_settle(void)
+static ALWAYS_INLINE void clock_bflb_settle(void)
 {
 	__asm__ volatile (".rept 20 ; nop ; .endr");
 }
@@ -43,7 +43,7 @@ static inline void clock_bflb_settle(void)
  * @param clock One of the @c BFLB_MAIN_CLOCK_* selections. Out-of-range values fall back to
  *              @ref BFLB_MAIN_CLOCK_RC32M.
  */
-static inline void clock_bflb_set_root_clock(uint32_t clock)
+static ALWAYS_INLINE void clock_bflb_set_root_clock(uint32_t clock)
 {
 	uint32_t tmp;
 
@@ -63,7 +63,7 @@ static inline void clock_bflb_set_root_clock(uint32_t clock)
  *
  * @return One of the @c BFLB_MAIN_CLOCK_* selections.
  */
-static inline uint32_t clock_bflb_get_root_clock(void)
+static ALWAYS_INLINE uint32_t clock_bflb_get_root_clock(void)
 {
 	uint32_t tmp;
 
