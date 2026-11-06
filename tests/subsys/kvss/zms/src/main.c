@@ -3153,6 +3153,7 @@ ZTEST_F(zms, test_zms_delete_physical_power_loss)
 #define PD_IN_ATE      BIT(0) /* data stored inside the ATE */
 #define PD_REWRITE     BIT(1) /* write the ID again after the delete */
 #define PD_CLOSE_FIRST BIT(2) /* the versions are in a closed sector when they are deleted */
+#define PD_HIST        BIT(3) /* erase the old versions and keep the newest one */
 
 /* Write versions of an entry in sector 0, delete it and recycle sector 0. Return how much the
  * cycle count of sector 0 grew.
@@ -3182,7 +3183,12 @@ static uint32_t pd_cycles_of_one_recycle(struct zms_fixture *fixture, bool physi
 		zassert_equal(zms_sector_use_next(fs), 0);
 	}
 
-	zassert_equal(physical ? zms_delete_physical(fs, 60) : zms_delete(fs, 60), 0);
+	if (physical) {
+		zassert_equal((flags & PD_HIST) ? zms_delete_physical_hist(fs, 60, 0)
+						: zms_delete_physical(fs, 60), 0);
+	} else {
+		zassert_equal(zms_delete(fs, 60), 0);
+	}
 
 	if (flags & PD_REWRITE) {
 		memset(val, 0xE0, sizeof(val));
@@ -3214,6 +3220,9 @@ ZTEST_F(zms, test_zms_delete_physical_cycle_count)
 		PD_CLOSE_FIRST,
 		PD_CLOSE_FIRST | PD_REWRITE,
 		PD_CLOSE_FIRST | PD_IN_ATE | PD_REWRITE,
+		PD_HIST,
+		PD_HIST | PD_IN_ATE,
+		PD_HIST | PD_CLOSE_FIRST,
 	};
 
 	for (int i = 0; i < ARRAY_SIZE(cases); i++) {
@@ -3354,4 +3363,392 @@ ZTEST_F(zms, test_zms_delete_physical_cycle_count_power_loss)
 		}
 	}
 }
+
+#define PD_GAP_SECRET_ID 80
+#define PD_GAP_KEEP_ID   81
+#define PD_GAP_LIVE_ID   82
+#define PD_GAP_OTHER_ID  90
+
+/* Open the sector 0 again after it was recycled, so that what the earlier cycle left in it is
+ * partly overwritten by ATEs of the new cycle.
+ */
+#define PD_GAP_REOPEN BIT(0)
+
+static bool pd_flash_erases(const struct zms_fs *fs)
+{
+	return (flash_params_get_erase_cap(fs->flash_parameters) & FLASH_ERASE_C_EXPLICIT) != 0;
+}
+
+/* Leave data of a deleted entry in a sector that was recycled by the garbage collection. On a
+ * device that does not erase, it is still in flash and no ATE designates it any more.
+ */
+static void pd_gap_populate(struct zms_fs *fs, uint32_t flags)
+{
+	uint8_t secret[48];
+	uint8_t keep[48];
+	uint8_t live[48];
+	uint8_t small[ZMS_DATA_IN_ATE_SIZE];
+
+	memset(secret, 0xD7, sizeof(secret));
+	memset(keep, 0x77, sizeof(keep));
+	memset(small, 0x5E, sizeof(small));
+
+	fs->sector_count = 3;
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_clear(fs), 0);
+	zassert_equal(zms_mount(fs), 0);
+
+	zassert_equal(zms_write(fs, PD_GAP_SECRET_ID, secret, sizeof(secret)), sizeof(secret));
+	zassert_equal(zms_write(fs, PD_GAP_SECRET_ID, secret, sizeof(secret)), sizeof(secret));
+	zassert_equal(zms_write(fs, PD_GAP_KEEP_ID, keep, sizeof(keep)), sizeof(keep));
+	zassert_equal(zms_delete(fs, PD_GAP_SECRET_ID), 0);
+
+	/* Sector 0 is closed, then recycled by the garbage collection of the second advance.
+	 * An entry in the sector closed in between must not be touched.
+	 */
+	zassert_equal(zms_sector_use_next(fs), 0);
+	memset(live, 0x44, sizeof(live));
+	zassert_equal(zms_write(fs, PD_GAP_LIVE_ID, live, sizeof(live)), sizeof(live));
+	zassert_equal(zms_sector_use_next(fs), 0);
+
+	if (flags & PD_GAP_REOPEN) {
+		/* Sector 0 is open again: only small entries are written, they overwrite the ATEs
+		 * at the end of the sector but not the data left by the earlier cycle.
+		 */
+		zassert_equal(zms_sector_use_next(fs), 0);
+		for (int i = 0; i < 3; i++) {
+			zassert_equal(zms_write(fs, 100 + i, small, sizeof(small)),
+				      sizeof(small));
+		}
+	}
+}
+
+static void pd_gap_check(struct zms_fs *fs, uint32_t flags, uint32_t cut, uint32_t torn)
+{
+	uint8_t secret[48];
+	uint8_t zeros[32] = {0};
+	uint8_t keep[48];
+	uint8_t live[48];
+	uint8_t rd[48];
+
+	memset(secret, 0xD7, sizeof(secret));
+	memset(keep, 0x77, sizeof(keep));
+
+	zassert_equal(count_in_flash(fs, secret, 16), 0, "flags 0x%x: data left (cut %u torn %u)",
+		      flags, cut, torn);
+	zassert_equal(zms_read(fs, PD_GAP_KEEP_ID, rd, sizeof(rd)), sizeof(keep),
+		      "kept entry lost (cut %u torn %u)", cut, torn);
+	zassert_mem_equal(rd, keep, sizeof(keep));
+	zassert_equal(zms_read(fs, PD_GAP_SECRET_ID, rd, sizeof(rd)), -ENOENT);
+	memset(live, 0x44, sizeof(live));
+	zassert_equal(zms_read(fs, PD_GAP_LIVE_ID, rd, sizeof(rd)), sizeof(live),
+		      "live entry lost (cut %u torn %u)", cut, torn);
+	zassert_mem_equal(rd, live, sizeof(live));
+
+	if (pd_flash_erases(fs)) {
+		/* Nothing is overwritten where the erase already removes the data */
+		zassert_equal(count_in_flash(fs, zeros, sizeof(zeros)), 0,
+			      "gap overwritten on a device that erases");
+	} else {
+		zassert_true(count_in_flash(fs, zeros, sizeof(zeros)) > 0, "gap not scrubbed");
+	}
+}
+
+/* Data left by a former cycle of a sector must be scrubbed too, whatever ID it belongs to: the
+ * sector is free, or it is open and the ATEs of its new cycle overwrote the ATEs of the old one.
+ */
+ZTEST_F(zms, test_zms_delete_physical_gap)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint8_t secret[48];
+	uint8_t next[48];
+	uint8_t rd[48];
+
+	memset(secret, 0xD7, sizeof(secret));
+	memset(next, 0x33, sizeof(next));
+
+	for (uint32_t flags = 0; flags <= PD_GAP_REOPEN; flags++) {
+		pd_gap_populate(fs, flags);
+
+		if (!pd_flash_erases(fs)) {
+			zassert_true(count_in_flash(fs, secret, 16) > 0,
+				     "flags 0x%x: no data left to scrub", flags);
+		}
+
+		zassert_equal(zms_delete_physical(fs, PD_GAP_OTHER_ID), 0);
+		pd_gap_check(fs, flags, 0, 0);
+
+		/* The file system is consistent and the scrubbed area is writable again */
+		zassert_equal(zms_mount(fs), 0, "remount failed");
+		pd_gap_check(fs, flags, 0, 0);
+		zassert_equal(zms_write(fs, 70, next, sizeof(next)), sizeof(next));
+		zassert_equal(zms_read(fs, 70, rd, sizeof(rd)), sizeof(next));
+		zassert_mem_equal(rd, next, sizeof(next));
+		zassert_equal(zms_clear(fs), 0);
+	}
+}
+
+/* Power loss at the writes of the scrub of the gaps, dropped and torn: the file system stays
+ * consistent and a second call removes what is left.
+ */
+ZTEST_F(zms, test_zms_delete_physical_gap_power_loss)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint32_t *write_calls;
+	uint32_t *max_write_calls;
+	uint32_t *max_len;
+	uint32_t total_writes;
+	uint32_t step;
+
+	if (pd_flash_erases(fs)) {
+		ztest_test_skip();
+	}
+
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &write_calls);
+	max_len = max_write_calls + 2;
+
+	for (uint32_t flags = 0; flags <= PD_GAP_REOPEN; flags++) {
+		/* Measure the number of flash writes of an uninterrupted run */
+		pd_gap_populate(fs, flags);
+		*write_calls = 0;
+		zassert_equal(zms_delete_physical(fs, PD_GAP_OTHER_ID), 0);
+		total_writes = *write_calls;
+		zassert_true(total_writes > 2, "unexpected number of writes: %u", total_writes);
+		zassert_equal(zms_clear(fs), 0);
+
+		step = MAX(1U, total_writes / 24U);
+		for (uint32_t torn = 0; torn <= 3; torn += 3) {
+			for (uint32_t cut = 1; cut <= total_writes; cut += step) {
+				pd_gap_populate(fs, flags);
+
+				*write_calls = 0;
+				*max_write_calls = cut;
+				*max_len = torn;
+				(void)zms_delete_physical(fs, PD_GAP_OTHER_ID);
+				*max_write_calls = 0;
+				*max_len = 0;
+
+				/* Power cycle */
+				memset(fs, 0, sizeof(*fs));
+				(void)setup();
+				fs->sector_count = 3;
+				zassert_equal(zms_mount(fs), 0,
+					      "remount failed (cut %u torn %u)", cut, torn);
+
+				zassert_equal(zms_delete_physical(fs, PD_GAP_OTHER_ID), 0);
+				pd_gap_check(fs, flags, cut, torn);
+				zassert_equal(zms_clear(fs), 0);
+			}
+		}
+	}
+}
+#define PH_ID      120
+#define PH_ID_KEEP 121
+
+/* Write count versions of PH_ID, version i holding the byte 0xE0 + i */
+static void ph_write_versions(struct zms_fs *fs, int count, bool last_in_ate)
+{
+	uint8_t big[48];
+	uint8_t small[ZMS_DATA_IN_ATE_SIZE];
+
+	for (int i = 1; i <= count; i++) {
+		if (last_in_ate && (i == count)) {
+			memset(small, 0xE0 + i, sizeof(small));
+			zassert_equal(zms_write(fs, PH_ID, small, sizeof(small)), sizeof(small));
+		} else {
+			memset(big, 0xE0 + i, sizeof(big));
+			zassert_equal(zms_write(fs, PH_ID, big, sizeof(big)), sizeof(big));
+		}
+	}
+}
+
+/* Version i is in the flash if its pattern is, whatever its size */
+static bool ph_in_flash(struct zms_fs *fs, int version)
+{
+	uint8_t pattern[ZMS_DATA_IN_ATE_SIZE];
+
+	memset(pattern, 0xE0 + version, sizeof(pattern));
+
+	return count_in_flash(fs, pattern, sizeof(pattern)) > 0;
+}
+
+/* Check which versions are left in the flash, the newest one is the last */
+static void ph_check_versions(struct zms_fs *fs, int count, int left_from, int left_to)
+{
+	uint8_t rd[48];
+
+	for (int i = 1; i <= count; i++) {
+		bool expected = (i >= left_from && i <= left_to) || (i == count);
+
+		zassert_equal(ph_in_flash(fs, i), expected, "version %d: expected %d", i, expected);
+	}
+
+	/* The newest version is still readable */
+	zassert_equal(zms_read(fs, PH_ID, rd, sizeof(rd)) > 0, true);
+	zassert_equal(rd[0], 0xE0 + count);
+}
+
+ZTEST_F(zms, test_zms_delete_physical_hist)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint8_t keep[48];
+	uint8_t rd[48];
+
+	memset(keep, 0x77, sizeof(keep));
+
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_write(fs, PH_ID_KEEP, keep, sizeof(keep)), sizeof(keep));
+
+	/* Invalid arguments */
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, -2), -EINVAL);
+	zassert_equal(zms_delete_physical_hist(fs, ZMS_HEAD_ID, 0), -EINVAL);
+	zassert_equal(zms_delete_physical_hist(NULL, PH_ID, 0), -EINVAL);
+
+	/* 0: all the old versions go, the newest stays */
+	ph_write_versions(fs, 4, false);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	ph_check_versions(fs, 4, 0, 0);
+	zassert_equal(zms_read_hist(fs, PH_ID, rd, sizeof(rd), 1), -ENOENT);
+	/* Idempotent */
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	ph_check_versions(fs, 4, 0, 0);
+
+	/* The newest version in the ATE */
+	zassert_equal(zms_delete_physical(fs, PH_ID), 0);
+	ph_write_versions(fs, 3, true);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	ph_check_versions(fs, 3, 0, 0);
+
+	/* n > 0: the n versions that precede the newest one go, the others stay */
+	zassert_equal(zms_delete_physical(fs, PH_ID), 0);
+	ph_write_versions(fs, 4, false);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 2), 0);
+	ph_check_versions(fs, 4, 1, 1);
+	zassert_equal(zms_read_hist(fs, PH_ID, rd, sizeof(rd), 1), sizeof(rd));
+	zassert_equal(rd[0], 0xE1, "the oldest version must be the next one in history");
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 5), 0);
+	ph_check_versions(fs, 4, 0, 0);
+
+	/* The newest state is a delete: every version before it is an old one */
+	ph_write_versions(fs, 3, false);
+	zassert_equal(zms_delete(fs, PH_ID), 0);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	for (int i = 1; i <= 3; i++) {
+		zassert_false(ph_in_flash(fs, i), "version %d left", i);
+	}
+	zassert_equal(zms_read(fs, PH_ID, rd, sizeof(rd)), -ENOENT);
+
+	/* -1 is zms_delete_physical() */
+	ph_write_versions(fs, 3, false);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, -1), 0);
+	for (int i = 1; i <= 3; i++) {
+		zassert_false(ph_in_flash(fs, i), "version %d left", i);
+	}
+	zassert_equal(zms_read(fs, PH_ID, rd, sizeof(rd)), -ENOENT);
+
+	zassert_equal(zms_read(fs, PH_ID_KEEP, rd, sizeof(rd)), sizeof(keep));
+	zassert_mem_equal(rd, keep, sizeof(keep));
+
+	/* Remount */
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_read(fs, PH_ID_KEEP, rd, sizeof(rd)), sizeof(keep));
+	zassert_mem_equal(rd, keep, sizeof(keep));
+}
+
+/* The newest version is a small one: the end of the data is only known from the ATE of the
+ * version that is erased, so the mount must recover it from the marker ATE, otherwise new data
+ * would be written over erased bytes.
+ */
+ZTEST_F(zms, test_zms_delete_physical_hist_data_end_recovery)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint8_t next[40];
+	uint8_t rd[40];
+
+	memset(next, 0x33, sizeof(next));
+
+	zassert_equal(zms_mount(fs), 0);
+	ph_write_versions(fs, 2, true);
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	ph_check_versions(fs, 2, 0, 0);
+
+	/* Power cycle */
+	memset(fs, 0, sizeof(*fs));
+	(void)setup();
+	zassert_equal(zms_mount(fs), 0);
+
+	zassert_equal(zms_write(fs, 72, next, sizeof(next)), sizeof(next));
+	zassert_equal(zms_read(fs, 72, rd, sizeof(rd)), sizeof(next));
+	zassert_mem_equal(rd, next, sizeof(next), "new data written over erased data");
+	zassert_equal(zms_read(fs, PH_ID, rd, sizeof(rd)), ZMS_DATA_IN_ATE_SIZE);
+	zassert_equal(rd[0], 0xE2);
+}
+
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+/* Power loss at every flash write of zms_delete_physical_hist(), dropped and torn: the newest
+ * version and the other entries stay intact and a second call finishes the erasure.
+ */
+ZTEST_F(zms, test_zms_delete_physical_hist_power_loss)
+{
+	struct zms_fs *fs = &fixture->fs;
+	uint32_t *write_calls;
+	uint32_t *max_write_calls;
+	uint32_t *max_len;
+	uint32_t total_writes;
+	uint8_t keep[48];
+	uint8_t rd[48];
+
+	memset(keep, 0x77, sizeof(keep));
+
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &write_calls);
+	max_len = max_write_calls + 2;
+
+	zassert_equal(zms_mount(fs), 0);
+	zassert_equal(zms_write(fs, PH_ID_KEEP, keep, sizeof(keep)), sizeof(keep));
+	ph_write_versions(fs, 4, true);
+	*write_calls = 0;
+	zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+	total_writes = *write_calls;
+	zassert_true(total_writes > 4, "unexpected number of writes: %u", total_writes);
+	zassert_equal(zms_clear(fs), 0);
+
+	for (uint32_t torn = 0; torn <= 3; torn += 3) {
+		for (uint32_t cut = 1; cut <= total_writes; cut++) {
+			zassert_equal(zms_mount(fs), 0);
+			zassert_equal(zms_write(fs, PH_ID_KEEP, keep, sizeof(keep)), sizeof(keep));
+			ph_write_versions(fs, 4, true);
+
+			*write_calls = 0;
+			*max_write_calls = cut;
+			*max_len = torn;
+			(void)zms_delete_physical_hist(fs, PH_ID, 0);
+			*max_write_calls = 0;
+			*max_len = 0;
+
+			/* Power cycle */
+			memset(fs, 0, sizeof(*fs));
+			(void)setup();
+			zassert_equal(zms_mount(fs), 0,
+				      "remount failed (cut %u torn %u)", cut, torn);
+
+			zassert_equal(zms_read(fs, PH_ID_KEEP, rd, sizeof(rd)), sizeof(keep),
+				      "kept entry lost (cut %u torn %u)", cut, torn);
+			zassert_mem_equal(rd, keep, sizeof(keep));
+			zassert_equal(zms_read(fs, PH_ID, rd, sizeof(rd)), ZMS_DATA_IN_ATE_SIZE,
+				      "newest version lost (cut %u torn %u)", cut, torn);
+			zassert_equal(rd[0], 0xE4);
+
+			zassert_equal(zms_delete_physical_hist(fs, PH_ID, 0), 0);
+			ph_check_versions(fs, 4, 0, 0);
+
+			/* Still usable */
+			zassert_equal(zms_write(fs, 50, keep, sizeof(keep)), sizeof(keep));
+			zassert_equal(zms_clear(fs), 0);
+		}
+	}
+}
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
 #endif /* CONFIG_ZMS_PHYSICAL_DELETE */
