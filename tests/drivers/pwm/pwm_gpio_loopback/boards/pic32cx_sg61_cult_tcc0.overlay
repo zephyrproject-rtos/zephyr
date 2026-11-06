@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect PB14 to PB15 */
+
+#define PWM_NODE    tcc0
+#define PWM_PINCTRL tcc0_pwm_default
+#define PWM_COMPAT "microchip,tcc-g1-pwm"
+#include "mchp_pwm_loopback_support.dtsi"
+
+/ {
+	zephyr,user {
+		pwms = <&tcc0 1 PWM_MSEC(20) 0>;
+		gpios = <&portb 15 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&portb {
+	status = "okay";
+};
+
+&pinctrl {
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PB14G_TCC0_WO2>;
+		};
+	};
+};
