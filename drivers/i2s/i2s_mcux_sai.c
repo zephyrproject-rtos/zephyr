@@ -312,9 +312,10 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 }
 
 /*
- * Move a running TX stream to I2S_STATE_ERROR after an underrun, detected
- * either by the TX DMA callback or by the SAI FIFO error interrupt. Per the
- * I2S API, i2s_write() then fails with -EIO until a PREPARE or DROP trigger.
+ * Move an active TX stream to I2S_STATE_ERROR. Used for every TX error: an
+ * underrun detected by the TX DMA callback or by the SAI FIFO error
+ * interrupt, a DMA error and a failed DMA reload. Per the I2S API,
+ * i2s_write() then fails with -EIO until a PREPARE or DROP trigger.
  *
  * Stop feeding the FIFO but keep the transmitter enabled, so the bit and
  * frame clocks keep running for an RX stream (or an external device)
@@ -349,55 +350,52 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 
 	LOG_DBG("tx cb");
 
-	if (strm->state == I2S_STATE_ERROR) {
+	if (strm->state != I2S_STATE_RUNNING && strm->state != I2S_STATE_STOPPING) {
 		/*
-		 * The SAI ISR already flagged a TX underrun and stopped the DMA.
-		 * This is a completion that was pending at that point. Leave the
-		 * queues and the transmitter alone, PREPARE/DROP cleans them up.
+		 * A completion that was pending when the stream was stopped, by a
+		 * trigger or by an error. Leave the queues and the transmitter
+		 * alone: START resumes from them, PREPARE/DROP releases them.
 		 */
 		return;
 	}
 
-	ret = k_msgq_get(&strm->out_queue, &q_entry, K_NO_WAIT);
-	if (ret == 0) {
-		/* transmission complete. free the buffer */
-		k_mem_slab_free(strm->cfg.mem_slab, q_entry.mem_block);
-		(strm->free_tx_dma_blocks)++;
-	} else {
-		LOG_ERR("no buf in out_queue for channel %u", channel);
+	if (status < 0) {
+		LOG_ERR("TX DMA error %d", status);
+		goto error;
 	}
+
+	ret = k_msgq_get(&strm->out_queue, &q_entry, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("no buf in out_queue for channel %u", channel);
+		goto error;
+	}
+
+	/* transmission complete. free the buffer */
+	k_mem_slab_free(strm->cfg.mem_slab, q_entry.mem_block);
+	(strm->free_tx_dma_blocks)++;
 
 	if (strm->free_tx_dma_blocks > MAX_TX_DMA_BLOCKS) {
-		strm->state = I2S_STATE_ERROR;
 		LOG_ERR("free_tx_dma_blocks exceeded maximum, now %d", strm->free_tx_dma_blocks);
-		goto disabled_exit_no_drop;
+		goto error;
 	}
 
-	/* Received a STOP trigger, terminate TX immediately */
+	/*
+	 * Received a STOP trigger, terminate TX at the end of this block. The
+	 * blocks still queued are kept for the next START.
+	 */
 	if (strm->last_block) {
 		strm->state = I2S_STATE_READY;
 		LOG_DBG("TX STOPPED last_block set");
-		goto disabled_exit_no_drop;
-	}
-
-	if (ret) {
-		/* k_msgq_get() returned error, and was not last_block */
-		strm->state = I2S_STATE_ERROR;
-		goto disabled_exit_no_drop;
-	}
-
-	if (strm->state != I2S_STATE_RUNNING && strm->state != I2S_STATE_STOPPING) {
-		goto disabled_exit_drop;
+		goto disabled_exit;
 	}
 
 	ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
 	if (ret) {
-		strm->state = I2S_STATE_ERROR;
-		goto disabled_exit_no_drop;
+		goto error;
 	}
 
 	if (blocks_queued || (strm->free_tx_dma_blocks < MAX_TX_DMA_BLOCKS)) {
-		goto enabled_exit;
+		return;
 	}
 
 	/* all DMA blocks are free but no blocks were queued */
@@ -405,7 +403,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 		/* TX queue has drained */
 		strm->state = I2S_STATE_READY;
 		LOG_DBG("TX stream has stopped");
-		goto disabled_exit_no_drop;
+		goto disabled_exit;
 	}
 
 	/*
@@ -413,19 +411,13 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 	 * TX underrun.
 	 */
 	LOG_ERR("TX underrun");
+
+error:
 	i2s_tx_stream_set_error(dev);
-	goto enabled_exit;
+	return;
 
-disabled_exit_no_drop:
+disabled_exit:
 	i2s_tx_stream_disable(dev, false);
-	return;
-
-disabled_exit_drop:
-	i2s_tx_stream_disable(dev, true);
-	return;
-
-enabled_exit:
-	return;
 }
 
 static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
@@ -1173,9 +1165,14 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 		strm->state = I2S_STATE_STOPPING;
 		strm->last_block = true;
-		if (strm->free_tx_dma_blocks == MAX_TX_DMA_BLOCKS && dir == I2S_DIR_TX) {
-			i2s_tx_stream_disable(dev, true);
+		if ((dir == I2S_DIR_TX) && (strm->free_tx_dma_blocks == MAX_TX_DMA_BLOCKS)) {
+			/*
+			 * No block in flight, so no DMA callback will complete
+			 * the STOP. Stop now, but keep the queued blocks: a
+			 * subsequent START resumes from them.
+			 */
 			strm->state = I2S_STATE_READY;
+			i2s_tx_stream_disable(dev, false);
 		}
 		break;
 
