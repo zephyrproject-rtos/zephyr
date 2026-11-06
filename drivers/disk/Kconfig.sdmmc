@@ -75,6 +75,20 @@ config SDMMC_STM32_CLOCK_CHECK
 	  In specific cases, this check might provide wrong verdict and should
 	  be disabled.
 
+config SDMMC_STM32_IDMA_BOUNCE_SIZE
+	int "STM32 SDMMC IDMA bounce buffer size"
+	depends on SDMMC_STM32
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SDMMC),idma)
+	range 512 32768
+	default 512
+	help
+	  Size in bytes, a multiple of 512, of the buffer that a read or a write
+	  goes through when the internal DMA of the SDMMC cannot use the buffer
+	  of the caller: one not aligned to a data cache line (to a 32-bit word
+	  without data cache), or outside of the zephyr,sram chosen memory, such
+	  as the DTCM of STM32H7. A larger buffer splits such a transfer into
+	  fewer commands.
+
 module = SDMMC
 module-str = sdmmc
 source "subsys/logging/Kconfig.template.log_config"
