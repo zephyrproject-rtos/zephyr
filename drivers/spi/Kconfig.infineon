@@ -25,6 +25,12 @@ config SPI_INFINEON_PDL
 	help
 	  This option enables the PDL based SPI driver for Infineon family.
 
+config SPI_INFINEON_PDL_PERIPHERAL_NO_CLOCK_STALL
+	bool
+	help
+	  The SCB in peripheral mode cannot pause the controller's clock, so a
+	  read-only transfer must be issued as a single PDL Transfer() call.
+
 if USE_INFINEON_SPI
 
 config SPI_INFINEON_DMA
