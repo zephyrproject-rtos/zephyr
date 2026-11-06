@@ -500,7 +500,7 @@
 		status = "disabled";
 	};
 
-	os_timer: timers@113000 {
+	os_timer: ostimer0: timers@113000 {
 		compatible = "nxp,os-timer";
 		reg = <0x113000 0x1000>;
 		interrupts = <41 0>;

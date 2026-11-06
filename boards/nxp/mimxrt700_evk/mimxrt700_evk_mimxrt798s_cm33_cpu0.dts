@@ -171,9 +171,9 @@
 /*
  * RT700-EVK board cm33_cpu0 uses OS timer as the kernel timer
  * In case we need to switch to SYSTICK timer, then
- * replace &os_timer with &systick
+ * replace &ostimer0 with &systick
  */
-&os_timer_cpu0 {
+&ostimer0 {
 	wakeup-source;
 	status = "okay";
 };
