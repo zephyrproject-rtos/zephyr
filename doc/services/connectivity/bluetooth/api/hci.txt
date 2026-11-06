@@ -133,6 +133,10 @@ identification of the hardware running Zephyr.
 	+--------------------+--------------------------------------+
 	| 0x0001             | nRF51x                               |
 	| 0x0002             | nRF52x                               |
+	| 0x0003             | nRF53x                               |
+	| 0x0004             | nRF54Hx                              |
+	| 0x0005             | nRF54Lx                              |
+	| 0x0006             | nRF71x                               |
 	| All other values   | Reserved for future use              |
 	+--------------------+--------------------------------------+
 
