@@ -20,6 +20,7 @@
 	aliases {
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -168,5 +169,9 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
