@@ -140,7 +140,8 @@ static int cst8xx_process(const struct device *dev)
 	uint8_t event;
 	uint16_t row, col;
 	bool pressed;
-	uint8_t pos[4];
+	uint8_t buf[5];
+	uint8_t *pos = &buf[1];
 
 #ifdef CONFIG_INPUT_CST8XX_EV_DEVICE
 	uint8_t gesture;
@@ -152,8 +153,8 @@ static int cst8xx_process(const struct device *dev)
 	}
 #endif
 
-	/* Read X and Y in one transfer so that both come from the same sample */
-	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_XPOS_H, pos, sizeof(pos));
+	/* Read the finger count, X and Y in one transfer so that all come from the same sample */
+	ret = i2c_burst_read_dt(&cfg->i2c, CST8XX_REG_FINGER_NUM, buf, sizeof(buf));
 	if (ret < 0) {
 		LOG_ERR("Could not read position data (%d)", ret);
 		return ret;
@@ -162,9 +163,9 @@ static int cst8xx_process(const struct device *dev)
 	row = sys_get_be16(&pos[2]) & 0x0fff;
 
 	event = pos[0] >> CST8XX_EVENT_BITS_POS;
-	pressed = (event == EVENT_PRESS_DOWN) || (event == EVENT_CONTACT);
+	pressed = (buf[0] != 0U) && ((event == EVENT_PRESS_DOWN) || (event == EVENT_CONTACT));
 
-	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
+	LOG_DBG("fingers: %d, event: %d, row: %d, col: %d", buf[0], event, row, col);
 
 	if (pressed) {
 		input_touchscreen_report_pos(dev, col, row, K_FOREVER);
