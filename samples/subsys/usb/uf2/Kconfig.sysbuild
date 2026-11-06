@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config APP_UF2_APPLICATION
+	string "Application built and flashed together with the bootloader"
+	default "$(ZEPHYR_BASE)/samples/hello_world"
+	help
+	  Source directory of an application that is linked into the slot0
+	  partition, it is built for the same board and flashed after the
+	  bootloader. Leave it empty to build the bootloader only.
+
+source "$(ZEPHYR_BASE)/samples/subsys/usb/uf2/Kconfig.family"
+
+config APP_UF2_FAMILY_ID
+	string "UF2 device family ID of the application"
+	default APP_UF2_FAMILY_ID_DEFAULT
+	help
+	  Family ID for the UF2 file of the application, it must match the
+	  one of the bootloader. The default is the ID from Kconfig.family if
+	  the board has one. If it is empty, the family ID of the SoC is used,
+	  if it is known to the UF2 family list.
+
+source "$(ZEPHYR_BASE)/share/sysbuild/Kconfig"

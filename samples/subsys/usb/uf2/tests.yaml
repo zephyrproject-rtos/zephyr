@@ -1,0 +1,22 @@
+sample:
+  name: USB UF2 sample
+common:
+  depends_on:
+    - usbd
+    - gpio
+  filter: dt_label_with_parent_compat_enabled("boot_partition", "fixed-partitions") and
+          dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions") and
+          dt_alias_exists("sw0") and dt_alias_exists("led0")
+  platform_allow:
+    - frdm_k64f
+    - nucleo_f413zh
+    - nrf54lm20dk/nrf54lm20b/cpuapp
+  integration_platforms:
+    - frdm_k64f
+  tags: usb filesystem
+tests:
+  sample.usbd.uf2:
+    build_only: true
+  sample.usbd.uf2.sysbuild:
+    build_only: true
+    sysbuild: true
