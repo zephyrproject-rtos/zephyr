@@ -1,0 +1,17 @@
+tests:
+  bluetooth.classic.hid_device:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - hid
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: session
+      fixture: usb_hci
+    extra_configs:
+      # The pytest harness drives the DUT shell over stdin/stdout
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+    timeout: 900
