@@ -180,3 +180,27 @@ def test_soc_name_falls_back_without_config(cc, req, runner_config, caplog):
         runner.run('flash')
 
     assert any('Flashing esp32 chip' in r.message for r in caplog.records)
+
+
+def baud_value(cmd):
+    '''Value passed to esptool's --baud.'''
+    return cmd[cmd.index('--baud') + 1]
+
+
+@pytest.mark.parametrize(
+    'extra, expected',
+    [
+        ([], '921600'),
+        (['--baud-rate', '115200'], '115200'),
+        (['--esp-baud-rate', '460800'], '460800'),
+    ],
+)
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_esptool)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_baud_rate(cc, req, runner_config, extra, expected):
+    '''--baud-rate (and deprecated --esp-baud-rate) select esptool's --baud.'''
+    runner = Esp32BinaryRunner.create(runner_config, parse_args(*extra))
+    runner.run('flash')
+
+    cmd = cc.call_args_list[-1].args[0]
+    assert baud_value(cmd) == expected

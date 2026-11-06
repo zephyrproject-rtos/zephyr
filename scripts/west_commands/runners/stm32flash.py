@@ -10,13 +10,14 @@ from os import path
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_DEVICE = '/dev/ttyUSB0'
+DEFAULT_BAUD_RATE = '115200'
 if platform.system() == 'Darwin':
     DEFAULT_DEVICE = '/dev/tty.SLAB_USBtoUART'
 
 class Stm32flashBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for stm32flash.'''
 
-    def __init__(self, cfg, device, action='write', baud=57600,
+    def __init__(self, cfg, device, action='write', baud=DEFAULT_BAUD_RATE,
                  force_binary=False, start_addr=0, exec_addr=None,
                  serial_mode='8e1', reset=False, verify=False):
         super().__init__(cfg)
@@ -37,7 +38,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, reset=True)
+        return RunnerCaps(commands={'flash'}, reset=True, baud_rate=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -52,12 +53,6 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--action', default='write', required=False,
                             choices=['erase', 'info', 'start', 'write'],
                             help='erase / get device info / start execution / write flash')
-
-        parser.add_argument('--baud-rate', default='57600', required=False,
-                            choices=['1200', '1800', '2400', '4800', '9600', '19200',
-                            '38400', '57600', '115200', '230400', '256000', '460800',
-                            '500000', '576000', '921600', '1000000', '1500000', '2000000'],
-                            help='serial baud rate, default \'57600\'')
 
         parser.add_argument('--force-binary', required=False, action='store_true',
                             help='force the binary parser')
@@ -75,7 +70,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--verify', default=False, required=False, action='store_true',
                             help='verify writes, default False')
 
-        parser.set_defaults(reset=False)
+        parser.set_defaults(reset=False, baud_rate=DEFAULT_BAUD_RATE)
 
     @classmethod
     def do_create(cls, cfg, args):
@@ -91,7 +86,7 @@ class Stm32flashBinaryRunner(ZephyrBinaryRunner):
         bin_name = self.cfg.bin_file
         bin_size = path.getsize(bin_name)
 
-        cmd_flash = ['stm32flash', '-b', self.baud,
+        cmd_flash = ['stm32flash', '-b', str(self.baud),
             '-m', self.serial_mode]
 
         action = self.action.lower()
