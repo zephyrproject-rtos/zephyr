@@ -3,14 +3,19 @@
 
 if SOC_SERIES_MCXE31X
 
+DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
+DT_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SYSTEM_TIMER))
+
 config NUM_IRQS
 	default 240
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
+	# Right where the prescaler is 1; the driver asserts the two agree.
+	default $(dt_node_int_prop_int,$(DT_SYSTEM_TIMER_PATH),clock-frequency) \
+		if MCUX_RTC_JDP_TIMER
 
-# The RTC system timer derives its cycle rate at runtime (clock-frequency /
-# prescaler); 1000 ticks/sec divides the 32 kHz RTC clock without rounding.
+# 1000 ticks/sec divides the 32 kHz RTC clock without rounding.
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000 if MCUX_RTC_JDP_TIMER
 
