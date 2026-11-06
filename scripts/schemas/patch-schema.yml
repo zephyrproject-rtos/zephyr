@@ -24,8 +24,13 @@ schema;patch-schema:
           type: str
           pattern: "^[0-9a-f]{64}$"
 
-        # The path of the module the patch is for, relative to the west workspace
-        # e.g. zephyr, or bootloader/mcuboot
+        # Where to apply the patch. The patch commands run in this directory. One of:
+        # - a path relative to the west workspace, e.g. zephyr or bootloader/mcuboot
+        # - an absolute path
+        # - a Zephyr module name, e.g. mcuboot
+        # It does not need to be a Zephyr module or a west project. But the default
+        # commands use git, so it must be in a git repository.
+        # Patches for a module that is not found are skipped.
         module:
           required: true
           type: str
