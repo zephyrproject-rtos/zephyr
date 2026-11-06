@@ -23,6 +23,8 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <stm32_backup_domain.h>
 
+#include "clock_stm32_flash_latency.h"
+
 /* Macros to fill up prescaler values */
 #define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
 #define ahb_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
@@ -847,7 +849,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set flash latency */
 	/* If freq increases, set flash latency before any clock setting */
 	if (old_hclk_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		stm32_set_flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
 	/* Set up individual enabled clocks */
@@ -894,7 +896,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set FLASH latency */
 	/* If freq not increased, set flash latency after all clock setting */
 	if (old_hclk_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		stm32_set_flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
 	if (IS_ENABLED(STM32_TIMER_PRESCALER)) {

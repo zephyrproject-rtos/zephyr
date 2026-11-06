@@ -18,6 +18,8 @@
 #include <stm32_backup_domain.h>
 #include <stm32_hsem.h>
 
+#include "clock_stm32_flash_latency.h"
+
 /* Macros to fill up prescaler values */
 #define ahb_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
 #define ahb5_prescaler(v) CONCAT(LL_RCC_AHB5_DIV_, v)
@@ -573,7 +575,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* If freq increases, set flash latency before any clock setting */
 	if (old_flash_freq < CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		stm32_set_flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
 	LL_RCC_SetAHBPrescaler(ahb_prescaler(STM32_CORE_PRESCALER));
@@ -609,7 +611,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* If freq not increased, set flash latency after all clock setting */
 	if (old_flash_freq >= CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
-		LL_SetFlashLatency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+		stm32_set_flash_latency(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 	}
 
 	/* Set voltage regulator to comply with targeted system frequency */
