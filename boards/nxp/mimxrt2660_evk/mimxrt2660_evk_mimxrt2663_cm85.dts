@@ -65,6 +65,11 @@
 	status = "okay";
 };
 
+/* Carries the PCA9555 interrupt line the SD card detect runs through. */
+&gpio1 {
+	status = "okay";
+};
+
 &gpio6 {
 	status = "okay";
 };
@@ -138,5 +143,13 @@ zephyr_mipi_dsi: &mipi_dsi {};
 &lpspi0 {
 	pinctrl-0 = <&pinmux_lpspi0>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c0 {
+	status = "okay";
+};
+
+&usdhc0 {
 	status = "okay";
 };
