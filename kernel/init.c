@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +45,14 @@
 #include <scheduler.h>
 
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#if CONFIG_PIC_OPTIONS
+/* The offset between the linker time address and run time address.
+ * Not set as 0 to avoid being put into bss region, which will be reset to 0 in
+ * init code and overwrite the value assigned earlier in initialization
+ */
+unsigned int g_load_offset = 0xFFFFFFF;
+#endif
 
 /* the only struct z_kernel instance */
 struct z_kernel _kernel;
@@ -516,6 +525,124 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
 	}
 }
 
+#if defined(CONFIG_GEN_ISR_TABLES) && defined(CONFIG_PIC_OPTIONS) && \
+	!defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+extern struct _isr_table_entry __sw_isr_table _sw_isr_table[];
+
+/*
+ * zephyr_pre0.elf is linked before generated isr_tables.c exists.
+ * Provide weak fallback definitions here so the pre0 link succeeds.
+ * The final generated isr_tables.c provides strong definitions with
+ * the real zephyr_pre0.elf table addresses.
+ *
+ * NOTE: These must be regular variables (not .equ absolute symbols).
+ * In a PIE image, .equ symbols get a GOT entry of 0 with no relocation,
+ * so (uintptr_t)z_sw_isr_table_pre0_addr would read 0 at runtime and
+ * produce a completely wrong relocation delta.
+ */
+__attribute__((weak, visibility("hidden"))) uintptr_t z_sw_isr_table_pre0_addr;
+__attribute__((weak, visibility("hidden"))) struct _isr_reloc_param_info reloc_param_list[] = {
+	{-1, -1}};
+#ifdef CONFIG_SHARED_INTERRUPTS
+extern struct z_shared_isr_table_entry __shared_sw_isr_table z_shared_sw_isr_table[];
+#endif
+#endif
+
+#if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS)
+extern uintptr_t __irq_vector_table _irq_vector_table[];
+__attribute__((weak, visibility("hidden"))) uintptr_t z_irq_vector_table_pre0_addr;
+#endif
+
+__boot_func void z_adjust_isr_tables(void)
+{
+	int i;
+#ifdef CONFIG_GEN_SW_ISR_TABLE
+	int irq_idx;
+	uintptr_t sw_isr_reloc_delta;
+
+	/*
+	 * The generated ISR table entries are numeric addresses read from
+	 * zephyr_pre0.elf. The final zephyr.elf link can move those symbols.
+	 *
+	 * Convert stale pre0 addresses directly to runtime addresses.
+	 *
+	 * In PIE code, the C reference to _sw_isr_table evaluates to the
+	 * runtime table address, i.e. final_table_addr + load_offset.  So:
+	 *
+	 *   runtime_table_addr - pre0_table_addr
+	 *
+	 * already contains both:
+	 *
+	 *   1. final_table_addr - pre0_table_addr
+	 *   2. load_offset
+	 *
+	 * Do not add g_load_offset again here.
+	 */
+	sw_isr_reloc_delta = (uintptr_t)_sw_isr_table - z_sw_isr_table_pre0_addr;
+
+	/* relocate the isr handlers for non-shared lines */
+	for (i = 0; i < IRQ_TABLE_SIZE; i++) {
+		_sw_isr_table[i].isr = (void (*)(const void *))((uintptr_t)_sw_isr_table[i].isr +
+								sw_isr_reloc_delta);
+	}
+
+#ifdef CONFIG_SHARED_INTERRUPTS
+	/* relocate the isr handlers for shared lines */
+	for (i = 0; i < IRQ_TABLE_SIZE; i++) {
+		/* when the corresponding irq is not shared, client_num is set to 0 */
+		for (int client_idx = 0; client_idx < z_shared_sw_isr_table[i].client_num;
+		     client_idx++) {
+			uintptr_t isr = (uintptr_t)z_shared_sw_isr_table[i].clients[client_idx].isr;
+
+			z_shared_sw_isr_table[i].clients[client_idx].isr =
+				(void (*)(const void *))(isr + sw_isr_reloc_delta);
+		}
+	}
+#endif
+
+	/* relocate the interrupt params (including shared and non-shared lines) */
+	for (i = 0; (irq_idx = reloc_param_list[i].table_index) != -1; i++) {
+		if (irq_idx < 0 || irq_idx >= IRQ_TABLE_SIZE) {
+			continue;
+		}
+#ifdef CONFIG_SHARED_INTERRUPTS
+		if (z_shared_sw_isr_table[irq_idx].client_num != 0) {
+			int shared_index = reloc_param_list[i].shared_index;
+
+			if (shared_index >= 0 &&
+			    shared_index < z_shared_sw_isr_table[irq_idx].client_num) {
+				uintptr_t arg = (uintptr_t)z_shared_sw_isr_table[irq_idx]
+							.clients[shared_index]
+							.arg;
+				z_shared_sw_isr_table[irq_idx].clients[shared_index].arg =
+					(const void *)(arg + sw_isr_reloc_delta);
+			}
+			continue;
+		}
+#endif
+		_sw_isr_table[irq_idx].arg =
+			(const void *)((uintptr_t)_sw_isr_table[irq_idx].arg + sw_isr_reloc_delta);
+	}
+#endif
+
+#if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS)
+	uintptr_t irq_vector_reloc_delta;
+
+	/*
+	 * Relocate the vector table only for jump by address.
+	 * Jump by code is not needed, since each item is instruction: "jump_instr symbol".
+	 */
+	irq_vector_reloc_delta = (uintptr_t)_irq_vector_table - z_irq_vector_table_pre0_addr;
+
+	for (i = 0; i < IRQ_TABLE_SIZE; i++) {
+		_irq_vector_table[i] = _irq_vector_table[i] + irq_vector_reloc_delta;
+	}
+#endif
+}
+#endif
+
 /**
  *
  * @brief Initialize kernel
@@ -532,6 +659,11 @@ FUNC_NORETURN void z_cstart(void)
 {
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
+
+#if defined(CONFIG_GEN_ISR_TABLES) && defined(CONFIG_PIC_OPTIONS) &&                               \
+	!defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
+	z_adjust_isr_tables();
+#endif
 
 	/* initialize early init calls */
 	z_sys_init_run_level(INIT_LEVEL_EARLY);

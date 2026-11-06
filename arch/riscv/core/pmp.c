@@ -805,7 +805,7 @@ void z_riscv_pmp_init(void)
 		      (COND_CODE_1(CONFIG_PMP_UNLOCK_ROM_FOR_DEBUG, (0x0),
 		      (PMP_L)))),
 		      (uintptr_t)__rom_region_start,
-		      (size_t)__rom_region_size,
+		      (size_t)((uintptr_t)__rom_region_end - (uintptr_t)__rom_region_start),
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 
 	/* SoC-specific PMP regions defined via iterable sections */
@@ -1396,7 +1396,8 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	/* Check if this is within the global read-only area */
 	if (!write) {
 		uintptr_t ro_start = (uintptr_t)__rom_region_start;
-		size_t ro_size = (size_t)__rom_region_size;
+		size_t ro_size =
+			(size_t)((uintptr_t)__rom_region_end - (uintptr_t)__rom_region_start);
 
 		if (IS_WITHIN(start, size, ro_start, ro_size)) {
 			return 0;

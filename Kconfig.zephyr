@@ -516,6 +516,17 @@ config LTO_SINGLE_THREADED
 	  LTO. See the following issue for more info:
 	  https://github.com/zephyrproject-rtos/sdk-ng/issues/1038
 
+config PIC_OPTIONS
+	bool "Generate Position Independent ELF"
+	help
+	  This option enables Position Independent ELF. Requires an LLVM toolchain
+	  that supports position independent executable linking, such as LLVM 19
+	  included in the Zephyr SDK or CPULLVM (github.com/qualcomm/cpullvm-toolchain).
+	  GCC itself can generate position independent code, but the GNU linker of
+	  the bare-metal GCC toolchains, such as the riscv64-zephyr-elf one in the
+	  Zephyr SDK is built without support for position independent
+	  executables ("-pie"), so the image cannot be linked with it.
+
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
