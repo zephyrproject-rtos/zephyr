@@ -64,6 +64,7 @@ def test_runner_imports():
         'rfp',
         'rtkprog',
         'rtsflash',
+        'sdcard',
         'sftool',
         'silabs_commander',
         'spi_burn',
