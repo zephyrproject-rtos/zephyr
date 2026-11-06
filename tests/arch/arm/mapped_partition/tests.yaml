@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow: qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+  toolchain_allow: zephyr/gnu
+  tags:
+    - arm
+    - devicetree
+    - linker
+tests:
+  arch.arm.mapped_partition.execution:
+    extra_args: DTC_OVERLAY_FILE=execution.overlay
+  arch.arm.mapped_partition.execution.linker_generator:
+    extra_args: DTC_OVERLAY_FILE=execution.overlay
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+  arch.arm.mapped_partition.unnamed:
+    extra_args: DTC_OVERLAY_FILE=unnamed.overlay
+  arch.arm.mapped_partition.unnamed.linker_generator:
+    extra_args: DTC_OVERLAY_FILE=unnamed.overlay
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+  arch.arm.mapped_partition.named_storage:
+    extra_args: DTC_OVERLAY_FILE=named_storage.overlay
+  arch.arm.mapped_partition.named_storage.linker_generator:
+    extra_args: DTC_OVERLAY_FILE=named_storage.overlay
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+  arch.arm.mapped_partition.larger_execution:
+    extra_args: DTC_OVERLAY_FILE=larger_execution.overlay
+  arch.arm.mapped_partition.larger_execution.linker_generator:
+    extra_args: DTC_OVERLAY_FILE=larger_execution.overlay
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
+  arch.arm.mapped_partition.storage_overflow:
+    harness: ctest
+    timeout: 120
+    extra_args:
+      - DTC_OVERLAY_FILE=larger_execution.overlay
+      - TEST_OVERFLOW_CHECK=ON
+  arch.arm.mapped_partition.storage_overflow.linker_generator:
+    harness: ctest
+    timeout: 120
+    extra_args:
+      - DTC_OVERLAY_FILE=larger_execution.overlay
+      - TEST_OVERFLOW_CHECK=ON
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
