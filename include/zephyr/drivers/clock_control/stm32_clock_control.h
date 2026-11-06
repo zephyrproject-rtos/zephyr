@@ -33,6 +33,10 @@
 /* Retrieve the main system clock from DTS. */
 #define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+#define STM32_CORE_FREQUENCY DT_PROP(DT_NODELABEL(cpusw), clock_frequency)
+#endif /* CONFIG_SOC_SERIES_STM32N6X */
+
 #if defined(CONFIG_SOC_SERIES_STM32C0X)
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32C5X)
