@@ -75,3 +75,10 @@ ltc2941@9 {
 	rsense-milliohms = <50>;
 	status = "okay";
 };
+
+ltc3337@a {
+	compatible = "adi,ltc3337";
+	reg = <0xa>;
+	ipeak-milliamp = <100>;
+	status = "okay";
+};

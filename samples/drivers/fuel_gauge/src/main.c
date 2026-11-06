@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(app);
 
 /*
  * Keep in sync with enum fuel_gauge_prop_type in include/zephyr/drivers/fuel_gauge.h
- * from FUEL_GAUGE_AVG_CURRENT_UA through FUEL_GAUGE_THERM_VOLTAGE_UV (order matters).
+ * from FUEL_GAUGE_AVG_CURRENT_UA through FUEL_GAUGE_CONSUMED_CAPACITY_UAH (order matters).
  */
 #define FUEL_GAUGE_PROP_X_LIST                                                                     \
 	X(FUEL_GAUGE_AVG_CURRENT_UA)                                                               \
@@ -67,9 +67,10 @@ LOG_MODULE_REGISTER(app);
 	X(FUEL_GAUGE_ADC_MODE)                                                                     \
 	X(FUEL_GAUGE_CC_CONFIG)                                                                    \
 	X(FUEL_GAUGE_STATE_OF_HEALTH)                                                              \
-	X(FUEL_GAUGE_THERM_VOLTAGE_UV)
+	X(FUEL_GAUGE_THERM_VOLTAGE_UV)                                                             \
+	X(FUEL_GAUGE_CONSUMED_CAPACITY_UAH)
 
-BUILD_ASSERT(FUEL_GAUGE_THERM_VOLTAGE_UV + 1 == FUEL_GAUGE_COMMON_COUNT);
+BUILD_ASSERT(FUEL_GAUGE_CONSUMED_CAPACITY_UAH + 1 == FUEL_GAUGE_COMMON_COUNT);
 
 static const char *const fuel_gauge_prop_strs[FUEL_GAUGE_COMMON_COUNT] = {
 #define X(name) [name] = #name,
@@ -289,6 +290,9 @@ static void decode_and_log_property(fuel_gauge_prop_t prop, union fuel_gauge_pro
 	case FUEL_GAUGE_THERM_VOLTAGE_UV:
 		LOG_INF("  Thermistor voltage: %" PRIu32 " μV", value.therm_voltage_uv);
 		break;
+	case FUEL_GAUGE_CONSUMED_CAPACITY_UAH:
+		LOG_INF("  Consumed capacity: %" PRIu32 " μAh", value.consumed_capacity_uah);
+		break;
 	default:
 		LOG_ERR("Unknown fuel gauge property");
 	}
@@ -362,6 +366,7 @@ int main(void)
 			FUEL_GAUGE_CC_CONFIG,
 			FUEL_GAUGE_STATE_OF_HEALTH,
 			FUEL_GAUGE_THERM_VOLTAGE_UV,
+			FUEL_GAUGE_CONSUMED_CAPACITY_UAH,
 		};
 
 		BUILD_ASSERT(ARRAY_SIZE(test_props) == FUEL_GAUGE_COMMON_COUNT);
