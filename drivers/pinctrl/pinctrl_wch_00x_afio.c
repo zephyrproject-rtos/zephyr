@@ -28,6 +28,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint8_t pin = FIELD_GET(CH32V00X_PINCTRL_PIN_MASK, pins->config);
 		uint8_t bit0 = FIELD_GET(CH32V00X_PINCTRL_BASE_MASK, pins->config);
 		uint8_t remap = FIELD_GET(CH32V00X_PINCTRL_RM_MASK, pins->config);
+		bool analog = FIELD_GET(CH32V00X_PINCTRL_ANALOG_FLAG, pins->config);
 		GPIO_TypeDef *regs = wch_afio_pinctrl_regs[port];
 		uint8_t cfg = 0;
 
@@ -41,6 +42,12 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		} else {
 			if (pins->bias_pull_up || pins->bias_pull_down) {
 				cfg |= BIT(3);
+			} else if (analog) {
+				/* Analog input mode */
+				cfg = 0;
+			} else {
+				/* Floating input mode */
+				cfg |= BIT(2);
 			}
 		}
 		regs->CFGLR = (regs->CFGLR & ~(0x0F << (pin * 4))) | (cfg << (pin * 4));
@@ -59,7 +66,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			}
 		}
 
-		AFIO->PCFR1 |= remap << bit0;
+		if (!analog) {
+			AFIO->PCFR1 |= remap << bit0;
+		}
 	}
 
 	return 0;
