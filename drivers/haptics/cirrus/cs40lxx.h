@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_DRIVERS_HAPTICS_CIRRUS_CS40LXX_H_
 #define ZEPHYR_DRIVERS_HAPTICS_CIRRUS_CS40LXX_H_
 
+#include <sys/types.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/pm/device.h>
@@ -184,7 +185,7 @@ int cs40lxx_burst_read(const struct cs40lxx_io_bus *const io_bus, const uint32_t
  *
  * @details Read from a single register, i.e., call @ref cs40lxx_burst_read() with length 1.
  *
- * @param[in] bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
+ * @param[in] io_bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
  * @param[in] addr Hardware register address
  * @param[out] rx Storage for register contents
  *
@@ -204,7 +205,7 @@ int cs40lxx_burst_write(const struct cs40lxx_io_bus *const io_bus, const uint32_
  *
  * @details Write to a single register, i.e., call @ref cs40lxx_burst_write() with length 1.
  *
- * @param[in] bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
+ * @param[in] io_bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
  * @param[in] addr Hardware register address
  * @param[in] val Register content to write
  *
@@ -224,7 +225,7 @@ int cs40lxx_raw_burst_write(const struct cs40lxx_io_bus *const io_bus, const uin
  * @details Write to a single register without changing endianness of register content, i.e., call
  * @ref cs40lxx_raw_burst_write() with length 1.
  *
- * @param[in] bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
+ * @param[in] io_bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
  * @param[in] addr Hardware register address
  * @param[in] val Register content to write
  *
@@ -236,12 +237,11 @@ int cs40lxx_raw_write(const struct cs40lxx_io_bus *const io_bus, const uint32_t 
 /**
  * @brief Write a sequence of multi-register transactions
  *
- * @param[in] bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
+ * @param[in] io_bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
  * @param[in] multi_write Refer to @ref cs40lxx_multi_write
  * @param[in] len Number of multi-register sequences to write
  *
- * @retval 0 if success
- * @retval <0 if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int cs40lxx_multi_write(const struct cs40lxx_io_bus *const io_bus,
 			const struct cs40lxx_multi_write *const multi_write, const uint32_t len);
@@ -252,16 +252,133 @@ int cs40lxx_multi_write(const struct cs40lxx_io_bus *const io_bus,
  * @details Similar to @ref cs40lxx_multi_write() except register contents are written without
  * changing endianness.
  *
- * @param[in] bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
+ * @param[in] io_bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
  * @param[in] multi_write Refer to @ref cs40lxx_multi_write
  * @param[in] len Number of multi-register sequences to write
  *
- * @retval 0 if success
- * @retval <0 if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int cs40lxx_raw_multi_write(const struct cs40lxx_io_bus *const io_bus,
 			    const struct cs40lxx_multi_write *const multi_write,
 			    const uint32_t len);
+
+/**
+ * @brief Poll a register for a specified value
+ *
+ * @param[in] io_bus Pointer to the @ref cs40lxx_bus structure for the haptic device instance
+ * @param[in] addr Hardware register address
+ * @param[in] val Register value to compare against
+ * @param[in] timeout Refer to @ref k_timeout_t
+ *
+ * @return 0 on success, negative errno value on failure.
+ */
+int cs40lxx_poll(const struct cs40lxx_io_bus *const io_bus, const uint32_t addr, const uint32_t val,
+		 const k_timeout_t timeout);
+
+/**
+ * @brief Extension of @ref cs40lxx_burst_read() with firmware register abstraction
+ */
+int cs40lxx_firmware_burst_read(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+				const uint32_t firmware_control, uint32_t *const rx,
+				const uint32_t len);
+
+/**
+ * @brief Extension of @ref cs40lxx_read() with firmware register abstraction
+ */
+int cs40lxx_firmware_read(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+			  const uint32_t firmware_control, uint32_t *const rx);
+
+/**
+ * @brief Extension of @ref cs40lxx_burst_read() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_burst_read_offset(const struct cs40lxx_io_bus *const io_bus,
+				       const uint32_t dev_id, const uint32_t firmware_control,
+				       uint32_t *const rx, const uint32_t len, const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_read() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_read_offset(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+				 const uint32_t firmware_control, uint32_t *const rx,
+				 const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_burst_write() with firmware register abstraction
+ */
+int cs40lxx_firmware_burst_write(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+				 const uint32_t firmware_control, uint32_t *const tx,
+				 const uint32_t len);
+
+/**
+ * @brief Extension of @ref cs40lxx_write() with firmware register abstraction
+ */
+int cs40lxx_firmware_write(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+			   const uint32_t firmware_control, uint32_t val);
+
+/**
+ * @brief Extension of @ref cs40lxx_burst_write() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_burst_write_offset(const struct cs40lxx_io_bus *const io_bus,
+					const uint32_t dev_id, const uint32_t firmware_control,
+					uint32_t *const tx, const uint32_t len, const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_write() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_write_offset(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+				  const uint32_t firmware_control, uint32_t val,
+				  const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_raw_burst_write() with firmware register abstraction
+ */
+int cs40lxx_firmware_raw_burst_write(const struct cs40lxx_io_bus *const io_bus,
+				     const uint32_t dev_id, const uint32_t firmware_control,
+				     const uint32_t *const tx, const uint32_t len);
+
+/**
+ * @brief Extension of @ref cs40lxx_raw_write() with firmware register abstraction
+ */
+int cs40lxx_firmware_raw_write(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+			       const uint32_t firmware_control, const uint32_t val);
+
+/**
+ * @brief Extension of @ref cs40lxx_raw_burst_write() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_raw_burst_write_offset(const struct cs40lxx_io_bus *const io_bus,
+					    const uint32_t dev_id, const uint32_t firmware_control,
+					    const uint32_t *const tx, const uint32_t len,
+					    const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_raw_write() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_raw_write_offset(const struct cs40lxx_io_bus *const io_bus,
+				      const uint32_t dev_id, const uint32_t firmware_control,
+				      const uint32_t val, const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_raw_multi_write() with firmware register abstraction
+ */
+int cs40lxx_firmware_raw_multi_write(const struct cs40lxx_io_bus *const io_bus,
+				     const uint32_t dev_id,
+				     const struct cs40lxx_multi_write *const multi_write,
+				     const uint32_t len);
+
+/**
+ * @brief Extension of @ref cs40lxx_raw_multi_write() with firmware register abstraction and offset
+ */
+int cs40lxx_firmware_raw_multi_write_offset(const struct cs40lxx_io_bus *const io_bus,
+					    const uint32_t dev_id,
+					    const struct cs40lxx_multi_write *const multi_write,
+					    const uint32_t len, const off_t offset);
+
+/**
+ * @brief Extension of @ref cs40lxx_poll() with firmware register abstraction
+ */
+int cs40lxx_firmware_poll(const struct cs40lxx_io_bus *const io_bus, const uint32_t dev_id,
+			  const uint32_t firmware_control, const uint32_t val,
+			  const k_timeout_t timeout);
 
 /** @endcond */
 
