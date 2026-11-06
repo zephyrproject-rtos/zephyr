@@ -101,6 +101,34 @@ ZTEST(spsc, test_produce_consume_wrap_around)
 }
 
 /**
+ * @brief Get previous multibyte elements across queue wraparound.
+ */
+ZTEST(spsc, test_prev)
+{
+	SPSC_DEFINE(queue, uint32_t, 4);
+	uint32_t *entries[3];
+
+	for (size_t round = 0; round < 4; ++round) {
+		for (size_t i = 0; i < ARRAY_SIZE(entries); ++i) {
+			entries[i] = spsc_acquire(&queue);
+			zassert_not_null(entries[i]);
+			*entries[i] = (uint32_t)i;
+		}
+		spsc_produce_all(&queue);
+
+		zassert_is_null(spsc_prev(&queue, entries[0]));
+		for (size_t i = 1; i < ARRAY_SIZE(entries); ++i) {
+			zassert_equal_ptr(spsc_prev(&queue, entries[i]), entries[i - 1]);
+		}
+
+		for (size_t i = 0; i < ARRAY_SIZE(entries); ++i) {
+			zassert_equal_ptr(spsc_consume(&queue), entries[i]);
+			spsc_release(&queue);
+		}
+	}
+}
+
+/**
  * @brief Ensure that integer wraps continue to work.
  *
  * Done by setting all values to UINTPTR_MAX - 2 and writing and reading enough
