@@ -6,4 +6,8 @@ if SOC_SERIES_SIWG917
 config NUM_IRQS
 	default 99
 
+# initialize wuc before gpio
+config WUC_INIT_PRIORITY
+	default 39
+
 endif
