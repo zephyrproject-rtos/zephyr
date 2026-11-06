@@ -27,6 +27,13 @@ Z_THREAD_LOCAL uint32_t is_user_mode;
 
 #endif /* CONFIG_USERSPACE */
 
+#if defined(CONFIG_XTENSA_LIBC)
+#include <sys/reent.h>
+#if !defined(__DYNAMIC_REENT__)
+extern struct _reent *_reent_ptr;
+#endif
+#endif
+
 /**
  * @brief Build the initial context frame of a new thread.
  *
@@ -168,6 +175,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	flush_sz = ROUND_UP(flush_sz, XCHAL_DCACHE_LINESIZE);
 
 	sys_cache_data_flush_and_invd_range(stack, flush_sz);
+#endif
+#if defined(CONFIG_XTENSA_LIBC)
+	_init_reent(&thread->arch.reent);
 #endif
 }
 
