@@ -271,6 +271,20 @@ File Header
 
 The file header consists of the following fields:
 
+.. mermaid::
+   :caption: Core dump file header layout
+   :alt: Core dump file header in file order: ID (2 bytes), header version
+         (2 bytes), target code (2 bytes), pointer size (1 byte), flags (1 byte)
+         and fatal error reason (4 bytes).
+
+   packet
+     0-15: "ID ('Z', 'E')"
+     16-31: "Header version"
+     32-47: "Target code"
+     48-55: "Pointer size"
+     56-63: "Flags"
+     64-95: "Fatal error reason"
+
 .. list-table:: Core dump binary file header
    :widths: 2 1 7
    :header-rows: 1
