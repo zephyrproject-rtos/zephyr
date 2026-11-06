@@ -49,9 +49,15 @@ typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 #define I2C_DW_SCL_STUCK   (1 << 6)
 #define I2C_DW_SDA_STUCK   (1 << 7)
 
-#define I2C_DW_ERR_MASK (I2C_DW_CMD_ERROR | I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_NACK)
+#define I2C_DW_ERR_MASK                                                                            \
+	(I2C_DW_CMD_ERROR | I2C_DW_TX_ABRT | I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_NACK)
 
 #define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_USER_ABRT)
+
+#define I2C_DW_FLUSH_ADDR           0x7fU
+#define I2C_DW_MAX_RECOVERY_RETRIES (IS_ENABLED(CONFIG_I2C_DW_BUS_CLEAR) ? 8U : 1U)
+#define I2C_DW_SDA_RECOV_POLL_COUNT 20U
+#define I2C_DW_SDA_RECOV_DELAY_US   10U
 
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 #define DW_ENABLE_TX_INT_I2C_CONTROLLER                                                            \
