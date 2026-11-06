@@ -6,12 +6,14 @@
 
 #include <zephyr/device.h>
 #include <soc.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/barrier.h>
 
 #define DT_DRV_COMPAT microchip_dmac_g3_dma
 
@@ -153,6 +155,13 @@ void dmac_desc_freeall(const struct device *dev,
 	channel_config_data->desc_head = DMAC_NULLP;
 }
 
+static int dmac_desc_flush(dma_descriptor_registers_t *desc)
+{
+	int ret = sys_cache_data_flush_range(desc, sizeof(*desc));
+
+	return (ret == -ENOTSUP) ? 0 : ret;
+}
+
 /* Check if dmac channel is busy */
 static bool dmac_ch_is_busy(dma_channel_registers_t *channel_regs)
 {
@@ -292,10 +301,10 @@ static int dmac_setup_channel(const struct device *dev, uint32_t channel,
 	struct dma_mchp_channel_config *channel_config_data =
 		&dev_data->dma_channel_config[channel];
 	uint32_t block_count = config->block_count;
+	int ret;
 
 	/* Start using the channel */
 	atomic_test_and_set_bit(dev_data->dma_ctx.atomic, channel);
-	channel_regs->DMA_CHNXT = (uint32_t)desc_list;
 	channel_config_data->desc_head = desc_list;
 	channel_config_data->is_cyclic = (config->cyclic != 0);
 
@@ -303,10 +312,16 @@ static int dmac_setup_channel(const struct device *dev, uint32_t channel,
 	while (block_count != 0) {
 		block_count--;
 		if (dmac_setup_desc(desc_config, desc_list, config) != 0) {
+			dmac_desc_freeall(dev, channel_config_data);
 			return -EINVAL;
 		}
 		if ((config->cyclic != 0) && (block_count == 0)) {
 			desc_list->DMA_BDNXT = (uint32_t)(channel_config_data->desc_head);
+		}
+		ret = dmac_desc_flush(desc_list);
+		if (ret != 0) {
+			dmac_desc_freeall(dev, channel_config_data);
+			return ret;
 		}
 		desc_config = desc_config->next_block;
 		desc_list = (dma_descriptor_registers_t *)(desc_list->DMA_BDNXT);
@@ -324,6 +339,9 @@ static int dmac_setup_channel(const struct device *dev, uint32_t channel,
 	channel_config_data->cb = config->dma_callback;
 	channel_config_data->user_data = config->user_data;
 	channel_config_data->is_configured = true;
+
+	barrier_dsync_fence_full();
+	channel_regs->DMA_CHNXT = (uint32_t)channel_config_data->desc_head;
 
 	return 0;
 }
@@ -364,6 +382,7 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 	/* Free the descriptors allocated for this channel before. */
 	channel_config_data = &dev_data->dma_channel_config[channel];
 	dmac_desc_freeall(dev, channel_config_data);
+	channel_config_data->is_configured = false;
 
 	/* Pre-allocate enough descriptors from pool. If not available, return error.
 	 * This is done upfront, since the pool is shared,
@@ -396,11 +415,7 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 		return -EINVAL;
 	}
 
-	if (dmac_setup_channel(dev, channel, config, desc_list) != 0) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return dmac_setup_channel(dev, channel, config, desc_list);
 }
 
 /* Start a dma transfer */
@@ -487,6 +502,7 @@ static int dma_mchp_reload(const struct device *dev, uint32_t channel, uint32_t 
 	struct dma_mchp_dev_data *const dev_data = dev->data;
 	dma_registers_t *dmac_reg = ((const struct dma_mchp_dev_config *)(dev)->config)->regs;
 	dma_channel_registers_t *channel_regs = &(dmac_reg->CHANNEL[channel]);
+	int ret;
 
 	/* Validate channel number */
 	if (channel >= dev_data->dma_ctx.dma_channels) {
@@ -515,6 +531,11 @@ static int dma_mchp_reload(const struct device *dev, uint32_t channel, uint32_t 
 		desc->DMA_BDDSA = dst;
 		desc->DMA_BDXSIZ &= ~DMA_BDXSIZ_BLKSZ_Msk;
 		desc->DMA_BDXSIZ |= DMA_BDXSIZ_BLKSZ(size);
+		ret = dmac_desc_flush(desc);
+		if (ret != 0) {
+			return ret;
+		}
+		barrier_dsync_fence_full();
 	} else {
 		channel_regs->DMA_CHSSA = src;
 		channel_regs->DMA_CHDSA = dst;
