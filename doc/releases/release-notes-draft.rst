@@ -38,6 +38,12 @@ Security Vulnerability Related
   removed APIs and options, boards, shields, drivers and samples are generated
   into the change inventory at release time.
 
+Deprecated APIs and options
+===========================
+
+* :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE`:
+  see :ref:`migration guide<migration_4.6>`.
+
 Libraries / Subsystems
 **********************
 
