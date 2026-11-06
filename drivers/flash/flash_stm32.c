@@ -119,14 +119,8 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 
 static void flash_stm32_flush_caches(const struct device *dev, off_t offset, size_t len)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
-	defined(CONFIG_SOC_SERIES_STM32G0X) || defined(CONFIG_SOC_SERIES_STM32L5X) ||              \
-	defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) ||              \
-	defined(CONFIG_SOC_SERIES_STM32H5X)
 	ARG_UNUSED(dev);
-	ARG_UNUSED(offset);
-	ARG_UNUSED(len);
-#elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                \
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X) ||                \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_SOC_SERIES_STM32G4X)
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -139,10 +133,9 @@ static void flash_stm32_flush_caches(const struct device *dev, off_t offset, siz
 		regs->ACR &= ~FLASH_ACR_DCRST;
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
-#elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS +
-						  (uintptr_t)offset), len);
-#endif
+#endif /* CONFIG_SOC_SERIES_* */
+
+	sys_cache_data_invd_range((void *)(FLASH_STM32_BASE_ADDRESS + offset), len);
 }
 
 static int flash_stm32_read(const struct device *dev, off_t offset, void *data, size_t len)
