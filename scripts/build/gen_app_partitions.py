@@ -198,7 +198,7 @@ class LDScriptTemlate:
     """
 
     library_data_template = """
-            \"*{lib}:*\"(.data .data.* .sdata .sdata.*)
+            {lib_pattern}(.data .data.* .sdata .sdata.*)
     """
 
     bss_template = """
@@ -207,7 +207,7 @@ class LDScriptTemlate:
     """
 
     library_bss_template = """
-            \"*{lib}:*\"(.bss .bss.* .sbss .sbss.* COMMON COMMON.*)
+            {lib_pattern}(.bss .bss.* .sbss .sbss.* COMMON COMMON.*)
     """
 
     footer_template = """
@@ -459,6 +459,14 @@ def generate_final(linker_file, partitions, lnkr_sect=""):
     generate_final_linker(template, linker_file, partitions, lnkr_sect)
 
 
+def library_pattern(library):
+    """Keep wildcard matching active unless the name needs script quoting."""
+    pattern = f"*{library}:*"
+    if re.fullmatch(r"[-A-Za-z0-9_./+*?\[\]]+", library):
+        return pattern
+    return f'"{pattern}"'
+
+
 def generate_final_linker(template, linker_file, partitions, lnkr_sect):
     string = ""
     props = {'section': lnkr_sect, 'SECTION': lnkr_sect.upper()}
@@ -473,12 +481,14 @@ def generate_final_linker(template, linker_file, partitions, lnkr_sect):
                 for lib in item[LIB]:
                     lib_props = part_props
                     lib_props["lib"] = lib
+                    lib_props["lib_pattern"] = library_pattern(lib)
                     string += template.library_data_template.format(**lib_props)
             string += template.bss_template.format(**part_props)
             if LIB in item:
                 for lib in item[LIB]:
                     lib_props = part_props
                     lib_props["lib"] = lib
+                    lib_props["lib_pattern"] = library_pattern(lib)
                     string += template.library_bss_template.format(**lib_props)
             string += template.footer_template.format(**part_props)
             size_string += template.size_cal_string.format(**part_props)
