@@ -34,9 +34,8 @@ device.
 
 The default :zephyr_file:`samples/subsys/tracing/basic/prj.conf` is a complete,
 working baseline: it enables tracing with the :ref:`CTF <ctf>` format and the
-RAM backend, which needs no transport or devicetree setup and therefore builds
-and runs on any board. Building the sample with no extra options already
-produces a trace.
+Semihosting backend. The trace is written to a ``tracing.bin`` file on the host,
+so the default build needs a target that supports semihosting.
 
 To stream the trace over a transport, or to use a different format, layer one of
 the ``prj_*.conf`` overlays on top of the baseline with ``EXTRA_CONF_FILE``.
@@ -52,8 +51,13 @@ can be combined with it (and with board configuration) without repetition:
      - Notes
    * - ``prj.conf`` (default)
      - CTF
+     - Semihosting
+     - Binary CTF written to ``tracing.bin`` on the host. Needs QEMU or a debugger with
+       semihosting.
+   * - ``prj_ram.conf``
+     - CTF
      - RAM
-     - Binary CTF buffered in RAM, dumped with a debugger. Works on any board.
+     - Binary CTF buffered in RAM, dumped with a debugger. Target independent.
    * - ``prj_uart.conf``
      - test
      - UART
@@ -90,14 +94,29 @@ can be combined with it (and with board configuration) without repetition:
 Capturing and decoding the output may also require host-side tooling, noted in
 each section below.
 
-Usage for the default (RAM) configuration
-*****************************************
+Usage for the default (semihosting) configuration
+*************************************************
 
-Build the baseline for any board, with no extra options:
+Build and run the baseline on a semihosting-capable target, with no extra options:
+
+.. zephyr-app-commands::
+       :zephyr-app: samples/subsys/tracing/basic
+       :board: qemu_cortex_m3
+       :goals: run
+       :compact:
+
+The CTF stream is written to ``tracing.bin`` in the build directory. Decode it
+as described in `Decoding a CTF trace`_.
+
+Usage for the (RAM) configuration
+*********************************
+
+Build the application with the RAM overlay file:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/tracing/basic
 	:board: qemu_x86
+	:gen-args: -DEXTRA_CONF_FILE=prj_ram.conf
 	:goals: build
 	:compact:
 
@@ -107,7 +126,7 @@ buffer to a file. For example, from GDB:
 
 .. code-block:: console
 
-	dump binary memory channel0_0 &ram_tracing &ram_tracing+sizeof(ram_tracing)
+	dump binary memory channel0_0 ram_tracing ram_tracing+sizeof(ram_tracing)
 
 The size of the buffer is controlled by :kconfig:option:`CONFIG_RAM_TRACING_BUFFER_SIZE`.
 The dumped file is a CTF stream; decode it as described in
@@ -267,7 +286,7 @@ The GPIO callbacks print to the console as the GPIO API is exercised.
 Decoding a CTF trace
 ********************
 
-The CTF backends (UART, USB, POSIX and RAM) emit a binary stream that follows
+The CTF backends (SEMIHOST, UART, USB, POSIX and RAM) emit a binary stream that follows
 the metadata in :zephyr_file:`subsys/tracing/ctf/tsdl/metadata`. To view it,
 place the captured stream next to that metadata file and open it with a
 CTF-aware tool such as `babeltrace2 <https://babeltrace.org/>`_:
