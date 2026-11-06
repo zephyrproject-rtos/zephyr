@@ -204,7 +204,14 @@ config NRF_WIFI_LOW_POWER
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	bool "TCP/IP checksum offload"
 	depends on NET_CHECKSUM_OFFLOAD
-	default y
+	help
+	  Let the nRF70 calculate and verify IPv4, TCP and UDP checksums.
+
+	  With firmware 1.2.14.11 the nRF70 drops received TCP segments whose
+	  checksum field is 0xFFFF, although they pass checksum verification
+	  (RFC 1071). Every retransmission carries the same checksum, so the
+	  connection stalls permanently. Enable this only with firmware that
+	  delivers such segments.
 
 config NRF70_REG_DOMAIN
 	string "The ISO/IEC alpha2 country code for the country in which this device is currently operating. Default 00 (World regulatory)"
