@@ -26,9 +26,11 @@ config GPIO_PCA_SERIES_INIT_PRIORITY
 
 config GPIO_PCA_SERIES_INTERRUPT
 	bool "Interrupt enable"
+	depends on MULTITHREADING
 	default y
 	help
-	  Enable interrupt support in PCA_SERIES driver.
+	  Enable interrupt support in PCA_SERIES driver. Interrupt callbacks
+	  use the system workqueue and require multithreading.
 	  Note that the PCA_SERIES cannot reliably detect
 	  short-pulse interrupts due to its design.
 

@@ -46,7 +46,8 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 #include <esp_private/sleep_retention.h>
 #endif
 
-#if defined(CONFIG_I2C_TARGET) && SOC_I2C_SUPPORT_SLAVE && SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+#if defined(CONFIG_I2C_TARGET) && defined(CONFIG_MULTITHREADING) && SOC_I2C_SUPPORT_SLAVE && \
+	SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
 #define I2C_ESP32_TARGET_ENABLED 1
 #else
 #define I2C_ESP32_TARGET_ENABLED 0
@@ -76,8 +77,10 @@ enum i2c_status_t {
 
 struct i2c_esp32_data {
 	i2c_hal_context_t hal;
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem cmd_sem;
 	struct k_sem transfer_sem;
+#endif
 	volatile enum i2c_status_t status;
 	uint32_t dev_config;
 	int cmd_idx;
@@ -101,6 +104,42 @@ struct i2c_esp32_data {
 #endif
 #endif
 };
+
+static void i2c_esp32_isr(void *arg);
+
+static inline void i2c_esp32_lock(struct i2c_esp32_data *data)
+{
+#ifdef CONFIG_MULTITHREADING
+	k_sem_take(&data->transfer_sem, K_FOREVER);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
+static inline void i2c_esp32_unlock(struct i2c_esp32_data *data)
+{
+#ifdef CONFIG_MULTITHREADING
+	k_sem_give(&data->transfer_sem);
+#else
+	ARG_UNUSED(data);
+#endif
+}
+
+#ifndef CONFIG_MULTITHREADING
+static bool IRAM_ATTR i2c_esp32_poll_event(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	uint32_t status;
+
+	i2c_ll_get_intr_mask(data->hal.dev, &status);
+	if (status == 0U) {
+		return false;
+	}
+
+	i2c_esp32_isr((void *)dev);
+	return true;
+}
+#endif
 
 #if CONFIG_PM
 static void i2c_esp32_pm_policy_state_lock_get(struct i2c_esp32_data *data)
@@ -323,7 +362,11 @@ static int i2c_esp32_recover(const struct device *dev)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-	k_sem_take(&data->transfer_sem, K_FOREVER);
+	if (!IS_ENABLED(CONFIG_MULTITHREADING) && k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	i2c_esp32_lock(data);
 
 #if CONFIG_PM
 	i2c_esp32_pm_policy_state_lock_get(data);
@@ -341,7 +384,7 @@ static int i2c_esp32_recover(const struct device *dev)
 #endif
 #endif
 
-	k_sem_give(&data->transfer_sem);
+	i2c_esp32_unlock(data);
 
 	return 0;
 }
@@ -399,6 +442,10 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	uint32_t bitrate;
 
+	if (!IS_ENABLED(CONFIG_MULTITHREADING) && k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
 		LOG_ERR("Only I2C Controller mode supported.");
 		return -ENOTSUP;
@@ -419,13 +466,13 @@ static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 		return -ENOTSUP;
 	}
 
-	k_sem_take(&data->transfer_sem, K_FOREVER);
+	i2c_esp32_lock(data);
 
 	data->dev_config = dev_config;
 
 	i2c_esp32_configure_bitrate(dev, bitrate);
 
-	k_sem_give(&data->transfer_sem);
+	i2c_esp32_unlock(data);
 
 	return 0;
 }
@@ -463,7 +510,12 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 	i2c_ll_start_trans(data->hal.dev);
 	data->cmd_idx = 0;
 
+#ifdef CONFIG_MULTITHREADING
 	ret = k_sem_take(&data->cmd_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC));
+#else
+	ret = WAIT_FOR(i2c_esp32_poll_event(dev),
+		       I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC, k_busy_wait(1)) ? 0 : -EAGAIN;
+#endif
 	if (ret != 0) {
 		/* If the I2C target is powered off or the SDA/SCL is */
 		/* connected to ground, for example, I2C hw FSM would get */
@@ -701,6 +753,10 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
 
+	if (!IS_ENABLED(CONFIG_MULTITHREADING) && k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
 	while (i2c_ll_is_bus_busy(data->hal.dev)) {
 		k_busy_wait(1);
 		if (timeout-- == 0) {
@@ -740,7 +796,7 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 		return ret;
 	}
 
-	k_sem_take(&data->transfer_sem, K_FOREVER);
+	i2c_esp32_lock(data);
 
 #if CONFIG_PM
 	i2c_esp32_pm_policy_state_lock_get(data);
@@ -799,7 +855,7 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 #endif
 #endif
 
-	k_sem_give(&data->transfer_sem);
+	i2c_esp32_unlock(data);
 
 	return ret;
 }
@@ -1073,7 +1129,9 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 		data->status = I2C_STATUS_DONE;
 	}
 
+#ifdef CONFIG_MULTITHREADING
 	k_sem_give(&data->cmd_sem);
+#endif
 }
 
 #if I2C_ESP32_TARGET_ENABLED
@@ -1088,7 +1146,7 @@ static int i2c_esp32_target_register(const struct device *dev, struct i2c_target
 		return -EBUSY;
 	}
 
-	k_sem_take(&data->transfer_sem, K_FOREVER);
+	i2c_esp32_lock(data);
 
 	data->target_cfg = cfg;
 	data->target_reading = false;
@@ -1111,7 +1169,7 @@ static int i2c_esp32_target_register(const struct device *dev, struct i2c_target
 	i2c_esp32_pm_policy_state_lock_get(data);
 #endif
 
-	k_sem_give(&data->transfer_sem);
+	i2c_esp32_unlock(data);
 
 	return 0;
 }
@@ -1127,7 +1185,7 @@ static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_targ
 		return -EINVAL;
 	}
 
-	k_sem_take(&data->transfer_sem, K_FOREVER);
+	i2c_esp32_lock(data);
 
 	i2c_esp32_target_teardown(dev);
 
@@ -1150,7 +1208,7 @@ static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_targ
 	i2c_esp32_pm_policy_state_lock_put(data);
 #endif
 
-	k_sem_give(&data->transfer_sem);
+	i2c_esp32_unlock(data);
 
 	return 0;
 }
@@ -1234,16 +1292,15 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
-	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			i2c_esp32_isr,
-			(void *)dev,
-			NULL);
-
-	if (ret != 0) {
-		LOG_ERR("could not allocate interrupt (err %d)", ret);
-		return ret;
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		ret = esp_intr_alloc(config->irq_source,
+				     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+				     i2c_esp32_isr, (void *)dev, NULL);
+		if (ret != 0) {
+			LOG_ERR("could not allocate interrupt (err %d)", ret);
+			return ret;
+		}
 	}
 
 	i2c_hal_init(&data->hal, config->index);
@@ -1297,8 +1354,11 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		.hal = {									   \
 			.dev = (i2c_dev_t *) DT_REG_ADDR(I2C(idx)),				   \
 		},										   \
-		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),		   \
-		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),	   \
+		IF_ENABLED(CONFIG_MULTITHREADING,					   \
+			(.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),))    \
+		IF_ENABLED(CONFIG_MULTITHREADING,					   \
+			(.transfer_sem =						   \
+			 Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),))	   \
 	};											   \
 												   \
 	static const struct i2c_esp32_config i2c_esp32_config_##idx = {				   \
