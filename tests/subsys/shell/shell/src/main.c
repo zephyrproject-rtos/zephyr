@@ -792,7 +792,7 @@ ZTEST(sh, test_shell_readline_success)
 
 	/* Verify the result */
 	zassert_equal(readline_len, 5, "Expected 5 bytes read, got %d", readline_len);
-	zassert_str_equal(readline_buf, "hello", "Input mismatch: got '%s'", readline_buf);
+	zassert_str_equal((char *)readline_buf, "hello", "Input mismatch: got '%s'", readline_buf);
 
 	/* Clean up */
 	shell_backend_dummy_clear_input(sh);
