@@ -200,6 +200,15 @@ bool lll_scan_ext_tgta_check(const struct lll_scan *lll, bool pri, bool is_init,
 		return true;
 	}
 
+	/* The AUX_ADV_IND of connectable and scannable advertising has the
+	 * AdvA (Core Spec v6.3, Vol 6, Part B, Tables 2.4 and 2.5)
+	 */
+	if (!pri && (pdu->adv_ext_ind.adv_mode != 0U) &&
+	    ((pdu->adv_ext_ind.ext_hdr_len == 0U) ||
+	     !pdu->adv_ext_ind.ext_hdr.adv_addr)) {
+		return false;
+	}
+
 	if (pdu->len <
 	    PDU_AC_EXT_HEADER_SIZE_MIN + sizeof(struct pdu_adv_ext_hdr) +
 	    ADVA_SIZE) {
