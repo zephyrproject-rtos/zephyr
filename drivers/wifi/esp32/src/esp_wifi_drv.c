@@ -109,6 +109,10 @@ struct esp32_wifi_runtime {
 	uint8_t ap_connection_cnt;
 	struct k_mutex send_lock;
 	struct k_sem tx_done_sem;
+	/* Received frames dropped because no net_pkt/net_buf was free, since
+	 * boot or the last Wi-Fi statistics reset
+	 */
+	uint32_t rx_nobuf_drops;
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	struct wifi_enterprise_creds_params enterprise_creds;
 	bool enterprise_enabled;
@@ -385,13 +389,37 @@ out:
 	return ret;
 }
 
+/*
+ * The receive callbacks run in the Wi-Fi library's task, which also handles
+ * management frames and transmit completions. Never block there waiting for
+ * a buffer: drop the frame like a full receive ring would, and let the upper
+ * layers recover.
+ */
+static struct net_pkt *esp32_wifi_rx_alloc(struct esp32_wifi_runtime *data, struct net_if *iface,
+					   uint16_t len)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
+	if (pkt == NULL) {
+		data->rx_nobuf_drops++;
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+		data->stats.overrun_count++;
+		data->stats.errors.rx++;
+#endif
+		LOG_WRN_RATELIMIT("RX frame dropped, no free net buffer (%u dropped)",
+				  data->rx_nobuf_drops);
+	}
+
+	return pkt;
+}
+
 static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
+	pkt = esp32_wifi_rx_alloc(&esp32_data, esp32_wifi_iface, len);
 	if (pkt == NULL) {
-		LOG_ERR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
 		return -EIO;
 	}
@@ -443,11 +471,9 @@ static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len,
-					   NET_AF_UNSPEC, 0, K_MSEC(100));
+	pkt = esp32_wifi_rx_alloc(&esp32_ap_sta_data, esp32_wifi_iface_ap, len);
 	if (pkt == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("Failed to get net buffer");
 		return -EIO;
 	}
 
@@ -2283,6 +2309,7 @@ static int esp32_wifi_get_stats(const struct device *dev __unused,
 	stats->multicast.tx = data->stats.multicast.tx;
 	stats->sta_mgmt.beacons_rx = data->stats.sta_mgmt.beacons_rx;
 	stats->sta_mgmt.beacons_miss = data->stats.sta_mgmt.beacons_miss;
+	stats->overrun_count = data->stats.overrun_count;
 
 	return 0;
 }
@@ -2293,6 +2320,7 @@ static int esp32_wifi_reset_stats(const struct device *dev __unused,
 	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 
 	memset(&data->stats, 0, sizeof(data->stats));
+	data->rx_nobuf_drops = 0;
 
 	return 0;
 }
