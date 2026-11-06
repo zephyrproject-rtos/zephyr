@@ -117,17 +117,20 @@ def pytest_addoption(parser: pytest.Parser):
     twister_harness_group.addoption(
         '--pre-script',
         metavar='PATH',
-        help='Script executed before flashing and connecting to serial.'
+        help='Deprecated: use hooks in the hardware map. '
+             'Script executed before flashing and connecting to serial.'
     )
     twister_harness_group.addoption(
         '--post-flash-script',
         metavar='PATH',
-        help='Script executed after flashing.'
+        help='Deprecated: use hooks in the hardware map. '
+             'Script executed after flashing.'
     )
     twister_harness_group.addoption(
         '--post-script',
         metavar='PATH',
-        help='Script executed after closing serial connection.'
+        help='Deprecated: use hooks in the hardware map. '
+             'Script executed after closing serial connection.'
     )
     twister_harness_group.addoption(
         '--dut-scope',
