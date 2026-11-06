@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bluetooth HCI controller running on a Silicon Labs network
+  co-processor. The node is a child of the "silabs,ncp" device, the HCI
+  packets (H4 framing) are carried by a dedicated CPC endpoint.
+
+  Example:
+
+    &ncp {
+        ncp_hci: bt-hci {
+            compatible = "silabs,ncp-hci";
+        };
+    };
+
+compatible: "silabs,ncp-hci"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "ncp"
+  bt-hci-bus:
+    default: "virtual"
