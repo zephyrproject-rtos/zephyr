@@ -27,7 +27,9 @@ child-binding:
   properties:
     label:
       type: string
-      description: Name of the corresponding UMP Function block
+      description: |
+        Name of this Group Terminal Block, given to the host as its string
+        descriptor, and of the corresponding UMP Function block
 
     reg:
       type: array
