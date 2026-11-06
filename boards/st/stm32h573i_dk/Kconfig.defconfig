@@ -13,6 +13,10 @@ configdefault ETH_DRIVER
 configdefault SDMMC_STM32_CLOCK_CHECK
 	default n
 
+# Required by the WM8904 MCLK fixed-clock node (revision D1)
+configdefault CLOCK_CONTROL_FIXED_RATE_CLOCK
+	default y if AUDIO_CODEC_WM8904
+
 if DISPLAY
 
 # Required to enable LCD backlight
