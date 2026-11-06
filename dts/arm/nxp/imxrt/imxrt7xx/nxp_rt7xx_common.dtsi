@@ -20,6 +20,14 @@
 				  0x20000000 0x30000000 0x780000>;
 		};
 
+		gpu: gpu@40486000 {
+			compatible = "vsi,gpu-gc555";
+			reg = <0x40486000 0x4000>;
+			interrupts = <57 0>;
+			clocks = <&clkctl2 2>;
+			status = "okay";
+		};
+
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
 		};

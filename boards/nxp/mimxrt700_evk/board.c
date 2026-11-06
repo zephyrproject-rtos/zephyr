@@ -246,7 +246,8 @@ void board_early_init_hook(void)
 	edma_enable_all_request(1);
 #endif
 
-#ifdef CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0
+#if defined(CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0) || \
+	defined(CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0_EXTMEM)
 	CLOCK_AttachClk(kOSC_CLK_to_FCCLK0);
 	CLOCK_SetClkDiv(kCLOCK_DivFcclk0Clk, 1U);
 #endif
