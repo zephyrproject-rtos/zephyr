@@ -388,6 +388,7 @@ SECTIONS
     *libdrivers__timer.a:esp32_sys_timer.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_core.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_complete.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:cbprintf_complete.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:printk.*(.literal.printk .literal.vprintk .literal.char_out .text.printk .text.vprintk .text.char_out)
     *libzephyr.a:log_msg.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_list.*(.literal .text .literal.* .text.*)
@@ -625,7 +626,6 @@ SECTIONS
      * when flash cache is disabled */
     *libkernel.a:fatal.*(.rodata .rodata.* .srodata .srodata.*)
     *libkernel.a:init.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:cbprintf_complete*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:log_core.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:log_backend_uart.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:log_output.*(.rodata .rodata.* .srodata .srodata.*)
