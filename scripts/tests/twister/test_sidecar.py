@@ -734,3 +734,171 @@ def test_bumble_stops_everything_before_it_reads_results(tmp_path):
     assert order == ['peer', 'controllers', 'results']
     assert sidecar._proc is None
     assert instance.status == TwisterStatus.PASS
+
+
+def _bumble_device_commands(tmp_path, config):
+    """What setup() makes the guest and the one peer run with ``config``."""
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _bumble_instance(tmp_path, {"bumble": config})
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    controllers = _fake_controllers(b'HCI0 00:00:01:00:00:01 40001\nHCI1 00:00:01:00:00:02 40002\n')
+    with (
+        mock.patch("importlib.util.find_spec", return_value=mock.Mock()),
+        mock.patch("subprocess.Popen", side_effect=[controllers, mock.Mock(pid=1)]) as popen_mock,
+    ):
+        assert sidecar.setup() is True
+    peer_command = popen_mock.call_args_list[1].args[0]
+
+    sidecar._peers = []
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+    return instance.handler.extra_test_args, peer_command
+
+
+def test_bumble_adds_the_controller_option_a_test_names(tmp_path):
+    guest, peer = _bumble_device_commands(
+        tmp_path, {"devices": ["-test=c::x", "-test=p::x"], "controller_option": "--hci"}
+    )
+
+    assert guest == ['--hci=127.0.0.1:40001', '-test=c::x']
+    assert peer[1:] == ['--hci=127.0.0.1:40002', '-test=p::x']
+
+
+def test_bumble_adds_nothing_for_an_empty_controller_option(tmp_path):
+    guest, peer = _bumble_device_commands(
+        tmp_path,
+        {"devices": ["--bt-dev={ctrl1} -test=c::x", "--bt-dev={ctrl0}"], "controller_option": ""},
+    )
+
+    # Written by the test, which also chose the controllers the other way round.
+    assert guest == ['--bt-dev=127.0.0.1:40002', '-test=c::x']
+    assert peer[1:] == ['--bt-dev=127.0.0.1:40001']
+
+
+def test_bumble_placeholders_do_not_change_what_is_added(tmp_path):
+    # Naming a controller, or braces that only look like it, is no request to
+    # leave the option out.
+    guest, peer = _bumble_device_commands(
+        tmp_path, {"devices": ["--other={ctrl1}", "--label={{ctrl0}}"]}
+    )
+
+    assert guest == ['--bt-dev=127.0.0.1:40001', '--other=127.0.0.1:40002']
+    assert peer[1:] == ['--bt-dev=127.0.0.1:40002', '--label={ctrl0}']
+
+
+def test_bumble_config_schema_takes_strings_and_mappings():
+    import jsonschema
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    schema = BumbleSidecar.config_schema()
+    jsonschema.validate(
+        {
+            'devices': ['-test=a::b', {'args': '-test=c::d', 'image': 'x.y'}],
+            'controller_option': '',
+        },
+        schema,
+    )
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate({'devices': [{'args': '-test=c::d', 'imag': 'x.y'}]}, schema)
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate({'devices': [7]}, schema)
+
+
+def _bumble_with_required_peer(tmp_path, image):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+    from twisterlib.testsuitedata import RequiredApplication
+
+    instance = _bumble_instance(
+        tmp_path,
+        {"bumble": {"devices": ["-test=c::x", {"args": "-test=p::x", "image": image}]}},
+    )
+    instance.testsuite.required_applications = [
+        RequiredApplication(application='other.app'),
+        RequiredApplication(application='peer.app'),
+    ]
+    instance.required_build_dirs = ['/builds/other', '/builds/peer']
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+    return instance, sidecar
+
+
+def test_bumble_runs_a_peer_from_a_required_application(tmp_path):
+    _, sidecar = _bumble_with_required_peer(tmp_path, 'peer.app')
+    assert sidecar.devices == ["-test=c::x", "-test=p::x"]
+
+    controllers = _fake_controllers(b'HCI0 00:00:01:00:00:01 40001\nHCI1 00:00:01:00:00:02 40002\n')
+    with (
+        mock.patch("importlib.util.find_spec", return_value=mock.Mock()),
+        mock.patch("subprocess.Popen", side_effect=[controllers, mock.Mock(pid=1)]) as popen_mock,
+    ):
+        assert sidecar.setup() is True
+
+    assert popen_mock.call_args_list[1].args[0] == [
+        os.path.join('/builds/peer', 'zephyr', 'zephyr.exe'),
+        '--bt-dev=127.0.0.1:40002',
+        '-test=p::x',
+    ]
+
+    sidecar._peers = []
+    with mock.patch("twisterlib.sidecars.bumble.terminate_process"):
+        sidecar.teardown()
+
+
+def test_bumble_setup_rejects_an_image_that_is_not_required(tmp_path):
+    instance, sidecar = _bumble_with_required_peer(tmp_path, 'missing.app')
+
+    with (
+        mock.patch("importlib.util.find_spec", return_value=mock.Mock()),
+        mock.patch("subprocess.Popen") as popen_mock,
+    ):
+        assert sidecar.setup() is False
+
+    popen_mock.assert_not_called()
+    assert instance.status == TwisterStatus.ERROR
+    assert instance.reason == "image 'missing.app' is not among the required applications"
+
+
+def test_bumble_setup_rejects_an_image_for_the_guest(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _bumble_instance(
+        tmp_path, {"bumble": {"devices": [{"args": "-test=c::x", "image": "peer.app"}]}}
+    )
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    with (
+        mock.patch("importlib.util.find_spec", return_value=mock.Mock()),
+        mock.patch("subprocess.Popen") as popen_mock,
+    ):
+        assert sidecar.setup() is False
+
+    popen_mock.assert_not_called()
+    assert instance.status == TwisterStatus.ERROR
+
+
+def test_bumble_finds_the_executable_of_a_sysbuild_build(tmp_path):
+    _, sidecar = _bumble_with_required_peer(tmp_path, 'peer.app')
+    build_dir = tmp_path / 'peer-build'
+    (build_dir / 'app').mkdir(parents=True)
+    (build_dir / 'domains.yaml').write_text(
+        f"""\
+default: app
+build_dir: {build_dir}
+domains:
+  - name: app
+    build_dir: {build_dir / 'app'}
+flash_order:
+  - app
+"""
+    )
+    sidecar.instance.required_build_dirs = ['/builds/other', str(build_dir)]
+
+    assert sidecar._executable(1) == str(build_dir / 'app' / 'zephyr' / 'zephyr.exe')
+    # Without sysbuild the executable is where it has always been.
+    assert sidecar._executable(0) == os.path.join(
+        sidecar.instance.build_dir, 'zephyr', 'zephyr.exe'
+    )

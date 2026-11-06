@@ -1287,10 +1287,15 @@ each peer printed: the cases a peer ran are reported, and a peer that fails,
 ends without a verdict or exits with an error fails the test. So does a peer
 that is still running when the scenario's timeout has passed and ten seconds
 after the guest ended.
+
 ``{addrN}`` and ``{ctrlN}`` placeholders in the device argument strings expand
-to controller N's Bluetooth device address and TCP endpoint. Bumble must be
-importable by the Python interpreter running Twister; otherwise the test is
-built but not run:
+to controller N's Bluetooth device address and TCP endpoint. A guest with
+another HCI driver names its option with ``controller_option``; an empty string
+adds nothing, for a test that passes ``{ctrlN}`` itself. A peer written as a
+mapping of ``args`` and ``image`` runs the application that ``image`` names
+among the scenario's ``required_applications`` instead of the test's own
+image. Bumble must be importable by the Python interpreter running Twister;
+otherwise the test is built but not run:
 
 .. code-block:: yaml
 
