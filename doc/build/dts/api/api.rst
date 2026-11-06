@@ -523,6 +523,9 @@ device.
        WS2812 GPIO driver
    * - zephyr,log-ipc
      - Selects the IPC device used by the logging subsystem's IPC service backend.
+   * - zephyr,log-partition
+     - Selects the flash partition the logging subsystem's flash backend stores
+       log messages in.
    * - zephyr,log-uart
      - Sets the UART device(s) used by the logging subsystem's UART backend.
        If defined, the UART log backend would output to the devices listed in this node.

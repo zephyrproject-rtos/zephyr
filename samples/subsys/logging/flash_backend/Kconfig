@@ -1,0 +1,15 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Flash log backend sample application"
+
+menu "Application configuration"
+
+# The application is the logging sample's, so its per-module log level is too.
+module = SAMPLE_MODULE
+module-str = Sample module
+source "subsys/logging/Kconfig.template.log_config"
+
+endmenu
+
+source "Kconfig.zephyr"
