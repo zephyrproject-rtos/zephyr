@@ -9,6 +9,8 @@ description: |
 
 compatible: "dac-leds"
 
+include: base.yaml
+
 class: led
 
 child-binding:
