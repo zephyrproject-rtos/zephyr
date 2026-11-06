@@ -34,7 +34,7 @@ static int clock_control_si32_pll_on(const struct device *dev, clock_control_sub
 	struct clock_control_si32_pll_data *data = dev->data;
 
 	if (data->freq == 0) {
-		return -ENOTSUP;
+		return -EINVAL;
 	}
 
 	uint32_t dco_range;
