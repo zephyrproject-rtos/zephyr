@@ -82,7 +82,7 @@
 	status = "okay";
 };
 
-&i2c0 {
+csi_i2c: &i2c0 {
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
@@ -271,3 +271,7 @@ zephyr_uhc0: &usb_otg {
 &ppa {
 	status = "okay";
 };
+
+csi_interface: &csi {};
+
+csi_capture_port: &csi {};

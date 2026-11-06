@@ -82,6 +82,12 @@ config ESP32P4_EMAC
 	  this driver. This option allows enabling MDIO
 	  independently of Ethernet.
 
+config SOC_ESP32P4_DW_GDMA
+	bool
+	help
+	  Shared bring-up of the DW-GDMA controller for the drivers that own
+	  one of its channels.
+
 config SOC_ESP32P4_REV_MIN_FULL
 	int
 	default 103 if SOC_ESP32P4_REV_1_3

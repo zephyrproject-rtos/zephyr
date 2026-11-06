@@ -15,6 +15,7 @@ tests:
       - platform:stm32h7b3i_dk:SHIELD="st_b_cams_omv_mb1683"
       - platform:ek_ra8d1/r7fa8d1bhecbd:SHIELD="dvp_20pin_ov7670;rtkmipilcdb00000be"
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD="dvp_20pin_ov7670;rk055hdmipi4ma0"
+      - platform:esp32p4x_function_ev_board/esp32p4/hpcore:SHIELD="espressif_sc2336_cam_module"
     extra_configs:
       - CONFIG_FPU=y
     harness: console
@@ -38,6 +39,7 @@ tests:
       - stm32h7b3i_dk
       - ek_ra8d1/r7fa8d1bhecbd
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - esp32p4x_function_ev_board/esp32p4/hpcore
     depends_on: video
     integration_platforms:
       - mimxrt1064_evk/mimxrt1064

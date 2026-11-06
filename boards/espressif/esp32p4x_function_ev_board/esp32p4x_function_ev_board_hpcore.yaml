@@ -24,4 +24,5 @@ supported:
   - spi
   - uart
   - usbh
+  - video
   - watchdog
