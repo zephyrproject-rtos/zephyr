@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	canopen-leds {
+		compatible = "gpio-leds";
+
+		canopen_run_led: run-led {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		};
+
+		canopen_err_led: err-led {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};

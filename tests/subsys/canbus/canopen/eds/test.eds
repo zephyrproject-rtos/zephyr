@@ -1,0 +1,876 @@
+; SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+;
+; SPDX-License-Identifier: Apache-2.0
+
+[FileInfo]
+FileName=test.eds
+FileVersion=1
+FileRevision=0
+EDSVersion=4.0
+Description=EDS tool test device
+CreationTime=12:00PM
+CreationDate=11-05-2026
+CreatedBy=Zephyr test
+ModificationTime=12:00PM
+ModificationDate=11-05-2026
+ModifiedBy=Zephyr test
+
+[DeviceInfo]
+VendorName=Zephyr test
+VendorNumber=0x0
+ProductName=EDS test
+ProductNumber=0x42
+RevisionNumber=0x10002
+OrderCode=
+BaudRate_10=0
+BaudRate_20=0
+BaudRate_50=0
+BaudRate_125=1
+BaudRate_250=0
+BaudRate_500=1
+BaudRate_800=0
+BaudRate_1000=0
+SimpleBootUpMaster=0
+SimpleBootUpSlave=1
+Granularity=8
+DynamicChannelsSupported=0
+GroupMessaging=0
+NrOfRXPDO=2
+NrOfTXPDO=2
+LSS_Supported=0
+
+[DummyUsage]
+Dummy0001=1
+Dummy0002=1
+Dummy0003=1
+Dummy0004=1
+Dummy0005=1
+Dummy0006=1
+Dummy0007=1
+
+[MandatoryObjects]
+SupportedObjects=3
+1=0x1000
+2=0x1001
+3=0x1018
+
+[1000]
+ParameterName=Device type
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0x20191
+PDOMapping=0
+
+[1001]
+ParameterName=Error register
+ObjectType=0x7
+DataType=0x0005
+AccessType=ro
+DefaultValue=0x0
+PDOMapping=0
+
+[1018]
+ParameterName=Identity object
+ObjectType=0x9
+SubNumber=5
+
+[1018sub0]
+ParameterName=Highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x4
+PDOMapping=0
+
+[1018sub1]
+ParameterName=Vendor-ID
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0x0
+PDOMapping=0
+
+[1018sub2]
+ParameterName=Product code
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0x42
+PDOMapping=0
+
+[1018sub3]
+ParameterName=Revision number
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0x10002
+PDOMapping=0
+
+[1018sub4]
+ParameterName=Serial number
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=195939070
+PDOMapping=0
+
+[OptionalObjects]
+SupportedObjects=22
+1=0x1003
+2=0x1005
+3=0x1006
+4=0x1007
+5=0x1008
+6=0x1009
+7=0x1014
+8=0x1015
+9=0x1016
+10=0x1017
+11=0x1019
+12=0x1029
+13=0x1200
+14=0x1400
+15=0x1401
+16=0x1600
+17=0x1601
+18=0x1800
+19=0x1801
+20=0x1A00
+21=0x1A01
+22=0x6000
+
+[1003]
+ParameterName=Pre-defined error field
+ObjectType=0x8
+SubNumber=3
+
+[1003sub0]
+ParameterName=Number of errors
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1003sub1]
+ParameterName=Standard error field
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0x0
+PDOMapping=0
+
+[1003sub2]
+ParameterName=Standard error field
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0x0
+PDOMapping=0
+
+[1005]
+ParameterName=COB-ID SYNC
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x80
+PDOMapping=0
+
+[1006]
+ParameterName=Communication cycle period
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1007]
+ParameterName=Synchronous window length
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1008]
+ParameterName=Manufacturer device name
+ObjectType=0x7
+DataType=0x0009
+AccessType=const
+DefaultValue=EDS test
+PDOMapping=0
+
+[1009]
+ParameterName=Manufacturer hardware version
+ObjectType=0x7
+DataType=0x0009
+AccessType=const
+DefaultValue=1.0
+PDOMapping=0
+
+[1014]
+ParameterName=COB-ID emergency message
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID+0x80
+PDOMapping=0
+
+[1015]
+ParameterName=inhibit time EMCY
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1016]
+ParameterName=Consumer heartbeat time
+ObjectType=0x8
+SubNumber=3
+
+[1016sub0]
+ParameterName=Highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x2
+PDOMapping=0
+
+[1016sub1]
+ParameterName=Consumer heartbeat time
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x503E8
+PDOMapping=0
+
+[1016sub2]
+ParameterName=Consumer heartbeat time
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1017]
+ParameterName=Producer heartbeat time
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x1F4
+PDOMapping=0
+
+[1019]
+ParameterName=Synchronous counter overflow value
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1029]
+ParameterName=Error behavior
+ObjectType=0x8
+SubNumber=2
+
+[1029sub0]
+ParameterName=Highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x1
+PDOMapping=0
+
+[1029sub1]
+ParameterName=Communication error
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1200]
+ParameterName=SDO server parameter
+ObjectType=0x9
+SubNumber=3
+
+[1200sub0]
+ParameterName=Highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x2
+PDOMapping=0
+
+[1200sub1]
+ParameterName=COB-ID client -> server (rx)
+ObjectType=0x7
+DataType=0x0007
+AccessType=const
+DefaultValue=$NODEID+0x600
+PDOMapping=0
+
+[1200sub2]
+ParameterName=COB-ID server -> client (tx)
+ObjectType=0x7
+DataType=0x0007
+AccessType=const
+DefaultValue=$NODEID+0x580
+PDOMapping=0
+
+[1400]
+ParameterName=RPDO communication parameter
+ObjectType=0x9
+SubNumber=5
+
+[1400sub0]
+ParameterName=highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x5
+PDOMapping=0
+
+[1400sub1]
+ParameterName=COB-ID used by RPDO
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID+0x200
+PDOMapping=0
+
+[1400sub2]
+ParameterName=transmission type
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0xFE
+PDOMapping=0
+
+[1400sub3]
+ParameterName=inhibit time
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1400sub5]
+ParameterName=event-timer
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1401]
+ParameterName=RPDO communication parameter
+ObjectType=0x9
+SubNumber=5
+
+[1401sub0]
+ParameterName=highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x5
+PDOMapping=0
+
+[1401sub1]
+ParameterName=COB-ID used by RPDO
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID+0x80000300
+PDOMapping=0
+
+[1401sub2]
+ParameterName=transmission type
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0xFE
+PDOMapping=0
+
+[1401sub3]
+ParameterName=inhibit time
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1401sub5]
+ParameterName=event-timer
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1600]
+ParameterName=RPDO mapping parameter
+ObjectType=0x9
+SubNumber=5
+
+[1600sub0]
+ParameterName=number of mapped application objects in PDO
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x2
+PDOMapping=0
+
+[1600sub1]
+ParameterName=application object 1
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x50008
+PDOMapping=0
+
+[1600sub2]
+ParameterName=application object 2
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x20030020
+PDOMapping=0
+
+[1600sub3]
+ParameterName=application object 3
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1600sub4]
+ParameterName=application object 4
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1601]
+ParameterName=RPDO mapping parameter
+ObjectType=0x9
+SubNumber=5
+
+[1601sub0]
+ParameterName=number of mapped application objects in PDO
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1601sub1]
+ParameterName=application object 1
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1601sub2]
+ParameterName=application object 2
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1601sub3]
+ParameterName=application object 3
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1601sub4]
+ParameterName=application object 4
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1800]
+ParameterName=TPDO communication parameter
+ObjectType=0x9
+SubNumber=6
+
+[1800sub0]
+ParameterName=highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x6
+PDOMapping=0
+
+[1800sub1]
+ParameterName=COB-ID used by TPDO
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID + 0x40000000 + 0x180
+PDOMapping=0
+
+[1800sub2]
+ParameterName=transmission type
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=01
+PDOMapping=0
+
+[1800sub3]
+ParameterName=inhibit time
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1800sub5]
+ParameterName=event timer
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1800sub6]
+ParameterName=SYNC start value
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x3
+PDOMapping=0
+
+[1801]
+ParameterName=TPDO communication parameter
+ObjectType=0x9
+SubNumber=6
+
+[1801sub0]
+ParameterName=highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x6
+PDOMapping=0
+
+[1801sub1]
+ParameterName=COB-ID used by TPDO
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=$NODEID+0xC0000280
+PDOMapping=0
+
+[1801sub2]
+ParameterName=transmission type
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0xFE
+PDOMapping=0
+
+[1801sub3]
+ParameterName=inhibit time
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x32
+PDOMapping=0
+
+[1801sub5]
+ParameterName=event timer
+ObjectType=0x7
+DataType=0x0006
+AccessType=rw
+DefaultValue=0x64
+PDOMapping=0
+
+[1801sub6]
+ParameterName=SYNC start value
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A00]
+ParameterName=TPDO mapping
+ObjectType=0x9
+SubNumber=5
+
+[1A00sub0]
+ParameterName=number of mapped application objects in TPDO
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x2
+PDOMapping=0
+
+[1A00sub1]
+ParameterName=application object 1
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x20010010
+PDOMapping=0
+
+[1A00sub2]
+ParameterName=application object 2
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x22000420
+PDOMapping=0
+
+[1A00sub3]
+ParameterName=application object 3
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A00sub4]
+ParameterName=application object 4
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A01]
+ParameterName=TPDO mapping
+ObjectType=0x9
+SubNumber=5
+
+[1A01sub0]
+ParameterName=number of mapped application objects in TPDO
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A01sub1]
+ParameterName=application object 1
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A01sub2]
+ParameterName=application object 2
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A01sub3]
+ParameterName=application object 3
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[1A01sub4]
+ParameterName=application object 4
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x0
+PDOMapping=0
+
+[6000]
+ParameterName=Digital inputs
+ObjectType=0x7
+DataType=0x0005
+AccessType=ro
+DefaultValue=0x3
+PDOMapping=1
+
+[ManufacturerObjects]
+SupportedObjects=12
+1=0x2000
+2=0x2001
+3=0x2002
+4=0x2003
+5=0x2004
+6=0x2005
+7=0x2006
+8=0x2007
+9=0x2100
+10=0x2101
+11=0x2200
+12=0x5600
+
+; ObjectType missing: VAR
+[2000]
+ParameterName=Enable
+DataType=0x0001
+AccessType=rw
+DefaultValue=0x1
+PDOMapping=0
+StorageLocation=PERSIST
+
+[2001]
+ParameterName=Temperature
+ObjectType=0x7
+DataType=0x0003
+AccessType=rwr
+DefaultValue=-273
+PDOMapping=1
+
+[2002]
+ParameterName=Energy counter
+ObjectType=0x7
+DataType=0x001B
+AccessType=const
+DefaultValue=0x123456789ABCDEF
+PDOMapping=0
+
+[2003]
+ParameterName=Gain
+ObjectType=0x7
+DataType=0x0008
+AccessType=rww
+DefaultValue=1.5
+PDOMapping=1
+
+[2004]
+ParameterName=Label
+ObjectType=0x7
+DataType=0x0009
+AccessType=rw
+DefaultValue=zephyr
+PDOMapping=0
+
+[2005]
+ParameterName=Key
+ObjectType=0x7
+DataType=0x000A
+AccessType=ro
+DefaultValue=deadbeef
+PDOMapping=0
+
+[2006]
+ParameterName=Offset
+ObjectType=0x7
+DataType=0x0010
+AccessType=rw
+DefaultValue=-0x10
+PDOMapping=0
+
+; 017 is octal
+[2007]
+ParameterName=Mode
+ObjectType=7
+DataType=5
+accesstype=RW
+DefaultValue=017
+PDOMapping=0
+
+[2100]
+ParameterName=Limits
+ObjectType=0x8
+SubNumber=4
+
+[2100sub0]
+ParameterName=Number of entries
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x3
+PDOMapping=0
+
+[2100sub1]
+ParameterName=Limit 1
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0xA
+PDOMapping=1
+
+[2100sub2]
+ParameterName=Limit 2
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x14
+PDOMapping=1
+
+[2100sub3]
+ParameterName=Limit 3
+ObjectType=0x7
+DataType=0x0007
+AccessType=rw
+DefaultValue=0x1E
+PDOMapping=1
+
+[2101]
+parametername = Samples
+ObjectType=0x8
+DATATYPE=0x0006
+AccessType=ro
+DefaultValue=0x55
+PDOMapping=0
+CompactSubObj=3
+
+[2101Name]
+NrOfEntries=1
+2=Second sample
+
+[2101Value]
+NrOfEntries=1
+3=0x66
+
+[2200]
+ParameterName=Axis
+ObjectType=0x9
+SubNumber=3
+
+[2200sub0]
+ParameterName=Highest sub-index supported
+ObjectType=0x7
+DataType=0x0005
+AccessType=const
+DefaultValue=0x4
+PDOMapping=0
+
+[2200sub1]
+ParameterName=Axis mode
+ObjectType=0x7
+DataType=0x0005
+AccessType=rw
+DefaultValue=0x3
+PDOMapping=0
+
+[2200sub4]
+ParameterName=Axis position
+ObjectType=0x7
+DataType=0x0007
+AccessType=ro
+DefaultValue=0xFFFFFFFF
+PDOMapping=1
+
+[5600]
+ParameterName=Firmware image
+ObjectType=0x7
+DataType=0x000F
+AccessType=rw
+PDOMapping=0

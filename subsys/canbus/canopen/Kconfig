@@ -1,0 +1,277 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CANOPEN
+	bool "CANopen protocol stack"
+	depends on CAN
+	select POLL
+	help
+	  Enable the native CANopen protocol stack (CiA 301).
+
+if CANOPEN
+
+module = CANOPEN
+module-str = CANOPEN
+source "subsys/logging/Kconfig.template.log_config"
+
+config CANOPEN_THREAD_STACK_SIZE
+	int "CANopen thread stack size"
+	default 1024 if CAN_MCP2515 || CAN_MCP251XFD || CAN_TCAN4X5X || LOG_MODE_IMMEDIATE || \
+			CANOPEN_STORAGE
+	default 768
+	help
+	  Stack size of the thread running the protocol of a CANopen node. The thread also runs
+	  the CAN driver's send and filter functions, the settings backend when parameters are
+	  stored, and the application callbacks, so SPI attached CAN controllers, immediate
+	  logging and parameter storage get a larger default. Increase it for application
+	  callbacks with large stack frames.
+
+config CANOPEN_THREAD_PRIORITY
+	int "CANopen thread priority"
+	default 2
+	help
+	  Priority of the thread running the protocol of a CANopen node.
+
+config CANOPEN_RX_QUEUE_SIZE
+	int "CANopen receive queue size"
+	default 8
+	range 1 256
+	help
+	  Number of received CAN frames buffered per node before frames are dropped.
+
+config CANOPEN_TX_QUEUE_SIZE
+	int "CANopen transmit queue size"
+	default 8
+	range 1 256
+	help
+	  Number of CAN frames buffered per node while all CAN transmit mailboxes are busy.
+
+config CANOPEN_SDO_BUFFER_SIZE
+	int "SDO server buffer size"
+	default 64
+	range 8 65535
+	help
+	  Largest object dictionary value in bytes transferred by the SDO server.
+
+config CANOPEN_SDO_SERVER_TIMEOUT_MS
+	int "SDO server timeout in milliseconds"
+	default 1000
+	range 1 65535
+	help
+	  Time without a request from the SDO client after which a segmented transfer is aborted.
+
+config CANOPEN_DEVICE_TYPE
+	hex "Device type"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1000h.
+
+config CANOPEN_VENDOR_ID
+	hex "Vendor-ID"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1018h sub-index 1, assigned by CAN in Automation.
+
+config CANOPEN_PRODUCT_CODE
+	hex "Product code"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1018h sub-index 2.
+
+config CANOPEN_REVISION_NUMBER
+	hex "Revision number"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1018h sub-index 3.
+
+config CANOPEN_DEVICE_NAME
+	string "Manufacturer device name"
+	default "Zephyr"
+	help
+	  Value of object 1008h. The object is omitted if the string is empty.
+
+config CANOPEN_HW_VERSION
+	string "Manufacturer hardware version"
+	help
+	  Value of object 1009h. The object is omitted if the string is empty.
+
+config CANOPEN_SW_VERSION
+	string "Manufacturer software version"
+	help
+	  Value of object 100Ah. The object is omitted if the string is empty.
+
+config CANOPEN_HEARTBEAT_PRODUCER_MS
+	int "Default producer heartbeat time in milliseconds"
+	default 0
+	range 0 65535
+	help
+	  Power-on value of object 1017h. 0 disables the heartbeat producer.
+
+config CANOPEN_STORAGE
+	bool "Store parameters in non-volatile memory"
+	depends on SETTINGS
+	default y
+	help
+	  Provide the store parameters (1010h) and restore default parameters (1011h) objects
+	  with sub-index 1 for all parameters, 2 for the communication parameters, 3 for the
+	  application parameters (6000h to 9FFFh) and 4 for the manufacturer-specific parameters
+	  (2000h to 5FFFh). Communication parameters and application entries marked with
+	  CANOPEN_OD_ATTR_PERSIST are saved through the settings subsystem and are the power-on
+	  values after a reset.
+
+config CANOPEN_LEDS
+	bool "CiA 303-3 indicator LEDs"
+	depends on LED
+	default y
+	help
+	  Drive the RUN and ERR LEDs given in the node configuration with the indicator states
+	  of CiA 303-3. The LEDs are updated from the CANopen thread, which only wakes up for
+	  them while one of them is blinking or flashing.
+
+config CANOPEN_DOMAIN
+	bool "DOMAIN objects"
+	help
+	  Support object dictionary entries of type DOMAIN (CANOPEN_OD_DOMAIN()), whose data of
+	  any size is streamed through application callbacks by the SDO server.
+
+config CANOPEN_SDO_BLOCK
+	bool "SDO block transfer"
+	select CRC
+	help
+	  Support SDO block upload and block download with CRC in the SDO server.
+
+config CANOPEN_SDO_BLOCK_SIZE
+	int "SDO block size"
+	default 127 if CANOPEN_RX_QUEUE_SIZE > 127
+	default CANOPEN_RX_QUEUE_SIZE
+	range 1 127
+	depends on CANOPEN_SDO_BLOCK
+	help
+	  Number of segments per block that the SDO server asks for in a block download. The
+	  default matches the receive queue, so a whole block is buffered even when the CANopen
+	  thread is delayed.
+
+config CANOPEN_MASTER
+	bool "CANopen master functions"
+	help
+	  Provide the SDO client parameter object (1280h), the SDO client API, the NMT master API
+	  and a simple boot-up of slaves.
+
+config CANOPEN_SDO_CLIENT_TIMEOUT_MS
+	int "SDO client timeout in milliseconds"
+	default 1000
+	range 1 65535
+	depends on CANOPEN_MASTER
+	help
+	  Time to wait for each response of the SDO server before the transfer is aborted.
+
+config CANOPEN_NODE_GUARDING
+	bool "Node guarding"
+	depends on CAN_ACCEPT_RTR
+	help
+	  Answer node guarding requests (remote frames on CAN-ID 700h + node-ID) and provide the
+	  guard time (100Ch) and life time factor (100Dh) objects for life guarding. Requests are
+	  only answered while the producer heartbeat time (1017h) is 0, since CiA 301 does not
+	  allow both protocols at the same time.
+
+config CANOPEN_TIME
+	bool "TIME producer and consumer"
+	help
+	  Provide the COB-ID time stamp object (1012h), the TIME consumer callback and
+	  canopen_time_send(). The node consumes TIME messages on CAN-ID 100h after power-on; the
+	  producer is enabled by setting bit 30 of 1012h.
+
+config CANOPEN_TPDO_COUNT
+	int "Number of TPDOs"
+	default 4
+	range 1 512
+	help
+	  Number of transmit PDOs of a CANopen node.
+
+config CANOPEN_RPDO_COUNT
+	int "Number of RPDOs"
+	default 4
+	range 1 512
+	help
+	  Number of receive PDOs of a CANopen node.
+
+config CANOPEN_PDO_MAPPED_MAX
+	int "Maximum number of objects mapped into a PDO"
+	default 8
+	range 1 64
+	help
+	  Number of mapping entries of each PDO mapping parameter object.
+
+config CANOPEN_EMCY_HISTORY_SIZE
+	int "Error history size"
+	default 8
+	range 1 254
+	help
+	  Number of entries of the pre-defined error field (1003h).
+
+config CANOPEN_EMCY_ACTIVE_MAX
+	int "Maximum number of active errors"
+	default 8
+	range 1 255
+	help
+	  Number of errors that can be active at the same time.
+
+config CANOPEN_EMCY_QUEUE_SIZE
+	int "Emergency message queue size"
+	default 4
+	range 1 255
+	help
+	  Number of emergency messages held back during the EMCY inhibit time (1015h) or while
+	  the node is in NMT state Stopped. When the queue is full the oldest message is
+	  dropped.
+
+config CANOPEN_HB_CONSUMER_COUNT
+	int "Number of heartbeat consumer entries"
+	default 4
+	range 1 127
+	help
+	  Number of entries of the consumer heartbeat time object (1016h). Each configured
+	  entry uses one CAN RX filter.
+
+config CANOPEN_SHELL
+	bool "CANopen shell commands"
+	depends on SHELL
+	help
+	  Provide the canopen shell command to list the local nodes, change their NMT state,
+	  read and write their objects and show their error history. With CANOPEN_MASTER it
+	  also sends NMT commands and reads and writes objects of other nodes over SDO.
+
+config CANOPEN_EDS
+	bool "Generate the electronic data sheet"
+	help
+	  Generate canopen.eds, the electronic data sheet (CiA 306) of the node, in the zephyr
+	  build directory from the linked image. The application objects, the PDO and heartbeat
+	  consumer configuration and the serial number are taken from the node configuration
+	  named by CANOPEN_EDS_NODE_CONFIG.
+
+if CANOPEN_EDS
+
+config CANOPEN_EDS_NODE_CONFIG
+	string "Node configuration symbol"
+	help
+	  Name of the struct canopen_node_config variable that describes the node.
+
+config CANOPEN_EDS_VENDOR_NAME
+	string "Vendor name"
+	help
+	  Value of VendorName in the electronic data sheet.
+
+config CANOPEN_EDS_BITRATES
+	string "Supported bit rates"
+	help
+	  Bit rates in kbit/s, separated by spaces, that are marked as supported in the
+	  electronic data sheet, for example "125 250 500 1000".
+
+endif # CANOPEN_EDS
+
+endif # CANOPEN

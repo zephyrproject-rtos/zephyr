@@ -1,0 +1,16 @@
+common:
+  tags:
+    - can
+    - canopen
+    - led
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+tests:
+  canbus.canopen.leds: {}
+  canbus.canopen.leds.bicolor:
+    extra_configs:
+      - CONFIG_TEST_LED_BICOLOR=y

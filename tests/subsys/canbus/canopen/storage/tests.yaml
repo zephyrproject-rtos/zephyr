@@ -1,0 +1,13 @@
+tests:
+  canbus.canopen.storage:
+    tags:
+      - can
+      - canopen
+      - settings
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus") and
+            (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or
+             dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
