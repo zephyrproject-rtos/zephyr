@@ -799,6 +799,35 @@ static void sl_802154_set_radio_to_idle(sl_rail_handle_t handle)
 	}
 }
 
+/*
+ * An idle period has started when rx_on_when_idle is clear and no scheduled
+ * receive is pending or started. A CSL window is that cleared flag with a
+ * scheduled receive still active, and must keep the receiver up.
+ */
+static bool sl_802154_is_idle_period(struct sl_802154_data *data)
+{
+	return !data->radio_data.rx_on_when_idle &&
+	       !sl_802154_state_is_rx_scheduled(&data->radio_data.state) &&
+	       !sl_802154_state_is_scheduled_rx_started(&data->radio_data.state);
+}
+
+/*
+ * Start of an idle period, as defined by IEEE802154_CONFIG_RX_ON_WHEN_IDLE.
+ * RAIL returns the radio to receive after TX and RX. Yielding alone leaves
+ * the receiver running, so the radio stays at receive current. Idle and yield
+ * only once an idle period has started. A caller that must release the radio
+ * even during a scheduled receive yields on its own when this does not.
+ */
+static void sl_802154_end_radio_operation(struct sl_802154_data *data)
+{
+	if (!sl_802154_is_idle_period(data)) {
+		return;
+	}
+
+	sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+	(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+}
+
 /*************************************************************************************************/
 /* Source match table helpers */
 
@@ -1598,7 +1627,10 @@ static void sl_802154_resume_background_rx_if_idle_enabled(struct sl_802154_data
 static void sl_802154_handle_tx_failed(struct sl_802154_data *data)
 {
 	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
-	sl_802154_yield_radio(data->radio_data.rail_handle);
+	sl_802154_end_radio_operation(data);
+	if (!sl_802154_is_idle_period(data)) {
+		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+	}
 }
 
 static void sl_802154_handle_ack_timeout(struct sl_802154_data *data)
@@ -1609,7 +1641,10 @@ static void sl_802154_handle_ack_timeout(struct sl_802154_data *data)
 	sl_802154_state_set_waiting_for_ack(&data->radio_data.state, false);
 	data->ack_errno = -ENOMSG;
 	k_sem_give(&data->ack_wait);
-	sl_802154_yield_radio(data->radio_data.rail_handle);
+	sl_802154_end_radio_operation(data);
+	if (!sl_802154_is_idle_period(data)) {
+		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+	}
 	data->mac_data.em_pending_data = false;
 }
 
@@ -1750,12 +1785,19 @@ ack_free:
 ack_complete:
 	k_sem_give(&data->ack_wait);
 	sl_802154_state_clear_tx_data_and_wait_for_ack(&data->radio_data.state);
-	if (tx_is_data_request && data->rx_mhr.fs->fc.frame_pending) {
+	/*
+	 * A valid ACK of a MAC command with frame pending set must stay awake
+	 * for the queued frame. Every other ACK, including a MAC command with
+	 * frame pending clear, has nothing left to receive.
+	 */
+	if (valid_ack && tx_is_data_request && data->rx_mhr.fs->fc.frame_pending) {
 		data->mac_data.em_pending_data = true;
+		return;
 	}
 invalid_ack:
-	if (!tx_is_data_request) {
-		sl_802154_yield_radio(data->radio_data.rail_handle);
+	sl_802154_end_radio_operation(data);
+	if (!sl_802154_is_idle_period(data)) {
+		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
 	}
 }
 
@@ -1801,19 +1843,26 @@ static void sl_802154_handle_rx_data(const struct device *dev, uint16_t length,
 	if (net_status < 0) {
 		LOG_ERR("RCV Packet dropped by NET stack: %d", net_status);
 		net_pkt_unref(pkt);
+		/* Dropped before the idle-period handling below. */
+		sl_802154_end_radio_operation(data);
 		return;
 	}
 
 	if (data->rx_mhr.fs->fc.ar) {
 		sl_802154_state_set_tx_ack_ongoing(&data->radio_data.state, true);
 	} else if (data->mac_data.em_pending_data) {
-		/* We received a frame that does not require an ACK as result of a data
-		 * poll: we yield the radio here.
+		/* Unacknowledged frame after a MAC command whose ACK had frame
+		 * pending set: the transaction is done, so yield the radio.
 		 */
-		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+		sl_802154_end_radio_operation(data);
+		if (!sl_802154_is_idle_period(data)) {
+			(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+		}
 		data->mac_data.em_pending_data = false;
+	} else if (!data->radio_data.rx_on_when_idle) {
+		sl_802154_end_radio_operation(data);
 	} else {
-		/* Plain unacknowledged frame outside a data poll: nothing to do. */
+		/* Plain unacknowledged frame with the receiver kept on: nothing to do. */
 	}
 }
 
@@ -1923,7 +1972,10 @@ static void sl_802154_handle_tx_completion(struct sl_802154_data *data, sl_rail_
 				sl_802154_state_set_waiting_for_ack(&data->radio_data.state, true);
 			} else {
 				sl_802154_state_set_tx_data_ongoing(&data->radio_data.state, false);
-				(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+				sl_802154_end_radio_operation(data);
+				if (!sl_802154_is_idle_period(data)) {
+					(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+				}
 			}
 			data->tx_errno = 0;
 		}
@@ -1984,6 +2036,11 @@ static void sl_802154_rail_events_callback(sl_rail_handle_t handle, sl_rail_even
 				data->event_handler(dev, IEEE802154_EVENT_RX_OFF, NULL);
 			} else {
 				sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+				/*
+				 * Idle only stops the current operation. Yielding releases the
+				 * radio so it can power down.
+				 */
+				(void)sl_802154_yield_radio(data->radio_data.rail_handle);
 			}
 		}
 	}
@@ -2000,8 +2057,13 @@ static void sl_802154_rail_events_callback(sl_rail_handle_t handle, sl_rail_even
 		 * We acked the packet we received after a poll: we can yield now.
 		 */
 		if (data->mac_data.em_pending_data) {
-			(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+			sl_802154_end_radio_operation(data);
+			if (!sl_802154_is_idle_period(data)) {
+				(void)sl_802154_yield_radio(data->radio_data.rail_handle);
+			}
 			data->mac_data.em_pending_data = false;
+		} else if (!data->radio_data.rx_on_when_idle) {
+			sl_802154_end_radio_operation(data);
 		}
 	}
 
@@ -2702,6 +2764,12 @@ static int silabs_efr32_stop(const struct device *dev)
 
 	if (data->radio_data.rail_initialized) {
 		sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+		/*
+		 * Idle only stops the current RF operation. RAIL keeps the radio
+		 * powered until it is yielded, which holds the current at receive
+		 * level after OpenThread has already gone back to sleep.
+		 */
+		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
 	}
 
 	sl_802154_state_set_rx_started(&data->radio_data.state, false);
@@ -3021,6 +3089,11 @@ static int sl_802154_configure_rx_on_when_idle(struct sl_802154_data *data, bool
 	if (!sl_802154_state_is_rx_scheduled(&data->radio_data.state) &&
 	    !sl_802154_state_is_scheduled_rx_started(&data->radio_data.state)) {
 		sl_802154_set_radio_to_idle(data->radio_data.rail_handle);
+		/*
+		 * Idle only stops the current operation. Yielding releases the
+		 * radio so it can power down.
+		 */
+		(void)sl_802154_yield_radio(data->radio_data.rail_handle);
 	}
 
 	return 0;
