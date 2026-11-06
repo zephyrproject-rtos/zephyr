@@ -342,7 +342,9 @@ static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 
 			/* If a Ping is done, write Tx fcs to rx buffer*/
 			if (msg->cmd_code == PECI_CMD_PING) {
-				rx_buf->buf[0] = tx_fcs;
+				if (rx_buf->buf != NULL) {
+					rx_buf->buf[0] = tx_fcs;
+				}
 				break;
 			}
 		} else if (i == (rx_buf->len + 1)) {
