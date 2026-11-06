@@ -58,6 +58,7 @@
 			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -142,7 +143,7 @@
 			compatible = "ti,mspm0-timer";
 			reg = <0x40868000 0x2000>;
 			interrupts = <17 0>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
 			status = "disabled";
@@ -150,6 +151,7 @@
 			counterg6: counterg6 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -158,7 +160,7 @@
 			compatible = "ti,mspm0-timer";
 			reg = <0x4086a000 0x2000>;
 			interrupts = <20 0>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			ti,clk-prescaler = <255>;
 			ti,clk-div = <1>;
 			status = "disabled";
@@ -166,6 +168,7 @@
 			counterg7: counterg7 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -174,7 +177,7 @@
 			compatible = "ti,mspm0-timer";
 			reg = <0x40870000 0x2000>;
 			interrupts = <21 0>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
 			ti,clk-prescaler = <0>; /* None */
 			ti,clk-div = <1>;
 			status = "disabled";
@@ -182,6 +185,7 @@
 			counterg12: counterg12 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <32>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
