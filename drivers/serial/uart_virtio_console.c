@@ -8,7 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
-#include <zephyr/spinlock.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
@@ -42,7 +42,8 @@ struct _fifo_item_virtio_console_control {
 #endif
 
 enum _flags {
-	RX_IRQ_ENABLED
+	RX_IRQ_ENABLED,
+	TX_IRQ_ENABLED,
 };
 
 enum _virtio_feature_bits {
@@ -58,6 +59,13 @@ enum _named_virtqueues {
 	VIRTQ_CONTROL_RX,
 	VIRTQ_CONTROL_TX
 };
+
+enum virtconsole_tx_state {
+	VIRTIO_CONSOLE_TX_READY,
+	VIRTIO_CONSOLE_TX_BUSY,
+	VIRTIO_CONSOLE_TX_UNAVAILABLE,
+};
+
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 enum _virtio_ctl_events {
 	VIRTIO_CONSOLE_DEVICE_READY,
@@ -78,6 +86,7 @@ struct _ctl_cb_data {
 
 /* This should be enough as QEMU only allows 31 */
 #define VIRTIO_CONSOLE_MAX_PORTS 32
+#define VIRTIO_CONSOLE_TX_CHANGED BIT(0)
 
 /* Allows virtconsole_recv_cb to know which virtqueue it was called by */
 struct _rx_cb_data {
@@ -124,7 +133,8 @@ struct virtconsole_data {
 #else
 	struct _rx_cb_data rx_cb_data[1];
 #endif
-	struct k_spinlock txsl;
+	struct k_spinlock tx_lock;
+	struct k_event tx_event;
 	char rxbuf[CONFIG_UART_VIRTIO_CONSOLE_RX_BUFSIZE],
 		txbuf[CONFIG_UART_VIRTIO_CONSOLE_TX_BUFSIZE];
 	atomic_t flags;
@@ -134,6 +144,10 @@ struct virtconsole_data {
 	void *irq_cb_data;
 	struct _virtio_console_config *virtio_devcfg;
 };
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int virtconsole_irq_tx_ready(const struct device *dev);
+#endif
 
 /* Return desired size for given virtqueue */
 static uint16_t virtconsole_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
@@ -206,7 +220,7 @@ static void virtconsole_control_tx_flush(void *priv, uint32_t len)
 		LOG_ERR("could not access virtqueue 3");
 		return;
 	}
-	int i = vq->free_desc_n;
+	int i = virtq_get_free_desc_count(vq);
 
 	while ((i-- > 0) && (item = k_fifo_get(&data->tx_ctlfifo, K_NO_WAIT))) {
 		struct virtq_buf vqbuf = {.addr = &item->msg, .len = sizeof(item->msg)};
@@ -268,6 +282,7 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 {
 	struct _ctl_cb_data *ctld = priv;
 	struct virtconsole_data *data = ctld->data;
+	uint32_t ports_before = data->console_ports;
 
 	for (int i = 0; i < CONFIG_UART_VIRTIO_CONSOLE_RX_CONTROL_BUFSIZE; i++) {
 		if (data->rx_ctlbuf[i].port == UINT32_MAX) {
@@ -340,8 +355,18 @@ static void virtconsole_control_recv_cb(void *priv, uint32_t len)
 	virtconsole_recv_setup(data->dev, VIRTQ_CONTROL_RX, &data->rx_ctlbuf[ctld->buf_no],
 			       sizeof(struct _virtio_console_control), virtconsole_control_recv_cb,
 			       ctld);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	if ((ports_before != data->console_ports) &&
+	    atomic_test_bit(&data->flags, TX_IRQ_ENABLED) && (data->irq_cb != NULL) &&
+	    (virtconsole_irq_tx_ready(data->dev) > 0)) {
+		data->irq_cb(data->dev, data->irq_cb_data);
+	}
+#else
+	ARG_UNUSED(ports_before);
+#endif
 }
 #endif
+
 static int virtconsole_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct virtconsole_data *data = dev->data;
@@ -387,46 +412,186 @@ static int virtconsole_poll_in(const struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void virtconsole_poll_out(const struct device *dev, unsigned char c)
+/*
+ * A queue is idle when all of its descriptors are free, so no descriptor can
+ * refer to a TX buffer that is about to be rewritten. Console data queues are
+ * created with a size of one, but checking the whole queue stays correct if
+ * that ever changes.
+ */
+static enum virtconsole_tx_state
+virtconsole_tx_queues_check(const struct virtconsole_config *config, uint32_t console_ports,
+			    bool reclaim_used)
+{
+	uint32_t port = 0U;
+	bool found = false;
+	bool busy = false;
+
+#ifndef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	ARG_UNUSED(console_ports);
+#endif
+
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	for (; port < VIRTIO_CONSOLE_MAX_PORTS; port++) {
+		if (!IS_BIT_SET(console_ports, port)) {
+			continue;
+		}
+#endif
+		found = true;
+		struct virtq *vq = virtio_get_virtqueue(config->vdev, PORT_TO_TX_VQ_IDX(port));
+
+		if (vq == NULL) {
+			return VIRTIO_CONSOLE_TX_UNAVAILABLE;
+		}
+
+		if (reclaim_used) {
+			virtq_process_used(vq);
+		}
+
+		k_spinlock_key_t key = k_spin_lock(&vq->lock);
+		bool faulted = vq->faulted;
+		bool idle = vq->free_desc_n == vq->num;
+
+		k_spin_unlock(&vq->lock, key);
+		if (faulted) {
+			return VIRTIO_CONSOLE_TX_UNAVAILABLE;
+		}
+
+		if (!idle) {
+			busy = true;
+		}
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	}
+#endif
+	if (!found) {
+		return VIRTIO_CONSOLE_TX_UNAVAILABLE;
+	}
+
+	return busy ? VIRTIO_CONSOLE_TX_BUSY : VIRTIO_CONSOLE_TX_READY;
+}
+
+static void virtconsole_tx_changed(void *opaque)
+{
+	struct virtconsole_data *data = opaque;
+
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		(void)k_event_post(&data->tx_event, VIRTIO_CONSOLE_TX_CHANGED);
+	}
+}
+
+static void virtconsole_tx_done(void *opaque, uint32_t used_len)
+{
+	ARG_UNUSED(used_len);
+	virtconsole_tx_changed(opaque);
+}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void virtconsole_tx_irq(void *opaque)
+{
+	struct virtconsole_data *data = opaque;
+
+	if (atomic_test_bit(&data->flags, TX_IRQ_ENABLED) && (data->irq_cb != NULL)) {
+		data->irq_cb(data->dev, data->irq_cb_data);
+	}
+}
+#endif
+
+static bool virtconsole_send_char(const struct device *dev, unsigned char c, bool wait)
 {
 	const struct virtconsole_config *config = dev->config;
 	struct virtconsole_data *data = dev->data;
+	bool in_isr = k_is_in_isr();
+	bool can_yield = IS_ENABLED(CONFIG_MULTITHREADING) && !in_isr && k_can_yield();
+	bool poll_completion = wait && !in_isr && !can_yield;
+	uint32_t port = 0U;
+	int ret = 0;
+	uint32_t ports = 0U;
+	k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
 
-	K_SPINLOCK(&(data->txsl)) {
-		int port = 0;
+	/*
+	 * Serialize queue checks and submissions, and keep txbuf[] unchanged until every TX
+	 * queue is idle. Non-yielding poll_out callers reclaim completions directly; FIFO
+	 * writes and ISR callers never wait for a busy queue.
+	 */
+	for (;;) {
+		/* Clear hints before the queue check so later notifications are retained. */
+		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+			(void)k_event_clear(&data->tx_event, VIRTIO_CONSOLE_TX_CHANGED);
+		}
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+		/*
+		 * Refresh the snapshot after every lock acquisition. A port added
+		 * while this sender waits must be checked before txbuf[] is
+		 * rewritten and must receive the character.
+		 */
+		ports = data->console_ports;
+#endif
+		enum virtconsole_tx_state state =
+			virtconsole_tx_queues_check(config, ports, poll_completion);
+
+		if (state == VIRTIO_CONSOLE_TX_READY) {
+			break;
+		} else if ((state == VIRTIO_CONSOLE_TX_UNAVAILABLE) || !wait || in_isr) {
+			if (state == VIRTIO_CONSOLE_TX_UNAVAILABLE) {
+				/* Keep the failure visible to senders that have not waited yet. */
+				virtconsole_tx_changed(data);
+			}
+			k_spin_unlock(&data->tx_lock, key);
+			return false;
+		}
+
+		k_spin_unlock(&data->tx_lock, key);
+		if (IS_ENABLED(CONFIG_MULTITHREADING) && can_yield) {
+			if (k_event_wait(&data->tx_event, VIRTIO_CONSOLE_TX_CHANGED, false,
+					 K_FOREVER) == 0U) {
+				return false;
+			}
+		} else {
+			arch_spin_relax();
+		}
+
+		key = k_spin_lock(&data->tx_lock);
+	}
 
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
-		int n_ports_checked = 0;
-
-		for (; port < VIRTIO_CONSOLE_MAX_PORTS; port++) {
-			if (!IS_BIT_SET(data->console_ports, port)) {
-				continue;
-			}
+	for (; port < VIRTIO_CONSOLE_MAX_PORTS; port++) {
+		if (!IS_BIT_SET(ports, port)) {
+			continue;
+		}
 #endif
-			uint16_t q_no = PORT_TO_TX_VQ_IDX(port);
-			struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
+		uint16_t q_no = PORT_TO_TX_VQ_IDX(port);
+		struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
 
-			if (vq == NULL) {
-				LOG_ERR("could not access virtqueue %u", q_no);
-				K_SPINLOCK_BREAK;
-			}
+		if (vq == NULL) {
+			ret = -ENODEV;
+		} else {
 			data->txbuf[data->txcurrent] = c;
 			struct virtq_buf vqbuf = {.addr = data->txbuf + data->txcurrent,
 						  .len = sizeof(char)};
 
-			if (virtq_add_buffer_chain(vq, &vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
-				LOG_ERR("could not send character");
-				K_SPINLOCK_BREAK;
-			}
-			virtio_notify_virtqueue(config->vdev, q_no);
-#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
-			if ((++n_ports_checked) >= data->n_console_ports) {
-				break;
+			ret = virtq_add_buffer_chain(vq, &vqbuf, 1, 1, virtconsole_tx_done, data,
+						     K_NO_WAIT);
+			if (ret == 0) {
+				virtio_notify_virtqueue(config->vdev, q_no);
 			}
 		}
-#endif
-		data->txcurrent = (data->txcurrent + 1) % CONFIG_UART_VIRTIO_CONSOLE_TX_BUFSIZE;
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+		if (ret != 0) {
+			break;
+		}
 	}
+#endif
+	if (ret == 0) {
+		data->txcurrent = (data->txcurrent + 1U) % CONFIG_UART_VIRTIO_CONSOLE_TX_BUFSIZE;
+	}
+
+	k_spin_unlock(&data->tx_lock, key);
+
+	return (ret == 0);
+}
+
+static void virtconsole_poll_out(const struct device *dev, unsigned char c)
+{
+	(void)virtconsole_send_char(dev, c, true);
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -435,10 +600,13 @@ static int virtconsole_fifo_fill(const struct device *dev, const uint8_t *tx_dat
 	int i = 0;
 
 	for (; i < size; i++) {
-		virtconsole_poll_out(dev, tx_data[i]);
+		if (!virtconsole_send_char(dev, tx_data[i], false)) {
+			break;
+		}
 	}
 	return i;
 }
+
 static int virtconsole_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	int i = 0;
@@ -450,25 +618,45 @@ static int virtconsole_fifo_read(const struct device *dev, uint8_t *rx_data, con
 	}
 	return i;
 }
+
 static void virtconsole_irq_tx_enable(const struct device *dev)
 {
-	/* Only need to invoke the callback */
 	struct virtconsole_data *data = dev->data;
 
-	if (data->irq_cb) {
+	atomic_set_bit(&data->flags, TX_IRQ_ENABLED);
+	if (data->irq_cb != NULL) {
 		data->irq_cb(dev, data->irq_cb_data);
 	}
 }
+
+static void virtconsole_irq_tx_disable(const struct device *dev)
+{
+	struct virtconsole_data *data = dev->data;
+
+	atomic_clear_bit(&data->flags, TX_IRQ_ENABLED);
+}
+
 static int virtconsole_irq_tx_ready(const struct device *dev)
 {
-	/* Always ready to transmit characters, nothing to wait for */
-	return 1;
+	const struct virtconsole_config *config = dev->config;
+	struct virtconsole_data *data = dev->data;
+	uint32_t ports = 0U;
+	k_spinlock_key_t key = k_spin_lock(&data->tx_lock);
+
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	ports = data->console_ports;
+#endif
+	bool ready = virtconsole_tx_queues_check(config, ports, false) == VIRTIO_CONSOLE_TX_READY;
+
+	k_spin_unlock(&data->tx_lock, key);
+	return ready;
 }
+
 static int virtconsole_irq_tx_complete(const struct device *dev)
 {
-	/* Always complete, nothing to wait for */
-	return 1;
+	return virtconsole_irq_tx_ready(dev);
 }
+
 static void virtconsole_irq_rx_enable(const struct device *dev)
 {
 	struct virtconsole_data *data = dev->data;
@@ -480,6 +668,7 @@ static void virtconsole_irq_rx_enable(const struct device *dev)
 		data->irq_cb(dev, data->irq_cb_data);
 	}
 }
+
 static int virtconsole_irq_rx_ready(const struct device *dev)
 {
 	struct virtconsole_data *data = dev->data;
@@ -487,10 +676,16 @@ static int virtconsole_irq_rx_ready(const struct device *dev)
 	/* True if any port has characters ready to read */
 	return atomic_get(&(data->rx_ready));
 }
+
 static int virtconsole_irq_is_pending(const struct device *dev)
 {
-	return virtconsole_irq_rx_ready(dev);
+	struct virtconsole_data *data = dev->data;
+
+	return (virtconsole_irq_rx_ready(dev) != 0) ||
+	       (atomic_test_bit(&data->flags, TX_IRQ_ENABLED) &&
+		(virtconsole_irq_tx_ready(dev) > 0));
 }
+
 static void virtconsole_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					 void *user_data)
 {
@@ -550,6 +745,19 @@ static int virtconsole_init(const struct device *dev)
 		LOG_ERR("error initializing virtqueues!");
 		return ret;
 	}
+	for (uint16_t q_no = VIRTQ_TX; q_no < n_queues; q_no += 2U) {
+		if (q_no == VIRTQ_CONTROL_TX) {
+			continue;
+		}
+		struct virtq *vq = virtio_get_virtqueue(config->vdev, q_no);
+
+		vq->fault_cb = virtconsole_tx_changed;
+		vq->fault_cb_data = data;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		vq->irq_cb = virtconsole_tx_irq;
+		vq->irq_cb_data = data;
+#endif
+	}
 	virtio_finalize_init(config->vdev);
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 	if (multiport) {
@@ -575,6 +783,7 @@ static DEVICE_API(uart, virtconsole_api) = {
 	.fifo_fill = virtconsole_fifo_fill,
 	.fifo_read = virtconsole_fifo_read,
 	.irq_tx_enable = virtconsole_irq_tx_enable,
+	.irq_tx_disable = virtconsole_irq_tx_disable,
 	.irq_tx_ready = virtconsole_irq_tx_ready,
 	.irq_tx_complete = virtconsole_irq_tx_complete,
 	.irq_rx_enable = virtconsole_irq_rx_enable,
@@ -585,7 +794,9 @@ static DEVICE_API(uart, virtconsole_api) = {
 };
 
 #define VIRTIO_CONSOLE_DEFINE(inst)                                                                \
-	static struct virtconsole_data virtconsole_data_##inst;                                    \
+	static struct virtconsole_data virtconsole_data_##inst = {                                 \
+		.tx_event = Z_EVENT_INITIALIZER(virtconsole_data_##inst.tx_event),                 \
+	};                                                                                         \
 	static const struct virtconsole_config virtconsole_config_##inst = {                       \
 		.vdev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                               \
 	};                                                                                         \
