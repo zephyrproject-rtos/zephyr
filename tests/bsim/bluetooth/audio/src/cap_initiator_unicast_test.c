@@ -58,9 +58,11 @@ static struct bt_bap_lc3_preset unicast_preset_16_2_1 = BT_BAP_LC3_UNICAST_PRESE
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
 static struct audio_test_stream
-	unicast_client_sink_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+	unicast_client_sink_streams[CONFIG_BT_MAX_CONN *
+				    CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct audio_test_stream
-	unicast_client_source_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+	unicast_client_source_streams[CONFIG_BT_MAX_CONN *
+				      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 static struct bt_bap_ep
 	*unicast_sink_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep
@@ -72,6 +74,9 @@ static const struct named_lc3_preset *snk_named_preset;
 static const struct named_lc3_preset *src_named_preset;
 static struct bt_cap_stream *non_idle_streams[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 static size_t non_idle_streams_cnt;
+
+BUILD_ASSERT(ARRAY_SIZE(unicast_client_sink_streams) >= CAP_UNICAST_AC_MAX_SNK);
+BUILD_ASSERT(ARRAY_SIZE(unicast_client_source_streams) >= CAP_UNICAST_AC_MAX_SRC);
 
 CREATE_FLAG(flag_discovered);
 CREATE_FLAG(flag_codec_found);
@@ -570,12 +575,6 @@ static void init(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_source_streams); i++) {
 		bt_cap_stream_ops_register(
 			cap_stream_from_audio_test_stream(&unicast_client_source_streams[i]),
-			&unicast_stream_ops);
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
-		bt_cap_stream_ops_register(
-			cap_stream_from_audio_test_stream(&unicast_streams[i].stream),
 			&unicast_stream_ops);
 	}
 }
@@ -1466,12 +1465,12 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_unicast_ac_par
 
 		snk_group_stream_params[i].qos_cfg = snk_qos[i];
 		snk_group_stream_params[i].stream =
-			cap_stream_from_audio_test_stream(&snk_uni_streams[i]->stream);
+			cap_stream_from_audio_test_stream(snk_uni_streams[i]->stream);
 	}
 	for (size_t i = 0U; i < src_cnt; i++) {
 		src_group_stream_params[i].qos_cfg = src_qos[i];
 		src_group_stream_params[i].stream =
-			cap_stream_from_audio_test_stream(&src_uni_streams[i]->stream);
+			cap_stream_from_audio_test_stream(src_uni_streams[i]->stream);
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
@@ -1585,12 +1584,12 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_unicast_ac_param 
 	 * preset so that we can modify them (e.g. update the metadata)
 	 */
 	for (size_t i = 0U; i < snk_cnt; i++) {
-		snk_cap_streams[i] = cap_stream_from_audio_test_stream(&snk_uni_streams[i]->stream);
+		snk_cap_streams[i] = cap_stream_from_audio_test_stream(snk_uni_streams[i]->stream);
 		snk_codec_cfgs[i] = &snk_uni_streams[i]->codec_cfg;
 	}
 
 	for (size_t i = 0U; i < src_cnt; i++) {
-		src_cap_streams[i] = cap_stream_from_audio_test_stream(&src_uni_streams[i]->stream);
+		src_cap_streams[i] = cap_stream_from_audio_test_stream(src_uni_streams[i]->stream);
 		src_codec_cfgs[i] = &src_uni_streams[i]->codec_cfg;
 	}
 
@@ -1681,6 +1680,8 @@ static int cap_initiator_ac_unicast(const struct cap_unicast_ac_param *param,
 
 			if (cis_param->has_snk) {
 				snk_uni_streams[total_snk_cnt] = &unicast_streams[total_cnt];
+				snk_uni_streams[total_snk_cnt]->stream =
+					&unicast_client_sink_streams[total_snk_cnt];
 
 				if (param->snk_named_preset == NULL) {
 					FAIL("No sink preset available\n");
@@ -1704,6 +1705,8 @@ static int cap_initiator_ac_unicast(const struct cap_unicast_ac_param *param,
 
 			if (cis_param->has_src) {
 				src_uni_streams[total_src_cnt] = &unicast_streams[total_cnt];
+				src_uni_streams[total_src_cnt]->stream =
+					&unicast_client_source_streams[total_src_cnt];
 
 				if (param->src_named_preset == NULL) {
 					FAIL("No source preset available\n");
@@ -1904,7 +1907,6 @@ void test_cap_initiator_unicast_ac(const struct cap_unicast_ac_param *param)
 	}
 
 	if (expect_rx) {
-		LOG_INF("Waiting for data");
 		wait_for_data();
 	}
 
