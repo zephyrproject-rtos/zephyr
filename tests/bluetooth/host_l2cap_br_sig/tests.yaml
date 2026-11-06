@@ -1,4 +1,6 @@
 common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
   platform_allow:
     - native_sim
     - native_sim/native/64
