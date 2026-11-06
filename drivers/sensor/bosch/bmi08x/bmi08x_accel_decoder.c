@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor_clock.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
 
 #define DT_DRV_COMPAT bosch_bmi08x_accel
@@ -105,13 +106,13 @@ static int bmi08x_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_
 	return 0;
 }
 
-static inline void fixed_point_from_encoded_data(const uint16_t encoded_payload[3], uint8_t shift,
+static inline void fixed_point_from_encoded_data(const uint8_t encoded_payload[6], uint8_t shift,
 						 uint32_t fsr_value_g, q31_t output[3])
 {
 	for (size_t i = 0 ; i < 3 ; i++) {
 		int64_t raw_value;
 
-		raw_value = sign_extend_64(encoded_payload[i], 15);
+		raw_value = sign_extend_64(sys_get_le16(&encoded_payload[2 * i]), 15);
 		raw_value = (raw_value * fsr_value_g << (31 - 5 - 15)) * SENSOR_G / 1000000;
 
 		output[i] = raw_value;
@@ -136,8 +137,8 @@ static inline int bmi08x_decode_one_shot(const struct bmi08x_accel_encoded_data 
 	data_output->shift = 5 + edata->header.range;
 	data_output->header.reading_count = 1;
 	data_output->header.base_timestamp_ns = edata->header.timestamp;
-	fixed_point_from_encoded_data(edata->payload, data_output->shift, fsr_value_g,
-				      data_output->readings[0].values);
+	fixed_point_from_encoded_data((const uint8_t *)edata->payload, data_output->shift,
+				      fsr_value_g, data_output->readings[0].values);
 
 	return ++(*fit);
 }
@@ -189,10 +190,8 @@ static inline int bmi08x_decode_fifo(const struct bmi08x_accel_encoded_data *eda
 
 		if (header_byte == BMI08X_ACCEL_FIFO_FRAME_ACCEL &&
 		    *fit + frame_len <= edata->header.buf_len) {
-			const uint16_t *values = (const uint16_t *)&edata->fifo[*fit + 1];
-
 			fixed_point_from_encoded_data(
-				values, data_output->shift, fsr_value_g,
+				&edata->fifo[*fit + 1], data_output->shift, fsr_value_g,
 				data_output->readings[reading_count].values);
 			data_output->readings[reading_count].timestamp_delta =
 				reading_count * period_ns;
