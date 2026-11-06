@@ -69,6 +69,14 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* Mbed TLS
+
+  * Mbed TLS and TF-PSA-Crypto global state, PSA key slots, RNG state, and the
+    built-in memory buffer allocator are now thread-safe by default in
+    multithreaded builds (:kconfig:option:`CONFIG_MBEDTLS_THREADING_C`), backed
+    by Zephyr kernel mutexes and condition variables
+    (:kconfig:option:`CONFIG_MBEDTLS_THREADING_ALT`).
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client

@@ -18,6 +18,7 @@
 #include <errno.h>
 
 #include <mbedtls/debug.h>
+#include <zephyr_mbedtls_priv.h>
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #include <psa/crypto.h>
@@ -43,6 +44,12 @@ static void init_heap(void)
 
 static int _mbedtls_init(void)
 {
+	/*
+	 * Register threading callbacks and initialize global Mbed TLS mutexes
+	 * before init_heap() initializes the allocator mutex and before
+	 * psa_crypto_init() accesses PSA global state.
+	 */
+	zephyr_mbedtls_init_threading();
 
 	init_heap();
 
