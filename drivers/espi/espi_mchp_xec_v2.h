@@ -103,6 +103,7 @@ enum xec_espi_girq_idx {
 };
 
 int xec_host_dev_init(const struct device *dev);
+void xec_sram_bars_init(const struct device *dev);
 int xec_host_dev_connect_irqs(const struct device *dev);
 
 int espi_xec_read_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
