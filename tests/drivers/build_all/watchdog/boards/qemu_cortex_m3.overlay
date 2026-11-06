@@ -12,4 +12,10 @@
 		xlnx,wdt-interval = <31>;
 		xlnx,wdt-enable-once = <1>;
 	};
+
+	cdns_wdt: watchdog@99999000 {
+		compatible = "cdns,wdt-r1p2";
+		reg = <0x99999000 0x1000>;
+		clock-frequency = <100000000>;
+	};
 };
