@@ -159,6 +159,38 @@ __weak void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivDmicClk, 5U, false);
 #endif
 
+#if defined(CONFIG_I2S_MCUX_FLEXCOMM) &&                                                           \
+	(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay) ||                  \
+	 DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay))
+	/*
+	 * Audio PLL for the I2S FlexComms and MCLK: 24.576 MHz (512 * 48 kHz)
+	 * from the 12 MHz crystal. The 480 kHz reference (N = 25) keeps the
+	 * lock indicator dependable (UM10912 7.6.6.3); the dividers are
+	 * encoded as in UM10912 7.5.81.3.3 to 7.5.81.3.5.
+	 */
+	pll_setup_t audio_pll_setup = {
+		.pllctrl = SYSCON_AUDPLLCTRL_SELI(8U) | SYSCON_AUDPLLCTRL_SELP(31U) |
+			   SYSCON_AUDPLLCTRL_SELR(0U),
+		.pllmdec = SYSCON_AUDPLLMDEC_MDEC(0x34d3U), /* M = 512 */
+		.pllndec = SYSCON_AUDPLLNDEC_NDEC(0x3fU),   /* N = 25 */
+		.pllpdec = SYSCON_AUDPLLPDEC_PDEC(0xeU),    /* P = 10 */
+	};
+
+	CLOCK_AttachClk(kEXT_CLK_to_AUDIO_PLL);
+	CLOCK_SetupAudioPLLPrec(&audio_pll_setup, PLL_SETUPFLAG_POWERUP | PLL_SETUPFLAG_WAITLOCK);
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay)
+	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM6);
+#endif
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm7), nxp_lpc_i2s, okay)
+	CLOCK_AttachClk(kAUDIO_PLL_to_FLEXCOMM7);
+#endif
+
+	CLOCK_AttachClk(kAUDIO_PLL_to_MCLK);
+	CLOCK_SetClkDiv(kCLOCK_DivMClk, 1U, false);
+	SYSCON->MCLKIO = SYSCON_MCLKIO_DIR(1U);
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz
