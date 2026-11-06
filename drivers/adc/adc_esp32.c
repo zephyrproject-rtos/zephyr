@@ -7,6 +7,9 @@
 #define DT_DRV_COMPAT espressif_esp32_adc
 
 #include <esp_clk_tree.h>
+#if !defined(CONFIG_ADC_ESP32_DMA) && defined(CONFIG_PM)
+#include <esp_sleep.h>
+#endif
 #include <esp_private/sar_periph_ctrl.h>
 #include <esp_private/adc_share_hw_ctrl.h>
 #include <esp_private/regi2c_ctrl.h>
@@ -363,6 +366,19 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 	return 0;
 }
 
+#if !defined(CONFIG_ADC_ESP32_DMA) && defined(CONFIG_PM)
+static void adc_esp32_keep_power_domains_on(void)
+{
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) && \
+	defined(SOC_PM_SUPPORT_MODEM_PD)
+	esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_ON);
+	esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON);
+#elif defined(ADC_LL_ADC_FE_ON_MODEM_DOMAIN)
+	esp_sleep_pd_config(ESP_PD_DOMAIN_MODEM, ESP_PD_OPTION_ON);
+#endif
+}
+#endif /* !CONFIG_ADC_ESP32_DMA && CONFIG_PM */
+
 static int adc_esp32_init(const struct device *dev)
 {
 	struct adc_esp32_data *data = (struct adc_esp32_data *)dev->data;
@@ -405,6 +421,9 @@ static int adc_esp32_init(const struct device *dev)
 	adc_oneshot_hal_init(&data->hal, &config);
 
 	sar_periph_ctrl_adc_oneshot_power_acquire();
+#if defined(CONFIG_PM)
+	adc_esp32_keep_power_domains_on();
+#endif
 #endif /* CONFIG_ADC_ESP32_DMA */
 
 	for (uint8_t i = 0; i < ADC_LL_MAX_CHANNEL_NUM; i++) {
