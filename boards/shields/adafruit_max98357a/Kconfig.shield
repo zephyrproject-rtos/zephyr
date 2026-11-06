@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_MAX98357A
+	def_bool $(shields_list_contains,adafruit_max98357a)
