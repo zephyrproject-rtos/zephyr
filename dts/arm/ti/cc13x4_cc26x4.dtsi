@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			cpu-power-states = <&idle &standby>;
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100>;
+			};
+
+			standby: standby {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <5000>;
+				exit-latency-us = <2400>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <48000000>;
+		#clock-cells = <0>;
+	};
+
+	rtcclk: rtc-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32768>;
+		#clock-cells = <0>;
+	};
+
+	bootloader {
+		backdoor: backdoor-config {
+			compatible = "ti,cc13x4-cc26x4-bootloader-backdoor";
+			pin = <255>;
+			level = <0>;
+		};
+	};
+
+	soc {
+		/* system necessity — flash */
+		flash_controller: flash-controller@58030000 {
+			compatible = "ti,cc13xx-cc26xx-flash-controller";
+			reg = <0x58030000 0x4000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x0 DT_SIZE_K(1024)>;
+				erase-block-size = <DT_SIZE_K(8)>;
+				write-block-size = <1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		rtc: rtc@58092000 {
+			compatible = "ti,cc13xx-cc26xx-rtc-timer";
+			reg = <0x58092000 0x1000>;
+			interrupts = <4 0>;
+			status = "okay";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&systick {
+	status = "disabled";
+};
