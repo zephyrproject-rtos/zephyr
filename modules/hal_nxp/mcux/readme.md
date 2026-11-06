@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright 2026 NXP
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # MCUX SDK and Zephyr Integration
 
 This document describes how NXP MCUX SDK code integrates with Zephyr.
@@ -26,6 +31,21 @@ mcux
 ```
 
 ## Architecture
+
+### MCUX SDK NG Port Header
+
+In MCUX SDK NG, the file `fsl_common.h` defines the fundamental utilities which
+other drivers will use, such as `ARRAY_SIZE`. Meanwhile, `fsl_common.h` provides
+a method for user to override the utilities.
+```
+#if defined(MCUX_PORT_HEADER)
+#include MCUX_PORT_HEADER
+#endif
+```
+
+Zephyr added such file `mcux-sdk-ng/mcux_port_zephyr.h`, and define
+`MCUX_PORT_HEADER` as `mcux-sdk-ng/mcux_port_zephyr.h`, so that MCUX SDK used
+utilities can be mapped to Zephyr implementation.
 
 ### MCUX SDK NG CMake Architecture
 

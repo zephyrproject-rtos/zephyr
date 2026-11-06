@@ -6,6 +6,9 @@ set(MCUX_SDK_NG_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng)
 # SdkRootDirPath is used by MCUX SDK NG CMake files.
 set(SdkRootDirPath ${MCUX_SDK_NG_DIR})
 
+zephyr_include_directories("${CMAKE_CURRENT_LIST_DIR}")
+zephyr_compile_definitions(MCUX_PORT_HEADER=\"mcux_port_zephyr.h\")
+
 if(CONFIG_CPU_CORTEX_A)
   set(ACoreCmsisDirPath ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk/CMSIS)
 endif()
