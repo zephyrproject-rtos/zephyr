@@ -194,6 +194,9 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	LOG_DBG("Stopping DMA channel %u for TX stream", strm->dma_channel);
 
+	/* Mask the FIFO error interrupt, TX start enables it again */
+	SAI_TxDisableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
+
 	/* Disable FIFO DMA request */
 	SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, false);
 
@@ -234,6 +237,10 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 	const struct device *dev_dma = dev_data->dev_dma;
 
 	LOG_DBG("Stopping RX stream & DMA channel %u", strm->dma_channel);
+
+	/* Mask the FIFO error interrupt, RX start enables it again */
+	SAI_RxDisableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
+
 	dma_stop(dev_dma, strm->dma_channel);
 
 	/* Disable the channel FIFO */
@@ -814,7 +821,6 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		dev_data->tx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->tx.dma_cfg.user_data = (void *)dev;
 		dev_data->tx.state = I2S_STATE_READY;
-		SAI_TxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
 	} else {
 		/* For RX, DMA reads from FIFO whenever data present */
 		config.fifo.fifoWatermark = 0;
@@ -841,7 +847,6 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		dev_data->rx.dma_cfg.dest_burst_length = word_size_bytes;
 		dev_data->rx.dma_cfg.user_data = (void *)dev;
 		dev_data->rx.state = I2S_STATE_READY;
-		SAI_RxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
 	}
 
 	return 0;
@@ -968,8 +973,10 @@ static int i2s_tx_stream_start(const struct device *dev)
 	base->TCSR |= I2S_TCSR_FR_MASK;
 
 	/*
-	 * A previous underrun masked the FIFO error interrupt. Clear any stale
-	 * FIFO error flag and unmask it again for the new run.
+	 * The FIFO error interrupt is enabled only while the stream runs. An
+	 * idle transmitter, for example one kept enabled to clock a
+	 * synchronous receiver, underruns on every frame. Clear any stale
+	 * FIFO error flag before enabling it for the new run.
 	 */
 	SAI_TxClearStatusFlags(base, kSAI_FIFOErrorFlag);
 	SAI_TxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
@@ -1078,6 +1085,13 @@ static int i2s_rx_stream_start(const struct device *dev)
 	 * previous run of the stream
 	 */
 	base->RCSR |= I2S_RCSR_FR_MASK;
+
+	/*
+	 * The FIFO error interrupt is enabled only while the stream runs.
+	 * Clear any stale FIFO error flag before enabling it for the new run.
+	 */
+	SAI_RxClearStatusFlags(base, kSAI_FIFOErrorFlag);
+	SAI_RxEnableInterrupts(base, kSAI_FIFOErrorInterruptEnable);
 
 	/* Enable DMA enable bit */
 	SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
