@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Charles Dias <charlesdias.cd@outlook.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/delete-node/ &sram1;
+/delete-node/ &sram2;
+
+/* Increase the SRAM0 bank memory size to accommodate the VIDEO_BUFFER_POOL_SZ_MAX configuration. */
+&sram0 {
+	reg = <0x24000000 DT_SIZE_K(1024)>;
+};

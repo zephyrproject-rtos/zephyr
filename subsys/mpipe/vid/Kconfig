@@ -1,0 +1,32 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_VID
+	bool "Video plugin support"
+	select VIDEO
+	help
+	  Elements backed by Zephyr video devices: capture from a camera, and
+	  memory-to-memory transforms performed by hardware such as a scaler,
+	  rotator or decoder.
+
+	  This is where zero-copy matters most, so the pools here hand out the
+	  driver's own buffers rather than copies, and a frame captured by a
+	  camera reaches the display without being moved.
+
+if MPIPE_VID
+
+config MPIPE_VID_CONVERT
+	bool "Software-based pixel format converter"
+	help
+	  A transform that converts a frame from one pixel format to another on
+	  the CPU.
+
+	  It exists as the fallback for a conversion no hardware on the board can
+	  do, which is common between a decoder's output format and what a panel
+	  accepts. It converts pixel formats only: it does not scale, crop or
+	  rotate. Expect it to cost real CPU time per frame.
+
+endif # MPIPE_VID
