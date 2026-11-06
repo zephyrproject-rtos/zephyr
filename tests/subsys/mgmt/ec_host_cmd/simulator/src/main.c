@@ -388,6 +388,22 @@ ZTEST(ec_host_cmd, test_add_rx_size_too_small)
 	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
 }
 
+ZTEST(ec_host_cmd, test_add_rqt_size_too_small)
+{
+	*host_to_dut = (struct rx_structure){
+		.header = {
+				.prtcl_ver = 3,
+				.cmd_id = EC_CMD_HELLO,
+				.data_len = sizeof(host_to_dut->add) - 1,
+			},
+		.add.in_data = 0x10203040,
+	};
+
+	simulate_rx_data();
+
+	verify_tx_error(EC_HOST_CMD_REQUEST_TRUNCATED);
+}
+
 ZTEST(ec_host_cmd, test_no_log_on_header_truncated)
 {
 	int rv;
