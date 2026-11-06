@@ -192,6 +192,17 @@ __weak void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM2);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_usart, okay) ||                    \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+	/* Attach 12 MHz clock to FLEXCOMM4 */
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm9), nxp_lpc_spi, okay)
+	/* Attach 12 MHz clock to FLEXCOMM9 */
+	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM9);
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sdif), nxp_lpc_sdif, okay)
 	/*
 	 * SD/MMC host source clock: the main clock, divided to stay within the
