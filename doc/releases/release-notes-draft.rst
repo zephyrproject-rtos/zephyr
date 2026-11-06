@@ -85,6 +85,9 @@ Libraries / Subsystems
     :c:macro:`NET_EVENT_L4_DNS_LOST` and :c:func:`conn_mgr_dns_is_ready`.
   * :c:func:`dns_resolve_get_server_families` reports the address families of the
     available unicast DNS servers.
+  * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
+    :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
+    MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
 
   * Ethernet bridge
 
