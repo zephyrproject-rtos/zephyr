@@ -12,6 +12,26 @@ module = VIRTIO
 module-str = VIRTIO
 source "subsys/logging/Kconfig.template.log_config"
 
+config VIRTIO_WAKE_QUEUE_STACK_SIZE
+	int "Virtio wake workqueue stack size"
+	default 4096 if COVERAGE_GCOV
+	default 1024
+	help
+	  Stack size of the shared workqueue thread that wakes threads blocked
+	  waiting for free virtqueue descriptors. Its handler only takes the
+	  virtqueue waiter mutex and broadcasts a condition variable.
+
+config VIRTIO_WAKE_QUEUE_PRIORITY
+	int "Virtio wake workqueue priority"
+	default 0 if !COOP_ENABLED
+	default -2 if !PREEMPT_ENABLED && NUM_COOP_PRIORITIES > 1
+	default -1
+	help
+	  Priority of the shared workqueue thread that wakes threads blocked
+	  waiting for free virtqueue descriptors. Defaults follow the system
+	  workqueue. A priority outside the configured non-idle priorities is
+	  rejected at build time.
+
 config VIRTIO_PCI
 	bool "Support for VIRTIO over PCI"
 	default y

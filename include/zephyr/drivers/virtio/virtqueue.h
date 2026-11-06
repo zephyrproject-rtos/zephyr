@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,13 +186,60 @@ struct virtq {
 	 * VIRTIO_F_IN_ORDER was offered, we can't use array with descriptors as another
 	 * ring buffer, always taking next descriptor. This is an auxiliary structure to
 	 * easily determine next free descriptor
+	 *
+	 * @warning This is implementation state. The virtqueue helpers are its only
+	 * supported users: they pop with K_NO_WAIT while holding @ref virtq.lock.
+	 * Blocking on this stack directly, or pushing to it, can break the free
+	 * descriptor accounting and is not supported.
 	 */
 	struct k_stack free_desc_stack;
 
 	/**
 	 * amount of free descriptors in the free_desc_stack
+	 *
+	 * Updated with atomic operations while @ref virtq.lock is held, and equal
+	 * to the stack depth at every completed allocation or release. It is the
+	 * authority for availability: submission rechecks it under the lock.
+	 * Outside the lock it is only a scheduling hint.
+	 *
+	 * @warning This is implementation state; modification is not supported.
 	 */
-	uint16_t free_desc_n;
+	atomic_t free_desc_n;
+
+	/**
+	 * number of threads currently blocked waiting for free descriptors
+	 *
+	 * @warning This is implementation state; modification is not supported.
+	 */
+	atomic_t waiters;
+
+	/**
+	 * serializes the blocking allocation path and pairs with @ref virtq.wait_cond
+	 *
+	 * @warning This is implementation state; use by drivers is not supported.
+	 */
+	struct k_mutex wait_lock;
+
+	/**
+	 * broadcast when descriptors are released while @ref virtq.waiters is non-zero
+	 *
+	 * @warning This is implementation state; use by drivers is not supported.
+	 */
+	struct k_condvar wait_cond;
+
+	/**
+	 * notifies @ref virtq.wait_cond waiters from the shared virtio wake workqueue
+	 *
+	 * @warning This is implementation state; use by drivers is not supported.
+	 */
+	struct k_work wake_work;
+
+	/**
+	 * synchronization storage in the queue's heap allocation for flushing wake_work
+	 *
+	 * @warning This is implementation state; use by drivers is not supported.
+	 */
+	struct k_work_sync *wake_sync;
 
 	/**
 	 * array with callbacks invoked after receiving buffers back from the device
@@ -199,18 +247,29 @@ struct virtq {
 	struct virtq_receive_callback_entry *recv_cbs;
 };
 
-
 /**
  * @brief creates virtqueue
  *
+ * Starts the shared virtio wake workqueue on first use, so this must be called
+ * from thread context, at POST_KERNEL or later.
+ *
  * @param v virtqueue to be created
  * @param size size of the virtqueue
- * @return 0 or error code on failure
+ * @retval 0 Virtqueue created.
+ * @retval -EINVAL Size is not a power of two no greater than 32 KiB, or the
+ * caller is in interrupt context.
+ * @retval -ENOMEM Backing memory could not be allocated.
  */
 int virtq_create(struct virtq *v, size_t size);
 
 /**
  * @brief frees virtqueue
+ *
+ * Must be called from thread context. The caller must first quiesce all
+ * submission and completion sources of this virtqueue, ensure that no thread
+ * is blocked waiting for its descriptors and that no release is in flight.
+ * The shared wake workqueue is not affected; only this virtqueue's pending
+ * notification is completed before its memory is released.
  *
  * @param v virtqueue to be freed
  */
@@ -233,6 +292,36 @@ struct virtq_buf {
 /**
  * @brief adds chain of buffers to the virtqueue
  *
+ * The chain is allocated all-or-nothing: either every descriptor it needs is
+ * taken from the free pool or none is taken. A chain needing more descriptors
+ * than the queue has fails immediately with -EINVAL and never waits, so it
+ * cannot wait on itself.
+ *
+ * Timeout handling:
+ * - K_NO_WAIT attempts the allocation once and returns -EBUSY when the free
+ *   descriptors are insufficient. This works in any context.
+ * - K_FOREVER or any finite value blocks the calling thread for up to
+ *   @p timeout, until the whole chain fits. The timeout is one budget for the
+ *   whole chain, not a fresh budget per descriptor; it starts when the call is
+ *   made and also covers the initial non-blocking attempt. A timed-out call
+ *   returns -EAGAIN.
+ * - Interrupt context never waits, whatever timeout is passed: it either
+ *   succeeds or returns -EBUSY. A completion callback that resubmits to its
+ *   own queue is such a caller.
+ *
+ * Blocking requires an independent completion path. A thread or workqueue
+ * that is the only source of progress for this queue must not wait for
+ * descriptors only it can return. Blocking is not allowed while holding a
+ * spinlock or with interrupts locked; use K_NO_WAIT instead. Waiting threads
+ * are woken greedily and in no particular order, so a sustained stream of
+ * small chains can delay a large one.
+ *
+ * Because the wait is implemented with a condition variable, a call that
+ * times out can still spend an unbounded time reacquiring the internal mutex
+ * after the deadline has passed; the deadline is otherwise never extended by
+ * wakeups. Aborting a thread that is blocked in this call is not supported:
+ * let it return and join it before the queue is freed.
+ *
  * Note that according to spec 2.7.13.3 the device may access the buffers as soon
  * as the avail->idx is increased, which is done at the end of this function, so
  * the device may access the buffers without notifying it with virtio_notify_virtqueue
@@ -244,34 +333,18 @@ struct virtq_buf {
  * device_readable_count buffers will be set as device readable
  * @param cb callback to be invoked after device returns the buffer chain, can be NULL
  * @param cb_opaque opaque value that will be passed to the cb
- * @param timeout amount of time it will wait for free descriptors, with K_NO_WAIT it
- * can be called from isr
- * @return 0 or error code on failure
+ * @param timeout how long to wait for the whole chain to fit
+ * @retval 0 Chain was queued.
+ * @retval -EINVAL Empty chain, chain larger than the queue, or chain longer
+ * than 2^32 bytes.
+ * @retval -EBUSY Free descriptors were insufficient and the caller cannot wait.
+ * @retval -EAGAIN The whole chain did not fit within @p timeout.
  */
 int virtq_add_buffer_chain(
 	struct virtq *v, struct virtq_buf *bufs, uint16_t bufs_size,
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque,
 	k_timeout_t timeout
 );
-
-/**
- * @brief adds free descriptor back
- *
- * @param v virtqueue it operates on
- * @param desc_idx index of returned descriptor
- */
-void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx);
-
-/**
- * @brief gets next free descriptor
- *
- * @param v virtqueue it operates on
- * @param desc_idx address where index of descriptor will be stored
- * @param timeout amount of time it will wait for free descriptor, with K_NO_WAIT it
- * can be called from isr
- * @return 0 or error code on failure
- */
-int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout);
 
 /**
  * @}

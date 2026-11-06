@@ -206,7 +206,7 @@ static void virtconsole_control_tx_flush(void *priv, uint32_t len)
 		LOG_ERR("could not access virtqueue 3");
 		return;
 	}
-	int i = vq->free_desc_n;
+	int i = (int)atomic_get(&vq->free_desc_n);
 
 	while ((i-- > 0) && (item = k_fifo_get(&data->tx_ctlfifo, K_NO_WAIT))) {
 		struct virtq_buf vqbuf = {.addr = &item->msg, .len = sizeof(item->msg)};
