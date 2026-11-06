@@ -1,0 +1,12 @@
+identifier: nicemcu_wb5e/bk7258/cpu0
+name: NiceMCU WB5E
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+ram: 640
+flash: 2048
+vendor: nicemcu
