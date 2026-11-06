@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_CC35XX
+	bool "CC35XX UART driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables the CC35XX UART driver

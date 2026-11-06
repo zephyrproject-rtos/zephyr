@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TI GPIO port node
+
+compatible: "ti,cc35xx-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  gpio-index-offset:
+    type: int
+    required: true
+    description: |
+      The cc35xx hardware has a single GPIO controller
+      which aggregates all the available GPIO pins.
+      The indexes range from 0 to <n>
+
+      In Zephyr the GPIOs are split into ports,
+      each aggregating up to 32 pins.
+      First port indexes match the global indexes (0-31),
+      second port is offset by 32
+      (0-31 port pins map to 32-63 pins in the global pool).
+      and so on.
+
+gpio-cells:
+  - pin
+  - flags

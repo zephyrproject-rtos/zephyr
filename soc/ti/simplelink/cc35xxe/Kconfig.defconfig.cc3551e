@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# Texas Instruments SimpleLink CC3551E SoC
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CC35XXE
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 1000000 if CC35XX_RTC_TIMER
+	default 160000000 if !CC35XX_RTC_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int
+	default 1000
+
+config NUM_IRQS
+	int
+	default 53
+
+config CORTEX_M_SYSTICK
+	default y if !CC35XX_RTC_TIMER
+	default n if CC35XX_RTC_TIMER
+
+config XIP
+	bool
+	default n
+
+config FLASH_LOAD_OFFSET
+	hex
+	default 0x2000 if XIP
+	default 0x0 if !XIP
+
+config ROM_START_OFFSET
+	hex
+	default 0x0
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # SOC_SERIES_CC35XXE

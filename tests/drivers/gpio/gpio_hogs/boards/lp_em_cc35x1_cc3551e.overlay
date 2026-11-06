@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	zephyr,user {
+		output-high-gpios = <&gpio0_31 30 GPIO_ACTIVE_LOW>; /* GPIO30, Green LED */
+		output-low-gpios = <&gpio32_63 2 GPIO_ACTIVE_HIGH>; /* GPIO34, Red LED */
+		input-gpios = <&gpio0_31 2 GPIO_ACTIVE_HIGH>;		/* GPIO2, SW 1 */
+	};
+};
+
+&gpio0_31 {
+	hog1 {
+		gpio-hog;
+		gpios = <30 GPIO_ACTIVE_LOW>;
+		output-high;
+	};
+
+	hog3 {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		input;
+	};
+};
+
+&gpio32_63 {
+	hog2 {
+		gpio-hog;
+		gpios = <2 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};

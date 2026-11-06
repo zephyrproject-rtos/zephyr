@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# Texas Instruments CC35XXE
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CC35XXE
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select HAS_CC35XX_SDK
+	select ARMV8_M_DSP
+	select DYNAMIC_INTERRUPTS
