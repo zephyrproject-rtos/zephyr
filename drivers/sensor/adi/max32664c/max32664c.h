@@ -152,8 +152,6 @@ struct max32664c_config {
 
 #ifdef CONFIG_MAX32664C_USE_INTERRUPT
 	const struct device *dev;
-	struct gpio_callback gpio_cb;
-	struct k_work interrupt_work;
 #endif /* CONFIG_MAX32664C_USE_INTERRUPT */
 
 	struct gpio_dt_spec mfio_gpio;
@@ -201,6 +199,11 @@ struct max32664c_data {
 	struct k_thread thread;
 	k_tid_t thread_id;
 	bool is_thread_running;
+
+#ifdef CONFIG_MAX32664C_USE_INTERRUPT
+	struct gpio_callback gpio_cb;
+	struct k_work interrupt_work;
+#endif /* CONFIG_MAX32664C_USE_INTERRUPT */
 
 #ifdef CONFIG_MAX32664C_USE_STATIC_MEMORY
 	/** @brief This buffer is used to read all available messages from the sensor hub plus the
