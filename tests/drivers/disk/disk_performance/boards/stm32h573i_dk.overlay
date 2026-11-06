@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+sdhc: &sdmmc1 {
+
+	bus-width = <1>;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
