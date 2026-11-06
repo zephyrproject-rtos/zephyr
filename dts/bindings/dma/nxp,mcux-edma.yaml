@@ -19,6 +19,9 @@ properties:
 
   interrupts:
     required: true
+    description: |
+      Channel interrupts followed by the shared error interrupt, if present.
+      Controllers without a separate error interrupt must set no-error-irq.
 
   dma-channels:
     required: true
