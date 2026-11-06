@@ -174,6 +174,13 @@ child-binding:
           state is latched before entering sleep and remains unchanged while
           the system is in low power mode.
 
+      output-invert:
+        type: boolean
+        description: |
+          Invert the peripheral output signal routed to the pin through the
+          GPIO matrix. Routing the same output signal to two pins, one of
+          them inverted, gives a differential output.
+
 examples:
   - |
     ledc0_default: ledc0_default {
