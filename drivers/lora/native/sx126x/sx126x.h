@@ -79,7 +79,7 @@ struct sx126x_data {
 
 int sx126x_set_packet_type(const struct device *dev, uint8_t type);
 int sx126x_set_rx_gain(const struct device *dev, bool boosted);
-int sx126x_set_sleep(const struct device *dev);
+int sx126x_finish(const struct device *dev, int status);
 int sx126x_config_begin(const struct device *dev);
 int sx126x_config_carrier(const struct device *dev, uint32_t frequency, int8_t tx_power);
 

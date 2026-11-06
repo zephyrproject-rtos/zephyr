@@ -251,6 +251,7 @@
 
 /* TX Clamp Config (workaround for SX1262) */
 #define SX126X_REG_TX_CLAMP_CFG             0x08D8
+#define SX126X_TX_CLAMP_CFG_MASK            0x1E
 
 /* Over Current Protection */
 #define SX126X_REG_OCP                      0x08E7
