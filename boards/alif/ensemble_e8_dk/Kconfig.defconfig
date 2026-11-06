@@ -11,4 +11,7 @@ configdefault I2C_DW_CLOCK_SPEED
 configdefault ETH_DRIVER
 	default y if $(dt_nodelabel_enabled,eth)
 
+config GPIO
+	default y if SPI
+
 endif # BOARD_ENSEMBLE_E8_DK
