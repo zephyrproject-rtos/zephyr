@@ -1098,6 +1098,8 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 	struct http2_frame *frame = &client->current_frame;
 	struct http_resource_detail *detail;
 	struct http2_stream_ctx *stream;
+	bool new_request = false;
+	size_t discard_len;
 	int path_len;
 	int ret;
 
@@ -1122,6 +1124,8 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			LOG_DBG("No available stream slots. Connection closed.");
 			return -ENOMEM;
 		}
+
+		new_request = true;
 	}
 
 	client->current_stream = stream;
@@ -1144,6 +1148,13 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 		}
 
 		client->preface_sent = true;
+	}
+
+	/* The request body can arrive over several calls. The request is
+	 * answered on the first call, the rest of the calls only carry body.
+	 */
+	if (!new_request) {
+		goto request_body;
 	}
 
 	detail = get_resource_detail(client->service, client->url_buffer, &path_len, false);
@@ -1172,18 +1183,6 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 			if (ret < 0) {
 				goto error;
 			}
-
-			if (client->method == HTTP_POST ||
-			    client->method == HTTP_PUT ||
-			    client->method == HTTP_PATCH) {
-				ret = dynamic_post_put_req_v2(
-					(struct http_resource_detail_dynamic *)detail, client,
-					false);
-				if (ret < 0) {
-					goto error;
-				}
-			}
-
 		}
 	} else {
 		ret = send_http2_404(client, frame);
@@ -1192,15 +1191,32 @@ int handle_http1_to_http2_upgrade(struct http_client_ctx *client)
 		}
 	}
 
+request_body:
+	/* A dynamic resource accepting a POST, PUT or PATCH request receives
+	 * the body. Otherwise the body is discarded.
+	 */
+	if (stream->current_detail != NULL) {
+		ret = dynamic_post_put_req_v2(
+			(struct http_resource_detail_dynamic *)stream->current_detail, client,
+			false);
+		if (ret < 0) {
+			goto error;
+		}
+	} else {
+		discard_len = MIN(frame->length, client->data_len);
+		frame->length -= discard_len;
+		client->cursor += discard_len;
+		client->data_len -= discard_len;
+	}
+
 	/* Only after the complete HTTP1 payload has been processed, switch
-	 * to HTTP2.
+	 * to HTTP2. Any data left after the request is the client connection
+	 * preface.
 	 */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
 		release_http_stream_context(client, frame->stream_identifier);
 		client->current_detail = NULL;
 		client->server_state = HTTP_SERVER_PREFACE_STATE;
-		client->cursor += client->data_len;
-		client->data_len = 0;
 	}
 
 	return 0;
