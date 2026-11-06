@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+
+/ {
+	clock-monitor-required-clocks {
+		compatible = "clock-monitor-required-clocks";
+		clocks = <&syscon MCUX_FRO_1M_CLK>;
+	};
+
+	aliases {
+		clock-meter = &anactrl;
+	};
+};
+
+&inputmux {
+	status = "okay";
+};
+
+/*
+ * Measures the 1 MHz FRO (default target) against the main clock
+ * (default reference).
+ */
+&anactrl {
+	status = "okay";
+};

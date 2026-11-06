@@ -24,5 +24,6 @@ rsource "Kconfig.nxp_cmu_fc"
 rsource "Kconfig.nxp_cmu_fm"
 rsource "Kconfig.nxp_freqme"
 rsource "Kconfig.nxp_fmeas"
+rsource "Kconfig.nxp_anactrl"
 
 endif # CLOCK_MONITOR

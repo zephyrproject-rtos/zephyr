@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fixture binding for the clock_monitor PM test suite.
+
+  Each child node names one clock_monitor instance to exercise:
+
+    / {
+        clock-monitor-pm-test {
+            compatible = "test-clock-monitor-pm";
+
+            monitor0 {
+                monitor = <&clock_monitor0>;
+            };
+        };
+    };
+
+  A board opts into the suite by providing an overlay with this node, which
+  must also enable the monitor node and power the clocks the measurement
+  needs (see test-required-clocks.yaml).
+
+compatible: "test-clock-monitor-pm"
+
+child-binding:
+  description: One clock_monitor instance under test.
+
+  properties:
+    monitor:
+      type: phandle
+      required: true
+      description: The clock_monitor device to exercise.
