@@ -25,12 +25,17 @@
 #define WDT_SETUP_FLAGS         CONFIG_TEST_WDT_SETUP_FLAGS
 
 #if defined(CONFIG_TEST_WDT_TIMEOUT_UNIT_TICKS)
-#define WDT_TIMEOUT K_TICKS(WDT_TIMEOUT_VALUE)
 #define SLEEP_TIME  K_TICKS(CONFIG_TEST_WDT_SLEEP_TIME)
 #else
-#define WDT_TIMEOUT K_MSEC(WDT_TIMEOUT_VALUE)
 #define SLEEP_TIME  K_MSEC(CONFIG_TEST_WDT_SLEEP_TIME)
 #endif
+
+/*
+ * Wait for the callback in milliseconds in both cases. With ticks, the window
+ * is in watchdog clock cycles, so a bound in ticks would depend on the system
+ * tick rate.
+ */
+#define WDT_TIMEOUT K_MSEC(WDT_TIMEOUT_VALUE)
 
 static struct wdt_timeout_cfg m_cfg_wdt0;
 static volatile int wdt_interrupted_flag;
