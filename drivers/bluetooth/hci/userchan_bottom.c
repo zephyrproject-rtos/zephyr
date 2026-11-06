@@ -38,6 +38,12 @@ bool user_chan_rx_ready(int fd)
 	return (poll(&pollfd, 1, 0) == 1);
 }
 
+long user_chan_send(int fd, const void *data, unsigned long len)
+{
+	/* As send(), but a peer that has gone away gives EPIPE instead of raising SIGPIPE. */
+	return send(fd, data, len, MSG_NOSIGNAL);
+}
+
 int user_chan_is_ipaddr_ok(char ip_addr[])
 {
 	struct in_addr addr;
