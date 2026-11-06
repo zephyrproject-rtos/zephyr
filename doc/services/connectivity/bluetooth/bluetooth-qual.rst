@@ -42,6 +42,9 @@ Qualified releases
 .. _Bluetooth qualification listing 332380:
    https://qualification.bluetooth.com/ListingDetails/332380
 
+.. _Bluetooth qualification listing 353725:
+   https://qualification.bluetooth.com/ListingDetails/353725
+
 The Zephyr Project provides a pre-qualified Bluetooth host stack to make it
 easy for users to build qualified Bluetooth products. It can be included in
 a product qualification design, providing feature coverage and reducing
@@ -57,3 +60,6 @@ the details can be checked below.
   * - v4.4
     - Q385945
     - `Bluetooth qualification listing 332380`_
+  * - v4.5
+    - Q399832
+    - `Bluetooth qualification listing 353725`_
