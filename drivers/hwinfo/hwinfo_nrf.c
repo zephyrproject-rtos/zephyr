@@ -8,13 +8,12 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
-#if defined(CONFIG_BOARD_QEMU_CORTEX_M0) || \
-	((defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) && \
-	 defined(CONFIG_RISCV_CORE_NORDIC_VPR))
-#define RESET_CAUSE_AVAILABLE 0
-#else
+
+#define _RESET_CAUSE_ON_NODE(node_id) IF_ENABLED(DT_PROP(node_id, reset_reason_available), (1,))
+#define RESET_CAUSE_AVAILABLE UTIL_NOT(IS_EMPTY(DT_FOREACH_STATUS_OKAY_NODE(_RESET_CAUSE_ON_NODE)))
+
+#if RESET_CAUSE_AVAILABLE
 #include <helpers/nrfx_reset_reason.h>
-#define RESET_CAUSE_AVAILABLE 1
 #endif
 
 #if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && defined(NRF_FICR_S)
