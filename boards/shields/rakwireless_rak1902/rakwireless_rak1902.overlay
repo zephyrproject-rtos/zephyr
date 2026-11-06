@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pressure-sensor = &lps22hb_rak1902;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	lps22hb_rak1902: lps22hb@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+	};
+};
