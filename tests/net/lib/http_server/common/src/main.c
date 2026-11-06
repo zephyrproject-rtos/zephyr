@@ -552,13 +552,20 @@ ZTEST(http_service, test_HTTP_SERVER_REMOVE_DOT_SEGMENTS)
 	ASSERT_NORMALIZE("/../foo", "/foo");
 	ASSERT_NORMALIZE("/a/../../b", "/b");
 
-	/* Query and fragment portions are preserved verbatim. */
+	/* The query portion is preserved verbatim. */
 	ASSERT_NORMALIZE("/foo?bar=1", "/foo?bar=1");
 	ASSERT_NORMALIZE("/foo/../bar?x=1", "/bar?x=1");
 	ASSERT_NORMALIZE("/foo/.?x=1", "/foo/?x=1");
 	ASSERT_NORMALIZE("/foo/..?x=1", "/?x=1");
-	ASSERT_NORMALIZE("/foo#frag", "/foo#frag");
-	ASSERT_NORMALIZE("/foo/../bar#frag", "/bar#frag");
+
+	/* A fragment is dropped. */
+	ASSERT_NORMALIZE("/foo#frag", "/foo");
+	ASSERT_NORMALIZE("/foo/../bar#frag", "/bar");
+	ASSERT_NORMALIZE("/foo#/../bar", "/foo");
+	ASSERT_NORMALIZE("/foo/#", "/foo/");
+	ASSERT_NORMALIZE("/foo?x=1#frag", "/foo?x=1");
+	ASSERT_NORMALIZE("/foo?x=1#/../bar", "/foo?x=1");
+	ASSERT_NORMALIZE("#frag", "");
 }
 
 ZTEST_SUITE(http_service, NULL, NULL, NULL, NULL, NULL);
