@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PA16 (TX) to PA17 (RX); the console uses a separate SERCOM. */
+&pinctrl {
+	fifo_read_uart: fifo_read_uart {
+		group1 {
+			pinmux = <PA16C_SERCOM1_PAD0>, <PA17C_SERCOM1_PAD1>;
+		};
+	};
+};
+
+dut: &sercom1 {
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&fifo_read_uart>;
+	pinctrl-names = "default";
+	status = "okay";
+};

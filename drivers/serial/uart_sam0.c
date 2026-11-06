@@ -857,18 +857,14 @@ static int uart_sam0_fifo_read(const struct device *dev, uint8_t *rx_data,
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
 	SercomUsart * const regs = config->regs;
+	int bytes_read = 0;
 
-	if (regs->INTFLAG.bit.RXC) {
-		uint8_t ch = regs->DATA.reg;
-
-		if (size >= 1) {
-			*rx_data = ch;
-			return 1;
-		} else {
-			return -EINVAL;
-		}
+	/* Read available data up to the caller's buffer capacity. */
+	while (bytes_read < size && regs->INTFLAG.bit.RXC) {
+		rx_data[bytes_read++] = regs->DATA.reg;
 	}
-	return 0;
+
+	return bytes_read;
 }
 
 static int uart_sam0_irq_is_pending(const struct device *dev)

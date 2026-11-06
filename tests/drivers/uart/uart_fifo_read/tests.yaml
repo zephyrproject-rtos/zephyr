@@ -1,0 +1,20 @@
+common:
+  tags:
+    - drivers
+    - uart
+  harness: ztest
+tests:
+  drivers.uart.fifo_read.emulated:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_EMUL=y
+  drivers.uart.fifo_read.sam0:
+    platform_allow:
+      - same54_xpro
+    integration_platforms:
+      - same54_xpro
+    harness_config:
+      fixture: uart_loopback
