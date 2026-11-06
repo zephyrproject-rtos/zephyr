@@ -121,6 +121,11 @@ void http_server_get_content_type_from_extension(char *url, char *content_type,
 						 size_t content_type_size);
 int http_server_find_file(char *fname, size_t fname_size, size_t *file_size,
 			  uint8_t supported_compression, enum http_compression *chosen_compression);
+int http_server_find_static_fs_file(const struct http_resource_detail_static_fs *static_fs_detail,
+				    char *url, char *fname, size_t fname_size, char *content_type,
+				    size_t content_type_size, size_t *file_size,
+				    uint8_t supported_compression,
+				    enum http_compression *chosen_compression);
 void http_client_timer_restart(struct http_client_ctx *client);
 bool http_response_is_final(struct http_response_ctx *rsp, enum http_transaction_status status);
 bool http_response_is_provided(struct http_response_ctx *rsp);

@@ -3319,7 +3319,8 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 
 #define LFS_MNTP		"/littlefs"
 #define TEST_FILE		"static_file.html"
-#define TEST_DIR		"/files"
+#define TEST_DIR_NAME		"files"
+#define TEST_DIR		"/" TEST_DIR_NAME
 #define TEST_DIR_PATH		LFS_MNTP TEST_DIR
 
 static struct http_resource_detail_static_fs static_file_resource_detail = {
@@ -3691,6 +3692,222 @@ ZTEST(server_function_tests, test_http2_static_fs_query)
 	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
 	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_FS_PAYLOAD,
 				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
+/* A missing file gets 404, and the 404 ends the stream. */
+ZTEST(server_function_tests, test_http2_static_fs_not_found)
+{
+	static const uint8_t request_get_static_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_STATIC_FS(TEST_STREAM_ID_1),
+		TEST_HTTP2_GOAWAY,
+	};
+	const struct http_header expected_headers[] = {
+		{.name = ":status", .value = "404"},
+	};
+	size_t offset = 0;
+	int ret;
+
+	test_clear_flash();
+	zassert_equal(test_unmount(), TC_PASS, "Failed to unmount fs");
+	zassert_equal(test_mount(), TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, request_get_static_fs, sizeof(request_get_static_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS,
+				   expected_headers, ARRAY_SIZE(expected_headers));
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, NULL, 0, HTTP2_FLAG_END_STREAM);
+}
+
+/* Served from the mount point, so that a request for TEST_DIR names a directory */
+static struct http_resource_detail_static_fs static_fs_fallback_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		},
+	.fs_path = LFS_MNTP,
+	.fallback_file = TEST_DIR_NAME "/" TEST_FILE,
+};
+
+HTTP_RESOURCE_DEFINE(static_fs_fallback_resource, test_http_service, "/spa/*",
+		     &static_fs_fallback_resource_detail);
+/* The file name is fs_path plus the whole URL path, so these two name the directory */
+HTTP_RESOURCE_DEFINE(static_fs_dir_route_resource, test_http_service, TEST_DIR,
+		     &static_fs_fallback_resource_detail);
+
+static struct http_resource_detail_static_fs static_fs_nofallback_resource_detail = {
+	.common = {
+			.type = HTTP_RESOURCE_TYPE_STATIC_FS,
+			.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		},
+	.fs_path = LFS_MNTP,
+};
+
+HTTP_RESOURCE_DEFINE(static_fs_dir_resource, test_http_service, TEST_DIR "/",
+		     &static_fs_nofallback_resource_detail);
+
+/* A missing path without an extension gets the fallback file, so does a route named
+ * like a directory, a missing path with an extension still gets 404. The query string
+ * is not part of the extension check.
+ */
+ZTEST(server_function_tests, test_http1_static_fs_fallback_file)
+{
+	static const char http1_request_route[] =
+		"GET /spa/settings/network HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char http1_request_dir_route[] =
+		"GET " TEST_DIR " HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char http1_request_route_query[] =
+		"GET /spa/settings?v=1.js HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response_route[] =
+		"HTTP/1.1 200 OK\r\n"
+		"Content-Length: 30\r\n"
+		"Content-Type: text/html\r\n"
+		"\r\n"
+		TEST_STATIC_FS_PAYLOAD;
+	static const char http1_request_asset[] =
+		"GET /spa/missing.js HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response_asset[] =
+		"HTTP/1.1 404 Not Found\r\n"
+		"Content-Length: 9\r\n"
+		"\r\n"
+		"Not Found";
+	static const struct {
+		const char *request;
+		const char *response;
+		size_t response_len;
+	} cases[] = {
+		{http1_request_route, expected_response_route,
+		 sizeof(expected_response_route) - 1},
+		{http1_request_route_query, expected_response_route,
+		 sizeof(expected_response_route) - 1},
+		{http1_request_dir_route, expected_response_route,
+		 sizeof(expected_response_route) - 1},
+		{http1_request_asset, expected_response_asset,
+		 sizeof(expected_response_asset) - 1},
+	};
+	size_t offset;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ARRAY_FOR_EACH(cases, i) {
+		ret = zsock_send(client_fd, cases[i].request, strlen(cases[i].request), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+		memset(buf, 0, sizeof(buf));
+		offset = 0;
+
+		test_read_data(&offset, cases[i].response_len);
+		zassert_mem_equal(buf, cases[i].response, cases[i].response_len,
+				  "Unexpected response to request %zu", i);
+	}
+}
+
+/* A directory of the requested name is not a file to serve: 404, not a failed open. */
+ZTEST(server_function_tests, test_http1_static_fs_directory)
+{
+	static const char http1_request[] =
+		"GET " TEST_DIR "/ HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Accept: */*\r\n"
+		"\r\n";
+	static const char expected_response[] =
+		"HTTP/1.1 404 Not Found\r\n"
+		"Content-Length: 9\r\n"
+		"\r\n"
+		"Not Found";
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
+/* HPACK-encoded "GET /spa/settings/network" and "GET /spa/missing.js" requests,
+ * encoded as TEST_HTTP2_HEADERS_GET_STATIC_FS.
+ */
+#define TEST_HTTP2_HEADERS_GET_SPA_ROUTE(_stream_id) \
+	0x00, 0x00, 0x19, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x15, 0x2f, 0x73, 0x70, 0x61, 0x2f, 0x73, 0x65, 0x74, \
+	0x74, 0x69, 0x6e, 0x67, 0x73, 0x2f, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, \
+	0x6b
+#define TEST_HTTP2_HEADERS_GET_SPA_ASSET(_stream_id) \
+	0x00, 0x00, 0x13, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x0f, 0x2f, 0x73, 0x70, 0x61, 0x2f, 0x6d, 0x69, 0x73, \
+	0x73, 0x69, 0x6e, 0x67, 0x2e, 0x6a, 0x73
+
+ZTEST(server_function_tests, test_http2_static_fs_fallback_file)
+{
+	static const uint8_t request_get_route[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_SPA_ROUTE(TEST_STREAM_ID_1),
+	};
+	static const uint8_t request_get_asset[] = {
+		TEST_HTTP2_HEADERS_GET_SPA_ASSET(TEST_STREAM_ID_2),
+		TEST_HTTP2_GOAWAY,
+	};
+	const struct http_header expected_headers_route[] = {
+		{.name = ":status", .value = "200"},
+		{.name = "content-type", .value = "text/html"},
+	};
+	const struct http_header expected_headers_asset[] = {
+		{.name = ":status", .value = "404"},
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, request_get_route, sizeof(request_get_route), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS,
+				   expected_headers_route, ARRAY_SIZE(expected_headers_route));
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_FS_PAYLOAD,
+				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
+
+	ret = zsock_send(client_fd, request_get_asset, sizeof(request_get_asset), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS,
+				   expected_headers_asset, ARRAY_SIZE(expected_headers_asset));
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, NULL, 0, HTTP2_FLAG_END_STREAM);
 }
 
 ZTEST(server_function_tests, test_http1_static_fs_compression)
