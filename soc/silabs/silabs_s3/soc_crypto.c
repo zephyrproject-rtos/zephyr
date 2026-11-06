@@ -105,6 +105,9 @@ static int soc_crypto_init(const struct device *dev)
 	}
 
 	ret = clock_control_off(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	}
 
 	return ret;
 }
@@ -138,6 +141,9 @@ int soc_crypto_disable(const struct device *dev)
 	int ret;
 
 	ret = clock_control_off(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
+	if (ret == -ENOTSUP) {
+		ret = 0;
+	}
 
 	return ret;
 }
