@@ -1,0 +1,18 @@
+sample:
+  name: TI VTM temperature sensor sample
+tests:
+  sample.sensor.ti_vtm:
+    tags:
+      - sensors
+    filter: dt_nodelabel_enabled("sensor0")
+    platform_allow:
+      - am62l_evm/am62l3/a53
+      - am243x_evm/am2434/r5f0_0
+      - sk_am62/am6254/a53
+    integration_platforms:
+      - am62l_evm/am62l3/a53
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "VTM temperature: -?[0-9]+.[0-9]+ C"
