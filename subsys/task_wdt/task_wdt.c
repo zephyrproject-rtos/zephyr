@@ -52,6 +52,8 @@ static bool task_wdt_initialized;
 static const struct device *hw_wdt_dev;
 static int hw_wdt_channel;
 static bool hw_wdt_started;
+/* serializes hardware watchdog startup */
+static K_MUTEX_DEFINE(hw_wdt_lock);
 #endif
 
 static void schedule_next_timeout(int64_t current_ticks)
@@ -166,6 +168,26 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK
+	/* wdt_setup() may sleep, so it must not be called with channels_lock held */
+	if (hw_wdt_dev != NULL) {
+		k_mutex_lock(&hw_wdt_lock, K_FOREVER);
+		if (!hw_wdt_started) {
+			wdt_setup(hw_wdt_dev,
+				0
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_HALTED_BY_DBG
+				| WDT_OPT_PAUSE_HALTED_BY_DBG
+#endif
+#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
+				| WDT_OPT_PAUSE_IN_SLEEP
+#endif
+			);
+			hw_wdt_started = true;
+		}
+		k_mutex_unlock(&hw_wdt_lock);
+	}
+#endif
+
 	/*
 	 * k_spin_lock instead of k_sched_lock required here to avoid being interrupted by a
 	 * triggering other task watchdog channel (executed in ISR context).
@@ -180,21 +202,6 @@ int task_wdt_add(uint32_t reload_period, task_wdt_callback_t callback,
 			channels[id].timeout_abs_ticks = K_TICKS_FOREVER;
 			channels[id].callback = callback;
 
-#ifdef CONFIG_TASK_WDT_HW_FALLBACK
-			if (!hw_wdt_started && hw_wdt_dev) {
-				/* also start fallback hw wdt */
-				wdt_setup(hw_wdt_dev,
-					0
-#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_HALTED_BY_DBG
-					| WDT_OPT_PAUSE_HALTED_BY_DBG
-#endif
-#ifdef CONFIG_TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
-					| WDT_OPT_PAUSE_IN_SLEEP
-#endif
-				);
-				hw_wdt_started = true;
-			}
-#endif
 			/* must be called after hw wdt has been started */
 			task_wdt_feed(id);
 
