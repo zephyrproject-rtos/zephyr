@@ -18,10 +18,12 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_cmc.h>
+#include <fsl_spc.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
+#define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
 
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
@@ -120,6 +122,22 @@ void soc_early_init_hook(void)
 	 * and enabled drivers need for the rest of boot.
 	 */
 	nxp_mcxw72_trdc_init();
+#endif
+
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	/*
+	 * A wakeup from Power Down or Deep Power Down goes through a reset: release
+	 * the peripheral and IO pad isolation, and clear the low-power requests
+	 * left from the entry.
+	 */
+	if ((CMC_GetSystemResetStatus(MCXW7_CMC_ADDR) & kCMC_WakeUpReset) != 0U) {
+		SPC_ClearPeriphIOIsolationFlag(MCXW7_SPC_ADDR);
+		for (uint32_t i = 0U; i < SPC_PD_STATUS_COUNT; i++) {
+			SPC_ClearPowerDomainLowPowerRequestFlag(MCXW7_SPC_ADDR,
+								(spc_power_domain_id_t)i);
+		}
+		SPC_ClearLowPowerRequest(MCXW7_SPC_ADDR);
+	}
 #endif
 
 #ifdef CONFIG_SOC_MCXW70AC
