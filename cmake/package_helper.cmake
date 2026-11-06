@@ -12,6 +12,12 @@
 # It does so by loading the Zephyr CMake modules specified with the 'MODULES'
 # argument.
 #
+# The Zephyr CMake modules which provides dedicated module functions for initialization,
+# such as `<module>_init`, allows for fine-grained control of the module itself.
+# Instead of the module running `<module>_init`, then it is possible to control
+# module functions to run, and the order. The module and its functions to
+# run are separated by a colon, `:`, like this: `-DMODULES=<module>:<funcA>:<funcC>...`.
+#
 # This script executes the given module identical to Zephyr CMake configure time.
 # The application source directory must be specified using
 # '-S <path-to-sample>'
@@ -25,6 +31,10 @@
 # you can invoke only dts module (and dependencies) as:
 #   $ cmake -DBOARD=<board> -B build -S samples/hello_world \
 #           -DMODULES=dts -P <ZEPHYR_BASE>/cmake/package_helper.cmake
+#
+# or invoke only `dts_configuration_files()` from the dts module (and dependencies) as:
+#   $ cmake -DBOARD=<board> -B build -S samples/hello_world \
+#           -DMODULES=dts:dts_configuration_files -P <ZEPHYR_BASE>/cmake/package_helper.cmake
 #
 # It is also possible to pass additional build settings.
 # If you invoke CMake for 'hello_world' as:
