@@ -38,6 +38,7 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
       - esp32c3_devkitc
+      - esp_sensairshuttle/esp32c5/hpcore
       - gd32l233r_eval
       - lpcxpresso55s06
       - lpcxpresso55s16
