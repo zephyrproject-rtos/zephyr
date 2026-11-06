@@ -519,7 +519,7 @@ static int i2s_siwx91x_param_config(const struct device *dev, enum i2s_dir dir)
 
 	if (resolution != data->current_resolution) {
 		ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys_static);
-		if (ret) {
+		if (ret != 0 && ret != -ENOTSUP) {
 			return ret;
 		}
 
@@ -864,7 +864,7 @@ static int i2s_siwx91x_pm_action(const struct device *dev, enum pm_device_action
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys_periph);
-		if (ret < 0 && ret != -EALREADY) {
+		if (ret != 0 && ret != -EALREADY && ret != -ENOTSUP) {
 			return ret;
 		}
 		break;
