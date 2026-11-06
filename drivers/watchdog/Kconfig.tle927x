@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_TLE927X
+	bool "Infineon TLE927x SBC watchdog driver"
+	default y
+	depends on DT_HAS_INFINEON_TLE927X_WDT_ENABLED
+	select MFD
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  Enable the watchdog driver for the Infineon TLE927x System Basis
+	  Chip. The SBC watchdog runs in SBC Normal and Stop mode and resets
+	  the SoC through the RO pin on a missed trigger. It cannot be
+	  disabled.
+
+if WDT_TLE927X
+
+config WDT_TLE927X_INIT_PRIORITY
+	int "TLE927x watchdog driver init priority"
+	default 78
+	help
+	  Init priority for the TLE927x watchdog driver. It must be greater
+	  than MFD_TLE927X_INIT_PRIORITY.
+
+endif # WDT_TLE927X
