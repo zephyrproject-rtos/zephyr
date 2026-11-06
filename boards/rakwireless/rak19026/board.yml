@@ -1,0 +1,6 @@
+board:
+  name: rak19026
+  full_name: RAK19026 WisMesh Base Board
+  vendor: rakwireless
+  socs:
+  - name: nrf52840
