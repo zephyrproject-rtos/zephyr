@@ -887,6 +887,15 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_CRYPTO */
 	/* LE Rand */
 	rp->commands[27] |= BIT(7);
+
+#if defined(CONFIG_BT_CENTRAL) || \
+	(defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_CTLR_ADV_EXT))
+	/* Set Host Channel Classification */
+	rp->commands[27] |= BIT(3);
+#endif /* CONFIG_BT_CENTRAL ||
+	* (CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_EXT)
+	*/
+
 	/* LE Read Supported States */
 	rp->commands[28] |= BIT(3);
 
@@ -951,8 +960,6 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 #if defined(CONFIG_BT_CENTRAL)
 	/* LE Create Connection, LE Create Connection Cancel */
 	rp->commands[26] |= BIT(4) | BIT(5);
-	/* Set Host Channel Classification */
-	rp->commands[27] |= BIT(3);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* LE Extended Create Connection */
@@ -1907,6 +1914,21 @@ static void le_big_terminate_sync(struct net_buf *buf, struct net_buf **evt,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_CENTRAL) || \
+	(defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_CTLR_ADV_EXT))
+static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_host_chan_classif *cmd = (void *)buf->data;
+	uint8_t status;
+
+	status = ll_chm_update(&cmd->ch_map[0]);
+
+	*evt = cmd_complete_status(status);
+}
+#endif /* CONFIG_BT_CENTRAL ||
+	* (CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_EXT)
+	*/
+
 #if defined(CONFIG_BT_CENTRAL)
 static uint8_t check_cconn_params(bool ext, uint16_t scan_interval,
 				  uint16_t scan_window,
@@ -2010,16 +2032,6 @@ static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt,
 	uint8_t status;
 
 	status = ll_connect_disable(node_rx);
-
-	*evt = cmd_complete_status(status);
-}
-
-static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
-{
-	struct bt_hci_cp_le_set_host_chan_classif *cmd = (void *)buf->data;
-	uint8_t status;
-
-	status = ll_chm_update(&cmd->ch_map[0]);
 
 	*evt = cmd_complete_status(status);
 }
@@ -4664,6 +4676,15 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_CENTRAL) || \
+	(defined(CONFIG_BT_BROADCASTER) && defined(CONFIG_BT_CTLR_ADV_EXT))
+	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
+		le_set_host_chan_classif(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CENTRAL ||
+	* (CONFIG_BT_BROADCASTER && CONFIG_BT_CTLR_ADV_EXT)
+	*/
+
 #if defined(CONFIG_BT_CENTRAL)
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN):
 		le_create_connection(cmd, evt);
@@ -4671,10 +4692,6 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN_CANCEL):
 		le_create_conn_cancel(cmd, evt, node_rx);
-		break;
-
-	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
-		le_set_host_chan_classif(cmd, evt);
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
