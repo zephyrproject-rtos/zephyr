@@ -65,6 +65,13 @@ struct pl011_data {
 	struct uart_config uart_cfg;
 	bool sbsa;		/* SBSA mode */
 	uint32_t clk_freq;
+	/* Serializes DR and RSR accesses with read_unflagged */
+	struct k_spinlock rx_lock;
+	/*
+	 * Received data was read without its status since uart_err_check() was
+	 * last called, so uart_fifo_read_flagged() cannot place errors
+	 */
+	bool read_unflagged;
 #if PL011_USE_IRQ
 	volatile bool sw_call_txdrdy;
 	uart_irq_callback_user_data_t irq_cb;
@@ -191,13 +198,18 @@ static bool pl011_is_readable(const struct device *dev)
 static int pl011_poll_in(const struct device *dev, unsigned char *c)
 {
 	volatile struct pl011_regs *uart = get_uart(dev);
+	struct pl011_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->rx_lock);
 
 	if (!pl011_is_readable(dev)) {
+		k_spin_unlock(&data->rx_lock, key);
 		return -1;
 	}
 
 	/* got a character */
 	*c = (unsigned char)uart->dr;
+	data->read_unflagged = true;
+	k_spin_unlock(&data->rx_lock, key);
 
 	return 0;
 }
@@ -218,18 +230,36 @@ static void pl011_poll_out(const struct device *dev,
 
 static int pl011_err_check(const struct device *dev)
 {
+	struct pl011_data *data = dev->data;
 	int errors = 0;
 	uint32_t rsr;
+	k_spinlock_key_t key;
 
-	/* Clear the latched error status first, then re-read.
-	 * RSR latches errors from the most recent DR read.
-	 * Writing any value to ECR (same address, write side) clears
-	 * all error flags.  We clear first so that after this call
-	 * returns, RSR is clean and ready to latch errors from the
-	 * next DR read.
+	/* Read the latched error status.
+	 * RSR holds the framing, parity, and break status of the most
+	 * recent DR read until the next DR read replaces it, and an
+	 * overrun from the moment it occurs. Writing any value to ECR
+	 * (same address, write side) clears all error flags, so ECR is
+	 * only written to take an overrun: an overrun latched between
+	 * the read and the write then merges into the one being
+	 * reported instead of being lost.
 	 */
+	key = k_spin_lock(&data->rx_lock);
 	rsr = get_uart(dev)->rsr;
-	get_uart(dev)->rsr = 0;
+	/*
+	 * Unless data was read without flags since the last call, the
+	 * framing, parity, and break status belongs to a byte already
+	 * reported, in flags or by the last call
+	 */
+	if (!data->read_unflagged) {
+		rsr &= PL011_RSR_ECR_OE;
+	}
+	if ((rsr & PL011_RSR_ECR_OE) != 0U) {
+		get_uart(dev)->rsr = 0;
+	}
+	/* With the status taken, uart_fifo_read_flagged() can place errors again */
+	data->read_unflagged = false;
+	k_spin_unlock(&data->rx_lock, key);
 
 	if (rsr & PL011_RSR_ECR_OE) {
 		errors |= UART_ERROR_OVERRUN;
@@ -383,11 +413,110 @@ static int pl011_fifo_read(const struct device *dev,
 				    uint8_t *rx_data, const int len)
 {
 	volatile struct pl011_regs *uart = get_uart(dev);
+	struct pl011_data *data = dev->data;
 	int num_rx = 0U;
+	k_spinlock_key_t key = k_spin_lock(&data->rx_lock);
 
 	while ((len - num_rx > 0) && !(uart->fr & PL011_FR_RXFE)) {
 		rx_data[num_rx++] = uart->dr;
 	}
+
+	if (num_rx > 0) {
+		data->read_unflagged = true;
+	}
+	k_spin_unlock(&data->rx_lock, key);
+
+	return num_rx;
+}
+
+static int pl011_fifo_read_flagged(const struct device *dev, uint8_t *rx_data, uint8_t *flags,
+				   const int len)
+{
+	volatile struct pl011_regs *uart = get_uart(dev);
+	struct pl011_data *data = dev->data;
+	int num_rx = 0;
+	/* Index of the first byte after an overrun gap, or 0 if none */
+	int oe_gap = 0;
+	k_spinlock_key_t key;
+
+	/* A read of nothing is never refused, so it can probe for support */
+	if (len <= 0) {
+		return 0;
+	}
+
+	key = k_spin_lock(&data->rx_lock);
+
+	/* uart_err_check() must take the status of data read without it first */
+	if (data->read_unflagged) {
+		k_spin_unlock(&data->rx_lock, key);
+		return -EBUSY;
+	}
+
+	while ((len - num_rx > 0) && ((uart->fr & PL011_FR_RXFE) == 0U)) {
+		/*
+		 * A single DR read yields the byte together with the error
+		 * status of that same byte, so no separate status read is
+		 * needed and attribution is exact.
+		 */
+		uint32_t dr = uart->dr;
+		uint8_t err = 0U;
+
+		if ((dr & PL011_DR_FE) != 0U) {
+			err |= UART_ERROR_FRAMING;
+		}
+		if ((dr & PL011_DR_PE) != 0U) {
+			err |= UART_ERROR_PARITY;
+		}
+		if ((dr & PL011_DR_BE) != 0U) {
+			err |= UART_BREAK;
+		}
+		/*
+		 * DR OE is stored with the first character received after the
+		 * FIFO has room again, so it marks data lost before that byte
+		 * rather than after it, and only once another character has
+		 * arrived. It is not reported itself; it only locates the gap
+		 * for the overrun taken from RSR below. The first one is used,
+		 * so that no lost data precedes the byte the overrun is
+		 * reported against. On the first byte of a read, the byte
+		 * before the gap was returned earlier, and the overrun was
+		 * taken from RSR then, by this function or by uart_err_check().
+		 */
+		if (((dr & PL011_DR_OE) != 0U) && (num_rx > 0) && (oe_gap == 0)) {
+			oe_gap = num_rx;
+		}
+
+		rx_data[num_rx] = (uint8_t)(dr & PL011_DR_DATA_MASK);
+		flags[num_rx] = err;
+		num_rx++;
+	}
+
+	if (num_rx > 0) {
+		/*
+		 * RSR also holds the framing, parity, and break status of the
+		 * last byte read, which flags[] already reports. It is left for
+		 * the next DR read to replace, as uart_err_check() only reports
+		 * it after a read without flags.
+		 *
+		 * An overrun is latched in RSR as soon as it occurs. Report it
+		 * against the last byte before the lost data: the byte before
+		 * the one carrying DR OE if this read returned it, otherwise
+		 * the last byte returned, as the lost data followed every byte
+		 * that was in the FIFO. Without an overrun in RSR, any DR OE
+		 * belongs to an overrun already reported by an earlier read or
+		 * by uart_err_check().
+		 *
+		 * As any write to ECR clears every flag, ECR is only written to
+		 * take the overrun. An overrun latched after RSR was read lost
+		 * data after the bytes returned, which the overrun reported here
+		 * already covers.
+		 */
+		if ((uart->rsr & PL011_RSR_ECR_OE) != 0U) {
+			flags[((oe_gap > 0) ? oe_gap : num_rx) - 1] |= UART_ERROR_OVERRUN;
+			uart->rsr = 0;
+		}
+	}
+
+	k_spin_unlock(&data->rx_lock, key);
 
 	return num_rx;
 }
@@ -547,6 +676,7 @@ static DEVICE_API(uart, pl011_driver_api) = {
 #endif
 	.fifo_fill = pl011_fifo_fill,
 	.fifo_read = pl011_fifo_read,
+	.fifo_read_flagged = pl011_fifo_read_flagged,
 	.irq_tx_enable = pl011_irq_tx_enable,
 	.irq_tx_disable = pl011_irq_tx_disable,
 	.irq_tx_ready = pl011_irq_tx_ready,

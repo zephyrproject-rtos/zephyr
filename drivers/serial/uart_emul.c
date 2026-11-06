@@ -38,8 +38,14 @@ struct uart_emul_data {
 
 	struct uart_config cfg;
 	int errors;
+	/* Data was lost to a full RX buffer and not reported yet */
+	bool rx_overrun;
+	/* RX data was read without its errors since uart_err_check() was last called */
+	bool read_unflagged;
 
 	struct ring_buf *rx_rb;
+	/* Error flags of each byte in rx_rb, kept in step with it under rx_lock */
+	struct ring_buf *rx_flags_rb;
 	struct k_spinlock rx_lock;
 
 	uart_emul_callback_tx_data_ready_t tx_data_ready_cb;
@@ -130,6 +136,58 @@ static void uart_emul_tx_data_ready(const struct device *dev)
 	}
 }
 
+/*
+ * Read up to size bytes from the RX buffer together with their error flags. When flags is
+ * NULL the flags are latched for uart_err_check() instead, as hardware does for bytes read
+ * without their status, and reads with flags are refused until uart_err_check() is called.
+ * Must be called with rx_lock held.
+ */
+static uint32_t uart_emul_rx_get_nolock(struct uart_emul_data *data, uint8_t *rx_data,
+					uint8_t *flags, uint32_t size)
+{
+	uint32_t count = ring_buf_get(data->rx_rb, rx_data, size);
+	uint32_t done = 0U;
+
+	if (flags != NULL) {
+		(void)ring_buf_get(data->rx_flags_rb, flags, count);
+		/*
+		 * An overrun leaves the RX buffer full, so nothing is added until a
+		 * read makes room. A read without flags leaves the overrun to
+		 * uart_err_check(), which must be called before the next read with
+		 * flags, so the first read with flags after the overrun returns
+		 * bytes received before the loss: report it against the last one.
+		 */
+		if (data->rx_overrun && (count > 0U)) {
+			flags[count - 1U] |= UART_ERROR_OVERRUN;
+			data->rx_overrun = false;
+		}
+		return count;
+	}
+
+	if (count > 0U) {
+		data->read_unflagged = true;
+	}
+
+	while (done < count) {
+		uint8_t *chunk;
+		uint32_t len = MIN(ring_buf_get_ptr(data->rx_flags_rb, &chunk, done), count - done);
+
+		if (len == 0U) {
+			break;
+		}
+
+		for (uint32_t i = 0U; i < len; i++) {
+			data->errors |= chunk[i];
+		}
+
+		done += len;
+	}
+
+	ring_buf_consume(data->rx_flags_rb, done);
+
+	return count;
+}
+
 static int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 {
 	struct uart_emul_data *drv_data = dev->data;
@@ -137,7 +195,7 @@ static int uart_emul_poll_in(const struct device *dev, unsigned char *p_char)
 	uint32_t read;
 
 	key = k_spin_lock(&drv_data->rx_lock);
-	read = ring_buf_get(drv_data->rx_rb, p_char, 1);
+	read = uart_emul_rx_get_nolock(drv_data, p_char, NULL, 1);
 	k_spin_unlock(&drv_data->rx_lock, key);
 
 	if (!read) {
@@ -174,9 +232,19 @@ static void uart_emul_poll_out(const struct device *dev, unsigned char out_char)
 static int uart_emul_err_check(const struct device *dev)
 {
 	struct uart_emul_data *drv_data = dev->data;
-	int errors = drv_data->errors;
+	int errors = 0;
 
-	drv_data->errors = 0;
+	/* The RX error state is also updated under rx_lock, possibly from the work queue */
+	K_SPINLOCK(&drv_data->rx_lock) {
+		errors = drv_data->errors;
+		if (drv_data->rx_overrun) {
+			errors |= UART_ERROR_OVERRUN;
+		}
+		drv_data->errors = 0;
+		drv_data->rx_overrun = false;
+		drv_data->read_unflagged = false;
+	}
+
 	return errors;
 }
 
@@ -228,10 +296,39 @@ static int uart_emul_fifo_read(const struct device *dev, uint8_t *rx_data, int s
 	K_SPINLOCK(&data->rx_lock) {
 		bytes_to_read = MIN(config->latch_buffer_size, ring_buf_size_get(data->rx_rb));
 		bytes_to_read = MIN(bytes_to_read, size);
-		ring_buf_get(data->rx_rb, rx_data, bytes_to_read);
+		uart_emul_rx_get_nolock(data, rx_data, NULL, bytes_to_read);
 	}
 
 	return bytes_to_read;
+}
+
+static int uart_emul_fifo_read_flagged(const struct device *dev, uint8_t *rx_data,
+				       uint8_t *flags, const int size)
+{
+	struct uart_emul_data *data = dev->data;
+	const struct uart_emul_config *config = dev->config;
+	uint32_t bytes_to_read = 0U;
+	int ret = 0;
+
+	/* A read of nothing is never refused, so it can probe for support */
+	if (size <= 0) {
+		return 0;
+	}
+
+	K_SPINLOCK(&data->rx_lock) {
+		/* uart_err_check() must take the errors of data read without them first */
+		if (data->read_unflagged) {
+			ret = -EBUSY;
+			K_SPINLOCK_BREAK;
+		}
+
+		bytes_to_read = MIN(config->latch_buffer_size, ring_buf_size_get(data->rx_rb));
+		bytes_to_read = MIN(bytes_to_read, size);
+		uart_emul_rx_get_nolock(data, rx_data, flags, bytes_to_read);
+		ret = (int)bytes_to_read;
+	}
+
+	return ret;
 }
 
 static int uart_emul_irq_tx_ready(const struct device *dev)
@@ -522,8 +619,9 @@ static void uart_emul_async_rx_handler(struct k_work *work)
 
 			buf_request = data_len == 0 && data->rx_buf_next == NULL;
 
-			uint32_t read = ring_buf_get(data->rx_rb, &rx_buf[offset + data_len],
-						     buf_len - (offset + data_len));
+			uint32_t read = uart_emul_rx_get_nolock(data, &rx_buf[offset + data_len],
+								NULL,
+								buf_len - (offset + data_len));
 			data_len += read;
 			data->rx_buf_data_len = data_len;
 
@@ -881,6 +979,7 @@ static DEVICE_API(uart, uart_emul_api) = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_emul_fifo_fill,
 	.fifo_read = uart_emul_fifo_read,
+	.fifo_read_flagged = uart_emul_fifo_read_flagged,
 	.irq_tx_enable = uart_emul_irq_tx_enable,
 	.irq_rx_enable = uart_emul_irq_rx_enable,
 	.irq_tx_disable = uart_emul_irq_tx_disable,
@@ -910,7 +1009,42 @@ void uart_emul_callback_tx_data_ready_set(const struct device *dev,
 	drv_data->user_data = user_data;
 }
 
+/*
+ * Append the error flags of count bytes just added to the RX buffer, or zeros when flags
+ * is NULL. Must be called with rx_lock held.
+ */
+static void uart_emul_rx_flags_put_nolock(struct uart_emul_data *data, const uint8_t *flags,
+					  uint32_t count)
+{
+	uint32_t done = 0U;
+
+	if (flags != NULL) {
+		(void)ring_buf_put(data->rx_flags_rb, flags, count);
+		return;
+	}
+
+	while (done < count) {
+		uint8_t *chunk;
+		uint32_t len = MIN(ring_buf_put_ptr(data->rx_flags_rb, &chunk, done), count - done);
+
+		if (len == 0U) {
+			break;
+		}
+
+		memset(chunk, 0, len);
+		done += len;
+	}
+
+	ring_buf_commit(data->rx_flags_rb, done);
+}
+
 uint32_t uart_emul_put_rx_data(const struct device *dev, const uint8_t *data, size_t size)
+{
+	return uart_emul_put_rx_data_flagged(dev, data, NULL, size);
+}
+
+uint32_t uart_emul_put_rx_data_flagged(const struct device *dev, const uint8_t *data,
+				       const uint8_t *flags, size_t size)
 {
 	struct uart_emul_data *drv_data = dev->data;
 	uint32_t count = 0;
@@ -920,13 +1054,17 @@ uint32_t uart_emul_put_rx_data(const struct device *dev, const uint8_t *data, si
 
 	K_SPINLOCK(&drv_data->rx_lock) {
 		count = ring_buf_put(drv_data->rx_rb, data, size);
+		uart_emul_rx_flags_put_nolock(drv_data, flags, count);
+		/*
+		 * Record the overrun under the same lock as the data, so that no
+		 * read or later put can come between the loss and its record
+		 */
+		if (count < size) {
+			drv_data->rx_overrun = true;
+		}
 		empty = ring_buf_is_empty(drv_data->rx_rb);
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (irq_en = drv_data->rx_irq_en;));
 		IF_ENABLED(CONFIG_UART_ASYNC_API, (rx_en = drv_data->rx_async_en;));
-	}
-
-	if (count < size) {
-		uart_emul_set_errors(dev, UART_ERROR_OVERRUN);
 	}
 
 	IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (
@@ -964,6 +1102,12 @@ uint32_t uart_emul_flush_rx_data(const struct device *dev)
 	key = k_spin_lock(&drv_data->rx_lock);
 	count = ring_buf_size_get(drv_data->rx_rb);
 	ring_buf_reset(drv_data->rx_rb);
+	ring_buf_reset(drv_data->rx_flags_rb);
+	/* An overrun of the flushed data is still reported by uart_err_check() */
+	if (drv_data->rx_overrun) {
+		drv_data->errors |= UART_ERROR_OVERRUN;
+		drv_data->rx_overrun = false;
+	}
 	k_spin_unlock(&drv_data->rx_lock, key);
 	return count;
 }
@@ -985,7 +1129,9 @@ void uart_emul_set_errors(const struct device *dev, int errors)
 {
 	struct uart_emul_data *drv_data = dev->data;
 
-	drv_data->errors |= errors;
+	K_SPINLOCK(&drv_data->rx_lock) {
+		drv_data->errors |= errors;
+	}
 }
 
 void uart_emul_set_release_buffer_on_timeout(const struct device *dev, bool release_on_timeout)
@@ -1017,6 +1163,7 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 		DT_FOREACH_CHILD_STATUS_OKAY(DT_DRV_INST(inst), EMUL_LINK_AND_COMMA)};             \
                                                                                                    \
 	RING_BUF_DECLARE(uart_emul_##inst##_rx_rb, UART_EMUL_RX_FIFO_SIZE(inst));                  \
+	RING_BUF_DECLARE(uart_emul_##inst##_rx_flags_rb, UART_EMUL_RX_FIFO_SIZE(inst));            \
 	RING_BUF_DECLARE(uart_emul_##inst##_tx_rb, UART_EMUL_TX_FIFO_SIZE(inst));                  \
                                                                                                    \
 	static const struct uart_emul_config uart_emul_cfg_##inst = {                              \
@@ -1040,6 +1187,7 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 					     : UART_CFG_FLOW_CTRL_NONE,                            \
 		},                                                                                 \
 		.rx_rb = &uart_emul_##inst##_rx_rb,                                                \
+		.rx_flags_rb = &uart_emul_##inst##_rx_flags_rb,                                    \
 		.tx_rb = &uart_emul_##inst##_tx_rb,                                                \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                           \
 			   (.irq_work = Z_WORK_INITIALIZER(uart_emul_irq_handler),))               \

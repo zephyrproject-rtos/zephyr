@@ -55,6 +55,26 @@ void uart_emul_callback_tx_data_ready_set(const struct device *dev,
 uint32_t uart_emul_put_rx_data(const struct device *dev, const uint8_t *data, size_t size);
 
 /**
+ * @brief Write (copy) data with per-byte error flags to RX buffer
+ *
+ * The flags of each byte are reported together with it by uart_fifo_read_flagged(). When a
+ * byte is read by any other means, its flags are latched and reported by uart_err_check().
+ *
+ * Bytes that do not fit in the RX buffer are dropped and reported once as #UART_ERROR_OVERRUN:
+ * on the last byte returned by the next uart_fifo_read_flagged() if no other read,
+ * uart_emul_flush_rx_data(), or uart_err_check() comes first, and by uart_err_check() otherwise.
+ *
+ * @param dev The emulated UART device instance
+ * @param data The data to append
+ * @param flags The @ref uart_rx_stop_reason flags of each byte, or NULL for none
+ * @param size Number of bytes to append
+ *
+ * @return Number of bytes appended
+ */
+uint32_t uart_emul_put_rx_data_flagged(const struct device *dev, const uint8_t *data,
+				       const uint8_t *flags, size_t size);
+
+/**
  * @brief Read data from TX buffer
  *
  * @param dev The emulated UART device instance
