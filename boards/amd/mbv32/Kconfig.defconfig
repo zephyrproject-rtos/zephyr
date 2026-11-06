@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MBV32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+endif # BOARD_MBV32
