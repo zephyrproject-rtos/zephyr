@@ -34,6 +34,13 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	soc_per_core_init_hook();
 }
 
+#if !defined(CONFIG_MULTITHREADING)
+extern FUNC_NORETURN void z_arm_switch_to_main_no_multithreading(k_thread_entry_t main_func,
+							 void *p1, void *p2, void *p3);
+
+#define ARCH_SWITCH_TO_MAIN_NO_MULTITHREADING z_arm_switch_to_main_no_multithreading
+#endif /* !CONFIG_MULTITHREADING */
+
 #ifndef CONFIG_USE_SWITCH
 
 static ALWAYS_INLINE int arch_swap(unsigned int key)
