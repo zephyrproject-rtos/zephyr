@@ -330,4 +330,25 @@ ZTEST(linear_range, test_linear_range_get_win_index)
 	zassert_equal(ret, -EINVAL);
 }
 
+ZTEST(linear_range, test_linear_range_get_win_index_signed_value)
+{
+	const struct linear_range range = LINEAR_RANGE_INIT(-10, 5U, 2U, 6U);
+	uint16_t idx;
+	int ret;
+
+	ret = linear_range_get_win_index(&range, -7, 0, &idx);
+	zexpect_equal(ret, 0);
+	zexpect_equal(idx, 3U);
+
+	ret = linear_range_get_win_index(&range, -4, -1, &idx);
+	zexpect_equal(ret, -EINVAL);
+
+	ret = linear_range_group_get_win_index(&range, 1U, -7, 0, &idx);
+	zexpect_equal(ret, 0);
+	zexpect_equal(idx, 3U);
+
+	ret = linear_range_group_get_win_index(&range, 1U, -4, -1, &idx);
+	zexpect_equal(ret, -EINVAL);
+}
+
 ZTEST_SUITE(linear_range, NULL, NULL, NULL, NULL, NULL);
