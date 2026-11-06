@@ -64,12 +64,13 @@ if(CONFIG_BUILD_WITH_TFM)
             "but TFM_MCUBOOT_SIGNATURE_TYPE is ${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE}")
         endif()
         list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_RSA:BOOL=ON)
-      else()
+        list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_KW:BOOL=OFF)
+      elseif(CONFIG_TFM_MCUBOOT_ENCRYPTION_AES_KW)
         list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_RSA:BOOL=OFF)
+        list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_KW:BOOL=ON)
+      else()
+        message(FATAL_ERROR "Unsupported TFM_MCUBOOT_ENCRYPTION_KEY_WRAP_SCHEME")
       endif()
-      # AES-KW is not supported in Zephyr's version of MCUboot but might be
-      # the platform default, turn it off
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_ENCRYPT_KW:BOOL=OFF)
       if(NOT CONFIG_TFM_MCUBOOT_ENCRYPTION_KEY_LEN MATCHES "^(128|256)$")
         message(FATAL_ERROR
           "TFM_MCUBOOT_ENCRYPTION_KEY_LEN must be 128 or 256, "

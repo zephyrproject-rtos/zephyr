@@ -391,6 +391,12 @@ config TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
 	  Wrap the AES key using RSA-OAEP.
 	  Corresponds to TF-M MCUBOOT_ENCRYPT_RSA option.
 
+config TFM_MCUBOOT_ENCRYPTION_AES_KW
+	bool "AES-KW"
+	help
+	  Wrap the AES key using AES-KW.
+	  Corresponds to TF-M MCUBOOT_ENCRYPT_KW option.
+
 endchoice
 
 config TFM_MCUBOOT_ENCRYPTION_KEY_LEN
@@ -402,17 +408,22 @@ config TFM_MCUBOOT_ENCRYPTION_KEY_LEN
 	  option.
 
 config TFM_MCUBOOT_ENCRYPTION_KEY_FILE
-	string "Path to private key used to encrypt firmware images"
+	string "Path to key-encryption key used for encrypting firmware images"
 	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-rsa2048-priv.pem" if TFM_MCUBOOT_ENCRYPTION_RSA_OAEP
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-aes128kw.b64" if TFM_MCUBOOT_ENCRYPTION_AES_KW && TFM_MCUBOOT_ENCRYPTION_KEY_LEN = 128
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/enc-aes256kw.b64" if TFM_MCUBOOT_ENCRYPTION_AES_KW && TFM_MCUBOOT_ENCRYPTION_KEY_LEN = 256
 	help
 	  The path and filename for the key file used to encrypt the secure and
 	  non-secure firmware images. For RSA-OAEP this is the RSA private key.
 	  It is embedded in BL2 to unwrap the AES key and its public half wraps
-	  that key when the images are encrypted. Maps to the TF-M
-	  MCUBOOT_KEY_ENC option.
+	  that key when the images are encrypted. For AES-KW this is a file
+	  holding the base64 encoded key-encryption key, which is embedded in
+	  BL2 and wraps the AES key; its length must match
+	  TFM_MCUBOOT_ENCRYPTION_KEY_LEN. Maps to the TF-M MCUBOOT_KEY_ENC
+	  option.
 
 	  The default is a publicly known MCUboot test key and provides no
-	  confidentiality. Use your own private key for production.
+	  confidentiality. Use your own key for production.
 
 endif # TFM_MCUBOOT_ENCRYPTION
 
