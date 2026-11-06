@@ -130,6 +130,18 @@ Devicetree
 * :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
   including chargers without a software-controlled enable pin.
 
+* Libc
+
+  * ``zephyr_write_stdout()`` no longer converts LF to CRLF. Backends that
+    convert on their own, such as the UART and EFI consoles, now receive a
+    single LF and emit one CRLF. With Newlib, ARCMWDT and the Picolibc POSIX
+    ``write()`` path the duplicated carriage return (CR CR LF) is gone;
+    Picolibc's ``printf()`` output is unchanged.
+
+  * ``printf()`` output to backends that pass bytes through, such as RTT, RAM
+    console, semihosting, IPM console, WCH SDI, whisper and the Bluetooth
+    monitor, is now LF-only, matching ``printk()``.
+
 Other notable changes
 *********************
 
