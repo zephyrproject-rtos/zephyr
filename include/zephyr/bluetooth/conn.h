@@ -2027,6 +2027,8 @@ int bt_conn_create_auto_stop(void);
  *  @return -EALREADY A Security Request is already in flight (one sent by the
  *                    peripheral has not yet been answered). It is left as-is and
  *                    the security level it carries is not changed.
+ *  @return -EBUSY Pairing or encryption is already in progress. It is left as-is
+ *                 and the security level it carries is not changed.
  */
 int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec);
 
