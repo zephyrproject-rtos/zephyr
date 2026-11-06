@@ -153,6 +153,11 @@
 		};
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,lpadc-temp40";
+		status = "disabled";
+	};
+
 	inputmux0: inputmux@6000 {
 		compatible = "nxp,inputmux";
 		reg = <0x6000 0x1000>;
