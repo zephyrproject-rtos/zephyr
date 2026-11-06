@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32-P4 Low-Power I2S controller
+
+compatible: "espressif,esp32-lp-i2s"
+
+include: i2s-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-parent:
+    required: true
+
+  clocks:
+    required: true
+
+  bck-pin:
+    type: int
+    required: true
+    description: |
+      LP IO number for the bit clock. Valid pins are the LP IO pads, 0 through
+      15. The signal is routed through the LP GPIO matrix, not the high-power
+      pinmux.
+
+  ws-pin:
+    type: int
+    required: true
+    description: |
+      LP IO number for the word-select (frame) clock. Valid pins are the LP IO
+      pads, 0 through 15.
+
+  sd-pin:
+    type: int
+    required: true
+    description: |
+      LP IO number for the serial data input. Valid pins are the LP IO pads, 0
+      through 15.
