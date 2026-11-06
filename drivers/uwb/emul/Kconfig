@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config UWB_TRANSPORT_EMUL
+	bool "Emulated UWB transport backend"
+	depends on DT_HAS_ZEPHYR_UWB_EMUL_ENABLED
+	default y
+	help
+	  Selects the pipe-based emulated UWB transport backend.
+	  A thread simulates the UWB device and responds to
+	  standard UCI commands.
