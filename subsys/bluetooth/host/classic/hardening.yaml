@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Bluetooth Classic.
+
+rules:
+  BT_BR_MIN_ENC_KEY_SIZE:
+    min: 16
+    rationale: |
+      Values below 16 let a man-in-the-middle negotiate the BR/EDR encryption key down to as few
+      as 7 octets and brute-force it, the KNOB attack (CVE-2019-9506). 16 accepts only
+      full-entropy keys.
+    references: [CWE-326, CWE-757, CVE-2019-9506]

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Bluetooth Mesh.
+
+rules:
+  BT_MESH_DEBUG_USE_ID_ADDR:
+    value: n
+    rationale: |
+      Makes all mesh advertising use the node's fixed identity address instead of private
+      addresses, so any passive observer in radio range can track the node over time.
+    references: [CWE-200]
+
+  BT_MESH_IV_UPDATE_TEST:
+    value: n
+    rationale: |
+      Compiles in a test mode, switchable at run time through the API and the mesh shell, that drops
+      the 96-hour minimum between IV Update state changes. In that mode the node moves through IV
+      Index transitions faster than the rest of the network and can lose contact with nodes that
+      enforce the minimum.
+    references: [CWE-489]
