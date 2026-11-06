@@ -90,12 +90,14 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 		z_smp_switch_handle_clear(new_thread);
 		z_sched_spinlock_release();
+		z_crit_hook_irq_end(key);
 		arch_switch(newsh, &old_thread->switch_handle);
 	} else {
 		z_sched_spinlock_release();
 	}
 
 	if (is_spinlock) {
+		z_crit_hook_irq_end(key);
 		arch_irq_unlock(key);
 	} else {
 		irq_unlock(key);
@@ -130,6 +132,7 @@ static inline int z_swap_irqlock(unsigned int key)
 	z_assert_can_swap(key, NULL);
 #endif /* CONFIG_SPIN_VALIDATE */
 
+	z_crit_hook_irq_end(key);
 	ret = arch_swap(key);
 	return ret;
 }
