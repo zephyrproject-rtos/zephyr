@@ -2016,10 +2016,7 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 	sys_snode_t *node = NULL;
 
 	switch (mgmt_event) {
-#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
 	case NET_EVENT_IF_UP:
-		break;
-#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
 	case NET_EVENT_IF_DOWN:
 		break;
 	default:
@@ -2056,8 +2053,7 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 					   : NET_DHCPV4_INIT,
 					   &iface->config.dhcpv4.requested_ip);
 		}
-	} else if (IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) &&
-		   (mgmt_event == NET_EVENT_IF_UP)) {
+	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 
 		/* We should not call dhcpv4_send_request() directly here as
@@ -2393,9 +2389,7 @@ int net_dhcpv4_set_reboot_hint(struct net_if *iface,
 
 int net_dhcpv4_init(void)
 {
-	uint64_t events =
-		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
-		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
+	uint64_t events = NET_EVENT_IF_UP | NET_EVENT_IF_DOWN;
 	struct net_sockaddr_storage local_addr_storage = { 0 };
 	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
