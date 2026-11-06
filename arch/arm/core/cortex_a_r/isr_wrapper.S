@@ -183,6 +183,11 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 
+#if defined(CONFIG_GIC_V1) || defined(CONFIG_GIC_V2)
+	/* Mask out GICC_IAR.CPUID [12:10] */
+	bic r0, r0, #0x1c00
+#endif
+
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
 	/*
 	 * Publish the acknowledged INTID for arch_irq_get_active(). The value
@@ -335,6 +340,11 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
+
+#if defined(CONFIG_GIC_V1) || defined(CONFIG_GIC_V2)
+	/* Mask out GICC_IAR.CPUID [12:10] */
+	bic r0, r0, #0x1c00
+#endif
 
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
 	/*
