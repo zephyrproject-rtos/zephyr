@@ -50,9 +50,25 @@
 			/* Second reg region is Core Domain Clock Generator */
 			reg = <0x4000d000 0x2000
 			       0x400b5000 0x2000>;
+			reg-names = "pmc", "cdcg";
 			/* Cells for clock id */
 			#clock-cells = <1>;
-			reg-names = "pmc", "cdcg";
+		};
+
+		/*
+		 * FIU0: Flash Interface Unit, shared/external SPI-NOR flash.
+		 * Write-protect pinmux: NPCM400 has fiu0_wp_gpio55,
+		 * fiu0_wp_gpio76 and fiu0_wp_int_fl; NPCM500 only has
+		 * fiu0_wp_int_fl.
+		 */
+		qspi_fiu0: quad-fiu@40020000 {
+			compatible = "nuvoton,npcm-fiu-qspi";
+			reg = <0x40020000 0x100
+			       0x40021000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&pcc NPCM_CLOCK_FIU>;
+			status = "disabled";
 		};
 
 		scfg: syscon@400c3000 {

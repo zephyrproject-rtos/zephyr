@@ -28,6 +28,8 @@
 						  mspi_data_rate_dual)
 #elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)
 #define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_qspi_nor)
+#elif defined(CONFIG_FLASH_NPCM_NOR)
+#define TEST_AREA_DEV_NODE	DT_INST(0, nuvoton_npcm_nor)
 #else
 #define TEST_AREA	storage_partition
 #endif
