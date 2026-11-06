@@ -1171,8 +1171,17 @@ static uint32_t rf_adjust_tstamp_from_ot(uint32_t time)
 	return (uint32_t)(ts + delta);
 }
 
-static void convert_ack(otRadioFrame *ack, pdDataCnf_t *cnf)
+static bool convert_ack(otRadioFrame *ack, pdDataCnf_t *cnf)
 {
+	/* ackLength is supplied by the NBU radio firmware and indexes the fixed
+	 * radio_rx_ack_data[OT_RADIO_FRAME_MAX_SIZE] buffer, so drop an ACK that
+	 * does not fit rather than copying past its end.
+	 */
+	if (cnf->ackLength > OT_RADIO_FRAME_MAX_SIZE) {
+		ack->mLength = 0;
+		return false;
+	}
+
 	ack->mChannel = radio_channel;
 	ack->mLength = cnf->ackLength;
 	ack->mInfo.mRxInfo.mLqi = cnf->ppduLinkQuality;
@@ -1198,6 +1207,7 @@ static void convert_ack(otRadioFrame *ack, pdDataCnf_t *cnf)
 		ack->mLength = cnf->ackLength + IEEE802154_FCS_LENGTH;
 	}
 
+	return true;
 }
 
 static void convert_rx_frame(otRadioFrame *rx_frm, pdDataInd_t *rx_ind)
@@ -1285,9 +1295,9 @@ phyStatus_t PD_OT_MAC_SapHandler(void *pMsg, instanceId_t instance)
 			if (pDataMsg->msgType == gPdDataCnf_c) {
 				radio_tx_status = OT_ERROR_NONE;
 
-				convert_ack(&radio_rx_ack_frame, &pDataMsg->msgData.dataCnf);
-
-				if (is_tx_poll &&
+				if (!convert_ack(&radio_rx_ack_frame, &pDataMsg->msgData.dataCnf)) {
+					radio_tx_status = OT_ERROR_NO_ACK;
+				} else if (is_tx_poll &&
 				    (radio_rx_ack_frame.mPsdu[IEEE802154_FRM_CTL_LO_OFFSET] &
 				     IEEE802154_FP)) {
 					is_rx_after_poll = TRUE;
