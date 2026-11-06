@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 Hsiu-Chi Tsai
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Use unique names and synthetic addresses for the emulator instances on this bus. */
+&i2c0 {
+	status = "okay";
+
+	codec: es8311@18 {
+		compatible = "everest,es8311";
+		reg = <0x18>;
+		status = "okay";
+	};
+
+	/* Deferred devices are probed once during the test application initialization. */
+
+	/* A part on a bus that fails one of init()'s safety writes. */
+	codec_quiesce: es8311@1a {
+		compatible = "everest,es8311";
+		reg = <0x1a>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
+	/* Reject an unexpected chip identity. */
+	codec_foreign: es8311@1b {
+		compatible = "everest,es8311";
+		reg = <0x1b>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
+	/* A part warm-rebooted out of a capture route: PGA powered, MIC1 still on the mux. */
+	codec_warm: es8311@1c {
+		compatible = "everest,es8311";
+		reg = <0x1c>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
+	/* Fail identity reads while allowing writes. */
+	codec_mute: es8311@1d {
+		compatible = "everest,es8311";
+		reg = <0x1d>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
+	/* Fail INI_REG writes after a successful identity check. */
+	codec_ini: es8311@1e {
+		compatible = "everest,es8311";
+		reg = <0x1e>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
+	/* Exercise non-default properties: right DAC slot and 30 dB PGA. */
+	codec_profile: es8311@1f {
+		compatible = "everest,es8311";
+		reg = <0x1f>;
+		status = "okay";
+		everest,mono-dac-source = "right";
+		everest,mic-pga-gain-db = <30>;
+	};
+};
