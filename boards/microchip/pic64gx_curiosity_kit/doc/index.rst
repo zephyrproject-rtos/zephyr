@@ -26,13 +26,43 @@ Applications for the ``pic64gx_curiosity_kit`` board configuration can be built 
 Flashing
 ========
 
-To Flash to the device, the easiest way to proceed is to load the binary using a sdcard.
-The binary on the sdcard can then be loaded by the bootloader at the designated address.
+The board has an on-board Microchip debugger (embedded FlashPro5) on its USB-C debug port. It
+provides JTAG access to the SoC and the serial consoles: ``MMUART0`` (used by the Hart Software
+Services, HSS) on the second serial port of the debugger and ``MMUART1`` (the Zephyr console of
+the ``u54`` targets) on the third.
 
-For the bootloader to be able to load the application, a payload file needs to be generated.
-Please proceed as follows:
+The application runs from DDR memory, which is initialized by the HSS stored in the eNVM of the
+SoC. The HSS must therefore be programmed in the eNVM, as on boards shipped by Microchip.
 
-To get the hss-payload-generator tool, please clone the following repository and build the tool:
+On Linux, OpenOCD needs access to the debugger. Add a udev rule such as the following to
+:file:`/etc/udev/rules.d/70-microchip.rules` and replug the board:
+
+.. code-block:: none
+
+   SUBSYSTEM=="usb", ATTR{idVendor}=="1514", ATTR{idProduct}=="200a", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+
+Loading into DDR over JTAG
+--------------------------
+
+The default runner resets the SoC, waits for the HSS to initialize DDR and to boot whatever the
+SD card holds, then halts the U54 harts, loads the application into DDR over JTAG and starts it.
+The SD card can stay in the board. The application is lost on reset or power cycle.
+
+.. zephyr-app-commands::
+   :board: pic64gx_curiosity_kit/pic64gx1000/u54
+   :goals: build flash
+
+The time to wait for the HSS can be changed if needed (default 8000 ms):
+
+.. code-block:: console
+
+   west flash -- --cmd-pre-init "set HSS_BOOT_WAIT_MS 10000"
+
+Writing the SD card on a host
+-----------------------------
+
+The payload can also be written to the SD card on a host computer. To get the
+hss-payload-generator tool, clone the following repository and build the tool:
 
 .. code-block:: bash
 
@@ -46,8 +76,8 @@ To generate a payload:
 
    ./hss-payload-generator -c config.yaml -v output.bin
 
-A payload generator config file such as the following should be used to generate a compatible with the Hart Software Services (HSS).
-https://github.com/pic64gx/pic64gx-hart-software-services
+A payload generator configuration file such as the following generates a payload compatible
+with the HSS.
 
 For single core:
 
@@ -96,7 +126,7 @@ For SMP:
 Please refer to the following README.md for more information on payload generation:
 https://github.com/pic64gx/pic64gx-hart-software-services/blob/pic64gx/tools/hss-payload-generator/README.md
 
-Then the output payload file needs to be copied to the sdcard (assuming the sdcard is mounted at /dev/sdx).
+Then copy the payload file to the SD card (assuming the SD card is :file:`/dev/sdx`):
 
 .. code-block:: bash
 
@@ -105,10 +135,11 @@ Then the output payload file needs to be copied to the sdcard (assuming the sdca
 Debugging
 =========
 
-Please note that in most use cases, the application must be loaded in the external DDR memory.
-And therefore DDR must be initialized before loading the application or debugging the application.
+Load and start the application with ``west flash``, then attach the debugger to the running
+application:
 
-The way to proceed is to load the HSS firmware first, then load the application in DDR memory through
-the HSS loader following the instructions in `Flashing`_.
+.. zephyr-app-commands::
+   :board: pic64gx_curiosity_kit/pic64gx1000/u54
+   :goals: attach
 
-Then proceed to debug the application as usual (ie: :ref:`application_debugging`.)
+See :ref:`application_debugging` for more information.
