@@ -161,11 +161,21 @@ extern "C" {
 
 #else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti) */
 
+#if defined(CONFIG_STM32_HAL2)
+
+#define EXTI_CLEAR_FLAG(line_range, line)		\
+	CONCAT(LL, CPU_NR, _EXTI_ClearTriggerFlag_##line_range)(line)
+#define EXTI_IS_ACTIVE_FLAG(line_range, line)	\
+	CONCAT(LL, CPU_NR, _EXTI_IsActiveTriggerFlag_##line_range)(line)
+
+#else /* CONFIG_STM32_HAL2 */
+
 #define EXTI_CLEAR_FLAG(line_range, line)			\
 	CONCAT(LL, CPU_NR, _EXTI_ClearFlag_##line_range)(line)
 #define EXTI_IS_ACTIVE_FLAG(line_range, line)		\
 	CONCAT(LL, CPU_NR, _EXTI_IsActiveFlag_##line_range)(line)
 
+#endif /* CONFIG_STM32_HAL2 */
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti) */
 
 

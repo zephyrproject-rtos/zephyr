@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: stm32h7p5i_dk
+  full_name: STM32H7P5I-DK Discovery Kit
+  vendor: st
+  socs:
+    - name: stm32h7p5xx

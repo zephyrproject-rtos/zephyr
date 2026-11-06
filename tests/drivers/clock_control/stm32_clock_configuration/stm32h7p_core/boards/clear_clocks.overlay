@@ -1,0 +1,88 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ hse-bypass;
+	/delete-property/ clock-frequency;
+};
+
+&clk_hsi {
+	status = "disabled";
+	/delete-property/ hsi-div;
+};
+
+&clk_csi {
+	status = "disabled";
+};
+
+&clk_hsi48 {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_lsi {
+	status = "disabled";
+};
+
+&pll {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ div-s;
+	/delete-property/ div-t;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&pll2 {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ div-s;
+	/delete-property/ div-t;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&pll3 {
+	/delete-property/ div-m;
+	/delete-property/ mul-n;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ div-r;
+	/delete-property/ div-s;
+	/delete-property/ div-t;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&perck {
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&adckerck {
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+	/delete-property/ cpre;
+	/delete-property/ bmpre;
+	/delete-property/ ppre1;
+	/delete-property/ ppre2;
+	/delete-property/ ppre4;
+};

@@ -133,6 +133,10 @@ family:
     - name: stm32h5e5xx
     - name: stm32h5f4xx
     - name: stm32h5f5xx
+  - name: stm32h7px
+    socs:
+    - name: stm32h7p4xx
+    - name: stm32h7p5xx
   - name: stm32h7rsx
     socs:
     - name: stm32h7r3xx

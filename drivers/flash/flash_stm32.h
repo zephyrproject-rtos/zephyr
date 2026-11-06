@@ -40,6 +40,11 @@ struct flash_stm32_priv {
 	/* as flash node property 'write-block-size' */
 #endif
 
+/* Let's wait for double the max erase time to be sure that the operation is
+ * completed.
+ */
+#define STM32_FLASH_TIMEOUT (2 * DT_PROP(DT_INST(0, st_stm32_nv_flash), max_erase_time))
+
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 /* FLASH register names differ for this series */
 #define FLASH_NSSR_BSY FLASH_SR_BSY
@@ -387,6 +392,10 @@ int flash_stm32_cr_lock(const struct device *dev, bool enable);
 #ifdef CONFIG_SOC_SERIES_STM32WBX
 int flash_stm32_check_status(const struct device *dev);
 #endif /* CONFIG_SOC_SERIES_STM32WBX */
+
+#ifdef CONFIG_SOC_SERIES_STM32H7PX
+int flash_stm32_wait_flash_idle(const struct device *dev);
+#endif /* CONFIG_SOC_SERIES_STM32H7PX */
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 void flash_stm32_page_layout(const struct device *dev,
