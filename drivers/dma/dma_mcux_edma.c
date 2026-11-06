@@ -93,6 +93,7 @@ struct call_back {
 	dma_callback_t dma_callback;
 	struct dma_mcux_channel_transfer_edma_settings transfer_settings;
 	bool busy;
+	bool error_callback_dis;
 };
 
 struct dma_mcux_edma_data {
@@ -240,6 +241,23 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 	}
 }
 
+/* Stop a channel that has flagged an error and tell its owner. */
+static void dma_mcux_edma_channel_error(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+
+	LOG_ERR("channel %d error status is 0x%x", hw_channel,
+		EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
+	EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
+	EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
+	data->busy = false;
+
+	if (data->dma_callback != NULL && !data->error_callback_dis) {
+		data->dma_callback(data->dev, data->user_data, channel, -EIO);
+	}
+}
+
 static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
 {
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
@@ -255,10 +273,7 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 #if DT_INST_PROP(0, no_error_irq)
 	/* Channel shares the same irq for error and transfer complete */
 	else if (flag & kEDMA_ErrorFlag) {
-		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel, 0xFFFFFFFF);
-		EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
-		DEV_CHANNEL_DATA(dev, channel)->busy = false;
-		LOG_INF("channel %d error status is 0x%x", channel, flag);
+		dma_mcux_edma_channel_error(dev, channel);
 	}
 #endif
 }
@@ -266,17 +281,19 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 #if !DT_INST_PROP(0, no_error_irq)
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
-	int i = 0;
-	uint32_t hw_channel;
+	/*
+	 * The error interrupt is shared; act on the channels that flagged one.
+	 * A channel never configured here has no handle and may belong to
+	 * another core sharing the controller, so leave it alone.
+	 */
+	for (uint32_t i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
+		uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
 
-	for (i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
-		if (DEV_CHANNEL_DATA(dev, i)->busy) {
-			hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
-			LOG_ERR("channel %d error status is 0x%x", hw_channel,
-					EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
-			EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
-			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
-			DEV_CHANNEL_DATA(dev, i)->busy = false;
+		if (DEV_CHANNEL_DATA(dev, i)->dev == NULL) {
+			continue;
+		}
+		if (EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel) & kEDMA_ErrorFlag) {
+			dma_mcux_edma_channel_error(dev, i);
 		}
 	}
 
@@ -855,6 +872,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	/* Replace the callback even with none, so a previous one is not kept. */
 	data->user_data = config->user_data;
 	data->dma_callback = config->dma_callback;
+	data->error_callback_dis = config->error_callback_dis;
 	data->dev = dev;
 
 	irq_unlock(key);
