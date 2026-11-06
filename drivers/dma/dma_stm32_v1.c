@@ -421,12 +421,8 @@ uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph)
  * information.
  * This function does not have the obligation of checking the parameters.
  */
-bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx)
+bool stm32_dma_check_fifo_mburst(uint32_t msize, uint32_t mburst, uint32_t fifo_level)
 {
-	uint32_t msize = DMAx->MemoryOrM2MDstDataSize;
-	uint32_t fifo_level = DMAx->FIFOThreshold;
-	uint32_t mburst = DMAx->MemBurst;
-
 	switch (msize) {
 	case LL_DMA_MDATAALIGN_BYTE:
 		switch (mburst) {
