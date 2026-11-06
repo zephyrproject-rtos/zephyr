@@ -8,14 +8,6 @@
 
 / {
 	cpus {
-		/delete-node/ cpu@1;
-		/delete-node/ cpu@2;
-		/delete-node/ cpu@3;
-		/delete-node/ cpu@4;
-		/delete-node/ cpu@5;
-		/delete-node/ cpu@6;
-		/delete-node/ cpu@7;
-
 		cpu0: cpu@0 {
 			/delete-node/ interrupt-controller;
 			#address-cells = <1>;
