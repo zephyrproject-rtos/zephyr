@@ -1,0 +1,25 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+
+&wisblock_3v3_s {
+	status = "okay";
+};
+
+&wisblock_spi {
+	status = "okay";
+
+	w5100s_rak13800: w5100s@0 {
+		compatible = "wiznet,w5100s";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(30)>;
+		power-domains = <&wisblock_3v3_s>;
+		int-gpios = <&wisblock_io WISBLOCK_IO_IO6 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&wisblock_io WISBLOCK_IO_IO3 GPIO_ACTIVE_LOW>;
+		zephyr,random-mac-address;
+	};
+};
