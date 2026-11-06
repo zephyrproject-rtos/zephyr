@@ -1,0 +1,18 @@
+# Copyright 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADC-backed voltage comparator
+
+compatible: "adc-comparator"
+
+include: voltage-divider-common.yaml
+
+properties:
+  output-ohms:
+    default: 1
+
+  threshold-mv:
+    type: int
+    required: true
+    description:
+      Voltage threshold in millivolts above which the comparator output is high.
