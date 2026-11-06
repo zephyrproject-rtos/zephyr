@@ -104,6 +104,11 @@ config FILE_SYSTEM_GC
 	help
 	  Enables function fs_gc that can be used to proactively run garbage collector.
 
+config FILE_SYSTEM_GETATTR
+	bool "Allow to query file attributes"
+	help
+	  Enables function fs_getattr that can be used to query file and directory attributes.
+
 config FUSE_FS_ACCESS
 	bool "FUSE based access to file system partitions"
 	depends on ARCH_POSIX

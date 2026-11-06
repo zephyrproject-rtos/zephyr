@@ -4,6 +4,8 @@ common:
     - fatfs
   modules:
     - fatfs
+  extra_configs:
+    - CONFIG_FILE_SYSTEM_GETATTR=y
 tests:
   filesystem.fat.api:
     platform_allow:
