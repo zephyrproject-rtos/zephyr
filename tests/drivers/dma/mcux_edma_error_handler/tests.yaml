@@ -1,0 +1,15 @@
+common:
+  tags:
+    - drivers
+    - dma
+  depends_on: dma
+  # The test reads eDMA v2 registers and uses a reserved address of the
+  # i.MX RT1170 memory map to cause a bus error
+  filter: CONFIG_DMA_MCUX_EDMA and dt_nodelabel_enabled("edma0")
+  platform_allow:
+    - mimxrt1170_evk@A/mimxrt1176/cm7
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+  integration_platforms:
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+tests:
+  drivers.dma.mcux_edma.error_handler: {}
