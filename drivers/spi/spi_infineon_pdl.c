@@ -99,8 +99,10 @@ struct ifx_cat1_spi_data {
 	struct spi_context ctx;
 	uint8_t dfs_value;
 	size_t chunk_len;
+	bool transfer_active;
 
 #ifdef CONFIG_SPI_INFINEON_DMA
+	bool dma_configured;
 	struct ifx_cat1_dma_stream dma_rx;
 	struct ifx_cat1_dma_stream dma_tx;
 #endif
@@ -271,6 +273,57 @@ static uint8_t get_dfs_value(struct spi_context *ctx)
 	}
 }
 
+/* Callers hold irq_lock() for an active transfer on these uniprocessor platforms. */
+static void spi_finish(const struct device *dev, int status, bool notify)
+{
+	struct ifx_cat1_spi_data *data = dev->data;
+	const struct ifx_cat1_spi_config *config = dev->config;
+
+	data->transfer_active = false;
+	data->is_async = false;
+	data->pending = IFX_SPI_PENDING_NONE;
+	Cy_SCB_SetRxInterruptMask(config->reg_addr, 0);
+	Cy_SCB_SetTxInterruptMask(config->reg_addr, 0);
+	Cy_SCB_SetMasterInterruptMask(config->reg_addr, 0);
+	Cy_SCB_SetSlaveInterruptMask(config->reg_addr, 0);
+
+#ifdef CONFIG_SPI_INFINEON_DMA
+	if (data->dma_configured) {
+		int tx_ret = dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
+		int rx_ret = dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
+
+		data->dma_configured = false;
+		if (tx_ret < 0 || rx_ret < 0) {
+			LOG_ERR("Failed to stop SPI DMA: TX %d RX %d", tx_ret, rx_ret);
+			status = -EIO;
+		}
+	}
+#endif
+
+	if (status < 0) {
+		Cy_SCB_SPI_AbortTransfer(config->reg_addr, &data->context);
+		/* Stop the shifter/native CS without invalidating the cached configuration. */
+		Cy_SCB_SPI_Disable(config->reg_addr, &data->context);
+		Cy_SCB_ClearRxInterrupt(config->reg_addr, CY_SCB_CLEAR_ALL_INTR_SRC);
+		Cy_SCB_ClearTxInterrupt(config->reg_addr, CY_SCB_CLEAR_ALL_INTR_SRC);
+		Cy_SCB_ClearMasterInterrupt(config->reg_addr, CY_SCB_CLEAR_ALL_INTR_SRC);
+		Cy_SCB_ClearSlaveInterrupt(config->reg_addr, CY_SCB_CLEAR_ALL_INTR_SRC);
+		Cy_SCB_SPI_Enable(config->reg_addr);
+	} else {
+		spi_context_cs_control(&data->ctx, false);
+	}
+
+	if (notify) {
+#ifdef CONFIG_SPI_ASYNC
+		if (status < 0 && data->ctx.asynchronous) {
+			/* Synchronous errors release CS and ownership after the wait. */
+			spi_context_unlock_unconditionally(&data->ctx);
+		}
+#endif
+		spi_context_complete(&data->ctx, dev, status);
+	}
+}
+
 static void transfer_chunk(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
@@ -310,6 +363,7 @@ static void transfer_chunk(const struct device *dev)
 				LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
 					"length (%d)",
 					IFX_CAT1_SPI_DMA_BURST_SIZE);
+				ret = -EINVAL;
 				goto exit;
 			}
 			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
@@ -350,6 +404,7 @@ static void transfer_chunk(const struct device *dev)
 			goto exit;
 		}
 
+		data->dma_configured = true;
 		ret = dma_start(dma_rx->dev_dma, dma_rx->dma_channel);
 		if (ret < 0) {
 			goto exit;
@@ -371,25 +426,20 @@ static void transfer_chunk(const struct device *dev)
 #endif
 
 exit:
-#ifdef CONFIG_SPI_INFINEON_DMA
-	dma_stop(data->dma_tx.dev_dma, data->dma_tx.dma_channel);
-	dma_stop(data->dma_rx.dev_dma, data->dma_rx.dma_channel);
-#endif
-	spi_context_cs_control(ctx, false);
-	spi_context_complete(ctx, dev, ret);
+	spi_finish(dev, ret, true);
 }
 
 static void spi_interrupt_callback(void *arg, uint32_t event)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct ifx_cat1_spi_data *const data = dev->data;
+	const struct ifx_cat1_spi_config *const config = dev->config;
 	struct spi_context *ctx = &data->ctx;
 
-	if (event & CY_SCB_SPI_TRANSFER_ERR_EVENT) {
-		const struct ifx_cat1_spi_config *const config = dev->config;
-
-		Cy_SCB_SPI_AbortTransfer(config->reg_addr, &(data->context));
-		data->pending = IFX_SPI_PENDING_NONE;
+	/* PDL may report completion after an error. Leave cleanup to the ISR. */
+	if (Cy_SCB_SPI_GetTransferStatus(config->reg_addr, &data->context) &
+	    CY_SCB_SPI_TRANSFER_ERR) {
+		return;
 	}
 
 	if (event & CY_SCB_SPI_TRANSFER_CMPLT_EVENT) {
@@ -406,8 +456,15 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	struct device *dev = arg;
 	struct ifx_cat1_spi_data *const data = dev->data;
 	struct spi_context *ctx = &data->ctx;
+	unsigned int key = irq_lock();
 
-	if (channel == data->dma_rx.dma_channel) {
+	if (!data->dma_configured) {
+		goto out;
+	}
+	if (status < 0) {
+		LOG_ERR("SPI DMA channel %u failed: %d", channel, status);
+		spi_finish(dev, status, true);
+	} else if (channel == data->dma_rx.dma_channel) {
 		spi_context_update_tx(ctx, get_dfs_value(ctx), data->chunk_len);
 		spi_context_update_rx(ctx, get_dfs_value(ctx), data->chunk_len);
 
@@ -417,6 +474,8 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	} else {
 		LOG_ERR("Unknown\n");
 	}
+out:
+	irq_unlock(key);
 }
 #endif
 
@@ -554,17 +613,41 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	result = spi_config(dev, spi_cfg);
 	if (result) {
 		LOG_ERR("Error in SPI Configuration (result: 0x%x)", result);
-		spi_context_release(ctx, result);
+		spi_context_unlock_unconditionally(ctx);
 		return result;
 	}
 
+	unsigned int key = irq_lock();
+
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, data->dfs_value);
+	data->transfer_active = true;
 	spi_context_cs_control(ctx, true);
 
 	transfer_chunk(dev);
+	irq_unlock(key);
 	result = spi_context_wait_for_completion(&data->ctx);
 
-	spi_context_release(ctx, result);
+	key = irq_lock();
+	if (result == -ETIMEDOUT) {
+		if (data->transfer_active) {
+			spi_finish(dev, -ETIMEDOUT, false);
+		} else {
+			/* Completion won the race with the wait timeout. Consume its signal. */
+			result = ctx->sync_status;
+#ifdef CONFIG_MULTITHREADING
+			(void)k_sem_take(&ctx->sync, K_NO_WAIT);
+#else
+			atomic_clear(&ctx->ready);
+#endif
+		}
+	}
+	if (result < 0) {
+		/* Generic release retains SPI_LOCK_ON after errors in synchronous-only builds. */
+		spi_context_unlock_unconditionally(ctx);
+	} else {
+		spi_context_release(ctx, result);
+	}
+	irq_unlock(key);
 
 	return result;
 }
@@ -624,15 +707,12 @@ bool ifx_cat1_spi_is_busy(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
 	const struct ifx_cat1_spi_config *const config = dev->config;
-	struct spi_context *ctx = &data->ctx;
-
 	/* On the large-chunk DMA path the transfer runs entirely through the DMA
 	 * channels without setting data->pending, and Cy_SCB_SPI_IsBusBusy() can
-	 * briefly read idle between FIFO-paced DMA bursts. The SPI context still
-	 * holds the outstanding buffers until the transfer completes, so use it as
-	 * the authoritative in-flight indicator that covers every transfer path.
+	 * briefly read idle between FIFO-paced DMA bursts. Track request lifetime
+	 * explicitly: context buffers can remain outstanding after an error.
 	 */
-	if (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
+	if (data->transfer_active) {
 		return true;
 	}
 
@@ -886,6 +966,14 @@ static int ifx_cat1_spi_init(const struct device *dev)
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_CAT1_SPI_INIT)
 
+static void spi_enable_rx_overflow(const struct ifx_cat1_spi_config *config)
+{
+	/* PDL transfer starts replace the RX mask and omit overflow in controller mode. */
+	Cy_SCB_SetRxInterruptMask(config->reg_addr,
+				 Cy_SCB_GetRxInterruptMask(config->reg_addr) |
+				 CY_SCB_RX_INTR_OVERFLOW);
+}
+
 cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *tx, size_t tx_length,
 				      uint8_t *rx, size_t rx_length)
 {
@@ -963,6 +1051,9 @@ cy_rslt_t ifx_cat1_spi_transfer_async(const struct device *dev, const uint8_t *t
 	}
 
 #endif /* IFX_SPI_ASYMM_PDL_FUNC_AVAIL */
+	if (spi_status == CY_SCB_SPI_SUCCESS) {
+		spi_enable_rx_overflow(config);
+	}
 	return spi_status == CY_SCB_SPI_SUCCESS ? CY_RSLT_SUCCESS : IFX_SPI_RSLT_TRANSFER_ERROR;
 }
 
@@ -1184,8 +1275,21 @@ static void spi_irq_handler(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
 	const struct ifx_cat1_spi_config *const config = dev->config;
+	unsigned int key = irq_lock();
+
+	if (!data->transfer_active) {
+		goto out;
+	}
 
 	Cy_SCB_SPI_Interrupt(config->reg_addr, &(data->context));
+
+	uint32_t status = Cy_SCB_SPI_GetTransferStatus(config->reg_addr, &data->context);
+
+	if (status & CY_SCB_SPI_TRANSFER_ERR) {
+		LOG_ERR("SPI transfer failed (PDL status 0x%x)", (unsigned int)status);
+		spi_finish(dev, -EIO, true);
+		goto out;
+	}
 
 	if (!data->is_async) {
 		if (CY_SCB_MASTER_INTR_SPI_DONE &
@@ -1195,11 +1299,10 @@ static void spi_irq_handler(const struct device *dev)
 						   (uint32_t)~CY_SCB_MASTER_INTR_SPI_DONE));
 			Cy_SCB_ClearMasterInterrupt(config->reg_addr, CY_SCB_MASTER_INTR_SPI_DONE);
 		}
-		return;
+		goto out;
 	}
 
-	if (0 == (Cy_SCB_SPI_GetTransferStatus(config->reg_addr, &data->context) &
-		  CY_SCB_SPI_TRANSFER_ACTIVE)) {
+	if (!(status & CY_SCB_SPI_TRANSFER_ACTIVE)) {
 
 #if !defined(IFX_SPI_ASYMM_PDL_FUNC_AVAIL)
 		if (NULL != data->tx_buffer) {
@@ -1209,8 +1312,13 @@ static void spi_irq_handler(const struct device *dev)
 
 			data->tx_buffer = NULL;
 
-			Cy_SCB_SPI_Transfer(config->reg_addr, (uint8_t *)buf, NULL,
-					    data->tx_buffer_size, &data->context);
+			if (Cy_SCB_SPI_Transfer(config->reg_addr, (uint8_t *)buf, NULL,
+					       data->tx_buffer_size, &data->context) !=
+			    CY_SCB_SPI_SUCCESS) {
+				spi_finish(dev, -EIO, true);
+			} else {
+				spi_enable_rx_overflow(config);
+			}
 		} else if (NULL != data->rx_buffer) {
 			/* Start RX Transfer */
 			data->pending = IFX_SPI_PENDING_RX;
@@ -1253,8 +1361,12 @@ static void spi_irq_handler(const struct device *dev)
 				data->rx_buffer = NULL;
 			}
 
-			Cy_SCB_SPI_Transfer(config->reg_addr, tx_buf, rx_buf, trx_size,
-					    &data->context);
+			if (Cy_SCB_SPI_Transfer(config->reg_addr, tx_buf, rx_buf, trx_size,
+					       &data->context) != CY_SCB_SPI_SUCCESS) {
+				spi_finish(dev, -EIO, true);
+			} else {
+				spi_enable_rx_overflow(config);
+			}
 		} else {
 #endif /* IFX_SPI_ASYMM_PDL_FUNC_AVAIL */
 			/* Finish Async Transfer */
@@ -1264,6 +1376,8 @@ static void spi_irq_handler(const struct device *dev)
 		}
 #endif /* IFX_SPI_ASYMM_PDL_FUNC_AVAIL */
 	}
+out:
+	irq_unlock(key);
 }
 
 static void ifx_cat1_spi_cb_wrapper(const struct device *dev, uint32_t event)
