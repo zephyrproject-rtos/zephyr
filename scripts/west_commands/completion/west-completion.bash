@@ -1082,6 +1082,7 @@ __comp_west_twister()
 		--alt-config-root
 		--board-root -A
 		--coverage-basedir
+		--coverage-exclude-dir
 		--outdir -O
 		--report-dir -o
 		--testsuite-root -T
