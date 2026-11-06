@@ -6,9 +6,26 @@
 
 #include <zephyr/arch/arm/nmi.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/barrier.h>
 #include <bsp_api.h>
 
 extern void NMI_Handler(void);
+
+void renesas_ra_reset_hook(void)
+{
+	/*
+	 * SystemInit() runs from z_arm_reset, before z_arm_floating_point_init()
+	 * and the compiler may emit FP/MVE instructions in it, which fault with NOCP.
+	 * Grant privileged access to CP10/CP11 first; prep_c reprograms CPACR afterwards.
+	 */
+	if (IS_ENABLED(CONFIG_FPU)) {
+		SCB->CPACR |= CPACR_CP10_PRIV_ACCESS | CPACR_CP11_PRIV_ACCESS;
+		barrier_dsync_fence_full();
+		barrier_isync_fence_full();
+	}
+
+	SystemInit();
+}
 
 void soc_early_init_hook(void)
 {
