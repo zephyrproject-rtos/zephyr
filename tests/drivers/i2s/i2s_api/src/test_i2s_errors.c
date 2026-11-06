@@ -106,6 +106,10 @@ ZTEST_USER(i2s_errors, test_i2s_incorrect_trigger)
 
 	err = i2s_trigger(dev_i2s, I2S_DIR_TX, INVALID_TRIGGER_SETTING);
 	zassert_equal(err, -EINVAL, "I2S invalid trigger setting not detected: err=%d", err);
+
+	/* Avoid leaking queue state into subsequent tests. */
+	err = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DROP);
+	zassert_equal(err, 0, "I2S_TRIGGER_DROP unexpected error: %d", err);
 }
 
 ZTEST_USER(i2s_errors, test_i2s_unconfigured_access)
