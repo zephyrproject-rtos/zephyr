@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon TLE927x SBC reset cause.
+
+  Reports the reset cause through the hwinfo API, decoded from the SUP_STAT,
+  THERM_STAT and DEV_STAT registers. The driver reads and clears these three
+  registers at init; the TLE927x MFD driver only clears the other status
+  registers. Without this node the three registers keep the bits latched
+  before the last reset, so it should be present on every TLE927x board.
+
+  Only one instance is supported.
+
+compatible: "infineon,tle927x-hwinfo"
+
+include: base.yaml
+
+on-bus: tle927x
