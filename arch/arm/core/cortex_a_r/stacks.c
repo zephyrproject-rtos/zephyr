@@ -6,9 +6,17 @@
 
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/kernel.h>
+#include <zephyr/arch/arm/cortex_a_r/exception_stack.h>
 #include <cortex_a_r/stack.h>
 #include <string.h>
 #include <kernel_internal.h>
+
+#if defined(Z_ARMV7_EXCEPTION_ENTRY_STACK_BYTES)
+BUILD_ASSERT(CONFIG_ARMV7_EXCEPTION_STACK_SIZE >= Z_ARMV7_EXCEPTION_ENTRY_STACK_BYTES,
+	     "CONFIG_ARMV7_EXCEPTION_STACK_SIZE is smaller than the exception entry "
+	     "frame (Z_ARMV7_EXCEPTION_ENTRY_STACK_BYTES in exception_stack.h). "
+	     "Increase the Kconfig value or reduce optional exception frame features.");
+#endif
 
 K_KERNEL_STACK_ARRAY_DEFINE(z_arm_fiq_stack, CONFIG_MP_MAX_NUM_CPUS,
 		CONFIG_ARMV7_FIQ_STACK_SIZE);

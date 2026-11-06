@@ -47,6 +47,48 @@
         and \rreg0, #TPIDRURO_CURR_CPU
 .endm
 
+/*
+ * DWARF for GDB at an AArch32 abort vector (no ESF yet).
+ * LR_abt/und is faulting PC plus 8 (data) or 4 (prefetch), not a C RA.
+ * SP is the exception-mode stack; previous SP is restored after exception_entry.
+ *
+ * DW_CFA_val_expression r15, DW_OP_breg14 -N  =>  PC = LR - N
+ */
+.macro cfi_aarch32_dabt_frame
+	.cfi_signal_frame
+	.cfi_return_column pc
+	.cfi_undefined sp
+	/* DW_CFA_val_expression: PC = LR - 8.
+	 * r15, expression length 2, DW_OP_breg14, SLEB128(-8).
+	 */
+	.cfi_escape 0x16, 0x0f, 0x02, 0x7e, 0x78
+.endm
+
+.macro cfi_aarch32_pabt_frame
+	.cfi_signal_frame
+	.cfi_return_column pc
+	.cfi_undefined sp
+	/* DW_CFA_val_expression: PC = LR - 4.
+	 * r15, expression length 2, DW_OP_breg14, SLEB128(-4).
+	 */
+	.cfi_escape 0x16, 0x0f, 0x02, 0x7e, 0x7c
+.endm
+
+/*
+ * Saved GPR locations in __basic_sf, as byte offsets from the CFA.
+ * above is the number of frame bytes between the end of __basic_sf and the
+ * CFA (4 for the interrupted SP word on the non-switch path).
+ */
+.macro cfi_basic_sf_offsets above=0
+	.cfi_offset pc, (___basic_sf_t_pc_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset lr, (___basic_sf_t_lr_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r12, (___basic_sf_t_r12_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r3, (___basic_sf_t_r3_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r2, (___basic_sf_t_r2_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r1, (___basic_sf_t_r1_OFFSET - ___basic_sf_t_SIZEOF - \above)
+	.cfi_offset r0, (___basic_sf_t_r0_OFFSET - ___basic_sf_t_SIZEOF - \above)
+.endm
+
 .macro z_arm_cortex_ar_enter_exc
 	/*
 	 * Store r0-r3, r12, lr into the stack to construct an exception

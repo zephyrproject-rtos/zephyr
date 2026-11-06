@@ -18,12 +18,20 @@
 
 _ASM_FILE_PROLOGUE
 
+	.cfi_sections .debug_frame
+
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	ldr pc, =z_arm_reset             /*                   offset 0 */
 	ldr pc, =z_arm_undef_instruction /* undef instruction offset 4 */
 	ldr pc, =z_arm_svc               /* svc               offset 8 */
+	.cfi_startproc simple
+	cfi_aarch32_pabt_frame
 	ldr pc, =z_arm_prefetch_abort    /* prefetch abort offset  0xc */
+	.cfi_endproc
+	.cfi_startproc simple
+	cfi_aarch32_dabt_frame
 	ldr pc, =z_arm_data_abort        /* data abort     offset 0x10 */
+	.cfi_endproc
 	nop				 /*                offset 0x14 */
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	ldr pc, =_isr_wrapper		 /* IRQ            offset 0x18 */
