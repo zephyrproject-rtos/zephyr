@@ -71,6 +71,11 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 		return -ENOTSUP;
 	}
 
+	/* The pins support open drain but not open source */
+	if (((flags & GPIO_SINGLE_ENDED) != 0) && ((flags & GPIO_LINE_OPEN_DRAIN) == 0)) {
+		return -ENOTSUP;
+	}
+
 #ifdef IOPCTL /* RT600 and RT500 series */
 	IOPCTL_Type *pinmux_base = config->pinmux_base;
 	volatile uint32_t *pinconfig = (volatile uint32_t *)&(pinmux_base->PIO[port][pin]);
