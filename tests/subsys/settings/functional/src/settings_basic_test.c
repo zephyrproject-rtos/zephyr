@@ -408,6 +408,11 @@ ZTEST(settings_functional, test_register_and_loading)
 	err = (!data.en1) && (data.en2) && (!data.en3);
 	zassert_true(err, "wrong data enable found");
 
+	/* test load_one: unsaved path "ps/ss/ss/val2". Should not be found */
+	rc = settings_load_one("ps/unsaved", &val, sizeof(uint8_t));
+	zassert_true(rc == -ENOENT, "unexpected return of settings_load_one "
+				    "with unsaved setting: %d", rc);
+
 	memset(&data, 0, sizeof(struct stored_data));
 	/* test load_one: path "ps/ss/ss/val2". Only data.val2 should
 	 * receive a value
@@ -418,6 +423,12 @@ ZTEST(settings_functional, test_register_and_loading)
 	zassert_true(rc >= 0, "settings_load_one failed");
 	err = (data.val1 == 0) && (data.val2 == 2) && (data.val3 == 0);
 	zassert_true(err, "wrong data value found %u != 2", data.val2);
+
+	/* test load_one: deleted path "ps/ss/ss/val2. Should not be found  */
+	settings_delete("ps/ss/ss/val2");
+	rc = settings_load_one("ps/ss/ss/val2", &data.val2, sizeof(uint8_t));
+	zassert_true(rc == -ENOENT, "unexpected return of settings_load_one "
+				    "with deleted setting: %d", rc);
 
 	/* clean up by deregistering settings_handler */
 	rc = settings_deregister(&val1_settings);
