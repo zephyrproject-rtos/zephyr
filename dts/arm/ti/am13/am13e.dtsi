@@ -10,6 +10,14 @@
 
 / {
 	soc {
+		dma: dma@40020000 {
+			compatible = "ti,mspm0-dma";
+			reg = <0x40020000 0x2000>;
+			interrupts = <40 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@400cc000 {
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x400cc000 0x400>;
