@@ -7,4 +7,15 @@ if BOARD_HIFIVE_UNLEASHED
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
+if QEMU_TARGET
+
+# The harts do not run concurrently with icount
+configdefault QEMU_ICOUNT
+	default n if SMP
+
+configdefault QEMU_ICOUNT_SHIFT
+	default 6
+
+endif # QEMU_TARGET
+
 endif # BOARD_HIFIVE_UNLEASHED
