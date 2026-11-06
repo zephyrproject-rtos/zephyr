@@ -1,0 +1,8 @@
+common:
+  tags:
+    - arch
+    - tricore
+  arch_allow: tricore
+  ignore_faults: true
+tests:
+  arch.tricore.csa_offset: {}

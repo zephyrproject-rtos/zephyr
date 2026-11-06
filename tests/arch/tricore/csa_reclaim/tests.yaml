@@ -1,0 +1,7 @@
+tests:
+  arch.tricore.csa_reclaim:
+    arch_allow: tricore
+    tags:
+      - arch
+      - tricore
+      - csa
