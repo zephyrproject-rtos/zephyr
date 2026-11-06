@@ -1879,6 +1879,78 @@ flagged.
 {undef_desc}""")
 
 
+class KconfigPrefixCheck(ComplianceTest):
+    """
+    Checks that the correct Kconfig prefix is used in the correct directories
+    """
+
+    name = "KconfigPrefix"
+    doc = zephyr_doc_detail_builder("/contribute/style/kconfig.html")
+    global_prefixes = tuple(
+        [
+            'HEAP_MEM_POOL_ADD_SIZE_',
+            'NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_',
+            'ZVFS_EVENTFD_ADD_SIZE_',
+            'ZVFS_OPEN_ADD_SIZE_',
+        ]
+    )
+
+    def _process(
+        self, prefix: str, path: str, path_excludes: tuple = None, allowed_kconfigs: tuple = None
+    ):
+        start_prefix_len = 7
+        end_prefix_len = start_prefix_len + len(prefix)
+
+        for file in get_files(filter="d"):
+            if (
+                not Path(file).name.startswith("Kconfig")
+                or not file.startswith(path)
+                or 'defconfig' in Path(file).name
+            ):
+                continue
+
+            if path_excludes is not None and file.startswith(path_excludes):
+                continue
+
+            diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+
+            for patch in unidiff.PatchSet.from_string(diff):
+                for hunk in patch:
+                    for line in hunk:
+                        if (
+                            not line.is_added
+                            or line.target_line_no is None
+                            or not line.value.startswith("config ")
+                            or line.value[start_prefix_len:end_prefix_len:] == prefix
+                            or line.value[start_prefix_len::].startswith(self.global_prefixes)
+                        ):
+                            continue
+
+                        if (
+                            allowed_kconfigs is not None
+                            and line.value[start_prefix_len:-1:] in allowed_kconfigs
+                        ):
+                            continue
+
+                        self.fmtd_failure(
+                            "error",
+                            "KconfigPrefixCheck",
+                            file,
+                            line.target_line_no,
+                            desc=f"""
+Kconfig file does not use correct prefix: {prefix} for Kconfig: {line.value[start_prefix_len::]}
+""",
+                        )
+
+    def run(self):
+        self._process(path='drivers/sensor', prefix='SENSOR_')
+        self._process(path='samples', prefix='SAMPLE_')
+        self._process(path='tests', prefix='TEST_')
+        self._process(path='boards', path_excludes=tuple(['boards/shields']), prefix='BOARD_')
+        self._process(path='boards/shields', prefix='SHIELD_')
+        self._process(path='soc', prefix='SOC_', allowed_kconfigs=tuple(['SOC']))
+
+
 class KconfigBasicCheck(KconfigCheck):
     """
     Checks if we are introducing any new warnings/errors with Kconfig,
