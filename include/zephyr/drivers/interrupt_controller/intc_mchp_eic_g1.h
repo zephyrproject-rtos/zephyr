@@ -57,6 +57,14 @@ enum mchp_gpio_port_id {
 	MCHP_PORT_ID2,
 	/** GPIO Port 3. */
 	MCHP_PORT_ID3,
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
+	/** GPIO Port 4. */
+	MCHP_PORT_ID4,
+	/** GPIO Port 5. */
+	MCHP_PORT_ID5,
+	/** GPIO Port 6. */
+	MCHP_PORT_ID6,
+#endif
 	/** Number of ports (sentinel). */
 	MCHP_PORT_ID_MAX,
 };

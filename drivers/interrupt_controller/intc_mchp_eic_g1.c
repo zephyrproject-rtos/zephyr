@@ -65,6 +65,14 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 #define PORTD_SPECIAL_PINS_1_OFFSET DT_INST_PROP_BY_IDX(0, portd_special_pins_1, 1)
 #define PORTD_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portd_special_pins_2, 1)
 
+#define PORTE_SUPPORTED_PINS DT_INST_PROP(0, porte_supported_pins)
+
+#define PORTF_SUPPORTED_PINS        DT_INST_PROP(0, portf_supported_pins)
+#define PORTF_SPECIAL_PINS_1        DT_INST_PROP_BY_IDX(0, portf_special_pins_1, 0)
+#define PORTF_SPECIAL_PINS_1_OFFSET DT_INST_PROP_BY_IDX(0, portf_special_pins_1, 1)
+
+#define PORTG_SUPPORTED_PINS DT_INST_PROP(0, portg_supported_pins)
+
 #define EIC_LINES_PER_PORT 16
 
 #define TIMEOUT_VALUE_US 1000
@@ -164,6 +172,69 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 	return eic_line;
 }
 
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
+
+uint8_t find_eic_line_from_pin(int port, int pin)
+{
+	uint8_t eic_line = pin % EIC_LINES_PER_PORT;
+	uint32_t pin_mask = BIT(pin);
+
+	switch (port) {
+	case MCHP_PORT_ID0:
+		if ((PORTA_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line -= PORTA_SPECIAL_PINS_1_OFFSET;
+		}
+		break;
+	case MCHP_PORT_ID1:
+		break;
+	case MCHP_PORT_ID2:
+		if ((PORTC_UNSUPPORTED_PINS & pin_mask) != 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line -= PORTC_SPECIAL_PINS_1_OFFSET;
+		} else {
+			/* Nothing to be done */
+		}
+		break;
+	case MCHP_PORT_ID3:
+		if ((PORTD_SUPPORTED_PINS & pin_mask) == 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTD_SPECIAL_PINS_2 & pin_mask) != 0) {
+			eic_line += PORTD_SPECIAL_PINS_2_OFFSET;
+		} else if ((PORTD_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line -= PORTD_SPECIAL_PINS_1_OFFSET;
+		} else {
+			/* Nothing to be done */
+		}
+		break;
+	case MCHP_PORT_ID4:
+		if ((PORTE_SUPPORTED_PINS & pin_mask) == 0) {
+			eic_line = INTC_LINE_FREE;
+		}
+		break;
+	case MCHP_PORT_ID5:
+		if ((PORTF_SUPPORTED_PINS & pin_mask) == 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTF_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line += PORTF_SPECIAL_PINS_1_OFFSET;
+		} else {
+			/* Nothing to be done */
+		}
+		break;
+	case MCHP_PORT_ID6:
+		if ((PORTG_SUPPORTED_PINS & pin_mask) == 0) {
+			eic_line = INTC_LINE_FREE;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported port id provided");
+		eic_line = INTC_LINE_FREE;
+		break;
+	}
+
+	return eic_line;
+}
+
 #else
 
 uint8_t find_eic_line_from_pin(int port, int pin)
@@ -251,7 +322,9 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	/*Check whether the pin was assigned to an eic line.*/
 	uint8_t eic_line = find_eic_line_from_pin(eic_pin_config->port_id, eic_pin_config->pin_num);
 
-	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
+	if ((eic_line != INTC_LINE_FREE) && ((eic_data->line_busy & BIT(eic_line)) != 0) &&
+	    (eic_data->lines[eic_line].port == eic_pin_config->port_id) &&
+	    (eic_data->lines[eic_line].pin == eic_pin_config->pin_num)) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
 		LOG_ERR("EIC Line is already free");
@@ -366,7 +439,8 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	 */
 
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG) ||                                             \
-	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH) ||                                         \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 	if (EIC_CONFIG_REG_IDX(eic_line) == 0) {
 		eic_cfg->regs->EIC_CONFIG0 &=
 			~(EIC_CONFIG_EIC_LINE_MSK << EIC_TRIG_TYPE_BIT_POS(eic_line));
@@ -387,7 +461,7 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	eic_cfg->regs->EIC_CONFIG[EIC_CONFIG_REG_IDX(eic_line)] |=
 		((eic_pin_config->trig_type) << EIC_TRIG_TYPE_BIT_POS(eic_line));
 
-#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG || CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+#endif /* PIC32CX_SG || PIC32CM_JH || PIC32CZ_CA */
 
 	/* Set the debouncing feature of the eic line if required */
 	if (eic_pin_config->debounce != 0) {

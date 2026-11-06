@@ -302,3 +302,7 @@ i2c0: &sercom9 {
 	adc-div-ratio = <1>;
 	status = "okay";
 };
+
+&eic {
+	status = "okay";
+};
