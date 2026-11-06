@@ -519,6 +519,7 @@ static int sam_hsmci_request_inner(const struct device *dev, struct sdhc_command
 		case SD_APP_SEND_SCR:
 		case SD_SWITCH:
 		case SD_READ_SINGLE_BLOCK:
+		case SD_APP_SEND_NUM_WRITTEN_BLK:
 			is_write = false;
 			cmdr |= HSMCI_CMDR_TRTYP_SINGLE;
 			cmdr |= HSMCI_CMDR_TRDIR_READ;
@@ -527,9 +528,6 @@ static int sam_hsmci_request_inner(const struct device *dev, struct sdhc_command
 			is_write = false;
 			cmdr |= HSMCI_CMDR_TRTYP_MULTIPLE;
 			cmdr |= HSMCI_CMDR_TRDIR_READ;
-			break;
-		case SD_APP_SEND_NUM_WRITTEN_BLK:
-			is_write = false;
 			break;
 		default:
 			return -ENOTSUP;
