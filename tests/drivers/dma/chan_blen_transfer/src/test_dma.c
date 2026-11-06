@@ -199,3 +199,157 @@ LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_BURST8_TESTS, ())
 
 LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_BURST16_TESTS, ())
 #endif
+
+#if defined(CONFIG_DMA_TRANSFER_NO_CALLBACK) || CONFIG_DMA_TRANSFER_IDLE_SLOT >= 0 ||              \
+	CONFIG_DMA_TRANSFER_MINOR_LINK_MAX_LOOPS > 0
+static void small_block_config(struct dma_config *cfg, struct dma_block_config *blk, uint32_t burst)
+{
+	*cfg = (struct dma_config){0};
+	*blk = (struct dma_block_config){0};
+
+	cfg->channel_direction = MEMORY_TO_MEMORY;
+	cfg->source_data_size = 1U;
+	cfg->dest_data_size = 1U;
+	cfg->source_burst_length = burst;
+	cfg->dest_burst_length = burst;
+	cfg->dma_callback = test_done;
+	cfg->user_data = &transfer_end_sem;
+	cfg->block_count = 1U;
+	cfg->head_block = blk;
+#ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
+	cfg->dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
+#endif
+
+	blk->block_size = TEST_BUF_SIZE;
+	blk->source_address = (uintptr_t)tx_data;
+	blk->dest_address = (uintptr_t)rx_data;
+}
+#endif
+
+#ifdef CONFIG_DMA_TRANSFER_NO_CALLBACK
+ZTEST(dma_m2m, test_dma0_m2m_chan0_no_callback)
+{
+	const struct device *dma = dma_test_devs[0];
+	uint32_t chan = CONFIG_DMA_TRANSFER_CHANNEL_NR_0;
+	struct dma_config cfg;
+	struct dma_block_config blk;
+	struct dma_status status;
+
+	zassert_equal(test_task(dma, chan, 8), TC_PASS, "transfer with a callback failed");
+
+	small_block_config(&cfg, &blk, 8U);
+	cfg.dma_callback = NULL;
+	cfg.user_data = NULL;
+	(void)memset(rx_data, 0, TEST_BUF_SIZE);
+	sys_cache_data_flush_range(tx_data, TEST_BUF_SIZE);
+	sys_cache_data_flush_and_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
+	k_sem_reset(&transfer_end_sem);
+
+	zassert_ok(dma_config(dma, chan, &cfg), "config without a callback failed");
+	zassert_ok(dma_start(dma, chan), "start without a callback failed");
+
+	for (int i = 0; i < 100; i++) {
+		zassert_ok(dma_get_status(dma, chan, &status), "get_status failed");
+		if (!status.busy) {
+			break;
+		}
+		k_msleep(1);
+	}
+	zassert_false(status.busy, "transfer without a callback did not finish");
+	zassert_equal(k_sem_count_get(&transfer_end_sem), 0,
+		      "the callback of the previous configuration was called");
+
+	sys_cache_data_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
+	zassert_mem_equal(rx_data, tx_data, TEST_BUF_SIZE, "data mismatch");
+}
+#endif
+
+#if CONFIG_DMA_TRANSFER_IDLE_SLOT >= 0
+static K_SEM_DEFINE(idle_end_sem, 0, 1);
+static uint8_t idle_rx[TEST_BUF_SIZE];
+
+/* A transfer on a request line that never fires, so it stays pending. */
+static void start_idle_transfer(const struct device *dma, uint32_t chan)
+{
+	struct dma_config cfg;
+	struct dma_block_config blk;
+
+	small_block_config(&cfg, &blk, 8U);
+	cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	cfg.dma_slot = CONFIG_DMA_TRANSFER_IDLE_SLOT;
+	cfg.user_data = &idle_end_sem;
+	blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+	blk.dest_address = (uintptr_t)idle_rx;
+
+	k_sem_reset(&idle_end_sem);
+	zassert_ok(dma_config(dma, chan, &cfg), "idle channel config failed");
+	zassert_ok(dma_start(dma, chan), "idle channel start failed");
+}
+
+ZTEST(dma_m2m, test_dma0_chan1_pending_length)
+{
+	const struct device *dma = dma_test_devs[0];
+	uint32_t chan = CONFIG_DMA_TRANSFER_CHANNEL_NR_1;
+	struct dma_status status;
+
+	start_idle_transfer(dma, chan);
+	zassert_ok(dma_get_status(dma, chan, &status), "get_status failed");
+	zassert_true(status.busy, "idle transfer not busy");
+	zassert_equal(status.pending_length, TEST_BUF_SIZE, "pending_length %u, expected %u",
+		      status.pending_length, TEST_BUF_SIZE);
+	zassert_ok(dma_stop(dma, chan), "stop failed");
+}
+
+#if CONFIG_DMA_TRANSFER_FAULT_ADDRESS != 0
+ZTEST(dma_m2m, test_dma0_m2m_chan0_error_callback)
+{
+	const struct device *dma = dma_test_devs[0];
+	uint32_t chan = CONFIG_DMA_TRANSFER_CHANNEL_NR_0;
+	uint32_t idle_chan = CONFIG_DMA_TRANSFER_CHANNEL_NR_1;
+	struct dma_config cfg;
+	struct dma_block_config blk;
+	struct dma_status status;
+
+	start_idle_transfer(dma, idle_chan);
+
+	small_block_config(&cfg, &blk, 8U);
+	blk.dest_address = CONFIG_DMA_TRANSFER_FAULT_ADDRESS;
+	k_sem_reset(&transfer_end_sem);
+	dma_complete_status = 0;
+
+	zassert_ok(dma_config(dma, chan, &cfg), "faulting config failed");
+	zassert_ok(dma_start(dma, chan), "faulting start failed");
+	zassert_ok(k_sem_take(&transfer_end_sem, K_MSEC(100)), "error not reported");
+	zassert_true(dma_complete_status < 0, "error reported as %d", dma_complete_status);
+
+	zassert_ok(dma_get_status(dma, idle_chan, &status), "get_status failed");
+	zassert_true(status.busy, "the error stopped another channel");
+	zassert_equal(k_sem_count_get(&idle_end_sem), 0, "the other channel got a callback");
+	zassert_ok(dma_stop(dma, idle_chan), "stop failed");
+
+	/* The controller must still serve other channels after the error. */
+	zassert_equal(test_task(dma, idle_chan, 8), TC_PASS, "transfer after the error failed");
+}
+#endif
+#endif
+
+#if CONFIG_DMA_TRANSFER_MINOR_LINK_MAX_LOOPS > 0
+ZTEST(dma_m2m, test_dma0_m2m_chan0_minor_link_limit)
+{
+	const struct device *dma = dma_test_devs[0];
+	uint32_t chan = CONFIG_DMA_TRANSFER_CHANNEL_NR_0;
+	struct dma_config cfg;
+	struct dma_block_config blk;
+
+	/* Only configured, never started, so the small buffers are enough. */
+	small_block_config(&cfg, &blk, 1U);
+	cfg.source_chaining_en = 1U;
+	cfg.linked_channel = CONFIG_DMA_TRANSFER_CHANNEL_NR_1;
+
+	blk.block_size = CONFIG_DMA_TRANSFER_MINOR_LINK_MAX_LOOPS;
+	zassert_ok(dma_config(dma, chan, &cfg), "largest linked block rejected");
+
+	blk.block_size = CONFIG_DMA_TRANSFER_MINOR_LINK_MAX_LOOPS + 1;
+	zassert_equal(dma_config(dma, chan, &cfg), -EINVAL, "oversized linked block accepted");
+}
+#endif
