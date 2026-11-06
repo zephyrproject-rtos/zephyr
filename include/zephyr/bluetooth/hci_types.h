@@ -1060,6 +1060,14 @@ struct bt_hci_rp_configure_data_path {
 	uint8_t  status;
 } __packed;
 
+/** HCI Set Min Encryption Key Size command opcode */
+#define BT_HCI_OP_SET_MIN_ENCRYPTION_KEY_SIZE   BT_OP(BT_OGF_BASEBAND, 0x0084) /* 0x0c84 */
+/** HCI Set Min Encryption Key Size command parameters */
+struct bt_hci_cp_set_min_encryption_key_size {
+	/** Minimum encryption key size in octets */
+	uint8_t  min_encryption_key_size;
+} __packed;
+
 /* HCI version from Assigned Numbers */
 #define BT_HCI_VERSION_1_0B                     0  /**< 1.0b */
 #define BT_HCI_VERSION_1_1                      1  /**< 1.1  */
