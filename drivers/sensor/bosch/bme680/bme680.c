@@ -158,6 +158,15 @@ static void bme680_calc_gas_resistance(struct bme680_data *data, uint8_t gas_ran
 					    / (int64_t)var2);
 }
 
+static void bme680_calc_gas_resistance_high(struct bme680_data *data, uint8_t gas_range,
+					    uint16_t adc_gas_res)
+{
+	uint32_t den = 2560U + 3U * adc_gas_res;
+	uint64_t num = 1000000ULL * (262144U >> gas_range);
+
+	data->calc_gas_resistance = (uint32_t)((num + den / 2U) / den);
+}
+
 static uint8_t bme680_calc_res_heat(struct bme680_data *data, uint16_t heatr_temp)
 {
 	uint8_t heatr_res;
@@ -252,6 +261,7 @@ void bme680_compensate_raw(const struct device *dev,
 			   struct bme680_reading *reading)
 {
 	struct bme680_data *data = dev->data;
+	const uint8_t *gas = (data->variant == BME680_VARIANT_GAS_LOW) ? regs->gas : regs->gas_high;
 	uint32_t adc_temp, adc_press;
 	uint16_t adc_hum, adc_gas_res;
 	uint8_t gas_range;
@@ -259,18 +269,23 @@ void bme680_compensate_raw(const struct device *dev,
 	adc_press   = sys_get_be24(regs->pressure) >> 4;
 	adc_temp    = sys_get_be24(regs->temperature) >> 4;
 	adc_hum     = sys_get_be16(regs->humidity);
-	adc_gas_res = sys_get_be16(regs->gas) >> 6;
-	data->heatr_stab = regs->gas[1] & BME680_MSK_HEATR_STAB;
-	data->gas_valid = ((regs->gas[1] & BME680_MSK_GAS_VALID) != 0U) && (data->heatr_stab != 0U);
-	gas_range   = regs->gas[1] & BME680_MSK_GAS_RANGE;
+	adc_gas_res = sys_get_be16(gas) >> 6;
+	data->heatr_stab = gas[1] & BME680_MSK_HEATR_STAB;
+	data->gas_valid = ((gas[1] & BME680_MSK_GAS_VALID) != 0U) && (data->heatr_stab != 0U);
+	gas_range = gas[1] & BME680_MSK_GAS_RANGE;
 
-	LOG_DBG("Raw ADC: temp=%u press=%u hum=%u gas=%u range=%u",
-		adc_temp, adc_press, adc_hum, adc_gas_res, gas_range);
+	LOG_DBG("Raw ADC: temp=%u press=%u hum=%u gas=%u range=%u status=0x%02x", adc_temp,
+		adc_press, adc_hum, adc_gas_res, gas_range, gas[1]);
 
 	bme680_calc_temp(data, adc_temp);
 	bme680_calc_press(data, adc_press);
 	bme680_calc_humidity(data, adc_hum);
-	bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
+
+	if (data->variant == BME680_VARIANT_GAS_LOW) {
+		bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
+	} else {
+		bme680_calc_gas_resistance_high(data, gas_range, adc_gas_res);
+	}
 
 	if (reading != NULL) {
 
@@ -428,6 +443,17 @@ static int bme680_power_up(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+	err = bme680_reg_read(dev, BME680_REG_VARIANT_ID, &data->variant, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	if (data->variant != BME680_VARIANT_GAS_HIGH) {
+		data->variant = BME680_VARIANT_GAS_LOW;
+	}
+
+	LOG_DBG("Variant id: 0x%x", data->variant);
+
 	err = bme680_read_compensation(dev);
 	if (err < 0) {
 		return err;
@@ -443,7 +469,10 @@ static int bme680_power_up(const struct device *dev)
 		return err;
 	}
 
-	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1, BME680_CTRL_GAS_1_VAL);
+	err = bme680_reg_write(dev, BME680_REG_CTRL_GAS_1,
+			       (data->variant == BME680_VARIANT_GAS_LOW)
+				       ? BME680_CTRL_GAS_1_RUN_GAS_LOW
+				       : BME680_CTRL_GAS_1_RUN_GAS_HIGH);
 	if (err < 0) {
 		return err;
 	}
