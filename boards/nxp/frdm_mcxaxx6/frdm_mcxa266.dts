@@ -92,3 +92,13 @@ zephyr_udc0: &usb {
 	num-bidir-endpoints = <8>;
 	status = "okay";
 };
+
+/* SLCD configuration */
+&slcd {
+	pin-list = <16 17 18 19 20 21 22 23 24 25 26 27>;
+	com-list = <28 29 30 31>;
+	blink-rate = <1>;
+	pinctrl-0 = <&pinmux_slcd>;
+	pinctrl-names = "default";
+	status = "okay";
+};

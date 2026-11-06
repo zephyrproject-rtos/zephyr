@@ -13,5 +13,6 @@ tests:
     tags: auxdisplay
     platform_allow:
       - frdm_mcxa366/mcxa366
+      - frdm_mcxa266/mcxa266
     extra_args:
       - SHIELD=od_6010
