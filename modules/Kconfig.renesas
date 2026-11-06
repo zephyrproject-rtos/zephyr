@@ -18,6 +18,11 @@ config HAS_RENESAS_RZ_FSP
 	help
 	  Enable Renesas RZ FSP support
 
+config HAS_RENESAS_RH850_FSP
+	bool
+	help
+	  Enable Renesas RH850 FSP support
+
 if HAS_RENESAS_RA_FSP
 
 config USE_RA_FSP_SCI_B_UART
@@ -565,3 +570,32 @@ config USE_RX_FSP_SCI_B_UART
 	  Enable RX FSP SCI-B UART driver
 
 endif # HAS_RENESAS_RX_FSP
+
+if HAS_RENESAS_RH850_FSP
+
+config USE_RH850_FSP_EXT_IRQ
+	bool
+	help
+	  Enable RH850 FSP External IRQ driver
+
+config USE_RH850_FSP_IOPORT
+	bool
+	help
+	  Enable RH850 FSP IOPORT driver
+
+config USE_RH850_FSP_OSTM
+	bool
+	help
+	  Enable RH850 FSP OSTM driver
+
+config USE_RH850_FSP_RLIN3_LIN
+	bool
+	help
+	  Enable RH850 FSP RLIN3 LIN driver
+
+config USE_RH850_FSP_RLIN3_UART
+	bool
+	help
+	  Enable RH850 FSP RLIN3 UART driver
+
+endif # HAS_RENESAS_RH850_FSP

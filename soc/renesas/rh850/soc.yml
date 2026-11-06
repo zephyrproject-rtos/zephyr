@@ -1,0 +1,6 @@
+family:
+  - name: renesas_rh850
+    series:
+      - name: rh850u2b
+        socs:
+          - name: r7f70254xafabg-c

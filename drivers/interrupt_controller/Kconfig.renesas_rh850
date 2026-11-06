@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RENESAS_RH850_EXT_IRQ
+	bool "Renesas RH850 external interrupt controller driver"
+	default y
+	depends on DT_HAS_RENESAS_RH850_EXT_IRQ_ENABLED
+	select USE_RH850_FSP_EXT_IRQ
+	select PINCTRL
+	help
+	  Renesas RH850 external interrupt controller driver
+
+config RENESAS_RH850_INTIF_ORED
+	bool "Renesas RH850 U2x series ORed interrupt function (ORed Interrupt)"
+	default y
+	depends on DT_HAS_RENESAS_RH850_INTIF_ORED_ENABLED
+	help
+	  Renesas RH850 U2x series ORed interrupt function (ORed Interrupt)
+
+config RENESAS_RH850_INTIF_INTSEL
+	bool "Renesas RH850 U2x series interrupt selection feature (INTSEL)"
+	default y
+	depends on DT_HAS_RENESAS_RH850_INTIF_INTSEL_ENABLED
+	help
+	  Renesas RH850 U2x series interrupt selection feature (INTSEL)
