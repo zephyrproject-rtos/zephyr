@@ -82,3 +82,17 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
     integration_platforms:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+  sample.video.capture.adi_gmsl2_camera_bridge.imx219:
+    tags:
+      - video
+      - shield
+      - samples
+    extra_args:
+      - SHIELD="raspberry_pi_camera_module_2;adi_gmsl2_camera_bridge"
+      - EXTRA_CONF_FILE="boards/adi_gmsl2_camera_bridge_1x_imx219.conf"
+      - EXTRA_DTC_OVERLAY_FILE="boards/adi_gmsl2_camera_bridge_1x_imx219.overlay"
+    build_only: true
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    integration_platforms:
+      - stm32n6570_dk/stm32n657xx/sb
