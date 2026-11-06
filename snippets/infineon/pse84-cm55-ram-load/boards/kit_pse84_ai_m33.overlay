@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * kit_pse84_ai_common.overlay (applied before this one, see snippet.yml)
+ * provides snippet_pse84_cm55_ram_load_dst, the destination the CM33
+ * enable_cm55 companion copies the CM55 image into before releasing the
+ * CM55 core.
+ */
+/ {
+	chosen {
+		zephyr,boot-ram-load-region = &snippet_pse84_cm55_ram_load_dst;
+	};
+};
