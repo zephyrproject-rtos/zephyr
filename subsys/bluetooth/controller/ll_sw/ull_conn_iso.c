@@ -1070,6 +1070,22 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		cis->event_expire = CONN_ESTAB_COUNTDOWN;
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		uint32_t remainder_us;
+		uint32_t latency_us;
+
+		/* CIG ticker expiry of the first CIS event, at CIS offset from
+		 * the ACL event at the instant.
+		 */
+		remainder_us = remainder;
+		hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+		latency_us = instant_latency * conn->lll.interval * CONN_INT_UNIT_US;
+		cis->ticks_first_expire =
+			ticker_ticks_diff_get((ticks_at_expire +
+					       HAL_TICKER_US_TO_TICKS(remainder_us + cis->offset -
+								      cis->lll.offset)) &
+					      HAL_TICKER_CNTR_MASK,
+					      HAL_TICKER_US_TO_TICKS(latency_us));
+
 		/* Initialize CIS event lazy at CIS create */
 		cis->lll.lazy_active = 0U;
 
@@ -1509,8 +1525,10 @@ static void mfy_cis_lazy_fill(void *param)
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint32_t ticks_to_expire;
+	uint32_t ticks_elapsed;
 	uint32_t ticks_current;
 	uint32_t remainder = 0U;
+	uint32_t events_missed;
 	uint16_t lazy = 0U;
 	uint8_t ticker_id;
 	uint8_t retry;
@@ -1570,6 +1588,23 @@ static void mfy_cis_lazy_fill(void *param)
 
 		LL_ASSERT_ERR(id != TICKER_NULL);
 	} while (id != ticker_id);
+
+	/* CIG events since the first CIS event, prepared before the CIS is set
+	 * active, are counted in the CIS event count.
+	 */
+	ticks_elapsed = ticker_ticks_diff_get((ticks_current + ticks_to_expire) &
+					      HAL_TICKER_CNTR_MASK,
+					      cis->ticks_first_expire);
+	if ((ticks_elapsed & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		uint32_t ticks_interval;
+
+		ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval * ISO_INT_UNIT_US);
+		events_missed = (ticks_elapsed + (ticks_interval >> 1)) / ticks_interval;
+	} else {
+		events_missed = 0U;
+	}
+	cis->lll.event_count_prepare = (LLL_CONN_ISO_EVENT_COUNT_MAX + events_missed) &
+				       LLL_CONN_ISO_EVENT_COUNT_MAX;
 
 	/* Set CIS active in already active CIG and any previous laziness in
 	 * CIG before the CIS gets active that be decremented when event_count
