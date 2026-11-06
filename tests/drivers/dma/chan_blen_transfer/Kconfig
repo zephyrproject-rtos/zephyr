@@ -25,3 +25,36 @@ config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 config DMA_TRANSFER_BURST16
 	bool "Enable loop transfers of 16-beat bursts"
 	default y
+
+config DMA_TRANSFER_NO_CALLBACK
+	bool "Run a transfer configured without a callback"
+	help
+	  Configure a channel with a callback, then again without one, and
+	  check that the second transfer completes without calling the first
+	  callback.
+
+config DMA_TRANSFER_IDLE_SLOT
+	int "Request line of a peripheral that never requests"
+	default -1
+	help
+	  When not negative, a peripheral-to-memory transfer on this request
+	  line stays pending, which lets the test read dma_get_status() of a
+	  started transfer: pending_length must be the whole block for 8-byte
+	  bursts of 1-byte data.
+
+config DMA_TRANSFER_FAULT_ADDRESS
+	hex "Address a write to which ends in a bus error"
+	default 0x0
+	depends on DMA_TRANSFER_IDLE_SLOT >= 0
+	help
+	  When non-zero, start a memory-to-memory transfer to this address
+	  while another channel waits on DMA_TRANSFER_IDLE_SLOT. The faulting
+	  transfer must end with a negative status in its callback and the
+	  waiting one must stay busy.
+
+config DMA_TRANSFER_MINOR_LINK_MAX_LOOPS
+	int "Most major loops a block can have with minor loop linking"
+	default 0
+	help
+	  When non-zero, dma_config() with minor loop linking must accept a
+	  block of this many one-byte bursts and reject one more.
