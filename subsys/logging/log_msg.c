@@ -24,15 +24,13 @@ BUILD_ASSERT(sizeof(struct log_msg_desc) == sizeof(uint32_t),
 #define CBPRINTF_DESC_SIZE32 (sizeof(struct cbprintf_package_desc) / sizeof(uint32_t))
 
 /*
- * cbvprintf_package() requires its buffer to be aligned at least to the size
- * of a pointer. Avoid alignment arithmetic when the stack already provides
- * that guarantee.
- *
- * Use the logging alignment for the fallback so the package address matches
- * the alignment assumed when its size was calculated.
+ * The package size is calculated for a buffer aligned to Z_LOG_MSG_ALIGNMENT,
+ * so a buffer with weaker alignment may need extra padding and not fit.
+ * Z_LOG_MSG_ALIGNMENT also satisfies the pointer alignment cbvprintf_package()
+ * requires. Avoid alignment arithmetic when the stack already provides it.
  */
 #define LOG_MSG_ALIGNED_ALLOCA(_size)                                                              \
-	(IS_ALIGNED(ARCH_STACK_PTR_ALIGN, sizeof(void *))                                          \
+	(IS_ALIGNED(ARCH_STACK_PTR_ALIGN, Z_LOG_MSG_ALIGNMENT)                                     \
 		 ? alloca(_size)                                                                   \
 		 : (void *)ROUND_UP((uintptr_t)alloca((_size) + Z_LOG_MSG_ALIGNMENT - 1U),         \
 				    Z_LOG_MSG_ALIGNMENT))
