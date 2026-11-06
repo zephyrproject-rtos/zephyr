@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/reboot.h>
-#include <soc.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 
 #define LITEX_CTRL_RESET DT_INST_REG_ADDR_BY_NAME(0, reset)
 

@@ -11,13 +11,12 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/irq.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/util.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
-
-#include <soc.h>
 
 BUILD_ASSERT(CONFIG_LITEX_CSR_DATA_WIDTH == 32, "CONFIG_LITEX_CSR_DATA_WIDTH must be 32 bits");
 
