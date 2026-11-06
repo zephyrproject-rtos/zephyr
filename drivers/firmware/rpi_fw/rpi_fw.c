@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rpi_fw, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define RPI_FW_RESPONSE_TIMEOUT 100U
+#define RPI_FW_RESPONSE_TIMEOUT 1000U
 #define RPI_FW_RESPONSE_STATUS  1U
 #define RPI_FW_RESPONSE_TAG     2U
 #define RPI_FW_BUF_OVERHEAD     (3 * sizeof(uint32_t))
@@ -35,6 +35,7 @@ struct rpi_fw_config {
 };
 
 struct rpi_fw_data {
+	const struct device *dev;
 	mem_addr_t shm;
 	size_t shm_size;
 	struct k_mutex lock;
@@ -49,20 +50,33 @@ static inline bool rpi_fw_is_response_success(uint32_t *buf)
 static void rpi_fw_mbox_cb(const struct device *mbox_dev, mbox_channel_id_t channel,
 			   void *user_data, struct mbox_msg *msg)
 {
+	struct rpi_fw_data *data = user_data;
+	const struct rpi_fw_config *config = data->dev->config;
+
 	ARG_UNUSED(mbox_dev);
 	ARG_UNUSED(channel);
-	ARG_UNUSED(msg);
 
-	struct rpi_fw_data *data = (struct rpi_fw_data *)user_data;
-
-	k_sem_give(&data->reply);
+	/*
+	 * The firmware echoes the address of the buffer it processed, so a
+	 * message that carries anything else does not belong to a property
+	 * transaction. A late reply from a previous transaction carries the
+	 * same address and is caught by the response status check instead.
+	 */
+	if (POINTER_TO_UINT(msg->data) == config->shm) {
+		k_sem_give(&data->reply);
+	}
 }
 
 static int rpi_fw_transaction(const struct device *dev, struct mbox_msg *msg)
 {
 	const struct rpi_fw_config *config = dev->config;
 	struct rpi_fw_data *data = dev->data;
+	uint32_t *buf = (uint32_t *)data->shm;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(RPI_FW_RESPONSE_TIMEOUT));
 	int ret;
+
+	/* Drop a reply that arrived after the previous transaction gave up. */
+	k_sem_reset(&data->reply);
 
 	ret = mbox_send_dt(&config->mbox, msg);
 	if (ret < 0) {
@@ -70,9 +84,17 @@ static int rpi_fw_transaction(const struct device *dev, struct mbox_msg *msg)
 		return ret;
 	}
 
-	ret = k_sem_take(&data->reply, K_MSEC(RPI_FW_RESPONSE_TIMEOUT));
-	if (ret < 0) {
-		LOG_ERR("Firmware transaction timed out (%d)", ret);
+	/*
+	 * A reply from an earlier transaction carries the same buffer address
+	 * and wakes the wait before this request has been processed. Keep
+	 * waiting while the status word still holds the process value.
+	 */
+	do {
+		ret = k_sem_take(&data->reply, sys_timepoint_timeout(end));
+	} while (ret == 0 && buf[RPI_FW_RESPONSE_STATUS] == RPI_FW_REQUEST_PROCESS);
+
+	if (ret != 0) {
+		LOG_ERR("No firmware response, status=0x%08x", buf[RPI_FW_RESPONSE_STATUS]);
 		return -ETIMEDOUT;
 	}
 
@@ -189,6 +211,7 @@ static int rpi_fw_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	data->dev = dev;
 	ret = mbox_register_callback_dt(&config->mbox, rpi_fw_mbox_cb, data);
 	if (ret) {
 		LOG_ERR("Failed to register mailbox callback (%d)", ret);
