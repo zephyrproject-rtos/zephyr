@@ -13,6 +13,7 @@ from argparse import Namespace
 from itertools import groupby
 
 import list_boards
+import list_hardware
 import scl
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 
@@ -81,6 +82,11 @@ class Platform:
 
         self.arch = None
         self.vendor = ""
+        # SoC identification, as declared in the SoC's soc.yml file. Left empty
+        # for platforms that do not resolve to a known SoC (e.g. legacy boards).
+        self.soc = ""
+        self.soc_series = ""
+        self.soc_family = ""
         self.tier = -1
         self.type = "na"
         self.simulators: list[Simulator] = []
@@ -95,13 +101,17 @@ class Platform:
         self.uart = ""
         self.resc = ""
 
-    def load(self, board, target, aliases, data, variant_data):
+    def load(self, board, target, aliases, data, variant_data,
+              soc_name="", soc_series="", soc_family=""):
         """Load the platform data from the board data and target data
         board: the board object as per the zephyr build system
         target: the target name of the board as per the zephyr build system
         aliases: list of aliases for the target
         data: the default data from the twister.yaml file for the board
         variant_data: the target-specific data to replace the default data
+        soc_name: the name of the SoC backing this target, as declared in soc.yml
+        soc_series: the SoC series soc_name belongs to, as declared in soc.yml
+        soc_family: the SoC family soc_name belongs to, as declared in soc.yml
         """
         self.name = target
         self.aliases = aliases
@@ -142,6 +152,9 @@ class Platform:
 
         self.arch = variant_data.get('arch', data.get('arch', self.arch))
         self.vendor = board.vendor
+        self.soc = soc_name
+        self.soc_series = soc_series
+        self.soc_family = soc_family
         self.tier = variant_data.get("tier", data.get("tier", self.tier))
         self.type = variant_data.get('type', data.get('type', self.type))
 
@@ -229,15 +242,40 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     yield from platforms
 
 
+def _soc_for_qualifier(board, qual):
+    """Return the name of the SoC (as declared in the board's 'socs' list) that a
+    given board qualifier belongs to, or None if it can't be resolved (e.g. a
+    qualifier introduced by a board-level, rather than SoC-level, variant).
+    """
+    return next(
+        (soc.name for soc in board.socs if qual == soc.name or qual.startswith(soc.name + '/')),
+        None
+    )
+
+
+def _soc_series_and_family(soc_roots):
+    """Build a soc name -> (series, family) mapping from the soc.yml files found
+    under soc_roots, as declared in the Zephyr SoC metadata (see soc-schema.yaml).
+    """
+    hw_args = Namespace(soc_roots=soc_roots)
+    systems = list_hardware.find_v2_systems(hw_args)
+    return {
+        soc.name: (soc.series or "", soc.family or "")
+        for soc in systems.get_socs()
+    }
+
+
 def _generate_platforms(board_roots, soc_roots, arch_roots):
     alias2target = {}
     target2board = {}
+    target2soc = {}
     target2data = {}
     dir2data = {}
     legacy_files = []
 
     lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
                         board=None, board_dir=None)
+    soc2seriesfamily = _soc_series_and_family(soc_roots)
 
     for board in list_boards.find_v2_boards(lb_args).values():
         for board_dir in board.directories:
@@ -258,6 +296,7 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
             dir2data[board_dir] = data
 
         for qual in list_boards.board_v2_qualifiers(board):
+            soc_name = _soc_for_qualifier(board, qual)
             if board.revisions:
                 for rev in board.revisions:
                     if rev.name:
@@ -277,12 +316,14 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
                             alias2target[f"{board.name}"] = target
 
                     target2board[target] = board
+                    target2soc[target] = soc_name
             else:
                 target = f"{board.name}/{qual}"
                 alias2target[target] = target
                 if '/' not in qual and len(board.socs) == 1:
                     alias2target[board.name] = target
                 target2board[target] = board
+                target2soc[target] = soc_name
 
     for board_dir, data in dir2data.items():
         if data is None:
@@ -312,9 +353,11 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
         data = dir2data[board.dir]
         if data is not None:
             variant_data = target2data.get(target, {})
+            soc_series, soc_family = soc2seriesfamily.get(target2soc.get(target), ("", ""))
 
             platform = Platform()
-            platform.load(board, target, aliases, data, variant_data)
+            platform.load(board, target, aliases, data, variant_data,
+                           target2soc.get(target) or "", soc_series, soc_family)
             yield platform
 
         target2aliases[target] = aliases
@@ -331,6 +374,9 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
             logger.error(f"Duplicate platform {target} in {os.path.dirname(file)}")
             raise Exception(f"Duplicate platform identifier {target} found")
 
+        soc_series, soc_family = soc2seriesfamily.get(target2soc.get(target), ("", ""))
         platform = Platform()
-        platform.load(board, target, target2aliases[target], data, variant_data={})
+        platform.load(board, target, target2aliases[target], data, variant_data={},
+                       soc_name=target2soc.get(target) or "", soc_series=soc_series,
+                       soc_family=soc_family)
         yield platform
