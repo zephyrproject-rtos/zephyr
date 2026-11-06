@@ -5,7 +5,8 @@ menuconfig PWM_MAX2221X
 	bool "Analog Devices MAX2221X multi-function device driver"
 	default y
 	depends on DT_HAS_ADI_MAX2221X_PWM_ENABLED
-	depends on MFD
+	depends on SPI
+	select MFD
 	help
 	  Enable driver for MAX2221x PWM
 
