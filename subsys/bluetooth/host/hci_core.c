@@ -486,7 +486,11 @@ static void hci_cmd_sent_purge(void)
 	net_buf_unref(buf);
 }
 
-int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
+/* Queue a command, and if check is given, only if it returns 0 when called
+ * with the host lock held right before the command is queued.
+ */
+static int hci_cmd_queue(uint16_t opcode, struct net_buf *buf, int (*check)(const void *data),
+			 const void *data)
 {
 	int err;
 
@@ -533,7 +537,26 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return err;
 	}
 
+	/* The Host changes the objects that commands are about with the host
+	 * lock held, and so does bt_disable(): what check() finds still holds
+	 * when the command is queued.
+	 */
+	if (check != NULL) {
+		bt_dev_lock();
+
+		err = check(data);
+		if (err != 0) {
+			bt_dev_unlock();
+			net_buf_unref(buf);
+			return err;
+		}
+	}
+
 	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
+
+	if (check != NULL) {
+		bt_dev_unlock();
+	}
 
 	/* bt_disable() clears BT_DEV_OPEN before purging the queue, so a
 	 * command queued by a sender that passed the check above just before
@@ -550,6 +573,11 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	bt_tx_irq_raise();
 
 	return 0;
+}
+
+int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
+{
+	return hci_cmd_queue(opcode, buf, NULL, NULL);
 }
 
 static bool process_pending_cmd(k_timeout_t timeout);
@@ -606,8 +634,8 @@ static bool close_silent_transport(void)
 	return true;
 }
 
-int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
-			 struct net_buf **rsp)
+static int hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf, struct net_buf **rsp,
+			     int (*check)(const void *data), const void *data)
 {
 	struct k_sem sync_sem;
 	uint8_t status;
@@ -635,7 +663,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
-	err = bt_hci_cmd_send(opcode, net_buf_ref(buf));
+	err = hci_cmd_queue(opcode, net_buf_ref(buf), check, data);
 	if (err) {
 		net_buf_unref(buf);
 		return err;
@@ -721,6 +749,17 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	}
 
 	return 0;
+}
+
+int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf, struct net_buf **rsp)
+{
+	return hci_cmd_send_sync(opcode, buf, rsp, NULL, NULL);
+}
+
+int bt_hci_cmd_send_sync_checked(uint16_t opcode, struct net_buf *buf, struct net_buf **rsp,
+				 int (*check)(const void *data), const void *data)
+{
+	return hci_cmd_send_sync(opcode, buf, rsp, check, data);
 }
 
 int bt_hci_le_rand(void *buffer, size_t len)
@@ -1802,6 +1841,10 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	uint8_t disconnect_reason = conn_handle_is_disconnected(handle);
+	/* Read before anything that can wait, logging included, after which
+	 * the sync object could be another sync's
+	 */
+	__maybe_unused const uint8_t sync_phy = sync->phy;
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 
@@ -1845,8 +1888,8 @@ void bt_hci_le_enh_conn_complete_sync(struct bt_hci_evt_le_enh_conn_complete_v2 
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/* The connection is always initiated on the same phy as the PAwR advertiser */
-	conn->le.phy.tx_phy = sync->phy;
-	conn->le.phy.rx_phy = sync->phy;
+	conn->le.phy.tx_phy = sync_phy;
+	conn->le.phy.rx_phy = sync_phy;
 #endif
 
 	bt_addr_le_copy(&conn->le.init_addr, &peer_addr);

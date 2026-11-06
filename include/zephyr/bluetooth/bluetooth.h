@@ -2199,7 +2199,9 @@ struct bt_le_per_adv_sync *bt_le_per_adv_sync_lookup_addr(const bt_addr_le_t *ad
  * when using this, if it is expected to find the advertiser within a reasonable timeframe.
  *
  * @param[in]  param     Periodic advertising sync parameters.
- * @param[out] out_sync  Periodic advertising sync object on.
+ * @param[out] out_sync  Periodic advertising sync object. It is set when the
+ *                       function succeeds, or before the synced callback if that
+ *                       comes first, and is otherwise left as it was.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
