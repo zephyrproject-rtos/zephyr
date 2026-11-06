@@ -101,6 +101,8 @@ if(CONFIG_NET_L2_PPP)
   zephyr_iterable_section(NAME ppp_protocol_handler KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+zephyr_iterable_section(NAME bt_controller_cb KVMA RAM_REGION GROUP RODATA_REGION)
+
 zephyr_iterable_section(NAME bt_l2cap_fixed_chan KVMA RAM_REGION GROUP RODATA_REGION)
 
 if(CONFIG_BT_CLASSIC)
