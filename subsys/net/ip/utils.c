@@ -28,6 +28,8 @@ LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/socketcan.h>
 
+#include "ipv4.h"
+
 char *net_sprint_addr(net_sa_family_t af, const void *addr)
 {
 #define NBUFS 3
@@ -775,11 +777,36 @@ int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum)
 #if defined(CONFIG_NET_NATIVE_IPV4)
 int net_calc_chksum_ipv4(struct net_pkt *pkt, uint16_t *out_chksum)
 {
+	size_t hdr_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt);
 	uint16_t sum;
 
-	sum = calc_chksum(0, pkt->buffer->data,
-			  net_pkt_ip_hdr_len(pkt) +
-			  net_pkt_ipv4_opts_len(pkt));
+	if (pkt->buffer == NULL) {
+		return -EINVAL;
+	}
+
+	if (pkt->buffer->len >= hdr_len) {
+		sum = calc_chksum(0, pkt->buffer->data, hdr_len);
+	} else {
+		uint8_t hdr[NET_IPV4H_LEN + NET_IPV4_HDR_OPTNS_MAX_LEN];
+		struct net_pkt_cursor backup;
+		int ret;
+
+		/* The options continue in the next fragments */
+		if (hdr_len > sizeof(hdr) || net_pkt_get_len(pkt) < hdr_len) {
+			return -EINVAL;
+		}
+
+		net_pkt_cursor_backup(pkt, &backup);
+		net_pkt_cursor_init(pkt);
+		ret = net_pkt_read(pkt, hdr, hdr_len);
+		net_pkt_cursor_restore(pkt, &backup);
+
+		if (ret < 0) {
+			return ret;
+		}
+
+		sum = calc_chksum(0, hdr, hdr_len);
+	}
 
 	sum = (sum == 0U) ? 0xffff : net_htons(sum);
 
