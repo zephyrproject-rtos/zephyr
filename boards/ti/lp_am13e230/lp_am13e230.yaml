@@ -7,5 +7,6 @@ toolchain:
 ram: 96
 flash: 512
 supported:
+  - dma
   - hwinfo
 vendor: ti
