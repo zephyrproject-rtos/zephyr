@@ -162,8 +162,11 @@ static uint8_t aics_client_read_state_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (inst->cli.cb && inst->cli.cb->state) {
-		inst->cli.cb->state(inst, cb_err, state->gain,
-				    state->mute, state->gain_mode);
+		if (cb_err == 0) {
+			inst->cli.cb->state(inst, 0, state->gain, state->mute, state->gain_mode);
+		} else {
+			inst->cli.cb->state(inst, cb_err, 0, 0, 0);
+		}
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -209,9 +212,12 @@ static uint8_t aics_client_read_gain_settings_cb(struct bt_conn *conn, uint8_t e
 	}
 
 	if (inst->cli.cb && inst->cli.cb->gain_setting) {
-		inst->cli.cb->gain_setting(inst, cb_err, gain_settings->units,
-					   gain_settings->minimum,
-					   gain_settings->maximum);
+		if (cb_err == 0) {
+			inst->cli.cb->gain_setting(inst, 0, gain_settings->units,
+						   gain_settings->minimum, gain_settings->maximum);
+		} else {
+			inst->cli.cb->gain_setting(inst, cb_err, 0, 0, 0);
+		}
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -256,7 +262,7 @@ static uint8_t aics_client_read_type_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (inst->cli.cb && inst->cli.cb->type) {
-		inst->cli.cb->type(inst, cb_err, *type);
+		inst->cli.cb->type(inst, cb_err, cb_err == 0 ? *type : 0U);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -301,7 +307,7 @@ static uint8_t aics_client_read_status_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	if (inst->cli.cb && inst->cli.cb->status) {
-		inst->cli.cb->status(inst, cb_err, *status);
+		inst->cli.cb->status(inst, cb_err, cb_err == 0 ? *status : 0U);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -388,9 +394,13 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 			LOG_DBG("Invalid length %u (expected %zu)", length, sizeof(*state));
 			cb_err = BT_ATT_ERR_UNLIKELY;
 		}
+	} else {
+		LOG_DBG("Invalid (empty) state read");
+		cb_err = BT_ATT_ERR_UNLIKELY;
 	}
 
 	if (cb_err) {
+		inst->cli.cp_retried = false;
 		inst->cli.busy = false;
 		aics_cp_notify_app(inst, cb_err);
 	}
@@ -630,6 +640,8 @@ static uint8_t aics_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			err = bt_gatt_subscribe(conn, sub_params);
 			if (err != 0 && err != -EALREADY) {
 				LOG_ERR("Failed to subscribe: %d", err);
+
+				inst->cli.busy = false;
 
 				if (inst->cli.cb && inst->cli.cb->discover) {
 					inst->cli.cb->discover(inst, err);
