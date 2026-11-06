@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_MCHP_USBHS
+	bool "Microchip PIC32CZ USBHS host controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CZ_USBHS_ENABLED
+	select GPIO
+	select UHC_MUSB
+	help
+	  USB host controller driver for the PIC32CZ CA USBHS peripheral, a
+	  Mentor Graphics MUSB core behind a Microchip wrapper. Host role
+	  only, PIO only, control and bulk transfers only.
