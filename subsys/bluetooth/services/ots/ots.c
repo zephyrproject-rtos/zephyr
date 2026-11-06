@@ -127,22 +127,35 @@ static ssize_t ots_feature_read(struct bt_conn *conn,
 		sizeof(ots->features));
 }
 
+/* The Current Object of a client. A local access, as from the shell, has no connection and so no
+ * Current Object.
+ */
+static struct bt_gatt_ots_object *cur_obj_get(const struct bt_ots *ots, struct bt_conn *conn)
+{
+	if (conn == NULL) {
+		return NULL;
+	}
+
+	return ots->cur_obj[bt_conn_index(conn)];
+}
+
 static ssize_t ots_obj_name_read(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr, void *buf,
 				 uint16_t len, uint16_t offset)
 {
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+	struct bt_gatt_ots_object *cur_obj = cur_obj_get(ots, conn);
 
 	LOG_DBG("OTS Object Name GATT Read Operation");
 
-	if (!ots->cur_obj) {
+	if (cur_obj == NULL) {
 		LOG_DBG("No Current Object selected in OTS!");
 		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 ots->cur_obj->metadata.name,
-				 strlen(ots->cur_obj->metadata.name));
+				 cur_obj->metadata.name,
+				 strlen(cur_obj->metadata.name));
 }
 
 #if defined(CONFIG_BT_OTS_OBJ_NAME_WRITE_SUPPORT)
@@ -152,19 +165,20 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 			   uint16_t offset, uint8_t flags)
 {
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+	struct bt_gatt_ots_object *cur_obj = cur_obj_get(ots, conn);
 	struct bt_gatt_ots_object *obj = NULL;
 	int rc = 0;
 	char name[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
 
 	LOG_DBG("OTS Object Name GATT Write Operation");
 
-	if (!ots->cur_obj) {
+	if (cur_obj == NULL) {
 		LOG_DBG("No Current Object selected in OTS!");
 		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
-	    ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
+	    cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
 		LOG_DBG("Rejecting name write for the directory list object.");
 		return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
 	}
@@ -179,13 +193,26 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 		return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
 	}
 
+	/* The Directory Listing Object is encoded as a read goes on, each record at an offset that
+	 * depends on the names of the records before it, within a size computed when the read
+	 * started. A rename during the read would give the client records cut short or repeated, so
+	 * it is refused until the read ends, as creating and deleting objects are. This is a choice
+	 * of this implementation: OTS 1.0 does not say how a rename and a read of the listing
+	 * interact.
+	 */
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list != NULL &&
+	    !bt_ots_dir_list_is_idle(ots->dir_list)) {
+		LOG_DBG("Directory Listing Object is being read");
+		return BT_GATT_ERR(BT_GATT_OTS_WRITE_REQUEST_REJECTED);
+	}
+
 	/* Construct a temporary name for duplication detection */
 	memcpy(name, buf, len);
 	name[len] = '\0';
 
 	rc = bt_gatt_ots_obj_manager_first_obj_get(ots->obj_manager, &obj);
 	while (rc == 0) {
-		if (obj != ots->cur_obj && strcmp(name, obj->metadata.name) == 0) {
+		if (obj != cur_obj && strcmp(name, obj->metadata.name) == 0) {
 			LOG_DBG("Object name is duplicated!");
 			return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NAME_ALREADY_EXISTS);
 		}
@@ -194,11 +221,11 @@ ssize_t ots_obj_name_write(struct bt_conn *conn,
 
 	/* No duplicate detected, notify application and update real object name */
 	if (ots->cb->obj_name_written) {
-		ots->cb->obj_name_written(ots, conn, ots->cur_obj->id,
-					  ots->cur_obj->metadata.name, name);
+		ots->cb->obj_name_written(ots, conn, cur_obj->id,
+					  cur_obj->metadata.name, name);
 	}
 
-	strcpy(ots->cur_obj->metadata.name, name);
+	(void)strcpy(cur_obj->metadata.name, name);
 
 	return len;
 }
@@ -209,16 +236,17 @@ static ssize_t ots_obj_type_read(struct bt_conn *conn,
 				 uint16_t len, uint16_t offset)
 {
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+	struct bt_gatt_ots_object *cur_obj = cur_obj_get(ots, conn);
 	struct bt_ots_obj_metadata *obj_meta;
 
 	LOG_DBG("OTS Object Type GATT Read Operation");
 
-	if (!ots->cur_obj) {
+	if (cur_obj == NULL) {
 		LOG_DBG("No Current Object selected in OTS!");
 		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
 	}
 
-	obj_meta = &ots->cur_obj->metadata;
+	obj_meta = &cur_obj->metadata;
 	switch (obj_meta->type.uuid.type) {
 	case BT_UUID_TYPE_16:
 		return bt_gatt_attr_read(conn, attr, buf, len, offset,
@@ -238,17 +266,25 @@ static ssize_t ots_obj_size_read(struct bt_conn *conn,
 				 uint16_t len, uint16_t offset)
 {
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+	struct bt_gatt_ots_object *cur_obj = cur_obj_get(ots, conn);
 
 	LOG_DBG("OTS Object Size GATT Read Operation");
 
-	if (!ots->cur_obj) {
+	if (cur_obj == NULL) {
 		LOG_DBG("No Current Object selected in OTS!");
 		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
 	}
 
+	/* The listing is built from the objects as they are when a client reads its size or starts
+	 * to read it, as any client can create, delete or rename objects in between
+	 */
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
+		bt_ots_dir_list_update(ots->dir_list, ots->obj_manager);
+	}
+
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &ots->cur_obj->metadata.size,
-				 sizeof(ots->cur_obj->metadata.size));
+				 &cur_obj->metadata.size,
+				 sizeof(cur_obj->metadata.size));
 }
 
 static ssize_t ots_obj_id_read(struct bt_conn *conn,
@@ -256,19 +292,20 @@ static ssize_t ots_obj_id_read(struct bt_conn *conn,
 			       uint16_t len, uint16_t offset)
 {
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+	struct bt_gatt_ots_object *cur_obj = cur_obj_get(ots, conn);
 	uint8_t id[BT_OTS_OBJ_ID_SIZE];
 	char id_str[BT_OTS_OBJ_ID_STR_LEN];
 
 	LOG_DBG("OTS Object ID GATT Read Operation");
 
-	if (!ots->cur_obj) {
+	if (cur_obj == NULL) {
 		LOG_DBG("No Current Object selected in OTS!");
 		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
 	}
 
-	sys_put_le48(ots->cur_obj->id, id);
+	sys_put_le48(cur_obj->id, id);
 
-	bt_ots_obj_id_to_str(ots->cur_obj->id, id_str,
+	bt_ots_obj_id_to_str(cur_obj->id, id_str,
 				      sizeof(id_str));
 	LOG_DBG("Current Object ID: %s", id_str);
 
@@ -280,17 +317,18 @@ static ssize_t ots_obj_prop_read(struct bt_conn *conn,
 				 uint16_t len, uint16_t offset)
 {
 	struct bt_ots *ots = (struct bt_ots *) attr->user_data;
+	struct bt_gatt_ots_object *cur_obj = cur_obj_get(ots, conn);
 
 	LOG_DBG("OTS Object Properties GATT Read Operation");
 
-	if (!ots->cur_obj) {
+	if (cur_obj == NULL) {
 		LOG_DBG("No Current Object selected in OTS!");
 		return BT_GATT_ERR(BT_GATT_OTS_OBJECT_NOT_SELECTED);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
-				 &ots->cur_obj->metadata.props,
-				 sizeof(ots->cur_obj->metadata.props));
+				 &cur_obj->metadata.props,
+				 sizeof(cur_obj->metadata.props));
 }
 
 int bt_ots_obj_add_internal(struct bt_ots *ots, struct bt_conn *conn,
@@ -388,6 +426,15 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
 	return obj->id;
 }
 
+static void cur_obj_clear(struct bt_ots *ots, const struct bt_gatt_ots_object *obj)
+{
+	ARRAY_FOR_EACH(ots->cur_obj, i) {
+		if (ots->cur_obj[i] == obj) {
+			ots->cur_obj[i] = NULL;
+		}
+	}
+}
+
 int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 {
 	int err;
@@ -426,9 +473,7 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 		return err;
 	}
 
-	if (ots->cur_obj == obj) {
-		ots->cur_obj = NULL;
-	}
+	cur_obj_clear(ots, obj);
 
 	return 0;
 }
@@ -617,6 +662,8 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 				LOG_ERR("Failed to remove object with %s ID from object manager",
 					id_str);
 			}
+
+			cur_obj_clear(ots, obj);
 		}
 	}
 }
@@ -630,13 +677,20 @@ static void ots_conn_disconnected(struct bt_conn *conn, uint8_t reason)
 	     index < instance_cnt;
 	     instance++, index++) {
 
+		struct bt_gatt_ots_object **cur_obj = &instance->cur_obj[bt_conn_index(conn)];
+
 		LOG_DBG("Processing disconnect for OTS instance %u", index);
 
-		if (instance->cur_obj != NULL) {
-			__ASSERT(instance->cur_obj->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE,
-				"The current object is expected to be in idle state as part "
-				"of cleanup of the L2CAP channel connection close.");
-			instance->cur_obj = NULL;
+		if (*cur_obj != NULL) {
+			/* A transfer needs the channel, and the channel of this connection is
+			 * closed, so another client can only be transferring with its own.
+			 */
+			__ASSERT(instance->l2cap.ot_chan.chan.conn != NULL ||
+					 (*cur_obj)->state.type == BT_GATT_OTS_OBJECT_IDLE_STATE,
+				 "The current object is expected to be in idle state as part of "
+				 "cleanup of the L2CAP channel connection close, but is in state %d",
+				 (*cur_obj)->state.type);
+			*cur_obj = NULL;
 		}
 
 		ots_delete_empty_name_objects(instance, conn);
