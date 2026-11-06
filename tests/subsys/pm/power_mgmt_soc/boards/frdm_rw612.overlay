@@ -1,9 +1,25 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 &standby {
 	status = "okay";
+};
+
+&pinmux_hsgpio0 {
+	group0 {
+		/* Reduce input current on GPIO11/18/21; the sleep state covers RGB pins. */
+		bias-pull-up;
+	};
+};
+
+&pinmux_hsgpio1 {
+	group0 {
+		/* Leave unused PHY interrupt GPIO55 at its reset mux to reduce sleep current. */
+		pinmux = <IO_MUX_GPIO44>;
+		bias-pull-up;
+		sleep-output = "disable";
+	};
 };

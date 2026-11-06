@@ -24,6 +24,20 @@ config SOC_SERIES_RW6XX
 
 if SOC_SERIES_RW6XX
 
+config SOC_SERIES_RW6XX_T3_CAU_POWER_SAVE
+	bool "T3 clock shutdown and CAU sleep power saving"
+	depends on PM && !ADC_MCUX_GAU && !DAC_MCUX_GAU && !COMPARATOR_NXP_ACOMP && \
+		!ENTROPY_NXP_ELS_TRNG && !MCUX_ELS_PKC && \
+		!I2C_MCUX_FLEXCOMM && !SPI_MCUX_FLEXCOMM && \
+		!COUNTER_MCUX_CTIMER && !PWM_MCUX_CTIMER && !CLOCK_MONITOR_NXP_FMEAS
+	help
+	  Disable T3 clocks at the end of SoC clock initialization on boot and
+	  PM3 wakeup. DTRNG, GDET and peripherals requiring T3 clocks cannot be used with this
+	  option. Flexcomm I2C/SPI, CTIMER, ELS/PKC and clock monitoring must be
+	  disabled because their clock paths can use T3. Power down CAU in
+	  sleep when CLK32K uses RC32K or XTAL32K;
+	  retain CAU when CLK32K uses its NCO. This option is disabled by default.
+
 menuconfig NXP_RW6XX_BOOT_HEADER
 	bool "Create boot header"
 	default y if !BOOTLOADER_MCUBOOT
