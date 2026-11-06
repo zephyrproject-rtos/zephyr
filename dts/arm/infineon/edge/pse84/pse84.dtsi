@@ -1180,9 +1180,12 @@
 		};
 
 		i3c0: i3c@42a50000 {
-			compatible = "infineon,i3c";
+			compatible = "infineon,i3c", "snps,designware-i3c";
 			reg = <0x42a50000 0x438>;
+			#address-cells = <3>;
+			#size-cells = <0>;
 			interrupts = <176 4>;
+			clk-dst = <0x900>;
 			status = "disabled";
 		};
 
