@@ -999,7 +999,10 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct device *d
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	/* Default (RMII) is defined at atmel,gmac-common.yaml file */
+	/* Default (RMII) is defined at atmel,gmac-common.yaml file.
+	 * The SAMA5D2 selects RMII with GMAC_UR.RMII = 1, the SAM E70/V71 with
+	 * GMAC_UR.RMII = 0, although their headers define GMAC_UR_RMII_Msk too.
+	 */
 	switch (cfg->phy_conn_type) {
 	case 0: /* mii */
 #if defined(GMAC_UR_MIM_MII)
@@ -1007,7 +1010,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct device *d
 #if defined(GMAC_NCR_MIIONRGMII_Msk)
 		gmac->GMAC_NCR |= GMAC_NCR_MIIONRGMII_Msk;
 #endif /* GMAC_NCR_MIIONRGMII_Msk */
-#elif defined(GMAC_UR_RMII_Msk)
+#elif defined(GMAC_UR_RMII_Msk) && !defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 		gmac->GMAC_UR = 0;
 #else
 		gmac->GMAC_UR = 0x1;
@@ -1016,7 +1019,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct device *d
 	case 1: /* rmii */
 #if defined(GMAC_UR_MIM_RMII)
 		gmac->GMAC_UR = GMAC_UR_MIM_RMII;
-#elif defined(GMAC_UR_RMII_Msk)
+#elif defined(GMAC_UR_RMII_Msk) && !defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 		gmac->GMAC_UR = GMAC_UR_RMII_Msk;
 #else
 		gmac->GMAC_UR = 0x0;
