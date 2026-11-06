@@ -77,6 +77,8 @@ struct dma_mcux_channel_transfer_edma_settings {
 	volatile uint8_t empty_tcds;
 };
 
+/* CITER/BITER with minor loop linking: LINKCH sits above a 9-bit count. */
+#define EDMA_MAX_LINKED_MAJOR_LOOP 0x1FFU
 
 struct call_back {
 	edma_transfer_config_t transferConfig;
@@ -618,6 +620,31 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 	if (!data_size_valid(config->dest_data_size)) {
 		LOG_ERR("Dest unit size error, %d", config->dest_data_size);
 		return -EINVAL;
+	}
+
+	/*
+	 * With minor loop linking CITER/BITER keep the link channel in their
+	 * upper bits, leaving 9 bits for the loop count.
+	 */
+	if (config->source_chaining_en) {
+		/* The looped scatter/gather path counts in data units, the others in bursts. */
+		bool sg_loop = config->cyclic &&
+			       (block_config->source_gather_en || block_config->dest_scatter_en);
+		uint32_t unit = sg_loop ? MAX(config->source_data_size, 1U)
+					: MAX(config->source_burst_length, 1U);
+		struct dma_block_config *blk = block_config;
+
+		for (uint32_t i = 0; i < config->block_count && blk != NULL;
+		     i++, blk = blk->next_block) {
+			uint32_t loops = DIV_ROUND_UP(blk->block_size, unit);
+
+			if (loops > EDMA_MAX_LINKED_MAJOR_LOOP) {
+				LOG_ERR("block of %u bytes needs %u major loops, %u is the "
+					"most with minor loop linking",
+					blk->block_size, loops, EDMA_MAX_LINKED_MAJOR_LOOP);
+				return -EINVAL;
+			}
+		}
 	}
 
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
