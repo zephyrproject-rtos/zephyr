@@ -64,6 +64,13 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* Interrupts
+
+  * :kconfig:option:`CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR` and
+    :kconfig:option:`CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR` size the 2nd and 3rd level
+    aggregator windows in the software ISR table independently. Both default to
+    :kconfig:option:`CONFIG_MAX_IRQ_PER_AGGREGATOR`.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region
