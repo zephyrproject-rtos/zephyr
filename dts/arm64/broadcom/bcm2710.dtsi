@@ -99,6 +99,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <28>;
+				legacy-pull-control;
 				status = "okay";
 			};
 
@@ -109,7 +110,8 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <18>;
-				status = "disabled";
+				legacy-pull-control;
+				status = "okay";
 			};
 		};
 
