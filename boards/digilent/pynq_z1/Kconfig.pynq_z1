@@ -1,0 +1,7 @@
+# Digilent PYNQ-Z1 board configuration
+
+# Copyright (c) 2026 Radu Pirea
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PYNQ_Z1
+	select SOC_XC7Z020

@@ -1,0 +1,6 @@
+board:
+  name: pynq_z1
+  full_name: PYNQ-Z1
+  vendor: digilent
+  socs:
+  - name: xc7z020
