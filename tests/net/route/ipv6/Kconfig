@@ -1,0 +1,14 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "IPv6 route test application"
+
+config NET_ROUTE_TEST_VPN
+	bool
+	default y
+	select NET_VPN
+	help
+	  Enable the VPN handling of the network stack, which only a VPN
+	  implementation selects otherwise, for the VPN interface of the test.
+
+source "Kconfig.zephyr"
