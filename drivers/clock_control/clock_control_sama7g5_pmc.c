@@ -77,6 +77,20 @@ static int sam_clock_control_get_rate(const struct device *dev,
 	return ret;
 }
 
+static int sam_clock_control_set_rate(const struct device *dev,
+				      clock_control_subsys_t sys,
+				      clock_control_subsys_rate_t rate)
+{
+	struct device *clk;
+	int ret = get_pmc_clk(dev, sys, &clk);
+
+	if (!ret) {
+		return clock_control_set_rate(clk, sys, rate);
+	}
+
+	return ret;
+}
+
 static enum clock_control_status
 sam_clock_control_get_status(const struct device *dev,
 			     clock_control_subsys_t sys)
@@ -101,6 +115,7 @@ static DEVICE_API(clock_control, sam_clock_control_api) = {
 	.on = sam_clock_control_on,
 	.off = sam_clock_control_off,
 	.get_rate = sam_clock_control_get_rate,
+	.set_rate = sam_clock_control_set_rate,
 	.get_status = sam_clock_control_get_status,
 };
 
