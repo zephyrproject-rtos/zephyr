@@ -105,6 +105,14 @@ typedef enum {
 } pwm_mchp_flags_t;
 
 /**
+ * @brief Output polarity of a PWM channel.
+ */
+typedef enum {
+	PWM_MCHP_POLARITY_NORMAL,
+	PWM_MCHP_POLARITY_INVERTED,
+} pwm_mchp_polarity_t;
+
+/**
  * @brief Structure to hold PWM data specific to Microchip hardware.
  */
 typedef struct {
@@ -201,26 +209,32 @@ static inline void tcc_enable(void *pwm_reg, bool enable)
 static inline void tcc_sync_wait(void *pwm_reg)
 {
 
-	if (!WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) != 0), TIMEOUT_VALUE_US,
-		      k_busy_wait(DELAY_US))) {
+	bool sync_done = WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) == 0), TIMEOUT_VALUE_US,
+				  k_busy_wait(DELAY_US));
+
+	if (sync_done == false) {
 		LOG_ERR("TCC_SYNCBUSY wait timed out");
 	}
 	LOG_DBG("%s invoked", __func__);
 }
 
 /**
- *Set the output inversion for a specific PWM channel.
+ *Set the output polarity for a specific PWM channel.
  */
-static int32_t tcc_set_invert(void *pwm_reg, uint32_t channel)
+static int32_t tcc_set_polarity(void *pwm_reg, uint32_t channel, pwm_mchp_polarity_t polarity)
 {
 	uint32_t invert_mask = 1 << (channel + TCC_DRVCTRL_INVEN0_Pos);
 
 	tcc_enable(pwm_reg, false);
 	tcc_sync_wait(pwm_reg);
-	PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
+	if (polarity == PWM_MCHP_POLARITY_INVERTED) {
+		PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
+	} else {
+		PWM_REG(pwm_reg)->TCC_DRVCTRL &= ~invert_mask;
+	}
 	tcc_enable(pwm_reg, true);
 	tcc_sync_wait(pwm_reg);
-	LOG_DBG("tcc set invert 0x%x invoked", invert_mask);
+	LOG_DBG("tcc set invert 0x%x to %d invoked", invert_mask, (int)polarity);
 
 	return MCHP_PWM_SUCCESS;
 }
@@ -240,9 +254,9 @@ void tcc_init(void *pwm_reg, uint32_t prescaler)
 }
 
 /**
- *Get the output inversion status for a specific PWM channel.
+ *Get the output polarity for a specific PWM channel.
  */
-static inline bool tcc_get_invert_status(void *pwm_reg, uint32_t channel)
+static inline pwm_mchp_polarity_t tcc_get_polarity(void *pwm_reg, uint32_t channel)
 {
 	uint32_t invert_status = 0;
 	uint32_t invert_mask = 1 << (channel + TCC_DRVCTRL_INVEN0_Pos);
@@ -250,7 +264,7 @@ static inline bool tcc_get_invert_status(void *pwm_reg, uint32_t channel)
 	LOG_DBG("tcc get invert status 0x%x invoked", invert_mask);
 	invert_status = PWM_REG(pwm_reg)->TCC_DRVCTRL & invert_mask;
 
-	return (invert_status == 0) ? true : false;
+	return (invert_status == 0) ? PWM_MCHP_POLARITY_NORMAL : PWM_MCHP_POLARITY_INVERTED;
 }
 
 /***********************************
@@ -275,32 +289,38 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 {
 	const pwm_mchp_config_t *const mchp_pwm_cfg = pwm_dev->config;
 	pwm_mchp_data_t *mchp_pwm_data = pwm_dev->data;
-	int ret_val = -EINVAL;
 	uint32_t top = (BIT(mchp_pwm_cfg->max_bit_width) - 1);
-
-	MCHP_PWM_DATA_LOCK(&mchp_pwm_data->lock);
+	uint32_t ccbuf_val = pulse;
+	pwm_mchp_polarity_t requested_polarity = ((flags & PWM_POLARITY_INVERTED) != 0)
+							 ? PWM_MCHP_POLARITY_INVERTED
+							 : PWM_MCHP_POLARITY_NORMAL;
 
 	if (channel >= mchp_pwm_cfg->channels) {
 		LOG_ERR("channel %d is invalid", channel);
-	} else if ((period > top) || (pulse > top)) {
-		LOG_ERR("period or pulse is out of range");
-	} else {
-
-		bool invert_flag_set = ((flags & PWM_POLARITY_INVERTED) != 0);
-		bool not_inverted = tcc_get_invert_status(mchp_pwm_cfg->regs, channel);
-
-		if ((invert_flag_set == true) && (not_inverted == true)) {
-			tcc_set_invert(mchp_pwm_cfg->regs, channel);
-		}
-
-		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
-		PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
-		ret_val = MCHP_PWM_SUCCESS;
+		return -EINVAL;
 	}
+
+	if ((period > top) || (pulse > top)) {
+		LOG_ERR("period or pulse is out of range");
+		return -EINVAL;
+	}
+
+	MCHP_PWM_DATA_LOCK(&mchp_pwm_data->lock);
+
+	if (tcc_get_polarity(mchp_pwm_cfg->regs, channel) != requested_polarity) {
+		tcc_set_polarity(mchp_pwm_cfg->regs, channel, requested_polarity);
+	}
+
+	if (pulse >= period) {
+		ccbuf_val = (period < top) ? (period + 1) : period;
+	}
+
+	PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(ccbuf_val);
+	PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
 
 	MCHP_PWM_DATA_UNLOCK(&mchp_pwm_data->lock);
 
-	return ret_val;
+	return MCHP_PWM_SUCCESS;
 }
 
 /**
