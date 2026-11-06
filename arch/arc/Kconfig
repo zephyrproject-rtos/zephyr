@@ -397,7 +397,7 @@ source "arch/arc/core/mpu/Kconfig"
 endmenu
 
 configdefault DCACHE_LINE_SIZE
-	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
+	default 32 if !$(dt_node_has_prop,$(dt_first_enabled_cpu_path),d-cache-line-size)
 
 config ARC_DCACHE_REGION_OPERATIONS
 	bool "DCACHE region operations"
