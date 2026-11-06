@@ -11,8 +11,6 @@
 
 LOG_MODULE_REGISTER(scmi_core);
 
-#define SCMI_CHAN_LOCK_TIMEOUT_USEC 500
-
 int scmi_status_to_errno(int scmi_status)
 {
 	switch (scmi_status) {
@@ -164,7 +162,7 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		       k_is_pre_kernel()) ? true : use_polling;
 
 	if (!k_is_pre_kernel()) {
-		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
+		ret = k_mutex_lock(&proto->tx->lock, K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
 		if (ret < 0) {
 			LOG_ERR("failed to acquire TX channel lock: %d", ret);
 			return ret;
