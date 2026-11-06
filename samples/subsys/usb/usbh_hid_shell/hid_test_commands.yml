@@ -1,0 +1,17 @@
+- command: "usbh init"
+  expected: "host: USB host initialized"
+
+- command: "delay 2000"
+
+- command: "usbh enable"
+  expected: "host: USB host enabled"
+
+- command: "delay 2000"
+
+- command: "hid input start"
+  expected: "Started input reports"
+
+- command: "delay 500"
+
+- command: "hid input stop"
+  expected: "Stopped input reports"

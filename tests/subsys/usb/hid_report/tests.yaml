@@ -1,0 +1,9 @@
+tests:
+  usb.host_hid_report:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - ek_ra8m2/r7ka8m2jflcac/cm85
+    integration_platforms:
+      - native_sim
+    tags: usbh_hid
