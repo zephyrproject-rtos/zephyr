@@ -242,6 +242,37 @@
 	};
 };
 
+&eic {
+	compatible = "microchip,eic-g1-intc";
+	interrupts = <13 0>, <14 0>, <15 0>, <16 0>,
+		     <17 0>, <18 0>, <19 0>, <20 0>,
+		     <21 0>, <22 0>, <23 0>, <24 0>,
+		     <25 0>, <26 0>, <27 0>, <28 0>;
+	interrupt-names = "extint-0", "extint-1", "extint-2", "extint-3",
+			  "extint-4", "extint-5", "extint-6", "extint-7",
+			  "extint-8", "extint-9", "extint-10", "extint-11",
+			  "extint-12", "extint-13", "extint-14", "extint-15";
+	clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_EIC_APB>,
+		 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+	clock-names = "mclk", "gclk";
+	low-power-mode;
+	/*
+	 * Created this by listing down the mapping between eic lines and the port
+	 * and pin numbers available in the pic32ck sg and gc family datasheet.
+	 * The set bits are commented beside the values
+	 */
+	porta-unsupported-pins = <0xe0080000>; /* 19|29|30|31 */
+	portc-unsupported-pins = <0x00000100>; /* 8 */
+
+	/* portd pins -1|2|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21 */
+	portd-supported-pins = <0x003f7ffe>;
+
+	porta-special-pins-1 = <0x1 0xe>; /*0*/
+
+	/* PD2 is connected to EIC NMI, not a regular EXTINT line */
+	nmi-pins = <3 2>; /* Port D, Pin 2 */
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
