@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/fdtable.h>
+#include <zephyr/zvfs/eventfd.h>
 #include <errno.h>
 
 /* The thread will test that the refcounting of fd object will
@@ -176,6 +177,33 @@ ZTEST(fdtable, test_z_fd_multiple_access)
 	obj = zvfs_get_fd_obj_and_vtable(shared_fd, &vtable, NULL);
 	zassert_is_null(obj, "obj is still there");
 	zassert_equal(errno, EBADF, "fd was found");
+}
+
+ZTEST(fdtable, test_select_nfds)
+{
+	const struct timespec timeout = {0};
+	struct zvfs_fd_set readfds;
+	int fd = zvfs_eventfd(1, ZVFS_EFD_NONBLOCK);
+	int zero_nfds, excluded, included;
+	bool ready;
+
+	zassert_true(fd >= 0, "Failed to create eventfd: %d", errno);
+	ZVFS_FD_ZERO(&readfds);
+	ZVFS_FD_SET(fd, &readfds);
+	zero_nfds = zvfs_select(0, &readfds, NULL, NULL, &timeout, NULL);
+
+	ZVFS_FD_SET(fd, &readfds);
+	excluded = zvfs_select(fd, &readfds, NULL, NULL, &timeout, NULL);
+
+	ZVFS_FD_SET(fd, &readfds);
+	included = zvfs_select(fd + 1, &readfds, NULL, NULL, &timeout, NULL);
+	ready = ZVFS_FD_ISSET(fd, &readfds);
+	zassert_ok(zvfs_close(fd));
+
+	zexpect_equal(zero_nfds, 0, "nfds=0 returned %d", zero_nfds);
+	zexpect_equal(excluded, 0, "Excluded fd %d returned %d", fd, excluded);
+	zexpect_equal(included, 1, "Included fd %d returned %d", fd, included);
+	zexpect_true(ready, "Included fd was not reported ready");
 }
 
 ZTEST_SUITE(fdtable, NULL, NULL, NULL, NULL, NULL);
