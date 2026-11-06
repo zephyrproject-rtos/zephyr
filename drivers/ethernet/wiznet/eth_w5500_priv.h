@@ -44,6 +44,7 @@
 #define W5500_Sn_TX_WR		0x0024 /* Sn Transmit memory write pointer */
 #define W5500_Sn_RX_RSR		0x0026 /* Sn Receive free memory size */
 #define W5500_Sn_RX_RD		0x0028 /* Sn Receive memory read pointer */
+#define W5500_Sn_IMR		0x002C /* Sn Interrupt Mask Register */
 
 #define W5500_S0_REGS		0x10000
 
