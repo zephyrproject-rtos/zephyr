@@ -187,7 +187,7 @@ def load_exceptions() -> list[LicensingException]:
     An annotation is a documented exception when it has an explicitly set
     ``Zephyr-Description`` and ``SPDX-FileComment`` justification.
     """
-    reuse_toml = ReuseTOML.from_file(REUSE_TOML)
+    reuse_toml = ReuseTOML.from_file(REUSE_TOML, ZEPHYR_BASE)
     exceptions = [
         LicensingException(annotation)
         for annotation in reuse_toml.annotations
