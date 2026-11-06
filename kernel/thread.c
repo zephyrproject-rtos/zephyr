@@ -22,6 +22,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
 #include <ksmp.h>
+#include <kuser.h>
 #include <kswap.h>
 #include <zephyr/init.h>
 #include <zephyr/tracing/tracing.h>
@@ -406,14 +407,11 @@ static struct stack_geometry compute_stack_geometry(k_thread_stack_t *stack,
 {
 	struct stack_geometry geo;
 
-#ifdef CONFIG_USERSPACE
 	if (z_stack_is_user_capable(stack)) {
 		geo.obj_size = K_THREAD_STACK_LEN(stack_size);
 		geo.buf_start = K_THREAD_STACK_BUFFER(stack);
 		geo.buf_size = geo.obj_size - K_THREAD_STACK_RESERVED;
-	} else
-#endif /* CONFIG_USERSPACE */
-	{
+	} else {
 		/* Object cannot host a user mode thread */
 		geo.obj_size = K_KERNEL_STACK_LEN(stack_size);
 		geo.buf_start = K_KERNEL_STACK_BUFFER(stack);
@@ -460,12 +458,9 @@ static char *map_thread_stack(struct k_thread *new_thread,
 
 	__ASSERT_NO_MSG((uintptr_t)stack_mapped != 0);
 
-#ifdef CONFIG_USERSPACE
 	if (z_stack_is_user_capable(stack)) {
 		geo->buf_start = K_THREAD_STACK_BUFFER(stack_mapped);
-	} else
-#endif /* CONFIG_USERSPACE */
-	{
+	} else {
 		geo->buf_start = K_KERNEL_STACK_BUFFER(stack_mapped);
 	}
 
@@ -699,31 +694,6 @@ static inline void init_thread_obj_core(struct k_thread *thread)
 #endif /* CONFIG_OBJ_CORE_THREAD */
 }
 
-/*
- * Initialize userspace bookkeeping: register the thread and stack kernel
- * objects, record stack ownership, and grant the thread access to itself.
- */
-static inline void init_thread_userspace(struct k_thread *thread,
-					 k_thread_stack_t *stack,
-					 uint32_t options)
-{
-#ifdef CONFIG_USERSPACE
-	__ASSERT((options & K_USER) == 0U || z_stack_is_user_capable(stack),
-		 "user thread %p with kernel-only stack %p", thread, stack);
-	k_object_init(thread);
-	k_object_init(stack);
-	thread->stack_obj = stack;
-	thread->syscall_frame = NULL;
-
-	/* Any given thread has access to itself */
-	k_object_access_grant(thread, thread);
-#else
-	ARG_UNUSED(thread);
-	ARG_UNUSED(stack);
-	ARG_UNUSED(options);
-#endif /* CONFIG_USERSPACE */
-}
-
 /* Assert the thread object is cache-coherent while its stack stays cached. */
 static inline void assert_thread_coherence(struct k_thread *thread,
 					   k_thread_stack_t *stack)
@@ -823,24 +793,6 @@ static inline void init_thread_cpu_mask(struct k_thread *thread)
 #endif /* CONFIG_SCHED_CPU_MASK */
 }
 
-/* Attach the thread to its memory domain and inherit caller permissions
- * when K_INHERIT_PERMS is requested.
- */
-static inline void init_thread_userspace_perms(struct k_thread *thread,
-					       uint32_t options)
-{
-#ifdef CONFIG_USERSPACE
-	z_mem_domain_init_thread(thread);
-
-	if ((options & K_INHERIT_PERMS) != 0U) {
-		k_thread_perms_inherit(_current, thread);
-	}
-#else
-	ARG_UNUSED(thread);
-	ARG_UNUSED(options);
-#endif /* CONFIG_USERSPACE */
-}
-
 /* Clear the EDF scheduling deadline. */
 static inline void init_thread_deadline(struct k_thread *thread)
 {
@@ -905,7 +857,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 
 	thread_abort_cleanup_check_reuse(new_thread);
 	init_thread_obj_core(new_thread);
-	init_thread_userspace(new_thread, stack, options);
+	z_thread_user_init(new_thread, stack, options);
 
 	z_waitq_init(&new_thread->join_queue);
 
@@ -940,7 +892,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 		return stack_ptr;
 	}
 
-	init_thread_userspace_perms(new_thread, options);
+	z_thread_user_perms_init(new_thread, options);
 	init_thread_deadline(new_thread);
 	new_thread->resource_pool = _current->resource_pool;
 	z_smp_halt_queue_init(new_thread);
@@ -1031,11 +983,6 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 }
 
 #ifdef CONFIG_USERSPACE
-bool z_stack_is_user_capable(k_thread_stack_t *stack)
-{
-	return k_object_find(stack) != NULL;
-}
-
 k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       k_thread_stack_t *stack,
 			       size_t stack_size, k_thread_entry_t entry,
@@ -1141,23 +1088,7 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter2 = p2;
 	_current->entry.parameter3 = p3;
 #endif /* CONFIG_THREAD_MONITOR */
-#ifdef CONFIG_USERSPACE
-	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
-		 "dropping to user mode with kernel-only stack object");
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	memset(_current->userspace_local_data, 0,
-	       sizeof(struct _thread_userspace_local_data));
-#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
-	arch_tls_stack_setup(_current,
-			     (char *)(_current->stack_info.start +
-				      _current->stack_info.size));
-#endif /* CONFIG_THREAD_LOCAL_STORAGE */
-	arch_user_mode_enter(entry, p1, p2, p3);
-#else
-	/* XXX In this case we do not reset the stack */
-	z_thread_entry(entry, p1, p2, p3);
-#endif /* CONFIG_USERSPACE */
+	z_thread_user_mode_enter(entry, p1, p2, p3);
 }
 
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
@@ -1603,9 +1534,7 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 	dummy_thread->stack_info.start = 0U;
 	dummy_thread->stack_info.size = 0U;
 #endif /* CONFIG_THREAD_STACK_INFO */
-#ifdef CONFIG_USERSPACE
-	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
-#endif /* CONFIG_USERSPACE */
+	z_thread_user_dummy_init(dummy_thread);
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 	k_thread_system_pool_assign(dummy_thread);
 #else

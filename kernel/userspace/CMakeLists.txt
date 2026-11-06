@@ -6,6 +6,7 @@ target_sources(
   kernel PRIVATE
   futex.c
   mem_domain.c
+  thread_user.c
   userspace_handler.c
   userspace.c
   )
