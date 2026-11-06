@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas R-Car Gen5 window watchdog. Platform firmware must reserve the
+  instance for Zephyr from the last peripheral reset, leave it stopped with its
+  mode register unwritten, configure and maintain its reset route, and ensure
+  the reset scope matches the requested SoC reset. The driver checks but does
+  not configure or clear the route.
+  The hardware has discrete timeout periods and window openings. The driver
+  rounds the requested maximum and minimum up to supported values; applications
+  must account for the actual window and clock rate when feeding the watchdog.
+
+compatible: "renesas,rcar-gen5-wwdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: Bus and counter clock inputs, in that order.
+
+  clock-names:
+    required: true
+    const: ["bus", "counter"]
+
+  bus-clock-frequency:
+    type: int
+    required: true
+    min: 1
+    description: Bus clock frequency in Hz as configured by platform firmware.
+
+  counter-clock-frequency:
+    type: int
+    required: true
+    min: 1
+    description: Counter clock frequency in Hz as configured by platform firmware.
+
+  renesas,ecm:
+    type: phandle
+    required: true
+    description: |
+      System controller providing an ECM reset route. Its control, status and
+      reset-forwarding registers must match the layout used by the driver.
+
+  renesas,ecm-error:
+    type: array
+    required: true
+    min-len: 2
+    max-len: 2
+    description: ECM error register index and bit for the watchdog reset output.
+
+examples:
+  - |
+    /* Example overlay; confirm actual clock rates with platform firmware. */
+    / {
+      aliases {
+        watchdog0 = &wwdt0;
+      };
+    };
+
+    &ecm {
+      status = "okay";
+    };
+
+    &wwdt0 {
+      bus-clock-frequency = <16666667>;
+      counter-clock-frequency = <32768>;
+      status = "okay";
+    };

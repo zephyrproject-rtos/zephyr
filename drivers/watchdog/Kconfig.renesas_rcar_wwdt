@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RENESAS_RCAR_WWDT
+	bool "Renesas R-Car Gen5 window watchdog driver"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_GEN5_WWDT_ENABLED
+	depends on CLOCK_CONTROL
+	select SYSCON
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  Enable the R-Car Gen5 window watchdog on compatible devices.
