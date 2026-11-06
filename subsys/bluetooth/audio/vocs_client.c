@@ -242,10 +242,11 @@ static uint8_t internal_read_volume_offset_state_cb(struct bt_conn *conn, uint8_
 	}
 
 	if (cb_err) {
+		inst->cp_retried = false;
 		inst->busy = false;
 
 		if (inst->cb && inst->cb->set_offset) {
-			inst->cb->set_offset(&inst->vocs, err);
+			inst->cb->set_offset(&inst->vocs, cb_err);
 		}
 	}
 
@@ -426,7 +427,11 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			if (err != 0 && err != -EALREADY) {
 				LOG_WRN("Could not subscribe to handle %u", sub_params->ccc_handle);
 
-				inst->cb->discover(&inst->vocs, err);
+				inst->busy = false;
+
+				if (inst->cb && inst->cb->discover) {
+					inst->cb->discover(&inst->vocs, err);
+				}
 
 				return BT_GATT_ITER_STOP;
 			}
@@ -706,6 +711,21 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 		inst->conn = NULL;
 	}
 }
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	ARRAY_FOR_EACH_PTR(insts, inst) {
+		if (inst->conn == conn) {
+			vocs_client_reset(inst);
+		}
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 		     const struct bt_vocs_discover_param *param)
