@@ -1984,7 +1984,7 @@ static int mspi_stm32_xspi_suspend(const struct device *dev)
 
 	/* Disable device clock. */
 	ret = clock_control_off(clk, (clock_control_subsys_t)(uintptr_t)&cfg->pclken[0]);
-	if (ret < 0) {
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("Failed to disable MSPI clock during PM suspend process");
 		return ret;
 	}
