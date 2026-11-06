@@ -99,6 +99,8 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
 		/* Set ODE bit. */
 		*pinconfig |= IOCON_PIO_OD_MASK;
+	} else {
+		*pinconfig &= ~IOCON_PIO_OD_MASK;
 	}
 
 	/* Set DIGIMODE bit */
