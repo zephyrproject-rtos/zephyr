@@ -45,6 +45,18 @@ BUILD_ASSERT(NUM_DMA_BLOCKS_RX_PREP >= 3,
 BUILD_ASSERT(MAX_TX_DMA_BLOCKS > NUM_DMA_BLOCKS_RX_PREP,
 	     "NUM_DMA_BLOCKS_RX_PREP must be < CONFIG_DMA_TCD_QUEUE_SIZE");
 
+/*
+ * The TX out_queue tracks the blocks loaded in the DMA, so it never holds
+ * more than MAX_TX_DMA_BLOCKS entries. Size it for that, independently of
+ * CONFIG_I2S_TX_BLOCK_COUNT, so that every block handed to the DMA can be
+ * tracked and freed.
+ */
+#define TX_OUT_QUEUE_LEN MAX_TX_DMA_BLOCKS
+
+/* The RX in_queue tracks the NUM_DMA_BLOCKS_RX_PREP blocks owned by the DMA */
+BUILD_ASSERT(CONFIG_I2S_RX_BLOCK_COUNT >= NUM_DMA_BLOCKS_RX_PREP,
+	     "CONFIG_I2S_RX_BLOCK_COUNT must be >= NUM_DMA_BLOCKS_RX_PREP");
+
 #define SAI_WORD_SIZE_BITS_MIN 8
 #define SAI_WORD_SIZE_BITS_MAX 32
 
@@ -123,7 +135,7 @@ struct i2s_dev_data {
 	const struct device *dev_dma;
 	struct stream tx;
 	struct i2s_q_entry tx_in_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
-	struct i2s_q_entry tx_out_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
+	struct i2s_q_entry tx_out_msgs[TX_OUT_QUEUE_LEN];
 	struct stream rx;
 	struct i2s_q_entry rx_in_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 	struct i2s_q_entry rx_out_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
@@ -260,11 +272,13 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 
 	/* queue additional blocks to DMA if in_queue and DMA has free blocks */
 	while (strm->free_tx_dma_blocks) {
-		/* get the next entry from queue */
-		ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
-		if (ret) {
+		/*
+		 * Peek at the next entry and take it off in_queue only once the
+		 * DMA accepted it. A block the DMA rejects stays on in_queue, so
+		 * a later reload retries it and PREPARE/DROP can still free it.
+		 */
+		if (k_msgq_peek(&strm->in_queue, &q_entry) != 0) {
 			/* in_queue is empty, no more blocks to send to DMA */
-			ret = 0;
 			break;
 		}
 
@@ -276,14 +290,12 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 			break;
 		}
 
+		(void)k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
 		(strm->free_tx_dma_blocks)--;
 
+		/* out_queue holds TX_OUT_QUEUE_LEN entries, one per DMA block */
 		ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
-		if (ret != 0) {
-			LOG_ERR("buffer %p -> out %p err %d", q_entry.mem_block, &strm->out_queue,
-				ret);
-			break;
-		}
+		__ASSERT(ret == 0, "TX out_queue full");
 
 		(*blocks_queued)++;
 	}
@@ -830,7 +842,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 	const struct device *dev_dma = dev_data->dev_dma;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = get_base(dev);
-	struct i2s_q_entry pending[CONFIG_I2S_TX_BLOCK_COUNT];
+	struct i2s_q_entry pending[TX_OUT_QUEUE_LEN];
 	size_t pending_cnt = 0;
 	struct dma_block_config *blk_cfg = &strm->dma_block;
 	uint32_t data_path = strm->start_channel;
@@ -1324,7 +1336,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	k_msgq_init(&dev_data->rx.in_queue, (char *)dev_data->rx_in_msgs,
 		    sizeof(struct i2s_q_entry), CONFIG_I2S_RX_BLOCK_COUNT);
 	k_msgq_init(&dev_data->tx.out_queue, (char *)dev_data->tx_out_msgs,
-		    sizeof(struct i2s_q_entry), CONFIG_I2S_TX_BLOCK_COUNT);
+		    sizeof(struct i2s_q_entry), TX_OUT_QUEUE_LEN);
 	k_msgq_init(&dev_data->rx.out_queue, (char *)dev_data->rx_out_msgs,
 		    sizeof(struct i2s_q_entry), CONFIG_I2S_RX_BLOCK_COUNT);
 
