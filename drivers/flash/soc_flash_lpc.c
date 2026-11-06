@@ -55,31 +55,88 @@ static inline void prepare_erase_write(off_t offset, size_t len,
 	FLASHIAP_PrepareSectorForWrite(start, stop);
 }
 
+static int flashiap_to_errno(status_t status)
+{
+	switch (status) {
+	case kStatus_FLASHIAP_Success:
+		return 0;
+	case kStatus_FLASHIAP_Busy:
+		return -EBUSY;
+	case kStatus_FLASHIAP_NotPrepared:
+		return -EACCES;
+	case kStatus_FLASHIAP_SectorNotblank:
+		return -ENOTEMPTY;
+	case kStatus_FLASHIAP_CompareError:
+	case kStatus_FLASHIAP_NoPower:
+	case kStatus_FLASHIAP_NoClock:
+		return -EIO;
+	default:
+		return -EINVAL;
+	}
+}
+
+static status_t erase_part(uint32_t start, uint32_t end, uint32_t sector_size)
+{
+	bool whole_sectors = IS_ALIGNED(start, sector_size) && IS_ALIGNED(end, sector_size);
+	uint32_t unit = whole_sectors ? sector_size : FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES;
+	unsigned int key;
+	status_t rc;
+
+	key = irq_lock();
+	prepare_erase_write(start, end - start, sector_size);
+	if (whole_sectors) {
+		rc = FLASHIAP_EraseSector(start / unit, (end - 1) / unit,
+					  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	} else {
+		rc = FLASHIAP_ErasePage(start / unit, (end - 1) / unit,
+					CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	}
+	irq_unlock(key);
+
+	return rc;
+}
+
 static int flash_lpc_erase(const struct device *dev, off_t offset, size_t len)
 {
 	struct flash_priv *priv = dev->data;
-	status_t rc;
-	unsigned int key;
+	const size_t flash_size = DT_REG_SIZE(SOC_NV_FLASH_NODE);
 	uint32_t start;
-	uint32_t stop;
-	uint32_t page_size;
+	uint32_t end;
+	uint32_t head_end;
+	uint32_t tail_start;
+	status_t rc = kStatus_FLASHIAP_Success;
+
+	if ((offset < 0) || (len > flash_size) || ((size_t)offset > (flash_size - len))) {
+		return -EINVAL;
+	}
+
+	if (!IS_ALIGNED(offset, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES) ||
+	    !IS_ALIGNED(len, FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES)) {
+		return -EINVAL;
+	}
 
 	if (k_sem_take(&priv->write_lock, K_FOREVER)) {
 		return -EACCES;
 	}
 
-	key = irq_lock();
-	prepare_erase_write(offset, len, priv->sector_size);
-	page_size = flash_lpc_parameters.write_block_size;
-	start = offset / page_size;
-	stop = (offset+len-1) / page_size;
-	rc = FLASHIAP_ErasePage(start, stop,
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-	irq_unlock(key);
+	start = (uint32_t)offset;
+	end = start + len;
+	head_end = MIN(ROUND_UP(start, priv->sector_size), end);
+	tail_start = MAX(ROUND_DOWN(end, priv->sector_size), head_end);
+
+	if (start < head_end) {
+		rc = erase_part(start, head_end, priv->sector_size);
+	}
+	if ((rc == kStatus_FLASHIAP_Success) && (head_end < tail_start)) {
+		rc = erase_part(head_end, tail_start, priv->sector_size);
+	}
+	if ((rc == kStatus_FLASHIAP_Success) && (tail_start < end)) {
+		rc = erase_part(tail_start, end, priv->sector_size);
+	}
 
 	k_sem_give(&priv->write_lock);
 
-	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
+	return flashiap_to_errno(rc);
 }
 
 static int flash_lpc_read(const struct device *dev, off_t offset,
@@ -117,7 +174,7 @@ static int flash_lpc_write(const struct device *dev, off_t offset,
 
 	k_sem_give(&priv->write_lock);
 
-	return (rc == kStatus_FLASHIAP_Success) ? 0 : -EINVAL;
+	return flashiap_to_errno(rc);
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
