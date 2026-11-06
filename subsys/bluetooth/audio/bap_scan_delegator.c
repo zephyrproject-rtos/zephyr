@@ -112,7 +112,7 @@ static void set_receive_state_changed_cb(struct bt_conn *conn, void *data)
 	err = bt_conn_get_info(conn, &conn_info);
 	__ASSERT_NO_MSG(err == 0);
 
-	if (conn_info.state != BT_CONN_STATE_CONNECTED ||
+	if (conn_info.state != BT_CONN_STATE_CONNECTED || internal_state->attr == NULL ||
 	    !bt_gatt_is_subscribed(conn, internal_state->attr, BT_GATT_CCC_NOTIFY)) {
 		return;
 	}
