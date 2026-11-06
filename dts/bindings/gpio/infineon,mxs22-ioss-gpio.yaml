@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXS22IOSS GPIO port
+
+  Variant of the IOSS GPIO port found on PSOC Edge devices. A high
+  impedance pin also has its CFG_OUT3 drive mode cleared.
+
+    gpio_prt8: gpio@42810400 {
+        compatible = "infineon,mxs22-ioss-gpio", "infineon,ioss-gpio";
+        reg = <0x42810400 0x80>, <0x42800080 0x10>;
+        reg-names = "gpio", "hsiom";
+        interrupts = <6 4>;
+        gpio-controller;
+        ngpios = <8>;
+        #gpio-cells = <2>;
+    };
+
+compatible: "infineon,mxs22-ioss-gpio"
+
+include: "infineon,ioss-gpio.yaml"
