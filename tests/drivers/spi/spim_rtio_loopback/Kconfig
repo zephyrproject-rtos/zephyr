@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_SPI_MODE
+	int "SPI mode"
+	range 0 3
+	default 0
+	help
+	  SPI mode (clock polarity and phase) used by both the SPIM and the SPIS.
+	  0: CPOL 0, CPHA 0
+	  1: CPOL 0, CPHA 1
+	  2: CPOL 1, CPHA 0
+	  3: CPOL 1, CPHA 1
+
+source "Kconfig.zephyr"
