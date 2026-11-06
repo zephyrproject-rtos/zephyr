@@ -232,6 +232,47 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_large_timeout)
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
+ZTEST(posix_timers, test_timer_create_null_evp)
+{
+	struct itimerspec value, ovalue;
+
+	zassert_ok(timer_create(CLOCK_MONOTONIC, NULL, &timerid));
+	zassert_not_equal(timerid, -1);
+
+	/* Arm the timer with relative expiration */
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 100 * NSEC_PER_MSEC;
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = 100 * NSEC_PER_MSEC;
+	zassert_ok(timer_settime(timerid, 0, &value, &ovalue));
+
+	/* Verify remaining time is non-zero */
+	zassert_ok(timer_gettime(timerid, &value));
+	zassert_true(value.it_value.tv_sec > 0 || value.it_value.tv_nsec > 0);
+
+	/* Disarm timer */
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = 0;
+	zassert_ok(timer_settime(timerid, 0, &value, NULL));
+}
+
+ZTEST(posix_timers, test_timer_create_invalid_params)
+{
+	timer_t tid;
+
+	/* Null timerid must fail with EINVAL */
+	zassert_equal(timer_create(CLOCK_MONOTONIC, NULL, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* Invalid clockid must fail with EINVAL */
+	zassert_equal(timer_create((clockid_t)-1, NULL, &tid), -1);
+	zassert_equal(errno, EINVAL);
+
+	zassert_equal(timer_create((clockid_t)9999, NULL, &tid), -1);
+	zassert_equal(errno, EINVAL);
+
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
