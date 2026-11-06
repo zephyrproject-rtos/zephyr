@@ -4,11 +4,11 @@ Device Power Management
 Introduction
 ************
 
-Device Power Management in Zephyr is a feature which presents mechanisms
-to coherently affect the control of power management actions to be taken
-by device drivers. This control is based on unambiguous expectations
-which could be set by any component of the system, and on power-related
-dependencies that devices may have on each other.
+Device power management in Zephyr provides the mechanisms used to control
+the power state of individual devices. Any component of the system
+(drivers, subsystems, applications) can influence when a device is
+suspended or resumed, and power-related dependencies between devices are
+taken into account.
 
 Zephyr supports two methods of device power management:
 
@@ -81,10 +81,10 @@ When using this method, device power management is mostly done inside
 If a decision to enter a CPU lower power state is made, the power management
 subsystem will check if the selected low power state triggers device power
 management and then suspend devices before changing state. The subsystem takes
-care of suspending devices following their initialization order, ensuring that
-possible dependencies between them are satisfied. As soon as the CPU wakes up
-from a sleep state, devices are resumed in the opposite order that they were
-suspended.
+care of suspending devices in the reverse of their initialization order,
+ensuring that possible dependencies between them are satisfied. As soon as the
+CPU wakes up from a sleep state, devices are resumed in the opposite order that
+they were suspended.
 
 The decision about suspending devices when entering a low power state is done based on the
 state and if it has set the property ``zephyr,pm-device-disabled``. Here is
@@ -156,7 +156,7 @@ The power management subsystem defines device states in
 :c:enum:`pm_device_state`. This method is used to track power states of
 a particular device. It is important to emphasize that, although the
 state is tracked by the subsystem, it is the responsibility of each device driver
-to handle device actions(:c:enum:`pm_device_action`) which change device state.
+to handle device actions (:c:enum:`pm_device_action`) which change device state.
 
 Device drivers implement the :c:func:`pm_device_action_cb_t` hook internally
 which receives the :c:enum:`pm_device_action` for the device driver to handle.
@@ -238,7 +238,7 @@ for brevity, in real drivers they must be handled.
            const struct gpio_dt_spec enable_pin;
    };
 
-   static void dummy_driver_int_pin_handler(const struct device *dev,
+   static void dummy_driver_int_pin_handler(const struct device *port,
                                             struct gpio_callback *cb,
                                             uint32_t pins)
    {
@@ -260,14 +260,14 @@ for brevity, in real drivers they must be handled.
 
            /* Disable and remove interrupt pin interrupt */
            (void)gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLED);
-           (void)gpio_remove_callback(config->int_pin.port, &data->int_pin_callback);
+           (void)gpio_remove_callback(config->int_gpio.port, &dev_data->int_pin_callback);
 
            /* Disable the device. In this case, we use the enable pin */
            (void)gpio_pin_set_dt(&config->enable_pin, 0);
 
            /* Release devices currently not needed by device */
            (void)pm_device_runtime_put(config->enable_pin.port);
-           (void)pm_device_runtime_put(config->int_pin.port);
+           (void)pm_device_runtime_put(config->int_gpio.port);
 
            /*
             * Note that we now have suspended the device and released all the
@@ -286,7 +286,7 @@ for brevity, in real drivers they must be handled.
 
            /* Request devices needed by device */
            (void)pm_device_runtime_get(config->enable_pin.port);
-           (void)pm_device_runtime_get(config->int_pin.port);
+           (void)pm_device_runtime_get(config->int_gpio.port);
            (void)pm_device_runtime_get(config->bus);
 
            /* Enable the device. In this case, we use the enable pin */
@@ -300,7 +300,7 @@ for brevity, in real drivers they must be handled.
            /* ... */
 
            /* Add and enable interrupt pin interrupt */
-           (void)gpio_add_callback(config->int_pin.port, &data->int_pin_callback);
+           (void)gpio_add_callback(config->int_gpio.port, &dev_data->int_pin_callback);
            (void)gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 
            /*
@@ -308,7 +308,7 @@ for brevity, in real drivers they must be handled.
             * are releasing the bus and the enable pin.
             *
             * The device driver would keep the bus ACTIVE while the device is
-            * ACTIVE in cases of high throughput or unsolicitet data on the
+            * ACTIVE in cases of high throughput or unsolicited data on the
             * bus, to avoid inefficient RESUME/SUSPEND cycles of the bus
             * for every transaction, and allowing reception of unsolicited
             * data on buses like UART.
@@ -318,7 +318,7 @@ for brevity, in real drivers they must be handled.
 
            /*
             * Note that the interrupt pin's port is kept resumed as it
-            * it needs to service the GPIO interrupt we enabled.
+            * needs to service the GPIO interrupt we enabled.
             */
 
            return 0;
@@ -351,7 +351,7 @@ for brevity, in real drivers they must be handled.
             * released the enable pin's port.
             */
 
-            return 0;
+           return 0;
    }
 
    static int dummy_driver_pm_turn_on(const struct device *dev)
@@ -419,7 +419,7 @@ for brevity, in real drivers they must be handled.
             * If CONFIG_PM_DEVICE=n, this also ensures the devices are ACTIVE.
             */
            if (!device_is_ready(dev_config->bus) ||
-               !gpio_is_ready_dt(&dev_config->int_pin) ||
+               !gpio_is_ready_dt(&dev_config->int_gpio) ||
                !gpio_is_ready_dt(&dev_config->enable_pin)) {
                    return -ENODEV;
            }
@@ -427,21 +427,21 @@ for brevity, in real drivers they must be handled.
            /* We then initialize the device driver data structure */
            gpio_init_callback(&dev_data->int_pin_callback,
                               dummy_driver_int_pin_handler,
-                              BIT(dev_config->int_pin.pin));
+                              BIT(dev_config->int_gpio.pin));
 
            dev_data->dev = dev;
 
-          /*
-           * This call must be the last call of the device init function.
-           * It will initialize the device's PM_DEVICE context and use the
-           * dummy_driver_pm_action callback to initialize the device into
-           * the appropriate state.
+           /*
+            * This call must be the last call of the device init function.
+            * It will initialize the device's PM_DEVICE context and use the
+            * dummy_driver_pm_action callback to initialize the device into
+            * the appropriate state.
             *
-            * On success, :c:func:`pm_device_driver_init` returns 0.
-            * If the callback fails (for example on ``PM_DEVICE_ACTION_RESUME``),
-            * the error is propagated and the device is not marked ``ACTIVE``.
-           */
-          return pm_device_driver_init(dev, dummy_driver_pm_action);
+            * On success, pm_device_driver_init() returns 0. If the callback
+            * fails (for example on PM_DEVICE_ACTION_RESUME), the error is
+            * propagated and the device is not marked ACTIVE.
+            */
+           return pm_device_driver_init(dev, dummy_driver_pm_action);
    }
 
    #ifdef CONFIG_DEVICE_DEINIT_SUPPORT
@@ -482,9 +482,9 @@ for brevity, in real drivers they must be handled.
 
    static struct dummy_driver_data data0;
 
-   static struct dummy_driver_config config0 = {
+   static const struct dummy_driver_config config0 = {
            .bus = DEVICE_DT_GET(DT_INST_PARENT(0)),
-           .int_pin = GPIO_DT_SPEC_INST_GET(0, int_gpios),
+           .int_gpio = GPIO_DT_SPEC_INST_GET(0, int_gpios),
            .enable_pin = GPIO_DT_SPEC_INST_GET(0, enable_gpios),
    };
 
@@ -508,7 +508,7 @@ Device Model with Partial Device Power Management Support
 *********************************************************
 
 If :kconfig:option:`CONFIG_PM_DEVICE` is not enabled, the device
-power state is tied to the devices initialization state.
+power state is tied to the device's initialization state.
 
 Once a device is initialized, the device driver PM action hook is
 used to move the device to the expected initial state through calling
@@ -587,8 +587,8 @@ longer doing an operation and can be suspended, it should call
 
 .. _pm-device-constraint:
 
-Device Power Management X System Power Management
-*************************************************
+Device Power Management and System Power Management
+***************************************************
 
 When managing power in embedded systems, it's crucial to understand
 the interplay between device power state and the overall system power
@@ -598,12 +598,14 @@ supply power to peripheral devices, leading to problems if the device
 is in the middle of an operation. Proper coordination is essential to
 maintain system stability and data integrity.
 
-To avoid this sort of problem, devices must :ref:`get and release lock <pm-policy-power-states>`
-power states that cause power loss during an operation.
+To avoid this sort of problem, devices must :ref:`lock <pm-policy-power-states>`
+the power states that would cause them to lose power while an operation is in
+progress, and release the lock once the operation is done.
 
 Zephyr provides a mechanism for devices to declare which power states cause power
-loss and an API that automatically get and put lock on them. This feature is
-enabled setting :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS` to ``y``.
+loss and an API that automatically gets and puts the corresponding locks. This
+feature is enabled by setting :kconfig:option:`CONFIG_PM_POLICY_DEVICE_CONSTRAINTS`
+to ``y``.
 
 Once this feature is enabled, devices must declare in devicetree which
 states cause power loss. In the following example, device ``test_dev``
@@ -646,8 +648,8 @@ says that power states ``state1`` and ``state2`` cause power loss.
             zephyr,disabling-power-states = <&state1 &state2>;
     };
 
-After that devices can lock these state calling
-:c:func:`pm_policy_device_power_lock_get` and release with
+Devices can then lock these states by calling
+:c:func:`pm_policy_device_power_lock_get` and release the lock with
 :c:func:`pm_policy_device_power_lock_put`. For example:
 
 .. code-block:: C
@@ -691,9 +693,9 @@ When a device has such capability, applications can enable or disable
 this feature on a device dynamically using
 :c:func:`pm_device_wakeup_enable`.
 
-This property can be set on device declaring the property ``wakeup-source`` in
-the device node in devicetree. For example, this devicetree fragment sets the
-``gpio0`` device as a "wakeup" source:
+A device is declared as wakeup capable by setting the ``wakeup-source``
+property in its devicetree node. For example, this devicetree fragment sets
+the ``gpio0`` device as a "wakeup" source:
 
 .. code-block:: devicetree
 
@@ -710,14 +712,14 @@ the device node in devicetree. For example, this devicetree fragment sets the
 
 By default, "wakeup" capable devices do not have this functionality enabled
 during the device initialization. Applications can enable this functionality
-later calling :c:func:`pm_device_wakeup_enable`.
+later by calling :c:func:`pm_device_wakeup_enable`.
 
 .. note::
 
    This property is **only** used by the system power management to identify
    devices that should not be suspended.
-   It is responsibility of driver or the application to do any additional
-   configuration required by the device to support it.
+   It is the responsibility of the driver or the application to do any
+   additional configuration required by the device to support it.
 
 Examples
 ********
