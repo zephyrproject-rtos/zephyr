@@ -22,3 +22,16 @@ properties:
 
   cd-gpios:
     type: phandle-array
+
+  bus-width:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 4
+    description: |
+      Number of data lines wired to the card (MCDA0 only, or MCDA0-3).
+      The default of 1 works with either wiring and matches the
+      controller's 1-bit reset state. Set 4 only if all four data lines
+      are routed; this also enables high speed mode, since the SD stack
+      only switches to the 4-bit bus during high speed init.
