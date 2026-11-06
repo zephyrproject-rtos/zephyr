@@ -33,6 +33,8 @@ properties:
 
   fast-memory-region:
     type: phandle
+    target-compatibles:
+      - "zephyr,memory-region"
     description: |
       Phandle to a node compatible with "zephyr,memory-region" that represents
       a dedicated fast SRAM region used by the Ethos-U driver as scratch
