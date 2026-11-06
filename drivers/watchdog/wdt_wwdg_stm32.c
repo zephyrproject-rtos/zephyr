@@ -82,8 +82,8 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #define ABS_DIFF_UINT(a, b)  ((a) > (b) ? (a) - (b) : (b) - (a))
 #define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__)   (__TIMEOUT__ / 10)
 #define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)  \
-	ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
-	WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
+	(ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
+	 WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__))
 
 static void wwdg_stm32_irq_config(const struct device *dev);
 
@@ -132,7 +132,28 @@ static uint32_t wwdg_stm32_get_timeout(uint32_t pclk,
 }
 
 /**
+ * @brief Converts a duration to a number of WWDG ticks, rounded up.
+ *
+ * @param pclk The WWDG bus clock rate in Hz.
+ * @param time_us The duration in microseconds.
+ * @param prescaler_exp The prescaler exponent value(Base 2).
+ * @return The number of ticks.
+ */
+static uint64_t wwdg_stm32_us_to_ticks(uint32_t pclk, uint32_t time_us,
+				       uint32_t prescaler_exp)
+{
+	uint64_t divider = (uint64_t)WWDG_INTERNAL_DIVIDER << prescaler_exp;
+	uint64_t num = (uint64_t)time_us * (uint64_t)pclk;
+	uint64_t den = (uint64_t)USEC_PER_SEC * divider;
+
+	return DIV_ROUND_UP(num, den);
+}
+
+/**
  * @brief Calculates prescaler & counter values.
+ *
+ * The smallest prescaler that can count @p timeout is selected. The
+ * counter expires after (counter - WWDG_COUNTER_MIN + 1) ticks.
  *
  * @param pclk The WWDG bus clock rate in Hz.
  * @param timeout Timeout value in microseconds.
@@ -144,24 +165,17 @@ static void wwdg_stm32_convert_timeout(uint32_t pclk,
 				       uint32_t *prescaler_exp,
 				       uint32_t *counter)
 {
-	uint32_t psc_exp;
-	uint32_t count;
+	for (uint32_t psc_exp = 0U; psc_exp <= WWDG_PRESCALER_EXPONENT_MAX; psc_exp++) {
+		uint64_t ticks = wwdg_stm32_us_to_ticks(pclk, timeout, psc_exp);
 
-	for (psc_exp = 0U; psc_exp <= WWDG_PRESCALER_EXPONENT_MAX; psc_exp++) {
-		uint32_t divider = WWDG_INTERNAL_DIVIDER << psc_exp;
-		uint64_t num = (uint64_t)timeout * (uint64_t)pclk;
-		uint64_t den = (uint64_t)USEC_PER_SEC * (uint64_t)divider;
-
-		count = (num / den) + WWDG_RESET_LIMIT;
-
-		if (count <= WWDG_COUNTER_MAX) {
-			*counter = count;
+		if (IN_RANGE(ticks, 1U, WWDG_COUNTER_MAX - WWDG_COUNTER_MIN + 1U)) {
+			*counter = WWDG_COUNTER_MIN + (uint32_t)ticks - 1U;
 			*prescaler_exp = psc_exp;
 			return;
 		}
 	}
 
-	/* timeout longer than wwdg can provide, set to max possible value */
+	/* timeout zero or longer than wwdg can provide, set to max possible value */
 	*counter = WWDG_COUNTER_MAX;
 	*prescaler_exp = WWDG_PRESCALER_EXPONENT_MAX;
 }
@@ -240,9 +254,10 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 	LOG_DBG("Desired WDT: %d us", timeout);
 	LOG_DBG("Set WDT:     %d us", calculated_timeout);
 
-	if (!(IN_RANGE(counter, WWDG_COUNTER_MIN, WWDG_COUNTER_MAX) &&
-	      IS_WWDG_TIMEOUT(timeout, calculated_timeout))) {
-		/* One of the parameters provided is invalid */
+	/* Rounding up to a whole tick or clamping to the longest timeout can
+	 * exceed the tolerated error.
+	 */
+	if (!IS_WWDG_TIMEOUT(timeout, calculated_timeout)) {
 		return -EINVAL;
 	}
 
