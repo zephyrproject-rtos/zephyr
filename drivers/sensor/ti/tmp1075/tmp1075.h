@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Arrow Electronics.
+ * Copyright (c) 2026 Antmicro <antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +58,14 @@ struct tmp1075_data {
 	sensor_trigger_handler_t temp_alert_handler;
 	struct gpio_callback temp_alert_gpio_cb;
 	bool over_threshold;
+#if defined(CONFIG_TMP1075_TRIGGER_OWN_THREAD)
+	struct k_sem trigger_sem;
+	struct k_thread trigger_thread;
+
+	K_KERNEL_STACK_MEMBER(trigger_thread_stack, CONFIG_TMP1075_THREAD_STACK_SIZE);
+#elif defined(CONFIG_TMP1075_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
 };
 
 struct tmp1075_config {
@@ -70,10 +79,11 @@ struct tmp1075_config {
 	bool shutdown_mode: 1;
 };
 
+int tmp1075_reg_read(const struct tmp1075_config *cfg, uint8_t reg, uint16_t *val);
+
 int tmp1075_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-void tmp1075_trigger_handle_alert(const struct device *port, struct gpio_callback *cb,
-				  gpio_port_pins_t pins);
+int tmp1075_setup_trigger(const struct device *dev);
 
 #endif
