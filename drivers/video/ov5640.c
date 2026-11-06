@@ -638,6 +638,15 @@ static const struct ov5640_mode_config dvp_modes[] = {
 		.frmrate_config = dvp_frmrate_params,
 		.max_frmrate = OV5640_30_FPS,
 		.def_frmrate = OV5640_30_FPS,
+	},
+	{
+		.width = 640,
+		.height = 480,
+		.array_size_res_params = ARRAY_SIZE(vga_res_params),
+		.res_params = vga_res_params,
+		.frmrate_config = dvp_frmrate_params,
+		.max_frmrate = OV5640_60_FPS,
+		.def_frmrate = OV5640_30_FPS,
 	}};
 
 #define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
@@ -662,6 +671,7 @@ static const struct video_format_cap dvp_fmts[] = {
 	OV5640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),
 	OV5640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),
 	OV5640_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_RGB565),
+	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
 	{0}};
 
 static inline bool ov5640_is_dvp(const struct device *dev)
