@@ -55,6 +55,12 @@ struct dma_mcux_edma_config {
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
+#if defined(CONFIG_DMA_MCUX_EDMA)
+	/* nxp,channel-priorities: <channel priority> pairs, NULL if absent */
+	const uint8_t *channel_priorities;
+	size_t channel_priorities_len; /* number of cells, two for each pair */
+	bool channel_preemption;
+#endif
 	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
@@ -204,6 +210,136 @@ static ALWAYS_INLINE uint32_t dma_mcux_edma_remove_channel_gap(const struct devi
 #define dma_mcux_edma_add_channel_gap(dev, channel) channel
 #define dma_mcux_edma_remove_channel_gap(dev, channel) channel
 #endif /* DMA_MCUX_HAS_CHANNEL_GAP */
+
+#if defined(CONFIG_DMA_MCUX_EDMA)
+/*
+ * The eDMA arbitrates the channels in groups. A group has one channel for
+ * each value of DCHPRIn[CHPRI], and the priorities in a group must be unique,
+ * otherwise the eDMA reports a channel priority error (i.MX RT1170 RM rev. 5,
+ * 6.5.5.2 and 6.5.5.18). FSL_FEATURE_EDMA_CHANNEL_GROUP_COUNT is not used: it
+ * is 1 on parts that have two groups.
+ */
+#define EDMA_PRIORITY_COUNT          (DMA_DCHPRI0_CHPRI_MASK + 1U)
+#define EDMA_PRIORITY_GROUP(channel) ((channel) / EDMA_PRIORITY_COUNT)
+
+/**
+ * @brief Find conflicting entries in nxp,channel-priorities.
+ *
+ * The build checks the range of each value. A pairwise compare is not
+ * possible with the devicetree macros, so it is done here.
+ *
+ * @param config Driver configuration.
+ *
+ * @retval 0 if the list is valid.
+ * @retval -EINVAL if a channel occurs two times, or if two channels of the
+ *         same group request the same priority.
+ */
+static int dma_mcux_edma_check_priorities(const struct dma_mcux_edma_config *config)
+{
+	const uint8_t *pairs = config->channel_priorities;
+
+	for (size_t i = 0; i < config->channel_priorities_len; i += 2) {
+		for (size_t j = i + 2; j < config->channel_priorities_len; j += 2) {
+			bool same_channel = pairs[i] == pairs[j];
+			bool same_group =
+				EDMA_PRIORITY_GROUP(pairs[i]) == EDMA_PRIORITY_GROUP(pairs[j]);
+			bool same_priority = pairs[i + 1] == pairs[j + 1];
+
+			if (same_channel || (same_group && same_priority)) {
+				LOG_ERR("nxp,channel-priorities: <%u %u> conflicts with <%u %u>",
+					pairs[i], pairs[i + 1], pairs[j], pairs[j + 1]);
+				return -EINVAL;
+			}
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Give a priority to a channel in the priority table.
+ *
+ * The channel of the same group that has this priority gets the old priority
+ * of the channel, so that the priorities in the group stay unique.
+ *
+ * @param chpri Priority table, one entry for each channel.
+ * @param dma_channels Number of channels in the table.
+ * @param channel Channel that gets the priority.
+ * @param priority Requested priority.
+ */
+static void dma_mcux_edma_swap_priority(uint8_t *chpri, uint32_t dma_channels, uint32_t channel,
+					uint8_t priority)
+{
+	uint32_t first = EDMA_PRIORITY_GROUP(channel) * EDMA_PRIORITY_COUNT;
+	uint32_t end = MIN(first + EDMA_PRIORITY_COUNT, dma_channels);
+
+	for (uint32_t other = first; other < end; other++) {
+		if (chpri[other] == priority) {
+			chpri[other] = chpri[channel];
+			break;
+		}
+	}
+
+	chpri[channel] = priority;
+}
+
+/**
+ * @brief Apply nxp,channel-priorities and nxp,channel-preemption.
+ *
+ * Without these properties, the registers keep their reset values.
+ * Otherwise the driver writes DCHPRIn of all channels, starting from the
+ * reset priorities, so the result does not depend on an earlier setting.
+ *
+ * @param dev eDMA device.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if nxp,channel-priorities has conflicting entries.
+ */
+static int dma_mcux_edma_init_priorities(const struct device *dev)
+{
+	const struct dma_mcux_edma_config *config = DEV_CFG(dev);
+	const uint8_t *pairs = config->channel_priorities;
+	uint8_t chpri[FSL_FEATURE_EDMA_MODULE_CHANNEL];
+	int ret;
+
+	if (config->channel_priorities_len == 0 && !config->channel_preemption) {
+		return 0;
+	}
+
+	ret = dma_mcux_edma_check_priorities(config);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* DCHPRIn[CHPRI] resets to the channel number in its group (6.5.5.18) */
+	for (uint32_t ch = 0; ch < config->dma_channels; ch++) {
+		chpri[ch] = ch % EDMA_PRIORITY_COUNT;
+	}
+
+	for (size_t i = 0; i < config->channel_priorities_len; i += 2) {
+		dma_mcux_edma_swap_priority(chpri, config->dma_channels, pairs[i], pairs[i + 1]);
+	}
+
+	/*
+	 * Two channels have the same priority for a short time between two
+	 * writes. This does not cause a priority error: the eDMA checks the
+	 * priorities only when a channel requests service (6.4.2), and no
+	 * channel can do that yet, because EDMA_Init() cleared ERQ and no
+	 * channel is started. DPA keeps its reset value 0.
+	 */
+	for (uint32_t ch = 0; ch < config->dma_channels; ch++) {
+		edma_channel_Preemption_config_t prio_config = {
+			.enableChannelPreemption = config->channel_preemption,
+			.enablePreemptAbility = true,
+			.channelPriority = chpri[ch],
+		};
+
+		EDMA_SetChannelPreemptionConfig(DEV_BASE(dev), ch, &prio_config);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DMA_MCUX_EDMA */
 
 static bool data_size_valid(const size_t data_size)
 {
@@ -1286,6 +1422,12 @@ static int dma_mcux_edma_init(const struct device *dev)
 	/* Channel linking available and will be controlled by each channel's link settings */
 	EDMA_EnableAllChannelLink(DEV_BASE(dev), true);
 #endif
+#if defined(CONFIG_DMA_MCUX_EDMA)
+	ret = dma_mcux_edma_init_priorities(dev);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
 	config->irq_config_func(dev);
 	data->dma_ctx.magic = DMA_MAGIC;
 	data->dma_ctx.dma_channels = config->dma_channels;
@@ -1362,6 +1504,45 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define DMA_MCUX_EDMA_CHANNEL_GAP(n)
 #endif
 
+#define DMA_MCUX_EDMA_HAS_PRIORITIES(n)						\
+	(DT_INST_NODE_HAS_PROP(n, nxp_channel_priorities) ||			\
+	 DT_INST_PROP(n, nxp_channel_preemption))
+
+#if defined(CONFIG_DMA_MCUX_EDMA)
+/* Even cells of nxp,channel-priorities are channels, odd cells are priorities */
+#define DMA_MCUX_EDMA_PRIORITY_CELL_CHECK(node_id, prop, idx)			\
+	BUILD_ASSERT((idx) % 2 != 0 ||						\
+		     DT_PROP_BY_IDX(node_id, prop, idx) < DT_PROP(node_id, dma_channels), \
+		     "nxp,channel-priorities: channel out of range");		\
+	BUILD_ASSERT((idx) % 2 == 0 ||						\
+		     DT_PROP_BY_IDX(node_id, prop, idx) < EDMA_PRIORITY_COUNT,	\
+		     "nxp,channel-priorities: priority out of range");
+
+#define DMA_MCUX_EDMA_PRIORITIES_DEFINE(n)					\
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(n, nxp_channel_priorities, 0) % 2 == 0, \
+		     "nxp,channel-priorities needs <channel priority> pairs");	\
+	BUILD_ASSERT(!DMA_MCUX_EDMA_HAS_PRIORITIES(n) ||			\
+		     DT_INST_PROP(n, dma_channels) <= FSL_FEATURE_EDMA_MODULE_CHANNEL, \
+		     "dma-channels is larger than the eDMA channel count");	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, nxp_channel_priorities), (		\
+		DT_INST_FOREACH_PROP_ELEM(n, nxp_channel_priorities,		\
+					  DMA_MCUX_EDMA_PRIORITY_CELL_CHECK)	\
+		static const uint8_t dma_channel_priorities_##n[] =		\
+			DT_INST_PROP(n, nxp_channel_priorities);))
+
+#define DMA_MCUX_EDMA_PRIORITIES_INIT(n)					\
+	.channel_priorities = COND_CODE_1(					\
+		DT_INST_NODE_HAS_PROP(n, nxp_channel_priorities),		\
+		(dma_channel_priorities_##n), (NULL)),				\
+	.channel_priorities_len = DT_INST_PROP_LEN_OR(n, nxp_channel_priorities, 0), \
+	.channel_preemption = DT_INST_PROP(n, nxp_channel_preemption),
+#else
+#define DMA_MCUX_EDMA_PRIORITIES_DEFINE(n)					\
+	BUILD_ASSERT(!DMA_MCUX_EDMA_HAS_PRIORITIES(n),				\
+		     "nxp,channel-priorities and nxp,channel-preemption need nxp,version = <2>");
+#define DMA_MCUX_EDMA_PRIORITIES_INIT(n)
+#endif /* CONFIG_DMA_MCUX_EDMA */
+
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 #define DMA_MCUX_EDMA_MUX(idx, n)						\
 	(DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, UTIL_INC(idx))
@@ -1410,6 +1591,7 @@ static int dma_mcux_edma_init(const struct device *dev)
  */
 #define DMA_INIT(n)								\
 	DMAMUX_BASE_INIT_DEFINE(n)						\
+	DMA_MCUX_EDMA_PRIORITIES_DEFINE(n)					\
 	static void dma_imx_config_func_##n(const struct device *dev);		\
 	static __aligned(DMA_TCD_ALIGN_SIZE) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t	\
 	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
@@ -1427,6 +1609,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
+		DMA_MCUX_EDMA_PRIORITIES_INIT(n)				\
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.tcdpool = dma_tcdpool##n,					\
 	};									\
