@@ -23,6 +23,12 @@ the :ref:`release notes<zephyr_4.6>`.
 Common
 ******
 
+* :c:func:`sys_hash32_murmur3` now handles trailing bytes correctly. Hash values can change for
+  inputs whose lengths are not multiples of four. Applications that persist these hashes must
+  migrate or rebuild them. This includes the ZMS settings backend when
+  :kconfig:option:`CONFIG_SYS_HASH_FUNC32_CHOICE_MURMUR3` is selected: export existing settings
+  before updating and restore them into freshly initialized settings storage afterward.
+
 Build System
 ************
 
