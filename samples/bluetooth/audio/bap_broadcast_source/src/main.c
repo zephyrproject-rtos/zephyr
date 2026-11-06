@@ -39,6 +39,8 @@
 #include <zephyr/usb/class/usbd_uac2.h>
 #include <zephyr/usb/usbd.h>
 
+#include "chan_map.h"
+
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
@@ -1188,6 +1190,25 @@ static int button_adv_init(void)
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(sw0)) */
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+/* Delegate the vendor-specific events to their handlers, each handler is given the event from
+ * its start.
+ */
+static bool vnd_evt_cb(struct net_buf_simple *buf)
+{
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (IS_ENABLED(CONFIG_CHAN_MAP_UPDATE) && chan_map_vnd_evt(buf)) {
+		return true;
+	}
+	net_buf_simple_restore(buf, &state);
+
+	return false;
+}
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
+
 int main(void)
 {
 	static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
@@ -1233,7 +1254,19 @@ int main(void)
 	if (err != 0) {
 		printk("Button 0 not available (err %d)\n", err);
 	}
+
+	if (IS_ENABLED(CONFIG_CHAN_MAP_UPDATE)) {
+		chan_map_init();
+	}
 #endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+	err = bt_hci_register_vnd_evt_cb(vnd_evt_cb);
+	if (err != 0) {
+		printk("Vendor-specific event callback register failed (err %d)\n", err);
+		return 0;
+	}
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
 	for (size_t i = 0U; i < ARRAY_SIZE(send_pcm_data); i++) {
 		/* Initialize mock data */

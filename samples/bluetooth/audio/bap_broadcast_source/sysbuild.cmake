@@ -14,7 +14,7 @@ if(SB_CONFIG_NET_CORE_IMAGE_HCI_IPC)
   )
 
   set(${NET_APP}_EXTRA_CONF_FILE
-   ${NET_APP_SRC_DIR}/extra-iso-bt_ll_sw_split.conf
+   "${NET_APP_SRC_DIR}/extra-iso-bt_ll_sw_split.conf;${CMAKE_CURRENT_LIST_DIR}/hci_ipc-chan_metrics.conf"
    CACHE INTERNAL ""
   )
 

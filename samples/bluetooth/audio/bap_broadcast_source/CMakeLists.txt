@@ -9,6 +9,7 @@ target_sources(app PRIVATE
 )
 
 target_sources_ifdef(CONFIG_AUDIO_INPUT_STREAM app PRIVATE src/audio_in.c)
+target_sources_ifdef(CONFIG_CHAN_MAP_UPDATE app PRIVATE src/chan_map.c)
 
 if(CONFIG_AUDIO_INPUT_TIMED AND CONFIG_USE_USB_AUDIO_INPUT)
   target_sources(app PRIVATE src/usb_sof_nrf.c)
