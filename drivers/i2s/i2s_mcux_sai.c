@@ -167,6 +167,82 @@ static uint32_t i2s_stream_wind_down_us(const struct device *dev, const struct s
 	       1000U;
 }
 
+/* Write-1-to-clear status flags, the same bits in TCSR and RCSR */
+#define I2S_CSR_W1C_MASK (I2S_TCSR_WSF_MASK | I2S_TCSR_SEF_MASK | I2S_TCSR_FEF_MASK)
+
+/*
+ * TX and RX share their bit and frame clocks when one of them is synchronous
+ * to the other. The side that provides the clocks must stay enabled while the
+ * other side needs them. TX keeps them in I2S_STATE_ERROR too, until PREPARE
+ * or DROP; RX is already disabled in that state.
+ */
+static bool i2s_tx_needs_clocks(const struct i2s_dev_data *dev_data)
+{
+	return (dev_data->tx.state == I2S_STATE_RUNNING) ||
+	       (dev_data->tx.state == I2S_STATE_STOPPING) ||
+	       (dev_data->tx.state == I2S_STATE_ERROR);
+}
+
+static bool i2s_rx_needs_clocks(const struct i2s_dev_data *dev_data)
+{
+	return (dev_data->rx.state == I2S_STATE_RUNNING) ||
+	       (dev_data->rx.state == I2S_STATE_STOPPING);
+}
+
+/* RX is clocked by TX (nxp,rx-sync-mode) */
+static bool i2s_rx_sync_to_tx(I2S_Type *base)
+{
+	return ((base->RCR2 & I2S_RCR2_SYNC_MASK) >> I2S_RCR2_SYNC_SHIFT) == 1U;
+}
+
+/* TX is clocked by RX (nxp,tx-sync-mode) */
+static bool i2s_tx_sync_to_rx(I2S_Type *base)
+{
+	return ((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) == 1U;
+}
+
+/*
+ * Clear TE and BCE, wait for the transmitter to finish its frame, then reset
+ * the TX FIFO and clear the error flags. BCE is set together with TE but is
+ * not cleared with it: the bit clock keeps running until BCE is cleared too.
+ * SAI_TxEnable() is not used because it keeps TE set whenever RX is
+ * synchronous to TX, even when RX is idle, and never clears BCE.
+ */
+static void i2s_tx_transmitter_off(const struct device *dev)
+{
+	I2S_Type *base = get_base(dev);
+	struct i2s_dev_data *dev_data = dev->data;
+
+	base->TCSR = (base->TCSR & ~I2S_CSR_W1C_MASK) & ~(I2S_TCSR_TE_MASK | I2S_TCSR_BCE_MASK);
+
+	if (!WAIT_FOR((base->TCSR & (I2S_TCSR_TE_MASK | I2S_TCSR_BCE_MASK)) == 0UL,
+		      i2s_stream_wind_down_us(dev, &dev_data->tx), k_busy_wait(1))) {
+		LOG_WRN("TX did not stop");
+		return;
+	}
+
+	base->TCSR |= (I2S_TCSR_FR_MASK | I2S_TCSR_SR_MASK);
+	base->TCSR &= ~I2S_TCSR_SR_MASK;
+}
+
+/* Same as i2s_tx_transmitter_off() for RE, RCSR[BCE] and the RX FIFO */
+static void i2s_rx_receiver_off(const struct device *dev)
+{
+	I2S_Type *base = get_base(dev);
+	struct i2s_dev_data *dev_data = dev->data;
+
+	base->RCSR = (base->RCSR & ~I2S_CSR_W1C_MASK) & ~(I2S_RCSR_RE_MASK | I2S_RCSR_BCE_MASK);
+
+	if (!WAIT_FOR((base->RCSR & (I2S_RCSR_RE_MASK | I2S_RCSR_BCE_MASK)) == 0UL,
+		      i2s_stream_wind_down_us(dev, &dev_data->rx), k_busy_wait(1))) {
+		LOG_WRN("RX did not stop");
+		return;
+	}
+
+	base->RCSR |= (I2S_RCSR_FR_MASK | I2S_RCSR_SR_MASK);
+	base->RCSR &= ~I2S_RCSR_SR_MASK;
+}
+
 static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab, bool in_drop,
 				     bool out_drop)
 {
@@ -231,13 +307,21 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	/* Disable the channel FIFO */
 	SAI_TxSetChannelFIFOMask(base, 0);
 
-	/* Disable Tx */
-	SAI_TxEnable(base, false);
+	/*
+	 * Disable the transmitter, unless it provides the clocks of an RX
+	 * stream that still needs them. The RX disable turns it off then.
+	 */
+	if (!i2s_rx_sync_to_tx(base) || !i2s_rx_needs_clocks(dev_data)) {
+		i2s_tx_transmitter_off(dev);
+	}
 
-	/* If Tx is disabled, reset the FIFO pointer, clear error flags */
-	if ((base->TCSR & I2S_TCSR_TE_MASK) == 0UL) {
-		base->TCSR |= (I2S_TCSR_FR_MASK | I2S_TCSR_SR_MASK);
-		base->TCSR &= ~I2S_TCSR_SR_MASK;
+	/*
+	 * When TX is synchronous to RX, an idle RX may have kept its receiver
+	 * enabled for this stream. Turn it off now that TX is done with it.
+	 */
+	if (i2s_tx_sync_to_rx(base) && !i2s_rx_needs_clocks(dev_data) &&
+	    ((base->RCSR & I2S_RCSR_RE_MASK) != 0UL)) {
+		i2s_rx_receiver_off(dev);
 	}
 
 	/* purge buffers queued in the stream */
@@ -268,24 +352,22 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 	/* Disable DMA enable bit */
 	SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, false);
 
-	/* Disable Rx */
-	SAI_RxEnable(base, false);
-
 	/*
-	 * When TX is synchronous to RX, the receiver provides the TX clocks and
-	 * SAI_RxEnable() leaves it enabled on purpose, so do not wait for it.
-	 * Otherwise the receiver stops at the end of the current frame.
+	 * Disable the receiver, unless it provides the clocks of a TX stream
+	 * that still needs them. The TX disable turns it off then.
 	 */
-	if ((((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) != 1U) &&
-	    !WAIT_FOR((base->RCSR & I2S_RCSR_RE_MASK) == 0UL, i2s_stream_wind_down_us(dev, strm),
-		      k_busy_wait(1))) {
-		LOG_WRN("RX did not stop");
+	if (!i2s_tx_sync_to_rx(base) || !i2s_tx_needs_clocks(dev_data)) {
+		i2s_rx_receiver_off(dev);
 	}
 
-	/* If Rx is disabled, reset the FIFO pointer and clear error flags */
-	if ((base->RCSR & I2S_RCSR_RE_MASK) == 0UL) {
-		base->RCSR |= (I2S_RCSR_FR_MASK | I2S_RCSR_SR_MASK);
-		base->RCSR &= ~I2S_RCSR_SR_MASK;
+	/*
+	 * When RX is synchronous to TX, SAI_RxEnable() started the transmitter
+	 * for the RX clocks, and an idle TX may have kept it enabled for this
+	 * stream. Turn it off now that RX is done with it.
+	 */
+	if (i2s_rx_sync_to_tx(base) && !i2s_tx_needs_clocks(dev_data) &&
+	    ((base->TCSR & I2S_TCSR_TE_MASK) != 0UL)) {
+		i2s_tx_transmitter_off(dev);
 	}
 
 	/* purge buffers queued in the stream */
@@ -642,6 +724,16 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		i2s_purge_stream_buffers(strm, strm->cfg.mem_slab, true, true);
 		strm->state = I2S_STATE_NOT_READY;
 		return 0;
+	}
+
+	/*
+	 * Do not reprogram a side that provides the clocks of the opposite
+	 * stream while that stream still needs them.
+	 */
+	if (((dir == I2S_DIR_TX) && i2s_rx_sync_to_tx(base) && i2s_rx_needs_clocks(dev_data)) ||
+	    ((dir == I2S_DIR_RX) && i2s_tx_sync_to_rx(base) && i2s_tx_needs_clocks(dev_data))) {
+		LOG_ERR("cannot configure: the opposite stream uses its clocks");
+		return -EINVAL;
 	}
 
 	if (word_size_bits < SAI_WORD_SIZE_BITS_MIN || word_size_bits > SAI_WORD_SIZE_BITS_MAX) {
