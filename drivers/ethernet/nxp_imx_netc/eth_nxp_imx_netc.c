@@ -304,6 +304,22 @@ static void msgintr_isr(void)
 }
 
 /*
+ * Write one SI MSI-X table entry with 32-bit stores. The NETC MSI-X table only
+ * accepts 32-bit accesses (the HAL writes it word by word, see
+ * EP_MSIXSetEntryTable()). A plain store to the 64-bit msgAddr member can
+ * compile to STRD, which a Cortex-M7 issues on its 64-bit AXI port as a single
+ * 64-bit write, ending in an imprecise bus fault.
+ */
+static void netc_eth_msix_entry_set(netc_msix_entry_t *entry, uint32_t msg_addr, uint32_t msg_data)
+{
+	volatile uint32_t *word = (volatile uint32_t *)entry;
+
+	word[0] = msg_addr; /* msgAddr, low word */
+	word[1] = 0U;       /* msgAddr, high word */
+	word[2] = msg_data; /* msgData */
+}
+
+/*
  * Register the device with the shared MSGINTR, point its SI Tx/Rx MSI-X vectors
  * at that line, hook the ISR once, and unmask. msgintr_isr dispatches to every
  * device registered here. The MSI-X function-enable itself lives in the SI
@@ -328,10 +344,10 @@ void netc_eth_msgintr_arm(const struct device *dev)
 		irq_enable(NETC_MSGINTR_IRQ);
 	}
 
-	data->handle.hw.msixTable[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
-	data->handle.hw.msixTable[NETC_TX_MSIX_ENTRY_IDX].msgData = config->tx_intr_msg_data;
-	data->handle.hw.msixTable[NETC_RX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
-	data->handle.hw.msixTable[NETC_RX_MSIX_ENTRY_IDX].msgData = config->rx_intr_msg_data;
+	netc_eth_msix_entry_set(&data->handle.hw.msixTable[NETC_TX_MSIX_ENTRY_IDX], msg_addr,
+				config->tx_intr_msg_data);
+	netc_eth_msix_entry_set(&data->handle.hw.msixTable[NETC_RX_MSIX_ENTRY_IDX], msg_addr,
+				config->rx_intr_msg_data);
 
 	EP_MsixSetEntryMask(&data->handle, NETC_TX_MSIX_ENTRY_IDX, false);
 	EP_MsixSetEntryMask(&data->handle, NETC_RX_MSIX_ENTRY_IDX, false);
@@ -339,9 +355,8 @@ void netc_eth_msgintr_arm(const struct device *dev)
 #ifdef CONFIG_DT_HAS_NXP_IMX_NETC_VSI_ENABLED
 	/* VSI has a third entry for the PSI->VSI message (link-notify) interrupt. */
 	if (config->is_vsi) {
-		data->handle.hw.msixTable[NETC_MSG_MSIX_ENTRY_IDX].msgAddr = msg_addr;
-		data->handle.hw.msixTable[NETC_MSG_MSIX_ENTRY_IDX].msgData =
-			config->msg_intr_msg_data;
+		netc_eth_msix_entry_set(&data->handle.hw.msixTable[NETC_MSG_MSIX_ENTRY_IDX],
+					msg_addr, config->msg_intr_msg_data);
 		EP_MsixSetEntryMask(&data->handle, NETC_MSG_MSIX_ENTRY_IDX, false);
 	}
 #endif
