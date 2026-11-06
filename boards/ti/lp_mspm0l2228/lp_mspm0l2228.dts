@@ -19,6 +19,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -129,5 +130,9 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&wdt0 {
 	status = "okay";
 };
