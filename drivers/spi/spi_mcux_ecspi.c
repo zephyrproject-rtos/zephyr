@@ -160,6 +160,12 @@ static void spi_mcux_isr(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	ECSPI_Type *base = config->base;
 
+	/* Not part of a transfer: disable all interrupts, the HAL would only disable the TX ones */
+	if (data->handle.txRemainingBytes == 0U && data->handle.rxRemainingBytes == 0U) {
+		ECSPI_DisableInterrupts(base, kECSPI_AllInterruptEnable);
+		return;
+	}
+
 	ECSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
@@ -199,7 +205,8 @@ static int spi_mcux_configure(const struct device *dev,
 	uint32_t clock_freq;
 	uint16_t word_size;
 
-	if (spi_context_configured(&data->ctx, spi_cfg)) {
+	/* An aborted transfer can leave words in the FIFOs, only the init resets them */
+	if (!data->aborted && spi_context_configured(&data->ctx, spi_cfg)) {
 		/* This configuration is already in use */
 		return 0;
 	}
