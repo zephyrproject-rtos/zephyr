@@ -505,6 +505,7 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 	struct dma_block_config *block_config = config->head_block;
 	bool sg_mode = block_config->source_gather_en || block_config->dest_scatter_en;
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+	int ret;
 
 	dma_mcux_edma_configure_muxes(dev, channel, config);
 
@@ -517,11 +518,14 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 #endif
 
 	if (sg_mode && config->cyclic) {
-		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
+		ret = dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
 	} else if (sg_mode) {
-		dma_mcux_edma_configure_sg_dynamic(dev, channel, config, transfer_type);
+		ret = dma_mcux_edma_configure_sg_dynamic(dev, channel, config, transfer_type);
 	} else {
-		dma_mcux_edma_configure_basic(dev, channel, config, transfer_type);
+		ret = dma_mcux_edma_configure_basic(dev, channel, config, transfer_type);
+	}
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (config->dest_chaining_en) {
