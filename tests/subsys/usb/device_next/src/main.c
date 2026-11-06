@@ -357,6 +357,126 @@ ZTEST(device_next, test_set_interface)
 	}
 }
 
+static int test_get_interface(struct usb_device *const udev, const uint8_t iface,
+			      uint8_t *const alt)
+{
+	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
+				      USB_REQTYPE_RECIPIENT_INTERFACE;
+	struct net_buf *buf;
+	int err;
+
+	buf = usbh_xfer_buf_alloc(udev, 1);
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	err = usbh_req_setup(udev, bmRequestType, USB_SREQ_GET_INTERFACE,
+			     0, iface, 1, buf);
+	if (err == 0) {
+		if (buf->len == 1) {
+			*alt = net_buf_pull_u8(buf);
+		} else {
+			err = -EINVAL;
+		}
+	}
+
+	usbh_xfer_buf_free(udev, buf);
+
+	return err;
+}
+
+static int test_get_endpoint_status(struct usb_device *const udev, const uint8_t ep,
+				    uint16_t *const status)
+{
+	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
+				      USB_REQTYPE_RECIPIENT_ENDPOINT;
+	struct net_buf *buf;
+	int err;
+
+	buf = usbh_xfer_buf_alloc(udev, sizeof(*status));
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	err = usbh_req_setup(udev, bmRequestType, USB_SREQ_GET_STATUS,
+			     0, ep, sizeof(*status), buf);
+	if (err == 0) {
+		if (buf->len == sizeof(*status)) {
+			*status = net_buf_pull_le16(buf);
+		} else {
+			err = -EINVAL;
+		}
+	}
+
+	usbh_xfer_buf_free(udev, buf);
+
+	return err;
+}
+
+/* Set Configuration request for the active configuration test */
+ZTEST(device_next, test_set_configuration_again)
+{
+	const uint8_t endpoints[] = {0x01, 0x81};
+	struct usb_device *udev;
+	uint16_t status = UINT16_MAX;
+	uint8_t alt = UINT8_MAX;
+	uint8_t cfg = 0;
+	int err;
+
+	udev = usbh_device_get_any(&uhs_ctx);
+	zassert_not_null(udev, "No USB device available");
+
+	if (udev->state != USB_STATE_CONFIGURED) {
+		ztest_test_skip();
+	}
+
+	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
+	zassert_equal(err, 0, "Failed to lock device");
+
+	err = usbh_req_get_cfg(udev, &cfg);
+	zassert_equal(err, 0, "Transfer status is an error");
+
+	err = usbh_req_set_alt(udev, TEST_DEFAULT_INTERFACE,
+			       TEST_DEFAULT_ALTERNATE);
+	zassert_equal(err, 0, "Transfer status is an error");
+
+	err = test_get_interface(udev, TEST_DEFAULT_INTERFACE, &alt);
+	zassert_equal(err, 0, "Transfer status is an error");
+	zassert_equal(alt, TEST_DEFAULT_ALTERNATE,
+		      "Alternate setting was not selected");
+
+	for (size_t i = 0; i < ARRAY_SIZE(endpoints); i++) {
+		err = usbh_req_set_sfs_halt(udev, endpoints[i]);
+		zassert_equal(err, 0, "Transfer status is an error");
+
+		err = test_get_endpoint_status(udev, endpoints[i], &status);
+		zassert_equal(err, 0, "Transfer status is an error");
+		zassert_equal(status, BIT(0), "Endpoint 0x%02x is not halted",
+			      endpoints[i]);
+	}
+
+	err = usbh_req_set_cfg(udev, cfg);
+	zassert_equal(err, 0, "Transfer status is an error");
+
+	err = test_get_interface(udev, TEST_DEFAULT_INTERFACE, &alt);
+	zassert_equal(err, 0, "Transfer status is an error");
+	zassert_equal(alt, 0, "Alternate setting was not reset");
+
+	/* Alternate setting zero has no endpoints, select the default again */
+	err = usbh_req_set_alt(udev, TEST_DEFAULT_INTERFACE,
+			       TEST_DEFAULT_ALTERNATE);
+	zassert_equal(err, 0, "Transfer status is an error");
+
+	for (size_t i = 0; i < ARRAY_SIZE(endpoints); i++) {
+		err = test_get_endpoint_status(udev, endpoints[i], &status);
+		zassert_equal(err, 0, "Transfer status is an error");
+		zassert_equal(status, 0, "Endpoint 0x%02x is still halted",
+			      endpoints[i]);
+	}
+
+	k_mutex_unlock(&udev->mutex);
+}
+
 static void *usb_test_enable(void)
 {
 	int err;
