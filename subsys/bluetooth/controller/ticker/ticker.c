@@ -169,6 +169,12 @@ struct ticker_expire_info_internal {
 #define TICKER_RESCHEDULE_PENDING(_ticker) 0
 #endif
 
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
+#define TICKER_PRIORITY_GET(_ticker) ((_ticker)->priority)
+#else
+#define TICKER_PRIORITY_GET(_ticker) 0
+#endif
+
 /* User operation data structure for start opcode. Used for passing start
  * requests to ticker_job
  */
@@ -999,9 +1005,12 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 					 (lazy_next *
 					  ticker_next->ticks_periodic);
 
-			/* Was the current node scheduled earlier? */
+			/* Was the current node scheduled earlier? A one-shot
+			 * node with an assigned priority resolves by priority.
+			 */
 			uint8_t current_is_older =
-				(ticker->ticks_periodic == 0U) ||
+				((ticker->ticks_periodic == 0U) &&
+				 (TICKER_PRIORITY_GET(ticker) == 0)) ||
 				(current_age > next_age);
 
 			/* Was next node scheduled earlier (legacy priority)? */
@@ -1039,12 +1048,22 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 
 #if defined(CONFIG_BT_TICKER_EXT)
 #if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
+			/* Does next node with ticks_slot_window not fit after
+			 * the current node within its ticks_slot_window?
+			 */
+			uint8_t next_window_unfit =
+				TICKER_HAS_SLOT_WINDOW(ticker_next) &&
+				((acc_ticks_to_expire +
+				  ticker_next->ext_data->ticks_slot_window -
+				  ticker_next->ticks_slot) < ticker_ticks_slot);
+
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
-				(!TICKER_HAS_SLOT_WINDOW(ticker_next) &&
-				((lazy_next - ticker_next->priority) >
-				 (lazy_current - ticker->priority));
+				((!TICKER_HAS_SLOT_WINDOW(ticker_next) ||
+				  (next_window_unfit != 0U)) &&
+				 ((lazy_next - ticker_next->priority) >
+				  (lazy_current - ticker->priority)));
 #endif /* CONFIG_BT_TICKER_PRIORITY_SET */
 
 			/* Colliding next ticker does not use ticks_slot_window
@@ -1075,7 +1094,18 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 					   (ticker->ext_data->ticks_slot_window -
 					    ticker->ext_data->ticks_drift - ticker->ticks_slot))));
 
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
+			/* Current node with higher composite priority does not
+			 * yield its slot window to the next node.
+			 */
+			if ((lazy_current - ticker->priority) >
+			    (lazy_next - ticker_next->priority)) {
+				curr_has_ticks_slot_window = 0U;
+			}
+#endif /* CONFIG_BT_TICKER_PRIORITY_SET */
+
 #else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
+			uint8_t next_window_unfit = 0U;
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
@@ -1100,6 +1130,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 
 #endif /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 #else /* !CONFIG_BT_TICKER_EXT */
+			uint8_t next_window_unfit = 0U;
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
 			/* Does next node have higher priority? */
 			uint8_t next_has_priority =
@@ -1133,7 +1164,27 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 					return 1U;
 				}
 
-				if ((next_has_priority != 0U) && (current_is_older == 0U)) {
+#if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
+				/* Preserve a jitter reservation when the collision would
+				 * leave insufficient time for it in its remaining window.
+				 */
+				if ((next_window_unfit != 0U) &&
+				    (ticker_next->ext_data->is_jitter_in_window != 0U) &&
+				    !TICKER_HAS_SLOT_WINDOW(ticker)) {
+					return 1U;
+				}
+
+				if (TICKER_HAS_SLOT_WINDOW(ticker) &&
+				    (ticker->ext_data->is_jitter_in_window != 0U) &&
+				    (curr_has_ticks_slot_window == 0U) &&
+				    !TICKER_HAS_SLOT_WINDOW(ticker_next)) {
+					id_head = ticker_next->next;
+					continue;
+				}
+#endif /* CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
+
+				if ((next_has_priority != 0U) &&
+				    ((current_is_older == 0U) || (next_window_unfit != 0U))) {
 					return 1U;
 				}
 
@@ -2920,6 +2971,23 @@ static uint8_t ticker_job_reschedule_in_window(struct ticker_instance *instance)
 
 			ticker_next = &nodes[ticker_id_next];
 			ticks_to_expire_offset += ticker_next->ticks_to_expire;
+
+			/* Keep a jitter reservation ahead of a fixed reservation
+			 * when placing it afterwards would exhaust its window.
+			 * Collision resolution protects its remaining window.
+			 */
+			if ((ext_data->is_jitter_in_window != 0U) &&
+			    ((ticks_to_expire_offset + ticker_next->ticks_slot +
+			      HAL_TICKER_RESCHEDULE_MARGIN + ticker_resched->ticks_slot) >
+			     ticks_slot_window) &&
+			    (ticker_next->ticks_slot != 0U) &&
+			    !TICKER_HAS_SLOT_WINDOW(ticker_next) &&
+			    (window_start_ticks < (ticks_start_offset + ticks_to_expire_offset)) &&
+			    ((window_start_ticks + ticker_resched->ticks_slot) <=
+			     ticks_slot_window)) {
+				ticks_to_expire = window_start_ticks;
+				break;
+			}
 
 			ticks_to_expire_latest = ticks_to_expire_offset;
 			if (!TICKER_RESCHEDULE_PENDING(ticker_next) &&
