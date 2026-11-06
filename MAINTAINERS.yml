@@ -937,6 +937,17 @@ Boards/SoCs:
     This area will have subgrouping of files for each platform with corresponding
     collaborators.
 
+Boot mode:
+  status: maintained
+  maintainers:
+    - nordicjm
+  files:
+    - doc/services/storage/boot_mode/
+    - include/zephyr/bootmode.h
+    - subsys/bootmode/
+  labels:
+    - "area: Boot mode"
+
 Bootloaders:
   status: odd fixes
   files:

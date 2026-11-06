@@ -6,7 +6,7 @@
 
 #include <errno.h>
 #include <string.h>
-#include <zephyr/retention/bootmode.h>
+#include <zephyr/bootmode.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>

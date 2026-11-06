@@ -11,7 +11,7 @@ rsource "*/Kconfig"
 config RPI_PICO_ROM_BOOTLOADER
 	bool
 	default y
-	depends on RETENTION_BOOT_MODE
+	depends on BOOT_MODE
 
 config RPI_PICO_USE_ROMFUNC
 	bool

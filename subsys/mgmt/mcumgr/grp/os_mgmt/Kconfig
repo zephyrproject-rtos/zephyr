@@ -43,9 +43,9 @@ config MCUMGR_GRP_OS_RESET_HOOK
 
 config MCUMGR_GRP_OS_RESET_BOOT_MODE
 	bool "Boot mode"
-	depends on RETENTION_BOOT_MODE
+	depends on BOOT_MODE
 	help
-	  Allows applications to set the boot mode using the retention boot mode module which
+	  Allows applications to set the boot mode using the boot mode module which
 	  allows for booting other images e.g. as part of a bootloader. This is done with an
 	  optional field in the reset command which specifies the value of the boot mode.
 

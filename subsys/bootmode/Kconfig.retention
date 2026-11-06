@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_Z_RETENTION := zephyr,retention
+DT_BOOT_MODE_IS_RETENTION := $(dt_chosen_has_compat,$(DT_CHOSEN_Z_BOOT_MODE),$(DT_COMPAT_Z_RETENTION))
+
+config BOOT_MODE_RETENTION
+	bool "Retention area backend"
+	default y
+	depends on $(DT_BOOT_MODE_IS_RETENTION) && RETENTION
+	help
+	  Store the boot mode in the retention area that the "zephyr,boot-mode"
+	  chosen node points at. Any value from 0 to 255 is kept across a
+	  reboot. The area needs at least 1 usable user byte.

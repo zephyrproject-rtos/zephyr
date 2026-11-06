@@ -11,7 +11,7 @@
 
 #if defined(CONFIG_OPENTHREAD_PLATFORM_BOOTLOADER_MODE_RETENTION)
 
-#include <zephyr/retention/bootmode.h>
+#include <zephyr/bootmode.h>
 
 #elif defined(CONFIG_OPENTHREAD_PLATFORM_BOOTLOADER_MODE_GPIO)
 
