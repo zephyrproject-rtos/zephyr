@@ -103,6 +103,7 @@
 #define ESP_GPIO_SD1_OUT                56
 #define ESP_GPIO_SD2_OUT                57
 #define ESP_GPIO_SD3_OUT                58
+#define ESP_I2SO_SD1_OUT                59
 #define ESP_FSPICLK_IN                  63
 #define ESP_FSPICLK_OUT                 63
 #define ESP_FSPIQ_IN                    64
