@@ -25,3 +25,28 @@ config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 config DMA_TRANSFER_BURST16
 	bool "Enable loop transfers of 16-beat bursts"
 	default y
+
+config DMA_TRANSFER_LONG_BLOCK_SIZE
+	int "Size in bytes of an additional long single-block transfer"
+	default 0
+	help
+	  When non-zero, also copy one block of this many bytes with
+	  one-byte bursts. Set it above what one descriptor of the
+	  controller can carry to exercise a driver that splits a block.
+
+config DMA_TRANSFER_LONG_BLOCK_RELOAD
+	bool "Reload the channel after the long block"
+	depends on DMA_TRANSFER_LONG_BLOCK_SIZE > 0
+	help
+	  For a driver that splits a long block on dma_config() but sends a
+	  reload out as one descriptor: check that a reload of the long size
+	  is refused with -EINVAL, and that a short reload then copies its
+	  data and nothing else.
+
+config DMA_TRANSFER_OVERSIZE_BLOCK_SIZE
+	int "Size in bytes of a single block the driver must reject"
+	default 0
+	help
+	  When non-zero, check that dma_config() rejects one block of this
+	  many bytes with -EINVAL, returns with interrupts unlocked, and
+	  leaves the channel usable for the next transfer.
