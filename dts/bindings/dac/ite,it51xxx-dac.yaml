@@ -1,0 +1,24 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT51xxx two-channel 8-bit DAC
+
+compatible: "ite,it51xxx-dac"
+
+include: [dac-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - output
