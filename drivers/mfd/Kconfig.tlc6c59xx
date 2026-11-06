@@ -1,0 +1,11 @@
+# Copyright (c) 2026 iomico
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_TLC6C59XX
+	bool "TLC6C59XX MFD driver"
+	default y
+	depends on DT_HAS_TI_TLC6C59XX_ENABLED
+	depends on SPI
+	help
+	  Enable the SPI parent driver for chains of Texas Instruments
+	  TLC6C59XX 8- or 12-channel shift-register LED drivers.

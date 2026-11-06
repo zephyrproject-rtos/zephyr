@@ -1,0 +1,19 @@
+# Copyright (c) 2026 iomico
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_TLC6C59XX
+	bool "TLC6C59XX GPIO driver"
+	default y
+	depends on DT_HAS_TI_TLC6C59XX_GPIO_ENABLED
+	depends on MFD_TLC6C59XX
+	help
+	  Enable output-only GPIO ports for TLC6C59XX chips. Each chip is
+	  a separate GPIO controller backed by the TLC6C59XX MFD driver.
+
+config GPIO_TLC6C59XX_INIT_PRIORITY
+	int "TLC6C59XX GPIO initialization priority"
+	default 85
+	depends on GPIO_TLC6C59XX
+	help
+	  Device driver initialization priority. Must run after the parent
+	  MFD instance (MFD_INIT_PRIORITY, default 80).

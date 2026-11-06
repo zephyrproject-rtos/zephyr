@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&chip0 {
+	ngpios = <8>;
+};
+
+&chip1 {
+	ngpios = <8>;
+};
+
+&chip2 {
+	ngpios = <8>;
+};

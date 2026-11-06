@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2026 iomico
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Texas Instruments 8/12-Channel Shift-Register LED Driver GPIO instance.
+
+  The driver supports output-only control of the fixed output stage. Input,
+  pull-up, pull-down and selectable open-drain/open-source modes are not
+  supported. GPIO values control shift-register bits; a set bit enables the
+  corresponding current-sink output.
+
+compatible: "ti,tlc6c59xx-gpio"
+
+include:
+  - name: gpio-controller.yaml
+    property-blocklist:
+      - ngpios
+  - base.yaml
+
+on-bus: tlc6c59xx
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  reg:
+    required: true
+    description: |
+      Zero-based physical position in the chain. Position 0 is the chip whose
+      serial input is connected to the SPI controller. Positions increase
+      toward the far end of the chain and must be unique and contiguous.
+
+  ngpios:
+    type: int
+    enum:
+      - 8
+      - 12
+    required: true
+    description: |
+      Number of outputs in each physical chip. This determines the serial
+      word width and must be the same for every chip in the chain.
+
+gpio-cells:
+  - pin
+  - flags
