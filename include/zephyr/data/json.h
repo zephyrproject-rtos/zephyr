@@ -649,6 +649,14 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
  *   since partial parsing may have corrupted the lexer state, making it unsafe
  *   to continue with other descriptors.
  *
+ * @warning The input JSON text may be modified in place. It only needs to be
+ * stored in writable memory if the parser performs numeric conversion or
+ * decodes a JSON_TOK_STRING value, including inside nested objects and arrays.
+ * Numeric conversion temporarily replaces the character following the number
+ * with NUL and restores it afterwards. Decoding a JSON_TOK_STRING value
+ * permanently replaces its closing quote with NUL and returns a string that
+ * borrows the input buffer.
+ *
  * @warning Only members present in the document are written; an omitted
  * member keeps whatever the target held before the call, so the struct must
  * be initialised beforehand. The returned bitmap covers top-level descriptors
@@ -695,6 +703,14 @@ int64_t json_obj_parse(char *json, size_t len,
  * (2) no UTF-8 validation is performed; and
  * (3) only integer numbers are supported (no strtod() in the minimal libc).
  *
+ * @warning The input JSON text may be modified in place. It only needs to be
+ * stored in writable memory if the parser performs numeric conversion or
+ * decodes a JSON_TOK_STRING value, including inside nested objects and arrays.
+ * Numeric conversion temporarily replaces the character following the number
+ * with NUL and restores it afterwards. Decoding a JSON_TOK_STRING value
+ * permanently replaces its closing quote with NUL and returns a string that
+ * borrows the input buffer.
+ *
  * @param json Pointer to JSON-encoded array to be parsed
  * @param len Length of JSON-encoded array
  * @param descr Pointer to the descriptor array
@@ -715,6 +731,12 @@ int json_arr_parse(char *json, size_t len,
  * Function validate that Json Array start is detected and initialize @a json object for
  * Json object parsing separately.
  *
+ * @note This function does not modify @a payload. The payload needs to remain
+ * valid until all calls to json_arr_separate_parse_object() finish. Those
+ * calls may modify the payload in place when performing numeric conversion or
+ * decoding JSON_TOK_STRING values, so it needs to be writable by then if such
+ * values are decoded.
+ *
  * @param json Provide storage for parser states. To be used when parsing the array.
  * @param payload Pointer to JSON-encoded array to be parsed
  * @param len Length of JSON-encoded array
@@ -729,6 +751,15 @@ int json_arr_separate_object_parse_init(struct json_obj *json, char *payload, si
  *
  * Parses the JSON-encoded object pointed to by @a json object array, with
  * size @a len, according to the descriptor pointed to by @a descr.
+ *
+ * @warning The payload passed to json_arr_separate_object_parse_init() only
+ * needs to be writable if any call to json_arr_separate_parse_object()
+ * performs numeric conversion or decodes a JSON_TOK_STRING value, including
+ * inside nested objects and arrays. Numeric conversion temporarily replaces
+ * the character following the number with NUL and restores it afterwards.
+ * Decoding a JSON_TOK_STRING value permanently replaces its closing quote
+ * with NUL and returns a string that borrows the input buffer. If neither
+ * happens, read-only memory is sufficient.
  *
  * @param json Pointer to JSON-object message state
  * @param descr Pointer to the descriptor array
@@ -751,6 +782,15 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
  * member-by-member parsing with @ref json_obj_next_key_value. Unlike
  * json_obj_parse(), no descriptor is required up front, which suits callers that
  * dispatch each member to a handler chosen at run time.
+ *
+ * @note This function and json_obj_next_key_value() do not modify @a payload.
+ * The payload needs to remain valid only while the parser is in use or while
+ * returned key or value spans are referenced; those spans borrow the input
+ * buffer. To decode a returned container span in place, pass an object span to
+ * json_obj_parse() or an array span to json_arr_parse(); those calls
+ * temporarily modify the payload while converting numbers and permanently
+ * replace the closing quote of a JSON_TOK_STRING value with NUL, so the payload
+ * needs to be writable by then if such values are decoded.
  *
  * @param json Provide storage for parser state. To be used when walking the object.
  * @param payload Pointer to JSON-encoded object to be parsed
@@ -1059,6 +1099,16 @@ struct json_mixed_arr_descr {
  * This function parses a JSON array (which may contain elements of varying types)
  * according to the provided mixed array descriptor and stores the result in the
  * user-supplied structure.
+ *
+ * @warning The input JSON text may be modified in place. It only needs to be
+ * stored in writable memory if the parser performs numeric conversion, decodes
+ * a JSON_TOK_STRING value, or decodes a JSON_TOK_ENCODED_OBJ value. Numeric
+ * conversion temporarily replaces the character following the number with NUL
+ * and restores it afterwards. Decoding a JSON_TOK_STRING value permanently
+ * replaces its closing quote with NUL. Decoding a JSON_TOK_ENCODED_OBJ value
+ * permanently replaces the closing quote of a string value, or the character
+ * following an object or array value, with NUL. String and encoded-object
+ * values return pointers that borrow the input buffer.
  *
  * @param json		Pointer to the input JSON string.
  * @param len		Length of the input JSON string.
