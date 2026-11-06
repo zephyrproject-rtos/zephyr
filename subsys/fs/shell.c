@@ -279,17 +279,117 @@ static int cmd_mkdir(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
-static int cmd_rm(const struct shell *sh, size_t argc, char **argv)
-{
-	int err;
-	char path[MAX_PATH_LEN];
+#define FS_SHELL_RM_MAX_DEPTH 4
 
-	create_abs_path(argv[1], path, sizeof(path));
+/*
+ * Removes path recursively, using a single shared buffer for all path
+ * levels. off is the length of the path at the current level
+ * (path[off] == '\0' on entry). depth tracks the current nesting level
+ * to enforce FS_SHELL_RM_MAX_DEPTH.
+ */
+static int rm_recursive(const struct shell *sh, char *path, size_t off, int depth,
+			struct fs_dirent *entry)
+{
+	struct fs_dir_t dir;
+	int err;
+
+	err = fs_stat(path, entry);
+	if (err != 0) {
+		shell_error(sh, "Failed to stat %s (%d)", path, err);
+		return -EIO;
+	}
+
+	if (entry->type == FS_DIR_ENTRY_DIR) {
+		fs_dir_t_init(&dir);
+		err = fs_opendir(&dir, path);
+		if (err != 0) {
+			shell_error(sh, "Failed to open dir %s (%d)", path, err);
+			return -EIO;
+		}
+
+		while (true) {
+			int len;
+
+			err = fs_readdir(&dir, entry);
+			if (err != 0) {
+				shell_error(sh, "Failed to read dir %s (%d)", path, err);
+				err = -EIO;
+				goto err;
+			}
+
+			/* End of directory. */
+			if (entry->name[0] == '\0') {
+				break;
+			}
+
+			/* Append child name onto the shared path buffer. */
+			len = snprintf(path + off, MAX_PATH_LEN - off, "/%s", entry->name);
+			if (len < 0 || (size_t)len >= MAX_PATH_LEN - off) {
+				shell_error(sh, "Path too long");
+				err = -ENAMETOOLONG;
+				goto err;
+			}
+
+			if (depth + 1 >= FS_SHELL_RM_MAX_DEPTH) {
+				shell_error(sh,
+					    "Directory tree too deep (max %d levels), aborting: %s",
+					    FS_SHELL_RM_MAX_DEPTH, path);
+				err = -ENOTSUP;
+				goto err;
+			}
+
+			err = rm_recursive(sh, path, off + (size_t)len, depth + 1, entry);
+			if (err != 0) {
+				goto err;
+			}
+		}
+
+		fs_closedir(&dir);
+
+		/* Restore buffer to this level's path before removing it. */
+		path[off] = '\0';
+	}
 
 	err = fs_unlink(path);
 	if (err != 0) {
 		shell_error(sh, "Failed to remove %s (%d)", path, err);
-		err = -EIO;
+		return -EIO;
+	}
+
+	return 0;
+
+err:
+	fs_closedir(&dir);
+	path[off] = '\0';
+	return err;
+}
+
+static int cmd_rm(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	char path[MAX_PATH_LEN];
+	bool recursive = false;
+	const char *target;
+
+	if (argc == 3 && strcmp(argv[1], "-r") == 0) {
+		recursive = true;
+		target = argv[2];
+	} else {
+		target = argv[1];
+	}
+
+	create_abs_path(target, path, sizeof(path));
+
+	if (recursive) {
+		struct fs_dirent entry;
+
+		err = rm_recursive(sh, path, strlen(path), 0, &entry);
+	} else {
+		err = fs_unlink(path);
+		if (err != 0) {
+			shell_error(sh, "Failed to remove %s (%d)", path, err);
+			err = -EIO;
+		}
 	}
 
 	return err;
@@ -985,7 +1085,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		      SHELL_HELP("Concatenate files and print on the standard output",
 				 "<path> [<path> ...]"),
 		      cmd_cat, 2, 255),
-	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "<path>"), cmd_rm, 2, 0),
+	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "[-r] <path>"), cmd_rm, 2, 1),
 	SHELL_CMD_ARG(cp, NULL, SHELL_HELP("Copy file", "<source> <dest>"), cmd_cp, 3, 0),
 	SHELL_CMD_ARG(mv, NULL, SHELL_HELP("Move file", "<source> <dest>"), cmd_mv, 3, 0),
 	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),

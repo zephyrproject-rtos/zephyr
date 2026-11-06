@@ -214,11 +214,12 @@ Create a directory
 Rm
 --
 
-Remove a file or directory
+Remove a file or directory. Use the ``-r`` flag to remove a non-empty directory
+and all of its contents.
 
 .. code-block:: console
 
-  fs rm <path>
+  fs rm [-r] <path>
 
 Flash Host Access
 =================
