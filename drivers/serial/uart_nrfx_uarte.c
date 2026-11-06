@@ -1855,7 +1855,13 @@ static uint32_t us_to_bauds(uint32_t baudrate, int32_t timeout)
 	 * but error is insignificant (within few bauds). Precise timeout my be more important
 	 * for higher baudrates but inaccuracy diminishes with higher baudrate.
 	 */
-	uint32_t bauds = ((baudrate / 1000) * timeout) / 1000;
+	uint32_t bauds;
+
+	if (baudrate < 1000) {
+		bauds = (uint32_t)(baudrate * timeout) / 1000000;
+	} else {
+		bauds = ((baudrate / 1000) * timeout) / 1000;
+	}
 
 	return MIN(bauds, UARTE_FRAMETIMEOUT_COUNTERTOP_Msk);
 }
