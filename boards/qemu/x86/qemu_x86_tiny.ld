@@ -382,8 +382,6 @@ SECTIONS
 
 	_image_ram_all = (KERNEL_BASE_ADDR + KERNEL_RAM_SIZE) - _image_ram_start;
 
-	z_mapped_size = z_mapped_end - z_mapped_start;
-
 #ifndef LINKER_ZEPHYR_FINAL
 	/* static interrupts */
 	SECTION_PROLOGUE(intList,,)
@@ -413,6 +411,9 @@ SECTIONS
 #define LAST_RAM_ALIGN MMU_PAGE_ALIGN
 
 #include <zephyr/linker/ram-end.ld>
+
+	MMU_PAGE_ALIGN
+	z_mapped_size = . - z_mapped_start;
 
     GROUP_END(RAMABLE_REGION)
 
