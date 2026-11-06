@@ -12,6 +12,9 @@
 
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 {
+	char *const stack_end = stack_ptr;
+	size_t tls_align = (size_t)(uintptr_t)__tls_align;
+
 	/*
 	 * TLS area for ARM has some data fields following by
 	 * thread data and bss. These fields are supposed to be
@@ -26,11 +29,13 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	 * Since we are populating things backwards,
 	 * setup the TLS data/bss area first.
 	 */
-	stack_ptr -= z_tls_data_size();
+	stack_ptr = (char *)ROUND_DOWN((uintptr_t)stack_ptr - z_tls_data_size(), tls_align);
 	z_tls_copy(stack_ptr);
 
-	/* Skip two pointers due to toolchain */
-	stack_ptr -= sizeof(uintptr_t) * 2;
+	/* ELF TLS offsets include padding between the two-word TCB and the TLS image. */
+	size_t toolchain_tls_size = ROUND_UP(sizeof(uintptr_t) * 2U, tls_align);
+
+	stack_ptr -= toolchain_tls_size;
 
 	/*
 	 * Set thread TLS pointer which is used in
@@ -38,5 +43,5 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	 */
 	new_thread->tls = POINTER_TO_UINT(stack_ptr);
 
-	return (z_tls_data_size() + (sizeof(uintptr_t) * 2));
+	return (size_t)(stack_end - stack_ptr);
 }
