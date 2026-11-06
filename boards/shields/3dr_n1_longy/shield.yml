@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: 3dr_n1_longy
+  full_name: Control N1 Carrier 2 (Longy)
+  vendor: 3dr
+  supported_features:
+    - can
+    - gpio
+    - i2c
+    - pwm
+    - serial
+    - spi
