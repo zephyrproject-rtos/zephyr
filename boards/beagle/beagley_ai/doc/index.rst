@@ -38,8 +38,35 @@ IRQ and FIQ.
 
 Supported Features
 ******************
-The board configuration supports a console UART via the HAT header pins. Future
-versions will also support a console over RPmsg.
+Only on-board resources needed for a console bring-up are enabled by default.
+HAT buses stay ``disabled`` until an application or HAT overlay enables them,
+so alternate pinmux on a connector does not fight assumed board defaults.
+
+HAT pin names match `pinout.beagleboard.io <https://pinout.beagleboard.io/>`_.
+
+Enabled by default:
+
+* **UART1** console (GPIO14/15, HAT pins 8/10): ``&uart1``
+* **GPIO** for on-board USR LEDs (``led0`` / ``led1``): ``&main_gpio0_0``
+
+HAT buses (enable and mux in the app/HAT overlay):
+
+* **I2C1** (GPIO2/GPIO3, HAT pins 3/5): ``&mcu_i2c0`` / aliases ``i2c1``, ``i2c-0``
+* **MCU SPI0** (GPIO10/9/11/8, HAT pins 19/21/23/24): ``&mcu_spi0`` / alias ``spi-0``
+
+Example overlays:
+
+* ``samples/sensor/tmp112/boards/beagley_ai_j722s_*_r5f0_0.overlay``
+* ``tests/drivers/spi/spi_loopback/boards/beagley_ai_j722s_*_r5f0_0.overlay``
+
+Pinmux groups live in ``beagley_ai_j722s_r5f0_0-pinctrl.dtsi``. Reference them
+from an overlay when enabling a controller (for example ``&hat_05_i2c`` /
+``&hat_03_i2c`` with ``&mcu_i2c0``, or ``&hat_24_spi`` / ``&hat_23_spi`` /
+``&hat_19_spi`` / ``&hat_21_spi`` with ``&mcu_spi0``). Optional I2C4 groups
+(``hat_15_i2c`` / ``hat_22_i2c``) and extra GPIO banks follow the same pattern.
+
+Avoid HAT pins 27/28 (GPIO0/GPIO1, I2C0 / WKUP_I2C0); shared with PMIC and
+board EEPROM. Future versions will also support a console over RPmsg.
 
 .. zephyr:board-supported-hw::
 
@@ -102,13 +129,16 @@ To load the image:
 | ``cp build/zephyr/zephyr.elf /lib/firmware/``
 |
 | Ensure the Core is not running.
-| ``echo stop > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
+| ``echo stop > /dev/remoteproc/j7-{main,mcu}-r5f0_0/state``
 |
 | Configuring the image name to the remoteproc module.
-| ``echo zephyr.elf > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/firmware``
+| ``echo zephyr.elf > /dev/remoteproc/j7-{main,mcu}-r5f0_0/firmware``
 |
 | Once the image name is configured, send the start command.
-| ``echo start > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
+| ``echo start > /dev/remoteproc/j7-{main,mcu}-r5f0_0/state``
+|
+| (Older docs used ``am67a-*`` names; current Beagle Debian images expose ``j7-*``.)
+| Also available via ``/sys/class/remoteproc/remoteproc*``.
 
 Console
 -------
