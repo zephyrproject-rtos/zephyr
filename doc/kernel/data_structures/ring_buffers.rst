@@ -135,13 +135,13 @@ same fields. This holds for both the copying APIs
 :c:func:`ring_buf_put_finish` and :c:func:`ring_buf_get_claim` /
 :c:func:`ring_buf_get_finish`).
 
-When the producer and consumer run on different CPUs (SMP), the
-application must still ensure that data writes are visible before the
-index update that publishes them. In practice this happens for free
-when the producer and consumer use a kernel synchronization primitive
-to coordinate (for example a :c:struct:`k_sem` signaled by the
-producer and waited on by the consumer), since those primitives
-include the necessary memory barriers.
+This also holds when the producer and consumer run on different CPUs
+(SMP). The ring buffer orders its accesses internally: the producer
+publishes the data with a release store of its index and the consumer
+reads that index with an acquire load (and vice versa for freed space),
+so no additional synchronization, such as a semaphore, is needed for
+memory ordering. A semaphore or similar is still useful to notify a
+consumer that data is available.
 
 Any use case with more than one concurrent producer, or more than one
 concurrent consumer, must serialize those accesses externally
