@@ -1,0 +1,38 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  mc.comm.stress.native:
+    platform_allow:
+      - native_sim/native/64
+    tags:
+      - mc
+      - comm
+  mc.comm.stress.qemu_x86:
+    platform_allow:
+      - qemu_x86/atom
+    tags:
+      - mc
+      - comm
+  mc.comm.stress.qemu_x86_64:
+    platform_allow:
+      - qemu_x86_64/atom
+    tags:
+      - mc
+      - comm
+  mc.comm.stress.sender:
+    build_only: true
+    extra_args: CONF_FILE=prj_sender.conf
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags:
+      - mc
+      - uart
+  mc.comm.stress.receiver:
+    build_only: true
+    extra_args: CONF_FILE=prj_receiver.conf
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    tags:
+      - mc
+      - uart
