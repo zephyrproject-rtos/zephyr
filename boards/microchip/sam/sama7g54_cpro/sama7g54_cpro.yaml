@@ -1,0 +1,23 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sama7g54_cpro
+name: SAMA7G54 Curiosity Pro Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - crypto
+  - dma
+  - eeprom
+  - entropy
+  - gpio
+  - i2c
+  - kernel
+  - led
+  - logging
+  - rtc
+  - uart
+vendor: microchip
