@@ -35,6 +35,27 @@ ZTEST(virtiofs, test_create_write_read)
 	zassert_mem_equal(buf, payload, sizeof(payload), "read back mismatch");
 }
 
+ZTEST(virtiofs, test_large_permanent_buffers)
+{
+	static uint8_t write_buf[3U * 4096U + 37U];
+	static uint8_t read_buf[sizeof(write_buf)];
+	struct fs_file_t file;
+
+	for (size_t i = 0; i < sizeof(write_buf); i++) {
+		write_buf[i] = (uint8_t)i;
+	}
+	memset(read_buf, 0, sizeof(read_buf));
+	fs_file_t_init(&file);
+
+	zassert_ok(fs_open(&file, PATH("large_file"), FS_O_CREATE | FS_O_RDWR), "open failed");
+	zassert_equal(fs_write(&file, write_buf, sizeof(write_buf)), sizeof(write_buf),
+		      "short write");
+	zassert_ok(fs_seek(&file, 0, FS_SEEK_SET), "seek failed");
+	zassert_equal(fs_read(&file, read_buf, sizeof(read_buf)), sizeof(read_buf), "short read");
+	zassert_ok(fs_close(&file), "close failed");
+	zassert_mem_equal(read_buf, write_buf, sizeof(write_buf), "read back mismatch");
+}
+
 /* stat a freshly written file and confirm type and size. */
 ZTEST(virtiofs, test_stat)
 {
