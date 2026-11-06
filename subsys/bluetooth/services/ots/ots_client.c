@@ -32,9 +32,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_otc);
 
-/* TODO: KConfig options */
-#define OTS_CLIENT_INST_COUNT     1
-
 #define OTS_CLIENT_MAX_WRITE_SIZE    23
 /* 64-bit value, outside of 48-bit Object ID range */
 #define OTS_CLIENT_UNKNOWN_ID      0x0001000000000000
@@ -173,11 +170,18 @@ static void write_obj_tx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static ssize_t rx_done(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		       struct bt_conn *conn, struct net_buf *buf)
 {
-	const uint32_t offset = cur_inst->rcvd_size;
+	uint32_t offset;
 	bool is_complete = false;
-	const struct bt_ots_obj_metadata *cur_object =
-		&cur_inst->otc_inst->cur_object;
+	const struct bt_ots_obj_metadata *cur_object;
 	int cb_ret;
+
+	if (cur_inst == NULL) {
+		LOG_WRN("Received L2CAP data without a transfer in progress");
+		return 0;
+	}
+
+	offset = cur_inst->rcvd_size;
+	cur_object = &cur_inst->otc_inst->cur_object;
 
 	LOG_DBG("Incoming L2CAP data, context: %p, conn: %p, len: %u, offset: %u", l2cap_ctx,
 		(void *)conn, buf->len, offset);
@@ -509,7 +513,7 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
 		}
 
 		LOG_DBG("%u", i);
-		err = bt_gatt_ots_l2cap_register(&otc_insts[i].l2cap_ctx);
+		err = bt_gatt_ots_l2cap_client_register(&otc_insts[i].l2cap_ctx);
 		if (err) {
 			LOG_WRN("Could not register L2CAP context %d", err);
 			return err;
@@ -1185,6 +1189,7 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_otc_internal_instance_t *inst =
 		lookup_inst_by_handle(params->handle);
 	uint32_t len;
+	int ret;
 
 	LOG_DBG("Write Object request %s (0x%02X)", err ? "failed" : "successful", err);
 	if (!inst) {
@@ -1194,10 +1199,18 @@ static void write_oacp_cp_write_req_cb(struct bt_conn *conn, uint8_t err,
 
 	len = inst->l2cap_ctx.tx.len;
 	inst->l2cap_ctx.tx.len = 0;
-	err = bt_gatt_ots_l2cap_send(&inst->l2cap_ctx, inst->l2cap_ctx.tx.data, len);
-	if (err) {
+	ret = bt_gatt_ots_l2cap_send(&inst->l2cap_ctx, inst->l2cap_ctx.tx.data, len);
+	if (ret != 0) {
 		LOG_WRN("L2CAP CoC error: %d while trying to execute OACP "
-			"Read procedure", err);
+			"Read procedure", ret);
+
+		/* The server waits for the object data: end the write with the channel */
+		ret = bt_gatt_ots_l2cap_disconnect(&inst->l2cap_ctx);
+		if (ret < 0) {
+			LOG_WRN("Disconnecting L2CAP returned error %d", ret);
+		}
+
+		cur_inst = NULL;
 	}
 
 	inst->busy = false;

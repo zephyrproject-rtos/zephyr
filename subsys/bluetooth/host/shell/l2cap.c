@@ -162,7 +162,7 @@ static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 		bt_shell_print("Channel %p requires buffer", chan);
 	}
 
-	return net_buf_alloc(&data_rx_pool, K_FOREVER);
+	return net_buf_alloc(&data_rx_pool, K_NO_WAIT);
 }
 
 static const struct bt_l2cap_chan_ops l2cap_ops = {

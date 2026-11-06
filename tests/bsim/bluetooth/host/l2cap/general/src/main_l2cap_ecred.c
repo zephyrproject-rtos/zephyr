@@ -90,7 +90,7 @@ static void init_workqs(void)
 static struct net_buf *chan_alloc_buf_cb(struct bt_l2cap_chan *chan)
 {
 	LOG_DBG("Allocated on chan %p", chan);
-	return net_buf_alloc(&rx_data_pool, K_FOREVER);
+	return net_buf_alloc(&rx_data_pool, K_NO_WAIT);
 }
 
 static int chan_recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
