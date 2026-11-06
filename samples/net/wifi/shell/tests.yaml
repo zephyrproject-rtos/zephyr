@@ -103,7 +103,7 @@ tests:
   sample.net.wifi.esp32.enterprise:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
-      - EXTRA_CONF_FILE=esp32/overlay_enterprise.conf
+      - EXTRA_CONF_FILE=esp32/enterprise.conf
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
     integration_platforms:
@@ -111,7 +111,7 @@ tests:
   sample.net.wifi.esp32.roaming:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
-      - EXTRA_CONF_FILE=esp32/overlay_roaming.conf
+      - EXTRA_CONF_FILE=esp32/roaming.conf
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
