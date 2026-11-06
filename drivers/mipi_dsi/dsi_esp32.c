@@ -10,6 +10,7 @@
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 
 #include <hal/mipi_dsi_hal.h>
 #include <hal/mipi_dsi_ll.h>
@@ -337,18 +338,25 @@ static int mipi_dsi_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* Light sleep can turn off the clock source this PHY uses. The PHY
+	 * is configured here and left on, so hold the lock for the life of
+	 * the device.
+	 */
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	mipi_dsi_hal_configure_phy_pll(hal, MIPI_DSI_PHY_PLL_REF_CLK_FREQ_HZ,
 				       (float)config->lane_bit_rate_mbps);
 
 	if (!WAIT_FOR(mipi_dsi_phy_ll_is_pll_locked(hal->host), MIPI_DSI_PLL_LOCK_TIMEOUT_US,
 		      k_busy_wait(MIPI_DSI_POLL_INTERVAL_US))) {
 		LOG_ERR("PHY PLL lock timeout (phy_status=0x%08x)", hal->host->phy_status.val);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 		return -ETIMEDOUT;
 	}
 
 	if (!WAIT_FOR(mipi_dsi_phy_ll_are_lanes_stopped(hal->host, config->num_data_lanes),
 		      MIPI_DSI_LANE_STOP_TIMEOUT_US, k_busy_wait(MIPI_DSI_POLL_INTERVAL_US))) {
 		LOG_ERR("Lanes stop state timeout");
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 		return -ETIMEDOUT;
 	}
 
