@@ -1765,3 +1765,8 @@ test_i2c_ictx53xx: ictx53xx@e5 {
 	compatible = "invensense,ictx53xx";
 	reg = <0xe5>;
 };
+
+test_i2c_ist8308: ist8308@e6 {
+	compatible = "isentek,ist8308";
+	reg = <0xe6>;
+};

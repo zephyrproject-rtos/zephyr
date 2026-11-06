@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config IST8308
+	bool "IST8308 geomagnetic sensor"
+	default y
+	depends on DT_HAS_ISENTEK_IST8308_ENABLED
+	select I2C
+	help
+	  Enable the driver for the iSentek IST8308 I2C geomagnetic sensor.
