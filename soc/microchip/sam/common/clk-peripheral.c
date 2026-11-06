@@ -153,7 +153,9 @@ int clk_register_peripheral(pmc_registers_t *const pmc,
 	periph->pmc = pmc;
 	periph->lock = lock;
 	periph->layout = layout;
-	periph->range = *range;
+	if (range != NULL) {
+		periph->range = *range;
+	}
 
 	return 0;
 }
