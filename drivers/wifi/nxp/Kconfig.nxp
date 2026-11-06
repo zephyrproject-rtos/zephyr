@@ -759,7 +759,6 @@ endmenu
 config NXP_WIFI_11AX
 	bool "802.11AX Support"
 	default y
-	select NXP_WIFI_11AC
 	select NXP_WIFI_WMM
 	depends on NXP_RW610 || NXP_IW61X || NXP_IW610 || NXP_WIFI_CUSTOM
 	help
