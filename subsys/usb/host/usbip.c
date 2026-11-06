@@ -243,7 +243,16 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 		}
 	}
 
-	xfer->interval = cmd->submit.interval;
+	/* Linux defines the interval as 1 microframe (125 us) if High-Speed or above,
+	 * or 1 frame (1 ms) if Full-Speed or below, but Zephyr uses 125 us units
+	 * (microframes) for all speeds. See Linux's include/linux/usb.h header.
+	 */
+	if (udev->speed <= USB_SPEED_SPEED_FS) {
+		xfer->microframe_interval = cmd->submit.interval * 1000U / 125U;
+	} else {
+		xfer->microframe_interval = cmd->submit.interval;
+	}
+
 	cmd_nd->xfer = xfer;
 	ret = usbh_xfer_enqueue(dev_ctx->udev, xfer);
 	if (ret) {
