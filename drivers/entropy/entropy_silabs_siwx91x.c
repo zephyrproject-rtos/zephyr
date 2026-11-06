@@ -74,7 +74,7 @@ static int rng_siwx91x_pm_action(const struct device *dev, enum pm_device_action
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		ret = clock_control_off(config->clock_dev, config->clock_subsys);
-		if (ret < 0 && ret != -EALREADY) {
+		if (ret != 0 && ret != -EALREADY && ret != -ENOTSUP) {
 			return ret;
 		}
 		break;
