@@ -94,6 +94,10 @@ struct test_ctx {
 	size_t buflen;
 	size_t offset;
 	uint16_t status;
+	size_t content_length;
+	struct http_content_range content_range;
+	bool cl_present;
+	bool cr_present;
 	bool abort;
 	bool final;
 };
@@ -118,6 +122,10 @@ static int response_cb(struct http_response *rsp,
 	if (final_data == HTTP_DATA_FINAL) {
 		ctx->final = true;
 		ctx->status = rsp->http_status_code;
+		ctx->content_length = rsp->content_length;
+		ctx->content_range = rsp->content_range;
+		ctx->cl_present = rsp->cl_present;
+		ctx->cr_present = rsp->cr_present;
 	}
 
 	/* Copy response body */
@@ -486,8 +494,21 @@ static const char multi_chunked_te_response[] =
 	"0\r\n"
 	"\r\n";
 
+/* Sent one byte per segment, so every header value reaches the client in
+ * slices spread over several receives.
+ */
+#define SPLIT_HEADERS_BODY_SIZE 16
+
+static const char split_headers_response[] =
+	"HTTP/1.1 206 Partial Content\r\n"
+	"Content-Range: bytes 4080-4095/4096\r\n"
+	"Content-Length: 16\r\n"
+	"\r\n"
+	"AAAAAAAAAAAAAAAA";
+
 static const char *chunked_srv_response;
 static size_t chunked_srv_response_len;
+static bool chunked_srv_bytewise;
 
 static K_THREAD_STACK_DEFINE(chunked_srv_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread chunked_srv_thread;
@@ -528,7 +549,21 @@ static void chunked_srv_fn(void *p1, void *p2, void *p3)
 	conn = zsock_accept(srv, NULL, NULL);
 	if (conn >= 0) {
 		(void)zsock_recv(conn, req_buf, sizeof(req_buf) - 1, 0);
-		(void)zsock_send(conn, chunked_srv_response, chunked_srv_response_len, 0);
+
+		if (chunked_srv_bytewise) {
+			int one = 1;
+
+			(void)zsock_setsockopt(conn, NET_IPPROTO_TCP, ZSOCK_TCP_NODELAY, &one,
+					       sizeof(one));
+
+			for (size_t i = 0; i < chunked_srv_response_len; i++) {
+				(void)zsock_send(conn, &chunked_srv_response[i], 1, 0);
+				k_msleep(1);
+			}
+		} else {
+			(void)zsock_send(conn, chunked_srv_response, chunked_srv_response_len, 0);
+		}
+
 		zsock_close(conn);
 	}
 
@@ -550,6 +585,7 @@ static void chunked_tests_before(void *fixture)
 	memset(chunked_response_buf, 0, sizeof(chunked_response_buf));
 	chunked_srv_response = chunked_te_response;
 	chunked_srv_response_len = sizeof(chunked_te_response) - 1;
+	chunked_srv_bytewise = false;
 
 	k_thread_create(&chunked_srv_thread, chunked_srv_stack,
 			K_THREAD_STACK_SIZEOF(chunked_srv_stack),
@@ -662,6 +698,42 @@ ZTEST(http_client_chunked_te, test_abort_multi_chunk_single_recv)
 	ret = http_client_req(chunked_client_fd, &req, -1, &ctx);
 	zassert_equal(ret, -ECONNABORTED,
 		      "http_client_req() should've reported abort (%d)", ret);
+}
+
+ZTEST(http_client_chunked_te, test_header_values_split_across_receives)
+{
+	struct http_request req = { 0 };
+	struct test_ctx ctx = { 0 };
+	int ret;
+
+	multi_chunked_request_init(&req);
+
+	chunked_srv_response = split_headers_response;
+	chunked_srv_response_len = sizeof(split_headers_response) - 1;
+	chunked_srv_bytewise = true;
+
+	ctx.buf = chunked_response_buf;
+	ctx.buflen = sizeof(chunked_response_buf);
+
+	ret = http_client_req(chunked_client_fd, &req, -1, &ctx);
+	zassert_true(ret > 0, "http_client_req() failed (%d)", ret);
+	zassert_true(ctx.final, "No final event received");
+	zassert_equal(ctx.status, 206, "Unexpected HTTP status code");
+
+	zassert_equal(ctx.content_length, SPLIT_HEADERS_BODY_SIZE,
+		      "Content-Length mismatch: got %zu", ctx.content_length);
+	zassert_equal(ctx.content_range.start, 4080, "Range start mismatch: got %llu",
+		      ctx.content_range.start);
+	zassert_equal(ctx.content_range.end, 4095, "Range end mismatch: got %llu",
+		      ctx.content_range.end);
+	zassert_equal(ctx.content_range.total, 4096, "Range total mismatch: got %llu",
+		      ctx.content_range.total);
+	zassert_true(ctx.cl_present, "Content-Length not reported present");
+	zassert_true(ctx.cr_present, "Content-Range not reported present");
+
+	zassert_equal(ctx.offset, SPLIT_HEADERS_BODY_SIZE,
+		      "body length mismatch: got %zu, expected %d",
+		      ctx.offset, SPLIT_HEADERS_BODY_SIZE);
 }
 
 ZTEST_SUITE(http_client_chunked_te, NULL, NULL,
