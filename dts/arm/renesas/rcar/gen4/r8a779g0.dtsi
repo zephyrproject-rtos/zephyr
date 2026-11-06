@@ -63,6 +63,42 @@
 			current-speed = <921600>;
 			status = "disabled";
 		};
+
+		can0_global: can0-global@e6660000 {
+			clocks = <&cpg CPG_MOD 328>, <&cpg CPG_CORE R8A779G0_CLK_CANFD>;
+
+			can0: can0 {
+				channel = <0>;
+			};
+
+			can1: can1 {
+				channel = <1>;
+			};
+
+			can2: can2 {
+				channel = <2>;
+			};
+
+			can3: can3 {
+				channel = <3>;
+			};
+
+			can4: can4 {
+				channel = <4>;
+			};
+
+			can5: can5 {
+				channel = <5>;
+			};
+
+			can6: can6 {
+				channel = <6>;
+			};
+
+			can7: can7 {
+				channel = <7>;
+			};
+		};
 	};
 
 	clocks {

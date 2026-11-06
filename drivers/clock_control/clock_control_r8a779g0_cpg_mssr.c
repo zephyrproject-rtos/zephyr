@@ -34,6 +34,9 @@ LOG_MODULE_DECLARE(clock_control_rcar);
 #define R8A779G0_CLK_SDSRC_DIV_MASK  0x3
 #define R8A779G0_CLK_SDSRC_DIV_SHIFT 29
 
+#define R8A779G0_CLK_CANFD_DIV_MASK  0x3f
+#define R8A779G0_CLK_CANFD_DIV_SHIFT 0
+
 struct r8a779g0_cpg_mssr_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
 };
@@ -59,6 +62,7 @@ static struct cpg_clk_info_table core_props[] = {
 				RCAR_CPG_KHZ(66660)),
 	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_CL16M, RCAR_CPG_NONE, RCAR_CPG_NONE,
 				RCAR_CPG_KHZ(16660)),
+	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_CANFD, 0x0878, RCAR_CPG_NONE, RCAR_CPG_MHZ(3200)),
 	RCAR_CORE_CLK_INFO_ITEM(R8A779G0_CLK_SASYNCPERD1, RCAR_CPG_NONE, RCAR_CPG_NONE, 266666666),
 	RCAR_CORE_CLK_INFO_ITEM(CLK_PLL5, RCAR_CPG_NONE, RCAR_CPG_NONE, RCAR_CPG_MHZ(3200)),
 };
@@ -72,6 +76,7 @@ static struct cpg_clk_info_table core_props[] = {
 
 /* NOTE: the array MUST be sorted by module field */
 static struct cpg_clk_info_table mod_props[] = {
+	RCAR_MOD_CLK_INFO_ITEM(328, R8A779G0_CLK_CANFD),       /* CANFD */
 	RCAR_MOD_CLK_INFO_ITEM(514, R8A779G0_CLK_SASYNCPERD1), /* HSCIF0 */
 	RCAR_MOD_CLK_INFO_ITEM(515, R8A779G0_CLK_SASYNCPERD1), /* HSCIF1 */
 	RCAR_MOD_CLK_INFO_ITEM(702, R8A779G0_CLK_S0D12_PER),   /* SCIF0 */
@@ -138,6 +143,9 @@ static uint32_t r8a779g0_get_div_helper(uint32_t reg_val, uint32_t module)
 	case R8A779G0_CLK_SD0:
 		/* convert only two possible values 0,1 to 2,4 */
 		return (1 << ((reg_val & R8A779G0_CLK_SD0_DIV_MASK) + 1));
+	case R8A779G0_CLK_CANFD:
+		reg_val &= GENMASK(5, 0);
+		return ((reg_val + 1) * 4);
 	default:
 		return RCAR_CPG_NONE;
 	}
@@ -173,6 +181,17 @@ static int r8a779g0_set_rate_helper(uint32_t module, uint32_t *divider, uint32_t
 		/* 1,2,4,8,16 have to be converted to 0,1,2,3,4 and then shifted */
 		*divider = (find_lsb_set(*divider) - 1) << R8A779G0_CLK_SD0H_DIV_SHIFT;
 		*div_mask = R8A779G0_CLK_SD0H_DIV_MASK << R8A779G0_CLK_SD0H_DIV_SHIFT;
+		return 0;
+	case R8A779G0_CLK_CANFD:
+		/* Divider must not be less than 40 or greater than 256,
+		 * so CANFD clk does not exceed 12.5MHz to 80MHz
+		 */
+		if (*divider < 40 || *divider > 256 || (*divider % 4) != 0) {
+			return -EINVAL;
+		}
+		*div_mask = R8A779G0_CLK_CANFD_DIV_MASK << R8A779G0_CLK_CANFD_DIV_SHIFT;
+		/* CANFD_freq = PLL5VCO * 0.5 * 0.5 * 1 / (setting + 1) */
+		*divider = (uint32_t)((*divider - 4) / 4);
 		return 0;
 	default:
 		return -ENOTSUP;
