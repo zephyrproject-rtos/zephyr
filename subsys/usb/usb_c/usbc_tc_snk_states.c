@@ -86,8 +86,11 @@ void tc_unattached_snk_entry(void *obj)
 	LOG_INF("Unattached.SNK");
 
 #ifdef CONFIG_USBC_CSM_DRP
-	/* Start DRP toggle timer with tDRP Sink time */
-	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, tc->drp_snk_window_ms);
+	/* Only a port that may become a Source has anything to toggle to. */
+	if (tc_is_drp(tc->dev)) {
+		/* Start DRP toggle timer with tDRP Sink time */
+		usbc_timer_start_with_value(&tc->tc_t_drp_toggle, tc->drp_snk_window_ms);
+	}
 #endif
 
 	/*
@@ -123,7 +126,7 @@ enum smf_state_result tc_unattached_snk_run(void *obj)
 
 #ifdef CONFIG_USBC_CSM_DRP
 	/* Check if DRP toggle timer expired - transition to Unattached.SRC */
-	if (usbc_timer_expired(&tc->tc_t_drp_toggle)) {
+	if (tc_is_drp(dev) && usbc_timer_expired(&tc->tc_t_drp_toggle)) {
 		tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
 		/* Execute transition immediately to improve DRP timing accuracy */
 		usbc_bypass_next_sleep(tc->dev);

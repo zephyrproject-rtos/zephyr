@@ -108,6 +108,28 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 }
 
 /**
+ * @brief The power role this port is wired for
+ */
+enum tc_power_role_capability tc_role_cap(const struct device *dev)
+{
+	struct usbc_port_data *data = dev->data;
+
+	return data->role_cap;
+}
+
+/**
+ * @brief Whether this port is wired to act as both Source and Sink
+ *
+ * CONFIG_USBC_CSM_DRP decides what is compiled in, which is a property of the
+ * build. Whether a given port may actually toggle is a property of the board,
+ * and that is what the connector's power-role says.
+ */
+bool tc_is_drp(const struct device *dev)
+{
+	return tc_role_cap(dev) == TC_ROLE_CAP_DRP;
+}
+
+/**
  * @brief Checks if the TC Layer is in an Attached state
  */
 bool tc_is_in_attached_state(const struct device *dev)
@@ -361,8 +383,14 @@ static enum smf_state_result tc_error_recovery_run(void *obj)
 	}
 
 	/* Per USB Type-C spec: Always transition to Unattached.SNK for DRP */
-#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
-	/* Transition to Unattached.SNK */
+#if defined(CONFIG_USBC_CSM_SUPPORTS_SINK) && defined(CONFIG_USBC_CSM_SUPPORTS_SOURCE)
+	/* A source-only port has no Unattached.SNK to recover into. */
+	if (tc_role_cap(dev) == TC_ROLE_CAP_SOURCE) {
+		tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
+	} else {
+		tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
+	}
+#elif defined(CONFIG_USBC_CSM_SUPPORTS_SINK)
 	tc_set_state(dev, TC_UNATTACHED_SNK_STATE);
 #else
 	/* Transition to Unattached.SRC */
