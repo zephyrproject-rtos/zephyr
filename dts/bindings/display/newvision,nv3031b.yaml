@@ -1,0 +1,187 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: NewVision NV3031B LCD (Liquid Crystal Display) controller
+
+description: |
+  NewVision NV3031B LCD controller using single-data-line SPI transfers
+  with four-byte QSPI command framing. Panel-specific timing, power, and
+  gamma properties contain register parameters without the command byte.
+
+compatible: "newvision,nv3031b"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Active-low panel reset signal.
+
+  supply-gpios:
+    type: phandle-array
+    description: Panel power enable signal.
+
+  backlight-leds:
+    type: phandles
+    description: |
+      LED child nodes that illuminate the panel. All are driven at the same
+      brightness.
+
+  brightness:
+    type: int
+    default: 127
+    min: 0
+    max: 255
+    description: |
+      Initial backlight brightness, from 0 (off) to 255 (maximum). Defaults
+      to approximately half brightness to limit startup intensity.
+
+  rotation:
+    type: int
+    default: 0
+    enum: [0, 90, 180, 270]
+    description: |
+      Initial clockwise rotation in degrees. Width and height describe the
+      panel before this rotation is applied.
+
+  color-invert:
+    type: boolean
+    description: Enable display color inversion.
+
+  red-blue-swap:
+    type: boolean
+    description: Set the BGR bit in the memory access control register.
+
+  source-timing:
+    type: uint8-array
+    min-len: 1
+    max-len: 1
+    required: true
+    description: Source timing register (0x60), 1 byte.
+
+  gate-timing:
+    type: uint8-array
+    min-len: 2
+    max-len: 2
+    required: true
+    description: Gate timing register (0x61), 2 bytes.
+
+  inversion-control:
+    type: uint8-array
+    min-len: 1
+    max-len: 1
+    required: true
+    description: Inversion control register (0xB4), 1 byte.
+
+  frame-rate:
+    type: uint8-array
+    min-len: 3
+    max-len: 3
+    required: true
+    description: Frame rate register (0xB1), 3 bytes.
+
+  porch-control:
+    type: uint8-array
+    min-len: 4
+    max-len: 4
+    required: true
+    description: Porch control register (0xB5), 4 bytes.
+
+  display-function:
+    type: uint8-array
+    min-len: 5
+    max-len: 5
+    required: true
+    description: Display function register (0xB6), 5 bytes.
+
+  bias-trim:
+    type: uint8-array
+    min-len: 1
+    max-len: 1
+    required: true
+    description: Bias trim register (0xDF), 1 byte.
+
+  bias-current:
+    type: uint8-array
+    min-len: 1
+    max-len: 1
+    required: true
+    description: Bias current register (0x67), 1 byte.
+
+  power-control:
+    type: uint8-array
+    min-len: 4
+    max-len: 4
+    required: true
+    description: Power control register (0x68), 4 bytes.
+
+  gamma-positive-voltage:
+    type: uint8-array
+    min-len: 2
+    max-len: 2
+    required: true
+    description: Positive gamma voltage register (0xE1), 2 bytes.
+
+  gamma-negative-voltage:
+    type: uint8-array
+    min-len: 2
+    max-len: 2
+    required: true
+    description: Negative gamma voltage register (0xE4), 2 bytes.
+
+  gamma-positive-mid:
+    type: uint8-array
+    min-len: 6
+    max-len: 6
+    required: true
+    description: Positive gamma mid-tone register (0xE2), 6 bytes.
+
+  gamma-negative-mid:
+    type: uint8-array
+    min-len: 6
+    max-len: 6
+    required: true
+    description: Negative gamma mid-tone register (0xE5), 6 bytes.
+
+  gamma-positive:
+    type: uint8-array
+    min-len: 8
+    max-len: 8
+    required: true
+    description: Positive gamma curve register (0xE0), 8 bytes.
+
+  gamma-negative:
+    type: uint8-array
+    min-len: 8
+    max-len: 8
+    required: true
+    description: Negative gamma curve register (0xE3), 8 bytes.
+
+  power-slope:
+    type: uint8-array
+    min-len: 2
+    max-len: 2
+    required: true
+    description: Power slope register (0xE6), 2 bytes.
+
+  source-equalization:
+    type: uint8-array
+    min-len: 6
+    max-len: 6
+    required: true
+    description: Source equalization register (0xE7), 6 bytes.
+
+  source-level:
+    type: uint8-array
+    min-len: 3
+    max-len: 3
+    required: true
+    description: Source output level register (0xE8), 3 bytes.
+
+  gate-equalization:
+    type: uint8-array
+    min-len: 1
+    max-len: 1
+    required: true
+    description: Gate equalization register (0xEC), 1 byte.
