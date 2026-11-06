@@ -705,6 +705,9 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 
 	ret = dma_mcux_edma_configure_hardware(dev, channel, config);
 	if (ret) {
+		/* The channel was reset above and holds no usable transfer. */
+		DEV_CHANNEL_DATA(dev, channel)->transfer_settings.valid = false;
+		DEV_CHANNEL_DATA(dev, channel)->busy = false;
 		irq_unlock(key);
 		return ret;
 	}
