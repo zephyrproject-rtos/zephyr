@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer = &lptim1;
+	};
+};
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 9)>,
+		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
+	st,prescaler = <1>;
+	status = "okay";
+};
+
+/* Fixed 2.4 GHz PLL1 parent, 600 MHz CPU boot rate. */
+&ic1 {
+	ic-div = <4>;
+};
+
+&cpusw {
+	clock-frequency = <600000000>;
+};
