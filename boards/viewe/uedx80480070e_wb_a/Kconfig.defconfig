@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UEDX80480070E_WB_A_ESP32S3_PROCPU
+
+choice ESPTOOLPY_FLASHMODE
+	default ESPTOOLPY_FLASHMODE_QIO
+endchoice
+
+config ESP_SPIRAM
+	default y
+
+# Room for up to three 800x480 RGB565 framebuffers
+config ESP_SPIRAM_HEAP_SIZE
+	default 4194304
+
+choice SPIRAM_MODE
+	default SPIRAM_MODE_OCT
+endchoice
+
+# The display is refreshed from PSRAM
+choice SPIRAM_SPEED
+	default SPIRAM_SPEED_80M
+endchoice
+
+if DISPLAY
+
+config REGULATOR
+	default y
+
+# Drawing into the framebuffers in PSRAM is faster through a larger cache
+choice ESP32S3_DATA_CACHE_SIZE
+	default ESP32S3_DATA_CACHE_64KB
+endchoice
+
+choice ESP32S3_DATA_CACHE_LINE_SIZE
+	default ESP32S3_DATA_CACHE_LINE_64B
+endchoice
+
+# Fewer code fetches from flash, which shares the bus with PSRAM
+choice ESP32S3_INSTRUCTION_CACHE_SIZE
+	default ESP32S3_INSTRUCTION_CACHE_32KB
+endchoice
+
+endif # DISPLAY
+
+endif # BOARD_UEDX80480070E_WB_A_ESP32S3_PROCPU
