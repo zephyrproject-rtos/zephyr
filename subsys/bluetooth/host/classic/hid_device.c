@@ -831,15 +831,16 @@ int bt_hid_device_connect(struct bt_conn *conn, struct bt_hid_device **hid)
 	bt_hid_session_init(inst, BT_HID_ROLE_INITIATOR);
 
 	inst->state = BT_HID_STATE_CTRL_CONNECTING;
+	*hid = inst;
 
 	err = bt_l2cap_chan_connect(conn, &inst->ctrl_session.br_chan.chan, BT_L2CAP_PSM_HID_CTRL);
 	if (err != 0) {
 		LOG_ERR("connect failed (%d)", err);
 		bt_hid_device_cleanup(inst);
+		*hid = NULL;
 		return err;
 	}
 
-	*hid = inst;
 	return 0;
 }
 

@@ -268,13 +268,14 @@ int bt_goep_transport_rfcomm_connect(struct bt_conn *conn, struct bt_goep *goep,
 
 	goep_rfcomm_init(conn, goep);
 
+	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTING);
+
 	err = bt_rfcomm_dlc_connect(conn, &goep->v1->dlc, channel);
 	if (err != 0) {
 		LOG_ERR("Fail to create RFCOMM connection");
+		atomic_set(&goep->_state, BT_GOEP_TRANSPORT_DISCONNECTED);
 		return err;
 	}
-
-	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTING);
 
 	return 0;
 }
@@ -570,13 +571,14 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 
 	goep_l2cap_init(conn, goep);
 
+	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTING);
+
 	err = bt_l2cap_chan_connect(conn, &goep->v2->chan.chan, psm);
 	if (err != 0) {
 		LOG_ERR("Fail to create L2CAP connection");
+		atomic_set(&goep->_state, BT_GOEP_TRANSPORT_DISCONNECTED);
 		return err;
 	}
-
-	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTING);
 
 	return 0;
 }

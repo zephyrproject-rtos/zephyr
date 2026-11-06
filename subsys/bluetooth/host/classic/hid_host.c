@@ -1127,6 +1127,7 @@ int bt_hid_host_connect(struct bt_conn *conn, struct bt_hid_host **hid)
 	 * Interrupt channel follows from hid_l2cap_ctrl_connected().
 	 */
 	atomic_set_bit(&inst->flags, BT_HID_HOST_FLAG_CTRL_ATTACHED);
+	*hid = inst;
 
 	err = bt_l2cap_chan_connect(conn, &inst->ctrl_session.br_chan.chan,
 				    BT_L2CAP_PSM_HID_CTRL);
@@ -1139,10 +1140,10 @@ int bt_hid_host_connect(struct bt_conn *conn, struct bt_hid_host **hid)
 			atomic_clear_bit(&inst->flags, BT_HID_HOST_FLAG_CTRL_ATTACHED);
 			hid_cleanup(inst);
 		}
+		*hid = NULL;
 		return err;
 	}
 
-	*hid = inst;
 	return 0;
 }
 
