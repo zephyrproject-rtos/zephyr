@@ -261,6 +261,7 @@ void bme680_compensate_raw(const struct device *dev,
 	adc_hum     = sys_get_be16(regs->humidity);
 	adc_gas_res = sys_get_be16(regs->gas) >> 6;
 	data->heatr_stab = regs->gas[1] & BME680_MSK_HEATR_STAB;
+	data->gas_valid = ((regs->gas[1] & BME680_MSK_GAS_VALID) != 0U) && (data->heatr_stab != 0U);
 	gas_range   = regs->gas[1] & BME680_MSK_GAS_RANGE;
 
 	LOG_DBG("Raw ADC: temp=%u press=%u hum=%u gas=%u range=%u",
@@ -277,6 +278,7 @@ void bme680_compensate_raw(const struct device *dev,
 		reading->comp_press    = data->calc_press;
 		reading->comp_humidity = data->calc_humidity;
 		reading->comp_gas      = data->calc_gas_resistance;
+		reading->gas_valid = data->gas_valid;
 	}
 }
 
@@ -312,6 +314,9 @@ static int bme680_channel_get(const struct device *dev,
 		val->val2 = (data->calc_humidity % 1000) * 1000;
 		break;
 	case SENSOR_CHAN_GAS_RES:
+		if (!data->gas_valid) {
+			return -ENODATA;
+		}
 		/*
 		 * data->calc_gas_resistance has a resolution of 1 ohm.
 		 * So 100000 equals 100000 ohms.
