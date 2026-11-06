@@ -237,3 +237,9 @@ zephyr_udc0: &usb {
 		};
 	};
 };
+
+&cmp {
+	pinctrl-0 = <&pinmux_cmp>;
+	pinctrl-names = "default";
+	status = "okay";
+};
