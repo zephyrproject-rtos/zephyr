@@ -269,8 +269,10 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 		/* In loop mode, DMA is always busy. */
 		data->busy = true;
 		ret = DMA_STATUS_COMPLETE;
-		for (uint8_t i = 0U; i < completed_tcds; i++) {
-			data->dma_callback(data->dev, data->user_data, channel, ret);
+		if (data->dma_callback != NULL) {
+			for (uint8_t i = 0U; i < completed_tcds; i++) {
+				data->dma_callback(data->dev, data->user_data, channel, ret);
+			}
 		}
 		return;
 	} else if (transferDone) {
@@ -279,7 +281,9 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 		ret = DMA_STATUS_COMPLETE;
 	}
 	LOG_DBG("transfer %d", tcds);
-	data->dma_callback(data->dev, data->user_data, channel, ret);
+	if (data->dma_callback != NULL) {
+		data->dma_callback(data->dev, data->user_data, channel, ret);
+	}
 }
 
 static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
@@ -895,12 +899,10 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	data->busy = false;
-	if (config->dma_callback) {
-		LOG_DBG("INSTALL call back on channel %d", channel);
-		data->user_data = config->user_data;
-		data->dma_callback = config->dma_callback;
-		data->dev = dev;
-	}
+	/* Replace the callback even with none, so a previous one is not kept. */
+	data->user_data = config->user_data;
+	data->dma_callback = config->dma_callback;
+	data->dev = dev;
 
 	irq_unlock(key);
 
