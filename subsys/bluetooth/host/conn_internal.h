@@ -171,11 +171,22 @@ struct bt_conn_sco {
 	/* Reference to the struct bt_sco_chan */
 	struct bt_sco_chan      *chan;
 
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	/* Queue from which conn will pull data */
+	struct k_fifo           tx_queue;
+	/* Queue for saving the pending data to be sent by the caller */
+	struct k_fifo           tx_pending;
+	/* Work to move data from tx_pending to tx_queue */
+	struct k_work           tx_worker;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 	uint16_t                pkt_type;
 	uint8_t                 dev_class[3];
 	uint8_t                 link_type;
 	/* Reference to BT_HCI_CODING_FORMAT_* */
 	uint8_t                 air_mode;
+	/* Transmission interval */
+	uint8_t                 interval;
 };
 
 struct bt_conn_iso {
@@ -456,6 +467,9 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size);
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(uint16_t handle, enum bt_conn_type type);
 
+/* Invalid connection handle */
+#define BT_CONN_HANDLE_INVALID 0xffff
+
 static inline bool bt_conn_is_handle_valid(struct bt_conn *conn)
 {
 	switch (conn->state) {
@@ -484,6 +498,11 @@ bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, uint8_t id,
  */
 #define BT_CONN_INDEX_INVALID 0xff
 struct bt_conn *bt_conn_lookup_index(uint8_t index);
+
+/* Helpers for identifying & looking up connections based on the index to
+ * the SCO connection list.
+ */
+struct bt_conn *bt_conn_lookup_index_sco(uint8_t index);
 
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
@@ -611,3 +630,6 @@ void bt_conn_tx_processor(void);
  * - unref the conn when popping the conn from the slist
  */
 void bt_conn_data_ready(struct bt_conn *conn);
+
+/* CONN TX complete process */
+void bt_conn_tx_complete(struct bt_conn *conn, uint16_t count);
