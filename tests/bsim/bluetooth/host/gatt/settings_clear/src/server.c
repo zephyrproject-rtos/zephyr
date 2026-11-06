@@ -125,6 +125,10 @@ void server_procedure(void)
 	err = settings_load();
 	TEST_ASSERT(err == 0, "Failed to load settings (err %d)", err);
 
+	/* The hash store is still pending: this load must not do it either. */
+	err = settings_load();
+	TEST_ASSERT(err == 0, "Failed to load settings again (err %d)", err);
+
 	err = bt_unpair(BT_ID_DEFAULT, BT_ADDR_LE_ANY);
 	TEST_ASSERT(err == 0, "(1) Failed to unpair (err %d)", err);
 
@@ -153,6 +157,8 @@ void server_procedure(void)
 	if (number_of_settings_left > 0) {
 		TEST_FAIL("'bt_unpair' did not clear the settings properly.");
 	}
+
+	TEST_ASSERT(bt_settings_hash_stored(), "The database hash was not stored");
 
 	TEST_PASS("server");
 }

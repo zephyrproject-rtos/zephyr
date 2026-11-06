@@ -52,6 +52,7 @@ config BT_RX_STACK_SIZE
 	default 2800 if BT_MESH_PB_GATT
 	default 2600 if BT_MESH
 	default 2048 if BT_AUDIO
+	default 1792 if BT_SETTINGS
 	default 1200
 	help
 	  Size of the stack of the Bluetooth workqueue, the thread in
