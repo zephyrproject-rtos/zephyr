@@ -15,6 +15,7 @@
 
 # zephyr-keep-sorted-start
 01space	01Space
+3dr	3DR, Inc.
 96boards	96Boards
 aaeon	AAEON Technology Inc.
 abb	ABB

@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "control_n1_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+/* The ArduPilot bootloader in the first sector loads the application after itself. */
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		bootloader_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "ardupilot-bootloader";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+			read-only;
+		};
+
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(1920)>;
+		};
+	};
+};

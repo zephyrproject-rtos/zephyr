@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_3DR_N1_FPV
+	def_bool $(shields_list_contains,3dr_n1_fpv)

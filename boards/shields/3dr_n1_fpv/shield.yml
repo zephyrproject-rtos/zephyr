@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: 3dr_n1_fpv
+  full_name: Control N1 Carrier 3 (FPV)
+  vendor: 3dr
+  supported_features:
+    - can
+    - gpio
+    - i2c
+    - pwm
+    - serial

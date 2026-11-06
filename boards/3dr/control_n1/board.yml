@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: control_n1
+  full_name: Control N1
+  vendor: 3dr
+  socs:
+    - name: stm32h743xx
+      variants:
+        - name: bare
