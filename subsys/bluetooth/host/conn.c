@@ -930,6 +930,13 @@ static bool held_back_by_tx_failure(struct bt_conn *conn)
 	return conn->state == BT_CONN_CONNECTED && atomic_test_bit(conn->flags, BT_CONN_TX_FAILED);
 }
 
+static bool held_back_by_br_refusal(struct bt_conn *conn)
+{
+	/* Nothing more goes out on a refused link, see br_sec_refuse() */
+	return IS_ENABLED(CONFIG_BT_CLASSIC) && conn->state == BT_CONN_CONNECTED &&
+	       atomic_test_bit(conn->flags, BT_CONN_BR_SEC_REFUSED);
+}
+
 static bool dont_have_viewbufs(void)
 {
 #if defined(CONFIG_BT_CONN_TX)
@@ -989,6 +996,12 @@ static struct bt_conn *get_conn_ready(void)
 
 		if (held_back_by_tx_failure(conn)) {
 			LOG_DBG("sending failed, holding back %p", conn);
+			prev = &conn->_conn_ready;
+			continue;
+		}
+
+		if (held_back_by_br_refusal(conn)) {
+			LOG_DBG("link refused, holding back %p", conn);
 			prev = &conn->_conn_ready;
 			continue;
 		}

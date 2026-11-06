@@ -4884,6 +4884,11 @@ static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, i
 		return;
 	}
 
+	/* The peer does not get a channel on a link that the Host refused */
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		return;
+	}
+
 	l2cap_br_config_rsp_complete(chan);
 }
 
@@ -5464,6 +5469,11 @@ int bt_l2cap_br_chan_send_cb(struct bt_l2cap_chan *chan, struct net_buf *buf, bt
 		return -ENOTCONN;
 	}
 
+	/* The TX processor holds this link back, so the data would only use up shared buffers */
+	if (atomic_test_bit(chan->conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		return -ENOTCONN;
+	}
+
 	if (atomic_test_bit(chan->status, BT_L2CAP_STATUS_SHUTDOWN)) {
 		return -ESHUTDOWN;
 	}
@@ -5854,6 +5864,13 @@ static void l2cap_br_pend_conn_req_reply_success(struct bt_l2cap_br *l2cap,
 
 static void l2cap_br_retry_signaling_handler(struct bt_l2cap_br *l2cap)
 {
+	const struct bt_conn *conn = l2cap->chan.chan.conn;
+
+	if ((conn != NULL) && atomic_test_bit(conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		l2cap_br_drop_recv_pending_bufs(l2cap);
+		return;
+	}
+
 	if (l2cap->recv_pending.buf == NULL) {
 		l2cap_br_recv_pending_done(l2cap);
 	}
@@ -6906,6 +6923,15 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 	struct bt_l2cap_hdr *hdr;
 	struct bt_l2cap_chan *chan;
 	uint16_t cid;
+
+	/* The peer can send until the link is down. The connection state cannot tell this link
+	 * apart: what arrives on a link that the application disconnects, or that the peer
+	 * disconnected, is still handled.
+	 */
+	if (atomic_test_bit(conn->flags, BT_CONN_BR_SEC_REFUSED)) {
+		LOG_DBG("Ignoring data on a refused link");
+		goto done;
+	}
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Too small L2CAP PDU received");
