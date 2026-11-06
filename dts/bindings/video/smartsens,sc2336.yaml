@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SmartSens SC2336 2 Mega-Pixel CMOS image sensor with a 2-lane MIPI CSI-2
+  output.
+
+compatible: "smartsens,sc2336"
+
+include: i2c-device.yaml
+
+properties:
+  clocks:
+    required: true
+    description: Input clock of the sensor, which must run at 24 MHz.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the sensor reset pin. The sensor is held in reset
+      while this GPIO is asserted.
+
+  powerdown-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the sensor power-down pin. The sensor is powered
+      down while this GPIO is asserted.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
