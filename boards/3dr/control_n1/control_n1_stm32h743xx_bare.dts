@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Applications use the whole flash, in place of the ArduPilot bootloader. */
+
+/dts-v1/;
+#include "control_n1_common.dtsi"
