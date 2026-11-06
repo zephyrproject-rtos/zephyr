@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		test-comp = &comp0;
+	};
+
+	zephyr,user {
+		/* Strap Arduino A2 to A3 */
+		test-gpios = <&portb 3 GPIO_ACTIVE_HIGH>;
+	};
+};

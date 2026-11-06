@@ -268,6 +268,18 @@
 			status = "disabled";
 		};
 
+		ac0: ac@4482a000 {
+			compatible = "microchip,ac-g2";
+			reg = <0x4482a000 0x40>;
+			interrupts = <132 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			clock-names = "mclk", "gclk";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		rstc: rstc@45004000 {
 			compatible = "microchip,rstc-g1-reset";
 			reg = <0x45004000 0x8>;
