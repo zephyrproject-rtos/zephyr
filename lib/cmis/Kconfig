@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CMIS
+	bool "CMIS pluggable optical module management decoding"
+	help
+	  Enable decoding of the Common Management Interface Specification
+	  (CMIS) Page 00h used by high-speed pluggable transceivers such as
+	  QSFP-DD, OSFP, SFP-DD and DSFP: the module-level monitors in Lower
+	  Memory and the administrative information in Upper Page 00h.

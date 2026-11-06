@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sfp
+  harness: ztest
+
+tests:
+  drivers.sfp.sff8472:
+    integration_platforms:
+      - native_sim
