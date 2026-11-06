@@ -85,7 +85,7 @@ static void dma_pl330_calc_burstsz_len(struct dma_pl330_ch_internal *ch_handle,
 	burst_len = MAX_BURST_LEN;
 	while (burst_len) {
 		/* Choose burst length so that size is aligned */
-		if (!(size % ((burst_len + 1) << byte_width))) {
+		if ((size % ((burst_len + 1) * byte_width)) == 0U) {
 			break;
 		}
 
