@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for an OpenAMP RPMsg endpoint.
+
+  This node represents an RPMsg endpoint used for communication between
+  processors. It defines the local and remote endpoint addresses and
+  the service type associated with the endpoint.
+
+compatible: "openamp,rpmsg-endpoint"
+
+include: base.yaml
+
+on-bus: rpmsg
+
+properties:
+  reg:
+    required: true
+    description: |
+      Endpoint addresses in the form <src dst>, where:
+        - src: local endpoint address
+        - dst: remote endpoint address
+
+  type:
+    type: string
+    required: true
+    description: |
+      RPMsg service name associated with the endpoint.
+
+      Common values include:
+        - "rpmsg-tty"
+        - "rpmsg-raw"
+
+      These names may be used by the remote system (e.g. Linux)
+      to bind the appropriate RPMsg driver.

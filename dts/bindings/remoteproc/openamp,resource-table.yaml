@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for describing the remoteproc resource table used by OpenAMP.
+
+  The resource table defines shared memory regions and virtio devices
+  required for inter-processor communication.
+
+compatible: "openamp,resource-table"
+
+properties:
+  carveouts:
+    type: phandles
+    required: true
+    description: |
+      Phandles to memory regions reserved as carveouts for shared memory
+      used by OpenAMP.
+
+  vdevs:
+    type: phandles
+    required: true
+    description: |
+      Phandles to virtio device nodes associated with the OpenAMP
+      resource table.
