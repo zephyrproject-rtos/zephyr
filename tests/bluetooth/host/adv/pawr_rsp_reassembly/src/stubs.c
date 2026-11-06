@@ -182,7 +182,8 @@ int bt_le_scan_set_enable(uint8_t enable)
 }
 
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
-				 const struct bt_le_ext_adv *ext_adv)
+				 const struct bt_le_ext_adv *ext_adv,
+				 uint8_t cached_disconnect_reason)
 {
 	ARG_UNUSED(evt);
 	ARG_UNUSED(ext_adv);
