@@ -6,8 +6,8 @@ title: Bosch BME680 Environmental Sensor (SPI)
 description: |
     The BME680 is an integrated environmental sensor that measures
     temperature, pressure, humidity and air quality. The driver also
-    supports the BME688, detected at runtime from the variant ID
-    register.
+    supports the BME688 and BME690, detected at runtime from the
+    variant ID register.
 
 compatible: "bosch,bme680"
 
