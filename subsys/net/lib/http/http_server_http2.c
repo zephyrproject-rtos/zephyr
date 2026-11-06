@@ -1237,14 +1237,13 @@ request_body:
 	}
 
 	/* Only after the complete HTTP1 payload has been processed, switch
-	 * to HTTP2.
+	 * to HTTP2. Any data left after the request is the client connection
+	 * preface.
 	 */
 	if (client->parser_state == HTTP1_MESSAGE_COMPLETE_STATE) {
 		release_http_stream_context(client, frame->stream_identifier);
 		client->current_detail = NULL;
 		client->server_state = HTTP_SERVER_PREFACE_STATE;
-		client->cursor += client->data_len;
-		client->data_len = 0;
 	}
 
 	return 0;
