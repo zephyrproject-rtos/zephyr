@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * QEMU attaches the virtio-blk device to virtio-mmio-bus.4, which is the
+ * virtio_mmio4 slot on this board (see boards/qemu/cortex_a53/board.cmake).
+ */
+&virtio_mmio4 {
+	status = "okay";
+
+	virtio_blk: virtio-blk {
+		compatible = "virtio,blk";
+		disk-name = "VIRTIOBLK0";
+		status = "okay";
+	};
+};
