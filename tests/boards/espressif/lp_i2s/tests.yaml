@@ -1,0 +1,20 @@
+tests:
+  boards.espressif.lp_i2s.api:
+    tags:
+      - drivers
+      - i2s
+    harness: ztest
+    platform_allow:
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+  boards.espressif.lp_i2s.loopback:
+    tags:
+      - drivers
+      - i2s
+    extra_args: EXTRA_DTC_OVERLAY_FILE="loopback.overlay"
+    harness: ztest
+    harness_config:
+      fixture: i2s_loopback
+    platform_allow:
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
