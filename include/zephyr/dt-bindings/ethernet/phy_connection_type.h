@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ETHERNET_PHY_CONNECTION_TYPE_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ETHERNET_PHY_CONNECTION_TYPE_H_
+
+/*
+ * Indices of the phy-connection-type enum in ethernet-controller.yaml, as
+ * returned by DT_ENUM_IDX() / DT_INST_ENUM_IDX(). Must match the enum order.
+ */
+#define ETHERNET_PHY_CONN_TYPE_MII        0
+#define ETHERNET_PHY_CONN_TYPE_RMII       1
+#define ETHERNET_PHY_CONN_TYPE_GMII       2
+#define ETHERNET_PHY_CONN_TYPE_RGMII      3
+#define ETHERNET_PHY_CONN_TYPE_RGMII_ID   4
+#define ETHERNET_PHY_CONN_TYPE_RGMII_TXID 5
+#define ETHERNET_PHY_CONN_TYPE_RGMII_RXID 6
+#define ETHERNET_PHY_CONN_TYPE_TBI        7
+#define ETHERNET_PHY_CONN_TYPE_RTBI       8
+#define ETHERNET_PHY_CONN_TYPE_SMII       9
+#define ETHERNET_PHY_CONN_TYPE_SGMII      10
+#define ETHERNET_PHY_CONN_TYPE_REV_MII    11
+#define ETHERNET_PHY_CONN_TYPE_XGMII      12
+#define ETHERNET_PHY_CONN_TYPE_MOCA       13
+#define ETHERNET_PHY_CONN_TYPE_QSGMII     14
+#define ETHERNET_PHY_CONN_TYPE_TRGMII     15
+#define ETHERNET_PHY_CONN_TYPE_INTERNAL   16
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ETHERNET_PHY_CONNECTION_TYPE_H_ */
