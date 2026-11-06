@@ -87,7 +87,7 @@ void tc_unattached_snk_entry(void *obj)
 
 #ifdef CONFIG_USBC_CSM_DRP
 	/* Start DRP toggle timer with tDRP Sink time */
-	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, TC_T_DRP_SNK_MS);
+	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, tc->drp_snk_window_ms);
 #endif
 
 	/*
@@ -201,14 +201,9 @@ enum smf_state_result tc_attach_wait_snk_run(void *obj)
 
 	if (vbus_present) {
 		tc_set_state(dev, TC_ATTACHED_SNK_STATE);
+		/* Run Attached.SNK entry and first iteration without waiting a cycle */
+		usbc_bypass_next_sleep(tc->dev);
 	}
-
-	/*
-	 * In case of no VBUS present, this call prevents going into the sleep and allows for
-	 * faster VBUS detection. In case of VBUS present, allows for immediate execution of logic
-	 * from new state.
-	 */
-	usbc_bypass_next_sleep(tc->dev);
 	return SMF_EVENT_PROPAGATE;
 }
 
