@@ -24,13 +24,14 @@ LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
  */
 static int iis3dhhc_enable_int(const struct device *dev, int enable)
 {
-	struct iis3dhhc_data *iis3dhhc = dev->data;
+	const struct iis3dhhc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 
 	/* set interrupt */
 #ifdef CONFIG_IIS3DHHC_DRDY_INT1
-	return iis3dhhc_drdy_on_int1_set(iis3dhhc->ctx, enable);
+	return iis3dhhc_drdy_on_int1_set(ctx, enable);
 #else
-	return iis3dhhc_drdy_on_int2_set(iis3dhhc->ctx, enable);
+	return iis3dhhc_drdy_on_int2_set(ctx, enable);
 #endif
 }
 
@@ -43,6 +44,7 @@ int iis3dhhc_trigger_set(const struct device *dev,
 {
 	struct iis3dhhc_data *iis3dhhc = dev->data;
 	const struct iis3dhhc_config *config = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	int16_t raw[3];
 
 	if (!config->int_gpio.port) {
@@ -54,7 +56,7 @@ int iis3dhhc_trigger_set(const struct device *dev,
 		iis3dhhc->trig_drdy = trig;
 		if (handler) {
 			/* dummy read: re-trigger interrupt */
-			iis3dhhc_acceleration_raw_get(iis3dhhc->ctx, raw);
+			iis3dhhc_acceleration_raw_get(ctx, raw);
 			return iis3dhhc_enable_int(dev, PROPERTY_ENABLE);
 		} else {
 			return iis3dhhc_enable_int(dev, PROPERTY_DISABLE);
@@ -127,6 +129,7 @@ int iis3dhhc_init_interrupt(const struct device *dev)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->data;
 	const struct iis3dhhc_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->int_gpio)) {
@@ -162,7 +165,7 @@ int iis3dhhc_init_interrupt(const struct device *dev)
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (iis3dhhc_drdy_notification_mode_set(iis3dhhc->ctx, IIS3DHHC_PULSED)) {
+	if (iis3dhhc_drdy_notification_mode_set(ctx, IIS3DHHC_PULSED)) {
 		return -EIO;
 	}
 
