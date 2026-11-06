@@ -18,6 +18,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/bit_rev.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crc_stm32, CONFIG_CRC_LOG_LEVEL);
@@ -99,6 +100,20 @@ static int crc_stm32_get_poly_size(struct crc_ctx *ctx, uint32_t *size)
 	return res;
 }
 
+static uint32_t crc_stm32_poly_width(uint32_t poly_size)
+{
+	switch (poly_size) {
+	case STM32_CRC_POLY_SIZE_7B:
+		return 7U;
+	case STM32_CRC_POLY_SIZE_8B:
+		return 8U;
+	case STM32_CRC_POLY_SIZE_16B:
+		return 16U;
+	default:
+		return 32U;
+	}
+}
+
 static void crc_stm32_release(const struct device *dev, struct crc_ctx *ctx)
 {
 	struct crc_stm32_data *data = dev->data;
@@ -115,6 +130,7 @@ static int crc_stm32_begin(const struct device *dev, struct crc_ctx *ctx)
 	const struct crc_stm32_config *config = dev->config;
 	struct crc_stm32_data *data = dev->data;
 	uint32_t poly_size;
+	uint32_t seed = ctx->seed;
 	int ret;
 
 	const uint32_t in_rev = (ctx->reversed & CRC_FLAG_REVERSE_INPUT)
@@ -138,10 +154,20 @@ static int crc_stm32_begin(const struct device *dev, struct crc_ctx *ctx)
 		return ret;
 	}
 
+	/*
+	 * The CRC unit always shifts MSB first. With output reversal the result
+	 * is the bit-reversed internal register, so a seed given in the bit order
+	 * of the result (e.g. the result of a previous computation, to continue
+	 * it) must be bit-reversed over the polynomial width before being loaded.
+	 */
+	if ((ctx->reversed & CRC_FLAG_REVERSE_OUTPUT) != 0U) {
+		seed = sys_bit_rev32(seed) >> (32U - crc_stm32_poly_width(poly_size));
+	}
+
 	/* Take ownership of CRC peripheral */
 	k_sem_take(&data->dev_lock, K_FOREVER);
 
-	LL_CRC_SetInitialData(config->base, ctx->seed);
+	LL_CRC_SetInitialData(config->base, seed);
 	LL_CRC_SetPolynomialSize(config->base, poly_size);
 	LL_CRC_SetPolynomialCoef(config->base, ctx->polynomial);
 	LL_CRC_SetInputDataReverseMode(config->base, in_rev);
