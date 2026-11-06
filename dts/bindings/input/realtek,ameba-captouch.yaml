@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Ameba CapTouch
+
+  Mapping input pinctrl:
+  Channel 0 -> adc_in0_pb19
+  Channel 1 -> adc_in1_pb18
+  Channel 2 -> adc_in2_pb17
+  Channel 3 -> adc_in3_pb16
+
+compatible: "realtek,ameba-captouch"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  channel-count:
+    type: int
+    required: true
+    description: the number of CapTouch channels
+
+  diff-thre:
+    type: array
+    required: true
+    description: CapTouch channel diff threshold
+
+  mbias-current:
+    type: array
+    required: true
+    description: CapTouch channel mbias current
+
+  nnoise-thre:
+    type: array
+    required: true
+    description: CapTouch channel n-noise threshold
+
+  pnoise-thre:
+    type: array
+    required: true
+    description: CapTouch channel p-noise threshold
+
+  channel-status:
+    type: array
+    required: true
+    description: CapTouch channel status
+
+  input-key:
+    type: array
+    required: true
+    description: CapTouch channel reported key
