@@ -232,6 +232,10 @@
 	status = "okay";
 };
 
+&lptmr0 {
+	status = "okay";
+};
+
 &lpi2c0 {
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
