@@ -370,7 +370,8 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 }
 
 int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
-		     k_timeout_t timeout, int16_t *rssi, int8_t *snr)
+		     k_timeout_t packet_search_timeout, k_timeout_t packet_rx_timeout,
+		     int16_t *rssi, int8_t *snr)
 {
 	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
 	struct k_poll_event evt = K_POLL_EVENT_INITIALIZER(
@@ -379,6 +380,10 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		&done);
 	int ret;
 	uint8_t data_len = 255;
+
+	if (!K_TIMEOUT_EQ(packet_search_timeout, K_NO_WAIT)) {
+		return -ENOTSUP;
+	}
 
 	/* Ensure available, decremented by sx12xx_ev_rx_done or on timeout */
 	if (!modem_acquire(&dev_data)) {
@@ -401,7 +406,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	Radio.SetMaxPayloadLength(dev_data.modem, data_len);
 	Radio.Rx(0);
 
-	ret = k_poll(&evt, 1, timeout);
+	ret = k_poll(&evt, 1, packet_rx_timeout);
 	if (ret < 0) {
 		if (!modem_release(&dev_data)) {
 			/* Releasing the modem failed, which means that
