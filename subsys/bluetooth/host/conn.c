@@ -835,25 +835,48 @@ static bool acl_has_data(struct bt_conn *conn)
  *
  * Will try to get the optimal number of queued buffers for the connection.
  *
- * Partitions the controller's buffers to each connection according to some
- * heuristic. This is made to be tunable, fairness, simplicity, throughput etc.
- *
- * In the future, this will be a hook exposed to the application.
+ * Decides when to move on to the next connection. How the controller's
+ * buffers are shared between connections is up to get_conn_ready().
  */
+static bool can_take_turn(struct bt_conn *conn, struct bt_conn *c)
+{
+	struct k_sem *pkts;
+
+	if ((c == conn) || (c->state != BT_CONN_CONNECTED) || (c->has_data == NULL) ||
+	    !c->has_data(c) || atomic_test_bit(c->flags, BT_CONN_TX_FAILED)) {
+		return false;
+	}
+
+	pkts = bt_conn_get_pkts(c);
+
+	return (pkts != NULL) && (k_sem_count_get(pkts) > 0U) &&
+	       (atomic_get(&c->in_ll) <= atomic_get(&conn->in_ll));
+}
+
 static bool should_stop_tx(struct bt_conn *conn)
 {
+	struct bt_conn *c;
+
 	LOG_DBG("%p", conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return true;
 	}
 
-	/* TODO: This function should be overridable by the application: they
-	 * should be able to provide their own heuristic.
-	 */
 	if (!conn->has_data(conn)) {
 		LOG_DBG("No more data for %p", conn);
 		return true;
+	}
+
+	/* Give way to another connection that can send and holds as many
+	 * packets in the controller or fewer. Otherwise a connection whose
+	 * packets complete quickly keeps its place at the head of the list.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_dev.le.conn_ready, c, _conn_ready) {
+		if (can_take_turn(conn, c)) {
+			LOG_DBG("%p gives way to %p", conn, c);
+			return true;
+		}
 	}
 
 	/* Queue only 3 buffers per-conn for now */
@@ -956,10 +979,83 @@ __maybe_unused static bool dont_have_methods(struct bt_conn *conn)
 		(conn->has_data == NULL);
 }
 
+/* The connections on a pool that have data queued or packets in flight,
+ * counted once per pass of the TX processor
+ */
+struct tx_pool_users {
+	struct k_sem *pkts;
+	unsigned int n;
+};
+
+#if defined(CONFIG_BT_CONN)
+static unsigned int tx_pool_users_get(struct tx_pool_users *users, size_t len,
+				      struct k_sem *pkts)
+{
+	size_t i;
+
+	for (i = 0; i < len && users[i].pkts != NULL; i++) {
+		if (users[i].pkts == pkts) {
+			return users[i].n;
+		}
+	}
+
+	__ASSERT_NO_MSG(i < len);
+
+	users[i].pkts = pkts;
+	users[i].n = 0U;
+
+	ARRAY_FOR_EACH_PTR(acl_conns, c) {
+		if (c->state != BT_CONN_CONNECTED || bt_conn_get_pkts(c) != pkts) {
+			continue;
+		}
+
+		if (atomic_get(&c->in_ll) > 0 || (c->has_data != NULL && c->has_data(c))) {
+			users[i].n++;
+		}
+	}
+
+	return users[i].n;
+}
+#endif /* CONFIG_BT_CONN */
+
+/* Whether a connection holds fewer of its pool's buffers than its share. The
+ * share is the pool's buffers, or the TX contexts if there are fewer, split
+ * evenly between the connections on that pool that have data queued or
+ * packets in flight, and is at least 1.
+ */
+static bool below_tx_share(struct bt_conn *conn, struct tx_pool_users *users, size_t len)
+{
+#if defined(CONFIG_BT_CONN)
+	struct k_sem *pkts;
+	unsigned int total;
+	unsigned int n;
+
+	if (!is_acl_conn(conn)) {
+		return true;
+	}
+
+	pkts = bt_conn_get_pkts(conn);
+	total = MIN(pkts->limit, ARRAY_SIZE(conn_tx));
+	n = MAX(tx_pool_users_get(users, len, pkts), 1U);
+
+	return atomic_get(&conn->in_ll) < MAX(total / n, 1U);
+#else
+	ARG_UNUSED(users);
+	ARG_UNUSED(len);
+
+	/* Only ISO channels, which are not shared */
+	return true;
+#endif /* CONFIG_BT_CONN */
+}
+
 static struct bt_conn *get_conn_ready(void)
 {
 	struct bt_conn *conn, *tmp;
+	struct bt_conn *first = NULL;
 	sys_snode_t *prev = NULL;
+	sys_snode_t *first_prev = NULL;
+	/* One ACL pool for BR/EDR and one for LE at most */
+	struct tx_pool_users users[2] = {0};
 
 	/* Called from the TX processor with the host lock held; the lock
 	 * serializes conn_ready list access against bt_conn_data_ready().
@@ -978,7 +1074,8 @@ static struct bt_conn *get_conn_ready(void)
 		__ASSERT_NO_MSG(tmp != conn);
 
 		/* Iterate over the list of connections that have data to send
-		 * and return the first one that can be sent.
+		 * and take the first one that can be sent and is below its share
+		 * of the controller's buffers, else the first one that can be sent.
 		 */
 
 		if (held_back_by_disable(conn)) {
@@ -1014,6 +1111,24 @@ static struct bt_conn *get_conn_ready(void)
 			continue;
 		}
 
+		if (below_tx_share(conn, users, ARRAY_SIZE(users))) {
+			break;
+		}
+
+		if (first == NULL) {
+			first = conn;
+			first_prev = prev;
+		}
+
+		prev = &conn->_conn_ready;
+	}
+
+	if (conn == NULL) {
+		conn = first;
+		prev = first_prev;
+	}
+
+	if (conn != NULL) {
 		if (should_stop_tx(conn)) {
 			/* Move reference off the list */
 			__ASSERT_NO_MSG(prev != &conn->_conn_ready);
@@ -1151,12 +1266,15 @@ void bt_conn_tx_processor(void)
 	 */
 	buf = conn->tx_data_pull(conn, conn_mtu(conn), &buf_len);
 	if (!buf) {
-		/* Either there is no more data, or the buffer is already in-use
-		 * by a view on it. In both cases, the TX processor will be
-		 * triggered again, either by the view's destroy callback, or by
-		 * the upper layer when it has more data.
-		 */
 		LOG_DBG("no buf returned");
+
+		/* A connection without data left leaves the list on the next pass:
+		 * run it now, so that the connections behind it are served without
+		 * waiting for a completion or new data.
+		 */
+		if (!conn->has_data(conn)) {
+			goto raise_and_exit;
+		}
 
 		goto exit;
 	}
