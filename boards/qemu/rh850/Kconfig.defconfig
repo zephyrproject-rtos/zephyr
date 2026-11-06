@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QEMU_RH850_U2C
+
+config BUILD_OUTPUT_BIN
+	default n
+
+endif # BOARD_QEMU_RH850_U2C

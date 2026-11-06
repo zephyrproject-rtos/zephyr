@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "RH850 Architecture Options"
+	depends on RH850
+
+config ARCH
+	string
+	default "rh850"
+
+config CPU_G4KH
+	bool
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	help
+	  RH850 G4KH CPU core (RH850/U2C).
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config NUM_IRQ_PRIORITIES
+	int
+	default 16
+
+endmenu
