@@ -129,6 +129,19 @@ Compared to LE:
   public address shares this state between its LE and BR/EDR connections, and it is kept until
   both bonds are removed.
 
+The local GATT server publishes SDP records with the service UUID, the ATT PSM and the service
+handle range (Core Vol 3, Part G, 9 and Part C, 15.4) for the GAP and GATT services, and for the
+other primary services defined with :c:macro:`BT_ATT_BR_SDP_SERVICE`. Use it for services whose
+specification defines SDP interoperability; services without it have no SDP record, but can still
+be discovered with ATT on the BR/EDR bearer. The records are updated when services are registered
+or unregistered. :kconfig:option:`CONFIG_BT_ATT_BR_SDP_RECORDS` sets the number of records,
+including the ones of the GAP and GATT services.
+
+.. code-block:: c
+
+   BT_GATT_SERVICE_DEFINE(my_svc, BT_GATT_PRIMARY_SERVICE(MY_SVC_UUID), ...);
+   BT_ATT_BR_SDP_SERVICE(my_svc, MY_SVC_UUID);
+
 The Enhanced ATT bearer is not supported on BR/EDR.
 
 API Reference
