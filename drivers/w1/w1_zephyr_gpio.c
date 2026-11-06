@@ -7,9 +7,9 @@
 #define DT_DRV_COMPAT zephyr_w1_gpio
 
 /**
- * @brief 1-Wire Bus Master driver using Zephyr GPIO interface.
+ * @brief 1-Wire bus controller driver using Zephyr GPIO interface.
  *
- * This file contains the implementation of the 1-Wire Bus Master driver using
+ * This file contains the implementation of the 1-Wire bus controller driver using
  * the Zephyr GPIO interface. The driver is based on GPIO bit-banging and
  * follows the timing specifications for 1-Wire communication.
  *
@@ -91,15 +91,15 @@ struct w1_gpio_timing {
 };
 
 struct w1_gpio_config {
-	/** w1 master config, common to all drivers */
-	struct w1_master_config master_config;
+	/** w1 controller config, common to all drivers */
+	struct w1_controller_config controller_config;
 	/** GPIO device used for 1-Wire communication */
 	const struct gpio_dt_spec spec;
 };
 
 struct w1_gpio_data {
-	/** w1 master data, common to all drivers */
-	struct w1_master_data master_data;
+	/** w1 controller data, common to all drivers */
+	struct w1_controller_data controller_data;
 	/** timing parameters for 1-Wire communication */
 	const struct w1_gpio_timing *timing;
 	/** overdrive speed mode active */
@@ -303,7 +303,8 @@ static int w1_gpio_init(const struct device *dev)
 	data->timing = &std;
 	data->overdrive_active = false;
 
-	LOG_DBG("w1-gpio initialized, with %d slave devices", cfg->master_config.slave_count);
+	LOG_DBG("w1-gpio initialized, with %d peripheral devices",
+		cfg->controller_config.peripheral_count);
 	return 0;
 }
 
@@ -318,7 +319,7 @@ static DEVICE_API(w1, w1_gpio_driver_api) = {
 
 #define W1_ZEPHYR_GPIO_INIT(inst)                                                                  \
 	static const struct w1_gpio_config w1_gpio_cfg_##inst = {                                  \
-		.master_config.slave_count = W1_INST_SLAVE_COUNT(inst),                            \
+		.controller_config.peripheral_count = W1_INST_PERIPHERAL_COUNT(inst),              \
 		.spec = GPIO_DT_SPEC_INST_GET(inst, gpios)};                                       \
 	static struct w1_gpio_data w1_gpio_data_##inst = {};                                       \
 	DEVICE_DT_INST_DEFINE(inst, &w1_gpio_init, NULL, &w1_gpio_data_##inst,                     \

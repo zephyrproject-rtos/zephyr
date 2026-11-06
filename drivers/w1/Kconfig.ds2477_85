@@ -1,4 +1,4 @@
-# Common configuration options for DS2477 and DS2485 1-Wire master drivers
+# Common configuration options for DS2477 and DS2485 1-Wire controller drivers
 
 # Copyright (c) 2022 Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
