@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -29,27 +30,32 @@ struct gpio_stellaris_runtime {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 	sys_slist_t cb;
+	struct k_spinlock lock;
 };
 
 #define GPIO_REG_ADDR(base, offset) (base + offset)
 
-#define GPIO_RW_ADDR(base, offset, p)			 \
-	(GPIO_REG_ADDR(base, offset) | (1 << (p + 2)))
+#define GPIO_DATA_OFFSET 0x000U
+#define GPIO_DIR_OFFSET  0x400U
+#define GPIO_DEN_OFFSET  0x51CU
+#define GPIO_IS_OFFSET   0x404U
+#define GPIO_IBE_OFFSET  0x408U
+#define GPIO_IEV_OFFSET  0x40CU
+#define GPIO_IM_OFFSET   0x410U
+#define GPIO_MIS_OFFSET  0x418U
+#define GPIO_ICR_OFFSET  0x41CU
 
-#define GPIO_RW_MASK_ADDR(base, offset, mask)		 \
-	(GPIO_REG_ADDR(base, offset) | (mask << 2))
+/* A port has at most eight pins, GPIODATA bits 7:0 */
+#define GPIO_PORT_PINS_MASK 0xFFU
 
-enum gpio_regs {
-	GPIO_DATA_OFFSET = 0x000,
-	GPIO_DIR_OFFSET = 0x400,
-	GPIO_DEN_OFFSET = 0x51C,
-	GPIO_IS_OFFSET = 0x404,
-	GPIO_IBE_OFFSET = 0x408,
-	GPIO_IEV_OFFSET = 0x40C,
-	GPIO_IM_OFFSET = 0x410,
-	GPIO_MIS_OFFSET = 0x418,
-	GPIO_ICR_OFFSET = 0x41C,
-};
+/*
+ * GPIODATA is address-masked: address bits [9:2] select the pins a read or write touches.
+ * Wider masks from the GPIO API are cut to bits 7:0 to stay inside GPIODATA.
+ */
+static inline mm_reg_t gpio_stellaris_data_addr(uint32_t base, uint32_t pins)
+{
+	return (mm_reg_t)(base + GPIO_DATA_OFFSET + ((pins & GPIO_PORT_PINS_MASK) << 2));
+}
 
 static void gpio_stellaris_isr(const struct device *dev)
 {
@@ -58,9 +64,10 @@ static void gpio_stellaris_isr(const struct device *dev)
 	uint32_t base = cfg->base;
 	uint32_t int_stat = sys_read32(GPIO_REG_ADDR(base, GPIO_MIS_OFFSET));
 
-	gpio_fire_callbacks(&context->cb, dev, int_stat);
-
+	/* Cleared first, so a new edge on a pin being handled raises another interrupt */
 	sys_write32(int_stat, GPIO_REG_ADDR(base, GPIO_ICR_OFFSET));
+
+	gpio_fire_callbacks(&context->cb, dev, int_stat);
 }
 
 static int gpio_stellaris_configure(const struct device *dev,
@@ -86,13 +93,17 @@ static int gpio_stellaris_configure(const struct device *dev,
 	if ((flags & GPIO_OUTPUT) != 0) {
 		mm_reg_t mask_addr;
 
-		mask_addr = GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, BIT(pin));
+		/*
+		 * A level written to GPIODATA while GPIODIR has the pin as an input does not take,
+		 * so GPIODIR is set first.
+		 */
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin);
+		mask_addr = gpio_stellaris_data_addr(base, BIT(pin));
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			sys_write32(BIT(pin), mask_addr);
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
 			sys_write32(0, mask_addr);
 		}
-		sys_set_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin);
 		/* Pin digital enable */
 		sys_set_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin);
 	} else if ((flags & GPIO_INPUT) != 0) {
@@ -120,7 +131,7 @@ static int gpio_stellaris_get_config(const struct device *dev,
 	if (sys_test_bit(GPIO_REG_ADDR(base, GPIO_DEN_OFFSET), pin) == 0) {
 		flags = GPIO_DISCONNECTED;
 	} else if (sys_test_bit(GPIO_REG_ADDR(base, GPIO_DIR_OFFSET), pin)) {
-		mask_addr = GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, BIT(pin));
+		mask_addr = gpio_stellaris_data_addr(base, BIT(pin));
 
 		if (sys_test_bit(mask_addr, pin)) {
 			flags |= GPIO_OUTPUT_HIGH;
@@ -141,7 +152,7 @@ static int gpio_stellaris_port_get_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	*value = sys_read32(GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, 0xff));
+	*value = sys_read32(gpio_stellaris_data_addr(base, GPIO_PORT_PINS_MASK));
 
 	return 0;
 }
@@ -153,7 +164,7 @@ static int gpio_stellaris_port_set_masked_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	sys_write32(value, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, mask));
+	sys_write32(value, gpio_stellaris_data_addr(base, mask));
 
 	return 0;
 }
@@ -164,7 +175,7 @@ static int gpio_stellaris_port_set_bits_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	sys_write32(mask, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, mask));
+	sys_write32(mask, gpio_stellaris_data_addr(base, mask));
 
 	return 0;
 }
@@ -175,7 +186,7 @@ static int gpio_stellaris_port_clear_bits_raw(const struct device *dev,
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
 
-	sys_write32(0, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, mask));
+	sys_write32(0, gpio_stellaris_data_addr(base, mask));
 
 	return 0;
 }
@@ -184,14 +195,52 @@ static int gpio_stellaris_port_toggle_bits(const struct device *dev,
 					   uint32_t mask)
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
+	struct gpio_stellaris_runtime *context = dev->data;
 	uint32_t base = cfg->base;
+	k_spinlock_key_t key;
 	uint32_t value;
 
-	value = sys_read32(GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, 0xff));
-	value ^= mask;
-	sys_write32(value, GPIO_RW_MASK_ADDR(base, GPIO_DATA_OFFSET, 0xff));
+	/*
+	 * Through the masked address, so the other pins of the port are not written, and under
+	 * the lock, so a toggle of the same pins between the read and the write is not lost
+	 */
+	key = k_spin_lock(&context->lock);
+	value = sys_read32(gpio_stellaris_data_addr(base, mask));
+	sys_write32(value ^ mask, gpio_stellaris_data_addr(base, mask));
+	k_spin_unlock(&context->lock, key);
 
 	return 0;
+}
+
+/*
+ * Sets how the pin's interrupt is sensed, then unmasks it. Writing GPIOIS, GPIOIBE or GPIOIEV
+ * can latch a spurious interrupt, so the pin stays masked until its status is cleared.
+ */
+static void gpio_stellaris_int_setup(uint32_t base, gpio_pin_t pin, enum gpio_int_mode mode,
+				     uint32_t edges)
+{
+	sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+
+	if (mode == GPIO_INT_MODE_EDGE) {
+		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
+	} else {
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
+	}
+
+	if (edges == (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) {
+		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
+	} else {
+		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
+
+		if (edges == GPIO_INT_HIGH_1) {
+			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+		} else {
+			sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
+		}
+	}
+
+	sys_write32(BIT(pin), GPIO_REG_ADDR(base, GPIO_ICR_OFFSET));
+	sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
 }
 
 static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
@@ -201,28 +250,20 @@ static int gpio_stellaris_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_stellaris_config *cfg = dev->config;
 	uint32_t base = cfg->base;
+	/* GPIO_INT_WAKEUP does not change how the pin is sensed */
+	uint32_t edges = (uint32_t)trig & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1);
 
-	/* Check if GPIO port needs interrupt support */
+	/* GPIO_INT_MODE_ENABLE_ONLY and GPIO_INT_MODE_DISABLE_ONLY are not handled */
+	if ((mode != GPIO_INT_MODE_DISABLED) && (mode != GPIO_INT_MODE_EDGE) &&
+	    (mode != GPIO_INT_MODE_LEVEL)) {
+		return -ENOTSUP;
+	}
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		/* Set the mask to disable the interrupt */
-		sys_set_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
-	} else {
-		if (mode == GPIO_INT_MODE_EDGE) {
-			sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
-		} else {
-			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IS_OFFSET), pin);
-		}
-
-		if (trig == GPIO_INT_TRIG_BOTH) {
-			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IBE_OFFSET), pin);
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			sys_set_bit(GPIO_REG_ADDR(base, GPIO_IEV_OFFSET), pin);
-		} else {
-			sys_clear_bit(GPIO_REG_ADDR(base,
-						    GPIO_IEV_OFFSET), pin);
-		}
-		/* Clear the Mask to enable the interrupt */
+		/* A clear GPIOIM bit masks the pin's interrupt */
 		sys_clear_bit(GPIO_REG_ADDR(base, GPIO_IM_OFFSET), pin);
+	} else {
+		gpio_stellaris_int_setup(base, pin, mode, edges);
 	}
 
 	return 0;
