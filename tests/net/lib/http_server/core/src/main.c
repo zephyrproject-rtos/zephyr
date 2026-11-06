@@ -1267,6 +1267,120 @@ ZTEST(server_function_tests, test_http1_dynamic_post)
 	common_verify_http1_dynamic_post("POST");
 }
 
+/* Send a chunked POST in the given parts and verify the application gets only the chunk data */
+static void verify_http1_dynamic_post_chunked(const char *const parts[], size_t part_count)
+{
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	for (size_t i = 0; i < part_count; i++) {
+		if (i > 0) {
+			/* Let the server process the previous part on its own */
+			k_msleep(100);
+		}
+
+		ret = zsock_send(client_fd, parts[i], strlen(parts[i]), 0);
+		zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+	}
+
+	memset(buf, 0, sizeof(buf));
+
+	test_read_data(&offset, sizeof(expected_response) - 1);
+	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_chunked)
+{
+	static const char *const parts[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"\r\n"
+		"5\r\nTest \r\n"
+		"c\r\ndynamic POST\r\n"
+		"0\r\n\r\n",
+	};
+
+	verify_http1_dynamic_post_chunked(parts, ARRAY_SIZE(parts));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_chunked_fragmented)
+{
+	static const char *const parts[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"\r\n"
+		"5\r\nTest \r\n"
+		"c\r\ndyna",
+		"mic POST\r\n"
+		"0\r\n\r\n",
+	};
+
+	verify_http1_dynamic_post_chunked(parts, ARRAY_SIZE(parts));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_chunked_framing_only)
+{
+	static const char *const parts[] = {
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"\r\n"
+		"5\r\nTest ",
+		"\r\nc\r\n",
+		"dynamic POST",
+		"\r\n0\r\n\r\n",
+	};
+
+	verify_http1_dynamic_post_chunked(parts, ARRAY_SIZE(parts));
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_chunked)
+{
+	static const char http1_request[] =
+		"POST /dynamic HTTP/1.1\r\n"
+		"Host: 127.0.0.1:8080\r\n"
+		"Transfer-Encoding: chunked\r\n"
+		"Connection: Upgrade, HTTP2-Settings\r\n"
+		"Upgrade: h2c\r\n"
+		"HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+		"\r\n"
+		"5\r\nTest \r\n"
+		"c\r\ndynamic POST\r\n"
+		"0\r\n\r\n";
+	size_t offset = 0;
+	int ret;
+
+	ret = zsock_send(client_fd, http1_request, strlen(http1_request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zassert_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zassert_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  dynamic_payload_len, "Wrong dynamic resource data");
+	zassert_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
 static void common_verify_http2_dynamic_get_request(const uint8_t *request,
 						    size_t request_len)
 {

@@ -1151,8 +1151,19 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 	struct http_client_ctx *ctx = CONTAINER_OF(parser,
 						   struct http_client_ctx,
 						   parser);
+	size_t offset = (const unsigned char *)at - ctx->cursor;
 
 	ctx->parser_state = HTTP1_RECEIVING_DATA_STATE;
+
+	/* Chunked encoding puts framing between the chunks; gather their data in
+	 * one block. The bytes overwritten have already been parsed.
+	 */
+	if (ctx->http1_frag_data_len == 0) {
+		ctx->http1_frag_data_offset = offset;
+	} else {
+		memmove(ctx->cursor + ctx->http1_frag_data_offset + ctx->http1_frag_data_len,
+			ctx->cursor + offset, length);
+	}
 
 	ctx->http1_frag_data_len += length;
 
@@ -1201,6 +1212,7 @@ int handle_http1_request(struct http_client_ctx *client)
 	int ret, path_len = 0;
 	struct http_resource_detail *detail;
 	bool skip_headers = (client->parser_state < HTTP1_RECEIVING_DATA_STATE);
+	size_t frag_skip_len;
 	size_t parsed;
 
 	LOG_DBG("HTTP_SERVER_REQUEST");
@@ -1234,20 +1246,27 @@ int handle_http1_request(struct http_client_ctx *client)
 
 	if (skip_headers) {
 		LOG_DBG("Requested URL: %s", client->url_buffer);
-
-		size_t frag_headers_len;
-
-		if (parsed < client->http1_frag_data_len) {
-			ret = -EBADMSG;
-			goto error;
-		}
-
-		frag_headers_len = parsed - client->http1_frag_data_len;
-		parsed -= frag_headers_len;
-
-		client->cursor += frag_headers_len;
-		client->data_len -= frag_headers_len;
 	}
+
+	if (parsed < client->http1_frag_data_len) {
+		ret = -EBADMSG;
+		goto error;
+	}
+
+	/* Move the payload to the end of the parsed bytes and skip what precedes
+	 * it: headers, chunk framing, or both.
+	 */
+	if (client->http1_frag_data_len > 0) {
+		memmove(client->cursor + parsed - client->http1_frag_data_len,
+			client->cursor + client->http1_frag_data_offset,
+			client->http1_frag_data_len);
+	}
+
+	frag_skip_len = parsed - client->http1_frag_data_len;
+	parsed -= frag_skip_len;
+
+	client->cursor += frag_skip_len;
+	client->data_len -= frag_skip_len;
 
 	if (client->has_upgrade_header) {
 		static const char upgrade_required[] =
