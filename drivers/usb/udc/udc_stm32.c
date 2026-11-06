@@ -102,17 +102,6 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
 #define STM32_PCD_PHY_EMBEDDED_HS	PCD_PHY_UTMI
 #endif /* CONFIG_STM32_HAL2 */
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-#define DT_DRV_COMPAT st_stm32_otghs
-#define UDC_STM32_IRQ_NAME     otghs
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs)
-#define DT_DRV_COMPAT st_stm32_otgfs
-#define UDC_STM32_IRQ_NAME     otgfs
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
-#define DT_DRV_COMPAT st_stm32_usb
-#define UDC_STM32_IRQ_NAME     usb
-#endif
-
 /*
  * Returns the 'PCD_PHY_Module' value for 'usb_node', which
  * corresponds to the PHY interface that should be used by
