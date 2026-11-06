@@ -2454,7 +2454,7 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 		}
 	}
 
-	bt_gatt_clear(id, addr);
+	bt_gatt_le_bond_deleted(id, addr);
 
 	if (IS_ENABLED(CONFIG_BT_SMP) && was_bonded) {
 		struct bt_conn_auth_info_cb *listener, *next;
