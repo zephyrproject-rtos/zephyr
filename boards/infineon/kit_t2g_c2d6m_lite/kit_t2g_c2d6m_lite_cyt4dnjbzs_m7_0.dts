@@ -15,6 +15,7 @@
 	aliases {
 		led0 = &user_led2;
 		sw0 = &user_bt1;
+		watchdog0 = &watchdog0;
 	};
 
 	chosen {
@@ -66,5 +67,9 @@ i2c11: &scb11 {
 	clock-frequency = <100000>;
 	pinctrl-0 = <&p0_5_scb11_i2c_scl &p0_4_scb11_i2c_sda>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&watchdog0 {
 	status = "okay";
 };
