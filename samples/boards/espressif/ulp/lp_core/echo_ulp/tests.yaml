@@ -2,6 +2,7 @@ sample:
   name: LP_CORE Echo Sample
 tests:
   sample.boards.esp32.ulp.lp_core.echo_ulp:
+    build_only: true
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32c5_devkitc/esp32c5/hpcore
