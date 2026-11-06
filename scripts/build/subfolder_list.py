@@ -6,7 +6,7 @@
 
 """Write subfolder list to a file
 
-This script will walk the specified directory and write the file specified with
+This script will walk the specified directories and write the file specified with
 the list of all sub-directories found. If the output file already exists, the
 file will only be updated in case sub-directories have been added or removed
 since the previous invocation.
@@ -14,6 +14,7 @@ since the previous invocation.
 """
 
 import argparse
+import hashlib
 import os
 
 
@@ -26,7 +27,11 @@ def parse_args():
     )
 
     parser.add_argument(
-        '-d', '--directory', required=True, help='Directory to walk for sub-directory discovery'
+        '-d',
+        '--directory',
+        required=True,
+        action='append',
+        help='Directory to walk for sub-directory discovery (may be repeated)',
     )
     parser.add_argument(
         '-c',
@@ -120,7 +125,14 @@ def main():
     """Parse command line arguments and take respective actions"""
     args = parse_args()
 
-    dirs = get_subfolder_list(args.directory, args.create_links)
+    dirs = []
+    for directory in sorted(set(args.directory)):
+        links = args.create_links
+        if links is not None:
+            # Keep each root's links separate and stable when roots are added or removed.
+            root_id = hashlib.sha256(os.path.abspath(directory).encode()).hexdigest()
+            links = os.path.join(links, root_id)
+        dirs.extend(get_subfolder_list(directory, links))
     gen_out_file(args.out_file, dirs)
 
     # Always touch trigger file to ensure json files are updated
