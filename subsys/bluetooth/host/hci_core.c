@@ -4695,6 +4695,14 @@ static int hci_init(void)
 		}
 	}
 #endif
+#if defined(CONFIG_BT_CLASSIC)
+	/* After any vendor BD_ADDR write, so PAN uses the address on the air. */
+	err = bt_br_read_bd_addr();
+	if (err != 0) {
+		LOG_WRN("Failed to read BR/EDR address (%d)", err);
+		err = 0;
+	}
+#endif
 	err = bt_id_init();
 	if (err) {
 		return err;

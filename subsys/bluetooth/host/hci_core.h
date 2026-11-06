@@ -366,6 +366,8 @@ struct bt_dev_br {
 	uint16_t         mtu;
 	struct k_sem  pkts;
 	uint16_t         esco_pkt_type;
+	/* Controller BD_ADDR, which may differ from the LE identity address. */
+	bt_addr_t        bdaddr;
 };
 
 /* The theoretical max for these is 8 and 64, but there's no point

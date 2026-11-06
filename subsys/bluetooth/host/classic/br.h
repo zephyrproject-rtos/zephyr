@@ -8,6 +8,9 @@
 
 int bt_br_init(void);
 
+/** Read the controller BD_ADDR into bt_dev.br.bdaddr. */
+int bt_br_read_bd_addr(void);
+
 void bt_br_discovery_reset(void);
 
 bool bt_br_update_sec_level(struct bt_conn *conn);
