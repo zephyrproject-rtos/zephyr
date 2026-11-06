@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - modem
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.modem.cellular.state_machine: {}
+  drivers.modem.cellular.state_machine.on_demand:
+    extra_args:
+      - DTC_OVERLAY_FILE=on_demand.overlay
+    extra_configs:
+      # Extra logging on the shorter suite for driver coverage
+      - CONFIG_MODEM_LOG_LEVEL_DBG=y
+      - CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT=y
+      - CONFIG_MODEM_DEDICATED_WORKQUEUE_STACK_SIZE=4096
