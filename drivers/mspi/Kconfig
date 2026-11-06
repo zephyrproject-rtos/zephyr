@@ -70,6 +70,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
 source "drivers/mspi/Kconfig.ambiq"
+source "drivers/mspi/Kconfig.bitbang"
 source "drivers/mspi/Kconfig.cadence"
 source "drivers/mspi/Kconfig.dw"
 source "drivers/mspi/Kconfig.mchp_xec"

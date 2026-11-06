@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bitbang MSPI controller
+
+description: |
+  MSPI controller implemented in software on GPIO pins.
+
+  Transfers are synchronous and run as fast as the GPIO accesses allow, at
+  most at the frequency a device requests. All I/O modes up to the number of
+  io-gpios entries and all data rates are supported.
+
+compatible: "zephyr,mspi-bitbang-controller"
+
+include: mspi-controller.yaml
+
+properties:
+  sck-gpios:
+    type: phandle-array
+    required: true
+    description: Serial clock output.
+
+  io-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data lines, up to sixteen, indexed like the IO0 .. IO15 pins of a
+      multi-bit SPI device. In single I/O mode IO0 is the data output and IO1
+      the data input; a multi-line phase uses IO0 .. IOn in both directions.
+
+examples:
+  - |
+    mspi0: mspi-bitbang-controller {
+        compatible = "zephyr,mspi-bitbang-controller";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        sck-gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+        io-gpios = <&gpio3 8 GPIO_ACTIVE_HIGH>,
+                   <&gpio3 9 GPIO_ACTIVE_HIGH>,
+                   <&gpio3 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+                   <&gpio3 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+        ce-gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+        clock-frequency = <1000000>;
+
+        flash@0 {
+            compatible = "jedec,nor";
+            reg = <0>;
+            size = <DT_SIZE_M(64)>;
+            jedec-id = [ef 40 17];
+            mspi-max-frequency = <1000000>;
+            mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+            mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+            mspi-cpp-mode = "MSPI_CPP_MODE_0";
+            mspi-endian = "MSPI_BIG_ENDIAN";
+            mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+        };
+    };
