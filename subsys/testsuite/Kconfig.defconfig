@@ -7,4 +7,12 @@ choice RNG_GENERATOR_CHOICE
 	default XOSHIRO_RANDOM_GENERATOR if ZTRESS && ENTROPY_HAS_DRIVER
 endchoice
 
+# Lock validation adds a few hundred bytes of stack to every k_spin_lock()
+# and k_mutex_lock() call, which overflows the minimal stacks many kernel
+# tests allocate. These must stay above every per-arch default.
+config TEST_EXTRA_STACK_SIZE
+	default 4096 if LOCKDEP && CPP_EXCEPTIONS
+	default 3072 if LOCKDEP && 64BIT
+	default 2048 if LOCKDEP
+
 endif # TEST

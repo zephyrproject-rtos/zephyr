@@ -7,6 +7,7 @@ Debugging
    :maxdepth: 1
 
    thread-analyzer.rst
+   lockdep.rst
    coredump.rst
    gdbstub.rst
    debugmon.rst
