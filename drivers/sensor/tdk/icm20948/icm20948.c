@@ -277,12 +277,23 @@ static int icm20948_init(const struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_ICM20948_TRIGGER
+	ret = icm20948_trigger_init(dev);
+	if (ret < 0) {
+		LOG_ERR("failed to set up the trigger: %d", ret);
+		return ret;
+	}
+#endif
+
 	return 0;
 }
 
 static DEVICE_API(sensor, icm20948_driver_api) = {
 	.sample_fetch = icm20948_sample_fetch,
 	.channel_get = icm20948_channel_get,
+#ifdef CONFIG_ICM20948_TRIGGER
+	.trigger_set = icm20948_trigger_set,
+#endif
 };
 
 #define ICM20948_DEFINE(inst)                                                                      \
@@ -294,6 +305,7 @@ static DEVICE_API(sensor, icm20948_driver_api) = {
 		.accel_fs = DT_INST_ENUM_IDX(inst, accel_fs),                                      \
 		.gyro_dlpf = DT_INST_ENUM_IDX(inst, gyro_dlpf),                                    \
 		.accel_dlpf = DT_INST_ENUM_IDX(inst, accel_dlpf),                                  \
+		.irq = GPIO_DT_SPEC_INST_GET_OR(inst, irq_gpios, {0}),                             \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm20948_init, NULL, &icm20948_data_##inst,             \

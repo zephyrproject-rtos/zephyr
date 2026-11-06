@@ -15,6 +15,12 @@ compatible: "invensense,icm20948"
 include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
+  irq-gpios:
+    type: phandle-array
+    description: |
+      The INT1 output of the device, which is active high, push-pull and
+      pulsed out of reset. Required when a trigger mode is selected.
+
   gyro-fs:
     type: int
     default: 250

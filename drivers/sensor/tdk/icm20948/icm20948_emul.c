@@ -198,7 +198,11 @@ static void icm20948_emul_write(const struct emul *target, uint8_t addr, uint8_t
 static void icm20948_emul_read(const struct emul *target, uint8_t addr, uint8_t *buf, size_t len)
 {
 	struct icm20948_emul_data *data = target->data;
-	uint8_t status = FIELD_GET(REG_ADDRESS_MASK, REG_I2C_MST_STATUS);
+	/* The status registers of bank 0 clear themselves as they are read */
+	static const uint8_t clear_on_read[] = {
+		FIELD_GET(REG_ADDRESS_MASK, REG_I2C_MST_STATUS),
+		FIELD_GET(REG_ADDRESS_MASK, REG_INT_STATUS_1),
+	};
 
 	__ASSERT_NO_MSG(addr + len <= ICM20948_EMUL_REGS);
 
@@ -208,9 +212,14 @@ static void icm20948_emul_read(const struct emul *target, uint8_t addr, uint8_t 
 
 	memcpy(buf, &data->reg[data->bank][addr], len);
 
-	/* The master status register clears itself as it is read */
-	if (data->bank == 0 && addr <= status && status < addr + len) {
-		data->reg[0][status] = 0;
+	if (data->bank != 0) {
+		return;
+	}
+
+	ARRAY_FOR_EACH(clear_on_read, i) {
+		if (addr <= clear_on_read[i] && clear_on_read[i] < addr + len) {
+			data->reg[0][clear_on_read[i]] = 0;
+		}
 	}
 }
 
