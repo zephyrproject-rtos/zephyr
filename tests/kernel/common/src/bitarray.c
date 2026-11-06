@@ -934,6 +934,51 @@ ZTEST(bitarray, test_bitarray_xor)
 }
 
 /**
+ * @brief Verify self-XOR clears only the selected bitarray region.
+ *
+ * @ingroup kernel_bitarray_tests
+ *
+ * @details
+ * Exercise self-XOR across bundle boundaries, repeated calls, and invalid regions.
+ *
+ * Test steps:
+ * - Apply self-XOR twice to a region spanning three bundles.
+ * - Attempt self-XOR with zero length, an invalid offset, and an excessive length.
+ *
+ * Expected result:
+ * - The selected bits are cleared and bits outside the region remain unchanged.
+ * - Repeated calls succeed; invalid regions return -EINVAL without modifying the array.
+ *
+ * @see sys_bitarray_xor()
+ */
+ZTEST(bitarray, test_bitarray_xor_self)
+{
+	const uint32_t expected[] = {0x00005a5aU, 0U, 0x5a5a0000U};
+
+	/* Bitarrays have embedded spinlocks and cannot be on the stack. */
+	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
+		ztest_test_skip();
+	}
+
+	SYS_BITARRAY_DEFINE(ba, 96);
+
+	ba.bundles[0] = 0xa5a55a5aU;
+	ba.bundles[1] = 0xffff0000U;
+	ba.bundles[2] = 0x5a5aa5a5U;
+
+	/* Self-XOR clears only the requested region, including on repeated calls. */
+	for (size_t i = 0; i < 2; i++) {
+		zassert_equal(sys_bitarray_xor(&ba, &ba, 64, 16), 0);
+		zassert_mem_equal(ba.bundles, expected, sizeof(expected));
+	}
+
+	zassert_equal(sys_bitarray_xor(&ba, &ba, 0, 0), -EINVAL);
+	zassert_equal(sys_bitarray_xor(&ba, &ba, 1, 96), -EINVAL);
+	zassert_equal(sys_bitarray_xor(&ba, &ba, 2, 95), -EINVAL);
+	zassert_mem_equal(ba.bundles, expected, sizeof(expected));
+}
+
+/**
  * @brief Verify locating the nth set bit within a region.
  *
  * @ingroup kernel_bitarray_tests

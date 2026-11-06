@@ -176,6 +176,7 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
  * Calculates the bit-wise XOR of two bitarrays in a region.
  * The result is stored in the first bitarray passed in (@p dst).
  * Both bitarrays must be of the same size.
+ * If @p dst and @p other refer to the same bitarray, the specified region is cleared.
  *
  * @param dst      Bitarray struct
  * @param other    Bitarray struct
