@@ -404,6 +404,17 @@ void HAL_PCD_ResetCallback(stm32_pcd_handle_t *hpcd)
 		__ASSERT_NO_MSG(status == HAL_OK);
 	}
 
+#if !defined(CONFIG_STM32_HAL2) && defined(USB_OTG_DOEPMSK_NAKM)
+	/*
+	 * HAL unmasks the OUT NAK IRQ on reset but never uses it. The resulting
+	 * IRQ storm can starve the threads that reply to host requests.
+	 */
+	USB_OTG_DeviceTypeDef *otg_dev =
+		(USB_OTG_DeviceTypeDef *)((uintptr_t)priv->pcd.Instance + USB_OTG_DEVICE_BASE);
+
+	stm32_reg_clear_bits(&otg_dev->DOEPMSK, USB_OTG_DOEPMSK_NAKM);
+#endif
+
 	udc_set_suspended(dev, false);
 	udc_submit_event(priv->dev, UDC_EVT_RESET, 0);
 }
