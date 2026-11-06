@@ -1243,6 +1243,7 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
 	struct i2s_q_entry q_entry = {.mem_block = mem_block, .size = size};
+	unsigned int key;
 	int ret;
 
 	LOG_DBG("i2s_mcux_write");
@@ -1257,25 +1258,30 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 		return ret;
 	}
 
+	/*
+	 * The driver owns the block from here on, so the write succeeded,
+	 * whatever happens below.
+	 *
+	 * While the stream runs and the DMA has a free TCD slot, hand the new
+	 * block to the DMA now instead of waiting for the next TX callback.
+	 * Otherwise the DMA can finish its last queued block before the
+	 * callback reloads it, the FIFO underruns and the stream moves to
+	 * I2S_STATE_ERROR although the application wrote data in time.
+	 *
+	 * Check the state again with interrupts locked: an underrun flagged by
+	 * the DMA callback or the FIFO error interrupt since the check above
+	 * stopped the DMA channel, which must not be reloaded. A block the DMA
+	 * rejects stays on in_queue for the next callback or PREPARE/DROP.
+	 */
+	key = irq_lock();
 	if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks > 0) {
 		uint8_t blocks_queued = 0;
-		/*
-		 * DMA is still running but has free TCD slots. Hand the new block
-		 * to the DMA now instead of waiting for the next TX callback.
-		 * Otherwise the DMA can finish its last queued block before the
-		 * callback reloads it, the FIFO underruns and the stream moves to
-		 * I2S_STATE_ERROR although the application wrote data in time.
-		 * Once the DMA has run dry the stream is in I2S_STATE_ERROR and
-		 * the state check above already rejected the write.
-		 */
-		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
-		if (ret != 0) {
-			LOG_ERR("TX block reload err (%d)", ret);
-			return ret;
-		}
-	}
 
-	return ret;
+		(void)i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
+	}
+	irq_unlock(key);
+
+	return 0;
 }
 
 static void sai_driver_irq(const struct device *dev)
