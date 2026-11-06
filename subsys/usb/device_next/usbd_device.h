@@ -31,6 +31,42 @@ struct usbd_vreq_node *usbd_device_get_vreq(struct usbd_context *const uds_ctx,
 void usbd_device_unregister_all_vreq(struct usbd_context *const uds_ctx);
 
 /**
+ * @brief Get the High-Speed device descriptor
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return pointer to the High-Speed device descriptor, or NULL if the stack
+ *         is built without High-Speed support.
+ */
+static inline void *usbd_get_hs_desc(const struct usbd_context *const uds_ctx)
+{
+#if USBD_SUPPORTS_HIGH_SPEED
+	return uds_ctx->hs_desc;
+#else
+	ARG_UNUSED(uds_ctx);
+	return NULL;
+#endif
+}
+
+/**
+ * @brief Get the list of High-Speed device configurations
+ *
+ * @param[in] uds_ctx Pointer to a device context
+ *
+ * @return pointer to the High-Speed configuration list, or NULL if the stack
+ *         is built without High-Speed support.
+ */
+static inline sys_slist_t *usbd_get_hs_configs(struct usbd_context *const uds_ctx)
+{
+#if USBD_SUPPORTS_HIGH_SPEED
+	return &uds_ctx->hs_configs;
+#else
+	ARG_UNUSED(uds_ctx);
+	return NULL;
+#endif
+}
+
+/**
  * @brief Get device descriptor bNumConfigurations value
  *
  * @param[in] uds_ctx Pointer to a device context
@@ -46,7 +82,7 @@ static inline uint8_t usbd_get_num_configs(const struct usbd_context *const uds_
 	if (speed == USBD_SPEED_FS) {
 		desc = uds_ctx->fs_desc;
 	} else if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		desc = uds_ctx->hs_desc;
+		desc = usbd_get_hs_desc(uds_ctx);
 	} else {
 		return 0;
 	}
@@ -71,7 +107,7 @@ static inline void usbd_set_num_configs(struct usbd_context *const uds_ctx,
 	if (speed == USBD_SPEED_FS) {
 		desc = uds_ctx->fs_desc;
 	} else if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		desc = uds_ctx->hs_desc;
+		desc = usbd_get_hs_desc(uds_ctx);
 	} else {
 		return;
 	}
