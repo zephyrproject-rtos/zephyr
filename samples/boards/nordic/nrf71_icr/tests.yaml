@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: nRF71 ICR fallback register reads
+  description: Read configuration register from UICR else FICR else default
+common:
+  build_only: true
+  sysbuild: true
+  platform_allow:
+    - nrf7120dk/nrf7120/cpuapp
+    - nrf7120dk/nrf7120e/cpuapp
+tests:
+  sample.boards.nordic.nrf71_icr: {}
