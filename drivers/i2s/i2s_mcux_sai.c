@@ -149,6 +149,24 @@ static I2S_Type *get_base(const struct device *dev)
 	return (I2S_Type *)DEVICE_MMIO_NAMED_GET(dev, sai_mmio);
 }
 
+/*
+ * Upper bound, in microseconds, for the TX FIFO to drain or the receiver to
+ * finish its frame once the stream is being disabled. At least one FIFO word
+ * is shifted per frame, so allow twice the FIFO depth in frames plus 1 ms.
+ * Bounding these waits keeps a stopped external clock from hanging the CPU.
+ */
+static uint32_t i2s_stream_wind_down_us(const struct device *dev, const struct stream *strm)
+{
+	uint32_t fs = strm->cfg.frame_clk_freq;
+
+	if (fs == 0U) {
+		return 1000U;
+	}
+
+	return ((2U * (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(get_base(dev)) * USEC_PER_SEC) / fs) +
+	       1000U;
+}
+
 static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab, bool in_drop,
 				     bool out_drop)
 {
@@ -204,8 +222,9 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	if (!drop && ((base->TCSR & I2S_TCSR_TE_MASK) != 0UL)) {
 		/* wait for TX FIFO to drain before disabling, if not disabled already */
-		while ((base->TCSR & I2S_TCSR_FWF_MASK) == 0) {
-			;
+		if (!WAIT_FOR((base->TCSR & I2S_TCSR_FWF_MASK) != 0UL,
+			      i2s_stream_wind_down_us(dev, strm), k_busy_wait(1))) {
+			LOG_WRN("TX FIFO did not drain");
 		}
 	}
 
@@ -252,13 +271,22 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 	/* Disable Rx */
 	SAI_RxEnable(base, false);
 
-	/* wait for Receiver to disable */
-	while (base->RCSR & I2S_RCSR_RE_MASK) {
-		;
+	/*
+	 * When TX is synchronous to RX, the receiver provides the TX clocks and
+	 * SAI_RxEnable() leaves it enabled on purpose, so do not wait for it.
+	 * Otherwise the receiver stops at the end of the current frame.
+	 */
+	if ((((base->TCR2 & I2S_TCR2_SYNC_MASK) >> I2S_TCR2_SYNC_SHIFT) != 1U) &&
+	    !WAIT_FOR((base->RCSR & I2S_RCSR_RE_MASK) == 0UL, i2s_stream_wind_down_us(dev, strm),
+		      k_busy_wait(1))) {
+		LOG_WRN("RX did not stop");
 	}
-	/* reset the FIFO pointer and clear error flags */
-	base->RCSR |= (I2S_RCSR_FR_MASK | I2S_RCSR_SR_MASK);
-	base->RCSR &= ~I2S_RCSR_SR_MASK;
+
+	/* If Rx is disabled, reset the FIFO pointer and clear error flags */
+	if ((base->RCSR & I2S_RCSR_RE_MASK) == 0UL) {
+		base->RCSR |= (I2S_RCSR_FR_MASK | I2S_RCSR_SR_MASK);
+		base->RCSR &= ~I2S_RCSR_SR_MASK;
+	}
 
 	/* purge buffers queued in the stream */
 	i2s_purge_stream_buffers(strm, dev_data->rx.cfg.mem_slab, in_drop, out_drop);
