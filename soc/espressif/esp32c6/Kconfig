@@ -14,7 +14,7 @@ config SOC_SERIES_ESP32C6
 
 if SOC_SERIES_ESP32C6
 
-config MAC_BB_PD
+config SOC_FAMILY_ESP32_MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
 	depends on SOC_SERIES_ESP32C6 && TICKLESS_KERNEL && PM
 	help

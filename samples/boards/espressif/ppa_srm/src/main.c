@@ -28,7 +28,7 @@
 /* The engine reads and writes these over 2D-DMA and the results are
  * invalidated afterwards, so they start and end on a cache line.
  */
-#define PPA_SRM_BUF_ALIGN CONFIG_ESP32_CACHE_L2_LINE_SIZE
+#define PPA_SRM_BUF_ALIGN CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE
 
 static const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 

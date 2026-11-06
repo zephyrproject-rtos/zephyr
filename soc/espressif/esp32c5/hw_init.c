@@ -80,7 +80,7 @@ int hardware_init(void)
 
 	bootloader_clock_configure();
 
-#ifdef CONFIG_ESP_CONSOLE
+#ifdef CONFIG_SOC_FAMILY_ESP32_CONSOLE
 	esp_console_init();
 	print_banner();
 #endif

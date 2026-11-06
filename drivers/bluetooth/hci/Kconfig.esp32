@@ -252,7 +252,7 @@ config ESP32_BT_CTLR_CHECK_CONNECT_IND_ACCESS_ADDRESS
 
 choice ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM
 	prompt "Coexistence PHY coded TX/RX time limit"
-	depends on ESP32_SW_COEXIST_ENABLE
+	depends on SOC_FAMILY_ESP32_SW_COEXIST_ENABLE
 	default ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_DIS
 	help
 	  Limit TX/RX time for coded PHY to reduce Wi-Fi interference.
@@ -267,7 +267,7 @@ endchoice
 
 config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EFF
 	int
-	default 0 if !ESP32_SW_COEXIST_ENABLE
+	default 0 if !SOC_FAMILY_ESP32_SW_COEXIST_ENABLE
 	default 1 if ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EN
 	default 0 if ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
@@ -594,7 +594,7 @@ config ESP32_BT_LE_MAX_CONNECTIONS
 choice ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM
 	prompt "Coexistence coded PHY TX/RX time limit"
 	default ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
-	depends on ESP32_SW_COEXIST_ENABLE
+	depends on SOC_FAMILY_ESP32_SW_COEXIST_ENABLE
 	help
 	  Apply a time limit on coded PHY TX/RX to reduce Wi-Fi interference.
 
@@ -608,7 +608,7 @@ endchoice
 
 config ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
 	int
-	default 0 if !ESP32_SW_COEXIST_ENABLE
+	default 0 if !SOC_FAMILY_ESP32_SW_COEXIST_ENABLE
 	default 1 if ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EN
 	default 0 if ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_DIS
 
@@ -616,7 +616,7 @@ config ESP32_BT_LE_SLEEP_ENABLE
 	bool "BLE sleep mode"
 	depends on PM && TICKLESS_KERNEL
 	default y
-	select MAC_BB_PD if SOC_SERIES_ESP32C6
+	select SOC_FAMILY_ESP32_MAC_BB_PD if SOC_SERIES_ESP32C6
 	help
 	  Allow controller to enter low-power sleep during idle periods.
 
