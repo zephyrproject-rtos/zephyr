@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA6B1 oscillator
+
+compatible: "renesas,ra6b1-osc"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - interrupts
+      - interrupt-names
+  - name: fixed-clock.yaml
+    property-allowlist:
+      - status
+      - compatible
+      - clock-frequency
+
+properties:
+  settle-time:
+    type: int
+    default: 8000
+    description: |
+      Time in ms needed to oscillator to settle.
+
+  calibration-interval:
+    type: int
+    default: 10000
+    description: |
+      Time in ms between oscillator calibrations.
+
+  calibration-cycles:
+    type: int
+    default: 10
+    description: |
+      Number of clocks cycle used for calibration.
