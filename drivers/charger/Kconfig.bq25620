@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ25620
+	bool "TI BQ25620 battery charger driver"
+	default y
+	depends on DT_HAS_TI_BQ25620_CHARGER_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the TI BQ25620 battery charger driver.
