@@ -56,7 +56,7 @@ void soc_reset_hook(void)
 	SystemInit();
 }
 
-#if defined(CONFIG_LV_USE_DRAW_VG_LITE) || !defined(CONFIG_LV_USE_VG_LITE_DRIVER)
+#if defined(CONFIG_VGLITE)
 static int gpu_init_imxrt7xx(const struct device *dev)
 {
 	ARG_UNUSED(dev);

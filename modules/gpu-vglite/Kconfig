@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+config ZEPHYR_GPU_VGLITE_MODULE
+	bool
+
+config VGLITE
+	bool "VGLite support"
+	select LV_USE_DRAW_VG_LITE
+	help
+	  Enable the external VGLite graphics driver.
