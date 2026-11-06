@@ -28,6 +28,7 @@ class HardwareData:
     runner: str | None = None
     flash_timeout: int = 60
     flash_with_test: bool = False
+    runner_console: bool = False
     flash_before: bool = False
     fixtures: list[str] = field(default_factory=list)
     run_with_fixture_only: bool = False

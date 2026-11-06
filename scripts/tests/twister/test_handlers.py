@@ -7,6 +7,7 @@
 Tests for handlers.py classes' methods
 """
 
+import io
 import itertools
 import os
 import signal
@@ -1192,7 +1193,8 @@ def test_devicehandler_handle(
         post_script='dummy post script',
         post_flash_script='dummy post flash script',
         flash_timeout=60,
-        flash_with_test=True
+        flash_with_test=True,
+        runner_console=False
     )
 
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
@@ -1257,6 +1259,49 @@ def test_devicehandler_handle(
         assert handler.instance.reason == expected_reason
     if expected_status:
         assert handler.instance.status == expected_status
+
+
+def test_devicehandler_handle_runner_console(tmp_path, mocked_instance):
+    """A runner that prints the output of the device itself is used instead of a
+    serial console, and its exit code decides the result."""
+    hardware = mock.Mock(
+        runner='probe-rs',
+        runner_console=True,
+        serial=None,
+        serial_pty=None,
+        pre_script=None,
+        post_script=None,
+        post_flash_script=None,
+        script_param=None,
+        flash_timeout=60,
+        flash_with_test=False,
+    )
+
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
+    handler.instance.reserved_duts = [hardware]
+    handler.build_dir = str(tmp_path)
+    handler.log = os.path.join(tmp_path, 'handler.log')
+    handler.options = mock.Mock(timeout_multiplier=1, west_flash=None, west_runner=None,
+                                enable_coverage=False, flash_command=None, verbose=0)
+    handler._create_command = mock.Mock(return_value=['dummy', 'command'])
+
+    proc = mock.Mock(
+        stdout=io.BytesIO(b'PROJECT EXECUTION SUCCESSFUL\n'),
+        stderr=io.BytesIO(b''),
+        returncode=0,
+    )
+    proc.__enter__ = mock.Mock(return_value=proc)
+    proc.__exit__ = mock.Mock(return_value=None)
+
+    harness = mock.Mock(status=TwisterStatus.PASS)
+
+    with mock.patch('subprocess.Popen', return_value=proc):
+        handler.handle(harness)
+
+    harness.handle.assert_called_once_with('PROJECT EXECUTION SUCCESSFUL')
+    assert handler.returncode == 0
+    with open(handler.log) as log:
+        assert 'PROJECT EXECUTION SUCCESSFUL' in log.read()
 
 
 TESTDATA_18 = [
