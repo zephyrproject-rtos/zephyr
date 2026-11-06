@@ -1,4 +1,14 @@
-description: ESP32 I2S
+description: |
+  ESP32 I2S
+
+  On SoCs with a PCM to PDM converter, except the ESP32, I2S0
+  transmits the I2S_FMT_DATA_FORMAT_PDM data format as a PDM stream
+  on the data output pin. See the pdm-tx-line-mode property for the
+  line modes.
+
+  The highest PDM sample rate depends on the I2S clock source: about
+  78 kHz with the 160 MHz PLL, 46.9 kHz on the ESP32-H2 and 19.5 kHz
+  on the ESP32-P4 revisions before v3.0.
 
 compatible: "espressif,esp32-i2s"
 
@@ -28,3 +38,16 @@ properties:
     required: true
     description: I2S unit number.
       Possible values are 0,1,.. depending on chip.
+
+  pdm-tx-line-mode:
+    type: string
+    enum:
+      - "codec"
+      - "dac"
+      - "dac-two-line"
+    description: |
+      PDM TX line mode. "codec" sends both channels on the data output
+      pin with the PDM clock on the WS pin. "dac" sends one channel on
+      the data output pin and needs no clock. "dac-two-line" sends the
+      second channel on the SD1 output pin. When not set, a one-channel
+      stream uses "dac" and a two-channel stream uses "codec".
