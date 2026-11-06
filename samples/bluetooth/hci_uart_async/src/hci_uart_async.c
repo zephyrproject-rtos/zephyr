@@ -281,8 +281,7 @@ static void h2c_h4_transport(void)
 				payload_size -= read_size;
 			}
 
-			net_buf_unref(buf);
-			buf = NULL;
+			net_buf_drop(&buf);
 		}
 
 		LOG_DBG("h2c: packet done");
@@ -293,8 +292,7 @@ static void h2c_h4_transport(void)
 			if (err) {
 				/* This is not a transport error. */
 				LOG_ERR("bt_send err %d", err);
-				net_buf_unref(buf);
-				buf = NULL;
+				net_buf_drop(&buf);
 			}
 		}
 
