@@ -11,7 +11,7 @@ a USB type C connector, and uses a large pad design.
 Hardware
 ********
 
-- Microcontroller Raspberry Pi RP2040, with a max frequency of 133 MHz
+- Microcontroller Raspberry Pi RP2040, with a max frequency of 200 MHz
 - Dual ARM Cortex M0+ cores
 - 264 kByte SRAM
 - 28 Mbyte QSPI flash

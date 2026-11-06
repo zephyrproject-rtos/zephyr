@@ -14,7 +14,7 @@ and a small speaker for audio feedback.
 Hardware
 ********
 
-- Dual core Cortex-M0+ at up to 133MHz
+- Dual core Cortex-M0+ at up to 200MHz
 - 264KB of SRAM
 - 8MB of QSPI flash memory
 - 12 mechanical key switches (Cherry MX compatible)
