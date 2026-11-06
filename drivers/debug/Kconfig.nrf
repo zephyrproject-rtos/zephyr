@@ -162,6 +162,7 @@ menuconfig DEBUG_CORESIGHT_NRF
 	bool "Coresight Trace support"
 	default y
 	depends on DT_HAS_NORDIC_CORESIGHT_NRF_ENABLED
+	depends on HAS_IRONSIDE_SE_CALL
 	select PINCTRL
 	select IRONSIDE_SE_CALL
 	help
