@@ -28,6 +28,12 @@ enum l2cap_conn_list_action {
 
 #define BT_L2CAP_PSM_RFCOMM             0x0003
 
+/** @brief Local L2CAP RTX (Response Timeout eXpired)
+ *
+ *  Specification-allowed range for the value of RTX is 1 to 60 seconds.
+ */
+#define BT_L2CAP_RTX_TIMEOUT K_SECONDS(2)
+
 struct bt_l2cap_hdr {
 	uint16_t len;
 	uint16_t cid;
