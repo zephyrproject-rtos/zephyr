@@ -49,7 +49,7 @@ References
 .. target-notes::
 
 .. _GM02S Datasheet:
-   https://www.sequans.com/products-solutions/gm02s/
+   https://docs-online.sequans.io/GM02S/datasheet/GM02S_datasheet.html
 
 .. _LTE IoT 10 Click:
    https://www.mikroe.com/lte-iot-10-click
