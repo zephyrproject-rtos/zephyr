@@ -1170,6 +1170,45 @@ ZTEST(smp, test_inc_concurrency)
 			"total count %d is wrong(M)", global_cnt);
 }
 
+static struct k_timer cleanup_timer;
+static atomic_t cleanup_in_expiry;
+
+static void cleanup_busy_expiry(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	atomic_set(&cleanup_in_expiry, 1);
+	k_busy_wait(USEC_PER_MSEC);
+	atomic_set(&cleanup_in_expiry, 0);
+}
+
+/**
+ * @brief Test k_timer_cleanup() on a periodic timer whose handler is running
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details Wait until the expiry function of a periodic timer is seen running
+ * on another CPU, then call k_timer_cleanup() and verify that it only returns
+ * once the expiry function has completed.
+ */
+ZTEST(smp, test_timer_cleanup_periodic_in_flight)
+{
+	int64_t end;
+
+	for (int i = 0; i < 10; i++) {
+		k_timer_init(&cleanup_timer, cleanup_busy_expiry, NULL);
+		k_timer_start(&cleanup_timer, K_MSEC(1), K_MSEC(1));
+
+		end = k_uptime_get() + 100;
+		while ((atomic_get(&cleanup_in_expiry) == 0) && (k_uptime_get() < end)) {
+		}
+
+		zassert_equal(k_timer_cleanup(&cleanup_timer), 0);
+		zassert_equal(atomic_get(&cleanup_in_expiry), 0,
+			      "expiry function still running after k_timer_cleanup()");
+	}
+}
+
 /** Keep track of how many signals raised. */
 static unsigned int t_signal_raised;
 
