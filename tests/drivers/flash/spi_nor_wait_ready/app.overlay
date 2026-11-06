@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	nor_short: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [ef 40 15];
+		size = <DT_SIZE_M(16)>;
+		wait-ready-timeout-ms = <200>;
+	};
+
+	nor_long: flash@1 {
+		compatible = "jedec,spi-nor";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [ef 40 15];
+		size = <DT_SIZE_M(16)>;
+		wait-ready-timeout-ms = <400>;
+	};
+
+	nor_default: flash@2 {
+		compatible = "jedec,spi-nor";
+		reg = <2>;
+		spi-max-frequency = <8000000>;
+		jedec-id = [ef 40 15];
+		size = <DT_SIZE_M(16)>;
+	};
+};
