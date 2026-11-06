@@ -1009,7 +1009,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 		 */
 		status->pending_length =
 			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel) *
-			DEV_CHANNEL_DATA(dev, channel)->transfer_settings.source_data_size;
+			DEV_CHANNEL_DATA(dev, channel)->transfer_settings.source_burst_length;
 	} else {
 		status->busy = false;
 		status->pending_length = 0;
