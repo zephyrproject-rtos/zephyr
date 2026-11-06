@@ -11,12 +11,13 @@ zephyr_library_sources(
   usbh_api.c
   usbh_device.c
   usbh_desc.c
-  usbh_class.c
+  usbh_hcd.c
 )
 
-if(CONFIG_USBH_SHELL OR CONFIG_USBH_HUB_CLASS)
-  zephyr_library_sources(usbh_ch11.c)
-endif()
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_HUB
+  usbh_hub.c
+)
 
 zephyr_library_sources_ifdef(
   CONFIG_USBH_SHELL
@@ -24,13 +25,20 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
-  CONFIG_USBH_VIDEO_CLASS
-  class/usbh_uvc.c
+  CONFIG_USBH_MSC
+  usbh_msc.c
 )
 
 zephyr_library_sources_ifdef(
-  CONFIG_USBH_HUB_CLASS
-  class/usbh_hub.c
+  CONFIG_USBH_MSC_CLASS
+  usbh_msc_bot.c
+  usbh_msc_scsi.c
+  msc/usb_msc_lun.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_VIDEO_CLASS
+  class/usbh_uvc.c
 )
 
 zephyr_library_sources_ifdef(

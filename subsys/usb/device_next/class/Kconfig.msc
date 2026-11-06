@@ -6,7 +6,11 @@ config USBD_MSC_CLASS
 	bool "USB Mass Storage Device class support"
 	select DISK_ACCESS
 	help
-	  USB Mass Storage device class support.
+	  USB Mass Storage device class (SCSI target) support. LUNs are
+	  pre-bound at build time via USBD_DEFINE_MSC_LUN() to a disk_access
+	  volume. Command opcodes match the initiator mid-layer through
+	  include/zephyr/scsi/scsi_opcode.h only; CONFIG_SCSI is not enabled
+	  and scsi_device/scsi_exec are not used on this path.
 
 if USBD_MSC_CLASS
 
