@@ -1,24 +1,25 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-config ESP32_ETM
+config SOC_FAMILY_ESPRESSIF_ETM
 	bool
-	depends on SOC_ESP32_ETM_SUPPORTED
+	depends on SOC_FAMILY_ESPRESSIF_ETM_SUPPORTED
 	help
 	  Espressif Event Task Matrix (ETM) channel allocator. The ETM
 	  routes a peripheral event to a peripheral task in hardware. This
 	  symbol is selected by drivers that need such routing and is not
 	  meant to be enabled directly.
 
-config ESP32_USE_UNSUPPORTED_REVISION
+config SOC_ESP32_USE_UNSUPPORTED_REVISION
 	bool "Use unsupported ESP32 revision (Rev 0/1)"
+	depends on SOC_SERIES_ESP32
 	help
 	  ESP32 SoC has multiple revisions, some of which are not supported by the current
 	  implementation, as such as REV0 and REV1. In case those revisions are required,
 	  set this option to enable support for them. Note that this is not recommended and
 	  may lead to unexpected behavior.
 
-config ESP_SIMPLE_BOOT
+config SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
 	bool "Simple Boot method"
 	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT
 	help

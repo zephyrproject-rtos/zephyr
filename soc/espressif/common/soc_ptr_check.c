@@ -19,7 +19,7 @@ bool IRAM_ATTR xtensa_soc_stack_ptr_is_sane(uint32_t sp)
 		return true;
 	}
 
-	if (IS_ENABLED(CONFIG_ESP_SPIRAM)) {
+	if (IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)) {
 		return esp_ptr_external_ram((void *)sp) && ((sp & 0xF) == 0U);
 	}
 

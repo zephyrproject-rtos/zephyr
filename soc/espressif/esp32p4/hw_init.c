@@ -63,7 +63,7 @@ int hardware_init(void)
 	 */
 	psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, true);
 
-#ifdef CONFIG_ESP_CONSOLE
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE
 	esp_console_init();
 	print_banner();
 #endif
@@ -77,8 +77,8 @@ int hardware_init(void)
 	 */
 	cache_hal_config_t cache_config = {
 		.core_nums = 1,
-		.l2_cache_size = CONFIG_ESP32_CACHE_L2_SIZE,
-		.l2_cache_line_size = CONFIG_ESP32_CACHE_L2_LINE_SIZE,
+		.l2_cache_size = CONFIG_SOC_ESP32P4_CACHE_L2_SIZE,
+		.l2_cache_line_size = CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE,
 	};
 	cache_hal_init(&cache_config);
 

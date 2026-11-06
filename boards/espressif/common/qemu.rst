@@ -190,11 +190,11 @@ The ``west build -t run`` target appends these flags automatically when
 * ``-icount 3`` on ESP32-C3 and ESP32-C6
 * ESP32 ECO3 eFuse image (see `Flash size`_ / `ESP32 chip revision`_)
 * ``-drive file=…/flash_image.bin,if=mtd,format=raw``
-* ``-m <size>`` when :kconfig:option:`CONFIG_ESP_SPIRAM` is set; size comes from
-  :kconfig:option:`CONFIG_ESP_SPIRAM_SIZE` (default from the board ``psram0``
-  ``size`` property in devicetree)
+* ``-m <size>`` when :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM` is set; size
+  comes from :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE` (default from the
+  board ``psram0`` ``size`` property in devicetree)
 * ``-global driver=ssi_psram,property=is_octal,value=true`` on ESP32-S3 when
-  :kconfig:option:`CONFIG_SPIRAM_MODE_OCT` is set
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT` is set
 
 Use the ``QEMU_EXTRA_FLAGS`` environment variable for optional cases (watchdog
 disable, SD card on ESP32, and similar).
@@ -362,8 +362,9 @@ appended automatically:
 PSRAM (automatic when SPIRAM is enabled)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When :kconfig:option:`CONFIG_ESP_SPIRAM` is enabled, CMake appends ``-m <size>`` where
-``<size>`` is derived from :kconfig:option:`CONFIG_ESP_SPIRAM_SIZE` (bytes ÷
+When :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM` is enabled, CMake appends
+``-m <size>`` where ``<size>`` is derived from
+:kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE` (bytes ÷
 1 MiB, suffixed with ``M``). Unsupported sizes fail configure (do not pass a
 half-supported ``-m``). The ESP32 ``/qemu`` variant clamps ``psram0`` to 4M
 because the hardware WROVER N4R8 tree defaults to 8M.
@@ -373,7 +374,7 @@ Documented QEMU sizes:
 * **ESP32:** 2M, 4M (PSRAM MMU is not fully emulated)
 * **ESP32-S3:** 2M, 4M, 8M, 16M, or 32M; octal (OPI) mode also adds the
   ``ssi_psram`` ``is_octal`` global when
-  :kconfig:option:`CONFIG_SPIRAM_MODE_OCT=y`
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT=y`
 
 Override or supplement with ``QEMU_EXTRA_FLAGS`` if needed.
 
@@ -389,7 +390,7 @@ ESP32 chip revision
 -------------------
 
 Default QEMU efuses report ESP32 revision 0, which Zephyr rejects unless
-:kconfig:option:`CONFIG_ESP32_USE_UNSUPPORTED_REVISION` is enabled. With
+:kconfig:option:`CONFIG_SOC_ESP32_USE_UNSUPPORTED_REVISION` is enabled. With
 :kconfig:option:`CONFIG_ESPRESSIF_QEMU`, the ``run`` / ``debugserver`` targets
 automatically attach an ECO3 eFuse image (``CHIP_VER_REV1`` and
 ``CHIP_VER_REV2`` set) so the guest reports chip revision v3.0.

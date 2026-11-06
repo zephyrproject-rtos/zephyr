@@ -28,7 +28,7 @@ void IRAM_ATTR lp_core_image_init(void)
 	}
 
 	const uint32_t lpcore_img_off = PARTITION_OFFSET(slot0_lpcore_partition);
-	const uint32_t lpcore_img_size = CONFIG_ESP32_ULP_COPROC_RESERVE_MEM;
+	const uint32_t lpcore_img_size = CONFIG_SOC_FAMILY_ESPRESSIF_ULP_RESERVE_MEM;
 
 	const uint8_t *data = (const uint8_t *)bootloader_mmap(lpcore_img_off, lpcore_img_size);
 
@@ -52,17 +52,18 @@ void IRAM_ATTR lp_core_image_init(void)
 
 	uint32_t wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU;
 
-#if IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)
+#if IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)
 	wakeup_source |= ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER;
-#elif IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_IO)
+#elif IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_LP_IO)
 	wakeup_source |= ULP_LP_CORE_WAKEUP_SOURCE_LP_IO;
 #endif
 
 	ulp_lp_core_cfg_t cfg = {
 		.wakeup_source = wakeup_source,
 		.skip_lp_rom_boot = true,
-#if IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)
-		.lp_timer_sleep_duration_us = CONFIG_ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US,
+#if IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)
+		.lp_timer_sleep_duration_us =
+			CONFIG_SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US,
 #endif
 	};
 

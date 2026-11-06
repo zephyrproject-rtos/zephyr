@@ -60,7 +60,7 @@ static int esp32_temp_init(const struct device *dev)
 {
 	struct esp32_temp_data *data = dev->data;
 
-#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                                        \
+#if CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                         \
 	SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
 	data->temp_sensor_config.flags.allow_pd = 1;
 #endif

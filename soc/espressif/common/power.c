@@ -27,18 +27,18 @@
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <hal/pmu_ll.h>
 #include <hal/pmu_types.h>
-#if !defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#if !defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 extern esp_err_t sleep_clock_icg_startup_init(void);
 #endif
 #endif
-#if defined(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
 #include <esp_private/sleep_cpu.h>
 #endif
-#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 #include <esp_private/sleep_sys_periph.h>
 #endif
 
-#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS)
 #include <pmstats.h>
 #endif
 
@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(soc_pm, CONFIG_SOC_LOG_LEVEL);
 
 #define MIN_RESIDENCY_SLEEP_US DT_PROP(DT_NODELABEL(light_sleep), min_residency_us)
 
-#if defined(CONFIG_ESP32_PM_SLP_IRAM_OPT)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT)
 #define ESP32_PM_SLEEP_FN_ATTR IRAM_ATTR
 #else
 #define ESP32_PM_SLEEP_FN_ATTR
@@ -65,7 +65,7 @@ static bool sleep_enabled;
 static uint64_t sleep_time_us;
 static uint64_t lpm_budget_us;
 static uint64_t lpm_entry_counter;
-#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS)
 static uint64_t lpm_deadline_us;
 static uint64_t lpm_kernel_us;
 #endif
@@ -129,15 +129,15 @@ static bool ESP32_PM_SLEEP_FN_ATTR rtc_wakeup_enable(enum pm_state state, bool e
 		 * resume before the scheduler deadline captured at low-power-idle entry. The
 		 * lead time has two parts: the software latency from that entry until here,
 		 * measured from the counter snapshot taken in the LPM entry hook (the HAL
-		 * cannot see it), plus CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US as a residual pad
-		 * for the remaining, unmeasured tail up to the HAL's internal sleep-start (GPIO
-		 * prepare and the sleep prologue). Feature-dependent hardware wake latency
-		 * (peripheral, flash and CPU power down) is compensated by HAL.
+		 * cannot see it), plus CONFIG_SOC_FAMILY_ESPRESSIF_PM_WAKEUP_MARGIN_US as a
+		 * residual pad for the remaining, unmeasured tail up to the HAL's internal
+		 * sleep-start (GPIO prepare and the sleep prologue). Feature-dependent hardware
+		 * wake latency (peripheral, flash and CPU power down) is compensated by HAL.
 		 */
 		uint64_t now = esp_timer_impl_get_counter_reg();
 		uint64_t elapsed_us =
 			((now - lpm_entry_counter) * 1000000ULL) / lpm_counter_ticks_per_sec();
-		uint64_t lead_us = elapsed_us + CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US;
+		uint64_t lead_us = elapsed_us + CONFIG_SOC_FAMILY_ESPRESSIF_PM_WAKEUP_MARGIN_US;
 
 		if ((sleep_time_us > lead_us) &&
 		    ((sleep_time_us - lead_us) >= MIN_RESIDENCY_SLEEP_US)) {
@@ -245,17 +245,18 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 		if (sleep_enabled) {
 			esp32_sleep_gpio_prepare();
-#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
-			esp32_sleep_stats_before(lpm_kernel_us, sleep_time_us,
-						 MIN_RESIDENCY_SLEEP_US +
-							 CONFIG_SOC_ESP32_PM_WAKEUP_MARGIN_US,
-						 lpm_deadline_us);
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS)
+			esp32_sleep_stats_before(
+				lpm_kernel_us, sleep_time_us,
+				MIN_RESIDENCY_SLEEP_US +
+					CONFIG_SOC_FAMILY_ESPRESSIF_PM_WAKEUP_MARGIN_US,
+				lpm_deadline_us);
 #endif
 			esp_err_t ret = esp_light_sleep_start();
 
 			esp32_sleep_gpio_restore();
 
-#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS)
 			esp32_sleep_stats_after();
 #endif
 			if (ret != ESP_OK) {
@@ -341,7 +342,7 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 		}
 	}
 
-#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS)
 	/* Anchor the wake deadline here, at low-power-idle entry, so the wake margin
 	 * to the deadline can be measured on wake in the same esp_timer frame without
 	 * the software-latency bias of anchoring later at sleep-start.
@@ -390,7 +391,7 @@ static int sleep_retention_init(void)
 	/* pmu_init() turns on all LP clocks; narrow it to FOSC (RC_SLOW) only. */
 	pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, BIT(30));
 
-#if !defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#if !defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 	/* With TOP power down, the ICG entries would gate the flash clocks
 	 * before the SPI memory registers are backed up.
 	 */
@@ -408,7 +409,7 @@ static int sleep_retention_init(void)
 		ret = err;
 	}
 
-#if defined(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
 	err = sleep_cpu_configure(true);
 	if (err != ESP_OK) {
 		LOG_ERR("sleep_cpu_configure failed (%d)", err);
@@ -416,7 +417,7 @@ static int sleep_retention_init(void)
 	}
 #endif
 
-#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 	err = sleep_sys_periph_startup_init();
 	if (err != ESP_OK) {
 		LOG_ERR("sleep_sys_periph_startup_init failed (%d)", err);

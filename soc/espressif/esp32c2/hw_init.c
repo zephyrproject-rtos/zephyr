@@ -49,11 +49,11 @@ int hardware_init(void)
 
 	bootloader_clock_configure();
 
-#ifdef CONFIG_ESP_CONSOLE
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE
 	/* initialize console, from now on, we can log */
 	esp_console_init();
 	print_banner();
-#endif /* CONFIG_ESP_CONSOLE */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE */
 
 	cache_hal_config_t cache_config = {
 		.core_nums = 1,

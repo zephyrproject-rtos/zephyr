@@ -28,7 +28,8 @@
 #include <esp_etm_alloc.h>
 #endif
 
-#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                         \
+	SOC_TIMER_SUPPORT_SLEEP_RETENTION
 #define COUNTER_SLEEP_RETENTION_ENABLED 1
 #else
 #define COUNTER_SLEEP_RETENTION_ENABLED 0
@@ -606,7 +607,7 @@ static int counter_esp32_capture_setup(const struct device *dev)
 		return ret;
 	}
 
-	/* The capture task always exists on SoCs gated by SOC_ESP32_ETM_SUPPORTED. */
+	/* The capture task always exists on SoCs gated by SOC_FAMILY_ESPRESSIF_ETM_SUPPORTED. */
 	task_id = TIMER_LL_ETM_TASK_TABLE(cfg->group, data->hal_ctx.timer_id,
 					  GPTIMER_ETM_TASK_CAPTURE);
 

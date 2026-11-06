@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_ESP32_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+config SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
 	bool
 	default y

@@ -4,7 +4,7 @@
 config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
-	depends on SOC_FAMILY_ESPRESSIF_ESP32
+	depends on SOC_FAMILY_ESPRESSIF
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable ESP32 hwinfo driver.

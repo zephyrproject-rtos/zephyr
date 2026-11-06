@@ -1,13 +1,13 @@
 # Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_ESPRESSIF_ESP32
+if SOC_FAMILY_ESPRESSIF
 
 config MMU_PAGE_SIZE
 	hex
 	default 0x10000
 
-config SPI_FLASH_SUPPORT_ISSI_CHIP
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_ISSI
 	bool "ISSI"
 	default y
 	help
@@ -15,7 +15,7 @@ config SPI_FLASH_SUPPORT_ISSI_CHIP
 	  given by ``chip_drv`` member of the chip struct. This adds support for variant
 	  chips, however will extend detecting time.
 
-config SPI_FLASH_SUPPORT_MXIC_CHIP
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_MXIC
 	bool "MXIC"
 	default y
 	help
@@ -23,7 +23,7 @@ config SPI_FLASH_SUPPORT_MXIC_CHIP
 	  given by ``chip_drv`` member of the chip struct. This adds support for variant
 	  chips, however will extend detecting time.
 
-config SPI_FLASH_SUPPORT_GD_CHIP
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_GD
 	bool "GigaDevice"
 	default y
 	help
@@ -36,7 +36,7 @@ config SPI_FLASH_SUPPORT_GD_CHIP
 	  size. Note that the default chip driver supports the GD chips with product ID
 	  60H.
 
-config SPI_FLASH_SUPPORT_WINBOND_CHIP
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_WINBOND
 	bool "Winbond"
 	default y
 	help
@@ -44,7 +44,7 @@ config SPI_FLASH_SUPPORT_WINBOND_CHIP
 	  given by ``chip_drv`` member of the chip struct. This adds support for variant
 	  chips, however will extend detecting time.
 
-config SPI_FLASH_SUPPORT_BOYA_CHIP
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_BOYA
 	bool "BOYA"
 	default y if !SOC_SERIES_ESP32
 	help
@@ -52,7 +52,7 @@ config SPI_FLASH_SUPPORT_BOYA_CHIP
 	  given by ``chip_drv`` member of the chip struct. This adds support for variant
 	  chips, however will extend detecting time.
 
-config SPI_FLASH_SUPPORT_TH_CHIP
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_TH
 	bool "TH"
 	default y if !SOC_SERIES_ESP32
 	help
@@ -60,7 +60,7 @@ config SPI_FLASH_SUPPORT_TH_CHIP
 	  given by ``chip_drv`` member of the chip struct. This adds support for variant
 	  chips, however will extend detecting time.
 
-config SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+config SOC_ESP32S3_SPI_FLASH_MXIC_OPI
 	bool "mxic (opi)"
 	depends on SOC_SERIES_ESP32S3
 	default y
@@ -69,7 +69,7 @@ config SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
 	  given by ``chip_drv`` member of the chip struct. This adds support for variant
 	  chips, however will extend detecting time.
 
-config SPI_FLASH_ROM_DRIVER_PATCH
+config SOC_FAMILY_ESPRESSIF_SPI_FLASH_ROM_DRIVER_PATCH
 	bool "SPI flash ROM driver patched functions"
 	default y
 	help
@@ -78,7 +78,7 @@ config SPI_FLASH_ROM_DRIVER_PATCH
 	  to flash on ESP32-D2WD; (2) main SPI flash is connected to non-default pins; (3) main
 	  SPI flash chip is manufactured by ISSI.
 
-config BOOTLOADER_FLASH_XMC_SUPPORT
+config SOC_FAMILY_ESPRESSIF_BOOTLOADER_FLASH_XMC_SUPPORT
 	bool "Support flash chips of XMC (READ HELP FIRST)"
 	default y
 	help
@@ -87,9 +87,9 @@ config BOOTLOADER_FLASH_XMC_SUPPORT
 
 	  DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
 
-choice BOOTLOADER_VDDSDIO_BOOST
+choice SOC_FAMILY_ESPRESSIF_BOOTLOADER_VDDSDIO_BOOST
 	bool "VDDSDIO LDO voltage"
-	default BOOTLOADER_VDDSDIO_BOOST_1_9V
+	default SOC_FAMILY_ESPRESSIF_BOOTLOADER_VDDSDIO_BOOST_1_9V
 	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  If this option is enabled, and VDDSDIO LDO is set to 1.8V (using eFuse
@@ -100,14 +100,16 @@ choice BOOTLOADER_VDDSDIO_BOOST
 	  This option has no effect if VDDSDIO is set to 3.3V, or if the internal
 	  VDDSDIO regulator is disabled via eFuse.
 
-	config BOOTLOADER_VDDSDIO_BOOST_1_8V
-		bool "1.8V"
-		depends on !ESPTOOLPY_FLASHFREQ_80M
-	config BOOTLOADER_VDDSDIO_BOOST_1_9V
-		bool "1.9V"
+config SOC_FAMILY_ESPRESSIF_BOOTLOADER_VDDSDIO_BOOST_1_8V
+	bool "1.8V"
+	depends on !SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M
+
+config SOC_FAMILY_ESPRESSIF_BOOTLOADER_VDDSDIO_BOOST_1_9V
+	bool "1.9V"
+
 endchoice
 
-config BOOTLOADER_REGION_PROTECTION_ENABLE
+config SOC_FAMILY_ESPRESSIF_BOOTLOADER_REGION_PROTECTION_ENABLE
 	bool "Protect unmapped memory regions from unintended accesses"
 	default y if !RISCV_PMP && BOOTLOADER_MCUBOOT
 	help
@@ -119,14 +121,14 @@ config BOOTLOADER_REGION_PROTECTION_ENABLE
 	  Only enabled by default for MCUboot-loaded apps where the bootloader has already
 	  configured unlocked PMP/PMA entries during its boot stage.
 
-config SPI_FLASH_HPM_ENABLE
+config SOC_ESP32S3_SPI_FLASH_HPM_ENABLE
 	bool
 	depends on SOC_SERIES_ESP32S3
 	help
 	  This option is invisible, and will be selected automatically
-	  when ``ESPTOOLPY_FLASHFREQ_120M`` is selected.
+	  when ``SOC_FAMILY_ESPRESSIF_FLASH_FREQ_120M`` is selected.
 
-config ESP32_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
+config SOC_FAMILY_ESPRESSIF_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
 	int "Extra delay (in us) after flash power down sleep wakeup to wait flash ready"
 	default 2000 if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3
 	default 0
@@ -140,7 +142,7 @@ config ESP32_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
 	  minus 900us. Increase it if you see "flash read err, 1000" after deep
 	  sleep or an RTC_WDT/LP_WDT trigger after light sleep wakeup.
 
-config SOC_ESP32_SLEEP_DCM_VSET_VAL_IN_SLEEP
+config SOC_ESP32P4_SLEEP_DCM_VSET_VAL_IN_SLEEP
 	int "DCDC voltage parameter during sleep"
 	depends on SOC_SERIES_ESP32P4
 	default 14
@@ -151,4 +153,4 @@ config SOC_ESP32_SLEEP_DCM_VSET_VAL_IN_SLEEP
 	  according to the external DCDC selected in your hardware.
 	  Recommended value for TI TLV62569/TLV62569P: 14.
 
-endif # SOC_FAMILY_ESPRESSIF_ESP32
+endif # SOC_FAMILY_ESPRESSIF

@@ -14,7 +14,7 @@
  * "iram_loader_seg" start address (that should not be overlapped).
  * If no bootloader is used, we can extend it to gain more user ram.
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
 user_iram_end = (DRAM_SHARED_BUFFERS_END + IRAM_DRAM_OFFSET);
 #else
 user_iram_end = (BOOTLOADER_DRAM_LOADER_SEG_START + IRAM_DRAM_OFFSET);
@@ -77,17 +77,17 @@ MEMORY
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg (R): org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
-  rtc_iram_seg(RWX): org = rtc_iram_org, len = rtc_iram_len - CONFIG_RESERVE_RTC_MEM
+  rtc_iram_seg(RWX): org = rtc_iram_org, len = rtc_iram_len - CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM
 
-  /* We reduced the size of rtc_iram_seg by CONFIG_RESERVE_RTC_MEM value.
+  /* We reduced the size of rtc_iram_seg by CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM value.
      It reserves the amount of RTC fast memory that we use for this memory segment.
      This segment is intended for keeping:
        - (lower addr) rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
      The aim of this is to keep data that will not be moved around and have a fixed address.
   */
-#if (CONFIG_RESERVE_RTC_MEM > 0)
-  rtc_reserved_seg(RW): org = rtc_iram_org + rtc_iram_len - CONFIG_RESERVE_RTC_MEM,
-                        len = CONFIG_RESERVE_RTC_MEM
+#if (CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM > 0)
+  rtc_reserved_seg(RW): org = rtc_iram_org + rtc_iram_len - CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM,
+                        len = CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM
 #endif
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -260,7 +260,7 @@ SECTIONS
    * This section holds RTC data that should have fixed addresses.
    * The data are not initialized at power-up and are retained during deep sleep.
    */
-#if (CONFIG_RESERVE_RTC_MEM > 0)
+#if (CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM > 0)
   .rtc_reserved (NOLOAD) :
   {
     . = ALIGN(4);
@@ -269,8 +269,8 @@ SECTIONS
     _rtc_reserved_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_reserved_seg)
   _rtc_reserved_length = (_rtc_reserved_end - _rtc_reserved_start);
-  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
-         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
+  ASSERT((_rtc_reserved_length <= CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM.")
 #else
   _rtc_reserved_length = 0;
 #endif
@@ -380,7 +380,7 @@ SECTIONS
     *libzephyr.a:flash_ops.*(.literal .text .literal.* .text.*)
     *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
-#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD)
     *libzephyr.a:spi_flash_dpd_enable.*(.literal .literal.* .text .text.*)
 #endif
     *libzephyr.a:flash_mmap.*(.literal .literal.* .text .text.*)
@@ -414,7 +414,7 @@ SECTIONS
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
     *libzephyr.a:sleep_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:systimer.*(.literal .literal.* .text .text.*)
-#if defined(CONFIG_ESP32_PM_SLP_IRAM_OPT)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT)
     *libzephyr.a:phy_override.*(.literal.phy_get_tsens_value .text.phy_get_tsens_value)
     *libzephyr.a:temperature_sensor_hal.*(.literal.temperature_sensor_hal_get_raw_value .text.temperature_sensor_hal_get_raw_value)
     *libzephyr.a:sleep_console.*(.literal .literal.* .text .text.*)
@@ -502,7 +502,7 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
   .loader.text :
   {
     . =  ALIGN(4);
@@ -544,7 +544,7 @@ SECTIONS
     . = ALIGN(0x10) + 0x10;
     _loader_text_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
-#endif /* CONFIG_ESP_SIMPLE_BOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT */
 
   .iram0.text_end (NOLOAD) :
   {
@@ -660,7 +660,7 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.* .srodata .srodata.*)
-#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD)
     *libzephyr.a:spi_flash_dpd_enable.*(.rodata .rodata.* .srodata .srodata.*)
 #endif
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
@@ -707,7 +707,7 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
   /* Secondary loader sections */
   .loader.data :
   {
@@ -733,7 +733,7 @@ SECTIONS
     . = ALIGN(16);
     _loader_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* CONFIG_ESP_SIMPLE_BOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT */
 
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>

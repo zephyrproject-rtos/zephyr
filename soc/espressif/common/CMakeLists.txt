@@ -14,8 +14,8 @@ endif()
 # Continue to prepare the build environment
 zephyr_include_directories(include)
 
-if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU_TARGET)
-  zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
+if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_FAMILY_ESPRESSIF_APPCPU_TARGET)
+  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM esp_psram.c)
 endif()
 
 # Generate linker snippets for BSS relocation to PSRAM.
@@ -26,8 +26,8 @@ set(_extram_inc "${PROJECT_BINARY_DIR}/include/generated/esp_spiram_relocate_bss
 
 set(_relocate_objects "")
 
-if(CONFIG_ESP_SPIRAM AND NOT "${CONFIG_ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}" STREQUAL "")
-  string(REPLACE " " ";" _tmp "${CONFIG_ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}")
+if(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM AND NOT "${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}" STREQUAL "")
+  string(REPLACE " " ";" _tmp "${CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}")
   foreach(obj IN LISTS _tmp)
     string(STRIP "${obj}" obj)
     if(NOT obj STREQUAL "")
@@ -70,7 +70,7 @@ endif()
 
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
-if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
+if((CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
   if(CONFIG_BUILD_OUTPUT_BIN)
     set(ELF2IMAGE_ARG "")
     if(NOT CONFIG_MCUBOOT)
@@ -81,14 +81,14 @@ if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE
       COMMAND esptool
       ARGS --chip ${CONFIG_SOC} elf2image ${ELF2IMAGE_ARG}
       --flash-mode dio
-      --flash-freq ${CONFIG_ESPTOOLPY_FLASHFREQ}
+      --flash-freq ${CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_FREQ}
       --flash-size ${esptoolpy_flashsize}MB
       -o ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
       ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME})
   endif()
 endif()
 
-if(CONFIG_ESP_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
+if(CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
   dt_nodelabel(image_part_path NODELABEL "boot_partition")
 else()
   dt_chosen(image_part_path PROPERTY "zephyr,code-partition")
@@ -101,8 +101,8 @@ endif()
 
 board_runner_args(esp32 "--esp-app-address=${image_off}")
 board_runner_args(esp32 "--esp-flash-size=${esptoolpy_flashsize}MB")
-board_runner_args(esp32 "--esp-flash-freq=${CONFIG_ESPTOOLPY_FLASHFREQ}")
-board_runner_args(esp32 "--esp-flash-mode=${CONFIG_ESPTOOLPY_FLASHMODE}")
+board_runner_args(esp32 "--esp-flash-freq=${CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_FREQ}")
+board_runner_args(esp32 "--esp-flash-mode=${CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_MODE}")
 board_runner_args(esp32 "--esp-idf-path=${ESP_IDF_PATH}")
 board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
 
@@ -146,7 +146,7 @@ endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/mcuboot.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32_APPCPU_TARGET)
+elseif(CONFIG_SOC_FAMILY_ESPRESSIF_APPCPU_TARGET)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_appcpu.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_lpcore.ld CACHE INTERNAL "")
@@ -154,12 +154,12 @@ else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default.ld CACHE INTERNAL "")
 endif()
 
-zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)
-zephyr_sources_ifdef(CONFIG_ESP32_ETM esp_etm_alloc.c)
+zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_LCD_CAM esp_lcd_cam.c)
+zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_ETM esp_etm_alloc.c)
 if(NOT CONFIG_SOC_ESP32C5_LPCORE AND NOT CONFIG_SOC_ESP32C6_LPCORE AND NOT CONFIG_SOC_ESP32P4_LPCORE)
-  zephyr_sources_ifdef(CONFIG_SOC_ESP32_PM_SLEEP_STATS pmstats.c)
+  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLEEP_STATS pmstats.c)
 endif()
-zephyr_sources_ifdef(CONFIG_ESP32_PPA esp_ppa.c)
+zephyr_sources_ifdef(CONFIG_SOC_FAMILY_ESPRESSIF_PPA esp_ppa.c)
 zephyr_sources(instr_mem.c)
 
 if(CONFIG_SOC_HAS_TIMING_FUNCTIONS AND NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
