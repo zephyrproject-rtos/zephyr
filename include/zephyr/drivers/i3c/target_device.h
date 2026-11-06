@@ -197,6 +197,11 @@ struct i3c_target_callbacks {
 	 * reception of data from the source buffer to the destination
 	 * buffer in an ongoing write operation to the device.
 	 *
+	 * This replaces @ref i3c_target_callbacks.write_received_cb for the
+	 * transfer rather than supplementing it: a driver delivers a given
+	 * write through one path or the other, never both. An application may
+	 * supply both, in which case the driver uses this one.
+	 *
 	 * @kconfig_dep{CONFIG_I3C_TARGET_BUFFER_MODE}
 	 *
 	 * @param config Configuration structure associated with the
