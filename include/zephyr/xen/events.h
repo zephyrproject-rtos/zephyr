@@ -34,15 +34,6 @@
  */
 typedef void (*evtchn_cb_t)(void *priv);
 
-/** @cond INTERNAL_HIDDEN */
-/* Internal event-channel callback slot. */
-struct event_channel_handle {
-	evtchn_cb_t cb;
-	void *priv;
-};
-typedef struct event_channel_handle evtchn_handle_t;
-/** @endcond */
-
 /**
  * @brief Query the status of an event channel.
  *
@@ -92,6 +83,24 @@ int evtchn_set_priority(evtchn_port_t port, uint32_t priority);
 int notify_evtchn(evtchn_port_t port);
 
 /**
+ * @brief Set the vCPU that receives an event channel.
+ *
+ * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * This updates both Xen's event-channel vCPU binding and the driver's local
+ * dispatch ownership cache for the port.
+ *
+ * Concurrent mask, unmask, and affinity changes for the same port must be
+ * serialized by the caller.
+ *
+ * @param port Local event-channel port number.
+ * @param vcpu Xen vCPU id that should receive the port's upcall.
+ *
+ * @return 0 on success, negative errno value on failure.
+ */
+int set_event_channel_affinity(evtchn_port_t port, uint32_t vcpu);
+
+/**
  * @brief Allocate an unbound event channel for the calling domain.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
@@ -134,6 +143,16 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * To reconfigure an active channel, callers should mask the port, drain or
+ * clear its pending state, update the Xen binding and/or callback, and then
+ * unmask the port again.
+ *
+ * Event-channel callbacks run in IRQ context and must not sleep. A callback
+ * must not bind or unbind a handler for the same port.
+ *
+ * After this function returns, any previously bound handler for the same port
+ * is no longer running and future events use the new handler.
+ *
  * @param port Local event-channel port number.
  * @param cb Callback to invoke when the port is signaled.
  * @param data User data pointer passed to @p cb.
@@ -144,6 +163,9 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
 
 /**
  * @brief Remove the callback bound to an event channel.
+ *
+ * After this function returns, the previously bound handler is no longer
+ * running and will not be invoked for later events.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
@@ -173,6 +195,9 @@ int get_missed_events(evtchn_port_t port);
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * Concurrent mask, unmask, and affinity changes for the same port must be
+ * serialized by the caller.
+ *
  * @param port Local event-channel port number.
  *
  * @retval 0 Always returned after updating the shared-info mask bit.
@@ -183,6 +208,9 @@ int mask_event_channel(evtchn_port_t port);
  * @brief Unmask local delivery for an event channel.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * Concurrent mask, unmask, and affinity changes for the same port must be
+ * serialized by the caller.
  *
  * @param port Local event-channel port number.
  *
@@ -211,6 +239,16 @@ void clear_event_channel(evtchn_port_t port);
  * @retval -EINVAL Xen shared-info page is not mapped.
  */
 int xen_events_init(void);
+
+/**
+ * @brief Set up Xen event-channel delivery on a secondary CPU.
+ *
+ * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * Registers per-vCPU info with the hypervisor and enables the
+ * event-channel PPI locally on the calling CPU.
+ */
+void xen_evtchn_secondary_cpu_init(void);
 
 /** @} */
 
