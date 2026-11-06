@@ -69,6 +69,7 @@ enum lwan_req_type {
 	LWAN_REQ_SET_CONF_MSG_TRIES,
 	LWAN_REQ_SET_CHANNELS_MASK,
 	LWAN_REQ_LINK_CHECK,
+	LWAN_REQ_JOIN_AIRTIME,
 };
 
 struct lwan_req {

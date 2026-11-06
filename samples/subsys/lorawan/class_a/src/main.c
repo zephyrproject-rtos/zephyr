@@ -63,8 +63,56 @@ static void lorwan_datarate_changed(enum lorawan_datarate dr)
 
 static void link_check_ans_cb(uint8_t demod_margin, uint8_t nb_gateways)
 {
-	LOG_INF("Link check: margin %u dB, %u gateway(s)",
-		demod_margin, nb_gateways);
+	LOG_INF("Link check: margin %u dB, %u gateway(s)", demod_margin, nb_gateways);
+}
+
+static void network_join(struct lorawan_join_config *join_cfg)
+{
+	uint32_t join_backoff_ms;
+	bool first_join = true;
+	int join_airtime;
+	int ret;
+
+	LOG_INF("Joining network over OTAA");
+	while (1) {
+		join_airtime = lorawan_join_airtime();
+		if (join_airtime < 0) {
+			LOG_WRN_ONCE("Failed to query Join-Request airtime: %d", join_airtime);
+			LOG_WRN_ONCE("Fallback to longest known airtime");
+			/* Use known longest join-request duration */
+			join_airtime = 1700;
+		}
+		LOG_INF("Join-Request airtime: %d ms", join_airtime);
+
+		/* Delay BEFORE the send to prevent a TX triggered reboot transmitting at a high
+		 * duty cycle.
+		 */
+		join_backoff_ms = lorawan_join_backoff(join_airtime);
+
+		/* Limit the first wait to 5 seconds to keep the sample responsive for new users.
+		 * Real applications SHOULD NOT do this, as it may violate regional duty cycle
+		 * limitations under frequent reboots.
+		 */
+		if (first_join && (join_backoff_ms > (5 * MSEC_PER_SEC))) {
+			LOG_WRN("First wait limited to 5 seconds (from %u ms) for sample purposes",
+				join_backoff_ms);
+			join_backoff_ms = 5000;
+			first_join = false;
+		}
+
+		LOG_INF("Waiting %d seconds for next attempt", join_backoff_ms / MSEC_PER_SEC);
+		k_sleep(K_MSEC(join_backoff_ms));
+
+		LOG_INF("Join attempt: %d", join_cfg->otaa.dev_nonce + 1);
+		ret = lorawan_join(join_cfg);
+		if (ret == 0) {
+			/* Join succeeded */
+			break;
+		}
+		LOG_ERR("lorawan_join_network failed: %d", ret);
+		/* Increment DevNonce for next attempt */
+		join_cfg->otaa.dev_nonce += 1;
+	}
 }
 
 int main(void)
@@ -115,12 +163,8 @@ int main(void)
 	join_cfg.otaa.nwk_key = app_key;
 	join_cfg.otaa.dev_nonce = 0u;
 
-	LOG_INF("Joining network over OTAA");
-	ret = lorawan_join(&join_cfg);
-	if (ret < 0) {
-		LOG_ERR("lorawan_join_network failed: %d", ret);
-		return 0;
-	}
+	/* Join the network */
+	network_join(&join_cfg);
 
 	LOG_INF("Sending data...");
 	for (uint32_t i = 0;; i++) {
