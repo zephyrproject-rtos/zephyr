@@ -7,3 +7,108 @@
 &standby {
 	status = "okay";
 };
+
+&{/leds} {
+	status = "disabled";
+};
+
+&{/gpio_keys} {
+	status = "disabled";
+};
+
+&hsgpio0 {
+	rgb-led-off {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>, <1 GPIO_ACTIVE_HIGH>, <12 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&hsgpio1 {
+	status = "disabled";
+};
+
+&pint {
+	status = "disabled";
+};
+
+&pinmux_hsgpio0 {
+	/delete-node/ group0;
+};
+
+&flexcomm3 {
+	/delete-property/ wakeup-source;
+	status = "okay";
+};
+
+&enet {
+	status = "disabled";
+};
+
+&enet_mac {
+	status = "disabled";
+};
+
+&enet_mdio {
+	status = "disabled";
+};
+
+&phy {
+	status = "disabled";
+};
+
+&hci {
+	status = "disabled";
+};
+
+&nbu {
+	status = "disabled";
+};
+
+&imu {
+	status = "disabled";
+};
+
+&usb_otg {
+	status = "disabled";
+};
+
+&wwdt {
+	status = "disabled";
+};
+
+&flexcomm1 {
+	status = "disabled";
+};
+
+&flexcomm2 {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+&dac0 {
+	status = "disabled";
+};
+
+&sctimer {
+	status = "disabled";
+};
+
+&ctimer0 {
+	status = "disabled";
+};
+
+&mrt0_channel0 {
+	status = "disabled";
+};
+
+&lcdic {
+	status = "disabled";
+};
+
+&powerquad {
+	status = "disabled";
+};
