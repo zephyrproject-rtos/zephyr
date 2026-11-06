@@ -1511,22 +1511,27 @@ static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 static inline int sensor_value_from_fixed_point(struct sensor_value *val, uint32_t inp, uint8_t m,
 						uint8_t n, bool is_signed)
 {
-	uint8_t num_bits = m + n + (is_signed ? 1U : 0U);
+	const uint8_t int_bits = m + (is_signed ? 1U : 0U);
+	bool neg;
 
-	if (m > 31 || !IN_RANGE(n, 1, 32) || !IN_RANGE(num_bits, 1, 32)) {
+	if (m > 31 || n == 0 || int_bits + n > 32) {
 		return -EINVAL;
 	}
 
-	inp &= BIT64_MASK(num_bits);
+	inp <<= 32 - int_bits - n;
+	neg = is_signed && (inp & BIT(31)) != 0;
 
-	int64_t inp_int64 = is_signed ? sign_extend_64((uint64_t)inp, m + n) : (int64_t)inp;
+	if (neg) {
+		inp = 0U - inp;
+	}
 
-	val->val1 = arithmetic_shift_right(inp_int64 + (inp_int64 < 0 ? BIT64_MASK(n) : 0), n);
+	val->val1 = (int32_t)((inp >> 1) >> (31 - int_bits));
+	val->val2 = (int32_t)(((uint64_t)(inp << int_bits) * 1000000U) >> 32);
 
-	inp_int64 -= ((int64_t)val->val1 << n);
-	inp_int64 *= 1000000LL;
-
-	val->val2 = arithmetic_shift_right(inp_int64 + (inp_int64 < 0 ? BIT64_MASK(n) : 0), n);
+	if (neg) {
+		val->val1 = -val->val1;
+		val->val2 = -val->val2;
+	}
 
 	return 0;
 }
