@@ -132,6 +132,7 @@ Devicetree
 
 * ESP32 SDHC slots support GPIO-based card detection, including GPIOs on external expanders.
   Configure the optional ``cd-gpios`` property in :dtcompatible:`espressif,esp32-sdhc-slot`.
+  An optional sleep pinctrl state controls the signal pins while card power is off.
 
 Other notable changes
 *********************

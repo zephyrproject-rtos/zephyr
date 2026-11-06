@@ -1314,6 +1314,14 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	/* Toggle card power supply */
 	if (data->power_mode != ios->power_mode) {
 		if (ios->power_mode == SDHC_POWER_OFF) {
+			/* Avoid powering an unpowered card through its signal pins. */
+			if (cfg->pcfg != NULL) {
+				ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+				if (ret != 0 && ret != -ENOENT) {
+					return ret;
+				}
+				ret = 0;
+			}
 			if (cfg->pwr_gpio.port) {
 				gpio_pin_set_dt(&cfg->pwr_gpio, 0);
 			}
@@ -1324,6 +1332,12 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 		} else if (ios->power_mode == SDHC_POWER_ON) {
 			if (cfg->pwr_gpio.port) {
 				gpio_pin_set_dt(&cfg->pwr_gpio, 1);
+			}
+			if (cfg->pcfg != NULL) {
+				ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+				if (ret != 0) {
+					return ret;
+				}
 			}
 			/*
 			 * Claim the bus: the reset and the register writes below
@@ -1972,7 +1986,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 
 #define SDHC_ESP32_INIT(n)                                                                         \
                                                                                                    \
-	COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                                          \
 			  (PINCTRL_DT_DEFINE(DT_DRV_INST(n));), (EMPTY))                           \
 	K_MSGQ_DEFINE_STATIC_TYPE(sdhc##n##_queue, struct sdmmc_event, SDMMC_EVENT_QUEUE_LENGTH);  \
                                                                                                    \
@@ -1985,7 +1999,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
-		.pcfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                         \
+		.pcfg = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                           \
 			  (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),                      \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
