@@ -23,4 +23,8 @@ zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${ZEPHYR_BASE}/subsys/bluetooth/controller/include
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic/lll
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/util
+  ${ZEPHYR_BASE}/subsys/bluetooth/controller/hal
   )
