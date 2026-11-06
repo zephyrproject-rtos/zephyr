@@ -370,6 +370,8 @@ static void edma_configure_dmamux(const struct device *dev, uint32_t channel,
 		LOG_DBG("ALWAYS ON");
 		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, true);
 	} else {
+		/* SetSource keeps A_ON, which an earlier configuration may have set. */
+		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, false);
 		DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
 	}
 #else
