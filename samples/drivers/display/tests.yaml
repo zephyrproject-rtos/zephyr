@@ -77,6 +77,7 @@ tests:
       - m5stack_atoms3/esp32s3/procpu
       - mimxrt595_evk/mimxrt595s/cm33
       - rza3m_ek
+      - mimxrt2660_evk/mimxrt2663/cm85
     extra_args:
       - platform:lpcxpresso55s69/lpc55s69/cpu0:SHIELD=adafruit_2_8_tft_touch_v2
       - platform:nrf52840dk/nrf52840:SHIELD=ssd1306_128x32
@@ -102,3 +103,4 @@ tests:
       - platform:mimxrt1040_evk/mimxrt1064:SHIELD=rk043fn02h_ct
       - platform:nucleo_u575zi_q/stm32u575xx:SHIELD=x_nucleo_gfx02z1_az2
       - platform:rza3m_ek:SHIELD=rtkapplcdms02001be
+      - platform:mimxrt2660_evk/mimxrt2663/cm85:SHIELD=lcd_par_s035_8080
