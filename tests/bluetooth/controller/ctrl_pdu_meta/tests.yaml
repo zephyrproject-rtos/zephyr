@@ -1,0 +1,6 @@
+common:
+  build_only: true
+  tags: bluetooth
+tests:
+  bluetooth.ctrl_pdu_meta.test:
+    platform_allow: nrf52_bsim
