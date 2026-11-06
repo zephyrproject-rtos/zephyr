@@ -28,6 +28,10 @@
 		die-temp0 = &die_temp;
 	};
 
+	chosen {
+		zephyr,entropy = &rosc_rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -237,6 +241,13 @@
 			compatible = "raspberrypi,pico-reset";
 			reg = <0x4000c000 DT_SIZE_K(4)>;
 			#reset-cells = <1>;
+		};
+
+		rosc_rng: rng@40060000 {
+			compatible = "raspberrypi,rp2040-rosc-rng";
+			reg = <0x40060000 0x24>;
+			raspberrypi,clock-controller = <&clocks>;
+			status = "okay";
 		};
 
 		gpio0_map: gpio@40014000 {
