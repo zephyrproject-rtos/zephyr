@@ -12,4 +12,5 @@ tests:
       - lp_mspm0g3507
       - lp_mspm0g3519
       - lp_mspm0l2228
+      - lp_am13e230
     filter: dt_nodelabel_enabled("tst_dma0")
