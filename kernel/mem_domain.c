@@ -327,10 +327,26 @@ int k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 
 	key = k_spin_lock(&z_mem_domain_lock);
 	if (thread->mem_domain_info.mem_domain != domain) {
+		struct k_mem_domain *old_domain = thread->mem_domain_info.mem_domain;
+
 		ret = remove_thread_locked(thread);
 
 		if (ret == 0) {
 			ret = add_thread_locked(domain, thread);
+		}
+
+		if (ret != 0) {
+			/*
+			 * The architecture leaves a thread it could not move
+			 * configured for its old domain: keep it a member there.
+			 */
+			sys_dnode_t *node = &thread->mem_domain_info.mem_domain_q_node;
+
+			if (sys_dnode_is_linked(node)) {
+				sys_dlist_remove(node);
+			}
+			sys_dlist_append(&old_domain->mem_domain_q, node);
+			thread->mem_domain_info.mem_domain = old_domain;
 		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
