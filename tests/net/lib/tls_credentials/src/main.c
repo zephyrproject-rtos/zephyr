@@ -232,6 +232,13 @@ static void test_credential_delete(void)
 
 ZTEST(tls_credentials, test_tls_credentials)
 {
+	/* Start from an empty credential store. */
+	for (sec_tag_t tag = 0; tag < CONFIG_TLS_MAX_CREDENTIALS_NUMBER; tag++) {
+		(void)tls_credential_delete(tag, TLS_CREDENTIAL_CA_CERTIFICATE);
+		(void)tls_credential_delete(tag, TLS_CREDENTIAL_PUBLIC_CERTIFICATE);
+		(void)tls_credential_delete(tag, TLS_CREDENTIAL_PRIVATE_KEY);
+	}
+
 	test_credential_add();
 	test_credential_get();
 	test_credential_internal_iterate();
