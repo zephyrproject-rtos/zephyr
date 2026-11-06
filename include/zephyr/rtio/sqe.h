@@ -432,11 +432,40 @@ struct rtio_sqe {
  */
 /** Generation counter; bumped on free, compared against a handle's generation */
 #define RTIO_SQE_GEN_MASK GENMASK(15, 0)
-/** Set while the entry is allocated from the pool (i.e. a live submission) */
-#define RTIO_SQE_ALLOCD   BIT(16)
+/** Entry lifetime state, one of the RTIO_SQE_STATE_* values */
+#define RTIO_SQE_STATE_MASK GENMASK(18, 16)
 /** Set when cancellation of the submission has been requested */
-#define RTIO_SQE_STATUS_CANCELED BIT(17)
+#define RTIO_SQE_STATUS_CANCELED BIT(19)
 /** @} */
+
+/**
+ * @name rtio_iodev_sqe lifetime states
+ *
+ * The states a pool entry moves through, held in @ref RTIO_SQE_STATE_MASK of the
+ * status word. Each state's bits are a superset of the one before it, so moving
+ * an entry forward is an or that keeps the generation and any cancel request
+ * that landed in the meantime, while returning it to the pool clears the field
+ * in the same store that bumps the generation.
+ * @{
+ */
+/** In the pool's free queue, owned by nobody */
+#define RTIO_SQE_STATE_FREE 0U
+/** Out of the free queue, holding a submission nobody stands behind yet */
+#define RTIO_SQE_STATE_PRE_ALLOCATED BIT(16)
+/** Holding a live submission; this is the only state a handle resolves in */
+#define RTIO_SQE_STATE_ALLOCATED (BIT(16) | BIT(17))
+/** @} */
+
+/**
+ * @brief Whether a status word says the entry holds a live submission
+ *
+ * @param status Status word previously read from the entry
+ * @return true if the entry is allocated
+ */
+static inline bool rtio_sqe_status_is_allocated(atomic_val_t status)
+{
+	return (status & RTIO_SQE_STATE_MASK) == RTIO_SQE_STATE_ALLOCATED;
+}
 
 /**
  * @brief Pool block index encoded in a handle
@@ -944,14 +973,29 @@ static inline void rtio_iodev_sqe_await_signal(struct rtio_iodev_sqe *iodev_sqe,
 /* Private structures and functions used for the pool of sqe structures */
 /** @cond ignore */
 
+/* Move an entry forward to the given state. Each state's bits include the ones
+ * before it, so this is an or, which keeps the generation and a cancel request
+ * that landed while the entry was being filled in.
+ */
+static inline void rtio_sqe_set_state(struct rtio_iodev_sqe *iodev_sqe, atomic_val_t state)
+{
+	atomic_or(&iodev_sqe->status, state);
+}
+
 struct rtio_sqe_pool {
 	struct mpsc free_q;
 	const uint16_t pool_size;
-	uint16_t pool_free;
 	struct rtio_iodev_sqe *pool;
 };
 
-static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *pool)
+/* Take an entry out of the pool in RTIO_SQE_STATE_PRE_ALLOCATED. The slot is off
+ * the free queue, so nothing else can take it, but no handle resolves to it and
+ * its submission is still the previous occupant's. Callers that fill the
+ * submission in from untrusted memory take an entry this way, check what they
+ * copied, and move it to RTIO_SQE_STATE_ALLOCATED once it holds something they
+ * stand behind.
+ */
+static inline struct rtio_iodev_sqe *rtio_sqe_pool_prealloc(struct rtio_sqe_pool *pool)
 {
 	struct mpsc_node *node = mpsc_pop(&pool->free_q);
 
@@ -972,28 +1016,42 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 	 */
 	iodev_sqe->next = NULL;
 
-	/* Mark the slot live. The generation persists from the previous free so a
-	 * handle captured against the prior occupant no longer matches.
-	 */
-	atomic_or(&iodev_sqe->status, RTIO_SQE_ALLOCD);
+	rtio_sqe_set_state(iodev_sqe, RTIO_SQE_STATE_PRE_ALLOCATED);
 
-	pool->pool_free--;
+	return iodev_sqe;
+}
+
+static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *pool)
+{
+	struct rtio_iodev_sqe *iodev_sqe = rtio_sqe_pool_prealloc(pool);
+
+	if (iodev_sqe == NULL) {
+		return NULL;
+	}
+
+	/* The caller fills the submission in after this returns, so clear it
+	 * rather than leave the previous occupant's in a slot whose handle now
+	 * resolves. An op of RTIO_OP_NOP with no iodev is the one state that is
+	 * harmless to anything reaching the entry in between.
+	 */
+	memset(&iodev_sqe->sqe, 0, sizeof(iodev_sqe->sqe));
+
+	rtio_sqe_set_state(iodev_sqe, RTIO_SQE_STATE_ALLOCATED);
 
 	return iodev_sqe;
 }
 
 static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_iodev_sqe *iodev_sqe)
 {
-	/* Bump the generation and clear ALLOCD so any outstanding handle to this
-	 * slot is rejected by rtio_iodev_sqe_from_handle() once it is recycled.
+	/* Bump the generation and go back to RTIO_SQE_STATE_FREE in one store, so
+	 * any outstanding handle to this slot is rejected by
+	 * rtio_iodev_sqe_from_handle() once it is recycled.
 	 */
 	atomic_val_t gen = (atomic_get(&iodev_sqe->status) + 1) & RTIO_SQE_GEN_MASK;
 
 	atomic_set(&iodev_sqe->status, gen);
 
 	mpsc_push(&pool->free_q, &iodev_sqe->q);
-
-	pool->pool_free++;
 }
 
 #if CONFIG_RTIO_SQE_PLACEMENT_DTCM
@@ -1012,7 +1070,6 @@ static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_io
 	STRUCT_SECTION_ITERABLE(rtio_sqe_pool, name) = {	\
 		.free_q = MPSC_INIT((name.free_q)),	\
 		.pool_size = sz,				\
-		.pool_free = sz,				\
 		.pool = CONCAT(_sqe_pool_, name),		\
 	}
 

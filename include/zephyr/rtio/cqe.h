@@ -103,7 +103,6 @@ struct rtio_cqe {
 struct rtio_cqe_pool {
 	struct mpsc free_q;
 	const uint16_t pool_size;
-	uint16_t pool_free;
 	struct rtio_cqe *pool;
 };
 
@@ -120,16 +119,12 @@ static inline struct rtio_cqe *rtio_cqe_pool_alloc(struct rtio_cqe_pool *pool)
 
 	memset(cqe, 0, sizeof(struct rtio_cqe));
 
-	pool->pool_free--;
-
 	return cqe;
 }
 
 static inline void rtio_cqe_pool_free(struct rtio_cqe_pool *pool, struct rtio_cqe *cqe)
 {
 	mpsc_push(&pool->free_q, &cqe->q);
-
-	pool->pool_free++;
 }
 
 /* Do not try and reformat the macros */
@@ -140,7 +135,6 @@ static inline void rtio_cqe_pool_free(struct rtio_cqe_pool *pool, struct rtio_cq
 	STRUCT_SECTION_ITERABLE(rtio_cqe_pool, name) = {	\
 		.free_q = MPSC_INIT((name.free_q)),	\
 		.pool_size = sz,				\
-		.pool_free = sz,				\
 		.pool = CONCAT(_cqe_pool_, name),		\
 	}
 
