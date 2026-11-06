@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gic {
+	compatible = "arm,gic-v2", "arm,gic";
+	reg = <0x0 0x08000000 0x0 0x1000>,
+	      <0x0 0x08010000 0x0 0x1000>;
+};
+
+&its {
+	status = "disabled";
+};
