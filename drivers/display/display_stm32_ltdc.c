@@ -83,6 +83,7 @@ struct display_stm32_ltdc_data {
 	LTDC_HandleTypeDef hltdc;
 	struct display_timing timing;
 	bool started;
+	bool blanked;
 	enum display_pixel_format current_pixel_format;
 	uint8_t current_pixel_size;
 	uint8_t *frame_buffer;
@@ -482,6 +483,7 @@ static void *stm32_ltdc_get_framebuffer(const struct device *dev)
 
 static int stm32_ltdc_display_blanking_off(const struct device *dev)
 {
+	struct display_stm32_ltdc_data *data = dev->data;
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
 	int err;
@@ -500,6 +502,7 @@ static int stm32_ltdc_display_blanking_off(const struct device *dev)
 
 	/* Panel controller's phandle is not passed to LTDC in devicetree */
 	if (!display_dev) {
+		data->blanked = false;
 		return 0;
 	}
 
@@ -508,11 +511,17 @@ static int stm32_ltdc_display_blanking_off(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return display_blanking_off(display_dev);
+	err = display_blanking_off(display_dev);
+	if (err == 0) {
+		data->blanked = false;
+	}
+
+	return err;
 }
 
 static int stm32_ltdc_display_blanking_on(const struct device *dev)
 {
+	struct display_stm32_ltdc_data *data = dev->data;
 	const struct display_stm32_ltdc_config *config = dev->config;
 	const struct device *display_dev = config->display_controller;
 	int err;
@@ -531,6 +540,7 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 
 	/* Panel controller's phandle is not passed to LTDC in devicetree */
 	if (!display_dev) {
+		data->blanked = true;
 		return 0;
 	}
 
@@ -539,7 +549,12 @@ static int stm32_ltdc_display_blanking_on(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return display_blanking_on(display_dev);
+	err = display_blanking_on(display_dev);
+	if (err == 0) {
+		data->blanked = true;
+	}
+
+	return err;
 }
 
 static int stm32_ltdc_display_register_event_cb(const struct device *dev, display_event_cb_t cb,
@@ -653,6 +668,7 @@ static int stm32_ltdc_start(const struct device *dev)
 {
 	int err = 0;
 	struct display_stm32_ltdc_data *data = dev->data;
+	const struct display_stm32_ltdc_config *config = dev->config;
 
 	/* Initialise the LTDC peripheral */
 	if (HAL_LTDC_Init(&data->hltdc) != HAL_OK) {
@@ -682,6 +698,22 @@ static int stm32_ltdc_start(const struct device *dev)
 
 	data->started = true;
 
+	/* Turn on disp_en (if its GPIO is defined in device tree) */
+	if (config->disp_on_gpio.port) {
+		err = gpio_pin_set_dt(&config->disp_on_gpio, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	/* Turn on/off backlight (if its GPIO is defined in device tree) */
+	if (config->bl_ctrl_gpio.port) {
+		err = gpio_pin_set_dt(&config->bl_ctrl_gpio, !data->blanked);
+		if (err < 0) {
+			return err;
+		}
+	}
+
 	return 0;
 }
 
@@ -693,7 +725,7 @@ static int stm32_ltdc_init(const struct device *dev)
 
 	/* Configure and set display on/off GPIO */
 	if (config->disp_on_gpio.port) {
-		err = gpio_pin_configure_dt(&config->disp_on_gpio, GPIO_OUTPUT_ACTIVE);
+		err = gpio_pin_configure_dt(&config->disp_on_gpio, GPIO_OUTPUT_INACTIVE);
 		if (err < 0) {
 			LOG_ERR("Configuration of display on/off control GPIO failed");
 			return err;
@@ -737,7 +769,7 @@ static int stm32_ltdc_init(const struct device *dev)
 		}
 	}
 
-	/* reset LTDC peripheral */
+	/* Reset LTDC peripheral */
 	(void)reset_line_toggle_dt(&config->reset);
 
 	data->current_pixel_format = DISPLAY_INIT_PIXEL_FORMAT;
@@ -772,19 +804,42 @@ static int stm32_ltdc_init(const struct device *dev)
 	data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t) data->frame_buffer;
 #endif
 
-	/* Keep the timings set with display_set_timing() across PM resume */
-	if (!data->started) {
-		/* Without timings, the LTDC is started by display_set_timing() */
-		if (!config->has_timings) {
-			return 0;
-		}
-		stm32_ltdc_update_timing(data, &config->timing);
+	/* Without timings, the LTDC is started by display_set_timing() */
+	if (!config->has_timings) {
+		return 0;
 	}
+
+	stm32_ltdc_update_timing(data, &config->timing);
 
 	return stm32_ltdc_start(dev);
 }
 
 #ifdef CONFIG_PM_DEVICE
+static int stm32_ltdc_resume(const struct device *dev)
+{
+	int err;
+	const struct display_stm32_ltdc_config *config = dev->config;
+	struct display_stm32_ltdc_data *data = dev->data;
+
+	/* Turn on LTDC peripheral clock */
+	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				(clock_control_subsys_t) &config->pclken[0]);
+	if (err < 0) {
+		LOG_ERR("Could not enable LTDC peripheral clock");
+		return err;
+	}
+
+	/* Restore front buffer */
+	data->hltdc.LayerCfg[0].FBStartAdress = (uint32_t) data->front_buf;
+
+	/* Not started yet, display_set_timing() will start it */
+	if (!data->started) {
+		return 0;
+	}
+
+	return stm32_ltdc_start(dev);
+}
+
 static int stm32_ltdc_suspend(const struct device *dev)
 {
 	const struct display_stm32_ltdc_config *config = dev->config;
@@ -806,9 +861,6 @@ static int stm32_ltdc_suspend(const struct device *dev)
 		}
 	}
 
-	/* Reset LTDC peripheral registers */
-	(void)reset_line_toggle_dt(&config->reset);
-
 	/* Turn off LTDC peripheral clock */
 	err = clock_control_off(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &config->pclken[0]);
@@ -823,7 +875,7 @@ static int stm32_ltdc_pm_action(const struct device *dev,
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		err = stm32_ltdc_init(dev);
+		err = stm32_ltdc_resume(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		err = stm32_ltdc_suspend(dev);
@@ -954,6 +1006,7 @@ static DEVICE_API(display, stm32_ltdc_display_api) = {
 		irq_enable(DT_INST_IRQN(inst));							\
 	}											\
 	static struct display_stm32_ltdc_data stm32_ltdc_data_##inst = {			\
+		.blanked = true,								\
 		.frame_buffer = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
 		.frame_buffer_len = STM32_LTDC_FRAME_BUFFER_LEN(inst),				\
 		.front_buf = STM32_LTDC_FRAME_BUFFER_ADDR(inst),				\
