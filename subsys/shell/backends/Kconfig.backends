@@ -526,6 +526,42 @@ config SHELL_PROMPT_SSH
 	help
 	  Displayed prompt name for SSH backend.
 
+choice
+	prompt "Initial log level limit"
+	default SHELL_SSH_INIT_LOG_LEVEL_NONE
+	help
+	  Log messages up to this level are printed in each SSH shell session
+	  from its start. With None, a session prints no log messages.
+
+config SHELL_SSH_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_SSH_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_SSH_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_SSH_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_SSH_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_SSH_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_SSH_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_SSH_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_SSH_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_SSH_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_SSH_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_SSH_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_SSH_INIT_LOG_LEVEL_DEFAULT
+
 module = SHELL_SSH
 module-str = SSH shell backend
 source "subsys/logging/Kconfig.template.log_config"
