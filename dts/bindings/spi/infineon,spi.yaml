@@ -18,3 +18,13 @@ properties:
 
   pinctrl-0:
     required: true
+
+  sck-gpios:
+    type: phandle-array
+    description: |
+      GPIO to which the SPI controller SCK signal is routed. The pin stays assigned to the SCB
+      through pinctrl; this GPIO is only used to read the SCK level back. It is only needed
+      together with cs-gpios: after the SCB is (re)configured its SCK output takes a while to
+      settle at the CPOL idle level, and the driver waits for that before a GPIO chip select
+      is asserted. The SCK pinctrl node must have input-enable so that its level can be read.
+      Use GPIO_ACTIVE_HIGH; the physical pin level is compared with CPOL.
