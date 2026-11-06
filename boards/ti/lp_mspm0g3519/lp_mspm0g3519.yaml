@@ -13,6 +13,7 @@ supported:
   - gpio
   - can
   - dac
+  - hwinfo
   - spi
   - vref
   - trng
