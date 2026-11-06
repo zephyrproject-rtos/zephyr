@@ -1157,17 +1157,12 @@ static int execute(const struct shell *sh)
 
 			status = z_shell_wildcard_process(sh, entry,
 							  argvp[0]);
-			/* Wildcard character found but there is no matching
-			 * command.
+			/* An argument without a wildcard character, or with a
+			 * pattern that matches no command, is processed as a
+			 * normal argument and reaches the handler as typed.
 			 */
-			if (status == SHELL_WILDCARD_CMD_NO_MATCH_FOUND) {
-				break;
-			}
-
-			/* Wildcard character was not found function can process
-			 * argument.
-			 */
-			if (status != SHELL_WILDCARD_NOT_FOUND) {
+			if ((status != SHELL_WILDCARD_NOT_FOUND) &&
+			    (status != SHELL_WILDCARD_CMD_NO_MATCH_FOUND)) {
 				++cmd_lvl;
 				wildcard_found = true;
 				continue;
