@@ -66,6 +66,7 @@ struct hid_device_config {
 	struct usbd_class_data *c_data;
 	struct net_buf_pool *pool_out;
 	struct net_buf_pool *pool_in;
+	uint16_t out_report_size;
 	struct usbd_desc_node *const if_desc_data;
 	const struct usb_desc_header *const *fs_desc;
 	const struct usb_desc_header *const *hs_desc;
@@ -623,6 +624,9 @@ static struct net_buf *hid_buf_alloc(const struct hid_device_config *const dcfg,
 		return NULL;
 	}
 
+	/* Pool buffers can be larger than the report, limit transfer size */
+	buf->size = MIN(dcfg->out_report_size, buf->size);
+
 	bi = udc_get_buf_info(buf);
 	bi->ep = ep;
 
@@ -913,6 +917,7 @@ static const struct hid_device_driver_api hid_device_api = {
 		.c_data = &hid_##n,						\
 		.pool_in = &hid_buf_pool_in_##n,				\
 		.pool_out = HID_OUT_POOL_ADDR(n),				\
+		.out_report_size = DT_INST_PROP_OR(n, out_report_size, 0),	\
 		.fs_desc = hid_fs_desc_##n,					\
 		.hs_desc = hid_hs_desc_##n,					\
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (			\
