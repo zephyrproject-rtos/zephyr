@@ -387,6 +387,7 @@ static void uart_emul_post_event(const struct device *dev, struct uart_event *ev
 
 	if (!data->uart_callback) {
 		LOG_DBG("No async callback configured for uart_emul device %p", dev);
+		return;
 	}
 
 	data->uart_callback(dev, evt, data->callback_user_data);
