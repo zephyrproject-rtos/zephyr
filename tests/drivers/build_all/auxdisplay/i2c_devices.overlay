@@ -33,6 +33,14 @@
 				rows = <2>;
 				status = "okay";
 			};
+
+			test_tm1650: tm1650@24 {
+				compatible = "titanmec,tm1650";
+				reg = <0x24>;
+				status = "okay";
+				columns = <4>;
+				rows = <1>;
+			};
 		};
 
 		test_gpio: gpio@deadbeef {
