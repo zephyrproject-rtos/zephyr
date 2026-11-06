@@ -127,6 +127,13 @@ means Pin number 0 on PORT1, as used in the board's datasheets and manuals.
 +-------+-------------+--------------------------+
 | P2_4  | SPIM00_MISO | External SPI Flash MISO  |
 +-------+-------------+--------------------------+
+| P0_0  | USART30_TX  | TF-M log TX (D19)        |
++-------+-------------+--------------------------+
+| P0_1  | USART30_RX  | TF-M log RX (D20)        |
++-------+-------------+--------------------------+
+
+The USART30 pins are used only by the ``cpuapp/ns`` target, see
+:ref:`xiao_nrf54lm20a_tfm`.
 
 
 Programming and Debugging
@@ -158,6 +165,28 @@ Reset the board and you should see the following message in the terminal:
 
    Hello World! xiao_nrf54lm20a/nrf54lm20a/cpuapp
 
+.. _xiao_nrf54lm20a_tfm:
+
+Building Non-Secure applications with TF-M
+==========================================
+
+The ``xiao_nrf54lm20a/nrf54lm20a/cpuapp/ns`` target builds the application as a Non-Secure
+image and `Trusted Firmware M`_ (TF-M) as the Secure image, using Arm(R) TrustZone(R)-M.
+TF-M is built by default for this target (``CONFIG_BUILD_WITH_TFM``), and the two images are
+merged into ``tfm_merged.hex``, which is the file flashed by ``west flash``.
+
+The memory layout is defined in ``nrf54lm20a_cpuapp_ns_partition.dtsi`` and matches the TF-M
+platform layout. TF-M writes its log to USART30, on pins D19 (TX) and D20 (RX), while the
+Non-Secure application keeps the UART console on USART20. On this target, D19 and D20 are
+Secure and cannot be used by the application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/tfm_integration/tfm_ipc
+   :board: xiao_nrf54lm20a/nrf54lm20a/cpuapp/ns
+   :goals: build flash
+
+.. _Trusted Firmware M:
+   https://www.trustedfirmware.org/projects/tf-m/
 
 .. _Seeed Studio XIAO nRF54LM20A:
    https://www.seeedstudio.com/
