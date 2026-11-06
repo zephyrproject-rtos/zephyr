@@ -215,14 +215,15 @@ static int mpu_partition_is_valid(const struct z_arm_mpu_partition *part)
  * needs to be enabled.
  *
  */
-#if defined(CONFIG_AARCH32_ARMV8_R)
+#if defined(CONFIG_AARCH32_ARMV8_R) || !defined(CONFIG_ARMV8_M_SE)
 static inline int get_region_index(uint32_t start, uint32_t size)
 {
 	uint32_t limit = (start + size - 1) & MPU_RLAR_LIMIT_Msk;
 
 	for (uint8_t idx = 0; idx < mpu_get_num_regions(); idx++) {
 		mpu_set_rnr(idx);
-		if (start >= (mpu_get_rbar() & MPU_RBAR_BASE_Msk) &&
+		if ((mpu_get_rlar() & MPU_RLAR_EN_Msk) &&
+		    start >= (mpu_get_rbar() & MPU_RBAR_BASE_Msk) &&
 		    limit <= (mpu_get_rlar() & MPU_RLAR_LIMIT_Msk)) {
 			return idx;
 		}
