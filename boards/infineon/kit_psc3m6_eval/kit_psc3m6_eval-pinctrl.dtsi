@@ -45,13 +45,16 @@
 
 /* Arduino SPI pin drive modes */
 &p7_1_scb2_spi_m_mosi {
+	drive-strength = "full";
 	drive-push-pull;
 };
 
 &p7_2_scb2_spi_m_miso {
+	drive-strength = "full";
 	input-enable;
 };
 
 &p7_0_scb2_spi_m_clk {
+	drive-strength = "full";
 	drive-push-pull;
 };
