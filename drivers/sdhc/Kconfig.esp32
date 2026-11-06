@@ -8,6 +8,7 @@ config SDHC_ESP32
 	select SDHC_COMMON
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL
+	select PINCTRL_KEEP_SLEEP_STATE
 	help
 	  Enables the ESP32 SD Host controller driver
 
