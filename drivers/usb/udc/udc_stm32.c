@@ -1354,7 +1354,7 @@ static int udc_stm32_host_wakeup(const struct device *dev)
 	}
 
 	/* Must be active from 1ms to 15ms as per reference manual. */
-	k_sleep(K_MSEC(2));
+	k_msleep(2);
 
 	status = hal_udc_remote_wakeup_stop(&priv->pcd);
 	if (status != HAL_OK) {
