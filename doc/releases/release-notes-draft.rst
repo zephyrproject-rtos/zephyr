@@ -82,6 +82,13 @@ Libraries / Subsystems
     :c:member:`i3c_config_controller.tcas_ps` and the ``tcas-ps`` controller
     Devicetree property.
 
+* Interrupts
+
+  * :kconfig:option:`CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR` and
+    :kconfig:option:`CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR` size the 2nd and 3rd level
+    aggregator windows in the software ISR table independently. Both default to
+    :kconfig:option:`CONFIG_MAX_IRQ_PER_AGGREGATOR`.
+
 * Libc
 
   * ``zephyr_write_stdout()`` no longer converts LF to CRLF. Backends that
