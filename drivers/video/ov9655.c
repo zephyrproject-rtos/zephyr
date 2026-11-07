@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ovti_ov9655
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -27,7 +28,7 @@ struct ov9655_config {
 };
 
 struct ov9655_data {
-	struct video_format fmt;
+	struct video_device vdev; /* keep first */
 };
 
 #define OV9655_REG8(addr)  ((uint32_t)(addr) | VIDEO_REG_ADDR8_DATA8)
@@ -260,23 +261,10 @@ static int ov9655_set_output_resolution(const struct device *dev, uint32_t width
 	return ret;
 }
 
-static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov9655_config *config = dev->config;
-	struct ov9655_data *data = dev->data;
 	int ret;
-
-	if (fmt->pixelformat != VIDEO_PIX_FMT_RGB565 && fmt->pixelformat != VIDEO_PIX_FMT_YUYV) {
-		LOG_ERR("Only RGB565 and YUYV supported!");
-		return -ENOTSUP;
-	}
-
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
 
 	/* Reset the sensor registers */
 	ret = video_write_cci_reg(&config->i2c, OV9655_REG8(OV9655_COMMON_CTRL7), 0x80);
@@ -314,20 +302,12 @@ static int ov9655_set_fmt(const struct device *dev, struct video_format *fmt)
 	return 0;
 }
 
-static int ov9655_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov9655_data *data = dev->data;
-
-	memcpy(fmt, &data->fmt, sizeof(data->fmt));
-
-	return 0;
-}
-
 static int ov9655_init(const struct device *dev)
 {
 	const struct ov9655_config *config = dev->config;
 	/* Set default camera format (QQVGA, YUYV) */
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_YUYV,
 		.width = 160,
 		.height = 120,
@@ -385,7 +365,7 @@ static int ov9655_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return ov9655_set_fmt(dev, &fmt);
+	return video_set_format(dev, &fmt);
 }
 
 static int ov9655_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -393,7 +373,7 @@ static int ov9655_set_stream(const struct device *dev, bool enable, enum video_b
 	return 0;
 }
 
-static int ov9655_get_frmival(const struct device *dev, struct video_frmival *frmival)
+static int ov9655_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	frmival->numerator = 1;
 	frmival->denominator = 30;
@@ -416,11 +396,9 @@ static int ov9655_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, ov9655_api) = {
 	.set_format = ov9655_set_fmt,
-	.get_format = ov9655_get_fmt,
 	.get_caps = ov9655_get_caps,
 	.set_stream = ov9655_set_stream,
-	.set_frmival = ov9655_get_frmival,
-	.get_frmival = ov9655_get_frmival,
+	.set_frmival = ov9655_set_frmival,
 	.enum_frmival = ov9655_enum_frmival,
 };
 
@@ -440,11 +418,12 @@ static DEVICE_API(video, ov9655_api) = {
 	const struct ov9655_config ov9655_config_##inst = {.i2c = I2C_DT_SPEC_INST_GET(inst),      \
 							   OV9655_RESET_GPIO(inst)                 \
 							   OV9655_PWDN_GPIO(inst)};		   \
-	struct ov9655_data ov9655_data_##inst;                                                     \
+                                                                                                   \
+	struct ov9655_data ov9655_data_##inst = {                                                  \
+		.vdev = VIDEO_DEVICE_INIT(ov9655_data_##inst, DT_DRV_INST(inst), NULL),                \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov9655_init, NULL, &ov9655_data_##inst, &ov9655_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov9655_api);		   \
-												   \
-	VIDEO_DEVICE_DEFINE(ov9655_##n, DEVICE_DT_INST_GET(inst), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov9655_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV9655_INIT)

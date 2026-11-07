@@ -79,24 +79,19 @@ struct video_nsi_fifo_config {
 };
 
 struct video_nsi_fifo_data {
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
+	struct video_device vdev; /* keep first */
 	struct k_thread thread;
 	/** Protects streaming, fmt, fd, frame_offset, discard and the head of fifo_in */
 	struct k_mutex lock;
 	/** Wakes the thread up when a buffer is queued or the stream is started */
 	struct k_sem wake_sem;
-	struct k_poll_signal *sig;
 	/** FIFO path given on the command line, NULL when the option was not used */
 	const char *fifo_path_arg;
 	/** FIFO path in use, resolved at init */
 	const char *path;
-	/** Format of the frames the host writer is expected to provide */
-	struct video_format fmt;
 	/** Number of bytes of the frame currently being read */
 	size_t frame_offset;
 	int fd;
-	bool streaming;
 	/** The frame being read was cancelled by a flush, drop it once complete */
 	bool discard;
 	/** The driver created the FIFO, so it removes it on exit */
@@ -131,7 +126,7 @@ static void video_nsi_fifo_cleanup(struct video_nsi_fifo_data *data)
 /* A frame larger than the host pipe can take several polls to be read */
 static void video_nsi_fifo_grow_pipe(struct video_nsi_fifo_data *data)
 {
-	uint32_t size = VIDEO_NSI_FIFO_PIPE_FRAMES * data->fmt.size;
+	uint32_t size = VIDEO_NSI_FIFO_PIPE_FRAMES * data->vdev.out_fmt.size;
 	int ret = video_nsi_fifo_grow_pipe_bottom(data->fd, size);
 
 	if (ret < 0) {
@@ -161,25 +156,6 @@ static int video_nsi_fifo_open(struct video_nsi_fifo_data *data)
 	return 0;
 }
 
-static void video_nsi_fifo_deliver(struct video_nsi_fifo_data *data, struct video_buffer *vbuf)
-{
-	struct video_buffer *popped = k_fifo_get(&data->fifo_in, K_NO_WAIT);
-
-	/* Only flush(true) takes buffers out of fifo_in, and it holds the lock */
-	__ASSERT_NO_MSG(popped == vbuf);
-	ARG_UNUSED(popped);
-
-	vbuf->bytesused = data->fmt.size;
-	vbuf->timestamp = k_uptime_get_32();
-	vbuf->line_offset = 0;
-
-	k_fifo_put(&data->fifo_out, vbuf);
-
-	if (IS_ENABLED(CONFIG_POLL) && (data->sig != NULL)) {
-		k_poll_signal_raise(data->sig, VIDEO_BUF_DONE);
-	}
-}
-
 static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
@@ -196,26 +172,11 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 		k_mutex_lock(&data->lock, K_FOREVER);
 
 		/* The buffer stays queued until it is filled, so stop and flush never lose it */
-		vbuf = k_fifo_peek_head(&data->fifo_in);
-		if (!data->streaming || (vbuf == NULL)) {
+		vbuf = k_fifo_peek_head(&data->vdev.out_buf_submitted);
+		if ((data->vdev.is_streaming & BIT(VIDEO_BUF_TYPE_OUTPUT)) == 0 ||
+		    (vbuf == NULL)) {
 			k_mutex_unlock(&data->lock);
 			k_sem_take(&data->wake_sem, K_FOREVER);
-			continue;
-		}
-
-		/* A larger format may have been set since the buffer was queued */
-		if (vbuf->size < data->fmt.size) {
-			LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-				data->fmt.size);
-			(void)k_fifo_get(&data->fifo_in, K_NO_WAIT);
-			vbuf->bytesused = 0;
-			/* As for a cancelled buffer, skip the rest of the frame it was receiving */
-			data->discard = (data->frame_offset > 0);
-			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && (data->sig != NULL)) {
-				k_poll_signal_raise(data->sig, VIDEO_BUF_ERROR);
-			}
-			k_mutex_unlock(&data->lock);
 			continue;
 		}
 
@@ -229,14 +190,18 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			LOG_DBG("Reopened the host FIFO %s", data->path);
 		}
 
-		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->fmt.size,
+		ret = video_nsi_fifo_read_bottom(data->fd, vbuf->buffer, data->vdev.out_fmt.size,
 						 &data->frame_offset);
 		if (ret == 0) {
 			data->frame_offset = 0;
 			if (data->discard) {
 				data->discard = false;
 			} else {
-				video_nsi_fifo_deliver(data, vbuf);
+				__maybe_unused struct video_buffer *popped =
+					k_fifo_get(&data->vdev.out_buf_submitted, K_NO_WAIT);
+
+				__ASSERT_NO_MSG(popped == vbuf);
+				video_buffer_done(data->vdev.dev, vbuf, 0);
 			}
 			k_mutex_unlock(&data->lock);
 			continue;
@@ -256,8 +221,8 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 			if (data->frame_offset > 0) {
 				LOG_WRN("Incomplete frame discarded, is the host writing %ux%u %s "
 					"frames?",
-					data->fmt.width, data->fmt.height,
-					VIDEO_FOURCC_TO_STR(data->fmt.pixelformat));
+					data->vdev.out_fmt.width, data->vdev.out_fmt.height,
+					VIDEO_FOURCC_TO_STR(data->vdev.out_fmt.pixelformat));
 			}
 			data->frame_offset = 0;
 			data->discard = false;
@@ -273,51 +238,13 @@ static void video_nsi_fifo_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_nsi_fifo_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct video_nsi_fifo_data *data = dev->data;
-	size_t idx;
-	int ret;
 
-	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
-	/* Scaling and pixel format conversion are up to the host writer (e.g. ffmpeg) */
-	ret = video_format_caps_index(video_nsi_fifo_fmts, fmt, &idx);
-	/* video_format_caps_index() ignores the steps, and YUYV needs an even width */
-	if ((ret < 0) || ((fmt->width % video_nsi_fifo_fmts[idx].width_step) != 0)) {
-		LOG_ERR("Unsupported format %s %ux%u", VIDEO_FOURCC_TO_STR(fmt->pixelformat),
-			fmt->width, fmt->height);
-		return -ENOTSUP;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-	data->fmt = *fmt;
 	if (data->fd >= 0) {
 		video_nsi_fifo_grow_pipe(data);
 	}
-	k_mutex_unlock(&data->lock);
-
-	return 0;
-}
-
-static int video_nsi_fifo_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-
-	if (fmt->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-	*fmt = data->fmt;
-	k_mutex_unlock(&data->lock);
 
 	return 0;
 }
@@ -340,20 +267,15 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 	struct video_nsi_fifo_data *data = dev->data;
 	int ret = 0;
 
-	if (type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	if (enable == data->streaming) {
-		goto unlock;
-	}
-
 	if (!enable) {
-		data->streaming = false;
 		video_nsi_fifo_close(data);
 		LOG_INF("Stream stopped");
+
+		/* Resetting frame_offset would misalign every later frame, so skip the rest instead */
+		data->discard = (data->frame_offset > 0);
+
 		goto unlock;
 	}
 
@@ -364,7 +286,6 @@ static int video_nsi_fifo_set_stream(const struct device *dev, bool enable,
 
 	LOG_INF("Reading frames from the host FIFO %s", data->path);
 
-	data->streaming = true;
 	k_sem_give(&data->wake_sem);
 
 unlock:
@@ -373,100 +294,20 @@ unlock:
 	return ret;
 }
 
-static int video_nsi_fifo_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-	int ret = 0;
-
-	if (vbuf->type != VIDEO_BUF_TYPE_OUTPUT) {
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	if (vbuf->size < data->fmt.size) {
-		LOG_ERR("Buffer too small: %u bytes provided, %u needed", vbuf->size,
-			data->fmt.size);
-		ret = -EINVAL;
-	} else {
-		vbuf->bytesused = 0;
-		k_fifo_put(&data->fifo_in, vbuf);
-		k_sem_give(&data->wake_sem);
-	}
-
-	k_mutex_unlock(&data->lock);
-
-	return ret;
-}
-
-static int video_nsi_fifo_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				  k_timeout_t timeout)
+static int video_nsi_fifo_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct video_nsi_fifo_data *data = dev->data;
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
+	k_sem_give(&data->wake_sem);
 
 	return 0;
 }
-
-static int video_nsi_fifo_flush(const struct device *dev, bool cancel)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-	struct video_buffer *vbuf;
-
-	if (!cancel) {
-		while (!k_fifo_is_empty(&data->fifo_in)) {
-			k_sleep(K_MSEC(1));
-		}
-		return 0;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	/* Resetting frame_offset would misalign every later frame, so skip the rest instead */
-	data->discard = (data->frame_offset > 0);
-
-	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-		k_fifo_put(&data->fifo_out, vbuf);
-		if (IS_ENABLED(CONFIG_POLL) && (data->sig != NULL)) {
-			k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
-		}
-	}
-
-	k_mutex_unlock(&data->lock);
-
-	return 0;
-}
-
-#ifdef CONFIG_POLL
-static int video_nsi_fifo_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_nsi_fifo_data *data = dev->data;
-
-	if ((data->sig != NULL) && (sig != NULL)) {
-		return -EALREADY;
-	}
-
-	data->sig = sig;
-
-	return 0;
-}
-#endif
 
 static DEVICE_API(video, video_nsi_fifo_driver_api) = {
 	.set_format = video_nsi_fifo_set_fmt,
-	.get_format = video_nsi_fifo_get_fmt,
 	.get_caps = video_nsi_fifo_get_caps,
 	.set_stream = video_nsi_fifo_set_stream,
-	.enqueue = video_nsi_fifo_enqueue,
-	.dequeue = video_nsi_fifo_dequeue,
-	.flush = video_nsi_fifo_flush,
-#ifdef CONFIG_POLL
-	.set_signal = video_nsi_fifo_set_signal,
-#endif
+	.trigger = video_nsi_fifo_trigger,
 };
 
 static int video_nsi_fifo_init(const struct device *dev)
@@ -475,8 +316,8 @@ static int video_nsi_fifo_init(const struct device *dev)
 	struct video_nsi_fifo_data *data = dev->data;
 	int ret;
 
-	data->fmt = video_nsi_fifo_default_fmt;
-	ret = video_estimate_fmt_size(&data->fmt);
+	data->vdev.out_fmt = video_nsi_fifo_default_fmt;
+	ret = video_estimate_fmt_size(&data->vdev.out_fmt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -496,8 +337,6 @@ static int video_nsi_fifo_init(const struct device *dev)
 
 	data->fd = -1;
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->wake_sem, 0, 1);
 
@@ -530,13 +369,13 @@ static int video_nsi_fifo_init(const struct device *dev)
 		.poll_interval_ms = DT_INST_PROP(inst, poll_interval_ms),                          \
 	};                                                                                         \
                                                                                                    \
-	static struct video_nsi_fifo_data video_nsi_fifo_data_##inst;                              \
+	static struct video_nsi_fifo_data video_nsi_fifo_data_##inst = {                           \
+		.vdev = VIDEO_DEVICE_INIT(video_nsi_fifo_data_##inst, DT_DRV_INST(inst), NULL),    \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, video_nsi_fifo_init, NULL, &video_nsi_fifo_data_##inst,        \
 			      &video_nsi_fifo_config_##inst, POST_KERNEL,                          \
 			      CONFIG_VIDEO_INIT_PRIORITY, &video_nsi_fifo_driver_api);             \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(video_nsi_fifo_##inst, DEVICE_DT_INST_GET(inst), NULL);                \
                                                                                                    \
 	static void video_nsi_fifo_cleanup_##inst(void)                                            \
 	{                                                                                          \

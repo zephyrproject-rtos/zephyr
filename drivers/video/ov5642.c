@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -156,8 +157,8 @@ struct ov5642_ctrls {
 };
 
 struct ov5642_data {
+	struct video_device vdev; /* keep first */
 	struct ov5642_ctrls ctrls;
-	struct video_format fmt;
 };
 
 static const struct video_reg16 init_params_common[] = {
@@ -535,33 +536,18 @@ static const struct video_format_cap dvp_fmts[] = {
 	[OV5642_RES_1280x960] = OV5642_VIDEO_FORMAT_CAP(1280, 960, VIDEO_PIX_FMT_GREY),
 	{0}};
 
-static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct ov5642_data *drv_data = dev->data;
 	const struct ov5642_config *cfg = dev->config;
-	const struct video_format_cap *fmts = dvp_fmts;
 	const struct ov5642_mode_config *modes = dvp_modes;
 	int ret = 0;
-	size_t i;
 
-	ret = video_format_caps_index(fmts, fmt, &i);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return ret;
-	}
-
-	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
-		return 0;
-	}
-
-	ret = video_write_cci_multiregs16(&cfg->i2c, modes[i].res_params,
-					  modes[i].array_size_res_params);
+	ret = video_write_cci_multiregs16(&cfg->i2c, modes[idx].res_params,
+					  modes[idx].array_size_res_params);
 	if (ret < 0) {
 		LOG_ERR("Unable to set resolution parameters");
 		return ret;
 	}
-
-	drv_data->fmt = *fmt;
 
 	return 0;
 }
@@ -580,15 +566,6 @@ static int ov5642_set_stream(const struct device *dev, bool enable,
 	}
 
 	LOG_DBG("Streaming %s", enable ? "started" : "stopped");
-
-	return 0;
-}
-
-static int ov5642_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov5642_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -750,7 +727,6 @@ static int ov5642_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, ov5642_driver_api) = {
 	.set_format = ov5642_set_fmt,
-	.get_format = ov5642_get_fmt,
 	.get_caps = ov5642_get_caps,
 	.set_stream = ov5642_set_stream,
 	.set_ctrl = ov5642_set_ctrl,
@@ -937,7 +913,9 @@ static int ov5642_init(const struct device *dev)
 #endif
 
 #define OV5642_INIT(n)								\
-	static struct ov5642_data ov5642_data_##n;				\
+	static struct ov5642_data ov5642_data_##n = {				\
+		.vdev = VIDEO_DEVICE_INIT(ov5642_data_##n, DT_DRV_INST(n), NULL),	\
+	};									\
 										\
 	static const struct ov5642_config ov5642_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\
@@ -949,8 +927,6 @@ static int ov5642_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &ov5642_init, NULL, &ov5642_data_##n,		\
 			&ov5642_cfg_##n,					\
 			POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,		\
-			&ov5642_driver_api);					\
-										\
-			VIDEO_DEVICE_DEFINE(ov5642_##n, DEVICE_DT_INST_GET(n), NULL);
+			&ov5642_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5642_INIT)

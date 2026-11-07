@@ -7,6 +7,7 @@
 
 #define DT_DRV_COMPAT ovti_ov7670
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -44,8 +45,8 @@ struct ov767x_ctrls {
 };
 
 struct ov767x_data {
+	struct video_device vdev; /* keep first */
 	struct ov767x_ctrls ctrls;
-	struct video_format fmt;
 };
 
 #define OV767X_REG8(addr)         ((addr) | VIDEO_REG_ADDR8_DATA8)
@@ -502,49 +503,34 @@ static int ov767x_get_caps(const struct device *dev, struct video_caps *caps)
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
-static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config *config = dev->config;
-	int ret = -ENOTSUP;
-	uint8_t i = 0U;
+	int ret;
 
-	/* Set output resolution */
-	while (config->fmts[i].pixelformat) {
-		if (config->fmts[i].width_min == fmt->width &&
-		    config->fmts[i].height_min == fmt->height &&
-		    config->fmts[i].pixelformat == fmt->pixelformat) {
-			/* Set output format */
-			switch (config->fmts[i].width_min) {
-			case 176: /* QCIF */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qcif,
-								 ARRAY_SIZE(ov7670_regs_qcif));
-				break;
-			case 352: /* CIF */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_cif,
-								 ARRAY_SIZE(ov7670_regs_cif));
-				break;
-			case 320: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
-								 ARRAY_SIZE(ov7670_regs_qvga));
-				break;
-			case 640: /* VGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_vga,
-								 ARRAY_SIZE(ov7670_regs_vga));
-				break;
-			default: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
-								 ARRAY_SIZE(ov7670_regs_qvga));
-				break;
-			}
-			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
-				return ret;
-			}
-		}
-		i++;
+	switch (fmt->width) {
+	case 176: /* QCIF */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qcif,
+						 ARRAY_SIZE(ov7670_regs_qcif));
+		break;
+	case 352: /* CIF */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_cif,
+						 ARRAY_SIZE(ov7670_regs_cif));
+		break;
+	case 320: /* QVGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_qvga,
+						 ARRAY_SIZE(ov7670_regs_qvga));
+		break;
+	case 640: /* VGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7670_regs_vga,
+						 ARRAY_SIZE(ov7670_regs_vga));
+		break;
+	default:
+		__ASSERT(false);
+		ret = -ENOTSUP;
 	}
 	if (ret < 0) {
-		LOG_ERR("Resolution not supported!");
+		LOG_ERR("Resolution not set!");
 		return ret;
 	}
 
@@ -553,44 +539,29 @@ static int ov7670_set_fmt(const struct device *dev, struct video_format *fmt)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
-static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config *config = dev->config;
-	int ret = -ENOTSUP;
-	uint8_t i = 0U;
+	int ret;
 
-	while (config->fmts[i].pixelformat) {
-		if (config->fmts[i].width_min == fmt->width &&
-		    config->fmts[i].height_min == fmt->height &&
-		    config->fmts[i].pixelformat == fmt->pixelformat) {
-			/* Set output format */
-			switch (config->fmts[i].width_min) {
-			case 160: /* QQVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qqvga,
-								 ARRAY_SIZE(ov7675_regs_qqvga));
-				break;
-			case 320: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qvga,
-								 ARRAY_SIZE(ov7675_regs_qvga));
-				break;
-			case 640: /* VGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_vga,
-								 ARRAY_SIZE(ov7675_regs_vga));
-				break;
-			default: /* QVGA */
-				ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qvga,
-								 ARRAY_SIZE(ov7675_regs_qvga));
-				break;
-			}
-			if (ret < 0) {
-				LOG_ERR("Resolution not set!");
-				return ret;
-			}
-		}
-		i++;
+	switch (fmt->width) {
+	case 160: /* QQVGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qqvga,
+						 ARRAY_SIZE(ov7675_regs_qqvga));
+		break;
+	case 320: /* QVGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_qvga,
+						 ARRAY_SIZE(ov7675_regs_qvga));
+		break;
+	case 640: /* VGA */
+		ret = video_write_cci_multiregs8(&config->bus, ov7675_regs_vga,
+						 ARRAY_SIZE(ov7675_regs_vga));
+		break;
+	default:
+		__ASSERT(false);
 	}
 	if (ret < 0) {
-		LOG_ERR("Resolution not supported!");
+		LOG_ERR("Resolution not set!");
 		return ret;
 	}
 
@@ -598,10 +569,9 @@ static int ov7675_set_fmt(const struct device *dev, struct video_format *fmt)
 }
 #endif
 
-static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct ov767x_config __maybe_unused *config = dev->config;
-	struct ov767x_data *data = dev->data;
 
 	int ret __maybe_unused;
 
@@ -609,13 +579,6 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 		LOG_ERR("Only RGB565 and YUYV supported!");
 		return -ENOTSUP;
 	}
-
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
 
 	/* Set RGB Format */
 	if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
@@ -635,7 +598,7 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7670)
 	if (config->camera_model == OV767X_MODEL_OV7670) {
-		ret = ov7670_set_fmt(dev, fmt);
+		ret = ov7670_set_fmt(dev, fmt, idx);
 		if (ret < 0) {
 			return ret;
 		}
@@ -643,21 +606,13 @@ static int ov767x_set_fmt(const struct device *dev, struct video_format *fmt)
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(ovti_ov7675)
 	if (config->camera_model == OV767X_MODEL_OV7675) {
-		ret = ov7675_set_fmt(dev, fmt);
+		ret = ov7675_set_fmt(dev, fmt, idx);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 #endif
 
-	return 0;
-}
-
-static int ov767x_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov767x_data *data = dev->data;
-
-	memcpy(fmt, &data->fmt, sizeof(data->fmt));
 	return 0;
 }
 
@@ -683,6 +638,7 @@ static int ov767x_init(const struct device *dev)
 	int ret;
 	uint8_t pid;
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = 320,
 		.height = 240,
@@ -787,7 +743,7 @@ static int ov767x_init(const struct device *dev)
 	}
 
 	/* Set video format after initialization */
-	ret = ov767x_set_fmt(dev, &fmt);
+	ret = ov767x_set_fmt(dev, &fmt, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -828,7 +784,6 @@ static int ov767x_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, ov767x_api) = {
 	.set_format = ov767x_set_fmt,
-	.get_format = ov767x_get_fmt,
 	.get_caps = ov767x_get_caps,
 	.set_stream = ov767x_set_stream,
 	.set_ctrl = ov767x_set_ctrl,
@@ -868,13 +823,13 @@ static DEVICE_API(video, ov767x_api) = {
 		.pclk_hb_disable = DT_INST_PROP(inst, pclk_hb_disable),                            \
 		OV767X_RESET_GPIO(inst) OV767X_PWDN_GPIO(inst) OV767X_CLOCK(inst)};                \
                                                                                                    \
-	static struct ov767x_data ov##id##_data##inst;                                             \
+	static struct ov767x_data ov##id##_data##inst = {                                          \
+		.vdev = VIDEO_DEVICE_INIT(ov##id##_data##inst, DT_DRV_INST(inst), NULL),           \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, ov767x_init, NULL, &ov##id##_data##inst,                       \
 			      &ov##id##_config##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,     \
-			      &ov767x_api);                                                        \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(ov##id##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &ov767x_api);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ovti_ov7670

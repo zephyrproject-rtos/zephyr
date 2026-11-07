@@ -5,12 +5,16 @@
  */
 
 #include <errno.h>
+
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+
 #include <fsl_jpegdec.h>
+
 #include "video_common.h"
 
 #define DT_DRV_COMPAT nxp_jpegdec
@@ -19,23 +23,12 @@ LOG_MODULE_REGISTER(mcux_jpegdec, CONFIG_VIDEO_LOG_LEVEL);
 
 #define MCUX_JPEGDEC_BUF_ALIGN 1024U
 
-struct video_common_header {
-	struct video_format fmt;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
-};
-
-struct video_m2m_common {
-	struct video_common_header in;  /* Incoming JPEG stream. */
-	struct video_common_header out; /* Outgoing decoded image data. */
-};
-
 struct mcux_jpegdec_data {
+	struct video_device vdev; /* keep first */
 	struct video_m2m_common m2m;
 	struct k_mutex lock;
 	struct k_sem decode_done;
 	jpegdec_descpt_t decoder_despt;
-	bool is_streaming; /* Application has set the in/out stream on. */
 	bool running;      /* Decoder is actively decoding. */
 	bool first_frame_rcv; /* First incoming frame has been fed. */
 	uint8_t format_idx;
@@ -145,12 +138,11 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 {
 	const struct mcux_jpegdec_config *config = dev->config;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct k_fifo *in_fifo_in = &data->m2m.in.fifo_in;
-	struct k_fifo *out_fifo_in = &data->m2m.out.fifo_in;
 	struct video_buffer *current_in = NULL;
 	struct video_buffer *current_out = NULL;
 
-	if (!data->is_streaming || k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
+	if (!video_stream_busy(dev) ||
+	    k_fifo_is_empty(in_fifo_in) || k_fifo_is_empty(out_fifo_in)) {
 		/*
 		 * Streaming was stopped, or nothing can be done if either input
 		 * or output queue is empty.
@@ -166,16 +158,16 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 	data->decoder_despt.config.jpegBufAddr = (uint32_t)current_in->buffer;
 	data->decoder_despt.config.jpegBufSize = ROUND_UP(current_in->size, MCUX_JPEGDEC_BUF_ALIGN);
 	data->decoder_despt.config.outBufAddr0 = (uint32_t)current_out->buffer;
-	data->decoder_despt.config.outBufPitch = data->m2m.out.fmt.pitch;
+	data->decoder_despt.config.outBufPitch = data->vdev.out_fmt.pitch;
 
 	/*
 	 * For VIDEO_PIX_FMT_NV12, we need a second output buffer for the UV plane.
 	 * Its address shall be strictly next to the end of Y plane.
 	 */
-	if (data->m2m.out.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+	if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
 		data->decoder_despt.config.outBufAddr1 =
 			data->decoder_despt.config.outBufAddr0 +
-			data->m2m.out.fmt.pitch * data->m2m.out.fmt.height;
+			data->vdev.out_fmt.pitch * data->vdev.out_fmt.height;
 	}
 
 	/* Start the decoding of next frame. */
@@ -184,16 +176,7 @@ static void mcux_jpegdec_decode_one_frame(const struct device *dev)
 	data->running = true;
 }
 
-static int mcux_jpegdec_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct mcux_jpegdec_data *data = dev->data;
-
-	*fmt = fmt->type == VIDEO_BUF_TYPE_INPUT ? data->m2m.in.fmt : data->m2m.out.fmt;
-
-	return 0;
-}
-
-static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mcux_jpegdec_data *data = dev->data;
 	struct video_format *current_format =
@@ -207,8 +190,12 @@ static int mcux_jpegdec_set_fmt(const struct device *dev, struct video_format *f
 	 * Note: It is assumed that all the following JPEG frames in the stream have the
 	 * same format as the first one.
 	 */
-	if (!data->first_frame_rcv) {
-		int ret;
+	fmt->size = 0;
+	fmt->pitch = 0;
+	if (data->first_frame_rcv) {
+		struct video_format *current_format =
+			(fmt->type == VIDEO_BUF_TYPE_INPUT) ? &(data->vdev.in_fmt) :
+			&(data->vdev.out_fmt);
 
 		if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
 			if (fmt->pixelformat != VIDEO_PIX_FMT_JPEG) {
@@ -245,27 +232,20 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 {
 	struct mcux_jpegdec_data *data = dev->data;
 	bool do_decode = false;
-	bool was_streaming;
 
 	ARG_UNUSED(type);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	was_streaming = data->is_streaming;
-
-	if (enable != data->is_streaming) {
-		data->is_streaming = enable;
-
-		if (enable) {
-			do_decode = true;
-		} else {
-			/*
-			 * Re-parse the header of the first frame fed after the
-			 * stream is restarted, instead of assuming it still
-			 * matches the format of the previous stream.
-			 */
-			data->first_frame_rcv = false;
-		}
+	if (enable) {
+		do_decode = true;
+	} else {
+		/*
+		 * Re-parse the header of the first frame fed after the
+		 * stream is restarted, instead of assuming it still
+		 * matches the format of the previous stream.
+		 */
+		data->first_frame_rcv = false;
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -278,9 +258,9 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 	 * Let a frame that is already being decoded by the hardware finish
 	 * before stopping, instead of tearing down the stream underneath it.
 	 * mcux_jpegdec_decode_one_frame() will not start another frame once
-	 * is_streaming is false.
+	 * video_stream_busy() is false.
 	 */
-	if (!enable && was_streaming) {
+	if (!enable) {
 		while (data->running) {
 			k_sem_take(&data->decode_done, K_FOREVER);
 		}
@@ -289,12 +269,10 @@ static int mcux_jpegdec_set_stream(const struct device *dev, bool enable, enum v
 	return 0;
 }
 
-static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int mcux_jpegdec_trigger(const struct device *dev, enum video_buf_type type)
 {
 	int ret = 0;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct video_common_header *common =
-		vbuf->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
 	bool do_decode = false;
 
 	if (((uint32_t)vbuf->buffer & 0xFU) != 0U) {
@@ -312,7 +290,9 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 	 * JPEG frames in the stream have the same format as the first one, so the
 	 * parsing is done only once.
 	 */
-	if (vbuf->type == VIDEO_BUF_TYPE_INPUT) {
+	if (type == VIDEO_BUF_TYPE_INPUT) {
+		struct video_buffer *vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_FOREVER);
+
 		/*
 		 * Check if it is the first frame, if so parse the JPEG header
 		 * and obtain the frame info.
@@ -335,24 +315,24 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 			/* Set output pixel format based on parsed JPEG header */
 			data->format_idx = mcux_jpegdec_get_conf(
 				data->decoder_despt.config.pixelFormat, true);
-			data->m2m.out.fmt.pixelformat =
+			data->vdev.out_fmt.pixelformat =
 				pixel_map_confs[data->format_idx].vid_pixel_format;
-			data->m2m.out.fmt.width = data->decoder_despt.config.width;
-			data->m2m.out.fmt.height = data->decoder_despt.config.height;
+			data->vdev.out_fmt.width = data->decoder_despt.config.width;
+			data->vdev.out_fmt.height = data->decoder_despt.config.height;
 
 			/* Calculate the default pitch and buffer size. */
-			if (data->m2m.out.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+			if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
 				/*
 				 * NV12 is a 2-plane format. The Y plane pitch is
 				 * 1 byte per pixel. video_bits_per_pixel() returns
 				 * 12 bpp (sum of both planes) which cannot be used
 				 * here for pitch calculation.
 				 */
-				data->m2m.out.fmt.pitch = 1U * data->m2m.out.fmt.width;
+				data->vdev.out_fmt.pitch = 1U * data->vdev.out_fmt.width;
 			} else {
-				data->m2m.out.fmt.pitch =
-					video_bits_per_pixel(data->m2m.out.fmt.pixelformat)
-					/ 8U * data->m2m.out.fmt.width;
+				data->vdev.out_fmt.pitch =
+					video_bits_per_pixel(data->vdev.out_fmt.pixelformat)
+					/ 8U * data->vdev.out_fmt.width;
 			}
 			/*
 			 * For NV12 2-plane format, the Y plane pitch is 1 byte per
@@ -364,49 +344,37 @@ static int mcux_jpegdec_enqueue(const struct device *dev, struct video_buffer *v
 			 * contains valid UV data). video_bits_per_pixel(NV12) = 12
 			 * bpp gives a smaller 1.5x factor and cannot be used here.
 			 */
-			if (data->m2m.out.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
-				data->m2m.out.fmt.size = data->m2m.out.fmt.pitch *
-					data->m2m.out.fmt.height * 2U;
+			if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+				data->vdev.out_fmt.size = data->vdev.out_fmt.pitch *
+					data->vdev.out_fmt.height * 2U;
 			} else {
-				data->m2m.out.fmt.size =
-					data->m2m.out.fmt.pitch * data->m2m.out.fmt.height;
+				data->vdev.out_fmt.size =
+					data->vdev.out_fmt.pitch * data->vdev.out_fmt.height;
 			}
 			/* outBufPitch is the pitch of the Y (Luma) plane. For NV12, the UV
 			 * plane uses the same pitch value; the hardware places the UV data
 			 * immediately after the Y plane at outBufAddr0 +
 			 * outBufPitch * height.
 			 */
-			data->decoder_despt.config.outBufPitch = data->m2m.out.fmt.pitch;
+			data->decoder_despt.config.outBufPitch = data->vdev.out_fmt.pitch;
 
 			/*
 			 * The input width/height is the same as output. JPEG files
 			 * do not have pitch and the size can be different for each
 			 * file due to compression ratio, so will not set them.
 			 */
-			data->m2m.in.fmt.width = data->m2m.out.fmt.width;
-			data->m2m.in.fmt.height = data->m2m.out.fmt.height;
+			data->vdev.in_fmt.width = data->vdev.out_fmt.width;
+			data->vdev.in_fmt.height = data->vdev.out_fmt.height;
 
 			data->first_frame_rcv = true;
 		}
-	} else {
-		/*
-		 * Verify the output buffer size only if the first input frame
-		 * has been received.
-		 */
-		if ((data->first_frame_rcv) && (vbuf->size < data->m2m.out.fmt.size)) {
-			LOG_ERR("Output buffer size is insufficient");
-			ret = -EINVAL;
-			goto unlock;
-		}
 	}
-
-	k_fifo_put(&common->fifo_in, vbuf);
 
 	/*
 	 * If the streaming is on but the decoder is not running due to
 	 * lack of in/out buffer, start to decode new frame.
 	 */
-	if (!data->running && data->is_streaming) {
+	if (!data->running && video_stream_busy(&data->vdev)) {
 		do_decode = true;
 	}
 
@@ -420,26 +388,9 @@ unlock:
 	return ret;
 }
 
-static int mcux_jpegdec_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				k_timeout_t timeout)
-{
-	struct mcux_jpegdec_data *data = dev->data;
-	struct video_common_header *common =
-		(*vbuf)->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
-
-	*vbuf = k_fifo_get(&common->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
 static int mcux_jpegdec_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	struct mcux_jpegdec_data *data = dev->data;
-
-	caps->min_vbuf_count = 1;
 
 	if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		if (data->first_frame_rcv) {
@@ -452,18 +403,22 @@ static int mcux_jpegdec_get_caps(const struct device *dev, struct video_caps *ca
 			mcux_jpegdec_out_fmts[0] = mcux_jpegdec_out_all_fmts[0];
 		}
 		caps->format_caps = mcux_jpegdec_out_fmts;
-	} else {
+	} else if (caps->type == VIDEO_BUF_TYPE_OUTPUT) {
 		caps->format_caps = mcux_jpegdec_in_fmts;
+	} else {
+		return -ENOTSUP;
 	}
+
+	caps->min_vbuf_count = 1;
 	caps->buf_align = 16U;
 
 	return 0;
 }
 
 static int mcux_jpegdec_transform_cap(const struct device *const dev,
-				const struct video_format_cap *const cap,
-				struct video_format_cap *const res_cap,
-				enum video_buf_type direction, uint16_t ind)
+				      const struct video_format_cap *const cap,
+				      struct video_format_cap *const res_cap,
+				      enum video_buf_type direction, uint16_t ind)
 {
 	struct mcux_jpegdec_data *data = dev->data;
 
@@ -474,9 +429,9 @@ static int mcux_jpegdec_transform_cap(const struct device *const dev,
 	*res_cap = *cap;
 
 	if (direction == VIDEO_BUF_TYPE_OUTPUT) {
-		res_cap->pixelformat = data->m2m.in.fmt.pixelformat;
+		res_cap->pixelformat = data->vdev.in_fmt.pixelformat;
 	} else {
-		res_cap->pixelformat = data->m2m.out.fmt.pixelformat;
+		res_cap->pixelformat = data->vdev.out_fmt.pixelformat;
 	}
 
 	return 0;
@@ -484,12 +439,10 @@ static int mcux_jpegdec_transform_cap(const struct device *const dev,
 
 static DEVICE_API(video, mcux_jpegdec_driver_api) = {
 	.set_format = mcux_jpegdec_set_fmt,
-	.get_format = mcux_jpegdec_get_fmt,
 	.set_stream = mcux_jpegdec_set_stream,
 	.get_caps = mcux_jpegdec_get_caps,
 	.transform_cap = mcux_jpegdec_transform_cap,
-	.enqueue = mcux_jpegdec_enqueue,
-	.dequeue = mcux_jpegdec_dequeue,
+	.trigger = mcux_jpegdec_trigger,
 };
 
 static int mcux_jpegdec_init(const struct device *dev)
@@ -513,26 +466,21 @@ static int mcux_jpegdec_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->decode_done, 0, 1);
 
-	k_fifo_init(&data->m2m.in.fifo_in);
-	k_fifo_init(&data->m2m.in.fifo_out);
-	k_fifo_init(&data->m2m.out.fifo_in);
-	k_fifo_init(&data->m2m.out.fifo_out);
-
 	/* Initialise default input / output formats */
-	data->m2m.in.fmt.type = VIDEO_BUF_TYPE_INPUT;
-	data->m2m.in.fmt.pixelformat = VIDEO_PIX_FMT_JPEG; /* Can only be JPEG format for input */
-	data->m2m.in.fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
-	data->m2m.in.fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.in_fmt.type = VIDEO_BUF_TYPE_INPUT;
+	data->vdev.in_fmt.pixelformat = VIDEO_PIX_FMT_JPEG; /* Can only be JPEG format for input */
+	data->vdev.in_fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.in_fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
 
 	/*
 	 * The output format and size are determined by the JPEG header parsing,
 	 * so just set a default value here.
 	 */
-	data->m2m.out.fmt.type = VIDEO_BUF_TYPE_OUTPUT;
-	data->m2m.out.fmt.pixelformat = VIDEO_PIX_FMT_NV12;
-	data->m2m.out.fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
-	data->m2m.out.fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
-	data->m2m.out.fmt.size = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * 2U;
+	data->vdev.out_fmt.type = VIDEO_BUF_TYPE_OUTPUT;
+	data->vdev.out_fmt.pixelformat = VIDEO_PIX_FMT_NV12;
+	data->vdev.out_fmt.width = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.out_fmt.height = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN;
+	data->vdev.out_fmt.size = MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * MCUX_JPEGDEC_WIDTH_HEIGHT_MIN * 2U;
 
 	/* Init JPEG decoder module. */
 	JPEGDEC_GetDefaultConfig(&init_config);
@@ -560,13 +508,13 @@ static void mcux_jpegdec_isr(const struct device *dev)
 {
 	const struct mcux_jpegdec_config *config = dev->config;
 	struct mcux_jpegdec_data *data = dev->data;
-	struct video_buffer *current_in = k_fifo_get(&data->m2m.in.fifo_in, K_NO_WAIT);
-	struct video_buffer *current_out = k_fifo_get(&data->m2m.out.fifo_in, K_NO_WAIT);
+	struct video_buffer *current_in = video_buffer_next(dev, VIDEO_BUF_TYPE_INPUT, K_NO_WAIT);
+	struct video_buffer *current_out = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	uint32_t flag = JPEGDEC_GetStatusFlags((JPEG_DECODER_Type *)&config->base, 0);
 
 	/* Decode complete. */
 	if ((flag & kJPEGDEC_DecodeCompleteFlag) != 0U) {
-		current_out->bytesused = data->m2m.out.fmt.size;
+		current_out->bytesused = data->vdev.out_fmt.size;
 	}
 
 	/* Error occur, this output buffer is broken, no valid data can be used. */
@@ -588,10 +536,10 @@ static void mcux_jpegdec_isr(const struct device *dev)
 
 	JPEGDEC_ClearStatusFlags((JPEG_DECODER_Type *)&config->base, 0, flag);
 
-	current_out->size = data->m2m.out.fmt.size;
+	current_out->size = data->vdev.out_fmt.size;
 
-	k_fifo_put(&data->m2m.in.fifo_out, current_in);
-	k_fifo_put(&data->m2m.out.fifo_out, current_out);
+	video_buffer_done(dev, current_in, 0);
+	video_buffer_done(dev, current_out, 0);
 
 	k_sem_give(&data->decode_done);
 
@@ -605,13 +553,15 @@ static void mcux_jpegdec_isr(const struct device *dev)
 			DEVICE_DT_INST_GET(n), 0);						\
 		irq_enable(DT_INST_IRQN(n));							\
 	}											\
+												\
 	static struct mcux_jpegdec_data mcux_jpegdec_data_##n = {				\
+		.vdev = VIDEO_DEVICE_INIT(mcux_jpegdec_data_##n, DT_DRV_INST(n), NULL),		\
 		.decoder_despt.config.clearStreamBuf = true,					\
 		.decoder_despt.config.autoStart = true,						\
 	};											\
+												\
 	static const struct mcux_jpegdec_config mcux_jpegdec_config_##n = {			\
-		.base =										\
-		{										\
+		.base =	{									\
 			.wrapper = (JPGDECWRP_Type *)DT_INST_REG_ADDR_BY_IDX(n, 0),		\
 			.core = (JPEGDEC_Type *)DT_INST_REG_ADDR_BY_IDX(n, 1),			\
 		},										\
@@ -623,9 +573,9 @@ static void mcux_jpegdec_isr(const struct device *dev)
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),			\
 			((clock_control_subsys_t)0U)),						\
 	};											\
+												\
 	DEVICE_DT_INST_DEFINE(n, &mcux_jpegdec_init, NULL, &mcux_jpegdec_data_##n,		\
 		&mcux_jpegdec_config_##n, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,		\
-		&mcux_jpegdec_driver_api);							\
-	VIDEO_DEVICE_DEFINE(jpegdec_##n, DEVICE_DT_INST_GET(n), NULL);
+		&mcux_jpegdec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_JPEGDEC_INIT)

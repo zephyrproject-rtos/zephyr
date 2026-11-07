@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -766,8 +767,8 @@ struct gc2145_ctrls {
 };
 
 struct gc2145_data {
+	struct video_device vdev; /* keep first */
 	struct gc2145_ctrls ctrls;
-	struct video_format fmt;
 	struct video_rect crop;
 	uint16_t format_width;
 	uint16_t format_height;
@@ -936,10 +937,10 @@ static int gc2145_set_resolution(const struct device *dev, uint32_t w, uint32_t 
 	drv_data->format_height = h;
 
 	/* Default to crop rectangle being same size as passed in resolution */
-	drv_data->crop.left = 0;
-	drv_data->crop.top = 0;
-	drv_data->crop.width = w;
-	drv_data->crop.height = h;
+	drv_data->vdev.in_selection.left = 0;
+	drv_data->vdev.in_selection.top = 0;
+	drv_data->vdev.in_selection.width = w;
+	drv_data->vdev.in_selection.height = h;
 
 	/* Calculates the window boundaries to obtain the desired resolution */
 
@@ -1018,9 +1019,10 @@ static int gc2145_set_crop(const struct device *dev, struct video_selection *sel
 	}
 
 	/* if rectangle passed in is same as current, simply return */
-	if ((drv_data->crop.left == sel->rect.left) && (drv_data->crop.top == sel->rect.top) &&
-	    (drv_data->crop.width == sel->rect.width) &&
-	    (drv_data->crop.height == sel->rect.height)) {
+	if ((drv_data->vdev.in_selection.left == sel->rect.left) &&
+	    (drv_data->vdev.in_selection.top == sel->rect.top) &&
+	    (drv_data->vdev.in_selection.width == sel->rect.width) &&
+	    (drv_data->vdev.in_selection.height == sel->rect.height)) {
 		return 0;
 	}
 
@@ -1036,12 +1038,6 @@ static int gc2145_set_crop(const struct device *dev, struct video_selection *sel
 	if (ret < 0) {
 		return ret;
 	}
-
-	drv_data->crop = sel->rect;
-
-	/* enqueue/dequeue depend on this being set as well as the crop */
-	drv_data->fmt.width = drv_data->crop.width;
-	drv_data->fmt.height = drv_data->crop.height;
 
 	return 0;
 }
@@ -1135,24 +1131,10 @@ static int gc2145_config_csi(const struct device *dev, uint32_t pixelformat,
 				   GC2145_REG_RESET_P0_REGS);
 }
 
-static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
+static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct gc2145_data *drv_data = dev->data;
 	const struct gc2145_config *cfg = dev->config;
-	size_t idx;
 	int ret;
-
-	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
-		/* nothing to do */
-		return 0;
-	}
-
-	/* Check if camera is capable of handling given format */
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		LOG_ERR("Image format not supported");
-		return ret;
-	}
 
 	/* Set output format */
 	ret = gc2145_set_output_format(dev, fmt->pixelformat);
@@ -1176,17 +1158,6 @@ static int gc2145_set_fmt(const struct device *dev, struct video_format *fmt)
 			return ret;
 		}
 	}
-
-	drv_data->fmt = *fmt;
-
-	return 0;
-}
-
-static int gc2145_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct gc2145_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -1280,9 +1251,8 @@ static int gc2145_get_selection(const struct device *dev, struct video_selection
 
 	switch (sel->target) {
 	case VIDEO_SEL_TGT_CROP:
-		sel->rect = drv_data->crop;
+		sel->rect = drv_data->vdev.in_selection;
 		break;
-
 	case VIDEO_SEL_TGT_NATIVE_SIZE:
 		sel->rect.top = 0;
 		sel->rect.left = 0;
@@ -1298,7 +1268,6 @@ static int gc2145_get_selection(const struct device *dev, struct video_selection
 
 static DEVICE_API(video, gc2145_driver_api) = {
 	.set_format = gc2145_set_fmt,
-	.get_format = gc2145_get_fmt,
 	.get_caps = gc2145_get_caps,
 	.set_stream = gc2145_set_stream,
 	.set_ctrl = gc2145_set_ctrl,
@@ -1340,6 +1309,7 @@ static int gc2145_init(const struct device *dev)
 {
 	/* set default/init format VGA RGB565 */
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = RESOLUTION_VGA_W,
 		.height = RESOLUTION_VGA_H,
@@ -1399,7 +1369,7 @@ static int gc2145_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = gc2145_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return ret;
@@ -1421,7 +1391,10 @@ static int gc2145_init(const struct device *dev)
 #endif
 
 #define GC2145_INIT(n)										\
-	static struct gc2145_data gc2145_data_##n;						\
+	static struct gc2145_data gc2145_data_##n = {						\
+		.vdev = VIDEO_DEVICE_INIT(gc2145_data_##n, DT_DRV_INST(n), NULL),			\
+	};											\
+												\
 	static const struct gc2145_config gc2145_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
 		GC2145_GET_PWDN_GPIO(n)								\
@@ -1431,8 +1404,6 @@ static int gc2145_init(const struct device *dev)
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &gc2145_init, NULL, &gc2145_data_##n, &gc2145_cfg_##n,		\
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);	\
-												\
-	VIDEO_DEVICE_DEFINE(gc2145_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &gc2145_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GC2145_INIT)

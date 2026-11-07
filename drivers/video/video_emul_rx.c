@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -20,159 +21,30 @@
 
 LOG_MODULE_REGISTER(video_emul_rx, CONFIG_VIDEO_LOG_LEVEL);
 
-struct emul_rx_config {
-	const struct device *source_dev;
-};
-
 struct emul_rx_data {
-	const struct device *dev;
-	struct video_format fmt;
+	struct video_device vdev; /* keep first */
 	struct k_work work;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 };
-
-static int emul_rx_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_set_frmival(cfg->source_dev, frmival);
-}
-
-static int emul_rx_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_get_frmival(cfg->source_dev, frmival);
-}
-
-static int emul_rx_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct emul_rx_config *cfg = dev->config;
-
-	return video_enum_frmival(cfg->source_dev, fie);
-}
-
-static int emul_rx_set_fmt(const struct device *const dev, struct video_format *fmt)
-{
-	const struct emul_rx_config *cfg = dev->config;
-	struct emul_rx_data *data = dev->data;
-	int ret;
-
-	/* Propagate the format selection to the source */
-	ret = video_set_format(cfg->source_dev, fmt);
-	if (ret < 0) {
-		LOG_DBG("Failed to set %s format to %x %ux%u", cfg->source_dev->name,
-			fmt->pixelformat, fmt->width, fmt->height);
-		return -EINVAL;
-	}
-
-	/* Cache the format selected locally to use it for getting the size of the buffer  */
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	data->fmt = *fmt;
-
-	return 0;
-}
-
-static int emul_rx_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct emul_rx_data *data = dev->data;
-
-	*fmt = data->fmt;
-	return 0;
-}
 
 static int emul_rx_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct emul_rx_config *cfg = dev->config;
+	struct emul_rx_data *data = dev->data;
 
-	return video_get_caps(cfg->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int emul_rx_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
-	const struct emul_rx_config *cfg = dev->config;
+	struct emul_rx_data *data = dev->data;
+	int ret;
 
 	/* A real hardware driver would first start / stop its own peripheral */
-	return enable ? video_stream_start(cfg->source_dev, type)
-		      : video_stream_stop(cfg->source_dev, type);
-}
+	if (enable) {
+		return video_stream_start(data->vdev.source_dev, type);
+	} else {
+		struct k_work_sync sync;
 
-static void emul_rx_worker(struct k_work *work)
-{
-	struct emul_rx_data *data = CONTAINER_OF(work, struct emul_rx_data, work);
-	const struct device *dev = data->dev;
-	const struct emul_rx_config *cfg = dev->config;
-	struct video_format *fmt = &data->fmt;
-	struct video_buffer *vbuf = vbuf;
-
-	LOG_DBG("Queueing a frame of %u bytes in format %x %ux%u", fmt->pitch * fmt->height,
-		fmt->pixelformat, fmt->width, fmt->height);
-
-	while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-		vbuf->bytesused = fmt->pitch * fmt->height;
-		vbuf->line_offset = 0;
-
-		LOG_DBG("Inserting %u bytes into buffer %p", vbuf->bytesused, vbuf->buffer);
-
-		/* Simulate the MIPI/DVP hardware transferring image data line-by-line from the
-		 * imager to the video buffer memory using DMA copying the data line-by-line over
-		 * the whole frame. vbuf->size is already checked in emul_rx_enqueue().
-		 */
-		for (size_t i = 0; i + fmt->pitch <= vbuf->bytesused; i += fmt->pitch) {
-			memcpy(vbuf->buffer + i, cfg->source_dev->data, fmt->pitch);
-		}
-
-		/* Once the buffer is completed, submit it to the video buffer */
-		k_fifo_put(&data->fifo_out, vbuf);
-	}
-}
-
-static int emul_rx_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct emul_rx_data *data = dev->data;
-	struct video_format *fmt = &data->fmt;
-
-	if (vbuf->size < fmt->pitch * fmt->height) {
-		LOG_ERR("Buffer too small for a full frame");
-		return -ENOMEM;
-	}
-
-	/* The buffer has not been filled yet: flag as empty */
-	vbuf->bytesused = 0;
-
-	/* Submit the buffer for processing in the worker, where everything happens */
-	k_fifo_put(&data->fifo_in, vbuf);
-	k_work_submit(&data->work);
-
-	return 0;
-}
-
-static int emul_rx_dequeue(const struct device *dev, struct video_buffer **vbufp,
-			   k_timeout_t timeout)
-{
-	struct emul_rx_data *data = dev->data;
-
-	/* All the processing is expected to happen in the worker */
-	*vbufp = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbufp == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
-static int emul_rx_flush(const struct device *dev, bool cancel)
-{
-	struct emul_rx_data *data = dev->data;
-	struct k_work_sync sync;
-
-	if (cancel) {
-		struct video_buffer *vbuf;
+		ret = video_stream_stop(data->vdev.source_dev, type);
 
 		/* Cancel the jobs that were not running */
 		k_work_cancel(&data->work);
@@ -180,56 +52,74 @@ static int emul_rx_flush(const struct device *dev, bool cancel)
 		/* Flush the jobs that were still running */
 		k_work_flush(&data->work, &sync);
 
-		/* Empty all the cancelled items */
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-			k_fifo_put(&data->fifo_out, vbuf);
-		}
-	} else {
-		/* Process all the remaining items from the queue */
-		k_work_flush(&data->work, &sync);
+		return ret;
 	}
+}
+
+static void emul_rx_worker(struct k_work *work)
+{
+	struct emul_rx_data *data = CONTAINER_OF(work, struct emul_rx_data, work);
+	const struct device *dev = data->vdev.dev;
+	struct video_format *fmt = &data->vdev.out_fmt;
+	struct video_buffer *vbuf = vbuf;
+
+	LOG_DBG("Queueing a frame of %u bytes in format %x %ux%u", fmt->pitch * fmt->height,
+		fmt->pixelformat, fmt->width, fmt->height);
+
+	while ((vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT)) != NULL) {
+		vbuf->bytesused = fmt->pitch * fmt->height;
+		vbuf->line_offset = 0;
+
+		LOG_DBG("Inserting %u bytes into buffer %p", vbuf->bytesused, vbuf->buffer);
+
+		/* Simulate the MIPI/DVP hardware transferring image data line-by-line from the
+		 * imager to the video buffer memory using DMA copying the data line-by-line over
+		 * the whole frame. vbuf->size is already checked in emul_rx_trigger().
+		 */
+		for (size_t i = 0; i + fmt->pitch <= vbuf->bytesused; i += fmt->pitch) {
+			memcpy(vbuf->buffer + i, data->vdev.source_dev->data, fmt->pitch);
+		}
+
+		/* Once the buffer is completed, submit it to the video buffer */
+		video_buffer_done(dev, vbuf, 0);
+	}
+}
+
+static int emul_rx_trigger(const struct device *dev, enum video_buf_type type)
+{
+	struct emul_rx_data *data = dev->data;
+
+	k_work_submit(&data->work);
 
 	return 0;
 }
 
 static DEVICE_API(video, emul_rx_driver_api) = {
-	.set_frmival = emul_rx_set_frmival,
-	.get_frmival = emul_rx_get_frmival,
-	.enum_frmival = emul_rx_enum_frmival,
-	.set_format = emul_rx_set_fmt,
-	.get_format = emul_rx_get_fmt,
 	.get_caps = emul_rx_get_caps,
 	.set_stream = emul_rx_set_stream,
-	.enqueue = emul_rx_enqueue,
-	.dequeue = emul_rx_dequeue,
-	.flush = emul_rx_flush,
+	.trigger = emul_rx_trigger,
 };
 
 int emul_rx_init(const struct device *dev)
 {
 	struct emul_rx_data *data = dev->data;
-	const struct emul_rx_config *cfg = dev->config;
 	int ret;
 
-	data->dev = dev;
-
-	if (!device_is_ready(cfg->source_dev)) {
-		LOG_ERR("Source device %s is not ready", cfg->source_dev->name);
+	if (!device_is_ready(data->vdev.source_dev)) {
+		LOG_ERR("Source device %s is not ready", data->vdev.source_dev->name);
 		return -ENODEV;
 	}
 
-	ret = video_get_format(cfg->source_dev, &data->fmt);
+	ret = video_get_format(data->vdev.source_dev, &data->vdev.out_fmt);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = video_estimate_fmt_size(&data->fmt);
+	ret = video_estimate_fmt_size(&data->vdev.out_fmt);
 	if (ret < 0) {
 		return ret;
 	}
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_work_init(&data->work, &emul_rx_worker);
 
 	return 0;
@@ -238,17 +128,11 @@ int emul_rx_init(const struct device *dev)
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
 #define EMUL_RX_DEFINE(n)                                                                          \
-	static const struct emul_rx_config emul_rx_cfg_##n = {                                     \
-		.source_dev = SOURCE_DEV(n),                                                       \
-	};                                                                                         \
-                                                                                                   \
 	static struct emul_rx_data emul_rx_data_##n = {                                            \
-		.dev = DEVICE_DT_INST_GET(n),                                                      \
+		.vdev = VIDEO_DEVICE_INIT(emul_rx_data_##n, DT_DRV_INST(n), SOURCE_DEV(n)),        \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, &emul_rx_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);       \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(emul_rx_##n, DEVICE_DT_INST_GET(n), SOURCE_DEV(n));
+	DEVICE_DT_INST_DEFINE(n, &emul_rx_init, NULL, &emul_rx_data_##n, NULL,                     \
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &emul_rx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_RX_DEFINE)

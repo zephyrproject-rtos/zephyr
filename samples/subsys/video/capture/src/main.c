@@ -121,35 +121,6 @@ static int app_display_frame(const struct device *const display_dev,
 	return display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 
-static int app_setup_video_selection(const struct device *const camera_dev,
-				     const struct video_format *const fmt)
-{
-	struct video_selection sel = {
-		.type = VIDEO_BUF_TYPE_OUTPUT,
-	};
-	int ret;
-
-	/* Set the crop setting only if configured */
-	if (CONFIG_VIDEO_SOURCE_CROP_WIDTH > 0) {
-		sel.target = VIDEO_SEL_TGT_CROP;
-		sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
-		sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
-		sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
-		sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
-
-		ret = video_set_selection(camera_dev, &sel);
-		if (ret < 0) {
-			LOG_ERR("Unable to set selection crop");
-			return ret;
-		}
-
-		LOG_INF("Crop window set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
-	}
-
-	return 0;
-}
-
 static int app_query_video_info(const struct device *const camera_dev,
 				struct video_caps *const caps,
 				struct video_format *const fmt)
@@ -203,15 +174,35 @@ static int app_query_video_info(const struct device *const camera_dev,
 static int app_setup_video_format(const struct device *const camera_dev,
 				  struct video_format *const fmt)
 {
+	struct video_selection sel = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
 	int ret;
 
 	LOG_INF("- Video format: %s %ux%u",
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
 
-	ret = video_set_compose_format(camera_dev, fmt);
+	ret = video_set_format(camera_dev, fmt);
 	if (ret < 0) {
-		LOG_ERR("Unable to set format");
+		LOG_ERR("Unable to set the format");
 		return ret;
+	}
+
+	if (CONFIG_VIDEO_SOURCE_CROP_WIDTH > 0) {
+		sel.target = VIDEO_SEL_TGT_CROP;
+		sel.rect.left = CONFIG_VIDEO_SOURCE_CROP_LEFT;
+		sel.rect.top = CONFIG_VIDEO_SOURCE_CROP_TOP;
+		sel.rect.width = CONFIG_VIDEO_SOURCE_CROP_WIDTH;
+		sel.rect.height = CONFIG_VIDEO_SOURCE_CROP_HEIGHT;
+
+		ret = video_set_selection(camera_dev, &sel);
+		if (ret < 0) {
+			LOG_ERR("Unable to set selection crop");
+			return ret;
+		}
+
+		LOG_INF("Crop window set to (%u,%u)/%ux%u",
+			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
 	}
 
 	return 0;
@@ -373,11 +364,6 @@ int main(void)
 	}
 
 	ret = app_query_video_info(camera_dev, &caps, &camera_fmt);
-	if (ret < 0) {
-		goto err;
-	}
-
-	ret = app_setup_video_selection(camera_dev, &camera_fmt);
 	if (ret < 0) {
 		goto err;
 	}

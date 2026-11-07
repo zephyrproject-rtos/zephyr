@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT himax_hm01b0
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -226,8 +227,8 @@ struct hm01b0_ctrls {
 };
 
 struct hm01b0_data {
+	struct video_device vdev; /* keep first */
 	struct hm01b0_ctrls ctrls;
-	struct video_format fmt;
 };
 
 struct hm01b0_config {
@@ -306,24 +307,12 @@ static int hm01b0_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt)
+static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct hm01b0_data *data = dev->data;
-	size_t idx;
 	int ret;
 
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	ret = video_format_caps_index(hm01b0_fmts, fmt, &idx);
-	if (ret != 0) {
-		LOG_ERR("Image resolution not supported\n");
-		return ret;
-	}
-
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
-		return 0;
-	}
 
 	/* Check if camera is capable of handling given format */
 	ret = hm01b0_apply_configuration(dev, (enum hm01b0_resolution)idx);
@@ -332,20 +321,8 @@ static int hm01b0_set_fmt(const struct device *dev, struct video_format *fmt)
 		LOG_ERR("Image resolution not supported");
 		return ret;
 	}
-	data->fmt = *fmt;
 
 	return ret;
-}
-
-static int hm01b0_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct hm01b0_data *data = dev->data;
-
-	*fmt = data->fmt;
-	LOG_DBG("HM01B0 get_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
-		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	return 0;
 }
 
 static int hm01b0_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -382,21 +359,11 @@ static int hm01b0_soft_reset(const struct device *dev)
 	return ret;
 }
 
-static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct hm01b0_config *config = dev->config;
-	struct hm01b0_data *drv_data = dev->data;
 	int ret;
 	uint32_t osc_div = 0;
-	struct video_frmival_enum fie;
-
-	fie.format = &drv_data->fmt;
-	fie.discrete = *frmival;
-	fie.type = VIDEO_FRMIVAL_TYPE_DISCRETE;
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
 
 	/*
 	 * Note: in highres mode max FPS is 45 else 60
@@ -404,8 +371,8 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 	 *  The return index will be the same value that
 	 *  we use for the osc_div field of OSC_CLOCK_DIV
 	 */
-	osc_div = fie.index;
-	LOG_DBG("%u %u %u", fie.index, fie.discrete.numerator, fie.discrete.denominator);
+	osc_div = idx;
+	LOG_DBG("%u %u %u", idx, frmival->numerator, frmival->denominator);
 
 	/* We also set the VT_REG_DIV bits[3:2] to 10 (0x2) or /1 */
 	osc_div |= HM01B0_CCI_OSC_CLOCK_DIV_VT_REG_DIV_1;
@@ -423,32 +390,10 @@ static int hm01b0_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	LOG_DBG("FrameRate selected: %d %d = %d", fie.discrete.numerator, fie.discrete.denominator,
-		fie.discrete.denominator / fie.discrete.numerator);
+	LOG_DBG("FrameRate selected: %d %d = %d",
+		frmival->numerator, frmival->denominator,
+		frmival->denominator / frmival->numerator);
 	LOG_DBG("OSC DIV: %d", osc_div);
-
-	return 0;
-}
-
-static int hm01b0_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct hm01b0_config *config = dev->config;
-	struct hm01b0_data *drv_data = dev->data;
-	uint32_t reg;
-	int ret;
-
-	/* lets compute the frmival from the HM01B0_CCI_OSC_CLOCK_DIV registervalue */
-	ret = video_read_cci_reg(&config->i2c, HM01B0_CCI_OSC_CLOCK_DIV, &reg);
-	if (ret < 0) {
-		LOG_ERR("Failed to write OSC_CLK_DIV reg (%d)", ret);
-		return ret;
-	}
-
-	frmival->denominator = ((drv_data->fmt.width >= 320)
-		&& (drv_data->fmt.height >= 320)) ? 45 : 60;
-
-	/* 0=>8 1->4 2->2 3->1 */
-	frmival->numerator = 8 >> (reg & 0x3);
 
 	return 0;
 }
@@ -457,8 +402,9 @@ int hm01b0_enum_frmival(const struct device *dev, struct video_frmival_enum *fie
 {
 	struct hm01b0_data *drv_data = dev->data;
 
-	fie->discrete.denominator = ((drv_data->fmt.width >= 320)
-		&& (drv_data->fmt.height >= 320)) ? 45 : 60;
+	fie->discrete.denominator =
+		((drv_data->vdev.out_fmt.width >= 320) &&
+		 (drv_data->vdev.out_fmt.height >= 320)) ? 45 : 60;
 
 	switch (fie->index) {
 	case HM01B0_5_OR_8_FPS:
@@ -539,12 +485,10 @@ static int hm01b0_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, hm01b0_driver_api) = {
 	.set_format = hm01b0_set_fmt,
-	.get_format = hm01b0_get_fmt,
 	.set_ctrl = hm01b0_set_ctrl,
 	.set_stream = hm01b0_set_stream,
 	.get_caps = hm01b0_get_caps,
 	.set_frmival = hm01b0_set_frmival,
-	.get_frmival = hm01b0_get_frmival,
 	.enum_frmival = hm01b0_enum_frmival,
 };
 
@@ -588,13 +532,13 @@ static int hm01b0_init(const struct device *dev)
 	}
 
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_GREY,
 		.width = 160,
 		.height = 120,
-		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 
-	ret = hm01b0_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret != 0) {
 		LOG_ERR("Error setting video format (%d)", ret);
 		return ret;
@@ -610,10 +554,13 @@ static int hm01b0_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                              \
 		.ctrl_val = HM01B0_CTRL_VAL(DT_INST_PROP(inst, data_bits))                      \
 	};                                                                                      \
-	struct hm01b0_data hm01b0_data_##inst;                                                  \
+	                                                                                        \
+	struct hm01b0_data hm01b0_data_##inst = {                                               \
+		.vdev = VIDEO_DEVICE_INIT(hm01b0_data_##inst, DT_DRV_INST(inst), NULL),             \
+	};                                                                                      \
+	                                                                                        \
 	DEVICE_DT_INST_DEFINE(inst, &hm01b0_init, NULL, &hm01b0_data_##inst,                    \
 			      &hm01b0_config_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
-			      &hm01b0_driver_api);                                              \
-	VIDEO_DEVICE_DEFINE(hm01b0_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &hm01b0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HM01B0_INIT)

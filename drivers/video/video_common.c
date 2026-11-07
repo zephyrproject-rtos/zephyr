@@ -20,21 +20,6 @@
 
 LOG_MODULE_REGISTER(video_common, CONFIG_VIDEO_LOG_LEVEL);
 
-struct video_device *video_find_vdev(const struct device *dev)
-{
-	if (!dev) {
-		return NULL;
-	}
-
-	STRUCT_SECTION_FOREACH(video_device, vdev) {
-		if (vdev->dev == dev) {
-			return vdev;
-		}
-	}
-
-	return NULL;
-}
-
 const char *const *video_get_std_menu_ctrl(uint32_t id)
 {
 	static char const *const power_line_frequency[] = {
@@ -144,24 +129,14 @@ int video_init_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t 
 	uint32_t flags;
 	enum video_ctrl_type type;
 	struct video_ctrl *vc;
-	struct video_device *vdev;
+	struct video_device *vdev = dev->data;
 
 	if (ctrl == NULL) {
 		return -EINVAL;
 	}
 
-	vdev = video_find_vdev(dev);
-	if (!vdev) {
-		return -EINVAL;
-	}
-
 	/* Sanity checks */
 	if (id < VIDEO_CID_BASE) {
-		return -EINVAL;
-	}
-
-	vdev = video_find_vdev(dev);
-	if (!vdev) {
 		return -EINVAL;
 	}
 
@@ -235,6 +210,21 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 	return 0;
 }
 
+int video_init_button_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id)
+{
+	int ret;
+
+	ret = video_init_ctrl(ctrl, dev, id,
+		(struct video_ctrl_range){.min = 0, .max = 0, .step = 0, .def = 0});
+	if (ret) {
+		return ret;
+	}
+
+	ctrl->flags |= VIDEO_CTRL_FLAG_VOLATILE;
+
+	return 0;
+}
+
 int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 			     uint8_t def, const int64_t menu[], size_t menu_len)
 {
@@ -255,6 +245,95 @@ int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, 
 	ctrl->int_menu = menu;
 
 	return 0;
+}
+
+void video_buffer_done(const struct device *dev, struct video_buffer *buf, int err)
+{
+	struct video_device *vdev = dev->data;
+
+	if (buf == NULL) {
+		LOG_WRN("NULL buffer returned by %s", dev->name);
+		return;
+	}
+
+	if (err == 0) {
+		if (buf->bytesused == 0) {
+			buf->bytesused = (buf->type == VIDEO_BUF_TYPE_INPUT)
+				? vdev->in_fmt.size : vdev->out_fmt.size;
+		}
+		if (buf->timestamp == 0) {
+			buf->timestamp = k_uptime_get_32();
+		}
+	}
+
+	switch (buf->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		LOG_DBG("%s is returning input buffer %p", dev->name, (void *)buf);
+		k_fifo_put(&vdev->in_buf_completed, buf);
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		LOG_DBG("%s is returning output buffer %p", dev->name, (void *)buf);
+		k_fifo_put(&vdev->out_buf_completed, buf);
+		break;
+	default:
+		LOG_ERR("Unexpected buffer type %u", buf->type);
+		__ASSERT_NO_MSG(false);
+	}
+
+	if (IS_ENABLED(CONFIG_POLL) && vdev->signal) {
+		k_poll_signal_raise(vdev->signal, err == 0 ? VIDEO_BUF_DONE : VIDEO_BUF_ERROR);
+	}
+}
+
+struct video_buffer *video_buffer_next(const struct device *dev, enum video_buf_type type,
+				       k_timeout_t timeout)
+{
+	struct video_device *vdev = dev->data;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		LOG_DBG("%s is requesting next input buffer", dev->name);
+		return k_fifo_get(&vdev->in_buf_submitted, timeout);
+	case VIDEO_BUF_TYPE_OUTPUT:
+		LOG_DBG("%s is requesting next output buffer", dev->name);
+		return k_fifo_get(&vdev->out_buf_submitted, timeout);
+	default:
+		LOG_ERR("Unexpected buffer type %u", type);
+		__ASSERT_NO_MSG(false);
+		return NULL;
+	}
+}
+
+struct video_buffer *video_buffer_peek(const struct device *dev, enum video_buf_type type)
+{
+	struct video_device *vdev = dev->data;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		return k_fifo_peek_head(&vdev->in_buf_submitted);
+	case VIDEO_BUF_TYPE_OUTPUT:
+		return k_fifo_peek_head(&vdev->out_buf_submitted);
+	default:
+		LOG_ERR("Unexpected buffer type %u", type);
+		__ASSERT_NO_MSG(false);
+		return NULL;
+	}
+}
+
+bool video_buffer_is_empty(const struct device *dev, enum video_buf_type type)
+{
+	struct video_device *vdev = dev->data;
+
+	switch (type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		return k_fifo_is_empty(&vdev->in_buf_submitted);
+	case VIDEO_BUF_TYPE_OUTPUT:
+		return k_fifo_is_empty(&vdev->out_buf_submitted);
+	default:
+		LOG_ERR("Unexpected buffer type %u", type);
+		__ASSERT_NO_MSG(false);
+		return true;
+	}
 }
 
 static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, size_t size_w,

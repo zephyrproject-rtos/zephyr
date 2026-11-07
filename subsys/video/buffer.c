@@ -79,6 +79,7 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	vbuf->memory = VIDEO_MEMORY_INTERNAL;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
+	vbuf->line_offset = 0;
 
 	return vbuf;
 }
@@ -147,24 +148,85 @@ struct video_buffer *video_import_buffer(uint8_t *mem, size_t sz)
 
 int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
+	struct video_device *vdev;
+	int ret;
+
 	if (dev == NULL || buf == NULL || buf->index >= CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
 	    (buf->type != VIDEO_BUF_TYPE_INPUT && buf->type != VIDEO_BUF_TYPE_OUTPUT)) {
+		LOG_ERR("Invalid parameters (%p, %p)", dev, buf);
 		return -EINVAL;
 	}
 
+	LOG_DBG("%s is enqueueing buffer %p", dev->name, (void *)buf);
+
+	vdev = dev->data;
+
 	video_buf[buf->index].type = buf->type;
 
-	return video_driver_enqueue(dev, &video_buf[buf->index]);
+	buf->bytesused = 0;
+	buf->line_offset = 0;
+
+	vdev = dev->data;
+
+	if (buf->type == VIDEO_BUF_TYPE_OUTPUT && vdev->out_fmt.size > 0) {
+		if (buf->size < vdev->out_fmt.size) {
+			LOG_ERR("Buffer size %u too small for output format size %u",
+				buf->size, vdev->out_fmt.size);
+			return -ENOBUFS;
+		}
+		k_fifo_put(&vdev->out_buf_submitted, buf);
+	}
+
+	if (buf->type == VIDEO_BUF_TYPE_INPUT && vdev->in_fmt.size > 0) {
+		if (buf->size < vdev->in_fmt.size) {
+			LOG_ERR("Buffer size %u too small for input format size %u",
+				buf->size, vdev->in_fmt.size);
+			return -ENOBUFS;
+		}
+		k_fifo_put(&vdev->in_buf_submitted, buf);
+	}
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	ret = video_driver_trigger(dev, video_buf[buf->index].type);
+	k_mutex_unlock(&vdev->lock);
+
+	return (ret == -ENOSYS) ? 0 : ret;
 }
 
 int video_dequeue(const struct device *dev, struct video_buffer **vbuf,
 				       k_timeout_t timeout)
 {
+	struct video_device *vdev;
+	struct k_fifo *fifo;
+
 	if (dev == NULL || vbuf == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", dev, vbuf);
 		return -EINVAL;
 	}
 
-	return video_driver_dequeue(dev, vbuf, timeout);
+	vdev = dev->data;
+
+	switch ((*vbuf)->type) {
+	case VIDEO_BUF_TYPE_INPUT:
+		fifo = &vdev->in_buf_completed;
+		break;
+	case VIDEO_BUF_TYPE_OUTPUT:
+		fifo = &vdev->out_buf_completed;
+		break;
+	default:
+		LOG_ERR("Invalid buffer type %u", (*vbuf)->type);
+		__ASSERT_NO_MSG(false);
+		return -EINVAL;
+	}
+
+	*vbuf = k_fifo_get(fifo, timeout);
+	if (*vbuf == NULL) {
+		return -ETIMEDOUT;
+	}
+
+	LOG_DBG("%s is dequeueing buffer %p", dev->name, (void *)*vbuf);
+
+	return 0;
 }
 
 int video_transfer_buffer(const struct device *src, const struct device *sink,
@@ -174,21 +236,32 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	struct video_buffer *buf = &(struct video_buffer){.type = src_type};
 	int ret;
 
-	ret = video_driver_dequeue(src, &buf, timeout);
+	ret = video_dequeue(src, &buf, timeout);
 	if (ret < 0) {
 		return ret;
 	}
 
 	buf->type = sink_type;
+	buf->timestamp = 0;
+	buf->bytesused = 0;
 
-	return video_driver_enqueue(sink, buf);
+	return video_enqueue(sink, buf);
 }
 
 int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
+	struct video_device *vdev;
+
 	if (dev == NULL || sig == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", dev, sig);
 		return -EINVAL;
 	}
 
-	return video_driver_set_signal(dev, sig);
+	vdev = dev->data;
+
+	k_mutex_lock(&vdev->lock, K_FOREVER);
+	vdev->signal = sig;
+	k_mutex_unlock(&vdev->lock);
+
+	return 0;
 }

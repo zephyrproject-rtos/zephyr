@@ -9,6 +9,7 @@
 
 #include <inttypes.h>
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -73,15 +74,10 @@ static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
 #endif
 
 struct video_sw_generator_data {
-	const struct device *dev;
+	struct video_device vdev; /* keep first */
 	struct sw_ctrls ctrls;
-	struct video_format fmt;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct k_work_delayable work;
 	int pattern;
-	struct k_poll_signal *sig;
-	uint32_t frame_rate;
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
 	size_t h264_offset;
 #endif
@@ -251,23 +247,9 @@ static const char *const test_pattern_menu[] = {
 	NULL,
 };
 
-static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt)
+static int video_sw_generator_set_fmt(const struct device *dev, struct video_format *fmt,
+				      size_t idx)
 {
-	struct video_sw_generator_data *data = dev->data;
-	size_t idx;
-	int ret;
-
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return ret;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
 	/* Special handling for JPEG and PNG file size */
 	if (fmt->pixelformat == VIDEO_PIX_FMT_JPEG) {
 		fmt->size = MAX(sizeof(jpeg_frame_buffer), sizeof(jpeg_frame_buffer_hflip));
@@ -286,16 +268,6 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 	}
 #endif
 
-	data->fmt = *fmt;
-	return 0;
-}
-
-static int video_sw_generator_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	*fmt = data->fmt;
-
 	return 0;
 }
 
@@ -306,7 +278,7 @@ static int video_sw_generator_set_stream(const struct device *dev, bool enable,
 	struct k_work_sync work_sync = {0};
 
 	if (enable) {
-		k_work_schedule(&data->work, K_MSEC(1000 / data->frame_rate));
+		k_work_schedule(&data->work, K_NSEC(video_frmival_nsec(&data->vdev.frmival)));
 	} else {
 		k_work_cancel_delayable_sync(&data->work, &work_sync);
 	}
@@ -470,7 +442,6 @@ static int video_sw_generator_fill_h264(struct video_sw_generator_data *data,
 
 	memcpy(vbuf->buffer, &h264_frame_buffer[start], frame_size);
 	vbuf->bytesused = frame_size;
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 	data->h264_offset = end < sizeof(h264_frame_buffer) ? end : 0;
 
@@ -518,7 +489,6 @@ static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hf
 	/* Copy the compressed frame data to the video buffer */
 	memcpy(vbuf->buffer, frame, frame_size);
 	vbuf->bytesused = frame_size;
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
 	return 0;
@@ -538,21 +508,21 @@ static uint16_t video_sw_generator_fill_grey(uint8_t *buffer, uint16_t width, bo
 static int video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
 {
 	struct video_sw_generator_data *data = dev->data;
-	struct video_format *fmt = &data->fmt;
+	struct video_format *fmt = &data->vdev.out_fmt;
 	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	bool hflip = data->ctrls.hflip.val;
 	uint16_t lines = 0;
 
 #ifdef CONFIG_VIDEO_SW_GENERATOR_H264
-	if (data->fmt.pixelformat == VIDEO_PIX_FMT_H264) {
+	if (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_H264) {
 		return video_sw_generator_fill_h264(data, vbuf);
 	}
 #endif
 
 	/* Handle JPEG and PNG formats specially */
-	if ((data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
-	    (data->fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
-		return video_sw_generator_fill_compressed(vbuf, hflip, data->fmt.pixelformat);
+	if ((data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
+	    (data->vdev.out_fmt.pixelformat == VIDEO_PIX_FMT_PNG)) {
+		return video_sw_generator_fill_compressed(vbuf, hflip, data->vdev.out_fmt.pixelformat);
 	}
 
 	if (vbuf->size < pitch * 2) {
@@ -561,7 +531,7 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	}
 
 	/* Fill the first row of the emulated framebuffer */
-	switch (data->fmt.pixelformat) {
+	switch (data->vdev.out_fmt.pixelformat) {
 	case VIDEO_PIX_FMT_YUYV:
 		lines = video_sw_generator_fill_yuyv(vbuf->buffer, fmt->width, hflip);
 		break;
@@ -609,10 +579,10 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	}
 
 	/* How much was filled in so far */
-	vbuf->bytesused = data->fmt.pitch * lines;
+	vbuf->bytesused = data->vdev.out_fmt.pitch * lines;
 
 	/* Duplicate the first line(s) all over the buffer */
-	for (int h = lines; h < data->fmt.height; h += lines) {
+	for (int h = lines; h < data->vdev.out_fmt.height; h += lines) {
 		if (vbuf->size < vbuf->bytesused + pitch * lines) {
 			LOG_WRN("Generation stopped early: buffer too small");
 			break;
@@ -621,7 +591,6 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 		vbuf->bytesused += pitch * lines;
 	}
 
-	vbuf->timestamp = k_uptime_get_32();
 	vbuf->line_offset = 0;
 
 	return 0;
@@ -635,114 +604,38 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	data = CONTAINER_OF(dwork, struct video_sw_generator_data, work);
 
-	k_work_reschedule(&data->work, K_MSEC(1000 / data->frame_rate));
+	k_work_reschedule(&data->work, K_NSEC(video_frmival_nsec(&data->vdev.frmival)));
 
-	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	vbuf = video_buffer_next(data->vdev.dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (vbuf == NULL) {
 		return;
 	}
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		video_sw_generator_fill(data->dev, vbuf);
+		video_sw_generator_fill(data->vdev.dev, vbuf);
 		break;
 	}
 
-	k_fifo_put(&data->fifo_out, vbuf);
-
-	if (IS_ENABLED(CONFIG_POLL) && data->sig) {
-		k_poll_signal_raise(data->sig, VIDEO_BUF_DONE);
-	}
-
-	k_yield();
-}
-
-static int video_sw_generator_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	k_fifo_put(&data->fifo_in, vbuf);
-
-	return 0;
-}
-
-static int video_sw_generator_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				      k_timeout_t timeout)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
-static int video_sw_generator_flush(const struct device *dev, bool cancel)
-{
-	struct video_sw_generator_data *data = dev->data;
-	struct video_buffer *vbuf;
-
-	if (!cancel) {
-		/* wait for all buffer to be processed */
-		do {
-			k_sleep(K_MSEC(1));
-		} while (!k_fifo_is_empty(&data->fifo_in));
-	} else {
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
-			k_fifo_put(&data->fifo_out, vbuf);
-			if (IS_ENABLED(CONFIG_POLL) && data->sig) {
-				k_poll_signal_raise(data->sig, VIDEO_BUF_ABORTED);
-			}
-		}
-	}
-
-	return 0;
+	video_buffer_done(data->vdev.dev, vbuf, 0);
 }
 
 static int video_sw_generator_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 1;
 
 	return 0;
 }
 
-#ifdef CONFIG_POLL
-static int video_sw_generator_set_signal(const struct device *dev, struct k_poll_signal *sig)
+static int video_sw_generator_set_frmival(const struct device *dev, struct video_frmival *frmival,
+					  size_t idx)
 {
-	struct video_sw_generator_data *data = dev->data;
-
-	if (data->sig && sig != NULL) {
-		return -EALREADY;
-	}
-
-	data->sig = sig;
-
-	return 0;
-}
-#endif
-
-static int video_sw_generator_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	data->frame_rate = CLAMP(DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator),
-				 MIN_FRAME_RATE, MAX_FRAME_RATE);
-	frmival->numerator = 1;
-	frmival->denominator = data->frame_rate;
-
-	return 0;
-}
-
-static int video_sw_generator_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = data->frame_rate;
-
+	/* The subsystem will update dev->data->vdev.frmival */
 	return 0;
 }
 
@@ -775,18 +668,10 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
-	.get_format = video_sw_generator_get_fmt,
 	.set_stream = video_sw_generator_set_stream,
-	.flush = video_sw_generator_flush,
-	.enqueue = video_sw_generator_enqueue,
-	.dequeue = video_sw_generator_dequeue,
 	.get_caps = video_sw_generator_get_caps,
 	.set_frmival = video_sw_generator_set_frmival,
-	.get_frmival = video_sw_generator_get_frmival,
 	.enum_frmival = video_sw_generator_enum_frmival,
-#ifdef CONFIG_POLL
-	.set_signal = video_sw_generator_set_signal,
-#endif
 };
 
 static int video_sw_generator_init_controls(const struct device *dev)
@@ -807,29 +692,37 @@ static int video_sw_generator_init_controls(const struct device *dev)
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
+	struct video_format fmt = {
+		.width = DEFAULT_FRAME_WIDTH,
+		.height = DEFAULT_FRAME_HEIGHT,
+		.pitch = DEFAULT_FRAME_WIDTH * 2,
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+		.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	int ret;
 
-	data->dev = dev;
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);
+
+	data->vdev.frmival.numerator = 1;
+	data->vdev.frmival.denominator = DEFAULT_FRAME_RATE;
+
+	ret = video_set_format(dev, &fmt);
+	if (ret < 0) {
+		LOG_ERR("Failed to set the default format");
+		return ret;
+	}
 
 	return video_sw_generator_init_controls(dev);
 }
 
 #define VIDEO_SW_GENERATOR_DEFINE(n)                                                               \
 	static struct video_sw_generator_data video_sw_generator_data_##n = {                      \
-		.fmt.width = DEFAULT_FRAME_WIDTH,                                                  \
-		.fmt.height = DEFAULT_FRAME_HEIGHT,                                                \
-		.fmt.pitch = DEFAULT_FRAME_WIDTH * 2,                                              \
-		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
-		.fmt.size = DEFAULT_FRAME_WIDTH * 2 * DEFAULT_FRAME_HEIGHT,                        \
-		.frame_rate = DEFAULT_FRAME_RATE,                                                  \
+		.vdev = VIDEO_DEVICE_INIT(video_sw_generator_data_##n, DT_DRV_INST(n), NULL),      \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &video_sw_generator_init, NULL, &video_sw_generator_data_##n,     \
 			      NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,                       \
-			      &video_sw_generator_driver_api);                                     \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(video_sw_generator_##n, DEVICE_DT_INST_GET(n), NULL);
+			      &video_sw_generator_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VIDEO_SW_GENERATOR_DEFINE)

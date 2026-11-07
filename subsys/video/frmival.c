@@ -11,29 +11,127 @@ LOG_MODULE_REGISTER(video_frmival, CONFIG_VIDEO_LOG_LEVEL);
 
 int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
-	if (dev == NULL || frmival == NULL) {
+	struct video_device *vdev = dev->data;
+	int ret;
+
+	if (dev == NULL || frmival == NULL ||
+	    frmival->numerator == 0 || frmival->denominator == 0) {
 		return -EINVAL;
 	}
 
-	return video_driver_set_frmival(dev, frmival);
+	while (true) {
+		struct video_frmival_enum fie = {.discrete = *frmival};
+
+		ret = video_closest_frmival(vdev->dev, &fie);
+		if (ret != 0 && ret != -ENOSYS) {
+			return ret;
+		}
+
+		ret = video_driver_set_frmival(vdev->dev, &fie.discrete, fie.index);
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			return -ENOSYS;
+		}
+		vdev = vdev->source_dev->data;
+	}
+
+	/* Cache the frame interval, now that it was accepted */
+	vdev = dev->data;
+	vdev->frmival = *frmival;
+
+	return 0;
 }
 
 int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
+	struct video_device *vdev = dev->data;
+	int ret;
+
 	if (dev == NULL || frmival == NULL) {
 		return -EINVAL;
 	}
 
-	return video_driver_get_frmival(dev, frmival);
+	while (true) {
+		ret = video_driver_get_frmival(vdev->dev, frmival);
+		if (ret == 0) {
+			if (frmival->numerator == 0 || frmival->denominator == 0) {
+				LOG_ERR("Invalid frame interval returned by %s", dev->name);
+				return -ERANGE;
+			}
+			return 0;
+		}
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			break;
+		}
+		vdev = vdev->source_dev->data;
+	}
+
+	/* No driver implements dynamic framerate or frame dropping, use the cached value */
+	vdev = dev->data;
+	*frmival = vdev->frmival;
+
+	return 0;
 }
 
 int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
+	struct video_device *vdev = dev->data;
+	int ret;
+
 	if (dev == NULL || fie == NULL) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)fie);
 		return -EINVAL;
 	}
 
-	return video_driver_enum_frmival(dev, fie);
+	while (true) {
+		ret = video_driver_enum_frmival(vdev->dev, fie);
+		if (ret == 0) {
+			break;
+		}
+		if (ret != -ENOSYS) {
+			return ret;
+		}
+
+		if (vdev->source_dev == NULL) {
+			return -ENOSYS;
+		}
+		vdev = vdev->source_dev->data;
+	}
+
+	switch (fie->type) {
+	case VIDEO_FRMIVAL_TYPE_STEPWISE:
+		if (fie->stepwise.min.denominator == 0 || fie->stepwise.min.numerator == 0 ||
+		    fie->stepwise.max.denominator == 0 || fie->stepwise.max.numerator == 0 ||
+		    fie->stepwise.step.denominator == 0 || fie->stepwise.step.numerator == 0) {
+			LOG_ERR("Invalid stepwise frame interval returned by %s at index %u",
+				dev->name, fie->index);
+			return -ERANGE;
+		}
+		break;
+	case VIDEO_FRMIVAL_TYPE_DISCRETE:
+		if (fie->discrete.denominator == 0 || fie->discrete.numerator == 0) {
+			LOG_ERR("Invalid discrete frame interval returned by %s at index %u",
+				dev->name, fie->index);
+			return -ERANGE;
+		}
+		break;
+	default:
+		LOG_ERR("Invalid frame interval type %u returned by %s at index %u",
+			fie->type, dev->name, fie->index);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise,
@@ -91,6 +189,7 @@ int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise
 int video_closest_frmival(const struct device *dev, struct video_frmival_enum *match)
 {
 	if (dev == NULL || match == NULL || match->type == VIDEO_FRMIVAL_TYPE_STEPWISE) {
+		LOG_ERR("Invalid parameters (%p, %p)", (void *)dev, (void *)match);
 		return -EINVAL;
 	}
 

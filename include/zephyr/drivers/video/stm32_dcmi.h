@@ -20,6 +20,17 @@ extern "C" {
 /** @brief Switch the camera between video mode(0) and snapshot mode(1). */
 #define VIDEO_CID_ST_SNAPSHOT_MODE (VIDEO_CID_PRIVATE_BASE + 1)
 
+/** @brief Trigger a snapshot, which will process a single input buffer then release it out */
+#define VIDEO_CID_ST_SNAPSHOT_BUTTON (VIDEO_CID_PRIVATE_BASE + 2)
+
+/** @brief Possible values for @ref VIDEO_CID_ST_SNAPSHOT_MODE */
+enum {
+	/** Trigger new frames continuously */
+	VIDEO_CID_ST_SNAPSHOT_CONTINUOUS0,
+	/** Trigger new frame only when @ref VIDEO_CID_ST_SNAPSHOT_BUTTON is activated */
+	VIDEO_CID_ST_SNAPSHOT_ONESHOT,
+};
+
 #ifdef __cplusplus
 }
 #endif
