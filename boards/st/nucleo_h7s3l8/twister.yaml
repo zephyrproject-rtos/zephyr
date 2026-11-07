@@ -12,7 +12,7 @@ supported:
   - entropy
   - gpio
   - netif:eth
-  - octospi
+  - mspi
   - ptp_clock
   - rtc
   - uart
