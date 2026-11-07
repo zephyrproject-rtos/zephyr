@@ -1451,7 +1451,10 @@ class TestReviewRequestBatching:
         gh, gh_repo, pr, args = _make_add_reviewers_stubs()
         candidates = [f"u{i}" for i in range(25)]
 
-        def _always_fail(_reviewers):
+        def _always_fail(reviewers):
+            # MagicMock forwards the reviewers= keyword to this callback so it needs to be named.
+            # This line explicitly discards it rather than leaving it unused.
+            _ = reviewers
             exc = sut.GithubException("nope")
             exc.status = 500
             raise exc
