@@ -49,6 +49,15 @@
 			status = "disabled";
 		};
 	};
+
+	/*
+	 * Dedicated Hibernate wakeup sources.  Disabled by default; a board or
+	 * application enables this node and selects the trigger(s) it needs.
+	 */
+	hibernate_wakeup: hibernate-wakeup {
+		compatible = "infineon,hibernate-wakeup";
+		status = "disabled";
+	};
 };
 
 &lpcomp0 {
