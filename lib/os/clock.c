@@ -185,7 +185,7 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 		uint64_t ns = (uint64_t)k_sleep(K_SECONDS(duration.tv_sec - 1)) * NSEC_PER_MSEC;
 		struct timespec rem = {
 			.tv_sec = (time_t)(ns / NSEC_PER_SEC),
-			.tv_nsec = ns % NSEC_PER_MSEC,
+			.tv_nsec = ns % NSEC_PER_SEC,
 		};
 
 		duration.tv_sec = 1;
