@@ -68,9 +68,9 @@ Zephyr uses the ``weact_mspm0g3507_core`` board for building Weact MSPM0G3507 de
 Features:
 *********
 
-- Onboard XDS110 debug probe
-- EnergyTrace technology available for ultra-low-power debugging
-- 1 buttons, 1 LED for user interaction
+- SWD header for external debugging (WCH-LinkE CMSIS-DAP / J-Link)
+- CH340X USB to UART converter for debugging
+- 1 user button, 1 user LED
 - CH340X USB to UART converter for debugging
 - Type-c connector for power supply
 
