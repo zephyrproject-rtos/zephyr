@@ -93,7 +93,8 @@ Follow the :ref:`getting_started` instructions for Zephyr application developmen
 For example, to build the blinky application for the Weact MSPM0G3507 development board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
    :board: weact_mspm0g3507_core
    :goals: build
 
