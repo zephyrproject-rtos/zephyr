@@ -96,6 +96,16 @@ queue (cq) with completion queue events (cqe). A sqe once completed results in
 a cqe being pushed into the cq. The ordering of cqe may not be the same order of
 sqe. A chain of sqe will however ensure ordering and failure cascading.
 
+Every submission reaches the completion queue, whatever its outcome. One that
+runs reports the result its iodev gave, one that fails reports the error, and
+one stopped by a cancellation reports ``-ECANCELED``. The only exception is
+:c:macro:`RTIO_SQE_NO_RESPONSE`, which says a submission wants no completion
+at all, however it finishes. A caller can therefore account for every
+submission it queued without that flag, which is what makes waiting on a count
+of them, as :c:func:`rtio_submit` does with a non-zero ``wait_count``, safe.
+A transaction is one unit of work to its iodev but several submissions, so it
+produces one completion per member rather than one for the set.
+
 Other potential schemes are possible but a completion queue is a well trod
 idea with io_uring and other similar operating system APIs.
 
@@ -129,6 +139,14 @@ Canceling an already queued operation is possible but not guaranteed. If the
 SQE has not yet started, it's likely that a call to :c:func:`rtio_sqe_cancel`
 will remove the SQE and never run it. If, however, the SQE already started
 running, the cancel request will be ignored.
+
+A canceled submission is not a submission that disappears. It completes like
+any other, under the rule described in `Completion Queue`_. One that is
+stopped reports ``-ECANCELED`` and its own userdata, and cancellation then
+cascades along a chain the way a failure does, so the submissions behind it
+are canceled too and each reports its own ``-ECANCELED``. One that beat the
+cancellation reports whatever its iodev produced, so read ``cqe->result``
+rather than assume.
 
 Memory pools
 ************
