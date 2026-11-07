@@ -113,6 +113,12 @@ Major enhancements with this release include:
 
   - New :ref:`tracing <tracing>` features: terminal viewer, Perfetto export, shell and ITM backend.
 
+**Bluetooth LE Host qualification**
+  This release includes a successfully qualified Bluetooth Low Energy (LE) Host stack, aligned with
+  Bluetooth Core Specification 6.3. The scope of qualification covered core components (GAP, ATT,
+  GATT, L2CAP, SM) and Device Information Service (DIS). A qualified listing and corresponding
+  Design Number (DN) are available here: https://qualification.bluetooth.com/ListingDetails/353725
+
 **Expanded board support**
   This release adds support for 178 :ref:`new boards <boards_added_in_zephyr_4_5>` and 29
   :ref:`new shields <shields_added_in_zephyr_4_5>`.
