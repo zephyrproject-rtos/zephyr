@@ -9,7 +9,7 @@
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/clock/puya_py32f0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/reset/stm32f0_1_3_reset.h>
+#include <zephyr/dt-bindings/reset/puya_py32f0_reset.h>
 #include <freq.h>
 
 / {
@@ -38,11 +38,25 @@
 	};
 
 	soc {
+		usart1: serial@40013800 {
+			compatible = "puya,py32-uart";
+			reg = <0x40013800 0x400>;
+			interrupts = <27 0>;
+			clocks = <&rcc PY32_CLOCK(APB2, 14)>;
+			resets = <&rctl PY32_RESET(APB2, 14)>;
+			status = "disabled";
+		};
+
 		rcc: rcc@40021000 {
 			compatible = "puya,py32f0-rcc";
 			reg = <0x40021000 0x400>;
 			#clock-cells = <2>;
 			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "puya,py32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		exti: interrupt-controller@40021800 {
