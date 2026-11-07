@@ -58,18 +58,43 @@ static struct tmr_cmsdk_apb_dev_data data_inst0;
  *                needs to chain a measurement onto the window accounted here
  *                with no gap in between (see timer_driver_set_reload()).
  */
+/* Cycles of finished periods not yet folded into cycle_count */
+static uint32_t overflow_cyc;
+
+/*
+ * Cycles elapsed since cycle_count was last updated. The counter reloads by
+ * itself when it reaches zero, before the interrupt is served, so a reader
+ * that holds the clock lock can see the reloaded counter while the finished
+ * period is still unaccounted. The pending interrupt flag, or a counter that
+ * grew between two reads, tells that a period finished; it is counted here
+ * once and the flag cleared, the way the SysTick driver uses COUNTFLAG.
+ */
 static uint32_t elapsed(uint32_t *val_out)
 {
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
+	uint32_t val1 = cfg->timer->value;
+	uint32_t pending = cfg->timer->intstatus;
+	uint32_t val2 = cfg->timer->value;
 
-	uint32_t value = cfg->timer->value;
-
-	if (val_out != NULL) {
-		*val_out = value;
+	/* Zero is the instant between reaching zero and reloading */
+	if (val1 == 0) {
+		val1 = data->load;
+	}
+	if (val2 == 0) {
+		val2 = data->load;
 	}
 
-	return data->load - value;
+	if ((pending & TIMER_CTRL_INT_CLEAR) != 0 || val1 < val2) {
+		overflow_cyc += data->load;
+		cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
+	}
+
+	if (val_out != NULL) {
+		*val_out = val2;
+	}
+
+	return (data->load - val2) + overflow_cyc;
 }
 
 static inline uint32_t timer_driver_cycle_get(void)
@@ -91,12 +116,16 @@ static void timer_driver_set_reload(uint32_t rel)
 	 * clamped rel to [MIN_DELAY_CYCLES, TIMER_CORE_ALARM_MAX_CYCLES].
 	 */
 	data->cycle_count += elapsed(&val1);
+	overflow_cyc = 0;
 	data->load = rel;
 
 	uint32_t val2 = cfg->timer->value;
 
 	cfg->timer->reload = rel;
 	cfg->timer->value = rel;
+	/* A wrap accounted above must not be counted again by the ISR */
+	cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
+	NVIC_ClearPendingIRQ(TIMER_IRQ);
 
 	/* verify if underflow occurred after reading val1 and before reading val2 */
 	if (val1 < val2) {
@@ -106,18 +135,6 @@ static void timer_driver_set_reload(uint32_t rel)
 	}
 }
 
-/*
- * Auto-reload 32-bit down-counter: a RELOAD backend. The hardware counts an
- * interval at a time rather than free-running, so timer_driver_cycle_get()
- * synthesizes a monotonic count from the intervals already consumed plus the
- * current partial, and that read is not atomic (cycle_count and the VALUE
- * register are both touched by the ISR and by the reprogram path). Hence
- * TIMER_CORE_COUNTER_NONATOMIC, which has the core serialise
- * sys_clock_cycle_get_32() under the clock lock.
- *
- * The reload register is as wide as the synthesized count, so there is no arm
- * range to state and the core's own bound applies.
- */
 #define TIMER_CORE_BACKEND_RELOAD
 #define TIMER_CORE_ALARM_MIN_CYCLES MIN_DELAY_CYCLES
 #define TIMER_CORE_COUNTER_NONATOMIC
@@ -131,11 +148,13 @@ static void cmsdk_apb_timer_isr(const void *arg)
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 	k_spinlock_key_t key = sys_clock_lock();
 
-	/* The counter underflowed to fire this interrupt, so a whole interval is
-	 * consumed. Commit it under the clock lock, atomically with the announce,
-	 * or a concurrent reprogram or cycle read sees a torn count.
+	/* The finished interval sits in overflow_cyc, counted by elapsed() here
+	 * or by an earlier reader. Commit it under the clock lock, atomically
+	 * with the announce.
 	 */
-	data->cycle_count += data->load;
+	(void)elapsed(NULL);
+	data->cycle_count += overflow_cyc;
+	overflow_cyc = 0;
 
 	cfg->timer->intclear = TIMER_CTRL_INT_CLEAR;
 	NVIC_ClearPendingIRQ(TIMER_IRQ);
