@@ -166,7 +166,9 @@ struct uart_esp32_data {
 	 */
 	uint32_t isr_error_flags;
 	struct k_spinlock err_lock;
+	struct k_spinlock int_lock;
 #endif
+	struct k_spinlock poll_lock;
 #if CONFIG_UART_ASYNC_API
 	struct uart_esp32_async_data async;
 	uhci_dev_t *uhci_dev;
@@ -218,6 +220,24 @@ struct uart_esp32_data {
 static void uart_esp32_isr(void *arg);
 #endif
 
+#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
+static void uart_esp32_intr_enable(struct uart_esp32_data *data, uint32_t mask)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->int_lock);
+
+	uart_hal_ena_intr_mask(&data->hal, mask);
+	k_spin_unlock(&data->int_lock, key);
+}
+
+static void uart_esp32_intr_disable(struct uart_esp32_data *data, uint32_t mask)
+{
+	k_spinlock_key_t key = k_spin_lock(&data->int_lock);
+
+	uart_hal_disable_intr_mask(&data->hal, mask);
+	k_spin_unlock(&data->int_lock, key);
+}
+#endif
+
 #if CONFIG_PM
 static void uart_esp32_pm_policy_state_lock_get(const struct device *dev, uint8_t lock_bit)
 {
@@ -267,6 +287,7 @@ static int uart_esp32_poll_in(const struct device *dev, unsigned char *p_char)
 static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 {
 	struct uart_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->poll_lock);
 	uint32_t written;
 
 	/* Wait for space in FIFO */
@@ -280,12 +301,13 @@ static void uart_esp32_poll_out(const struct device *dev, unsigned char c)
 
 		/* Enable ISR to aid controlling power lock */
 		uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
-		uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		uart_esp32_intr_enable(data, UART_INTR_TX_DONE);
 	}
 #endif
 
 	/* Send a character */
 	uart_hal_write_txfifo(&data->hal, &c, 1, &written);
+	k_spin_unlock(&data->poll_lock, key);
 }
 
 static int uart_esp32_err_check(const struct device *dev)
@@ -614,14 +636,14 @@ static void uart_esp32_irq_tx_enable(const struct device *dev)
 #endif
 
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
+	uart_esp32_intr_enable(data, UART_INTR_TXFIFO_EMPTY);
 }
 
 static void uart_esp32_irq_tx_disable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_TXFIFO_EMPTY);
+	uart_esp32_intr_disable(data, UART_INTR_TXFIFO_EMPTY);
 
 #ifdef CONFIG_PM
 	unsigned int key = irq_lock();
@@ -633,10 +655,10 @@ static void uart_esp32_irq_tx_disable(const struct device *dev)
 	 */
 	uart_esp32_pm_policy_state_lock_get(dev, TX_DRAIN);
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_TX_DONE);
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+	uart_esp32_intr_enable(data, UART_INTR_TX_DONE);
 
 	if (uart_hal_is_tx_idle(&data->hal)) {
-		uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		uart_esp32_intr_disable(data, UART_INTR_TX_DONE);
 		uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
 	}
 
@@ -672,14 +694,14 @@ static void uart_esp32_irq_err_enable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	uart_hal_ena_intr_mask(&data->hal, UART_ESP32_ERR_INTR_MASK);
+	uart_esp32_intr_enable(data, UART_ESP32_ERR_INTR_MASK);
 }
 
 static void uart_esp32_irq_err_disable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	uart_hal_disable_intr_mask(&data->hal, UART_ESP32_ERR_INTR_MASK);
+	uart_esp32_intr_disable(data, UART_ESP32_ERR_INTR_MASK);
 }
 
 static int uart_esp32_irq_is_pending(const struct device *dev)
@@ -778,8 +800,7 @@ static void uart_esp32_irq_rx_enable(const struct device *dev)
 
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_FULL);
 	uart_hal_clr_intsts_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+	uart_esp32_intr_enable(data, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
 }
 
 #endif
@@ -789,8 +810,7 @@ static void uart_esp32_irq_rx_disable(const struct device *dev)
 {
 	struct uart_esp32_data *data = dev->data;
 
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_FULL);
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_RXFIFO_TOUT);
+	uart_esp32_intr_disable(data, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
 }
 
 #endif
@@ -804,6 +824,7 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 	k_spinlock_key_t key;
 #if CONFIG_UART_ASYNC_API
 	struct uart_event evt = {0};
+	unsigned int irq_key;
 #endif
 
 	/* Save error flags before clearing so that uart_err_check()
@@ -822,7 +843,7 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 
 #if CONFIG_PM
 	if (uart_intr_status & UART_INTR_TX_DONE) {
-		uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+		uart_esp32_intr_disable(data, UART_INTR_TX_DONE);
 		uart_esp32_pm_policy_state_lock_put(dev, TX_DRAIN);
 	}
 #endif
@@ -835,11 +856,12 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 #endif
 
 #if CONFIG_UART_ASYNC_API
+	irq_key = irq_lock();
 	if ((uart_intr_status & UART_INTR_TX_DONE) && (data->async.tx_len != 0U)) {
 		if (!uart_hal_is_tx_idle(&data->hal)) {
-			uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+			uart_esp32_intr_enable(data, UART_INTR_TX_DONE);
 		} else {
-			uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+			uart_esp32_intr_disable(data, UART_INTR_TX_DONE);
 			k_work_cancel_delayable(&data->async.tx_timeout_work);
 
 			evt.type = UART_TX_DONE;
@@ -858,6 +880,7 @@ static void IRAM_ATTR uart_esp32_isr(void *arg)
 			}
 		}
 	}
+	irq_unlock(irq_key);
 #endif
 }
 
@@ -1057,7 +1080,7 @@ static void IRAM_ATTR uart_esp32_dma_tx_done(const struct device *dma_dev, void 
 	/* The tail of the buffer is still in the TX FIFO: UART_TX_DONE is
 	 * reported from the ISR once the transmitter goes idle.
 	 */
-	uart_hal_ena_intr_mask(&data->hal, UART_INTR_TX_DONE);
+	uart_esp32_intr_enable(data, UART_INTR_TX_DONE);
 }
 
 static int uart_esp32_async_tx_abort(const struct device *dev)
@@ -1069,6 +1092,11 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 	size_t tx_sent;
 	int err = 0;
 	unsigned int key = irq_lock();
+
+	if (data->async.tx_len == 0U) {
+		err = -EFAULT;
+		goto unlock;
+	}
 
 	k_work_cancel_delayable(&data->async.tx_timeout_work);
 
@@ -1088,7 +1116,7 @@ static int uart_esp32_async_tx_abort(const struct device *dev)
 		goto unlock;
 	}
 
-	uart_hal_disable_intr_mask(&data->hal, UART_INTR_TX_DONE);
+	uart_esp32_intr_disable(data, UART_INTR_TX_DONE);
 	uart_hal_txfifo_rst(&data->hal);
 
 	evt.type = UART_TX_ABORTED;
@@ -1551,8 +1579,11 @@ static int uart_esp32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, s
 		return -EINVAL;
 	}
 
+	unsigned int key = irq_lock();
+
 	data->async.rx_next_buf = buf;
 	data->async.rx_next_len = len;
+	irq_unlock(key);
 
 	return 0;
 }
