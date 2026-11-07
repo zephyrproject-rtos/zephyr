@@ -15,6 +15,8 @@ app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_first_sequential.conf c
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv_sequential.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-legacy_adv_acl_first_sequential.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group_sequential.conf compile
+app=tests/bsim/bluetooth/ll/cis \
+  conf_overlay=overlay-ticker_priority_acl_group_sequential.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group_acl_first_sequential.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-peripheral_cis_sequential.conf compile
 app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-interleaved.conf compile
