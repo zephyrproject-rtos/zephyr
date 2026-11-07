@@ -68,10 +68,13 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 {
 	int ret;
 	int err;
-	pthread_barrier_t bb = *b;
 	struct posix_barrier *bar;
 
-	bar = get_posix_barrier(bb);
+	if (b == NULL) {
+		return EINVAL;
+	}
+
+	bar = get_posix_barrier(*b);
 	if (bar == NULL) {
 		return EINVAL;
 	}
@@ -111,8 +114,15 @@ int pthread_barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr
 	size_t bit;
 	struct posix_barrier *bar;
 
-	if (count == 0) {
+	if (b == NULL || count == 0) {
 		return EINVAL;
+	}
+
+	if (attr != NULL) {
+		if (attr->pshared != PTHREAD_PROCESS_PRIVATE &&
+		    attr->pshared != PTHREAD_PROCESS_PUBLIC) {
+			return EINVAL;
+		}
 	}
 
 	if (sys_bitarray_alloc(&posix_barrier_bitarray, 1, &bit) < 0) {
@@ -133,6 +143,10 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 	int err;
 	size_t bit;
 	struct posix_barrier *bar;
+
+	if (b == NULL) {
+		return EINVAL;
+	}
 
 	bar = get_posix_barrier(*b);
 	if (bar == NULL) {
@@ -164,7 +178,9 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 
 int pthread_barrierattr_init(pthread_barrierattr_t *attr)
 {
-	__ASSERT_NO_MSG(attr != NULL);
+	if (attr == NULL) {
+		return EINVAL;
+	}
 
 	attr->pshared = PTHREAD_PROCESS_PRIVATE;
 
@@ -173,8 +189,12 @@ int pthread_barrierattr_init(pthread_barrierattr_t *attr)
 
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
 {
+	if (attr == NULL) {
+		return EINVAL;
+	}
+
 	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_PUBLIC) {
-		return -EINVAL;
+		return EINVAL;
 	}
 
 	attr->pshared = pshared;
@@ -184,6 +204,10 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *restrict attr,
 				   int *restrict pshared)
 {
+	if (attr == NULL || pshared == NULL) {
+		return EINVAL;
+	}
+
 	*pshared = attr->pshared;
 
 	return 0;
@@ -191,7 +215,9 @@ int pthread_barrierattr_getpshared(const pthread_barrierattr_t *restrict attr,
 
 int pthread_barrierattr_destroy(pthread_barrierattr_t *attr)
 {
-	ARG_UNUSED(attr);
+	if (attr == NULL) {
+		return EINVAL;
+	}
 
 	return 0;
 }
