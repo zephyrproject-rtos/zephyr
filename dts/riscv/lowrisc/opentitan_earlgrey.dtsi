@@ -97,6 +97,14 @@
 			status = "disabled";
 		};
 
+		hmac0: crypto@41110000 {
+			compatible = "lowrisc,opentitan-hmac";
+			reg = <0x41110000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <165 1>, <166 1>, <167 1>;
+			status = "disabled";
+		};
+
 		plic: interrupt-controller@48000000 {
 			compatible = "sifive,plic-1.0.0";
 			reg = <0x48000000 0x04000000>;
