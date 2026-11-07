@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <puya/f0/py32f003X6.dtsi>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(24)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+&pinctrl {
+	usart1_tx_pa2: usart1_tx_pa2 {
+		pinmux = <STM32_PINMUX('A', 2, AF1)>;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa2>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};

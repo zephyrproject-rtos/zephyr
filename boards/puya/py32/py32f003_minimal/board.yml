@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: py32f003_minimal
+  full_name: PY32F003 Minimal Circuit
+  vendor: puya
+  socs:
+    - name: py32f003x6
+      variants:
+        - name: w16s6tu
+        - name: l16s6tu

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: py32f003_minimal/py32f003x6/l16s6tu
+name: PY32F003L16S6TU Minimal Circuit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 4
+flash: 32
+supported:
+  - gpio

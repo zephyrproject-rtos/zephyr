@@ -133,6 +133,12 @@ Devicetree
 Other notable changes
 *********************
 
+* Applications can run on Puya PY32F003 and PY32F030 Cortex-M0+ devices with GPIO interrupts and
+  interrupt-driven UART using the shared STM32 drivers. The initial configuration uses
+  the 24 MHz internal oscillator; see :zephyr:board:`py32f030_startkit` for board setup
+  and programming instructions. Crystal-free bare-chip configurations are documented for
+  :zephyr:board:`py32f003_minimal`, including a TX-only SOP8 console that preserves SWD.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,

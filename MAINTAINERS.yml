@@ -5493,6 +5493,19 @@ Precision Timing:
     - sample.subsys.precision_timing
     - subsys.precision_timing
 
+Puya PY32 Platforms:
+  status: maintained
+  maintainers:
+    - kholia
+  files:
+    - boards/puya/
+    - drivers/clock_control/Kconfig.py32
+    - dts/arm/puya/
+    - dts/bindings/*/puya,*.yaml
+    - include/zephyr/dt-bindings/*/puya_*.h
+    - soc/puya/
+    - tests/drivers/interrupt_controller/intc_gpio_py32/
+
 QNX Hypervisor Platforms:
   status: maintained
   maintainers:
