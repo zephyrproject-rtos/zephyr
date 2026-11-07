@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DOXYGEN_VERSION: 1.17.0
   DOXYGEN_SHA256SUM: 75419ef4f446fc1c24ef12514b574e66e898ee6f527c6ae2ad84f91a905823c2
@@ -73,9 +77,6 @@ jobs:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.4.20260912
       options: '--entrypoint /bin/bash'
     timeout-minutes: 60
-    concurrency:
-      group: doc-build-html-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
 
@@ -315,9 +316,6 @@ jobs:
       github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
-    concurrency:
-      group: doc-build-pdf-${{ github.ref }}
-      cancel-in-progress: true
 
     steps:
     - name: checkout
