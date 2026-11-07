@@ -3968,6 +3968,7 @@ Linters and Static Analyzers:
     - scripts/ci/pylintrc
     - scripts/coccicheck
     - scripts/coccinelle/
+    - scripts/coding_guidelines/
     - scripts/gitlint/
     - scripts/pylint/
     - scripts/spelling.txt
