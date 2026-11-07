@@ -64,6 +64,12 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* GPIO
+
+  * Added Fast GPIO API extension (:kconfig:option:`CONFIG_GPIO_FAST`) for
+    sub-microsecond GPIO operations. Vendor implementation for SAM0. See
+    :ref:`gpio_fast_api`. (:github:`110787`)
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region

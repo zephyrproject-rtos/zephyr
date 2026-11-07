@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Optional Fast GPIO properties.
+
+  Include this binding in any driver that uses the Fast GPIO API to allow
+  the backend to be overridden from the default (the GPIO controller's
+  DT compatible) and to configure the CPU clock frequency used for
+  NOP delay calculations.
+
+properties:
+  fast-gpio-backend:
+    type: string
+    description: |
+      Override the Fast GPIO backend used for this device. When set, the
+      dispatch macros use this value instead of the GPIO controller's DT
+      compatible. The value must match a backend's compat token
+      (e.g. "atmel_sam0_gpio", "generic").
+
+  fast-gpio-cpu-clock-reference:
+    type: phandle
+    description: |
+      Reference to the CPU node whose clock-frequency property is used
+      for NOP delay calculations. Defaults to /cpus/cpu@0 if not set.
+
+  fast-gpio-cpu-clock-frequency:
+    type: int
+    description: |
+      Explicit CPU clock frequency in Hz for NOP delay calculations.
+      Takes precedence over fast-gpio-cpu-clock-reference and the
+      default cpu@0 clock-frequency. Use this when the CPU node lacks
+      a clock-frequency property or when the frequency differs from
+      the DT value at runtime.
