@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/atomic.h>
 
 #include "esp_hosted_mcu.h"
 
@@ -31,6 +33,7 @@ LOG_MODULE_REGISTER(esp_hosted_mcu_spi, CONFIG_ESP_HOSTED_MCU_LOG_LEVEL);
 
 /* Bound on how long the coprocessor may take to raise the handshake line (ms). */
 #define ESP_HOSTED_MCU_SPI_HANDSHAKE_TIMEOUT (100)
+#define ESP_HOSTED_MCU_SPI_RX_SPACE_TIMEOUT (100)
 
 struct esp_hosted_mcu_spi_config {
 	struct spi_dt_spec bus;
@@ -43,17 +46,12 @@ struct esp_hosted_mcu_spi_data {
 	/* Signalled by the data-ready GPIO interrupt to wake the receive path. */
 	struct k_sem rx_sem;
 	struct gpio_callback dataready_cb;
-	/*
-	 * A frame the coprocessor clocked in while the host was transmitting. The bus
-	 * is full duplex, so every transmit also shifts in whatever the coprocessor
-	 * had queued; that frame is held here until the receive path collects
-	 * it. Without this the coprocessor considers the frame delivered and drops
-	 * data-ready, so a response that happens to arrive during a transmit is
-	 * lost and a command waiting on it never completes.
-	 */
+	/* Reserve the stash before clocking a transmit, even if no RX is expected. */
+	struct k_sem rx_space;
 	uint8_t stash[ESP_HOSTED_MCU_FRAME_SIZE] __aligned(ESP_HOSTED_MCU_DMA_ALIGN);
-	/* Read by the receive path without the lock, so keep the load explicit. */
-	volatile uint16_t stash_len;
+	/* Atomic snapshot for data_ready(); stash contents use lock. */
+	atomic_t stash_len;
+	/* Covers GPIO readiness, the entire SPI transaction and stash publication. */
 	struct k_mutex lock;
 };
 
@@ -126,7 +124,9 @@ static int esp_hosted_mcu_spi_init(const struct device *dev)
 	}
 
 	k_sem_init(&data->rx_sem, 0, 1);
+	k_sem_init(&data->rx_space, 1, 1);
 	k_mutex_init(&data->lock);
+	atomic_clear(&data->stash_len);
 
 	/*
 	 * Wake the receive path on the coprocessor asserting data-ready. The level is
@@ -167,7 +167,7 @@ static bool esp_hosted_mcu_spi_data_ready(const struct device *dev)
 	 * already released it and lowered data-ready, so the GPIO alone would
 	 * leave it uncollected.
 	 */
-	if (esp_hosted_mcu_spi_data_0.stash_len != 0) {
+	if (atomic_get(&esp_hosted_mcu_spi_data_0.stash_len) != 0) {
 		return true;
 	}
 
@@ -205,7 +205,7 @@ static int esp_hosted_mcu_spi_transfer(const struct device *dev, const uint8_t *
 	const struct esp_hosted_mcu_spi_config *spi = cfg->transport_config;
 	struct esp_hosted_mcu_spi_data *data = &esp_hosted_mcu_spi_data_0;
 	bool want_rx = rx != NULL;
-	uint16_t rx_len;
+	int ret;
 
 	ARG_UNUSED(tx_len);
 
@@ -221,95 +221,94 @@ static int esp_hosted_mcu_spi_transfer(const struct device *dev, const uint8_t *
 	 * receive-only poll passes no transmit buffer and leaves the controller
 	 * to clock out a frame worth of zeros, which the SPI API defines a null
 	 * buffer to mean.
-	 *
-	 * This holds what a transmit shifted in. It is not a discard sink: the
-	 * stash below needs the frame, so it cannot be a null receive buffer.
-	 * Only the transmit path uses it, and the core serialises transmits. It
-	 * is aligned because a controller moving it by DMA may not accept an
-	 * unaligned address, and the cache maintenance around the transfer
-	 * must not reach into a neighbouring object.
 	 */
-	static uint8_t rx_buf[ESP_HOSTED_MCU_FRAME_SIZE] __aligned(ESP_HOSTED_MCU_DMA_ALIGN);
 
 	/*
-	 * Hand back a frame stashed by an earlier transmit before using the bus.
-	 * The lock covers only the stash: holding it across the handshake wait
-	 * below would let an idle receive poll block a transmit for the whole
-	 * timeout, and the transmit holds the core's send lock while it waits.
+	 * Every transmit can clock in a real frame, including HCI and RPC sends.
+	 * Wait without the bus lock so the event thread can drain the stash. This
+	 * also works if a cooperative Bluetooth thread is sending a whole burst.
+	 * On timeout nothing has been clocked, so the pending RX frame remains intact.
 	 */
-	k_mutex_lock(&data->lock, K_FOREVER);
-	if (want_rx && data->stash_len != 0) {
-		rx_len = data->stash_len;
-		memcpy(rx, data->stash, rx_len);
-		data->stash_len = 0;
-		k_mutex_unlock(&data->lock);
-		return (int)rx_len;
+	if (!want_rx && k_sem_take(&data->rx_space,
+				  K_MSEC(ESP_HOSTED_MCU_SPI_RX_SPACE_TIMEOUT)) != 0) {
+		LOG_WRN("receive stash busy, transmit not sent");
+		return -ENOBUFS;
 	}
-	k_mutex_unlock(&data->lock);
 
-	const struct spi_buf txb = {
-		.buf = (void *)tx,
-		.len = ESP_HOSTED_MCU_FRAME_SIZE,
-	};
-	const struct spi_buf_set txs = {.buffers = &txb, .count = 1};
-	const struct spi_buf rxb = {
-		.buf = want_rx ? rx : rx_buf,
-		.len = ESP_HOSTED_MCU_FRAME_SIZE,
-	};
-	const struct spi_buf_set rxs = {.buffers = &rxb, .count = 1};
-
-	/*
-	 * A transaction may proceed only when the coprocessor has raised handshake.
-	 * A receive additionally waits for data-ready, since without it the
-	 * coprocessor has nothing queued and clocking would waste a full frame time.
-	 * A transmit goes ahead on handshake alone and takes whatever the coprocessor
-	 * happens to return along with it.
-	 */
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(ESP_HOSTED_MCU_SPI_HANDSHAKE_TIMEOUT));
 
-	while (true) {
-		bool hs = gpio_pin_get_dt(&spi->handshake_gpio) > 0;
-		bool dr = gpio_pin_get_dt(&spi->dataready_gpio) > 0;
+	for (;;) {
+		k_mutex_lock(&data->lock, K_FOREVER);
 
-		if (hs && (!want_rx || dr)) {
+		/* Recheck the stash on every poll, even if data-ready has gone low. */
+		if (want_rx && atomic_get(&data->stash_len) != 0) {
+			ret = atomic_get(&data->stash_len);
+			memcpy(rx, data->stash, ret);
+			atomic_clear(&data->stash_len);
+			k_sem_give(&data->rx_space);
+			k_mutex_unlock(&data->lock);
+			return ret;
+		}
+
+		/*
+		 * Check readiness under the same lock as the transaction. Checking
+		 * outside lets another caller consume the ready transaction first.
+		 * Never retain this mutex while sleeping for handshake/data-ready.
+		 */
+		int hs = gpio_pin_get_dt(&spi->handshake_gpio);
+		int dr = gpio_pin_get_dt(&spi->dataready_gpio);
+
+		if (hs < 0 || dr < 0) {
+			ret = hs < 0 ? hs : dr;
+			k_mutex_unlock(&data->lock);
 			break;
 		}
+		if (hs > 0 && (!want_rx || dr > 0)) {
+			const struct spi_buf txb = {
+				.buf = (void *)tx,
+				.len = ESP_HOSTED_MCU_FRAME_SIZE,
+			};
+			const struct spi_buf_set txs = {.buffers = &txb, .count = 1};
+			const struct spi_buf rxb = {
+				.buf = want_rx ? rx : data->stash,
+				.len = ESP_HOSTED_MCU_FRAME_SIZE,
+			};
+			const struct spi_buf_set rxs = {.buffers = &rxb, .count = 1};
+
+			/* Fixed 1600-byte full-duplex exchange; NULL TX clocks zeros. */
+			ret = spi_transceive_dt(&spi->bus, &txs, &rxs);
+			if (ret == 0) {
+				uint16_t len = esp_hosted_mcu_spi_rx_len(rxb.buf);
+
+				if (want_rx) {
+					ret = len;
+				} else if (len != 0) {
+					atomic_set(&data->stash_len, len);
+					/* Publish before waking RX; its lock sees complete data. */
+					k_sem_give(&data->rx_sem);
+					k_mutex_unlock(&data->lock);
+					return 0; /* RX now owns the reserved slot. */
+				}
+			} else {
+				LOG_ERR("spi_transceive failed (%d)", ret);
+			}
+			k_mutex_unlock(&data->lock);
+			break;
+		}
+		k_mutex_unlock(&data->lock);
+
 		if (sys_timepoint_expired(end)) {
-			/*
-			 * A receive that times out means the coprocessor had nothing
-			 * to hand over, which the core treats as an idle poll.
-			 * A transmit that never sees handshake did not reach
-			 * the coprocessor and must be reported as an error.
-			 */
-			return want_rx ? 0 : -ETIMEDOUT;
+			ret = want_rx ? 0 : -ETIMEDOUT;
+			break;
 		}
 		k_msleep(1);
 	}
 
-	if (spi_transceive_dt(&spi->bus, &txs, &rxs)) {
-		LOG_ERR("spi_transceive failed");
-		return -EIO;
+	/* Dummy frames, failed transfers and handshake timeouts keep no RX slot. */
+	if (!want_rx) {
+		k_sem_give(&data->rx_space);
 	}
-
-	if (want_rx) {
-		return (int)esp_hosted_mcu_spi_rx_len(rx);
-	}
-
-	/* Keep whatever this transmit shifted in; the coprocessor will not resend it. */
-	rx_len = esp_hosted_mcu_spi_rx_len(rx_buf);
-	if (rx_len != 0) {
-		k_mutex_lock(&data->lock, K_FOREVER);
-		if (data->stash_len != 0) {
-			LOG_WRN("receive stash overrun, frame dropped");
-		} else {
-			memcpy(data->stash, rx_buf, rx_len);
-			data->stash_len = rx_len;
-			k_sem_give(&data->rx_sem);
-		}
-		k_mutex_unlock(&data->lock);
-	}
-
-	return 0;
+	return ret;
 }
 
 const struct esp_hosted_mcu_transport_api esp_hosted_mcu_spi_api = {
