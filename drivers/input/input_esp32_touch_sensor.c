@@ -21,6 +21,9 @@
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
 #include <soc/rtc_cntl_reg.h>
+#include <esp_private/critical_section.h>
+
+extern esp_os_spinlock_t rtc_spinlock;
 #endif
 #include <driver/rtc_io.h>
 
@@ -156,7 +159,9 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 	}
 
 	if (++scan_done_counter == ESP32_SCAN_DONE_MAX_COUNT) {
+		esp_os_enter_critical(&rtc_spinlock);
 		touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_SCAN_DONE);
+		esp_os_exit_critical(&rtc_spinlock);
 		for (int i = 0; i < dev_cfg->num_channels; i++) {
 			const struct esp32_touch_sensor_channel_config *channel_cfg =
 				&dev_cfg->channel_cfg[i];
@@ -212,7 +217,7 @@ static void IRAM_ATTR esp32_touch_rtc_isr(void *arg)
 	}
 
 	esp32_touch_sensor_interrupt_cb(arg);
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, status & ESP32_RTC_INTR_MSK);
 }
 #endif
 
@@ -435,10 +440,14 @@ static int esp32_touch_sensor_init(const struct device *dev)
 
 #if SOC_TOUCH_SENSOR_VERSION == 1
 	touch_ll_interrupt_clear(TOUCH_LL_INTR_MASK_ALL);
+	esp_os_enter_critical(&rtc_spinlock);
 	touch_ll_interrupt_enable(TOUCH_LL_INTR_MASK_ALL);
+	esp_os_exit_critical(&rtc_spinlock);
 #elif SOC_TOUCH_SENSOR_VERSION == 2
 	touch_ll_enable_channel_mask(channel_mask);
+	esp_os_enter_critical(&rtc_spinlock);
 	touch_ll_intr_enable(ESP32_TOUCH_PAD_INTR_MASK);
+	esp_os_exit_critical(&rtc_spinlock);
 	touch_ll_enable_fsm_timer(true);
 	touch_ll_start_fsm_repeated_timer();
 #elif SOC_TOUCH_SENSOR_VERSION == 3
