@@ -61,6 +61,8 @@ LOG_MODULE_REGISTER(crypto_opentitan_hmac, CONFIG_CRYPTO_LOG_LEVEL);
 
 #define OPENTITAN_HMAC_CAPS (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 
+#define HMAC_TIMEOUT_US 10000U
+
 struct crypto_opentitan_hmac_config {
 	uintptr_t base;
 };
@@ -69,10 +71,28 @@ struct crypto_opentitan_hmac_data {
 	atomic_t in_use;
 };
 
-static void opentitan_hmac_fifo_wait(uintptr_t base)
+static int opentitan_hmac_wait(uintptr_t base, uint32_t reg_offset, uint32_t mask,
+			       uint32_t expected)
 {
-	while ((sys_read32(base + HMAC_STATUS_OFFSET) & HMAC_STATUS_FIFO_FULL) != 0U)
-		;
+	bool ready =
+		WAIT_FOR((((sys_read32(base + reg_offset) & mask) == expected) ||
+			  ((sys_read32(base + HMAC_INTR_STATE_OFFSET) & HMAC_INTR_HMAC_ERR) != 0U)),
+			 HMAC_TIMEOUT_US, k_busy_wait(1));
+
+	if ((sys_read32(base + HMAC_INTR_STATE_OFFSET) & HMAC_INTR_HMAC_ERR) != 0U) {
+		uint32_t err = sys_read32(base + HMAC_ERR_CODE_OFFSET);
+
+		sys_write32(HMAC_INTR_HMAC_ERR, base + HMAC_INTR_STATE_OFFSET);
+		LOG_ERR("HMAC hardware error: 0x%08x", err);
+		return -EIO;
+	}
+
+	if (!ready) {
+		LOG_ERR("Timed out waiting for HMAC (reg 0x%02x)", reg_offset);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
 }
 
 static int opentitan_hmac_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
@@ -80,6 +100,9 @@ static int opentitan_hmac_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pk
 	const struct device *dev = ctx->device;
 	const struct crypto_opentitan_hmac_config *cfg = dev->config;
 	uintptr_t base = cfg->base;
+	const uint8_t *buf;
+	size_t len;
+	int ret;
 
 	if (pkt == NULL) {
 		return -EINVAL;
@@ -95,28 +118,33 @@ static int opentitan_hmac_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pk
 
 	if (!ctx->started) {
 		sys_write32(HMAC_INTR_ALL, base + HMAC_INTR_STATE_OFFSET);
-		/*
-		 * Disable ENDIAN_SWAP and use 8-bit writes to bypass
-		 * Renode's endianSwap being inverted relative to the RTL.
-		 */
 		sys_write32(HMAC_CFG_SHA_EN, base + HMAC_CFG_OFFSET);
 		sys_write32(HMAC_CMD_HASH_START, base + HMAC_CMD_OFFSET);
 		ctx->started = true;
 	}
 
-	const uint8_t *buf = pkt->in_buf;
-	size_t len = pkt->in_len;
+	buf = pkt->in_buf;
+	len = pkt->in_len;
 
 	while (len > 0U) {
-		opentitan_hmac_fifo_wait(base);
-		sys_write8(*buf++, base + HMAC_MSG_FIFO_OFFSET);
+		ret = opentitan_hmac_wait(base, HMAC_STATUS_OFFSET, HMAC_STATUS_FIFO_FULL, 0U);
+		if (ret != 0) {
+			ctx->started = false;
+			return ret;
+		}
+
+		sys_write32(*buf++, base + HMAC_MSG_FIFO_OFFSET);
 		len--;
 	}
 
 	if (finish) {
 		sys_write32(HMAC_CMD_HASH_PROCESS, base + HMAC_CMD_OFFSET);
 
-		while ((sys_read32(base + HMAC_INTR_STATE_OFFSET) & HMAC_INTR_HMAC_DONE) == 0U) {
+		ret = opentitan_hmac_wait(base, HMAC_INTR_STATE_OFFSET, HMAC_INTR_HMAC_DONE,
+					  HMAC_INTR_HMAC_DONE);
+		if (ret != 0) {
+			ctx->started = false;
+			return ret;
 		}
 
 		sys_write32(HMAC_INTR_HMAC_DONE, base + HMAC_INTR_STATE_OFFSET);
