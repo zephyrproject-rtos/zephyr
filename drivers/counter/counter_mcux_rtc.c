@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018 blik GmbH
- * Copyright (c) 2018,2024 NXP
+ * Copyright (c) 2018,2024,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,15 @@
 #include <zephyr/sys/clock.h>
 #include <fsl_rtc.h>
 #include <zephyr/logging/log.h>
+
+#if defined(FSL_FEATURE_SOC_OSC32_COUNT) && FSL_FEATURE_SOC_OSC32_COUNT > 0
+#include <fsl_clock.h>
+#endif
+
+#define MCUX_RTC_OSC_STARTUP_TIME_MS DT_INST_PROP(0, oscillator_startup_time_ms)
+
+BUILD_ASSERT(MCUX_RTC_OSC_STARTUP_TIME_MS > 0 && MCUX_RTC_OSC_STARTUP_TIME_MS <= INT32_MAX,
+	     "RTC oscillator startup time must be a positive number of milliseconds");
 
 /*
  * FSL_FEATURE_* is defined with paranethesis
@@ -317,6 +326,65 @@ static int mcux_rtc_get_calibration(const struct device *dev, int32_t *calibrati
 
 #endif /* CONFIG_COUNTER_CALIBRATION */
 
+#if !(defined(FSL_FEATURE_RTC_HAS_NO_CR_OSCE) && FSL_FEATURE_RTC_HAS_NO_CR_OSCE)
+static int mcux_rtc_wait_for_oscillator(const struct device *dev)
+{
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
+	k_timepoint_t deadline = sys_timepoint_calc(K_MSEC(MCUX_RTC_OSC_STARTUP_TIME_MS));
+#endif
+
+#if defined(FSL_FEATURE_SOC_OSC32_COUNT) && FSL_FEATURE_SOC_OSC32_COUNT > 0
+#if !defined(CONFIG_SYS_CLOCK_EXISTS)
+	uint32_t remaining_ms = MCUX_RTC_OSC_STARTUP_TIME_MS;
+#endif
+
+	while (true) {
+		bool ready = (OSC32->CR & OSC32_CR_ROSCSTB_MASK) != 0;
+
+		/* Check time after sampling readiness in case the thread was delayed. */
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
+		bool expired = sys_timepoint_expired(deadline);
+#else
+		bool expired = remaining_ms == 0;
+#endif
+
+		if (expired) {
+			LOG_ERR("%s: oscillator did not stabilize within %d ms",
+				dev->name, MCUX_RTC_OSC_STARTUP_TIME_MS);
+			return -ETIMEDOUT;
+		}
+		if (ready) {
+			break;
+		}
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
+		k_msleep(1);
+#else
+		/* Timepoints cannot expire without the system timer. */
+		k_busy_wait(USEC_PER_MSEC);
+		remaining_ms--;
+#endif
+	}
+#else
+	ARG_UNUSED(dev);
+
+	/* No ready flag is available; use the board's startup budget. */
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
+	while (!sys_timepoint_expired(deadline)) {
+		k_sleep(sys_timepoint_timeout(deadline));
+	}
+#else
+	/* Millisecond chunks also avoid overflowing a microsecond timeout. */
+	for (uint32_t remaining_ms = MCUX_RTC_OSC_STARTUP_TIME_MS; remaining_ms > 0;
+	     remaining_ms--) {
+		k_busy_wait(USEC_PER_MSEC);
+	}
+#endif
+#endif
+
+	return 0;
+}
+#endif
+
 static int mcux_rtc_init(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
@@ -337,16 +405,41 @@ static int mcux_rtc_init(const struct device *dev)
 		"Cannot choose the LPO clock for that instance of the RTC");
 
 #if (defined(FSL_FEATURE_RTC_HAS_LPO_ADJUST) && FSL_FEATURE_RTC_HAS_LPO_ADJUST)
-	/* The RTC prescaler increments using the LPO 1 kHz clock
-	 * instead of the RTC clock
-	 */
+	/* Select the dedicated LPO input where supported. */
 	RTC_EnableLPOClock(config->base, DT_INST_ENUM_IDX(0, clock_source));
 #endif
 
 #if !(defined(FSL_FEATURE_RTC_HAS_NO_CR_OSCE) && FSL_FEATURE_RTC_HAS_NO_CR_OSCE)
-	/* Enable 32kHz oscillator and wait for 1ms to settle */
-	RTC_SetClockSource(config->base);
-	k_busy_wait(USEC_PER_MSEC);
+	bool use_oscillator = DT_INST_ENUM_IDX(0, clock_source) == 0;
+
+	/*
+	 * HAL has no feature describing these SIM mux layouts. Keep the register
+	 * guards: OSC32 presence alone does not identify the input selector.
+	 */
+#if defined(SIM_CHIPCTL_RTC32KCLKSEL_MASK)
+	uint32_t rtc_input = (SIM->CHIPCTL & SIM_CHIPCTL_RTC32KCLKSEL_MASK) >>
+			     SIM_CHIPCTL_RTC32KCLKSEL_SHIFT;
+#elif defined(SIM_CHIPCTL_RTC_CLKSEL_MASK)
+	uint32_t rtc_input = (SIM->CHIPCTL & SIM_CHIPCTL_RTC_CLKSEL_MASK) >>
+			     SIM_CHIPCTL_RTC_CLKSEL_SHIFT;
+#endif
+
+#if defined(SIM_CHIPCTL_RTC32KCLKSEL_MASK) || defined(SIM_CHIPCTL_RTC_CLKSEL_MASK)
+	use_oscillator &= rtc_input == 0;
+#endif
+
+	if (use_oscillator) {
+		int ret;
+
+#if defined(FSL_FEATURE_SOC_OSC32_COUNT) && FSL_FEATURE_SOC_OSC32_COUNT > 0
+		CLOCK_EnableClock(kCLOCK_RtcOsc0);
+#endif
+		RTC_EnableOscillatorClock(config->base, true);
+		ret = mcux_rtc_wait_for_oscillator(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
 #endif /* !FSL_FEATURE_RTC_HAS_NO_CR_OSCE */
 
 	config->irq_config_func(dev);

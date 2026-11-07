@@ -1,5 +1,5 @@
 # Copyright (c) 2018, blik GmbH
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP Real Time Clock (RTC)
@@ -19,8 +19,39 @@ properties:
       - "RTC"
       - "LPO"
     description: |
-      Select one of two possible clock sources for the RTC:
+      Select the RTC prescaler input, where supported by the SoC:
         * RTC: RTC prescaler increments using RTC clock.
-        * LPO: RTC prescaler increments using 1 kHz LPO.
-      The default corresponds to the reset value of the register field,
-      and there is no additional code configuration in the driver.
+        * LPO: RTC prescaler increments using the dedicated LPO input.
+      The LPO frequency depends on the SoC, for example 1 kHz or 16.384 kHz.
+      The RTC clock can come from an oscillator, an external clock input,
+      or an upstream clock provider, depending on the SoC clock tree.
+      This property does not select those upstream clock sources.
+      The default corresponds to the reset value of the prescaler input
+      selection field.
+
+  oscillator-startup-time-ms:
+    type: int
+    default: 1000
+    description: |
+      Startup budget in milliseconds for the oscillator enabled by the RTC
+      driver. Must be positive. When the hardware provides a stable flag,
+      initialization polls it and can finish before the budget elapses.
+      The readiness check must complete before the startup deadline; at or
+      after that deadline, initialization fails even if the flag is set.
+      Scheduling delays can therefore cause a timeout even if the oscillator
+      stabilized earlier.
+      Without a stable flag, initialization waits for the full duration;
+      it cannot detect oscillator failure.
+      This does not apply to the dedicated LPO input, an upstream input
+      selected by the SoC RTC clock mux, or clocks managed by an upstream
+      provider on SoCs without RTC oscillator enable control. The driver
+      does not change the upstream clock selection.
+      The default is a configurable waiting budget, not a guaranteed maximum
+      oscillator startup time. Set it according to the oscillator and board
+      requirements.
+      On hardware without a stable flag this adds the full default delay,
+      including on warm resets; an enabled oscillator is not proof of
+      stability. Boards may override the delay when supported by their
+      oscillator specifications or qualification results.
+      Without a system timer the driver uses a bounded busy wait, whose
+      timing accuracy depends on the platform's busy-wait implementation.
