@@ -312,6 +312,10 @@ static void rx_buffer_size_set(struct tdm_drv_data *drv_data, tdm_buffers_t *buf
 	 */
 	tx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, txc));
 	rx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rxc));
+	/* TX blocks that would not divide exactly were rejected on write or at the duplex start.
+	 * Only the 1-word buffer supplied when stopping, which is never transferred, can round.
+	 */
+	__ASSERT_NO_MSG(drv_data->stop || (buffers->tx_buffer_size * rx_enabled) % tx_enabled == 0);
 	buffers->rx_buffer_size = MAX(buffers->tx_buffer_size * rx_enabled / tx_enabled, 1);
 }
 
@@ -717,6 +721,27 @@ static int tdm_nrf_read(const struct device *dev, void **mem_block, size_t *size
 	return ret;
 }
 
+/* In duplex, each TX block is paired with an RX transfer covering the same frames. Like any
+ * transfer, its size must be a multiple of 4 bytes and more than 8 bytes.
+ */
+static bool duplex_rx_size_check(const struct tdm_drv_data *drv_data, size_t tx_size)
+{
+	uint32_t txc = drv_data->tx.nrfx_cfg.channels;
+	uint32_t rxc = drv_data->rx.nrfx_cfg.channels;
+	uint8_t tx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_TX_CHANNELS_MASK, txc));
+	uint8_t rx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rxc));
+	size_t rx_size = tx_size * rx_enabled / tx_enabled;
+
+	if ((rx_size * tx_enabled) != (tx_size * rx_enabled) || (rx_size % sizeof(uint32_t)) != 0 ||
+	    rx_size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
+		LOG_ERR("RX size for a %zu-byte TX block is not whole words over %u bytes", tx_size,
+			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
+		return false;
+	}
+
+	return true;
+}
+
 static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 {
 	struct tdm_drv_data *drv_data = dev->data;
@@ -743,6 +768,12 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 	if ((size % sizeof(uint32_t)) != 0 || size <= NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED) {
 		LOG_ERR("This device can only write full 32-bit words greater than %u bytes.",
 			NRFX_TDM_MIN_TRANSFER_SIZE_ALLOWED);
+		return -EIO;
+	}
+
+	/* Blocks written before a duplex start are checked by the START trigger. */
+	if (drv_data->state == I2S_STATE_RUNNING && drv_data->active_dir == I2S_DIR_BOTH &&
+	    !duplex_rx_size_check(drv_data, size)) {
 		return -EIO;
 	}
 
@@ -837,6 +868,22 @@ static bool channels_configuration_check(const struct stream_cfg *tx, const stru
 	uint8_t rx_enabled = POPCOUNT(FIELD_GET(NRFX_TDM_RX_CHANNELS_MASK, rx->nrfx_cfg.channels));
 
 	return tx->cfg.block_size * rx_enabled == rx->cfg.block_size * tx_enabled;
+}
+
+/* The direction and the RX configuration are only final at start, so blocks queued before a
+ * duplex start are checked here.
+ */
+static bool duplex_tx_queue_check(struct tdm_drv_data *drv_data)
+{
+	struct tdm_buf buf;
+
+	for (uint32_t i = 0; k_msgq_peek_at(&drv_data->tx_queue, &buf, i) == 0; i++) {
+		if (!duplex_rx_size_check(drv_data, buf.size)) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static void tdm_init(struct tdm_drv_data *drv_data, nrf_tdm_config_t const *p_config,
@@ -999,6 +1046,9 @@ static int tdm_nrf_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
+		if (dir == I2S_DIR_BOTH && !duplex_tx_queue_check(drv_data)) {
+			return -EIO;
+		}
 		drv_data->stop = false;
 		drv_data->discard_rx = false;
 		drv_data->active_dir = dir;
