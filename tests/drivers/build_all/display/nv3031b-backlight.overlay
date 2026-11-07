@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		test_backlight {
+			compatible = "gpio-leds";
+
+			test_nv3031b_backlight: led {
+				gpios = <&test_gpio 2 0>;
+			};
+		};
+	};
+};
+
+&test_nv3031b {
+	backlight-leds = <&test_nv3031b_backlight>;
+	brightness = <64>;
+	supply-gpios = <&test_gpio 1 0>;
+	/* Exercise a different geometry and rotation in this build-only fixture. */
+	width = <200>;
+	height = <280>;
+	rotation = <90>;
+};

@@ -511,6 +511,7 @@ netsol	Netsol, CO., LTD
 netxeon	Shenzhen Netxeon Technology CO., LTD
 neweast	Guangdong Neweast Optoelectronics CO., LTD
 newhaven	Newhaven Display International
+newvision	New Vision Display (Shenzhen) Co., Ltd.
 nexbox	Nexbox
 nextthing	Next Thing Co.
 ni	National Instruments

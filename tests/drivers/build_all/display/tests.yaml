@@ -11,6 +11,16 @@ tests:
       - native_sim/native/64
     depends_on: display
 
+  drivers.display.build.pm:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_DISPLAY_INIT_PRIORITY=95
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="nv3031b-backlight.overlay"
+
   drivers.display.build.bflb_dbi:
     platform_allow:
       - ai_m62_12f_kit
