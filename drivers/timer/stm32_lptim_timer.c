@@ -19,7 +19,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/reset.h>
-#include <zephyr/pm/policy.h>
+#include <zephyr/pm/pm.h>
 
 #include <zephyr/spinlock.h>
 
@@ -326,7 +326,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	const struct pm_state_info *next;
 
-	next = pm_policy_next_state(_current_cpu->id, ticks);
+	next = pm_state_next_get(_current_cpu->id);
 
 	/* Check if STANBY or STOP3 is requested */
 	timeout_stdby = false;
