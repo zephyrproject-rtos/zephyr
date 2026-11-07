@@ -36,6 +36,8 @@
 #define CRYPTO_DEV_COMPAT infineon_mxcrypto_crypto
 #elif CONFIG_CRYPTO_IT51XXX_SHA
 #define CRYPTO_DEV_COMPAT ite_it51xxx_sha
+#elif DT_HAS_COMPAT_STATUS_OKAY(lowrisc_opentitan_hmac)
+#define CRYPTO_DEV_COMPAT lowrisc_opentitan_hmac
 #else
 #error "You need to enable one crypto device"
 #endif
