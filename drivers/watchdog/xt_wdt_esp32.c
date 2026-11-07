@@ -8,6 +8,7 @@
 #include <soc/rtc_cntl_reg.h>
 #include <hal/xt_wdt_hal.h>
 #include <esp_attr.h>
+#include <esp_private/critical_section.h>
 
 #include <string.h>
 #include <zephyr/drivers/watchdog.h>
@@ -19,6 +20,8 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(xt_wdt_esp32, CONFIG_WDT_LOG_LEVEL);
+
+extern esp_os_spinlock_t rtc_spinlock;
 
 #define ESP32_XT_WDT_MAX_TIMEOUT 255
 
@@ -46,7 +49,9 @@ static int esp32_xt_wdt_setup(const struct device *dev, uint8_t options)
 	};
 
 	xt_wdt_hal_init(&data->hal, &xt_wdt_hal_config);
+	esp_os_enter_critical(&rtc_spinlock);
 	xt_wdt_hal_enable(&data->hal, true);
+	esp_os_exit_critical(&rtc_spinlock);
 
 	return 0;
 }
@@ -55,7 +60,9 @@ static int esp32_xt_wdt_disable(const struct device *dev)
 {
 	struct esp32_xt_wdt_data *data = dev->data;
 
+	esp_os_enter_critical(&rtc_spinlock);
 	xt_wdt_hal_enable(&data->hal, false);
+	esp_os_exit_critical(&rtc_spinlock);
 
 	return 0;
 }
@@ -97,7 +104,7 @@ static void IRAM_ATTR esp32_xt_wdt_isr(void *arg)
 		return;
 	}
 
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_XTAL32K_DEAD_INT_CLR);
 
 	clk_cfg.rtc.rtc_slow_clock_src = ESP32_RTC_SLOW_CLK_SRC_RC_SLOW;
 
@@ -131,8 +138,10 @@ static int esp32_xt_wdt_init(const struct device *dev)
 		return -EFAULT;
 	}
 
-	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+	esp_os_enter_critical(&rtc_spinlock);
+	CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_XTAL32K_DEAD_INT_ENA);
+	esp_os_exit_critical(&rtc_spinlock);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_XTAL32K_DEAD_INT_CLR);
 
 	return 0;
 }
