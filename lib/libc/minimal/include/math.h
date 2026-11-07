@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_MATH_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_MATH_H_
 
+#include <zephyr/toolchain.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -50,6 +52,45 @@ extern "C" {
 #define M_2_SQRTPI  1.12837916709551257390
 #define M_SQRT2     1.41421356237309504880
 #define M_SQRT1_2   0.70710678118654752440
+
+/* Classification macros, for the compilers that have them as builtins */
+#if HAS_BUILTIN(__builtin_fpclassify)
+#define FP_NAN       0
+#define FP_INFINITE  1
+#define FP_ZERO      2
+#define FP_SUBNORMAL 3
+#define FP_NORMAL    4
+#define fpclassify(x)                                                                              \
+	__builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)
+#endif
+#if HAS_BUILTIN(__builtin_isfinite)
+#define isfinite(x) __builtin_isfinite(x)
+#endif
+#if HAS_BUILTIN(__builtin_isinf)
+#define isinf(x) __builtin_isinf(x)
+#endif
+#if HAS_BUILTIN(__builtin_isnan)
+#define isnan(x) __builtin_isnan(x)
+#endif
+#if HAS_BUILTIN(__builtin_isnormal)
+#define isnormal(x) __builtin_isnormal(x)
+#endif
+#if HAS_BUILTIN(__builtin_signbit)
+#define signbit(x) __builtin_signbit(x)
+#endif
+
+/* C23 classification macros */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ > 201710L)
+#if HAS_BUILTIN(__builtin_issignaling)
+#define issignaling(x) __builtin_issignaling(x)
+#endif
+#if HAS_BUILTIN(__builtin_issubnormal)
+#define issubnormal(x) __builtin_issubnormal(x)
+#endif
+#if HAS_BUILTIN(__builtin_iszero)
+#define iszero(x) __builtin_iszero(x)
+#endif
+#endif
 
 float sqrtf(float square);
 double sqrt(double square);
