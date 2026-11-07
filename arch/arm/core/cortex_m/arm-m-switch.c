@@ -172,17 +172,7 @@ uint32_t arm_m_switch_stack_buffer =
 uint32_t arm_m_switch_stack_buffer = sizeof(struct z_frame) - sizeof(struct hw_frame_base);
 #endif
 
-struct arm_m_cs_ptrs arm_m_cs_ptrs;
-
-#ifdef CONFIG_LTO
-/* Toolchain workaround: when building with LTO, gcc seems unable to
- * notice the external references in the assembly for arm_m_exc_exit
- * below, and drops the symbols before the final link.  Use this
- * global to store pointers in arm_m_new_stack(), wasting a few bytes
- * of code & data.
- */
-void *arm_m_lto_refs[2];
-#endif
+__used struct arm_m_cs_ptrs arm_m_cs_ptrs;
 
 /* Bitmask to determine if the XPSR indicates the exception frame was padded */
 #define XPSR_STACK_ALIGN BIT(9)
@@ -588,11 +578,6 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 	struct switch_frame *sw;
 	uint32_t baddr;
 
-#ifdef CONFIG_LTO
-	arm_m_lto_refs[0] = &arm_m_cs_ptrs;
-	arm_m_lto_refs[1] = arm_m_must_switch;
-#endif
-
 #ifdef CONFIG_MULTITHREADING
 	/* Kludgey global initialization, stash computed pointers to
 	 * the LR frame location and fixup address into these
@@ -639,7 +624,7 @@ void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *ar
 
 bool arm_m_do_switch(struct k_thread *last_thread, void *next);
 
-bool arm_m_must_switch(void)
+__used bool arm_m_must_switch(void)
 {
 	/* This lock is held until the end of the context switch, at
 	 * which point it will be dropped unconditionally. Save a few
