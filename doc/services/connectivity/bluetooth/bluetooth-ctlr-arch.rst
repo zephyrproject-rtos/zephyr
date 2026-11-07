@@ -62,6 +62,71 @@ Ticker
 .. image:: img/ctlr_sched_ticker.png
 
 
+Ticker Collision Resolution
+---------------------------
+
+Overlapping ticker reservations are resolved by fairness, not by static priority. A ticker node
+that is skipped accumulates laziness, and the older request, i.e. the node with the larger age,
+is not displaced by a younger one. Static priority is suitable only when all contenders complete
+within their deadline, e.g. four 10 ms activities in a 100 ms period. When the demand equals the
+deadline window, e.g. four 10 ms activities in a 10 ms period, round robin and oldest request
+first is used.
+
+The following roles and states are arbitrated by fairness alone:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 35 40
+
+   * - Role / state
+     - What arbitrates
+     - Why it is enough
+   * - Legacy and extended advertising
+     - Must-expire, random advertising delay, slot window
+     - Has slack, skipping accumulates laziness
+   * - Auxiliary and periodic advertising
+     - Slot window, drift in window
+     - Can be moved within its window
+   * - Scanning and auxiliary scanning
+     - Slot window, force only when the scan duration is reloaded
+     - Best effort
+   * - ACL Central and Peripheral in normal state
+     - Laziness, Peripheral latency, must-expire
+     - Supervision timeout gives many intervals of slack
+   * - Periodic sync and BIG sync
+     - Ousting of previous events, jitter in window, resume ticker without force
+     - Uses only the events it needs, other events fall back to fairness
+   * - BIG broadcast
+     - Jitter in window, deadline in window, resume ticker per BIS
+     - One repetition of each BIS is reserved, other repetitions are in the window
+   * - Channel Sounding
+     - No reserved time, LLL abort check
+     - Does not compete in collision resolution
+
+Precedence that is needed close to a deadline is derived from the time left, by forcing the
+ticker expiry, not from a static priority:
+
+* ACL close to supervision timeout, before connection establishment, or with a pending instant.
+* Peripheral, periodic sync and BIG sync that are skipped repeatedly or close to their timeout.
+
+The CIG and CIS resume tickers use the whole ISO interval within the flush timeout. The BIG and
+BIS resume tickers reserve one repetition of each BIS, the remaining repetitions are in their slot
+window. These tickers mark their reservation as a deadline in their slot window: the reservation
+neither yields to nor is displaced by an overlapping ticker without slot window, unless that
+ticker is forced. A deadline reservation that cannot be placed after an overlapping ticker with
+slot window is not skipped when that ticker fits after it within its own slot window, i.e. the
+earliest deadline is served first. Static ticker priorities for the CIG are only used when
+:kconfig:option:`CONFIG_BT_TICKER_PRIORITY_SET` is enabled, which is disabled by default.
+
+A preempted BIG event is resumed at the next subevent. The Lower Link Layer does not yield the
+BIG event to a preempting event that would end after the last repetition of a BIS which has not
+been transmitted yet in the BIG event, the preempting event is cancelled instead. When a BIS
+resume ticker expires while the yielded BIG event waits in the prepare pipeline, the BIG event is
+prepared at the reserved time of that BIS and preempts the event using the radio. When the BIG
+event yields after the reserved time of a BIS, it is prepared to preempt at the end of the
+preempting event.
+
+
 Upper Link Layer and Lower Link Layer
 =====================================
 
