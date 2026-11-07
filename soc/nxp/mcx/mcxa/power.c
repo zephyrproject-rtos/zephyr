@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -161,6 +161,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		break;
 
 	case PM_STATE_SUSPEND_TO_IDLE:
+		SPC_SetLowPowerWakeUpDelay(MCXA_SPC_ADDR, MCXA_WAKEUP_DELAY);
 		CMC_SetClockMode(MCXA_CMC_ADDR, kCMC_GateAllSystemClocksEnterLowPowerMode);
 		CMC_SetMAINPowerMode(MCXA_CMC_ADDR, kCMC_DeepSleepMode);
 		enter_low_power();

@@ -351,7 +351,8 @@
 			compatible = "nxp,spc";
 			reg = <0x40090000 0x1000>;
 			interrupts = <16 0>;
-			wakeup-delay = <780>;
+			/* RM Rev. 7, Table 156: LDO_CORE wake-up delay in SPC timer cycles. */
+			wakeup-delay = <0x5b>;
 
 			bandgap_buffer: bandgap-buffer {
 				compatible = "nxp,spc-bandgap-buffer";
