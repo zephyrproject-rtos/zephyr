@@ -97,6 +97,15 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_group_sequential.sh
 
+  bluetooth.controller.cis.ticker_priority.acl_group.sequential:
+    extra_overlay_confs:
+      - overlay-ticker_priority_acl_group_sequential.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-ticker_priority_acl_group_sequential_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_ticker_priority_acl_group_sequential.sh
+
   bluetooth.controller.cis.acl_group.interleaved:
     sysbuild: true
     platform_allow:
