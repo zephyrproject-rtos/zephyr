@@ -5625,6 +5625,17 @@ RX arch:
     - arch
     - kernel
 
+Radxa ROCK 5B Platforms:
+  status: maintained
+  maintainers:
+    - zevorn
+  files:
+    - boards/radxa/rock_5b/
+    - boards/radxa/rock_5b_plus/
+    - boards/radxa/common/rk3588_rock_5b_common.dtsi
+  labels:
+    - "platform: Rockchip"
+
 Random:
   status: maintained
   maintainers:
