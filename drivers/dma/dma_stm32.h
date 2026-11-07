@@ -12,7 +12,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
-/* Maximum data sent in single transfer (Bytes) */
+/* Maximum data sent in single transfer (transfer unit) */
 #define DMA_STM32_MAX_DATA_ITEMS	0xffff
 
 struct dma_stm32_stream {

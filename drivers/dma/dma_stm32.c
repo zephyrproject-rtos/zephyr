@@ -589,6 +589,8 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
 	LL_DMA_InitTypeDef DMA_InitStruct;
 	struct dma_stm32_stream *stream;
+	uint32_t transfer_unit_size;
+	uint32_t transfer_items_nb;
 	int ret;
 
 	LL_DMA_StructInit(&DMA_InitStruct);
@@ -626,12 +628,6 @@ static int dma_stm32_configure(const struct device *dev,
 		stream->user_data = config->user_data;
 		stream->cyclic = false;
 		return 0;
-	}
-
-	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
-		LOG_ERR("Data size too big: %d\n",
-		       config->head_block->block_size);
-		return -EINVAL;
 	}
 
 #ifdef CONFIG_DMA_STM32_V1
@@ -673,6 +669,18 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_ERR("source_reload_en and dest_reload_en must "
 			"be the same.");
 		return -EINVAL;
+	}
+
+	transfer_unit_size = (config->channel_direction == MEMORY_TO_PERIPHERAL) ?
+		config->dest_data_size : config->source_data_size;
+	if (config->head_block->block_size == 0 ||
+	    (config->head_block->block_size % transfer_unit_size) != 0) {
+		return -EINVAL;
+	}
+	transfer_items_nb = config->head_block->block_size / transfer_unit_size;
+	if (transfer_items_nb > DMA_STM32_MAX_DATA_ITEMS) {
+		LOG_DBG("Transfer size exceeds %u data items", DMA_STM32_MAX_DATA_ITEMS);
+		return -ENOTSUP;
 	}
 
 	stream->busy		= true;
@@ -815,13 +823,7 @@ static int dma_stm32_configure(const struct device *dev,
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
 	}
 #endif
-	if (stream->source_periph) {
-		DMA_InitStruct.NbData = config->head_block->block_size /
-					config->source_data_size;
-	} else {
-		DMA_InitStruct.NbData = config->head_block->block_size /
-					config->dest_data_size;
-	}
+	DMA_InitStruct.NbData = transfer_items_nb;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
 	/* With dma V2 and dmamux,the request ID is stored in the dma_slot */
@@ -864,6 +866,8 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
+	uint32_t transfer_unit_size;
+	uint32_t transfer_items_nb;
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -873,6 +877,16 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	}
 
 	stream = &config->streams[id];
+	transfer_unit_size = stream->source_periph ? stream->src_size : stream->dst_size;
+	if (transfer_unit_size == 0 || size == 0 || size > UINT32_MAX ||
+	    (size % transfer_unit_size) != 0) {
+		return -EINVAL;
+	}
+	transfer_items_nb = size / transfer_unit_size;
+	if (transfer_items_nb > DMA_STM32_MAX_DATA_ITEMS) {
+		LOG_DBG("Transfer size exceeds %u data items", DMA_STM32_MAX_DATA_ITEMS);
+		return -ENOTSUP;
+	}
 
 	if (dma_stm32_disable_stream(dma, id) != 0) {
 		return -EBUSY;
@@ -892,13 +906,7 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 		return -EINVAL;
 	}
 
-	if (stream->source_periph) {
-		LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id),
-				     size / stream->src_size);
-	} else {
-		LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id),
-				     size / stream->dst_size);
-	}
+	LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id), transfer_items_nb);
 
 	/* When reloading the dma, the stream is busy again before enabling */
 	stream->busy = true;
