@@ -266,6 +266,15 @@ struct ticker_ext {
 	uint8_t is_jitter_in_window:1; /* Jitter in slot window, maintaining
 					* the average periodic interval
 					*/
+	uint8_t is_deadline_in_window:1; /* Deadline in slot window, the
+					  * reservation does not yield to nor
+					  * is displaced by an overlapping
+					  * ticker without slot window, unless
+					  * that ticker is forced, and is not
+					  * skipped by an overlapping ticker
+					  * that fits after it in its slot
+					  * window
+					  */
 	uint8_t unforce:1;             /* Start with force flag unset
 					*/
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */

@@ -1083,11 +1083,16 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 			 * scheduled after the colliding ticker? A ticker with
 			 * reserved time yields only if the colliding ticker
 			 * fits before the end of the remaining slot window.
+			 * A deadline reservation yields to a colliding ticker
+			 * without slot window only if that ticker is forced.
 			 */
 			uint8_t curr_has_ticks_slot_window =
 					TICKER_HAS_SLOT_WINDOW(ticker) &&
 					((ticker->ticks_slot == 0U) ||
-					 ((acc_ticks_to_expire < ticker->ticks_slot) &&
+					 ((TICKER_HAS_SLOT_WINDOW(ticker_next) ||
+					   (ticker->ext_data->is_deadline_in_window == 0U) ||
+					   (ticker_next->force != 0U)) &&
+					  (acc_ticks_to_expire < ticker->ticks_slot) &&
 					  (ticker->ext_data->ticks_slot_window >=
 					   (ticker->ext_data->ticks_drift + ticker->ticks_slot)) &&
 					  ((acc_ticks_to_expire + ticker_next->ticks_slot) <=
@@ -1165,6 +1170,19 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 				}
 
 #if defined(CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD)
+				/* Current node without slot window and not forced does not
+				 * displace a deadline reservation in its slot window. Peer
+				 * devices reserve different time for the same event, hence
+				 * the age of the current node can not be used here, the
+				 * forced state bounds its latency instead.
+				 */
+				if (TICKER_HAS_SLOT_WINDOW(ticker_next) &&
+				    (ticker_next->ext_data->is_deadline_in_window != 0U) &&
+				    !TICKER_HAS_SLOT_WINDOW(ticker) &&
+				    (ticker->force == 0U)) {
+					return 1U;
+				}
+
 				/* Preserve a jitter reservation when the collision would
 				 * leave insufficient time for it in its remaining window.
 				 */
@@ -1178,6 +1196,19 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes, struct ticker
 				    (ticker->ext_data->is_jitter_in_window != 0U) &&
 				    (curr_has_ticks_slot_window == 0U) &&
 				    !TICKER_HAS_SLOT_WINDOW(ticker_next)) {
+					id_head = ticker_next->next;
+					continue;
+				}
+
+				/* Deadline reservation that cannot be placed after the colliding
+				 * ticker is not skipped when the colliding ticker fits after it
+				 * within its slot window, earliest deadline first.
+				 */
+				if (TICKER_HAS_SLOT_WINDOW(ticker) &&
+				    (ticker->ext_data->is_deadline_in_window != 0U) &&
+				    (curr_has_ticks_slot_window == 0U) &&
+				    TICKER_HAS_SLOT_WINDOW(ticker_next) &&
+				    (next_window_unfit == 0U)) {
 					id_head = ticker_next->next;
 					continue;
 				}
