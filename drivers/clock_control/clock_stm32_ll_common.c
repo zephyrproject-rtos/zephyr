@@ -979,6 +979,7 @@ static void set_up_fixed_clock_sources(void)
 #endif
 	}
 
+#if defined(STM32_LSE_ENABLED)
 	if (IS_ENABLED(STM32_LSE_ENABLED)) {
 		/* LSE belongs to the back-up domain, enable access.*/
 
@@ -1026,6 +1027,7 @@ static void set_up_fixed_clock_sources(void)
 
 		z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 	}
+#endif /* STM32_LSE_ENABLED */
 
 #if defined(STM32_MSI_ENABLED)
 	if (IS_ENABLED(STM32_MSI_ENABLED)) {

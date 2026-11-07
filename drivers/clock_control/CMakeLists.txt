@@ -39,6 +39,7 @@ if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   else()
     # zephyr-keep-sorted-start
     zephyr_library_sources(clock_stm32_ll_common.c)
+    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_PY32F0X clock_stm32f0_f3.c)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32C0X clock_stm32c0.c)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F0X clock_stm32f0_f3.c)
     zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F1X clock_stm32f1.c)

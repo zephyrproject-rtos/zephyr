@@ -1,0 +1,14 @@
+# Puya PY32 clock control driver configuration
+
+# Copyright (c) 2017 Linaro
+# Copyright (c) 2017 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_STM32_CUBE
+	bool "Puya PY32 Reset & Clock Control"
+	depends on SOC_FAMILY_PY32
+	default y
+	select USE_STM32_LL_UTILS
+	help
+	  Enable driver for Reset & Clock Control subsystem found
+	  in the Puya PY32 family of MCUs.
