@@ -213,7 +213,9 @@ static int counter_esp32_start(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
 
-	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
+	K_SPINLOCK(&data->lock) {
+		timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
+	}
 
 	return 0;
 }
@@ -222,18 +224,28 @@ static int counter_esp32_stop(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
 
-	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
-	timer_hal_set_counter_value(&data->hal_ctx, 0);
+	K_SPINLOCK(&data->lock) {
+		timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
+		timer_hal_set_counter_value(&data->hal_ctx, 0);
+	}
 
 	return 0;
+}
+
+static uint64_t counter_esp32_read_locked(struct counter_esp32_data *data)
+{
+	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
+
+	return timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
 }
 
 static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
 
-	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
-	*ticks = (uint32_t)timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
+	K_SPINLOCK(&data->lock) {
+		*ticks = (uint32_t)counter_esp32_read_locked(data);
+	}
 
 	return 0;
 }
@@ -242,8 +254,9 @@ static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	struct counter_esp32_data *data = dev->data;
 
-	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
-	*ticks = timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
+	K_SPINLOCK(&data->lock) {
+		*ticks = counter_esp32_read_locked(data);
+	}
 
 	return 0;
 }
@@ -277,7 +290,7 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	data->alarm_cfg.callback = alarm_cfg->callback;
 	data->alarm_cfg.user_data = alarm_cfg->user_data;
 
-	counter_esp32_get_value_64(dev, &now);
+	now = counter_esp32_read_locked(data);
 
 	if (absolute) {
 		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
@@ -299,7 +312,7 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 			err = -ETIME;
 		}
 		if (irq_on_late) {
-			counter_esp32_get_value_64(dev, &now);
+			now = counter_esp32_read_locked(data);
 			timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
 						 now + 1);
 			K_SPINLOCK(&timg_intr_lock[cfg->group]) {
@@ -372,7 +385,7 @@ static int counter_esp32_set_top_value_64(const struct device *dev,
 		return -EBUSY;
 	}
 
-	counter_esp32_get_value_64(dev, &now);
+	now = counter_esp32_read_locked(data);
 
 	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
 		timer_hal_set_counter_value(&data->hal_ctx, 0);
@@ -436,7 +449,9 @@ static int counter_esp32_reset(const struct device *dev)
 {
 	struct counter_esp32_data *data = dev->data;
 
-	timer_hal_set_counter_value(&data->hal_ctx, 0);
+	K_SPINLOCK(&data->lock) {
+		timer_hal_set_counter_value(&data->hal_ctx, 0);
+	}
 
 	return 0;
 }
@@ -499,8 +514,19 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 		.flags = alarm_cfg->flags,
 	};
 
+	if (chan_id > 0) {
+		return -ENOTSUP;
+	}
+
+	if ((uint64_t)alarm_cfg->ticks > data->top_data.ticks) {
+		return -EINVAL;
+	}
+
 	/* use trampoline function to handle the function pointer type difference */
-	data->alarm_callback_32 = alarm_cfg->callback;
+	K_SPINLOCK(&data->lock) {
+		data->alarm_cfg.callback = NULL;
+		data->alarm_callback_32 = alarm_cfg->callback;
+	}
 
 	return counter_esp32_set_alarm_64(dev, chan_id, &alarm_cfg_64);
 }
@@ -802,6 +828,7 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	const struct counter_esp32_config *cfg = dev->config;
 	struct counter_esp32_data *data = dev->data;
 	counter_alarm_callback_64_t cb;
+	counter_alarm_callback_t cb_32;
 	counter_top_callback_t top_cb;
 	void *cb_data;
 	void *top_data;
@@ -821,6 +848,7 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	key = k_spin_lock(&data->lock);
 	cb = data->alarm_cfg.callback;
 	cb_data = data->alarm_cfg.user_data;
+	cb_32 = data->alarm_callback_32;
 	if (cb) {
 		K_SPINLOCK(&timg_intr_lock[cfg->group]) {
 			timer_ll_enable_intr(data->hal_ctx.dev,
@@ -834,7 +862,9 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	top_data = data->top_data.user_data;
 	k_spin_unlock(&data->lock, key);
 
-	if (cb) {
+	if (cb == counter_esp32_callback_32_trampoline) {
+		cb_32(dev, 0, (uint32_t)now, cb_data);
+	} else if (cb) {
 		cb(dev, 0, now, cb_data);
 	}
 

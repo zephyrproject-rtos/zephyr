@@ -22,6 +22,9 @@
 #else
 #define SOC_HAS_LP_TIMER 0
 #include <soc/rtc_cntl_reg.h>
+#include <esp_private/critical_section.h>
+
+extern esp_os_spinlock_t rtc_spinlock;
 #endif
 
 #include <zephyr/device.h>
@@ -182,7 +185,9 @@ static int counter_esp32_set_alarm(const struct device *dev, uint8_t chan_id,
 #else
 	/* For chips without LP_TIMER, enable alarm and interrupt via registers */
 	SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
+	esp_os_enter_critical(&rtc_spinlock);
 	SET_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_MAIN_TIMER_INT_ENA);
+	esp_os_exit_critical(&rtc_spinlock);
 #endif
 
 	k_spin_unlock(&data->lock, key);
@@ -202,8 +207,10 @@ static void counter_esp32_disable_alarm_locked(struct counter_esp32_data *data)
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
 
 	/* RTC main timer interrupt disable, and clear interrupt flag */
-	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
-	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
+	esp_os_enter_critical(&rtc_spinlock);
+	CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_MAIN_TIMER_INT_ENA);
+	esp_os_exit_critical(&rtc_spinlock);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
 #endif
 
 	data->alarm_cfg.callback = NULL;
