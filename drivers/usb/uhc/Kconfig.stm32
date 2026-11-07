@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Hamza Bahri
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_STM32
+	bool "STM32 USB_DRD_FS host controller driver [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ST_STM32_USB_DRD_ENABLED
+	select EXPERIMENTAL
+	select EVENTS
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_HCD
+	select STM32_USB_COMMON
+	select PINCTRL
+	help
+	  STM32 USB host controller driver for the USB_DRD_FS controller,
+	  built on the STM32Cube HAL HCD. Full-speed and low-speed devices,
+	  control, bulk and interrupt transfers; isochronous is not supported.
+
+if UHC_STM32
+
+config UHC_STM32_STACK_SIZE
+	int "UHC STM32 driver thread stack size"
+	default 2048
+	help
+	  STM32 UHC driver thread stack size.
+
+config UHC_STM32_THREAD_PRIORITY
+	int "UHC STM32 driver thread priority"
+	default 2
+	help
+	  STM32 UHC driver thread priority (cooperative).
+
+config UHC_STM32_DEBOUNCE_DELAY_MS
+	int "Connect/disconnect debounce delay in ms"
+	range 100 500
+	default 200
+	help
+	  The USB 2.0 specification requires a debounce interval of at least
+	  100 ms on connection (chapter 7.1.7.3). The connect/disconnect event
+	  is only reported once the line has been stable this long; 200 ms
+	  covers the bouncing seen on NUCLEO-H563ZI.
+
+endif # UHC_STM32
