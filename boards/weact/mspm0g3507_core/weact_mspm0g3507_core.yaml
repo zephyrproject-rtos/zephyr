@@ -14,4 +14,4 @@ supported:
   - dac
   - spi
   - vref
-vendor: weact
+  - can
