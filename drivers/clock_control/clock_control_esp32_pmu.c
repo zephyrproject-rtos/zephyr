@@ -53,12 +53,6 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 	}
 #endif
 
-	/*
-	 * RTC slow clock calibration uses TIMG0 to count XTAL cycles.
-	 * Ensure TIMG0 bus clock is enabled before calibration.
-	 */
-	_timg_ll_enable_bus_clock(0, true);
-	_timg_ll_reset_register(0);
 	do {
 		if (clk_32k_src) {
 			/* 32k XTAL oscillator or external 32k clock needs to be enabled and

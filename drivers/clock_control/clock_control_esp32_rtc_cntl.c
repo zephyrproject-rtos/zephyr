@@ -52,12 +52,6 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk, bool fallback)
 	int retry_32k_xtal = CONFIG_CLOCK_CONTROL_ESP32_RTC_XTAL_CAL_RETRY;
 	bool revoke_32k = false;
 
-	/*
-	 * RTC slow clock calibration uses TIMG0 to count XTAL cycles.
-	 * Ensure TIMG0 bus clock is enabled before calibration.
-	 */
-	_timg_ll_enable_bus_clock(0, true);
-	_timg_ll_reset_register(0);
 #if defined(CONFIG_SOC_SERIES_ESP32C2)
 #define ESP32_RTC_EXT_SLOW_CLK_SRC ESP32_RTC_SLOW_CLK_SRC_OSC_SLOW
 #define ESP32_RTC_EXT_CLK_CAL_SRC  CLK_CAL_32K_OSC_SLOW

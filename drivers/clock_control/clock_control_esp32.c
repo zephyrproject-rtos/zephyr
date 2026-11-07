@@ -82,14 +82,9 @@ static enum clock_control_status clock_control_esp32_get_status(const struct dev
 
 static int clock_control_esp32_on(const struct device *dev, clock_control_subsys_t sys)
 {
-	enum clock_control_status status;
-
-	status = clock_control_esp32_get_status(dev, sys);
-	if (status == CLOCK_CONTROL_STATUS_ON) {
-		return 0;
-	}
-
 	int module_id = (int)sys;
+
+	ARG_UNUSED(dev);
 
 	if (module_id < ESP32_MODULE_MAX) {
 #if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
@@ -208,6 +203,10 @@ static int clock_control_esp32_init(const struct device *dev)
 
 	esp32_select_rtc_fast_clk(cfg->rtc.rtc_fast_clock_src);
 
+	/* RTC slow clock calibration counts XTAL cycles with TIMG0 */
+	_timg_ll_enable_bus_clock(0, true);
+	_timg_ll_reset_register(0);
+
 	ret = esp32_select_rtc_slow_clk(cfg->rtc.rtc_slow_clock_src, true);
 	if (ret) {
 		LOG_ERR("Failed to configure RTC clock");
@@ -226,12 +225,17 @@ static int clock_control_esp32_init(const struct device *dev)
 
 	esp_perip_clk_init();
 
-	/*
-	 * esp_perip_clk_init() gates TIMG0 bus clock. Re-enable it
-	 * for the RTC calibration circuit used by rtc_clk_cal().
+	/* esp_perip_clk_init() gates TIMG0 bus clock. Re-enable it
+	 * for the RTC calibration circuit used by rtc_clk_cal(), and
+	 * keep a reference so it is never gated or reset afterwards.
 	 */
-	_timg_ll_enable_bus_clock(0, true);
-	_timg_ll_reset_register(0);
+	uint8_t ref_count = periph_rcc_acquire_enter(PERIPH_TIMG0_MODULE);
+
+	if (ref_count == 0) {
+		_timg_ll_enable_bus_clock(0, true);
+		_timg_ll_reset_register(0);
+	}
+	periph_rcc_acquire_exit(PERIPH_TIMG0_MODULE, ref_count);
 
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
 	esp32p4_crypto_clk_to_pll();
