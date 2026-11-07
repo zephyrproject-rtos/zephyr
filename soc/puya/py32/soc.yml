@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: py32
+  series:
+  - name: py32f0x
+    socs:
+    - name: py32f003x6
+    - name: py32f030x4
+    - name: py32f030x6
+    - name: py32f030x8
