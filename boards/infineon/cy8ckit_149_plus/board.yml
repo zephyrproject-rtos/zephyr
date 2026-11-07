@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: cy8ckit_149_plus
+  full_name: PSOC™ 4100S Plus pioneer kit
+  vendor: infineon
+  socs:
+  - name: cy8c4147azi_s475
