@@ -29,7 +29,7 @@ static void input_cb_filtered(struct input_event *evt, void *user_data)
 
 	k_sem_give(&cb_start);
 }
-INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered, NULL);
+struct input_callback input_callback_filtered;
 
 static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 {
@@ -49,6 +49,8 @@ ZTEST(input_api, test_sequence_thread)
 {
 	int i;
 	int ret;
+
+	input_add_callback(&input_callback_filtered, &fake_dev, input_cb_filtered, NULL);
 
 	message_count_filtered = 0;
 	message_count_unfiltered = 0;
@@ -92,7 +94,7 @@ static void input_cb_filtered(struct input_event *evt, void *user_data)
 		message_count_filtered++;
 	}
 }
-INPUT_CALLBACK_DEFINE(&fake_dev, input_cb_filtered, NULL);
+struct input_callback input_callback_filtered;
 
 static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 {
@@ -103,6 +105,8 @@ INPUT_CALLBACK_DEFINE(NULL, input_cb_unfiltered, NULL);
 ZTEST(input_api, test_synchronous)
 {
 	int ret;
+
+	input_add_callback(&input_callback_filtered, &fake_dev, input_cb_filtered, NULL);
 
 	message_count_filtered = 0;
 	message_count_unfiltered = 0;
