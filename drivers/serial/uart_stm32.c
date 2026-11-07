@@ -6,7 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_SOC_SERIES_PY32F0X)
+#define DT_DRV_COMPAT puya_py32_uart
+#else
 #define DT_DRV_COMPAT st_stm32_uart
+#endif
 
 /**
  * @brief Driver for UART port on STM32 family processor.
@@ -36,8 +40,10 @@
 #include "uart_stm32.h"
 
 #include <stm32_ll_bus.h>
+#if !defined(CONFIG_SOC_SERIES_PY32F0X)
 #include <stm32_ll_usart.h>
 #include <stm32_ll_lpuart.h>
+#endif
 #if defined(CONFIG_PM) && defined(IS_UART_WAKEUP_FROMSTOP_INSTANCE)
 #include <stm32_ll_pwr.h>
 #include <zephyr/drivers/interrupt_controller/intc_exti_stm32.h>
@@ -357,17 +363,15 @@ static inline int uart_stm32_set_baudrate(const struct device *dev, uint32_t bau
 			return -EINVAL;
 		}
 
-#ifdef USART_CR1_OVER8
-		LL_USART_SetOverSampling(usart,
-					 LL_USART_OVERSAMPLING_16);
+#if defined(USART_CR1_OVER8) || defined(USART_CR3_OVER8)
+		LL_USART_SetOverSampling(usart, LL_USART_OVERSAMPLING_16);
 #endif
 
-		LL_USART_SetBaudRate(usart,
-				     clock_rate,
+		LL_USART_SetBaudRate(usart, clock_rate,
 #ifdef USART_PRESC_PRESCALER
 				     LL_USART_PRESCALER_DIV1,
 #endif
-#ifdef USART_CR1_OVER8
+#if defined(USART_CR1_OVER8) || defined(USART_CR3_OVER8)
 				     LL_USART_OVERSAMPLING_16,
 #endif
 				     baud_rate);
@@ -962,7 +966,8 @@ static int uart_stm32_err_check(const struct device *dev)
 		err |= UART_ERROR_NOISE;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(USART_LIN_SUPPORT)
+#if (!defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_PY32F0X)) ||               \
+	defined(USART_LIN_SUPPORT)
 	if (LL_USART_IsActiveFlag_LBD(usart)) {
 		err |= UART_BREAK;
 	}
@@ -1229,7 +1234,8 @@ static void uart_stm32_irq_err_enable(const struct device *dev)
 
 	/* Enable FE, ORE interruptions */
 	LL_USART_EnableIT_ERROR(usart);
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(USART_LIN_SUPPORT)
+#if (!defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_PY32F0X)) ||               \
+	defined(USART_LIN_SUPPORT)
 	/* Enable Line break detection */
 	if (IS_UART_LIN_INSTANCE(usart)) {
 		LL_USART_EnableIT_LBD(usart);
@@ -1246,7 +1252,8 @@ static void uart_stm32_irq_err_disable(const struct device *dev)
 
 	/* Disable FE, ORE interruptions */
 	LL_USART_DisableIT_ERROR(usart);
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) || defined(USART_LIN_SUPPORT)
+#if (!defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_PY32F0X)) ||               \
+	defined(USART_LIN_SUPPORT)
 	/* Disable Line break detection */
 	if (IS_UART_LIN_INSTANCE(usart)) {
 		LL_USART_DisableIT_LBD(usart);
