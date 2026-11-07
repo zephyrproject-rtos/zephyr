@@ -19,6 +19,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
 
 #include "ticker/ticker.h"
 
@@ -57,6 +58,8 @@ static int prepare_cb_common(struct lll_prepare_param *p);
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
 static int drift_prepare_cb(struct lll_prepare_param *p);
 static int resume_prepare_cb(struct lll_prepare_param *p);
+static uint16_t se_idx_get(const struct lll_adv_iso *lll);
+static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next);
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -111,6 +114,64 @@ void lll_adv_iso_prepare(void *param)
 	prepare_bh(param);
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+void lll_adv_iso_resume(void *param)
+{
+	struct lll_prepare_param p;
+	struct lll_adv_iso *lll;
+	uint32_t ticks_interval;
+	struct lll_event *e;
+	void *idx;
+	int err;
+
+	lll = param;
+
+	/* Reservation is not of the current BIG event, its prepare is pending */
+	ticks_interval = HAL_TICKER_US_TO_TICKS(lll->iso_interval * ISO_INT_UNIT_US);
+	if (ticker_ticks_diff_get(lll->ticks_resume, lll->ticks_anchor) >= ticks_interval) {
+		return;
+	}
+
+	/* Find the resume of the yielded current BIG event, it is otherwise
+	 * dequeued only when there is no other prepare in the pipeline.
+	 */
+	idx = NULL;
+	do {
+		e = ull_prepare_dequeue_iter(&idx);
+		if ((e != NULL) && (e->is_aborted == 0U) && (e->is_resume != 0U) &&
+		    (e->prepare_param.param == param) && (e->prepare_cb == resume_prepare_cb) &&
+		    (ticker_ticks_diff_get(e->prepare_param.ticks_at_expire,
+					   e->prepare_param.ticks_drift) == lll->ticks_anchor)) {
+			break;
+		}
+
+		e = NULL;
+	} while (idx != NULL);
+
+	if (e == NULL) {
+		/* Resume when the BIG event yields later in this event */
+		lll->is_resume_due = 1U;
+
+		return;
+	}
+
+	/* Prepare the resume at the time reserved for the BIS, so that it
+	 * preempts the events that would otherwise use the radio before it.
+	 * The HF clock and the event reference retained by the resume are
+	 * carried over to the prepare, hence the resume is released without
+	 * calling its abort_cb.
+	 */
+	p = e->prepare_param;
+	p.ticks_drift += ticker_ticks_diff_get(lll->ticks_resume, p.ticks_at_expire);
+	p.ticks_at_expire = lll->ticks_resume;
+	e->is_aborted = 1U;
+	lll->is_resume_prepare = 1U;
+
+	err = lll_prepare(is_abort_cb, abort_cb, resume_prepare_cb, 0U, &p);
+	LL_ASSERT_ERR(!err || (err == -EINPROGRESS));
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
 static int init_reset(void)
 {
 	return 0;
@@ -163,8 +224,10 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll->latency_prepare = 0U;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
-	/* Initialise resume subevent flag */
+	/* Initialise resume subevent flags */
+	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
 	lll->is_lll_resume = 0U;
+	lll->is_resume_due = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	err = prepare_cb_common(p);
@@ -203,8 +266,10 @@ static int prepare_cb(struct lll_prepare_param *p)
 	lll->latency_prepare = 0U;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
-	/* Initialise resume subevent flag */
+	/* Initialise resume subevent flags */
+	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
 	lll->is_lll_resume = 0U;
+	lll->is_resume_due = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	err = prepare_cb_common(p);
@@ -604,6 +669,10 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
 	/* Reset resume subevent flag */
 	lll->is_lll_resume = 0U;
+
+	/* Radio start and sequential subevent index of the first subevent */
+	lll->ticks_se_start = ticks_at_start;
+	lll->se_start = se_idx_get(lll);
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	/* Calculate ahead the next subevent channel index */
@@ -673,8 +742,10 @@ static int drift_prepare_cb(struct lll_prepare_param *p)
 	lll->latency_prepare = 0U;
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
-	/* Initialise resume subevent flag */
+	/* Initialise resume subevent flags */
+	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
 	lll->is_lll_resume = 0U;
+	lll->is_resume_due = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	err = prepare_cb_common(p);
@@ -705,6 +776,7 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 	int err;
 
 	lll = p->param;
+	lll->is_resume_prepare = 0U;
 
 	ull = HDR_LLL2ULL(lll);
 	ticks_offset = lll_event_offset_get(ull);
@@ -730,6 +802,77 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 
 	return err;
 }
+
+/* Sequential packing index of the subevent on air or next to be transmitted */
+static uint16_t se_idx_get(const struct lll_adv_iso *lll)
+{
+	uint16_t se_idx;
+
+	se_idx = (lll->bis_curr - 1U) * lll->nse;
+	if (lll->ptc_curr != 0U) {
+		se_idx += (lll->bn * lll->irc) + lll->ptc_curr - 1U;
+	} else {
+		se_idx += ((lll->irc_curr - 1U) * lll->bn) + lll->bn_curr - 1U;
+	}
+
+	return se_idx;
+}
+
+/* Check if the preemptor event and the resume of the current sequential packing BIG event
+ * would miss the last repetition of a BIS that has no repetition transmitted yet.
+ */
+static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next)
+{
+	struct ull_hdr *ull_next;
+	uint16_t se_curr;
+	uint16_t se_bis;
+	uint8_t bis;
+
+	ull_next = HDR_LLL2ULL(next);
+	se_curr = se_idx_get(lll);
+
+	for (bis = 0U, se_bis = 0U; bis < lll->num_bis; bis++, se_bis += lll->nse) {
+		uint32_t ticks_deadline;
+		uint32_t ticks_resume;
+		uint16_t se_last;
+		uint16_t se_rep;
+
+		/* Start of the last repetition of the BIS */
+		se_last = se_bis + ((lll->irc - 1U) * lll->bn);
+		if (se_last < lll->se_start) {
+			/* All repetitions were skipped */
+			continue;
+		}
+
+		/* Start of the first repetition transmitted in this BIG event */
+		se_rep = se_bis;
+		if (se_rep < lll->se_start) {
+			se_rep += DIV_ROUND_UP(lll->se_start - se_rep, lll->bn) * lll->bn;
+		}
+
+		/* BIS has at least one repetition transmitted */
+		if ((se_rep + lll->bn) <= se_curr) {
+			continue;
+		}
+
+		/* Last repetition already in progress */
+		if (se_last < se_curr) {
+			return true;
+		}
+
+		ticks_deadline = lll->ticks_se_start +
+				 HAL_TICKER_US_TO_TICKS((se_last - lll->se_start) *
+							lll->sub_interval);
+		ticks_resume = ticker_ticks_now_get() + ull_next->ticks_slot +
+			       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US +
+						      EVENT_OVERHEAD_RESUME_US);
+
+		return (ticker_ticks_diff_get(ticks_deadline, ticks_resume) &
+			BIT(HAL_TICKER_CNTR_MSBIT)) != 0U;
+	}
+
+	return false;
+}
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
@@ -741,7 +884,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		/* This role is the ready (next) event, it did not preempt current event;
 		 * return -EAGAIN so that this ready event is placed as resume event.
 		 */
-		*resume_cb = drift_prepare_cb;
+		if (lll->is_resume_prepare != 0U) {
+			*resume_cb = resume_prepare_cb;
+		} else {
+			*resume_cb = drift_prepare_cb;
+		}
 
 		/* Drift prepare is not a resume, but we set the flag so that abort_cb will
 		 * correctly retain the ULL prepare.
@@ -752,6 +899,37 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	}
 
 	if (next != curr) {
+		/* Do not yield when the preemptor overlaps the last repetition of a BIS
+		 * that has not yet been transmitted in this BIG event.
+		 */
+		if ((lll->bis_spacing >= (lll->sub_interval * lll->nse)) &&
+		    is_deadline_reached(lll, next)) {
+			return -EBUSY;
+		}
+
+		/* Reserved time of the BIS to resume at has already been reached,
+		 * resume after the preemptor once it is enqueued as resume event.
+		 */
+		if (lll->is_resume_due != 0U) {
+			static memq_link_t link;
+			static struct mayfly mfy = {0U, 0U, &link, NULL, lll_adv_iso_resume};
+			struct ull_hdr *ull_next;
+			uint32_t ticks_resume;
+			uint32_t ret;
+
+			/* Resume prepare preempts at the end of the preemptor */
+			ull_next = HDR_LLL2ULL(next);
+			ticks_resume = ticker_ticks_now_get() + ull_next->ticks_slot +
+				       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
+				       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+			lll->ticks_resume = ticks_resume & HAL_TICKER_CNTR_MASK;
+			lll->is_resume_due = 0U;
+
+			mfy.param = lll;
+			ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
+			LL_ASSERT_ERR(!ret);
+		}
+
 		*resume_cb = resume_prepare_cb;
 
 		lll->is_lll_resume = 1U;
@@ -804,6 +982,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	if (param && (lll->is_lll_resume != 0U)) {
 		return;
 	}
+
+	/* Resume prepare being cancelled */
+	lll->is_resume_prepare = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	/* NOTE: Else clean the top half preparations of the aborted event

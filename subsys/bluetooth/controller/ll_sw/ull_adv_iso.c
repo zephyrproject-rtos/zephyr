@@ -89,6 +89,9 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+static void adv_iso_resume_ticker_start(struct ll_adv_iso_set *adv_iso);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void adv_iso_disable(void *param);
@@ -106,6 +109,8 @@ static void *stream_free;
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
 static struct ticker_ext normal_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
 static struct ticker_ext resume_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
+static memq_link_t link_lll_resume[CONFIG_BT_CTLR_ADV_ISO_SET];
+static struct mayfly mfy_lll_resume[CONFIG_BT_CTLR_ADV_ISO_SET];
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
@@ -223,6 +228,17 @@ int ull_adv_iso_init(void)
 	if (err) {
 		return err;
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	/* Mayfly memq links are owned by the mayfly queue once enqueued,
+	 * initialize only at power up as queues persist across HCI reset.
+	 */
+	for (uint8_t i = 0U; i < CONFIG_BT_CTLR_ADV_ISO_SET; i++) {
+		mfy_lll_resume[i]._link = &link_lll_resume[i];
+		mfy_lll_resume[i].param = &ll_adv_iso[i].lll;
+		mfy_lll_resume[i].fp = lll_adv_iso_resume;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	return 0;
 }
@@ -1305,6 +1321,9 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 	} else if (lll_iso->bis_spacing >=
 		   (lll_iso->sub_interval * lll_iso->nse)) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)) {
+			/* Time reservation for one repetition of a BIS, the
+			 * successive BISes are reserved by the resume ticker.
+			 */
 			time_us = pdu_spacing * lll_iso->bn;
 		} else {
 			/* Time reservation omitting PTC subevents in sequential
@@ -1398,6 +1417,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		normal_ticker_ext[index].ticks_slot_window =
 			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
 		normal_ticker_ext[index].is_jitter_in_window = 1U;
+		normal_ticker_ext[index].is_deadline_in_window = 1U;
 
 		ret = ticker_start_ext(
 				TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
@@ -1665,7 +1685,25 @@ static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			     uint32_t remainder, uint16_t lazy, uint8_t force,
 			     void *param)
 {
-	/* TODO: Add implementation to place ULL time reservation for subsequent BIS spacing */
+	struct ll_adv_iso_set *adv_iso;
+	uint8_t index;
+	uint32_t ret;
+
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(force);
+
+	adv_iso = param;
+	index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+
+	/* Resume a yielded BIG event at the reserved repetition of the BIS */
+	adv_iso->lll.ticks_resume = ticks_at_expire;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U,
+			     &mfy_lll_resume[index]);
+	LL_ASSERT_ERR(!ret);
+
+	/* Reserve a repetition of the BIS following the one just reserved */
+	adv_iso_resume_ticker_start(adv_iso);
 }
 
 static void ticker_op_start_cb(uint32_t status, void *param)
@@ -1673,7 +1711,52 @@ static void ticker_op_start_cb(uint32_t status, void *param)
 	ARG_UNUSED(status);
 	ARG_UNUSED(param);
 
-	/* FIXME: Handle the skipped ULL scheduling of the subevent used to reserve time. */
+	/* NOTE: The reservation is not placed when it collides with other
+	 *       reservations, the BIG event may then be preempted and resumed
+	 *       without reserved time.
+	 */
+}
+
+static void adv_iso_resume_ticker_start(struct ll_adv_iso_set *adv_iso)
+{
+	const struct lll_adv_iso *lll = &adv_iso->lll;
+	uint32_t ticks_slot_window;
+	uint32_t ticks_offset;
+	uint32_t jitter_us;
+	uint32_t ret;
+	uint8_t index;
+
+	adv_iso->resume_bis++;
+	if (adv_iso->resume_bis >= lll->num_bis) {
+		return;
+	}
+
+	/* Reserve the first repetition of the BIS, the remaining repetitions
+	 * of the BIS are in the jitter window, same as the BIG ticker.
+	 */
+	jitter_us = lll->sub_interval * lll->bn * (lll->irc - 1U);
+	ticks_slot_window = HAL_TICKER_US_TO_TICKS(jitter_us) + adv_iso->ull.ticks_slot;
+	ticks_offset = HAL_TICKER_US_TO_TICKS(lll->bis_spacing * adv_iso->resume_bis);
+
+	index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+	resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
+	resume_ticker_ext[index].is_jitter_in_window = 1U;
+	resume_ticker_ext[index].is_deadline_in_window = 1U;
+	resume_ticker_ext[index].unforce = 1U;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	ret = ticker_start_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			       (TICKER_ID_ADV_ISO_RESUME_BASE + index),
+			       adv_iso->ticks_resume_anchor, ticks_offset,
+			       TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+			       TICKER_NULL_LAZY, adv_iso->ull.ticks_slot,
+			       ticker_resume_cb, adv_iso, ticker_op_start_cb,
+			       (void *)__LINE__, &resume_ticker_ext[index]);
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
@@ -1729,44 +1812,17 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 							    EVENT_OVERHEAD_START_US));
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
-	if (lll->num_bis > 1U) {
-		uint32_t bis_offset;
-		uint32_t jitter_us;
-		uint32_t slot_us;
-		uint8_t index;
-
-		bis_offset = lll->bis_spacing;
-
-		/* TODO: below is for sequential packing, interleaved packing need to be
-		 *       implemented in future.
+	if ((lll->num_bis > 1U) &&
+	    (lll->bis_spacing >= (lll->sub_interval * lll->nse))) {
+		/* The BIG ticker reserves a repetition of the first BIS, reserve
+		 * a repetition of each successive BIS in sequential packing, so
+		 * that a preempted BIG event can be resumed for transmission.
 		 */
-		jitter_us = lll->sub_interval * lll->bn * (lll->irc - 1U);
+		adv_iso->ticks_resume_anchor = ticker_ticks_diff_get(p.ticks_at_expire,
+								     ticks_drift);
+		adv_iso->resume_bis = 0U;
 
-		slot_us = HAL_TICKER_TICKS_TO_US(adv_iso->ull.ticks_slot);
-
-		index = ARRAY_INDEX(ll_adv_iso, adv_iso);
-
-		resume_ticker_ext[index].ticks_slot_window =
-			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
-		resume_ticker_ext[index].is_jitter_in_window = 1U;
-		resume_ticker_ext[index].unforce = 1U;
-
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-		resume_ticker_ext[index].expire_info_id = TICKER_NULL;
-#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
-
-		ret = ticker_start_ext(
-				   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-				   (TICKER_ID_ADV_ISO_RESUME_BASE + index),
-				   p.ticks_at_expire, HAL_TICKER_US_TO_TICKS(bis_offset),
-				   TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
-				   TICKER_NULL_LAZY, adv_iso->ull.ticks_slot,
-				   ticker_resume_cb, lll, ticker_op_start_cb,
-				   (void *)__LINE__,
-				   &resume_ticker_ext[index]
-				  );
-		LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
-			      (ret == TICKER_STATUS_BUSY));
+		adv_iso_resume_ticker_start(adv_iso);
 	}
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
