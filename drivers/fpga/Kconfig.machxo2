@@ -1,0 +1,13 @@
+# Copyright (c) 2026 FIRST RF
+# SPDX-License-Identifier: Apache-2.0
+
+config MACHXO2_FPGA
+	bool "Lattice MachXO2 FPGA sysCONFIG SPI driver"
+	default y
+	depends on DT_HAS_LATTICE_MACHXO2_FPGA_ENABLED
+	depends on SPI
+	select CRC
+	select GPIO
+	help
+	  Enable support for the Lattice MachXO2 CPLD/FPGA configured through the
+	  sysCONFIG slave SPI port.
