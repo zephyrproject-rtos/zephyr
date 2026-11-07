@@ -853,6 +853,14 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct conn_param_data *cpd = conn_param_data_get(conn);
 
+	/* Invalidate the session ID before sweeping the queue so that pending
+	 * requests of this connection are dropped; cpd->conn must stay set until
+	 * after the sweep because the validity check finds the session through it.
+	 */
+	if (cpd != NULL) {
+		cpd->id = 0;
+	}
+
 	/* Remove all pending requests from this device which have yet to be processed from the
 	 * FIFO (for this specific connection).
 	 */
@@ -869,7 +877,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 #endif
 
 		/* Clear cpd. */
-		cpd->id = 0;
 		cpd->conn = NULL;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
