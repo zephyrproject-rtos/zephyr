@@ -53,6 +53,20 @@ extern "C" {
 #define M_SQRT2     1.41421356237309504880
 #define M_SQRT1_2   0.70710678118654752440
 
+/* Infinity and NaN, for the compilers that have them as builtins */
+#if HAS_BUILTIN(__builtin_huge_val)
+#define HUGE_VAL __builtin_huge_val()
+#endif
+#if HAS_BUILTIN(__builtin_huge_valf)
+#define HUGE_VALF __builtin_huge_valf()
+#endif
+#if HAS_BUILTIN(__builtin_inff)
+#define INFINITY __builtin_inff()
+#endif
+#if HAS_BUILTIN(__builtin_nanf)
+#define NAN __builtin_nanf("")
+#endif
+
 /* Classification macros, for the compilers that have them as builtins */
 #if HAS_BUILTIN(__builtin_fpclassify)
 #define FP_NAN       0
