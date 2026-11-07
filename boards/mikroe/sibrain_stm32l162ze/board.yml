@@ -1,0 +1,6 @@
+board:
+  name: mikroe_sibrain_stm32l162ze
+  full_name: SiBRAIN for STM32L162ZE
+  vendor: mikroe
+  socs:
+    - name: stm32l162xe

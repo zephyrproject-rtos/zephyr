@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l1/stm32l162Xe.dtsi>
+#include <st/l1/stm32l162zetx-pinctrl.dtsi>
+
+/ {
+	compatible = "mikroe,sibrain-stm32l162ze";
+	model = "MikroElektronika SiBRAIN for STM32L162ZE";
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		rtc = &rtc;
+		eeprom-0 = &eeprom;
+	};
+};
+
+/* Y1: 24 MHz crystal */
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+/* Y2: 32.768 kHz crystal */
+&clk_lse {
+	status = "okay";
+};
+
+/* 24 MHz * 4 = 96 MHz VCO (USB capable), / 3 = 32 MHz SYSCLK */
+&pll {
+	mul = <4>;
+	div = <3>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(32)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+/* SiBRAIN USB-UART pins (CN1 160/159), routed to the host board USB-UART */
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pc12 &uart5_rx_pd2>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&eeprom {
+	status = "okay";
+};
