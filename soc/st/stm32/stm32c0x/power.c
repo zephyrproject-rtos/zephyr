@@ -11,19 +11,11 @@
 #include <stm32_ll_cortex.h>
 #include <stm32_ll_pwr.h>
 
+#include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
-
-#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
-#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_system_timer_companion)
-#else
-/* Compatibility fallback for the deprecated /chosen/zephyr,cortex-m-idle-timer.
- * Scheduled for removal in Zephyr 4.6.0.
- */
-#define SYSTEM_TIMER_COMPANION_NODE DT_CHOSEN(zephyr_cortex_m_idle_timer)
-#endif
 
 BUILD_ASSERT(DT_SAME_NODE(SYSTEM_TIMER_COMPANION_NODE, DT_NODELABEL(rtc)),
 		"STM32C0x series needs RTC as the system timer companion for power management");
