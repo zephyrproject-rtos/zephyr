@@ -45,4 +45,6 @@ int verify_buf_const(int16_t *rx_block, int16_t val_l, int16_t val_r);
 
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir);
 
+bool tdm_channel_masking_supported(const void *global_state);
+
 #endif
