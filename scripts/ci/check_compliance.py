@@ -2391,6 +2391,52 @@ class CMakeStyle(StyleCheckMixin, ComplianceTest):
         )
 
 
+class CodingGuidelines(StyleCheckMixin, ComplianceTest):
+    """
+    Checks added/modified C files against the subset of the coding guidelines
+    that scripts/coding_guidelines/coding_guidelines.py can decide from the
+    syntax of a file. Only issues on lines touched by the change are reported,
+    so pre-existing violations are not flagged.
+    """
+
+    name = "CodingGuidelines"
+    doc = zephyr_doc_detail_builder("/contribute/coding_guidelines/index.html")
+
+    # The C library implementation and the POSIX layer define the reserved
+    # identifiers themselves, so the reserved-identifier rule does not apply to
+    # them.
+    RESERVED_EXEMPT = (
+        "lib/libc/",
+        "subsys/portability/posix/",
+        "include/zephyr/posix/",
+        "tests/subsys/portability/",
+    )
+
+    def run(self):
+        from importlib.util import find_spec
+
+        if any(find_spec(m) is None for m in ("tree_sitter", "tree_sitter_c")):
+            self.skip(
+                "coding_guidelines requires tree-sitter; install it with "
+                "'pip install tree-sitter tree-sitter-c'"
+            )
+
+        tool = ZEPHYR_BASE / "scripts" / "coding_guidelines" / "coding_guidelines.py"
+
+        def c_file(file):
+            return file.endswith((".c", ".h"))
+
+        self._check_files(
+            tool,
+            lambda file: c_file(file) and not file.startswith(self.RESERVED_EXEMPT),
+        )
+        self._check_files(
+            tool,
+            lambda file: c_file(file) and file.startswith(self.RESERVED_EXEMPT),
+            extra_args=("--skip-rule", "reserved-identifier"),
+        )
+
+
 class BinaryFiles(ComplianceTest):
     """
     Check that the diff contains no binary files.
