@@ -61,6 +61,10 @@ extern "C" {
  * dispatch registration is needed in the OOT header.
  */
 
+#ifdef CONFIG_GPIO_SAM0
+#include <zephyr_gpio_fast_atmel_sam0_gpio.h>
+#endif
+
 #include <zephyr_gpio_fast_generic.h>
 
 #ifdef CONFIG_GPIO_FAST_OUT_OF_TREE_BACKEND

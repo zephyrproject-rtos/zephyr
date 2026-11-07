@@ -164,6 +164,9 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE gpio_handlers.c)
 # Out-of-tree modules provide their own zephyr_gpio_fast_impl_oot.h
 # on the include path and enable CONFIG_GPIO_FAST_OUT_OF_TREE_BACKEND.
 if(CONFIG_GPIO_FAST)
+  if(CONFIG_GPIO_SAM0)
+    zephyr_include_directories(fast/atmel)
+  endif()
   zephyr_include_directories(fast/generic)
 endif()
 
