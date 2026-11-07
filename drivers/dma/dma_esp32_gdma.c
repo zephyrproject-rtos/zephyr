@@ -146,6 +146,8 @@ struct dma_esp32_channel {
 	esp_dma_desc_t *tail;
 	uint8_t next_slot;
 	uint8_t in_flight;
+	/* Peripheral TX remains active even when the descriptor fetch FSM parks. */
+	bool tx_started;
 #if CONFIG_PM
 	bool pm_lock_held;
 #endif
@@ -225,6 +227,14 @@ static inline intptr_t dma_ll_tx_get_prefetched_desc(struct dma_esp32_data *data
 	return ahb_dma_ll_tx_get_prefetched_desc_addr(data->hal.ahb_dma_dev, ch);
 }
 
+static inline intptr_t dma_ll_tx_get_eof_desc(struct dma_esp32_data *data, int ch)
+{
+	if (data->is_axi) {
+		return axi_dma_ll_tx_get_eof_desc_addr(data->hal.axi_dma_dev, ch);
+	}
+	return ahb_dma_ll_tx_get_eof_desc_addr(data->hal.ahb_dma_dev, ch);
+}
+
 static inline intptr_t dma_ll_rx_get_suc_eof_desc(struct dma_esp32_data *data, int ch)
 {
 	if (data->is_axi) {
@@ -262,6 +272,11 @@ static inline intptr_t dma_ll_rx_get_prefetched_desc(struct dma_esp32_data *data
 static inline intptr_t dma_ll_tx_get_prefetched_desc(struct dma_esp32_data *data, int ch)
 {
 	return gdma_ll_tx_get_prefetched_desc_addr(data->hal.dev, ch);
+}
+
+static inline intptr_t dma_ll_tx_get_eof_desc(struct dma_esp32_data *data, int ch)
+{
+	return gdma_ll_tx_get_eof_desc_addr(data->hal.dev, ch);
 }
 
 static inline intptr_t dma_ll_rx_get_suc_eof_desc(struct dma_esp32_data *data, int ch)
@@ -544,7 +559,11 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	if ((intr_status & GDMA_LL_EVENT_TX_EOF) != 0U) {
 		k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-		if (tx->in_flight > 0U) {
+		/* The final descriptor also accounts for coalesced EOF interrupts. */
+		if ((esp_dma_desc_t *)dma_ll_tx_get_eof_desc(data, tx->channel_id) == tx->tail) {
+			tx->in_flight = 0U;
+			tx->tx_started = false;
+		} else if (tx->in_flight > 0U) {
 			tx->in_flight--;
 		}
 		k_spin_unlock(&data->lock, key);
@@ -832,6 +851,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
 
 	dma_channel->dir = DMA_TX;
+	dma_channel->tx_started = false;
 
 	dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 
@@ -1008,14 +1028,19 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 						 GDMA_CHANNEL_DIRECTION_RX,
 						 (intptr_t)dma_channel->desc_list);
 		} else if (dma_channel->dir == DMA_TX) {
-			if (!dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id)) {
-				return 0; /* already running, the reload is linked behind */
+			k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+			if (dma_channel->tx_started) {
+				k_spin_unlock(&data->lock, key);
+				return 0;
 			}
+			dma_channel->tx_started = true;
 			gdma_hal_enable_intr(&data->hal, dma_channel->channel_id,
 					     GDMA_CHANNEL_DIRECTION_TX, GDMA_LL_EVENT_TX_EOF, true);
 			gdma_hal_start_with_desc(&data->hal, dma_channel->channel_id,
 						 GDMA_CHANNEL_DIRECTION_TX,
 						 (intptr_t)dma_channel->desc_list);
+			k_spin_unlock(&data->lock, key);
 		} else {
 			LOG_ERR("Channel %d is not configured", channel);
 			return -EINVAL;
@@ -1067,6 +1092,7 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 
 	dma_channel->tail = NULL;
 	dma_channel->in_flight = 0;
+	dma_channel->tx_started = false;
 
 	return 0;
 }
@@ -1127,7 +1153,11 @@ static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t cha
 				dma_channel->desc_list[0].dw0.size * status->read_position;
 		}
 	} else if (dma_channel->dir == DMA_TX) {
-		status->busy = !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id);
+		if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
+			status->busy = !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id);
+		} else {
+			status->busy = dma_channel->tx_started;
+		}
 		status->dir = MEMORY_TO_PERIPHERAL;
 		desc = (esp_dma_desc_t *)dma_ll_tx_get_prefetched_desc(data,
 								       dma_channel->channel_id);
@@ -1214,6 +1244,7 @@ static int IRAM_ATTR dma_esp32_tx_append(struct dma_esp32_data *data,
 	dma_channel->tail = desc_iter;
 	dma_channel->next_slot ^= 1;
 	dma_channel->in_flight++;
+	dma_channel->tx_started = true;
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1245,7 +1276,7 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 
 	/* A running TX channel takes the buffer as the next one, as with eDMA. */
 	if (dma_channel->dir == DMA_TX && dma_channel->periph_id != SOC_GDMA_TRIG_PERIPH_M2M0 &&
-	    dma_channel->tail != NULL && !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id)) {
+	    dma_channel->tail != NULL && dma_channel->tx_started) {
 		return dma_esp32_tx_append(data, dma_channel, src, size);
 	}
 
