@@ -50,6 +50,9 @@ extern "C" {
  * unique filename keyed by its DT compatible token, so multiple
  * backends can coexist in a single build.
  *
+ * The generic fallback is always included. Consumers opt into it
+ * per-node by setting fast-gpio-backend = "generic" in DT.
+ *
  * Out-of-tree backends are included via zephyr_gpio_fast_impl_oot.h
  * when CONFIG_GPIO_FAST_OUT_OF_TREE_BACKEND is enabled. The OOT
  * module provides its own zephyr_gpio_fast_impl_oot.h on the include
@@ -57,6 +60,8 @@ extern "C" {
  * The dispatch macros resolve via token-paste automatically: no
  * dispatch registration is needed in the OOT header.
  */
+
+#include <zephyr_gpio_fast_generic.h>
 
 #ifdef CONFIG_GPIO_FAST_OUT_OF_TREE_BACKEND
 #include <zephyr_gpio_fast_impl_oot.h>
