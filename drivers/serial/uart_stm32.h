@@ -17,7 +17,11 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
 
+#if defined(CONFIG_SOC_SERIES_PY32F0X)
+#include <py32f0xx_ll_usart.h>
+#else
 #include <stm32_ll_usart.h>
+#endif
 
 /* device config */
 struct uart_stm32_config {
@@ -112,11 +116,11 @@ struct uart_stm32_data {
 #endif
 };
 
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_PY32F0X)
 static inline uint32_t ll_usart_is_active_txe(USART_TypeDef *usart)
-#else /* CONFIG_SOC_SERIES_STM32MP1X */
+#else
 static inline uint32_t ll_usart_is_active_txe(const USART_TypeDef *usart)
-#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+#endif
 {
 #if defined(CONFIG_STM32_HAL2)
 	return LL_USART_IsActiveFlag_TXE_TXFNF(usart);
@@ -143,11 +147,11 @@ static inline void ll_usart_irq_rx_disable(USART_TypeDef *usart)
 #endif
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_PY32F0X)
 static inline uint32_t ll_usart_is_active_rxne(USART_TypeDef *usart)
-#else /* CONFIG_SOC_SERIES_STM32MP1X */
+#else
 static inline uint32_t ll_usart_is_active_rxne(const USART_TypeDef *usart)
-#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+#endif
 {
 #if defined(CONFIG_STM32_HAL2)
 	return LL_USART_IsActiveFlag_RXNE_RXFNE(usart);
@@ -156,11 +160,11 @@ static inline uint32_t ll_usart_is_active_rxne(const USART_TypeDef *usart)
 #endif /* CONFIG_STM32_HAL2 */
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_PY32F0X)
 static inline uint32_t ll_usart_is_enabled_rxne(USART_TypeDef *usart)
-#else /* CONFIG_SOC_SERIES_STM32MP1X */
+#else
 static inline uint32_t ll_usart_is_enabled_rxne(const USART_TypeDef *usart)
-#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+#endif
 {
 #if defined(CONFIG_STM32_HAL2)
 	return LL_USART_IsEnabledIT_RXNE_RXFNE(usart);

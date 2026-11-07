@@ -73,6 +73,12 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X)
 	return ((linenum % 4 * 4) << 16) | (linenum / 4);
+#elif defined(CONFIG_SOC_SERIES_PY32F0X)
+	/* PY32 source fields occupy one byte, with two-bit masks for lines 0-4. */
+	uint32_t mask = (linenum < 5U) ? 0x3U : 0x1U;
+
+	return (mask << LL_EXTI_REGISTER_PINMASK_SHFT) |
+	       ((linenum % 4U * 8U) << LL_EXTI_REGISTER_PINPOS_SHFT) | (linenum / 4U);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti) || \
 	defined(CONFIG_SOC_SERIES_STM32MP2X)
 #if defined(CONFIG_STM32_HAL2)
@@ -294,6 +300,11 @@ void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port)
 {
 	uint32_t ll_line = stm32_exti_linenum_to_src_cfg_line(line);
 
+	/* PY32 lines 9-15 are hardwired to GPIOA and have no source selection. */
+	if (IS_ENABLED(CONFIG_SOC_SERIES_PY32F0X) && (line >= 9U)) {
+		return;
+	}
+
 	/*
 	 * On some series, or specific parts, it may happen that a discontinuity
 	 * exists in the indexes of port used in configuration registers.
@@ -308,6 +319,10 @@ void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port)
 	if (port == STM32_PORTZ) {
 		/* Port Z (index 25) uses value 11 */
 		port = LL_EXTI_CONFIG_PORTZ;
+	}
+#elif defined(CONFIG_SOC_SERIES_PY32F0X)
+	if (port == STM32_PORTF) {
+		port = LL_EXTI_CONFIG_PORTF;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	if (port >= STM32_PORTN) {
@@ -338,6 +353,11 @@ uint32_t stm32_exti_get_line_src_port(gpio_pin_t line)
 	uint32_t ll_line = stm32_exti_linenum_to_src_cfg_line(line);
 	uint32_t port;
 
+	/* PY32 lines 9-15 are hardwired to GPIOA and have no source selection. */
+	if (IS_ENABLED(CONFIG_SOC_SERIES_PY32F0X) && (line >= 9U)) {
+		return STM32_PORTA;
+	}
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	port = LL_GPIO_AF_GetEXTISource(ll_line);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti)
@@ -364,6 +384,10 @@ uint32_t stm32_exti_get_line_src_port(gpio_pin_t line)
 	if (port == LL_EXTI_CONFIG_PORTZ) {
 		/* Value 11 is for port Z */
 		port = STM32_PORTZ;
+	}
+#elif defined(CONFIG_SOC_SERIES_PY32F0X)
+	if (port == LL_EXTI_CONFIG_PORTF) {
+		port = STM32_PORTF;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 	if (port >= STM32_PORTN) {

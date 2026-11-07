@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "py32f003_minimal.dtsi"
+
+/ {
+	model = "PY32F003L16S6TU Minimal Circuit";
+};
+
+&gpioa {
+	gpio-reserved-ranges = <3 7>, <11 2>, <15 1>;
+};
+
+&gpiob {
+	status = "disabled";
+};
+
+&gpiof {
+	status = "disabled";
+};

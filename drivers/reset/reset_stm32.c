@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_SOC_SERIES_PY32F0X)
+#define DT_DRV_COMPAT puya_py32_rcc_rctl
+#else
 #define DT_DRV_COMPAT st_stm32_rcc_rctl
+#endif
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>

@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <puya/f0/py32f0.dtsi>
+
+&pinctrl {
+	gpiob: gpio@50000400 {
+		compatible = "st,stm32-gpio";
+		reg = <0x50000400 0x400>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		clocks = <&rcc STM32_CLOCK(IOP, 1U)>;
+	};
+
+	gpiof: gpio@50001400 {
+		compatible = "st,stm32-gpio";
+		reg = <0x50001400 0x400>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		clocks = <&rcc STM32_CLOCK(IOP, 5U)>;
+	};
+};

@@ -394,8 +394,9 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 	IF_ENABLED(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(__suffix),				\
 		   (GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
-#define DEVICE_INIT_IF_OKAY(idx, __suffix)				\
-	GPIO_PORT_DEVICE_INIT_STM32_IF_OKAY(__suffix,			\
-		GET_ARG_N(UTIL_INC(idx), STM32_GPIO_PORTS_LIST_UPR))
+#define DEVICE_INIT_IF_OKAY(idx, _)                                                                \
+	GPIO_PORT_DEVICE_INIT_STM32_IF_OKAY(GET_ARG_N(UTIL_INC(idx), STM32_GPIO_PORTS_LIST_LWR),   \
+					    GET_ARG_N(UTIL_INC(idx), STM32_GPIO_PORTS_LIST_UPR))
 
-FOR_EACH_IDX(DEVICE_INIT_IF_OKAY, (;), STM32_GPIO_PORTS_LIST_LWR);
+/* GPIO reserved-range masks use FOR_EACH internally. */
+LISTIFY(NUM_VA_ARGS(STM32_GPIO_PORTS_LIST_LWR), DEVICE_INIT_IF_OKAY, (;), _);

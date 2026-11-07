@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Puya PY32 UART
+
+compatible: "puya,py32-uart"
+
+include: st,stm32-uart-base.yaml

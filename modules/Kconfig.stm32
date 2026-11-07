@@ -35,7 +35,12 @@ config STM32CUBE_SOC_NAME_OVERRIDE
 	  shall derive the global preprocessor definition from this option
 	  instead of CONFIG_SOC.
 
-if HAS_STM32CUBE
+config HAS_STM32CUBE_PUYA
+	bool
+	select HAS_CMSIS_CORE
+	depends on SOC_FAMILY_PY32
+
+if HAS_STM32CUBE || HAS_STM32CUBE_PUYA
 
 config USE_STM32_HAL_ADC
 	bool

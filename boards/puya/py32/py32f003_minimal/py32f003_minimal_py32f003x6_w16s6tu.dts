@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "py32f003_minimal.dtsi"
+
+/ {
+	model = "PY32F003W16S6TU Minimal Circuit";
+
+	chosen {
+		zephyr,shell-uart = &usart1;
+	};
+};
+
+&gpioa {
+	gpio-reserved-ranges = <8 4>, <15 1>;
+};
+
+&gpiob {
+	gpio-reserved-ranges = <2 14>;
+};
+
+&gpiof {
+	gpio-reserved-ranges = <3 13>;
+};
+
+&pinctrl {
+	usart1_rx_pa3: usart1_rx_pa3 {
+		pinmux = <STM32_PINMUX('A', 3, AF1)>;
+		bias-pull-up;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa2 &usart1_rx_pa3>;
+};

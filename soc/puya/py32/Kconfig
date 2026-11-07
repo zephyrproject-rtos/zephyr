@@ -1,0 +1,16 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_PY32
+	select BUILD_OUTPUT_HEX
+
+if SOC_FAMILY_PY32
+
+rsource "*/Kconfig"
+
+# Shared GPIO support used by the STM32 GPIO and pinctrl drivers.
+
+config STM32_GPIOPORT_MGR
+	bool
+
+endif # SOC_FAMILY_PY32

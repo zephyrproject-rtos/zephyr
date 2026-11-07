@@ -1,0 +1,4 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# PY32 HAL options are defined in modules/Kconfig.stm32.

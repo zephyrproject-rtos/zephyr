@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Puya PY32 RCC peripheral reset controller
+
+compatible: "puya,py32-rcc-rctl"
+
+include: st,stm32-rcc-rctl.yaml

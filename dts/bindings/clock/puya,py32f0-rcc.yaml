@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Puya PY32F0 reset and clock controller.
+
+  The clock driver supports the 24 MHz HSI source with undivided AHB and APB
+  clocks. Other oscillator frequencies and clock sources are not supported.
+
+compatible: "puya,py32f0-rcc"
+
+include:
+  - name: st,stm32-rcc.yaml
+    property-blocklist:
+      - apb2-prescaler
+
+properties:
+  clock-frequency:
+    const: 24000000
+
+  ahb-prescaler:
+    const: 1
+
+  apb1-prescaler:
+    const: 1

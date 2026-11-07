@@ -4,7 +4,7 @@
 # Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_STM32
+if SOC_FAMILY_STM32 || SOC_FAMILY_PY32
 
 config EXTI_STM32
 	bool "STM32 External Interrupt/Event Controller (EXTI) Driver"
