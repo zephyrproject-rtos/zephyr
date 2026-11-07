@@ -1785,9 +1785,16 @@ esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id, const vo
 
 static K_MUTEX_DEFINE(esp32_wifi_conn_lock);
 
-static int esp32_wifi_disconnect(const struct device *dev __unused, struct net_if *iface __unused)
+static int esp32_wifi_disconnect(const struct device *dev __unused,
+				 struct net_if *iface __maybe_unused)
 {
 	bool disconnect_requested;
+
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	if (iface == esp32_wifi_iface_ap) {
+		return -ENOTSUP;
+	}
+#endif
 
 #if defined(CONFIG_WIFI_ESP32_MESH)
 	/* The mesh stack owns the station link while it runs. */
