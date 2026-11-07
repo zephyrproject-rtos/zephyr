@@ -171,6 +171,94 @@ ZTEST_USER(tdm_channel_masking, test_channel_mask_asymmetric)
 	TC_PRINT("%d<-OK\n", 1);
 }
 
+/** @brief Partial TX writes while duplex runs with two TX slots and one RX slot.
+ *
+ * - A 12-byte write returns -EIO, as its 6-byte RX share is not whole words.
+ * - A 24-byte write is received as a 12-byte RX block.
+ */
+ZTEST_USER(tdm_channel_masking, test_channel_mask_partial_write)
+{
+	int ret;
+	size_t rx_size;
+	char tx_buf[BLOCK_SIZE] = {0};
+	char rx_buf[BLOCK_SIZE / 2];
+
+	if (!dir_both_supported) {
+		ztest_test_skip();
+		return;
+	}
+
+	ret = configure_with_mask(dev_i2s, I2S_DIR_TX, 0, BLOCK_SIZE);
+	zassert_equal(ret, 0, "TX configure without mask failed");
+	ret = configure_with_mask(dev_i2s, I2S_DIR_RX, BIT(0), BLOCK_SIZE / 2);
+	zassert_equal(ret, 0, "RX configure with mask failed");
+
+	/* Queue enough audio to outlast logging the rejected write, and leave a slab block for the
+	 * writes below.
+	 */
+	for (size_t i = 0; i < NUM_TX_BLOCKS - 1; i++) {
+		ret = i2s_buf_write(dev_i2s, tx_buf, BLOCK_SIZE);
+		zassert_equal(ret, 0, "TX write failed");
+	}
+
+	ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_START);
+	zassert_equal(ret, 0, "RX/TX START trigger failed");
+
+	ret = i2s_buf_write(dev_i2s, tx_buf, 12U);
+	zassert_equal(ret, -EIO, "12-byte TX write should return -EIO, got %d", ret);
+	ret = i2s_buf_write(dev_i2s, tx_buf, 24U);
+	zassert_equal(ret, 0, "24-byte TX write failed");
+
+	ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_DRAIN);
+	zassert_equal(ret, 0, "RX/TX DRAIN trigger failed");
+
+	for (size_t i = 0; i < NUM_TX_BLOCKS; i++) {
+		ret = i2s_buf_read(dev_i2s, rx_buf, &rx_size);
+		zassert_equal(ret, 0, "RX read failed");
+	}
+	zassert_equal(rx_size, 12U, "unexpected RX size for the 24-byte TX block");
+}
+
+/** @brief TX blocks queued before a duplex start with two TX slots and one RX slot.
+ *
+ * - A 16-byte block written before RX is configured makes the duplex START return -EIO, as its
+ *   8-byte RX share is not above the hardware minimum.
+ * - A TX-only START accepts the same blocks.
+ */
+ZTEST_USER(tdm_channel_masking, test_channel_mask_partial_write_before_start)
+{
+	int ret;
+	char tx_buf[BLOCK_SIZE] = {0};
+
+	if (!dir_both_supported) {
+		ztest_test_skip();
+		return;
+	}
+
+	ret = configure_with_mask(dev_i2s, I2S_DIR_TX, 0, BLOCK_SIZE);
+	zassert_equal(ret, 0, "TX configure without mask failed");
+
+	/* Start with a full block so TX is still running when DRAIN is triggered. */
+	ret = i2s_buf_write(dev_i2s, tx_buf, BLOCK_SIZE);
+	zassert_equal(ret, 0, "TX write failed");
+	ret = i2s_buf_write(dev_i2s, tx_buf, 16U);
+	zassert_equal(ret, 0, "16-byte TX write failed");
+
+	ret = configure_with_mask(dev_i2s, I2S_DIR_RX, BIT(0), BLOCK_SIZE / 2);
+	zassert_equal(ret, 0, "RX configure with mask failed");
+
+	ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_START);
+	zassert_equal(ret, -EIO, "RX/TX START trigger should return -EIO, got %d", ret);
+
+	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_START);
+	zassert_equal(ret, 0, "TX START trigger failed");
+	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
+	zassert_equal(ret, 0, "TX DRAIN trigger failed");
+
+	/* Let TX finish draining before the next test reconfigures the device. */
+	k_sleep(K_MSEC(200));
+}
+
 /** @brief Disabling every channel must be rejected at configure.
  *
  * - i2s_configure() returns -EINVAL for TX and for RX when channel_disable_mask
