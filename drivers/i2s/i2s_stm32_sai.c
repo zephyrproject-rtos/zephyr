@@ -141,7 +141,7 @@ static inline void sai_sub_disable(SAI_HandleTypeDef *hsai, const struct i2s_con
 		return;
 	}
 
-	__HAL_SAI_DISABLE(hsai);
+	stm32_reg_clear_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN);
 
 	/*
 	 * SAIEN clears at the end of the current frame. Wait for it, so that a following
@@ -240,7 +240,7 @@ static int sai_sub_dma_start(const struct device *dev)
 		 * be enabled here. Restart it, so that reception resumes on the first slot
 		 * of a frame. It provides no clocks, so no other sub-block is affected.
 		 */
-		__HAL_SAI_DISABLE(hsai);
+		stm32_reg_clear_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN);
 		if (!WAIT_FOR(stm32_reg_read_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN) == 0U,
 			      sai_sub_disable_timeout_us(&stream->i2s_cfg), k_busy_wait(1))) {
 			LOG_ERR("RX disable timeout");
@@ -276,7 +276,7 @@ static int sai_sub_dma_start(const struct device *dev)
 	}
 
 	if (stm32_reg_read_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN) == 0U) {
-		__HAL_SAI_ENABLE(hsai);
+		stm32_reg_set_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN);
 	}
 
 	if (sub_cfg->dir == I2S_DIR_TX) {
@@ -820,7 +820,7 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 	if (((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) == 0) &&
 	    hsai->Init.Synchro != SAI_SYNCHRONOUS && stream->master) {
 
-		__HAL_SAI_ENABLE(hsai);
+		stm32_reg_set_bits(&hsai->Instance->CR1, SAI_xCR1_SAIEN);
 
 		if (sub_cfg->dir == I2S_DIR_TX) {
 			/* Prime the FIFO with a silent frame so the controller
