@@ -31,6 +31,13 @@ tests:
     filter: CONFIG_PICOLIBC_SUPPORTED
     extra_configs:
       - CONFIG_PICOLIBC=y
+  cpp.main.runtime_cycle_rate:
+    platform_allow:
+      - mps2/an385
+      - qemu_cortex_a53
+      - qemu_riscv32
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE=y
 
   # Note: the -std= variants below exclude the host compilers, which
   # aren't part of the SDK and can't be managed as part of the test
