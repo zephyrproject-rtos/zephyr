@@ -45,6 +45,7 @@ static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_key_t *key);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
+#ifndef CONFIG_SMP
 /* Uniprocessor selection of the next thread, used to refresh the ready
  * queue cache. The SMP scheduler selects its next thread at the context
  * switch instead, in kernel/smp/sched_smp.c.
@@ -63,6 +64,7 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	 */
 	return (thread != NULL) ? thread : _current_cpu->idle_thread;
 }
+#endif /* !CONFIG_SMP */
 
 void move_current_to_end_of_prio_q(void)
 {
@@ -584,11 +586,23 @@ static void halt_thread(struct k_thread *thread, uint8_t new_state, k_spinlock_k
 			 * remaining in-flight window before the caller of
 			 * z_thread_halt() returns.
 			 */
-			if (key != NULL) {
-				while (z_try_abort_thread_timeout(thread) == -EAGAIN) {
-					z_sched_spinlock_unlock(*key);
-					*key = z_sched_spinlock_lock();
-				}
+			if ((key != NULL) &&
+			    (z_try_abort_thread_timeout(thread) == -EAGAIN)) {
+				/* The wait drops the lock with the thread
+				 * already dead (only possible on SMP). Flag
+				 * the halt as still in progress, so
+				 * k_thread_join() waits on join_queue instead
+				 * of returning early or spinning on the lock
+				 * (clear_halting() below drops the flag), and
+				 * keep interrupts masked: a dead _current that
+				 * an interrupt switches away never comes back
+				 * to finish the halt.
+				 */
+				thread->base.thread_state |= _THREAD_ABORTING;
+				do {
+					z_sched_spinlock_release();
+					(void)z_sched_spinlock_lock();
+				} while (z_try_abort_thread_timeout(thread) == -EAGAIN);
 			}
 			unpend_all(&thread->join_queue);
 

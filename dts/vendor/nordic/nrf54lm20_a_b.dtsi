@@ -132,7 +132,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			cpuapp_sram_app: sram@60 {
+			cpuapp_sram_app: memory@60 {
 				compatible = "mmio-sram";
 				reg = <0x60 (DT_SIZE_K(511) - 0x60)>;
 			};

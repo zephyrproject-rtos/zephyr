@@ -17,6 +17,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/section_tags.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/sys/util.h>
 
 #include "soc.h"
@@ -24,12 +27,40 @@
 
 #include <fsl_common.h>
 #include <fsl_powercon.h>
+#include <fsl_resetcon.h>
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /*
  * The ROM leaves SCB->VTOR at 0 and SystemInit() only relocates it for a RAM
  * vector table, so an XIP image has to point VTOR at this one itself.
  */
 extern char _vector_table[];
+
+void sys_arch_reboot(int type)
+{
+	RESETCON_Type *const resetcon = (RESETCON_Type *)DT_REG_ADDR(DT_NODELABEL(resetcon));
+
+	switch (type) {
+	case SYS_REBOOT_COLD:
+		RESETCON_EnableResetEscalation(resetcon, kRESETCON_WarmResetSw);
+		break;
+	case SYS_REBOOT_WARM:
+		/* Escalation cannot be disabled until the next cold reset. */
+		if ((RESETCON_GetResetEscalation(resetcon) & kRESETCON_WarmResetSw) != 0U) {
+			LOG_ERR("Warm reboot is unavailable: software reset escalation is enabled");
+			LOG_PANIC();
+			return;
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported reboot type: %d", type);
+		LOG_PANIC();
+		return;
+	}
+
+	RESETCON_SystemReset(resetcon);
+}
 
 FUNC_NORETURN void soc_early_init_failed(enum soc_early_init_step step)
 {
@@ -104,7 +135,7 @@ void soc_reset_hook(void)
 void soc_early_init_hook(void)
 {
 	/* Access control first: every step after it is a peripheral access. */
-	soc_trdc_setup();
+	soc_ele_release_rdc();
 
 	soc_release_sleep_hold();
 
@@ -120,11 +151,18 @@ void soc_early_init_hook(void)
 	sys_cache_data_enable();
 
 	/*
-	 * Clocks last: this reconfigures the PLLs, which parks both XSPI
+	 * Clocks next: this reconfigures the PLLs, which parks both XSPI
 	 * controllers -- including the flash this code runs from -- so everything
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+
+	/*
+	 * Last: soc_trdc_assign_masters() writes MEDIA__TRDC, which sits on the
+	 * MEDIA domain bus that soc_clock_init() just started clocking via
+	 * mediabus_rootclk. Any earlier and that write stalls the bus forever.
+	 */
+	soc_trdc_assign_masters();
 }
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER

@@ -7,7 +7,7 @@
 /*
  * @addtogroup t_uart_basic
  * @{
- * @defgroup t_uart_fifo test_uart_pending
+ * @defgroup t_uart_pending test_uart_pending
  * @brief TestPurpose: test UART uart_irq_is_pending()
  * @details
  *

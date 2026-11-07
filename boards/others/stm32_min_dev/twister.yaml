@@ -3,10 +3,22 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
-ram: 20
 supported:
   - i2c
   - pwm
   - spi
   - adc
   - gpio
+variants:
+  stm32_min_dev@blue/stm32f103x8:
+    ram: 20
+    flash: 64
+  stm32_min_dev@black/stm32f103x8:
+    ram: 20
+    flash: 64
+  stm32_min_dev@blue/stm32f103x6:
+    ram: 10
+    flash: 32
+  stm32_min_dev@black/stm32f103x6:
+    ram: 10
+    flash: 32

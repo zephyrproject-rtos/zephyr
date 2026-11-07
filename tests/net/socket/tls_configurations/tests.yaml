@@ -2,43 +2,86 @@ common:
   tags:
     - crypto.mbedtls
     - net.socket
-  platform_allow:
-    - native_sim
-  integration_platforms:
-    - native_sim
-  integration_toolchains:
-    # Only build/run with gcc so we don't try to run in parallel (in the same port) with clang
-    - host/gnu
   harness: pytest
 tests:
-  net.sockets.tls12.psk_kex:
+  net.sockets.tls12.psk_kex.native_sim:
+    <<: &native_common_configs
+      platform_allow:
+        - native_sim
+      integration_platforms:
+        - native_sim
+      integration_toolchains:
+        # Only build/run with gcc so we don't try to run in parallel (in the same port) with clang
+        - host/gnu
     extra_configs:
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384=y
       - CONFIG_SERVER_PORT=4001
     harness_config:
-      pytest_args: ["--server-type", "1.2-psk", "--port", "4001"]
-  net.sockets.tls12.psk_kex.opaque:
+      pytest_args: ["--server-type", "1.2-psk"]
+  net.sockets.tls12.psk_kex.real_hw:
+    <<: &real_hw_common_configs
+      filter: CONFIG_NET_L2_PPP or CONFIG_NET_L2_ETHERNET
+      platform_allow:
+        - nrf54l15dk/nrf54l15/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp
+      integration_platforms:
+        - nrf54l15dk/nrf54l15/cpuapp
+        - nrf54lm20dk/nrf54lm20a/cpuapp
+    extra_configs:
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384=y
+      - CONFIG_SERVER_PORT=4008
+    harness_config:
+      pytest_args: ["--server-type", "1.2-psk"]
+  net.sockets.tls12.psk_kex.opaque.native_sim:
+    <<: *native_common_configs
     extra_configs:
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384=y
       - CONFIG_TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE=y
       - CONFIG_SERVER_PORT=4007
     harness_config:
-      pytest_args: ["--server-type", "1.2-psk", "--port", "4007"]
-  net.sockets.tls12.ec_kex:
+      pytest_args: ["--server-type", "1.2-psk"]
+  net.sockets.tls12.psk_kex.opaque.real_hw:
+    <<: *real_hw_common_configs
+    extra_configs:
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384=y
+      - CONFIG_TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE=y
+      - CONFIG_SERVER_PORT=4009
+    harness_config:
+      pytest_args: ["--server-type", "1.2-psk"]
+  net.sockets.tls12.ec_kex.native_sim:
+    <<: *native_common_configs
     extra_configs:
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256=y
       - CONFIG_SERVER_PORT=4002
     harness_config:
-      pytest_args: ["--server-type", "1.2-ec", "--port", "4002"]
-  net.sockets.tls13.ephemeral_kex:
+      pytest_args: ["--server-type", "1.2-ec"]
+  net.sockets.tls12.ec_kex.real_hw:
+    <<: *real_hw_common_configs
+    extra_configs:
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256=y
+      - CONFIG_SERVER_PORT=4010
+    harness_config:
+      pytest_args: ["--server-type", "1.2-ec"]
+  net.sockets.tls13.ephemeral_kex.native_sim:
+    <<: *native_common_configs
     extra_configs:
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
       - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y
       - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
       - CONFIG_SERVER_PORT=4003
     harness_config:
-      pytest_args: ["--server-type", "1.3-ephemeral", "--port", "4003"]
-  net.sockets.tls13.ephemeral_kex.tickets:
+      pytest_args: ["--server-type", "1.3-ephemeral"]
+  net.sockets.tls13.ephemeral_kex.real_hw:
+    <<: *real_hw_common_configs
+    extra_configs:
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y
+      - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
+      - CONFIG_SERVER_PORT=4011
+    harness_config:
+      pytest_args: ["--server-type", "1.3-ephemeral"]
+  net.sockets.tls13.ephemeral_kex.tickets.native_sim:
+    <<: *native_common_configs
     extra_configs:
       - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
@@ -46,8 +89,19 @@ tests:
       - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
       - CONFIG_SERVER_PORT=4004
     harness_config:
-      pytest_args: ["--server-type", "1.3-ephemeral-tickets", "--port", "4004"]
-  net.sockets.tls13.psk_kex.tickets:
+      pytest_args: ["--server-type", "1.3-ephemeral-tickets"]
+  net.sockets.tls13.ephemeral_kex.tickets.real_hw:
+    <<: *real_hw_common_configs
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y
+      - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
+      - CONFIG_SERVER_PORT=4012
+    harness_config:
+      pytest_args: ["--server-type", "1.3-ephemeral-tickets"]
+  net.sockets.tls13.psk_kex.tickets.native_sim:
+    <<: *native_common_configs
     extra_configs:
       - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
@@ -56,16 +110,39 @@ tests:
       - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
       - CONFIG_SERVER_PORT=4005
     harness_config:
-      pytest_args: ["--server-type", "1.3-psk-tickets", "--port", "4005"]
-  net.sockets.tls13.psk_kex.tickets.session_cache:
+      pytest_args: ["--server-type", "1.3-psk-tickets"]
+  net.sockets.tls13.psk_kex.tickets.real_hw:
+    <<: *real_hw_common_configs
     extra_configs:
-      - CONFIG_NET_TEST=y
-      - CONFIG_NET_IPV4=y
       - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED=y
+      - CONFIG_PSA_WANT_ECC_SECP_R1_256=y # for certificate verification
+      - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
+      - CONFIG_SERVER_PORT=4013
+    harness_config:
+      pytest_args: ["--server-type", "1.3-psk-tickets"]
+  net.sockets.tls13.psk_kex.tickets.session_cache.native_sim:
+    <<: *native_common_configs
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
+      - CONFIG_NET_SOCKETS_TEST_SESSION_CACHE=y
       - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
       - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED=y
       - CONFIG_PSA_WANT_ECC_SECP_R1_256=y # for certificate verification
       - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
       - CONFIG_SERVER_PORT=4006
     harness_config:
-      pytest_args: ["--server-type", "1.3-psk-tickets", "--port", "4006"]
+      pytest_args: ["--server-type", "1.3-psk-tickets"]
+  net.sockets.tls13.psk_kex.tickets.session_cache.real_hw:
+    <<: *real_hw_common_configs
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_SESSION_TICKETS=y
+      - CONFIG_NET_SOCKETS_TEST_SESSION_CACHE=y
+      - CONFIG_MBEDTLS_CIPHERSUITE_TLS1_3_AES_256_GCM_SHA384=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED=y
+      - CONFIG_PSA_WANT_ECC_SECP_R1_256=y # for certificate verification
+      - CONFIG_PSA_WANT_ALG_SHA_256=y # for certificate verification
+      - CONFIG_SERVER_PORT=4014
+    harness_config:
+      pytest_args: ["--server-type", "1.3-psk-tickets"]

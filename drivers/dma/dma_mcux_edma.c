@@ -705,6 +705,7 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 
 	ret = dma_mcux_edma_configure_hardware(dev, channel, config);
 	if (ret) {
+		irq_unlock(key);
 		return ret;
 	}
 

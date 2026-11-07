@@ -11,10 +11,4 @@ manifest:
       remote: upstream
       groups:
         - optional
-    - name: zephyr-lang-rust
-      revision: dd73abc242e995784da62352fe8c70d9a6c7ac2e
-      path: modules/lang/rust
-      remote: upstream
-      groups:
-        - optional
 # zephyr-keep-sorted-stop

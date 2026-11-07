@@ -156,7 +156,7 @@ struct net_if_test net_iface1_data;
 struct net_if_test net_iface2_data;
 struct net_if_test net_iface3_data;
 
-static struct dummy_api net_iface_api = {
+static const struct dummy_api net_iface_api = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
@@ -265,7 +265,7 @@ static int eth_fake_set_config(const struct device *dev,
 	return 0;
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
+static const struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 
 	.get_capabilities = eth_fake_get_capabilities,
@@ -1687,6 +1687,28 @@ ZTEST(net_iface, test_ipv6_iid_eui64)
 	generate_iid(eth_iface, &expected_addr, &iid_addr);
 
 	zassert_mem_equal(&expected_addr, &iid_addr, sizeof(struct net_in6_addr));
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(net_iface, test_ipv6_iid_eui64_no_lladdr)
+{
+#if defined(CONFIG_NET_IPV6_IID_EUI_64)
+	const struct net_in6_addr prefix = { { { 0x20, 0x01, 0x1b, 0x98, 0x24, 0xb8, 0x7e, 0xbb,
+					     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_linkaddr lladdr = { .type = NET_LINK_DUMMY, .len = 0U };
+	struct net_in6_addr iid_addr = { };
+	int ret;
+
+	ret = net_ipv6_addr_generate_iid(eth_iface, &prefix, NULL, 0, 0, &iid_addr, &lladdr);
+	zexpect_equal(ret, -EINVAL, "Unexpected value (%d) returned", ret);
+
+	lladdr.type = NET_LINK_ETHERNET;
+	lladdr.len = 2U;
+
+	ret = net_ipv6_addr_generate_iid(eth_iface, &prefix, NULL, 0, 0, &iid_addr, &lladdr);
+	zexpect_equal(ret, -EINVAL, "Unexpected value (%d) returned", ret);
 #else
 	ztest_test_skip();
 #endif

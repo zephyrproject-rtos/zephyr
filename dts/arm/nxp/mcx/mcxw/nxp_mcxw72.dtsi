@@ -75,6 +75,18 @@
 
 &pbridge2 {
 	reg = <0x0 0x54000>;
+
+	regfile0: retained-memory@21000 {
+		compatible = "zephyr,retained-reg";
+		reg = <0x21000 0x20>;
+		status = "disabled";
+	};
+
+	regfile1: retained-memory@22000 {
+		compatible = "zephyr,retained-reg";
+		reg = <0x22000 0x20>;
+		status = "disabled";
+	};
 };
 
 &porta {

@@ -134,7 +134,7 @@ manifest:
       groups:
         - hal
     - name: dhara
-      revision: 6f163ca05e174b168b4d148160b50eeaeeb561fc
+      revision: 0e083ded62b911dc1eca1ee99176342541af95c5
       path: modules/lib/dhara
     - name: edtt
       revision: c282625e694f0b53ea53e13231ea6d2f49411768
@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: cc81db00233af6020f2fea9fbb0d0098fb3d0d86
+      revision: a67d46545def251403ad1aac4239776633c6afe7
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -198,12 +198,12 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: e33b6fce18d8a75dad23a2af6dd2d027564fee89
+      revision: ec9372007f3c15f5994e0c3e6551c86584973a7c
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: d4462033b4f3b10ca9b7037b5c597d0f0f8c3b38
+      revision: 62de98d1d2ab05e9fe41679158042c1237843c38
       path: modules/hal/nordic
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 016bebcd7e13570c5d1e7669302495dd14e81ce4
+      revision: 94438e50a4d831cf3dc081898e4a66724b81cb17
       path: modules/hal/nxp
       groups:
         - hal
@@ -259,7 +259,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: c9550199186236d610092f4005f8c9bae2a6bfcf
+      revision: 2fd0502dd5e02aa3e95a2f01278fdf27e42d7229
       path: modules/hal/stm32
       groups:
         - hal
@@ -295,7 +295,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 64c7fce4823891d289d1f90ba46b554458e7a8a7
+      revision: 1ce844ea5a9d8860d8690a125925fcc7274461df
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -303,7 +303,7 @@ manifest:
       revision: b6be45dfc5c67c43c3a5e12589ae3845ea00ab5e
       path: modules/lib/libmctp
     - name: libmetal
-      revision: 77237e9748212796a8f93a33689ce935fb9c81c2
+      revision: e425e3bc3670aada8801886f0ad7c87956aecdee
       path: modules/hal/libmetal
       groups:
         - hal
@@ -353,20 +353,20 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 50187f3879ffaafc171d364490bead27557f5192
+      revision: 0569cfac3d8dd9c69f959dbc877f386139ebffcf
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 45cb18fd563d7212d2a828da94d1a16455ec80e5
       path: modules/lib/nrf_wifi
     - name: open-amp
-      revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
+      revision: 6833b0d2cd8dcb0fa51908a5c2e3732e2a82048f
       path: modules/lib/open-amp
     - name: openthread
       revision: 4a8d33459567cc611bf9d4d810c2201a24a64d84
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 022c06f76d3e141aad98252fa9211665bf8ca027
+      revision: f5f2f01f2830cf7082ac3264887aaaade213d568
       groups:
         - debug
     - name: picolibc
@@ -408,7 +408,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 3d46d29fb296af1ff278ea3216e6fe0289a8fa7a
+      revision: 83c504a35d9a599e4bd71942dd2c0c8193901608
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

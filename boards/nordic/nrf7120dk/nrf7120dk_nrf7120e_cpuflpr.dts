@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nordic/nrf7120_7120e_enga_cpuflpr.dtsi>
+#include <nordic/nrf7120_7120e_cpuflpr.dtsi>
 #include "nrf7120_7120e_cpuflpr_common.dtsi"
 
 / {

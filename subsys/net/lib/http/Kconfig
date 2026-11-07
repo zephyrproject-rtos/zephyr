@@ -209,6 +209,9 @@ config HTTP_SERVER_HTTP2_MAX_HEADER_FRAME_LEN
 	  value is sufficient for the standard headers included with a response,
 	  and only needs to be increased if the application wishes to send
 	  additional response headers.
+	  Two buffers of this size are allocated on the stack of the HTTP
+	  server thread, so CONFIG_HTTP_SERVER_STACK_SIZE has to be
+	  sufficiently large when raising this value.
 
 config HTTP_SERVER_CAPTURE_HEADERS
 	bool "Allow capturing HTTP headers for application use"
@@ -257,6 +260,19 @@ config HTTP_SERVER_WEBSOCKET
 	  upgraded to a Websocket connection. The user can then define a Websocket
 	  handler that is called after upgrading to handle the Websocket network
 	  traffic.
+
+config HTTP_SERVER_TCP_NODELAY
+	bool "Disable Nagle's algorithm on accepted connections"
+	default y
+	help
+	  Set TCP_NODELAY on every accepted TCP connection. The server sends
+	  a response in more than one piece whenever the socket cannot gather
+	  them, which is the case for every TLS socket, where each piece
+	  becomes its own record. With Nagle's algorithm enabled the second
+	  piece waits until the client acknowledges the first, and a client
+	  that delays its acknowledgements holds every response back by that
+	  delay, typically 40 ms or more. Disable this option to keep Nagle's
+	  algorithm and send fewer, larger segments at the cost of latency.
 
 config HTTP_SERVER_RESOURCE_WILDCARD
 	bool "Allow wildcard matching of resources"

@@ -7,3 +7,8 @@ zephyr_library_sources(bridge.c)
 zephyr_library_sources(bridge_input.c)
 zephyr_library_sources_ifdef(CONFIG_NET_ETHERNET_BRIDGE_SHELL bridge_shell.c)
 zephyr_library_sources_ifdef(CONFIG_NET_ETHERNET_BRIDGE_FDB bridge_fdb.c)
+zephyr_library_sources_ifdef(CONFIG_NET_ETHERNET_BRIDGE_STP
+  bridge_stp.c
+  stp/rstp.c
+  stp/rstp_bpdu.c
+)

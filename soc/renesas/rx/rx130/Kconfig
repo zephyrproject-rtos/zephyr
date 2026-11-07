@@ -161,10 +161,16 @@ choice
 	default WDT_RENESAS_RX_OFS0_COUNT_STOP_DIS
 
 config WDT_RENESAS_RX_OFS0_COUNT_STOP_ENA
-	bool "Count stop is disabled"
+	bool "Stop count in sleep, standby and deep sleep modes"
+	help
+	  IWDT counting is stopped at a transition to sleep mode, software
+	  standby mode, or deep sleep mode.
 
 config WDT_RENESAS_RX_OFS0_COUNT_STOP_DIS
-	bool "Count is stopped at a transition to sleep mode, software standby mode, or deep sleep mode."
+	bool "Keep counting in sleep, standby and deep sleep modes"
+	help
+	  IWDT counting is not stopped at a transition to sleep mode, software
+	  standby mode, or deep sleep mode.
 
 endchoice
 

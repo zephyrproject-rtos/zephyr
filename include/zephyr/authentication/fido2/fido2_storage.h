@@ -89,16 +89,15 @@ extern const struct fido2_storage_api fido2_storage_backend;
 
 /**
  * @brief Initialize credential storage.
- * @retval 0 On success
- * @retval -errno On failure
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_init(void);
 
 /**
  * @brief Store a credential.
  * @param cred Credential to store
- * @retval 0 On success
  * @retval -ENOSPC If storage is full
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_store(const struct fido2_credential *cred);
 
@@ -107,8 +106,8 @@ int fido2_storage_store(const struct fido2_credential *cred);
  * @param cred_id Credential ID bytes
  * @param cred_id_len Length of credential ID
  * @param cred Output credential structure
- * @retval 0 On success
  * @retval -ENOENT If not found
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_load(const uint8_t *cred_id, size_t cred_id_len, struct fido2_credential *cred);
 
@@ -116,8 +115,8 @@ int fido2_storage_load(const uint8_t *cred_id, size_t cred_id_len, struct fido2_
  * @brief Delete a credential.
  * @param cred_id Credential ID bytes
  * @param cred_id_len Length of credential ID
- * @retval 0 On success
  * @retval -ENOENT If not found
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_remove(const uint8_t *cred_id, size_t cred_id_len);
 
@@ -127,7 +126,7 @@ int fido2_storage_remove(const uint8_t *cred_id, size_t cred_id_len);
  * @param creds Output array
  * @param max_creds Array capacity
  * @param count Number of credentials found
- * @retval 0 on Success
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_find_by_rp(const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
 			     struct fido2_credential *creds, size_t max_creds, size_t *count);
@@ -138,8 +137,7 @@ int fido2_storage_find_by_rp(const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
  * @param creds Output array for credentials containing unique RP IDs
  * @param max_creds Capacity of the output array
  * @param count Number of unique RPs found
- * @retval 0 On success
- * @retval -errno On failure
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_enumerate_rps(size_t offset, struct fido2_credential *creds, size_t max_creds,
 				size_t *count);
@@ -149,8 +147,8 @@ int fido2_storage_enumerate_rps(size_t offset, struct fido2_credential *creds, s
  * @param cred_id     Credential ID bytes
  * @param cred_id_len Length of credential ID
  * @param new_count   Output: counter value after increment
- * @retval 0	      On success
  * @retval -ENOENT    If credential not found
+ * @return 0 on success, negative errno on failure.
  */
 int fido2_storage_sign_count_increment(const uint8_t *cred_id, size_t cred_id_len,
 				       uint32_t *new_count);

@@ -302,8 +302,6 @@ config MCP_TRANSPORT_HTTP
 	select UUID_BASE64
 	select ENTROPY_GENERATOR
 	select PSA_CRYPTO
-	select MBEDTLS
-	select MBEDTLS_PSA_CRYPTO_C
 	select PSA_WANT_ALG_SHA_1
 	select BASE64
 	help

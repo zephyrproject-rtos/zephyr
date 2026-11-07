@@ -27,6 +27,30 @@
 		status = "disabled";
 	};
 
+	eth: ethernet@48100000 {
+		compatible = "alif,ensemble-eth", "snps,dwmac";
+		reg = <0x48100000 0x2000>;
+		clocks = <&clockctrl ALIF_ETH_RMII_REFCLK>,
+			 <&clockctrl ALIF_ETH_RMII_CLK>,
+			 <&clockctrl ALIF_ETH_SYST_HCLK>,
+			 <&clockctrl ALIF_ETH_PTP_100M_CLK>;
+		clock-names = "rmii-src", "rmii", "csr", "ptp";
+		phy-connection-type = "rmii";
+		status = "disabled";
+
+		mdio: mdio {
+			compatible = "snps,dwmac-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		ptp_clock: ptp-clock {
+			compatible = "snps,dwmac-ptp-clock";
+			status = "disabled";
+		};
+	};
+
 	gpio9: gpio@49009000 {
 		compatible = "snps,designware-gpio";
 		reg = <0x49009000 0x1000>;

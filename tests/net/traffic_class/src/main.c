@@ -241,7 +241,7 @@ fail:
 	return 0;
 }
 
-static struct dummy_api api_funcs = {
+static const struct dummy_api api_funcs = {
 	.iface_api.init	= eth_iface_init,
 	.send	= eth_tx,
 };

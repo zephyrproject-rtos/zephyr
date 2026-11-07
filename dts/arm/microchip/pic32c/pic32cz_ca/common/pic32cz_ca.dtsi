@@ -32,6 +32,14 @@
 	};
 
 	soc {
+		hwinfo: device_id@a0071e0 {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0a0071e0 0x4>,
+			      <0x0a0071e4 0x4>,
+			      <0x0a0071e8 0x4>,
+			      <0x0a0071ec 0x4>;
+		};
+
 		sram0: memory@20020000 {
 			compatible = "mmio-sram";
 		};
@@ -63,6 +71,11 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		rstc: rstc@44030000 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x44030000 0x8>;
 		};
 
 		clock: clock@44052000 {
@@ -152,16 +165,6 @@
 			status = "disabled";
 		};
 
-		trng: random@44870000 {
-			compatible = "microchip,trng-g1-entropy";
-			reg = <0x44870000 0x24>;
-			interrupts = <210 0>;
-			interrupt-names = "datardy";
-			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TRNG>;
-			clock-names = "mclk";
-			status = "disabled";
-		};
-
 		pinctrl: pinctrl@44840000 {
 			compatible = "microchip,port-g1-pinctrl";
 			ranges = <0x44840000 0x44840000 0x380>;
@@ -214,6 +217,16 @@
 			clock-names = "mclk";
 			dma-channels = <16>;
 			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		trng: random@44870000 {
+			compatible = "microchip,trng-g1-entropy";
+			reg = <0x44870000 0x24>;
+			interrupts = <210 0>;
+			interrupt-names = "datardy";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TRNG>;
+			clock-names = "mclk";
 			status = "disabled";
 		};
 

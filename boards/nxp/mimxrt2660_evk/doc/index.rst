@@ -77,6 +77,34 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+TRDC Master Assignments
+=======================
+
+The SoC devicetree assigns all non-core TRDC masters to domain 0 by default, matching the
+CPU's access-control domain. Boards and application overlays can override these assignments.
+Each child of a ``trdc_*`` node describes one hardware
+Master Domain Assignment Controller (MDAC). DMA channel pairs share an MDAC: for example,
+``trdc_main_edma5_ch0_1`` configures both eDMA5 channels 0 and 1, not two independent
+assignments.
+
+An application overlay can change one master without replacing the other SoC defaults:
+
+.. code-block:: devicetree
+
+   &trdc_main_edma5_ch0_1 {
+           domain-id = <1>;
+   };
+
+   &trdc_media_jpeg {
+           domain-id = <1>;
+   };
+
+The RT266x supports four domains, so the domain ID must be between 0 and 3.
+Assigning a master to another domain does not grant that domain memory or peripheral
+access; the corresponding resource permissions
+must already allow its transactions. Disable or delete an assignment child to leave its
+register unchanged.
+
 Connections and I/Os
 ====================
 
@@ -95,8 +123,25 @@ Connections and I/Os
 |           | DATA0..DATA3    | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |
 +-----------+-----------------+------------------------------------+
+| LPI2C1    | SDA, SCL        | PIO2_24, PIO2_25 (on-board         |
+|           |                 | P3T1755DP temperature sensor at    |
+|           |                 | 0x48, ``ambient-temp0``)           |
++-----------+-----------------+------------------------------------+
+| LPSPI0    | SCK, SDO, SDI,  | PIO3_20, PIO3_21 (J56 pin 5),      |
+|           | PCS0            | PIO3_22 (J56 pin 6), PIO3_23       |
+|           |                 | (needs J53 at 1-2, see below)      |
++-----------+-----------------+------------------------------------+
+| GPIO test | VBAT GPIO0 2,   | PIO0_2 (J51 pin 2),                |
+|           | VBAT GPIO0 3    | PIO0_3 (J51 pin 3)                 |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
+
+PIO3_20..PIO3_23 are shared between the LCD interface and LPSPI0 through the U33
+and U34 analog switches, which select the LCD by default: move J53 to 1-2 to
+route them to LPSPI0. The board has no SPI target, so ``spi_loopback`` also needs
+J56 pin 5 (SDO) shorted to J56 pin 6 (SDI). ``gpio_basic_api`` needs J51 pin 2
+shorted to pin 3; no jumper change is required for those pads.
 
 System Clock
 ============

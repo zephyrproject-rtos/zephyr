@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Same configuration as on the XIAO nRF52840 Plus: the PDM interface is routed
+ * to the microphone of the display board instead of the one of the module.
+ */
+#include "xiao_nrf52840_plus.overlay"

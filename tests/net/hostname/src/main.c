@@ -131,7 +131,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 
 struct net_if_test net_iface1_data;
 
-static struct ethernet_api net_iface_api = {
+static const struct ethernet_api net_iface_api = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
@@ -191,7 +191,7 @@ static int eth_fake_send(const struct device *dev,
 	return 0;
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
+static const struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 	.send = eth_fake_send,
 };

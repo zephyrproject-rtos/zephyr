@@ -14,9 +14,9 @@
  * controller (EC) to exit 'Sleep' or 'Deep Sleep' power state which allows chip
  * has better power consumption. Also, it provides signal conditioning such as
  * 'Level' and 'Edge' trigger type and grouping of external interrupt sources
- * of NVIC. The NPCX series has three identical MIWU modules: MIWU0, MIWU1,
- * MIWU2. Together, they support a total of over 140 internal and/or external
- * wake-up input (WUI) sources.
+ * of NVIC. The NPCX series has three or four identical MIWU modules: MIWU0,
+ * MIWU1, MIWU2 and, on some series, MIWU3. Together, they support a total of
+ * over 140 internal and/or external wake-up input (WUI) sources.
  *
  * This driver uses device tree files to present the relationship between
  * MIWU and the other devices in different npcx series. For npcx7 series,
@@ -60,13 +60,27 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(intc_miwu, LOG_LEVEL_ERR);
 
-/* MIWU module instances */
+/* MIWU module instances, indexed by the 'index' property of each module */
+#define NPCX_MIWU_DEV_ENTRY(inst) [DT_INST_PROP(inst, index)] = DEVICE_DT_INST_GET(inst),
+
 static const struct device *const miwu_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
+	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV_ENTRY)
 };
 
 BUILD_ASSERT(ARRAY_SIZE(miwu_devs) == NPCX_MIWU_TABLE_COUNT,
 		"Size of miwu_devs array must equal to NPCX_MIWU_TABLE_COUNT");
+
+BUILD_ASSERT(sizeof(struct npcx_wui) == 1, "struct npcx_wui must be one byte");
+
+/* No real wake-up input may share the encoding of the pseudo source 'wui_none' */
+#define NPCX_MIWU_WUI_NONE_COLLISION_CHECK(node_id)                                                \
+	BUILD_ASSERT(DT_SAME_NODE(node_id, DT_NODELABEL(wui_none)) ||                              \
+		     (DT_PROP(DT_PHANDLE(node_id, miwus), index) != NPCX_MIWU_WUI_NONE_TABLE) ||   \
+		     (DT_PHA(node_id, miwus, group) != NPCX_MIWU_WUI_NONE_GROUP) ||                \
+		     (DT_PHA(node_id, miwus, bit) != NPCX_MIWU_WUI_NONE_BIT),                      \
+		     DT_NODE_FULL_NAME(node_id) " collides with the encoding of wui_none");
+
+DT_FOREACH_CHILD(DT_PATH(npcx_miwus_wui_map), NPCX_MIWU_WUI_NONE_COLLISION_CHECK)
 
 /* Driver config */
 struct intc_miwu_config {
@@ -405,9 +419,9 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 #define NPCX_MIWU_INIT_FUNC_DECL(inst) \
 	static int intc_miwu_init##inst(const struct device *dev)
 
-/* MIWU ISR implementation */
-#define NPCX_MIWU_ISR_FUNC_IMPL(inst)                                          \
-	static void intc_miwu_isr##inst(void *arg)                             \
+/* MIWU ISR implementation, named and dispatched by MIWU table index */
+#define NPCX_MIWU_ISR_FUNC_IMPL(table)                                         \
+	static void NPCX_MIWU_ISR_FUNC(table)(void *arg)                       \
 	{                                                                      \
 		uint8_t grp_mask = (uint32_t)arg;                              \
 		int group = 0;                                                 \
@@ -415,7 +429,7 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 		/* Check all MIWU groups belong to the same irq */             \
 		do {                                                           \
 			if (grp_mask & 0x01)                                   \
-				intc_miwu_isr_pri(inst, group);                \
+				intc_miwu_isr_pri(table, group);               \
 			group++;                                               \
 			grp_mask = grp_mask >> 1;                              \
 									       \
@@ -437,7 +451,8 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 		}                                                              \
 									       \
 		/* Config IRQ and MWIU group directly */                       \
-		DT_FOREACH_CHILD(NPCX_DT_NODE_FROM_MIWU_MAP(inst),             \
+		DT_FOREACH_CHILD(NPCX_DT_NODE_FROM_MIWU_MAP(                   \
+				DT_INST_PROP(inst, index)),                    \
 			NPCX_DT_MIWU_IRQ_CONNECT_IMPL_CHILD_FUNC)              \
 		return 0;                                                      \
 	}                                                                      \
@@ -446,8 +461,8 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 	NPCX_MIWU_INIT_FUNC_DECL(inst);                                        \
 									       \
 	static const struct intc_miwu_config miwu_config_##inst = {	       \
-		.base = DT_REG_ADDR(DT_NODELABEL(miwu##inst)),                 \
-		.index = DT_PROP(DT_NODELABEL(miwu##inst), index),             \
+		.base = DT_INST_REG_ADDR(inst),                                \
+		.index = DT_INST_PROP(inst, index),                            \
 	};                                                                     \
 	struct intc_miwu_data miwu_data_##inst;				       \
 									       \
@@ -458,7 +473,7 @@ int npcx_miwu_manage_callback(struct miwu_callback *cb, bool set)
 			    PRE_KERNEL_1,                                      \
 			    CONFIG_INTC_INIT_PRIORITY, NULL);                  \
 									       \
-	NPCX_MIWU_ISR_FUNC_IMPL(inst)                                          \
+	NPCX_MIWU_ISR_FUNC_IMPL(DT_INST_PROP(inst, index))                     \
 									       \
 	NPCX_MIWU_INIT_FUNC_IMPL(inst)
 

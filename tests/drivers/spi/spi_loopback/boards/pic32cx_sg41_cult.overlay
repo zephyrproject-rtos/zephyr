@@ -8,6 +8,14 @@
 	status = "disabled";
 };
 
+&gclkperiph {
+	sercom6 {
+		subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM6_CORE>;
+		gclkperiph-src = "gclk0";
+		gclkperiph-en = <1>;
+	};
+};
+
 &sercom6 {
 	compatible = "microchip,sercom-g1-spi";
 	/* Internally connect MOSI to MISO for loop-back operation */

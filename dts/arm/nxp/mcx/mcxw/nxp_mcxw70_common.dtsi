@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
+
 / {
 	aliases {
 		watchdog0 = &wdog_0;
@@ -39,13 +41,13 @@
 			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				exit-latency-us = <10>;
+				exit-latency-us = <140>;
 			};
 
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				exit-latency-us = <11>;
+				exit-latency-us = <180>;
 			};
 		};
 
@@ -58,6 +60,19 @@
 
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
+	};
+
+	/*
+	 * Devices that lose their state in Deep Sleep. Deep Sleep keeps PD_MAIN
+	 * in retention, but only part of its logic has retention flops: the
+	 * peripherals without them are reset when it leaves retention (LPUART1,
+	 * TPM, LPSPI and LPI2C, for example), while the PORT pin configuration
+	 * is kept.
+	 */
+	deep_sleep_off_domain: deep-sleep-off-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&deep_sleep>;
 	};
 
 	hw_params: hw-params {
@@ -104,9 +119,11 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		ieee802154_eui64_ifr0: ieee802154-eui64@1002000 {
-			reg = <0x1002000 0x8>;
+		/* CFPA CUST_802_15_4_MAC_ADDR0/1 (CFPA base 0x1000010 + 0x148) */
+		ieee802154_eui64_ifr0: ieee802154-eui64@1000158 {
+			reg = <0x1000158 0x8>;
 			#nvmem-cell-cells = <0>;
+			read-only;
 			status = "disabled";
 		};
 	};
@@ -207,6 +224,7 @@
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		prescaler = <16>;
 		#pwm-cells = <3>;
+		power-domains = <&deep_sleep_off_domain>;
 		status = "disabled";
 	};
 
@@ -424,6 +442,8 @@
 		clk-source = <0>;
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
+		wakeup-source;
+		wakeup-ctrls = <&wuu_0 NXP_WUU_MODULE_1_INT>;
 		status = "disabled";
 	};
 
@@ -464,6 +484,12 @@
 			alarms-count = <1>;
 			status = "disabled";
 		};
+	};
+
+	regfile0: retained-memory@b000 {
+		compatible = "zephyr,retained-reg";
+		reg = <0xb000 0x20>;
+		status = "disabled";
 	};
 
 	wuu_0: system-modules@14000 {

@@ -6,6 +6,9 @@ if BOARD_QEMU_XTENSA
 config BUILD_OUTPUT_BIN
 	default n
 
+config HAS_COVERAGE_SUPPORT
+	default y
+
 config IPM_CONSOLE_STACK_SIZE
 	default 2048 if IPM_CONSOLE_RECEIVER
 

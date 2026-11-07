@@ -99,14 +99,15 @@ static bool check_eeprom_bounds(const struct device *dev, off_t offset, size_t l
 {
 	struct tmp11x_data *drv_data = dev->data;
 
-	if ((offset + len) > EEPROM_TMP11X_SIZE || offset % EEPROM_SIZE_REG != 0 ||
+	if (offset < 0 || offset > EEPROM_TMP11X_SIZE ||
+	    len > EEPROM_TMP11X_SIZE - (size_t)offset || offset % EEPROM_SIZE_REG != 0 ||
 	    len % EEPROM_SIZE_REG != 0) {
 		return false;
 	}
 
 	/* TMP117 and TMP119 uses EEPROM[2] as temperature offset register */
 	if ((drv_data->id == TMP117_DEVICE_ID || drv_data->id == TMP119_DEVICE_ID) &&
-	    offset <= EEPROM_TMP117_RESERVED && (offset + len) > EEPROM_TMP117_RESERVED) {
+	    offset <= EEPROM_TMP117_RESERVED && len > EEPROM_TMP117_RESERVED - (size_t)offset) {
 		return false;
 	}
 

@@ -241,13 +241,13 @@
 	}
 
 /**
- * @brief Get a node from path '/npcx_miwus_map/map_miwu(0/1/2)_groups'
+ * @brief Get a node from path '/npcx_miwus_map/map_miwu(0/1/2/3)_groups'
  *
  * @param i index of npcx miwu devices
  * @return node identifier with that path.
  */
 #define NPCX_DT_NODE_FROM_MIWU_MAP(i)  DT_PATH(npcx_miwus_int_map, \
-						map_miwu##i##_groups)
+						UTIL_CAT(UTIL_CAT(map_miwu, i), _groups))
 /**
  * @brief Get the index prop from parent MIWU device node.
  *

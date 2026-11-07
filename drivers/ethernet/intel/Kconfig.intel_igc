@@ -19,11 +19,4 @@ config ETH_INTEL_IGC_INT_PRIORITY
 	help
 	  MSI-X vectors priority for IGC interrupts.
 
-config ETH_INTEL_IGC_NET_MTU
-	int "MTU size"
-	default 1500
-	range 64 1522
-	help
-	  Maximum Transmission Unit (MTU) size configuration.
-
 endif # ETH_INTEL_IGC

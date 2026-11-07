@@ -6649,7 +6649,7 @@ static void offload_iface_init(struct net_if *iface)
 	}
 }
 
-static struct offloaded_if_api api_funcs = {
+static const struct offloaded_if_api api_funcs = {
 	.iface_api.init = offload_iface_init,
 };
 

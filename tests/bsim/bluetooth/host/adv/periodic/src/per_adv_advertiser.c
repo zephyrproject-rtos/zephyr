@@ -402,6 +402,29 @@ static void main_per_adv_update_did(void)
 	TEST_PASS("Periodic advertising update DID passed");
 }
 
+static void main_per_adv_sync_term_leak_advertiser(void)
+{
+	struct bt_le_ext_adv *per_adv;
+
+	common_init();
+
+	create_per_adv_set(&per_adv);
+
+	set_per_adv_data(per_adv);
+	start_per_adv_set(per_adv);
+	start_ext_adv_set(per_adv);
+
+	(void)k_sleep(K_MSEC(TERM_LEAK_ADV_MS));
+
+	stop_per_adv_set(per_adv);
+	stop_ext_adv_set(per_adv);
+
+	delete_adv_set(per_adv);
+	per_adv = NULL;
+
+	TEST_PASS("Periodic advertising sync terminate leak advertiser passed");
+}
+
 static const struct bst_test_instance per_adv_advertiser[] = {
 	{
 		.test_id = "per_adv_advertiser",
@@ -440,6 +463,12 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_descr = "Periodic advertising DID update test. "
 			      "Verifies bt_le_per_adv_update_did returns success.",
 		.test_main_f = main_per_adv_update_did
+	},
+	{
+		.test_id = "per_adv_sync_term_leak_advertiser",
+		.test_descr = "Advertises a chained periodic train for long enough "
+			      "for the scanner to sweep sync/terminate cycles.",
+		.test_main_f = main_per_adv_sync_term_leak_advertiser
 	},
 	BSTEST_END_MARKER
 };

@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "tiny2040-pinctrl.dtsi"
 
 / {
@@ -32,6 +33,9 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		pwm-led0 = &pwm_red_led;
+		pwm-led1 = &pwm_green_led;
+		pwm-led2 = &pwm_blue_led;
 		sw0 = &boot_button;
 	};
 
@@ -55,6 +59,26 @@
 		blue_led: blue_led {
 			gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
+		};
+	};
+
+	pwm_leds: pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_red_led: pwm_led_0 {
+			pwms = <&pwm 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Red LED";
+		};
+
+		pwm_green_led: pwm_led_1 {
+			pwms = <&pwm 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Green LED";
+		};
+
+		pwm_blue_led: pwm_led_2 {
+			pwms = <&pwm 4 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Blue LED";
 		};
 	};
 
@@ -119,6 +143,15 @@
 
 &timer {
 	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_led_default>;
+	pinctrl-names = "default";
+	divider-int-1 = <255>;
+	divider-int-2 = <255>;
+	divider-frac-1 = <15>;
+	divider-frac-2 = <15>;
 };
 
 &wdt0 {

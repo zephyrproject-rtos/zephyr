@@ -5,7 +5,19 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bsim_test_advx)
 
-target_sources(app PRIVATE src/main.c)
+add_subdirectory("${ZEPHYR_BASE}/tests/bsim/babblekit" babblekit)
+add_subdirectory("${ZEPHYR_BASE}/tests/bluetooth/common/testlib" testlib)
+target_link_libraries(app PRIVATE
+  babblekit
+  testlib
+)
+
+target_sources(app PRIVATE
+  "src/main.c"
+  "src/scan_req_tgta.c"
+  "src/anonymous.c"
+  "src/connect.c"
+)
 
 zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/

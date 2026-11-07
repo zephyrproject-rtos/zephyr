@@ -268,6 +268,7 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	/* get notified when latency requirement changes */
 	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
 	pm_policy_latency_changed_subscribe(&sreq2, on_pm_policy_latency_changed);
+	pm_policy_latency_changed_subscribe(&sreq1, on_pm_policy_latency_changed);
 
 	/* add new request (expected notification) */
 	latency_cb_call_cnt = 0;
@@ -297,6 +298,7 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req1);
 	zassert_equal(latency_cb_call_cnt, 1);
+	pm_policy_latency_changed_unsubscribe(&sreq1);
 }
 
 ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
@@ -317,6 +319,47 @@ ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
 	expected_latency = SYS_FOREVER_US;
 	pm_policy_latency_request_remove(&req);
 	zassert_equal(latency_cb_call_cnt, 0);
+}
+
+/**
+ * @brief Re-adding a latency request must not corrupt the request list.
+ */
+ZTEST(policy_api, test_pm_policy_latency_request_add_twice)
+{
+	struct pm_policy_latency_request req1, req2;
+	struct pm_policy_latency_subscription sreq;
+
+	pm_policy_latency_changed_subscribe(&sreq, on_pm_policy_latency_changed);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = 10000;
+	pm_policy_latency_request_add(&req1, 10000);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	/* The higher request does not change the maximum latency. */
+	pm_policy_latency_request_add(&req2, 60000);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	/* Re-adding the first request must behave like an update instead of
+	 * appending the same node again.
+	 */
+	pm_policy_latency_request_add(&req1, 10000);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	/* If the re-add truncated the list, req2 is unreachable and the
+	 * maximum latency falls back to SYS_FOREVER_US.
+	 */
+	latency_cb_call_cnt = 0;
+	expected_latency = 60000;
+	pm_policy_latency_request_remove(&req1);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = SYS_FOREVER_US;
+	pm_policy_latency_request_remove(&req2);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	pm_policy_latency_changed_unsubscribe(&sreq);
 }
 
 /**
@@ -441,6 +484,11 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 }
 
 ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
+{
+	ztest_test_skip();
+}
+
+ZTEST(policy_api, test_pm_policy_latency_request_add_twice)
 {
 	ztest_test_skip();
 }

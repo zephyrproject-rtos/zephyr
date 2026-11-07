@@ -1,0 +1,22 @@
+#
+# SPDX-FileCopyrightText: 2026 PHYTEC Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: phyboard_pollux/mimx8ml8/adsp
+name: phyBOARD-Pollux i.MX8MP Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc
+  - xt-clang
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - mcumgr
+supported:
+  - uart
+vendor: phytec

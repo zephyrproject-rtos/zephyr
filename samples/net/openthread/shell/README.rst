@@ -68,6 +68,27 @@ Example building for NXP's MCXW72 FRDM (host) with vendor specific radio impleme
    :goals: build
    :compact:
 
+Example building for NXP's MCXW72 FRDM (host) with the RGB status LED enabled.
+The board RGB LED blinks with a colour that reflects the Thread device role:
+white (disabled), red (detached), yellow (child), green (router) and blue (leader).
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: frdm_mcxw72/mcxw727c
+   :gen-args: -DEXTRA_CONF_FILE="prj-ot-host.conf" -DCONFIG_OT_SHELL_SAMPLE_RGB_STATUS_LED=y
+   :goals: build
+   :compact:
+
+The LED is controlled with the ``rgb`` shell command:
+
+.. code-block:: console
+
+   uart:~$ rgb off             # stop blinking
+   uart:~$ rgb on              # start blinking
+   uart:~$ rgb rate 200        # blink period in milliseconds
+   uart:~$ rgb color 255 0 255 # fixed colour, stops following the role
+   uart:~$ rgb role            # follow the Thread device role again
+
 Example building for Silicon Labs EFR32MG24 4187c radio board:
 
 .. zephyr-app-commands::

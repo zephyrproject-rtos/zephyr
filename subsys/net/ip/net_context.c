@@ -1456,6 +1456,38 @@ static int get_zone_iface(struct net_context *context, const struct net_sockaddr
 	return 0;
 }
 
+/* A TCP context bound neither to an interface nor to a unicast address got its
+ * interface at bind() time, from a peer that was not known yet. The source
+ * address is selected on that interface, so it must be the one the peer is
+ * reached through.
+ */
+static bool tcp_iface_from_peer(struct net_context *context)
+{
+	if (net_context_get_proto(context) != NET_IPPROTO_TCP ||
+	    net_context_is_bound_to_iface(context)) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		return false;
+	}
+
+	if (!net_context_is_local_addr_set(context)) {
+		return true;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_context_get_family(context) == NET_AF_INET6) {
+		return net_ipv6_is_addr_unspecified(&net_sin6(&context->local)->sin6_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_context_get_family(context) == NET_AF_INET) {
+		return net_ipv4_is_addr_unspecified(&net_sin(&context->local)->sin_addr);
+	}
+
+	return false;
+}
+
 int net_context_connect(struct net_context *context,
 			const struct net_sockaddr *addr,
 			net_socklen_t addrlen,
@@ -1567,9 +1599,17 @@ int net_context_connect(struct net_context *context,
 			goto unlock;
 		}
 
-		/* Replace the interface chosen at bind time with the one of the zone. */
+		/* Replace the interface chosen at bind time with the one of the
+		 * zone, or else with the one the peer is reached through.
+		 */
 		if (zone_iface != NULL) {
 			net_context_set_iface(context, zone_iface);
+		} else if (tcp_iface_from_peer(context)) {
+			struct net_if *iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+
+			if (iface != NULL) {
+				net_context_set_iface(context, iface);
+			}
 		}
 
 		net_sin6(&context->local)->sin6_family = NET_AF_INET6;
@@ -1587,16 +1627,22 @@ int net_context_connect(struct net_context *context,
 		   net_context_get_family(context) == NET_AF_INET) {
 		struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)
 							&context->remote;
+		struct net_if *iface = net_context_get_iface(context);
+		bool iface_from_peer;
 
 		if (addrlen < sizeof(struct net_sockaddr_in)) {
 			ret = -EINVAL;
 			goto unlock;
 		}
 
+		iface_from_peer = tcp_iface_from_peer(context);
+		if (iface_from_peer) {
+			iface = net_if_ipv4_select_src_iface(&net_sin(addr)->sin_addr);
+		}
+
 		if (net_context_get_proto(context) == NET_IPPROTO_TCP &&
 		    (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) ||
-		     net_ipv4_is_addr_bcast(net_context_get_iface(context),
-					    &net_sin(addr)->sin_addr))) {
+		     net_ipv4_is_addr_bcast(iface, &net_sin(addr)->sin_addr))) {
 			ret = -EADDRNOTAVAIL;
 			goto unlock;
 		}
@@ -1618,6 +1664,13 @@ int net_context_connect(struct net_context *context,
 		ret = bind_default(context);
 		if (ret) {
 			goto unlock;
+		}
+
+		/* Replace the interface chosen at bind time with the one the
+		 * peer is reached through.
+		 */
+		if (iface_from_peer && iface != NULL) {
+			net_context_set_iface(context, iface);
 		}
 
 		net_sin(&context->local)->sin_family = NET_AF_INET;

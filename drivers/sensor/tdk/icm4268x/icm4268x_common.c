@@ -64,6 +64,9 @@ int icm4268x_reset(const struct device *dev)
 	case ICM4268X_VARIANT_ICM42686:
 		expected_who_am_i = WHO_AM_I_ICM42686;
 		break;
+	case ICM4268X_VARIANT_IIM42653:
+		expected_who_am_i = WHO_AM_I_IIM42653;
+		break;
 	default:
 		LOG_ERR("Invalid variant: %d", dev_data->cfg.variant);
 		return -EINVAL;
@@ -75,6 +78,60 @@ int icm4268x_reset(const struct device *dev)
 	}
 
 	return 0;
+}
+
+/*
+ * The IIM-42653 resets with the pads of a dual interface, in which CLKIN does not clock the
+ * device and the data registers read 0x8000 once RTC_MODE is set. Switch to a single interface
+ * first, as the TDK eMD driver does (inv_ixm42xxx_interface_change_procedure).
+ */
+static int icm4268x_iim42653_single_interface(const struct spi_dt_spec *bus)
+{
+	static const struct {
+		uint16_t reg;
+		uint8_t mask;
+		uint8_t val;
+	} seq[] = {
+		/* Weak pull-ups and pull-downs, INT1, AUX, INT2, FSYNC and CLKIN pads off */
+		{REG_PU_PD_CONFIG1, 0xFF, 0x00},
+		{REG_PU_PD_CONFIG2, 0xFF, 0x00},
+		{REG_TMD4, 0xFF, 0x01},
+		{REG_TMD5, 0xFF, 0x01},
+		{REG_TMD6, 0xFF, 0x01},
+		{REG_TMD7, 0xFF, 0x01},
+		{REG_INTF_CONFIG3, 0xFF, 0xF0},
+		{REG_INTF_CONFIG5, MASK_PIN9_FUNCTION, ICM4268X_PIN9_FUNCTION_FSYNC},
+		{REG_SENSOR_CONFIG1, MASK_PAD_SCENARIO, BIT_PAD_SCENARIO_SINGLE},
+		/* INT1 and INT2 pads, weak pull-ups and pull-downs on */
+		{REG_TMD4, 0xFF, 0x00},
+		{REG_INTF_CONFIG3, 0xFF, 0x70},
+		{REG_PU_PD_CONFIG1, 0xFF, 0x9F},
+		{REG_PU_PD_CONFIG2, 0xFF, 0xAA},
+	};
+	uint8_t bank = UINT8_MAX;
+	int res;
+
+	for (size_t i = 0; i < ARRAY_SIZE(seq); i++) {
+		if (FIELD_GET(REG_BANK_MASK, seq[i].reg) != bank) {
+			bank = FIELD_GET(REG_BANK_MASK, seq[i].reg);
+			res = icm4268x_spi_single_write(bus, REG_BANK_SEL, bank);
+			if (res != 0) {
+				return res;
+			}
+		}
+
+		if (seq[i].mask == 0xFF) {
+			res = icm4268x_spi_single_write(bus, seq[i].reg, seq[i].val);
+		} else {
+			res = icm4268x_spi_update_register(bus, seq[i].reg, seq[i].mask,
+							   seq[i].val);
+		}
+		if (res != 0) {
+			return res;
+		}
+	}
+
+	return icm4268x_spi_single_write(bus, REG_BANK_SEL, BIT_BANK0);
 }
 
 static uint16_t icm4268x_compute_fifo_wm(const struct icm4268x_cfg *cfg)
@@ -170,6 +227,23 @@ int icm4268x_configure(const struct device *dev, struct icm4268x_cfg *cfg)
 	}
 
 	/* TODO maybe do the next few steps intelligently by checking current config */
+
+	if (cfg->variant == ICM4268X_VARIANT_IIM42653 &&
+	    cfg->pin9_function == ICM4268X_PIN9_FUNCTION_CLKIN) {
+		/* The pads change with the sensors off and the internal clock selected */
+		res = icm4268x_spi_single_write(&dev_cfg->spi, REG_PWR_MGMT0, 0);
+		if (res == 0) {
+			res = icm4268x_spi_single_write(&dev_cfg->spi, REG_INTF_CONFIG1, 0x91);
+		}
+		if (res == 0) {
+			k_busy_wait(250);
+			res = icm4268x_iim42653_single_interface(&dev_cfg->spi);
+		}
+		if (res != 0) {
+			LOG_ERR("Error selecting the single interface pads");
+			return -EINVAL;
+		}
+	}
 
 	/* Select register bank 1 */
 	res = icm4268x_spi_single_write(&dev_cfg->spi, REG_BANK_SEL, BIT_BANK1);

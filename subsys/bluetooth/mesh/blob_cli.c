@@ -193,13 +193,7 @@ static uint16_t next_missing_chunk(struct bt_mesh_blob_cli *cli,
 				   const uint8_t *missing_chunks,
 				   uint16_t idx)
 {
-	do {
-		if (blob_chunk_missing_get(missing_chunks, idx)) {
-			break;
-		}
-	} while (++idx < cli->block.chunk_count);
-
-	return idx;
+	return sys_bitmap_find_next_set(missing_chunks, cli->block.chunk_count, idx);
 }
 
 /* Used in Pull mode to collect all missing chunks from each target in cli->block.missing. */
@@ -210,14 +204,14 @@ static void update_missing_chunks(struct bt_mesh_blob_cli *cli)
 	memset(cli->block.missing, 0, sizeof(cli->block.missing));
 
 	TARGETS_FOR_EACH(cli, target) {
+		size_t idx;
+
 		if (target->procedure_complete || target->timedout) {
 			continue;
 		}
 
-		for (size_t idx = 0; idx < cli->block.chunk_count; idx++) {
-			bool missing = blob_chunk_missing_get(cli->block.missing, idx) ||
-				       blob_chunk_missing_get(target->pull->missing, idx);
-			blob_chunk_missing_set(cli->block.missing, idx, missing);
+		SYS_BITMAP_FOR_EACH_SET_BIT(target->pull->missing, cli->block.chunk_count, idx) {
+			blob_chunk_missing_set(cli->block.missing, idx, true);
 		}
 	}
 }
@@ -271,7 +265,7 @@ static int chunk_idx_decode(struct net_buf_simple *buf)
 static void block_set(struct bt_mesh_blob_cli *cli, uint16_t block_idx)
 {
 	cli->block.number = block_idx;
-	cli->block.offset = block_idx * (1UL << cli->xfer->block_size_log);
+	cli->block.offset = block_idx * BIT64(cli->xfer->block_size_log);
 	cli->block.size = blob_block_size(cli->xfer->size, cli->xfer->block_size_log,
 					  block_idx);
 	cli->block.chunk_count =
@@ -831,7 +825,7 @@ static void caps_collected(struct bt_mesh_blob_cli *cli)
 	}
 
 	while (success &&
-	       (1UL << cli->caps.max_block_size_log) >
+	       BIT64(cli->caps.max_block_size_log) >
 	       (cli->caps.max_chunk_size * cli->caps.max_chunks)) {
 		cli->caps.max_block_size_log--;
 	}
@@ -1236,14 +1230,44 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 	info.phase = net_buf_simple_pull_u8(buf);
 
 	if (buf->len) {
+		if (buf->len < sizeof(info.id)) {
+			LOG_WRN("Invalid BLOB ID length: %u", buf->len);
+			return -EINVAL;
+		}
+
 		info.id = net_buf_simple_pull_le64(buf);
 	}
 
-	if (buf->len >= 7) {
+	/* BLOB Size, Block Size Log, Transfer MTU Size and Blocks Not Received are either all
+	 * present or all absent (MshMBTv1.0 4.4).
+	 */
+	if (buf->len) {
+		uint32_t block_count;
+
+		if (buf->len < sizeof(info.size) + sizeof(info.block_size_log) +
+				   sizeof(info.mtu_size)) {
+			LOG_WRN("Invalid message length: %u", buf->len);
+			return -EINVAL;
+		}
+
 		info.size = net_buf_simple_pull_le32(buf);
 		info.block_size_log = net_buf_simple_pull_u8(buf);
 		info.mtu_size = net_buf_simple_pull_le16(buf);
-		info.missing_blocks = net_buf_simple_pull(buf, buf->len);
+
+		/* Block Size Log range is 0x06 to 0x20 (MshMBTv1.0 3.1.1.3). */
+		if (info.block_size_log < 0x06 || info.block_size_log > 0x20) {
+			LOG_WRN("Invalid block size log: %u", info.block_size_log);
+			return -EINVAL;
+		}
+
+		/* The block size can be 2^32, so compute the block count in 64 bits. */
+		block_count = DIV_ROUND_UP((uint64_t)info.size, BIT64(info.block_size_log));
+		if (buf->len != DIV_ROUND_UP(block_count, 8)) {
+			LOG_WRN("Invalid Blocks Not Received length: %u", buf->len);
+			return -EINVAL;
+		}
+
+		info.missing_blocks = net_buf_simple_pull_mem(buf, buf->len);
 	}
 
 	LOG_DBG("status: %u %s phase: %u %s", info.status,
@@ -1315,6 +1339,16 @@ static int handle_block_report(const struct bt_mesh_model *mod, struct bt_mesh_m
 	};
 	struct bt_mesh_blob_target *target;
 
+	if (cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_START &&
+	    cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_SEND &&
+	    cli->state != BT_MESH_BLOB_CLI_STATE_BLOCK_CHECK) {
+		/* In Pull mode, reports can arrive after the block has ended, for example
+		 * through a Friend queue.
+		 */
+		LOG_DBG("Wrong state: %d", cli->state);
+		return -EBUSY;
+	}
+
 	if (!cli->xfer) {
 		return -EINVAL;
 	}
@@ -1335,8 +1369,9 @@ static int handle_block_report(const struct bt_mesh_model *mod, struct bt_mesh_m
 		int idx;
 
 		idx = chunk_idx_decode(buf);
-		if (idx < 0) {
-			return idx;
+		if (idx < 0 || idx >= cli->block.chunk_count) {
+			LOG_ERR("Invalid encoding");
+			return -EINVAL;
 		}
 
 		blob_chunk_missing_set(status.block.missing, idx, true);
@@ -1391,8 +1426,10 @@ static int handle_block_status(const struct bt_mesh_model *mod, struct bt_mesh_m
 		return -EINVAL;
 	}
 
-	status.block.chunk_count =
-		DIV_ROUND_UP(cli->block.size, chunk_size);
+	/* The client owns the Chunk Size state (MshMBTv1.0 6.2.4), so the received value must not
+	 * be used to size the missing chunks bitfield.
+	 */
+	status.block.chunk_count = cli->block.chunk_count;
 
 	LOG_DBG("status: %u block: %u encoding: %u", status.status,
 		status.block.number, status.missing);
@@ -1557,6 +1594,8 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 			  const struct bt_mesh_blob_xfer *xfer,
 			  const struct bt_mesh_blob_io *io)
 {
+	size_t block_size;
+
 	if (bt_mesh_blob_cli_is_busy(cli)) {
 		LOG_ERR("BLOB Client is busy");
 		return -EBUSY;
@@ -1566,6 +1605,20 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 	    xfer->block_size_log > 0x20 || xfer->chunk_size < 8 ||
 	    xfer->chunk_size > BLOB_TX_CHUNK_SIZE) {
 		LOG_ERR("Incompatible transfer parameters");
+		return -EINVAL;
+	}
+
+	/* No block is larger than the first one, so its chunk count bounds the chunk count
+	 * of every block. Compare sizes to avoid truncating the chunk count to uint16_t.
+	 */
+	block_size = xfer->size;
+	if (xfer->block_size_log < 32U && block_size > BIT(xfer->block_size_log)) {
+		block_size = BIT(xfer->block_size_log);
+	}
+
+	if (block_size > (size_t)CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX * xfer->chunk_size) {
+		LOG_ERR("Too many chunks: block size %zu, chunk size %u, max %d", block_size,
+			xfer->chunk_size, CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX);
 		return -EINVAL;
 	}
 
@@ -1580,11 +1633,6 @@ int bt_mesh_blob_cli_send(struct bt_mesh_blob_cli *cli,
 	}
 
 	block_set(cli, 0);
-
-	if (cli->block.chunk_count > CONFIG_BT_MESH_BLOB_CHUNK_COUNT_MAX) {
-		LOG_ERR("Too many chunks");
-		return -EINVAL;
-	}
 
 	if (!targets_reset(cli)) {
 		LOG_ERR("No valid targets");

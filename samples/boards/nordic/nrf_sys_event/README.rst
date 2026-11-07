@@ -45,6 +45,7 @@ The sample is supported on the following Nordic Semiconductor board targets:
 - nrf54h20dk/nrf54h20/cpurad
 - nrf54l15dk/nrf54l15/cpuapp
 - nrf7120dk/nrf7120/cpuapp
+- nrf7120dk/nrf7120e/cpuapp
 
 Building and Running
 ********************

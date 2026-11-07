@@ -13,6 +13,11 @@ tests:
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - qemu_cortex_m3
+      - frdm_mcxc242
+      - frdm_mcxc444
+      - frdm_mcxw70
+      - frdm_mcxw71
+      - frdm_mcxw72
       - gd32f450i_eval
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
@@ -24,6 +29,8 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54lv10dk/nrf54lv10a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
+      - nrf7120dk/nrf7120/cpuapp/ns
       - nucleo_h723zg/stm32h723xx
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:

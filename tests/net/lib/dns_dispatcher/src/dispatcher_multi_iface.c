@@ -94,12 +94,12 @@ static void if2_init(struct net_if *iface)
 #define _MULTI_L2 DUMMY_L2
 #define _MULTI_L2_CTX NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-static struct dummy_api if1_api = {
+static const struct dummy_api if1_api = {
 	.iface_api.init = if1_init,
 	.send = multi_if_dummy_send,
 };
 
-static struct dummy_api if2_api = {
+static const struct dummy_api if2_api = {
 	.iface_api.init = if2_init,
 	.send = multi_if_dummy_send,
 };

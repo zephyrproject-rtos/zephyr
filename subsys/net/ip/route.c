@@ -603,6 +603,9 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 	if (forwarding) {
 		int ret = 0;
 
+		/* The transport layer checksum is the sender's */
+		net_pkt_set_chksum_done(pkt, true);
+
 		if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING) &&
 		    net_pkt_family(pkt) == NET_PF_INET) {
 			ret = net_route_ipv4_decrement_ttl(pkt);

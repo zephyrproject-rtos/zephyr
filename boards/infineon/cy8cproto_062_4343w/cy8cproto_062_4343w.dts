@@ -33,6 +33,11 @@
 	status = "okay";
 };
 
+/* SysTick's low-power companion: keeps time while the CM4 is in DeepSleep. */
+&mcwdt0 {
+	status = "okay";
+};
+
 uart5: &scb5 {
 	compatible = "infineon,uart";
 	current-speed = <115200>;

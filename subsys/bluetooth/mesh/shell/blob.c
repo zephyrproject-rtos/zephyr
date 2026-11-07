@@ -10,6 +10,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
+#include <zephyr/sys/bitmap.h>
 
 #include "common/bt_shell_private.h"
 #include "utils.h"
@@ -104,10 +105,10 @@ static void blob_cli_caps(struct bt_mesh_blob_cli *cli,
 
 	bt_shell_print("Mesh BLOB: capabilities:");
 	bt_shell_print("\tMax BLOB size: %u bytes", caps->max_size);
-	bt_shell_print("\tBlock size: %u-%u (%u-%u bytes)",
+	bt_shell_print("\tBlock size: %u-%u (%llu-%llu bytes)",
 		       caps->min_block_size_log, caps->max_block_size_log,
-		       1 << caps->min_block_size_log,
-		       1 << caps->max_block_size_log);
+		       BIT64(caps->min_block_size_log),
+		       BIT64(caps->max_block_size_log));
 	bt_shell_print("\tMax chunks: %u", caps->max_chunks);
 	bt_shell_print("\tChunk size: %u", caps->max_chunk_size);
 	bt_shell_print("\tMTU size: %u", caps->mtu_size);
@@ -126,22 +127,24 @@ static void blob_cli_end(struct bt_mesh_blob_cli *cli,
 
 static uint8_t get_progress(const struct bt_mesh_blob_xfer_info *info)
 {
-	uint8_t total_blocks;
-	uint8_t blocks_not_rxed = 0;
+	uint32_t total_blocks;
+	uint32_t blocks_not_rxed;
 
-	total_blocks = DIV_ROUND_UP(info->size, 1U << info->block_size_log);
+	if (info->missing_blocks == NULL) {
+		return 0;
+	}
+
+	/* The block size can be 2^32, so compute the block count in 64 bits. */
+	total_blocks = DIV_ROUND_UP((uint64_t)info->size, BIT64(info->block_size_log));
 
 	if (total_blocks == 0) {
 		return 0;
 	}
 
-	for (int i = 0; i < total_blocks; i++) {
-		if (info->missing_blocks[i / 8] & (1 << (i % 8))) {
-			blocks_not_rxed++;
-		}
-	}
+	blocks_not_rxed = sys_bitmap_count_set(info->missing_blocks, total_blocks);
 
-	return (100U * (total_blocks - blocks_not_rxed)) / total_blocks;
+	/* 100 times the block count does not fit in 32 bits. */
+	return (100ULL * (total_blocks - blocks_not_rxed)) / total_blocks;
 }
 
 static void xfer_progress(struct bt_mesh_blob_cli *cli,

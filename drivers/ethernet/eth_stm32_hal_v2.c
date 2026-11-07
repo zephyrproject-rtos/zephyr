@@ -150,6 +150,20 @@ static inline uint16_t allocate_tx_buffer(struct eth_stm32_hal_dev_data *dev_dat
 	}
 }
 
+/* The MAC computes the ICMPv4 checksum over the field as it is, so a packet
+ * that carries its transport layer checksum already, a forwarded one for
+ * example, gets the IPv4 header checksum only.
+ */
+static uint32_t tx_checksum_ctrl(struct net_pkt *pkt)
+{
+	if (!IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM)) {
+		return ETH_CHECKSUM_DISABLE;
+	}
+
+	return net_pkt_is_chksum_done(pkt) ? ETH_CHECKSUM_IPHDR_INSERT
+					   : ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC;
+}
+
 #if defined(CONFIG_ETH_STM32_HAL_TX_ASYNC)
 /* allocate a tx context and mark it as used, the first tx buffer is also allocated */
 static struct eth_stm32_tx_context *
@@ -183,8 +197,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	HAL_StatusTypeDef hal_ret;
 	ETH_TxPacketConfigTypeDef tx_config = {
 		.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD,
-		.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
-			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE,
+		.ChecksumCtrl = tx_checksum_ctrl(pkt),
 		.CRCPadCtrl = ETH_CRC_PAD_INSERT,
 	};
 
@@ -300,8 +313,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	HAL_StatusTypeDef hal_ret;
 	ETH_TxPacketConfigTypeDef tx_config = {
 		.Attributes = ETH_TX_PACKETS_FEATURES_CSUM | ETH_TX_PACKETS_FEATURES_CRCPAD,
-		.ChecksumCtrl = IS_ENABLED(CONFIG_ETH_STM32_HW_CHECKSUM) ?
-			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE,
+		.ChecksumCtrl = tx_checksum_ctrl(pkt),
 		.CRCPadCtrl = ETH_CRC_PAD_INSERT,
 	};
 

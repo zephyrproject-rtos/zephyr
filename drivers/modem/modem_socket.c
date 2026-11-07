@@ -344,8 +344,7 @@ int modem_socket_poll_prepare(struct modem_socket_config *cfg, struct modem_sock
 {
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (*pev == pev_end) {
-			errno = ENOMEM;
-			return -1;
+			return -ENOMEM;
 		}
 
 		k_poll_event_init(*pev, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
@@ -355,12 +354,10 @@ int modem_socket_poll_prepare(struct modem_socket_config *cfg, struct modem_sock
 
 	if (pfd->events & ZSOCK_POLLOUT) {
 		if (*pev == pev_end) {
-			errno = ENOMEM;
-			return -1;
+			return -ENOMEM;
 		}
 		/* Not Implemented */
-		errno = ENOTSUP;
-		return -1;
+		return -ENOTSUP;
 	}
 
 	return 0;

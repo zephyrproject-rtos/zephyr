@@ -114,7 +114,7 @@ static int save_key(char setting_name[MAX_SETTINGS_NAME],
 		return ret;
 	}
 
-	return settings_save_one(setting_name, config->key_buf, config->key_buf_len);
+	return settings_save_one(setting_name, config->key_buf, ret);
 }
 
 static uint8_t *export_key(const struct net_config_ssh_key *config)
@@ -142,7 +142,6 @@ int net_config_init_sshd(struct net_if *iface,
 	char ip_addr_str[NET_IPV6_ADDR_LEN];
 	const char *username, *password;
 	struct ssh_server *sshd;
-	int priv_key_id = -1;
 	uint8_t *key;
 	int ret;
 
@@ -300,8 +299,6 @@ int net_config_init_sshd(struct net_if *iface,
 		} else {
 			LOG_INF("Starting SSH server with public key authentication");
 		}
-
-		priv_key_id = priv_key_config->key_id;
 	} else {
 		if (username != NULL) {
 			LOG_INF("Starting SSH server with password authentication as \"%s\" user",
@@ -313,7 +310,7 @@ int net_config_init_sshd(struct net_if *iface,
 
 	ret = ssh_server_start(sshd,
 			       net_sad(&bind_addr),
-			       priv_key_id,
+			       priv_key_config->key_id,
 			       username,
 			       password,
 			       &pub_key_config->key_id,

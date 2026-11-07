@@ -30,6 +30,7 @@
 		sw0 = &user_button;
 		accel0 = &mma8652fc;
 		watchdog0 = &wwdt0;
+		rtc = &rtc;
 	};
 
 	/*
@@ -154,5 +155,21 @@ zephyr_udc0: &usbhs {
 };
 
 &wwdt0 {
+	status = "okay";
+};
+
+&mrt0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

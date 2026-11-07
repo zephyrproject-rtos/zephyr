@@ -4,6 +4,13 @@ tests:
       - kernel
       - timer
       - userspace
+  kernel.timer.timeout_32bit:
+    tags:
+      - kernel
+      - timer
+      - userspace
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
   kernel.timer.sloppy_idle:
     tags:
       - kernel

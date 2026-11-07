@@ -210,12 +210,12 @@ config OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE
 
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
 	int "The maximum number of supported IPv6 addresses allows to be externally added"
-	range 0 32
+	range 0 $(UINT16_MAX)
 	default 4
 
 config OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
 	int "The maximum number of supported IPv6 multicast addresses allows to be externally added"
-	range 0 32
+	range 0 $(UINT16_MAX)
 	default 2
 
 config OPENTHREAD_TCP_ENABLE

@@ -15,6 +15,14 @@ menuconfig ICM20948
 
 if ICM20948
 
+config EMUL_ICM20948
+	bool "Emulator for the ICM20948"
+	default y
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the ICM20948. Doing so allows
+	  exercising the driver without the device being present.
+
 config ICM20948_MAGN_EN
 	bool "Magnetometer enable"
 	default y

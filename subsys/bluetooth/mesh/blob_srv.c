@@ -64,14 +64,7 @@ static inline uint32_t max_chunk_count(const struct bt_mesh_blob_srv *srv)
 
 static inline uint32_t missing_chunks(const struct bt_mesh_blob_block *block)
 {
-	int i;
-	uint32_t count = 0;
-
-	for (i = 0; i < ARRAY_SIZE(block->missing); ++i) {
-		count += POPCOUNT(block->missing[i]);
-	}
-
-	return count;
+	return sys_bitmap_count_set(block->missing, sizeof(block->missing) * BITS_PER_BYTE);
 }
 
 static void store_state(const struct bt_mesh_blob_srv *srv)
@@ -186,8 +179,8 @@ static void block_report(struct bt_mesh_blob_srv *srv)
 		.send_ttl = srv->state.ttl,
 		.addr = srv->state.cli,
 	};
+	size_t chunk;
 	int count;
-	int i;
 
 	LOG_DBG("rx BLOB Timeout Timer: %i", k_work_delayable_is_pending(&srv->rx_timeout));
 
@@ -197,11 +190,13 @@ static void block_report(struct bt_mesh_blob_srv *srv)
 
 	count = pull_req_max(srv);
 
-	for (i = 0; i < srv->block.chunk_count && count; ++i) {
-		if (blob_chunk_missing_get(srv->block.missing, i)) {
-			buf_chunk_index_add(&buf, i);
-			count--;
+	SYS_BITMAP_FOR_EACH_SET_BIT(srv->block.missing, srv->block.chunk_count, chunk) {
+		if (count == 0) {
+			break;
 		}
+
+		buf_chunk_index_add(&buf, chunk);
+		count--;
 	}
 
 	(void)bt_mesh_model_send(srv->mod, &ctx, &buf, &report_cb, srv);
@@ -359,7 +354,6 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 {
 	enum bt_mesh_blob_chunks_missing format;
 	uint32_t missing;
-	int i;
 
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_BLOB_OP_BLOCK_STATUS,
 				 BLOB_BLOCK_STATUS_MSG_MAXLEN);
@@ -401,13 +395,16 @@ static void block_status_rsp(struct bt_mesh_blob_srv *srv,
 
 	} else if (format == BT_MESH_BLOB_CHUNKS_MISSING_ENCODED) {
 		int count = pull_req_max(srv);
+		size_t chunk;
 
-		for (i = 0; (i < srv->block.chunk_count) && count; ++i) {
-			if (blob_chunk_missing_get(srv->block.missing, i)) {
-				LOG_DBG("Missing %u", i);
-				buf_chunk_index_add(&buf, i);
-				count--;
+		SYS_BITMAP_FOR_EACH_SET_BIT(srv->block.missing, srv->block.chunk_count, chunk) {
+			if (count == 0) {
+				break;
 			}
+
+			LOG_DBG("Missing %zu", chunk);
+			buf_chunk_index_add(&buf, chunk);
+			count--;
 		}
 	}
 
@@ -457,8 +454,8 @@ static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg
 	block_size_log = net_buf_simple_pull_u8(buf);
 	mtu_size = net_buf_simple_pull_le16(buf);
 
-	LOG_DBG("\n\tsize: %u block size: %u\n\tmtu_size: %u\n\tmode: %s",
-		size, (1U << block_size_log), mtu_size,
+	LOG_DBG("\n\tsize: %u block size log: %u\n\tmtu_size: %u\n\tmode: %s",
+		size, block_size_log, mtu_size,
 		mode == BT_MESH_BLOB_XFER_MODE_PUSH ? "push" : "pull");
 
 	if (mode != BT_MESH_BLOB_XFER_MODE_PULL &&
@@ -510,8 +507,7 @@ static int handle_xfer_start(const struct bt_mesh_model *mod, struct bt_mesh_msg
 		goto rsp;
 	}
 
-	if (((1U << block_size_log) < CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN) ||
-	    ((1U << block_size_log) > CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX)) {
+	if (block_size_log < BLOB_BLOCK_SIZE_LOG_MIN || block_size_log > BLOB_BLOCK_SIZE_LOG_MAX) {
 		LOG_WRN("Invalid block size: %u", block_size_log);
 		status = BT_MESH_BLOB_ERR_INVALID_BLOCK_SIZE;
 		goto rsp;

@@ -31,4 +31,10 @@
 			input-enable;
 		};
 	};
+
+	pwm_led_default: pwm_led_default {
+		group1 {
+			pinmux = <PWM_1A_P18>, <PWM_1B_P19>, <PWM_2A_P20>;
+		};
+	};
 };

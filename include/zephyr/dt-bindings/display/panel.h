@@ -43,6 +43,7 @@
 #define PANEL_PIXEL_FORMAT_I_4       (0x1 << 13) /**< 4-bit indexed color */
 #define PANEL_PIXEL_FORMAT_L_4       (0x1 << 14) /**< 4-bit luminance/grayscale */
 #define PANEL_PIXEL_FORMAT_YUYV      (0x1 << 15) /**< 16-bit packed YUV 4:2:2 */
+#define PANEL_PIXEL_FORMAT_NV12      (0x1 << 16) /**< 2-plane YUV 4:2:0, Y then interleaved UV */
 
 /**
  * @brief Pack color components into a 32-bit ARGB8888 value.

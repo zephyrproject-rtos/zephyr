@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  nRF71 Coexistence Controller (COEXC) interface for short-range clients.
+
+  The short-range radio uses one COEXC client for RX and one for TX.
+  Each client signals COEXC through a pair of IPCT channels.
+
+compatible: "nordic,nrf71-coex"
+
+include: base.yaml
+
+properties:
+  ipct:
+    type: phandle
+    required: true
+    description: |
+      IPCT instance connected to COEXC.
+
+  rx-channels:
+    type: array
+    required: true
+    description: |
+      IPCT channels of the RX client, as <request-channel release-channel>.
+
+  tx-channels:
+    type: array
+    required: true
+    description: |
+      IPCT channels of the TX client, as <request-channel release-channel>.
+
+  rx-client:
+    type: int
+    required: true
+    description: |
+      COEXC client index of the RX client.
+
+  tx-client:
+    type: int
+    required: true
+    description: |
+      COEXC client index of the TX client.

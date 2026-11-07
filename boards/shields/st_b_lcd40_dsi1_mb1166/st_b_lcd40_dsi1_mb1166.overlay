@@ -14,6 +14,7 @@
 };
 
 &zephyr_mipi_dsi {
+	st,ltdc = <&zephyr_lcd_controller>;
 	status = "okay";
 
 	otm8009a: otm8009a@0 {
@@ -35,21 +36,6 @@
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	status = "okay";
-
-	/* orisetech, otm8009a */
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-active = <0>;
-		vsync-active = <0>;
-		de-active = <0>;
-		pixelclk-active = <0>;
-		hsync-len = <2>;
-		vsync-len = <1>;
-		hback-porch = <34>;
-		vback-porch = <15>;
-		hfront-porch = <34>;
-		vfront-porch = <16>;
-	};
 };
 
 &qsh_030_i2c {

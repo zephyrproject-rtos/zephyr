@@ -26,6 +26,7 @@ tests:
       - max78002evkit/max78002/m4
       - imx95_evk/mimx9596/m7
       - imx952_evk/mimx9529/m7
+      - imx95_var_dart/mimx9596/m7
       - ek_ra8m1
       - ek_ra8d1
       - mck_ra8t1
@@ -36,6 +37,7 @@ tests:
       - ek_ra8m2/r7ka8m2jflcac/cm85
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxw70
       - frdm_mcxw72
       - mcxw23_evk
       - frdm_mcxw23
@@ -45,12 +47,16 @@ tests:
       - frdm_mcxa266
       - frdm_mcxa346
       - frdm_mcxa366
+      - kit_psc3m5_evk
+      - kit_psc3m6_eval/psc3m6ges3ahq1
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - frdm_mcxc242
       - frdm_mcxc444
+      - cy8cproto_062_4343w/cy8c624abzi_s2d44
+      - cy8cproto_062s3_4343w/cy8c6245lqi_s3d72
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853

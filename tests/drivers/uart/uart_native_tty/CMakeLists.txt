@@ -8,9 +8,11 @@ project(uart_native_tty)
 target_sources(app PRIVATE src/main.c)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/serial)
 
-# The driver's host side is tested on its own, against pseudo terminals the
-# suite creates, so that no driver instance needs a real serial port.
+# The driver's host side is tested on its own, against pseudo terminals and a
+# fake sysfs tree the suite creates, so that no driver instance needs a real
+# serial port.
 target_sources(native_simulator INTERFACE
   ${ZEPHYR_BASE}/drivers/serial/uart_native_tty_bottom.c
   src/pty_bottom.c
+  src/sysfs_bottom.c
 )

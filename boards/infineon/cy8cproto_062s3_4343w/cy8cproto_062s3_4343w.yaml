@@ -12,8 +12,10 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - gpio
   - uart
   - i2c
   - watchdog
+  - pm
 vendor: infineon

@@ -31,6 +31,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,canbus = &canfd0;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -74,19 +75,32 @@
 };
 
 &ulpclk {
-	clock-frequency = <DT_FREQ_M(40)>;
 	clk-div = <2>;
 };
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk>;
+};
+
+&hsclk {
 	clocks = <&syspll>;
+	status = "okay";
 };
 
 &canclk {
 	clocks = <&syspll>;
-	clock-frequency = <DT_FREQ_M(40)>;
 	status = "okay";
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <1000000>;
 };
 
 &pinctrl {
@@ -142,5 +156,9 @@
 &vref0 {
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };

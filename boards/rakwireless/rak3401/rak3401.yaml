@@ -1,0 +1,20 @@
+identifier: rak3401/nrf52840
+name: RAK3401 WisBlock Core Module
+type: mcu
+arch: arm
+flash: 384
+ram: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - netif:openthread
+  - wisblock_io
+vendor: rakwireless

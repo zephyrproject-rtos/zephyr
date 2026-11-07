@@ -26,6 +26,7 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf52840dk/nrf52840
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
       - nrf9151dk/nrf9151
       - nrf9160dk/nrf9160
       - nrf9161dk/nrf9161
@@ -66,6 +67,9 @@ tests:
 
   secure_storage.psa.its.secure_storage.custom.store:
     filter: CONFIG_SECURE_STORAGE
+    platform_exclude:
+      - imx95_var_dart/mimx9596/m7
+      - imx95_var_dart/mimx9596/a55
     extra_args: "EXTRA_CONF_FILE=\
       overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_custom.conf"
 

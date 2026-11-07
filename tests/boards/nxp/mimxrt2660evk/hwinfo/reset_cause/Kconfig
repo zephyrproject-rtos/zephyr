@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_RESET_CAUSE_COLD
+	bool "Cold reboot reset cause test"
+	help
+	  Request a cold reboot and verify software reset escalation and clearing
+	  of the POWERCON cold-reset GPR. Otherwise, test a warm reboot.

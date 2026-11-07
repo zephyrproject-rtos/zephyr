@@ -350,6 +350,7 @@ ARM64 arch:
     - npitre
     - JiafeiPan
     - carlocaione
+    - hongquan-prog
   files:
     - arch/arm64/
     - include/zephyr/arch/arm64/
@@ -402,6 +403,7 @@ Alif Semiconductor Platforms:
     - dts/arm/alif/
     - dts/bindings/*/alif,*
     - include/zephyr/dt-bindings/*/alif*.h
+    - scripts/west_commands/runners/alif_flash.py
     - soc/alif/
   labels:
     - "platform: Alif Semiconductor"
@@ -1491,6 +1493,19 @@ Display controllers:
     - display.cfb
     - drivers.display
     - sample.display
+
+Division by Reciprocal:
+  status: maintained
+  maintainers:
+    - npitre
+  files:
+    - doc/kernel/div64.rst
+    - include/zephyr/sys/div64.h
+    - lib/os/div64.c
+    - tests/lib/div64/
+    - tests/unit/time_units/reciprocal.c
+  tests:
+    - libraries.div64
 
 Documentation:
   status: maintained
@@ -2697,8 +2712,11 @@ Documentation Infrastructure:
   files:
     - drivers/ptp_clock/
     - include/zephyr/drivers/ptp_clock.h
+    - tests/drivers/ptp_clock/
   labels:
     - "area: Clocks"
+  tests:
+    - drivers.ptp_clock
 
 "Drivers: PWM":
   status: maintained
@@ -3756,6 +3774,7 @@ Intel Platforms (Xtensa):
     - ycsin
     - dcpleung
     - nashif
+    - hongquan-prog
   files:
     - drivers/interrupt_controller/
     - dts/bindings/interrupt-controller/
@@ -3999,6 +4018,7 @@ LoRa and LoRaWAN:
     - martinjaeger
     - mniestroj
     - carlocaione
+    - juanjin-dev
   files:
     - drivers/lora/
     - include/zephyr/drivers/lora.h
@@ -4242,6 +4262,7 @@ Microchip RISC-V Platforms:
     - boards/microchip/pic64gx_curiosity_kit/
     - dts/riscv/microchip/
     - soc/microchip/miv/
+    - soc/microchip/polarfire/
     - soc/microchip/pic64/
     - drivers/*/*mchp*mss*
     - dts/bindings/*/microchip,mpfs*
@@ -4839,6 +4860,7 @@ Networking:
     - tests/net/wifi/
     - tests/net/arp/
     - tests/net/bridge/
+    - tests/net/bridge_stp/
     - tests/net/ethernet_mgmt/
     - tests/net/vlan/
   labels:
@@ -4968,6 +4990,7 @@ Networking:
     - samples/net/ethernet/
     - tests/net/arp/
     - tests/net/bridge/
+    - tests/net/bridge_stp/
     - tests/net/ethernet_mgmt/
     - tests/net/vlan/
     - doc/services/connectivity/networking/api/ethernet*.rst
@@ -5085,6 +5108,7 @@ Networking:
   files:
     - doc/services/connectivity/networking/api/ieee802154.rst
     - include/zephyr/net/ieee802154*.h
+    - samples/net/ieee802154/
     - subsys/net/l2/ieee802154/
     - subsys/net/lib/config/ieee802154*
     - tests/net/ieee802154/
@@ -5266,6 +5290,7 @@ OTP:
     - drivers/otp/
     - dts/bindings/otp/
     - include/zephyr/drivers/otp.h
+    - tests/drivers/otp/
     - tests/subsys/nvmem/api/otp.overlay
   labels:
     - "area: OTP"
@@ -5353,7 +5378,6 @@ PHYTEC Platforms:
   maintainers:
     - dnltz
   collaborators:
-    - jonas-rem
     - pefech
   files:
     - boards/phytec/
@@ -5486,6 +5510,17 @@ QNX Hypervisor Platforms:
     - dts/arm/quicklogic/
   labels:
     - "platform: Quicklogic"
+
+RAKwireless Platforms:
+  status: maintained
+  maintainers:
+    - juanjin-dev
+  files:
+    - boards/rakwireless/
+    - boards/shields/rakwireless_*/
+    - dts/vendor/rakwireless/
+  labels:
+    - "platform: RAKwireless"
 
 RISCV Platforms:
   status: maintained
@@ -5733,6 +5768,7 @@ Renesas R-Car Platforms:
     - lorc
   collaborators:
     - xakep-amatop
+    - jpanisbl
   files:
     - boards/renesas/rcar_*/
     - drivers/*/*rcar*
@@ -5851,6 +5887,7 @@ Retention:
     - include/zephyr/retention/
     - subsys/retention/
     - doc/services/storage/retention/
+    - tests/subsys/retention/
   labels:
     - "area: Retention"
 
@@ -5867,6 +5904,20 @@ Rockchip Platforms:
     - include/zephyr/dt-bindings/*/*rk35*
   labels:
     - "platform: Rockchip"
+
+Rust:
+  status: maintained
+  maintainers:
+    - d3zd3z
+  collaborators:
+    - felipebalbi
+    - kurtjd
+    - jerrysxie
+  files:
+    - doc/develop/languages/rust/
+    - modules/Kconfig.rust
+  labels:
+    - "area: Rust"
 
 SPARC arch:
   status: odd fixes
@@ -6825,6 +6876,7 @@ Utilities:
   files:
     - include/zephyr/data/cobs.h
     - lib/utils/
+    - tests/lib/bitmap/
     - tests/unit/timeutil/
     - tests/unit/time_units/
     - tests/unit/rbtree/
@@ -7079,6 +7131,8 @@ West:
     - modules/dhara/
   labels:
     - "area: Disk Access"
+  tests:
+    - drivers.disk.ftl
 
 "West project: edtt":
   status: maintained
@@ -7909,18 +7963,6 @@ West:
     - modules/zcbor/
   labels:
     - "area: CBOR"
-
-"West project: zephyr-lang-rust":
-  status: maintained
-  maintainers:
-    - d3zd3z
-  collaborators:
-    - felipebalbi
-    - kurtjd
-    - jerrysxie
-  files: []
-  labels:
-    - "area: Rust"
 
 "West project: zephyr-xenlib":
   status: maintained

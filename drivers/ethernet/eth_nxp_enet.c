@@ -117,6 +117,18 @@ struct nxp_enet_mac_data {
 static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
 
+/* Priority of the dedicated ENET RX drain thread. Cooperative by default;
+ * on a sustained 1G receive path that can be delayed long enough for the RX
+ * DMA to overrun its descriptors (kStatus_ENET_RxFrameError). Selecting
+ * ETH_NXP_ENET_RX_THREAD_PREEMPTIVE runs it preemptibly so it recycles
+ * descriptors promptly.
+ */
+#if defined(CONFIG_ETH_NXP_ENET_RX_THREAD_PREEMPTIVE)
+#define ENET_RX_THREAD_PRIO K_PRIO_PREEMPT(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#else
+#define ENET_RX_THREAD_PRIO K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#endif
+
 static int rx_queue_init(void)
 {
 	struct k_work_queue_config cfg = {.name = "ENET_RX"};
@@ -124,7 +136,7 @@ static int rx_queue_init(void)
 	k_work_queue_init(&rx_work_queue);
 	k_work_queue_start(&rx_work_queue, enet_rx_stack,
 			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
-			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY),
+			   ENET_RX_THREAD_PRIO,
 			   &cfg);
 
 	return 0;
@@ -290,6 +302,13 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	frame_is_timestamped = net_pkt_is_tx_timestamping(pkt);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
+	/*
+	 * Without a running 1588 timer there is no timestamp, and reading the timer when the
+	 * frame is reclaimed would wait forever with interrupts locked
+	 */
+	frame_is_timestamped = frame_is_timestamped && data->ptp.ptp_running;
+#endif
 
 	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf, total_len, RING_ID,
 			     frame_is_timestamped, pkt);
@@ -460,24 +479,27 @@ static int eth_nxp_enet_rx(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-	k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
+	/* Without a running 1588 timer the frame has no timestamp */
+	if (data->ptp.ptp_running) {
+		k_mutex_lock(data->ptp.ptp_mutex, K_FOREVER);
 
-	/* Timestamp the packet using PTP clock. Add full second part
-	 * the hardware timestamp contains the fractional part of the second only
-	 */
-	ptp_clock_get(config->ptp_clock, &ptp_time);
+		/* Timestamp the packet using PTP clock. Add full second part
+		 * the hardware timestamp contains the fractional part of the second only
+		 */
+		ptp_clock_get(config->ptp_clock, &ptp_time);
 
-	/* If latest timestamp reloads after getting from Rx BD,
-	 * then second - 1 to make sure the actual Rx timestamp is accurate
-	 */
-	if (ptp_time.nanosecond < ts) {
-		ptp_time.second--;
+		/* If latest timestamp reloads after getting from Rx BD,
+		 * then second - 1 to make sure the actual Rx timestamp is accurate
+		 */
+		if (ptp_time.nanosecond < ts) {
+			ptp_time.second--;
+		}
+
+		pkt->timestamp.nanosecond = ts;
+		pkt->timestamp.second = ptp_time.second;
+		net_pkt_set_rx_timestamping(pkt, true);
+		k_mutex_unlock(data->ptp.ptp_mutex);
 	}
-
-	pkt->timestamp.nanosecond = ts;
-	pkt->timestamp.second = ptp_time.second;
-	net_pkt_set_rx_timestamping(pkt, true);
-	k_mutex_unlock(data->ptp.ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 	iface = get_iface(data);
@@ -835,6 +857,30 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
+
+#if defined(CONFIG_ETH_NXP_ENET_RX_INT_COALESCE) &&					\
+	defined(FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) &&				\
+	FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
+	/* Program hardware RX/TX interrupt coalescing so the MAC raises an
+	 * interrupt only after a batch of frames (or a hardware timer) rather
+	 * than once per frame. This amortizes the fixed per-interrupt and
+	 * RX-thread wake cost across many standard frames on the 1G path. Ring 0
+	 * only; the other rings (AVB-classified) are left uncoalesced.
+	 */
+	{
+		static enet_intcoalesce_config_t intcoalesce_cfg;
+
+		intcoalesce_cfg.rxCoalesceFrameCount[0] =
+			CONFIG_ETH_NXP_ENET_RX_COALESCE_FRAMES;
+		intcoalesce_cfg.rxCoalesceTimeCount[0] =
+			CONFIG_ETH_NXP_ENET_RX_COALESCE_TICKS;
+		intcoalesce_cfg.txCoalesceFrameCount[0] =
+			CONFIG_ETH_NXP_ENET_TX_COALESCE_FRAMES;
+		intcoalesce_cfg.txCoalesceTimeCount[0] =
+			CONFIG_ETH_NXP_ENET_TX_COALESCE_TICKS;
+		enet_config.intCoalesceCfg = &intcoalesce_cfg;
+	}
+#endif
 
 	ENET_Up(data->base,
 		  &data->enet_handle,

@@ -824,6 +824,8 @@ static uint8_t smp_bt_bridge_discover(struct bt_conn *conn, const struct bt_gatt
 		}
 	} else {
 		bt_smp_subscribe_params.ccc_handle = attr->handle;
+		/* The host clears the value when a subscription ends, so set it for every bridge */
+		bt_smp_subscribe_params.value = BT_GATT_CCC_NOTIFY;
 
 		rc = bt_gatt_subscribe(conn, &bt_smp_subscribe_params);
 

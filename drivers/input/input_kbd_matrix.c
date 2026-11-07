@@ -294,6 +294,7 @@ static void input_kbd_matrix_poll(const struct device *dev)
 	k_timepoint_t poll_time_end;
 	uint32_t current_cycles;
 	uint32_t cycles_diff;
+	uint32_t cycles_diff_us;
 	uint32_t wait_period_us;
 	uint32_t poll_period_us;
 
@@ -316,14 +317,19 @@ static void input_kbd_matrix_poll(const struct device *dev)
 		 */
 		current_cycles = k_cycle_get_32();
 		cycles_diff = current_cycles - start_period_cycles;
+		cycles_diff_us = k_cyc_to_us_floor32(cycles_diff);
 
 		if (input_kbd_matrix_is_unstable(dev)) {
 			poll_period_us = cfg->poll_period_us;
 		} else {
 			poll_period_us = cfg->stable_poll_period_us;
 		}
-		wait_period_us = clamp(poll_period_us - k_cyc_to_us_floor32(cycles_diff),
-				       USEC_PER_MSEC, poll_period_us);
+		if (cycles_diff_us >= poll_period_us) {
+			wait_period_us = 0;
+		} else {
+			wait_period_us = poll_period_us - cycles_diff_us;
+		}
+		wait_period_us = max(wait_period_us, USEC_PER_MSEC);
 
 		LOG_DBG("wait_period_us: %d", wait_period_us);
 

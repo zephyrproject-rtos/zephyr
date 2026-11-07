@@ -457,12 +457,9 @@ Here are more details on the peripherals that are currently provided with this b
   Both can also be overridden from the command line with the ``--wifi-if=<name>``
   and ``--wifi-mac-addr=<mac>`` options.
 
-  64-bit ``native_sim`` (``native_sim/native/64``) is not supported yet, as the
-  hostap sources the driver pulls in do not build cleanly for 64-bit, so the
-  driver can only be built for a 32-bit ``native_sim`` image on a Linux host.
   The build links the host ``libnl``, which has to match the word size of the
-  image, so it requires the 32-bit ``libnl`` development libraries; on a
-  Debian/Ubuntu host:
+  image. The default 32-bit ``native_sim`` target requires the 32-bit ``libnl``
+  development libraries; on a Debian/Ubuntu host:
 
   .. code-block:: console
 
@@ -470,6 +467,13 @@ Here are more details on the peripherals that are currently provided with this b
      $ sudo apt update
      $ sudo apt install gcc-multilib pkg-config libnl-3-dev:i386 libnl-genl-3-dev:i386
      $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+  For :ref:`64bit native_sim<native_sim32_64>` builds the 64-bit version is
+  needed instead:
+
+  .. code-block:: console
+
+     $ sudo apt install pkg-config libnl-3-dev libnl-genl-3-dev
 
   The simulated radio and the access points it connects to are created on the
   host with the ``net-setup.sh`` script and the ``zwifi`` configuration from the
@@ -847,6 +851,13 @@ Interaction with serial ports can be configured in several different ways:
 * Serial port and baud rate can also be set via command line options ``X_port``
   and ``X_baud`` respectively, where ``X`` is a name of a node. Command line
   options override values from the devicetree.
+* When neither ``serial-port`` nor ``X_port`` names the port, the driver can
+  find a USB serial adapter by vendor and product ID: the ``usb-ids`` property
+  lists ``<vendor-id product-id>`` pairs, tried in order, and the first host tty
+  whose USB device matches is opened. The application exits if none matches.
+* The ``low-latency`` property asks the host tty driver to deliver received
+  data at once instead of after a latency timer, which USB serial adapters such
+  as FTDI ones otherwise wait for.
 * The rest of the configuration options such as number of data and stop bits,
   parity, as well as baud rate can be set at runtime with ``uart_configure``.
 * This driver can emulate an interrupt-driven UART by enabling
@@ -859,7 +870,9 @@ driver.
 
 This driver only supports poll mode and interrupt mode. Async mode is not
 supported.
-It has runtime configuration support, but no line control support.
+It has runtime configuration support. With
+:kconfig:option:`CONFIG_UART_LINE_CTRL`, :c:func:`uart_line_ctrl_set` drives the
+port's DTR and RTS lines.
 
 .. _native_sim_backends:
 

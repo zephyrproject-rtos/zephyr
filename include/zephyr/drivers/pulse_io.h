@@ -263,45 +263,48 @@ struct pulse_io_rx_req {
 };
 
 /**
- * @brief Driver vtable.
- *
- * Implemented by each backend; not intended for direct application use.
- * The core ops are mandatory and must not be NULL; the RTIO ops are
- * optional and the wrappers return -ENOSYS when they are NULL.
+ * @def_driverbackendgroup{Pulse IO,pulse_io_interface}
+ * @{
+ */
+
+/**
+ * @driver_ops{Pulse IO}
  */
 __subsystem struct pulse_io_driver_api {
-	/** @driver_ops_optional NULL returns -ENOSYS from the wrapper. */
+	/** @driver_ops_optional @copybrief pulse_io_get_capabilities */
 	int (*get_capabilities)(const struct device *dev, struct pulse_io_caps *caps);
 
-	/** @driver_ops_mandatory */
+	/** @driver_ops_mandatory @copybrief pulse_io_channel_get */
 	int (*channel_get)(const struct device *dev, uint8_t channel_idx,
 			   struct pulse_io_channel **chan);
 
-	/** @driver_ops_mandatory */
+	/** @driver_ops_mandatory @copybrief pulse_io_channel_release */
 	int (*channel_release)(const struct device *dev, struct pulse_io_channel *chan);
 
-	/** @driver_ops_mandatory */
+	/** @driver_ops_mandatory @copybrief pulse_io_channel_configure */
 	int (*channel_configure)(const struct device *dev, struct pulse_io_channel *chan,
 				 const struct pulse_io_config *cfg);
 
-	/** @driver_ops_mandatory */
+	/** @driver_ops_mandatory @copybrief pulse_io_transmit_sync */
 	int (*transmit_sync)(const struct device *dev, struct pulse_io_channel *chan,
 			     const struct pulse_io_tx_req *req, k_timeout_t timeout);
 
-	/** @driver_ops_mandatory */
+	/** @driver_ops_mandatory @copybrief pulse_io_receive_sync */
 	int (*receive_sync)(const struct device *dev, struct pulse_io_channel *chan,
 			    const struct pulse_io_rx_req *req, size_t *count, k_timeout_t timeout);
 
-	/** @driver_ops_mandatory */
+	/** @driver_ops_mandatory @copybrief pulse_io_stop */
 	int (*stop)(const struct device *dev, struct pulse_io_channel *chan);
 
-	/** @driver_ops_optional RTIO submit; NULL if the backend has no RTIO support. */
+	/** @driver_ops_optional Submit an RTIO request, see pulse_io_iodev_submit(). */
 	void (*submit)(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
-	/** @driver_ops_optional */
+	/** @driver_ops_optional @copybrief pulse_io_get_encoder */
 	int (*get_encoder)(const struct device *dev, const struct pulse_io_encoder_api **api);
-	/** @driver_ops_optional */
+	/** @driver_ops_optional @copybrief pulse_io_get_decoder */
 	int (*get_decoder)(const struct device *dev, const struct pulse_io_decoder_api **api);
 };
+
+/** @} */
 
 /**
  * @brief Query backend capabilities.
@@ -539,12 +542,14 @@ static inline int z_impl_pulse_io_get_decoder(const struct device *dev,
 	return drv->get_decoder(dev, api);
 }
 
-#ifdef CONFIG_RTIO
+#if defined(CONFIG_RTIO) || defined(__DOXYGEN__)
 /**
  * @brief Submit an RTIO request to a pulse_io device.
  *
  * Routes an RTIO submission queue entry to the backend. Intended to be
  * called from a backend iodev submit handler, not directly by clients.
+ *
+ * @kconfig_dep{CONFIG_RTIO}
  */
 static inline void pulse_io_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {

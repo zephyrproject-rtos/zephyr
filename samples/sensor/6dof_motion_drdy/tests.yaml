@@ -7,3 +7,17 @@ tests:
     filter: dt_alias_exists("6dof_motion_drdy0")
     integration_platforms:
       - nrf52dk/nrf52832
+  sample.sensor.6dof_motion_drdy.adis16607-2:
+    build_only: true
+    tags: sensors
+    extra_args:
+      - SHIELD=eval_adis16607_2_pcbz
+    platform_allow:
+      - apard32690/max32690/m4
+  sample.sensor.6dof_motion_drdy.adis16607-3:
+    build_only: true
+    tags: sensors
+    extra_args:
+      - SHIELD=eval_adis16607_3_pcbz
+    platform_allow:
+      - apard32690/max32690/m4

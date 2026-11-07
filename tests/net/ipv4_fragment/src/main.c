@@ -172,7 +172,7 @@ static struct net_pkt *reass_err_make_udp_fragment(struct net_if *iface,
 						   uint16_t offset, uint16_t payload_len,
 						   bool more);
 
-static struct dummy_api net_iface_api = {
+static const struct dummy_api net_iface_api = {
 	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };

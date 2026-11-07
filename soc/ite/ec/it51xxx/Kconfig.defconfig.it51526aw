@@ -1,0 +1,12 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_IT51526AW
+
+configdefault ITE_IT51XXX_TIMER_COUNTUP_IN_COMBINATION_MODE
+	default y
+
+config NUM_IRQS
+	default 225
+
+endif # SOC_IT51526AW

@@ -6,7 +6,6 @@
 
 #include <errno.h>
 #include <float.h>
-#include <math.h>
 #include <string.h>
 
 #include <zephyr/drivers/ptp_clock.h>
@@ -40,9 +39,13 @@ static int fake_ptp_clock_get_ret;
 static int fake_ptp_clock_get_second_ret;
 static int fake_ptp_clock_set_ret;
 static int fake_ptp_clock_rate_adjust_ret;
-static double fake_ptp_clock_last_rate_ratio;
-static double fake_ptp_clock_applied_rate_ratio;
-static double fake_ptp_clock_rate_limit;
+/* A rate of 0.995 times the nominal one and a limit of 1 %, in scaled ppm */
+#define FAKE_SLOW_SCALED_PPM  (-5000 * PTP_CLOCK_SCALED_PPM_ONE)
+#define FAKE_LIMIT_SCALED_PPM (10000 * PTP_CLOCK_SCALED_PPM_ONE)
+
+static int64_t fake_ptp_clock_last_scaled_ppm;
+static int64_t fake_ptp_clock_applied_scaled_ppm;
+static int64_t fake_ptp_clock_scaled_ppm_limit;
 static int fake_ptp_clock_range_ret;
 static struct net_ptp_time fake_ptp_clock_time;
 static struct net_ptp_time fake_ptp_clock_last_set_time;
@@ -144,21 +147,22 @@ static int fake_ptp_clock_adjust(const struct device *dev, int increment)
 	return 0;
 }
 
-static int fake_ptp_clock_rate_adjust(const struct device *dev, double ratio)
+static int fake_ptp_clock_adjust_rate(const struct device *dev, int64_t scaled_ppm)
 {
 	ARG_UNUSED(dev);
 
 	fake_ptp_clock_rate_adjust_calls++;
-	fake_ptp_clock_last_rate_ratio = ratio;
+	fake_ptp_clock_last_scaled_ppm = scaled_ppm;
 
 	if (fake_ptp_clock_rate_adjust_ret < 0) {
 		return fake_ptp_clock_rate_adjust_ret;
 	}
-	if (fabs(ratio - 1.0) > fake_ptp_clock_rate_limit) {
+	if ((scaled_ppm > fake_ptp_clock_scaled_ppm_limit) ||
+	    (scaled_ppm < -fake_ptp_clock_scaled_ppm_limit)) {
 		return fake_ptp_clock_range_ret;
 	}
 
-	fake_ptp_clock_applied_rate_ratio = ratio;
+	fake_ptp_clock_applied_scaled_ppm = scaled_ppm;
 	return 0;
 }
 
@@ -166,7 +170,7 @@ static DEVICE_API(ptp_clock, fake_ptp_clock_api) = {
 	.set = fake_ptp_clock_set,
 	.get = fake_ptp_clock_get,
 	.adjust = fake_ptp_clock_adjust,
-	.rate_adjust = fake_ptp_clock_rate_adjust,
+	.adjust_rate = fake_ptp_clock_adjust_rate,
 };
 
 DEVICE_DEFINE(fake_phc, "fake_phc", NULL, NULL, NULL, NULL, POST_KERNEL,
@@ -291,9 +295,7 @@ int ptp_port_management_msg_process(struct ptp_port *port, struct ptp_port *send
 #define net_eth_get_ptp_clock    fake_net_eth_get_ptp_clock
 #define ptp_clock_get            fake_ptp_clock_get
 #define ptp_clock_set            fake_ptp_clock_set
-#define ptp_clock_rate_adjust    fake_ptp_clock_rate_adjust
 #include "../../../../../subsys/net/lib/ptp/clock.c"
-#undef ptp_clock_rate_adjust
 #undef ptp_clock_set
 #undef ptp_clock_get
 #undef net_eth_get_ptp_clock
@@ -328,9 +330,9 @@ static void reset_clock_state(void)
 	fake_ptp_clock_get_second_ret = 0;
 	fake_ptp_clock_set_ret = 0;
 	fake_ptp_clock_rate_adjust_ret = 0;
-	fake_ptp_clock_last_rate_ratio = 0.0;
-	fake_ptp_clock_applied_rate_ratio = 1.0;
-	fake_ptp_clock_rate_limit = 1.0;
+	fake_ptp_clock_last_scaled_ppm = INT64_MIN;
+	fake_ptp_clock_applied_scaled_ppm = 0;
+	fake_ptp_clock_scaled_ppm_limit = 1000000 * PTP_CLOCK_SCALED_PPM_ONE;
 	fake_ptp_clock_range_ret = -EINVAL;
 	memset(&fake_ptp_clock_time, 0, sizeof(fake_ptp_clock_time));
 	memset(&fake_ptp_clock_last_set_time, 0, sizeof(fake_ptp_clock_last_set_time));
@@ -617,7 +619,7 @@ ZTEST(ptp_clock_wakeup, test_unrepresentable_pi_output_resets_locked_servo)
 		      "locked servo should not step on unrepresentable PI output");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
 		      "only the nominal-rate reset should reach the clock");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "servo reset should restore nominal rate");
 	zassert_equal(ptp_clk.pi.integral, 0.0, "servo integral should be cleared");
 	zassert_false(ptp_clk.sync_servo_locked, "servo lock should be cleared");
@@ -643,7 +645,7 @@ ZTEST(ptp_clock_wakeup, test_unrepresentable_pi_output_steps_while_unlocked)
 		      "step nanoseconds mismatch");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
 		      "only the servo reset should reach the rate control");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "step should leave the PHC at nominal rate");
 	zassert_equal(ptp_clk.pi.integral, 0.0, "servo integral should be cleared");
 	zassert_false(ptp_clk.sync_servo_locked, "servo should stay unlocked");
@@ -664,7 +666,16 @@ ZTEST(ptp_clock_wakeup, test_synchronize_applies_pi_rate_adjustment)
 		      "offset mismatch");
 	zassert_equal(fake_ptp_clock_set_calls, 0, "small offset should not hard-step");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "rate adjust should be applied");
-	zassert_true(fake_ptp_clock_applied_rate_ratio < 1.0, "positive offset should slow clock");
+	zassert_true(fake_ptp_clock_applied_scaled_ppm < 0, "positive offset should slow clock");
+}
+
+/* Scaled ppm the PTP clock gets from a PI output in ppb */
+static int64_t scaled_ppm_for_ppb(double ppb)
+{
+	int64_t scaled_ppm;
+
+	zassert_ok(precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm));
+	return scaled_ppm;
 }
 
 ZTEST(ptp_clock_wakeup, test_pi_gains_follow_sync_interval)
@@ -683,17 +694,8 @@ ZTEST(ptp_clock_wakeup, test_pi_gains_follow_sync_interval)
 
 	expected_ppb = -(kp + ki) * scale * (double)offset;
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "rate adjust should be applied");
-	zassert_within(fake_ptp_clock_last_rate_ratio, 1.0 + expected_ppb * 1.0e-9, 1.0e-10,
+	zassert_within(fake_ptp_clock_last_scaled_ppm, scaled_ppm_for_ppb(expected_ppb), 7,
 		       "rate does not follow the Sync interval setting");
-}
-
-/* Rate ratio the PTP clock gets from a PI output in ppb */
-static double ratio_for_ppb(double ppb)
-{
-	int64_t scaled_ppm;
-
-	zassert_ok(precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm));
-	return 1.0 + (double)scaled_ppm / (1000000.0 * PRECISION_CLOCK_SCALED_PPM_ONE);
 }
 
 ZTEST(ptp_clock_wakeup, test_pi_gains_follow_elapsed_time_after_lost_sync)
@@ -722,8 +724,8 @@ ZTEST(ptp_clock_wakeup, test_pi_gains_follow_elapsed_time_after_lost_sync)
 	expected_ppb = precision_pi_update_interval(&reference, -1000.0, 0.5);
 
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 2, "both samples should adjust the rate");
-	zassert_within(fake_ptp_clock_last_rate_ratio, ratio_for_ppb(expected_ppb), 1.0e-12,
-		       "gains not scaled by the elapsed time");
+	zassert_equal(fake_ptp_clock_last_scaled_ppm, scaled_ppm_for_ppb(expected_ppb),
+		      "gains not scaled by the elapsed time");
 }
 
 ZTEST(ptp_clock_wakeup, test_pi_gains_use_advertised_interval_after_long_gap)
@@ -750,8 +752,8 @@ ZTEST(ptp_clock_wakeup, test_pi_gains_use_advertised_interval_after_long_gap)
 	clock_adjust_rate(precision_clk, 1000);
 	expected_ppb = precision_pi_update_interval(&reference, -1000.0, 0.25);
 
-	zassert_within(fake_ptp_clock_last_rate_ratio, ratio_for_ppb(expected_ppb), 1.0e-12,
-		       "a long gap should fall back to the advertised interval");
+	zassert_equal(fake_ptp_clock_last_scaled_ppm, scaled_ppm_for_ppb(expected_ppb),
+		      "a long gap should fall back to the advertised interval");
 }
 
 ZTEST(ptp_clock_wakeup, test_pi_gains_limited_for_close_samples)
@@ -779,8 +781,8 @@ ZTEST(ptp_clock_wakeup, test_pi_gains_limited_for_close_samples)
 	expected_ppb = precision_pi_update_interval(&reference, -1000.0, 1.0 / 1024.0);
 
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 2, "both samples should adjust the rate");
-	zassert_within(fake_ptp_clock_last_rate_ratio, ratio_for_ppb(expected_ppb), 1.0e-12,
-		       "close samples should be scaled for the shortest Sync interval");
+	zassert_equal(fake_ptp_clock_last_scaled_ppm, scaled_ppm_for_ppb(expected_ppb),
+		      "close samples should be scaled for the shortest Sync interval");
 }
 
 ZTEST(ptp_clock_wakeup, test_pi_gains_use_limited_advertised_interval)
@@ -804,8 +806,8 @@ ZTEST(ptp_clock_wakeup, test_pi_gains_use_limited_advertised_interval)
 	expected_ppb = precision_pi_update_interval(&reference, -1000.0, 1.0 / 1024.0);
 
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "the sample should adjust the rate");
-	zassert_within(fake_ptp_clock_last_rate_ratio, ratio_for_ppb(expected_ppb), 1.0e-12,
-		       "the advertised interval should be limited to 2^-10 s");
+	zassert_equal(fake_ptp_clock_last_scaled_ppm, scaled_ppm_for_ppb(expected_ppb),
+		      "the advertised interval should be limited to 2^-10 s");
 }
 
 ZTEST(ptp_clock_wakeup, test_time_transmitter_change_forgets_last_sample)
@@ -841,7 +843,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_resets_locked_servo_after_rate_adjust_f
 
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 2,
 		      "failed adjustment should be followed by servo reset");
-	zassert_equal(fake_ptp_clock_last_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_last_scaled_ppm, 0,
 		      "servo reset should request nominal rate");
 	zassert_equal(ptp_clk.pi.integral, 0.0, "servo integral should be cleared");
 	zassert_false(ptp_clk.sync_servo_locked, "servo lock should be cleared");
@@ -859,9 +861,9 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_while_unlocked_after_rate_adjust_
 	ptp_clk.phc = DEVICE_GET(fake_phc);
 	ptp_clk.current_ds.mean_delay = (ptp_timeinterval)delay << 16;
 	fake_ptp_clock_time.second = 1;
-	zassert_ok(fake_ptp_clock_rate_adjust(DEVICE_GET(fake_phc), 0.995));
+	zassert_ok(fake_ptp_clock_adjust_rate(DEVICE_GET(fake_phc), FAKE_SLOW_SCALED_PPM));
 	fake_ptp_clock_rate_adjust_calls = 0;
-	fake_ptp_clock_rate_limit = 0.01;
+	fake_ptp_clock_scaled_ppm_limit = FAKE_LIMIT_SCALED_PPM;
 
 	ptp_clock_synchronize(ingress, ingress - delay - offset, true);
 
@@ -872,7 +874,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_while_unlocked_after_rate_adjust_
 		      NSEC_PER_SEC - offset, "step nanoseconds mismatch");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 2,
 		      "failed adjustment followed by nominal rate on step");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "step should leave the PHC at nominal rate");
 	zassert_equal(ptp_clk.pi.integral, 0.0, "servo integral should be cleared");
 	zassert_false(ptp_clk.sync_servo_locked, "servo should stay unlocked");
@@ -889,7 +891,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_while_unlocked_after_rate_adjust_
 	zassert_equal(fake_ptp_clock_set_calls, 1,
 		      "acquisition after the step should not step again");
 	zassert_true(ptp_clk.sync_servo_locked, "servo should reacquire after the step");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "zero-offset acquisition should retain nominal rate");
 }
 
@@ -904,7 +906,8 @@ ZTEST(ptp_clock_wakeup, test_synchronize_does_not_step_after_hardware_rate_error
 		for (int locked = 0; locked <= 1; locked++) {
 			reset_clock_state();
 			fake_ptp_clock_time.second = 1;
-			zassert_ok(fake_ptp_clock_rate_adjust(DEVICE_GET(fake_phc), 0.995));
+			zassert_ok(fake_ptp_clock_adjust_rate(DEVICE_GET(fake_phc),
+							      FAKE_SLOW_SCALED_PPM));
 			fake_ptp_clock_rate_adjust_ret = errors[i];
 			ptp_clk.sync_servo_locked = locked;
 			ptp_clk.sync_servo_lock_samples = 2;
@@ -919,9 +922,9 @@ ZTEST(ptp_clock_wakeup, test_synchronize_does_not_step_after_hardware_rate_error
 			zassert_equal(ptp_clk.pi.integral, 0.0, "failed sample must reset PI");
 			zassert_equal(ptp_clk.sync_servo_lock_samples, 0);
 			zassert_false(ptp_clk.sync_servo_locked);
-			zassert_equal(fake_ptp_clock_last_rate_ratio, 1.0,
+			zassert_equal(fake_ptp_clock_last_scaled_ppm, 0,
 				      "reset should attempt nominal rate");
-			zassert_equal(fake_ptp_clock_applied_rate_ratio, 0.995,
+			zassert_equal(fake_ptp_clock_applied_scaled_ppm, FAKE_SLOW_SCALED_PPM,
 				      "failed nominal reset must not change the applied rate");
 		}
 	}
@@ -939,8 +942,9 @@ ZTEST(ptp_clock_wakeup, test_synchronize_rate_rejection_respects_lock_state)
 			for (int locked = 0; locked <= 1; locked++) {
 				reset_clock_state();
 				fake_ptp_clock_time.second = 1;
-				zassert_ok(fake_ptp_clock_rate_adjust(DEVICE_GET(fake_phc), 0.995));
-				fake_ptp_clock_rate_limit = 0.01;
+				zassert_ok(fake_ptp_clock_adjust_rate(DEVICE_GET(fake_phc),
+								      FAKE_SLOW_SCALED_PPM));
+				fake_ptp_clock_scaled_ppm_limit = FAKE_LIMIT_SCALED_PPM;
 				fake_ptp_clock_range_ret = errors[i];
 				ptp_clk.sync_servo_locked = locked;
 
@@ -958,7 +962,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_rate_rejection_respects_lock_state)
 					zassert_equal(fake_ptp_clock_last_set_time.nanosecond,
 						      target % NSEC_PER_SEC);
 				}
-				zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+				zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 					      "rate rejection should restore nominal rate");
 				zassert_equal(ptp_clk.pi.integral, 0.0);
 				zassert_false(ptp_clk.sync_servo_locked);
@@ -971,8 +975,8 @@ static void check_rate_rejection_step_failure(uint64_t ingress, int64_t offset)
 {
 	const int64_t delay = 100;
 
-	zassert_ok(fake_ptp_clock_rate_adjust(DEVICE_GET(fake_phc), 0.995));
-	fake_ptp_clock_rate_limit = 0.01;
+	zassert_ok(fake_ptp_clock_adjust_rate(DEVICE_GET(fake_phc), FAKE_SLOW_SCALED_PPM));
+	fake_ptp_clock_scaled_ppm_limit = FAKE_LIMIT_SCALED_PPM;
 	ptp_clk.sync_servo_lock_samples = 2;
 
 	for (int i = 0; i < 2; i++) {
@@ -984,7 +988,7 @@ static void check_rate_rejection_step_failure(uint64_t ingress, int64_t offset)
 			      "failed fallback must discard the rejected PI correction");
 		zassert_equal(ptp_clk.sync_servo_lock_samples, 0);
 		zassert_false(ptp_clk.sync_servo_locked);
-		zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0);
+		zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0);
 		zassert_equal(ptp_clk.current_ds.mean_delay, (ptp_timeinterval)delay << 16,
 			      "failed step must retain delay state");
 		zassert_equal(ptp_clk.timestamp.t2, ingress,
@@ -1002,7 +1006,7 @@ static void check_rate_rejection_step_failure(uint64_t ingress, int64_t offset)
 						 (ptp_timeinterval)delay << 16, true);
 	}
 
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "zero-offset samples must not inherit rejected corrections");
 	zassert_equal(fake_ptp_clock_set_calls, 0);
 	zassert_true(ptp_clk.sync_servo_locked, "servo should reacquire after failure clears");
@@ -1063,7 +1067,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_persistent_offset_after_locked_ou
 	zassert_false(ptp_clk.sync_servo_locked, "consecutive outliers should reset the servo");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, SYNC_SERVO_LOCK_SAMPLES + 1,
 		      "second outlier should only restore nominal rate");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "servo reset should restore nominal rate");
 	zassert_equal(fake_ptp_clock_set_calls, 0, "outliers alone should not step the PHC");
 
@@ -1074,7 +1078,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_persistent_offset_after_locked_ou
 	zassert_equal(fake_ptp_clock_last_set_time.second, 0, "step seconds mismatch");
 	zassert_equal(fake_ptp_clock_last_set_time.nanosecond, NSEC_PER_SEC - persistent_offset,
 		      "step nanoseconds mismatch");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "step should leave the PHC at nominal rate");
 }
 
@@ -1094,7 +1098,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_steps_large_offset_while_unlocked)
 		      "unlocked offset beyond the unlocked step bound should step the PHC");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
 		      "only the servo reset should reach the rate control");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0, "step should use nominal rate");
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0, "step should use nominal rate");
 }
 
 /* The outlier threshold applies only while locked: an unlocked servo steps above
@@ -1116,7 +1120,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_slews_unlocked_offset_above_outlier_thr
 		      "unlocked offset below the fixed bound should not step the PHC");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
 		      "unlocked offset should drive the PI controller");
-	zassert_true(fake_ptp_clock_applied_rate_ratio < 1.0, "positive offset should slow clock");
+	zassert_true(fake_ptp_clock_applied_scaled_ppm < 0, "positive offset should slow clock");
 }
 
 ZTEST(ptp_clock_wakeup, test_synchronize_good_sample_clears_locked_outlier_count)
@@ -1163,7 +1167,7 @@ ZTEST(ptp_clock_wakeup, test_synchronize_hard_steps_large_offset_and_resets_dela
 	zassert_equal(ptp_clk.current_ds.mean_delay, 0, "hard step should reset mean delay");
 	zassert_equal(ptp_clk.timestamp.t1, 0, "hard step should clear timestamps");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "hard step should reset servo rate");
-	zassert_equal(fake_ptp_clock_applied_rate_ratio, 1.0,
+	zassert_equal(fake_ptp_clock_applied_scaled_ppm, 0,
 		      "servo reset should use nominal rate");
 }
 

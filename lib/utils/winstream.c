@@ -57,7 +57,7 @@ void sys_winstream_write(struct sys_winstream *ws,
 	 * len-1 from above)
 	 */
 	len = min(len, ws->len);
-	if (seq != 0) {
+	if ((seq != 0) || (start != end)) {
 		uint32_t avail = (ws->len - 1) - idx_sub(ws, end, start);
 
 		if (len > avail) {

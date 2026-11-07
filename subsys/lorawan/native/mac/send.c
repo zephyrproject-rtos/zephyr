@@ -485,7 +485,7 @@ static int mac_process_dl_payload(struct lwan_ctx *ctx,
 				  const struct dl_frame_info *frame_info,
 				  int16_t rssi, int8_t snr)
 {
-	struct dl_payload_info payload;
+	struct dl_payload_info payload = {0};
 
 	if (!mac_get_dl_payload_info(rx_buf, rx_len, frame_info->fopts_len,
 				     &payload) ||
@@ -639,7 +639,7 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 {
 	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
 	struct lwan_session *sess = &ctx->session;
-	struct dl_payload_info payload;
+	struct dl_payload_info payload = {0};
 	struct dl_frame_info frame_info;
 	bool has_payload;
 	int ret;

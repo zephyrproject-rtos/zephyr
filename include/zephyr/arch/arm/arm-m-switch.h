@@ -139,6 +139,13 @@ extern uint32_t arm_m_switch_stack_buffer;
 struct arm_m_cs_ptrs {
 	/** Pointer to the callee-saved block being written by the outgoing thread */
 	void *out, *in, *lr_save, *lr_fixup;
+#ifdef CONFIG_FPU
+	/* FPU register blocks, or NULL if the thread has no FPU state:
+	 * the outgoing thread's s16-s31 are stored to fpu_out and the
+	 * incoming thread's s16-s31 are loaded from fpu_in.
+	 */
+	void *fpu_out, *fpu_in;
+#endif
 };
 /** @endcond */
 
@@ -286,22 +293,36 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 #endif
 
 #ifdef CONFIG_FPU
-			 /* Push FPU state (if active) to our outgoing stack */
+			 /* Push FPU state (if active) to our outgoing stack.
+			  * CONTROL.FPCA is cleared only after the last FP
+			  * instruction: one executed with FPCA clear sets it
+			  * again and first resets FPSCR from FPDSCR.
+			  */
 			 "   mrs r8, control;" /* read CONTROL.FPCA */
 			 "   and r7, r8, #4;"  /* r7 == have_fpu */
 			 "   cbz r7, 1f;"
+			 "   vmrs r6, fpscr;"
+#ifdef CONFIG_ARMV8_1_M_MVEI
+			 "   vmrs r2, vpr;" /* r2 is already saved */
+			 "   push {r2, r6};"
+#else
+			 "   push {r6};"
+#endif
+			 "   vpush {s0-s31};"
 			 "   bic r8, r8, #4;" /* clear CONTROL.FPCA */
 			 "   msr control, r8;"
-			 "   vmrs r6, fpscr;"
-			 "   push {r6};"
-			 "   vpush {s0-s31};"
 			 "1: push {r7};" /* have_fpu word */
 
 			 /* Pop FPU state (if present) from incoming frame in r4 */
 			 "   ldm r4!, {r7};" /* have_fpu word */
 			 "   cbz r7, 2f;"
 			 "   vldm r4!, {s0-s31};" /* (note: sets FPCA bit for us) */
+#ifdef CONFIG_ARMV8_1_M_MVEI
+			 "   ldm r4!, {r2, r6};"
+			 "   vmsr vpr, r2;"
+#else
 			 "   ldm r4!, {r6};"
+#endif
 			 "   vmsr fpscr, r6;"
 			 "2:;"
 #endif

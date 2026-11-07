@@ -96,6 +96,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(DEVICE_API_LD_TARGET       device_api_ld_target)
+set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 # Backward compatibility: open-amp explicitly depends on OFFSETS_H_TARGET
 # which is redundant as zephyr_generated_headers already provides this to
 # all Zephyr libraries.  Remove once open-amp drops this.
@@ -281,14 +282,14 @@ toolchain_linker_add_compiler_options(${simple_options})
 
 if(CONFIG_LTO)
   if(CONFIG_LTO_SINGLE_THREADED)
-    zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto_st>)
+    set(genex_lto "$<TARGET_PROPERTY:compiler,optimization_lto_st>")
     add_link_options($<TARGET_PROPERTY:linker,lto_arguments_st>)
   else()
-    set(genex_tgt_lto "$<TARGET_PROPERTY:LTO>")
     set(genex_lto "$<TARGET_PROPERTY:compiler,optimization_lto>")
-    zephyr_compile_options("$<$<OR:$<STREQUAL:${genex_tgt_lto},>,${genex_tgt_lto}>:${genex_lto}>")
     add_link_options($<TARGET_PROPERTY:linker,lto_arguments>)
   endif()
+  set(genex_tgt_lto "$<TARGET_PROPERTY:LTO>")
+  zephyr_compile_options("$<$<OR:$<STREQUAL:${genex_tgt_lto},>,${genex_tgt_lto}>:${genex_lto}>")
 endif()
 
 if(CONFIG_STD_C23)
@@ -927,6 +928,10 @@ add_custom_command(
           ${syscalls_file_list_output} syscalls_interface
   )
 
+# The Makefile generator copies the rule above into every target that depends on its outputs.
+# Commands that read the json files also depend on this target, so the rule runs only once.
+add_custom_target(${PARSE_SYSCALLS_TARGET} DEPENDS ${syscalls_json} ${struct_tags_json})
+
 # Make sure Picolibc is built before the rest of the system; there's no explicit
 # reference to any of the files as they're all picked up by various compiler
 # settings
@@ -965,7 +970,7 @@ endif()
 add_custom_command(
   OUTPUT
   include/generated/zephyr/syscall_dispatch.c
-  include/generated/zephyr/syscall_exports_llext.c
+  ${ZEPHYR_BINARY_DIR}/syscall_exports_llext.c
   syscall_weakdefs_llext.c
   ${syscall_list_h}
   # Also, some files are written to include/generated/zephyr/syscalls/
@@ -975,7 +980,7 @@ add_custom_command(
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/zephyr/syscalls    # Write to this dir
   --syscall-dispatch include/generated/zephyr/syscall_dispatch.c # Write this file
-  --syscall-exports-llext  include/generated/zephyr/syscall_exports_llext.c
+  --syscall-exports-llext  ${ZEPHYR_BINARY_DIR}/syscall_exports_llext.c # compiled in LLEXT subsys
   --syscall-weakdefs-llext syscall_weakdefs_llext.c # compiled in CMake library 'syscall_weakdefs'
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
@@ -984,7 +989,7 @@ add_custom_command(
   COMMAND
   ${LEGACY_SYSCALL_LIST_H_ARGS}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${syscalls_json}
+  DEPENDS ${syscalls_json} ${PARSE_SYSCALLS_TARGET}
   )
 
 include(${ZEPHYR_BASE}/cmake/kobj.cmake)
@@ -995,12 +1000,12 @@ gen_kobject_list(
   OUTPUTS ${DRV_VALIDATION}
   SCRIPT_ARGS --validation-output ${DRV_VALIDATION}
   INCLUDES ${struct_tags_json}
-  DEPENDS ${struct_tags_json}
+  DEPENDS ${struct_tags_json} ${PARSE_SYSCALLS_TARGET}
   )
 
 gen_kobject_list_headers(
   INCLUDES ${struct_tags_json}
-  DEPENDS ${struct_tags_json}
+  DEPENDS ${struct_tags_json} ${PARSE_SYSCALLS_TARGET}
   )
 
 # Generate sections for kernel device subsystems
@@ -1013,8 +1018,15 @@ set(DEVICE_API_LINKER_SECTIONS_CMAKE
     ${CMAKE_CURRENT_BINARY_DIR}/include/generated/device-api-sections.cmake
 )
 
+set(DEVICE_API_EXPORTS_LLEXT
+    ${ZEPHYR_BINARY_DIR}/device_api_exports_llext.c
+)
+
 add_custom_command(
-  OUTPUT ${DEVICE_API_LD_SECTIONS} ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+  OUTPUT
+    ${DEVICE_API_LD_SECTIONS}
+    ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+    ${DEVICE_API_EXPORTS_LLEXT}
   COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
@@ -1023,9 +1035,11 @@ add_custom_command(
     --tag __subsystem
     --ld-output ${DEVICE_API_LD_SECTIONS}
     --cmake-output ${DEVICE_API_LINKER_SECTIONS_CMAKE}
+    --llext-output ${DEVICE_API_EXPORTS_LLEXT}
   DEPENDS
     ${ZEPHYR_BASE}/scripts/build/gen_iter_sections.py
     ${struct_tags_json}
+    ${PARSE_SYSCALLS_TARGET}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
@@ -1106,7 +1120,7 @@ else()
   set(NO_WHOLE_ARCHIVE_LIBS kernel)
 endif()
 
-if(CONFIG_LLEXT)
+if(CONFIG_LLEXT_EXPORT_SYMBOL_GROUP_SYSCALL)
   # LLEXT exports symbols for all syscalls, including unimplemented ones.
   # Weak definitions for these must be added at the end of the link order
   # to avoid shadowing actual implementations.

@@ -34,3 +34,6 @@ supported:
   - pwm
   - dac
   - opamp
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi

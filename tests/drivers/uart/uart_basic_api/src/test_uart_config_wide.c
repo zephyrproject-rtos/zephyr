@@ -7,7 +7,7 @@
 /*
  * @addtogroup t_uart_basic
  * @{
- * @defgroup t_uart_config test_uart_config_wide
+ * @defgroup t_uart_config_wide test_uart_config_wide
  * @brief TestPurpose: verify UART configure API settings for wide data support
  * @details
  * - Test Steps

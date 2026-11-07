@@ -42,6 +42,7 @@ tests:
       - raytac_an54lv_db_15/nrf54l15/cpuapp
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
+      - kit_psc3m6_eval/psc3m6ges3ahq1
     integration_platforms:
       - nrf52840dk/nrf52840
   sample.drivers.adc.adc_sequence.8bit:

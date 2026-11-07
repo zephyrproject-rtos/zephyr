@@ -227,6 +227,7 @@ static void single_read(enum uart_config_data_bits data_bits, uint32_t baudrate)
 	static const uint8_t tx_buf[] = "0123456789";
 	uint32_t sent_bytes = 0;
 	uint32_t tx_time_ms;
+	uint32_t tx_timeout_us;
 	uint32_t timeout_ms = 50;
 	int rv;
 
@@ -241,6 +242,7 @@ static void single_read(enum uart_config_data_bits data_bits, uint32_t baudrate)
 	}
 	/* Estimate how long it takes to transfer 5 bytes. */
 	tx_time_ms = (5 * 11 * 10000) / uart_cfg.baudrate + 5;
+	tx_timeout_us = tx_time_ms * USEC_PER_MSEC;
 
 	uart_cfg.data_bits = data_bits;
 	rv = uart_configure(uart_dev, &uart_cfg);
@@ -257,7 +259,10 @@ static void single_read(enum uart_config_data_bits data_bits, uint32_t baudrate)
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), -EAGAIN,
 		      "RX_RDY not expected at this point");
 
-	rv = uart_tx(uart_dev, tx_buf, 5, timeout_ms * USEC_PER_MSEC);
+	/* Scale the TX timeout with the baudrate so slow transfers have enough
+	 * time to complete while the timeout remains bounded.
+	 */
+	rv = uart_tx(uart_dev, tx_buf, 5, tx_timeout_us);
 	if (rv == -ENOTSUP) {
 		uart_rx_disable(uart_dev);
 		ztest_test_skip();
@@ -272,7 +277,9 @@ static void single_read(enum uart_config_data_bits data_bits, uint32_t baudrate)
 
 	tdata_check_recv_buffers(tx_buf, sent_bytes, data_bits);
 
-	uart_tx(uart_dev, tx_buf + sent_bytes, 5, timeout_ms * USEC_PER_MSEC);
+	rv = uart_tx(uart_dev, tx_buf + sent_bytes, 5, tx_timeout_us);
+	/* Check submission now, rather than reporting a misleading TX_DONE timeout. */
+	zassert_ok(rv, "uart_tx failed");
 	sent_bytes += 5;
 
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(tx_time_ms)), 0, "TX_DONE timeout");

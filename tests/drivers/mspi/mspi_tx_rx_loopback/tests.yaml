@@ -10,5 +10,6 @@ tests:
   drivers.mspi.mspi_tx_rx_loopback:
     platform_allow:
       - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120e/cpuapp
     extra_configs:
       - CONFIG_MSPI_DMA=y

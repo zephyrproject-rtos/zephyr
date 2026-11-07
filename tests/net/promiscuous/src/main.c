@@ -133,7 +133,7 @@ static int eth_fake_set_config(const struct device *dev,
 	return 0;
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
+static const struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 
 	.get_capabilities = eth_fake_get_capabilities,

@@ -31,8 +31,7 @@ config MQTT_VERSION_3_1_1
 	  with respective runtime MQTT client configuration.
 
 config MQTT_VERSION_5_0
-	bool "Support up to version 5.0 of the MQTT protocol [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Support up to version 5.0 of the MQTT protocol"
 	help
 	  The MQTT version 5.0 will be the default library choice. Applications
 	  will still be able to choose to use an older MQTT protocol version

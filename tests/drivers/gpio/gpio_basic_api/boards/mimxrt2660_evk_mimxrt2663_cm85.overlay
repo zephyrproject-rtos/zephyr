@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect J51-2 (PIO0_2) <-> J51-3 (PIO0_3) */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio5 2 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL)>; /* J51-2 */
+		in-gpios = <&gpio5 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>; /* J51-3 */
+	};
+};

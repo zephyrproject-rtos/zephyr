@@ -49,6 +49,16 @@ static const struct {
 	{ IS_ENABLED(CONFIG_LORAWAN_REGION_RU864), LORAWAN_REGION_RU864 },
 };
 
+static void lwan_region_select(const struct lwan_region_ops *ops)
+{
+	if (ops == NULL) {
+		return;
+	}
+
+	lwan_ctx.region = ops;
+	lwan_ctx.session.rx2_datarate = ops->default_rx2_dr;
+}
+
 static int lorawan_native_init(void)
 {
 	size_t count = 0;
@@ -62,7 +72,7 @@ static int lorawan_native_init(void)
 	}
 
 	if (count == 1) {
-		lwan_ctx.region = lwan_region_get(single);
+		lwan_region_select(lwan_region_get(single));
 	}
 
 	return 0;
@@ -223,7 +233,7 @@ int lorawan_set_region(enum lorawan_region region)
 		return -ENOTSUP;
 	}
 
-	lwan_ctx.region = ops;
+	lwan_region_select(ops);
 	return 0;
 }
 

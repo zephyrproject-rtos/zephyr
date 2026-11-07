@@ -1104,11 +1104,15 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 		uint32_t _wf_cycle_count = k_us_to_cyc_ceil32(timeout);                            \
 		uint32_t _wf_start = k_cycle_get_32();                                             \
 		bool _wf_ret;                                                                      \
-		while (!(_wf_ret = (expr)) &&                                                      \
-		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
+		do {                                                                               \
+			bool _wf_timed_out = (_wf_cycle_count <= (k_cycle_get_32() - _wf_start));  \
+			_wf_ret = (expr);                                                          \
+			if (_wf_ret || _wf_timed_out) {                                            \
+				break;                                                             \
+			}                                                                          \
 			({ delay_stmt; });                                                         \
 			Z_SPIN_DELAY(10);                                                          \
-		}                                                                                  \
+		} while (true);                                                                    \
 		(_wf_ret);                                                                         \
 	})
 

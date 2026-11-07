@@ -18,10 +18,11 @@ then stops, printing a final ``Completed N system-off cycles`` line so a test
 harness can confirm every wakeup happened. No console input is needed.
 
 Because each wakeup is a reset, the completed-cycle counter must survive Deep
-Power Down. Deep Power Down gates every SRAM array, so the sample keeps the
-counter in retained SRAM and arms that SRAM's low-power retention (the VBAT SRAM
-LDO on MCXN, the SPC SRAM retention LDO on MCXA) before powering off. On each
-boot it tells a wake from a cold boot apart using the reset cause reported
+Power Down. The sample keeps the counter in retained SRAM and arms that SRAM's
+low-power retention before powering off. MCXN and MCXA577 use the VBAT backup
+SRAM regulator; the other supported MCXA boards use the SPC SRAM retention LDO.
+Only retainable arrays can preserve the counter; on MCXA577 these are A0 and A3.
+On each boot it tells a wake from a cold boot apart using the reset cause reported
 through :ref:`hwinfo <hwinfo_api>` (``RESET_LOW_POWER_WAKE``): a cold boot seeds
 the counter, a wake keeps counting. Once the target count is reached the sample
 returns without powering off, leaving the SoC awake and debuggable.
@@ -77,5 +78,6 @@ Sample Output
    Woke from system off; retained count 10/10
    Completed 10 system-off cycles
 
-With ``CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON`` each cycle instead waits for a press on
-the board's wakeup button (SW2) to leave system off.
+With ``CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON`` each cycle instead waits for a
+press on the board's wakeup button to leave system off: SW3 on FRDM-MCXA153,
+SW2 on the other supported FRDM boards.

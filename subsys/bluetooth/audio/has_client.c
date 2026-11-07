@@ -865,12 +865,11 @@ int bt_has_client_discover(struct bt_conn *conn)
 		goto cleanup;
 	}
 
-	inst->conn = ref;
+	inst->conn = bt_conn_take(&ref);
 
 	err = features_discover(inst);
 	if (err != 0) {
-		bt_conn_unref(inst->conn);
-		inst->conn = NULL;
+		bt_conn_drop(&inst->conn);
 		goto cleanup;
 	}
 

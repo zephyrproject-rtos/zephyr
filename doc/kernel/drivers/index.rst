@@ -444,6 +444,11 @@ to the associated device node in the DTS file. For example:
            };
    };
 
+.. note::
+   Some drivers might not work correctly if deferred initialization is used,
+   as they may expect to be initialized at boot time.
+   Network drivers currently do not support deferred initialization.
+
 System Drivers
 **************
 

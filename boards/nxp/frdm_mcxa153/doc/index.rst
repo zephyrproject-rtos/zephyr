@@ -63,6 +63,13 @@ Serial Port
 The FRDM-MCXA153 SoC has 3 LPUART interfaces for serial communication.
 LPUART 0 is configured as UART for the console.
 
+.. include:: ../../common/mcxa-mcxn-power-management.rst.inc
+
+The ``wakeup-button`` alias selects SW3 on P1_7, routed to WUU external pin 9
+with a falling-edge interrupt.
+
+The SPC SRAM retention LDO keeps all SRAM powered during suspend-to-RAM.
+
 Programming and Debugging
 *************************
 

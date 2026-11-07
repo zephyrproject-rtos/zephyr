@@ -353,7 +353,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 struct net_icmpv4_context net_icmpv4_context_data;
 
-static struct dummy_api net_icmpv4_if_api = {
+static const struct dummy_api net_icmpv4_if_api = {
 	.iface_api.init = net_icmpv4_iface_init,
 	.send = tester_send,
 };

@@ -161,7 +161,7 @@ ZTEST(hwinfo_device_id_api, test_clear_reset_cause)
 /*
  * @addtogroup t_hwinfo_get_reset_cause_api
  * @{
- * @defgroup t_hwinfo_get_reset_cause test_hwinfo_get_supported_reset_cause
+ * @defgroup t_hwinfo_get_supported_reset_cause test_hwinfo_get_supported_reset_cause
  * @brief TestPurpose: verify get supported reset cause works.
  * @details
  * - Test Steps

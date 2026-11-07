@@ -52,12 +52,6 @@ FOR_EACH(DISPLAY_NODE_CLASS_ASSERT, (), LV_DISPLAYS_IDX_LIST)
 #define BUFFER_BITS_PER_PIXEL LV_COLOR_FORMAT_GET_BPP(LV_COLOR_FORMAT_DEFAULT)
 #endif
 
-#if (CONFIG_LV_Z_BITS_PER_PIXEL == 1) || defined(CONFIG_LV_COLOR_FORMAT_I1)
-#define IS_MONOCHROME_DISPLAY 1
-#else
-#define IS_MONOCHROME_DISPLAY 0
-#endif
-
 #define ALLOC_MONOCHROME_CONV_BUFFER                                                               \
 	UTIL_AND(IS_EQ(IS_MONOCHROME_DISPLAY, 1),                                                  \
 		 IS_EQ(CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER, 1))

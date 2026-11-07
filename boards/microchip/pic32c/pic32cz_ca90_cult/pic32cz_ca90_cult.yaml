@@ -15,8 +15,10 @@ supported:
   - entropy
   - flash
   - gpio
+  - hwinfo
   - i2c
   - pinctrl
+  - reset
   - rtc
   - spi
   - uart

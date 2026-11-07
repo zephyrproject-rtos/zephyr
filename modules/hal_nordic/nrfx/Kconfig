@@ -68,17 +68,14 @@ config NRFX_CLOCK_LF_SRC_XTAL
 
 config NRFX_CLOCK_LF_SRC_SYNTH
 	bool "Synthesized from HFCLK [DEPRECATED]"
-	depends on !SOC_SERIES_NRF91X
 	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_LOW_SWING
 	bool "External low swing [DEPRECATED]"
-	depends on SOC_SERIES_NRF52X
 	select DEPRECATED
 
 config NRFX_CLOCK_LF_SRC_FULL_SWING
 	bool "External full swing [DEPRECATED]"
-	depends on SOC_SERIES_NRF52X
 	select DEPRECATED
 
 config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED

@@ -120,6 +120,10 @@ static void icm4268x_complete_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 		accel_fs_hr = ICM42686_DT_ACCEL_FS_32;
 		gyro_fs_hr = ICM42686_DT_GYRO_FS_4000;
 		break;
+	case ICM4268X_VARIANT_IIM42653:
+		accel_fs_hr = IIM42653_DT_ACCEL_FS_32;
+		gyro_fs_hr = IIM42653_DT_GYRO_FS_4000;
+		break;
 	default:
 		CODE_UNREACHABLE;
 	}

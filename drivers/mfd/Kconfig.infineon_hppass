@@ -17,6 +17,13 @@ config MFD_INFINEON_HPPASS
 	  trigger configuration, and the combined MCPASS interrupt, providing
 	  APIs for child peripheral drivers.
 
+config MFD_INFINEON_HPPASS_V3
+	def_bool DT_HAS_INFINEON_HPPASS_ANALOG_V3_ENABLED
+	depends on MFD_INFINEON_HPPASS
+	help
+	  Set when the HPPASS node carries the MCPASS v3 register layout, which
+	  routes 16 triggers and moves the INFRA and MMIO trigger registers.
+
 config MFD_INFINEON_HPPASS_INIT_PRIORITY
 	int "Infineon HPPASS MFD init priority"
 	default 41

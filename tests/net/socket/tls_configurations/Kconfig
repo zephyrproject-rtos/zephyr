@@ -17,4 +17,29 @@ config TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE
 
 endchoice
 
+config SERVER_ADDR
+	string "Server address"
+	default "127.0.0.1" # For native_sim target
+
+config TEST_TIMEOUT
+	int "Timeout (in seconds) for the test to complete"
+	default 10
+	help
+	  Time that the pytest harness waits for the whole run.
+
+config TEST_IPV4_ADDR_TIMEOUT
+	int "Timeout (in seconds) to wait for an IPv4 address"
+	default 5
+	range 1 TEST_TIMEOUT
+	help
+	  Must be smaller than TEST_TIMEOUT, in order to give time for the TLS
+	  connection to be established after the IPv4 address has been
+	  set up.
+
+if USB_DEVICE_STACK_NEXT
+
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+endif
+
 source "Kconfig.zephyr"

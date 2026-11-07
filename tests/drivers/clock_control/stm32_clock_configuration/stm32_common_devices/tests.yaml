@@ -39,3 +39,6 @@ tests:
     platform_allow:
       - stm32f412g_disco
       - nucleo_f412zg
+  drivers.clock.stm32_clock_configuration.common_device.f4.i2s2_pll:
+    extra_args: DTC_OVERLAY_FILE="boards/f4_i2s2_pll.overlay"
+    platform_allow: nucleo_f401re

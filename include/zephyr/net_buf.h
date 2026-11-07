@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup os_services
  *
  * The functions that add, push, pull or remove data check with an assertion
@@ -1074,12 +1074,13 @@ struct net_buf {
 	 * ref/unref; `ref`, `flags`, `pool_id` and `user_data_size` are
 	 * byte-level views into the same storage.
 	 *
-	 * atomic_inc/dec on ref_word add/subtract 1 to/from the whole
-	 * word, but because the byte-struct layout below places `ref`
-	 * at the least-significant byte of `ref_word` regardless of
-	 * endianness, and because the ref count never overflows past
-	 * 254 (already implicit in its uint8_t domain), only the ref
-	 * byte changes -- the other three bytes are untouched.
+	 * Incrementing and decrementing ref_word adds or subtracts 1
+	 * to/from the whole word, but because the byte-struct layout
+	 * below places `ref` at the least-significant byte of `ref_word`
+	 * regardless of endianness, and because net_buf_ref() leaves a
+	 * count of 255 alone and net_buf_unref() a count of 255 or 0,
+	 * only the ref byte changes -- the other three bytes are
+	 * untouched.
 	 *
 	 * On 32-bit architectures atomic_t is 4 bytes and the byte
 	 * struct fills the slot exactly. On 64-bit, atomic_t is 8 bytes;
@@ -1669,9 +1670,10 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve);
 /**
  * @brief Put a buffer into a list
  *
- * The list is modified under a spinlock that net_buf_slist_put() and
- * net_buf_slist_get() share, so a list that is only accessed through these
- * two functions can be used from several threads and from interrupt handlers.
+ * The list is modified under a spinlock that net_buf_slist_put(),
+ * net_buf_slist_get() and net_buf_slist_purge() share, so a list that is only
+ * accessed through these functions can be used from several threads and from
+ * interrupt handlers.
  *
  * @param list Which list to append the buffer to.
  * @param buf Buffer.
@@ -1690,9 +1692,42 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
 struct net_buf * __must_check net_buf_slist_get(sys_slist_t *list);
 
 /**
+ * @brief Unreference all buffers in a list.
+ *
+ * The list is emptied in one step under the same spinlock as in
+ * net_buf_slist_put(), and the buffers are unreferenced after the spinlock has
+ * been released, so buffers put into the list meanwhile stay in it.
+ *
+ * @param list Which list to purge.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_slist_purge_debug(sys_slist_t *list, const char *func, int line);
+#define net_buf_slist_purge(_list) net_buf_slist_purge_debug(_list, __func__, __LINE__)
+#else
+void net_buf_slist_purge(sys_slist_t *list);
+#endif
+
+/**
+ * @brief Unreference all buffers in a FIFO.
+ *
+ * Buffers are taken from the FIFO until it is empty, so buffers put into it
+ * meanwhile are unreferenced as well.
+ *
+ * @param fifo Which FIFO to purge.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_fifo_purge_debug(struct k_fifo *fifo, const char *func, int line);
+#define net_buf_fifo_purge(_fifo) net_buf_fifo_purge_debug(_fifo, __func__, __LINE__)
+#else
+void net_buf_fifo_purge(struct k_fifo *fifo);
+#endif
+
+/**
  * @brief Decrements the reference count of a buffer.
  *
  * The buffer is put back into the pool if the reference count reaches zero.
+ * A saturated reference count (see net_buf_ref()) is left as it is, and the
+ * buffer is not put back.
  *
  * @param buf A valid pointer on a buffer
  */
@@ -1706,6 +1741,9 @@ void net_buf_unref(struct net_buf *buf);
 
 /**
  * @brief Increment the reference count of a buffer.
+ *
+ * The reference count tracks up to 254 references. At 255 it saturates: it
+ * no longer changes, and the buffer is never put back into its pool.
  *
  * @param buf A valid pointer on a buffer
  *

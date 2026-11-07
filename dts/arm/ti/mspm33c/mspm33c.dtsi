@@ -5,6 +5,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock/mspm0_clock.h>
 
 / {
 	cpus {
@@ -19,9 +20,110 @@
 		};
 	};
 
+	ckm: clock-module {
+		compatible = "ti,mspm0-ckm";
+		#clock-cells = <1>;
+		sysctl = <&sysctl>;
+		factoryregion = <&factoryregion>;
+		fri = <&fri>;
+		memcfg = <&memcfg>;
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hsclk: hsclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clocks = <&lfosc>;
+		};
+
+		ulpclk: ulpclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+		};
+
+		mclk: mclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clocks = <&sysosc>;
+		};
+
+		mclk_div_2: mclk_div_2 {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clk-div = <2>;
+		};
+
+		mclk_div_4: mclk_div_4 {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clk-div = <4>;
+		};
+
+		mfpclk: mfpclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			clocks = <&sysosc>;
+			status = "disabled";
+		};
+
+		canclk: canclk {
+			compatible = "ti,mspm0-clk";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	oscillators: oscillators {
+		hfxt: hfxt {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			compatible = "ti,mspm0-osc";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
 	soc {
 		sram0: memory@30000000 {
 			compatible = "mmio-sram";
+		};
+
+		fri: syscon@40028000 {
+			compatible = "syscon";
+			reg = <0x40028000 0x2000>;
+		};
+
+		memcfg: syscon@4002a000 {
+			compatible = "syscon";
+			reg = <0x4002a000 0x2000>;
 		};
 
 		flash_controller: flash-controller@40042000 {
@@ -38,6 +140,12 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "okay";
 		};
 
 		pinctrl: pin-controller@400f0000 {
@@ -72,6 +180,11 @@
 				#gpio-cells = <2>;
 				status = "disabled";
 			};
+		};
+
+		factoryregion: syscon@80111000 {
+			compatible = "syscon";
+			reg = <0x80111000 0x80>;
 		};
 	};
 };

@@ -27,6 +27,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -72,6 +73,16 @@
 	};
 };
 
+&hfxt {
+	clock-frequency = <DT_FREQ_M(32)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <640000>;
+};
+
 &pinctrl {
 	status = "okay";
 };
@@ -114,5 +125,9 @@
 &vref0 {
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };

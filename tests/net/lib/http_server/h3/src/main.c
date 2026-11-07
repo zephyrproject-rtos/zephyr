@@ -177,6 +177,41 @@ static struct http_resource_detail_dynamic dynamic_resource_detail = {
 HTTP_RESOURCE_DEFINE(dynamic_resource, test_http_service, "/dynamic",
 		     &dynamic_resource_detail);
 
+static const struct http_header response_header_headers[] = {
+	{.name = "Test-Header", .value = "test_data"},
+};
+
+static int response_header_cb(struct http_client_ctx *client,
+			      enum http_transaction_status status,
+			      const struct http_request_ctx *request_ctx,
+			      struct http_response_ctx *response_ctx, void *user_data)
+{
+	ARG_UNUSED(client);
+	ARG_UNUSED(request_ctx);
+	ARG_UNUSED(user_data);
+
+	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
+		response_ctx->headers = response_header_headers;
+		response_ctx->header_count = ARRAY_SIZE(response_header_headers);
+		response_ctx->final_chunk = true;
+	}
+
+	return 0;
+}
+
+static struct http_resource_detail_dynamic response_header_resource_detail = {
+	.common = {
+		.type = HTTP_RESOURCE_TYPE_DYNAMIC,
+		.bitmask_of_supported_http_methods = BIT(HTTP_GET),
+		.content_type = "text/plain",
+	},
+	.cb = response_header_cb,
+	.user_data = NULL,
+};
+
+HTTP_RESOURCE_DEFINE(response_header_resource, test_http_service, "/response_header",
+		     &response_header_resource_detail);
+
 static int streaming_dynamic_cb(struct http_client_ctx *client,
 				enum http_transaction_status status,
 				const struct http_request_ctx *request_ctx,
@@ -1292,6 +1327,57 @@ ZTEST(server_h3_tests, test_h3_headers_only_fin_completes_dynamic_request)
 
 	ret = zsock_close(stream_fd);
 	zassert_ok(ret, "Failed to close POST stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+static bool contains_bytes(const uint8_t *buf, size_t len, const char *str)
+{
+	size_t str_len = strlen(str);
+
+	for (size_t i = 0; i + str_len <= len; i++) {
+		if (memcmp(buf + i, str, str_len) == 0) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* An application header name goes out in lowercase (RFC 9114, Section 4.2) */
+ZTEST(server_h3_tests, test_h3_response_header_name_is_lowercase)
+{
+	uint8_t request[32];
+	uint8_t response[MAX_RESPONSE_SIZE];
+	size_t request_len;
+	size_t response_len;
+	size_t offset = 0;
+	uint64_t frame_type;
+	uint64_t frame_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	request_len = build_headers_frame(request, HTTP_GET, "/response_header");
+	send_all(stream_fd, request, request_len);
+	shutdown_stream_send(stream_fd);
+
+	response_len = read_stream_to_eof(stream_fd, response, sizeof(response));
+	zassert_true(response_len > 0, "Empty H3 response");
+
+	offset += h3_decode_varint(response + offset, response_len - offset, &frame_type);
+	zassert_equal(frame_type, H3_FRAME_HEADERS, "Expected HEADERS frame");
+	offset += h3_decode_varint(response + offset, response_len - offset, &frame_len);
+	zassert_true(offset + frame_len <= response_len, "HEADERS frame exceeds buffer");
+
+	zassert_true(contains_bytes(response + offset, frame_len, "test-header"),
+		     "Header name not sent in lowercase");
+	zassert_false(contains_bytes(response + offset, frame_len, "Test-Header"),
+		      "Header name sent as given");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close GET stream (%d)", errno);
 	untrack_stream_fd(stream_fd);
 }
 

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+config STS35
+	bool "STS35 high-accuracy temperature sensor"
+	default y
+	depends on DT_HAS_SENSIRION_STS35_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable the driver for the Sensirion STS35-DIS digital temperature sensor.

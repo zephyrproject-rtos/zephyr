@@ -211,8 +211,8 @@ zephyr_udc0: &usb_otg {
 		reg = <1>;
 		/* GPIO51: PHY reset (active-low) */
 		reset-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
-		reset-assert-duration-us = <10000>;
-		reset-deassertion-timeout-ms = <100>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
 	};
 };
 

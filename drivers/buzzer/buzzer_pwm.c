@@ -10,6 +10,7 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(buzzer_pwm, CONFIG_BUZZER_LOG_LEVEL);
 
@@ -159,10 +160,26 @@ static int buzzer_pwm_stop(const struct device *dev)
 	return ret;
 }
 
+static int buzzer_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_TURN_ON:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int buzzer_pwm_init(const struct device *dev)
 {
 	const struct buzzer_pwm_config *cfg = dev->config;
 	struct buzzer_pwm_data *data = dev->data;
+	int ret;
 
 	if (!pwm_is_ready_dt(&cfg->pwm)) {
 		LOG_ERR_DEVICE_NOT_READY(cfg->pwm.dev);
@@ -174,7 +191,12 @@ static int buzzer_pwm_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_work_init_delayable(&data->stop_work, buzzer_pwm_stop_work);
 
-	return buzzer_pwm_silence(dev);
+	ret = buzzer_pwm_silence(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, buzzer_pwm_pm_action);
 }
 
 static DEVICE_API(buzzer, buzzer_pwm_api) = {
@@ -189,7 +211,8 @@ static DEVICE_API(buzzer, buzzer_pwm_api) = {
 		.pwm = PWM_DT_SPEC_INST_GET(inst),					\
 	};										\
 	static struct buzzer_pwm_data buzzer_pwm_data_##inst;				\
-	DEVICE_DT_INST_DEFINE(inst, buzzer_pwm_init, NULL,				\
+	PM_DEVICE_DT_INST_DEFINE(inst, buzzer_pwm_pm_action);				\
+	DEVICE_DT_INST_DEFINE(inst, buzzer_pwm_init, PM_DEVICE_DT_INST_GET(inst),	\
 			      &buzzer_pwm_data_##inst, &buzzer_pwm_cfg_##inst,		\
 			      POST_KERNEL, CONFIG_BUZZER_INIT_PRIORITY,			\
 			      &buzzer_pwm_api);

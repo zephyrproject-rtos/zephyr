@@ -78,7 +78,7 @@ found in :ref:`nordic_segger_flashing`.
 
 To build and program the sample to the nRF54L15 DK, complete the following steps:
 
-First, connect the nRF54L15 DK to you computer using the IMCU USB port on the DK.
+First, connect the nRF54L15 DK to your computer using the IMCU USB port on the DK.
 Next, build the sample by running the following command:
 
 .. zephyr-app-commands::
@@ -86,10 +86,10 @@ Next, build the sample by running the following command:
    :board: nrf54l15dk/nrf54l15/cpuapp
    :goals: build flash
 
-Testing the LEDs and buttons in the nRF54L15 DK
-************************************************
+Testing the LEDs and buttons on the nRF54L15 DK
+***********************************************
 
-Test the nRF54L15 DK with a :zephyr:code-sample:`blinky` sample.
+Test the nRF54L15 DK with :zephyr:code-sample:`blinky` or :zephyr:code-sample:`button` samples.
 
 
 .. _nrf54l15dk_nrf54l05:

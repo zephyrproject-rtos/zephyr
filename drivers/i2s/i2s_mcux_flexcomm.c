@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright (c) 2021, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -331,6 +331,14 @@ static void i2s_mcux_tx_stream_disable(const struct device *dev, bool drop)
 	struct i2s_mcux_stream *stream = &dev_data->tx;
 	I2S_Type *base = cfg->base;
 
+	/*
+	 * Disable the I2S TX DMA request before stopping the DMA channel.
+	 * dma_stop() aborts the transfer and briefly re-enables the channel,
+	 * so a still-asserted peripheral request could start another DMA
+	 * transfer from a buffer that is about to be released.
+	 */
+	base->FIFOCFG &= (~I2S_FIFOCFG_DMATX_MASK);
+
 	LOG_DBG("Stopping DMA channel %u for TX stream", stream->channel);
 	dma_stop(stream->dev_dma, stream->channel);
 
@@ -352,8 +360,6 @@ static void i2s_mcux_tx_stream_disable(const struct device *dev, bool drop)
 		}
 
 		/* At this moment the additional data is out of FIFO, we can stop I2S */
-		/* Disable TX DMA */
-		base->FIFOCFG &= (~I2S_FIFOCFG_DMATX_MASK);
 		base->FIFOCFG |= I2S_FIFOCFG_EMPTYTX_MASK;
 
 		I2S_Disable(base);
@@ -374,6 +380,14 @@ static void i2s_mcux_rx_stream_disable(const struct device *dev, bool drop)
 	struct i2s_mcux_stream *stream = &dev_data->rx;
 	I2S_Type *base = cfg->base;
 
+	/*
+	 * Disable the I2S RX DMA request before stopping the DMA channel.
+	 * dma_stop() aborts the transfer and briefly re-enables the channel,
+	 * so pending RX FIFO data could otherwise trigger another DMA write
+	 * into a buffer that is released by i2s_purge_stream_buffers().
+	 */
+	base->FIFOCFG &= (~I2S_FIFOCFG_DMARX_MASK);
+
 	LOG_DBG("Stopping DMA channel %u for RX stream", stream->channel);
 	dma_stop(stream->dev_dma, stream->channel);
 
@@ -381,9 +395,7 @@ static void i2s_mcux_rx_stream_disable(const struct device *dev, bool drop)
 	base->FIFOSTAT = I2S_FIFOSTAT_RXERR(1U);
 	I2S_DisableInterrupts(base, (uint32_t)kI2S_RxErrorFlag);
 
-	/* stop transfer */
-	/* Disable Rx DMA */
-	base->FIFOCFG &= (~I2S_FIFOCFG_DMARX_MASK);
+	/* stop transfer and flush RX FIFO */
 	base->FIFOCFG |= I2S_FIFOCFG_EMPTYRX_MASK;
 
 	I2S_Disable(base);

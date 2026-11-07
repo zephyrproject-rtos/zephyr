@@ -11,23 +11,22 @@
 		cpuflpr_sram_code_data: memory@2001fc00 {
 			compatible = "mmio-sram";
 			reg = <0x2001fc00 DT_SIZE_K(64)>;
+			ranges = <0x0 0x2001fc00 DT_SIZE_K(64)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2001fc00 DT_SIZE_K(64)>;
 			status = "reserved";
 		};
 	};
 };
 
 &ipc0 {
-	status = "okay";
 	tx-region = <&cpuapp_cpuflpr_ipc_shm>;
 	rx-region = <&cpuflpr_cpuapp_ipc_shm>;
+	status = "okay";
 };
 
-&cpuapp_sram {
-	reg = <0x20000000 DT_SIZE_K(123)>;
-	ranges = <0x0 0x20000000 DT_SIZE_K(123)>;
+&cpuapp_sram_app {
+	reg = <0x60 (DT_SIZE_K(123) - 0x60)>;
 };
 
 &cpuapp_rram {

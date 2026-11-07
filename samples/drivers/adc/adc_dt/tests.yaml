@@ -15,6 +15,7 @@ tests:
       - disco_l475_iot1
       - cc3220sf_launchxl
       - cc3235sf_launchxl
+      - cy8cproto_062s3_4343w
       - cy8cproto_063_ble
       - stm32l496g_disco
       - stm32h735g_disco
@@ -38,6 +39,8 @@ tests:
       - esp32s2_devkitc
       - esp32c3_devkitc
       - gd32l233r_eval
+      - lpcxpresso55s06
+      - lpcxpresso55s16
       - lpcxpresso55s36
       - mr_canhubk3
       - longan_nano
@@ -64,6 +67,7 @@ tests:
       - fpb_ra8e1
       - raytac_an54lv_db_15/nrf54l15/cpuapp
       - frdm_mcxl255/mcxl255/cpu0
+      - kit_psc3m6_eval/psc3m6ges3ahq1
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840

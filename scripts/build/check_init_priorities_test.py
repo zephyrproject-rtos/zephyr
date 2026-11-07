@@ -11,7 +11,7 @@ import unittest
 from unittest import mock
 
 import check_init_priorities
-from elftools.elf.relocation import Section
+from elftools.elf.relocation import RelocationSection, Section
 from elftools.elf.sections import SymbolTableSection
 
 
@@ -85,9 +85,52 @@ class testZephyrInitLevels(unittest.TestCase):
 
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
+        obj._relocatable = False
         obj._load_objects()
 
         self.assertDictEqual(obj._objects, {0xAA: ("a", 4, 1), 0xBB: ("b", 8, 2)})
+        self.assertDictEqual(obj._object_addr, {"a": 0xAA, "b": 0xBB})
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_load_objects_relocatable(self, mock_zilinit):
+        mock_elf = mock.Mock()
+
+        sts = mock.Mock(spec=SymbolTableSection)
+        mock_elf.iter_sections.return_value = [sts]
+
+        s0 = mock.Mock()
+        s0.name = "a"
+        s0.entry.st_info.type = "STT_FUNC"
+        s0.entry.st_size = 163
+        s0.entry.st_value = 0x00
+        s0.entry.st_shndx = 1
+
+        s1 = mock.Mock()
+        s1.name = "b"
+        s1.entry.st_info.type = "STT_FUNC"
+        s1.entry.st_size = 1
+        s1.entry.st_value = 0x00
+        s1.entry.st_shndx = 2
+
+        s2 = mock.Mock()
+        s2.name = "c"
+        s2.entry.st_info.type = "STT_OBJECT"
+        s2.entry.st_size = 8
+        s2.entry.st_value = 0x08
+        s2.entry.st_shndx = 2
+
+        sts.iter_symbols.return_value = [s0, s1, s2]
+
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._elf = mock_elf
+        obj._relocatable = True
+        obj._load_objects()
+
+        self.assertDictEqual(
+            obj._objects,
+            {(1, 0x00): ("a", 163, 1), (2, 0x00): ("b", 1, 2), (2, 0x08): ("c", 8, 2)},
+        )
+        self.assertDictEqual(obj._object_addr, {"a": (1, 0x00), "b": (2, 0x00), "c": (2, 0x08)})
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_load_level_addr(self, mock_zilinit):
@@ -129,6 +172,7 @@ class testZephyrInitLevels(unittest.TestCase):
 
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock_elf
+        obj._relocatable = False
         obj._load_level_addr()
 
         self.assertDictEqual(
@@ -166,6 +210,7 @@ class testZephyrInitLevels(unittest.TestCase):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
         obj._elf.elfclass = 32
+        obj._relocatable = False
         mock_section = mock.Mock()
         obj._elf.get_section.return_value = mock_section
         mock_section.header.sh_addr = 0x100
@@ -181,6 +226,7 @@ class testZephyrInitLevels(unittest.TestCase):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
         obj._elf.elfclass = 64
+        obj._relocatable = False
         mock_section = mock.Mock()
         obj._elf.get_section.return_value = mock_section
         mock_section.header.sh_addr = 0x100
@@ -195,11 +241,81 @@ class testZephyrInitLevels(unittest.TestCase):
         self.assertEqual(obj._initlevel_pointer(0x108, 0, 0), 2)
         self.assertEqual(obj._initlevel_pointer(0x108, 1, 0), 3)
 
+    def _relocatable_pointer_obj(self, elfclass, rela):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._elf = mock.Mock()
+        obj._elf.elfclass = elfclass
+        obj._relocatable = True
+        obj._relocs = {}
+
+        ptrsize = elfclass // 8
+        init_section = mock.Mock()
+        # Entry 0: a relocated pointer with in-place addend 0x10 and a
+        # relocated NULL pointer; entry 1: a constant and an unrelocated zero.
+        init_section.data.return_value = (
+            (0x10).to_bytes(ptrsize, "little")
+            + (0).to_bytes(ptrsize, "little")
+            + (7).to_bytes(ptrsize, "little")
+            + (0).to_bytes(ptrsize, "little")
+        )
+
+        sym_a = mock.Mock()
+        sym_a.entry.st_shndx = 5
+        sym_a.entry.st_value = 0x20
+        sym_b = mock.Mock()
+        sym_b.entry.st_shndx = 6
+        sym_b.entry.st_value = 0x00
+        symtab = mock.Mock(spec=SymbolTableSection)
+        symtab.get_symbol.side_effect = lambda idx: {1: sym_a, 2: sym_b}[idx]
+
+        r0 = mock.Mock()
+        r0.entry.r_offset = 0
+        r0.entry.r_info_sym = 1
+        r0.entry.r_addend = 0x30
+        r1 = mock.Mock()
+        r1.entry.r_offset = ptrsize
+        r1.entry.r_info_sym = 2
+        r1.entry.r_addend = 0
+        rel_section = mock.Mock(spec=RelocationSection)
+        rel_section.header = mock.Mock()
+        rel_section.header.sh_info = 3
+        rel_section.header.sh_link = 4
+        rel_section.is_RELA.return_value = rela
+        rel_section.iter_relocations.return_value = [r0, r1]
+
+        other_rel_section = mock.Mock(spec=RelocationSection)
+        other_rel_section.header = mock.Mock()
+        other_rel_section.header.sh_info = 9
+
+        obj._elf.iter_sections.return_value = [symtab, rel_section, other_rel_section]
+        obj._elf.get_section.side_effect = lambda idx: {3: init_section, 4: symtab}[idx]
+
+        return obj
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_initlevel_pointer_relocatable_rel(self, mock_zilinit):
+        obj = self._relocatable_pointer_obj(32, rela=False)
+
+        self.assertEqual(obj._initlevel_pointer((3, 0), 0, 3), (5, 0x30))
+        self.assertEqual(obj._initlevel_pointer((3, 0), 1, 3), (6, 0x00))
+        self.assertEqual(obj._initlevel_pointer((3, 8), 0, 3), 7)
+        self.assertEqual(obj._initlevel_pointer((3, 8), 1, 3), 0)
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_initlevel_pointer_relocatable_rela(self, mock_zilinit):
+        obj = self._relocatable_pointer_obj(64, rela=True)
+
+        self.assertEqual(obj._initlevel_pointer((3, 0), 0, 3), (5, 0x50))
+        self.assertEqual(obj._initlevel_pointer((3, 0), 1, 3), (6, 0x00))
+        self.assertEqual(obj._initlevel_pointer((3, 16), 0, 3), 7)
+        self.assertEqual(obj._initlevel_pointer((3, 16), 1, 3), 0)
+
     @mock.patch("check_init_priorities.ZephyrInitLevels._object_name")
     @mock.patch("check_init_priorities.ZephyrInitLevels._initlevel_pointer")
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_process_initlevels(self, mock_zilinit, mock_ip, mock_on):
         obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._relocatable = False
         obj._init_level_addr = {
             "EARLY": 0x00,
             "PRE_KERNEL_1": 0x00,
@@ -254,6 +370,75 @@ class testZephyrInitLevels(unittest.TestCase):
                 22: (check_init_priorities.Priority("PRE_KERNEL_2", 1), "i1"),
             },
         )
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels._object_name")
+    @mock.patch("check_init_priorities.ZephyrInitLevels._initlevel_pointer")
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_process_initlevels_relocatable(self, mock_zilinit, mock_ip, mock_on):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._relocatable = True
+        obj._init_level_addr = {
+            "EARLY": (7, 0x00),
+            "PRE_KERNEL_1": (7, 0x00),
+            "PRE_KERNEL_2": (7, 0x00),
+            "POST_KERNEL": (7, 0x08),
+            "APPLICATION": (7, 0x0C),
+            "SMP": (7, 0x0C),
+        }
+        obj._init_level_end = (7, 0x0C)
+        # Symbols from other sections share the init entries' offsets.
+        obj._objects = {
+            (1, 0x00): ("z_fatal_error", 163, 1),
+            (2, 0x00): ("z_thread_release", 1, 2),
+            (7, 0x00): ("a", 4, 7),
+            (7, 0x04): ("b", 4, 7),
+            (7, 0x08): ("c", 4, 7),
+            (8, 0x00): ("__device_dts_ord_11", 4, 8),
+        }
+        obj._object_addr = {
+            "__device_dts_ord_11": (8, 0x00),
+        }
+
+        mock_ip.side_effect = lambda *args: args
+
+        def mock_obj_name(*args):
+            if args[0] == ((8, 0x00), 5, 8):
+                return "i0"
+            elif args[0] == ((7, 0x00), 1, 7):
+                return "__device_dts_ord_11"
+            return f"name_{args[0][0][1]}_{args[0][1]}"
+
+        mock_on.side_effect = mock_obj_name
+
+        obj._process_initlevels()
+
+        self.assertDictEqual(
+            obj.initlevels,
+            {
+                "EARLY": [],
+                "PRE_KERNEL_1": [],
+                "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: name_4_0(name_4_1)"],
+                "POST_KERNEL": ["c: name_8_0(name_8_1)"],
+                "APPLICATION": [],
+                "SMP": [],
+            },
+        )
+        self.assertDictEqual(
+            obj.devices,
+            {11: (check_init_priorities.Priority("PRE_KERNEL_2", 0), "i0")},
+        )
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_process_initlevels_relocatable_split_section(self, mock_zilinit):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._relocatable = True
+        obj._init_level_addr = dict.fromkeys(check_init_priorities._DEVICE_INIT_LEVELS, (7, 0x00))
+        obj._init_level_end = (8, 0x00)
+        obj._objects = {}
+        obj._object_addr = {}
+
+        with self.assertRaises(ValueError):
+            obj._process_initlevels()
 
 
 class testValidator(unittest.TestCase):

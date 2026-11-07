@@ -170,7 +170,7 @@ static bool produce(void *user_data, uint32_t cnt, bool last, int prio)
 	zassert_true(prio < 4);
 
 
-	uint32_t wlen = sys_rand32_get() % (buffer->size / 4) + 1;
+	uint32_t wlen = sys_rand32_get() % (buffer->config->size / 4) + 1;
 	struct test_packet *packet = (struct test_packet *)mpsc_pbuf_alloc(buffer, wlen, K_NO_WAIT);
 
 	if (!packet) {

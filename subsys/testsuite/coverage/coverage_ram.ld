@@ -82,5 +82,28 @@ SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
+#ifdef CONFIG_XTENSA
+SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
+{
+#ifdef CONFIG_MMU
+	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
+#elif defined(CONFIG_MPU)
+	. = ALIGN(XCHAL_MPU_ALIGN);
+#else
+	. = ALIGN(4);
+#endif
+	__gcov_bss_start = .;
+	*(".bss.__gcov0$*");
+#ifdef CONFIG_MMU
+	. = ALIGN(CONFIG_MMU_PAGE_SIZE);
+#elif defined(CONFIG_MPU)
+	. = ALIGN(XCHAL_MPU_ALIGN);
+#else
+	. = ALIGN(4);
+#endif
+	__gcov_bss_end = .;
+} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
 __gcov_bss_num_words = ((__gcov_bss_end - __gcov_bss_start) >> 2);
 __gcov_bss_size = __gcov_bss_end - __gcov_bss_start;

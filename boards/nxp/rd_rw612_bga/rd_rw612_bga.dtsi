@@ -138,6 +138,10 @@ arduino_i2c: &flexcomm2 {
 	status = "okay";
 };
 
+&ocotp {
+	status = "okay";
+};
+
 &hsgpio0 {
 	status = "okay";
 };

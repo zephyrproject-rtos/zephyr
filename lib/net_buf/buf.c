@@ -449,6 +449,57 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
+void net_buf_slist_purge_debug(sys_slist_t *list, const char *func, int line)
+#else
+void net_buf_slist_purge(sys_slist_t *list)
+#endif
+{
+	k_spinlock_key_t key;
+	sys_snode_t *node;
+
+	__ASSERT_NO_MSG(list != NULL);
+
+	/* Destroy callbacks may use the list functions, so they must not run under the lock */
+	key = k_spin_lock(&net_buf_slist_lock);
+	node = sys_slist_peek_head(list);
+	sys_slist_init(list);
+	k_spin_unlock(&net_buf_slist_lock, key);
+
+	while (node != NULL) {
+		struct net_buf *buf = CONTAINER_OF(node, struct net_buf, node);
+
+		/* Read the link before the buffer may go back to its pool */
+		node = sys_slist_peek_next_no_check(node);
+#if defined(CONFIG_NET_BUF_LOG)
+		net_buf_unref_debug(buf, func, line);
+#else
+		net_buf_unref(buf);
+#endif
+	}
+}
+
+#if defined(CONFIG_NET_BUF_LOG)
+void net_buf_fifo_purge_debug(struct k_fifo *fifo, const char *func, int line)
+#else
+void net_buf_fifo_purge(struct k_fifo *fifo)
+#endif
+{
+	struct net_buf *buf;
+
+	__ASSERT_NO_MSG(fifo != NULL);
+
+	buf = k_fifo_get(fifo, K_NO_WAIT);
+	while (buf != NULL) {
+#if defined(CONFIG_NET_BUF_LOG)
+		net_buf_unref_debug(buf, func, line);
+#else
+		net_buf_unref(buf);
+#endif
+		buf = k_fifo_get(fifo, K_NO_WAIT);
+	}
+}
+
+#if defined(CONFIG_NET_BUF_LOG)
 void net_buf_unref_debug(struct net_buf *buf, const char *func, int line)
 #else
 void net_buf_unref(struct net_buf *buf)
@@ -474,11 +525,12 @@ void net_buf_unref(struct net_buf *buf)
 		/* A zero count must not be decremented, not even by an unref
 		 * racing with the last one: the borrow would go into the other
 		 * bytes of ref_word of a buffer that has already been freed.
+		 * A saturated count stays as it is, see net_buf_ref().
 		 */
 		do {
 			old_word = atomic_get(&buf->ref_word);
 			old_ref = (uint8_t)old_word;
-			if (old_ref == 0U) {
+			if ((old_ref == 0U) || (old_ref == UINT8_MAX)) {
 				break;
 			}
 		} while (!atomic_cas(&buf->ref_word, old_word, old_word - 1));
@@ -523,11 +575,29 @@ void net_buf_unref(struct net_buf *buf)
 
 struct net_buf *net_buf_ref(struct net_buf *buf)
 {
+	atomic_val_t old_word;
+	uint8_t old_ref;
+
 	__ASSERT_NO_MSG(buf);
 
-	__maybe_unused uint8_t old_ref = atomic_inc(&buf->ref_word);
+	/* A count that reaches UINT8_MAX saturates: it is neither incremented
+	 * nor decremented any more, so the buffer is never freed. Incrementing
+	 * it would carry into the other bytes of ref_word and let the buffer be
+	 * freed while it is still referenced.
+	 */
+	do {
+		old_word = atomic_get(&buf->ref_word);
+		old_ref = (uint8_t)old_word;
+		if (old_ref == UINT8_MAX) {
+			break;
+		}
+	} while (!atomic_cas(&buf->ref_word, old_word, old_word + 1));
 
-	__ASSERT(old_ref != 0xff, "buf %p ref count overflow", buf);
+	__ASSERT(old_ref < (UINT8_MAX - 1U), "buf %p ref count saturated", buf);
+	if (old_ref >= (UINT8_MAX - 1U)) {
+		NET_BUF_ERR("buf %p ref count saturated", buf);
+	}
+
 	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
 		    buf, old_ref, buf->pool_id);
 	return buf;

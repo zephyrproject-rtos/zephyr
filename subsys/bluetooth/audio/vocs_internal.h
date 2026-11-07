@@ -2,6 +2,7 @@
  *  @brief Internal APIs for Bluetooth VOCS.
  *
  * Copyright (c) 2020 Bose Corporation
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,10 +19,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 
+/* Set the buf size to include the NULL terminator */
 #if defined(CONFIG_BT_VOCS)
-#define BT_VOCS_MAX_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
+#define BT_VOCS_DESC_BUF_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE + 1U
 #else
-#define BT_VOCS_MAX_DESC_SIZE 1U
+#define BT_VOCS_DESC_BUF_SIZE 1U
 #endif /* CONFIG_BT_VOCS */
 
 /* VOCS opcodes */
@@ -94,7 +96,7 @@ struct bt_vocs_server {
 	struct bt_vocs_state state;
 	uint32_t location;
 	bool initialized;
-	char output_desc[BT_VOCS_MAX_DESC_SIZE];
+	char output_desc[BT_VOCS_DESC_BUF_SIZE];
 	struct bt_vocs_cb *cb;
 
 	struct bt_gatt_service *service_p;

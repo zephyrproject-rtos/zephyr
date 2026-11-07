@@ -597,7 +597,7 @@ static ALWAYS_INLINE void udc_thread_handler(const struct device *const dev)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				udc_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint %02x busy", ep);
+				LOG_DBG("Endpoint %02x busy", ep);
 			}
 		}
 	}
@@ -618,7 +618,7 @@ static ALWAYS_INLINE void udc_thread_handler(const struct device *const dev)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				udc_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint %02x busy", ep);
+				LOG_DBG("Endpoint %02x busy", ep);
 			}
 		}
 	}

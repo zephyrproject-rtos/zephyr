@@ -271,6 +271,8 @@ static struct net_pkt *reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	struct net_pkt *pkt;
 	struct net_buf *last;
+	struct net_buf *buf;
+	size_t frag_start;
 	uint8_t next_hdr;
 	int i, len, ret;
 
@@ -340,7 +342,18 @@ static struct net_pkt *reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	next_hdr = ipv6.frag_hdr->nexthdr;
 
-	if (net_pkt_pull(pkt, sizeof(struct net_ipv6_frag_hdr))) {
+	/* When the fragment header lies in the first buffer, remove it by
+	 * moving the headers in front of it up and pulling the buffer, so
+	 * that only those headers are copied instead of the payload after it.
+	 */
+	frag_start = net_pkt_ipv6_fragment_start(pkt);
+	buf = pkt->buffer;
+
+	if ((frag_start + sizeof(struct net_ipv6_frag_hdr)) <= buf->len) {
+		memmove(buf->data + sizeof(struct net_ipv6_frag_hdr), buf->data, frag_start);
+		(void)net_buf_pull(buf, sizeof(struct net_ipv6_frag_hdr));
+		net_pkt_cursor_init(pkt);
+	} else if (net_pkt_pull(pkt, sizeof(struct net_ipv6_frag_hdr))) {
 		NET_ERR("Failed to remove fragment header");
 		goto error;
 	}

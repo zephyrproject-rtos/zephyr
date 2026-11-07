@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2026 Microchip Technology Inc.
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -36,6 +35,8 @@
 #else
 #error "Library does not support the specified device."
 #endif
+
+#include "pic32ck_sg_gc.h"
 
 #endif /* _ASMLANGUAGE */
 

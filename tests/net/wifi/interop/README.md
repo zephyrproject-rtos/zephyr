@@ -46,7 +46,8 @@ exact name, which is what the net-tools wrapper `zwifi.sh` (`-i zwifi`) creates.
 ## Running (host setup - default)
 
 Prerequisites on the host: `iw`, `hostapd`, `dnsmasq`, `libnl-3` / `libnl-genl-3`
-(plus the 32-bit variants used by the build), and the
+(the 32-bit development variants for `native_sim`, the 64-bit ones for
+`native_sim/native/64`), and the
 [net-tools](https://github.com/zephyrproject-rtos/net-tools) checkout on the
 `zwifi` setup branch at `$ZEPHYR_BASE/../tools/net-tools`. Root is required for
 `modprobe`, the network namespaces and `setcap` (passwordless `sudo`, or run the
@@ -71,6 +72,11 @@ sudo ../tools/net-tools/net-setup.sh -c zwifi.conf -i zwifi start
 # Stop when done:
 sudo ../tools/net-tools/net-setup.sh -c zwifi.conf -i zwifi stop
 ```
+
+To run either option on the 64-bit target, use `-p native_sim/native/64
+--force-platform` instead of `-p native_sim`. `tests.yaml` lists only
+`native_sim`, as the CI image provides only the 32-bit `libnl` development
+packages.
 
 ### pytest options
 

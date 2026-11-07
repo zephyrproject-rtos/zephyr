@@ -85,13 +85,18 @@ static int ptp_clock_nxp_netc_adjust(const struct device *dev,
 
 }
 
-static int ptp_clock_nxp_netc_rate_adjust(const struct device *dev,
-					double ratio)
+static int ptp_clock_nxp_netc_adjust_rate(const struct device *dev,
+					int64_t scaled_ppm)
 {
 	struct ptp_clock_nxp_netc_data *data = dev->data;
 	netc_timer_config_t *ptp_config = &data->ptp_config;
+	int64_t ppb = ptp_clock_scaled_ppm_to_ppb(scaled_ppm);
 
-	ptp_config->defaultPpb = (ratio - 1.0) * 1000000000LL;
+	if ((ppb < INT32_MIN) || (ppb > INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	ptp_config->defaultPpb = (int32_t)ppb;
 
 	k_mutex_lock(&data->ptp_mutex, K_FOREVER);
 
@@ -136,7 +141,7 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_netc_api) = {
 	.set = ptp_clock_nxp_netc_set,
 	.get = ptp_clock_nxp_netc_get,
 	.adjust = ptp_clock_nxp_netc_adjust,
-	.rate_adjust = ptp_clock_nxp_netc_rate_adjust,
+	.adjust_rate = ptp_clock_nxp_netc_adjust_rate,
 };
 
 #define PTP_CLOCK_NXP_NETC_INIT(n)						\

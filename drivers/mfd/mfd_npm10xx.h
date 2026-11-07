@@ -63,6 +63,8 @@ enum mfd_npm10xx_pin_usage {
  * @param flags GPIO flags to apply to the pin's configuration
  * @return 0 on success, negative errno value on failure
  * @retval -EINVAL Invalid pin index or usage
+ * @retval -ENOTSUP GPIO_INPUT without GPIO_OUTPUT on a pin whose input buffer is excluded in
+ *                  UICR (MAIN.START). With GPIO_OUTPUT also set, only a warning is logged.
  * @retval -EBUSY The pin has already been configured for a conflicting usage
  * @retval -EIO Any I2C input/output error
  */

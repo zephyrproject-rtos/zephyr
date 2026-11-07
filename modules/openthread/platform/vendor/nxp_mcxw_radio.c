@@ -66,6 +66,9 @@ static void stop_csl_receiver(void);
 #define IEEE802154_FP                    (1 << 4)
 #define IEEE802154_ACK_REQUEST           (1 << 5)
 #define IEEE802154_MIN_LENGTH            (5)
+#define IEEE802154_FCS_LENGTH            (2)
+/* Imm-ACK PSDU length with FCS: FCF(2) + DSN(1) + FCS(2) = 5 bytes. */
+#define IEEE802154_IMM_ACK_LENGTH        (IEEE802154_MIN_LENGTH)
 #define IEEE802154_FRM_CTL_LO_OFFSET     (0)
 #define IEEE802154_DSN_OFFSET            (2)
 #define IEEE802154_FRM_TYPE_MASK         (0x7)
@@ -1175,6 +1178,26 @@ static void convert_ack(otRadioFrame *ack, pdDataCnf_t *cnf)
 	ack->mInfo.mRxInfo.mLqi = cnf->ppduLinkQuality;
 	ack->mInfo.mRxInfo.mRssi = cnf->ppduRssi;
 	memcpy(ack->mPsdu, cnf->ackData, ack->mLength);
+
+	/*
+	 * NBU firmware strips the 2 byte FCS from Imm-ACKs after it has
+	 * verified them in hardware, while Enh-ACKs are delivered with the FCS
+	 * still present. OpenThread's Frame::ParseFrom() expects mLength to
+	 * always account for the FCS (PSDU + 2); a stripped Imm-ACK handed over
+	 * as is fails to parse and returns OT_ERROR_PARSE.
+	 * A stripped Imm-ACK has an exact length of FCF(2) + DSN(1) = 3 bytes
+	 * (IEEE802154_IMM_ACK_LENGTH - IEEE802154_FCS_LENGTH). Matching both
+	 * this exact length and the ACK frame type (lowest 3 bits of the first
+	 * Frame Control octet) before appending the 2 dummy FCS bytes makes the
+	 * intent explicit and avoids altering any other short frame that happens
+	 * to have the same length but a different frame type.
+	 */
+	if ((cnf->ackLength == (IEEE802154_IMM_ACK_LENGTH - IEEE802154_FCS_LENGTH)) &&
+	    ((cnf->ackData[0] & IEEE802154_FRM_TYPE_MASK) == IEEE802154_FRM_TYPE_ACK)) {
+		memset(&ack->mPsdu[cnf->ackLength], 0, IEEE802154_FCS_LENGTH);
+		ack->mLength = cnf->ackLength + IEEE802154_FCS_LENGTH;
+	}
+
 }
 
 static void convert_rx_frame(otRadioFrame *rx_frm, pdDataInd_t *rx_ind)

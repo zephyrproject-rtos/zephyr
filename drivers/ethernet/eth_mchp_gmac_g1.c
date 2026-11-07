@@ -980,8 +980,6 @@ static struct net_stats_eth *eth_mchp_get_stats(const struct device *dev,
 				gmac_regs->GMAC_JR + err_ofr + gmac_regs->GMAC_UFR;
 	eth_stats->errors.tx +=
 		err_scf + err_mcf + err_ecf + gmac_regs->GMAC_TUR + gmac_regs->GMAC_CSE;
-	eth_stats->multicast.rx += gmac_regs->GMAC_MFR;
-	eth_stats->multicast.tx += gmac_regs->GMAC_MFT;
 	eth_stats->tx_dropped = 0;
 	eth_stats->tx_restart_queue = 0;
 	eth_stats->tx_timeout_count = 0;

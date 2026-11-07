@@ -213,7 +213,7 @@ static void analog_axis_loop(const struct device *dev)
 		out = clamp(out, axis_cfg->out_min, axis_cfg->out_max);
 
 		if (axis_cfg->invert_output) {
-			out = axis_cfg->out_max - out;
+			out = axis_cfg->out_max + axis_cfg->out_min - out;
 		}
 
 		if (axis_data->last_out != out) {

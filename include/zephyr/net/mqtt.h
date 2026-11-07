@@ -50,8 +50,11 @@ enum mqtt_evt_type {
 	 */
 	MQTT_EVT_DISCONNECT,
 
-	/** Publish event received when message is published on a topic client
-	 *  is subscribed to.
+	/** Publish event received when the broker sends a PUBLISH message to the
+	 *  client. The library does not check the topic against the client's
+	 *  subscriptions, so the event is also raised for topics the client has
+	 *  not subscribed to. Applications must filter messages by topic when
+	 *  needed.
 	 *
 	 * @note PUBLISH event structure only contains payload size, the payload
 	 *       data parameter should be ignored. Payload content has to be

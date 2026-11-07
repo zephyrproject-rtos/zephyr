@@ -39,6 +39,12 @@ ZTEST(sd_stack, test_0_init)
 
 	ret = sd_init(sdhc_dev, &card);
 	zassert_equal(ret, 0, "Card initialization failed");
+	if (!card.host_props.is_spi && card.host_props.bus_4_bit_support &&
+	    (card.flags & SD_4BITS_WIDTH) != 0U) {
+		zassert_equal(
+			card.bus_io.bus_width, SDHC_BUS_WIDTH4BIT,
+			"Card and host support 4-bit operation but initialization left 1 bit");
+	}
 }
 
 /* Verify that SD stack returns valid IOCTL values */

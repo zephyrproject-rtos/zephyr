@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2021 Guillaume Paquet <guillaume.paquet@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+# RAKWIRELESS RAK3401 Board configuration
+
+if BOARD_RAK3401
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_RAK3401

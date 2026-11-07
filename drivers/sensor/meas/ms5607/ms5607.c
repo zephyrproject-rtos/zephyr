@@ -261,8 +261,6 @@ static int ms5607_init(const struct device *dev)
 		return err;
 	}
 
-	k_sleep(K_MSEC(2));
-
 	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_OFF_T1,
 			       &data->off_t1);
 	if (err < 0) {

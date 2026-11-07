@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(tls_configuration_sample, LOG_LEVEL_INF);
 #include <psa/crypto.h>
 #endif
 
-#if defined(CONFIG_NET_TEST)
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 #include <mbedtls/ssl.h>
 
 int ztls_get_cached_session(int fd, mbedtls_ssl_session *session);
@@ -64,9 +64,9 @@ static struct zsock_pollfd fds[1];
 #define TEST_STRING "hello world\n"
 static uint8_t test_buf[sizeof(TEST_STRING)];
 
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 static int check_cached_ticket(void)
 {
-#if defined(CONFIG_NET_TEST)
 	mbedtls_ssl_session session;
 	int ret;
 
@@ -78,10 +78,8 @@ static int check_cached_ticket(void)
 
 	mbedtls_ssl_session_free(&session);
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
 static int wait_for_event(void)
 {
@@ -106,7 +104,7 @@ static int create_socket(void)
 
 	addr.sin_family = NET_AF_INET;
 	addr.sin_port = net_htons(CONFIG_SERVER_PORT);
-	zsock_inet_pton(NET_AF_INET, "127.0.0.1", &addr.sin_addr);
+	zsock_inet_pton(NET_AF_INET, CONFIG_SERVER_ADDR, &addr.sin_addr);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
 	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_3);
@@ -139,7 +137,7 @@ static int create_socket(void)
 	}
 #endif
 
-#if defined(CONFIG_NET_TEST)
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 	int session_cache = ZSOCK_TLS_SESSION_CACHE_ENABLED;
 
 	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SESSION_CACHE,
@@ -194,6 +192,24 @@ static int import_opaque_psk(void)
 	return 0;
 }
 #endif /* CONFIG_TLS_CONFIGURATIONS_PSK_FORMAT_OPAQUE */
+
+/* Wait until the interface has been assigned an IPv4 address. */
+static int wait_for_ipv4_addr(void)
+{
+	struct net_if *iface = net_if_get_default();
+	k_timeout_t timeout = K_SECONDS(CONFIG_TEST_IPV4_ADDR_TIMEOUT);
+	k_timepoint_t end = sys_timepoint_calc(timeout);
+
+	while (net_if_ipv4_get_global_addr(iface, NET_ADDR_PREFERRED) == NULL) {
+		if (sys_timepoint_expired(end)) {
+			LOG_ERR("Timeout waiting for an IPv4 address");
+			return -ETIMEDOUT;
+		}
+		k_sleep(K_MSEC(100));
+	}
+
+	return 0;
+}
 
 static int setup_credentials(void)
 {
@@ -254,6 +270,16 @@ int main(void)
 
 	setup_credentials();
 
+	/* On native_sim target sockets are offloaded to the host PC, so the
+	 * Zephyr TCP/IP stack is not used (i.e. no IPv4 to wait for).
+	 */
+	if (!IS_ENABLED(CONFIG_NET_NATIVE_OFFLOADED_SOCKETS)) {
+		ret = wait_for_ipv4_addr();
+		if (ret < 0) {
+			goto exit;
+		}
+	}
+
 	ret = create_socket();
 	if (ret < 0) {
 		LOG_ERR("Socket creation failed (%d)", ret);
@@ -302,11 +328,13 @@ int main(void)
 		LOG_DBG("Received: %s", test_buf);
 	}
 
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE)
 	ret = check_cached_ticket();
 	if (ret < 0) {
 		LOG_ERR("TLS session ticket was not cached (%d)", ret);
 		goto exit;
 	}
+#endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
 	ret = memcmp(TEST_STRING, test_buf, data_len);
 	if (ret != 0) {

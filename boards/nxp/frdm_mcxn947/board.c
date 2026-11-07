@@ -259,6 +259,14 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Dac1);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac2))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac2);
+	CLOCK_SetClkDiv(kCLOCK_DivDac2Clk, 1u);
+	CLOCK_AttachClk(kFRO_HF_to_DAC2);
+
+	CLOCK_EnableClock(kCLOCK_Dac2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS) || defined(CONFIG_PTP_CLOCK_DWC_MAC)
@@ -266,9 +274,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kPLL0_to_ENETPTPREF);
 	CLOCK_SetClkDiv(kCLOCK_DivEnetptprefClk, 1u);
 #endif
+	/* Gate the peripheral clock during reset (MCX N RM 33.1). */
+	CLOCK_DisableClock(kCLOCK_Enet);
+	SYSCON0->PRESETCTRLSET[2] = SYSCON_PRESETCTRL2_ENET_RST_MASK;
+	SYSCON0->PRESETCTRLCLR[2] = SYSCON_PRESETCTRL2_ENET_RST_MASK;
 	CLOCK_EnableClock(kCLOCK_Enet);
-	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
-	SYSCON0->PRESETCTRL2 &= ~SYSCON_PRESETCTRL2_ENET_RST_MASK;
 	/* rmii selection for this board */
 	SYSCON->ENET_PHY_INTF_SEL = SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(1);
 #endif

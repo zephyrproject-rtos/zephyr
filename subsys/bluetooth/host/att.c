@@ -79,6 +79,17 @@ struct bt_attr_data {
 /* Pool for incoming ATT packets */
 NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_BUF_SIZE,
 		    sizeof(struct bt_attr_data), NULL);
+
+/* Maximum number of prep_pool buffers a single connection may hold in its
+ * prepare queue. The pool is shared by all connections, so without this limit
+ * a peer that never executes or cancels its queued writes would block the
+ * prepare writes of every other peer for as long as it stays connected.
+ */
+#if CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN > 0
+#define PREP_QUEUE_MAX CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN
+#else
+#define PREP_QUEUE_MAX MAX(1, CONFIG_BT_ATT_PREPARE_COUNT / CONFIG_BT_MAX_CONN)
+#endif
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 K_MEM_SLAB_DEFINE_STATIC_TYPE(req_slab, struct bt_att_req,
@@ -706,17 +717,26 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req
 static void bt_att_sent(struct bt_l2cap_chan *ch)
 {
 	struct bt_att_chan *chan = ATT_CHAN(ch);
-	struct bt_att *att = chan->att;
+	struct bt_att *att;
 	int err;
 
 	LOG_DBG("chan %p", chan);
 
-	atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
+	/* Under the locks of bt_att_send(). Waiting for them can outlast the
+	 * bearer: disconnection clears its connection before freeing it, and
+	 * detaching clears chan->att.
+	 */
+	bt_dev_lock();
+	k_sched_lock();
 
-	if (!att) {
+	if (ch->conn == NULL || chan->att == NULL) {
 		LOG_DBG("Ignore sent on detached ATT chan");
-		return;
+		goto unlock;
 	}
+
+	att = chan->att;
+
+	atomic_clear_bit(chan->flags, ATT_PENDING_SENT);
 
 	/* Process pending requests first since they require a response they
 	 * can only be processed one at time while if other queues were
@@ -729,7 +749,7 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 		if (req != NULL) {
 			err = bt_att_chan_req_send(chan, req);
 			if (err == 0) {
-				return;
+				goto unlock;
 			}
 
 			/* Prepend back to the list as it could not be sent */
@@ -740,11 +760,15 @@ static void bt_att_sent(struct bt_l2cap_chan *ch)
 	/* Process channel queue */
 	err = process_queue(chan, &chan->tx_queue);
 	if (!err) {
-		return;
+		goto unlock;
 	}
 
 	/* Process global queue */
 	(void)process_queue(chan, &att->tx_queue);
+
+unlock:
+	k_sched_unlock();
+	bt_dev_unlock();
 }
 
 static void chan_rebegin_att_timeout(struct bt_att_tx_meta_data *user_data)
@@ -823,6 +847,12 @@ static void att_on_sent_cb(struct bt_att_tx_meta_data *meta)
 		 * SDUs. Call it manually instead.
 		 */
 		bt_att_sent(l2cap_chan);
+
+		/* The bearer may have gone while bt_att_sent() waited */
+		if (l2cap_chan->conn == NULL || att_chan->att == NULL) {
+			LOG_DBG("Bearer detached, dropping ATT cb");
+			return;
+		}
 	}
 
 	switch (op_type) {
@@ -2282,6 +2312,7 @@ static uint8_t att_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 struct prep_data {
+	struct bt_att *att;
 	struct bt_conn *conn;
 	struct net_buf *buf;
 	const void *value;
@@ -2326,6 +2357,13 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 append:
+	if (sys_slist_len(&data->att->prep_queue) >= (size_t)PREP_QUEUE_MAX) {
+		LOG_WRN_RATELIMIT("Per-connection prepare queue limit (%d) reached for %s",
+				  PREP_QUEUE_MAX, bt_conn_dst_str(data->conn));
+		data->err = BT_ATT_ERR_PREPARE_QUEUE_FULL;
+		return BT_GATT_ITER_STOP;
+	}
+
 	/* Copy data into the outstanding queue */
 	data->buf = net_buf_alloc(&prep_pool, K_NO_WAIT);
 	if (!data->buf) {
@@ -2364,6 +2402,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 
 	(void)memset(&data, 0, sizeof(data));
 
+	data.att = chan->att;
 	data.conn = chan->att->conn;
 	data.offset = offset;
 	data.value = value;
@@ -2469,17 +2508,6 @@ static uint8_t exec_write_reassemble(uint16_t handle, uint16_t offset,
 	return BT_ATT_ERR_SUCCESS;
 }
 
-static void att_prep_queue_clear(struct bt_att *att)
-{
-	struct net_buf *buf;
-
-	buf = net_buf_slist_get(&att->prep_queue);
-	while (buf != NULL) {
-		net_buf_unref(buf);
-		buf = net_buf_slist_get(&att->prep_queue);
-	}
-}
-
 static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 {
 	struct net_buf *buf;
@@ -2488,7 +2516,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		/* Core v6.3 Vol 3 Part F 3.4.6.3: the prepared values are
 		 * discarded, the queue is cleared and the response is sent.
 		 */
-		att_prep_queue_clear(chan->att);
+		net_buf_slist_purge(&chan->att->prep_queue);
 		goto rsp;
 	}
 
@@ -2521,7 +2549,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 		if (err != BT_ATT_ERR_SUCCESS) {
 			/* Discard queued buffers */
 			net_buf_unref(buf);
-			att_prep_queue_clear(chan->att);
+			net_buf_slist_purge(&chan->att->prep_queue);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
 				     handle, err);
 			return 0;
@@ -2534,7 +2562,7 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 			/* Core v6.3 Vol 3 Part F 3.4.6.3: the queue is cleared
 			 * and only an Error Response is sent.
 			 */
-			att_prep_queue_clear(chan->att);
+			net_buf_slist_purge(&chan->att->prep_queue);
 			send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, err);
 			return 0;
 		}
@@ -3216,11 +3244,9 @@ static struct net_buf *att_create_rsp_pdu(struct bt_att_chan *chan, uint8_t op)
 
 static void att_reset(struct bt_att *att)
 {
-	struct net_buf *buf;
-
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	/* Discard queued buffers */
-	att_prep_queue_clear(att);
+	net_buf_slist_purge(&att->prep_queue);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 
 #if defined(CONFIG_BT_EATT)
@@ -3229,9 +3255,7 @@ static void att_reset(struct bt_att *att)
 	(void)k_work_cancel_delayable_sync(&att->eatt.connection_work, &sync);
 #endif /* CONFIG_BT_EATT */
 
-	while ((buf = k_fifo_get(&att->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&att->tx_queue);
 
 	/* Notify pending requests */
 	while (!sys_slist_is_empty(&att->reqs)) {
@@ -3257,16 +3281,12 @@ static void att_reset(struct bt_att *att)
 
 static void att_chan_detach(struct bt_att_chan *chan)
 {
-	struct net_buf *buf;
-
 	LOG_DBG("chan %p", chan);
 
 	sys_slist_find_and_remove(&chan->att->chans, &chan->node);
 
 	/* Release pending buffers */
-	while ((buf = k_fifo_get(&chan->tx_queue, K_NO_WAIT))) {
-		net_buf_unref(buf);
-	}
+	net_buf_fifo_purge(&chan->tx_queue);
 
 	if (chan->req) {
 		/* Notify outstanding request */
@@ -3970,17 +3990,12 @@ static void bt_eatt_init(void)
 		.sec_level = BT_SECURITY_L2,
 		.accept = bt_eatt_accept,
 	};
-	struct bt_l2cap_server *registered_server;
 
 	LOG_DBG("");
 
-	/* Check if eatt_l2cap server has already been registered. */
-	registered_server = bt_l2cap_server_lookup_psm(eatt_l2cap.psm);
-	if (registered_server != &eatt_l2cap) {
-		err = bt_l2cap_server_register(&eatt_l2cap);
-		if (err < 0) {
-			LOG_ERR("EATT Server registration failed %d", err);
-		}
+	err = bt_l2cap_server_register(&eatt_l2cap);
+	if (err < 0 && err != -EALREADY) {
+		LOG_ERR("EATT Server registration failed %d", err);
 	}
 
 #if defined(CONFIG_BT_EATT)
@@ -4000,6 +4015,14 @@ void bt_att_init(void)
 	if (IS_ENABLED(CONFIG_BT_EATT)) {
 		bt_eatt_init();
 	}
+
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
+	if (CONFIG_BT_ATT_PREPARE_COUNT > PREP_QUEUE_MAX * CONFIG_BT_MAX_CONN) {
+		LOG_WRN("%d of %d prepare write buffers are unusable (limit %d per connection)",
+			CONFIG_BT_ATT_PREPARE_COUNT - PREP_QUEUE_MAX * CONFIG_BT_MAX_CONN,
+			CONFIG_BT_ATT_PREPARE_COUNT, PREP_QUEUE_MAX);
+	}
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT > 0 */
 }
 
 uint16_t bt_att_get_mtu(struct bt_conn *conn)
@@ -4169,14 +4192,27 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 	__ASSERT_NO_MSG(conn);
 	__ASSERT_NO_MSG(buf);
 
+	/* Disconnect processing frees the ATT context on the RX workqueue
+	 * without the host lock. Take the host lock before the lookup so that
+	 * L2CAP does not wait for it later, and keep the RX workqueue out with
+	 * the scheduler lock.
+	 */
+	bt_dev_lock();
+	k_sched_lock();
+
 	att = att_get(conn);
 	if (!att) {
+		k_sched_unlock();
+		bt_dev_unlock();
 		net_buf_unref(buf);
 		return -ENOTCONN;
 	}
 
 	k_fifo_put(&att->tx_queue, net_buf_take(&buf));
 	att_send_process(att);
+
+	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }

@@ -15,11 +15,11 @@
 /* Common bank select register and values */
 #define REG_BANK_SEL  0x76
 #define MASK_BANK_SEL GENMASK(2, 0)
-#define BIT_BANK0     0x000
-#define BIT_BANK1     0x001
-#define BIT_BANK2     0x010
-#define BIT_BANK3     0x011
-#define BIT_BANK4     0x100
+#define BIT_BANK0     0
+#define BIT_BANK1     1
+#define BIT_BANK2     2
+#define BIT_BANK3     3
+#define BIT_BANK4     4
 
 /* Helper macros for addressing registers in the 4 register banks
  * registers are defined as 16 bit values with the bank in the high
@@ -97,6 +97,7 @@
 
 /* Bank 1 */
 #define REG_SENSOR_CONFIG0	     (REG_BANK1_OFFSET | 0x03)
+#define REG_SENSOR_CONFIG1	     (REG_BANK1_OFFSET | 0x04)
 #define REG_GYRO_CONFIG_STATIC2  (REG_BANK1_OFFSET | 0x0B)
 #define REG_GYRO_CONFIG_STATIC3  (REG_BANK1_OFFSET | 0x0C)
 #define REG_GYRO_CONFIG_STATIC4  (REG_BANK1_OFFSET | 0x0D)
@@ -112,6 +113,7 @@
 #define REG_TMSTVAL0	     (REG_BANK1_OFFSET | 0x62)
 #define REG_TMSTVAL1	     (REG_BANK1_OFFSET | 0x63)
 #define REG_TMSTVAL2	     (REG_BANK1_OFFSET | 0x64)
+#define REG_INTF_CONFIG3     (REG_BANK1_OFFSET | 0x79)
 #define REG_INTF_CONFIG4     (REG_BANK1_OFFSET | 0x7A)
 #define REG_INTF_CONFIG5     (REG_BANK1_OFFSET | 0x7B)
 #define REG_INTF_CONFIG6     (REG_BANK1_OFFSET | 0x7C)
@@ -123,8 +125,14 @@
 #define REG_XA_ST_DATA		 (REG_BANK2_OFFSET | 0x3B)
 #define REG_YA_ST_DATA		 (REG_BANK2_OFFSET | 0x3C)
 #define REG_ZA_ST_DATA		 (REG_BANK2_OFFSET | 0x3D)
+#define REG_TMD4		 (REG_BANK2_OFFSET | 0x70)
+#define REG_TMD5		 (REG_BANK2_OFFSET | 0x71)
+#define REG_TMD6		 (REG_BANK2_OFFSET | 0x72)
+#define REG_TMD7		 (REG_BANK2_OFFSET | 0x73)
 
 /* Bank 3 */
+#define REG_PU_PD_CONFIG1 (REG_BANK3_OFFSET | 0x06)
+#define REG_PU_PD_CONFIG2 (REG_BANK3_OFFSET | 0x0E)
 #define REG_CLKDIV (REG_BANK3_OFFSET | 0x2A)
 
 /* Bank 4 */
@@ -472,6 +480,13 @@
 /* Bank1 TMSTVAL2 See section 5.x of DS-000347 */
 #define MASK_TMST_VALUE_19_16 GENMASK(3, 0)
 
+/*
+ * Bank1 SENSOR_CONFIG1 and INTF_CONFIG3, Bank2 TMD4-7 and Bank3 PU_PD_CONFIG1-2 are not
+ * documented in the datasheets. Names and values follow the TDK eMD driver.
+ */
+#define MASK_PAD_SCENARIO	 GENMASK(7, 4)
+#define BIT_PAD_SCENARIO_SINGLE	 4
+
 /* Bank1 INTF_CONFIG4 See section 5.x of DS-000347 */
 #define BIT_I3C_BUS_MODE BIT(6)
 #define BIT_SPI_AP_4WIRE BIT(1)
@@ -504,6 +519,7 @@
 /* misc. defines */
 #define WHO_AM_I_ICM42688     0x47
 #define WHO_AM_I_ICM42686     0x44
+#define WHO_AM_I_IIM42653     0x56
 #define MIN_ACCEL_SENS_SHIFT  11
 #define ACCEL_DATA_SIZE	      6
 #define GYRO_DATA_SIZE	      6

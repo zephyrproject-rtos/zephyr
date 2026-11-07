@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include <wrap_max32_trng.h>
 
@@ -22,12 +24,29 @@ struct max32_trng_config {
 
 static int api_get_entropy(const struct device *dev, uint8_t *buf, uint16_t len)
 {
-	return MXC_TRNG_Random(buf, len);
+	int ret;
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MXC_TRNG_Random(buf, len);
+
+	(void)pm_device_runtime_put(dev);
+
+	return ret;
 }
 
 static int api_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t len, uint32_t flags)
 {
 	int ret = 0;
+	enum pm_device_state state;
+
+	(void)pm_device_state_get(dev, &state);
+	if (state != PM_DEVICE_STATE_ACTIVE) {
+		return -ENODATA;
+	}
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0) {
 		uint32_t temp;
@@ -56,7 +75,7 @@ static int api_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t 
 		ret = count ? count : -ENODATA;
 	} else {
 		/* Allowed to busy-wait */
-		ret = api_get_entropy(dev, buf, len);
+		ret = MXC_TRNG_Random(buf, len);
 		if (ret == 0) {
 			ret = len; /* Data retrieved successfully. */
 		}
@@ -65,18 +84,39 @@ static int api_get_entropy_isr(const struct device *dev, uint8_t *buf, uint16_t 
 	return ret;
 }
 
-static DEVICE_API(entropy, entropy_max32_api) = {.get_entropy = api_get_entropy,
-							    .get_entropy_isr = api_get_entropy_isr};
+static DEVICE_API(entropy, entropy_max32_api) = {
+	.get_entropy = api_get_entropy,
+	.get_entropy_isr = api_get_entropy_isr
+};
 
-static int entropy_max32_init(const struct device *dev)
+static int entropy_max32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 	const struct max32_trng_config *cfg = dev->config;
 
-	/* Enable clock */
-	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+		if (ret) {
+			return ret;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+		if (ret) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
-	return ret;
+	return 0;
+}
+
+static int entropy_max32_init(const struct device *dev)
+{
+	return pm_device_driver_init(dev, entropy_max32_pm_action);
 }
 
 static const struct max32_trng_config max32_trng_cfg = {
@@ -85,5 +125,7 @@ static const struct max32_trng_config max32_trng_cfg = {
 	.perclk.bit = DT_INST_CLOCKS_CELL(0, bit),
 };
 
-DEVICE_DT_INST_DEFINE(0, entropy_max32_init, NULL, NULL, &max32_trng_cfg, PRE_KERNEL_1,
-		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_max32_api);
+PM_DEVICE_DT_INST_DEFINE(0, entropy_max32_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, entropy_max32_init, PM_DEVICE_DT_INST_GET(0), NULL, &max32_trng_cfg,
+		      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY, &entropy_max32_api);

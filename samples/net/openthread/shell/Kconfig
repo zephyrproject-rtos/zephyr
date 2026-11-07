@@ -1,0 +1,31 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "OpenThread shell sample application"
+
+config OT_SHELL_SAMPLE_RGB_STATUS_LED
+	bool "Show the Thread device role on the RGB LED"
+	depends on OPENTHREAD
+	depends on $(dt_alias_enabled,red-pwm-led)
+	depends on $(dt_alias_enabled,green-pwm-led)
+	depends on $(dt_alias_enabled,blue-pwm-led)
+	select PWM
+	help
+	  Blink the board RGB LED with a colour that reflects the current
+	  OpenThread device role: disabled is white, detached is red, child
+	  is yellow, router is green and leader is blue. When the shell is
+	  enabled, an "rgb" command is added to control the LED.
+
+if OT_SHELL_SAMPLE_RGB_STATUS_LED
+
+config OT_SHELL_SAMPLE_RGB_STATUS_LED_BLINK_MS
+	int "Default RGB LED blink period in milliseconds"
+	default 500
+	range 10 10000
+	help
+	  Initial time the LED stays on or off. It can be changed at run
+	  time with the "rgb rate" shell command.
+
+endif # OT_SHELL_SAMPLE_RGB_STATUS_LED
+
+source "Kconfig.zephyr"

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 ID8 Engineering AB
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/nordic/nrf9151_ns_laca.dtsi>
+#include "seven_nrf9151_common.dtsi"
+
+/ {
+	model = "Seven nRF9151 Non-Secure";
+	compatible = "id8,seven-nrf9151-ns";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0_ns_app;
+		zephyr,code-partition = &slot0_ns_partition;
+	};
+};
+
+/* Disable UART1, because it is used by default in TF-M */
+&uart1 {
+	status = "disabled";
+};

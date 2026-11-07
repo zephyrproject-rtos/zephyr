@@ -667,8 +667,18 @@ static int omap_mcspi_init(const struct device *dev)
 
 	data->fifo_depth = FIELD_GET(OMAP_MCSPI_HWINFO_FFNBYTE, regs->HWINFO) << 4;
 
+	/*
+	 * The reset above clears EPOL on every channel, which makes SPIEN
+	 * active high and so leaves the line asserted while the channel sits
+	 * unused. A peripheral whose chip select is active low is then
+	 * selected from here until its own first transfer configures the
+	 * channel, and it takes every transfer meant for another peripheral
+	 * as its own. Deassert them all up front; a channel that really is
+	 * active high has EPOL cleared again when it is configured.
+	 */
 	ARRAY_FOR_EACH(regs->CHAN, ch) {
 		regs->CHAN[ch].CHCONF &= ~OMAP_MCSPI_CHCONF_FORCE;
+		regs->CHAN[ch].CHCONF |= OMAP_MCSPI_CHCONF_EPOL;
 	}
 
 	ret = spi_context_cs_configure_all(&data->ctx);

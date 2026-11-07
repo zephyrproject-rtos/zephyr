@@ -179,7 +179,7 @@ child-binding:
   include:
     - name: pinctrl-device.yaml
     - name: adc-controller.yaml
-      property-blocklist: [compatible]
+      property-blocklist: [compatible, clocks, clock-names]
 
   properties:
     reg:

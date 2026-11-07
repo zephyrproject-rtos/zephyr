@@ -120,7 +120,7 @@ zephyr_library_sources(
 
   ${HOSTAP_SRC_BASE}/drivers/driver_common.c
   ${HOSTAP_SRC_BASE}/drivers/drivers.c
-  ${HOSTAP_SRC_BASE}/utils/crc32.c
+  src/crc32.c
   ${HOSTAP_SRC_BASE}/utils/base64.c
   ${HOSTAP_SRC_BASE}/utils/common.c
   ${HOSTAP_SRC_BASE}/utils/wpabuf.c
@@ -238,7 +238,6 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP OR CONFIG_WIFI_NM_HOSTAPD_AP)
     ${HOSTAP_SRC_BASE}/eap_server/eap_server_methods.c
     ${HOSTAP_SRC_BASE}/eapol_auth/eapol_auth_sm.c
     ${HOSTAP_SRC_BASE}/ap/ctrl_iface_ap.c
-    ${HOSTAP_SRC_BASE}/utils/crc32.c
     ${HOSTAP_SRC_BASE}/utils/ip_addr.c
   )
 

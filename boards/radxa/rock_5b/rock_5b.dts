@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm64/rockchip/rk3588.dtsi>
+#include "../common/rk3588_rock_5b_common.dtsi"
+
+/ {
+	compatible = "radxa,rock-5b", "rockchip,rk3588";
+	model = "Radxa ROCK 5B";
+};

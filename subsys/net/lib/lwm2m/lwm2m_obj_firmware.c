@@ -80,9 +80,127 @@ static lwm2m_engine_set_data_cb_t write_cb[MAX_INSTANCE_COUNT];
 static lwm2m_engine_execute_cb_t update_cb[MAX_INSTANCE_COUNT];
 static lwm2m_engine_user_cb_t cancel_cb[MAX_INSTANCE_COUNT];
 
+/* Set while a push (write to Package) is downloading; a pull leaves it clear */
+static bool push_active[MAX_INSTANCE_COUNT];
+/* Uptime at which an idle push is given up, 0 when not armed */
+static int64_t push_deadline[MAX_INSTANCE_COUNT];
+
+#define PUSH_TIMEOUT_MS ((int64_t)CONFIG_LWM2M_FIRMWARE_UPDATE_PUSH_TIMEOUT * MSEC_PER_SEC)
+
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 extern int lwm2m_firmware_start_transfer(uint16_t obj_inst_id, char *package_uri);
+extern int lwm2m_firmware_cancel_transfer(void);
 #endif
+
+static void push_timeout_service(struct k_work *work);
+
+/* Run the service at the earliest armed deadline, or drop it when none is left.
+ * Called with the registry lock held.
+ */
+static void push_timeout_reschedule(void)
+{
+	int64_t next = 0;
+
+	for (int i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (push_deadline[i] != 0 && (next == 0 || push_deadline[i] < next)) {
+			next = push_deadline[i];
+		}
+	}
+
+	if (next == 0) {
+		(void)lwm2m_engine_update_service_period(push_timeout_service, 0);
+	} else {
+		(void)lwm2m_engine_call_at(push_timeout_service, next);
+	}
+}
+
+static void push_timeout_arm(uint16_t obj_inst_id)
+{
+	if (PUSH_TIMEOUT_MS == 0) {
+		return;
+	}
+
+	lwm2m_registry_lock();
+	push_deadline[obj_inst_id] = k_uptime_get() + PUSH_TIMEOUT_MS;
+	push_timeout_reschedule();
+	lwm2m_registry_unlock();
+}
+
+static void push_end(uint16_t obj_inst_id)
+{
+	lwm2m_registry_lock();
+	push_active[obj_inst_id] = false;
+	if (push_deadline[obj_inst_id] != 0) {
+		push_deadline[obj_inst_id] = 0;
+		push_timeout_reschedule();
+	}
+	lwm2m_registry_unlock();
+}
+
+/* Let the application drop the image. It may erase flash or take its own
+ * locks, so the timeout service calls this without holding the registry lock.
+ */
+static void cancel_notify(uint16_t obj_inst_id)
+{
+	lwm2m_engine_user_cb_t cancel_callback;
+
+	cancel_callback = lwm2m_firmware_get_cancel_cb_inst(obj_inst_id);
+	if (cancel_callback) {
+		(void)cancel_callback(obj_inst_id);
+	}
+}
+
+/* Return to Idle with the given result and let the application drop the image */
+static void download_cancel(uint16_t obj_inst_id, uint8_t result)
+{
+	lwm2m_firmware_set_update_result_inst(obj_inst_id, result);
+	cancel_notify(obj_inst_id);
+}
+
+/* Stop a pull before the state machine resets, so no late block reaches the application */
+static void pull_cancel(void)
+{
+#ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	int ret = lwm2m_firmware_cancel_transfer();
+
+	if (ret < 0) {
+		LOG_DBG("Firmware pull not cancelled: %d", ret);
+	}
+#endif
+}
+
+static void push_timeout_service(struct k_work *work)
+{
+	int64_t now = k_uptime_get();
+	bool expired[MAX_INSTANCE_COUNT] = { false };
+
+	lwm2m_registry_lock();
+
+	for (uint16_t i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		/* Decided under the lock: a push that just ended keeps its image */
+		if (push_deadline[i] == 0 || now < push_deadline[i]) {
+			continue;
+		}
+
+		LOG_WRN("Firmware push to instance %u timed out", i);
+		lwm2m_firmware_set_update_result_inst(i, RESULT_CONNECTION_LOST);
+		expired[i] = true;
+	}
+
+	/* Deadlines that moved on, or belong to other instances, need a new wake-up */
+	push_timeout_reschedule();
+
+	lwm2m_registry_unlock();
+
+	/* Server writes run on this thread, so only an application writing Package
+	 * from its own thread could start a new push before the old image is dropped.
+	 */
+	for (uint16_t i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (expired[i]) {
+			cancel_notify(i);
+		}
+	}
+}
 
 uint8_t lwm2m_firmware_get_update_state_inst(uint16_t obj_inst_id)
 {
@@ -140,6 +258,9 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 	path.res_id = FIRMWARE_STATE_ID;
 
 	lwm2m_set_u8(&path, state);
+	if (state != STATE_DOWNLOADING) {
+		push_end(obj_inst_id);
+	}
 	lwm2m_registry_unlock();
 
 	LOG_DBG("Update state = %d", state);
@@ -233,39 +354,70 @@ void lwm2m_firmware_set_update_result(uint8_t result)
 	lwm2m_firmware_set_update_result_inst(0, result);
 }
 
+/* An empty or NULL ('\0') Package write resets the state machine; a block-wise
+ * transfer can only produce such a payload past offset zero.
+ */
+static bool is_reset_write(const uint8_t *data, uint16_t data_len, size_t offset)
+{
+	return offset == 0 && (data_len == 0U || (data_len == 1U && data[0] == '\0'));
+}
+
 static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 			    uint16_t res_inst_id, uint8_t *data,
 			    uint16_t data_len, bool last_block,
 			    size_t total_size, size_t offset)
 {
 	uint8_t state;
+	bool pull;
+	bool reset;
 	int ret = 0;
 	lwm2m_engine_set_data_cb_t write_callback;
-	lwm2m_engine_user_cb_t cancel_callback;
 
+	lwm2m_registry_lock();
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
-	if (state == STATE_IDLE) {
-		/* TODO: setup timer to check download status,
-		 * make sure it fail after timeout
-		 */
-		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
-	} else if (state == STATE_DOWNLOADED) {
-		if (data_len == 0U || (data_len == 1U && data[0] == '\0')) {
-			/* reset to state idle and result default */
-			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
-			cancel_callback = lwm2m_firmware_get_cancel_cb_inst(obj_inst_id);
-			if (cancel_callback) {
-				ret = cancel_callback(obj_inst_id);
-			}
-			LOG_DBG("Update canceled by writing %d bytes", data_len);
-			return 0;
+	pull = state == STATE_DOWNLOADING && !push_active[obj_inst_id];
+	lwm2m_registry_unlock();
+	reset = state != STATE_UPDATING && is_reset_write(data, data_len, offset);
+
+	if (pull && !reset) {
+		LOG_DBG("Package is not writable while a pull is in progress");
+		return -EPERM;
+	}
+
+	if (reset) {
+		if (pull) {
+			pull_cancel();
 		}
+
+		if (state == STATE_IDLE) {
+			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+		} else {
+			download_cancel(obj_inst_id, RESULT_DEFAULT);
+		}
+		LOG_DBG("Update canceled by writing %d bytes", data_len);
+		return 0;
+	}
+
+	if (state == STATE_IDLE) {
+		if (offset != 0) {
+			/* A late block of a download that was already given up */
+			LOG_DBG("Push block at offset %zu without a start", offset);
+			return -EFAULT;
+		}
+
+		lwm2m_registry_lock();
+		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
+		push_active[obj_inst_id] = true;
+		lwm2m_registry_unlock();
+	} else if (state == STATE_DOWNLOADED) {
 		LOG_WRN("Download has already completed");
 		return -EPERM;
 	} else if (state != STATE_DOWNLOADING) {
 		LOG_WRN("Cannot download: state = %d", state);
 		return -EPERM;
 	}
+
+	push_timeout_arm(obj_inst_id);
 
 	write_callback = lwm2m_firmware_get_write_cb_inst(obj_inst_id);
 	if (write_callback) {
@@ -297,15 +449,43 @@ static int package_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	return ret;
 }
 
+/* The engine records the length of whatever it last wrote, including a write
+ * that was diverted below; report the stored URI as it is instead.
+ */
+static void *package_uri_read_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
+				 size_t *data_len)
+{
+	*data_len = strlen(package_uri[obj_inst_id]) + 1;
+	return package_uri[obj_inst_id];
+}
+
+/* Outside Idle a Package URI write is refused or only resets the state machine,
+ * so it must not replace the stored URI: divert it to a scratch buffer.
+ */
+static void *package_uri_pre_write_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
+				      size_t *data_len)
+{
+	static char scratch[LWM2M_PACKAGE_URI_LEN];
+
+	if (lwm2m_firmware_get_update_state_inst(obj_inst_id) == STATE_IDLE) {
+		*data_len = sizeof(package_uri[obj_inst_id]);
+		return package_uri[obj_inst_id];
+	}
+
+	*data_len = sizeof(scratch);
+	return scratch;
+}
+
 static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				uint16_t res_inst_id, uint8_t *data,
 				uint16_t data_len, bool last_block,
 				size_t total_size, size_t offset)
 {
-	LOG_DBG("PACKAGE_URI WRITE: %s", package_uri[obj_inst_id]);
+	LOG_DBG("PACKAGE_URI WRITE: %s", (char *)data);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	uint8_t state;
+	bool pull;
 	bool empty_uri;
 
 	/* writes every block of a block-wise transfer to the start of
@@ -317,18 +497,42 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 		return -EFBIG;
 	}
 
+	lwm2m_registry_lock();
 	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
+	pull = state == STATE_DOWNLOADING && !push_active[obj_inst_id];
+	lwm2m_registry_unlock();
 	empty_uri = data_len == 0 || strnlen(data, data_len) == 0;
 
-	if (state == STATE_IDLE) {
-		if (!empty_uri) {
-			lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
-			lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
+	if (empty_uri) {
+		/* Nothing can stop an update; tell the server rather than pretend */
+		if (state == STATE_UPDATING) {
+			LOG_DBG("Package URI cannot be reset: state = %d", state);
+			return -EPERM;
 		}
-	} else if (state == STATE_DOWNLOADED && empty_uri) {
-		/* reset to state idle and result default */
-		lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+
+		if (pull) {
+			pull_cancel();
+		}
+
+		if (state == STATE_IDLE) {
+			lwm2m_firmware_set_update_result_inst(obj_inst_id, RESULT_DEFAULT);
+		} else {
+			download_cancel(obj_inst_id, RESULT_DEFAULT);
+		}
+
+		/* The write may have been diverted; the resource reads as empty either way */
+		package_uri[obj_inst_id][0] = '\0';
+
+		return 0;
 	}
+
+	if (state != STATE_IDLE) {
+		LOG_DBG("Cannot start download: state = %d", state);
+		return -EPERM;
+	}
+
+	lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_DOWNLOADING);
+	lwm2m_firmware_start_transfer(obj_inst_id, package_uri[obj_inst_id]);
 
 	return 0;
 #else
@@ -457,8 +661,9 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[index], i, res_inst[index], j, 1,
 			 false, true, NULL, NULL, NULL, package_write_cb, NULL);
 	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1,
-		     false, true, package_uri[index], LWM2M_PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
-		     package_uri_write_cb, NULL);
+		     false, true, package_uri[index], LWM2M_PACKAGE_URI_LEN, 0,
+		     package_uri_read_cb, package_uri_pre_write_cb, NULL, package_uri_write_cb,
+		     NULL);
 	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[index], i, firmware_update_cb);
 	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[index], i, res_inst[index], j,
 			  &(update_state[index]), sizeof(update_state[index]));

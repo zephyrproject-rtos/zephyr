@@ -169,7 +169,7 @@ static int fake_init(const struct device *dev)
 	return 0;
 }
 
-static struct ieee802154_radio_api fake_radio_api = {
+static const struct ieee802154_radio_api fake_radio_api = {
 	.iface_api.init	= fake_iface_init,
 
 	.get_capabilities	= fake_get_capabilities,

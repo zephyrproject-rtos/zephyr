@@ -77,6 +77,13 @@
 			   <15 0 &gpioq 2 0>;
 	};
 
+	wm8904_fll_ref: sai1a-mclk {
+		compatible = "fixed-clock";
+		/* 1.536 GHz / 136 */
+		clock-frequency = <11294117>;
+		#clock-cells = <0>;
+	};
+
 	psram: memory@90000000 {
 		compatible = "zephyr,memory-region";
 		/*
@@ -123,6 +130,9 @@
 		compatible = "wolfson,wm8904";
 		reg = <0x1a>;
 		input-pga-select = <1>;
+		clocks = <&wm8904_fll_ref>;
+		clock-names = "mclk";
+		clock-source = "FLL";
 
 		wolfson,mic-bias-voltage = "avdd-9-10";
 		status = "okay";

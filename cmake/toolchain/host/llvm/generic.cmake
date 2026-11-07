@@ -1,6 +1,5 @@
 
-# Todo: deprecate CLANG_ROOT_DIR
-set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
+find_package(Deprecated COMPONENTS ENV_CLANG_ROOT_DIR)
 set(TOOLCHAIN_VARIANT_COMPILER llvm CACHE STRING "Variant compiler being used")
 zephyr_get(LLVM_TOOLCHAIN_PATH)
 
@@ -8,7 +7,7 @@ if(LLVM_TOOLCHAIN_PATH)
   set(TOOLCHAIN_HOME ${LLVM_TOOLCHAIN_PATH}/bin/)
 endif()
 
-set(LLVM_TOOLCHAIN_PATH ${CLANG_ROOT_DIR} CACHE PATH "clang install directory")
+find_package(Deprecated COMPONENTS CLANG_ROOT_DIR)
 
 set(COMPILER clang)
 set(BINTOOLS llvm)

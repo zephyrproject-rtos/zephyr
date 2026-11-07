@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: PSOC C3 HPPASS SAR ADC, MCPASS v3
+
+description: |
+  Infineon PSOC C3 HPPASS SAR ADC with the MCPASS v3 register layout
+  (PSOC Control C3M6/P6).
+
+  v3 carries 36 channels: 12 direct samplers, plus four muxed samplers of
+  six inputs each.  The Zephyr ADC API addresses channels 0-31 only, so the
+  top four are not reachable.  The programming model is otherwise the one
+  described by infineon,hppass-sar-adc, which must be listed as the fallback
+  compatible so the ADC driver still binds:
+
+    compatible = "infineon,hppass-sar-adc-v3", "infineon,hppass-sar-adc";
+
+compatible: "infineon,hppass-sar-adc-v3"
+
+include: infineon,hppass-sar-adc.yaml

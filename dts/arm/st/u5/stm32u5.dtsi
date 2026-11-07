@@ -1079,6 +1079,17 @@
 				      <8 1>, <9 1>, <10 1>, <11 1>,
 				      <12 1>, <13 1>, <14 1>, <15 1>;
 		};
+
+		lpdma1: dma@46025000 {
+			compatible = "st,stm32u5-dma";
+			reg = <0x46025000 0x1000>;
+			#dma-cells = <3>;
+			interrupts = <114 0>, <115 0>, <116 0>, <117 0>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 9)>;
+			dma-channels = <4>;
+			dma-requests = <16>;
+			status = "disabled";
+		};
 	};
 
 	swj_port: swj_port {

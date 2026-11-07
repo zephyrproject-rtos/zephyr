@@ -18,6 +18,13 @@ LOG_MODULE_REGISTER(st75256, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/kernel.h>
 
+#define ST75256_COLUMN_ADDR_RANGE    256U
+#define ST75256_PAGE_ADDR_RANGE_GREY (0x29 * 4U)
+#define ST75256_PAGE_ADDR_RANGE_MONO (0x15 * 8U)
+
+#define ST75256_FLIP_CONFIG_MY BIT(0)
+#define ST75256_FLIP_CONFIG_MX BIT(1)
+
 #define ST75256_EXTCOM   0x30
 #define ST75256_EXTCOM_1 ST75256_EXTCOM
 #define ST75256_EXTCOM_2 ST75256_EXTCOM + 1
@@ -135,32 +142,37 @@ static int st75256_blanking_off(const struct device *dev)
 	return st75256_write_command(dev, ST75256_DISPLAY_ON, NULL, 0);
 }
 
-static int st75256_set_window(const struct device *dev, int x, int y, int width, int height)
+static int st75256_set_window(const struct device *dev, uint16_t x, uint16_t y, uint16_t width,
+			      uint16_t height)
 {
-	struct st75256_data *data = dev->data;
-	int ret;
-	uint8_t x_position[] = {x, x + width - 1};
-	uint8_t y_position[2];
+	const struct st75256_config *config = dev->config;
+	const struct st75256_data *data = dev->data;
 
-	if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
-		y_position[0] = y / 4;
-		y_position[1] = ((y + height) / 4) - 1;
-	} else {
-		y_position[0] = y / 8;
-		y_position[1] = ((y + height) / 8) - 1;
-	}
+	/* Page address range and pixel per byte depend on pixel format */
+	const bool grey = data->current_pixel_format == PIXEL_FORMAT_L_8;
+	const uint16_t y_div = grey ? 2 : 3; /* division by 4 or 8 through shifting */
+	const uint16_t par = grey ? ST75256_PAGE_ADDR_RANGE_GREY : ST75256_PAGE_ADDR_RANGE_MONO;
+
+	/* If mx or my is set offset by the memory area not used by the display */
+	const bool mx = config->flip_configuration & ST75256_FLIP_CONFIG_MX;
+	const bool my = config->flip_configuration & ST75256_FLIP_CONFIG_MY;
+	const uint16_t x_off = mx ? ST75256_COLUMN_ADDR_RANGE - config->width : 0;
+	const uint16_t y_off = my ? par - config->height : 0;
+
+	int ret;
+	uint8_t column_range[2], page_range[2];
+
+	/* Start and end, column is 1 pixel broad (x direction), page pixels depend on greyscale */
+	column_range[0] = x + x_off;
+	column_range[1] = column_range[0] + width - 1;
+	page_range[0] = (y + y_off) >> y_div;
+	page_range[1] = page_range[0] + (height >> y_div) - 1;
 
 	ret = st75256_write_command(dev, ST75256_EXTCOM_1, NULL, 0);
-	if (ret < 0) {
-		return ret;
-	}
+	ret = (ret != 0) ? ret : st75256_write_command(dev, ST75256_PAGE_RANGE, page_range, 2);
+	ret = (ret != 0) ? ret : st75256_write_command(dev, ST75256_COL_RANGE, column_range, 2);
 
-	ret = st75256_write_command(dev, ST75256_PAGE_RANGE, y_position, 2);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return st75256_write_command(dev, ST75256_COL_RANGE, x_position, 2);
+	return ret;
 }
 
 static int st75256_start_write(const struct device *dev)
@@ -180,22 +192,22 @@ static int st75256_write_pixels_MONO01(const struct device *dev, const uint16_t 
 				       const struct display_buffer_descriptor *desc)
 {
 	const struct st75256_config *config = dev->config;
-	struct display_buffer_descriptor mipi_desc;
-	int ret;
+	struct display_buffer_descriptor mipi_desc = {
+		.width = desc->width,
+		.pitch = desc->width,
+		.buf_size = MIN(desc->buf_size, desc->width * (desc->height / 8)),
+		.height = desc->height,
+	};
+	int ret, ret_release;
 
-	for (int i = 0; i < desc->height / 8; i++) {
-		st75256_set_window(dev, x, y + i * 8, desc->width, desc->height);
-		st75256_start_write(dev);
-		mipi_desc.buf_size = desc->width;
-		mipi_desc.width = desc->width;
-		mipi_desc.height = 8;
-		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, buf, &mipi_desc,
-					     PIXEL_FORMAT_MONO01);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	return mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+	ret = st75256_set_window(dev, x, y, mipi_desc.width, mipi_desc.height);
+	ret = (ret != 0) ? ret : st75256_start_write(dev);
+	ret = (ret != 0) ? ret
+			 : mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, buf,
+						  &mipi_desc, PIXEL_FORMAT_MONO01);
+
+	ret_release = mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+	return (ret != 0) ? ret : ret_release;
 }
 
 /* ST75256 4-level is greyscale is 4 pixels per byte vtiled.
@@ -208,14 +220,14 @@ static int st75256_write_pixels_L_8(const struct device *dev, const uint16_t x, 
 	const struct st75256_config *config = dev->config;
 	struct display_buffer_descriptor mipi_desc;
 	int32_t line_count = desc->height;
-	int ret, l;
+	int ret = 0, l, ret_release;
 	int line_total = 0;
 
 	mipi_desc.pitch = desc->pitch;
+	ret = st75256_set_window(dev, x, y, desc->width, desc->height);
+	ret = (ret != 0) ? ret : st75256_start_write(dev);
 
-	st75256_set_window(dev, x, y, desc->width, desc->height);
-	st75256_start_write(dev);
-	while (line_count > line_total) {
+	while ((line_count > line_total) && (ret == 0)) {
 		l = 0;
 
 		/* Convert what the conversion buffer can hold to
@@ -245,13 +257,11 @@ static int st75256_write_pixels_L_8(const struct device *dev, const uint16_t x, 
 		/* This is the wrong format, but it doesn't matter to almost all mipi drivers */
 		ret = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config,
 					     config->conversion_buf, &mipi_desc, PIXEL_FORMAT_L_8);
-		if (ret < 0) {
-			return ret;
-		}
 		line_total += l;
 	}
-	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
-	return 0;
+
+	ret_release = mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+	return (ret != 0) ? ret : ret_release;
 }
 
 static int st75256_write(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -268,20 +278,28 @@ static int st75256_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
+	buf_len = desc->height * desc->width;
 	if (data->current_pixel_format == PIXEL_FORMAT_MONO01) {
-		buf_len = MIN(desc->buf_size, desc->height * desc->width / 8);
 		if ((y % 8) != 0 || (desc->height % 8) != 0) {
 			LOG_ERR("Y and height must be aligned on 8 boundary");
 			return -EINVAL;
 		}
+		buf_len /= 8; /* 8 pixel per byte */
 	} else if (data->current_pixel_format == PIXEL_FORMAT_L_8) {
-		buf_len = MIN(desc->buf_size, desc->height * desc->width / 4);
 		if ((y % 4) != 0 || (desc->height % 4) != 0) {
 			LOG_ERR("Y and height must be aligned on 4 boundary");
 			return -EINVAL;
 		}
 	} else {
 		return -EINVAL;
+	}
+
+	if (desc->buf_size < buf_len) {
+		LOG_ERR("Buffer smaller than window");
+		return -EINVAL;
+	}
+	if (desc->buf_size > buf_len) {
+		LOG_INF("Buffer does not completely fit into window");
 	}
 
 	if (buf == NULL || buf_len == 0U) {

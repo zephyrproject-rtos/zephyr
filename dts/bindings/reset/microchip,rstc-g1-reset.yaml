@@ -8,6 +8,7 @@ description: |
 
   Group g1 RSTC Reset driver supports following hardware peripherals:
     - module name="RSTC" id="U2239" version="4.0.0"
+    - module name="RSTC" id="03926" name2="pwr_rpmu_rstc_v1" version="1a0"
 
 include: base.yaml
 

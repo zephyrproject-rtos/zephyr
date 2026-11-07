@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Build the DesignWare XGMAC driver */
+
+&xgmac0 {
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+};

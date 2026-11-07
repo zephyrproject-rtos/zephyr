@@ -413,16 +413,21 @@ static int64_t retransmit_request(struct lwm2m_ctx *client_ctx, const int64_t ti
 
 	return next;
 }
+/* The service list is shared with every thread that adds, reschedules or removes
+ * a service, so each access to it holds the engine lock.
+ */
 static int64_t engine_next_service_timestamp(void)
 {
 	struct service_node *srv;
 	int64_t next = INT64_MAX;
 
+	lwm2m_engine_lock();
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
 		if (srv->next_timestamp < next) {
 			next = srv->next_timestamp;
 		}
 	}
+	lwm2m_engine_unlock();
 
 	return next;
 }
@@ -435,8 +440,11 @@ static int engine_add_srv(k_work_handler_t service, uint32_t period_ms, int64_t 
 		return -EINVAL;
 	}
 
+	lwm2m_engine_lock();
+
 	/* First, try if the service is already registered, and modify it*/
 	if (lwm2m_engine_update_service_period(service, period_ms) == 0) {
+		lwm2m_engine_unlock();
 		return 0;
 	}
 
@@ -448,6 +456,7 @@ static int engine_add_srv(k_work_handler_t service, uint32_t period_ms, int64_t 
 	}
 
 	if (i == MAX_PERIODIC_SERVICE) {
+		lwm2m_engine_unlock();
 		return -ENOMEM;
 	}
 
@@ -456,6 +465,8 @@ static int engine_add_srv(k_work_handler_t service, uint32_t period_ms, int64_t 
 	service_node_data[i].next_timestamp = next;
 
 	sys_slist_append(&engine_service_list, &service_node_data[i].node);
+
+	lwm2m_engine_unlock();
 
 	lwm2m_engine_wake_up();
 
@@ -479,36 +490,51 @@ int lwm2m_engine_call_now(k_work_handler_t service)
 
 int lwm2m_engine_update_service_period(k_work_handler_t service, uint32_t period_ms)
 {
+	int ret = -ENOENT;
 	int i = 0;
+
+	lwm2m_engine_lock();
 
 	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
 		if (service_node_data[i].service_work == service) {
 			if (period_ms) {
 				service_node_data[i].call_period = period_ms;
 				service_node_data[i].next_timestamp = k_uptime_get() + period_ms;
-				lwm2m_engine_wake_up();
-				return 0;
+				ret = 0;
+			} else {
+				sys_slist_find_and_remove(&engine_service_list,
+							  &service_node_data[i].node);
+				service_node_data[i].service_work = NULL;
+				ret = 1;
 			}
-			sys_slist_find_and_remove(&engine_service_list, &service_node_data[i].node);
-			service_node_data[i].service_work = NULL;
-			return 1;
+			break;
 		}
 	}
 
-	return -ENOENT;
+	lwm2m_engine_unlock();
+
+	if (ret == 0) {
+		lwm2m_engine_wake_up();
+	}
+
+	return ret;
 }
 
 static int64_t lwm2m_engine_service(const int64_t timestamp)
 {
 	struct service_node *srv, *tmp;
+	k_work_handler_t work;
 	bool restart;
 
 	do {
 		restart = false;
+		work = NULL;
+
+		lwm2m_engine_lock();
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_service_list, srv, tmp, node) {
 			/* service is due */
 			if (timestamp >= srv->next_timestamp) {
-				k_work_handler_t work = srv->service_work;
+				work = srv->service_work;
 
 				if (srv->call_period) {
 					srv->next_timestamp = k_uptime_get() + srv->call_period;
@@ -516,13 +542,16 @@ static int64_t lwm2m_engine_service(const int64_t timestamp)
 					sys_slist_find_and_remove(&engine_service_list, &srv->node);
 					srv->service_work = NULL;
 				}
-				if (work) {
-					work(NULL);
-				}
 				/* List might have been modified by the callback */
 				restart = true;
 				break;
 			}
+		}
+		lwm2m_engine_unlock();
+
+		/* Run the handler unlocked: it may reschedule itself or other services */
+		if (work != NULL) {
+			work(NULL);
 		}
 	} while (restart);
 

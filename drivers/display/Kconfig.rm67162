@@ -4,7 +4,8 @@
 config RM67162
 	bool "RM67162 display driver"
 	default y
-	select MIPI_DSI
 	depends on DT_HAS_RAYDIUM_RM67162_ENABLED
+	select MIPI_DSI if $(dt_compat_on_bus,$(DT_COMPAT_RAYDIUM_RM67162),mipi-dsi)
+	select MIPI_DBI if $(dt_compat_on_bus,$(DT_COMPAT_RAYDIUM_RM67162),mipi-dbi)
 	help
 	  Enable driver for RM67162 display driver.
