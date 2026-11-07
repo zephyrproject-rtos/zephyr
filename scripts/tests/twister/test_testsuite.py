@@ -188,6 +188,38 @@ TESTDATA_2 = [
             ztest_suite_names = ['feature6']
         )
     ),
+    (
+        os.path.join(
+            'testsuites',
+            'tests',
+            'test_e',
+            'test_ztest_static.c'
+        ),
+        ScanPathResult(
+            warnings=None,
+            matches=['feature7.plain_case', 'feature7.static_case', 'feature7.static_fixture_case'],
+            has_registered_test_suites=False,
+            has_run_registered_test_suites=True,
+            has_test_main=False,
+            ztest_suite_names = ['feature7']
+        )
+    ),
+    (
+        os.path.join(
+            'testsuites',
+            'tests',
+            'test_e',
+            'test_ztest_static_no_suite.c'
+        ),
+        ScanPathResult(
+            warnings=None,
+            matches=['feature7.static_other_file'],
+            has_registered_test_suites=False,
+            has_run_registered_test_suites=False,
+            has_test_main=False,
+            ztest_suite_names = []
+        )
+    ),
 #    (
 #        os.path.join(
 #            'testsuites',
@@ -217,6 +249,8 @@ TESTDATA_2 = [
         'registered testsuite',
         'new testsuite with registered run',
         'new testsuite with token-pasted testcase names',
+        'new testsuite with static testcases',
+        'static testcases without testsuite',
 #        'empty testsuite'
     ]
 )
