@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	interrupt-controller@10000000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x10000000 0x10000>;
+	};
+};

@@ -10,6 +10,8 @@
 
 #define DT_DRV_COMPAT   arm_gic_v3_its
 
+#define ITS_TEST_LPI_INT_BASE 8192U
+
 static volatile unsigned int last_lpi_irq_num;
 
 static void lpi_irq_handle(const void *parameter)
@@ -51,22 +53,77 @@ ZTEST(arm64_gicv3_its, test_gicv3_its_alloc)
 {
 	int devn, event_id;
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
+	unsigned int first;
+	unsigned int intid;
+	int device_id = ITS_TEST_DEV(0);
 
 	zassert_false(dev == NULL, "");
+	zassert_equal(its_alloc_intids(dev, 0U, &first), -EINVAL, "");
+	zassert_equal(its_setup_deviceid(dev, device_id, 0U), -EINVAL, "");
+	zassert_equal(its_setup_deviceid(dev, device_id, CONFIG_GIC_V3_ITS_MAX_VECTORS + 1U),
+		      -ENOMEM, "");
+
+	zassert_equal(its_alloc_intids(dev, 2U, &first), 0, "");
+	zassert_true(first >= ITS_TEST_LPI_INT_BASE, "");
+	zassert_equal(its_alloc_intids(dev, 1U, &intid), 0, "");
+	zassert_equal(intid, first + 2U, "");
 
 	for (devn = 0; devn < ITS_TEST_NUM_DEVS; ++devn) {
-		int device_id = ITS_TEST_DEV(devn);
+		device_id = ITS_TEST_DEV(devn);
 
-		zassert_true(its_setup_deviceid(dev, device_id, ITS_TEST_NUM_ITES) == 0, "");
+		if (devn == 0) {
+			zassert_true(its_setup_deviceid(dev, device_id, 1) == 0, "");
+			vectors[devn][0] = first;
+			zassert_true(vectors[devn][0] >= ITS_TEST_LPI_INT_BASE, "");
+			zassert_true(its_map_intid(dev, device_id, 0, vectors[devn][0]) == 0, "");
 
-		for (event_id = 0; event_id < ITS_TEST_NUM_ITES; ++event_id) {
-			vectors[devn][event_id] = its_alloc_intid(dev);
-			zassert_true(vectors[devn][event_id] >= 8192, "");
+			/* A mapped EventID rejects a second mapping. */
+			zassert_equal(its_map_intid(dev, device_id, 0, first + 1U), -EBUSY, "");
+		}
+
+		int ret = its_setup_deviceid(dev, device_id, ITS_TEST_NUM_ITES);
+
+		zassert_equal(ret, 0, "DeviceID %x setup failed: %d", device_id, ret);
+		if (devn == 1) {
+			zassert_equal(
+				its_alloc_map_intids(dev, device_id, ITS_TEST_NUM_ITES, &first), 0,
+				"");
+			zassert_true(first >= ITS_TEST_LPI_INT_BASE, "");
+			zassert_equal(
+				its_alloc_map_intids(dev, device_id, ITS_TEST_NUM_ITES, &first),
+				-EBUSY, "EventIDs must not be mapped more than once");
+
+			for (event_id = 0; event_id < ITS_TEST_NUM_ITES; event_id++) {
+				vectors[devn][event_id] = first + event_id;
+			}
+			continue;
+		}
+
+		for (event_id = (devn == 0) ? 1 : 0; event_id < ITS_TEST_NUM_ITES; ++event_id) {
+			if (devn == 0 && event_id < 3) {
+				vectors[devn][event_id] = first + event_id;
+			} else {
+				zassert_equal(its_alloc_intids(dev, 1U, &intid), 0, "");
+				vectors[devn][event_id] = intid;
+			}
+			zassert_true(vectors[devn][event_id] >= ITS_TEST_LPI_INT_BASE, "");
 			zassert_true(vectors[devn][event_id] < CONFIG_NUM_IRQS, "");
 
 			zassert_true(its_map_intid(dev, device_id, event_id,
 						   vectors[devn][event_id]) == 0, "");
 		}
+	}
+
+	if (ITS_TEST_NUM_DEVS == CONFIG_GIC_V3_ITS_MAX_DEVICES) {
+		zassert_true(its_setup_deviceid(dev, ITS_TEST_DEV(ITS_TEST_NUM_DEVS),
+						ITS_TEST_NUM_ITES) == -ENOMEM,
+			     "");
+	}
+
+	if (CONFIG_NUM_IRQS == (ITS_TEST_LPI_INT_BASE + ITS_TEST_NUM_DEVS * ITS_TEST_NUM_ITES)) {
+		zassert_equal(its_alloc_intids(dev, 1U, &intid), -ENOSPC, "");
+		zassert_equal(its_map_intid(dev, ITS_TEST_DEV(0), 0U, CONFIG_NUM_IRQS), -EINVAL,
+			      "");
 	}
 }
 
