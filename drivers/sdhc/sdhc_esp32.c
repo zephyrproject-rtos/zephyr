@@ -89,6 +89,7 @@ struct sdhc_esp32_config {
 	const clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
 	const struct gpio_dt_spec pwr_gpio;
+	const struct gpio_dt_spec cd_gpio;
 	/*
 	 * Pins below are only defined for ESP32. For SoC's with GPIO matrix feature
 	 * please use pinctrl for pin configuration.
@@ -1313,6 +1314,14 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	/* Toggle card power supply */
 	if (data->power_mode != ios->power_mode) {
 		if (ios->power_mode == SDHC_POWER_OFF) {
+			/* Avoid powering an unpowered card through its signal pins. */
+			if (cfg->pcfg != NULL) {
+				ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+				if (ret != 0 && ret != -ENOENT) {
+					return ret;
+				}
+				ret = 0;
+			}
 			if (cfg->pwr_gpio.port) {
 				gpio_pin_set_dt(&cfg->pwr_gpio, 0);
 			}
@@ -1323,6 +1332,12 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 		} else if (ios->power_mode == SDHC_POWER_ON) {
 			if (cfg->pwr_gpio.port) {
 				gpio_pin_set_dt(&cfg->pwr_gpio, 1);
+			}
+			if (cfg->pcfg != NULL) {
+				ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+				if (ret != 0) {
+					return ret;
+				}
 			}
 			/*
 			 * Claim the bus: the reset and the register writes below
@@ -1611,6 +1626,10 @@ static int sdhc_esp32_get_card_present(const struct device *dev)
 	const struct sdhc_esp32_config *cfg = dev->config;
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
 
+	if (cfg->cd_gpio.port != NULL) {
+		return gpio_pin_get_dt(&cfg->cd_gpio);
+	}
+
 	return sdmmc_ll_is_card_detected(sdio_hw, cfg->slot);
 }
 
@@ -1797,6 +1816,18 @@ static int sdhc_esp32_init(const struct device *dev)
 
 	/* Pin configuration */
 
+	if (cfg->cd_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure SDHC card detect pin");
+			return ret;
+		}
+	}
+
 	if (cfg->pwr_gpio.port) {
 		ret = gpio_pin_configure_dt(&cfg->pwr_gpio, GPIO_OUTPUT_INACTIVE);
 
@@ -1955,7 +1986,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 
 #define SDHC_ESP32_INIT(n)                                                                         \
                                                                                                    \
-	COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                                          \
 			  (PINCTRL_DT_DEFINE(DT_DRV_INST(n));), (EMPTY))                           \
 	K_MSGQ_DEFINE_STATIC_TYPE(sdhc##n##_queue, struct sdmmc_event, SDMMC_EVENT_QUEUE_LENGTH);  \
                                                                                                    \
@@ -1968,9 +1999,10 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
-		.pcfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                         \
+		.pcfg = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pinctrl_0),                           \
 			  (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),                      \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.clk_pin = DT_INST_PROP_OR(n, clk_pin, GPIO_NUM_NC),                               \
 		.cmd_pin = DT_INST_PROP_OR(n, cmd_pin, GPIO_NUM_NC),                               \
 		.d0_pin = DT_INST_PROP_OR(n, d0_pin, GPIO_NUM_NC),                                 \
