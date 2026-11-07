@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.interrupt_controller.gicv3_its.reservation:
+    extra_configs:
+      - CONFIG_GIC_V3_ITS_MAX_DEVICES=2
+      - CONFIG_GIC_V3_ITS_MAX_VECTORS=64
+      - CONFIG_NUM_IRQS=32768
+    platform_allow:
+      - native_sim/native/64
+    tags:
+      - drivers
+      - interrupt_controller
