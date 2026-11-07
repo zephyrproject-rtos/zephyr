@@ -119,6 +119,8 @@ struct esp32_wifi_runtime {
 	atomic_t connect_seq;
 	struct k_work_delayable connect_retry_work;
 	struct k_work_delayable connect_timeout_work;
+	bool ap_config_busy;
+	bool ap_running;
 	struct k_mutex send_lock;
 	struct k_sem tx_done_sem;
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
@@ -206,6 +208,9 @@ static const char esp32_wifi_internal_event[] = "esp32_wifi_internal";
 enum esp32_wifi_internal_event_id {
 	ESP32_WIFI_EVENT_ROAM_TIMEOUT,
 	ESP32_WIFI_EVENT_RSSI_RECOVER,
+	ESP32_WIFI_EVENT_AP_CONFIG_BEGIN,
+	ESP32_WIFI_EVENT_AP_CONFIG_DONE,
+	ESP32_WIFI_EVENT_AP_CONFIG_FAILED,
 	ESP32_WIFI_EVENT_CONNECT_RETRY,
 	ESP32_WIFI_EVENT_CONNECT_TIMEOUT,
 	ESP32_WIFI_EVENT_CONNECT_CANCEL,
@@ -233,6 +238,23 @@ static int esp32_wifi_post_internal_event(enum esp32_wifi_internal_event_id id)
 	}
 
 	return 0;
+}
+
+static K_MUTEX_DEFINE(esp32_wifi_ap_lock);
+
+static int esp32_wifi_post_ap_config_event(enum esp32_wifi_internal_event_id id,
+					   k_timeout_t timeout)
+{
+	uint32_t seq = (uint32_t)atomic_get(&esp32_data.connect_seq);
+	struct esp32_wifi_event evt = {
+		.base = ESP32_WIFI_INTERNAL_EVENT,
+		.id = id,
+		.data_size = sizeof(seq),
+	};
+
+	memcpy(evt.data, &seq, sizeof(seq));
+
+	return k_msgq_put(&esp32_wifi_event_msgq, &evt, timeout);
 }
 
 /*
@@ -1576,6 +1598,19 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 			esp32_wifi_handle_rssi_recover();
 			break;
 #endif
+		case ESP32_WIFI_EVENT_AP_CONFIG_BEGIN:
+			ap_data->ap_config_busy = true;
+			break;
+		case ESP32_WIFI_EVENT_AP_CONFIG_DONE:
+			ap_data->ap_config_busy = false;
+			if (ap_data->ap_running) {
+				wifi_mgmt_raise_ap_enable_result_event(iface_ap,
+								       WIFI_STATUS_AP_SUCCESS);
+			}
+			break;
+		case ESP32_WIFI_EVENT_AP_CONFIG_FAILED:
+			ap_data->ap_config_busy = false;
+			break;
 		case ESP32_WIFI_EVENT_CONNECT_RETRY:
 			esp32_wifi_handle_connect_retry();
 			break;
@@ -1639,23 +1674,29 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
+		ap_data->ap_running = true;
 #if defined(CONFIG_WIFI_ESP32_MESH)
 		if (esp_wifi_mesh_is_active()) {
 			break;
 		}
 #endif
 		net_if_dormant_off(iface_ap);
-		wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
+		if (!ap_data->ap_config_busy) {
+			wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
+		}
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
+		ap_data->ap_running = false;
 #if defined(CONFIG_WIFI_ESP32_MESH)
 		if (esp_wifi_mesh_is_active()) {
 			break;
 		}
 #endif
 		net_if_dormant_on(iface_ap);
-		wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
+		if (!ap_data->ap_config_busy) {
+			wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
+		}
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
 		ap_data->state = ESP32_AP_CONNECTED;
@@ -2201,6 +2242,8 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 {
 	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	esp_err_t err = 0;
+	int ret = 0;
+	bool marked;
 
 #if defined(CONFIG_WIFI_ESP32_MESH)
 	/* The mesh stack owns the softAP interface while it runs. */
@@ -2291,6 +2334,14 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 	/* Start Wi-Fi in AP mode with configuration built above */
 	wifi_mode_t mode;
 
+	/* The mode and configuration changes below restart the softAP, so its
+	 * start and stop events are reported once for the whole sequence.
+	 */
+	(void)k_mutex_lock(&esp32_wifi_ap_lock, K_FOREVER);
+	marked =
+		(k_current_get() != esp32_wifi_event_tid) &&
+		(esp32_wifi_post_ap_config_event(ESP32_WIFI_EVENT_AP_CONFIG_BEGIN, K_NO_WAIT) == 0);
+
 	err = esp_wifi_get_mode(&mode);
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_AP_STA_MODE) &&
 	    (mode == ESP32_WIFI_MODE_STA || mode == ESP32_WIFI_MODE_APSTA)) {
@@ -2300,19 +2351,23 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 	}
 	if (err) {
 		LOG_ERR("Failed to set Wi-Fi mode (%d)", err);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
 	if (err) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", err);
-		return -EINVAL;
+		(void)esp_wifi_set_mode(mode);
+		ret = -EINVAL;
+		goto out;
 	}
 
 	err = esp32_wifi_start();
 	if (err) {
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto out;
 	}
 
 	/*
@@ -2330,7 +2385,15 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 	net_if_carrier_on(esp32_wifi_iface);
 #endif
 
-	return 0;
+out:
+	if (marked) {
+		(void)esp32_wifi_post_ap_config_event(ret == 0 ? ESP32_WIFI_EVENT_AP_CONFIG_DONE
+							       : ESP32_WIFI_EVENT_AP_CONFIG_FAILED,
+						      K_FOREVER);
+	}
+	(void)k_mutex_unlock(&esp32_wifi_ap_lock);
+
+	return ret;
 };
 
 static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_if *iface __unused)
@@ -2346,6 +2409,7 @@ static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_i
 	}
 #endif
 
+	(void)k_mutex_lock(&esp32_wifi_ap_lock, K_FOREVER);
 	esp_wifi_get_mode(&mode);
 	if (mode == ESP32_WIFI_MODE_APSTA) {
 		err = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
@@ -2353,6 +2417,7 @@ static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_i
 	} else {
 		err = esp_wifi_stop();
 	}
+	(void)k_mutex_unlock(&esp32_wifi_ap_lock);
 	if (err) {
 		LOG_ERR("Failed to disable Wi-Fi AP mode: (%d)", err);
 		return -EAGAIN;
