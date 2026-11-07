@@ -127,6 +127,11 @@ struct ll_adv_iso_set {
 		uint8_t  dummy;
 	} node_rx_terminate;
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	uint32_t ticks_resume_anchor; /* BIG anchor without jitter */
+	uint8_t  resume_bis;          /* Index of the BIS reserved last */
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
 #if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
 	uint8_t  hci_handle;
 #endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */

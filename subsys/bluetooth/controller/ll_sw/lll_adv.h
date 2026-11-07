@@ -114,7 +114,21 @@ struct lll_adv_iso {
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	/* Radio start ticks and sequential packing index of the first
+	 * subevent transmitted in the current (resumed) BIG event.
+	 */
+	uint32_t ticks_se_start;
+	uint16_t se_start;
+
+	/* Ticks at expire of the current BIG event anchor, without drift */
+	uint32_t ticks_anchor;
+
+	/* Ticks at expire of the reservation of the BIS to resume at */
+	uint32_t ticks_resume;
+
 	uint8_t is_lll_resume:1;
+	uint8_t is_resume_prepare:1;
+	uint8_t is_resume_due:1;
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 };
 
