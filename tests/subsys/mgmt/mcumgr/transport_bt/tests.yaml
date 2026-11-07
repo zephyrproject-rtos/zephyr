@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2026 Tondo Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+tests:
+  mgmt.mcumgr.transport.bt:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - mcumgr
+      - bluetooth
