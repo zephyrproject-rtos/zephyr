@@ -632,6 +632,8 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 	if (ull_ref_get(hdr)) {
 		static memq_link_t link;
 		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint16_t handle_iter;
+		uint8_t cis_idx;
 		uint32_t ret;
 
 		mfy.param = &cig->lll;
@@ -647,6 +649,20 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 			      (hdr->disabled_cb == cis_disabled_cb));
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = cis_disabled_cb;
+
+		/* Do not abort the CIG event while it serves other CISes, their
+		 * SDUs would be lost; teardown continues when the event is done.
+		 */
+		handle_iter = UINT16_MAX;
+		for (cis_idx = 0U; cis_idx < cig->lll.num_cis; cis_idx++) {
+			const struct ll_conn_iso_stream *cis_other;
+
+			cis_other = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+			if ((cis_other != NULL) && (cis_other != cis) &&
+			    (cis_other->lll.active != 0U) && (cis_other->teardown == 0U)) {
+				return;
+			}
+		}
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
