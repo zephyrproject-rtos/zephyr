@@ -109,6 +109,19 @@ extern "C" {
 float sqrtf(float square);
 double sqrt(double square);
 
+#if HAS_BUILTIN(__builtin_fabs)
+static inline double fabs(double x)
+{
+	return __builtin_fabs(x);
+}
+#endif
+#if HAS_BUILTIN(__builtin_fabsf)
+static inline float fabsf(float x)
+{
+	return __builtin_fabsf(x);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
