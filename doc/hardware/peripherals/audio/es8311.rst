@@ -1,0 +1,38 @@
+.. SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+.. SPDX-License-Identifier: Apache-2.0
+
+.. _es8311:
+
+Everest ES8311
+##############
+
+See the `ES8311 datasheet`_ for electrical specifications and the `ES8311 user guide`_
+for register descriptions and configuration details.
+
+The ES8311 driver supports mono playback from the left channel of a two-channel I2S stream.
+The codec consumes externally generated MCLK, bit clock and frame clock. Supported word
+sizes are 16, 18, 20, 24 and 32 bits, with sample rates from 8 to 48 kHz. The supplied MCLK
+must be convertible to 256 times the sample rate using a divider from 1 to 8 and a
+multiplier of 1, 2, 4 or 8. The driver keeps the pre-divider output below 4.5 MHz.
+
+Enable :kconfig:option:`CONFIG_AUDIO` and :kconfig:option:`CONFIG_AUDIO_CODEC` and describe
+the codec with the :dtcompatible:`everest,es8311` binding. Set ``mclk_freq`` in
+:c:struct:`audio_codec_cfg` to the actual MCLK frequency and select clock target mode for
+both clocks in the I2S configuration.
+
+``AUDIO_PROPERTY_OUTPUT_VOLUME`` uses whole decibels from -95 to +32, with a default of
+0 dB. Volume and mute accept ``AUDIO_CHANNEL_FRONT_LEFT`` or ``AUDIO_CHANNEL_ALL``.
+Call :c:func:`audio_codec_apply_properties` after changing these properties.
+
+An optional ``vin-supply`` controls codec power. An optional ``pa-gpios`` enables an
+external amplifier during playback. With :kconfig:option:`CONFIG_PM_DEVICE`, suspend
+powers down the codec and releases its supply; resume restores the configuration and
+properties. Stop playback before requesting suspend.
+
+Microphone capture and codec-generated clocks are not supported.
+
+.. _ES8311 datasheet:
+   https://dl.espressif.com/dl/schematics/Audio_ES8311.pdf
+
+.. _ES8311 user guide:
+   https://files.waveshare.com/wiki/common/ES8311.user.Guide.pdf

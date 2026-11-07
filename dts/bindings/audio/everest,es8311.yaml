@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Everest ES8311 mono audio codec
+
+compatible: "everest,es8311"
+
+include: i2c-device.yaml
+
+properties:
+  vin-supply:
+    type: phandle
+    description: Regulator supplying the codec.
+
+  pa-gpios:
+    type: phandle-array
+    description: Enable signal for an external power amplifier.
