@@ -93,6 +93,26 @@ extern "C" {
 #define signbit(x) __builtin_signbit(x)
 #endif
 
+/* Comparison macros, which do not raise an exception on a NaN */
+#if HAS_BUILTIN(__builtin_isgreater)
+#define isgreater(x, y) __builtin_isgreater(x, y)
+#endif
+#if HAS_BUILTIN(__builtin_isgreaterequal)
+#define isgreaterequal(x, y) __builtin_isgreaterequal(x, y)
+#endif
+#if HAS_BUILTIN(__builtin_isless)
+#define isless(x, y) __builtin_isless(x, y)
+#endif
+#if HAS_BUILTIN(__builtin_islessequal)
+#define islessequal(x, y) __builtin_islessequal(x, y)
+#endif
+#if HAS_BUILTIN(__builtin_islessgreater)
+#define islessgreater(x, y) __builtin_islessgreater(x, y)
+#endif
+#if HAS_BUILTIN(__builtin_isunordered)
+#define isunordered(x, y) __builtin_isunordered(x, y)
+#endif
+
 /* C23 classification macros */
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ > 201710L)
 #if HAS_BUILTIN(__builtin_issignaling)
@@ -119,6 +139,18 @@ static inline double fabs(double x)
 static inline float fabsf(float x)
 {
 	return __builtin_fabsf(x);
+}
+#endif
+#if HAS_BUILTIN(__builtin_copysign)
+static inline double copysign(double x, double y)
+{
+	return __builtin_copysign(x, y);
+}
+#endif
+#if HAS_BUILTIN(__builtin_copysignf)
+static inline float copysignf(float x, float y)
+{
+	return __builtin_copysignf(x, y);
 }
 #endif
 
