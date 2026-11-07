@@ -44,6 +44,9 @@ struct serial_esp32_usb_data {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t irq_cb;
 	void *irq_cb_data;
+	struct k_spinlock lock;
+	bool cb_running;
+	bool cb_pending;
 #endif
 	int64_t last_tx_time;
 };
@@ -154,25 +157,52 @@ static int serial_esp32_usb_fifo_read(const struct device *dev, uint8_t *rx_data
 	return usb_serial_jtag_ll_read_rxfifo(rx_data, len);
 }
 
+static void serial_esp32_usb_run_cb(const struct device *dev)
+{
+	struct serial_esp32_usb_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (data->cb_running) {
+		data->cb_pending = true;
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
+
+	data->cb_running = true;
+	do {
+		data->cb_pending = false;
+		k_spin_unlock(&data->lock, key);
+		if (data->irq_cb != NULL) {
+			data->irq_cb(dev, data->irq_cb_data);
+		}
+		key = k_spin_lock(&data->lock);
+	} while (data->cb_pending);
+	data->cb_running = false;
+	k_spin_unlock(&data->lock, key);
+}
+
 static void serial_esp32_usb_irq_tx_enable(const struct device *dev)
 {
 	struct serial_esp32_usb_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	unsigned int irq_key;
 
 	usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
 	usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+	k_spin_unlock(&data->lock, key);
 
-	if (data->irq_cb != NULL) {
-		unsigned int key = irq_lock();
-		data->irq_cb(dev, data->irq_cb_data);
-		irq_unlock(key);
-	}
+	irq_key = irq_lock();
+	serial_esp32_usb_run_cb(dev);
+	irq_unlock(irq_key);
 }
 
 static void serial_esp32_usb_irq_tx_disable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_IN_EMPTY);
+	k_spin_unlock(&data->lock, key);
 }
 
 static int serial_esp32_usb_irq_tx_ready(const struct device *dev)
@@ -185,17 +215,21 @@ static int serial_esp32_usb_irq_tx_ready(const struct device *dev)
 
 static void serial_esp32_usb_irq_rx_enable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
 	usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+	k_spin_unlock(&data->lock, key);
 }
 
 static void serial_esp32_usb_irq_rx_disable(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct serial_esp32_usb_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_SERIAL_OUT_RECV_PKT);
+	k_spin_unlock(&data->lock, key);
 }
 
 static int serial_esp32_usb_irq_tx_complete(const struct device *dev)
@@ -249,6 +283,7 @@ static void IRAM_ATTR serial_esp32_usb_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct serial_esp32_usb_data *data = dev->data;
 	uint32_t uart_intr_status = usb_serial_jtag_ll_get_intsts_mask();
+	k_spinlock_key_t key;
 
 	if (uart_intr_status == 0) {
 		return;
@@ -261,20 +296,22 @@ static void IRAM_ATTR serial_esp32_usb_isr(void *arg)
 	 * not recover the data.
 	 */
 	if ((uart_intr_status & USB_SERIAL_JTAG_INTR_BUS_RESET) != 0U) {
+		key = k_spin_lock(&data->lock);
 		usb_serial_jtag_ll_clr_intsts_mask(USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1);
 		usb_serial_jtag_ll_ena_intr_mask(USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1);
+		k_spin_unlock(&data->lock, key);
 	}
 
 	if ((uart_intr_status & USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1) != 0U) {
+		key = k_spin_lock(&data->lock);
 		usb_serial_jtag_ll_disable_intr_mask(USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1);
+		k_spin_unlock(&data->lock, key);
 		if (usb_serial_jtag_ll_txfifo_writable() == 0) {
 			usb_serial_jtag_ll_txfifo_flush();
 		}
 	}
 
-	if (data->irq_cb != NULL) {
-		data->irq_cb(dev, data->irq_cb_data);
-	}
+	serial_esp32_usb_run_cb(dev);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
