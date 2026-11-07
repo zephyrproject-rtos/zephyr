@@ -150,7 +150,7 @@ static esp_err_t i2s_esp32_calculate_clock(const struct i2s_config *i2s_cfg, uin
 		i2s_hal_clock_info->bclk_div = 8;
 		i2s_hal_clock_info->bclk =
 			i2s_cfg->frame_clk_freq * i2s_cfg->channels * channel_length;
-		i2s_hal_clock_info->mclk = i2s_cfg->frame_clk_freq * i2s_hal_clock_info->bclk_div;
+		i2s_hal_clock_info->mclk = i2s_hal_clock_info->bclk * i2s_hal_clock_info->bclk_div;
 	} else {
 		i2s_hal_clock_info->bclk =
 			i2s_cfg->frame_clk_freq * i2s_cfg->channels * channel_length;
