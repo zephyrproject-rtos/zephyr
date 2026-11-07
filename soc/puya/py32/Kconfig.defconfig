@@ -1,0 +1,21 @@
+# Copyright (c) 2017, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_PY32
+
+configdefault CLOCK_CONTROL
+	default y
+
+configdefault NUM_IRQS
+	default 32
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,rcc,clock-frequency)
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 8000
+
+configdefault CLOCK_CONTROL_INIT_PRIORITY
+	default 1 if CLOCK_CONTROL
+
+endif # SOC_FAMILY_PY32
