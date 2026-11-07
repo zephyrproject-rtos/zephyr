@@ -161,6 +161,29 @@ Ethernet
   ``reset-deassertion-timeout-ms`` with ``reset-deassert-us``, multiplying its value by 1000 as
   it is now in microseconds. (:github:`124061`)
 
+Interrupt Controllers
+=====================
+
+* GIC v3 LPI and ITS tables now use static storage instead of the system heap.
+  Applications must provision enough table capacity for their devices and interrupt vectors.
+  (:github:`120728`)
+
+  Set :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_DEVICES` to at least the number of distinct DeviceIDs
+  registered with each ITS instance; the default is 16. Set
+  :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_VECTORS` to at least the largest number of vectors requested
+  for any one device, rounded up to a power of two; the default is 32. Increasing these capacities
+  increases the statically reserved memory, including space for devices that are not registered.
+
+  The ``zephyr,device-id-bits`` property of :dtcompatible:`arm,gic-v3-its` must cover the largest
+  DeviceID used by the platform, rather than the number of devices. Its default of 16 covers the
+  PCIe RequesterID space. The ``zephyr,lpi-id-bits`` property of :dtcompatible:`arm,gic-v3` controls
+  the LPI table provision and defaults to 16; reduce it only when all required INTIDs fit in the
+  smaller range.
+
+  Remove application or board :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` overrides that only
+  reserved space for GIC v3 LPI or ITS tables. The ITS no longer contributes a minimum heap size.
+  Retain any heap space needed by other drivers or application allocations.
+
 OPAMP
 =====
 

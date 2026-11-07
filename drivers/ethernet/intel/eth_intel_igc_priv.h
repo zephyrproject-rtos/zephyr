@@ -489,6 +489,7 @@ struct eth_intel_igc_mac_data {
 	struct k_work_delayable rx_work[INTEL_IGC_MAX_QCNT];
 	struct eth_intel_igc_intr_info *intr_info;
 	uint8_t mac_addr[NET_ETH_ADDR_LEN];
+	uint8_t num_queues;
 	msi_vector_t *msi_vec;
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
