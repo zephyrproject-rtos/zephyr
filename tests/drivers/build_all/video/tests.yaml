@@ -53,8 +53,10 @@ tests:
     platform_allow:
       - stm32h7b3i_dk
       - arduino_nicla_vision/stm32h747xx/m7
+      - stm32l4r9i_disco
     extra_args:
       - platform:stm32h7b3i_dk:SHIELD=st_b_cams_omv_mb1683
+      - platform:stm32l4r9i_disco:SHIELD=st_b_cams_omv_mb1683
   drivers.video.esp32_dvp.build:
     platform_allow:
       - esp32s3_eye/esp32s3/procpu
