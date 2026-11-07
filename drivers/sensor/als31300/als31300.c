@@ -253,18 +253,20 @@ static int als31300_init(const struct device *dev)
 }
 
 #define ALS31300_INIT(inst)                                                                        \
-	RTIO_DEFINE(als31300_rtio_ctx_##inst, 16, 16);                                             \
-	I2C_DT_IODEV_DEFINE(als31300_bus_##inst, DT_DRV_INST(inst));                               \
+	IF_ENABLED(CONFIG_SENSOR_ASYNC_API,                                                        \
+		   (RTIO_DEFINE(als31300_rtio_ctx_##inst, 16, 16);                                 \
+		    I2C_DT_IODEV_DEFINE(als31300_bus_##inst, DT_DRV_INST(inst));))                 \
                                                                                                    \
 	static struct als31300_data als31300_data_##inst;                                          \
                                                                                                    \
 	static const struct als31300_config als31300_config_##inst = {                             \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
-		.bus =                                                                             \
-			{                                                                          \
-				.ctx = &als31300_rtio_ctx_##inst,                                  \
-				.iodev = &als31300_bus_##inst,                                     \
-			},                                                                         \
+		IF_ENABLED(CONFIG_SENSOR_ASYNC_API,                                                \
+			   (.bus =                                                                 \
+				    {                                                              \
+					    .ctx = &als31300_rtio_ctx_##inst,                      \
+					    .iodev = &als31300_bus_##inst,                         \
+				    },))                                                           \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, als31300_init, NULL, &als31300_data_##inst,             \
