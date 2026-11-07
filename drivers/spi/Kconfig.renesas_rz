@@ -7,6 +7,7 @@ config SPI_RENESAS_RZ_RSPI
 	depends on DT_HAS_RENESAS_RZ_RSPI_ENABLED
 	select USE_RZ_FSP_RSPI_SPI
 	select PINCTRL
+	select SPI_HAS_RTIO if SPI_RTIO
 	help
 	  Enable Renesas RZ RSPI SPI Driver.
 
@@ -14,14 +15,18 @@ if SPI_RENESAS_RZ_RSPI
 
 config SPI_RENESAS_RZ_RSPI_INTERRUPT
 	bool "RZ RSPI Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the RSPI.
 
 config SPI_RENESAS_RZ_RSPI_DMAC
 	bool "RZ SPI DMA Support"
+	default y if SPI_DMA
 	select USE_RZ_FSP_DMAC_B if SOC_SERIES_RZG2L || SOC_SERIES_RZG2UL || SOC_SERIES_RZG3S \
 				|| SOC_SERIES_RZV2L
 	select USE_RZ_FSP_DMAC if SOC_SERIES_RZA3UL
+	select SPI_HAS_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 
@@ -33,6 +38,7 @@ config SPI_RENESAS_RZ
 	depends on DT_HAS_RENESAS_RZ_SPI_ENABLED
 	select USE_RZ_FSP_SPI
 	select PINCTRL
+	select SPI_HAS_RTIO if SPI_RTIO
 	help
 	  Enable Renesas RZ SPI Driver.
 
@@ -57,6 +63,8 @@ config SPI_RENESAS_RZ_USE_INTERRUPT_SELECT
 
 config SPI_RENESAS_RZ_INTERRUPT
 	bool "RZ SPI Interrupt Support"
+	default y if SPI_INTERRUPT_DRIVEN
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SPI.
 
@@ -68,6 +76,7 @@ config SPI_USE_HW_SS
 
 config SPI_RENESAS_RZ_DMA
 	bool "RZ SPI DMA Support"
+	default y if SPI_DMA
 	default n
 	select SPI_RENESAS_RZ_INTERRUPT
 	select USE_RZ_FSP_DMAC if SOC_SERIES_RZT2L \
@@ -76,6 +85,7 @@ config SPI_RENESAS_RZ_DMA
 
 	select USE_RZ_FSP_DMAC_B if SOC_SERIES_RZV2N \
 			         || SOC_SERIES_RZV2H
+	select SPI_HAS_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 

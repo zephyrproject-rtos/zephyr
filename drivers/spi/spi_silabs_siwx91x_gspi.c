@@ -26,7 +26,8 @@ LOG_MODULE_REGISTER(siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 #define SPI_HIGH_BURST_FREQ_THRESHOLD_HZ      10000000
 
 #ifdef CONFIG_SPI_ASYNC
-#if !defined(CONFIG_DMA) || CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT == 0
+#if !defined(CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA) ||                                                \
+	CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT == 0
 #warning "Silabs GSPI SPI driver ASYNC without DMA is not supported"
 #endif
 #endif
