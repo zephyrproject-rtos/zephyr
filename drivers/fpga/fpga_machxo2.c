@@ -26,13 +26,12 @@
 #include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 
+#include "fpga_machxo2.h"
+
 LOG_MODULE_REGISTER(fpga_machxo2, CONFIG_FPGA_LOG_LEVEL);
 
 /* Maximum sysCONFIG slave SPI clock, in Hz. */
 #define FPGA_MACHXO2_MAX_SPI_HZ 66000000U
-
-/* Programming page size, in bytes. */
-#define FPGA_MACHXO2_PAGE_SIZE 16U
 
 /* sysCONFIG command opcodes. */
 #define FPGA_MACHXO2_CMD_IDCODE_PUB      0xE0U
@@ -41,7 +40,6 @@ LOG_MODULE_REGISTER(fpga_machxo2, CONFIG_FPGA_LOG_LEVEL);
 #define FPGA_MACHXO2_CMD_ISC_PROGRAMDONE 0x5EU
 #define FPGA_MACHXO2_CMD_LSC_INITADDRESS 0x46U
 #define FPGA_MACHXO2_CMD_LSC_PROGINCRNV  0x70U
-#define FPGA_MACHXO2_CMD_LSC_READ_STATUS 0x3CU
 #define FPGA_MACHXO2_CMD_LSC_REFRESH     0x79U
 
 /* Command operands. */
@@ -50,11 +48,8 @@ LOG_MODULE_REGISTER(fpga_machxo2, CONFIG_FPGA_LOG_LEVEL);
 #define FPGA_MACHXO2_LSC_PROGINCRNV_OPERAND 0x000001U
 
 /* Status register bits. */
-#define FPGA_MACHXO2_STATUS_DONE     BIT(8)
-#define FPGA_MACHXO2_STATUS_BUSY     BIT(12)
-#define FPGA_MACHXO2_STATUS_FAIL     BIT(13)
-#define FPGA_MACHXO2_STATUS_ERR_POS  23U
-#define FPGA_MACHXO2_STATUS_ERR_MASK 0x7U
+#define FPGA_MACHXO2_STATUS_DONE BIT(8)
+#define FPGA_MACHXO2_STATUS_BUSY BIT(12)
 
 struct fpga_machxo2_config {
 	struct spi_dt_spec bus;
@@ -95,7 +90,21 @@ static bool machxo2_status_ready(uint32_t status)
 	       (((status >> FPGA_MACHXO2_STATUS_ERR_POS) & FPGA_MACHXO2_STATUS_ERR_MASK) == 0U);
 }
 
-static int fpga_machxo2_write_cmd(const struct device *dev, uint8_t opcode, uint32_t operand)
+int fpga_machxo2_lock(const struct device *dev, k_timeout_t timeout)
+{
+	struct fpga_machxo2_data *data = dev->data;
+
+	return k_mutex_lock(&data->lock, timeout);
+}
+
+void fpga_machxo2_unlock(const struct device *dev)
+{
+	struct fpga_machxo2_data *data = dev->data;
+
+	k_mutex_unlock(&data->lock);
+}
+
+int fpga_machxo2_write_cmd(const struct device *dev, uint8_t opcode, uint32_t operand)
 {
 	const struct fpga_machxo2_config *config = dev->config;
 	uint8_t cmd[4];
@@ -113,8 +122,32 @@ static int fpga_machxo2_write_cmd(const struct device *dev, uint8_t opcode, uint
 	return spi_write_dt(&config->bus, &tx);
 }
 
-static int fpga_machxo2_read_cmd(const struct device *dev, uint8_t opcode, uint8_t *data,
-				 size_t len)
+int fpga_machxo2_write_cmd_data(const struct device *dev, uint8_t opcode, uint32_t operand,
+				const void *data, size_t len)
+{
+	const struct fpga_machxo2_config *config = dev->config;
+	uint8_t cmd[4];
+	struct spi_buf tx_bufs[2];
+	struct spi_buf_set tx;
+
+	if ((data == NULL) && (len != 0U)) {
+		return -EINVAL;
+	}
+
+	machxo2_build_cmd(cmd, opcode, operand);
+
+	tx_bufs[0].buf = cmd;
+	tx_bufs[0].len = sizeof(cmd);
+	tx_bufs[1].buf = (void *)data;
+	tx_bufs[1].len = len;
+	tx.buffers = tx_bufs;
+	tx.count = (len == 0U) ? 1U : 2U;
+
+	return spi_write_dt(&config->bus, &tx);
+}
+
+int fpga_machxo2_read_cmd(const struct device *dev, uint8_t opcode, uint32_t operand, void *data,
+			  size_t len)
 {
 	const struct fpga_machxo2_config *config = dev->config;
 	uint8_t cmd[4];
@@ -129,7 +162,7 @@ static int fpga_machxo2_read_cmd(const struct device *dev, uint8_t opcode, uint8
 		return -EINVAL;
 	}
 
-	machxo2_build_cmd(cmd, opcode, 0U);
+	machxo2_build_cmd(cmd, opcode, operand);
 
 	tx_buf.buf = cmd;
 	tx_buf.len = sizeof(cmd);
@@ -156,7 +189,7 @@ static int fpga_machxo2_read_status(const struct device *dev, uint32_t *status)
 	uint8_t buf[4];
 	int ret;
 
-	ret = fpga_machxo2_read_cmd(dev, FPGA_MACHXO2_CMD_LSC_READ_STATUS, buf, sizeof(buf));
+	ret = fpga_machxo2_read_cmd(dev, FPGA_MACHXO2_CMD_LSC_READ_STATUS, 0U, buf, sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
@@ -171,7 +204,7 @@ static int fpga_machxo2_read_idcode(const struct device *dev, uint32_t *idcode)
 	uint8_t buf[4];
 	int ret;
 
-	ret = fpga_machxo2_read_cmd(dev, FPGA_MACHXO2_CMD_IDCODE_PUB, buf, sizeof(buf));
+	ret = fpga_machxo2_read_cmd(dev, FPGA_MACHXO2_CMD_IDCODE_PUB, 0U, buf, sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
@@ -181,7 +214,7 @@ static int fpga_machxo2_read_idcode(const struct device *dev, uint32_t *idcode)
 	return 0;
 }
 
-static int fpga_machxo2_wait_not_busy(const struct device *dev, uint32_t timeout_ms)
+int fpga_machxo2_wait_not_busy(const struct device *dev, uint32_t timeout_ms)
 {
 	uint32_t start = k_uptime_get_32();
 	uint32_t status;

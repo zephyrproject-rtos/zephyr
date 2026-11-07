@@ -1,0 +1,64 @@
+# Copyright (c) 2026 FIRST RF
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Lattice MachXO2 user flash memory (UFM).
+
+  The UFM is a single erase sector with 16-byte pages and is erased as a whole.
+  It is accessed through the sysCONFIG transport of the parent Lattice MachXO2
+  FPGA node.
+
+  UFM size depends on the device family (TN1204, table 14-20):
+    - LCMXO2-256: 0 bytes (no UFM; do not instantiate this node)
+    - LCMXO2-640: 192 bytes
+    - LCMXO2-640U: 512 bytes
+    - LCMXO2-1200: 512 bytes
+    - LCMXO2-1200U: 640 bytes
+    - LCMXO2-2000: 640 bytes
+    - LCMXO2-2000U: 768 bytes
+    - LCMXO2-4000: 768 bytes
+    - LCMXO2-7000: 2048 bytes
+
+  The HC/HE/ZE/UHC/UHE suffixes do not change the UFM size; the U variants
+  listed above do.
+
+  If fixed-partitions are used, a partition must cover the entire UFM to be
+  erasable. Smaller partitions are usable for read and write access only,
+  because an erase always affects the whole UFM.
+
+compatible: "lattice,machxo2-ufm"
+
+include: [base.yaml]
+
+properties:
+  size:
+    type: int
+    required: true
+    enum: [192, 512, 640, 768, 2048]
+    description: |
+      UFM size in bytes for the populated device, as listed above. It must be
+      a multiple of the 16-byte UFM page size. The whole UFM is one erase
+      sector and is erased as a whole, so a valid erase covers the full size.
+
+  write-block-size:
+    type: int
+    default: 16
+    enum: [16]
+    description: |
+      UFM page size used for writes, in bytes. This must be 16.
+
+examples:
+  - |
+    &spi0 {
+            machxo2: machxo2@0 {
+                    compatible = "lattice,machxo2-fpga";
+                    reg = <0>;
+                    spi-max-frequency = <1000000>;
+
+                    ufm: ufm {
+                            compatible = "lattice,machxo2-ufm";
+                            size = <512>;             /* LCMXO2-1200 */
+                            write-block-size = <16>;
+                    };
+            };
+    };
