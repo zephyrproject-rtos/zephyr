@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <signal.h>
 #include <time.h>
 #include <unistd.h>
@@ -111,7 +112,10 @@ ZTEST(posix_timers, test_timer_overrun)
 
 	zassert_ok(timer_create(CLOCK_MONOTONIC, &sig, &timerid));
 
-	/*Set the timer to expire every 500 milliseconds*/
+	/* Overrun count must be 0 before any timer expiration */
+	zassert_equal(timer_getoverrun(timerid), 0, "Overrun count should be 0 before expiration");
+
+	/* Set the timer to expire every 500 milliseconds */
 	value.it_interval.tv_sec = 0;
 	value.it_interval.tv_nsec = 500000000;
 	value.it_value.tv_sec = 0;
@@ -120,6 +124,67 @@ ZTEST(posix_timers, test_timer_overrun)
 	k_sleep(K_MSEC(2500));
 
 	zassert_equal(timer_getoverrun(timerid), 4, "Number of overruns is incorrect");
+
+	/* Subsequent call must return 0 since overruns were already reported */
+	zassert_equal(timer_getoverrun(timerid), 0,
+		      "Consecutive timer_getoverrun() call should return 0");
+}
+
+ZTEST(posix_timers, test_timer_invalid_params)
+{
+	struct sigevent sig = {0};
+	struct itimerspec value;
+
+	sig.sigev_notify = SIGEV_NONE;
+
+	zassert_ok(timer_create(CLOCK_MONOTONIC, &sig, &timerid));
+
+	/* timer_getoverrun with NULL timer */
+	errno = 0;
+	zassert_equal(timer_getoverrun((timer_t)0), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_gettime with NULL timer */
+	errno = 0;
+	zassert_equal(timer_gettime((timer_t)0, &value), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_gettime with NULL its */
+	errno = 0;
+	zassert_equal(timer_gettime(timerid, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_settime with NULL timer */
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 0;
+	value.it_value.tv_sec = 1;
+	value.it_value.tv_nsec = 0;
+	errno = 0;
+	zassert_equal(timer_settime((timer_t)0, 0, &value, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_settime with NULL value */
+	errno = 0;
+	zassert_equal(timer_settime(timerid, 0, NULL, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_settime with invalid flags */
+	errno = 0;
+	zassert_equal(timer_settime(timerid, ~TIMER_ABSTIME, &value, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_settime with negative it_value.tv_sec */
+	value.it_value.tv_sec = -1;
+	errno = 0;
+	zassert_equal(timer_settime(timerid, 0, &value, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* timer_settime with negative it_interval.tv_sec */
+	value.it_value.tv_sec = 1;
+	value.it_interval.tv_sec = -1;
+	errno = 0;
+	zassert_equal(timer_settime(timerid, 0, &value, NULL), -1);
+	zassert_equal(errno, EINVAL);
 }
 
 ZTEST(posix_timers, test_one_shot__SIGEV_SIGNAL)
