@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led {
+			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};

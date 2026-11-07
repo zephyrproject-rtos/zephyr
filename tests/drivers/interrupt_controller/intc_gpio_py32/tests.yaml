@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.interrupt_controller.intc_gpio_py32:
+    min_ram: 4
+    platform_allow:
+      - py32f003_minimal/py32f003x6/l16s6tu
+      - py32f003_minimal/py32f003x6/w16s6tu
+      - py32f030_startkit/py32f030x6
+    tags:
+      - drivers
+      - interrupt
+    harness: ztest
