@@ -23,6 +23,7 @@ supported:
   - counter
   - spi
   - usb_device
+  - usbh
   - rtc
   - i2c
   - i3c

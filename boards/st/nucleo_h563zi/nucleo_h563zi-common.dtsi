@@ -288,6 +288,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+zephyr_uhc0: &usb {
+	status = "okay";
+};
+
 &vref {
 	status = "okay";
 };
