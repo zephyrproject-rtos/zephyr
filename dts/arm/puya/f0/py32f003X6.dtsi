@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <puya/f0/py32f003.dtsi>
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(32)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(4)>;
+};
