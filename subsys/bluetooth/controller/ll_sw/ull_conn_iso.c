@@ -942,6 +942,7 @@ static void cig_resume_ticker_start(struct ll_conn_iso_group *cig)
 	index = ll_conn_iso_group_handle_get(cig);
 	cig_resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
 	cig_resume_ticker_ext[index].is_jitter_in_window = 1U;
+	cig_resume_ticker_ext[index].is_deadline_in_window = 1U;
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	cig_resume_ticker_ext[index].expire_info_id = TICKER_NULL;
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
@@ -1325,6 +1326,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		cig_ticker_ext[index].ticks_slot_window =
 			HAL_TICKER_US_TO_TICKS(jitter_us) + ticks_slot;
 		cig_ticker_ext[index].is_jitter_in_window = 1U;
+		cig_ticker_ext[index].is_deadline_in_window = 1U;
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 		cig_ticker_ext[index].expire_info_id = TICKER_NULL;
 #endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
