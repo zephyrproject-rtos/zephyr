@@ -51,6 +51,9 @@ struct video_stm32_dcmi_data {
 	struct video_buffer *vbuf;
 	bool continuous;
 	struct stream dma;
+	struct stream dma_m2m;
+	uint32_t capture_offset;
+	bool copy_pending;
 };
 
 struct video_stm32_dcmi_config {
@@ -79,6 +82,75 @@ static void stm32_dcmi_abort_capture(struct video_stm32_dcmi_data *data)
 	if (dma_stop(data->dma.dma_dev, data->dma.channel) < 0) {
 		LOG_ERR("Failed to stop DCMI DMA channel");
 	}
+	if (data->dma.cfg.cyclic &&
+	    dma_stop(data->dma_m2m.dma_dev, data->dma_m2m.channel) < 0) {
+		LOG_ERR("Failed to stop DCMI M2M DMA channel");
+	}
+	data->copy_pending = false;
+}
+
+static uint32_t stm32_dcmi_dma_period(uint32_t frame_size, uint32_t limit)
+{
+	uint32_t half_words = frame_size / (2 * sizeof(uint32_t));
+	uint32_t max_half_words = limit / (2 * sizeof(uint32_t));
+	uint32_t best = 0;
+
+	if ((frame_size % (2 * sizeof(uint32_t))) != 0) {
+		return 0;
+	}
+
+	for (uint32_t divisor = 1; divisor <= half_words / divisor; divisor++) {
+		uint32_t other;
+
+		if ((half_words % divisor) != 0) {
+			continue;
+		}
+		other = half_words / divisor;
+		if (divisor <= max_half_words) {
+			best = MAX(best, divisor);
+		}
+		if (other <= max_half_words) {
+			best = MAX(best, other);
+		}
+	}
+
+	return best * 2 * sizeof(uint32_t);
+}
+
+static int stm32_dcmi_configure_cyclic(struct video_stm32_dcmi_data *data,
+				      struct video_buffer *vbuf, uint32_t frame_size)
+{
+	struct stream *dma = &data->dma;
+	struct stream *m2m = &data->dma_m2m;
+	uint32_t period = stm32_dcmi_dma_period(frame_size, frame_size / 2);
+	int ret = -ENOTSUP;
+
+	dma->cfg.cyclic = 1;
+	dma->cfg.half_complete_callback_en = 1;
+	dma->block.source_reload_en = 1;
+	dma->block.dest_reload_en = 1;
+
+	/* Let the DMA controller determine the supported period size. */
+	while (period != 0) {
+		dma->block.dest_address = (uintptr_t)vbuf->buffer + frame_size - period;
+		dma->block.block_size = period;
+		ret = dma_config(dma->dma_dev, dma->channel, &dma->cfg);
+		if (ret == 0) {
+			break;
+		}
+		period = stm32_dcmi_dma_period(frame_size, period / 2);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+
+	m2m->block.source_address = dma->block.dest_address;
+	m2m->block.dest_address = (uintptr_t)vbuf->buffer;
+	m2m->block.block_size = period / 2;
+	data->capture_offset = 0;
+	data->copy_pending = false;
+
+	return dma_config(m2m->dma_dev, m2m->channel, &m2m->cfg);
 }
 
 /* Try to (re)arm the DCMI capture, either in snapshot (if at most one spare
@@ -86,22 +158,26 @@ static void stm32_dcmi_abort_capture(struct video_stm32_dcmi_data *data)
  * available).
  */
 static int stm32_dcmi_start_dma(struct video_stm32_dcmi_data *data, struct video_buffer *vbuf);
-static void stm32_dcmi_arm_capture(struct video_stm32_dcmi_data *data)
+static int stm32_dcmi_arm_capture(struct video_stm32_dcmi_data *data)
 {
 	struct video_buffer *vbuf;
+	int ret;
 
 	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
 	if (vbuf == NULL) {
 		LOG_DBG("arm_capture: no buffer, waiting");
 		data->state = STM32_DCMI_WAIT_FOR_BUFFER;
-		return;
+		return -ENOMEM;
 	}
 	sys_cache_data_invd_range(vbuf->buffer, vbuf->bytesused);
 
 	data->continuous = !k_fifo_is_empty(&data->fifo_in);
-	if (stm32_dcmi_start_dma(data, vbuf) == 0) {
+	ret = stm32_dcmi_start_dma(data, vbuf);
+	if (ret == 0) {
 		stm32_dcmi_capture_start(data);
 	}
+
+	return ret;
 }
 
 /* Complete a frame while holding data->lock. */
@@ -200,7 +276,9 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 		stm32_dcmi_process_dma_error(data);
 		return;
 	}
-	if (status != DMA_STATUS_COMPLETE) {
+	if (status != DMA_STATUS_COMPLETE &&
+	    !(data->dma.cfg.cyclic &&
+	      (status == DMA_STATUS_BLOCK || status == DMA_STATUS_HALF_COMPLETE))) {
 		LOG_ERR("Unexpected DCMI DMA status: %d", status);
 		stm32_dcmi_process_dma_error(data);
 		return;
@@ -212,6 +290,45 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 		return;
 	}
 
+	if (data->dma.cfg.cyclic) {
+		struct stream *m2m = &data->dma_m2m;
+		uint32_t half_size = data->dma.block.block_size / 2;
+		uint32_t tail_offset = data->vbuf->bytesused - data->dma.block.block_size;
+		bool second_half = (data->capture_offset % data->dma.block.block_size) != 0;
+		int ret;
+
+		if (data->copy_pending ||
+		    second_half != (status == DMA_STATUS_COMPLETE)) {
+			k_spin_unlock(&data->lock, key);
+			LOG_ERR("DCMI DMA staging buffer overrun");
+			stm32_dcmi_process_dma_error(data);
+			return;
+		}
+
+		if (data->capture_offset < tail_offset) {
+			ret = dma_reload(m2m->dma_dev, m2m->channel,
+					 data->dma.block.dest_address +
+					 (second_half ? half_size : 0),
+					 (uintptr_t)data->vbuf->buffer + data->capture_offset,
+					 half_size);
+			if (ret == 0) {
+				data->copy_pending = true;
+				ret = dma_start(m2m->dma_dev, m2m->channel);
+			}
+			if (ret < 0) {
+				k_spin_unlock(&data->lock, key);
+				LOG_ERR("Failed to start DCMI M2M transfer: %d", ret);
+				stm32_dcmi_process_dma_error(data);
+				return;
+			}
+		}
+		data->capture_offset += half_size;
+		if (data->capture_offset < data->vbuf->bytesused) {
+			k_spin_unlock(&data->lock, key);
+			return;
+		}
+	}
+
 	vbuf_done = stm32_dcmi_finish_frame(data);
 	k_spin_unlock(&data->lock, key);
 
@@ -220,6 +337,26 @@ static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t chan
 		vbuf_done->timestamp = k_uptime_get_32();
 		k_fifo_put(&data->fifo_out, vbuf_done);
 	}
+}
+
+static void stm32_dcmi_m2m_callback(const struct device *dev, void *arg, uint32_t channel,
+				   int status)
+{
+	struct video_stm32_dcmi_data *data = arg;
+	k_spinlock_key_t key;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel);
+
+	if (status != DMA_STATUS_COMPLETE) {
+		LOG_ERR("DCMI M2M DMA transfer failed: %d", status);
+		stm32_dcmi_process_dma_error(data);
+		return;
+	}
+
+	key = k_spin_lock(&data->lock);
+	data->copy_pending = false;
+	k_spin_unlock(&data->lock, key);
 }
 
 static int stm32_dma_init(const struct device *dev)
@@ -238,6 +375,24 @@ static int stm32_dma_init(const struct device *dev)
 	dma->cfg.complete_callback_en = 1;
 	dma->cfg.dma_callback = dcmi_dma_callback;
 
+	dma = &data->dma_m2m;
+	if (dma->dma_dev != NULL) {
+		if (!device_is_ready(dma->dma_dev)) {
+			LOG_ERR("%s M2M DMA device not ready", dma->dma_dev->name);
+			return -ENODEV;
+		}
+		if (dma->cfg.channel_direction != MEMORY_TO_MEMORY ||
+		    dma->block.source_addr_adj != DMA_ADDR_ADJ_INCREMENT ||
+		    dma->block.dest_addr_adj != DMA_ADDR_ADJ_INCREMENT ||
+		    (dma->dma_dev == data->dma.dma_dev && dma->channel == data->dma.channel)) {
+			return -EINVAL;
+		}
+		dma->cfg.head_block = &dma->block;
+		dma->cfg.block_count = 1;
+		dma->cfg.complete_callback_en = 1;
+		dma->cfg.dma_callback = stm32_dcmi_m2m_callback;
+	}
+
 	return 0;
 }
 
@@ -251,10 +406,16 @@ static int stm32_dcmi_start_dma(struct video_stm32_dcmi_data *data, struct video
 	dma->block.dest_address = (uintptr_t)vbuf->buffer;
 	dma->block.block_size = vbuf->bytesused;
 	dma->block.next_block = NULL;
+	dma->block.source_reload_en = 0;
+	dma->block.dest_reload_en = 0;
 	dma->cfg.block_count = 1;
+	dma->cfg.half_complete_callback_en = 0;
 	data->vbuf = vbuf;
 
 	ret = dma_config(dma->dma_dev, dma->channel, &dma->cfg);
+	if (ret < 0 && data->dma_m2m.dma_dev != NULL) {
+		ret = stm32_dcmi_configure_cyclic(data, vbuf, vbuf->bytesused);
+	}
 	if (ret < 0) {
 		LOG_ERR("Failed to configure DMA channel %u: %d", dma->channel, ret);
 		goto error;
@@ -272,6 +433,7 @@ static int stm32_dcmi_start_dma(struct video_stm32_dcmi_data *data, struct video
 	return 0;
 
 error:
+	stm32_dcmi_abort_capture(data);
 	data->vbuf = NULL;
 	k_fifo_put(&data->fifo_in, vbuf);
 	data->state = STM32_DCMI_WAIT_FOR_BUFFER;
@@ -378,12 +540,11 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
 
 	key = k_spin_lock(&data->lock);
-	stm32_dcmi_arm_capture(data);
-	if (data->state != STM32_DCMI_RUNNING) {
+	err = stm32_dcmi_arm_capture(data);
+	if (err < 0) {
 		data->state = STM32_DCMI_STOPPED;
 		k_spin_unlock(&data->lock, key);
-		LOG_ERR("No buffers");
-		return -ENOMEM;
+		return err;
 	}
 	k_spin_unlock(&data->lock, key);
 
@@ -591,7 +752,7 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
-		/* single transfers on the DCMI side, 4 beat bursts to memory */	\
+		/* single source transfers, 4 beat bursts to the destination */	\
 		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dest_burst_length = 4 * STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
@@ -648,6 +809,10 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 	.dma = {
 		DCMI_DMA_CHANNEL_INIT(0, 0, PERIPHERAL, MEMORY),
 	},
+	.dma_m2m = {
+		COND_CODE_1(DT_INST_DMAS_HAS_IDX(0, 1),
+			    (DCMI_DMA_CHANNEL_INIT(0, 1, PERIPHERAL, MEMORY)), ())
+	}
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
