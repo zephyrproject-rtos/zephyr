@@ -230,131 +230,71 @@ static bool stopping;
 static K_SEM_DEFINE(sem_started, 0U, 1U);
 static K_SEM_DEFINE(sem_stopped, 0U, 1U);
 
-#define LED1_NODE DT_ALIAS(led0)
-#define LED2_NODE DT_ALIAS(led1)
-
-#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE) || DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
-#define LED_BLINK_INTERVAL K_MSEC(250)
+/* Red blinks while the broadcast ISO is active, green while connectable advertising is active
+ * and blue while an ACL connection exists
+ */
+#if DT_NODE_EXISTS(DT_ALIAS(led_red))
+#define LED_RED_NODE DT_ALIAS(led_red)
+#else
+#define LED_RED_NODE DT_ALIAS(led0)
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led_green))
+#define LED_GREEN_NODE DT_ALIAS(led_green)
+#else
+#define LED_GREEN_NODE DT_ALIAS(led1)
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led_blue))
+#define LED_BLUE_NODE DT_ALIAS(led_blue)
+#else
+#define LED_BLUE_NODE DT_ALIAS(led2)
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
-static const struct gpio_dt_spec led_iso = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
-static struct k_work_delayable led_iso_work;
-static bool led_iso_is_on;
-static bool led_iso_blinking;
-static bool led_iso_ready;
+#define LED_BLINK_INTERVAL K_MSEC(250)
 
-static void led_iso_work_handler(struct k_work *work)
+enum led_id {
+	LED_RED,
+	LED_GREEN,
+	LED_BLUE,
+	LED_COUNT,
+};
+
+static const struct gpio_dt_spec leds[LED_COUNT] = {
+	[LED_RED] = GPIO_DT_SPEC_GET_OR(LED_RED_NODE, gpios, {0}),
+	[LED_GREEN] = GPIO_DT_SPEC_GET_OR(LED_GREEN_NODE, gpios, {0}),
+	[LED_BLUE] = GPIO_DT_SPEC_GET_OR(LED_BLUE_NODE, gpios, {0}),
+};
+static volatile bool led_blink[LED_COUNT];
+static bool led_ready[LED_COUNT];
+static bool led_phase_on;
+
+static void led_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(led_work, led_work_handler);
+
+static void led_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	if (!led_iso_blinking) {
-		return;
+	led_phase_on = !led_phase_on;
+
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if (led_ready[i]) {
+			(void)gpio_pin_set_dt(&leds[i], (int)(led_phase_on && led_blink[i]));
+		}
 	}
 
-	led_iso_is_on = !led_iso_is_on;
-	(void)gpio_pin_set_dt(&led_iso, (int)led_iso_is_on);
-	(void)k_work_reschedule(&led_iso_work, LED_BLINK_INTERVAL);
+	(void)k_work_reschedule(&led_work, LED_BLINK_INTERVAL);
 }
-
-static void led_iso_blink_set(bool enable)
-{
-	if (!led_iso_ready) {
-		return;
-	}
-
-	led_iso_blinking = enable;
-
-	if (!enable) {
-		(void)k_work_cancel_delayable(&led_iso_work);
-		led_iso_is_on = false;
-		(void)gpio_pin_set_dt(&led_iso, 0);
-		return;
-	}
-
-	(void)k_work_reschedule(&led_iso_work, K_NO_WAIT);
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
-
-#if defined(CONFIG_BT_PERIPHERAL)
-static uint8_t acl_conn_count;
-
-#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
-static const struct gpio_dt_spec led_acl = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
-static struct k_work_delayable led_acl_work;
-static bool led_acl_is_on;
-static bool led_acl_blinking;
-static bool led_acl_ready;
-
-static void led_acl_work_handler(struct k_work *work)
-{
-	ARG_UNUSED(work);
-
-	if (!led_acl_blinking) {
-		return;
-	}
-
-	led_acl_is_on = !led_acl_is_on;
-	(void)gpio_pin_set_dt(&led_acl, (int)led_acl_is_on);
-	(void)k_work_reschedule(&led_acl_work, LED_BLINK_INTERVAL);
-}
-
-static void led_acl_blink_set(bool enable)
-{
-	if (!led_acl_ready) {
-		return;
-	}
-
-	led_acl_blinking = enable;
-
-	if (!enable) {
-		(void)k_work_cancel_delayable(&led_acl_work);
-		led_acl_is_on = false;
-		(void)gpio_pin_set_dt(&led_acl, 0);
-		return;
-	}
-
-	(void)k_work_reschedule(&led_acl_work, K_NO_WAIT);
-}
-
-static void update_acl_led(void)
-{
-	led_acl_blink_set(acl_conn_count > 0U);
-}
-#else
-static void update_acl_led(void)
-{
-}
-#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
-#endif /* CONFIG_BT_PERIPHERAL */
 
 static void leds_init(void)
 {
-#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
-	if (gpio_is_ready_dt(&led_iso)) {
-		int err;
-
-		err = gpio_pin_configure_dt(&led_iso, GPIO_OUTPUT_INACTIVE);
-		if (err == 0) {
-			k_work_init_delayable(&led_iso_work, led_iso_work_handler);
-			led_iso_ready = true;
+	for (size_t i = 0U; i < LED_COUNT; i++) {
+		if ((leds[i].port != NULL) && gpio_is_ready_dt(&leds[i]) &&
+		    (gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE) == 0)) {
+			led_ready[i] = true;
 		}
 	}
-#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
 
-#if defined(CONFIG_BT_PERIPHERAL)
-#if DT_NODE_HAS_STATUS_OKAY(LED2_NODE)
-	if (gpio_is_ready_dt(&led_acl)) {
-		int err;
-
-		err = gpio_pin_configure_dt(&led_acl, GPIO_OUTPUT_INACTIVE);
-		if (err == 0) {
-			k_work_init_delayable(&led_acl_work, led_acl_work_handler);
-			led_acl_ready = true;
-		}
-	}
-#endif /* DT_NODE_HAS_STATUS_OKAY(LED2_NODE) */
-#endif /* CONFIG_BT_PERIPHERAL */
+	(void)k_work_reschedule(&led_work, K_NO_WAIT);
 }
 
 #define BROADCAST_SOURCE_LIFETIME 120U /* seconds */
@@ -1008,9 +948,7 @@ static void source_started_cb(struct bt_bap_broadcast_source *source)
 {
 	printk("Broadcast source %p started\n", source);
 
-#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
-	led_iso_blink_set(true);
-#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+	led_blink[LED_RED] = true;
 
 	k_sem_give(&sem_started);
 }
@@ -1019,9 +957,7 @@ static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t re
 {
 	printk("Broadcast source %p stopped with reason 0x%02X\n", source, reason);
 
-#if DT_NODE_HAS_STATUS_OKAY(LED1_NODE)
-	led_iso_blink_set(false);
-#endif /* DT_NODE_HAS_STATUS_OKAY(LED1_NODE) */
+	led_blink[LED_RED] = false;
 
 	k_sem_give(&sem_stopped);
 }
@@ -1057,78 +993,47 @@ static const struct bt_data conn_legacy_ad[] = {
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_EXT_ADV,                                \
 			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
-static void conn_adv_start_work_handler(struct k_work *work)
+/* Connectable advertising is enabled or disabled by sw0, it is off at boot. While enabled it runs
+ * only when there is no ACL connection, and resumes on disconnect.
+ */
+static volatile bool conn_adv_enabled;
+static volatile uint8_t acl_conn_count;
+
+static int conn_adv_set_update(struct bt_le_ext_adv *adv, bool start, const char *name)
 {
 	int err;
 
-	if (conn_ext_adv != NULL) {
-		err = bt_le_ext_adv_start(conn_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err != 0 && err != -EALREADY) {
-			printk("Failed to restart connectable extended advertising (err %d)\n",
-			       err);
-		} else if (err == 0) {
-			printk("Connectable extended advertising restarted\n");
+	if (adv == NULL) {
+		return -EINVAL;
+	}
+
+	if (!start) {
+		err = bt_le_ext_adv_stop(adv);
+		if (err != 0) {
+			printk("Failed to stop connectable %s advertising (err %d)\n", name, err);
 		}
+
+		return err;
 	}
 
-	if (conn_legacy_adv != NULL) {
-		err = bt_le_ext_adv_start(conn_legacy_adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err != 0 && err != -EALREADY) {
-			printk("Failed to restart connectable legacy advertising (err %d)\n",
-			       err);
-		} else if (err == 0) {
-			printk("Connectable legacy advertising restarted\n");
-		}
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err == -EALREADY) {
+		return 0;
 	}
+
+	if (err != 0) {
+		printk("Failed to start connectable %s advertising (err %d)\n", name, err);
+	} else {
+		printk("Connectable %s advertising started\n", name);
+	}
+
+	return err;
 }
 
-static K_WORK_DEFINE(conn_adv_start_work, conn_adv_start_work_handler);
-
-static void connected_cb(struct bt_conn *conn, uint8_t err)
-{
-	if (err != 0U) {
-		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
-		       err, bt_hci_err_to_str(err));
-		/* Advertising sets that failed to establish a connection stop;
-		 * re-start them so the central can retry.
-		 */
-		k_work_submit(&conn_adv_start_work);
-		return;
-	}
-
-	printk("Connected: %s\n", bt_conn_dst_str(conn));
-	acl_conn_count++;
-	update_acl_led();
-
-	/* When one advertising set produces a connection, the other stays
-	 * advertising. Re-start any advertising set the stack stopped so a
-	 * second central (up to CONFIG_BT_MAX_CONN) can also connect.
-	 */
-	k_work_submit(&conn_adv_start_work);
-}
-
-static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
-{
-	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
-	       reason, bt_hci_err_to_str(reason));
-	if (acl_conn_count > 0U) {
-		acl_conn_count--;
-	}
-	update_acl_led();
-
-	/* Restart the connectable advertising sets so the central can
-	 * reconnect. Both sets are restarted; -EALREADY is treated as OK for
-	 * the set that was never stopped.
-	 */
-	k_work_submit(&conn_adv_start_work);
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected_cb,
-	.disconnected = disconnected_cb,
-};
-
-static int conn_adv_setup_and_start(void)
+/* The advertising sets are created on first enable and started right after their data is
+ * set, the Controller releases superseded advertising PDUs only while a set is advertising.
+ */
+static int conn_adv_create(void)
 {
 	int err;
 
@@ -1146,14 +1051,6 @@ static int conn_adv_setup_and_start(void)
 		return err;
 	}
 
-	err = bt_le_ext_adv_start(conn_ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err != 0) {
-		printk("Failed to start connectable extended advertising (err %d)\n", err);
-		return err;
-	}
-
-	printk("Connectable extended advertising started as \"%s\"\n", CONN_EXT_ADV_NAME);
-
 	/* Connectable legacy advertising set. */
 	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &conn_legacy_adv);
 	if (err != 0) {
@@ -1168,16 +1065,127 @@ static int conn_adv_setup_and_start(void)
 		return err;
 	}
 
-	err = bt_le_ext_adv_start(conn_legacy_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	return 0;
+}
+
+static void conn_adv_update_work_handler(struct k_work *work)
+{
+	const bool connected = (acl_conn_count > 0U);
+	const bool start = (conn_adv_enabled && !connected);
+	int err_legacy;
+	int err_ext;
+
+	ARG_UNUSED(work);
+
+	if (start && (conn_ext_adv == NULL) && (conn_legacy_adv == NULL)) {
+		(void)conn_adv_create();
+	}
+
+	err_ext = conn_adv_set_update(conn_ext_adv, start, "extended");
+	err_legacy = conn_adv_set_update(conn_legacy_adv, start, "legacy");
+
+	led_blink[LED_GREEN] = (start && ((err_ext == 0) || (err_legacy == 0)));
+	led_blink[LED_BLUE] = connected;
+}
+
+static K_WORK_DEFINE(conn_adv_update_work, conn_adv_update_work_handler);
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	if (err != 0U) {
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
+		/* Advertising sets that failed to establish a connection stop;
+		 * re-start them so the central can retry.
+		 */
+		(void)k_work_submit(&conn_adv_update_work);
+		return;
+	}
+
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
+	acl_conn_count++;
+
+	/* Stop the advertising set that did not produce the connection */
+	(void)k_work_submit(&conn_adv_update_work);
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
+	if (acl_conn_count > 0U) {
+		acl_conn_count--;
+	}
+
+	/* Resume connectable advertising, if enabled, so the central can reconnect */
+	(void)k_work_submit(&conn_adv_update_work);
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(sw0))
+#define BUTTON_DEBOUNCE K_MSEC(30)
+
+static const struct gpio_dt_spec button_adv = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+static struct gpio_callback button_adv_cb_data;
+
+static void button_adv_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (gpio_pin_get_dt(&button_adv) <= 0) {
+		return;
+	}
+
+	conn_adv_enabled = !conn_adv_enabled;
+	printk("Connectable advertising %s\n", conn_adv_enabled ? "enabled" : "disabled");
+
+	(void)k_work_submit(&conn_adv_update_work);
+}
+
+static K_WORK_DELAYABLE_DEFINE(button_adv_work, button_adv_work_handler);
+
+static void button_adv_isr(const struct device *port, struct gpio_callback *cb,
+			   gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(pins);
+
+	(void)k_work_reschedule(&button_adv_work, BUTTON_DEBOUNCE);
+}
+
+static int button_adv_init(void)
+{
+	int err;
+
+	if (!gpio_is_ready_dt(&button_adv)) {
+		return -ENODEV;
+	}
+
+	err = gpio_pin_configure_dt(&button_adv, GPIO_INPUT);
 	if (err != 0) {
-		printk("Failed to start connectable legacy advertising (err %d)\n", err);
 		return err;
 	}
 
-	printk("Connectable legacy advertising started as \"%s\"\n", CONN_LEGACY_ADV_NAME);
+	err = gpio_pin_interrupt_configure_dt(&button_adv, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err != 0) {
+		return err;
+	}
 
-	return 0;
+	gpio_init_callback(&button_adv_cb_data, button_adv_isr, BIT(button_adv.pin));
+
+	return gpio_add_callback_dt(&button_adv, &button_adv_cb_data);
 }
+#else
+static int button_adv_init(void)
+{
+	return -ENODEV;
+}
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(sw0)) */
 #endif /* CONFIG_BT_PERIPHERAL */
 
 int main(void)
@@ -1214,14 +1222,16 @@ int main(void)
 	}
 
 #if defined(CONFIG_BT_PERIPHERAL)
-	/* Bring up a connectable extended advertising set that runs alongside
-	 * the LE Audio broadcast, so a remote central can connect and
-	 * disconnect repeatedly while the broadcast continues.
+	/* Connectable advertising sets run alongside the LE Audio broadcast,
+	 * so a remote central can connect and disconnect repeatedly while the
+	 * broadcast continues.
 	 */
-	err = conn_adv_setup_and_start();
+	printk("Press button 0 to toggle connectable advertising as \"%s\" and \"%s\"\n",
+	       CONN_EXT_ADV_NAME, CONN_LEGACY_ADV_NAME);
+
+	err = button_adv_init();
 	if (err != 0) {
-		printk("Unable to start connectable advertiser: %d\n", err);
-		return 0;
+		printk("Button 0 not available (err %d)\n", err);
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 

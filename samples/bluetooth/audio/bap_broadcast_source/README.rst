@@ -18,8 +18,17 @@ advertising sets that run in parallel with the LE Audio broadcast:
 * a connectable **extended** advertising set (device name ``BAP Ext Connectable``)
 * a connectable **legacy** advertising set (device name ``BAP Legacy Connectable``)
 
+Button 0 enables or disables the connectable advertising, which is off at boot.
 Remote centrals can connect to either set and reconnect after
 disconnecting, while the LE Audio broadcast continues uninterrupted.
+The connectable advertising stops while a central is connected and resumes on disconnect.
+
+The LEDs show the state, using the ``led-red``, ``led-green`` and ``led-blue`` aliases when
+present, else ``led0``, ``led1`` and ``led2``:
+
+* red blinks while the broadcast ISO is active
+* green blinks while the connectable advertising is active
+* blue blinks while a central is connected
 The broadcast audio set itself uses ``CONFIG_BT_DEVICE_NAME`` (default
 ``Broadcast Audio Source``) as its device name in the advertising data.
 
