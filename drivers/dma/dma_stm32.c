@@ -766,7 +766,8 @@ static int dma_stm32_configure(const struct device *dev,
 		DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
 	}
 
-	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
+	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY ||
+				 stream->direction == MEMORY_TO_MEMORY);
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if ((config->source_burst_length % config->source_data_size) != 0) {
@@ -807,7 +808,8 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
 					config->head_block->fifo_mode_control);
 
-	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+	/* M2M always requires FIFO mode */
+	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct) || stream->direction == MEMORY_TO_MEMORY) {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
 	} else {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
