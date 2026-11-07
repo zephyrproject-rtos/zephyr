@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+# Expose the driver's capacity settings for native tests.
+config GIC_V3_ITS_MAX_DEVICES
+	int "Maximum registered devices per controller"
+
+config GIC_V3_ITS_MAX_VECTORS
+	int "Maximum MSI vectors per device"
+
+config NUM_IRQS
+	int "Number of interrupts for ITS tests"
