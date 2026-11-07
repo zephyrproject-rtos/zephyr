@@ -7431,6 +7431,13 @@ West:
   labels:
     - "platform: openisa/RV32M1"
 
+"West project: hal_py32":
+  status: maintained
+  maintainers:
+    - kholia
+  files:
+    - modules/hal_py32/
+
 "West project: hal_quicklogic":
   status: odd fixes
   collaborators:
