@@ -7,6 +7,7 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
@@ -17,13 +18,11 @@
 #include <zephyr/tc_util.h>
 
 #include <zephyr/bluetooth/hci.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest_assert.h>
 
-#define DT_DRV_COMPAT zephyr_bt_hci_test
+#include <fake_hci.h>
 
 #define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -42,28 +41,6 @@ struct test_adv_report {
 #define MORE_TO_COME BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL << 5
 #define TRUNCATED BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_INCOMPLETE << 5
 
-/* Command handler structure for cmd_handle(). */
-struct cmd_handler {
-	uint16_t opcode; /* HCI command opcode */
-	uint8_t len; /* HCI command response length */
-	void (*handler)(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode);
-};
-
-/* Add event to net_buf. */
-static void evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
-{
-	struct bt_hci_evt_hdr *hdr;
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->evt = evt;
-	hdr->len = len;
-}
-
-static void le_meta_evt_create(struct bt_hci_evt_le_meta_event *evt, uint8_t subevent)
-{
-	evt->subevent = subevent;
-}
-
 static void adv_info_create(struct bt_hci_evt_le_ext_advertising_info *evt, uint16_t evt_type,
 			    const bt_addr_le_t *const addr, uint8_t length)
 {
@@ -79,282 +56,38 @@ static void adv_info_create(struct bt_hci_evt_le_ext_advertising_info *evt, uint
 	evt->length = length;
 }
 
-/* Create a command complete event. */
-static void *cmd_complete(struct net_buf **buf, uint8_t plen, uint16_t opcode)
+/* The Controller answers LE Periodic Advertising Create Sync with a Command Status */
+static bool cmd_cb(uint16_t opcode, struct net_buf *buf)
 {
-	struct bt_hci_evt_cmd_complete *cc;
+	ARG_UNUSED(buf);
 
-	*buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
-	evt_create(*buf, BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
-	cc = net_buf_add(*buf, sizeof(*cc));
-	cc->ncmd = 1U;
-	cc->opcode = sys_cpu_to_le16(opcode);
-
-	return net_buf_add(*buf, plen);
-}
-
-/* Loop over handlers to try to handle the command given by opcode. */
-static int cmd_handle_helper(uint16_t opcode, struct net_buf *cmd, struct net_buf **evt,
-			     const struct cmd_handler *handlers, size_t num_handlers)
-{
-	for (size_t i = 0; i < num_handlers; i++) {
-		const struct cmd_handler *handler = &handlers[i];
-
-		if (handler->opcode != opcode) {
-			continue;
-		}
-
-		if (handler->handler) {
-			handler->handler(cmd, evt, handler->len, opcode);
-
-			return 0;
-		}
+	if (opcode == BT_HCI_OP_LE_PER_ADV_CREATE_SYNC) {
+		fake_hci_cmd_status(opcode, BT_HCI_ERR_SUCCESS);
+		return true;
 	}
 
-	zassert_unreachable("opcode %X failed", opcode);
-
-	return -EINVAL;
-}
-
-/* Lookup the command opcode and invoke handler. */
-static int cmd_handle(const struct device *dev, struct net_buf *cmd,
-		      const struct cmd_handler *handlers, size_t num_handlers)
-{
-	struct net_buf *evt = NULL;
-	struct bt_hci_evt_cc_status *ccst;
-	struct bt_hci_cmd_hdr *chdr;
-	uint16_t opcode;
-	int err;
-
-	chdr = net_buf_pull_mem(cmd, sizeof(*chdr));
-	opcode = sys_le16_to_cpu(chdr->opcode);
-
-	err = cmd_handle_helper(opcode, cmd, &evt, handlers, num_handlers);
-
-	if (err == -EINVAL) {
-		ccst = cmd_complete(&evt, sizeof(*ccst), opcode);
-		ccst->status = BT_HCI_ERR_UNKNOWN_CMD;
-	}
-
-	if (evt) {
-		bt_hci_recv(dev, evt);
-	}
-
-	return err;
-}
-
-/* Generic command complete with success status. */
-static void generic_success(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
-{
-	struct bt_hci_evt_cc_status *ccst;
-
-	ccst = cmd_complete(evt, len, opcode);
-
-	/* Fill any event parameters with zero */
-	(void)memset(ccst, 0, len);
-
-	ccst->status = BT_HCI_ERR_SUCCESS;
-}
-
-/* Generic command status with success status. */
-static void generic_status(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
-{
-	struct bt_hci_evt_cmd_status *cs;
-
-	*evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
-	evt_create(*evt, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
-	cs = net_buf_add(*evt, sizeof(*cs));
-	cs->status = BT_HCI_ERR_SUCCESS;
-	cs->ncmd = 1U;
-	cs->opcode = sys_cpu_to_le16(opcode);
-}
-
-/* Bogus handler for BT_HCI_OP_READ_LOCAL_FEATURES. */
-static void read_local_features(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				uint16_t opcode)
-{
-	struct bt_hci_rp_read_local_features *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	rp->status = 0x00;
-	(void)memset(rp->features, 0xFF, sizeof(rp->features));
-}
-
-/* Bogus handler for BT_HCI_OP_READ_SUPPORTED_COMMANDS. */
-static void read_supported_commands(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				    uint16_t opcode)
-{
-	struct bt_hci_rp_read_supported_commands *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	(void)memset(rp->commands, 0xFF, sizeof(rp->commands));
-	rp->status = 0x00;
-}
-
-/* Bogus handler for BT_HCI_OP_LE_READ_LOCAL_FEATURES. */
-static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				   uint16_t opcode)
-{
-	struct bt_hci_rp_le_read_local_features *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	rp->status = 0x00;
-	(void)memset(rp->features, 0xFF, sizeof(rp->features));
-}
-
-/* Bogus handler for BT_HCI_OP_LE_READ_SUPP_STATES. */
-static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				uint16_t opcode)
-{
-	struct bt_hci_rp_le_read_supp_states *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	rp->status = 0x00;
-	(void)memset(&rp->le_states, 0xFF, sizeof(rp->le_states));
-}
-
-
-/* Setup handlers needed for bt_enable to function. */
-static const struct cmd_handler cmds[] = {
-	{ BT_HCI_OP_READ_LOCAL_VERSION_INFO, sizeof(struct bt_hci_rp_read_local_version_info),
-	  generic_success },
-	{ BT_HCI_OP_READ_SUPPORTED_COMMANDS, sizeof(struct bt_hci_rp_read_supported_commands),
-	  read_supported_commands },
-	{ BT_HCI_OP_READ_LOCAL_FEATURES, sizeof(struct bt_hci_rp_read_local_features),
-	  read_local_features },
-	{ BT_HCI_OP_READ_BD_ADDR, sizeof(struct bt_hci_rp_read_bd_addr), generic_success },
-	{ BT_HCI_OP_SET_EVENT_MASK, sizeof(struct bt_hci_evt_cc_status), generic_success },
-	{ BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(struct bt_hci_evt_cc_status), generic_success },
-	{ BT_HCI_OP_LE_READ_LOCAL_FEATURES, sizeof(struct bt_hci_rp_le_read_local_features),
-	  le_read_local_features },
-	{ BT_HCI_OP_LE_READ_SUPP_STATES, sizeof(struct bt_hci_rp_le_read_supp_states),
-	  le_read_supp_states },
-	{ BT_HCI_OP_LE_RAND, sizeof(struct bt_hci_rp_le_rand), generic_success },
-	{ BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(struct bt_hci_cp_le_set_random_address),
-	  generic_success },
-	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, sizeof(struct bt_hci_evt_cc_status), generic_success },
-	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, sizeof(struct bt_hci_evt_cc_status), generic_success },
-	{ BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, 0, generic_status },
-	{ BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, sizeof(struct bt_hci_evt_cc_status),
-	  generic_success },
-	{ BT_HCI_OP_RESET, sizeof(struct bt_hci_evt_cc_status), generic_success },
-};
-
-/* HCI driver open. */
-static int driver_open(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
-/*  HCI driver send.  */
-static int driver_send(const struct device *dev, struct net_buf *buf)
-{
-	uint8_t type = net_buf_pull_u8(buf);
-
-	zassert_true(type == BT_HCI_H4_CMD, "Unexpected command buffer, got %u", type);
-
-	zassert_true(cmd_handle(dev, buf, cmds, ARRAY_SIZE(cmds)) == 0, "Unknown HCI command");
-
-	net_buf_unref(buf);
-
-	return 0;
-}
-
-static DEVICE_API(bt_hci, driver_api) = {
-	.open = driver_open,
-	.send = driver_send,
-};
-
-#define TEST_DEVICE_INIT(inst) \
-	static struct bt_hci_driver_data driver_data_##inst = { \
-	}; \
-	static const struct bt_hci_driver_config driver_config_##inst = \
-						BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, &driver_config_##inst, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &driver_api)
-
-DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
-
-
-struct bt_recv_job_data {
-	struct k_work work; /* Work item */
-	struct k_sem *sync; /* Semaphore to synchronize with */
-	struct net_buf *buf; /* Net buffer to be passed to bt_recv() */
-} job_data[CONFIG_BT_BUF_EVT_RX_COUNT];
-
-#define job(buf) (&job_data[net_buf_id(buf)])
-
-/* Work item handler for bt_recv() jobs. */
-static void bt_recv_job_cb(struct k_work *item)
-{
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct bt_recv_job_data *data = CONTAINER_OF(item, struct bt_recv_job_data, work);
-
-	/* Send net buffer to host */
-	bt_hci_recv(dev, data->buf);
-
-	/* Wake up bt_recv_job_submit */
-	k_sem_give(job(data->buf)->sync);
-}
-
-/* Prepare a job to call bt_recv() to be submitted to the system workqueue. */
-static void bt_recv_job_submit(struct net_buf *buf)
-{
-	struct k_sem sync_sem;
-
-	/* Store the net buffer to be passed to bt_recv */
-	job(buf)->buf = buf;
-
-	/* Initialize job work item/semaphore */
-	k_work_init(&job(buf)->work, bt_recv_job_cb);
-	k_sem_init(&sync_sem, 0, 1);
-	job(buf)->sync = &sync_sem;
-
-	/* Make sure the buffer stays around until the command completes */
-	buf = net_buf_ref(buf);
-
-	/* Submit the work item */
-	k_work_submit(&job(buf)->work);
-
-	/* Wait for bt_recv_job_cb to be done */
-	k_sem_take(&sync_sem, K_FOREVER);
-
-	net_buf_unref(buf);
+	return false;
 }
 
 /* Semaphore to test if the prop callback was called. */
 static K_SEM_DEFINE(prop_cb_sem, 0, 1);
 
-static void *adv_report_evt(struct net_buf *buf, uint8_t data_len, uint16_t evt_type,
-			    const bt_addr_le_t *const addr)
-{
-	struct bt_hci_evt_le_meta_event *meta_evt;
-	struct bt_hci_evt_le_ext_advertising_info *evt;
-
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + sizeof(*evt) + data_len + 1);
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	le_meta_evt_create(meta_evt, BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT);
-	net_buf_add_u8(buf, 1); /* Number of reports */
-	evt = net_buf_add(buf, sizeof(*evt));
-	adv_info_create(evt, evt_type, addr, data_len);
-
-	return net_buf_add(buf, data_len);
-}
-
-/* Send a prop event report with the given data. */
+/* Send an extended advertising report with the given data. */
 static void send_adv_report(const struct test_adv_report *report)
 {
-	LOG_DBG("Sending adv report");
+	struct bt_hci_evt_le_ext_advertising_info *evt;
 	struct net_buf *buf;
-	uint8_t *adv_data;
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-	adv_data = adv_report_evt(buf, report->length, report->evt_prop, &report->addr);
-	memcpy(adv_data, &report->data, report->length);
+	LOG_DBG("Sending adv report");
 
-	/* Submit job */
-	bt_recv_job_submit(buf);
+	buf = fake_hci_le_meta_evt(BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT,
+				   1 + sizeof(*evt) + report->length);
+	(void)net_buf_add_u8(buf, 1); /* Number of reports */
+	evt = net_buf_add(buf, sizeof(*evt));
+	adv_info_create(evt, report->evt_prop, &report->addr, report->length);
+	(void)net_buf_add_mem(buf, &report->data, report->length);
+
+	fake_hci_recv(buf);
 }
 
 FAKE_VALUE_FUNC(struct test_adv_report, get_expected_report);
@@ -385,17 +118,14 @@ static void send_per_adv_sync_established(const bt_addr_le_t *addr, uint8_t sid)
 {
 	const bool is_v2 = IS_ENABLED(CONFIG_BT_PER_ADV_SYNC_RSP);
 	struct bt_hci_evt_le_per_adv_sync_established_v2 *evt;
-	struct bt_hci_evt_le_meta_event *meta_evt;
 	struct net_buf *buf;
 	size_t len;
 
 	len = is_v2 ? sizeof(*evt) : sizeof(struct bt_hci_evt_le_per_adv_sync_established);
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + len);
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	le_meta_evt_create(meta_evt, is_v2 ? BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED_V2
-					   : BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED);
+	buf = fake_hci_le_meta_evt(is_v2 ? BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED_V2
+					 : BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED,
+				   len);
 	evt = net_buf_add(buf, len);
 	evt->status = BT_HCI_ERR_SUCCESS;
 	evt->handle = sys_cpu_to_le16(SYNC_HANDLE);
@@ -412,7 +142,7 @@ static void send_per_adv_sync_established(const bt_addr_le_t *addr, uint8_t sid)
 		evt->response_slot_spacing = 0U;
 	}
 
-	bt_recv_job_submit(buf);
+	fake_hci_recv(buf);
 }
 
 /* send_per_adv_report() with the v2 event, the only one the Host takes with PAwR sync support */
@@ -420,13 +150,10 @@ static void send_per_adv_report_v2(uint8_t data_status, const uint8_t *data, uin
 				   uint8_t claimed_len)
 {
 	struct bt_hci_evt_le_per_advertising_report_v2 *evt;
-	struct bt_hci_evt_le_meta_event *meta_evt;
 	struct net_buf *buf;
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + sizeof(*evt) + data_len);
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	le_meta_evt_create(meta_evt, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2);
+	buf = fake_hci_le_meta_evt(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT_V2,
+				   sizeof(*evt) + data_len);
 	evt = net_buf_add(buf, sizeof(*evt));
 	evt->handle = sys_cpu_to_le16(SYNC_HANDLE);
 	evt->tx_power = 0;
@@ -438,7 +165,7 @@ static void send_per_adv_report_v2(uint8_t data_status, const uint8_t *data, uin
 	evt->length = claimed_len;
 	(void)net_buf_add_mem(buf, data, data_len);
 
-	bt_recv_job_submit(buf);
+	fake_hci_recv(buf);
 }
 
 /* Send a periodic advertising report carrying data_len bytes of data, whose length
@@ -447,7 +174,6 @@ static void send_per_adv_report_v2(uint8_t data_status, const uint8_t *data, uin
 static void send_per_adv_report(uint8_t data_status, const uint8_t *data, uint8_t data_len,
 				uint8_t claimed_len)
 {
-	struct bt_hci_evt_le_meta_event *meta_evt;
 	struct bt_hci_evt_le_per_advertising_report *evt;
 	struct net_buf *buf;
 
@@ -456,10 +182,7 @@ static void send_per_adv_report(uint8_t data_status, const uint8_t *data, uint8_
 		return;
 	}
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + sizeof(*evt) + data_len);
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	le_meta_evt_create(meta_evt, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT);
+	buf = fake_hci_le_meta_evt(BT_HCI_EVT_LE_PER_ADVERTISING_REPORT, sizeof(*evt) + data_len);
 	evt = net_buf_add(buf, sizeof(*evt));
 	evt->handle = sys_cpu_to_le16(SYNC_HANDLE);
 	evt->tx_power = 0;
@@ -469,7 +192,7 @@ static void send_per_adv_report(uint8_t data_status, const uint8_t *data, uint8_
 	evt->length = claimed_len;
 	net_buf_add_mem(buf, data, data_len);
 
-	bt_recv_job_submit(buf);
+	fake_hci_recv(buf);
 }
 
 static K_SEM_DEFINE(per_adv_synced_sem, 0, 1);
@@ -529,7 +252,15 @@ static void *suite_setup(void)
 		.term = per_adv_sync_term_cb,
 		.recv = per_adv_sync_recv_cb,
 	};
+	static const struct fake_hci_cb cb = {
+		.cmd = cmd_cb,
+	};
 	int err;
+
+	/* Bogus Controller features */
+	(void)memset(fake_hci.features, 0xFF, sizeof(fake_hci.features));
+	(void)memset(fake_hci.le_features, 0xFF, sizeof(fake_hci.le_features));
+	fake_hci_cb_set(&cb);
 
 	zassert_true((bt_enable(NULL) == 0), "bt_enable failed");
 
