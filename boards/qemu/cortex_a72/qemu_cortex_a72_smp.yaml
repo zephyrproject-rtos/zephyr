@@ -8,4 +8,8 @@ toolchain:
   - zephyr
   - cross-compile
 ram: 8192
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
 vendor: raspberrypi
