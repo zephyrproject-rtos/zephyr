@@ -40,4 +40,7 @@ configdefault ETH_DRIVER
 configdefault NET_IF_MAX_IPV6_COUNT
 	default 2 if DT_HAS_NXP_ENET_MAC_ENABLED
 
+configdefault ZVFS_POLL_MAX
+	default 8 if DT_HAS_NXP_ENET_MAC_ENABLED
+
 endif # BOARD_RD_RW612_BGA
