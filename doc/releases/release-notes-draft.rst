@@ -296,6 +296,12 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_enable` while it is not runnable (before it is started, or while
     it is blocked or suspended).
 
+* Virtio
+
+  * Descriptor chain submission with :c:func:`virtq_add_buffer_chain` now allocates all required
+    descriptors at once. A submission waiting for space no longer holds descriptors needed by
+    smaller submissions, and blocking submissions use one timeout budget for the whole chain.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
