@@ -23,9 +23,11 @@ choice ARM_AARCH32_MMU_TYPE
 
 config ARM_AARCH32_MMU_VMSA_V5
 	bool "ARMv5 MMU Support"
-	select ARM_AARCH32_MMU
 	help
 	  The current CPU has an ARMv5 Memory Management Unit.
+
+	  arm_mmu.c only implements the ARMv7 short descriptor format, so
+	  this does not turn on ARM_AARCH32_MMU.
 
 config ARM_AARCH32_MMU_VMSA_V7
 	bool "ARMv7 Cortex-A MMU Support"
