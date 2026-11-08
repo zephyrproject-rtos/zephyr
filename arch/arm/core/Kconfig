@@ -6,6 +6,12 @@
 config CPU_AARCH32_ARM9
 	bool
 	select CPU_ARM9
+	# ARMv5 has no architectural interrupt controller: interrupt control
+	# always lives in the SoC.
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	# LDREX/STREX only arrived with ARMv6, so atomics have to be done by
+	# locking interrupts.
+	select ATOMIC_OPERATIONS_C
 	select HAS_FLASH_LOAD_OFFSET
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED

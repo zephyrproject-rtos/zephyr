@@ -76,4 +76,29 @@ config ICACHE_LINE_SIZE
 	depends on CPU_HAS_ICACHE
 	default 32
 
+config CPU_HAS_DCACHE
+	default y
+
+config CPU_HAS_ICACHE
+	default y
+
+config ARMV5_IRQ_NESTING
+	bool "Allow interrupts to nest"
+	help
+	  Unmask IRQs while an ISR runs, so that a second interrupt can
+	  preempt it.
+
+	  This is only safe when the SoC's interrupt controller masks the
+	  active source between z_soc_irq_get_active() and z_soc_irq_eoi(),
+	  the way a GIC does. Level sensitive controllers such as the ARM
+	  PL190 or the PXA2xx ICU keep the line asserted until the peripheral
+	  itself is serviced, so unmasking early would re-enter the handler
+	  immediately and recurse until the interrupt stack overflows.
+
+config MP_MAX_NUM_CPUS
+	default 1
+
+config STACK_ALIGN_DOUBLE_WORD
+	default y
+
 endif # ARMV5
