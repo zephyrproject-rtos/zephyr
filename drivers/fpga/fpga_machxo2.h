@@ -19,30 +19,67 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
+/* sysCONFIG command opcodes (Lattice FPGA-TN-02155, table 9.3). */
+#define FPGA_MACHXO2_CMD_IDCODE_PUB        0xE0U /* Read Device ID */
+#define FPGA_MACHXO2_CMD_ISC_ENABLE_X      0x74U /* Enable configuration, transparent mode */
+#define FPGA_MACHXO2_CMD_ISC_ENABLE        0xC6U /* Enable configuration, offline mode */
+#define FPGA_MACHXO2_CMD_LSC_CHECK_BUSY    0xF0U
+#define FPGA_MACHXO2_CMD_LSC_READ_STATUS   0x3CU
+#define FPGA_MACHXO2_CMD_ISC_ERASE         0x0EU /* Erase memory space: sram, config, feature row, or ufm */
+#define FPGA_MACHXO2_CMD_LSC_ERASE_TAG     0xCBU /* Erase UFM only */
+#define FPGA_MACHXO2_CMD_LSC_INIT_ADDRESS  0x46U /* Reset page pointer to start of config flash */
+#define FPGA_MACHXO2_CMD_LSC_WRITE_ADDRESS 0xB4U /* Set page address pointer */
+#define FPGA_MACHXO2_CMD_LSC_PROG_INC_RNV  0x70U /* Program one flash page, config or UFM */
+#define FPGA_MACHXO2_CMD_LSC_INIT_ADDR_UFM 0x47U /* Reset page pointer to start of UFM */
+#define FPGA_MACHXO2_CMD_LSC_PROG_TAG      0xC9U /* Program one UFM page */
+#define FPGA_MACHXO2_CMD_ISC_PROG_USERCODE 0xC2U
+#define FPGA_MACHXO2_CMD_ISC_READ_USERCODE 0xC0U
+#define FPGA_MACHXO2_CMD_LSC_PROG_FEATURE  0xE4U
+#define FPGA_MACHXO2_CMD_LSC_READ_FEATURE  0xE7U
+#define FPGA_MACHXO2_CMD_LSC_PROG_FEABITS  0xF8U
+#define FPGA_MACHXO2_CMD_LSC_READ_FEABITS  0xFBU
+#define FPGA_MACHXO2_CMD_LSC_READ_INCR_NV  0x73U /* Read config flash pages */
+#define FPGA_MACHXO2_CMD_LSC_READ_UFM      0xCAU
+#define FPGA_MACHXO2_CMD_ISC_PROGRAM_DONE  0x5EU /* Program DONE  */
+#define FPGA_MACHXO2_CMD_LSC_PROG_OTP      0xF9U
+#define FPGA_MACHXO2_CMD_LSC_READ_OTP      0xFAU
+#define FPGA_MACHXO2_CMD_ISC_DISABLE       0x26U /* Disable configuration interface */
+#define FPGA_MACHXO2_CMD_ISC_NOOP          0xFFU
+#define FPGA_MACHXO2_CMD_LSC_REFRESH       0x79U    /* Refresh, reconfigure from flash */
+#define FPGA_MACHXO2_CMD_ISC_PROGRAM_SECURITY 0xCEU /* Program SECURITY bit */
+#define FPGA_MACHXO2_CMD_ISC_PROGRAM_SECPLUS  0xCFU /* Program SECURITY PLUS bit */
+#define FPGA_MACHXO2_CMD_UIDCODE_PUB          0x19U /* Read TraceID code */
+
+/* ISC_ENABLE/ISC_ENABLE_X operand: bit 19 selects flash (1) or SRAM (0). */
+#define FPGA_MACHXO2_ENABLE_FLASH BIT(19)
+
+/* ISC_ERASE operand: bitwise OR of the memory spaces to erase. */
+#define FPGA_MACHXO2_ERASE_SRAM    BIT(16)
+#define FPGA_MACHXO2_ERASE_FEATURE BIT(17)
+#define FPGA_MACHXO2_ERASE_CONFIG  BIT(18)
+#define FPGA_MACHXO2_ERASE_UFM     BIT(19)
+
+/* LSC_PROG_INCR_NV/LSC_PROG_TAG operand: 0x000001 selects program mode. */
+#define FPGA_MACHXO2_PROG_INCR 0x000001U
+
+/* LSC_READ_UFM operand: M field (bits 23..20) = 0x1 for JTAG/SSPI. */
+#define FPGA_MACHXO2_UFM_READ_M       GENMASK(23, 20)
+#define FPGA_MACHXO2_UFM_READ_OPERAND (FIELD_PREP(FPGA_MACHXO2_UFM_READ_M, 0x1U) | 1U)
+
+/* LSC_WRITE_ADDRESS write data: M field (byte 0) = 0x4 for UFM. */
+#define FPGA_MACHXO2_UFM_ADDRESS_MARKER FIELD_PREP(GENMASK(31, 24), 0x4U)
+
+/* Status register bits. */
+#define FPGA_MACHXO2_STATUS_DONE BIT(8)
+#define FPGA_MACHXO2_STATUS_BUSY BIT(12)
+#define FPGA_MACHXO2_STATUS_FAIL BIT(13)
+
 /** MachXO2 configuration and UFM page size, in bytes. */
 #define FPGA_MACHXO2_PAGE_SIZE 16U
 
-/* sysCONFIG commands used by the UFM driver. */
-#define FPGA_MACHXO2_CMD_ISC_ENABLE_X      0x74U
-#define FPGA_MACHXO2_CMD_ISC_DISABLE       0x26U
-#define FPGA_MACHXO2_CMD_ISC_NOOP          0xFFU
-#define FPGA_MACHXO2_CMD_LSC_INIT_ADDR_UFM 0x47U
-#define FPGA_MACHXO2_CMD_LSC_WRITE_ADDRESS 0xB4U
-#define FPGA_MACHXO2_CMD_LSC_ERASE_TAG     0xCBU
-#define FPGA_MACHXO2_CMD_LSC_PROG_TAG      0xC9U
-#define FPGA_MACHXO2_CMD_LSC_READ_UFM      0xCAU
-#define FPGA_MACHXO2_CMD_LSC_READ_STATUS   0x3CU
-
 /* Status register bits shared with the UFM driver. */
-#define FPGA_MACHXO2_STATUS_FAIL     BIT(13)
 #define FPGA_MACHXO2_STATUS_ERR_POS  23U
 #define FPGA_MACHXO2_STATUS_ERR_MASK 0x7U
-
-/* UFM command operands. */
-#define FPGA_MACHXO2_ISC_ENABLE_X_UFM   0x080000U
-#define FPGA_MACHXO2_UFM_ADDRESS_MARKER 0x40000000U
-#define FPGA_MACHXO2_UFM_READ_OPERAND   0x100000U
-#define FPGA_MACHXO2_UFM_PROG_OPERAND   0x000001U
 
 /**
  * @brief Lock the MachXO2 transport.
@@ -63,48 +100,27 @@ int fpga_machxo2_lock(const struct device *dev, k_timeout_t timeout);
 void fpga_machxo2_unlock(const struct device *dev);
 
 /**
- * @brief Write a sysCONFIG command.
+ * @brief Transact a sysCONFIG command with optional data.
+ *
+ * Sends the four-byte command (opcode plus three operand bytes) and
+ * simultaneously clocks data in or out. Set @p tx_data and @p rx_data to NULL
+ * when the command carries no payload in that direction.
  *
  * @param dev MachXO2 FPGA device.
  * @param opcode Command opcode.
  * @param operand Three-byte command operand.
+ * @param tx_data Data sent after the command, or NULL.
+ * @param tx_len Length of @p tx_data in bytes.
+ * @param rx_data Destination buffer for data read after the command, or NULL.
+ * @param rx_len Number of bytes to read into @p rx_data.
  *
  * @retval 0 on success.
+ * @retval -EINVAL if @p tx_data is NULL and @p tx_len is not zero.
+ * @retval -EINVAL if @p rx_data is NULL and @p rx_len is not zero.
  * @retval -errno on SPI failure.
  */
-int fpga_machxo2_write_cmd(const struct device *dev, uint8_t opcode, uint32_t operand);
-
-/**
- * @brief Write a sysCONFIG command followed by data.
- *
- * @param dev MachXO2 FPGA device.
- * @param opcode Command opcode.
- * @param operand Three-byte command operand.
- * @param data Data sent after the command.
- * @param len Data length in bytes.
- *
- * @retval 0 on success.
- * @retval -EINVAL if @p data is NULL and @p len is not zero.
- * @retval -errno on SPI failure.
- */
-int fpga_machxo2_write_cmd_data(const struct device *dev, uint8_t opcode, uint32_t operand,
-				const void *data, size_t len);
-
-/**
- * @brief Read data following a sysCONFIG command.
- *
- * @param dev MachXO2 FPGA device.
- * @param opcode Command opcode.
- * @param operand Three-byte command operand.
- * @param data Destination buffer.
- * @param len Number of bytes to read.
- *
- * @retval 0 on success.
- * @retval -EINVAL if @p data is NULL or @p len is zero.
- * @retval -errno on SPI failure.
- */
-int fpga_machxo2_read_cmd(const struct device *dev, uint8_t opcode, uint32_t operand, void *data,
-			  size_t len);
+int fpga_machxo2_transceive(const struct device *dev, uint8_t opcode, uint32_t operand,
+			    const void *tx_data, size_t tx_len, void *rx_data, size_t rx_len);
 
 /**
  * @brief Poll the status register until BUSY clears.

@@ -45,8 +45,8 @@ static int machxo2_ufm_enter(const struct device *parent, bool *entered)
 {
 	int ret;
 
-	ret = fpga_machxo2_write_cmd(parent, FPGA_MACHXO2_CMD_ISC_ENABLE_X,
-				     FPGA_MACHXO2_ISC_ENABLE_X_UFM);
+	ret = fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_ISC_ENABLE_X,
+				      FPGA_MACHXO2_ENABLE_FLASH, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -60,12 +60,12 @@ static int machxo2_ufm_exit(const struct device *parent)
 {
 	int ret;
 
-	ret = fpga_machxo2_write_cmd(parent, FPGA_MACHXO2_CMD_ISC_DISABLE, 0U);
+	ret = fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_ISC_DISABLE, 0U, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = fpga_machxo2_write_cmd(parent, FPGA_MACHXO2_CMD_ISC_NOOP, 0U);
+	ret = fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_ISC_NOOP, 0U, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -79,7 +79,8 @@ static int machxo2_ufm_check_status(const struct device *parent)
 	uint32_t status;
 	int ret;
 
-	ret = fpga_machxo2_read_cmd(parent, FPGA_MACHXO2_CMD_LSC_READ_STATUS, 0U, buf, sizeof(buf));
+	ret = fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_LSC_READ_STATUS, 0U, NULL, 0U, buf,
+				      sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
@@ -100,29 +101,29 @@ static int machxo2_ufm_set_page(const struct device *parent, size_t page)
 	uint32_t value = FPGA_MACHXO2_UFM_ADDRESS_MARKER | (page & 0x3FFFU);
 
 	if (page == 0U) {
-		return fpga_machxo2_write_cmd(parent, FPGA_MACHXO2_CMD_LSC_INIT_ADDR_UFM, 0U);
+		return fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_LSC_INIT_ADDR_UFM, 0U, NULL, 0U, NULL, 0U);
 	}
 
 	sys_put_be32(value, address);
 
-	return fpga_machxo2_write_cmd_data(parent, FPGA_MACHXO2_CMD_LSC_WRITE_ADDRESS, 0U, address,
-					   sizeof(address));
+	return fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_LSC_WRITE_ADDRESS, 0U, address,
+				       sizeof(address), NULL, 0U);
 }
 
 static int machxo2_ufm_read_page(const struct device *parent, uint8_t *page)
 {
-	return fpga_machxo2_read_cmd(parent, FPGA_MACHXO2_CMD_LSC_READ_UFM,
-				     FPGA_MACHXO2_UFM_READ_OPERAND | 1U, page,
-				     FPGA_MACHXO2_PAGE_SIZE);
+	return fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_LSC_READ_UFM,
+				       FPGA_MACHXO2_UFM_READ_OPERAND, NULL, 0U, page,
+				       FPGA_MACHXO2_PAGE_SIZE);
 }
 
 static int machxo2_ufm_write_page(const struct device *parent, const uint8_t *page)
 {
 	int ret;
 
-	ret = fpga_machxo2_write_cmd_data(parent, FPGA_MACHXO2_CMD_LSC_PROG_TAG,
-					  FPGA_MACHXO2_UFM_PROG_OPERAND, page,
-					  FPGA_MACHXO2_PAGE_SIZE);
+	ret = fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_LSC_PROG_TAG,
+				      FPGA_MACHXO2_PROG_INCR, page, FPGA_MACHXO2_PAGE_SIZE,
+				      NULL, 0U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -141,7 +142,7 @@ static int machxo2_ufm_erase_sector(const struct device *parent)
 {
 	int ret;
 
-	ret = fpga_machxo2_write_cmd(parent, FPGA_MACHXO2_CMD_LSC_ERASE_TAG, 0U);
+	ret = fpga_machxo2_transceive(parent, FPGA_MACHXO2_CMD_LSC_ERASE_TAG, 0U, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		return ret;
 	}

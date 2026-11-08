@@ -30,27 +30,6 @@
 
 LOG_MODULE_REGISTER(fpga_machxo2, CONFIG_FPGA_LOG_LEVEL);
 
-/* Maximum sysCONFIG slave SPI clock, in Hz. */
-#define FPGA_MACHXO2_MAX_SPI_HZ 66000000U
-
-/* sysCONFIG command opcodes. */
-#define FPGA_MACHXO2_CMD_IDCODE_PUB      0xE0U
-#define FPGA_MACHXO2_CMD_ISC_ENABLE      0xC6U
-#define FPGA_MACHXO2_CMD_ISC_ERASE       0x0EU
-#define FPGA_MACHXO2_CMD_ISC_PROGRAMDONE 0x5EU
-#define FPGA_MACHXO2_CMD_LSC_INITADDRESS 0x46U
-#define FPGA_MACHXO2_CMD_LSC_PROGINCRNV  0x70U
-#define FPGA_MACHXO2_CMD_LSC_REFRESH     0x79U
-
-/* Command operands. */
-#define FPGA_MACHXO2_ISC_ENABLE_OFFLINE     0x080000U
-#define FPGA_MACHXO2_ISC_ERASE_CONFIG       0x040000U
-#define FPGA_MACHXO2_LSC_PROGINCRNV_OPERAND 0x000001U
-
-/* Status register bits. */
-#define FPGA_MACHXO2_STATUS_DONE BIT(8)
-#define FPGA_MACHXO2_STATUS_BUSY BIT(12)
-
 struct fpga_machxo2_config {
 	struct spi_dt_spec bus;
 	struct gpio_dt_spec reset;
@@ -68,6 +47,7 @@ struct fpga_machxo2_data {
 	char info[160];
 };
 
+#define FPGA_MACHXO2_MAX_SPI_HZ 66000000U
 #define MACHXO2_LOW_DELAY_US       5U
 #define MACHXO2_HIGH_DELAY_US      200U
 #define MACHXO2_REFRESH_US         4800U
@@ -104,33 +84,22 @@ void fpga_machxo2_unlock(const struct device *dev)
 	k_mutex_unlock(&data->lock);
 }
 
-int fpga_machxo2_write_cmd(const struct device *dev, uint8_t opcode, uint32_t operand)
-{
-	const struct fpga_machxo2_config *config = dev->config;
-	uint8_t cmd[4];
-	struct spi_buf tx_buf = {
-		.buf = cmd,
-		.len = sizeof(cmd),
-	};
-	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1,
-	};
-
-	machxo2_build_cmd(cmd, opcode, operand);
-
-	return spi_write_dt(&config->bus, &tx);
-}
-
-int fpga_machxo2_write_cmd_data(const struct device *dev, uint8_t opcode, uint32_t operand,
-				const void *data, size_t len)
+int fpga_machxo2_transceive(const struct device *dev, uint8_t opcode, uint32_t operand,
+			    const void *tx_data, size_t tx_len, void *rx_data, size_t rx_len)
 {
 	const struct fpga_machxo2_config *config = dev->config;
 	uint8_t cmd[4];
 	struct spi_buf tx_bufs[2];
+	struct spi_buf rx_bufs[2];
 	struct spi_buf_set tx;
+	struct spi_buf_set rx;
+	int ret;
 
-	if ((data == NULL) && (len != 0U)) {
+	if ((tx_data == NULL) && (tx_len != 0U)) {
+		return -EINVAL;
+	}
+
+	if ((rx_data == NULL) && (rx_len != 0U)) {
 		return -EINVAL;
 	}
 
@@ -138,47 +107,24 @@ int fpga_machxo2_write_cmd_data(const struct device *dev, uint8_t opcode, uint32
 
 	tx_bufs[0].buf = cmd;
 	tx_bufs[0].len = sizeof(cmd);
-	tx_bufs[1].buf = (void *)data;
-	tx_bufs[1].len = len;
+	tx_bufs[1].buf = (void *)tx_data;
+	tx_bufs[1].len = tx_len;
 	tx.buffers = tx_bufs;
-	tx.count = (len == 0U) ? 1U : 2U;
+	tx.count = (tx_len == 0U) ? 1U : 2U;
 
-	return spi_write_dt(&config->bus, &tx);
-}
-
-int fpga_machxo2_read_cmd(const struct device *dev, uint8_t opcode, uint32_t operand, void *data,
-			  size_t len)
-{
-	const struct fpga_machxo2_config *config = dev->config;
-	uint8_t cmd[4];
-	uint8_t dummy[4];
-	struct spi_buf tx_buf;
-	struct spi_buf rx_bufs[2];
-	struct spi_buf_set tx;
-	struct spi_buf_set rx;
-	int ret;
-
-	if ((data == NULL) || (len == 0U)) {
-		return -EINVAL;
-	}
-
-	machxo2_build_cmd(cmd, opcode, operand);
-
-	tx_buf.buf = cmd;
-	tx_buf.len = sizeof(cmd);
-	tx.buffers = &tx_buf;
-	tx.count = 1;
-
-	rx_bufs[0].buf = dummy;
-	rx_bufs[0].len = sizeof(dummy);
-	rx_bufs[1].buf = data;
-	rx_bufs[1].len = len;
+	/* The first four RX bytes echo the command and are discarded; a NULL
+	 * buffer makes the controller clock them out without storing them.
+	 */
+	rx_bufs[0].buf = NULL;
+	rx_bufs[0].len = sizeof(cmd);
+	rx_bufs[1].buf = rx_data;
+	rx_bufs[1].len = rx_len;
 	rx.buffers = rx_bufs;
-	rx.count = 2;
+	rx.count = (rx_len == 0U) ? 1U : 2U;
 
 	ret = spi_transceive_dt(&config->bus, &tx, &rx);
 	if (ret != 0) {
-		LOG_ERR("SPI read command 0x%02x failed: %d", opcode, ret);
+		LOG_ERR("SPI command 0x%02x failed: %d", opcode, ret);
 	}
 
 	return ret;
@@ -189,7 +135,7 @@ static int fpga_machxo2_read_status(const struct device *dev, uint32_t *status)
 	uint8_t buf[4];
 	int ret;
 
-	ret = fpga_machxo2_read_cmd(dev, FPGA_MACHXO2_CMD_LSC_READ_STATUS, 0U, buf, sizeof(buf));
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_LSC_READ_STATUS, 0U, NULL, 0U, buf, sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
@@ -204,7 +150,7 @@ static int fpga_machxo2_read_idcode(const struct device *dev, uint32_t *idcode)
 	uint8_t buf[4];
 	int ret;
 
-	ret = fpga_machxo2_read_cmd(dev, FPGA_MACHXO2_CMD_IDCODE_PUB, 0U, buf, sizeof(buf));
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_IDCODE_PUB, 0U, NULL, 0U, buf, sizeof(buf));
 	if (ret != 0) {
 		return ret;
 	}
@@ -353,7 +299,7 @@ static int machxo2_refresh(const struct device *dev)
 	int ret;
 
 	for (;;) {
-		ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_LSC_REFRESH, 0U);
+		ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_LSC_REFRESH, 0U, NULL, 0U, NULL, 0U);
 		if (ret != 0) {
 			return ret;
 		}
@@ -379,8 +325,8 @@ static void machxo2_cleanup(const struct device *dev)
 {
 	int ret;
 
-	ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_ISC_ERASE,
-				     FPGA_MACHXO2_ISC_ERASE_CONFIG);
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_ISC_ERASE,
+				      FPGA_MACHXO2_ERASE_CONFIG, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		LOG_ERR("Cleanup erase failed: %d", ret);
 		return;
@@ -392,7 +338,7 @@ static void machxo2_cleanup(const struct device *dev)
 		return;
 	}
 
-	ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_LSC_REFRESH, 0U);
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_LSC_REFRESH, 0U, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		LOG_ERR("Cleanup refresh failed: %d", ret);
 	}
@@ -624,7 +570,7 @@ static int fpga_machxo2_reset(const struct device *dev)
 	if (config->reset.port != NULL) {
 		ret = machxo2_reset_and_wait(dev);
 	} else {
-		ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_LSC_REFRESH, 0U);
+		ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_LSC_REFRESH, 0U, NULL, 0U, NULL, 0U);
 		if (ret == 0) {
 			ret = fpga_machxo2_wait_not_busy(dev, MACHXO2_REFRESH_TIMEOUT_MS);
 		}
@@ -662,8 +608,8 @@ static int fpga_machxo2_load(const struct device *dev, uint32_t *image_ptr, uint
 		goto unlock;
 	}
 
-	ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_ISC_ENABLE,
-				     FPGA_MACHXO2_ISC_ENABLE_OFFLINE);
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_ISC_ENABLE,
+				      FPGA_MACHXO2_ENABLE_FLASH, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		goto unlock;
 	}
@@ -671,8 +617,8 @@ static int fpga_machxo2_load(const struct device *dev, uint32_t *image_ptr, uint
 	entered = true;
 	k_busy_wait(MACHXO2_LOW_DELAY_US);
 
-	ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_ISC_ERASE,
-				     FPGA_MACHXO2_ISC_ERASE_CONFIG);
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_ISC_ERASE,
+				      FPGA_MACHXO2_ERASE_CONFIG, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		goto unlock;
 	}
@@ -693,7 +639,7 @@ static int fpga_machxo2_load(const struct device *dev, uint32_t *image_ptr, uint
 		goto unlock;
 	}
 
-	ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_LSC_INITADDRESS, 0U);
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_LSC_INIT_ADDRESS, 0U, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		goto unlock;
 	}
@@ -708,8 +654,8 @@ static int fpga_machxo2_load(const struct device *dev, uint32_t *image_ptr, uint
 			.count = 1,
 		};
 
-		machxo2_build_cmd(page, FPGA_MACHXO2_CMD_LSC_PROGINCRNV,
-				  FPGA_MACHXO2_LSC_PROGINCRNV_OPERAND);
+		machxo2_build_cmd(page, FPGA_MACHXO2_CMD_LSC_PROG_INC_RNV,
+				  FPGA_MACHXO2_PROG_INCR);
 		memcpy(&page[4], &image[offset], FPGA_MACHXO2_PAGE_SIZE);
 
 		ret = spi_write_dt(&config->bus, &tx);
@@ -726,7 +672,7 @@ static int fpga_machxo2_load(const struct device *dev, uint32_t *image_ptr, uint
 		goto unlock;
 	}
 
-	ret = fpga_machxo2_write_cmd(dev, FPGA_MACHXO2_CMD_ISC_PROGRAMDONE, 0U);
+	ret = fpga_machxo2_transceive(dev, FPGA_MACHXO2_CMD_ISC_PROGRAM_DONE, 0U, NULL, 0U, NULL, 0U);
 	if (ret != 0) {
 		goto unlock;
 	}
