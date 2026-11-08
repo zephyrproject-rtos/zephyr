@@ -17,4 +17,5 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_RC_TX rc_tx.c)
+zephyr_library_sources_ifdef(CONFIG_RC_PROTOCOL_NEC protocols/nec.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE rc_handlers.c)
