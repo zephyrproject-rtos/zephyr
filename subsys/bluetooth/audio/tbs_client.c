@@ -1564,6 +1564,14 @@ static void tbs_client_disc_read_ccid(struct bt_conn *conn)
 	struct bt_tbs_instance *inst = srv_inst->current_inst;
 	int err;
 
+	/* The CCID is mandatory, so a server without one is invalid */
+	if (inst->ccid_handle == 0U) {
+		LOG_WRN("No CCID in instance %u", tbs_index(conn, inst));
+		tbs_client_discover_complete(conn, -EBADMSG);
+
+		return;
+	}
+
 	err = tbs_client_gatt_read(conn, inst, inst->ccid_handle, disc_read_ccid_cb);
 	if (err != 0) {
 		tbs_client_discover_complete(conn, err);
@@ -1993,6 +2001,11 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
 
 	inst = tbs_inst_by_index(conn, inst_index);
 	if (inst == NULL) {
+		return -EINVAL;
+	}
+
+	if (inst->call_cp_sub_params.value_handle == 0U) {
+		LOG_DBG("Handle not set");
 		return -EINVAL;
 	}
 
