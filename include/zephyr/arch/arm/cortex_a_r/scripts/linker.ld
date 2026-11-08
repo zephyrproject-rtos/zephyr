@@ -75,6 +75,9 @@ _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
 _region_min_align = CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE;
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 _region_min_align = CONFIG_MMU_PAGE_SIZE;
+#elif defined(CONFIG_ARMV5_FLAT_MMU) && defined(CONFIG_NOCACHE_MEMORY)
+/* The ARMv5 flat MMU maps the nocache region with 4 kB pages. */
+_region_min_align = 4096;
 #else
 /* If building without MPU/MMU support, use default 4-byte alignment. */
 _region_min_align = 4;
