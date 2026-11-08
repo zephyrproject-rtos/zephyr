@@ -14,6 +14,10 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 configdefault BT_HCI_ACL_FLOW_CONTROL
 	default y
 
+configdefault BT_BUF_ACL_RX_SIZE
+	# ESP32-S3 rejects Host Buffer Size with an ACL length below 251 bytes.
+	default 251 if SOC_SERIES_ESP32S3 && BT_HCI_ACL_FLOW_CONTROL
+
 choice ESP_BT_HEAP
 	prompt "Bluetooth heap type"
 	default ESP_BT_HEAP_SYSTEM

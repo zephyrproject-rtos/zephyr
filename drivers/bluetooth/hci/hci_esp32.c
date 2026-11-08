@@ -21,6 +21,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_esp32);
 
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_SERIES_ESP32S3) || !IS_ENABLED(CONFIG_BT_HCI_HOST) ||
+	     !IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || CONFIG_BT_BUF_ACL_RX_SIZE >= 251U,
+	     "ESP32-S3 requires BT_BUF_ACL_RX_SIZE >= 251 with controller-to-host flow control");
+
 #if defined(CONFIG_SOC_SERIES_ESP32) || defined(CONFIG_SOC_SERIES_ESP32S3) ||                      \
 	defined(CONFIG_SOC_SERIES_ESP32C3)
 extern const char *btdm_controller_get_compile_version(void);
