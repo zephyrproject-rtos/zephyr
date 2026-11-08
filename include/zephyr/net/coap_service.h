@@ -64,6 +64,9 @@ struct coap_service_data {
 	/* Local address to send the reply from; NET_AF_UNSPEC means let the OS pick. */
 	struct net_sockaddr_storage current_local_addr;
 	struct net_sockaddr_storage pending_local_addr[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
+	/* Interface the request came in on, sent back with the local address; 0 if unknown. */
+	int current_local_ifindex;
+	int pending_local_ifindex[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
 	/* Cached at coap_service_start() so the hot receive path doesn't recompute it. */
 	bool secure;
 	/* Set when the socket agreed to turn on PKTINFO. Some offloaded
