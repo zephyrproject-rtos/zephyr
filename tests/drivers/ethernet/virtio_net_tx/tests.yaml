@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.ethernet.virtio_net_tx:
+    platform_allow:
+      - qemu_x86_64
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_x86_64
+      - qemu_cortex_a53
+    timeout: 180
+    tags:
+      - ethernet
+      - virtio

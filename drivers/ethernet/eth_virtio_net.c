@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Antmicro <www.antmicro.com>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +11,6 @@
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys/atomic.h>
 #include "eth.h"
 
 #define DT_DRV_COMPAT virtio_net
@@ -104,26 +104,37 @@ struct _rx_cb_data {
 	uint16_t buf_no;
 };
 
+/* Bound the submission array while covering standard frames in 128-byte fragments. */
+#define VIRTIO_NET_TX_DESCRIPTORS 17U
+
+struct virtnet_tx {
+	void *fifo_link;
+	struct k_fifo *free;
+	struct net_pkt *pkt;
+	uint8_t buf[VIRTIO_NET_BUFLEN];
+};
+
 struct virtnet_data {
 	const struct device *dev;
 	struct net_if *iface;
 	const struct _virtio_net_config *virtio_devcfg;
 	uint8_t mac[6];
 	struct _rx_cb_data rx_cb_data[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS];
-	uint8_t txb[VIRTIO_NET_BUFLEN];
+	struct k_fifo tx_free;
+	struct virtnet_tx tx[CONFIG_ETH_VIRTIO_NET_TX_BUFFERS];
 	uint8_t rxb[CONFIG_ETH_VIRTIO_NET_RX_BUFFERS][VIRTIO_NET_BUFLEN];
 };
 
 static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
 {
-	ARG_UNUSED(q_size_max);
+	uint32_t wanted = q_index % 2U == 0U
+				  ? CONFIG_ETH_VIRTIO_NET_RX_BUFFERS
+				  : CONFIG_ETH_VIRTIO_NET_TX_BUFFERS * VIRTIO_NET_TX_DESCRIPTORS;
+	uint32_t size = MIN(BIT(LOG2CEIL(wanted)), MIN(q_size_max, KB(32)));
+
 	ARG_UNUSED(priv);
 
-	if (q_index % 2 == 0) { /* receiving virtqueue (even-numbered) */
-		return CONFIG_ETH_VIRTIO_NET_RX_BUFFERS;
-	} else {
-		return 1;
-	}
+	return size == 0U ? 0U : BIT(LOG2(size));
 }
 
 static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev __unused,
@@ -133,28 +144,68 @@ static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev _
 	       ETHERNET_LINK_2500BASE | ETHERNET_LINK_5000BASE;
 }
 
+static void virtnet_tx_done(void *priv, uint32_t len)
+{
+	struct virtnet_tx *tx = priv;
+
+	ARG_UNUSED(len);
+
+	net_pkt_unref(tx->pkt);
+	k_fifo_put(tx->free, tx);
+}
+
 static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
+	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_TX(1));
+	struct virtq_buf bufs[VIRTIO_NET_TX_DESCRIPTORS];
 	size_t len = net_pkt_get_len(pkt);
+	uint16_t count = 1U;
+	int ret;
 
 	if (len > NET_ETH_MAX_FRAME_SIZE) {
 		return -EMSGSIZE;
 	}
 
-	if (net_pkt_read(pkt, data->txb + sizeof(struct _virtio_net_hdr), len)) {
-		LOG_ERR("could not read contents of packet to be sent");
-		return -EIO;
+	struct virtnet_tx *tx = k_fifo_get(&data->tx_free, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
+
+	if (tx == NULL) {
+		return -EBUSY;
 	}
 
-	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_TX(1));
-	struct virtq_buf vqbuf[] = {
-		{.addr = data->txb, .len = sizeof(struct _virtio_net_hdr) + len}};
+	memset(tx->buf, 0, sizeof(struct _virtio_net_hdr));
+	bufs[0] = (struct virtq_buf){.addr = tx->buf, .len = sizeof(struct _virtio_net_hdr)};
 
-	if (virtq_add_buffer_chain(vq, vqbuf, 1, 1, NULL, NULL, K_FOREVER)) {
-		LOG_ERR("could not send packet");
-		return -EIO;
+	for (struct net_buf *frag = pkt->frags; frag != NULL; frag = frag->frags) {
+		if (frag->len == 0U) {
+			continue;
+		}
+		if (count == ARRAY_SIZE(bufs) || count >= vq->num ||
+		    !virtio_buf_is_in_linear_mapping(frag->data, frag->len)) {
+			/* Keep one-descriptor queues and non-linear packet storage usable. */
+			if (net_buf_linearize(tx->buf + sizeof(struct _virtio_net_hdr),
+					      NET_ETH_MAX_FRAME_SIZE, pkt->frags, 0, len) != len) {
+				k_fifo_put(&data->tx_free, tx);
+				return -EIO;
+			}
+			bufs[0].len += len;
+			count = 1U;
+			break;
+		}
+		bufs[count++] = (struct virtq_buf){.addr = frag->data, .len = frag->len};
+	}
+
+	/* Ethernet L2 releases its reference after send returns. */
+	tx->pkt = net_pkt_ref(pkt);
+	if (tx->pkt == NULL) {
+		k_fifo_put(&data->tx_free, tx);
+		return -EINVAL;
+	}
+	ret = virtq_add_buffer_chain(vq, bufs, count, count, virtnet_tx_done, tx, K_FOREVER);
+	if (ret != 0) {
+		virtnet_tx_done(tx, 0);
+		return ret;
 	}
 	virtio_notify_virtqueue(config->vdev, VIRTQ_TX(1));
 	return 0;
@@ -200,7 +251,7 @@ static void virtnet_if_init(struct net_if *iface)
 	net_if_set_link_addr(iface, data->mac, sizeof(data->virtio_devcfg->mac), NET_LINK_ETHERNET);
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
 
-	for (int i = 0; i < CONFIG_ETH_VIRTIO_NET_RX_BUFFERS; i++) {
+	for (uint16_t i = 0; i < MIN(CONFIG_ETH_VIRTIO_NET_RX_BUFFERS, vq->num); i++) {
 		data->rx_cb_data[i].data = data;
 		data->rx_cb_data[i].buf_no = i;
 
@@ -223,14 +274,33 @@ static int virtnet_dev_init(const struct device *dev)
 	data->virtio_devcfg = virtio_get_device_specific_config(config->vdev);
 	if (data->virtio_devcfg == NULL) {
 		LOG_ERR("could not get config struct");
+		return -ENODEV;
 	}
-	if (virtio_commit_feature_bits(config->vdev)) {
+	int ret = virtio_commit_feature_bits(config->vdev);
+
+	if (ret != 0) {
 		LOG_ERR("could not commit feature bits");
+		return ret;
 	}
 	LOG_DBG("MAC address is %02x:%02x:%02x:%02x:%02x:%02x", data->mac[0], data->mac[1],
 		data->mac[2], data->mac[3], data->mac[4], data->mac[5]);
 
-	virtio_init_virtqueues(config->vdev, 2, virtnet_enum_queues_cb, NULL);
+	k_fifo_init(&data->tx_free);
+	for (size_t i = 0; i < ARRAY_SIZE(data->tx); i++) {
+		data->tx[i].free = &data->tx_free;
+		k_fifo_put(&data->tx_free, &data->tx[i]);
+	}
+
+	ret = virtio_init_virtqueues(config->vdev, 2, virtnet_enum_queues_cb, NULL);
+	if (ret < 0) {
+		return ret;
+	}
+	struct virtq *rx = virtio_get_virtqueue(config->vdev, VIRTQ_RX(1));
+	struct virtq *tx = virtio_get_virtqueue(config->vdev, VIRTQ_TX(1));
+
+	if (rx == NULL || tx == NULL || rx->num == 0U || tx->num == 0U) {
+		return -ENODEV;
+	}
 	virtio_finalize_init(config->vdev);
 
 	return 0;
