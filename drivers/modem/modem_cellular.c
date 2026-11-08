@@ -35,6 +35,9 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT \
 	K_MSEC(CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS)
 
+/* Retry delay while waiting for a running chat script to complete */
+#define MODEM_CELLULAR_CHAT_BUSY_RETRY_TIMEOUT K_MSEC(100)
+
 /* Magic constants */
 #define CSQ_RSSI_UNKNOWN		     (99)
 #define CESQ_RSRP_UNKNOWN		     (255)
@@ -2049,6 +2052,38 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 	return 0;
 }
 
+static void modem_cellular_await_registered_next(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	if (modem_cellular_has_network_script(config)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+	} else {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
+	}
+}
+
+/*
+ * Move on once the modem is registered. The dial state attaches the chat to DLCI2, so
+ * wait until no script runs on DLCI1: neither the periodic script nor a script run by
+ * an API call such as cellular_get_signal(), whose result the state machine never sees.
+ */
+static bool modem_cellular_await_registered_try_next(struct modem_cellular_data *data)
+{
+	if (!modem_cellular_is_registered(data)) {
+		return false;
+	}
+
+	if (modem_chat_is_running(&data->chat)) {
+		/* Replace a pending periodic deadline, which can be seconds away */
+		modem_cellular_update_timer(data, MODEM_CELLULAR_CHAT_BUSY_RETRY_TIMEOUT);
+	} else {
+		modem_cellular_await_registered_next(data);
+	}
+
+	return true;
+}
+
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
 							  enum modem_cellular_event evt)
 {
@@ -2058,7 +2093,9 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		if (!modem_cellular_await_registered_try_next(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -2066,12 +2103,15 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		if (modem_cellular_is_script_retry_exceeded(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-		} else {
+		} else if (!modem_cellular_await_registered_try_next(data)) {
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (modem_cellular_await_registered_try_next(data)) {
+			break;
+		}
 		if (config->vendor->scripts.periodic == NULL) {
 			break;
 		}
@@ -2103,11 +2143,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_REGISTERED:
-		if (modem_cellular_has_network_script(config)) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
-		} else {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
-		}
+		modem_cellular_await_registered_try_next(data);
 		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
