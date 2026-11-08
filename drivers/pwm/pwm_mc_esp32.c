@@ -58,6 +58,7 @@ struct mcpwm_esp32_data {
 	mcpwm_hal_context_t hal;
 	uint32_t mcpwm_clk_hz;
 	struct k_sem cmd_sem;
+	struct k_spinlock lock;
 	uint8_t timers_started;
 };
 
@@ -337,6 +338,7 @@ static int mcpwm_esp32_disable_capture(const struct device *dev, uint32_t channe
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 	struct mcpwm_esp32_channel_config *channel = &config->channel_config[channel_idx];
 	struct mcpwm_esp32_capture_config *capture = &channel->capture;
+	k_spinlock_key_t key;
 
 	if (!channel) {
 		LOG_ERR("Error getting channel %d", channel_idx);
@@ -348,8 +350,10 @@ static int mcpwm_esp32_disable_capture(const struct device *dev, uint32_t channe
 		return -EINVAL;
 	}
 
+	key = k_spin_lock(&data->lock);
 	mcpwm_ll_capture_enable_channel(data->hal.dev, capture->capture_signal, false);
 	mcpwm_ll_intr_enable(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal), false);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -360,6 +364,7 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 	struct mcpwm_esp32_data *data = (struct mcpwm_esp32_data *const)(dev)->data;
 	struct mcpwm_esp32_channel_config *channel = &config->channel_config[channel_idx];
 	struct mcpwm_esp32_capture_config *capture = &channel->capture;
+	k_spinlock_key_t key;
 
 	if (!channel) {
 		LOG_ERR("Error getting channel %d", channel_idx);
@@ -381,6 +386,8 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 		return -EBUSY;
 	}
 
+	capture->skip_irq = 0;
+
 	mcpwm_ll_group_set_clock_prescale(config->index, config->prescale + 1);
 	mcpwm_ll_group_enable_shadow_mode(data->hal.dev);
 	mcpwm_ll_group_flush_shadow(data->hal.dev);
@@ -391,10 +398,10 @@ static int mcpwm_esp32_enable_capture(const struct device *dev, uint32_t channel
 	mcpwm_ll_capture_enable_posedge(data->hal.dev, capture->capture_signal, true);
 	mcpwm_ll_capture_set_prescale(data->hal.dev, capture->capture_signal, 1);
 
+	key = k_spin_lock(&data->lock);
 	mcpwm_ll_intr_enable(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal), true);
 	mcpwm_ll_intr_clear_status(data->hal.dev, MCPWM_LL_EVENT_CAPTURE(capture->capture_signal));
-
-	capture->skip_irq = 0;
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
