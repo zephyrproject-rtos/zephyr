@@ -18,4 +18,11 @@ config ENERGY_METER_INIT_PRIORITY
 	help
 	  Energy meter device driver initialization priority.
 
+config ENERGY_METER_SHELL
+	bool "Energy meter shell"
+	depends on SHELL
+	help
+	  Enable the energy_meter shell command, which lists the values an
+	  energy meter measures and reads them once or periodically.
+
 endif # ENERGY_METER
