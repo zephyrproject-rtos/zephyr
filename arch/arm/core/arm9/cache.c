@@ -13,7 +13,10 @@
  * ("entire cache") or an MVA. Range operations are therefore a simple loop
  * over cache lines.
  *
- * Note that "clean" by MVA is an ARMv5 *TE* addition.
+ * Note that "clean" by MVA is an ARMv5 *TE* addition, which both ARM926EJ-S
+ * and XScale implement. XScale has neither "clean & invalidate" by MVA nor the
+ * test-clean operations: it needs two operations per line, and cleans the
+ * whole cache by displacing it with line allocations.
  */
 
 #include <zephyr/kernel.h>
@@ -23,6 +26,29 @@
 #include <zephyr/sys/util.h>
 
 #define LINE_SIZE CONFIG_DCACHE_LINE_SIZE
+
+#ifdef CONFIG_CPU_XSCALE
+#define XSCALE_DCACHE_SIZE (32U * 1024U)
+
+/*
+ * Cacheable memory that exists only to be allocated over. Two windows are
+ * needed: lines left behind by the previous clean displace nothing.
+ */
+static uint8_t clean_area[2U * XSCALE_DCACHE_SIZE] __aligned(XSCALE_DCACHE_SIZE);
+
+static void xscale_dcache_clean_all(void)
+{
+	static size_t window;
+	uintptr_t addr = (uintptr_t)&clean_area[window];
+	uintptr_t end = addr + XSCALE_DCACHE_SIZE;
+
+	window ^= XSCALE_DCACHE_SIZE;
+
+	for (; addr < end; addr += LINE_SIZE) {
+		MCR15(c7, 0, c2, 5, addr);
+	}
+}
+#endif /* CONFIG_CPU_XSCALE */
 
 static ALWAYS_INLINE void dcache_op_range(void *start_addr, size_t size, int op)
 {
@@ -38,7 +64,12 @@ static ALWAYS_INLINE void dcache_op_range(void *start_addr, size_t size, int op)
 			MCR15(c7, 0, c6, 1, addr);
 			break;
 		default: /* clean and invalidate */
+#ifdef CONFIG_CPU_XSCALE
+			MCR15(c7, 0, c10, 1, addr);
+			MCR15(c7, 0, c6, 1, addr);
+#else
 			MCR15(c7, 0, c14, 1, addr);
+#endif
 			break;
 		}
 	}
@@ -76,6 +107,13 @@ void arch_dcache_disable(void)
 
 int arch_dcache_flush_all(void)
 {
+#ifdef CONFIG_CPU_XSCALE
+	unsigned int key = arch_irq_lock();
+
+	xscale_dcache_clean_all();
+	__DSB();
+	arch_irq_unlock(key);
+#else
 	/*
 	 * ARMv5 has no "clean entire data cache" operation that works for a
 	 * write-back cache without walking it, so use the test-clean loop
@@ -87,6 +125,7 @@ int arch_dcache_flush_all(void)
 			 : /* no inputs */
 			 : "cc", "memory");
 	__DSB();
+#endif
 
 	return 0;
 }
@@ -101,12 +140,21 @@ int arch_dcache_invd_all(void)
 
 int arch_dcache_flush_and_invd_all(void)
 {
+#ifdef CONFIG_CPU_XSCALE
+	unsigned int key = arch_irq_lock();
+
+	xscale_dcache_clean_all();
+	__DSB();
+	MCR15(c7, 0, c6, 0, 0);
+	arch_irq_unlock(key);
+#else
 	__asm__ volatile("1:	mrc	p15, 0, r15, c7, c14, 3\n\t"
 			 "	bne	1b"
 			 : /* no outputs */
 			 : /* no inputs */
 			 : "cc", "memory");
 	__DSB();
+#endif
 
 	return 0;
 }

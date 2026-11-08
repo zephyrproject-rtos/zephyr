@@ -58,6 +58,11 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 	bic	r0, r0, #SCTLR_Z_BIT
 	bic	r0, r0, #SCTLR_V_BIT
 	mcr	p15, 0, r0, c1, c0, 0
+#ifdef CONFIG_CPU_XSCALE
+	mrc	p15, 0, r0, c2, c0, 0		/* CPWAIT */
+	mov	r0, r0
+	sub	pc, pc, #4
+#endif
 
 	mov	r0, #0
 	mcr	p15, 0, r0, c7, c7, 0		/* invalidate I and D caches */
