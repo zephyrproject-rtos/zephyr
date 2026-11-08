@@ -53,6 +53,24 @@ Events
 Energy pulse outputs, interrupt outputs and fault signals are reported through a callback set with
 :c:func:`energy_meter_set_event_callback`.
 
+Shell
+*****
+
+With :kconfig:option:`CONFIG_ENERGY_METER_SHELL`, the ``energy_meter`` shell command lists what a
+meter measures (``info``), prints all values once (``get``) or periodically (``watch``), reads a
+single common or device-specific quantity (``read``) and resets the accumulated energy
+(``reset_energy``).
+
+.. code-block:: console
+
+   uart:~$ energy_meter get meter@0
+                                                 a              b              c          total
+   voltage [V]                             230.125        229.870        231.004              -
+   current [A]                               5.123          4.998          5.051              -
+   active_power [W]                       1150.320       1120.110       1149.870       3420.300
+   power_factor                              0.985          0.982          0.987          0.985
+   frequency [Hz]                                -              -              -         50.020
+
 .. _energy_meter_api_reference:
 
 API Reference

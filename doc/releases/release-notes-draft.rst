@@ -61,7 +61,8 @@ Libraries / Subsystems
 
 * Energy meter
 
-  * Added the :ref:`energy meter API <energy_meter_api>` for electrical energy metering ICs.
+  * Added the :ref:`energy meter API <energy_meter_api>` for electrical energy metering ICs, with
+    an ``energy_meter`` shell command that reads any meter that implements it.
 
 * FIDO2
 
