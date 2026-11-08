@@ -328,8 +328,8 @@ extern struct k_mem_partition rtio_partition;
  * @brief Statically define and initialize an RTIO context
  *
  * @param name Name of the RTIO
- * @param sq_sz Size of the submission queue, must be power of 2
- * @param cq_sz Size of the completion queue, must be power of 2
+ * @param sq_sz Size of the submission queue entry pool
+ * @param cq_sz Size of the completion queue entry pool
  * @param num_blks Number of blocks in the memory pool
  * @param blk_size The number of bytes in each block
  * @param balign The block alignment
