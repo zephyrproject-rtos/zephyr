@@ -1,0 +1,164 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip ATM90E26 single-phase energy metering IC (formerly Atmel M90E26).
+
+  Calibration and configuration values are written to the chip at
+  initialization, followed by the CS1 and CS2 checksums, which the driver
+  computes. Every register property defaults to the power-on value from the
+  datasheet. All register values are 16-bit.
+
+properties:
+  meter-constant:
+    type: int
+    default: 3200
+    description: |
+      Meter constant (MC) in pulses per kWh. One CF pulse corresponds to
+      1 kWh / MC. Used to convert the energy registers to watt-hours; it
+      must match the value pl-constant was derived from.
+
+  current-scale:
+    type: array
+    default: [1, 1]
+    description: |
+      Ratio <numerator denominator> of the actual current to the current
+      the chip is calibrated to read. Each value is from 1 to 65535.
+
+      The RMS current registers stop at 65.535 A and the power registers
+      at 32.767 kW. To measure more, calibrate the chip (i-gain-l,
+      i-gain-n, l-gain, n-gain) to read a fraction of the actual current
+      and set this property to the inverse of that fraction. The driver
+      multiplies current, power and energy by the ratio; voltage, power
+      factor, phase angle and frequency are not affected. Keep
+      meter-constant and pl-constant as calibrated, so that energy scales
+      with power.
+
+      For example, a meter calibrated to read one tenth of the load
+      current uses <10 1>.
+
+  irq-gpios:
+    type: phandle-array
+    description: IRQ interrupt output, reported as alarm event 0.
+
+  wrn-out-gpios:
+    type: phandle-array
+    description: WarnOut fatal error warning output, reported as fault event 0.
+
+  cf1-gpios:
+    type: phandle-array
+    description: CF1 active energy pulse output, reported as pulse event 0.
+
+  cf2-gpios:
+    type: phandle-array
+    description: CF2 reactive energy pulse output, reported as pulse event 1.
+
+  func-en:
+    type: int
+    default: 0x000c
+    description: FuncEn (02h), function enable.
+
+  sag-th:
+    type: int
+    default: 0x1d6a
+    description: SagTh (03h), voltage sag threshold.
+
+  pl-constant:
+    type: int
+    default: 0x0015d174
+    description: PL_Constant, written to PLconstH (21h) and PLconstL (22h).
+
+  l-gain:
+    type: int
+    default: 0x0000
+    description: Lgain (23h), L line calibration gain.
+
+  l-phi:
+    type: int
+    default: 0x0000
+    description: Lphi (24h), L line calibration angle.
+
+  n-gain:
+    type: int
+    default: 0x0000
+    description: Ngain (25h), N line calibration gain.
+
+  n-phi:
+    type: int
+    default: 0x0000
+    description: Nphi (26h), N line calibration angle.
+
+  p-start-th:
+    type: int
+    default: 0x08bd
+    description: PStartTh (27h), active startup power threshold.
+
+  p-nol-th:
+    type: int
+    default: 0x0000
+    description: PNolTh (28h), active no-load power threshold.
+
+  q-start-th:
+    type: int
+    default: 0x0aec
+    description: QStartTh (29h), reactive startup power threshold.
+
+  q-nol-th:
+    type: int
+    default: 0x0000
+    description: QNolTh (2Ah), reactive no-load power threshold.
+
+  mmode:
+    type: int
+    default: 0x9422
+    description: MMode (2Bh), metering mode configuration.
+
+  u-gain:
+    type: int
+    default: 0x6720
+    description: Ugain (31h), voltage RMS gain.
+
+  i-gain-l:
+    type: int
+    default: 0x7a13
+    description: IgainL (32h), L line current RMS gain.
+
+  i-gain-n:
+    type: int
+    default: 0x7530
+    description: IgainN (33h), N line current RMS gain.
+
+  u-offset:
+    type: int
+    default: 0x0000
+    description: Uoffset (34h), voltage offset.
+
+  i-offset-l:
+    type: int
+    default: 0x0000
+    description: IoffsetL (35h), L line current offset.
+
+  i-offset-n:
+    type: int
+    default: 0x0000
+    description: IoffsetN (36h), N line current offset.
+
+  p-offset-l:
+    type: int
+    default: 0x0000
+    description: PoffsetL (37h), L line active power offset.
+
+  q-offset-l:
+    type: int
+    default: 0x0000
+    description: QoffsetL (38h), L line reactive power offset.
+
+  p-offset-n:
+    type: int
+    default: 0x0000
+    description: PoffsetN (39h), N line active power offset.
+
+  q-offset-n:
+    type: int
+    default: 0x0000
+    description: QoffsetN (3Ah), N line reactive power offset.

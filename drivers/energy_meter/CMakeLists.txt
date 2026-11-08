@@ -10,5 +10,6 @@ zephyr_library_sources_ifdef(CONFIG_ENERGY_METER_SHELL energy_meter_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE energy_meter_syscall_handlers.c)
 
 # zephyr-keep-sorted-start
+add_subdirectory_ifdef(CONFIG_ATM90E26 atm90e26)
 add_subdirectory_ifdef(CONFIG_ATM90E32AS atm90e32as)
 # zephyr-keep-sorted-stop

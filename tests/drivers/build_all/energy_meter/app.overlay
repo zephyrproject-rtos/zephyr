@@ -15,7 +15,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clock-frequency = <2000000>;
-			cs-gpios = <&test_gpio 0 0>;
+			cs-gpios = <&test_gpio 0 0>, <&test_gpio 0 0>;
 			status = "okay";
 
 			test_spi_atm90e32as: atm90e32as@0 {
@@ -31,6 +31,28 @@
 				cf2-gpios = <&test_gpio 0 0>;
 				cf3-gpios = <&test_gpio 0 0>;
 				cf4-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_atm90e26: atm90e26@1 {
+				compatible = "microchip,atm90e26";
+				reg = <1>;
+				spi-max-frequency = <1000000>;
+				irq-gpios = <&test_gpio 0 0>;
+				wrn-out-gpios = <&test_gpio 0 0>;
+				cf1-gpios = <&test_gpio 0 0>;
+				cf2-gpios = <&test_gpio 0 0>;
+			};
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			current-speed = <9600>;
+			status = "okay";
+
+			test_uart_atm90e26: atm90e26 {
+				compatible = "microchip,atm90e26";
+				irq-gpios = <&test_gpio 0 0>;
 			};
 		};
 
