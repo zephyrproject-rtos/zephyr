@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_T153_E907
+	bool
+
+config SOC
+	default "t153" if SOC_T153_E907

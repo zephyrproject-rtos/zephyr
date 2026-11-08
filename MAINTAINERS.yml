@@ -418,6 +418,8 @@ Allwinner Platforms:
     - boards/xunlong/opi_zero2w/
     - dts/arm/allwinner/
     - dts/arm64/allwinner/
+    - dts/riscv/allwinner/
+    - dts/vendor/allwinner/
     - soc/allwinner/
   labels:
     - "platform: Allwinner"
