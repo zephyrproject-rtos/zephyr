@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <hisilicon/hi3861.dtsi>
+
+/ {
+	compatible = "bearpi,bearpi-hm-nano";
+	model = "BearPi-HM Nano";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &loader_sram;
+		zephyr,system-timer = &timer0;
+	};
+
+	/* RAM executable window used by the ROM serial loader; preserve its work areas. */
+	loader_sram: memory@10a040 {
+		compatible = "mmio-sram";
+		reg = <0x0010a040 (DT_SIZE_K(64) - 0x40)>;
+	};
+};
+
+&timer0 {
+	clock-frequency = <DT_FREQ_M(40)>;
+	status = "okay";
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};
