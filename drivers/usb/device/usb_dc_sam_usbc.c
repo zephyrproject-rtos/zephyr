@@ -694,6 +694,7 @@ int usb_dc_attach(void)
 
 	retval = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (retval < 0) {
+		irq_unlock(key);
 		return retval;
 	}
 
