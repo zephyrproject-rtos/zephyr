@@ -19,6 +19,31 @@ tests:
       - native_sim
       - native_sim/native/64
 
+  # ADIN1140 and LAN865x share oa_tc6.c. Build each one on its own, so that
+  # Kconfig options selected by one driver cannot hide a missing dependency
+  # of the other.
+  net.ethernet.build.spi.adin1140:
+    depends_on:
+      - eth
+    extra_args: DTC_OVERLAY_FILE="spi_adin1140.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+      - CONFIG_NET_L2_ETHERNET=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
+  net.ethernet.build.spi.lan865x:
+    depends_on:
+      - eth
+    extra_args: DTC_OVERLAY_FILE="spi_lan865x.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+      - CONFIG_NET_L2_ETHERNET=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
   net.ethernet.build.stm32_ethernet:
     depends_on:
       - eth
