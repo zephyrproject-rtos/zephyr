@@ -472,6 +472,10 @@ static bool seed_from_esf(struct unwind_control_block *ucb, const struct arch_es
 	}
 
 	ucb->vrs[7] = esf->extra_info.callee->v4;
+#if defined(CONFIG_CPU_AARCH32_ARM9)
+	/* ARM state code uses r11 as its frame pointer. */
+	ucb->vrs[11] = esf->extra_info.callee->v8;
+#endif
 	ucb->vrs[13] = esf_stack_pointer(esf) + sizeof(esf->basic);
 
 #if defined(CONFIG_CPU_CORTEX_M)
@@ -500,6 +504,13 @@ static bool __noinline seed_from_current(struct unwind_control_block *ucb)
 	uint32_t lr;
 	uint32_t pc;
 
+#if defined(CONFIG_CPU_AARCH32_ARM9)
+	uint32_t fp_arm;
+
+	__asm__ volatile("mov %0, r11" : "=r"(fp_arm));
+	ucb->vrs[11] = fp_arm;
+#endif
+
 	__asm__ volatile(
 		"mov %0, r7\n"
 		"mov %1, sp\n"
@@ -520,7 +531,9 @@ static bool __noinline seed_from_current(struct unwind_control_block *ucb)
 static bool seed_from_thread(struct unwind_control_block *ucb, const struct k_thread *thread)
 {
 	const _callee_saved_t *csf;
+#if !defined(CONFIG_CPU_AARCH32_ARM9)
 	const struct __basic_sf *basic;
+#endif
 
 	if (thread == NULL) {
 		return false;
@@ -530,6 +543,26 @@ static bool seed_from_thread(struct unwind_control_block *ucb, const struct k_th
 	if (csf->psp == 0U) {
 		return false;
 	}
+
+#if defined(CONFIG_CPU_AARCH32_ARM9)
+	/*
+	 * z_arm_context_switch() saves r4-r11, sp and lr as they are at its
+	 * call, so the thread resumes at lr with sp unchanged.
+	 */
+	ucb->vrs[4] = csf->v1;
+	ucb->vrs[5] = csf->v2;
+	ucb->vrs[6] = csf->v3;
+	ucb->vrs[7] = csf->v4;
+	ucb->vrs[8] = csf->v5;
+	ucb->vrs[9] = csf->v6;
+	ucb->vrs[10] = csf->v7;
+	ucb->vrs[11] = csf->v8;
+	ucb->vrs[13] = csf->psp;
+	ucb->vrs[14] = csf->lr;
+	ucb->vrs[15] = csf->lr;
+
+	return true;
+#else
 
 	basic = (const struct __basic_sf *)csf->psp;
 
@@ -561,6 +594,7 @@ static bool seed_from_thread(struct unwind_control_block *ucb, const struct k_th
 	ucb->vrs[15] = (basic->lr != 0U) ? basic->lr : basic->pc;
 
 	return true;
+#endif /* CONFIG_CPU_AARCH32_ARM9 */
 }
 
 static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,

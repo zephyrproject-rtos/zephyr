@@ -270,7 +270,7 @@ config ARM_STACK_PROTECTION
 
 config ARCH_HAS_STACKWALK
 	bool
-	default y if EXTRA_EXCEPTION_INFO && CPU_CORTEX_M
+	default y if EXTRA_EXCEPTION_INFO && (CPU_CORTEX_M || CPU_AARCH32_ARM9)
 	help
 	  Internal config to indicate that the arch_stack_walk() API is implemented
 	  and it can be enabled.
