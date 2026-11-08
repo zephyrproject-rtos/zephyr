@@ -15,6 +15,9 @@ configdefault ETH_DRIVER
 configdefault NET_IF_MAX_IPV6_COUNT
 	default 2 if DT_HAS_NXP_ENET_MAC_ENABLED
 
+configdefault ZVFS_POLL_MAX
+	default 8 if DT_HAS_NXP_ENET_MAC_ENABLED
+
 # The external flash is bound to a power domain, so restore its
 # FlexSPI configuration when that domain is turned back on.
 configdefault FLASH_MCUX_FLEXSPI_NOR_PM_RESTORE
