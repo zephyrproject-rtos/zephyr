@@ -45,4 +45,12 @@ config ATM90E26_SHELL
 	  register rewrites its block with a new checksum. Registers written
 	  from the shell keep their value until the chip is reset.
 
+config EMUL_ATM90E26
+	bool "Emulator for the ATM90E26"
+	default y
+	depends on EMUL
+	help
+	  Enable the SPI and UART emulator for the ATM90E26, used by the driver
+	  tests.
+
 endif # ATM90E26

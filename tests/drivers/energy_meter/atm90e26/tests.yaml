@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - energy_meter
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.energy_meter.atm90e26: {}
+  drivers.energy_meter.atm90e26.full:
+    extra_configs:
+      - CONFIG_ATM90E26_EVENTS=y
+      - CONFIG_ATM90E26_VERIFY_READ=y
+      - CONFIG_ATM90E26_SHELL=y
+      - CONFIG_ENERGY_METER_SHELL=y
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=4096
+      - CONFIG_SHELL_VT100_COMMANDS=n
