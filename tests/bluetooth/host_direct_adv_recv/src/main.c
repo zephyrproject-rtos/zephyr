@@ -19,16 +19,14 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
-#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
 
-#define DT_DRV_COMPAT zephyr_bt_hci_test
+#include <fake_hci.h>
 
 #define TEST_RSSI (-42)
 
@@ -43,9 +41,6 @@ static const bt_addr_le_t test_target_rpa = {
 	.type = BT_ADDR_LE_RANDOM,
 	.a = {.val = {0x9a, 0x3d, 0xe0, 0x55, 0xb1, 0x7c}},
 };
-
-/* LE features the fake Controller reports. Set before bt_enable(). */
-static uint8_t test_le_features[8];
 
 /* LE event mask the host asked the fake Controller for. */
 static uint64_t captured_le_event_mask;
@@ -89,263 +84,36 @@ static struct bt_le_scan_cb scan_callbacks = {
 	.recv = scan_recv_cb,
 };
 
-/*
- * Fake HCI driver
+/* Capture the LE event mask, so that the test can check which events the host allowed the
+ * Controller to generate, and the scanning filter policy, so that the test can check which of
+ * the four policies each option combination maps to. The Controller answers the commands.
  */
-
-struct cmd_handler {
-	uint16_t opcode;
-	uint8_t len;
-	void (*handler)(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode);
-};
-
-static void evt_create(struct net_buf *buf, uint8_t evt, uint8_t len)
+static bool cmd_cb(uint16_t opcode, struct net_buf *buf)
 {
-	struct bt_hci_evt_hdr *hdr;
+	switch (opcode) {
+	case BT_HCI_OP_LE_SET_EVENT_MASK: {
+		const struct bt_hci_cp_le_set_event_mask *cp = (const void *)buf->data;
 
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->evt = evt;
-	hdr->len = len;
-}
+		captured_le_event_mask = sys_get_le64(cp->events);
+		break;
+	}
+	case BT_HCI_OP_LE_SET_SCAN_PARAM: {
+		const struct bt_hci_cp_le_set_scan_param *cp = (const void *)buf->data;
 
-static void *cmd_complete(struct net_buf **buf, uint8_t plen, uint16_t opcode)
-{
-	struct bt_hci_evt_cmd_complete *cc;
+		captured_filter_policy = cp->filter_policy;
+		break;
+	}
+	case BT_HCI_OP_LE_SET_EXT_SCAN_PARAM: {
+		const struct bt_hci_cp_le_set_ext_scan_param *cp = (const void *)buf->data;
 
-	*buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
-	evt_create(*buf, BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
-	cc = net_buf_add(*buf, sizeof(*cc));
-	cc->ncmd = 1U;
-	cc->opcode = sys_cpu_to_le16(opcode);
-
-	return net_buf_add(*buf, plen);
-}
-
-static void generic_success(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
-{
-	struct bt_hci_evt_cc_status *ccst;
-
-	ccst = cmd_complete(evt, len, opcode);
-	(void)memset(ccst, 0, len);
-	ccst->status = BT_HCI_ERR_SUCCESS;
-}
-
-static void read_local_features(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				uint16_t opcode)
-{
-	struct bt_hci_rp_read_local_features *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	rp->status = 0x00;
-	(void)memset(rp->features, 0xFF, sizeof(rp->features));
-}
-
-static void read_supported_commands(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				    uint16_t opcode)
-{
-	struct bt_hci_rp_read_supported_commands *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	(void)memset(rp->commands, 0xFF, sizeof(rp->commands));
-	rp->status = 0x00;
-}
-
-/* Report the LE features the running test asked for. */
-static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				   uint16_t opcode)
-{
-	struct bt_hci_rp_le_read_local_features *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	rp->status = 0x00;
-	(void)memset(rp->features, 0, sizeof(rp->features));
-	memcpy(rp->features, test_le_features, MIN(sizeof(rp->features), sizeof(test_le_features)));
-}
-
-static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				uint16_t opcode)
-{
-	struct bt_hci_rp_le_read_supp_states *rp;
-
-	rp = cmd_complete(evt, sizeof(*rp), opcode);
-	rp->status = 0x00;
-	(void)memset(&rp->le_states, 0xFF, sizeof(rp->le_states));
-}
-
-/* Capture the LE event mask so that the test can check which events the host
- * allowed the Controller to generate.
- */
-static void le_set_event_mask(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-			      uint16_t opcode)
-{
-	struct bt_hci_cp_le_set_event_mask *cp = (void *)buf->data;
-
-	captured_le_event_mask = sys_get_le64(cp->events);
-
-	generic_success(buf, evt, len, opcode);
-}
-
-/* Capture the scanning filter policy the host requests, so that the test can check
- * which of the four policies each option combination maps to.
- */
-static void le_set_scan_param(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-			      uint16_t opcode)
-{
-	struct bt_hci_cp_le_set_scan_param *cp = (void *)buf->data;
-
-	captured_filter_policy = cp->filter_policy;
-
-	generic_success(buf, evt, len, opcode);
-}
-
-static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt, uint8_t len,
-				  uint16_t opcode)
-{
-	struct bt_hci_cp_le_set_ext_scan_param *cp = (void *)buf->data;
-
-	captured_filter_policy = cp->filter_policy;
-
-	generic_success(buf, evt, len, opcode);
-}
-
-static const struct cmd_handler cmds[] = {
-	{BT_HCI_OP_READ_LOCAL_VERSION_INFO, sizeof(struct bt_hci_rp_read_local_version_info),
-	 generic_success},
-	{BT_HCI_OP_READ_SUPPORTED_COMMANDS, sizeof(struct bt_hci_rp_read_supported_commands),
-	 read_supported_commands},
-	{BT_HCI_OP_READ_LOCAL_FEATURES, sizeof(struct bt_hci_rp_read_local_features),
-	 read_local_features},
-	{BT_HCI_OP_READ_BD_ADDR, sizeof(struct bt_hci_rp_read_bd_addr), generic_success},
-	{BT_HCI_OP_SET_EVENT_MASK, sizeof(struct bt_hci_evt_cc_status), generic_success},
-	{BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(struct bt_hci_evt_cc_status), le_set_event_mask},
-	{BT_HCI_OP_LE_READ_LOCAL_FEATURES, sizeof(struct bt_hci_rp_le_read_local_features),
-	 le_read_local_features},
-	{BT_HCI_OP_LE_READ_SUPP_STATES, sizeof(struct bt_hci_rp_le_read_supp_states),
-	 le_read_supp_states},
-	{BT_HCI_OP_LE_RAND, sizeof(struct bt_hci_rp_le_rand), generic_success},
-	{BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(struct bt_hci_cp_le_set_random_address),
-	 generic_success},
-	{BT_HCI_OP_LE_SET_SCAN_PARAM, sizeof(struct bt_hci_evt_cc_status), le_set_scan_param},
-	{BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(struct bt_hci_evt_cc_status), generic_success},
-	{BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, sizeof(struct bt_hci_evt_cc_status),
-	 le_set_ext_scan_param},
-	{BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, sizeof(struct bt_hci_evt_cc_status), generic_success},
-	{BT_HCI_OP_RESET, sizeof(struct bt_hci_evt_cc_status), generic_success},
-};
-
-static int cmd_handle(const struct device *dev, struct net_buf *cmd)
-{
-	struct net_buf *evt = NULL;
-	struct bt_hci_evt_cc_status *ccst;
-	struct bt_hci_cmd_hdr *chdr;
-	uint16_t opcode;
-	bool handled = false;
-
-	chdr = net_buf_pull_mem(cmd, sizeof(*chdr));
-	opcode = sys_le16_to_cpu(chdr->opcode);
-
-	ARRAY_FOR_EACH_PTR(cmds, entry) {
-		if (entry->opcode == opcode) {
-			entry->handler(cmd, &evt, entry->len, opcode);
-			handled = true;
-			break;
-		}
+		captured_filter_policy = cp->filter_policy;
+		break;
+	}
+	default:
+		break;
 	}
 
-	if (!handled) {
-		ccst = cmd_complete(&evt, sizeof(*ccst), opcode);
-		ccst->status = BT_HCI_ERR_UNKNOWN_CMD;
-	}
-
-	if (evt != NULL) {
-		bt_hci_recv(dev, evt);
-	}
-
-	return 0;
-}
-
-static int driver_open(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-/* Needed so that the test can cycle bt_disable()/bt_enable() to change the LE
- * features the fake Controller reports.
- */
-static int driver_close(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-static int driver_send(const struct device *dev, struct net_buf *buf)
-{
-	uint8_t type = net_buf_pull_u8(buf);
-
-	zassert_equal(type, BT_HCI_H4_CMD, "Unexpected buffer type %u", type);
-	(void)cmd_handle(dev, buf);
-	net_buf_unref(buf);
-
-	return 0;
-}
-
-static DEVICE_API(bt_hci, driver_api) = {
-	.open = driver_open,
-	.close = driver_close,
-	.send = driver_send,
-};
-
-#define TEST_DEVICE_INIT(inst)                                                                     \
-	static struct bt_hci_driver_data driver_data_##inst = {};                                  \
-	static const struct bt_hci_driver_config driver_config_##inst =                            \
-		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &driver_data_##inst, &driver_config_##inst,        \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &driver_api)
-
-DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT);
-
-/*
- * Pushing events to the host
- */
-
-struct recv_job_data {
-	struct k_work work;
-	struct k_sem *sync;
-	struct net_buf *buf;
-};
-
-static struct recv_job_data job_data[CONFIG_BT_BUF_EVT_RX_COUNT];
-
-#define job(buf) (&job_data[net_buf_id(buf)])
-
-static void recv_job_cb(struct k_work *item)
-{
-	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct recv_job_data *data = CONTAINER_OF(item, struct recv_job_data, work);
-
-	bt_hci_recv(dev, data->buf);
-	k_sem_give(data->sync);
-}
-
-/* Push an event to the host from the system workqueue and wait until it has
- * been consumed.
- */
-static void recv_job_submit(struct net_buf *buf)
-{
-	struct k_sem sync_sem;
-
-	job(buf)->buf = buf;
-	k_work_init(&job(buf)->work, recv_job_cb);
-	k_sem_init(&sync_sem, 0, 1);
-	job(buf)->sync = &sync_sem;
-
-	buf = net_buf_ref(buf);
-	k_work_submit(&job(buf)->work);
-	k_sem_take(&sync_sem, K_FOREVER);
-	net_buf_unref(buf);
+	return false;
 }
 
 static void direct_adv_info_create(struct bt_hci_evt_le_direct_adv_info *info,
@@ -365,16 +133,11 @@ static void direct_adv_info_create(struct bt_hci_evt_le_direct_adv_info *info,
 static void send_direct_adv_report(const bt_addr_le_t *dir_addr, uint8_t num_reports,
 				   uint8_t claimed_reports)
 {
-	struct bt_hci_evt_le_meta_event *meta_evt;
 	struct bt_hci_evt_le_direct_adv_info *info;
 	struct net_buf *buf;
 	uint8_t info_len = num_reports * sizeof(*info);
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + 1 + info_len);
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	meta_evt->subevent = BT_HCI_EVT_LE_DIRECT_ADV_REPORT;
+	buf = fake_hci_le_meta_evt(BT_HCI_EVT_LE_DIRECT_ADV_REPORT, 1 + info_len);
 	net_buf_add_u8(buf, claimed_reports);
 
 	for (uint8_t i = 0; i < num_reports; i++) {
@@ -382,21 +145,16 @@ static void send_direct_adv_report(const bt_addr_le_t *dir_addr, uint8_t num_rep
 		direct_adv_info_create(info, &test_adv_addr, dir_addr, TEST_RSSI);
 	}
 
-	recv_job_submit(buf);
+	fake_hci_recv(buf);
 }
 
 /* Send an ordinary LE Advertising Report event with no advertising data. */
 static void send_adv_report(uint8_t evt_type)
 {
-	struct bt_hci_evt_le_meta_event *meta_evt;
 	struct bt_hci_evt_le_advertising_info *info;
 	struct net_buf *buf;
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + 1 + sizeof(*info) + 1);
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	meta_evt->subevent = BT_HCI_EVT_LE_ADVERTISING_REPORT;
+	buf = fake_hci_le_meta_evt(BT_HCI_EVT_LE_ADVERTISING_REPORT, 1 + sizeof(*info) + 1);
 	net_buf_add_u8(buf, 1);
 	info = net_buf_add(buf, sizeof(*info));
 	info->evt_type = evt_type;
@@ -404,7 +162,7 @@ static void send_adv_report(uint8_t evt_type)
 	info->length = 0;
 	net_buf_add_u8(buf, (uint8_t)TEST_RSSI);
 
-	recv_job_submit(buf);
+	fake_hci_recv(buf);
 }
 
 /* Send an LE Extended Advertising Report event for a legacy directed
@@ -412,15 +170,10 @@ static void send_adv_report(uint8_t evt_type)
  */
 static void send_ext_directed_report(const bt_addr_le_t *dir_addr)
 {
-	struct bt_hci_evt_le_meta_event *meta_evt;
 	struct bt_hci_evt_le_ext_advertising_info *info;
 	struct net_buf *buf;
 
-	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-
-	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + 1 + sizeof(*info));
-	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
-	meta_evt->subevent = BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT;
+	buf = fake_hci_le_meta_evt(BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT, 1 + sizeof(*info));
 	net_buf_add_u8(buf, 1);
 
 	info = net_buf_add(buf, sizeof(*info));
@@ -437,7 +190,7 @@ static void send_ext_directed_report(const bt_addr_le_t *dir_addr)
 	bt_addr_le_copy(&info->direct_addr, dir_addr);
 	info->length = 0;
 
-	recv_job_submit(buf);
+	fake_hci_recv(buf);
 }
 
 static void start_scan(uint8_t options)
@@ -470,9 +223,14 @@ static void check_filter_policy(uint8_t options, uint8_t expected)
 
 static void *suite_setup(void)
 {
+	static const struct fake_hci_cb cb = {
+		.cmd = cmd_cb,
+	};
+
 	/* Extended Scanner Filter Policies supported. */
-	(void)memset(test_le_features, 0, sizeof(test_le_features));
-	test_le_features[0] = BIT(BT_LE_FEAT_BIT_EXT_SCAN);
+	(void)memset(fake_hci.features, 0xFF, sizeof(fake_hci.features));
+	fake_hci.le_features[0] = BIT(BT_LE_FEAT_BIT_EXT_SCAN);
+	fake_hci_cb_set(&cb);
 
 	zassert_ok(bt_enable(NULL), "bt_enable failed");
 	zassert_ok(bt_le_scan_cb_register(&scan_callbacks), "Failed to register scan callbacks");
@@ -521,7 +279,7 @@ static ZTEST(bt_direct_adv_recv, test_no_controller_support)
 
 	zassert_ok(bt_disable(), "bt_disable failed");
 
-	test_le_features[0] &= ~BIT(BT_LE_FEAT_BIT_EXT_SCAN);
+	fake_hci.le_features[0] &= ~BIT(BT_LE_FEAT_BIT_EXT_SCAN);
 	captured_le_event_mask = 0;
 
 	zassert_ok(bt_enable(NULL), "bt_enable failed");
@@ -533,7 +291,7 @@ static ZTEST(bt_direct_adv_recv, test_no_controller_support)
 
 	/* Restore the Controller support for the remaining tests. */
 	zassert_ok(bt_disable(), "bt_disable failed");
-	test_le_features[0] |= BIT(BT_LE_FEAT_BIT_EXT_SCAN);
+	fake_hci.le_features[0] |= BIT(BT_LE_FEAT_BIT_EXT_SCAN);
 	zassert_ok(bt_enable(NULL), "bt_enable failed");
 	zassert_true((captured_le_event_mask & BT_EVT_MASK_LE_DIRECT_ADV_REPORT) != 0,
 		     "Failed to restore Controller support");
