@@ -31,6 +31,7 @@ struct cmsis_rtos_thread_cb {
 	struct k_poll_event poll_event;
 	uint32_t signal_results;
 	uint32_t attr_bits;
+	bool is_initializing;
 	/** @endcond */
 };
 

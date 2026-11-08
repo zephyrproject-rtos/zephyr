@@ -26,7 +26,8 @@ static const osThreadAttr_t init_thread_attrs = {
 	.reserved = 0,
 };
 
-static sys_dlist_t thread_list;
+static sys_dlist_t thread_list = SYS_DLIST_STATIC_INIT(&thread_list);
+static struct k_spinlock thread_list_lock;
 
 static atomic_t num_dynamic_cb;
 #if CONFIG_CMSIS_V2_THREAD_MAX_COUNT != 0
@@ -45,6 +46,15 @@ static inline int _is_thread_cmsis_inactive(struct k_thread *thread)
 	uint8_t state = thread->base.thread_state;
 
 	return state & _THREAD_DEAD;
+}
+
+static bool _is_thread_cb_inactive(struct cmsis_rtos_thread_cb *tid)
+{
+	k_spinlock_key_t key = k_spin_lock(&thread_list_lock);
+	bool inactive = tid->is_initializing || _is_thread_cmsis_inactive(&tid->z_thread);
+
+	k_spin_unlock(&thread_list_lock, key);
+	return inactive;
 }
 
 static inline uint32_t zephyr_to_cmsis_priority(uint32_t z_prio)
@@ -67,15 +77,18 @@ void *is_cmsis_rtos_v2_thread(void *thread_id)
 {
 	sys_dnode_t *pnode;
 	struct cmsis_rtos_thread_cb *itr;
+	k_spinlock_key_t key = k_spin_lock(&thread_list_lock);
 
 	SYS_DLIST_FOR_EACH_NODE(&thread_list, pnode) {
 		itr = CONTAINER_OF(pnode, struct cmsis_rtos_thread_cb, node);
 
 		if ((void *)itr == thread_id) {
+			k_spin_unlock(&thread_list_lock, key);
 			return itr;
 		}
 	}
 
+	k_spin_unlock(&thread_list_lock, key);
 	return NULL;
 }
 
@@ -85,13 +98,18 @@ osThreadId_t get_cmsis_thread_id(k_tid_t tid)
 	struct cmsis_rtos_thread_cb *itr;
 
 	if (tid != NULL) {
+		k_spinlock_key_t key = k_spin_lock(&thread_list_lock);
+
 		SYS_DLIST_FOR_EACH_NODE(&thread_list, pnode) {
 			itr = CONTAINER_OF(pnode, struct cmsis_rtos_thread_cb, node);
 
 			if (&itr->z_thread == tid) {
+				k_spin_unlock(&thread_list_lock, key);
 				return (osThreadId_t)itr;
 			}
 		}
+
+		k_spin_unlock(&thread_list_lock, key);
 	}
 
 	return NULL;
@@ -105,7 +123,8 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 	int32_t prio;
 	osPriority_t cv2_prio;
 	struct cmsis_rtos_thread_cb *tid;
-	static uint32_t one_time;
+	sys_dnode_t *pnode;
+	k_spinlock_key_t key;
 	void *stack;
 	size_t stack_size;
 
@@ -162,6 +181,21 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 		tid = (struct cmsis_rtos_thread_cb *)attr->cb_mem;
 	}
 
+	key = k_spin_lock(&thread_list_lock);
+	SYS_DLIST_FOR_EACH_NODE(&thread_list, pnode) {
+		if (pnode == &tid->node) {
+			if (tid->is_initializing || !_is_thread_cmsis_inactive(&tid->z_thread)) {
+				k_spin_unlock(&thread_list_lock, key);
+				return NULL;
+			}
+			sys_dlist_remove(&tid->node);
+			break;
+		}
+	}
+	tid->is_initializing = true;
+	sys_dlist_append(&thread_list, &tid->node);
+	k_spin_unlock(&thread_list_lock, key);
+
 	tid->attr_bits = attr->attr_bits;
 
 #if CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT != 0
@@ -184,22 +218,20 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 			  &tid->poll_signal);
 	tid->signal_results = 0U;
 
-	/* TODO: Do this somewhere only once */
-	if (one_time == 0U) {
-		sys_dlist_init(&thread_list);
-		one_time = 1U;
-	}
-
-	sys_dlist_append(&thread_list, &tid->node);
-
 	prio = cmsis_to_zephyr_priority(cv2_prio);
 
 	(void)k_thread_create(&tid->z_thread, stack, stack_size, zephyr_thread_wrapper, (void *)arg,
-			      NULL, threadfunc, prio, 0, K_NO_WAIT);
+			      NULL, threadfunc, prio, 0, K_FOREVER);
 
 	const char *name = (attr->name == NULL) ? init_thread_attrs.name : attr->name;
 
 	k_thread_name_set(&tid->z_thread, name);
+
+	key = k_spin_lock(&thread_list_lock);
+	tid->is_initializing = false;
+	k_spin_unlock(&thread_list_lock, key);
+
+	k_thread_start(&tid->z_thread);
 
 	return (osThreadId_t)tid;
 }
@@ -237,7 +269,7 @@ osPriority_t osThreadGetPriority(osThreadId_t thread_id)
 	uint32_t priority;
 
 	if (k_is_in_isr() || (tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL) ||
-	    (_is_thread_cmsis_inactive(&tid->z_thread))) {
+	    _is_thread_cb_inactive(tid)) {
 		return osPriorityError;
 	}
 
@@ -261,7 +293,7 @@ osStatus_t osThreadSetPriority(osThreadId_t thread_id, osPriority_t priority)
 		return osErrorISR;
 	}
 
-	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
+	if (_is_thread_cb_inactive(tid)) {
 		return osErrorResource;
 	}
 
@@ -277,12 +309,22 @@ osThreadState_t osThreadGetState(osThreadId_t thread_id)
 {
 	struct cmsis_rtos_thread_cb *tid = (struct cmsis_rtos_thread_cb *)thread_id;
 	osThreadState_t state;
+	uint8_t thread_state;
+	k_spinlock_key_t key;
 
 	if (k_is_in_isr() || (tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osThreadError;
 	}
 
-	switch (tid->z_thread.base.thread_state) {
+	key = k_spin_lock(&thread_list_lock);
+	if (tid->is_initializing) {
+		k_spin_unlock(&thread_list_lock, key);
+		return osThreadInactive;
+	}
+	thread_state = tid->z_thread.base.thread_state;
+	k_spin_unlock(&thread_list_lock, key);
+
+	switch (thread_state) {
 	case _THREAD_DUMMY:
 		state = osThreadError;
 		break;
@@ -373,7 +415,7 @@ osStatus_t osThreadSuspend(osThreadId_t thread_id)
 		return osErrorISR;
 	}
 
-	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
+	if (_is_thread_cb_inactive(tid)) {
 		return osErrorResource;
 	}
 
@@ -397,7 +439,7 @@ osStatus_t osThreadResume(osThreadId_t thread_id)
 		return osErrorISR;
 	}
 
-	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
+	if (_is_thread_cb_inactive(tid)) {
 		return osErrorResource;
 	}
 
@@ -422,7 +464,7 @@ osStatus_t osThreadDetach(osThreadId_t thread_id)
 		return osErrorISR;
 	}
 
-	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
+	if (_is_thread_cb_inactive(tid)) {
 		return osErrorResource;
 	}
 
@@ -450,7 +492,7 @@ osStatus_t osThreadJoin(osThreadId_t thread_id)
 		return osErrorISR;
 	}
 
-	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
+	if (_is_thread_cb_inactive(tid)) {
 		return osErrorResource;
 	}
 
@@ -492,7 +534,7 @@ osStatus_t osThreadTerminate(osThreadId_t thread_id)
 		return osErrorISR;
 	}
 
-	if (_is_thread_cmsis_inactive(&tid->z_thread)) {
+	if (_is_thread_cb_inactive(tid)) {
 		return osErrorResource;
 	}
 
