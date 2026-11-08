@@ -12,6 +12,17 @@ config CPU_ARM926EJ_S
 	help
 	  This option signifies the use of a ARM926EJ-S CPU.
 
+config CPU_XSCALE
+	bool
+	select ARMV5TE
+	select CPU_AARCH32_ARM9
+	select CPU_HAS_MMU
+	help
+	  This option signifies the use of an Intel/Marvell XScale (PXA2xx,
+	  PXA3xx, IXP) CPU. XScale implements ARMv5TE with an ARM926-compatible
+	  CP15 programmer's model, but adds its own cache and coprocessor 0
+	  extensions.
+
 config ARMV5TEJ
 	bool
 	select ARMV5TE
