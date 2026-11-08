@@ -21,11 +21,14 @@
 #include <zephyr/arch/arm/arm9/mmu.h>
 #include <zephyr/arch/arm/arm9/lib_helpers.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/linker/linker-defs.h>
 #include <string.h>
 
 #define L1_ENTRIES      4096U
 #define L1_SECTION_SIZE (1024U * 1024U)
 #define L2_ENTRIES      256U
+#define L2_PAGE_SIZE    4096U
 
 /* Level 1 descriptor types */
 #define L1_TYPE_FAULT   0x0U
@@ -42,8 +45,10 @@
 #else
 #define L1_SECTION_SBO BIT(4)
 #endif
-#define L1_CACHEABLE  BIT(3)
-#define L1_BUFFERABLE BIT(2)
+#define L1_CACHEABLE        BIT(3)
+#define L1_BUFFERABLE       BIT(2)
+#define L1_TYPE_MASK        0x3U
+#define L1_COARSE_BASE_MASK 0xfffffc00U
 
 #define L2_SMALL_PAGE_AP_RW 0x00000ff0U /* AP0..AP3 = 0b11 */
 #define L2_CACHEABLE        BIT(3)
@@ -104,6 +109,55 @@ static void map_vector_page(void)
 }
 #endif /* CONFIG_ARMV5_HIGH_VECTORS */
 
+#ifdef CONFIG_NOCACHE_MEMORY
+static uint32_t l2_tables[CONFIG_ARMV5_MMU_NUM_L2_TABLES][L2_ENTRIES] __aligned(1024);
+
+/*
+ * Return the coarse page table of the 1 MB section holding addr, replacing
+ * a section mapping with 256 small pages of the same attributes first.
+ * The C and B bits sit at the same place in both descriptor formats.
+ */
+static uint32_t *section_to_pages(uintptr_t addr)
+{
+	static unsigned int l2_tables_used;
+	uint32_t *l1 = &l1_table[addr >> 20];
+	uint32_t base = addr & 0xfff00000U;
+	uint32_t cb;
+	uint32_t *l2;
+
+	if ((*l1 & L1_TYPE_MASK) == L1_TYPE_COARSE) {
+		return (uint32_t *)(*l1 & L1_COARSE_BASE_MASK);
+	}
+
+	__ASSERT(l2_tables_used < CONFIG_ARMV5_MMU_NUM_L2_TABLES,
+		 "CONFIG_ARMV5_MMU_NUM_L2_TABLES too small");
+
+	l2 = l2_tables[l2_tables_used++];
+	cb = *l1 & (L1_CACHEABLE | L1_BUFFERABLE);
+
+	for (uint32_t i = 0; i < L2_ENTRIES; i++) {
+		l2[i] = (base + (i * L2_PAGE_SIZE)) | L2_SMALL_PAGE_AP_RW | cb | L2_TYPE_SMALL_PAGE;
+	}
+
+	*l1 = ((uint32_t)l2 & L1_COARSE_BASE_MASK) | L1_SECTION_SBO | L1_TYPE_COARSE;
+
+	return l2;
+}
+
+/* Change the attributes of the 4 kB pages covering [base, base + size). */
+static void map_pages(uintptr_t base, size_t size, uint32_t attrs)
+{
+	uint32_t cb = section_attrs(attrs);
+
+	for (uintptr_t addr = ROUND_DOWN(base, L2_PAGE_SIZE); addr < base + size;
+	     addr += L2_PAGE_SIZE) {
+		uint32_t *pte = &section_to_pages(addr)[(addr >> 12) & (L2_ENTRIES - 1U)];
+
+		*pte = (*pte & ~(L2_CACHEABLE | L2_BUFFERABLE)) | cb;
+	}
+}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 void z_armv5_mmu_init(void)
 {
 	/* Everything is device memory until the SoC says otherwise. */
@@ -116,6 +170,12 @@ void z_armv5_mmu_init(void)
 
 		map_range(r->base, r->size, r->attrs);
 	}
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	map_pages((uintptr_t)_nocache_ram_start,
+		  (uintptr_t)_nocache_ram_end - (uintptr_t)_nocache_ram_start,
+		  ARMV5_MMU_MEM_BUFFERED);
+#endif
 
 #ifdef CONFIG_ARMV5_HIGH_VECTORS
 	map_vector_page();
