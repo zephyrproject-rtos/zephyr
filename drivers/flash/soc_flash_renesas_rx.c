@@ -28,8 +28,8 @@ extern void Excep_FCU_FRDYI(void);
 LOG_MODULE_REGISTER(flash_rx, CONFIG_FLASH_LOG_LEVEL);
 
 #define FLASH_RX_CF_INCLUDED DT_PROP(DT_NODELABEL(code_flash), programming_enable)
-#define ERASE_BLOCK_SIZE_0   DT_PROP(DT_INST(0, renesas_rx_nv_flash), erase_block_size)
-#define ERASE_BLOCK_SIZE_1   DT_PROP(DT_INST(1, renesas_rx_nv_flash), erase_block_size)
+#define ERASE_BLOCK_SIZE_0   DT_PROP(DT_NODELABEL(code_flash), erase_block_size)
+#define ERASE_BLOCK_SIZE_1   DT_PROP(DT_NODELABEL(data_flash), erase_block_size)
 
 BUILD_ASSERT((ERASE_BLOCK_SIZE_0 % FLASH_CF_BLOCK_SIZE) == 0,
 	     "erase-block-size expected to be a multiple of a block size");
