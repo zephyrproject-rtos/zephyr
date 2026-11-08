@@ -91,6 +91,7 @@ config ARMV5_FLAT_MMU
 	bool "Flat ARMv5 MMU mapping"
 	depends on CPU_HAS_MMU && !ARM_AARCH32_MMU
 	default y
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Build a flat (identity) translation table out of 1 MB sections and
 	  turn the MMU on during boot. The MMU is what gives memory its
@@ -106,6 +107,15 @@ config ARMV5_FLAT_MMU
 
 	  It is also required for CONFIG_ARMV5_HIGH_VECTORS, since the
 	  0xFFFF0000 vector page has to be mapped somewhere.
+
+config ARMV5_MMU_NUM_L2_TABLES
+	int "Number of page tables for non-cacheable memory"
+	depends on ARMV5_FLAT_MMU && NOCACHE_MEMORY
+	default 2
+	help
+	  The non-cacheable region is mapped with 4 kB pages. Every 1 MB
+	  section it touches needs one 1 kB coarse page table, allocated from
+	  a pool of this many tables.
 
 config ARMV5_HIGH_VECTORS
 	bool "Place the exception vectors at 0xFFFF0000"
