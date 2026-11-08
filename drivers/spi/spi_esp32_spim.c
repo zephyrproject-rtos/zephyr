@@ -567,15 +567,35 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 	}
 #endif /* CONFIG_ESP32_SPI_TARGET */
 
+	k_spinlock_key_t key = k_spin_lock(&data->isr_lock);
+	bool armed = data->isr_armed;
+
+	if (!armed) {
+		spi_ll_disable_int(cfg->spi);
+		spi_ll_clear_int_stat(cfg->spi);
+		k_spin_unlock(&data->isr_lock, key);
+		return;
+	}
+	atomic_set(&data->isr_busy, 1);
+	k_spin_unlock(&data->isr_lock, key);
+
 	do {
 		spi_esp32_transfer(dev);
 	} while (spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(dev, data, cfg->spi, 0);
+	key = k_spin_lock(&data->isr_lock);
+	armed = data->isr_armed;
+	data->isr_armed = false;
+	k_spin_unlock(&data->isr_lock, key);
 
+	if (armed) {
+		spi_esp32_complete(dev, data, cfg->spi, 0);
 #if CONFIG_PM
-	spi_esp32_pm_policy_state_lock_put(dev);
+		spi_esp32_pm_policy_state_lock_put(dev);
 #endif
+	}
+
+	atomic_set(&data->isr_busy, 0);
 }
 #endif
 
@@ -1043,6 +1063,11 @@ static int transceive(const struct device *dev,
 	spi_context_cs_control(&data->ctx, true);
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
+	k_spinlock_key_t key = k_spin_lock(&data->isr_lock);
+
+	data->isr_armed = true;
+	k_spin_unlock(&data->isr_lock, key);
+
 	spi_ll_enable_int(cfg->spi);
 	spi_ll_set_int_stat(cfg->spi);
 
@@ -1052,8 +1077,16 @@ static int transceive(const struct device *dev,
 			/* A late ISR completion must not signal the context of
 			 * the next transfer
 			 */
+			key = k_spin_lock(&data->isr_lock);
+			data->isr_armed = false;
 			spi_ll_disable_int(cfg->spi);
+			k_spin_unlock(&data->isr_lock, key);
+
+			while (atomic_get(&data->isr_busy) != 0) {
+				k_busy_wait(10);
+			}
 			spi_ll_clear_int_stat(cfg->spi);
+			spi_context_clear_completion(&data->ctx);
 			spi_context_cs_control(&data->ctx, false);
 #ifdef CONFIG_PM
 			spi_esp32_pm_policy_state_lock_put(dev);
