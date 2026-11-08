@@ -54,6 +54,17 @@ def test_reserved_list_is_configurable():
     assert not _rules("int free;\n", reserved=set())
 
 
+def test_reserved_list_does_not_apply_to_libc_and_posix():
+    from pathlib import Path
+
+    for path in (
+        "lib/libc/minimal/source/stdlib/malloc.c",
+        "/w/zephyr/include/zephyr/posix/time.h",
+    ):
+        assert coding_guidelines.reserved_for(Path(path), RESERVED) == set()
+    assert coding_guidelines.reserved_for(Path("drivers/gpio/gpio_libc.c"), RESERVED) == RESERVED
+
+
 # tag-name (Rule 5.7)
 def test_struct_tag_as_object_name_flagged():
     assert _rules("struct item item;\n") == [("tag-name", 1)]
