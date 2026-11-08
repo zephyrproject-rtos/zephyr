@@ -1,0 +1,43 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC5241
+	bool "TMC5241/TMC2241 stepper driver"
+	default y
+	depends on DT_HAS_ADI_TMC5241_ENABLED || DT_HAS_ADI_TMC2241_ENABLED
+	select STEPPER_ADI_TMC_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC5241),spi) || \
+					$(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC2241),spi)
+	select STEPPER_ADI_TMC_UART if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC5241),uart) || \
+					$(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC2241),uart)
+	help
+	  Enable support for the ADI/Trinamic TMC5241 (controller+driver) and
+	  TMC2241 (driver-only) stepper ICs. One driver source tree serves
+	  both compatibles - non-ramp registers are identical between the two
+	  chips and the ramp-generator block is purely additive on TMC5241.
+
+if STEPPER_ADI_TMC5241
+
+config STEPPER_ADI_TMC5241_STEPPER_DRIVER
+	bool "Activate trinamic tmc5241/tmc2241 stepper driver"
+	default y
+	depends on DT_HAS_ADI_TMC5241_STEPPER_DRIVER_ENABLED
+	help
+	  stepper.h child device. Present for both TMC5241 and TMC2241 parents.
+
+config STEPPER_ADI_TMC5241_STEPPER_CTRL
+	bool "Activate trinamic tmc5241 motion controller"
+	default y
+	depends on DT_HAS_ADI_TMC5241_STEPPER_CTRL_ENABLED
+	depends on DT_HAS_ADI_TMC5241_STEPPER_DRIVER_ENABLED
+	help
+	  stepper_ctrl.h child device. Only ever instantiated under an
+	  adi,tmc5241 parent - TMC2241 boards simply have no such DT child,
+	  so this symbol is never enabled for TMC2241-only builds. Also
+	  requires the stepper-driver child (motion control alone can't
+	  enable/disable the coils or set microstep resolution).
+
+module = TMC5241
+module-str = tmc5241
+source "drivers/stepper/adi_tmc/Kconfig.tmc_rampgen_template"
+
+endif # STEPPER_ADI_TMC5241
