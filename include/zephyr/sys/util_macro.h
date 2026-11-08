@@ -79,6 +79,18 @@ extern "C" {
  */
 #define BIT64_MASK(n) (BIT64(n) - 1ULL)
 
+/**
+ * @brief Create a contiguous bitmask starting at bit position @p l
+ *        and ending at position @p h.
+ */
+#define GENMASK(h, l) (((1UL << (h)) << 1U) - (1UL << (l)))
+
+/**
+ * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
+ *        and ending at position @p h.
+ */
+#define GENMASK64(h, l) (((1ULL << (h)) << 1U) - (1ULL << (l)))
+
 /** @brief Check if a @p x is a power of two */
 #define IS_POWER_OF_TWO(x) (((x) != 0U) && (((x) & ((x) - 1U)) == 0U))
 
