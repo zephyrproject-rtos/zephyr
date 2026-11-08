@@ -439,7 +439,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			stm32_dma_clear_stream_irq(dma, id);
 		}
 		status = -EIO;
-	} else {
+	} else if (stm32_dma_is_irq_active(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			LOG_ERR("Transfer Error.");
@@ -448,6 +448,9 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			dma_stm32_clear_stream_irq(dev, id);
 		}
 		status = -EIO;
+	} else {
+		/* Ignore a pending IRQ after its transfer flags have been cleared. */
+		return;
 	}
 
 	if (stream->dma_callback != NULL) {
