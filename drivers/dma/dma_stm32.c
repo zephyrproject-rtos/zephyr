@@ -692,7 +692,6 @@ static int dma_stm32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->user_data       = config->user_data;
@@ -870,6 +869,7 @@ static int dma_stm32_configure(const struct device *dev,
 	 */
 	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 #endif
+	stream->busy = true;
 	return ret;
 }
 
