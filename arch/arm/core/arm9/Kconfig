@@ -93,6 +93,21 @@ config ARMV5_FLAT_MMU
 	  once the VMSA-v5 back end of arch/arm/core/mmu grows an ARMv5
 	  implementation.
 
+	  It is also required for CONFIG_ARMV5_HIGH_VECTORS, since the
+	  0xFFFF0000 vector page has to be mapped somewhere.
+
+config ARMV5_HIGH_VECTORS
+	bool "Place the exception vectors at 0xFFFF0000"
+	depends on ARMV5_FLAT_MMU
+	help
+	  ARMv5 cores fetch their exception vectors from either 0x00000000 or
+	  0xFFFF0000, selected by SCTLR.V. Enable this on SoCs where address
+	  0x00000000 is read-only (mask ROM or NOR flash) and therefore cannot
+	  hold a vector table, which is the case for most XScale designs.
+
+	  When disabled, the vector block is installed at 0x00000000, which
+	  requires RAM to be present (or aliased) there.
+
 config CPU_HAS_DCACHE
 	default y
 

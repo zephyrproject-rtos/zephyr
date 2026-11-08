@@ -40,6 +40,11 @@ FUNC_NORETURN void z_prep_c(void)
 #endif
 
 #ifdef CONFIG_ARMV5_FLAT_MMU
+	/*
+	 * The MMU has to come up before the vector table is relocated: with
+	 * high vectors the 0xFFFF0000 page only exists once the translation
+	 * tables are live.
+	 */
 	z_armv5_mmu_init();
 #endif
 

@@ -10,7 +10,8 @@
  *
  * The ARMv5 MMU only understands the "short descriptor" format: 1 MB sections
  * and, below them, coarse page tables of 4 kB pages. This port maps the whole
- * address space with sections, which is all a flat-mapped RTOS needs.
+ * address space with sections, which is all a flat-mapped RTOS needs, and
+ * keeps a single coarse table around for the high vector page.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARM9_MMU_H_
