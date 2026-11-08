@@ -1,0 +1,8 @@
+sample:
+  name: TMC5241 Stepper Sample
+tests:
+  sample.drivers.stepper.tmc5241:
+    harness: stepper
+    tags: stepper
+    platform_allow: nucleo_g071rb
+    depends_on: spi

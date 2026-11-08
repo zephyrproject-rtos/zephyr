@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TMC5241 sample application"
+
+config STEPS_PER_REV
+	int "Steps per revolution"
+	default 200
+
+config PING_PONG_N_REV
+	int "Change direction every N revolutions"
+	default 1
+
+config MAX_VELOCITY_MULTIPLIER
+	int "Max velocity multiplier"
+	default 1
+
+config STALLGUARD_THRESHOLD_VELOCITY
+	int "StallGuard-stop arm velocity (fclk units)"
+	default 200000
+
+source "Kconfig.zephyr"
