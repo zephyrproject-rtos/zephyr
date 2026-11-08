@@ -85,4 +85,67 @@
 	strb	r1, [r2, #_cpu_offset_to_exc_depth]
 .endm
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/*
+ * Size of what z_armv5_esf_extend pushes below the basic frame: struct
+ * _callee_saved (r4-r11, sp, lr), then a copy of the basic frame preceded
+ * by struct __extra_esf_info. fault.c checks these against the C layout.
+ */
+#define ARMV5_CALLEE_SIZE	40
+#define ARMV5_EXTRA_INFO_SIZE	12
+#define ARMV5_BASIC_SF_SIZE	32
+
+/*
+ * Turn the basic frame built by z_armv5_enter_exc into a complete
+ * struct arch_esf for the fault handlers.
+ *
+ * As on Cortex-M, callee.psp is the address of the basic frame, so the
+ * stack pointer of the interrupted context is callee.psp + 32.
+ *
+ * Entered with r0 = sp = basic frame. The IRQ path and the exception return
+ * only ever see the basic frame, so the extended one is built as a copy
+ * below it rather than changing the frame layout everywhere.
+ *
+ * On return r0 = sp = struct arch_esf. Clobbers r1-r10.
+ */
+.macro z_armv5_esf_extend
+	mov	r1, r0				/* psp: the basic frame */
+	ldr	r2, [r0, #20]			/* lr before the exception */
+	stmdb	sp!, {r1, r2}
+	stmdb	sp!, {r4-r11}
+	mov	r10, sp				/* struct _callee_saved */
+
+	ldmia	r0, {r1-r8}
+	stmdb	sp!, {r1-r8}			/* copy of the basic frame */
+
+	mov	r1, r10				/* extra_info.callee */
+	mov	r2, r0				/* extra_info.msp */
+	mov	r3, #0				/* extra_info.exc_return */
+	stmdb	sp!, {r1-r3}
+
+	mov	r0, sp
+.endm
+
+/*
+ * Undo z_armv5_esf_extend with sp = struct arch_esf: write the basic frame
+ * and r4-r11, which a handler may have changed, back to where the exception
+ * return expects them. Leaves sp at the basic frame. Clobbers r0-r9.
+ */
+.macro z_armv5_esf_unextend
+	add	r0, sp, #ARMV5_EXTRA_INFO_SIZE
+	ldmia	r0, {r1-r8}
+	add	r9, sp, #(ARMV5_EXTRA_INFO_SIZE + ARMV5_BASIC_SF_SIZE + ARMV5_CALLEE_SIZE)
+	stmia	r9, {r1-r8}
+	add	sp, sp, #(ARMV5_EXTRA_INFO_SIZE + ARMV5_BASIC_SF_SIZE)
+	ldmia	sp!, {r4-r11}
+	add	sp, sp, #8			/* sp and lr */
+.endm
+#else
+.macro z_armv5_esf_extend
+.endm
+
+.macro z_armv5_esf_unextend
+.endm
+#endif /* CONFIG_EXTRA_EXCEPTION_INFO */
+
 #endif /* _ARM9_MACRO_PRIV_INC_ */
