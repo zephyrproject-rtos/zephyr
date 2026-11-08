@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include "ipv4.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
+#include "route_ipv4.h"
 #include "net_stats.h"
 #include "pmtu.h"
 
@@ -2516,7 +2517,8 @@ static int context_setup_udp_options(struct net_context *context,
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
 static bool get_msg_src_addr_hint(const struct net_msghdr *msg, net_sa_family_t family,
-				  struct net_in6_addr *src6, struct net_in_addr *src4)
+				  struct net_in6_addr *src6, struct net_in_addr *src4,
+				  unsigned int *ifindex)
 {
 	struct net_cmsghdr *cmsg;
 
@@ -2532,6 +2534,7 @@ static bool get_msg_src_addr_hint(const struct net_msghdr *msg, net_sa_family_t 
 				(struct net_in6_pktinfo *)NET_CMSG_DATA(cmsg);
 
 			*src6 = info->ipi6_addr;
+			*ifindex = info->ipi6_ifindex;
 			return true;
 		}
 
@@ -2541,11 +2544,241 @@ static bool get_msg_src_addr_hint(const struct net_msghdr *msg, net_sa_family_t 
 			struct net_in_pktinfo *info = (struct net_in_pktinfo *)NET_CMSG_DATA(cmsg);
 
 			*src4 = info->ipi_spec_dst;
+			*ifindex = info->ipi_ifindex;
 			return true;
 		}
 	}
 
 	return false;
+}
+
+/* The interface that owns the unicast address the context is bound to, or
+ * NULL if it is bound to the unspecified or a multicast address, or to an
+ * address of another family (an AF_INET6 socket sending to an IPv4-mapped
+ * address), or not bound.
+ */
+static struct net_if *get_bound_addr_iface(struct net_context *context, net_sa_family_t family)
+{
+	struct net_if *iface = NULL;
+
+	if (!net_context_is_local_addr_set(context) || context->local.sa_family != family) {
+		return NULL;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		const struct net_in6_addr *addr = &net_sin6(&context->local)->sin6_addr;
+
+		if (!net_ipv6_is_addr_unspecified(addr)) {
+			(void)net_if_ipv6_addr_lookup(addr, &iface);
+		}
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+		const struct net_in_addr *addr = &net_sin(&context->local)->sin_addr;
+
+		if (!net_ipv4_is_addr_unspecified(addr)) {
+			(void)net_if_ipv4_addr_lookup(addr, &iface);
+		}
+	}
+
+	return iface;
+}
+
+/* The interface named by a non-zero IP_PKTINFO or IPV6_PKTINFO index in
+ * sendmsg(), or NULL in *iface without one. The index is checked whatever the
+ * state of the context. One with no interface fails with -ENODEV. One other
+ * than the interface the context is bound to (SO_BINDTODEVICE) fails with
+ * -EINVAL. On a context bound to a unicast address the index wins, as on
+ * Linux, even if its interface doesn't own that address: a packet for any of
+ * our addresses is accepted on any interface, so a reply must be able to go
+ * back through the interface it came in on. On a connected context the index
+ * wins too, as the interface of a connected UDP context follows the packets it
+ * receives anyway.
+ */
+static int get_msg_ifindex_iface(struct net_context *context, const struct net_msghdr *msg,
+				 net_sa_family_t family, struct net_if **iface)
+{
+	struct net_in6_addr src6;
+	struct net_in_addr src4;
+	unsigned int ifindex = 0U;
+
+	*iface = NULL;
+
+	if (!get_msg_src_addr_hint(msg, family, &src6, &src4, &ifindex) || ifindex == 0U) {
+		return 0;
+	}
+
+	*iface = net_if_get_by_index((int)ifindex);
+	if (*iface == NULL) {
+		return -ENODEV;
+	}
+
+	if (net_context_is_bound_to_iface(context) && *iface != net_context_get_iface(context)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Whether dst is on-link on iface, or on any interface if iface is NULL.
+ * Multicast, broadcast and link-local destinations are on-link everywhere.
+ */
+static bool is_dst_onlink(struct net_if *iface, net_sa_family_t family, const void *dst)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		const struct net_in6_addr *dst6 = dst;
+
+		return net_ipv6_is_addr_mcast(dst6) || net_ipv6_is_ll_addr(dst6) ||
+		       net_if_ipv6_addr_onlink(&iface, dst6);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+		const struct net_in_addr *dst4 = dst;
+
+		if (net_ipv4_is_addr_mcast(dst4) || net_ipv4_is_ll_addr(dst4) ||
+		    net_ipv4_is_addr_bcast(iface, dst4)) {
+			return true;
+		}
+
+		if (iface != NULL) {
+			return net_if_ipv4_addr_mask_cmp(iface, dst4);
+		}
+
+		STRUCT_SECTION_FOREACH(net_if, tmp) {
+			if (net_if_ipv4_addr_mask_cmp(tmp, dst4)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/* Whether iface has a gateway or a default router (IPv4), or a default router
+ * (IPv6).
+ */
+static bool has_gateway(struct net_if *iface, net_sa_family_t family, const void *dst)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		return net_if_ipv6_router_find_default(iface, dst) != NULL;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+		struct net_in_addr gw = net_if_ipv4_get_gw(iface);
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+		if (net_if_ipv4_router_find_default(iface, dst) != NULL) {
+			return true;
+		}
+#endif
+
+		return !net_ipv4_is_addr_unspecified(&gw);
+	}
+
+	return false;
+}
+
+/* The interface of the IPv4 route to dst, or NULL without one. If a route
+ * with the same prefix length goes through iface too, iface. IPv6 doesn't need
+ * this: net_ipv6_prepare_for_send() moves the packet to the interface of its
+ * route.
+ */
+static struct net_if *get_route_iface(struct net_if *iface, net_sa_family_t family,
+				      const void *dst)
+{
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	if (family == NET_AF_INET && !net_ipv4_is_ll_addr(dst) && !net_ipv4_is_addr_mcast(dst)) {
+		struct net_route_entry *route = net_route_ipv4_lookup(NULL, dst);
+		struct net_route_entry *own;
+
+		if (route == NULL) {
+			return NULL;
+		}
+
+		own = net_route_ipv4_lookup(iface, dst);
+		if (own != NULL && own->prefix_len == route->prefix_len) {
+			return iface;
+		}
+
+		return route->iface;
+	}
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(family);
+	ARG_UNUSED(dst);
+#endif
+
+	return NULL;
+}
+
+/* The first interface with a gateway or a default router, or NULL. */
+static struct net_if *get_gateway_iface(net_sa_family_t family, const void *dst)
+{
+	STRUCT_SECTION_FOREACH(net_if, tmp) {
+		if (has_gateway(tmp, family, dst)) {
+			return tmp;
+		}
+	}
+
+	return NULL;
+}
+
+/* Find the interface to send through from the source address, for a context
+ * that is neither connected nor bound to an interface. The source address is
+ * the PKTINFO one from sendmsg(), else the unicast address the context is
+ * bound to. Several interfaces can reach a destination (two on one subnet, or
+ * each with a gateway), and then the one that owns the source address is used.
+ * An IPv4 route to the destination comes first, as in net_route_ipv4_get_info():
+ * its interface is used, or the source address's if a route of the same prefix
+ * length goes through it too. Otherwise the source address's interface is used
+ * only if it reaches the destination as directly as the others: if the
+ * destination is on-link on it, or on no interface and it has a gateway.
+ * Otherwise the interface with the destination on-link, or else one with a
+ * gateway, is used. NULL when there is no source address or no such interface,
+ * so that the destination alone decides.
+ */
+static struct net_if *get_msg_src_iface(struct net_context *context,
+					const struct net_msghdr *msg,
+					net_sa_family_t family, const void *dst)
+{
+	struct net_in6_addr src6;
+	struct net_in_addr src4;
+	unsigned int ifindex = 0U;
+	struct net_if *iface = NULL;
+	struct net_if *route_iface;
+
+	if (get_msg_src_addr_hint(msg, family, &src6, &src4, &ifindex)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+			(void)net_if_ipv6_addr_lookup(&src6, &iface);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+			(void)net_if_ipv4_addr_lookup(&src4, &iface);
+		}
+	}
+
+	if (iface == NULL) {
+		iface = get_bound_addr_iface(context, family);
+	}
+
+	if (iface == NULL) {
+		return NULL;
+	}
+
+	route_iface = get_route_iface(iface, family, dst);
+	if (route_iface != NULL) {
+		return route_iface;
+	}
+
+	if (is_dst_onlink(iface, family, dst)) {
+		return iface;
+	}
+
+	if (is_dst_onlink(NULL, family, dst)) {
+		return NULL;
+	}
+
+	if (has_gateway(iface, family, dst)) {
+		return iface;
+	}
+
+	return get_gateway_iface(family, dst);
 }
 
 static int context_setup_udp_packet(struct net_context *context,
@@ -2562,7 +2795,8 @@ static int context_setup_udp_packet(struct net_context *context,
 	uint16_t dst_port = 0U;
 	struct net_in6_addr src6;
 	struct net_in_addr src4;
-	bool have_src = get_msg_src_addr_hint(msg, family, &src6, &src4);
+	unsigned int ifindex = 0U;
+	bool have_src = get_msg_src_addr_hint(msg, family, &src6, &src4, &ifindex);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)dst_addr;
@@ -2572,9 +2806,15 @@ static int context_setup_udp_packet(struct net_context *context,
 		/* Only honor the hint if the address is still owned by this
 		 * packet's interface; otherwise fall back to normal source
 		 * selection, e.g. if it was removed by a rebind in the meantime.
+		 * With a PKTINFO index, as on Linux, an address that another
+		 * interface owns will do, unless it is link-local: a reply to a
+		 * packet that came in on one interface for another's address
+		 * then goes back the same way, from that address.
 		 */
 		if (have_src &&
-		    net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt), &src6) == NULL) {
+		    net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt), &src6) == NULL &&
+		    (ifindex == 0U || net_ipv6_is_ll_addr(&src6) ||
+		     net_if_ipv6_addr_lookup(&src6, NULL) == NULL)) {
 			have_src = false;
 		}
 
@@ -2586,7 +2826,8 @@ static int context_setup_udp_packet(struct net_context *context,
 		dst_port = addr4->sin_port;
 
 		if (have_src &&
-		    net_if_ipv4_addr_lookup_by_iface(net_pkt_iface(pkt), &src4) == NULL) {
+		    net_if_ipv4_addr_lookup_by_iface(net_pkt_iface(pkt), &src4) == NULL &&
+		    (ifindex == 0U || net_if_ipv4_addr_lookup(&src4, NULL) == NULL)) {
 			have_src = false;
 		}
 
@@ -3120,7 +3361,31 @@ static int context_sendto(struct net_context *context,
 
 		if (IS_ENABLED(CONFIG_NET_UDP) &&
 		    net_context_get_type(context) == NET_SOCK_DGRAM) {
-			if (net_ipv6_is_addr_mcast(&addr6->sin6_addr) &&
+			struct net_if *msg_iface;
+
+			/* A PKTINFO index wins over IPV6_MULTICAST_IF, and must
+			 * agree with the scope of a link-local destination.
+			 */
+			ret = get_msg_ifindex_iface(context, msghdr, NET_AF_INET6, &msg_iface);
+			if (ret < 0) {
+				return ret;
+			}
+
+			if (msg_iface != NULL) {
+				if (net_ipv6_is_ll_addr(&addr6->sin6_addr) &&
+				    COND_CODE_1(CONFIG_NET_IPV6,
+						(addr6->sin6_scope_id > 0 &&
+						 addr6->sin6_scope_id !=
+							(uint32_t)net_if_get_by_iface(msg_iface)),
+						(false))) {
+					return -EINVAL;
+				}
+
+				iface = msg_iface;
+				net_context_set_iface(context, iface);
+			}
+
+			if (iface == NULL && net_ipv6_is_addr_mcast(&addr6->sin6_addr) &&
 			    COND_CODE_1(CONFIG_NET_IPV6,
 					(context->options.ipv6_mcast_ifindex > 0), (false))) {
 				IF_ENABLED(CONFIG_NET_IPV6,
@@ -3128,7 +3393,7 @@ static int context_sendto(struct net_context *context,
 						   context->options.ipv6_mcast_ifindex)));
 			}
 
-			if (net_ipv6_is_ll_addr(&addr6->sin6_addr) &&
+			if (msg_iface == NULL && net_ipv6_is_ll_addr(&addr6->sin6_addr) &&
 			    !net_context_is_bound_to_iface(context) &&
 			    COND_CODE_1(CONFIG_NET_IPV6,
 					(addr6->sin6_scope_id > 0), (false))) {
@@ -3151,7 +3416,12 @@ static int context_sendto(struct net_context *context,
 			if (net_ipv6_is_addr_unspecified(
 				    &net_sin6(&context->remote)->sin6_addr) &&
 			    !net_context_is_bound_to_iface(context)) {
-				iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+				iface = get_msg_src_iface(context, msghdr, NET_AF_INET6,
+							  &addr6->sin6_addr);
+				if (iface == NULL) {
+					iface = net_if_ipv6_select_src_iface(&addr6->sin6_addr);
+				}
+
 				net_context_set_iface(context, iface);
 			}
 		}
@@ -3208,7 +3478,17 @@ static int context_sendto(struct net_context *context,
 
 		if (IS_ENABLED(CONFIG_NET_UDP) &&
 		    net_context_get_type(context) == NET_SOCK_DGRAM) {
-			if (net_ipv4_is_addr_mcast(&addr4->sin_addr) &&
+			/* A PKTINFO index wins over IP_MULTICAST_IF. */
+			ret = get_msg_ifindex_iface(context, msghdr, NET_AF_INET, &iface);
+			if (ret < 0) {
+				return ret;
+			}
+
+			if (iface != NULL) {
+				net_context_set_iface(context, iface);
+			}
+
+			if (iface == NULL && net_ipv4_is_addr_mcast(&addr4->sin_addr) &&
 			    COND_CODE_1(CONFIG_NET_IPV4,
 					(context->options.ipv4_mcast_ifindex > 0), (false))) {
 				IF_ENABLED(CONFIG_NET_IPV4,
@@ -3227,7 +3507,12 @@ static int context_sendto(struct net_context *context,
 		if (iface == NULL) {
 			if (net_sin(&context->remote)->sin_addr.s_addr == 0U &&
 			    !net_context_is_bound_to_iface(context)) {
-				iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
+				iface = get_msg_src_iface(context, msghdr, NET_AF_INET,
+							  &addr4->sin_addr);
+				if (iface == NULL) {
+					iface = net_if_ipv4_select_src_iface(&addr4->sin_addr);
+				}
+
 				net_context_set_iface(context, iface);
 			}
 		}
