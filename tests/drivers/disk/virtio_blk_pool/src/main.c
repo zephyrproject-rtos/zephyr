@@ -7,6 +7,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/drivers/disk.h>
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/sys/byteorder.h>
@@ -21,7 +22,36 @@
 #define CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT 3
 #define CONFIG_DISK_VIRTIO_BLK_LOG_LEVEL    0
 
+#if defined(CONFIG_MMU)
+static atomic_t page_queries;
+static atomic_t linear_checks;
+static bool reject_translation;
+
+static int counted_page_phys_get(void *virt, uintptr_t *phys)
+{
+	atomic_inc(&page_queries);
+	if (reject_translation) {
+		return -EIO;
+	}
+
+	return arch_page_phys_get(virt, phys);
+}
+
+static bool __maybe_unused counted_linear_mapping(const void *addr, size_t len)
+{
+	atomic_inc(&linear_checks);
+
+	return virtio_buf_is_in_linear_mapping(addr, len);
+}
+
+#define arch_page_phys_get              counted_page_phys_get
+#define virtio_buf_is_in_linear_mapping counted_linear_mapping
+#endif
+
 #include "virtio_blk.c"
+
+#undef arch_page_phys_get
+#undef virtio_buf_is_in_linear_mapping
 
 static const void *const kept_symbols[] __unused = {
 	(void *)virtio_blk_dev_init,
@@ -43,6 +73,8 @@ struct submitter {
 	int result;
 	atomic_t done;
 	bool active;
+	uint8_t *buffer;
+	uint32_t sectors;
 };
 
 static struct submitter submitters[POOL_DEPTH];
@@ -57,6 +89,12 @@ static void reset_pool(uint16_t queue_size)
 	data.max_data_segs = VIRTIO_BLK_MAX_DATA_SEGS;
 	data.sector_size = 512;
 	data.sectors_per_block = 1;
+
+#if defined(CONFIG_MMU)
+	atomic_set(&page_queries, 0);
+	atomic_set(&linear_checks, 0);
+	reject_translation = false;
+#endif
 
 	k_stack_init(&data.free, data.free_idx, ARRAY_SIZE(data.free_idx));
 	for (size_t i = 0; i < ARRAY_SIZE(data.free_idx); i++) {
@@ -289,6 +327,206 @@ ZTEST(virtio_blk_pool, test_queue_size)
 	zassert_equal(virtio_blk_enum_queues_cb(0, 256, &data), VIRTIO_BLK_REQUEST_QUEUE_SIZE);
 	zassert_equal(virtio_blk_enum_queues_cb(0, 4, &data), 4);
 	zassert_equal(virtio_blk_enum_queues_cb(1, 256, &data), 0);
+}
+
+#if defined(CONFIG_MMU)
+#define TRANSFER_SECTORS ((2U * CONFIG_MMU_PAGE_SIZE) / 512U + 1U)
+#define TRANSFER_BYTES   (TRANSFER_SECTORS * 512U)
+
+static uint8_t transfer_buffers[POOL_DEPTH][TRANSFER_BYTES + 1U];
+
+static void transfer_thread(void *p1, void *p2, void *p3)
+{
+	uint32_t idx = POINTER_TO_UINT(p1);
+	struct submitter *s = &submitters[idx];
+	bool write = (idx % 2U) != 0U;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	s->result = virtio_blk_transfer(&data, write ? VIRTIO_BLK_T_OUT : VIRTIO_BLK_T_IN, idx,
+					s->buffer, s->sectors, write);
+	atomic_set(&s->done, 1);
+}
+
+static void start_transfer(uint32_t idx, uint8_t *buffer, uint32_t sectors)
+{
+	submitters[idx].buffer = buffer;
+	submitters[idx].sectors = sectors;
+	submitters[idx].active = true;
+	k_thread_create(&submit_threads[idx], submit_stacks[idx],
+			K_THREAD_STACK_SIZEOF(submit_stacks[idx]), transfer_thread,
+			UINT_TO_POINTER(idx), NULL, NULL, K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+}
+
+/* Check device addresses before emulating access through the CPU mapping. */
+static void check_transfer(uint16_t head, bool linear)
+{
+	struct virtio_blk_request *req = vq.recv_cbs[head].opaque;
+	uint32_t idx;
+	struct submitter *s;
+	uint16_t desc = sys_le16_to_cpu(vq.desc[head].next);
+	bool write;
+	size_t offset = 0;
+	uint16_t segments = 0;
+
+	zassert_not_null(req);
+	idx = sys_le64_to_cpu(req->hdr.sector) / data.sectors_per_block;
+	zassert_true(idx < POOL_DEPTH);
+	s = &submitters[idx];
+	write = (idx % 2U) != 0U;
+	zassert_equal(sys_le32_to_cpu(req->hdr.type), write ? VIRTIO_BLK_T_OUT : VIRTIO_BLK_T_IN);
+	zassert_equal(sys_le64_to_cpu(vq.desc[head].addr), k_mem_phys_addr(&req->hdr));
+	zassert_equal(sys_le32_to_cpu(vq.desc[head].len), sizeof(req->hdr));
+	zassert_true(desc < vq.num);
+	while ((sys_le16_to_cpu(vq.desc[desc].flags) & VIRTQ_DESC_F_NEXT) != 0U) {
+		size_t len = sys_le32_to_cpu(vq.desc[desc].len);
+		uintptr_t phys = sys_le64_to_cpu(vq.desc[desc].addr);
+		uint8_t *addr = s->buffer + offset;
+		uintptr_t expected;
+		uintptr_t virt = (uintptr_t)s->buffer + offset;
+
+		zassert_ok(arch_page_phys_get((void *)ROUND_DOWN(virt, CONFIG_MMU_PAGE_SIZE),
+					      &expected));
+		expected += virt % CONFIG_MMU_PAGE_SIZE;
+		zassert_equal(phys, expected);
+		zassert_equal(sys_le16_to_cpu(vq.desc[desc].flags),
+			      VIRTQ_DESC_F_NEXT | (write ? 0U : VIRTQ_DESC_F_WRITE));
+		zassert_true(offset + len <= (size_t)s->sectors * data.sector_size);
+		for (size_t i = 0; i < len; i++) {
+			uint8_t value = (uint8_t)(offset + i + idx);
+
+			if (write) {
+				zassert_equal(addr[i], value);
+			} else {
+				addr[i] = value;
+			}
+		}
+		offset += len;
+		segments++;
+		desc = sys_le16_to_cpu(vq.desc[desc].next);
+		zassert_true(segments < vq.num);
+		zassert_true(desc < vq.num);
+	}
+	zassert_equal(offset, (size_t)s->sectors * data.sector_size);
+	if (linear) {
+		zassert_equal(segments, 1U, "linear transfer used multiple data descriptors");
+	}
+	complete_chain(head, VIRTIO_BLK_S_OK);
+	join_submitter(idx);
+	zassert_ok(s->result);
+	for (size_t i = 0; i < offset; i++) {
+		zassert_equal(s->buffer[i], (uint8_t)(i + idx));
+	}
+}
+#endif
+
+ZTEST(virtio_blk_pool, test_linear_transfers)
+{
+#if defined(CONFIG_MMU)
+	struct virtio_blk_request *requests[POOL_DEPTH];
+
+	reset_pool(VIRTIO_BLK_REQUEST_QUEUE_SIZE);
+	/* A page walk must fail, even when the test's buffer is a valid mapping. */
+	reject_translation = true;
+	for (uint32_t i = 0; i < POOL_DEPTH; i++) {
+		uint8_t *buf = transfer_buffers[i] + 1U;
+
+		zassert_true(virtio_buf_is_in_linear_mapping(buf, TRANSFER_BYTES));
+		for (size_t j = 0; j < TRANSFER_BYTES; j++) {
+			buf[j] = (i % 2U) != 0U ? (uint8_t)(i + j) : 0U;
+		}
+		start_transfer(i, buf, TRANSFER_SECTORS);
+	}
+	wait_for_published(POOL_DEPTH);
+	zassert_equal(atomic_get(&page_queries), 0, "linear buffers used the page walker");
+	zassert_equal(atomic_get(&linear_checks), POOL_DEPTH);
+	for (uint16_t i = 0; i < POOL_DEPTH; i++) {
+		requests[i] = vq.recv_cbs[published_head(i)].opaque;
+		for (uint16_t j = 0; j < i; j++) {
+			zassert_not_equal(requests[i], requests[j]);
+		}
+	}
+	for (uint16_t i = POOL_DEPTH; i > 0U; i--) {
+		check_transfer(published_head(i - 1U), true);
+	}
+	zassert_equal(atomic_get(&vq.free_desc_n), vq.num);
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(virtio_blk_pool, test_runtime_mapped_transfers)
+{
+#if defined(CONFIG_MMU)
+	size_t map_size = ROUND_UP(TRANSFER_BYTES + 1U, CONFIG_MMU_PAGE_SIZE);
+	uint8_t *mapped = k_mem_map(map_size, K_MEM_PERM_RW);
+	uint8_t *buf;
+
+	zassert_not_null(mapped);
+	buf = mapped + 1U;
+	zassert_false(virtio_buf_is_in_linear_mapping(buf, TRANSFER_BYTES));
+	reset_pool(VIRTIO_BLK_REQUEST_QUEUE_SIZE);
+	for (uint32_t idx = 0; idx < 2U; idx++) {
+		for (size_t i = 0; i < TRANSFER_BYTES; i++) {
+			buf[i] = (uint8_t)(i + idx);
+		}
+		start_transfer(idx, buf, TRANSFER_SECTORS);
+		wait_for_published(idx + 1U);
+		check_transfer(published_head(idx), false);
+	}
+	zassert_true(atomic_get(&page_queries) > 0, "runtime mapping skipped page translation");
+	reject_translation = true;
+	start_transfer(0, buf, 1);
+	join_submitter(0);
+	zassert_equal(submitters[0].result, -EIO);
+	zassert_equal(published_count(), 2U, "translation failure published a request");
+	k_mem_unmap(mapped, map_size);
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(virtio_blk_pool, test_linear_transfer_submission_error)
+{
+#if defined(CONFIG_MMU)
+	stack_data_t slots[POOL_DEPTH];
+
+	reset_pool(2);
+	reject_translation = true;
+	zassert_equal(virtio_blk_transfer(&data, VIRTIO_BLK_T_IN, 0, transfer_buffers[0], 1, false),
+		      -EINVAL);
+	zassert_equal(atomic_get(&page_queries), 0);
+	zassert_equal(published_count(), 0);
+	for (size_t i = 0; i < ARRAY_SIZE(slots); i++) {
+		zassert_ok(k_stack_pop(&data.free, &slots[i], K_NO_WAIT), "request slot leaked");
+	}
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST(virtio_blk_pool, test_transfer_length_limits)
+{
+#if defined(CONFIG_MMU)
+	const uint32_t counts[] = {UINT32_MAX / 512U + 1U, UINT32_MAX};
+
+	reset_pool(VIRTIO_BLK_REQUEST_QUEUE_SIZE);
+	reject_translation = true;
+	zassert_ok(virtio_blk_transfer(&data, VIRTIO_BLK_T_IN, 0, transfer_buffers[0], 0, false));
+	zassert_equal(atomic_get(&linear_checks), 0);
+	zassert_equal(atomic_get(&page_queries), 0);
+	/* The failing page lookup stops before these oversized ranges are accessed. */
+	for (size_t i = 0; i < ARRAY_SIZE(counts); i++) {
+		zassert_equal(virtio_blk_transfer(&data, VIRTIO_BLK_T_IN, 0, transfer_buffers[0],
+						  counts[i], false),
+			      -EIO);
+	}
+	zassert_equal(atomic_get(&linear_checks), 0, "oversized length reached the fast path");
+	zassert_equal(atomic_get(&page_queries), ARRAY_SIZE(counts));
+	zassert_equal(published_count(), 0);
+#else
+	ztest_test_skip();
+#endif
 }
 
 static void pool_after(void *fixture)

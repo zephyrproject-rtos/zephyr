@@ -469,10 +469,24 @@ static int virtio_blk_transfer_mmu(struct virtio_blk_data *data, uint32_t type,
 	struct virtq_buf segs[VIRTIO_BLK_MAX_DATA_SEGS];
 	uint32_t sector_size = data->sector_size;
 	uint16_t max_data_descs;
+	uint64_t total_len = (uint64_t)num_sector * sector_size;
 	uint32_t done = 0;
 
 	if (vq == NULL) {
 		return -ENODEV;
+	}
+
+	/* Leave room for the header and status in the 4 GiB descriptor chain. */
+	if (total_len <= UINT32_MAX - sizeof(struct virtio_blk_req_hdr) &&
+	    virtio_buf_is_in_linear_mapping(buf, (size_t)total_len)) {
+		struct virtq_buf seg = {
+			.addr = (void *)buf,
+			.len = (uint32_t)total_len,
+		};
+
+		return virtio_blk_submit(data, type,
+					 (uint64_t)start_sector * data->sectors_per_block, &seg, 1,
+					 is_write);
 	}
 
 	/* Reserve one descriptor for the header and one for the status byte. */
