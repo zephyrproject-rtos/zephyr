@@ -36,10 +36,14 @@
 #define L2_TYPE_SMALL_PAGE 0x2U
 
 #define L1_SECTION_AP_RW (3U << 10)
-/* Bit 4 of a level 1 descriptor is should-be-one. */
-#define L1_SECTION_SBO   BIT(4)
-#define L1_CACHEABLE     BIT(3)
-#define L1_BUFFERABLE    BIT(2)
+/* Bit 4 of a level 1 descriptor is should-be-one, except on XScale. */
+#ifdef CONFIG_CPU_XSCALE
+#define L1_SECTION_SBO 0U
+#else
+#define L1_SECTION_SBO BIT(4)
+#endif
+#define L1_CACHEABLE  BIT(3)
+#define L1_BUFFERABLE BIT(2)
 
 #define L2_SMALL_PAGE_AP_RW 0x00000ff0U /* AP0..AP3 = 0b11 */
 #define L2_CACHEABLE        BIT(3)

@@ -120,6 +120,15 @@ static ALWAYS_INLINE void __DMB(void)
 static ALWAYS_INLINE void __ISB(void)
 {
 	MCR15(c7, 0, c10, 4, 0);
+#ifdef CONFIG_CPU_XSCALE
+	/* CPWAIT: a CP15 write only takes effect once this sequence completes. */
+	uint32_t tmp;
+
+	__asm__ volatile("mrc p15, 0, %0, c2, c0, 0\n\t"
+			 "mov %0, %0\n\t"
+			 "sub pc, pc, #4"
+			 : "=r"(tmp)::"memory");
+#else
 	/* Flush the prefetch buffer by forcing a pipeline refill. */
 	__asm__ volatile("mov r0, r0\n\t"
 			 "mov r0, r0\n\t"
@@ -127,6 +136,7 @@ static ALWAYS_INLINE void __ISB(void)
 			 : /* no outputs */
 			 : /* no inputs */
 			 : "memory");
+#endif
 }
 
 static ALWAYS_INLINE void __NOP(void)
@@ -134,10 +144,14 @@ static ALWAYS_INLINE void __NOP(void)
 	__asm__ volatile("mov r0, r0" ::: "memory");
 }
 
-/* Wait for interrupt: CP15 c7 c0 4. */
+/* Wait for interrupt: CP15 c7 c0 4 on ARM926EJ-S, PWRMODE = IDLE on XScale. */
 static ALWAYS_INLINE void __WFI(void)
 {
+#ifdef CONFIG_CPU_XSCALE
+	__asm__ volatile("mcr p14, 0, %0, c7, c0, 0" ::"r"(1U) : "memory");
+#else
 	MCR15(c7, 0, c0, 4, 0);
+#endif
 }
 
 /* ARMv5 has no WFE; the closest equivalent is WFI. */
