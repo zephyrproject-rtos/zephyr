@@ -994,7 +994,7 @@ drop:
 
 static int wg_ctrl_send(const struct device *dev, struct net_pkt *pkt)
 {
-	struct wg_context *ctx = dev->data;
+	__maybe_unused struct wg_context *ctx = dev->data;
 
 	net_stats_update_bytes_sent(ctx->iface, net_pkt_get_len(pkt));
 
