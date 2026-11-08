@@ -7,6 +7,7 @@ config CPU_AARCH32_ARM9
 	bool
 	select CPU_ARM9
 	select ISA_ARM
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	# ARMv5 has no architectural interrupt controller: interrupt control
 	# always lives in the SoC.
 	select ARM_CUSTOM_INTERRUPT_CONTROLLER
