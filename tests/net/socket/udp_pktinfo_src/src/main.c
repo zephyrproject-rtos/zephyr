@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
@@ -23,9 +24,12 @@
 
 #include <string.h>
 
+#include "ipv4.h"
 #include "ipv6.h"
+#include "udp_internal.h"
 
 #define TEST_PORT 4242
+#define PEER_PORT 4343
 #define WAIT_TIME K_MSEC(1000)
 
 static const char payload[] = "pktinfo";
@@ -36,6 +40,7 @@ static const struct net_in_addr my_addr4[] = {
 };
 static const struct net_in_addr netmask4 = { { { 255, 255, 255, 0 } } };
 static const struct net_in_addr peer_addr4 = { { { 192, 0, 2, 10 } } };
+static const struct net_in_addr bcast_addr4 = { { { 192, 0, 2, 255 } } };
 static const struct net_in_addr unknown_addr4 = { { { 198, 51, 100, 1 } } };
 /* A subnet that only one interface has, at a time. */
 static const struct net_in_addr other_addr4 = { { { 203, 0, 113, 2 } } };
@@ -1013,6 +1018,234 @@ ZTEST(net_socket_udp_pktinfo_src, test_v6_sendmsg_pktinfo_ifindex_scope_conflict
 	zassert_equal(ret, -1, "sendmsg should fail");
 	zassert_equal(errno, EINVAL, "Wrong errno %d", errno);
 	assert_nothing_sent();
+}
+
+/* Deliver a UDP packet from the peer to dst, as if it came in on iface. */
+static void inject_v4(struct net_if *iface, const struct net_in_addr *dst)
+{
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(payload) - 1,
+							   NET_AF_INET, NET_IPPROTO_UDP,
+							   K_NO_WAIT);
+
+	zassert_not_null(pkt, "Cannot allocate packet");
+	zassert_ok(net_ipv4_create(pkt, &peer_addr4, dst), "Cannot create IPv4 header");
+	zassert_ok(net_udp_create(pkt, net_htons(PEER_PORT), net_htons(TEST_PORT)),
+		   "Cannot create UDP header");
+	zassert_ok(net_pkt_write(pkt, payload, sizeof(payload) - 1), "Cannot write payload");
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_ipv4_finalize(pkt, NET_IPPROTO_UDP), "Cannot finalize packet");
+	zassert_ok(net_recv_data(iface, pkt), "Cannot receive packet");
+}
+
+static void inject_v6(struct net_if *iface, const struct net_in6_addr *dst)
+{
+	struct net_pkt *pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(payload) - 1,
+							   NET_AF_INET6, NET_IPPROTO_UDP,
+							   K_NO_WAIT);
+
+	zassert_not_null(pkt, "Cannot allocate packet");
+	zassert_ok(net_ipv6_create(pkt, &peer_addr6, dst), "Cannot create IPv6 header");
+	zassert_ok(net_udp_create(pkt, net_htons(PEER_PORT), net_htons(TEST_PORT)),
+		   "Cannot create UDP header");
+	zassert_ok(net_pkt_write(pkt, payload, sizeof(payload) - 1), "Cannot write payload");
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_ipv6_finalize(pkt, NET_IPPROTO_UDP), "Cannot finalize packet");
+	zassert_ok(net_recv_data(iface, pkt), "Cannot receive packet");
+}
+
+/* Receive one datagram and copy out its PKTINFO control message. */
+static void recv_pktinfo(int sock, int level, int type, void *info, size_t info_len)
+{
+	char buf[sizeof(payload)];
+	union {
+		struct net_cmsghdr hdr;
+		uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_in6_pktinfo))];
+	} cmsg_storage = { 0 };
+	struct net_iovec io_vec = {
+		.iov_base = buf,
+		.iov_len = sizeof(buf),
+	};
+	struct net_msghdr msg = {
+		.msg_iov = &io_vec,
+		.msg_iovlen = 1,
+		.msg_control = cmsg_storage.buf,
+		.msg_controllen = sizeof(cmsg_storage.buf),
+	};
+	struct zsock_pollfd pfd = { .fd = sock, .events = ZSOCK_POLLIN };
+	struct net_cmsghdr *cmsg;
+	int ret;
+
+	zassert_equal(zsock_poll(&pfd, 1, k_ticks_to_ms_ceil32(WAIT_TIME.ticks)), 1,
+		      "Nothing was received");
+
+	ret = zsock_recvmsg(sock, &msg, 0);
+	zassert_equal(ret, sizeof(payload) - 1, "recvmsg failed (%d)", -errno);
+
+	for (cmsg = NET_CMSG_FIRSTHDR(&msg); cmsg != NULL; cmsg = NET_CMSG_NXTHDR(&msg, cmsg)) {
+		if (cmsg->cmsg_level == level && cmsg->cmsg_type == type) {
+			zassert_equal(cmsg->cmsg_len, NET_CMSG_LEN(info_len), "Wrong cmsg length");
+			memcpy(info, NET_CMSG_DATA(cmsg), info_len);
+			return;
+		}
+	}
+
+	zassert_unreachable("No PKTINFO received");
+}
+
+static int open_pktinfo_sock(net_sa_family_t family)
+{
+	int sock = open_wildcard_sock(family);
+	int on = 1;
+	int ret;
+
+	if (family == NET_AF_INET) {
+		ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_PKTINFO, &on, sizeof(on));
+	} else {
+		ret = zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_RECVPKTINFO, &on,
+				       sizeof(on));
+	}
+
+	zassert_equal(ret, 0, "Cannot enable PKTINFO (%d)", -errno);
+
+	return sock;
+}
+
+/* A wildcard socket reports the interface and local address of each packet,
+ * not its own: that is what a server needs to answer from the right one.
+ * Packets from both interfaces are queued before any is read, so the
+ * interface of the last arrival can't stand in for the one being read.
+ */
+ZTEST(net_socket_udp_pktinfo_src, test_v4_recvmsg_pktinfo_iface)
+{
+	int sock = open_pktinfo_sock(NET_AF_INET);
+
+	for (int n = 0; n < ARRAY_SIZE(ifaces); n++) {
+		inject_v4(ifaces[n], &my_addr4[n]);
+	}
+
+	for (int n = 0; n < ARRAY_SIZE(ifaces); n++) {
+		struct net_in_pktinfo info;
+
+		recv_pktinfo(sock, NET_IPPROTO_IP, ZSOCK_IP_PKTINFO, &info, sizeof(info));
+
+		zassert_equal(info.ipi_ifindex, net_if_get_by_iface(ifaces[n]),
+			      "Received on interface %d, expected %d", info.ipi_ifindex,
+			      net_if_get_by_iface(ifaces[n]));
+		zassert_mem_equal(&info.ipi_addr, &my_addr4[n], NET_IPV4_ADDR_SIZE,
+				  "Wrong destination address for interface %d", n);
+		zassert_mem_equal(&info.ipi_spec_dst, &my_addr4[n], NET_IPV4_ADDR_SIZE,
+				  "Wrong local address for interface %d", n);
+	}
+}
+
+/* For a broadcast, the local address is the one a reply would come from. */
+ZTEST(net_socket_udp_pktinfo_src, test_v4_recvmsg_pktinfo_bcast)
+{
+	int sock = open_pktinfo_sock(NET_AF_INET);
+	struct net_in_pktinfo info;
+
+	inject_v4(ifaces[1], &bcast_addr4);
+	recv_pktinfo(sock, NET_IPPROTO_IP, ZSOCK_IP_PKTINFO, &info, sizeof(info));
+
+	zassert_equal(info.ipi_ifindex, net_if_get_by_iface(ifaces[1]),
+		      "Received on interface %d, expected %d", info.ipi_ifindex,
+		      net_if_get_by_iface(ifaces[1]));
+	zassert_mem_equal(&info.ipi_addr, &bcast_addr4, NET_IPV4_ADDR_SIZE,
+			  "Wrong destination address");
+	zassert_mem_equal(&info.ipi_spec_dst, &my_addr4[1], NET_IPV4_ADDR_SIZE,
+			  "Wrong local address");
+}
+
+ZTEST(net_socket_udp_pktinfo_src, test_v6_recvmsg_pktinfo_iface)
+{
+	int sock = open_pktinfo_sock(NET_AF_INET6);
+
+	for (int n = 0; n < ARRAY_SIZE(ifaces); n++) {
+		inject_v6(ifaces[n], &my_addr6[n]);
+	}
+
+	for (int n = 0; n < ARRAY_SIZE(ifaces); n++) {
+		struct net_in6_pktinfo info;
+
+		recv_pktinfo(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_PKTINFO, &info, sizeof(info));
+
+		zassert_equal(info.ipi6_ifindex, net_if_get_by_iface(ifaces[n]),
+			      "Received on interface %d, expected %d", info.ipi6_ifindex,
+			      net_if_get_by_iface(ifaces[n]));
+		zassert_mem_equal(&info.ipi6_addr, &my_addr6[n], NET_IPV6_ADDR_SIZE,
+				  "Wrong destination address for interface %d", n);
+	}
+}
+
+/* The interface of a connected socket follows the packets it receives. After
+ * one comes in on the other interface, a PKTINFO index for either interface
+ * still sends through it.
+ */
+static void check_ifindex_after_recv(net_sa_family_t family)
+{
+	int sock = open_wildcard_sock(family);
+	struct net_sockaddr_in peer4 = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(PEER_PORT),
+		.sin_addr = peer_addr4,
+	};
+	struct net_sockaddr_in6 peer6 = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(PEER_PORT),
+		.sin6_addr = peer_addr6,
+	};
+	struct zsock_pollfd pfd = { .fd = sock, .events = ZSOCK_POLLIN };
+	char buf[sizeof(payload)];
+	int ret;
+	int n;
+
+	if (family == NET_AF_INET) {
+		ret = zsock_connect(sock, (struct net_sockaddr *)&peer4, sizeof(peer4));
+	} else {
+		ret = zsock_connect(sock, (struct net_sockaddr *)&peer6, sizeof(peer6));
+	}
+
+	zassert_equal(ret, 0, "Cannot connect (%d)", -errno);
+
+	k_sem_reset(&sent_sem);
+	ret = zsock_send(sock, payload, sizeof(payload) - 1, 0);
+	zassert_equal(ret, sizeof(payload) - 1, "send failed (%d)", -errno);
+	zassert_ok(k_sem_take(&sent_sem, WAIT_TIME), "Nothing was sent");
+	n = (sent.iface == ifaces[0]) ? 0 : 1;
+
+	if (family == NET_AF_INET) {
+		inject_v4(ifaces[1 - n], &my_addr4[1 - n]);
+	} else {
+		inject_v6(ifaces[1 - n], &my_addr6[1 - n]);
+	}
+
+	zassert_equal(zsock_poll(&pfd, 1, k_ticks_to_ms_ceil32(WAIT_TIME.ticks)), 1,
+		      "Nothing was received");
+	ret = zsock_recv(sock, buf, sizeof(buf), 0);
+	zassert_equal(ret, sizeof(payload) - 1, "recv failed (%d)", -errno);
+
+	for (int i = 0; i < ARRAY_SIZE(ifaces); i++) {
+		int m = (i == 0) ? n : 1 - n;
+
+		k_sem_reset(&sent_sem);
+		if (family == NET_AF_INET) {
+			send_v4_from(sock, net_ipv4_unspecified_address(), ifindex_of(m));
+		} else {
+			send_v6_from(sock, net_ipv6_unspecified_address(), ifindex_of(m));
+		}
+
+		assert_sent_on(m);
+	}
+}
+
+ZTEST(net_socket_udp_pktinfo_src, test_v4_sendmsg_pktinfo_ifindex_connected_after_recv)
+{
+	check_ifindex_after_recv(NET_AF_INET);
+}
+
+ZTEST(net_socket_udp_pktinfo_src, test_v6_sendmsg_pktinfo_ifindex_connected_after_recv)
+{
+	check_ifindex_after_recv(NET_AF_INET6);
 }
 
 ZTEST_SUITE(net_socket_udp_pktinfo_src, NULL, setup, before, after, NULL);
