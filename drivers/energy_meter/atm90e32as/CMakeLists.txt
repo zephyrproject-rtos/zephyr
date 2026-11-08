@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
+zephyr_library_sources(atm90e32as.c)
+zephyr_library_sources_ifdef(CONFIG_ATM90E32AS_EVENTS atm90e32as_events.c)
