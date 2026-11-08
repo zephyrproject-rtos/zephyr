@@ -76,6 +76,23 @@ config ICACHE_LINE_SIZE
 	depends on CPU_HAS_ICACHE
 	default 32
 
+config ARMV5_FLAT_MMU
+	bool "Flat ARMv5 MMU mapping"
+	depends on CPU_HAS_MMU && !ARM_AARCH32_MMU
+	default y
+	help
+	  Build a flat (identity) translation table out of 1 MB sections and
+	  turn the MMU on during boot. The MMU is what gives memory its
+	  cacheability attributes, so the data and instruction caches can only
+	  be used when this is enabled.
+
+	  This is deliberately *not* the full Zephyr memory management layer
+	  (CONFIG_ARM_AARCH32_MMU): there is no arch_mem_map(), no demand
+	  paging and no per-region permissions, just a fixed map described by
+	  the SoC. Turn it off, and enable CONFIG_ARM_AARCH32_MMU instead,
+	  once the VMSA-v5 back end of arch/arm/core/mmu grows an ARMv5
+	  implementation.
+
 config CPU_HAS_DCACHE
 	default y
 
