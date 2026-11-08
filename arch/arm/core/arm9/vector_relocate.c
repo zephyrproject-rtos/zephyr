@@ -22,9 +22,18 @@ extern void *_vector_table[];
 
 void z_armv5_vector_table_init(void)
 {
-	uintptr_t base = VECTOR_BASE_LOW;
+	uint32_t sctlr = __get_SCTLR();
+	uintptr_t base;
 
-	__set_SCTLR(__get_SCTLR() & ~SCTLR_V_BIT);
+	if (IS_ENABLED(CONFIG_ARMV5_HIGH_VECTORS)) {
+		sctlr |= SCTLR_V_BIT;
+		base = VECTOR_BASE_HIGH;
+	} else {
+		sctlr &= ~SCTLR_V_BIT;
+		base = VECTOR_BASE_LOW;
+	}
+
+	__set_SCTLR(sctlr);
 	__ISB();
 
 	if (base != (uintptr_t)_vector_table) {
