@@ -1077,9 +1077,7 @@ static int add_timestamping(struct net_context *ctx,
 	return -ENOTSUP;
 }
 
-static int add_pktinfo(struct net_context *ctx,
-			struct net_pkt *pkt,
-			struct net_msghdr *msg)
+static int add_pktinfo(struct net_pkt *pkt, struct net_msghdr *msg)
 {
 	int ret = -ENOTSUP;
 	struct net_pkt_cursor backup;
@@ -1103,9 +1101,25 @@ static int add_pktinfo(struct net_context *ctx,
 		}
 
 		net_ipv4_addr_copy_raw((uint8_t *)&info.ipi_addr, ipv4_hdr->dst);
-		net_ipv4_addr_copy_raw((uint8_t *)&info.ipi_spec_dst,
-				       (uint8_t *)&net_sin(&ctx->local)->sin_addr);
-		info.ipi_ifindex = ctx->iface;
+
+		/* Report the packet's interface and local address, not the
+		 * socket's: a socket bound to the wildcard address can receive
+		 * on several interfaces, and the caller needs to know which one
+		 * to answer from. For a multicast or broadcast packet, the
+		 * local address is the one a reply would be sent from.
+		 */
+		if (net_ipv4_is_addr_mcast(&info.ipi_addr) ||
+		    net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &info.ipi_addr)) {
+			struct net_in_addr peer;
+
+			net_ipv4_addr_copy_raw((uint8_t *)&peer, ipv4_hdr->src);
+			net_ipaddr_copy(&info.ipi_spec_dst,
+					net_if_ipv4_select_src_addr(net_pkt_iface(pkt), &peer));
+		} else {
+			net_ipaddr_copy(&info.ipi_spec_dst, &info.ipi_addr);
+		}
+
+		info.ipi_ifindex = net_if_get_by_iface(net_pkt_iface(pkt));
 
 		ret = insert_pktinfo(msg, NET_IPPROTO_IP, ZSOCK_IP_PKTINFO,
 				     &info, sizeof(info));
@@ -1129,7 +1143,7 @@ static int add_pktinfo(struct net_context *ctx,
 		}
 
 		net_ipv6_addr_copy_raw((uint8_t *)&info.ipi6_addr, ipv6_hdr->dst);
-		info.ipi6_ifindex = ctx->iface;
+		info.ipi6_ifindex = net_if_get_by_iface(net_pkt_iface(pkt));
 
 		ret = insert_pktinfo(msg, NET_IPPROTO_IPV6, ZSOCK_IPV6_PKTINFO,
 				     &info, sizeof(info));
@@ -1433,7 +1447,7 @@ static ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 				if (IS_ENABLED(CONFIG_NET_CONTEXT_RECV_PKTINFO) &&
 				    net_context_is_recv_pktinfo_set(ctx)) {
-					if (add_pktinfo(ctx, pkt, msg) < 0) {
+					if (add_pktinfo(pkt, msg) < 0) {
 						msg->msg_flags |= ZSOCK_MSG_CTRUNC;
 					}
 				}
