@@ -852,7 +852,11 @@ static inline bool dad_failed(struct net_if *iface, struct net_in6_addr *addr)
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
+/* pref_iface, if not NULL, is the interface whose default router is tried
+ * first, when no route matches.
+ */
 static struct net_in6_addr *check_route(struct net_if *iface,
+				    struct net_if *pref_iface,
 				    struct net_in6_addr *dst,
 				    bool *try_route)
 {
@@ -888,7 +892,15 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 		/* No specific route to this host, use the default
 		 * route instead.
 		 */
-		router = net_if_ipv6_router_find_default(NULL, dst);
+		router = NULL;
+		if (pref_iface != NULL) {
+			router = net_if_ipv6_router_find_default(pref_iface, dst);
+		}
+
+		if (router == NULL) {
+			router = net_if_ipv6_router_find_default(NULL, dst);
+		}
+
 		if (!router) {
 			NET_DBG("No default route to %s",
 				net_sprint_ipv6_addr(dst));
@@ -911,10 +923,42 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 	return nexthop;
 }
 
+/* Whether a packet whose destination has the longest on-link prefix on best
+ * stays on its own interface instead: if the destination is on-link there
+ * too, and the packet's context is bound to that interface (SO_BINDTODEVICE)
+ * or the prefix there is as long.
+ */
+static bool keep_onlink_pkt_iface(struct net_pkt *pkt, struct net_if *best,
+				  const struct net_in6_addr *dst)
+{
+	struct net_if *pkt_iface = net_pkt_iface(pkt);
+	struct net_context *context = net_pkt_context(pkt);
+	struct net_if_ipv6_prefix *own;
+	struct net_if_ipv6_prefix *other;
+
+	if (pkt_iface == NULL || pkt_iface == best) {
+		return false;
+	}
+
+	own = net_if_ipv6_prefix_get(pkt_iface, dst);
+	if (own == NULL) {
+		return false;
+	}
+
+	if (context != NULL && net_context_is_bound_to_iface(context)) {
+		return true;
+	}
+
+	other = net_if_ipv6_prefix_get(best, dst);
+
+	return other == NULL || own->len >= other->len;
+}
+
 enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_in6_addr *nexthop = NULL;
+	struct net_if *pkt_iface;
 	struct net_if *iface = NULL;
 	struct net_ipv6_hdr *ip_hdr;
 	struct net_in6_addr dst_ip;
@@ -957,7 +1001,18 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 		return NET_OK;
 	}
 
+	/* Several interfaces can have the destination on-link, for example two
+	 * on one subnet. The longest prefix decides, but on a tie, or with
+	 * SO_BINDTODEVICE, the packet keeps the interface it was given, which
+	 * may have been chosen for its source address. Off-link, its default
+	 * router and neighbours are tried first, for the same reason.
+	 */
+	pkt_iface = net_pkt_iface(pkt);
 	if (net_if_ipv6_addr_onlink(&iface, &dst_ip)) {
+		if (keep_onlink_pkt_iface(pkt, iface, &dst_ip)) {
+			iface = pkt_iface;
+		}
+
 		nexthop = &dst_ip;
 		net_pkt_set_iface(pkt, iface);
 	} else if (net_ipv6_is_ll_addr(&dst_ip)) {
@@ -968,7 +1023,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 		 */
 		bool try_route = false;
 
-		nexthop = check_route(NULL, &dst_ip, &try_route);
+		nexthop = check_route(NULL, pkt_iface, &dst_ip, &try_route);
 		if (!nexthop) {
 			return NET_DROP;
 		}
@@ -982,7 +1037,9 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 		/* This means that the dst was not onlink, so try to
 		 * figure out the interface using nexthop instead.
 		 */
-		if (net_if_ipv6_addr_onlink(&iface, nexthop)) {
+		if (pkt_iface != NULL && net_if_ipv6_addr_onlink(&pkt_iface, nexthop)) {
+			iface = pkt_iface;
+		} else if (net_if_ipv6_addr_onlink(&iface, nexthop)) {
 			net_pkt_set_iface(pkt, iface);
 		} else {
 			/* nexthop might be the nbr list, e.g. a link-local
@@ -991,7 +1048,15 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 			 * thread can remove the entry, which clears nbr->iface.
 			 */
 			net_ipv6_nbr_lock();
-			nbr = nbr_lookup(&net_neighbor.table, NULL, nexthop);
+			nbr = NULL;
+			if (pkt_iface != NULL) {
+				nbr = nbr_lookup(&net_neighbor.table, pkt_iface, nexthop);
+			}
+
+			if (nbr == NULL) {
+				nbr = nbr_lookup(&net_neighbor.table, NULL, nexthop);
+			}
+
 			if (nbr != NULL) {
 				iface = nbr->iface;
 			}
@@ -1503,7 +1568,7 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 			struct net_in6_addr *nexthop;
 
-			nexthop = check_route(NULL, &ns_tgt, NULL);
+			nexthop = check_route(NULL, NULL, &ns_tgt, NULL);
 			if (nexthop) {
 				ns_routing_info(pkt, nexthop, &ns_tgt);
 				na_dst = &ns_dst;
