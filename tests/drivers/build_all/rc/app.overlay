@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/rc/rc-proto.h>
 
 / {
@@ -22,6 +23,26 @@
 		compatible = "zephyr,rc-loopback";
 		hw-rx-timeout;
 		rx-timeout-us = <5000>;
+		status = "okay";
+	};
+
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@0 {
+			compatible = "vnd,gpio";
+			reg = <0x0 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+	};
+
+	rc-gpio-ir-receiver {
+		compatible = "gpio-ir-receiver";
+		gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+		protocols = <RC_PROTO_NEC>;
 		status = "okay";
 	};
 };
