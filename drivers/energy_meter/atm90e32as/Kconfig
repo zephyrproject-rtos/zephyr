@@ -35,4 +35,11 @@ config ATM90E32AS_SHELL
 	  registers for calibration and debugging. Registers written from the
 	  shell keep their value until the chip is reset or resumed.
 
+config EMUL_ATM90E32AS
+	bool "Emulator for the ATM90E32AS"
+	default y
+	depends on EMUL
+	help
+	  Enable the SPI emulator for the ATM90E32AS, used by the driver tests.
+
 endif # ATM90E32AS

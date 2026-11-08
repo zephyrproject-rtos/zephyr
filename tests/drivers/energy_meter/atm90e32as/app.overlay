@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Pedro Ramos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&spi0 {
+	meter: atm90e32as@0 {
+		compatible = "microchip,atm90e32as";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		meter-constant = <3200>;
+		mmode0 = <0x0185>;
+		f0 = <6000>;
+		p-start-th = <0x0123>;
+		u-gain = <0x8000 0x7000 0x6000>;
+		i-gain = <0x8000 0x8000 0x4000>;
+		emm-int-en = <0x0001 0x0002>;
+		pm0-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		pm1-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		irq0-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		cf1-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* Calibrated to read 40% of the actual current */
+	meter_scaled: atm90e32as@1 {
+		compatible = "microchip,atm90e32as";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+		current-scale = <5 2>;
+	};
+};
