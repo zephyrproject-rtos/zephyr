@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Remote control receive
+common:
+  tags: rc
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "nec scancode 0x0102 press"
+tests:
+  sample.rc.receive: {}
+  sample.rc.receive.raw:
+    extra_configs:
+      - CONFIG_SAMPLE_RC_RAW=y

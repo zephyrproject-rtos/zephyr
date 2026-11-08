@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Remote control receive sample"
+
+config SAMPLE_RC_RAW
+	bool "Print raw words"
+	help
+	  Print the raw pulse and space words received by the rc device.
+
+config SAMPLE_RC_SELFTEST
+	bool "Send one NEC frame at start"
+	depends on RC_TX
+	help
+	  Send one NEC frame through the rc device at start, for a loopback
+	  device that stores transmitted words as received words.
+
+source "Kconfig.zephyr"
