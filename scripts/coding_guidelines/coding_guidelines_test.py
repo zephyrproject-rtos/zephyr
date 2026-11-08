@@ -268,3 +268,339 @@ def test_issue_position_is_one_based():
 def test_issues_sorted_by_position():
     issues = _issues("void f(int);\nint free;\n")
     assert [(i.line, i.col) for i in issues] == [(1, 8), (2, 5)]
+
+
+# include-guard (Dir 4.10)
+def _header_rules(text):
+    return [(i.rule, i.line) for i in coding_guidelines.check_text(text, RESERVED, header=True)]
+
+
+def test_header_with_guard_clean():
+    assert not _header_rules("/* c */\n#ifndef FOO_H\n#define FOO_H\nint x;\n#endif\n")
+
+
+def test_header_with_pragma_once_clean():
+    assert not _header_rules("#pragma once\nint x;\n")
+
+
+def test_header_with_includes_before_guard_clean():
+    assert not _header_rules("#include <stdint.h>\n#ifndef FOO_H\n#define FOO_H\nint x;\n#endif\n")
+
+
+def test_header_with_negated_defined_guard_clean():
+    assert not _header_rules("#if !defined(FOO_H)\n#define FOO_H\nint x;\n#endif\n")
+
+
+def test_header_without_guard_flagged():
+    assert _header_rules("/* c */\nint x;\n") == [("include-guard", 1)]
+
+
+def test_header_guard_defining_other_macro_reported_at_guard():
+    assert _header_rules("/* c */\n#ifndef FOO_H\n#define BAR\nint x;\n#endif\n") == [
+        ("include-guard", 2)
+    ]
+
+
+def test_header_with_code_outside_guard_reported_at_that_code():
+    assert _header_rules("#ifndef FOO_H\n#define FOO_H\n#endif\nint x;\n") == [("include-guard", 4)]
+
+
+def test_source_file_needs_no_guard():
+    assert not _rules("int x;\n")
+
+
+# Integer constants (Rules 7.1, 7.2, 7.3, 1.2)
+def test_octal_constant_flagged():
+    assert _rules("int mode = 0600;\n") == [("octal-constant", 1)]
+
+
+def test_zero_is_not_octal():
+    assert not _rules("int a = 0;\nint b = 0U;\nint c = 0x0;\n")
+
+
+def test_lowercase_l_suffix_flagged():
+    assert _rules("unsigned long a = 0x01ul;\nlong b = 1l;\n") == [
+        ("lowercase-l-suffix", 1),
+        ("lowercase-l-suffix", 2),
+    ]
+
+
+def test_uppercase_suffixes_clean():
+    assert not _rules("unsigned long a = 0x01UL;\nlong b = 1L;\nunsigned c = 2U;\n")
+
+
+def test_hex_constant_with_unsigned_type_flagged():
+    assert _rules("uint32_t m = 0xffffffff;\nuint32_t n = 0x80000000;\n") == [
+        ("unsigned-suffix", 1),
+        ("unsigned-suffix", 2),
+    ]
+
+
+def test_hex_constant_with_suffix_or_signed_type_clean():
+    assert not _rules(
+        "uint32_t m = 0xffffffffU;\nuint32_t n = 0x7fffffff;\nuint64_t o = 0x100000000;\n"
+    )
+
+
+def test_decimal_constant_never_needs_suffix():
+    assert not _rules("int64_t n = 4294967295;\n")
+
+
+def test_float_constant_ignored():
+    assert not _rules("double d = 0.5;\nfloat f = 1e10f;\n")
+
+
+def test_binary_literal_flagged():
+    assert _rules("int a = 0b1010;\n") == [("language-extension", 1)]
+
+
+def test_case_range_flagged():
+    assert _rules(
+        "void f(int n)\n{\n\tswitch (n) {\n\tcase 1 ... 3:\n\t\tbreak;\n"
+        "\tdefault:\n\t\tbreak;\n\t}\n}\n"
+    ) == [("language-extension", 4)]
+
+
+def test_elvis_operator_flagged():
+    assert _rules("void f(int a, int b)\n{\n\ta = b ?: 1;\n}\n") == [("language-extension", 3)]
+
+
+def test_conditional_with_both_operands_clean():
+    assert not _rules("void f(int a, int b)\n{\n\ta = b ? b : 1;\n}\n")
+
+
+# bitfield-type (Rule 6.1)
+def test_plain_int_bitfield_flagged():
+    assert _rules("struct s {\n\tint x: 1;\n\tchar y: 2;\n};\n") == [
+        ("bitfield-type", 2),
+        ("bitfield-type", 3),
+    ]
+
+
+def test_explicit_bitfield_types_clean():
+    assert not _rules(
+        "struct s {\n\tunsigned int x: 1;\n\tsigned int y: 2;\n\tbool z: 1;\n\tuint8_t w: 3;\n};\n"
+    )
+
+
+# inline-static (Rule 8.10)
+def test_inline_without_static_flagged():
+    assert _rules("inline int g(void)\n{\n\treturn 0;\n}\n") == [("inline-static", 1)]
+
+
+def test_always_inline_without_static_flagged():
+    assert _rules("ALWAYS_INLINE int g(void)\n{\n\treturn 0;\n}\n") == [("inline-static", 1)]
+
+
+def test_extern_inline_flagged():
+    assert _rules("extern inline int g(void)\n{\n\treturn 0;\n}\n") == [("inline-static", 1)]
+
+
+def test_static_inline_clean():
+    assert not _rules(
+        "static inline int g(void)\n{\n\treturn 0;\n}\n"
+        "static ALWAYS_INLINE int h(void)\n{\n\treturn 0;\n}\n"
+    )
+
+
+# switch rules (16.4, 16.5, 16.6)
+def _switch(body):
+    return _rules("void f(int n)\n{\n\tswitch (n) {\n" + body + "\t}\n}\n")
+
+
+def test_switch_without_default_flagged():
+    assert _switch("\tcase 1:\n\t\tbreak;\n\tcase 2:\n\t\tbreak;\n") == [("switch-default", 3)]
+
+
+def test_switch_default_in_the_middle_flagged():
+    assert _switch("\tcase 1:\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n\tcase 2:\n\t\tbreak;\n") == [
+        ("default-position", 6)
+    ]
+
+
+def test_switch_default_first_or_last_clean():
+    assert not _switch("\tdefault:\n\t\tbreak;\n\tcase 1:\n\t\tbreak;\n")
+    assert not _switch("\tcase 1:\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n")
+
+
+def test_switch_with_one_clause_flagged():
+    assert _switch("\tcase 1:\n\tdefault:\n\t\tbreak;\n") == [("switch-clauses", 3)]
+
+
+def test_switch_grouped_labels_count_as_one_clause():
+    # 'case 1: case 2:' share a body: one clause plus the default is two.
+    assert not _switch("\tcase 1:\n\tcase 2:\n\t\tbreak;\n\tdefault:\n\t\tbreak;\n")
+
+
+def test_switch_defaults_under_conditional_compilation_not_ordered():
+    assert not _switch(
+        "\tcase 1:\n\t\tbreak;\n#ifdef A\n\tdefault:\n\t\treturn 1;\n"
+        "#else\n\tdefault:\n\t\treturn 2;\n#endif\n"
+    )
+
+
+def test_switch_in_macro_body_skipped():
+    assert not _rules("#define SW(n) \\\n\tswitch (n) { \\\n\tcase 1: \\\n\t\tbreak; \\\n\t}\n")
+
+
+# Function body rules (15.2, 2.6, 17.2, 21.7)
+def test_backward_goto_flagged():
+    assert _rules("void f(void)\n{\nagain:\n\tg();\n\tgoto again;\n}\n") == [("backward-goto", 5)]
+
+
+def test_forward_goto_clean():
+    assert not _rules("void f(void)\n{\n\tgoto out;\nout:\n\treturn;\n}\n")
+
+
+def test_unused_label_flagged():
+    assert _rules("void f(void)\n{\n\tg();\nout:\n\treturn;\n}\n") == [("unused-label", 4)]
+
+
+def test_direct_recursion_flagged():
+    assert _rules("int f(int n)\n{\n\treturn n ? f(n - 1) : 0;\n}\n") == [("recursion", 3)]
+
+
+def test_call_to_other_function_clean():
+    assert not _rules("int f(int n)\n{\n\treturn g(n);\n}\n")
+
+
+def test_atoi_flagged():
+    assert _rules("void f(const char *s)\n{\n\tint n = atoi(s);\n\n\tg(n);\n}\n") == [
+        ("stdlib-ato", 3)
+    ]
+
+
+# pointer-nesting (18.5) and vla (18.8)
+def test_three_pointer_levels_flagged():
+    assert _rules("char ***p;\nvoid f(int ***q);\nstruct s {\n\tint ***r;\n};\n") == [
+        ("pointer-nesting", 1),
+        ("pointer-nesting", 2),
+        ("pointer-nesting", 4),
+    ]
+
+
+def test_two_pointer_levels_clean():
+    assert not _rules("char **argv;\nvoid f(int **q);\n")
+
+
+def test_vla_flagged():
+    assert _rules(
+        "void f(size_t n, const struct cfg *c)\n{\n\tint a[n];\n\tint b[c->len + 1];\n}\n"
+    ) == [
+        ("vla", 3),
+        ("vla", 4),
+    ]
+
+
+def test_array_sized_by_enumerator_or_offsetof_clean():
+    assert not _rules(
+        "enum { count = 4 };\nvoid f(void)\n{\n\tint a[count];\n"
+        "\tchar b[offsetof(struct s, m)];\n}\n"
+    )
+
+
+def test_array_sized_by_file_scope_object_flagged():
+    assert _rules("int n;\nvoid f(void)\n{\n\tint a[n];\n}\n") == [("vla", 4)]
+
+
+def test_constant_size_arrays_clean():
+    assert not _rules(
+        "void f(void)\n{\n\tint a[4];\n\tint b[BUF_SIZE + 2];\n\tint c[ARRAY_SIZE(a)];\n"
+        "\tint d[sizeof(int) * 2];\n\tstatic int e[NUM_ITEMS];\n}\n"
+    )
+
+
+def test_file_scope_array_is_not_vla():
+    assert not _rules("int a[n];\n")
+
+
+# braces (15.6)
+def test_unbraced_bodies_flagged():
+    text = (
+        "void f(int n)\n{\n\tif (n)\n\t\tg();\n\telse\n\t\th();\n\twhile (n--)\n\t\tg();\n"
+        "\tfor (;;)\n\t\tg();\n\tdo\n\t\tg();\n\twhile (n);\n}\n"
+    )
+    assert [r for r, _ in _rules(text)] == ["braces"] * 5
+
+
+def test_braced_bodies_and_else_if_clean():
+    text = (
+        "void f(int n)\n{\n\tif (n) {\n\t\tg();\n\t} else if (n > 1) {\n\t\th();\n"
+        "\t} else {\n\t\ti();\n\t}\n}\n"
+    )
+    assert not _rules(text)
+
+
+# line-comment (Zephyr style)
+def test_line_comment_flagged():
+    assert _rules("// hello\nint x; // there\n") == [("line-comment", 1), ("line-comment", 2)]
+
+
+def test_block_comment_clean():
+    assert not _rules("/* hello */\nint x; /* there */\n")
+
+
+# macro-parameter (20.7)
+def test_unparenthesized_macro_parameter_flagged():
+    assert _rules("#define BAD(a, b) (a + b)\n") == [("macro-parameter", 1)]
+
+
+def test_parenthesized_macro_parameters_clean():
+    assert not _rules("#define ADD(a, b) ((a) + (b))\n")
+
+
+def test_macro_parameter_as_argument_or_index_clean():
+    text = (
+        "#define CALL(f, x) f((x))\n#define IDX(a, i) ((a)[i])\n"
+        "#define ASSIGN(v, x) do { (v) = x; } while (0)\n"
+    )
+    assert not _rules(text)
+
+
+def test_macro_parameter_as_member_designator_clean():
+    assert not _rules("#define GET(s, m) ((s)->m)\n#define VAL(s, m) ((s).m)\n")
+
+
+def test_macro_parameter_before_member_access_flagged():
+    assert _rules("#define NEXT(x) x->next\n#define LEN(x) x.len\n") == [
+        ("macro-parameter", 1),
+        ("macro-parameter", 2),
+    ]
+
+
+def test_macro_parameter_reported_at_its_use_in_the_body():
+    (issue,) = _issues("#define ADD(a, b) \\\n\t((a) + b)\n")
+    assert (issue.rule, issue.line, issue.col) == ("macro-parameter", 2, 9)
+
+
+def test_macro_parameter_after_line_splice_clean():
+    assert not _rules("#define CALL(x) call( \\\n\tx)\n")
+
+
+def test_macro_parameter_as_cast_type_clean():
+    assert not _rules("#define SIZEOF_FIELD(type, member) sizeof(((type *)0)->member)\n")
+
+
+def test_stringified_and_pasted_parameters_clean():
+    assert not _rules("#define STR(x) #x\n#define CAT(x, y) x##y\n")
+
+
+def test_macro_parameter_next_to_word_clean():
+    assert not _rules("#define DEF(_name, ...) struct item _name[] = {__VA_ARGS__};\n")
+
+
+def test_macro_parameter_before_arrow_flagged():
+    assert _rules("#define DATA(dev) (*(struct data *)dev->data)\n") == [("macro-parameter", 1)]
+
+
+def test_switch_clauses_under_conditional_compilation_counted():
+    assert not _switch(
+        "#ifdef A\n\tcase 1:\n\t\treturn 1;\n#endif\n#ifdef B\n\tcase 2:\n\t\treturn 2;\n#endif\n"
+        "\tdefault:\n\t\tbreak;\n"
+    )
+
+
+def test_do_while_zero_tail_of_macro_not_a_loop_body():
+    # An unrecognized macro body ends in '} while (0)' with no backslash on
+    # that line; the next declaration is not its loop body.
+    assert not _rules("\t} while (0)\nint x;\n")

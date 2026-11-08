@@ -22,6 +22,43 @@ that can be decided from the syntax of a single, unpreprocessed file:
   unnamed-parameter    MISRA C:2012 Rule 8.2. A function declaration or
                        definition has a parameter with a type but no name,
                        including the parameters of a function pointer parameter.
+  include-guard        MISRA C:2012 Dir 4.10. A header is not wrapped in an
+                       '#ifndef X / #define X ... #endif' include guard.
+  language-extension   MISRA C:2012 Rule 1.2. A binary literal, a case range
+                       ('case 1 ... 3:') or a conditional with an omitted
+                       operand ('a ?: b').
+  bitfield-type        MISRA C:2012 Rule 6.1. A bit-field of plain int, char,
+                       short or long, whose signedness is implementation-defined.
+  octal-constant       MISRA C:2012 Rule 7.1. An octal integer constant.
+  unsigned-suffix      MISRA C:2012 Rule 7.2. A hexadecimal or octal constant
+                       that has an unsigned type without a u or U suffix.
+  lowercase-l-suffix   MISRA C:2012 Rule 7.3. A lowercase l in a literal suffix.
+  inline-static        MISRA C:2012 Rule 8.10. An inline function definition
+                       without the static storage class.
+  switch-default       MISRA C:2012 Rule 16.4. A switch without a default label.
+  default-position     MISRA C:2012 Rule 16.5. A default label that is neither
+                       the first nor the last label of its switch.
+  switch-clauses       MISRA C:2012 Rule 16.6. A switch with fewer than two
+                       clauses.
+  backward-goto        MISRA C:2012 Rule 15.2. A goto to a label declared
+                       earlier in the function.
+  unused-label         MISRA C:2012 Rule 2.6. A label no goto refers to.
+  recursion            MISRA C:2012 Rule 17.2. A function calling itself.
+  pointer-nesting      MISRA C:2012 Rule 18.5. A declarator with more than two
+                       levels of pointer nesting.
+  vla                  MISRA C:2012 Rule 18.8. A block scope array whose size
+                       is not a constant expression.
+  stdlib-ato           MISRA C:2012 Rule 21.7. A call to atof, atoi, atol or
+                       atoll, which have undefined behavior on invalid input.
+  braces               MISRA C:2012 Rule 15.6. The body of an if, else, for,
+                       while or do statement is not a compound statement.
+  macro-parameter      MISRA C:2012 Rule 20.7. A function-like macro uses a
+                       parameter without parentheses next to an operator.
+  line-comment         Zephyr coding style (doc/contribute/style/code.rst). A
+                       // comment.
+
+The last three overlap with checkpatch, which reports them on the lines of a
+patch; this checker reports them on the tree as it is.
 
 The rules are derived from the tree-sitter-c syntax tree. tree-sitter parses C
 without preprocessing and recovers from the constructs it cannot parse (macro
@@ -151,6 +188,58 @@ def _is_bool_literal_violation(value: Node | None) -> bool:
 
 _WORD = re.compile(r"[A-Za-z_]\w*")
 
+# An integer constant: the digits by radix and the suffix; floats do not match.
+_INTEGER = re.compile(r"(?P<hex>0[xX][0-9a-fA-F]+|0[bB][01]+|0[0-7]*|[1-9]\d*)(?P<suffix>[uUlL]*)")
+
+# Bit-field types whose signedness is implementation-defined (Rule 6.1).
+_PLAIN_INT_TYPES = {"int", "char", "short", "short int", "long", "long int", "long long"}
+
+_STDLIB_ATO = {"atof", "atoi", "atol", "atoll"}
+
+# Statements whose body must be a compound statement (Rule 15.6).
+_CONTROL_STATEMENTS = ("if_statement", "for_statement", "while_statement", "do_statement")
+
+# Tokens of a macro body: identifiers, numbers, strings, character constants,
+# the preprocessor operators and single punctuation characters.
+_TOKEN = re.compile(
+    r'[A-Za-z_]\w*|0[xX][0-9a-fA-F]+\w*|\d+\.?\d*\w*|"(?:\\.|[^"\\])*"|\x27(?:\\.|[^\x27\\])*\x27'
+    r"|##|#|->|\+\+|--|<<|>>|<=|>=|==|!=|&&|\|\||[^\s]"
+)
+
+# Tokens next to which a bare macro parameter needs no parentheses: it is the
+# whole operand, an argument, an array index or a statement by itself.
+_PARAM_SAFE_NEIGHBORS = {"(", ")", ",", "[", "]", "{", "}", ";", "#", "##", ":", "?", "="}
+
+
+_NOT_DEFINED = re.compile(r"!\s*defined\s*\(?\s*([A-Za-z_]\w*)\s*\)?\s*$")
+
+
+def _guard_name(node: Node) -> str | None:
+    """The macro an include guard tests, for '#ifndef X' and '#if !defined(X)'."""
+    if node.type == "preproc_ifdef" and _text(node).startswith("#ifndef"):
+        name = node.child_by_field_name("name")
+        return _text(name) if name is not None else None
+    if node.type == "preproc_if":
+        condition = node.child_by_field_name("condition")
+        if condition is not None:
+            m = _NOT_DEFINED.fullmatch(_text(condition).strip())
+            if m is not None:
+                return m.group(1)
+    return None
+
+
+def _is_token_safe(token: str) -> bool:
+    """
+    Whether a macro parameter next to 'token' is not an operand of an operator:
+    punctuation that delimits it, or a word ('struct name[]', 'sep F(x)'),
+    which juxtaposes rather than combines.
+    """
+    return token in _PARAM_SAFE_NEIGHBORS or _WORD.fullmatch(token) is not None
+
+
+# Statements that end a function's control flow.
+_JUMPS = ("break_statement", "return_statement", "goto_statement", "continue_statement")
+
 # Keywords that error recovery can leave in function position, as in
 # '} else if (x) {' parsed as a definition of a function named 'if'.
 _KEYWORDS = {"if", "else", "for", "while", "do", "switch", "return", "sizeof", "goto"}
@@ -177,6 +266,101 @@ def _is_macro_name(name: str) -> bool:
     of sys/util.h start with a double underscore.
     """
     return name.startswith("__") or name in _KEYWORDS or not any(c.islower() for c in name)
+
+
+def _pointer_depth(declarator: Node | None) -> int:
+    """Number of pointer levels in a declarator ('char ***p' has three)."""
+    depth = 0
+    while declarator is not None:
+        if declarator.type in ("pointer_declarator", "abstract_pointer_declarator"):
+            depth += 1
+        elif declarator.type == "parenthesized_declarator":
+            inner = [c for c in declarator.named_children if c.type != "type_qualifier"]
+            declarator = inner[0] if inner else None
+            continue
+        declarator = declarator.child_by_field_name("declarator")
+    return depth
+
+
+# Function-like operators that yield a constant (Rule 18.8).
+_CONSTANT_FUNCTIONS = {
+    "sizeof",
+    "offsetof",
+    "alignof",
+    "_Alignof",
+    "__alignof__",
+    "__builtin_offsetof",
+}
+
+
+def _is_constant_expression(node: Node, objects: set[str]) -> bool:
+    """
+    Whether an array size is a constant expression, as far as the syntax tells.
+    'objects' are the names declared as objects in the scopes visible at the
+    array: a size that reads one of them, or a member, an element or a pointer
+    target, is variable, as is a call to anything but a macro (upper case name)
+    or a constant operator such as offsetof. A name that is not a known object
+    (an enumerator, a macro) counts as constant.
+    """
+    stack = [node]
+    while stack:
+        n = stack.pop()
+        if n.type == "identifier":
+            if _text(n) in objects:
+                return False
+            continue
+        if n.type in ("field_expression", "subscript_expression", "pointer_expression"):
+            return False
+        if n.type == "call_expression":
+            function = n.child_by_field_name("function")
+            if function is None:
+                return False
+            callee = _text(function)
+            if not _is_macro_name(callee) and callee not in _CONSTANT_FUNCTIONS:
+                return False
+            # Macro arguments can be anything, e.g. ARRAY_SIZE(buf).
+            continue
+        if n.type == "sizeof_expression":
+            continue
+        stack.extend(n.named_children)
+    return True
+
+
+def _switch_clauses(body: Node) -> list[list[Node]]:
+    """
+    The clauses of a switch body: each is the run of case_statement nodes that
+    ends with the one carrying statements ('case 1: case 2: x(); break;' is one
+    clause). A trailing run of bare labels is a clause of its own.
+    """
+    clauses: list[list[Node]] = []
+    run: list[Node] = []
+    for case in _flatten_preproc(body):
+        if case.type != "case_statement":
+            continue
+        run.append(case)
+        if _case_statements(case):
+            clauses.append(run)
+            run = []
+    if run:
+        clauses.append(run)
+    return clauses
+
+
+def _flatten_preproc(node: Node) -> list[Node]:
+    """The named children of a node, with conditional compilation blocks opened up."""
+    result: list[Node] = []
+    for child in node.named_children:
+        if child.type.startswith("preproc_") and child.type not in ("preproc_call", "preproc_def"):
+            result.extend(_flatten_preproc(child))
+        else:
+            result.append(child)
+    return result
+
+
+def _case_statements(case: Node) -> list[Node]:
+    """The statements of a case_statement, without its label value and comments."""
+    value = case.child_by_field_name("value")
+    return [c for c in case.named_children if c != value and c.type != "comment"]
 
 
 class _Checker:
@@ -354,6 +538,361 @@ class _Checker:
                 )
             )
 
+    def _check_function_definition(self, node: Node, declarator: Node) -> None:
+        """inline-static, then the body rules."""
+        specifiers = {_text(c) for c in node.children if c.type == "storage_class_specifier"}
+        macros = {_text(c) for c in node.children if c.type == "type_identifier"}
+        if ("inline" in specifiers or "ALWAYS_INLINE" in macros) and "static" not in specifiers:
+            self.issues.append(
+                _issue(
+                    node,
+                    "inline-static",
+                    "inline function is not static (MISRA C:2012 Rule 8.10)",
+                )
+            )
+        name = _declared_name(declarator)
+        body = node.child_by_field_name("body")
+        if name is not None and body is not None:
+            self._check_function_body(_text(name), body)
+
+    def _check_bitfield(self, field: Node) -> None:
+        if not any(c.type == "bitfield_clause" for c in field.children):
+            return
+        type_node = _type_node(field)
+        if type_node is not None and _text(type_node) in _PLAIN_INT_TYPES:
+            self.issues.append(
+                _issue(
+                    field,
+                    "bitfield-type",
+                    f"bit-field of plain '{_text(type_node)}' has implementation-defined "
+                    "signedness, use an explicitly unsigned or signed type "
+                    "(MISRA C:2012 Rule 6.1)",
+                )
+            )
+
+    def _check_braces(self, node: Node) -> None:
+        """Rule 15.6: the body of an if, else, for, while or do is a compound statement."""
+        condition = node.child_by_field_name("condition")
+        if (
+            node.type == "while_statement"
+            and condition is not None
+            and _text(condition)
+            in (
+                "(0)",
+                "(false)",
+            )
+        ):
+            # The tail of a 'do { } while (0)' macro body the parser did not
+            # recognize; what follows it is not the loop body.
+            return
+        for field in ("consequence", "body"):
+            body = node.child_by_field_name(field)
+            if body is not None and body.type != "compound_statement":
+                self.issues.append(
+                    _issue(
+                        body,
+                        "braces",
+                        f"body of '{_text(node.children[0])}' is not a compound statement, "
+                        "add braces (MISRA C:2012 Rule 15.6)",
+                    )
+                )
+        alternative = node.child_by_field_name("alternative")
+        if alternative is not None:
+            body = alternative.named_children[-1] if alternative.named_children else None
+            if body is not None and body.type not in ("compound_statement", "if_statement"):
+                self.issues.append(
+                    _issue(
+                        body,
+                        "braces",
+                        "body of 'else' is not a compound statement, add braces "
+                        "(MISRA C:2012 Rule 15.6)",
+                    )
+                )
+
+    def _check_macro_parameters(self, node: Node) -> None:
+        """Rule 20.7: each parameter instance in a macro body is parenthesized."""
+        params = node.child_by_field_name("parameters")
+        value = node.child_by_field_name("value")
+        if params is None or value is None:
+            return
+        names = {_text(p) for p in params.named_children if p.type == "identifier"}
+        if not names:
+            return
+        body = _text(value)
+        # A line splice is not a token.
+        matches = [m for m in _TOKEN.finditer(body) if m.group() != "\\"]
+        tokens = [m.group() for m in matches]
+        for i, token in enumerate(tokens):
+            if token not in names:
+                continue
+            before = tokens[i - 1] if i > 0 else "("
+            after = tokens[i + 1] if i + 1 < len(tokens) else ")"
+            if before in ("#", "##") or after == "##":
+                # Stringified or pasted: parentheses would change the result.
+                continue
+            if before in ("->", "."):
+                # A member designator ('(s)->m') cannot be parenthesized.
+                continue
+            if after == "(":
+                # Used as a function name: (f)(x) is not what is meant.
+                continue
+            if after == "*" and i + 2 < len(tokens) and tokens[i + 2] == ")":
+                # A type in a cast: '((type *)0)->member'.
+                continue
+            if _is_token_safe(before) and _is_token_safe(after):
+                continue
+            # Report at the occurrence in the body, which is the line a change
+            # to the macro touches.
+            prefix = body[: matches[i].start()]
+            line = value.start_point.row + 1 + prefix.count("\n")
+            if "\n" in prefix:
+                col = len(prefix.rsplit("\n", 1)[1].encode("utf-8")) + 1
+            else:
+                col = value.start_point.column + len(prefix.encode("utf-8")) + 1
+            self.issues.append(
+                Issue(
+                    line,
+                    col,
+                    "macro-parameter",
+                    f"macro parameter '{token}' is used without parentheses in the body, "
+                    f"next to '{before if before not in _PARAM_SAFE_NEIGHBORS else after}' "
+                    "(MISRA C:2012 Rule 20.7)",
+                )
+            )
+            break
+
+    def _check_number(self, node: Node) -> None:
+        """octal-constant, unsigned-suffix, lowercase-l-suffix, language-extension."""
+        text = _text(node)
+        m = _INTEGER.fullmatch(text)
+        if m is None:
+            return
+        digits, suffix = m.group("hex"), m.group("suffix")
+        if "l" in suffix:
+            self.issues.append(
+                _issue(
+                    node,
+                    "lowercase-l-suffix",
+                    f"'{text}' uses a lowercase l suffix, write L (MISRA C:2012 Rule 7.3)",
+                )
+            )
+        if digits.startswith(("0b", "0B")):
+            self.issues.append(
+                _issue(
+                    node,
+                    "language-extension",
+                    f"'{text}' is a binary literal, a language extension (MISRA C:2012 Rule 1.2)",
+                )
+            )
+            return
+        if digits.startswith(("0x", "0X")):
+            value = int(digits, 16)
+        elif len(digits) > 1 and digits.startswith("0"):
+            self.issues.append(
+                _issue(
+                    node, "octal-constant", f"'{text}' is an octal constant (MISRA C:2012 Rule 7.1)"
+                )
+            )
+            value = int(digits, 8)
+        else:
+            # A decimal constant without a suffix never has an unsigned type.
+            return
+        if "u" not in suffix.lower() and (
+            0x80000000 <= value < 0x100000000 or value >= 0x8000000000000000
+        ):
+            self.issues.append(
+                _issue(
+                    node,
+                    "unsigned-suffix",
+                    f"'{text}' has an unsigned type, add a U suffix (MISRA C:2012 Rule 7.2)",
+                )
+            )
+
+    def _check_switch(self, node: Node) -> None:
+        """switch-default, default-position, switch-clauses."""
+        body = node.child_by_field_name("body")
+        if body is None:
+            return
+        clauses = _switch_clauses(body)
+        labels = [case for clause in clauses for case in clause]
+        defaults = [case for case in labels if case.child_by_field_name("value") is None]
+        if not defaults:
+            self.issues.append(
+                _issue(
+                    node, "switch-default", "switch has no default label (MISRA C:2012 Rule 16.4)"
+                )
+            )
+        elif len(defaults) == 1 and defaults[0] != labels[0] and defaults[0] != labels[-1]:
+            # Several defaults come from conditional compilation; which one is
+            # last depends on the configuration, so their order is not judged.
+            self.issues.append(
+                _issue(
+                    defaults[0],
+                    "default-position",
+                    "default is neither the first nor the last label of the switch "
+                    "(MISRA C:2012 Rule 16.5)",
+                )
+            )
+        if len(clauses) < 2:
+            self.issues.append(
+                _issue(
+                    node,
+                    "switch-clauses",
+                    "switch has fewer than two clauses, use an if statement "
+                    "(MISRA C:2012 Rule 16.6)",
+                )
+            )
+
+    def _check_function_body(self, function: str, body: Node) -> None:
+        """recursion, unused-label and backward-goto for one function body."""
+        labels: list[Node] = []
+        gotos: list[Node] = []
+        stack = [body]
+        while stack:
+            n = stack.pop()
+            if n.type == "labeled_statement":
+                labels.append(n)
+            elif n.type == "goto_statement":
+                gotos.append(n)
+            elif n.type == "call_expression" and not _in_macro_body(n):
+                callee = n.child_by_field_name("function")
+                if callee is not None and callee.type == "identifier":
+                    name = _text(callee)
+                    if name == function:
+                        self.issues.append(
+                            _issue(
+                                n, "recursion", f"'{name}' calls itself (MISRA C:2012 Rule 17.2)"
+                            )
+                        )
+                    elif name in _STDLIB_ATO:
+                        self.issues.append(
+                            _issue(
+                                n,
+                                "stdlib-ato",
+                                f"'{name}' has undefined behavior on invalid input, use "
+                                "strtol/strtoul/strtod (MISRA C:2012 Rule 21.7)",
+                            )
+                        )
+            stack.extend(n.named_children)
+
+        targets: dict[str, list[Node]] = {}
+        for goto in gotos:
+            label = goto.child_by_field_name("label")
+            if label is not None:
+                targets.setdefault(_text(label), []).append(goto)
+        for labeled in labels:
+            label = labeled.child_by_field_name("label")
+            if label is None or _in_macro_body(labeled):
+                continue
+            name = _text(label)
+            if name not in targets:
+                self.issues.append(
+                    _issue(
+                        label, "unused-label", f"label '{name}' is unused (MISRA C:2012 Rule 2.6)"
+                    )
+                )
+                continue
+            for goto in targets[name]:
+                if goto.start_byte > labeled.start_byte:
+                    self.issues.append(
+                        _issue(
+                            goto,
+                            "backward-goto",
+                            f"goto jumps back to '{name}' (MISRA C:2012 Rule 15.2)",
+                        )
+                    )
+
+    def _check_pointer_nesting(self, decl: Node) -> None:
+        for declarator in decl.children_by_field_name("declarator"):
+            if _pointer_depth(declarator) > 2:
+                name = _declared_name(declarator)
+                what = f"'{_text(name)}'" if name is not None else "declarator"
+                self.issues.append(
+                    _issue(
+                        declarator,
+                        "pointer-nesting",
+                        f"{what} has more than two levels of pointer nesting "
+                        "(MISRA C:2012 Rule 18.5)",
+                    )
+                )
+
+    def _check_vla(self, decl: Node, scopes: list[dict[str, bool]]) -> None:
+        if any(
+            c.type == "storage_class_specifier" and _text(c) in ("static", "extern")
+            for c in decl.children
+        ):
+            return
+        objects = {name for scope in scopes for name in scope}
+        for declarator in decl.children_by_field_name("declarator"):
+            inner = declarator
+            if inner.type == "init_declarator":
+                inner = inner.child_by_field_name("declarator")
+            while inner is not None and inner.type in (
+                "pointer_declarator",
+                "parenthesized_declarator",
+            ):
+                inner = (
+                    inner.child_by_field_name("declarator")
+                    if inner.type == "pointer_declarator"
+                    else (inner.named_children[0] if inner.named_children else None)
+                )
+            while inner is not None and inner.type == "array_declarator":
+                size = inner.child_by_field_name("size")
+                if size is not None and not _is_constant_expression(size, objects):
+                    name = _declared_name(inner)
+                    self.issues.append(
+                        _issue(
+                            inner,
+                            "vla",
+                            f"'{_text(name) if name else ''}' is a variable-length array "
+                            "(MISRA C:2012 Rule 18.8)",
+                        )
+                    )
+                    break
+                inner = inner.child_by_field_name("declarator")
+
+    def check_include_guard(self, root: Node) -> None:
+        """include-guard: the header is one '#ifndef X' / '#define X' block."""
+        # Includes are guarded by their own header and may precede the guard.
+        top = [c for c in root.named_children if c.type not in ("comment", "preproc_include")]
+        if not top:
+            return
+        for n in top:
+            if n.type == "preproc_call":
+                directive = n.child_by_field_name("directive")
+                if directive is not None and _text(directive) == "#pragma":
+                    argument = n.child_by_field_name("argument")
+                    if argument is not None and _text(argument).strip() == "once":
+                        return
+        guards = [(n, name) for n in top if (name := _guard_name(n)) is not None]
+        if not guards:
+            self.issues.append(
+                Issue(1, 1, "include-guard", "header has no include guard (MISRA C:2012 Dir 4.10)")
+            )
+            return
+        guard, name = guards[0]
+        define = next((c for c in guard.named_children if c.type == "preproc_def"), None)
+        defined = define.child_by_field_name("name") if define is not None else None
+        if defined is None or _text(defined) != name:
+            self.issues.append(
+                _issue(
+                    guard,
+                    "include-guard",
+                    f"include guard '{name}' is not defined right after its test "
+                    "(MISRA C:2012 Dir 4.10)",
+                )
+            )
+            return
+        outside = next((n for n in top if n != guard), None)
+        if outside is not None:
+            self.issues.append(
+                _issue(
+                    outside,
+                    "include-guard",
+                    f"code outside the include guard '{name}' (MISRA C:2012 Dir 4.10)",
+                )
+            )
+
     def walk(self, root: Node) -> None:
         """
         Check the tree under 'root'.
@@ -383,6 +922,7 @@ class _Checker:
                     declarator = declarator.child_by_field_name("declarator")
                 if declarator is not None:
                     self._check_function_declarator(declarator, node)
+                    self._check_function_definition(node, declarator)
                     # Parameters are visible in the body, which is the next scope.
                     params = declarator.child_by_field_name("parameters")
                     scopes = [*scopes, {}]
@@ -394,12 +934,55 @@ class _Checker:
                 pass
             elif node_type == "declaration":
                 self._check_declaration(node, scopes)
+                self._check_pointer_nesting(node)
+                if len(scopes) > 1:
+                    self._check_vla(node, scopes)
             elif node_type == "field_declaration":
                 for declarator in node.children_by_field_name("declarator"):
                     if declarator.type != "function_declarator":
                         self._check_name(_declared_name(declarator), node, "member")
+                self._check_pointer_nesting(node)
+                self._check_bitfield(node)
+            elif node_type == "parameter_declaration":
+                self._check_pointer_nesting(node)
             elif node_type == "assignment_expression":
                 self._check_assignment(node, scopes)
+            elif node_type == "number_literal":
+                self._check_number(node)
+            elif node_type == "switch_statement" and not _in_macro_body(node):
+                self._check_switch(node)
+            elif node_type == "case_statement" and "..." in _text(node).split(":", 1)[0]:
+                self.issues.append(
+                    _issue(
+                        node,
+                        "language-extension",
+                        "case range is a language extension (MISRA C:2012 Rule 1.2)",
+                    )
+                )
+            elif node_type in _CONTROL_STATEMENTS and not _in_macro_body(node):
+                self._check_braces(node)
+            elif node_type == "comment" and _text(node).startswith("//"):
+                self.issues.append(
+                    _issue(
+                        node,
+                        "line-comment",
+                        "use /* */ comments, not // (Zephyr coding style)",
+                    )
+                )
+            elif node_type == "preproc_function_def":
+                self._check_macro_parameters(node)
+            elif (
+                node_type == "conditional_expression"
+                and node.child_by_field_name("consequence") is None
+            ):
+                self.issues.append(
+                    _issue(
+                        node,
+                        "language-extension",
+                        "'?:' with an omitted operand is a language extension "
+                        "(MISRA C:2012 Rule 1.2)",
+                    )
+                )
 
             # Siblings share one scope dict, so a declaration recorded while
             # visiting an earlier sibling is visible to the later ones; push in
@@ -407,13 +990,16 @@ class _Checker:
             stack.extend((child, scopes, recovered) for child in reversed(node.children))
 
 
-def check_text(text: str, reserved: set[str]) -> list[Issue]:
+def check_text(text: str, reserved: set[str], header: bool = False) -> list[Issue]:
     """
     Return the list of guideline issues for the given C file contents.
-    'reserved' is the set of reserved identifiers (see load_reserved()).
+    'reserved' is the set of reserved identifiers (see load_reserved());
+    'header' selects the rules that apply to header files only.
     """
     root = _PARSER.parse(text.encode("utf-8")).root_node
     checker = _Checker(reserved)
+    if header:
+        checker.check_include_guard(root)
     checker.walk(root)
     checker.issues.sort(key=lambda issue: (issue.line, issue.col))
     return checker.issues
@@ -421,7 +1007,9 @@ def check_text(text: str, reserved: set[str]) -> list[Issue]:
 
 def check_file(path: Path, reserved: set[str]) -> list[Issue]:
     """Return the list of guideline issues for a single file."""
-    return check_text(path.read_text(encoding="utf-8", errors="replace"), reserved)
+    return check_text(
+        path.read_text(encoding="utf-8", errors="replace"), reserved, header=path.suffix == ".h"
+    )
 
 
 def _is_c_file(name: str) -> bool:
