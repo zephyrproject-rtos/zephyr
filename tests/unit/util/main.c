@@ -773,6 +773,26 @@ ZTEST(util, test_BIT_MASK64)
 	zassert_equal(0x7fffffffffffffffULL, bitmask63);
 }
 
+ZTEST(util, test_GENMASK)
+{
+	zassert_equal(0x00000001UL, GENMASK(0, 0));
+	zassert_equal(0x000000f0UL, GENMASK(7, 4));
+	zassert_equal(0x00ffffffUL, GENMASK(23, 0));
+	zassert_equal(0x80000000UL, GENMASK(31, 31));
+	zassert_equal(0xffffffffUL, (uint32_t)GENMASK(31, 0));
+	zassert_equal(~0UL, GENMASK(BITS_PER_LONG - 1, 0));
+	zassert_equal(~1UL, GENMASK(BITS_PER_LONG - 1, 1));
+}
+
+ZTEST(util, test_GENMASK64)
+{
+	zassert_equal(0x0000000000000001ULL, GENMASK64(0, 0));
+	zassert_equal(0x000000ff00000000ULL, GENMASK64(39, 32));
+	zassert_equal(0x00000000ffffffffULL, GENMASK64(31, 0));
+	zassert_equal(0x8000000000000000ULL, GENMASK64(63, 63));
+	zassert_equal(0xffffffffffffffffULL, GENMASK64(63, 0));
+}
+
 ZTEST(util, test_IS_BIT_MASK)
 {
 	uint32_t zero32 = 0UL;
