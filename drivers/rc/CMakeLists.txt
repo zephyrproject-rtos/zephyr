@@ -4,4 +4,5 @@
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
+zephyr_library_sources_ifdef(CONFIG_RC_GPIO_IR_RECEIVER rc_gpio_ir_receiver.c)
 zephyr_library_sources_ifdef(CONFIG_RC_LOOPBACK rc_loopback.c)
