@@ -2402,16 +2402,6 @@ class CodingGuidelines(StyleCheckMixin, ComplianceTest):
     name = "CodingGuidelines"
     doc = zephyr_doc_detail_builder("/contribute/coding_guidelines/index.html")
 
-    # The C library implementation and the POSIX layer define the reserved
-    # identifiers themselves, so the reserved-identifier rule does not apply to
-    # them.
-    RESERVED_EXEMPT = (
-        "lib/libc/",
-        "subsys/portability/posix/",
-        "include/zephyr/posix/",
-        "tests/subsys/portability/",
-    )
-
     def run(self):
         from importlib.util import find_spec
 
@@ -2421,19 +2411,9 @@ class CodingGuidelines(StyleCheckMixin, ComplianceTest):
                 "'pip install tree-sitter tree-sitter-c'"
             )
 
-        tool = ZEPHYR_BASE / "scripts" / "coding_guidelines" / "coding_guidelines.py"
-
-        def c_file(file):
-            return file.endswith((".c", ".h"))
-
         self._check_files(
-            tool,
-            lambda file: c_file(file) and not file.startswith(self.RESERVED_EXEMPT),
-        )
-        self._check_files(
-            tool,
-            lambda file: c_file(file) and file.startswith(self.RESERVED_EXEMPT),
-            extra_args=("--skip-rule", "reserved-identifier"),
+            ZEPHYR_BASE / "scripts" / "coding_guidelines" / "coding_guidelines.py",
+            lambda file: file.endswith((".c", ".h")),
         )
 
 

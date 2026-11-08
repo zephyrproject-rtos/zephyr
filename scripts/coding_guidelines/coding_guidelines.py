@@ -12,7 +12,8 @@ that can be decided from the syntax of a single, unpreprocessed file:
   reserved-identifier  MISRA C:2012 Rule 21.2. A declared object, function or
                        parameter name is a reserved identifier, i.e. one listed
                        in reserved_identifiers.txt next to this script (the C
-                       standard library names).
+                       standard library names). The C library and the POSIX
+                       layer (RESERVED_EXEMPT_DIRS) are exempt.
   tag-name             MISRA C:2012 Rule 5.7. An object, parameter or member is
                        named after the tag of its own struct, union or enum type
                        ('struct device *device').
@@ -95,6 +96,17 @@ from tree_sitter import Language, Node, Parser
 # Default reserved identifier list (rule reserved-identifier), shipped next to
 # this script.
 DEFAULT_RESERVED_FILE = Path(__file__).parent / "reserved_identifiers.txt"
+
+# Directories whose files define the reserved identifiers themselves: the C
+# library implementation and the POSIX layer. The reserved-identifier rule does
+# not apply to them. Matched against the path as given, so a path from the
+# tree root and an absolute path both work.
+RESERVED_EXEMPT_DIRS = (
+    "lib/libc/",
+    "subsys/portability/posix/",
+    "include/zephyr/posix/",
+    "tests/subsys/portability/",
+)
 
 EXIT_OK = 0
 EXIT_ISSUES = 1
@@ -1151,10 +1163,20 @@ def fix_text(
     return text, fixed, remaining
 
 
+def reserved_for(path: Path, reserved: set[str]) -> set[str]:
+    """The reserved identifiers that apply to 'path': none in an exempt directory."""
+    posix = path.as_posix()
+    if any(f"/{d}" in f"/{posix}" for d in RESERVED_EXEMPT_DIRS):
+        return set()
+    return reserved
+
+
 def check_file(path: Path, reserved: set[str]) -> list[Issue]:
     """Return the list of guideline issues for a single file."""
     return check_text(
-        path.read_text(encoding="utf-8", errors="replace"), reserved, header=path.suffix == ".h"
+        path.read_text(encoding="utf-8", errors="replace"),
+        reserved_for(path, reserved),
+        header=path.suffix == ".h",
     )
 
 
@@ -1163,7 +1185,9 @@ def fix_file(
 ) -> tuple[list[Issue], list[Issue]]:
     """Fix a file in place; return the issues fixed and those remaining."""
     text = path.read_text(encoding="utf-8")
-    new_text, fixed, remaining = fix_text(text, reserved, path.suffix == ".h", rules)
+    new_text, fixed, remaining = fix_text(
+        text, reserved_for(path, reserved), path.suffix == ".h", rules
+    )
     if new_text != text:
         path.write_text(new_text, encoding="utf-8")
     return fixed, remaining
