@@ -842,6 +842,8 @@ static int dma_stm32_configure(const struct device *dev,
 	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
 	if (stream->cyclic && stream->dma_callback != NULL) {
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+	} else {
+		LL_DMA_DisableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
 
 #if defined(CONFIG_DMA_STM32_V1)
