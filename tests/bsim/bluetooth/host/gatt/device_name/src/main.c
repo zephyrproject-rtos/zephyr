@@ -13,6 +13,7 @@
 
 extern void server_procedure(void);
 extern void client_procedure(void);
+extern struct bst_test_list *invalid_handles_install(struct bst_test_list *tests);
 extern enum bst_result_t bst_result;
 
 static void test_end_cb(void)
@@ -41,7 +42,7 @@ static struct bst_test_list *install(struct bst_test_list *tests)
 	return bst_add_tests(tests, entrypoints);
 };
 
-bst_test_install_t test_installers[] = {install, NULL};
+bst_test_install_t test_installers[] = {install, invalid_handles_install, NULL};
 
 int main(void)
 {
