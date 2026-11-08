@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_TMC5241
+	bool "TMC5241/TMC2241 stepper driver"
+	default y
+	depends on DT_HAS_ADI_TMC5241_ENABLED || DT_HAS_ADI_TMC2241_ENABLED
+	select GPIO
+	select STEPPER_ADI_TMC_SPI if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC5241),spi) || \
+					$(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC2241),spi)
+	select STEPPER_ADI_TMC_UART if $(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC5241),uart) || \
+					$(dt_compat_on_bus,$(DT_COMPAT_ADI_TMC2241),uart)
+	help
+	  Enable support for the ADI/Trinamic TMC5241 (controller and driver)
+	  and TMC2241 (driver only) stepper ICs.
+
+if STEPPER_ADI_TMC5241
+
+config STEPPER_ADI_TMC5241_STEPPER_DRIVER
+	bool "Activate trinamic tmc5241/tmc2241 stepper driver"
+	default y
+	depends on DT_HAS_ADI_TMC5241_STEPPER_DRIVER_ENABLED
+	help
+	  Enable the stepper.h child device (TMC5241 and TMC2241).
+
+config STEPPER_ADI_TMC5241_STEPPER_CTRL
+	bool "Activate trinamic tmc5241 motion controller"
+	default y
+	depends on DT_HAS_ADI_TMC5241_STEPPER_CTRL_ENABLED
+	depends on DT_HAS_ADI_TMC5241_STEPPER_DRIVER_ENABLED
+	help
+	  Enable the stepper_ctrl.h child device (TMC5241 only). Requires the
+	  stepper driver child.
+
+module = TMC5241
+module-str = tmc5241
+source "drivers/stepper/adi_tmc/Kconfig.tmc_rampgen_template"
+
+endif # STEPPER_ADI_TMC5241
