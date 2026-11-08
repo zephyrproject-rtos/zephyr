@@ -298,7 +298,7 @@ static struct net_pkt *eth_rx(const struct device *dev)
 			    ETH_DMARXDESC_FRAME_LENGTHSHIFT) -
 			   sizeof(uint32_t); /* This discards CRC (checked by hardware) */
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, total_len, AF_UNSPEC, 0, K_MSEC(100));
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (pkt == 0U) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
