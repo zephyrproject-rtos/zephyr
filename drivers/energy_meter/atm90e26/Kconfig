@@ -36,4 +36,13 @@ config ATM90E26_VERIFY_READ
 	  the number of bus transactions per read. Register writes are always
 	  verified, and UART frames are always checked against their checksum.
 
+config ATM90E26_SHELL
+	bool "Register access shell commands"
+	depends on SHELL
+	help
+	  Enable the atm90e26 shell command, which reads and writes chip
+	  registers for calibration and debugging. Writing a calibration
+	  register rewrites its block with a new checksum. Registers written
+	  from the shell keep their value until the chip is reset.
+
 endif # ATM90E26
