@@ -331,6 +331,7 @@ static int udc_renesas_ra_ep_dequeue(const struct device *dev, struct udc_ep_con
 	udc_ep_cancel_queued(dev, cfg);
 
 	if (FSP_SUCCESS != R_USBD_XferAbort(&data->udc, cfg->addr)) {
+		irq_unlock(lock_key);
 		return -EIO;
 	}
 
