@@ -14,6 +14,7 @@ tests:
   net.dns.resolve.system_workqueue:
     extra_configs:
       - CONFIG_NET_DEDICATED_WORKQUEUE=n
+      - platform:qemu_riscv32/qemu_virt_riscv32:CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=1280
   net.dns.resolve.no_ipv6:
     extra_args: CONF_FILE=prj-no-ipv6.conf
     min_ram: 18
