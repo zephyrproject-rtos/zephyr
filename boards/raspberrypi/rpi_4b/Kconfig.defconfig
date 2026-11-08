@@ -4,7 +4,7 @@
 if BOARD_RPI_4B
 
 config PM_DEVICE
-	default y if PM
+	default y
 
 if PM_DEVICE
 
