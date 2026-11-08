@@ -9,7 +9,7 @@
 
 / {
 	chosen {
-		zephyr,camera = &st_cam_dvp;
+		zephyr,camera = &st_cam_interface;
 	};
 };
 

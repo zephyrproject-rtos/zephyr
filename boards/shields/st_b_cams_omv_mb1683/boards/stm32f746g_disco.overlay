@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Panoramix Labs
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Reset cannot be controlled on the STM32F746G-DISCO */
+&ov5640 {
+	/delete-property/ reset-gpios;
+};
