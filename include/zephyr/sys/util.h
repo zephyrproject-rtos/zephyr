@@ -73,18 +73,6 @@ extern "C" {
 /** Number of bits in a long long int. */
 #define BITS_PER_LONG_LONG (__CHAR_BIT__ * __SIZEOF_LONG_LONG__)
 
-/**
- * @brief Create a contiguous bitmask starting at bit position @p l
- *        and ending at position @p h.
- */
-#define GENMASK(h, l) (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
-
-/**
- * @brief Create a contiguous 64-bit bitmask starting at bit position @p l
- *        and ending at position @p h.
- */
-#define GENMASK64(h, l) (((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
-
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int)sizeof(char[1 - (2 * !(cond))]) - 1)
 
