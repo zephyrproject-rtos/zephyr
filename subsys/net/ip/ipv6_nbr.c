@@ -362,7 +362,9 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 	iface = nbr->iface;
 
 	/* Remove any routes with nbr as nexthop in first place */
-	net_route_ipv6_del_by_nexthop(iface, addr);
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE)) {
+		net_route_ipv6_del_by_nexthop(iface, addr);
+	}
 
 	nbr_free(nbr);
 
@@ -855,11 +857,17 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 				    bool *try_route)
 {
 	struct net_in6_addr *nexthop = NULL;
-	struct net_route_entry *route;
+	struct net_route_entry *route = NULL;
 	struct net_if_router *router;
 
-	route = net_route_ipv6_lookup(iface, dst);
-	if (route) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE)) {
+		route = net_route_ipv6_lookup(iface, dst);
+	}
+
+	/* The IS_ENABLED() check drops the route calls also without
+	 * compiler optimization.
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTE) && route != NULL) {
 		nexthop = net_route_ipv6_get_nexthop(route);
 
 		NET_DBG("Route %p nexthop %s iface %p/%d",
