@@ -1,0 +1,50 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI/Trinamic TMC2241 Stepper Motor Driver, driver-only (no ramp generator),
+  single-wire UART mode
+
+compatible: "adi,tmc2241"
+
+include: [uart-device.yaml, "adi,tmc2241-base.yaml"]
+
+properties:
+  sw-sel-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the SW_SEL pin of TMC2241.
+      Must be set HIGH for UART mode operation.
+      If not provided, it's assumed SW_SEL is hardwired to VCC/HIGH.
+
+  uart-device-addr:
+    type: int
+    description: |
+      UART device address for TMC2241 in UART mode.
+    min: 0
+    max: 253
+
+examples:
+  - |
+    &uart2 {
+        current-speed = <115200>;
+        status = "okay";
+
+        tmc2241: tmc2241 {
+            compatible = "adi,tmc2241";
+            sw-sel-gpios = <&gpiob 0x01 GPIO_ACTIVE_HIGH>;
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(12)>;
+            en-pwm-mode;
+            shaft;
+
+            tmc2241_stepper_driver: stepper-driver {
+                compatible = "adi,tmc5241-stepper-driver";
+                micro-step-res = <256>;
+
+                /* ADI TMC stallguard settings specific to TMC2241 */
+                stallguard2-threshold = <9>;
+            };
+        };
+    };

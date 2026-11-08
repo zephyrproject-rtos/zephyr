@@ -1,0 +1,36 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for ADI/Trinamic TMC5241 (bus-agnostic base).
+  GCONF layout differs from tmc51xx/tmc50xx, so only en-pwm-mode is reused
+  from adi,trinamic-gconf.yaml via property-allowlist; shaft/fast-standstill
+  are declared here directly instead.
+
+include:
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - en-pwm-mode
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      External/internal clock frequency in Hz (fCLK). Used by
+      tmc5xxx_calculate_velocity_from_hz_to_fclk() for Hz<->fclk ramp math.
+
+  shaft:
+    type: boolean
+    description: Reverse motor direction (GCONF bit 4).
+
+  fast-standstill:
+    type: boolean
+    description: GCONF bit 1. Timeout for standstill detection is reduced from 2^20 to 2^18 clocks.
+
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      Optional DIAG0 interrupt pin. When wired, RAMPSTAT/DRVSTATUS events are
+      interrupt-driven instead of polled at the Kconfig-configured interval
+      (see Kconfig.tmc_rampgen_template).

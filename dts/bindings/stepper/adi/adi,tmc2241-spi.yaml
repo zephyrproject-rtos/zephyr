@@ -1,0 +1,35 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI/Trinamic TMC2241 Stepper Motor Driver, driver-only (no ramp generator), SPI mode
+
+compatible: "adi,tmc2241"
+
+include: [spi-device.yaml, "adi,tmc2241-base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+examples:
+  - |
+    &spi0 {
+        tmc2241: tmc2241@0 {
+            compatible = "adi,tmc2241";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(8)>;
+            diag0-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>; /* driver configures DIAG0 push-pull */
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
+            en-pwm-mode, shaft; /* ADI TMC Global configuration flags */
+
+            tmc2241_stepper_driver: stepper-driver {
+              compatible = "adi,tmc5241-stepper-driver";
+              micro-step-res = <256>;
+              /* ADI TMC stallguard settings specific to TMC2241 */
+              stallguard2-threshold = <9>;
+            };
+        };
+    };

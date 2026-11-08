@@ -1,0 +1,56 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI/Trinamic TMC5241 Stepper Motor Controller (SPI mode)
+
+compatible: "adi,tmc5241"
+
+include: [spi-device.yaml, "adi,tmc5241-base.yaml"]
+
+properties:
+  reg:
+    required: true
+
+examples:
+  - |
+    &spi0 {
+        tmc5241: tmc5241@0 {
+            compatible = "adi,tmc5241";
+            reg = <0>;
+            spi-max-frequency = <DT_FREQ_M(8)>;
+            diag0-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>; /* driver configures DIAG0 push-pull */
+
+            /* Common settings from base binding */
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal/External Clock frequency */
+            en-pwm-mode, shaft; /* ADI TMC Global configuration flags */
+
+            tmc5241_stepper_driver: stepper-driver {
+              compatible = "adi,tmc5241-stepper-driver";
+              micro-step-res = <256>;
+              /* ADI TMC stallguard settings specific to TMC5241 */
+              stallguard2-threshold = <9>;
+            };
+
+            tmc5241_stepper_ctrl: stepper-ctrl {
+              compatible = "adi,tmc5241-stepper-ctrl";
+
+              /* ADI TMC ramp generator as well as current settings */
+              vstart = <10>;
+              a1 = <20>;
+              v1 = <30>;
+              d1 = <40>;
+              vmax = <50>;
+              amax = <60>;
+              dmax = <70>;
+              tzerowait = <80>;
+              thigh = <90>;
+              tcoolthrs = <100>;
+              tpwmthrs = <110>;
+              tpowerdown = <120>;
+              ihold = <1>;
+              irun = <2>;
+              iholddelay = <3>;
+            };
+        };
+    };
