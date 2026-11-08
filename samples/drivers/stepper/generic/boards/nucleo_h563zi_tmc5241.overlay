@@ -1,0 +1,87 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * TMC5241-EVKIT on the Nucleo-H563ZI through the "Sternbruecke Nucleo V0.1"
+ * adapter, using the same connector, shunts and Nucleo pins as the TMC2241
+ * overlay (nucleo_h563zi.overlay, see its header for the pin trace), except
+ * for the chip-select. The Eval connector has two SPI buses that share the
+ * Nucleo's SPI clock and data pins (D13, D11, D12) and differ only in the
+ * chip-select: the TMC2241-EVAL uses SPI2_nCS0 (pin 24, D7), the TMC5241-EVKIT
+ * answers on SPI1_nCS (pin 30 -> Nucleo D8 -> PF3). Found on the bench by
+ * trying every chip-select: only this one returns a valid IOIN (revision
+ * 0x41, external clock and reference resistor detected). D5, D6 and D7 are
+ * silent. The other TMC5241 signals (SLEEP, UART_EN, DRV_ENN, DIAG0, CLK)
+ * use the same pins as the TMC2241 and were confirmed by register readback.
+ *
+ * Use it in place of the default overlay:
+ *   west build -b nucleo_h563zi samples/drivers/stepper/generic -- \
+ *       -DDTC_OVERLAY_FILE=boards/nucleo_h563zi_tmc5241.overlay
+ *
+ * The TMC5241 moves itself with its ramp generator, so there is no
+ * STEP/DIR motion controller here. The ramp values are deliberately slow
+ * for a first bring-up: with fCLK = 16 MHz, v[Hz] = v * fCLK / 2^24, so
+ * vmax = 100000 is about 95k microsteps/s, or 1.9 rev/s at 256
+ * microsteps/step and 200 full steps/rev. StallGuard is off (tcoolthrs and
+ * thigh are 0): this sample never configures the chip's stall stop, so use
+ * samples/drivers/stepper/tmc5241, whose overlay has the tuned values, to test
+ * stall detection.
+ */
+
+/ {
+	aliases {
+		stepper-driver = &tmc5241_stepper_driver;
+		stepper-ctrl = &tmc5241_motion_controller;
+	};
+
+	/* Driven once at boot by main.c, same pins as the TMC2241 overlay */
+	zephyr,user {
+		/* must stay high - low/floating = chip sleep */
+		sleep-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+		uart-en-gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>; /* low = SPI mode */
+		/* both low = lowest current range on the TMC2241-EVAL */
+		iref-r2-gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+		iref-r3-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi1 {
+	cs-gpios = <&gpiof 3 GPIO_ACTIVE_LOW>; /* Eval pin 30 SPI1_nCS = D8, overrides D10/PD14 */
+
+	tmc5241: tmc5241@0 {
+		compatible = "adi,tmc5241";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		/* Sternbruecke Y201 XTAL OSC (IOIN.EXT_CLK should read 1) */
+		clock-frequency = <16000000>;
+		diag0-gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+		en-pwm-mode;
+
+		tmc5241_stepper_driver: stepper-driver {
+			compatible = "adi,tmc5241-stepper-driver";
+			en-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>; /* DRV_ENN active-low */
+			micro-step-res = <256>;
+			stallguard2-threshold = <0>;
+		};
+
+		tmc5241_motion_controller: stepper-ctrl {
+			compatible = "adi,tmc5241-stepper-ctrl";
+			vstart = <100>;
+			vstop = <200>;
+			a1 = <3000>;
+			v1 = <50000>;
+			d1 = <3000>;
+			vmax = <100000>;
+			amax = <3000>;
+			dmax = <3000>;
+			tzerowait = <100>;
+			thigh = <0>;
+			tcoolthrs = <0>;
+			/* IRUN 10 of 31 is about 0.23 A RMS at the lowest range */
+			ihold = <1>;
+			irun = <10>;
+			iholddelay = <1>;
+		};
+	};
+};

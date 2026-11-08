@@ -1,0 +1,70 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * TMC2241-EVKIT (TMC2241-EVAL board only, Landungsbruecke/Eselsbruecke
+ * bypassed), wired directly to the MAX32655FTHR (M4 core) Feather header.
+ *
+ * TMC2241-EVAL J201 (44-pin, main IO connector) -> MAX32655FTHR Feather:
+ *   27 SPI_SCK     -> feather pin 6  (feather_spi, shared bus)
+ *   29 SPI_MOSI    -> feather pin 7  (feather_spi)
+ *   28 SPI_MISO    -> feather pin 8  (feather_spi)
+ *   24 SPI_CS_DRV  -> feather_spi CS0 (dedicated SS0 pin, hardware chip select)
+ *    8 DRV_EN      -> feather pin 17 (gpio0.24)
+ *   38 DIAG0       -> feather pin 18 (gpio0.25)
+ *    1 GND         -> Feather GND
+ *   44 (unused; +5V_VM is a separate board-internal rail, not needed here)
+ *
+ * TMC2241-EVAL J205 (direct STEP/DIR header) -> MAX32655FTHR Feather:
+ *   STEP -> feather pin 19 (gpio1.7)
+ *   DIR  -> feather pin 20 (gpio1.6)
+ *   GND  -> Feather GND
+ *
+ * Board-local jumpers on TMC2241-EVAL (no MCU GPIO needed):
+ *   - J201 pin 20 (UART_EN) -> GND (selects SPI mode; internal pulldown
+ *     already defaults this, but tie explicitly since it's run out to a
+ *     44-pin connector)
+ *   - J201 pin 23 (CLK)     -> GND (use the internal 12.5MHz oscillator,
+ *     per TMC2241 datasheet "Clock Oscillator and Clock Input")
+ *   - J201 pin 19 (SLEEP)   -> PTH209 (+VCC_IO test point) (internal
+ *     pulldown means floating = sleep mode; must be held high)
+ *   - MAX32655FTHR 3V3      -> PTH209 (+VCC_IO) / PTH210 (GND) (R202 is
+ *     populated by default, routing +VCC_IO to IC201's 3.3V LDO output net
+ *     -- the LDO is unpowered without the Landungsbruecke, so driving
+ *     +VCC_IO directly from the MCU's 3V3 here is safe)
+ *   - Motor power (+VM/GND) -> external bench PSU into J202, NOT the MCU.
+ */
+
+/ {
+	aliases {
+		stepper-driver = &tmc2241_stepper_driver;
+		stepper-ctrl = &step_dir_motion_control;
+	};
+
+	step_dir_motion_control: motion-controller {
+		compatible = "zephyr,gpio-step-dir-stepper-ctrl";
+		step-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>; /* feather pin 19 */
+		dir-gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;  /* feather pin 20 */
+		stepper-driver = <&tmc2241_stepper_driver>;
+	};
+};
+
+&feather_spi {
+	tmc2241: tmc2241@0 {
+		compatible = "adi,tmc2241";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		clock-frequency = <12500000>; /* internal osc typ. freq, see note above */
+		en-pwm-mode;
+		diag0-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>; /* feather pin 18 */
+
+		tmc2241_stepper_driver: stepper-driver {
+			compatible = "adi,tmc5241-stepper-driver";
+			/* feather pin 17, DRV_ENN active-low */
+			en-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			micro-step-res = <256>;
+			stallguard2-threshold = <9>;
+		};
+	};
+};

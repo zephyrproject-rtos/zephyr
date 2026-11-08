@@ -7,6 +7,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/stepper/stepper.h>
 #include <zephyr/drivers/stepper/stepper_ctrl.h>
+#include <zephyr/init.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 
@@ -26,6 +27,48 @@ static const struct device *stepper_driver = DEVICE_DT_GET(DT_ALIAS(stepper_driv
 #define STEPPER_DRIVER_MICRO_STEP_RES 1
 #endif
 static const struct device *stepper_ctrl = DEVICE_DT_GET(DT_ALIAS(stepper_ctrl));
+
+/*
+ * Some boards (e.g. the TMC2241-EVKIT via the Sternbruecke Nucleo V0.1) need a
+ * handful of static GPIOs driven once at boot for signals not covered by any
+ * devicetree binding (SLEEP, UART_EN, IREF_R2/R3) - declared under zephyr,user.
+ */
+#define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
+#if DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, sleep_gpios)
+#define HAS_STATIC_PINS 1
+static const struct gpio_dt_spec sleep_gpio = GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, sleep_gpios);
+static const struct gpio_dt_spec uart_en_gpio =
+	GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, uart_en_gpios);
+static const struct gpio_dt_spec iref_r2_gpio =
+	GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, iref_r2_gpios);
+static const struct gpio_dt_spec iref_r3_gpio =
+	GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, iref_r3_gpios);
+
+static void init_static_pins(void)
+{
+	gpio_pin_configure_dt(&sleep_gpio, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&uart_en_gpio, GPIO_OUTPUT_INACTIVE);
+	/* Raised to the next current step (IREF_R2 high) for a real StallGuard
+	 * test - default (both low, 48kOhm) gives ~0.245A, well under the
+	 * QSH2818-32-07-006's rated 0.67A/phase. Watch motor temperature.
+	 */
+	gpio_pin_configure_dt(&iref_r2_gpio, GPIO_OUTPUT_ACTIVE);
+	gpio_pin_configure_dt(&iref_r3_gpio, GPIO_OUTPUT_INACTIVE);
+}
+
+/* Must run before CONFIG_STEPPER_INIT_PRIORITY (default 90) so SLEEP is driven
+ * high before the stepper driver's own init tries to talk SPI to the chip -
+ * calling this from main() ran too late, after all POST_KERNEL device inits.
+ */
+static int init_static_pins_sys_init(void)
+{
+	init_static_pins();
+	return 0;
+}
+SYS_INIT(init_static_pins_sys_init, POST_KERNEL, 50);
+#else
+#define HAS_STATIC_PINS 0
+#endif
 
 enum stepper_mode {
 	STEPPER_MODE_ENABLE,
@@ -55,6 +98,24 @@ static void stepper_callback(const struct device *dev, const enum stepper_ctrl_e
 		break;
 	}
 }
+
+#if HAS_STEPPER_DRIVER
+static void stepper_driver_callback(const struct device *dev, const enum stepper_event event,
+				    void *user_data)
+{
+	ARG_UNUSED(user_data);
+	switch (event) {
+	case STEPPER_EVENT_STALL_DETECTED:
+		LOG_WRN("event: stall detected");
+		break;
+	case STEPPER_EVENT_FAULT_DETECTED:
+		LOG_ERR("event: fault detected");
+		break;
+	default:
+		break;
+	}
+}
+#endif /* HAS_STEPPER_DRIVER */
 
 static void button_pressed(struct input_event *event, void *user_data)
 {
@@ -87,6 +148,24 @@ int main(void)
 		LOG_ERR("Device %s is not ready", stepper_driver->name);
 		return -ENODEV;
 	}
+	stepper_set_event_cb(stepper_driver, stepper_driver_callback, NULL);
+
+	/* STS Software Items 2/3 (SRS-DRV-003/004): microstep resolution
+	 * get/set round-trip, and rejection of a non-power-of-two value.
+	 */
+	enum stepper_micro_step_resolution ms_res;
+	int ms_err;
+
+	ms_err = stepper_set_micro_step_res(stepper_driver, STEPPER_MICRO_STEP_256);
+	stepper_get_micro_step_res(stepper_driver, &ms_res);
+	LOG_INF("Microstep resolution round-trip: set 256 (err %d), get %d", ms_err, ms_res);
+
+	ms_err = stepper_set_micro_step_res(stepper_driver, (enum stepper_micro_step_resolution)3);
+	LOG_INF("Invalid microstep resolution (3) rejected with err %d", ms_err);
+
+	/* Restore the devicetree resolution after the round-trip test above */
+	stepper_set_micro_step_res(
+		stepper_driver, (enum stepper_micro_step_resolution)STEPPER_DRIVER_MICRO_STEP_RES);
 #endif
 	LOG_DBG("stepper is %p, name is %s", stepper_ctrl, stepper_ctrl->name);
 
