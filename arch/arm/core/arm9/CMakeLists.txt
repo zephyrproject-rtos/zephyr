@@ -25,4 +25,5 @@ zephyr_library_sources(
   )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
+zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
 zephyr_library_sources_ifdef(CONFIG_ARMV5_FLAT_MMU mmu.c)
