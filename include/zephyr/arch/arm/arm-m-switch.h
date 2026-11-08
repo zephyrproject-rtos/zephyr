@@ -122,6 +122,14 @@ bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr);
  */
 void arm_m_iciit_stub(void);
 
+/**
+ * @brief Restore the incoming frame of arm_m_switch() and resume the thread.
+ *
+ * Entered with SP and r4 at the base of the incoming switch frame, r0 zero
+ * and, with CONFIG_USERSPACE, r8 holding the CONTROL value for the thread.
+ */
+void arm_m_switch_restore(void);
+
 /** Per-CPU pointer to the stacked LR word used by the ISR tail fixup path. */
 extern uint32_t *arm_m_exc_lr_ptr[CONFIG_MP_MAX_NUM_CPUS];
 
@@ -349,40 +357,16 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			 "  ldr r8, [r8];"
 #endif
 
-			 /* Save the outgoing switch handle (which is SP), swap stacks,
-			  * and enable interrupts.  The restore process is
-			  * interruptible code (running in the incoming thread) once
-			  * the stack is valid.
+			 /* Save the outgoing switch handle (which is SP), swap
+			  * stacks and restore the incoming frame out of line in
+			  * arm_m_switch_restore(), which also unmasks interrupts.
 			  */
 #ifdef CONFIG_SMP
 			 "dmb;"
 #endif
 			 "str sp, [r5];"
 			 "mov sp, r4;"
-			 "msr basepri, r0;"
-
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_USE_SWITCH)
-			 "  msr control, r8;" /* Now we can drop privilege */
-#endif
-
-	/* Restore is super simple: pop the flags (and stack limit if
-	 * enabled) then slurp in the whole GPR set in two
-	 * instructions. (The instruction encoding disallows popping
-	 * both LR and PC in a single instruction)
-	 */
-#ifdef CONFIG_BUILTIN_STACK_GUARD
-			 "pop {r1-r2};"
-			 "msr psplim, r1;"
-#else
-			 "pop {r2};"
-#endif
-#ifdef _ARM_M_SWITCH_HAVE_DSP
-			 "msr apsr_nzcvqg, r2;" /* bonkers syntax */
-#else
-			 "msr apsr_nzcvq, r2;" /* not even source-compatible! */
-#endif
-			 "pop {r0-r12, lr};"
-			 "pop {pc};"
+			 "b arm_m_switch_restore;"
 
 			 "3:" /* Label for restore address */
 			 _R7_CLOBBER_OPT("pop {r7};")::"r"(r4),
