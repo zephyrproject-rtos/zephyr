@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_T153_E907
+
+configdefault NUM_IRQS
+	default 256
+
+configdefault RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+endif # SOC_T153_E907
