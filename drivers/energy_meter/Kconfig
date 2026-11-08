@@ -26,6 +26,7 @@ config ENERGY_METER_SHELL
 	  energy meter measures and reads them once or periodically.
 
 # zephyr-keep-sorted-start
+source "drivers/energy_meter/atm90e26/Kconfig"
 source "drivers/energy_meter/atm90e32as/Kconfig"
 # zephyr-keep-sorted-stop
 
