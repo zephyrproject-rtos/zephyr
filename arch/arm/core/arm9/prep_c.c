@@ -13,6 +13,7 @@
 #include <kernel_internal.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 #include <zephyr/arch/common/xip.h>
 #include <zephyr/arch/common/init.h>
 #include <arm9/stack.h>
@@ -43,6 +44,10 @@ FUNC_NORETURN void z_prep_c(void)
 #endif
 
 	z_armv5_vector_table_init();
+
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
+#endif
 
 	z_arm_interrupt_init();
 
