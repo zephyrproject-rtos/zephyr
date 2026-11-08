@@ -52,9 +52,9 @@ static size_t queue_head;
 static size_t queue_count;
 static uint32_t queue_overflows;
 
-#define A (&bridges[0])
-#define B (&bridges[1])
-#define C (&bridges[2])
+#define BRIDGE_A (&bridges[0])
+#define BRIDGE_B (&bridges[1])
+#define BRIDGE_C (&bridges[2])
 
 static struct sim_port *port_of(struct eth_rstp_port *port)
 {
@@ -291,27 +291,27 @@ static void before(void *fixture)
  */
 ZTEST(rstp, test_two_bridges)
 {
-	attach(A, 0, 0);
-	attach(B, 0, 0);
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
 	sim_start();
 
-	zexpect_equal(A->rstp.root_port_id, 0U, "A is not the root");
-	zexpect_equal(B->rstp.root_prio.root_id, bridge_id(A));
-	zexpect_equal(B->rstp.root_prio.root_path_cost, ETH_RSTP_DEFAULT_PATH_COST);
-	zexpect_equal(B->rstp.root_port_id, P(B, 0)->port_id);
+	zexpect_equal(BRIDGE_A->rstp.root_port_id, 0U, "A is not the root");
+	zexpect_equal(BRIDGE_B->rstp.root_prio.root_id, bridge_id(BRIDGE_A));
+	zexpect_equal(BRIDGE_B->rstp.root_prio.root_path_cost, ETH_RSTP_DEFAULT_PATH_COST);
+	zexpect_equal(BRIDGE_B->rstp.root_port_id, P(BRIDGE_B, 0)->port_id);
 
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
-	zexpect_equal(P(B, 0)->role, ETH_RSTP_ROLE_ROOT);
-	zexpect_true(is_forwarding(A, 0));
-	zexpect_true(is_forwarding(B, 0));
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
+	zexpect_equal(P(BRIDGE_B, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
+	zexpect_true(is_forwarding(BRIDGE_B, 0));
 
 	/* The last BPDU of the root port carries the agreement */
-	zexpect_equal(B->port[0].last_tx.type, ETH_RSTP_BPDU_RST);
-	zexpect_equal(B->port[0].last_tx_raw[2], 2U, "Protocol Version Identifier");
-	zexpect_equal((B->port[0].last_tx.flags & ETH_RSTP_FLAG_ROLE_MASK) >>
+	zexpect_equal(BRIDGE_B->port[0].last_tx.type, ETH_RSTP_BPDU_RST);
+	zexpect_equal(BRIDGE_B->port[0].last_tx_raw[2], 2U, "Protocol Version Identifier");
+	zexpect_equal((BRIDGE_B->port[0].last_tx.flags & ETH_RSTP_FLAG_ROLE_MASK) >>
 			      ETH_RSTP_FLAG_ROLE_SHIFT,
 		      ETH_RSTP_BPDU_ROLE_ROOT);
-	zexpect_true((B->port[0].last_tx.flags & ETH_RSTP_FLAG_AGREEMENT) != 0U);
+	zexpect_true((BRIDGE_B->port[0].last_tx.flags & ETH_RSTP_FLAG_AGREEMENT) != 0U);
 
 	expect_settled();
 }
@@ -321,20 +321,20 @@ ZTEST(rstp, test_triangle)
 {
 	int discarding = 0;
 
-	attach(A, 0, 0);
-	attach(B, 0, 0);
-	attach(A, 1, 1);
-	attach(C, 0, 1);
-	attach(B, 1, 2);
-	attach(C, 1, 2);
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
+	attach(BRIDGE_A, 1, 1);
+	attach(BRIDGE_C, 0, 1);
+	attach(BRIDGE_B, 1, 2);
+	attach(BRIDGE_C, 1, 2);
 	sim_start();
 
-	zexpect_equal(B->rstp.root_port_id, P(B, 0)->port_id);
-	zexpect_equal(C->rstp.root_port_id, P(C, 0)->port_id);
+	zexpect_equal(BRIDGE_B->rstp.root_port_id, P(BRIDGE_B, 0)->port_id);
+	zexpect_equal(BRIDGE_C->rstp.root_port_id, P(BRIDGE_C, 0)->port_id);
 
 	/* On the B-C link B has the better bridge identifier */
-	zexpect_equal(P(B, 1)->role, ETH_RSTP_ROLE_DESIGNATED);
-	zexpect_equal(P(C, 1)->role, ETH_RSTP_ROLE_ALTERNATE);
+	zexpect_equal(P(BRIDGE_B, 1)->role, ETH_RSTP_ROLE_DESIGNATED);
+	zexpect_equal(P(BRIDGE_C, 1)->role, ETH_RSTP_ROLE_ALTERNATE);
 
 	ARRAY_FOR_EACH(bridges, b) {
 		for (size_t i = 0; i < 2U; i++) {
@@ -348,13 +348,13 @@ ZTEST(rstp, test_triangle)
 	}
 
 	zexpect_equal(discarding, 1);
-	zexpect_true(is_discarding(C, 1));
+	zexpect_true(is_discarding(BRIDGE_C, 1));
 
 	/* Nothing changes once the protocol has settled */
 	sim_ticks(10U);
-	zexpect_equal(P(C, 1)->role, ETH_RSTP_ROLE_ALTERNATE);
-	zexpect_true(is_discarding(C, 1));
-	zexpect_true(is_forwarding(B, 1));
+	zexpect_equal(P(BRIDGE_C, 1)->role, ETH_RSTP_ROLE_ALTERNATE);
+	zexpect_true(is_discarding(BRIDGE_C, 1));
+	zexpect_true(is_forwarding(BRIDGE_B, 1));
 
 	expect_settled();
 }
@@ -364,17 +364,17 @@ ZTEST(rstp, test_triangle)
  */
 ZTEST(rstp, test_parallel_links)
 {
-	attach(A, 0, 0);
-	attach(B, 0, 0);
-	attach(A, 1, 1);
-	attach(B, 1, 1);
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
+	attach(BRIDGE_A, 1, 1);
+	attach(BRIDGE_B, 1, 1);
 	sim_start();
 
-	zexpect_equal(P(B, 0)->role, ETH_RSTP_ROLE_ROOT);
-	zexpect_equal(P(B, 1)->role, ETH_RSTP_ROLE_ALTERNATE);
-	zexpect_true(is_forwarding(B, 0));
-	zexpect_true(is_discarding(B, 1));
-	zexpect_true(is_forwarding(A, 1));
+	zexpect_equal(P(BRIDGE_B, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_equal(P(BRIDGE_B, 1)->role, ETH_RSTP_ROLE_ALTERNATE);
+	zexpect_true(is_forwarding(BRIDGE_B, 0));
+	zexpect_true(is_discarding(BRIDGE_B, 1));
+	zexpect_true(is_forwarding(BRIDGE_A, 1));
 
 	expect_settled();
 }
@@ -382,26 +382,26 @@ ZTEST(rstp, test_parallel_links)
 /* Two ports of one bridge on a shared LAN: the worse one is a Backup Port */
 ZTEST(rstp, test_backup_port)
 {
-	attach(A, 0, 0);
-	attach(A, 1, 0);
-	attach(B, 0, 0);
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_A, 1, 0);
+	attach(BRIDGE_B, 0, 0);
 	sim_start();
 
-	zexpect_false(P(A, 0)->oper_p2p);
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
-	zexpect_equal(P(A, 1)->role, ETH_RSTP_ROLE_BACKUP);
-	zexpect_equal(P(B, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_false(P(BRIDGE_A, 0)->oper_p2p);
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
+	zexpect_equal(P(BRIDGE_A, 1)->role, ETH_RSTP_ROLE_BACKUP);
+	zexpect_equal(P(BRIDGE_B, 0)->role, ETH_RSTP_ROLE_ROOT);
 
 	/* No agreements on a shared LAN, the Designated Port waits for the
 	 * timers.
 	 */
-	zexpect_false(is_forwarding(A, 0));
+	zexpect_false(is_forwarding(BRIDGE_A, 0));
 
 	sim_ticks(2U * ETH_RSTP_DEFAULT_MAX_AGE);
-	zexpect_true(is_forwarding(A, 0));
-	zexpect_true(is_forwarding(B, 0));
-	zexpect_true(is_discarding(A, 1));
-	zexpect_equal(P(A, 1)->role, ETH_RSTP_ROLE_BACKUP);
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
+	zexpect_true(is_forwarding(BRIDGE_B, 0));
+	zexpect_true(is_discarding(BRIDGE_A, 1));
+	zexpect_equal(P(BRIDGE_A, 1)->role, ETH_RSTP_ROLE_BACKUP);
 
 	expect_settled();
 }
@@ -413,15 +413,15 @@ ZTEST(rstp, test_admin_edge)
 {
 	struct eth_rstp_bpdu bpdu = designated_bpdu(WORSE_ID, WORSE_ID);
 
-	attach(A, 0, 0);
-	eth_rstp_port_set_edge(P(A, 0), true, false);
+	attach(BRIDGE_A, 0, 0);
+	eth_rstp_port_set_edge(P(BRIDGE_A, 0), true, false);
 	sim_start();
 
-	zexpect_true(P(A, 0)->oper_edge);
-	zexpect_true(is_forwarding(A, 0));
+	zexpect_true(P(BRIDGE_A, 0)->oper_edge);
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
 
-	inject(&A->port[0], &bpdu);
-	zexpect_false(P(A, 0)->oper_edge);
+	inject(&BRIDGE_A->port[0], &bpdu);
+	zexpect_false(P(BRIDGE_A, 0)->oper_edge);
 
 	expect_settled();
 }
@@ -431,18 +431,18 @@ ZTEST(rstp, test_admin_edge)
  */
 ZTEST(rstp, test_auto_edge)
 {
-	attach(A, 0, 0);
+	attach(BRIDGE_A, 0, 0);
 	sim_start();
 
-	zexpect_false(is_forwarding(A, 0));
+	zexpect_false(is_forwarding(BRIDGE_A, 0));
 
 	sim_ticks(ETH_RSTP_MIGRATE_TIME - 1U);
-	zexpect_false(P(A, 0)->oper_edge);
-	zexpect_false(is_forwarding(A, 0));
+	zexpect_false(P(BRIDGE_A, 0)->oper_edge);
+	zexpect_false(is_forwarding(BRIDGE_A, 0));
 
 	sim_ticks(1U);
-	zexpect_true(P(A, 0)->oper_edge);
-	zexpect_true(is_forwarding(A, 0));
+	zexpect_true(P(BRIDGE_A, 0)->oper_edge);
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
 
 	expect_settled();
 }
@@ -455,29 +455,29 @@ ZTEST(rstp, test_root_port_failure)
 	uint32_t a_flushes;
 	uint32_t b_flushes;
 
-	attach(A, 0, 0);
-	attach(B, 0, 0);
-	attach(A, 1, 1);
-	attach(C, 0, 1);
-	attach(B, 1, 2);
-	attach(C, 1, 2);
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
+	attach(BRIDGE_A, 1, 1);
+	attach(BRIDGE_C, 0, 1);
+	attach(BRIDGE_B, 1, 2);
+	attach(BRIDGE_C, 1, 2);
 	sim_start();
 	sim_ticks(1U);
 
-	zassert_true(is_discarding(C, 1));
-	a_flushes = flushes(A);
-	b_flushes = flushes(B);
+	zassert_true(is_discarding(BRIDGE_C, 1));
+	a_flushes = flushes(BRIDGE_A);
+	b_flushes = flushes(BRIDGE_B);
 
 	lan_down(1);
 
-	zexpect_equal(P(C, 1)->role, ETH_RSTP_ROLE_ROOT);
-	zexpect_true(is_forwarding(C, 1));
-	zexpect_equal(C->rstp.root_prio.root_id, bridge_id(A));
-	zexpect_equal(C->rstp.root_prio.root_path_cost, 2U * ETH_RSTP_DEFAULT_PATH_COST);
+	zexpect_equal(P(BRIDGE_C, 1)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_true(is_forwarding(BRIDGE_C, 1));
+	zexpect_equal(BRIDGE_C->rstp.root_prio.root_id, bridge_id(BRIDGE_A));
+	zexpect_equal(BRIDGE_C->rstp.root_prio.root_path_cost, 2U * ETH_RSTP_DEFAULT_PATH_COST);
 
-	zexpect_true(P(C, 1)->tc_while != 0U, "no topology change detected");
-	zexpect_true(flushes(B) > b_flushes, "B did not flush");
-	zexpect_true(flushes(A) > a_flushes, "A did not flush");
+	zexpect_true(P(BRIDGE_C, 1)->tc_while != 0U, "no topology change detected");
+	zexpect_true(flushes(BRIDGE_B) > b_flushes, "B did not flush");
+	zexpect_true(flushes(BRIDGE_A) > a_flushes, "A did not flush");
 
 	expect_settled();
 }
@@ -485,22 +485,22 @@ ZTEST(rstp, test_root_port_failure)
 /* No more than TxHoldCount BPDUs leave a port in one second (13.34) */
 ZTEST(rstp, test_tx_hold_count)
 {
-	attach(A, 0, 0);
-	attach(B, 0, 0);
-	zassert_ok(eth_rstp_set_tx_hold_count(&A->rstp, 1U));
-	zassert_ok(eth_rstp_set_tx_hold_count(&B->rstp, 1U));
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
+	zassert_ok(eth_rstp_set_tx_hold_count(&BRIDGE_A->rstp, 1U));
+	zassert_ok(eth_rstp_set_tx_hold_count(&BRIDGE_B->rstp, 1U));
 	sim_start();
 
-	zexpect_equal(A->port[0].tx_count, 1U);
-	zexpect_equal(B->port[0].tx_count, 1U);
-	zexpect_false(is_forwarding(A, 0));
+	zexpect_equal(BRIDGE_A->port[0].tx_count, 1U);
+	zexpect_equal(BRIDGE_B->port[0].tx_count, 1U);
+	zexpect_false(is_forwarding(BRIDGE_A, 0));
 
 	/* One more BPDU per port and second, and the handshake completes */
 	sim_ticks(3U);
-	zexpect_true(A->port[0].tx_count <= 4U);
-	zexpect_true(B->port[0].tx_count <= 4U);
-	zexpect_true(is_forwarding(A, 0));
-	zexpect_true(is_forwarding(B, 0));
+	zexpect_true(BRIDGE_A->port[0].tx_count <= 4U);
+	zexpect_true(BRIDGE_B->port[0].tx_count <= 4U);
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
+	zexpect_true(is_forwarding(BRIDGE_B, 0));
 
 	expect_settled();
 }
@@ -515,30 +515,30 @@ ZTEST(rstp, test_stp_migration)
 	config.type = ETH_RSTP_BPDU_CONFIG;
 	config.flags = 0U;
 
-	attach(A, 0, 0);
+	attach(BRIDGE_A, 0, 0);
 	sim_start();
 
-	zexpect_equal(A->port[0].last_tx.type, ETH_RSTP_BPDU_RST);
+	zexpect_equal(BRIDGE_A->port[0].last_tx.type, ETH_RSTP_BPDU_RST);
 
 	/* Received during the first MigrateTime, the BPDU changes nothing */
-	inject(&A->port[0], &config);
-	zexpect_true(P(A, 0)->send_rstp);
+	inject(&BRIDGE_A->port[0], &config);
+	zexpect_true(P(BRIDGE_A, 0)->send_rstp);
 
 	sim_ticks(ETH_RSTP_MIGRATE_TIME);
-	inject(&A->port[0], &config);
-	zexpect_false(P(A, 0)->send_rstp);
+	inject(&BRIDGE_A->port[0], &config);
+	zexpect_false(P(BRIDGE_A, 0)->send_rstp);
 
 	sim_ticks(ETH_RSTP_HELLO_TIME);
-	zexpect_equal(A->port[0].last_tx.type, ETH_RSTP_BPDU_CONFIG);
-	zexpect_equal(A->port[0].last_tx_len, ETH_RSTP_BPDU_CONFIG_LEN);
-	zexpect_equal(A->port[0].last_tx_raw[2], 0U, "Protocol Version Identifier");
+	zexpect_equal(BRIDGE_A->port[0].last_tx.type, ETH_RSTP_BPDU_CONFIG);
+	zexpect_equal(BRIDGE_A->port[0].last_tx_len, ETH_RSTP_BPDU_CONFIG_LEN);
+	zexpect_equal(BRIDGE_A->port[0].last_tx_raw[2], 0U, "Protocol Version Identifier");
 
-	eth_rstp_port_mcheck(P(A, 0));
+	eth_rstp_port_mcheck(P(BRIDGE_A, 0));
 	pump();
-	zexpect_true(P(A, 0)->send_rstp);
+	zexpect_true(P(BRIDGE_A, 0)->send_rstp);
 
 	sim_ticks(ETH_RSTP_HELLO_TIME);
-	zexpect_equal(A->port[0].last_tx.type, ETH_RSTP_BPDU_RST);
+	zexpect_equal(BRIDGE_A->port[0].last_tx.type, ETH_RSTP_BPDU_RST);
 
 	expect_settled();
 }
@@ -548,22 +548,22 @@ ZTEST(rstp, test_stp_migration)
  */
 ZTEST(rstp, test_force_version_stp)
 {
-	attach(A, 0, 0);
-	attach(B, 0, 0);
-	zassert_ok(eth_rstp_set_force_version(&A->rstp, 0U));
-	zassert_ok(eth_rstp_set_force_version(&B->rstp, 0U));
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
+	zassert_ok(eth_rstp_set_force_version(&BRIDGE_A->rstp, 0U));
+	zassert_ok(eth_rstp_set_force_version(&BRIDGE_B->rstp, 0U));
 	sim_start();
 
-	zexpect_equal(A->port[0].last_tx.type, ETH_RSTP_BPDU_CONFIG);
-	zexpect_equal(P(B, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_equal(BRIDGE_A->port[0].last_tx.type, ETH_RSTP_BPDU_CONFIG);
+	zexpect_equal(P(BRIDGE_B, 0)->role, ETH_RSTP_ROLE_ROOT);
 
 	sim_ticks(2U * ETH_RSTP_DEFAULT_FORWARD_DELAY);
-	zexpect_false(is_forwarding(A, 0));
-	zexpect_false(is_forwarding(B, 0));
+	zexpect_false(is_forwarding(BRIDGE_A, 0));
+	zexpect_false(is_forwarding(BRIDGE_B, 0));
 
 	sim_ticks(ETH_RSTP_DEFAULT_MAX_AGE);
-	zexpect_true(is_forwarding(A, 0));
-	zexpect_true(is_forwarding(B, 0));
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
+	zexpect_true(is_forwarding(BRIDGE_B, 0));
 
 	expect_settled();
 }
@@ -575,18 +575,18 @@ ZTEST(rstp, test_dispute)
 {
 	struct eth_rstp_bpdu bpdu = designated_bpdu(WORSE_ID, WORSE_ID);
 
-	attach(A, 0, 0);
+	attach(BRIDGE_A, 0, 0);
 	sim_start();
 	sim_ticks(ETH_RSTP_MIGRATE_TIME);
-	zassert_true(is_forwarding(A, 0));
+	zassert_true(is_forwarding(BRIDGE_A, 0));
 
-	inject(&A->port[0], &bpdu);
-	zexpect_true(is_forwarding(A, 0), "inferior BPDU without Learning flag");
+	inject(&BRIDGE_A->port[0], &bpdu);
+	zexpect_true(is_forwarding(BRIDGE_A, 0), "inferior BPDU without Learning flag");
 
 	bpdu.flags |= ETH_RSTP_FLAG_LEARNING;
-	inject(&A->port[0], &bpdu);
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
-	zexpect_true(is_discarding(A, 0));
+	inject(&BRIDGE_A->port[0], &bpdu);
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
+	zexpect_true(is_discarding(BRIDGE_A, 0));
 
 	expect_settled();
 }
@@ -598,18 +598,18 @@ ZTEST(rstp, test_message_age)
 {
 	struct eth_rstp_bpdu bpdu = designated_bpdu(BETTER_ID, BETTER_ID);
 
-	attach(A, 0, 0);
+	attach(BRIDGE_A, 0, 0);
 	sim_start();
 
 	bpdu.times.message_age = ETH_RSTP_DEFAULT_MAX_AGE;
-	inject(&A->port[0], &bpdu);
-	zexpect_equal(A->rstp.root_port_id, 0U, "aged information selected the root");
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
+	inject(&BRIDGE_A->port[0], &bpdu);
+	zexpect_equal(BRIDGE_A->rstp.root_port_id, 0U, "aged information selected the root");
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
 
 	bpdu.times.message_age = ETH_RSTP_DEFAULT_MAX_AGE - 1U;
-	inject(&A->port[0], &bpdu);
-	zexpect_equal(A->rstp.root_port_id, P(A, 0)->port_id);
-	zexpect_equal(A->rstp.root_times.message_age, ETH_RSTP_DEFAULT_MAX_AGE);
+	inject(&BRIDGE_A->port[0], &bpdu);
+	zexpect_equal(BRIDGE_A->rstp.root_port_id, P(BRIDGE_A, 0)->port_id);
+	zexpect_equal(BRIDGE_A->rstp.root_times.message_age, ETH_RSTP_DEFAULT_MAX_AGE);
 
 	expect_settled();
 }
@@ -621,18 +621,18 @@ ZTEST(rstp, test_info_ages_out)
 {
 	struct eth_rstp_bpdu bpdu = designated_bpdu(BETTER_ID, BETTER_ID);
 
-	attach(A, 0, 0);
+	attach(BRIDGE_A, 0, 0);
 	sim_start();
 
-	inject(&A->port[0], &bpdu);
-	zassert_equal(P(A, 0)->role, ETH_RSTP_ROLE_ROOT);
+	inject(&BRIDGE_A->port[0], &bpdu);
+	zassert_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_ROOT);
 
 	sim_ticks(3U * ETH_RSTP_HELLO_TIME - 1U);
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_ROOT);
 
 	sim_ticks(1U);
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
-	zexpect_equal(A->rstp.root_port_id, 0U);
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_DESIGNATED);
+	zexpect_equal(BRIDGE_A->rstp.root_port_id, 0U);
 
 	expect_settled();
 }
@@ -640,39 +640,40 @@ ZTEST(rstp, test_info_ages_out)
 /* A better Bridge Priority makes a bridge the root */
 ZTEST(rstp, test_bridge_priority)
 {
-	attach(A, 0, 0);
-	attach(B, 0, 0);
+	attach(BRIDGE_A, 0, 0);
+	attach(BRIDGE_B, 0, 0);
 	sim_start();
-	zassert_equal(P(B, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zassert_equal(P(BRIDGE_B, 0)->role, ETH_RSTP_ROLE_ROOT);
 
-	zexpect_equal(eth_rstp_set_bridge_priority(&B->rstp, 100U), -EINVAL);
-	zassert_ok(eth_rstp_set_bridge_priority(&B->rstp, 4096U));
+	zexpect_equal(eth_rstp_set_bridge_priority(&BRIDGE_B->rstp, 100U), -EINVAL);
+	zassert_ok(eth_rstp_set_bridge_priority(&BRIDGE_B->rstp, 4096U));
 	pump();
 	sim_ticks(1U);
 
-	zexpect_equal(B->rstp.root_port_id, 0U);
-	zexpect_equal(P(A, 0)->role, ETH_RSTP_ROLE_ROOT);
-	zexpect_equal(A->rstp.root_prio.root_id, bridge_id(B));
-	zexpect_true(is_forwarding(A, 0));
-	zexpect_true(is_forwarding(B, 0));
+	zexpect_equal(BRIDGE_B->rstp.root_port_id, 0U);
+	zexpect_equal(P(BRIDGE_A, 0)->role, ETH_RSTP_ROLE_ROOT);
+	zexpect_equal(BRIDGE_A->rstp.root_prio.root_id, bridge_id(BRIDGE_B));
+	zexpect_true(is_forwarding(BRIDGE_A, 0));
+	zexpect_true(is_forwarding(BRIDGE_B, 0));
 
 	expect_settled();
 }
 
 ZTEST(rstp, test_parameter_ranges)
 {
-	zexpect_equal(eth_rstp_set_times(&A->rstp, 5U, 15U), -EINVAL);
-	zexpect_equal(eth_rstp_set_times(&A->rstp, 20U, 3U), -EINVAL);
+	zexpect_equal(eth_rstp_set_times(&BRIDGE_A->rstp, 5U, 15U), -EINVAL);
+	zexpect_equal(eth_rstp_set_times(&BRIDGE_A->rstp, 20U, 3U), -EINVAL);
 	/* 2 * (Forward Delay - 1) >= Max Age */
-	zexpect_equal(eth_rstp_set_times(&A->rstp, 20U, 10U), -EINVAL);
-	zexpect_ok(eth_rstp_set_times(&A->rstp, 20U, 11U));
-	zexpect_equal(eth_rstp_set_tx_hold_count(&A->rstp, 0U), -EINVAL);
-	zexpect_equal(eth_rstp_set_tx_hold_count(&A->rstp, 11U), -EINVAL);
-	zexpect_equal(eth_rstp_set_force_version(&A->rstp, 1U), -EINVAL);
-	zexpect_equal(eth_rstp_set_force_version(&A->rstp, 3U), -EINVAL);
-	zexpect_equal(eth_rstp_port_set_priority(P(A, 0), 8U), -EINVAL);
-	zexpect_equal(eth_rstp_port_set_path_cost(P(A, 0), 0U), -EINVAL);
-	zexpect_equal(eth_rstp_port_set_path_cost(P(A, 0), ETH_RSTP_MAX_PATH_COST + 1U), -EINVAL);
+	zexpect_equal(eth_rstp_set_times(&BRIDGE_A->rstp, 20U, 10U), -EINVAL);
+	zexpect_ok(eth_rstp_set_times(&BRIDGE_A->rstp, 20U, 11U));
+	zexpect_equal(eth_rstp_set_tx_hold_count(&BRIDGE_A->rstp, 0U), -EINVAL);
+	zexpect_equal(eth_rstp_set_tx_hold_count(&BRIDGE_A->rstp, 11U), -EINVAL);
+	zexpect_equal(eth_rstp_set_force_version(&BRIDGE_A->rstp, 1U), -EINVAL);
+	zexpect_equal(eth_rstp_set_force_version(&BRIDGE_A->rstp, 3U), -EINVAL);
+	zexpect_equal(eth_rstp_port_set_priority(P(BRIDGE_A, 0), 8U), -EINVAL);
+	zexpect_equal(eth_rstp_port_set_path_cost(P(BRIDGE_A, 0), 0U), -EINVAL);
+	zexpect_equal(eth_rstp_port_set_path_cost(P(BRIDGE_A, 0), ETH_RSTP_MAX_PATH_COST + 1U),
+		      -EINVAL);
 }
 
 ZTEST_SUITE(rstp, NULL, NULL, before, NULL, NULL);
