@@ -33,6 +33,29 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+UART validation
+***************
+
+The UART basic API keyboard-harness variant is
+``drivers.uart.basic_api.hi3861``. It tests runtime configuration, polling,
+interrupt-driven FIFO transfers, and receive-interrupt pending status.
+Build it with:
+
+.. code-block:: console
+
+   west build -b bearpi_hm_nano tests/drivers/uart/uart_basic_api -- -DCONF_FILE=prj_hi3861.conf
+
+Download it using the RAM runner described below. Send a newline-terminated
+line when the test asks for characters. The separate interrupt API suite
+tests transmission with increasing FIFO-fill sizes:
+
+.. code-block:: console
+
+   west build -b bearpi_hm_nano tests/drivers/uart/uart_interrupt_api
+
+Neither suite requires connecting TX to RX; keep the CH340 console wiring.
+Press RESET after testing to return to the factory firmware.
+
 RAM execution
 *************
 
