@@ -604,3 +604,87 @@ def test_do_while_zero_tail_of_macro_not_a_loop_body():
     # An unrecognized macro body ends in '} while (0)' with no backslash on
     # that line; the next declaration is not its loop body.
     assert not _rules("\t} while (0)\nint x;\n")
+
+
+# --fix
+def _fix(text, rules=None):
+    new_text, fixed, remaining = coding_guidelines.fix_text(text, RESERVED, rules=rules)
+    return new_text, [i.rule for i in fixed], [i.rule for i in remaining]
+
+
+def test_fix_constant_suffixes():
+    text, fixed, remaining = _fix(
+        "unsigned long a = 0x01ul;\nuint32_t b = 0xffffffff;\nlong c = 1l;\n"
+    )
+    assert text == "unsigned long a = 0x01UL;\nuint32_t b = 0xffffffffU;\nlong c = 1L;\n"
+    assert sorted(fixed) == ["lowercase-l-suffix", "lowercase-l-suffix", "unsigned-suffix"]
+    assert not remaining
+
+
+def test_fix_leaves_line_comment_containing_block_terminator():
+    text, fixed, remaining = _fix("// see */ here\nint x;\n")
+    assert text == "// see */ here\nint x;\n"
+    assert not fixed and remaining == ["line-comment"]
+
+
+def test_fix_binary_literal_keeps_width_and_suffix():
+    text, _, _ = _fix("int a = 0b1011;\nint b = 0b000100000000U;\n")
+    assert text == "int a = 0xB;\nint b = 0x100U;\n"
+
+
+def test_fix_bool_literals():
+    text, _, _ = _fix("void f(void)\n{\n\tbool b = 0;\n\n\tb = 1;\n}\n")
+    assert text == "void f(void)\n{\n\tbool b = false;\n\n\tb = true;\n}\n"
+
+
+def test_fix_line_comments():
+    text, _, _ = _fix("// top\n/// brief\nint x; ///< after\n//! also brief\n//\n")
+    assert text == "/* top */\n/** brief */\nint x; /**< after */\n/** also brief */\n/* */\n"
+
+
+def test_fix_braces_if_else_and_loops():
+    text, _, remaining = _fix(
+        "void f(int n)\n{\n\tif (n)\n\t\tg();\n\telse\n\t\th();\n\twhile (n--)\n\t\tg();\n"
+        "\tdo\n\t\tg();\n\twhile (n);\n\tfor (;;)\n\t\tg();\n}\n"
+    )
+    assert text == (
+        "void f(int n)\n{\n\tif (n) {\n\t\tg();\n\t} else {\n\t\th();\n\t}\n"
+        "\twhile (n--) {\n\t\tg();\n\t}\n\tdo {\n\t\tg();\n\t} while (n);\n"
+        "\tfor (;;) {\n\t\tg();\n\t}\n}\n"
+    )
+    assert not remaining
+
+
+def test_fix_braces_same_line_body_and_nesting():
+    text, _, remaining = _fix("void f(int n)\n{\n\tif (n) if (n > 1) g();\n}\n")
+    assert text == "void f(int n)\n{\n\tif (n) {\n\t\tif (n > 1) {\n\t\t\tg();\n\t\t}\n\t}\n}\n"
+    assert not remaining
+
+
+def test_fix_braces_else_if_chain_kept():
+    text, _, _ = _fix("void f(int n)\n{\n\tif (n)\n\t\tg();\n\telse if (n > 1)\n\t\th();\n}\n")
+    assert (
+        text == "void f(int n)\n{\n\tif (n) {\n\t\tg();\n\t} else if (n > 1) {\n\t\th();\n\t}\n}\n"
+    )
+
+
+def test_fix_is_idempotent():
+    text = "void f(int n)\n{\n\tif (n)\n\t\tg();\n}\n"
+    once, _, _ = _fix(text)
+    twice, fixed, _ = _fix(once)
+    assert twice == once and not fixed
+
+
+def test_fix_leaves_other_rules_alone():
+    text, fixed, remaining = _fix("int f(int);\nint x = 0600;\n")
+    assert text == "int f(int);\nint x = 0600;\n"
+    assert not fixed
+    assert sorted(remaining) == ["octal-constant", "unnamed-parameter"]
+
+
+def test_fix_rule_selection():
+    text, fixed, remaining = _fix(
+        "long a = 1l;\nuint32_t b = 0xffffffff;\n", rules={"lowercase-l-suffix"}
+    )
+    assert text == "long a = 1L;\nuint32_t b = 0xffffffff;\n"
+    assert fixed == ["lowercase-l-suffix"] and remaining == ["unsigned-suffix"]

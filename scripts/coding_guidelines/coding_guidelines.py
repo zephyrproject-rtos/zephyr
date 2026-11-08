@@ -66,6 +66,11 @@ invocations at file scope, conditionally compiled fragments), so the checks run
 on the source as written, independently of any build configuration, and only
 the constructs they understand are reported on.
 
+With --fix, the issues whose correction is purely a matter of spelling are
+rewritten in place (bool-literal, braces, line-comment, lowercase-l-suffix,
+unsigned-suffix and the binary literals of language-extension) and the rest
+are reported.
+
 Issues are printed as '<file>:<line>:<col>: [<rule>] <message>'. The exit status
 distinguishes "found issues" from "the checker failed":
 
@@ -107,6 +112,15 @@ _SCOPES = ("compound_statement",)
 
 
 @dataclass
+class Edit:
+    """Replace the bytes in [start, end) of the file with 'text'."""
+
+    start: int
+    end: int
+    text: bytes
+
+
+@dataclass
 class Issue:
     """A single guideline violation, used for reporting."""
 
@@ -114,6 +128,9 @@ class Issue:
     col: int  # 1-based
     rule: str
     message: str
+    # Edits that resolve the issue without changing what the code does, for
+    # the rules whose fix is mechanical (--fix); None for the others.
+    fix: list[Edit] | None = None
 
 
 def load_reserved(paths: list[Path]) -> set[str]:
@@ -136,8 +153,12 @@ def _text(node: Node) -> str:
     return node.text.decode("utf-8", errors="replace") if node.text is not None else ""
 
 
-def _issue(node: Node, rule: str, message: str) -> Issue:
-    return Issue(node.start_point.row + 1, node.start_point.column + 1, rule, message)
+def _issue(node: Node, rule: str, message: str, fix: list[Edit] | None = None) -> Issue:
+    return Issue(node.start_point.row + 1, node.start_point.column + 1, rule, message, fix)
+
+
+def _replace(node: Node, text: str) -> list[Edit]:
+    return [Edit(node.start_byte, node.end_byte, text.encode("utf-8"))]
 
 
 def _declared_name(declarator: Node | None) -> Node | None:
@@ -268,6 +289,30 @@ def _is_macro_name(name: str) -> bool:
     return name.startswith("__") or name in _KEYWORDS or not any(c.islower() for c in name)
 
 
+def _block_comment(comment: str) -> str | None:
+    """
+    The /* */ spelling of a // comment, keeping Doxygen markers; None when the
+    comment contains '*/', which would end the block comment early.
+    """
+    if "*/" in comment:
+        return None
+    body = comment[2:]
+    opening = "/*"
+    if body.startswith(("/", "!")):
+        body = body[1:]
+        opening = "/**"
+        if body.startswith("<"):
+            body = body[1:]
+            opening = "/**<"
+    body = body.strip()
+    return f"{opening} {body} */" if body else f"{opening} */"
+
+
+def _comment_fix(node: Node) -> list[Edit] | None:
+    block = _block_comment(_text(node))
+    return None if block is None else _replace(node, block)
+
+
 def _pointer_depth(declarator: Node | None) -> int:
     """Number of pointer levels in a declarator ('char ***p' has three)."""
     depth = 0
@@ -364,8 +409,9 @@ def _case_statements(case: Node) -> list[Node]:
 
 
 class _Checker:
-    def __init__(self, reserved: set[str]):
+    def __init__(self, reserved: set[str], source: bytes = b""):
         self.reserved = reserved
+        self.source = source
         self.issues: list[Issue] = []
 
     # The bool-literal rule needs to know which identifiers denote bool objects
@@ -504,12 +550,14 @@ class _Checker:
                     and _is_scalar(inner)
                     and _is_bool_literal_violation(declarator.child_by_field_name("value"))
                 ):
+                    value = declarator.child_by_field_name("value")
                     self.issues.append(
                         _issue(
-                            declarator.child_by_field_name("value"),
+                            value,
                             "bool-literal",
                             "bool object initialized with an integer literal, use true/false "
                             "(MISRA C:2012 Rule 10.1)",
+                            _replace(value, "true" if _text(value) == "1" else "false"),
                         )
                     )
             # 'void *alloc(int);' wraps the function declarator in a pointer.
@@ -535,6 +583,7 @@ class _Checker:
                     "bool-literal",
                     "bool object assigned an integer literal, use true/false "
                     "(MISRA C:2012 Rule 10.1)",
+                    _replace(value, "true" if _text(value) == "1" else "false"),
                 )
             )
 
@@ -594,6 +643,7 @@ class _Checker:
                         "braces",
                         f"body of '{_text(node.children[0])}' is not a compound statement, "
                         "add braces (MISRA C:2012 Rule 15.6)",
+                        self._brace_body(node, body),
                     )
                 )
         alternative = node.child_by_field_name("alternative")
@@ -606,8 +656,44 @@ class _Checker:
                         "braces",
                         "body of 'else' is not a compound statement, add braces "
                         "(MISRA C:2012 Rule 15.6)",
+                        self._brace_body(alternative, body),
                     )
                 )
+
+    def _brace_body(self, statement: Node, body: Node) -> list[Edit] | None:
+        """
+        Edits wrapping 'body' in braces, Zephyr style: ' {' after the header,
+        the body on its own line one indentation level in, '}' on its own line
+        at the header's indentation ('} while (...)' for a do statement).
+        """
+        if body.type == "preproc_call" or body.type.startswith("preproc_"):
+            # The body is split by conditional compilation; not mechanical.
+            return None
+        source = self.source
+        line_start = source.rfind(b"\n", 0, statement.start_byte) + 1
+        indent = source[line_start : statement.start_byte]
+        if indent.strip():
+            # The header does not start its line ('} else' does): take the
+            # indentation of that line.
+            indent = indent[: len(indent) - len(indent.lstrip())]
+        header_end = len(source[: body.start_byte].rstrip())
+        gap = source[header_end : body.start_byte]
+        edits = [
+            Edit(
+                header_end,
+                body.start_byte,
+                b" {" + (gap if b"\n" in gap else b"\n" + indent + b"\t"),
+            )
+        ]
+        after = source[body.end_byte :]
+        trailing = len(after) - len(after.lstrip())
+        if statement.type == "do_statement" or after[trailing:].startswith(b"else"):
+            # 'while' of a do statement and 'else' of an if statement go on
+            # the line of the closing brace.
+            edits.append(Edit(body.end_byte, body.end_byte + trailing, b"\n" + indent + b"} "))
+        else:
+            edits.append(Edit(body.end_byte, body.end_byte, b"\n" + indent + b"}"))
+        return edits
 
     def _check_macro_parameters(self, node: Node) -> None:
         """Rule 20.7: each parameter instance in a macro body is parenthesized."""
@@ -674,14 +760,18 @@ class _Checker:
                     node,
                     "lowercase-l-suffix",
                     f"'{text}' uses a lowercase l suffix, write L (MISRA C:2012 Rule 7.3)",
+                    _replace(node, digits + suffix.upper()),
                 )
             )
         if digits.startswith(("0b", "0B")):
+            # The same value in hexadecimal, one digit per four bits.
+            hexadecimal = f"0x{int(digits[2:], 2):0{(len(digits) - 2 + 3) // 4}X}"
             self.issues.append(
                 _issue(
                     node,
                     "language-extension",
                     f"'{text}' is a binary literal, a language extension (MISRA C:2012 Rule 1.2)",
+                    _replace(node, hexadecimal + suffix),
                 )
             )
             return
@@ -697,14 +787,17 @@ class _Checker:
         else:
             # A decimal constant without a suffix never has an unsigned type.
             return
-        if "u" not in suffix.lower() and (
-            0x80000000 <= value < 0x100000000 or value >= 0x8000000000000000
-        ):
+        if not suffix and (0x80000000 <= value < 0x100000000 or value >= 0x8000000000000000):
+            # Without a suffix the constant already has an unsigned type on
+            # every target (it does not fit int, nor long long), so adding U
+            # changes nothing but the spelling. With an L suffix the type
+            # depends on the width of long, so that case is left alone.
             self.issues.append(
                 _issue(
                     node,
                     "unsigned-suffix",
                     f"'{text}' has an unsigned type, add a U suffix (MISRA C:2012 Rule 7.2)",
+                    _replace(node, text + "U"),
                 )
             )
 
@@ -967,6 +1060,7 @@ class _Checker:
                         node,
                         "line-comment",
                         "use /* */ comments, not // (Zephyr coding style)",
+                        _comment_fix(node),
                     )
                 )
             elif node_type == "preproc_function_def":
@@ -996,8 +1090,9 @@ def check_text(text: str, reserved: set[str], header: bool = False) -> list[Issu
     'reserved' is the set of reserved identifiers (see load_reserved());
     'header' selects the rules that apply to header files only.
     """
-    root = _PARSER.parse(text.encode("utf-8")).root_node
-    checker = _Checker(reserved)
+    source = text.encode("utf-8")
+    root = _PARSER.parse(source).root_node
+    checker = _Checker(reserved, source)
     if header:
         checker.check_include_guard(root)
     checker.walk(root)
@@ -1005,11 +1100,73 @@ def check_text(text: str, reserved: set[str], header: bool = False) -> list[Issu
     return checker.issues
 
 
+MAX_FIX_PASSES = 8
+
+# The rules whose issues carry a fix. A fix changes the spelling of the code,
+# never what it does: an unsigned constant gets its U, a bool gets true/false,
+# a comment or a literal is respelled, an unbraced body is braced.
+FIXABLE_RULES = {
+    "bool-literal",
+    "braces",
+    "language-extension",
+    "line-comment",
+    "lowercase-l-suffix",
+    "unsigned-suffix",
+}
+
+
+def fix_text(
+    text: str, reserved: set[str], header: bool = False, rules: set[str] | None = None
+) -> tuple[str, list[Issue], list[Issue]]:
+    """
+    Apply the mechanical fixes to the given C file contents and return the new
+    contents, the issues fixed and the issues that remain. 'rules' limits the
+    fixes to those rules. Edits that overlap are applied over several passes,
+    re-parsing in between, so nested statements all end up braced.
+    """
+    fixed: list[Issue] = []
+    for _ in range(MAX_FIX_PASSES):
+        issues = check_text(text, reserved, header)
+        source = text.encode("utf-8")
+        applied_end = len(source) + 1
+        applied = False
+        # Apply from the end so earlier offsets stay valid; skip an issue whose
+        # edits overlap one already applied in this pass.
+        for issue in sorted(
+            issues, key=lambda i: -max(e.start for e in i.fix or [Edit(0, 0, b"")])
+        ):
+            if issue.fix is None or (rules is not None and issue.rule not in rules):
+                continue
+            if max(e.end for e in issue.fix) > applied_end:
+                continue
+            for edit in sorted(issue.fix, key=lambda e: -e.start):
+                source = source[: edit.start] + edit.text + source[edit.end :]
+            applied_end = min(e.start for e in issue.fix)
+            fixed.append(issue)
+            applied = True
+        text = source.decode("utf-8")
+        if not applied:
+            break
+    remaining = check_text(text, reserved, header)
+    return text, fixed, remaining
+
+
 def check_file(path: Path, reserved: set[str]) -> list[Issue]:
     """Return the list of guideline issues for a single file."""
     return check_text(
         path.read_text(encoding="utf-8", errors="replace"), reserved, header=path.suffix == ".h"
     )
+
+
+def fix_file(
+    path: Path, reserved: set[str], rules: set[str] | None = None
+) -> tuple[list[Issue], list[Issue]]:
+    """Fix a file in place; return the issues fixed and those remaining."""
+    text = path.read_text(encoding="utf-8")
+    new_text, fixed, remaining = fix_text(text, reserved, path.suffix == ".h", rules)
+    if new_text != text:
+        path.write_text(new_text, encoding="utf-8")
+    return fixed, remaining
 
 
 def _is_c_file(name: str) -> bool:
@@ -1060,6 +1217,12 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="do not report this rule (may be given multiple times)",
     )
+    parser.add_argument(
+        "--fix",
+        action="store_true",
+        help="rewrite the files, applying the fixes that change spelling only: "
+        f"{', '.join(sorted(FIXABLE_RULES))}. The remaining issues are reported.",
+    )
     return parser.parse_args()
 
 
@@ -1076,7 +1239,12 @@ def main() -> int:
     failed = False
     for path in expand_paths(args.paths):
         try:
-            issues = check_file(path, reserved)
+            if args.fix:
+                fixed, issues = fix_file(path, reserved, FIXABLE_RULES - set(args.skip_rule))
+                for issue in sorted(fixed, key=lambda i: (i.line, i.col)):
+                    print(f"{path}:{issue.line}:{issue.col}: [{issue.rule}] fixed")
+            else:
+                issues = check_file(path, reserved)
         except Exception:
             # Never let a checker failure masquerade as "no issues" (exit 0) or
             # "issues found" (exit 1): report it and exit with EXIT_ERROR.

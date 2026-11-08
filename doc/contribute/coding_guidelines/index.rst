@@ -27,6 +27,11 @@ locally on any file or directory:
    ./scripts/coding_guidelines/coding_guidelines.py drivers/gpio/gpio_nrfx.c
    ./scripts/coding_guidelines/coding_guidelines.py include/zephyr/drivers/
 
+With ``--fix`` the script rewrites the issues whose correction is a matter of
+spelling only (integer constant suffixes, binary literals as hexadecimal,
+``true``/``false`` for booleans, ``//`` comments, braces around a statement
+body) and reports the rest.
+
 The complete rule set is checked by static analysis on the whole tree, see
 :ref:`static_analysis`.
 
