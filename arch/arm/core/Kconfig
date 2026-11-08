@@ -74,9 +74,14 @@ config CPU_AARCH32_CORTEX_R
 
 config ARM_ZIMAGE_HEADER
 	bool "zImage Header"
-	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR
+	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR || \
+		CPU_AARCH32_ARM9
 	help
 	  This option adds a zImage Header.
+
+	  On ARM9, the image also moves itself to its link address when the
+	  loader started it somewhere else, so it can be booted by anything
+	  that boots a Linux zImage.
 
 config CPU_AARCH32_CORTEX_A
 	bool
