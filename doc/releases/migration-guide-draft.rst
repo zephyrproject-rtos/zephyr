@@ -201,6 +201,11 @@ PTP Clock
 Virtio
 ======
 
+* The VirtIO block driver now permits up to four in-flight requests per device by default,
+  increasing the request-pool and virtqueue memory requirements. Set
+  :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT` to ``1`` to retain single-request operation
+  and reduce per-device memory use. (:github:`124800`)
+
 * :c:func:`virtq_add_buffer_chain` now allocates the whole descriptor chain at once. A chain that
   needs more descriptors than the queue has is rejected with ``-EINVAL`` instead of being
   partially submitted, a chain that does not fit within the timeout returns ``-EAGAIN``, and a
