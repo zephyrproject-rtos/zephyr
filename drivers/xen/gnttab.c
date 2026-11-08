@@ -79,6 +79,7 @@ static void put_free_entry(grant_ref_t gref)
 	if (gnttab.gref_list[gref] != GNTTAB_GREF_USED) {
 		LOG_WRN("Trying to put already free gref = %u", gref);
 
+		irq_unlock(flags);
 		return;
 	}
 
