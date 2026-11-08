@@ -122,6 +122,8 @@ config RC_TX_MAX_DURATION_MS
 
 endif # RC_TX
 
+rsource "protocols/Kconfig"
+
 module = RC
 module-str = rc
 source "subsys/logging/Kconfig.template.log_config"
