@@ -88,6 +88,7 @@ struct i2c_esp32_data {
 	bool pm_policy_state_on;
 #endif
 #if I2C_ESP32_TARGET_ENABLED
+	struct k_spinlock target_lock;
 	struct i2c_target_config *target_cfg;
 	bool target_attached;
 	bool target_reading;
@@ -875,9 +876,12 @@ static void i2c_esp32_target_pause(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->target_lock);
 
 	data->target_in_controller_xfer = true;
 	i2c_esp32_target_teardown(dev);
+	k_spin_unlock(&data->target_lock, key);
+
 	i2c_hal_master_init(&data->hal);
 	i2c_esp32_configure_data_mode(dev);
 	i2c_esp32_configure_bitrate(dev, config->bitrate);
@@ -886,11 +890,13 @@ static void i2c_esp32_target_pause(const struct device *dev)
 static void i2c_esp32_target_resume(const struct device *dev)
 {
 	struct i2c_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->target_lock);
 
 	i2c_esp32_target_setup(dev);
 	data->target_reading = false;
 	data->target_writing = false;
 	data->target_in_controller_xfer = false;
+	k_spin_unlock(&data->target_lock, key);
 }
 
 static inline void IRAM_ATTR i2c_esp32_target_drain_rx(const struct device *dev)
@@ -1081,10 +1087,14 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
 
 #if I2C_ESP32_TARGET_ENABLED
+	k_spinlock_key_t key = k_spin_lock(&data->target_lock);
+
 	if (data->target_attached && !data->target_in_controller_xfer) {
 		i2c_esp32_target_isr(dev);
+		k_spin_unlock(&data->target_lock, key);
 		return;
 	}
+	k_spin_unlock(&data->target_lock, key);
 #endif
 
 	/* Only the TX interrupts are ever enabled, and status may be stale here */
@@ -1107,6 +1117,7 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 static int i2c_esp32_target_register(const struct device *dev, struct i2c_target_config *cfg)
 {
 	struct i2c_esp32_data *data = dev->data;
+	k_spinlock_key_t key;
 
 	if (!cfg) {
 		return -EINVAL;
@@ -1129,9 +1140,11 @@ static int i2c_esp32_target_register(const struct device *dev, struct i2c_target
 	data->target_tx_idx = 0;
 #endif
 
+	key = k_spin_lock(&data->target_lock);
 	i2c_esp32_target_setup(dev);
-
 	data->target_attached = true;
+	k_spin_unlock(&data->target_lock, key);
+
 	data->dev_config = 0;
 
 #if CONFIG_PM
@@ -1146,6 +1159,7 @@ static int i2c_esp32_target_register(const struct device *dev, struct i2c_target
 static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
 {
 	struct i2c_esp32_data *data = dev->data;
+	k_spinlock_key_t key;
 
 	if (!data->target_attached) {
 		return -EINVAL;
@@ -1156,10 +1170,12 @@ static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_targ
 
 	k_sem_take(&data->transfer_sem, K_FOREVER);
 
+	key = k_spin_lock(&data->target_lock);
 	i2c_esp32_target_teardown(dev);
-
 	data->target_attached = false;
 	data->target_cfg = NULL;
+	k_spin_unlock(&data->target_lock, key);
+
 	data->target_reading = false;
 	data->target_writing = false;
 #if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
