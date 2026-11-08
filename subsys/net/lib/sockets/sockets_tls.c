@@ -193,6 +193,18 @@ __net_socket struct tls_context {
 	/** Information whether underlying socket is listening. */
 	bool is_listening : 1;
 
+	/** Information whether accept() left the TLS handshake to the
+	 *  consecutive socket calls and it has not completed yet.
+	 */
+	bool handshake_deferred : 1;
+
+	/** Information whether accept() deferred the TLS handshake of this
+	 *  socket. Unlike handshake_deferred it stays set once the handshake
+	 *  completes, so that poll() reads its events back the way it prepared
+	 *  them even if another thread completed the handshake in between.
+	 */
+	bool accept_deferred : 1;
+
 	/* TLS sessions associated with this socket. In most cases there will
 	 * be one session allocated per TLS context. DTLS server is an exception,
 	 * which can have multiple TLS sessions allocated at the same time.
@@ -218,6 +230,15 @@ __net_socket struct tls_context {
 
 	/* TLS socket mutex lock. */
 	struct k_mutex *lock;
+
+	/* Time by which a handshake deferred by accept() has to complete. */
+	k_timepoint_t handshake_deadline;
+
+	/* mbedTLS code (WANT_READ, WANT_WRITE, ...) the handshake last stopped
+	 * on without waiting, so that a deferred handshake waits for the right
+	 * socket event.
+	 */
+	int handshake_want;
 
 	/** TLS specific option values. */
 	struct {
@@ -258,6 +279,9 @@ __net_socket struct tls_context {
 
 		/** Session cache enabled on a socket. */
 		bool cache_enabled;
+
+		/** Execute the TLS handshake inside accept(). */
+		bool handshake_on_accept;
 
 		/** Socket TX timeout */
 		k_timeout_t timeout_tx;
@@ -696,6 +720,7 @@ static struct tls_context *tls_alloc(void)
 			tls->options.mfl_code = -1;
 			tls->options.timeout_tx = K_FOREVER;
 			tls->options.timeout_rx = K_FOREVER;
+			tls->options.handshake_on_accept = true;
 			tls->sock = -1;
 
 			sys_slist_init(&tls->sessions);
@@ -2018,6 +2043,7 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 			/* Blocking timeout. */
 			timeout = sys_timepoint_timeout(end);
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				context->handshake_want = ret;
 				ret = -EAGAIN;
 				break;
 			}
@@ -2108,6 +2134,70 @@ static int tls_mbedtls_handshake(struct tls_context *context,
 	context->active_session->handshake_in_progress = false;
 
 	return ret;
+}
+
+/* Advance a handshake that accept() left to the socket calls, waiting at most
+ * timeout and never past the handshake deadline. Return 0 once the handshake
+ * is complete, -EAGAIN while it is still in progress, or a negative errno
+ * value when it failed or timed out. A failed handshake and an expired
+ * deadline are also latched in ctx->error, a failed wait on the underlying
+ * socket is only returned.
+ *
+ * The application already holds the socket, so unlike connect() the wait
+ * releases the socket lock, as the recv() data loop does.
+ */
+static int tls_deferred_handshake(struct tls_context *ctx, k_timeout_t timeout)
+{
+	k_timepoint_t end;
+	int ret;
+
+	end = sys_timepoint_calc(timeout);
+	if (sys_timepoint_cmp(end, ctx->handshake_deadline) > 0) {
+		end = ctx->handshake_deadline;
+	}
+
+	while (true) {
+		if (ctx->error != 0) {
+			return -ctx->error;
+		}
+
+		if (!ctx->handshake_deferred || is_handshake_complete(ctx->active_session)) {
+			return 0;
+		}
+
+		ret = tls_mbedtls_handshake(ctx, K_NO_WAIT);
+		if (ret == 0) {
+			/* From now on the socket behaves like one accepted with
+			 * the handshake done.
+			 */
+			ctx->handshake_deferred = false;
+			return 0;
+		}
+
+		if (ret != -EAGAIN) {
+			/* Failed, ctx->error is set. */
+			return ret;
+		}
+
+		if (sys_timepoint_expired(ctx->handshake_deadline)) {
+			NET_DBG("TLS handshake timeout");
+			ctx->error = ETIMEDOUT;
+			return -ETIMEDOUT;
+		}
+
+		timeout = sys_timepoint_timeout(end);
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			return -EAGAIN;
+		}
+
+		k_mutex_unlock(ctx->lock);
+		ret = wait_for_reason(ctx->sock, timeout_to_ms(&timeout), ctx->handshake_want);
+		k_mutex_lock(ctx->lock, K_FOREVER);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
 }
 
 static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
@@ -2984,6 +3074,38 @@ static int tls_opt_dtls_handshake_on_connect_get(struct tls_context *context,
 }
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
+static int tls_opt_handshake_on_accept_set(struct tls_context *context, const void *optval,
+					   net_socklen_t optlen)
+{
+	if (optval == NULL || optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->type != NET_SOCK_STREAM) {
+		return -ENOPROTOOPT;
+	}
+
+	context->options.handshake_on_accept = *(const int *)optval != 0;
+
+	return 0;
+}
+
+static int tls_opt_handshake_on_accept_get(struct tls_context *context, void *optval,
+					   net_socklen_t *optlen)
+{
+	if (*optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	if (context->type != NET_SOCK_STREAM) {
+		return -ENOPROTOOPT;
+	}
+
+	*(int *)optval = context->options.handshake_on_accept ? 1 : 0;
+
+	return 0;
+}
+
 static int tls_opt_alpn_list_get(struct tls_context *context,
 				 void *optval, net_socklen_t *optlen)
 {
@@ -3435,8 +3557,20 @@ int ztls_accept_ctx(struct tls_context *parent, struct net_sockaddr *addr,
 	/* Do not use any socket flags during the handshake. */
 	child->flags = 0;
 
+	if (!child->options.handshake_on_accept) {
+		/* The handshake advances in recv(), send() and poll(). */
+		child->handshake_deferred = true;
+		child->accept_deferred = true;
+		/* A server handshake starts by reading the ClientHello. */
+		child->handshake_want = MBEDTLS_ERR_SSL_WANT_READ;
+		child->handshake_deadline =
+			sys_timepoint_calc(K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
+
+		return fd;
+	}
+
 	/* TODO For simplicity, TLS handshake blocks the socket even for
-	 * non-blocking socket.
+	 * non-blocking socket, unless TLS_HANDSHAKE_ON_ACCEPT is cleared.
 	 */
 	ret = tls_mbedtls_handshake(
 		child, K_MSEC(CONFIG_NET_SOCKETS_TLS_CONNECT_TIMEOUT));
@@ -3492,6 +3626,14 @@ static ssize_t send_tls(struct tls_context *ctx, const void *buf,
 	}
 
 	end = sys_timepoint_calc(timeout);
+
+	if (ctx->handshake_deferred) {
+		ret = tls_deferred_handshake(ctx, timeout);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+	}
 
 	do {
 		ret = mbedtls_ssl_write(&ctx->active_session->ssl, buf, len);
@@ -3798,6 +3940,14 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 	}
 
 	end = sys_timepoint_calc(timeout);
+
+	if (ctx->handshake_deferred) {
+		ret = tls_deferred_handshake(ctx, timeout);
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+	}
 
 	do {
 		size_t read_len = max_len - recv_len;
@@ -4284,6 +4434,165 @@ static int ztls_poll_prepare_pollin(struct tls_context *ctx)
 	return -EALREADY;
 }
 
+/* Whether poll() has to wait for a handshake that accept() deferred, rather
+ * than for the events the application asked for.
+ */
+static bool tls_poll_on_handshake(struct tls_context *ctx, short events)
+{
+	return ctx->handshake_deferred && (events & (ZSOCK_POLLIN | ZSOCK_POLLOUT)) != 0 &&
+	       !is_handshake_complete(ctx->active_session);
+}
+
+/* Advance a deferred handshake once poll() returned for it and add the events
+ * the application asked for to revents. The event of the underlying socket has
+ * been removed from revents already, as it belonged to the handshake. Return
+ * -EAGAIN when there is nothing to report yet.
+ */
+static int tls_poll_handshake_revents(struct tls_context *ctx, short events, short *revents)
+{
+	int ret;
+
+	(void)tls_deferred_handshake(ctx, K_NO_WAIT);
+
+	if (ctx->error != 0) {
+		*revents |= ZSOCK_POLLERR;
+		return 0;
+	}
+
+	if (is_handshake_complete(ctx->active_session)) {
+		if (events & ZSOCK_POLLOUT) {
+			*revents |= ZSOCK_POLLOUT;
+		}
+
+		if (events & ZSOCK_POLLIN) {
+			/* The client may have sent data along with its last
+			 * handshake message.
+			 */
+			ret = tls_data_check(ctx);
+			if (ret == -ENOTCONN) {
+				*revents |= ZSOCK_POLLHUP;
+			} else if (ret < 0) {
+				ctx->error = -ret;
+				*revents |= ZSOCK_POLLERR;
+			} else if (ret > 0) {
+				*revents |= ZSOCK_POLLIN;
+			} else {
+				/* Nothing to read yet. */
+			}
+		}
+	}
+
+	return (*revents == 0) ? -EAGAIN : 0;
+}
+
+/* Tags of the k_poll_event of a socket that poll() prepared to wait for a
+ * handshake deferred by accept(), saying which event of the underlying socket
+ * it waits for, so that ztls_poll_update_ctx() reads the event back the same
+ * way. The event of any other TLS socket is tagged 0.
+ */
+#define TLS_POLL_TAG_HANDSHAKE_IN  1
+#define TLS_POLL_TAG_HANDSHAKE_OUT 2
+
+/* The event of the underlying socket a deferred handshake waits for. Once it
+ * has completed, only data from the peer is left to wait for.
+ */
+static short tls_poll_handshake_events(struct tls_context *ctx)
+{
+	if (!is_handshake_complete(ctx->active_session) &&
+	    (ctx->handshake_want == MBEDTLS_ERR_SSL_WANT_WRITE)) {
+		return ZSOCK_POLLOUT;
+	}
+
+	return ZSOCK_POLLIN;
+}
+
+/* Prepare exactly one k_poll_event of the underlying socket for a deferred
+ * handshake and tag it.
+ */
+static int tls_poll_prepare_handshake(struct tls_context *ctx, const struct fd_op_vtable *vtable,
+				      void *obj, struct zsock_pollfd *pfd,
+				      struct k_poll_event **pev, struct k_poll_event *pev_end)
+{
+	struct k_poll_event *first = *pev;
+	int ret;
+
+	pfd->events = tls_poll_handshake_events(ctx);
+	ret = zvfs_fdtable_call_poll_prepare(vtable, obj, pfd, pev, pev_end);
+	if ((*pev == first) && (pfd->events == ZSOCK_POLLOUT)) {
+		/* The socket reports POLLOUT without an event to wait on, so
+		 * wait for POLLIN instead, bounded by the handshake deadline.
+		 */
+		pfd->events = ZSOCK_POLLIN;
+		ret = zvfs_fdtable_call_poll_prepare(vtable, obj, pfd, pev, pev_end);
+	}
+
+	if (*pev != first) {
+		first->tag = (pfd->events == ZSOCK_POLLOUT) ? TLS_POLL_TAG_HANDSHAKE_OUT
+							    : TLS_POLL_TAG_HANDSHAKE_IN;
+	}
+
+	return ret;
+}
+
+/* Whether poll_prepare() of the underlying socket can be called again from
+ * ztls_poll_update_ctx(). poll() may return right after an update, so that is
+ * only safe when prepare does nothing but fill in the k_poll_event, as the
+ * native sockets do. A socket that also registers itself elsewhere (host
+ * sockets on native_sim) would stay registered.
+ */
+static bool tls_poll_can_prepare_in_update(const struct fd_op_vtable *vtable)
+{
+	return IS_ENABLED(CONFIG_NET_NATIVE) &&
+	       (vtable == (const struct fd_op_vtable *)&sock_fd_op_vtable);
+}
+
+static int tls_poll_update_handshake(struct tls_context *ctx, const struct fd_op_vtable *vtable,
+				     void *obj, struct zsock_pollfd *pfd, struct k_poll_event **pev)
+{
+	struct k_poll_event *slot = *pev;
+	short events = pfd->events;
+	short waited = (slot->tag == TLS_POLL_TAG_HANDSHAKE_OUT) ? ZSOCK_POLLOUT : ZSOCK_POLLIN;
+	bool fired;
+	int ret;
+
+	pfd->events = waited;
+
+	ret = zvfs_fdtable_call_poll_update(vtable, obj, pfd, pev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	fired = (pfd->revents & waited) != 0;
+	pfd->revents &= ~(ZSOCK_POLLIN | ZSOCK_POLLOUT);
+
+	ret = tls_poll_handshake_revents(ctx, events, &pfd->revents);
+	if (ret != -EAGAIN) {
+		return ret;
+	}
+
+	if (!fired && (tls_poll_handshake_events(ctx) == waited)) {
+		/* Nothing happened, the event is still the one to wait for. */
+		return 0;
+	}
+
+	if (!tls_poll_can_prepare_in_update(vtable)) {
+		/* Let poll() return, without events if no other descriptor has
+		 * any. The next call prepares what the handshake needs now.
+		 */
+		return 0;
+	}
+
+	/* Wait again, in the same slot, for what the handshake needs now,
+	 * which may have changed between POLLIN and POLLOUT.
+	 */
+	ret = tls_poll_prepare_handshake(ctx, vtable, obj, pfd, &slot, *pev);
+	if ((ret == 0) || (ret == -EALREADY)) {
+		ret = -EAGAIN;
+	}
+
+	return ret;
+}
+
 static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 				 struct zsock_pollfd *pfd,
 				 struct k_poll_event **pev,
@@ -4291,6 +4600,8 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 {
 	const struct fd_op_vtable *vtable;
 	struct k_mutex *lock;
+	struct k_poll_event *first = *pev;
+	bool on_handshake = false;
 	void *obj;
 	int ret;
 	short events = pfd->events;
@@ -4322,7 +4633,29 @@ static int ztls_poll_prepare_ctx(struct tls_context *ctx,
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
+	if (ctx->handshake_deferred) {
+		(void)tls_deferred_handshake(ctx, K_NO_WAIT);
+		on_handshake = tls_poll_on_handshake(ctx, pfd->events);
+	}
+
+	if (on_handshake) {
+		/* Wait for the handshake only, in one event, no more than the
+		 * events the application asked for.
+		 */
+		ret = tls_poll_prepare_handshake(ctx, vtable, obj, pfd, pev, pev_end);
+		if (ret == 0 && ctx->error != 0) {
+			/* Failed or timed out, report it without waiting. */
+			ret = -EALREADY;
+		}
+
+		goto exit;
+	}
+
 	ret = zvfs_fdtable_call_poll_prepare(vtable, obj, pfd, pev, pev_end);
+	if (*pev != first) {
+		first->tag = 0;
+	}
+
 	if (ret != 0) {
 		goto exit;
 	}
@@ -4649,6 +4982,18 @@ static int ztls_poll_update_ctx(struct tls_context *ctx,
 
 	(void)k_mutex_lock(lock, K_FOREVER);
 
+	/* Check if the socket was waiting for a handshake deferred by accept().
+	 * The tag decides, as the handshake may have completed in another
+	 * thread since prepare. Sockets that never deferred it do not read the
+	 * tag, their first event may belong to the next descriptor.
+	 */
+	if (ctx->accept_deferred && (pfd->events & (ZSOCK_POLLIN | ZSOCK_POLLOUT)) &&
+	    (((*pev)->tag == TLS_POLL_TAG_HANDSHAKE_IN) ||
+	     ((*pev)->tag == TLS_POLL_TAG_HANDSHAKE_OUT))) {
+		ret = tls_poll_update_handshake(ctx, vtable, obj, pfd, pev);
+		goto exit;
+	}
+
 	/* Check if the socket was waiting for the handshake to complete. */
 	if ((pfd->events & ZSOCK_POLLIN) &&
 	    ((*pev)->obj == &ctx->active_session->tls_established)) {
@@ -4744,7 +5089,10 @@ static bool poll_offload_dtls_client_retry(struct tls_context *ctx,
 static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 {
 	int fd_backup[CONFIG_ZVFS_POLL_MAX];
+	short events_backup[CONFIG_ZVFS_POLL_MAX];
+	bool on_handshake[CONFIG_ZVFS_POLL_MAX];
 	const struct fd_op_vtable *vtable;
+	struct tls_context *tls_ctx;
 	void *ctx;
 	int ret = 0;
 	int result;
@@ -4756,6 +5104,8 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 	/* Overwrite TLS file descriptors with underlying ones. */
 	for (i = 0; i < nfds; i++) {
 		fd_backup[i] = fds[i].fd;
+		events_backup[i] = fds[i].events;
+		on_handshake[i] = false;
 
 		ctx = zvfs_get_fd_obj(fds[i].fd,
 				   (const struct fd_op_vtable *)
@@ -4765,7 +5115,29 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 			continue;
 		}
 
-		if (fds[i].events & ZSOCK_POLLIN) {
+		tls_ctx = ctx;
+		if (tls_ctx->handshake_deferred) {
+			/* poll() released the socket lock before it came here,
+			 * and a recv() or send() in another thread may step
+			 * the same handshake.
+			 */
+			(void)k_mutex_lock(tls_ctx->lock, K_FOREVER);
+			(void)tls_deferred_handshake(tls_ctx, K_NO_WAIT);
+			k_mutex_unlock(tls_ctx->lock);
+		}
+
+		if (tls_poll_on_handshake(tls_ctx, fds[i].events)) {
+			/* Wait for the handshake only, see
+			 * ztls_poll_prepare_ctx().
+			 */
+			on_handshake[i] = true;
+			fds[i].events = tls_poll_handshake_events(tls_ctx);
+
+			if (tls_ctx->error != 0) {
+				/* Failed or timed out, report it at once. */
+				timeout = 0;
+			}
+		} else if (fds[i].events & ZSOCK_POLLIN) {
 			ret = ztls_poll_prepare_pollin(ctx);
 			/* In case data is already available in mbedtls,
 			 * do not wait in poll.
@@ -4807,7 +5179,27 @@ static int ztls_poll_offload(struct zsock_pollfd *fds, int nfds, int timeout)
 					   (const struct fd_op_vtable *)
 							&tls_sock_fd_op_vtable,
 					   0);
-			if (ctx != NULL) {
+			if (ctx != NULL && on_handshake[i]) {
+				tls_ctx = ctx;
+				fds[i].revents &= ~(ZSOCK_POLLIN | ZSOCK_POLLOUT);
+
+				(void)k_mutex_lock(tls_ctx->lock, K_FOREVER);
+				result = tls_poll_handshake_revents(ctx, events_backup[i],
+								    &fds[i].revents);
+				k_mutex_unlock(tls_ctx->lock);
+				if (result == -EAGAIN) {
+					retry = true;
+					fds[i].events = tls_poll_handshake_events(ctx);
+				}
+
+				/* Once the handshake is complete, wait for
+				 * what the application asked for.
+				 */
+				if (!tls_poll_on_handshake(ctx, events_backup[i])) {
+					on_handshake[i] = false;
+					fds[i].events = events_backup[i];
+				}
+			} else if (ctx != NULL) {
 				if (fds[i].events & ZSOCK_POLLIN) {
 					if (poll_offload_dtls_client_retry(
 							ctx, &fds[i])) {
@@ -4846,6 +5238,7 @@ exit:
 	/* Restore original fds. */
 	for (i = 0; i < nfds; i++) {
 		fds[i].fd = fd_backup[i];
+		fds[i].events = events_backup[i];
 	}
 
 	return ret;
@@ -4948,6 +5341,10 @@ int ztls_getsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		err = tls_opt_dtls_handshake_on_connect_get(ctx, optval, optlen);
 		break;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+	case ZSOCK_TLS_HANDSHAKE_ON_ACCEPT:
+		err = tls_opt_handshake_on_accept_get(ctx, optval, optlen);
+		break;
 
 	default:
 		/* Unknown or write-only option. */
@@ -5069,6 +5466,10 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		break;
 
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
+
+	case ZSOCK_TLS_HANDSHAKE_ON_ACCEPT:
+		err = tls_opt_handshake_on_accept_set(ctx, optval, optlen);
+		break;
 
 	case ZSOCK_TLS_NATIVE:
 		/* Option handled at the socket dispatcher level. */
