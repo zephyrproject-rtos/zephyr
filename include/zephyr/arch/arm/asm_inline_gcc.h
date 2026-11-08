@@ -25,6 +25,9 @@
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
+#elif defined(CONFIG_CPU_AARCH32_ARM9)
+#include <zephyr/arch/arm/arm9/cpu.h>
+#include <zephyr/arch/arm/arm9/lib_helpers.h>
 #endif
 
 #ifdef __cplusplus
@@ -75,6 +78,17 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		: "=r" (key)
 		:
 		: "memory", "cc");
+#elif defined(CONFIG_ARMV5)
+	/* ARMv5 has no CPS: read-modify-write CPSR instead. */
+	unsigned int tmp;
+
+	__asm__ volatile("mrs %0, cpsr;"
+			 "orr %1, %0, %2;"
+			 "msr cpsr_c, %1;"
+			 "and %0, %0, %2;"
+			 : "=&r"(key), "=&r"(tmp)
+			 : "i"(I_BIT)
+			 : "memory", "cc");
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -104,7 +118,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__set_BASEPRI(key);
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
-	defined(CONFIG_ARM_A_PROFILE_AARCH32)
+	defined(CONFIG_ARM_A_PROFILE_AARCH32) || defined(CONFIG_ARMV5)
 	if (key != 0U) {
 		return;
 	}
@@ -129,7 +143,7 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	/* irq_lock() uses BASEPRI, but PRIMASK also masks interrupts. */
 	return (__get_BASEPRI() == 0U) && (__get_PRIMASK() == 0U);
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) ||                                \
-	defined(CONFIG_ARM_A_PROFILE_AARCH32)
+	defined(CONFIG_ARM_A_PROFILE_AARCH32) || defined(CONFIG_ARMV5)
 	unsigned int cpsr;
 
 	__asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));

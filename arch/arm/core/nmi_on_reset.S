@@ -23,5 +23,11 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_SysNmiOnReset)
 
 SECTION_FUNC(TEXT, z_SysNmiOnReset)
+#if defined(CONFIG_ARMV5)
+    /* ARMv5 spells "wait for interrupt" as a CP15 operation. */
+    mov r0, #0
+    mcr p15, 0, r0, c7, c0, 4
+#else
     wfi
+#endif
     b z_SysNmiOnReset
