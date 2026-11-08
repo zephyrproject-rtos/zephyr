@@ -37,6 +37,7 @@ def test_runner_imports():
         'esp32',
         'ezflashcli',
         'gd32isp',
+        'hi3861',
         'hifive1',
         'iar',
         'intel_adsp',
