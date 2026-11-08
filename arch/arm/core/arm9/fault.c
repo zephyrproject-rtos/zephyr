@@ -17,6 +17,15 @@
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#if defined(CONFIG_EXTRA_EXCEPTION_INFO)
+/* z_armv5_esf_extend in macro_priv.inc builds this layout by hand. */
+BUILD_ASSERT(offsetof(struct arch_esf, extra_info) == 0);
+BUILD_ASSERT(offsetof(struct arch_esf, basic) == 12);
+BUILD_ASSERT(sizeof(struct __basic_sf) == 32);
+BUILD_ASSERT(sizeof(_callee_saved_t) == 40);
+BUILD_ASSERT(offsetof(_callee_saved_t, psp) == 32);
+#endif
+
 /**
  * @brief Map an ARMv5 fault status code onto a Zephyr fatal error reason
  */

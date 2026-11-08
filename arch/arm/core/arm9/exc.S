@@ -87,7 +87,9 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	ldr	r0, [sp]
 
 	z_armv5_enter_exc
+	z_armv5_esf_extend
 	bl	z_arm_fault_undef_instruction
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
 
 /**
@@ -96,7 +98,9 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	sub	lr, lr, #4
 	z_armv5_enter_exc
+	z_armv5_esf_extend
 	bl	z_arm_fault_prefetch
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
 
 /**
@@ -105,7 +109,9 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	sub	lr, lr, #8
 	z_armv5_enter_exc
+	z_armv5_esf_extend
 	bl	z_arm_fault_data
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
 
 /**
@@ -117,9 +123,11 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_fiq)
 	sub	lr, lr, #4
 	z_armv5_enter_exc
+	z_armv5_esf_extend
 	mov	r1, r0
 	mov	r0, #0				/* K_ERR_CPU_EXCEPTION */
 	bl	z_arm_fatal_error
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
 
 /**
@@ -127,9 +135,11 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_fiq)
  */
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_reserved)
 	z_armv5_enter_exc
+	z_armv5_esf_extend
 	mov	r1, r0
 	mov	r0, #0				/* K_ERR_CPU_EXCEPTION */
 	bl	z_arm_fatal_error
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
 
 /**
@@ -176,14 +186,18 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_svc)
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 _svc_inv:
+	z_armv5_esf_extend
 	mov	r1, r0
 	mov	r0, #0				/* K_ERR_CPU_EXCEPTION */
 	bl	z_arm_fatal_error
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
 
 _oops:
 	/* r0 already points at the exception stack frame */
+	z_armv5_esf_extend
 	mov	r1, #0				/* callee_regs (Cortex-M only) */
 	mov	r2, #0				/* exc_return (Cortex-M only) */
 	bl	z_do_kernel_oops
+	z_armv5_esf_unextend
 	b	z_armv5_exit_exc
