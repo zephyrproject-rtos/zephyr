@@ -205,6 +205,17 @@ struct input_callback {
 void input_add_callback(struct input_callback *callback, const struct device *dev,
 			input_callback_handler_t handler, void *user_data);
 
+/**
+ * @brief Remove a callback structure for input events at runtime.
+ *
+ * Note that only callbacks added at runtime can be removed at runtime.
+ *
+ * @param callback A pointer to the callback structure to remove
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int input_remove_callback(struct input_callback *callback);
+
 /** @cond INTERNAL_HIDDEN */
 K_DEDICATED_WORK_QUEUE_DECLARE(input, INPUT);
 /** @endcond */

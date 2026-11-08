@@ -37,7 +37,7 @@ static void input_cb_unfiltered(struct input_event *evt, void *user_data)
 
 	message_count_unfiltered++;
 
-	if (message_count_unfiltered == CONFIG_INPUT_QUEUE_MAX_MSGS + 1) {
+	if (message_count_unfiltered >= CONFIG_INPUT_QUEUE_MAX_MSGS + 1) {
 		TC_PRINT("cb: done\n");
 		k_sem_give(&cb_done);
 	}
@@ -84,6 +84,16 @@ ZTEST(input_api, test_sequence_thread)
 
 	zassert_equal(message_count_filtered, CONFIG_INPUT_QUEUE_MAX_MSGS);
 	zassert_equal(message_count_unfiltered, CONFIG_INPUT_QUEUE_MAX_MSGS + 1);
+
+	input_remove_callback(&input_callback_filtered);
+
+	ret = input_report_key(&fake_dev, 0, 1, false, K_FOREVER);
+	zassert_equal(ret, 0, "ret: %d", ret);
+
+	k_sem_take(&cb_done, K_FOREVER);
+
+	zassert_equal(message_count_filtered, CONFIG_INPUT_QUEUE_MAX_MSGS);
+	zassert_equal(message_count_unfiltered, CONFIG_INPUT_QUEUE_MAX_MSGS + 2);
 }
 
 #else /* CONFIG_INPUT_MODE_THREAD */
@@ -119,6 +129,14 @@ ZTEST(input_api, test_synchronous)
 
 	zassert_equal(message_count_filtered, 1);
 	zassert_equal(message_count_unfiltered, 2);
+
+	input_remove_callback(&input_callback_filtered);
+
+	ret = input_report_key(&fake_dev, 0, 1, false, K_FOREVER);
+	zassert_equal(ret, 0, "ret: %d", ret);
+
+	zassert_equal(message_count_filtered, 1);
+	zassert_equal(message_count_unfiltered, 3);
 }
 
 static struct input_event last_event;

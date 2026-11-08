@@ -33,6 +33,21 @@ void input_add_callback(struct input_callback *callback, const struct device *de
 	sys_slist_prepend(&callbacks, &callback->node);
 }
 
+int input_remove_callback(struct input_callback *callback)
+{
+	__ASSERT(callback, "No callback!");
+
+	if (sys_slist_is_empty(&callbacks)) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&callbacks, &callback->node)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static void input_process(struct input_event *evt)
 {
 	STRUCT_SECTION_FOREACH(input_callback, callback) {

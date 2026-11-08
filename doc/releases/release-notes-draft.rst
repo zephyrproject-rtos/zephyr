@@ -72,8 +72,9 @@ Libraries / Subsystems
 
 * Input
 
-  * Input event callbacks can now be registered at runtime
-    with :c:func:`input_add_callback`.
+  * Input event callbacks can now be registered at runtime with
+    :c:func:`input_add_callback`, and callbacks registered at runtime
+    can be removed at runtime with :c:func:`input_remove_callback`.
 
 * LoRaWAN
 

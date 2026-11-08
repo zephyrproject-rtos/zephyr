@@ -68,6 +68,13 @@ a :c:struct:`input_callback` by calling :c:func:`input_add_callback`.
 
     input_add_callback(&input_cb, NULL, input_event_cb, NULL);
 
+Callbacks registered at runtime can also be removed at runtime by calling
+:c:func:`input_remove_callback`.
+
+.. code-block:: c
+
+    input_remove_callback(&input_cb);
+
 The subsystem can operate synchronously or by using an event queue, depending
 on the :kconfig:option:`CONFIG_INPUT_MODE` option. If the input thread is used,
 all the events are added to a queue and executed in a common ``input`` thread.
