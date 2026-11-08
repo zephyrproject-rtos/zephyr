@@ -55,6 +55,12 @@ __no_optimization void func_3(uint32_t *addr)
 	 * a lot, so it's good to check that it causes a coredump.
 	 */
 	k_panic();
+#elif defined(CONFIG_ARMV5)
+	ARG_UNUSED(addr);
+	/* Address 0 is RAM or ROM on ARMv5 SoCs, so writing to it does not
+	 * fault. Execute a permanently undefined instruction instead.
+	 */
+	__asm__ volatile(".word 0xe7f000f0");
 #elif !defined(CONFIG_CPU_CORTEX_M)
 	/* For null pointer reference */
 	*addr = 0;
