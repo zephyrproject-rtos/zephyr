@@ -18,6 +18,9 @@
 #include <arm9/stack.h>
 
 extern void z_armv5_vector_table_init(void);
+#ifdef CONFIG_ARMV5_FLAT_MMU
+extern void z_armv5_mmu_init(void);
+#endif
 
 extern FUNC_NORETURN void z_cstart(void);
 
@@ -33,6 +36,10 @@ FUNC_NORETURN void z_prep_c(void)
 
 #if defined(CONFIG_INIT_STACKS)
 	z_arm_init_stacks();
+#endif
+
+#ifdef CONFIG_ARMV5_FLAT_MMU
+	z_armv5_mmu_init();
 #endif
 
 	z_armv5_vector_table_init();
