@@ -810,6 +810,18 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 		return -EIO;
 	}
 
+	/*
+	 * A free-running RX controller stays enabled between transfers, so reception
+	 * is not restarted on a frame boundary. Above the "empty" FIFO threshold, the
+	 * first word of a restarted transfer can belong to any slot.
+	 */
+	if ((sub_cfg->dir == I2S_DIR_RX) && stream->master &&
+	    ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) == 0) &&
+	    (hsai->Init.FIFOThreshold != SAI_FIFOTHRESHOLD_EMPTY)) {
+		LOG_WRN("Free-running RX with FIFO threshold other than EMPTY may "
+			"cause slot misalignment between transfers");
+	}
+
 	stream->state = I2S_STATE_READY;
 
 	/*
