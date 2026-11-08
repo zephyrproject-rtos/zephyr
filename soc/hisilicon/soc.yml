@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+  - name: hisilicon
+    series:
+      - name: hi3861
+        socs:
+          - name: hi3861

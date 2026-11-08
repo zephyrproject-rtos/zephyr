@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HI3861
+	bool
+	select SOC_FAMILY_HISILICON
+
+config SOC_HI3861
+	bool
+	select SOC_SERIES_HI3861
+
+config SOC_SERIES
+	default "hi3861" if SOC_SERIES_HI3861
+
+config SOC
+	default "hi3861" if SOC_HI3861
