@@ -140,6 +140,10 @@ Other notable changes
 
 * Virtio
 
+  * :ref:`Virtio-net <eth_virtio_net>` transmits eligible packet fragments without copying their
+    payload and supports multiple in-flight requests. Packets that cannot be submitted directly
+    retain the copy path, with separate storage for each request.
+
   * Descriptor chain submission with :c:func:`virtq_add_buffer_chain` now allocates all required
     descriptors at once. A submission waiting for space no longer holds descriptors needed by
     smaller submissions, and blocking submissions use one timeout budget for the whole chain.

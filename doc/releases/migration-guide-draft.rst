@@ -213,6 +213,12 @@ Virtio
   buffer chains with :c:func:`virtq_add_buffer_chain`; the Virtio completion path returns their
   descriptors.
 
+* Virtio-net now keeps up to four transmit requests in flight per device by default, using
+  separate request buffers and a larger transmit queue. Set
+  :kconfig:option:`CONFIG_ETH_VIRTIO_NET_TX_BUFFERS` to ``1`` to reduce the request-pool memory
+  requirement. A single-request configuration still uses a scatter-gather-capable queue; see
+  :ref:`eth_virtio_net` for the resource requirements.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
