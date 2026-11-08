@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  HiSilicon Hi3861 UART controller with 64-entry transmit and receive FIFOs.
+  UART0 does not support hardware RTS/CTS; UART1 and UART2 do.
+
+compatible: "hisilicon,hi3861-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    required: true
+    description: Frequency of the UART input clock in Hz.
+
+  current-speed:
+    required: true
+
+  hw-flow-control-supported:
+    type: boolean
+    description: |
+      RTS/CTS capability, available on UART1 and UART2.
+      The hw-flow-control property enables it at boot.
