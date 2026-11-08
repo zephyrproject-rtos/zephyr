@@ -27,4 +27,12 @@ config ATM90E32AS_VERIFY_READ
 	  the SPI lines. This doubles the number of SPI transfers per read.
 	  Register writes are always verified.
 
+config ATM90E32AS_SHELL
+	bool "Register access shell commands"
+	depends on SHELL
+	help
+	  Enable the atm90e32as shell command, which reads and writes chip
+	  registers for calibration and debugging. Registers written from the
+	  shell keep their value until the chip is reset or resumed.
+
 endif # ATM90E32AS
