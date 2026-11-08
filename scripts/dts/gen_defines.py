@@ -33,6 +33,7 @@ def main():
     global header_file
     global flash_area_num
     global ZEPHYR_BASE
+    global WORKSPACE_DIR
 
     args = parse_args()
 
@@ -44,6 +45,11 @@ def main():
         ZEPHYR_BASE = pathlib.Path(base_path)
     else:
         ZEPHYR_BASE = pathlib.Path(__file__).resolve().parents[2]
+
+    # abspath() also collapses the "<zephyr base>/.." given when west is not used
+    WORKSPACE_DIR = None
+    if args.workspace_dir:
+        WORKSPACE_DIR = pathlib.Path(os.path.abspath(args.workspace_dir))
 
     with open(args.edt_pickle, 'rb') as f:
         edt = pickle.load(f)
@@ -171,6 +177,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--deps-out", help="path to dependencies file to output")
     parser.add_argument("--edt-pickle", help="path to read pickled edtlib.EDT object from")
     parser.add_argument("--zephyr-base", help="path to zephyr base")
+    parser.add_argument(
+        "--workspace-dir",
+        help="path to the workspace root; paths below it are written relative to it",
+    )
 
     return parser.parse_args()
 
@@ -253,17 +263,24 @@ Binding (compatible = {node.matching_compat}):
 
 def relativize(path) -> str | None:
     # If 'path' is within $ZEPHYR_BASE, returns it relative to $ZEPHYR_BASE,
-    # with a "$ZEPHYR_BASE/..." hint at the start of the string. Otherwise,
-    # returns 'path' unchanged.
+    # with a "$ZEPHYR_BASE/..." hint at the start of the string. If it is
+    # elsewhere within the workspace, returns it relative to the workspace
+    # root, as the comments in zephyr.dts do. Otherwise, returns 'path'
+    # unchanged. This keeps the header identical across checkout locations.
 
-    if ZEPHYR_BASE is None:
-        return path
+    if ZEPHYR_BASE is not None:
+        try:
+            return str("$ZEPHYR_BASE" / pathlib.Path(path).relative_to(ZEPHYR_BASE))
+        except ValueError:
+            pass
 
-    try:
-        return str("$ZEPHYR_BASE" / pathlib.Path(path).relative_to(ZEPHYR_BASE))
-    except ValueError:
-        # Not within ZEPHYR_BASE
-        return path
+    if WORKSPACE_DIR is not None:
+        try:
+            return str(pathlib.Path(path).relative_to(WORKSPACE_DIR))
+        except ValueError:
+            pass
+
+    return path
 
 
 def write_idents_and_existence(node: edtlib.Node) -> None:
