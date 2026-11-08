@@ -609,6 +609,15 @@ static int store_attr_handle_and_subscribe(struct bt_aics_client *client_inst, s
 	if (sub_params != NULL) {
 		int err;
 
+		/* The CCC is assumed after the value, so a server with the value at the last
+		 * handle is invalid.
+		 */
+		if (chrc->value_handle == BT_ATT_LAST_ATTRIBUTE_HANDLE) {
+			LOG_WRN("No room for a CCC after value handle 0x%04x", chrc->value_handle);
+
+			return -EBADMSG;
+		}
+
 		sub_params->value = BT_GATT_CCC_NOTIFY;
 		sub_params->value_handle = chrc->value_handle;
 		/*

@@ -735,6 +735,14 @@ static uint8_t service_discover_func(struct bt_conn *conn,
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
+		if (attr->handle == prim_service->end_handle) {
+			LOG_WRN("BASS without characteristics");
+			err = BT_GATT_ERR(BT_ATT_ERR_NOT_SUPPORTED);
+			bap_broadcast_assistant_discover_complete(conn, err, 0);
+
+			return BT_GATT_ITER_STOP;
+		}
+
 		inst->disc_params.uuid = NULL;
 		inst->disc_params.start_handle = attr->handle + 1U;
 		inst->disc_params.end_handle = prim_service->end_handle;
