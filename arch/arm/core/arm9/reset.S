@@ -70,6 +70,69 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 	mcr	p15, 0, r0, c8, c7, 0		/* invalidate I and D TLBs */
 	mcr	p15, 0, r0, c13, c0, 0		/* reset FCSE PID */
 
+#if defined(CONFIG_ARM_ZIMAGE_HEADER)
+	/*
+	 * zImage loaders do not agree on where the image goes: kexec puts it
+	 * at the start of RAM plus 0x8000, QEMU plus 0x10000, U-Boot wherever
+	 * bootz is told. Only position independent code may run until the
+	 * image sits at its link address, so move it there first.
+	 *
+	 * The source and the destination usually overlap this very code, so
+	 * the copy loop is first moved past the end of both and run from
+	 * there. The caches are off, so draining the write buffer is enough
+	 * before executing what was copied.
+	 */
+	adr	r3, __start			/* where we run */
+	ldr	r4, =__start			/* where we are linked */
+	subs	r5, r3, r4
+	beq	_relocated
+
+	ldr	r6, =__rom_region_start		/* r6 = destination */
+	add	r7, r6, r5			/* r7 = source */
+	ldr	r8, =__end
+	sub	r8, r8, r6
+	add	r8, r8, #3
+	bic	r8, r8, #3			/* r8 = bytes to move */
+
+	/* r9 = first word past both the source and the destination */
+	add	r9, r7, r8
+	add	r10, r6, r8
+	cmp	r9, r10
+	movlo	r9, r10
+
+	adr	r10, _mover
+	mov	r11, r9
+	mov	r12, #(_mover_end - _mover)
+1:	ldr	r0, [r10], #4
+	str	r0, [r11], #4
+	subs	r12, r12, #4
+	bne	1b
+	mcr	p15, 0, r12, c7, c10, 4		/* drain write buffer */
+	mov	pc, r9
+
+	/* Position independent: runs from the copy made above */
+_mover:
+	cmp	r7, r6
+	blo	3f
+2:	ldr	r0, [r7], #4			/* moving down: from the bottom */
+	str	r0, [r6], #4
+	subs	r8, r8, #4
+	bne	2b
+	b	4f
+3:	add	r7, r7, r8			/* moving up: from the top */
+	add	r6, r6, r8
+5:	ldr	r0, [r7, #-4]!
+	str	r0, [r6, #-4]!
+	subs	r8, r8, #4
+	bne	5b
+4:	mcr	p15, 0, r8, c7, c10, 4		/* drain write buffer */
+	mov	pc, r4				/* __start at its link address */
+_mover_end:
+
+	.ltorg
+_relocated:
+#endif /* CONFIG_ARM_ZIMAGE_HEADER */
+
 	/*
 	 * Install one stack per mode. The exception modes only ever use the
 	 * three word scratch area at the top of their stack: the handlers
