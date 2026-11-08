@@ -21,13 +21,19 @@
 #include <zephyr/arch/arm/arm9/mmu.h>
 #include <zephyr/arch/arm/arm9/lib_helpers.h>
 #include <zephyr/sys/util.h>
+#include <string.h>
 
 #define L1_ENTRIES      4096U
 #define L1_SECTION_SIZE (1024U * 1024U)
+#define L2_ENTRIES      256U
 
 /* Level 1 descriptor types */
 #define L1_TYPE_FAULT   0x0U
+#define L1_TYPE_COARSE  0x1U
 #define L1_TYPE_SECTION 0x2U
+
+/* Level 2 descriptor types */
+#define L2_TYPE_SMALL_PAGE 0x2U
 
 #define L1_SECTION_AP_RW (3U << 10)
 /* Bit 4 of a level 1 descriptor is should-be-one. */
@@ -35,10 +41,19 @@
 #define L1_CACHEABLE     BIT(3)
 #define L1_BUFFERABLE    BIT(2)
 
+#define L2_SMALL_PAGE_AP_RW 0x00000ff0U /* AP0..AP3 = 0b11 */
+#define L2_CACHEABLE        BIT(3)
+#define L2_BUFFERABLE       BIT(2)
+
 /* Domain 0 = manager, all other domains = no access */
 #define DACR_INIT 0x00000003U
 
 static uint32_t l1_table[L1_ENTRIES] __aligned(16 * 1024);
+
+#ifdef CONFIG_ARMV5_HIGH_VECTORS
+static uint32_t l2_vector_table[L2_ENTRIES] __aligned(1024);
+static uint8_t vector_page[4096] __aligned(4096);
+#endif
 
 static uint32_t section_attrs(uint32_t attrs)
 {
@@ -69,6 +84,22 @@ static void map_range(uintptr_t base, size_t size, uint32_t attrs)
 	}
 }
 
+#ifdef CONFIG_ARMV5_HIGH_VECTORS
+static void map_vector_page(void)
+{
+	uint32_t l1_idx = VECTOR_BASE_HIGH >> 20;
+	uint32_t l2_idx = (VECTOR_BASE_HIGH >> 12) & (L2_ENTRIES - 1);
+
+	memset(l2_vector_table, 0, sizeof(l2_vector_table));
+
+	l2_vector_table[l2_idx] = ((uint32_t)vector_page & 0xfffff000U) | L2_SMALL_PAGE_AP_RW |
+				  L2_CACHEABLE | L2_BUFFERABLE | L2_TYPE_SMALL_PAGE;
+
+	l1_table[l1_idx] =
+		((uint32_t)l2_vector_table & 0xfffffc00U) | L1_SECTION_SBO | L1_TYPE_COARSE;
+}
+#endif /* CONFIG_ARMV5_HIGH_VECTORS */
+
 void z_armv5_mmu_init(void)
 {
 	/* Everything is device memory until the SoC says otherwise. */
@@ -81,6 +112,10 @@ void z_armv5_mmu_init(void)
 
 		map_range(r->base, r->size, r->attrs);
 	}
+
+#ifdef CONFIG_ARMV5_HIGH_VECTORS
+	map_vector_page();
+#endif
 
 	/* Publish the tables before pointing the walker at them. */
 	__DSB();
