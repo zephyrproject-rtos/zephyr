@@ -911,8 +911,8 @@ static int cmd_remote_pub_key_set(const struct shell *sh, size_t argc, char *arg
 static int cmd_auth_method_set_input(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
-	bt_mesh_input_action_t action = shell_strtoul(argv[1], 10, &err);
-	uint8_t size = shell_strtoul(argv[2], 10, &err);
+	bt_mesh_input_action_t action = shell_strtoul(argv[1], 0, &err);
+	uint8_t size = shell_strtoul(argv[2], 0, &err);
 
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
@@ -930,8 +930,8 @@ static int cmd_auth_method_set_input(const struct shell *sh, size_t argc, char *
 static int cmd_auth_method_set_output(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
-	bt_mesh_output_action_t action = shell_strtoul(argv[1], 10, &err);
-	uint8_t size = shell_strtoul(argv[2], 10, &err);
+	bt_mesh_output_action_t action = shell_strtoul(argv[1], 0, &err);
+	uint8_t size = shell_strtoul(argv[2], 0, &err);
 
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
