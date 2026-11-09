@@ -290,6 +290,11 @@ static int gpio_mcux_lpc_pint_interrupt_cfg(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* The PINT input mux only reaches the first num-inputs pins */
+	if (((port * 32U) + pin) >= DT_PROP(DT_INST(0, nxp_pint), num_inputs)) {
+		return -ENOTSUP;
+	}
+
 	/* PINT treats GPIO pins as continuous. Each port has 32 pins */
 	ret = nxp_pint_pin_enable((port * 32) + pin, interrupt_mode, wake);
 	if (ret < 0) {
