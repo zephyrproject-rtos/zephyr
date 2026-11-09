@@ -3079,6 +3079,7 @@ Documentation Infrastructure:
     - tgorochowik
   collaborators:
     - kgugala
+    - hongquan-prog
   files:
     - drivers/virtio/
     - dts/bindings/virtio/
