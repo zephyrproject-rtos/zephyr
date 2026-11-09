@@ -56,6 +56,11 @@ static int cmd_tbs_authorize(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
 	tbs_authorized_conn = default_conn;
 
 	shell_print(sh, "Connection with addr %s authorized",
