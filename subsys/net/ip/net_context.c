@@ -3179,6 +3179,14 @@ static int context_sendto(struct net_context *context,
 		    net_ipv6_addr_is_v4_mapped(&net_sin6(dst_addr)->sin6_addr)) {
 			struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)dst_addr;
 
+			/* Only the unspecified IPv6 address has an IPv4 equivalent
+			 * to send from; an IPv4-mapped one cannot be bound.
+			 */
+			if (context->local.sa_family == NET_AF_INET6 &&
+			    !net_ipv6_is_addr_unspecified(&net_sin6(&context->local)->sin6_addr)) {
+				return -EINVAL;
+			}
+
 			mapped.sin_port = addr6->sin6_port;
 			mapped.sin_family = NET_AF_INET;
 			net_ipaddr_copy(&mapped.sin_addr,
