@@ -228,20 +228,6 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(chan_slab, struct bt_att_chan,
 			      CONFIG_BT_MAX_CONN * ATT_CHAN_MAX);
 static struct bt_att_req cancel;
 
-/** The thread ATT response handlers likely run on.
- *
- *  Blocking this thread while waiting for an ATT request to resolve can cause a
- *  deadlock.
- *
- *  This can happen if the application queues ATT requests in the context of a
- *  callback from the Bluetooth stack. This is because queuing an ATT request
- *  will block until a request-resource is available, and the callbacks run on
- *  the same thread as the ATT response handler that frees request-resources.
- *
- *  The intended use of this value is to detect the above situation.
- */
-static k_tid_t att_handle_rsp_thread;
-
 static struct bt_att_tx_meta_data tx_meta_data_storage[CONFIG_BT_ATT_TX_COUNT];
 
 static struct bt_att_tx_meta_data *att_get_tx_meta_data(const struct net_buf *buf);
@@ -911,8 +897,10 @@ static struct net_buf *bt_att_chan_create_pdu(struct bt_att_chan *chan, uint8_t 
 		if (current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
 			/* No blocking in the sysqueue. */
 			timeout = K_NO_WAIT;
-		} else if (current_thread == att_handle_rsp_thread) {
-			/* Blocking would cause deadlock. */
+		} else if (bt_is_work_thread()) {
+			/* The RX thread handles the ATT responses, blocking it
+			 * would cause a deadlock.
+			 */
 			timeout = K_NO_WAIT;
 		} else {
 			timeout = K_FOREVER;
@@ -3706,8 +3694,6 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **ch)
 		return -ENOMEM;
 	}
 
-	att_handle_rsp_thread = k_current_get();
-
 	chan = att_chan_new(att, 0);
 	if (!chan) {
 		k_mem_slab_free(&att_slab, (void *)att);
@@ -4184,21 +4170,17 @@ struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 	struct bt_att_req *req = NULL;
 	k_tid_t current_thread = k_current_get();
 
-	if (current_thread == att_handle_rsp_thread ||
-	    current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
-		/* bt_att_req are released by the att_handle_rsp_thread.
-		 * A blocking allocation the same thread would cause a
-		 * deadlock.
+	if (bt_is_work_thread() || current_thread == k_work_queue_thread_get(&k_sys_work_q)) {
+		/* bt_att_req are released by the RX thread, which handles the
+		 * ATT responses. An application that queues an ATT request from
+		 * a callback of the Bluetooth stack runs on that thread, so a
+		 * blocking allocation would cause a deadlock.
 		 *
 		 * Likewise, the system work queue is used for
 		 * tx_processor(), which is needed to send currently
 		 * pending requests. Blocking here in a situation where
 		 * all the request holding a bt_att_req have yet to go
 		 * through the tx_processor() would cause a deadlock.
-		 *
-		 * Note the att_handle_rsp_thread might be the system
-		 * work queue thread or the dedicated BT RX WQ thread,
-		 * depending on kconfig.
 		 */
 		LOG_DBG("Timeout discarded. No blocking on BT RX WQ or SYS WQ threads.");
 		timeout = K_NO_WAIT;
