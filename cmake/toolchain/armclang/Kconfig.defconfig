@@ -4,7 +4,6 @@
 
 config MINIMAL_LIBC_SUPPORTED
 	bool
-	default n
 
 config PICOLIBC_SUPPORTED
 	default n
