@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: FRDM-RW612 PM4 system off
+  description: Enter PM4 and verify a fresh boot after RTC wakeup
+common:
+  tags: power
+  platform_allow: frdm_rw612
+  integration_platforms:
+    - frdm_rw612
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Entering PM4 via sys_poweroff"
+      - "RW612 boot: reset cause 0x00000080"
+      - "PM4 wake reset: fresh boot; SYSTEM OFF TEST PASSED"
+  timeout: 60
+tests:
+  sample.boards.frdm_rw612.system_off: {}
+  sample.boards.frdm_rw612.system_off.pm:
+    extra_configs:
+      - CONFIG_PM=y

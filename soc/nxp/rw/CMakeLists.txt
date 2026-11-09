@@ -1,4 +1,4 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2024, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,6 +14,8 @@ zephyr_sources_ifdef(CONFIG_NXP_NBU
 zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
+
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 
 zephyr_linker_sources_ifdef(CONFIG_NXP_RW6XX_BOOT_HEADER
   ROM_START SORT_KEY 0 boot_header.ld)

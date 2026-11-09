@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_RW612_SYSTEM_OFF_WAKEUP_SECONDS
+	int "RTC wakeup delay in seconds"
+	range 2 99
+	default 30

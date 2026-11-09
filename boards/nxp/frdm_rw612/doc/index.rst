@@ -48,6 +48,14 @@ Supported Features
 .. note::
 
    Power modes 1, 2 and 3 are supported when using System Power Management.
+   PM4 is available through :c:func:`sys_poweroff` with
+   :kconfig:option:`CONFIG_POWEROFF`. This implementation powers off both
+   WLAN and BLE, terminating Wi-Fi and Bluetooth LE connections. PM4 discards
+   the execution context; a wakeup starts a new kernel boot. Applications
+   must reinitialize the wireless subsystems and reestablish any required
+   connections after wakeup. Configure an RTC alarm or an AON wake
+   pin before entering PM4. The on-board SW2 button uses GPIO11 and cannot
+   wake PM4. See :zephyr:code-sample:`rw612_system_off` for an RTC example.
 
 Shields for Supported Features
 ==============================

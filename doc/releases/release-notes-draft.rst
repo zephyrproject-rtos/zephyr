@@ -138,6 +138,15 @@ Devicetree
 Other notable changes
 *********************
 
+* Power management
+
+  * NXP RW6xx applications can enter PM4 through :c:func:`sys_poweroff` and
+    restart from the reset vector on wakeup. System power off shuts down
+    both WLAN and BLE and terminates their connections; applications must
+    reinitialize them and reconnect after wakeup. The
+    :zephyr:code-sample:`rw612_system_off` example configures an RTC alarm
+    before powering off.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
