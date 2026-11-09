@@ -499,6 +499,13 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return -EHOSTDOWN;
 	}
 
+	/* With CONFIG_BT_CLASSIC the Controller may support only BR/EDR */
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && BT_OGF(opcode) == BT_OGF_LE &&
+	    !BT_FEAT_LE(bt_dev.features)) {
+		net_buf_drop(&buf);
+		return -ENOTSUP;
+	}
+
 	if (buf == NULL) {
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
@@ -4148,17 +4155,31 @@ static int le_init_iso(void)
 	return 0;
 }
 
+/* Drop what a Controller used before this one reported about LE */
+static void le_caps_clear(void)
+{
+	(void)memset(bt_dev.le.features, 0, sizeof(bt_dev.le.features));
+	bt_dev.le.states = 0U;
+#if defined(CONFIG_BT_CONN)
+	bt_dev.le.acl_mtu = 0U;
+#endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_ISO)
+	bt_dev.le.iso_mtu = 0U;
+	bt_dev.le.iso_limit = 0U;
+#endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_BROADCASTER)
+	bt_dev.le.max_adv_data_len = 0U;
+#endif /* CONFIG_BT_BROADCASTER */
+#if defined(CONFIG_BT_SMP)
+	bt_dev.le.rl_size = 0U;
+#endif /* CONFIG_BT_SMP */
+}
+
 static int le_init(void)
 {
 	struct bt_hci_cp_write_le_host_supp *cp_le;
 	struct net_buf *buf, *rsp;
 	int err;
-
-	/* For now we only support LE capable controllers */
-	if (!BT_FEAT_LE(bt_dev.features)) {
-		LOG_ERR("Non-LE capable controller detected!");
-		return -ENODEV;
-	}
 
 	err = read_le_local_supported_features();
 	if (err) {
@@ -4375,8 +4396,8 @@ static int set_event_mask(void)
 	ev = net_buf_add(buf, sizeof(*ev));
 
 	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-		/* Since we require LE support, we can count on a
-		 * Bluetooth 4.0 feature set
+		/* bt_br_init() enables Secure Simple Pairing and Extended
+		 * Inquiry Response, so a Bluetooth 2.1 feature set is assumed
 		 */
 		mask |= BT_EVT_MASK_INQUIRY_COMPLETE;
 		mask |= BT_EVT_MASK_CONN_COMPLETE;
@@ -4406,15 +4427,18 @@ static int set_event_mask(void)
 
 	mask |= BT_EVT_MASK_HARDWARE_ERROR;
 	mask |= BT_EVT_MASK_DATA_BUFFER_OVERFLOW;
-	mask |= BT_EVT_MASK_LE_META_EVENT;
+
+	if (!IS_ENABLED(CONFIG_BT_CLASSIC) || BT_FEAT_LE(bt_dev.features)) {
+		mask |= BT_EVT_MASK_LE_META_EVENT;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
 		mask |= BT_EVT_MASK_DISCONN_COMPLETE;
 		mask |= BT_EVT_MASK_REMOTE_VERSION_INFO;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SMP) &&
-	    BT_FEAT_LE_ENCR(bt_dev.le.features)) {
+	if ((IS_ENABLED(CONFIG_BT_SMP) && BT_FEAT_LE_ENCR(bt_dev.le.features)) ||
+	    (IS_ENABLED(CONFIG_BT_CLASSIC) && BT_FEAT_BREDR(bt_dev.features))) {
 		mask |= BT_EVT_MASK_ENCRYPT_CHANGE;
 		mask |= BT_EVT_MASK_ENCRYPT_KEY_REFRESH_COMPLETE;
 	}
@@ -4656,9 +4680,16 @@ static int hci_init(void)
 		return err;
 	}
 
-	err = le_init();
-	if (err) {
-		return err;
+	if (BT_FEAT_LE(bt_dev.features)) {
+		err = le_init();
+		if (err != 0) {
+			return err;
+		}
+	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && BT_FEAT_BREDR(bt_dev.features)) {
+		le_caps_clear();
+	} else {
+		LOG_ERR("Non-LE capable controller detected!");
+		return -ENODEV;
 	}
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
@@ -5434,6 +5465,10 @@ int bt_le_get_local_features(struct bt_le_local_features *remote_info)
 	remote_info->states = bt_dev.le.states;
 	remote_info->acl_mtu = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_mtu), (0));
 	remote_info->acl_pkts = COND_CODE_1(CONFIG_BT_CONN, (bt_dev.le.acl_pkts.limit), (0));
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		/* The semaphore keeps the limit of a previous LE Controller */
+		remote_info->acl_pkts = 0U;
+	}
 	remote_info->iso_mtu = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_mtu), (0));
 	remote_info->iso_pkts = COND_CODE_1(CONFIG_BT_ISO, (bt_dev.le.iso_limit), (0));
 	remote_info->rl_size = COND_CODE_1(CONFIG_BT_SMP, (bt_dev.le.rl_size), (0));
@@ -5466,6 +5501,10 @@ int bt_le_filter_accept_list_add(const bt_addr_le_t *addr)
 		return -EAGAIN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -5494,6 +5533,10 @@ int bt_le_filter_accept_list_remove(const bt_addr_le_t *addr)
 		return -EAGAIN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -5517,6 +5560,10 @@ int bt_le_filter_accept_list_clear(void)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_FAL, NULL, NULL);

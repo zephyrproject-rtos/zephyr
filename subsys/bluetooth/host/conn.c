@@ -4131,6 +4131,10 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 		return -EAGAIN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	if (!bt_le_conn_params_valid(param)) {
 		return -EINVAL;
 	}
@@ -4228,6 +4232,11 @@ static int conn_le_create_common_checks(const bt_addr_le_t *peer,
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		LOG_DBG("Conn check failed: BT dev not ready.");
 		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		LOG_DBG("Conn check failed: Controller without LE.");
+		return -ENOTSUP;
 	}
 
 	if (!bt_le_conn_params_valid(conn_param)) {

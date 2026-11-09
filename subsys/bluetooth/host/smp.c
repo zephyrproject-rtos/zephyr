@@ -1744,6 +1744,11 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 bool bt_smp_br_supported(void)
 {
+	/* SMP over BR/EDR only derives keys for LE */
+	if (!BT_FEAT_LE(bt_dev.features)) {
+		return false;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR)) {
 		LOG_WRN("Enabling BR/EDR SMP without BR/EDR SC support");
 		return true;
