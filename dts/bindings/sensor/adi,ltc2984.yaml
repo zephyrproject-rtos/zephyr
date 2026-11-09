@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LTC2984 Multi-Sensor High Accuracy Digital Temperature Measurement System
+
+  The LTC2984 is register-compatible with the ADT7604 and additionally
+  supports thermocouples (with automatic cold junction compensation),
+  diodes, and Direct ADC voltage measurements across 20 channels.
+
+compatible: "adi,ltc2984"
+
+include: adi,adt7604-common.yaml
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adt7604.h>
+
+    &spi0 {
+        ltc2984: ltc2984@0 {
+            compatible = "adi,ltc2984";
+            reg = <0>;
+            spi-max-frequency = <1000000>;
+
+            reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+            int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+
+            adi,mux-delay-config-us = <0>;
+            adi,filter-notch-freq = "50-60hz";
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            channel@2 {
+                reg = <0x2>;
+                adi,sensor-type = <LTC2984_SENSOR_TYPE_DIODE>;
+                adi,sensor-configuration = <LTC2984_DIODE_CONFIG_SINGLE_ENDED_3_READINGS>;
+                adi,excitation-current = <LTC2984_DIODE_EXCITATION_CURRENT_10_UA>;
+                adi,diode-ideality-factor = "1.003";
+            };
+
+            channel@4 {
+                reg = <0x4>;
+                adi,sensor-type = <LTC2984_SENSOR_TYPE_TC_TYPE_K>;
+                adi,sensor-configuration = <LTC2984_TC_CONFIG_DIFF_10_UA>;
+                adi,rsense-channel = <2>;
+            };
+
+            channel@6 {
+                reg = <0x6>;
+                adi,sensor-type = <LTC2984_SENSOR_TYPE_DIRECT_ADC>;
+                adi,direct-adc-single-ended;
+            };
+        };
+    };
