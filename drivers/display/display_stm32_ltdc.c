@@ -29,22 +29,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 
-/* Horizontal synchronization pulse polarity */
-#define LTDC_HSPOL_ACTIVE_LOW     0x00000000
-#define LTDC_HSPOL_ACTIVE_HIGH    0x80000000
-
-/* Vertical synchronization pulse polarity */
-#define LTDC_VSPOL_ACTIVE_LOW     0x00000000
-#define LTDC_VSPOL_ACTIVE_HIGH    0x40000000
-
-/* Data enable pulse polarity */
-#define LTDC_DEPOL_ACTIVE_LOW     0x00000000
-#define LTDC_DEPOL_ACTIVE_HIGH    0x20000000
-
-/* Pixel clock polarity */
-#define LTDC_PCPOL_ACTIVE_LOW     0x00000000
-#define LTDC_PCPOL_ACTIVE_HIGH    0x10000000
-
 #if CONFIG_STM32_LTDC_ARGB8888
 #define STM32_LTDC_INIT_PIXEL_FORMAT	LTDC_PIXEL_FORMAT_ARGB8888
 #define DISPLAY_INIT_PIXEL_FORMAT	PIXEL_FORMAT_ARGB_8888
@@ -648,10 +632,10 @@ static void stm32_ltdc_update_timing(struct display_stm32_ltdc_data *data,
 
 	data->timing = *timing;
 
-	init->HSPolarity = timing->hsync_active ? LTDC_HSPOL_ACTIVE_HIGH : LTDC_HSPOL_ACTIVE_LOW;
-	init->VSPolarity = timing->vsync_active ? LTDC_VSPOL_ACTIVE_HIGH : LTDC_VSPOL_ACTIVE_LOW;
-	init->DEPolarity = timing->de_active ? LTDC_DEPOL_ACTIVE_HIGH : LTDC_DEPOL_ACTIVE_LOW;
-	init->PCPolarity = timing->pixelclk_active ? LTDC_PCPOL_ACTIVE_HIGH : LTDC_PCPOL_ACTIVE_LOW;
+	init->HSPolarity = timing->hsync_active ? LTDC_HSPOLARITY_AH : LTDC_HSPOLARITY_AL;
+	init->VSPolarity = timing->vsync_active ? LTDC_VSPOLARITY_AH : LTDC_VSPOLARITY_AL;
+	init->DEPolarity = timing->de_active ? LTDC_DEPOLARITY_AH : LTDC_DEPOLARITY_AL;
+	init->PCPolarity = timing->pixelclk_active ? LTDC_PCPOLARITY_IIPC : LTDC_PCPOLARITY_IPC;
 	init->HorizontalSync = timing->hsync_len - 1;
 	init->VerticalSync = timing->vsync_len - 1;
 	init->AccumulatedHBP = timing->hback_porch + timing->hsync_len - 1;
