@@ -125,6 +125,10 @@
 	status = "okay";
 };
 
+&coretemp {
+	status = "okay";
+};
+
 &uart0 {
 	status = "disabled";
 };

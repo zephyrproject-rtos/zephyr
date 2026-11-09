@@ -107,6 +107,10 @@
 	status = "okay";
 };
 
+&coretemp {
+	status = "okay";
+};
+
 &trng0 {
 	status = "okay";
 };
