@@ -177,6 +177,46 @@ static int hci_ncp_acl_recv(const uint8_t *data, size_t remaining, struct net_bu
 	return 0;
 }
 
+/* An ISO packet is only worth delivering on time: when the host has no buffer
+ * for it, it is dropped rather than held back with the packets behind it.
+ */
+static int hci_ncp_iso_recv(const uint8_t *data, size_t remaining, struct net_buf **out)
+{
+	struct bt_hci_iso_hdr hdr;
+	struct net_buf *buf;
+
+	if (remaining < sizeof(hdr)) {
+		LOG_ERR("Not enough data for ISO header");
+		return -EBADMSG;
+	}
+
+	memcpy(&hdr, data, sizeof(hdr));
+	data += sizeof(hdr);
+	remaining -= sizeof(hdr);
+
+	if (remaining != bt_iso_hdr_len(sys_le16_to_cpu(hdr.len))) {
+		LOG_ERR("ISO payload length mismatch");
+		return -EBADMSG;
+	}
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	if (!buf) {
+		LOG_DBG("No ISO buffer, discarding");
+		return -ENOBUFS;
+	}
+
+	net_buf_add_mem(buf, &hdr, sizeof(hdr));
+	if (net_buf_tailroom(buf) < remaining) {
+		LOG_ERR("Not enough room in ISO buffer");
+		net_buf_unref(buf);
+		return -EMSGSIZE;
+	}
+	net_buf_add_mem(buf, data, remaining);
+	*out = buf;
+
+	return 0;
+}
+
 /* Deliver one H4 packet to the host. Returns -ENOMEM when the host has no
  * buffer: the packet must be kept and delivered later. Any other outcome
  * means the CPC buffer can be returned.
@@ -202,6 +242,13 @@ static int hci_ncp_deliver(const struct device *dev, const uint8_t *payload, uin
 		break;
 	case BT_HCI_H4_ACL:
 		ret = hci_ncp_acl_recv(payload, len, &buf);
+		break;
+	case BT_HCI_H4_ISO:
+		if (!IS_ENABLED(CONFIG_BT_ISO)) {
+			LOG_ERR("ISO packet without ISO support");
+			return -EBADMSG;
+		}
+		ret = hci_ncp_iso_recv(payload, len, &buf);
 		break;
 	default:
 		LOG_ERR("Unknown HCI packet type %u", h4_type);
