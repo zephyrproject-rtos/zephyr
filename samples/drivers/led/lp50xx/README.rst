@@ -32,11 +32,11 @@ Building and Running
 ********************
 
 This sample can be built and executed on boards with an I2C LP5009, LP5012,
-LP5018, LP5024, LP5030 or LP5036 LED driver connected. A node matching the
+LP5018, LP5024, LP5030, LP5036 or AL5887 LED driver connected. A node matching
 the device type binding should be defined in the board DTS files.
 
 As an example this sample provides a DTS overlay for the :zephyr:board:`lpcxpresso11u68`
-board (:file:`boards/lpcxpresso11u68.overlay`). It assumes that a I2C LP5030
+board (:file:`boards/lpcxpresso11u68.overlay`). It assumes that an I2C LP5030
 LED driver (with 10 LEDs wired) is connected to the I2C0 bus at address 0x30.
 
 References
@@ -45,3 +45,4 @@ References
 - LP5009/LP5012: https://www.ti.com/lit/ds/symlink/lp5012.pdf
 - LP5018/LP5024: https://www.ti.com/lit/ds/symlink/lp5024.pdf
 - LP5030/LP5036: https://www.ti.com/lit/ds/symlink/lp5036.pdf
+- AL5887: https://www.diodes.com/assets/Datasheets/AL5887.pdf
