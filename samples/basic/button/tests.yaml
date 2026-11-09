@@ -5,3 +5,11 @@ tests:
     integration_platforms:
       - nrf52833dk/nrf52820
     build_only: true
+  sample.basic.button.rakwireless_rak12006:
+    tags: input
+    extra_args: SHIELD="rakwireless_rak19007;rakwireless_rak12006"
+    platform_allow:
+      - rak4631/nrf52840
+    integration_platforms:
+      - rak4631/nrf52840
+    build_only: true

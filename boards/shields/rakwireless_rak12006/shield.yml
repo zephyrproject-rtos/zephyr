@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: rakwireless_rak12006
+  full_name: RAK12006 WisBlock PIR Sensor
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - input
