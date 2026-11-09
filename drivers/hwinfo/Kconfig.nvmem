@@ -5,7 +5,7 @@ config HWINFO_NVMEM
 	bool "NVMEM device ID"
 	default y
 	depends on DT_HAS_ZEPHYR_HWINFO_NVMEM_ENABLED
-	select NVMEM
+	depends on NVMEM
 	select HWINFO_HAS_DRIVER
 	help
 	  Generic hwinfo backend reading the device unique identifier (and
@@ -14,5 +14,5 @@ config HWINFO_NVMEM
 
 	  Only one hwinfo device-id backend can be linked into an image;
 	  disable any SoC-specific backend (and HWINFO_NATIVE on native_sim)
-	  when enabling this one. The backing provider class (e.g. EEPROM,
-	  OTP) must be enabled separately.
+	  when enabling this one. NVMEM and the backing provider class (e.g.
+	  EEPROM, OTP) must be enabled separately.

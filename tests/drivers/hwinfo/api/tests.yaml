@@ -14,6 +14,7 @@ tests:
       - native_sim
     extra_configs:
       - CONFIG_HWINFO_NATIVE=n
+      - CONFIG_NVMEM=y
       - CONFIG_EEPROM=y
     extra_dtc_overlay_files:
       - nvmem.overlay
