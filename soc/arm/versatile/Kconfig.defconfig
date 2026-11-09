@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Takayuki Goto
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_VERSATILE
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_SERIES_VERSATILE

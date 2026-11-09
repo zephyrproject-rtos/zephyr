@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2026 Takayuki Goto
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,arm926ej-s";
+			reg = <0>;
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		vic: interrupt-controller@10140000 {
+			compatible = "arm,versatile-vic";
+			reg = <0x10140000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			status = "okay";
+		};
+
+		uart0: uart@101f1000 {
+			compatible = "arm,pl011";
+			reg = <0x101f1000 0x1000>;
+			interrupts = <12 0>;
+			interrupt-parent = <&vic>;
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		uart1: uart@101f2000 {
+			compatible = "arm,pl011";
+			reg = <0x101f2000 0x1000>;
+			interrupts = <13 0>;
+			interrupt-parent = <&vic>;
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
+		uart2: uart@101f3000 {
+			compatible = "arm,pl011";
+			reg = <0x101f3000 0x1000>;
+			interrupts = <14 0>;
+			interrupt-parent = <&vic>;
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+	};
+
+	uartclk: uartclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+};
