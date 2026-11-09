@@ -704,6 +704,7 @@
 		      <0x87006580 0x04>,
 		      <0x87006584 0x04>,
 		      <0x87006588 0x04>;
+		ranges;
 		#interrupt-cells = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -717,6 +718,126 @@
 			interrupts = <27 14>;
 			interrupt-parent = <&icu>;
 			status = "okay";
+		};
+
+		group_irq_il0: interrupt-controller@87006550 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006550 0x04>,
+			      <0x87006570 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <17 4>;
+			status = "disabled";
+		};
+
+		group_irq_bl0: interrupt-controller@87006640 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006640 0x04>,
+			      <0x870066c0 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <102 4>;
+			status = "disabled";
+		};
+
+		group_irq_bl1: interrupt-controller@87006644 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006644 0x04>,
+			      <0x870066c4 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <103 4>;
+			status = "disabled";
+		};
+
+		group_irq_al0: interrupt-controller@87006740 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006740 0x04>,
+			      <0x870067c0 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <104 4>;
+			status = "disabled";
+		};
+
+		group_irq_al1: interrupt-controller@87006744 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006744 0x04>,
+			      <0x870067c4 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <105 4>;
+			status = "disabled";
+		};
+
+		group_irq_al2: interrupt-controller@87006748 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006748 0x04>,
+			      <0x870067c8 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <106 4>;
+			status = "disabled";
+		};
+
+		group_irq_al3: interrupt-controller@8700674c {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x8700674c 0x04>,
+			      <0x870067cc 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <107 4>;
+			status = "disabled";
+		};
+
+		group_irq_al4: interrupt-controller@87006750 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006750 0x04>,
+			      <0x870067d0 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <108 4>;
+			status = "disabled";
+		};
+
+		group_irq_al5: interrupt-controller@87006754 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006754 0x04>,
+			      <0x870067d4 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <109 4>;
+			status = "disabled";
+		};
+
+		group_irq_al6: interrupt-controller@87006758 {
+			compatible = "renesas,rx-icum-grp-irq";
+			reg = <0x87006758 0x04>,
+			      <0x870067d8 0x04>;
+			reg-names = "grp", "gen";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupt-parent = <&icu>;
+			interrupts = <110 4>;
+			status = "disabled";
 		};
 	};
 };
