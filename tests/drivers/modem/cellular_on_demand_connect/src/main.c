@@ -167,8 +167,11 @@ static void dlci1_respond(const char *line)
 		} else {
 			dce_send(dce_dlci1_pipe, "+CEREG: 1,0\r\nOK\r\n");
 		}
+	} else if (strcmp(line, "AT+QENG=\"servingcell\"") == 0 && atomic_get(&emu_registered)) {
+		dce_send(dce_dlci1_pipe, "+QENG: \"servingcell\",\"NOCONN\",\"LTE\",\"FDD\",724,05,"
+					 "1A2B3C4,123,1850,3,5,5,1B58,-95,-10,-60,15,30\r\nOK\r\n");
 	} else {
-		/* AT+CREG?, AT+CGREG?, AT+QENG="servingcell" */
+		/* AT+CREG?, AT+CGREG?, AT+QENG="servingcell" while not registered */
 		dce_send(dce_dlci1_pipe, "OK\r\n");
 	}
 }
@@ -1068,6 +1071,89 @@ ZTEST(cellular_on_demand_connect, test_14_dial_while_periodic_holds_chat)
 		     modem_fsm_state());
 	zassert_true(wait_for_call_up(10000), "dial script did not complete, state is %d",
 		     modem_fsm_state());
+}
+
+static atomic_t reg_event_count;       /* CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED events seen */
+static atomic_t reg_event_status;      /* status carried by the last one */
+static atomic_t reg_event_network_ret; /* cellular_get_network_status() within the last one */
+
+static void registration_cb(const struct device *dev, enum cellular_event event,
+			    const void *payload, void *user_data)
+{
+	const struct cellular_evt_registration_status *evt = payload;
+	struct cellular_evt_network_status status;
+
+	ARG_UNUSED(user_data);
+
+	if (event == CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED) {
+		atomic_set(&reg_event_status, evt->status);
+		atomic_set(&reg_event_network_ret, cellular_get_network_status(dev, &status));
+		atomic_inc(&reg_event_count);
+	}
+}
+
+/* Wait until the periodic script has polled a registered status and its serving cell. */
+static bool wait_for_registered_serving_cell(int timeout_ms)
+{
+	int64_t deadline = k_uptime_get() + timeout_ms;
+	struct cellular_evt_network_status status;
+
+	while ((cellular_get_network_status(modem, &status) != 0) ||
+	       (status.status != CELLULAR_REGISTRATION_REGISTERED_HOME)) {
+		if (k_uptime_get() > deadline) {
+			return false;
+		}
+		k_msleep(20);
+	}
+	return true;
+}
+
+/* Suspending a registered modem must report the registration as lost: only changes are
+ * reported, so an unregistered status read after resume would not.
+ */
+ZTEST(cellular_on_demand_connect, test_15_suspend_reports_deregistration)
+{
+	struct cellular_evt_network_status status;
+	int csq;
+
+	park_in_await_dial();
+	atomic_set(&emu_registered, 1);
+	zassert_true(wait_for_registered_serving_cell(4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "periodic script did not poll a registered serving cell while parked");
+
+	atomic_clear(&reg_event_count);
+	zassert_ok(cellular_set_callback(modem, CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED,
+					 registration_cb, NULL),
+		   "set_callback failed");
+
+	zassert_ok(pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND), "suspend failed");
+	zassert_equal(1, atomic_get(&reg_event_count),
+		      "suspend reported %d registration changes, expected 1",
+		      (int)atomic_get(&reg_event_count));
+	zassert_equal(CELLULAR_REGISTRATION_NOT_REGISTERED, atomic_get(&reg_event_status),
+		      "suspend reported registration status %d",
+		      (int)atomic_get(&reg_event_status));
+	zassert_equal(-ENODATA, atomic_get(&reg_event_network_ret),
+		      "the serving cell outlived the registration lost on suspend");
+	zassert_equal(-ENODATA, cellular_get_network_status(modem, &status),
+		      "the serving cell outlived the suspend");
+
+	emulator_rewind();
+	atomic_set(&emu_registered, 0);
+	zassert_ok(pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME), "resume failed");
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_AWAIT_DIAL, 30000),
+		     "modem did not park in AWAIT_DIAL after resume, state is %d",
+		     modem_fsm_state());
+	csq = atomic_get(&csq_count);
+	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "periodic script did not poll after resume");
+	k_msleep(PERIODIC_SCRIPT_SETTLE_MS);
+
+	zassert_equal(1, atomic_get(&reg_event_count),
+		      "an unchanged unregistered status was reported after resume");
+
+	zassert_ok(cellular_set_callback(modem, 0, NULL, NULL), "set_callback failed");
+	atomic_set(&emu_registered, 1);
 }
 
 static void *suite_setup(void)

@@ -593,12 +593,53 @@ static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 		(data->registration_status_5g == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
+/*
+ * The registration event carries no access technology, so it reports one status for
+ * all of them: a registered one (home before roaming), otherwise the first status other
+ * than NOT_REGISTERED from the newest technology on. A technology the vendor never reads
+ * keeps NOT_REGISTERED, so that is reported only when every technology has it.
+ */
+static enum cellular_registration_status
+modem_cellular_registration_status(const struct modem_cellular_data *data)
+{
+	const enum cellular_registration_status statuses[] = {
+		data->registration_status_5g,
+		data->registration_status_lte,
+		data->registration_status_gprs,
+		data->registration_status_gsm,
+	};
+	enum cellular_registration_status status = CELLULAR_REGISTRATION_NOT_REGISTERED;
+
+	ARRAY_FOR_EACH(statuses, i) {
+		if (statuses[i] == CELLULAR_REGISTRATION_REGISTERED_HOME) {
+			return statuses[i];
+		}
+		if ((status == CELLULAR_REGISTRATION_NOT_REGISTERED) ||
+		    ((statuses[i] == CELLULAR_REGISTRATION_REGISTERED_ROAMING) &&
+		     (status != CELLULAR_REGISTRATION_REGISTERED_ROAMING))) {
+			status = statuses[i];
+		}
+	}
+
+	return status;
+}
+
 static void modem_cellular_clear_registration_status(struct modem_cellular_data *data)
 {
+	enum cellular_registration_status reported = modem_cellular_registration_status(data);
+
 	data->registration_status_gsm = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_gprs = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_lte = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_5g = CELLULAR_REGISTRATION_NOT_REGISTERED;
+
+	/* The serving cell went with the registration; drop it before subscribers hear */
+	modem_cellular_invalidate_network_status(data);
+
+	/* Only changes are reported, so a later +C*REG answer of 0 would not report this */
+	if (reported != CELLULAR_REGISTRATION_NOT_REGISTERED) {
+		modem_cellular_emit_reg_state(data, CELLULAR_REGISTRATION_NOT_REGISTERED);
+	}
 }
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
@@ -631,6 +672,8 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	enum cellular_registration_status registration_status = CELLULAR_REGISTRATION_UNKNOWN;
 	enum cellular_registration_status registration_prev;
+	enum cellular_registration_status reported_prev;
+	enum cellular_registration_status reported;
 	uint8_t num_args;
 	uint8_t base;
 
@@ -661,6 +704,7 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS,
 		   (const bool was_registered = modem_cellular_is_registered(data)));
+	reported_prev = modem_cellular_registration_status(data);
 
 	if (strcmp(argv[0], "+CREG: ") == 0) {
 		registration_prev = data->registration_status_gsm;
@@ -704,7 +748,12 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 			modem_cellular_emit_network_status(data, &evt);
 		}
 	}
-	modem_cellular_emit_reg_state(data, registration_status);
+
+	/* Periodic scripts read +C*REG? every few seconds: report changes only */
+	reported = modem_cellular_registration_status(data);
+	if (reported != reported_prev) {
+		modem_cellular_emit_reg_state(data, reported);
+	}
 }
 
 void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -967,9 +1016,10 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 		gpio_pin_set_dt(&config->reset_gpio, 1);
 	}
 
-	modem_cellular_clear_registration_status(data);
 	modem_cellular_notify_user_pipes_disconnected(data);
 	modem_chat_release(&data->chat);
+	/* After the release, so that no +C*REG or serving cell report races the clear */
+	modem_cellular_clear_registration_status(data);
 	modem_ppp_release(config->ppp);
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
