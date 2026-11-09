@@ -668,7 +668,7 @@ endif # WIFI_ESP32_MESH
 
 config ESP32_WIFI_ENHANCED_LIGHT_SLEEP
 	bool "Wi-Fi modem automatically receives the beacon [EXPERIMENTAL]"
-	depends on MAC_BB_PD && SOC_ESP32_PM_SUPPORT_BEACON_WAKEUP
+	depends on ESP32_MAC_BB_PD && SOC_ESP32_PM_SUPPORT_BEACON_WAKEUP
 	select EXPERIMENTAL
 	help
 	  The Wi-Fi modem automatically receives the beacon frame during light sleep
@@ -676,12 +676,12 @@ config ESP32_WIFI_ENHANCED_LIGHT_SLEEP
 	  state machine instead of the RTC timer.
 
 	  EXPERIMENTAL: known to cause system hangs on disconnect in some
-	  configurations. Use plain MAC_BB_PD light sleep (without this option)
+	  configurations. Use plain ESP32_MAC_BB_PD light sleep (without this option)
 	  for reliable connected light sleep.
 
 config ESP32_WIFI_SLP_BEACON_LOST_OPT
 	bool "Wi-Fi sleep optimize when beacon lost"
-	depends on MAC_BB_PD
+	depends on ESP32_MAC_BB_PD
 	help
 	  Enable Wi-Fi sleep optimization when beacon loss occurs and immediately enter
 	  sleep mode when the Wi-Fi module detects beacon loss.
