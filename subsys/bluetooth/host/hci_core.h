@@ -81,6 +81,7 @@ enum {
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
+	BT_DEV_INQUIRY_CANCEL_FAILED, /* The Inquiry Complete of that inquiry is pending */
 	BT_DEV_LIMITED_DISCOVERABLE_MODE,
 #endif /* CONFIG_BT_CLASSIC */
 
