@@ -1,0 +1,62 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip OTPC G1 Driver
+
+description: |
+  Binding for the Microchip OTPC driver supporting Group G1 peripherals.
+
+  Group G1 OTPC driver supports the following hardware peripheral:
+    - module name="OTPC" id="44105" version="150"
+
+examples:
+  - |
+    Example devicetree configuration at SoC level:
+      otpc: efuse@e8c00000 {
+        compatible = "microchip,otpc-g1-otp";
+        reg = <0xe8c00000 0x100>;
+        interrupt-parent = <&gic>;
+        interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+        otp-memory-size = <DT_SIZE_K(11)>;
+        emul-sram-size = <DT_SIZE_K(4)>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+        status = "disabled";
+
+        /* Temp calib data packet TAG */
+        temperature_calib: calib@41435354 {
+          reg = <0x41435354 0x48>;
+        };
+      };
+
+    Example devicetree configuration at board level:
+      &otpc {
+        status = "okay";
+      };
+
+compatible: "microchip,otpc-g1-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address and size for the OTPC peripheral.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt specifier for the OTPC peripheral.
+
+  otp-memory-size:
+    type: int
+    required: true
+    description: |
+      OTP user area memory size of OTPC, in bytes.
+
+  emul-sram-size:
+    type: int
+    required: true
+    description: |
+      Emulation mode sram size of OTPC, in bytes.
