@@ -7,4 +7,4 @@ config LPM013M126
 	depends on DT_HAS_JDI_LPM013M126_ENABLED
 	select SPI
 	help
-		Enable driver for JDI memory display series LPM013M126
+	  Enable driver for JDI memory display series LPM013M126

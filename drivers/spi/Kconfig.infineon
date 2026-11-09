@@ -37,7 +37,7 @@ config SPI_INFINEON_DMA
 	bool "Infineon SPI DMA Support"
 	select DMA
 	help
-		Enable DMA during usage of SPI driver.
+	  Enable DMA during usage of SPI driver.
 
 config IFX_SPI_OVERSAMPLE_DEFAULT
 	int "Default SPI oversample value"

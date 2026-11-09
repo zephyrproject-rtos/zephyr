@@ -29,7 +29,6 @@ config ADC_ADS1X4S0X_ACQUISITION_THREAD_STACK_SIZE
 
 config ADC_ADS1X4S0X_GPIO
 	bool "GPIO support"
-	default n
 	depends on GPIO && ADC_ADS1X4S0X
 	help
 	  Enable GPIO child device support in the ADS1X4S0X ADC driver.

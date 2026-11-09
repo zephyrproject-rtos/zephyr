@@ -20,7 +20,6 @@ config UART_VIRTIO_CONSOLE_TX_BUFSIZE
 
 config UART_VIRTIO_CONSOLE_F_MULTIPORT
 	bool "Support multiple VIRTIO console ports"
-	default n
 	help
 	  The VIRTIO console device can support multiple i/o ports simultaneously
 	  (up to 31 in the case of QEMU). Select to enable this feature. Otherwise

@@ -12,7 +12,6 @@ config LED_STRIP_CACHE
 
 config LED_STRIP_CACHE_UPDATE_ALL
 	bool "Update all LEDs on each update"
-	default n
 	depends on LED_STRIP_CACHE
 	help
 	  Always update all LEDs of a strip instead of stopping at the targeted

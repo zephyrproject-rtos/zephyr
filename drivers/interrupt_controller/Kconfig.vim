@@ -10,7 +10,7 @@ config TI_VIM
 	default y
 	depends on DT_HAS_TI_VIM_ENABLED
 	help
-		The TI Vectored Interrupt Manager provides hardware assistance for prioritizing
-		and aggregating the interrupt sources for ARM Cortex-R5 processor cores.
+	  The TI Vectored Interrupt Manager provides hardware assistance for prioritizing
+	  and aggregating the interrupt sources for ARM Cortex-R5 processor cores.
 
 endif # CPU_CORTEX_R5

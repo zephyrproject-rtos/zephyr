@@ -9,4 +9,4 @@ config BH1730
 	depends on DT_HAS_ROHM_BH1730_ENABLED
 	select I2C
 	help
-		Enable driver for BH1730 ambient light sensor.
+	  Enable driver for BH1730 ambient light sensor.
