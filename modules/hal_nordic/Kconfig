@@ -128,7 +128,6 @@ menu "nRF 802.15.4 serialization"
 
 config NRF_802154_SER_LOG
 	bool "802.15.4 serialization logs"
-	default n
 	help
 	  This option enable debug logs of 802.15.4 serialization module.
 
