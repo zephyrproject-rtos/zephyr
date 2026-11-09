@@ -93,6 +93,11 @@ This section shows additional configuration options that can be set in
      zephyr_code_relocate(FILES src/file1.c LOCATION SRAM2_DATA)
      zephyr_code_relocate(FILES src/file2.c LOCATION SRAM2_TEXT)
 
+  On Xtensa, relocating the ``_TEXT`` sections of a file also relocates its
+  ``.literal`` sections, since ``L32R`` loads only reach literals placed before
+  the code using them. A ``FILTER`` must match both names, for example
+  ``"\\.func1$"`` selects ``.text.func1`` and ``.literal.func1``.
+
 * Multiple regions can also be appended together such as:
   ``SRAM2_DATA_BSS_NOINIT``. This will place all data: value-initialized,
   zero-initialized and uninitialized inside ``SRAM2``.
