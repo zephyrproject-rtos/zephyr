@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HPM5300EVK
+
+config BUILD_OUTPUT_HEX
+	default y if XIP
+
+endif # BOARD_HPM5300EVK
