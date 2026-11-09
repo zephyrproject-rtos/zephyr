@@ -388,6 +388,11 @@ test_i2c_lsm303dlhc_accel: lsm303dlhc-accel@35 {
 	status = "disabled";
 };
 
+test_i2c_tle493d: tle493d@35 {
+	compatible = "infineon,tle493d";
+	reg = <0x35>;
+};
+
 test_i2c_lsm303dlhc_magn: lsm303dlhc-magn@36 {
 	compatible = "st,lsm303dlhc-magn";
 	reg = <0x36>;
