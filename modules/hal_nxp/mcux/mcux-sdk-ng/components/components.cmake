@@ -30,6 +30,10 @@ if(${MCUX_DEVICE} MATCHES "RW61")
 
 endif()
 
+if(CONFIG_SSCP_MU_THREAD_SAFE)
+  set(CONFIG_USE_component_osa_zephyr ON)
+endif()
+
 if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_UHC_DRIVER OR CONFIG_BT)
   set(CONFIG_USE_component_osa_zephyr ON)
 endif()
