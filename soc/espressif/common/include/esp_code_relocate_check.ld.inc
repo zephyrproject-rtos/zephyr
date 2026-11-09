@@ -1,0 +1,18 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#if defined(CONFIG_CODE_DATA_RELOCATION)
+#define LINKER_RELOCATE_SELECTIVE
+#define LINKER_RELOCATE_SUPPORTS_RAM_LITERAL
+#define LINKER_RELOCATE_SUPPORTS_RAM_TEXT
+#if !defined(CONFIG_USERSPACE)
+#define LINKER_RELOCATE_SUPPORTS_RAM_RODATA
+#endif
+#define LINKER_RELOCATE_SUPPORTS_RAM_DATA
+#define LINKER_RELOCATE_SUPPORTS_RAM_BSS
+#define LINKER_RELOCATE_SUPPORTS_RAM_NOINIT
+#define LINKER_RELOCATE_CHECK
+#include <linker_relocate.ld>
+#undef LINKER_RELOCATE_CHECK
+#endif

@@ -368,6 +368,8 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
     #include <snippets-ramfunc-section.ld>
+    #include <esp_code_relocate_check.ld.inc>
+    #include <esp_code_relocate_text.ld.inc>
     *(.tcm.text .tcm.text.*)
     *(.spm.text .spm.text.*)
     *libzephyr.a:panic.*(.literal .text .literal.* .text.*)
@@ -602,6 +604,7 @@ SECTIONS
     . = ALIGN(4);
     _data_start = ABSOLUTE(.);
     __data_start = ABSOLUTE(.);
+    #include <esp_code_relocate_data.ld.inc>
 
     *(.data)
     *(.data.*)
@@ -828,6 +831,7 @@ SECTIONS
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
+    #include <esp_code_relocate_noinit.ld.inc>
     *(.noinit)
     *(.noinit.*)
 #ifdef CONFIG_USERSPACE
@@ -849,6 +853,7 @@ SECTIONS
     MPU_MIN_SIZE_ALIGN
     . = ALIGN (8);
     __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
     _bss_start = ABSOLUTE(.);
 
     *(.dynsbss)

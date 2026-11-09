@@ -10,6 +10,10 @@
 
 #include "memory.h"
 
+#if defined(CONFIG_CODE_DATA_RELOCATION)
+#error "Code relocation is not supported in this image"
+#endif
+
 /* Disable all romable LMA */
 #undef GROUP_DATA_LINK_IN
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
