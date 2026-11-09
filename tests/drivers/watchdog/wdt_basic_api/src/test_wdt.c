@@ -576,7 +576,11 @@ static int test_wdt_enable_wait_mode(void)
 
 	err = wdt_setup(wdt, (WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP));
 	if (err == -ENOTSUP) {
-		TC_PRINT("- pausing watchdog in sleep mode or by debugger is not supported\n");
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, WDT_OPT_PAUSE_IN_SLEEP);
+	}
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog in sleep mode is not supported\n");
 		err = wdt_setup(wdt, 0);
 	}
 	if (err < 0) {
