@@ -476,28 +476,28 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			\
-	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),				\
+#define DCMI_DMA_CHANNEL_INIT(inst, index, src_dev, dest_dev)				\
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(inst, index)),		\
+	.channel = DT_INST_DMAS_CELL_BY_IDX(inst, index, channel),			\
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(						\
-				DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),		\
+				DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), dmas, index)),	\
 	.cfg = {									\
-		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0),			\
+		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(inst, index),			\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		/* single transfers on the DCMI side, 4 beat bursts to memory */	\
 		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dest_burst_length = 4 * STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dma_callback = dcmi_dma_callback,					\
-	},										\
+	}
 
 PINCTRL_DT_INST_DEFINE(0);
 
@@ -508,10 +508,10 @@ PINCTRL_DT_INST_DEFINE(0);
 	(bus_width) == 14 ? DCMI_EXTEND_DATA_14B :					\
 	DCMI_EXTEND_DATA_8B)
 
-#define DCMI_DMA_CHANNEL(id, src, dest)							\
+#define DCMI_DMA_CHANNEL(inst, src, dest)						\
 	.dma = {									\
-		COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),				\
-			(DCMI_DMA_CHANNEL_INIT(id, src, dest)),				\
+		COND_CODE_1(DT_INST_DMAS_HAS_IDX(inst, 0),				\
+			(DCMI_DMA_CHANNEL_INIT(inst, 0, src, dest)),			\
 			(NULL))								\
 	},
 
