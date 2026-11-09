@@ -1726,7 +1726,7 @@ static int cmd_scan(const struct shell *sh, size_t argc, char *argv[])
 			break;
 		case WINDOW:
 			window = shell_strtoul(state->optarg, 0, &err);
-			if (interval > UINT16_MAX) {
+			if (window > UINT16_MAX) {
 				shell_error(sh, "Window value too large");
 				return -EINVAL;
 			}
