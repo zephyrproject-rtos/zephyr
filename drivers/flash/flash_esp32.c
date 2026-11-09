@@ -178,7 +178,7 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 	return 0;
 }
 
-#ifdef CONFIG_ESP_FLASH_ENCRYPTION
+#ifdef CONFIG_ESP32_FLASH_ENCRYPTION
 #define FLASH_BUFFER_SIZE 32
 
 static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, bool erase);
@@ -355,7 +355,7 @@ static bool aligned_flash_erase(size_t addr, size_t size)
 
 	return true;
 }
-#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
+#endif /* CONFIG_ESP32_FLASH_ENCRYPTION */
 #endif /* !CONFIG_MCUBOOT */
 
 #ifdef CONFIG_MCUBOOT
@@ -453,7 +453,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 #else
 	flash_esp32_sem_take(dev);
 
-#ifdef CONFIG_ESP_FLASH_ENCRYPTION
+#ifdef CONFIG_ESP32_FLASH_ENCRYPTION
 	bool erase = false;
 
 	if (esp_efuse_is_flash_encryption_enabled()) {
@@ -469,7 +469,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 	}
 #else
 	ret = flash_esp32_write_check_enc(address, buffer, length);
-#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
+#endif /* CONFIG_ESP32_FLASH_ENCRYPTION */
 
 	flash_esp32_sem_give(dev);
 #endif /* CONFIG_MCUBOOT */
@@ -491,7 +491,7 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 #else
 	flash_esp32_sem_take(dev);
 
-#ifdef CONFIG_ESP_FLASH_ENCRYPTION
+#ifdef CONFIG_ESP32_FLASH_ENCRYPTION
 	if (!aligned_flash_erase(start, len)) {
 		ret = -EIO;
 	}
@@ -526,7 +526,7 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 	}
 #else
 	ret = esp_flash_erase_region(NULL, start, len);
-#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
+#endif /* CONFIG_ESP32_FLASH_ENCRYPTION */
 
 	flash_esp32_sem_give(dev);
 #endif /* CONFIG_MCUBOOT */
