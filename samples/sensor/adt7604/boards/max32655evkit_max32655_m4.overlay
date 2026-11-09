@@ -1,0 +1,98 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/adt7604.h>
+
+&i2c0 {
+	status = "disabled";
+};
+
+&spi0 {
+	cs-gpios = <&gpio0 4 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>,
+		   <&gpio0 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+	adt7604: adt7604@1 {
+		compatible = "adi,adt7604";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+
+		reset-gpios = <&gpio0 18 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+		int-gpios = <&gpio0 19 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		adi,mux-delay-config-us = <0>;
+		adi,filter-notch-freq = "50hz";
+
+		channel@2 {
+			reg = <0x2>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_RSENSE>;
+			adi,rsense-val = "100";
+			adi,rsense-mohm;
+		};
+
+		channel@4 {
+			reg = <0x4>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_COPPER_TRACE>;
+			adi,excitation-current = <ADT7604_CT_EXCITATION_CURRENT_10_UA>;
+			adi,rsense-channel = <2>;
+			adi,sub-ohm;
+		};
+
+		channel@6 {
+			reg = <0x6>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_COPPER_TRACE>;
+			adi,excitation-current = <ADT7604_CT_EXCITATION_CURRENT_10_UA>;
+			adi,rsense-channel = <2>;
+			adi,sub-ohm;
+		};
+
+		channel@8 {
+			reg = <0x8>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_COPPER_TRACE>;
+			adi,rsense-channel = <2>;
+			adi,excitation-current = <ADT7604_CT_EXCITATION_CURRENT_10_UA>;
+		};
+
+		channel@c {
+			reg = <0xc>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_RSENSE>;
+			adi,rsense-val = "1000";
+		};
+
+		channel@e {
+			reg = <0xe>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_LEAK_DETECTOR>;
+			adi,rsense-channel = <12>;
+			adi,excitation-current = <ADT7604_LEAK_EXCITATION_CURRENT_10_UA>;
+		};
+
+		channel@10 {
+			reg = <0x10>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_LEAK_DETECTOR>;
+			adi,rsense-channel = <12>;
+			adi,excitation-current = <ADT7604_LEAK_EXCITATION_CURRENT_10_UA>;
+		};
+
+		channel@12 {
+			reg = <0x12>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_RTD_PT_100>;
+			adi,rsense-channel = <12>;
+			adi,sensor-configuration = <ADT7604_RTD_CONFIG_2_WIRE_INTERNAL>;
+			adi,excitation-current = <ADT7604_RTD_EXCITATION_CURRENT_1_MA>;
+			adi,rtd-curve = "european-curve";
+		};
+
+		channel@14 {
+			reg = <0x14>;
+			adi,sensor-type = <ADT7604_SENSOR_TYPE_THERMISTOR_44006>;
+			adi,rsense-channel = <12>;
+			adi,sensor-configuration = <ADT7604_THERMISTOR_CONFIG_DIFF_SHARE_NO_ROTATE>;
+			adi,excitation-current = <ADT7604_THERMISTOR_EXCITATION_CURRENT_10_UA>;
+		};
+	};
+};
