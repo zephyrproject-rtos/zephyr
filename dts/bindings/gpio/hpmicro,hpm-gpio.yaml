@@ -1,0 +1,23 @@
+# Copyright (c) 2022 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+description: HPMicro GPIO controller
+
+compatible: "hpmicro,hpm-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    description: |
+      GPIO port index within the controller's shared register block. GPIOA is
+      0, GPIOB is 1, GPIOX is 13, and GPIOY is 14.
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
