@@ -361,8 +361,8 @@ static int flash_sim_erase(const struct device *dev, const off_t offset,
 
 		ERASE_CYCLES_INC(unit_start + i);
 		ret = unit_erase(dev, unit_start + i);
-		if (ret < 0) {
-			return ret;
+		if (ret != 0) {
+			return ret < 0 ? ret : -EIO;
 		}
 	}
 
