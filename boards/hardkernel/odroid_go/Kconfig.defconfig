@@ -9,7 +9,7 @@ config SPI
 	default y if DISK_DRIVER_SDMMC
 
 config ESP_SPIRAM
-	default y if !MCUBOOT
+	default y if !MCUBOOT && !ESP32_USE_UNSUPPORTED_REVISION
 
 choice SPIRAM_TYPE
 	default SPIRAM_TYPE_ESPPSRAM32
