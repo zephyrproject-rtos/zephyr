@@ -102,6 +102,16 @@ config RISCV_HAS_CUSTOM_NESTED_INTERRUPTS
 	  the __custom_nested_interrupts_enable and
 	  __custom_nested_interrupts_disable assembler macros.
 
+config RISCV_HAS_CUSTOM_CHECK_RESCHEDULE
+	bool
+	help
+	  Selected by a SoC or CPU that needs to veto rescheduling when an
+	  interrupt or exception returns to thread context. The SoC or CPU
+	  implements z_riscv_custom_check_reschedule(), which the common
+	  RISC-V ISR wrapper calls with the esf of the interrupted context
+	  whenever a reschedule is pending, and which returns false to return
+	  to the interrupted context without rescheduling.
+
 DT_CHOSEN_Z_SRAM = zephyr,sram
 
 choice RISCV_CMODEL

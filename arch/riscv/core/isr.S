@@ -992,6 +992,14 @@ check_reschedule:
 	beq t0, a1, no_reschedule
 #endif /* !CONFIG_SMP && !CONFIG_SCHED_THREAD_USAGE */
 
+#ifdef CONFIG_RISCV_HAS_CUSTOM_CHECK_RESCHEDULE
+	/* a0 = esf of the interrupted context, returns 0 to skip rescheduling */
+	mv a0, sp
+	call z_riscv_custom_check_reschedule
+	beqz a0, no_reschedule
+	lr a1, ___cpu_t_current_OFFSET(s0)
+#endif /* CONFIG_RISCV_HAS_CUSTOM_CHECK_RESCHEDULE */
+
 	/*
 	 * Get next thread to schedule with z_get_next_switch_handle().
 	 * We pass it a NULL as we didn't save the whole thread context yet.
