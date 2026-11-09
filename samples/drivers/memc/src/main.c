@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(main);
 #define MEMC_DEV DT_ALIAS(sram_ext)
 #define MSPI_BUS DT_BUS(MEMC_DEV)
 #define MEMC_BASE DT_REG_ADDR_BY_IDX(MSPI_BUS, 1)
-#define MEMC_SIZE (DT_PROP(MEMC_DEV, size) / 8)
+#define MEMC_SIZE (DT_PROP(MEMC_DEV, size))
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_siwx91x_qspi_memory)
 #define MEMC_DEV  DT_ALIAS(sram_ext)
 #define MEMC_BASE ((void *)DT_REG_ADDR(MEMC_DEV))

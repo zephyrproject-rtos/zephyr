@@ -49,12 +49,12 @@ struct memc_mcux_xspi_psram_config {
 
 struct memc_mcux_xspi_psram_data {
 	const struct device *xspi_dev;
-	const char *dev_name;
+	const struct memc_xspi_dev_config *device_config;
 	uint32_t amba_address;
 	uint32_t size;
 };
 
-const uint32_t memc_xspi_w958d6nbkx_lut[][5] = {
+const uint32_t memc_xspi_w958d6n_lut[][5] = {
 	/* Memory Read */
 	[PSRAM_CMD_MEM_READ] = {
 			XSPI_LUT_SEQ(kXSPI_Command_DDR, kXSPI_8PAD, 0xA0, kXSPI_Command_RADDR_DDR,
@@ -97,41 +97,45 @@ const uint32_t memc_xspi_w958d6nbkx_lut[][5] = {
 		},
 };
 
-/* Memory devices table. */
-static struct memc_xspi_dev_config dev_configs[] = {
-	{
-		.name_prefix = "w958d6nbkx",
-		.xspi_dev_config = {
-			.deviceInterface = kXSPI_HyperBus,
-			.interfaceSettings.hyperBusSettings.x16Mode = kXSPI_x16ModeEnabledOnlyData,
-			.interfaceSettings.hyperBusSettings.enableVariableLatency = true,
-			.interfaceSettings.hyperBusSettings.forceBit10To1 = false,
-			.interfaceSettings.hyperBusSettings.pageSize = 1024,
-			.CSHoldTime = 2,
-			.CSSetupTime = 2,
-			.addrMode = kXSPI_Device4ByteAddressable,
-			.columnAddrWidth = 3,
-			.enableCASInterleaving = false,
-			.ptrDeviceDdrConfig =
-				&(xspi_device_ddr_config_t){
-					.ddrDataAlignedClk =
-						kXSPI_DDRDataAlignedWith2xInternalRefClk,
-					.enableByteSwapInOctalMode = false,
-					.enableDdr = true,
-				},
-			.deviceSize = {32 * 1024, 32 * 1024},
+static const struct memc_xspi_dev_config memc_xspi_w958d6_config = {
+	.xspi_dev_config = {
+		.deviceInterface = kXSPI_HyperBus,
+		.interfaceSettings.hyperBusSettings.x16Mode = kXSPI_x16ModeEnabledOnlyData,
+		.interfaceSettings.hyperBusSettings.enableVariableLatency = true,
+		.interfaceSettings.hyperBusSettings.forceBit10To1 = false,
+		.interfaceSettings.hyperBusSettings.pageSize = 1024,
+		.CSHoldTime = 2,
+		.CSSetupTime = 2,
+		.addrMode = kXSPI_Device4ByteAddressable,
+		.columnAddrWidth = 3,
+		.enableCASInterleaving = false,
+		.ptrDeviceDdrConfig =
+			&(xspi_device_ddr_config_t){
+				.ddrDataAlignedClk = kXSPI_DDRDataAlignedWith2xInternalRefClk,
+				.enableByteSwapInOctalMode = false,
+				.enableDdr = true,
 			},
-		.lut_array = &memc_xspi_w958d6nbkx_lut[0][0],
-		.lut_count = MEMC_MCUX_XSPI_LUT_ARRAY_SIZE(memc_xspi_w958d6nbkx_lut),
+		.deviceSize = {32 * 1024, 32 * 1024},
 	},
+	.lut_array = &memc_xspi_w958d6n_lut[0][0],
+	.lut_count = MEMC_MCUX_XSPI_LUT_ARRAY_SIZE(memc_xspi_w958d6n_lut),
 };
+
+#define MEMC_MCUX_XSPI_PSRAM_CHIP_CONFIG(node_id) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, winbond_w958d6), \
+		    (&memc_xspi_w958d6_config,), \
+		    ())
+
+#define MEMC_MCUX_XSPI_PSRAM_CONFIG(n) \
+	GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(n, \
+			MEMC_MCUX_XSPI_PSRAM_CHIP_CONFIG) NULL)
 
 static int xspi_psram_write_reg(const struct device *dev, uint32_t regAddr,
 				uint8_t *data, uint32_t size);
 static int xspi_psram_read_reg(const struct device *dev, uint32_t regAddr,
 				uint8_t *data, uint32_t size);
 
-static int memc_mcux_xspi_w958d6nbkx_enable_clk(const struct device *dev)
+static int memc_mcux_xspi_w958d6n_enable_clk(const struct device *dev)
 {
 	uint16_t reg[2] = {0x0U, 0x0U};
 	int ret = 0;
@@ -163,7 +167,7 @@ static int memc_mcux_xspi_w958d6nbkx_enable_clk(const struct device *dev)
 	return ret;
 }
 
-static int memc_mcux_xspi_w958d6nbkx_enable_variable_latency(const struct device *dev)
+static int memc_mcux_xspi_w958d6n_enable_variable_latency(const struct device *dev)
 {
 	uint16_t reg[2] = {0x0U, 0x0U};
 	int ret = 0;
@@ -197,7 +201,7 @@ static int memc_mcux_xspi_w958d6nbkx_enable_variable_latency(const struct device
 	return ret;
 }
 
-static int memc_mcux_xspi_w958d6nbkx_setup(const struct device *dev,
+static int memc_mcux_xspi_psram_setup(const struct device *dev,
 				xspi_device_config_t *config)
 {
 	struct memc_mcux_xspi_psram_data *data = dev->data;
@@ -223,14 +227,14 @@ static int memc_mcux_xspi_w958d6nbkx_setup(const struct device *dev,
 		}
 
 		if (config->enableCknPad) {
-			ret = memc_mcux_xspi_w958d6nbkx_enable_clk(dev);
+			ret = memc_mcux_xspi_w958d6n_enable_clk(dev);
 			if (ret < 0) {
 				break;
 			}
 		}
 
 		if (config->interfaceSettings.hyperBusSettings.enableVariableLatency) {
-			ret = memc_mcux_xspi_w958d6nbkx_enable_variable_latency(dev);
+			ret = memc_mcux_xspi_w958d6n_enable_variable_latency(dev);
 			if (ret < 0) {
 				break;
 			}
@@ -276,59 +280,38 @@ static int xspi_psram_read_reg(const struct device *dev, uint32_t regAddr,
 	return memc_mcux_xspi_transfer(psram_data->xspi_dev, &flashXfer);
 }
 
-static int memc_mcux_xspi_psram_setup(const struct device *dev,
-		const char *dev_name_prefix, xspi_device_config_t *config)
-{
-	int ret = 0;
-
-	if (strcmp(dev_name_prefix, "w958d6nbkx") == 0) {
-		ret = memc_mcux_xspi_w958d6nbkx_setup(dev, config);
-	}
-
-	return ret;
-}
-
 static int memc_mcux_xspi_psram_probe(const struct device *dev)
 {
 	const struct memc_mcux_xspi_psram_config *config =
 		(const struct memc_mcux_xspi_psram_config *)dev->config;
 	struct memc_mcux_xspi_psram_data *data = dev->data;
 	const struct device *xspi_dev = data->xspi_dev;
-	struct memc_xspi_dev_config *xspi_psram_config = NULL;
-	xspi_device_config_t *dev_config = NULL;
+	const struct memc_xspi_dev_config *xspi_psram_config = data->device_config;
+	xspi_device_config_t dev_config;
 	int ret;
 
-	/* Get the specific memory parameters. */
-	for (uint32_t i = 0; i < ARRAY_SIZE(dev_configs); i++) {
-		if (strncmp(dev_configs[i].name_prefix, data->dev_name,
-				strlen(dev_configs[i].name_prefix)) == 0) {
-			xspi_psram_config = (struct memc_xspi_dev_config *)&dev_configs[i];
-			break;
-		}
-	}
-
 	if (xspi_psram_config == NULL) {
-		LOG_ERR("Unsupported device: %s", data->dev_name);
+		LOG_ERR("Unsupported device: %s", dev->name);
 		return -ENOTSUP;
 	}
 
 	/* Set special device configurations. */
-	dev_config = &xspi_psram_config->xspi_dev_config;
-	dev_config->enableCknPad = config->enable_differential_clk;
-	dev_config->sampleClkConfig = config->sample_clk_config;
+	dev_config = xspi_psram_config->xspi_dev_config;
+	dev_config.enableCknPad = config->enable_differential_clk;
+	dev_config.sampleClkConfig = config->sample_clk_config;
 
-	ret = memc_mcux_xspi_get_root_clock(xspi_dev, &dev_config->xspiRootClk);
+	ret = memc_mcux_xspi_get_root_clock(xspi_dev, &dev_config.xspiRootClk);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = memc_xspi_set_device_config(xspi_dev, dev_config,
+	ret = memc_xspi_set_device_config(xspi_dev, &dev_config,
 		xspi_psram_config->lut_array, xspi_psram_config->lut_count);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return memc_mcux_xspi_psram_setup(dev, xspi_psram_config->name_prefix, dev_config);
+	return memc_mcux_xspi_psram_setup(dev, &dev_config);
 }
 
 static int memc_mcux_xspi_psram_init(const struct device *dev)
@@ -346,13 +329,20 @@ static int memc_mcux_xspi_psram_init(const struct device *dev)
 	return memc_mcux_xspi_psram_probe(dev);
 }
 
+#if defined(FSL_FEATURE_XSPI_HAS_DQS_LAT_EN) && FSL_FEATURE_XSPI_HAS_DQS_LAT_EN
+#define MEMC_MCUX_XSPI_PSRAM_DQS_LATENCY(n) \
+	.enableDQSLatency = DT_INST_PROP_OR(n, enable_dqs_latency, 0),
+#else
+#define MEMC_MCUX_XSPI_PSRAM_DQS_LATENCY(n)
+#endif
+
 #define MEMC_MCUX_XSPI_PSRAM_INIT(n)	\
 	static const struct memc_mcux_xspi_psram_config \
 		memc_mcux_xspi_psram_config_##n = {	\
 		.enable_differential_clk = DT_INST_PROP(n, enable_differential_clk),	\
 		.sample_clk_config = {	\
 			.sampleClkSource = DT_INST_PROP(n, sample_clk_source),	\
-			.enableDQSLatency = DT_INST_PROP(n, enable_dqs_latency),	\
+			MEMC_MCUX_XSPI_PSRAM_DQS_LATENCY(n) \
 			.dllConfig = {	\
 				.dllMode = kXSPI_AutoUpdateMode,	\
 				.useRefValue = true,	\
@@ -362,7 +352,7 @@ static int memc_mcux_xspi_psram_init(const struct device *dev)
 	};	\
 	static struct memc_mcux_xspi_psram_data memc_mcux_xspi_psram_data_##n = {	\
 		.xspi_dev = DEVICE_DT_GET(DT_INST_BUS(n)),	\
-		.dev_name = DT_INST_PROP(n, device_name),	\
+		.device_config = MEMC_MCUX_XSPI_PSRAM_CONFIG(n),	\
 		.size = DT_INST_PROP(n, size),	\
 	};	\
 	DEVICE_DT_INST_DEFINE(n, &memc_mcux_xspi_psram_init, NULL, \

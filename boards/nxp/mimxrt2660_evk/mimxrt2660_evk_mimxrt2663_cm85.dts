@@ -140,3 +140,49 @@ zephyr_mipi_dsi: &mipi_dsi {};
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&xspi1 {
+	pinctrl-0 = <&pinmux_xspi1>;
+	pinctrl-names = "default";
+	ahb-buffer-write-flush;
+	ahb-prefetch;
+	enable-ahb-write;
+	status = "disabled";
+
+	mdad_tg0 {
+		enable-descriptor-lock = <0>;
+		mask-type = <0>;
+		mask = <0>;
+		master-id-reference = <0>;
+		secure-attribute = <3>;
+	};
+
+	mdad_tg1 {
+		enable-descriptor-lock = <0>;
+		mask-type = <0>;
+		mask = <0>;
+		master-id-reference = <0>;
+		secure-attribute = <3>;
+	};
+
+	frad_region0 {
+		start-address = <0x80000000>;
+		end-address = <0x81ff0000>;
+		tg0-master-access = <0x7>;
+		tg1-master-access = <0x7>;
+		descriptor-lock = <0>;
+		exclusive-access-lock = <0>;
+	};
+
+	psram0: memory-controller@0 {
+		compatible = "nxp,xspi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(32)>;
+		sample-clk-source = <3>;
+		status = "disabled";
+
+		psram {
+			compatible = "winbond,w958d6";
+		};
+	};
+};

@@ -133,11 +133,14 @@
 	psram: memory-controller@0 {
 		compatible = "nxp,xspi-psram";
 		reg = <0>;
-		device-name = "w958d6nbkx4l";
 		size = <DT_SIZE_M(32)>;
 		enable-differential-clk;
 		sample-clk-source = <3>;
 		status = "okay";
+
+		psram {
+			compatible = "winbond,w958d6";
+		};
 	};
 };
 
