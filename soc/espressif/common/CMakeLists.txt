@@ -11,6 +11,13 @@ if(NOT ESPTOOL_EXECUTABLE)
     "  west packages pip --install")
 endif()
 
+if(CONFIG_SOC_FAMILY_ESPRESSIF_ENABLE_APPCPU AND NOT CONFIG_BOOTLOADER_MCUBOOT AND
+   NOT CONFIG_SOC_FAMILY_ESPRESSIF_APPCPU_TARGET)
+  message(FATAL_ERROR
+    "APPCPU (AMP) requires the PROCPU image to be booted by MCUboot.\n"
+    "Build with --sysbuild and SB_CONFIG_BOOTLOADER_MCUBOOT=y.")
+endif()
+
 # Continue to prepare the build environment
 zephyr_include_directories(include)
 
