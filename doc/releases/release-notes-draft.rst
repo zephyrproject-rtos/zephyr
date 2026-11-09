@@ -111,6 +111,15 @@ Libraries / Subsystems
       :c:enumerator:`ETHERNET_HW_STP_PORT_STATE` capability and takes the port state and FDB
       flushes from the protocol.
 
+  * Wi-Fi
+
+    * Added external PMKSA cache import and export support, controlled by
+      :kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_IMPORT` and
+      :kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_EXPORT`. New requests query and selectively flush
+      the cache, and new events report added and removed entries. The hostap backend
+      implements import, export, and selective flush. (:github:`115470`)
+
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
