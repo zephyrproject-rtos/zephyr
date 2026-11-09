@@ -48,6 +48,6 @@ if(CONFIG_SOC_MIMX8MQ6_M4)
   add_subdirectory(m4_quad)
 endif()
 
-if(CONFIG_SOC_MIMX8ML8_M7)
+if(CONFIG_SOC_MIMX8ML8_M7 OR CONFIG_SOC_MIMX8MN6_M7)
   add_subdirectory(m7)
 endif()

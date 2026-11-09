@@ -182,8 +182,8 @@ And in the prj.conf the configuration to the **DDR** memory region:
 
 .. code-block:: cfg
 
-   CONFIG_CODE_DDR=y
-   CONFIG_CODE_ITCM=n
+   CONFIG_SOC_IMX8M_M7_CODE_DDR=y
+   CONFIG_SOC_IMX8M_M7_CODE_ITCM=n
 
 Connecting to the Serial Console
 ================================

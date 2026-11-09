@@ -61,6 +61,12 @@ Boards
   (P2.0 to P2.2) was removed. SCB2 is now ``arduino_spi`` on the Arduino header pins D11 to D13
   (P10.0 to P10.2), disabled by default.
 
+* NXP i.MX8M Plus Cortex-M7: the Kconfig options selecting the code location and the Video PLL
+  initialization have been renamed. ``CONFIG_CODE_ITCM``, ``CONFIG_CODE_DDR`` and
+  ``CONFIG_INIT_VIDEO_PLL`` are deprecated; use :kconfig:option:`CONFIG_SOC_IMX8M_M7_CODE_ITCM`,
+  :kconfig:option:`CONFIG_SOC_IMX8M_M7_CODE_DDR` and
+  :kconfig:option:`CONFIG_SOC_IMX8M_M7_INIT_VIDEO_PLL` instead.
+
 Device Drivers and Devicetree
 *****************************
 

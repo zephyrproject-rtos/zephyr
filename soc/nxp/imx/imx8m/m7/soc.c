@@ -50,7 +50,7 @@ static void SOC_RdcInit(void)
 	CLOCK_ControlGate(kCLOCK_SysPll2Gate, kCLOCK_ClockNeededAll);
 	/* Enable the CCGR gate for SysPLL3 in Domain 1 */
 	CLOCK_ControlGate(kCLOCK_SysPll3Gate, kCLOCK_ClockNeededAll);
-#ifdef CONFIG_INIT_VIDEO_PLL
+#ifdef CONFIG_SOC_IMX8M_M7_INIT_VIDEO_PLL
 	/* Enable the CCGR gate for VideoPLL1 in Domain 1 */
 	CLOCK_ControlGate(kCLOCK_VideoPll1Gate, kCLOCK_ClockNeededAll);
 #endif
@@ -97,10 +97,18 @@ __weak void SOC_ClockInit(void)
 	/* switch AXI M7 root to 24M first in order to configure the SYSTEM PLL2. */
 	CLOCK_SetRootMux(kCLOCK_RootM7, kCLOCK_M7RootmuxOsc24M);
 
+#if defined(CONFIG_SOC_MIMX8MN6_M7)
+	/* The nominal M7 clock rate on the i.MX8MN is 600 MHz: use SYSTEM PLL3,
+	 * which U-Boot runs at 600 MHz on this SoC, not SYSTEM PLL1 (800 MHz).
+	 */
+	CLOCK_SetRootDivider(kCLOCK_RootM7, 1U, 1U);
+	CLOCK_SetRootMux(kCLOCK_RootM7, kCLOCK_M7RootmuxSysPll3);
+#else
 	/* Set root clock to 800M */
 	CLOCK_SetRootDivider(kCLOCK_RootM7, 1U, 1U);
 	/* switch cortex-m7 to SYSTEM PLL1 */
 	CLOCK_SetRootMux(kCLOCK_RootM7, kCLOCK_M7RootmuxSysPll1);
+#endif
 
 	/* Set root clock freq to 133M / 1= 133MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootAhb, 1U, 1U);

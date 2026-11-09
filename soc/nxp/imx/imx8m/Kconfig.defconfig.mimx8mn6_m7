@@ -1,0 +1,23 @@
+# MIMX8MN6 SoC defconfig
+
+# Copyright 2024 NXP
+# Copyright (c) 2026 Televic NV
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMX8MN6_M7
+
+configdefault MCUX_CORE_SUFFIX
+	default "_cm7"
+
+config GPIO
+	default y
+
+config IPM_IMX
+	default y
+	depends on IPM
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 128
+
+endif # SOC_MIMX8MN6_M7
