@@ -350,7 +350,7 @@ static int cmd_dfu_metadata_encode(const struct shell *sh, size_t argc, char *ar
 	shell_print(sh, "\tElements: %u", md.elems);
 
 	if (argc > 9) {
-		shell_print(sh, "\tUser data: %s", argv[10]);
+		shell_print(sh, "\tUser data: %s", argv[9]);
 	}
 
 	shell_print(sh, "\tUser data length: %u", md.user_data_len);
