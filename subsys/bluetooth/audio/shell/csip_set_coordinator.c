@@ -318,6 +318,10 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 	}
 
 	conn = conns[member_index];
+	if (conn == NULL) {
+		shell_error(sh, "Member %lu is not connected", member_index);
+		return -ENOEXEC;
+	}
 
 	shell_print(sh, "Discovering for member[%u] (%s)",
 		    (uint8_t)member_index, bt_conn_dst_str(conn));
