@@ -27,5 +27,6 @@ config SOC_FAMILY_ESPRESSIF_ENABLE_PVT
 	  debugging only.
 
 rsource "Kconfig.ulp"
+rsource "common/Kconfig.deprecated"
 
 endif # SOC_FAMILY_ESPRESSIF
