@@ -27,4 +27,65 @@ config ESP_HAL_EARLY_LOG_LEVEL
 	  These use esp_rom_printf and are independent of CONFIG_LOG.
 	  0 = Off, 1 = Error, 2 = Warning, 3 = Info, 4 = Debug
 
+config ESP32_TIMER_TASK_STACK_SIZE
+	int "Stack size of the high resolution ESP Timer"
+	default 1536
+	help
+	  Set the stack size for the internal high resolution ESP Timer
+	  used in Wi-Fi and BLE peripherals. Registered timer callbacks
+	  run in this task's context, including Wi-Fi, BLE, mesh, PHY and
+	  coexistence callbacks that dispatch here.
+
+config ESP32_TIMER_TASK_PRIO
+	int "Task priority of the high resolution ESP Timer"
+	default 3
+	help
+	  Set the task priority for the internal high resolution ESP Timer
+	  used in Wi-Fi and BLE peripherals.
+
+config ESP32_MAC_BB_PD
+	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C5 || \
+		SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S3
+	depends on TICKLESS_KERNEL && PM
+	help
+	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
+	  down when PHY is disabled. Enabling this setting reduces power consumption
+	  by a small amount but increases RAM use by approximately 4 KB (Wi-Fi only),
+	  2 KB (Bluetooth only) or 5.3 KB (Wi-Fi + Bluetooth).
+
+config MAC_BB_PD
+	bool "Power down MAC and baseband when PHY is disabled [DEPRECATED]"
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C5 || \
+		SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S3
+	depends on TICKLESS_KERNEL && PM
+	select DEPRECATED
+	imply ESP32_MAC_BB_PD
+	help
+	  Deprecated. Use ESP32_MAC_BB_PD instead.
+
+if (BT_ESP32 || WIFI_ESP32 || IEEE802154_ESP32)
+
+config ESP32_PHY_MAX_TX_POWER
+	int "Max Wi-Fi/BLE/IEEE802154 TX power (dBm)"
+	range 10 20
+	default 20
+	help
+	  Set maximum transmit power for the ESP32 radio. Actual transmit power for high
+	  data rates may be lower than this setting.
+
+config ESP32_SW_COEXIST_ENABLE
+	bool "Software controls Wi-Fi/Bluetooth coexistence"
+	default y if (BT_ESP32 && WIFI_ESP32) || \
+		(WIFI_ESP32 && IEEE802154_ESP32) || \
+		(IEEE802154_ESP32 && BT_ESP32)
+	help
+	  If enabled, Wi-Fi & Bluetooth coexistence is controlled by software rather than hardware.
+	  Recommended for heavy traffic scenarios. Both coexistence configuration options are
+	  automatically managed, no user intervention is required.
+	  If only Bluetooth is used, it is recommended to disable this option to reduce binary file
+	  size.
+
+endif
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32
