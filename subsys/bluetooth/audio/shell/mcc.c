@@ -2182,9 +2182,11 @@ static int cmd_mcc_otc_read_current_group_object(const struct shell *sh,
 
 static int cmd_mcc(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-
-	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+	if (argc > 1) {
+		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+	} else {
+		shell_error(sh, "%s Missing subcommand", argv[0]);
+	}
 
 	return -ENOEXEC;
 }
