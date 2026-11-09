@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/adc/nxp,gau-adc.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_rw_pmu.h>
 
 / {
 	chosen {
@@ -455,6 +456,11 @@
 	pmu: pmu@31000 {
 		compatible = "nxp,rw-pmu";
 		reg = <0x31000 0x130>;
+
+		wuc: wakeup-controller {
+			compatible = "nxp,rw-pmu-wuc";
+			#wakeup-ctrl-cells = <1>;
+		};
 
 		pin0: pin0 {
 			compatible = "nxp,aon-wakeup-pin";
