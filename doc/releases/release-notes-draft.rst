@@ -130,6 +130,11 @@ Devicetree
 * :dtcompatible:`zephyr,charger-gpio` supports charging and charge-complete status inputs,
   including chargers without a software-controlled enable pin.
 
+* On NXP RW61x, the wakeup routes used by the PM, wireless and RD button
+  samples can be configured through ``wakeup-ctrls`` using peripheral IRQn
+  values. Peripheral alarm, interrupt and pin configuration remain separate
+  from wakeup routing.
+
 Other notable changes
 *********************
 

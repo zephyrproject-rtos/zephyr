@@ -26,6 +26,11 @@ working.
 The scratch area used by the test is a ``scratch`` fixed partition defined
 in :file:`app.overlay` at 48 MiB into the 64 MiB NOR, far from the XIP image.
 
+RW61x routes wakeup requests through the PMU WUC driver. The OS timer
+(IRQn 41) wakes PM2, and RTC (IRQn 32) wakes PM3. The timer and SoC PM
+code use the same WUC driver as the system-off sample; no application
+calls to ``POWER_EnableWakeup()`` are needed.
+
 Requirements
 ************
 

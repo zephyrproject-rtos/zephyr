@@ -1,5 +1,5 @@
 #
-# Copyright 2023 NXP
+# Copyright 2023, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -15,5 +15,6 @@ ram: 960
 flash: 65536
 supported:
   - netif:eth
+  - wuc
 testing:
   default: false
