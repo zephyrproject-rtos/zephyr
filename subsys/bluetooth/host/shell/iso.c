@@ -368,10 +368,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		param.p_to_c_latency = param.c_to_p_latency;
 	}
 
-	if (argc > 7) {
+	if (argc > 8) {
 		unsigned long sdu;
 
-		sdu = shell_strtoul(argv[7], 0, &err);
+		sdu = shell_strtoul(argv[8], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse sdu: %d", err);
 
@@ -393,10 +393,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (argc > 8) {
+	if (argc > 9) {
 		unsigned long phy;
 
-		phy = shell_strtoul(argv[8], 0, &err);
+		phy = shell_strtoul(argv[9], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse phy: %d", err);
 
@@ -419,10 +419,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (argc > 9) {
+	if (argc > 10) {
 		unsigned long rtn;
 
-		rtn = shell_strtoul(argv[9], 0, &err);
+		rtn = shell_strtoul(argv[10], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse rtn: %d", err);
 
