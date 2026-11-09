@@ -285,10 +285,21 @@ static bool have_tx_config(void)
 {
 #ifdef SX12XX_GFSK
 	if (dev_data.modem == MODEM_FSK) {
-		return dev_data.gfsk_cfg.frequency != 0;
+		return dev_data.gfsk_cfg.tx && dev_data.gfsk_cfg.frequency != 0;
 	}
 #endif
-	return dev_data.lora_cfg.frequency != 0;
+	return dev_data.lora_cfg.tx && dev_data.lora_cfg.frequency != 0;
+}
+
+/* Whether the modem in use has been given a receive configuration */
+static bool have_rx_config(void)
+{
+#ifdef SX12XX_GFSK
+	if (dev_data.modem == MODEM_FSK) {
+		return !dev_data.gfsk_cfg.tx && dev_data.gfsk_cfg.frequency != 0;
+	}
+#endif
+	return !dev_data.lora_cfg.tx && dev_data.lora_cfg.frequency != 0;
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
@@ -301,11 +312,6 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		&done);
 	uint32_t air_time;
 	int ret;
-
-	/* Validate that we have a TX configuration */
-	if (!have_tx_config()) {
-		return -EINVAL;
-	}
 
 	ret = sx12xx_lora_send_async(dev, data, data_len, &done);
 	if (ret < 0) {
@@ -335,6 +341,17 @@ int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 			   uint32_t data_len, struct k_poll_signal *async)
 {
+	/* Ensure available, freed by sx12xx_ev_tx_done */
+	if (!modem_acquire(&dev_data)) {
+		return -EBUSY;
+	}
+
+	/* Validate that we have a TX configuration */
+	if (!have_tx_config()) {
+		modem_release(&dev_data);
+		return -EINVAL;
+	}
+
 #ifdef SX12XX_GFSK
 	/* A fixed-length frame carries no length byte, so the receiver only
 	 * matches the length it was configured with.
@@ -343,6 +360,7 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	    data_len != dev_data.gfsk_cfg.payload_len) {
 		LOG_ERR("Fixed-length GFSK takes %u bytes, got %u",
 			dev_data.gfsk_cfg.payload_len, data_len);
+		modem_release(&dev_data);
 		return -EINVAL;
 	}
 #endif /* SX12XX_GFSK */
@@ -350,12 +368,8 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	if (dev_data.modem == MODEM_LORA &&
 		dev_data.lora_cfg.explicit_header_disable &&
 		dev_data.lora_cfg.implicit_packet_length != data_len) {
+		modem_release(&dev_data);
 		return -EINVAL;
-	}
-
-	/* Ensure available, freed by sx12xx_ev_tx_done */
-	if (!modem_acquire(&dev_data)) {
-		return -EBUSY;
 	}
 
 	/* Store signal */
@@ -382,6 +396,11 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	/* Ensure available, decremented by sx12xx_ev_rx_done or on timeout */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
+	}
+
+	if (!have_rx_config()) {
+		modem_release(&dev_data);
+		return -EINVAL;
 	}
 
 	dev_data.async_rx_cb = NULL;
@@ -438,6 +457,11 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 	/* Ensure available */
 	if (!modem_acquire(&dev_data)) {
 		return -EBUSY;
+	}
+
+	if (!have_rx_config()) {
+		modem_release(&dev_data);
+		return -EINVAL;
 	}
 
 	/* Store parameters */
