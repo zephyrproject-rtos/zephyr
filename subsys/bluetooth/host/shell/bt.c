@@ -2827,7 +2827,7 @@ static int cmd_per_adv_param(const struct shell *sh, size_t argc,
 
 	if (argc > 3) {
 		if (!strcmp(argv[3], "tx-power")) {
-			param.options = BT_LE_ADV_OPT_USE_TX_POWER;
+			param.options = BT_LE_PER_ADV_OPT_USE_TX_POWER;
 		} else {
 			shell_help(sh);
 			return SHELL_CMD_HELP_PRINTED;
