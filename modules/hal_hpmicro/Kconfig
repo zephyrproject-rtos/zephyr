@@ -1,0 +1,160 @@
+# Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+#
+# Placeholder definitions for symbols owned by the hal_hpmicro module. The
+# module provides the real definitions when it is present. Keep this list in
+# sync with the module Kconfig as Zephyr starts using more SDK peripherals.
+
+config ZEPHYR_HAL_HPMICRO_MODULE
+	bool
+
+if !ZEPHYR_HAL_HPMICRO_MODULE
+
+config HAS_HPMSDK_ACMP
+	bool
+
+config HAS_HPMSDK_ADC16
+	bool
+
+config HAS_HPMSDK_CRC
+	bool
+
+config HAS_HPMSDK_DAC
+	bool
+
+config HAS_HPMSDK_DMAMUX
+	bool
+
+config HAS_HPMSDK_DMAV2
+	bool
+
+config HAS_HPMSDK_EWDG
+	bool
+
+config HAS_HPMSDK_GPIO
+	bool
+
+config HAS_HPMSDK_GPIOM
+	bool
+
+config HAS_HPMSDK_GPTMR
+	bool
+
+config HAS_HPMSDK_I2C
+	bool
+
+config HAS_HPMSDK_IOC
+	bool
+
+config HAS_HPMSDK_KEYM
+	bool
+
+config HAS_HPMSDK_MBX
+	bool
+
+config HAS_HPMSDK_MCAN
+	bool
+
+config HAS_HPMSDK_MCHTMR
+	bool
+
+config HAS_HPMSDK_MMC
+	bool
+
+config HAS_HPMSDK_MON
+	bool
+
+config HAS_HPMSDK_OPAMP
+	bool
+
+config HAS_HPMSDK_OTP
+	bool
+
+config HAS_HPMSDK_PCFG
+	bool
+
+config HAS_HPMSDK_PDGO
+	bool
+
+config HAS_HPMSDK_PGPR
+	bool
+
+config HAS_HPMSDK_PLB
+	bool
+
+config HAS_HPMSDK_PLIC
+	bool
+
+config HAS_HPMSDK_PLICSW
+	bool
+
+config HAS_HPMSDK_PLLCTLV2
+	bool
+
+config HAS_HPMSDK_PMP
+	bool
+
+config HAS_HPMSDK_PPOR
+	bool
+
+config HAS_HPMSDK_PTPC
+	bool
+
+config HAS_HPMSDK_PWM
+	bool
+
+config HAS_HPMSDK_QEIV2
+	bool
+
+config HAS_HPMSDK_QEO
+	bool
+
+config HAS_HPMSDK_RDC
+	bool
+
+config HAS_HPMSDK_RNG
+	bool
+
+config HAS_HPMSDK_SDP
+	bool
+
+config HAS_HPMSDK_SEC
+	bool
+
+config HAS_HPMSDK_SEI
+	bool
+
+config HAS_HPMSDK_SPI
+	bool
+
+config HAS_HPMSDK_SYNT
+	bool
+
+config HAS_HPMSDK_SYSCTL
+	bool
+
+config HAS_HPMSDK_TRGM
+	bool
+
+config HAS_HPMSDK_TSNS
+	bool
+
+config HAS_HPMSDK_UART
+	bool
+
+config HAS_HPMSDK_USB
+	bool
+
+config HAS_HPMSDK_XPI
+	bool
+
+config USE_HPMSDK_PCFG
+	bool
+
+config USE_HPMSDK_PLLCTLV2
+	bool
+
+config USE_HPMSDK_UART
+	bool
+
+endif # !ZEPHYR_HAL_HPMICRO_MODULE
