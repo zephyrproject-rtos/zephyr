@@ -463,6 +463,15 @@
 			status = "disabled";
 		};
 
+		rtc_wdt: watchdog@600b1c00 {
+			compatible = "espressif,esp32-rtc-wdt";
+			reg = <0x600b1c00 DT_SIZE_K(1)>;
+			clocks = <&clock ESP32_MODULE_MAX>;
+			interrupts = <LP_WDT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		trng0: trng@600b2808 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x600b2808 0x4>;
