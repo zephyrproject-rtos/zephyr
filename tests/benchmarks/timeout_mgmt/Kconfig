@@ -31,7 +31,6 @@ config BENCHMARK_TIMEOUT_BIAS
 
 config BENCHMARK_VERBOSE
 	bool "Display detailed results"
-	default n
 	help
 	  This option displays the average time of all the iterations done for
 	  each timeout in the tests. This generates large amounts of output. To

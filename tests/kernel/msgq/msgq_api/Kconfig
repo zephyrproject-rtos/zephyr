@@ -3,7 +3,6 @@
 
 config TEST_MSGQ_PUT_FRONT
 	bool "Test message queue put front feature"
-	default n
 
 # Include Zephyr's Kconfig.
 source "Kconfig"

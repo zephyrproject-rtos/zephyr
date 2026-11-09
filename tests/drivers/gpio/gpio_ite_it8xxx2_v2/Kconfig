@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source "Kconfig.zephyr"
-
 config SOC_IT8XXX2_GPIO_GROUP_K_L_DEFAULT_PULL_DOWN
 	bool
-	default n
+
 config HAS_ITE_INTC
 	bool
 	default y
+
+source "Kconfig.zephyr"

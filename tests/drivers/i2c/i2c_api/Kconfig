@@ -9,14 +9,14 @@ choice
 	prompt "Select GY271 Sensor Type"
 	default SENSOR_GY271_HMC
 
-	config SENSOR_GY271_HMC
-		bool "Use gy271 HMC type sensor"
-		help
-		  Use to enable the use of gy271 HMC sensor
+config SENSOR_GY271_HMC
+	bool "Use gy271 HMC type sensor"
+	help
+	  Use to enable the use of gy271 HMC sensor
 
-	config SENSOR_GY271_QMC
-		bool "Use gy271 QMC type sensor"
-		help
-		  Use to enable the use of gy271 QMC sensor
+config SENSOR_GY271_QMC
+	bool "Use gy271 QMC type sensor"
+	help
+	  Use to enable the use of gy271 QMC sensor
 
 endchoice

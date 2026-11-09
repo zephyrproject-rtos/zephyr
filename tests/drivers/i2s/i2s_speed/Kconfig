@@ -40,7 +40,6 @@ config I2S_TEST_ALLOWED_DATA_OFFSET
 
 config I2S_TEST_ALLOW_VARIABLE_OFFSET
 	bool "Recalculate the data offset on every block read"
-	default n
 	help
 	  If the data offset is not consistent between reads because of
 	  timing variations in the hardware, enable this option to
@@ -48,7 +47,6 @@ config I2S_TEST_ALLOW_VARIABLE_OFFSET
 
 config I2S_TEST_USE_32_SAMPLES_PER_BLOCK
 	bool "Use 32 samples per block"
-	default n
 	help
 	  When set to 'y', the test will use 32 samples per block
 	  instead of the default 64 samples per block. This option
