@@ -10,9 +10,11 @@
 #ifndef DRIVERS_BASIC_RADIO_BACKENDS_TI_CC23X0_BASIC_RADIO_CC23X0_H_
 #define DRIVERS_BASIC_RADIO_BACKENDS_TI_CC23X0_BASIC_RADIO_CC23X0_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <zephyr/drivers/basic_radio.h>
+#include <zephyr/drivers/basic_radio/ti/cc23x0.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 
@@ -22,32 +24,18 @@
 /* Padding bytes in front of the TX header for the PBE generic image */
 #define NUM_PAD_BYTES 3
 
-/*
- * One application PHY, built at compile time from a basic-radio-base PHY
- * child node and the operating mode it references (phy-mode).
- *
- * lrf_config and phy_feature select the waveform. frequency_min/max is the
- * mode's characterized range. frequency_hz, sync_word, tx_power_dbm and
- * max_packet_len are the DT defaults. dt_id identifies the DT node
- * (BASIC_RADIO_PHY_DT_ID) for BASIC_RADIO_config().
- */
-struct phy_profile
+/* Frame header layout of a PHY, from its LENCFG */
+struct basic_radio_cc23x0_hdr
 {
-    const LRF_Config *lrf_config;
-    uint32_t          frequency_hz;
-    uint32_t          frequency_min;
-    uint32_t          frequency_max;
-    uint32_t          sync_word;
-    uint16_t          dt_id;
-    uint16_t          phy_feature;
-    int8_t            tx_power_dbm;
-    uint8_t           max_packet_len;
+    uint8_t lenIndex; /* Byte holding the length field */
+    uint8_t len;      /* Header bytes up to and including the length field */
+    uint8_t lenMask;  /* Length field bits within that byte */
 };
 
 struct basic_radio_cc23x0_config
 {
-    const struct phy_profile *phy_table;
-    uint8_t                   phy_count;
+    /* PHY applied at init, NULL if none */
+    const struct basic_radio_cc23x0_phy *boot_phy;
 };
 
 /*
@@ -72,8 +60,13 @@ struct basic_radio_cc23x0_data
     struct k_sem rx_sem;
     struct k_sem tx_sync_done;
 
+    /* Active PHY, NULL until the first PHY is applied */
+    const struct basic_radio_cc23x0_phy *phy;
+
     uint8_t tx_pool_idx;
-    uint8_t active_phy_idx;
+
+    /* Frame header layout of the active PHY */
+    struct basic_radio_cc23x0_hdr hdr;
 
     /* Layer 1 config cache */
     uint32_t cfg_frequency_hz;

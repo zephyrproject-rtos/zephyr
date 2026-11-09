@@ -13,7 +13,11 @@
 LOG_MODULE_REGISTER(basic_radio_tx, LOG_LEVEL_INF);
 
 #define BASIC_RADIO_NODE 	DT_NODELABEL(basic_radio0)		/* select parent device node */
-#define PHY0_NODE    		DT_NODELABEL(phy0)				/* select child PHY node */
+
+/* Runtime parameters on top of the boot PHY */
+#define RADIO_FREQUENCY_HZ 2450000000U
+#define RADIO_SYNC_WORD    0x930B51DEU
+#define RADIO_TX_POWER_DBM 5
 
 static const struct device *const rf_dev = DEVICE_DT_GET(BASIC_RADIO_NODE);
 
@@ -58,7 +62,13 @@ int main(void)
 	uint32_t caps = basic_radio_get_caps(rf_dev);
 	LOG_INF("caps=0x%08x:", caps);
 
-	static const struct basic_radio_config cfg = BASIC_RADIO_CONFIG_DT(PHY0_NODE);
+	static const struct basic_radio_config cfg = {
+		.phy = NULL,
+		.frequency = RADIO_FREQUENCY_HZ,
+		.sync_word = RADIO_SYNC_WORD,
+		.max_packet_len = CONFIG_BASIC_RADIO_MAX_PACKET_LEN,
+		.tx_power = RADIO_TX_POWER_DBM,
+	};
 	ret = basic_radio_config(rf_dev, &cfg);
 
 	if (ret != 0)

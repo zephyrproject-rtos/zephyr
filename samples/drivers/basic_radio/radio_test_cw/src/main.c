@@ -12,12 +12,11 @@
 LOG_MODULE_REGISTER(basic_radio_cw, LOG_LEVEL_INF);
 
 #define BASIC_RADIO_NODE 	DT_NODELABEL(basic_radio0)
-#define PHY0_NODE    		DT_NODELABEL(phy0)
 
 static const struct device *const rf_dev = DEVICE_DT_GET(BASIC_RADIO_NODE);
 
-#define CW_FREQUENCY_HZ  	DT_PROP(PHY0_NODE, frequency_hz)
-#define CW_TX_POWER_DBM  	DT_PROP_OR(PHY0_NODE, tx_power_dbm, 0)
+#define CW_FREQUENCY_HZ  	2450000000U
+#define CW_TX_POWER_DBM  	5
 #define CW_DURATION_MS   	5000U
 
 int main(void)

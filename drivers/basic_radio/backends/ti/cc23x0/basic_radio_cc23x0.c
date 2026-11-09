@@ -8,22 +8,23 @@
  * Wraps the TI Radio Control Layer (RCL) commands behind the
  * Zephyr basic_radio driver API.
  *
- * PHY selection comes from devicetree. Each basic-radio-base PHY
- * child of the radio node selects one operating mode of a
- * ti,cc23x0-radio-phy-config node through phy-mode. That node names
- * the LRF_Config (SmartRF Studio C export) the driver links against:
- * certified PHYs come from hal_ti, custom PHYs from the application.
+ * A PHY is a struct basic_radio_cc23x0_phy passed in basic_radio_config::phy.
+ * It names the LRF_Config (SmartRF Studio C export) and the phyFeatures
+ * word: certified PHYs come from basic_radio_cc23x0_phy_catalog_<soc>.c,
+ * custom PHYs from the application. The boot PHY is selected with Kconfig.
  */
 
-#define DT_DRV_COMPAT basic_radio_base
+#define DT_DRV_COMPAT ti_cc23x0_basic_radio
 
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/basic_radio.h>
+#include <zephyr/drivers/basic_radio/ti/cc23x0.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
@@ -33,6 +34,10 @@
 #include <ti/drivers/rcl/RCL.h>
 #include <ti/drivers/rcl/LRF.h>
 #include <ti/drivers/rcl/commands/generic.h>
+
+#include <inc/hw_memmap.h>
+#include <inc/pbe_generic_ram_regs.h>
+#include <rf_patches/lrf_pbe_binary_generic.h>
 
 #include "basic_radio_cc23x0.h"
 
@@ -46,99 +51,220 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "basic_radio_cc23x0 ba
 #define TX_BUFFER_COUNT     CONFIG_BASIC_RADIO_TX_BUFFER_COUNT
 #define MAX_PACKET_LEN      CONFIG_BASIC_RADIO_MAX_PACKET_LEN
 
-/*****************************************************************************************************************/
-/*
- * PHY table: one entry per basic-radio-base PHY child.
- *
- * Hierarchy: instance → phy child (phy-mode → mode node → ti,cc23x0-radio-phy-config)
- *
- * Runtime (child): frequency_hz, sync_word, tx_power_dbm, max_packet_length
- * Caps (mode):     frequency_min_hz, frequency_max_hz, ti,phy-feature
- */
-#define PHY_MODE(child)    DT_PHANDLE(child, phy_mode)
-#define PHY_LRF_CFG(child) DT_PARENT(PHY_MODE(child))
-#define PHY_LRF_SYM(child) DT_STRING_TOKEN(PHY_LRF_CFG(child), ti_lrf_config)
+/* Boot PHY selected with Kconfig, NULL if none */
+#if defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_1M)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_ble5_1m)
+#elif defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_2M)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_ble5_2m)
+#elif defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_CODED)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_ble5_coded)
+#elif defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_IEEE_802_15_4)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_ieee_802_15_4)
+#elif defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_PROP_250KBPS_MSK_FEC)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_prop_250kbps_msk_fec)
+#elif defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_PROP_2MBPS_320KHZ_GFSK)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_prop_2mbps_320khz_gfsk)
+#elif defined(CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY_CUSTOM)
+#define BOOT_PHY (&basic_radio_cc23x0_phy_custom)
+#else
+#define BOOT_PHY NULL
+#endif
 
-/*
- * Declare only the LRF_Configs the enabled phy children reference, so
- * unused PHYs are dropped at link time. Used to generate external declarations 
- * for configuration structures
- */
-#define PHY_LRF_EXTERN(child) extern const LRF_Config PHY_LRF_SYM(child);
+#define MAX_HDR_LEN CONFIG_BASIC_RADIO_CC23X0_MAX_HDR_LEN
 
-DT_INST_FOREACH_CHILD_STATUS_OKAY(INST, PHY_LRF_EXTERN)
+/* Runtime parameters of the boot PHY until basic_radio_config() */
+#define BOOT_SYNC_WORD    0x930B51DEU
+#define BOOT_TX_POWER_DBM 0
 
-/*
- * TODO: check again if needed when hal_ti RCL driver is updated in upstream.
- * RCL_AdcNoise (used by the entropy driver) opens this config. The HAL
- * normally provides it with its pre-generated settings, which basic_radio
- * disables (CONFIG_RCL_RF_SETTING_PREGEN=n). It is not a PHY.
+/* LENCFG as addressed by SW region headers (offset from PBE_RAM_BASE_ADDR) */
+#define LENCFG_OFFSET ((LRFD_BUFRAM_BASE - PBE_RAM_BASE_ADDR) + PBE_GENERIC_RAM_O_LENCFG)
 
-extern const uint32_t LRF_RFE_binary_ble5[];
+/* Region types of LRF_RegionOperation that carry no data words */
+#define REGION_IS_CLEAR(op) (((op) == HW_Region_Clear) || ((op) == SW_Region_Clear) || \
+                             ((op) == Par_Region_Clear))
 
-static const LRF_RegConfigList adc_noise_reg_config_list = {
-    .numEntries = 0,
-};
+/* Segment selection, same rule as LRF_applySettings() on a full setup */
+static bool segment_is_applied(LRF_ConfigWord hdr, uint16_t phyFeatures)
+{
+    uint16_t mask = hdr.segment.featureMask;
 
-const LRF_Config LRF_configAdcNoise = {
-    .pbeImage      = NULL,
-    .mceImage      = NULL,
-    .rfeImage      = (const LRF_TOPsmImage *)LRF_RFE_binary_ble5,
-    .regConfigList = &adc_noise_reg_config_list,
-};
-*/
+    if (hdr.segment.invertedFeatureMask != 0U)
+    {
+        return ((mask & phyFeatures) == 0U);
+    }
 
-#define CHILD_PHY_INIT(child)                                                                           \
-{                                                                                                       \
-    .lrf_config     = &PHY_LRF_SYM(child),                                  /* SmartRF LRF_Config */    \
-    .dt_id          = BASIC_RADIO_PHY_DT_ID(child),                         /* phy index for API */     \
-    .frequency_hz   = DT_PROP(child, frequency_hz),                         /* center frequency */      \
-    .sync_word      = DT_PROP(child, sync_word),                            /* sync word */             \
-    .tx_power_dbm   = DT_PROP(child, tx_power_dbm),                         /* TX power dBm */          \
-    .max_packet_len = DT_PROP(child, max_packet_length),                    /* max packet length */     \
-    .frequency_min  = DT_PROP_OR(PHY_MODE(child), frequency_min_hz, 0),     /* min freq allowed */      \
-    .frequency_max  = DT_PROP_OR(PHY_MODE(child), frequency_max_hz, 0),     /* max freq allowed */      \
-    .phy_feature    = DT_PROP_OR(PHY_MODE(child), ti_phy_feature, 0),       /* phyFeatures */           \
+    return ((mask == 0U) || ((mask & phyFeatures) != 0U));
 }
 
-static const struct phy_profile phy_table[] = {
-    DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(INST, CHILD_PHY_INIT, (,))
-};
+/* Halfword written to LENCFG_OFFSET by one region, if any */
+static bool region_find_lencfg(LRF_RegionOperation op, uint32_t start, const uint32_t *data, uint32_t regLen,
+                               uint16_t *lencfg)
+{
+    bool isFound = false;
 
-BUILD_ASSERT(ARRAY_SIZE(phy_table) >= 1, "basic-radio-base node needs at least one PHY child");
+    for (uint32_t i = 0; i < regLen; i++)
+    {
+        switch (op)
+        {
+            case SW_Write_16bit:
+                /* Two halfwords per word, low half first */
+                if ((start + (2U * i)) == LENCFG_OFFSET)
+                {
+                    *lencfg = ((const LRF_ConfigWord *)&data[i / 2U])->value16[i % 2U];
+                    isFound = true;
+                }
+                break;
+
+            case SW_Write_32bit:
+                if ((start + (4U * i)) == LENCFG_OFFSET)
+                {
+                    *lencfg = ((const LRF_ConfigWord *)&data[i])->value16[0];
+                    isFound = true;
+                }
+                break;
+
+            case SW_Write_16bit_sparse:
+                if ((start + ((const LRF_ConfigWord *)&data[i])->sparse.address) == LENCFG_OFFSET)
+                {
+                    *lencfg = ((const LRF_ConfigWord *)&data[i])->sparse.value16;
+                    isFound = true;
+                }
+                break;
+
+            default:
+                /* HW and parameter regions do not touch PBE RAM */
+                return (false);
+        }
+    }
+
+    return (isFound);
+}
 
 /*
- * TX header layout comes from the FIRST PHY's PBE_GENERIC_RAM.LENCFG.
- * ALL PHYs UNDER THIS INSTANCE MUST USE THE SAME LENCFG because TX/RX
- * buffers are allocated ONCE at compile time using HDR_LEN/LEN_INDEX.
- *
- * LENCFG exists only in generic PBE exports (ti,pbe-image = "generic").
- * BLE5/IEEE PBE images hardcode length position in firmware — no LENCFG.
- * This driver uses RCL generic commands (RCL_CmdGenericTx/Rx) which require
- * generic PBE. If a PHY uses ble5/ieee PBE, LENCFG is absent and the build
- * fails here.
- *
- * Mixing PHYs with different LENCFG (e.g., BLE LENPOS=8 + IEEE LENPOS=0)
- * in one instance is NOT supported — would corrupt TX/RX parsing.
- *
- * CURRENT ASSERT ONLY CHECKS PROPERTIES EXIST, NOT THAT VALUES MATCH.
- * PHY0: LENPOS=8, NUMLENBITS=8  and  PHY1: LENPOS=0, NUMLENBITS=7
- * will BUILD OK but CORRUPT RX/TX at runtime. No cross-PHY check exists yet.
+ * Read PBE_GENERIC_RAM.LENCFG from the register list of a PHY. The radio
+ * applies settings at command start, so it cannot be read back from PBE RAM
+ * before the first TX header is built.
  */
-#define PHY_ASSERT_GENERIC_PBE(child)                                              \
-    BUILD_ASSERT(DT_NODE_HAS_PROP(PHY_LRF_CFG(child), ti_len_pos) &&               \
-                 DT_NODE_HAS_PROP(PHY_LRF_CFG(child), ti_num_len_bits),            \
-                 "phy-mode needs a generic PBE radio config "                 \
-                 "(ti,len-pos and ti,num-len-bits missing)");
+static int lencfg_find(const struct basic_radio_cc23x0_phy *phy, uint16_t *lencfg)
+{
+    const LRF_Config *lrf = phy->lrf_config;
+    bool isFound = false;
 
-DT_INST_FOREACH_CHILD_STATUS_OKAY(INST, PHY_ASSERT_GENERIC_PBE)
+    /* LENCFG lives at this offset only in the generic PBE RAM map */
+    if ((lrf == NULL) || (lrf->regConfigList == NULL) ||
+        (lrf->pbeImage != (const LRF_TOPsmImage *)LRF_PBE_binary_generic))
+    {
+        return (-ENOTSUP);
+    }
 
-#define PHY_LEN_POS(child)      DT_PROP_OR(PHY_LRF_CFG(child), ti_len_pos, 0)
-#define PHY_NUM_LEN_BITS(child) DT_PROP_OR(PHY_LRF_CFG(child), ti_num_len_bits, 0)
-#define BOOT_LEN_POS            GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(INST, PHY_LEN_POS, (,)))
-#define BOOT_NUM_LEN_BITS       GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(INST, PHY_NUM_LEN_BITS, (,)))
-#define LEN_INDEX               (BOOT_LEN_POS / CHAR_BIT)
-#define HDR_LEN                 (LEN_INDEX + (BOOT_NUM_LEN_BITS / CHAR_BIT))
+    for (uint32_t e = 0; e < lrf->regConfigList->numEntries; e++)
+    {
+        const uint32_t *word = &lrf->regConfigList->entries[e]->value32;
+        LRF_ConfigWord entryHdr = {.value32 = *word};
+        uint32_t totalLen = entryHdr.segment.length + 1U;
+
+        /* A compound header is followed by several segments */
+        if (entryHdr.segment.compoundSegment != 0U)
+        {
+            totalLen = entryHdr.segment.length;
+            word++;
+        }
+
+        while (totalLen > 0U)
+        {
+            LRF_ConfigWord hdr = {.value32 = *word++};
+            uint32_t segLen = hdr.segment.length;
+
+            if ((segLen == 0U) || (segLen >= totalLen))
+            {
+                return (-EINVAL);
+            }
+
+            totalLen -= segLen + 1U;
+
+            if (!segment_is_applied(hdr, phy->phy_features))
+            {
+                word += segLen;
+                continue;
+            }
+
+            /* Walk the regions of the segment */
+            while (segLen > 0U)
+            {
+                LRF_ConfigWord reg = {.value32 = *word++};
+                LRF_RegionOperation op = (LRF_RegionOperation)reg.region.type;
+                uint32_t regLen = reg.region.lengthMinus1 + 1U;
+                uint32_t numWords = regLen;
+
+                segLen--;
+
+                if (REGION_IS_CLEAR(op))
+                {
+                    numWords = 0U;
+                }
+                else if ((op == HW_Write_16bit) || (op == SW_Write_16bit))
+                {
+                    numWords = DIV_ROUND_UP(regLen, 2U);
+                }
+
+                if (numWords > segLen)
+                {
+                    return (-EINVAL);
+                }
+
+                /* Later writes win, as on the radio */
+                if (region_find_lencfg(op, reg.region.startAddress, word, regLen, lencfg))
+                {
+                    isFound = true;
+                }
+
+                word   += numWords;
+                segLen -= numWords;
+            }
+        }
+    }
+
+    return (isFound ? 0 : -ENOTSUP);
+}
+
+/*
+ * Frame header layout of a PHY. The driver writes the length as one byte,
+ * so the field must be byte aligned and at most 8 bits.
+ */
+static int phy_hdr_get(const struct basic_radio_cc23x0_phy *phy, struct basic_radio_cc23x0_hdr *hdr)
+{
+    uint16_t lencfg = 0;
+    int ret = lencfg_find(phy, &lencfg);
+
+    if (ret != 0)
+    {
+        LOG_ERR("PHY has no generic PBE LENCFG");
+
+        return (ret);
+    }
+
+    uint32_t lenPos = (lencfg & PBE_GENERIC_RAM_LENCFG_LENPOS_M) >> PBE_GENERIC_RAM_LENCFG_LENPOS_S;
+    uint32_t numLenBits = (lencfg & PBE_GENERIC_RAM_LENCFG_NUMLENBITS_M) >> PBE_GENERIC_RAM_LENCFG_NUMLENBITS_S;
+    uint32_t len = DIV_ROUND_UP(lenPos + numLenBits, CHAR_BIT);
+
+    LOG_DBG("LENCFG: LENPOS=%u NUMLENBITS=%u", lenPos, numLenBits);
+
+    if (((lenPos % CHAR_BIT) != 0U) || (numLenBits == 0U) || (numLenBits > CHAR_BIT))
+    {
+        return (-ENOTSUP);
+    }
+
+    if (len > MAX_HDR_LEN)
+    {
+        return (-EINVAL);
+    }
+
+    hdr->lenIndex = (uint8_t)(lenPos / CHAR_BIT);
+    hdr->len      = (uint8_t)len;
+    hdr->lenMask  = (uint8_t)BIT_MASK(numLenBits);
+
+    return (0);
+}
 
 /*****************************************************************************************************************/
 
@@ -152,7 +278,7 @@ static RCL_CmdGenericTx tx_cmd = RCL_CmdGenericTx_Default();
 static RCL_CmdGenericRx rx_cmd = RCL_CmdGenericRx_Default();
 
 static uint32_t rx_bufs[RX_BUFFER_COUNT][RCL_MultiBuffer_len_u32(RX_BUFFER_SIZE)];
-static uint32_t tx_bufs[TX_BUFFER_COUNT][RCL_TxBuffer_len_u32(NUM_PAD_BYTES, HDR_LEN, MAX_PACKET_LEN)];
+static uint32_t tx_bufs[TX_BUFFER_COUNT][RCL_TxBuffer_len_u32(NUM_PAD_BYTES, MAX_HDR_LEN, MAX_PACKET_LEN)];
 
 static const struct device *basic_radio_cc23x0_dev;
 
@@ -189,50 +315,37 @@ static void rf_params_set(struct basic_radio_cc23x0_data *data, uint32_t frequen
  *     - Requires RCL_close() + RCL_open() with new LRF_Config.
  *     - Reloads PBE/MCE/RFE images and full register list. Slow (~1-2ms).
  *
- * All PHYs in one instance MUST share LENCFG (same HDR_LEN), enforced
- * by design, not checked at runtime. Mixing mismatched LENCFG corrupts TX/RX.
+ * The header layout is read from the PHY in phy_hdr_get() before this is
+ * called, so PHYs with different LENCFG can be mixed.
  */
-static int phy_select(struct basic_radio_cc23x0_data *data, const struct basic_radio_cc23x0_config *cfg, uint8_t idx)
+static int phy_select(struct basic_radio_cc23x0_data *data, const struct basic_radio_cc23x0_phy *phy,
+                      const struct basic_radio_cc23x0_hdr *hdr)
 {
-    const struct phy_profile *phy = &cfg->phy_table[idx];
-    const struct phy_profile *current = &cfg->phy_table[data->active_phy_idx];
-
-    if ((data->handle == NULL) || (phy->lrf_config != current->lrf_config))
+    if ((data->handle == NULL) || (data->phy == NULL) || (phy->lrf_config != data->phy->lrf_config))
     {
         if (data->handle != NULL)
         {
             RCL_close(data->handle);
+            data->handle = NULL;
         }
 
         data->handle = RCL_open(&data->rcl_client, phy->lrf_config);
 
         if (data->handle == NULL)
         {
-            LOG_ERR("RCL_open failed for PHY %u", idx);
+            LOG_ERR("RCL_open failed");
+            data->phy = NULL;
 
             return (-EIO);
         }
     }
 
-    tx_cmd.common.phyFeatures = phy->phy_feature;
-    rx_cmd.common.phyFeatures = phy->phy_feature;
-    data->active_phy_idx      = idx;
+    tx_cmd.common.phyFeatures = phy->phy_features;
+    rx_cmd.common.phyFeatures = phy->phy_features;
+    data->phy = phy;
+    data->hdr = *hdr;
 
     return (0);
-}
-
-/* Index of the phy_table entry built from DT node id, or -1 */
-static int phy_find(const struct basic_radio_cc23x0_config *cfg, uint16_t dtId)
-{
-    for (uint8_t i = 0; i < cfg->phy_count; i++)
-    {
-        if (cfg->phy_table[i].dt_id == dtId)
-        {
-            return (i);
-        }
-    }
-
-    return (-1);
 }
 
 /*****************************************************************************************************************/
@@ -300,30 +413,22 @@ static void tx_callback(RCL_Command *cmd, LRF_Events lrfEvt, RCL_Events rclEvt)
 /*****************************************************************************************************************/
 /* Driver API: Configuration */
 /*
- * cfg->phy selects the waveform (BASIC_RADIO_CONFIG_DT() fills it from the PHY
- * node); BASIC_RADIO_PHY_CURRENT keeps the active one. The runtime parameters
- * are then applied on top. Waveform fields of cfg are ignored: on CC23x0 the
- * waveform is defined by the PHY's phy-mode.
+ * cfg->phy is a const struct basic_radio_cc23x0_phy *; NULL keeps the
+ * active PHY. The runtime parameters are applied on top.
  */
 static int basic_radio_cc23x0_config_impl(const struct device *dev, const struct basic_radio_config *cfg)
 {
-    const struct basic_radio_cc23x0_config *drvCfg = dev->config;
     struct basic_radio_cc23x0_data *dd = dev->data;
-    int idx = dd->active_phy_idx;
+    const struct basic_radio_cc23x0_phy *phy = (cfg->phy != NULL) ? cfg->phy : dd->phy;
+    struct basic_radio_cc23x0_hdr hdr = dd->hdr;
     int ret = 0;
 
-    /* If phy is not the phy0 default one, then search for others in the phy table (phy childs in the overlay) */
-    if (cfg->phy != BASIC_RADIO_PHY_CURRENT)
+    if (phy == NULL)
     {
-        idx = phy_find(drvCfg, cfg->phy);
+        LOG_ERR("no active PHY");
 
-        if (idx < 0)
-        {
-            return (-EINVAL);
-        }
+        return (-EINVAL);
     }
-
-    const struct phy_profile *phy = &drvCfg->phy_table[idx];
 
     /* Evaluate the frequency */
     if ((cfg->frequency < phy->frequency_min) || (cfg->frequency > phy->frequency_max))
@@ -333,19 +438,29 @@ static int basic_radio_cc23x0_config_impl(const struct device *dev, const struct
         return (-EINVAL);
     }
 
+    /* Header layout of a new PHY, from its register list */
+    if (phy != dd->phy)
+    {
+        ret = phy_hdr_get(phy, &hdr);
+
+        if (ret != 0)
+        {
+            return (ret);
+        }
+    }
+
     /* Own the radio so no send()/recv() runs while RCL is reconfigured */
     if (!atomic_cas(&dd->state, RADIO_STATE_IDLE, RADIO_STATE_TX_ACTIVE))
     {
         return (-EBUSY);
     }
 
-    /* If a new phy node is detected, then change the RCL settings */
-    if (idx != dd->active_phy_idx)
+    if (phy != dd->phy)
     {
-        ret = phy_select(dd, drvCfg, (uint8_t)idx);
+        ret = phy_select(dd, phy, &hdr);
     }
 
-    /* After chaning the main phy settings, modify the runtime parameters */
+    /* After changing the PHY, modify the runtime parameters */
     if (ret == 0)
     {
         rf_params_set(dd, cfg->frequency, cfg->sync_word, cfg->tx_power, cfg->max_packet_len);
@@ -385,6 +500,17 @@ static int basic_radio_cc23x0_send(const struct device *dev, const uint8_t *data
         return (-ENOTSUP);
     }
 
+    if (dd->phy == NULL)
+    {
+        return (-ENODEV);
+    }
+
+    /* Length must fit the length field of the active PHY */
+    if (len > dd->hdr.lenMask)
+    {
+        return (-EINVAL);
+    }
+
     if (!atomic_cas(&dd->state, RADIO_STATE_IDLE, RADIO_STATE_TX_ACTIVE))
     {
         return (-EBUSY);
@@ -393,10 +519,10 @@ static int basic_radio_cc23x0_send(const struct device *dev, const uint8_t *data
     uint8_t slot = dd->tx_pool_idx;
     dd->tx_pool_idx = (slot + 1) % TX_BUFFER_COUNT;
     RCL_Buffer_TxBuffer *txBuf = (RCL_Buffer_TxBuffer *)tx_bufs[slot];
-    uint8_t *txData = RCL_TxBuffer_init(txBuf, NUM_PAD_BYTES, HDR_LEN, len);
-    memset(txData, 0, LEN_INDEX);
-    txData[LEN_INDEX] = (uint8_t)len;
-    memcpy(&txData[HDR_LEN], data, len);
+    uint8_t *txData = RCL_TxBuffer_init(txBuf, NUM_PAD_BYTES, dd->hdr.len, len);
+    memset(txData, 0, dd->hdr.lenIndex);
+    txData[dd->hdr.lenIndex] = (uint8_t)len;
+    memcpy(&txData[dd->hdr.len], data, len);
     tx_cmd.common.status = RCL_CommandStatus_Idle;
     memset(&tx_cmd.txBuffers, 0, sizeof(tx_cmd.txBuffers));
     RCL_TxBuffer_put(&tx_cmd.txBuffers, txBuf);
@@ -461,6 +587,11 @@ static int basic_radio_cc23x0_recv(const struct device *dev, uint8_t *buf, uint1
     }
 
     /* Own the radio so no send()/config() touches RCL while RX is pending */
+    if (data->phy == NULL)
+    {
+        return (-ENODEV);
+    }
+
     if (!atomic_cas(&data->state, RADIO_STATE_IDLE, RADIO_STATE_RX_ACTIVE))
     {
         return (-EBUSY);
@@ -521,8 +652,8 @@ static int basic_radio_cc23x0_recv(const struct device *dev, uint8_t *buf, uint1
     }
 
     uint8_t *pkt     = &entry->pad0 + entry->numPad;
-    uint8_t  datalen = pkt[LEN_INDEX];
-    uint8_t *payload = pkt + HDR_LEN;
+    uint8_t  datalen = (uint8_t)(pkt[data->hdr.lenIndex] & data->hdr.lenMask);
+    uint8_t *payload = pkt + data->hdr.len;
     uint16_t copy    = MIN((uint16_t)datalen, buf_len);
 
     if (!(params && (params->flags & BASIC_RADIO_RX_FLAG_DISCARD_PAYL)))
@@ -580,25 +711,36 @@ static int basic_radio_cc23x0_init(const struct device *dev)
 {
     struct basic_radio_cc23x0_data *data = dev->data;
     const struct basic_radio_cc23x0_config *cfg = dev->config;
-    const struct phy_profile *boot = &cfg->phy_table[0];
 
     k_sem_init(&data->rx_sem, 0, RX_BUFFER_COUNT);
     k_sem_init(&data->tx_sync_done, 0, 1);
     atomic_set(&data->state, RADIO_STATE_IDLE);
 
-    data->active_phy_idx = 0;
+    data->phy = NULL;
     data->handle = NULL;
 
     RCL_init();
 
-    int ret = phy_select(data, cfg, 0);
-
-    if (ret != 0)
+    /* Boot PHY at the center of its range, until basic_radio_config() */
+    if (cfg->boot_phy != NULL)
     {
-        return (ret);
-    }
+        struct basic_radio_cc23x0_hdr hdr;
+        int ret = phy_hdr_get(cfg->boot_phy, &hdr);
 
-    rf_params_set(data, boot->frequency_hz, boot->sync_word, boot->tx_power_dbm, boot->max_packet_len);
+        if (ret == 0)
+        {
+            ret = phy_select(data, cfg->boot_phy, &hdr);
+        }
+
+        if (ret != 0)
+        {
+            return (ret);
+        }
+
+        rf_params_set(data,
+                      cfg->boot_phy->frequency_min / 2U + cfg->boot_phy->frequency_max / 2U,
+                      BOOT_SYNC_WORD, BOOT_TX_POWER_DBM, MAX_PACKET_LEN);
+    }
 
     tx_cmd.common.runtime.callback = tx_callback;
     tx_cmd.common.runtime.rclCallbackMask.value = RCL_EventLastCmdDone.value | RCL_EventCmdStarted.value |
@@ -640,8 +782,7 @@ static const struct basic_radio_driver_api basic_radio_cc23x0_api = {
 };
 
 static const struct basic_radio_cc23x0_config basic_radio_cc23x0_cfg_0 = {
-    .phy_table = phy_table,
-    .phy_count = ARRAY_SIZE(phy_table),
+    .boot_phy = BOOT_PHY,
 };
 
 static struct basic_radio_cc23x0_data basic_radio_cc23x0_data_0;

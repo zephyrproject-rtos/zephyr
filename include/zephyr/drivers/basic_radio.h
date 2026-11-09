@@ -23,7 +23,6 @@
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -31,104 +30,31 @@
 extern "C" {
 #endif
 
-/** @brief Modulation schemes supported by Basic Radio backends. */
-enum basic_radio_modulation {
-	BASIC_RADIO_MOD_2GFSK = 0,
-	BASIC_RADIO_MOD_4GFSK,
-	BASIC_RADIO_MOD_2FSK,
-	BASIC_RADIO_MOD_OOK,
-	BASIC_RADIO_MOD_MSK,
-	BASIC_RADIO_MOD_OQPSK,
-	BASIC_RADIO_MOD_OFDM,
-};
-
 /** @brief Optional radio features. Bitmask returned by basic_radio_get_caps(). */
 enum basic_radio_capability {
 	BASIC_RADIO_CAP_CCA         = BIT(1),
 	/* others to be added */
 };
 
-/** @brief basic_radio_config::phy value that keeps the active PHY. */
-#define BASIC_RADIO_PHY_CURRENT 0U
-
-/**
- * @brief Identifier of a PHY child node, for basic_radio_config::phy.
- *
- * Uses the node's dependency ordinal, which is unique and never 0 for a
- * child node (0 is the root), so it cannot collide with BASIC_RADIO_PHY_CURRENT.
- */
-#define BASIC_RADIO_PHY_DT_ID(phy_node) ((uint16_t)DT_DEP_ORD(phy_node))
-
 /**
  * @brief Runtime radio configuration.
  *
- * phy selects the PHY child node whose waveform is used. The backend
- * switches to the waveform of that node's phy-mode, reconfiguring the radio
- * if needed. BASIC_RADIO_PHY_CURRENT keeps the active PHY.
+ * phy points to a backend-specific PHY object that fully defines the
+ * waveform and frame format. Its type is declared by the backend header
+ * (for example struct basic_radio_cc23x0_phy in
+ * <zephyr/drivers/basic_radio/ti/cc23x0.h>) and is opaque to this API.
+ * NULL keeps the active PHY.
  *
  * frequency, sync_word, max_packet_len and tx_power are the common runtime
- * parameters (basic_radio-base.yaml) and every backend applies them.
- *
- * The remaining fields describe the waveform of the selected mode
- * (basic-radio-phy-mode.yaml). Backends take the waveform from phy and do
- * not apply these fields. Zero / false means "not specified".
+ * parameters every backend applies on top of the PHY.
  */
 struct basic_radio_config {
-	uint16_t phy;                     /**< BASIC_RADIO_PHY_DT_ID() or BASIC_RADIO_PHY_CURRENT. */
+	const void *phy;                  /**< Backend PHY object, or NULL to keep the active PHY. */
 	uint32_t frequency;               /**< Carrier frequency in Hz. */
 	uint32_t sync_word;               /**< Sync pattern, LSB-aligned. */
 	uint8_t  max_packet_len;          /**< Maximum payload length in bytes. */
 	int8_t   tx_power;                /**< TX power in dBm. */
-	uint32_t datarate;                /**< Waveform: bitrate in bps (0 if N/A). */
-	uint32_t deviation;               /**< Waveform: FSK deviation in Hz (0 if N/A). */
-	uint8_t  sync_word_len;           /**< Waveform: sync word length in bytes (0 if N/A). */
-	uint8_t  preamble_len;            /**< Waveform: preamble length in bytes. */
-	enum basic_radio_modulation modulation; /**< Waveform: modulation scheme. */
-	bool     crc_enable;              /**< Waveform: enable HW CRC. */
-	bool     whitening_enable;        /**< Waveform: enable data whitening. */
-	bool     variable_length;         /**< Waveform: frames carry a length byte. */
 };
-
-/**
- * @brief Initializer for struct basic_radio_config from a DT PHY child node.
- *
- * @p phy_node is a PHY child of a basic-radio-base node. The
- * PHY is selected and the base properties are always read. Waveform
- * properties are read from the mode node referenced by phy-mode
- * (basic-radio-phy-mode.yaml) and are zero / false when the mode omits them.
- * The modulation string enum is ordered to match @ref basic_radio_modulation
- * so DT_ENUM_IDX maps directly to the C enum value.
- *
- * Typical usage:
- * @code
- *   static const struct basic_radio_config cfg =
- *       BASIC_RADIO_CONFIG_DT(DT_NODELABEL(phy0));
- * @endcode
- */
-#define BASIC_RADIO_CONFIG_DT(phy_node) {                                \
-	.phy              = BASIC_RADIO_PHY_DT_ID(phy_node),                 \
-	.frequency        = DT_PROP(phy_node, frequency_hz),                 \
-	.sync_word        = DT_PROP(phy_node, sync_word),                    \
-	.max_packet_len   = DT_PROP(phy_node, max_packet_length),            \
-	.tx_power         = DT_PROP(phy_node, tx_power_dbm),                 \
-	BASIC_RADIO_MODE_DT_INIT(DT_PHANDLE(phy_node, phy_mode))            \
-}
-
-/**
- * @cond INTERNAL_HIDDEN
- *
- * Waveform fields of struct basic_radio_config from a mode node.
- */
-#define BASIC_RADIO_MODE_DT_INIT(mode_node)                              \
-	.datarate         = DT_PROP(mode_node, datarate_bps),                \
-	.deviation        = DT_PROP_OR(mode_node, deviation_hz, 0),          \
-	.sync_word_len    = DT_PROP_OR(mode_node, sync_word_length, 0),      \
-	.preamble_len     = DT_PROP_OR(mode_node, preamble_length, 0),       \
-	.modulation       = DT_ENUM_IDX(mode_node, modulation),              \
-	.crc_enable       = DT_PROP(mode_node, crc_enable),                  \
-	.whitening_enable = DT_PROP(mode_node, whitening_enable),            \
-	.variable_length  = DT_PROP(mode_node, variable_length),
-/** @endcond */
 
 /** @brief Per-packet RX metadata. */
 struct basic_radio_rx_info {
@@ -208,19 +134,20 @@ __subsystem struct basic_radio_driver_api {
 /**
  * @brief Apply a runtime radio configuration.
  *
- * Selects the PHY in @p cfg->phy (when the backend supports several) and
- * applies the runtime parameters on top of it. Changing to a PHY with
- * another radio configuration may reinitialize the radio. The radio must
- * be idle.
+ * Selects the PHY object in @p cfg->phy, if not NULL, and applies the
+ * runtime parameters on top of it. @p cfg->phy must point to an object of
+ * the type defined by the backend of @p dev. Changing to a PHY with another
+ * radio configuration may reinitialize the radio. The radio must be idle.
  *
  * @param dev  Radio device.
  * @param cfg  Configuration to apply.
  *
- * @retval 0       Success.
- * @retval -EBUSY  Radio is not idle.
- * @retval -EINVAL @p cfg->phy is not a PHY of @p dev, or a parameter is out
- *                 of range for the selected PHY.
- * @retval -EIO    Radio reconfiguration failed.
+ * @retval 0        Success.
+ * @retval -EBUSY   Radio is not idle.
+ * @retval -EINVAL  A parameter is out of range for the selected PHY, or
+ *                  @p cfg->phy is NULL and no PHY is active.
+ * @retval -ENOTSUP The backend cannot drive the PHY in @p cfg->phy.
+ * @retval -EIO     Radio reconfiguration failed.
  */
 static inline int basic_radio_config(const struct device *dev, const struct basic_radio_config *cfg)
 {

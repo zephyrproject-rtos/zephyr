@@ -43,7 +43,7 @@ config BASIC_RADIO_TX_BUFFER_COUNT
 	  Depth of the backend's TX buffer pool. More buffers allow
 	  back-to-back submits without waiting for the previous TX to finish.
 
-rsource "backends/ti_cc23x0/Kconfig"
+rsource "backends/ti/cc23x0/Kconfig"
 # add here more "backends/..."
 
 endif # BASIC_RADIO
