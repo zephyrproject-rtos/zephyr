@@ -40,6 +40,7 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
  * @retval PSA_SUCCESS                The read succeeded.
  * @retval PSA_ERROR_INVALID_ARGUMENT One or more arguments are invalid.
  * @retval PSA_ERROR_DOES_NOT_EXIST   The entry was not found from the storage.
+ * @retval PSA_ERROR_DATA_CORRUPT     The stored entry is corrupt.
  * @retval PSA_ERROR_STORAGE_FAILURE  Some storage failure happened.
  */
 psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
