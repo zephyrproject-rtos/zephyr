@@ -3981,6 +3981,14 @@ static void remove_subscriptions(struct bt_conn *conn)
 			prev = &params->node;
 		}
 	}
+
+	/* Free the entry if it holds no subscription, as after a CCC discovery that found no CCC.
+	 * Look it up again: a notify callback above may have given it to another peer.
+	 */
+	sub = gatt_sub_find(conn);
+	if (sub != NULL) {
+		gatt_sub_remove(conn, sub, NULL, NULL);
+	}
 }
 
 static void gatt_mtu_rsp(struct bt_conn *conn, int err, const void *pdu,
@@ -5834,17 +5842,17 @@ static int gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 		return -ENOTCONN;
 	}
 
-	sub = gatt_sub_add(conn);
-	if (!sub) {
-		return -ENOMEM;
-	}
-
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
 	if (params->disc_params != NULL && params->disc_params->func == gatt_ccc_discover_cb) {
 		/* Already in progress */
 		return -EBUSY;
 	}
 #endif
+
+	sub = gatt_sub_add(conn);
+	if (sub == NULL) {
+		return -ENOMEM;
+	}
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
@@ -5867,7 +5875,16 @@ static int gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
 		if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
-			return gatt_ccc_discover(conn, params);
+			err = gatt_ccc_discover(conn, params);
+			if (err != 0) {
+				/* Not the slot from before the waits */
+				sub = gatt_sub_find(conn);
+				if (sub != NULL) {
+					gatt_sub_remove(conn, sub, NULL, NULL);
+				}
+			}
+
+			return err;
 		}
 #endif
 		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp, gatt_write_ccc_revalidate);
