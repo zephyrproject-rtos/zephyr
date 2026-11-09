@@ -1756,6 +1756,19 @@ static void dhcpv6_enter_rebinding(struct net_if *iface)
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
 
+static uint64_t dhcpv6_confirm_deadline(struct net_if *iface)
+{
+	return MIN(iface->config.dhcpv6.exchange_start + DHCPV6_CNF_MAX_RD,
+		   iface->config.dhcpv6.expire);
+}
+
+static void dhcpv6_set_confirm_timeout(struct net_if *iface)
+{
+	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
+	iface->config.dhcpv6.timeout = MIN(iface->config.dhcpv6.timeout,
+					  dhcpv6_confirm_deadline(iface));
+}
+
 static void dhcpv6_enter_confirming(struct net_if *iface)
 {
 	iface->config.dhcpv6.retransmit_timeout =
@@ -1765,7 +1778,7 @@ static void dhcpv6_enter_confirming(struct net_if *iface)
 
 	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_confirm(iface);
-	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
+	dhcpv6_set_confirm_timeout(iface);
 }
 
 static void dhcpv6_enter_bound(struct net_if *iface)
@@ -2640,11 +2653,10 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 			 * prefix is requested, Rebind is used with
 			 * Confirm timings.
 			 */
-			iface->config.dhcpv6.expire = now + DHCPV6_CNF_MAX_RD;
-
 			if (!iface->config.dhcpv6.params.request_prefix) {
 				dhcpv6_enter_state(iface, NET_DHCPV6_CONFIRMING);
 			} else {
+				iface->config.dhcpv6.expire = now + DHCPV6_CNF_MAX_RD;
 				dhcpv6_enter_state(iface, NET_DHCPV6_REBINDING);
 			}
 		} else {
@@ -2687,7 +2699,7 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 
 		return iface->config.dhcpv6.timeout;
 	case NET_DHCPV6_CONFIRMING:
-		if (now >= iface->config.dhcpv6.expire) {
+		if (now >= dhcpv6_confirm_deadline(iface)) {
 			dhcpv6_enter_state(iface, NET_DHCPV6_SOLICITING);
 			return iface->config.dhcpv6.timeout;
 		}
@@ -2699,11 +2711,7 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 				DHCPV6_CNF_MAX_RT);
 
 		(void)dhcpv6_send_confirm(iface);
-		dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
-
-		if (iface->config.dhcpv6.timeout > iface->config.dhcpv6.expire) {
-			iface->config.dhcpv6.timeout = iface->config.dhcpv6.expire;
-		}
+		dhcpv6_set_confirm_timeout(iface);
 
 		return iface->config.dhcpv6.timeout;
 	case NET_DHCPV6_RENEWING:

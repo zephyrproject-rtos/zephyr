@@ -1535,6 +1535,7 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 		.request_prefix = false,
 	};
 	struct net_if_addr *addr;
+	uint64_t lease_expire;
 	int ret;
 
 	test_ctx.reset_dhcpv6 = true;
@@ -1542,6 +1543,7 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 	       sizeof(test_ctx.iface->config.dhcpv6));
 
 	test_dhcpv6_start_and_enter_bound(&params);
+	lease_expire = test_ctx.iface->config.dhcpv6.expire;
 	set_dhcpv6_test_fn(test_confirm_expect_confirm_send_reply);
 
 	net_if_down(test_ctx.iface);
@@ -1552,6 +1554,8 @@ ZTEST(dhcpv6_tests, test_confirm_exchange_after_iface_down)
 
 	addr = net_if_ipv6_addr_lookup_by_iface(test_ctx.iface, &test_addr);
 	zassert_not_null(addr, "Address not configured on the interface");
+	zassert_equal(test_ctx.iface->config.dhcpv6.expire, lease_expire,
+		      "Confirm changed the lease expiration");
 }
 
 static void test_rebind_expect_rebind_send_reply(struct net_if *iface,
