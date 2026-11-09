@@ -179,7 +179,6 @@ config KOBJECT_TEXT_AREA
 
 config WAIT_AT_RESET_VECTOR
 	bool "Wait at reset vector"
-	default n
 	help
 	  Spin at reset vector waiting for debugger to attach and resume
 	  execution

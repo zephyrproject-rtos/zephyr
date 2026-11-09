@@ -239,10 +239,11 @@ choice
 	depends on REBOOT
 	default REBOOT_RST_CNT
 
-	config REBOOT_RST_CNT
-		bool "Reboot via RST_CNT register"
-		help
-		  Reboot via the RST_CNT register, going back to BIOS.
+config REBOOT_RST_CNT
+	bool "Reboot via RST_CNT register"
+	help
+	  Reboot via the RST_CNT register, going back to BIOS.
+
 endchoice
 
 config PCIE_MMIO_CFG
@@ -337,7 +338,6 @@ config X86_MMU
 
 config X86_COMMON_PAGE_TABLE
 	bool "Use a single page table for all threads"
-	default n
 	depends on USERSPACE
 	depends on !SMP
 	depends on !X86_KPTI

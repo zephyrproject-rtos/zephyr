@@ -606,7 +606,6 @@ config PMP_NO_LOCK_GLOBAL
 
 config PMP_UNLOCK_ROM_FOR_DEBUG
 	bool "Unlock ROM region for debugger access"
-	default n
 	help
 	  When enabled, the ROM region PMP entry is configured without
 	  the lock bit (L=0), allowing debuggers running in machine mode
