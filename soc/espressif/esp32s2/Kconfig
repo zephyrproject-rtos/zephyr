@@ -61,7 +61,7 @@ config SOC_ESP32S2_DATA_CACHE_16KB
 
 endchoice
 
-choice
+choice SOC_ESP32S2_DATA_CACHE_LINE_SIZE
 	prompt "Data cache line size"
 	default SOC_ESP32S2_DATA_CACHE_LINE_32B
 

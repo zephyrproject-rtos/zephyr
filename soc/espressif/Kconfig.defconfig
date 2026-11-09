@@ -3,6 +3,7 @@
 
 if SOC_FAMILY_ESPRESSIF
 
+rsource "common/Kconfig.deprecated.defconfig"
 rsource "*/Kconfig.defconfig"
 
 endif # SOC_FAMILY_ESPRESSIF
