@@ -196,6 +196,16 @@ static void verify_tx_error(enum ec_host_cmd_status error)
 }
 
 #define EC_CMD_HELLO 0x0001
+static uint32_t hello_v0_resp(uint32_t in_data)
+{
+	return in_data + 0x01020304;
+}
+
+static uint32_t hello_v1_resp(uint32_t in_data)
+{
+	return in_data + 0x02040608;
+}
+
 static enum ec_host_cmd_status
 ec_host_cmd_add(struct ec_host_cmd_handler_args *args)
 {
@@ -203,9 +213,9 @@ ec_host_cmd_add(struct ec_host_cmd_handler_args *args)
 	struct ec_response_add *const response = args->output_buf;
 
 	if (args->version == 0) {
-		response->out_data = request->in_data + 0x01020304;
+		response->out_data = hello_v0_resp(request->in_data);
 	} else if (args->version == 1) {
-		response->out_data = request->in_data + 0x02040608;
+		response->out_data = hello_v1_resp(request->in_data);
 	} else if (args->version == 2) {
 		return EC_HOST_CMD_OVERFLOW;
 	} else {
@@ -234,7 +244,8 @@ ZTEST(ec_host_cmd, test_add)
 	expected_dut_to_host->header.reserved = 0;
 	expected_dut_to_host->header.data_len =
 		sizeof(expected_dut_to_host->add);
-	expected_dut_to_host->add.out_data = 0x11223344;
+	expected_dut_to_host->add.out_data =
+		hello_v0_resp(host_to_dut->add.in_data);
 
 	verify_tx_data();
 }
@@ -255,7 +266,8 @@ ZTEST(ec_host_cmd, test_add_version_2)
 	expected_dut_to_host->header.reserved = 0;
 	expected_dut_to_host->header.data_len =
 		sizeof(expected_dut_to_host->add);
-	expected_dut_to_host->add.out_data = 0x12243648;
+	expected_dut_to_host->add.out_data =
+		hello_v1_resp(host_to_dut->add.in_data);
 
 	verify_tx_data();
 }
@@ -582,7 +594,7 @@ ZTEST(ec_host_cmd, test_unbounded_output_cleared)
 	const struct tx_structure *const tx = (void *)sent->buf;
 
 	/*
-	 * First call writes 0x11223344 to tx->add.out_data and sets
+	 * First call writes hello_v0_resp(in_data) to tx->add.out_data and sets
 	 * output_buf_size = 4.
 	 */
 	*host_to_dut = (struct rx_structure){
@@ -598,11 +610,12 @@ ZTEST(ec_host_cmd, test_unbounded_output_cleared)
 				.prtcl_ver = 3,
 				.data_len = sizeof(expected_dut_to_host->add),
 			},
-		.add.out_data = 0x11223344,
+		.add.out_data = hello_v0_resp(host_to_dut->add.in_data),
 	};
 	simulate_rx_data();
 	verify_tx_data();
-	zassert_equal(tx->add.out_data, 0x11223344);
+	zassert_equal(tx->add.out_data,
+		      hello_v0_resp(host_to_dut->add.in_data));
 
 	/*
 	 * With bytes_to_write == 0, the handler returns without modifying
