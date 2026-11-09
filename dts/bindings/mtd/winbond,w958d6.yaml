@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Winbond W958D6 family PSRAM
+
+compatible: "winbond,w958d6"
+
+include: [base.yaml]
