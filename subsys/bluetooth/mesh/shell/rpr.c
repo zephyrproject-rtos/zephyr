@@ -312,6 +312,10 @@ static int cmd_link_close(const struct shell *sh, size_t argc, char *argv[])
 	};
 	int err;
 
+	if (!mod && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_REMOTE_PROV_CLI, &mod)) {
+		return -ENODEV;
+	}
+
 	err = bt_mesh_rpr_link_close((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &rsp);
 	if (err) {
 		shell_print(sh, "Link close failed: %d %u", err, rsp.status);
