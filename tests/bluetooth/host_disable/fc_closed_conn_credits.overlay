@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&bt_hci_test {
+	bt-hci-quirks = "fc-closed-conn-credits";
+};
