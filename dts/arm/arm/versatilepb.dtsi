@@ -37,6 +37,15 @@
 			status = "okay";
 		};
 
+		timer01: timer@101e2000 {
+			compatible = "arm,sp804";
+			reg = <0x101e2000 0x1000>;
+			interrupts = <4 0>;
+			interrupt-parent = <&vic>;
+			clock-frequency = <1000000>;
+			status = "disabled";
+		};
+
 		uart0: uart@101f1000 {
 			compatible = "arm,pl011";
 			reg = <0x101f1000 0x1000>;
