@@ -274,6 +274,23 @@ static int cmd_flash_stream_unset(const struct shell *sh, size_t argc, char *arg
 
 static const struct bt_mesh_model *mod_cli;
 
+/* The Firmware Update Client contains a BLOB Transfer Client with its own
+ * callbacks. Only a BLOB Transfer Client with the shell callbacks can be used.
+ */
+static bool blob_cli_usable(const struct shell *sh)
+{
+	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+		return false;
+	}
+
+	if (((struct bt_mesh_blob_cli *)mod_cli->rt->user_data)->cb != &blob_cli_handlers) {
+		shell_error(sh, "BLOB Transfer Client is in use by another model");
+		return false;
+	}
+
+	return true;
+}
+
 static void blob_cli_inputs_prepare(uint16_t group)
 {
 	int i;
@@ -302,7 +319,7 @@ static int cmd_tx(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t group;
 	int err = 0;
 
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -392,7 +409,7 @@ static int cmd_caps(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t group;
 	int err = 0;
 
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -434,7 +451,7 @@ static int cmd_caps(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_tx_cancel(const struct shell *sh, size_t argc,
 			      char *argv[])
 {
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -449,7 +466,7 @@ static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t group;
 	int err;
 
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -478,7 +495,7 @@ static int cmd_tx_get(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_tx_suspend(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
@@ -490,7 +507,7 @@ static int cmd_tx_suspend(const struct shell *sh, size_t argc,
 
 static int cmd_tx_resume(const struct shell *sh, size_t argc, char *argv[])
 {
-	if (!mod_cli && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_BLOB_CLI, &mod_cli)) {
+	if (!blob_cli_usable(sh)) {
 		return -ENODEV;
 	}
 
