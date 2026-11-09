@@ -1,0 +1,208 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADT7604 20-Channel Digital Temperature Measurement System
+
+  The ADT7604 supports multiple sensor types including RTDs, thermocouples,
+  thermistors, diodes, and direct ADC measurements across 20 channels.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adt7604.h>
+
+    &spi0 {
+        adt7604: adt7604@1 {
+            compatible = "adi,adt7604";
+            reg = <0>;
+            spi-max-frequency = <1000000>;
+
+            reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+            int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+
+            adi,mux-delay-config-us = <0>;
+            adi,filter-notch-freq = "50-60hz";
+
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            channel@2 {
+                reg = <0x2>;
+                adi,sensor-type = <ADT7604_SENSOR_TYPE_RSENSE>;
+                adi,rsense-val = "100";
+                adi,rsense-mohm;
+            };
+
+            channel@4 {
+                reg = <0x4>;
+                adi,sensor-type = <ADT7604_SENSOR_TYPE_COPPER_TRACE>;
+                adi,rsense-channel = <12>;
+                adi,excitation-current = <ADT7604_CT_EXCITATION_CURRENT_10_UA>;
+                adi,sub-ohm;
+            };
+
+            channel@12 {
+                reg = <0x12>;
+                adi,sensor-type = <ADT7604_SENSOR_TYPE_RTD_PT_100>;
+                adi,rsense-channel = <12>;
+                adi,sensor-configuration = <ADT7604_RTD_CONFIG_2_WIRE_INTERNAL>;
+                adi,excitation-current = <ADT7604_RTD_EXCITATION_CURRENT_1_MA>;
+                adi,rtd-curve = "european-curve";
+            };
+
+            channel@e {
+                reg = <0xe>;
+                adi,sensor-type = <ADT7604_SENSOR_TYPE_LEAK_DETECTOR>;
+                adi,rsense-channel = <12>;
+                adi,excitation-current = <ADT7604_LEAK_EXCITATION_CURRENT_10_UA>;
+            };
+
+            channel@14 {
+                reg = <0x14>;
+                adi,sensor-type = <ADT7604_SENSOR_TYPE_THERMISTOR_44006>;
+                adi,rsense-channel = <12>;
+                adi,sensor-configuration = <ADT7604_THERMISTOR_CONFIG_DIFF_SHARE_NO_ROTATE>;
+                adi,excitation-current = <ADT7604_THERMISTOR_EXCITATION_CURRENT_10_UA>;
+            };
+        };
+    };
+
+compatible: "adi,adt7604"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Active low reset pin.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Active high interrupt pin.
+
+  adi,mux-delay-config-us:
+    type: int
+    default: 0
+    description: |
+      Multiplexer delay configuration in microseconds.
+      Adds settling time between channel switches.
+
+  adi,filter-notch-freq:
+    type: string
+    enum:
+      - "50-60hz"
+      - "60hz"
+      - "50hz"
+    default: "50-60hz"
+    description: |
+      Digital filter notch frequency for line noise rejection. Default is
+      power-on setting ("50-60hz").
+      - "50-60hz": Rejection of both 50Hz and 60Hz
+      - "60hz": 60Hz rejection only
+      - "50hz": 50Hz rejection only
+
+child-binding:
+  description: Channel configuration
+
+  properties:
+    reg:
+      type: int
+      min: 1
+      max: 20
+      required: true
+      description: |
+        Channel number (1-20)
+
+    adi,sensor-type:
+      type: int
+      required: true
+      description: |
+        Sensor type for this channel. Use macros from dt-bindings/sensor/adt7604.h:
+          ADT7604_SENSOR_TYPE_RTD_PT_10 (10) = RTD PT-10
+          ADT7604_SENSOR_TYPE_RTD_PT_50 (11) = RTD PT-50
+          ADT7604_SENSOR_TYPE_RTD_PT_100 (12) = RTD PT-100
+          ADT7604_SENSOR_TYPE_RTD_PT_200 (13) = RTD PT-200
+          ADT7604_SENSOR_TYPE_RTD_PT_500 (14) = RTD PT-500
+          ADT7604_SENSOR_TYPE_RTD_PT_1000 (15) = RTD PT-1000
+          ADT7604_SENSOR_TYPE_RTD_1000 (16) = RTD 1000
+          ADT7604_SENSOR_TYPE_RTD_NI_120 (17) = RTD NI-120
+          ADT7604_SENSOR_TYPE_COPPER_TRACE (18) = Copper Trace
+          ADT7604_SENSOR_TYPE_THERMISTOR_44004 (19) = Thermistor 44004/44033
+          ADT7604_SENSOR_TYPE_THERMISTOR_44005 (20) = Thermistor 44005/44030
+          ADT7604_SENSOR_TYPE_THERMISTOR_44007 (21) = Thermistor 44007/44034
+          ADT7604_SENSOR_TYPE_THERMISTOR_44006 (22) = Thermistor 44006/44031
+          ADT7604_SENSOR_TYPE_THERMISTOR_44008 (23) = Thermistor 44008/44032
+          ADT7604_SENSOR_TYPE_THERMISTOR_YSI_400 (24) = Thermistor YSI-400
+          ADT7604_SENSOR_TYPE_THERMISTOR_SPECTRUM (25) = Thermistor Spectrum
+          ADT7604_SENSOR_TYPE_THERMISTOR_CUSTOM (26) = Thermistor Custom
+          ADT7604_SENSOR_TYPE_LEAK_DETECTOR (27) = Leak Detector
+          ADT7604_SENSOR_TYPE_RSENSE (29) = Sense Resistor
+
+    adi,rsense-channel:
+      type: int
+      default: 0
+      description: |
+        Reference sense resistor channel number for RTD, thermistor,
+        copper trace, or custom sensor types. Must point to a channel
+        configured as sense resistor (type 29).
+
+    adi,rsense-val:
+      type: string
+      default: "0"
+      description: |
+        Value of the reference sense resistor in ohms or mohms. Ohm values
+        can be fractional. Valid only if the sensor type is a sense resistor
+        (type 29).
+
+    adi,rsense-mohm:
+      type: boolean
+      description: |
+        Indicates whether the reference sense resistor value is specified in milliohms.
+
+    adi,sensor-configuration:
+      type: int
+      default: 0
+      description: |
+        Sensor configuration bit value. Use macros from dt-bindings/sensor/adt7604.h:
+        - RTD sensors: ADT7604_RTD_CONFIG_* (wire type + excitation mode)
+        - Thermistors: ADT7604_THERMISTOR_CONFIG_* (differential/single-ended + sharing)
+        - Copper trace: Fixed value 0x9
+        - Leak sensor: Fixed value 0x1
+        Default 0 = basic configuration.
+
+    adi,excitation-current:
+      type: int
+      default: 0
+      description: |
+        Excitation current bit value for the sensor. Use macros from
+        dt-bindings/sensor/adt7604.h for correct values:
+        - RTD sensors: ADT7604_RTD_EXCITATION_CURRENT_* (5µA to 1mA)
+        - Copper trace ≥1Ω: ADT7604_CT_EXCITATION_CURRENT_* (5µA to 1mA)
+        - Thermistors: ADT7604_THERMISTOR_EXCITATION_CURRENT_* (250nA to 1mA, AUTO)
+        - Leak sensors: ADT7604_LEAK_EXCITATION_CURRENT_* (250nA to 1mA)
+        Default 0 = reserved/disabled.
+
+    adi,rtd-curve:
+      type: string
+      enum:
+        - "european-curve"
+        - "american"
+        - "japanese"
+        - "its-90"
+        - "rtd1000-375"
+        - "ni-120"
+      default: "european-curve"
+      description: |
+        RTD curve type for this channel. See the datasheet for corresponding
+        Callendar-Van Dusen coefficients. Valid only if the sensor type is an RTD.
+
+    adi,sub-ohm:
+      type: boolean
+      description: |
+        Indicates whether the resistance of copper trace sensor tied to ADT7604 is
+        in sub-ohms (e.g. 0.25ohms). Valid only if the sensor type is a copper
+        trace resistor (type 18).
+        Note: Custom sensor data table address and length are automatically managed
+        at runtime when adt7604_write_custom_sensor_data_table() is called.

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADT7604
+	bool "ADT7604 20-Channel Digital Temperature Sensor"
+	default y
+	depends on DT_HAS_ADI_ADT7604_ENABLED
+	select SPI
+	select SPI_RTIO
+	select RTIO_WORKQ
+	select SENSOR_ASYNC_API
+	help
+	  Enable driver for Analog Devices ADT7604 20-Channel Digital
+	  Temperature Measurement System.
+
+	  The ADT7604 supports multiple sensor types including RTDs,
+	  thermocouples, thermistors, diodes, copper trace sensing,
+	  and leak detection across 20 configurable channels.
