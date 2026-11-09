@@ -6,21 +6,24 @@ Commands
 
 .. code-block:: console
 
-   iso --help
+   uart:~$ iso
    iso - Bluetooth ISO shell commands
    Subcommands:
-      cig_create  :[dir=tx,rx,txrx] [interval] [packing] [framing] [latency] [sdu]
-                  [phy] [rtn]
-      cig_term    :Terminate the CIG
-      connect     :Connect ISO Channel
-      listen      :<dir=tx,rx,txrx> [security level]
-      send        :Send to ISO Channel [count]
-      disconnect  :Disconnect ISO Channel
-      create-big  :Create a BIG as a broadcaster [enc <broadcast code>]
-      broadcast   :Broadcast on ISO channels
-      sync-big    :Synchronize to a BIG as a receiver <BIS bitfield> [mse] [timeout]
-                  [enc <broadcast code>]
-      term-big    :Terminate a BIG
+     cig_create        : [dir=tx,rx,txrx] [C to P interval] [P to C interval]
+                         [packing] [framing] [C to P latency] [P to C latency]
+                         [sdu] [phy] [rtn]
+     cig_term          : Terminate the CIG
+     connect           : Connect ISO Channel
+     listen            : <dir=tx,rx,txrx>
+     send              : Send to ISO Channel [count]
+     disconnect        : Disconnect ISO Channel
+     tx_sync_read_cis  : Read CIS TX sync info
+     create-big        : Create a BIG as a broadcaster [enc <broadcast code>]
+     broadcast         : Broadcast on ISO channels
+     tx_sync_read_bis  : Read BIS TX sync info
+     sync-big          : Synchronize to a BIG as a receiver <BIS bitfield> [mse
+                         <mse>] [timeout <timeout>] [enc <broadcast code>]
+     term-big          : Terminate a BIG
 
 
 Unicast examples
@@ -53,7 +56,7 @@ Requires to be connected:
 .. code-block:: console
 
    uart:~$ iso send
-   send: 40 bytes of data
+   send: 40 bytes of data with PSN 178
    ISO sending...
 
 

@@ -18,17 +18,22 @@ On device B, connect to the registered LE PSM and send data:
 .. code-block:: console
 
         uart:~$ l2cap connect 29
-        Chan sec: 1
         L2CAP connection pending
         Channel 0x20000210 connected
         Channel 0x20000210 status 1
         uart:~$ l2cap send 3 14
         Rem 2
+        Channel 0x20000210 status 0
         Rem 1
         Rem 0
         Outgoing data channel 0x20000210 transmitted
+        Channel 0x20000210 status 1
+        Channel 0x20000210 status 0
         Outgoing data channel 0x20000210 transmitted
+        Channel 0x20000210 status 1
+        Channel 0x20000210 status 0
         Outgoing data channel 0x20000210 transmitted
+        Channel 0x20000210 status 1
 
 On device A, you should have received the data:
 
