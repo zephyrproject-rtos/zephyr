@@ -22,14 +22,26 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 			      uint32_t var_length,
 			      struct buf_ctx *buf)
 {
+	uint8_t type = type_and_flags & 0xF0;
 	int err_code = 0;
 	bool notify_event = true;
 	struct mqtt_evt evt = { 0 };
 
+	/* Until it has accepted the connection, a server sends nothing but
+	 * CONNACK, and with MQTT 5.0 AUTH (MQTT 3.1.1 and MQTT 5.0
+	 * section 3.2). Anything else is a protocol error.
+	 */
+	if ((MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED) == 0U) &&
+	    (type != MQTT_PKT_TYPE_CONNACK) &&
+	    ((mqtt_is_version_5_0(client) == 0) || (type != MQTT_PKT_TYPE_AUTH))) {
+		NET_ERR("[CID %p]: Unexpected packet 0x%02x before CONNACK", client, type);
+		return -EBADMSG;
+	}
+
 	/* Success by default, overwritten in special cases. */
 	evt.result = 0;
 
-	switch (type_and_flags & 0xF0) {
+	switch (type) {
 	case MQTT_PKT_TYPE_CONNACK:
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_CONNACK!", client);
 
