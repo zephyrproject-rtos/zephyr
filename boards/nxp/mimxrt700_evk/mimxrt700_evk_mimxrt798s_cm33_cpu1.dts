@@ -145,3 +145,12 @@
 	domain-id = <5>;
 	status = "okay";
 };
+
+/* SEMA42_3: sense domain (VDD2_SENSE), pairs with MU3 for cpu1 <-> HiFi1.
+ * Clock gate and reset must be released here because the DSP devicetree
+ * has no access to clkctl1/rstctl1.
+ */
+&sema423 {
+	domain-id = <5>;
+	status = "okay";
+};
