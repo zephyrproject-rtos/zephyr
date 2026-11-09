@@ -79,4 +79,20 @@
 			slew-rate = "standard";
 		};
 	};
+
+	/* RMII Ethernet to the on-board LAN8720A PHY. */
+	pinmux_enet: pinmux_enet {
+		group0 {
+			pinmux = <ENET_ENET_TXD0_PIO4_8>,
+				 <ENET_ENET_TXD1_PIO0_17>,
+				 <ENET_ENET_RXD0_PIO4_11>,
+				 <ENET_ENET_RXD1_PIO4_12>,
+				 <ENET_RX_DV_PIO4_10>,
+				 <ENET_TX_EN_PIO4_13>,
+				 <ENET_RX_CLK_PIO4_14>,
+				 <ENET_MDC_PIO4_15>,
+				 <ENET_MDIO_PIO4_16>;
+			slew-rate = "fast";
+		};
+	};
 };

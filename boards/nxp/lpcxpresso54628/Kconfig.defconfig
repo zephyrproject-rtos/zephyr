@@ -3,6 +3,9 @@
 
 if BOARD_LPCXPRESSO54628
 
+configdefault ETH_DRIVER
+	default y
+
 if FXOS8700
 
 # The on-board MMA8652FC has no magnetometer.
