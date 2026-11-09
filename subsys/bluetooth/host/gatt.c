@@ -88,6 +88,12 @@ struct gatt_sub {
  *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
  */
 static struct gatt_sub subscriptions[SUB_MAX];
+
+/* What an iteration over the subscriptions on the RX workqueue goes to next. A
+ * callback or a wait during it can outlast that subscription, so removing a
+ * subscription moves this on.
+ */
+static struct bt_gatt_subscribe_params *sub_iter_next;
 static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
@@ -3742,11 +3748,19 @@ static void gatt_sub_free(struct gatt_sub *sub)
 	bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
 }
 
+static void sub_iter_skip(struct bt_gatt_subscribe_params *params)
+{
+	if (sub_iter_next == params) {
+		sub_iter_next = SYS_SLIST_PEEK_NEXT_CONTAINER(params, node);
+	}
+}
+
 static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 			    sys_snode_t *prev,
 			    struct bt_gatt_subscribe_params *params)
 {
 	if (params) {
+		sub_iter_skip(params);
 		/* Remove subscription from the list*/
 		sys_slist_remove(&sub->list, prev, &params->node);
 		/* Notify removal */
@@ -3848,7 +3862,7 @@ static bool check_subscribe_security_level(struct bt_conn *conn,
 static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct gatt_sub *sub,
 						 uint16_t handle, const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params, *tmp;
+	struct bt_gatt_subscribe_params *params;
 	int err;
 
 	/* Core Specification Vol 3, Part F, Section 3.2.9: the maximum length
@@ -3860,7 +3874,10 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+	for (params = SYS_SLIST_PEEK_HEAD_CONTAINER(&sub->list, params, node); params != NULL;
+	     params = sub_iter_next) {
+		sub_iter_next = SYS_SLIST_PEEK_NEXT_CONTAINER(params, node);
+
 		if (handle != params->value_handle) {
 			continue;
 		}
@@ -5984,6 +6001,7 @@ static int gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_param
 		}
 	}
 
+	sub_iter_skip(params);
 	sys_slist_find_and_remove(&sub->list, &params->node);
 
 	if (gatt_sub_is_empty(sub)) {
@@ -6067,7 +6085,10 @@ static void add_subscriptions(struct bt_conn *conn)
 	}
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
+	for (params = SYS_SLIST_PEEK_HEAD_CONTAINER(&sub->list, params, node); params != NULL;
+	     params = sub_iter_next) {
+		sub_iter_next = SYS_SLIST_PEEK_NEXT_CONTAINER(params, node);
+
 		if (!atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_SENT) &&
 		    !atomic_test_bit(params->flags,
