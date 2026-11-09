@@ -468,11 +468,14 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 	psram0: memory-controller@0 {
 		compatible = "nxp,xspi-psram";
 		reg = <0>;
-		device-name = "w958d6nbkx5l";
 		size = <DT_SIZE_M(32)>;
 		enable-differential-clk;
 		sample-clk-source = <3>;
 		status = "okay";
+
+		psram {
+			compatible = "winbond,w958d6";
+		};
 	};
 	/* Connect JP45 1-2 to use XSPI1. */
 };
@@ -489,11 +492,14 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 	psram1: memory-controller@0 {
 		compatible = "nxp,xspi-psram";
 		reg = <0>;
-		device-name = "w958d6nbkx4l";
 		size = <DT_SIZE_M(32)>;
 		enable-differential-clk;
 		sample-clk-source = <3>;
 		status = "okay";
+
+		psram {
+			compatible = "winbond,w958d6";
+		};
 	};
 };
 

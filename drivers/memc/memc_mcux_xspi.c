@@ -176,9 +176,23 @@ static int memc_mcux_xspi_init(const struct device *dev)
 #define MCUX_XSPI_GET_FRAD(n, idx, x)	\
 	DT_PROP(DT_CHILD(DT_DRV_INST(n), frad_region ## idx), x)
 
+#if defined(FSL_FEATURE_XSPI_HAS_END_CFG) && FSL_FEATURE_XSPI_HAS_END_CFG
+#define MCUX_XSPI_BYTE_ORDER(n) \
+	.byteOrder = DT_INST_PROP(n, byte_order),
+#else
+#define MCUX_XSPI_BYTE_ORDER(n)
+#endif
+
+#if defined(FSL_FEATURE_XSPI_HAS_DOZE_MODE) && FSL_FEATURE_XSPI_HAS_DOZE_MODE
+#define MCUX_XSPI_ENABLE_DOZE .enableDoze = false,
+#else
+#define MCUX_XSPI_ENABLE_DOZE
+#endif
+
 #define MCUX_XSPI_MDAD_INIT(idx, n)	\
 	COND_CODE_1(DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(n), mdad_tg ## idx)),	\
 		({	\
+			.assignIsValid = true,	\
 			.enableDescriptorLock =	\
 				MCUX_XSPI_GET_MDAD(n, idx, enable_descriptor_lock),	\
 			.maskType = MCUX_XSPI_GET_MDAD(n, idx, mask_type),	\
@@ -216,8 +230,8 @@ static int memc_mcux_xspi_init(const struct device *dev)
 	static const struct memc_mcux_xspi_config memc_mcux_xspi_config_##n = {	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),	\
 		.xspi_config = {	\
-			.byteOrder = DT_INST_PROP(n, byte_order),	\
-			.enableDoze = false,	\
+			MCUX_XSPI_BYTE_ORDER(n) \
+			MCUX_XSPI_ENABLE_DOZE \
 			.ptrAhbAccessConfig = &(xspi_ahb_access_config_t){	\
 				.ahbErrorPayload = {	\
 					.highPayload = 0x5A5A5A5A,	\
