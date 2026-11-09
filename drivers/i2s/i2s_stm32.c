@@ -148,6 +148,8 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	return 0;
 }
 
+static void i2s_tx_disable(const struct device *dev);
+
 static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 			       const struct i2s_config *i2s_cfg)
 {
@@ -185,6 +187,14 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	    stream->state != I2S_STATE_READY) {
 		LOG_ERR("invalid state");
 		return -EINVAL;
+	}
+
+	if (dir == I2S_DIR_TX) {
+		/*
+		 * With a continuous bit clock the peripheral is left enabled
+		 * after a stop. It can only be reconfigured while disabled.
+		 */
+		i2s_tx_disable(dev);
 	}
 
 	stream->master = true;
@@ -837,11 +847,44 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
+static void i2s_tx_disable(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	int ret;
+
+	if (ll_i2s_is_enabled(cfg->i2s) != 0U) {
+		/* Wait for TX queue to drain before disabling */
+		k_busy_wait(100);
+		LL_I2S_Disable(cfg->i2s);
+	}
+
+	LL_I2S_DisableDMAReq_TX(cfg->i2s);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	LL_I2S_DisableIT_OVR(cfg->i2s);
+	LL_I2S_DisableIT_UDR(cfg->i2s);
+	LL_I2S_DisableIT_FRE(cfg->i2s);
+#else
+	LL_I2S_DisableIT_ERR(cfg->i2s);
+#endif
+
+	ret = dma_stop(dev_data->tx.dev_dma, dev_data->tx.dma_channel);
+	if (ret < 0) {
+		LOG_ERR("Failed to stop the TX DMA: %d", ret);
+	}
+}
+
 static int tx_stream_start(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	size_t mem_block_size = 0;
 	int ret;
+
+	/*
+	 * With a continuous bit clock the peripheral is left enabled after a
+	 * stop. Mode and DMA can only be reconfigured while it is disabled.
+	 */
+	i2s_tx_disable(dev);
 
 	ret = queue_get(stream->msgq, &stream->mem_block,
 			&mem_block_size, 0);
@@ -916,22 +959,8 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 
 static void tx_stream_disable(struct stream *stream, const struct device *dev)
 {
-	const struct i2s_stm32_cfg *cfg = dev->config;
+	i2s_tx_disable(dev);
 
-	/* Wait for TX queue to drain before disabling */
-	k_busy_wait(100);
-	LL_I2S_Disable(cfg->i2s);
-
-	LL_I2S_DisableDMAReq_TX(cfg->i2s);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
-	LL_I2S_DisableIT_OVR(cfg->i2s);
-	LL_I2S_DisableIT_UDR(cfg->i2s);
-	LL_I2S_DisableIT_FRE(cfg->i2s);
-#else
-	LL_I2S_DisableIT_ERR(cfg->i2s);
-#endif
-
-	dma_stop(stream->dev_dma, stream->dma_channel);
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
