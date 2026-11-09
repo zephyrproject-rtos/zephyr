@@ -12,9 +12,8 @@ config APP_USE_COMPENSATION
 
 config APP_USE_HEATER
 	bool "Use the Heater on the SHT4X"
-	default n
 	help
-		Maximum duty cycle for using the heater is 5%
+	  Maximum duty cycle for using the heater is 5%
 
 config APP_HEATER_HUMIDITY_THRESH
 	int "RH [%] threshold above which the heater will be activated"
@@ -28,9 +27,9 @@ config APP_HEATER_PULSE_POWER
 	default 2
 	depends on APP_USE_HEATER
 	help
-		0 -> High power heater pulse -> ~200 mW  @3.3V
-		1 -> Medium power heater pulse -> ~110 mW  @3.3V
-		2 -> Low power heater pulse -> ~20 mW  @3.3V
+	  0 -> High power heater pulse -> ~200 mW  @3.3V
+	  1 -> Medium power heater pulse -> ~110 mW  @3.3V
+	  2 -> Low power heater pulse -> ~20 mW  @3.3V
 
 config APP_HEATER_PULSE_DURATION
 	int "Heater Pulse Length Setting"
@@ -38,7 +37,7 @@ config APP_HEATER_PULSE_DURATION
 	default 1
 	depends on APP_USE_HEATER
 	help
-		0 -> Long heater pulse -> 1.1s
-		1 -> Short heater pulse -> 0.11s
+	  0 -> Long heater pulse -> 1.1s
+	  1 -> Short heater pulse -> 0.11s
 
 source "Kconfig.zephyr"

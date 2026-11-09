@@ -8,7 +8,6 @@ mainmenu "VEAA sample application"
 
 config SAMPLE_USE_SHELL
 	bool "Use sensor shell and disable loop"
-	default n
 	select SHELL
 	select SENSOR_SHELL
 
