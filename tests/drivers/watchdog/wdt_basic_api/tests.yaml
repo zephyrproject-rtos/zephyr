@@ -226,3 +226,30 @@ tests:
       - xenvm
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="boards/xenvm.overlay"
+  drivers.watchdog.esp32_rtc_wdt:
+    filter: dt_compat_enabled("espressif,esp32-rtc-wdt")
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c61_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/esp32_rtc_wdt.overlay"
+  drivers.watchdog.esp32_rtc_wdt.pm:
+    filter: dt_compat_enabled("espressif,esp32-rtc-wdt")
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_COUNTER=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/esp32_rtc_wdt.overlay;boards/esp32_rtc_wdt_pm.overlay"
