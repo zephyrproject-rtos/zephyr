@@ -491,6 +491,10 @@ static int stm32_sai_clock_en(const struct device *dev)
 		return -EIO;
 	}
 
+	if (!sai_cfg->has_sai_ker_ck && !sai_cfg->has_sai_b_ker_ck) {
+		LOG_WRN("%s: SAI kernel clock not configured", dev->name);
+	}
+
 	/* Configure shared SAIn_A & SAIn_B or dedicated SAIn_A kernel clock */
 	if (sai_cfg->has_sai_ker_ck) {
 		ret = clock_control_configure(clk, (clock_control_subsys_t)&sai_cfg->sai_ker_ck,

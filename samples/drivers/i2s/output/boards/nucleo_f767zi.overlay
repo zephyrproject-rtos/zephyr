@@ -21,6 +21,9 @@
 };
 
 &sai1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+		 <&rcc STM32_SRC_PLLSAI_POST_Q SAI1_SEL(0)>;
+	clock-names = "sai_ck", "sai_ker_ck";
 	status = "okay";
 };
 
