@@ -478,6 +478,11 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
+	/* The inquiry that stop failed to cancel, a new one may have started */
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_INQUIRY_CANCEL_FAILED)) {
+		return;
+	}
+
 	/* Queued before the inquiry was stopped */
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return;
@@ -488,6 +493,20 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 	}
 
 	report_discovery_results();
+}
+
+static struct bt_br_discovery_result *find_resolving_result(const bt_addr_t *addr)
+{
+	size_t i;
+
+	for (i = 0; i < discovery_results_count; i++) {
+		if (bt_addr_eq(addr, &discovery_results[i].addr) &&
+		    discovery_results[i]._priv.resolve_state == RESOLVE_REMOTE_NAME_RESOLVING) {
+			return &discovery_results[i];
+		}
+	}
+
+	return NULL;
 }
 
 static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int8_t rssi)
@@ -617,8 +636,11 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	int eir_len = 240;
 	uint8_t *eir;
 
-	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
-	if (!result) {
+	/* A request cancelled by a stop completes after it, maybe once a new
+	 * discovery has started
+	 */
+	result = find_resolving_result(&evt->bdaddr);
+	if (result == NULL) {
 		return;
 	}
 
@@ -1238,10 +1260,11 @@ static int discovery_stop(const void *arg)
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
 		/* If the cancel fails the inquiry was not cancelled, and its
 		 * Inquiry Complete (Core Specification 6.3, Vol 4, Part E,
-		 * Section 7.1.1) is dropped once the flag is cleared below.
+		 * Section 7.1.1) may be handled once a new discovery has started.
 		 */
 		if (err != 0) {
 			LOG_DBG("Inquiry Cancel failed (err %d)", err);
+			atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY_CANCEL_FAILED);
 		}
 	}
 
