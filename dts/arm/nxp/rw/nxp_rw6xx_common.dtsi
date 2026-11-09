@@ -445,6 +445,8 @@
 		compatible = "nxp,lpc-rtc";
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
+		wakeup-ctrls = <&wuc NXP_RW_PMU_RTC>;
+		wakeup-source;
 		status = "disabled";
 
 		rtc_highres: rtc_highres {
