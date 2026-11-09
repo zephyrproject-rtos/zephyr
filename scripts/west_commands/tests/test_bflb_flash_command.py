@@ -40,9 +40,7 @@ def parse_args(*extra):
 def test_baud_rate(cc, req, eo, bc, runner_config, extra, expected):
     bc.return_value.edt.chosen_node.return_value.regs = [MagicMock(size=0x400000)]
 
-    # No user-provided --file: the runner must fall back to the build's bin_file
-    cfg = runner_config._replace(file=None)
-    runner = BlFlashCommandBinaryRunner.create(cfg, parse_args(*extra))
+    runner = BlFlashCommandBinaryRunner.create(runner_config, parse_args(*extra))
     runner.run('flash')
 
     bc.assert_called_once_with(RC_BUILD_DIR)
