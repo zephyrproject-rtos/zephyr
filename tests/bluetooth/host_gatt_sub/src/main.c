@@ -76,6 +76,9 @@ static atomic_t peer_mode;
 K_MSGQ_DEFINE_STATIC(write_req_msgq, sizeof(uint16_t), 16, sizeof(uint16_t));
 static atomic_t acl_unexpected;
 
+/* The controller refuses to disconnect */
+static atomic_t disconnect_refused;
+
 /* Released when the Host asks to disconnect, with time for other threads to run before the answer,
  * during which the connection is still up
  */
@@ -114,13 +117,13 @@ static void *cmd_complete(struct net_buf **buf, uint8_t plen, uint16_t opcode)
 	return net_buf_add(*buf, plen);
 }
 
-static void generic_success(struct net_buf **evt, uint16_t opcode)
+static void generic_complete(struct net_buf **evt, uint16_t opcode, uint8_t status)
 {
 	struct bt_hci_evt_cc_status *rp;
 
 	rp = cmd_complete(evt, GENERIC_RP_SIZE, opcode);
 	(void)memset(rp, 0, GENERIC_RP_SIZE);
-	rp->status = BT_HCI_ERR_SUCCESS;
+	rp->status = status;
 }
 
 static void read_local_features(struct net_buf **evt, uint16_t opcode)
@@ -204,8 +207,13 @@ static void cmd_handle(struct net_buf *cmd)
 	case BT_HCI_OP_LE_READ_SUPP_STATES:
 		le_read_supp_states(&evt, opcode);
 		break;
+	case BT_HCI_OP_DISCONNECT:
+		generic_complete(&evt, opcode, (atomic_get(&disconnect_refused) != 0) ?
+						       BT_HCI_ERR_CMD_DISALLOWED :
+						       BT_HCI_ERR_SUCCESS);
+		break;
 	default:
-		generic_success(&evt, opcode);
+		generic_complete(&evt, opcode, BT_HCI_ERR_SUCCESS);
 		break;
 	}
 
@@ -548,6 +556,11 @@ struct test_sub {
 	bool notify_cancels;
 	/* The notify callback asks to be unsubscribed */
 	bool notify_stops;
+	/* The NULL callback subscribes again with bt_gatt_resubscribe() */
+	bool resubscribe_peer;
+	/* The NULL callback first subscribes this one to another peer */
+	struct test_sub *other;
+	const bt_addr_le_t *other_addr;
 };
 
 static uint8_t sub_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
@@ -582,6 +595,20 @@ static uint8_t sub_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 		sub->resubscribe = false;
 		params->value = BT_GATT_CCC_NOTIFY;
 		sub->resubscribe_err = bt_gatt_subscribe(conn, params);
+	}
+
+	if (sub->resubscribe_peer) {
+		sub->resubscribe_peer = false;
+
+		if (sub->other != NULL) {
+			int err = bt_gatt_resubscribe(BT_ID_DEFAULT, sub->other_addr,
+						      &sub->other->params);
+
+			__ASSERT(err == 0, "Subscribing another peer returned %d", err);
+		}
+
+		params->value = BT_GATT_CCC_NOTIFY;
+		sub->resubscribe_err = bt_gatt_resubscribe(BT_ID_DEFAULT, &peer_addr, params);
 	}
 
 	if (sub->overwrite) {
@@ -1539,4 +1566,80 @@ static ZTEST(host_gatt_sub, test_unpair_during_subscribe)
 
 	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
 		      atomic_get(&sub.unsubscribed_count));
+}
+
+/* The NULL callback of the first subscription subscribes again while the peer is unpaired, which it
+ * may. Each subscription gets its callback, and the new one stays.
+ */
+static ZTEST(host_gatt_sub, test_unpair_callback_resubscribes)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	/* Each new subscription goes first in the list */
+	sub_establish(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+	sub_establish(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_a.resubscribe_peer = true;
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
+
+	zassert_equal(atomic_get(&sub_a.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_a.unsubscribed_count));
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_b.unsubscribed_count));
+	zassert_ok(sub_a.resubscribe_err, "Subscribing again returned %d", sub_a.resubscribe_err);
+	zassert_equal(bt_gatt_resubscribe(BT_ID_DEFAULT, &peer_addr, &sub_a.params), -EALREADY,
+		      "The new subscription is gone");
+}
+
+/* The thread waits for an ATT buffer while the peer is unpaired, with the controller refusing to
+ * disconnect. The NULL callback gives the slot to another peer and subscribes the params again, so
+ * that they end up in another slot. The thread removes them from there.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_params_moved)
+{
+	static struct net_buf *bufs[CONFIG_BT_ATT_TX_COUNT];
+	static bt_addr_le_t other_addr;
+	static struct test_sub other;
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	ARRAY_FOR_EACH_PTR(bufs, buf) {
+		*buf = bt_att_create_pdu(test_conn, BT_ATT_OP_WRITE_CMD, sizeof(uint8_t));
+		zassert_not_null(*buf, "No ATT buffer");
+	}
+
+	app_thread_waiting_start(app_unsubscribe_entry, &sub);
+
+	bt_addr_le_copy(&other_addr, &peer_addr);
+	other_addr.a.val[0] = 0x10U;
+	sub_init(&other, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.other = &other;
+	sub.other_addr = &other_addr;
+	sub.resubscribe_peer = true;
+
+	(void)atomic_set(&disconnect_refused, 1);
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &peer_addr), "Unpairing failed");
+	(void)atomic_clear(&disconnect_refused);
+	zassert_ok(sub.resubscribe_err, "Subscribing again returned %d", sub.resubscribe_err);
+
+	ARRAY_FOR_EACH_PTR(bufs, buf) {
+		net_buf_drop(buf);
+	}
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_ok(unsubscribe_err, "The unsubscription returned %d", unsubscribe_err);
+
+	write_req_expect(0x0000U);
+	write_rsp_recv();
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 2, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+
+	/* The params are off the list */
+	sub.params.value = BT_GATT_CCC_NOTIFY;
+	zassert_ok(bt_gatt_resubscribe(BT_ID_DEFAULT, &peer_addr, &sub.params),
+		   "The subscription is still there");
+
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, &other_addr), "Unpairing failed");
 }
