@@ -32,6 +32,7 @@
 		pwm-led0 = &pwm_led0;
 		rtc = &rtc;
 		eeprom-0 = &eeprom;
+		sdhc0 = &sdhc1;
 	};
 
 	leds {
@@ -402,4 +403,16 @@ i2c0: &sercom6 {
 
 &trng {
 	status = "okay";
+};
+
+&sdhc1 {
+	pinctrl-0 = <&sdhc1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
