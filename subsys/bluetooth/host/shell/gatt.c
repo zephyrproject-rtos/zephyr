@@ -522,6 +522,12 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
 
+	if (handle == 0U) {
+		(void)memset(&ctx->write, 0, sizeof(ctx->write));
+		shell_error(sh, "Invalid handle 0x%04x", handle);
+		return -ENOEXEC;
+	}
+
 	ctx->write.length = hex2bin(argv[3], strlen(argv[3]),
 				    ctx->write_buf, sizeof(ctx->write_buf));
 	if (ctx->write.length == 0) {
@@ -582,6 +588,11 @@ static int cmd_write_without_rsp(const struct shell *sh,
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
+	if (handle == 0U) {
+		shell_error(sh, "Invalid handle 0x%04x", handle);
+		return -ENOEXEC;
+	}
+
 	gatt_write_without_rsp_buf[0] = strtoul(argv[2], NULL, 16);
 	len = 1U;
 
