@@ -246,6 +246,16 @@ xtensa_userspace_enter:
 	 */
 	entry a1, 16
 
+	/* Mask interrupts while the register windows are spilled below.
+	 * SPILL_ALL_WINDOWS rotates WINDOWBASE, so an interrupt taken in
+	 * the middle of it would save its frame relative to the A1 of
+	 * whichever register window is visible at that moment, corrupting
+	 * the stack of the interrupted frames.
+	 *
+	 * Interrupts stay masked until the rfi below.
+	 */
+	rsil a0, 0xf
+
 	SPILL_ALL_WINDOWS
 
 	/* We have to switch to kernel stack before spill kernel data and
