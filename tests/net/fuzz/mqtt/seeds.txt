@@ -53,3 +53,22 @@ publish_topic_alias_out_of_range 30080001740323ffff78
 # allows, with nothing behind it: the length check is the only thing
 # between the client and the end of the buffer.
 truncated_remaining_length 30ffffff7f
+
+# PUBACK, PUBREC, PUBREL and PUBCOMP, each with a reason code and an
+# empty property list. They share one decoder, which reads the reason
+# code and properties under 5.0 and stops after the message id under
+# 3.1.1. PUBREL's fixed header carries the flags the specification
+# requires.
+puback_reason 400400011000
+pubrec_reason 500400010000
+pubrel_reason 620400010000
+pubcomp_reason 700400010000
+
+# UNSUBACK: message id, an empty property list and reason codes, which
+# 3.1.1 does not have and so does not read.
+unsuback_reason_codes b006000100001100
+
+# PUBLISH with a payload format indicator, correlation data and a
+# subscription identifier: the uint8, binary-data and variable-integer
+# property decoders, which no other seed reaches.
+publish_more_properties 300e000174090101090002aabb0b0178

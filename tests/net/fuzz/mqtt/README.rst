@@ -170,6 +170,18 @@ connection has been accepted.
    * - ``truncated_remaining_length``
      - A fixed header announcing the largest remaining length the
        encoding allows, with nothing behind it.
+   * - ``puback_reason``, ``pubrec_reason``, ``pubrel_reason``,
+       ``pubcomp_reason``
+     - Each acknowledgment with a reason code and an empty property
+       list, which the shared decoder reads under 5.0 and skips under
+       3.1.1.
+   * - ``unsuback_reason_codes``
+     - An UNSUBACK with a message id, an empty property list and reason
+       codes, which only 5.0 reads.
+   * - ``publish_more_properties``
+     - A PUBLISH with a payload format indicator, correlation data and a
+       subscription identifier, which are the uint8, binary-data and
+       variable-integer property decoders.
 
 The corpus is a seed set, not an accumulating one: a new seed belongs in
 it only when it reaches code the existing ones do not, and it is
