@@ -1,0 +1,179 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for the ADT7604 20-Channel Digital Temperature Measurement
+  System and the register-compatible LTC2984 Multi-Sensor High Accuracy
+  Digital Temperature Measurement System.
+
+  Both parts support multiple sensor types including RTDs, thermocouples,
+  thermistors, diodes, and direct ADC measurements across 20 channels.
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Active low reset pin.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Active high interrupt pin.
+
+  adi,mux-delay-config-us:
+    type: int
+    default: 0
+    description: |
+      Multiplexer delay configuration in microseconds.
+      Adds settling time between channel switches.
+
+  adi,filter-notch-freq:
+    type: string
+    enum:
+      - "50-60hz"
+      - "60hz"
+      - "50hz"
+    default: "50-60hz"
+    description: |
+      Digital filter notch frequency for line noise rejection. Default is
+      power-on setting ("50-60hz").
+      - "50-60hz": Rejection of both 50Hz and 60Hz
+      - "60hz": 60Hz rejection only
+      - "50hz": 50Hz rejection only
+
+child-binding:
+  description: Channel configuration
+
+  properties:
+    reg:
+      type: int
+      min: 1
+      max: 20
+      required: true
+      description: |
+        Channel number (1-20)
+
+    adi,sensor-type:
+      type: int
+      required: true
+      description: |
+        Sensor type for this channel. Use macros from dt-bindings/sensor/adt7604.h:
+          ADT7604_SENSOR_TYPE_RTD_PT_10 (10) = RTD PT-10
+          ADT7604_SENSOR_TYPE_RTD_PT_50 (11) = RTD PT-50
+          ADT7604_SENSOR_TYPE_RTD_PT_100 (12) = RTD PT-100
+          ADT7604_SENSOR_TYPE_RTD_PT_200 (13) = RTD PT-200
+          ADT7604_SENSOR_TYPE_RTD_PT_500 (14) = RTD PT-500
+          ADT7604_SENSOR_TYPE_RTD_PT_1000 (15) = RTD PT-1000
+          ADT7604_SENSOR_TYPE_RTD_1000 (16) = RTD 1000
+          ADT7604_SENSOR_TYPE_RTD_NI_120 (17) = RTD NI-120
+          ADT7604_SENSOR_TYPE_COPPER_TRACE (18) = Copper Trace
+          ADT7604_SENSOR_TYPE_THERMISTOR_44004 (19) = Thermistor 44004/44033
+          ADT7604_SENSOR_TYPE_THERMISTOR_44005 (20) = Thermistor 44005/44030
+          ADT7604_SENSOR_TYPE_THERMISTOR_44007 (21) = Thermistor 44007/44034
+          ADT7604_SENSOR_TYPE_THERMISTOR_44006 (22) = Thermistor 44006/44031
+          ADT7604_SENSOR_TYPE_THERMISTOR_44008 (23) = Thermistor 44008/44032
+          ADT7604_SENSOR_TYPE_THERMISTOR_YSI_400 (24) = Thermistor YSI-400
+          ADT7604_SENSOR_TYPE_THERMISTOR_SPECTRUM (25) = Thermistor Spectrum
+          ADT7604_SENSOR_TYPE_THERMISTOR_CUSTOM (26) = Thermistor Custom
+          ADT7604_SENSOR_TYPE_LEAK_DETECTOR (27) = Leak Detector
+          ADT7604_SENSOR_TYPE_RSENSE (29) = Sense Resistor
+
+    adi,rsense-channel:
+      type: int
+      default: 0
+      description: |
+        Reference sense resistor channel number for RTD, thermistor,
+        copper trace, or custom sensor types. Must point to a channel
+        configured as sense resistor (type 29).
+
+        LTC2984 thermocouples only: reused as the cold junction channel
+        pointer (1-20). Points to the channel (diode, RTD, or thermistor)
+        used for automatic cold junction compensation; that channel is
+        measured automatically whenever a conversion is performed on this
+        thermocouple channel.
+
+    adi,rsense-val:
+      type: string
+      default: "0"
+      description: |
+        Value of the reference sense resistor in ohms or mohms. Ohm values
+        can be fractional. Valid only if the sensor type is a sense resistor
+        (type 29).
+
+    adi,rsense-mohm:
+      type: boolean
+      description: |
+        Indicates whether the reference sense resistor value is specified in milliohms.
+
+    adi,sensor-configuration:
+      type: int
+      default: 0
+      description: |
+        Sensor configuration bit value. Use macros from dt-bindings/sensor/adt7604.h:
+        - RTD sensors: ADT7604_RTD_CONFIG_* (wire type + excitation mode)
+        - Thermistors: ADT7604_THERMISTOR_CONFIG_* (differential/single-ended + sharing)
+        - LTC2984 thermocouples: LTC2984_TC_CONFIG_* (differential/single-ended +
+          open-circuit check enable + open-circuit detect current)
+        - LTC2984 diodes: LTC2984_DIODE_CONFIG_* (differential/single-ended + number of
+          readings (2 or 3) + running average enable)
+        - Copper trace: Fixed value 0x9
+        - Leak sensor: Fixed value 0x1
+        Default 0 = basic configuration.
+
+    adi,excitation-current:
+      type: int
+      default: 0
+      description: |
+        Excitation current bit value for the sensor. Use macros from
+        dt-bindings/sensor/adt7604.h for correct values:
+        - RTD sensors: ADT7604_RTD_EXCITATION_CURRENT_* (5µA to 1mA)
+        - Copper trace ≥1Ω: ADT7604_CT_EXCITATION_CURRENT_* (5µA to 1mA)
+        - Thermistors: ADT7604_THERMISTOR_EXCITATION_CURRENT_* (250nA to 1mA, AUTO)
+        - Leak sensors: ADT7604_LEAK_EXCITATION_CURRENT_* (250nA to 1mA)
+        - LTC2984 diodes: LTC2984_DIODE_EXCITATION_CURRENT_* (10µA to 80µA base/1x value;
+          device automatically also measures at 4x/8x when 3-readings mode is selected)
+        Default 0 = reserved/disabled. Not used for LTC2984 thermocouples; see
+        adi,sensor-configuration (LTC2984_TC_CONFIG_*) instead.
+
+    adi,diode-ideality-factor:
+      type: string
+      default: "1.003"
+      description: |
+        LTC2984 diode non-ideality factor (eta), as a decimal string. Encoded as a Q2.20
+        unsigned fixed-point value (2 integer bits, 20 fractional bits, 1/1048576
+        resolution), valid range 0 to just under 4. Programming all zeros (an eta of
+        exactly 0) causes the device to use its internal factory-set default of 1.003
+        instead of literal 0 -- the default value of this property matches that
+        behavior. Valid only if the sensor type is a diode.
+
+    adi,direct-adc-single-ended:
+      type: boolean
+      description: |
+        LTC2984 Direct ADC mode: selects single-ended measurement (positive input tied
+        to this channel, negative input is COM) when set, or differential measurement
+        (negative input tied to the previous channel) when unset. Valid only if the
+        sensor type is Direct ADC.
+
+    adi,rtd-curve:
+      type: string
+      enum:
+        - "european-curve"
+        - "american"
+        - "japanese"
+        - "its-90"
+        - "rtd1000-375"
+        - "ni-120"
+      default: "european-curve"
+      description: |
+        RTD curve type for this channel. Valid only if the sensor type is an RTD.
+
+    adi,sub-ohm:
+      type: boolean
+      description: |
+        Indicates whether the resistance of copper trace sensor tied to ADT7604 is
+        in sub-ohms (e.g. 0.25ohms). Valid only if the sensor type is a copper
+        trace resistor (type 18).
+        Note: Custom sensor data table address and length are automatically managed
+        at runtime when adt7604_write_custom_sensor_data_table() is called.
