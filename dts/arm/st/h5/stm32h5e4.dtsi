@@ -176,6 +176,22 @@
 		};
 	};
 
+	die_temp: dietemp {
+		io-channels = <&adc3 16>;
+	};
+
+	vbat: vbat {
+		io-channels = <&adc3 14>;
+	};
+
+	vddcore: vddcore {
+		io-channels = <&adc3 15>;
+	};
+
+	vref: vref {
+		io-channels = <&adc3 17>;
+	};
+
 	/delete-node/ usbphy;
 
 	otgfs_phy: otgfs-phy {
@@ -189,22 +205,6 @@
 	/delete-property/ noise-source-control;
 	nist-config = <0x8451f00>;
 	health-test-config = <0xaac7>;
-};
-
-&die_temp {
-	io-channels = <&adc3 16>;
-};
-
-&vref {
-	io-channels = <&adc3 17>;
-};
-
-&vbat {
-	io-channels = <&adc3 14>;
-};
-
-&vddcore {
-	io-channels = <&adc3 15>;
 };
 
 &xspi1 {

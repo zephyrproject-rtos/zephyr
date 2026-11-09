@@ -110,12 +110,12 @@
 			status = "disabled";
 		};
 	};
-};
 
-&vbat {
-	io-channels = <&adc2 16>;
-};
+	vbat: vbat {
+		io-channels = <&adc2 16>;
+	};
 
-&vddcore {
-	io-channels = <&adc2 17>;
+	vddcore: vddcore {
+		io-channels = <&adc2 17>;
+	};
 };
