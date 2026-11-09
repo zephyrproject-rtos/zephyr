@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+  - name: hpmicro
+    series:
+      - name: hpm5300
+        socs:
+          - name: hpm5361
