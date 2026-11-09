@@ -1742,7 +1742,7 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static bool br_sc_supported(void)
+bool bt_smp_br_supported(void)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR)) {
 		LOG_WRN("Enabling BR/EDR SMP without BR/EDR SC support");
@@ -1762,8 +1762,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_smp_br_recv,
 	};
 
-	/* Check BR/EDR SC is supported */
-	if (!br_sc_supported()) {
+	if (!bt_smp_br_supported()) {
 		return -ENOTSUP;
 	}
 
@@ -1809,6 +1808,10 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	uint8_t max_key_size;
 	struct bt_smp_br *smp;
 	uint8_t remote_fixed_chan;
+
+	if (!bt_smp_br_supported()) {
+		return -ENOTSUP;
+	}
 
 	remote_fixed_chan = bt_l2cap_br_get_remote_fixed_chan(conn);
 	if (!(remote_fixed_chan & BIT(BT_L2CAP_CID_BR_SMP))) {

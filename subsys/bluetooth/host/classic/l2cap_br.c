@@ -28,6 +28,7 @@
 #include <host/hci_core.h>
 #include <host/conn_internal.h>
 #include <host/keys.h>
+#include <host/smp.h>
 #include "l2cap_br_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
@@ -2174,8 +2175,8 @@ static uint8_t get_fixed_channels_mask(void)
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
 	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
-		if (!IS_ENABLED(CONFIG_BT_SMP_DERIVE_LTK) &&
-		    fchan->cid == BT_L2CAP_CID_BR_SMP) {
+		if (fchan->cid == BT_L2CAP_CID_BR_SMP &&
+		    (!IS_ENABLED(CONFIG_BT_SMP_DERIVE_LTK) || !bt_smp_br_supported())) {
 			/* Nothing would be accepted on this channel, so do not
 			 * invite the peer to start a derivation on it.
 			 */
