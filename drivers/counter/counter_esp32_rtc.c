@@ -199,7 +199,7 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
 
 	/* RTC main timer interrupt disable, and clear interrupt flag */
-	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
+	CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_MAIN_TIMER_INT_ENA);
 	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
 #endif
 
