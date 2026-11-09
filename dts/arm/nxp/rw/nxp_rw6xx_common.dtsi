@@ -213,6 +213,7 @@
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
+		wakeup-ctrls = <&wuc NXP_RW_PMU_BLE_WAKEUP0>;
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "nbu_rx_int", "wakeup_int";
 	};
@@ -473,6 +474,7 @@
 
 		pin1: pin1 {
 			compatible = "nxp,aon-wakeup-pin";
+			wakeup-ctrls = <&wuc NXP_RW_PMU_PIN1>;
 			interrupts = <101 0>;
 			status = "disabled";
 		};
