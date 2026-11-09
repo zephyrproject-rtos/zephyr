@@ -6959,6 +6959,15 @@ WCH Platforms:
   labels:
     - "platform: WinChipHead"
 
+Waveshare Platforms:
+  status: maintained
+  maintainers:
+    - hongquan-prog
+  files:
+    - boards/waveshare/
+  labels:
+    - "platform: Waveshare"
+
 West:
   status: maintained
   maintainers:
