@@ -704,6 +704,10 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 tx_disable:
 	if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0) {
 		tx_stream_disable(stream, dev);
+	} else if (stream->mem_block != NULL) {
+		/* Bit clock keeps running, but do not leak the pending block */
+		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
+		stream->mem_block = NULL;
 	}
 }
 
