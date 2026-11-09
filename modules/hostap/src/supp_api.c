@@ -779,7 +779,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char *chan_list = NULL;
 	struct net_eth_addr mac = {0};
 	int ret = 0;
-	uint8_t ssid_null_terminated[WIFI_SSID_MAX_LEN + 1];
+	char ssid_hex[WIFI_SSID_MAX_LEN * 2 + 1];
 	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
 	uint8_t sae_null_terminated[WIFI_SAE_PSWD_MAX_LEN + 1];
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
@@ -826,11 +826,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
-	strncpy(ssid_null_terminated, params->ssid, WIFI_SSID_MAX_LEN);
-	ssid_null_terminated[params->ssid_length] = '\0';
+	/* Pass the SSID as hex: the wpa_cli argument splitter does not honour
+	 * quotes, so runs of whitespace inside a quoted SSID would collapse.
+	 */
+	if (bin2hex(params->ssid, params->ssid_length, ssid_hex, sizeof(ssid_hex)) == 0U) {
+		goto out;
+	}
 
-	if (!wpa_cli_cmd_v("set_network %d ssid \"%s\"",
-			   resp.network_id, ssid_null_terminated)) {
+	if (!wpa_cli_cmd_v("set_network %d ssid %s", resp.network_id, ssid_hex)) {
 		goto out;
 	}
 
