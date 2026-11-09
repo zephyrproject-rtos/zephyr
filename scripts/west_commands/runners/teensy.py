@@ -44,8 +44,11 @@ class TeensyBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command):
         self.require(self.teensy_loader)
-        if command == 'flash':
-            self.flash()
+        match command:
+            case 'flash':
+                self.flash()
+            case _:
+                raise NotImplementedError(f"west {command} not implemented")
 
     def flash(self):
         if self.hex_name is not None and os.path.isfile(self.hex_name):
