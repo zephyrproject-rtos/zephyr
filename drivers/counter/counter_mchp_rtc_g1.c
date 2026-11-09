@@ -20,7 +20,8 @@ LOG_MODULE_REGISTER(counter_mchp_rtc_g1, CONFIG_COUNTER_LOG_LEVEL);
 #define ALL_RTC_SYNC_BITS                 ((uint32_t)UINT32_MAX)
 #define COUNTER_RET_FAILED                (-1)
 #define COUNTER_RET_PASSED                (0)
-#define RTC_SYNCHRONIZATION_TIMEOUT_IN_US (5000U)
+#define RTC_SYNCHRONIZATION_TIMEOUT_IN_US (100000U)
+#define RTC_WAIT_CNT_TIMEOUT_IN_US        (200000U)
 #define DELAY_US                          (10U)
 
 struct mchp_counter_clock {
@@ -95,9 +96,8 @@ static void rtc_counter_wait_count_change(const void *regs, const uint32_t *coun
 			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
 
 		if ((p_regs->RTC_CTRLA & RTC_MODE0_CTRLA_ENABLE_Msk) != 0) {
-			bool success =
-				WAIT_FOR((*counter_value != p_regs->RTC_COUNT),
-					 RTC_SYNCHRONIZATION_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
+			bool success = WAIT_FOR((*counter_value != p_regs->RTC_COUNT),
+						RTC_WAIT_CNT_TIMEOUT_IN_US, k_busy_wait(DELAY_US));
 			if (!success) {
 				LOG_ERR("%s : Synchronization time-out occurred %d", __func__,
 					max_bit_width);
@@ -152,12 +152,19 @@ static int32_t rtc_counter_init(const void *regs, uint32_t prescaler, const uint
 		p_regs->RTC_CTRLA = RTC_MODE0_CTRLA_SWRST_Msk;
 		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, RTC_MODE0_SYNCBUSY_SWRST_Msk);
 
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+		p_regs->RTC_CTRLA = RTC_MODE0_CTRLA_MODE(0U) | RTC_MODE0_CTRLA_MATCHCLR(0U) |
+				    RTC_MODE0_CTRLA_COUNTSYNC(1U) |
+				    RTC_MODE0_CTRLA_PRESCALER(get_rtc_prescale_index(prescaler));
+		p_regs->RTC_COMP0 = UINT32_MAX;
+#else
 		p_regs->RTC_CTRLA = RTC_MODE0_CTRLA_MODE(0U) | RTC_MODE0_CTRLA_MATCHCLR(1U) |
 				    RTC_MODE0_CTRLA_COUNTSYNC(1U) |
 				    RTC_MODE0_CTRLA_PRESCALER(get_rtc_prescale_index(prescaler));
-
 		p_regs->RTC_COMP[0U] = UINT32_MAX;
 		p_regs->RTC_COMP[1U] = UINT32_MAX;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+
 		p_regs->RTC_INTFLAG = RTC_MODE0_INTFLAG_Msk;
 		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, ALL_RTC_SYNC_BITS);
 		break;
@@ -178,8 +185,14 @@ static int32_t rtc_counter_init(const void *regs, uint32_t prescaler, const uint
 		p_regs->RTC_PER = UINT16_MAX;
 		p_regs->RTC_COMP[0U] = UINT16_MAX;
 		p_regs->RTC_COMP[1U] = UINT16_MAX;
+
+		/*not available for cmjh01*/
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+#else
 		p_regs->RTC_COMP[2U] = UINT16_MAX;
 		p_regs->RTC_COMP[3U] = UINT16_MAX;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+
 		p_regs->RTC_INTFLAG = RTC_MODE1_INTFLAG_Msk;
 		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, ALL_RTC_SYNC_BITS);
 		break;
@@ -209,33 +222,6 @@ static int32_t rtc_counter_disable(const void *regs, const uint32_t max_bit_widt
 		rtc_mode1_registers_t *const p_regs =
 			(rtc_mode1_registers_t *const)(&(((rtc_registers_t *)regs)->MODE1));
 		p_regs->RTC_CTRLA &= ~RTC_MODE1_CTRLA_ENABLE_Msk;
-		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, RTC_MODE1_SYNCBUSY_ENABLE_Msk);
-		break;
-	}
-	default:
-		LOG_ERR("%s : Unsupported Counter mode %d", __func__, max_bit_width);
-		return_value = COUNTER_RET_FAILED;
-		break;
-	}
-
-	return return_value;
-}
-
-static int32_t rtc_counter_start(const void *regs, const uint32_t max_bit_width)
-{
-	int32_t return_value = COUNTER_RET_PASSED;
-
-	switch (max_bit_width) {
-	case COUNTER_BIT_MODE_32: {
-		rtc_mode0_registers_t *const p_regs =
-			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
-		p_regs->RTC_CTRLA |= RTC_MODE0_CTRLA_ENABLE_Msk;
-		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, RTC_MODE0_SYNCBUSY_ENABLE_Msk);
-	}
-	case COUNTER_BIT_MODE_16: {
-		rtc_mode1_registers_t *const p_regs =
-			(rtc_mode1_registers_t *const)(&(((rtc_registers_t *)regs)->MODE1));
-		p_regs->RTC_CTRLA |= RTC_MODE1_CTRLA_ENABLE_Msk;
 		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, RTC_MODE1_SYNCBUSY_ENABLE_Msk);
 		break;
 	}
@@ -340,7 +326,7 @@ static uint32_t rtc_counter_get_count(const void *regs, uint32_t *const counter_
 
 	return return_value;
 }
-
+#ifndef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
 static int32_t rtc_counter_set_period(const void *regs, const uint32_t period,
 				      const uint32_t max_bit_width)
 {
@@ -369,6 +355,7 @@ static int32_t rtc_counter_set_period(const void *regs, const uint32_t period,
 
 	return return_value;
 }
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 static int32_t rtc_counter_get_period(const void *regs, uint32_t *period,
 				      const uint32_t max_bit_width)
@@ -377,9 +364,18 @@ static int32_t rtc_counter_get_period(const void *regs, uint32_t *period,
 
 	switch (max_bit_width) {
 	case COUNTER_BIT_MODE_32: {
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+		/* The counter top value is designed such that the top value cannot be changed.
+		 * since in cmjh both top value and compare match is the same register when matcclr
+		 * is set as 1.
+		 */
+		*period = UINT32_MAX;
+#else
 		rtc_mode0_registers_t *const p_regs =
 			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
 		*period = p_regs->RTC_COMP[0];
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 		break;
 	}
 	case COUNTER_BIT_MODE_16: {
@@ -406,8 +402,11 @@ static int32_t rtc_counter_set_compare(const void *regs, const uint32_t chan_id,
 	case COUNTER_BIT_MODE_32: {
 		rtc_mode0_registers_t *const p_regs =
 			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
-
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+		p_regs->RTC_COMP0 = compare_value;
+#else
 		p_regs->RTC_COMP[1u] = compare_value;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 		rtc_counter_wait_sync(&p_regs->RTC_SYNCBUSY, ALL_RTC_SYNC_BITS);
 		break;
 	}
@@ -466,7 +465,11 @@ static int32_t rtc_counter_alarm_irq_enable(const void *regs, const uint32_t cha
 			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
 
 		if (channel_id == 0u) {
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+			p_regs->RTC_INTENSET = RTC_MODE0_INTFLAG_CMP_Msk;
+#else
 			p_regs->RTC_INTENSET = RTC_MODE0_INTFLAG_CMP1_Msk;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 		} else {
 			ret_status = COUNTER_RET_FAILED;
 		}
@@ -500,7 +503,11 @@ static int32_t rtc_counter_alarm_irq_disable(const void *regs, const uint32_t ch
 			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
 
 		if (channel_id == 0u) {
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+			p_regs->RTC_INTENCLR = RTC_MODE0_INTFLAG_CMP_Msk;
+#else
 			p_regs->RTC_INTENCLR = RTC_MODE0_INTFLAG_CMP1_Msk;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 		} else {
 			ret_status = COUNTER_RET_FAILED;
 		}
@@ -532,7 +539,11 @@ static int32_t rtc_counter_alarm_irq_clear(const void *regs, const uint32_t chan
 			(rtc_mode0_registers_t *const)(&(((rtc_registers_t *)regs)->MODE0));
 
 		if (channel_id == 0u) {
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+			p_regs->RTC_INTFLAG = RTC_MODE0_INTFLAG_CMP_Msk | RTC_MODE0_INTFLAG_OVF_Msk;
+#else
 			p_regs->RTC_INTFLAG = RTC_MODE0_INTFLAG_CMP1_Msk;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 		} else {
 			ret_status = COUNTER_RET_FAILED;
 		}
@@ -562,8 +573,13 @@ static bool rtc_counter_alarm_irq_status(const uint32_t pending_irq_status,
 	switch (max_bit_width) {
 	case COUNTER_BIT_MODE_32: {
 		if (channel_id == 0u) {
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+			ret_status = (bool)((pending_irq_status & RTC_MODE0_INTFLAG_CMP_Msk) ==
+					    RTC_MODE0_INTFLAG_CMP_Msk);
+#else
 			ret_status = (bool)((pending_irq_status & RTC_MODE0_INTFLAG_CMP1_Msk) ==
 					    RTC_MODE0_INTFLAG_CMP1_Msk);
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 		} else {
 			ret_status = false;
 		}
@@ -585,6 +601,7 @@ static bool rtc_counter_alarm_irq_status(const uint32_t pending_irq_status,
 	return ret_status;
 }
 
+#ifndef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
 static int32_t rtc_counter_top_irq_enable(const void *regs, const uint32_t max_bit_width)
 {
 	int32_t return_value = COUNTER_RET_PASSED;
@@ -691,6 +708,7 @@ static bool rtc_counter_top_irq_status(const uint32_t pending_irq_status,
 
 	return return_value;
 }
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 /* Computes the difference between two tick values considering wraparound */
 static uint32_t rtc_counter_ticks_sub(uint32_t val, uint32_t old, uint32_t top)
@@ -734,7 +752,7 @@ static int32_t counter_mchp_start(const struct device *const dev)
 {
 	const struct counter_mchp_dev_config *const cfg = dev->config;
 
-	rtc_counter_start(cfg->regs, cfg->max_bit_width);
+	rtc_counter_retrigger(cfg->regs, cfg->max_bit_width);
 
 	return 0;
 }
@@ -779,7 +797,7 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 
 	/* Check if the requested tick value is less than top (period) value */
 	if (ticks > top_value) {
-		LOG_ERR("tick value is greater than top value");
+		LOG_ERR("tick value %d is greater than top value %d", ticks, top_value);
 		return -EINVAL;
 	}
 
@@ -808,6 +826,7 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 	/* Check if counter has exceeded the alarm count in absolute alarm configuration */
 	if (absolute != 0) {
 		count_diff = rtc_counter_ticks_diff(count_value, ticks, top_value);
+
 		if (count_diff <= data->guard_period) {
 			ret_status = -ETIME;
 			irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
@@ -868,10 +887,12 @@ static int32_t counter_mchp_cancel_alarm(const struct device *const dev, uint8_t
 static int32_t counter_mchp_set_top_value(const struct device *const dev,
 					  const struct counter_top_cfg *const top_cfg)
 {
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+	return -ENOTSUP;
+#else
 	int32_t ret_status = 0;
 	struct counter_mchp_dev_data *const data = dev->data;
 	const struct counter_mchp_dev_config *const cfg = dev->config;
-
 	/* Check if alarm callback function is already in progress */
 	for (uint8_t i = 0; i < counter_get_num_of_channels(dev); i++) {
 		if (NULL != data->channel_data[i].callback) {
@@ -914,6 +935,7 @@ static int32_t counter_mchp_set_top_value(const struct device *const dev,
 	}
 
 	return ret_status;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 }
 
 static uint32_t counter_mchp_get_pending_int(const struct device *const dev)
@@ -1057,7 +1079,7 @@ static void counter_mchp_alarm_irq_handler(const struct device *const dev)
 		}
 	}
 }
-
+#ifndef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
 static void counter_mchp_top_irq_handler(const struct device *const dev)
 {
 	struct counter_mchp_dev_data *const data = dev->data;
@@ -1073,11 +1095,14 @@ static void counter_mchp_top_irq_handler(const struct device *const dev)
 		}
 	}
 }
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 static void counter_mchp_interrupt_handler(const struct device *const dev)
 {
 	counter_mchp_alarm_irq_handler(dev);
+#ifndef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
 	counter_mchp_top_irq_handler(dev);
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 }
 
 static DEVICE_API(counter, counter_mchp_api) = {
