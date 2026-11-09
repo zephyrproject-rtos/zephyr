@@ -11,6 +11,5 @@ config SAMPLE_DEBUG_PRINTF
 
 config SAMPLE_SAME_PRIO
 	bool "Print debug information"
-	default n
 
 source "Kconfig.zephyr"
