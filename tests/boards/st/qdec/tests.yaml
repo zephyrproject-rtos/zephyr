@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  boards.st.qdec:
+    tags:
+      - drivers
+      - sensor
+    depends_on: gpio
+    filter: dt_alias_exists("qdec0") and dt_compat_enabled("st,stm32-qdec")
+    platform_allow:
+      - stm32h747i_disco/stm32h747xx/m7
+    integration_platforms:
+      - stm32h747i_disco/stm32h747xx/m7
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback

@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Marcelo Roberto Jimenez
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Quadrature decoder on TIM4 (CH1 on D15/PD12, CH2 on D14/PD13), driven by
+ * two GPIOs looped back by wire: D6 to D15 (channel A) and D7 to D14
+ * (channel B).
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	aliases {
+		qdec0 = &qdec;
+	};
+
+	zephyr,user {
+		enc-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>,
+			    <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&timers4 {
+	st,prescaler = <0>;
+	status = "okay";
+
+	qdec: qdec {
+		pinctrl-0 = <&tim4_ch1_pd12 &tim4_ch2_pd13>;
+		pinctrl-names = "default";
+		st,encoder-mode = <0x3>;
+		st,counts-per-revolution = <1>;
+		status = "okay";
+	};
+};
