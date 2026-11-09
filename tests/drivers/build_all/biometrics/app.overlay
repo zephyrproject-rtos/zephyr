@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_i2c: i2c@11112222 {
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "okay";
+
+			fingerprint@1f {
+				compatible = "dfrobot,sen0359";
+				reg = <0x1f>;
+			};
+		};
+
+		test_uart: uart@11113333 {
+			compatible = "vnd,serial";
+			reg = <0x11113333 0x1000>;
+			current-speed = <57600>;
+			status = "okay";
+
+			gt5x {
+				compatible = "adh-tech,gt5x";
+				max-templates = <200>;
+				template-size = <498>;
+			};
+
+			zfm-x0 {
+				compatible = "zhiantec,zfm-x0";
+			};
+		};
+	};
+};
