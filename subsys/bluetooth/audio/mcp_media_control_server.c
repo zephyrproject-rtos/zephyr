@@ -252,7 +252,7 @@ static struct bt_mcp_media_control_server_player media_player = {
 	.state = BT_MCS_MEDIA_STATE_PAUSED,
 	.playback_speed_param = PLAYBACK_SPEED_PARAM_DEFAULT,
 	.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO,
-	.playing_order = BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
+	.playing_order = BT_MCS_PLAYING_ORDER_INORDER_REPEAT,
 	.playing_orders_supported = BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE |
 				    BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.opcodes_supported = 0x001fffffU, /* All opcodes */
@@ -2708,6 +2708,12 @@ int bt_mcp_media_control_server_get_playing_order(uint8_t *order)
 
 static void set_playing_order(uint8_t order)
 {
+	if (!IN_RANGE(order, BT_MCS_PLAYING_ORDER_SINGLE_ONCE,
+		      BT_MCS_PLAYING_ORDER_SHUFFLE_REPEAT)) {
+		LOG_DBG("Invalid playing order %u", order);
+		return;
+	}
+
 	if (order != media_player.playing_order) {
 		if (BIT(order - 1) & media_player.playing_orders_supported) {
 			media_player.playing_order = order;
