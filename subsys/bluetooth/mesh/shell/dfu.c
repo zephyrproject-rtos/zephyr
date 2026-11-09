@@ -557,6 +557,7 @@ static int cmd_dfu_target(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	dfu_tx.targets[dfu_tx.target_cnt].blob.addr = addr;
+	dfu_tx.targets[dfu_tx.target_cnt].blob.pull = &dfu_tx.pull[dfu_tx.target_cnt];
 	dfu_tx.targets[dfu_tx.target_cnt].img_idx = img_idx;
 	sys_slist_append(&dfu_tx.inputs.targets, &dfu_tx.targets[dfu_tx.target_cnt].blob.n);
 	dfu_tx.target_cnt++;
