@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.2.0
+ * @version 1.3.0
  * @ingroup os_services
  *
  * The functions that add, push, pull or remove data check with an assertion
@@ -1757,6 +1757,11 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
  * This performs an atomic exchange on @p orig. setting it to NULL and
  * returning the previous value.
  *
+ * The exchange guarantees that when several contexts take or drop the same
+ * pointer at the same time, only one of them gets the buffer. Where no other
+ * context can access @p orig, net_buf_take_plain() moves the pointer at no
+ * cost.
+ *
  * Use it where ownership of the reference moves, so that the previous owner
  * is left without a pointer to a buffer it no longer owns:
  *
@@ -1777,6 +1782,36 @@ struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
 static inline struct net_buf *__must_check net_buf_take(struct net_buf **orig)
 {
 	return (struct net_buf *)atomic_ptr_clear((atomic_ptr_t *)orig);
+}
+
+/**
+ * @brief Move a buffer pointer without an atomic exchange.
+ *
+ * Same as net_buf_take(), but @p orig is read and set to NULL with plain
+ * accesses. Use it where no other context can access @p orig at the same
+ * time: a local variable, or a field that only the caller's context uses or
+ * that the caller protects with a lock. The compiler then drops the store
+ * when the pointer is not read again, so the move costs no code:
+ *
+ * @code{.c}
+ * k_fifo_put(&tx_queue, net_buf_take_plain(&buf));
+ * @endcode
+ *
+ * As with net_buf_take(), passing `net_buf_take_plain(&buf)` as an argument
+ * is only correct for calls that always take ownership.
+ *
+ * @param orig Pointer to the buffer pointer to transfer. Will be set to NULL
+ *		on return.
+ *
+ * @return The buffer originally pointed to by @p orig
+ */
+static inline struct net_buf *__must_check net_buf_take_plain(struct net_buf **orig)
+{
+	struct net_buf *buf = *orig;
+
+	*orig = NULL;
+
+	return buf;
 }
 
 /** @brief Drop a buffer reference and clear the pointer.
