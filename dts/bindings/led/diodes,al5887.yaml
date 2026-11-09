@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Mission Embedded GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: Diodes AL5887 36-channel I2C LED controller
+
+description: |
+  The AL5887 drives 36 constant-current outputs, organised as 12 RGB modules.
+  Its register map is compatible with the TI LP5036, so it uses the LP50xx
+  driver. LED n is driven by OUT(3n), OUT(3n+1) and OUT(3n+2), in the order
+  given by its color-mapping property.
+
+  The output current limit is
+    I_MAX = K_IREF * 0.7 V / R_SET * (Max_Current_Option / 4 + 3 / 4)
+  where K_IREF is set by the global-dimming property.
+
+compatible: "diodes,al5887"
+
+include: ti,lp50xx.yaml
+
+properties:
+  max-curr-opt:
+    type: boolean
+    description: |
+      Sets Max_Current_Option. If enabled, the maximum output current is
+      39 mA, otherwise 29.25 mA, with R_SET = 2.1 kOhm and global-dimming
+      at its default value. Unlike the chip's reset value, where this option
+      is enabled, it is cleared unless this property is given.
+
+  phase-shift-disable:
+    type: boolean
+    description: |
+      Disables PWM phase shifting. By default the PWM pulses of the outputs are
+      delayed in three phases to reduce the peak supply current.
+
+  global-dimming:
+    type: int
+    default: 0
+    description: |
+      Value of the 6-bit LED_GLOBAL_DIMMING register (G5:G0), which sets the
+      current multiplication factor K_IREF = 117 + 3 * N, where N is G5:G0 as a
+      two's complement number. The default corresponds to the register's power-on
+      reset value. With R_SET = 2.1 kOhm and max-curr-opt enabled:
+      0 (default) gives 39 mA, 31 gives the maximum of 70 mA, 32 gives the
+      minimum of 7 mA, 63 gives 38 mA.
+    min: 0
+    max: 63
