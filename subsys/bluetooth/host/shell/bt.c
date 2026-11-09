@@ -5468,7 +5468,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(scan, NULL,
 		      "[--timeout <timeout>] [--filter-dups] [--fal] [--coded] [--no-1m] "
 		      "[--ext-filter-policy] "
-		      "[--interval <n * 0.625 ms] [--window <n * 0.625 ms>] "
+		      "[--interval <n * 0.625 ms>] [--window <n * 0.625 ms>] "
 		      "<value: on, passive, off>",
 		      cmd_scan, 2, 12),
 	SHELL_CMD(scan-filter-set, &bt_scan_filter_set_cmds,
