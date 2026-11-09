@@ -216,3 +216,6 @@ This test will place .text, .data, .bss from 3 files to various parts in the SRA
 using a custom linker file derived from ``include/zephyr/arch/arm/cortex_m/scripts/linker.ld``
 
 A sample showcasing the NOCOPY flag is provided here: :zephyr:code-sample:`code_relocation_nocopy`.
+
+The placement by the linker script on Espressif SoCs is tested by
+``$ZEPHYR_BASE/tests/boards/espressif/code_relocation``.
