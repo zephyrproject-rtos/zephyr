@@ -5709,6 +5709,16 @@ static int gatt_unsub_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 					 gatt_unsub_ccc_revalidate);
 }
 
+/* The last other subscription of the peer may have gone during the waits, which
+ * frees the slot.
+ */
+static int gatt_write_ccc_revalidate(struct bt_conn *conn, void *params)
+{
+	ARG_UNUSED(params);
+
+	return (gatt_sub_add(conn) != NULL) ? 0 : -ENOMEM;
+}
+
 static int gatt_write_ccc(struct bt_conn *conn,
 			  struct bt_gatt_subscribe_params *params,
 			  bt_att_func_t rsp, gatt_req_revalidate_t revalidate)
@@ -5842,9 +5852,16 @@ static int gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 			return gatt_ccc_discover(conn, params);
 		}
 #endif
-		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp, NULL);
+		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp, gatt_write_ccc_revalidate);
+
+		/* Not the slot from before the waits */
+		sub = gatt_sub_find(conn);
+
 		if (err) {
-			gatt_sub_remove(conn, sub, NULL, NULL);
+			if (sub != NULL) {
+				gatt_sub_remove(conn, sub, NULL, NULL);
+			}
+
 			return err;
 		}
 	}
