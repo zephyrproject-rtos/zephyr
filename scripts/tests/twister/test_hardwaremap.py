@@ -6,6 +6,7 @@
 Tests for hardwaremap.py classes' methods
 """
 
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -848,6 +849,7 @@ def test_run_hook_success(dut_with_hooks):
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         env=mock.ANY,
+        start_new_session=True,
     )
     proc_mock.communicate.assert_called_once_with(timeout=10)
 
@@ -869,6 +871,7 @@ def test_run_hook_default_args_and_timeout(dut_with_hooks):
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         env=mock.ANY,
+        start_new_session=True,
     )
     proc_mock.communicate.assert_called_once_with(timeout=60)
 
@@ -888,19 +891,22 @@ def test_run_hook_nonzero_returncode(caplog, dut_with_hooks):
 
 
 def test_run_hook_timeout(caplog, dut_with_hooks):
-    """run_hook should kill the process and log an error on timeout."""
+    """run_hook should kill the process group and log an error on timeout."""
     proc_mock = mock.Mock()
+    proc_mock.pid = 12345
     proc_mock.communicate.side_effect = [
         subprocess.TimeoutExpired(cmd='cmd', timeout=10),
-        (b'', b''),  # second call after kill
+        (b'', b''),  # second call after killpg
     ]
     proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
     proc_mock.__exit__ = mock.Mock(return_value=False)
 
-    with mock.patch('subprocess.Popen', return_value=proc_mock):
+    with mock.patch('subprocess.Popen', return_value=proc_mock), \
+         mock.patch('os.killpg') as killpg_mock, \
+         mock.patch('os.getpgid', return_value=12345):
         dut_with_hooks.run_hook('pre')
 
-    proc_mock.kill.assert_called_once()
+    killpg_mock.assert_called_once_with(12345, signal.SIGKILL)
     assert '/usr/bin/pre_script.sh timed out' in caplog.text
 
 
@@ -936,6 +942,7 @@ def test_run_hook_pre_flash_with_args(dut_with_hooks):
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         env=mock.ANY,
+        start_new_session=True,
     )
     proc_mock.communicate.assert_called_once_with(timeout=30)
 
@@ -979,6 +986,7 @@ def test_run_hook_string_shorthand():
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         env=mock.ANY,
+        start_new_session=True,
     )
     proc_mock.communicate.assert_called_once_with(timeout=60)
 
@@ -1008,6 +1016,7 @@ def test_run_hook_expandvars():
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         env=mock.ANY,
+        start_new_session=True,
     )
 
 
@@ -1147,6 +1156,7 @@ def test_run_hook_returns_false_on_nonzero(dut_with_hooks):
 def test_run_hook_returns_false_on_timeout(dut_with_hooks):
     """run_hook should return False on timeout."""
     proc_mock = mock.Mock()
+    proc_mock.pid = 12345
     proc_mock.communicate.side_effect = [
         subprocess.TimeoutExpired(cmd='cmd', timeout=10),
         (b'', b''),
@@ -1154,7 +1164,9 @@ def test_run_hook_returns_false_on_timeout(dut_with_hooks):
     proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
     proc_mock.__exit__ = mock.Mock(return_value=False)
 
-    with mock.patch('subprocess.Popen', return_value=proc_mock):
+    with mock.patch('subprocess.Popen', return_value=proc_mock), \
+         mock.patch('os.killpg'), \
+         mock.patch('os.getpgid', return_value=12345):
         result = dut_with_hooks.run_hook('pre')
 
     assert result is False

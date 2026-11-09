@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+import signal
 import subprocess
 from dataclasses import asdict, dataclass, field
 from typing import Any
@@ -77,7 +78,7 @@ class HardwareData:
         env = self._hook_env(hook_type, extra_env)
         try:
             with subprocess.Popen(
-                cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env
+                cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, env=env, start_new_session=True
             ) as proc:
                 try:
                     stdout, stderr = proc.communicate(timeout=timeout)
@@ -86,7 +87,7 @@ class HardwareData:
                         logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
                         return False
                 except subprocess.TimeoutExpired:
-                    proc.kill()
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                     proc.communicate()
                     logger.error(f"{script} timed out")
                     return False
