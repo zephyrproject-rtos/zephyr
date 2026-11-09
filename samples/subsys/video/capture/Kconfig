@@ -61,7 +61,6 @@ config VIDEO_CTRL_VFLIP
 config VIDEO_SHELL_AND_CAPTURE
 	bool "Capture video even if the video shell is enabled"
 	depends on VIDEO_SHELL
-	default n
 	help
 	  If set, the video capture is enabled even if the video shell is also enabled.
 

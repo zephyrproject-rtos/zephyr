@@ -37,7 +37,6 @@ config APP_MONITOR_BASELINE
 
 config APP_USE_ENVDATA
 	bool "Program CCS811 with fixed environmental parameters"
-	default n
 
 config APP_ENV_TEMPERATURE
 	int "Environment temperature for CCS811, Cel"
