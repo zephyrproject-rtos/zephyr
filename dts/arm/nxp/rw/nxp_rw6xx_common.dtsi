@@ -155,6 +155,7 @@
 
 	imu: nxp_wifi {
 		compatible = "nxp,wifi";
+		wakeup-ctrls = <&wuc 72>;
 		/* first index is the imu interrupt, the second is the wakeup done interrupt */
 		interrupts = <72 2>, <64 2>;
 		power-domains = <&peripheral_domain>;
