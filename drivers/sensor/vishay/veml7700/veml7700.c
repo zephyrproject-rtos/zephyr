@@ -59,20 +59,10 @@ static const uint8_t veml7700_it_values[VEML7700_ALS_IT_ELEM_COUNT] = {
 };
 
 /*
- * Resolution matrix for values to convert between data provided
- * by the sensor ("counts") and lux.
- *
- * These values depend on the current gain and integration time settings.
- * The enumerators of <tt>enum veml7700_als_gain</tt> and <tt>enum veml7700_als_it</tt>
- * are used for indices into this matrix.
+ * Resolution at gain 2 and 800 ms integration time in micro lux per count. Each halving of the
+ * gain or of the integration time doubles the resolution value.
  */
-static const float veml7700_resolution[VEML7700_ALS_GAIN_ELEM_COUNT][VEML7700_ALS_IT_ELEM_COUNT] = {
-	/* 25ms    50ms    100ms   200ms   400ms   800ms  Integration Time */
-	{0.2304f, 0.1152f, 0.0576f, 0.0288f, 0.0144f, 0.0072f}, /* Gain 1 */
-	{0.1152f, 0.0576f, 0.0288f, 0.0144f, 0.0072f, 0.0036f}, /* Gain 2 */
-	{1.8432f, 0.9216f, 0.4608f, 0.2304f, 0.1152f, 0.0576f}, /* Gain 1/8 */
-	{0.9216f, 0.4608f, 0.2304f, 0.1152f, 0.0576f, 0.0288f}, /* Gain 1/4 */
-};
+#define VEML7700_RESOLUTION_ULX 3600U
 
 struct veml7700_config {
 	struct i2c_dt_spec bus;
@@ -87,7 +77,7 @@ struct veml7700_data {
 	uint16_t thresh_high;
 	uint16_t thresh_low;
 	uint16_t als_counts;
-	uint32_t als_lux;
+	struct sensor_value als_lux;
 	uint16_t white_counts;
 	uint32_t int_flags;
 };
@@ -145,23 +135,49 @@ static void veml7700_sleep_by_integration_time(const struct veml7700_data *data)
 	}
 }
 
-static int veml7700_counts_to_lux(const struct veml7700_data *data, uint16_t counts,
-				  uint32_t *lux)
+/*
+ * Resolution of a gain and integration time setting in micro lux per count as shift of
+ * VEML7700_RESOLUTION_ULX.
+ */
+static uint32_t veml7700_resolution_shift(enum veml7700_als_gain gain,
+					  enum veml7700_als_it itime)
 {
-	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
-		return -EINVAL;
-	}
-	*lux = counts * veml7700_resolution[data->gain][data->it];
-	return 0;
+	/* Gain 1, 2, 1/8 and 1/4 */
+	static const uint8_t gain_shift[VEML7700_ALS_GAIN_ELEM_COUNT] = {1U, 0U, 4U, 3U};
+
+	return gain_shift[gain] + (uint32_t)(VEML7700_ALS_IT_800 - itime);
 }
 
-static int veml7700_lux_to_counts(const struct veml7700_data *data, uint32_t lux,
-				       uint16_t *counts)
+static int veml7700_counts_to_lux(const struct veml7700_data *data, uint16_t counts,
+				  struct sensor_value *lux)
 {
+	uint32_t resolution;
+
 	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
 		return -EINVAL;
 	}
-	*counts = lux / veml7700_resolution[data->gain][data->it];
+
+	resolution = VEML7700_RESOLUTION_ULX << veml7700_resolution_shift(data->gain, data->it);
+
+	return sensor_value_from_micro(lux, (int64_t)counts * resolution);
+}
+
+static int veml7700_lux_to_counts(const struct veml7700_data *data, const struct sensor_value *lux,
+				  uint16_t *counts)
+{
+	int64_t micro = sensor_value_to_micro(lux);
+	uint32_t resolution;
+
+	if (!is_veml7700_gain_in_range(data->gain) || !is_veml7700_it_in_range(data->it)) {
+		return -EINVAL;
+	}
+
+	resolution = VEML7700_RESOLUTION_ULX << veml7700_resolution_shift(data->gain, data->it);
+	if ((micro < 0) || ((micro / resolution) > UINT16_MAX)) {
+		return -ERANGE;
+	}
+
+	*counts = (uint16_t)(micro / resolution);
 	return 0;
 }
 
@@ -313,7 +329,8 @@ static int veml7700_fetch_als(const struct device *dev)
 		return ret;
 	}
 
-	LOG_DBG("Read ALS measurement: counts=%d, lux=%d", data->als_counts, data->als_lux);
+	LOG_DBG("Read ALS measurement: counts=%d, lux=%d.%06d", data->als_counts,
+		data->als_lux.val1, data->als_lux.val2);
 
 	return 0;
 }
@@ -363,13 +380,13 @@ static int veml7700_attr_set(const struct device *dev, enum sensor_channel chan,
 	int ret = 0;
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
-		ret = veml7700_lux_to_counts(data, val->val1, &data->thresh_low);
+		ret = veml7700_lux_to_counts(data, val, &data->thresh_low);
 		if (ret < 0) {
 			return ret;
 		}
 		return veml7700_write_thresh_low(dev);
 	} else if (attr == SENSOR_ATTR_UPPER_THRESH) {
-		ret = veml7700_lux_to_counts(data, val->val1, &data->thresh_high);
+		ret = veml7700_lux_to_counts(data, val, &data->thresh_high);
 		if (ret < 0) {
 			return ret;
 		}
@@ -498,7 +515,8 @@ static int veml7700_channel_get(const struct device *dev, enum sensor_channel ch
 	struct veml7700_data *data = dev->data;
 
 	if (chan == SENSOR_CHAN_LIGHT) {
-		val->val1 = data->als_lux;
+		*val = data->als_lux;
+		return 0;
 	} else if ((enum sensor_channel_veml7700)chan == SENSOR_CHAN_VEML7700_RAW_COUNTS) {
 		val->val1 = data->als_counts;
 	} else if ((enum sensor_channel_veml7700)chan == SENSOR_CHAN_VEML7700_WHITE_RAW_COUNTS) {
@@ -562,7 +580,7 @@ static int veml7700_init(const struct device *dev)
 	data->it = VEML7700_ALS_IT_100;
 	data->int_mode = VEML7700_INT_DISABLED;
 	data->als_counts = 0;
-	data->als_lux = 0;
+	data->als_lux = (struct sensor_value){0};
 	data->white_counts = 0;
 	data->shut_down = (conf->psm != VEML7700_PSM_DISABLED) ? 0 : 1;
 
