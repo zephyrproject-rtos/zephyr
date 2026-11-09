@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP RW6xx Power Management Unit wakeup controller.
+
+  This device is a child of the nxp,rw-pmu node and adapts the SDK Power
+  driver's wakeup APIs to WUC. The wakeup source ID is the peripheral
+  IRQn_Type value in the RW61x device header, without the Cortex-M
+  exception offset of 16. For example, RTC_IRQn is ID 32, not vector
+  index 48; PIN1_INT_IRQn is ID 101, not WAKEUP_MASK bit index 1.
+  The same IRQn numbering applies to wakeup-ctrls and the WUC runtime API.
+
+  Source IDs are supplied by the SoC devicetree and passed to the SDK
+  Power driver without validation. The Power driver defines the supported
+  sources and maps each IRQn to its wakeup registers. The SoC provides
+  consumer specifiers for wakeup sources used by in-tree samples.
+
+  The driver only routes wakeup requests; it does not configure the
+  peripheral, pin polarity, clocks, or NVIC. Availability
+  depends on the power mode and powered domains. PM1 can wake on any
+  enabled interrupt without PMU routing. PM3/PM4 have fewer sources
+  than PM2; WLAN/BLE routes cannot wake a powered-off radio.
+
+compatible: "nxp,rw-pmu-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  '#wakeup-ctrl-cells':
+    const: 1
+
+wakeup-ctrl-cells:
+  - id

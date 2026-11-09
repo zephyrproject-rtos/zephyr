@@ -456,6 +456,11 @@
 		compatible = "nxp,rw-pmu";
 		reg = <0x31000 0x130>;
 
+		wuc: wakeup-controller {
+			compatible = "nxp,rw-pmu-wuc";
+			#wakeup-ctrl-cells = <1>;
+		};
+
 		pin0: pin0 {
 			compatible = "nxp,aon-wakeup-pin";
 			interrupts = <100 0>;
