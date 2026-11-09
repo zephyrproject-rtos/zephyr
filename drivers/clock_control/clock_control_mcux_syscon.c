@@ -666,6 +666,29 @@ static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_WDT_MCUX_WWDT)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt))
+	if ((uint32_t)sub_system == MCUX_WWDT0_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+		CLOCK_DisableClock(kCLOCK_GateWWDT0);
+#elif defined(CONFIG_SOC_SERIES_MCXW2XX) || defined(CONFIG_SOC_FAMILY_LPC)
+		CLOCK_DisableClock(kCLOCK_Wwdt);
+#else
+		CLOCK_DisableClock(kCLOCK_Wwdt0);
+#endif
+	}
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
+	if ((uint32_t)sub_system == MCUX_WWDT1_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_DisableClock(kCLOCK_GateWWDT1);
+#else
+		CLOCK_DisableClock(kCLOCK_Wwdt1);
+#endif
+	}
+#endif
+#endif /* defined(CONFIG_WDT_MCUX_WWDT) */
+
 	return 0;
 }
 
