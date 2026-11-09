@@ -1,0 +1,16 @@
+sample:
+  name: ADT7604 Sensor Sample
+common:
+  tags: sensors
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Temperature channels:"
+      - "Resistance channels:"
+tests:
+  sample.sensor.adt7604:
+    platform_allow: max32655evkit/max32655/m4
+    depends_on: spi
+    integration_platforms:
+      - max32655evkit/max32655/m4
