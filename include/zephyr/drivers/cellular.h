@@ -200,7 +200,8 @@ struct cellular_evt_network_status {
 /**
  * @brief Cellular link operational statistics.
  *
- * Counters are cumulative since boot.
+ * Counters are cumulative since boot. Counters a driver does not maintain stay
+ * zero.
  */
 struct cellular_stats {
 	/** Cumulative time the modem was not registered, in milliseconds. */
@@ -217,6 +218,12 @@ struct cellular_stats {
 	uint32_t recoveries;
 	/** CMUX desync/disconnect events. */
 	uint32_t cmux_disconnects;
+	/** Received bytes the UART backend dropped because its buffer was full. */
+	uint32_t uart_rx_dropped_bytes;
+	/** Received CMUX frames dropped as malformed. */
+	uint32_t cmux_frames_dropped;
+	/** Received bytes dropped because a CMUX channel buffer was full. */
+	uint32_t cmux_rx_dropped_bytes;
 };
 
 /**
@@ -512,9 +519,13 @@ static inline int cellular_set_callback(const struct device *dev, cellular_event
 /**
  * @brief Read operational statistics from the cellular device
  *
+ * @details The returned structure stays valid for the lifetime of the device.
+ * The driver may refresh some counters only when this function is called, so
+ * call it again to read current values.
+ *
  * @param dev Cellular network device instance.
  *
- * @return Pointer to the device's live statistics, or `NULL` if the device does
+ * @return Pointer to the device's statistics, or `NULL` if the device does
  *         not implement the API.
  */
 static inline const struct cellular_stats *cellular_get_stats(const struct device *dev)
