@@ -85,6 +85,7 @@ static uint32_t lptim_clock_presc = DT_PROP(LPTIM_SYSTIMER_NODE, st_prescaler);
  * This is for example about of 65000 x 2000ms when clocked by LSI
  */
 static uint32_t accumulated_lptim_cnt;
+
 /* Next autoreload value to set */
 static uint32_t autoreload_next;
 /* Indicate if the autoreload register is ready for a write */
@@ -261,24 +262,6 @@ static inline bool arrm_state_get(void)
 	return (LL_LPTIM_IsActiveFlag_ARRM(LPTIM) && LL_LPTIM_IsEnabledIT_ARRM(LPTIM));
 }
 
-static void lptim_set_autoreload(uint32_t arr)
-{
-	/* Update autoreload register */
-	autoreload_next = arr;
-
-	if (!autoreload_ready) {
-		return;
-	}
-
-	/* The ARR register ready, we could set it directly */
-	if ((arr > 0) && (arr != LL_LPTIM_GetAutoReload(LPTIM))) {
-		/* The new autoreload value change, we set it */
-		autoreload_ready = false;
-		LL_LPTIM_ClearFlag_ARROK(LPTIM);
-		LL_LPTIM_SetAutoReload(LPTIM, arr);
-	}
-}
-
 static inline uint32_t z_clock_lptim_getcounter(void)
 {
 	uint32_t lp_time;
@@ -294,6 +277,100 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 		lp_time = LL_LPTIM_GetCounter(LPTIM);
 	} while (lp_time != lp_time_prev_read);
 	return lp_time;
+}
+
+/*
+ * Request a new autoreload value.
+ *
+ * Preconditions:
+ * - autoreload_ready is true, indicating that the previous ARR write
+ *   was acknowledged by the ARROK interrupt handler.
+ * - The caller serializes access to ARR and the autoreload software
+ *   state, including updates performed by interrupt handlers.
+ * - The hardware counter never exceeds lptim_time_base.
+ * - lptim_time_base + LPTIM_GUARD_VALUE fits in uint32_t.
+ * - LPTIM_GUARD_VALUE accounts for the delay between sampling the
+ *   counter and the hardware accepting the new ARR value.
+ *
+ * For a nonzero request that differs from the last written ARR value,
+ * raises the request if necessary to leave at least LPTIM_GUARD_VALUE
+ * counts after the sampled counter. Rejects the adjusted value if it
+ * exceeds lptim_time_base.
+ *
+ * When the adjusted value postpones the effective match, issues a write
+ * only if the current match is more than LPTIM_GUARD_VALUE counts ahead
+ * and ARRM is not set. Otherwise, defers to the upcoming timer
+ * interrupt for recomputation. These checks govern scheduling;
+ * permission to write is established by the ARROK-based precondition.
+ *
+ * Side effects:
+ * - Before issuing a write, sets autoreload_ready to false and clears
+ *   ARROK. The ARROK interrupt handler restores autoreload_ready to true.
+ * - Clears autoreload_next for a zero request, a request matching the
+ *   last written ARR value, or a deferred postponement.
+ * - Leaves autoreload_next unchanged when a write is issued or the
+ *   adjusted value exceeds lptim_time_base.
+ *
+ * @param arr Requested autoreload value. Zero causes no write.
+ *
+ * @return true if an ARR write was issued, not necessarily acknowledged.
+ * @return false if no write was needed, postponement was deferred, or
+ *         the adjusted value exceeded lptim_time_base.
+ */
+static bool arr_set(uint32_t arr)
+{
+	uint32_t autoreload_current = LL_LPTIM_GetAutoReload(LPTIM);
+
+	if ((arr == 0U) || (arr == autoreload_current)) {
+		autoreload_next = 0U;
+		return false;
+	}
+
+	uint32_t counter = z_clock_lptim_getcounter();
+
+	/* Leave the required guard after the sampled counter value. */
+	arr = MAX(arr, counter + LPTIM_GUARD_VALUE);
+	if (arr > lptim_time_base) {
+		return false;
+	}
+
+	if (arr > autoreload_current) {
+		/*
+		 * Postpone the match only while the current match is safely
+		 * ahead and ARRM is not asserted. Check ordering
+		 * before subtracting to avoid unsigned underflow.
+		 */
+		bool match_safely_ahead =
+			(counter < autoreload_current) &&
+			((autoreload_current - counter) >
+			 LPTIM_GUARD_VALUE);
+
+		if (!match_safely_ahead ||
+		    LL_LPTIM_IsActiveFlag_ARRM(LPTIM)) {
+			/* The upcoming timer interrupt will recompute ARR. */
+			autoreload_next = 0U;
+			return false;
+		}
+	}
+
+	/*
+	 * For an earlier or equal effective ARR, the counter guard above
+	 * is sufficient. For a later ARR, the current-match check passed.
+	 */
+	autoreload_ready = false;
+	LL_LPTIM_ClearFlag_ARROK(LPTIM);
+	LL_LPTIM_SetAutoReload(LPTIM, arr);
+
+	return true;
+}
+
+static void lptim_set_autoreload(uint32_t arr)
+{
+	/* Update autoreload register */
+	autoreload_next = arr;
+	if (autoreload_ready) {
+		arr_set(arr);
+	}
 }
 
 static uint32_t sys_clock_lp_time_get(void)
@@ -361,21 +438,11 @@ static void lptim_clock_restore(void)
 
 static void timer_driver_set_reload(uint32_t rel)
 {
-	uint32_t lp_time, autoreload, next_arr;
+	uint32_t lp_time, next_arr;
 
 	lptim_clock_restore();
 
 	lp_time = z_clock_lptim_getcounter();
-	autoreload = LL_LPTIM_GetAutoReload(LPTIM);
-
-	if (LL_LPTIM_IsActiveFlag_ARRM(LPTIM) ||
-	    ((autoreload - lp_time) < LPTIM_GUARD_VALUE)) {
-		/* The period is ending; ARR can no longer be moved. The
-		 * announce that follows re-arms with the deadline still due.
-		 */
-		return;
-	}
-
 	/* The core floors rel at LPTIM_GUARD_VALUE + 1, so the match lands at
 	 * least LPTIM_GUARD_VALUE ahead of the counter and cannot be missed.
 	 */
@@ -461,20 +528,16 @@ static void lptim_irq_handler(const struct device *unused)
 	ARG_UNUSED(unused);
 
 	uint32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM);
-
-	if ((LL_LPTIM_IsActiveFlag_ARROK(LPTIM) != 0)
-		&& LL_LPTIM_IsEnabledIT_ARROK(LPTIM) != 0) {
+	bool arrm = arrm_state_get();
+	bool arrok = (LL_LPTIM_IsActiveFlag_ARROK(LPTIM) != 0) &&
+					(LL_LPTIM_IsEnabledIT_ARROK(LPTIM) != 0);
+	if (arrok) {
+		autoreload_ready = true;
 		LL_LPTIM_ClearFlag_ARROK(LPTIM);
-		if ((autoreload_next > 0) && (autoreload_next != autoreload)) {
-			/* the new autoreload value change, we set it */
-			autoreload_ready = false;
-			LL_LPTIM_SetAutoReload(LPTIM, autoreload_next);
-		} else {
-			autoreload_ready = true;
-		}
+		arr_set(autoreload_next);
 	}
 
-	if (arrm_state_get()) {
+	if (arrm) {
 		k_spinlock_key_t key = sys_clock_lock();
 
 		/* Clear the flag first: sys_clock_lp_time_get() adds a period
