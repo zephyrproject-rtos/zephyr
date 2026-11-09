@@ -133,7 +133,6 @@ config ISOTP_TX_CONTEXT_BUF_COUNT
 
 config ISOTP_CUSTOM_FIXED_ADDR
 	bool "Use fixed address not compatible with SAE J1939"
-	default n
 	help
 	  This option allow to use an alternative CAN frame id format.
 	  If not set ISO-TP fixed addressing use SAE J1939 standard.
