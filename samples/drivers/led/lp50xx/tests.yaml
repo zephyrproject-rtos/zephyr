@@ -8,6 +8,7 @@ tests:
             dt_compat_enabled("ti,lp5018") or
             dt_compat_enabled("ti,lp5024") or
             dt_compat_enabled("ti,lp5030") or
-            dt_compat_enabled("ti,lp5036")
+            dt_compat_enabled("ti,lp5036") or
+            dt_compat_enabled("diodes,al5887")
     tags: LED
     depends_on: i2c

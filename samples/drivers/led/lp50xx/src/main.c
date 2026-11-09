@@ -431,6 +431,22 @@ int main(void)
 		}
 	}
 
+	lp50xx_dev = DEVICE_DT_GET_ANY(diodes_al5887);
+	if (lp50xx_dev) {
+		LOG_INF("Found LED controller %s", lp50xx_dev->name);
+		found = true;
+
+		if (device_is_ready(lp50xx_dev)) {
+			run_test(lp50xx_dev,
+				 AL5887_MAX_LEDS,
+				 LP50XX_LED_BRIGHT_CHAN_BASE,
+				 LP5036_LED_COL_CHAN_BASE);
+		} else {
+			LOG_ERR("LED controller %s is not ready",
+				lp50xx_dev->name);
+		}
+	}
+
 	if (!found) {
 		LOG_ERR("No LP50XX LED controller found");
 	}
