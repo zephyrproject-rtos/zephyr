@@ -5342,6 +5342,19 @@ int ead_update_ad(void)
 
 		if (ad->data_len > 0) {
 			if (ad->type == BT_DATA_ENCRYPTED_AD_DATA) {
+				/* The stored length is the size of the data once
+				 * encrypted, so it must be at least the encryption
+				 * overhead, otherwise the decrypted-size computation
+				 * below underflows and overflows the output buffer.
+				 */
+				if (ad->data_len < BT_EAD_RANDOMIZER_SIZE + BT_EAD_MIC_SIZE) {
+					bt_shell_error("Failed to update AD: encrypted AD data "
+						       "too short (%u < %u)",
+						       ad->data_len,
+						       BT_EAD_RANDOMIZER_SIZE + BT_EAD_MIC_SIZE);
+					return -ENOEXEC;
+				}
+
 				/* for EAD the size used to store the non-encrypted data
 				 * is the size of those data when encrypted
 				 */
