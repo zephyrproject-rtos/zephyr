@@ -18,7 +18,6 @@ config TEST_DRIVER_FLASH_SIZE
 
 config TEST_FORCE_STORAGE_PARTITION
 	bool "Force testing the storage partition area"
-	default n
 	help
 	  This test prioritizes testing spi nor flash over
 	  the storage area by default. Set this config to prioritize
