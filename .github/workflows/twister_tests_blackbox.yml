@@ -50,7 +50,7 @@ jobs:
         cache-dependency-path: scripts/requirements-actions.txt
 
     - name: Setup Zephyr project
-      uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
+      uses: zephyrproject-rtos/action-zephyr-setup@cc223fe61661d8573c1cd3f95f72f90cce729ae9 # v1.0.16
       with:
         app-path: zephyr
         toolchains: 'arm-zephyr-eabi:riscv64-zephyr-elf:x86_64-zephyr-elf'
