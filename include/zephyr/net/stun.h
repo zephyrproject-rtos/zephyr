@@ -810,6 +810,190 @@ int stun_finish(struct stun_builder *builder, const uint8_t *key, size_t key_len
  */
 int stun_finish_plain(struct stun_builder *builder);
 
+/**
+ * @name Binding transaction
+ *
+ * One Binding request to a STUN server and its response, which tells the
+ * transport address the server sees the request come from (@rfc{8489,section-6},
+ * @rfc{8489,section-12}). The transaction does no I/O and reads no clock: the
+ * caller sends what it is told to send, feeds in what it receives, and says what
+ * time it is. Available with @kconfig{CONFIG_STUN_CLIENT}.
+ * @{
+ */
+
+/** Size of the buffer a transaction keeps its request in. */
+#define STUN_BINDING_REQUEST_SIZE 128U
+
+/** What the caller of a transaction has to do next. */
+enum stun_txn_action {
+	/** Nothing: the call was refused. */
+	STUN_TXN_NONE = 0,
+	/** Send stun_txn_step::tx to the server, then call stun_binding_next_step() again. */
+	STUN_TXN_SEND,
+	/** Nothing to do before stun_txn_step::wait_until_ms. */
+	STUN_TXN_WAIT,
+	/** The transaction has succeeded. */
+	STUN_TXN_DONE,
+	/** The transaction has failed. */
+	STUN_TXN_FAILED,
+};
+
+/** One step of a transaction, filled in for the caller. */
+struct stun_txn_step {
+	/** What to do. */
+	enum stun_txn_action action;
+	/** The datagram to send, owned by the transaction; set with @ref STUN_TXN_SEND. */
+	const uint8_t *tx;
+	/** Its length. */
+	size_t tx_len;
+	/** When to call again, on the caller's millisecond clock; set with @ref STUN_TXN_WAIT. */
+	uint32_t wait_until_ms;
+};
+
+/** State of a Binding transaction. */
+enum stun_binding_state {
+	/** Not started. */
+	STUN_BINDING_IDLE = 0,
+	/** Request sent, no answer yet. */
+	STUN_BINDING_IN_FLIGHT,
+	/** Answered: stun_binding::mapped is valid. */
+	STUN_BINDING_DONE,
+	/** Failed: see stun_binding::fail. */
+	STUN_BINDING_FAILED,
+};
+
+/** Why a Binding transaction failed. */
+enum stun_binding_fail {
+	/** It has not failed. */
+	STUN_BINDING_FAIL_NONE = 0,
+	/** The server did not answer. */
+	STUN_BINDING_FAIL_TIMEOUT,
+	/** The server answered with an error response; see stun_binding::error_code. */
+	STUN_BINDING_FAIL_ERROR_RESPONSE,
+	/**
+	 * The server's response cannot be used: it has a comprehension-required
+	 * attribute nobody understands, or no address this build can represent.
+	 */
+	STUN_BINDING_FAIL_BAD_RESPONSE,
+};
+
+/**
+ * @brief A Binding transaction
+ *
+ * Zero it before the first stun_binding_start(). The members are for reading.
+ *
+ * The library keeps nothing of a transaction outside this structure. Zeroing
+ * it abandons a transaction that is in flight and makes the structure ready for
+ * stun_binding_start() again.
+ */
+struct stun_binding {
+	/** State. */
+	enum stun_binding_state state;
+	/** Why it failed, in @ref STUN_BINDING_FAILED. */
+	enum stun_binding_fail fail;
+	/** Error code of the server's error response, 0 if it carried none. */
+	uint16_t error_code;
+	/** The address the server sees, in @ref STUN_BINDING_DONE. */
+	struct net_sockaddr_storage mapped;
+
+	/** @cond INTERNAL_HIDDEN */
+	struct net_sockaddr_storage server;
+	uint8_t req[STUN_BINDING_REQUEST_SIZE];
+	size_t req_len;
+	uint32_t deadline_ms;
+	uint8_t attempt;
+	/** @endcond */
+};
+
+/**
+ * @brief Start a Binding transaction
+ *
+ * Builds the request, with SOFTWARE if asked for and with FINGERPRINT, and
+ * returns its first transmission in @p step.
+ *
+ * @param[in,out] b Transaction; not one that is in flight.
+ * @param server Address and port of the STUN server.
+ * @param txid Transaction id, from a cryptographically secure random
+ *        generator (@rfc{8489,section-5}).
+ * @param software Value of the SOFTWARE attribute, which a request should
+ *        carry (@rfc{8489,section-6.1}); NULL to send none.
+ * @param now_ms Current time on a millisecond clock of the caller's choice,
+ *        which may wrap around.
+ * @param[out] step Receives the first step, @ref STUN_TXN_SEND.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL NULL argument, a server without a port or with the unspecified
+ *         address, or a @p software the SOFTWARE attribute cannot carry.
+ * @retval -EAFNOSUPPORT The server address is neither IPv4 nor IPv6, or the
+ *         stack of its family is not enabled.
+ * @retval -EMSGSIZE @p software does not fit the request buffer.
+ * @retval -EALREADY The transaction is in flight.
+ */
+int stun_binding_start(struct stun_binding *b, const struct net_sockaddr *server,
+		       const uint8_t txid[STUN_TXID_SIZE], const char *software, uint32_t now_ms,
+		       struct stun_txn_step *step);
+
+/**
+ * @brief Let time pass in a Binding transaction
+ *
+ * Call it after sending what a step asked for, and when the time a
+ * @ref STUN_TXN_WAIT step named has come. Retransmissions follow the schedule
+ * of @rfc{8489,section-6.2.1}; each interval is counted from the transmission
+ * before it, so a call that comes late moves the rest of the schedule with it.
+ *
+ * @param[in,out] b Transaction.
+ * @param now_ms Current time, on the clock given to stun_binding_start().
+ * @param[out] step Receives the next step.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL NULL argument.
+ * @retval -EPERM The transaction was never started.
+ */
+int stun_binding_next_step(struct stun_binding *b, uint32_t now_ms, struct stun_txn_step *step);
+
+/**
+ * @brief Tell whether a datagram answers a Binding transaction
+ *
+ * A cheap check for routing on a socket shared with other traffic: a STUN
+ * message that is a Binding response and carries the transaction id.
+ *
+ * @param b Transaction.
+ * @param buf Datagram.
+ * @param len Its length.
+ *
+ * @return true if the datagram is a response to this transaction's request.
+ */
+bool stun_binding_is_response(const struct stun_binding *b, const uint8_t *buf, size_t len);
+
+/**
+ * @brief Offer a received datagram to a Binding transaction
+ *
+ * The datagram is taken for the server's answer only if it is a Binding
+ * response with the transaction id, comes from the server's address and port,
+ * is well-formed, and has a correct FINGERPRINT if it has one. Anything else
+ * is ignored and the transaction goes on waiting: a datagram from elsewhere can
+ * neither end it nor plant an address.
+ *
+ * The server's answer ends the transaction, in @ref STUN_BINDING_DONE or in
+ * @ref STUN_BINDING_FAILED (@rfc{8489,section-6.3.3}, @rfc{8489,section-6.3.4}).
+ *
+ * @param[in,out] b Transaction.
+ * @param from Where the datagram came from.
+ * @param buf Datagram.
+ * @param len Its length.
+ *
+ * @retval 0 The datagram was the server's answer; see stun_binding::state.
+ * @retval -ENOENT Not a response to this transaction.
+ * @retval -EACCES Not from the server.
+ * @retval -EBADMSG Malformed, or its FINGERPRINT is wrong.
+ * @retval -EALREADY The transaction is not in flight.
+ * @retval -EINVAL NULL argument.
+ */
+int stun_binding_on_datagram(struct stun_binding *b, const struct net_sockaddr *from,
+			     const uint8_t *buf, size_t len);
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
