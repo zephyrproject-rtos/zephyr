@@ -288,6 +288,14 @@ static int mcux_lcdifv2_init(const struct device *dev)
 	LCDIFV2_EnableLayer(config->base, LCDIFV2_LAYER_INDEX, true);
 #endif
 
+	/* With no layer enabled the display scans out its background color */
+	if (IS_ENABLED(CONFIG_MCUX_LCDIFV2_START_ON_INIT)) {
+		LCDIFV2_EnableDisplay(config->base, true);
+		if (CONFIG_MCUX_LCDIFV2_FB_NUM != 0) {
+			LCDIFV2_TriggerLayerShadowLoad(config->base, LCDIFV2_LAYER_INDEX);
+		}
+	}
+
 	return 0;
 }
 
