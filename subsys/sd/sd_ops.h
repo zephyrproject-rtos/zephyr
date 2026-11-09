@@ -56,6 +56,11 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf,
 int card_erase_blocks(struct sd_card *card, uint32_t start_block,
 	uint32_t num_blocks);
 
+/*
+ * Sends ACMD22 to read how many blocks the last write command programmed
+ */
+int card_query_written(struct sd_card *card, uint32_t *num_written);
+
 int card_app_command(struct sd_card *card, int relative_card_address);
 
 int sdmmc_read_status(struct sd_card *card);
