@@ -404,6 +404,13 @@ I2S
   :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`, which also accept ALSA devices. Without the
   ALSA backend the old options still provide their default. (:github:`123474`)
 
+* The kernel clock of the STM32 SAI is now chosen by the board instead of the SoC devicetree. The
+  SoC ``sai`` nodes only describe the bus clock (``sai_ck``), so boards and applications that
+  enable a SAI node must add the kernel clock (``sai_ker_ck``, and ``sai_b_ker_ck`` where the SAI
+  has a dedicated one for sub-block B) to its ``clocks`` and ``clock-names`` properties, for
+  example ``clocks = <&rcc STM32_CLOCK(APB2, 21)>, <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;``.
+  The driver logs a warning when an enabled SAI has no kernel clock.
+
 Interrupt Controllers
 =====================
 
