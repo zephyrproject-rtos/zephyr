@@ -33,6 +33,18 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 	case MQTT_PKT_TYPE_CONNACK:
 		NET_DBG("[CID %p]: Received MQTT_PKT_TYPE_CONNACK!", client);
 
+		/* A server sends one CONNACK per connection (MQTT 5.0
+		 * section 3.2), so another one is a protocol error and the
+		 * connection is closed (MQTT 3.1.1 section 4.8, MQTT 5.0
+		 * section 4.13.1).
+		 */
+		if (MQTT_HAS_STATE(client, MQTT_STATE_CONNECTED) != 0U) {
+			NET_ERR("[CID %p]: Unexpected CONNACK", client);
+			err_code = -EBADMSG;
+			notify_event = false;
+			break;
+		}
+
 		evt.type = MQTT_EVT_CONNACK;
 		err_code = connect_ack_decode(client, buf, &evt.param.connack);
 		if (err_code == 0) {
