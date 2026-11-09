@@ -8,11 +8,13 @@ ESP32_PSRAM0_NODE_PATH := $(dt_nodelabel_path,psram0)
 
 config ESP_SPIRAM
 	bool "Support for external, SPI-connected RAM"
-	default n if MCUBOOT
-	default n if ESP32_USE_UNSUPPORTED_REVISION && SOC_SERIES_ESP32
 	help
 	  This enables support for an external SPI RAM chip, connected in
 	  parallel with the main SPI flash chip.
+
+	  ESP32 revisions below 3 have a PSRAM cache erratum that is not
+	  worked around, so CPU accesses to PSRAM can be corrupted when
+	  ESP32_USE_UNSUPPORTED_REVISION is used.
 
 configdefault SHARED_MULTI_HEAP
 	default y if ESP_SPIRAM
