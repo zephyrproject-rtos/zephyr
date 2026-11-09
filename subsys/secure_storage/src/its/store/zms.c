@@ -112,8 +112,10 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
-	zms_ret = zms_read(&s_zms, zms_id, data, data_size);
-	if (zms_ret > 0) {
+	zms_ret = zms_read_hist(&s_zms, zms_id, data, data_size, 0);
+	if (zms_ret > (ssize_t)data_size) {
+		psa_ret = PSA_ERROR_DATA_CORRUPT;
+	} else if (zms_ret > 0) {
 		*data_length = zms_ret;
 		psa_ret = PSA_SUCCESS;
 	} else if (zms_ret == -ENOENT) {
@@ -122,7 +124,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 		psa_ret = PSA_ERROR_STORAGE_FAILURE;
 	}
 	LOG_DBG("%s " ZMS_ID_FMT " for up to %zu bytes. (%zd)",
-		(psa_ret != PSA_ERROR_STORAGE_FAILURE) ? "Read" : "Failed to read",
+		(psa_ret == PSA_SUCCESS) ? "Read" : "Failed to read",
 		ZMS_ID_ARG(zms_id), data_size, zms_ret);
 	return psa_ret;
 }
