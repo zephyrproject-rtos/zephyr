@@ -26,9 +26,9 @@
 LOG_MODULE_REGISTER(qdec_stm32, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_STM32_HAL2
-#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECT
+#define STM32_TIM_ACTIVEINPUT_DIRECT LL_TIM_ACTIVEINPUT_DIRECT
 #else /* CONFIG_STM32_HAL2 */
-#define STM32_TIM_ACTIVEINPUT_DIRECT	LL_TIM_ACTIVEINPUT_DIRECTTI
+#define STM32_TIM_ACTIVEINPUT_DIRECT LL_TIM_ACTIVEINPUT_DIRECTTI
 #endif /* CONFIG_STM32_HAL2 */
 
 /* Device constant configuration parameters */
@@ -56,8 +56,8 @@ static int qdec_stm32_fetch(const struct device *dev, enum sensor_channel chan)
 	uint32_t total_counter_value;
 	uint32_t counter_value;
 
-	if ((chan != SENSOR_CHAN_ALL) &&
-	    (chan != SENSOR_CHAN_ROTATION) && (chan != SENSOR_CHAN_ENCODER_COUNT)) {
+	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_ROTATION) &&
+	    (chan != SENSOR_CHAN_ENCODER_COUNT)) {
 		return -ENOTSUP;
 	}
 
@@ -103,8 +103,8 @@ static void qdec_stm32_initialize_channel(const struct device *dev, uint32_t ll_
 			    dev_cfg->input_filtering_level * LL_TIM_IC_FILTER_FDIV1_N2);
 	LL_TIM_IC_SetPrescaler(dev_cfg->timer_inst, ll_channel, LL_TIM_ICPSC_DIV1);
 	LL_TIM_IC_SetPolarity(dev_cfg->timer_inst, ll_channel,
-			      dev_cfg->is_input_polarity_inverted ? LL_TIM_IC_POLARITY_FALLING :
-								    LL_TIM_IC_POLARITY_RISING);
+			      dev_cfg->is_input_polarity_inverted ? LL_TIM_IC_POLARITY_FALLING
+								  : LL_TIM_IC_POLARITY_RISING);
 }
 
 static int qdec_stm32_initialize(const struct device *dev)
@@ -169,7 +169,7 @@ static DEVICE_API(sensor, qdec_stm32_driver_api) = {
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                   \
 		.timer_inst = ((TIM_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(n))),                     \
 		.prescaler = DT_PROP(DT_INST_PARENT(n), st_prescaler),                             \
-		.pclken = STM32_CLOCK_INFO(0, DT_INST_PARENT(n)),				   \
+		.pclken = STM32_CLOCK_INFO(0, DT_INST_PARENT(n)),                                  \
 		.encoder_mode = DT_INST_PROP(n, st_encoder_mode),                                  \
 		.is_input_polarity_inverted = DT_INST_PROP(n, st_input_polarity_inverted),         \
 		.input_filtering_level = DT_INST_PROP(n, st_input_filter_level),                   \
