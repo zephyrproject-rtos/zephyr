@@ -151,6 +151,14 @@ Devicetree
 Other notable changes
 *********************
 
+* Architectures
+
+  * ARM
+
+    * ARMv5 cores (ARM9), such as the ARM926EJ-S and Intel XScale, are supported, with an
+      identity mapped MMU, cache management, thread local storage, stack unwinding and core dumps.
+      The :zephyr:board:`qemu_versatilepb` board runs the architecture on the QEMU of the Zephyr SDK.
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
