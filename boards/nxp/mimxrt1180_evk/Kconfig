@@ -8,7 +8,6 @@ config BOARD_MIMXRT1180_EVK
 config CM7_BOOT_FROM_FLASH
 	bool "Run CM7 core from Flash (XIP)"
 	depends on SECOND_CORE_MCUX && (SOC_MIMXRT1189_CM7 || SOC_MIMXRT1189_CM33)
-	default n
 	help
 	  If enabled, the CM7 core will run directly from flash (XIP).
 	  If disabled, the CM7 core will run from ITCM memory.
