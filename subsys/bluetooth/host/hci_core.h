@@ -387,6 +387,8 @@ enum bt_dev_cmd {
 	BT_DEV_CMD_WRITE_CONN_ACCEPT_TIMEOUT,
 	/* Set Controller To Host Flow Control */
 	BT_DEV_CMD_SET_CTL_TO_HOST_FLOW,
+	/* Read Encryption Key Size */
+	BT_DEV_CMD_READ_ENC_KEY_SIZE,
 	/* LE Set Host Channel Classification */
 	BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF,
 	/* LE Rand */
