@@ -338,6 +338,8 @@ def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKi
     if not out:
         # No listed kinds implies all of the kinds
         out = set(SectionKind)
+    if SectionKind.TEXT in out:
+        out.add(SectionKind.LITERAL)
     return (out, memory_region)
 
 
@@ -499,7 +501,7 @@ def generate_memcpy_code(memory_type, full_list_of_sections, code_generation):
 
     # Non-BSS sections get copied to the destination memory, except data in
     # main memory which gets copied automatically.
-    for kind in (SectionKind.TEXT, SectionKind.RODATA, SectionKind.DATA):
+    for kind in (SectionKind.LITERAL, SectionKind.TEXT, SectionKind.RODATA, SectionKind.DATA):
         if region_is_default_ram(memory_type) and kind is SectionKind.DATA:
             continue
 
