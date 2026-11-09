@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/wuc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/pm.h>
@@ -59,7 +60,7 @@ struct mcux_flexcomm_config {
 #endif
 #if FC_UART_IS_WAKEUP
 	struct pm_state_constraints lp_states;
-	void (*wakeup_cfg)(void);
+	int (*wakeup_cfg)(void);
 	clock_control_subsys_t lp_clock_subsys;
 #endif
 };
@@ -1279,7 +1280,11 @@ static int mcux_flexcomm_init(const struct device *dev)
 #endif
 
 #if FC_UART_IS_WAKEUP
-	config->wakeup_cfg();
+	int ret = config->wakeup_cfg();
+
+	if (ret != 0) {
+		return ret;
+	}
 	pm_notifier_register(&data->pm_handles);
 #endif
 
@@ -1419,15 +1424,19 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 
 #if FC_UART_IS_WAKEUP
 
-#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)					\
-static void serial_mcux_flexcomm_##n##_wakeup_cfg(void)				\
-{										\
-	IF_ENABLED(DT_INST_PROP(n, wakeup_source), (				\
-		NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(n));			\
-	))									\
-}
-#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)					\
-		.wakeup_cfg = serial_mcux_flexcomm_##n##_wakeup_cfg,
+#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)                                                    \
+	static int serial_mcux_flexcomm_##n##_wakeup_cfg(void)                                     \
+	{                                                                                          \
+		IF_ENABLED(DT_INST_PROP(n, wakeup_source), (                                   \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, wakeup_ctrls), (                  \
+				const struct wuc_dt_spec wakeup = WUC_DT_SPEC_INST_GET(n);     \
+				return device_is_ready(wakeup.dev) ?                           \
+					wuc_enable_wakeup_source_dt(&wakeup) : -ENODEV;        \
+			), (NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(n));))                       \
+		))   \
+		return 0;                                                                          \
+	}
+#define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n) .wakeup_cfg = serial_mcux_flexcomm_##n##_wakeup_cfg,
 
 #define UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)	\
 	PM_STATE_CONSTRAINTS_LIST_DEFINE(DT_DRV_INST(n), low_power_states);	\
