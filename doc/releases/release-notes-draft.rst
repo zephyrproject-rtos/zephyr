@@ -247,6 +247,13 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Code relocation
+
+  * Espressif SoCs support :kconfig:option:`CONFIG_CODE_DATA_RELOCATION`: ``RAM`` places
+    code in IRAM and data in DRAM, and ``EXTMEM_NOINIT`` places noinit objects in PSRAM. The
+    linker script places the relocated sections inside its own output sections, see
+    :ref:`code_data_relocation`.
+
 * Hardware information
 
   * NXP RW61x hwinfo reports PM4 wakeup resets as :c:macro:`RESET_LOW_POWER_WAKE`.
