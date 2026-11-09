@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024 HPMicro
  * Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,10 +87,22 @@
 			interrupts-extended = <&cpu0_intc 3>;
 		};
 
+		pinctrl: pin-controller@f4040000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf4040000 0x4000>;
+			status = "okay";
+		};
+
 		clk: clock-controller@f40c0000 {
 			compatible = "hpmicro,hpm-pllv2";
 			reg = <0xf40c0000 0x4000>;
 			#clock-cells = <3>;
+			status = "okay";
+		};
+
+		pinctrl_pioc: pin-controller@f4118000 {
+			compatible = "hpmicro,hpm-pinctrl";
+			reg = <0xf4118000 0x4000>;
 			status = "okay";
 		};
 	};
