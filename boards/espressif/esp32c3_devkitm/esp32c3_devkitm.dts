@@ -90,6 +90,10 @@
 	status = "okay";
 };
 
+&coretemp {
+	status = "okay";
+};
+
 &timer0 {
 	status = "disabled";
 };
