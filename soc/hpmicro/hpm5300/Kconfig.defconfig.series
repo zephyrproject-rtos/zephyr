@@ -7,6 +7,9 @@ if SOC_SERIES_HPM5300
 configdefault SOC_SERIES
 	default "hpm5300"
 
+configdefault CLOCK_CONTROL
+	default y
+
 configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(dt_nodelabel_path,mtimer),clock-frequency)
 
