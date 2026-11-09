@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * RAK12006 is an AM312 PIR sensor on the WisBlock IO slot. Connector
+ * pin 38 (OUT) is IO6 and is low while motion is detected. The module
+ * is powered from the base 3V3 rail. Optional 3V3_S is switched by
+ * WisBlock IO2. This shield does not drive that pin.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		sw0 = &rak12006_out;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		rak12006_out: motion {
+			gpios = <&wisblock_io WISBLOCK_IO_IO6 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
