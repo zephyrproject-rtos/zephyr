@@ -6,6 +6,11 @@ zephyr_include_directories(.)
 zephyr_library_sources(soc_context.S soc_init.c)
 zephyr_library_sources_ifdef(CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE soc_idle.c)
 
+if(CONFIG_RISCV_HAS_CUSTOM_CHECK_RESCHEDULE)
+  zephyr_library_sources(soc_isr.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/arch/${ARCH}/include)
+endif()
+
 zephyr_compile_options(-msmall-data-limit=0)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")

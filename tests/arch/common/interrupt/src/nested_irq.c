@@ -13,8 +13,7 @@
  * Run the nested interrupt test for the supported platforms only.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC) || \
-	defined(CONFIG_RISCV_NESTED_INTERRUPTS)
+	defined(CONFIG_GIC) || defined(CONFIG_RISCV_NESTED_INTERRUPTS)
 #define TEST_NESTED_ISR
 #endif
 
