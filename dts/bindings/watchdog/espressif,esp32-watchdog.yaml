@@ -5,7 +5,8 @@ description: |
     ESP32 watchdog.
 
     ESP32 contains 3x Watchdog timers, 2x Main System Watchdog
-    Timer (MWDT), 1x RTC Watchdog Timer (RWDT). RWDT is not supported yet.
+    Timer (MWDT), 1x RTC Watchdog Timer (RWDT). This binding covers the
+    MWDT. The RWDT uses the espressif,esp32-rtc-wdt binding.
 
 compatible: "espressif,esp32-watchdog"
 
