@@ -157,15 +157,12 @@
 
 /* zephyr,acquisition-time should be overwritten by user based on their needs in overlays */
 &adc0 {
-	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
-	max-result-reg = <12>;
 	pinctrl-0 = <&analog_pa24>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	auto-powerdown;
 	ti,clk-divider = <1>;
-	ti,clk-range = <5>;
 	status = "okay";
 
 	/* PA27 */
