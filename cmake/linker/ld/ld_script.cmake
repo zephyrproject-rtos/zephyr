@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
 # ToDo:
 # - Ensure LMA / VMA sections are correctly grouped similar to scatter file creation.
 cmake_minimum_required(VERSION 3.28.0)
@@ -194,6 +198,12 @@ function(section_to_string)
   get_property(subalign   GLOBAL PROPERTY ${STRING_SECTION}_SUBALIGN)
   get_property(vma        GLOBAL PROPERTY ${STRING_SECTION}_VMA)
   get_property(lma        GLOBAL PROPERTY ${STRING_SECTION}_LMA)
+  get_property(link_in_set GLOBAL PROPERTY ${STRING_SECTION}_LINK_IN SET)
+  if(link_in_set)
+    get_property(link_in GLOBAL PROPERTY ${STRING_SECTION}_LINK_IN)
+  else()
+    unset(link_in)
+  endif()
   get_property(noinput    GLOBAL PROPERTY ${STRING_SECTION}_NOINPUT)
   get_property(noinit     GLOBAL PROPERTY ${STRING_SECTION}_NOINIT)
   get_property(nosymbols  GLOBAL PROPERTY ${STRING_SECTION}_NOSYMBOLS)
@@ -357,9 +367,37 @@ function(section_to_string)
   if(${parent_type} STREQUAL GROUP)
     get_property(vma GLOBAL PROPERTY ${parent}_VMA)
     get_property(lma GLOBAL PROPERTY ${parent}_LMA)
+
+    if(NOT DEFINED link_in)
+      get_property(link_in GLOBAL PROPERTY ${parent}_LINK_IN)
+    endif()
   elseif(${parent_type} STREQUAL REGION)
     if(NOT DEFINED vma)
       get_property(vma GLOBAL PROPERTY ${parent}_NAME)
+    endif()
+  endif()
+
+  # Match the GROUP_*LINK_IN() placement policies in linker-tool-gcc.h.
+  if(CONFIG_ARCH_POSIX)
+    unset(vma)
+    unset(lma)
+  elseif(link_in STREQUAL "PLAIN")
+    unset(lma)
+  elseif(link_in STREQUAL "ROM")
+    if(NOT LINKER_IS_VM_KERNEL)
+      unset(vma)
+    endif()
+  elseif(link_in STREQUAL "DATA")
+    if(NOT (CONFIG_XIP OR LINKER_IS_VM_KERNEL))
+      unset(lma)
+    endif()
+  elseif(link_in STREQUAL "NOLOAD")
+    if(NOT LINKER_IS_VM_KERNEL)
+      if(CONFIG_XIP AND DEFINED vma)
+        set(lma "${vma}")
+      else()
+        unset(lma)
+      endif()
     endif()
   endif()
 
