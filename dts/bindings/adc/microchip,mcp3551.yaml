@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip MCP3551 22-bit delta-sigma ADC
+
+description: |
+  Low-power, single-channel 22-bit delta-sigma ADC with a differential input,
+  an external reference input and a 3-wire SPI interface (CS, SCK, SDO/RDY).
+  A conversion takes 73.1 ms, with simultaneous 50 Hz and 60 Hz rejection.
+
+compatible: "microchip,mcp3551"
+
+include: microchip,mcp355x-base.yaml
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/adc/adc.h>
+
+    &spi1 {
+        status = "okay";
+
+        adc@0 {
+            compatible = "microchip,mcp3551";
+            reg = <0>;
+            spi-max-frequency = <1000000>;
+            #address-cells = <1>;
+            #size-cells = <0>;
+            #io-channel-cells = <1>;
+
+            channel@0 {
+                reg = <0>;
+                zephyr,gain = "ADC_GAIN_1";
+                zephyr,reference = "ADC_REF_EXTERNAL0";
+                zephyr,vref-mv = <5000>;
+                zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+                zephyr,resolution = <22>;
+                zephyr,differential;
+            };
+        };
+    };
