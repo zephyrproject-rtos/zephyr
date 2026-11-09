@@ -5,3 +5,11 @@ tests:
       - net
       - wireguard
     depends_on: netif
+  net.wireguard.workq:
+    platform_allow: native_sim
+    tags:
+      - net
+      - wireguard
+    depends_on: netif
+    extra_configs:
+      - CONFIG_WIREGUARD_WORKQ_STACK_SIZE=2048
