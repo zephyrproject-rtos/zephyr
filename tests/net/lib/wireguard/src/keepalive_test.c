@@ -58,6 +58,38 @@ static void set_private_key(void)
 
 static const char *peer_public_key = "fF2zTE6NVbBEZkwDgaPDkd9Vx7nL6xj/6g9W3nwyyHc=";
 
+static void set_test_endpoint(struct wireguard_peer_config *config)
+{
+	struct net_sockaddr_in *cfg_endpoint = (struct net_sockaddr_in *)&config->endpoint_ip;
+
+	cfg_endpoint->sin_family = NET_AF_INET;
+	cfg_endpoint->sin_port = net_htons(51820);
+	cfg_endpoint->sin_addr.s_addr = net_htonl(0xC0000201U); /* 192.0.2.1 */
+}
+
+/* With a Wireguard work queue of its own, the periodic timer sends the first
+ * initiation there, after the call that started it has returned.
+ */
+static uint32_t wait_for_init_tx(int peer_id, uint32_t count)
+{
+	struct net_stats_vpn stats = { 0 };
+	k_timepoint_t end = sys_timepoint_calc(K_SECONDS(1));
+
+	do {
+		if (wireguard_test_get_stats(peer_id, &stats) != 0) {
+			break;
+		}
+
+		if (stats.handshake_init_tx >= count) {
+			break;
+		}
+
+		k_sleep(K_MSEC(10));
+	} while (!sys_timepoint_expired(end));
+
+	return stats.handshake_init_tx;
+}
+
 /* A peer that was just added has no endpoint learnt from it yet. A keepalive
  * must start the first handshake, to the configured endpoint, so that an
  * application can bring the tunnel up without sending traffic into it.
@@ -76,10 +108,7 @@ ZTEST(wireguard_keepalive, test_keepalive_starts_first_handshake)
 	int ret;
 
 	set_private_key();
-
-	cfg_endpoint->sin_family = NET_AF_INET;
-	cfg_endpoint->sin_port = net_htons(51820);
-	cfg_endpoint->sin_addr.s_addr = net_htonl(0xC0000201U); /* 192.0.2.1 */
+	set_test_endpoint(&config);
 
 	peer_id = wireguard_peer_add(&config, &peer_iface);
 	zassert_true(peer_id > 0, "Peer add failed (%d)", peer_id);
@@ -94,10 +123,11 @@ ZTEST(wireguard_keepalive, test_keepalive_starts_first_handshake)
 	ret = wireguard_peer_keepalive(peer_id);
 	zexpect_equal(ret, 0, "Keepalive failed (%d)", ret);
 
+	zexpect_equal(wait_for_init_tx(peer_id, before.handshake_init_tx + 1),
+		      before.handshake_init_tx + 1, "No handshake initiation sent");
+
 	ret = wireguard_test_get_stats(peer_id, &after);
 	zexpect_equal(ret, 0);
-	zexpect_equal(after.handshake_init_tx, before.handshake_init_tx + 1,
-		      "No handshake initiation sent");
 
 	ret = wireguard_test_peer_endpoint(peer_id, &endpoint);
 	zexpect_equal(ret, 0);

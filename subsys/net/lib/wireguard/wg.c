@@ -316,6 +316,19 @@ static bool should_send_init(struct wg_peer *peer)
 	return false;
 }
 
+/* With a work queue of its own, a handshake initiation started outside of it
+ * is left to the periodic timer, so that its X25519 computation runs on the
+ * Wireguard work queue rather than on the stack of the calling thread.
+ */
+static bool defer_handshake(void)
+{
+#if CONFIG_WIREGUARD_WORKQ_STACK_SIZE > 0
+	return k_current_get() != k_work_queue_thread_get(&wg_workq);
+#else
+	return false;
+#endif
+}
+
 static int start_handshake(struct wg_iface_context *ctx,
 			   struct wg_peer *peer)
 {
@@ -384,11 +397,18 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 		 */
 		peer->send_handshake = true;
 
-		ret = start_handshake(ctx, peer);
-		if (ret < 0) {
-			(void)k_work_schedule_for_queue(WG_WORKQ, &ctx->wg_ctx->wg_periodic_timer,
-							K_MSEC(WG_TIMER_PERIOD));
-			return ret;
+		if (defer_handshake()) {
+			(void)k_work_reschedule_for_queue(WG_WORKQ,
+							  &ctx->wg_ctx->wg_periodic_timer,
+							  K_NO_WAIT);
+		} else {
+			ret = start_handshake(ctx, peer);
+			if (ret < 0) {
+				(void)k_work_schedule_for_queue(WG_WORKQ,
+								&ctx->wg_ctx->wg_periodic_timer,
+								K_MSEC(WG_TIMER_PERIOD));
+				return ret;
+			}
 		}
 
 		/* As the first data packet does, so that it does not start
@@ -1268,7 +1288,13 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 	if (peer->last_tx == 0) {
 		peer->send_handshake = true;
 		memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
-		start_handshake(ctx, peer);
+		if (defer_handshake()) {
+			(void)k_work_reschedule_for_queue(WG_WORKQ,
+							  &ctx->wg_ctx->wg_periodic_timer,
+							  K_NO_WAIT);
+		} else {
+			start_handshake(ctx, peer);
+		}
 
 		peer->last_tx = sys_clock_tick_get_32();
 
