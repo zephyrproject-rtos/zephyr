@@ -9,7 +9,7 @@
 
 MEMORY
      {
-#if defined(CONFIG_CODE_DDR)
+#if defined(CONFIG_SOC_IMX8M_M7_CODE_DDR)
         DDR  (wx) : ORIGIN = 0x80400000, LENGTH = 0x00C00000
 #else
         DDR  (wx) : ORIGIN = 0x80000000, LENGTH = 0x01000000

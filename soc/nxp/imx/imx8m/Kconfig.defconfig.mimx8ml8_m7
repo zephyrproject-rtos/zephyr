@@ -13,7 +13,7 @@ config IPM_IMX
 	default y
 	depends on IPM
 
-if CODE_ITCM
+if SOC_IMX8M_M7_CODE_ITCM
 
 config FLASH_SIZE
 	default $(dt_node_reg_size_int,/soc/itcm@0,0,K)
@@ -21,9 +21,9 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/itcm@0)
 
-endif # CODE_ITCM
+endif # SOC_IMX8M_M7_CODE_ITCM
 
-if CODE_DDR
+if SOC_IMX8M_M7_CODE_DDR
 
 config FLASH_SIZE
 	default $(dt_node_reg_size_int,/soc/code@80000000,0,K)
@@ -31,7 +31,7 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_node_reg_addr_hex,/soc/code@80000000)
 
-endif # CODE_DDR
+endif # SOC_IMX8M_M7_CODE_DDR
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used

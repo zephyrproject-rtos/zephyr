@@ -13,7 +13,7 @@
 #define REGION_DTCM_BASE_ADDRESS			0x20000000U
 #define REGION_DDR_BASE_ADDRESS				0x40000000U
 #define REGION_DDR2_BASE_ADDRESS			0x80000000U
-#if defined(CONFIG_CODE_DDR)
+#if defined(CONFIG_SOC_IMX8M_M7_CODE_DDR)
 #define REGION_DDR_NONCACHE_BASE_ADDRESS	0x80000000U
 #define REGION_DDR_NONCACHE_SIZE			0x00400000U
 #endif
@@ -77,7 +77,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 					 { ARM_MPU_RASR(0, ARM_MPU_AP_FULL,
 					 1, 0, 0, 0, 0, ARM_MPU_REGION_SIZE_1GB) }),
 
-#if defined(CONFIG_CODE_DDR)
+#if defined(CONFIG_SOC_IMX8M_M7_CODE_DDR)
 	/* If run on DDR, configure text and data section to be cacheable */
 	MPU_REGION_ENTRY("DDR_NONCACHE", REGION_DDR_NONCACHE_BASE_ADDRESS,
 					 { ARM_MPU_RASR(0, ARM_MPU_AP_FULL, 1,

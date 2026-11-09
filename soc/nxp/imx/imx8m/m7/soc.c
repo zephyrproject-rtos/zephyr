@@ -50,7 +50,7 @@ static void SOC_RdcInit(void)
 	CLOCK_ControlGate(kCLOCK_SysPll2Gate, kCLOCK_ClockNeededAll);
 	/* Enable the CCGR gate for SysPLL3 in Domain 1 */
 	CLOCK_ControlGate(kCLOCK_SysPll3Gate, kCLOCK_ClockNeededAll);
-#ifdef CONFIG_INIT_VIDEO_PLL
+#ifdef CONFIG_SOC_IMX8M_M7_INIT_VIDEO_PLL
 	/* Enable the CCGR gate for VideoPLL1 in Domain 1 */
 	CLOCK_ControlGate(kCLOCK_VideoPll1Gate, kCLOCK_ClockNeededAll);
 #endif

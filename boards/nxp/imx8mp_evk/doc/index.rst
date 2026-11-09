@@ -316,7 +316,7 @@ board defconfig.
    +++ b/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
    @@ -12,3 +12,4 @@ CONFIG_CONSOLE=y
    CONFIG_XIP=y
-   CONFIG_CODE_DDR=y
+   CONFIG_SOC_IMX8M_M7_CODE_DDR=y
    +CONFIG_ROMSTART_RELOCATION_ROM=y
 
 Then use the following steps to boot Zephyr kernel:
