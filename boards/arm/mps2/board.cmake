@@ -74,6 +74,10 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
   endif()
 endif()
 
+if("armfvp" IN_LIST SUPPORTED_EMU_PLATFORMS)
+  list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
+endif()
+
 set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
 -C fvp_mps2.telnetterminal0.start_telnet=0
 -C fvp_mps2.telnetterminal1.start_telnet=0

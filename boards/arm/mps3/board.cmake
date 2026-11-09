@@ -81,6 +81,8 @@ if(CONFIG_BUILD_WITH_TFM)
   set(QEMU_KERNEL_OPTION "-device;loader,file=${CMAKE_BINARY_DIR}/zephyr/tfm_merged.hex")
 
   set(ARMFVP_FLAGS ${ARMFVP_FLAGS} -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex)
+elseif("armfvp" IN_LIST SUPPORTED_EMU_PLATFORMS)
+  list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
 endif()
 
 # FVP Parameters
