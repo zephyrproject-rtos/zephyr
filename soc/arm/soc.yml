@@ -33,6 +33,9 @@ family:
   - name: beetle
     socs:
     - name: beetle_r0
+  - name: versatile
+    socs:
+    - name: versatilepb
 - name: arm64
   series:
   - name: fvp_aem
