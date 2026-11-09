@@ -306,6 +306,11 @@
 					current-limit = <20>;
 				};
 			};
+
+			al5887@30 {
+				compatible = "diodes,al5887";
+				reg = <0x30>;
+			};
 		};
 
 		test_pwm: pwm@12341234 {
