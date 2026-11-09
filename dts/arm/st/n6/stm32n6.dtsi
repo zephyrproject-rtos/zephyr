@@ -1281,7 +1281,7 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					otp124_hconf1: opt124_hconf1@1f0 {
+					otp124_hconf1: otp124-hconf1@1f0 {
 						reg = <0x1f0 0x4>;
 						#nvmem-cell-cells = <0>;
 					};
