@@ -52,8 +52,9 @@ config MODEM_CELLULAR_STATS
 	help
 	  Maintain cumulative operational counters (outage time, registration
 	  losses, command failures, recoveries, ...) and expose them through
-	  cellular_get_stats(). Adds a small amount of RAM per instance and a
-	  few increments on existing code paths.
+	  cellular_get_stats(), together with the receive losses counted by the
+	  UART backend and CMUX modules. Adds a small amount of RAM per instance
+	  and a few increments on existing code paths.
 
 config MODEM_CELLULAR_ON_DEMAND_CONNECT
 	bool "Dial the data call on demand (net_if admin up/down)"
@@ -185,7 +186,8 @@ config MODEM_CELLULAR_SHELL
 	  Enable shell commands for the cellular_modem driver, exposing
 	  cellular_modem_pause_periodic_script() /
 	  cellular_modem_resume_periodic_script() at runtime via a
-	  "cellular" shell command.
+	  "cellular" shell command, and cellular_get_stats() when
+	  MODEM_CELLULAR_STATS is enabled.
 
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 
