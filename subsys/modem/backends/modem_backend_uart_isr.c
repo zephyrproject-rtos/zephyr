@@ -39,6 +39,7 @@ static void modem_backend_uart_isr_irq_handler_receive_ready(struct modem_backen
 		 * relatively to the (too high) baud rate and amount of incoming data.
 		 */
 		LOG_WRN("%s: Receive buffer overrun", backend->uart->name);
+		backend->receive_dropped += ring_buf_size_get(receive_rb);
 		ring_buf_reset(receive_rb);
 		size = ring_buf_put_ptr(receive_rb, &buffer, 0);
 	}

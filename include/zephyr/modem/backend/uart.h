@@ -73,6 +73,9 @@ struct modem_backend_uart {
 	struct k_work_delayable receive_ready_work;
 	struct k_work transmit_idle_work;
 
+	/** Received bytes dropped because the receive buffer was full */
+	uint32_t receive_dropped;
+
 #if CONFIG_MODEM_STATS
 	struct modem_stats_buffer receive_buf_stats;
 	struct modem_stats_buffer transmit_buf_stats;
@@ -96,6 +99,17 @@ struct modem_backend_uart_config {
 
 struct modem_pipe *modem_backend_uart_init(struct modem_backend_uart *backend,
 					   const struct modem_backend_uart_config *config);
+
+/**
+ * @brief Get the number of received bytes the backend dropped
+ *
+ * @details Bytes are dropped when the receive buffer is full, because the pipe
+ * user did not read the received data fast enough.
+ *
+ * @param backend UART backend instance
+ * @returns Bytes dropped since the backend was initialized
+ */
+uint32_t modem_backend_uart_get_receive_dropped(const struct modem_backend_uart *backend);
 
 #ifdef __cplusplus
 }

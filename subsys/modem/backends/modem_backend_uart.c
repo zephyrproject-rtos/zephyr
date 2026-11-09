@@ -63,3 +63,8 @@ struct modem_pipe *modem_backend_uart_init(struct modem_backend_uart *backend,
 
 	return NULL;
 }
+
+uint32_t modem_backend_uart_get_receive_dropped(const struct modem_backend_uart *backend)
+{
+	return backend->receive_dropped;
+}
