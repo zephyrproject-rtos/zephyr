@@ -101,6 +101,13 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* Bluetooth
+
+  * With :kconfig:option:`CONFIG_BT_CLASSIC` the Host also runs on BR/EDR-only and
+    on LE-only Controllers, so one build serves whichever transports the
+    Controller supports. The APIs of a transport the Controller does not
+    support return ``-ENOTSUP``.
+
 Other notable changes
 *********************
 
