@@ -62,7 +62,7 @@ static const uint8_t veml7700_it_values[VEML7700_ALS_IT_ELEM_COUNT] = {
  * Resolution at gain 2 and 800 ms integration time in micro lux per count. Each halving of the
  * gain or of the integration time doubles the resolution value.
  */
-#define VEML7700_RESOLUTION_ULX 3600U
+#define VEML7700_RESOLUTION_ULX 4200U
 
 struct veml7700_config {
 	struct i2c_dt_spec bus;
