@@ -173,3 +173,24 @@ zephyr_udc0: &usbhs {
 &crc {
 	status = "okay";
 };
+
+/* 10/100 RMII Ethernet to the on-board LAN8720A PHY and RJ45 jack (J4). */
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&enet_mdio {
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		reset-gpios = <&gpio2 26 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <10000>;
+		reset-deassert-us = <100000>;
+	};
+};
