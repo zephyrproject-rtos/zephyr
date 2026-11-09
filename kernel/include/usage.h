@@ -32,7 +32,28 @@ extern "C" {
  */
 void z_sched_usage_stop(void);
 
+/** @brief Start thread cycle usage accounting.
+ *
+ * Starts the accumulation of cycle usage for @a thread, which is about
+ * to run on the current CPU, and begins a new execution window of it.
+ * Called on context switch.
+ *
+ * Like z_sched_usage_stop(), this assumes local interrupts are masked.
+ *
+ * @param thread Thread that is about to run
+ */
 void z_sched_usage_start(struct k_thread *thread);
+
+/** @brief Resume thread cycle usage accounting of the current thread.
+ *
+ * Adds the cycles since the last update to the current thread, or
+ * restarts the accounting that z_sched_usage_stop() halted, without
+ * starting a new execution window of the current thread. Called on an
+ * interrupt exit that does not switch threads.
+ *
+ * Like z_sched_usage_stop(), this assumes local interrupts are masked.
+ */
+void z_sched_usage_resume(void);
 
 /**
  * @brief Retrieves CPU cycle usage data for specified core
