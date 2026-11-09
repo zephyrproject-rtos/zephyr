@@ -15,6 +15,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
+#define MCUX_LPC546XX_ENET_RMII_REF_CLK_HZ 50000000U
+
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 #define MCUX_LPC_SYSCON_CTIMER_GATE(n) kCLOCK_GateCTIMER##n
@@ -281,6 +283,8 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	if ((uint32_t)sub_system == MCUX_ENET_QOS_CLK) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
 		CLOCK_EnableClock(kCLOCK_GateENET0);
+#elif defined(CONFIG_SOC_SERIES_LPC54XXX)
+		CLOCK_EnableClock(kCLOCK_Eth);
 #else
 		CLOCK_EnableClock(kCLOCK_Enet);
 #endif /* defined(CONFIG_PINCTRL_NXP_PORT) */
@@ -1073,7 +1077,18 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 	case MCUX_ENET_QOS_PTP_CLK:
+#if !defined(CONFIG_SOC_SERIES_LPC54XXX)
 		*rate = CLOCK_GetEnetPtpRefClkFreq();
+#elif DT_ENUM_HAS_VALUE(DT_NODELABEL(enet), phy_connection_type, rmii)
+		/*
+		 * The timestamp logic of the LPC546xx runs from the reference
+		 * clock the PHY drives into the SoC, which RMII fixes at 50 MHz.
+		 * No clock mux or gate is involved.
+		 */
+		*rate = MCUX_LPC546XX_ENET_RMII_REF_CLK_HZ;
+#else
+		return -ENOTSUP;
+#endif
 		break;
 #endif
 
