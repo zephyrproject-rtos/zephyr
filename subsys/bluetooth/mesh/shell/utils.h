@@ -36,6 +36,9 @@
 
 bool bt_mesh_shell_mdl_first_get(uint16_t id, const struct bt_mesh_model **mod);
 
+bool bt_mesh_shell_mdl_match_get(uint16_t id, bool (*match)(const struct bt_mesh_model *mod),
+				 const struct bt_mesh_model **mod);
+
 int bt_mesh_shell_mdl_instance_set(const struct shell *sh, const struct bt_mesh_model **mod,
 			      uint16_t mod_id, uint8_t elem_idx);
 
