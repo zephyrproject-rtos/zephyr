@@ -50,6 +50,24 @@ properties:
       time in ms for SDHC to delay when toggling power to the SD card. This
       delay gives the card time to power up or down fully
 
+  sd-uhs-modes:
+    type: string-array
+    enum:
+      - "sdr50"
+      - "ddr50"
+      - "sdr104"
+    description: |
+      UHS-I bus speed modes the slot supports for SD and SDIO cards. The
+      host reports a mode only if it is in this list and the controller
+      supports it. Without this property, the modes the controller
+      supports are not restricted.
+
+      Use this property when a mode the controller supports is not
+      reliable on the board, for example on a bus that is shared between
+      slots. A slot where SDR104 tuning fails can be limited to DDR50:
+
+        sd-uhs-modes = "ddr50";
+
   mmc-hs200-1_8v:
     type: boolean
     description: |

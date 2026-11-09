@@ -44,3 +44,20 @@ void sdhc_common_dt_props_init(struct sdhc_host_props *props, const struct sdhc_
 		props->hs400_support ? "true" : "false",
 		props->hs400_enhanced_strobe_support ? "true" : "false");
 }
+
+void sdhc_common_dt_caps_restrict(struct sdhc_host_caps *caps, const struct sdhc_common_config *cfg)
+{
+	if ((cfg->sd_uhs_modes & SDHC_COMMON_SD_UHS_SDR50) == 0U) {
+		caps->sdr50_support = 0;
+	}
+	if ((cfg->sd_uhs_modes & SDHC_COMMON_SD_UHS_DDR50) == 0U) {
+		caps->ddr50_support = 0;
+	}
+	if ((cfg->sd_uhs_modes & SDHC_COMMON_SD_UHS_SDR104) == 0U) {
+		caps->sdr104_support = 0;
+	}
+
+	LOG_DBG("SDHC UHS-I modes: sdr50 %s, ddr50 %s, sdr104 %s",
+		caps->sdr50_support ? "true" : "false", caps->ddr50_support ? "true" : "false",
+		caps->sdr104_support ? "true" : "false");
+}
