@@ -5,7 +5,6 @@
 
 config BOARD_MIMX93_EVK_EXP_SEL_INIT
 	bool "Configure i.MX 93 EVK board mux control during init"
-	default n
 
 config BOARD_MIMX93_EVK_EXP_SEL_INIT_PRIO
 	int "i.MX 93 EVK board mux control init priority"
