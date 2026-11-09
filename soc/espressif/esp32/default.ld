@@ -371,6 +371,8 @@ SECTIONS
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     /* Input sections named with zephyr_linker_sources(RAMFUNC_SECTION ...) */
     #include <snippets-ramfunc-section.ld>
+    #include <esp_code_relocate_check.ld.inc>
+    #include <esp_code_relocate_text.ld.inc>
     *libarch__xtensa__core.a:(.literal .text .literal.* .text.*)
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
@@ -659,6 +661,7 @@ SECTIONS
   {
     _dram_data_start = ABSOLUTE(.);
     _data_start = ABSOLUTE(.);
+    #include <esp_code_relocate_data.ld.inc>
 
     _btdm_data_start = ABSOLUTE(.);
     *libbtdm_app.a:(.data .data.*)
@@ -849,6 +852,7 @@ SECTIONS
     . = ALIGN (8);
     _bss_start = ABSOLUTE(.); /* required by bluetooth library */
     __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
 
     _btdm_bss_start = ABSOLUTE(.);
     *libbtdm_app.a:(.bss .bss.* COMMON)
@@ -882,6 +886,7 @@ SECTIONS
   {
     . = ALIGN (4);
     __dram_noinit_start = ABSOLUTE(.);
+    #include <esp_code_relocate_noinit.ld.inc>
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *(EXCLUDE_FILE(
       *libdrivers__wifi.a:*
