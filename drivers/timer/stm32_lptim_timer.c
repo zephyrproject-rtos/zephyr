@@ -339,6 +339,7 @@ static uint32_t sys_clock_lp_time_get(void)
 #define TIMER_CORE_ALARM_MAX_CYCLES lptim_time_base
 #define TIMER_CORE_ALARM_MIN_CYCLES (LPTIM_GUARD_VALUE + 1)
 #define TIMER_CORE_HAVE_CYCLE_GET_32
+#define TIMER_CORE_COUNTER_NONATOMIC
 
 static inline uint32_t timer_driver_cycle_get(void)
 {
