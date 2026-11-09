@@ -18,6 +18,30 @@
 
 static struct k_spinlock usage_lock;
 
+#if defined(CONFIG_SCHED_THREAD_USAGE_HISTORY) && (CONFIG_SCHED_THREAD_USAGE_HISTORY > 0)
+BUILD_ASSERT(IS_POWER_OF_TWO(CONFIG_SCHED_THREAD_USAGE_HISTORY),
+	     "CONFIG_SCHED_THREAD_USAGE_HISTORY must be a power of two");
+
+struct z_sched_usage_history z_sched_usage_history;
+
+static ALWAYS_INLINE void usage_history_add(struct k_thread *thread, uint32_t now)
+{
+	uint32_t seq = z_sched_usage_history.seq;
+	struct z_sched_usage_history_entry *entry =
+		&z_sched_usage_history.entries[seq & (CONFIG_SCHED_THREAD_USAGE_HISTORY - 1U)];
+
+	entry->cycles = now;
+	entry->thread = thread;
+	z_sched_usage_history.seq = seq + 1U;
+}
+#else
+static ALWAYS_INLINE void usage_history_add(struct k_thread *thread, uint32_t now)
+{
+	ARG_UNUSED(thread);
+	ARG_UNUSED(now);
+}
+#endif /* CONFIG_SCHED_THREAD_USAGE_HISTORY > 0 */
+
 static uint32_t usage_now(void)
 {
 	uint32_t now;
@@ -78,7 +102,10 @@ void z_sched_usage_start(struct k_thread *thread)
 
 	key = k_spin_lock(&usage_lock);
 
-	_current_cpu->usage0 = usage_now();   /* Always update */
+	uint32_t now = usage_now();
+
+	_current_cpu->usage0 = now; /* Always update */
+	usage_history_add(thread, now);
 
 	if (thread->base.usage.track_usage) {
 		thread->base.usage.num_windows++;
@@ -92,7 +119,10 @@ void z_sched_usage_start(struct k_thread *thread)
 	 * (we can't race with _stop() by design).
 	 */
 
-	_current_cpu->usage0 = usage_now();
+	uint32_t now = usage_now();
+
+	_current_cpu->usage0 = now;
+	usage_history_add(thread, now);
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 }
 
