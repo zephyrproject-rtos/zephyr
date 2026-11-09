@@ -212,7 +212,7 @@ static void IRAM_ATTR esp32_touch_rtc_isr(void *arg)
 	}
 
 	esp32_touch_sensor_interrupt_cb(arg);
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, status & ESP32_RTC_INTR_MSK);
 }
 #endif
 
