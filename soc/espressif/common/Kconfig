@@ -27,46 +27,6 @@ config ESP_SIMPLE_BOOT
 	  Please note that this method brings the system up with all memories set-up, but
 	  all other features, such as secure boot OTA or slots management are not available.
 
-config ESP32_TIMER_TASK_STACK_SIZE
-	int "Stack size of the high resolution ESP Timer"
-	default 1536
-	help
-	  Set the stack size for the internal high resolution ESP Timer
-	  used in Wi-Fi and BLE peripherals. Registered timer callbacks
-	  run in this task's context, including Wi-Fi, BLE, mesh, PHY and
-	  coexistence callbacks that dispatch here.
-
-config ESP32_TIMER_TASK_PRIO
-	int "Task priority of the high resolution ESP Timer"
-	default 3
-	help
-	  Set the task priority for the internal high resolution ESP Timer
-	  used in Wi-Fi and BLE peripherals.
-
-if (BT_ESP32 || WIFI_ESP32 || IEEE802154_ESP32)
-
-config ESP32_PHY_MAX_TX_POWER
-	int "Max Wi-Fi/BLE/IEEE802154 TX power (dBm)"
-	range 10 20
-	default 20
-	help
-	  Set maximum transmit power for the ESP32 radio. Actual transmit power for high
-	  data rates may be lower than this setting.
-
-config ESP32_SW_COEXIST_ENABLE
-	bool "Software controls Wi-Fi/Bluetooth coexistence"
-	default y if (BT_ESP32 && WIFI_ESP32) || \
-		     (WIFI_ESP32 && IEEE802154_ESP32) || \
-		     (IEEE802154_ESP32 && BT_ESP32)
-	help
-	  If enabled, Wi-Fi & Bluetooth coexistence is controlled by software rather than hardware.
-	  Recommended for heavy traffic scenarios. Both coexistence configuration options are
-	  automatically managed, no user intervention is required.
-	  If only Bluetooth is used, it is recommended to disable this option to reduce binary file
-	  size.
-
-endif
-
 rsource "Kconfig.amp"
 rsource "Kconfig.console"
 rsource "Kconfig.efuse"

@@ -134,15 +134,6 @@ config ESP32S3_DATA_CACHE_LINE_SIZE
 	default 32 if ESP32S3_DATA_CACHE_LINE_32B
 	default 64 if ESP32S3_DATA_CACHE_LINE_64B
 
-config MAC_BB_PD
-	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
-	depends on SOC_SERIES_ESP32S3 && TICKLESS_KERNEL && PM
-	help
-	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
-	  down when PHY is disabled. Enabling this setting reduces power consumption
-	  by a small amount but increases RAM use by approximately 4KB (Wi-Fi only),
-	  2KB (Bluetooth only) or 5.3KB (Wi-Fi + Bluetooth).
-
 endmenu  # Cache config
 
 rsource "Kconfig.caps"
