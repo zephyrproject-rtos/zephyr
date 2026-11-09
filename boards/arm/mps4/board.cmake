@@ -1,4 +1,4 @@
-# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -43,6 +43,8 @@ if(CONFIG_BUILD_WITH_TFM)
     --data ${APPLICATION_BINARY_DIR}/tfm/bin/bl2_signed.bin@0x12031400
     -a ${APPLICATION_BINARY_DIR}/zephyr/tfm_merged.hex
   )
+elseif("armfvp" IN_LIST SUPPORTED_EMU_PLATFORMS)
+  list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
 endif()
 
 # FVP Parameters

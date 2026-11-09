@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS armfvp)
@@ -173,12 +174,16 @@ elseif(CONFIG_ARMV8_A_NS)
     --data cluster0.cpu0="${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}"@0x88000000
   )
 
-elseif(CONFIG_PM_CPU_OPS_FVP)
-  # Configure RVBAR_EL3 for bare metal SMP when using FVP PM CPU ops driver
-  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
-    # Set RVBAR_EL3 for secondary CPUs to Zephyr image base address
-    -C cluster0.cpu1.RVBAR=${CONFIG_KERNEL_VM_BASE}
-    -C cluster0.cpu2.RVBAR=${CONFIG_KERNEL_VM_BASE}
-    -C cluster0.cpu3.RVBAR=${CONFIG_KERNEL_VM_BASE}
+else()
+  list(APPEND ARMFVP_FLAGS -a "${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}")
+
+  if(CONFIG_PM_CPU_OPS_FVP)
+    # Configure RVBAR_EL3 for bare metal SMP when using FVP PM CPU ops driver
+    list(APPEND ARMFVP_FLAGS
+      # Set RVBAR_EL3 for secondary CPUs to Zephyr image base address
+      -C cluster0.cpu1.RVBAR=${CONFIG_KERNEL_VM_BASE}
+      -C cluster0.cpu2.RVBAR=${CONFIG_KERNEL_VM_BASE}
+      -C cluster0.cpu3.RVBAR=${CONFIG_KERNEL_VM_BASE}
     )
+  endif()
 endif()
