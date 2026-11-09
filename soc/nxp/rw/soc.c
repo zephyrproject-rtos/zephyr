@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -362,8 +362,6 @@ void soc_early_init_hook(void)
 	POWER_PowerOnGau();
 #endif
 #if CONFIG_PM
-	nxp_rw6xx_power_init();
-
 	int32_t i;
 	/* Set all non-AON pins output low level in sleep mode. */
 	for (i = NON_AON_PINS_START; i <= NON_AON_PINS_BREAK; i++) {
@@ -378,11 +376,25 @@ void soc_early_init_hook(void)
 		IO_MUX_SetRfPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
 	}
 #endif
+}
 
+static int nxp_rw6xx_wakeup_init(void)
+{
+	/*
+	 * Wakeup routing uses the PRE_KERNEL_1 WUC device. Set up the PM
+	 * configuration and NBU interrupts after that device is ready, but
+	 * before POST_KERNEL RTC and radio drivers initialize.
+	 */
+#if CONFIG_PM
+	nxp_rw6xx_power_init();
+#endif
 #if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
 	nxp_nbu_init();
 #endif
+	return 0;
 }
+
+SYS_INIT(nxp_rw6xx_wakeup_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 void soc_reset_hook(void)
 {
