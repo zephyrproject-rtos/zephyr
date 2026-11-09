@@ -132,8 +132,19 @@ enum bt_hids_ctrl_point {
 /**
  * @brief Callback for a Host writing an Output or Feature Report.
  *
- * A write longer than @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN} is rejected with
- * an ATT Invalid Attribute Value Length error and the callback is not called.
+ * The callback decides whether the write is accepted. Only an accepted value
+ * replaces the one a Host reads and bt_hids_report_get() returns.
+ *
+ * The callback is not called for a write that is rejected before it:
+ * - The GATT server rejects a write over a link without the security the
+ *   characteristics require.
+ * - The service rejects a write with a non-zero offset with an ATT Invalid
+ *   Offset error, and a write longer than
+ *   @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN} with an ATT Invalid Attribute Value
+ *   Length error.
+ *
+ * An Output Report can also be written with a Write Command, which has no
+ * response, so a Host does not learn that such a write was rejected.
  *
  * @param conn        Connection of the Host that wrote the Report.
  * @param report_type Report Type of the Report written, either
@@ -145,9 +156,16 @@ enum bt_hids_ctrl_point {
  *                    the duration of the callback only.
  * @param len         Length of @p data in bytes, at most
  *                    @kconfig{CONFIG_BT_HIDS_MAX_REPORT_LEN}.
+ *
+ * @retval 0 Accept the write.
+ * @retval BT_ATT_ERR_* Reject the write with this ATT error, for example
+ *         @ref BT_ATT_ERR_VALUE_NOT_ALLOWED for a value the Device does not
+ *         accept or @ref BT_ATT_ERR_INSUFFICIENT_RESOURCES if it cannot handle
+ *         the value now.
  */
-typedef void (*bt_hids_set_report_cb)(struct bt_conn *conn, enum bt_hids_report_type report_type,
-				      uint8_t report_id, const uint8_t *data, uint16_t len);
+typedef uint8_t (*bt_hids_set_report_cb)(struct bt_conn *conn,
+					 enum bt_hids_report_type report_type, uint8_t report_id,
+					 const uint8_t *data, uint16_t len);
 
 /**
  * @brief Callback for a Host changing the Protocol Mode.

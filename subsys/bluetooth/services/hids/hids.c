@@ -78,6 +78,10 @@ static K_MUTEX_DEFINE(hids_mutex);
 static const struct bt_hids_cb *callbacks;
 static struct hids_state hids;
 static struct hids_client clients[HIDS_MAX_INSTS];
+/* Counts the registrations, so that a handler that dropped the mutex can tell
+ * whether the service was registered again meanwhile
+ */
+static uint32_t hids_registrations;
 
 /* Report characteristic contexts, laid out Input, then Output, then Feature, in
  * the same order as the Report characteristics appear in the service. The
@@ -414,6 +418,7 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 	bt_hids_set_report_cb set_report_cb = NULL;
 	struct hids_report_ctx *ctx = attr->user_data;
 	struct hids_report_ref ref;
+	uint32_t registration;
 
 	ARG_UNUSED(flags);
 
@@ -441,19 +446,43 @@ static ssize_t write_report(struct bt_conn *conn, const struct bt_gatt_attr *att
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	/* A Host write replaces the value a read returns */
-	(void)memcpy(ctx->value, buf, len);
-	ctx->value_len = len;
-
 	if (callbacks != NULL) {
 		set_report_cb = callbacks->set_report;
 	}
 
+	registration = hids_registrations;
+
 	hids_unlock();
 
+	/* The application decides before the value is stored, and is called
+	 * without the mutex held
+	 */
 	if (set_report_cb != NULL) {
-		set_report_cb(conn, (enum bt_hids_report_type)ref.type, ref.id, buf, len);
+		uint8_t err = set_report_cb(conn, (enum bt_hids_report_type)ref.type, ref.id, buf,
+					    len);
+
+		if (err != 0U) {
+			LOG_DBG("SET_REPORT for Report ID %u type %u rejected (0x%02x)", ref.id,
+				ref.type, err);
+			return BT_GATT_ERR(err);
+		}
 	}
+
+	hids_lock();
+
+	/* The service may have been unregistered, or unregistered and
+	 * registered again, while the callback ran
+	 */
+	if (!hids.registered || hids_registrations != registration) {
+		hids_unlock();
+		return HIDS_ERR_UNREGISTERED;
+	}
+
+	/* An accepted write replaces the value a read returns */
+	(void)memcpy(ctx->value, buf, len);
+	ctx->value_len = len;
+
+	hids_unlock();
 
 	return len;
 }
@@ -782,6 +811,7 @@ int bt_hids_register(const struct bt_hids_register_param *param)
 	err = bt_gatt_service_register(&hids_gatt_svc);
 	if (err == 0) {
 		hids.registered = true;
+		hids_registrations++;
 		LOG_DBG("HID Service registered, %u reports", HIDS_REPORT_COUNT);
 	} else {
 		LOG_DBG("Failed to register the HID Service (err %d)", err);

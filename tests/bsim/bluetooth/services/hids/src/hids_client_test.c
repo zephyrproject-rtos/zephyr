@@ -694,6 +694,16 @@ static void test_hids_client(void)
 	bk_sync_send();
 	bk_sync_wait();
 
+	/* The server application rejects this value, which leaves the Feature
+	 * Report as it was
+	 */
+	gatt_write_expect_err(feature->value_handle, test_feature_rejected,
+			      TEST_FEATURE_REPORT_LEN, BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	gatt_read(feature->value_handle);
+	TEST_ASSERT(read_buf.len == TEST_FEATURE_REPORT_LEN &&
+		    memcmp(read_buf.data, test_feature_data, TEST_FEATURE_REPORT_LEN) == 0,
+		    "A rejected SET_REPORT changed the Feature Report");
+
 	/* Suspend and Exit Suspend through the HID Control Point */
 	gatt_write_cmd(ctrl_point_handle, BT_HIDS_CTRL_SUSPEND);
 	bk_sync_send();

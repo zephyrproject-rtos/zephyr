@@ -117,12 +117,17 @@ static struct bt_conn_cb server_conn_cb = {
 	.disconnected = server_disconnected,
 };
 
-static void set_report(struct bt_conn *conn, enum bt_hids_report_type report_type,
-		       uint8_t report_id, const uint8_t *data, uint16_t len)
+static uint8_t set_report(struct bt_conn *conn, enum bt_hids_report_type report_type,
+			  uint8_t report_id, const uint8_t *data, uint16_t len)
 {
 	ARG_UNUSED(conn);
 
 	TEST_ASSERT(len <= sizeof(set_report_data), "SET_REPORT of %u bytes", len);
+
+	if (report_type == BT_HIDS_REPORT_TYPE_FEATURE && len == sizeof(test_feature_rejected) &&
+	    memcmp(data, test_feature_rejected, len) == 0) {
+		return BT_ATT_ERR_VALUE_NOT_ALLOWED;
+	}
 
 	set_report_type = report_type;
 	set_report_id = report_id;
@@ -134,6 +139,8 @@ static void set_report(struct bt_conn *conn, enum bt_hids_report_type report_typ
 	}
 
 	SET_FLAG(flag_set_report);
+
+	return 0U;
 }
 
 static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)

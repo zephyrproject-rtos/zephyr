@@ -110,5 +110,7 @@ static const uint8_t test_output_data[TEST_OUTPUT_REPORT_LEN] = {0x05};
 /* Feature Report payload: the vendor defined byte */
 #define TEST_FEATURE_REPORT_LEN 1U
 static const uint8_t test_feature_data[TEST_FEATURE_REPORT_LEN] = {0x5A};
+/* A Feature Report value the server application rejects */
+static const uint8_t test_feature_rejected[TEST_FEATURE_REPORT_LEN] = {0xA5};
 
 #endif /* HIDS_TEST_COMMON_H_ */
