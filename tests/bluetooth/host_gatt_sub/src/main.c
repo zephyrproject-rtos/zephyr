@@ -32,6 +32,7 @@
 
 #include "host/att_internal.h"
 #include "host/conn_internal.h"
+#include "host/hci_core.h"
 #include "host/keys.h"
 #include "host/l2cap_internal.h"
 
@@ -74,6 +75,11 @@ static atomic_t peer_mode;
  */
 K_MSGQ_DEFINE_STATIC(write_req_msgq, sizeof(uint16_t), 16, sizeof(uint16_t));
 static atomic_t acl_unexpected;
+
+/* Released when the Host asks to disconnect, with time for other threads to run before the answer,
+ * during which the connection is still up
+ */
+static struct net_buf *disconnect_release_buf;
 
 /* Whether the link is up, and the data packets that the controller holds on it until it reports
  * them as completed
@@ -173,6 +179,11 @@ static void cmd_handle(struct net_buf *cmd)
 
 	hdr = net_buf_pull_mem(cmd, sizeof(*hdr));
 	opcode = sys_le16_to_cpu(hdr->opcode);
+
+	if (opcode == BT_HCI_OP_DISCONNECT && disconnect_release_buf != NULL) {
+		net_buf_drop(&disconnect_release_buf);
+		k_sleep(K_MSEC(10));
+	}
 
 	switch (opcode) {
 	case BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS:
@@ -527,6 +538,9 @@ struct test_sub {
 	/* The NULL callback subscribes again, as the params are free for reuse */
 	bool resubscribe;
 	int resubscribe_err;
+	/* The NULL callback overwrites the params, as an application that frees them */
+	bool overwrite;
+	uint8_t overwrite_value;
 	/* The subscribe callback unsubscribes */
 	bool subscribe_unsubscribes;
 };
@@ -549,6 +563,10 @@ static uint8_t sub_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params 
 		sub->resubscribe = false;
 		params->value = BT_GATT_CCC_NOTIFY;
 		sub->resubscribe_err = bt_gatt_subscribe(conn, params);
+	}
+
+	if (sub->overwrite) {
+		(void)memset(params, sub->overwrite_value, sizeof(*params));
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -621,6 +639,17 @@ static void sub_refused_expect(const struct test_sub *sub)
 	sub_handed_back_expect(sub, 1);
 	zassert_equal(sub->subscribe_err, BT_ATT_ERR_WRITE_NOT_PERMITTED,
 		      "The subscribe callback got 0x%02x", sub->subscribe_err);
+}
+
+/* The Host left the params alone once it had handed them back */
+static void sub_not_overwritten_expect(const struct test_sub *sub)
+{
+	const uint8_t *bytes = (const uint8_t *)&sub->params;
+
+	for (size_t i = 0U; i < sizeof(sub->params); i++) {
+		zassert_equal(bytes[i], sub->overwrite_value, "Byte %zu of the params is 0x%02x", i,
+			      bytes[i]);
+	}
 }
 
 static void *setup(void)
@@ -978,6 +1007,134 @@ static ZTEST(host_gatt_sub, test_unsubscribe_waits_disconnection)
 		      atomic_get(&sub.unsubscribed_count));
 }
 
+/* The thread waits for an ATT buffer while the connection is lost, which hands the params back. It
+ * leaves them alone when it runs again.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_for_buffer_disconnection)
+{
+	static struct net_buf *bufs[CONFIG_BT_ATT_TX_COUNT];
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.overwrite = true;
+	sub.overwrite_value = 0x00U;
+
+	ARRAY_FOR_EACH_PTR(bufs, buf) {
+		*buf = bt_att_create_pdu(test_conn, BT_ATT_OP_WRITE_CMD, sizeof(uint8_t));
+		zassert_not_null(*buf, "No ATT buffer");
+	}
+
+	app_thread_waiting_start(app_unsubscribe_entry, &sub);
+
+	disconn_complete_send();
+	disconnected_wait();
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+
+	ARRAY_FOR_EACH_PTR(bufs, buf) {
+		net_buf_drop(buf);
+	}
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_not_equal(unsubscribe_err, 0, "The unsubscription returned 0");
+	sub_not_overwritten_expect(&sub);
+	recycled_wait();
+}
+
+/* The thread waits for an ATT buffer while another request times out, which hands the params back
+ * while the connection is up, until the disconnection that follows. The thread leaves them alone.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_for_buffer_att_timeout)
+{
+	static struct net_buf *bufs[CONFIG_BT_ATT_TX_COUNT];
+	static struct test_sub sub;
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.overwrite = true;
+	sub.overwrite_value = 0x00U;
+
+	requests_take(1U);
+	write_req_expect(WRITE_VALUE);
+
+	ARRAY_FOR_EACH_PTR(bufs, buf) {
+		*buf = bt_att_create_pdu(test_conn, BT_ATT_OP_WRITE_CMD, sizeof(uint8_t));
+		zassert_not_null(*buf, "No ATT buffer");
+	}
+
+	app_thread_waiting_start(app_unsubscribe_entry, &sub);
+	disconnect_release_buf = net_buf_take(&bufs[0]);
+
+	k_sleep(K_SECONDS(31));
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_not_equal(unsubscribe_err, 0, "The unsubscription returned 0");
+	sub_not_overwritten_expect(&sub);
+
+	disconn_complete_send();
+	disconnected_wait();
+
+	ARRAY_FOR_EACH_PTR(bufs, buf) {
+		net_buf_drop(buf);
+	}
+
+	recycled_wait();
+}
+
+/* The thread cancels a pending subscribe write and waits for the host lock while the peer refuses
+ * the write, which hands the params back. The thread leaves them alone when it runs again.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_for_host_lock_refused)
+{
+	static struct test_sub sub;
+
+	sub_init(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.overwrite = true;
+	sub.overwrite_value = 0x00U;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+
+	bt_dev_lock();
+	app_thread_waiting_start(app_unsubscribe_entry, &sub);
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	bt_dev_unlock();
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_equal(unsubscribe_err, -EINVAL, "The unsubscription returned %d", unsubscribe_err);
+	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub.unsubscribed_count));
+	sub_not_overwritten_expect(&sub);
+	zassert_equal(k_msgq_num_used_get(&write_req_msgq), 0U, "The peer was asked");
+}
+
+/* As above with another subscription to the value, so that the thread has no write to send */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_for_host_lock_refused_other_left)
+{
+	static struct test_sub sub_1;
+	static struct test_sub sub_2;
+
+	sub_init(&sub_1, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_1.overwrite = true;
+	sub_1.overwrite_value = 0xffU;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_1.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+
+	sub_init(&sub_2, VALUE_HANDLE_A, CCC_HANDLE_A);
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_2.params), "The subscription failed");
+
+	bt_dev_lock();
+	app_thread_waiting_start(app_unsubscribe_entry, &sub_1);
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	bt_dev_unlock();
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_equal(unsubscribe_err, -EINVAL, "The unsubscription returned %d", unsubscribe_err);
+	zassert_equal(atomic_get(&sub_1.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_1.unsubscribed_count));
+	sub_not_overwritten_expect(&sub_1);
+}
+
 /* The subscribe callback unsubscribes, which does not hand the params back yet */
 static ZTEST(host_gatt_sub, test_unsubscribe_in_subscribe_callback)
 {
@@ -994,6 +1151,112 @@ static ZTEST(host_gatt_sub, test_unsubscribe_in_subscribe_callback)
 	write_req_expect(0x0000U);
 	write_rsp_recv();
 	sub_handed_back_expect(&sub, 2);
+}
+
+/* bt_workq waits for the host lock to resubscribe the first of two subscriptions to a value, as
+ * when the TX processor is in a driver's send(). Unsubscribing that one hands the params back at
+ * once. The resubscription leaves them alone.
+ */
+static ZTEST(host_gatt_sub, test_resubscribe_waits_unsubscribed)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+	struct bt_keys *keys;
+
+	keys = bt_keys_get_addr(BT_ID_DEFAULT, &peer_addr);
+	zassert_not_null(keys, "No keys");
+	bt_keys_add_type(keys, BT_KEYS_LTK_P256);
+
+	/* Each new subscription goes first in the list */
+	sub_establish(&sub_b, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_init(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub_a.overwrite = true;
+	sub_a.overwrite_value = 0x00U;
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_a.params), "The subscription failed");
+
+	disconnect();
+	pools_full_expect();
+	connect_as_peripheral();
+
+	bt_dev_lock();
+	encrypt_change_send();
+	zassert_ok(bt_gatt_unsubscribe(test_conn, &sub_a.params), "The unsubscription failed");
+	zassert_equal(atomic_get(&sub_a.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_a.unsubscribed_count));
+	bt_dev_unlock();
+
+	sub_not_overwritten_expect(&sub_a);
+}
+
+/* The thread waits for the host lock to send its unsubscription while bt_workq queues a
+ * resubscription, which the thread cancels. Only one write of the two completes, so the NULL
+ * callback cannot come before the other completion.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_resubscribe_queued)
+{
+	static struct test_sub sub;
+	struct bt_keys *keys;
+
+	keys = bt_keys_get_addr(BT_ID_DEFAULT, &peer_addr);
+	zassert_not_null(keys, "No keys");
+	bt_keys_add_type(keys, BT_KEYS_LTK_P256);
+
+	sub_establish(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	disconnect();
+	pools_full_expect();
+	connect_as_peripheral();
+
+	bt_dev_lock();
+	app_thread_waiting_start(app_unsubscribe_entry, &sub);
+	encrypt_change_send();
+	bt_dev_unlock();
+
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_ok(unsubscribe_err, "The unsubscription returned %d", unsubscribe_err);
+
+	/* The bearer is busy until the peer has answered the write that it got */
+	write_rsp_recv();
+	zassert_equal(atomic_get(&sub.subscribe_count), 0, "The cancelled write completed");
+
+	write_req_expect(0x0000U);
+	write_rsp_recv();
+	sub_handed_back_expect(&sub, 1);
+}
+
+/* The thread waits for an ATT request to turn the CCC off, while another subscription to the value
+ * comes, which needs no write of its own. The thread leaves the CCC as it is.
+ */
+static ZTEST(host_gatt_sub, test_unsubscribe_waits_other_joins)
+{
+	static struct test_sub sub_1;
+	static struct test_sub sub_2;
+
+	sub_establish(&sub_1, VALUE_HANDLE_A, CCC_HANDLE_A);
+
+	requests_take(CONFIG_BT_ATT_TX_COUNT);
+	write_req_expect(WRITE_VALUE);
+	app_thread_waiting_start(app_unsubscribe_entry, &sub_1);
+
+	sub_init(&sub_2, VALUE_HANDLE_A, CCC_HANDLE_A);
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_2.params), "The subscription failed");
+
+	/* A request becomes free */
+	write_rsp_recv();
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The unsubscription did not return");
+	zassert_ok(unsubscribe_err, "The unsubscription returned %d", unsubscribe_err);
+	sub_handed_back_expect(&sub_1, 0);
+
+	for (size_t i = 0U; i < CONFIG_BT_ATT_TX_COUNT - 1U; i++) {
+		write_req_expect(WRITE_VALUE);
+		write_rsp_recv();
+	}
+
+	zassert_equal(k_msgq_num_used_get(&write_req_msgq), 0U, "The CCC was written");
+
+	notification_recv(VALUE_HANDLE_A);
+	zassert_equal(atomic_get(&sub_2.notify_count), 1, "The other subscription stopped");
 }
 
 /* The peer answers before the thread that unsubscribed runs again. The params are free for reuse
