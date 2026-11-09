@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "andestech,andescore-v5", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			/*
+			 * The HPM5300 family implements the F, D, Zba, Zbb, Zbc,
+			 * and Zbs extensions. Runtime FPU support remains opt-in
+			 * through CONFIG_FPU.
+			 */
+			riscv,isa-extensions = "i", "m", "a", "c", "f", "d",
+					       "zba", "zbb", "zbc", "zbs",
+					       "zicsr", "zifencei";
+			status = "okay";
+
+			cpu0_intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ilm: memory@0 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 DT_SIZE_K(128)>;
+			zephyr,memory-region = "ITCM";
+		};
+
+		plic: interrupt-controller@e4000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xe4000000 0x1000>,
+			      <0xe4002000 0x800>,
+			      <0xe4200000 0x10000>;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "prio", "irq_en", "reg";
+			interrupts-extended = <&cpu0_intc 11>;
+			riscv,max-priority = <31>;
+			riscv,ndev = <127>;
+		};
+
+		mtimer: machine-timer@e6000000 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe6000000 0x1>,
+			      <0xe6000008 0x1>;
+			reg-names = "mtime", "mtimecmp";
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts-extended = <&cpu0_intc 7>;
+		};
+
+		plic_sw: interrupt-controller@e6400000 {
+			compatible = "andestech,plic_sw";
+			reg = <0xe6400000 0x400000>;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&cpu0_intc 3>;
+		};
+	};
+};
