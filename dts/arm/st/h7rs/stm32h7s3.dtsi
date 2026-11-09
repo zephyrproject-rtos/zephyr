@@ -13,6 +13,10 @@
 	soc {
 		compatible = "st,stm32h7s3", "st,stm32h7rs", "simple-bus";
 
+		mac: ethernet@40028000 {
+			memory-regions = <&sram1>;
+		};
+
 		cryp: crypto@48020800 {
 			compatible = "st,stm32-cryp";
 			reg = <0x48020800 0x800>;
@@ -22,8 +26,4 @@
 			status = "disabled";
 		};
 	};
-};
-
-&mac {
-	memory-regions = <&sram1>;
 };
