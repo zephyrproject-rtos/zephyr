@@ -1088,6 +1088,10 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EAGAIN;
 	}
 
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	if (!valid_br_discov_param(param, cnt)) {
 		return -EINVAL;
 	}
@@ -1214,6 +1218,10 @@ int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func)
 {
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	if (enable) {
@@ -1372,6 +1380,10 @@ int bt_br_set_discoverable(bool enable, bool limited)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	if (enable) {
@@ -1551,6 +1563,10 @@ int bt_br_page_scan_update_param(const struct bt_br_page_scan_param *param)
 		return -EINVAL;
 	}
 
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	err = bt_br_write_page_scan_activity(param->interval, param->window);
 	if (err != 0) {
 		LOG_ERR("write page scan activity failed (err %d)", err);
@@ -1574,6 +1590,10 @@ int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param
 		return -EINVAL;
 	}
 
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	err = bt_br_write_inquiry_scan_activity(param->interval, param->window);
 	if (err != 0) {
 		LOG_ERR("write inquiry scan activity failed (err %d)", err);
@@ -1595,6 +1615,10 @@ int bt_br_set_class_of_device(uint32_t cod)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	/* Limited discoverable mode could be set with bt_br_set_discoverable */
@@ -1627,6 +1651,10 @@ int bt_br_get_class_of_device(uint32_t *cod)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	err = bt_br_read_cod(cod);
@@ -1713,6 +1741,10 @@ int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_requir
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
