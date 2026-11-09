@@ -821,6 +821,11 @@ struct mqtt_sec_config {
 
 	/** Set socket to use native TLS (used with socket offloading). */
 	bool set_native_tls;
+
+	/** Indicates the preference for TLS session caching, one of the
+	 *  TLS_SESSION_CACHE socket option values. Disabled by default.
+	 */
+	int session_cache;
 };
 
 /** @brief MQTT transport type. */

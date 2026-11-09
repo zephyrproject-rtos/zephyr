@@ -166,6 +166,14 @@ to :ref:`secure sockets documentation <secure_sockets_interface>`.
 Finally, ``set_native_tls`` can be optionally set to enable native TLS support
 instead of offloading TLS operations to an offloaded socket.
 
+Setting ``session_cache`` to ``TLS_SESSION_CACHE_ENABLED`` makes the client cache
+the TLS session, so that a reconnection to the same broker can resume it with an
+abbreviated handshake. See the ``TLS_SESSION_CACHE`` socket option in
+:ref:`secure sockets documentation <secure_sockets_interface>`. The native TLS
+sockets keep up to :kconfig:option:`CONFIG_NET_SOCKETS_TLS_MAX_CLIENT_SESSION_COUNT`
+client sessions. If the socket does not support the option, as some offloaded
+sockets do not, :c:func:`mqtt_connect` fails.
+
 An example of how to use TLS with MQTT is also present in
 :zephyr:code-sample:`mqtt-publisher` sample application.
 
