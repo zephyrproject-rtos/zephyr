@@ -942,6 +942,16 @@ static void app_unsubscribe_entry(void *p1, void *p2, void *p3)
 	bt_conn_unref(conn);
 }
 
+static void app_subscribe_entry(void *p1, void *p2, void *p3)
+{
+	struct bt_conn *conn = p1;
+
+	ARGS_UNUSED(p2, p3);
+
+	unsubscribe_err = bt_gatt_subscribe(conn, &unsubscribe_sub->params);
+	bt_conn_unref(conn);
+}
+
 static void app_thread_waiting_start(k_thread_entry_t entry, struct test_sub *sub)
 {
 	static K_THREAD_STACK_DEFINE(app_stack, 2048);
@@ -1133,6 +1143,89 @@ static ZTEST(host_gatt_sub, test_unsubscribe_waits_for_host_lock_refused_other_l
 	zassert_equal(atomic_get(&sub_1.unsubscribed_count), 1, "%ld NULL callbacks",
 		      atomic_get(&sub_1.unsubscribed_count));
 	sub_not_overwritten_expect(&sub_1);
+}
+
+/* A subscribe waits for an ATT request while the only other subscription of the peer is refused,
+ * which frees the slot of the peer. The new subscription still belongs to the peer.
+ */
+static ZTEST(host_gatt_sub, test_subscribe_waits_other_refused)
+{
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	sub_init(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_a.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+
+	sub_init(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+	requests_take(CONFIG_BT_ATT_TX_COUNT - 1U);
+	app_thread_waiting_start(app_subscribe_entry, &sub_b);
+
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	sub_refused_expect(&sub_a);
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The subscription did not return");
+	zassert_ok(unsubscribe_err, "The subscription returned %d", unsubscribe_err);
+
+	for (size_t i = 0U; i < CONFIG_BT_ATT_TX_COUNT - 1U; i++) {
+		write_req_expect(WRITE_VALUE);
+		write_rsp_recv();
+	}
+
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+	write_rsp_recv();
+
+	notification_recv(VALUE_HANDLE_B);
+	zassert_equal(atomic_get(&sub_b.notify_count), 1, "The subscription is not there");
+
+	disconnect();
+	zassert_equal(atomic_get(&sub_b.unsubscribed_count), 1, "%ld NULL callbacks",
+		      atomic_get(&sub_b.unsubscribed_count));
+}
+
+/* As above, with every slot taken by other peers meanwhile. The subscription fails, with no write
+ * left to the peer.
+ */
+static ZTEST(host_gatt_sub, test_subscribe_waits_no_slot_left)
+{
+	static struct test_sub others[CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN];
+	static bt_addr_le_t other_addrs[ARRAY_SIZE(others)];
+	static struct test_sub sub_a;
+	static struct test_sub sub_b;
+
+	sub_init(&sub_a, VALUE_HANDLE_A, CCC_HANDLE_A);
+	zassert_ok(bt_gatt_subscribe(test_conn, &sub_a.params), "The subscription failed");
+	write_req_expect(BT_GATT_CCC_NOTIFY);
+
+	sub_init(&sub_b, VALUE_HANDLE_B, CCC_HANDLE_B);
+	requests_take(CONFIG_BT_ATT_TX_COUNT - 1U);
+	app_thread_waiting_start(app_subscribe_entry, &sub_b);
+
+	error_rsp_recv(CCC_HANDLE_A, BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	sub_refused_expect(&sub_a);
+
+	ARRAY_FOR_EACH(others, i) {
+		bt_addr_le_copy(&other_addrs[i], &peer_addr);
+		other_addrs[i].a.val[0] = (uint8_t)(i + 0x10U);
+		sub_init(&others[i], VALUE_HANDLE_A, CCC_HANDLE_A);
+		zassert_ok(bt_gatt_resubscribe(BT_ID_DEFAULT, &other_addrs[i], &others[i].params),
+			   "No slot for another peer");
+	}
+
+	zassert_ok(k_thread_join(&app_thread, K_SECONDS(1)), "The subscription did not return");
+	zassert_equal(unsubscribe_err, -ENOMEM, "The subscription returned %d", unsubscribe_err);
+
+	for (size_t i = 0U; i < CONFIG_BT_ATT_TX_COUNT - 1U; i++) {
+		write_req_expect(WRITE_VALUE);
+		write_rsp_recv();
+	}
+
+	zassert_equal(k_msgq_num_used_get(&write_req_msgq), 0U, "The peer was asked");
+	zassert_equal(atomic_get(&sub_b.subscribe_count), 0, "The write is not gone");
+
+	ARRAY_FOR_EACH(others, i) {
+		zassert_ok(bt_unpair(BT_ID_DEFAULT, &other_addrs[i]), "Unpairing failed");
+	}
 }
 
 /* The subscribe callback unsubscribes, which does not hand the params back yet */
