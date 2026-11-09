@@ -1,0 +1,16 @@
+# Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: hpm5300evk
+name: HPMicro HPM5300EVK
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 288
+flash: 1024
+supported:
+  - gpio
+  - pinctrl
+  - uart
+vendor: hpmicro
