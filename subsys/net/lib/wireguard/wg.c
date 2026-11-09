@@ -64,6 +64,14 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt);
 
 #define WG_TIMER_PERIOD 500 /* ms */
 
+#if CONFIG_WIREGUARD_WORKQ_STACK_SIZE > 0
+static K_KERNEL_STACK_DEFINE(wg_workq_stack, CONFIG_WIREGUARD_WORKQ_STACK_SIZE);
+static struct k_work_q wg_workq;
+#define WG_WORKQ (&wg_workq)
+#else
+#define WG_WORKQ (&k_sys_work_q)
+#endif
+
 #define WG_BUF_COUNT CONFIG_WIREGUARD_BUF_COUNT
 #define WG_MAX_BUF_SIZE CONFIG_WIREGUARD_BUF_LEN
 
@@ -330,7 +338,8 @@ static int start_handshake(struct wg_iface_context *ctx,
 	memcpy(peer->handshake_mac1, msg.mac1, WG_COOKIE_LEN);
 	peer->handshake_mac1_valid = true;
 
-	ret = k_work_schedule(&ctx->wg_ctx->wg_periodic_timer, K_MSEC(WG_TIMER_PERIOD));
+	ret = k_work_schedule_for_queue(WG_WORKQ, &ctx->wg_ctx->wg_periodic_timer,
+					K_MSEC(WG_TIMER_PERIOD));
 	if (ret < 0) {
 		NET_DBG("Cannot schedule %s work (%d)", "periodic", ret);
 	}
@@ -377,8 +386,8 @@ static int wg_send_keepalive(struct wg_iface_context *ctx,
 
 		ret = start_handshake(ctx, peer);
 		if (ret < 0) {
-			(void)k_work_schedule(&ctx->wg_ctx->wg_periodic_timer,
-					      K_MSEC(WG_TIMER_PERIOD));
+			(void)k_work_schedule_for_queue(WG_WORKQ, &ctx->wg_ctx->wg_periodic_timer,
+							K_MSEC(WG_TIMER_PERIOD));
 			return ret;
 		}
 
@@ -494,7 +503,7 @@ static void wg_periodic_timer(struct k_work *work)
 
 	k_mutex_unlock(&lock);
 
-	ret = k_work_reschedule(dwork, K_MSEC(WG_TIMER_PERIOD));
+	ret = k_work_reschedule_for_queue(WG_WORKQ, dwork, K_MSEC(WG_TIMER_PERIOD));
 	if (ret < 0) {
 		NET_DBG("Cannot schedule %s work (%d)", "periodic", ret);
 	}
@@ -610,6 +619,12 @@ static int wireguard_init(void)
 	net_mgmt_init_event_callback(&ctx->wg_mgmt_cb, wg_iface_event_handler,
 				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 	net_mgmt_add_event_callback(&ctx->wg_mgmt_cb);
+
+#if CONFIG_WIREGUARD_WORKQ_STACK_SIZE > 0
+	k_work_queue_start(&wg_workq, wg_workq_stack, K_KERNEL_STACK_SIZEOF(wg_workq_stack),
+			   CONFIG_WIREGUARD_WORKQ_PRIORITY,
+			   &(const struct k_work_queue_config){ .name = "wireguard" });
+#endif
 
 	k_work_init_delayable(&ctx->wg_periodic_timer, wg_periodic_timer);
 
@@ -792,8 +807,9 @@ ZTESTABLE_STATIC int handle_transport_data(struct wg_peer *peer,
 			}
 
 			peer->send_handshake = true;
-			(void)k_work_schedule(&peer->ctx->wg_ctx->wg_periodic_timer,
-					      K_NO_WAIT);
+			(void)k_work_schedule_for_queue(WG_WORKQ,
+							&peer->ctx->wg_ctx->wg_periodic_timer,
+							K_NO_WAIT);
 		}
 		return -ENOENT;
 	}
@@ -954,8 +970,8 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 			goto drop;
 		}
 
-		ret = k_work_schedule(&peer->ctx->wg_ctx->wg_periodic_timer,
-				      K_MSEC(WG_TIMER_PERIOD));
+		ret = k_work_schedule_for_queue(WG_WORKQ, &peer->ctx->wg_ctx->wg_periodic_timer,
+						K_MSEC(WG_TIMER_PERIOD));
 		if (ret < 0) {
 			NET_DBG("Cannot schedule %s work (%d)", "periodic", ret);
 		}
