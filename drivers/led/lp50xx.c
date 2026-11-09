@@ -166,13 +166,11 @@ static int lp50xx_write_channels(const struct device *dev,
 {
 	const struct lp50xx_config *config = dev->config;
 	struct lp50xx_data *data = dev->data;
-	uint8_t base_channel, end_channel, max_channels;
+	uint8_t base_channel = LP50XX_BANK_BASE(config->num_modules);
+	uint32_t max_channels = LP50XX_MAX_CHANNELS(config->num_modules);
 
-	base_channel = LP50XX_BANK_BASE(config->num_modules);
-	end_channel = base_channel + start_channel + num_channels;
-	max_channels = base_channel + LP50XX_MAX_CHANNELS(config->num_modules);
-
-	if (end_channel > max_channels) {
+	if ((start_channel > max_channels) ||
+	    (num_channels > (max_channels - start_channel))) {
 		return -EINVAL;
 	}
 
