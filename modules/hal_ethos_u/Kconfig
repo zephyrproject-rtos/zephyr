@@ -4,7 +4,6 @@
 
 config ETHOS_U
 	bool "Ethos-U core driver"
-	default n
 	depends on MULTITHREADING
 	help
 	  This option enables the Arm Ethos-U core driver.

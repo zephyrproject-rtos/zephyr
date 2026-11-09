@@ -19,17 +19,17 @@ choice LV_Z_MEMORY_POOL
 	help
 	  Memory pool to use for lvgl allocated objects
 
-	config LV_Z_MEM_POOL_HEAP_LIB_C
-	  bool "C library Heap"
-	  depends on !MINIMAL_LIBC || (COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
-	  help
-		Use C library malloc and free to allocate objects on the C library heap
+config LV_Z_MEM_POOL_HEAP_LIB_C
+	bool "C library Heap"
+	depends on !MINIMAL_LIBC || (COMMON_LIBC_MALLOC_ARENA_SIZE != 0)
+	help
+	  Use C library malloc and free to allocate objects on the C library heap
 
-	config LV_Z_MEM_POOL_SYS_HEAP
-		bool "User space lvgl pool"
-		select SYS_HEAP_INFO
-		help
-		  Use a dedicated memory pool from a private sys heap.
+config LV_Z_MEM_POOL_SYS_HEAP
+	bool "User space lvgl pool"
+	select SYS_HEAP_INFO
+	help
+	  Use a dedicated memory pool from a private sys heap.
 
 endchoice
 

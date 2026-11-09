@@ -65,7 +65,6 @@ config FPU
 
 config LV_Z_NEMA_GFX_MULTI_THREAD
 	bool "Multi-thread support for NemaGFX"
-	default n
 
 config LV_Z_NEMA_HAL_RING_SIZE
 	int "NemaGFX ring size"

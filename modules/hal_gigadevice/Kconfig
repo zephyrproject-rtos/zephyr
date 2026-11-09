@@ -130,7 +130,7 @@ config USE_GD32_DBG
 config USE_GD32_DCI
 	bool
 	help
-		Enable GD32 Digital Camera Interface (DCI) HAL module driver
+	  Enable GD32 Digital Camera Interface (DCI) HAL module driver
 
 config USE_GD32_DMA
 	bool
