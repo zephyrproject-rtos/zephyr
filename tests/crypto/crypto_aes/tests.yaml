@@ -16,6 +16,7 @@ tests:
       - esp32h2_devkitm
       - nucleo_h753zi
       - nucleo_wba55cg
+      - stm32mp135f_dk
       - sama7d65_curiosity
       - sama7g54_ek
       - sf32lb52_devkit_lcd
