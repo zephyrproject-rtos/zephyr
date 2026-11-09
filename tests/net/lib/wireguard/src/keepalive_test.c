@@ -157,6 +157,56 @@ ZTEST(wireguard_keepalive, test_keepalive_starts_first_handshake)
 	zassert_equal(ret, 0, "Peer remove failed (%d)", ret);
 }
 
+/* With a Wireguard work queue of its own, the initiation started by a
+ * keepalive is not computed on the stack of the calling thread: with the
+ * scheduler locked nothing is sent before the call returns, and the work
+ * queue sends the initiation once the scheduler is unlocked.
+ */
+ZTEST(wireguard_keepalive, test_keepalive_initiation_on_workq)
+{
+	struct wireguard_peer_config config = {
+		.public_key = peer_public_key,
+	};
+	struct net_stats_vpn before;
+	struct net_stats_vpn locked;
+	struct net_if *peer_iface;
+	bool pending;
+	int peer_id;
+	int ret;
+
+	if (CONFIG_WIREGUARD_WORKQ_STACK_SIZE == 0) {
+		ztest_test_skip();
+	}
+
+	set_private_key();
+	set_test_endpoint(&config);
+
+	peer_id = wireguard_peer_add(&config, &peer_iface);
+	zassert_true(peer_id > 0, "Peer add failed (%d)", peer_id);
+
+	ret = wireguard_test_get_stats(peer_id, &before);
+	zexpect_equal(ret, 0);
+
+	k_sched_lock();
+	ret = wireguard_peer_keepalive(peer_id);
+	pending = wireguard_test_peer_send_handshake(peer_id);
+	(void)wireguard_test_get_stats(peer_id, &locked);
+	k_sched_unlock();
+
+	zexpect_equal(ret, 0, "Keepalive failed (%d)", ret);
+	zexpect_true(pending, "Initiation not left to the work queue");
+	zexpect_equal(locked.handshake_init_tx, before.handshake_init_tx,
+		      "Initiation sent from the calling thread");
+
+	zexpect_equal(wait_for_init_tx(peer_id, before.handshake_init_tx + 1),
+		      before.handshake_init_tx + 1, "No handshake initiation sent");
+	zexpect_false(wireguard_test_peer_send_handshake(peer_id),
+		      "Handshake request left pending");
+
+	ret = wireguard_peer_remove(peer_id);
+	zassert_equal(ret, 0, "Peer remove failed (%d)", ret);
+}
+
 /* A peer added without an endpoint can only be reached once it contacts us */
 ZTEST(wireguard_keepalive, test_keepalive_without_endpoint)
 {
