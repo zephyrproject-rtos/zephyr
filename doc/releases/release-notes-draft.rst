@@ -53,6 +53,10 @@ Libraries / Subsystems
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
+  * With :kconfig:option:`CONFIG_BT_CLASSIC` the Host also runs on BR/EDR-only and
+    on LE-only Controllers, so one build serves whichever transports the
+    Controller supports. The APIs of a transport the Controller does not
+    support return ``-ENOTSUP``.
 
 * Display
 
