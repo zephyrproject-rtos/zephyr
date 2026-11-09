@@ -1861,6 +1861,13 @@ static int cmd_i3c_i2c_scan(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "I3C: Invalid mode %s. Use 'fm' or 'fmp'.", argv[2]);
 			return -EINVAL;
 		}
+	} else {
+		uint32_t config;
+
+		if (i2c_get_config(dev, &config) == 0 &&
+		    (I2C_SPEED_GET(config) == I2C_SPEED_STANDARD || I2C_SPEED_GET(config) == I2C_SPEED_FAST)) {
+			lvr = FIELD_PREP(I3C_LVR_I2C_MODE_MASK, I3C_LVR_I2C_FM_MODE);
+		}
 	}
 
 	data = (struct i3c_driver_data *)dev->data;
