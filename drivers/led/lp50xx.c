@@ -61,6 +61,9 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define LP50XX_RESET(nmodules)			\
 	(LP50XX_OUT0_COLOR(nmodules) + LP50XX_COLORS_PER_LED * (nmodules))
 
+/* AL5887 specific registers */
+#define AL5887_LED_GLOBAL_DIMMING	0x66
+
 /* Register values */
 #define CONFIG0_CHIP_EN			BIT(6)
 
@@ -70,6 +73,7 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define CONFIG1_AUTO_INCR_EN		BIT(3)
 #define CONFIG1_POWER_SAVE_EN		BIT(4)
 #define CONFIG1_LOG_SCALE_EN		BIT(5)
+#define CONFIG1_PHASE_SHIFT_EN		BIT(7)
 
 #define RESET_SW			0xFF
 
@@ -80,6 +84,7 @@ struct lp50xx_config {
 	uint8_t max_leds;
 	uint8_t num_leds;
 	uint8_t config1;
+	uint8_t global_dimming;
 	const struct led_info *leds_info;
 };
 
@@ -202,8 +207,19 @@ static int lp50xx_reset(const struct device *dev)
 	/* After reset, apply configuration since all registers are reset. */
 	buf[0] = LP50XX_DEVICE_CONFIG1;
 	buf[1] = config->config1;
+	err = i2c_write_dt(&config->bus, buf, 2);
+	if (err < 0) {
+		return err;
+	}
 
-	return i2c_write_dt(&config->bus, buf, 2);
+	if (DT_HAS_COMPAT_STATUS_OKAY(diodes_al5887) &&
+	    (config->global_dimming != 0)) {
+		buf[0] = AL5887_LED_GLOBAL_DIMMING;
+		buf[1] = config->global_dimming;
+		err = i2c_write_dt(&config->bus, buf, 2);
+	}
+
+	return err;
 }
 
 static int lp50xx_hw_enable(const struct device *dev, bool enable)
@@ -358,6 +374,10 @@ static DEVICE_API(led, lp50xx_led_api) = {
 #define LP50XX_TI_CONFIG(n)							\
 	.config1 = LP50XX_CONFIG1(n),
 
+#define AL5887_CONFIG(n)							\
+	.config1 = LP50XX_CONFIG1(n) | CONFIG1_PHASE_SHIFT_EN,			\
+	.global_dimming = DT_INST_PROP(n, global_dimming),
+
 #define LP50XX_DEVICE(n, id, nmodules, nleds, chip_config)			\
 	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)					\
 										\
@@ -421,3 +441,8 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5030, LP5036_NUM_MODULES,
 #define DT_DRV_COMPAT ti_lp5036
 DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5036, LP5036_NUM_MODULES,
 				  LP5036_MAX_LEDS, LP50XX_TI_CONFIG)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT diodes_al5887
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, al5887, LP5036_NUM_MODULES,
+				  AL5887_MAX_LEDS, AL5887_CONFIG)
