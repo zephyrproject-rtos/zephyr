@@ -60,6 +60,8 @@ static struct mqtt_test_ctx {
 	bool connected;
 	int connack_count;
 	uint8_t disconnect_reason;
+	const uint8_t *reply_before_connack;
+	size_t reply_before_connack_len;
 	bool ping_resp_handled;
 	bool publish_handled;
 	bool puback_handled;
@@ -275,6 +277,11 @@ static void broker_validate_packet(uint8_t *buf, size_t length, uint8_t type,
 {
 	switch (type) {
 	case MQTT_PKT_TYPE_CONNECT: {
+		if (test_ctx.reply_before_connack != NULL) {
+			test_send_reply(test_ctx.reply_before_connack,
+					test_ctx.reply_before_connack_len);
+		}
+
 		if (client_ctx.protocol_version == MQTT_VERSION_5_0) {
 			test_send_reply(connect_ack_reply_5_0, sizeof(connect_ack_reply_5_0));
 		} else {
@@ -1070,6 +1077,28 @@ ZTEST(mqtt_client, test_mqtt_second_connack_5_0)
 	broker_process(MQTT_PKT_TYPE_DISCONNECT);
 	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
 		      "Unexpected DISCONNECT reason code 0x%02x", test_ctx.disconnect_reason);
+}
+
+ZTEST(mqtt_client, test_mqtt_packet_before_connack)
+{
+	int ret;
+
+	test_ctx.reply_before_connack = ping_resp_reply;
+	test_ctx.reply_before_connack_len = sizeof(ping_resp_reply);
+
+	ret = mqtt_connect(&client_ctx);
+	zassert_ok(ret, "MQTT client failed to connect (%d)", ret);
+	broker_process(MQTT_PKT_TYPE_CONNECT);
+	prepare_client_fds(&client_ctx);
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG, "Packet before CONNACK should be a protocol error (%d)", ret);
+	zexpect_false(test_ctx.ping_resp_handled,
+		      "Packet before CONNACK reported to the application");
+
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -ENOTCONN, "MQTT client should no longer be connected (%d)", ret);
 }
 
 static void mqtt_tests_before(void *fixture)
