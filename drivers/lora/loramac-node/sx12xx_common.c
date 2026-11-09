@@ -56,12 +56,11 @@ static struct sx12xx_data {
 	 */
 	RadioModems_t modem;
 	union {
-		struct lora_modem_config tx_cfg;
+		struct lora_modem_config lora_cfg;
 #ifdef SX12XX_GFSK
-		struct lora_modem_config_gfsk tx_gfsk_cfg;
+		struct lora_modem_config_gfsk gfsk_cfg;
 #endif
 	};
-	struct lora_modem_config rx_cfg;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
 } dev_data;
@@ -256,29 +255,29 @@ uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 		/* Under FSK the datarate argument carries the bit rate and
 		 * the bandwidth is not read at all.
 		 */
-		return Radio.TimeOnAir(MODEM_FSK, 0, dev_data.tx_gfsk_cfg.bitrate, 0,
-				       dev_data.tx_gfsk_cfg.preamble_len,
-				       dev_data.tx_gfsk_cfg.fixed_len,
-				       dev_data.tx_gfsk_cfg.fixed_len
-					       ? dev_data.tx_gfsk_cfg.payload_len
+		return Radio.TimeOnAir(MODEM_FSK, 0, dev_data.gfsk_cfg.bitrate, 0,
+				       dev_data.gfsk_cfg.preamble_len,
+				       dev_data.gfsk_cfg.fixed_len,
+				       dev_data.gfsk_cfg.fixed_len
+					       ? dev_data.gfsk_cfg.payload_len
 					       : data_len,
-				       !dev_data.tx_gfsk_cfg.packet_crc_disable);
+				       !dev_data.gfsk_cfg.packet_crc_disable);
 	}
 #endif /* SX12XX_GFSK */
 
 	/* Translate bandwidth to loramac-node index, default to 0 if invalid */
-	if (sx12xx_get_bandwidth_idx(dev_data.tx_cfg.bandwidth, &bw_idx) < 0) {
+	if (sx12xx_get_bandwidth_idx(dev_data.lora_cfg.bandwidth, &bw_idx) < 0) {
 		bw_idx = 0;
 	}
 
 	return Radio.TimeOnAir(MODEM_LORA,
 			       bw_idx,
-			       dev_data.tx_cfg.datarate,
-			       dev_data.tx_cfg.coding_rate,
-			       dev_data.tx_cfg.preamble_len,
-			       dev_data.tx_cfg.explicit_header_disable,
+			       dev_data.lora_cfg.datarate,
+			       dev_data.lora_cfg.coding_rate,
+			       dev_data.lora_cfg.preamble_len,
+			       dev_data.lora_cfg.explicit_header_disable,
 			       data_len,
-			       !dev_data.tx_cfg.packet_crc_disable);
+			       !dev_data.lora_cfg.packet_crc_disable);
 }
 
 /* Whether the modem in use has been given a transmit configuration */
@@ -286,10 +285,10 @@ static bool have_tx_config(void)
 {
 #ifdef SX12XX_GFSK
 	if (dev_data.modem == MODEM_FSK) {
-		return dev_data.tx_gfsk_cfg.frequency != 0;
+		return dev_data.gfsk_cfg.frequency != 0;
 	}
 #endif
-	return dev_data.tx_cfg.frequency != 0;
+	return dev_data.lora_cfg.frequency != 0;
 }
 
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
@@ -340,17 +339,17 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	/* A fixed-length frame carries no length byte, so the receiver only
 	 * matches the length it was configured with.
 	 */
-	if (dev_data.modem == MODEM_FSK && dev_data.tx_gfsk_cfg.fixed_len &&
-	    data_len != dev_data.tx_gfsk_cfg.payload_len) {
+	if (dev_data.modem == MODEM_FSK && dev_data.gfsk_cfg.fixed_len &&
+	    data_len != dev_data.gfsk_cfg.payload_len) {
 		LOG_ERR("Fixed-length GFSK takes %u bytes, got %u",
-			dev_data.tx_gfsk_cfg.payload_len, data_len);
+			dev_data.gfsk_cfg.payload_len, data_len);
 		return -EINVAL;
 	}
 #endif /* SX12XX_GFSK */
 
 	if (dev_data.modem == MODEM_LORA &&
-		dev_data.tx_cfg.explicit_header_disable &&
-		dev_data.tx_cfg.implicit_packet_length != data_len) {
+		dev_data.lora_cfg.explicit_header_disable &&
+		dev_data.lora_cfg.implicit_packet_length != data_len) {
 		return -EINVAL;
 	}
 
@@ -394,8 +393,8 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	dev_data.rx_params.rssi = rssi;
 	dev_data.rx_params.snr = snr;
 
-	if (dev_data.modem == MODEM_LORA && dev_data.rx_cfg.explicit_header_disable) {
-		data_len = dev_data.rx_cfg.implicit_packet_length;
+	if (dev_data.modem == MODEM_LORA && dev_data.lora_cfg.explicit_header_disable) {
+		data_len = dev_data.lora_cfg.implicit_packet_length;
 	}
 
 	Radio.SetMaxPayloadLength(dev_data.modem, data_len);
@@ -447,8 +446,8 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 
 	uint8_t data_len = 255;
 
-	if (dev_data.modem == MODEM_LORA && dev_data.rx_cfg.explicit_header_disable) {
-		data_len = dev_data.rx_cfg.implicit_packet_length;
+	if (dev_data.modem == MODEM_LORA && dev_data.lora_cfg.explicit_header_disable) {
+		data_len = dev_data.lora_cfg.implicit_packet_length;
 	}
 
 	/* Start reception */
@@ -479,22 +478,15 @@ int sx12xx_lora_config(const struct device *dev,
 
 	Radio.SetChannel(config->frequency);
 	dev_data.modem = MODEM_LORA;
-	/* The configurations share storage, so drop whatever the other
-	 * modem left behind
-	 */
-	memset(&dev_data.tx_cfg, 0, sizeof(dev_data.tx_cfg));
-	memset(&dev_data.rx_cfg, 0, sizeof(dev_data.rx_cfg));
+	dev_data.lora_cfg = *config;
 
 	if (config->tx) {
-		/* Store TX config locally for airtime calculations */
-		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
 		/* Configure radio driver */
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
 				  bw_idx, config->datarate,
 				  config->coding_rate, config->preamble_len,
 				  fix_len, crc, 0, 0, config->iq_inverted, 4000);
 	} else {
-		memcpy(&dev_data.rx_cfg, config, sizeof(dev_data.rx_cfg));
 		/* TODO: Get symbol timeout value from config parameters */
 		Radio.SetRxConfig(MODEM_LORA, bw_idx,
 				  config->datarate, config->coding_rate,
@@ -574,14 +566,9 @@ int sx12xx_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 
 	Radio.SetChannel(config->frequency);
 	dev_data.modem = MODEM_FSK;
-	/* The configurations share storage, so drop whatever the other
-	 * modem left behind
-	 */
-	memset(&dev_data.tx_gfsk_cfg, 0, sizeof(dev_data.tx_gfsk_cfg));
+	dev_data.gfsk_cfg = *config;
 
 	if (config->tx) {
-		/* Store TX config locally for airtime calculations */
-		dev_data.tx_gfsk_cfg = *config;
 		Radio.SetTxConfig(MODEM_FSK, config->tx_power, config->freq_deviation, bw_ssb,
 				  config->bitrate, 0, config->preamble_len, config->fixed_len, crc,
 				  0, 0, false, 4000);
