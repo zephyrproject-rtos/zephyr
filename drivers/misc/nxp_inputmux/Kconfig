@@ -3,7 +3,6 @@
 
 config NXP_INPUTMUX
 	bool "NXP INPUTMUX driver"
-	default n
 	depends on HAS_MCUX
 	help
 	  Includes a HAL driver for the INPUTMUX peripheral on select NXP

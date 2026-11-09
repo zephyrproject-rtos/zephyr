@@ -7,4 +7,4 @@ config DAI_NXP_ESAI
 	depends on DT_HAS_NXP_DAI_ESAI_ENABLED
 	select PINCTRL
 	help
-		Select this to enable NXP ESAI driver.
+	  Select this to enable NXP ESAI driver.

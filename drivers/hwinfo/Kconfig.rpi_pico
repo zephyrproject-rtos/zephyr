@@ -12,7 +12,6 @@ config HWINFO_RPI_PICO
 
 config HWINFO_RPI_PICO_CHIP_ID
 	bool "Use chip ID as device ID for RP2350"
-	default n
 	depends on SOC_SERIES_RP2350
 	depends on HWINFO_RPI_PICO
 	help

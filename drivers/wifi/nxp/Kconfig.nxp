@@ -519,7 +519,6 @@ menu "Wi-Fi Station Support"
 
 config NXP_WIFI_STA_AUTO_CONN
 	bool "Automatically starts STA connection"
-	default n
 	help
 	  This option enables Station auto connection support.
 

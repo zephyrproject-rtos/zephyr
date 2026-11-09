@@ -5,6 +5,5 @@
 
 config CLOCK_CONTROL_FIXED_RATE_CLOCK
 	bool "Fixed Clock Clock Control"
-	default n
 	help
 	  Enable driver for devicetree defined fixed clocks.

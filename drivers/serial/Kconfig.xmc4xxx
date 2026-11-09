@@ -19,7 +19,6 @@ if UART_XMC4XXX
 
 config UART_XMC4XXX_RX_FIFO_INT_TRIGGER
 	bool "Continue to trigger fifo rx interrupt"
-	default n
 	help
 	  When this option is enabled, an interrupt will continue to trigger
 	  if there is data in the receive fifo. Otherwise, an interrupt will

@@ -215,14 +215,14 @@ config I3C_RTIO_FALLBACK_MSGS
 	int "Number of available i3c_msg structs for the default handler to use"
 	default 4
 	help
-		When RTIO is used with a driver that does not yet implement the submit API
-		natively the submissions are converted back to struct i3c_msg values that
-		are given to i3c_transfer. This requires some number of msgs be available to convert
-		the submissions into on the stack. MISRA rules dictate we must know this in
-		advance.
+	  When RTIO is used with a driver that does not yet implement the submit API
+	  natively the submissions are converted back to struct i3c_msg values that
+	  are given to i3c_transfer. This requires some number of msgs be available to convert
+	  the submissions into on the stack. MISRA rules dictate we must know this in
+	  advance.
 
-		In all likelihood 4 is going to work for everyone, but in case you do end up with
-		an issue where you are using RTIO, your driver does not implement submit natively,
+	  In all likelihood 4 is going to work for everyone, but in case you do end up with
+	  an issue where you are using RTIO, your driver does not implement submit natively,
 
 endif # I3C_RTIO
 

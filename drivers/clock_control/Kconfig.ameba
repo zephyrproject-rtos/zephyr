@@ -7,4 +7,4 @@ config CLOCK_CONTROL_AMEBA
 	default y
 	depends on DT_HAS_REALTEK_AMEBA_RCC_ENABLED
 	help
-		Enable support for Ameba clock controller driver.
+	  Enable support for Ameba clock controller driver.
