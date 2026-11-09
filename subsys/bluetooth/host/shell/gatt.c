@@ -659,6 +659,8 @@ static uint8_t notify_func(struct bt_conn *conn,
 
 static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 {
+	uint16_t ccc_handle;
+	uint16_t value_handle;
 	int err;
 
 	if (subscribe_params.value_handle) {
@@ -672,8 +674,21 @@ static int cmd_subscribe(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
-	subscribe_params.value_handle = strtoul(argv[2], NULL, 16);
+	ccc_handle = strtoul(argv[1], NULL, 16);
+	value_handle = strtoul(argv[2], NULL, 16);
+	if (value_handle == 0U) {
+		shell_error(sh, "Invalid value handle 0x%04x", value_handle);
+		return -ENOEXEC;
+	}
+
+	/* A zero CCC handle requests automatic discovery, if supported */
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) && ccc_handle == 0U) {
+		shell_error(sh, "Invalid CCC handle 0x%04x", ccc_handle);
+		return -ENOEXEC;
+	}
+
+	subscribe_params.ccc_handle = ccc_handle;
+	subscribe_params.value_handle = value_handle;
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 	SET_CHAN_OPT_ANY(subscribe_params);
@@ -706,6 +721,8 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 				char *argv[])
 {
 	bt_addr_le_t addr;
+	uint16_t ccc_handle;
+	uint16_t value_handle;
 	int err;
 
 	if (subscribe_params.value_handle) {
@@ -720,8 +737,21 @@ static int cmd_resubscribe(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-	subscribe_params.ccc_handle = strtoul(argv[2], NULL, 16);
-	subscribe_params.value_handle = strtoul(argv[3], NULL, 16);
+	/* Resubscribe does not support automatic CCC discovery */
+	ccc_handle = strtoul(argv[2], NULL, 16);
+	value_handle = strtoul(argv[3], NULL, 16);
+	if (ccc_handle == 0U) {
+		shell_error(sh, "Invalid CCC handle 0x%04x", ccc_handle);
+		return -ENOEXEC;
+	}
+
+	if (value_handle == 0U) {
+		shell_error(sh, "Invalid value handle 0x%04x", value_handle);
+		return -ENOEXEC;
+	}
+
+	subscribe_params.ccc_handle = ccc_handle;
+	subscribe_params.value_handle = value_handle;
 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
 	subscribe_params.notify = notify_func;
 	SET_CHAN_OPT_ANY(subscribe_params);
