@@ -123,6 +123,16 @@ void z_sched_usage_stop(void)
 	k_spin_unlock(&usage_lock, k);
 }
 
+void z_sched_usage_resume(void)
+{
+	struct _cpu *cpu = _current_cpu;
+
+	/* Only this CPU writes usage0, and callers keep local IRQs masked. */
+	if (cpu->usage0 == 0U) {
+		cpu->usage0 = usage_now();
+	}
+}
+
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 {
