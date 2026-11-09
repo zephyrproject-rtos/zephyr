@@ -934,6 +934,11 @@ Architectures
   interrupt stack, and code or debuggers that inspect the processor mode inside an ISR see SYS
   mode. (:github:`123041`)
 
+* On AArch32 Cortex-A/R targets with :kconfig:option:`CONFIG_USE_SWITCH`, the default
+  :kconfig:option:`CONFIG_IDLE_STACK_SIZE` is now 512 bytes, increasing per-CPU idle-stack
+  memory use. The larger stack accommodates scheduler and timer calls made during interrupt
+  exit, including compiler runtime helpers. Coverage builds retain their larger default.
+
 * The portable CPU performance monitoring API has been renamed to disambiguate it from
   power-management units (the ``pmu`` name is used by both). The header
   :file:`include/zephyr/arch/pmu.h` is now :file:`include/zephyr/arch/perf_counter.h`, and its
