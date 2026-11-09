@@ -842,6 +842,7 @@ void sys_clock_idle_exit(void)
 
 		timer_core_announce_cycles64_from(key, missed_lptim_cnt);
 
+		SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 		/* We've already performed all needed operations */
 		timeout_stdby = false;
 	}
