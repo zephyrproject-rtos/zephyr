@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sram-ext = &psram0;
+	};
+
+	chosen {
+		zephyr,sram = &dtcm;
+	};
+};
+
+&xspi1 {
+	status = "okay";
+
+	psram0: memory-controller@0 {
+		status = "okay";
+	};
+};
