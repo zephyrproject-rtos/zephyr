@@ -1,0 +1,25 @@
+# Copyright (c) 2022 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+description: HPMicro UART
+
+compatible: "hpmicro,hpm-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      Clock specifier with the HPM clock resource, source selector and
+      divider, respectively.
+
+  clock-names:
+    required: true
