@@ -837,14 +837,39 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
+/*
+ * Wait until the last frame is shifted out. The wait is bounded because in
+ * slave mode the bit clock may be absent and the busy flag would never clear.
+ */
+static void tx_wait_idle(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	/*
+	 * The DMA completes when the last word is written to the FIFO, which
+	 * can hold several frames, plus one frame in the shift register.
+	 */
+	const uint32_t frame_freq = dev_data->tx.cfg.frame_clk_freq != 0U ?
+				    dev_data->tx.cfg.frame_clk_freq : 8000U;
+	uint32_t timeout_us = (8U * USEC_PER_SEC) / frame_freq + 10U;
+
+	while (ll_i2s_dma_busy(cfg->i2s) != 0U) {
+		if (timeout_us == 0U) {
+			LOG_DBG("TX did not become idle in time");
+			break;
+		}
+		k_busy_wait(1);
+		timeout_us--;
+	}
+}
+
 static void tx_hw_disable(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 
 	if (ll_i2s_is_enabled(cfg->i2s) != 0U) {
-		/* Wait for TX queue to drain before disabling */
-		k_busy_wait(100);
+		tx_wait_idle(dev);
 		LL_I2S_Disable(cfg->i2s);
 	}
 
