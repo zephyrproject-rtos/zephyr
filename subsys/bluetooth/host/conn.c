@@ -827,6 +827,25 @@ static bool acl_has_data(struct bt_conn *conn)
 }
 #endif	/* defined(CONFIG_BT_CONN) */
 
+/* Whether c is an ACL connection that can send and holds as many packets in
+ * the controller as conn or fewer, so that conn gives way to it
+ */
+static bool can_take_turn(struct bt_conn *conn, struct bt_conn *c)
+{
+	struct k_sem *pkts;
+
+	if ((c == conn) || !is_acl_conn(c) || (c->state != BT_CONN_CONNECTED) ||
+	    (c->has_data == NULL) || !c->has_data(c) ||
+	    atomic_test_bit(c->flags, BT_CONN_TX_FAILED)) {
+		return false;
+	}
+
+	pkts = bt_conn_get_pkts(c);
+
+	return (pkts != NULL) && (k_sem_count_get(pkts) > 0U) &&
+	       (atomic_get(&c->in_ll) <= atomic_get(&conn->in_ll));
+}
+
 /* Connection "Scheduler" of sorts:
  *
  * Will try to get the optimal number of queued buffers for the connection.
@@ -838,6 +857,8 @@ static bool acl_has_data(struct bt_conn *conn)
  */
 static bool should_stop_tx(struct bt_conn *conn)
 {
+	struct bt_conn *c;
+
 	LOG_DBG("%p", conn);
 
 	if (conn->state != BT_CONN_CONNECTED) {
@@ -850,6 +871,18 @@ static bool should_stop_tx(struct bt_conn *conn)
 	if (!conn->has_data(conn)) {
 		LOG_DBG("No more data for %p", conn);
 		return true;
+	}
+
+	/* Give way to another ACL connection that can send and holds as many
+	 * packets in the controller or fewer. Otherwise a connection whose
+	 * packets complete quickly keeps its place at the head of the list.
+	 * ISO channels do not take part.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&bt_dev.le.conn_ready, c, _conn_ready) {
+		if (is_acl_conn(conn) && can_take_turn(conn, c)) {
+			LOG_DBG("%p gives way to %p", conn, c);
+			return true;
+		}
 	}
 
 	/* Queue only 3 buffers per-conn for now */
