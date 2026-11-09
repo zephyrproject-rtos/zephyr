@@ -18,9 +18,8 @@
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
-				 <&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
-			clock-names = "sai_ck", "sai_ker_ck";
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+			clock-names = "sai_ck";
 			status = "disabled";
 
 			sai2_a: sai2a@40015804 {

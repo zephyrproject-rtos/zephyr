@@ -13,6 +13,9 @@
 
 /* 46.875KHz (6.29% Error) */
 &sai1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+		 <&rcc STM32_SRC_MSIK SAI1_SEL(0)>;
+	clock-names = "sai_ck", "sai_ker_ck";
 	status = "okay";
 };
 
