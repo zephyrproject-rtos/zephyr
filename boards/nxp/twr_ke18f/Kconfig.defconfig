@@ -5,6 +5,10 @@
 
 if BOARD_TWR_KE18F
 
+choice PINCTRL_HOGS_INIT_LEVEL
+	default PINCTRL_HOGS_INIT_PRE_KERNEL_1
+endchoice
+
 config I2C_MCUX_LPI2C_BUS_RECOVERY
 	default y
 	depends on I2C_MCUX_LPI2C && PINCTRL

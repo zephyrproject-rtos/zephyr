@@ -51,6 +51,25 @@ Serial Port
 The KE18 SoC has three UARTs. UART0 is configured for the console. The
 remaining UARTs are not used.
 
+.. _twr_ke18f_clkout:
+
+Clock Output
+============
+
+To route CLKOUT to FlexIO header pin 7 (PTE10), set the pin controller's default
+state in a devicetree overlay:
+
+.. code-block:: devicetree
+
+   &pinctrl {
+       pinctrl-0 = <&flexio_clockout>;
+       pinctrl-names = "default";
+   };
+
+Pin controller hogs are enabled automatically and applied in ``PRE_KERNEL_1``,
+after the PORT drivers. If the default state already references other
+configurations, include them in the same list.
+
 Accelerometer and magnetometer
 ==============================
 
