@@ -1348,6 +1348,28 @@ ZTEST(net_buf_tests, test_net_buf_take)
 	zassert_equal(destroy_called, 1, "Buffer should be destroyed now");
 }
 
+static ZTEST(net_buf_tests, test_net_buf_take_plain)
+{
+	struct net_buf *buf;
+	struct net_buf *moved;
+
+	destroy_called = 0;
+
+	buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+
+	moved = net_buf_take_plain(&buf);
+	zassert_is_null(buf, "Original pointer not NULLed after move");
+	zassert_not_null(moved, "Moved pointer should not be NULL");
+	zassert_equal(moved->ref, 1U, "Ref count should remain 1 after move");
+
+	zassert_is_null(net_buf_take_plain(&buf), "Moving a NULL pointer should give NULL");
+	zassert_is_null(buf, "Original pointer should stay NULL");
+
+	net_buf_unref(moved);
+	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+}
+
 ZTEST(net_buf_tests, test_net_buf_drop)
 {
 	struct net_buf *buf, *new_ref;
