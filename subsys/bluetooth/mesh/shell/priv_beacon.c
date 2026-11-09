@@ -149,7 +149,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(priv-beacon-set, NULL, "<Val(off, on)> <RandInt(10s steps)>",
 		      cmd_priv_beacon_set, 3, 0),
 	SHELL_CMD_ARG(priv-gatt-proxy-get, NULL, NULL, cmd_priv_gatt_proxy_get, 1, 0),
-	SHELL_CMD_ARG(priv-gatt-proxy-set, NULL, "Val(off, on)> ", cmd_priv_gatt_proxy_set,
+	SHELL_CMD_ARG(priv-gatt-proxy-set, NULL, "<Val(off, on)>", cmd_priv_gatt_proxy_set,
 		      2, 0),
 	SHELL_CMD_ARG(priv-node-id-get, NULL, "<NetKeyIdx>", cmd_priv_node_id_get, 2, 0),
 	SHELL_CMD_ARG(priv-node-id-set, NULL, "<NetKeyIdx> <State>", cmd_priv_node_id_set, 3,
