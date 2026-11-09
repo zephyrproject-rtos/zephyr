@@ -802,6 +802,99 @@ static void test_main_reserved_bit(void)
 	TEST_PASS_AND_EXIT("GATT client passed");
 }
 
+DEFINE_FLAG_STATIC(flag_no_ccc);
+
+static uint8_t no_ccc_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+			     const void *data, uint16_t length)
+{
+	TEST_ASSERT(data == NULL, "Value received without a subscription");
+
+	SET_FLAG(flag_no_ccc);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void connect_next_peer(void)
+{
+	int err;
+
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
+	TEST_ASSERT(err == 0, "Scanning failed to start (err %d)", err);
+
+	WAIT_FOR_FLAG(flag_is_connected);
+}
+
+static void disconnect_peer(void)
+{
+	int err;
+
+	err = bt_conn_disconnect(g_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	TEST_ASSERT(err == 0, "Failed to disconnect (err %d)", err);
+
+	WAIT_FOR_FLAG_UNSET(flag_is_connected);
+}
+
+/* A subscribe that ends without a subscription must not keep a subscription entry for the peer:
+ * each half of the test meets one peer more than the client has entries for
+ */
+static void test_main_many_peers(void)
+{
+	static struct bt_gatt_discover_params disc_params_no_ccc;
+	static struct bt_gatt_subscribe_params sub_params_no_ccc = {
+		.notify = no_ccc_notify,
+		.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+		.disc_params = &disc_params_no_ccc,
+		.value = BT_GATT_CCC_NOTIFY,
+	};
+	int err;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Bluetooth init failed (err %d)", err);
+
+	/* CCC discovery finds no CCC */
+	for (uint32_t peer_idx = 0U; peer_idx < SUB_PEER_COUNT; peer_idx++) {
+		connect_next_peer();
+
+		if (peer_idx == 0U) {
+			gatt_discover(BT_ATT_CHAN_OPT_NONE);
+		}
+
+		/* The write characteristic has no descriptors */
+		sub_params_no_ccc.value_handle = write_chrc_handle;
+		sub_params_no_ccc.end_handle = write_chrc_handle;
+		UNSET_FLAG(flag_no_ccc);
+		err = bt_gatt_subscribe(g_conn, &sub_params_no_ccc);
+		TEST_ASSERT(err == 0, "Peer %u: failed to subscribe (err %d)", peer_idx, err);
+		WAIT_FOR_FLAG(flag_no_ccc);
+
+		disconnect_peer();
+	}
+
+	/* CCC discovery cannot start: EATT needs encryption */
+	for (uint32_t peer_idx = 0U; peer_idx < SUB_PEER_COUNT; peer_idx++) {
+		/* Nothing keeps the parameters of a CCC discovery that cannot start */
+		struct bt_gatt_discover_params disc_params = { 0 };
+		struct bt_gatt_subscribe_params sub_params = {
+			.notify = no_ccc_notify,
+			.value_handle = chrc_handle,
+			.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE,
+			.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+			.disc_params = &disc_params,
+			.value = BT_GATT_CCC_NOTIFY,
+			.chan_opt = BT_ATT_CHAN_OPT_ENHANCED_ONLY,
+		};
+
+		connect_next_peer();
+
+		err = bt_gatt_subscribe(g_conn, &sub_params);
+		TEST_ASSERT(err == -EINVAL, "Peer %u: expected -EINVAL, got %d", peer_idx, err);
+
+		disconnect_peer();
+	}
+
+	TEST_PASS_AND_EXIT("GATT client passed");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_none",
@@ -838,6 +931,10 @@ static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_reserved_bit",
 		.test_main_f = test_main_reserved_bit,
+	},
+	{
+		.test_id = "gatt_client_many_peers",
+		.test_main_f = test_main_many_peers,
 	},
 	BSTEST_END_MARKER,
 };

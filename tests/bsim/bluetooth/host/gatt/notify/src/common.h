@@ -33,3 +33,6 @@
 
 #define NOTIFICATION_COUNT 10
 BUILD_ASSERT(NOTIFICATION_COUNT % 2 == 0);
+
+/* One peer more than a GATT client keeps subscriptions for */
+#define SUB_PEER_COUNT (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN + 1U)
