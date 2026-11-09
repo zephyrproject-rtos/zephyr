@@ -292,6 +292,28 @@ static bool mbs_fc02_di_read(struct modbus_context *ctx)
 }
 
 /*
+ * A register read range must not wrap around the 16-bit address space.
+ * With the floating-point extensions it must also lie entirely below or
+ * entirely at or above MODBUS_FP_EXTENSIONS_ADDR, so that all registers
+ * in the range have the same width.
+ */
+static bool mbs_reg_range_valid(uint16_t reg_addr, uint16_t reg_qty)
+{
+	uint32_t end = (uint32_t)reg_addr + reg_qty;
+
+	if (end > (UINT16_MAX + 1U)) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS) && (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) &&
+	    (end > MODBUS_FP_EXTENSIONS_ADDR)) {
+		return false;
+	}
+
+	return true;
+}
+
+/*
  * 03 (0x03) Read Holding Registers
  *
  * Request Payload:
@@ -313,6 +335,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	uint16_t reg_addr;
 	uint16_t reg_qty;
 	uint16_t num_bytes;
+	bool fp_regs;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
@@ -329,11 +352,19 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 		return true;
 	}
 
+	if (!mbs_reg_range_valid(reg_addr, reg_qty)) {
+		LOG_ERR("Invalid register range %u, %u", reg_addr, reg_qty);
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+		return true;
+	}
+
 	/* Get number of bytes needed for response. */
 	num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	fp_regs = IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS) &&
+		  (reg_addr >= MODBUS_FP_EXTENSIONS_ADDR);
+
+	if (!fp_regs) {
 		/* Read integer register */
 		if (ctx->mbs_user_cb->holding_reg_rd == NULL) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
@@ -362,7 +393,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 	presp = &ctx->tx_adu.data[1];
 	/* Loop through each register requested. */
 	while (reg_qty > 0) {
-		if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
+		if (!fp_regs) {
 			uint16_t reg;
 
 			/* Read integer register */
@@ -375,7 +406,7 @@ static bool mbs_fc03_hreg_read(struct modbus_context *ctx)
 			/* Increment current register address */
 			reg_addr++;
 			reg_qty--;
-		} else if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+		} else {
 			float fp;
 			uint32_t reg;
 
@@ -425,6 +456,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	uint16_t reg_addr;
 	uint16_t reg_qty;
 	uint16_t num_bytes;
+	bool fp_regs;
 
 	if (ctx->rx_adu.length != request_len) {
 		LOG_ERR("Wrong request length");
@@ -441,11 +473,19 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 		return true;
 	}
 
+	if (!mbs_reg_range_valid(reg_addr, reg_qty)) {
+		LOG_ERR("Invalid register range %u, %u", reg_addr, reg_qty);
+		mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_DATA_ADDR);
+		return true;
+	}
+
 	/* Get number of bytes needed for response. */
 	num_bytes = (uint8_t)(reg_qty * sizeof(uint16_t));
 
-	if ((reg_addr < MODBUS_FP_EXTENSIONS_ADDR) ||
-	    !IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+	fp_regs = IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS) &&
+		  (reg_addr >= MODBUS_FP_EXTENSIONS_ADDR);
+
+	if (!fp_regs) {
 		/* Read integer register */
 		if (ctx->mbs_user_cb->input_reg_rd == NULL) {
 			mbs_exception_rsp(ctx, MODBUS_EXC_ILLEGAL_FC);
@@ -474,7 +514,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 	presp = &ctx->tx_adu.data[1];
 	/* Loop through each register requested. */
 	while (reg_qty > 0) {
-		if (reg_addr < MODBUS_FP_EXTENSIONS_ADDR) {
+		if (!fp_regs) {
 			uint16_t reg;
 
 			/* Read integer register */
@@ -487,7 +527,7 @@ static bool mbs_fc04_inreg_read(struct modbus_context *ctx)
 			/* Increment current register number */
 			reg_addr++;
 			reg_qty--;
-		} else if (IS_ENABLED(CONFIG_MODBUS_FP_EXTENSIONS)) {
+		} else {
 			float fp;
 			uint32_t reg;
 
