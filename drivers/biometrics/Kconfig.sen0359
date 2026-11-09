@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BIOMETRICS_SEN0359
+	bool "DFRobot SEN0359 capacitive fingerprint sensor"
+	default y
+	depends on DT_HAS_DFROBOT_SEN0359_ENABLED
+	select I2C
+	help
+	  Enable driver for the DFRobot SEN0359 (ID809) I2C capacitive
+	  fingerprint sensor.
