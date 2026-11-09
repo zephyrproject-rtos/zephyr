@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_MCHP_OTPC_G1
+	bool "Microchip OTPC support for G1 peripherals"
+	depends on DT_HAS_MICROCHIP_OTPC_G1_OTP_ENABLED
+	default y
+	help
+	  Enable support for the Microchip OTPC driver on G1 OTPC peripherals.
