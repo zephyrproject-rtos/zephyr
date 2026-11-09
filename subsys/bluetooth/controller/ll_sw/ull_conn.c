@@ -1128,8 +1128,11 @@ void ull_conn_done(struct node_rx_event_done *done)
 		conn->connect_expire = 0U;
 	} else {
 #if defined(CONFIG_BT_PERIPHERAL)
-		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
-			conn->periph.drift_skip = 0U;
+		/* Events prepared before the drift compensation, missed or not, use the
+		 * uncompensated anchor point.
+		 */
+		if ((lll->role == BT_HCI_ROLE_PERIPHERAL) && (conn->periph.drift_skip != 0U)) {
+			conn->periph.drift_skip--;
 		}
 #endif /* CONFIG_BT_PERIPHERAL */
 	}
