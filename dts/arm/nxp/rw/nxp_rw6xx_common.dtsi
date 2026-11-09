@@ -722,6 +722,7 @@
 	os_timer: ostimer0: timers@13b000 {
 		compatible = "nxp,os-timer";
 		reg = <0x13b000 0x1000>;
+		wakeup-ctrls = <&wuc NXP_RW_PMU_OS_EVENT_TIMER>;
 		interrupts = <41 0>;
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 27)>;
 		status = "disabled";
