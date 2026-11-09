@@ -777,7 +777,11 @@ void lll_conn_isr_tx(void *param)
 	 *       use for Rx Chain Delay in BabbleSIM? or is there a bug in
 	 *       target implementation?
 	 */
+#if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_chain_delay_get(lll->phy_tx, PHY_FLAGS_S8);
+#else /* !CONFIG_BT_CTLR_PHY */
+	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
+#endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* FIXME: Why different for BabbleSIM? */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
