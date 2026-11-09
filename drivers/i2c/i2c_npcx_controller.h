@@ -374,8 +374,19 @@ void i2c_ctrl_hold_bus(const struct device *dev, int stall);
 
 /* DMA-Driven public functions */
 #if defined(CONFIG_I2C_NPCX_DMA_DRIVEN)
-size_t i2c_ctrl_dma_proceed_write(const struct device *dev);
-size_t i2c_ctrl_dma_proceed_read(const struct device *dev);
+/* How SCL is handled while the DMA is configured and enabled (armed) */
+enum npcx_i2c_dma_scl_hold {
+	/* Address phase: the bus is not clocked yet, no need to stall SCL */
+	NPCX_I2C_DMA_SCL_NO_HOLD,
+	/*
+	 * Transaction in progress: stall SCL until the DMA is armed, otherwise
+	 * the module could move a byte too early.
+	 */
+	NPCX_I2C_DMA_SCL_HOLD,
+};
+
+size_t i2c_ctrl_dma_proceed_write(const struct device *dev, enum npcx_i2c_dma_scl_hold scl_hold);
+size_t i2c_ctrl_dma_proceed_read(const struct device *dev, enum npcx_i2c_dma_scl_hold scl_hold);
 void i2c_ctrl_handle_write_dma_int_event(const struct device *dev);
 void i2c_ctrl_handle_read_dma_int_event(const struct device *dev);
 #endif

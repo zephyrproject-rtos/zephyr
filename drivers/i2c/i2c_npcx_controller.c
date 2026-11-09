@@ -400,10 +400,8 @@ static int i2c_ctrl_recovery(const struct device *dev)
 		data->oper_state = NPCX_I2C_ERROR_RECOVERY;
 	}
 
-	/* Step 1: Make sure the bus is not stalled before exit in FIFO mode. */
-#if defined(CONFIG_I2C_NPCX_FIFO_DRIVEN)
+	/* Step 1: Make sure the bus is not stalled before exit. */
 	i2c_ctrl_hold_bus(dev, 0);
-#endif
 
 	/*
 	 * Step 2: Abort data, wait for STOP condition completed.
@@ -481,7 +479,7 @@ static int i2c_ctrl_proc_write_msg(const struct device *dev,
 		data->oper_state = NPCX_I2C_WRITE_DATA;
 #if defined(CONFIG_I2C_NPCX_DMA_DRIVEN)
 		/* Start the following DMA transmitted transaction */
-		i2c_ctrl_dma_proceed_write(dev);
+		i2c_ctrl_dma_proceed_write(dev, NPCX_I2C_DMA_SCL_HOLD);
 #endif
 		i2c_ctrl_irq_enable(dev, 1);
 
@@ -527,7 +525,7 @@ static int i2c_ctrl_proc_read_msg(const struct device *dev, struct i2c_msg *msg)
 		data->oper_state = NPCX_I2C_READ_DATA;
 #if defined(CONFIG_I2C_NPCX_DMA_DRIVEN)
 		/* Start DMA received transaction */
-		i2c_ctrl_dma_proceed_read(dev);
+		i2c_ctrl_dma_proceed_read(dev, NPCX_I2C_DMA_SCL_HOLD);
 #endif
 #if defined(CONFIG_I2C_NPCX_FIFO_DRIVEN)
 		/* Setup threshold of RX FIFO first */
