@@ -1040,6 +1040,33 @@ int bt_br_init(void)
 	return 0;
 }
 
+int bt_br_read_bd_addr(void)
+{
+	struct bt_hci_rp_read_bd_addr *rp;
+	struct net_buf *rsp;
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_BD_ADDR, NULL, &rsp);
+	if (err != 0) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	if (rp->status != 0U) {
+		err = -EIO;
+	} else if (bt_addr_eq(&rp->bdaddr, BT_ADDR_ANY) ||
+		   bt_addr_eq(&rp->bdaddr, BT_ADDR_NONE)) {
+		err = -ENODEV;
+	} else {
+		bt_addr_copy(&bt_dev.br.bdaddr, &rp->bdaddr);
+		err = 0;
+	}
+
+	net_buf_unref(rsp);
+
+	return err;
+}
+
 static int br_start_inquiry(const struct bt_br_discovery_param *param)
 {
 	const uint8_t iac[3] = {0x33, 0x8b, 0x9e};
