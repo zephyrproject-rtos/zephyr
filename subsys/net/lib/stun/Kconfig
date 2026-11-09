@@ -32,4 +32,71 @@ module-str = Log level for STUN
 module-help = Enable the log of the STUN library.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config STUN_CLIENT
+	bool "STUN client over UDP sockets"
+	depends on NET_SOCKETS && NET_UDP
+	select CSPRNG_NEEDED
+	help
+	  The Binding transaction, which does no I/O, and blocking calls that
+	  run it over a UDP socket to ask a STUN server for the address it
+	  sees this device at, on a socket of the caller or on one opened for
+	  the purpose. The transaction id of a request has to be unpredictable
+	  (RFC 8489 section 5), so the client needs a cryptographically
+	  secure random number generator. A server given by host name, not
+	  by literal address, also needs DNS_RESOLVER.
+
+if STUN_CLIENT
+
+config STUN_CLIENT_SOFTWARE
+	string "SOFTWARE attribute of the client's requests"
+	default "Zephyr"
+	help
+	  What the client describes itself as to the server (RFC 8489
+	  sections 6.1 and 14.14), at most 96 bytes. Leave it empty to send
+	  no SOFTWARE attribute; a version number here tells an observer what
+	  to attack.
+
+config STUN_CLIENT_RX_BUF_SIZE
+	int "Size of the client's receive buffer"
+	default 576
+	range 128 1500
+	help
+	  The client receives into a buffer of this size on the stack of its
+	  caller. A STUN message over UDP is meant to stay below 576 bytes
+	  (RFC 8489 section 6.1); a response to a Binding request is some
+	  100 to 200 bytes with the attributes servers add to it. A datagram
+	  that does not fit is not taken for an answer, and the query ends
+	  with a timeout.
+
+config STUN_BINDING_RTO_MS
+	int "Initial retransmission timeout of a Binding request, in milliseconds"
+	default 500
+	range 500 60000
+	help
+	  How long a Binding transaction waits for the answer before it sends
+	  the request a second time. The wait doubles with every further
+	  transmission (RFC 8489 section 6.2.1, which asks for 500 ms or
+	  more).
+
+config STUN_BINDING_MAX_TRANSMITS
+	int "Number of times a Binding request is sent"
+	default 7
+	range 1 16
+	help
+	  Rc of RFC 8489 section 6.2.1: how many times a Binding transaction
+	  sends its request, the first transmission included, while no answer
+	  arrives.
+
+config STUN_BINDING_FINAL_WAIT_RTO
+	int "Wait after the last transmission, in initial timeouts"
+	default 16
+	range 1 255
+	help
+	  Rm of RFC 8489 section 6.2.1: after its last transmission a Binding
+	  transaction waits this many times STUN_BINDING_RTO_MS for the
+	  answer and then fails. With the defaults of the three options a
+	  transaction that gets no answer lasts 39.5 seconds.
+
+endif # STUN_CLIENT
+
 endif # STUN
