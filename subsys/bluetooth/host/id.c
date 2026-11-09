@@ -2352,6 +2352,10 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 		return -EINVAL;
 	}
 
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	bt_addr_copy(&oob->addr, &bt_dev.id_addr[0].a);
 
 	return 0;

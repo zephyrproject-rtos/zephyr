@@ -4395,7 +4395,7 @@ static int set_event_mask(void)
 
 	ev = net_buf_add(buf, sizeof(*ev));
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && BT_FEAT_BREDR(bt_dev.features)) {
 		/* bt_br_init() enables Secure Simple Pairing and Extended
 		 * Inquiry Response, so a Bluetooth 2.1 feature set is assumed
 		 */
@@ -4701,9 +4701,6 @@ static int hci_init(void)
 		if (err) {
 			return err;
 		}
-	} else if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-		LOG_ERR("Non-BR/EDR controller detected");
-		return -EIO;
 	}
 #if defined(CONFIG_BT_CONN)
 	else if (!bt_dev.le.acl_mtu) {
@@ -5390,7 +5387,8 @@ int bt_set_name(const char *name)
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CLASSIC) && atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && BT_FEAT_BREDR(bt_dev.features) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		err = bt_br_write_local_name(name);
 		if (err != 0) {
 			LOG_ERR("Unable to set local name %d", err);

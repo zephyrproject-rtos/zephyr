@@ -3246,6 +3246,12 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	rsp->init_key_dist = (req->init_key_dist & RECV_KEYS);
 	rsp->resp_key_dist = (req->resp_key_dist & SEND_KEYS);
 
+	/* A link key is of no use with a Controller that lacks BR/EDR */
+	if (IS_ENABLED(CONFIG_BT_SMP_DERIVE_LK) && !BT_FEAT_BREDR(bt_dev.features)) {
+		rsp->init_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+		rsp->resp_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+	}
+
 	if ((rsp->auth_req & BT_SMP_AUTH_SC) &&
 	    (req->auth_req & BT_SMP_AUTH_SC)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_SC);
@@ -3440,6 +3446,12 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	if (req->auth_req & BT_SMP_AUTH_BONDING) {
 		req->init_key_dist = SEND_KEYS;
 		req->resp_key_dist = RECV_KEYS;
+
+		/* A link key is of no use with a Controller that lacks BR/EDR */
+		if (IS_ENABLED(CONFIG_BT_SMP_DERIVE_LK) && !BT_FEAT_BREDR(bt_dev.features)) {
+			req->init_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+			req->resp_key_dist &= ~BT_SMP_DIST_LINK_KEY;
+		}
 	} else {
 		req->init_key_dist = 0;
 		req->resp_key_dist = 0;

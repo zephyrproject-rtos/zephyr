@@ -61,6 +61,10 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 		return NULL;
 	}
 
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return NULL;
+	}
+
 	conn = bt_conn_lookup_addr_br(peer);
 	if (conn) {
 		switch (conn->state) {
