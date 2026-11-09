@@ -177,6 +177,13 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Code relocation
+
+  * Espressif SoCs support :kconfig:option:`CONFIG_CODE_DATA_RELOCATION`: ``RAM`` places
+    code in IRAM and data in DRAM, and ``EXTMEM_NOINIT`` places noinit objects in PSRAM. The
+    linker script places the relocated sections inside its own output sections, see
+    :ref:`code_data_relocation`.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
