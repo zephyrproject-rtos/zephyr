@@ -222,6 +222,12 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 		ret = DMA_STATUS_COMPLETE;
 	}
 	LOG_DBG("transfer %d", tcds);
+
+	/* The major loop interrupt is always enabled, also for a client without a callback */
+	if (data->dma_callback == NULL) {
+		return;
+	}
+
 	data->dma_callback(data->dev, data->user_data, channel, ret);
 }
 
@@ -712,11 +718,14 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	data->busy = false;
+	/* Without a new callback, the callback of the previous configuration must not stay */
+	data->user_data = NULL;
+	data->dma_callback = NULL;
+	data->dev = dev;
 	if (config->dma_callback) {
 		LOG_DBG("INSTALL call back on channel %d", channel);
 		data->user_data = config->user_data;
 		data->dma_callback = config->dma_callback;
-		data->dev = dev;
 	}
 
 	irq_unlock(key);
