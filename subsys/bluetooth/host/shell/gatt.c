@@ -468,6 +468,21 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	if (ctx->read.by_uuid.uuid == NULL) {
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
+		shell_error(sh, "Invalid UUID %s", argv[1]);
+		return -ENOEXEC;
+	}
+
+	if (ctx->read.by_uuid.start_handle < BT_ATT_FIRST_ATTRIBUTE_HANDLE ||
+	    ctx->read.by_uuid.end_handle > BT_ATT_LAST_ATTRIBUTE_HANDLE ||
+	    ctx->read.by_uuid.start_handle > ctx->read.by_uuid.end_handle) {
+		shell_error(sh, "Invalid handle range 0x%04x-0x%04x",
+			    ctx->read.by_uuid.start_handle, ctx->read.by_uuid.end_handle);
+		(void)memset(&ctx->read, 0, sizeof(ctx->read));
+		return -ENOEXEC;
+	}
+
 	err = bt_gatt_read(default_conn, &ctx->read);
 	if (err) {
 		(void)memset(&ctx->read, 0, sizeof(ctx->read));
