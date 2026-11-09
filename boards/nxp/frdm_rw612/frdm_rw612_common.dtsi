@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_rw_pmu.h>
 
 / {
 	model = "nxp,frdm_rw612";
@@ -110,6 +111,7 @@
 
 &flexcomm3 {
 	compatible = "nxp,lpc-usart";
+	wakeup-ctrls = <&wuc NXP_RW_PMU_FLEXCOMM3>;
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_flexcomm3_usart>;
 	pinctrl-names = "default";
