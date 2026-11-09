@@ -25,6 +25,15 @@ void nsi_cpu_set_auto_start(int cpu_n, bool auto_start);
 bool nsi_cpu_get_auto_start(int cpu_n);
 
 /**
+ * @brief Check if a CPU has been booted (or is in the process of booting)
+ *
+ * @param[in] cpu_n:      Which CPU
+ *
+ * @returns true if nsi_cpu_boot() was called for it (or it was auto-booted), false otherwise
+ */
+bool nsi_cpu_is_booted(int cpu_n);
+
+/**
  * @brief Boot CPU <cpu_n>
  *
  * Note: This API may only be called if that CPU was not stared before

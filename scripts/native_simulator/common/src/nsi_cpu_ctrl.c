@@ -30,6 +30,13 @@ bool nsi_cpu_get_auto_start(int cpu_n)
 	return cpu_auto_start[cpu_n];
 }
 
+bool nsi_cpu_is_booted(int cpu_n)
+{
+	CPU_N_RANGE_CHECK(cpu_n);
+
+	return cpu_booted[cpu_n];
+}
+
 void nsi_cpu_auto_boot(void)
 {
 	for (int i = 0; i < NSI_N_CPUS; i++) {
