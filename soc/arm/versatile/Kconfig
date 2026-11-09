@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Takayuki Goto
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_VERSATILE
+	select ARM
+	select CPU_ARM926EJ_S
