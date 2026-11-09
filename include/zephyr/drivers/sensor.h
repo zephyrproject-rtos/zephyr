@@ -530,6 +530,24 @@ typedef int (*sensor_get_decoder_t)(const struct device *dev,
 typedef void (*sensor_submit_t)(const struct device *sensor, struct rtio_iodev_sqe *sqe);
 
 /**
+ * @brief Callback API to cancel an RTIO submission for a sensor device.
+ *
+ * Invoked when rtio_sqe_cancel() is called for a submission to a sensor
+ * iodev, so that the driver can stop work it still owns, for example a stream
+ * that waits for its next trigger. The rules of @ref rtio_iodev_api.cancel
+ * apply: the driver resolves @p handle with rtio_iodev_sqe_from_handle() under
+ * its own lock. If it still owns the submission, it can complete it, typically
+ * with rtio_iodev_sqe_err() and -ECANCELED. Otherwise this must be a no-op, and
+ * the submission ends when the driver completes it.
+ *
+ * @param sensor The sensor device
+ * @param r RTIO context that owns the submission
+ * @param handle Handle of the submission being canceled
+ */
+typedef void (*sensor_cancel_t)(const struct device *sensor, struct rtio *r,
+				rtio_sqe_handle_t handle);
+
+/**
  * @driver_ops{Sensor}
  */
 __subsystem struct sensor_driver_api {
@@ -561,6 +579,10 @@ __subsystem struct sensor_driver_api {
 	 * @driver_ops_optional Handler for RTIO submissions to this sensor.
 	 */
 	sensor_submit_t submit;
+	/**
+	 * @driver_ops_optional Handler for RTIO cancellations of submissions to this sensor.
+	 */
+	sensor_cancel_t cancel;
 };
 /**
  * @}
