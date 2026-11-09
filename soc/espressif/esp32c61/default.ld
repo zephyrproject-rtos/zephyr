@@ -672,6 +672,69 @@ SECTIONS
     __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  /* --- START OF SPIRAM --- */
+
+#if defined(CONFIG_ESP_SPIRAM)
+  /* This section is required to skip flash content because ext_dram_seg
+   * and irom0_0_seg/drom0_0_seg share the same bus (unified cache).
+   * The MMU reserves pages for both IROM and DROM from the same address
+   * region, so the dummy must account for both to match the runtime
+   * free_head used by esp_mmu_map_reserve_block_with_caps(). */
+  .ext_ram.dummy (NOLOAD):
+  {
+    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
+    . += ALIGN(_rodata_reserved_end - _rodata_reserved_start, CACHE_ALIGN);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.data (NOLOAD) :
+  {
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
+
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif
+    . = ALIGN(16);
+    *(.ext_ram_noinit.*)
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(16);
+
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
+    KEEP(*(.lvgl_buf*))
+    . = ALIGN(16);
+    KEEP(*(.lvgl_heap*))
+    . = ALIGN(16);
+    KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
+    . = ALIGN(16);
+
+    _ext_ram_bss_end = ABSOLUTE(.);
+
+    /* Used by Shared Multi Heap */
+    _ext_ram_heap_start = ABSOLUTE(.);
+    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
+
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+#endif /* CONFIG_ESP_SPIRAM */
+
+  /* --- END OF SPIRAM --- */
+
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
@@ -759,6 +822,10 @@ SECTIONS
 #if defined(CONFIG_ESP_SPIRAM)
   ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
+  ASSERT(((_ext_ram_start - ORIGIN(ext_dram_seg)) >=
+          (ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN) +
+           ALIGN(_rodata_reserved_end - _rodata_reserved_start, CACHE_ALIGN))),
+          "External SPIRAM overlaps the flash mapping.")
 #endif
 
   /* --- END OF DRAM --- */
@@ -930,68 +997,6 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
-
-  /* --- START OF SPIRAM --- */
-
-#if defined(CONFIG_ESP_SPIRAM)
-  /* This section is required to skip flash content because ext_dram_seg
-   * and irom0_0_seg/drom0_0_seg share the same bus (unified cache).
-   * The MMU reserves pages for both IROM and DROM from the same address
-   * region, so the dummy must account for both to match the runtime
-   * free_head used by esp_mmu_map_reserve_block_with_caps(). */
-  .ext_ram.dummy (NOLOAD):
-  {
-    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
-    . += ALIGN(_rodata_reserved_end - _rodata_reserved_start, CACHE_ALIGN);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-
-  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.data (NOLOAD) :
-  {
-    _ext_ram_start = ABSOLUTE(.);
-    _ext_ram_noinit_start = ABSOLUTE(.);
-
-#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
-    *libdrivers__wifi.a:(.noinit .noinit.*)
-    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
-    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
-    *libsubsys__net__ip.a:(.noinit .noinit.*)
-    *libsubsys__net.a:(.noinit .noinit.*)
-#endif
-    . = ALIGN(16);
-    *(.ext_ram_noinit.*)
-    . = ALIGN(16);
-    _ext_ram_noinit_end = ABSOLUTE(.);
-
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    . = ALIGN(16);
-
-#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
-    . = ALIGN(16);
-
-    KEEP(*(.lvgl_buf*))
-    . = ALIGN(16);
-    KEEP(*(.lvgl_heap*))
-    . = ALIGN(16);
-    KEEP(*(.mbedtls_heap*))
-    . = ALIGN(16);
-    KEEP(*(.ot_msg_pool*))
-    . = ALIGN(16);
-
-    _ext_ram_bss_end = ABSOLUTE(.);
-
-    /* Used by Shared Multi Heap */
-    _ext_ram_heap_start = ABSOLUTE(.);
-    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
-    . = ALIGN(16);
-    _ext_ram_heap_end = ABSOLUTE(.);
-
-    _ext_ram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-#endif /* CONFIG_ESP_SPIRAM */
-
-  /* --- END OF SPIRAM --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
   #include <zephyr/linker/intlist.ld>

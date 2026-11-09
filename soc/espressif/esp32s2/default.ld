@@ -852,40 +852,13 @@ SECTIONS
     _dram_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-  /* .bss */
-  .dram0.bss (NOLOAD) :
-  {
-    . = ALIGN (8);
-    __bss_start = ABSOLUTE(.);
-    #include <esp_code_relocate_bss.ld.inc>
-    _bss_start = ABSOLUTE(.);
-
-    *(.dynsbss)
-    *(.sbss)
-    *(.sbss.*)
-    *(.gnu.linkonce.sb.*)
-    *(.scommon)
-    *(.sbss2)
-    *(.sbss2.*)
-    *(.gnu.linkonce.sb2.*)
-    *(.dynbss)
-
-#include <esp_spiram_relocate_bss.ld.inc>
-
-    *(.share.mem)
-    *(.gnu.linkonce.b.*)
-    *(COMMON)
-    . = ALIGN (8);
-    __bss_end = ABSOLUTE(.);
-    _bss_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
 #ifdef CONFIG_ESP_SPIRAM
   /* This section holds .ext_ram.bss data, and will be put in PSRAM */
   .ext_ram (NOLOAD):
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
 
 #ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
     *libdrivers__wifi.a:(.noinit .noinit.*)
@@ -926,6 +899,34 @@ SECTIONS
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_ram_seg)
 #endif /* CONFIG_ESP_SPIRAM */
+
+  /* .bss */
+  .dram0.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    __bss_start = ABSOLUTE(.);
+    #include <esp_code_relocate_bss.ld.inc>
+    _bss_start = ABSOLUTE(.);
+
+    *(.dynsbss)
+    *(.sbss)
+    *(.sbss.*)
+    *(.gnu.linkonce.sb.*)
+    *(.scommon)
+    *(.sbss2)
+    *(.sbss2.*)
+    *(.gnu.linkonce.sb2.*)
+    *(.dynbss)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
+    *(.share.mem)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN (8);
+    __bss_end = ABSOLUTE(.);
+    _bss_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(RAMABLE_REGION)
 
   .dram0.noinit (NOLOAD) :
   {

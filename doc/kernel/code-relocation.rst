@@ -189,7 +189,11 @@ region and kind without a matching ``LINKER_RELOCATE_SUPPORTS_<REGION>_<KIND>``.
 
 Espressif SoCs use this mode. ``RAM`` places code and literals in IRAM, rodata
 and data in the initialized DRAM section, and bss and noinit in their DRAM
-sections. No other region or kind is supported.
+sections. With :kconfig:option:`CONFIG_ESP_SPIRAM`, ``EXTMEM_NOINIT`` places
+noinit objects in PSRAM. No other region or kind is supported.
+
+With :kconfig:option:`CONFIG_USERSPACE`, ``RAM`` does not take rodata, since user threads
+cannot read it from DRAM. Use ``RAM_TEXT_DATA_BSS`` for files that have read-only data.
 
 Tips
 ====

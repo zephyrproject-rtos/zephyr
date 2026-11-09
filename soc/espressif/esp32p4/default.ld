@@ -828,6 +828,47 @@ SECTIONS
     __data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+  /* --- START OF SPIRAM --- */
+
+#if defined(CONFIG_ESP_SPIRAM)
+  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
+  .ext_ram.data (NOLOAD) :
+  {
+    _ext_ram_start = ABSOLUTE(.);
+    _ext_ram_noinit_start = ABSOLUTE(.);
+#include <esp_code_relocate_extmem.ld.inc>
+    . = ALIGN(16);
+    *(.ext_ram_noinit.*)
+    . = ALIGN(16);
+    _ext_ram_noinit_end = ABSOLUTE(.);
+
+    _ext_ram_bss_start = ABSOLUTE(.);
+    *(.ext_ram.bss*)
+    . = ALIGN(16);
+
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
+    KEEP(*(.lvgl_buf*))
+    . = ALIGN(16);
+    KEEP(*(.lvgl_heap*))
+    . = ALIGN(16);
+    KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+
+    _ext_ram_bss_end = ABSOLUTE(.);
+
+    _ext_ram_heap_start = ABSOLUTE(.);
+    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = ALIGN(16);
+    _ext_ram_heap_end = ABSOLUTE(.);
+
+    _ext_ram_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(EXT_DRAM_REGION)
+#endif /* CONFIG_ESP_SPIRAM */
+
+  /* --- END OF SPIRAM --- */
+
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
@@ -1044,46 +1085,6 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
-
-  /* --- START OF SPIRAM --- */
-
-#if defined(CONFIG_ESP_SPIRAM)
-  /* This section holds .ext_ram.bss data, and will be put in PSRAM */
-  .ext_ram.data (NOLOAD) :
-  {
-    _ext_ram_start = ABSOLUTE(.);
-    _ext_ram_noinit_start = ABSOLUTE(.);
-    . = ALIGN(16);
-    *(.ext_ram_noinit.*)
-    . = ALIGN(16);
-    _ext_ram_noinit_end = ABSOLUTE(.);
-
-    _ext_ram_bss_start = ABSOLUTE(.);
-    *(.ext_ram.bss*)
-    . = ALIGN(16);
-
-#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
-    . = ALIGN(16);
-
-    KEEP(*(.lvgl_buf*))
-    . = ALIGN(16);
-    KEEP(*(.lvgl_heap*))
-    . = ALIGN(16);
-    KEEP(*(.mbedtls_heap*))
-    . = ALIGN(16);
-
-    _ext_ram_bss_end = ABSOLUTE(.);
-
-    _ext_ram_heap_start = ABSOLUTE(.);
-    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
-    . = ALIGN(16);
-    _ext_ram_heap_end = ABSOLUTE(.);
-
-    _ext_ram_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(EXT_DRAM_REGION)
-#endif /* CONFIG_ESP_SPIRAM */
-
-  /* --- END OF SPIRAM --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
   #include <zephyr/linker/intlist.ld>
