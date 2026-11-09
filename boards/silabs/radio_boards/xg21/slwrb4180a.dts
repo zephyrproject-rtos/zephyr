@@ -18,6 +18,7 @@
 	model = "Silicon Labs BRD4180A (Mighty Gecko 21 Radio Board)";
 
 	chosen {
+		zephyr,bt-c2h-uart = &usart0;
 		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;

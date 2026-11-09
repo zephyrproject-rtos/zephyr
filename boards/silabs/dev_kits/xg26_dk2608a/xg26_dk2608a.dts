@@ -18,6 +18,7 @@
 	model = "Silicon Labs EFR32xG26 Dev Kit (xG26-DK2608A)";
 
 	chosen {
+		zephyr,bt-c2h-uart = &usart0;
 		zephyr,bt-hci = &bt_hci_silabs;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
