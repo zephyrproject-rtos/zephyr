@@ -386,7 +386,7 @@ static int cmd_reprovision_remote(const struct shell *sh, size_t argc, char *arg
 		return err;
 	}
 
-	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
+	if (addr && !BT_MESH_ADDR_IS_UNICAST(addr)) {
 		shell_print(sh, "Must be a valid unicast address");
 		return -EINVAL;
 	}
