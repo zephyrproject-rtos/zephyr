@@ -115,6 +115,56 @@ Boards
   that relied on the alias, such as :zephyr:code-sample:`blinky`, need an
   overlay pointing at a LED wired to the headers.
 
+* The Espressif SoC family is renamed from ``espressif_esp32`` to ``espressif``. The
+  :kconfig:option:`CONFIG_SOC_FAMILY` string is now ``"espressif"`` and the family option is
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF`. ``CONFIG_SOC_FAMILY_ESPRESSIF_ESP32`` is still set
+  for Espressif SoCs, but it is deprecated and will be removed in a future release. Use
+  :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF` instead.
+
+* The Kconfig options defined by the Espressif SoCs in :file:`soc/espressif` now use the SoC
+  symbol prefixes required by the Kconfig naming conventions. Options shared by the Espressif SoC
+  family use ``SOC_FAMILY_ESPRESSIF_`` and options that belong to a single SoC use ``SOC_<SoC>_``.
+  The former ``ESP_``, ``ESP32_``, ``ESP32<SoC>_`` and ``SOC_ESP32_`` prefixes are dropped, and
+  options that had no vendor prefix, such as ``SPIRAM_*``, ``SPI_FLASH_*`` and ``BOOTLOADER_*``,
+  gain the family prefix. The flash options lose the ``ESPTOOLPY_`` tool name (``FLASHFREQ`` and
+  ``FLASHMODE`` become ``FLASH_FREQ`` and ``FLASH_MODE``), and a few redundant words are dropped.
+  For example:
+
+  * ``CONFIG_ESP_SPIRAM`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM`.
+  * ``CONFIG_SPIRAM_MODE_OCT`` is now :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_MODE_OCT`.
+  * ``CONFIG_ESPTOOLPY_FLASHFREQ_80M`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_FREQ_80M`.
+  * ``CONFIG_ESPTOOLPY_OCT_FLASH`` is now :kconfig:option:`CONFIG_SOC_ESP32S3_FLASH_OCTAL`.
+  * ``CONFIG_ESP32_ULP_COPROC_ENABLED`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_ULP_ENABLED`.
+  * ``CONFIG_ESP_CONSOLE_UART_NUM`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM`.
+  * ``CONFIG_SOC_ESP32_PM_SUPPORT_CPU_PD`` is now
+    :kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_PM_SUPPORT_CPU_PD`.
+  * ``CONFIG_ESP32S3_DATA_CACHE_64KB`` is now :kconfig:option:`CONFIG_SOC_ESP32S3_DATA_CACHE_64KB`.
+  * ``CONFIG_ESP32_CACHE_L2_512KB`` is now :kconfig:option:`CONFIG_SOC_ESP32P4_CACHE_L2_512KB`.
+
+  The old names of the options that can be set by users are kept as deprecated options and will be
+  removed in a future release. Setting one of them prints a deprecation warning and forwards the
+  value to the renamed option. Configuration files should still be updated, because the following
+  uses of the old names are not covered:
+
+  * Code that tests an old boolean ``CONFIG_`` macro. A deprecated boolean option only appears in
+    :file:`autoconf.h` when it is set.
+  * Board ``Kconfig.defconfig`` files that change the default of a renamed option or choice, for
+    example ``choice SPIRAM_MODE``. They must use the new option and choice names.
+  * A deprecated option set by an application does not override a value that a board sets for the
+    renamed option.
+
+  The options ``CONFIG_ESPTOOLPY_FLASHSIZE_*``, ``CONFIG_ESPTOOLPY_HEADER_FLASHSIZE_UPDATE``,
+  ``CONFIG_ESPTOOLPY_BEFORE_*``, ``CONFIG_ESPTOOLPY_AFTER_*``,
+  ``CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY``, ``CONFIG_SPIRAM_TYPE_ESPPSRAM*``,
+  ``CONFIG_ESP32S3_INSTRUCTION_CACHE_WRAP``, ``CONFIG_ESP32S3_DATA_CACHE_WRAP``,
+  ``CONFIG_ESP32_ULP_PANIC_OUTPUT_ENABLE`` and ``CONFIG_ESP32_ULP_RISCV_INTERRUPT_ENABLE`` have
+  been removed because they had no effect. Remove them from configuration files. Board
+  ``Kconfig.defconfig`` files must drop their ``choice SPIRAM_TYPE`` overrides. The flash size
+  comes from the ``zephyr,flash`` devicetree node.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -227,6 +277,13 @@ Ethernet
 * The ``ETHERNET_LLDP`` value of :c:enum:`ethernet_hw_caps` has been removed. LLDP is now enabled
   on every Ethernet interface when :kconfig:option:`CONFIG_NET_LLDP` is set. Out-of-tree Ethernet
   drivers must stop reporting it. (:github:`124787`)
+
+Flash
+=====
+
+* The Espressif flash encryption compatibility option ``CONFIG_ESP_FLASH_ENCRYPTION`` is now
+  :kconfig:option:`CONFIG_ESP32_FLASH_ENCRYPTION`, defined by the ESP32 flash driver. The old name
+  is kept as a deprecated option and will be removed in a future release.
 
 I2S
 ===
@@ -437,6 +494,23 @@ Shell
 
 Modules
 *******
+
+* Espressif ``hal_espressif`` options moved from :file:`soc/espressif` to
+  :zephyr_file:`modules/Kconfig.esp32`:
+
+  * The per-SoC ``CONFIG_MAC_BB_PD`` options are merged into
+    :kconfig:option:`CONFIG_ESP32_MAC_BB_PD`.
+  * The per-SoC universal MAC address choices, such as
+    ``CONFIG_ESP32C6_UNIVERSAL_MAC_ADDRESSES_TWO``, are replaced by one choice with the
+    :kconfig:option:`CONFIG_ESP32_MAC_ADDRESSES_ONE`,
+    :kconfig:option:`CONFIG_ESP32_MAC_ADDRESSES_TWO` and
+    :kconfig:option:`CONFIG_ESP32_MAC_ADDRESSES_FOUR` options. The per-SoC integer options,
+    such as ``CONFIG_ESP32C6_UNIVERSAL_MAC_ADDRESSES``, and the hidden
+    ``CONFIG_ESP_MAC_ADDR_UNIVERSE_*`` and ``CONFIG_ESP_MAC_UNIVERSAL_MAC_ADDRESSES_*`` options
+    are removed.
+
+  The old names that can be set by users are kept as deprecated options and will be removed in a
+  future release.
 
 * The `zephyr-lang-rust <https://github.com/zephyrproject-rtos/zephyr-lang-rust>`_ module providing
   Rust language support is no longer an optional module of the Zephyr manifest. It is now an
