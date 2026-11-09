@@ -487,7 +487,19 @@ void *z_get_next_switch_handle(void *interrupted)
 
 	struct k_thread *next = _kernel.ready_q.cache;
 
-	z_sched_usage_switch(next);
+	/*
+	 * Interrupt exits come here whether or not they switch threads. Only
+	 * a switch ends the current thread's execution window, as it does on
+	 * the z_swap() path. Otherwise the window continues, and accounting
+	 * that the arch halted on interrupt entry resumes.
+	 */
+	if (next != _current) {
+		z_sched_usage_switch(next);
+	} else {
+		if (IS_ENABLED(CONFIG_SCHED_THREAD_USAGE)) {
+			z_sched_usage_resume();
+		}
+	}
 	_current->switch_handle = interrupted;
 	z_sched_set_current(next);
 	return next->switch_handle;
