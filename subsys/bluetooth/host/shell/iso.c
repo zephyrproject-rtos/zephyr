@@ -769,7 +769,7 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 	param.framing = BT_ISO_FRAMING_UNFRAMED;
 
 	if (argc > 1) {
-		if (!strcmp(argv[1], "enc")) {
+		if (argc == 3 && !strcmp(argv[1], "enc")) {
 			size_t bcode_len =
 				hex2bin(argv[2], strlen(argv[2]), param.bcode, sizeof(param.bcode));
 
