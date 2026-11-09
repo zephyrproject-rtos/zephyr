@@ -49,6 +49,11 @@ static int cmd_ias_client_discover(const struct shell *sh, size_t argc, char **a
 {
 	int err;
 
+	if (default_conn == NULL) {
+		shell_error(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
 	err = bt_ias_discover(default_conn);
 	if (err != 0) {
 		shell_print(sh, "IAS discover failed");
