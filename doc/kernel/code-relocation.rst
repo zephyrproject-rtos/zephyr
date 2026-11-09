@@ -187,6 +187,10 @@ inside its RAM code section. It also includes the file once with
 ``LINKER_RELOCATE_CHECK`` defined: the build then fails for every relocated
 region and kind without a matching ``LINKER_RELOCATE_SUPPORTS_<REGION>_<KIND>``.
 
+Espressif SoCs use this mode. ``RAM`` places code and literals in IRAM, rodata
+and data in the initialized DRAM section, and bss and noinit in their DRAM
+sections. No other region or kind is supported.
+
 Tips
 ====
 
