@@ -93,6 +93,11 @@ Libraries / Subsystems
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
+  * New :ref:`multiprotocol HTTP client <http_client_multiprotocol_interface>`
+    (:kconfig:option:`CONFIG_HTTP_CLIENT_MULTIPROTOCOL`), a client API meant to
+    cover HTTP/1.1, HTTP/2 and HTTP/3 over pluggable transports, with any number
+    of requests per connection in a synchronous or an asynchronous mode. HTTP/2
+    over TCP and TLS is supported in this release.
 
   * Ethernet bridge
 
