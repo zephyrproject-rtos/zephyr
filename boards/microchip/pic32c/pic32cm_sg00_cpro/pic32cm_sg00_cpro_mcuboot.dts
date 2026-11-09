@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright 2026 Siemens Mobility GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "pic32cm_sg00_cpro.dts"
+
+/ {
+	chosen {
+		/delete-property/ zephyr,romstart;
+	};
+};
