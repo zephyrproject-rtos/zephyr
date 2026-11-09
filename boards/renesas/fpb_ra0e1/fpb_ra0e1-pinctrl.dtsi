@@ -29,4 +29,33 @@
 			psels = <RA_PSEL(RA_PSEL_P1nPFS_RXD2A, 1, 10)>;
 		};
 	};
+
+	spi00_default: spi00_default {
+		group1 {
+			/* sck so ssi */
+			psels = <RA_PSEL(RA_PSEL_P1nPFS_SCK00A, 1, 2)>,
+				<RA_PSEL(RA_PSEL_P1nPFS_SO00A, 1, 1)>,
+				<RA_PSEL(RA_PSEL_P1nPFS_SSI00A, 1, 3)>;
+			output-enable;
+		};
+
+		group2 {
+			/* si */
+			psels = <RA_PSEL(RA_PSEL_P1nPFS_SI00A, 1, 0)>;
+		};
+	};
+
+	spi20_default: spi20_default {
+		group1 {
+			/* sck so */
+			psels = <RA_PSEL(RA_PSEL_P1nPFS_SCK20A, 1, 12)>,
+				<RA_PSEL(RA_PSEL_P1nPFS_SO20A, 1, 9)>;
+			output-enable;
+		};
+
+		group2 {
+			/* si */
+			psels = <RA_PSEL(RA_PSEL_P1nPFS_SI20A, 1, 10)>;
+		};
+	};
 };

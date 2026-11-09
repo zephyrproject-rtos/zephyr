@@ -90,6 +90,11 @@ config USE_RA_FSP_SAU_UART
 	help
 	  Enable RA FSP SAU UART driver
 
+config USE_RA_FSP_SAU_SPI
+	bool
+	help
+	  Enable RA FSP SAU SPI driver
+
 if USE_RA_FSP_SCE
 
 config HAS_RENESAS_RA_RSIP_E11A

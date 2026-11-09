@@ -219,6 +219,47 @@
 				};
 			};
 
+			sau-spi {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				spi00: sau-spi@0 {
+					compatible = "renesas,ra-spi-sau";
+					reg = <0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					sau-channel = <&sau_ch00>;
+					status = "disabled";
+				};
+
+				spi01: sau-spi@1 {
+					compatible = "renesas,ra-spi-sau";
+					reg = <1>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					sau-channel = <&sau_ch01>;
+					status = "disabled";
+				};
+
+				spi10: sau-spi@10 {
+					compatible = "renesas,ra-spi-sau";
+					reg = <0x10>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					sau-channel = <&sau_ch02>;
+					status = "disabled";
+				};
+
+				spi11: sau-spi@11 {
+					compatible = "renesas,ra-spi-sau";
+					reg = <0x11>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					sau-channel = <&sau_ch03>;
+					status = "disabled";
+				};
+			};
+
 			sau_ch01: ch@1 {
 				compatible = "renesas,ra-sau-channel";
 				reg = <1>;
@@ -268,6 +309,29 @@
 					reg = <2>;
 					interrupts = <14 1>;
 					sau-channels = <&sau_ch10>, <&sau_ch11>;
+					status = "disabled";
+				};
+			};
+
+			sau-spi {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				spi20: sau-spi@20 {
+					compatible = "renesas,ra-spi-sau";
+					reg = <0x20>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					sau-channel = <&sau_ch10>;
+					status = "disabled";
+				};
+
+				spi21: sau-spi@21 {
+					compatible = "renesas,ra-spi-sau";
+					reg = <0x21>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+					sau-channel = <&sau_ch11>;
 					status = "disabled";
 				};
 			};

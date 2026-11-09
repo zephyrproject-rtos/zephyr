@@ -1,6 +1,6 @@
 # Renesas RA Family
 
-# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SPI_RENESAS_RA
@@ -98,3 +98,30 @@ config SPI_RENESAS_RA_SCI_B_DTC
 	  Enable DTC (Data Transfer Control) support for the SCI B SPI Driver of RA family.
 
 endif # SPI_RENESAS_RA_SCI_B
+
+config SPI_RENESAS_RA_SAU
+	bool "Renesas RA SAU SPI"
+	default y
+	depends on DT_HAS_RENESAS_RA_SPI_SAU_ENABLED
+	select SPI_RENESAS_RA_SAU_INTERRUPT if SPI_ASYNC
+	select USE_RA_FSP_SAU_SPI
+	select PINCTRL
+	help
+	  Enable Renesas RA SAU (Serial Array Unit) simplified SPI driver.
+
+if SPI_RENESAS_RA_SAU
+
+config SPI_RENESAS_RA_SAU_INTERRUPT
+	bool "RENESAS RA SAU SPI Interrupt Support"
+	depends on SPI_ASYNC
+	help
+	  Enable Interrupt support for the SAU SPI Driver of RA family.
+
+config SPI_RENESAS_RA_SAU_DTC
+	bool "RA MCU SAU SPI DTC Support"
+	depends on SPI_RENESAS_RA_SAU_INTERRUPT
+	select USE_RA_FSP_DTC
+	help
+	  Enable DTC support for the SAU SPI Driver of RA family.
+
+endif # SPI_RENESAS_RA_SAU
