@@ -1322,7 +1322,7 @@
 		};
 	};
 
-	otgfs_phy: otgfs_phy {
+	otgfs_phy: otgfs-usb-phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};

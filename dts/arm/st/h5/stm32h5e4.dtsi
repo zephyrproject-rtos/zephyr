@@ -206,9 +206,9 @@
 		io-channels = <&adc3 17>;
 	};
 
-	/delete-node/ usbphy;
+	/delete-node/ usb-phy;
 
-	otgfs_phy: otgfs-phy {
+	otgfs_phy: otgfs-usb-phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};
