@@ -26,6 +26,7 @@
 	chosen {
 		zephyr,flash-controller = &iap;
 		zephyr,crc = &crc;
+		zephyr,entropy = &rng;
 	};
 
 	cpus {
@@ -233,6 +234,13 @@
 				erase-block-size = <32768>;
 				write-block-size = <256>;
 			};
+		};
+
+		rng: rng@4003a000 {
+			compatible = "nxp,lpc-rng";
+			reg = <0x4003a000 0x1000>;
+			clocks = <&syscon MCUX_RNG_CLK>;
+			status = "okay";
 		};
 
 		ctimer3: ctimer@40048000 {
