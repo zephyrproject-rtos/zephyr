@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensor
+  depends_on: gpio
+  filter: dt_alias_exists("qdec0") and dt_compat_enabled("st,stm32-qdec")
+  platform_allow:
+    - stm32h747i_disco/stm32h747xx/m7
+  integration_platforms:
+    - stm32h747i_disco/stm32h747xx/m7
+  harness: ztest
+  harness_config:
+    fixture: gpio_loopback
+tests:
+  drivers.sensor.qdec_stm32: {}
+  drivers.sensor.qdec_stm32.cpr4:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="cpr4.overlay"
