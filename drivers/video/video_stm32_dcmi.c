@@ -508,13 +508,6 @@ PINCTRL_DT_INST_DEFINE(0);
 	(bus_width) == 14 ? DCMI_EXTEND_DATA_14B :					\
 	DCMI_EXTEND_DATA_8B)
 
-#define DCMI_DMA_CHANNEL(inst, src, dest)						\
-	.dma = {									\
-		COND_CODE_1(DT_INST_DMAS_HAS_IDX(inst, 0),				\
-			(DCMI_DMA_CHANNEL_INIT(inst, 0, src, dest)),			\
-			(NULL))								\
-	},
-
 static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 	.hdcmi = {
 		.Instance = (DCMI_TypeDef *) DT_INST_REG_ADDR(0),
@@ -540,7 +533,9 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 				.LineSelectStart = DCMI_OELS_ODD,
 		},
 	},
-	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
+	.dma = {
+		DCMI_DMA_CHANNEL_INIT(0, 0, PERIPHERAL, MEMORY),
+	},
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
