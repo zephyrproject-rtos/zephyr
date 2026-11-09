@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - virtio
+  timeout: 180
+
+tests:
+  drivers.virtio.queue_submission:
+    # Real submissions program descriptors through k_mem_phys_addr(), which
+    # requires the board to declare a SRAM region. native_sim has none, so it is
+    # not listed here; the descriptor-free virtqueue_size_validation suite
+    # (tests/drivers/virtio/virtqueue_size_validation) keeps running there.
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_cortex_m3
+
+  drivers.virtio.queue_submission.smp:
+    # Same suite on a two-CPU machine. CONFIG_SCHED_CPU_MASK lets the test pin a
+    # probe thread to CPU 1 and prove the secondary CPU is actually scheduling.
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
