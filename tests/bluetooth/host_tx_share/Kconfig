@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_SIX_BUFFERS
+	bool "Run only the test with six controller buffers"
+	help
+	  Give the Host six controller buffers instead of one, and let the
+	  test decide when the controller reports packets as completed, so
+	  that one connection can hold every buffer.
+
+source "Kconfig.zephyr"

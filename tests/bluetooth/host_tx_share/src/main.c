@@ -41,11 +41,13 @@
 #define GENERIC_RP_SIZE 64U
 
 #define LE_ACL_MAX_LEN 27U
-/* A single controller buffer, shared by both connections */
-#define LE_ACL_MAX_NUM 1U
+/* The controller buffers, shared by both connections */
+#define LE_ACL_MAX_NUM COND_CODE_1(CONFIG_TEST_SIX_BUFFERS, (6U), (1U))
 
 #define TEST_CONN_NUM 2U
 #define TEST_NOTIFY_NUM 6U
+/* Notifications the first connection queues in the test with six buffers */
+#define TEST_BURST_NUM 8U
 
 BT_GATT_SERVICE_DEFINE(test_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_DECLARE_16(0xfff0)),
@@ -54,7 +56,7 @@ BT_GATT_SERVICE_DEFINE(test_svc,
 );
 
 /* The handles of the notifications in the order the controller got them */
-static uint16_t sent[TEST_NOTIFY_NUM + 1U];
+static uint16_t sent[TEST_BURST_NUM + 1U];
 static atomic_t sent_num;
 static atomic_t acl_unexpected;
 
@@ -196,31 +198,34 @@ static void acl_handle(struct net_buf *buf)
 	}
 }
 
-/* The controller sends each packet at once and reports it as completed */
-static void completed_handler(struct k_work *work)
+static void completed_send(size_t i, uint16_t count)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct bt_hci_evt_num_completed_packets *evt;
 	struct bt_hci_handle_count *hc;
 	struct net_buf *buf;
 
+	buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, sizeof(*evt) + sizeof(*hc));
+	evt = net_buf_add(buf, sizeof(*evt));
+	evt->num_handles = 1U;
+	hc = net_buf_add(buf, sizeof(*hc));
+	hc->handle = sys_cpu_to_le16(conn_handle(i));
+	hc->count = sys_cpu_to_le16(count);
+	bt_hci_recv(dev, buf);
+}
+
+/* The controller sends each packet at once and reports it as completed */
+static void completed_handler(struct k_work *work)
+{
 	ARG_UNUSED(work);
 
 	for (size_t i = 0U; i < TEST_CONN_NUM; i++) {
 		atomic_val_t count = atomic_set(&acl_pending[i], 0);
 
-		if (count == 0) {
-			continue;
+		if (count != 0) {
+			completed_send(i, (uint16_t)count);
 		}
-
-		buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS, false, K_FOREVER);
-		evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, sizeof(*evt) + sizeof(*hc));
-		evt = net_buf_add(buf, sizeof(*evt));
-		evt->num_handles = 1U;
-		hc = net_buf_add(buf, sizeof(*hc));
-		hc->handle = sys_cpu_to_le16(conn_handle(i));
-		hc->count = sys_cpu_to_le16((uint16_t)count);
-		bt_hci_recv(dev, buf);
 	}
 }
 
@@ -241,7 +246,10 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 		cmd_handle(dev, buf);
 	} else if (type == BT_HCI_H4_ACL) {
 		acl_handle(buf);
-		(void)k_work_submit(&completed_work);
+		/* With six buffers, the test reports the packets as completed */
+		if (!IS_ENABLED(CONFIG_TEST_SIX_BUFFERS)) {
+			(void)k_work_submit(&completed_work);
+		}
 	} else {
 		(void)atomic_inc(&acl_unexpected);
 	}
@@ -330,6 +338,13 @@ static int notify(struct bt_conn *conn)
 	return bt_gatt_notify(conn, &test_svc.attrs[2], &value, sizeof(value));
 }
 
+static void wait_sent(size_t num)
+{
+	for (unsigned int i = 0U; i < 100U && atomic_get(&sent_num) < num; i++) {
+		k_sleep(K_MSEC(10));
+	}
+}
+
 static void *setup(void)
 {
 	zassert_ok(bt_enable(NULL), "Bluetooth init failed");
@@ -350,7 +365,10 @@ ZTEST_SUITE(host_tx_share, NULL, setup, NULL, NULL, NULL);
  */
 static ZTEST(host_tx_share, test_one_buffer_two_connections)
 {
+	const size_t total = TEST_NOTIFY_NUM + 1U;
 	int pos = -1;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_SIX_BUFFERS);
 
 	/* Queue everything before the TX processor looks at the list */
 	k_sched_lock();
@@ -360,16 +378,14 @@ static ZTEST(host_tx_share, test_one_buffer_two_connections)
 	zassert_ok(notify(test_conn[1]), "Notification on the second connection failed");
 	k_sched_unlock();
 
-	for (unsigned int i = 0U; i < 100U && atomic_get(&sent_num) < ARRAY_SIZE(sent); i++) {
-		k_sleep(K_MSEC(10));
-	}
+	wait_sent(total);
 
-	zassert_equal(atomic_get(&sent_num), ARRAY_SIZE(sent), "The controller got %ld of %zu",
-		      atomic_get(&sent_num), ARRAY_SIZE(sent));
+	zassert_equal(atomic_get(&sent_num), total, "The controller got %ld of %zu",
+		      atomic_get(&sent_num), total);
 	zassert_equal(atomic_get(&acl_unexpected), 0, "The controller got %ld unexpected packets",
 		      atomic_get(&acl_unexpected));
 
-	for (size_t i = 0U; i < ARRAY_SIZE(sent); i++) {
+	for (size_t i = 0U; i < total; i++) {
 		if (sent[i] == conn_handle(1U)) {
 			pos = (int)i;
 			break;
@@ -378,5 +394,55 @@ static ZTEST(host_tx_share, test_one_buffer_two_connections)
 
 	/* The first connection may send once before the second one is served */
 	zassert_true(pos >= 0 && pos <= 1, "The second connection sent as packet %d of %zu",
-		     pos, ARRAY_SIZE(sent));
+		     pos, total);
+}
+
+/* With six controller buffers, a connection that holds all of them while the
+ * other one is idle must leave the next freed buffer to the other one once it
+ * has data. The first connection is over its share of 3, the second is not.
+ */
+static ZTEST(host_tx_share, test_freed_buffer_to_connection_below_share)
+{
+	const size_t total = TEST_BURST_NUM + 1U;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_TEST_SIX_BUFFERS);
+
+	k_sched_lock();
+	for (size_t i = 0U; i < TEST_BURST_NUM; i++) {
+		zassert_ok(notify(test_conn[0]), "Notification %zu failed", i);
+	}
+	k_sched_unlock();
+
+	/* The first connection takes every buffer */
+	wait_sent(LE_ACL_MAX_NUM);
+	zassert_equal(atomic_get(&sent_num), LE_ACL_MAX_NUM, "The controller got %ld of %u",
+		      atomic_get(&sent_num), LE_ACL_MAX_NUM);
+
+	zassert_ok(notify(test_conn[1]), "Notification on the second connection failed");
+
+	/* Nothing goes out until a buffer is freed */
+	k_sleep(K_MSEC(50));
+	zassert_equal(atomic_get(&sent_num), LE_ACL_MAX_NUM, "The controller got %ld of %u",
+		      atomic_get(&sent_num), LE_ACL_MAX_NUM);
+
+	/* Free one buffer of the first connection: it goes to the second one */
+	(void)atomic_dec(&acl_pending[0]);
+	completed_send(0U, 1U);
+
+	wait_sent(LE_ACL_MAX_NUM + 1U);
+	zassert_equal(atomic_get(&sent_num), LE_ACL_MAX_NUM + 1U, "The controller got %ld of %u",
+		      atomic_get(&sent_num), LE_ACL_MAX_NUM + 1U);
+	zassert_equal(sent[LE_ACL_MAX_NUM], conn_handle(1U),
+		      "The freed buffer went to connection %u", sent[LE_ACL_MAX_NUM]);
+
+	/* Let the rest of the burst go out */
+	for (unsigned int i = 0U; i < 100U && atomic_get(&sent_num) < total; i++) {
+		completed_handler(NULL);
+		k_sleep(K_MSEC(10));
+	}
+
+	zassert_equal(atomic_get(&sent_num), total, "The controller got %ld of %zu",
+		      atomic_get(&sent_num), total);
+	zassert_equal(atomic_get(&acl_unexpected), 0, "The controller got %ld unexpected packets",
+		      atomic_get(&acl_unexpected));
 }

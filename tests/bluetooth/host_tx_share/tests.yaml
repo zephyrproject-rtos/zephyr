@@ -16,3 +16,7 @@ common:
 tests:
   bluetooth.host_tx_share:
     {}
+  bluetooth.host_tx_share.six_buffers:
+    extra_configs:
+      - CONFIG_TEST_SIX_BUFFERS=y
+      - CONFIG_BT_BUF_ACL_TX_COUNT=6
