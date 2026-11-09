@@ -47,6 +47,17 @@ ZTEST(nvmem_api, test_nvmem_api)
 	zassert_equal(ret, -EROFS, "Expected read-only NVMEM");
 }
 
+ZTEST(nvmem_api, test_nvmem_out_of_range)
+{
+	uint8_t buf[0x10] = {0};
+
+	zexpect_equal(nvmem_cell_read(&cell0, buf, -1, 1), -EINVAL);
+	zexpect_equal(nvmem_cell_read(&cell0, buf, 0, cell0.size + 1), -EINVAL);
+	zexpect_equal(nvmem_cell_read(&cell0, buf, cell0.size, 1), -EINVAL);
+	zexpect_equal(nvmem_cell_read(&cell0, buf, 1, SIZE_MAX), -EINVAL);
+	zexpect_equal(nvmem_cell_write(&cell0, buf, 1, SIZE_MAX), -EINVAL);
+}
+
 ZTEST(nvmem_api, test_nvmem_missing)
 {
 	const struct nvmem_cell missing_idx = NVMEM_CELL_GET_BY_IDX_OR(consumer0, 10, {});

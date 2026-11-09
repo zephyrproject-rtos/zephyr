@@ -16,7 +16,7 @@ int nvmem_cell_read(const struct nvmem_cell *cell, void *buf, off_t off, size_t 
 {
 	__ASSERT_NO_MSG(cell != NULL);
 
-	if (off < 0 || cell->size < off + len) {
+	if (off < 0 || (size_t)off > cell->size || len > cell->size - (size_t)off) {
 		return -EINVAL;
 	}
 
@@ -47,7 +47,7 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 {
 	__ASSERT_NO_MSG(cell != NULL);
 
-	if (off < 0 || cell->size < off + len) {
+	if (off < 0 || (size_t)off > cell->size || len > cell->size - (size_t)off) {
 		return -EINVAL;
 	}
 
