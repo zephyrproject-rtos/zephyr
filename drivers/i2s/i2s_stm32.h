@@ -64,6 +64,17 @@ struct i2s_stm32_data {
 	struct stream tx;
 };
 
+static inline uint32_t ll_i2s_is_enabled(SPI_TypeDef *i2s)
+{
+#if defined(CONFIG_STM32_HAL2)
+	return LL_I2S_IsEnabled(i2s);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	return LL_SPI_IsEnabled(i2s);
+#else
+	return LL_I2S_IsEnabled(i2s);
+#endif
+}
+
 /* checks that DMA Tx packet is fully transmitted over the I2S */
 static inline uint32_t ll_i2s_dma_busy(SPI_TypeDef *i2s)
 {

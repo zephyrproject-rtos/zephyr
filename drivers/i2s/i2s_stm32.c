@@ -837,11 +837,40 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
+static void tx_hw_disable(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+
+	if (ll_i2s_is_enabled(cfg->i2s) != 0U) {
+		/* Wait for TX queue to drain before disabling */
+		k_busy_wait(100);
+		LL_I2S_Disable(cfg->i2s);
+	}
+
+	LL_I2S_DisableDMAReq_TX(cfg->i2s);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	LL_I2S_DisableIT_OVR(cfg->i2s);
+	LL_I2S_DisableIT_UDR(cfg->i2s);
+	LL_I2S_DisableIT_FRE(cfg->i2s);
+#else
+	LL_I2S_DisableIT_ERR(cfg->i2s);
+#endif
+
+	dma_stop(dev_data->tx.dev_dma, dev_data->tx.dma_channel);
+}
+
 static int tx_stream_start(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	size_t mem_block_size = 0;
 	int ret;
+
+	/*
+	 * With a continuous bit clock the peripheral is left enabled after a
+	 * stop. Mode and DMA can only be reconfigured while it is disabled.
+	 */
+	tx_hw_disable(dev);
 
 	ret = queue_get(stream->msgq, &stream->mem_block,
 			&mem_block_size, 0);
@@ -916,22 +945,8 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 
 static void tx_stream_disable(struct stream *stream, const struct device *dev)
 {
-	const struct i2s_stm32_cfg *cfg = dev->config;
+	tx_hw_disable(dev);
 
-	/* Wait for TX queue to drain before disabling */
-	k_busy_wait(100);
-	LL_I2S_Disable(cfg->i2s);
-
-	LL_I2S_DisableDMAReq_TX(cfg->i2s);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
-	LL_I2S_DisableIT_OVR(cfg->i2s);
-	LL_I2S_DisableIT_UDR(cfg->i2s);
-	LL_I2S_DisableIT_FRE(cfg->i2s);
-#else
-	LL_I2S_DisableIT_ERR(cfg->i2s);
-#endif
-
-	dma_stop(stream->dev_dma, stream->dma_channel);
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
