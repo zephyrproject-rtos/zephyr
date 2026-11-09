@@ -72,6 +72,7 @@ static void update_match(uint32_t cycles, uint32_t match)
 
 static void ttc_isr(const void *arg)
 {
+	k_spinlock_key_t key;
 	uint32_t cycles;
 	uint32_t ticks;
 
@@ -79,6 +80,8 @@ static void ttc_isr(const void *arg)
 
 	/* Acknowledge interrupt */
 	sys_read32(TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
+
+	key = sys_clock_lock();
 
 	/* Read counter value */
 	cycles = read_count();
@@ -97,8 +100,8 @@ static void ttc_isr(const void *arg)
 	ticks = 1;
 #endif
 
-	/* Announce to the kernel*/
-	sys_clock_announce(ticks);
+	/* Announce to the kernel, releasing the lock */
+	sys_clock_announce_locked(ticks, key);
 }
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
@@ -139,6 +142,13 @@ uint32_t sys_clock_cycle_get_32(void)
 	/* Return the current counter value */
 	return read_count();
 }
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	/* Single system-wide timer, serviced by the CPU that initialised it */
+}
+#endif
 
 static int sys_clock_driver_init(void)
 {
