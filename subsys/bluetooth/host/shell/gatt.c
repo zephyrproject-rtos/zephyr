@@ -301,6 +301,15 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
+	if (ctx->discover.start_handle < BT_ATT_FIRST_ATTRIBUTE_HANDLE ||
+	    ctx->discover.end_handle > BT_ATT_LAST_ATTRIBUTE_HANDLE ||
+	    ctx->discover.start_handle > ctx->discover.end_handle) {
+		shell_error(sh, "Invalid handle range 0x%04x-0x%04x", ctx->discover.start_handle,
+			    ctx->discover.end_handle);
+		(void)memset(&ctx->discover, 0, sizeof(ctx->discover));
+		return -ENOEXEC;
+	}
+
 	if (!strcmp(argv[0], "discover")) {
 		ctx->discover.type = BT_GATT_DISCOVER_ATTRIBUTE;
 	} else if (!strcmp(argv[0], "discover-secondary")) {
