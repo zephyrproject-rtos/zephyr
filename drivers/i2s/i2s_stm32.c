@@ -563,6 +563,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
 			       K_NO_WAIT);
 	if (ret < 0) {
+		/* The completed block is not queued, give it back */
+		k_mem_slab_free(stream->cfg.mem_slab, mblk_tmp);
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
@@ -578,6 +580,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 			stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_DBG("Failed to start RX DMA transfer: %d", ret);
+		k_mem_slab_free(stream->cfg.mem_slab, mblk_tmp);
+		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
 
@@ -590,6 +594,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	if (ret < 0) {
 		LOG_ERR("queue_put() <FAILED>: ret=%d, used=%d/%d", ret,
 			k_msgq_num_used_get(stream->msgq), CONFIG_I2S_STM32_RX_BLOCK_COUNT);
+		k_mem_slab_free(stream->cfg.mem_slab, mblk_tmp);
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
