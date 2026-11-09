@@ -1,0 +1,6 @@
+board:
+  name: qemu_versatilepb
+  full_name: QEMU Emulation for ARM Versatile/PB (ARM926EJ-S)
+  vendor: qemu
+  socs:
+  - name: versatilepb
