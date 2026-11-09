@@ -1630,7 +1630,7 @@ static int cmd_mod_pub(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (argc > 0) {
-		if (argc < 7) {
+		if (argc != 8) {
 			shell_warn(sh, "Invalid number of argument");
 			return -EINVAL;
 		}
