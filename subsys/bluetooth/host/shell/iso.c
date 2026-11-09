@@ -992,9 +992,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
 	SHELL_CMD_ARG(sync-big, NULL,
-		      "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
-		      "[timeout] [enc <broadcast code>]",
-		      cmd_big_sync, 2, 4),
+		      "Synchronize to a BIG as a receiver <BIS bitfield> [mse <mse>] "
+		      "[timeout <timeout>] [enc <broadcast code>]",
+		      cmd_big_sync, 2, 6),
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #if defined(CONFIG_BT_ISO_BROADCAST)
 	SHELL_CMD_ARG(term-big, NULL, "Terminate a BIG", cmd_big_term, 1, 0),
