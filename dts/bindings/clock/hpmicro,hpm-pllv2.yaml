@@ -1,0 +1,18 @@
+# Copyright (c) 2024 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+description: HPMicro PLLv2 clock controller
+
+compatible: "hpmicro,hpm-pllv2"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+clock-cells:
+  - name
+  - source
+  - divider

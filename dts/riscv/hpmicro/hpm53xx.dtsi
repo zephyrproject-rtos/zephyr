@@ -85,5 +85,12 @@
 			interrupt-controller;
 			interrupts-extended = <&cpu0_intc 3>;
 		};
+
+		clk: clock-controller@f40c0000 {
+			compatible = "hpmicro,hpm-pllv2";
+			reg = <0xf40c0000 0x4000>;
+			#clock-cells = <3>;
+			status = "okay";
+		};
 	};
 };
