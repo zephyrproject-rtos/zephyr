@@ -93,6 +93,9 @@ class HardwareData:
         except FileNotFoundError:
             logger.error(f"Hook script not found: {script}")
             return False
+        except OSError as e:
+            logger.error(f"Hook script failed: {e}")
+            return False
         except subprocess.SubprocessError as e:
             logger.error(f"Hook script failed: {e}")
             return False

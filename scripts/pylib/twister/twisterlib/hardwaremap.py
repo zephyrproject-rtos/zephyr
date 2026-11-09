@@ -276,14 +276,23 @@ class HardwareMap:
 
     @staticmethod
     def _resolve_hook_scripts(hooks, hwmap_dir):
-        """Resolve relative hook script paths against the hardware map directory."""
+        """Resolve relative hook script paths against the hardware map directory.
+
+        Expands environment variables first, then resolves relative paths
+        that contain a directory separator.  Bare command names (no separator)
+        are left for PATH lookup.
+        """
         for hook_type, hook in hooks.items():
             if isinstance(hook, str):
-                hooks[hook_type] = str(hwmap_dir / hook) if not os.path.isabs(hook) else hook
+                script = os.path.expandvars(hook)
+                if not os.path.isabs(script) and os.sep in script:
+                    script = str(hwmap_dir / script)
+                hooks[hook_type] = script
             elif isinstance(hook, dict) and 'script' in hook:
-                script = hook['script']
-                if not os.path.isabs(script):
-                    hook['script'] = str(hwmap_dir / script)
+                script = os.path.expandvars(hook['script'])
+                if not os.path.isabs(script) and os.sep in script:
+                    script = str(hwmap_dir / script)
+                hook['script'] = script
 
     def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)

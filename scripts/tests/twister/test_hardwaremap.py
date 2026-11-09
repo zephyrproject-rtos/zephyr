@@ -1082,6 +1082,31 @@ def test_resolve_hook_scripts_relative_string():
     assert hooks['post'] == '/abs/post.sh'
 
 
+def test_resolve_hook_scripts_bare_command():
+    """Bare command names without dir separator should be left for PATH lookup."""
+    hooks = {
+        'pre': 'python3',
+        'post': {'script': 'bash', 'args': ['-c', 'echo ok'], 'timeout': 10},
+    }
+    HardwareMap._resolve_hook_scripts(hooks, Path('/maps'))
+
+    assert hooks['pre'] == 'python3'
+    assert hooks['post']['script'] == 'bash'
+
+
+def test_resolve_hook_scripts_expands_env_vars(monkeypatch):
+    """Environment variables in script paths should be expanded before resolution."""
+    monkeypatch.setenv('MY_BASE', '/opt/zephyr')
+    hooks = {
+        'pre': '${MY_BASE}/hooks/pre.sh',
+        'post': {'script': '${MY_BASE}/hooks/post.sh', 'args': [], 'timeout': 10},
+    }
+    HardwareMap._resolve_hook_scripts(hooks, Path('/maps'))
+
+    assert hooks['pre'] == '/opt/zephyr/hooks/pre.sh'
+    assert hooks['post']['script'] == '/opt/zephyr/hooks/post.sh'
+
+
 def test_resolve_hook_scripts_empty():
     """Empty hooks dict should be handled without error."""
     hooks = {}
@@ -1138,6 +1163,14 @@ def test_run_hook_returns_false_on_timeout(dut_with_hooks):
 def test_run_hook_returns_false_on_file_not_found(dut_with_hooks):
     """run_hook should return False when the script is not found."""
     with mock.patch('subprocess.Popen', side_effect=FileNotFoundError):
+        result = dut_with_hooks.run_hook('pre')
+
+    assert result is False
+
+
+def test_run_hook_returns_false_on_permission_error(dut_with_hooks):
+    """run_hook should return False when the script lacks execute permission."""
+    with mock.patch('subprocess.Popen', side_effect=PermissionError):
         result = dut_with_hooks.run_hook('pre')
 
     assert result is False

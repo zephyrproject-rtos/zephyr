@@ -326,7 +326,7 @@ To do so, it is advised to use Twister's hardware map feature with the following
      product: BOOT-SERIAL
      runner: stm32cubeprogrammer
      hooks:
-       - type: pre
+       pre:
          script: ${ZEPHYR_BASE}/boards/st/common/scripts/board_power_reset.sh
 
 .. note::

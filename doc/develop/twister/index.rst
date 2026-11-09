@@ -1691,8 +1691,10 @@ Each value can be either a plain string (the script path) or an object
 with the following properties:
 
 - ``script`` *(required)*: Path to the script or executable to run.
-  Relative paths are resolved against the directory containing the
-  hardware map file.
+  Environment variables such as ``${ZEPHYR_BASE}`` are expanded in both
+  script paths and arguments.  Relative paths that contain a directory
+  separator are resolved against the directory containing the hardware
+  map file; bare command names are looked up via ``PATH``.
 - ``args`` *(optional)*: A list of arguments passed to the script.
   Defaults to an empty list.
 - ``timeout`` *(optional)*: Maximum time in seconds to wait for the script
@@ -1733,13 +1735,16 @@ Hook scripts receive the following environment variables:
 - ``TWISTER_DUT_SERIAL``: The serial port of the DUT.
 - ``TWISTER_RUNNER``: The flash runner being used.
 - ``TWISTER_BUILD_DIR``: The build output directory.
-- ``TWISTER_TEST_NAME``: The name of the test being run.
-- ``TWISTER_HARDWARE_MAP``: The path to the hardware map file.
+- ``TWISTER_TEST_NAME``: The name of the test being run (twister native
+  handler only; not available in ``pytest-twister-harness``).
+- ``TWISTER_HARDWARE_MAP``: The path to the hardware map file (twister
+  native handler only; not available in ``pytest-twister-harness``).
 
-If a ``pre`` or ``pre_flash`` hook fails (non-zero exit, timeout, or
-script not found), the test instance is set to ERROR and execution stops.
-A ``post_flash`` failure also sets ERROR but allows the test run to
-complete.  The ``post`` hook always runs for cleanup.
+If a ``pre`` or ``pre_flash`` hook fails (non-zero exit, timeout,
+permission error, or script not found), the test instance is set to
+ERROR and execution stops.  A ``post_flash`` failure also sets ERROR
+but allows the test run to complete.  The ``post`` hook always runs
+for cleanup.
 
 Legacy Script Fields (Deprecated)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1796,7 +1801,8 @@ remove the legacy fields.
 The legacy fields ``pre_script``, ``post_script``, ``post_flash_script``
 and ``script_param`` emit ``DeprecationWarning`` when loaded.  The
 ``--pre-script``, ``--post-script`` and ``--post-flash-script`` CLI options
-in ``pytest-twister-harness`` are also deprecated.
+in ``pytest-twister-harness`` are also deprecated; they are only applied to
+DUTs that have no ``hooks`` defined in the hardware map.
 
 .. _twister_fixtures:
 

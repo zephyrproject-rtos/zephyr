@@ -209,6 +209,13 @@ class Handler:
 
     def _update_instance_info(self, harness, failure_type=FailureType.NONE):
         self.instance.execution_time = self.execution_time
+        if (
+            self.instance.status == TwisterStatus.ERROR
+            and self.instance.reason
+            and self.instance.reason.endswith("hook failed")
+        ):
+            self.instance.add_missing_case_status(TwisterStatus.BLOCK, self.instance.reason)
+            return
         if (not self.terminated and self.returncode != 0 and not self.ignore_crash) or \
             harness.status == TwisterStatus.NONE:
 
