@@ -432,7 +432,7 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 		* ``8`` - Display String action set.
 	* ``Size`` - Authentication size.
 
-``mesh prov auth-method static <Val(1-16 hex)>``
+``mesh prov auth-method static <Val(1-32 hex)>``
 ------------------------------------------------
 	From the provisioner device, instruct the unprovisioned device to use static OOB
 	authentication, and use the given static authentication value when provisioning.

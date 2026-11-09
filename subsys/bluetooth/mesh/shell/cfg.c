@@ -1899,7 +1899,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(gatt-proxy, NULL, "[Val(off, on)]", cmd_gatt_proxy, 1, 1),
 	SHELL_CMD_ARG(relay, NULL, "[<Val(off, on)> [<Count> [Int(ms)]]]", cmd_relay,
 		      1, 3),
-	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIdx> [Identify]", cmd_node_id, 2, 1),
+	SHELL_CMD_ARG(node-id, NULL, "<NetKeyIdx> [Identity]", cmd_node_id, 2, 1),
 	SHELL_CMD_ARG(polltimeout-get, NULL, "<LPNAddr>", cmd_polltimeout_get, 2, 0),
 	SHELL_CMD_ARG(net-transmit-param, NULL, "[<Count> <Int(ms)>]",
 		      cmd_net_transmit, 1, 2),
