@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - arm
+  arch_allow:
+    - arm
+  platform_allow:
+    - qemu_cortex_m3
+    - mps2/an386
+    - mps3/corstone300/an547
+    - mps3/corstone300/fvp
+    - mps3/corstone310/fvp
+    - mps4/corstone320/fvp
+  integration_platforms:
+    - qemu_cortex_m3
+    - mps2/an386
+    - mps3/corstone300/an547
+tests:
+  arch.arm.switch.restore_alignment:
+    extra_configs:
+      - CONFIG_FPU=n
+  arch.arm.switch.restore_alignment.fpu:
+    filter: CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
