@@ -148,7 +148,7 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	return 0;
 }
 
-static void i2s_tx_disable(const struct device *dev);
+static void i2s_tx_disable(const struct device *dev, bool wait_idle);
 
 static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 			       const struct i2s_config *i2s_cfg)
@@ -194,7 +194,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		 * With a continuous bit clock the peripheral is left enabled
 		 * after a stop. It can only be reconfigured while disabled.
 		 */
-		i2s_tx_disable(dev);
+		i2s_tx_disable(dev, true);
 	}
 
 	stream->master = true;
@@ -847,15 +847,42 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
-static void i2s_tx_disable(const struct device *dev)
+/*
+ * Wait until the last frame is shifted out. The wait is bounded because in
+ * slave mode the bit clock may be absent and the busy flag would never clear.
+ */
+static void i2s_tx_wait_idle(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	/*
+	 * The DMA completes when the last word is written to the FIFO, which
+	 * can hold several frames, plus one frame in the shift register.
+	 */
+	const uint32_t frame_freq = dev_data->tx.cfg.frame_clk_freq != 0U ?
+				    dev_data->tx.cfg.frame_clk_freq : 8000U;
+	uint32_t timeout_us = (8U * USEC_PER_SEC) / frame_freq + 10U;
+
+	while (ll_i2s_dma_busy(cfg->i2s) != 0U) {
+		if (timeout_us == 0U) {
+			LOG_DBG("TX did not become idle in time");
+			break;
+		}
+		k_busy_wait(1);
+		timeout_us--;
+	}
+}
+
+static void i2s_tx_disable(const struct device *dev, bool wait_idle)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	int ret;
 
 	if (ll_i2s_is_enabled(cfg->i2s) != 0U) {
-		/* Wait for TX queue to drain before disabling */
-		k_busy_wait(100);
+		if (wait_idle) {
+			i2s_tx_wait_idle(dev);
+		}
 		LL_I2S_Disable(cfg->i2s);
 	}
 
@@ -884,7 +911,7 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 	 * With a continuous bit clock the peripheral is left enabled after a
 	 * stop. Mode and DMA can only be reconfigured while it is disabled.
 	 */
-	i2s_tx_disable(dev);
+	i2s_tx_disable(dev, true);
 
 	ret = queue_get(stream->msgq, &stream->mem_block,
 			&mem_block_size, 0);
@@ -959,7 +986,11 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 
 static void tx_stream_disable(struct stream *stream, const struct device *dev)
 {
-	i2s_tx_disable(dev);
+	/*
+	 * Only a stream that has ended regularly still has to send its last
+	 * frame. A drop or an error stops at once.
+	 */
+	i2s_tx_disable(dev, stream->state == I2S_STATE_READY);
 
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
