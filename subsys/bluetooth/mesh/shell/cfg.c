@@ -1668,10 +1668,10 @@ static int cmd_mod_pub_va(const struct shell *sh, size_t argc, char *argv[])
 	uint16_t addr, mod_id, cid = CID_NVAL;
 
 	addr = shell_strtoul(argv[1], 0, &err);
-	mod_id = shell_strtoul(argv[9], 0, &err);
+	mod_id = shell_strtoul(argv[10], 0, &err);
 
-	if (argc > 10) {
-		cid = shell_strtoul(argv[10], 0, &err);
+	if (argc > 11) {
+		cid = shell_strtoul(argv[11], 0, &err);
 	}
 
 	if (err) {
