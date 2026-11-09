@@ -202,6 +202,26 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Virtio
+======
+
+* The VirtIO block driver now permits up to four in-flight requests per device by default,
+  increasing the request-pool and virtqueue memory requirements. Set
+  :kconfig:option:`CONFIG_DISK_VIRTIO_BLK_MAX_INFLIGHT` to ``1`` to retain single-request operation
+  and reduce per-device memory use. (:github:`124800`)
+
+* :c:func:`virtq_add_buffer_chain` now allocates the whole descriptor chain at once. A chain that
+  needs more descriptors than the queue has is rejected with ``-EINVAL`` instead of being
+  partially submitted, a chain that does not fit within the timeout returns ``-EAGAIN``, and a
+  caller that cannot wait (interrupt context or ``K_NO_WAIT``) gets ``-EBUSY`` when the queue is
+  exhausted. Check the return value wherever the queue can be short of descriptors. Blocking
+  submission is only allowed from a sleepable thread with an independent completion source, and
+  never while holding a spinlock or with interrupts locked.
+
+* ``virtq_get_free_desc()`` and ``virtq_add_free_desc()`` have been removed. Submit complete
+  buffer chains with :c:func:`virtq_add_buffer_chain`; the Virtio completion path returns their
+  descriptors.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth

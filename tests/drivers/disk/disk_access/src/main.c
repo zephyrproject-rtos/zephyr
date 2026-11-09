@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/mm.h>
 #include <zephyr/ztest.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/device.h>
@@ -368,6 +369,27 @@ ZTEST(disk_driver, test_write)
 		rc = write_sector_checked(scratch_buf[0], scratch_buf[1], 0, SECTOR_COUNT1);
 		zassert_equal(rc, 0, "Failed to write to disk at same sector location");
 	}
+}
+
+ZTEST(disk_driver, test_runtime_mapped_buffer)
+{
+#if defined(CONFIG_MMU) && defined(CONFIG_DISK_DRIVER_VIRTIO_BLK)
+	uint32_t sectors = MIN(SECTOR_COUNT_MAX, (BUF_SIZE - 1U) / disk_sector_size);
+	size_t bytes = (size_t)sectors * disk_sector_size;
+	size_t map_size = ROUND_UP(bytes + 1U, CONFIG_MMU_PAGE_SIZE);
+	uint8_t *mapped = k_mem_map(map_size, K_MEM_PERM_RW);
+	uint8_t *buf;
+
+	zassert_not_null(mapped, "failed to map buffer");
+	buf = mapped + 1U;
+	zassert_ok(write_sector_checked(buf, scratch_buf[0], 0, sectors));
+	memset(buf, 0, bytes);
+	zassert_ok(read_sector(buf, 0, sectors));
+	zassert_mem_equal(buf, scratch_buf[0], bytes, "runtime-mapped read mismatch");
+	k_mem_unmap(mapped, map_size);
+#else
+	ztest_test_skip();
+#endif
 }
 
 /* Test multiple erases in series, and erasing from a variety of blocks */
