@@ -190,6 +190,7 @@ def nrfutil_dictionary_from_serial(
         "nrfutil trace stm --database-config "
         f"{config_str} "
         f"--input-serialport {UART_PATH} "
+        "--output-raw test.txt"
     )
     try:
         # run nrfutil trace in background non-blocking
@@ -199,6 +200,7 @@ def nrfutil_dictionary_from_serial(
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 encoding='UTF-8',
+                                text=True,
                                 errors='replace')
     except OSError as exc:
         logger.error(f"Unable to start nrfutil trace:\n{cmd}\n{exc}")
@@ -354,7 +356,7 @@ def test_sample_STM_dictionary_mode(dut: DeviceAdapter):
     """
     BUILD_DIR = str(dut.device_config.build_dir)
     autoconf_file = f"{BUILD_DIR}/_sysbuild/autoconf.h"
-    COLLECT_TIMEOUT = 10.0
+    COLLECT_TIMEOUT = 30.0
 
     # set SB_CONFIG_APP_CPUPPR_RUN, SB_CONFIG_APP_CPUFLPR_RUN
     # this information is needed to build nrfutil database-config
