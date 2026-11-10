@@ -12,7 +12,9 @@
 /* -------------------------------------------------------------------------- */
 /*                                  Includes                                  */
 /* -------------------------------------------------------------------------- */
+#include <zephyr/init.h>
 #include <zephyr/irq.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/wuc.h>
 #include <zephyr/logging/log.h>
@@ -121,3 +123,66 @@ void nxp_nbu_init(void)
 	(void)pinctrl_apply_state(pincfg, PINCTRL_STATE_DEFAULT);
 #endif
 }
+
+#if DT_INST_NODE_HAS_PROP(0, nvmem_cells) && defined(CONFIG_NVMEM_FLASH)
+/*
+ * The factory 32 MHz crystal trim lives in a non-volatile memory which is only readable once
+ * its provider is initialized. The rfmc-xo-cdac value from the devicetree, if any, is applied
+ * by nxp_nbu_init() and refined here, at POST_KERNEL, when a valid trim is available. This
+ * requires the flash driver, hence CONFIG_FLASH, to be enabled by the application.
+ */
+/* Bit 7 of the stored byte flags the trim as valid, the CDAC value is in the low bits */
+#define NBU_XO_CDAC_TRIM_VALID 0x80U
+#define NBU_XO_CDAC_TRIM_MAX   (RFMC_XO_TEST_CDAC_MASK >> RFMC_XO_TEST_CDAC_SHIFT)
+
+BUILD_ASSERT(NBU_XO_CDAC_TRIM_MAX < NBU_XO_CDAC_TRIM_VALID,
+	     "The CDAC field must not overlap the trim valid flag");
+
+#if defined(CONFIG_FLASH_INIT_PRIORITY)
+BUILD_ASSERT(CONFIG_NXP_NBU_IFR_TRIM_INIT_PRIORITY > CONFIG_FLASH_INIT_PRIORITY,
+	     "The XTAL32M trim must be applied after the flash driver is initialized");
+#endif
+
+static int nxp_nbu_xtal32m_ifr_trim(void)
+{
+	static const struct nvmem_cell trim_cell = NVMEM_CELL_GET_BY_IDX(DT_DRV_INST(0), 0);
+	uint8_t raw;
+	uint32_t trim;
+	uint32_t rfmc_xo;
+	int ret;
+
+	ret = nvmem_cell_read(&trim_cell, &raw, 0, sizeof(raw));
+	if (ret < 0) {
+		LOG_DBG("XTAL32M trim not readable (%d), keeping default", ret);
+		return 0;
+	}
+
+	if (raw == 0xFFU) {
+		LOG_DBG("XTAL32M trim not provisioned, keeping default");
+		return 0;
+	}
+
+	if ((raw & NBU_XO_CDAC_TRIM_VALID) == 0U) {
+		LOG_DBG("XTAL32M trim 0x%02x not valid, keeping default", raw);
+		return 0;
+	}
+
+	/* 0 is a valid CDAC value */
+	trim = (uint32_t)raw & ~NBU_XO_CDAC_TRIM_VALID;
+	if (trim > NBU_XO_CDAC_TRIM_MAX) {
+		LOG_DBG("XTAL32M trim 0x%02x out of range, keeping default", raw);
+		return 0;
+	}
+
+	rfmc_xo = RFMC->XO_TEST;
+	rfmc_xo &= ~(RFMC_XO_TEST_CDAC_MASK);
+	rfmc_xo |= RFMC_XO_TEST_CDAC(trim);
+	RFMC->XO_TEST = rfmc_xo;
+
+	LOG_DBG("XTAL32M trim 0x%02x applied (CDAC %u)", raw, trim);
+
+	return 0;
+}
+
+SYS_INIT(nxp_nbu_xtal32m_ifr_trim, POST_KERNEL, CONFIG_NXP_NBU_IFR_TRIM_INIT_PRIORITY);
+#endif /* nvmem-cells && CONFIG_NVMEM_FLASH */
