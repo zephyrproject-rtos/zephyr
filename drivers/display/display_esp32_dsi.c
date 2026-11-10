@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(display_esp32_dsi, CONFIG_DISPLAY_LOG_LEVEL);
  * the scanout at the next frame while the panel is still reading the previous
  * one, which tears the picture across the seam.
  */
-#define DISPLAY_ESP32_DSI_EXT_FB_NUM 2
+#define DISPLAY_ESP32_DSI_EXT_FB_NUM CONFIG_DISPLAY_ESP32_DSI_EXT_FB_NUM
 
 /* How long a write waits for the frame it is about to reuse to leave the
  * screen. A frame takes about 17 ms at 60 Hz, so this covers several.
@@ -849,7 +849,13 @@ void *display_esp32_dsi_get_framebuffer_by_index(const struct device *dev, uint3
 {
 	struct display_esp32_dsi_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
-	void *fb = (index < data->fb_count) ? data->fb[index] : NULL;
+	void *fb = NULL;
+
+	if (index < data->fb_count) {
+		fb = data->fb[index];
+	} else if (index - data->fb_count < DISPLAY_ESP32_DSI_EXT_FB_NUM) {
+		fb = data->ext_fb[index - data->fb_count];
+	}
 
 	k_spin_unlock(&data->lock, key);
 
