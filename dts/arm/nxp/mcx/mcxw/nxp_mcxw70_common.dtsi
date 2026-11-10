@@ -417,6 +417,8 @@
 		compatible = "nxp,nbu";
 		interrupts = <92 2>;
 		interrupt-names = "nbu_rx_int";
+		rfmc-xo-cdac = <0x0a>;
+		rfmc-xo-isel = <0x0b>;
 		status = "okay";
 	};
 
