@@ -1713,8 +1713,8 @@ Provisioning Servers on devices in a mesh network.
 	* ``Timeout``: Scan timeout in seconds. Must be at least 1 second.
 	* ``UUID``: Device UUID to scan for. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. If omitted, all devices will be reported.
 
-``mesh models rpr scan-ext <Timeout(s)> <UUID(1-16 hex)> [<ADType> ... ]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models rpr scan-ext <Timeout(s)> <UUID(1-16 hex)> <ADType> [<ADType> ... ]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Start the extended scanning for unprovisioned devices.
 
@@ -1722,8 +1722,8 @@ Provisioning Servers on devices in a mesh network.
 	* ``UUID``: Device UUID to start extended scanning for. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest.
 	* ``ADType``: List of AD types to include in the scan report. Must contain 1 to :kconfig:option:`CONFIG_BT_MESH_RPR_AD_TYPES_MAX` entries.
 
-``mesh models rpr scan-srv [<ADType> ... ]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models rpr scan-srv <ADType> [<ADType> ... ]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Start the extended scanning for the Remote Provisioning Server.
 
