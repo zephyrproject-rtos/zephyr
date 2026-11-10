@@ -2082,6 +2082,19 @@
 
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		/*
+		 * The ENET (ETH1) RGMII delay line needs a 125 MHz reference, while the
+		 * shared clock tree leaves the TRXCLK root at 250 MHz: MAINPLL /8 /2.
+		 */
+		/* CLOCK_ROOT11 */
+		eth1_trxclk_rootclk: clock-root@b0 {
+			compatible = "nxp,imx-ccm-rev3-root";
+			reg = <0xb0 0x10>;
+			clock-mux = <IMX_CCM_MUX_ETH1_TRXCLK_MAINPLLDIV8>;
+			clock-div = <2>;
+			nxp,root-id = <IMX_CCM_ROOT_COMM_ETH1_TRXCLK>;
+		};
 	};
 
 	/* USDHC (COMM domain), IRQ 307/308 */
@@ -2126,8 +2139,8 @@
 	enet_qos: comm_enet_qos: ethernet@4a0c0000 {
 		compatible = "nxp,enet-qos";
 		reg = <0x4a0c0000 0x10000>;
-		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
-					   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
+					   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
 		status = "disabled";
 
 		enet_qos_mac: ethernet {
@@ -2149,14 +2162,14 @@
 	enet: comm_enet: ethernet@4a0d0000 {
 		compatible = "nxp,enet";
 		reg = <0x4a0d0000 0x10000>;
-		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
-					   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+		clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
+					   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
 		status = "disabled";
 
 		enet_mac: ethernet {
 			compatible = "nxp,enet-mac";
-			interrupts = <299 0>, <300 0>;
-			interrupt-names = "TX", "RX";
+			interrupts = <299 0>, <300 0>, <301 0>;
+			interrupt-names = "TX", "RX", "COMMON";
 			ptp-clock = <&enet_ptp_clock>;
 			nxp,mdio = <&enet_mdio>;
 			status = "disabled";
@@ -2173,8 +2186,8 @@
 			compatible = "nxp,enet-ptp-clock";
 			interrupts = <302 0>;
 			interrupt-names = "IEEE1588_TMR";
-			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH0,
-						   IMX_CCM_ROOT_COMM_ETH0_TRXCLK)>;
+			clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_COMM_ETH1,
+						   IMX_CCM_ROOT_COMM_ETH1_TRXCLK)>;
 			status = "disabled";
 		};
 	};
