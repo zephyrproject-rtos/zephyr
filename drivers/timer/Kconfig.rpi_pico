@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config RPI_PICO_SYSTEM_TIMER
+	bool "Raspberry Pi Pico TIMER as the system timer"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_SYSTEM_TIMER_ENABLED
+	depends on RESET
+	select TICKLESS_CAPABLE
+	help
+	  Use a TIMER block of the Raspberry Pi Pico as the system timer. It
+	  counts microseconds and is the same for both cores, which the
+	  SysTick of a core is not, so it can keep the time of an SMP kernel.
