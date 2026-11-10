@@ -8,7 +8,6 @@ import logging
 import re
 import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 from time import sleep
 
 import psutil
@@ -169,19 +168,12 @@ def _kill(proc):
 
 def nrfutil_dictionary_from_serial(
     dut: DeviceAdapter,
-    decoded_file_name: str = "output.txt",
     collect_time: float = 60.0,
-) -> None:
+) -> str:
     UART_PATH = dut.device_config.serial_configs[0].port
     dut.close()
 
     logger.debug(f"Using serial: {UART_PATH}")
-
-    try:
-        Path(f"{decoded_file_name}").unlink()
-        logger.info("Old output file was deleted")
-    except FileNotFoundError:
-        pass
 
     # prepare database config string
     BUILD_DIR = str(dut.device_config.build_dir)
@@ -198,7 +190,6 @@ def nrfutil_dictionary_from_serial(
         "nrfutil trace stm --database-config "
         f"{config_str} "
         f"--input-serialport {UART_PATH} "
-        f"--output-ascii {decoded_file_name}"
     )
     try:
         # run nrfutil trace in background non-blocking
@@ -219,6 +210,8 @@ def nrfutil_dictionary_from_serial(
         _kill(proc)
         outs, errs = proc.communicate()
         logger.info(f"{outs=}\n{errs=}")
+
+    return outs
 
 
 def test_sample_STM_decoded(dut: DeviceAdapter):
@@ -360,7 +353,6 @@ def test_sample_STM_dictionary_mode(dut: DeviceAdapter):
     outputs STM traces on UART port.
     """
     BUILD_DIR = str(dut.device_config.build_dir)
-    test_filename = f"{BUILD_DIR}/coresight_stm_dictionary.txt"
     autoconf_file = f"{BUILD_DIR}/_sysbuild/autoconf.h"
     COLLECT_TIMEOUT = 10.0
 
@@ -369,44 +361,37 @@ def test_sample_STM_dictionary_mode(dut: DeviceAdapter):
     analyse_autoconf(autoconf_file)
 
     # use nrfutil trace to decode logs
-    nrfutil_dictionary_from_serial(
+    decoded_dict_logs = nrfutil_dictionary_from_serial(
         dut=dut,
-        decoded_file_name=f"{test_filename}",
         collect_time=COLLECT_TIMEOUT,
     )
 
-    # read decoded logs
-    with open(f"{test_filename}", errors="ignore") as decoded_file:
-        decoded_file_content = decoded_file.read()
-
-    # if nothing in decoded_file, stop test
-    assert(
-        len(decoded_file_content) > 0
-    ), f"File {test_filename} is empty"
+    # stop test if logs are empty
+    assert len(decoded_dict_logs) > 0, "Nrfutil trace stm returned no dictionary logs."
 
     # check that LOGs from Application core are present
     check_console_output(
-        output=decoded_file_content,
+        output=decoded_dict_logs,
         core='app',
     )
 
     # check that LOGs from Radio core are present
     check_console_output(
-        output=decoded_file_content,
+        output=decoded_dict_logs,
         core='rad',
     )
 
     if SB_CONFIG_APP_CPUPPR_RUN:
         # check that LOGs from PPR core are present
         check_console_output(
-            output=decoded_file_content,
+            output=decoded_dict_logs,
             core='ppr',
         )
 
     if SB_CONFIG_APP_CPUFLPR_RUN:
         # check that LOGs from FLPR core are present
         check_console_output(
-            output=decoded_file_content,
+            output=decoded_dict_logs,
             core='flpr',
         )
 
@@ -421,7 +406,6 @@ def test_STM_dictionary_mode(dut: DeviceAdapter):
     outputs STM traces on UART port.
     """
     BUILD_DIR = str(dut.device_config.build_dir)
-    test_filename = f"{BUILD_DIR}/coresight_stm_dictionary.txt"
     autoconf_file = f"{BUILD_DIR}/_sysbuild/autoconf.h"
     COLLECT_TIMEOUT = 10.0
 
@@ -475,33 +459,28 @@ def test_STM_dictionary_mode(dut: DeviceAdapter):
     analyse_autoconf(autoconf_file)
 
     # use nrfutil trace to decode logs
-    nrfutil_dictionary_from_serial(
+    decoded_dict_logs = nrfutil_dictionary_from_serial(
         dut=dut,
-        decoded_file_name=f"{test_filename}",
         collect_time=COLLECT_TIMEOUT,
     )
 
-    # read decoded logs
-    with open(f"{test_filename}", errors="ignore") as decoded_file:
-        decoded_file_content = decoded_file.read()
-
-    # if nothing in decoded_file, stop test
-    assert len(decoded_file_content) > 0, f"File {test_filename} is empty"
+    # stop test if logs are empty
+    assert len(decoded_dict_logs) > 0, "Nrfutil trace stm returned no dictionary logs."
 
     # check results on Application core
-    check_benchmark_results(output=decoded_file_content, core='app', constraints=app_constraints)
+    check_benchmark_results(output=decoded_dict_logs, core='app', constraints=app_constraints)
 
     # check results on Radio core
-    check_benchmark_results(output=decoded_file_content, core='rad', constraints=rad_constraints)
+    check_benchmark_results(output=decoded_dict_logs, core='rad', constraints=rad_constraints)
 
     if SB_CONFIG_APP_CPUPPR_RUN:
         # check results on PPR core
         check_benchmark_results(
-            output=decoded_file_content, core='ppr', constraints=ppr_constraints
+            output=decoded_dict_logs, core='ppr', constraints=ppr_constraints
         )
 
     if SB_CONFIG_APP_CPUFLPR_RUN:
         # check results on FLPR core
         check_benchmark_results(
-            output=decoded_file_content, core='flpr', constraints=flpr_constraints
+            output=decoded_dict_logs, core='flpr', constraints=flpr_constraints
         )
