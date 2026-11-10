@@ -39,6 +39,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,canbus = &flexcan1;
 	};
 };
 
@@ -70,6 +71,10 @@
 };
 
 &gpio5 {
+	status = "okay";
+};
+
+&flexcan1 {
 	status = "okay";
 };
 
