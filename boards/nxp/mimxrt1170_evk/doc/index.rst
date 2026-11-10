@@ -114,7 +114,9 @@ Some features in the table above are tested with Zephyr shields.  These shields
 are tested on this board:
 
 - :ref:`rk055hdmipi4m`, :ref:`rk055hdmipi4ma0` and :ref:`g1120b0mipi` - support
-  the MIPI-DSI display interface.
+  the MIPI-DSI display interface. The LCDIFv2 controller feeds the DSI host by
+  default; to use the eLCDIF instead, point the ``zephyr_lcdif`` label of the
+  board devicetree at ``lcdif``.
 - :ref:`nxp_btb44_ov5640` - supports the MIPI-CSI video/camera interface.
 - :ref:`nxp_m2_wifi_bt` - EVK RevB version is tested with this shield to attach any M.2 module
   with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
