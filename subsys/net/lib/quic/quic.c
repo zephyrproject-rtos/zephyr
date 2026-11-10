@@ -6934,6 +6934,24 @@ ZTESTABLE_STATIC int quic_build_connection_close(uint8_t *frame, size_t frame_le
 	return pos;
 }
 
+/* RFC 9000 ch. 10.2.3: an application close is not sent in Initial or
+ * Handshake packets, where it would reveal application state. Before the
+ * application keys are in use it becomes a transport close with
+ * APPLICATION_ERROR and no reason phrase.
+ */
+ZTESTABLE_STATIC void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
+						uint64_t *error_code, uint64_t *frame_type,
+						const char **reason)
+{
+	if (*type == QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION &&
+	    level != QUIC_SECRET_LEVEL_APPLICATION) {
+		*type = QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT;
+		*error_code = QUIC_ERROR_APPLICATION_ERROR;
+		*frame_type = 0;
+		*reason = NULL;
+	}
+}
+
 /**
  * Send CONNECTION_CLOSE frame to peer
  *
@@ -6968,6 +6986,8 @@ static int quic_endpoint_send_close(struct quic_endpoint *ep,
 			ep, quic_get_by_ep(ep));
 		return 0;
 	}
+
+	quic_close_frame_at_level(level, &type, &error_code, &frame_type, &reason);
 
 	len = quic_build_connection_close(frame, sizeof(frame), type, error_code, frame_type,
 					  reason);

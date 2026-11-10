@@ -177,7 +177,9 @@ frame carrying the transport error NO_ERROR (:rfc:`9000` Section 10.2). An
 application protocol that has to report an error of its own sets
 ``ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE`` on the connection socket first; the
 close then carries that code in a CONNECTION_CLOSE frame of the application
-type.
+type. A connection closed before its handshake is complete is ended with the
+transport error APPLICATION_ERROR instead, as :rfc:`9000` Section 10.2.3
+requires.
 
 The peer's connection socket reports ``ZSOCK_POLLHUP`` and ``ECONNRESET`` from
 ``SO_ERROR`` once a CONNECTION_CLOSE frame arrives. The frame itself, the type

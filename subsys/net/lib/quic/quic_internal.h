@@ -1569,6 +1569,9 @@ int handle_crypto_level_packet(struct quic_endpoint *ep,
 int quic_build_connection_close(uint8_t *frame, size_t frame_len,
 				uint8_t type, uint64_t error_code,
 				uint64_t frame_type, const char *reason);
+void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
+			       uint64_t *error_code, uint64_t *frame_type,
+			       const char **reason);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
