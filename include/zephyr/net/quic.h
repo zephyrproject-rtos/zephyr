@@ -192,6 +192,18 @@ enum {
 	 * (@rfc{9000,section-19.19}) has been received.
 	 */
 	ZSOCK_QUIC_SO_PEER_CLOSE = 9,
+
+	/**
+	 * Close the connection with an error of the application protocol.
+	 *
+	 * The option value is a pointer to a uint64_t holding the application
+	 * error code and is only valid on QUIC connection sockets. Once it is
+	 * set, quic_connection_close() and close() end the connection with a
+	 * CONNECTION_CLOSE frame of the application type (0x1d) carrying that
+	 * code (@rfc{9000,section-10.2}), instead of a transport close with
+	 * NO_ERROR.
+	 */
+	ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE = 10,
 };
 
 /** How the peer closed the connection, see ZSOCK_QUIC_SO_PEER_CLOSE. */
