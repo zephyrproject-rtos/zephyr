@@ -97,6 +97,7 @@
 #define SDHC_REG_CAPABILITIES_VS33_MASK    BIT64(24)
 #define SDHC_REG_CAPABILITIES_VS30_MASK    BIT64(25)
 #define SDHC_REG_CAPABILITIES_VS18_MASK    BIT64(26)
+#define SDHC_REG_CAPABILITIES_64BV4_MASK   BIT64(27)
 #define SDHC_REG_CAPABILITIES_64B_MASK     BIT64(28)
 #define SDHC_REG_CAPABILITIES_AIS_MASK     BIT64(29)
 #define SDHC_REG_CAPABILITIES_ST_MASK      (0x3ULL << 30)
@@ -115,6 +116,175 @@
 #define SDHC_REG_CAPABILITIES_CM_MASK      (0xffULL << 48)
 #define SDHC_REG_CAPABILITIES_CM_SHIFT     48
 /** @} */
+
+/**
+ * @name Transfer Mode Register Bits
+ * @{
+ */
+#define SDHC_REG_TRANSFER_MODE_DMAE_MASK   BIT(0)       /**< DMA Enable */
+#define SDHC_REG_TRANSFER_MODE_BCE_MASK    BIT(1)       /**< Block Count Enable */
+#define SDHC_REG_TRANSFER_MODE_ACEN_MASK   (0x3U << 2)  /**< Auto CMD Enable */
+#define SDHC_REG_TRANSFER_MODE_ACEN_CMD12  (0x1U << 2)  /**< Auto CMD12 Enable */
+#define SDHC_REG_TRANSFER_MODE_DTDS_MASK   BIT(4)       /**< Data Transfer Direction Select */
+#define SDHC_REG_TRANSFER_MODE_MSBS_MASK   BIT(5)       /**< Multi / Single Block Select */
+/** @} */
+
+/**
+ * @name Command Register Bits
+ * @{
+ */
+#define SDHC_REG_COMMAND_RTS_MASK    0x3U         /**< Response Type Select */
+#define SDHC_REG_COMMAND_RTS_NONE    0x0U         /**< No response */
+#define SDHC_REG_COMMAND_RTS_136     0x1U         /**< Response length 136 */
+#define SDHC_REG_COMMAND_RTS_48      0x2U         /**< Response length 48 */
+#define SDHC_REG_COMMAND_RTS_48_BUSY 0x3U         /**< Response length 48, check busy */
+#define SDHC_REG_COMMAND_CRCCE_MASK  BIT(3)       /**< Command CRC Check Enable */
+#define SDHC_REG_COMMAND_CICE_MASK   BIT(4)       /**< Command Index Check Enable */
+#define SDHC_REG_COMMAND_DPS_MASK    BIT(5)       /**< Data Present Select */
+#define SDHC_REG_COMMAND_CIDX_MASK   (0x3fU << 8) /**< Command Index */
+#define SDHC_REG_COMMAND_CIDX_SHIFT  8
+/** @} */
+
+/**
+ * @name Present State Register Bits
+ * @{
+ */
+#define SDHC_REG_PRESENT_STATE_CICMD_MASK BIT(0)  /**< Command Inhibit (CMD) */
+#define SDHC_REG_PRESENT_STATE_CIDAT_MASK BIT(1)  /**< Command Inhibit (DAT) */
+#define SDHC_REG_PRESENT_STATE_CI_MASK    BIT(16) /**< Card Inserted */
+#define SDHC_REG_PRESENT_STATE_DAT0_MASK  BIT(20) /**< DAT[0] Line Signal Level */
+/** @} */
+
+/**
+ * @name Host Control 1 Register Bits
+ * @{
+ */
+#define SDHC_REG_HOST_CTRL1_DTW_MASK         BIT(1)      /**< Data Transfer Width */
+#define SDHC_REG_HOST_CTRL1_HSE_MASK         BIT(2)      /**< High Speed Enable */
+#define SDHC_REG_HOST_CTRL1_DMASEL_MASK      (0x3U << 3) /**< DMA Select */
+#define SDHC_REG_HOST_CTRL1_DMASEL_ADMA2_32  (0x2U << 3) /**< 32-bit address ADMA2 */
+#define SDHC_REG_HOST_CTRL1_EDTW_MASK        BIT(5)      /**< Extended Data Transfer Width */
+/** @} */
+
+/**
+ * @name Power Control Register Bits
+ * @{
+ */
+#define SDHC_REG_POWER_CTRL_BP_MASK   BIT(0)      /**< SD Bus Power */
+#define SDHC_REG_POWER_CTRL_BVS_MASK  (0x7U << 1) /**< SD Bus Voltage Select */
+#define SDHC_REG_POWER_CTRL_BVS_3_3V  (0x7U << 1) /**< 3.3V */
+#define SDHC_REG_POWER_CTRL_BVS_3_0V  (0x6U << 1) /**< 3.0V */
+#define SDHC_REG_POWER_CTRL_BVS_1_8V  (0x5U << 1) /**< 1.8V */
+/** @} */
+
+/**
+ * @name Clock Control Register Bits
+ * @{
+ */
+#define SDHC_REG_CLOCK_CTRL_ICE_MASK     BIT(0)       /**< Internal Clock Enable */
+#define SDHC_REG_CLOCK_CTRL_ICS_MASK     BIT(1)       /**< Internal Clock Stable */
+#define SDHC_REG_CLOCK_CTRL_SDCE_MASK    BIT(2)       /**< SD Clock Enable */
+#define SDHC_REG_CLOCK_CTRL_SDCFSH_MASK  (0x3U << 6)  /**< SDCLK Frequency Select, bits 9:8 */
+#define SDHC_REG_CLOCK_CTRL_SDCFSH_SHIFT 6
+#define SDHC_REG_CLOCK_CTRL_SDCFSL_MASK  (0xffU << 8) /**< SDCLK Frequency Select, bits 7:0 */
+#define SDHC_REG_CLOCK_CTRL_SDCFSL_SHIFT 8
+/** @} */
+
+/**
+ * @name Timeout Control Register Bits
+ * @{
+ */
+#define SDHC_REG_TIMEOUT_CTRL_DTCV_MASK 0xfU /**< Data Timeout Counter Value */
+/** @} */
+
+/**
+ * @name Software Reset Register Bits
+ * @{
+ */
+#define SDHC_REG_SW_RESET_SRA_MASK BIT(0) /**< Software Reset For All */
+/** @} */
+
+/**
+ * @name Normal Interrupt Status, Status Enable and Signal Enable Register Bits
+ * @{
+ */
+#define SDHC_REG_NORMAL_INT_CC_MASK   BIT(0)  /**< Command Complete */
+#define SDHC_REG_NORMAL_INT_TC_MASK   BIT(1)  /**< Transfer Complete */
+#define SDHC_REG_NORMAL_INT_EINT_MASK BIT(15) /**< Error Interrupt (status only) */
+/** @} */
+
+/**
+ * @name Error Interrupt Status, Status Enable and Signal Enable Register Bits
+ * @{
+ */
+#define SDHC_REG_ERROR_INT_CTE_MASK   BIT(0) /**< Command Timeout Error */
+#define SDHC_REG_ERROR_INT_CCRC_MASK  BIT(1) /**< Command CRC Error */
+#define SDHC_REG_ERROR_INT_CEB_MASK   BIT(2) /**< Command End Bit Error */
+#define SDHC_REG_ERROR_INT_CIE_MASK   BIT(3) /**< Command Index Error */
+#define SDHC_REG_ERROR_INT_DTE_MASK   BIT(4) /**< Data Timeout Error */
+#define SDHC_REG_ERROR_INT_DCRC_MASK  BIT(5) /**< Data CRC Error */
+#define SDHC_REG_ERROR_INT_DEB_MASK   BIT(6) /**< Data End Bit Error */
+#define SDHC_REG_ERROR_INT_CLE_MASK   BIT(7) /**< Current Limit Error */
+#define SDHC_REG_ERROR_INT_ACE_MASK   BIT(8) /**< Auto CMD Error */
+#define SDHC_REG_ERROR_INT_ADMAE_MASK BIT(9) /**< ADMA Error */
+/** @} */
+
+/**
+ * @name Host Control 2 Register Bits
+ * @{
+ */
+#define SDHC_REG_HOST_CTRL2_UMS_MASK   0x7U   /**< UHS Mode Select */
+#define SDHC_REG_HOST_CTRL2_UMS_SDR12  0x0U   /**< SDR12 */
+#define SDHC_REG_HOST_CTRL2_UMS_SDR25  0x1U   /**< SDR25 */
+#define SDHC_REG_HOST_CTRL2_V18SE_MASK BIT(3) /**< 1.8V Signaling Enable */
+/** @} */
+
+/**
+ * @name Maximum Current Capabilities Register Bits
+ * @{
+ */
+#define SDHC_REG_MAX_CURRENT_CAP_MC33_MASK  0xffU         /**< Maximum Current for 3.3V */
+#define SDHC_REG_MAX_CURRENT_CAP_MC33_SHIFT 0
+#define SDHC_REG_MAX_CURRENT_CAP_MC30_MASK  (0xffU << 8)  /**< Maximum Current for 3.0V */
+#define SDHC_REG_MAX_CURRENT_CAP_MC30_SHIFT 8
+#define SDHC_REG_MAX_CURRENT_CAP_MC18_MASK  (0xffU << 16) /**< Maximum Current for 1.8V */
+#define SDHC_REG_MAX_CURRENT_CAP_MC18_SHIFT 16
+/** @} */
+
+/**
+ * @name ADMA2 Descriptor Attribute Bits
+ * @{
+ */
+#define SDHC_ADMA2_DESC_VALID    BIT(0)      /**< Valid */
+#define SDHC_ADMA2_DESC_END      BIT(1)      /**< End of descriptor table */
+#define SDHC_ADMA2_DESC_ACT_TRAN (0x2U << 4) /**< Transfer data of one descriptor line */
+/** @} */
+
+/** Maximum data length of one ADMA2 descriptor line, encoded as length 0 */
+#define SDHC_ADMA2_DESC_MAX_LEN 65536U
+
+/**
+ * @brief ADMA2 descriptor.
+ *
+ * With CONFIG_SDHC_STANDARD_CORE_ADMA2_64BIT, the 128-bit descriptor of the
+ * SD Host Controller Specification version 4.00 with a 64-bit address, used
+ * when Host Version 4 Enable and 64-bit Addressing are set in Host Control 2.
+ * Otherwise the 64-bit descriptor with a 32-bit address.
+ */
+struct sdhc_adma2_descriptor {
+	/** Attribute bits, see SDHC_ADMA2_DESC_* */
+	uint16_t attr;
+	/** Data length in bytes, 0 for SDHC_ADMA2_DESC_MAX_LEN */
+	uint16_t len;
+	/** Data address, bits 31:0 */
+	uint32_t addr_low;
+#ifdef CONFIG_SDHC_STANDARD_CORE_ADMA2_64BIT
+	/** Data address, bits 63:32 */
+	uint32_t addr_high;
+	/** Reserved, must be zero */
+	uint32_t reserved;
+#endif
+};
 
 /**
  * @brief Callback table for the SDHC standard host controller.
@@ -350,4 +520,20 @@ void sdhc_standard_capabilities_init(const struct device *dev);
  * @param dev Pointer to the host controller device.
  */
 void sdhc_standard_host_init(const struct device *dev);
+
+/**
+ * @brief Fill one ADMA2 descriptor line.
+ *
+ * @param desc Descriptor to fill.
+ * @param attr Attribute bits, see SDHC_ADMA2_DESC_*.
+ * @param addr Data address.
+ * @param len Data length in bytes, 1 to SDHC_ADMA2_DESC_MAX_LEN.
+ *
+ * @retval 0 Descriptor filled.
+ * @retval -EINVAL Length out of range.
+ * @retval -EINVAL Data ends above 4 GiB without
+ *         CONFIG_SDHC_STANDARD_CORE_ADMA2_64BIT.
+ */
+int sdhc_standard_adma2_desc_set(struct sdhc_adma2_descriptor *desc, uint16_t attr, uintptr_t addr,
+				 uint32_t len);
 #endif /* ZEPHYR_DRIVERS_SDHC_SDHC_STANDARD_CORE_H_ */

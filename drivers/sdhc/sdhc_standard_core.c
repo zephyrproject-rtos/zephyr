@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
 #include <zephyr/logging/log.h>
 
 #include "sdhc_standard_core.h"
@@ -202,7 +204,7 @@ void sdhc_standard_capabilities_init(const struct device *dev)
 	caps->vol_330_support = (val & SDHC_REG_CAPABILITIES_VS33_MASK) != 0 ? 1 : 0;
 	caps->vol_300_support = (val & SDHC_REG_CAPABILITIES_VS30_MASK) != 0 ? 1 : 0;
 	caps->vol_180_support = (val & SDHC_REG_CAPABILITIES_VS18_MASK) != 0 ? 1 : 0;
-	caps->address_64_bit_support_v4 = 0; /* Not supported in SDHC Specification v3.00 */
+	caps->address_64_bit_support_v4 = (val & SDHC_REG_CAPABILITIES_64BV4_MASK) != 0 ? 1 : 0;
 	caps->address_64_bit_support_v3 = (val & SDHC_REG_CAPABILITIES_64B_MASK) != 0 ? 1 : 0;
 	caps->sdio_async_interrupt_support = (val & SDHC_REG_CAPABILITIES_AIS_MASK) != 0 ? 1 : 0;
 	caps->slot_type = (val & SDHC_REG_CAPABILITIES_ST_MASK) >> SDHC_REG_CAPABILITIES_ST_SHIFT;
@@ -236,4 +238,27 @@ void sdhc_standard_host_init(const struct device *dev)
 
 	/* Host capabilities init */
 	sdhc_standard_capabilities_init(dev);
+}
+
+int sdhc_standard_adma2_desc_set(struct sdhc_adma2_descriptor *desc, uint16_t attr, uintptr_t addr,
+				 uint32_t len)
+{
+	if ((len == 0U) || (len > SDHC_ADMA2_DESC_MAX_LEN)) {
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_SDHC_STANDARD_CORE_ADMA2_64BIT) &&
+	    (((uint64_t)addr + len - 1U) > UINT32_MAX)) {
+		return -EINVAL;
+	}
+
+	desc->attr = attr;
+	desc->len = (len == SDHC_ADMA2_DESC_MAX_LEN) ? 0U : (uint16_t)len;
+	desc->addr_low = (uint32_t)addr;
+#ifdef CONFIG_SDHC_STANDARD_CORE_ADMA2_64BIT
+	desc->addr_high = (uint32_t)((uint64_t)addr >> 32);
+	desc->reserved = 0U;
+#endif
+
+	return 0;
 }
