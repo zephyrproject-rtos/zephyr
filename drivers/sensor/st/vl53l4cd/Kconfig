@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+config VL53L4CD
+	bool "VL53L4CD time-of-flight distance sensor"
+	default y
+	depends on DT_HAS_ST_VL53L4CD_ENABLED
+	depends on SENSOR_ASYNC_API
+	select I2C
+	select RTIO_WORKQ
+	help
+	  Enable the driver for the ST VL53L4CD time-of-flight distance sensor.
+	  The driver only implements the Read and Decode API (sensor_read() and
+	  sensor_get_decoder()).
