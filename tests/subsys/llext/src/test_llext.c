@@ -127,7 +127,8 @@ static void threads_objects_test_setup(struct llext *ext, struct k_thread *llext
 	k_object_access_grant(&my_sem, llext_thread);
 	k_object_access_grant(&my_thread, llext_thread);
 	k_object_access_grant(&my_thread_stack, llext_thread);
-#if DT_HAS_CHOSEN(zephyr_console) && DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_console))
+#if DT_HAS_CHOSEN(zephyr_console) && DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_console)) &&         \
+	!DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), intel_adsp_mem_window)
 	k_object_access_grant(DEVICE_DT_GET(DT_CHOSEN(zephyr_console)), llext_thread);
 #endif
 }
@@ -173,6 +174,7 @@ void load_call_unload(const struct llext_test *test_case)
 	res = llext_add_domain(ext, &domain);
 	if (res == -ENOSPC) {
 		TC_PRINT("Too many memory partitions for this particular hardware\n");
+		k_mem_domain_deinit(&domain);
 		llext_unload(&ext);
 		ztest_test_skip();
 		return;
@@ -222,6 +224,13 @@ void load_call_unload(const struct llext_test *test_case)
 		if (test_case->test_cleanup) {
 			test_case->test_cleanup(ext);
 		}
+	}
+
+	/* "domain" is on the stack: it must leave the arch domain list before
+	 * this frame goes away.
+	 */
+	if (IS_ENABLED(CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT)) {
+		zassert_ok(k_mem_domain_deinit(&domain), "domain deinit should succeed");
 	}
 
 #else /* CONFIG_USERSPACE */
