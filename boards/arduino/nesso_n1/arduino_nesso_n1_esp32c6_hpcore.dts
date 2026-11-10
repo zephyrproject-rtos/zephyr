@@ -189,8 +189,9 @@
 		reset-gpios = <&expander_e0 7 GPIO_ACTIVE_LOW>;
 		busy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 		dio1-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
-		tx-enable-gpios = <&expander_e0 6 GPIO_ACTIVE_HIGH>;
-		antenna-enable-gpios = <&expander_e0 5 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		rx-enable-gpios = <&expander_e0 5 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&expander_e0 6 GPIO_ACTIVE_HIGH>;
 		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
 		tcxo-power-startup-delay-ms = <5>;
 	};
