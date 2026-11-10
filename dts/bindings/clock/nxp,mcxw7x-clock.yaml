@@ -2,9 +2,20 @@ description: NXP MCXW7X series clock controller
 
 compatible: "nxp,mcxw7x-clock"
 
-include: [clock-controller.yaml, base.yaml]
+include: [clock-controller.yaml, base.yaml, nvmem-consumer.yaml]
 
 properties:
+
+  nvmem-cells:
+    description: |
+      Optional single NVMEM cell holding the factory 32 kHz crystal trim
+      (one byte). Bit 7 flags the trim as valid and bits 3:0 hold the
+      capacitance selection (0 to 15), so a selection of 0xF is stored as
+      0x8F. Once the NVMEM provider is available, a valid trim is applied to
+      both the XTAL and EXTAL capacitance selection. A blank cell (0xFF), a
+      byte with bit 7 clear, an out of range value or a read failure keeps
+      osc32k-xtal-cap and osc32k-extal-cap, which are always used as the
+      early boot default.
 
   osc32k-mode:
     type: int
