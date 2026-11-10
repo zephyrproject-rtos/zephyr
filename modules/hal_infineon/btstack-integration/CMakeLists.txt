@@ -104,7 +104,7 @@ if(CONFIG_CYW55513IUBG_SM)
 endif()
 
 # CYW55513 Murata 2FY Module
-if(CONFIG_CYW55513_MURATA_2FY)
+if(CONFIG_CYW55513_MURATA_2FY_SM)
   set(blob_hcd_file  ${hal_blobs_dir}/COMPONENT_CYW55513/COMPONENT_BTFW_MURATA-2FY/bt_firmware.hcd)
 endif()
 
