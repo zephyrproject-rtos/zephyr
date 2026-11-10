@@ -3,9 +3,6 @@
 
 if BOARD_RPI_ZERO_2W
 
-config PM_DEVICE
-	default y if PM
-
 if PM_DEVICE
 
 config POWER_DOMAIN
