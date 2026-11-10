@@ -813,6 +813,20 @@ struct lll_conn *ull_conn_lll_get(uint16_t handle)
 	return &conn->lll;
 }
 
+struct lll_conn *ull_conn_lll_is_valid_get(struct lll_conn *lll)
+{
+	struct ll_conn *conn;
+
+	conn = HDR_LLL2ULL(lll);
+	if (((uint8_t *)conn < (uint8_t *)conn_pool) ||
+	    ((uint8_t *)conn > ((uint8_t *)conn_pool +
+				(sizeof(struct ll_conn) * (CONFIG_BT_MAX_CONN - 1U))))) {
+		return NULL;
+	}
+
+	return &conn->lll;
+}
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 uint16_t ull_conn_default_tx_octets_get(void)
 {

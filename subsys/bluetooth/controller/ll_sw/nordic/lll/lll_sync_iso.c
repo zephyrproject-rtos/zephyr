@@ -32,6 +32,7 @@
 #include "lll_chan.h"
 #include "lll_scan.h"
 #include "lll_df_types.h"
+#include "lll_conn.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 
@@ -1911,6 +1912,50 @@ static bool is_gap_available(struct lll_sync_iso *lll, uint32_t ticks_now,
 	return (ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U;
 }
 
+/* Check if the current sequential packing event, when preempted now by an event using the
+ * radio for the given duration, would lose a payload of a selected BIS that has not been
+ * received yet, i.e. the preemptor overlaps the last repetition of the payload. A preemptor
+ * without a duration is considered to use the radio for the rest of the event.
+ */
+static bool is_preempt_lossy(const struct lll_sync_iso *lll, uint32_t ticks_duration,
+			     uint32_t ticks_now)
+{
+	uint32_t ticks_diff;
+	uint32_t ticks_end;
+	uint32_t se_after;
+	uint8_t se;
+
+	if (lll->bis_spacing < (lll->sub_interval * lll->nse)) {
+		return false;
+	}
+
+	se = MAX(lll->se, lll->se_next);
+	if (ticks_duration == 0U) {
+		return !is_se_optional(lll, lll->latency_event, se);
+	}
+
+	/* Preemptor duration, the overhead to preempt and to resume, and a margin of a tick on
+	 * either side for the conversions to ticks.
+	 */
+	ticks_end = ticks_now + ticks_duration +
+		    HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US + EVENT_OVERHEAD_RESUME_US) +
+		    2U;
+	ticks_end &= HAL_TICKER_CNTR_MASK;
+
+	/* First subevent that starts after the preemptor ends */
+	ticks_diff = ticker_ticks_diff_get(ticks_end, lll->ticks_se_first);
+	if ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) {
+		return false;
+	}
+
+	se_after = DIV_ROUND_UP(HAL_TICKER_TICKS_TO_US(ticks_diff), lll->sub_interval);
+	if (se_after <= se) {
+		return false;
+	}
+
+	return !is_se_skip_lossless(lll, lll->latency_event, se, MIN(se_after, UINT8_MAX));
+}
+
 /* Check if the current event, waiting for its next subevent, can yield to a resume prepare or
  * a deferred scan prepare in the prepare pipeline, that is not of an ISO sync event. The
  * prepare uses the radio until the preempt timeout of the yielded current event, i.e.
@@ -2138,6 +2183,25 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 			return -EBUSY;
 		}
 
+		/* Do not abort current ISO sync event when the next event, say an advertising or
+		 * a connection event, overlaps the last repetition of a payload not received yet,
+		 * unless the next event is a connection near its supervision timeout.
+		 */
+		lll_next = ull_sync_iso_lll_is_valid_get(next);
+		if (lll_next == NULL) {
+			const struct ull_hdr *ull_next = HDR_LLL2ULL(next);
+			struct lll_conn *conn_lll = NULL;
+
+			if (IS_ENABLED(CONFIG_BT_CONN)) {
+				conn_lll = ull_conn_lll_is_valid_get(next);
+			}
+
+			if (((conn_lll == NULL) || (conn_lll->forced == 0U)) &&
+			    is_preempt_lossy(lll, ull_next->ticks_slot, ticks_now)) {
+				return -EBUSY;
+			}
+		}
+
 		/* Setup the resume callback so that we yield now and be scheduled after the
 		 * overlap finishes its radio use.
 		 */
@@ -2151,7 +2215,6 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		/* Yield to the ready event if the current event is waiting for its next
 		 * subevent and a subevent of the ready event can be received before it.
 		 */
-		lll_next = ull_sync_iso_lll_is_valid_get(next);
 		if ((lll_next != NULL) && is_yield_to_ready(lll, next, ticks_now)) {
 			lll_next->is_yield_to = 1U;
 
