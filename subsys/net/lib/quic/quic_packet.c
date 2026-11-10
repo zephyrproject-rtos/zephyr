@@ -448,9 +448,6 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			stream_seq_mark_opened(opened, stream_id >> 2);
 		}
 
-		sys_slist_find_and_remove(&conn->streams, &stream->node);
-		sys_slist_prepend(&conn->streams, &stream->node);
-
 		/* The reference of the new stream goes to the accept queue,
 		 * where the application can take the stream and close it at
 		 * once. Keep one until the data of this frame is delivered.

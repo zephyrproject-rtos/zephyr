@@ -3494,7 +3494,15 @@ ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *
 		 * streams on it, is closed. Other connections, including a
 		 * new one that reuses the context of a closed one, are not.
 		 */
+		k_mutex_lock(&endpoints_lock, K_FOREVER);
 		affected = sys_slist_find(&ctx->endpoints, &ep->node, NULL);
+		k_mutex_unlock(&endpoints_lock);
+
+		/* The stream list is changed under streams_lock: a stream that
+		 * is released at the same time unlinks itself holding only that
+		 * lock.
+		 */
+		k_mutex_lock(&streams_lock, K_FOREVER);
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 			if (stream->ep == ep) {
@@ -3516,6 +3524,8 @@ ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *
 				ep->is_closing_notified = true;
 			}
 		}
+
+		k_mutex_unlock(&streams_lock);
 
 		/* A listening socket is closed only by its own endpoint, not by
 		 * a connection that goes away before it is accepted. The
