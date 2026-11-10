@@ -10465,7 +10465,7 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 
 	/* A valid one is kept, with the error code and the final size of the
 	 * frame, and the bytes up to its final size that never arrived count
-	 * as received.
+	 * as received and are handed back as credit at once.
 	 */
 	test_stream.local_max_data = 0x3f;
 	atomic_set(&test_stream.refcount, 1);
@@ -10480,6 +10480,8 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 		      "Received up to %" PRIu64, test_stream.highest_offset_received);
 	zassert_equal(ep->rx_fc.bytes_received, 10,
 		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 10 - sizeof(data),
+		      "Connection credit %" PRIu64, ep->rx_fc.max_data);
 
 	/* A repeat of the frame, which the peer sends until it is
 	 * acknowledged, counts nothing twice.
@@ -10489,6 +10491,8 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
 	zassert_equal(ep->rx_fc.bytes_received, 10,
 		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 10 - sizeof(data),
+		      "Connection credit %" PRIu64 " after a repeated reset", ep->rx_fc.max_data);
 
 	/* The data received before the reset is still read, then the reset
 	 * is reported as an error, not as the end of a complete stream.
@@ -10553,6 +10557,32 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	ret = quic_stream_receive_data(&test_stream, 1, data, 0, true);
 	zassert_equal(ret, -EPROTO, "A FIN below the data received must close the connection (%d)",
 		      ret);
+	unlink_test_stream(&test_stream, ctx);
+
+	/* Data held behind a gap is never read either: a reset credits back
+	 * everything past the contiguous data, and charges what never came.
+	 */
+	ep->rx_fc.max_data = 1024;
+	ep->rx_fc.bytes_received = 0;
+	link_test_stream(&test_stream, ctx, ep, 13);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 10, data, sizeof(data), false);
+	zassert_equal(ret, -EAGAIN, "Data behind a gap was not held back (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 10 + sizeof(data),
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 13, 0x3f, 20);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 20,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 20,
+		      "Connection credit %" PRIu64, ep->rx_fc.max_data);
+	zassert_equal(test_stream.rx_buf.ooo_count, 0, "Data behind the gap was kept");
+	ret = quic_stream_recv(&test_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, -1, "Expected an error for a reset stream (%d)", ret);
+	zassert_equal(errno, ECONNRESET, "Expected ECONNRESET for a reset stream (%d)", errno);
 	unlink_test_stream(&test_stream, ctx);
 
 	ret = quic_connection_close(sock);
@@ -10645,6 +10675,72 @@ ZTEST(net_socket_quic, test_571_reset_stream_carries_final_size)
 	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
 
 	reset_test_disconnect(&peers);
+}
+
+ZTEST(net_socket_quic, test_572_closed_stream_returns_credit)
+{
+	static struct quic_stream test_stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint8_t data[] = { 'a', 'b', 'c' };
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54359");
+
+	/* As a client, with data of a stream of the server's in the buffer
+	 * and behind a gap. Closing the stream credits all of it back.
+	 */
+	ep->is_server = false;
+	ep->rx_fc.max_data = 1024;
+	link_test_stream(&test_stream, ctx, ep, 1);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
+	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+	ret = quic_stream_receive_data(&test_stream, 10, data, sizeof(data), false);
+	zassert_equal(ret, -EAGAIN, "Data behind a gap was not held back (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 13,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+
+	quic_rx_stream_closed(ep, &test_stream);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 13,
+		      "Connection credit %" PRIu64 " after the close", ep->rx_fc.max_data);
+	unlink_test_stream(&test_stream, ctx);
+
+	/* Data discarded once the read half is shut down is credited back
+	 * as well, and a reset after that credits what was not already.
+	 */
+	ep->rx_fc.max_data = 1024;
+	ep->rx_fc.bytes_received = 0;
+	link_test_stream(&test_stream, ctx, ep, 9);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
+	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+	test_stream.read_closed = true;
+	ret = quic_stream_receive_data(&test_stream, sizeof(data), data, sizeof(data), false);
+	zassert_ok(ret, "Discarding data failed (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 6,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 3,
+		      "Connection credit %" PRIu64 " after discarded data", ep->rx_fc.max_data);
+
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 9, 0x3f, 10);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 10,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 7,
+		      "Connection credit %" PRIu64 " after the reset", ep->rx_fc.max_data);
+
+	quic_rx_stream_closed(ep, &test_stream);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 10,
+		      "Connection credit %" PRIu64 " after the close", ep->rx_fc.max_data);
+	unlink_test_stream(&test_stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
