@@ -31,3 +31,17 @@ properties:
     default: 1
     description: |
       Size of the virtual UART latch buffer.
+
+  supported-modes:
+    type: string-array
+    enum:
+      - "polling"
+      - "interrupt-driven"
+      - "async"
+    default: ["polling", "interrupt-driven", "async"]
+    description: |
+      Modes of the UART API the emulator supports, the interrupt-driven and asynchronous ones when
+      their Kconfig options are enabled. Leaving one out emulates a UART driver that does not
+      implement it: its operations are missing, as with such a driver. Polling, which every UART
+      driver implements, is always supported, so "polling" alone emulates a UART with polling
+      only.

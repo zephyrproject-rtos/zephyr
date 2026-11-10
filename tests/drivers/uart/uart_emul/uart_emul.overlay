@@ -29,4 +29,22 @@
 			status = "okay";
 		};
 	};
+
+	euart_irq: uart-emul-interrupt-driven {
+		compatible = "zephyr,uart-emul";
+		supported-modes = "interrupt-driven";
+		status = "okay";
+	};
+
+	euart_async: uart-emul-async {
+		compatible = "zephyr,uart-emul";
+		supported-modes = "async";
+		status = "okay";
+	};
+
+	euart_poll: uart-emul-polling {
+		compatible = "zephyr,uart-emul";
+		supported-modes = "polling";
+		status = "okay";
+	};
 };

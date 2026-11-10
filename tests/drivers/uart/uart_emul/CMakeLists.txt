@@ -7,4 +7,5 @@ project(uart_emul)
 target_sources(app PRIVATE
     src/bus.c
     src/device.c
+    src/modes.c
     )
