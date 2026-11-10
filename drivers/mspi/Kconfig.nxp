@@ -16,3 +16,19 @@ config MSPI_NXP_QSPI_BUSY_TIMEOUT_US
 	help
 	  Maximum time in microseconds to wait for the QSPI controller to
 	  complete an IP command or for the TX FIFO to drain.
+
+config MSPI_NXP_LPC_SPIFI
+	bool "NXP LPC SPIFI controller driver"
+	default y
+	depends on DT_HAS_NXP_LPC_SPIFI_ENABLED
+	select PINCTRL
+	imply MSPI_MEMMAP
+	help
+	  Enable MSPI driver for the NXP LPC SPIFI controller.
+
+config MSPI_NXP_LPC_SPIFI_TIMEOUT_US
+	int "NXP LPC SPIFI command timeout in microseconds"
+	depends on MSPI_NXP_LPC_SPIFI
+	default 1000000
+	help
+	  Maximum time in microseconds to wait for a SPIFI command to complete.
