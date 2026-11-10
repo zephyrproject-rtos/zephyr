@@ -79,4 +79,21 @@
 			slew-rate = "standard";
 		};
 	};
+
+	/* SPIFI: on-board QSPI NOR flash (quad; WP#/HOLD# muxed to IO2/IO3). */
+	pinmux_spifi: pinmux_spifi {
+		group0 {
+			pinmux = <SPIFI_IO0_PIO0_24>,
+				 <SPIFI_IO1_PIO0_25>,
+				 <SPIFI_CLK_PIO0_26>,
+				 <SPIFI0_SPIFI_IO3_PIO0_27>,
+				 <SPIFI0_SPIFI_IO2_PIO0_28>;
+			slew-rate = "fast";
+		};
+
+		/* PIO0_23 is a type A pin without a slew rate setting. */
+		group1 {
+			pinmux = <SPIFI_CSN_PIO0_23>;
+		};
+	};
 };
