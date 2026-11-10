@@ -427,16 +427,6 @@
 			resets = <&rctl STM32_RESET(AHB6, 20)>;
 			status = "disabled";
 		};
-
-		ltdc: display-controller@5a001000 {
-			compatible = "st,stm32-ltdc";
-			reg = <0x5a001000 0x200>;
-			interrupts = <88 0>, <89 0>;
-			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB4, 0)>;
-			resets = <&rctl STM32_RESET(APB4, 26)>;
-			status = "disabled";
-		};
 	};
 
 	smbus5: smbus5 {
