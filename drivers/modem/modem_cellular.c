@@ -2035,8 +2035,14 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
 			break;
 		}
-		/* Check if we are already registered during the network setup */
-		if (modem_cellular_has_network_script(config)) {
+		/* With a network script registration was awaited before dialling, but losing
+		 * it while dialling is not acted on. PPP is attached, so it is torn down before
+		 * registration is awaited again.
+		 */
+		if (modem_cellular_has_network_script(config) &&
+		    !modem_cellular_is_attached(data)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
+		} else if (modem_cellular_has_network_script(config)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
