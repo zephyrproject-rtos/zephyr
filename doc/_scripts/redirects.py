@@ -9,7 +9,8 @@ doc directories)
 Notes:
     - Please keep this list sorted alphabetically.
     - URLs must be relative to document root (with NO leading slash), and
-      without the html extension).
+      without the html extension). A new URL may instead be an absolute
+      http(s) URL for pages moved out of this documentation set.
 """
 
 REDIRECTS = (
