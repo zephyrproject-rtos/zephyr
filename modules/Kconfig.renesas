@@ -564,4 +564,9 @@ config USE_RX_FSP_SCI_B_UART
 	help
 	  Enable RX FSP SCI-B UART driver
 
+config USE_RX_FSP_MRAM
+	bool
+	help
+	  Enable RX FSP MRAM driver
+
 endif # HAS_RENESAS_RX_FSP
