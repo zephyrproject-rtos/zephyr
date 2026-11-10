@@ -125,8 +125,6 @@ config ESP32_PM_SLP_IRAM_OPT
 
 config ESP32_SLEEP_POWER_DOWN_FLASH
 	bool "Power down flash supply in light sleep (VDDSDIO path)"
-	depends on SOC_ESP32_PM_SUPPORT_VDDSDIO_PD
-	depends on SOC_ESP32_FLASH_SUPPORTED
 	depends on !SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP
 	depends on !ESP_SPIRAM
 	select ESP32_PM_SLP_IRAM_OPT
@@ -140,7 +138,6 @@ config ESP32_SLEEP_POWER_DOWN_FLASH
 
 config ESP32_SLEEP_SET_FLASH_DPD
 	bool "SPI flash deep power-down mode in light sleep"
-	depends on SOC_ESP32_FLASH_SUPPORTED
 	depends on !ESP32_SLEEP_POWER_DOWN_FLASH
 	select ESP32_PM_SLP_IRAM_OPT
 	help

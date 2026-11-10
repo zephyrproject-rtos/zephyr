@@ -8,10 +8,6 @@ if BOARD_ESP32_ETHERNET_KIT_ESP32_PROCPU
 config ESP_SPIRAM
 	default y if !MCUBOOT && !ESP32_USE_UNSUPPORTED_REVISION
 
-choice SPIRAM_TYPE
-	default SPIRAM_TYPE_ESPPSRAM64
-endchoice
-
 configdefault ETH_DRIVER
 	default y
 
