@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&code_mram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		storage_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0xe0000 DT_SIZE_K(64)>;
+		};
+	};
+};
