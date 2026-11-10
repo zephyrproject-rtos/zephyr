@@ -208,4 +208,103 @@ static inline unsigned long micsr2_read_clear(unsigned int index, unsigned long 
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
 
+#ifdef CONFIG_RISCV_ISA_EXT_SSCSRIND
+
+/**
+ * @brief Read a supervisor-level indirect CSR register atomically
+ * @param index The CSR index to read
+ * @return The value of the indirect CSR register
+ */
+static inline unsigned long sicsr_read(unsigned int index)
+{
+	unsigned int key = arch_irq_lock();
+
+	csr_write(SISELECT, index);
+	unsigned long val = csr_read(SIREG);
+
+	arch_irq_unlock(key);
+	return val;
+}
+
+/**
+ * @brief Write a supervisor-level indirect CSR register atomically
+ * @param index The CSR index to write
+ * @param value The value to write to the indirect CSR register
+ */
+static inline void sicsr_write(unsigned int index, unsigned long value)
+{
+	unsigned int key = arch_irq_lock();
+
+	csr_write(SISELECT, index);
+	csr_write(SIREG, value);
+
+	arch_irq_unlock(key);
+}
+
+/**
+ * @brief Set bits in a supervisor-level indirect CSR register atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to set
+ */
+static inline void sicsr_set(unsigned int index, unsigned long mask)
+{
+	unsigned int key = arch_irq_lock();
+
+	csr_write(SISELECT, index);
+	csr_set(SIREG, mask);
+
+	arch_irq_unlock(key);
+}
+
+/**
+ * @brief Clear bits in a supervisor-level indirect CSR register atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to clear
+ */
+static inline void sicsr_clear(unsigned int index, unsigned long mask)
+{
+	unsigned int key = arch_irq_lock();
+
+	csr_write(SISELECT, index);
+	csr_clear(SIREG, mask);
+
+	arch_irq_unlock(key);
+}
+
+/**
+ * @brief Read a supervisor-level indirect CSR register and set bits atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to set
+ * @return The previous value of the indirect CSR register
+ */
+static inline unsigned long sicsr_read_set(unsigned int index, unsigned long mask)
+{
+	unsigned int key = arch_irq_lock();
+
+	csr_write(SISELECT, index);
+	unsigned long val = csr_read_set(SIREG, mask);
+
+	arch_irq_unlock(key);
+	return val;
+}
+
+/**
+ * @brief Read a supervisor-level indirect CSR register and clear bits atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to clear
+ * @return The previous value of the indirect CSR register
+ */
+static inline unsigned long sicsr_read_clear(unsigned int index, unsigned long mask)
+{
+	unsigned int key = arch_irq_lock();
+
+	csr_write(SISELECT, index);
+	unsigned long val = csr_read_clear(SIREG, mask);
+
+	arch_irq_unlock(key);
+	return val;
+}
+
+#endif /* CONFIG_RISCV_ISA_EXT_SSCSRIND */
+
 #endif /* ZEPHYR_INCLUDE_ARCH_RISCV_ICSR_H_ */

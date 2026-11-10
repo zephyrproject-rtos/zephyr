@@ -153,6 +153,16 @@ config RISCV_ISA_EXT_SMCSRIND
 	  The Smcsrind extension provides indirect access to CSRs through
 	  the MISELECT and MIREG registers.
 
+config RISCV_ISA_EXT_SSCSRIND
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),sscsrind)
+	depends on RISCV_ISA_EXT_ZICSR
+	help
+	  (Sscsrind) - Standard Extension for Supervisor-level Indirect CSR Access
+
+	  The Sscsrind extension provides indirect access to CSRs through
+	  the SISELECT and SIREG registers.
+
 config RISCV_ISA_EXT_ZIFENCEI
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zifencei)

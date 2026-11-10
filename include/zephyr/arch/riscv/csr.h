@@ -233,6 +233,13 @@
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
 
+#ifdef CONFIG_RISCV_ISA_EXT_SSCSRIND
+
+#define SISELECT 0x150
+#define SIREG    0x151
+
+#endif /* CONFIG_RISCV_ISA_EXT_SSCSRIND */
+
 /* Privilege-level abstraction for status and cause CSRs */
 #ifdef CONFIG_RISCV_S_MODE
 #define RV_STATUS_CSR sstatus
