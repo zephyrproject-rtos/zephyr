@@ -90,6 +90,7 @@ if(CONFIG_MBEDTLS)
     target_include_directories(mbedtls_iface INTERFACE
       ${CMAKE_CURRENT_LIST_DIR}/configs
       ${CMAKE_CURRENT_LIST_DIR}/include
+      $<$<BOOL:${CONFIG_MBEDTLS_THREADING_ZEPHYR}>:${CMAKE_CURRENT_LIST_DIR}/include/threading_alt>
     )
 
     if(CONFIG_TF_PSA_CRYPTO_BUILTIN)
@@ -108,6 +109,9 @@ if(CONFIG_MBEDTLS)
     )
     list_append_ifdef(CONFIG_MBEDTLS_SHELL zephyr_mbedtls_src
       ${CMAKE_CURRENT_LIST_DIR}/shell.c
+    )
+    list_append_ifdef(CONFIG_MBEDTLS_THREADING_ZEPHYR zephyr_mbedtls_src
+      ${CMAKE_CURRENT_LIST_DIR}/zephyr_threading.c
     )
     if(zephyr_mbedtls_src)
       zephyr_library()
