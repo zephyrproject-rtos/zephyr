@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  bluetooth.hci.h4:
+    platform_allow:
+      - native_sim
+    tags:
+      - bluetooth
+      - hci
