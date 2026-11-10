@@ -863,6 +863,25 @@ Modules
   :ref:`external module <external_module_rust>`; add it to the application manifest to keep using
   Rust. The ``manifest.project-filter +zephyr-lang-rust`` west setting no longer has an effect.
 
+Mbed TLS
+========
+
+* :kconfig:option:`CONFIG_MBEDTLS_THREADING_C` is now enabled by default in
+  multithreaded builds when :kconfig:option:`CONFIG_MBEDTLS_BUILTIN` or
+  :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_C` is enabled, with
+  :kconfig:option:`CONFIG_MBEDTLS_THREADING_ZEPHYR` selected by default when
+  :kconfig:option:`CONFIG_TF_PSA_CRYPTO_BUILTIN` is enabled. Applications that
+  disable :kconfig:option:`CONFIG_MBEDTLS_INIT` must call ``mbedtls_init()``
+  before invoking any Mbed TLS or PSA Crypto API so the threading callbacks are
+  registered first. Direct calls must run from thread context;
+  applications that invoke Mbed TLS or PSA Crypto from ISRs must set
+  ``CONFIG_MBEDTLS_THREADING_C=n``. Custom ``THREADING_ALT`` providers
+  (:kconfig:option:`CONFIG_MBEDTLS_THREADING_CUSTOM`) that keep
+  :kconfig:option:`CONFIG_MBEDTLS_INIT` enabled must call
+  ``mbedtls_threading_set_alt()`` at an earlier initialization level or a
+  numerically lower ``POST_KERNEL`` priority than
+  :kconfig:option:`CONFIG_KERNEL_INIT_PRIORITY_DEFAULT`.
+
 Architectures
 *************
 
