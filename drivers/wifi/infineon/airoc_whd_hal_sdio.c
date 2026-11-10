@@ -269,9 +269,8 @@ whd_result_t whd_bus_sdio_register_oob_intr(whd_driver_t whd_driver)
 	int ret;
 	/* Not DEVICE_DT_GET(DT_DRV_INST(0))->data: that only resolves when the
 	 * net_if was registered via NET_DEVICE_DT_INST_DEFINE, which isn't the
-	 * case under CONFIG_WIFI_NM_WPA_SUPPLICANT (see airoc_wifi.c). Use the
-	 * same singleton directly, matching how whd_bus_sdio_oob_irq_handler
-	 * and the SDIO card callback in this file already get at it.
+	 * case under CONFIG_WIFI_NM_WPA_SUPPLICANT (see airoc_wifi.c). Reference
+	 * the singleton directly instead, as airoc_wifi.c's own driver code does.
 	 */
 	struct airoc_wifi_data *data = &airoc_wifi_dev_data;
 
