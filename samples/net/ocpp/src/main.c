@@ -79,7 +79,7 @@ static int ocpp_get_time_from_sntp(void)
 	struct sntp_time stime;
 	struct sockaddr addr;
 	socklen_t addrlen;
-	struct timespec tv;
+	struct timespec tv = {0};
 	int ret;
 
 	ret = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT,
@@ -103,9 +103,13 @@ static int ocpp_get_time_from_sntp(void)
 
 	LOG_INF("SNTP success, epoch seconds: %llu\n", stime.seconds);
 	tv.tv_sec = stime.seconds;
-	clock_settime(CLOCK_REALTIME, &tv);
+	if (clock_settime(CLOCK_REALTIME, &tv) < 0) {
+		ret = -errno;
+		LOG_ERR("Failed to set time (%d)", ret);
+	}
+
 	sntp_close(&ctx);
-	return 0;
+	return ret;
 }
 
 ZBUS_CHAN_DEFINE(ch_event, /* Name */
