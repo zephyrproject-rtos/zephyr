@@ -498,6 +498,95 @@ static bool is_pll_ready(uint32_t pll_idx)
 	}
 }
 
+/*
+ * Requests held on each no-auto-enable PLL, indexed as by no_auto_enable_pll_idx().
+ * set_up_plls() reads them without taking the lock, so the clock tree must not be
+ * set up concurrently with on() or off() calls.
+ */
+static uint32_t pll_requests[3];
+static struct k_spinlock pll_requests_lock;
+
+/** @brief Enables the PLL with index pll_idx (0 for PLL1) */
+static void enable_pll(uint32_t pll_idx)
+{
+	switch (pll_idx) {
+	case 0U:
+		LL_RCC_PLL1_Enable();
+		break;
+	case 1U:
+		LL_RCC_PLL2_Enable();
+		break;
+	case 2U:
+		LL_RCC_PLL3_Enable();
+		break;
+	default:
+		break;
+	}
+}
+
+/** @brief Disables the PLL with index pll_idx (0 for PLL1) */
+static void disable_pll(uint32_t pll_idx)
+{
+	switch (pll_idx) {
+	case 0U:
+		LL_RCC_PLL1_Disable();
+		break;
+	case 1U:
+		LL_RCC_PLL2_Disable();
+		break;
+	case 2U:
+		LL_RCC_PLL3_Disable();
+		break;
+	default:
+		break;
+	}
+}
+
+/** @brief Takes a request on a no-auto-enable PLL and waits until the PLL is locked */
+static void request_pll(uint32_t pll_idx)
+{
+	K_SPINLOCK(&pll_requests_lock) {
+		if (pll_requests[pll_idx] == 0U) {
+			enable_pll(pll_idx);
+		}
+		pll_requests[pll_idx]++;
+	}
+
+	/* Also wait if another caller enabled the PLL, as it may still be locking */
+	while (!is_pll_ready(pll_idx)) {
+	}
+}
+
+/**
+ * @brief Releases a request on a no-auto-enable PLL and disables it with the last one
+ *
+ * @retval 0 Request released
+ * @retval -EALREADY No request was held
+ */
+static int release_pll(uint32_t pll_idx)
+{
+	int ret = 0;
+
+	K_SPINLOCK(&pll_requests_lock) {
+		if (pll_requests[pll_idx] == 0U) {
+			ret = -EALREADY;
+			K_SPINLOCK_BREAK;
+		}
+
+		pll_requests[pll_idx]--;
+		if (pll_requests[pll_idx] == 0U) {
+			disable_pll(pll_idx);
+			/* Wait for the ready flag to clear so that the next request does not
+			 * see it set before the PLL has locked again.
+			 */
+			while (is_pll_ready(pll_idx)) {
+			}
+		}
+	}
+
+	return ret;
+}
+
 static int stm32_clock_control_configure(const struct device *dev,
 					 clock_control_subsys_t sub_system, void *data);
 
@@ -507,6 +596,19 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	volatile int temp;
 
 	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
+		int err = enabled_clock(pclken->bus);
+		int pll_idx;
+
+		if (err < 0) {
+			return err;
+		}
+
+		pll_idx = no_auto_enable_pll_idx(pclken->bus);
+		if (pll_idx >= 0) {
+			/* Start the PLL before a peripheral can be switched to it */
+			request_pll((uint32_t)pll_idx);
+		}
+
 		/* Source selection entry: apply it instead of toggling a gate */
 		return stm32_clock_control_configure(dev, sub_system, NULL);
 	}
@@ -532,8 +634,14 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 	ARG_UNUSED(dev);
 
 	if (!IN_RANGE(pclken->bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
-		/* Attempt to toggle a wrong periph clock bit */
-		return -ENOTSUP;
+		int pll_idx = no_auto_enable_pll_idx(pclken->bus);
+
+		/* Of source selection entries, only no-auto-enable PLL outputs can be released */
+		if ((pll_idx < 0) || (enabled_clock(pclken->bus) < 0)) {
+			return -ENOTSUP;
+		}
+
+		return release_pll((uint32_t)pll_idx);
 	}
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
@@ -1097,7 +1205,7 @@ static int set_up_plls(void)
 		LL_RCC_PLL1S_Enable();
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	if (!IS_ENABLED(STM32_PLL_NO_AUTO_ENABLE)) {
+	if (!IS_ENABLED(STM32_PLL_NO_AUTO_ENABLE) || (pll_requests[0] > 0U)) {
 		LL_RCC_PLL1_Enable();
 		while (LL_RCC_PLL1_IsReady() != 1U) {
 		}
@@ -1157,7 +1265,7 @@ static int set_up_plls(void)
 	}
 
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	if (!IS_ENABLED(STM32_PLL2_NO_AUTO_ENABLE)) {
+	if (!IS_ENABLED(STM32_PLL2_NO_AUTO_ENABLE) || (pll_requests[1] > 0U)) {
 		LL_RCC_PLL2_Enable();
 		while (LL_RCC_PLL2_IsReady() != 1U) {
 		}
@@ -1212,7 +1320,7 @@ static int set_up_plls(void)
 	}
 
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	if (!IS_ENABLED(STM32_PLL3_NO_AUTO_ENABLE)) {
+	if (!IS_ENABLED(STM32_PLL3_NO_AUTO_ENABLE) || (pll_requests[2] > 0U)) {
 		LL_RCC_PLL3_Enable();
 		while (LL_RCC_PLL3_IsReady() != 1U) {
 		}
