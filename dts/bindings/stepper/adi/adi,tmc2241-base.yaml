@@ -1,0 +1,65 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for ADI/Trinamic TMC2241 (bus-agnostic base).
+  Driver-only variant of TMC5241 - identical GCONF/CHOPCONF/COOLCONF/DRVSTATUS
+  layout, no ramp generator block.
+
+include:
+  - name: adi,trinamic-gconf.yaml
+    property-allowlist:
+      - en-pwm-mode
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: External/internal clock frequency in Hz (fCLK).
+
+  shaft:
+    type: boolean
+    description: Reverse motor direction (GCONF bit 4).
+
+  fast-standstill:
+    type: boolean
+    description: GCONF bit 1.
+
+  tcoolthrs:
+    type: int
+    default: 0
+    description: |
+      TCOOLTHRS (0x14). The StallGuard stall output on DIAG0 is only enabled
+      while TCOOLTHRS >= TSTEP, where TSTEP is the measured time between
+      microsteps in fCLK cycles. The reset value 0 keeps the stall output
+      disabled, so set this to a value at or above the TSTEP (register 0x12)
+      read while the motor runs at the slowest speed where stall detection is
+      wanted. 0 leaves the register at its reset value.
+
+  sg4-threshold:
+    type: int
+    default: 0
+    description: |
+      StallGuard4 stall threshold (SG4_THRS, 0x74, 8 bits), used when
+      StealthChop is enabled (en-pwm-mode). Per the datasheet the chip
+      compares SG4_RESULT against twice this value, and a stall is flagged
+      while SG4_RESULT is at or below that. Tune it so that 2x this value
+      sits between the SG4_RESULT seen while the motor runs unloaded (minimum)
+      and while it is blocked (SG4_RESULT can be read at 0x75). StallGuard
+      needs a fast enough motor speed to produce a usable signal; the
+      datasheet suggests roughly 1 revolution per second or more. Requires
+      tcoolthrs to be >= TSTEP at that speed. 0 leaves the register at its
+      reset value.
+
+  multistep-filt:
+    type: boolean
+    description: |
+      GCONF bit 3. TMC2241-only field (reserved on TMC5241). Filters
+      step pulses for correct StealthChop/StallGuard operation at
+      high step rates.
+
+  diag0-gpios:
+    type: phandle-array
+    description: |
+      Optional DIAG0 interrupt pin, used for stall/fault (DRVSTATUS)
+      events only - TMC2241 has no RAMPSTAT.

@@ -73,3 +73,63 @@ adi_tmcm3216 {
 		};
 	};
 };
+
+adi_tmc5241_uart: adi-tmc5241 {
+	compatible = "adi,tmc5241";
+	status = "okay";
+
+	label = "tmc5241_uart_1";
+	sw-sel-gpios = <&test_gpio 0x02 GPIO_ACTIVE_HIGH>;
+
+	en-pwm-mode;
+	shaft; /* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+
+	tmc5241_uart_stepper_driver: stepper-driver {
+		compatible = "adi,tmc5241-stepper-driver";
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC5241 */
+		stallguard2-threshold = <9>;
+	};
+
+	/* ADI TMC ramp generator as well as current settings; TMC5241 only */
+	tmc5241_uart_motion_controller: motion-controller {
+		compatible = "adi,tmc5241-stepper-ctrl";
+
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		thigh = <90>;
+		tcoolthrs = <100>;
+		tpwmthrs = <110>;
+		tpowerdown = <120>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
+};
+
+adi_tmc2241_uart: adi-tmc2241 {
+	compatible = "adi,tmc2241";
+	status = "okay";
+
+	label = "tmc2241_uart_1";
+	sw-sel-gpios = <&test_gpio 0x03 GPIO_ACTIVE_HIGH>;
+
+	en-pwm-mode;
+	shaft;
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+
+	/* TMC2241 is driver-only; no stepper-ctrl child (no ramp generator hardware) */
+	tmc2241_uart_stepper_driver: stepper-driver {
+		compatible = "adi,tmc5241-stepper-driver";
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC2241 */
+		stallguard2-threshold = <9>;
+	};
+};

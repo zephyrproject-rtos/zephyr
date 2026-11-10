@@ -1,0 +1,91 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * TMC2241-EVKIT (TMC2241-EVAL board), bridged to the Nucleo-H563ZI via the
+ * "Sternbruecke Nucleo V0.1" adapter board (stacks on the Nucleo's Arduino/
+ * Morpho headers, plugs directly into the EVAL board's J201 connector - no
+ * loose jumper wires for the signals below). Every pin here was traced
+ * directly off the Sternbruecke schematic + cross-checked against ST's
+ * UM3115 Zio connector tables, not guessed.
+ *
+ * TMC2241-EVAL J201 pin -> Sternbruecke J101 pin -> Nucleo Zio Dxx -> STM32 pin:
+ *   27 SPI_SCK    -> D13 -> PA5  (board default &spi1 pinctrl, unchanged)
+ *   29 SPI_MOSI   -> D11 -> PB5  (board default &spi1 pinctrl, unchanged)
+ *   28 SPI_MISO   -> D12 -> PG9  (board default &spi1 pinctrl, unchanged)
+ *   24 SPI_CS_DRV -> D7  -> PG12 (overrides the board's default D10/PD14 CS)
+ *    8 DRV_EN     -> D35 -> PA3
+ *   38 DIAG0      -> D41 -> PE7
+ *   19 SLEEP      -> D38 -> PE6  (must stay driven high - datasheet: floating/low = sleep)
+ *   20 UART_EN    -> D39 -> PE12 (low = SPI mode)
+ *    9 IREF_R2    -> D34 -> PE0  (low = lowest/safest current range, see IREF_R3)
+ *   10 IREF_R3    -> D36 -> PB10
+ *   23 CLK        -> Sternbruecke Y201 16MHz XTAL OSC. Its EN pin is pulled high
+ *                     by default (R214, 4.7k to +3.3V); Nucleo D42 only pulls it
+ *                     low to disable, so leaving D42 undriven means CLK is
+ *                     actively driven at 16MHz (not grounded for the internal
+ *                     osc) - clock-frequency below is set to 16000000 to match.
+ *   17 STEP_INT   -> D37 -> PE15
+ *   18 DIR_INT    -> D32 -> PA0
+ *
+ * STEP/DIR use the INT path (STEP_INT/DIR_INT, J201 pins 17/18, via the
+ * Sternbruecke) rather than EXT (TMC2241-EVAL's separate J205 header) - no
+ * loose jumper wires needed. This requires J206 and J207 (on the EVAL board)
+ * to both have their shunt installed in the INT position (pins 1-2), not EXT
+ * (pins 2-3) - without those shunts J205/INT is electrically disconnected
+ * from the chip regardless of overlay wiring.
+ */
+
+/ {
+	aliases {
+		stepper-driver = &tmc2241_stepper_driver;
+		stepper-ctrl = &step_dir_motion_control;
+	};
+
+	step_dir_motion_control: motion-controller {
+		compatible = "zephyr,gpio-step-dir-stepper-ctrl";
+		step-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>; /* STEP_INT, via Sternbruecke D37 */
+		dir-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;   /* DIR_INT, via Sternbruecke D32 */
+		stepper-driver = <&tmc2241_stepper_driver>;
+	};
+
+	/* Static pins not covered by the tmc2241 DT binding - driven once at boot
+	 * by main.c via the zephyr,user node (see HAS_STATIC_PINS in main.c).
+	 */
+	zephyr,user {
+		/* must stay high - low/floating = chip sleep */
+		sleep-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+		uart-en-gpios = <&gpioe 12 GPIO_ACTIVE_HIGH>; /* low = SPI mode */
+		/* both low = 48kOhm = lowest current range */
+		iref-r2-gpios = <&gpioe 0 GPIO_ACTIVE_HIGH>;
+		iref-r3-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi1 {
+	cs-gpios = <&gpiog 12 GPIO_ACTIVE_LOW>; /* overrides board default D10/PD14 */
+
+	tmc2241: tmc2241@0 {
+		compatible = "adi,tmc2241";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		/* Sternbruecke Y201 XTAL OSC, actively driven (see header comment) */
+		clock-frequency = <16000000>;
+		diag0-gpios = <&gpioe 7 GPIO_ACTIVE_HIGH>;
+		en-pwm-mode;
+		/* >= measured TSTEP (400 fCLK cycles) at this sample's speed */
+		tcoolthrs = <1000>;
+		/* 12V/0.5A: unloaded SG4_RESULT >= 58, stalled 0-6; compared as 2x */
+		sg4-threshold = <15>;
+
+		tmc2241_stepper_driver: stepper-driver {
+			compatible = "adi,tmc5241-stepper-driver";
+			en-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>; /* DRV_ENN active-low */
+			/* 256 at the same step interval gave no usable SG4_RESULT */
+			micro-step-res = <16>;
+			/* unused while en-pwm-mode selects StallGuard4 */
+			stallguard2-threshold = <12>;
+		};
+	};
+};

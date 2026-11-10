@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * MAX32655FTHR (M4 core), wired via the Feather SPI header (spi1/feather_spi,
+ * CS0 = SS0). Adapt stallguard2-threshold/ramp values to the actual motor.
+ */
+
+/ {
+	aliases {
+		stepper-driver = &tmc5241_stepper_driver;
+		stepper-ctrl = &tmc5241_motion_controller;
+	};
+};
+
+&feather_spi {
+	tmc5241: tmc5241@0 {
+		compatible = "adi,tmc5241";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		clock-frequency = <DT_FREQ_M(16)>;
+		en-pwm-mode;
+		shaft;
+
+		tmc5241_stepper_driver: stepper-driver {
+			compatible = "adi,tmc5241-stepper-driver";
+			micro-step-res = <256>;
+			stallguard2-threshold = <30>;
+		};
+
+		tmc5241_motion_controller: stepper-ctrl {
+			compatible = "adi,tmc5241-stepper-ctrl";
+			vstart = <1000>;
+			vstop = <10>;
+			a1 = <10000>;
+			v1 = <50000>;
+			d1 = <14000>;
+			vmax = <900000>;
+			amax = <50000>;
+			dmax = <7000>;
+			tzerowait = <100>;
+			thigh = <900000>;
+			tcoolthrs = <900000>;
+			ihold = <1>;
+			irun = <10>;
+			iholddelay = <1>;
+		};
+	};
+};
