@@ -8864,7 +8864,7 @@ static void reset_test_connect(struct reset_test_peers *peers, const char *serve
 	reset_test_connect_bound(peers, server, client, NULL);
 }
 
-ZTEST(net_socket_quic, test_557_connection_close_frame_layout)
+ZTEST(net_socket_quic, test_557_close_frame_before_handshake_is_transport_close)
 {
 	const uint8_t app_close[] = {
 		QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
@@ -8877,7 +8877,14 @@ ZTEST(net_socket_quic, test_557_connection_close_frame_layout)
 		0x08,       /* Frame type STREAM */
 		3, 'b', 'a', 'd',
 	};
+	const uint8_t converted_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		0x0c,       /* Error code APPLICATION_ERROR */
+		0,          /* Frame type */
+		0,          /* Reason phrase length */
+	};
 	const char *reason = "bad";
+	const char *app_reason = "app";
 	uint64_t error_code = 0x0a;
 	uint64_t frame_type = 0x08;
 	uint8_t type = QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT;
@@ -8898,6 +8905,42 @@ ZTEST(net_socket_quic, test_557_connection_close_frame_layout)
 	zassert_equal(len, sizeof(transport_close), "Transport close of %d bytes", len);
 	zassert_mem_equal(frame, transport_close, sizeof(transport_close),
 			  "Transport close mismatch");
+
+	/* A transport close is sent as it is at every level, an application
+	 * close only once the application keys are in use. Before that it
+	 * becomes a transport close with APPLICATION_ERROR and no reason
+	 * (RFC 9000 ch. 10.2.3).
+	 */
+	quic_close_frame_at_level(QUIC_SECRET_LEVEL_HANDSHAKE, &type, &error_code, &frame_type,
+				  &reason);
+	zassert_equal(type, QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT, "Type changed to 0x%02x",
+		      type);
+	zassert_equal(error_code, 0x0a, "Error code changed to 0x%" PRIx64, error_code);
+
+	type = QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION;
+	error_code = 0x100;
+	frame_type = 0;
+	reason = app_reason;
+	quic_close_frame_at_level(QUIC_SECRET_LEVEL_APPLICATION, &type, &error_code, &frame_type,
+				  &reason);
+	zassert_equal(type, QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+		      "Type changed to 0x%02x at the application level", type);
+	zassert_equal(error_code, 0x100, "Error code changed to 0x%" PRIx64, error_code);
+	zassert_equal_ptr(reason, app_reason, "Reason dropped at the application level");
+
+	quic_close_frame_at_level(QUIC_SECRET_LEVEL_INITIAL, &type, &error_code, &frame_type,
+				  &reason);
+	zassert_equal(type, QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		      "Application close kept before the handshake (0x%02x)", type);
+	zassert_equal(error_code, 0x0c, "Expected APPLICATION_ERROR, got 0x%" PRIx64,
+		      error_code);
+	zassert_is_null(reason, "Reason kept before the handshake");
+
+	len = quic_build_connection_close(frame, sizeof(frame), type, error_code, frame_type,
+					  reason);
+	zassert_equal(len, sizeof(converted_close), "Converted close of %d bytes", len);
+	zassert_mem_equal(frame, converted_close, sizeof(converted_close),
+			  "Converted close mismatch");
 }
 
 /* Wait for a CONNECTION_CLOSE from the peer and read it */
