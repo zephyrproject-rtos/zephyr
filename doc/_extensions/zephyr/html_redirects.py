@@ -71,17 +71,20 @@ def create_redirect_pages(app, exception):
         if old_url.startswith('/'):
             old_url = old_url[1:]
 
-        # check that new_url is a valid docname, or if not that it is at least
-        # covered as the "old" part of another redirect rule
-        if new_url not in app.env.all_docs and not any(
-            old == new_url for (old, _) in app.config.html_redirect_pages
-        ):
-            logger.warning(
-                f"{new_url} is not a valid destination for a redirect."
-                "Check that both the source and destination are complete docnames."
-            )
+        # an absolute URL points outside this documentation set and is used as-is
+        if not new_url.startswith(('http://', 'https://')):
+            # check that new_url is a valid docname, or if not that it is at least
+            # covered as the "old" part of another redirect rule
+            if new_url not in app.env.all_docs and not any(
+                old == new_url for (old, _) in app.config.html_redirect_pages
+            ):
+                logger.warning(
+                    f"{new_url} is not a valid destination for a redirect."
+                    "Check that both the source and destination are complete docnames."
+                )
 
-        new_url = app.builder.get_relative_uri(old_url, new_url)
+            new_url = app.builder.get_relative_uri(old_url, new_url)
+
         out_file = app.builder.get_outfilename(old_url)
 
         out_dir = os.path.dirname(out_file)
