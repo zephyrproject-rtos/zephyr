@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
 
+#include "common/bt_shell_private.h"
 #include "utils.h"
 
 static const struct bt_mesh_model *mod;
