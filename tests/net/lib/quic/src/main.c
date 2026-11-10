@@ -8036,7 +8036,7 @@ ZTEST(net_socket_quic, test_503_close_notifies_only_its_connection)
 
 	zexpect_equal(k_sem_count_get(&ctx_a->incoming.stream_sem), 1,
 		      "The connection of the endpoint was not woken");
-	zexpect_equal(ctx_a->error_code, -ECONNRESET, "Wrong error %d", ctx_a->error_code);
+	zexpect_equal(ctx_a->error_code, ECONNRESET, "Wrong error %d", ctx_a->error_code);
 	zexpect_true(ctx_a->closed, "The connection of the endpoint was not closed");
 
 	zexpect_equal(k_sem_count_get(&ctx_b->incoming.stream_sem), 0,
@@ -8085,7 +8085,7 @@ ZTEST(net_socket_quic, test_531_failed_connection_leaves_its_listener_open)
 	/* Its own endpoint going away closes the listener */
 	quic_endpoint_notify_streams_closed(ctx->listen);
 
-	zexpect_equal(ctx->error_code, -ECONNRESET, "Wrong error %d", ctx->error_code);
+	zexpect_equal(ctx->error_code, ECONNRESET, "Wrong error %d", ctx->error_code);
 	zexpect_true(ctx->closed, "The listener was not closed");
 
 	unlink_test_stream(&waiting, ctx);

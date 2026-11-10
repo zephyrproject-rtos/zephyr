@@ -762,7 +762,7 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 				 * POLLHUP handler, with no SO_ERROR probe needed.
 				 */
 				if (ctx->error_code == 0) {
-					ctx->error_code = -ECONNRESET;
+					ctx->error_code = ECONNRESET;
 				}
 
 				pfd->revents |= ZSOCK_POLLHUP;
