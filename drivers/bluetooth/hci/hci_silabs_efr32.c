@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,10 +102,11 @@ static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8
 	}
 }
 
-static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const int16_t len)
+static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const uint16_t len)
 {
 	struct net_buf *buf;
 	bool discardable;
+	size_t buf_tailroom;
 	const struct bt_hci_evt_hdr *hdr = (void *)data;
 	const uint8_t *params = &data[sizeof(*hdr)];
 	const int16_t params_len = len - sizeof(*hdr);
@@ -121,14 +123,28 @@ static struct net_buf *slz_bt_recv_evt(const uint8_t *data, const int16_t len)
 		return buf;
 	}
 
+	buf_tailroom = net_buf_tailroom(buf);
+	if (len > buf_tailroom) {
+		LOG_ERR("Event too long for buffer: %u > %zu", len, buf_tailroom);
+		net_buf_unref(buf);
+		return NULL;
+	}
+
 	net_buf_add_mem(buf, data, len);
 
 	return buf;
 }
 
-static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const int16_t len)
+static struct net_buf *slz_bt_recv_acl(const uint8_t *data, const uint16_t len)
 {
 	struct net_buf *buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	size_t buf_tailroom = net_buf_tailroom(buf);
+
+	if (len > buf_tailroom) {
+		LOG_ERR("ACL data too long for buffer: %u > %zu", len, buf_tailroom);
+		net_buf_unref(buf);
+		return NULL;
+	}
 
 	net_buf_add_mem(buf, data, len);
 
