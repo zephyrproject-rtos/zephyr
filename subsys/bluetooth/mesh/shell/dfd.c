@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strtok_r() */
+
 #include <stdlib.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/shell/shell.h>
