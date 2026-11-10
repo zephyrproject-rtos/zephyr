@@ -5,7 +5,7 @@
 
 #include "airoc_wifi_connect_security.h"
 
-whd_security_t convert_zephyr_security_to_whd(int security)
+whd_security_t airoc_convert_zephyr_security_to_whd(int security)
 {
 	whd_security_t whd_security = WHD_SECURITY_UNKNOWN;
 
@@ -42,4 +42,10 @@ whd_security_t convert_zephyr_security_to_whd(int security)
 		break;
 	}
 	return whd_security;
+}
+
+bool airoc_wifi_security_supported_for_ap(whd_security_t security)
+{
+	return security == WHD_SECURITY_OPEN || security == WHD_SECURITY_WPA2_AES_PSK ||
+	       security == WHD_SECURITY_WPA3_SAE;
 }

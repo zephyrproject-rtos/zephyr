@@ -10,7 +10,6 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "airoc_wifi_security.h"
 #include "airoc_wifi_connect_security.h"
 
 #ifdef CONFIG_AIROC_WIFI_BUS_SDIO

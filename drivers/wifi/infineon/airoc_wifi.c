@@ -893,7 +893,7 @@ static int airoc_mgmt_connect(const struct device *dev,
 
 	usr_result.SSID.length = params->ssid_length;
 	memcpy(usr_result.SSID.value, params->ssid, params->ssid_length);
-	usr_result.security = convert_zephyr_security_to_whd(params->security);
+	usr_result.security = airoc_convert_zephyr_security_to_whd(params->security);
 
 	if (is_invalid_security(params->security, params->psk_length)) {
 
@@ -1086,9 +1086,10 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		break;
 	}
 
-	ret = airoc_wifi_security_to_whd(params->security, &security);
-	if (ret) {
+	security = airoc_convert_zephyr_security_to_whd(params->security);
+	if (!airoc_wifi_security_supported_for_ap(security)) {
 		LOG_ERR("Unsupported AP security type: %d", params->security);
+		ret = -ENOTSUP;
 		goto error;
 	}
 
