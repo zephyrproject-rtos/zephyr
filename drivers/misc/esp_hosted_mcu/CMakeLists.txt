@@ -14,6 +14,7 @@ if(CONFIG_ESP_HOSTED_MCU)
 
   zephyr_library_sources_ifdef(CONFIG_ESP_HOSTED_MCU_SPI  esp_hosted_mcu_spi.c)
   zephyr_library_sources_ifdef(CONFIG_ESP_HOSTED_MCU_SDIO esp_hosted_mcu_sdio.c)
+  zephyr_library_sources_ifdef(CONFIG_ESP_HOSTED_MCU_UART esp_hosted_mcu_uart.c)
 
   zephyr_nanopb_sources(esp_hosted_mcu_core
     esp_hosted_mcu_rpc.proto

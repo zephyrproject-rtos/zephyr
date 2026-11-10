@@ -45,7 +45,7 @@ typedef enum {
  * Transport buffer sizing. The coprocessor caps a single SPI transaction at
  * 1600 bytes; keep the host frame the same so a full coprocessor buffer fits.
  */
-#define ESP_HOSTED_MCU_FRAME_SIZE  (1600)
+#define ESP_HOSTED_MCU_FRAME_SIZE  (CONFIG_ESP_HOSTED_MCU_FRAME_SIZE)
 #define ESP_HOSTED_MCU_HEADER_SIZE (sizeof(struct esp_hosted_mcu_header))
 #define ESP_HOSTED_MCU_MAX_PAYLOAD (ESP_HOSTED_MCU_FRAME_SIZE - ESP_HOSTED_MCU_HEADER_SIZE)
 
