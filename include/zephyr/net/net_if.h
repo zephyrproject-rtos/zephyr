@@ -534,6 +534,9 @@ struct net_if_dhcpv6 {
 	/** Retransmission counter. */
 	uint8_t retransmissions;
 
+	/** Rebind after link recovery uses Confirm retransmission parameters. */
+	bool rebind_on_link_change;
+
 	/** Client was started automatically by a Router Advertisement. */
 	bool auto_started : 1;
 
