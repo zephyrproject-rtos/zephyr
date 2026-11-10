@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+
+config LED_KTD2052
+	bool "Kinetic KTD2052 LED driver"
+	default y
+	depends on DT_HAS_KINETIC_KTD2052_ENABLED
+	select I2C
+	help
+	  Enable the driver for the Kinetic KTD2052.
