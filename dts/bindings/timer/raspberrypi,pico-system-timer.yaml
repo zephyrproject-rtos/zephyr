@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A TIMER block of the Raspberry Pi Pico used as the system timer.
+
+  The block counts microseconds and both cores see the same one, so it suits
+  an SMP kernel, which a per-core SysTick does not. Give the compatible to
+  the timer, or on the RP2350 to one of its two, and disable the SysTick.
+
+  The first interrupt of the node, alarm 0, is the one used.
+
+compatible: "raspberrypi,pico-system-timer"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clock-frequency:
+    type: int
+    default: 1000000
+    description: |
+      Rate of the count in Hz. The clock driver runs the tick generators of
+      the TIMER blocks at 1 MHz.
+
+examples:
+  - |
+    /* RP2350: TIMER1 keeps the time, TIMER0 is left to the counter driver */
+    &systick {
+        status = "disabled";
+    };
+
+    &timer1 {
+        compatible = "raspberrypi,pico-system-timer";
+        status = "okay";
+    };
+  - |
+    /* RP2040, which has one TIMER */
+    &systick {
+        status = "disabled";
+    };
+
+    &timer {
+        compatible = "raspberrypi,pico-system-timer";
+        status = "okay";
+    };
