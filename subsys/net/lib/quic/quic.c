@@ -364,6 +364,7 @@ static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
 static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi);
+ZTESTABLE_STATIC void quic_rx_stream_closed(struct quic_endpoint *ep, struct quic_stream *stream);
 static int quic_send_data_blocked(struct quic_endpoint *ep);
 static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
 					 struct quic_stream *stream);
@@ -3308,6 +3309,8 @@ static int quic_stream_unref(struct quic_stream *stream)
 		bool peer_init = ((stream->id & 1u) == 0u) == is_server;
 		bool is_bidi = (stream->id & 2u) == 0u;
 
+		quic_rx_stream_closed(ep, stream);
+
 		if (peer_init) {
 			if (is_bidi && ep->rx_sl.open_bidi > 0) {
 				ep->rx_sl.open_bidi--;
@@ -6204,6 +6207,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->local_max_data_sent = 0;
 	stream->fc_bytes_received = 0;
 	stream->highest_offset_received = 0;
+	stream->rx_credited = 0;
 	stream->read_closed = false;
 	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
 	stream->tx_reset = false;
@@ -7828,19 +7832,6 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 		return -EPROTO;
 	}
 
-	/*
-	 * If the application shut down the read half (SHUT_RD), discard
-	 * incoming data silently. We have already sent STOP_SENDING so the
-	 * peer should stop soon; any data in flight before that arrives is
-	 * simply dropped here.
-	 */
-	if (stream->read_closed) {
-		NET_DBG("[ST:%p/%d] stream %" PRIu64 ": discarding %zu bytes "
-			"(read half closed)", stream, quic_get_by_stream(stream),
-			stream->id, len);
-		return 0;
-	}
-
 	k_mutex_lock(&stream->cond.data_available, K_FOREVER);
 
 	if (end > stream->local_max_data) {
@@ -7861,17 +7852,47 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 		 * credit. Duplicate data must not be counted twice.
 		 */
 		new_bytes = end - stream->highest_offset_received;
-		if (ep != NULL &&
-		    (new_bytes > ep->rx_fc.max_data ||
-		     ep->rx_fc.bytes_received > ep->rx_fc.max_data - new_bytes)) {
+		if (ep != NULL && new_bytes > quic_rx_window_left(ep)) {
 			NET_ERR("[ST:%p/%d] Stream data exceeds MAX_DATA: "
-				"new=%" PRIu64 " conn_used=%" PRIu64
-				" conn_limit=%" PRIu64,
+				"new=%" PRIu64 " conn_used=%" PRIu64,
 				stream, quic_get_by_stream(stream), new_bytes,
-				ep->rx_fc.bytes_received, ep->rx_fc.max_data);
+				ep->rx_fc.bytes_received);
 			ret = -EPROTO;
 			goto flow_control_error;
 		}
+	}
+
+	/*
+	 * If the application shut down the read half (SHUT_RD), discard
+	 * incoming data silently. We have already sent STOP_SENDING so the
+	 * peer should stop soon; any data in flight before that arrives is
+	 * simply dropped here. The peer charged it to the connection window
+	 * all the same, so it counts as received and the credit is handed
+	 * back.
+	 */
+	if (stream->read_closed) {
+		NET_DBG("[ST:%p/%d] stream %" PRIu64 ": discarding %zu bytes "
+			"(read half closed)", stream, quic_get_by_stream(stream),
+			stream->id, len);
+		if (is_fin) {
+			stream->peer_final_size = end;
+			stream->final_size_known = true;
+		}
+
+		stream->highest_offset_received = MAX(stream->highest_offset_received, end);
+		stream->fc_bytes_received += new_bytes;
+		stream->rx_credited += new_bytes;
+		if (ep != NULL) {
+			ep->rx_fc.bytes_received += new_bytes;
+		}
+
+		k_mutex_unlock(&stream->cond.data_available);
+
+		if (ep != NULL && new_bytes > 0U) {
+			quic_rx_credit(ep, 0, new_bytes, false, NULL);
+		}
+
+		return 0;
 	}
 
 	/* For now, just log and store if this is in-order data */
@@ -8222,6 +8243,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	stream->local_max_data = quic_stream_local_rx_limit(ep, stream->type);
 	stream->fc_bytes_received = 0;
 	stream->highest_offset_received = 0;
+	stream->rx_credited = 0;
 	stream->local_max_data_sent = stream->local_max_data;
 
 	stream->tx_buf.base_offset = 0;

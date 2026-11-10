@@ -541,11 +541,69 @@ out:
 /*
  * Stub handlers for other frame types
  */
+/* Charge and credit the connection window for bytes the application never
+ * reads: the peer counted them, so they are charged like data received and
+ * handed back, the window being shared with the application thread that
+ * reads. Only the receive thread charges, so that it alone writes the count
+ * of bytes received. A MAX_DATA goes out at once for a one-off event such
+ * as a reset, out of the reply budget of the payload when the event is a
+ * frame, and at the usual threshold for data discarded frame by frame or
+ * left unread by a close.
+ */
+static void quic_rx_credit(struct quic_endpoint *ep, uint64_t charged, uint64_t credited,
+			   bool at_once, struct quic_reply_budget *budget)
+{
+	k_spinlock_key_t key = k_spin_lock(&ep->rx_fc.lock);
+	uint64_t threshold;
+	bool update = false;
+
+	if (charged > 0U) {
+		ep->rx_fc.bytes_received += charged;
+	}
+
+	ep->rx_fc.max_data += credited;
+
+	threshold = ep->rx_fc.max_data_sent /
+		    (100 / CONFIG_QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD);
+	if (ep->rx_fc.max_data > ep->rx_fc.max_data_sent &&
+	    (at_once || ep->rx_fc.max_data > ep->rx_fc.max_data_sent + threshold)) {
+		/* The reply to a frame comes out of the budget of its payload */
+		update = true;
+		if (budget != NULL) {
+			update = quic_reply_budget_take(budget);
+		}
+	}
+
+	if (update) {
+		ep->rx_fc.max_data_sent = ep->rx_fc.max_data;
+	}
+
+	k_spin_unlock(&ep->rx_fc.lock, key);
+
+	if (update) {
+		(void)quic_send_max_data(ep);
+	}
+}
+
+/* A stream is released: what was charged for it and never read is credited
+ * back, told to the peer with the usual MAX_DATA threshold as a close is
+ * not urgent.
+ */
+ZTESTABLE_STATIC void quic_rx_stream_closed(struct quic_endpoint *ep, struct quic_stream *stream)
+{
+	uint64_t unread = stream->highest_offset_received - stream->rx_credited;
+
+	if (unread > 0U) {
+		quic_rx_credit(ep, 0, unread, false, NULL);
+	}
+}
+
 static int handle_reset_stream_frame(struct quic_endpoint *ep,
-				     const uint8_t *buf, size_t len)
+				     const uint8_t *buf, size_t len,
+				     struct quic_reply_budget *budget)
 {
 	uint64_t stream_id, error_code, final_size;
-	uint64_t unreceived;
+	uint64_t unreceived, unreadable;
 	struct quic_stream *stream;
 	int pos = 1;
 	int ret;
@@ -639,8 +697,7 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 	 * the final size were never charged.
 	 */
 	unreceived = final_size - stream->highest_offset_received;
-	if (final_size > stream->local_max_data ||
-	    unreceived > ep->rx_fc.max_data - ep->rx_fc.bytes_received) {
+	if (final_size > stream->local_max_data || unreceived > quic_rx_window_left(ep)) {
 		NET_DBG("[ST:%p/%d] RESET_STREAM final size %" PRIu64
 			" exceeds flow control",
 			stream, quic_get_by_stream(stream), final_size);
@@ -652,9 +709,19 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		return -EPROTO;
 	}
 
+	/* What the application can still read, the contiguous data in the
+	 * buffer, is credited back as it is read or when the stream is
+	 * closed; everything else up to the final size, segments held behind
+	 * a gap included, is never read and is credited back now, as far as
+	 * it was not already. The segments are dropped with the rest of what
+	 * is in flight.
+	 */
+	unreadable = final_size - stream->rx_credited -
+		     (stream->rx_buf.tail - stream->rx_buf.head);
+	stream->rx_credited += unreadable;
+	stream->rx_buf.ooo_count = 0;
 	stream->highest_offset_received = final_size;
 	stream->fc_bytes_received += unreceived;
-	ep->rx_fc.bytes_received += unreceived;
 
 	/*
 	 * Mark the stream as reset and its read half as closed, so that
@@ -678,6 +745,7 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		stream_id);
 
 	quic_stream_unref(stream);
+	quic_rx_credit(ep, unreceived, unreadable, true, budget);
 
 	return pos;
 }
@@ -1111,21 +1179,23 @@ static int handle_max_streams_frame(struct quic_endpoint *ep, int frame_type,
 
 static int quic_send_max_data(struct quic_endpoint *ep)
 {
+	k_spinlock_key_t key = k_spin_lock(&ep->rx_fc.lock);
+	uint64_t max_data = ep->rx_fc.max_data;
 	uint8_t frame[16];
 	int pos = 0;
 	int varint_len;
 
+	k_spin_unlock(&ep->rx_fc.lock, key);
+
 	frame[pos++] = QUIC_FRAME_TYPE_MAX_DATA;
 
-	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos,
-				     ep->rx_fc.max_data);
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos, max_data);
 	if (varint_len <= 0) {
 		return -EINVAL;
 	}
 	pos += varint_len;
 
-	NET_DBG("[EP:%p/%d] Sending MAX_DATA: %" PRIu64, ep, quic_get_by_ep(ep),
-		ep->rx_fc.max_data);
+	NET_DBG("[EP:%p/%d] Sending MAX_DATA: %" PRIu64, ep, quic_get_by_ep(ep), max_data);
 
 	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
 }
@@ -2387,7 +2457,7 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_RESET_STREAM:
-			ret = handle_reset_stream_frame(ep, &buf[pos], len - pos);
+			ret = handle_reset_stream_frame(ep, &buf[pos], len - pos, &budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -2961,7 +3031,7 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 
 			case QUIC_FRAME_TYPE_RESET_STREAM:
 				ret = handle_reset_stream_frame(ep, &payload[pos],
-								payload_len - pos);
+								payload_len - pos, &budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;

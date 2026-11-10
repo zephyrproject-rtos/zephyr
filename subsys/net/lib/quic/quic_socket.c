@@ -1752,6 +1752,7 @@ ZTESTABLE_STATIC int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 	memcpy(buf, &rx->data[rx->head], to_copy);
 	rx->head += to_copy;
 	rx->read_offset += to_copy;
+	stream->rx_credited += to_copy;
 
 	/* Compact buffer if needed */
 	if (rx->head == rx->tail) {
@@ -1821,8 +1822,12 @@ ZTESTABLE_STATIC int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 		}
 	}
 
-	/* Also advance connection-level flow control window */
+	/* Also advance connection-level flow control window, which the
+	 * receive thread grows too when a stream is reset.
+	 */
 	if (ep != NULL) {
+		k_spinlock_key_t key = k_spin_lock(&ep->rx_fc.lock);
+		bool update = false;
 		int conn_threshold;
 
 		ep->rx_fc.max_data += to_copy;
@@ -1836,7 +1841,7 @@ ZTESTABLE_STATIC int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 				ep, quic_get_by_ep(ep), ep->rx_fc.max_data,
 				ep->rx_fc.max_data_sent);
 			ep->rx_fc.max_data_sent = ep->rx_fc.max_data;
-			quic_send_max_data(ep);
+			update = true;
 		} else if (buffer_empty &&
 			   ep->rx_fc.max_data > ep->rx_fc.max_data_sent) {
 			uint64_t unadvertised = ep->rx_fc.max_data -
@@ -1845,8 +1850,14 @@ ZTESTABLE_STATIC int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 				NET_DBG("[EP:%p/%d] Buffer empty, sending conn window update",
 					ep, quic_get_by_ep(ep));
 				ep->rx_fc.max_data_sent = ep->rx_fc.max_data;
-				quic_send_max_data(ep);
+				update = true;
 			}
+		}
+
+		k_spin_unlock(&ep->rx_fc.lock, key);
+
+		if (update) {
+			quic_send_max_data(ep);
 		}
 	}
 
@@ -2832,6 +2843,7 @@ have_endpoint:
 	stream->local_max_data_sent = stream->local_max_data;
 	stream->fc_bytes_received = 0;
 	stream->highest_offset_received = 0;
+	stream->rx_credited = 0;
 
 	/* Initialize TX flow control from peer transport parameters */
 	if (ep->peer_params.parsed) {
