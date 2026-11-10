@@ -1765,7 +1765,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(input-str, NULL, "<String>", cmd_input_str, 2, 0),
 	SHELL_CMD_ARG(local, NULL, "<NetKeyIdx> <Addr> [IVI]", cmd_provision_local, 3, 1),
 #if defined(CONFIG_BT_MESH_SHELL_PROV_CTX_INSTANCE)
-	SHELL_CMD_ARG(static-oob, NULL, "[Val]", cmd_static_oob, 2, 1),
+	SHELL_CMD_ARG(static-oob, NULL, "[Val]", cmd_static_oob, 1, 1),
 	SHELL_CMD_ARG(uuid, NULL, "[UUID(1-16 hex)]", cmd_uuid, 1, 1),
 	SHELL_CMD_ARG(beacon-listen, NULL, "<Val(off, on)>", cmd_beacon_listen, 2, 0),
 #endif
