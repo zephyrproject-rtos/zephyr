@@ -209,6 +209,14 @@ jobs:
           junitparser merge --glob "./twister-out*/twister.xml" junit.xml
           junit2html junit.xml junit.html
 
+      - name: Test Results Summary
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2.25.0
+        with:
+          files: "junit.xml"
+          check_run: false
+          comment_mode: off
+
       - name: Upload Bsim Test Results
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
