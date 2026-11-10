@@ -70,6 +70,38 @@ Boards
   32 bit CSR data width is supported. Designs that use an 8 bit CSR data width must be rebuilt with
   a 32 bit CSR data width. (:github:`124793`)
 
+* The Andes AE350 SoC is now provided per AndesCore core, for example ``ae350_a25`` for the A25
+  core. The ``ae350`` SoC and :kconfig:option:`CONFIG_SOC_AE350` are deprecated and will be
+  removed in a future release. Kconfig, CMake and code checking
+  :kconfig:option:`CONFIG_SOC_AE350` should check :kconfig:option:`CONFIG_SOC_SERIES_AE350`
+  instead. (:github:`122288`)
+
+  * The AE350 board targets of :zephyr:board:`adp_xc7k` and
+    :zephyr:board:`tang_mega_138k_pro_dock` have been renamed after the core. The previous board
+    targets are deprecated and map to the new board targets:
+
+    * ``adp_xc7k/ae350`` to ``adp_xc7k/ae350_a25``
+    * ``adp_xc7k/ae350/clic`` to ``adp_xc7k/ae350_d23/clic``
+    * ``tang_mega_138k_pro_dock/ae350`` to ``tang_mega_138k_pro_dock/ae350_a25``
+    * ``tang_mega_138k_pro_dock/ae350/demo`` to ``tang_mega_138k_pro_dock/ae350_a25/demo``
+
+  * Applications must rename their board specific files after the new board targets, for
+    example :file:`boards/adp_xc7k_ae350.overlay` to :file:`boards/adp_xc7k_ae350_a25.overlay`,
+    as the files named after the previous board targets are no longer applied. Kconfig, CMake
+    and code checking ``CONFIG_BOARD_ADP_XC7K_AE350`` must check
+    ``CONFIG_BOARD_ADP_XC7K_AE350_A25`` instead.
+  * Out-of-tree boards using the ``ae350`` SoC should use the ``ae350_<core>`` SoC of their core
+    in ``board.yml``, rename the board files named after the SoC, select ``SOC_AE350_<core>``
+    instead of ``SOC_AE350``, and include the :file:`riscv/andes/andes_v5_ae350_<core>.dtsi` of
+    their core. Boards describing their own CPU nodes must use the compatible of the core, for
+    example :dtcompatible:`andestech,a25`, which enables the ``CONFIG_CPU_ANDES_<core>`` option
+    selecting the CPU features of the core.
+  * :file:`riscv/andes/andes_v5_ae350.dtsi` now describes a single CPU instead of eight, and the
+    PLIC also has the supervisor mode context of the hart. Out-of-tree boards including it must
+    drop the deletes of the other CPU nodes. Multicore boards must add the other CPU nodes and
+    add them to the ``interrupts-extended`` of ``plic0``, ``mtimer`` and ``plic_sw``, or include
+    the :file:`riscv/andes/andes_v5_ae350_<core>mp.dtsi` of their core.
+
 Device Drivers and Devicetree
 *****************************
 
