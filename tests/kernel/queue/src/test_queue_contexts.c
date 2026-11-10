@@ -1048,16 +1048,22 @@ ZTEST(queue_api_1cpu, test_queue_multithread_competition)
  * - Append an item and verify it succeeds.
  * - Append the same item again and verify it fails.
  * - Append a different item and verify it succeeds.
+ * - Queue an item with k_queue_alloc_append() and verify that a subsequent
+ *   k_queue_unique_append() of the same item still reports it as present.
  *
  * Expected result:
- * - Duplicate appends return false; unique appends return true.
+ * - Duplicate appends return false; unique appends return true, whether the
+ *   duplicate was queued from the item itself or through the allocating
+ *   variant.
  *
  * @ingroup tests_kernel_queue
  *
  * @see k_queue_unique_append()
+ * @see k_queue_alloc_append()
  */
 ZTEST(queue_api, test_queue_unique_append)
 {
+	static qdata_t alloc_unique = { .data = 0x44, .allocated = false };
 	bool ret;
 
 	k_queue_init(&queue);
@@ -1069,4 +1075,19 @@ ZTEST(queue_api, test_queue_unique_append)
 
 	ret = k_queue_unique_append(&queue, (void *)&data[1]);
 	zassert_true(ret, "queue unique append failed");
+
+	/*
+	 * An allocating append stores a wrapper node rather than the item
+	 * itself, so the membership test has to look at the payload.
+	 */
+	k_queue_init(&queue);
+	k_thread_heap_assign(k_current_get(), &mem_pool_pass);
+
+	zassert_ok(k_queue_alloc_append(&queue, &alloc_unique),
+		   "alloc_append failed");
+	ret = k_queue_unique_append(&queue, &alloc_unique);
+	zassert_false(ret, "queue unique append missed an alloc-queued item");
+
+	zassert_true(k_queue_remove(&queue, &alloc_unique),
+		     "k_queue_remove failed after alloc_append");
 }
