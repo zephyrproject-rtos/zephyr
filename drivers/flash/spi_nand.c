@@ -854,6 +854,10 @@ static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr
 	switch (code) {
 	case FLASH_EX_OP_RESET:
 		ret = spi_nand_reset(dev);
+		if (ret == 0) {
+			ret = spi_nand_set_feature(dev, SPI_NAND_FEATURE_ADDR_BLOCK_PROT,
+						   SPI_NAND_FEATURE_BLOCK_PROT_DISABLE_ALL);
+		}
 		break;
 	case FLASH_EX_OP_IS_BAD_BLOCK:
 #ifdef CONFIG_SPI_NAND_BAD_BLOCK_CACHE
