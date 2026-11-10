@@ -74,6 +74,9 @@ struct quic_buffer {
 #define QUIC_AEAD_TAG_LEN 16
 #define QUIC_RESET_TOKEN_LEN 16
 
+/* Largest value a variable-length integer holds (RFC 9000 ch. 16) */
+#define QUIC_VARINT_MAX ((1ULL << 62) - 1)
+
 #define MAX_QUIC_MIN_INITIAL_SIZE 1200
 #define MAX_QUIC_FRAME_SIZE 1300
 
@@ -1214,6 +1217,9 @@ __net_socket struct quic_stream {
 enum quic_context_flag {
 	/** A CONNECTION_CLOSE frame was received from the peer */
 	QUIC_CONTEXT_PEER_CLOSED,
+
+	/** Close with an application error instead of a transport NO_ERROR */
+	QUIC_CONTEXT_APP_CLOSE,
 };
 
 /**
@@ -1294,6 +1300,11 @@ __net_socket struct quic_context {
 	 * QUIC_CONTEXT_PEER_CLOSED is set and not after
 	 */
 	struct quic_peer_close peer_close;
+
+	/** Application error code sent when the connection is closed, written
+	 * before QUIC_CONTEXT_APP_CLOSE is set
+	 */
+	uint64_t app_close_code;
 
 	/** Stream priority */
 	uint8_t stream_priority;
@@ -1577,6 +1588,12 @@ int handle_crypto_level_packet(struct quic_endpoint *ep,
 			       size_t payload_len,
 			       size_t total_packet_len,
 			       bool *ack_only);
+int quic_build_connection_close(uint8_t *frame, size_t frame_len,
+				uint8_t type, uint64_t error_code,
+				uint64_t frame_type, const char *reason);
+void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
+			       uint64_t *error_code, uint64_t *frame_type,
+			       const char **reason);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
