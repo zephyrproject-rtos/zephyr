@@ -4,4 +4,5 @@
 # zephyr-keep-sorted-start
 source "drivers/sensor/omron/2smpb_02e/Kconfig"
 source "drivers/sensor/omron/d6f/Kconfig"
+source "drivers/sensor/omron/d7s/Kconfig"
 # zephyr-keep-sorted-stop
