@@ -925,6 +925,15 @@ struct quic_endpoint {
 		struct quic_stream_seq_set opened_uni;
 	} rx_sl;
 
+	/** The limits the peer set on the streams opened here, kept in
+	 * peer_params, as far as the peer was told that they block us
+	 * (RFC 9000 ch. 4.6).
+	 */
+	struct {
+		uint64_t blocked_sent_bidi; /* bidi limit STREAMS_BLOCKED was last sent for */
+		uint64_t blocked_sent_uni;  /* uni limit STREAMS_BLOCKED was last sent for */
+	} tx_sl;
+
 	/** Peer's transport parameters */
 	struct {
 		uint64_t initial_max_data;

@@ -1137,6 +1137,31 @@ static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi)
 	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
 }
 
+/* Tell the peer that its stream limit stops us from opening a stream
+ * (RFC 9000 ch. 19.14).
+ */
+static int quic_send_streams_blocked(struct quic_endpoint *ep, bool bidi, uint64_t limit)
+{
+	uint8_t frame[16];
+	int pos = 0;
+	int varint_len;
+
+	frame[pos++] = bidi ? QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI
+			    : QUIC_FRAME_TYPE_STREAMS_BLOCKED_UNI;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos, limit);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+	pos += varint_len;
+
+	NET_DBG("[EP:%p/%d] Sending STREAMS_BLOCKED_%s: %" PRIu64,
+		ep, quic_get_by_ep(ep),
+		bidi ? "BIDI" : "UNI", limit);
+
+	return quic_send_packet(ep, quic_stream_send_level(ep), frame, pos);
+}
+
 static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 					const uint8_t *buf, size_t len,
 					struct quic_reply_budget *budget)

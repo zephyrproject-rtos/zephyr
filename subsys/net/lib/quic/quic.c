@@ -395,6 +395,7 @@ ZTESTABLE_STATIC int quic_send_packet(struct quic_endpoint *ep,
 				      enum quic_secret_level level,
 				      const uint8_t *payload,
 				      size_t payload_len);
+static int quic_send_streams_blocked(struct quic_endpoint *ep, bool bidi, uint64_t limit);
 static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
@@ -5551,6 +5552,8 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
 	ep->rx_sl.open_bidi = 0;
 	ep->rx_sl.open_uni = 0;
+	ep->tx_sl.blocked_sent_bidi = UINT64_MAX;
+	ep->tx_sl.blocked_sent_uni = UINT64_MAX;
 	ep->peer_params.max_udp_payload_size = UINT16_MAX;
 	ep->peer_params.parsed = false;
 

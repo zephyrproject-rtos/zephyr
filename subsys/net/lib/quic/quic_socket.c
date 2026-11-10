@@ -2649,17 +2649,25 @@ have_endpoint:
 	}
 
 	/* RFC 9000 ch. 4.6: no more streams of a type than the peer allows.
-	 * It raises the limit with a MAX_STREAMS frame.
+	 * It raises the limit with a MAX_STREAMS frame; tell it once per
+	 * limit that we are waiting for one.
 	 */
 	if (ep->peer_params.parsed) {
 		bool bidi = direction == QUIC_STREAM_BIDIRECTIONAL;
 		uint64_t limit = bidi ? ep->peer_params.max_streams_bidi
 				      : ep->peer_params.max_streams_uni;
 		uint64_t opened = *quic_stream_id_counter(ctx, direction);
+		uint64_t *blocked_sent = bidi ? &ep->tx_sl.blocked_sent_bidi
+					      : &ep->tx_sl.blocked_sent_uni;
 
 		if (opened >= limit) {
 			NET_DBG("[EP:%p/%d] Peer allows no more than %" PRIu64 " %s streams",
 				ep, quic_get_by_ep(ep), limit, bidi ? "bidi" : "uni");
+
+			if (*blocked_sent != limit &&
+			    quic_send_streams_blocked(ep, bidi, limit) == 0) {
+				*blocked_sent = limit;
+			}
 
 			quic_stats_update_stream_open_failed();
 			return -EAGAIN;
