@@ -1316,6 +1316,7 @@ int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep)
 {
 	struct quic_context *ctx = quic_find_context(ep);
 	struct quic_stream *stream, *tmp;
+	int ret = 0;
 
 	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
 		return 0;
@@ -1324,6 +1325,10 @@ int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep)
 	if (ctx == NULL) {
 		return -ENOENT;
 	}
+
+	/* The stream list is changed under streams_lock */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 		uint64_t outstanding;
@@ -1340,21 +1345,73 @@ int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep)
 
 		outstanding = stream->bytes_sent - stream->bytes_acked;
 		if (outstanding > ep->tx_fc.bytes_sent) {
-			return -EOVERFLOW;
+			ret = -EOVERFLOW;
+			break;
 		}
 
 		ep->tx_fc.bytes_sent -= outstanding;
 		stream->bytes_sent = stream->bytes_acked;
 	}
 
+	k_mutex_unlock(&streams_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	return ret;
+}
+
+static int quic_stream_replay_rejected_early_data(struct quic_stream *stream,
+						  struct quic_endpoint *ep)
+{
+	int ret = 0;
+
+	while (stream->bytes_sent < stream->tx_buf.base_offset + stream->tx_buf.len) {
+		ret = quic_stream_replay_pending_data(stream);
+		if (ret == -EAGAIN || ret == -EPIPE) {
+			break;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* A reset stream has nothing left to replay and gets no FIN.
+	 * It is skipped, so that it does not hold up the streams after
+	 * it.
+	 */
+	if (ret == -EPIPE) {
+		stream->replay_fin_pending = false;
+		return 0;
+	}
+
+	if (!stream->replay_fin_pending ||
+	    stream->bytes_sent != stream->tx_buf.base_offset + stream->tx_buf.len) {
+		return 0;
+	}
+
+	ret = quic_send_stream_fin(stream, ep);
+	if (ret == -EAGAIN) {
+		return 0;
+	}
+
+	if (ret < 0 && ret != -EPIPE) {
+		return ret;
+	}
+
+	stream->replay_fin_pending = false;
+
 	return 0;
 }
+
+static struct quic_stream *quic_replay_snapshot[ARRAY_SIZE(streams)];
+static K_MUTEX_DEFINE(quic_replay_lock);
 
 int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 {
 	struct quic_context *ctx = quic_find_context(ep);
 	struct quic_stream *stream, *tmp;
-	int ret;
+	size_t count = 0;
+	int ret = 0;
 
 	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
 		return 0;
@@ -1364,50 +1421,42 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 		return -ENOENT;
 	}
 
+	k_mutex_lock(&quic_replay_lock, K_FOREVER);
+
+	/* The stream list is changed under streams_lock, but sending takes
+	 * other locks, so the streams are sent on with the list unlocked.
+	 * Each one is held with a reference meanwhile, so that its slot is
+	 * not reused.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
-		if (stream->ep != ep) {
+		if (count >= ARRAY_SIZE(quic_replay_snapshot)) {
+			break;
+		}
+
+		if (stream->ep != ep || !quic_stream_ref_if_used(stream)) {
 			continue;
 		}
 
-		ret = 0;
-		while (stream->bytes_sent < stream->tx_buf.base_offset + stream->tx_buf.len) {
-			ret = quic_stream_replay_pending_data(stream);
-			if (ret == -EAGAIN || ret == -EPIPE) {
-				break;
-			}
-
-			if (ret < 0) {
-				return ret;
-			}
-		}
-
-		/* A reset stream has nothing left to replay and gets no FIN.
-		 * It is skipped, so that it does not hold up the streams after
-		 * it.
-		 */
-		if (ret == -EPIPE) {
-			stream->replay_fin_pending = false;
-			continue;
-		}
-
-		if (!stream->replay_fin_pending ||
-		    stream->bytes_sent != stream->tx_buf.base_offset + stream->tx_buf.len) {
-			continue;
-		}
-
-		ret = quic_send_stream_fin(stream, ep);
-		if (ret == -EAGAIN) {
-			continue;
-		}
-
-		if (ret < 0 && ret != -EPIPE) {
-			return ret;
-		}
-
-		stream->replay_fin_pending = false;
+		quic_replay_snapshot[count++] = stream;
 	}
 
-	return 0;
+	k_mutex_unlock(&streams_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	for (size_t i = 0; i < count; i++) {
+		if (ret == 0) {
+			ret = quic_stream_replay_rejected_early_data(quic_replay_snapshot[i], ep);
+		}
+
+		(void)quic_stream_unref(quic_replay_snapshot[i]);
+	}
+
+	k_mutex_unlock(&quic_replay_lock);
+
+	return ret;
 }
 
 static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,

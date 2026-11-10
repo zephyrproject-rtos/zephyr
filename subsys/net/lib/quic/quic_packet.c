@@ -857,11 +857,17 @@ static int handle_max_data_frame(struct quic_endpoint *ep,
 		 */
 		ctx = quic_find_context(ep);
 		if (ctx != NULL) {
+			k_mutex_lock(&contexts_lock, K_FOREVER);
+			k_mutex_lock(&streams_lock, K_FOREVER);
+
 			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 				if (stream->ep == ep) {
 					k_poll_signal_raise(&stream->send.signal, 0);
 				}
 			}
+
+			k_mutex_unlock(&streams_lock);
+			k_mutex_unlock(&contexts_lock);
 		}
 
 		if (IS_ENABLED(CONFIG_QUIC_0RTT) &&

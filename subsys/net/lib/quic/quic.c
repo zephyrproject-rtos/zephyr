@@ -8072,8 +8072,11 @@ ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 {
 	struct quic_stream *stream, *tmp, *found = NULL;
 
-	/* Look up stream in connection's stream list */
+	/* Look up stream in connection's stream list, which is changed
+	 * under streams_lock
+	 */
 	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
 		/* A stream ID is only unique within one connection. The
@@ -8095,6 +8098,7 @@ ZTESTABLE_STATIC struct quic_stream *quic_find_stream(struct quic_context *ctx,
 		break;
 	}
 
+	k_mutex_unlock(&streams_lock);
 	k_mutex_unlock(&contexts_lock);
 
 	return found;
@@ -8110,6 +8114,7 @@ static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 	int i;
 
 	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
 
 	for (i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_context *ctx = &contexts[i];
@@ -8128,6 +8133,7 @@ static struct quic_stream *quic_find_stream_by_id(struct quic_endpoint *ep,
 	}
 
 out:
+	k_mutex_unlock(&streams_lock);
 	k_mutex_unlock(&contexts_lock);
 	return found;
 }
