@@ -21,6 +21,7 @@
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/policy.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -153,6 +154,31 @@ static inline void ospi_unlock_thread(const struct device *dev)
 	k_sem_give(&dev_data->sem);
 }
 
+/*
+ * Waits for the end of an operation started with HAL_OSPI_*_IT or HAL_OSPI_*_DMA.
+ * The OCTOSPI is not clocked in Stop (STM32U5: RM0456 rev 6, table 100), so the
+ * SoC is kept out of Stop until then; otherwise the operation would only complete
+ * once something else woke the SoC.
+ */
+static int ospi_wait_sync(struct k_sem *sync, k_timeout_t timeout)
+{
+	int ret;
+
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+
+	ret = k_sem_take(sync, timeout);
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+
+	return ret;
+}
+
 static int ospi_send_cmd(const struct device *dev, OSPI_RegularCmdTypeDef *cmd)
 {
 	struct flash_stm32_ospi_data *dev_data = dev->data;
@@ -200,7 +226,7 @@ static int ospi_read_access(const struct device *dev, OSPI_RegularCmdTypeDef *cm
 		return -EIO;
 	}
 
-	k_sem_take(&dev_data->sync, K_FOREVER);
+	ospi_wait_sync(&dev_data->sync, K_FOREVER);
 
 	return dev_data->cmd_status;
 }
@@ -242,7 +268,7 @@ static int ospi_write_access(const struct device *dev, OSPI_RegularCmdTypeDef *c
 		return -EIO;
 	}
 
-	k_sem_take(&dev_data->sync, K_FOREVER);
+	ospi_wait_sync(&dev_data->sync, K_FOREVER);
 
 	return dev_data->cmd_status;
 }
@@ -490,7 +516,7 @@ static int stm32_ospi_wait_auto_polling(struct flash_stm32_ospi_data *dev_data,
 		return -EIO;
 	}
 
-	if (k_sem_take(&dev_data->sync, K_MSEC(timeout_ms)) != 0) {
+	if (ospi_wait_sync(&dev_data->sync, K_MSEC(timeout_ms)) != 0) {
 		LOG_ERR("OSPI AutoPoll wait failed");
 		HAL_OSPI_Abort(&dev_data->hospi);
 		k_sem_reset(&dev_data->sync);
