@@ -84,6 +84,22 @@ static bool spi_silabs_eusart_is_dma_enabled_instance(const struct device *dev)
 #endif
 }
 
+static int spi_silabs_eusart_calculate_clock_div(uint32_t ref_frequency, uint32_t spi_frequency,
+						 uint32_t *div_output)
+{
+	/* Round the divider up so the requested frequency is never exceeded */
+	uint32_t divider = DIV_ROUND_UP(ref_frequency, spi_frequency) - 1U;
+
+	if (divider > FIELD_GET(_EUSART_CFG2_SDIV_MASK, _EUSART_CFG2_SDIV_MASK)) {
+		LOG_ERR("SPI frequency too low");
+		return -EINVAL;
+	}
+
+	*div_output = divider;
+
+	return 0;
+}
+
 static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_config *config)
 {
 	sl_hal_eusart_spi_advanced_init_t adv_init = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
@@ -155,8 +171,11 @@ static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_co
 			spi_frequency = MIN(config->frequency, spi_frequency);
 		}
 
-		init.clock_div =
-			sl_hal_eusart_spi_calculate_clock_div(ref_frequency, spi_frequency);
+		err = spi_silabs_eusart_calculate_clock_div(ref_frequency, spi_frequency,
+							    &init.clock_div);
+		if (err < 0) {
+			return err;
+		}
 	}
 
 	if (config->operation & SPI_MODE_LOOP) {
