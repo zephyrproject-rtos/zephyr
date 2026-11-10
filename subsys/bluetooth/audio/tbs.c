@@ -925,7 +925,20 @@ static bool promote_dialing_call_to_alerting(struct tbs_inst *inst)
 		return false;
 	}
 
+	/* Not required by the specification: wait for the pending Call Control Point notification
+	 * so that the Dialing and the Alerting Call State notifications are not sent back-to-back.
+	 * PTS appears to miss the second one when it arrives while it is still waiting for the Call
+	 * Control Point notification (G)TBS/SR/CP/BV-09-C.
+	 */
+	if (inst->cp_ntf.pending || gtbs_inst.cp_ntf.pending) {
+		return false;
+	}
+
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->calls); i++) {
+		if (inst->calls[i].index == BT_TBS_FREE_CALL_INDEX) {
+			continue;
+		}
+
 		if (inst->calls[i].state == BT_TBS_CALL_STATE_DIALING) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_ALERTING;
 			notify_calls(inst);
@@ -1205,6 +1218,10 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 			inst->cp_ntf.pending = false;
 		} else {
 			goto fail;
+		}
+
+		if (try_change_dialing_call_to_alerting(inst)) {
+			goto reschedule;
 		}
 	}
 
@@ -1666,6 +1683,10 @@ static void hold_other_calls(struct tbs_inst *inst, uint8_t call_index_cnt,
 		bool hold_call = true;
 		uint8_t call_state;
 
+		if (inst->calls[i].index == BT_TBS_FREE_CALL_INDEX) {
+			continue;
+		}
+
 		for (int j = 0; j < call_index_cnt; j++) {
 			if (inst->calls[i].index == call_indexes[j]) {
 				hold_call = false;
@@ -1788,7 +1809,8 @@ static int originate_call(struct tbs_inst *inst, const struct bt_tbs_call_cp_ori
 
 	/* Only allow one active outgoing call */
 	for (int i = 0; i < CONFIG_BT_TBS_MAX_CALLS; i++) {
-		if (inst->calls[i].state == BT_TBS_CALL_STATE_ALERTING) {
+		if (inst->calls[i].index != BT_TBS_FREE_CALL_INDEX &&
+		    inst->calls[i].state == BT_TBS_CALL_STATE_ALERTING) {
 			return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 		}
 	}
