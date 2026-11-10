@@ -57,6 +57,20 @@
  *      set to finish value and test checks if m_testvalue was set in callback
  *      of second watchdog right before reset.
  *
+ * - Test Steps - test_wdt_window_min_early_feed
+ *   -# Install watchdog with window.min set to half of window.max.
+ *   -# Setup watchdog with no additions options.
+ *   -# Feed every millisecond, before window.min, for longer than window.max.
+ * - Expected Results
+ *   -# The first feed resets the MCU.
+ *
+ * - Test Steps - test_wdt_window_min_feed
+ *   -# Install watchdog with window.min set to half of window.max.
+ *   -# Setup watchdog with no additions options.
+ *   -# Feed several times between window.min and window.max, then stop.
+ * - Expected Results
+ *   -# No feed resets the MCU and the reset comes from the timeout.
+ *
  * @}
  */
 
@@ -132,6 +146,7 @@
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define TIMEOUTS            0
+#define WDT_TEST_WINDOW_MIN 1
 #if defined(CONFIG_SOC_SERIES_STM32F7X)
 #define WDT_TEST_MAX_WINDOW 170
 #else
@@ -185,6 +200,13 @@
 #ifndef WDT_TEST_BAD_MAX_WINDOW
 #define WDT_TEST_BAD_MAX_WINDOW 1
 #endif
+
+#ifndef WDT_TEST_WINDOW_MIN
+#define WDT_TEST_WINDOW_MIN 0
+#endif
+
+/* Number of feeds issued inside [window.min, window.max] */
+#define WDT_TEST_WINDOW_MIN_FEEDS 10U
 
 static struct wdt_timeout_cfg m_cfg_wdt0;
 #if TEST_WDT_CALLBACK_2 || TEST_WDT_NO_CALLBACK_2
@@ -538,6 +560,163 @@ static int test_wdt_bad_window_max(void)
 }
 #endif
 
+#if WDT_TEST_WINDOW_MIN
+static int test_wdt_window_min_bad_config(void)
+{
+	int err;
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	TC_PRINT("Testcase: %s\n", __func__);
+
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
+		return TC_FAIL;
+	}
+
+	m_cfg_wdt0.callback = NULL;
+	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
+	m_cfg_wdt0.window.min = WDT_TEST_MAX_WINDOW + 1U;
+	m_cfg_wdt0.window.max = WDT_TEST_MAX_WINDOW;
+	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
+	if (err != -EINVAL) {
+		TC_PRINT("min > max not rejected: %d\n", err);
+		return TC_FAIL;
+	}
+
+	/* Converted to microseconds in 32 bits, this max wraps around to
+	 * slightly less than WDT_TEST_MAX_WINDOW, which the hardware can provide.
+	 */
+	m_cfg_wdt0.window.min = 0U;
+	m_cfg_wdt0.window.max = (UINT32_MAX / USEC_PER_MSEC) + WDT_TEST_MAX_WINDOW;
+	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
+	if (err != -EINVAL) {
+		TC_PRINT("max overflowing in microseconds not rejected: %d\n", err);
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+static int test_wdt_window_min_install(const struct device *wdt)
+{
+	int err;
+
+	m_cfg_wdt0.callback = NULL;
+	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
+	m_cfg_wdt0.window.min = WDT_TEST_MAX_WINDOW / 2U;
+	m_cfg_wdt0.window.max = WDT_TEST_MAX_WINDOW;
+	err = wdt_install_timeout(wdt, &m_cfg_wdt0);
+	if (err < 0) {
+		TC_PRINT("Watchdog install error\n");
+		return TC_FAIL;
+	}
+
+	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
+	if (err < 0) {
+		TC_PRINT("Watchdog setup error\n");
+		return TC_FAIL;
+	}
+
+	return TC_PASS;
+}
+
+static int test_wdt_window_min_early_feed(void)
+{
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	TC_PRINT("Testcase: %s\n", __func__);
+
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
+		return TC_FAIL;
+	}
+
+	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
+		m_state = WDT_TEST_STATE_IDLE;
+		m_testcase_index++;
+		if (m_testvalue == 1U) {
+			TC_PRINT("Testcase passed\n");
+			return TC_PASS;
+		}
+		TC_PRINT("Reset after %u early feeds, expected 1\n", (uint32_t)m_testvalue);
+		return TC_FAIL;
+	}
+
+	if (test_wdt_window_min_install(wdt) != TC_PASS) {
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Feeding before window.min, waiting to restart MCU\n");
+	m_testvalue = 0U;
+	m_state = WDT_TEST_STATE_CHECK_RESET;
+	commit_noinit_state();
+
+	/* Feeding every millisecond keeps the watchdog alive past window.max,
+	 * so only a feed rejected by the window can reset the MCU.
+	 */
+	for (uint32_t i = 0U; i < (3U * WDT_TEST_MAX_WINDOW); i++) {
+		m_testvalue++;
+		commit_noinit_state();
+		wdt_feed(wdt, 0);
+		k_busy_wait(USEC_PER_MSEC);
+	}
+
+	m_state = WDT_TEST_STATE_IDLE;
+	m_testcase_index++;
+	TC_PRINT("Feeding before window.min did not restart MCU\n");
+	return TC_FAIL;
+}
+
+static int test_wdt_window_min_feed(void)
+{
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	TC_PRINT("Testcase: %s\n", __func__);
+
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
+		return TC_FAIL;
+	}
+
+	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
+		m_state = WDT_TEST_STATE_IDLE;
+		m_testcase_index++;
+		if (m_testvalue == WDT_TEST_WINDOW_MIN_FEEDS) {
+			TC_PRINT("Testcase passed\n");
+			return TC_PASS;
+		}
+		TC_PRINT("Reset after %u feeds, expected %u\n", (uint32_t)m_testvalue,
+			 WDT_TEST_WINDOW_MIN_FEEDS);
+		return TC_FAIL;
+	}
+
+	if (test_wdt_window_min_install(wdt) != TC_PASS) {
+		return TC_FAIL;
+	}
+
+	m_testvalue = 0U;
+	m_state = WDT_TEST_STATE_CHECK_RESET;
+	commit_noinit_state();
+
+	/* Feed halfway between window.min and window.max */
+	for (uint32_t i = 0U; i < WDT_TEST_WINDOW_MIN_FEEDS; i++) {
+		k_sleep(K_MSEC(WDT_TEST_MAX_WINDOW * 3U / 4U));
+		wdt_feed(wdt, 0);
+		m_testvalue++;
+		commit_noinit_state();
+	}
+
+	TC_PRINT("Waiting to restart MCU\n");
+	while (1) {
+		k_yield();
+	}
+}
+#endif
+
 #if TEST_WDT_WAIT_MODE
 static int test_wdt_enable_wait_mode(void)
 {
@@ -648,7 +827,27 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 #endif
 		m_testcase_index++;
 	}
-	if (m_testcase_index > 5) {
+	if (m_testcase_index == 6U) {
+#if WDT_TEST_WINDOW_MIN
+		zassert_true(test_wdt_window_min_bad_config() == TC_PASS);
+#endif
+		m_testcase_index++;
+	}
+	if (m_testcase_index == 7U) {
+#if WDT_TEST_WINDOW_MIN
+		zassert_true(test_wdt_window_min_early_feed() == TC_PASS);
+#else
+		m_testcase_index++;
+#endif
+	}
+	if (m_testcase_index == 8U) {
+#if WDT_TEST_WINDOW_MIN
+		zassert_true(test_wdt_window_min_feed() == TC_PASS);
+#else
+		m_testcase_index++;
+#endif
+	}
+	if (m_testcase_index > 8) {
 		m_state = WDT_TEST_STATE_IDLE;
 		m_magic = 0;
 		m_testcase_index = 0;

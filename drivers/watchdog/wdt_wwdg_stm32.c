@@ -82,39 +82,45 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #define ABS_DIFF_UINT(a, b)  ((a) > (b) ? (a) - (b) : (b) - (a))
 #define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__)   (__TIMEOUT__ / 10)
 #define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)  \
-	ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
-	WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
+	(ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
+	 WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__))
 
 static void wwdg_stm32_irq_config(const struct device *dev);
 
-static uint32_t wwdg_stm32_get_pclk(const struct device *dev)
+/**
+ * @brief Get the WWDG bus clock rate.
+ *
+ * @param dev Pointer to device structure.
+ * @param pclk Pointer to the clock rate in Hz.
+ * @retval 0 On success.
+ * @retval -EIO The clock rate could not be read.
+ */
+static int wwdg_stm32_get_pclk(const struct device *dev, uint32_t *pclk)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
-	uint32_t pclk_rate;
 
-	if (clock_control_get_rate(clk, (clock_control_subsys_t) &cfg->pclken,
-			       &pclk_rate) < 0) {
+	if ((clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken, pclk) < 0) ||
+	    (*pclk == 0U)) {
 		LOG_ERR("Failed call clock_control_get_rate");
 		return -EIO;
 	}
 
-	return pclk_rate;
+	return 0;
 }
 
 /**
  * @brief Calculates the timeout in microseconds.
  *
- * @param dev Pointer to device structure.
+ * @param pclk The WWDG bus clock rate in Hz.
  * @param prescaler_exp The prescaler exponent value(Base 2).
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */
-static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
+static uint32_t wwdg_stm32_get_timeout(uint32_t pclk,
 				       uint32_t prescaler_exp,
 				       uint32_t counter)
 {
-	uint32_t pclk = wwdg_stm32_get_pclk(dev);
 	uint32_t ticks = (counter & 0x3FU) + 1U;
 	uint64_t divider = WWDG_INTERNAL_DIVIDER << prescaler_exp;
 	uint64_t num = (uint64_t)ticks * divider * (uint64_t)USEC_PER_SEC;
@@ -126,39 +132,92 @@ static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
 }
 
 /**
+ * @brief Converts a duration to a number of WWDG ticks, rounded up.
+ *
+ * @param pclk The WWDG bus clock rate in Hz.
+ * @param time_us The duration in microseconds.
+ * @param prescaler_exp The prescaler exponent value(Base 2).
+ * @return The number of ticks.
+ */
+static uint64_t wwdg_stm32_us_to_ticks(uint32_t pclk, uint32_t time_us,
+				       uint32_t prescaler_exp)
+{
+	uint64_t divider = (uint64_t)WWDG_INTERNAL_DIVIDER << prescaler_exp;
+	uint64_t num = (uint64_t)time_us * (uint64_t)pclk;
+	uint64_t den = (uint64_t)USEC_PER_SEC * divider;
+
+	return DIV_ROUND_UP(num, den);
+}
+
+/**
  * @brief Calculates prescaler & counter values.
  *
- * @param dev Pointer to device structure.
+ * The smallest prescaler that can count @p timeout is selected. The
+ * counter expires after (counter - WWDG_COUNTER_MIN + 1) ticks.
+ *
+ * @param pclk The WWDG bus clock rate in Hz.
  * @param timeout Timeout value in microseconds.
  * @param prescaler_exp Pointer to prescaler exponent value(Base 2).
  * @param counter Pointer to counter value.
  */
-static void wwdg_stm32_convert_timeout(const struct device *dev,
+static void wwdg_stm32_convert_timeout(uint32_t pclk,
 				       uint32_t timeout,
 				       uint32_t *prescaler_exp,
 				       uint32_t *counter)
 {
-	uint32_t pclk = wwdg_stm32_get_pclk(dev);
-	uint32_t psc_exp;
-	uint32_t count;
+	for (uint32_t psc_exp = 0U; psc_exp <= WWDG_PRESCALER_EXPONENT_MAX; psc_exp++) {
+		uint64_t ticks = wwdg_stm32_us_to_ticks(pclk, timeout, psc_exp);
 
-	for (psc_exp = 0U; psc_exp <= WWDG_PRESCALER_EXPONENT_MAX; psc_exp++) {
-		uint32_t divider = WWDG_INTERNAL_DIVIDER << psc_exp;
-		uint64_t num = (uint64_t)timeout * (uint64_t)pclk;
-		uint64_t den = (uint64_t)USEC_PER_SEC * (uint64_t)divider;
-
-		count = (num / den) + WWDG_RESET_LIMIT;
-
-		if (count <= WWDG_COUNTER_MAX) {
-			*counter = count;
+		if (IN_RANGE(ticks, 1U, WWDG_COUNTER_MAX - WWDG_COUNTER_MIN + 1U)) {
+			*counter = WWDG_COUNTER_MIN + (uint32_t)ticks - 1U;
 			*prescaler_exp = psc_exp;
 			return;
 		}
 	}
 
-	/* timeout longer than wwdg can provide, set to max possible value */
+	/* timeout zero or longer than wwdg can provide, set to max possible value */
 	*counter = WWDG_COUNTER_MAX;
 	*prescaler_exp = WWDG_PRESCALER_EXPONENT_MAX;
+}
+
+/**
+ * @brief Compute the window value
+ *
+ * Once the WWDG counter is reloaded with @p counter after a feed, it
+ * cannot be fed again until it has reached the window value. Feeding
+ * earlier generates a reset. The number of ticks is rounded up.
+ *
+ * A feed does not reset the prescaler, so the first tick after a feed
+ * comes up to one tick early. The window can open up to one tick before
+ * @p min_timeout rounded up to whole ticks, and a feed is only
+ * guaranteed to be accepted once that rounded value has elapsed.
+ *
+ * @param pclk The WWDG bus clock rate in Hz.
+ * @param min_timeout Minimum time between two feeds in microseconds.
+ * @param prescaler_exp The prescaler exponent value(Base 2).
+ * @param counter The counter value.
+ * @param window Pointer to the window value.
+ * @retval 0 On success.
+ * @retval -EINVAL @p min_timeout leaves no tick to feed before the reset.
+ */
+static int wwdg_stm32_convert_window(uint32_t pclk,
+				     uint32_t min_timeout,
+				     uint32_t prescaler_exp,
+				     uint32_t counter,
+				     uint32_t *window)
+{
+	uint64_t ticks = wwdg_stm32_us_to_ticks(pclk, min_timeout, prescaler_exp);
+
+	/* A feed is accepted once the counter equals the window, so 0x40 still
+	 * leaves a one-tick window.
+	 */
+	if (ticks > (counter - WWDG_COUNTER_MIN)) {
+		return -EINVAL;
+	}
+
+	*window = counter - (uint32_t)ticks;
+
+	return 0;
 }
 
 static int wwdg_stm32_setup(const struct device *dev, uint8_t options)
@@ -212,27 +271,62 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 {
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
-	uint32_t timeout = config->window.max * USEC_PER_MSEC;
 	uint32_t calculated_timeout;
 	uint32_t prescaler_exp = 0U;
 	uint32_t counter = 0U;
+	uint32_t window;
+	uint32_t pclk;
+	int ret;
+
+	/* Reloading the counter above a reduced window would reset the MCU */
+	if (LL_WWDG_IsEnabled(wwdg) != 0U) {
+		return -EBUSY;
+	}
+
+	if (config->window.max > (UINT32_MAX / USEC_PER_MSEC)) {
+		return -EINVAL;
+	}
+
+	if (config->window.min > config->window.max) {
+		return -EINVAL;
+	}
+
+	const uint32_t timeout = config->window.max * USEC_PER_MSEC;
+	const uint32_t window_start = config->window.min * USEC_PER_MSEC;
+
+	ret = wwdg_stm32_get_pclk(dev, &pclk);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (config->callback != NULL) {
 		data->callback = config->callback;
 	}
 
-	wwdg_stm32_convert_timeout(dev, timeout, &prescaler_exp, &counter);
-	calculated_timeout = wwdg_stm32_get_timeout(dev, prescaler_exp, counter);
+	wwdg_stm32_convert_timeout(pclk, timeout, &prescaler_exp, &counter);
+	calculated_timeout = wwdg_stm32_get_timeout(pclk, prescaler_exp, counter);
 
 	LOG_DBG("prescaler: %d", (1 << prescaler_exp));
 	LOG_DBG("Desired WDT: %d us", timeout);
 	LOG_DBG("Set WDT:     %d us", calculated_timeout);
 
-	if (!(IN_RANGE(counter, WWDG_COUNTER_MIN, WWDG_COUNTER_MAX) &&
-	      IS_WWDG_TIMEOUT(timeout, calculated_timeout))) {
-		/* One of the parameters provided is invalid */
+	/* Rounding up to a whole tick or clamping to the longest timeout can
+	 * exceed the tolerated error.
+	 */
+	if (!IS_WWDG_TIMEOUT(timeout, calculated_timeout)) {
 		return -EINVAL;
 	}
+
+	/* A zero minimum keeps the window equal to the counter, so the WWDG can
+	 * be fed immediately.
+	 */
+	ret = wwdg_stm32_convert_window(pclk, window_start, prescaler_exp, counter, &window);
+	if (ret < 0) {
+		return ret;
+	}
+
+	LOG_DBG("Desired window: %d us", window_start);
+	LOG_DBG("Set window:     %d (counter %d)", window, counter);
 
 	data->counter = counter;
 
@@ -241,10 +335,7 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 	LL_WWDG_SetPrescaler(wwdg,
 		(prescaler_exp << WWDG_PRESCALER_POS) & WWDG_PRESCALER_MASK);
 
-	/* Set window the same as the counter to be able to feed the WWDG almost
-	 * immediately
-	 */
-	LL_WWDG_SetWindow(wwdg, counter);
+	LL_WWDG_SetWindow(wwdg, window);
 	LL_WWDG_SetCounter(wwdg, counter);
 
 	return 0;
