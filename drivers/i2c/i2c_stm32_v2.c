@@ -175,6 +175,15 @@ static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
 	dma_cfg->head_block = blk_cfg;
 	dma_cfg->block_count = 1;
 
+	/* DMA channel has not been initialized */
+	if (data->dma_channel < 0 || data->dma_channel == STM32_DMA_CHANNEL_AUTO) {
+		data->dma_channel = dma_request_channel(data->dev_dma, NULL);
+		if (data->dma_channel < 0) {
+			LOG_ERR("Failed to request DMA channel: %d", data->dma_channel);
+			return -ENODEV;
+		}
+	}
+
 	int ret = dma_config(dma->dev_dma, dma->dma_channel, dma_cfg);
 
 	if (ret != 0) {
