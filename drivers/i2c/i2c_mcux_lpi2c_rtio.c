@@ -23,8 +23,7 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
-#include "i2c_bitbang.h"
-#include <zephyr/drivers/gpio.h>
+#include "i2c_mcux_lpi2c_common.h"
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
 #include <zephyr/logging/log.h>
@@ -52,6 +51,7 @@ struct mcux_lpi2c_config {
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
+	bool recover_bus_on_init;
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 };
 
@@ -60,6 +60,9 @@ struct mcux_lpi2c_data {
 	lpi2c_master_handle_t handle;
 	struct i2c_rtio *ctx;
 	lpi2c_master_transfer_t transfer;
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+	struct k_work recovery_work;
+#endif
 #ifdef CONFIG_I2C_TARGET
 	lpi2c_slave_handle_t target_handle;
 	struct i2c_target_config *target_cfg;
@@ -69,6 +72,39 @@ struct mcux_lpi2c_data {
 	bool send_ack;
 #endif
 };
+
+static bool mcux_lpi2c_start(const struct device *dev, int *status);
+
+static void mcux_lpi2c_finish_transaction(const struct device *dev, int status)
+{
+	struct mcux_lpi2c_data *data = dev->data;
+
+	if (i2c_rtio_complete(data->ctx, status)) {
+		(void)i2c_rtio_run_sync_start_async(dev, data->ctx, mcux_lpi2c_start);
+	}
+}
+
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+static void mcux_lpi2c_recovery_work_handler(struct k_work *work)
+{
+	struct mcux_lpi2c_data *data =
+		CONTAINER_OF(work, struct mcux_lpi2c_data, recovery_work);
+	const struct device *dev = data->ctx->dt_spec.bus;
+	const struct mcux_lpi2c_config *config = dev->config;
+	int ret;
+
+	ret = mcux_lpi2c_recover_bus_common(&config->scl, &config->sda, config->pincfg,
+					  config->bitrate);
+	mcux_lpi2c_finish_transaction(dev, ret);
+}
+
+static int mcux_lpi2c_recover_bus(const struct device *dev)
+{
+	struct mcux_lpi2c_data *data = dev->data;
+
+	return i2c_rtio_recover(data->ctx);
+}
+#endif
 
 static int mcux_lpi2c_configure(const struct device *dev,
 				uint32_t dev_config_raw)
@@ -203,13 +239,22 @@ static bool mcux_lpi2c_start(const struct device *dev, int *status)
 	case RTIO_OP_I2C_CONFIGURE:
 		*status = mcux_lpi2c_do_configure(dev, sqe->i2c_config);
 		return false;
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+	case RTIO_OP_I2C_RECOVER:
+		error = k_work_submit(&data->recovery_work);
+		if (error < 0) {
+			LOG_ERR("Failed to schedule bus recovery: %d", error);
+			break;
+		}
+		return true;
+#endif
 	default:
 		LOG_ERR("Invalid op code %d for submission %p", sqe->op, (void *)sqe);
 		*status = -EINVAL;
 		return false;
 	}
 
-	/* When mcux_lpi2c_msg_start() fails, no asynchronous operation is started */
+	/* An error means no asynchronous operation was started. */
 	if (error != 0) {
 		*status = error;
 		return false;
@@ -223,8 +268,6 @@ static void mcux_lpi2c_complete(const struct device *dev, status_t status)
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = (LPI2C_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	struct i2c_rtio *const ctx = data->ctx;
-
 	int ret = 0;
 
 	/* Return an error if the transfer didn't complete
@@ -246,9 +289,7 @@ static void mcux_lpi2c_complete(const struct device *dev, status_t status)
 	}
 
 out:
-	if (i2c_rtio_complete(ctx, ret)) {
-		(void)i2c_rtio_run_sync_start_async(dev, ctx, mcux_lpi2c_start);
-	}
+	mcux_lpi2c_finish_transaction(dev, ret);
 }
 
 static void mcux_lpi2c_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
@@ -319,6 +360,16 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return error;
 	}
 
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+	if (config->recover_bus_on_init) {
+		error = mcux_lpi2c_recover_bus_common(&config->scl, &config->sda, config->pincfg,
+						    config->bitrate);
+		if (error != 0) {
+			return error;
+		}
+	}
+#endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
@@ -342,6 +393,10 @@ static int mcux_lpi2c_init(const struct device *dev)
 
 	i2c_rtio_init(data->ctx, dev);
 
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+	k_work_init(&data->recovery_work, mcux_lpi2c_recovery_work_handler);
+#endif
+
 	return 0;
 }
 
@@ -349,14 +404,27 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 	.configure = mcux_lpi2c_configure,
 	.transfer = mcux_lpi2c_transfer,
 	.iodev_submit = mcux_lpi2c_submit,
+#ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
+	.recover_bus = mcux_lpi2c_recover_bus,
+#endif
 };
 
 #if CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 #define I2C_MCUX_LPI2C_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),
 #define I2C_MCUX_LPI2C_SDA_INIT(n) .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),
+#define I2C_MCUX_LPI2C_RECOVER_BUS_ON_INIT(n) \
+	.recover_bus_on_init = DT_INST_PROP(n, recover_bus_on_init),
+#define I2C_MCUX_LPI2C_RECOVER_CHECK(n)					\
+	BUILD_ASSERT(!DT_INST_PROP(n, recover_bus_on_init) ||		\
+		     (DT_INST_NODE_HAS_PROP(n, scl_gpios) &&		\
+		      DT_INST_NODE_HAS_PROP(n, sda_gpios)),		\
+		     "I2C node " DT_NODE_FULL_NAME(DT_DRV_INST(n))	\
+		     " has recover-bus-on-init but is missing scl-gpios or sda-gpios");
 #else
 #define I2C_MCUX_LPI2C_SCL_INIT(n)
 #define I2C_MCUX_LPI2C_SDA_INIT(n)
+#define I2C_MCUX_LPI2C_RECOVER_BUS_ON_INIT(n)
+#define I2C_MCUX_LPI2C_RECOVER_CHECK(n)
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
 #define I2C_MCUX_LPI2C_MODULE_IRQ_CONNECT(n)				\
@@ -388,6 +456,7 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 		    (I2C_MCUX_LPI2C_MODULE_IRQ(n)))
 
 #define I2C_MCUX_LPI2C_INIT(n)						\
+	I2C_MCUX_LPI2C_RECOVER_CHECK(n)					\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
 	static void mcux_lpi2c_config_func_##n(const struct device *dev)\
@@ -405,6 +474,7 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		I2C_MCUX_LPI2C_SCL_INIT(n)				\
 		I2C_MCUX_LPI2C_SDA_INIT(n)				\
+		I2C_MCUX_LPI2C_RECOVER_BUS_ON_INIT(n)			\
 		.bus_idle_timeout_ns =					\
 			UTIL_AND(DT_INST_NODE_HAS_PROP(n, bus_idle_timeout),\
 				 DT_INST_PROP(n, bus_idle_timeout)),	\
