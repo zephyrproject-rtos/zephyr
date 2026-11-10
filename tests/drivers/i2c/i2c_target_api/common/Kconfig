@@ -21,3 +21,8 @@ config APP_DUAL_ROLE_I2C
 config I2C_TEST_DATA_MAX_SIZE
 	int "Max tested data size for the I2C transfers"
 	default 20
+
+config I2C_TEST_TRANSFER_TIMEOUT_THRESHOLD_MS
+	int "The transfer timeout threshold in +- milliseconds"
+	depends on I2C_TRANSFER_TIMEOUT_SUPPORTED
+	default 100
