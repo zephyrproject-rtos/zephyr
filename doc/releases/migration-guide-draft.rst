@@ -206,6 +206,15 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Serial
+======
+
+* The ``CONFIG_UART_SIFIVE_PORT_0``, ``CONFIG_UART_SIFIVE_PORT_1`` and the related
+  ``CONFIG_UART_SIFIVE_PORT_*_RXCNT_IRQ`` and ``CONFIG_UART_SIFIVE_PORT_*_TXCNT_IRQ`` Kconfig
+  options have been removed. The :dtcompatible:`sifive,uart0` driver now instantiates a device for
+  every enabled devicetree node. The TX watermark interrupt fires when the TX FIFO is empty and
+  the RX watermark interrupt fires as soon as the RX FIFO holds a character. (:github:`122450`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
