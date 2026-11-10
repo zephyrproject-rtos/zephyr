@@ -1264,13 +1264,16 @@ update to a set of Target nodes.
 	* ``TargetImgIdx``: Index of the Target node's DFU image to check.
 
 
-``mesh models dfu cli send <SlotIdx> [<Group>]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models dfu cli send <SlotIdx> [<Group> [<Mode(push, pull)> [<BlockSizeLog> <ChunkSize>]]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Start a DFU transfer to all added Target nodes.
 
 	* ``SlotIdx``: Index of the local DFU image slot to send.
-	* ``Group``: Optional group address to use when communicating with the Target nodes. If omitted, the Firmware Update Client will address each Target node individually.
+	* ``Group``: Optional group address to use when communicating with the Target nodes. If omitted or set to 0, the Firmware Update Client will address each Target node individually.
+	* ``Mode``: BLOB transfer mode to use. Must be either ``push`` (Push BLOB Transfer Mode) or ``pull`` (Pull BLOB Transfer Mode). If omitted, ``push`` will be used by default.
+	* ``BlockSizeLog``: Optional logarithmic representation of the block size. The block size will be ``1 << BlockSizeLog`` bytes. Must be given together with ``ChunkSize``.
+	* ``ChunkSize``: Optional chunk size in bytes. Must be given together with ``BlockSizeLog``.
 
 
 ``mesh models dfu cli cancel [<Addr>]``
