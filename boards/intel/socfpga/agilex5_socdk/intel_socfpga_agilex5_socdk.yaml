@@ -5,4 +5,6 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
+supported:
+  - sdhc
 vendor: intel
