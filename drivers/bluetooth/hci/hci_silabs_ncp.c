@@ -19,9 +19,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
 #include "sl_cpc.h"
@@ -47,7 +45,7 @@ LOG_MODULE_REGISTER(hci_silabs_ncp, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 
 /* Receive buffer handed to CPC, queued for delivery to the host once filled */
 struct hci_ncp_rx_slot {
-	sys_snode_t node;
+	void *fifo_reserved;
 	sl_cpc_buf_t buf;
 	uint8_t data[HCI_RX_MTU] __aligned(SL_CPC_BUF_MIN_ALIGNMENT);
 };
@@ -72,25 +70,60 @@ struct hci_ncp_data {
 	struct k_sem connected;
 	struct k_sem closed;
 	/* Received packets waiting for a host buffer, oldest first */
-	sys_slist_t rx_pending;
-	struct k_spinlock rx_lock;
+	struct k_fifo rx_pending;
 	struct k_work rx_work;
 	bool opened;
 	struct hci_ncp_rx_slot rx_slots[CONFIG_BT_HCI_SILABS_NCP_RX_COUNT];
 };
 
-static bool hci_ncp_evt_discardable(const uint8_t *evt_data, size_t remaining)
+/* Same policy as the other HCI drivers: the advertising reports the host can
+ * lose are taken from the discardable pool and dropped when it is empty, so
+ * that a flood of reports never holds back the events behind them. The
+ * extended reports that may be fragmented are not discardable.
+ */
+static bool hci_ncp_evt_discardable(const uint8_t *data, size_t remaining)
 {
-	if (remaining <= sizeof(struct bt_hci_evt_hdr)) {
+	const struct bt_hci_evt_hdr *evt = (const void *)data;
+	const struct bt_hci_evt_le_meta_event *meta = (const void *)evt->data;
+	const struct bt_hci_evt_le_ext_advertising_report *report = (const void *)meta->data;
+	uint16_t adv_evt_type;
+
+	if (remaining < sizeof(*evt)) {
 		return false;
 	}
-	if (evt_data[0] != BT_HCI_EVT_LE_META_EVENT) {
+	remaining -= sizeof(*evt);
+
+	switch (evt->evt) {
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
+	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
+		return true;
+#endif
+	case BT_HCI_EVT_LE_META_EVENT:
+		break;
+	default:
 		return false;
 	}
 
-	switch (evt_data[sizeof(struct bt_hci_evt_hdr)]) {
+	if (remaining < sizeof(*meta)) {
+		return false;
+	}
+	remaining -= sizeof(*meta);
+
+	switch (meta->subevent) {
 	case BT_HCI_EVT_LE_ADVERTISING_REPORT:
 		return true;
+#if defined(CONFIG_BT_EXT_ADV)
+	case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
+		if (remaining < sizeof(*report) + sizeof(report->adv_info[0])) {
+			return false;
+		}
+		if (report->num_reports != 1) {
+			return false;
+		}
+		adv_evt_type = sys_le16_to_cpu(report->adv_info[0].evt_type);
+		return (adv_evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0;
+#endif
 	default:
 		return false;
 	}
@@ -263,35 +296,29 @@ static int hci_ncp_deliver(const struct device *dev, const uint8_t *payload, uin
 }
 
 /* Deliver the pending packets in order, until the host runs out of buffers.
- * Runs in the CPC context and from rx_work, both on the work queue of the
- * co-processor.
+ * Runs from rx_work only: the CPC core delivers the packets from its own
+ * thread, and the host frees its buffers from any thread, so both hand over
+ * to the work queue of the co-processor instead of racing on rx_pending.
  */
 static void hci_ncp_rx_process(const struct device *dev)
 {
 	struct hci_ncp_data *data = dev->data;
 	struct hci_ncp_rx_slot *slot;
-	k_spinlock_key_t key;
-	sys_snode_t *node;
 	int ret;
 
 	while (true) {
-		key = k_spin_lock(&data->rx_lock);
-		node = sys_slist_peek_head(&data->rx_pending);
-		k_spin_unlock(&data->rx_lock, key);
-		if (!node || !data->opened) {
+		slot = k_fifo_peek_head(&data->rx_pending);
+		if (!slot || !data->opened) {
 			return;
 		}
-		slot = CONTAINER_OF(node, struct hci_ncp_rx_slot, node);
 
 		ret = hci_ncp_deliver(dev, slot->buf.ptr, slot->buf.len);
 		if (ret == -ENOMEM) {
-			/* bt_buf_rx_freed_cb() resumes us */
+			/* bt_buf_rx_freed_cb() resumes us, the packet stays pending */
 			return;
 		}
 
-		key = k_spin_lock(&data->rx_lock);
-		sys_slist_remove(&data->rx_pending, NULL, node);
-		k_spin_unlock(&data->rx_lock, key);
+		k_fifo_get(&data->rx_pending, K_NO_WAIT);
 		/* Give the buffer back to CPC */
 		sl_cpc_ep_push_recv_buf(&data->ep, &slot->buf);
 	}
@@ -305,20 +332,15 @@ static void hci_ncp_rx_work(struct k_work *work)
 }
 
 /* The host freed a RX buffer, may be in any context */
-static const struct device *hci_ncp_rx_freed_dev;
-
 static void hci_ncp_rx_freed(enum bt_buf_type type_mask)
 {
-	const struct device *dev = hci_ncp_rx_freed_dev;
+	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_bt_hci));
+	const struct hci_ncp_config *cfg = dev->config;
+	struct hci_ncp_data *data = dev->data;
 
 	ARG_UNUSED(type_mask);
 
-	if (dev) {
-		const struct hci_ncp_config *cfg = dev->config;
-		struct hci_ncp_data *data = dev->data;
-
-		mfd_silabs_ncp_wq_submit(cfg->parent, &data->rx_work);
-	}
+	mfd_silabs_ncp_wq_submit(cfg->parent, &data->rx_work);
 }
 
 /* Runs in the CPC context: keep it short */
@@ -330,17 +352,14 @@ static void hci_ncp_ep_event(sl_cpc_ep_t *ep, sl_cpc_ep_event_type_t type,
 	struct hci_ncp_data *data = dev->data;
 	struct hci_ncp_rx_slot *rx;
 	struct hci_ncp_tx_slot *tx;
-	k_spinlock_key_t key;
 
 	ARG_UNUSED(ep);
 
 	switch (type) {
 	case SL_CPC_EP_EVENT_RECV:
 		rx = CONTAINER_OF(event->recv.buf, struct hci_ncp_rx_slot, buf);
-		key = k_spin_lock(&data->rx_lock);
-		sys_slist_append(&data->rx_pending, &rx->node);
-		k_spin_unlock(&data->rx_lock, key);
-		hci_ncp_rx_process(dev);
+		k_fifo_put(&data->rx_pending, rx);
+		mfd_silabs_ncp_wq_submit(cfg->parent, &data->rx_work);
 		break;
 	case SL_CPC_EP_EVENT_SEND_DONE:
 		tx = CONTAINER_OF(event->send_done.frame, struct hci_ncp_tx_slot, frame);
@@ -429,8 +448,6 @@ static int hci_ncp_open(const struct device *dev)
 		sl_cpc_ep_push_recv_buf(&data->ep, &slot->buf);
 	}
 
-	sys_slist_init(&data->rx_pending);
-	hci_ncp_rx_freed_dev = dev;
 	bt_buf_rx_freed_cb_set(hci_ncp_rx_freed);
 
 	k_sem_reset(&data->connected);
@@ -477,6 +494,9 @@ static int hci_ncp_close(const struct device *dev)
 		return -ETIMEDOUT;
 	}
 	sl_cpc_ep_deinit(&data->ep);
+	/* The packets still pending are gone with the endpoint */
+	while (k_fifo_get(&data->rx_pending, K_NO_WAIT)) {
+	}
 
 	return 0;
 }
@@ -488,7 +508,7 @@ static int hci_ncp_init(const struct device *dev)
 	data->dev = dev;
 	k_sem_init(&data->connected, 0, 1);
 	k_sem_init(&data->closed, 0, 1);
-	sys_slist_init(&data->rx_pending);
+	k_fifo_init(&data->rx_pending);
 	k_work_init(&data->rx_work, hci_ncp_rx_work);
 
 	return 0;
@@ -499,6 +519,10 @@ static DEVICE_API(bt_hci, hci_ncp_api) = {
 	.close = hci_ncp_close,
 	.send = hci_ncp_send,
 };
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "A single HCI controller is supported");
+BUILD_ASSERT(DT_SAME_NODE(DT_CHOSEN(zephyr_bt_hci), DT_DRV_INST(0)),
+	     "The silabs,ncp-hci node must be the chosen zephyr,bt-hci");
 
 #define HCI_NCP_DEFINE(inst)                                                                       \
 	K_MEM_SLAB_DEFINE_STATIC(hci_ncp_tx_slab_##inst, sizeof(struct hci_ncp_tx_slot),           \
@@ -512,7 +536,5 @@ static DEVICE_API(bt_hci, hci_ncp_api) = {
 	DEVICE_DT_INST_DEFINE(inst, hci_ncp_init, NULL, &hci_ncp_data_##inst,                      \
 			      &hci_ncp_config_##inst, POST_KERNEL,                                 \
 			      CONFIG_BT_HCI_SILABS_NCP_INIT_PRIORITY, &hci_ncp_api);
-
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1, "A single HCI controller is supported");
 
 DT_INST_FOREACH_STATUS_OKAY(HCI_NCP_DEFINE)
