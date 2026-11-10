@@ -5568,21 +5568,22 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+	struct gatt_sub *sub;
 	uint8_t att_err;
 
 	LOG_DBG("err %d", err);
+
+	/* bt_gatt_clear() hands the params back with the write still in flight */
+	sub = gatt_sub_find_params(conn, params);
+	if (sub == NULL) {
+		return;
+	}
 
 	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
-		struct gatt_sub *sub;
 		sys_snode_t *node, *tmp, *prev;
-
-		sub = gatt_sub_find(conn);
-		if (!sub) {
-			return;
-		}
 
 		att_err = att_err_from_int(err);
 
