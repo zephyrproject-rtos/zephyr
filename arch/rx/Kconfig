@@ -40,6 +40,7 @@ config CPU_RXV3E
 	select HAS_EXCEPT_VECTOR_TABLE
 	select CPU_HAS_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select ARCH_HAS_RAMFUNC_SUPPORT
 	help
 	  Set if the processor supports the Renesas RXv3e instruction set.
 

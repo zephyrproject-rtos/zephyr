@@ -48,6 +48,9 @@
 #define RAM_START DT_CHOSEN_SRAM_ADDR
 #define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
+#define MPU_ALIGN(region_size) . = ALIGN(4)
+#define MPU_MIN_SIZE_ALIGN
+
 _region_min_align = 4;
 
 MEMORY
@@ -221,6 +224,18 @@ SECTIONS
  * zephyr_linker_sources() Cmake function.
  */
 #include <snippets-ram-sections.ld>
+
+
+#ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+	/* The RX compiler adds a leading underscore to C symbols. Provide the aliases
+	 * of the symbols defined by ramfunc.ld, which are referenced from C code.
+	 */
+	PROVIDE(___ramfunc_region_start = __ramfunc_region_start);
+	PROVIDE(___ramfunc_start = __ramfunc_start);
+	PROVIDE(___ramfunc_end = __ramfunc_end);
+	PROVIDE(___ramfunc_size = __ramfunc_size);
+	PROVIDE(___ramfunc_load_start = __ramfunc_load_start);
+#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
