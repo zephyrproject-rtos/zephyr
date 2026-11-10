@@ -1229,11 +1229,15 @@ __net_socket struct quic_stream {
 	/** Stream priority (to order streams within a connection) */
 	uint8_t priority;
 
+	/** Read half shut down via shutdown(SHUT_RD), discard incoming data.
+	 * Not a bit-field: the application sets it in shutdown() while the
+	 * receive path writes the bit-fields below, and a write to a
+	 * bit-field rewrites the bits next to it as well.
+	 */
+	bool read_closed;
+
 	/** Flag indicating stream needs window update (MAX_STREAM_DATA) */
 	bool need_window_update : 1;
-
-	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
-	bool read_closed : 1;
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
