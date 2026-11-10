@@ -11,8 +11,4 @@ config SPI
 config ESP_SPIRAM
 	default y if !MCUBOOT && !ESP32_USE_UNSUPPORTED_REVISION
 
-choice SPIRAM_TYPE
-	default SPIRAM_TYPE_ESPPSRAM32
-endchoice
-
 endif # BOARD_ODROID_GO_ESP32_PROCPU
