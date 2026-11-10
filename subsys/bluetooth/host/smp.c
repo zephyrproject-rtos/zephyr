@@ -866,6 +866,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 	if (bt_crypto_h6(ilk, lebr, link_key->val)) {
 		bt_keys_link_key_clear(link_key);
+		return;
 	}
 
 	if (conn->le.keys->flags & BT_KEYS_SC) {
@@ -1112,7 +1113,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 					       0x00, 0x00, 0x00, 0x00 };
 
 		if (bt_crypto_h7(salt, link_key->val, ilk)) {
-			bt_keys_link_key_clear(link_key);
+			bt_keys_clear(keys);
 			return;
 		}
 	} else {
