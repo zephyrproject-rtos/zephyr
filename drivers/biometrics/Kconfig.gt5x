@@ -19,4 +19,11 @@ config GT5X_TIMEOUT_MS
 	help
 	  Default timeout for enrollment and matching operations.
 
+config HEAP_MEM_POOL_ADD_SIZE_BIOMETRICS_GT5X
+	int
+	default 2048
+	help
+	  System heap reserved for the template buffer and the data packets
+	  allocated by the driver.
+
 endif # BIOMETRICS_GT5X
