@@ -58,6 +58,14 @@ Libraries / Subsystems
 
   * Display timings can be read and set at runtime with
     :c:func:`display_get_timing` and :c:func:`display_set_timing`.
+  * Display controllers that scan a full-frame write out of the caller's buffer
+    report it with :c:enumerator:`SCREEN_INFO_WRITE_HOLDS_BUFFER`: the buffer stays in
+    use until the next full-frame write returns, see :c:func:`display_write`.
+  * Display controllers with several layers expose them as planes for hardware
+    composition: each plane has its own buffer, pixel format, position, alpha and
+    blend mode, :c:func:`display_set_plane` stages a plane and :c:func:`display_commit`
+    applies the staged planes at the next vertical synchronization, with no copy. See
+    :ref:`display_planes`.
 
 * FIDO2
 
@@ -155,6 +163,13 @@ Other notable changes
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
+
+* Display
+
+  * The NXP LCDIFv2 driver exposes its eight layers as planes and can start
+    scanning at init (:kconfig:option:`CONFIG_MCUX_LCDIFV2_START_ON_INIT`), which
+    MIPI DSI panels in video mode need. The SDL and dummy displays implement planes
+    as well, so plane applications run on ``native_sim``.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
