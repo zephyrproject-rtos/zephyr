@@ -322,6 +322,11 @@ Networking
   :kconfig:option:`CONFIG_NET_SOCKETS_DNS_PREFER_IPV4` to keep IPv4 first, for example with
   offloaded network interfaces, where reachability cannot be determined.
 
+* ``CONFIG_HTTP_SERVER_HUFFMAN_DECODE_BUFFER_SIZE`` is deprecated in favor of
+  :kconfig:option:`CONFIG_HTTP_HUFFMAN_DECODE_BUFFER_SIZE`, which is shared by the
+  HTTP server and the multiprotocol HTTP client. A non-zero value of the old
+  option is still used as the default of the new one.
+
 Other subsystems
 ****************
 
