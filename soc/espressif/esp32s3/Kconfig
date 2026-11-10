@@ -55,11 +55,6 @@ config ESP32S3_INSTRUCTION_CACHE_8WAYS
 
 endchoice
 
-config ESP32S3_ICACHE_ASSOCIATED_WAYS
-	int
-	default 4 if ESP32S3_INSTRUCTION_CACHE_4WAYS
-	default 8 if ESP32S3_INSTRUCTION_CACHE_8WAYS
-
 choice ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
 	prompt "Instruction cache line size"
 	default ESP32S3_INSTRUCTION_CACHE_LINE_32B
@@ -74,18 +69,6 @@ config ESP32S3_INSTRUCTION_CACHE_LINE_32B
 	bool "32 Bytes"
 
 endchoice
-
-config ESP32S3_INSTRUCTION_CACHE_LINE_SIZE
-	int
-	default 16 if ESP32S3_INSTRUCTION_CACHE_LINE_16B
-	default 32 if ESP32S3_INSTRUCTION_CACHE_LINE_32B
-
-config ESP32S3_INSTRUCTION_CACHE_WRAP
-	bool "Define instruction cache wrap mode"
-	help
-	  If enabled, instruction cache will use wrap mode to read spi flash or spi ram.
-	  The wrap length equals to ESP32S3_INSTRUCTION_CACHE_LINE_SIZE.
-	  However, it depends on complex conditions.
 
 choice ESP32S3_DATA_CACHE_SIZE
 	prompt "Data cache size"
@@ -127,11 +110,6 @@ config ESP32S3_DATA_CACHE_8WAYS
 
 endchoice
 
-config ESP32S3_DCACHE_ASSOCIATED_WAYS
-	int
-	default 4 if ESP32S3_DATA_CACHE_4WAYS
-	default 8 if ESP32S3_DATA_CACHE_8WAYS
-
 choice ESP32S3_DATA_CACHE_LINE_SIZE
 	prompt "Data cache line size"
 	default ESP32S3_DATA_CACHE_LINE_32B
@@ -155,13 +133,6 @@ config ESP32S3_DATA_CACHE_LINE_SIZE
 	default 16 if ESP32S3_DATA_CACHE_LINE_16B
 	default 32 if ESP32S3_DATA_CACHE_LINE_32B
 	default 64 if ESP32S3_DATA_CACHE_LINE_64B
-
-config ESP32S3_DATA_CACHE_WRAP
-	bool "Define data cache wrap mode"
-	help
-	  If enabled, data cache will use wrap mode to read spi flash or spi ram.
-	  The wrap length equals to ESP32S3_DATA_CACHE_LINE_SIZE.
-	  However, it depends on complex conditions.
 
 config MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
