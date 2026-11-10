@@ -796,6 +796,8 @@ static void quic_tls_restore_session_transport_params(struct quic_tls_context *c
 	ep->peer_params.initial_max_stream_data_uni = params->initial_max_stream_data_uni;
 	ep->peer_params.initial_max_streams_bidi = params->initial_max_streams_bidi;
 	ep->peer_params.initial_max_streams_uni = params->initial_max_streams_uni;
+	ep->peer_params.max_streams_bidi = params->initial_max_streams_bidi;
+	ep->peer_params.max_streams_uni = params->initial_max_streams_uni;
 	ep->peer_params.max_idle_timeout = params->max_idle_timeout;
 	ep->peer_params.max_udp_payload_size = params->max_udp_payload_size;
 	ep->peer_params.parsed = true;

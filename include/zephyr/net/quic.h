@@ -339,7 +339,9 @@ int quic_connection_close(int sock);
  *         If set to QUIC_STREAM_UNIDIRECTIONAL, then only the initiator can write.
  * @param  priority Priority level (0-255) for scheduling stream data.
  *
- * @return New QUIC stream socket on success, <0 on failure.
+ * @return New QUIC stream socket on success, <0 on failure: -EAGAIN when
+ *         the peer allows no more streams of that type for now; a
+ *         MAX_STREAMS frame from it lifts the limit (@rfc{9000,section-4.6}).
  */
 int quic_stream_open(int connection_sock,
 		     enum quic_stream_initiator initiator,

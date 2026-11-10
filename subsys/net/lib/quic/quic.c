@@ -5797,6 +5797,8 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 			ep->peer_params.initial_max_streams_bidi;
 		new_ep->peer_params.initial_max_streams_uni =
 			ep->peer_params.initial_max_streams_uni;
+		new_ep->peer_params.max_streams_bidi = ep->peer_params.initial_max_streams_bidi;
+		new_ep->peer_params.max_streams_uni = ep->peer_params.initial_max_streams_uni;
 		new_ep->peer_params.max_idle_timeout = ep->peer_params.max_idle_timeout;
 		new_ep->peer_params.max_udp_payload_size =
 			ep->peer_params.max_udp_payload_size;
@@ -7176,10 +7178,12 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 			break;
 		case QUIC_INITIAL_MAX_STREAMS_BIDI:
 			ep->peer_params.initial_max_streams_bidi = value;
+			ep->peer_params.max_streams_bidi = value;
 			NET_DBG("  initial_max_streams_bidi: %" PRIu64, value);
 			break;
 		case QUIC_INITIAL_MAX_STREAMS_UNI:
 			ep->peer_params.initial_max_streams_uni = value;
+			ep->peer_params.max_streams_uni = value;
 			NET_DBG("  initial_max_streams_uni: %" PRIu64, value);
 			break;
 		case QUIC_MAX_IDLE_TIMEOUT:

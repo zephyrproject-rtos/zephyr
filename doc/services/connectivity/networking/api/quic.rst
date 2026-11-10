@@ -101,6 +101,11 @@ sends a request, and reads the response.
                                       QUIC_STREAM_BIDIRECTIONAL,
                                       0);
 
+The peer limits how many streams of each type may be opened on the connection
+(:rfc:`9000` Section 4.6). Once that many were opened, :c:func:`quic_stream_open`
+fails with ``-EAGAIN`` until the peer raises the limit with a MAX_STREAMS frame,
+which it typically does as streams are closed.
+
 
 **Step 4: Transfer Data**
 
