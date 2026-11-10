@@ -9344,4 +9344,100 @@ ZTEST(net_socket_quic, test_556_connection_socket_binds_to_interface)
 	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
 }
 
+static void reset_test_disconnect(struct reset_test_peers *peers)
+{
+	int ret;
+
+	ret = quic_connection_close(peers->server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers->client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers->server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_555_stream_open_honours_peer_stream_limit)
+{
+	struct reset_test_peers peers;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	uint64_t stream_id;
+	int stream;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54360", "127.0.0.1:19960");
+
+	ctx = quic_get_context(peers.client_sock);
+	zassert_not_null(ctx, "No context for the client connection");
+	ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
+	zassert_not_null(ep, "No endpoint for the client connection");
+
+	/* The limits start out as the server's transport parameters */
+	zassert_equal(ep->peer_params.max_streams_bidi, CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI,
+		      "Bidi stream limit %" PRIu64, ep->peer_params.max_streams_bidi);
+	zassert_equal(ep->peer_params.max_streams_uni, CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI,
+		      "Uni stream limit %" PRIu64, ep->peer_params.max_streams_uni);
+	zassert_equal(ctx->stream_id_counter[0], 1, "Opened %" PRIu64 " bidi streams",
+		      ctx->stream_id_counter[0]);
+
+	/* The streams of each type are numbered on their own, so a stream of
+	 * the other type does not count: the first unidirectional stream is
+	 * stream 2, whatever was opened before (RFC 9000 ch. 2.1).
+	 */
+	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
+				  QUIC_STREAM_UNIDIRECTIONAL, 0);
+	zassert_true(stream >= 0, "Failed to open a unidirectional stream (%d)", stream);
+	ret = quic_stream_get_id(stream, &stream_id);
+	zassert_ok(ret, "Failed to get the stream id (%d)", ret);
+	zassert_equal(stream_id, 2, "Unidirectional stream %" PRIu64 ", expected 2", stream_id);
+	zassert_equal(ctx->stream_id_counter[0], 1, "Opened %" PRIu64 " bidi streams",
+		      ctx->stream_id_counter[0]);
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+
+	/* Its FIN opens the stream at the server, which accepts and closes it */
+	wait_for_revents(peers.server_conn, ZSOCK_POLLIN, "the unidirectional stream");
+	stream = zsock_accept(peers.server_conn, NULL, NULL);
+	zassert_true(stream >= 0, "Failed to accept the unidirectional stream (%d)", -errno);
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	wait_for_streams(2);
+
+	/* With as many streams open as the peer allows, no more is opened
+	 * and the peer is told so, once per limit.
+	 */
+	ep->peer_params.max_streams_bidi = 1;
+
+	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
+				  QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_equal(stream, -EAGAIN, "Stream opened past the peer's limit (%d)", stream);
+
+	/* The server closes its end of the stream, which frees a stream slot
+	 * and makes it raise the limit with a MAX_STREAMS frame.
+	 */
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+	wait_for_streams(1);
+
+	for (int i = 0; i < 100 && ep->peer_params.max_streams_bidi <= 1; i++) {
+		k_msleep(10);
+	}
+
+	zassert_true(ep->peer_params.max_streams_bidi > 1,
+		     "Bidi stream limit %" PRIu64 " not raised", ep->peer_params.max_streams_bidi);
+
+	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
+				  QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(stream >= 0, "Failed to open a stream within the limit (%d)", stream);
+	zassert_equal(ctx->stream_id_counter[0], 2, "Opened %" PRIu64 " bidi streams",
+		      ctx->stream_id_counter[0]);
+
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+
+	reset_test_disconnect(&peers);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
