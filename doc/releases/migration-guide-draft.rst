@@ -411,6 +411,10 @@ I2S
   example ``clocks = <&rcc STM32_CLOCK(APB2, 21)>, <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;``.
   The driver logs a warning when an enabled SAI has no kernel clock.
 
+* On :zephyr:board:`stm32n6570_dk`, the WM8904 MCLK is now read from the SAI1_A MCLK output instead
+  of a fixed 11.294117 MHz clock. Call :c:func:`i2s_configure` on ``sai1_a`` before
+  :c:func:`audio_codec_configure`, otherwise the codec fails with ``-ENOTSUP``.
+
 Interrupt Controllers
 =====================
 
