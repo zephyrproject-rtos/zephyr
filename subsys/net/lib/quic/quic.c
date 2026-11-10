@@ -6209,6 +6209,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->tx_reset = false;
 	stream->tx_final_size = 0;
 	stream->rx_reset = false;
+	stream->final_size_known = false;
 	stream->peer_reset_error_code = QUIC_ERROR_NO_ERROR;
 	stream->peer_final_size = 0;
 
@@ -7798,6 +7799,35 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 	size_t available;
 	int ret = 0;
 
+	if (len > UINT64_MAX - offset) {
+		NET_ERR("[ST:%p/%d] Stream offset overflow: offset=%" PRIu64
+			" len=%zu", stream, quic_get_by_stream(stream), offset, len);
+		ret = -EPROTO;
+		goto connection_error;
+	}
+
+	end = offset + len;
+
+	/* RFC 9000 ch. 4.5: the final size cannot be below the data received
+	 * and, once known, cannot change, nor does any data lie beyond it.
+	 * Checked before anything is discarded, so that it holds after a
+	 * reset too.
+	 */
+	if ((is_fin && end < stream->highest_offset_received) ||
+	    (stream->final_size_known &&
+	     (end > stream->peer_final_size || (is_fin && end != stream->peer_final_size)))) {
+		NET_ERR("[ST:%p/%d] Stream data against the final size: "
+			"end=%" PRIu64 " received=%" PRIu64 " final=%" PRIu64,
+			stream, quic_get_by_stream(stream), end, stream->highest_offset_received,
+			stream->final_size_known ? stream->peer_final_size : 0);
+		if (ep != NULL && ep->sock >= 0) {
+			quic_endpoint_send_connection_close(ep, QUIC_ERROR_FINAL_SIZE_ERROR,
+							    "stream data against the final size");
+		}
+
+		return -EPROTO;
+	}
+
 	/*
 	 * If the application shut down the read half (SHUT_RD), discard
 	 * incoming data silently. We have already sent STOP_SENDING so the
@@ -7813,14 +7843,6 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 
 	k_mutex_lock(&stream->cond.data_available, K_FOREVER);
 
-	if (len > UINT64_MAX - offset) {
-		NET_ERR("[ST:%p/%d] Stream offset overflow: offset=%" PRIu64
-			" len=%zu", stream, quic_get_by_stream(stream), offset, len);
-		ret = -EPROTO;
-		goto flow_control_error;
-	}
-
-	end = offset + len;
 	if (end > stream->local_max_data) {
 		NET_ERR("[ST:%p/%d] Stream data exceeds MAX_STREAM_DATA: "
 			"end=%" PRIu64 " limit=%" PRIu64,
@@ -8032,6 +8054,8 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 
 	if (is_fin) {
 		buf->fin_received = true;
+		stream->peer_final_size = end;
+		stream->final_size_known = true;
 
 		/* Mark stream as having received all data */
 		smf_set_state(SMF_CTX(&stream->state.ctx),
@@ -8050,6 +8074,15 @@ unlock:
 flow_control_error:
 	k_mutex_unlock(&stream->cond.data_available);
 
+	if (ep != NULL && ep->sock >= 0) {
+		quic_endpoint_send_connection_close(ep,
+						    QUIC_ERROR_FLOW_CONTROL_ERROR,
+						    "stream data exceeds flow control");
+	}
+
+	return ret;
+
+connection_error:
 	if (ep != NULL && ep->sock >= 0) {
 		quic_endpoint_send_connection_close(ep,
 						    QUIC_ERROR_FLOW_CONTROL_ERROR,

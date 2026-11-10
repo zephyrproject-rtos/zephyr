@@ -545,6 +545,7 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 				     const uint8_t *buf, size_t len)
 {
 	uint64_t stream_id, error_code, final_size;
+	uint64_t unreceived;
 	struct quic_stream *stream;
 	int pos = 1;
 	int ret;
@@ -604,6 +605,57 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		return pos;
 	}
 
+	k_mutex_lock(&stream->cond.data_available, K_FOREVER);
+
+	/* RFC 9000 ch. 4.5: the final size cannot be below the data received
+	 * on the stream already, nor differ from a final size known already.
+	 */
+	if (final_size < stream->highest_offset_received ||
+	    (stream->final_size_known && final_size != stream->peer_final_size)) {
+		NET_DBG("[ST:%p/%d] RESET_STREAM final size %" PRIu64
+			" against %" PRIu64 " bytes received, final size %" PRIu64,
+			stream, quic_get_by_stream(stream), final_size,
+			stream->highest_offset_received,
+			stream->final_size_known ? stream->peer_final_size : 0);
+		k_mutex_unlock(&stream->cond.data_available);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_FINAL_SIZE_ERROR,
+						    "RESET_STREAM changes the final size");
+		quic_stream_unref(stream);
+		return -EPROTO;
+	}
+
+	/* A repeat of a RESET_STREAM taken already, sent again by a peer
+	 * that did not see it acknowledged: all of it was accounted for the
+	 * first time.
+	 */
+	if (stream->rx_reset) {
+		k_mutex_unlock(&stream->cond.data_available);
+		quic_stream_unref(stream);
+		return pos;
+	}
+
+	/* RFC 9000 ch. 4.5: the final size counts against the flow control
+	 * limits like data would. The bytes between the data received and
+	 * the final size were never charged.
+	 */
+	unreceived = final_size - stream->highest_offset_received;
+	if (final_size > stream->local_max_data ||
+	    unreceived > ep->rx_fc.max_data - ep->rx_fc.bytes_received) {
+		NET_DBG("[ST:%p/%d] RESET_STREAM final size %" PRIu64
+			" exceeds flow control",
+			stream, quic_get_by_stream(stream), final_size);
+		k_mutex_unlock(&stream->cond.data_available);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_FLOW_CONTROL_ERROR,
+						    "RESET_STREAM final size exceeds "
+						    "flow control");
+		quic_stream_unref(stream);
+		return -EPROTO;
+	}
+
+	stream->highest_offset_received = final_size;
+	stream->fc_bytes_received += unreceived;
+	ep->rx_fc.bytes_received += unreceived;
+
 	/*
 	 * Mark the stream as reset and its read half as closed, so that
 	 * data still in flight is dropped, and wake any thread blocked in
@@ -612,12 +664,14 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 	 */
 	stream->peer_reset_error_code = error_code;
 	stream->peer_final_size = final_size;
+	stream->final_size_known = true;
 	stream->rx_reset = true;
 	stream->read_closed = true;
 	stream->rx_buf.fin_received = true;  /* unblocks the wait loop */
 
 	k_poll_signal_raise(&stream->recv.signal, 0);
 	k_condvar_signal(&stream->cond.recv);
+	k_mutex_unlock(&stream->cond.data_available);
 
 	NET_DBG("[ST:%p/%d] RESET_STREAM: woke blocked readers on "
 		"stream %" PRIu64, stream, quic_get_by_stream(stream),

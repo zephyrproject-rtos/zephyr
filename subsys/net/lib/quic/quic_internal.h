@@ -1199,7 +1199,7 @@ __net_socket struct quic_stream {
 	/** Error code of the RESET_STREAM received from the peer */
 	uint64_t peer_reset_error_code;
 
-	/** Final size of the receiving half, from the peer's RESET_STREAM */
+	/** Final size of the receiving half, from the peer's FIN or RESET_STREAM */
 	uint64_t peer_final_size;
 
 	/** BSD socket private data */
@@ -1252,6 +1252,9 @@ __net_socket struct quic_stream {
 
 	/** RX side reset by a RESET_STREAM from the peer */
 	bool rx_reset : 1;
+
+	/** peer_final_size is known (RFC 9000 ch. 4.5) */
+	bool final_size_known : 1;
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
