@@ -456,3 +456,53 @@ config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
 	  The long term goal is to remove this option once all users are on the
 	  PSA Crypto API.
+
+config MBEDTLS_THREADING_C
+	bool "Mbed TLS threading abstraction layer"
+	default y if MBEDTLS_BUILTIN && TF_PSA_CRYPTO_BUILTIN && !BT_CTLR_BROADCAST_ISO_ENC
+	depends on MULTITHREADING && (MBEDTLS_BUILTIN || MBEDTLS_PSA_CRYPTO_C)
+	help
+	  Enable the Mbed TLS and TF-PSA-Crypto threading abstraction layer.
+
+	  When MBEDTLS_INIT is disabled, applications must call mbedtls_init()
+	  before invoking any Mbed TLS or PSA Crypto API so the threading
+	  callbacks are registered first.
+
+	  Disabled by default when BT_CTLR_BROADCAST_ISO_ENC is enabled
+	  because the Bluetooth Link Layer invokes PSA Crypto from ISR
+	  context during encrypted BIG sync setup, where kernel mutexes
+	  cannot be locked.
+
+if MBEDTLS_THREADING_C
+
+config MBEDTLS_THREADING_ALT
+	bool
+	default y
+
+choice MBEDTLS_THREADING_IMPLEMENTATION
+	prompt "Mbed TLS threading implementation"
+	default MBEDTLS_THREADING_ZEPHYR if MBEDTLS_BUILTIN && TF_PSA_CRYPTO_BUILTIN
+	default MBEDTLS_THREADING_CUSTOM
+
+config MBEDTLS_THREADING_ZEPHYR
+	bool "Zephyr-provided THREADING_ALT implementation"
+	depends on MBEDTLS_BUILTIN && TF_PSA_CRYPTO_BUILTIN
+	help
+	  Implement the Mbed TLS and TF-PSA-Crypto threading abstraction layer
+	  using Zephyr kernel mutexes and condition variables. Direct calls to
+	  Mbed TLS and PSA Crypto APIs must be made from supervisor thread
+	  context (not ISRs).
+
+config MBEDTLS_THREADING_CUSTOM
+	bool "Custom THREADING_ALT implementation"
+	help
+	  Provide a custom THREADING_ALT header and callback implementation
+	  outside Zephyr. When MBEDTLS_INIT is enabled, a custom provider must
+	  call mbedtls_threading_set_alt() at an earlier initialization level
+	  or a numerically lower POST_KERNEL priority than
+	  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT so the threading callbacks are
+	  registered before Zephyr initializes the Mbed TLS heap and PSA Crypto.
+
+endchoice # MBEDTLS_THREADING_IMPLEMENTATION
+
+endif # MBEDTLS_THREADING_C
