@@ -50,6 +50,7 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 	const struct entropy_virtio_config *cfg = dev->config;
 	struct entropy_virtio_data *data = dev->data;
 	struct virtq *vq = virtio_get_virtqueue(cfg->vdev, VIRTIO_ENTROPY_QUEUE_IDX);
+	bool direct = virtio_buf_is_in_linear_mapping(buffer, length);
 	int ret;
 
 	if (!vq) {
@@ -59,7 +60,8 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 
 	while (length > 0) {
 		struct virtq_buf buf[] = {
-			{.addr = data->buf, .len = MIN(length, ENTROPY_BUFFER_MAX_LEN)}};
+			{.addr = direct ? buffer : data->buf,
+			 .len = direct ? length : MIN(length, ENTROPY_BUFFER_MAX_LEN)}};
 
 		k_mutex_lock(&data->buf_mutex, K_FOREVER);
 		data->received_len = 0;
@@ -75,14 +77,15 @@ static int entropy_virtio_get_entropy(const struct device *dev, uint8_t *buffer,
 
 		k_sem_take(&data->sem, K_FOREVER);
 
-		if (data->received_len != buf[0].len) {
-			LOG_ERR("insufficient number of values: %d/%d", data->received_len,
-				buf[0].len);
+		if (data->received_len == 0U || data->received_len > buf[0].len) {
+			LOG_ERR("invalid entropy length: %u/%u", data->received_len, buf[0].len);
 			k_mutex_unlock(&data->buf_mutex);
 			return -EIO;
 		}
 
-		memcpy(buffer, data->buf, data->received_len);
+		if (!direct) {
+			memcpy(buffer, data->buf, data->received_len);
+		}
 		buffer += data->received_len;
 		length -= data->received_len;
 		k_mutex_unlock(&data->buf_mutex);

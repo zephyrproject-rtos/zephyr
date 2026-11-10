@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - entropy
+    - virtio
+  timeout: 120
+
+tests:
+  drivers.entropy.virtio_direct:
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_SMP=n
+      - CONFIG_MP_MAX_NUM_CPUS=1
+  drivers.entropy.virtio_direct.smp:
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_MP_MAX_NUM_CPUS=2
+  drivers.entropy.virtio_direct.stack_unmapped:
+    platform_allow:
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_SMP=n
+      - CONFIG_MP_MAX_NUM_CPUS=1
+      - CONFIG_THREAD_STACK_MEM_MAPPED=n
+      - CONFIG_KERNEL_VM_SIZE=0x10000000

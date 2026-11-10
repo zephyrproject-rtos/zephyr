@@ -156,6 +156,12 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Virtio
+
+  * Descriptor chain submission with :c:func:`virtq_add_buffer_chain` now allocates all required
+    descriptors at once. A submission waiting for space no longer holds descriptors needed by
+    smaller submissions, and blocking submissions use one timeout budget for the whole chain.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

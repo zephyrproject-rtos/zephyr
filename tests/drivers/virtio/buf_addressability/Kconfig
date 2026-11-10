@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Virtio buffer addressability tests"
+
+config TEST_VIRTIO_MAPS_ALL_RAM
+	bool "Map all RAM at boot in the test image"
+	help
+	  Drives the hidden ARCH_MAPS_ALL_RAM option through its default. The
+	  option has no prompt and cannot be assigned from an extra configuration.
+
+config ARCH_MAPS_ALL_RAM
+	bool
+	default y if TEST_VIRTIO_MAPS_ALL_RAM
+
+source "Kconfig.zephyr"

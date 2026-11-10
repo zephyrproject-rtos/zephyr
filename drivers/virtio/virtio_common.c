@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Antmicro <www.antmicro.com>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +18,14 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 	if (isr_status & VIRTIO_QUEUE_INTERRUPT) {
 		for (int i = 0; i < virtqueue_count; i++) {
 			struct virtq *vq = virtio_get_virtqueue(dev, i);
-			uint16_t used_idx = sys_le16_to_cpu(vq->used->idx);
+			uint16_t used_idx;
+
+			/* An unused, zero-size queue has no used ring to consume. */
+			if (vq == NULL || vq->num == 0U) {
+				continue;
+			}
+
+			used_idx = sys_le16_to_cpu(vq->used->idx);
 
 			while (vq->last_used_idx != used_idx) {
 				uint16_t idx = vq->last_used_idx % vq->num;
@@ -47,28 +55,16 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 				struct virtq_receive_callback_entry cbe =
 					vq->recv_cbs[chain_head];
 
-				uint16_t next = chain_head;
-				bool last = false;
-
-				/*
-				 * We are done processing the descriptor chain, and
-				 * we can add used descriptors back to the free stack.
-				 * The only thing left to do is calling the callback
-				 * associated with the chain, but it was saved above on
-				 * the stack, so other code is free to use the descriptors
-				 */
-				while (!last) {
-					uint16_t curr = next;
-
-					next = sys_le16_to_cpu(vq->desc[curr].next);
-					last = (sys_le16_to_cpu(vq->desc[curr].flags) &
-						VIRTQ_DESC_F_NEXT) == 0U;
-					virtq_add_free_desc(vq, curr);
-				}
+				int ret = virtq_release_chain(vq, (uint16_t)chain_head);
 
 				vq->last_used_idx++;
 
-				if (cbe.cb) {
+				/*
+				 * A rejected chain was not partially freed and
+				 * is not reported to the driver: its callback is
+				 * skipped, and only the used index advances.
+				 */
+				if (ret == 0 && cbe.cb != NULL) {
 					cbe.cb(cbe.opaque, used_len);
 				}
 			}

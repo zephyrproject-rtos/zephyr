@@ -101,6 +101,7 @@ tests:
       - CONFIG_DISK_DRIVER_VIRTIO_BLK=y
     platform_allow:
       - qemu_x86_64
+      - qemu_cortex_a53
   drivers.disk.virtio_blk.blk4096:
     extra_args: FILE_SUFFIX=virtio_blk
     extra_configs:
