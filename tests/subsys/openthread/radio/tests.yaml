@@ -15,3 +15,7 @@ tests:
     # Hack to enable CSL w/o having to enable CONFIG_OPENTHREAD
     extra_args:
       - EXTRA_CPPFLAGS=-DCONFIG_OPENTHREAD_CSL_RECEIVER
+  openthread.radio_test.deep_sleep:
+    # Enable deep-sleep radio paths without full OpenThread/PM Kconfig
+    extra_args:
+      - EXTRA_CPPFLAGS=-DCONFIG_OPENTHREAD_PLATFORM_DEEP_SLEEP
