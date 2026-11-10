@@ -1406,6 +1406,15 @@ static inline bool quic_stream_id_is_receive_only(const struct quic_endpoint *ep
 	return (stream_id & 2U) != 0U && ((stream_id & 1U) != 0U) != ep->is_server;
 }
 
+/**
+ * Tell whether a stream was opened by this endpoint, from bit 0 of its ID
+ * (RFC 9000 ch. 2.1).
+ */
+static inline bool quic_stream_id_is_local(const struct quic_endpoint *ep, uint64_t stream_id)
+{
+	return ((stream_id & 1U) != 0U) == ep->is_server;
+}
+
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 struct quic_closed_context_stats {
 	int id;
