@@ -1549,13 +1549,15 @@ static ZTEST(host_gatt_sub, test_subscribe_refused_before_return)
 }
 
 /* The peer is unpaired with the request of a subscription outstanding. The application gets the
- * params back once, and the failure of the request does not hand them back again.
+ * params back once, and the failure of the request leaves them alone.
  */
 static ZTEST(host_gatt_sub, test_unpair_during_subscribe)
 {
 	static struct test_sub sub;
 
 	sub_init(&sub, VALUE_HANDLE_A, CCC_HANDLE_A);
+	sub.overwrite = true;
+	sub.overwrite_value = 0xffU;
 	zassert_ok(bt_gatt_subscribe(test_conn, &sub.params), "The subscription failed");
 	write_req_expect(BT_GATT_CCC_NOTIFY);
 
@@ -1566,6 +1568,7 @@ static ZTEST(host_gatt_sub, test_unpair_during_subscribe)
 
 	zassert_equal(atomic_get(&sub.unsubscribed_count), 1, "%ld NULL callbacks",
 		      atomic_get(&sub.unsubscribed_count));
+	sub_not_overwritten_expect(&sub);
 }
 
 /* The NULL callback of the first subscription subscribes again while the peer is unpaired, which it
