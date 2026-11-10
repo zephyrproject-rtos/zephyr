@@ -89,11 +89,11 @@ class SectionKind(Enum):
         """
         if ".text." in name:
             return cls.TEXT
-        elif ".rodata." in name:
+        elif ".rodata." in name or ".srodata." in name:
             return cls.RODATA
-        elif ".data." in name:
+        elif ".data." in name or ".sdata." in name:
             return cls.DATA
-        elif ".bss." in name:
+        elif ".bss." in name or ".sbss." in name:
             return cls.BSS
         elif ".noinit." in name or name in LLEXT_HEAP_SECTIONS:
             return cls.NOINIT
