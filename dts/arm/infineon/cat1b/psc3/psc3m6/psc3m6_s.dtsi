@@ -873,6 +873,24 @@
 				#io-channel-cells = <1>;
 				status = "disabled";
 			};
+
+			dac0: dac@90000 {
+				compatible = "infineon,hppass-dac-v3";
+				reg = <0x00090000 0x400>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+
+			dac1: dac@90400 {
+				compatible = "infineon,hppass-dac-v3";
+				reg = <0x00090400 0x400>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		scb5: scb@52c00000 {
