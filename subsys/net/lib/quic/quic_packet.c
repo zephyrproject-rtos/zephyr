@@ -399,6 +399,12 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		if (local_init || stream_seq_was_opened(opened, stream_id >> 2)) {
 			NET_DBG("[EP:%p/%d] STREAM frame for closed stream %" PRIu64 " ignored",
 				ep, quic_get_by_ep(ep), stream_id);
+			ret = quic_rx_closed_stream_data(ep, stream_id, offset + data_len,
+							 is_fin);
+			if (ret < 0) {
+				return ret;
+			}
+
 			*consumed = pos + data_len;
 
 			return pos + data_len;
@@ -585,17 +591,185 @@ static void quic_rx_credit(struct quic_endpoint *ep, uint64_t charged, uint64_t 
 	}
 }
 
+/* The streams followed after their close are looked up under rx_fc.lock:
+ * the application thread adds them as it closes streams, the receive
+ * thread updates and drops them.
+ */
+static struct quic_closed_stream_rx *quic_rx_closed_stream_find(struct quic_endpoint *ep,
+								 uint64_t stream_id)
+{
+	ARRAY_FOR_EACH_PTR(ep->rx_fc.closed, entry) {
+		if (entry->stream_id == stream_id) {
+			return entry;
+		}
+	}
+
+	return NULL;
+}
+
 /* A stream is released: what was charged for it and never read is credited
  * back, told to the peer with the usual MAX_DATA threshold as a close is
- * not urgent.
+ * not urgent, and a stream whose final size is still unknown is followed,
+ * so that what the peer sends on it later is credited too. Once every entry
+ * is in use they are taken over in turn, and the credit of that stream is
+ * given up with it.
  */
 ZTESTABLE_STATIC void quic_rx_stream_closed(struct quic_endpoint *ep, struct quic_stream *stream)
 {
 	uint64_t unread = stream->highest_offset_received - stream->rx_credited;
+	struct quic_closed_stream_rx *entry;
+	k_spinlock_key_t key;
 
 	if (unread > 0U) {
 		quic_rx_credit(ep, 0, unread, false, NULL);
 	}
+
+	if (stream->final_size_known || quic_stream_id_is_send_only(ep, stream->id)) {
+		return;
+	}
+
+	key = k_spin_lock(&ep->rx_fc.lock);
+
+	entry = quic_rx_closed_stream_find(ep, QUIC_STREAM_ID_UNASSIGNED);
+	if (entry == NULL) {
+		entry = &ep->rx_fc.closed[ep->rx_fc.closed_next];
+		ep->rx_fc.closed_next = (ep->rx_fc.closed_next + 1U) % ARRAY_SIZE(ep->rx_fc.closed);
+	}
+
+	entry->stream_id = stream->id;
+	entry->received = stream->highest_offset_received;
+	entry->limit = stream->local_max_data;
+
+	k_spin_unlock(&ep->rx_fc.lock, key);
+}
+
+/* Data for a stream followed after its close: what the peer charged for it
+ * is credited back, and the stream is not followed any more once its final
+ * size is known.
+ */
+static int quic_rx_closed_stream_data(struct quic_endpoint *ep, uint64_t stream_id,
+				      uint64_t end, bool is_fin)
+{
+	k_spinlock_key_t key = k_spin_lock(&ep->rx_fc.lock);
+	struct quic_closed_stream_rx *entry = quic_rx_closed_stream_find(ep, stream_id);
+	uint64_t new_bytes = 0;
+	uint64_t error = QUIC_ERROR_NO_ERROR;
+
+	if (entry != NULL) {
+		if (is_fin && end < entry->received) {
+			error = QUIC_ERROR_FINAL_SIZE_ERROR;
+		} else if (end > entry->received) {
+			new_bytes = end - entry->received;
+			if (end > entry->limit ||
+			    new_bytes > ep->rx_fc.max_data - ep->rx_fc.bytes_received) {
+				error = QUIC_ERROR_FLOW_CONTROL_ERROR;
+			} else {
+				entry->received = end;
+			}
+		}
+
+		if (error == QUIC_ERROR_NO_ERROR && is_fin) {
+			entry->stream_id = QUIC_STREAM_ID_UNASSIGNED;
+		}
+	}
+
+	k_spin_unlock(&ep->rx_fc.lock, key);
+
+	if (error != QUIC_ERROR_NO_ERROR) {
+		NET_DBG("[EP:%p/%d] Data for closed stream %" PRIu64 " against its final size "
+			"or flow control", ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, error,
+						    "stream data against the final size "
+						    "or flow control");
+		return -EPROTO;
+	}
+
+	if (new_bytes > 0U) {
+		quic_rx_credit(ep, new_bytes, new_bytes, false, NULL);
+	}
+
+	return 0;
+}
+
+/* A RESET_STREAM for a stream followed after its close: the rest up to the
+ * final size is credited back and the stream is not followed any more.
+ */
+static int quic_rx_closed_stream_reset(struct quic_endpoint *ep, uint64_t stream_id,
+				       uint64_t final_size, struct quic_reply_budget *budget)
+{
+	k_spinlock_key_t key = k_spin_lock(&ep->rx_fc.lock);
+	struct quic_closed_stream_rx *entry = quic_rx_closed_stream_find(ep, stream_id);
+	uint64_t error = QUIC_ERROR_NO_ERROR;
+	uint64_t rest = 0;
+
+	if (entry != NULL) {
+		if (final_size < entry->received) {
+			error = QUIC_ERROR_FINAL_SIZE_ERROR;
+		} else if (final_size > entry->limit ||
+			   final_size - entry->received >
+			   ep->rx_fc.max_data - ep->rx_fc.bytes_received) {
+			error = QUIC_ERROR_FLOW_CONTROL_ERROR;
+		} else {
+			rest = final_size - entry->received;
+			entry->stream_id = QUIC_STREAM_ID_UNASSIGNED;
+		}
+	}
+
+	k_spin_unlock(&ep->rx_fc.lock, key);
+
+	if (error != QUIC_ERROR_NO_ERROR) {
+		NET_DBG("[EP:%p/%d] RESET_STREAM for closed stream %" PRIu64 " against its "
+			"final size or flow control", ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, error,
+						    "RESET_STREAM against the final size "
+						    "or flow control");
+		return -EPROTO;
+	}
+
+	if (rest > 0U) {
+		quic_rx_credit(ep, rest, rest, true, budget);
+	}
+
+	return 0;
+}
+
+/* A RESET_STREAM for a stream that is not found. A stream of ours that was
+ * never opened cannot be reset, as it cannot take a STREAM or STOP_SENDING
+ * frame (RFC 9000 ch. 19.5, 19.8). One that was opened, like a stream of the
+ * peer's that was, is closed by the application already and is credited what
+ * the peer charged for it since.
+ */
+static int quic_reset_unknown_stream(struct quic_endpoint *ep, uint64_t stream_id,
+				     uint64_t final_size, int pos,
+				     struct quic_reply_budget *budget)
+{
+	bool is_bidi = (stream_id & 2U) == 0U;
+	bool is_local = quic_stream_id_is_local(ep, stream_id);
+	uint64_t seq = stream_id >> 2;
+	struct quic_stream_seq_set *opened = is_bidi ? &ep->rx_sl.opened_bidi
+						     : &ep->rx_sl.opened_uni;
+	int ret;
+
+	if (is_local) {
+		struct quic_context *conn = quic_find_context(ep);
+
+		if (conn != NULL && seq >= *quic_stream_id_counter(conn, stream_id)) {
+			NET_DBG("[EP:%p/%d] RESET_STREAM for stream %" PRIu64
+				" that was never opened", ep, quic_get_by_ep(ep), stream_id);
+			quic_endpoint_send_connection_close(
+				ep, QUIC_ERROR_STREAM_STATE_ERROR,
+				"RESET_STREAM for a stream that was never opened");
+			return -EPROTO;
+		}
+	}
+
+	if (is_local || stream_seq_was_opened(opened, seq)) {
+		ret = quic_rx_closed_stream_reset(ep, stream_id, final_size, budget);
+
+		return ret < 0 ? ret : pos;
+	}
+
+	return pos;
 }
 
 static int handle_reset_stream_frame(struct quic_endpoint *ep,
@@ -640,27 +814,7 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 
 	stream = quic_find_stream_by_id(ep, stream_id);
 	if (stream == NULL) {
-		/* A stream of ours that was never opened cannot be reset, as
-		 * it cannot take a STREAM or STOP_SENDING frame (RFC 9000
-		 * ch. 19.5, 19.8). One that is not found otherwise was closed
-		 * already.
-		 */
-		if (quic_stream_id_is_local(ep, stream_id)) {
-			struct quic_context *conn = quic_find_context(ep);
-
-			if (conn != NULL &&
-			    (stream_id >> 2) >= *quic_stream_id_counter(conn, stream_id)) {
-				NET_DBG("[EP:%p/%d] RESET_STREAM for stream %" PRIu64
-					" that was never opened",
-					ep, quic_get_by_ep(ep), stream_id);
-				quic_endpoint_send_connection_close(
-					ep, QUIC_ERROR_STREAM_STATE_ERROR,
-					"RESET_STREAM for a stream that was never opened");
-				return -EPROTO;
-			}
-		}
-
-		return pos;
+		return quic_reset_unknown_stream(ep, stream_id, final_size, pos, budget);
 	}
 
 	k_mutex_lock(&stream->cond.data_available, K_FOREVER);

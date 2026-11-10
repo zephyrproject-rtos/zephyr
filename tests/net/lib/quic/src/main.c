@@ -177,6 +177,10 @@ static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
 
 	memset(ep, 0, sizeof(*ep));
 	ep->sock = -1;
+	ARRAY_FOR_EACH_PTR(ep->rx_fc.closed, closed) {
+		closed->stream_id = QUIC_STREAM_ID_UNASSIGNED;
+	}
+
 	quic_recovery_init(ep);
 	k_mutex_init(&ep->pending.lock);
 	k_mutex_init(&ep->send_lock);

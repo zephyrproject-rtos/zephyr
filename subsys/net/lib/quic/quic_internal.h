@@ -688,6 +688,13 @@ struct quic_stream_seq_set {
 	uint8_t gap_count;
 };
 
+/* A stream followed after its close for the data the peer still sends on it */
+struct quic_closed_stream_rx {
+	uint64_t stream_id; /* QUIC_STREAM_ID_UNASSIGNED when the entry is free */
+	uint64_t received;  /* Highest offset received, all of it credited */
+	uint64_t limit;     /* MAX_STREAM_DATA the stream was given */
+};
+
 /**
  * QUIC endpoint information
  */
@@ -890,6 +897,14 @@ struct quic_endpoint {
 		 * dropped or streams are reset.
 		 */
 		struct k_spinlock lock;
+		/* Streams closed by the application before their final size
+		 * was known: what the peer still sends on them is charged to
+		 * the connection window by the peer and is credited back here
+		 * as it arrives (RFC 9000 ch. 4.5).
+		 */
+		struct quic_closed_stream_rx closed[CONFIG_QUIC_MAX_STREAMS_BIDI +
+						    CONFIG_QUIC_MAX_STREAMS_UNI];
+		uint8_t closed_next; /* Entry taken over once all are in use */
 	} rx_fc;
 
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)

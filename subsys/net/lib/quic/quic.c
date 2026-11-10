@@ -364,6 +364,8 @@ static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
 static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi);
+static int quic_rx_closed_stream_data(struct quic_endpoint *ep, uint64_t stream_id,
+				      uint64_t end, bool is_fin);
 ZTESTABLE_STATIC void quic_rx_stream_closed(struct quic_endpoint *ep, struct quic_stream *stream);
 static int quic_send_data_blocked(struct quic_endpoint *ep);
 static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
@@ -5603,6 +5605,10 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_fc.bytes_received = 0;
 	ep->rx_fc.max_data_sent = CONFIG_QUIC_INITIAL_MAX_DATA;
 	ep->rx_fc.need_window_update = false;
+	ARRAY_FOR_EACH_PTR(ep->rx_fc.closed, closed) {
+		closed->stream_id = QUIC_STREAM_ID_UNASSIGNED;
+	}
+	ep->rx_fc.closed_next = 0;
 	ep->rx_sl.max_bidi = CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI;
 	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
 	ep->rx_sl.open_bidi = 0;
