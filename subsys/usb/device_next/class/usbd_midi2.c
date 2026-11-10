@@ -662,7 +662,7 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 			.wMaxPacketSize = sys_cpu_to_le16(512U),                         \
 		},                                                                       \
 		.if1_0_cs_in_ep = {                                                      \
-			.bLength = 4 + N_INPUTS(n),                                      \
+			.bLength = 4,                                                    \
 			.bDescriptorType = USB_DESC_CS_ENDPOINT,                         \
 			.bDescriptorSubtype = MS_GENERAL,                                \
 			.bNumGrpTrmBlock = 0,                                            \
