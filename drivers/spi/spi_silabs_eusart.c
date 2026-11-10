@@ -313,6 +313,14 @@ static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data
 	if (status < 0) {
 		dma_stop(data->dma_chan_tx.dma_dev, data->dma_chan_tx.chan_nb);
 		dma_stop(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
+	} else {
+		/* Mark all buffers as completed */
+		while (spi_context_tx_on(instance_ctx)) {
+			spi_context_update_tx(instance_ctx, 1, instance_ctx->tx_len);
+		}
+		while (spi_context_rx_on(instance_ctx)) {
+			spi_context_update_rx(instance_ctx, 1, instance_ctx->rx_len);
+		}
 	}
 
 	spi_context_cs_control(instance_ctx, false);
