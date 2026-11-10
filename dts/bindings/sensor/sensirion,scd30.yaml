@@ -1,0 +1,52 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Sensirion SCD30 carbon dioxide, temperature and relative humidity sensor module
+
+description: |
+  Sensirion SCD30 dual channel Non-Dispersive Infrared carbon dioxide sensor module with
+  an onboard SHT31 providing temperature and relative humidity.
+  The host I2C controller must support extensive clock stretching up to 150ms,
+  and the maximum I2C bitrate is 100 kHz, with recommendations to use lower speeds.
+  The sensor address is always 0x61.
+
+compatible: "sensirion,scd30"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+examples:
+  - |
+    &i2c {
+      clock-frequency = <I2C_BITRATE_STANDARD>;
+
+      scd30: scd30@61 {
+        compatible = "sensirion,scd30";
+        reg = <0x61>;
+        status = "okay";
+        ready-gpios = <&gpio0 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+      };
+    };
+
+properties:
+  ready-gpios:
+    type: phandle-array
+    description: |
+      Optional READY pin.
+
+      This pin signals active high that data is ready for reading.
+
+  one-shot-measurement:
+    type: boolean
+    description: |
+      Only start measurements when queried.
+      This increases the sensor response time and functionally disables self-calibration.
+
+  default-measurement-period:
+    type: int
+    min: 2
+    max: 1800
+    description: |
+      How long to wait in seconds for the measurements by default.
+      The default in one-shot mode is the CO2 sensor stabilization time,
+      to ensure samples as accurate as possible.
+      In continuous periodic mode, it is the length stored in NVM if this is unset.
