@@ -6,3 +6,17 @@ description: STM32H7 I2S controller
 compatible: "st,stm32h7-i2s"
 
 include: st,stm32-i2s-common.yaml
+
+properties:
+  st,full-duplex:
+    type: boolean
+    description: |
+      This I2S instance is capable of full duplex: the receiver and the
+      transmitter can stream at the same time.
+
+      The driver uses full duplex when both directions are configured at once
+      with I2S_DIR_BOTH. The RX and TX streams then share the clock, the format
+      and the role, but are started, stopped, drained and dropped independently
+      of each other. Configuring the directions one by one keeps the single
+      direction behavior. Both the SDI and the SDO pins must be listed in
+      pinctrl-0 to use both directions.
