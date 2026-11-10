@@ -15,4 +15,11 @@ config RC_PROTOCOL_RC5
 	help
 	  Decoder and encoder for Philips RC5 and 20 bit RC5X.
 
+config RC_PROTOCOL_RC6
+	bool "RC6 protocol"
+	default y
+	help
+	  Decoder and encoder for Philips RC6 mode 0, mode 6A with 20, 24 and
+	  32 bits, and the MCE variant of 6A 32 bit.
+
 endmenu

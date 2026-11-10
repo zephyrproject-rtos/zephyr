@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	rc_rc6_0: rc-rc6-0 {
+		compatible = "zephyr,rc-loopback";
+		tx-echo;
+		status = "okay";
+	};
+};
