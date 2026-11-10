@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Cadence SDHC Controller
+description: Cadence SD Host Controller
 
 compatible: "cdns,sdhc"
 
@@ -11,6 +11,28 @@ properties:
   clock-frequency:
     type: int
     description: clock-frequency for SDHC
+
   reg:
     required: true
-    description: register space
+
+  reg-names:
+    required: true
+    description: |
+      "slot" for the slot register set (SRS) and "host" for the optional
+      host register set (HRS).
+
+  broken-cd:
+    type: boolean
+    description:
+      There is no card detection available; polling must be used.
+
+  vqmmc-supply:
+    type: phandle
+    description: |
+      Supply of the bus IO lines, such as a level shifter. When it cannot
+      provide 1.8 V, 1.8 V signalling is not offered to the card.
+
+  has-host:
+    type: boolean
+    description: |
+      Whether this instance exposes a separate "host" MMIO region.
