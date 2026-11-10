@@ -9,6 +9,7 @@
 	phy-clock = <792000000>;
 };
 
-&zephyr_lcdif {
+/* Only the eLCDIF has a selectable bus width; keep it set for a switch back to it */
+&lcdif {
 	data-bus-width = "24-bit";
 };
