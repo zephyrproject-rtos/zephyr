@@ -1,0 +1,48 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QEMU inter-VM shared memory device without PCI. A local QEMU machine
+  wiring patch maps the register and shared memory regions at fixed
+  addresses and optionally connects one output IRQ. These addresses and
+  the IRQ must match the machine wiring; applications supply an overlay
+  rather than relying on the unmodified QEMU board description.
+
+  An ivshmem server is required even without interrupts. INTMASK (0x00)
+  and INTSTATUS (0x04) are reserved: reads return zero and writes are
+  ignored. They cannot mask, acknowledge, or identify notifications.
+  IVPOSITION (0x08) contains the peer ID. DOORBELL (0x0c) takes the peer ID
+  in bits 31:16 and the vector in bits 15:0.
+
+compatible: "qemu,ivshmem-flat"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Two regions: the 0x10-byte memory-mapped registers, followed by the
+      nonempty shared memory region. The shared memory size must match
+      the QEMU shmem-size property and the ivshmem server configuration.
+
+  reg-names:
+    required: true
+    description: Must contain "mmr" and "shmem", in that order.
+
+  interrupts:
+    description: |
+      Optional single receive interrupt. Without it, shared memory,
+      peer ID access, and sending notifications remain available, but
+      registering a notification handler returns -ENOSYS. Sending and
+      receiving notifications require CONFIG_IVSHMEM_DOORBELL.
+
+  num-vectors:
+    type: int
+    default: 1
+    enum: [1]
+    description: |
+      Number of server notification vectors. The single output IRQ does
+      not identify which eventfd vector triggered it, so only vector 0
+      is supported. Configure ivshmem-server with -n 1. The device cannot
+      report or validate the server's vector count at runtime.
