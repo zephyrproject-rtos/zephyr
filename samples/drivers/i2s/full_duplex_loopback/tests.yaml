@@ -1,0 +1,19 @@
+sample:
+  description: I2S full duplex loopback sample
+  name: i2s_full_duplex_loopback
+common:
+  tags:
+    - drivers
+    - i2s
+tests:
+  sample.drivers.i2s.full_duplex_loopback:
+    filter: dt_nodelabel_enabled("i2s_rxtx")
+    platform_allow:
+      - nucleo_h745zi_q/stm32h745xx/m7
+    integration_platforms:
+      - nucleo_h745zi_q/stm32h745xx/m7
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Full duplex loopback: PASS"
