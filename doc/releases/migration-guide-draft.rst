@@ -65,6 +65,13 @@ Boards
   32 bit CSR data width is supported. Designs that use an 8 bit CSR data width must be rebuilt with
   a 32 bit CSR data width. (:github:`124793`)
 
+* :zephyr:board:`mimxrt1170_evk`: the ``zephyr_lcdif`` label now names the LCDIFv2 controller
+  (:dtcompatible:`nxp,imx-lcdifv2`) instead of the eLCDIF, so the MIPI DSI display shields run
+  on it. Applications that set ``CONFIG_MCUX_ELCDIF_*`` options for this board use the
+  ``CONFIG_MCUX_LCDIFV2_*`` ones, and overlays that set eLCDIF-only properties such as
+  ``data-bus-width`` on ``&zephyr_lcdif`` set them on ``&lcdif``. The board devicetree
+  comment shows the one-line change back to the eLCDIF.
+
 Device Drivers and Devicetree
 *****************************
 
