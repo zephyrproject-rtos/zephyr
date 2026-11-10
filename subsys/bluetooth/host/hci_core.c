@@ -2140,15 +2140,22 @@ static void le_phy_update_complete(struct net_buf *buf)
 	uint16_t handle = sys_le16_to_cpu(evt->handle);
 	struct bt_conn *conn;
 
+	if (evt->status != BT_HCI_ERR_SUCCESS) {
+		/* The procedure failed, so the controller did not change the PHYs.
+		 * TX_PHY and RX_PHY are only meaningful on success.
+		 */
+		LOG_WRN("status 0x%02x %s handle %u", evt->status,
+			bt_hci_err_to_str(evt->status), handle);
+		return;
+	}
+
 	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_LE);
 	if (!conn) {
 		LOG_ERR("Unable to lookup conn for handle %u", handle);
 		return;
 	}
 
-	LOG_DBG("PHY updated: status: 0x%02x %s, tx: %u, rx: %u",
-		evt->status, bt_hci_err_to_str(evt->status), evt->tx_phy,
-		evt->rx_phy);
+	LOG_DBG("PHY updated: tx: %u, rx: %u", evt->tx_phy, evt->rx_phy);
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	conn->le.phy.tx_phy = bt_get_phy(evt->tx_phy);
