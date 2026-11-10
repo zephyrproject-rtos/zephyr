@@ -32,6 +32,7 @@ include:
   - name: st,stm32h7-pll-clock.yaml
     property-blocklist:
       - div-p
+      - no-auto-enable
 
 properties:
   div-p:

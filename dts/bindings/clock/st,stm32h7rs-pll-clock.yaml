@@ -24,7 +24,10 @@ description: |
 
 compatible: "st,stm32h7rs-pll-clock"
 
-include: st,stm32h7-pll-clock.yaml
+include:
+  - name: st,stm32h7-pll-clock.yaml
+    property-blocklist:
+      - no-auto-enable
 
 properties:
   div-s:

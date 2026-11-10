@@ -79,3 +79,26 @@ properties:
         PLLx FRACN value
     min: 0
     max: 8191
+
+  no-auto-enable:
+    type: boolean
+    description: |
+      Configure the PLL but only enable it on request.
+
+      The clock control driver programs the PLL source, dividers,
+      multiplier and output enables whenever it sets up the clock tree,
+      but leaves the PLL disabled unless a request for it is held.
+
+      A request is taken by calling clock_control_on() with a clocks
+      entry whose source is one of the PLL outputs, and released by
+      calling clock_control_off() with such an entry. Requests are
+      reference counted: the PLL runs while at least one is held. If the
+      clock tree is set up again while a request is held, the PLL is
+      enabled again.
+
+      While no request is held, the PLL outputs are stopped and
+      peripherals clocked from them do not operate. The PLL outputs must
+      stay within the limits of the active voltage scale.
+
+      A PLL with this property cannot be the system clock source. Not
+      supported on dual-core SoCs.
