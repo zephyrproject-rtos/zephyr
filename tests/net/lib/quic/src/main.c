@@ -9411,6 +9411,7 @@ ZTEST(net_socket_quic, test_555_stream_open_honours_peer_stream_limit)
 	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
 				  QUIC_STREAM_BIDIRECTIONAL, 0);
 	zassert_equal(stream, -EAGAIN, "Stream opened past the peer's limit (%d)", stream);
+	zassert_equal(ep->tx_sl.blocked_sent_bidi, 1, "STREAMS_BLOCKED not sent for limit 1");
 
 	/* The server closes its end of the stream, which frees a stream slot
 	 * and makes it raise the limit with a MAX_STREAMS frame.
