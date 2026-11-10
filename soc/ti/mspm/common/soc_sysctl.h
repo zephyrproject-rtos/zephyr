@@ -39,6 +39,8 @@
 #define SYSCTL_CLKSTATUS_OFFSET      0x1204 /**< Clock module status */
 #define SYSCTL_SYSSTATUS_OFFSET      0x1208 /**< System status */
 #define SYSCTL_RSTCAUSE_OFFSET       0x1220 /**< Reset Cause */
+#define SYSCTL_RESETLEVEL_OFFSET     0x1300 /**< Reset level for app-triggered reset */
+#define SYSCTL_RESETCMD_OFFSET       0x1304 /**< Execute app-triggered reset */
 #define SYSCTL_LFXTCTL_OFFSET        0x1314 /**< LFXT and LFCLK control */
 #define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
 
@@ -148,6 +150,15 @@
 #define SYSCTL_LFXTCTL_KEY_VAL    (0x91)
 #define SYSCTL_LFXTCTL_SETUSELFXT BIT(1)
 #define SYSCTL_LFXTCTL_STARTLFXT  BIT(0)
+
+/* resetlevel values */
+#define SYSCTL_RESETLEVEL_CPU  0x00000000U /* SYSRST: CPU + peripherals, RAM preserved */
+#define SYSCTL_RESETLEVEL_BOOT 0x00000001U /* BOOTRST: re-runs boot config routine */
+#define SYSCTL_RESETLEVEL_POR  0x00000003U /* Full power-on reset */
+
+/* resetcmd bits: key 0xE4 must be in bits[31:24], GO in bit[0] */
+#define SYSCTL_RESETCMD_KEY 0xE4000000U
+#define SYSCTL_RESETCMD_GO  BIT(0)
 
 /* exlfctl bits */
 #define SYSCTL_EXLFCTL_KEY        GENMASK(31, 24)
