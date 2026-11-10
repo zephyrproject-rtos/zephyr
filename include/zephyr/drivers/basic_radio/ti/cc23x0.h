@@ -67,9 +67,9 @@ struct basic_radio_cc23x0_phy {
 	const LRF_Config *lrf_config;
 	/** phyFeatures word selecting the sub-PHY within lrf_config. */
 	uint16_t phy_features;
-	/** Lowest characterized carrier frequency in Hz. */
+	/** Lowest characterized carrier frequency, 10 Hz units. */
 	uint32_t frequency_min;
-	/** Highest characterized carrier frequency in Hz. */
+	/** Highest characterized carrier frequency, 10 Hz units. */
 	uint32_t frequency_max;
 };
 

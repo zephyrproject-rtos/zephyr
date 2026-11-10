@@ -15,7 +15,8 @@ LOG_MODULE_REGISTER(basic_radio_tx, LOG_LEVEL_INF);
 #define BASIC_RADIO_NODE 	DT_NODELABEL(basic_radio0)		/* select parent device node */
 
 /* Runtime parameters on top of the boot PHY */
-#define RADIO_FREQUENCY_HZ 2450000000U
+/* 10 Hz units */
+#define RADIO_FREQUENCY    245000000U
 #define RADIO_SYNC_WORD    0x930B51DEU
 #define RADIO_TX_POWER_DBM 5
 
@@ -59,12 +60,17 @@ int main(void)
 		return ret;
 	}
 
-	uint32_t caps = basic_radio_get_caps(rf_dev);
-	LOG_INF("caps=0x%08x:", caps);
+	struct basic_radio_caps caps;
+
+	ret = basic_radio_get_caps(rf_dev, &caps);
+	if (ret == 0) {
+		LOG_INF("caps=0x%08x tx_power=[%d, %d] dBm", caps.flags, caps.tx_power_min_dbm,
+			caps.tx_power_max_dbm);
+	}
 
 	static const struct basic_radio_config cfg = {
 		.phy = NULL,
-		.frequency = RADIO_FREQUENCY_HZ,
+		.frequency = RADIO_FREQUENCY,
 		.sync_word = RADIO_SYNC_WORD,
 		.max_packet_len = CONFIG_BASIC_RADIO_MAX_PACKET_LEN,
 		.tx_power = RADIO_TX_POWER_DBM,
@@ -79,7 +85,7 @@ int main(void)
 
 	while (true)
 	{
-		LOG_INF("Transmitting at %u Hz every %u ms", cfg.frequency, PACKET_INTERVAL_MS);
+		LOG_INF("Transmitting at %u0 Hz every %u ms", cfg.frequency, PACKET_INTERVAL_MS);
 		ret = basic_radio_send(rf_dev, payload, sizeof(payload), NULL, K_MSEC(500));
 		
 		if (ret != 0)

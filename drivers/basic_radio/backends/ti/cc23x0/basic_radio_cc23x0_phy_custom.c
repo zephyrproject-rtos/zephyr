@@ -13,8 +13,8 @@
 #include <ti/drivers/rcl/LRF.h>
 
 /* CC23x0 2.4 GHz band; a custom PHY has no characterized range */
-#define BAND_FREQUENCY_MIN 2360000000U
-#define BAND_FREQUENCY_MAX 2510000000U
+#define BAND_FREQUENCY_MIN 236000000U
+#define BAND_FREQUENCY_MAX 251000000U
 
 /* Default name of a SmartRF Studio export */
 extern const LRF_Config LRF_config;

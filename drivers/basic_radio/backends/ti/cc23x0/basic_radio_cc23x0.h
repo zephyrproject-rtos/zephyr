@@ -15,7 +15,6 @@
 
 #include <zephyr/drivers/basic_radio.h>
 #include <zephyr/drivers/basic_radio/ti/cc23x0.h>
-#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 
 #include <ti/drivers/rcl/RCL.h>
@@ -39,14 +38,15 @@ struct basic_radio_cc23x0_config
 };
 
 /*
- * Radio state machine. Radio returns to IDLE between every send() and
- * every recv(); no continuous background RX.
+ * Radio state machine. One operation at a time; the radio returns to IDLE
+ * before the final event of each operation is reported.
  */
 enum radio_state
 {
     RADIO_STATE_IDLE = 0,
     RADIO_STATE_TX_ACTIVE,
     RADIO_STATE_RX_ACTIVE,
+    RADIO_STATE_TONE_ACTIVE,
 };
 
 struct basic_radio_cc23x0_data
@@ -57,8 +57,9 @@ struct basic_radio_cc23x0_data
 
     atomic_t state;
 
-    struct k_sem rx_sem;
-    struct k_sem tx_sync_done;
+    /* Event callback of the active operation */
+    basic_radio_callback_t cb;
+    void *user_data;
 
     /* Active PHY, NULL until the first PHY is applied */
     const struct basic_radio_cc23x0_phy *phy;
@@ -68,8 +69,13 @@ struct basic_radio_cc23x0_data
     /* Frame header layout of the active PHY */
     struct basic_radio_cc23x0_hdr hdr;
 
-    /* Layer 1 config cache */
-    uint32_t cfg_frequency_hz;
+    /* TX power table range of the active PHY, if it has a table */
+    bool   isTxPowerKnown;
+    int8_t tx_power_min_dbm;
+    int8_t tx_power_max_dbm;
+
+    /* Layer 1 config cache, frequency in 10 Hz units */
+    uint32_t cfg_frequency;
     uint32_t cfg_sync_word;
     int8_t   cfg_tx_power_dbm;
     uint8_t  cfg_max_packet_len;

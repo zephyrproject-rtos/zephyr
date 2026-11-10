@@ -30,10 +30,51 @@
 extern "C" {
 #endif
 
-/** @brief Optional radio features. Bitmask returned by basic_radio_get_caps(). */
+/**
+ * @brief Frequency unit of the API in Hz.
+ *
+ * Every carrier frequency is a uint32_t in units of 10 Hz, which covers up
+ * to 42.9 GHz.
+ */
+#define BASIC_RADIO_FREQ_UNIT_HZ 10U
+
+/** @brief Optional radio features, in basic_radio_caps::flags. */
 enum basic_radio_capability {
-	BASIC_RADIO_CAP_CCA         = BIT(1),
-	/* others to be added */
+	/** Clear channel assessment. */
+	BASIC_RADIO_CAP_CCA           = BIT(1),
+	/** Scheduled start of TX, RX and tone operations. */
+	BASIC_RADIO_CAP_SCHED         = BIT(2),
+	/** Unmodulated tone, see basic_radio_tone_async(). */
+	BASIC_RADIO_CAP_TONE          = BIT(3),
+	/** BASIC_RADIO_STOP_GRACEFUL. */
+	BASIC_RADIO_CAP_STOP_GRACEFUL = BIT(4),
+};
+
+/**
+ * @brief Radio capabilities with the active PHY.
+ *
+ * Frequencies are in units of @ref BASIC_RADIO_FREQ_UNIT_HZ.
+ */
+struct basic_radio_caps {
+	/** Bitmask of @ref basic_radio_capability values. */
+	uint32_t flags;
+	/** Lowest carrier frequency. */
+	uint32_t freq_min;
+	/** Highest carrier frequency. */
+	uint32_t freq_max;
+	/** Synthesizer tuning step in millihertz. */
+	uint32_t freq_resolution_millihz;
+	/**
+	 * Minimum time in microseconds from the end of one operation to the
+	 * scheduled start of the next one on another frequency.
+	 */
+	uint32_t retune_time_us;
+	/** Maximum lead time of a scheduled start in microseconds. */
+	uint32_t sched_horizon_us;
+	/** Lowest TX power in dBm. */
+	int8_t tx_power_min_dbm;
+	/** Highest TX power in dBm. */
+	int8_t tx_power_max_dbm;
 };
 
 /**
@@ -49,17 +90,17 @@ enum basic_radio_capability {
  * parameters every backend applies on top of the PHY.
  */
 struct basic_radio_config {
+	uint64_t sync_word;               /**< Sync pattern, LSB-aligned. */
 	const void *phy;                  /**< Backend PHY object, or NULL to keep the active PHY. */
-	uint32_t frequency;               /**< Carrier frequency in Hz. */
-	uint32_t sync_word;               /**< Sync pattern, LSB-aligned. */
+	uint32_t frequency;               /**< Carrier frequency, 10 Hz units. */
 	uint8_t  max_packet_len;          /**< Maximum payload length in bytes. */
 	int8_t   tx_power;                /**< TX power in dBm. */
 };
 
 /** @brief Per-packet RX metadata. */
 struct basic_radio_rx_info {
+	uint64_t timestamp_us;            /**< Time of the packet on the radio time base; 0 if unsupported. */
 	int8_t   rssi;                    /**< Received signal strength in dBm. */
-	uint32_t timestamp;               /**< Driver-defined ticks; 0 if unsupported. */
 	bool     crc_ok;
 };
 
@@ -71,21 +112,21 @@ struct basic_radio_rx_info {
  *  last basic_radio_config() call.  Each BIT opts into exactly one override;
  *  unknown bits cause basic_radio_send() to return -ENOTSUP.
  */
-#define BASIC_RADIO_TX_FLAG_SCHED_ABS  BIT(0) /*< Schedule TX at abs_start_time.  Default: immediate. */
-#define BASIC_RADIO_TX_FLAG_CHANNEL    BIT(1) /*< Use frequency_hz instead of Layer 1 default. */
+#define BASIC_RADIO_TX_FLAG_SCHED_ABS  BIT(0) /*< Schedule TX at abs_start_time_us.  Default: immediate. */
+#define BASIC_RADIO_TX_FLAG_CHANNEL    BIT(1) /*< Use frequency instead of Layer 1 default. */
 #define BASIC_RADIO_TX_FLAG_POWER      BIT(2) /*< Use tx_power_dbm instead of Layer 1 default. */
 #define BASIC_RADIO_TX_FLAG_SYNC_WORD  BIT(3) /*< Use sync_word instead of Layer 1 default. */
 
 struct basic_radio_tx_params {
+	/* Start time on the radio time base. Used only when BASIC_RADIO_TX_FLAG_SCHED_ABS is set. */
+	uint64_t abs_start_time_us;
+	/* Sync word. Used only when BASIC_RADIO_TX_FLAG_SYNC_WORD is set. */
+	uint64_t sync_word;
 	uint32_t flags;
-	/* Absolute radio-timer ticks. Used only when BASIC_RADIO_TX_FLAG_SCHED_ABS is set. */
-	uint32_t abs_start_time;
-	/* Carrier frequency in Hz. Used only when BASIC_RADIO_TX_FLAG_CHANNEL is set. */
-	uint32_t frequency_hz;
+	/* Carrier frequency, 10 Hz units. Used only when BASIC_RADIO_TX_FLAG_CHANNEL is set. */
+	uint32_t frequency;
 	/* TX power in dBm. Used only when BASIC_RADIO_TX_FLAG_POWER is set. */
 	int8_t   tx_power_dbm;
-	/* Sync word. Used only when BASIC_RADIO_TX_FLAG_SYNC_WORD is set. */
-	uint32_t sync_word;
 };
 
 /** @brief RX adverbs passed to basic_radio_recv().
@@ -94,24 +135,100 @@ struct basic_radio_tx_params {
  *  last basic_radio_config() call.  Unknown bits cause basic_radio_recv() to return
  *  -ENOTSUP.
  */
-#define BASIC_RADIO_RX_FLAG_SCHED_ABS     BIT(0) /**< Start RX at abs_start_time.  Default: immediate. */
+#define BASIC_RADIO_RX_FLAG_SCHED_ABS     BIT(0) /**< Start RX at abs_start_time_us.  Default: immediate. */
 #define BASIC_RADIO_RX_FLAG_ONE_SHOT      BIT(1) /**< Stop after first packet.  Default: continuous. */
 #define BASIC_RADIO_RX_FLAG_DISCARD_PAYL  BIT(2) /**< Discard payload bytes (PER test).  Default: keep. */
-#define BASIC_RADIO_RX_FLAG_CHANNEL       BIT(3) /**< Use frequency_hz instead of Layer 1 default. */
+#define BASIC_RADIO_RX_FLAG_CHANNEL       BIT(3) /**< Use frequency instead of Layer 1 default. */
 #define BASIC_RADIO_RX_FLAG_SYNC_WORD     BIT(4) /**< Use sync_word instead of Layer 1 default. */
 #define BASIC_RADIO_RX_FLAG_MAX_LEN       BIT(5) /**< Cap received payload at max_packet_len bytes. */
 
 struct basic_radio_rx_params {
-	uint32_t flags;
-	/** Absolute radio-timer ticks. Used only when BASIC_RADIO_RX_FLAG_SCHED_ABS is set. */
-	uint32_t abs_start_time;
-	/** Carrier frequency in Hz. Used only when BASIC_RADIO_RX_FLAG_CHANNEL is set. */
-	uint32_t frequency_hz;
+	/** Start time on the radio time base. Used only when BASIC_RADIO_RX_FLAG_SCHED_ABS is set. */
+	uint64_t abs_start_time_us;
 	/** Sync word. Used only when BASIC_RADIO_RX_FLAG_SYNC_WORD is set. */
-	uint32_t sync_word;
+	uint64_t sync_word;
+	uint32_t flags;
+	/** Carrier frequency, 10 Hz units. Used only when BASIC_RADIO_RX_FLAG_CHANNEL is set. */
+	uint32_t frequency;
 	/** Maximum payload length cap in bytes. Used only when BASIC_RADIO_RX_FLAG_MAX_LEN is set. */
 	uint16_t max_packet_len;
 };
+
+/** @brief Tone adverbs passed to basic_radio_tone_async(). */
+#define BASIC_RADIO_TONE_FLAG_SCHED_ABS   BIT(0) /**< Start at abs_start_time_us.  Default: immediate. */
+
+/** @brief Unmodulated tone operation. */
+struct basic_radio_tone_params {
+	/** Start time on the radio time base. Used only when BASIC_RADIO_TONE_FLAG_SCHED_ABS is set. */
+	uint64_t abs_start_time_us;
+	uint32_t flags;
+	/** Tone frequency, 10 Hz units. */
+	uint32_t frequency;
+	/** Tone duration in microseconds from the start; 0: until basic_radio_stop(). */
+	uint32_t duration_us;
+	/** TX power in dBm. */
+	int8_t   tx_power_dbm;
+};
+
+/**
+ * @brief How basic_radio_stop() ends the active operation.
+ *
+ * Every backend supports BASIC_RADIO_STOP_ABORT.
+ */
+enum basic_radio_stop_mode {
+	/** Cancel the operation only if it has not started on air yet. */
+	BASIC_RADIO_STOP_DESCHEDULE,
+	/** Finish the packet in progress, then end the operation. */
+	BASIC_RADIO_STOP_GRACEFUL,
+	/** End the operation as soon as possible, scheduled or running. */
+	BASIC_RADIO_STOP_ABORT,
+};
+
+/** @brief Event types reported to a @ref basic_radio_callback_t. */
+enum basic_radio_evt_type {
+	/** Final event of a TX operation. */
+	BASIC_RADIO_EVT_TX_DONE,
+	/** One packet received. Continuous RX reports one event per packet. */
+	BASIC_RADIO_EVT_RX_PKT,
+	/** Final event of an RX operation. */
+	BASIC_RADIO_EVT_RX_DONE,
+	/** Final event of a tone operation. */
+	BASIC_RADIO_EVT_TONE_DONE,
+};
+
+/** @brief Event of an asynchronous operation. */
+struct basic_radio_evt {
+	enum basic_radio_evt_type type;
+	/**
+	 * Final events: 0 if the operation ended normally, -ECANCELED if it
+	 * was ended by basic_radio_stop(), -ETIME if the scheduled start was
+	 * missed, -EIO on a radio error.
+	 * Always 0 for BASIC_RADIO_EVT_RX_PKT.
+	 */
+	int status;
+	/**
+	 * Payload. BASIC_RADIO_EVT_RX_PKT only, valid during the callback only.
+	 * NULL with BASIC_RADIO_RX_FLAG_DISCARD_PAYL.
+	 */
+	const uint8_t *data;
+	/** Payload length in bytes. BASIC_RADIO_EVT_RX_PKT only, 0 if @p data is NULL. */
+	uint16_t len;
+	/** Packet metadata. BASIC_RADIO_EVT_RX_PKT only. */
+	struct basic_radio_rx_info info;
+};
+
+/**
+ * @brief Event callback of an asynchronous operation.
+ *
+ * Runs in interrupt context and must not block. It may start the next
+ * operation or call basic_radio_stop().
+ *
+ * @param dev        Radio device.
+ * @param evt        Event, valid during the callback only.
+ * @param user_data  Pointer passed when the operation was started.
+ */
+typedef void (*basic_radio_callback_t)(const struct device *dev, const struct basic_radio_evt *evt,
+				       void *user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -121,10 +238,16 @@ struct basic_radio_rx_params {
 __subsystem struct basic_radio_driver_api {
 	/* Main Functions */
 	int      (*config)(const struct device *dev, const struct basic_radio_config *cfg);
-	int      (*send)(const struct device *dev, const uint8_t *data, uint16_t len, const struct basic_radio_tx_params *params, k_timeout_t timeout);
-	int      (*recv)(const struct device *dev, uint8_t *buf, uint16_t buf_len, const struct basic_radio_rx_params *params, k_timeout_t timeout, struct basic_radio_rx_info *info);
-	int      (*test_cw)(const struct device *dev, uint32_t frequency, int8_t tx_power, uint16_t duration_ms);
-	uint32_t (*get_caps)(const struct device *dev);
+	int      (*send_async)(const struct device *dev, const uint8_t *data, uint16_t len,
+			       const struct basic_radio_tx_params *params, basic_radio_callback_t cb,
+			       void *user_data);
+	int      (*recv_async)(const struct device *dev, const struct basic_radio_rx_params *params,
+			       basic_radio_callback_t cb, void *user_data);
+	int      (*tone_async)(const struct device *dev, const struct basic_radio_tone_params *params,
+			       basic_radio_callback_t cb, void *user_data);
+	int      (*stop)(const struct device *dev, enum basic_radio_stop_mode mode);
+	uint64_t (*time_get)(const struct device *dev);
+	int      (*get_caps)(const struct device *dev, struct basic_radio_caps *caps);
 	/* Optional Functions */
 	/* Vendor-Specific */
 	int      (*ext_ctl)(const struct device *dev, uint32_t cmd, void *arg, size_t arg_sz);
@@ -157,74 +280,229 @@ static inline int basic_radio_config(const struct device *dev, const struct basi
 }
 
 /**
- * @brief Transmit a packet, blocking until the frame is on the air.
+ * @brief Start a TX operation.
+ *
+ * The radio runs one operation at a time. The operation ends with exactly
+ * one BASIC_RADIO_EVT_TX_DONE event, which may arrive before this function
+ * returns. The radio is idle again when @p cb runs.
+ *
+ * @param dev        Radio device.
+ * @param data       Payload to transmit. Copied, may be reused on return.
+ * @param len        Length of @p data in bytes.
+ * @param params     TX adverbs, or NULL for the configured defaults.
+ * @param cb         Event callback.
+ * @param user_data  Pointer passed to @p cb.
+ *
+ * @retval 0        Operation started.
+ * @retval -EINVAL  Invalid length, parameter out of range, start time beyond
+ *                  the scheduling horizon, or @p cb is NULL.
+ * @retval -ENOTSUP Unsupported flag in @p params.
+ * @retval -ENODEV  No active PHY.
+ * @retval -EBUSY   Another operation is active.
+ * @retval -ETIME   The scheduled start time has passed.
+ * @retval -EIO     The radio rejected the operation.
+ */
+static inline int basic_radio_send_async(const struct device *dev, const uint8_t *data,
+					 uint16_t len, const struct basic_radio_tx_params *params,
+					 basic_radio_callback_t cb, void *user_data)
+{
+	const struct basic_radio_driver_api *api = dev->api;
+
+	return api->send_async(dev, data, len, params, cb, user_data);
+}
+
+/**
+ * @brief Start an RX operation.
+ *
+ * Each received packet is reported with BASIC_RADIO_EVT_RX_PKT. The
+ * operation ends with exactly one BASIC_RADIO_EVT_RX_DONE event: after the
+ * first packet with BASIC_RADIO_RX_FLAG_ONE_SHOT, otherwise only on
+ * basic_radio_stop() or a radio error.
+ *
+ * @param dev        Radio device.
+ * @param params     RX adverbs, or NULL for the configured defaults.
+ * @param cb         Event callback.
+ * @param user_data  Pointer passed to @p cb.
+ *
+ * @retval 0        Operation started.
+ * @retval -EINVAL  Parameter out of range, start time beyond the scheduling
+ *                  horizon, or @p cb is NULL.
+ * @retval -ENOTSUP Unsupported flag in @p params.
+ * @retval -ENODEV  No active PHY.
+ * @retval -EBUSY   Another operation is active.
+ * @retval -ETIME   The scheduled start time has passed.
+ * @retval -EIO     The radio rejected the operation.
+ */
+static inline int basic_radio_recv_async(const struct device *dev,
+					 const struct basic_radio_rx_params *params,
+					 basic_radio_callback_t cb, void *user_data)
+{
+	const struct basic_radio_driver_api *api = dev->api;
+
+	return api->recv_async(dev, params, cb, user_data);
+}
+
+/**
+ * @brief Start an unmodulated tone.
+ *
+ * The operation ends with exactly one BASIC_RADIO_EVT_TONE_DONE event,
+ * after @p params->duration_us or on basic_radio_stop().
+ *
+ * @param dev        Radio device.
+ * @param params     Tone parameters.
+ * @param cb         Event callback.
+ * @param user_data  Pointer passed to @p cb.
+ *
+ * @retval 0        Operation started.
+ * @retval -EINVAL  Parameter out of range, start time beyond the scheduling
+ *                  horizon, or @p cb is NULL.
+ * @retval -ENOTSUP Unsupported flag in @p params.
+ * @retval -ENOSYS  The backend does not support tones.
+ * @retval -ENODEV  No active PHY.
+ * @retval -EBUSY   Another operation is active.
+ * @retval -ETIME   The scheduled start time has passed.
+ * @retval -EIO     The radio rejected the operation.
+ */
+static inline int basic_radio_tone_async(const struct device *dev,
+					 const struct basic_radio_tone_params *params,
+					 basic_radio_callback_t cb, void *user_data)
+{
+	const struct basic_radio_driver_api *api = dev->api;
+
+	if (api->tone_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->tone_async(dev, params, cb, user_data);
+}
+
+/**
+ * @brief Stop the active operation.
+ *
+ * Does not block and may be called from interrupt context. The final event
+ * of the operation reports -ECANCELED once the stop takes effect.
+ *
+ * @param dev   Radio device.
+ * @param mode  How to end the operation.
+ *
+ * @retval 0         Stop requested.
+ * @retval -EALREADY No operation is active, or it has already ended.
+ * @retval -EBUSY    BASIC_RADIO_STOP_DESCHEDULE and the operation has
+ *                   started. It keeps running.
+ * @retval -EINVAL   Invalid @p mode.
+ * @retval -ENOTSUP  The backend does not support @p mode.
+ */
+static inline int basic_radio_stop(const struct device *dev, enum basic_radio_stop_mode mode)
+{
+	const struct basic_radio_driver_api *api = dev->api;
+
+	return api->stop(dev, mode);
+}
+
+/**
+ * @brief Transmit a packet, blocking until the operation ends.
+ *
+ * On timeout the operation is aborted. basic_radio_stop() from another
+ * context ends the call with -ECANCELED.
  *
  * @param dev      Radio device.
  * @param data     Payload to transmit.
  * @param len      Length of @p data in bytes.
+ * @param params   TX adverbs, or NULL for the configured defaults.
  * @param timeout  Maximum time to wait for TX completion.
  *
- * @return 0 on success, negative errno on failure.
+ * @retval 0          Packet sent.
+ * @retval -ETIMEDOUT TX did not end within @p timeout.
+ * @retval -ECANCELED Stopped by basic_radio_stop().
+ * @retval -ETIME     The scheduled start time was missed.
+ * @retval -EIO       Radio error.
+ * @return Other negative errno values of basic_radio_send_async().
  */
-static inline int basic_radio_send(const struct device *dev, const uint8_t *data, uint16_t len, const struct basic_radio_tx_params *params, k_timeout_t timeout)
-{
-	const struct basic_radio_driver_api *api = dev->api;
-	return api->send(dev, data, len, params, timeout);
-}
+int basic_radio_send(const struct device *dev, const uint8_t *data, uint16_t len,
+		     const struct basic_radio_tx_params *params, k_timeout_t timeout);
 
 /**
  * @brief Receive one packet, blocking until data arrives or @p timeout expires.
  *
+ * The RX operation is aborted after the first packet or on timeout.
+ * basic_radio_stop() from another context ends the call with -ECANCELED.
+ *
  * @param dev      Radio device.
  * @param buf      Destination buffer.
- * @param buf_len  Size of @p buf in bytes.
+ * @param buf_len  Size of @p buf in bytes. Longer payloads are truncated.
+ * @param params   RX adverbs, or NULL for the configured defaults.
  * @param timeout  Maximum wait time.
  * @param info     Optional RX metadata (may be NULL).
  *
- * @return Number of bytes received on success, negative errno on failure.
+ * @return Number of bytes copied to @p buf on success.
+ * @retval -EAGAIN    No packet within @p timeout.
+ * @retval -ECANCELED Stopped by basic_radio_stop().
+ * @retval -ETIME     The scheduled start time was missed.
+ * @retval -EIO       Radio error, or RX ended without a packet.
+ * @return Other negative errno values of basic_radio_recv_async().
  */
-static inline int basic_radio_recv(const struct device *dev, uint8_t *buf, uint16_t buf_len,
-			       const struct basic_radio_rx_params *params, k_timeout_t timeout,
-			       struct basic_radio_rx_info *info)
-{
-	const struct basic_radio_driver_api *api = dev->api;
-
-	return api->recv(dev, buf, buf_len, params, timeout, info);
-}
+int basic_radio_recv(const struct device *dev, uint8_t *buf, uint16_t buf_len,
+		     const struct basic_radio_rx_params *params, k_timeout_t timeout,
+		     struct basic_radio_rx_info *info);
 
 /**
- * @brief Query supported optional features.
+ * @brief Read the radio time base.
  *
- * @return Bitmask of @ref basic_radio_capability values.
+ * The time base is a free-running 64-bit counter in microseconds. A
+ * scheduled start (abs_start_time_us) is an absolute compare against this
+ * counter, independent of when the previous operation ended, so a sequence
+ * of starts computed as t0 + n * period does not accumulate error. The start
+ * must be in the future and at most basic_radio_caps::sched_horizon_us
+ * ahead. RX timestamps use the same base.
+ *
+ * May be called from interrupt context.
+ *
+ * @param dev  Radio device.
+ *
+ * @return Current time in microseconds.
  */
-static inline uint32_t basic_radio_get_caps(const struct device *dev)
+static inline uint64_t basic_radio_time_get(const struct device *dev)
 {
 	const struct basic_radio_driver_api *api = dev->api;
 
-	return api->get_caps(dev);
+	return api->time_get(dev);
 }
 
 /**
- * @brief Transmit an unmodulated continuous wave for test / regulatory work.
+ * @brief Query the capabilities with the active PHY.
+ *
+ * @param dev   Radio device.
+ * @param caps  Filled with the capabilities.
+ *
+ * @retval 0        Success.
+ * @retval -ENODEV  No active PHY.
+ */
+static inline int basic_radio_get_caps(const struct device *dev, struct basic_radio_caps *caps)
+{
+	const struct basic_radio_driver_api *api = dev->api;
+
+	return api->get_caps(dev, caps);
+}
+
+/**
+ * @brief Transmit an unmodulated continuous wave, blocking until it ends.
+ *
+ * Immediate tone of basic_radio_tone_async() for test and regulatory work.
  *
  * @param dev          Radio device.
- * @param frequency    Output frequency in Hz.
+ * @param frequency    Output frequency, 10 Hz units.
  * @param tx_power     TX power in dBm.
- * @param duration_ms  Transmission duration in milliseconds.
+ * @param duration_ms  Transmission duration in milliseconds, not 0.
  *
- * @retval 0        The CW transmission was scheduled.
- * @retval -ENOSYS  The backend does not support CW test mode.
+ * @retval 0          The CW transmission ended after @p duration_ms.
+ * @retval -EINVAL    @p duration_ms is 0.
+ * @retval -ECANCELED Stopped by basic_radio_stop().
+ * @retval -ETIMEDOUT The tone did not end in time and was aborted.
+ * @retval -EIO       Radio error.
+ * @return Other negative errno values of basic_radio_tone_async().
  */
-static inline int basic_radio_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_power, uint16_t duration_ms)
-{
-	const struct basic_radio_driver_api *api = dev->api;
-
-	if (api->test_cw == NULL)
-	{
-		return -ENOSYS;
-	}
-	return api->test_cw(dev, frequency, tx_power, duration_ms);
-}
+int basic_radio_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_power,
+			uint16_t duration_ms);
 
 /**
  * @brief Vendor-specific escape hatch. @c cmd space is per-backend.
