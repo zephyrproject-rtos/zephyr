@@ -662,12 +662,12 @@ static void le_update_private_addr(void)
 	} else {
 		err = bt_id_set_private_addr(id);
 	}
-	if (err) {
+	if (err != 0) {
+		/* The roles paused above resume with their current address */
 		LOG_WRN("Failed to update RPA address (%d)", err);
-		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
+	if (err == 0 && IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		/* The legacy advertiser advertises with the device-wide
 		 * random address that was just refreshed.
