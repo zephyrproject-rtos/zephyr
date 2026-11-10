@@ -740,6 +740,94 @@ static void prepare_test_dst_lladdr(struct net_sockaddr_ll *ll_dst, uint16_t pro
 	}
 }
 
+#define TEST_ETH_P_EXPERIMENTAL 0x88b5
+
+static enum net_verdict test_packet_recv(struct net_if *iface, uint16_t ptype,
+					struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ptype);
+
+	net_pkt_set_family(pkt, NET_AF_UNSPEC);
+	return NET_CONTINUE;
+}
+
+ETH_NET_L3_REGISTER(TEST_EAPOL, NET_ETH_PTYPE_EAPOL, test_packet_recv);
+ETH_NET_L3_REGISTER(TEST_EXPERIMENTAL, TEST_ETH_P_EXPERIMENTAL, test_packet_recv);
+
+static bool packet_test_dormant;
+
+static void test_send_dormant(int type, uint16_t proto)
+{
+	struct net_sockaddr_ll dst;
+	uint16_t len;
+	int ret;
+	int error;
+
+	prepare_packet_socket(&packet_sock_1, ud.second, type,
+			      type == NET_SOCK_RAW ? 0 : net_htons(proto));
+	prepare_packet_socket(&packet_sock_2, ud.first, NET_SOCK_DGRAM, net_htons(proto));
+	prepare_test_dst_lladdr(&dst, proto, lladdr1, ud.second);
+	prepare_test_packet(type, proto, lladdr2, lladdr1, &len);
+
+	packet_test_dormant = true;
+	net_if_dormant_on(ud.first);
+	net_if_dormant_on(ud.second);
+
+	zassert_ok(net_if_down(ud.second));
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	error = errno;
+	zassert_ok(net_if_up(ud.second));
+	zassert_equal(ret, -1, "Send should fail while administratively down");
+	zassert_equal(error, ENETDOWN);
+
+	net_if_carrier_off(ud.second);
+	zassert_false(net_if_is_carrier_ok(ud.second));
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	error = errno;
+	net_if_carrier_on(ud.second);
+	zassert_equal(ret, -1, "Send should fail without carrier");
+	zassert_equal(error, ENETDOWN);
+	ret = zsock_recv(packet_sock_2, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, -1, "Rejected frame should not reach the peer");
+	zassert_equal(errno, EAGAIN);
+
+	net_if_flag_set(ud.second, NET_IF_SUSPENDED);
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	error = errno;
+	net_if_flag_clear(ud.second, NET_IF_SUSPENDED);
+	zassert_equal(ret, -1, "Send should fail while suspended");
+	zassert_equal(error, ENETDOWN);
+
+	ret = zsock_sendto(packet_sock_1, tx_buf, len, 0,
+			   (struct net_sockaddr *)&dst, sizeof(dst));
+	zassert_equal(ret, len, "Dormant packet send failed (%d)", errno);
+
+	ret = zsock_recv(packet_sock_2, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(ret, sizeof(test_payload), "Dormant packet receive failed (%d)", errno);
+	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload));
+	zassert_false(net_if_is_up(ud.first));
+	zassert_false(net_if_is_up(ud.second));
+}
+
+ZTEST(socket_packet, test_dgram_eapol_dormant)
+{
+	test_send_dormant(NET_SOCK_DGRAM, NET_ETH_PTYPE_EAPOL);
+}
+
+ZTEST(socket_packet, test_dgram_experimental_dormant)
+{
+	test_send_dormant(NET_SOCK_DGRAM, TEST_ETH_P_EXPERIMENTAL);
+}
+
+ZTEST(socket_packet, test_raw_experimental_dormant)
+{
+	test_send_dormant(NET_SOCK_RAW, TEST_ETH_P_EXPERIMENTAL);
+}
+
 static void test_sendto_common(int sock_type, int proto, bool do_bind,
 			       int custom_dst_iface, bool set_dst_addr,
 			       bool success)
@@ -2277,6 +2365,12 @@ static void test_after(void *arg)
 	memset(&tx_buf, 0, sizeof(tx_buf));
 
 	eth_filter_ret = 0;
+
+	if (packet_test_dormant) {
+		net_if_dormant_off(ud.first);
+		net_if_dormant_off(ud.second);
+		packet_test_dormant = false;
+	}
 
 	test_sockets_close();
 }
