@@ -10428,6 +10428,8 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	test_stream.local_max_data = 1024;
 	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
 	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, sizeof(data),
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
 
 	/* A RESET_STREAM for a stream of ours that was never opened is a
 	 * connection error, as a STREAM or a STOP_SENDING frame for it is
@@ -10442,9 +10444,30 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 		      "RESET_STREAM for a stream never opened must close the connection (%d)",
 		      ret);
 
-	/* The reset is kept with the error code and the final size of the
-	 * frame. The parser gives back the reference it takes.
+	/* A final size below the data received is a connection error, as is
+	 * one beyond the flow control limit of the stream (RFC 9000 ch. 4.5).
+	 * The parser gives back the reference it takes.
 	 */
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 1, 0x3f, sizeof(data) - 1);
+	zassert_equal(ret, -EPROTO,
+		      "RESET_STREAM below the received data must close the connection (%d)",
+		      ret);
+	zassert_false(test_stream.rx_reset, "Stream was reset by a bad RESET_STREAM");
+
+	test_stream.local_max_data = 8;
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 1, 0x3f, 0x3f);
+	zassert_equal(ret, -EPROTO,
+		      "RESET_STREAM beyond the stream limit must close the connection (%d)",
+		      ret);
+	zassert_false(test_stream.rx_reset, "Stream was reset by a bad RESET_STREAM");
+
+	/* A valid one is kept, with the error code and the final size of the
+	 * frame, and the bytes up to its final size that never arrived count
+	 * as received.
+	 */
+	test_stream.local_max_data = 0x3f;
 	atomic_set(&test_stream.refcount, 1);
 	ret = reset_stream_for(ep, 1, 0x3f, 10);
 	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
@@ -10453,6 +10476,19 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 		      "Error code 0x%" PRIx64 " kept", test_stream.peer_reset_error_code);
 	zassert_equal(test_stream.peer_final_size, 10,
 		      "Final size %" PRIu64 " kept", test_stream.peer_final_size);
+	zassert_equal(test_stream.highest_offset_received, 10,
+		      "Received up to %" PRIu64, test_stream.highest_offset_received);
+	zassert_equal(ep->rx_fc.bytes_received, 10,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+
+	/* A repeat of the frame, which the peer sends until it is
+	 * acknowledged, counts nothing twice.
+	 */
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 1, 0x3f, 10);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 10,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
 
 	/* The data received before the reset is still read, then the reset
 	 * is reported as an error, not as the end of a complete stream.
@@ -10469,6 +10505,54 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	zassert_equal(ret, -1, "The reset must be reported again (%d)", ret);
 	zassert_equal(errno, ECONNRESET, "Expected ECONNRESET again (%d)", errno);
 
+	unlink_test_stream(&test_stream, ctx);
+
+	/* Once the final size is known, as a FIN makes it, data beyond it and
+	 * a RESET_STREAM with another final size are connection errors; one
+	 * with the same final size is fine (RFC 9000 ch. 4.5).
+	 */
+	link_test_stream(&test_stream, ctx, ep, 5);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
+	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+	test_stream.peer_final_size = sizeof(data);
+	test_stream.final_size_known = true;
+
+	ret = quic_stream_receive_data(&test_stream, sizeof(data), data, 1, false);
+	zassert_equal(ret, -EPROTO, "Data beyond the final size must close the connection (%d)",
+		      ret);
+
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 5, 0x3f, sizeof(data) + 1);
+	zassert_equal(ret, -EPROTO,
+		      "RESET_STREAM changing the final size must close the connection (%d)",
+		      ret);
+	zassert_false(test_stream.rx_reset, "Stream was reset by a bad RESET_STREAM");
+
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 5, 0x3f, sizeof(data));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_true(test_stream.rx_reset, "Stream was not marked as reset");
+
+	/* Data beyond the final size is an error also once the reset closed
+	 * the read half, where other data is discarded.
+	 */
+	ret = quic_stream_receive_data(&test_stream, sizeof(data), data, 1, false);
+	zassert_equal(ret, -EPROTO, "Data beyond the final size must close the connection (%d)",
+		      ret);
+
+	unlink_test_stream(&test_stream, ctx);
+
+	/* A FIN below the data received already is an error (RFC 9000 ch. 4.5) */
+	link_test_stream(&test_stream, ctx, ep, 9);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
+	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+	ret = quic_stream_receive_data(&test_stream, 1, data, 0, true);
+	zassert_equal(ret, -EPROTO, "A FIN below the data received must close the connection (%d)",
+		      ret);
 	unlink_test_stream(&test_stream, ctx);
 
 	ret = quic_connection_close(sock);
