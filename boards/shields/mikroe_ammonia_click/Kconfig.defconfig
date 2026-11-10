@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_AMMONIA_CLICK || SHIELD_MIKROE_AMMONIA_CLICK_SPI
+
+# The heater MOSFET gate has no pull-down: the regulator-fixed driver
+# drives it low at boot so the heater stays off until enabled.
+config REGULATOR
+	default y
+
+endif # SHIELD_MIKROE_AMMONIA_CLICK || SHIELD_MIKROE_AMMONIA_CLICK_SPI
