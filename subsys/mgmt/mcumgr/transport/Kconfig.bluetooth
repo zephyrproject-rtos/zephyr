@@ -63,14 +63,14 @@ if MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 
 config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT
 	int "Minimum connection interval for SMP packet exchange"
-	default 6
+	default 12
 	range 6 3200
 	help
 	  Minimum connection interval in 1.25ms units used during the exchange of SMP packets.
 
 config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MAX_INT
 	int "Maximum connection interval for SMP packet exchange"
-	default 9
+	default 12
 	range MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_MIN_INT 3200
 	help
 	  Maximum connection interval in 1.25ms units used during the exchange of SMP packets.
