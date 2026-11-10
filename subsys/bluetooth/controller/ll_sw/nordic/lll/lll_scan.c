@@ -71,9 +71,12 @@ static void isr_abort(void *param);
 	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	*/
 static void isr_done_cleanup(void *param);
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 static bool is_pipeline_dup(const struct lll_scan *lll);
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	*/
 
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
@@ -569,7 +572,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 	/* Prepare being cancelled */
 	if (next == NULL) {
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 		/* Continuous scanning is deferred, to be resumed when the current event
 		 * yields or is done, unless already in the prepare pipeline.
 		 */
@@ -582,7 +586,9 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 			return -EAGAIN;
 		}
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	*/
 
 		/* No resume for scan */
 		return 0;
@@ -688,12 +694,15 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		return;
 	}
 
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 	/* Being put back into the pipeline as deferred event, keep the preparations */
 	if (param != NULL) {
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	*/
 
 	/* NOTE: Else clean the top half preparations of the aborted event
 	 * currently in preparation pipeline.
@@ -704,7 +713,8 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	lll_done(prepare_param->param);
 }
 
-#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 /* Check if the prepare pipeline has more than one prepare of the scan instance */
 static bool is_pipeline_dup(const struct lll_scan *lll)
 {
@@ -726,7 +736,9 @@ static bool is_pipeline_dup(const struct lll_scan *lll)
 
 	return count > 1U;
 }
-#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	*/
 
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			   uint32_t remainder, uint16_t lazy, uint8_t force,
