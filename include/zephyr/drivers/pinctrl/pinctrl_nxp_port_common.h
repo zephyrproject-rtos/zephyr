@@ -65,9 +65,12 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define Z_PINCTRL_STATE_PIN_INIT(group, pin_prop, idx)                                             \
 	DT_PROP_BY_IDX(group, pin_prop, idx) | Z_PINCTRL_NXP_PORT_PINCFG(group),
 
+#define Z_PINCTRL_STATE_PINS_INIT_BY_IDX(node_id, prop, idx)                                       \
+	DT_FOREACH_CHILD_VARGS(DT_PHANDLE_BY_IDX(node_id, prop, idx), DT_FOREACH_PROP_ELEM,        \
+			       pinmux, Z_PINCTRL_STATE_PIN_INIT)
+
 #define Z_PINCTRL_STATE_PINS_INIT(node_id, prop)                                                   \
-	{DT_FOREACH_CHILD_VARGS(DT_PHANDLE(node_id, prop), DT_FOREACH_PROP_ELEM, pinmux,           \
-				Z_PINCTRL_STATE_PIN_INIT)};
+	{DT_FOREACH_PROP_ELEM_SEP(node_id, prop, Z_PINCTRL_STATE_PINS_INIT_BY_IDX, ())};
 
 #ifdef __cplusplus
 }
