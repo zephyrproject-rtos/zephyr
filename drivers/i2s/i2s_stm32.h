@@ -37,7 +37,7 @@ struct i2s_stm32_cfg {
 	bool ioswp: 1;
 };
 
-struct stream {
+struct i2s_stm32_stream {
 	int32_t state;
 	struct k_msgq *msgq;
 
@@ -54,14 +54,14 @@ struct stream {
 	void *mem_block;
 	bool last_block;
 	bool master;
-	int (*stream_start)(struct stream *, const struct device *dev);
-	void (*stream_disable)(struct stream *, const struct device *dev);
+	int (*stream_start)(struct i2s_stm32_stream *stream, const struct device *dev);
+	void (*stream_disable)(struct i2s_stm32_stream *stream, const struct device *dev);
 };
 
 /* Device run time data */
 struct i2s_stm32_data {
-	struct stream rx;
-	struct stream tx;
+	struct i2s_stm32_stream rx;
+	struct i2s_stm32_stream tx;
 };
 
 static inline uint32_t ll_i2s_is_enabled(SPI_TypeDef *i2s)

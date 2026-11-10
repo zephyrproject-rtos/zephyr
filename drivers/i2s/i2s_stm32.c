@@ -58,7 +58,7 @@ static int queue_put(struct k_msgq *q, void *mem_block, size_t size, int32_t tim
 	return k_msgq_put(q, &item, SYS_TIMEOUT_MS(timeout));
 }
 
-static void stream_queue_drop(struct stream *s)
+static void stream_queue_drop(struct i2s_stm32_stream *s)
 {
 	size_t size;
 	void *mem_block;
@@ -165,7 +165,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_I2S)
 			? 2U
 			: i2s_cfg->channels;
-	struct stream *stream;
+	struct i2s_stm32_stream *stream;
 	uint32_t bit_clk_freq;
 	bool enable_mck;
 	int ret;
@@ -293,7 +293,7 @@ static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
 						     enum i2s_dir dir)
 {
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = NULL;
+	struct i2s_stm32_stream *stream = NULL;
 
 	if (dir == I2S_DIR_RX) {
 		stream = &dev_data->rx;
@@ -313,7 +313,7 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 {
 	struct i2s_stm32_data *const dev_data = dev->data;
 	const struct i2s_stm32_cfg *const cfg = dev->config;
-	struct stream *stream;
+	struct i2s_stm32_stream *stream;
 	unsigned int key;
 	int ret;
 
@@ -529,8 +529,8 @@ static int start_dma(const struct device *dev_dma, uint32_t channel,
 	return ret;
 }
 
-static void rx_stream_disable(struct stream *stream, const struct device *dev);
-static void tx_stream_disable(struct stream *stream, const struct device *dev);
+static void rx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev);
+static void tx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev);
 
 /* This function is executed in the interrupt context */
 static void dma_rx_callback(const struct device *dma_dev, void *arg,
@@ -540,7 +540,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	const struct device *dev = arg;
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->rx;
+	struct i2s_stm32_stream *stream = &dev_data->rx;
 	void *mblk_tmp;
 	int ret;
 
@@ -618,7 +618,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	const struct device *dev = arg;
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->tx;
+	struct i2s_stm32_stream *stream = &dev_data->tx;
 	size_t mem_block_size = 0;
 	int ret;
 
@@ -738,7 +738,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->tx;
+	struct i2s_stm32_stream *stream = &dev_data->tx;
 	int ret;
 
 	/* Initialize the variable used to handle the TX */
@@ -788,7 +788,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 	return 0;
 }
 
-static int rx_stream_start(struct stream *stream, const struct device *dev)
+static int rx_stream_start(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	int ret;
@@ -885,7 +885,7 @@ static void tx_hw_disable(const struct device *dev)
 	dma_stop(dev_data->tx.dev_dma, dev_data->tx.dma_channel);
 }
 
-static int tx_stream_start(struct stream *stream, const struct device *dev)
+static int tx_stream_start(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	size_t mem_block_size = 0;
@@ -946,7 +946,7 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
-static void rx_stream_disable(struct stream *stream, const struct device *dev)
+static void rx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 
@@ -968,7 +968,7 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 	}
 }
 
-static void tx_stream_disable(struct stream *stream, const struct device *dev)
+static void tx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	tx_hw_disable(dev);
 
