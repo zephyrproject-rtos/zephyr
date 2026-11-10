@@ -1036,7 +1036,7 @@ ZTEST(cellular_on_demand_connect, test_13_signal_query_while_awaiting_registrati
 	atomic_set(&emu_registered, 1);
 }
 
-/* A dial requested while the periodic script holds the chat must still dial. */
+/* A dial requested while the periodic script holds the chat waits for it, then dials. */
 ZTEST(cellular_on_demand_connect, test_14_dial_while_periodic_holds_chat)
 {
 	int dials;
@@ -1053,22 +1053,19 @@ ZTEST(cellular_on_demand_connect, test_14_dial_while_periodic_holds_chat)
 	dials = atomic_get(&atd_count);
 
 	admit_iface();
-	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT, 5000),
-		     "dial request did not reach RUN_DIAL_SCRIPT, state is %d", modem_fsm_state());
+	k_msleep(3 * PERIODIC_SCRIPT_SETTLE_MS);
 
-	/* The answer arrives on the dial channel, so the periodic script completes in the
-	 * dial state.
-	 */
-	atomic_set(&emu_hold_csq, 0);
-	dce_send(dce_dlci2_pipe, "+CSQ: 20,99\r\nOK\r\n");
-	k_msleep(PERIODIC_SCRIPT_SETTLE_MS);
-
-	zassert_equal(MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT, modem_fsm_state(),
-		      "the periodic script result completed the dial, state is %d",
+	/* The dial channel would not receive the answer, sent on DLCI1 */
+	zassert_equal(MODEM_CELLULAR_STATE_AWAIT_DIAL, modem_fsm_state(),
+		      "dial request left AWAIT_DIAL while the periodic script ran, state is %d",
 		      modem_fsm_state());
-	zassert_true(wait_for_atd(dials + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
-		     "dial script was not retried after finding the chat busy, state is %d",
-		     modem_fsm_state());
+	zassert_equal(dials, atomic_get(&atd_count), "modem dialled while the chat was busy");
+
+	atomic_set(&emu_hold_csq, 0);
+	dce_send(dce_dlci1_pipe, "+CSQ: 20,99\r\nOK\r\n");
+
+	zassert_true(wait_for_atd(dials + 1, CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "dial did not follow the periodic script, state is %d", modem_fsm_state());
 	zassert_true(wait_for_call_up(10000), "dial script did not complete, state is %d",
 		     modem_fsm_state());
 }

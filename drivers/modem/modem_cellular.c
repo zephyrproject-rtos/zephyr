@@ -1889,6 +1889,28 @@ static int modem_cellular_on_await_dial_state_enter(struct modem_cellular_data *
 	return 0;
 }
 
+/*
+ * Dial once the PPP interface is admin up. The dial state attaches the chat to DLCI2, so
+ * wait until no script runs on DLCI1, as in the await registered state.
+ */
+static bool modem_cellular_await_dial_try_dial(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	if (!net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+		return false;
+	}
+
+	if (modem_chat_is_running(&data->chat)) {
+		/* Replace a pending periodic deadline, which can be seconds away */
+		modem_cellular_update_timer(data, MODEM_CELLULAR_CHAT_BUSY_RETRY_TIMEOUT);
+	} else {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+	}
+
+	return true;
+}
+
 static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *data,
 						    enum modem_cellular_event evt)
 {
@@ -1897,12 +1919,17 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_DIAL:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		/* Entering the state with the interface up skipped the periodic timer */
+		if (!modem_cellular_await_dial_try_dial(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
-		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		if (!modem_cellular_await_dial_try_dial(data)) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1910,12 +1937,15 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 		if (modem_cellular_is_script_retry_exceeded(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
-		} else {
+		} else if (!modem_cellular_await_dial_try_dial(data)) {
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (modem_cellular_await_dial_try_dial(data)) {
+			break;
+		}
 		if (config->vendor->scripts.periodic == NULL) {
 			break;
 		}
