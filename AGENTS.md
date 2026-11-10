@@ -42,7 +42,7 @@ do not rely on this digest or on training data alone.
 - Zephyr builds only inside a west workspace: from the parent directory of the clone,
   `west init -l <zephyr-dir> && west update` (most boards need HAL and module repositories from
   `west.yml`). Build with `west build -b <board> <app-dir>`; `native_sim` runs on the host.
-  See `doc/develop/west/workspaces.rst`.
+  See https://docs.zephyrproject.org/west/latest/workspaces.html.
 - Tests and samples are run by twister: `west twister -p native_sim -T <test-dir>` or
   `-s <test-dir>/<scenario-id>`; `--build-only` skips execution; `-i` prints failing logs.
   Suites whose `tests.yaml` lists `unit_testing` as platform need `-p unit_testing`. See
