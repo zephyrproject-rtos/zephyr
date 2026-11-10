@@ -8374,6 +8374,63 @@ ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+static void notify_streams_closed_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	quic_endpoint_notify_streams_closed(p1);
+}
+
+ZTEST(net_socket_quic, test_545_closing_endpoint_unlinks_streams_under_lock)
+{
+	static K_THREAD_STACK_DEFINE(stack, 4096);
+	static struct k_thread thread;
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54390");
+	ctx->is_listening = false;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&stream, ctx, ep, 0);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	/* A stream that is released unlinks itself holding streams_lock only,
+	 * so the close of its endpoint must not change the list meanwhile.
+	 */
+	quic_test_streams_lock(true);
+
+	k_thread_create(&thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			notify_streams_closed_thread, ep, NULL, NULL,
+			K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(10));
+
+	zexpect_true(sys_slist_find(&ctx->streams, &stream.node, NULL),
+		     "Stream unlinked while the stream list is locked");
+	zexpect_equal_ptr(stream.ep, ep, "Stream closed while the stream list is locked");
+
+	quic_test_streams_lock(false);
+
+	ret = k_thread_join(&thread, K_SECONDS(1));
+	zassert_ok(ret, "Endpoint close did not finish (%d)", ret);
+
+	zexpect_false(sys_slist_find(&ctx->streams, &stream.node, NULL),
+		      "Stream of the closed endpoint still linked");
+	zexpect_is_null(stream.ep, "Stream of the closed endpoint not closed");
+	zexpect_true(ctx->closed, "Connection of the endpoint not closed");
+
+	unlink_test_stream(&stream, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 /* Feed a STREAM frame with the FIN bit and no data to the endpoint */
 static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
 				 uint8_t stream_id)
