@@ -272,6 +272,11 @@ Select one of them from the SOC_SERIES_* symbol or, lacking that, from the \
 SOC_* symbol.")
 endif()
 
+if(CONFIG_LIBC_SPEED_OPTIMIZED)
+  # the driver selects the C library build by the optimization flag of the link
+  set(LINKER_OPTIMIZATION_FLAG ${LINKER_OPTIMIZE_FOR_SPEED_FLAG})
+endif()
+
 # Apply the final optimization flag(s)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${ASM_OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${COMPILER_OPTIMIZATION_FLAG}>)
