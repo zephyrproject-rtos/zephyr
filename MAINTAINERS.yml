@@ -2832,7 +2832,9 @@ Documentation Infrastructure:
     - drivers.regulator
 
 "Drivers: Reset":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - andrei-edward-popa
   files:
     - drivers/reset/
     - include/zephyr/drivers/reset.h
