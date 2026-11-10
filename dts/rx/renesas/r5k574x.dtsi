@@ -335,10 +335,9 @@
 		};
 
 		mram_ctrl: mram-controller@8709c000 {
+			compatible = "renesas,rx-maci";
 			reg = <0x8709c000 0x4000>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
+			status = "okay";
 		};
 	};
 };

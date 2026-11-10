@@ -6,12 +6,42 @@
 
 #include <rx/renesas/r5k574x.dtsi>
 
-&mram_ctrl {
-	mram0: mram@fff00000 {
-		compatible = "soc-nv-flash";
-		reg = <0xfff00000 0x100000>;
-		ranges = <0x0 0xfff00000 0x100000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
+/ {
+	soc {
+		code_mram_ctrl: code-mram-ctrl {
+			compatible = "renesas,rx-mram-controller";
+			command-interface = <&mram_ctrl>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			code_mram: code-mram@fff00000 {
+				compatible = "soc-nv-flash";
+				reg = <0xfff00000 DT_SIZE_M(1)>;
+				ranges = <0x0 0xfff00000 DT_SIZE_M(1)>;
+				write-block-size = <1>;
+				erase-block-size = <32>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		data_mram_ctrl: data-mram-ctrl {
+			compatible = "renesas,rx-mram-controller";
+			command-interface = <&mram_ctrl>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			data_mram: data-mram@86900000 {
+				compatible = "soc-nv-flash";
+				reg = <0x86900000 DT_SIZE_K(48)>;
+				ranges = <0x0 0x86900000 DT_SIZE_K(48)>;
+				write-block-size = <1>;
+				erase-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
 	};
 };
