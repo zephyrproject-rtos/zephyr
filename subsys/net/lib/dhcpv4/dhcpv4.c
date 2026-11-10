@@ -411,13 +411,13 @@ static void dhcpv4_set_timeout_inc(struct net_if_dhcpv4 *dhcpv4,
 
 	NET_DBG("sched timeout dhcpv4=%p timeout=%us", dhcpv4, timeout);
 
-	timeout_ms = (now - dhcpv4->timer_start) + MSEC_PER_SEC * timeout;
+	timeout_ms = (now - dhcpv4->timer_start) + (int64_t)timeout * MSEC_PER_SEC;
 	dhcpv4->request_time = (uint32_t)(timeout_ms / MSEC_PER_SEC);
 }
 
 static uint32_t dhcpv4_get_timeleft(int64_t start, uint32_t time, int64_t now)
 {
-	int64_t deadline = start + MSEC_PER_SEC * time;
+	int64_t deadline = start + (int64_t)time * MSEC_PER_SEC;
 	uint32_t ret = 0U;
 
 	/* If we haven't reached the deadline, calculate the
@@ -486,24 +486,44 @@ static uint32_t dhcpv4_set_restart_timeout(struct net_if_dhcpv4 *dhcpv4)
 }
 
 /* Must be invoked with lock held */
-static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
+static uint32_t dhcpv4_next_message_delay(struct net_if_dhcpv4 *dhcpv4)
 {
 	uint32_t timeout;
 
-	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << dhcpv4->attempts;
-
-	/* Max 64 seconds, see RFC 2131 chapter 4.1 */
-	if (timeout < DHCPV4_INITIAL_RETRY_TIMEOUT || timeout > 64) {
-		timeout = 64;
-	}
+	/* Four doublings of the initial 4 seconds reach the 64-second
+	 * limit (RFC 2131 section 4.1). Cap the shift before applying it.
+	 */
+	timeout = DHCPV4_INITIAL_RETRY_TIMEOUT << MIN(dhcpv4->attempts, 4U);
 
 	/* +1/-1 second randomization */
 	timeout += (sys_rand8_get() % 3U) - 1;
 
 	dhcpv4->attempts++;
+
+	return timeout;
+}
+
+static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
+{
+	uint32_t timeout = dhcpv4_next_message_delay(dhcpv4);
+
 	dhcpv4_set_timeout(dhcpv4, timeout);
 
 	return timeout;
+}
+
+static uint32_t dhcpv4_update_confirm_timeout(struct net_if *iface)
+{
+	struct net_if_dhcpv4 *dhcpv4 = &iface->config.dhcpv4;
+	int64_t now = k_uptime_get();
+	uint32_t timeout = dhcpv4_next_message_delay(dhcpv4);
+
+	/* Keep the original lease clock while the confirmation is in flight. */
+	timeout = MIN(timeout, dhcpv4_lease_timeleft(iface, now));
+	dhcpv4_set_timeout_inc(dhcpv4, now, timeout);
+	dhcpv4->request_time = MIN(dhcpv4->request_time, dhcpv4->lease_time);
+
+	return dhcpv4_request_timeleft(iface, now);
 }
 
 static uint32_t dhcpv4_calculate_renew_rebind_timeout(uint32_t timeleft)
@@ -584,6 +604,10 @@ static uint32_t dhcpv4_send_request(struct net_if *iface)
 		NET_ASSERT(0, "Invalid state %s",
 			   net_dhcpv4_state_name(iface->config.dhcpv4.state));
 		goto fail;
+		break;
+	case NET_DHCPV4_CONFIRMING:
+		with_requested_ip = true;
+		timeout = dhcpv4_update_confirm_timeout(iface);
 		break;
 	case NET_DHCPV4_INIT_REBOOT:
 		with_requested_ip = true;
@@ -727,6 +751,7 @@ static bool dhcpv4_has_bound_addr(struct net_if *iface)
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
+	case NET_DHCPV4_CONFIRMING:
 		return true;
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
@@ -982,6 +1007,14 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 	case NET_DHCPV4_SELECTING:
 		/* Failed to get OFFER message, send DISCOVER again */
 		return dhcpv4_send_discover(iface);
+	case NET_DHCPV4_CONFIRMING:
+		if (!IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT) ||
+		    dhcpv4_lease_timeleft(iface, now) == 0U ||
+		    iface->config.dhcpv4.attempts >= DHCPV4_INIT_REBOOT_MAX_ATTEMPTS) {
+			return dhcpv4_restart_with_discover(iface);
+		}
+
+		return dhcpv4_send_request(iface);
 	case NET_DHCPV4_INIT_REBOOT:
 		/* INIT-REBOOT is an optimistic fast probe (RFC2131 3.2). If the
 		 * remembered address is not confirmed within a tight retransmit
@@ -1038,12 +1071,13 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 static void dhcpv4_timeout(struct k_work *work)
 {
 	uint32_t timeout_update = UINT32_MAX;
-	int64_t now = k_uptime_get();
+	int64_t now;
 	struct net_if_dhcpv4 *current, *next;
 
 	ARG_UNUSED(work);
 
 	k_mutex_lock(&lock, K_FOREVER);
+	now = k_uptime_get();
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&dhcpv4_ifaces, current, next, node) {
 		struct net_if *iface = CONTAINER_OF(
@@ -1057,14 +1091,15 @@ static void dhcpv4_timeout(struct k_work *work)
 		}
 	}
 
-	k_mutex_unlock(&lock);
-
 	if (timeout_update != UINT32_MAX) {
 		NET_DBG("Waiting for %us", timeout_update);
 
 		k_work_reschedule(&timeout_work,
 				  K_SECONDS(timeout_update));
 	}
+
+	/* Publish the next timer before another caller can replace it. */
+	k_mutex_unlock(&lock);
 }
 
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC)
@@ -1143,13 +1178,12 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 #endif /* CONFIG_NET_DHCPV4_OPTION_CALLBACKS_VENDOR_SPECIFIC */
 
 /*
- * Read the message type and the server identifier without applying any
- * options or invoking callbacks. Option 53 need not be the first option, so
- * inspect the complete option list. The server identifier is optional here;
- * server_id_found tells whether it was present.
+ * Inspect reply options without applying them or invoking callbacks.
+ * The message type need not be first, so inspect the complete list.
  */
 static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *msg_type,
-				struct net_in_addr *server_id, bool *server_id_found)
+				struct net_in_addr *server_id, bool *server_id_found,
+				bool *valid_lease_time)
 {
 	struct net_pkt_cursor backup;
 	uint8_t cookie[sizeof(magic_cookie)];
@@ -1157,6 +1191,7 @@ static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *m
 	bool found = false;
 
 	*server_id_found = false;
+	*valid_lease_time = false;
 
 	net_pkt_cursor_backup(pkt, &backup);
 
@@ -1192,6 +1227,14 @@ static bool dhcpv4_get_msg_type(struct net_pkt *pkt, enum net_dhcpv4_msg_type *m
 			}
 
 			*server_id_found = true;
+		} else if (type == DHCPV4_OPTIONS_LEASE_TIME && length == sizeof(uint32_t)) {
+			uint32_t lease_time;
+
+			if (net_pkt_read_be32(pkt, &lease_time) != 0) {
+				return false;
+			}
+
+			*valid_lease_time = lease_time != 0U;
 		} else if (net_pkt_skip(pkt, length) != 0) {
 			return false;
 		}
@@ -1678,7 +1721,8 @@ end:
 		/* Clear Renew/Rebind times if not provided. They need to be
 		 * recalculated accordingly.
 		 */
-		if (state == NET_DHCPV4_RENEWING || state == NET_DHCPV4_REBINDING) {
+		if (state == NET_DHCPV4_RENEWING || state == NET_DHCPV4_REBINDING ||
+		    state == NET_DHCPV4_CONFIRMING) {
 			if (!renewal_present) {
 				iface->config.dhcpv4.renewal_time = 0U;
 			}
@@ -1702,6 +1746,7 @@ static inline void dhcpv4_handle_msg_offer(struct net_if *iface,
 	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
+	case NET_DHCPV4_CONFIRMING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
 		break;
@@ -1753,6 +1798,14 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 		break;
 	}
 
+	case NET_DHCPV4_CONFIRMING:
+		/* The interface still holds the address. Refresh its configuration
+		 * without another address add or remove event.
+		 */
+		net_if_ipv4_set_netmask_by_addr(iface, &iface->config.dhcpv4.requested_ip,
+						&iface->config.dhcpv4.netmask);
+		dhcpv4_enter_bound(iface);
+		break;
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
 		/* TODO: If the renewal is success, update only
@@ -1767,7 +1820,8 @@ static void dhcpv4_handle_msg_nak(struct net_if *iface)
 {
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_INIT_REBOOT:
-		LOG_DBG("NAK during INIT-REBOOT, restart config");
+	case NET_DHCPV4_CONFIRMING:
+		LOG_DBG("NAK while checking an address, restart config");
 
 		if (dhcpv4_entered_selecting(iface)) {
 			dhcpv4_immediate_timeout(&iface->config.dhcpv4);
@@ -1854,10 +1908,11 @@ static bool dhcpv4_reply_is_expected(struct net_if *iface, enum net_dhcpv4_msg_t
 		return state == NET_DHCPV4_SELECTING;
 	case NET_DHCPV4_MSG_TYPE_ACK:
 		return state == NET_DHCPV4_INIT_REBOOT || state == NET_DHCPV4_REQUESTING ||
-		       state == NET_DHCPV4_RENEWING || state == NET_DHCPV4_REBINDING;
+		       state == NET_DHCPV4_RENEWING || state == NET_DHCPV4_REBINDING ||
+		       state == NET_DHCPV4_CONFIRMING;
 	case NET_DHCPV4_MSG_TYPE_NAK:
 		if (state == NET_DHCPV4_INIT_REBOOT || state == NET_DHCPV4_RENEWING ||
-		    state == NET_DHCPV4_REBINDING) {
+		    state == NET_DHCPV4_REBINDING || state == NET_DHCPV4_CONFIRMING) {
 			return true;
 		}
 
@@ -1888,6 +1943,10 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	enum net_dhcpv4_msg_type msg_type = 0;
 	struct net_in_addr server_id;
 	bool server_id_found;
+	bool valid_lease_time;
+	bool confirming;
+	bool parsed;
+	uint32_t prior_lease_time;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
 	int ret;
@@ -1973,7 +2032,8 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	if (!dhcpv4_get_msg_type(pkt, &msg_type, &server_id, &server_id_found)) {
+	if (!dhcpv4_get_msg_type(pkt, &msg_type, &server_id, &server_id_found,
+				 &valid_lease_time)) {
 		NET_DBG("Invalid DHCPv4 message type or option list");
 		goto drop;
 	}
@@ -1986,7 +2046,28 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	if (!dhcpv4_parse_options(pkt, iface, &msg_type)) {
+	confirming = iface->config.dhcpv4.state == NET_DHCPV4_CONFIRMING;
+	if (confirming && msg_type == NET_DHCPV4_MSG_TYPE_ACK &&
+	    (!valid_lease_time || !server_id_found ||
+	     memcmp(msg->yiaddr, iface->config.dhcpv4.requested_ip.s4_addr, sizeof(msg->yiaddr)))) {
+		NET_DBG("Confirm ACK lacks a lease for the retained address");
+		goto drop;
+	}
+
+	prior_lease_time = iface->config.dhcpv4.lease_time;
+	parsed = dhcpv4_parse_options(pkt, iface, &msg_type);
+
+	/* An option callback can stop the client or start another exchange. */
+	if (confirming && (iface->config.dhcpv4.state != NET_DHCPV4_CONFIRMING ||
+			   iface->config.dhcpv4.xid != net_ntohl(msg->xid))) {
+		goto drop;
+	}
+
+	if (!parsed) {
+		if (confirming) {
+			iface->config.dhcpv4.lease_time = prior_lease_time;
+		}
+
 		goto drop;
 	}
 
@@ -2150,7 +2231,8 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 		"renewing",
 		"rebinding",
 		"bound",
-		"decline,"
+		"decline,",
+		"confirming",
 	};
 
 	__ASSERT_NO_MSG(state >= 0 && state < ARRAY_SIZE(name));
@@ -2244,6 +2326,7 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 	case NET_DHCPV4_REBINDING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_CONFIRMING:
 		break;
 	}
 
@@ -2338,6 +2421,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 	case NET_DHCPV4_REBINDING:
 	case NET_DHCPV4_BOUND:
 	case NET_DHCPV4_DECLINE:
+	case NET_DHCPV4_CONFIRMING:
 		/* The node and the machinery shared with it go first, so that
 		 * a callback on the removals below that restarts the client
 		 * finds both the way a client starting from cold does.
@@ -2365,6 +2449,27 @@ void net_dhcpv4_restart(struct net_if *iface)
 {
 	net_dhcpv4_stop(iface);
 	dhcpv4_start_internal(iface, false);
+}
+
+void net_dhcpv4_attachment_changed(struct net_if *iface)
+{
+	struct net_if_dhcpv4 *dhcpv4 = &iface->config.dhcpv4;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (net_if_is_up(iface) && dhcpv4_has_bound_addr(iface)) {
+		dhcpv4->state = NET_DHCPV4_CONFIRMING;
+		dhcpv4->attempts = 0U;
+		dhcpv4_generate_xid(iface);
+
+		/* Start the exchange from the work queue. Do not reset the
+		 * timer base: the old lease can still expire during Confirm.
+		 */
+		dhcpv4->request_time = 0U;
+		k_work_reschedule(&timeout_work, K_NO_WAIT);
+	}
+
+	k_mutex_unlock(&lock);
 }
 
 int net_dhcpv4_set_reboot_hint(struct net_if *iface,
@@ -2442,6 +2547,7 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 	case NET_DHCPV4_REQUESTING:
 	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
+	case NET_DHCPV4_CONFIRMING:
 		break;
 	}
 

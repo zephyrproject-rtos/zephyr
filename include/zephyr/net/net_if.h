@@ -3529,6 +3529,7 @@ void net_if_dormant_off(struct net_if *iface);
  * access point. Reports are processed at most once per second and combined
  * into one deferred notification during that interval. When network management
  * events are enabled, processing emits @ref NET_EVENT_IF_ATTACHMENT_CHANGED.
+ * If DHCPv4 is active, the stack also revalidates the lease.
  *
  * This function must be called from thread context.
  *

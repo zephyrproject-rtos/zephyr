@@ -44,6 +44,7 @@ enum net_dhcpv4_state {
 	NET_DHCPV4_REBINDING,
 	NET_DHCPV4_BOUND,
 	NET_DHCPV4_DECLINE,
+	NET_DHCPV4_CONFIRMING,
 } __packed;
 
 /** @endcond */

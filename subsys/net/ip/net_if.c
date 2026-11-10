@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/sys/minmax.h>
 
 #include "net_private.h"
+#include "dhcpv4/dhcpv4_internal.h"
 #include "../l2/ethernet/arp.h"
 #include "ipv4.h"
 #include "ipv6.h"
@@ -7173,6 +7174,9 @@ static void attachment_work_handler(struct k_work *work)
 	net_mgmt_event_notify(NET_EVENT_IF_ATTACHMENT_CHANGED, iface);
 #endif
 	net_if_unlock(iface);
+
+	/* DHCP acquires its own lock; do not nest it under the interface lock. */
+	net_dhcpv4_attachment_changed(iface);
 }
 
 void net_if_attachment_changed(struct net_if *iface)
