@@ -713,7 +713,10 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
-		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
+		/* A context that alone counted as registration keeps the data call up */
+		if (!modem_cellular_is_attached(data)) {
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
+		}
 		/* On deregistration report the status, as periodic network status AT
 		 * commands are not guaranteed to respond normally.
 		 */
