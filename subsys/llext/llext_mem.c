@@ -310,48 +310,95 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
-void llext_adjust_mmu_permissions(struct llext *ext)
+int llext_mem_finalize(struct llext_loader *ldr, struct llext *ext,
+		      const struct llext_load_param *ldr_parm)
 {
-#ifdef CONFIG_MMU
-	void *addr;
-	size_t size;
-	uint32_t flags;
+	for (int i = 0; i < LLEXT_MEM_COUNT; ++i) {
+		void *addr = ext->mem[i];
+		size_t size = ext->mem_size[i];
+		bool update_perms = !ldr_parm->pre_located;
+		uint32_t flags;
 
-	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
-		addr = ext->mem[mem_idx];
-		size = ROUND_UP(ext->mem_size[mem_idx], LLEXT_PAGE_SIZE);
-		if (size == 0) {
+		if (addr == NULL || size == 0) {
 			continue;
 		}
-		switch (mem_idx) {
+
+#ifdef CONFIG_MMU
+		size = ROUND_UP(size, LLEXT_PAGE_SIZE);
+#endif
+
+		switch (i) {
 		case LLEXT_MEM_TEXT:
 #ifdef CONFIG_LLEXT_VENEERS
 		case LLEXT_MEM_VENEER:
 #endif
 			flags = K_MEM_PERM_EXEC;
 			break;
-		case LLEXT_MEM_DATA:
-		case LLEXT_MEM_BSS:
-			/* memory is already K_MEM_PERM_RW by default */
-			continue;
 		case LLEXT_MEM_RODATA:
 			flags = 0;
 			break;
 		default:
-			continue;
+			/* DATA/BSS etc. are already K_MEM_PERM_RW by default */
+			update_perms = false;
+			break;
 		}
+
+		/* Make sure changes to memory regions are flushed to RAM */
 		sys_cache_data_flush_range(addr, size);
-		if ((flags & K_MEM_PERM_EXEC) != 0) {
-			/* new code must reach PoU (flush above) before the
-			 * stale instruction lines are dropped
-			 */
+
+#ifdef CONFIG_MMU
+		/* Final permissions must be applied before icache invalidation */
+		if (update_perms) {
+			int ret = k_mem_update_flags(addr, size, flags);
+
+			if (ret != 0) {
+				LOG_ERR("Failed to update memory flags for region %d: %d",
+					i, ret);
+				return ret;
+			}
+			ext->mmu_permissions_set = true;
+		}
+#endif
+
+		/*
+		 * New code must reach PoU (flush above) before the stale
+		 * instruction lines are dropped. Pre-located text is not
+		 * rewritten at load time, but the veneer table is always
+		 * generated on the heap, so it must be invalidated regardless.
+		 */
+		if ((update_perms && (flags & K_MEM_PERM_EXEC) != 0)
+#ifdef CONFIG_LLEXT_VENEERS
+		    || i == LLEXT_MEM_VENEER
+#endif
+		    ) {
 			sys_cache_instr_invd_range(addr, size);
 		}
-		k_mem_update_flags(addr, size, flags);
 	}
 
-	ext->mmu_permissions_set = true;
+
+#ifdef CONFIG_CACHE_MANAGEMENT
+	/* Detached section caches should be synchronized in place */
+	if (ldr_parm->section_detached) {
+		for (int i = 0; i < ext->sect_cnt; ++i) {
+			elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+			if (ldr_parm->section_detached(shdr)) {
+				void *base = llext_peek(ldr, shdr->sh_offset);
+
+				if (base == NULL) {
+					LOG_ERR("Failed to access detached section %d", i);
+					return -ENOEXEC;
+				}
+
+				sys_cache_data_flush_range(base, shdr->sh_size);
+				if (shdr->sh_flags & SHF_EXECINSTR && !ldr_parm->pre_located) {
+					sys_cache_instr_invd_range(base, shdr->sh_size);
+				}
+			}
+		}
+	}
 #endif
+	return 0;
 }
 
 void llext_free_regions(struct llext *ext)

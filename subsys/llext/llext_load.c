@@ -1004,8 +1004,10 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 		goto out;
 	}
 
-	if (!ldr_parm->pre_located) {
-		llext_adjust_mmu_permissions(ext);
+	ret = llext_mem_finalize(ldr, ext, ldr_parm);
+	if (ret != 0) {
+		LOG_ERR("Failed to finalize extension memory, ret %d", ret);
+		goto out;
 	}
 
 out:
