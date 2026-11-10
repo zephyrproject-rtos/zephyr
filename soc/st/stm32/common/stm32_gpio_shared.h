@@ -9,6 +9,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
 /*
@@ -71,7 +72,7 @@ struct gpio_stm32_data {
 	 * Keeps track of pins which are used as GPIOs
 	 * and need the GPIO port clock to remain enabled.
 	 */
-	gpio_port_pins_t pin_has_clock_enabled;
+	atomic_t pin_has_clock_enabled;
 
 	/* User callbacks list */
 	sys_slist_t cb;
