@@ -16,3 +16,7 @@
 		rx-only;
 	};
 };
+
+&rc_pwm_ir_transmitter {
+	status = "disabled";
+};
