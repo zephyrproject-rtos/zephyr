@@ -42,6 +42,9 @@ struct mgmt_event_wait {
 
 static K_MUTEX_DEFINE(net_mgmt_callback_lock);
 
+/* Thread running callbacks, written with net_mgmt_callback_lock held */
+static atomic_ptr_t callback_thread;
+
 #if defined(CONFIG_NET_MGMT_EVENT_THREAD)
 K_KERNEL_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 
@@ -274,13 +277,38 @@ static inline void mgmt_run_static_callbacks(const struct mgmt_event_entry * con
 
 static void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event)
 {
+	atomic_ptr_val_t prev;
+
 	/* take the lock to prevent changes to the callback structure during use */
 	(void)k_mutex_lock(&net_mgmt_callback_lock, K_FOREVER);
+
+	/* Direct delivery can nest when a callback notifies another event */
+	prev = atomic_ptr_set(&callback_thread, k_current_get());
 
 	mgmt_run_static_callbacks(mgmt_event);
 	mgmt_run_slist_callbacks(mgmt_event);
 
+	(void)atomic_ptr_set(&callback_thread, prev);
 	(void)k_mutex_unlock(&net_mgmt_callback_lock);
+}
+
+bool net_mgmt_is_event_context(void)
+{
+	k_tid_t self = k_current_get();
+
+	/* Read without the lock: only the current thread can set it to itself */
+	if (atomic_ptr_get(&callback_thread) == self) {
+		return true;
+	}
+
+#if defined(CONFIG_NET_MGMT_EVENT_QUEUE)
+	/* Any work item on the queue that delivers events, also outside callbacks */
+	if (k_work_queue_thread_get(mgmt_work_q) == self) {
+		return true;
+	}
+#endif
+
+	return false;
 }
 
 static int mgmt_event_wait_call(struct net_if *iface,

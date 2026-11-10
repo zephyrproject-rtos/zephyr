@@ -78,6 +78,9 @@ extern enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
+/* True in a net_mgmt event callback or on the work queue delivering net_mgmt events */
+extern bool net_mgmt_is_event_context(void);
+
 #if defined(CONFIG_NET_STATISTICS_VIA_PROMETHEUS)
 extern void net_stats_prometheus_init(struct net_if *iface);
 #else
