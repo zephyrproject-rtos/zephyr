@@ -3,5 +3,6 @@
 zephyr_sources_ifdef(CONFIG_HAS_MSPM0_SDK soc.c)
 zephyr_include_directories(.)
 
+zephyr_sources_ifdef(CONFIG_REBOOT reboot.c)
 zephyr_sources_ifdef(CONFIG_PM power.c)
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
