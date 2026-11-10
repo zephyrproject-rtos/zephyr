@@ -3518,7 +3518,7 @@ ZTESTABLE_STATIC void quic_endpoint_notify_streams_closed(struct quic_endpoint *
 			continue;
 		}
 
-		ctx->error_code = -ECONNRESET;
+		ctx->error_code = ECONNRESET;
 		ctx->closed = true;
 
 		/* This will release any accepts waiting on this stream */
