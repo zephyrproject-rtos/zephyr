@@ -1196,6 +1196,12 @@ __net_socket struct quic_stream {
 	 */
 	uint64_t stop_sending_error_code;
 
+	/** Error code of the RESET_STREAM received from the peer */
+	uint64_t peer_reset_error_code;
+
+	/** Final size of the receiving half, from the peer's RESET_STREAM */
+	uint64_t peer_final_size;
+
 	/** BSD socket private data */
 	void *socket_data;
 
@@ -1243,6 +1249,9 @@ __net_socket struct quic_stream {
 
 	/** Read half shut down via shutdown(SHUT_RD), discard incoming data */
 	bool read_closed : 1;
+
+	/** RX side reset by a RESET_STREAM from the peer */
+	bool rx_reset : 1;
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
@@ -1668,6 +1677,8 @@ int quic_build_connection_close(uint8_t *frame, size_t frame_len,
 void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
 			       uint64_t *error_code, uint64_t *frame_type,
 			       const char **reason);
+int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
+		     size_t buf_len, int32_t timeout);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,

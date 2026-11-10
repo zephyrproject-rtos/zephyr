@@ -6208,6 +6208,9 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->stop_sending_error_code = QUIC_ERROR_NO_ERROR;
 	stream->tx_reset = false;
 	stream->tx_final_size = 0;
+	stream->rx_reset = false;
+	stream->peer_reset_error_code = QUIC_ERROR_NO_ERROR;
+	stream->peer_final_size = 0;
 
 	return stream;
 }

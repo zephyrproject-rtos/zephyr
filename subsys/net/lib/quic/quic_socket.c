@@ -1683,8 +1683,8 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	return (ssize_t)to_send;
 }
 
-static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
-			    size_t buf_len, int32_t timeout)
+ZTESTABLE_STATIC int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
+				      size_t buf_len, int32_t timeout)
 {
 	struct quic_stream_rx_buffer *rx = &stream->rx_buf;
 	struct quic_endpoint *ep;
@@ -1735,9 +1735,13 @@ static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 		}
 	}
 
-	/* Check for end of data */
+	/* End of data: what the peer sent is read. A stream the peer reset
+	 * is reported as an error once the data received before the reset
+	 * is read, so that it is not taken for a complete one (RFC 9000
+	 * ch. 3.2, the reset is read).
+	 */
 	if (quic_stream_is_eof(stream)) {
-		ret = 0;   /* EOF */
+		ret = stream->rx_reset ? -ECONNRESET : 0;
 		goto out;
 	}
 
@@ -2161,7 +2165,10 @@ static int quic_stream_getsockopt_ctx(void *obj, int level, int optname,
 				return -1;
 			}
 
-			*(int *)optval = 0; /* TODO: FIXME */
+			/* The connection is gone, or nothing is wrong: a reset
+			 * of the stream itself is read from it.
+			 */
+			*(int *)optval = stream->ep == NULL ? ECONNRESET : 0;
 			return 0;
 		}
 

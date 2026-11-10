@@ -579,25 +579,31 @@ static int handle_reset_stream_frame(struct quic_endpoint *ep,
 		return ret;
 	}
 
-	/*
-	 * Wake any thread blocked in quic_stream_recv() so it gets
-	 * -ECONNRESET rather than blocking forever. Also mark the stream's
-	 * read half as closed so future recv() calls return immediately.
-	 */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL) {
-		stream->read_closed = true;
-		stream->rx_buf.fin_received = true;  /* unblocks the wait loop */
-
-		k_poll_signal_raise(&stream->recv.signal, 0);
-		k_condvar_signal(&stream->cond.recv);
-
-		NET_DBG("[ST:%p/%d] RESET_STREAM: woke blocked readers on "
-			"stream %" PRIu64, stream, quic_get_by_stream(stream),
-			stream_id);
-
-		quic_stream_unref(stream);
+	if (stream == NULL) {
+		return pos;
 	}
+
+	/*
+	 * Mark the stream as reset and its read half as closed, so that
+	 * data still in flight is dropped, and wake any thread blocked in
+	 * quic_stream_recv() so it reads the reset rather than blocking
+	 * forever.
+	 */
+	stream->peer_reset_error_code = error_code;
+	stream->peer_final_size = final_size;
+	stream->rx_reset = true;
+	stream->read_closed = true;
+	stream->rx_buf.fin_received = true;  /* unblocks the wait loop */
+
+	k_poll_signal_raise(&stream->recv.signal, 0);
+	k_condvar_signal(&stream->cond.recv);
+
+	NET_DBG("[ST:%p/%d] RESET_STREAM: woke blocked readers on "
+		"stream %" PRIu64, stream, quic_get_by_stream(stream),
+		stream_id);
+
+	quic_stream_unref(stream);
 
 	return pos;
 }
