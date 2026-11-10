@@ -28,11 +28,6 @@ sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "pytest-twister-harne
 
 import redirects  # noqa: E402
 
-try:
-    import west as west_found
-except ImportError:
-    west_found = False
-
 # -- Project --------------------------------------------------------------
 
 project = "Zephyr Project"
@@ -147,11 +142,6 @@ RELEASE_NOTES_GLOB_PATTERNS = [
 ]
 exclude_patterns.extend(RELEASE_NOTES_GLOB_PATTERNS)
 
-if not west_found:
-    exclude_patterns.append("**/*west-apis*")
-else:
-    exclude_patterns.append("**/*west-not-found*")
-
 # Ensure only one of the two top-level indexes ever gets included.
 # This is a workaround for Sphinx issuing INFO notices about being referenced in
 # multiple toctrees.
@@ -167,6 +157,7 @@ highlight_language = "none"
 todo_include_todos = False
 
 CMAKE_DOCS_URL = "https://cmake.org/cmake/help/latest"
+WEST_DOCS_URL = "https://docs.zephyrproject.org/west/latest"
 
 
 def _inventory_reachable(url: str) -> bool:
@@ -186,6 +177,8 @@ def _inventory_reachable(url: str) -> bool:
 intersphinx_mapping = {}
 if _inventory_reachable(CMAKE_DOCS_URL):
     intersphinx_mapping["cmake"] = (CMAKE_DOCS_URL, None)
+if _inventory_reachable(WEST_DOCS_URL):
+    intersphinx_mapping["west"] = (WEST_DOCS_URL, None)
 
 nitpick_ignore = [
     # ignore C standard identifiers (they are not defined in Zephyr docs)
@@ -507,9 +500,22 @@ def _set_html_permalinks_icon(_, config):
     config.html_permalinks_icon = ""
 
 
+def _west_ref_as_text(app, env, node, contnode):
+    # Without the west inventory, render references to west documentation
+    # labels as plain text instead of failing the build.
+    if (
+        "west" not in app.config.intersphinx_mapping
+        and node["reftype"] == "ref"
+        and node["reftarget"].startswith("west")
+    ):
+        return contnode
+    return None
+
+
 def setup(app):
     # theme customizations
     app.add_css_file("css/custom.css")
     app.add_js_file("js/custom.js")
     # RTD theme hard codes a Font Awesome link icon in its setup() code, but we want no icon
     app.connect("config-inited", _set_html_permalinks_icon, priority=900)
+    app.connect("missing-reference", _west_ref_as_text)
