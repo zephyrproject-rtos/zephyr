@@ -357,6 +357,23 @@ struct sdhc_standard_host_common_data {
 	}
 
 /**
+ * @brief Initializer for @ref sdhc_standard_host_common_config from a DT instance
+ *        whose standard register block is a named register region.
+ *
+ * @param n DT instance number.
+ * @param name Name of the register region, as listed in reg-names.
+ * @param o Pointer to @ref sdhc_standard_host_ops, or NULL if no I/O
+ *          overrides are needed. Ignored when
+ *          @kconfig{CONFIG_SDHC_STANDARD_CORE_IO_ACCESSORS} is disabled.
+ */
+#define SDHC_STANDARD_COMMON_CONFIG_DT_INST_INIT_BY_NAME(n, name, o)                     \
+	{                                                                                \
+		.sdhc_base = Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(name, DT_DRV_INST(n)),  \
+		.common = SDHC_COMMON_CONFIG_DT_INST_INIT(n),                            \
+		SDHC_STANDARD_COMMON_CONFIG_OPS_INIT(o)                                  \
+	}
+
+/**
  * @brief Get the CPU-side base address of the host controller register block.
  *
  * Returns the virtual address established by @ref sdhc_standard_host_init.
