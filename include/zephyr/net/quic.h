@@ -201,7 +201,9 @@ enum {
 	 * set, quic_connection_close() and close() end the connection with a
 	 * CONNECTION_CLOSE frame of the application type (0x1d) carrying that
 	 * code (@rfc{9000,section-10.2}), instead of a transport close with
-	 * NO_ERROR.
+	 * NO_ERROR. A connection closed before its handshake is complete is
+	 * ended with a transport close carrying APPLICATION_ERROR instead
+	 * (@rfc{9000,section-10.2.3}).
 	 */
 	ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE = 10,
 };
