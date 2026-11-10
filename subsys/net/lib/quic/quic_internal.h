@@ -1210,6 +1210,12 @@ __net_socket struct quic_stream {
 	bool received_early_data : 1;
 };
 
+/** Bits of the flags of a context */
+enum quic_context_flag {
+	/** A CONNECTION_CLOSE frame was received from the peer */
+	QUIC_CONTEXT_PEER_CLOSED,
+};
+
 /**
  * QUIC connection information
  */
@@ -1278,6 +1284,16 @@ __net_socket struct quic_context {
 	 * to be accepted.
 	 */
 	bool closed;
+
+	/** Bits of enum quic_context_flag. Atomic, as the receive path and
+	 * the application each set bits of their own.
+	 */
+	atomic_t flags;
+
+	/** The CONNECTION_CLOSE frame received from the peer, written before
+	 * QUIC_CONTEXT_PEER_CLOSED is set and not after
+	 */
+	struct quic_peer_close peer_close;
 
 	/** Stream priority */
 	uint8_t stream_priority;

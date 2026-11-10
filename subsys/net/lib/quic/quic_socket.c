@@ -228,6 +228,22 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 			return 0;
 		}
 
+		case ZSOCK_QUIC_SO_PEER_CLOSE: {
+			if (!atomic_test_bit(&ctx->flags, QUIC_CONTEXT_PEER_CLOSED)) {
+				errno = ENOTCONN;
+				return -1;
+			}
+
+			if (*optlen < sizeof(ctx->peer_close)) {
+				errno = ENOBUFS;
+				return -1;
+			}
+
+			memcpy(optval, &ctx->peer_close, sizeof(ctx->peer_close));
+			*optlen = sizeof(ctx->peer_close);
+			return 0;
+		}
+
 		default:
 			break;
 		}
