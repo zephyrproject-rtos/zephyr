@@ -3772,6 +3772,35 @@ static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 	}
 }
 
+static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
+{
+	struct bt_att_req *req;
+	bt_att_func_t func = NULL;
+
+	bt_dev_lock();
+
+	/* att_handle_rsp() processes the request state on the RX workqueue
+	 * without the host lock, relying on cooperative scheduling: hold the
+	 * scheduler lock as well so that it cannot preempt a preemptible
+	 * caller mid-cancel, or hand the params back before the completion.
+	 */
+	k_sched_lock();
+
+	req = bt_att_find_req_by_user_data(conn, params);
+	if (req != NULL) {
+		func = req->func;
+		bt_att_req_cancel(conn, req);
+	}
+
+	bt_dev_unlock();
+
+	if (run_completion && func != NULL) {
+		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+	}
+
+	k_sched_unlock();
+}
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 static struct gatt_sub *gatt_sub_find(struct bt_conn *conn)
 {
@@ -5568,21 +5597,22 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+	struct gatt_sub *sub;
 	uint8_t att_err;
 
 	LOG_DBG("err %d", err);
+
+	/* bt_gatt_clear() hands the params back with the write still in flight */
+	sub = gatt_sub_find_params(conn, params);
+	if (sub == NULL) {
+		return;
+	}
 
 	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
-		struct gatt_sub *sub;
 		sys_snode_t *node, *tmp, *prev;
-
-		sub = gatt_sub_find(conn);
-		if (!sub) {
-			return;
-		}
 
 		att_err = att_err_from_int(err);
 
@@ -5652,35 +5682,6 @@ static int gatt_unsub_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
 	gatt_write_ccc_encode(buf, user_data, 0x0000U);
 
 	return 0;
-}
-
-static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
-{
-	struct bt_att_req *req;
-	bt_att_func_t func = NULL;
-
-	bt_dev_lock();
-
-	/* att_handle_rsp() processes the request state on the RX workqueue
-	 * without the host lock, relying on cooperative scheduling: hold the
-	 * scheduler lock as well so that it cannot preempt a preemptible
-	 * caller mid-cancel, or hand the params back before the completion.
-	 */
-	k_sched_lock();
-
-	req = bt_att_find_req_by_user_data(conn, params);
-	if (req != NULL) {
-		func = req->func;
-		bt_att_req_cancel(conn, req);
-	}
-
-	bt_dev_unlock();
-
-	if (run_completion && func != NULL) {
-		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
-	}
-
-	k_sched_unlock();
 }
 
 /* ATT teardown may have handed the params back during the waits, which the
@@ -6981,6 +6982,7 @@ static struct gatt_sub *find_gatt_sub(uint8_t id, const bt_addr_le_t *addr)
 static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_gatt_subscribe_params *params;
+	struct bt_conn *conn;
 	struct gatt_sub *sub;
 	sys_snode_t *node;
 	sys_slist_t list;
@@ -7006,9 +7008,26 @@ static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 
 	k_sched_unlock();
 
+	conn = bt_conn_lookup_addr_le(id, addr);
+
 	for (node = sys_slist_get(&list); node != NULL; node = sys_slist_get(&list)) {
 		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params, node);
+
+		if (atomic_test_and_clear_bit(params->flags,
+					      BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
+			/* On a connection that stays up, a security error would have the pending
+			 * write encoded from the params again
+			 */
+			if (conn != NULL && conn->state == BT_CONN_CONNECTED) {
+				gatt_cancel(conn, params, false);
+			}
+		}
+
 		params->notify(NULL, params, NULL, 0);
+	}
+
+	if (conn != NULL) {
+		bt_conn_unref(conn);
 	}
 }
 
