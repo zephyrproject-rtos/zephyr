@@ -56,6 +56,11 @@ family:
     - name: mcxa153
   - name: mcxa1x6
     socs:
+    - name: mcxa144
+    - name: mcxa145
+    - name: mcxa146
+    - name: mcxa154
+    - name: mcxa155
     - name: mcxa156
   - name: mcxaxx6
     socs:
@@ -157,6 +162,16 @@ runners:
         - mcxe32b/cpu1
       - qualifiers:
         - mcxa153
+      - qualifiers:
+        - mcxa144
+      - qualifiers:
+        - mcxa145
+      - qualifiers:
+        - mcxa146
+      - qualifiers:
+        - mcxa154
+      - qualifiers:
+        - mcxa155
       - qualifiers:
         - mcxa156
       - qualifiers:
