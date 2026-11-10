@@ -19,6 +19,17 @@ config ETH_NIC_MODEL
 
 config ETH_VIRTIO_NET_RX_BUFFERS
 	int "VIRTIO network device receive buffers"
+	range 1 32768
 	default 4
+
+config ETH_VIRTIO_NET_TX_BUFFERS
+	int "Transmit requests"
+	range 1 64
+	default 4
+	help
+	  Maximum number of packets queued or waiting for transmit descriptors.
+	  Each request includes a full-frame copy buffer for packets whose
+	  fragments cannot be submitted directly. Packet references and request
+	  buffers are released when the device completes transmission.
 
 endif
