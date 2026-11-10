@@ -1043,6 +1043,13 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		goto error;
 	}
 
+	security = airoc_convert_zephyr_security_to_whd(params->security);
+	if (!airoc_wifi_security_supported_for_ap(security)) {
+		LOG_ERR("Unsupported AP security type: %d", params->security);
+		ret = -ENOTSUP;
+		goto error;
+	}
+
 	if (!data->second_interface_init) {
 		if (whd_add_secondary_interface(data->whd_drv, NULL, &airoc_ap_if) !=
 		    CY_RSLT_SUCCESS) {
@@ -1084,13 +1091,6 @@ static int airoc_mgmt_ap_enable(const struct device *dev,
 		LOG_WRN("Discard of setting unsupported bandwidth: %u (will set 20MHz)",
 			params->bandwidth);
 		break;
-	}
-
-	security = airoc_convert_zephyr_security_to_whd(params->security);
-	if (!airoc_wifi_security_supported_for_ap(security)) {
-		LOG_ERR("Unsupported AP security type: %d", params->security);
-		ret = -ENOTSUP;
-		goto error;
 	}
 
 	if (whd_wifi_init_ap(airoc_ap_if, &ssid, security, params->psk, params->psk_length,
