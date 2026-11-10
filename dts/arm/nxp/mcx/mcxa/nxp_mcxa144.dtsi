@@ -1,0 +1,21 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/mcxa/nxp_mcxa156.dtsi>
+
+/delete-node/ &eqdc1;
+/delete-node/ &flexpwm1;
+/delete-node/ &dac0;
+/delete-node/ &opamp0;
+
+&flash {
+	reg = <0 DT_SIZE_K(256)>;
+	ranges = <0x0 0x0 DT_SIZE_K(256)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(56)>;
+};
