@@ -148,3 +148,39 @@ tstmr0: &tstmr_0 {
 &crc {
 	status = "okay";
 };
+
+lpspi1: &lpspi_1 {
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* The LPSPI1_SIN line is held low by the
+	 * combined action of U30 and U12C. To prevent
+	 * this condition when accessing the NOR flash,
+	 * first disable U30 by either shorting JP6 or
+	 * removing the jumper on JP23. This releases
+	 * the LPSPI1_SIN signal and allows normal flash
+	 * operation.
+	 */
+	mx25r6435fm2il0: flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		jedec-id = [c2 28 17];
+		/* only wp-gpio on default board configuration,
+		 * there is a reset gpio line but the line is
+		 * DNP by default on the board (R83 on schematic)
+		 */
+		wp-gpios = <&gpiob 5 GPIO_ACTIVE_LOW>;
+		size = <DT_SIZE_M(64)>;
+		has-dpd;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		t-enter-dpd = <10000>;
+		/* 8 MHz for low power mode */
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		spi-cs-setup-delay-ns = <5>;
+		spi-cs-hold-delay-ns = <5>;
+		spi-interframe-delay-ns = <125>;
+		/* this is the default (reset) mode for this flash */
+		mxicy,mx25r-power-mode = "low-power";
+	};
+};

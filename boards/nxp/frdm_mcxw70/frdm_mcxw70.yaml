@@ -20,5 +20,6 @@ supported:
   - uart
   - trng
   - crc
+  - spi
   - netif:openthread
 vendor: nxp
