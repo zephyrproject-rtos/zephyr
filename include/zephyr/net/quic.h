@@ -182,6 +182,32 @@ enum {
 	 * already carried accepted early data on this connection.
 	 */
 	ZSOCK_QUIC_SO_STREAM_EARLY_DATA = 8,
+
+	/**
+	 * Read how the peer closed the connection.
+	 *
+	 * The option value is a pointer to struct quic_peer_close and is only
+	 * valid with getsockopt() on QUIC connection sockets. It fails with
+	 * ENOTCONN as long as no CONNECTION_CLOSE frame
+	 * (@rfc{9000,section-19.19}) has been received.
+	 */
+	ZSOCK_QUIC_SO_PEER_CLOSE = 9,
+};
+
+/** How the peer closed the connection, see ZSOCK_QUIC_SO_PEER_CLOSE. */
+struct quic_peer_close {
+	/** Error code carried by the CONNECTION_CLOSE frame. */
+	uint64_t error_code;
+
+	/** Type of the frame that caused a transport error, 0 when unknown.
+	 *  Only set for a transport close.
+	 */
+	uint64_t frame_type;
+
+	/** Whether the peer closed with an error of the application protocol
+	 *  (frame type 0x1d) rather than a transport error (frame type 0x1c).
+	 */
+	bool application;
 };
 
 /** Version of struct quic_session_state. */

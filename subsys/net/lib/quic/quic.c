@@ -6042,6 +6042,8 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	ctx->accept_closed = false;
 	ctx->error_code = 0;
 	ctx->closed = false;
+	ctx->peer_closed = false;
+	memset(&ctx->peer_close, 0, sizeof(ctx->peer_close));
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	memset(&ctx->stats, 0, sizeof(ctx->stats));

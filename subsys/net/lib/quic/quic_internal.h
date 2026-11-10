@@ -1269,6 +1269,12 @@ __net_socket struct quic_context {
 	 */
 	bool closed;
 
+	/** The CONNECTION_CLOSE frame received from the peer */
+	struct quic_peer_close peer_close;
+
+	/** A CONNECTION_CLOSE frame was received from the peer */
+	bool peer_closed : 1;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 
