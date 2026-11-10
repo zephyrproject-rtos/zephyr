@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <qemu/virt-riscv-aia.dtsi>
+#include <qemu/virt-riscv32-aia.dtsi>
 
 / {
 	compatible = "qemu,virt-riscv32-aia-direct-smp";
