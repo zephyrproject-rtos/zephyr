@@ -11,6 +11,7 @@
 
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
@@ -19,6 +20,17 @@
 #include <cmsis_core.h>
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
+
+#define GICC_CTLR_FIQEN BIT(3)
+
+static void gic_secure_group_init(void)
+{
+	/* SGIs and PPIs are banked, the GIC driver only sets the SPIs to group 0 */
+	sys_write32(0U, GICD_IGROUPRn);
+
+	/* Group 0 is signaled as FIQ when FIQEn is set, Zephyr only handles IRQ */
+	sys_write32(sys_read32(GICC_CTLR) & ~GICC_CTLR_FIQEN, GICC_CTLR);
+}
 
 void relocate_vector_table(void)
 {
@@ -44,6 +56,13 @@ void soc_early_init_hook(void)
 	/* Clear A bit in SCTLR to disable alignment check */
 	write_sctlr(read_sctlr() & ~SCTLR_A_Msk);
 	barrier_isync_fence_full();
+
+	/*
+	 * STM32MP13 makes Zephyr run in secure mode only. In these conditions,
+	 * unconditionally set all GIC interrupts as part of group 0 (secure).
+	 */
+	gic_secure_group_init();
+
 }
 
 static const struct arm_mmu_region mmu_regions[] = {
