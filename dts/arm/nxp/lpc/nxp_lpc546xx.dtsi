@@ -259,6 +259,19 @@
 			status = "disabled";
 		};
 
+		spifi: spi@40080000 {
+			compatible = "nxp,lpc-spifi";
+			reg = <0x40080000 0x1000>,
+			      <0x10000000 DT_SIZE_M(128)>;
+			reg-names = "control", "memory";
+			interrupts = <39 0>;
+			clocks = <&syscon MCUX_SPIFI_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(0, 10)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		usbfs: usbfs@40084000 {
 			compatible = "nxp,lpcip3511";
 			reg = <0x40084000 0x1000>;
