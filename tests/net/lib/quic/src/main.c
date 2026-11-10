@@ -10419,7 +10419,9 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	static struct quic_stream test_stream;
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	const uint8_t data[] = { 'a', 'b', 'c' };
+	uint8_t resets[4 * 15]; /* Stream IDs 5 to 61 fit a one-byte varint */
 	struct quic_context *ctx;
+	bool ack_only = false;
 	uint8_t buf[8];
 	int sock;
 	int ret;
@@ -10592,6 +10594,58 @@ ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
 	zassert_equal(ret, -1, "Expected an error for a reset stream (%d)", ret);
 	zassert_equal(errno, ECONNRESET, "Expected ECONNRESET for a reset stream (%d)", errno);
 	unlink_test_stream(&test_stream, ctx);
+
+	/* A reset is the first word of a stream the peer never sent data on:
+	 * its final size is held to the limits of such a stream, then the
+	 * stream counts as opened, with its slot free again at once, and the
+	 * final size as received and read, so that a frame for it is late
+	 * and the credit returns.
+	 */
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_fc.bytes_received = 0;
+	ep->rx_fc.max_data = 4 * CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE;
+	ret = reset_stream_for(ep, 1, 0x3f, CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE + 1);
+	zassert_equal(ret, -EPROTO,
+		      "RESET_STREAM beyond the stream limit must close the connection (%d)",
+		      ret);
+	zassert_false(stream_seq_was_opened(&ep->rx_sl.opened_bidi, 0),
+		      "A bad RESET_STREAM opened the stream");
+
+	ep->rx_fc.max_data = 1024;
+	ret = reset_stream_for(ep, 1, 0x3f, 20);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_true(stream_seq_was_opened(&ep->rx_sl.opened_bidi, 0),
+		     "The reset stream does not count as opened");
+	zassert_equal(ep->rx_sl.max_bidi, 9, "The slot of the reset stream is not free again");
+	zassert_equal(ep->rx_fc.bytes_received, 20,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 20, "Connection credit %" PRIu64,
+		      ep->rx_fc.max_data);
+
+	/* The MAX_DATA and MAX_STREAMS such a reset draws come out of the
+	 * reply budget of the payload: a payload full of them opens the
+	 * streams, but replies no more than the budget allows.
+	 */
+	for (size_t i = 0; i < ARRAY_SIZE(resets); i += 4) {
+		resets[i] = QUIC_FRAME_TYPE_RESET_STREAM;
+		resets[i + 1] = 5 + i; /* Stream 5, 9, 13, ... */
+		resets[i + 2] = 0x3f;
+		resets[i + 3] = 1;
+	}
+
+	quic_test_reply_budget_spent = 0;
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, resets,
+					 sizeof(resets), sizeof(resets), &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_sl.max_bidi, 9 + ARRAY_SIZE(resets) / 4,
+		      "Stream limit %" PRIu64 " after the resets", ep->rx_sl.max_bidi);
+	zassert_equal(quic_test_reply_budget_spent, CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		      "Expected replies to stop at %d, got %u",
+		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, quic_test_reply_budget_spent);
+	zassert_true(ARRAY_SIZE(resets) / 2 > CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		     "Test payload must draw more replies than the budget allows");
+	zassert_false(ep->rx_sl.max_bidi_pending,
+		      "The limit raised past the budget was not told after the payload");
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
