@@ -17,6 +17,7 @@ target_sources(app PRIVATE
   src/main.c
   src/dut.c
   src/scan_identity_adv.c
+  src/auto_identity_adv.c
 )
 
 zephyr_include_directories(
