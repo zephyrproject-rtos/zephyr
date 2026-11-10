@@ -938,6 +938,11 @@ struct quic_endpoint {
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
 		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
 		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
+		/* A limit was raised and MAX_STREAMS not sent yet: it goes
+		 * out once the payload that raised it is handled.
+		 */
+		bool max_bidi_pending;
+		bool max_uni_pending;
 		/* Which peer-initiated streams were opened, so that a late
 		 * frame for a closed one does not open it again.
 		 */

@@ -552,9 +552,9 @@ out:
  * handed back, the window being shared with the application thread that
  * reads. Only the receive thread charges, so that it alone writes the count
  * of bytes received. A MAX_DATA goes out at once for a one-off event such
- * as a reset, out of the reply budget of the payload when the event is a
- * frame, and at the usual threshold for data discarded frame by frame or
- * left unread by a close.
+ * as a reset or a close, out of the reply budget of the payload when the
+ * event is a frame, and at the usual threshold for data discarded frame by
+ * frame.
  */
 static void quic_rx_credit(struct quic_endpoint *ep, uint64_t charged, uint64_t credited,
 			   bool at_once, struct quic_reply_budget *budget)
@@ -737,7 +737,11 @@ static int quic_rx_closed_stream_reset(struct quic_endpoint *ep, uint64_t stream
  * never opened cannot be reset, as it cannot take a STREAM or STOP_SENDING
  * frame (RFC 9000 ch. 19.5, 19.8). One that was opened, like a stream of the
  * peer's that was, is closed by the application already and is credited what
- * the peer charged for it since.
+ * the peer charged for it since. A stream the peer never sent data on is
+ * opened by the reset (ch. 2.1), its slot free again at once as nothing is
+ * read from it (ch. 4.6), and its final size counts like data (ch. 4.5), all
+ * of it unreadable. The replies come out of the reply budget of the
+ * payload: a flood of such frames opens no more than that many replies.
  */
 static int quic_reset_unknown_stream(struct quic_endpoint *ep, uint64_t stream_id,
 				     uint64_t final_size, int pos,
@@ -748,6 +752,7 @@ static int quic_reset_unknown_stream(struct quic_endpoint *ep, uint64_t stream_i
 	uint64_t seq = stream_id >> 2;
 	struct quic_stream_seq_set *opened = is_bidi ? &ep->rx_sl.opened_bidi
 						     : &ep->rx_sl.opened_uni;
+	int stream_type;
 	int ret;
 
 	if (is_local) {
@@ -769,7 +774,63 @@ static int quic_reset_unknown_stream(struct quic_endpoint *ep, uint64_t stream_i
 		return ret < 0 ? ret : pos;
 	}
 
+	if (seq >= (is_bidi ? ep->rx_sl.max_bidi : ep->rx_sl.max_uni) ||
+	    !stream_seq_gaps_fit(opened, seq)) {
+		NET_DBG("[EP:%p/%d] RESET_STREAM for stream %" PRIu64 " over the limit",
+			ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_STREAM_LIMIT_ERROR,
+						    "RESET_STREAM for a stream over the limit");
+		return -EPROTO;
+	}
+
+	/* The limits a stream of the peer's of that direction gets */
+	stream_type = (is_bidi ? 0 : QUIC_STREAM_UNIDIRECTIONAL) |
+		      (ep->is_server ? 0 : QUIC_STREAM_SERVER);
+	if (final_size > quic_stream_local_rx_limit(ep, stream_type) ||
+	    final_size > quic_rx_window_left(ep)) {
+		NET_DBG("[EP:%p/%d] RESET_STREAM for stream %" PRIu64 " exceeds flow control",
+			ep, quic_get_by_ep(ep), stream_id);
+		quic_endpoint_send_connection_close(ep, QUIC_ERROR_FLOW_CONTROL_ERROR,
+						    "RESET_STREAM final size exceeds "
+						    "flow control");
+		return -EPROTO;
+	}
+
+	stream_seq_mark_opened(opened, seq);
+	if (is_bidi) {
+		ep->rx_sl.total_bidi++;
+		ep->rx_sl.max_bidi++;
+	} else {
+		ep->rx_sl.total_uni++;
+		ep->rx_sl.max_uni++;
+	}
+
+	quic_rx_credit(ep, final_size, final_size, true, budget);
+	if (quic_reply_budget_take(budget)) {
+		(void)quic_send_max_streams(ep, is_bidi);
+	} else if (is_bidi) {
+		ep->rx_sl.max_bidi_pending = true;
+	} else {
+		ep->rx_sl.max_uni_pending = true;
+	}
+
 	return pos;
+}
+
+/* The stream limits raised while handling a payload whose reply budget was
+ * used up are told now, once each, outside the budget.
+ */
+static void quic_send_pending_max_streams(struct quic_endpoint *ep)
+{
+	if (ep->rx_sl.max_bidi_pending) {
+		ep->rx_sl.max_bidi_pending = false;
+		(void)quic_send_max_streams(ep, true);
+	}
+
+	if (ep->rx_sl.max_uni_pending) {
+		ep->rx_sl.max_uni_pending = false;
+		(void)quic_send_max_streams(ep, false);
+	}
 }
 
 static int handle_reset_stream_frame(struct quic_endpoint *ep,
@@ -2853,6 +2914,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 	 */
 	QUIC_EP_STAT_INC(ep, valid_rx);
 
+	quic_send_pending_max_streams(ep);
+
 	if (ack_eliciting) {
 		ret = quic_send_ack(ep, QUIC_SECRET_LEVEL_APPLICATION, pkt->pkt_num);
 		if (ret != 0) {
@@ -3218,6 +3281,8 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 					     QUIC_ERROR_FRAME_ENCODING_ERROR,
 					     "Unknown frame type");
 	}
+
+	quic_send_pending_max_streams(ep);
 
 	/* Set ack_only flag: true if we saw ACK frame(s) but no other frames */
 	if (ack_only != NULL) {

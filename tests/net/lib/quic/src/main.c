@@ -7366,6 +7366,10 @@ static int frame_for_stream(struct quic_context *ctx, bool is_server, uint8_t ty
 
 	ep->is_server = is_server;
 
+	/* Room for the stream that a RESET_STREAM of the peer opens */
+	ep->rx_sl.max_bidi = 1;
+	ep->rx_sl.max_uni = 1;
+
 	/* The parser drops a reference when it gives up on the connection */
 	atomic_set(&ep->refcount, 2);
 	sys_slist_append(&ctx->endpoints, &ep->node);
