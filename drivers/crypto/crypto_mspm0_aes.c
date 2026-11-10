@@ -493,6 +493,102 @@ cleanup:
 	return ret;
 }
 
+static int crypto_aes_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+{
+	const struct device *dev = ctx->device;
+	const struct crypto_mspm0_aes_config *config = dev->config;
+	struct mspm0_aes_session *session = ctx->drv_sessn_state;
+	struct crypto_mspm0_aes_data *data = dev->data;
+	uint8_t counter[AES_BLOCK_SIZE] = {0};
+	int bytes_processed = 0;
+	int ret;
+
+	if (session == NULL || !session->in_use) {
+		LOG_ERR("Invalid session");
+		return -EINVAL;
+	}
+
+	ret = validate_pkt(pkt);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->device_mutex, AES_WAIT_TIMEOUT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	k_sem_reset(&data->aes_done);
+
+	ret = aes_hw_init(ctx);
+	if (ret != 0) {
+		goto cleanup;
+	}
+
+	memcpy(counter, iv, AES_BLOCK_SIZE - sizeof(uint32_t));
+
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+	config->regs->aesactl0 &= ~AES_MSPM0_AESACTL0_CMEN;
+#else
+	/* load iv */
+	aes_adv_load_iv(config->regs, counter);
+
+	config->regs->c_length_0 = pkt->in_len;
+#endif
+
+	do {
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		ret = aes_load_data_in(config->regs, counter);
+		if (ret != 0) {
+			break;
+		}
+#else
+		/* enable interrupt before writing data for next block */
+		config->regs->cpu_int.imask |= AESADV_MSPM0_IMASK_OUTPUTRDY_MASK;
+		aes_adv_load_words(config->regs->data,
+				   &pkt->in_buf[bytes_processed],
+				   AES_BLOCK_WORDS);
+#endif
+
+		/* wait for AES operation completion */
+		ret = k_sem_take(&data->aes_done, AES_SEM_TIMEOUT);
+		if (ret != 0) {
+			break;
+		}
+
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		ret = aes_load_xor_data_in_without_trigger(config->regs,
+							   &pkt->in_buf[bytes_processed]);
+		if (ret != 0) {
+			break;
+		}
+
+		ret = aes_get_data_out(config->regs, &pkt->out_buf[bytes_processed]);
+		if (ret != 0) {
+			break;
+		}
+#else
+		aes_adv_read_words(config->regs->data,
+				   &pkt->out_buf[bytes_processed],
+				   AES_BLOCK_WORDS);
+#endif
+
+		/* Increment the counter */
+		sys_put_be32(sys_get_be32(&counter[12]) + 1U, &counter[12]);
+
+		bytes_processed += AES_BLOCK_SIZE;
+	} while (bytes_processed < pkt->in_len);
+
+cleanup:
+	if (ret != 0 && bytes_processed < pkt->in_len) {
+		LOG_ERR("aborted after %d/%d bytes (ret : %d)", bytes_processed, pkt->in_len, ret);
+	}
+	pkt->out_len = bytes_processed;
+	k_mutex_unlock(&data->device_mutex);
+
+	return ret;
+}
+
 static void crypto_mspm0_aes_isr(const struct device *dev)
 {
 	const struct crypto_mspm0_aes_config *config = dev->config;
@@ -599,6 +695,16 @@ static int aes_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 		ctx->ops.ofb_crypt_hndlr = crypto_aes_ofb_op;
 		break;
 
+	case CRYPTO_CIPHER_MODE_CTR:
+#ifdef CONFIG_CRYPTO_MSPM0_AES
+		aesconfig = AES_MSPM0_AESACTL0_OPX_ENCRYPT;
+#else
+		aesconfig = (op == CRYPTO_CIPHER_OP_ENCRYPT) ?
+			    (AESADV_MSPM0_CTRL_DIR | AESADV_MSPM0_CTRL_CTR)
+			    : AESADV_MSPM0_CTRL_CTR;
+#endif
+		ctx->ops.ctr_crypt_hndlr = crypto_aes_ctr_op;
+		break;
 	default:
 		LOG_ERR("Mode Not Supported");
 		return -EINVAL;
