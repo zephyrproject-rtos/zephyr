@@ -10681,6 +10681,51 @@ ZTEST(net_socket_quic, test_571_reset_stream_carries_final_size)
 	reset_test_disconnect(&peers);
 }
 
+/* A STREAM frame with an offset, as stream_frame_for(), for an endpoint of a
+ * connection: the frame handler looks the connection up.
+ */
+static int stream_frame_at(struct quic_endpoint *ep, struct quic_context *ctx,
+			   uint8_t stream_id, uint8_t offset, const uint8_t *data, uint8_t len,
+			   bool fin)
+{
+	uint8_t payload[12];
+	bool ack_only = false;
+	int ret;
+
+	__ASSERT_NO_MSG(len <= sizeof(payload) - 4);
+
+	payload[0] = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02 | (fin ? 0x01 : 0x00);
+	payload[1] = stream_id;
+	payload[2] = offset;
+	payload[3] = len;
+
+	if (len > 0U) {
+		memcpy(&payload[4], data, len);
+	}
+
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, 4 + len, 4 + len, &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+/* Whether a closed stream is followed for the data the peer still sends */
+static bool closed_stream_followed(struct quic_endpoint *ep, uint64_t stream_id)
+{
+	ARRAY_FOR_EACH_PTR(ep->rx_fc.closed, closed) {
+		if (closed->stream_id == stream_id) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 ZTEST(net_socket_quic, test_572_closed_stream_returns_credit)
 {
 	static struct quic_stream test_stream;
@@ -10693,11 +10738,14 @@ ZTEST(net_socket_quic, test_572_closed_stream_returns_credit)
 	ctx = open_test_listener(&sock, "127.0.0.1:54359");
 
 	/* As a client, with data of a stream of the server's in the buffer
-	 * and behind a gap. Closing the stream credits all of it back.
+	 * and behind a gap. Closing the stream credits all of it back, and
+	 * the stream is followed for what the peer still sends on it. A
+	 * stream is marked as opened when it is created from a frame.
 	 */
 	ep->is_server = false;
 	ep->rx_fc.max_data = 1024;
 	link_test_stream(&test_stream, ctx, ep, 1);
+	stream_seq_mark_opened(&ep->rx_sl.opened_bidi, 1 >> 2);
 	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
 	test_stream.local_max_data = 1024;
 	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
@@ -10707,10 +10755,79 @@ ZTEST(net_socket_quic, test_572_closed_stream_returns_credit)
 	zassert_equal(ep->rx_fc.bytes_received, 13,
 		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
 
+	test_stream.local_max_data = 16;
 	quic_rx_stream_closed(ep, &test_stream);
 	zassert_equal(ep->rx_fc.max_data, 1024 + 13,
 		      "Connection credit %" PRIu64 " after the close", ep->rx_fc.max_data);
+	zassert_true(closed_stream_followed(ep, 1), "The closed stream is not followed");
 	unlink_test_stream(&test_stream, ctx);
+
+	/* Data that arrives later is credited as the peer charged it, up to
+	 * the highest offset, within the limit the stream had, and a FIN
+	 * ends that.
+	 */
+	ret = stream_frame_at(ep, ctx, 1, 13, data, sizeof(data), false);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 16,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 16,
+		      "Connection credit %" PRIu64 " after late data", ep->rx_fc.max_data);
+
+	ret = stream_frame_at(ep, ctx, 1, 0, data, sizeof(data), false);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 16,
+		      "Connection credit %" PRIu64 " after a repeat", ep->rx_fc.max_data);
+
+	ret = stream_frame_at(ep, ctx, 1, 16, data, sizeof(data), false);
+	zassert_equal(ret, -EPROTO,
+		      "Data beyond the stream limit must close the connection (%d)", ret);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 16,
+		      "Connection credit %" PRIu64 " after data beyond the limit",
+		      ep->rx_fc.max_data);
+
+	ret = stream_frame_at(ep, ctx, 1, 16, NULL, 0, true);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_false(closed_stream_followed(ep, 1), "The ended stream is still followed");
+
+	ret = stream_frame_at(ep, ctx, 1, 16, data, sizeof(data), false);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 16,
+		      "Connection credit %" PRIu64 " after data for an ended stream",
+		      ep->rx_fc.max_data);
+
+	/* A RESET_STREAM credits the rest up to its final size, which cannot
+	 * be below the data received nor beyond the limit the stream had.
+	 */
+	ep->rx_fc.max_data = 1024;
+	ep->rx_fc.bytes_received = 0;
+	link_test_stream(&test_stream, ctx, ep, 5);
+	stream_seq_mark_opened(&ep->rx_sl.opened_bidi, 5 >> 2);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
+	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+	test_stream.local_max_data = 20;
+	quic_rx_stream_closed(ep, &test_stream);
+	unlink_test_stream(&test_stream, ctx);
+
+	ret = reset_stream_for(ep, 5, 0x3f, 1);
+	zassert_equal(ret, -EPROTO,
+		      "RESET_STREAM below the received data must close the connection (%d)",
+		      ret);
+
+	ret = reset_stream_for(ep, 5, 0x3f, 21);
+	zassert_equal(ret, -EPROTO,
+		      "RESET_STREAM beyond the stream limit must close the connection (%d)",
+		      ret);
+	zassert_true(closed_stream_followed(ep, 5), "A bad RESET_STREAM ended the stream");
+
+	ret = reset_stream_for(ep, 5, 0x3f, 20);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->rx_fc.bytes_received, 20,
+		      "Connection credit used %" PRIu64, ep->rx_fc.bytes_received);
+	zassert_equal(ep->rx_fc.max_data, 1024 + 20,
+		      "Connection credit %" PRIu64 " after a late reset", ep->rx_fc.max_data);
+	zassert_false(closed_stream_followed(ep, 5), "The reset stream is still followed");
 
 	/* Data discarded once the read half is shut down is credited back
 	 * as well, and a reset after that credits what was not already.
@@ -10718,6 +10835,7 @@ ZTEST(net_socket_quic, test_572_closed_stream_returns_credit)
 	ep->rx_fc.max_data = 1024;
 	ep->rx_fc.bytes_received = 0;
 	link_test_stream(&test_stream, ctx, ep, 9);
+	stream_seq_mark_opened(&ep->rx_sl.opened_bidi, 9 >> 2);
 	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
 	test_stream.local_max_data = 1024;
 	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
@@ -10741,6 +10859,7 @@ ZTEST(net_socket_quic, test_572_closed_stream_returns_credit)
 	quic_rx_stream_closed(ep, &test_stream);
 	zassert_equal(ep->rx_fc.max_data, 1024 + 10,
 		      "Connection credit %" PRIu64 " after the close", ep->rx_fc.max_data);
+	zassert_false(closed_stream_followed(ep, 9), "A stream of known final size is followed");
 	unlink_test_stream(&test_stream, ctx);
 
 	ret = quic_connection_close(sock);
