@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT st_mipid02
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -23,7 +24,6 @@ LOG_MODULE_REGISTER(video_st_mipid02, CONFIG_VIDEO_LOG_LEVEL);
 struct mipid02_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec reset_gpio;
-	const struct device *source_dev;
 	struct {
 		uint32_t nb_lanes;
 		uint8_t lanes[MIPID02_MAX_DATA_LANE_NB];
@@ -32,7 +32,7 @@ struct mipid02_config {
 };
 
 struct mipid02_data {
-	struct video_format fmt;
+	struct video_device vdev; /* keep first */
 	const struct mipid02_format_desc *desc;
 	struct video_format_cap *caps;
 };
@@ -127,7 +127,7 @@ static const struct mipid02_format_desc *mipid02_get_format_desc(uint32_t pixelf
 	return NULL;
 }
 
-static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct mipid02_data *drv_data = dev->data;
 	const struct mipid02_config *cfg = dev->config;
@@ -163,56 +163,18 @@ static int mipid02_set_fmt(const struct device *dev, struct video_format *fmt)
 	/* Call video_set_format to the sensor */
 	sensor_fmt.pixelformat = desc->csi_pixelformat;
 
-	ret = video_set_format(cfg->source_dev, &sensor_fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	drv_data->fmt = *fmt;
 	drv_data->desc = desc;
-
-	return 0;
-}
-
-static int mipid02_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct mipid02_config *cfg = dev->config;
-	struct mipid02_data *drv_data = dev->data;
-	const struct mipid02_format_desc *desc;
-	int ret;
-
-	if (!drv_data->desc) {
-		ret = video_get_format(cfg->source_dev, fmt);
-		if (ret < 0) {
-			return ret;
-		}
-
-		desc = mipid02_get_format_desc(fmt->pixelformat);
-		if (desc == NULL) {
-			LOG_ERR("Sensor format not supported by the ST-MIPID02");
-			return -EIO;
-		}
-
-		/* Override the pixelformat */
-		fmt->pixelformat = desc->pixelformat;
-
-		drv_data->fmt = *fmt;
-		drv_data->desc = desc;
-	}
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
 
 static int mipid02_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct mipid02_config *cfg = dev->config;
 	struct mipid02_data *drv_data = dev->data;
 	int ind = 0, caps_nb = 0;
 	int ret;
 
-	ret = video_get_caps(cfg->source_dev, caps);
+	ret = video_get_caps(drv_data->vdev.source_dev, caps);
 	if (ret < 0) {
 		return ret;
 	}
@@ -264,7 +226,7 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 	int ret;
 
 	if (!enable) {
-		ret = video_stream_stop(cfg->source_dev, type);
+		ret = video_stream_stop(drv_data->vdev.source_dev, type);
 		if (ret < 0) {
 			return ret;
 		}
@@ -290,14 +252,14 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 		return 0;
 	}
 
-	desc = mipid02_get_format_desc(drv_data->fmt.pixelformat);
+	desc = mipid02_get_format_desc(drv_data->vdev.out_fmt.pixelformat);
 	if (!desc) {
-		LOG_ERR("No valid format desc available, should get/set_fmt prior to set_stream");
+		LOG_ERR("No valid format desc available, should set_fmt prior to set_stream");
 		return -EIO;
 	}
 
 	/* Get link-frequency information from source */
-	link_freq = video_get_csi_link_freq(cfg->source_dev,
+	link_freq = video_get_csi_link_freq(drv_data->vdev.source_dev,
 					    video_bits_per_pixel(desc->csi_pixelformat),
 					    cfg->csi.nb_lanes);
 	if (link_freq < 0) {
@@ -327,38 +289,13 @@ static int mipid02_set_stream(const struct device *dev, bool enable, enum video_
 		}
 	}
 
-	return video_stream_start(cfg->source_dev, type);
-}
-
-static int mipid02_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct mipid02_config *cfg = dev->config;
-
-	return video_set_frmival(cfg->source_dev, frmival);
-}
-
-static int mipid02_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct mipid02_config *cfg = dev->config;
-
-	return video_get_frmival(cfg->source_dev, frmival);
-}
-
-static int mipid02_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct mipid02_config *cfg = dev->config;
-
-	return video_enum_frmival(cfg->source_dev, fie);
+	return video_stream_start(drv_data->vdev.source_dev, type);
 }
 
 static DEVICE_API(video, mipid02_driver_api) = {
 	.set_format = mipid02_set_fmt,
-	.get_format = mipid02_get_fmt,
 	.get_caps = mipid02_get_caps,
 	.set_stream = mipid02_set_stream,
-	.set_frmival = mipid02_set_frmival,
-	.get_frmival = mipid02_get_frmival,
-	.enum_frmival = mipid02_enum_frmival,
 };
 
 static int mipid02_init(const struct device *dev)
@@ -423,14 +360,15 @@ static int mipid02_init(const struct device *dev)
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
 
 #define MIPID02_INIT(n)										\
-	static struct mipid02_data mipid02_data_##n;						\
+	static struct mipid02_data mipid02_data_##n = {						\
+		.vdev = VIDEO_DEVICE_INIT(mipid02_data_##n, DT_DRV_INST(n), SOURCE_DEV(n)),	\
+	};											\
 												\
 	static const struct mipid02_config mipid02_cfg_##n = {					\
 		.i2c = I2C_DT_SPEC_INST_GET(n),							\
-		.source_dev = SOURCE_DEV(n),							\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
 		.csi.nb_lanes = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 0, 0), data_lanes),	\
-		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(n, 0, 0),		\
+		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(n, 0, 0),			\
 					       data_lanes, 0),					\
 		.csi.lanes[1] = COND_CODE_1(DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(n, 0, 0),	\
 							data_lanes),				\
@@ -446,8 +384,6 @@ static int mipid02_init(const struct device *dev)
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(n, &mipid02_init, NULL, &mipid02_data_##n, &mipid02_cfg_##n,	\
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mipid02_driver_api);	\
-												\
-	VIDEO_DEVICE_DEFINE(mipid02_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mipid02_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPID02_INIT)

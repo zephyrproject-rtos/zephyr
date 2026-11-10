@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,display = &st7735r_160x80;
+		zephyr,console = &lpuart1;
 	};
 
 	leds {
@@ -162,7 +163,12 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-#include <../boards/common/usb/cdc_acm_serial.dtsi>
+//#include <../boards/common/usb/cdc_acm_serial.dtsi>
+&lpuart1 {
+	status = "okay";
+	pinctrl-0 = <&lpuart1_tx_pa9 &lpuart1_rx_pa10>;
+	pinctrl-names = "default";
+};
 
 &quadspi {
 	pinctrl-names = "default";

@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -189,9 +190,8 @@ struct ov5640_ctrls {
 };
 
 struct ov5640_data {
+	struct video_device vdev; /* keep first */
 	struct ov5640_ctrls ctrls;
-	struct video_format fmt;
-	uint16_t cur_frmrate;
 	const struct ov5640_mode_config *cur_mode;
 };
 
@@ -699,57 +699,54 @@ static int ov5640_set_fmt_dvp(const struct ov5640_config *cfg)
 	return 0;
 }
 
-static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int ov5640_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct ov5640_config *cfg = dev->config;
 	struct ov5640_data *drv_data = dev->data;
 	int ret;
-	uint8_t i, ind = 0;
-	uint32_t desired_frmrate, best_match = ov5640_frame_rates[ind];
-
-	desired_frmrate = DIV_ROUND_CLOSEST(frmival->denominator, frmival->numerator);
-
-	/* Find the supported frame rate closest to the desired one */
-	for (i = 0; i < ARRAY_SIZE(ov5640_frame_rates); i++) {
-		if (ov5640_frame_rates[i] <= drv_data->cur_mode->max_frmrate &&
-		    ABS(desired_frmrate, ov5640_frame_rates[i]) <
-			    ABS(desired_frmrate, best_match)) {
-			best_match = ov5640_frame_rates[i];
-			ind = i;
-		}
-	}
 
 	struct video_reg16 frmrate_params[] = {
-		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl1},
-		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmrate_config[ind].pllCtrl2},
-		{PCLK_PERIOD_REG, 0x0a}};
+		{SC_PLL_CTRL1_REG, drv_data->cur_mode->frmrate_config[idx].pllCtrl1},
+		{SC_PLL_CTRL2_REG, drv_data->cur_mode->frmrate_config[idx].pllCtrl2},
+		{PCLK_PERIOD_REG, 0x0a},
+	};
 
 	ret = video_write_cci_multiregs16(&cfg->i2c, frmrate_params, ARRAY_SIZE(frmrate_params));
-	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL0_REG), 0x0f, MIPI_BIT_MODE);
-	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL3_REG), 0x1f,
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL0_REG), 0x0f, MIPI_BIT_MODE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SC_PLL_CTRL3_REG), 0x1f,
 				    (LOG2CEIL(PLL_ROOT_DIV) << 4) | (PLL_PRE_DIV & 0x07));
-	ret |= video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SYS_ROOT_DIV_REG), 0x3f,
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_modify_cci_reg(&cfg->i2c, OV5640_REG8(SYS_ROOT_DIV_REG), 0x3f,
 				    (LOG2CEIL(PCLK_ROOT_DIV) & 0x03 << 4) |
 					    (LOG2CEIL(SCLK2X_DIV) & 0x03 << 2) |
 					    (LOG2CEIL(SCLK_DIV) & 0x03));
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (ret) {
 		LOG_ERR("Unable to set frame interval");
 		return ret;
 	}
 
-	drv_data->cur_frmrate = best_match;
-
 	/* Update pixerate control */
-	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[ind].pixelrate;
-
-	frmival->numerator = 1;
-	frmival->denominator = best_match;
+	drv_data->ctrls.pixel_rate.val64 = drv_data->cur_mode->frmrate_config[idx].pixelrate;
 
 	return 0;
 }
 
-static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
+static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	struct ov5640_data *drv_data = dev->data;
 	const struct ov5640_config *cfg = dev->config;
@@ -771,25 +768,6 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 		num_fmts = ARRAY_SIZE(csi2_fmts);
 		array_size_modes = ARRAY_SIZE(csi2_modes);
 	}
-
-	for (i = 0; i < num_fmts; ++i) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
-			break;
-		}
-	}
-
-	if (i == num_fmts) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
-	}
-
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
-		return 0;
-	}
-
-	drv_data->fmt = *fmt;
 
 	/* Set resolution */
 	for (i = 0; i < array_size_modes; i++) {
@@ -860,16 +838,7 @@ static int ov5640_set_fmt(const struct device *dev, struct video_format *fmt)
 	def_frmival.denominator = drv_data->cur_mode->def_frmrate;
 	def_frmival.numerator = 1;
 
-	return ov5640_set_frmival(dev, &def_frmival);
-}
-
-static int ov5640_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct ov5640_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
-
-	return 0;
+	return video_set_frmival(dev, &def_frmival);
 }
 
 static int ov5640_get_caps(const struct device *dev, struct video_caps *caps)
@@ -1148,16 +1117,6 @@ static int ov5640_get_volatile_ctrl(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-static int ov5640_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct ov5640_data *drv_data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = drv_data->cur_frmrate;
-
-	return 0;
-}
-
 static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct ov5640_mode_config *modes;
@@ -1193,13 +1152,11 @@ static int ov5640_enum_frmival(const struct device *dev, struct video_frmival_en
 
 static DEVICE_API(video, ov5640_driver_api) = {
 	.set_format = ov5640_set_fmt,
-	.get_format = ov5640_get_fmt,
 	.get_caps = ov5640_get_caps,
 	.set_stream = ov5640_set_stream,
 	.set_ctrl = ov5640_set_ctrl,
 	.get_volatile_ctrl = ov5640_get_volatile_ctrl,
 	.set_frmival = ov5640_set_frmival,
-	.get_frmival = ov5640_get_frmival,
 	.enum_frmival = ov5640_enum_frmival,
 };
 
@@ -1291,7 +1248,10 @@ static int ov5640_init_controls(const struct device *dev)
 static int ov5640_init(const struct device *dev)
 {
 	const struct ov5640_config *cfg = dev->config;
-	struct video_format fmt = {0};
+	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+		.pixelformat = VIDEO_PIX_FMT_RGB565,
+	};
 	uint32_t chip_id;
 	int ret;
 
@@ -1443,7 +1403,6 @@ static int ov5640_init(const struct device *dev)
 	}
 
 	/* Set default format */
-	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 	if (ov5640_is_dvp(dev)) {
 		/* Set default resolution to QQVGA (160x120) */
 		fmt.width = 160;
@@ -1453,7 +1412,7 @@ static int ov5640_init(const struct device *dev)
 		fmt.width = 1280;
 		fmt.height = 720;
 	}
-	ret = ov5640_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
@@ -1481,7 +1440,9 @@ static int ov5640_init(const struct device *dev)
 	DT_PROP_OR(DT_CHILD(DT_INST_CHILD(n, port), endpoint), prop, default)
 
 #define OV5640_INIT(n)                                                                             \
-	static struct ov5640_data ov5640_data_##n;                                                 \
+	static struct ov5640_data ov5640_data_##n = {                                              \
+		.vdev = VIDEO_DEVICE_INIT(ov5640_data_##n, DT_DRV_INST(n), NULL),                      \
+	};                                                                                         \
                                                                                                    \
 	static const struct ov5640_config ov5640_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
@@ -1496,8 +1457,6 @@ static int ov5640_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &ov5640_init, NULL, &ov5640_data_##n, &ov5640_cfg_##n,            \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);        \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(ov5640_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &ov5640_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(OV5640_INIT)

@@ -47,19 +47,38 @@ struct video_device {
 	/** Device held by this video device */
 	const struct device *dev;
 	/** Source device up in the chain, and providing the data */
-	const struct device *src_dev;
+	const struct device *source_dev;
 	/** List of video controls supported by this device */
 	sys_dlist_t ctrls;
+	/** Current frame interval value */
+	struct video_frmival frmival;
+	/** Current input format configured, if supported by this device */
+	struct video_format in_fmt;
+	/** Current output format configured, if supported by this device */
+	struct video_format out_fmt;
+	/** Bitmask mapping each @ref video_buf_type to a streaming state */
+	atomic_t is_streaming;
+	/** Mutex used by video APIs to access the driver */
+	struct k_mutex lock;
+	/** Signal used by the poll API and @ref video_set_signal() */
+	struct k_poll_signal *signal;
+	/** Input buffer submission queue */
+	struct k_fifo in_buf_submitted;
+	/** Input buffer completion queue */
+	struct k_fifo in_buf_completed;
+	/** Output buffer submission queue */
+	struct k_fifo out_buf_submitted;
+	/** Output buffer completion queue */
+	struct k_fifo out_buf_completed;
+	/** Selection rectangle for cropping at frame output */
+	struct video_rect out_selection;
+	/** Copose rectangle for scaling ans output offset at frame output */
+	struct video_rect out_compose;
+	/** Selection rectangle for cropping at frame input */
+	struct video_rect in_selection;
+	/** Copose rectangle for scaling ans output offset at frame input */
+	struct video_rect in_compose;
 };
-
-/**
- * @brief Find the @ref video_device associated with a video @ref device.
- *
- * @param dev Device that will be looked up in the global list of video devices.
- * @return Pointer to the @ref video_device if found.
- * @retval NULL if not found.
- */
-struct video_device *video_find_vdev(const struct device *dev);
 
 /**
  * @brief Types used to access drivers video controls
@@ -97,6 +116,8 @@ enum video_ctrl_type {
 	VIDEO_CTRL_TYPE_STRING = 5,
 	/** Menu integer type, standard or driver-defined menu */
 	VIDEO_CTRL_TYPE_INTEGER_MENU = 6,
+	/** Button type to trigger an event */
+	VIDEO_CTRL_TYPE_BUTTON = 7,
 };
 
 /**
@@ -155,15 +176,29 @@ struct video_ctrl {
 
 /**
  * @brief Callback API to set or get video format.
- * See @a video_driver_set_format() and @a video_driver_get_format() for argument description.
+ * See @a video_driver_set_format() for argument description.
  */
-typedef int (*video_api_format_t)(const struct device *dev, struct video_format *fmt);
+typedef int (*video_api_set_format_t)(const struct device *dev, struct video_format *fmt,
+				      size_t idx);
 
 /**
- * @brief Callback API to set or get video frame interval.
- * See @a video_driver_set_frmival() and @a video_driver_get_frmival() for argument description.
+ * @brief Callback API to set or get video format.
+ * See @a video_driver_get_format() for argument description.
  */
-typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmival *frmival);
+typedef int (*video_api_get_format_t)(const struct device *dev, struct video_format *fmt);
+
+/**
+ * @brief Callback API to set video frame interval.
+ * See @a video_driver_set_frmival() for argument description.
+ */
+typedef int (*video_api_set_frmival_t)(const struct device *dev, struct video_frmival *frmival,
+				       size_t idx);
+
+/**
+ * @brief Callback API to get video frame interval.
+ * See @a video_driver_get_frmival() for argument description.
+ */
+typedef int (*video_api_get_frmival_t)(const struct device *dev, struct video_frmival *frmival);
 
 /**
  * @brief Callback API to enumerate supported frame intervals for a format.
@@ -172,23 +207,10 @@ typedef int (*video_api_frmival_t)(const struct device *dev, struct video_frmiva
 typedef int (*video_api_enum_frmival_t)(const struct device *dev, struct video_frmival_enum *fie);
 
 /**
- * @brief Callback API to enqueue a buffer in the driver incoming queue.
- * See @a video_driver_enqueue() for argument description.
+ * @brief Callback API to notify of new buffers being available in the driver incoming queue.
+ * See @a video_driver_trigger() for argument description.
  */
-typedef int (*video_api_enqueue_t)(const struct device *dev, struct video_buffer *buf);
-
-/**
- * @brief Callback API to dequeue a buffer from the driver outgoing queue.
- * See @a video_driver_dequeue() for argument description.
- */
-typedef int (*video_api_dequeue_t)(const struct device *dev, struct video_buffer **buf,
-				   k_timeout_t timeout);
-
-/**
- * @brief Callback API to flush endpoint buffers.
- * See @a video_driver_flush() for argument description.
- */
-typedef int (*video_api_flush_t)(const struct device *dev, bool cancel);
+typedef int (*video_api_trigger_t)(const struct device *dev, enum video_buf_type type);
 
 /**
  * @brief Callback API to control stream status.
@@ -219,12 +241,6 @@ typedef int (*video_api_transform_cap_t)(const struct device *const dev,
 					 enum video_buf_type type, uint16_t ind);
 
 /**
- * @brief Callback API to register or unregister poll signal for buffer events.
- * See @a video_set_signal() for argument description.
- */
-typedef int (*video_api_set_signal_t)(const struct device *dev, struct k_poll_signal *sig);
-
-/**
  * @brief Callback API to set or get video selection (crop/compose).
  * See @a video_driver_set_selection() and @a video_driver_get_selection() for argument description.
  */
@@ -237,11 +253,11 @@ __subsystem struct video_driver_api {
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_set_format
 	 */
-	video_api_format_t set_format;
+	video_api_set_format_t set_format;
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_get_format
 	 */
-	video_api_format_t get_format;
+	video_api_get_format_t get_format;
 	/**
 	 * @driver_ops_mandatory @copybrief video_driver_set_stream
 	 */
@@ -251,17 +267,9 @@ __subsystem struct video_driver_api {
 	 */
 	video_api_get_caps_t get_caps;
 	/**
-	 * @driver_ops_optional @copybrief video_driver_enqueue
+	 * @driver_ops_optional @copybrief video_driver_trigger
 	 */
-	video_api_enqueue_t enqueue;
-	/**
-	 * @driver_ops_optional @copybrief video_driver_dequeue
-	 */
-	video_api_dequeue_t dequeue;
-	/**
-	 * @driver_ops_optional @copybrief video_driver_flush
-	 */
-	video_api_flush_t flush;
+	video_api_trigger_t trigger;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_set_ctrl
 	 */
@@ -271,17 +279,13 @@ __subsystem struct video_driver_api {
 	 */
 	video_api_ctrl_t get_volatile_ctrl;
 	/**
-	 * @driver_ops_optional @copybrief video_driver_set_signal
+	 * @driver_ops_optional @copybrief video_driver_get_frmival
 	 */
-	video_api_set_signal_t set_signal;
+	video_api_get_frmival_t get_frmival;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_set_frmival
 	 */
-	video_api_frmival_t set_frmival;
-	/**
-	 * @driver_ops_optional @copybrief video_driver_get_frmival
-	 */
-	video_api_frmival_t get_frmival;
+	video_api_set_frmival_t set_frmival;
 	/**
 	 * @driver_ops_optional @copybrief video_driver_enum_frmival
 	 */
@@ -311,12 +315,14 @@ __subsystem struct video_driver_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param fmt Pointer to a video format struct.
+ * @param idx Index withing this driver's format capability list.
  *
  * @retval 0 on success.
  * @retval -ENOTSUP Format is not supported.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_set_format(const struct device *dev, struct video_format *fmt)
+static inline int video_driver_set_format(const struct device *dev, struct video_format *fmt,
+					  size_t idx)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
@@ -324,29 +330,7 @@ static inline int video_driver_set_format(const struct device *dev, struct video
 		return -ENOSYS;
 	}
 
-	return api->set_format(dev, fmt);
-}
-
-/**
- * @brief Get video format of a driver.
- *
- * Get video device current video format.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param fmt Pointer to video format struct.
- *
- * @retval 0 on success.
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_get_format(const struct device *dev, struct video_format *fmt)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->get_format == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_format(dev, fmt);
+	return api->set_format(dev, fmt, idx);
 }
 
 /**
@@ -357,11 +341,13 @@ static inline int video_driver_get_format(const struct device *dev, struct video
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param frmival Pointer to a video frame interval struct.
+ * @param idx Index of the frame interval in the list of enumerated frame intervals.
  *
  * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static inline int video_driver_set_frmival(const struct device *dev, struct video_frmival *frmival,
+					   size_t idx)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
@@ -369,7 +355,7 @@ static inline int video_driver_set_frmival(const struct device *dev, struct vide
 		return -ENOSYS;
 	}
 
-	return api->set_frmival(dev, frmival);
+	return api->set_frmival(dev, frmival, idx);
 }
 
 /**
@@ -422,76 +408,27 @@ static inline int video_driver_enum_frmival(const struct device *dev,
 }
 
 /**
- * @brief Pass a video buffer to a driver.
+ * @brief Trigger a driver after a frame got submitted.
  *
- * Enqueue an empty (capturing) or filled (output) video buffer in the driver’s
- * endpoint incoming queue.
+ * The driver may expect one buffer for every trigger invocation in the matching buffer queue.
+ *
+ * Buffer queues reside in struct @ref video_device part of @c dev->data.
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param vbuf Pointer to the video buffer.
+ * @param type Buffer type to trigger.
  *
  * @retval 0 on success.
  * @retval -ENOSYS API is not implemented.
  */
-static inline int video_driver_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static inline int video_driver_trigger(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
 
-	if (api->enqueue == NULL) {
+	if (api->trigger == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->enqueue(dev, vbuf);
-}
-
-/**
- * @brief Dequeue a video buffer from a driver.
- *
- * Dequeue a filled (capturing) or displayed (output) buffer from the driver’s
- * endpoint outgoing queue.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param vbuf Pointer a video buffer pointer.
- * @param timeout Timeout
- *
- * @retval 0 on success.
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				       k_timeout_t timeout)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->dequeue == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->dequeue(dev, vbuf, timeout);
-}
-
-/**
- * @brief Flush endpoint buffers from a driver.
- *
- * A call to flush finishes when all endpoint buffers have been moved from
- * incoming queue to outgoing queue. Either because canceled or fully processed
- * through the video function.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param cancel If true, cancel buffer processing instead of waiting for
- *        completion.
- *
- * @retval 0 on success.
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_flush(const struct device *dev, bool cancel)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->flush == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->flush(dev, cancel);
+	return api->trigger(dev, type);
 }
 
 /**
@@ -572,6 +509,7 @@ static inline int video_driver_set_ctrl(const struct device *dev, uint32_t cid)
  *
  * @retval 0 on success
  * @retval -ENOSYS API is not implemented.
+ * @retval -ENOTSUP The device does not support this buffer type.
  */
 static inline int video_driver_get_caps(const struct device *dev, struct video_caps *caps)
 {
@@ -585,7 +523,7 @@ static inline int video_driver_get_caps(const struct device *dev, struct video_c
 }
 
 /**
- * @brief Transform a video format capability from one end to the other end of a m2m video device.
+ * @brief Transform a video format capability from one end to the other end of a video device.
  *
  * See @ref video_transform_cap for detailed description and usage.
  *
@@ -611,30 +549,6 @@ static inline int video_driver_transform_cap(const struct device *const dev,
 	}
 
 	return api->transform_cap(dev, cap, res_cap, type, ind);
-}
-
-/**
- * @brief Register/Unregister k_poll signal for a video endpoint.
- *
- * Register a poll signal to the endpoint, which will be signaled on frame
- * completion (done, aborted, error). Registering a NULL poll signal
- * unregisters any previously registered signal.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param sig Pointer to k_poll_signal
- *
- * @retval 0 on success
- * @retval -ENOSYS API is not implemented.
- */
-static inline int video_driver_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	const struct video_driver_api *api = DEVICE_API_GET(video, dev);
-
-	if (api->set_signal == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_signal(dev, sig);
 }
 
 /**

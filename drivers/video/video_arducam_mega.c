@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT arducam_mega
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/video/video.h>
 #include <zephyr/drivers/video.h>
@@ -234,15 +235,10 @@ struct arducam_mega_ctrls {
 };
 
 struct arducam_mega_data {
+	struct video_device vdev; /* keep first */
 	struct arducam_mega_ctrls ctrls;
-	struct video_format fmt;
-
-	const struct device *dev;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct k_work buf_work;
 	struct k_timer stream_schedule_timer;
-	struct k_poll_signal *signal;
 	uint8_t fifo_first_read;
 	uint32_t fifo_length;
 	uint8_t stream_on;
@@ -581,7 +577,7 @@ static int arducam_mega_set_jpeg_quality(const struct device *dev, enum mega_ima
 
 	LOG_DBG("JPEG quality level: %d", qc);
 
-	if (drv_data->fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
+	if (drv_data->vdev.out_fmt.pixelformat != VIDEO_PIX_FMT_JPEG) {
 		LOG_ERR("Image format does not support setting JPEG quality");
 		return -ENOTSUP;
 	}
@@ -814,30 +810,11 @@ static int arducam_mega_check_connection(const struct device *dev)
 	return ret;
 }
 
-static int arducam_mega_set_fmt(const struct device *dev, struct video_format *fmt)
+static int arducam_mega_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct arducam_mega_data *drv_data = dev->data;
 	int ret = 0;
 	int i = 0;
 
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	drv_data->fmt = *fmt;
-
-	ret = video_format_caps_index(fmts, fmt, &i);
-	if (ret < 0) {
-		LOG_ERR("Unsupported pixel format or resolution %s %ux%u",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), fmt->width, fmt->height);
-		return ret;
-	}
 	ret = arducam_mega_set_output_format(dev, fmt->pixelformat);
 	if (ret < 0) {
 		return ret;
@@ -847,15 +824,6 @@ static int arducam_mega_set_fmt(const struct device *dev, struct video_format *f
 	if (ret < 0) {
 		return ret;
 	}
-
-	return 0;
-}
-
-static int arducam_mega_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct arducam_mega_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
 
 	return 0;
 }
@@ -896,21 +864,6 @@ static int arducam_mega_stream_stop(const struct device *dev)
 
 	k_timer_stop(&drv_data->stream_schedule_timer);
 
-	return 0;
-}
-
-static int arducam_mega_flush(const struct device *dev, bool cancel)
-{
-	struct arducam_mega_data *drv_data = dev->data;
-	struct video_buffer *vbuf;
-
-	/* Clear fifo cache */
-	while (!k_fifo_is_empty(&drv_data->fifo_out)) {
-		vbuf = k_fifo_get(&drv_data->fifo_out, K_USEC(10));
-		if (vbuf != NULL) {
-			k_fifo_put(&drv_data->fifo_in, vbuf);
-		}
-	}
 	return 0;
 }
 
@@ -1014,22 +967,21 @@ static void arducam_mega_buffer_work(struct k_work *work)
 	struct k_work *dwork = work;
 	struct arducam_mega_data *drv_data =
 		CONTAINER_OF(dwork, struct arducam_mega_data, buf_work);
-	static uint32_t f_timestamp, f_length;
+	static uint32_t f_length;
 	struct video_buffer *vbuf;
 	int ret = 0;
 
-	vbuf = k_fifo_get(&drv_data->fifo_in, K_NO_WAIT);
+	vbuf = k_fifo_get(&drv_data->vdev.out_buf_submitted, K_NO_WAIT);
 	if (vbuf == NULL) {
 		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 		return;
 	}
 
 	if (drv_data->fifo_length == 0) {
-		arducam_mega_capture(drv_data->dev, &f_length);
-		f_timestamp = k_uptime_get_32();
+		arducam_mega_capture(drv_data->vdev.dev, &f_length);
 	}
 
-	ret = arducam_mega_fifo_read(drv_data->dev, vbuf);
+	ret = arducam_mega_fifo_read(drv_data->vdev.dev, vbuf);
 	if (ret < 0) {
 		LOG_ERR("failed to read a buffer (%d)", ret);
 		return;
@@ -1039,41 +991,20 @@ static void arducam_mega_buffer_work(struct k_work *work)
 		k_work_submit_to_queue(&ac_work_q, &drv_data->buf_work);
 	}
 
-	vbuf->timestamp = f_timestamp;
-	k_fifo_put(&drv_data->fifo_out, vbuf);
-}
-
-static int arducam_mega_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct arducam_mega_data *data = dev->data;
-
-	k_fifo_put(&data->fifo_in, vbuf);
-
-	LOG_DBG("enqueue buffer %p", vbuf->buffer);
-
-	return 0;
-}
-
-static int arducam_mega_dequeue(const struct device *dev, struct video_buffer **vbuf,
-				k_timeout_t timeout)
-{
-	struct arducam_mega_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	LOG_DBG("dequeue buffer %p", (*vbuf)->buffer);
-
-	return 0;
+	vbuf->bytesused = f_length;
+	video_buffer_done(drv_data->vdev.dev, vbuf, 0);
 }
 
 static int arducam_mega_get_caps(const struct device *dev, struct video_caps *caps)
 {
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	/* Arducam in capture mode needs only one buffer allocated before starting */
 	caps->min_vbuf_count = 1;
 	caps->format_caps = fmts;
+
 	return 0;
 }
 
@@ -1128,13 +1059,9 @@ static int arducam_mega_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, arducam_mega_driver_api) = {
 	.set_format = arducam_mega_set_fmt,
-	.get_format = arducam_mega_get_fmt,
 	.set_ctrl = arducam_mega_set_ctrl,
 	.get_caps = arducam_mega_get_caps,
 	.set_stream = arducam_mega_stream_start,
-	.flush = arducam_mega_flush,
-	.enqueue = arducam_mega_enqueue,
-	.dequeue = arducam_mega_dequeue,
 };
 
 #define ARDUCAM_MEGA_640_480_LINK_FREQ      120000000
@@ -1260,8 +1187,8 @@ static int arducam_mega_init_controls(const struct device *dev)
 static int arducam_mega_init(const struct device *dev)
 {
 	const struct arducam_mega_config *cfg = dev->config;
-	struct arducam_mega_data *drv_data = dev->data;
 	struct video_format fmt;
+	struct arducam_mega_data *drv_data = dev->data;
 	int ret = 0;
 	uint32_t reg_data;
 
@@ -1270,9 +1197,6 @@ static int arducam_mega_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	drv_data->dev = dev;
-	k_fifo_init(&drv_data->fifo_in);
-	k_fifo_init(&drv_data->fifo_out);
 	k_work_queue_init(&ac_work_q);
 	k_work_queue_start(&ac_work_q, ac_stack_area, K_THREAD_STACK_SIZEOF(ac_stack_area),
 			   AC_PRIORITY, NULL);
@@ -1334,7 +1258,7 @@ static int arducam_mega_init(const struct device *dev)
 	fmt.width = 320;
 	fmt.height = 240;
 
-	ret = arducam_mega_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("Unable to configure default format");
 		return ret;
@@ -1354,12 +1278,12 @@ static int arducam_mega_init(const struct device *dev)
 			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_LOCK_ON),\
 	};                                                                                         \
                                                                                                    \
-	static struct arducam_mega_data arducam_mega_data_##inst;                                  \
+	static struct arducam_mega_data arducam_mega_data_##inst = {                               \
+		.vdev = VIDEO_DEVICE_INIT(arducam_mega_data_##inst, DT_DRV_INST(inst), NULL),          \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &arducam_mega_init, NULL, &arducam_mega_data_##inst,           \
 			      &arducam_mega_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,   \
-			      &arducam_mega_driver_api);                                           \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(arducam_mega_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &arducam_mega_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ARDUCAM_MEGA_INIT)

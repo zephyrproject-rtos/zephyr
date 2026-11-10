@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT renesas_ra_ceu
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/video.h>
@@ -47,23 +48,16 @@ struct video_renesas_ra_ceu_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *clock_dev;
 	const struct device *cam_xclk_dev;
-	const struct device *source_dev;
 	const struct pinctrl_dev_config *pincfg;
 	const struct clock_control_ra_subsys_cfg clock_subsys;
 };
 
 struct video_renesas_ra_ceu_data {
+	struct video_device vdev; /* keep first */
 	struct st_ceu_instance_ctrl *fsp_ctrl;
 	struct st_capture_cfg *fsp_cfg;
 	struct st_ceu_extended_cfg *fsp_extend_cfg;
-	struct video_format fmt;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	atomic_ptr_t vbuf;
-	atomic_t streaming;
-#ifdef CONFIG_POLL
-	struct k_poll_signal *signal;
-#endif
 };
 
 extern void ceu_isr(void);
@@ -79,24 +73,23 @@ static void video_renesas_ra_ceu_callback(capture_callback_args_t *p_args)
 	if (p_args->event & CEU_EVENT_FRAME_END) {
 		curr_vbuf = atomic_ptr_get(&data->vbuf);
 		if (curr_vbuf && atomic_ptr_cas(&data->vbuf, curr_vbuf, NULL)) {
-			curr_vbuf->timestamp = k_uptime_get_32();
-			k_fifo_put(&data->fifo_out, curr_vbuf);
+			video_buffer_done(dev, curr_vbuf, 0);
 		}
 
-		next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		next_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 		if (next_vbuf == NULL) {
 			return;
 		}
 
 		if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-			k_fifo_put(&data->fifo_in, next_vbuf);
+			video_buffer_done(dev, next_vbuf, 0);
 			return;
 		}
 
 		err = R_CEU_CaptureStart(data->fsp_ctrl, next_vbuf->buffer);
 		if (err != FSP_SUCCESS) {
 			atomic_ptr_clear(&data->vbuf);
-			k_fifo_put(&data->fifo_out, next_vbuf);
+			video_buffer_done(dev, next_vbuf, -EIO);
 			return;
 		}
 	}
@@ -107,26 +100,15 @@ static void video_renesas_ra_ceu_capture_stop(void)
 	R_CEU->CAPSR = R_CEU_CAPSR_CPKIL_Msk;
 }
 
-static int video_renesas_ra_ceu_get_format(const struct device *dev, struct video_format *fmt)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-	int ret;
-
-	ret = video_get_format(config->source_dev, fmt);
-	if (ret < 0) {
-		LOG_DBG("Failed to get video format from source device");
-		return ret;
-	}
-
-	return video_estimate_fmt_size(fmt);
-}
-
-static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt)
+static int video_renesas_ra_ceu_set_format(const struct device *dev, struct video_format *fmt,
+					   size_t idx)
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	fsp_err_t err;
 	int ret;
+
+	/* TODO: modify the table of format capabilities to apply these rules */
 
 	if (fmt->width > VIDEO_RA_CEU_WIDTH_MAX || fmt->width < VIDEO_RA_CEU_WIDTH_MIN) {
 		LOG_DBG("Width %d out of supported range %d-%d", fmt->width, VIDEO_RA_CEU_WIDTH_MIN,
@@ -148,12 +130,6 @@ static int video_renesas_ra_ceu_set_format(const struct device *dev, struct vide
 		return -ENOTSUP;
 	}
 
-	ret = video_set_format(config->source_dev, fmt);
-	if (ret < 0) {
-		LOG_DBG("Failed to set format on source device");
-		return ret;
-	}
-
 	if (data->fsp_ctrl->open) {
 		R_CEU_Close(data->fsp_ctrl);
 	}
@@ -168,13 +144,6 @@ static int video_renesas_ra_ceu_set_format(const struct device *dev, struct vide
 		return -EIO;
 	}
 
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(struct video_format));
-
 	return 0;
 }
 
@@ -182,9 +151,13 @@ static int video_renesas_ra_ceu_get_caps(const struct device *dev, struct video_
 {
 	const struct video_renesas_ra_ceu_config *config = dev->config;
 
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
+
 	caps->min_vbuf_count = 1;
 
-	return video_get_caps(config->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
 
 static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable,
@@ -197,30 +170,25 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 	int ret;
 
 	if (!enable) {
-		ret = video_stream_stop(config->source_dev, type);
+		ret = video_stream_stop(data->vdev.source_dev, type);
 		if (ret < 0) {
 			LOG_DBG("Failed to stop source device stream");
 			return -EIO;
 		}
 
 		video_renesas_ra_ceu_capture_stop();
-		atomic_clear(&data->streaming);
 
 		return 0;
 	}
 
-	if (atomic_get(&data->streaming)) {
-		return -EBUSY;
-	}
-
-	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	next_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (next_vbuf == NULL) {
 		LOG_DBG("No enqueued video buffers available to start streaming");
 		return -EAGAIN;
 	}
 
 	if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-		k_fifo_put(&data->fifo_in, next_vbuf);
+		k_fifo_put(&data->vdev.out_buf_submitted, next_vbuf);
 		return 0;
 	}
 
@@ -228,11 +196,11 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to start CEU capture");
 		atomic_ptr_clear(&data->vbuf);
-		k_fifo_put(&data->fifo_out, next_vbuf);
+		video_buffer_done(dev, next_vbuf, -EIO);
 		return -EIO;
 	}
 
-	ret = video_stream_start(config->source_dev, type);
+	ret = video_stream_start(data->vdev.source_dev, type);
 	if (ret < 0) {
 		LOG_DBG("Failed to start source device stream");
 		atomic_ptr_clear(&data->vbuf);
@@ -240,29 +208,19 @@ static int video_renesas_ra_ceu_set_stream(const struct device *dev, bool enable
 		return -EIO;
 	}
 
-	atomic_set(&data->streaming, 1);
-
 	return 0;
 }
 
-static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_buffer *vbuf)
+static int video_renesas_ra_ceu_trigger(const struct device *dev, enum video_buf_type type)
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	struct video_buffer *next_vbuf;
-	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
 	fsp_err_t err;
-
-	if (buffer_size > vbuf->size) {
-		LOG_DBG("Enqueue buffer too small");
-		return -EINVAL;
-	}
 
 	vbuf->bytesused = buffer_size;
 	vbuf->line_offset = 0;
 
-	k_fifo_put(&data->fifo_in, vbuf);
-
-	if (!atomic_get(&data->streaming)) {
+	if (!video_stream_busy(dev)) {
 		return 0;
 	}
 
@@ -270,14 +228,14 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 		return 0;
 	}
 
-	next_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	next_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (!next_vbuf) {
 		LOG_DBG("No enqueued video buffers available to restart streaming");
 		return -EAGAIN;
 	}
 
 	if (!atomic_ptr_cas(&data->vbuf, NULL, next_vbuf)) {
-		k_fifo_put(&data->fifo_in, next_vbuf);
+		k_fifo_put(&data->vdev.out_buf_submitted, next_vbuf);
 		return 0;
 	}
 
@@ -285,92 +243,29 @@ static int video_renesas_ra_ceu_enqueue(const struct device *dev, struct video_b
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to start CEU capture");
 		atomic_ptr_clear(&data->vbuf);
-		k_fifo_put(&data->fifo_out, next_vbuf);
+		video_buffer_done(dev, next_vbuf, -EIO);
 		return -EIO;
 	}
 
 	return 0;
 }
 
-static int video_renesas_ra_ceu_dequeue(const struct device *dev, struct video_buffer **buf,
-					k_timeout_t timeout)
-{
-	struct video_renesas_ra_ceu_data *data = dev->data;
-
-	*buf = k_fifo_get(&data->fifo_out, timeout);
-	if (*buf == NULL) {
-		LOG_DBG("Dequeue timeout or no completed buffer available");
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
-static int video_renesas_ra_ceu_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-
-	return video_get_frmival(config->source_dev, frmival);
-}
-
-static int video_renesas_ra_ceu_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-
-	return video_set_frmival(config->source_dev, frmival);
-}
-
-static int video_renesas_ra_ceu_enum_frmival(const struct device *dev,
-					     struct video_frmival_enum *fie)
-{
-	const struct video_renesas_ra_ceu_config *config = dev->config;
-
-	return video_enum_frmival(config->source_dev, fie);
-}
-
-static int video_renesas_ra_ceu_flush(const struct device *dev, bool cancel)
+static int video_renesas_ra_ceu_cancel(const struct device *dev, enum video_buf_type type)
 {
 	struct video_renesas_ra_ceu_data *data = dev->data;
 	struct video_buffer *vbuf;
 
-	if (cancel) {
-		if (atomic_cas(&data->streaming, 1, 0)) {
-			video_renesas_ra_ceu_set_stream(dev, false, VIDEO_BUF_TYPE_OUTPUT);
-		}
+	if (atomic_cas(&data->streaming, 1, 0)) {
+		video_renesas_ra_ceu_set_stream(dev, false, type);
+	}
 
-		vbuf = atomic_ptr_get(&data->vbuf);
-		if (vbuf && atomic_ptr_cas(&data->vbuf, vbuf, NULL)) {
-			k_fifo_put(&data->fifo_out, vbuf);
-		}
-
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->fifo_out, vbuf);
-		}
-
-#ifdef CONFIG_POLL
-		if (data->signal) {
-			k_poll_signal_raise(data->signal, VIDEO_BUF_ABORTED);
-		}
-#endif
-
-	} else {
-		while (!k_fifo_is_empty(&data->fifo_in)) {
-			k_sleep(K_MSEC(1));
-		}
+	vbuf = atomic_ptr_get(&data->vbuf);
+	if (vbuf && atomic_ptr_cas(&data->vbuf, vbuf, NULL)) {
+		video_buffer_done(dev, vbuf, -ECANCELED);
 	}
 
 	return 0;
 }
-
-#ifdef CONFIG_POLL
-static int video_renesas_ra_ceu_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_renesas_ra_ceu_data *data = dev->data;
-
-	data->signal = sig;
-	return 0;
-}
-#endif
 
 static int video_renesas_ra_ceu_init(const struct device *dev)
 {
@@ -406,26 +301,15 @@ static int video_renesas_ra_ceu_init(const struct device *dev)
 
 	atomic_clear(&data->streaming);
 	atomic_ptr_clear(&data->vbuf);
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 
 	return 0;
 }
 
 static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
-	.get_format = video_renesas_ra_ceu_get_format,
 	.set_format = video_renesas_ra_ceu_set_format,
 	.get_caps = video_renesas_ra_ceu_get_caps,
 	.set_stream = video_renesas_ra_ceu_set_stream,
-	.enqueue = video_renesas_ra_ceu_enqueue,
-	.dequeue = video_renesas_ra_ceu_dequeue,
-	.enum_frmival = video_renesas_ra_ceu_enum_frmival,
-	.set_frmival = video_renesas_ra_ceu_set_frmival,
-	.get_frmival = video_renesas_ra_ceu_get_frmival,
-	.flush = video_renesas_ra_ceu_flush,
-#ifdef CONFIG_POLL
-	.set_signal = video_renesas_ra_ceu_set_signal,
-#endif
+	.trigger = video_renesas_ra_ceu_trigger,
 };
 
 #define EVENT_CEU_INT(inst) BSP_PRV_IELS_ENUM(CONCAT(EVENT_CEU, _CEUI))
@@ -522,6 +406,7 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 	};                                                                                         \
                                                                                                    \
 	static struct video_renesas_ra_ceu_data video_renesas_ra_ceu_data##inst = {                \
+		.vdev = VIDEO_DEVICE_INIT(video_renesas_ra_ceu_data##inst, DT_DRV_INST(n), NULL),      \
 		.fsp_ctrl = &video_renesas_ra_ceu_fsp_ctrl##inst,                                  \
 		.fsp_cfg = &video_renesas_ra_ceu_fsp_cfg##inst,                                    \
 		.fsp_extend_cfg = &video_renesas_ra_ceu_fsp_extend_cfg##inst,                      \
@@ -531,8 +416,6 @@ static DEVICE_API(video, video_renesas_ra_ceu_driver_api) = {
 			      &video_renesas_ra_ceu_data##inst,                                    \
 			      &video_renesas_ra_ceu_config##inst, POST_KERNEL,                     \
 			      CONFIG_VIDEO_INIT_PRIORITY, &video_renesas_ra_ceu_driver_api);       \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(renesas_ra_ceu##inst, DEVICE_DT_INST_GET(inst), SOURCE_DEV(inst));     \
                                                                                                    \
 	SYS_INIT(video_renesas_ra_ceu_cam_clock_init##inst, POST_KERNEL,                           \
 		 CONFIG_CLOCK_CONTROL_PWM_INIT_PRIORITY);

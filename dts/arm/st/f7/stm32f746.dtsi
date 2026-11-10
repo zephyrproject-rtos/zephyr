@@ -20,5 +20,15 @@
 			resets = <&rctl STM32_RESET(APB2, 26)>;
 			status = "disabled";
 		};
+
+		dcmi: dcmi@50050000 {
+			compatible = "st,stm32-dcmi";
+			reg = <0x50050000 0x400>;
+			interrupts = <85 0>;
+			interrupt-names = "dcmi";
+			clocks = <&rcc STM32_CLOCK(AHB2, 0)>;
+			dmas = <&dma2 1 1 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+			status = "disabled";
+		};
 	};
 };

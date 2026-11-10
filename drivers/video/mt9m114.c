@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT aptina_mt9m114
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -71,8 +72,8 @@ struct mt9m114_ctrls {
 };
 
 struct mt9m114_data {
+	struct video_device vdev; /* keep first */
 	struct mt9m114_ctrls ctrls;
-	struct video_format fmt;
 };
 
 struct mt9m114_reg {
@@ -398,32 +399,9 @@ static int mt9m114_set_output_format(const struct device *dev, int pixel_format)
 	return ret;
 }
 
-static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
+static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
-	struct mt9m114_data *drv_data = dev->data;
 	int ret;
-	int i = 0;
-
-	while (fmts[i].pixelformat) {
-		if (fmt->pixelformat == fmts[i].pixelformat && fmt->width >= fmts[i].width_min &&
-		    fmt->width <= fmts[i].width_max && fmt->height >= fmts[i].height_min &&
-		    fmt->height <= fmts[i].height_max) {
-			break;
-		}
-		i++;
-	}
-
-	if (i == (ARRAY_SIZE(fmts) - 1)) {
-		LOG_ERR("Unsupported pixel format or resolution");
-		return -ENOTSUP;
-	}
-
-	if (!memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	drv_data->fmt = *fmt;
 
 	/* Set output pixel format */
 	ret = mt9m114_set_output_format(dev, fmt->pixelformat);
@@ -433,28 +411,18 @@ static int mt9m114_set_fmt(const struct device *dev, struct video_format *fmt)
 	}
 
 	/* Set output resolution */
-	for (i = 0; i < ARRAY_SIZE(resolution_configs); i++) {
-		if (fmt->width == resolution_configs[i].width &&
-		    fmt->height == resolution_configs[i].height) {
-			ret = mt9m114_write_all(dev, resolution_configs[i].params);
-			if (ret) {
-				LOG_ERR("Unable to set resolution");
-				return ret;
-			}
-
-			break;
-		}
+	ret = mt9m114_write_all(dev, resolution_configs[idx].params);
+	if (ret) {
+		LOG_ERR("Unable to set resolution");
+		return ret;
 	}
 
 	/* Apply Config */
-	return mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
-}
-
-static int mt9m114_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct mt9m114_data *drv_data = dev->data;
-
-	*fmt = drv_data->fmt;
+	ret = mt9m114_set_state(dev, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
+	if (ret < 0) {
+		LOG_ERR("Failed to apply %s state", dev->name);
+		return ret;
+	}
 
 	return 0;
 }
@@ -503,7 +471,6 @@ static int mt9m114_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, mt9m114_driver_api) = {
 	.set_format = mt9m114_set_fmt,
-	.get_format = mt9m114_get_fmt,
 	.get_caps = mt9m114_get_caps,
 	.set_stream = mt9m114_set_stream,
 	.set_ctrl = mt9m114_set_ctrl,
@@ -529,6 +496,7 @@ static int mt9m114_init(const struct device *dev)
 {
 	const struct mt9m114_config *cfg = dev->config;
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = VIDEO_PIX_FMT_RGB565,
 		.width = 480,
 		.height = 272,
@@ -565,7 +533,7 @@ static int mt9m114_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = mt9m114_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
 		return -EIO;
@@ -579,15 +547,15 @@ static int mt9m114_init(const struct device *dev)
 }
 
 #define MT9M114_INIT(n)                                                                            \
-	static struct mt9m114_data mt9m114_data_##n;                                               \
+	static struct mt9m114_data mt9m114_data_##n = {                                            \
+		.vdev = VIDEO_DEVICE_INIT(mt9m114_data_##n, DT_DRV_INST(n), NULL),                     \
+	};                                                                                         \
                                                                                                    \
 	static const struct mt9m114_config mt9m114_cfg_##n = {                                     \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &mt9m114_init, NULL, &mt9m114_data_##n, &mt9m114_cfg_##n,         \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);       \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(mt9m114_##n, DEVICE_DT_INST_GET(n), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &mt9m114_driver_api);\
 
 DT_INST_FOREACH_STATUS_OKAY(MT9M114_INIT)

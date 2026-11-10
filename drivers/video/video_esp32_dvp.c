@@ -9,6 +9,7 @@
 
 #include <hal/gdma_channel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
@@ -29,8 +30,8 @@ LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #ifdef CONFIG_POLL
 #define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)                                               \
-	if (data->signal_out) {                                                                    \
-		k_poll_signal_raise(data->signal_out, result);                                     \
+	if (data->vdev.signal) {                                                                   \
+		k_poll_signal_raise(data->vdev.signal, result);                                    \
 	}
 #else
 #define VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(result)
@@ -45,7 +46,6 @@ enum video_esp32_cam_clk_sel_values {
 
 struct video_esp32_config {
 	const struct device *dma_dev;
-	const struct device *source_dev;
 	uint32_t cam_clk;
 	uint8_t rx_dma_channel;
 	uint8_t data_width;
@@ -58,49 +58,20 @@ struct video_esp32_config {
 };
 
 struct video_esp32_data {
+	struct video_device vdev; /* keep first */
 	cam_hal_context_t hal;
 	const struct video_esp32_config *config;
-	struct video_format video_format;
 	struct video_buffer *active_vbuf;
-	bool is_streaming;
-	struct k_fifo fifo_in;
-	struct k_fifo fifo_out;
 	struct dma_block_config dma_blocks[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
-#ifdef CONFIG_POLL
-	struct k_poll_signal *signal_out;
-#endif
 };
 
-static int video_esp32_reload_dma(struct video_esp32_data *data)
-{
-	const struct video_esp32_config *cfg = data->config;
-	int ret = 0;
-
-	if (data->active_vbuf == NULL) {
-		LOG_ERR("No video buffer available. Enqueue some buffers first.");
-		return -EAGAIN;
-	}
-
-	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
-			 data->active_vbuf->bytesused);
-	if (ret < 0) {
-		LOG_ERR("Unable to reload DMA (%d)", ret);
-		return ret;
-	}
-
-	ret = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
-	if (ret < 0) {
-		LOG_ERR("Unable to start DMA (%d)", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t channel,
+void video_esp32_dma_rx_done(const struct device *dma_dev, void *user_data, uint32_t channel,
 			     int status)
 {
 	struct video_esp32_data *data = user_data;
+	const struct device *dev = data->vdev.dev;
+	const struct video_esp32_config *cfg = dev->config;
+	int ret;
 
 	if (status == DMA_STATUS_BLOCK) {
 		LOG_DBG("received block");
@@ -119,17 +90,27 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		return;
 	}
 
-	data->active_vbuf->timestamp = k_uptime_get_32();
-	k_fifo_put(&data->fifo_out, data->active_vbuf);
-	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	video_buffer_done(dev, data->active_vbuf, 0);
 
+	data->active_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (data->active_vbuf == NULL) {
 		LOG_WRN("Frame dropped. No buffer available");
 		VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_ERROR)
 		return;
 	}
-	video_esp32_reload_dma(data);
+
+	ret = dma_reload(cfg->dma_dev, cfg->rx_dma_channel, 0, (uint32_t)data->active_vbuf->buffer,
+			 data->vdev.out_fmt.size);
+	if (ret < 0) {
+		LOG_ERR("Unable to reload DMA (%d)", ret);
+		return;
+	}
+
+	ret = dma_start(cfg->dma_dev, cfg->rx_dma_channel);
+	if (ret < 0) {
+		LOG_ERR("Unable to start DMA (%d)", ret);
+		return;
+	}
 }
 
 static int video_esp32_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
@@ -139,18 +120,17 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 	struct dma_status dma_status = {0};
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config *dma_block_iter = data->dma_blocks;
-	uint32_t buffer_size = 0;
+	uint32_t buffer_size = data->vdev.out_fmt.size;
 	int error = 0;
 
 	if (!enable) {
 		LOG_DBG("Stop streaming");
 
-		if (video_stream_stop(cfg->source_dev, type)) {
-			LOG_ERR("Failed to start source device %s", cfg->source_dev->name);
+		if (video_stream_stop(data->vdev.source_dev, type)) {
+			LOG_ERR("Failed to start source device %s", data->vdev.source_dev->name);
 			return -EIO;
 		}
 
-		data->is_streaming = false;
 		error = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
 		if (error) {
 			LOG_ERR("Unable to stop DMA (%d)", error);
@@ -159,12 +139,12 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 		cam_hal_stop_streaming(&data->hal);
 
-		return 0;
-	}
+		if (data->active_vbuf) {
+			video_buffer_done(dev, data->active_vbuf, -ECANCELED);
+			data->active_vbuf = NULL;
+		}
 
-	if (data->is_streaming) {
-		LOG_ERR("Cannot start %s, busy", dev->name);
-		return -EBUSY;
+		return 0;
 	}
 
 	LOG_DBG("Start streaming");
@@ -180,13 +160,12 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 		return -EBUSY;
 	}
 
-	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	data->active_vbuf = video_buffer_next(dev, VIDEO_BUF_TYPE_OUTPUT, K_NO_WAIT);
 	if (!data->active_vbuf) {
 		LOG_ERR("No enqueued video buffers available.");
 		return -EAGAIN;
 	}
 
-	buffer_size = data->active_vbuf->bytesused;
 	memset(data->dma_blocks, 0, sizeof(data->dma_blocks));
 	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
 		dma_block_iter->dest_address =
@@ -230,133 +209,29 @@ static int video_esp32_set_stream(const struct device *dev, bool enable, enum vi
 
 	cam_hal_start_streaming(&data->hal);
 
-	error = video_stream_start(cfg->source_dev, type);
+	error = video_stream_start(data->vdev.source_dev, type);
 	if (error) {
-		LOG_ERR("Failed to start source device %s", cfg->source_dev->name);
+		LOG_ERR("Failed to start source device %s", data->vdev.source_dev->name);
 		return error;
 	}
-	data->is_streaming = true;
 
 	return 0;
 }
 
 static int video_esp32_get_caps(const struct device *dev, struct video_caps *caps)
 {
-	const struct video_esp32_config *config = dev->config;
+	struct video_esp32_data *data = dev->data;
+
+	if (caps->type != VIDEO_BUF_TYPE_OUTPUT) {
+		return -ENOTSUP;
+	}
 
 	/* Two buffers are needed to perform transfers */
 	caps->min_vbuf_count = 2;
 
 	/* Forward the message to the source device */
-	return video_get_caps(config->source_dev, caps);
+	return video_get_caps(data->vdev.source_dev, caps);
 }
-
-static int video_esp32_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct video_esp32_config *cfg = dev->config;
-	int ret = 0;
-
-	LOG_DBG("Get format");
-
-	ret = video_get_format(cfg->source_dev, fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to get format from source");
-		return ret;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return 0;
-}
-
-static int video_esp32_set_fmt(const struct device *dev, struct video_format *fmt)
-{
-	const struct video_esp32_config *cfg = dev->config;
-	struct video_esp32_data *data = dev->data;
-	int ret;
-
-	ret = video_set_format(cfg->source_dev, fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to apply format to the source %s", cfg->source_dev->name);
-		return ret;
-	}
-
-	ret = video_estimate_fmt_size(fmt);
-	if (ret < 0) {
-		LOG_ERR("Failed to estimate the format size");
-		return ret;
-	}
-
-	data->video_format = *fmt;
-
-	return 0;
-}
-
-static int video_esp32_enqueue(const struct device *dev, struct video_buffer *vbuf)
-{
-	struct video_esp32_data *data = dev->data;
-
-	vbuf->bytesused = data->video_format.pitch * data->video_format.height;
-	vbuf->line_offset = 0;
-
-	k_fifo_put(&data->fifo_in, vbuf);
-
-	return 0;
-}
-
-static int video_esp32_dequeue(const struct device *dev, struct video_buffer **vbuf,
-			       k_timeout_t timeout)
-{
-	struct video_esp32_data *data = dev->data;
-
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	LOG_DBG("Dequeue done, vbuf = %p", *vbuf);
-	if (*vbuf == NULL) {
-		return -EAGAIN;
-	}
-
-	return 0;
-}
-
-static int video_esp32_flush(const struct device *dev, bool cancel)
-{
-	struct video_esp32_data *data = dev->data;
-	struct video_buffer *vbuf = NULL;
-
-	if (cancel) {
-		if (data->active_vbuf) {
-			k_fifo_put(&data->fifo_out, data->active_vbuf);
-			data->active_vbuf = NULL;
-		}
-		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT)) != NULL) {
-			k_fifo_put(&data->fifo_out, vbuf);
-#ifdef CONFIG_POLL
-			if (data->signal_out) {
-				k_poll_signal_raise(data->signal_out, VIDEO_BUF_ABORTED);
-			}
-#endif
-		}
-	} else {
-		while (!k_fifo_is_empty(&data->fifo_in)) {
-			k_sleep(K_MSEC(1));
-		}
-	}
-
-	return 0;
-}
-
-#ifdef CONFIG_POLL
-int video_esp32_set_signal(const struct device *dev, struct k_poll_signal *sig)
-{
-	struct video_esp32_data *data = dev->data;
-
-	data->signal_out = sig;
-	return 0;
-}
-#endif
 
 static void video_esp32_cam_ctrl_init(const struct device *dev)
 {
@@ -377,27 +252,6 @@ static void video_esp32_cam_ctrl_init(const struct device *dev)
 	cam_ll_enable_invert_hsync(data->hal.hw, cfg->invert_hsync);
 }
 
-static int video_esp32_set_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_set_frmival(cfg->source_dev, frmival);
-}
-
-static int video_esp32_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_get_frmival(cfg->source_dev, frmival);
-}
-
-static int video_esp32_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_enum_frmival(cfg->source_dev, fie);
-}
-
 static int video_esp32_init(const struct device *dev)
 {
 	const struct video_esp32_config *cfg = dev->config;
@@ -408,8 +262,6 @@ static int video_esp32_init(const struct device *dev)
 	 * to ensure the image sensor receives clock before its I2C init.
 	 */
 
-	k_fifo_init(&data->fifo_in);
-	k_fifo_init(&data->fifo_out);
 	data->config = cfg;
 	video_esp32_cam_ctrl_init(dev);
 
@@ -421,57 +273,14 @@ static int video_esp32_init(const struct device *dev)
 	return 0;
 }
 
-int video_esp32_set_selection(const struct device *dev, struct video_selection *sel)
-{
-	struct video_esp32_data *data = dev->data;
-	const struct video_esp32_config *cfg = dev->config;
-	int ret;
-
-	ret = video_set_selection(cfg->source_dev, sel);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = video_get_format(cfg->source_dev, &data->video_format);
-	if (ret < 0) {
-		LOG_ERR("Failed to get format from source device");
-		return ret;
-	}
-
-	return 0;
-}
-
-int video_esp32_get_selection(const struct device *dev, struct video_selection *sel)
-{
-	const struct video_esp32_config *cfg = dev->config;
-
-	return video_get_selection(cfg->source_dev, sel);
-}
-
 static DEVICE_API(video, esp32_driver_api) = {
-	/* mandatory callbacks */
-	.set_format = video_esp32_set_fmt,
-	.get_format = video_esp32_get_fmt,
 	.set_stream = video_esp32_set_stream,
 	.get_caps = video_esp32_get_caps,
-	/* optional callbacks */
-	.enqueue = video_esp32_enqueue,
-	.dequeue = video_esp32_dequeue,
-	.flush = video_esp32_flush,
-	.set_selection = video_esp32_set_selection,
-	.get_selection = video_esp32_get_selection,
-	.set_frmival = video_esp32_set_frmival,
-	.get_frmival = video_esp32_get_frmival,
-	.enum_frmival = video_esp32_enum_frmival,
-#ifdef CONFIG_POLL
-	.set_signal = video_esp32_set_signal,
-#endif
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_INST_PHANDLE(n, source))
 
 static const struct video_esp32_config esp32_config = {
-	.source_dev = SOURCE_DEV(0),
 	.dma_dev = DEVICE_DT_GET_OR_NULL(DT_DMAS_CTLR_BY_NAME(DT_INST_PARENT(0), rx)),
 	.rx_dma_channel = DT_DMAS_CELL_BY_NAME(DT_INST_PARENT(0), rx, channel),
 	.data_width = DT_INST_PROP_OR(0, data_width, 8),
@@ -484,9 +293,9 @@ static const struct video_esp32_config esp32_config = {
 	.cam_clk = DT_INST_PROP_OR(0, cam_clk, 0),
 };
 
-static struct video_esp32_data esp32_data = {0};
+static struct video_esp32_data esp32_data = {
+	.vdev = VIDEO_DEVICE_INIT(esp32_data, DT_DRV_INST(0), SOURCE_DEV(0)),
+};
 
 DEVICE_DT_INST_DEFINE(0, video_esp32_init, NULL, &esp32_data, &esp32_config, POST_KERNEL,
 		      CONFIG_VIDEO_INIT_PRIORITY, &esp32_driver_api);
-
-VIDEO_DEVICE_DEFINE(esp32, DEVICE_DT_INST_GET(0), SOURCE_DEV(0));

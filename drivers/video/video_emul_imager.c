@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -70,12 +71,11 @@ struct emul_imager_ctrls {
 };
 
 struct emul_imager_data {
+	struct video_device vdev; /* keep first */
 	/* First field is a line buffer for I/O emulation purpose */
 	uint8_t framebuffer[320 * sizeof(uint16_t)];
 	/* Other fields are shared with real hardware drivers */
 	const struct emul_imager_mode *mode;
-	enum emul_imager_fmt_id fmt_id;
-	struct video_format fmt;
 	struct emul_imager_ctrls ctrls;
 };
 
@@ -226,28 +226,20 @@ err:
 	return ret;
 }
 
-static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int emul_imager_set_frmival(const struct device *dev, struct video_frmival *frmival,
+				   size_t idx)
 {
 	struct emul_imager_data *data = dev->data;
-	struct video_frmival_enum fie = {.format = &data->fmt, .discrete = *frmival};
+	size_t fmt_id;
 	int ret;
 
-	ret = video_closest_frmival(dev, &fie);
+	ret = video_format_caps_index(fmts, &data->vdev.out_fmt, &fmt_id);
 	if (ret < 0) {
 		return ret;
 	}
 
-	LOG_DBG("Applying frame interval number %u", fie.index);
-	return emul_imager_set_mode(dev, &emul_imager_modes[data->fmt_id][fie.index]);
-}
-
-static int emul_imager_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct emul_imager_data *data = dev->data;
-
-	frmival->numerator = 1;
-	frmival->denominator = data->mode->fps;
-	return 0;
+	LOG_DBG("Applying frame interval number %u", idx);
+	return emul_imager_set_mode(dev, &emul_imager_modes[fmt_id][idx]);
 }
 
 static int emul_imager_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
@@ -270,23 +262,13 @@ static int emul_imager_enum_frmival(const struct device *dev, struct video_frmiv
 	return mode->fps == 0;
 }
 
-static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt)
+static int emul_imager_set_fmt(const struct device *const dev, struct video_format *fmt,
+			       size_t idx)
 {
 	struct emul_imager_data *data = dev->data;
-	size_t fmt_id;
 	int ret;
 
-	if (memcmp(&data->fmt, fmt, sizeof(data->fmt)) == 0) {
-		return 0;
-	}
-
-	ret = video_format_caps_index(fmts, fmt, &fmt_id);
-	if (ret < 0) {
-		LOG_ERR("Format %x %ux%u not found", fmt->pixelformat, fmt->width, fmt->height);
-		return ret;
-	}
-
-	ret = emul_imager_set_mode(dev, &emul_imager_modes[fmt_id][0]);
+	ret = emul_imager_set_mode(dev, &emul_imager_modes[idx][0]);
 	if (ret < 0) {
 		return ret;
 	}
@@ -302,16 +284,6 @@ static int emul_imager_set_fmt(const struct device *const dev, struct video_form
 		memset(data->framebuffer, 0x7f, fmt->pitch);
 	}
 
-	data->fmt_id = fmt_id;
-	data->fmt = *fmt;
-	return 0;
-}
-
-static int emul_imager_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct emul_imager_data *data = dev->data;
-
-	*fmt = data->fmt;
 	return 0;
 }
 
@@ -329,10 +301,8 @@ static int emul_imager_set_stream(const struct device *dev, bool enable, enum vi
 static DEVICE_API(video, emul_imager_driver_api) = {
 	.set_ctrl = emul_imager_set_ctrl,
 	.set_frmival = emul_imager_set_frmival,
-	.get_frmival = emul_imager_get_frmival,
 	.enum_frmival = emul_imager_enum_frmival,
 	.set_format = emul_imager_set_fmt,
-	.get_format = emul_imager_get_fmt,
 	.get_caps = emul_imager_get_caps,
 	.set_stream = emul_imager_set_stream,
 };
@@ -373,7 +343,7 @@ int emul_imager_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = emul_imager_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("Failed to set to default format %x %ux%u",
 			fmt.pixelformat, fmt.width, fmt.height);
@@ -384,7 +354,9 @@ int emul_imager_init(const struct device *dev)
 }
 
 #define EMUL_IMAGER_DEFINE(inst)                                                                   \
-	static struct emul_imager_data emul_imager_data_##inst;                                    \
+	static struct emul_imager_data emul_imager_data_##inst = {                                 \
+		.vdev = VIDEO_DEVICE_INIT(emul_imager_data_##inst, DT_DRV_INST(inst), NULL),       \
+	};                                                                                         \
                                                                                                    \
 	static const struct emul_imager_config emul_imager_cfg_##inst = {                          \
 		.i2c = /* I2C_DT_SPEC_INST_GET(inst) */ {0},                                       \
@@ -392,8 +364,6 @@ int emul_imager_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &emul_imager_init, NULL, &emul_imager_data_##inst,             \
 			      &emul_imager_cfg_##inst, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,    \
-			      &emul_imager_driver_api);                                            \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(emul_imager_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      &emul_imager_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_IMAGER_DEFINE)

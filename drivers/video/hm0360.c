@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT himax_hm0360
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
@@ -32,9 +33,8 @@ struct hm0360_ctrls {
 };
 
 struct hm0360_data {
+	struct video_device vdev; /* keep first */
 	struct hm0360_ctrls ctrls;
-	struct video_format fmt;
-	uint16_t cur_frmrate;
 };
 
 struct video_frmival default_frmival = {
@@ -561,28 +561,14 @@ static int hm0360_get_caps(const struct device *dev, struct video_caps *caps)
 	return 0;
 }
 
-static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
+static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt, size_t idx)
 {
 	const struct hm0360_config *config = dev->config;
-	struct hm0360_data *data = dev->data;
 	int ret;
-	size_t idx;
 
 	/* Note: hm0360 only supports grayscale */
 	LOG_DBG("HM01B0 set_fmt: %d x %d, fmt: %s", fmt->width, fmt->height,
 		VIDEO_FOURCC_TO_STR(fmt->pixelformat));
-
-	ret = video_format_caps_index(fmts, fmt, &idx);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (!memcmp(&data->fmt, fmt, sizeof(data->fmt))) {
-		/* nothing to do */
-		return 0;
-	}
-
-	memcpy(&data->fmt, fmt, sizeof(data->fmt));
 
 	switch (fmts[idx].width_min) {
 	case 160: /* QQVGA */
@@ -598,17 +584,12 @@ static int hm0360_set_fmt(const struct device *dev, struct video_format *fmt)
 						ARRAY_SIZE(hm0360_vga_regs));
 		break;
 	default:
+		__ASSERT(false);
 		CODE_UNREACHABLE;
 	}
-
-	return ret;
-}
-
-static int hm0360_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct hm0360_data *data = dev->data;
-
-	*fmt = data->fmt;
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -639,26 +620,21 @@ int hm0360_enum_frmival(const struct device *dev, struct video_frmival_enum *fie
 }
 
 
-static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival)
+static int hm0360_set_frmival(const struct device *dev, struct video_frmival *frmival, size_t idx)
 {
 	const struct hm0360_config *config = dev->config;
 	struct hm0360_data *drv_data = dev->data;
-	struct video_frmival_enum fie = {.format = &drv_data->fmt, .discrete = *frmival};
 	int ret;
 	uint32_t osc_div = 0;
 	bool highres = false;
 
-	if (drv_data->fmt.width == 640 && drv_data->fmt.height == 480) {
+	if (drv_data->vdev.out_fmt.width == 640 && drv_data->vdev.out_fmt.height == 480) {
 		highres = true;
 	}
 
-	ret = video_closest_frmival(dev, &fie);
-	if (ret < 0) {
-		return ret;
-	}
-	LOG_DBG("Applying frame interval number %u", fie.index);
+	LOG_DBG("Applying frame interval number %u", idx);
 
-	switch (fie.index) {
+	switch (idx) {
 	case HM0360_60_FPS:
 		osc_div = highres ? 0x00 : 0x01;
 		break;
@@ -681,24 +657,8 @@ static int hm0360_set_frmival(const struct device *dev, struct video_frmival *fr
 		return ret;
 	}
 
-	LOG_DBG("FrameRate selected: %d", frmival->denominator);
-
-	frmival->denominator = fie.discrete.denominator;
-	drv_data->cur_frmrate = fie.discrete.denominator;
-
-	LOG_DBG("FrameRate rounded to: %d", fie.discrete.denominator);
 	LOG_DBG("HIRES Selected: %d", highres);
 	LOG_DBG("OSC DIV: 0x%x", osc_div);
-
-	return 0;
-}
-
-static int hm0360_get_frmival(const struct device *dev, struct video_frmival *frmival)
-{
-	struct hm0360_data *drv_data = dev->data;
-
-	frmival->denominator = drv_data->cur_frmrate;
-	frmival->numerator = 1;
 
 	return 0;
 }
@@ -725,6 +685,7 @@ static int hm0360_init(const struct device *dev)
 	int ret;
 
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
 		.pixelformat = fmts[0].pixelformat,
 		.width = fmts[0].width_min,
 		.height = fmts[0].height_min,
@@ -801,13 +762,13 @@ static int hm0360_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = hm0360_set_fmt(dev, &fmt);
+	ret = video_set_format(dev, &fmt);
 	if (ret < 0) {
 		LOG_ERR("ERROR: Unable to set format");
 		return ret;
 	}
 
-	ret = hm0360_set_frmival(dev, &default_frmival);
+	ret = video_set_frmival(dev, &default_frmival);
 	if (ret < 0) {
 		LOG_ERR("ERROR: Unable to set frame rate");
 		return ret;
@@ -867,12 +828,10 @@ static int hm0360_set_ctrl(const struct device *dev, uint32_t id)
 
 static DEVICE_API(video, hm0360_api) = {
 	.set_format = hm0360_set_fmt,
-	.get_format = hm0360_get_fmt,
 	.get_caps = hm0360_get_caps,
 	.set_stream = hm0360_set_stream,
 	.set_ctrl = hm0360_set_ctrl,
 	.set_frmival = hm0360_set_frmival,
-	.get_frmival = hm0360_get_frmival,
 	.enum_frmival = hm0360_enum_frmival,
 };
 
@@ -889,14 +848,17 @@ static DEVICE_API(video, hm0360_api) = {
 #endif
 
 #define HM0360_INIT(inst)                                                                          \
-	const struct hm0360_config hm0360_config_##inst = {.bus = I2C_DT_SPEC_INST_GET(inst),      \
-							   HM0360_RESET_GPIO(inst)                 \
-								   HM0360_PWDN_GPIO(inst)};        \
-	struct hm0360_data hm0360_data_##inst;                                                     \
+	const struct hm0360_config hm0360_config_##inst = {                                        \
+		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
+		HM0360_RESET_GPIO(inst)                                                            \
+		HM0360_PWDN_GPIO(inst)                                                             \
+	};                                                                                         \
+                                                                                                   \
+	struct hm0360_data hm0360_data_##inst = {                                                  \
+		.vdev = VIDEO_DEVICE_INIT(hm0360_data_##inst, DT_DRV_INST(inst), NULL),                \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, hm0360_init, NULL, &hm0360_data_##inst, &hm0360_config_##inst, \
-			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &hm0360_api);               \
-                                                                                                   \
-	VIDEO_DEVICE_DEFINE(hm0360_##inst, DEVICE_DT_INST_GET(inst), NULL);
+			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &hm0360_api);
 
 DT_INST_FOREACH_STATUS_OKAY(HM0360_INIT)
