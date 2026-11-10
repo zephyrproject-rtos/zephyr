@@ -435,6 +435,13 @@ Serial
   applied to every UART instance, while the properties apply to the node that sets them.
   (:github:`119492`)
 
+* The ``CONFIG_UART_XLNX_PS`` Kconfig option has been removed in favour of
+  :kconfig:option:`CONFIG_UART_CDNS`. Nodes with :dtcompatible:`xlnx,xuartps` must add
+  :dtcompatible:`cdns,uart`; the :dtcompatible:`xlnx,xuartps` compatible remains valid as a hardware
+  identifier, the unified driver matches on :dtcompatible:`cdns,uart`. The ``bdiv`` property has been
+  removed; the baud rate is now computed from ``clock-frequency`` and ``current-speed``.
+  (:github:`114729`)
+
 Timers
 ======
 
