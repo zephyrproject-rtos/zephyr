@@ -8,6 +8,7 @@ menu "Remote control drivers"
 # zephyr-keep-sorted-start
 source "drivers/rc/Kconfig.gpio_ir_receiver"
 source "drivers/rc/Kconfig.loopback"
+source "drivers/rc/Kconfig.pwm_ir_transmitter"
 # zephyr-keep-sorted-stop
 
 endmenu
