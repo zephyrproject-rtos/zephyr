@@ -178,7 +178,7 @@ TESTDATA_3 = [
         {'internal_jobs': 1, 'makeflags': '-j1'}
     ),
     (
-        {'MAKEFLAGS': 'n--jobserver-auth=0,1'},
+        {'MAKEFLAGS': 'n --jobserver-auth=0,1'},
         1,
         (True, True),
         [
@@ -225,6 +225,24 @@ TESTDATA_3 = [
         [None, 0],
         {'internal_jobs': 1, 'makeflags': '--jobserver-auth=0,1'}
     ),
+    (
+        {'MAKEFLAGS': ' -I/src/inc-j2 -- V=-j1 SAVED=--jobserver-auth=0,1'},
+        0,
+        (True, True),
+        [],
+        None,
+        [None, 0],
+        {'internal_jobs': 1, 'makeflags': ' -I/src/inc-j2 -- V=-j1 SAVED=--jobserver-auth=0,1'}
+    ),
+    (
+        {'MAKEFLAGS': ' --eval=X\\ -j7\\ --jobserver-auth=0,1 -j3'},
+        0,
+        (True, True),
+        [],
+        None,
+        [None, 3],
+        {'internal_jobs': 1, 'makeflags': ' --eval=X\\ -j7\\ --jobserver-auth=0,1 -j3'}
+    ),
     (None, 0, (False, False), [], None, None, None),
 ]
 
@@ -234,7 +252,8 @@ TESTDATA_3 = [
     TESTDATA_3,
     ids=['env, no jobserver-auth', 'env, jobs, dry run', 'env, no jobs',
          'env, no jobs, oserror', 'env, no jobs, wrong read pipe',
-         'env, no jobs, wrong write pipe', 'environ, no makeflags']
+         'env, no jobs, wrong write pipe', 'env, variables', 'env, escaped blanks',
+         'environ, no makeflags']
 )
 def test_gnumakejobclient_from_environ(
     caplog,

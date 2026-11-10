@@ -120,6 +120,9 @@ class GNUMakeJobClient(JobClient):
 
         The specification for MAKEFLAGS is:
           * If the first char is "n", this is a dry run, just exit.
+          * Only the words before a "--" word are options; the rest are
+            the variables set on the command line. Words are separated by
+            blanks that are not escaped with a backslash.
           * If the flags contains -j1, go to sequential mode.
           * If the flags contains --jobserver-auth=R,W AND those file
             descriptors are valid, use the jobserver. Otherwise output a
@@ -138,7 +141,13 @@ class GNUMakeJobClient(JobClient):
         makeflags = env.get("MAKEFLAGS")
         if not makeflags:
             return None
-        match = re.search(r"--jobserver-auth=(\d+),(\d+)", makeflags)
+        options = re.split(r"(?<!\\)\s+", makeflags.strip())
+        if "--" in options:
+            options = options[:options.index("--")]
+        match = next(
+            (m for word in options if (m := re.fullmatch(r"--jobserver-auth=(\d+),(\d+)", word))),
+            None,
+        )
         if match:
             pipe = [int(x) for x in match.groups()]
             if jobs:
@@ -175,7 +184,7 @@ class GNUMakeJobClient(JobClient):
         else:
             pipe = None
         if not jobs:
-            match = re.search(r"-j(\d+)", makeflags)
+            match = next((m for word in options if (m := re.fullmatch(r"-j(\d+)", word))), None)
             if match:
                 jobs = int(match.group(1))
                 if jobs == 1:
