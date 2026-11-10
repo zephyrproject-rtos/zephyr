@@ -758,7 +758,7 @@ an example of how you can set up a device to start using the Configuration Clien
 			* ``0x03``: The Step Resolution is 10 minutes
 		* ``PerSteps``: Number of publication period steps, or 0 to disable periodic publication.
 		* ``Count``: Number of retransmission for each published message (``0`` to ``7``).
-		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
+		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50 in the range 50 to 1600.
 
 ``mesh models cfg model pub-va <Addr> <UUID(1-16 hex)> <AppKeyIdx> <Cred(off, on)> <TTL> <PerRes> <PerSteps> <Count> <Int(ms)> <MID> [CID]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -783,7 +783,7 @@ an example of how you can set up a device to start using the Configuration Clien
 			* ``0x03``: The Step Resolution is 10 minutes
 		* ``PerSteps``: Number of publication period steps, or 0 to disable periodic publication.
 		* ``Count``: Number of retransmission for each published message (``0`` to ``7``).
-		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
+		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50 in the range 50 to 1600.
 
 
 ``mesh models cfg model sub-add <ElemAddr> <SubAddr> <MID> [CID]``
