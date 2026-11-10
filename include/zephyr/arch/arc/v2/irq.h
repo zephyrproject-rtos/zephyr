@@ -97,6 +97,8 @@ static inline void arch_isr_direct_header(void)
 
 static inline void arch_isr_direct_footer(int maybe_swap)
 {
+	ARG_UNUSED(maybe_swap);
+
 	/* clear SW generated interrupt */
 	if (z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE) ==
 	    z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_HINT)) {
