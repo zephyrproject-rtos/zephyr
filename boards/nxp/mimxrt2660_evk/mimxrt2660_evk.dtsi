@@ -58,6 +58,35 @@
 	pinctrl-names = "default";
 };
 
+/* ETH1: 1G ENET, YT8531 PHY over RGMII on J71. */
+&enet {
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&enet_mac {
+	phy-handle = <&enet_phy>;
+	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&enet_mdio {
+	pinctrl-0 = <&pinmux_enet_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	enet_phy: phy@4 {
+		compatible = "motorcomm,yt8531";
+		reg = <4>;
+		/* RGMII clock delays, same values as the other NXP RGMII boards in tree. */
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
+		status = "okay";
+	};
+};
+
 /*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
  * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
