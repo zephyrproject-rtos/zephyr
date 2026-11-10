@@ -15,6 +15,9 @@ tests:
       - CONFIG_MFD=y
     platform_allow:
       - kit_psc3m6_eval/psc3m6ges3ahq1
+  drivers.dac.api.infineon_hppass:
+    platform_allow:
+      - kit_psc3m6_eval/psc3m6ges3ahq1
   drivers.dac.api.dac_channel0:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="dac-channel0.overlay"
