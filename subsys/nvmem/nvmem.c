@@ -10,18 +10,26 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/otp.h>
 #include <zephyr/nvmem.h>
+#include <zephyr/drivers/nvmem_provider.h>
 #include <zephyr/sys/__assert.h>
 
 int nvmem_cell_read(const struct nvmem_cell *cell, void *buf, off_t off, size_t len)
 {
 	__ASSERT_NO_MSG(cell != NULL);
 
-	if (off < 0 || cell->size < off + len) {
+	if (off < 0 || (size_t)off > cell->size || len > cell->size - (size_t)off) {
 		return -EINVAL;
 	}
 
 	if (!device_is_ready(cell->dev)) {
 		return -ENODEV;
+	}
+
+	if (IS_ENABLED(CONFIG_NVMEM_PROVIDER) && DEVICE_API_IS(nvmem_provider, cell->dev)) {
+		const struct nvmem_provider_driver_api *api =
+			DEVICE_API_GET(nvmem_provider, cell->dev);
+
+		return api->read(cell->dev, (uint32_t)cell->offset, (size_t)off, buf, len);
 	}
 
 	if (IS_ENABLED(CONFIG_NVMEM_BBRAM) && DEVICE_API_IS(bbram, cell->dev)) {
@@ -47,7 +55,7 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 {
 	__ASSERT_NO_MSG(cell != NULL);
 
-	if (off < 0 || cell->size < off + len) {
+	if (off < 0 || (size_t)off > cell->size || len > cell->size - (size_t)off) {
 		return -EINVAL;
 	}
 
@@ -57,6 +65,17 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *buf, off_t off, 
 
 	if (!device_is_ready(cell->dev)) {
 		return -ENODEV;
+	}
+
+	if (IS_ENABLED(CONFIG_NVMEM_PROVIDER) && DEVICE_API_IS(nvmem_provider, cell->dev)) {
+		const struct nvmem_provider_driver_api *api =
+			DEVICE_API_GET(nvmem_provider, cell->dev);
+
+		if (api->write == NULL) {
+			return -ENOSYS;
+		}
+
+		return api->write(cell->dev, (uint32_t)cell->offset, (size_t)off, buf, len);
 	}
 
 	if (IS_ENABLED(CONFIG_NVMEM_BBRAM) && DEVICE_API_IS(bbram, cell->dev)) {
