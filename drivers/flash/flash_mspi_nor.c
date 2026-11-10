@@ -1328,11 +1328,11 @@ static void sfdp_process_bfp(const struct device *dev,
 		if (data_rate == MSPI_DATA_RATE_S_D_D) {
 			read_cmd_bf = bfp->dw10[12] >> 16;
 		}
-		break;
 		/* 1S-2S-2S */
 		if (data_rate == MSPI_DATA_RATE_SINGLE) {
 			read_cmd_bf = bfp->dw4 >> 16;
 		}
+		break;
 	case MSPI_IO_MODE_DUAL_1_1_2:
 		/* 1S-1S-2S */
 		if (data_rate == MSPI_DATA_RATE_SINGLE) {
