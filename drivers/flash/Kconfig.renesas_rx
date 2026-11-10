@@ -14,6 +14,18 @@ config SOC_FLASH_RENESAS_RX
 	help
 	  Flash driver for RX series
 
+config SOC_FLASH_RENESAS_RX_MRAM
+	bool "RX Flash MRAM driver"
+	depends on DT_HAS_RENESAS_RX_MRAM_CONTROLLER_ENABLED
+	default y
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select USE_RX_FSP_MRAM
+	help
+	  Enable Flash MRAM driver for RX series
+
 if SOC_FLASH_RENESAS_RX
 
 config FLASH_RENESAS_RX_BGO_ENABLED
