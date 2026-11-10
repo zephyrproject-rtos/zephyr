@@ -21,6 +21,7 @@ void otSysInit(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
+	platformPowerInit();
 	platformRadioInit();
 	platformAlarmMicroInit();
 	platformAlarmMilliInit();
@@ -35,4 +36,6 @@ void otSysProcessDrivers(otInstance *aInstance)
 	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
 		platformUartProcess(aInstance);
 	}
+
+	platformPowerProcess(aInstance);
 }

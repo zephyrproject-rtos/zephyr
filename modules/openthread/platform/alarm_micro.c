@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 void alarm_milli_set_time_offset_ms(int32_t offset_ms);
 
 static bool timer_us_fired;
+static uint32_t timer_us_deadline;
 static int32_t time_offset_us;
 
 static void ot_timer_us_fired(struct k_timer *timer)
@@ -36,6 +37,7 @@ static void ot_timer_us_fired(struct k_timer *timer)
 	ARG_UNUSED(timer);
 
 	timer_us_fired = true;
+	platformPowerNotifyAlarmMicroFired();
 	otSysEventSignalPending();
 }
 
@@ -66,7 +68,10 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 
 	int32_t delta = (int32_t)(aT0 + aDt - otPlatAlarmMicroGetNow());
 
+	timer_us_deadline = aT0 + aDt;
+
 	if (delta > 0) {
+		platformPowerNotifyAlarmMicroStart(timer_us_deadline);
 		k_timer_start(&ot_us_timer, K_USEC(delta), K_NO_WAIT);
 	} else {
 		ot_timer_us_fired(NULL);
@@ -77,6 +82,7 @@ void otPlatAlarmMicroStop(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
+	platformPowerNotifyAlarmMicroStop();
 	k_timer_stop(&ot_us_timer);
 }
 

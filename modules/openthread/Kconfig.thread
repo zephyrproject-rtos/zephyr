@@ -80,6 +80,30 @@ config OPENTHREAD_POLL_PERIOD
 	default 236000
 	depends on OPENTHREAD_MTD_SED
 
+config OPENTHREAD_PLATFORM_DEEP_SLEEP
+	bool "OpenThread platform deep sleep coordination"
+	depends on OPENTHREAD_MTD_SED
+	depends on PM
+	depends on NET_L2_OPENTHREAD
+	depends on !HDLC_RCP_IF
+	depends on !OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION
+	depends on !OPENTHREAD_COPROCESSOR_RCP
+	help
+	  Enable OpenThread platform deep-sleep coordination for sleepy end
+	  devices with platform PM. Tracks pending OpenThread work, radio
+	  activity and alarm deadlines, and uses Zephyr PM state locks to
+	  disable CPU power states deeper than runtime-idle while the platform
+	  has near-term work to process.
+
+config OPENTHREAD_PLATFORM_DEEP_SLEEP_MIN_MS
+	int "Minimum sleep window before deep sleep is allowed [ms]"
+	depends on OPENTHREAD_PLATFORM_DEEP_SLEEP
+	default 5
+	range 1 1000
+	help
+	  Minimum remaining time before the next OpenThread wakeup for the
+	  platform to allow deep sleep entry.
+
 config OPENTHREAD_MAX_CHILDREN
 	int "The maximum number of children"
 	range 1 511

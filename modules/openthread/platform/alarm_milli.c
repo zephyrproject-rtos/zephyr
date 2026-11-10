@@ -18,7 +18,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <openthread/platform/diag.h>
 #include <openthread-system.h>
 
+#include "platform-zephyr.h"
+
 static bool timer_ms_fired;
+static uint32_t timer_ms_deadline;
 static int32_t time_offset_ms;
 
 static void ot_timer_ms_fired(struct k_timer *timer)
@@ -26,6 +29,7 @@ static void ot_timer_ms_fired(struct k_timer *timer)
 	ARG_UNUSED(timer);
 
 	timer_ms_fired = true;
+	platformPowerNotifyAlarmMilliFired();
 	otSysEventSignalPending();
 }
 
@@ -70,7 +74,10 @@ void otPlatAlarmMilliStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 
 	int32_t delta = (int32_t)(aT0 + aDt - otPlatAlarmMilliGetNow());
 
+	timer_ms_deadline = aT0 + aDt;
+
 	if (delta > 0) {
+		platformPowerNotifyAlarmMilliStart(timer_ms_deadline);
 		k_timer_start(&ot_ms_timer, K_MSEC(delta), K_NO_WAIT);
 	} else {
 		ot_timer_ms_fired(NULL);
@@ -81,5 +88,6 @@ void otPlatAlarmMilliStop(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
+	platformPowerNotifyAlarmMilliStop();
 	k_timer_stop(&ot_ms_timer);
 }
