@@ -618,12 +618,17 @@ class TestPlan:
         """Resolve the path to the test yaml file, considering alternative configuration roots."""
         suite_yaml_path = os.path.join(dirpath, filename)
         suite_path = os.path.dirname(suite_yaml_path)
+        rel_path = os.path.relpath(suite_path, root)
 
         for alt_config_root in self.env.alt_config_root:
             alt_config = os.path.join(os.path.abspath(alt_config_root),
-                                      os.path.relpath(suite_path, root),
+                                      rel_path,
                                       filename)
             if os.path.exists(alt_config):
+                if rel_path == "." and (
+                    os.path.basename(alt_config_root) != os.path.basename(root)
+                ):
+                    continue
                 logger.info(
                     f"Using alternative configuration from {os.path.normpath(alt_config)}"
                 )
