@@ -10386,4 +10386,80 @@ ZTEST(net_socket_quic, test_555_stream_open_honours_peer_stream_limit)
 	reset_test_disconnect(&peers);
 }
 
+/* Hand a payload with one RESET_STREAM frame to the frame parser */
+static int reset_stream_for(struct quic_endpoint *ep, uint8_t stream_id,
+			    uint8_t error_code, uint64_t final_size)
+{
+	uint8_t payload[3 + 8] = {
+		QUIC_FRAME_TYPE_RESET_STREAM,
+		stream_id,
+		error_code,
+	};
+	bool ack_only = false;
+	int len;
+
+	len = quic_put_varint(&payload[3], sizeof(payload) - 3, final_size);
+	__ASSERT_NO_MSG(len > 0);
+	len += 3;
+
+	return handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					  payload, len, len, &ack_only);
+}
+
+ZTEST(net_socket_quic, test_564_peer_reset_stream_reads_as_error)
+{
+	static struct quic_stream test_stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint8_t data[] = { 'a', 'b', 'c' };
+	struct quic_context *ctx;
+	uint8_t buf[8];
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54355");
+
+	/* As a client, with data from the peer waiting to be read on a
+	 * bidirectional stream of the server.
+	 */
+	ep->is_server = false;
+	ep->rx_fc.max_data = 1024;
+	link_test_stream(&test_stream, ctx, ep, 1);
+	test_stream.rx_buf.size = sizeof(test_stream.rx_buf.data);
+	test_stream.local_max_data = 1024;
+	ret = quic_stream_receive_data(&test_stream, 0, data, sizeof(data), false);
+	zassert_ok(ret, "Cannot queue received data (%d)", ret);
+
+	/* The reset is kept with the error code and the final size of the
+	 * frame. The parser gives back the reference it takes.
+	 */
+	atomic_set(&test_stream.refcount, 1);
+	ret = reset_stream_for(ep, 1, 0x3f, 10);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_true(test_stream.rx_reset, "Stream was not marked as reset");
+	zassert_equal(test_stream.peer_reset_error_code, 0x3f,
+		      "Error code 0x%" PRIx64 " kept", test_stream.peer_reset_error_code);
+	zassert_equal(test_stream.peer_final_size, 10,
+		      "Final size %" PRIu64 " kept", test_stream.peer_final_size);
+
+	/* The data received before the reset is still read, then the reset
+	 * is reported as an error, not as the end of a complete stream.
+	 */
+	ret = quic_stream_recv(&test_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, sizeof(data), "Expected the data before the reset (%d)", ret);
+	zassert_mem_equal(buf, data, sizeof(data), "Data mismatch");
+
+	ret = quic_stream_recv(&test_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, -1, "Expected an error for a reset stream (%d)", ret);
+	zassert_equal(errno, ECONNRESET, "Expected ECONNRESET for a reset stream (%d)", errno);
+
+	ret = quic_stream_recv(&test_stream, buf, sizeof(buf), 0);
+	zassert_equal(ret, -1, "The reset must be reported again (%d)", ret);
+	zassert_equal(errno, ECONNRESET, "Expected ECONNRESET again (%d)", errno);
+
+	unlink_test_stream(&test_stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
