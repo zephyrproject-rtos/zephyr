@@ -9,6 +9,7 @@
 
 #define LOG_LEVEL CONFIG_MBOX_LOG_LEVEL
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(mbox_nrfx_ipc);
 
@@ -186,6 +187,11 @@ static int mbox_nrf_init(const struct device *dev)
 		    nrfx_isr, nrfx_ipc_irq_handler, 0);
 
 	enable_dt_channels(dev);
+
+#if defined(CONFIG_ARCH_POSIX)
+	/* For bsim, to allow time to cpunet start. This way no IPC signal is lost. */
+	k_busy_wait(1);
+#endif
 
 	return 0;
 }
