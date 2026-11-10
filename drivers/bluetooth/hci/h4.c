@@ -55,6 +55,11 @@ struct h4_data {
 		 */
 		atomic_t        deferred;
 
+		/* Boolean: set while the transport is being stopped, for rx_thread
+		 * to end itself.
+		 */
+		atomic_t        stopping;
+
 		/* Byte counts: still to be read of the current header or payload,
 		 * and still to be read and dropped.
 		 */
@@ -265,6 +270,31 @@ static struct net_buf *get_rx(struct h4_data *h4, k_timeout_t timeout)
 	return NULL;
 }
 
+static bool rx_stopping(const struct h4_data *h4)
+{
+	return atomic_get(&h4->rx.stopping) != 0;
+}
+
+/* How long rx_thread waits for a buffer at a time, before it checks whether
+ * the transport is being stopped.
+ */
+#define RX_BUF_WAIT K_MSEC(10)
+
+/* Waits for a buffer for the deferred packet, or returns NULL once the
+ * transport is being stopped. A wait for a buffer cannot be ended from outside,
+ * so it is cut into periods, with a check before each.
+ */
+static struct net_buf *get_rx_deferred(struct h4_data *h4)
+{
+	struct net_buf *buf = NULL;
+
+	while ((buf == NULL) && !rx_stopping(h4)) {
+		buf = get_rx(h4, RX_BUF_WAIT);
+	}
+
+	return buf;
+}
+
 #if defined(CONFIG_BT_H4_VND_OPEN)
 /* Responses to the vendor extension's own commands, sent while opening */
 static bool vnd_consumed(struct h4_data *h4, struct net_buf *buf)
@@ -286,7 +316,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	const struct device *dev = p1;
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
-	struct net_buf *buf;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -295,11 +324,17 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	uart_irq_rx_enable(cfg->uart);
 
-	while (1) {
+	while (!rx_stopping(h4)) {
 		k_sem_take(&h4->rx.ready, K_FOREVER);
 
-		buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT);
-		while (buf != NULL) {
+		/* Stop delivering once the transport is being stopped */
+		while (!rx_stopping(h4)) {
+			struct net_buf *buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT);
+
+			if (buf == NULL) {
+				break;
+			}
+
 			if (vnd_consumed(h4, buf)) {
 				net_buf_unref(buf);
 			} else {
@@ -312,8 +347,6 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			 * or very rarely goes empty.
 			 */
 			k_yield();
-
-			buf = k_fifo_get(&h4->rx.fifo, K_NO_WAIT);
 		}
 
 		/* Only once no packet is queued, as the allocation may have to wait
@@ -321,7 +354,11 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		 * deferred, and gave rx.ready for any it queued before.
 		 */
 		if (atomic_get(&h4->rx.deferred) != 0 && k_fifo_is_empty(&h4->rx.fifo)) {
-			h4->rx.buf = get_rx(h4, K_FOREVER);
+			h4->rx.buf = get_rx_deferred(h4);
+			if (h4->rx.buf == NULL) {
+				break;
+			}
+
 			LOG_DBG("Got rx.buf %p", h4->rx.buf);
 			init_rx_buf(h4);
 
@@ -576,25 +613,41 @@ static int h4_send_raw(const struct device *dev, const uint8_t *pkt, size_t len)
 /* Stops reception and transmission and drops what is queued or half received,
  * so that the next open() starts from a clean transport.
  */
-static void h4_stop(const struct device *dev)
+static int h4_stop(const struct device *dev)
 {
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
+	int err;
 
+	/* rx_thread ends itself. Aborting it would lose what it holds, such as a
+	 * buffer it has just been handed or a recv callback in progress.
+	 */
+	(void)atomic_set(&h4->rx.stopping, 1);
+	k_sem_give(&h4->rx.ready);
+
+	err = k_thread_join(cfg->rx_thread, K_FOREVER);
+	if (err != 0) {
+		return err;
+	}
+
+	/* Only now, as rx_thread enables RX once it has a buffer for a deferred
+	 * packet.
+	 */
 	uart_irq_rx_disable(cfg->uart);
 	uart_irq_tx_disable(cfg->uart);
-
-	k_thread_abort(cfg->rx_thread);
 
 	reset_rx(h4);
 	h4->rx.discard = 0U;
 	(void)atomic_clear(&h4->rx.deferred);
+	(void)atomic_clear(&h4->rx.stopping);
 	net_buf_fifo_purge(&h4->rx.fifo);
 	k_sem_reset(&h4->rx.ready);
 
 	net_buf_drop(&h4->tx.buf);
 	h4->tx.type = BT_HCI_H4_NONE;
 	net_buf_fifo_purge(&h4->tx.fifo);
+
+	return 0;
 }
 
 /** Setup the HCI transport, which usually means to reset the Bluetooth IC
@@ -656,9 +709,14 @@ static int h4_open(const struct device *dev)
 #if defined(CONFIG_BT_H4_VND_OPEN)
 	ret = bt_h4_vnd_open(dev, cfg->uart, &h4->lockstep);
 	if (ret < 0) {
+		__maybe_unused int err;
+
 		LOG_ERR("Vendor initialization failed (err %d)", ret);
-		/* A failed open() is not followed by close() */
-		h4_stop(dev);
+		/* A failed open() is not followed by close(). This thread is not
+		 * rx_thread and is not joined by it, so the stop succeeds.
+		 */
+		err = h4_stop(dev);
+		__ASSERT_NO_MSG(err == 0);
 		(void)bt_hci_transport_teardown(cfg->uart);
 		return ret;
 	}
@@ -687,9 +745,7 @@ static int h4_close(const struct device *dev)
 		return err;
 	}
 
-	h4_stop(dev);
-
-	return 0;
+	return h4_stop(dev);
 }
 
 #if defined(CONFIG_BT_HCI_SETUP)
