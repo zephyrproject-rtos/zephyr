@@ -13,7 +13,7 @@
 /* 43.836KHz (-0.37% Error) */
 &pllsai {
 	div-m = <8>;
-	mul-n = <101>;
+	mul-n = <202>;
 	div-q = <9>;
 	post-div-q = <1>;
 	clocks = <&clk_hse>;
