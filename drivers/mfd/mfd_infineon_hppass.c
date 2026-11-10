@@ -248,15 +248,13 @@ static inline bool ifx_hppass_ac_is_block_ready(const struct device *dev)
 
 /*
  * Replay the SFLASH-resident trim table into HPPASS infra registers, plus
- * the 16-entry SAR linearity calibration table.  Layout of SFLASH table is
- * fixed by silicon (Regs TRM 5.1.21).
+ * the SAR linearity calibration table when exposed by the device HAL.
+ * Layout of SFLASH table is fixed by silicon (Regs TRM 5.1.21).
  */
 #define IFX_HPPASS_TRIMS_ENTRIES_NUM 7
 
 static int ifx_hppass_apply_factory_trims(const struct device *dev)
 {
-	const struct ifx_hppass_mfd_config *config = dev->config;
-	mem_addr_t base = config->base;
 	struct trim_entry {
 		volatile uint32_t *addr;
 		uint32_t value;
@@ -276,9 +274,16 @@ static int ifx_hppass_apply_factory_trims(const struct device *dev)
 		*infra_trims->entry[i].addr = infra_trims->entry[i].value;
 	}
 
+#if defined(SFLASH_SAR_CAL_LIN_TABLE)
+	const struct ifx_hppass_mfd_config *config = dev->config;
+	mem_addr_t base = config->base;
+
 	for (uint8_t i = 0; i < IFX_HPPASS_SAR_CAL_LIN_TABLE_SIZE; i++) {
 		sys_write32(SFLASH_SAR_CAL_LIN_TABLE(i), base + IFX_HPPASS_SARADC_CALLIN(i));
 	}
+#else
+	ARG_UNUSED(dev);
+#endif
 
 	return 0;
 }
@@ -1175,11 +1180,18 @@ static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_act
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_HPPASS_MFD_INIT)
 
+#define IFX_HPPASS_DAC_CHILD(node) DT_NODE_HAS_COMPAT(node, infineon_hppass_dac_v3) &&
+#define IFX_HPPASS_DAC_ONLY(n)                                                                     \
+	(DT_INST_CHILD_NUM_STATUS_OKAY(n) > 0 &&                                                   \
+	 (DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_HPPASS_DAC_CHILD) 1))
+
 /*
  * APPLICATION-init hook for the AC one-shot unlock sweep.  Must run after
  * all POST_KERNEL device inits so child CFG writes happen
  * before the AC sees them.  Errors are logged; dependent drivers read
  * register reset values rather than failing to initialize.
+ * Standalone v3 DACs do not need the default AC sequence. Custom tables
+ * and configurations with other enabled children retain normal AC startup.
  */
 #define IFX_HPPASS_LATE_START(n)                                                                   \
 	{                                                                                          \
@@ -1188,7 +1200,8 @@ DT_INST_FOREACH_STATUS_OKAY(IFX_HPPASS_MFD_INIT)
                                                                                                    \
 		if (!device_is_ready(dev)) {                                                       \
 			LOG_ERR("HPPASS instance %d not ready; AC not started", (n));              \
-		} else {                                                                           \
+		} else if (!IS_ENABLED(CONFIG_MFD_INFINEON_HPPASS_V3) || HAS_AC_STATES(n) ||       \
+			   !IFX_HPPASS_DAC_ONLY(n)) {                                              \
 			ret = ifx_hppass_ac_start(dev, 0, IFX_HPPASS_ENSURE_RUNNING_TIMEOUT_US);   \
 			if (ret != 0 && ret != -EALREADY) {                                        \
 				LOG_ERR("ifx_hppass_ac_start(%s) -> %d", dev->name, ret);          \
