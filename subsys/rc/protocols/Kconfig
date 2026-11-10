@@ -9,4 +9,10 @@ config RC_PROTOCOL_NEC
 	help
 	  Decoder and encoder for NEC, extended NEC and 32 bit NEC.
 
+config RC_PROTOCOL_RC5
+	bool "RC5 protocol"
+	default y
+	help
+	  Decoder and encoder for Philips RC5 and 20 bit RC5X.
+
 endmenu
