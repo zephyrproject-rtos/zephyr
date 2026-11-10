@@ -12,6 +12,8 @@
  * @brief Remote control protocol decoder and encoder interface.
  */
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/sys/iterable_sections.h>
@@ -103,6 +105,117 @@ struct rc_protocol {
  * @param _name Name of the protocol object.
  */
 #define RC_PROTOCOL_DEFINE(_name) static const STRUCT_SECTION_ITERABLE(rc_protocol, _name)
+
+/**
+ * @brief Raw word writer for encoders.
+ *
+ * Adjacent durations of one level are merged, a leading space is dropped and
+ * rc_raw_end() drops a trailing space, so the result starts with a pulse and
+ * alternates.
+ */
+struct rc_raw_writer {
+	/** Output words */
+	uint32_t *words;
+	/** Size of @ref words */
+	size_t max;
+	/** Words written */
+	size_t count;
+	/** Set when a word did not fit */
+	bool overflow;
+};
+
+/** @brief Pulse distance timings: data in the space after each fixed pulse. */
+struct rc_gen_pd_timings {
+	/** Header pulse in us, 0 for none */
+	uint32_t header_pulse;
+	/** Header space in us */
+	uint32_t header_space;
+	/** Bit pulse in us */
+	uint32_t bit_pulse;
+	/** Bit space in us, for a 0 and a 1 */
+	uint32_t bit_space[2];
+	/** Trailer pulse in us, 0 for none */
+	uint32_t trailer_pulse;
+	/** Most significant bit first */
+	bool msb_first;
+};
+
+/** @brief Pulse length timings: data in the pulse after each fixed space. */
+struct rc_gen_pl_timings {
+	/** Header pulse in us */
+	uint32_t header_pulse;
+	/** Bit space in us, before each bit pulse */
+	uint32_t bit_space;
+	/** Bit pulse in us, for a 0 and a 1 */
+	uint32_t bit_pulse[2];
+	/** Most significant bit first */
+	bool msb_first;
+};
+
+/**
+ * @brief Start writing raw words.
+ *
+ * @param w Writer.
+ * @param words Output buffer.
+ * @param max Size of @p words.
+ */
+static inline void rc_raw_writer_init(struct rc_raw_writer *w, uint32_t *words, size_t max)
+{
+	*w = (struct rc_raw_writer){.words = words, .max = max};
+}
+
+/**
+ * @brief Append a pulse or a space.
+ *
+ * @param w Writer.
+ * @param pulse true for a pulse, false for a space.
+ * @param us Duration in us, 0 is ignored.
+ */
+void rc_raw_put(struct rc_raw_writer *w, bool pulse, uint32_t us);
+
+/**
+ * @brief Append Manchester coded bits, most significant bit first.
+ *
+ * @param w Writer.
+ * @param data Bits, the low @p nbits are sent.
+ * @param nbits Number of bits, 1 to 32.
+ * @param half_us Duration of half a bit in us.
+ * @param one_pulse_first true if a 1 is a pulse then a space.
+ */
+void rc_gen_manchester(struct rc_raw_writer *w, uint32_t data, uint8_t nbits, uint32_t half_us,
+		       bool one_pulse_first);
+
+/**
+ * @brief Append a pulse distance coded frame.
+ *
+ * @param w Writer.
+ * @param t Timings.
+ * @param data Bits, the low @p nbits are sent.
+ * @param nbits Number of bits, 1 to 32.
+ */
+void rc_gen_pd(struct rc_raw_writer *w, const struct rc_gen_pd_timings *t, uint32_t data,
+	       uint8_t nbits);
+
+/**
+ * @brief Append a pulse length coded frame.
+ *
+ * @param w Writer.
+ * @param t Timings.
+ * @param data Bits, the low @p nbits are sent.
+ * @param nbits Number of bits, 1 to 32.
+ */
+void rc_gen_pl(struct rc_raw_writer *w, const struct rc_gen_pl_timings *t, uint32_t data,
+	       uint8_t nbits);
+
+/**
+ * @brief Finish writing.
+ *
+ * @param w Writer.
+ *
+ * @return Number of words written, a trailing space removed.
+ * @retval -ENOBUFS A word did not fit.
+ */
+int rc_raw_end(struct rc_raw_writer *w);
 
 /** @} */
 

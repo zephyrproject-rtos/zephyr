@@ -7,6 +7,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(rc_core)
 
 target_sources(app PRIVATE
+  src/encode.c
   src/event.c
   src/keystate.c
   src/main.c

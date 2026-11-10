@@ -9,6 +9,7 @@ zephyr_library()
 zephyr_library_sources(
   rc_callback.c
   rc_core.c
+  rc_encode.c
   rc_keystate.c
   rc_protocol.c
   rc_raw.c
