@@ -120,6 +120,10 @@ struct lll_sync_iso {
 	/* HF clock was running when the event was prepared */
 	uint8_t is_hfclock_ready:1;
 
+	/* Anchor without drift of the current event, and the ticks to resume at */
+	uint32_t ticks_anchor;
+	uint32_t ticks_resume;
+
 	uint32_t ticks_start;
 	uint32_t ready_us;
 	uint32_t aa_us;

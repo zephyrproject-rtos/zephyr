@@ -18,6 +18,7 @@
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/memq.h"
+#include "util/mayfly.h"
 #include "util/dbuf.h"
 
 #include "ticker/ticker.h"
@@ -272,6 +273,9 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 	lll->is_lll_resume = 0U;
 	lll->is_yielded = 0U;
 
+	/* Initialise the event anchor used by the resume prepared at a deadline */
+	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
+
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
 	lll->chan_se = 0U;
@@ -407,6 +411,9 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* Initialise resume subevent flag */
 	lll->is_lll_resume = 0U;
 	lll->is_yielded = 0U;
+
+	/* Initialise the event anchor used by the resume prepared at a deadline */
+	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
@@ -985,6 +992,9 @@ static int drift_prepare_cb(struct lll_prepare_param *p)
 	/* Initialise resume subevent flag */
 	lll->is_lll_resume = 0U;
 	lll->is_yielded = 0U;
+
+	/* Initialise the event anchor used by the resume prepared at a deadline */
+	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
@@ -1956,6 +1966,95 @@ static bool is_preempt_lossy(const struct lll_sync_iso *lll, uint32_t ticks_dura
 	return !is_se_skip_lossless(lll, lll->latency_event, se, MIN(se_after, UINT8_MAX));
 }
 
+static void resume_deadline(void *param)
+{
+	struct lll_prepare_param p;
+	struct lll_sync_iso *lll;
+	uint32_t ticks_interval;
+	struct lll_event *e;
+	void *idx;
+	int err;
+
+	lll = param;
+
+	/* Deadline is not in the current BIG event */
+	ticks_interval = HAL_TICKER_US_TO_TICKS(lll->iso_interval * ISO_INT_UNIT_US);
+	if (ticker_ticks_diff_get(lll->ticks_resume, lll->ticks_anchor) >= ticks_interval) {
+		return;
+	}
+
+	/* Find the resume of the yielded current BIG event */
+	idx = NULL;
+	do {
+		e = ull_prepare_dequeue_iter(&idx);
+		if ((e != NULL) && (e->is_aborted == 0U) && (e->is_resume != 0U) &&
+		    (e->is_yield == 0U) && (e->prepare_param.param == param) &&
+		    (e->prepare_cb == resume_prepare_cb) &&
+		    (ticker_ticks_diff_get(e->prepare_param.ticks_at_expire,
+					   e->prepare_param.ticks_drift) == lll->ticks_anchor)) {
+			break;
+		}
+
+		e = NULL;
+	} while (idx != NULL);
+
+	if (e == NULL) {
+		return;
+	}
+
+	/* Prepare the resume at the deadline, so that it preempts the events that would
+	 * otherwise use the radio before it. The HF clock and the event reference retained
+	 * by the resume are carried over to the prepare, hence the resume is released
+	 * without calling its abort_cb.
+	 */
+	p = e->prepare_param;
+	p.ticks_drift += ticker_ticks_diff_get(lll->ticks_resume, p.ticks_at_expire);
+	p.ticks_at_expire = lll->ticks_resume;
+	e->is_aborted = 1U;
+
+	err = lll_prepare(is_abort_cb, abort_cb, resume_prepare_cb, 0U, &p);
+	LL_ASSERT_ERR(!err || (err == -EINPROGRESS));
+}
+
+/* The current event yields to a next event that is not a Broadcast ISO event while payload
+ * remains to be received, prepare its resume to preempt at the end of the next event. A
+ * resume is otherwise dequeued only when there is no other prepare in the pipeline, which
+ * can be after the last repetition of the payload.
+ */
+static void resume_deadline_enqueue(struct lll_sync_iso *lll, void *next, uint32_t ticks_now)
+{
+	static memq_link_t link[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+	static struct mayfly mfy[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
+	const struct ull_hdr *ull_next;
+	uint32_t ticks_resume;
+	uint8_t index;
+	uint32_t ret;
+
+	ull_next = HDR_LLL2ULL(next);
+	if ((ull_next->ticks_slot == 0U) ||
+	    is_se_optional(lll, lll->latency_event, MAX(lll->se, lll->se_next))) {
+		return;
+	}
+
+	ticks_resume = ticks_now + ull_next->ticks_slot +
+		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
+		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	lll->ticks_resume = ticks_resume & HAL_TICKER_CNTR_MASK;
+
+	/* Assign the link only on the first use, the mayfly exchanges links between the
+	 * mayflies in its queue on dequeue, and the initial link can be in use by the queue.
+	 */
+	index = ull_sync_iso_lll_index_get(lll);
+	if (mfy[index]._link == NULL) {
+		mfy[index]._link = &link[index];
+		mfy[index].fp = resume_deadline;
+	}
+	mfy[index].param = lll;
+
+	ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy[index]);
+	LL_ASSERT_ERR(!ret);
+}
+
 /* Check if the current event, waiting for its next subevent, can yield to a resume prepare or
  * a deferred scan prepare in the prepare pipeline, that is not of an ISO sync event. The
  * prepare uses the radio until the preempt timeout of the yielded current event, i.e.
@@ -2177,6 +2276,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 				*resume_cb = resume_prepare_cb;
 				lll->is_lll_resume = 1U;
 
+				resume_deadline_enqueue(lll, next, ticks_now);
+
 				return -EAGAIN;
 			}
 
@@ -2268,6 +2369,10 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 			if ((lll_next == NULL) || (lll_next->abort_count <= lll->abort_count)) {
 				return -EINPROGRESS;
 			}
+		}
+
+		if (lll_next == NULL) {
+			resume_deadline_enqueue(lll, next, ticks_now);
 		}
 
 		return -EAGAIN;
