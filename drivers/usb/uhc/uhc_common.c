@@ -110,18 +110,13 @@ void uhc_xfer_cleanup_cancelled(const struct device *dev, uhc_xfer_cancel_cb_t c
 	uhc_xfer_dlist_cleanup_cancelled(dev, &data->ctrl_xfers, cb, priv);
 }
 
-int uhc_xfer_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
+int uhc_xfer_dequeue(struct uhc_transfer *const xfer)
 {
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
-
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (xfer == tmp) {
-			tmp->err = -ECONNRESET;
-		}
+	if (!sys_dnode_is_linked(&xfer->node)) {
+		return -EINVAL;
 	}
 
-
+	xfer->err = -ECONNRESET;
 	return 0;
 }
 

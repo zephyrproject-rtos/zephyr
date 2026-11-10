@@ -149,12 +149,12 @@ void uhc_xfer_cleanup_cancelled(const struct device *dev, uhc_xfer_cancel_cb_t c
  * To fully delete the transfer, call `uhc_xfer_cleanup_cancelled()`
  * after marking a transfer as canceled.
  *
- * @param[in] dev    Pointer to device struct of the driver instance
- * @param[in] xfer   Pointer to UHC transfer that should be canceled
+ * @param[in] xfer Pointer to UHC transfer that should be canceled
  *
  * @return 0 on success, all other values should be treated as error.
+ * @retval -EINVAL if the transfer is not in any queue
  */
-int uhc_xfer_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
+int uhc_xfer_dequeue(struct uhc_transfer *const xfer);
 
 /**
  * @brief Helper function to send UHC event to a higher level.
