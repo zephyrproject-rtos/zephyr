@@ -248,17 +248,13 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 		clock_root = kCLOCK_Root_Sai1 + instance;
 		break;
 #else
+	/*
+	 * The switch compares only the peripheral part of the clock name, so
+	 * IMX_CCM_SAI1_CLK to IMX_CCM_SAI4_CLK all come here. The instance
+	 * selects the root: the SAI1 to SAI4 roots are consecutive in the HAL.
+	 */
 	case IMX_CCM_SAI1_CLK:
-		clock_root = kCLOCK_Root_Sai1;
-		break;
-	case IMX_CCM_SAI2_CLK:
-		clock_root = kCLOCK_Root_Sai2;
-		break;
-	case IMX_CCM_SAI3_CLK:
-		clock_root = kCLOCK_Root_Sai3;
-		break;
-	case IMX_CCM_SAI4_CLK:
-		clock_root = kCLOCK_Root_Sai4;
+		clock_root = kCLOCK_Root_Sai1 + instance;
 		break;
 #endif
 #endif
