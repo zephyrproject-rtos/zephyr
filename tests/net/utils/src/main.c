@@ -1430,6 +1430,39 @@ ZTEST(test_utils_fn, test_addr_parse_mask)
 #endif /* CONFIG_NET_IPV4 && CONFIG_NET_IPV6 */
 }
 
+ZTEST(test_utils_fn, test_net_mask_len_to_netmask)
+{
+	static const struct {
+		uint8_t mask_len;
+		uint32_t expected;
+	} cases[] = {
+		{0, 0x00000000},
+		{1, 0x80000000},
+		{24, 0xffffff00},
+		{32, 0xffffffff},
+	};
+	struct net_sockaddr_in mask;
+	size_t i;
+	int ret;
+
+	for (i = 0; i < ARRAY_SIZE(cases); i++) {
+		/* Start from junk so a zeroed struct can't hide a missing write */
+		memset(&mask, 0xaa, sizeof(mask));
+
+		ret = net_mask_len_to_netmask(NET_AF_INET, cases[i].mask_len,
+					      (struct net_sockaddr *)&mask);
+
+		zexpect_equal(ret, 0, "mask_len %u: returned %d, expected 0", cases[i].mask_len,
+			      ret);
+		zexpect_equal(mask.sin_family, NET_AF_INET,
+			      "mask_len %u: family is %d, expected NET_AF_INET", cases[i].mask_len,
+			      mask.sin_family);
+		zexpect_equal(mask.sin_addr.s_addr, net_htonl(cases[i].expected),
+			      "mask_len %u: netmask is 0x%08x, expected 0x%08x", cases[i].mask_len,
+			      net_ntohl(mask.sin_addr.s_addr), cases[i].expected);
+	}
+}
+
 static uint16_t calc_chksum_ref(uint16_t sum, const uint8_t *data, size_t len)
 {
 	const uint8_t *end;
