@@ -1565,7 +1565,7 @@ static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
 {
 	struct bt_keys *keys = data;
 
-	if (!bt_addr_le_is_rpa(&conn->le.dst)) {
+	if ((conn->id != keys->id) || !bt_addr_le_is_rpa(&conn->le.dst)) {
 		return;
 	}
 
