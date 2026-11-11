@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(conn_mgr, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 #define THREAD_PRIORITY K_PRIO_PREEMPT(7)
 #endif
 
-static K_THREAD_STACK_DEFINE(conn_mgr_mon_stack,
+static K_KERNEL_STACK_DEFINE(conn_mgr_mon_stack,
 			     CONFIG_NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE);
 static struct k_thread conn_mgr_mon_thread;
 
