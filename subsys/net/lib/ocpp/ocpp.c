@@ -154,6 +154,14 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 #endif
 	}
 
+	/* The websocket sends its close frame on tcpsock, so drop it before
+	 * the fd is closed and handed out again to the new socket.
+	 */
+	if (ui->wssock >= 0) {
+		websocket_disconnect(ui->wssock);
+		ui->wssock = -1;
+	}
+
 	if (ui->tcpsock >= 0) {
 		zsock_close(ui->tcpsock);
 	}
@@ -197,11 +205,6 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 	if (ret < 0 && errno != EALREADY && errno != EISCONN) {
 		LOG_ERR("tcp socket connect fail %d %d", ret, errno);
 		return ret;
-	}
-
-	if (ui->wssock >= 0) {
-		websocket_disconnect(ui->wssock);
-		ui->wssock = -1;
 	}
 
 	if (ui->wssock < 0) {
