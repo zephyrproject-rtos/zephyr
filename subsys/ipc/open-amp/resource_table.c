@@ -39,7 +39,7 @@ extern char ram_console_buf[];
 
 #define __resource Z_GENERIC_SECTION(.resource_table)
 
-static struct fw_resource_table __resource resource_table = RESOURCE_TABLE_INIT;
+static struct fw_resource_table __resource resource_table __used = RESOURCE_TABLE_INIT;
 
 void rsc_table_get(void **table_ptr, int *length)
 {
