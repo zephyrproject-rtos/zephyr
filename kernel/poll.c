@@ -487,6 +487,24 @@ bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state)
 	return (poll_event != NULL);
 }
 
+bool z_handle_obj_poll_events_all(sys_dlist_t *events, uint32_t state)
+{
+	struct k_poll_event *poll_event;
+	bool signaled = false;
+	k_spinlock_key_t key = k_spin_lock(&poll_lock);
+
+	poll_event = (struct k_poll_event *)sys_dlist_get(events);
+	while (poll_event != NULL) {
+		(void)signal_poll_event(poll_event, state);
+		signaled = true;
+		poll_event = (struct k_poll_event *)sys_dlist_get(events);
+	}
+
+	k_spin_unlock(&poll_lock, key);
+
+	return signaled;
+}
+
 void z_impl_k_poll_signal_init(struct k_poll_signal *sig)
 {
 	sys_dlist_init(&sig->poll_events);
