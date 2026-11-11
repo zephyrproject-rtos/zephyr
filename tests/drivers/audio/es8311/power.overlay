@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	codec_power_gpio: codec-power-gpio {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <1>;
+	};
+
+	codec-regulators {
+		compatible = "zephyr,fake-regulator";
+
+		codec_supply: codec-supply {
+			regulator-name = "codec-test";
+		};
+
+		codec_failed_supply: failed-supply {
+			regulator-name = "failed-codec-test";
+		};
+	};
+};
+
+&i2c0 {
+	codec_power: es8311@20 {
+		compatible = "everest,es8311";
+		reg = <0x20>;
+		vin-supply = <&codec_supply>;
+		pa-gpios = <&codec_power_gpio 0 GPIO_ACTIVE_HIGH>;
+	};
+
+	codec_power_failed: es8311@21 {
+		compatible = "everest,es8311";
+		reg = <0x21>;
+		vin-supply = <&codec_failed_supply>;
+		zephyr,deferred-init;
+	};
+};

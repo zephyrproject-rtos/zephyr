@@ -11,3 +11,7 @@ project(es8311_codec_test)
 zephyr_include_directories(${ZEPHYR_BASE}/drivers/audio)
 
 target_sources(app PRIVATE src/main.c)
+
+if(CONFIG_REGULATOR_FAKE)
+  target_sources(app PRIVATE src/power.c)
+endif()
