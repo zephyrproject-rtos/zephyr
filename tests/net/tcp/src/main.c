@@ -266,6 +266,10 @@ static void test_sem_take_failure(k_timeout_t timeout, int line)
 	}
 }
 
+/* The stack offers SACK permitted when either side of SACK is enabled */
+#define TCP_SACK_OFFERED                                                                           \
+	(IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || IS_ENABLED(CONFIG_NET_TCP_SACK_SEND))
+
 /* MSS carried by tcp_options[] */
 #define TESTER_MSS 1460
 
@@ -720,13 +724,12 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
 						    NULL, &wnd_shift, NULL, NULL),
 				   "Cannot read TCP options");
-			/* SACK is offered only when enabled, which needs
-			 * the receive queue to hold data out of order.
+			/* SACK is offered only when one side of it is
+			 * enabled.
 			 */
-			zassert_equal(sack_perm,
-				      IS_ENABLED(CONFIG_NET_TCP_SACK),
+			zassert_equal(sack_perm, TCP_SACK_OFFERED,
 				      "SACK permitted in the SYN does not "
-				      "match CONFIG_NET_TCP_SACK");
+				      "match the SACK configuration");
 			zexpect_equal(wnd_shift >= 0,
 				      IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
 				      "Window scale in the SYN does not match "
@@ -745,10 +748,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			/* The peer offered SACK and window scaling; they are
 			 * offered back only when enabled here.
 			 */
-			zassert_equal(sack_perm,
-				      IS_ENABLED(CONFIG_NET_TCP_SACK),
+			zassert_equal(sack_perm, TCP_SACK_OFFERED,
 				      "SACK permitted in the SYN-ACK does not "
-				      "match CONFIG_NET_TCP_SACK");
+				      "match the SACK configuration");
 			zexpect_equal(wnd_shift >= 0,
 				      IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
 				      "Window scale in the SYN-ACK does not "
@@ -1481,9 +1483,9 @@ static void verify_handshake_options(struct net_pkt *pkt, struct tcphdr *th,
 	zassert_ok(read_tcp_options(pkt, th, &sack_perm, &mss, &wnd_shift, NULL, NULL),
 		   "Cannot read TCP options");
 	zexpect_not_equal(mss, 0, "No MSS in handshake segment %u", times);
-	zexpect_equal(sack_perm, IS_ENABLED(CONFIG_NET_TCP_SACK),
+	zexpect_equal(sack_perm, TCP_SACK_OFFERED,
 		      "SACK permitted in handshake segment %u does not match "
-		      "CONFIG_NET_TCP_SACK", times);
+		      "the SACK configuration", times);
 	zexpect_equal(wnd_shift >= 0, IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
 		      "Window scale in handshake segment %u does not match "
 		      "CONFIG_NET_TCP_WINDOW_SCALE", times);
@@ -2237,6 +2239,9 @@ static uint32_t rtt_tx_seq[16];
 static uint32_t rtt_tx_len[16];
 /* The stack sent a RST */
 static bool rtt_rst_seen;
+/* SACK block of the last ACK without data the stack sent, 0 and 0 if none */
+static uint32_t rtt_ack_sack_left;
+static uint32_t rtt_ack_sack_right;
 
 static void rtt_reply_send(struct k_work *work)
 {
@@ -2301,6 +2306,11 @@ static void handle_rtt_client(struct net_pkt *pkt, struct tcphdr *th)
 		len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) - net_pkt_ip_opts_len(pkt) -
 		      th->th_off * 4U;
 		if (len == 0U) {
+			bool sack_perm;
+
+			zassert_ok(read_tcp_options(pkt, th, &sack_perm, NULL, NULL,
+						    &rtt_ack_sack_left, &rtt_ack_sack_right),
+				   "Cannot read TCP options");
 			return;
 		}
 
@@ -2840,7 +2850,7 @@ ZTEST(net_tcp, test_client_rtt_fast_retransmit)
 	rtt_close(ctx);
 }
 
-#if defined(CONFIG_NET_TCP_SACK_SEND)
+#if defined(CONFIG_NET_TCP_SACK_RECV) || defined(CONFIG_NET_TCP_SACK_SEND)
 /* Connect to a tester that offers SACK and an MSS of TESTER_SACK_MSS. The
  * handshake takes 70 ms, so the RTO of about 210 ms leaves time for the ACKs
  * of a test. The congestion window is opened, so that a test can have many
@@ -2867,6 +2877,47 @@ static struct net_context *sack_connect(void)
 	return ctx;
 }
 
+static void sack_close(struct net_context *ctx)
+{
+	tester_sack_opts_len = 0U;
+	rtt_hold = false;
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect with SACK, the peer sends a segment after a hole,
+ *   expect the duplicate ACK to report the segment in a SACK block only when
+ *   CONFIG_NET_TCP_SACK_RECV is enabled.
+ */
+ZTEST(net_tcp, test_client_sack_recv_block)
+{
+	struct net_context *ctx;
+	struct net_pkt *data;
+
+	ctx = sack_connect();
+	rtt_ack_sack_left = 0U;
+	rtt_ack_sack_right = 0U;
+
+	seq += 10U;
+	data = prepare_data_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port, "BBBBB", 5U);
+	seq -= 10U;
+	zassert_not_null(data, "Failed to prepare data");
+	zassert_ok(net_recv_data(net_iface, data), "Failed to send data");
+	k_msleep(10);
+
+	if (IS_ENABLED(CONFIG_NET_TCP_SACK_RECV)) {
+		zexpect_equal(rtt_ack_sack_left, seq + 10U, "SACK block from %u",
+			      rtt_ack_sack_left - seq);
+		zexpect_equal(rtt_ack_sack_right, seq + 15U, "SACK block to %u",
+			      rtt_ack_sack_right - seq);
+	} else {
+		zexpect_equal(rtt_ack_sack_right, 0U, "SACK block with SACK_RECV disabled");
+	}
+
+	sack_close(ctx);
+}
+
+#if defined(CONFIG_NET_TCP_SACK_SEND)
 /* Send count segments of len bytes, which the tester does not answer */
 static void sack_send(struct net_context *ctx, uint32_t count, uint32_t len)
 {
@@ -2917,12 +2968,6 @@ static void sack_inject(uint32_t base, uint32_t ack_off, const int32_t *edges, s
 	tester_sack_opts_len = 0U;
 }
 
-static void sack_close(struct net_context *ctx)
-{
-	tester_sack_opts_len = 0U;
-	rtt_hold = false;
-	rtt_close(ctx);
-}
 
 /* Test case scenario IPv4
  *   connect with SACK, send 8 segments of 20 bytes,
@@ -3392,6 +3437,7 @@ ZTEST(net_tcp, test_client_sack_scoreboard_full)
 	sack_close(ctx);
 }
 #endif /* CONFIG_NET_TCP_SACK_SEND */
+#endif /* CONFIG_NET_TCP_SACK_RECV || CONFIG_NET_TCP_SACK_SEND */
 
 static void handle_advertised_recv_window(struct tcphdr *th)
 {
