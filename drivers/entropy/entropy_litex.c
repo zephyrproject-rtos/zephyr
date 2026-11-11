@@ -8,9 +8,9 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <errno.h>
 #include <zephyr/init.h>
-#include <soc.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 
