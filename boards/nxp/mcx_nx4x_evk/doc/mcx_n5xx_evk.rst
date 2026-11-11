@@ -30,6 +30,24 @@ limits ``zephyr,sram`` to the 24 KB at ``0x20002000`` to avoid the boot ROM's
 scratch area. The default CPU0 RAM allocation is not a suspend-to-RAM layout;
 check that the entire retained working set fits before enabling this state.
 
+Using QSPI Board Variant
+========================
+
+The board includes an 8 MiB W25Q64JWTBJQ flash connected to FlexSPI. The default
+``mcx_n5xx_evk/mcxn547/cpu0`` target executes from internal flash and makes the
+external flash available for storage. Use ``mcx_n5xx_evk/mcxn547/cpu0/qspi`` to
+execute directly from external flash (XIP):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mcx_n5xx_evk/mcxn547/cpu0/qspi
+   :goals: build
+
+The QSPI variant uses the same external flash partition layout as the
+MCX-N9XX-EVK QSPI variant. The ROM bootloader must be configured to boot from
+FlexSPI before running this image. See :doc:`mcx_n9xx_evk` for the external
+QSPI boot configuration procedure, using the MCXN547 target for this board.
+
 .. _MCX-N547 SoC Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X
 
