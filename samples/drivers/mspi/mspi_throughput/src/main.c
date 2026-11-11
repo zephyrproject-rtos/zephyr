@@ -145,7 +145,7 @@ static int run_single_test(uint32_t buffer_size,
 
 	/* Setup tx and rx transfer descriptions */
 	struct mspi_xfer tx_xfer = {
-		.xfer_mode = MSPI_DMA,
+		.xfer_mode = IS_ENABLED(CONFIG_MSPI_DMA) ? MSPI_DMA : MSPI_PIO,
 		/* tx_xfer.packets will be set inside the timing loop */
 		/* tx_xfer.num_packet will be set inside the timing loop */
 		.timeout = 10000,
