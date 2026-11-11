@@ -148,6 +148,11 @@ static int set_random_address(const bt_addr_t *addr)
 
 	net_buf_add_mem(buf, addr, sizeof(*addr));
 
+	/* Cached when the command completes, not when this thread resumes: commands
+	 * complete in the order in which the Controller sets the addresses.
+	 */
+	bt_hci_cmd_random_addr_set_init(buf, addr);
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_RANDOM_ADDRESS, buf, NULL);
 	if (err) {
 		if (err == -EACCES) {
@@ -162,7 +167,6 @@ static int set_random_address(const bt_addr_t *addr)
 		return err;
 	}
 
-	bt_addr_copy(&bt_dev.random_addr, addr);
 	return 0;
 }
 
