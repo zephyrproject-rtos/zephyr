@@ -1,0 +1,38 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cadence SD Host Controller (SD6HC)
+
+  The cdns,phy-cfg-* properties hold the Combo PHY registers programmed for
+  a group of timing modes: <DQS timing, gate/loopback control, DLL slave
+  control, DQ timing, DLL master control>. The cdns,ctrl-cfg-* properties
+  hold the host registers for the same group: <HRS09 HRS10 HRS16 HRS07>.
+  Only the HRS09 read-data/read-command enable and extended mode bits and
+  the HRS10 SDCLK adjust field are taken from the given values. The defaults
+  are the values from the Agilex 5 HPS Technical Reference Manual.
+
+compatible: "cdns,sd6hc"
+
+include: ["cdns,sdhc.yaml"]
+
+properties:
+  cdns,phy-cfg-sd-ds:
+    type: array
+    default: [0x00380004, 0x01a00040, 0x0, 0x1, 0x00800004]
+    description: Combo PHY settings for SD default speed and UHS-I SDR12.
+
+  cdns,phy-cfg-sd-hs:
+    type: array
+    default: [0x00380004, 0x01a00040, 0x0, 0x1, 0x00800004]
+    description: Combo PHY settings for SD high speed and UHS-I SDR25.
+
+  cdns,ctrl-cfg-sd-ds:
+    type: array
+    default: [0x0001800c, 0x00020000, 0x0, 0x00080000]
+    description: Controller settings for SD default speed and UHS-I SDR12.
+
+  cdns,ctrl-cfg-sd-hs:
+    type: array
+    default: [0x0001800c, 0x00030000, 0x0, 0x00080000]
+    description: Controller settings for SD high speed and UHS-I SDR25.
