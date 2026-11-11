@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #define ACK_DELAY K_MSEC(CONFIG_NET_TCP_ACK_DELAY)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
+#define TCP_RTO_SYN_FALLBACK_MS 3000U
 
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
 static uint32_t tcp_rx_window =
@@ -675,6 +676,23 @@ static void tcp_rtt_ack(struct tcp *conn, uint32_t ack)
 static void tcp_rtt_cancel(struct tcp *conn)
 {
 	conn->rtt_pending = false;
+}
+
+/* Take the RTT sample of the handshake when the ACK of the SYN or SYN-ACK
+ * arrives. If the SYN or SYN-ACK was retransmitted there is no sample, and
+ * the data starts with an RTO of at least 3 seconds (RFC 6298, rule 5.7).
+ */
+static void tcp_rtt_handshake_ack(struct tcp *conn, uint32_t ack)
+{
+	tcp_rtt_ack(conn, ack);
+
+	if ((conn->send_data_retries > 0U) && !conn->rtt_sampled) {
+		uint32_t rto = tcp_rto_backoff(conn->rto, conn->rto_backoff);
+
+		/* A backoff beyond 3 seconds is kept */
+		conn->rto = MAX(rto, TCP_RTO_SYN_FALLBACK_MS);
+		conn->rto_backoff = 0U;
+	}
 }
 
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
@@ -3687,6 +3705,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			tcp_win_scale_negotiate(conn);
 			(void)tcp_out_syn(conn, SYN | ACK, conn->seq);
 			conn_seq(conn, + 1);
+			tcp_rtt_start(conn, conn->seq);
 			next = TCP_SYN_RECEIVED;
 
 			tcp_setup_retransmission(conn);
@@ -3715,6 +3734,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 
 			k_work_cancel_delayable(&conn->establish_timer);
 			k_work_cancel_delayable(&conn->send_data_timer);
+			tcp_rtt_handshake_ack(conn, th_ack(th));
 			tcp_conn_ref(conn);
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
@@ -3811,6 +3831,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		 */
 		if (FL(&fl, &, SYN | ACK, th && th_ack(th) == conn->seq)) {
 			k_work_cancel_delayable(&conn->send_data_timer);
+			tcp_rtt_handshake_ack(conn, th_ack(th));
 			/* We offered SACK in the SYN; the peer agreed if it
 			 * came back in the SYN-ACK.
 			 */
@@ -4592,6 +4613,7 @@ static int tcp_start_handshake(struct tcp *conn)
 	tcp_setup_retransmission(conn);
 
 	conn_seq(conn, + 1);
+	tcp_rtt_start(conn, conn->seq);
 	conn_state(conn, TCP_SYN_SENT);
 	tcp_conn_ref(conn);
 	k_mutex_unlock(&conn->lock);
