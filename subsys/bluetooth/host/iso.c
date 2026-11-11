@@ -1719,8 +1719,8 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
-		bt_iso_cleanup_acl(iso);
-		bt_conn_unref(iso);
+		iso->err = BT_HCI_ERR_UNSPECIFIED;
+		bt_iso_disconnected(iso);
 		hci_le_reject_cis(cis_handle, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
 	}
