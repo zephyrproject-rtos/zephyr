@@ -400,7 +400,7 @@ static void dhcpv4_immediate_timeout(struct net_if_dhcpv4 *dhcpv4)
 	NET_DBG("force timeout dhcpv4=%p", dhcpv4);
 	dhcpv4->timer_start = k_uptime_get() - 1;
 	dhcpv4->request_time = 0U;
-	k_work_reschedule(&timeout_work, K_NO_WAIT);
+	net_work_reschedule(&timeout_work, K_NO_WAIT);
 }
 
 /* Must be invoked with lock held. */
@@ -415,7 +415,7 @@ static void dhcpv4_set_timeout(struct net_if_dhcpv4 *dhcpv4,
 	 * event; also this timeout may replace the current timeout
 	 * event.  Delegate scheduling to the timeout manager.
 	 */
-	k_work_reschedule(&timeout_work, K_NO_WAIT);
+	net_work_reschedule(&timeout_work, K_NO_WAIT);
 }
 
 /* Set a new timeout w/o updating base time. Used for RENEWING and REBINDING to
@@ -765,7 +765,7 @@ static void dhcpv4_post_events(struct net_if *iface, uint8_t events)
 		iface->config.dhcpv4.pending_events |= events;
 	}
 
-	(void)k_work_submit(&event_work);
+	(void)net_work_submit(&event_work);
 }
 
 /* The leased address sits on the interface for as long as the client is in
@@ -1114,8 +1114,8 @@ static void dhcpv4_timeout(struct k_work *work)
 	if (timeout_update != UINT32_MAX) {
 		NET_DBG("Waiting for %us", timeout_update);
 
-		k_work_reschedule(&timeout_work,
-				  K_SECONDS(timeout_update));
+		net_work_reschedule(&timeout_work,
+				    K_SECONDS(timeout_update));
 	}
 }
 
@@ -2205,7 +2205,7 @@ static void dhcpv4_acd_event_handler(uint64_t mgmt_event, struct net_if *iface,
 	}
 
 	if (requested) {
-		(void)k_work_submit(&event_work);
+		(void)net_work_submit(&event_work);
 	}
 }
 
