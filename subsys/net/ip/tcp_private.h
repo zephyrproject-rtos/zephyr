@@ -206,6 +206,9 @@ union tcp_endpoint {
 #define NET_TCP_SACK_PERM_SIZE   2
 #define NET_TCP_SACK_BLOCK_SIZE  8
 
+/* Most blocks a SACK option can carry in 40 bytes of options */
+#define NET_TCP_SACK_MAX_BLOCKS  4U
+
 /* TCP Option sizes */
 #define NET_TCP_END_SIZE          1
 #define NET_TCP_NOP_SIZE          1
@@ -227,6 +230,20 @@ struct tcp_options {
 	bool mss_found : 1;
 	bool wnd_found : 1;
 	bool sack_perm_found : 1;
+};
+
+/* A SACK block: the peer holds the data from left up to, but not
+ * including, right.
+ */
+struct tcp_sack_block {
+	uint32_t left;
+	uint32_t right;
+};
+
+/* SACK blocks of a received segment */
+struct tcp_sack_blocks {
+	struct tcp_sack_block block[NET_TCP_SACK_MAX_BLOCKS];
+	uint8_t count;
 };
 
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
@@ -360,6 +377,19 @@ struct tcp { /* TCP connection */
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	uint8_t dup_ack_cnt;
 #endif
+#ifdef CONFIG_NET_TCP_SACK_SEND
+	/* SACK scoreboard of RFC 6675: the ranges the peer reported above
+	 * seq, sorted and disjoint.
+	 */
+	struct tcp_sack_block sack_ranges[CONFIG_NET_TCP_SACK_SCOREBOARD];
+	/* Loss recovery ends when seq reaches recovery_point */
+	uint32_t recovery_point;
+	/* End of the data retransmitted in this recovery (HighRxt) */
+	uint32_t high_rxt;
+	/* A rescue retransmission is allowed once seq is past rescue_rxt */
+	uint32_t rescue_rxt;
+	uint8_t sack_count;
+#endif
 	uint8_t zwp_retries;
 	bool in_connect : 1;
 	bool in_close : 1;
@@ -377,6 +407,12 @@ struct tcp { /* TCP connection */
 	bool rtt_pending : 1;
 	/* At least one RTT sample was taken. */
 	bool rtt_sampled : 1;
+#ifdef CONFIG_NET_TCP_SACK_SEND
+	/* In SACK-based loss recovery. */
+	bool sack_recovery : 1;
+	/* An RTO happened: no loss recovery before seq reaches recovery_point. */
+	bool sack_rto_hold : 1;
+#endif
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
