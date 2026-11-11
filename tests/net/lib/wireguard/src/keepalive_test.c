@@ -11,6 +11,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_pkt.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/virtual_mgmt.h>
 #include <zephyr/net/wireguard.h>
@@ -202,6 +203,68 @@ ZTEST(wireguard_keepalive, test_keepalive_initiation_on_workq)
 		      before.handshake_init_tx + 1, "No handshake initiation sent");
 	zexpect_false(wireguard_test_peer_send_handshake(peer_id),
 		      "Handshake request left pending");
+
+	ret = wireguard_peer_remove(peer_id);
+	zassert_equal(ret, 0, "Peer remove failed (%d)", ret);
+}
+
+/* Nor is the initiation started by the first packet sent to a peer: the
+ * packet is dropped with -EAGAIN, the handshake left due, and the work queue
+ * sends the initiation once the scheduler is unlocked.
+ */
+ZTEST(wireguard_keepalive, test_first_packet_initiation_on_workq)
+{
+	struct wireguard_peer_config config = {
+		.public_key = peer_public_key,
+	};
+	const struct virtual_interface_driver_api *api;
+	struct net_stats_vpn before;
+	struct net_stats_vpn locked;
+	struct net_if *peer_iface;
+	struct net_pkt *pkt;
+	bool pending;
+	int peer_id;
+	int ret;
+
+	if (CONFIG_WIREGUARD_WORKQ_STACK_SIZE == 0) {
+		ztest_test_skip();
+	}
+
+	set_private_key();
+	set_test_endpoint(&config);
+
+	peer_id = wireguard_peer_add(&config, &peer_iface);
+	zassert_true(peer_id > 0, "Peer add failed (%d)", peer_id);
+
+	ret = wireguard_test_get_stats(peer_id, &before);
+	zexpect_equal(ret, 0);
+
+	/* An empty packet passes the allowed IP check */
+	pkt = net_pkt_alloc_with_buffer(peer_iface, 0, NET_AF_INET, 0, K_NO_WAIT);
+	zexpect_not_null(pkt, "Cannot allocate a packet");
+
+	if (pkt != NULL) {
+		api = net_if_get_device(peer_iface)->api;
+
+		k_sched_lock();
+		ret = api->send(peer_iface, pkt);
+		pending = wireguard_test_peer_send_handshake(peer_id);
+		(void)wireguard_test_get_stats(peer_id, &locked);
+		k_sched_unlock();
+
+		/* A packet that is not sent is left to the caller */
+		net_pkt_unref(pkt);
+
+		zexpect_equal(ret, -EAGAIN, "Unexpected result (%d)", ret);
+		zexpect_true(pending, "Initiation not left to the work queue");
+		zexpect_equal(locked.handshake_init_tx, before.handshake_init_tx,
+			      "Initiation sent from the calling thread");
+
+		zexpect_equal(wait_for_init_tx(peer_id, before.handshake_init_tx + 1),
+			      before.handshake_init_tx + 1, "No handshake initiation sent");
+		zexpect_false(wireguard_test_peer_send_handshake(peer_id),
+			      "Handshake request left pending");
+	}
 
 	ret = wireguard_peer_remove(peer_id);
 	zassert_equal(ret, 0, "Peer remove failed (%d)", ret);
