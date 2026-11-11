@@ -82,12 +82,13 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #define CONTROLLER_ID	kUSB_ControllerLpcIp3511Hs0
 #elif defined(CONFIG_SOC_LPC55S36)
 #define CONTROLLER_ID	kUSB_ControllerLpcIp3511Fs0
-#elif defined(CONFIG_SOC_LPC55S69_CPU0) || defined(CONFIG_SOC_LPC55S69_CPU1)
+#elif defined(CONFIG_SOC_LPC55S69_CPU0) || defined(CONFIG_SOC_LPC55S69_CPU1) ||                    \
+	defined(CONFIG_SOC_SERIES_LPC54XXX)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbhs))
 #define CONTROLLER_ID	kUSB_ControllerLpcIp3511Hs0
 #elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbfs))
 #define CONTROLLER_ID	kUSB_ControllerLpcIp3511Fs0
-#endif /* LPC55s69 */
+#endif /* LPC55s69, LPC54xxx */
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX) || \
 	defined(CONFIG_SOC_SERIES_IMXRT118X) || \
 	defined(CONFIG_SOC_SERIES_IMXRT10XX) || \
