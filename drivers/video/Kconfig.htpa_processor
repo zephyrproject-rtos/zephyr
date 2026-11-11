@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIDEO_HTPA_PROCESSOR
+	bool "HTPA frame processing video device"
+	depends on DT_HAS_HEIMANN_HTPA_PROCESSOR_ENABLED
+	default y
+	help
+	  Capture raw HTPA frames from a video source and correct electrical
+	  offsets and pixel ordering.
+
+if VIDEO_HTPA_PROCESSOR
+
+config VIDEO_HTPA_PROCESSOR_MIN_GREY_RANGE
+	int "Minimum HTPA grayscale input range"
+	default 256
+	range 1 65535
+	help
+	  Minimum span between the grayscale scaling bounds, in corrected
+	  sensor levels. Smaller spans are expanded around their midpoint.
+
+config VIDEO_HTPA_PROCESSOR_RAW_BUFFER_SIZE
+	int "Maximum raw HTPA frame size"
+	default 41756
+	range 1 2147483647
+	help
+	  Size in bytes of each of the processor's source frame buffers.
+	  The source frame format must fit in each buffer.
+
+config VIDEO_HTPA_PROCESSOR_RAW_BUFFER_COUNT
+	int "Number of HTPA source frame buffers"
+	default 3
+	range 2 32
+	help
+	  Number of raw frame buffers queued to the source. Increasing this
+	  allows more frames to be buffered while processing, at the cost of
+	  additional memory and potentially increased frame latency.
+
+config VIDEO_HTPA_PROCESSOR_INIT_PRIORITY
+	int "HTPA processor initialization priority"
+	default 61
+	help
+	  Initialization priority after the source video device.
+
+config VIDEO_HTPA_PROCESSOR_STACK_SIZE
+	int "HTPA processor worker stack size"
+	default 1024
+	help
+	  Stack size of the frame processing worker.
+
+config VIDEO_HTPA_PROCESSOR_THREAD_PRIORITY
+	int "HTPA processor worker priority"
+	default 5
+	help
+	  Scheduling priority of the frame processing worker.
+
+endif # VIDEO_HTPA_PROCESSOR

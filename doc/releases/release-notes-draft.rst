@@ -73,6 +73,9 @@ Libraries / Subsystems
 
   * Heimann HTPA 120x84 and 160x120 thermal array sensors can provide raw frames
     containing pixel data and electrical offsets for image processing.
+  * HTPA raw frames can be corrected and reordered by a virtual video device enabled by
+    :kconfig:option:`CONFIG_VIDEO_HTPA_PROCESSOR`. It also provides 8-bit grayscale output
+    with histogram-based contrast scaling.
 
 * Networking
 
