@@ -7,6 +7,13 @@ toolchain:
   - gnuarmemb
 ram: 512
 flash: 2048
+simulation:
+  - name: renode
+    exec: renode
+testing:
+  renode:
+    uart: sysbus.usart2
+    resc: boards/antmicro/stm32h7_renode_reference_board/support/testing.resc
 supported:
   - adc
   - can

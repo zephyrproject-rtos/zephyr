@@ -125,6 +125,37 @@ static inline uint32_t ll_usart_is_active_txe(const USART_TypeDef *usart)
 #endif /* CONFIG_STM32_HAL2 */
 }
 
+static inline void ll_usart_irq_tx_enable(USART_TypeDef *usart)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_USART_EnableIT_TXE_TXFNF(usart);
+#else
+	LL_USART_EnableIT_TXE(usart);
+#endif
+}
+
+static inline void ll_usart_irq_tx_disable(USART_TypeDef *usart)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_USART_DisableIT_TXE_TXFNF(usart);
+#else
+	LL_USART_DisableIT_TXE(usart);
+#endif
+}
+
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+static inline uint32_t ll_usart_is_enabled_txe(USART_TypeDef *usart)
+#else
+static inline uint32_t ll_usart_is_enabled_txe(const USART_TypeDef *usart)
+#endif
+{
+#if defined(CONFIG_STM32_HAL2)
+	return LL_USART_IsEnabledIT_TXE_TXFNF(usart);
+#else
+	return LL_USART_IsEnabledIT_TXE(usart);
+#endif
+}
+
 static inline void ll_usart_irq_rx_enable(USART_TypeDef *usart)
 {
 #if defined(CONFIG_STM32_HAL2)

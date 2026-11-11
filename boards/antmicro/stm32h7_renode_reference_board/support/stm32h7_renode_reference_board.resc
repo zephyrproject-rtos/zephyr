@@ -5,8 +5,9 @@
 :description: This script is prepared to run Zephyr on STM32H7 Renode Reference Platform board.
 
 $name?="STM32H7 Renode Reference Platform"
+$platform?=$ORIGIN/stm32h7_renode_reference_board.repl
 mach create $name
-machine LoadPlatformDescription $ORIGIN/stm32h7_renode_reference_board.repl
+machine LoadPlatformDescription $platform
 
 showAnalyzer sysbus.usart2
 
