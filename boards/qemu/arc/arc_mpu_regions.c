@@ -19,7 +19,7 @@ static struct arc_mpu_region mpu_regions[] = {
 	/* Region Coverage */
 	MPU_REGION_ENTRY("COVERAGE",
 			 (uint32_t)&(__gcov_bss_start),
-			 (uint32_t)&__gcov_bss_size,
+			 (uint32_t)LINKER_SECTION_SIZE_CONST(__gcov_bss_size),
 			 REGION_IO_ATTR),
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 
@@ -39,13 +39,13 @@ static struct arc_mpu_region mpu_regions[] = {
 	 */
 	MPU_REGION_ENTRY("RAM_RX",
 			 (uintptr_t)__rom_region_start,
-			 (uintptr_t)__rom_region_size,
+			 (uint32_t)LINKER_SECTION_SIZE_CONST(__rom_region_size),
 			 REGION_ROM_ATTR),
 
 	 MPU_REGION_ENTRY("RAM_RW",
-			(uintptr_t)_image_ram_start,
-			(uintptr_t)__arc_rw_sram_size,
-			REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
+				(uintptr_t)_image_ram_start,
+				(uintptr_t)LINKER_SECTION_SIZE_CONST(__arc_rw_sram_size),
+				REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif /* CONFIG_XIP */
 
 #endif /* zephyr_sram > 0 */

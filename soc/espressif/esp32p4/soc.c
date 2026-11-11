@@ -61,7 +61,7 @@ BUILD_ASSERT(ESP32P4_CPU_FREQ_VALID(DT_PROP(DT_PATH(cpus, cpu_1), clock_frequenc
 void nocache_region_init(void)
 {
 	const uintptr_t start = (uintptr_t)_nocache_ram_start;
-	const size_t used = (size_t)(uintptr_t)_nocache_ram_size;
+	const size_t used = LINKER_SECTION_SIZE(_nocache_ram_start, _nocache_ram_end);
 	size_t size;
 	uintptr_t napot_addr;
 	uint32_t cfg;

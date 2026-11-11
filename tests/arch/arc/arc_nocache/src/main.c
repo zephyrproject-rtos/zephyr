@@ -26,7 +26,7 @@ ZTEST(arc_nocache, test_placement)
 
 ZTEST(arc_nocache, test_section_invariants)
 {
-	uintptr_t size = (uintptr_t)&_nocache_ram_size;
+	uintptr_t size = LINKER_SECTION_SIZE(_nocache_ram_start, _nocache_ram_end);
 	uintptr_t start = (uintptr_t)&_nocache_ram_start;
 
 	zassert_true(size > 0 && (size & (size - 1)) == 0,

@@ -53,7 +53,7 @@ const __imx_boot_data_section BOOT_DATA_T boot_data = {
 	.size = (uint32_t)&_flash_used,
 #else
 	.start = DT_CHOSEN_SRAM_ADDR,
-	.size = (uint32_t)&_image_ram_size,
+	.size = (uint32_t)LINKER_SECTION_SIZE_CONST(_image_ram_size),
 #endif
 	.plugin = PLUGIN_FLAG,
 	.placeholder = 0xFFFFFFFF,
