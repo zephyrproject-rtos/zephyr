@@ -438,6 +438,30 @@ endchoice # BT_AUTO_PHY_CENTRAL
 
 endif # BT_PHY_UPDATE
 
+if BT_FRAME_SPACE_UPDATE
+
+config BT_AUTO_FRAME_SPACE_UPDATE_1M
+	bool "Auto-initiate Frame Space Update on 1M PHY"
+	help
+	  Request the lowest supported ACL inter-frame spacing for the 1M PHY on
+	  connection establishment.
+
+config BT_AUTO_FRAME_SPACE_UPDATE_2M
+	bool "Auto-initiate Frame Space Update on 2M PHY"
+	help
+	  Request the lowest supported ACL inter-frame spacing for the 2M PHY on
+	  connection establishment. Ignored if the local Controller does not support
+	  the 2M PHY.
+
+config BT_AUTO_FRAME_SPACE_UPDATE_CODED
+	bool "Auto-initiate Frame Space Update on Coded PHY"
+	help
+	  Request the lowest supported ACL inter-frame spacing for the Coded PHY on
+	  connection establishment. Ignored if the local Controller does not support
+	  the Coded PHY.
+
+endif # BT_FRAME_SPACE_UPDATE
+
 config BT_USER_DATA_LEN_UPDATE
 	bool "User control of Data Length Update Procedure"
 	depends on BT_DATA_LEN_UPDATE

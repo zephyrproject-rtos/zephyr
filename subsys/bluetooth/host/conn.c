@@ -2042,6 +2042,48 @@ static int do_phy_update(struct bt_conn *conn)
 	return bt_le_set_phy(conn, 0U, pref, pref, BT_HCI_LE_PHY_CODED_ANY);
 }
 
+#if defined(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_1M) || defined(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_2M) || \
+	defined(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_CODED)
+#define AUTO_FRAME_SPACE_UPDATE 1
+
+/* Default T_IFS; any value up to it is acceptable. */
+#define AUTO_FRAME_SPACE_MAX_US 150U
+
+static int do_frame_space_update(struct bt_conn *conn)
+{
+	struct bt_conn_le_frame_space_update_param param = {
+		.spacing_types = BT_CONN_LE_FRAME_SPACE_TYPES_MASK_ACL_IFS,
+		.frame_space_min = 0U,
+		.frame_space_max = AUTO_FRAME_SPACE_MAX_US,
+	};
+
+	if (!BT_FEAT_LE_FRAME_SPACE_UPDATE_SET(bt_dev.le.features)) {
+		LOG_WRN("Frame Space Update not supported");
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_1M)) {
+		param.phys |= BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_1M_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_2M) &&
+	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
+		param.phys |= BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_2M_MASK;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_CODED) &&
+	    BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
+		param.phys |= BT_HCI_LE_FRAME_SPACE_UPDATE_PHY_CODED_MASK;
+	}
+
+	if (param.phys == 0U) {
+		return 0;
+	}
+
+	return bt_conn_le_frame_space_update(conn, &param);
+}
+#endif /* CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_* */
+
 static bool can_initiate_feature_exchange(struct bt_conn *conn)
 {
 	/* Spec says both central and peripheral can send the command. However,
@@ -2119,6 +2161,18 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
+#if defined(AUTO_FRAME_SPACE_UPDATE)
+	err = do_frame_space_update(conn);
+	if (err) {
+		/* Expected if the peer does not support Frame Space Update. */
+		LOG_WRN("Failed LE Frame Space Update (%d)", err);
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return;
+	}
+#endif /* AUTO_FRAME_SPACE_UPDATE */
+
 	/* Data length should be automatically updated to the maximum by the
 	 * controller. Not updating it is a quirk and this is the workaround.
 	 */
@@ -2142,6 +2196,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
  * - read remote features
  * - read remote version
  * - update PHY
+ * - update frame space
  * - update data length
  */
 static void auto_initiated_procedures(struct k_work *unused)
