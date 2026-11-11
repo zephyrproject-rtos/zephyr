@@ -313,6 +313,9 @@ static int spi_mcux_configure(const struct device *dev,
 			LOG_WRN("CS hold delay %u ns not supported, ignored", spi_cfg->cs.hold_ns);
 		}
 		controller_config.chipSelectDelay = (uint8_t)clock_cycles;
+		controller_config.channelConfig.chipSlectActiveState =
+			(spi_cfg->operation & SPI_CS_ACTIVE_HIGH) ? kECSPI_ChipSelectActiveStateHigh
+								  : kECSPI_ChipSelectActiveStateLow;
 	}
 
 	ECSPI_MasterInit(base, &controller_config, clock_freq);
