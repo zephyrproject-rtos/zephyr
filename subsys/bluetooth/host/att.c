@@ -275,6 +275,7 @@ const char *bt_att_err_to_str(uint8_t att_err)
 		ATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES),
 		ATT_ERR(BT_ATT_ERR_DB_OUT_OF_SYNC),
 		ATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED),
+		ATT_ERR(BT_ATT_ERR_MIC_LEN_TOO_SHORT),
 	};
 
 	const char * const second_mapping_table[] = {

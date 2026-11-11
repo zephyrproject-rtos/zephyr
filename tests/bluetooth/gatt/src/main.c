@@ -475,12 +475,13 @@ ZTEST(test_gatt, test_bt_att_err_to_str)
 			  "BT_ATT_ERR_SUCCESS");
 	zassert_str_equal(bt_att_err_to_str(BT_ATT_ERR_INSUFFICIENT_ENCRYPTION),
 			  "BT_ATT_ERR_INSUFFICIENT_ENCRYPTION");
+	zassert_str_equal(bt_att_err_to_str(BT_ATT_ERR_MIC_LEN_TOO_SHORT),
+			  "BT_ATT_ERR_MIC_LEN_TOO_SHORT");
 	zassert_str_equal(bt_att_err_to_str(BT_ATT_ERR_OUT_OF_RANGE),
 			  "BT_ATT_ERR_OUT_OF_RANGE");
 
 	/* Test a entries that is not used */
-	zassert_mem_equal(bt_att_err_to_str(0x14),
-			  "(unknown)", strlen("(unknown)"));
+	zassert_mem_equal(bt_att_err_to_str(0x15), "(unknown)", strlen("(unknown)"));
 	zassert_mem_equal(bt_att_err_to_str(0xFB),
 			  "(unknown)", strlen("(unknown)"));
 
@@ -496,12 +497,13 @@ ZTEST(test_gatt, test_bt_gatt_err_to_str)
 			  "BT_ATT_ERR_SUCCESS");
 	zassert_str_equal(bt_gatt_err_to_str(BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_ENCRYPTION)),
 			  "BT_ATT_ERR_INSUFFICIENT_ENCRYPTION");
+	zassert_str_equal(bt_gatt_err_to_str(BT_GATT_ERR(BT_ATT_ERR_MIC_LEN_TOO_SHORT)),
+			  "BT_ATT_ERR_MIC_LEN_TOO_SHORT");
 	zassert_str_equal(bt_gatt_err_to_str(BT_GATT_ERR(BT_ATT_ERR_OUT_OF_RANGE)),
 			  "BT_ATT_ERR_OUT_OF_RANGE");
 
 	/* Test entries that are not used */
-	zassert_mem_equal(bt_gatt_err_to_str(BT_GATT_ERR(0x14)),
-			  "(unknown)", strlen("(unknown)"));
+	zassert_mem_equal(bt_gatt_err_to_str(BT_GATT_ERR(0x15)), "(unknown)", strlen("(unknown)"));
 	zassert_mem_equal(bt_gatt_err_to_str(BT_GATT_ERR(0xFB)),
 			  "(unknown)", strlen("(unknown)"));
 
