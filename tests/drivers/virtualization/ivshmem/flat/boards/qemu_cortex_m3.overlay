@@ -1,0 +1,27 @@
+&sram0 {
+	reg = <0x20000000 0xf000>;
+};
+
+/ {
+	flat0: ivshmem@2000f000 {
+		compatible = "qemu,ivshmem-flat";
+		reg = <0x2000f000 0x10>, <0x2000f100 0x100>;
+		reg-names = "mmr", "shmem";
+		interrupt-parent = <&nvic>;
+		interrupts = <25 2>;
+	};
+
+	flat1: ivshmem@2000f010 {
+		compatible = "qemu,ivshmem-flat";
+		reg = <0x2000f010 0x10>, <0x2000f200 0x100>;
+		reg-names = "mmr", "shmem";
+		interrupt-parent = <&nvic>;
+		interrupts = <26 2>;
+	};
+
+	flat_no_irq: ivshmem@2000f020 {
+		compatible = "qemu,ivshmem-flat";
+		reg = <0x2000f020 0x10>, <0x2000f300 0x100>;
+		reg-names = "mmr", "shmem";
+	};
+};
