@@ -32,6 +32,7 @@
 		watchdog0 = &wwdt0;
 		rtc = &rtc;
 		dmic0 = &dmic0;
+		sdhc0 = &sdif;
 	};
 
 	/*
