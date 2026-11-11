@@ -14,6 +14,10 @@
 #include <zephyr/usb/usb_ch9.h>
 
 #include <cy_sysclk.h>
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+#include <cy_dma.h>
+#include <cy_trigmux.h>
+#endif
 
 #include "udc_common.h"
 #include "udc_infineon_usbfs_regs.h"
@@ -51,11 +55,28 @@ LOG_MODULE_REGISTER(udc_ifx_usbfs, CONFIG_UDC_DRIVER_LOG_LEVEL);
 	 FIELD_PREP(IFX_USBFS_INTR_LVL_SEL_EP0, IFX_USBFS_INTR_LVL_LO) |		\
 	 (LISTIFY(8, USBFS_INTR_LVL_EP_MED, (|))))
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+/*
+ * usb.dma_req[i] and usb.dma_burstend[i] are dedicated 1-to-1 trigger lines,
+ * not a routable mux, so data endpoint i + 1 is reachable only from DW0
+ * channel 8 + i. The constants are absent on psoc6_01, which routes these
+ * through the multiplexed group and would need Cy_TrigMux_Connect() instead
+ */
+#define USBFS_DMA_CHANNEL(i)	(8U + (i))
+#define USBFS_TRIG_DMA_REQ(i)	((uint32_t)TRIG_OUT_1TO1_5_USB_DMA0_TO_PDMA0_TR_IN8 + (i))
+#define USBFS_TRIG_BURSTEND(i)	((uint32_t)TRIG_OUT_1TO1_6_PDMA0_TR_OUT8_TO_USB_ACK0 + (i))
+#endif
+
+struct udc_ifx_usbfs_dma_cfg;
+
 struct udc_ifx_usbfs_config {
 	mem_addr_t base;
 	en_clk_dst_t clk_dst;
 	cy_en_divider_types_t brs_div_type;
 	uint8_t brs_div_num;
+	/* Indexed by data endpoint number minus one, NULL in CPU mode */
+	const struct udc_ifx_usbfs_dma_cfg *dma_cfg;
+	uint8_t num_dma_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
 	void (*irq_connect)(void);
@@ -63,6 +84,14 @@ struct udc_ifx_usbfs_config {
 	void (*irq_disable_func)(void);
 	void (*make_thread)(const struct device *dev);
 };
+
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+struct udc_ifx_usbfs_dma_cfg {
+	DW_Type *dw;
+	uint32_t ch;
+	cy_stc_dma_descriptor_t *descr[2];
+};
+#endif
 
 enum usbfs_ep_state {
 	USBFS_EP_DISABLED,
@@ -144,6 +173,17 @@ enum udc_ifx_usbfs_event {
 static inline bool ep_num_is_in(const unsigned int num)
 {
 	return (num % 2U) == 1U;
+}
+
+/* RESET_PTR rewinds the pointers when a transaction ends, even part way through a
+ * copy, so it is only set where it is needed: manual DMA of a short OUT packet
+ * reads zeros without it
+ */
+static inline uint32_t usbfs_arb_ep_cfg(const uint32_t ep)
+{
+	return IFX_USBFS_ARB_EP_CFG_CRC_BYPASS |
+	       ((IS_ENABLED(CONFIG_UDC_INFINEON_USBFS_DMA) && !ep_num_is_in(ep)) ?
+			IFX_USBFS_ARB_EP_CFG_RESET_PTR : 0U);
 }
 
 /* Write, then read back so the write has reached the block before returning */
@@ -619,6 +659,174 @@ static void usbfs_slot_add_second(const struct device *dev, const struct udc_ep_
 	}
 }
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+/* Channel control word with ENABLED set, so a start never reads the DMA block */
+static uint32_t usbfs_dma_ch_ctl[USBFS_NUM_DATA_EPS];
+/* X count each channel's descriptor currently holds, in halfwords */
+static uint16_t usbfs_dma_xcount[USBFS_NUM_DATA_EPS];
+
+static const cy_stc_dma_descriptor_config_t usbfs_dma_in_cfg = {
+	.retrigger = CY_DMA_RETRIG_IM,
+	.interruptType = CY_DMA_DESCR,
+	.triggerOutType = CY_DMA_DESCR,
+	.channelState = CY_DMA_CHANNEL_DISABLED,
+	.triggerInType = CY_DMA_DESCR,
+	.dataSize = CY_DMA_HALFWORD,
+	.srcTransferSize = CY_DMA_TRANSFER_SIZE_DATA,
+	.dstTransferSize = CY_DMA_TRANSFER_SIZE_WORD,
+	.descriptorType = CY_DMA_1D_TRANSFER,
+	.srcXincrement = 1,
+	.dstXincrement = 0,
+	.xCount = 1U,
+	.yCount = 1U,
+};
+
+static const cy_stc_dma_descriptor_config_t usbfs_dma_out_cfg = {
+	.retrigger = CY_DMA_RETRIG_IM,
+	.interruptType = CY_DMA_DESCR,
+	.triggerOutType = CY_DMA_DESCR,
+	.channelState = CY_DMA_CHANNEL_DISABLED,
+	.triggerInType = CY_DMA_DESCR,
+	.dataSize = CY_DMA_HALFWORD,
+	.srcTransferSize = CY_DMA_TRANSFER_SIZE_WORD,
+	.dstTransferSize = CY_DMA_TRANSFER_SIZE_DATA,
+	.descriptorType = CY_DMA_1D_TRANSFER,
+	.srcXincrement = 0,
+	.dstXincrement = 1,
+	.xCount = 1U,
+	.yCount = 1U,
+};
+
+static int usbfs_dma_init(const struct device *dev)
+{
+	const struct udc_ifx_usbfs_config *config = dev->config;
+
+	for (uint8_t i = 0U; i < config->num_dma_eps; i++) {
+		const struct udc_ifx_usbfs_dma_cfg *dma = &config->dma_cfg[i];
+		const mem_addr_t dr16 = config->base + IFX_USBFS_ARB_RW_DR16(i + 1U);
+		const cy_stc_dma_channel_config_t ch_cfg = {
+			.descriptor = dma->descr[0],
+			.preemptable = false,
+			.priority = 0U,
+			.enable = false,
+			.bufferable = false,
+		};
+
+		(void)Cy_DMA_Descriptor_Init(dma->descr[0], &usbfs_dma_out_cfg);
+		Cy_DMA_Descriptor_SetSrcAddress(dma->descr[0], (const void *)dr16);
+		Cy_DMA_Descriptor_SetNextDescriptor(dma->descr[0], dma->descr[0]);
+
+		(void)Cy_DMA_Descriptor_Init(dma->descr[1], &usbfs_dma_in_cfg);
+		Cy_DMA_Descriptor_SetDstAddress(dma->descr[1], (const void *)dr16);
+		Cy_DMA_Descriptor_SetNextDescriptor(dma->descr[1], dma->descr[1]);
+
+		if (Cy_DMA_Channel_Init(dma->dw, dma->ch, &ch_cfg) != CY_DMA_SUCCESS) {
+			return -EIO;
+		}
+
+		usbfs_dma_ch_ctl[i] = DW_CH_CTL(dma->dw, dma->ch) | DW_CH_STRUCT_CH_CTL_ENABLED_Msk;
+		usbfs_dma_xcount[i] = 0U;
+		Cy_DMA_Enable(dma->dw);
+	}
+
+	return 0;
+}
+
+/* The descriptor disables the channel when done, so ENABLED doubles as busy */
+static void usbfs_dma_wait(const struct device *dev, const uint32_t ep)
+{
+	const struct udc_ifx_usbfs_config *config = dev->config;
+	const struct udc_ifx_usbfs_dma_cfg *dma = &config->dma_cfg[ep - 1U];
+
+	/* A packet takes a few microseconds; a channel still busy after this is stuck */
+	for (uint32_t spins = 0U; Cy_DMA_Channel_IsEnabled(dma->dw, dma->ch); spins++) {
+		if (spins == 10000U) {
+			Cy_DMA_Channel_Disable(dma->dw, dma->ch);
+			LOG_ERR("DMA stuck on endpoint %u", ep);
+			return;
+		}
+	}
+}
+
+/* Run descriptor d on the endpoint's channel - it moves len bytes (even) */
+static inline void usbfs_dma_kick(const struct device *dev, const uint32_t ep,
+				  cy_stc_dma_descriptor_t *const d, const uint32_t len)
+{
+	const struct udc_ifx_usbfs_config *config = dev->config;
+	const struct udc_ifx_usbfs_dma_cfg *dma = &config->dma_cfg[ep - 1U];
+
+	if (usbfs_dma_xcount[ep - 1U] != (len / 2U)) {
+		Cy_DMA_Descriptor_SetXloopDataCount(d, len / 2U);
+		usbfs_dma_xcount[ep - 1U] = (uint16_t)(len / 2U);
+	}
+
+	DW_CH_CURR_PTR(dma->dw, dma->ch) = (uint32_t)d;
+	DW_CH_IDX(dma->dw, dma->ch) = 0U;
+	DW_CH_CTL(dma->dw, dma->ch) = usbfs_dma_ch_ctl[ep - 1U];
+
+	/* A DMA_REQ rising edge raises the endpoint's DMA request */
+	usbfs_wr_flush(dev, IFX_USBFS_ARB_EP_CFG(ep),
+		       usbfs_arb_ep_cfg(ep) | IFX_USBFS_ARB_EP_CFG_DMA_REQ);
+	sys_write32(usbfs_arb_ep_cfg(ep), config->base + IFX_USBFS_ARB_EP_CFG(ep));
+}
+
+/* IN endpoints are the odd-numbered ones, so endpoint ep uses entry (ep - 1) / 2 */
+static uint8_t __aligned(4) usbfs_dma_in_bounce[USBFS_NUM_DATA_EPS / 2U][USBFS_EP_SLOT_SIZE];
+
+/* In manual DMA mode the DMA writes the data register. A CPU write is refused unless a DMA grant
+ * (on any endpoint) has occurred since the last fill
+ */
+static void usbfs_dma_in_load(const struct device *dev, const uint32_t ep,
+			      const uint8_t *const data, const uint32_t len, const uint16_t off)
+{
+	const struct udc_ifx_usbfs_config *config = dev->config;
+	cy_stc_dma_descriptor_t *const d = config->dma_cfg[ep - 1U].descr[1];
+	const uint8_t *src = data;
+
+	/* Halfword transfers need an even source, and must not read past an odd packet */
+	if (((POINTER_TO_UINT(data) | len) & 1U) != 0U) {
+		uint8_t *const bounce = usbfs_dma_in_bounce[(ep - 1U) / 2U];
+
+		memcpy(bounce, data, len);
+		src = bounce;
+	}
+
+	sys_write32(off, config->base + IFX_USBFS_ARB_RW_WA16(ep));
+	d->src = (uint32_t)src;
+	usbfs_dma_kick(dev, ep, d, ROUND_UP(len, 2U));
+}
+
+/* Start the DMA of count bytes (even) from offset off of the endpoint buffer to dst */
+static void usbfs_dma_out_start(const struct device *dev, const uint32_t ep, void *const dst,
+				const uint32_t count, const uint16_t off)
+{
+	const struct udc_ifx_usbfs_config *config = dev->config;
+	cy_stc_dma_descriptor_t *const d = config->dma_cfg[ep - 1U].descr[0];
+
+	sys_write32(off, config->base + IFX_USBFS_ARB_RW_RA16(ep));
+	d->dst = (uint32_t)dst;
+	usbfs_dma_kick(dev, ep, d, count);
+}
+
+/* Account for an early re-armed packet, whose DMA started with the re-arm */
+static bool usbfs_dma_out_take(const struct device *dev, const uint32_t ep,
+			       struct net_buf *const buf)
+{
+	struct udc_ifx_usbfs_data *priv = udc_get_private(dev);
+	struct udc_ifx_usbfs_hw_ep *hw = &priv->hw_ep[ep - 1U];
+
+	if (!hw->early) {
+		return false;
+	}
+
+	net_buf_add(buf, hw->rd_count);
+	hw->state = USBFS_EP_PENDING;
+
+	return true;
+}
+#endif
+
+#ifndef CONFIG_UDC_INFINEON_USBFS_DMA
 /* Endpoint buffers start on even offsets per DR16's requirements. An odd byte goes
  * out padded: mixing in DR accesses skews the pointer for later packets
  */
@@ -635,6 +843,7 @@ static void usbfs_in_copy(const struct device *dev, const uint32_t ep, const uin
 		sys_write32(data[i] | (hi << 8), config->base + IFX_USBFS_ARB_RW_DR16(ep));
 	}
 }
+#endif
 
 /* Load an IN packet and arm the endpoint to send it */
 static void usbfs_in_load(const struct device *dev, const uint32_t ep,
@@ -656,7 +865,13 @@ static void usbfs_in_load(const struct device *dev, const uint32_t ep,
 
 	const uint16_t off = usbfs_slot_off(hw, hw->slot);
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	usbfs_dma_wait(dev, ep);
+	usbfs_dma_in_load(dev, ep, data, len, off);
+	usbfs_dma_wait(dev, ep);
+#else
 	usbfs_in_copy(dev, ep, off, data, len);
+#endif
 	sys_write32(off, config->base + IFX_USBFS_ARB_RW_RA16(ep));
 	usbfs_sie_mode_set(dev, ep, hw->sie_mode);
 }
@@ -680,6 +895,10 @@ static bool usbfs_in_arm_staged(const struct device *dev, const uint32_t ep, con
 		return true;
 	}
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	usbfs_dma_wait(dev, ep);
+#endif
+
 	usbfs_sie_count_set(dev, ep, len, hw->toggle);
 	sys_write32(usbfs_slot_off(hw, hw->slot), config->base + IFX_USBFS_ARB_RW_RA16(ep));
 	usbfs_sie_mode_set(dev, ep, hw->sie_mode);
@@ -696,6 +915,13 @@ static void usbfs_in_early_arm(const struct device *dev, const uint32_t ep)
 	if ((hw->staged < 0) || (hw->sie_mode == IFX_USBFS_MODE_ISO_IN)) {
 		return;
 	}
+
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	/* Left to the completion handler, which waits for the DMA */
+	if (Cy_DMA_Channel_IsEnabled(config->dma_cfg[ep - 1U].dw, config->dma_cfg[ep - 1U].ch)) {
+		return;
+	}
+#endif
 
 	/* Cleared first, so a later status bit can only be the staged packet's */
 	sys_write32(BIT(ep - 1U), config->base + IFX_USBFS_SIE_EP_INT_SR);
@@ -741,13 +967,29 @@ static void usbfs_out_early_arm(const struct device *dev, const uint32_t ep)
 		return;
 	}
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	/* The packet is copied straight into the buffer, in halfwords */
+	if (((POINTER_TO_UINT(net_buf_tail(buf)) | count) & 1U) != 0U) {
+		return;
+	}
+#endif
+
 	sys_write32(BIT(ep - 1U), config->base + IFX_USBFS_SIE_EP_INT_SR);
 	hw->rd_slot = hw->slot;
 	hw->rd_count = (uint16_t)count;
 	hw->slot ^= 1U;
 	sys_write32(usbfs_slot_off(hw, hw->slot), config->base + IFX_USBFS_ARB_RW_WA16(ep));
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	unsigned int key = irq_lock();
+
 	usbfs_sie_arm(dev, ep, hw->sie_mode);
+	usbfs_dma_wait(dev, ep);
+	usbfs_dma_out_start(dev, ep, net_buf_tail(buf), count, usbfs_slot_off(hw, hw->rd_slot));
+	irq_unlock(key);
+#else
+	usbfs_sie_arm(dev, ep, hw->sie_mode);
+#endif
 
 	hw->early = true;
 }
@@ -793,7 +1035,11 @@ static void usbfs_in_stage(const struct device *dev, const struct udc_ep_config 
 
 	len = MIN(buf->len - armed, cfg->mps);
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	usbfs_dma_in_load(dev, ep, &buf->data[armed], len, usbfs_slot_off(hw, hw->slot ^ 1U));
+#else
 	usbfs_in_copy(dev, ep, usbfs_slot_off(hw, hw->slot ^ 1U), &buf->data[armed], len);
+#endif
 	hw->staged = (int16_t)len;
 }
 
@@ -812,6 +1058,18 @@ static int usbfs_out_read(const struct device *dev, const uint32_t ep, uint8_t *
 		return -ENOMEM;
 	}
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	/* The CPU reads zeros from DR in manual DMA mode, so this goes through a bounce buffer */
+	static uint8_t __aligned(4) bounce[USBFS_EP_SLOT_SIZE];
+
+	if (count != 0U) {
+		/* The previous packet's early copy may still be running on the channel */
+		usbfs_dma_wait(dev, ep);
+		usbfs_dma_out_start(dev, ep, bounce, ROUND_UP(count, 2U), off);
+		usbfs_dma_wait(dev, ep);
+		memcpy(dst, bounce, count);
+	}
+#else
 	const struct udc_ifx_usbfs_config *config = dev->config;
 
 	sys_write32(off, config->base + IFX_USBFS_ARB_RW_RA16(ep));
@@ -824,6 +1082,7 @@ static int usbfs_out_read(const struct device *dev, const uint32_t ep, uint8_t *
 			dst[i + 1U] = (uint8_t)(v >> 8);
 		}
 	}
+#endif
 
 	*received = count;
 
@@ -911,6 +1170,12 @@ static void usbfs_ep_complete(const struct device *dev, const uint8_t ep_addr,
 			ep_data_arm(dev, cfg, buf);
 			return;
 		}
+
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+		if (usbfs_dma_out_take(dev, USB_EP_GET_IDX(ep_addr), buf)) {
+			return;
+		}
+#endif
 
 		/* Nothing is copied when the packet is larger than the tailroom. */
 		if (usbfs_out_read(dev, USB_EP_GET_IDX(ep_addr), net_buf_tail(buf),
@@ -1019,7 +1284,8 @@ static int usbfs_ep_add(const struct device *dev, const struct udc_ep_config *co
 	hw->staged = -1;
 	hw->early = false;
 
-	sys_write32(IFX_USBFS_ARB_EP_CFG_CRC_BYPASS, config->base + IFX_USBFS_ARB_EP_CFG(ep));
+	/* Also clears any DMA request left from before */
+	sys_write32(usbfs_arb_ep_cfg(ep), config->base + IFX_USBFS_ARB_EP_CFG(ep));
 
 	sys_set_bits(config->base + IFX_USBFS_SIE_EP_INT_EN, BIT(ep - 1U));
 
@@ -1032,7 +1298,7 @@ static void usbfs_ep_remove(const struct device *dev, const uint32_t ep)
 {
 	const struct udc_ifx_usbfs_config *config = dev->config;
 	struct udc_ifx_usbfs_data *priv = udc_get_private(dev);
-	/* The completion interrupt must not re-arm the endpoint part way through */
+	/* The completion interrupt must not re-arm the endpoint or start a DMA part way through */
 	unsigned int key = irq_lock();
 
 	usbfs_sie_mode_set(dev, ep, IFX_USBFS_MODE_DISABLE);
@@ -1041,6 +1307,10 @@ static void usbfs_ep_remove(const struct device *dev, const uint32_t ep)
 	sys_clear_bits(config->base + IFX_USBFS_SIE_EP_INT_EN, BIT(ep - 1U));
 
 	usbfs_wr_flush(dev, IFX_USBFS_SIE_EP_INT_SR, BIT(ep - 1U));
+
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	usbfs_dma_wait(dev, ep);
+#endif
 
 	usbfs_slots_release(dev, ep);
 	irq_unlock(key);
@@ -1157,6 +1427,9 @@ static int udc_ifx_usbfs_ep_dequeue(const struct device *dev,
 	if (ep != 0U) {
 		/* A staged packet belongs to the transfer being cancelled */
 		priv->hw_ep[ep - 1U].staged = -1;
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+		usbfs_dma_wait(dev, ep);
+#endif
 	}
 	udc_ep_set_busy(cfg, false);
 	udc_ep_cancel_queued(dev, cfg);
@@ -1234,6 +1507,16 @@ static int udc_ifx_usbfs_ep_enable(const struct device *dev,
 		return -EIO;
 	}
 
+#if defined(CONFIG_UDC_INFINEON_USBFS_DMA)
+	const struct udc_ifx_usbfs_config *config = dev->config;
+
+	/* Latch the arbiter's manual DMA mode */
+	usbfs_wr_flush(dev, IFX_USBFS_ARB_CFG,
+		       FIELD_PREP(IFX_USBFS_ARB_CFG_DMA_CFG, IFX_USBFS_ARB_CFG_DMA_CFG_MANUAL));
+	usbfs_wr_flush(dev, IFX_USBFS_ARB_CFG,
+		       sys_read32(config->base + IFX_USBFS_ARB_CFG) | IFX_USBFS_ARB_CFG_CFG_CMP);
+#endif
+
 	LOG_DBG("Enable endpoint 0x%02x mps %u", cfg->addr, cfg->mps);
 
 	return 0;
@@ -1296,6 +1579,25 @@ static int udc_ifx_usbfs_disable(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+static int udc_ifx_usbfs_dma_trigger_init(const struct device *dev)
+{
+	const struct udc_ifx_usbfs_config *config = dev->config;
+
+	for (uint8_t i = 0U; i < config->num_dma_eps; i++) {
+		if ((Cy_TrigMux_Select(USBFS_TRIG_DMA_REQ(i), false,
+				       TRIGGER_TYPE_USB_DMA_REQ) != CY_TRIGMUX_SUCCESS) ||
+		    (Cy_TrigMux_Select(USBFS_TRIG_BURSTEND(i), false,
+				       TRIGGER_TYPE_USB_DMA_BURSTEND) != CY_TRIGMUX_SUCCESS)) {
+			LOG_ERR("Failed to route DMA triggers for endpoint %u", i + 1U);
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 /* Power the block and PHY up, route its interrupts and leave every endpoint off */
 static int usbfs_hw_init(const struct device *dev)
 {
@@ -1328,8 +1630,19 @@ static int usbfs_hw_init(const struct device *dev)
 		    config->base + IFX_USBFS_INTR_SIE_MASK);
 	sys_write32(0U, config->base + IFX_USBFS_LPM_CTL);
 
-	sys_write32(FIELD_PREP(IFX_USBFS_ARB_CFG_DMA_CFG, IFX_USBFS_ARB_CFG_DMA_CFG_NONE),
+	sys_write32(FIELD_PREP(IFX_USBFS_ARB_CFG_DMA_CFG,
+			       IS_ENABLED(CONFIG_UDC_INFINEON_USBFS_DMA) ?
+				       IFX_USBFS_ARB_CFG_DMA_CFG_MANUAL :
+				       IFX_USBFS_ARB_CFG_DMA_CFG_NONE),
 		    config->base + IFX_USBFS_ARB_CFG);
+
+#if defined(CONFIG_UDC_INFINEON_USBFS_DMA)
+	int err = usbfs_dma_init(dev);
+
+	if (err != 0) {
+		return err;
+	}
+#endif
 
 	priv->slots_used = 0U;
 	sys_write32(0U, config->base + IFX_USBFS_SIE_EP_INT_EN);
@@ -1400,6 +1713,13 @@ static int udc_ifx_usbfs_init(const struct device *dev)
 {
 	const struct udc_ifx_usbfs_config *config = dev->config;
 	int err;
+
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+	err = udc_ifx_usbfs_dma_trigger_init(dev);
+	if (err != 0) {
+		return err;
+	}
+#endif
 
 	err = udc_ifx_usbfs_brs_clock_init(dev);
 	if (err != 0) {
@@ -1526,8 +1846,13 @@ static int udc_ifx_usbfs_driver_preinit(const struct device *dev)
 			struct udc_ep_config *cfg = in ? &config->ep_cfg_in[i] :
 							 &config->ep_cfg_out[i];
 
-			/* Numbers owned by the other direction get no caps. */
-			if ((i == 0U) || (ep_num_is_in(i) == in)) {
+			/* Numbers owned by the other direction, or with no DMA channel,
+			 * get no caps.
+			 */
+			if ((i == 0U) ||
+			    ((ep_num_is_in(i) == in) &&
+			     (!IS_ENABLED(CONFIG_UDC_INFINEON_USBFS_DMA) ||
+			      (i <= config->num_dma_eps)))) {
 				cfg->caps.in = in;
 				cfg->caps.out = !in;
 				cfg->caps.control = (i == 0U);
@@ -1573,6 +1898,37 @@ static const struct udc_api udc_ifx_usbfs_api = {
 	.lock = udc_ifx_usbfs_lock,
 	.unlock = udc_ifx_usbfs_unlock,
 };
+
+#ifdef CONFIG_UDC_INFINEON_USBFS_DMA
+#define UDC_IFX_USBFS_DMA_EP_DEFINE(i, n)						\
+	static cy_stc_dma_descriptor_t __aligned(32) udc_ifx_usbfs_descr_##n##_##i[2];	\
+											\
+	BUILD_ASSERT(DT_INST_DMAS_CELL_BY_IDX(n, i, channel) == USBFS_DMA_CHANNEL(i),	\
+		     "Data endpoint N is wired to DW0 channel 7 + N");
+
+#define UDC_IFX_USBFS_DMA_EP_CFG(i, n)							\
+	{										\
+		.dw = (DW_Type *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_IDX(n, i)),		\
+		.ch = DT_INST_DMAS_CELL_BY_IDX(n, i, channel),				\
+		.descr = {								\
+			&udc_ifx_usbfs_descr_##n##_##i[0],				\
+			&udc_ifx_usbfs_descr_##n##_##i[1],				\
+		},									\
+	}
+
+#define UDC_IFX_USBFS_DMA_DEFINE(n)							\
+	LISTIFY(DT_INST_PROP_LEN(n, dmas), UDC_IFX_USBFS_DMA_EP_DEFINE, (), n)		\
+	static const struct udc_ifx_usbfs_dma_cfg udc_ifx_usbfs_dma_cfg_##n[] = {	\
+		LISTIFY(DT_INST_PROP_LEN(n, dmas), UDC_IFX_USBFS_DMA_EP_CFG, (,), n)	\
+	};
+
+#define UDC_IFX_USBFS_DMA_CFG_INIT(n)							\
+	.dma_cfg = udc_ifx_usbfs_dma_cfg_##n,						\
+	.num_dma_eps = DT_INST_PROP_LEN(n, dmas),
+#else
+#define UDC_IFX_USBFS_DMA_DEFINE(n)
+#define UDC_IFX_USBFS_DMA_CFG_INIT(n)
+#endif
 
 #define UDC_IFX_USBFS_DEVICE_DEFINE(n)							\
 	K_THREAD_STACK_DEFINE(udc_ifx_usbfs_stack_##n,					\
@@ -1630,11 +1986,14 @@ static const struct udc_api udc_ifx_usbfs_api = {
 	static struct udc_ep_config							\
 		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];			\
 											\
+	UDC_IFX_USBFS_DMA_DEFINE(n)							\
+											\
 	static const struct udc_ifx_usbfs_config udc_ifx_usbfs_config_##n = {		\
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),				\
 		.clk_dst = (en_clk_dst_t)DT_INST_PROP(n, clk_dst),			\
 		.brs_div_type = (cy_en_divider_types_t)DT_INST_PROP(n, brs_div_type),	\
 		.brs_div_num = DT_INST_PROP(n, brs_div_num),				\
+		UDC_IFX_USBFS_DMA_CFG_INIT(n)						\
 		.ep_cfg_in = ep_cfg_in_##n,						\
 		.ep_cfg_out = ep_cfg_out_##n,						\
 		.irq_connect = udc_ifx_usbfs_irq_connect_##n,				\

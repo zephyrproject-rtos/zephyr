@@ -13,6 +13,17 @@ config UDC_INFINEON_USBFS
 
 if UDC_INFINEON_USBFS
 
+config UDC_INFINEON_USBFS_DMA
+	bool "DMA endpoint data transfers"
+	default y
+	# The SoC provides a single USBFS instance, labelled usbfs0 on every die.
+	depends on $(dt_nodelabel_has_prop,usbfs0,dmas)
+	select USE_INFINEON_DMA
+	help
+	  Copy data endpoint payloads between the endpoint buffer and RAM
+	  with DataWire instead of the CPU. Throughput is about the same,
+	  but each packet costs less CPU time, mostly on OUT endpoints
+
 config UDC_INFINEON_USBFS_STACK_SIZE
 	int "UDC controller driver internal thread stack size"
 	default 1024
