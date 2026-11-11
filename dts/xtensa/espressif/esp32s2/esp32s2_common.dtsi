@@ -473,5 +473,24 @@
 			clocks = <&clock ESP32_SHA_MODULE>;
 			status = "okay";
 		};
+
+		usb_otg: usb_otg@60080000 {
+			compatible = "espressif,esp32-usb-otg-fs", "snps,dwc2";
+			reg = <0x60080000 DT_SIZE_K(256)>;
+			interrupts = <USB_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_USB_MODULE>;
+			num-out-eps = <7>;
+			num-in-eps = <5>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x224dd930>;
+			ghwcfg4 = <0xd3f0a030>;
+			g-rx-fifo-size = <64>;
+			g-np-tx-fifo-size = <16>;
+			g-tx-fifo-size = <32 32 32 24>;
+			phy-dp-pin = <20>;
+			phy-dm-pin = <19>;
+			status = "disabled";
+		};
 	};
 };
