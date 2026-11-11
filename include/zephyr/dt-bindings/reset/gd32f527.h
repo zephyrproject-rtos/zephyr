@@ -1,0 +1,108 @@
+/*
+ * Copyright (c) 2026 GigaDevice Semiconductor Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief GD32F527 reset controller definitions for device tree bindings
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32F527_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32F527_H_
+
+#include "gd32-common.h"
+
+/**
+ * @name Register offsets
+ * @{
+ */
+
+#define GD32_AHB1RST_OFFSET 0x10U /**< AHB1 peripheral reset register offset */
+#define GD32_AHB2RST_OFFSET 0x14U /**< AHB2 peripheral reset register offset */
+#define GD32_APB1RST_OFFSET 0x20U /**< APB1 peripheral reset register offset */
+#define GD32_APB2RST_OFFSET 0x24U /**< APB2 peripheral reset register offset */
+
+/** @} */
+
+/**
+ * @name Reset definitions for peripherals
+ * @{
+ */
+
+/* AHB1 peripherals */
+#define GD32_RESET_GPIOA GD32_RESET_CONFIG(AHB1RST, 0U)  /**< GPIOA reset */
+#define GD32_RESET_GPIOB GD32_RESET_CONFIG(AHB1RST, 1U)  /**< GPIOB reset */
+#define GD32_RESET_GPIOC GD32_RESET_CONFIG(AHB1RST, 2U)  /**< GPIOC reset */
+#define GD32_RESET_GPIOD GD32_RESET_CONFIG(AHB1RST, 3U)  /**< GPIOD reset */
+#define GD32_RESET_GPIOE GD32_RESET_CONFIG(AHB1RST, 4U)  /**< GPIOE reset */
+#define GD32_RESET_GPIOF GD32_RESET_CONFIG(AHB1RST, 5U)  /**< GPIOF reset */
+#define GD32_RESET_GPIOG GD32_RESET_CONFIG(AHB1RST, 6U)  /**< GPIOG reset */
+#define GD32_RESET_GPIOH GD32_RESET_CONFIG(AHB1RST, 7U)  /**< GPIOH reset */
+#define GD32_RESET_GPIOI GD32_RESET_CONFIG(AHB1RST, 8U)  /**< GPIOI reset */
+#define GD32_RESET_CRC   GD32_RESET_CONFIG(AHB1RST, 12U) /**< CRC reset */
+#define GD32_RESET_DMA0  GD32_RESET_CONFIG(AHB1RST, 21U) /**< DMA0 reset */
+#define GD32_RESET_DMA1  GD32_RESET_CONFIG(AHB1RST, 22U) /**< DMA1 reset */
+#define GD32_RESET_IPA   GD32_RESET_CONFIG(AHB1RST, 23U) /**< IPA reset */
+#define GD32_RESET_ENET  GD32_RESET_CONFIG(AHB1RST, 25U) /**< ENET reset */
+#define GD32_RESET_USBHS GD32_RESET_CONFIG(AHB1RST, 29U) /**< USBHS reset */
+
+/* AHB2 peripherals */
+#define GD32_RESET_DCI   GD32_RESET_CONFIG(AHB2RST, 0U) /**< DCI reset */
+#define GD32_RESET_PKCAU GD32_RESET_CONFIG(AHB2RST, 3U) /**< PKCAU reset */
+#define GD32_RESET_CAU   GD32_RESET_CONFIG(AHB2RST, 4U) /**< CAU reset */
+#define GD32_RESET_HAU   GD32_RESET_CONFIG(AHB2RST, 5U) /**< HAU reset */
+#define GD32_RESET_TRNG  GD32_RESET_CONFIG(AHB2RST, 6U) /**< TRNG reset */
+#define GD32_RESET_USBFS GD32_RESET_CONFIG(AHB2RST, 7U) /**< USBFS reset */
+
+/* APB1 peripherals */
+#define GD32_RESET_TIMER1  GD32_RESET_CONFIG(APB1RST, 0U)  /**< TIMER1 reset */
+#define GD32_RESET_TIMER2  GD32_RESET_CONFIG(APB1RST, 1U)  /**< TIMER2 reset */
+#define GD32_RESET_TIMER3  GD32_RESET_CONFIG(APB1RST, 2U)  /**< TIMER3 reset */
+#define GD32_RESET_TIMER4  GD32_RESET_CONFIG(APB1RST, 3U)  /**< TIMER4 reset */
+#define GD32_RESET_TIMER5  GD32_RESET_CONFIG(APB1RST, 4U)  /**< TIMER5 reset */
+#define GD32_RESET_TIMER6  GD32_RESET_CONFIG(APB1RST, 5U)  /**< TIMER6 reset */
+#define GD32_RESET_TIMER11 GD32_RESET_CONFIG(APB1RST, 6U)  /**< TIMER11 reset */
+#define GD32_RESET_TIMER12 GD32_RESET_CONFIG(APB1RST, 7U)  /**< TIMER12 reset */
+#define GD32_RESET_TIMER13 GD32_RESET_CONFIG(APB1RST, 8U)  /**< TIMER13 reset */
+#define GD32_RESET_I2C3    GD32_RESET_CONFIG(APB1RST, 10U) /**< I2C3 reset */
+#define GD32_RESET_WWDGT   GD32_RESET_CONFIG(APB1RST, 11U) /**< Window watchdog reset */
+#define GD32_RESET_I2C4    GD32_RESET_CONFIG(APB1RST, 12U) /**< I2C4 reset */
+#define GD32_RESET_I2C5    GD32_RESET_CONFIG(APB1RST, 13U) /**< I2C5 reset */
+#define GD32_RESET_SPI1    GD32_RESET_CONFIG(APB1RST, 14U) /**< SPI1 reset */
+#define GD32_RESET_SPI2    GD32_RESET_CONFIG(APB1RST, 15U) /**< SPI2 reset */
+#define GD32_RESET_USART1  GD32_RESET_CONFIG(APB1RST, 17U) /**< USART1 reset */
+#define GD32_RESET_USART2  GD32_RESET_CONFIG(APB1RST, 18U) /**< USART2 reset */
+#define GD32_RESET_UART3   GD32_RESET_CONFIG(APB1RST, 19U) /**< UART3 reset */
+#define GD32_RESET_UART4   GD32_RESET_CONFIG(APB1RST, 20U) /**< UART4 reset */
+#define GD32_RESET_I2C0    GD32_RESET_CONFIG(APB1RST, 21U) /**< I2C0 reset */
+#define GD32_RESET_I2C1    GD32_RESET_CONFIG(APB1RST, 22U) /**< I2C1 reset */
+#define GD32_RESET_I2C2    GD32_RESET_CONFIG(APB1RST, 23U) /**< I2C2 reset */
+#define GD32_RESET_CAN0    GD32_RESET_CONFIG(APB1RST, 25U) /**< CAN0 reset */
+#define GD32_RESET_CAN1    GD32_RESET_CONFIG(APB1RST, 26U) /**< CAN1 reset */
+#define GD32_RESET_PMU     GD32_RESET_CONFIG(APB1RST, 28U) /**< PMU reset */
+#define GD32_RESET_DAC     GD32_RESET_CONFIG(APB1RST, 29U) /**< DAC reset */
+#define GD32_RESET_UART6   GD32_RESET_CONFIG(APB1RST, 30U) /**< UART6 reset */
+#define GD32_RESET_UART7   GD32_RESET_CONFIG(APB1RST, 31U) /**< UART7 reset */
+
+/* APB2 peripherals */
+#define GD32_RESET_TIMER0  GD32_RESET_CONFIG(APB2RST, 0U)  /**< TIMER0 reset */
+#define GD32_RESET_TIMER7  GD32_RESET_CONFIG(APB2RST, 1U)  /**< TIMER7 reset */
+#define GD32_RESET_USART0  GD32_RESET_CONFIG(APB2RST, 4U)  /**< USART0 reset */
+#define GD32_RESET_USART5  GD32_RESET_CONFIG(APB2RST, 5U)  /**< USART5 reset */
+#define GD32_RESET_ADC     GD32_RESET_CONFIG(APB2RST, 8U)  /**< ADC reset, resets ADC0/1/2 */
+#define GD32_RESET_SDIO    GD32_RESET_CONFIG(APB2RST, 11U) /**< SDIO reset */
+#define GD32_RESET_SPI0    GD32_RESET_CONFIG(APB2RST, 12U) /**< SPI0 reset */
+#define GD32_RESET_SPI3    GD32_RESET_CONFIG(APB2RST, 13U) /**< SPI3 reset */
+#define GD32_RESET_SYSCFG  GD32_RESET_CONFIG(APB2RST, 14U) /**< SYSCFG reset */
+#define GD32_RESET_TIMER8  GD32_RESET_CONFIG(APB2RST, 16U) /**< TIMER8 reset */
+#define GD32_RESET_TIMER9  GD32_RESET_CONFIG(APB2RST, 17U) /**< TIMER9 reset */
+#define GD32_RESET_TIMER10 GD32_RESET_CONFIG(APB2RST, 18U) /**< TIMER10 reset */
+#define GD32_RESET_SPI4    GD32_RESET_CONFIG(APB2RST, 20U) /**< SPI4 reset */
+#define GD32_RESET_SPI5    GD32_RESET_CONFIG(APB2RST, 21U) /**< SPI5 reset */
+#define GD32_RESET_SAI0    GD32_RESET_CONFIG(APB2RST, 22U) /**< SAI0 reset */
+
+/** @} */
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32F527_H_ */
