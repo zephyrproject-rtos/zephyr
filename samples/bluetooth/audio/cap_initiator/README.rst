@@ -23,7 +23,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable the required ISO
+use ``-DEXTRA_CONF_FILE=extra-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
 
 Building for an nrf5340dk
@@ -70,4 +70,4 @@ Building for a simulated nrf52_bsim
    :zephyr-app: samples/bluetooth/audio/cap_initiator/
    :board: nrf52_bsim
    :goals: build
-   :gen-args: -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+   :gen-args: -DEXTRA_CONF_FILE=extra-bt_ll_sw_split.conf

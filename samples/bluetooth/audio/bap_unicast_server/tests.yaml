@@ -22,7 +22,7 @@ tests:
       - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52dk/nrf52832
-    extra_args: EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+    extra_args: EXTRA_CONF_FILE=extra-bt_ll_sw_split.conf
   sample.bluetooth.audio.unicast_server.bsim:
     depends_on: bsim
     platform_allow:
@@ -32,7 +32,7 @@ tests:
     build_only: true
     sysbuild: true
     extra_args:
-      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf"
+      - EXTRA_CONF_FILE="extra-bt_ll_sw_split.conf"
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
     harness: bsim
     harness_config:

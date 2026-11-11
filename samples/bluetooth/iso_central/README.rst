@@ -29,7 +29,7 @@ Building and Running
    :goals: build flash
    :compact:
 
-Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
+Use ``-DEXTRA_CONF_FILE=extra-bt_ll_sw_split.conf`` to enable
 required ISO feature support in Zephyr Bluetooth Controller on supported boards.
 
 After flashing, check the following:

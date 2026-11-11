@@ -29,7 +29,7 @@ Building and Running
 
 After flashing, the sample starts Isochronous Broadcasting automatically.
 
-Use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable
+Use ``-DEXTRA_CONF_FILE=extra-bt_ll_sw_split.conf`` to enable
 required ISO feature support in Zephyr Bluetooth Controller on supported boards.
 The sample defaults to sequential packing of BIS subevents, add
 ``-DCONFIG_ISO_PACKING_INTERLEAVED=y`` to use interleaved packing.

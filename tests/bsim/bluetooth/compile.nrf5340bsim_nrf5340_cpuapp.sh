@@ -20,12 +20,12 @@ ${ZEPHYR_BASE}/tests/bsim/bluetooth/tester/compile.sh
 
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf sysbuild=1  compile
 app=tests/bsim/bluetooth/ll/throughput sysbuild=1 compile
-app=tests/bsim/bluetooth/ll/throughput conf_overlay=overlay-no_phy_update.conf sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/throughput extra_conf_file=extra-no_phy_update.conf sysbuild=1 compile
 app=tests/bsim/bluetooth/ll/multiple_id sysbuild=1 compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf sysbuild=1 compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf sysbuild=1 compile
-app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf sysbuild=1 compile
-app=tests/bsim/bluetooth/ll/cis conf_overlay=overlay-acl_group.conf sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-sequential.conf sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-interleaved.conf sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/bis extra_conf_file=extra-ticker_expire_info.conf sysbuild=1 compile
+app=tests/bsim/bluetooth/ll/cis extra_conf_file=extra-acl_group.conf sysbuild=1 compile
 
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh

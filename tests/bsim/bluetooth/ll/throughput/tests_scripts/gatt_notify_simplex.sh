@@ -10,11 +10,11 @@ EXECUTE_TIMEOUT=1200
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_throughput_prj_conf_overlay-notify_simplex_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_throughput_prj_conf_extra-notify_simplex_conf \
   -v=${verbosity_level} -s=${simulation_id} -RealEncryption=1 -d=0 \
   -testid=central
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_throughput_prj_conf_overlay-notify_simplex_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_throughput_prj_conf_extra-notify_simplex_conf \
   -v=${verbosity_level} -s=${simulation_id} -RealEncryption=1 -d=1 \
   -testid=peripheral
 

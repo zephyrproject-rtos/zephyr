@@ -655,8 +655,8 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/tester/src/audio/
     - tests/bluetooth/shell/extra-audio.conf
     - tests/bluetooth/shell/usb_audio.overlay
-    - tests/bluetooth/tester/overlay-le-audio.conf
-    - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
+    - tests/bluetooth/tester/extra-le-audio.conf
+    - tests/bluetooth/tester/extra-bt_ll_sw_split.conf
     - tests/bluetooth/tester/src/audio/
     - doc/services/connectivity/bluetooth/api/audio/
     - doc/services/connectivity/bluetooth/shell/audio/

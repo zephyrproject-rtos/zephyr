@@ -11,7 +11,7 @@ common:
   harness: bsim
   extra_args:
     - CONF_FILE=${ZEPHYR_BASE}/samples/bluetooth/audio/cap_acceptor/prj.conf
-    - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/cap_acceptor/overlay-bt_ll_sw_split.conf"
+    - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/cap_acceptor/extra-bt_ll_sw_split.conf"
     - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/cap_acceptor/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf"
     # Note the last provided EXTRA_CONF_FILE definition will be used by cmake
 

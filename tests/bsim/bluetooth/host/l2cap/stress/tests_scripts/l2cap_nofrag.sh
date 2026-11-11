@@ -9,7 +9,7 @@ simulation_id="${BOARD_TS}_l2cap_stress_nofrag"
 verbosity_level=2
 EXECUTE_TIMEOUT=240
 
-bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_stress_prj_conf_overlay-nofrag_conf
+bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_stress_prj_conf_extra-nofrag_conf
 
 cd ${BSIM_OUT_PATH}/bin
 
