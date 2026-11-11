@@ -1610,8 +1610,8 @@ static struct k_mutex *nbr_rm_sender_waits_on(void)
 
 /* Earlier tests take the interface down and up, which restarts duplicate
  * address detection. When it succeeds, dad_timeout() removes the neighbor
- * entry for the address on the system work queue, and the neighbor lock it
- * takes for that would be handed over ahead of the sender. Once no address
+ * entry for the address on the work queue running the stack's timers, and the
+ * neighbor lock it takes for that would be handed over ahead of the sender. Once no address
  * is tentative, that work has run.
  */
 static bool wait_for_dad_done(struct net_if *iface, int32_t timeout_ms)
