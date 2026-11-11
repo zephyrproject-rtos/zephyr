@@ -7,3 +7,11 @@ tests:
     tags:
       - samples
       - ipm
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "PRO_CPU is sending a request, waiting remote response"
+        - "PRO_CPU received a message from APP_CPU : APP_CPU uptime ticks [0-9]+"
