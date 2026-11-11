@@ -111,6 +111,7 @@ bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
 beagle	BeagleBoard.org Foundation
+beken	Beken Corporation
 bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
