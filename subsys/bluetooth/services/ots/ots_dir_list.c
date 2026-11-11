@@ -41,10 +41,22 @@ BUILD_ASSERT(CONFIG_BT_OTS_MAX_OBJ_CNT <= MAX_DIR_OBJ_RECORDS,
 
 static struct bt_ots_dir_list dir_lists[CONFIG_BT_OTS_MAX_INST_CNT];
 
+/* An Object Record has an Object Name of 1 to 120 octets (OTS 1.0 section 4.1.1, Table 4.1). An
+ * object that a client has created and not named yet has an empty name, so it has no record.
+ */
+static bool dir_list_object_is_listed(const struct bt_gatt_ots_object *obj)
+{
+	return obj->metadata.name[0] != '\0';
+}
+
 static size_t dir_list_object_record_size(const struct bt_gatt_ots_object *obj)
 {
 	uint16_t len;
 	size_t obj_name_len;
+
+	if (!dir_list_object_is_listed(obj)) {
+		return 0U;
+	}
 
 	/* Record Length */
 	len = sizeof(len);
@@ -92,6 +104,10 @@ static void dir_list_object_encode(const struct bt_gatt_ots_object *obj,
 	uint8_t *start;
 	uint16_t len;
 	size_t obj_name_len;
+
+	if (!dir_list_object_is_listed(obj)) {
+		return;
+	}
 
 	BT_OTS_DIR_LIST_SET_FLAG_PROPERTIES(flags);
 	BT_OTS_DIR_LIST_SET_FLAG_CUR_SIZE(flags);
