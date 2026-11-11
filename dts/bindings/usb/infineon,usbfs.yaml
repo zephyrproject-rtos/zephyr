@@ -57,3 +57,24 @@ properties:
       legacy HAL allocates dividers from the bottom upwards, so the default is
       the topmost 16 bit divider to avoid colliding with it. Boards that use
       that divider for something else must override this
+
+  dmas:
+    description: |
+      One DataWire channel per data endpoint, used when
+      CONFIG_UDC_INFINEON_USBFS_DMA is enabled to copy packets between the
+      endpoint buffer and RAM. The entries describe data endpoints 1 upwards
+      in order, so the first entry serves endpoint 1.
+
+      The channel numbers are not free. A dedicated trigger line pairs
+      usb.dma_req[i] with cpuss.dw0_tr_in[8 + i] and cpuss.dw0_tr_out[8 + i]
+      with usb.dma_burstend[i], so data endpoint N can only be served by DW0
+      channel 7 + N. The driver checks this at build time.
+
+      The SoC lists all eight channels, because the controller has eight data
+      endpoints. A board that needs some of those channels for other
+      peripherals should shorten the list to the number of endpoints its USB
+      configuration actually uses, for example three entries for CDC ACM:
+
+        &usbfs0 {
+                dmas = <&dma0 8>, <&dma0 9>, <&dma0 10>;
+        };

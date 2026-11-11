@@ -270,6 +270,12 @@
 			interrupt-names = "lo", "med", "hi";
 			num-bidir-endpoints = <9>;
 			clk-dst = <0x1b>;
+			/* Dedicated trigger lines pair usb.dma_req[i] with
+			 * dw0_tr_in[8 + i], so endpoint N can only be served by
+			 * DW0 channel 7 + N
+			 */
+			dmas = <&dma0 8>, <&dma0 9>, <&dma0 10>, <&dma0 11>,
+			       <&dma0 12>, <&dma0 13>, <&dma0 14>, <&dma0 15>;
 			status = "disabled";
 		};
 
