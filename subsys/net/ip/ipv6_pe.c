@@ -421,7 +421,7 @@ void net_ipv6_pe_start(struct net_if *iface, const struct net_in6_addr *prefix,
 	if (remaining == 0 || remaining > vlifetimeout.ticks) {
 		NET_DBG("Next check for temp addresses in %d seconds",
 			ifaddr->addr_timeout);
-		k_work_schedule(&temp_lifetime, vlifetimeout);
+		net_work_schedule(&temp_lifetime, vlifetimeout);
 	}
 
 out:
@@ -739,7 +739,7 @@ static void renewal_cb(struct net_if *iface, void *user_data)
 		       sizeof(struct net_in6_addr));
 
 		/* 500ms should be enough for DAD to pass */
-		k_work_schedule(&trigger_deprecated_event.work, K_MSEC(500));
+		net_work_schedule(&trigger_deprecated_event.work, K_MSEC(500));
 	}
 }
 
