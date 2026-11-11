@@ -16,6 +16,7 @@ Overview
 This runs the Zephyr Bluetooth LE Controller on the generic packet level
 BabbleSim 2.4GHz radio model instead of a vendor radio model, so that Link
 Layer features can be tested in simulation independently of any vendor LLL.
+See :ref:`bluetooth-ctlr-bsim-lll` for the design of the LLL and of the radio model.
 
 Requirements
 ************
