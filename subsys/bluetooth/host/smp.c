@@ -3142,16 +3142,25 @@ static int smp_send_security_req(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
+	/* The keys can be cleared or replaced from the Bluetooth RX context,
+	 * which can preempt an application thread here.
+	 */
+	k_sched_lock();
+
 	/* early verify if required sec level if reachable */
 	if (!(sec_level_reachable(smp) || smp_keys_check(conn))) {
-		return -EINVAL;
+		err = -EINVAL;
+	} else if (conn->le.keys == NULL) {
+		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
+		err = (conn->le.keys == NULL) ? -ENOMEM : 0;
+	} else {
+		err = 0;
 	}
 
-	if (!conn->le.keys) {
-		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
-		if (!conn->le.keys) {
-			return -ENOMEM;
-		}
+	k_sched_unlock();
+
+	if (err != 0) {
+		return err;
 	}
 
 	if (atomic_test_and_set_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
@@ -3365,6 +3374,7 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	struct bt_smp *smp;
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
+	bool has_keys;
 
 	LOG_DBG("");
 
@@ -3400,11 +3410,21 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!conn->le.keys) {
+	/* As in smp_send_security_req(): the lookup and the assignment must
+	 * not be split by a change of the keys.
+	 */
+	k_sched_lock();
+
+	if (conn->le.keys == NULL) {
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
-		if (!conn->le.keys) {
-			return -ENOMEM;
-		}
+	}
+
+	has_keys = (conn->le.keys != NULL);
+
+	k_sched_unlock();
+
+	if (!has_keys) {
+		return -ENOMEM;
 	}
 
 	if (smp_init(smp)) {
@@ -6289,6 +6309,8 @@ int bt_smp_start_security(struct bt_conn *conn)
 	{
 		int err;
 		struct bt_smp *smp;
+		struct bt_ltk ltk;
+		uint8_t enc_size;
 
 		smp = smp_chan_get(conn);
 		if (!smp) {
@@ -6305,16 +6327,23 @@ int bt_smp_start_security(struct bt_conn *conn)
 			return -EBUSY;
 		}
 
+		/* The keys can be cleared or replaced from the Bluetooth RX
+		 * context, which can preempt an application thread here.
+		 */
+		k_sched_lock();
+
 		if (!smp_keys_check(conn)) {
+			k_sched_unlock();
 			return smp_send_pairing_req(conn);
 		}
 
 		/* LE SC LTK and legacy central LTK are stored in same place */
-		err = bt_conn_le_start_encryption(conn,
-						  conn->le.keys->ltk.rand,
-						  conn->le.keys->ltk.ediv,
-						  conn->le.keys->ltk.val,
-						  conn->le.keys->enc_size);
+		ltk = conn->le.keys->ltk;
+		enc_size = conn->le.keys->enc_size;
+
+		k_sched_unlock();
+
+		err = bt_conn_le_start_encryption(conn, ltk.rand, ltk.ediv, ltk.val, enc_size);
 		if (err) {
 			return err;
 		}
