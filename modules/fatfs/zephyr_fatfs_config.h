@@ -83,13 +83,22 @@
 #define FF_MULTI_PARTITION	CONFIG_FS_FATFS_MULTI_PARTITION
 #endif /* defined(CONFIG_FS_FATFS_MULTI_PARTITION) */
 
+#undef FF_FS_TINY
+#if defined(CONFIG_FS_FATFS_TINY)
+#define FF_FS_TINY		1
+#else
+#define FF_FS_TINY		0
+#endif /* defined(CONFIG_FS_FATFS_TINY) */
+
+#if defined(CONFIG_FS_FATFS_FASTSEEK)
+#undef FF_USE_FASTSEEK
+#define FF_USE_FASTSEEK		1
+#endif /* defined(CONFIG_FS_FATFS_FASTSEEK) */
+
 /*
  * These options are override from default values, but have no Kconfig
  * options.
  */
-#undef FF_FS_TINY
-#define FF_FS_TINY 1
-
 #undef FF_FS_NORTC
 #if defined(CONFIG_FS_FATFS_HAS_RTC)
 #define FF_FS_NORTC 0
