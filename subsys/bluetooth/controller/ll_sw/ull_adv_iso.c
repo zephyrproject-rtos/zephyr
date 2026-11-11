@@ -324,27 +324,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	/* Mandatory Num_BIS = 1 */
 	lll_adv_iso->num_bis = num_bis;
 
-	/* Allocate streams */
-	for (uint8_t i = 0U; i < num_bis; i++) {
-		struct lll_adv_iso_stream *stream;
-
-		stream = (void *)adv_iso_stream_acquire();
-		stream->big_handle = big_handle;
-		stream->dp = NULL;
-
-		if (!stream->link_tx_free) {
-			stream->link_tx_free = &stream->link_tx;
-		}
-		memq_init(stream->link_tx_free, &stream->memq_tx.head,
-			  &stream->memq_tx.tail);
-		stream->link_tx_free = NULL;
-
-		stream->pkt_seq_num = 0U;
-
-		lll_adv_iso->stream_handle[i] =
-			adv_iso_stream_handle_get(stream);
-	}
-
 	if (test_config) {
 		lll_adv_iso->bn = bn;
 		lll_adv_iso->iso_interval = iso_interval;
@@ -637,6 +616,29 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return err;
 	}
 
+	/* Allocate streams, after all parameter checks so that a rejected BIG
+	 * does not hold them.
+	 */
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		struct lll_adv_iso_stream *stream;
+
+		stream = (void *)adv_iso_stream_acquire();
+		stream->big_handle = big_handle;
+		stream->dp = NULL;
+
+		if (!stream->link_tx_free) {
+			stream->link_tx_free = &stream->link_tx;
+		}
+		memq_init(stream->link_tx_free, &stream->memq_tx.head,
+			  &stream->memq_tx.tail);
+		stream->link_tx_free = NULL;
+
+		stream->pkt_seq_num = 0U;
+
+		lll_adv_iso->stream_handle[i] =
+			adv_iso_stream_handle_get(stream);
+	}
+
 	/* Associate the ISO instance with an Extended Advertising instance */
 	lll_adv_iso->adv = &adv->lll;
 
@@ -652,10 +654,10 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	if (ret) {
 		/* Failed to schedule BIG events */
 
-		/* Reset the association of ISO instance with the Extended
-		 * Advertising Instance
+		/* Release the streams and reset the association of ISO instance
+		 * with the Extended Advertising Instance
 		 */
-		lll_adv_iso->adv = NULL;
+		ull_adv_iso_stream_release(adv_iso);
 
 		/* Release allocated link buffers */
 		ll_rx_link_release(link_cmplt);
