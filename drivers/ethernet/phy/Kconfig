@@ -126,6 +126,24 @@ config PHY_TI_DP83825
 	help
 	  Enable TI DP83825 Ethernet PHY Driver
 
+config PHY_TI_DP83TC811
+	bool "TI DP83TC811 PHY Driver"
+	default y
+	depends on DT_HAS_TI_DP83TC811_ENABLED
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83TC811),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83TC811),int-gpios))
+	help
+	  Enable TI DP83TC811 100BASE-T1 Ethernet PHY Driver
+
+config PHY_TI_DP83TC811_READY_TIMEOUT_MS
+	int "TI DP83TC811 ready timeout [ms]"
+	default 100
+	depends on PHY_TI_DP83TC811
+	help
+	  Time to wait after reset for the PHY to respond on MDIO with its
+	  identifier.
+
 config PHY_TI_DP83867
 	bool "TI DP83867 PHY Driver"
 	default y
