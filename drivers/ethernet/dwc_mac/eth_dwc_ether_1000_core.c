@@ -720,7 +720,7 @@ int dwmac_probe(const struct device *dev)
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
 	reg_val = DWMAC_REG_READ(DWMAC_DMABMR) & ~DWMAC_DMABMR_PBL;
-	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, 32);
+	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, CONFIG_ETH_DWC_ETHER_1000_CORE_PBL);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
 		reg_val |= DWMAC_DMABMR_EDFE;

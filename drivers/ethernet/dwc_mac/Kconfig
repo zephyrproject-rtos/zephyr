@@ -176,6 +176,16 @@ config ETH_DWC_ETHER_1000_CORE_EDFE
 	help
 	  Increases the descriptor size to 32 bytes.
 
+config ETH_DWC_ETHER_1000_CORE_PBL
+	int "DMA programmable burst length"
+	depends on ETH_DWC_ETHER_1000_CORE
+	range 1 32
+	default 32
+	help
+	  Maximum number of beats the DMA transfers in one burst, for both
+	  transmit and receive: 1, 2, 4, 8, 16 or 32. Lower it on platforms
+	  whose DMA does not support bursts of 32 beats.
+
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
 configdefault NET_BUF_ALIGNMENT
