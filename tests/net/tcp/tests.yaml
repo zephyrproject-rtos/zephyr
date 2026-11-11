@@ -14,6 +14,10 @@ tests:
     extra_configs:
       - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
       - CONFIG_NET_TCP_SACK=n
+  net.tcp.sack_scoreboard_1:
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
+      - CONFIG_NET_TCP_SACK_SCOREBOARD=1
   net.tcp.variable_buf_size:
     extra_configs:
       - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
