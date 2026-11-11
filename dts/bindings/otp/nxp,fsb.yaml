@@ -1,0 +1,40 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP FSB (Fuse Sense Block) OTP
+
+description: |
+  NXP Fuse Sense Block found on i.MX RT266x SoCs. It exposes the fuse
+  array as read-only 32-bit words.
+
+  The reg property describes the fuse value register array only (FSB base
+  offset 0x8000). The OTP driver API uses byte addressing: byte offset N maps
+  to fuse word N / 4.
+
+compatible: "nxp,fsb"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+examples:
+  - |
+    fsb: otp@40608000 {
+            compatible = "nxp,fsb";
+            reg = <0x40608000 0x8000>;
+
+            nvmem-layout {
+                    compatible = "fixed-layout";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    /* Fuse words 477 and 478 (byte offset 0x774), 6 bytes wide */
+                    mac_address: mac-address@774 {
+                            reg = <0x774 0x6>;
+                            #nvmem-cell-cells = <0>;
+                            read-only;
+                    };
+            };
+    };

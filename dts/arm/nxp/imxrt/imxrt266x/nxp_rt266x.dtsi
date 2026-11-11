@@ -686,6 +686,26 @@
 		status = "okay";
 	};
 
+	/* Fuse Sense Block: fuse value array only (FSB base 0x40600000 + 0x8000). */
+	fsb: otp@40608000 {
+		compatible = "nxp,fsb";
+		reg = <0x40608000 0x8000>;
+		status = "disabled";
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* COM_DEVICE_ID_CFG3/CFG4: fuse words 477/478, MAC_1 address */
+			mac_address: mac-address@774 {
+				reg = <0x774 0x6>;
+				#nvmem-cell-cells = <0>;
+				read-only;
+			};
+		};
+	};
+
 	adc0: hsp_adc_0: adc@42050000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0x42050000 0x304>;
