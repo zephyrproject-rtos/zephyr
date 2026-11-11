@@ -318,9 +318,16 @@ static int mcux_flexcan_start(const struct device *dev)
 		FLEXCAN_SetFDTimingConfig(base, &timing);
 
 		FLEXCAN_EnterFreezeMode(base);
+#if (defined(FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG) && \
+	 FSL_FEATURE_FLEXCAN_HAS_ENHANCED_BIT_TIMING_REG)
+		base->ETDC &= ~(CAN_ETDC_ETDCOFF_MASK);
+		base->ETDC |= FIELD_PREP(CAN_ETDC_ETDCOFF_MASK,
+						 CAN_CALC_TDCO((&data->timing_data), 1U, 127U));
+#else
 		base->FDCTRL &= ~(CAN_FDCTRL_TDCOFF_MASK);
 		base->FDCTRL |= FIELD_PREP(CAN_FDCTRL_TDCOFF_MASK,
 						   CAN_CALC_TDCO((&data->timing_data), 1U, 31U));
+#endif
 		FLEXCAN_ExitFreezeMode(base);
 	}
 #endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
@@ -1273,6 +1280,7 @@ static int mcux_flexcan_init(const struct device *dev)
 		flexcan_config.timingConfig.fpropSeg = data->timing_data.prop_seg;
 		flexcan_config.timingConfig.fphaseSeg1 = data->timing_data.phase_seg1 - 1U;
 		flexcan_config.timingConfig.fphaseSeg2 = data->timing_data.phase_seg2 - 1U;
+		flexcan_config.timingConfig.fpreDivider = data->timing_data.prescaler - 1U;
 
 		FLEXCAN_FDInit(base, &flexcan_config, clock_freq, kFLEXCAN_64BperMB, true);
 	} else {
