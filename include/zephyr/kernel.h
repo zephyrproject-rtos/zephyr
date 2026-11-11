@@ -2412,11 +2412,12 @@ __syscall void k_queue_init(struct k_queue *queue);
  * This routine causes the first thread pending on @a queue, if any, to return
  * from k_queue_get() with a null value, as if its timeout had expired.
  *
- * A thread waiting in k_poll() is woken with -EINTR and the
- * K_POLL_STATE_CANCELLED state, and as described above a subsequent call to
- * k_queue_get() returns a null value.
+ * Every k_poll() call waiting on @a queue is woken with -EINTR and the
+ * K_POLL_STATE_CANCELLED state, and every k_work_poll item waiting on it is
+ * submitted. As described above a subsequent call to k_queue_get() returns a
+ * null value.
  *
- * @note Does nothing when no thread is waiting on @a queue.
+ * @note Does nothing when no thread or k_work_poll item is waiting on @a queue.
  *
  * @isr_ok
  *
@@ -3166,11 +3167,12 @@ struct k_fifo {
  * @brief Cancel waiting on a FIFO queue.
  *
  * This routine causes the first thread pending on @a fifo, if any, to return
- * from k_fifo_get() with a null value, as if its timeout had expired. A thread
- * waiting in k_poll() is woken with -EINTR and the K_POLL_STATE_CANCELLED
- * state.
+ * from k_fifo_get() with a null value, as if its timeout had expired. Every
+ * k_poll() call waiting on @a fifo is woken with -EINTR and the
+ * K_POLL_STATE_CANCELLED state, and every k_work_poll item waiting on it is
+ * submitted.
  *
- * @note Does nothing when no thread is waiting on @a fifo.
+ * @note Does nothing when no thread or k_work_poll item is waiting on @a fifo.
  *
  * @isr_ok
  *
