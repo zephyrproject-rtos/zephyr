@@ -158,7 +158,7 @@ static void acd_timer_reschedule(void)
 		return;
 	}
 
-	k_work_reschedule(&ipv4_acd_timer, timeout);
+	net_work_reschedule(&ipv4_acd_timer, timeout);
 }
 
 /* Returns true if the address has to be marked valid. */
