@@ -248,4 +248,71 @@ ZTEST(net_socket_poll, test_pollout_tcp)
 	zassert_equal(res, 0, "close failed");
 }
 
+#define CLOSE_POLL_TIMEOUT_MS 2000
+#define CLOSE_POLL_WAKE_MS 1000U
+#define CLOSE_POLL_SETTLE_MS 20
+#define CLOSE_POLL_STACK_SIZE 2048
+
+struct close_poller {
+	int sock;
+	int res;
+	uint32_t elapsed;
+};
+
+static struct close_poller close_pollers[2];
+static struct k_thread close_poll_threads[2];
+static K_THREAD_STACK_ARRAY_DEFINE(close_poll_stacks, 2, CLOSE_POLL_STACK_SIZE);
+
+static void close_poller_thread(void *p1, void *p2, void *p3)
+{
+	struct close_poller *poller = p1;
+	struct zsock_pollfd pfd = {
+		.fd = poller->sock,
+		.events = ZSOCK_POLLIN,
+	};
+	uint32_t start = k_uptime_get_32();
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	poller->res = zsock_poll(&pfd, 1, CLOSE_POLL_TIMEOUT_MS);
+	poller->elapsed = k_uptime_get_32() - start;
+}
+
+ZTEST(net_socket_poll, test_poll_close_wakes_every_poller)
+{
+	int res;
+	int sock;
+	struct net_sockaddr_in6 addr;
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &sock, &addr);
+	res = zsock_bind(sock, (struct net_sockaddr *)&addr, sizeof(addr));
+	zassert_equal(res, 0, "bind failed");
+
+	for (size_t i = 0; i < ARRAY_SIZE(close_pollers); i++) {
+		close_pollers[i].sock = sock;
+		close_pollers[i].res = -1;
+		(void)k_thread_create(&close_poll_threads[i], close_poll_stacks[i],
+				      K_THREAD_STACK_SIZEOF(close_poll_stacks[i]),
+				      close_poller_thread, &close_pollers[i], NULL, NULL,
+				      K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+	}
+
+	(void)k_sleep(K_MSEC(CLOSE_POLL_SETTLE_MS));
+	res = zsock_close(sock);
+
+	for (size_t i = 0; i < ARRAY_SIZE(close_poll_threads); i++) {
+		zassert_equal(k_thread_join(&close_poll_threads[i], K_FOREVER), 0);
+	}
+
+	zassert_equal(res, 0, "close failed");
+
+	for (size_t i = 0; i < ARRAY_SIZE(close_pollers); i++) {
+		zassert_true(close_pollers[i].res >= 0, "poller %zu: %d", i,
+			     close_pollers[i].res);
+		zassert_true(close_pollers[i].elapsed < CLOSE_POLL_WAKE_MS,
+			     "poller %zu woke after %u ms", i, close_pollers[i].elapsed);
+	}
+}
+
 ZTEST_SUITE(net_socket_poll, NULL, NULL, NULL, NULL, NULL);
