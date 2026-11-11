@@ -109,6 +109,11 @@ struct bt_l2cap_le_conn_req {
 #define BT_L2CAP_LE_ERR_SCID_IN_USE     0x000A
 #define BT_L2CAP_LE_ERR_UNACCEPT_PARAMS 0x000B
 #define BT_L2CAP_LE_ERR_INVALID_PARAMS  0x000C
+/* MIC length too short: 0x000C in L2CAP_LE_CREDIT_BASED_CONNECTION_RSP and 0x0010 in
+ * L2CAP_CREDIT_BASED_CONNECTION_RSP, where 0x000C is BT_L2CAP_LE_ERR_INVALID_PARAMS.
+ */
+#define BT_L2CAP_LE_ERR_MIC_LEN         0x000C
+#define BT_L2CAP_ECRED_ERR_MIC_LEN      0x0010
 
 #define BT_L2CAP_LE_CONN_RSP            0x15
 struct bt_l2cap_le_conn_rsp {
