@@ -734,6 +734,34 @@ example :file:`board.cmake`:
 This example configures the ``nrfutil``, ``nrfjprog``, ``jlink``, and ``pyocd``
 runners.
 
+Command-scoped runner arguments
+===============================
+
+Arguments added with :cmake:command:`board_runner_args` apply to every west
+command that uses the runner (``flash``, ``debug``, ``debugserver``,
+``attach``, ``rtt`` and ``reset``). If you need an argument that only applies to
+a specific command, add the ``COMMANDS`` keyword to :cmake:command:`board_runner_args`
+followed by the command names the argument applies to, for example:
+
+.. code-block:: cmake
+
+   board_runner_args(jlink "--speed=4000")
+   board_runner_args(jlink "--erase" COMMANDS flash)
+   board_runner_args(jlink "--reset" COMMANDS debug)
+
+   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+
+In this example ``--speed=4000`` is used by every command, ``--erase`` is only
+used by ``west flash``, and ``--reset`` is only used by ``west debug``.
+
+For a given runner, the effective command line is built in this order: first the
+common arguments from :cmake:command:`board_runner_args` without ``COMMANDS``,
+then the command-scoped arguments from ``board_runner_args(... COMMANDS <command>...)``
+matching the command being run, and finally any arguments given on the west
+command line. For options that take a single value, the last value wins, so a
+command-scoped argument overrides a common one and a command line argument
+overrides both.
+
 .. warning::
 
    Runners usually have names which match the tools they wrap, so the ``jlink``
