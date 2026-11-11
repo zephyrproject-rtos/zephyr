@@ -442,6 +442,9 @@ enum sensor_attribute {
 	 */
 	SENSOR_ATTR_COMMON_COUNT,
 
+	/** FIFO watermark threshold, expressed in driver-specific FIFO units. */
+	SENSOR_ATTR_FIFO_WATERMARK,
+
 	/**
 	 * This and higher values are sensor specific.
 	 * Refer to the sensor header file.
