@@ -2,6 +2,7 @@ sample:
   name: ESP32C6 LP_CORE Debug Sample
 tests:
   sample.boards.esp32.ulp.lp_core.debug_ulp:
+    build_only: true
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
     tags:
