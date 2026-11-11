@@ -1292,10 +1292,10 @@ void bt_conn_tx_processor(void)
 		LOG_DBG("no buf returned");
 
 		/* A connection without data left leaves the list on the next pass:
-		 * run it now, so that the connections behind it are served without
-		 * waiting for a completion or new data.
+		 * run that pass now while the list holds connections, so that those
+		 * behind it are served without waiting for a completion or new data.
 		 */
-		if (!conn->has_data(conn)) {
+		if (!conn->has_data(conn) && !sys_slist_is_empty(&bt_dev.le.conn_ready)) {
 			goto raise_and_exit;
 		}
 
