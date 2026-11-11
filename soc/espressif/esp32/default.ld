@@ -914,6 +914,11 @@ SECTIONS
 
   ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM data does not fit.")
 
+#ifdef CONFIG_ESP32_REGION_1_NOINIT
+  ASSERT(__dram_noinit_end <= _iram_end_at_dram_addr,
+         "IRAM code in SRAM1 overlaps the noinit data in DRAM region 1.")
+#endif
+
   /* --- DRAM END --- */
 
   /* --- SPIRAM BEGIN --- */
