@@ -148,3 +148,21 @@ i2c6: &scb6 {
 &watchdog0 {
 	status = "okay";
 };
+
+/* USB needs CLK_HF3 at 48 MHz */
+&pll0 {
+	clock-frequency = <96000000>;
+	status = "okay";
+};
+
+&clk_hf3 {
+	clock-div = <2>;
+	clocks = <&pll0>;
+	status = "okay";
+};
+
+zephyr_udc0: &usbfs0 {
+	brs-div-type = <1>;
+	brs-div-num = <7>;
+	status = "okay";
+};
