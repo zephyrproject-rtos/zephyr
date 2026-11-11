@@ -1,0 +1,9 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GD32F527
+
+configdefault NUM_IRQS
+	default 104
+
+endif # SOC_GD32F527
