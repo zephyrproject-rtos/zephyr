@@ -342,6 +342,14 @@ void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion)
 #if defined(CONFIG_BT_CONN_TX)
 	/* Ensure that function is called only from a single context. */
 	if (k_current_get() == k_work_queue_thread_get(tx_notify_workqueue_get())) {
+		/* What the queued work would do is done here, and a TX context
+		 * completed later queues it again. Running work is this context
+		 * itself, and cancelling it would refuse the next submission.
+		 */
+		if ((k_work_busy_get(&conn->tx_complete_work) & K_WORK_RUNNING) == 0) {
+			(void)k_work_cancel(&conn->tx_complete_work);
+		}
+
 		tx_notify_process(conn);
 	} else {
 		struct k_work_sync sync;
