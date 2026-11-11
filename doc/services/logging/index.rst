@@ -475,7 +475,7 @@ other message is processed there during the flush. A thread that was switched ou
 middle of a message can still resume during the flush and mix its output with it. A
 caller that stops the other CPUs before the flush prevents that: it calls
 :c:func:`log_panic_prepare`, stops the other CPUs, and only then calls
-:c:func:`log_panic`.
+:c:func:`log_panic`. The default fatal error handler does so.
 
 .. _logging_printk:
 
