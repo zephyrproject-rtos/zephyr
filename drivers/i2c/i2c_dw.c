@@ -1157,6 +1157,7 @@ static int i2c_dw_set_controller_mode(const struct device *dev)
 
 	clear_bit_enable_en(reg_base);
 
+	ic_con.raw = 0U;
 	ic_con.bits.master_mode = 1U;
 	ic_con.bits.slave_disable = 1U;
 	ic_con.bits.rx_fifo_full = 0U;
