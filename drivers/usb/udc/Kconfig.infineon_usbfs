@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_INFINEON_USBFS
+	bool "Infineon MXUSBFS device controller driver"
+	default y
+	depends on DT_HAS_INFINEON_USBFS_ENABLED
+	select EVENTS
+	help
+	  Infineon MXUSBFS full-speed USB device controller driver
+
+if UDC_INFINEON_USBFS
+
+config UDC_INFINEON_USBFS_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 1024
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_INFINEON_USBFS_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_INFINEON_USBFS
