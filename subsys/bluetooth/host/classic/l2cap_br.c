@@ -5117,14 +5117,15 @@ static void l2cap_br_disconn_req(struct bt_l2cap_br *l2cap, uint8_t ident, struc
 	dcid = sys_le16_to_cpu(req->dcid);
 	scid = sys_le16_to_cpu(req->scid);
 
-	LOG_DBG("scid 0x%04x dcid 0x%04x", dcid, scid);
+	LOG_DBG("dcid 0x%04x scid 0x%04x", dcid, scid);
 
 	chan = l2cap_br_remove_tx_cid(conn, scid);
 	if (!chan) {
 		struct bt_l2cap_cmd_reject_cid_data data;
 
-		data.scid = req->scid;
-		data.dcid = req->dcid;
+		/* Local endpoint first, which is the destination of the request */
+		data.scid = req->dcid;
+		data.dcid = req->scid;
 		l2cap_br_send_reject(l2cap, ident, BT_L2CAP_REJ_INVALID_CID, &data, sizeof(data));
 		return;
 	}
