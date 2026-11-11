@@ -11,6 +11,7 @@ from bumble.hci import (
 )
 from bumble.l2cap import (
     ClassicChannelSpec,
+    L2CAP_Disconnection_Response,
 )
 from bumble.pairing import PairingConfig, PairingDelegate
 from bumble.snoop import BtSnooper
@@ -1664,6 +1665,129 @@ async def l2cap_client_case_31(hci_port, shell, dut, address, snoop_file) -> Non
         await send_cmd_to_iut(shell, dut, "bt disconnect", "Disconnected:")
 
 
+def bumble_disconn_rsp_wrong_ident(device, answer):
+    """Answer the next L2CAP Disconnection Request with a wrong identifier.
+
+    With answer set, the matching Disconnection Response follows at once. The returned
+    future is done once the responses have been sent.
+    """
+    manager = device.l2cap_channel_manager
+    on_request = manager.on_l2cap_disconnection_request
+    sent = asyncio.get_running_loop().create_future()
+
+    def on_l2cap_disconnection_request(connection, cid, request):
+        manager.on_l2cap_disconnection_request = on_request
+        manager.send_control_frame(
+            connection,
+            cid,
+            L2CAP_Disconnection_Response(
+                identifier=request.identifier % 255 + 1,
+                destination_cid=request.destination_cid,
+                source_cid=request.source_cid,
+            ),
+        )
+        if answer:
+            on_request(connection, cid, request)
+        sent.set_result(None)
+
+    manager.on_l2cap_disconnection_request = on_l2cap_disconnection_request
+    return sent
+
+
+def count_lines(lines, message):
+    return sum(1 for line in lines if message in line)
+
+
+async def l2cap_client_case_32(hci_port, shell, dut, address, snoop_file) -> None:
+    logger.info('<<< l2cap_client_case_32 ...')
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        logger.info('bumble l2cap server register.')
+        device.create_l2cap_server(spec=ClassicChannelSpec(psm=L2CAP_SERVER_PSM))
+
+        device.host.snooper = BtSnooper(snoop_file)
+        await device_power_on(device)
+        await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+        await send_cmd_to_iut(shell, dut, "br clear all", None)
+
+        target_address = address.split(" ")[0]
+        connection = await bumble_acl_connect(shell, dut, device, target_address)
+        found, _ = await wait_for_shell_response(dut, "Connected:")
+        assert found is True
+
+        await send_cmd_to_iut(
+            shell,
+            dut,
+            f"l2cap_br connect {format(L2CAP_SERVER_PSM, 'x')}",
+            f"Channel {L2CAP_CHAN_IUT_ID} connected",
+        )
+
+        disconnected = f"Channel {L2CAP_CHAN_IUT_ID} disconnected"
+        bumble_disconn_rsp_wrong_ident(device, answer=True)
+        lines = await send_cmd_to_iut(
+            shell, dut, f"l2cap_br disconnect {L2CAP_CHAN_IUT_ID}", disconnected
+        )
+
+        # Past the RTX timeout, so that a second report would show
+        _, more = await wait_for_shell_response(dut, disconnected, 3)
+        assert count_lines(lines + more, disconnected) == 1
+
+        await bumble_acl_disconnect(shell, dut, device, connection)
+
+
+async def l2cap_client_case_33(hci_port, shell, dut, address, snoop_file) -> None:
+    logger.info('<<< l2cap_client_case_33 ...')
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        logger.info('bumble l2cap server register.')
+        device.create_l2cap_server(spec=ClassicChannelSpec(psm=L2CAP_SERVER_PSM))
+
+        device.host.snooper = BtSnooper(snoop_file)
+        await device_power_on(device)
+        await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+        await send_cmd_to_iut(shell, dut, "br clear all", None)
+
+        target_address = address.split(" ")[0]
+        connection = await bumble_acl_connect(shell, dut, device, target_address)
+        found, _ = await wait_for_shell_response(dut, "Connected:")
+        assert found is True
+
+        await send_cmd_to_iut(
+            shell,
+            dut,
+            f"l2cap_br connect {format(L2CAP_SERVER_PSM, 'x')}",
+            f"Channel {L2CAP_CHAN_IUT_ID} connected",
+        )
+
+        disconnected = f"Channel {L2CAP_CHAN_IUT_ID} disconnected"
+        sent = bumble_disconn_rsp_wrong_ident(device, answer=False)
+        lines = shell.exec_command(f"l2cap_br disconnect {L2CAP_CHAN_IUT_ID}")
+        await asyncio.wait_for(sent, timeout=5)
+        lines += dut.readlines()
+        assert count_lines(lines, disconnected) == 0
+
+        # Drop the link before the RTX timeout releases the channel
+        _, lines = await bumble_acl_disconnect(shell, dut, device, connection)
+        _, more = await wait_for_shell_response(dut, disconnected, 3)
+        assert count_lines(lines + more, disconnected) == 1
+
+
 class TestL2capBRClient:
     def test_l2cap_client_case_1(self, shell: Shell, dut: DeviceAdapter, l2cap_br_dut):
         """Test passive ACL connection,l2cap connect and active l2cap disconnect"""
@@ -1906,3 +2030,19 @@ class TestL2capBRClient:
         hci, iut_address = l2cap_br_dut
         with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
             asyncio.run(l2cap_client_case_31(hci, shell, dut, iut_address, snoop_file))
+
+    def test_l2cap_client_case_32(self, shell: Shell, dut: DeviceAdapter, l2cap_br_dut):
+        """Test active l2cap disconnect, answered first with a wrong identifier and then
+        with the matching one. The channel is reported disconnected once."""
+        logger.info(f'test_l2cap_client_case_32 {l2cap_br_dut}')
+        hci, iut_address = l2cap_br_dut
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            asyncio.run(l2cap_client_case_32(hci, shell, dut, iut_address, snoop_file))
+
+    def test_l2cap_client_case_33(self, shell: Shell, dut: DeviceAdapter, l2cap_br_dut):
+        """Test active l2cap disconnect, answered only with a wrong identifier, then ACL
+        disconnect. The channel is reported disconnected once, at the ACL disconnect."""
+        logger.info(f'test_l2cap_client_case_33 {l2cap_br_dut}')
+        hci, iut_address = l2cap_br_dut
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            asyncio.run(l2cap_client_case_33(hci, shell, dut, iut_address, snoop_file))
