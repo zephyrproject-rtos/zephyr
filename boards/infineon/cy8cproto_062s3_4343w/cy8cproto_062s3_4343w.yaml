@@ -18,4 +18,5 @@ supported:
   - i2c
   - watchdog
   - pm
+  - usbd
 vendor: infineon
