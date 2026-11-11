@@ -3459,4 +3459,70 @@ ZTEST(lib_json_test, test_json_obj_walk_interleaved_mismatch)
 	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "'[{]}' must fail");
 }
 
+struct test_number_end {
+	int32_t num;
+	size_t count;
+};
+
+struct test_number_end_fp {
+	double num;
+};
+
+static const struct json_obj_descr test_number_end_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_number_end, num, JSON_TOK_NUMBER),
+};
+
+static const struct json_obj_descr test_number_end_fp_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct test_number_end_fp, num, JSON_TOK_DOUBLE_FP),
+};
+
+static const struct json_mixed_arr_descr test_number_end_mixed_descr[] = {
+	JSON_MIXED_ARR_DESCR_PRIM(struct test_number_end, num, JSON_TOK_NUMBER, count),
+};
+
+/* The inputs below have no closing bracket and no terminating NUL, so any
+ * access past the given length is outside the buffer. The number decoders
+ * restore the byte they overwrite, so only AddressSanitizer sees the access.
+ */
+ZTEST(lib_json_test, test_json_number_ends_input)
+{
+	char obj_json[8];
+	char fp_json[10];
+	char mixed_json[2];
+	struct test_number_end val = {0};
+	struct test_number_end_fp fp_val = {0};
+	int64_t ret64;
+	int ret;
+
+	memcpy(obj_json, "{\"num\":1", sizeof(obj_json));
+	ret64 = json_obj_parse(obj_json, sizeof(obj_json), test_number_end_descr,
+			       ARRAY_SIZE(test_number_end_descr), &val);
+	zexpect_true(ret64 < 0, "Unclosed object accepted (%lld)", ret64);
+
+	memcpy(fp_json, "{\"num\":NaN", sizeof(fp_json));
+	ret64 = json_obj_parse(fp_json, sizeof(fp_json), test_number_end_fp_descr,
+			       ARRAY_SIZE(test_number_end_fp_descr), &fp_val);
+	zexpect_true(ret64 < 0, "Unclosed object with NaN accepted (%lld)", ret64);
+
+	memcpy(mixed_json, "[1", sizeof(mixed_json));
+	ret = json_mixed_arr_parse(mixed_json, sizeof(mixed_json), test_number_end_mixed_descr,
+				   ARRAY_SIZE(test_number_end_mixed_descr), &val);
+	zexpect_true(ret < 0, "Unclosed array accepted (%d)", ret);
+}
+
+ZTEST(lib_json_test, test_json_number_before_end)
+{
+	/* The input has no terminating NUL */
+	char json[9];
+	struct test_number_end val = {0};
+	int64_t ret;
+
+	memcpy(json, "{\"num\":7}", sizeof(json));
+
+	ret = json_obj_parse(json, sizeof(json), test_number_end_descr,
+			     ARRAY_SIZE(test_number_end_descr), &val);
+	zexpect_equal(ret, 1, "Closed object not parsed (%lld)", ret);
+	zexpect_equal(val.num, 7);
+}
+
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);
