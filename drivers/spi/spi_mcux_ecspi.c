@@ -241,6 +241,16 @@ static int spi_mcux_configure(const struct device *dev,
 		return 0;
 	}
 
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode not supported");
+		return -ENOTSUP;
+	}
+
+	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
+		LOG_ERR("Only single line mode is supported");
+		return -ENOTSUP;
+	}
+
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
 		return -ENOTSUP;
