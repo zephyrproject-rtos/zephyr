@@ -124,12 +124,12 @@ static uint32_t tcp_get_seq(struct net_buf *buf)
 }
 
 /*
- * Out of order data is only held when the receive queue is enabled, and
- * without it there is never a block to report.
+ * SACK permitted is offered when either side uses SACK. Reporting received
+ * data needs the receive queue, since only it holds data out of order.
  */
 static inline bool tcp_sack_supported(void)
 {
-	return IS_ENABLED(CONFIG_NET_TCP_SACK);
+	return IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || IS_ENABLED(CONFIG_NET_TCP_SACK_SEND);
 }
 
 /* The SACK blocks of the peer are used for loss recovery */
@@ -144,7 +144,8 @@ static inline bool tcp_sack_send_active(struct tcp *conn)
  */
 static bool tcp_sack_block(struct tcp *conn, uint32_t *left, uint32_t *right)
 {
-	if (!conn->sack_perm || conn->queue_recv_data == NULL) {
+	if (!IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || !conn->sack_perm ||
+	    (conn->queue_recv_data == NULL)) {
 		return false;
 	}
 

@@ -174,29 +174,38 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
-config NET_TCP_SACK
-	bool "Selective acknowledgment (SACK) of received data"
+menuconfig NET_TCP_SACK
+	bool "Selective acknowledgment (SACK)"
+	default y
+	help
+	  Offer SACK permitted in the handshake (RFC 2018). The receiving side,
+	  NET_TCP_SACK_RECV, and the sending side, NET_TCP_SACK_SEND, can be
+	  enabled separately. SACK permitted is offered when either of them is
+	  enabled.
+
+	  Disable to stop offering SACK, for example when chasing an
+	  interoperability problem.
+
+if NET_TCP_SACK
+
+config NET_TCP_SACK_RECV
+	bool "Report received out-of-order data with SACK"
 	default y
 	depends on NET_TCP_RECV_QUEUE_TIMEOUT > 0
 	help
-	  Offer SACK permitted in the handshake (RFC 2018) and, when the peer
-	  agrees, report out-of-order data held in the receive queue with a
-	  SACK block, so that the sender can resend only what is missing.
-	  SACK blocks sent by the peer are used when retransmitting if
-	  NET_TCP_SACK_SEND is enabled.
+	  When the peer agrees to SACK, report out-of-order data held in the
+	  receive queue with a SACK block, so that the sender can resend only
+	  what is missing.
 
 	  Queued data is still discarded after NET_TCP_RECV_QUEUE_TIMEOUT
 	  milliseconds, even if it has already been reported in a SACK block.
 	  RFC 2018 section 8 permits this and senders have to cope, but it is
 	  worth knowing when debugging a stall against this stack.
 
-	  Disable to stop offering SACK, for example when chasing an
-	  interoperability problem.
-
 config NET_TCP_SACK_SEND
 	bool "Use the SACK blocks of the peer when retransmitting"
 	default y
-	depends on NET_TCP_SACK && NET_TCP_FAST_RETRANSMIT
+	depends on NET_TCP_FAST_RETRANSMIT
 	help
 	  Record the SACK blocks the peer sends and recover from lost
 	  segments as RFC 6675 describes: only data the peer has not
@@ -215,6 +224,8 @@ config NET_TCP_SACK_SCOREBOARD
 	  Each range costs 8 bytes per connection. The peer reports at most
 	  four ranges in one segment. When the ranges do not fit, the highest
 	  one is forgotten, and the data in it is treated as still in flight.
+
+endif # NET_TCP_SACK
 
 config NET_TCP_ACK_DELAY
 	int "TCP delayed ACK timeout (in ms)"

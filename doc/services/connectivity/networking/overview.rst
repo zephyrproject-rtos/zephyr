@@ -108,9 +108,12 @@ Transport and Sockets
   protocols, and for plain UDP sockets through UDP options (:rfc:`9869`).
   See :ref:`DPLPMTUD <net_dplpmtud>`.
 * **TCP** (:rfc:`9293`), client and server, with a build-time configurable
-  number of sockets. Selective acknowledgment (:rfc:`2018`) of received data
-  with :kconfig:option:`CONFIG_NET_TCP_SACK`, and window scaling (:rfc:`7323`)
-  with :kconfig:option:`CONFIG_NET_TCP_WINDOW_SCALE`.
+  number of sockets. Selective acknowledgment (:rfc:`2018`) with
+  :kconfig:option:`CONFIG_NET_TCP_SACK`: of received data
+  (:kconfig:option:`CONFIG_NET_TCP_SACK_RECV`), and SACK-based loss recovery
+  (:rfc:`6675`) when sending (:kconfig:option:`CONFIG_NET_TCP_SACK_SEND`).
+  Window scaling (:rfc:`7323`) with
+  :kconfig:option:`CONFIG_NET_TCP_WINDOW_SCALE`.
 * **QUIC** (:rfc:`9000`) with integrated TLS 1.3 (:rfc:`9001`).
   See :ref:`QUIC <quic_transport_interface>`. Samples:
   :zephyr:code-sample:`quic-client-echo`, :zephyr:code-sample:`quic-service-echo`.
