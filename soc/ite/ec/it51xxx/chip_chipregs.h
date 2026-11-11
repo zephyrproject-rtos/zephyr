@@ -7,6 +7,7 @@
 #ifndef CHIP_CHIPREGS_H
 #define CHIP_CHIPREGS_H
 
+#include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 
 #define IT51XXX_EC_FREQ KHZ(9200)
@@ -367,14 +368,12 @@ enum bram_indices {
 
 /**
  *
- * (42xxh) SMBus Interface for target (SMB) registers
+ * SMBus Interface for target (SMB) registers
  *
  */
-#define IT51XXX_SMB_BASE 0xf04200
-/* 0x0a, 0x2a, 0x4a: Slave n Dedicated FIFO Pre-defined Control Register */
-#define SMB_SADFPCTL     (IT51XXX_SMB_BASE + 0x0a)
-#define SMB_SBDFPCTL     (IT51XXX_SMB_BASE + 0x2a)
-#define SMB_SCDFPCTL     (IT51XXX_SMB_BASE + 0x4a)
+/* 0x0a: Slave Dedicated FIFO Pre-defined Control Register */
+#define SMB_SADFPCTL     (DT_REG_ADDR_BY_IDX(DT_NODELABEL(i2c0), 1) + 0x0a)
+#define SMB_SBDFPCTL     (DT_REG_ADDR_BY_IDX(DT_NODELABEL(i2c1), 1) + 0x0a)
 #define SMB_HSAPE        BIT(1)
 
 #endif /* CHIP_CHIPREGS_H */
