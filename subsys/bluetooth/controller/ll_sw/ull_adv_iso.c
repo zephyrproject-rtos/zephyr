@@ -430,8 +430,21 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		}
 	} else {
 		/* Pre-Transmission Offset (PTO) */
+		const uint8_t pto_sel = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
+
+		/* No room for extra pre-transmission subevents: use one repetition
+		 * as a pre-transmission instead, latency permitting.
+		 */
+		if (ull_adv_iso_can_pto_from_repetitions(lll_adv_iso->ptc, lll_adv_iso->irc,
+							 pto_sel, event_spacing, iso_interval_us,
+							 sdu_interval, max_latency, framing)) {
+			lll_adv_iso->irc--;
+			lll_adv_iso->nse -= lll_adv_iso->bn;
+			lll_adv_iso->ptc = lll_adv_iso->bn;
+		}
+
 		if (lll_adv_iso->ptc) {
-			lll_adv_iso->pto = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
+			lll_adv_iso->pto = pto_sel;
 		} else {
 			lll_adv_iso->pto = 0U;
 		}
