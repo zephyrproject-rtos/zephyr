@@ -175,6 +175,9 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 		*chat->script_result = result;
 	}
 
+	/* The waiter lives on the caller's stack, so drop it before the next script */
+	chat->script_stopped_sem = NULL;
+
 	/* Clear script running state */
 	atomic_clear_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
 
@@ -1015,6 +1018,7 @@ void modem_chat_script_abort(struct modem_chat *chat)
 
 void modem_chat_release(struct modem_chat *chat)
 {
+	struct k_sem *sync_waiter = NULL;
 	struct k_work_sync sync;
 
 	if (chat->pipe) {
@@ -1027,6 +1031,14 @@ void modem_chat_release(struct modem_chat *chat)
 	k_work_cancel_sync(&chat->script_send_work, &sync);
 	k_work_cancel_delayable_sync(&chat->script_timeout_work, &sync);
 	k_work_cancel_delayable_sync(&chat->script_send_timeout_work, &sync);
+
+	/* With the work items cancelled nothing stops a running script, so wake its waiter */
+	if (atomic_test_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT) &&
+	    (chat->script_stopped_sem != NULL)) {
+		sync_waiter = chat->script_stopped_sem;
+		*chat->script_result = MODEM_CHAT_SCRIPT_RESULT_ABORT;
+	}
+	chat->script_stopped_sem = NULL;
 
 	chat->pipe = NULL;
 	chat->receive_buf_len = 0;
@@ -1044,6 +1056,10 @@ void modem_chat_release(struct modem_chat *chat)
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_ABORT] = 0;
 	chat->matches[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = NULL;
 	chat->matches_size[MODEM_CHAT_MATCHES_INDEX_RESPONSE] = 0;
+
+	if (sync_waiter != NULL) {
+		k_sem_give(sync_waiter);
+	}
 }
 
 void modem_chat_match_init(struct modem_chat_match *chat_match)
