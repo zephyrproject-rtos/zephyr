@@ -633,8 +633,14 @@ def test_bumble_takes_no_exit_status_for_a_verdict(tmp_path):
 
     sidecar.teardown()
 
+    reason = "Bumble peer 1 ended without a verdict"
     assert instance.status == TwisterStatus.FAIL
-    assert instance.reason == "Bumble peer 1 ended without a verdict"
+    assert instance.reason == reason
+    # No case failed, so the cases that passed, on the guest or on the peer,
+    # show the failure in reports that list cases alone.
+    for name in ("id.central.connect", "id.peripheral.connect"):
+        assert instance.get_case_by_name(name).status == TwisterStatus.FAIL
+        assert instance.get_case_by_name(name).reason == reason
 
 
 def test_bumble_requires_a_verdict_of_any_ztest_run(tmp_path):
