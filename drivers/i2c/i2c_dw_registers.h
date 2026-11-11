@@ -27,6 +27,9 @@ union ic_con_register {
 		uint32_t rx_fifo_full: 1 __packed;
 		uint32_t stop_det_mstactive: 1 __packed;
 		uint32_t bus_clear: 1 __packed;
+		uint32_t reserved: 6 __packed;
+		uint32_t smbus_arp_en: 1 __packed;
+		uint32_t smbus_persistent_slv_addr_en: 1 __packed;
 	} bits;
 };
 
@@ -194,6 +197,12 @@ union ic_sdahold_register {
 #define DW_IC_REG_HS_SPKLEN     (0xA4)
 #define DW_IC_REG_SCL_TIMEOUT   (0xAC)
 #define DW_IC_REG_SDA_TIMEOUT   (0xB0)
+#define DW_IC_REG_SMBUS_INTR_MASK  (0xCC)
+#define DW_IC_REG_CLR_SMBUS_INTR   (0xD4)
+#define DW_IC_REG_SMBUS_UDID_WORD0 (0xDC)
+#define DW_IC_REG_SMBUS_UDID_WORD1 (0xE0)
+#define DW_IC_REG_SMBUS_UDID_WORD2 (0xE4)
+#define DW_IC_REG_SMBUS_UDID_WORD3 (0xE8)
 #define DW_IC_REG_COMP_PARAM_1  (0xF4)
 #define DW_IC_REG_COMP_TYPE     (0xFC)
 
@@ -221,6 +230,8 @@ DEFINE_MM_REG_READ(tar, DW_IC_REG_TAR, 32)
 DEFINE_MM_REG_WRITE(tar, DW_IC_REG_TAR, 32)
 
 DEFINE_MM_REG_WRITE(sar, DW_IC_REG_SAR, 32)
+DEFINE_MM_REG_READ(sar, DW_IC_REG_SAR, 32)
+#define DW_IC_SAR_7BIT_MASK 0x7F
 
 DEFINE_MM_REG_WRITE(cmd_data, DW_IC_REG_DATA_CMD, 32)
 DEFINE_MM_REG_READ(cmd_data, DW_IC_REG_DATA_CMD, 32)
@@ -282,10 +293,13 @@ DEFINE_TEST_BIT_OP(enable_clk_reset, DW_IC_REG_ENABLE, DW_IC_ENABLE_CLK_RESET_BI
 #define DW_IC_STATUS_TFNT_BIT        (1)
 #define DW_IC_STATUS_RFNE_BIT        (3)
 #define DW_IC_STATUS_SDANOTRECOV_BIT (11)
+#define DW_IC_STATUS_SMBUS_SLAVE_ADDR_VALID_BIT (17)
 DEFINE_TEST_BIT_OP(status_activity, DW_IC_REG_STATUS, DW_IC_STATUS_ACTIVITY_BIT)
 DEFINE_TEST_BIT_OP(status_tfnt, DW_IC_REG_STATUS, DW_IC_STATUS_TFNT_BIT)
 DEFINE_TEST_BIT_OP(status_rfne, DW_IC_REG_STATUS, DW_IC_STATUS_RFNE_BIT)
 DEFINE_TEST_BIT_OP(status_sdanotrecov, DW_IC_REG_STATUS, DW_IC_STATUS_SDANOTRECOV_BIT)
+DEFINE_TEST_BIT_OP(status_smbus_slave_addr_valid, DW_IC_REG_STATUS,
+		   DW_IC_STATUS_SMBUS_SLAVE_ADDR_VALID_BIT)
 
 DEFINE_MM_REG_READ(txflr, DW_IC_REG_TXFLR, 32)
 DEFINE_MM_REG_READ(rxflr, DW_IC_REG_RXFLR, 32)
@@ -315,6 +329,16 @@ DEFINE_MM_REG_WRITE(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)
 DEFINE_MM_REG_READ(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)
 DEFINE_MM_REG_WRITE(sdatimeout, DW_IC_REG_SDA_TIMEOUT, 32)
 DEFINE_MM_REG_READ(sdatimeout, DW_IC_REG_SDA_TIMEOUT, 32)
+
+/* All SMBus interrupt bits */
+#define DW_IC_SMBUS_INTR_ALL GENMASK(10, 0)
+DEFINE_MM_REG_WRITE(smbus_intr_mask, DW_IC_REG_SMBUS_INTR_MASK, 32)
+DEFINE_MM_REG_WRITE(clr_smbus_intr, DW_IC_REG_CLR_SMBUS_INTR, 32)
+
+DEFINE_MM_REG_WRITE(smbus_udid_word0, DW_IC_REG_SMBUS_UDID_WORD0, 32)
+DEFINE_MM_REG_WRITE(smbus_udid_word1, DW_IC_REG_SMBUS_UDID_WORD1, 32)
+DEFINE_MM_REG_WRITE(smbus_udid_word2, DW_IC_REG_SMBUS_UDID_WORD2, 32)
+DEFINE_MM_REG_WRITE(smbus_udid_word3, DW_IC_REG_SMBUS_UDID_WORD3, 32)
 
 DEFINE_MM_REG_READ(comp_param_1, DW_IC_REG_COMP_PARAM_1, 32)
 DEFINE_MM_REG_READ(comp_type, DW_IC_REG_COMP_TYPE, 32)
