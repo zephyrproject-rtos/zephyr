@@ -2,7 +2,12 @@
 
 set(ARM_C_FLAGS)
 
-list(APPEND ARM_C_FLAGS   -mcpu=${GCC_M_CPU})
+if(CONFIG_ARMV8_M_CDE_CP0)
+  # Clang takes the CDE feature on -mcpu rather than -march
+  list(APPEND ARM_C_FLAGS   -mcpu=${GCC_M_CPU}+cdecp0)
+else()
+  list(APPEND ARM_C_FLAGS   -mcpu=${GCC_M_CPU})
+endif()
 
 if(CONFIG_COMPILER_ISA_THUMB2)
   list(APPEND ARM_C_FLAGS   -mthumb)
