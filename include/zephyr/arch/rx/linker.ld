@@ -212,6 +212,7 @@ SECTIONS
 
 	GROUP_START(RAMABLE_REGION)
 
+	. = RAM_START;
 	_image_ram_start = .;
 
 #include <app_data_alignment.ld>
@@ -242,8 +243,8 @@ SECTIONS
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
-		__data_region_start = .;
-		__data_start = .;
+		PLACE_SYMBOL_HERE(__data_region_start);
+		PLACE_SYMBOL_HERE(__data_start);
 		*(.data)
 		*(.data.*)
 		*(D)
@@ -253,6 +254,9 @@ SECTIONS
 
 #include <snippets-rwdata.ld>
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	___data_region_load_start = LOADADDR(_DATA_SECTION_NAME);
+	PROVIDE(__data_region_load_start = ___data_region_load_start);
 
 	/* the sections defined in common-ram.ld have to be initialized on
 	 * reset as well, to place them before _edata */
@@ -265,7 +269,7 @@ SECTIONS
  */
 #include <snippets-data-sections.ld>
 
-	__data_region_end = .;
+	PLACE_SYMBOL_HERE(__data_region_end);
 
 #if DT_PROP(DT_NODELABEL(code_flash), programming_enable)
 
@@ -279,10 +283,13 @@ SECTIONS
 
 #endif
 
+	/* Sections generated from 'zephyr,memory-region' nodes */
+	LINKER_DT_SECTIONS()
+
 	SECTION_PROLOGUE(_BSS_SECTION_NAME,,)
 	{
-		_bss = .;
-		__bss_start = .;
+		PLACE_SYMBOL_HERE(_bss);
+		PLACE_SYMBOL_HERE(__bss_start);
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -295,10 +302,9 @@ SECTIONS
 		*(B)
 		*(B_1)
 		*(B_2)
-		_ebss = .;
-		__bss_end = .;
+		PLACE_SYMBOL_HERE(_ebss);
+		PLACE_SYMBOL_HERE(__bss_end);
 		. = ALIGN(128);
-		_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	_ebss = . ;
