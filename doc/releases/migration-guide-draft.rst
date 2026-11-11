@@ -184,6 +184,21 @@ Boards
   CPU ``clock-frequency`` when ``/cpus`` has no ``timebase-frequency``. Out-of-tree boards must
   set ``timebase-frequency`` on the ``/cpus`` node. (:github:`124446`)
 
+* The NXP LPC54xxx DTSI files are named after the sub-family they describe and all live in
+  :file:`dts/arm/nxp/lpc/lpc54xxx/`. Out-of-tree boards must update their includes:
+
+  * LPC5411x: :file:`nxp/lpc/lpc54xxx/nxp_lpc54xxx.dtsi`,
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc54xxx_m4.dtsi` and
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc54xxx_m0.dtsi` are now
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc5411x.dtsi`,
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc5411x_m4.dtsi` and
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc5411x_m0.dtsi`.
+  * LPC546xx: :file:`nxp/lpc/nxp_lpc546xx.dtsi` is now
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc546xx.dtsi`.
+
+  The root compatible of the LPCXpresso54114 board is now ``nxp,lpc5411x`` instead of
+  ``nxp,lpc54xxx``. (:github:`125465`)
+
 Device Drivers and Devicetree
 *****************************
 
