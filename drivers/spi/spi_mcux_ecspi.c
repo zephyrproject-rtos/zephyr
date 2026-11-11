@@ -297,12 +297,20 @@ static int spi_mcux_configure(const struct device *dev,
 	controller_config.enableLoopback = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP);
 
 	if (!spi_cs_is_gpio(spi_cfg)) {
-		uint32_t clock_cycles =
-			DIV_ROUND_UP(spi_cfg->cs.delay * USEC_PER_SEC, spi_cfg->frequency);
+		uint64_t clock_cycles =
+			DIV_ROUND_UP((uint64_t)spi_cfg->cs.setup_ns * sclk_hz, NSEC_PER_SEC);
 
 		if (clock_cycles > 63U) {
-			LOG_ERR("CS delay is greater than 63 clock cycles (%u)", clock_cycles);
+			LOG_ERR("CS setup delay %u ns exceeds 63 clock cycles",
+				spi_cfg->cs.setup_ns);
 			return -EINVAL;
+		}
+
+		/* CSD_CTL delays the first clock only; nothing delays the release.
+		 * Several bindings default a hold delay, so it is not an error.
+		 */
+		if (spi_cfg->cs.hold_ns != 0U) {
+			LOG_WRN("CS hold delay %u ns not supported, ignored", spi_cfg->cs.hold_ns);
 		}
 		controller_config.chipSelectDelay = (uint8_t)clock_cycles;
 	}
