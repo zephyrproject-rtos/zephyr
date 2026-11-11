@@ -1,0 +1,11 @@
+tests:
+  drivers.clock_control.nxp_ccm_rev2.sai_rate:
+    tags:
+      - drivers
+      - clock_control
+    # The test uses the SAI clock roots of the RT11xx and RT118x HAL. The CCM
+    # rev2 driver has the SAI rate only when an SAI node is enabled.
+    filter: (CONFIG_SOC_SERIES_IMXRT11XX or CONFIG_SOC_SERIES_IMXRT118X) and
+      dt_compat_enabled("nxp,mcux-i2s")
+    integration_platforms:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
