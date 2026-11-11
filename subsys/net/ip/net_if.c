@@ -923,7 +923,7 @@ static void iface_router_update_timer(uint32_t now)
 	if (new_delay == UINT32_MAX) {
 		k_work_cancel_delayable(&router_timer);
 	} else {
-		k_work_reschedule(&router_timer, K_MSEC(new_delay));
+		net_work_reschedule(&router_timer, K_MSEC(new_delay));
 	}
 
 	k_mutex_unlock(&global_lock);
@@ -1616,7 +1616,7 @@ static void dad_queue(struct net_if_addr *ifaddr)
 
 	/* FUTURE: use schedule, not reschedule. */
 	if (!k_work_delayable_remaining_get(&dad_timer)) {
-		k_work_reschedule(&dad_timer, K_MSEC(DAD_TIMEOUT));
+		net_work_reschedule(&dad_timer, K_MSEC(DAD_TIMEOUT));
 	}
 }
 
@@ -1652,7 +1652,7 @@ static void dad_timeout(struct k_work *work)
 	}
 
 	if ((ifaddr != NULL) && (delay > 0)) {
-		k_work_reschedule(&dad_timer, K_MSEC((uint32_t)delay));
+		net_work_reschedule(&dad_timer, K_MSEC((uint32_t)delay));
 	}
 
 	k_mutex_unlock(&global_lock);
@@ -1940,8 +1940,8 @@ static void rs_timeout(struct k_work *work)
 	}
 
 	if ((ipv6 != NULL) && (delay > 0)) {
-		k_work_reschedule(&rs_timer, K_MSEC(ipv6->rs_start +
-						    RS_TIMEOUT - current_time));
+		net_work_reschedule(&rs_timer, K_MSEC(ipv6->rs_start +
+						      RS_TIMEOUT - current_time));
 	}
 
 	k_mutex_unlock(&global_lock);
@@ -2004,7 +2004,7 @@ void net_if_start_rs(struct net_if *iface)
 
 		/* FUTURE: use schedule, not reschedule. */
 		if (!k_work_delayable_remaining_get(&rs_timer)) {
-			k_work_reschedule(&rs_timer, K_MSEC(RS_TIMEOUT));
+			net_work_reschedule(&rs_timer, K_MSEC(RS_TIMEOUT));
 		}
 	}
 
@@ -2242,7 +2242,7 @@ static void address_lifetime_timeout(struct k_work *work)
 	if (next_update != UINT32_MAX) {
 		NET_DBG("Waiting for %d ms", (int32_t)next_update);
 
-		k_work_reschedule(&address_lifetime_timer, K_MSEC(next_update));
+		net_work_reschedule(&address_lifetime_timer, K_MSEC(next_update));
 	}
 
 	k_mutex_unlock(&global_lock);
@@ -2276,7 +2276,7 @@ static void address_start_timer(struct net_if_addr *ifaddr, uint32_t vlifetime)
 			 &ifaddr->lifetime.node);
 
 	net_timeout_set(&ifaddr->lifetime, vlifetime, k_uptime_get_32());
-	k_work_reschedule(&address_lifetime_timer, K_NO_WAIT);
+	net_work_reschedule(&address_lifetime_timer, K_NO_WAIT);
 }
 #else /* CONFIG_NET_NATIVE_IPV6 */
 #define address_start_timer(...)
@@ -3241,7 +3241,7 @@ static void prefix_lifetime_timeout(struct k_work *work)
 	}
 
 	if (next_update != UINT32_MAX) {
-		k_work_reschedule(&prefix_lifetime_timer, K_MSEC(next_update));
+		net_work_reschedule(&prefix_lifetime_timer, K_MSEC(next_update));
 	}
 
 	k_mutex_unlock(&global_lock);
@@ -3262,7 +3262,7 @@ static void prefix_start_timer(struct net_if_ipv6_prefix *ifprefix,
 			 &ifprefix->lifetime.node);
 
 	net_timeout_set(&ifprefix->lifetime, lifetime, k_uptime_get_32());
-	k_work_reschedule(&prefix_lifetime_timer, K_NO_WAIT);
+	net_work_reschedule(&prefix_lifetime_timer, K_NO_WAIT);
 
 	k_mutex_unlock(&global_lock);
 }
