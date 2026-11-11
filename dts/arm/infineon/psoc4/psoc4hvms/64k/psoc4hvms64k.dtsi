@@ -226,6 +226,7 @@
 			reg = <0x40240000 0xfd0>;
 			interrupts = <14 3>;
 			clk-dst = <0x0>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 
@@ -234,6 +235,7 @@
 			reg = <0x40250000 0xfd0>;
 			interrupts = <15 3>;
 			clk-dst = <0x8>;
+			fifo-depth = <16>;
 			status = "disabled";
 		};
 	};
