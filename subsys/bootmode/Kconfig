@@ -20,4 +20,10 @@ if BOOT_MODE
 rsource "Kconfig.retention"
 # zephyr-keep-sorted-stop
 
+config BOOT_MODE_SHELL
+	bool "Boot mode shell"
+	depends on SHELL
+	help
+	  Adds the bootmode shell command to check, set and clear the boot mode.
+
 endif # BOOT_MODE
