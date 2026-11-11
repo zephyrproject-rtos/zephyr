@@ -1943,7 +1943,8 @@ static void rs_timeout(struct k_work *work)
 
 	k_mutex_unlock(&global_lock);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&expired_list, ipv6, rs_node) {
+	/* net_if_start_rs() puts the node back on active_rs_timers. */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&expired_list, ipv6, next, rs_node) {
 		struct net_if *iface = NULL;
 
 		/* Did not receive RA yet. */
