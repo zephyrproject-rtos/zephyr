@@ -69,6 +69,11 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* Multimedia
+
+  * Heimann HTPA 120x84 and 160x120 thermal array sensors can provide raw frames
+    containing pixel data and electrical offsets for image processing.
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
