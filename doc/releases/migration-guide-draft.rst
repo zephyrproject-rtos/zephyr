@@ -411,6 +411,19 @@ Bluetooth Host
   multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
   of the other connections.
 
+* Every ATT connection now has a buffer of its own for the responses it sends, so that a request
+  is answered while the application keeps all buffers of
+  :kconfig:option:`CONFIG_BT_ATT_TX_COUNT` in use. Those carry a response only in the cases
+  described below, and a value that was raised to leave room for responses can be lowered again.
+  The new buffers take the RAM of one ATT buffer for each connection, ``CONFIG_BT_MAX_CONN``.
+  A request that arrives while the previous response of its connection has not left the Host is
+  answered from :kconfig:option:`CONFIG_BT_ATT_TX_COUNT` if a buffer is free there; if none is,
+  the request is not processed and the Host disconnects the peer. That includes requests that a
+  client sends at the same time on several enhanced bearers of one connection, which ATT allows:
+  beyond the first, they are answered from :kconfig:option:`CONFIG_BT_ATT_TX_COUNT`. A server
+  that sends an indication before the Host's confirmation of the previous one has left the Host
+  is disconnected as well.
+
 Bluetooth Mesh
 ==============
 
