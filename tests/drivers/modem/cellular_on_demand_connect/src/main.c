@@ -1153,6 +1153,24 @@ ZTEST(cellular_on_demand_connect, test_15_suspend_reports_deregistration)
 	atomic_set(&emu_registered, 1);
 }
 
+/* A modem parked before dialing answers signal queries on DLCI1 */
+ZTEST(cellular_on_demand_connect, test_16_signal_query_while_parked)
+{
+	int16_t rssi;
+
+	park_in_await_dial();
+	quiesce_periodic();
+
+	zassert_ok(cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &rssi),
+		   "signal query failed while parked");
+	zassert_equal(-73, rssi, "wrong RSSI %d", rssi);
+	zassert_equal(MODEM_CELLULAR_STATE_AWAIT_DIAL, modem_fsm_state(),
+		      "signal query moved the modem out of AWAIT_DIAL, state is %d",
+		      modem_fsm_state());
+
+	zassert_ok(cellular_modem_resume_periodic_script(modem), "resume failed");
+}
+
 static void *suite_setup(void)
 {
 	common_setup();

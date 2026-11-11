@@ -2905,7 +2905,9 @@ static int modem_cellular_get_signal(const struct device *dev,
 	int ret = -ENOTSUP;
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 
-	if ((data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
+	/* States in which the chat is attached to DLCI1, the AT channel */
+	if ((data->state != MODEM_CELLULAR_STATE_AWAIT_DIAL) &&
+	    (data->state != MODEM_CELLULAR_STATE_AWAIT_REGISTERED) &&
 	    (data->state != MODEM_CELLULAR_STATE_REGISTERED)) {
 		return -ENODATA;
 	}
