@@ -1,0 +1,12 @@
+common:
+  depends_on: netif
+  min_ram: 16
+  tags:
+    - net
+    - ipv4
+    - acd
+tests:
+  net.ipv4_acd: {}
+  net.ipv4_acd.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
