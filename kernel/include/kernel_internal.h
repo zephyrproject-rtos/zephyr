@@ -198,6 +198,7 @@ void z_mem_manage_boot_finish(void);
 
 
 bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
+bool z_handle_obj_poll_events_all(sys_dlist_t *events, uint32_t state);
 
 #ifdef CONFIG_PM
 
