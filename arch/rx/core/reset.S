@@ -27,32 +27,6 @@ __start :
 /* set interrupt vector address (_rvectors_start is defined in vects.c) */
     mvtc    #_rvectors_start, intb
 
-/* load data section from ROM to RAM */
-
-    mov     #_image_ram_start,r2        /* src ROM address of data section in R2 */
-    mov     #__data_start,r1            /* dest start RAM address of data section in R1 */
-    mov     #__data_region_end,r3       /* end RAM address of data section in R3 */
-    sub    r1,r3                        /* size of data section in R3 (R3=R3-R1) */
-#ifdef __RX_ALLOW_STRING_INSNS__
-    smovf                   /* block copy R3 bytes from R2 to R1 */
-#else
-    cmp     #0, r3
-    beq     2f
-
-1:  mov.b   [r2+], r5
-    mov.b   r5, [r1+]
-    sub     #1, r3
-    bne     1b
-2:
-#endif
-
-/* bss initialisation: zero out bss */
-    mov    #0,r2          /* load R2 reg with zero */
-    mov    #_ebss, r3     /* store the end address of bss in R3 */
-    mov    #_bss, r1      /* store the start address of bss in R1 */
-    sub   r1,r3           /* size of bss section in R3 (R3=R3-R1) */
-    sstr.b
-
 #ifdef CONFIG_INIT_STACKS
 	/* initialize the irq stack (it is located in the bss section) */
 	mov    #0xaa,r2      			/* initialization value 0xaa */
@@ -69,7 +43,7 @@ __start :
 #endif
 
 /* start user program */
-    bsr    _z_cstart
+    bsr    _z_prep_c
     bsr    _exit
 
 #ifdef CPPAPP
