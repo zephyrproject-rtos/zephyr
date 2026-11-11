@@ -1993,7 +1993,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 		 * consuming the send queue: the queued data is dropped
 		 * only when the peer acknowledges it.
 		 */
-		ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, data_len);
+		ret = tcp_pkt_peek(pkt, &conn->send_data, (size_t)(seq - conn->seq), data_len);
 		if (ret < 0) {
 			tcp_pkt_unref(pkt);
 			ret = -ENOBUFS;
@@ -2297,13 +2297,59 @@ static void tcp_setup_retransmission(struct tcp *conn)
 				    K_MSEC(tcp_cur_rto_ms(conn)));
 }
 
+/* Largest payload of a segment, after the options */
+static int tcp_send_seg_max(struct tcp *conn)
+{
+	return (int)conn_mss(conn) - (int)tcp_send_options_len(conn);
+}
+
+/* Send len bytes of the send queue from seq on, which must be at or after
+ * conn->seq. Data from send_max on is new, data below it was sent before.
+ */
+static int tcp_send_segment(struct tcp *conn, uint32_t seq, size_t len)
+{
+	uint32_t end_seq = seq + (uint32_t)len;
+	bool new_data = net_tcp_seq_cmp(seq, conn->send_max) >= 0;
+	int ret;
+
+	ret = tcp_out_ext(conn, PSH | ACK, len, seq);
+	if (ret < 0) {
+		if (ret == -ENOBUFS) {
+			NET_ERR("[%p] packet allocation failed, len=%zu", conn, len);
+		}
+
+		return ret;
+	}
+
+	/* Time one segment of new data at a time. Data below send_max
+	 * was sent before, so it is never timed (Karn's algorithm).
+	 */
+	if (new_data) {
+		tcp_rtt_start(conn, end_seq);
+	}
+	if (net_tcp_seq_cmp(end_seq, conn->send_max) > 0) {
+		conn->send_max = end_seq;
+	}
+
+	if (new_data) {
+		net_stats_update_tcp_sent(conn->iface, len);
+		net_stats_update_tcp_seg_sent(conn->iface);
+	} else {
+		net_stats_update_tcp_resent(conn->iface, len);
+		net_stats_update_tcp_seg_rexmit(conn->iface);
+	}
+
+	return 0;
+}
+
 static int tcp_send_data(struct tcp *conn)
 {
+	int seg_max = tcp_send_seg_max(conn);
 	int ret = 0;
-	uint32_t seq;
 	int len;
 
-	len = MIN(tcp_unsent_len(conn), conn_mss(conn) - tcp_send_options_len(conn));
+	len = tcp_unsent_len(conn);
+	len = MIN(len, seg_max);
 	if (len < 0) {
 		ret = len;
 		goto out;
@@ -2314,32 +2360,9 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
-	seq = conn->seq + (uint32_t)conn->unacked_len;
-	ret = tcp_out_ext(conn, PSH | ACK, (size_t)len, seq);
+	ret = tcp_send_segment(conn, conn->seq + (uint32_t)conn->unacked_len, (size_t)len);
 	if (ret == 0) {
-		uint32_t end_seq = seq + (uint32_t)len;
-
 		conn->unacked_len += len;
-
-		/* Time one segment of new data at a time. Data below send_max
-		 * was sent before, so it is never timed (Karn's algorithm).
-		 */
-		if (net_tcp_seq_cmp(seq, conn->send_max) >= 0) {
-			tcp_rtt_start(conn, end_seq);
-		}
-		if (net_tcp_seq_cmp(end_seq, conn->send_max) > 0) {
-			conn->send_max = end_seq;
-		}
-
-		if (conn->data_mode == TCP_DATA_MODE_RESEND) {
-			net_stats_update_tcp_resent(conn->iface, len);
-			net_stats_update_tcp_seg_rexmit(conn->iface);
-		} else {
-			net_stats_update_tcp_sent(conn->iface, len);
-			net_stats_update_tcp_seg_sent(conn->iface);
-		}
-	} else if (ret == -ENOBUFS) {
-		NET_ERR("[%p] packet allocation failed, len=%d", conn, len);
 	}
 
 	conn_send_data_dump(conn);
