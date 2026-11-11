@@ -23,3 +23,9 @@ configdefault SOC_PREP_HOOK
 
 configdefault SPI_SAM_DMA
 	default y
+
+configdefault FPU
+	default y
+
+configdefault FPU_SHARING
+	default y
