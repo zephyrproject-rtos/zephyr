@@ -6474,6 +6474,7 @@ TI K3 Platforms:
     - natto1784
     - Kronosblaster
     - soumya-TI
+    - Sunil-Hegde
   files:
     - boards/ti/*am2*/
     - boards/ti/*am6*/
@@ -6505,6 +6506,7 @@ TI MSPM Platforms:
     - Girinandha-M
     - santhosh-c-c
     - soumya-TI
+    - Sunil-Hegde
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
