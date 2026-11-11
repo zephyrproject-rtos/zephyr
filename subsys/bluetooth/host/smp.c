@@ -484,6 +484,7 @@ static enum bt_security_err security_err_get(uint8_t smp_err)
 	case BT_SMP_ERR_REPEATED_ATTEMPTS:
 	case BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS:
 	case BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED:
+	case BT_SMP_ERR_BUSY:
 		return BT_SECURITY_ERR_PAIR_NOT_ALLOWED;
 	case BT_SMP_ERR_INVALID_PARAMS:
 		return BT_SECURITY_ERR_INVALID_PARAM;
@@ -570,6 +571,7 @@ const char *bt_smp_err_to_str(uint8_t smp_err)
 		SMP_ERR(BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS),
 		SMP_ERR(BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED),
 		SMP_ERR(BT_SMP_ERR_KEY_REJECTED),
+		SMP_ERR(BT_SMP_ERR_BUSY),
 	};
 
 	if (smp_err < ARRAY_SIZE(mapping_table) && mapping_table[smp_err]) {
