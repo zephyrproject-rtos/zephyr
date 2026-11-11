@@ -879,6 +879,15 @@ static K_SEM_DEFINE(peer_cis_connected_sem, 0, 1);
 static K_SEM_DEFINE(peer_cis_disconnected_sem, 0, 1);
 static uint8_t peer_cis_reason;
 
+/* How long a sent callback keeps the TX notification work running, which is ample time
+ * for bt_disable() to get to the CIS meanwhile
+ */
+#define SENT_CALLBACK_TIME K_MSEC(100)
+
+static bool should_block_in_peer_sent;
+static unsigned int peer_sent_count;
+static unsigned int peer_sent_count_at_disconnected;
+
 static void peer_cis_connected(struct bt_iso_chan *chan)
 {
 	ARG_UNUSED(chan);
@@ -891,12 +900,27 @@ static void peer_cis_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	ARG_UNUSED(chan);
 
 	peer_cis_reason = reason;
+	peer_sent_count_at_disconnected = peer_sent_count;
 	k_sem_give(&peer_cis_disconnected_sem);
+}
+
+static void peer_cis_sent(struct bt_iso_chan *chan)
+{
+	ARG_UNUSED(chan);
+
+	if (should_block_in_peer_sent) {
+		should_block_in_peer_sent = false;
+		k_sem_give(&in_sent_sem);
+		(void)k_sleep(SENT_CALLBACK_TIME);
+	}
+
+	peer_sent_count++;
 }
 
 static struct bt_iso_chan_ops peer_cis_ops = {
 	.connected = peer_cis_connected,
 	.disconnected = peer_cis_disconnected,
+	.sent = peer_cis_sent,
 };
 
 static struct bt_iso_chan_io_qos peer_cis_tx_qos;
@@ -940,6 +964,8 @@ static void cis_accept_before(void *fixture)
 	k_sem_reset(&peer_cis_disconnected_sem);
 	k_sem_reset(&workq_held_sem);
 	k_sem_reset(&workq_release_sem);
+	k_sem_reset(&in_sent_sem);
+	peer_sent_count = 0U;
 	zassert_ok(bt_iso_server_register(&peer_cis_server), "Registering the server failed");
 }
 
@@ -947,6 +973,7 @@ static void cis_accept_after(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	should_block_in_peer_sent = false;
 	zassert_ok(bt_iso_server_unregister(&peer_cis_server), "Unregistering the server failed");
 }
 
@@ -970,6 +997,27 @@ static void establish_peer_cis(void)
 
 	cis_established_evt(PEER_CIS_HANDLE);
 	zassert_ok(k_sem_take(&peer_cis_connected_sem, EVENT_TIMEOUT), "No CIS from the peer");
+}
+
+/* The first fragment of an SDU from the peer */
+static void peer_sdu_start_fragment(void)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_iso_sdu_hdr *sdu_hdr;
+	struct bt_hci_iso_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+	zassert_not_null(buf, "No ISO RX buffer");
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(bt_iso_handle_pack(PEER_CIS_HANDLE, BT_ISO_START, 0U));
+	hdr->len = sys_cpu_to_le16(sizeof(*sdu_hdr) + SHORT_SDU_LEN);
+	sdu_hdr = net_buf_add(buf, sizeof(*sdu_hdr));
+	sdu_hdr->sn = 0U;
+	sdu_hdr->slen = sys_cpu_to_le16(bt_iso_pkt_len_pack(LONG_SDU_LEN, BT_ISO_DATA_VALID));
+	(void)memset(net_buf_add(buf, SHORT_SDU_LEN), 0xAA, SHORT_SDU_LEN);
+	bt_hci_recv(dev, buf);
 }
 
 /* The application already has the channel when the controller refuses the CIS.
@@ -1074,4 +1122,126 @@ static ZTEST(iso_cis_accept, test_connect_after_refused)
 
 	connect_cis();
 	disconnect_cis();
+}
+
+/* Nothing more is reported about an accepted CIS once bt_disable() has reset the
+ * controller. The channel gets the disconnected callback, and the connection object
+ * releases the ACL connection and is free for the next CIS.
+ */
+static ZTEST(iso_cis_accept, test_disable_before_established)
+{
+	accept_cis_hci_status = BT_HCI_ERR_SUCCESS;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&accept_cis_sem, EVENT_TIMEOUT), "CIS request not accepted");
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the CIS");
+	zassert_equal(peer_cis_reason, BT_HCI_ERR_UNSPECIFIED, "Reason 0x%02x", peer_cis_reason);
+	zassert_is_null(peer_cis_chan.iso, "Channel still attached");
+	zassert_equal(peer_cis_chan.state, BT_ISO_STATE_DISCONNECTED, "Channel in state %u",
+		      peer_cis_chan.state);
+
+	start();
+
+	accept_cis_hci_status = BT_HCI_ERR_CMD_DISALLOWED;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No connection object for the next CIS");
+	zassert_equal(k_sem_count_get(&peer_cis_connected_sem), 0U,
+		      "A CIS that was not established reported as connected");
+}
+
+/* The same with a reference kept to the object, which the connection cleanup of
+ * bt_disable() then finds as well.
+ */
+static ZTEST(iso_cis_accept, test_disable_with_reference_kept)
+{
+	struct bt_conn *kept;
+
+	accept_cis_hci_status = BT_HCI_ERR_SUCCESS;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&accept_cis_sem, EVENT_TIMEOUT), "CIS request not accepted");
+	kept = bt_conn_ref(peer_cis_chan.iso);
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the CIS");
+	zassert_is_null(peer_cis_chan.iso, "Channel still attached");
+
+	start();
+
+	zassert_equal(k_sem_count_get(&peer_cis_disconnected_sem), 0U,
+		      "Disconnected callback called again");
+	bt_conn_unref(kept);
+}
+
+/* A connected CIS from the peer is taken down by bt_disable() as well, with the same
+ * reason as a central one.
+ */
+static ZTEST(iso_cis_accept, test_disable_with_peer_cis_connected)
+{
+	establish_peer_cis();
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the CIS");
+	zassert_equal(peer_cis_reason, BT_HCI_ERR_UNSPECIFIED, "Reason 0x%02x", peer_cis_reason);
+	zassert_is_null(peer_cis_chan.iso, "Channel still attached");
+
+	start();
+}
+
+/* bt_disable() lets a sent callback that is still running finish before the
+ * disconnected callback, and before the connection object is released.
+ */
+static ZTEST(iso_cis_accept, test_disable_with_sent_callback_running)
+{
+	establish_peer_cis();
+	send_sdu(&peer_cis_chan, SHORT_SDU_LEN);
+	expect_iso_packets(1U);
+
+	should_block_in_peer_sent = true;
+	num_completed_evt(PEER_CIS_HANDLE);
+	zassert_ok(k_sem_take(&in_sent_sem, EVENT_TIMEOUT), "SDU not reported as sent");
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the CIS");
+	zassert_equal(peer_sent_count_at_disconnected, 1U,
+		      "Disconnected callback called while the sent callback was running");
+
+	start();
+}
+
+/* An SDU from the peer that bt_disable() cuts short leaves no ISO RX buffer behind */
+static ZTEST(iso_cis_accept, test_disable_with_partial_sdu_from_peer)
+{
+	struct net_buf *bufs[CONFIG_BT_ISO_RX_BUF_COUNT];
+
+	establish_peer_cis();
+	peer_sdu_start_fragment();
+	/* The CIS Established event is handled after the fragment */
+	connect_cis();
+
+	stop();
+
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the CIS");
+
+	ARRAY_FOR_EACH(bufs, i) {
+		bufs[i] = bt_buf_get_rx(BT_BUF_ISO_IN, K_NO_WAIT);
+		zassert_not_null(bufs[i], "%zu ISO RX buffers are still in use",
+				 ARRAY_SIZE(bufs) - i);
+	}
+
+	ARRAY_FOR_EACH(bufs, i) {
+		net_buf_unref(bufs[i]);
+	}
+
+	start();
 }
