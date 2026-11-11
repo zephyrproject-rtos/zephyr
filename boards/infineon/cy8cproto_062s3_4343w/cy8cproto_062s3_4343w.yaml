@@ -18,4 +18,5 @@ supported:
   - i2c
   - watchdog
   - pm
+  - dma
 vendor: infineon
