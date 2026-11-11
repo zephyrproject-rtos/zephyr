@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&extflash_ns {
+	reg = <0x10000000 DT_SIZE_M(8)>;
+};
+
+&extflash {
+	reg = <0x14000000 DT_SIZE_M(8)>;
+};
+
+&flash0 {
+	reg = <0x14000000 0x6fb000>, <0x105000 0x6fb000>;
+
+	partitions {
+		/delete-node/ partition@0;
+
+		vendor_image_partition: partition@0 {
+			label = "vendor-image";
+			reg = <0x0 0x6fb000>;
+		};
+	};
+};

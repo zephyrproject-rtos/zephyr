@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CC35XX_RTC_TIMER
+	bool "TI SimpleLink CC35XX RTC system clock timer"
+	default n
+	depends on HAS_CC35XX_SDK
+	select TICKLESS_CAPABLE
+	help
+	  This module provides the RTC as "system clock driver" interface
+	  for the TI SimpleLink CC35XX devices. The RTC runs at 1us
+	  resolution (1 MHz effective rate).

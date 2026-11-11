@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_TI_CC35XX
+	bool "TI CC35XX pinctrl driver"
+	default y
+	depends on DT_HAS_TI_CC35XX_PINCTRL_ENABLED
+	help
+	  Enable the TI CC35XX pinctrl driver

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+# Texas Instruments SimpleLink Family
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CC35XXE
+
+rsource "Kconfig.defconfig.cc35*e"
+
+endif # SOC_SERIES_CC35XXE

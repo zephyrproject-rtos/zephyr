@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ti-cc35xx-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <P17_UART0_TX>, <P18_UART0_RX>;
+		};
+	};
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <P5_UART1_TX>, <P6_UART1_RX>;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group1 {
+			pinmux = <P16_UART2_TX>, <P19_UART2_RX>;
+		};
+	};
+
+};

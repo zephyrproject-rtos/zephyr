@@ -1,0 +1,6 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+KEEP(*(.TI.ramfunc))
