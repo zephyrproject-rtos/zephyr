@@ -1,0 +1,21 @@
+common:
+  tags:
+    - drivers.virtualization
+    - ivshmem
+  platform_allow:
+    - qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+tests:
+  drivers.virtualization.ivshmem.flat: {}
+  drivers.virtualization.ivshmem.flat.no_irq:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=no_irq.overlay
+  drivers.virtualization.ivshmem.flat.no_doorbell:
+    extra_configs:
+      - CONFIG_IVSHMEM_DOORBELL=n
+  drivers.virtualization.ivshmem.flat.shell:
+    build_only: true
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_IVSHMEM_SHELL=y

@@ -1,0 +1,12 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flat0 {
+	/delete-property/ interrupts;
+};
+
+&flat1 {
+	/delete-property/ interrupts;
+};
