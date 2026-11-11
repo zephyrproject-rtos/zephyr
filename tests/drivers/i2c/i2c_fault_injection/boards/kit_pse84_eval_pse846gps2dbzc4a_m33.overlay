@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * KIT_PSE84_EVAL for the I2C fault injection suite.  The controller under test
+ * is SCB0 (i2c0) on P8[0] SCL and P8[1] SDA, at J3.10 and J3.9 (kit user
+ * guide 002-39007 Rev. *B, Table 2).  No wiring is needed.
+ */
+
+/ {
+	aliases {
+		i2c-dut = &i2c0;
+	};
+};

@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "I2C fault injection test"
+
+config I2C_FAULT_TEST_ABSENT_ADDR
+	hex "7-bit address that nothing on the bus answers"
+	default 0x01
+	range 0x01 0x77
+	help
+	  Address that the address-phase tests send to.  The default, 0x01,
+	  is the CBUS address.  The I2C-bus specification does not allow
+	  I2C-bus compatible devices to respond to it, though a system may
+	  assign it to a target when CBUS is not used (UM10204 Rev. 7.0,
+	  Table 4 and section 3.1.12).
+
+	  The suite checks with one zero-length write that the address does
+	  not answer before using it.  If it answers, every test skips and
+	  the log names the address.  Set another address where a device on
+	  the bus uses 0x01.
+
+	  This is not a devicetree property, because devicetree describes
+	  what is present on a bus and this is an address where nothing is.
+
+config I2C_FAULT_TEST_PRESENT_ADDR
+	hex "7-bit address used for the known-good transfers"
+	default 0x00
+	range 0x00 0x77
+	help
+	  Address that the suite sends to when it needs to show that the bus
+	  still works.  The default, 0x00, means the first enabled devicetree
+	  child of the controller under test that answers a zero-length
+	  write.  Set a value where the device that answers is not in
+	  devicetree.
+
+	  Only the zero-length write is sent to this address, so the device
+	  there is not written to.  If nothing answers, the tests that need a
+	  known-good address skip.
+
+config I2C_FAULT_TEST_ABSENT_ADDR_10BIT
+	hex "10-bit address that nothing on the bus answers"
+	default 0x2AA
+	range 0x000 0x3FF
+	help
+	  10-bit address used by the 10-bit addressing test.  The test checks
+	  with one zero-length 10-bit write that the address does not answer
+	  before sending data, and skips if it does.  Set another address
+	  where a device on the bus uses it.
+
+config I2C_FAULT_TEST_RELAXED_ERRNO
+	bool "Accept any negative errno from a failed transfer"
+	help
+	  The I2C API documents -EIO for a failed transfer and -ETIMEDOUT for
+	  one that reached the transfer timeout, so by default this suite
+	  accepts only those.  Enable this to accept any negative value
+	  instead, which is useful when bringing up a driver that is not yet
+	  conformant.  In both modes each test logs the value the driver
+	  returned.
+
+config I2C_FAULT_TEST_UNSAFE_API_MISUSE
+	bool "Run the NULL-buffer condition without userspace"
+	help
+	  Runs test_misuse_null_buffer, which passes a NULL buffer with a
+	  non-zero length, in a build without CONFIG_USERSPACE.  Without
+	  userspace, nothing validates the buffer before the driver receives
+	  it.  The driver may dereference the NULL pointer or pass it to a DMA
+	  engine, and either can fault the CPU and end the run.  Off by
+	  default for that reason.
+
+config I2C_FAULT_TEST_TIMEOUT_MS
+	int "Time in milliseconds the test waits for a faulted transfer"
+	default 2000
+	range 100 30000
+	help
+	  The test wait limit: how long the test thread waits for a faulted
+	  transfer, which runs on a worker thread.  A transfer still running
+	  at the limit fails the condition where the driver has a transfer
+	  timeout shorter than this limit, and skips it elsewhere.  Without
+	  the limit, a driver that never returns would show up only as a
+	  twister timeout, which looks the same as a build or flash problem.
+
+config I2C_FAULT_TEST_WORKER_STACK_SIZE
+	int "Stack size in bytes for the faulted-transfer worker thread"
+	default 2048
+	range 512 8192
+	help
+	  Stack for the thread that faulted transfers run on.  It calls
+	  nothing deeper than the I2C driver.
+
+config I2C_FAULT_TEST_PAYLOAD_LEN
+	int "Bytes transferred by the multi-byte conditions"
+	default 8
+	range 4 64
+	help
+	  Length of the data in the multi-byte transfers: the write, read and
+	  write-read to the absent address, the read in the alternating-NACK
+	  test, and the NULL-buffer write.  A refused transfer then leaves the
+	  driver more than one queued byte to discard.
+
+config I2C_FAULT_TEST_REPEAT_COUNT
+	int "Attempts made by the repeated-fault conditions"
+	default 5
+	range 2 100
+	help
+	  Number of times a fault is repeated when checking that a driver
+	  does not latch state from the first failure.
+
+source "Kconfig.zephyr"

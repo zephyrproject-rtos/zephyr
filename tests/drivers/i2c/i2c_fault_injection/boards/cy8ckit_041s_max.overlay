@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * CY8CKIT-041S-MAX for the I2C fault injection suite.
+ *
+ * Controller under test: SCB0 on P1[0] SCL and P1[1] SDA, the Arduino I2C
+ * pins.  Built with SHIELD=cy15framkit_001 and the shield fitted, its
+ * FM24W256 is the known-good device.
+ */
+
+/ {
+	aliases {
+		i2c-dut = &i2c0;
+	};
+};
