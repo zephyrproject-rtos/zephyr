@@ -514,6 +514,16 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			chan->ops->send_failed(chan, -ESHUTDOWN);
 		}
 	}
+
+	/* Report the SDUs the controller has acknowledged, and let a report in progress
+	 * finish. After a Disconnection Complete that has been done already, but a BIS gets
+	 * none, and neither does a CIS that bt_iso_reset() takes down. None can be added
+	 * once the state is set above.
+	 */
+	if (!sys_slist_is_empty(&chan->iso->tx_complete) ||
+	    k_work_busy_get(&chan->iso->tx_complete_work) != 0) {
+		bt_conn_tx_notify(chan->iso, true);
+	}
 #endif /* CONFIG_BT_ISO_TX */
 
 	/* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
@@ -559,15 +569,6 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			}
 #endif /* CONFIG_BT_ISO_CENTRAL */
 		}
-	} else if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
-		   conn_type == BT_ISO_CHAN_TYPE_BROADCASTER) {
-		/* BIS do not get a HCI Disconnected event and will not handle cleanup of pending TX
-		 * complete in the same way as ACL and CIS do. Call bt_conn_tx_notify directly here
-		 * to flush the chan->iso->tx_complete for each disconnected BIS
-		 */
-		bt_conn_tx_notify(chan->iso, true);
-	} else {
-		/* No special handling for BT_ISO_CHAN_TYPE_SYNC_RECEIVER */
 	}
 }
 
