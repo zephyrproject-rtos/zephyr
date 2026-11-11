@@ -41,4 +41,17 @@ endif # DISK_DRIVERS
 configdefault ETH_DRIVER
 	default y if DT_HAS_NXP_ENET_ENABLED
 
+# One address slot per interface: ENET, ENET_1G and, when enabled, loopback.
+# VLAN builds keep the core default, which sizes this from NET_VLAN_COUNT.
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 3 if $(dt_nodelabel_enabled,enet) && $(dt_nodelabel_enabled,enet1g) && \
+		NET_LOOPBACK && !NET_VLAN
+	default 2 if $(dt_nodelabel_enabled,enet) && $(dt_nodelabel_enabled,enet1g) && \
+		!NET_VLAN
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 3 if $(dt_nodelabel_enabled,enet) && $(dt_nodelabel_enabled,enet1g) && \
+		NET_LOOPBACK && !NET_VLAN
+	default 2 if $(dt_nodelabel_enabled,enet) && $(dt_nodelabel_enabled,enet1g) && \
+		!NET_VLAN
 endif

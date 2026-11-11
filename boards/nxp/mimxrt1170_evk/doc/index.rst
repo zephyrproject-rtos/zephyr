@@ -405,9 +405,9 @@ should see the following message in the terminal:
 ENET1G Driver
 =============
 
-Current default of ethernet driver is to use 100M Ethernet instance ENET.
-To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
+Both the 100M Ethernet instance ENET and the 1G Ethernet instance ENET1G are
+enabled by default. To use only ENET1G, include the overlay to west build with
+the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay``.
 
 .. include:: ../../common/board-footer.rst.inc
 
