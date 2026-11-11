@@ -1471,6 +1471,179 @@ ZTEST(counter_basic, test_set_get_calibration)
 }
 #endif /* CONFIG_COUNTER_CALIBRATION */
 
+/* Test checks that a relative alarm armed past the next wrap does not expire on
+ * the compare value left by a previous alarm. Some counters apply a new compare
+ * value only at the next wrap, until then the previous value stays active.
+ * Positions are distances to the next wrap, so both counting directions work.
+ */
+#define REARM_TOP_TICKS       1000U
+#define REARM_PREV_TICKS      50U
+#define REARM_PREV_FROM       400U
+#define REARM_PREV_TO         600U
+#define REARM_NEW_FROM        90U
+#define REARM_NEW_TO          120U
+#define REARM_REL_TICKS       300U
+#define REARM_MIN_WINDOW_US   100U
+#define REARM_MAX_PERIOD_US   2000000U
+
+BUILD_ASSERT(REARM_PREV_FROM > REARM_PREV_TICKS && REARM_PREV_TO < REARM_TOP_TICKS,
+	     "previous alarm must be armed ahead of its compare value");
+BUILD_ASSERT(REARM_NEW_FROM > REARM_PREV_TICKS,
+	     "previous compare value must still be ahead when the new alarm is armed");
+BUILD_ASSERT(REARM_REL_TICKS > REARM_NEW_TO && REARM_REL_TICKS < REARM_TOP_TICKS,
+	     "new alarm target must lie past the next wrap");
+
+struct rearm_ctx {
+	atomic_t fired;
+	volatile uint32_t fired_cnt;
+};
+
+static void rearm_alarm_handler(const struct device *dev, uint8_t chan_id, uint32_t counter,
+				void *user_data)
+{
+	struct rearm_ctx *ctx = user_data;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(chan_id);
+
+	ctx->fired_cnt = counter;
+	atomic_inc(&ctx->fired);
+}
+
+/* Skip counters that cannot use the fixed positions above: top value below
+ * REARM_TOP_TICKS, arming window too short to hit by polling, or period too
+ * long to wait for.
+ */
+static bool rearm_capable(const struct device *dev)
+{
+	uint64_t window_us;
+	uint64_t period_us;
+
+	if (counter_get_frequency(dev) == 0U || counter_get_max_top_value(dev) < REARM_TOP_TICKS) {
+		return false;
+	}
+
+	window_us = counter_ticks_to_us(dev, REARM_NEW_TO - REARM_NEW_FROM);
+	period_us = counter_ticks_to_us(dev, REARM_TOP_TICKS + 1U);
+	if (window_us < REARM_MIN_WINDOW_US || period_us > REARM_MAX_PERIOD_US) {
+		return false;
+	}
+
+	return alarm_capable(dev) && absolute_alarm_capable(dev) && set_top_value_capable(dev);
+}
+
+/* Ticks from counter value cnt to the next wrap */
+static uint32_t rearm_to_wrap(const struct device *dev, uint32_t cnt)
+{
+	return counter_is_counting_up(dev) ? (REARM_TOP_TICKS - cnt) : cnt;
+}
+
+/* Busy-wait until the counter is from..to ticks before the next wrap */
+static bool rearm_wait_window(const struct device *dev, uint32_t from, uint32_t to,
+			      uint32_t timeout_us, uint32_t *now)
+{
+	for (uint32_t waited_us = 0U; waited_us < timeout_us; waited_us += 2U) {
+		uint32_t to_wrap;
+
+		zassert_ok(counter_get_value(dev, now), "%s: counter read failed", dev->name);
+		to_wrap = rearm_to_wrap(dev, *now);
+		if ((to_wrap >= from) && (to_wrap <= to)) {
+			return true;
+		}
+		k_busy_wait(2);
+	}
+
+	return false;
+}
+
+static bool rearm_wait_fired(struct rearm_ctx *ctx, uint32_t timeout_us)
+{
+	for (uint32_t waited_us = 0U; waited_us < timeout_us; waited_us += 5U) {
+		if (atomic_get(&ctx->fired) != 0) {
+			return true;
+		}
+		k_busy_wait(5);
+	}
+
+	return false;
+}
+
+static void test_alarm_rearm_across_wrap_instance(const struct device *dev)
+{
+	/* Static: an alarm left armed by a failed assertion may still fire later */
+	static struct rearm_ctx ctx;
+	const uint32_t period = REARM_TOP_TICKS + 1U;
+	const uint32_t period_us = (uint32_t)counter_ticks_to_us(dev, period);
+	const uint32_t tolerance = MAX(counter_us_to_ticks(dev, PROCESSING_LIMIT_US), 2U);
+	const bool up = counter_is_counting_up(dev);
+	struct counter_top_cfg top_cfg = {
+		.ticks = REARM_TOP_TICKS,
+		.callback = NULL,
+		.user_data = NULL,
+		.flags = 0,
+	};
+	struct counter_alarm_cfg cfg = {
+		.callback = rearm_alarm_handler,
+		.user_data = &ctx,
+	};
+	uint32_t now;
+	uint32_t target;
+	uint32_t late_by;
+	int err;
+
+	err = counter_set_top_value(dev, &top_cfg);
+	zassert_equal(0, err, "%s: Failed to set top value (err: %d)", dev->name, err);
+
+	err = counter_start(dev);
+	zassert_equal(0, err, "%s: Counter failed to start", dev->name);
+
+	for (uint8_t chan = 0U; chan < counter_get_num_of_channels(dev); chan++) {
+		/* 1. Leave the compare value of an expired alarm programmed */
+		zassert_true(rearm_wait_window(dev, REARM_PREV_FROM, REARM_PREV_TO,
+					       2U * period_us, &now),
+			     "%s: counter did not reach the previous alarm window", dev->name);
+		atomic_set(&ctx.fired, 0);
+		cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
+		cfg.ticks = up ? (REARM_TOP_TICKS - REARM_PREV_TICKS) : REARM_PREV_TICKS;
+		err = counter_set_channel_alarm(dev, chan, &cfg);
+		zassert_equal(0, err, "%s: ch %u: previous alarm failed (err: %d)", dev->name,
+			      chan, err);
+		zassert_true(rearm_wait_fired(&ctx, 2U * period_us),
+			     "%s: ch %u: previous alarm did not fire", dev->name, chan);
+
+		/* 2. Arm an alarm past the next wrap while the previous compare value
+		 * is still ahead of the counter
+		 */
+		zassert_true(rearm_wait_window(dev, REARM_NEW_FROM, REARM_NEW_TO,
+					       2U * period_us, &now),
+			     "%s: counter did not reach the arming window", dev->name);
+		atomic_set(&ctx.fired, 0);
+		cfg.flags = 0;
+		cfg.ticks = REARM_REL_TICKS;
+		target = up ? ((now + REARM_REL_TICKS) % period)
+			    : ((now + period - REARM_REL_TICKS) % period);
+		err = counter_set_channel_alarm(dev, chan, &cfg);
+		zassert_equal(0, err, "%s: ch %u: new alarm failed (err: %d)", dev->name, chan,
+			      err);
+		zassert_true(rearm_wait_fired(&ctx, 2U * period_us),
+			     "%s: ch %u: new alarm did not fire", dev->name, chan);
+
+		/* 3. Ticks counted from the target to the reported value. An alarm
+		 * expired early by the previous compare value wraps to a large number.
+		 */
+		late_by = up ? ((ctx.fired_cnt + period - target) % period)
+			     : ((target + period - ctx.fired_cnt) % period);
+		zassert_true(late_by <= tolerance,
+			     "%s: ch %u: alarm set at %u for %u ticks (target %u) fired at %u",
+			     dev->name, chan, now, REARM_REL_TICKS, target, ctx.fired_cnt);
+	}
+}
+
+ZTEST(counter_basic, test_alarm_rearm_across_wrap)
+{
+	test_all_instances(test_alarm_rearm_across_wrap_instance, rearm_capable);
+}
+
 static void *counter_setup(void)
 {
 	int i;
