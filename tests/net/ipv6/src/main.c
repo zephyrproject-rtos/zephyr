@@ -2090,6 +2090,51 @@ ZTEST(net_ipv6, test_rs_after_carrier_toggle)
 	verify_rs_on_iface_event(test_iface_carrier_off_on);
 }
 
+static bool rs_retry_tx(struct net_pkt *pkt, void *user_data)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(user_data);
+
+	/* No router answers the solicitations. */
+	return true;
+}
+
+/* Router Solicitations started on two interfaces at the same time expire in
+ * the same timer run, and both interfaces must solicit again.
+ */
+ZTEST(net_ipv6, test_rs_retry_on_every_expired_iface)
+{
+	static struct test_tx_handler handler = {
+		.fn = rs_retry_tx,
+	};
+	struct net_if *ifaces[] = {
+		TEST_NET_IF,
+		net_if_lookup_by_dev(DEVICE_GET(eth_ipv6_net_dummy)),
+	};
+
+	tx_handler = &handler;
+
+	ARRAY_FOR_EACH(ifaces, i) {
+		zassert_not_null(ifaces[i], "Interface %zu not found", i);
+		zassert_not_null(ifaces[i]->config.ip.ipv6, "Interface %zu has no IPv6", i);
+
+		net_if_stop_rs(ifaces[i]);
+		ifaces[i]->config.ip.ipv6->rs_count = 0U;
+	}
+
+	ARRAY_FOR_EACH(ifaces, i) {
+		net_if_start_rs(ifaces[i]);
+	}
+
+	k_sleep(K_MSEC(CONFIG_NET_IPV6_RS_TIMEOUT * MSEC_PER_SEC + 100));
+
+	ARRAY_FOR_EACH(ifaces, i) {
+		zexpect_equal(ifaces[i]->config.ip.ipv6->rs_count, 1U,
+			      "Interface %zu did not solicit again", i);
+		net_if_stop_rs(ifaces[i]);
+	}
+}
+
 /**
  * @brief IPv6 parse Hop-By-Hop Option
  */
