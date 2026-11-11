@@ -68,3 +68,17 @@ i2c11: &scb11 {
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+};
+
+i2c10: &scb10 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&peri0_group1_16bit_1>;
+	clock-frequency = <100000>;
+	pinctrl-0 = <&p0_1_scb10_i2c_scl &p0_0_scb10_i2c_sda>;
+	pinctrl-names = "default";
+};
