@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# Board Kconfig for the BK7258 EVB
+#
+# Single responsibility: select the SoC, nothing else. Per the Zephyr HWMv2
+# convention a board Kconfig must not select anything outside the board/SoC
+# tree; that is the job of _defconfig and Kconfig.defconfig.
+
+config BOARD_BK7258_EVB
+	select SOC_BK7258
