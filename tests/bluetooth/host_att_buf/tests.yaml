@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+
+tests:
+  bluetooth.host_att_buf:
+    {}
+  bluetooth.host_att_buf.no_acl_flow_control:
+    extra_configs:
+      - CONFIG_BT_HCI_ACL_FLOW_CONTROL=n
+  bluetooth.host_att_buf.one_att_buf:
+    extra_configs:
+      - CONFIG_BT_ATT_TX_COUNT=1
