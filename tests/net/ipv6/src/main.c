@@ -1774,6 +1774,37 @@ ZTEST(net_ipv6, test_prefix_timeout)
 			net_sprint_ipv6_addr(&addr), len);
 }
 
+/* A prefix that expires after IPv6 was turned off on the interface must not
+ * leave the interface locked.
+ */
+ZTEST(net_ipv6, test_prefix_timeout_ipv6_off)
+{
+	struct net_if_ipv6_prefix *prefix;
+	struct net_in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 44, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_if *iface = TEST_NET_IF;
+	uint32_t lifetime = 1U;
+	int len = 64;
+	int ret;
+
+	prefix = net_if_ipv6_prefix_add(iface, &addr, len, lifetime);
+	zassert_not_null(prefix, "Cannot get prefix");
+
+	net_if_ipv6_prefix_set_lf(prefix, false);
+	net_if_ipv6_prefix_set_timer(prefix, lifetime);
+
+	net_if_flag_clear(iface, NET_IF_IPV6);
+	k_sleep(K_SECONDS(lifetime * 2U));
+	net_if_flag_set(iface, NET_IF_IPV6);
+
+	ret = k_mutex_lock(&iface->lock, K_MSEC(100));
+	zassert_ok(ret, "Interface left locked after the prefix expired");
+	k_mutex_unlock(&iface->lock);
+
+	zexpect_is_null(net_if_ipv6_prefix_lookup(iface, &addr, len),
+			"Prefix %s/%d should have expired", net_sprint_ipv6_addr(&addr), len);
+}
+
 ZTEST(net_ipv6, test_prefix_timeout_long)
 {
 	struct net_if_ipv6_prefix *ifprefix;
