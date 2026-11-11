@@ -766,6 +766,43 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 #endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_CLASSIC)
+static void br_conn_link_key_drop(struct bt_conn *conn, void *data)
+{
+	if (conn->br.link_key == data) {
+		conn->br.link_key = NULL;
+	}
+}
+
+/* A BR/EDR connection to the same device can still reference the link key, and
+ * the pool slot is reused for another device once cleared.
+ * bt_keys_link_key_clear() can block, but empties the slot as its last step:
+ * every reference that exists after it, also one taken while it blocked, points
+ * to an empty slot.
+ */
+static void smp_link_key_clear(struct bt_keys_link_key *link_key)
+{
+	bt_keys_link_key_clear(link_key);
+	bt_conn_foreach(BT_CONN_TYPE_BR, br_conn_link_key_drop, link_key);
+}
+
+static void le_conn_keys_drop(struct bt_conn *conn, void *data)
+{
+	if (conn->le.keys == data) {
+		conn->le.keys = NULL;
+	}
+}
+
+/* An LE connection to the same device can still reference the keys, and the
+ * pool slot is reused for another device once cleared. bt_keys_clear() can
+ * block, but empties the slot as its last step: every reference that exists
+ * after it, also one taken while it blocked, points to an empty slot.
+ */
+static void smp_br_keys_clear(struct bt_keys *keys)
+{
+	bt_keys_clear(keys);
+	bt_conn_foreach(BT_CONN_TYPE_LE, le_conn_keys_drop, keys);
+}
+
 static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
 {
 	struct bt_conn *conn;
@@ -831,7 +868,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	/* Remove the bonding information */
 	link_key = bt_keys_find_link_key(&conn->le.dst.a);
 	if (link_key != NULL) {
-		bt_keys_link_key_clear(link_key);
+		smp_link_key_clear(link_key);
 	}
 
 	/*
@@ -851,7 +888,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 					       0x00, 0x00, 0x00, 0x00 };
 
 		if (bt_crypto_h7(salt, conn->le.keys->ltk.val, ilk)) {
-			bt_keys_link_key_clear(link_key);
+			smp_link_key_clear(link_key);
 			return;
 		}
 	} else {
@@ -859,13 +896,13 @@ static void sc_derive_link_key(struct bt_smp *smp)
 		static const uint8_t tmp1[4] = { 0x31, 0x70, 0x6d, 0x74 };
 
 		if (bt_crypto_h6(conn->le.keys->ltk.val, tmp1, ilk)) {
-			bt_keys_link_key_clear(link_key);
+			smp_link_key_clear(link_key);
 			return;
 		}
 	}
 
 	if (bt_crypto_h6(ilk, lebr, link_key->val)) {
-		bt_keys_link_key_clear(link_key);
+		smp_link_key_clear(link_key);
 		return;
 	}
 
@@ -953,7 +990,7 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 		struct bt_conn_auth_info_cb *listener, *next;
 
 		if (keys) {
-			bt_keys_clear(keys);
+			smp_br_keys_clear(keys);
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
@@ -1096,7 +1133,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	keys = bt_keys_find_addr(conn->id, &addr);
 	if (keys != NULL) {
 		LOG_DBG("Clear the current keys for %s", bt_addr_le_str(&addr));
-		bt_keys_clear(keys);
+		smp_br_keys_clear(keys);
 	}
 
 	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
@@ -1113,7 +1150,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 					       0x00, 0x00, 0x00, 0x00 };
 
 		if (bt_crypto_h7(salt, link_key->val, ilk)) {
-			bt_keys_clear(keys);
+			smp_br_keys_clear(keys);
 			return;
 		}
 	} else {
@@ -1121,13 +1158,13 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 		static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
 
 		if (bt_crypto_h6(link_key->val, tmp2, ilk)) {
-			bt_keys_clear(keys);
+			smp_br_keys_clear(keys);
 			return;
 		}
 	}
 
 	if (bt_crypto_h6(ilk, brle, keys->ltk.val)) {
-		bt_keys_clear(keys);
+		smp_br_keys_clear(keys);
 		return;
 	}
 
@@ -1537,7 +1574,7 @@ static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
 
 	if (bt_addr_matches_irk(&conn->le.dst.a, keys->irk.val)) {
 		if (conn->le.keys != NULL && conn->le.keys != keys) {
-			bt_keys_clear(conn->le.keys);
+			smp_br_keys_clear(conn->le.keys);
 		}
 
 		conn->le.keys = keys;
