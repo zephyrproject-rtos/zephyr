@@ -16,3 +16,5 @@ tests:
       - CONFIG_ZTEST_REPEAT=y
       - CONFIG_ZTEST_SUITE_REPEAT_COUNT=3
       - CONFIG_ZTEST_TEST_REPEAT_COUNT=2
+  drivers.audio.es8311.power:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="power.overlay"
