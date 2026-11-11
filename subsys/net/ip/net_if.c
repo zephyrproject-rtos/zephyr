@@ -3156,7 +3156,7 @@ static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
 	ifprefix->is_used = false;
 
 	if (net_if_config_ipv6_get(ifprefix->iface, &ipv6) < 0) {
-		return;
+		goto out;
 	}
 
 	/* Remove also all auto addresses if the they have the same prefix.
@@ -3179,6 +3179,7 @@ static void prefix_lifetime_expired(struct net_if_ipv6_prefix *ifprefix)
 		net_mgmt_event_notify(NET_EVENT_IPV6_PREFIX_DEL, ifprefix->iface);
 	}
 
+out:
 	net_if_unlock(ifprefix->iface);
 }
 
