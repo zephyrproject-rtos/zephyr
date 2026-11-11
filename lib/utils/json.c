@@ -904,12 +904,21 @@ static int arr_parse(struct json_obj *obj,
 
 static int arr_data_parse(struct json_obj *obj, struct json_obj_token *val);
 
+/* The number decoders terminate the token in place, which needs a byte of
+ * input after it. A number that ends the input also leaves the enclosing
+ * object or array unclosed.
+ */
+static bool number_ends_input(const struct json_obj *obj, const struct json_token *value)
+{
+	return value->type == JSON_TOK_NUMBER && value->end >= obj->lex.end;
+}
+
 static int64_t decode_value(struct json_obj *obj,
 			    const struct json_obj_descr *descr,
 			    struct json_token *value, void *field, void *val)
 {
 
-	if (!equivalent_types(value->type, descr->type)) {
+	if (!equivalent_types(value->type, descr->type) || number_ends_input(obj, value)) {
 		return -EINVAL;
 	}
 
@@ -2036,7 +2045,7 @@ static int64_t decode_mixed_value(struct json_obj *obj,
 				  struct json_token *value,
 				  void *field, void *val)
 {
-	if (!equivalent_types(value->type, elem->type)) {
+	if (!equivalent_types(value->type, elem->type) || number_ends_input(obj, value)) {
 		return -EINVAL;
 	}
 
