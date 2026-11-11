@@ -34,3 +34,9 @@ tests:
     filter: dt_compat_enabled("microchip,xec-qmspi-controller-mspi")
     platform_allow:
       - mec_assy6941/mec1753_qlj
+  drivers.mspi.api.bitbang:
+    filter: dt_compat_enabled("zephyr,mspi-bitbang-controller")
+    platform_allow:
+      - stm32h573i_dk
+    extra_args:
+      - FILE_SUFFIX="bitbang"
