@@ -5037,6 +5037,11 @@ static uint16_t get_ipv4_destination_mtu(struct net_if *iface,
 #endif /* CONFIG_NET_IPV4_PMTU */
 }
 
+uint32_t net_tcp_get_rto(const struct tcp *conn)
+{
+	return tcp_cur_rto_ms(conn);
+}
+
 uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	net_sa_family_t family = net_context_get_family(conn->context);
