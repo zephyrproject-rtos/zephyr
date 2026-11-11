@@ -50,3 +50,30 @@ config DMA_TRANSFER_OVERSIZE_BLOCK_SIZE
 	  When non-zero, check that dma_config() rejects one block of this
 	  many bytes with -EINVAL, returns with interrupts unlocked, and
 	  leaves the channel usable for the next transfer.
+
+config DMA_TRANSFER_IDLE_SLOT
+	int "Request line of a peripheral that never requests"
+	default -1
+	help
+	  When not negative, a peripheral-to-memory transfer on this request
+	  line stays pending, which lets the test read dma_get_status() of a
+	  started transfer: pending_length must be the whole block for 8-byte
+	  bursts of 1-byte data.
+
+config DMA_TRANSFER_FAULT_ADDRESS
+	hex "Address a write to which ends in a bus error"
+	default 0x0
+	depends on DMA_TRANSFER_IDLE_SLOT >= 0
+	help
+	  When non-zero, start a memory-to-memory transfer to this address
+	  while another channel waits on DMA_TRANSFER_IDLE_SLOT. The faulting
+	  transfer must end with a negative status in its callback and the
+	  waiting one must stay busy.
+
+config DMA_TRANSFER_SOURCE_CHAINING_MAX_BLOCK_SIZE
+	int "Largest block_size accepted with source_chaining_en"
+	default 0
+	help
+	  When non-zero, dma_config() with source_chaining_en set and 1-byte
+	  data and bursts must accept a block of this many bytes and reject
+	  one byte more with -EINVAL.
