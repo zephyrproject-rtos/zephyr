@@ -2156,8 +2156,9 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	if (!chan) {
 		struct bt_l2cap_cmd_reject_cid_data data;
 
-		data.scid = req->scid;
-		data.dcid = req->dcid;
+		/* Local endpoint first, which is the destination of the request */
+		data.scid = req->dcid;
+		data.dcid = req->scid;
 
 		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID, &data,
 				  sizeof(data));
