@@ -72,6 +72,8 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include "../l2/ethernet/arp.h"
 
+K_DEDICATED_WORK_QUEUE_DEFINE(net, NET);
+
 #if defined(CONFIG_NET_NATIVE)
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
