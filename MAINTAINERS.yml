@@ -566,6 +566,19 @@ BeagleBoard Platforms:
   labels:
     - "platform: BeagleBoard"
 
+Beken Platforms:
+  status: maintained
+  maintainers:
+    - jamesluo11
+  files:
+    - boards/beken/
+    - dts/arm/beken/
+    - dts/bindings/*/beken,*
+    - drivers/**/*bk7258*
+    - soc/beken/
+  labels:
+    - "platform: Beken"
+
 Benchmarks:
   status: maintained
   meta: true

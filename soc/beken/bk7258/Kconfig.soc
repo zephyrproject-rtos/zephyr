@@ -1,0 +1,49 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BK7258
+	bool
+	select SOC_FAMILY_BEKEN_ARM
+	help
+	  Beken BK7258 series.
+
+config SOC_SERIES
+	default "bk7258" if SOC_SERIES_BK7258
+
+config SOC_BK7258
+	bool
+	help
+	  Beken BK7258 SoC (Armv8-M STAR-MC1).
+
+config SOC
+	default "bk7258" if SOC_BK7258
+
+config SOC_BK7258_VENDOR_FIRMWARE
+	bool "Run alongside the firmware the device ships with"
+	help
+	  The image at flash offset 0 is normally the firmware the device ships
+	  with: it drives the radio, owns the flash controller, and hands
+	  execution over to the application.
+
+	  By default the board is self-contained. An in-tree first stage takes the
+	  place of that firmware, disables the watchdogs it leaves running, and
+	  starts the application at the address it is linked for.
+
+	  Enable this option to keep this image on a board that still runs that
+	  firmware, for example to use the radio. It then expects the firmware to
+	  have raised the clock to 120 MHz and to have configured UART0, keeps the
+	  mailbox heartbeat that firmware supervises, and does not build the first
+	  stage.
+
+config SOC_BK7258_IPC_HEARTBEAT
+	bool "Report power-up and keep the mailbox heartbeat going"
+	depends on SOC_BK7258_VENDOR_FIRMWARE
+	default y
+	help
+	  Send a power-up indication once, then a heartbeat every 2 s over the
+	  mbox0 mailbox, to the firmware the device ships with.
+
+	  That firmware supervises this image: it waits 2 s for the power-up
+	  indication after releasing it, and 6 s between heartbeats, before it
+	  resets the whole chip. Without this the board reboots over and over
+	  with no console output.
