@@ -66,6 +66,24 @@ do { \
 		: "r" (r0), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
 } while (false)
+#elif defined(CONFIG_ARMV5)
+/*
+ * Same idea as the Cortex-A/R variant above, but ARMv5 has no CPS, so the
+ * IRQ mask has to be cleared with a read-modify-write of CPSR. Threads and
+ * ISRs run in system mode, so the svc only clobbers the banked lr_svc and
+ * lr does not need saving; this also leaves sp as the unwinder expects it.
+ */
+#define ARCH_EXCEPT(reason_p)                                                                      \
+	do {                                                                                       \
+		register uint32_t r0 __asm__("r0") = reason_p;                                     \
+		__asm__ volatile("mrs r1, cpsr\n\t"                                                \
+				 "bic r1, r1, #0x80\n\t"                                           \
+				 "msr cpsr_c, r1\n\t"                                              \
+				 "svc %[id]\n\t"                                                   \
+				 :                                                                 \
+				 : "r"(r0), [id] "i"(_SVC_CALL_RUNTIME_EXCEPT)                     \
+				 : "r1", "memory");                                                \
+	} while (false)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

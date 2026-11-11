@@ -280,6 +280,15 @@ static inline void trigger_irq(int irq)
 	z_vim_arm_enter_irq(irq);
 }
 
+#elif defined(CONFIG_SOC_SERIES_VERSATILE)
+
+extern void z_versatile_irq_trigger(unsigned int irq);
+
+static inline void trigger_irq(int irq)
+{
+	z_versatile_irq_trigger((unsigned int)irq);
+}
+
 #elif defined(CONFIG_RX)
 #define IR_BASE_ADDRESS DT_REG_ADDR_BY_NAME(DT_NODELABEL(icu), IR)
 static inline void trigger_irq(int irq)

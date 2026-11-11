@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Takayuki Goto
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/arm/versatilepb.dtsi>
+
+/ {
+	model = "QEMU ARM Versatile/PB";
+	compatible = "arm,versatile-pb";
+
+	/*
+	 * SDRAM starts at 0. The bottom 64 kB is left out of the image, so the
+	 * exception vectors can be installed at address 0.
+	 */
+	sram0: memory@10000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x00010000 (DT_SIZE_M(64) - 0x10000)>;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&timer01 {
+	status = "okay";
+};

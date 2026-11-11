@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Takayuki Goto
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARM SP804 dual timer module.
+
+  The two timers in the block share a single interrupt line. This driver uses
+  the first one to generate the kernel tick and leaves the second one free
+  running as the cycle counter.
+
+compatible: "arm,sp804"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Frequency of the timer input clock (TIMCLK), in Hz.

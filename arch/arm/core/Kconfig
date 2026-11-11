@@ -6,6 +6,15 @@
 config CPU_AARCH32_ARM9
 	bool
 	select CPU_ARM9
+	select ISA_ARM
+	select ARCH_HAS_NESTED_EXCEPTION_DETECTION
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO
+	# ARMv5 has no architectural interrupt controller: interrupt control
+	# always lives in the SoC.
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	# LDREX/STREX only arrived with ARMv6, so atomics have to be done by
+	# locking interrupts.
+	select ATOMIC_OPERATIONS_C
 	select HAS_FLASH_LOAD_OFFSET
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
@@ -65,9 +74,14 @@ config CPU_AARCH32_CORTEX_R
 
 config ARM_ZIMAGE_HEADER
 	bool "zImage Header"
-	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR
+	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR || \
+		CPU_AARCH32_ARM9
 	help
 	  This option adds a zImage Header.
+
+	  On ARM9, the image also moves itself to its link address when the
+	  loader started it somewhere else, so it can be booted by anything
+	  that boots a Linux zImage.
 
 config CPU_AARCH32_CORTEX_A
 	bool
@@ -261,7 +275,7 @@ config ARM_STACK_PROTECTION
 
 config ARCH_HAS_STACKWALK
 	bool
-	default y if EXTRA_EXCEPTION_INFO && CPU_CORTEX_M
+	default y if EXTRA_EXCEPTION_INFO && (CPU_CORTEX_M || CPU_AARCH32_ARM9)
 	help
 	  Internal config to indicate that the arch_stack_walk() API is implemented
 	  and it can be enabled.

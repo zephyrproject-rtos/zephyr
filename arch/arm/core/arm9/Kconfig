@@ -12,6 +12,17 @@ config CPU_ARM926EJ_S
 	help
 	  This option signifies the use of a ARM926EJ-S CPU.
 
+config CPU_XSCALE
+	bool
+	select ARMV5TE
+	select CPU_AARCH32_ARM9
+	select CPU_HAS_MMU
+	help
+	  This option signifies the use of an Intel/Marvell XScale (PXA2xx,
+	  PXA3xx, IXP) CPU. XScale implements ARMv5TE with an ARM926-compatible
+	  CP15 programmer's model, but adds its own cache and coprocessor 0
+	  extensions.
+
 config ARMV5TEJ
 	bool
 	select ARMV5TE
@@ -75,5 +86,72 @@ config DCACHE_LINE_SIZE
 config ICACHE_LINE_SIZE
 	depends on CPU_HAS_ICACHE
 	default 32
+
+config ARMV5_FLAT_MMU
+	bool "Flat ARMv5 MMU mapping"
+	depends on CPU_HAS_MMU && !ARM_AARCH32_MMU
+	default y
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Build a flat (identity) translation table out of 1 MB sections and
+	  turn the MMU on during boot. The MMU is what gives memory its
+	  cacheability attributes, so the data and instruction caches can only
+	  be used when this is enabled.
+
+	  This is deliberately *not* the full Zephyr memory management layer
+	  (CONFIG_ARM_AARCH32_MMU): there is no arch_mem_map(), no demand
+	  paging and no per-region permissions, just a fixed map described by
+	  the SoC. Turn it off, and enable CONFIG_ARM_AARCH32_MMU instead,
+	  once the VMSA-v5 back end of arch/arm/core/mmu grows an ARMv5
+	  implementation.
+
+	  It is also required for CONFIG_ARMV5_HIGH_VECTORS, since the
+	  0xFFFF0000 vector page has to be mapped somewhere.
+
+config ARMV5_MMU_NUM_L2_TABLES
+	int "Number of page tables for non-cacheable memory"
+	depends on ARMV5_FLAT_MMU && NOCACHE_MEMORY
+	default 2
+	help
+	  The non-cacheable region is mapped with 4 kB pages. Every 1 MB
+	  section it touches needs one 1 kB coarse page table, allocated from
+	  a pool of this many tables.
+
+config ARMV5_HIGH_VECTORS
+	bool "Place the exception vectors at 0xFFFF0000"
+	depends on ARMV5_FLAT_MMU
+	help
+	  ARMv5 cores fetch their exception vectors from either 0x00000000 or
+	  0xFFFF0000, selected by SCTLR.V. Enable this on SoCs where address
+	  0x00000000 is read-only (mask ROM or NOR flash) and therefore cannot
+	  hold a vector table, which is the case for most XScale designs.
+
+	  When disabled, the vector block is installed at 0x00000000, which
+	  requires RAM to be present (or aliased) there.
+
+config CPU_HAS_DCACHE
+	default y
+
+config CPU_HAS_ICACHE
+	default y
+
+config ARMV5_IRQ_NESTING
+	bool "Allow interrupts to nest"
+	help
+	  Unmask IRQs while an ISR runs, so that a second interrupt can
+	  preempt it.
+
+	  This is only safe when the SoC's interrupt controller masks the
+	  active source between z_soc_irq_get_active() and z_soc_irq_eoi(),
+	  the way a GIC does. Level sensitive controllers such as the ARM
+	  PL190 or the PXA2xx ICU keep the line asserted until the peripheral
+	  itself is serviced, so unmasking early would re-enter the handler
+	  immediately and recurse until the interrupt stack overflows.
+
+config MP_MAX_NUM_CPUS
+	default 1
+
+config STACK_ALIGN_DOUBLE_WORD
+	default y
 
 endif # ARMV5

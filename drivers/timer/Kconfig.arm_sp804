@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Takayuki Goto
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_SP804_TIMER
+	bool "ARM SP804 dual timer"
+	default y
+	depends on DT_HAS_ARM_SP804_ENABLED
+	help
+	  Kernel tick source built on the ARM SP804 dual timer block.

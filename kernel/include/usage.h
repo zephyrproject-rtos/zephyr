@@ -34,6 +34,17 @@ void z_sched_usage_stop(void);
 
 void z_sched_usage_start(struct k_thread *thread);
 
+/** @brief Resume thread cycle usage accounting of the current thread.
+ *
+ * Restarts the accounting that z_sched_usage_stop() halted, without
+ * starting a new execution window of the current thread. Called on an
+ * interrupt exit that does not switch threads. Does nothing when the
+ * accounting is running.
+ *
+ * Like z_sched_usage_stop(), this assumes local interrupts are masked.
+ */
+void z_sched_usage_resume(void);
+
 /**
  * @brief Retrieves CPU cycle usage data for specified core
  */
