@@ -84,6 +84,8 @@ elseif("${ARCH}" STREQUAL "openrisc")
   include(${CMAKE_CURRENT_LIST_DIR}/target_openrisc.cmake)
 elseif("${ARCH}" STREQUAL "tricore")
   include(${CMAKE_CURRENT_LIST_DIR}/target_tricore.cmake)
+elseif("${ARCH}" STREQUAL "rh850")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_rh850.cmake)
 endif()
 
 if(SYSROOT_DIR)
