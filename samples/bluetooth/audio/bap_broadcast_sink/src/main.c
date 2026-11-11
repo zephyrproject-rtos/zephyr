@@ -43,6 +43,7 @@
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 #include "chan_metrics.h"
+#include "vs_fatal.h"
 
 #include "lc3.h"
 #include "stream_rx.h"
@@ -1063,6 +1064,11 @@ static bool vnd_evt_cb(struct net_buf_simple *buf)
 	net_buf_simple_save(buf, &state);
 
 	if (IS_ENABLED(CONFIG_CHAN_METRICS_PRINT) && chan_metrics_vnd_evt(buf)) {
+		return true;
+	}
+	net_buf_simple_restore(buf, &state);
+
+	if (IS_ENABLED(CONFIG_VS_FATAL_PRINT) && vs_fatal_vnd_evt(buf)) {
 		return true;
 	}
 	net_buf_simple_restore(buf, &state);
