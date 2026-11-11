@@ -438,6 +438,9 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 		return -ENOTSUP;
 	}
 
+	/* USART_Deinit() disables the FIFO interrupts */
+	uint32_t int_mask = USART_GetEnabledInterrupts(config->base);
+
 	/* Wait for USART to finish transmission and turn off */
 	USART_Deinit(config->base);
 
@@ -450,6 +453,8 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 
 	/* Reconfigure UART */
 	USART_Init(config->base, &usart_config, clock_freq);
+
+	USART_EnableInterrupts(config->base, int_mask);
 
 	/* Update driver device data */
 	uart_config->parity = cfg->parity;
