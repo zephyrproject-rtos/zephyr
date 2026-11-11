@@ -11,6 +11,7 @@ properties:
   pwm-map:
     type: compound
     required: true
+    nexus-map: true
 
   pwm-map-mask:
     type: array

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Binding that marks 'gpio-map' as a nexus map
+
+compatible: "map-nexus"
+
+properties:
+  gpio-map:
+    type: compound
+    nexus-map: true
+
+  "#gpio-cells":
+    type: int

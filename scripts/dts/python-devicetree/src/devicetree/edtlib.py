@@ -567,7 +567,7 @@ class Binding:
         ok_prop_keys = {"description", "type", "required",
                         "enum", "const", "default", "deprecated",
                         "specifier-space", "min", "max", "min-len", "max-len",
-                        "dependency-mode"}
+                        "dependency-mode", "nexus-map"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -579,7 +579,7 @@ class Binding:
             _check_prop_by_type(prop_name, options, self.path,
                                 self._local_props.props.get(prop_name) or {})
 
-            for true_false_opt in ["required", "deprecated"]:
+            for true_false_opt in ["required", "deprecated", "nexus-map"]:
                 if true_false_opt in options:
                     option = options[true_false_opt]
                     if not isinstance(option, bool):
@@ -590,6 +590,12 @@ class Binding:
             if options.get("deprecated") and options.get("required"):
                 _err(f"'{prop_name}' in 'properties' in {self.path} should not "
                       "have both 'deprecated' and 'required' set")
+
+            if options.get("nexus-map") and (not prop_name.endswith("-map")
+                                             or options.get("type") != "compound"):
+                _err(f"'nexus-map' set for '{prop_name}' in 'properties' in "
+                     f"{self.path}, expected a '<space>-map' property with "
+                     "'type: compound'")
 
             if ("description" in options
                 and not isinstance(options["description"], str)):
@@ -655,6 +661,10 @@ class PropertySpec:
 
     required:
       True if the property is marked required; False otherwise.
+
+    nexus_map:
+      True if the property is marked as a nexus map with 'nexus-map: true';
+      False otherwise.
 
     specifier_space:
       The specifier space for the property as given in the binding, or None.
@@ -760,6 +770,11 @@ class PropertySpec:
     def deprecated(self) -> bool:
         "See the class docstring"
         return self._raw.get("deprecated", False)
+
+    @property
+    def nexus_map(self) -> bool:
+        "See the class docstring"
+        return self._raw.get("nexus-map", False)
 
     @property
     def dependency_mode(self) -> Optional[str]:
@@ -1264,7 +1279,10 @@ class Node:
     maps:
       A dictionary that contains a list of MapEntry instances associated with each string key.
       The key is the basename-part of the node property name, the value is
-      the entries of the property value.
+      the entries of the property value. Only nexus maps are included. If the node
+      has a binding, a '<space>-map' property is parsed if the binding sets
+      'nexus-map: true' for it. Otherwise it is parsed if the node has a
+      '#<space>-cells' property.
 
     is_pci_device:
       True if the node is a PCI device.
@@ -1591,7 +1609,21 @@ class Node:
 
             return 0
 
-        for prop in [v for k, v in self._node.props.items() if k.endswith("-map")]:
+        def is_nexus_map(prop_name: str) -> bool:
+            """Return True if *prop_name* is a nexus map property of this node."""
+
+            if not prop_name.endswith("-map"):
+                return False
+
+            if self._binding:
+                # The binding marks nexus maps with 'nexus-map: true', e.g. by
+                # including gpio-nexus.yaml.
+                spec = self._binding.prop2specs.get(prop_name)
+                return spec is not None and spec.nexus_map
+
+            return f"#{prop_name[:-4]}-cells" in self._node.props
+
+        for prop in [v for k, v in self._node.props.items() if is_nexus_map(k)]:
             specifier_space = prop.name[:-4]  # Strip '-map'
             entries: list[MapEntry] = []
             raw = prop.value
