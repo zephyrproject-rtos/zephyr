@@ -11,6 +11,7 @@ tests:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_function_coreboard/esp32s31/hpcore
       - esp32h2_devkitm
       - esp8684_devkitm
   sample.esp32.deep_sleep.dut:
@@ -24,6 +25,7 @@ tests:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32s31_function_coreboard/esp32s31/hpcore
       - esp32h2_devkitm
       - esp8684_devkitm
     tags: esp32
