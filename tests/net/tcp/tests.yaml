@@ -10,6 +10,11 @@ tests:
   net.tcp.no_recv_queue:
     extra_configs:
       - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=0
+  net.tcp.no_socket_buffer_options:
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
+      - CONFIG_NET_CONTEXT_RCVBUF=n
+      - CONFIG_NET_CONTEXT_SNDBUF=n
   net.tcp.no_sack:
     extra_configs:
       - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
