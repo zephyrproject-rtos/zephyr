@@ -219,6 +219,14 @@ struct modem_cellular_data {
 	 * the modem already powered; the init script then confirms it responds.
 	 */
 	bool power_on_skipped;
+	/** Set when suspended during the init script, which leaves the modem powered at the
+	 * UART's current baudrate; a resume that finds it still powered keeps that baudrate.
+	 */
+	bool baudrate_kept;
+	/** Set when the init script failed, so the modem did not respond at the current
+	 * baudrate; a suspend that follows, when recoveries are exhausted, does not keep it.
+	 */
+	bool init_script_failed;
 	/** Set when a suspend arrives while CMUX is connecting; acted on once it settles. */
 	bool suspend_pending;
 	/** Set when the CMUX connect attempt has failed; a suspend is then acted on at once. */
