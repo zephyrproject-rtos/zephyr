@@ -1139,13 +1139,22 @@ static void modem_cellular_idle_event_handler(struct modem_cellular_data *data,
 static int modem_cellular_on_idle_state_leave(struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+	/* Without a status GPIO the modem stays powered unless a power GPIO can cycle it */
+	const bool powered = modem_cellular_gpio_is_enabled(&config->status_gpio)
+				     ? modem_cellular_modem_is_powered(config)
+				     : !modem_cellular_gpio_is_enabled(&config->power_gpio);
+	const bool baudrate_kept = data->baudrate_kept && powered &&
+				   !(modem_cellular_gpio_is_enabled(&config->reset_gpio) &&
+				     config->hold_reset_on_suspend);
 
 	k_sem_take(&data->suspended_sem, K_NO_WAIT);
+	data->baudrate_kept = false;
 
 	/* Revert to original baudrate if we have changed it. Boots that skip the power-on
-	 * and reset pulses would otherwise reach the baudrate script at the new speed.
+	 * and reset pulses would otherwise reach the baudrate script at the new speed,
+	 * unless the modem was left powered at it and still is.
 	 */
-	if (data->original_baudrate != 0U) {
+	if ((data->original_baudrate != 0U) && !baudrate_kept) {
 		modem_cellular_baudrate_update(data, data->original_baudrate);
 	}
 
@@ -1360,11 +1369,18 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 		modem_pipe_close_async(data->uart_pipe);
 		break;
 
-	case MODEM_CELLULAR_EVENT_BUS_CLOSED:
-		/* Update UART port baudrate and preserve the original value */
-		data->original_baudrate = modem_cellular_baudrate_update(
-			data, CONFIG_MODEM_CELLULAR_NEW_BAUDRATE);
+	case MODEM_CELLULAR_EVENT_BUS_CLOSED: {
+		/* Update UART port baudrate. The UART may already be at the new baudrate when
+		 * it was kept, so preserve the original value from the first change.
+		 */
+		const uint32_t baudrate =
+			modem_cellular_baudrate_update(data, CONFIG_MODEM_CELLULAR_NEW_BAUDRATE);
+
+		if (data->original_baudrate == 0U) {
+			data->original_baudrate = baudrate;
+		}
 		break;
+	}
 
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_INIT_SCRIPT);
@@ -1381,6 +1397,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 
 static int modem_cellular_on_run_init_script_state_enter(struct modem_cellular_data *data)
 {
+	data->init_script_failed = false;
 	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
 	return modem_pipe_open_async(data->uart_pipe);
 }
@@ -1509,10 +1526,15 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
+		/* The modem is left powered, at the baudrate the init script is sent at, unless
+		 * the script failed at it and this is the suspend of exhausted recoveries.
+		 */
+		data->baudrate_kept = !data->init_script_failed;
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		data->init_script_failed = true;
 		if (data->power_on_skipped) {
 			/* Skipped the power-on pulse assuming the modem was already up, but
 			 * it did not respond. Power it on now rather than entering recovery.
@@ -3318,6 +3340,8 @@ void modem_cellular_ztest_halt(const struct device *dev)
 	atomic_clear(&data->periodic_paused);
 	data->periodic_timeout_skipped = false;
 	data->power_on_skipped = false;
+	data->baudrate_kept = false;
+	data->init_script_failed = false;
 	data->suspend_pending = false;
 	data->cmux_connect_failed = false;
 	data->cmux_bus_opened = false;
