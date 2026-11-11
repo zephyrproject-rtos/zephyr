@@ -344,7 +344,10 @@ struct tcp { /* TCP connection */
 	uint32_t rtt_time;
 	uint32_t rtt_seq;
 	/* RTO derived from the RTT samples, or the initial RTO before the
-	 * first sample, without randomization and backoff.
+	 * first sample, without randomization and the backoff counted in
+	 * rto_backoff. After a retransmitted SYN or SYN-ACK it holds the
+	 * backed off RTO of the handshake, at least 3 seconds, until the
+	 * first sample.
 	 */
 	uint32_t rto;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
