@@ -6,23 +6,8 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/mcxn/nxp_mcxn547.dtsi>
-#include "mcx_n5xx_evk.dtsi"
-#include "mcx_nx4x_evk_cpu0.dtsi"
+#include "mcx_n5xx_evk_mcxn547_cpu0.dtsi"
 
 / {
 	model = "NXP MCX-N5XX-EVK board";
-};
-
-&inputmux0 {
-	status = "okay";
-};
-
-&freqme0 {
-	status = "okay";
-};
-
-&sema42 {
-	domain-id = <1>;
-	status = "okay";
 };
