@@ -339,8 +339,16 @@ static int omap_mcspi_wait_for_reg_bit(volatile uint32_t *reg, uint8_t bit)
 {
 	uint32_t retries = 0;
 
+	/*
+	 * At megahertz clock rates a FIFO fills or drains within microseconds,
+	 * while no sleep is shorter than a tick. Poll for as long as a tick lasts,
+	 * and sleep between the polls only if the wait is longer than that.
+	 */
+	if (WAIT_FOR((*reg & bit) != 0, k_ticks_to_us_ceil32(1), NULL)) {
+		return 0;
+	}
+
 	while ((*reg & bit) == 0) {
-		/* timeout = 1ms */
 		if (retries++ > OMAP_MCSPI_REG_RETRIES) {
 			return -ETIMEDOUT;
 		}
