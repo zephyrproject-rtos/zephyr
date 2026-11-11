@@ -97,7 +97,7 @@ static void IRAM_ATTR esp32_xt_wdt_isr(void *arg)
 		return;
 	}
 
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_XTAL32K_DEAD_INT_CLR);
 
 	clk_cfg.rtc.rtc_slow_clock_src = ESP32_RTC_SLOW_CLK_SRC_RC_SLOW;
 
@@ -131,8 +131,8 @@ static int esp32_xt_wdt_init(const struct device *dev)
 		return -EFAULT;
 	}
 
-	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+	CLEAR_PERI_REG_MASK(RTC_CNTL_INT_ENA_REG, RTC_CNTL_XTAL32K_DEAD_INT_ENA);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_XTAL32K_DEAD_INT_CLR);
 
 	return 0;
 }

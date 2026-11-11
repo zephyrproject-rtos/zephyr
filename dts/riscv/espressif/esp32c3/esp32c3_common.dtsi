@@ -177,6 +177,15 @@
 			status = "disabled";
 		};
 
+		rtc_wdt: watchdog@60008090 {
+			compatible = "espressif,esp32-rtc-wdt";
+			reg = <0x60008090 0x1c>;
+			clocks = <&clock ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		uart1: uart@60010000 {
 			compatible = "espressif,esp32-uart";
 			reg = <0x60010000 0x400>;
