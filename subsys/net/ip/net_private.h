@@ -20,6 +20,14 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/kernel/dedicated_workq.h>
+
+/* The network stack submits its timers and deferred work with
+ * net_work_submit(), net_work_schedule() and net_work_reschedule(). They use
+ * a dedicated networking work queue if CONFIG_NET_DEDICATED_WORKQUEUE is
+ * enabled and the system work queue otherwise.
+ */
+K_DEDICATED_WORK_QUEUE_DECLARE(net, NET);
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 
