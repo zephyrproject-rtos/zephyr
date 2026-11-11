@@ -1,0 +1,6 @@
+shield:
+  name: espressif_sc2336_cam_module
+  full_name: Espressif SC2336 Camera Module
+  vendor: espressif
+  supported_features:
+    - video

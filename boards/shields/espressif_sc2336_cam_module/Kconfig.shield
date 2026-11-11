@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ESPRESSIF_SC2336_CAM_MODULE
+	def_bool $(shields_list_contains,espressif_sc2336_cam_module)
