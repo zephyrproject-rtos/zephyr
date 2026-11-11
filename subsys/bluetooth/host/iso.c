@@ -118,7 +118,10 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 	struct bt_iso_chan *chan = iso->iso.chan;
 	struct bt_iso_chan_ops *ops;
 
-	__ASSERT(chan != NULL, "NULL chan for iso %p", iso);
+	if (chan == NULL) {
+		/* The channel has been detached */
+		return;
+	}
 
 	ops = chan->ops;
 
@@ -531,6 +534,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		bt_iso_cleanup_acl(chan->iso);
 
 		if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
+			chan->iso->iso.chan = NULL;
 			bt_conn_drop(&chan->iso);
 #if defined(CONFIG_BT_ISO_CENTRAL)
 		} else {
@@ -580,7 +584,7 @@ void bt_iso_disconnected(struct bt_conn *iso)
 
 	chan = iso_chan(iso);
 	if (chan == NULL) {
-		LOG_ERR("Could not lookup chan from disconnected ISO");
+		LOG_DBG("No chan for disconnected ISO %p", iso);
 		return;
 	}
 
@@ -863,8 +867,10 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 static bool iso_has_data(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_ISO_TX)
-	return ((conn->iso.chan->state == BT_ISO_STATE_CONNECTED) &&
-		!k_fifo_is_empty(&conn->iso.txq));
+	const struct bt_iso_chan *chan = conn->iso.chan;
+
+	return chan != NULL && chan->state == BT_ISO_STATE_CONNECTED &&
+	       !k_fifo_is_empty(&conn->iso.txq);
 #else  /* !CONFIG_BT_ISO_TX */
 	return false;
 #endif /* CONFIG_BT_ISO_TX */
@@ -890,7 +896,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount, size_t
 
 	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
 
-	if (conn->iso.chan->state != BT_ISO_STATE_CONNECTED) {
+	const struct bt_iso_chan *chan = conn->iso.chan;
+
+	if (chan == NULL || chan->state != BT_ISO_STATE_CONNECTED) {
 		LOG_DBG("channel has been disconnected");
 
 		/* Service other connections */
@@ -2479,7 +2487,7 @@ static bool iso_chans_connecting(void)
 		}
 
 		iso_chan = iso_chan(iso);
-		if (iso_chan->state == BT_ISO_STATE_CONNECTING) {
+		if (iso_chan != NULL && iso_chan->state == BT_ISO_STATE_CONNECTING) {
 			return true;
 		}
 	}
