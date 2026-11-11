@@ -259,12 +259,25 @@ gpiohogs-macro =/ %s"DT_N" path-id %s"_GPIO_HOGS_IDX_" DIGIT %s"_VAL_flags"
 ; --------------------------------------------------------------------
 ; map-macro: a macro related to map properties
 ;
-; Macros are generated when there is a property ending with '-map' as shown below.
+; Macros are generated when there is a property ending with '-map' and the node has the matching
+; '#<space>-cells' property, as shown below. The 'msi-map', 'iommu-map' and 'phy-map'
+; properties are not nexus maps and are skipped.
 ;
 ; connector {
 ;     ...
+;     #address-cells = <1>;
+;     #interrupt-cells = <1>;
 ;     interrupt-map = <0 1 &intc0 2 3>;
 ; };
+;
+; intc0 {
+;     ...
+;     #address-cells = <1>;
+;     #interrupt-cells = <1>;
+; };
+;
+; The '#interrupt-cells' property is the '#<space>-cells' property for 'interrupt-map', and
+; '#address-cells' is also read for 'interrupt-map'.
 ;
 ; The existence of map entry;
 ;
