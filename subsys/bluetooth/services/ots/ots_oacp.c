@@ -684,7 +684,10 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 
 	LOG_DBG("Object Action Control Point GATT Write Operation");
 
-	if (!ots->oacp_ind.is_enabled) {
+	/* The response is indicated to the clients that subscribed to it, so the writer must be
+	 * one of them. A local write has no connection to indicate to.
+	 */
+	if (conn == NULL || !bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_INDICATE)) {
 		LOG_WRN("OACP indications not enabled");
 		return BT_GATT_ERR(BT_ATT_ERR_CCC_IMPROPER_CONF);
 	}
@@ -725,19 +728,4 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 
 	oacp_ind_send(attr, oacp_proc, oacp_status, &resp_param);
 	return len;
-}
-
-void bt_gatt_ots_oacp_cfg_changed(const struct bt_gatt_attr *attr,
-				      uint16_t value)
-{
-	struct bt_gatt_ots_indicate *oacp_ind =
-	    CONTAINER_OF((struct bt_gatt_ccc_managed_user_data *) attr->user_data,
-			 struct bt_gatt_ots_indicate, ccc);
-
-	LOG_DBG("Object Action Control Point CCCD value: 0x%04X", value);
-
-	oacp_ind->is_enabled = false;
-	if (value == BT_GATT_CCC_INDICATE) {
-		oacp_ind->is_enabled = true;
-	}
 }

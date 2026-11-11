@@ -121,7 +121,6 @@ struct bt_gatt_ots_indicate {
 	struct bt_gatt_indicate_params params;
 	struct bt_gatt_attr attr;
 	struct bt_gatt_ccc_managed_user_data ccc;
-	bool is_enabled;
 	struct k_work work;
 	uint8_t res[OACP_OLCP_RES_MAX_SIZE];
 };

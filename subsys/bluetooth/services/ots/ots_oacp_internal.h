@@ -109,9 +109,6 @@ ssize_t bt_gatt_ots_oacp_write(struct bt_conn *conn,
 				   const void *buf, uint16_t len,
 				   uint16_t offset, uint8_t flags);
 
-void bt_gatt_ots_oacp_cfg_changed(const struct bt_gatt_attr *attr,
-				      uint16_t value);
-
 #ifdef __cplusplus
 }
 #endif

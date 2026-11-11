@@ -246,7 +246,10 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 
 	LOG_DBG("Object List Control Point GATT Write Operation");
 
-	if (!ots->olcp_ind.is_enabled) {
+	/* The response is indicated to the clients that subscribed to it, so the writer must be
+	 * one of them. A local write has no connection to indicate to.
+	 */
+	if (conn == NULL || !bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_INDICATE)) {
 		LOG_WRN("OLCP indications not enabled");
 		return BT_GATT_ERR(BT_ATT_ERR_CCC_IMPROPER_CONF);
 	}
@@ -305,19 +308,4 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 
 	olcp_ind_send(attr, olcp_proc.type, olcp_status);
 	return len;
-}
-
-void bt_gatt_ots_olcp_cfg_changed(const struct bt_gatt_attr *attr,
-				      uint16_t value)
-{
-	struct bt_gatt_ots_indicate *olcp_ind =
-	    CONTAINER_OF((struct bt_gatt_ccc_managed_user_data *) attr->user_data,
-			 struct bt_gatt_ots_indicate, ccc);
-
-	LOG_DBG("Object List Control Point CCCD value: 0x%04X", value);
-
-	olcp_ind->is_enabled = false;
-	if (value == BT_GATT_CCC_INDICATE) {
-		olcp_ind->is_enabled = true;
-	}
 }

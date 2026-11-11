@@ -674,14 +674,6 @@ static int bt_gatt_ots_instances_prepare(void)
 
 		/* Assign pointer to the service descriptor. */
 		instance->service = &BT_GATT_OTS_SERVICE_LIST_START[index];
-
-		/* Initialize CCC descriptors for characteristics with
-		 * indication properties.
-		 */
-		instance->oacp_ind.ccc.cfg_changed =
-			bt_gatt_ots_oacp_cfg_changed;
-		instance->olcp_ind.ccc.cfg_changed =
-			bt_gatt_ots_olcp_cfg_changed;
 	}
 
 	return 0;
