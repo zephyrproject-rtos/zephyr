@@ -108,7 +108,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 		temp_batch = config->temp_batch;
 
 		fifo_mode = LSM6DSV16X_STREAM_MODE;
-		fifo_wtm = config->fifo_wtm;
+		fifo_wtm = lsm6dsv16x->fifo_watermark;
 
 		if (config->sflp_fifo_en & LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION) {
 			sflp_fifo.game_rotation = 1;
@@ -129,7 +129,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	 * Set FIFO watermark (number of unread sensor data TAG + 6 bytes
 	 * stored in FIFO) to FIFO_WATERMARK samples
 	 */
-	lsm6dsv16x_fifo_watermark_set(ctx, config->fifo_wtm);
+	lsm6dsv16x_fifo_watermark_set(ctx, fifo_wtm);
 
 	/* Set FIFO batch rates */
 	lsm6dsv16x_fifo_xl_batch_set(ctx, xl_batch);
