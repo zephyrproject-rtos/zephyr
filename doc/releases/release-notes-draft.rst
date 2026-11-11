@@ -126,6 +126,13 @@ Libraries / Subsystems
     window. The RTO is kept between :kconfig:option:`CONFIG_NET_TCP_MIN_RTO` and
     :kconfig:option:`CONFIG_NET_TCP_MAX_RTO`. The retransmissions, and so the time until an
     unanswered connection fails with ``-ETIMEDOUT``, grow with the RTO of the connection.
+  * TCP uses the SACK blocks of the peer when it retransmits (:rfc:`6675`): after a loss it
+    resends only the data the peer reports missing, and repairs several losses in one window
+    without waiting for the retransmission timer. :kconfig:option:`CONFIG_NET_TCP_SACK` now
+    enables two sides, both on by default: :kconfig:option:`CONFIG_NET_TCP_SACK_RECV` reports
+    received data out of order, and :kconfig:option:`CONFIG_NET_TCP_SACK_SEND` does the loss
+    recovery. Without the receive queue (:kconfig:option:`CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT`
+    set to 0), SACK permitted is now offered for the sending side.
 
 * PTP Clock
 
