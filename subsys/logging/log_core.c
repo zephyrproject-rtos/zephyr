@@ -122,6 +122,14 @@ static atomic_t unordered_cnt;
 static uint64_t last_failure_report;
 static struct k_spinlock process_lock;
 static atomic_t process_lock_owner_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
+/*
+ * Thread with a message claimed in log_process(), and thread whose context
+ * flushes the queue in log_panic() while the others must not claim. Threads
+ * rather than CPUs, as a thread keeps what it claimed when it is preempted
+ * or moves to another CPU.
+ */
+static atomic_ptr_t process_owner;
+static atomic_ptr_t panic_owner;
 
 static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
 static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
@@ -442,6 +450,114 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter, uint32_t freq)
 	return 0;
 }
 
+static inline int log_curr_cpu(void)
+{
+#ifdef CONFIG_SMP
+	return arch_curr_cpu()->id;
+#else
+	return 0;
+#endif
+}
+
+/*
+ * Thread running on this CPU: in an interrupt or an exception the one that
+ * was interrupted, which runs nowhere else meanwhile. NULL on a single CPU,
+ * and before there is a thread, when no other context has to be kept apart.
+ */
+static inline struct k_thread *log_curr_thread(void)
+{
+	return IS_ENABLED(CONFIG_SMP) ? _current : NULL;
+}
+
+/* True while the thread with a message claimed runs on another CPU */
+static bool process_owner_runs_elsewhere(void)
+{
+	const struct k_thread *owner = atomic_ptr_get(&process_owner);
+	unsigned int num_cpus = arch_num_cpus();
+	unsigned int this_cpu = log_curr_cpu();
+
+	if (owner == NULL) {
+		return false;
+	}
+
+	for (unsigned int i = 0; i < num_cpus; i++) {
+		/* Polled without the scheduler lock */
+		volatile k_tid_t *running = &_kernel.cpus[i].current;
+
+		if ((i != this_cpu) && (*running == owner)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+ * Makes the calling context the only one to claim messages, until the flush
+ * in log_panic() is done. Returns false when another context did that flush
+ * meanwhile.
+ */
+static bool panic_begin(void)
+{
+	struct k_thread *curr;
+	unsigned int key;
+	bool flush = true;
+
+	if (!IS_ENABLED(CONFIG_SMP) || IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
+		return true;
+	}
+
+	/* Stay on this CPU; arch_spin_relax() is for use with interrupts locked */
+	key = arch_irq_lock();
+	curr = log_curr_thread();
+	if (curr == NULL) {
+		arch_irq_unlock(key);
+		return true;
+	}
+
+	/* A message that the current thread has claimed stays unfinished */
+	(void)atomic_ptr_cas(&process_owner, curr, NULL);
+
+	if (atomic_ptr_cas(&panic_owner, NULL, curr)) {
+		/*
+		 * No message is claimed on the other CPUs from here on. One
+		 * that a thread is processing there is given the time to be
+		 * finished. A thread that was switched out with a message
+		 * claimed is not waited for, as nothing tells when it runs
+		 * again: the caller has to stop the other CPUs to keep it
+		 * from resuming during the flush.
+		 */
+		while (process_owner_runs_elsewhere()) {
+			arch_spin_relax();
+		}
+	} else if (atomic_ptr_get(&panic_owner) != curr) {
+		/* Another context is flushing: it prints the messages of this one too */
+		while (atomic_ptr_get(&panic_owner) != NULL) {
+			arch_spin_relax();
+		}
+		flush = false;
+	} else {
+		/*
+		 * This context has been here before. The other CPUs may have
+		 * been stopped since, one of them in the middle of a message:
+		 * the wait is not repeated.
+		 */
+	}
+
+	arch_irq_unlock(key);
+
+	return flush;
+}
+
+void log_panic_prepare(void)
+{
+	if (panic_mode) {
+		return;
+	}
+
+	(void)panic_begin();
+}
+
 void z_impl_log_panic(void)
 {
 	if (panic_mode) {
@@ -452,6 +568,10 @@ void z_impl_log_panic(void)
 	 * Forcing initialization of the logger and auto-starting backends.
 	 */
 	(void)z_log_init(true, false);
+
+	if (!panic_begin()) {
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_LOG_FRONTEND)) {
 		log_frontend_panic();
@@ -474,6 +594,7 @@ void z_impl_log_panic(void)
 
 out:
 	panic_mode = true;
+	(void)atomic_ptr_clear(&panic_owner);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -572,9 +693,27 @@ bool z_impl_log_process(void)
 
 	k_timeout_t backoff = K_NO_WAIT;
 	union log_msg_generic *msg;
+	struct k_thread *curr = log_curr_thread();
 
 	if (atomic_get(&backend_attached) == 0) {
 		return false;
+	}
+
+	if (curr != NULL) {
+		atomic_ptr_val_t flusher;
+
+		/*
+		 * A context flushing the queue in log_panic() prints alone.
+		 * The owner is written before the flusher is read and
+		 * log_panic() does the opposite, so one of the two sees the
+		 * other.
+		 */
+		(void)atomic_ptr_set(&process_owner, curr);
+		flusher = atomic_ptr_get(&panic_owner);
+		if ((flusher != NULL) && (flusher != curr)) {
+			(void)atomic_ptr_cas(&process_owner, curr, NULL);
+			return false;
+		}
 	}
 
 	msg = z_log_msg_claim(&backoff);
@@ -583,7 +722,15 @@ bool z_impl_log_process(void)
 		msg_process(msg);
 		z_log_msg_free(msg);
 		atomic_dec(&buffered_cnt);
-	} else if (CONFIG_LOG_PROCESSING_LATENCY_US > 0 && !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
+	}
+
+	if (curr != NULL) {
+		/* Unless another thread has claimed a message since */
+		(void)atomic_ptr_cas(&process_owner, curr, NULL);
+	}
+
+	if (msg == NULL && CONFIG_LOG_PROCESSING_LATENCY_US > 0 &&
+	    !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
 		/* If backoff is requested, it means that there are pending
 		 * messages but they are too new and processing shall back off
 		 * to allow arrival of newer messages from remote domains.
