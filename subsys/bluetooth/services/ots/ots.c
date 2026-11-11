@@ -426,12 +426,17 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
 	return obj->id;
 }
 
-static void cur_obj_clear(struct bt_ots *ots, const struct bt_gatt_ots_object *obj)
+/* An object that goes away is no longer current for any client, nor the object of the transfer */
+static void obj_refs_clear(struct bt_ots *ots, const struct bt_gatt_ots_object *obj)
 {
 	ARRAY_FOR_EACH(ots->cur_obj, i) {
 		if (ots->cur_obj[i] == obj) {
 			ots->cur_obj[i] = NULL;
 		}
+	}
+
+	if (ots->transfer_obj == obj) {
+		ots->transfer_obj = NULL;
 	}
 }
 
@@ -473,7 +478,7 @@ int bt_ots_obj_delete(struct bt_ots *ots, uint64_t id)
 		return err;
 	}
 
-	cur_obj_clear(ots, obj);
+	obj_refs_clear(ots, obj);
 
 	return 0;
 }
@@ -678,7 +683,7 @@ static void ots_delete_empty_name_objects(struct bt_ots *ots, struct bt_conn *co
 					id_str);
 			}
 
-			cur_obj_clear(ots, obj);
+			obj_refs_clear(ots, obj);
 		}
 	}
 }

@@ -139,6 +139,11 @@ struct bt_ots {
 	struct bt_ots_feat features;
 	/* The Current Object of each connection, by bt_conn_index() (OTS 1.0 section 1.12.1) */
 	struct bt_gatt_ots_object *cur_obj[CONFIG_BT_MAX_CONN];
+	/* The object of the last read or write accepted on the Object Transfer Channel. The
+	 * transfer stays on it whatever its client selects meanwhile, and its state says whether
+	 * the transfer still runs.
+	 */
+	struct bt_gatt_ots_object *transfer_obj;
 	struct bt_gatt_service *service;
 	struct bt_gatt_ots_indicate oacp_ind;
 	struct bt_gatt_ots_indicate olcp_ind;

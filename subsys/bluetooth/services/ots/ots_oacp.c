@@ -30,20 +30,28 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn, struct net_buf *buf);
 #endif
 
+/* The Object Transfer Channel carries one read or write at a time */
+static bool transfer_runs(const struct bt_ots *ots)
+{
+	return ots->transfer_obj != NULL &&
+	       ots->transfer_obj->state.type != BT_GATT_OTS_OBJECT_IDLE_STATE;
+}
+
 static void oacp_l2cap_closed(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn)
 {
-	struct bt_gatt_ots_object *cur_obj;
+	struct bt_gatt_ots_object *obj;
 	struct bt_ots *ots;
 
 	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
-	cur_obj = ots->cur_obj[bt_conn_index(conn)];
+	obj = ots->transfer_obj;
 
-	if (cur_obj == NULL) {
+	if (obj == NULL) {
 		return;
 	}
 
-	cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+	obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+	ots->transfer_obj = NULL;
 	l2cap_ctx->rx_done = NULL;
 	l2cap_ctx->tx_done = NULL;
 }
@@ -234,7 +242,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 		return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
 	}
 
-	if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn)) {
+	if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn) || transfer_runs(ots)) {
 		return BT_GATT_OTS_OACP_RES_CHAN_UNAVAIL;
 	}
 
@@ -260,6 +268,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_read_proc_validate(
 	cur_obj->state.read_op.started = false;
 	(void)memcpy(&cur_obj->state.read_op.oacp_params, &proc->read_params,
 		sizeof(cur_obj->state.read_op.oacp_params));
+	ots->transfer_obj = cur_obj;
 
 	LOG_DBG("Read procedure is accepted");
 
@@ -301,7 +310,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_write_proc_validate(
 		return BT_GATT_OTS_OACP_RES_NOT_PERMITTED;
 	}
 
-	if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn)) {
+	if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn) || transfer_runs(ots)) {
 		return BT_GATT_OTS_OACP_RES_CHAN_UNAVAIL;
 	}
 
@@ -328,6 +337,7 @@ static enum bt_gatt_ots_oacp_res_code oacp_write_proc_validate(
 	cur_obj->state.write_op.recv_len = 0U;
 	(void)memcpy(&cur_obj->state.write_op.oacp_params, params,
 		sizeof(cur_obj->state.write_op.oacp_params));
+	ots->transfer_obj = cur_obj;
 
 	LOG_DBG("Write procedure is accepted");
 
@@ -469,21 +479,21 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	off_t offset;
 	ssize_t len;
 	struct bt_ots *ots;
-	struct bt_gatt_ots_object *cur_obj;
+	struct bt_gatt_ots_object *obj;
 	struct bt_gatt_ots_object_read_op *read_op;
 
 	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
-	cur_obj = ots->cur_obj[bt_conn_index(conn)];
+	obj = ots->transfer_obj;
 
 	if (ots->cb->obj_read == NULL &&
-	    !(IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && cur_obj->id == OTS_OBJ_ID_DIR_LIST)) {
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+	    !(IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && obj->id == OTS_OBJ_ID_DIR_LIST)) {
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 		LOG_ERR("OTS Read operation failed: there is no OTS Read callback");
 
 		return;
 	}
 
-	read_op = &cur_obj->state.read_op;
+	read_op = &obj->state.read_op;
 	offset  = read_op->oacp_params.offset + read_op->sent_len;
 
 	if (read_op->sent_len >= read_op->oacp_params.len) {
@@ -493,25 +503,25 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			LOG_WRN("More bytes sent that the client requested");
 		}
 
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 
 		if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
-		    cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
+		    obj->id == OTS_OBJ_ID_DIR_LIST) {
 			return;
 		}
 
-		ots->cb->obj_read(ots, conn, cur_obj->id, NULL, 0,
+		ots->cb->obj_read(ots, conn, obj->id, NULL, 0,
 				  offset);
 		return;
 	}
 
 	len = read_op->oacp_params.len - read_op->sent_len;
 	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
-	    cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
+	    obj->id == OTS_OBJ_ID_DIR_LIST) {
 		len = bt_ots_dir_list_content_get(ots->dir_list, ots->obj_manager,
 						  &obj_chunk, len, offset);
 	} else {
-		len = ots->cb->obj_read(ots, conn, cur_obj->id, &obj_chunk,
+		len = ots->cb->obj_read(ots, conn, obj->id, &obj_chunk,
 					len, offset);
 	}
 
@@ -519,7 +529,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		LOG_ERR("OCAP Read Op failed with error: %zd", len);
 
 		bt_gatt_ots_l2cap_disconnect(&ots->l2cap);
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 
 		return;
 	}
@@ -529,7 +539,7 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	if (err) {
 		LOG_ERR("L2CAP CoC error: %d while trying to execute OACP "
 			"Read procedure", err);
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 	} else {
 		read_op->sent_len += len;
 	}
@@ -538,20 +548,20 @@ static void oacp_read_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 static void oacp_read_proc_execute(struct bt_ots *ots,
 				   struct bt_conn *conn)
 {
-	struct bt_gatt_ots_object *cur_obj = ots->cur_obj[bt_conn_index(conn)];
+	struct bt_gatt_ots_object *obj = ots->transfer_obj;
 	struct bt_gatt_ots_oacp_read_params *params;
 
-	if (cur_obj == NULL) {
-		LOG_ERR("Invalid Current Object on OACP Read procedure");
+	if (obj == NULL) {
+		LOG_ERR("No object for the OACP Read procedure");
 		return;
 	}
 
-	params = &cur_obj->state.read_op.oacp_params;
+	params = &obj->state.read_op.oacp_params;
 
 	LOG_DBG("Executing Read procedure with offset: 0x%08X and "
 		"length: 0x%08X", params->offset, params->len);
 
-	cur_obj->state.read_op.started = true;
+	obj->state.read_op.started = true;
 
 	oacp_read_proc_cb(&ots->l2cap, conn);
 }
@@ -560,7 +570,7 @@ static void oacp_read_proc_execute(struct bt_ots *ots,
 static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 			struct bt_conn *conn, struct net_buf *buf)
 {
-	struct bt_gatt_ots_object *cur_obj;
+	struct bt_gatt_ots_object *obj;
 	struct bt_gatt_ots_object_write_op *write_op;
 	struct bt_ots *ots;
 	off_t offset;
@@ -569,14 +579,14 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	ssize_t rc;
 
 	ots = CONTAINER_OF(l2cap_ctx, struct bt_ots, l2cap);
-	cur_obj = ots->cur_obj[bt_conn_index(conn)];
+	obj = ots->transfer_obj;
 
-	if (cur_obj == NULL) {
-		LOG_ERR("Invalid Current Object on OACP Write procedure");
+	if (obj == NULL) {
+		LOG_WRN("Object data without an OACP Write procedure");
 		return -ENODEV;
 	}
 
-	if (cur_obj->state.type != BT_GATT_OTS_OBJECT_WRITE_OP_STATE) {
+	if (obj->state.type != BT_GATT_OTS_OBJECT_WRITE_OP_STATE) {
 		LOG_WRN("Object data without an OACP Write procedure");
 		return -EINVAL;
 	}
@@ -584,11 +594,11 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	if (!ots->cb->obj_write) {
 		LOG_ERR("OTS Write operation failed: "
 			"there is no OTS Write callback");
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 		return -ENODEV;
 	}
 
-	write_op = &cur_obj->state.write_op;
+	write_op = &obj->state.write_op;
 	offset = write_op->oacp_params.offset + write_op->recv_len;
 	len = buf->len;
 	if (write_op->recv_len + len > write_op->oacp_params.len) {
@@ -597,7 +607,7 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	}
 	rem = write_op->oacp_params.len - (write_op->recv_len + len);
 
-	rc = ots->cb->obj_write(ots, conn, cur_obj->id, buf->data, len,
+	rc = ots->cb->obj_write(ots, conn, obj->id, buf->data, len,
 				  offset, rem);
 
 	if (rc < 0) {
@@ -612,7 +622,7 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 		}
 
 		LOG_ERR("OTS Write operation failed with error: %zd", rc);
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 	} else {
 		/* Return -EIO as an error if all of data was not written */
 		if (rc != len) {
@@ -624,11 +634,11 @@ static ssize_t oacp_write_proc_cb(struct bt_gatt_ots_l2cap *l2cap_ctx,
 	write_op->recv_len += len;
 	if (write_op->recv_len == write_op->oacp_params.len) {
 		LOG_DBG("OACP Write Op over L2CAP is completed");
-		cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+		obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 	}
 
-	if (offset + len > cur_obj->metadata.size.cur) {
-		cur_obj->metadata.size.cur = offset + len;
+	if (offset + len > obj->metadata.size.cur) {
+		obj->metadata.size.cur = offset + len;
 	}
 
 	return rc;
@@ -640,16 +650,16 @@ static void oacp_ind_cb(struct bt_conn *conn,
 			uint8_t err)
 {
 	struct bt_ots *ots = (struct bt_ots *) params->attr->user_data;
-	struct bt_gatt_ots_object *cur_obj = ots->cur_obj[bt_conn_index(conn)];
+	struct bt_gatt_ots_object *obj = ots->transfer_obj;
 
 	LOG_DBG("Received OACP Indication ACK with status: 0x%04X", err);
 
-	if (cur_obj == NULL) {
+	if (obj == NULL) {
 		LOG_DBG("There is no object associated with this ACK");
 		return;
 	}
 
-	switch (cur_obj->state.type) {
+	switch (obj->state.type) {
 	case BT_GATT_OTS_OBJECT_READ_OP_STATE:
 		/* oacp_ind_send() indicates each response to every client subscribed to the OACP,
 		 * so this runs on the confirmation of each client, also for the responses to other
@@ -657,12 +667,12 @@ static void oacp_ind_cb(struct bt_conn *conn,
 		 * the Object Transfer Channel, which is the client that asked for the read.
 		 */
 		if (!bt_gatt_ots_l2cap_is_open(&ots->l2cap, conn) ||
-		    cur_obj->state.read_op.started) {
+		    obj->state.read_op.started) {
 			break;
 		}
 
 		if (err != 0U) {
-			cur_obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
+			obj->state.type = BT_GATT_OTS_OBJECT_IDLE_STATE;
 			break;
 		}
 
@@ -675,7 +685,7 @@ static void oacp_ind_cb(struct bt_conn *conn,
 		/* procedure is not in progress and was already completed */
 		break;
 	default:
-		LOG_ERR("Unsupported OTS state: %d", cur_obj->state.type);
+		LOG_ERR("Unsupported OTS state: %d", obj->state.type);
 		break;
 	}
 }
