@@ -331,9 +331,28 @@ struct tcp { /* TCP connection */
 	 */
 	uint8_t send_win_shift;
 	uint8_t recv_win_shift;
+	/* End of the highest sequence number sent, telling new data from
+	 * retransmitted data.
+	 */
+	uint32_t send_max;
+	/* RTT estimation of RFC 6298, in milliseconds: srtt is scaled by 8
+	 * and rttvar by 4.
+	 */
+	uint32_t srtt;
+	uint32_t rttvar;
+	/* Send time and end sequence number of the segment being timed */
+	uint32_t rtt_time;
+	uint32_t rtt_seq;
+	/* RTO derived from the RTT samples, or the initial RTO before the
+	 * first sample, without randomization and backoff.
+	 */
+	uint32_t rto;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
-	uint16_t rto;
+	/* Randomization gain of the RTO, scaled by 512 */
+	uint16_t rto_gain;
 #endif
+	/* Number of times the RTO was backed off since the last RTT sample */
+	uint8_t rto_backoff;
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
 	struct tcp_collision_avoidance_reno ca;
 #endif
@@ -355,6 +374,10 @@ struct tcp { /* TCP connection */
 	bool sack_perm : 1;
 	/* Both ends offered window scaling during the handshake. */
 	bool win_scale : 1;
+	/* A segment is being timed for an RTT sample. */
+	bool rtt_pending : 1;
+	/* At least one RTT sample was taken. */
+	bool rtt_sampled : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
