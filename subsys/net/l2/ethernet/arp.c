@@ -217,8 +217,8 @@ static void arp_entry_register_pending(struct arp_entry *entry)
 
 	/* Let's start the timer if necessary */
 	if (!k_work_delayable_remaining_get(&arp_request_timer)) {
-		k_work_reschedule(&arp_request_timer,
-				  K_MSEC(ARP_REQUEST_TIMEOUT));
+		net_work_reschedule(&arp_request_timer,
+				    K_MSEC(ARP_REQUEST_TIMEOUT));
 	}
 }
 
@@ -247,9 +247,9 @@ static void arp_request_timeout(struct k_work *work)
 	}
 
 	if (entry) {
-		k_work_reschedule(&arp_request_timer,
-				  K_MSEC(entry->req_start +
-					 ARP_REQUEST_TIMEOUT - current));
+		net_work_reschedule(&arp_request_timer,
+				    K_MSEC(entry->req_start +
+					   ARP_REQUEST_TIMEOUT - current));
 	}
 
 	k_mutex_unlock(&arp_mutex);
@@ -719,8 +719,8 @@ static void arp_gratuitous_work_handler(struct k_work *work)
 
 	net_if_foreach(iface_cb, NULL);
 
-	k_work_reschedule(&arp_gratuitous_work,
-			  K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
+	net_work_reschedule(&arp_gratuitous_work,
+			    K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
 }
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
 
@@ -1165,8 +1165,8 @@ void net_arp_init(void)
 	}
 
 #if defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION)
-	k_work_reschedule(&arp_gratuitous_work,
-			  K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
+	net_work_reschedule(&arp_gratuitous_work,
+			    K_SECONDS(CONFIG_NET_ARP_GRATUITOUS_INTERVAL));
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
 }
 
