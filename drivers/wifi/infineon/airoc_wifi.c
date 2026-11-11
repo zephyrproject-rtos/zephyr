@@ -1177,7 +1177,7 @@ static int airoc_mgmt_wifi_stats(const struct device *dev,
 				 struct net_if *iface __unused,
 				 struct net_stats_wifi *stats)
 {
-	struct airoc_wifi_data *data = dev->data;
+	const struct airoc_wifi_data *data = dev->data;
 
 	stats->bytes.received = data->stats.bytes.received;
 	stats->bytes.sent = data->stats.bytes.sent;
