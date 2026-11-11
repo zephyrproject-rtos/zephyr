@@ -394,6 +394,7 @@ void bt_keys_clear_keep_entry(struct bt_keys *keys)
 	 */
 	keys->state &= ~BT_KEYS_ID_PENDING_ADD;
 	keys->keys = 0U;
+	keys->ltk_derive_cnt = 0U;
 	(void)memset(&keys->ltk, 0, sizeof(keys->ltk));
 	(void)memset(&keys->irk, 0, sizeof(keys->irk));
 #if defined(CONFIG_BT_SIGNING)

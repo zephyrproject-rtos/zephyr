@@ -86,6 +86,10 @@ struct bt_keys {
 	uint8_t id;
 	bt_addr_le_t addr;
 	uint8_t state;
+	/* Not stored: the count of LTKs derived from a BR/EDR link key since
+	 * boot when this LTK was derived, 0 if it was not derived.
+	 */
+	uint16_t ltk_derive_cnt;
 	uint8_t storage_start[0] __aligned(sizeof(void *));
 	/* cfg_version and cfg_flags total 4 octets to maintain struct alignment */
 	uint8_t cfg_version;
