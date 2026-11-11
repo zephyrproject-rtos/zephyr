@@ -84,7 +84,7 @@ struct stm32_sai_sub_cfg {
 	enum i2s_dir dir;
 	bool is_sub_b;
 
-	const struct device *controller;
+	const struct device *sai;
 };
 
 struct stm32_sai_cfg {
@@ -551,7 +551,7 @@ static int sai_sub_init(const struct device *dev)
 static int stm32_sai_sub_f4_clk_src_conf(const struct device *dev)
 {
 	const struct stm32_sai_sub_cfg *sub_cfg = dev->config;
-	const struct stm32_sai_cfg *sai_cfg = sub_cfg->controller->config;
+	const struct stm32_sai_cfg *sai_cfg = sub_cfg->sai->config;
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	SAI_HandleTypeDef *hsai = &sub_data->hsai;
 	uint32_t clock_source = 0U;
@@ -1185,7 +1185,7 @@ static int stm32_sai_sub_mclk_get_rate(const struct device *dev, clock_control_s
 	const struct stm32_sai_sub_mclk_cfg *cfg = dev->config;
 	const struct stm32_sai_sub_data *sub_data = cfg->sai_sub->data;
 	const struct stm32_sai_sub_cfg *sub_cfg = cfg->sai_sub->config;
-	const struct stm32_sai_cfg *sai_cfg = sub_cfg->controller->config;
+	const struct stm32_sai_cfg *sai_cfg = sub_cfg->sai->config;
 	const struct stm32_pclken *ker_ck;
 	uint32_t cr1, mckdiv, ker_ck_freq;
 
@@ -1282,7 +1282,7 @@ static DEVICE_API(clock_control, stm32_sai_sub_mclk_api) = {
 		.mclk_div = DT_ENUM_IDX(node, mclk_divider),                                       \
 		.synchronous = DT_PROP(node, synchronous),                                         \
 		.is_sub_b = SAI_IS_SUB_B(node),                                                    \
-		.controller = DEVICE_DT_GET(DT_PARENT(node)),                                      \
+		.sai = DEVICE_DT_GET(DT_PARENT(node)),                                             \
 		.dir = COND_CODE_1(DT_DMAS_HAS_NAME(node, tx), (I2S_DIR_TX), (I2S_DIR_RX)),        \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node, &sai_sub_init, NULL, &sub_data_##node, &sub_cfg_##node,             \
