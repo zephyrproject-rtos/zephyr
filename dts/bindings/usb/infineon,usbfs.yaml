@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXUSBFS full-speed USB device controller
+
+  The controller drives the dedicated USBDP/USBDM pads and integrates the
+  series termination and the D+ pull-up, so no pinctrl or external components
+  are required.
+
+  The block must be clocked at 48 MHz
+
+compatible: "infineon,usbfs"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      Low, medium and high priority interrupt lines, in that order. The driver
+      routes bus reset and endpoint 0 to the low line and data endpoint
+      completion to the medium line, and leaves the high line unused. The
+      medium line should have the higher priority, since it re-arms a bulk
+      endpoint before the host's next token.
+
+  interrupt-names:
+    required: true
+
+  clk-dst:
+    type: int
+    required: true
+    description: |
+      Maps to the en_clk_dst_t value the PDL uses to assign a peripheral clock
+      divider for the USB bus reset clock (PCLK_USB_CLOCK_DEV_BRS)
+
+  brs-div-type:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3]
+    description: |
+      Peripheral divider type used for the bus reset clock, as cy_en_divider_types_t:
+      0 = 8 bit, 1 = 16 bit, 2 = 16.5 bit fractional, 3 = 24.5 bit fractional.
+      The default is a 16 bit divider, which is what the Infineon reference
+      configuration uses.
+
+  brs-div-num:
+    type: int
+    default: 7
+    description: |
+      Index of the peripheral divider used for the bus reset clock. On CAT1A the
+      legacy HAL allocates dividers from the bottom upwards, so the default is
+      the topmost 16 bit divider to avoid colliding with it. Boards that use
+      that divider for something else must override this
