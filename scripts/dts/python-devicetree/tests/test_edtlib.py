@@ -225,6 +225,12 @@ def test_maps():
     assert "interrupt" in empty.maps
     assert len(empty.maps["interrupt"]) == 0
 
+    # Only nexus maps are parsed: the '#<space>-cells' property is required and
+    # msi-map is excluded.
+    assert edt.get_node("/map-exclusions/no-cells").maps == {}
+    assert edt.get_node("/map-exclusions/msi").maps == {}
+    assert edt.get_node("/map-exclusions/no-map-node").maps == {}
+
 def test_ranges():
     '''Tests for the ranges property'''
     with from_here():
