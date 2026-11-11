@@ -19,6 +19,8 @@
 #define MSP_GPIO_HIGH_DRIVE		(20)
 #define MSP_GPIO_OPEN_DRAIN_OUTPUT	(25)
 #define MSP_GPIO_INVERSION_ENABLED	(26)
+#define MSP_GPIO_WAKEUP_ENABLE          (27)
+#define MSP_GPIO_WAKEUP_COMPARE         (28)
 
 #define MSP_PINMUX_INIT(node_id) DT_PROP(node_id, pinmux)
 

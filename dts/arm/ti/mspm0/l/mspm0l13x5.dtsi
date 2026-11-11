@@ -6,7 +6,7 @@
  */
 
 #include <mem.h>
-#include <ti/mspm0/l/mspm0l.dtsi>
+#include <ti/mspm0/l/mspm0l110x.dtsi>
 
 / {
 	soc {
