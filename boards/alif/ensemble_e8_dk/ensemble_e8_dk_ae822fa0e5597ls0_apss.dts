@@ -27,3 +27,25 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&eth {
+	pinctrl-0 = <&eth_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&mdio {
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&ptp_clock {
+	status = "okay";
+};
