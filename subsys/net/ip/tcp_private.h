@@ -343,6 +343,7 @@ struct tcp { /* TCP connection */
 #endif
 	uint8_t zwp_retries;
 	bool in_connect : 1;
+	bool connect_done : 1;
 	bool in_close : 1;
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 	bool keep_alive : 1;
