@@ -1,0 +1,10 @@
+/ {
+	ivshmem: ivshmem@40010000 {
+		compatible = "qemu,ivshmem-flat";
+		reg = <0x40010000 0x10>, <0x60000000 0x100000>;
+		reg-names = "mmr", "shmem";
+		num-vectors = <1>;
+		interrupt-parent = <&nvic>;
+		interrupts = <25 2>;
+	};
+};

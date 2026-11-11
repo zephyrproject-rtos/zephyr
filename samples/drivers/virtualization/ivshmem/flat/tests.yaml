@@ -1,0 +1,13 @@
+sample:
+  name: IVSHMEM flat ping-pong
+  description: Shared memory and DoorBell communication between two Cortex-M VMs
+tests:
+  sample.drivers.virtualization.ivshmem.flat:
+    build_only: true
+    tags:
+      - drivers.virtualization
+      - ivshmem
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
