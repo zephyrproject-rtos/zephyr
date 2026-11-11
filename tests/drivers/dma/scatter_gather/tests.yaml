@@ -27,6 +27,7 @@ tests:
       - kg100s_rb4332a
       - pic32cz_ca80_cult
       - sixg301_rb4407a
+      - cy8cproto_062s3_4343w
       - kit_psc3m5_evk
       - kit_psc3m6_eval/psc3m6ges3ahq1
       - kit_pse84_ai/pse846gps2dbzc4a/m33
