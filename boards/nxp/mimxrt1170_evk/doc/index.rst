@@ -405,9 +405,13 @@ should see the following message in the terminal:
 ENET1G Driver
 =============
 
-Current default of ethernet driver is to use 100M Ethernet instance ENET.
-To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
+Both the 100M Ethernet instance ENET and the 1G Ethernet instance ENET1G are
+enabled by default on the CM7 core and come up as two network interfaces.
+ENET1G is first in devicetree order, so it is network interface 1 and the
+default interface: ``CONFIG_NET_CONFIG_MY_IPV4_ADDR`` and DHCP apply to the
+1G port. The 100M port is interface 2. To use a single port, disable the
+other instance (for example ``&enet { status = "disabled"; };``) in an
+application overlay. ENET1G is not enabled on the CM4 core.
 
 .. include:: ../../common/board-footer.rst.inc
 
