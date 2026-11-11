@@ -463,6 +463,16 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 			goto out;
 		}
 
+		/*
+		 * The FIFO is empty once its last word is in the shift register:
+		 * wait until that word has been shifted out as well.
+		 */
+		ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_EOT);
+		if (ret != 0) {
+			LOG_ERR("EOT timed out");
+			goto out;
+		}
+
 		/* Both RX and TX */
 	} else {
 		while (count > 0) {
