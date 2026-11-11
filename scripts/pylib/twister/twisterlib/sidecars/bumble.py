@@ -64,7 +64,8 @@ class BumbleSidecar(Sidecar):
     in :meth:`teardown` the sidecar reads the Ztest results each peer printed
     and reports the cases it ran. A peer that fails, ends without a verdict
     or does not finish fails the test even if the guest side passed, since
-    both sides must complete the exchange. An exception in the controllers,
+    both sides must complete the exchange; when no case shows the failure,
+    the cases that passed take it. An exception in the controllers,
     or controllers that exit before the test ends, make it and the cases that
     passed an error, whatever the devices reported.
 
@@ -393,6 +394,10 @@ class BumbleSidecar(Sidecar):
                 self.instance.reason = reason
                 # The handler's log is the guest's; point at the peer's.
                 logger.error(f"SIDECAR:{self.__class__.__name__}: {reason}, see {peer.log_path}")
+                # A peer that exited with an error, gave no verdict or failed
+                # outside its cases leaves every case passing.
+                if all(case.status != TwisterStatus.FAIL for case in self.instance.testcases):
+                    self._fail_passed_cases(TwisterStatus.FAIL, reason)
 
         # A broken simulation can let the devices pass, skip or stall into a
         # timeout, so it decides the result over what they reported, and a

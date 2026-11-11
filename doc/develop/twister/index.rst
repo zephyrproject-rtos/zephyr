@@ -1286,7 +1286,8 @@ The handler watches the guest only, so the sidecar reads the Ztest results
 each peer printed: the cases a peer ran are reported, and a peer that fails,
 ends without a verdict or exits with an error fails the test. So does a peer
 that is still running when the scenario's timeout has passed and ten seconds
-after the guest ended. A Python exception in the controllers, which they log in
+after the guest ended. When no case shows such a failure, the cases that
+passed take it. A Python exception in the controllers, which they log in
 ``bumble-controllers.log`` in the build directory and survive, or controllers
 that exit before the test ends make the test, and each case that passed, an
 error whatever the devices reported.
