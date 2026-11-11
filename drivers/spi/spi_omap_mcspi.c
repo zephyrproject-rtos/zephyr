@@ -404,6 +404,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 	const uint8_t dfs = data->dfs;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
+	int ret = 0;
 
 	volatile uint32_t *chstat = &regs->CHAN[chan].CHSTAT;
 	volatile uint32_t *tx_reg = &regs->CHAN[chan].TX;
@@ -415,9 +416,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 		*tx_reg = 0;
 
 		while (count != 0) {
-			if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXS)) {
+			ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXS);
+			if (ret != 0) {
 				LOG_ERR("RXS timed out");
-				return count;
+				goto out;
 			}
 
 			read_rx(rx_buf, rx_reg, dfs, word_mask);
@@ -427,9 +429,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 		}
 
 		/* Make sure RX FIFO is empty */
-		if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXFFE) != 0) {
+		ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXFFE);
+		if (ret != 0) {
 			LOG_ERR("RXFFE timed out");
-			return count;
+			goto out;
 		}
 
 		/* TX only */
@@ -438,9 +441,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 			size_t num_words = MIN(count, (data->fifo_depth / 2) / dfs);
 
 			/* Make sure TX FIFO is empty */
-			if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE)) {
+			ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE);
+			if (ret != 0) {
 				LOG_ERR("TXFFE timed out");
-				return count;
+				goto out;
 			}
 
 			/* Write and fill the entire TX FIFO */
@@ -453,9 +457,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 		}
 
 		/* Make sure TX FIFO is empty */
-		if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE)) {
+		ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE);
+		if (ret != 0) {
 			LOG_ERR("TXFFE timed out");
-			return count;
+			goto out;
 		}
 
 		/* Both RX and TX */
@@ -464,9 +469,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 			size_t num_words = MIN(count, (data->fifo_depth / 2) / dfs);
 
 			/* Make sure TX FIFO is empty */
-			if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE)) {
+			ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_TXFFE);
+			if (ret != 0) {
 				LOG_ERR("TXFFE timed out");
-				return count;
+				goto out;
 			}
 
 			/* Write and fill the entire TX FIFO */
@@ -477,9 +483,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 
 			/* Read and empty the entire RX FIFO */
 			for (int i = 0; i < num_words; i++) {
-				if (omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXS)) {
+				ret = omap_mcspi_wait_for_reg_bit(chstat, OMAP_MCSPI_CHSTAT_RXS);
+				if (ret != 0) {
 					LOG_ERR("RXS timed out");
-					return count;
+					goto out;
 				}
 
 				read_rx(rx_buf, rx_reg, dfs, word_mask);
@@ -490,9 +497,10 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 		}
 	}
 
+out:
 	omap_mcspi_channel_enable(dev, false);
 
-	return count;
+	return ret;
 }
 
 static int omap_mcspi_transceive_one(const struct device *dev)
