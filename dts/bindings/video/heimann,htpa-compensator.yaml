@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: HTPA electrical offset correction and pixel sorting video device
+
+compatible: "heimann,htpa-compensator"
+
+include: base.yaml
+
+properties:
+  source:
+    type: phandle
+    required: true
+    description: Video device providing HTPA raw frames
