@@ -159,7 +159,7 @@ static void igmp_timer_arm(k_timepoint_t timeout)
 		remaining = K_NO_WAIT;
 	}
 
-	(void)k_work_reschedule(&igmp_timer, remaining);
+	(void)net_work_reschedule(&igmp_timer, remaining);
 }
 
 /* Cancel every pending query response and report retransmission of the
@@ -855,7 +855,7 @@ static void igmp_timeout(struct k_work *work)
 	}
 
 	if (!igmp_timepoint_is_never(next)) {
-		(void)k_work_reschedule(&igmp_timer, sys_timepoint_timeout(next));
+		(void)net_work_reschedule(&igmp_timer, sys_timepoint_timeout(next));
 	}
 
 	k_mutex_unlock(&igmp_lock);
