@@ -69,6 +69,23 @@ static inline uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 }
 #endif
 
+/**
+ * @brief Obtains the current retransmission timeout of a TCP context
+ *
+ * @param conn TCP context
+ *
+ * @return RTO in milliseconds, with its randomization and backoff
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+uint32_t net_tcp_get_rto(const struct tcp *conn);
+#else
+static inline uint32_t net_tcp_get_rto(const struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+	return 0;
+}
+#endif
+
 const char *net_tcp_state_str(enum tcp_state state);
 
 /**
