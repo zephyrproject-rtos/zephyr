@@ -61,6 +61,7 @@ tests:
       - frdm_mcxe31b
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
+      - lpcxpresso54628
       - it51xxx_evb/it51526aw
       - kit_psc3m6_eval
       - max32655evkit/max32655/m4
