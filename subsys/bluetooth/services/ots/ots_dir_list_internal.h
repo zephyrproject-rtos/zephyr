@@ -177,8 +177,8 @@ enum {
 #define BT_OTS_DIR_LIST_GET_FLAG_EXTENDED(flags) \
 	((flags) & BIT(BT_OTS_DIR_LIST_FLAG_EXTENDED))
 
-void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
-			      struct bt_gatt_ots_object *cur_obj);
+/* Bring the size and the content of the Directory Listing Object up to date with the objects */
+void bt_ots_dir_list_update(struct bt_ots_dir_list *dir_list, void *obj_manager);
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager);
 ssize_t bt_ots_dir_list_content_get(struct bt_ots_dir_list *dir_list, void *obj_manager,
 				    void **data, size_t len, off_t offset);

@@ -280,9 +280,10 @@ ssize_t bt_gatt_ots_olcp_write(struct bt_conn *conn,
 			LOG_DBG("Selecting a new Current Object with id: %s",
 				id);
 
-			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ)) {
-				bt_ots_dir_list_selected(ots->dir_list, ots->obj_manager,
-							 ots->cur_obj);
+			/* The listing is only built when a client selects it */
+			if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) &&
+			    ots->cur_obj->id == OTS_OBJ_ID_DIR_LIST) {
+				bt_ots_dir_list_update(ots->dir_list, ots->obj_manager);
 			}
 
 			if (ots->cb->obj_selected) {

@@ -289,16 +289,8 @@ static void dir_list_update_size(struct bt_ots_dir_list *dir_list, void *obj_man
 	dir_list->dir_list_obj->metadata.size.cur = len;
 }
 
-void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
-			      struct bt_gatt_ots_object *cur_obj)
+void bt_ots_dir_list_update(struct bt_ots_dir_list *dir_list, void *obj_manager)
 {
-	if (dir_list->dir_list_obj != cur_obj) {
-		/* We only need to update the object directory listing if it is currently selected,
-		 * as we otherwise only create it when it is selected.
-		 */
-		return;
-	}
-
 	bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
 	dir_list_update_size(dir_list, obj_manager);
 }
