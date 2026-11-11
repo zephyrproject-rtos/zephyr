@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 604" width="900" height="604">
+  <title>Layers of a device using the BabbleSim LLL, from the Host down to the Phy, with the function called at each boundary and the three places the code runs.</title>
+  <style>
+    .d-band { fill: #eef1f5; }
+    .d-box { fill: #ffffff; stroke: #18212e; stroke-width: 1.2; }
+    .d-new { fill: #dceff5; stroke: #0a6b8a; stroke-width: 1.6; }
+    .d-t { font: 600 14px sans-serif; fill: #18212e; }
+    .d-f { font: 11.5px monospace; fill: #566274; }
+    .d-l { font: 11.5px monospace; fill: #18212e; }
+    .d-s { font: 11px monospace; fill: #566274; letter-spacing: 0.06em; }
+    .d-a { stroke: #18212e; stroke-width: 1.3; fill: none; }
+    .d-dash { stroke-dasharray: 5 4; }
+    .d-tx { fill: #0a6b8a; stroke: #0a6b8a; }
+    .d-tx-t { font: 11.5px monospace; fill: #ffffff; }
+  </style>
+  <rect x="0" y="0" width="900" height="604" fill="#ffffff"/>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#18212e"/></marker>
+  </defs>
+  <rect class="d-band" x="0" y="4" width="900" height="394" rx="6"/>
+  <rect class="d-band" x="0" y="426" width="900" height="68" rx="6"/>
+  <rect class="d-band" x="0" y="522" width="900" height="78" rx="6"/>
+  <text class="d-s" x="12" y="26">ZEPHYR IMAGE</text>
+  <text class="d-f" x="12" y="42">embedded code</text>
+  <text class="d-s" x="12" y="448">RUNNER</text>
+  <text class="d-f" x="12" y="464">hardware models</text>
+  <text class="d-s" x="12" y="546">PHY PROCESS</text>
+  <text class="d-f" x="12" y="562">bs_2G4_phy_v1</text>
+
+  <rect class="d-box" x="150" y="14" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="33">Host and HCI</text>
+  <text class="d-f" x="164" y="49">hci/hci.c (shared)</text>
+
+  <rect class="d-box" x="150" y="96" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="115">ULL: roles and scheduling</text>
+  <text class="d-f" x="164" y="131">ll_sw/ull_*.c, ticker (shared)</text>
+
+  <rect class="d-box" x="150" y="178" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="197">LLL prepare pipeline</text>
+  <text class="d-f" x="164" y="213">ll_sw/lll_prepare_pipeline.c (shared, moved out of nordic)</text>
+
+  <rect class="d-new" x="150" y="260" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="279">LLL roles</text>
+  <text class="d-f" x="164" y="295">ll_sw/native/lll/lll_adv.c, ...</text>
+
+  <rect class="d-new" x="150" y="342" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="361">Event engine</text>
+  <text class="d-f" x="164" y="377">ll_sw/native/lll/lll_radio.c</text>
+
+  <rect class="d-new" x="150" y="438" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="457">Packet radio model</text>
+  <text class="d-f" x="164" y="473">neutral_2g4_radio/nbr_2g4_radio.c</text>
+
+  <rect class="d-box" x="150" y="534" width="480" height="44" rx="4"/>
+  <text class="d-t" x="164" y="553">BabbleSim 2G4 Phy</text>
+  <text class="d-f" x="164" y="569">the air, shared with every other device</text>
+
+  <g class="d-a" marker-end="url(#ah)">
+    <line x1="200" y1="58" x2="200" y2="95"/>
+    <line x1="200" y1="140" x2="200" y2="177"/>
+    <line x1="200" y1="222" x2="200" y2="259"/>
+    <line x1="200" y1="304" x2="200" y2="341"/>
+    <line x1="200" y1="386" x2="200" y2="437"/>
+    <line x1="200" y1="482" x2="200" y2="533"/>
+    <line x1="420" y1="96" x2="420" y2="59"/>
+    <line x1="420" y1="178" x2="420" y2="141"/>
+    <line x1="420" y1="260" x2="420" y2="223"/>
+    <line x1="420" y1="342" x2="420" y2="305"/>
+    <line x1="420" y1="438" x2="420" y2="387"/>
+    <line x1="420" y1="534" x2="420" y2="483"/>
+  </g>
+  <text class="d-l" x="212" y="81">HCI commands</text>
+  <text class="d-l" x="432" y="81">HCI events</text>
+  <text class="d-l" x="212" y="163">mayfly: lll_*_prepare()</text>
+  <text class="d-l" x="432" y="163">ull_event_done()</text>
+  <text class="d-l" x="212" y="245">prepare_cb()</text>
+  <text class="d-l" x="432" y="245">lll_done()</text>
+  <text class="d-l" x="212" y="327">lll_radio_tx() / _rx()</text>
+  <text class="d-l" x="432" y="327">callback of the operation</text>
+  <text class="d-l" x="212" y="416">nbr_tx() / nbr_rx()</text>
+  <text class="d-l" x="432" y="416">IRQ + nbr_op_result_get()</text>
+  <text class="d-l" x="212" y="512">Tx and Rx requests</text>
+  <text class="d-l" x="432" y="512">end / address found</text>
+
+  <text class="d-s" x="670" y="86">TIME BASE</text>
+  <rect class="d-box" x="670" y="96" width="210" height="44" rx="4"/>
+  <text class="d-t" x="684" y="115">Ticker</text>
+  <text class="d-f" x="684" y="131">ticker/ticker.c (shared)</text>
+  <rect class="d-new" x="670" y="342" width="210" height="44" rx="4"/>
+  <text class="d-t" x="684" y="361">Counter HAL</text>
+  <text class="d-f" x="684" y="377">native/hal/bsim/cntr.c</text>
+  <rect class="d-new" x="670" y="438" width="210" height="44" rx="4"/>
+  <text class="d-t" x="684" y="457">1 MHz counter</text>
+  <text class="d-f" x="684" y="473">nbr_cntr.c</text>
+  <g class="d-a" marker-end="url(#ah)">
+    <line x1="690" y1="140" x2="690" y2="341"/>
+    <line x1="860" y1="342" x2="860" y2="141"/>
+    <line x1="690" y1="386" x2="690" y2="437"/>
+    <line x1="860" y1="438" x2="860" y2="387"/>
+    <line x1="630" y1="118" x2="669" y2="118"/>
+  </g>
+  <text class="d-l" x="698" y="215">cntr_cmp_set()</text>
+  <text class="d-l" x="852" y="275" text-anchor="end">ticker_trigger(0)</text>
+  <text class="d-l" x="698" y="409">nbr_cntr_cmp_set()</text>
+  <text class="d-l" x="852" y="424" text-anchor="end">IRQ</text>
+</svg>

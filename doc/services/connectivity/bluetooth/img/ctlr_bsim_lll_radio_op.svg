@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" width="680" height="440">
+  <title>States of a radio model operation: idle, waiting for its start, in the Phy, waiting for its end, done, and back to idle when the result is read. An operation aborted while in the Phy stays there until the Phy is next answered.</title>
+  <style>
+    .d-band { fill: #eef1f5; }
+    .d-box { fill: #ffffff; stroke: #18212e; stroke-width: 1.2; }
+    .d-new { fill: #dceff5; stroke: #0a6b8a; stroke-width: 1.6; }
+    .d-t { font: 600 14px sans-serif; fill: #18212e; }
+    .d-f { font: 11.5px monospace; fill: #566274; }
+    .d-l { font: 11.5px monospace; fill: #18212e; }
+    .d-s { font: 11px monospace; fill: #566274; letter-spacing: 0.06em; }
+    .d-a { stroke: #18212e; stroke-width: 1.3; fill: none; }
+    .d-dash { stroke-dasharray: 5 4; }
+    .d-tx { fill: #0a6b8a; stroke: #0a6b8a; }
+    .d-tx-t { font: 11.5px monospace; fill: #ffffff; }
+  </style>
+  <rect x="0" y="0" width="680" height="440" fill="#ffffff"/>
+  <defs>
+    <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#18212e"/></marker>
+  </defs>
+  <rect class="d-box" x="60" y="30" width="170" height="40" rx="4"/>
+  <text class="d-t" x="145" y="55" text-anchor="middle">OP_IDLE</text>
+  <rect class="d-box" x="60" y="110" width="170" height="40" rx="4"/>
+  <text class="d-t" x="145" y="135" text-anchor="middle">OP_WAIT_START</text>
+  <rect class="d-new" x="60" y="190" width="170" height="40" rx="4"/>
+  <text class="d-t" x="145" y="215" text-anchor="middle">OP_IN_PHY</text>
+  <rect class="d-box" x="60" y="270" width="170" height="40" rx="4"/>
+  <text class="d-t" x="145" y="295" text-anchor="middle">OP_WAIT_END</text>
+  <rect class="d-box" x="60" y="350" width="170" height="40" rx="4"/>
+  <text class="d-t" x="145" y="375" text-anchor="middle">OP_DONE</text>
+  <rect class="d-box d-dash" x="380" y="190" width="210" height="40" rx="4"/>
+  <text class="d-l" x="485" y="214" text-anchor="middle">aborted, still in the Phy</text>
+  <g class="d-a" marker-end="url(#ah3)">
+    <line x1="145" y1="70" x2="145" y2="109"/>
+    <line x1="145" y1="150" x2="145" y2="189"/>
+    <line x1="145" y1="230" x2="145" y2="269"/>
+    <line x1="145" y1="310" x2="145" y2="349"/>
+    <line x1="230" y1="210" x2="379" y2="210"/>
+    <polyline points="485,190 485,50 231,50"/>
+    <polyline points="145,390 145,416 25,416 25,50 59,50"/>
+  </g>
+  <text class="d-l" x="157" y="94">nbr_tx() / nbr_rx()</text>
+  <text class="d-l" x="157" y="174">start time</text>
+  <text class="d-l" x="157" y="254">Phy reports end</text>
+  <text class="d-l" x="157" y="334">end time (=> IRQ)</text>
+  <text class="d-l" x="157" y="409">nbr_op_result_get()</text>
+  <text class="d-l" x="305" y="203" text-anchor="middle">nbr_abort()</text>
+  <text class="d-l" x="358" y="43" text-anchor="middle">next answer to the Phy</text>
+</svg>

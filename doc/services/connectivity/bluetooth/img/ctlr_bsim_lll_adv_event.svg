@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 250" width="900" height="250">
+  <title>Timeline of a scannable advertising event: on channel 37 the advertising PDU is followed by a scan request and a scan response, on channel 38 the receive window ends without a request, then channel 39. Below it, the callback that runs at each boundary.</title>
+  <style>
+    .d-band { fill: #eef1f5; }
+    .d-box { fill: #ffffff; stroke: #18212e; stroke-width: 1.2; }
+    .d-new { fill: #dceff5; stroke: #0a6b8a; stroke-width: 1.6; }
+    .d-t { font: 600 14px sans-serif; fill: #18212e; }
+    .d-f { font: 11.5px monospace; fill: #566274; }
+    .d-l { font: 11.5px monospace; fill: #18212e; }
+    .d-s { font: 11px monospace; fill: #566274; letter-spacing: 0.06em; }
+    .d-a { stroke: #18212e; stroke-width: 1.3; fill: none; }
+    .d-dash { stroke-dasharray: 5 4; }
+    .d-tx { fill: #0a6b8a; stroke: #0a6b8a; }
+    .d-tx-t { font: 11.5px monospace; fill: #ffffff; }
+  </style>
+  <rect x="0" y="0" width="900" height="250" fill="#ffffff"/>
+  <defs>
+    <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#18212e"/></marker>
+  </defs>
+  <text class="d-s" x="30" y="20">ON AIR, NOT TO SCALE</text>
+  <text class="d-s" x="90" y="44" text-anchor="middle">CH 37</text>
+  <text class="d-s" x="560" y="44" text-anchor="middle">CH 38</text>
+  <text class="d-s" x="790" y="44" text-anchor="middle">CH 39</text>
+
+  <rect class="d-tx" x="30" y="54" width="120" height="38" rx="3"/>
+  <text class="d-tx-t" x="90" y="78" text-anchor="middle">ADV_SCAN_IND</text>
+  <text class="d-f" x="180" y="78" text-anchor="middle">150 us</text>
+  <rect class="d-box" x="210" y="54" width="80" height="38" rx="3"/>
+  <text class="d-l" x="250" y="78" text-anchor="middle">SCAN_REQ</text>
+  <text class="d-f" x="320" y="78" text-anchor="middle">150 us</text>
+  <rect class="d-tx" x="350" y="54" width="120" height="38" rx="3"/>
+  <text class="d-tx-t" x="410" y="78" text-anchor="middle">SCAN_RSP</text>
+  <text class="d-f" x="485" y="78" text-anchor="middle">40</text>
+  <rect class="d-tx" x="500" y="54" width="120" height="38" rx="3"/>
+  <text class="d-tx-t" x="560" y="78" text-anchor="middle">ADV_SCAN_IND</text>
+  <rect class="d-box d-dash" x="620" y="54" width="80" height="38" rx="3"/>
+  <text class="d-f" x="660" y="78" text-anchor="middle">Rx window</text>
+  <text class="d-f" x="715" y="78" text-anchor="middle">40</text>
+  <rect class="d-tx" x="730" y="54" width="120" height="38" rx="3"/>
+  <text class="d-tx-t" x="790" y="78" text-anchor="middle">ADV_SCAN_IND</text>
+  <text class="d-l" x="866" y="78">...</text>
+
+  <line class="d-a" x1="30" y1="104" x2="880" y2="104" marker-end="url(#ah2)"/>
+  <text class="d-f" x="880" y="120" text-anchor="end">time</text>
+
+  <g class="d-a">
+    <line x1="30" y1="92" x2="30" y2="236"/>
+    <line x1="150" y1="92" x2="150" y2="192"/>
+    <line x1="290" y1="92" x2="290" y2="148"/>
+    <line x1="470" y1="92" x2="470" y2="236"/>
+    <line x1="620" y1="92" x2="620" y2="192"/>
+    <line x1="700" y1="92" x2="700" y2="148"/>
+  </g>
+  <text class="d-l" x="296" y="134">isr_rx()</text>
+  <text class="d-l" x="296" y="148">-> lll_radio_tx()</text>
+  <text class="d-l" x="156" y="178">isr_tx()</text>
+  <text class="d-l" x="156" y="192">-> lll_radio_rx()</text>
+  <text class="d-l" x="36" y="222">prepare_cb()</text>
+  <text class="d-l" x="36" y="236">-> chan_tx()</text>
+  <text class="d-l" x="706" y="134">isr_rx(), NO_SYNC</text>
+  <text class="d-l" x="706" y="148">-> isr_done()</text>
+  <text class="d-l" x="626" y="178">isr_tx()</text>
+  <text class="d-l" x="626" y="192">-> lll_radio_rx()</text>
+  <text class="d-l" x="476" y="222">isr_done()</text>
+  <text class="d-l" x="476" y="236">-> chan_tx()</text>
+  <text class="d-s" x="880" y="236" text-anchor="end">CODE AT EACH BOUNDARY</text>
+</svg>
