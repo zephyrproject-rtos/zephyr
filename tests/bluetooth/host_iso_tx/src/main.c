@@ -395,9 +395,35 @@ static void connect_acl(void)
 	zassert_ok(k_sem_take(&acl_connected_sem, K_SECONDS(1)), "No ACL connection");
 }
 
+static void num_completed_evt(uint16_t handle)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_num_completed_packets *evt;
+	const size_t evt_len = sizeof(*evt) + sizeof(evt->h[0]);
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, evt_len);
+	evt = net_buf_add(buf, evt_len);
+	evt->num_handles = 1U;
+	evt->h[0].handle = sys_cpu_to_le16(handle);
+	evt->h[0].count = sys_cpu_to_le16(1U);
+	bt_hci_recv(dev, buf);
+}
+
 /* What the CIS has reported about the SDUs given to it */
 static unsigned int sent_count;
 static unsigned int send_failed_count;
+static bool should_ack_on_send_failed;
+static K_SEM_DEFINE(workq_release_sem, 0, 1);
+static bool should_ack_on_sent;
+static int disable_err;
+static K_SEM_DEFINE(disable_done_sem, 0, 1);
+static K_SEM_DEFINE(workq_held_sem, 0, 1);
+static int workq_hold_err;
+static K_SEM_DEFINE(in_sent_sem, 0, 1);
+static K_SEM_DEFINE(next_ack_sem, 0, 1);
+static int next_ack_err;
 
 static K_SEM_DEFINE(iso_connected_sem, 0, 1);
 static K_SEM_DEFINE(iso_disconnected_sem, 0, 1);
@@ -422,6 +448,16 @@ static void iso_sent(struct bt_iso_chan *chan)
 	ARG_UNUSED(chan);
 
 	sent_count++;
+
+	if (should_ack_on_sent) {
+		should_ack_on_sent = false;
+		num_completed_evt(CIS_HANDLE);
+		k_sem_give(&in_sent_sem);
+		/* Keeps the TX notification work running until the test thread has
+		 * delivered the next acknowledgment
+		 */
+		next_ack_err = k_sem_take(&next_ack_sem, EVENT_TIMEOUT);
+	}
 }
 
 static void iso_send_failed(struct bt_iso_chan *chan, int err)
@@ -430,6 +466,12 @@ static void iso_send_failed(struct bt_iso_chan *chan, int err)
 
 	zassert_equal(err, -ESHUTDOWN, "Send failed with %d", err);
 	send_failed_count++;
+	k_sem_give(&workq_release_sem);
+
+	if (should_ack_on_send_failed) {
+		should_ack_on_send_failed = false;
+		num_completed_evt(CIS_HANDLE);
+	}
 }
 
 static struct bt_iso_chan_ops iso_ops = {
@@ -602,6 +644,11 @@ static void before(void *fixture)
 	k_sem_reset(&iso_pkt_sem);
 	k_sem_reset(&iso_connected_sem);
 	k_sem_reset(&iso_disconnected_sem);
+	k_sem_reset(&in_sent_sem);
+	k_sem_reset(&next_ack_sem);
+	k_sem_reset(&disable_done_sem);
+	k_sem_reset(&workq_held_sem);
+	k_sem_reset(&workq_release_sem);
 	iso_pkt_count = 0U;
 	sent_count = 0U;
 	send_failed_count = 0U;
@@ -612,6 +659,9 @@ static void before(void *fixture)
 static void after(void *fixture)
 {
 	ARG_UNUSED(fixture);
+
+	should_ack_on_send_failed = false;
+	should_ack_on_sent = false;
 
 	if (iso_chan.state != BT_ISO_STATE_DISCONNECTED) {
 		disconnect_cis();
@@ -697,6 +747,134 @@ static ZTEST(iso_tx, test_unacked_sdu_on_disable)
 		      send_failed_count);
 }
 
+/* Keeps the system workqueue busy until workq_release_sem is given: by the send_failed
+ * callback, or by the test.
+ */
+static void hold_workq(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	k_sem_give(&workq_held_sem);
+	workq_hold_err = k_sem_take(&workq_release_sem, EVENT_TIMEOUT);
+}
+
+static K_WORK_DEFINE(hold_workq_work, hold_workq);
+
+/* An SDU the controller has acknowledged is reported as sent, also when bt_disable()
+ * gets to the CIS before the TX notification work, which runs on the system workqueue.
+ * The workqueue is held until bt_disable() has reported the other SDU as failed.
+ */
+static ZTEST(iso_tx, test_acked_sdu_on_disable)
+{
+	send_sdu(&iso_chan, SHORT_SDU_LEN);
+	send_sdu(&iso_chan, SHORT_SDU_LEN);
+	expect_iso_packets(2U);
+
+	zassert_true(k_work_submit(&hold_workq_work) >= 0, "Holding the workqueue failed");
+	zassert_ok(k_sem_take(&workq_held_sem, EVENT_TIMEOUT), "Workqueue not held");
+	num_completed_evt(CIS_HANDLE);
+
+	stop();
+
+	zassert_ok(workq_hold_err, "Workqueue not held until an SDU was reported as failed");
+	zassert_equal(sent_count, 1U, "%u SDUs reported as sent (!= 1)", sent_count);
+	zassert_equal(send_failed_count, 1U, "%u SDUs reported as failed (!= 1)",
+		      send_failed_count);
+}
+
+/* The controller can still acknowledge an SDU while another one is being reported
+ * as failed, and that one has to be reported before the object is released too.
+ */
+static ZTEST(iso_tx, test_sdu_acked_during_disable)
+{
+	send_sdu(&iso_chan, SHORT_SDU_LEN);
+	send_sdu(&iso_chan, SHORT_SDU_LEN);
+	expect_iso_packets(2U);
+
+	should_ack_on_send_failed = true;
+	stop();
+
+	zassert_equal(sent_count, 1U, "%u SDUs reported as sent (!= 1)", sent_count);
+	zassert_equal(send_failed_count, 1U, "%u SDUs reported as failed (!= 1)",
+		      send_failed_count);
+}
+
+static void disable_on_workq(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	disable_err = bt_disable();
+	k_sem_give(&disable_done_sem);
+}
+
+static K_WORK_DEFINE(disable_work, disable_on_workq);
+
+/* The same when bt_disable() runs on the workqueue that the TX notification work is
+ * queued on, behind it.
+ */
+static ZTEST(iso_tx, test_acked_sdu_on_disable_from_workq)
+{
+	send_sdu(&iso_chan, SHORT_SDU_LEN);
+	expect_iso_packets(1U);
+
+	zassert_true(k_work_submit(&disable_work) >= 0, "Submitting bt_disable() failed");
+	num_completed_evt(CIS_HANDLE);
+
+	zassert_ok(k_sem_take(&disable_done_sem, EVENT_TIMEOUT), "bt_disable() did not return");
+	zassert_ok(disable_err, "Bluetooth disable failed (err %d)", disable_err);
+	bt_conn_drop(&acl);
+
+	zassert_equal(sent_count, 1U, "%u SDUs reported as sent (!= 1)", sent_count);
+	zassert_equal(send_failed_count, 0U, "%u SDUs reported as failed", send_failed_count);
+}
+
+/* An acknowledgment handled from within the TX notification work, here from a sent
+ * callback, does not keep the next one from being reported. The callback holds that
+ * work until the next acknowledgment has come from the test thread.
+ */
+static ZTEST(iso_tx, test_ack_from_sent_callback)
+{
+	/* One more than the controller has buffers for */
+	const uint8_t sdu_count = ISO_BUF_NUM + 1U;
+
+	for (uint8_t sdu = 0U; sdu < sdu_count; sdu++) {
+		send_sdu(&iso_chan, SHORT_SDU_LEN);
+	}
+	expect_iso_packets(ISO_BUF_NUM);
+
+	should_ack_on_sent = true;
+	num_completed_evt(CIS_HANDLE);
+	zassert_ok(k_sem_take(&in_sent_sem, EVENT_TIMEOUT), "First SDU not reported as sent");
+	expect_iso_packets(sdu_count);
+	num_completed_evt(CIS_HANDLE);
+	k_sem_give(&next_ack_sem);
+
+	stop();
+
+	zassert_ok(next_ack_err, "Next acknowledgment not delivered");
+	zassert_equal(sent_count, sdu_count, "%u SDUs reported as sent (!= %u)", sent_count,
+		      sdu_count);
+	zassert_equal(send_failed_count, 0U, "%u SDUs reported as failed", send_failed_count);
+}
+
+/* A reference kept to the CIS does not get the disconnected callback called again */
+static ZTEST(iso_tx, test_reference_kept_on_disable)
+{
+	struct bt_conn *kept = bt_conn_ref(iso_chan.iso);
+
+	stop();
+
+	zassert_ok(k_sem_take(&iso_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the CIS");
+	zassert_is_null(iso_chan.iso, "Channel still attached");
+
+	start();
+
+	zassert_equal(k_sem_count_get(&iso_disconnected_sem), 0U,
+		      "Disconnected callback called again");
+	bt_conn_unref(kept);
+}
+
 static K_SEM_DEFINE(peer_cis_connected_sem, 0, 1);
 static K_SEM_DEFINE(peer_cis_disconnected_sem, 0, 1);
 static uint8_t peer_cis_reason;
@@ -760,6 +938,8 @@ static void cis_accept_before(void *fixture)
 	k_sem_reset(&accept_cis_sem);
 	k_sem_reset(&peer_cis_connected_sem);
 	k_sem_reset(&peer_cis_disconnected_sem);
+	k_sem_reset(&workq_held_sem);
+	k_sem_reset(&workq_release_sem);
 	zassert_ok(bt_iso_server_register(&peer_cis_server), "Registering the server failed");
 }
 
@@ -860,6 +1040,26 @@ static ZTEST(iso_cis_accept, test_sdu_queued_behind_other_cis)
 	/* The buffers coming back take the TX processor to that object */
 	disconnect_cis();
 	expect_iso_packets(ISO_BUF_NUM);
+}
+
+/* A refused CIS has nothing to report as sent, so its disconnected callback does not
+ * wait for the TX notification work, which runs on the system workqueue held here.
+ */
+static ZTEST(iso_cis_accept, test_refused_with_workq_held)
+{
+	struct k_work_sync sync;
+
+	zassert_true(k_work_submit(&hold_workq_work) >= 0, "Holding the workqueue failed");
+	zassert_ok(k_sem_take(&workq_held_sem, EVENT_TIMEOUT), "Workqueue not held");
+
+	accept_cis_hci_status = BT_HCI_ERR_CMD_DISALLOWED;
+	request_peer_cis();
+	zassert_ok(k_sem_take(&peer_cis_disconnected_sem, EVENT_TIMEOUT),
+		   "No disconnected callback for the refused CIS");
+
+	k_sem_give(&workq_release_sem);
+	(void)k_work_flush(&hold_workq_work, &sync);
+	zassert_ok(workq_hold_err, "Workqueue released only by its timeout");
 }
 
 /* A refused CIS leaves a released connection object without a channel, and
