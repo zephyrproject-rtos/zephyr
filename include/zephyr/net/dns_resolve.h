@@ -464,6 +464,11 @@ enum dns_resolve_status {
  * DNS resolving. The resolver can call this callback multiple times, one
  * for each resolved address.
  *
+ * The callback is called from the thread that receives the DNS responses. For
+ * a query that times out it is called from the networking work queue, or from
+ * the system work queue if CONFIG_NET_DEDICATED_WORKQUEUE is disabled. Cached
+ * and numeric results and canceled queries call it from the calling thread.
+ *
  * @param status The status of the query:
  *  DNS_EAI_INPROGRESS returned for each resolved address
  *  DNS_EAI_ALLDONE    mark end of the resolving, info is set to NULL in
