@@ -693,6 +693,23 @@ static void i2c_esp32_target_pause(const struct device *dev);
 static void i2c_esp32_target_resume(const struct device *dev);
 #endif
 
+static bool IRAM_ATTR i2c_esp32_bus_stuck(const struct device *dev)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	if (i2c_ll_is_bus_busy(data->hal.dev)) {
+		return true;
+	}
+#ifndef I2C_LL_SUPPORT_HW_CLR_BUS
+	/* A line held low does not always set bus busy */
+	const struct i2c_esp32_config *config = dev->config;
+
+	return !gpio_pin_get_dt(&config->sda) || !gpio_pin_get_dt(&config->scl);
+#else
+	return false;
+#endif
+}
+
 static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg *msgs,
 					uint8_t num_msgs, uint16_t addr)
 {
@@ -750,11 +767,15 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	addr &= BIT_MASK(data->dev_config & I2C_ADDR_10_BITS ? 10 : 7);
 	addr <<= 1;
 
-	for (; num_msgs > 0; num_msgs--, msgs++) {
-
-		if (data->status == I2C_STATUS_TIMEOUT || i2c_ll_is_bus_busy(data->hal.dev)) {
-			i2c_hw_fsm_reset(dev);
+	/* Recover a stuck bus, and fail if a line is still held low */
+	if (data->status == I2C_STATUS_TIMEOUT || i2c_esp32_bus_stuck(dev)) {
+		i2c_hw_fsm_reset(dev);
+		if (i2c_esp32_bus_stuck(dev)) {
+			ret = -EBUSY;
 		}
+	}
+
+	for (; ret == 0 && num_msgs > 0; num_msgs--, msgs++) {
 
 		/* reset all fifo buffer before start */
 		i2c_esp32_reset_fifo(dev);
