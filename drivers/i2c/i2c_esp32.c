@@ -1057,11 +1057,8 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	}
 #endif
 
-	if (data->status == I2C_STATUS_WRITE) {
-		i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
-	} else if (data->status == I2C_STATUS_READ) {
-		i2c_hal_master_handle_rx_event(&data->hal, &evt_type);
-	}
+	/* Only the TX interrupts are ever enabled, and status may be stale here */
+	i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
 
 	if (evt_type == I2C_INTR_EVENT_NACK) {
 		data->status = I2C_STATUS_ACK_ERROR;
