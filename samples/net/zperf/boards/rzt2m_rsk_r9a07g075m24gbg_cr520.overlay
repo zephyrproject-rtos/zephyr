@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Run CPU0 at 800 MHz (ICLK 200 MHz x 4) instead of the 200 MHz default */
+&cpu0clk {
+	mul = <4>;
+};
