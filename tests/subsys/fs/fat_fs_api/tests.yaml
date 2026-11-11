@@ -70,6 +70,16 @@ tests:
     extra_configs:
       - CONFIG_FS_FATFS_REENTRANT=y
       - CONFIG_MULTITHREADING=y
+  filesystem.fat.api.no_tiny:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FS_FATFS_TINY=n
+  filesystem.fat.api.fastseek:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FS_FATFS_FASTSEEK=y
   filesystem.fat.api.virtio_blk:
     extra_args: FILE_SUFFIX=virtio_blk
     # On 32-bit qemu_x86 the HPET runs in 64-bit mode and QEMU's -icount makes
