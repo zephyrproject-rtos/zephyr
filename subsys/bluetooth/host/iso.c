@@ -3547,20 +3547,32 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 
 void bt_iso_reset(void)
 {
-#if defined(CONFIG_BT_ISO_CENTRAL)
-	for (size_t i = 0U; i < ARRAY_SIZE(cigs); i++) {
-		struct bt_iso_cig *cig = &cigs[i];
-		struct bt_iso_chan *cis;
+	/* After the controller reset no event reports the end of a CIS */
+	ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+		struct bt_conn *iso = bt_conn_ref(iso_conn);
+		struct bt_iso_chan *chan;
 
-		SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
-			if (cis->state != BT_ISO_STATE_DISCONNECTED) {
-				cis->iso->err = BT_HCI_ERR_UNSPECIFIED;
-
-				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
-			}
+		if (iso == NULL) {
+			continue;
 		}
 
-		cleanup_cig(cig);
+		/* No more fragments come after the controller reset */
+		bt_conn_reset_rx_state(iso);
+
+		chan = iso->iso.chan;
+		if ((iso->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
+		     iso->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
+		    chan != NULL && chan->state != BT_ISO_STATE_DISCONNECTED) {
+			iso->err = BT_HCI_ERR_UNSPECIFIED;
+			bt_iso_chan_disconnected(chan, BT_HCI_ERR_UNSPECIFIED);
+		}
+
+		bt_conn_unref(iso);
+	}
+
+#if defined(CONFIG_BT_ISO_CENTRAL)
+	for (size_t i = 0U; i < ARRAY_SIZE(cigs); i++) {
+		cleanup_cig(&cigs[i]);
 	}
 #endif /* CONFIG_BT_ISO_CENTRAL */
 
