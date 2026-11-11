@@ -58,6 +58,34 @@ static inline uint16_t bytes_per_word(uint16_t bits_per_word)
 	return 4U;
 }
 
+/* The MCUX driver takes the divider pair closest to the requested rate, which
+ * can lie above it. The requested rate is the device's maximum, so this takes
+ * the fastest rate that does not exceed it, as CONREG divider fields, and
+ * returns that rate, or 0 if even the slowest rate exceeds the request.
+ */
+static uint32_t spi_mcux_sclk_dividers(uint32_t clock_hz, uint32_t max_hz, uint32_t *dividers)
+{
+	uint32_t best_hz = 0U;
+	uint32_t best_pre = 0U;
+	uint32_t best_post = 0U;
+
+	for (uint32_t post = 0U; post < 16U; post++) {
+		for (uint32_t pre = 0U; pre < 16U; pre++) {
+			uint32_t hz = (clock_hz / (pre + 1U)) >> post;
+
+			if ((hz <= max_hz) && (hz > best_hz)) {
+				best_hz = hz;
+				best_pre = pre;
+				best_post = post;
+			}
+		}
+	}
+
+	*dividers = ECSPI_CONREG_PRE_DIVIDER(best_pre) | ECSPI_CONREG_POST_DIVIDER(best_post);
+
+	return best_hz;
+}
+
 static inline void spi_mcux_set_burst_length(ECSPI_Type *base, uint16_t bits)
 {
 	base->CONREG = (base->CONREG & ~ECSPI_CONREG_BURST_LENGTH_MASK) |
@@ -203,6 +231,8 @@ static int spi_mcux_configure(const struct device *dev,
 	ECSPI_Type *base = config->base;
 	ecspi_master_config_t controller_config;
 	uint32_t clock_freq;
+	uint32_t dividers;
+	uint32_t sclk_hz;
 	uint16_t word_size;
 
 	/* An aborted transfer can leave words in the FIFOs, only the init resets them */
@@ -234,6 +264,12 @@ static int spi_mcux_configure(const struct device *dev,
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (0 == word_size || word_size > 32) {
 		LOG_ERR("Invalid word size (0 < %d <= 32)", word_size);
+		return -EINVAL;
+	}
+
+	sclk_hz = spi_mcux_sclk_dividers(clock_freq, spi_cfg->frequency, &dividers);
+	if (sclk_hz == 0U) {
+		LOG_ERR("Frequency %u Hz is below the slowest SCLK", spi_cfg->frequency);
 		return -EINVAL;
 	}
 
@@ -272,6 +308,9 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	ECSPI_MasterInit(base, &controller_config, clock_freq);
+	base->CONREG =
+		(base->CONREG & ~(ECSPI_CONREG_PRE_DIVIDER_MASK | ECSPI_CONREG_POST_DIVIDER_MASK)) |
+		dividers;
 	ECSPI_MasterTransferCreateHandle(base, &data->handle,
 					 spi_mcux_transfer_callback,
 					 (void *)dev);
