@@ -120,7 +120,10 @@ struct mcux_lpuart_async_data {
 	size_t next_rx_buffer_len;
 	uart_callback_t user_callback;
 	void *user_data;
-	/* RX line errors cleared by the ISR, reported by uart_err_check() */
+	/* RX line errors the ISR cleared from STAT, reported by uart_err_check().
+	 * Dropped together with the STAT error flags when reception is enabled
+	 * or the LPUART is reinitialized.
+	 */
 	uint32_t rx_errors;
 };
 #endif
@@ -1071,6 +1074,8 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 	LPUART_ClearStatusFlags(get_base(dev), kLPUART_RxOverrunFlag | kLPUART_ParityErrorFlag |
 							kLPUART_FramingErrorFlag |
 							kLPUART_NoiseErrorFlag);
+	/* Errors of a previous reception do not apply to this one */
+	data->async.rx_errors = 0U;
 	LPUART_EnableRx(lpuart, true);
 	irq_unlock(key);
 	return ret;
@@ -1495,6 +1500,13 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 	}
 
 	LPUART_Init(get_base(dev), &uart_config, clock_freq);
+
+#if LPUART_ASYNC_ENABLE
+	/* LPUART_Init() clears the STAT error flags. Errors received with the
+	 * previous configuration do not apply to the new one.
+	 */
+	data->async.rx_errors = 0U;
+#endif
 
 #ifdef LPUART_HAS_MODEM
 	if (cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {

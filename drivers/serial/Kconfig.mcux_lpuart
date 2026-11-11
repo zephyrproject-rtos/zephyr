@@ -42,5 +42,7 @@ config UART_MCUX_LPUART_ASYNC_RX_STOP_ON_ERROR
 	  receiving. A character received with a framing, noise or parity
 	  error is still delivered, an overrun loses the character that was
 	  in the shift register. The errors are reported by uart_err_check().
+	  They are kept until uart_err_check() reads them, uart_rx_enable()
+	  starts a new reception or the UART is reconfigured.
 
 endif
