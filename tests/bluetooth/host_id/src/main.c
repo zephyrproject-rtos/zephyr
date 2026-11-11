@@ -294,6 +294,27 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt, uin
 	generic_success(buf, evt, len, opcode);
 }
 
+/* Once armed, the response to the next LE Set Random Address is held back until the
+ * test sends it, as by a Controller that is slow to respond.
+ */
+static bool random_addr_rsp_hold_armed;
+static struct net_buf *held_rsp;
+static K_SEM_DEFINE(rsp_held_sem, 0, 1);
+
+/* Return true if the response is held back */
+static bool hold_rsp_if_armed(uint16_t opcode, struct net_buf *evt)
+{
+	if (opcode != BT_HCI_OP_LE_SET_RANDOM_ADDRESS || !random_addr_rsp_hold_armed) {
+		return false;
+	}
+
+	random_addr_rsp_hold_armed = false;
+	held_rsp = evt;
+	k_sem_give(&rsp_held_sem);
+
+	return true;
+}
+
 static const struct cmd_handler cmds[] = {
 	{
 		BT_HCI_OP_READ_LOCAL_FEATURES,
@@ -374,6 +395,10 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	for (size_t i = 0U; i < ARRAY_SIZE(cmds); i++) {
 		if (cmds[i].opcode == opcode) {
 			cmds[i].handler(cmd, &evt, cmds[i].len, opcode);
+			if (hold_rsp_if_armed(opcode, evt)) {
+				return;
+			}
+
 			bt_hci_recv(dev, evt);
 			return;
 		}
@@ -517,6 +542,33 @@ static void adv_cleanup(void)
 	bt_le_ext_adv_foreach(adv_cleanup_func, NULL);
 }
 
+/* The application thread of test_rpa_timeout_during_adv_start() */
+static struct k_thread adv_start_thread;
+static bool adv_start_thread_created;
+
+/* What a failed advertiser start leaves behind: the held response, the thread
+ * that waits for it and the advertiser
+ */
+static void adv_start_cleanup(void)
+{
+	random_addr_rsp_hold_armed = false;
+	k_sem_reset(&rsp_held_sem);
+
+	if (held_rsp != NULL) {
+		bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&held_rsp));
+	}
+
+	if (adv_start_thread_created) {
+		adv_start_thread_created = false;
+		zassert_ok(k_thread_join(&adv_start_thread, K_FOREVER),
+			   "Failed to join the thread");
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && bt_le_adv_lookup_legacy() != NULL) {
+		zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+	}
+}
+
 static void *id_setup(void)
 {
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -549,6 +601,7 @@ static void id_after(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	adv_start_cleanup();
 	adv_cleanup();
 	cleanup_secondary_identities();
 }
@@ -1424,6 +1477,85 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 	zassert_ok(unpair_err, "Failed to remove the test bond");
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP) */
+
+/* Below the Host's threads, as application threads usually are */
+#define ADV_START_PRIO K_PRIO_PREEMPT(5)
+
+/* Ample for bt_le_adv_start() */
+#define ADV_START_STACK_SIZE 2048U
+
+/* How long before the RPA timeout the advertiser is started. Its response is held
+ * back until past the RPA timeout, so this stays well below the command timeout.
+ */
+#define ADV_START_LEAD_MS 100U
+
+static void adv_start_func(void *p1, void *p2, void *p3)
+{
+	int *err = p1;
+
+	ARGS_UNUSED(p2, p3);
+
+	*err = bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U);
+}
+
+/* Without a Central the RPA timeout sets a new RPA also while no role uses one.
+ * Here it expires before the Controller responds to the LE Set Random Address of
+ * an advertiser that is being started, so its own address goes to the Controller
+ * after the advertiser's.
+ */
+static ZTEST(bt_id_public_api, test_rpa_timeout_during_adv_start)
+{
+	static K_THREAD_STACK_DEFINE(stack, ADV_START_STACK_SIZE);
+	uint32_t rpa_timeout_left_ms;
+	bt_addr_t adv_start_addr;
+	static int adv_start_err;
+	struct bt_le_oob oob;
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		/* With a Central the RPA timeout sets nothing while no role uses an RPA */
+		ztest_test_skip();
+	}
+
+	/* Start a new RPA period, so that the RPA timeout is a known time ahead */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+	rpa_timeout_left_ms =
+		k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&bt_dev.rpa_update));
+	/* Start the advertiser shortly before the RPA timeout */
+	(void)k_sleep(K_MSEC(rpa_timeout_left_ms - ADV_START_LEAD_MS));
+
+	random_addr_rsp_hold_armed = true;
+	adv_start_thread_created = true;
+	(void)k_thread_create(&adv_start_thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			      adv_start_func, &adv_start_err, NULL, NULL, ADV_START_PRIO, 0,
+			      K_NO_WAIT);
+	/* The command reaches the driver with no simulated time passing, so the
+	 * timeout only ends a failed wait before the RPA timeout
+	 */
+	zassert_ok(k_sem_take(&rsp_held_sem, K_MSEC(ADV_START_LEAD_MS)),
+		   "The advertiser did not set a random address");
+	bt_addr_copy(&adv_start_addr, &random_addr);
+
+	/* Until one tick past the RPA timeout, which runs until it waits for a
+	 * command buffer or for the response to its own command
+	 */
+	(void)k_sleep(K_TICKS(k_work_delayable_remaining_get(&bt_dev.rpa_update) + 1));
+	zassert_true((k_work_delayable_busy_get(&bt_dev.rpa_update) & K_WORK_RUNNING) != 0U,
+		     "The RPA timeout is not running");
+
+	bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&held_rsp));
+	zassert_ok(k_thread_join(&adv_start_thread, K_FOREVER), "Failed to join the thread");
+	adv_start_thread_created = false;
+	zassert_ok(adv_start_err, "Failed to start advertising");
+	zassert_false(bt_addr_eq(&random_addr, &adv_start_addr),
+		      "The RPA timeout did not set an address after the advertiser");
+
+	zassert_true(bt_addr_eq(&bt_dev.random_addr, &random_addr),
+		     "The Host's random address is not the Controller's");
+	/* What bt_le_ext_adv_get_info() reports for the advertiser */
+	zassert_true(bt_addr_eq(&bt_le_adv_lookup_legacy()->adv_addr.a, &random_addr),
+		     "The advertiser's address is not the Controller's");
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+}
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 
 #if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
