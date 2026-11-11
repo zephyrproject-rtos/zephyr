@@ -19,4 +19,5 @@ supported:
   - watchdog
   - pm
   - dma
+  - usbd
 vendor: infineon
