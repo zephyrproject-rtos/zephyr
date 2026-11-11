@@ -32,6 +32,7 @@
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,camera = &htpa_cam0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
@@ -135,6 +136,32 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+	dma-names = "tx", "rx";
+
+	/* The flash and sensor share a chip select with opposite polarity. */
+	cs-gpios = <&pioa 24 GPIO_ACTIVE_HIGH>, <&pioa 24 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	htpa_flash0: flash@0 {
+		compatible = "heimann,htpa-flash";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		size = <DT_SIZE_K(512)>;
+	};
+
+	htpa_cam0: camera@1 {
+		compatible = "heimann,htpa-160x120-camera";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		spi-cs-high;
+		calibration-flash = <&htpa_flash0>;
+	};
 };
 
 &wdt {
