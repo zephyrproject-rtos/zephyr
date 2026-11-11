@@ -242,13 +242,18 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 		break;
 #endif
 
-#ifdef CONFIG_I2S_MCUX_SAI
 #if (defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111))
+#ifdef CONFIG_I2S_MCUX_SAI
 	case IMX_CCM_SAI1_CLK:
 		clock_root = kCLOCK_Root_Sai1 + instance;
 		break;
-#else
+#endif
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
 	/*
+	 * Audio codec drivers read the SAI clock root rate (MCLK), also when
+	 * the I2S driver is not built. Thus an enabled SAI node is sufficient
+	 * for this case.
+	 *
 	 * The switch compares only the peripheral part of the clock name, so
 	 * IMX_CCM_SAI1_CLK to IMX_CCM_SAI4_CLK all come here. The instance
 	 * selects the root: the SAI1 to SAI4 roots are consecutive in the HAL.
@@ -256,7 +261,6 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 	case IMX_CCM_SAI1_CLK:
 		clock_root = kCLOCK_Root_Sai1 + instance;
 		break;
-#endif
 #endif
 #if defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	case IMX_CCM_PDM_CLK:
