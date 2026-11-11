@@ -3143,7 +3143,7 @@ void hci_le_big_terminate(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 
-static int hci_le_terminate_big(struct bt_iso_big *big)
+static int hci_le_terminate_big(uint8_t big_handle)
 {
 	struct bt_hci_cp_le_terminate_big *req;
 	struct net_buf *buf;
@@ -3154,13 +3154,13 @@ static int hci_le_terminate_big(struct bt_iso_big *big)
 	}
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->big_handle = big->handle;
+	req->big_handle = big_handle;
 	req->reason = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_TERMINATE_BIG, buf, NULL);
 }
 
-static int hci_le_big_sync_term(struct bt_iso_big *big)
+static int hci_le_big_sync_term(uint8_t big_handle)
 {
 	struct bt_hci_cp_le_big_terminate_sync *req;
 	struct bt_hci_rp_le_big_terminate_sync *evt;
@@ -3174,14 +3174,14 @@ static int hci_le_big_sync_term(struct bt_iso_big *big)
 	}
 
 	req = net_buf_add(buf, sizeof(*req));
-	req->big_handle = big->handle;
+	req->big_handle = big_handle;
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_BIG_TERMINATE_SYNC, buf, &rsp);
 	if (err) {
 		return err;
 	}
 
 	evt = (struct bt_hci_rp_le_big_terminate_sync *)rsp->data;
-	if (evt->status || (evt->big_handle != big->handle)) {
+	if (evt->status != BT_HCI_ERR_SUCCESS || evt->big_handle != big_handle) {
 		err = -EIO;
 	}
 
@@ -3192,7 +3192,9 @@ static int hci_le_big_sync_term(struct bt_iso_big *big)
 
 int bt_iso_big_terminate(struct bt_iso_big *big)
 {
+	enum bt_iso_chan_type type;
 	struct bt_iso_chan *bis;
+	uint8_t big_handle;
 	int err;
 
 	if (big == NULL) {
@@ -3200,12 +3202,24 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 		return -EINVAL;
 	}
 
+	/* Controller events such as BIG Sync Lost tear the BIG down on the RX workqueue. That
+	 * path does not take the host lock (bt_dev_lock()) and relies on cooperative scheduling:
+	 * hold the scheduler lock as well, so that it cannot preempt a preemptible caller
+	 * between the checks and the reads below.
+	 */
+	bt_dev_lock();
+	k_sched_lock();
+
 	if (!atomic_test_bit(big->flags, BT_BIG_INITIALIZED) || !big->num_bis) {
+		k_sched_unlock();
+		bt_dev_unlock();
 		LOG_DBG("BIG not initialized");
 		return -EINVAL;
 	}
 
 	if (atomic_test_bit(big->flags, BT_BIG_BUSY)) {
+		k_sched_unlock();
+		bt_dev_unlock();
 		LOG_DBG("BIG %p is busy", big);
 		return -EBUSY;
 	}
@@ -3213,9 +3227,14 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 	bis = SYS_SLIST_PEEK_HEAD_CONTAINER(&big->bis_channels, bis, node);
 	__ASSERT(bis != NULL, "bis was NULL");
 
-	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
-	    bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_BROADCASTER) {
-		err = hci_le_terminate_big(big);
+	big_handle = big->handle;
+	type = bis->iso->iso.info.type;
+
+	k_sched_unlock();
+	bt_dev_unlock();
+
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && type == BT_ISO_CHAN_TYPE_BROADCASTER) {
+		err = hci_le_terminate_big(big_handle);
 
 		/* Wait for BT_HCI_EVT_LE_BIG_TERMINATE before cleaning up
 		 * the BIG in hci_le_big_terminate
@@ -3226,8 +3245,8 @@ int bt_iso_big_terminate(struct bt_iso_big *big)
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_BT_ISO_SYNC_RECEIVER) &&
-		   bis->iso->iso.info.type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
-		err = hci_le_big_sync_term(big);
+		   type == BT_ISO_CHAN_TYPE_SYNC_RECEIVER) {
+		err = hci_le_big_sync_term(big_handle);
 
 		if (!err) {
 			big_disconnect(big, BT_HCI_ERR_LOCALHOST_TERM_CONN);
