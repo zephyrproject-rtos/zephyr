@@ -132,7 +132,7 @@ static inline void ifx_cat1_i2c_enable(const struct ifx_cat1_i2c_config *config,
  * keeps its own mutable copy in struct ifx_cat1_i2c_data::scb_config so that
  * concurrent I2C instances cannot corrupt each other's configuration.
  */
-static const cy_stc_scb_i2c_config_t _i2c_default_config = {
+static const cy_stc_scb_i2c_config_t i2c_infineon_default_config = {
 	.i2cMode = CY_SCB_I2C_MASTER,
 	.useRxFifo = false,
 	.useTxFifo = true,
@@ -351,8 +351,9 @@ static void ifx_cat1_i2c_target_arm(const struct device *dev)
 	data->irq_cause |= I2C_CAT1_TARGET_EVENTS_MASK;
 }
 
-void ifx_cat1_i2c_register_callback(const struct device *dev,
-				    ifx_cat1_i2c_event_callback_t callback, void *callback_arg)
+static void ifx_cat1_i2c_register_callback(const struct device *dev,
+					   ifx_cat1_i2c_event_callback_t callback,
+					   void *callback_arg)
 {
 
 	struct ifx_cat1_i2c_data *const data = dev->data;
@@ -396,17 +397,18 @@ void ifx_cat1_i2c_register_callback(const struct device *dev,
  * Returns 0 on success, negative errno otherwise.
  */
 #if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_V2)
-static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_target_mode)
+static int i2c_infineon_set_peri_divider(const struct device *dev, uint32_t freq,
+					 bool is_target_mode)
 {
 /* Controller mode oversampling clock frequencies */
-#define _SCB_PERI_CLOCK_CTRL_STD  2000000UL
-#define _SCB_PERI_CLOCK_CTRL_FST  8000000UL
-#define _SCB_PERI_CLOCK_CTRL_FSTP 24000000UL
+#define I2C_INFINEON_PERI_CLOCK_CTRL_STD  2000000UL
+#define I2C_INFINEON_PERI_CLOCK_CTRL_FST  8000000UL
+#define I2C_INFINEON_PERI_CLOCK_CTRL_FSTP 24000000UL
 
 /* Target mode oversampling clock frequencies */
-#define _SCB_PERI_CLOCK_TGT_STD  8000000UL
-#define _SCB_PERI_CLOCK_TGT_FST  12000000UL
-#define _SCB_PERI_CLOCK_TGT_FSTP 24000000UL
+#define I2C_INFINEON_PERI_CLOCK_TGT_STD  8000000UL
+#define I2C_INFINEON_PERI_CLOCK_TGT_FST  12000000UL
+#define I2C_INFINEON_PERI_CLOCK_TGT_FSTP 24000000UL
 
 	const struct ifx_cat1_i2c_config *const config = dev->config;
 	CySCB_Type *base = config->base;
@@ -418,11 +420,14 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	if (freq == 0) {
 		return -EINVAL;
 	} else if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
-		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_STD : _SCB_PERI_CLOCK_CTRL_STD;
+		peri_freq = is_target_mode ? I2C_INFINEON_PERI_CLOCK_TGT_STD
+					   : I2C_INFINEON_PERI_CLOCK_CTRL_STD;
 	} else if (freq <= CY_SCB_I2C_FST_DATA_RATE) {
-		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FST : _SCB_PERI_CLOCK_CTRL_FST;
+		peri_freq = is_target_mode ? I2C_INFINEON_PERI_CLOCK_TGT_FST
+					   : I2C_INFINEON_PERI_CLOCK_CTRL_FST;
 	} else if (freq <= CY_SCB_I2C_FSTP_DATA_RATE) {
-		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FSTP : _SCB_PERI_CLOCK_CTRL_FSTP;
+		peri_freq = is_target_mode ? I2C_INFINEON_PERI_CLOCK_TGT_FSTP
+					   : I2C_INFINEON_PERI_CLOCK_CTRL_FSTP;
 	} else {
 		return -EINVAL;
 	}
@@ -450,17 +455,18 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	return 0;
 }
 #else
-static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool is_target_mode)
+static int i2c_infineon_set_peri_divider(const struct device *dev, uint32_t freq,
+					 bool is_target_mode)
 {
 /* Controller mode oversampling clock frequencies */
-#define _SCB_PERI_CLOCK_CTRL_STD  2000000UL
-#define _SCB_PERI_CLOCK_CTRL_FST  8000000UL
-#define _SCB_PERI_CLOCK_CTRL_FSTP 24000000UL
+#define I2C_INFINEON_PERI_CLOCK_CTRL_STD  2000000UL
+#define I2C_INFINEON_PERI_CLOCK_CTRL_FST  8000000UL
+#define I2C_INFINEON_PERI_CLOCK_CTRL_FSTP 24000000UL
 
 /* Target mode oversampling clock frequencies */
-#define _SCB_PERI_CLOCK_TGT_STD  8000000UL
-#define _SCB_PERI_CLOCK_TGT_FST  12000000UL
-#define _SCB_PERI_CLOCK_TGT_FSTP 24000000UL
+#define I2C_INFINEON_PERI_CLOCK_TGT_STD  8000000UL
+#define I2C_INFINEON_PERI_CLOCK_TGT_FST  12000000UL
+#define I2C_INFINEON_PERI_CLOCK_TGT_FSTP 24000000UL
 
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -477,11 +483,14 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	if (freq == 0) {
 		return -EINVAL;
 	} else if (freq <= CY_SCB_I2C_STD_DATA_RATE) {
-		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_STD : _SCB_PERI_CLOCK_CTRL_STD;
+		peri_freq = is_target_mode ? I2C_INFINEON_PERI_CLOCK_TGT_STD
+					   : I2C_INFINEON_PERI_CLOCK_CTRL_STD;
 	} else if (freq <= CY_SCB_I2C_FST_DATA_RATE) {
-		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FST : _SCB_PERI_CLOCK_CTRL_FST;
+		peri_freq = is_target_mode ? I2C_INFINEON_PERI_CLOCK_TGT_FST
+					   : I2C_INFINEON_PERI_CLOCK_CTRL_FST;
 	} else if (freq <= CY_SCB_I2C_FSTP_DATA_RATE) {
-		peri_freq = is_target_mode ? _SCB_PERI_CLOCK_TGT_FSTP : _SCB_PERI_CLOCK_CTRL_FSTP;
+		peri_freq = is_target_mode ? I2C_INFINEON_PERI_CLOCK_TGT_FSTP
+					   : I2C_INFINEON_PERI_CLOCK_CTRL_FSTP;
 	} else {
 		return -EINVAL;
 	}
@@ -701,7 +710,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	/* Program the SCB oversampling clock divider for the requested speed */
-	if (_i2c_set_peri_divider(dev, data->frequencyhal_hz, is_target_mode) != 0) {
+	if (i2c_infineon_set_peri_divider(dev, data->frequencyhal_hz, is_target_mode) != 0) {
 		LOG_ERR("Failed to configure I2C peripheral clock divider");
 		k_sem_give(&data->operation_sem);
 		return -EIO;
@@ -909,9 +918,9 @@ static bool ifx_cat1_i2c_read_run_continues(struct i2c_msg *msg, uint8_t num_msg
  * @retval 0 Submitted.
  * @retval -EIO Neither buffer was supplied.
  */
-static int _i2c_controller_transfer_async(const struct device *dev, uint16_t address,
-					  const void *tx, size_t tx_size, void *rx,
-					  size_t rx_size, bool hold_bus, bool append)
+static int i2c_infineon_controller_transfer_async(const struct device *dev, uint16_t address,
+						  const void *tx, size_t tx_size, void *rx,
+						  size_t rx_size, bool hold_bus, bool append)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -1058,12 +1067,10 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		/* Initiate controller write and read transfer using tx_buff and rx_buff
 		 * respectively
 		 */
-		ret = _i2c_controller_transfer_async(dev, addr,
-						     (tx_msg == NULL) ? NULL : tx_msg->buf,
-						     (tx_msg == NULL) ? 0 : tx_msg->len,
-						     (rx_msg == NULL) ? NULL : rx_msg->buf,
-						     (rx_msg == NULL) ? 0 : rx_msg->len,
-						     hold_bus, append);
+		ret = i2c_infineon_controller_transfer_async(
+			dev, addr, (tx_msg == NULL) ? NULL : tx_msg->buf,
+			(tx_msg == NULL) ? 0 : tx_msg->len, (rx_msg == NULL) ? NULL : rx_msg->buf,
+			(rx_msg == NULL) ? 0 : rx_msg->len, hold_bus, append);
 
 		if (ret < 0) {
 			/* The submission never reached the bus, so no abort ran
@@ -1207,7 +1214,7 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	data->pending = CAT1_I2C_PENDING_NONE;
 
 	/* Seed this instance's mutable SCB config from the read-only template */
-	data->scb_config = _i2c_default_config;
+	data->scb_config = i2c_infineon_default_config;
 
 	config->irq_config_func(dev);
 
@@ -1306,7 +1313,7 @@ static int ifx_cat1_i2c_pm_action(const struct device *dev, enum pm_device_actio
 }
 #endif /* CONFIG_PM_DEVICE */
 
-void _i2c_free(const struct device *dev)
+static void i2c_infineon_free(const struct device *dev)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -1332,7 +1339,7 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 
 	if (ifx_cat1_i2c_configure(dev, I2C_SPEED_SET(I2C_SPEED_FAST)) != 0) {
 		/* Free I2C resource */
-		_i2c_free(dev);
+		i2c_infineon_free(dev);
 
 		/* Release semaphore */
 		k_sem_give(&data->operation_sem);
@@ -1419,7 +1426,7 @@ static void i2c_isr_handler(const struct device *dev)
 	Cy_SCB_I2C_Interrupt(config->base, &data->context);
 }
 
-void ifx_cat1_i2c_cb_wrapper(const struct device *dev, uint32_t event)
+static void ifx_cat1_i2c_cb_wrapper(const struct device *dev, uint32_t event)
 {
 	struct ifx_cat1_i2c_data *const data = dev->data;
 	uint32_t anded_events = (data->irq_cause & (uint32_t)event);
@@ -1614,7 +1621,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 #define INFINEON_CAT1_I2C_INIT(n)                                                                  \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
-	void i2c_handle_events_func_##n(uint32_t event)                                            \
+	static void i2c_handle_events_func_##n(uint32_t event)                                     \
 	{                                                                                          \
 		ifx_cat1_i2c_cb_wrapper(DEVICE_DT_INST_GET(n), event);                             \
 	}                                                                                          \
