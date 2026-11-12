@@ -65,6 +65,9 @@ struct mc_ksz8081_config {
 #define KSZ8081_LINK_STATE_VALID BIT(2)
 #define KSZ8081_INITIALIZED BIT(3)
 
+/* Link monitor interval while autonegotiation is in progress */
+#define KSZ8081_AUTONEG_POLL_INTERVAL_MS 100
+
 #define USING_INTERRUPT_GPIO							\
 		UTIL_OR(DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios),		\
 			UTIL_AND(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios),	\
@@ -80,6 +83,8 @@ struct mc_ksz8081_data {
 	void *cb_data;
 	struct k_mutex mutex;
 	struct k_work_delayable phy_monitor_work;
+	k_timepoint_t autoneg_timeout;
+	bool autoneg_in_progress;
 	uint8_t flags;
 };
 
@@ -202,15 +207,13 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
 	struct mc_ksz8081_data *data = dev->data;
-	int ret = 0, attempts = 0;
+	int ret = 0;
 	uint32_t bmcr = 0;
-	uint32_t bmsr = 0, last_bmsr = 0;
-	uint16_t timeout = CONFIG_PHY_AUTONEG_TIMEOUT_MS / 100;
 
 	ret = k_mutex_lock(&data->mutex, K_FOREVER);
 	if (ret) {
 		LOG_ERR("PHY mutex lock error");
-		goto done;
+		return ret;
 	}
 
 	/* Read control register to write back with autonegotiation bit */
@@ -229,41 +232,53 @@ static int phy_mc_ksz8081_autonegotiate(const struct device *dev)
 		goto done;
 	}
 
-	data->flags |= KSZ8081_SILENCE_DEBUG_LOGS;
-	do {
-		if (timeout-- == 0) {
-			LOG_ERR("PHY (%d) autonegotiation timed out", config->addr);
-			/* The value -ETIMEDOUT can be returned by PHY read/write functions, so
-			 * return -ENETDOWN instead to distinguish link timeout from PHY timeout.
-			 */
-			ret = -ENETDOWN;
-			goto done;
-		}
-		k_msleep(100);
-
-		ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
-		if (ret) {
-			goto done;
-		}
-
-		if (last_bmsr != bmsr) {
-			LOG_DBG("phy %d autoneg BMSR: %x", config->addr, bmsr);
-		}
-
-		last_bmsr = bmsr;
-		attempts++;
-	} while (!(bmsr & MII_BMSR_AUTONEG_COMPLETE));
-	data->flags &= ~KSZ8081_SILENCE_DEBUG_LOGS;
-
-	LOG_DBG("PHY (%d) autonegotiation completed after %d checks", config->addr, attempts);
-
+	/* The link monitor checks for completion, so as not to block here */
+	data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
+	data->autoneg_in_progress = true;
 	data->flags &= ~KSZ8081_DO_AUTONEG_FLAG;
 
 done:
-	if (ret && ret != -ENETDOWN) {
+	if (ret) {
 		LOG_ERR("Failed to configure %s for autonegotiation", dev->name);
 	}
 	/* Unlock mutex */
+	k_mutex_unlock(&data->mutex);
+	return ret;
+}
+
+/* 0 once autonegotiation completed, -EINPROGRESS until then, -ENETDOWN on timeout */
+static int phy_mc_ksz8081_check_autoneg(const struct device *dev)
+{
+	const struct mc_ksz8081_config *config = dev->config;
+	struct mc_ksz8081_data *data = dev->data;
+	uint32_t bmsr = 0;
+	int ret;
+
+	ret = k_mutex_lock(&data->mutex, K_FOREVER);
+	if (ret) {
+		LOG_ERR("PHY mutex lock error");
+		return ret;
+	}
+
+	ret = phy_mc_ksz8081_read(dev, MII_BMSR, &bmsr);
+	if (ret) {
+		goto done;
+	}
+
+	if (bmsr & MII_BMSR_AUTONEG_COMPLETE) {
+		LOG_DBG("PHY (%d) autonegotiation completed", config->addr);
+		ret = 0;
+	} else if (sys_timepoint_expired(data->autoneg_timeout)) {
+		/* Also without a cable: the link monitor reports a later link.
+		 * -ENETDOWN, as the PHY register accesses can return -ETIMEDOUT.
+		 */
+		LOG_ERR("PHY (%d) autonegotiation timed out", config->addr);
+		ret = -ENETDOWN;
+	} else {
+		ret = -EINPROGRESS;
+	}
+
+done:
 	k_mutex_unlock(&data->mutex);
 	return ret;
 }
@@ -628,11 +643,18 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 		phy_mc_ksz8081_static_cfg(dev);
 	}
 
-	/* (re)do autonegotiation if needed */
+	/* (re)start autonegotiation if needed, then follow it */
 	if (data->flags & KSZ8081_DO_AUTONEG_FLAG) {
 		rc = phy_mc_ksz8081_autonegotiate(dev);
 	}
-	if (rc && (rc != -ENETDOWN)) {
+	if (rc == 0 && data->autoneg_in_progress) {
+		rc = phy_mc_ksz8081_check_autoneg(dev);
+		data->autoneg_in_progress = (rc == -EINPROGRESS);
+		if (rc == -EINPROGRESS || rc == -ENETDOWN) {
+			rc = 0;
+		}
+	}
+	if (rc) {
 		LOG_ERR("Error in %s autonegotiation", dev->name);
 		data->flags &= ~KSZ8081_SILENCE_DEBUG_LOGS; /* get logs next time */
 		turn_on_logs = true;
@@ -664,6 +686,13 @@ static void phy_mc_ksz8081_monitor_work_handler(struct k_work *work)
 	} else {
 		/* everything is fine, don't need to spam annoying register logs */
 		data->flags |= KSZ8081_SILENCE_DEBUG_LOGS;
+	}
+
+	/* Follow autonegotiation also when the link interrupt drives the monitor */
+	if (data->autoneg_in_progress) {
+		k_work_reschedule(&data->phy_monitor_work,
+				  K_MSEC(KSZ8081_AUTONEG_POLL_INTERVAL_MS));
+		return;
 	}
 
 	if (USING_INTERRUPT_GPIO) {
