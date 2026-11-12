@@ -275,6 +275,7 @@ static int create_prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialise the event anchor used by the resume prepared at a deadline */
 	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
+	lll->is_resume_due = 0U;
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
@@ -414,6 +415,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialise the event anchor used by the resume prepared at a deadline */
 	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
+	lll->is_resume_due = 0U;
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
@@ -995,6 +997,7 @@ static int drift_prepare_cb(struct lll_prepare_param *p)
 
 	/* Initialise the event anchor used by the resume prepared at a deadline */
 	lll->ticks_anchor = ticker_ticks_diff_get(p->ticks_at_expire, p->ticks_drift);
+	lll->is_resume_due = 0U;
 
 	/* Initialise the subevent to resume at */
 	lll->se_next = 0U;
@@ -1922,17 +1925,71 @@ static bool is_gap_available(struct lll_sync_iso *lll, uint32_t ticks_now,
 	return (ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U;
 }
 
-/* Check if the current sequential packing event, when preempted now by an event using the
- * radio for the given duration, would lose a payload of a selected BIS that has not been
- * received yet, i.e. the preemptor overlaps the last repetition of the payload. A preemptor
- * without a duration is considered to use the radio for the rest of the event.
+/* Ticks at expire to date the resume of the current event at, so that it preempts at the end
+ * of the reserved radio use of the next event. The preempt timeout of a prepare is
+ * EVENT_OVERHEAD_XTAL_US less EVENT_OVERHEAD_PREEMPT_MIN_US after its ticks at expire.
  */
-static bool is_preempt_lossy(const struct lll_sync_iso *lll, uint32_t ticks_duration,
-			     uint32_t ticks_now)
+static uint32_t ticks_resume_get(void *next, uint32_t ticks_now)
+{
+	const struct ull_hdr *ull_next = HDR_LLL2ULL(next);
+
+	return (ticks_now + ull_next->ticks_slot +
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US)) & HAL_TICKER_CNTR_MASK;
+}
+
+/* Sequential packing index of the first subevent that the resume of the current event, dated
+ * at the end of the next event, receives; calculated as the drift in prepare_cb_common(),
+ * with a tick of margin for the remainder.
+ */
+static uint8_t se_resume_get(const struct lll_sync_iso *lll, void *next, uint32_t ticks_now)
 {
 	uint32_t ticks_diff;
-	uint32_t ticks_end;
-	uint32_t se_after;
+	uint32_t se;
+
+	ticks_diff = ticker_ticks_diff_get(ticks_resume_get(next, ticks_now), lll->ticks_anchor);
+	if ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) {
+		return 0U;
+	}
+
+	se = DIV_ROUND_UP(HAL_TICKER_TICKS_TO_US(ticks_diff + 1U), lll->sub_interval);
+
+	return MIN(se, UINT8_MAX);
+}
+
+/* Check if the next event is a connection or a periodic sync event near its supervision
+ * timeout.
+ */
+static bool is_next_forced(void *next)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		const struct lll_conn *conn_lll = ull_conn_lll_is_valid_get(next);
+
+		if (conn_lll != NULL) {
+			return conn_lll->forced != 0U;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
+		const struct lll_sync *sync_lll = ull_sync_lll_is_valid_get(next);
+
+		if (sync_lll != NULL) {
+			return sync_lll->forced != 0U;
+		}
+	}
+
+	return false;
+}
+
+/* Check if the current sequential packing event, when preempted now by the next event and
+ * resumed at the end of its reserved radio use, would lose a payload of a selected BIS that
+ * has not been received yet. A next event without a duration is considered to use the radio
+ * for the rest of the event.
+ */
+static bool is_preempt_lossy(const struct lll_sync_iso *lll, void *next, uint32_t ticks_now)
+{
+	const struct ull_hdr *ull_next;
+	uint8_t se_resume;
 	uint8_t se;
 
 	if (lll->bis_spacing < (lll->sub_interval * lll->nse)) {
@@ -1940,44 +1997,40 @@ static bool is_preempt_lossy(const struct lll_sync_iso *lll, uint32_t ticks_dura
 	}
 
 	se = MAX(lll->se, lll->se_next);
-	if (ticks_duration == 0U) {
+	ull_next = HDR_LLL2ULL(next);
+	if (ull_next->ticks_slot == 0U) {
 		return !is_se_optional(lll, lll->latency_event, se);
 	}
 
-	/* Preemptor duration, the overhead to preempt and to resume, and a margin of a tick on
-	 * either side for the conversions to ticks.
-	 */
-	ticks_end = ticks_now + ticks_duration +
-		    HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US + EVENT_OVERHEAD_RESUME_US) +
-		    2U;
-	ticks_end &= HAL_TICKER_CNTR_MASK;
-
-	/* First subevent that starts after the preemptor ends */
-	ticks_diff = ticker_ticks_diff_get(ticks_end, lll->ticks_se_first);
-	if ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) {
+	se_resume = se_resume_get(lll, next, ticks_now);
+	if (se_resume <= se) {
 		return false;
 	}
 
-	se_after = DIV_ROUND_UP(HAL_TICKER_TICKS_TO_US(ticks_diff), lll->sub_interval);
-	if (se_after <= se) {
-		return false;
-	}
-
-	return !is_se_skip_lossless(lll, lll->latency_event, se, MIN(se_after, UINT8_MAX));
+	return !is_se_skip_lossless(lll, lll->latency_event, se, se_resume);
 }
 
-static void resume_deadline(void *param)
+void lll_sync_iso_resume(void *param)
 {
 	struct lll_prepare_param p;
 	struct lll_sync_iso *lll;
 	uint32_t ticks_interval;
 	struct lll_event *e;
+	bool is_resume;
 	void *idx;
 	int err;
 
 	lll = param;
 
-	/* Deadline is not in the current BIG event */
+	/* The yielded current BIG event can be done before the preemptor it yielded to is
+	 * dequeued, a resume prepared now would start before the preemptor and be preempted
+	 * by it again. Dequeue the preemptor first, so that the resume is prepared after it.
+	 */
+	if (lll_is_done(param, &is_resume)) {
+		ull_prepare_dequeue(TICKER_USER_ID_LLL);
+	}
+
+	/* Deadline is not in the current BIG event, its prepare is pending */
 	ticks_interval = HAL_TICKER_US_TO_TICKS(lll->iso_interval * ISO_INT_UNIT_US);
 	if (ticker_ticks_diff_get(lll->ticks_resume, lll->ticks_anchor) >= ticks_interval) {
 		return;
@@ -1999,6 +2052,9 @@ static void resume_deadline(void *param)
 	} while (idx != NULL);
 
 	if (e == NULL) {
+		/* Resume at the deadline when the BIG event yields later in this event */
+		lll->is_resume_due = 1U;
+
 		return;
 	}
 
@@ -2016,30 +2072,30 @@ static void resume_deadline(void *param)
 	LL_ASSERT_ERR(!err || (err == -EINPROGRESS));
 }
 
-/* The current event yields to a next event that is not a Broadcast ISO event while payload
- * remains to be received, prepare its resume to preempt at the end of the next event. A
- * resume is otherwise dequeued only when there is no other prepare in the pipeline, which
- * can be after the last repetition of the payload.
+/* The current sequential packing event yields to a next event that is not a Broadcast ISO
+ * event while payload remains to be received, or its deadline was reached before it yielded,
+ * prepare its resume to preempt at the end of the next event. A resume is otherwise dequeued
+ * only when there is no other prepare in the pipeline, which can be after the last repetition
+ * of the payload.
  */
 static void resume_deadline_enqueue(struct lll_sync_iso *lll, void *next, uint32_t ticks_now)
 {
 	static memq_link_t link[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 	static struct mayfly mfy[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 	const struct ull_hdr *ull_next;
-	uint32_t ticks_resume;
 	uint8_t index;
 	uint32_t ret;
 
 	ull_next = HDR_LLL2ULL(next);
 	if ((ull_next->ticks_slot == 0U) ||
-	    is_se_optional(lll, lll->latency_event, MAX(lll->se, lll->se_next))) {
+	    (lll->bis_spacing < (lll->sub_interval * lll->nse)) ||
+	    ((lll->is_resume_due == 0U) &&
+	     is_se_optional(lll, lll->latency_event, MAX(lll->se, lll->se_next)))) {
 		return;
 	}
 
-	ticks_resume = ticks_now + ull_next->ticks_slot +
-		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
-		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	lll->ticks_resume = ticks_resume & HAL_TICKER_CNTR_MASK;
+	lll->ticks_resume = ticks_resume_get(next, ticks_now);
+	lll->is_resume_due = 0U;
 
 	/* Assign the link only on the first use, the mayfly exchanges links between the
 	 * mayflies in its queue on dequeue, and the initial link can be in use by the queue.
@@ -2047,7 +2103,7 @@ static void resume_deadline_enqueue(struct lll_sync_iso *lll, void *next, uint32
 	index = ull_sync_iso_lll_index_get(lll);
 	if (mfy[index]._link == NULL) {
 		mfy[index]._link = &link[index];
-		mfy[index].fp = resume_deadline;
+		mfy[index].fp = lll_sync_iso_resume;
 	}
 	mfy[index].param = lll;
 
@@ -2224,89 +2280,65 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 		struct lll_sync_iso *lll_next;
-		struct lll_scan_aux *aux_lll;
-		struct lll_scan *scan_lll;
-		struct lll_sync *sync_lll;
+		struct lll_event *e_next;
 		uint32_t ticks_now;
+		uint8_t se_rem_next;
+		bool is_yielded;
+		uint8_t se_rem;
 
-		scan_lll = ull_scan_lll_is_valid_get(next);
-		if (scan_lll) {
-			/* Do not abort current ISO sync event as next event is a scan event, a
-			 * continuous scan event is deferred and the current event yields to it
-			 * when waiting for a subsequent subevent.
-			 */
+		/* Do not abort current ISO sync event as next event is a scan event, a continuous
+		 * scan event is deferred and the current event yields to it when waiting for a
+		 * subsequent subevent.
+		 */
+		if (ull_scan_lll_is_valid_get(next) != NULL) {
 			return -EBUSY;
 		}
 
 		ticks_now = ticker_ticks_now_get();
 
-		aux_lll = ull_scan_aux_lll_is_valid_get(next);
-		if ((aux_lll != NULL) || (ull_sync_lll_is_valid_get(next) != NULL)) {
-			/* Do not abort current ISO sync event as next event is a scan aux or a
-			 * periodic sync event, unless the current event is waiting for its next
-			 * subevent and the next event's radio use ends before it.
-			 */
-			struct ull_hdr *ull_next = HDR_LLL2ULL(next);
+		/* Setup the resume callback so that we yield now and be scheduled after the
+		 * overlap finishes its radio use.
+		 */
+		*resume_cb = resume_prepare_cb;
+
+		lll_next = ull_sync_iso_lll_is_valid_get(next);
+		if (lll_next == NULL) {
+			const struct ull_hdr *ull_next = HDR_LLL2ULL(next);
 
 			/* No payload remains to be received, resume after the next event */
 			if (is_se_optional(lll, lll->latency_event, MAX(lll->se, lll->se_next))) {
-				*resume_cb = resume_prepare_cb;
 				lll->is_lll_resume = 1U;
 
 				return -EAGAIN;
 			}
 
-			if (ull_next->ticks_slot == 0U) {
-				return -EBUSY;
-			}
-
-			if (is_gap_available(lll, ticks_now, ull_next->ticks_slot)) {
-				*resume_cb = resume_prepare_cb;
+			/* Current event is waiting for its next subevent and the next event's
+			 * radio use ends before it.
+			 */
+			if ((ull_next->ticks_slot != 0U) &&
+			    is_gap_available(lll, ticks_now, ull_next->ticks_slot)) {
 				lll->is_lll_resume = 1U;
 
 				return -EINPROGRESS;
 			}
 
-			/* Periodic sync, resume after it when the periodic sync is near its
-			 * supervision timeout, otherwise it is received only in a gap or when
-			 * the remaining subevents carry no payload to be received.
+			/* Do not yield when the next event, say a scan aux, a periodic sync, an
+			 * advertising or a connection event, overlaps the last repetition of a
+			 * payload not received yet, unless the next event is near its supervision
+			 * timeout.
 			 */
-			sync_lll = ull_sync_lll_is_valid_get(next);
-			if ((sync_lll != NULL) && (sync_lll->forced != 0U)) {
-				*resume_cb = resume_prepare_cb;
-				lll->is_lll_resume = 1U;
-
-				resume_deadline_enqueue(lll, next, ticks_now);
-
-				return -EAGAIN;
-			}
-
-			return -EBUSY;
-		}
-
-		/* Do not abort current ISO sync event when the next event, say an advertising or
-		 * a connection event, overlaps the last repetition of a payload not received yet,
-		 * unless the next event is a connection near its supervision timeout.
-		 */
-		lll_next = ull_sync_iso_lll_is_valid_get(next);
-		if (lll_next == NULL) {
-			const struct ull_hdr *ull_next = HDR_LLL2ULL(next);
-			struct lll_conn *conn_lll = NULL;
-
-			if (IS_ENABLED(CONFIG_BT_CONN)) {
-				conn_lll = ull_conn_lll_is_valid_get(next);
-			}
-
-			if (((conn_lll == NULL) || (conn_lll->forced == 0U)) &&
-			    is_preempt_lossy(lll, ull_next->ticks_slot, ticks_now)) {
+			if (is_preempt_lossy(lll, next, ticks_now) && !is_next_forced(next)) {
 				return -EBUSY;
 			}
-		}
 
-		/* Setup the resume callback so that we yield now and be scheduled after the
-		 * overlap finishes its radio use.
-		 */
-		*resume_cb = resume_prepare_cb;
+			/* Resume at the deadline at the end of the next event's reserved radio
+			 * use.
+			 */
+			lll->is_lll_resume = 1U;
+			resume_deadline_enqueue(lll, next, ticks_now);
+
+			return -EAGAIN;
+		}
 
 		/* Resume prepare setup hence abort_cb() use is_lll_resume flag to retain the
 		 * hfclock on.
@@ -2316,7 +2348,7 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		/* Yield to the ready event if the current event is waiting for its next
 		 * subevent and a subevent of the ready event can be received before it.
 		 */
-		if ((lll_next != NULL) && is_yield_to_ready(lll, next, ticks_now)) {
+		if (is_yield_to_ready(lll, next, ticks_now)) {
 			lll_next->is_yield_to = 1U;
 
 			return -EINPROGRESS;
@@ -2326,53 +2358,35 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		 * does, payloads already received, say from pre-transmission subevents of a
 		 * previous event, have no deadline.
 		 */
-		if (lll_next != NULL) {
-			struct lll_event *e_next;
+		e_next = ready_event_get(lll_next, ticks_now);
 
-			e_next = ready_event_get(lll_next, ticks_now);
-
-			/* Continue the current event that has not received any subevent,
-			 * waiting for its subevent at its anchor point or drift, when the ready
-			 * event loses no payload receiving after this subevent. Aborted, the
-			 * current event would restart with the start overhead. The current
-			 * event yields after its subevent.
-			 */
-			if ((lll->trx_cnt == 0U) && (e_next != NULL) &&
-			    is_ready_lossless_after_curr(lll, e_next, ticks_now)) {
-				return -EBUSY;
-			}
-
-			if ((e_next != NULL) &&
-			    is_pending_deadline_before_curr(e_next, lll, ticks_now)) {
-				return -EAGAIN;
-			}
+		/* Continue the current event that has not received any subevent, waiting for its
+		 * subevent at its anchor point or drift, when the ready event loses no payload
+		 * receiving after this subevent. Aborted, the current event would restart with
+		 * the start overhead. The current event yields after its subevent.
+		 */
+		if ((lll->trx_cnt == 0U) && (e_next != NULL) &&
+		    is_ready_lossless_after_curr(lll, e_next, ticks_now)) {
+			return -EBUSY;
 		}
 
-		if (lll_next != NULL) {
-			uint8_t se_rem_next;
-			bool is_yielded;
-			uint8_t se_rem;
-
-			/* Continue the current event if it has fewer remaining subevents to
-			 * receive its payload than the ready event, a pre-transmission subevent
-			 * has the most. A yielded ready event is then enqueued back as deferred.
-			 */
-			is_yielded = false;
-			se_rem_next = ready_se_remaining_get(lll_next, ticks_now, &is_yielded);
-			se_rem = se_remaining_get(lll, MAX(lll->se, lll->se_next));
-			if ((se_rem_next != UINT8_MAX) && (se_rem < se_rem_next)) {
-				return is_yielded ? -EBUSY : -EINPROGRESS;
-			}
+		if ((e_next != NULL) && is_pending_deadline_before_curr(e_next, lll, ticks_now)) {
+			return -EAGAIN;
 		}
 
-		if (lll->bn_curr <= lll->bn) {
-			if ((lll_next == NULL) || (lll_next->abort_count <= lll->abort_count)) {
-				return -EINPROGRESS;
-			}
+		/* Continue the current event if it has fewer remaining subevents to receive its
+		 * payload than the ready event, a pre-transmission subevent has the most. A
+		 * yielded ready event is then enqueued back as deferred.
+		 */
+		is_yielded = false;
+		se_rem_next = ready_se_remaining_get(lll_next, ticks_now, &is_yielded);
+		se_rem = se_remaining_get(lll, MAX(lll->se, lll->se_next));
+		if ((se_rem_next != UINT8_MAX) && (se_rem < se_rem_next)) {
+			return is_yielded ? -EBUSY : -EINPROGRESS;
 		}
 
-		if (lll_next == NULL) {
-			resume_deadline_enqueue(lll, next, ticks_now);
+		if ((lll->bn_curr <= lll->bn) && (lll_next->abort_count <= lll->abort_count)) {
+			return -EINPROGRESS;
 		}
 
 		return -EAGAIN;
