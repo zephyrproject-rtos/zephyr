@@ -6082,8 +6082,8 @@ STM32 Platforms (Wireless):
   status: maintained
   maintainers:
     - erwango
-  collaborators:
     - asm5878
+  collaborators:
     - HoZHel
     - mathieuchopstm
     - vtardy-st
