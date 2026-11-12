@@ -141,6 +141,7 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 	buf_tailroom = net_buf_tailroom(buf);
 	if (buf_tailroom < hci_rx->dataLength) {
 		LOG_WRN("Not enough space for rx data");
+		net_buf_unref(buf);
 		return;
 	}
 	net_buf_add_mem(buf, hci_rx->data, hci_rx->dataLength);
