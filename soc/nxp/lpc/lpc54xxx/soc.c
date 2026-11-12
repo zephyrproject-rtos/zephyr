@@ -202,6 +202,11 @@ __weak void clock_init(void)
 			(CPU_FREQ / FSL_FEATURE_SDIF_MAX_SOURCE_CLOCK) + 1U, true);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(spifi), nxp_lpc_spifi, okay)
+	/* SPIFI source clock: the main clock. The SPIFI driver sets the divider. */
+	CLOCK_AttachClk(kMAIN_CLK_to_SPIFI_CLK);
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz

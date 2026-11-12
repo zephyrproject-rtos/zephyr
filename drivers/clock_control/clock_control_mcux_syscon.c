@@ -561,6 +561,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_MSPI_NXP_LPC_SPIFI)
+	if ((uint32_t)sub_system == MCUX_SPIFI_CLK) {
+		CLOCK_EnableClock(kCLOCK_Spifi);
+	}
+#endif
+
 	return 0;
 }
 
@@ -1278,6 +1284,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
 #endif
+
+#if defined(CONFIG_MSPI_NXP_LPC_SPIFI)
+	case MCUX_SPIFI_CLK:
+		*rate = CLOCK_GetSpifiClkFreq();
+		break;
+#endif
 	}
 
 	return 0;
@@ -1391,6 +1403,24 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 		return 0;
 	case MCUX_USBPHY_REF_CLK:
 		return CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M, clock_rate) ? 0 : -EINVAL;
+#endif
+#if defined(CONFIG_MSPI_NXP_LPC_SPIFI)
+	case MCUX_SPIFI_CLK: {
+		/* SPIFICLKDIV divides the selected source by 1 to 256. */
+		uint32_t root_rate = CLOCK_GetSpifiClkFreq() *
+				     ((SYSCON->SPIFICLKDIV & SYSCON_SPIFICLKDIV_DIV_MASK) + 1U);
+		uint32_t divider;
+
+		if ((clock_rate == 0U) || (root_rate == 0U)) {
+			return -EINVAL;
+		}
+		divider = DIV_ROUND_UP(root_rate, clock_rate);
+		if (divider > 256U) {
+			return -EINVAL;
+		}
+		CLOCK_SetClkDiv(kCLOCK_DivSpifiClk, divider, false);
+		return 0;
+	}
 #endif
 	case MCUX_FLEXSPI_CLK:
 #if defined(CONFIG_MEMC)

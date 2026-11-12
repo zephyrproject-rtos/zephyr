@@ -16,6 +16,7 @@ toolchain:
 supported:
   - counter
   - crc
+  - flash
   - gpio
   - hwinfo
   - pwm

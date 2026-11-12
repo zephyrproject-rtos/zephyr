@@ -173,3 +173,39 @@ zephyr_udc0: &usbhs {
 &crc {
 	status = "okay";
 };
+
+/* On-board 128 Mbit quad SPI NOR flash; the part differs between board revisions. */
+&spifi {
+	pinctrl-0 = <&pinmux_spifi>;
+	pinctrl-names = "default";
+	/*
+	 * 30 MHz suits the flash parts of all board revisions. The SPIFI supports
+	 * up to 100 MHz at 3.3 V (LPC546xx data sheet), so a flash that allows it
+	 * can run faster with both frequencies raised.
+	 */
+	clock-frequency = <DT_FREQ_M(30)>;
+	status = "okay";
+
+	spifi_flash: flash@0 {
+		compatible = "jedec,nor";
+		reg = <0>;
+		size = <DT_SIZE_M(128)>;
+		mspi-max-frequency = <DT_FREQ_M(30)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+		write-io-mode = "MSPI_IO_MODE_SINGLE";
+		use-runtime-sfdp;
+		memmap-config = <1 0 DT_SIZE_M(16) 1>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				reg = <0x0 DT_SIZE_M(16)>;
+				label = "storage";
+			};
+		};
+	};
+};
