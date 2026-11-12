@@ -67,4 +67,10 @@ const struct snmp_object *snmp_registry_next(const uint32_t *target, size_t targ
 size_t snmp_process_message(const uint8_t *in, size_t in_len, uint8_t *out, size_t out_size,
 			    size_t *out_start);
 
+/*
+ * Kernel uptime in milliseconds at the last snmp_agent_start(), zero before
+ * the first: the re-initialization epoch that sysUpTime counts from.
+ */
+int64_t snmp_agent_start_uptime(void);
+
 #endif /* ZEPHYR_SUBSYS_NET_LIB_SNMP_SNMP_INTERNAL_H_ */
