@@ -153,42 +153,40 @@ uint8_t lll_chan_iso_subevent(uint16_t chan_id, uint8_t *chan_map,
 #endif /* CONFIG_BT_CTLR_ISO */
 #endif /* CONFIG_BT_CTLR_CHAN_SEL_2 */
 
+static inline uint8_t chan_ones_count(uint8_t octet)
+{
+	octet = octet - ((octet >> 1) & 0x55U);
+	octet = (octet & 0x33U) + ((octet >> 2) & 0x33U);
+
+	return (octet + (octet >> 4)) & 0x0FU;
+}
+
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3
  * Channel Selection algorithm #2, and Section 4.5.8.3.4 Event mapping to used
  * channel index
  */
 static uint8_t chan_sel_remap(uint8_t *chan_map, uint8_t chan_index)
 {
-	uint8_t chan_next;
-	uint8_t byte_count;
+	for (uint8_t octet_index = 0U; octet_index < 5U; octet_index++) {
+		uint8_t octet;
+		uint8_t count;
 
-	chan_next = 0U;
-	byte_count = 5U;
-	while (byte_count--) {
-		uint8_t bite;
-		uint8_t bit_count;
-
-		bite = *chan_map;
-		bit_count = 8U;
-		while (bit_count--) {
-			if (bite & 0x01) {
-				if (chan_index == 0U) {
-					break;
-				}
+		octet = chan_map[octet_index];
+		count = chan_ones_count(octet);
+		if (chan_index < count) {
+			/* Clear the used channels before the one at chan_index */
+			while (chan_index != 0U) {
+				octet &= octet - 1U;
 				chan_index--;
 			}
-			chan_next++;
-			bite >>= 1;
+
+			return (octet_index << 3) + find_lsb_set(octet) - 1U;
 		}
 
-		if (bit_count < 8) {
-			break;
-		}
-
-		chan_map++;
+		chan_index -= count;
 	}
 
-	return chan_next;
+	return 40U;
 }
 
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
@@ -251,33 +249,21 @@ static uint16_t chan_prn_e(uint16_t counter, uint16_t chan_id)
  */
 static uint8_t chan_sel_remap_index(uint8_t *chan_map, uint8_t chan_index)
 {
-	uint8_t octet_count;
+	uint8_t octet_index;
 	uint8_t remap_index;
 
-	remap_index = 0U;
-	octet_count = 5U;
-	while (octet_count--) {
-		uint8_t octet;
-		uint8_t bit_count;
-
-		octet = *chan_map;
-		bit_count = 8U;
-		while (bit_count--) {
-			if (!chan_index) {
-				return remap_index;
-			}
-			chan_index--;
-
-			if (octet & BIT(0)) {
-				remap_index++;
-			}
-			octet >>= 1;
-		}
-
-		chan_map++;
+	if (chan_index >= 40U) {
+		return 0U;
 	}
 
-	return 0;
+	/* Used channels before chan_index */
+	remap_index = 0U;
+	for (octet_index = 0U; octet_index < (chan_index >> 3); octet_index++) {
+		remap_index += chan_ones_count(chan_map[octet_index]);
+	}
+
+	return remap_index + chan_ones_count(chan_map[octet_index] &
+					     (BIT(chan_index & 0x07U) - 1U));
 }
 
 /* Refer to Bluetooth Specification v5.2 Vol 6, Part B, Section 4.5.8.3

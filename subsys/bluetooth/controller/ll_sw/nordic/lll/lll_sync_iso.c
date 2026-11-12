@@ -62,6 +62,9 @@ static bool is_yield_to_other(struct lll_sync_iso *lll);
 static void isr_rx_yield(struct lll_sync_iso *lll, struct lll_event *e, uint8_t is_yield);
 static struct lll_event *ready_before_get(const struct lll_sync_iso *lll,
 					  uint32_t ticks_at_expire, uint32_t ticks_end);
+static bool is_se_optional(const struct lll_sync_iso *lll, uint16_t latency, uint8_t se);
+static bool is_next_forced(void *next);
+static bool is_preempt_lossy(const struct lll_sync_iso *lll, void *next, uint32_t ticks_now);
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx_estab(void *param);
@@ -1082,20 +1085,22 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 }
 
 /* Get the first ready prepare in the pipeline, that is not a resume, a deferred nor a yielded
- * prepare, if it is due before the given ticks_at_expire. Scan and scan aux prepares are not
- * considered, as the current event does not yield to them, refer to is_abort_cb(). ISO sync
- * prepares are not considered, these are ordered by the subevent yield, refer to is_yield().
+ * prepare, if it is due before the given ticks_at_expire. Scan prepares are not considered,
+ * as the current event does not yield to them, refer to is_abort_cb(). ISO sync prepares are
+ * not considered, these are ordered by the subevent yield, refer to is_yield().
  *
- * A ready prepare, other than a periodic sync prepare, is also returned if it is due before
- * ticks_end, i.e. its preempt timeout is before the end of the subevent to be received; the
- * current event would be preempted before it receives the subevent. A periodic sync prepare
- * does not preempt the current event while it has payload to receive, refer to is_abort_cb().
+ * A ready prepare is also returned if it is due before ticks_end, i.e. its preempt timeout is
+ * before the end of the subevent to be received; the current event would be preempted before
+ * it receives the subevent. An auxiliary scan prepare, and a periodic sync prepare due only
+ * before ticks_end, are returned when the current event yields to them, refer to
+ * is_abort_cb().
  */
 static struct lll_event *ready_before_get(const struct lll_sync_iso *lll,
 					  uint32_t ticks_at_expire, uint32_t ticks_end)
 {
 	struct lll_event *e;
 	uint32_t ticks_diff;
+	bool is_scan_aux;
 	void *idx;
 
 	idx = NULL;
@@ -1113,26 +1118,52 @@ static struct lll_event *ready_before_get(const struct lll_sync_iso *lll,
 
 	if ((e == NULL) || (e->is_yield != 0U) ||
 	    (ull_sync_iso_lll_is_valid_get(e->prepare_param.param) != NULL) ||
-	    (ull_scan_lll_is_valid_get(e->prepare_param.param) != NULL) ||
-	    (ull_scan_aux_lll_is_valid_get(e->prepare_param.param) != NULL)) {
+	    (ull_scan_lll_is_valid_get(e->prepare_param.param) != NULL)) {
 		return NULL;
 	}
+
+	is_scan_aux = (ull_scan_aux_lll_is_valid_get(e->prepare_param.param) != NULL);
 
 	ticks_diff = ticker_ticks_diff_get(ticks_at_expire, e->prepare_param.ticks_at_expire);
 	if ((ticks_diff != 0U) && ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
-		return e;
+		if (!is_scan_aux) {
+			return e;
+		}
+	} else {
+		ticks_diff = ticker_ticks_diff_get(ticks_end, e->prepare_param.ticks_at_expire);
+		if ((ticks_diff == 0U) || ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U)) {
+			return NULL;
+		}
 	}
 
-	if (ull_sync_lll_is_valid_get(e->prepare_param.param) != NULL) {
-		return NULL;
+	/* An auxiliary scan or a periodic sync event preempts the current event when no payload
+	 * remains to be received, when the current event resumed at the end of the radio use of
+	 * the ready event loses no payload, or when the ready event is near its supervision
+	 * timeout, refer to is_abort_cb().
+	 */
+	if (is_scan_aux || (ull_sync_lll_is_valid_get(e->prepare_param.param) != NULL)) {
+		uint32_t ticks_preempt;
+		uint32_t ticks_now;
+
+		/* Preempt timeout of the ready prepare, or now if it has expired */
+		ticks_now = ticker_ticks_now_get();
+		ticks_preempt = (e->prepare_param.ticks_at_expire +
+				 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
+				 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US)) &
+				HAL_TICKER_CNTR_MASK;
+		ticks_diff = ticker_ticks_diff_get(ticks_preempt, ticks_now);
+		if ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) {
+			ticks_preempt = ticks_now;
+		}
+
+		if (!is_se_optional(lll, lll->latency_event, MAX(lll->se, lll->se_next)) &&
+		    is_preempt_lossy(lll, e->prepare_param.param, ticks_preempt) &&
+		    !is_next_forced(e->prepare_param.param)) {
+			return NULL;
+		}
 	}
 
-	ticks_diff = ticker_ticks_diff_get(ticks_end, e->prepare_param.ticks_at_expire);
-	if ((ticks_diff != 0U) && ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
-		return e;
-	}
-
-	return NULL;
+	return e;
 }
 
 /* Radio start ticks of the next subevent to be received by an event in the prepare pipeline */
@@ -1174,7 +1205,7 @@ static bool pending_ticks_se_after_get(const struct lll_event *e, uint32_t ticks
 				       uint8_t *se_pending)
 {
 	const struct lll_sync_iso *lll = e->prepare_param.param;
-	uint32_t ticks_resume;
+	uint32_t ticks_target;
 	uint32_t ticks_diff;
 	uint32_t ticks_si;
 	uint32_t ticks;
@@ -1182,16 +1213,22 @@ static bool pending_ticks_se_after_get(const struct lll_event *e, uint32_t ticks
 	uint8_t se;
 
 	ticks = pending_ticks_se_get(e, &se);
-	ticks_si = HAL_TICKER_US_TO_TICKS(lll->sub_interval);
-	ticks_resume = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_RESUME_US);
 	se_max = lll->nse * lll->num_bis;
 
-	ticks_diff = ticker_ticks_diff_get(ticks, ticks_now + ticks_after + ticks_resume);
-	while (((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) && (se < se_max)) {
-		ticks += ticks_si;
-		se++;
+	/* Earliest radio start that can be resumed at */
+	ticks_target = ticks_now + ticks_after + HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_RESUME_US);
 
-		ticks_diff = ticker_ticks_diff_get(ticks, ticks_now + ticks_after + ticks_resume);
+	/* Subevents elapsed before the earliest radio start */
+	ticks_diff = ticker_ticks_diff_get(ticks, ticks_target);
+	if (((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) && (se < se_max)) {
+		uint32_t se_elapsed;
+
+		ticks_si = HAL_TICKER_US_TO_TICKS(lll->sub_interval);
+		se_elapsed = DIV_ROUND_UP(ticker_ticks_diff_get(ticks_target, ticks), ticks_si);
+		se_elapsed = MIN(se_elapsed, (uint32_t)(se_max - se));
+
+		ticks += se_elapsed * ticks_si;
+		se += se_elapsed;
 	}
 
 	*ticks_se = ticks & HAL_TICKER_CNTR_MASK;
@@ -1391,11 +1428,6 @@ bool lll_sync_iso_is_defer_lossless(void *param, uint32_t ticks_duration)
 {
 	struct lll_sync_iso *lll;
 	struct lll_event *e;
-	uint32_t ticks_se;
-	uint32_t ticks_now;
-	uint16_t latency;
-	uint8_t se_after;
-	uint8_t se;
 	void *idx;
 
 	lll = ull_sync_iso_lll_is_valid_get(param);
@@ -1414,9 +1446,30 @@ bool lll_sync_iso_is_defer_lossless(void *param, uint32_t ticks_duration)
 		}
 	}
 
-	ticks_now = ticker_ticks_now_get();
+	if (e == NULL) {
+		return false;
+	}
 
-	if ((e == NULL) || !pending_ticks_se_now_get(e, ticks_now, &ticks_se, &se)) {
+	return lll_sync_iso_is_pending_lossless(e, ticker_ticks_now_get(), ticks_duration);
+}
+
+/* Check if an event in the prepare pipeline, when deferred from now for the given duration,
+ * loses no payload.
+ */
+bool lll_sync_iso_is_pending_lossless(const struct lll_event *e, uint32_t ticks_now,
+				      uint32_t ticks_duration)
+{
+	const struct lll_sync_iso *lll = e->prepare_param.param;
+	uint32_t ticks_se;
+	uint16_t latency;
+	uint8_t se_after;
+	uint8_t se;
+
+	if ((lll->abort_count != 0U) || (ticks_duration == 0U)) {
+		return false;
+	}
+
+	if (!pending_ticks_se_now_get(e, ticks_now, &ticks_se, &se)) {
 		return false;
 	}
 
@@ -1927,15 +1980,46 @@ static bool is_gap_available(struct lll_sync_iso *lll, uint32_t ticks_now,
 
 /* Ticks at expire to date the resume of the current event at, so that it preempts at the end
  * of the reserved radio use of the next event. The preempt timeout of a prepare is
- * EVENT_OVERHEAD_XTAL_US less EVENT_OVERHEAD_PREEMPT_MIN_US after its ticks at expire.
+ * EVENT_OVERHEAD_XTAL_US less EVENT_OVERHEAD_PREEMPT_MIN_US after its ticks at expire. The
+ * next event uses the radio from its preempt timeout when the current event is preempted
+ * before it, the resume is then dated after the ticks at expire of the next event, else the
+ * prepare pipeline orders the resume before the next event.
  */
 static uint32_t ticks_resume_get(void *next, uint32_t ticks_now)
 {
 	const struct ull_hdr *ull_next = HDR_LLL2ULL(next);
+	uint32_t ticks_preempt_to;
+	uint32_t ticks_start;
+	struct lll_event *e;
+	void *idx;
 
-	return (ticks_now + ull_next->ticks_slot +
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
-		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US)) & HAL_TICKER_CNTR_MASK;
+	ticks_preempt_to = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US) -
+			   HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	ticks_start = ticks_now;
+
+	idx = NULL;
+	while ((e = ull_prepare_dequeue_iter(&idx)) != NULL) {
+		if ((e->is_aborted == 0U) && (e->is_resume == 0U) &&
+		    (e->prepare_param.param == next)) {
+			uint32_t ticks_at_preempt;
+			uint32_t ticks_diff;
+
+			ticks_at_preempt = (e->prepare_param.ticks_at_expire + ticks_preempt_to) &
+					   HAL_TICKER_CNTR_MASK;
+			ticks_diff = ticker_ticks_diff_get(ticks_at_preempt, ticks_now);
+			if ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+				ticks_start = ticks_at_preempt;
+			}
+
+			break;
+		}
+
+		if (idx == NULL) {
+			break;
+		}
+	}
+
+	return (ticks_start + ull_next->ticks_slot - ticks_preempt_to) & HAL_TICKER_CNTR_MASK;
 }
 
 /* Sequential packing index of the first subevent that the resume of the current event, dated

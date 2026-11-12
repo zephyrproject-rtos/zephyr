@@ -145,6 +145,9 @@ struct ll_sync_iso_set {
 	 * the anchor point from which the next event measures its drift.
 	 */
 	int32_t ticks_drift_lag;
+
+	uint32_t ticks_resume_anchor; /* BIG anchor without jitter */
+	uint8_t  resume_stream;       /* Index of the selected BIS reserved last */
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Encryption */
