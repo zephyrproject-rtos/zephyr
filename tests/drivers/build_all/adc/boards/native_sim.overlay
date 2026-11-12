@@ -10,6 +10,9 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/ad7794-adc.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -682,6 +685,30 @@
 				reg = <0x3a>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad7794: ad7794@3b {
+				compatible = "adi,ad7794";
+				reg = <0x3b>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_16";
+					zephyr,reference = "ADC_REF_EXTERNAL1";
+					zephyr,vref-mv = <1225>;
+					zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS,
+							AD7794_DR_16_7_HZ)>;
+					zephyr,differential;
+					zephyr,resolution = <24>;
+					zephyr,input-positive = <AD7794_ADC_AIN1>;
+					zephyr,current-source-pin = [AD7794_IEXCDIR_IOUT1_IOUT2
+								     AD7794_IEXCEN_1_MA];
+					zephyr,vbias-pins = <AD7794_VBIAS_OFF>;
+				};
 			};
 		};
 
