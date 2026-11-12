@@ -17,6 +17,7 @@
 #define LP5024_MAX_LEDS		8
 #define LP5030_MAX_LEDS		10
 #define LP5036_MAX_LEDS		12
+/** Maximum number of LEDs of the Diodes AL5887 */
 #define AL5887_MAX_LEDS		12
 
 /*
