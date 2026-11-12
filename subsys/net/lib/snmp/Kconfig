@@ -3,12 +3,34 @@
 
 menuconfig SNMP
 	bool "SNMP agent [EXPERIMENTAL]"
+	depends on NET_UDP
+	depends on NET_IPV4 || NET_IPV6
+	depends on NET_SOCKETS
 	select EXPERIMENTAL
+	select NET_SOCKETS_SERVICE
+	select NET_CONTEXT_RECV_PKTINFO
 	help
 	  SNMPv1 and SNMPv2c agent. Managed objects are registered at build
 	  time with SNMP_SCALAR_DEFINE() and SNMP_COLUMN_DEFINE().
 
 if SNMP
+
+config SNMP_PORT
+	int "UDP port"
+	default 161
+	range 1 $(UINT16_MAX)
+	help
+	  Port the agent listens on, on every enabled address family.
+
+config SNMP_MAX_PDU_SIZE
+	int "Maximum message size"
+	default 512
+	range 484 65507
+	help
+	  Size of the receive and transmit buffers in bytes. Requests larger
+	  than this are dropped and responses that would exceed it are
+	  answered with a tooBig error. RFC 3417 section 3.2 requires agents
+	  to accept messages of at least 484 bytes and recommends 1472.
 
 config SNMP_OID_MAX_LEN
 	int "Maximum object identifier length"

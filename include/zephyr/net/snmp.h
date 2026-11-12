@@ -327,6 +327,26 @@ enum snmp_community {
 int snmp_agent_set_community(enum snmp_community which, const char *community);
 
 /**
+ * @brief Start the agent.
+ *
+ * Opens a UDP socket bound to CONFIG_SNMP_PORT on every enabled address
+ * family. Requests are answered from the socket service thread.
+ *
+ * @retval 0 Success.
+ * @retval -EALREADY The agent is already running.
+ * @retval -errno A socket call failed; the reported errno.
+ */
+int snmp_agent_start(void);
+
+/**
+ * @brief Stop the agent and close its sockets.
+ *
+ * @retval 0 Success.
+ * @retval -EALREADY The agent is not running.
+ */
+int snmp_agent_stop(void);
+
+/**
  * @}
  */
 
