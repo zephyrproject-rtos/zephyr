@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ALLWINNER
+	bool
+
+config SOC_FAMILY
+	default "allwinner" if SOC_FAMILY_ALLWINNER
+
+rsource "*/Kconfig.soc"

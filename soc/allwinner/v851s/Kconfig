@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC_SERIES_V851S is declared in Kconfig.soc. This file only carries the
+# architecture / CPU selects, following the HWMv2 split used by the i.MX RT
+# and nRF54L series (Kconfig.soc = symbol + family, Kconfig = selects).
+config SOC_SERIES_V851S
+	select RISCV
+	select CPU_XUANTIE_E907
