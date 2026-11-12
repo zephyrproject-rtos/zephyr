@@ -14,7 +14,7 @@
 #include <cmsis_core.h>
 
 /* Called by z_arm_svc, which must preserve the callee-saved regs. r4 and r5. */
-__attribute__((naked)) void z_irq_do_offload(void)
+__attribute__((naked, no_profile_instrument_function)) void z_irq_do_offload(void)
 {
 	__asm__ volatile("mov r0, r5; bx r4;");
 	/* return from the offload routine branches back to the svc handler */
