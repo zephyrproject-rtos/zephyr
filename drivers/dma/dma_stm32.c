@@ -357,6 +357,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #endif
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
 
+/* FIFO size of a stream of the v1 controllers */
+#define DMA_STM32_FIFO_SIZE 16U
+
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
 	LL_DMA_MDATAALIGN_HALFWORD,
@@ -803,13 +806,27 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.Channel = dma_stm32_slot_to_channel(config->dma_slot);
 #endif
 
-	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
-					config->head_block->fifo_mode_control);
-
-	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
+		/* Memory to memory transfers must not use direct mode. Nothing paces
+		 * them, so the FIFO threshold only sets how much the FIFO buffers
+		 * before it drains: a full FIFO suits a single beat and every burst
+		 * that fits the FIFO. A burst must fit it on either port.
+		 */
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
+		DMA_InitStruct.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
+		if (config->source_burst_length > DMA_STM32_FIFO_SIZE ||
+		    config->dest_burst_length > DMA_STM32_FIFO_SIZE) {
+			LOG_ERR("burst exceeds the FIFO.");
+			return -EINVAL;
+		}
 	} else {
-		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
+		DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
+						config->head_block->fifo_mode_control);
+		if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+			DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
+		} else {
+			DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
+		}
 	}
 #endif
 	if (stream->source_periph) {
