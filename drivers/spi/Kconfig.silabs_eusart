@@ -19,7 +19,10 @@ config SPI_SILABS_EUSART_DMA
 	bool "Silabs EUSART SPI controller driver DMA enabled transfer"
 	depends on SPI_SILABS_EUSART
 	select DMA
-	default y if SPI_ASYNC
+	default y if SPI_ASYNC || SPI_PERIPHERAL
+	help
+	  Use DMA for transfers on instances that have DMA channels configured.
+	  Asynchronous transfers and peripheral mode require DMA.
 
 config SPI_SILABS_EUSART_DMA_MAX_BLOCKS
 	int "Silabs EUSART SPI controller driver max DMA transfer blocks per channel"

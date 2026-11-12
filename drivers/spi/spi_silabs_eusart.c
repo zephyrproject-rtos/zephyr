@@ -36,7 +36,9 @@ LOG_MODULE_REGISTER(spi_silabs_eusart, CONFIG_SPI_LOG_LEVEL);
 #warning "Silabs eusart SPI driver ASYNC without DMA is not supported"
 #endif
 
-#define SPI_WORD_SIZE 8
+#define SPI_WORD_SIZE           8
+/* Datasheet: SCLK high/low time of 50 ns limits frequency to 10 MHz in peripheral mode */
+#define SPI_PERIPHERAL_MAX_FREQ MHZ(10U)
 #ifdef CONFIG_SPI_SILABS_EUSART_DMA
 #define SPI_DMA_MAX_DESCRIPTOR_TRANSFER_SIZE (0x800U)
 
@@ -82,23 +84,31 @@ static bool spi_silabs_eusart_is_dma_enabled_instance(const struct device *dev)
 #endif
 }
 
+static int spi_silabs_eusart_calculate_clock_div(uint32_t ref_frequency, uint32_t spi_frequency,
+						 uint32_t *div_output)
+{
+	/* Round the divider up so the requested frequency is never exceeded */
+	uint32_t divider = DIV_ROUND_UP(ref_frequency, spi_frequency) - 1U;
+
+	if (divider > FIELD_GET(_EUSART_CFG2_SDIV_MASK, _EUSART_CFG2_SDIV_MASK)) {
+		LOG_ERR("SPI frequency too low");
+		return -EINVAL;
+	}
+
+	*div_output = divider;
+
+	return 0;
+}
+
 static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_config *config)
 {
 	sl_hal_eusart_spi_advanced_init_t adv_init = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
 	sl_hal_eusart_spi_init_t init = SL_HAL_EUSART_SPI_MASTER_INIT_DEFAULT_HF;
 	const struct spi_silabs_eusart_config *eusart_cfg = dev->config;
 	struct spi_silabs_eusart_data *data = dev->data;
+	bool peripheral = (config->operation & SPI_OP_MODE_PERIPHERAL) != 0U;
 	uint32_t spi_frequency, ref_frequency;
 	int err;
-
-	err = clock_control_get_rate(eusart_cfg->clock_dev,
-				     (clock_control_subsys_t)&eusart_cfg->clock_cfg,
-				     &ref_frequency);
-	if (err) {
-		return err;
-	}
-	/* Max supported SPI frequency is half the source clock */
-	spi_frequency = ref_frequency / 2;
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -116,25 +126,57 @@ static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_co
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
-		LOG_ERR("Peripheral mode not supported");
-		return -ENOTSUP;
-	}
+	if (peripheral) {
+		if (!IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+			LOG_ERR("Peripheral mode requires CONFIG_SPI_PERIPHERAL");
+			return -ENOTSUP;
+		}
 
-	/* Set frequency to the minimum of what the device supports, what the
-	 * user has configured the controller to, and the max frequency for the
-	 * transaction.
-	 */
-	if (eusart_cfg->clock_frequency > spi_frequency) {
-		LOG_ERR("SPI clock-frequency too high");
-		return -EINVAL;
-	}
-	spi_frequency = MIN(eusart_cfg->clock_frequency, spi_frequency);
-	if (config->frequency) {
-		spi_frequency = MIN(config->frequency, spi_frequency);
-	}
+		if (!spi_silabs_eusart_is_dma_enabled_instance(dev)) {
+			LOG_ERR("Peripheral mode requires DMA");
+			return -ENOTSUP;
+		}
 
-	init.clock_div = sl_hal_eusart_spi_calculate_clock_div(ref_frequency, spi_frequency);
+		if (spi_cs_is_gpio(config)) {
+			LOG_ERR("Peripheral mode requires CS through pinctrl");
+			return -ENOTSUP;
+		}
+
+		if (config->frequency > SPI_PERIPHERAL_MAX_FREQ) {
+			LOG_ERR("Peripheral mode supports up to %u Hz", SPI_PERIPHERAL_MAX_FREQ);
+			return -EINVAL;
+		}
+
+		init.master = false;
+	} else {
+		err = clock_control_get_rate(eusart_cfg->clock_dev,
+					     (clock_control_subsys_t)&eusart_cfg->clock_cfg,
+					     &ref_frequency);
+		if (err != 0) {
+			return err;
+		}
+		/* Max supported SPI frequency is half the source clock */
+		spi_frequency = ref_frequency / 2;
+
+		/* Set frequency to the minimum of what the device supports, what the
+		 * user has configured the controller to, and the max frequency for the
+		 * transaction.
+		 */
+		if (eusart_cfg->clock_frequency > spi_frequency) {
+			LOG_ERR("SPI clock-frequency too high");
+			return -EINVAL;
+		}
+		spi_frequency = MIN(eusart_cfg->clock_frequency, spi_frequency);
+		if (config->frequency != 0U) {
+			spi_frequency = MIN(config->frequency, spi_frequency);
+		}
+
+		err = spi_silabs_eusart_calculate_clock_div(ref_frequency, spi_frequency,
+							    &init.clock_div);
+		if (err < 0) {
+			return err;
+		}
+	}
 
 	if (config->operation & SPI_MODE_LOOP) {
 		init.loopback_enable = SL_HAL_EUSART_LOOPBACK_ENABLE;
@@ -164,7 +206,8 @@ static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_co
 	}
 
 	adv_init.msb_first = !(config->operation & SPI_TRANSFER_LSB);
-	adv_init.auto_cs_enable = !spi_cs_is_gpio(config);
+	adv_init.auto_cs_enable = !peripheral && !spi_cs_is_gpio(config);
+	adv_init.default_tx_data = eusart_cfg->sdo_overrun;
 	init.data_bits = SL_HAL_EUSART_DATA_BITS_8;
 	init.advanced_config = &adv_init;
 
@@ -313,6 +356,14 @@ static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data
 	if (status < 0) {
 		dma_stop(data->dma_chan_tx.dma_dev, data->dma_chan_tx.chan_nb);
 		dma_stop(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
+	} else {
+		/* Mark all buffers as completed */
+		while (spi_context_tx_on(instance_ctx)) {
+			spi_context_update_tx(instance_ctx, 1, instance_ctx->tx_len);
+		}
+		while (spi_context_rx_on(instance_ctx)) {
+			spi_context_update_rx(instance_ctx, 1, instance_ctx->rx_len);
+		}
 	}
 
 	spi_context_cs_control(instance_ctx, false);
@@ -602,8 +653,11 @@ static int spi_silabs_eusart_xfer_dma(const struct device *dev, const struct spi
 		goto force_transaction_close;
 	}
 
-	/* Successful transaction. DMA transfer done interrupt ended the transaction. */
-	return 0;
+	/* Successful transaction. DMA transfer done interrupt ended the transaction.
+	 * In peripheral mode, ret is the number of received frames.
+	 */
+	return ret;
+
 force_transaction_close:
 	dma_stop(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
 	dma_stop(data->dma_chan_tx.dma_dev, data->dma_chan_tx.chan_nb);
