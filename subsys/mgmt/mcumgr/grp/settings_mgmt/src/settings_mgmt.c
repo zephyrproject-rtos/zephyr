@@ -83,6 +83,10 @@ static int settings_mgmt_read(struct smp_streamer *ctxt)
 			free(key_name);
 		}
 
+		if (data != NULL) {
+			free(data);
+		}
+
 		return MGMT_ERR_ENOMEM;
 	}
 #endif
