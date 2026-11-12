@@ -158,3 +158,30 @@ nordic_expansion_spi: &spi22 {
 	pinctrl-1 = <&spi22_sleep>;
 	pinctrl-names = "default", "sleep";
 };
+
+/* Note only one serial peripheral with a given peripheral ID can be enabled at a time. */
+nordic_expansion_i2c: &i2c22 {
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/*
+ * SPI21 uses P2.09 for MISO, which is also connected to LED0. Cross-domain
+ * routing to P2 requires constant-latency mode.
+ */
+nordic_expansion_spi_p2: &spi21 {
+	pinctrl-0 = <&spi21_default>;
+	pinctrl-1 = <&spi21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/*
+ * Note this PDM instance conflicts with UART20. Disable or reconfigure pinctrl for UART20
+ * to use this PDM instance. UART20 is the default console.
+ */
+nordic_expansion_pdm: &pdm21 {
+	pinctrl-0 = <&pdm21_default>;
+	pinctrl-1 = <&pdm21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
