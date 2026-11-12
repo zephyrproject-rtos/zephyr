@@ -203,7 +203,7 @@ static int init_app(void)
 	 * tunnels them to peer via the Ethernet interface 3.
 	 *
 	 * The above IP addresses might change if you change the addresses in
-	 * overlay-tunnel.conf file.
+	 * tunnel.conf file.
 	 *
 	 * If the cooked mode capture is enabled (CONFIG_NET_CAPTURE_COOKED_MODE=y),
 	 * then we setup the capture automatically to the correct network interface.
