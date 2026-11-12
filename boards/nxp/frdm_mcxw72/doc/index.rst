@@ -1,3 +1,6 @@
+.. SPDX-FileCopyrightText: Copyright 2026 NXP
+.. SPDX-License-Identifier: Apache-2.0
+
 .. zephyr:board:: frdm_mcxw72
 
 Overview
@@ -28,6 +31,38 @@ Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
+
+Suspend-to-RAM
+==============
+
+Suspend-to-RAM is opt-in on ``frdm_mcxw72/mcxw727c`` application core0.
+It uses MAIN Power Down, WAKE Deep Sleep and Radio Power Down.
+Enable the ``powerdown`` power-state node and add it to ``cpu0``'s
+``cpu-power-states``; the board's default sleep states are unchanged.
+The supported configuration requires standalone secure internal-flash XIP,
+``CONFIG_NXP_NBU=n``, software CRC dispatch (``CONFIG_CRC_HW_HANDLER=n``),
+and factory ROM fast-wake eligibility without NPX/FLW reconstruction.
+
+The boot ROM uses low STCM before the warm entry. S2RAM applications must place
+all live kernel/application state at or above ``0x30010000``, conservatively
+excluding the low 64 KiB and its non-secure alias. ``__noinit`` does not protect
+data from ROM writes. The SoC keeps the excluded banks powered and rejects unsafe
+chosen-RAM or allocated ELF-section placement. The PM test's S2RAM overlay uses
+32 KiB at ``0x30010000``; other
+applications must choose a suitable RAM window outside the reserved area.
+The ``s2ram_reserved`` DT node supplies both excluded address ranges to the
+SoC retention logic and final-ELF checker.
+The board's ordinary PM and default RAM layout are unchanged.
+
+LPTMR0 through WUU supplies automatic timed wake. The PM test keeps
+the default UART1 debug console and reconstructs its pinctrl/UART configuration
+from application-thread context after resume; no extra UART0 connection or
+button is required. Other MAIN-domain peripherals need their own register and
+pinctrl restoration support. REGFILE1 REG[0] and REGFILE0 REG[6] are reserved
+while S2RAM is enabled; REGFILE1 REG[1]/[2] are not modified. See
+:zephyr_file:`tests/subsys/pm/power_mgmt_soc/README.rst` for the opt-in
+retained-execution scenarios. These scenarios do not qualify actual POR/ECC
+behavior or complete peripheral recovery.
 
 Fetch Binary Blobs
 ******************

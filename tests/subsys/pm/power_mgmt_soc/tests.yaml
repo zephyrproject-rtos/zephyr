@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
 tests:
   pm.soc:
     platform_allow:
@@ -38,6 +41,7 @@ tests:
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxw70
+      - frdm_mcxw71
       - frdm_mcxw72
       - mcxw23_evk
       - frdm_mcxw23
@@ -60,6 +64,48 @@ tests:
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
+  pm.soc.s2ram:
+    tags:
+      - pm
+      - s2ram
+    platform_allow:
+      - frdm_mcxw71/mcxw716c
+      - frdm_mcxw72/mcxw727c
+    integration_platforms:
+      - frdm_mcxw71/mcxw716c
+      - frdm_mcxw72/mcxw727c
+    filter: CONFIG_PM_S2RAM
+    timeout: 60
+    extra_args:
+      - TEST_S2RAM=ON
+      - EXTRA_CONF_FILE=s2ram.conf
+      - DTC_OVERLAY_FILE=mcxw7x_s2ram.overlay
+    extra_configs:
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y
+    testcases:
+      - power_mgmt.pm_multithread
+  pm.soc.s2ram.no_fpu:
+    tags:
+      - pm
+      - s2ram
+    platform_allow:
+      - frdm_mcxw71/mcxw716c
+      - frdm_mcxw72/mcxw727c
+    integration_platforms:
+      - frdm_mcxw71/mcxw716c
+      - frdm_mcxw72/mcxw727c
+    filter: CONFIG_PM_S2RAM
+    timeout: 60
+    extra_args:
+      - TEST_S2RAM=ON
+      - EXTRA_CONF_FILE=s2ram.conf
+      - DTC_OVERLAY_FILE=mcxw7x_s2ram.overlay
+    extra_configs:
+      - CONFIG_FPU=n
+      - CONFIG_FPU_SHARING=n
+    testcases:
+      - power_mgmt.pm_multithread
   pm.soc.measure:
     tags: pm
     harness: power
