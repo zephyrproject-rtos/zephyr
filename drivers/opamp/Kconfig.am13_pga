@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config OPAMP_AM13_PGA
+	bool "TI AM13 PGA driver"
+	default y
+	select PINCTRL
+	select SYSCON
+	depends on DT_HAS_TI_AM13_PGA_ENABLED
+	help
+	  Enable driver for the TI AM13E Programmable Gain Amplifier
+	  (PGA). Allows for runtime gain changes.
+	  Mux topology, filter resistor, and output routing are configured
+	  statically via devicetree properties.
