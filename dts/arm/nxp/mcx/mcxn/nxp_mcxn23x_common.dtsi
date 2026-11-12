@@ -438,7 +438,18 @@
 		compatible = "nxp,spc";
 		reg = <0x45000 0x1000>;
 		interrupts = <146 0>;
-		wakeup-delay = <780>;
+		/*
+		 * RM Rev. 4, Table 228 (LP_CFG voltage -> ACTIVE_CFG voltage):
+		 * DCDC 0.7 V -> 1.0 V: 0x3bb; 0.7 V -> 1.1 V: 0x4f9;
+		 * 0.7 V -> 1.2 V: 0x637; 1.0 V -> 1.2 V: 0x30c.
+		 * DCDC 1.0 V -> 1.1 V and 1.1 V -> 1.2 V: 0x186.
+		 * LDO_CORE 1.0 V -> 1.1 V is listed twice: 0xaa and 0x136;
+		 * LDO_CORE 1.1 V -> 1.2 V: 0xaa. The default covers both rows.
+		 * Default to the largest listed requirement, in SPC timer cycles.
+		 * Table values assume maximum external output capacitance.
+		 * Users need to make adjustments based on their actual configuration.
+		 */
+		wakeup-delay = <0x637>;
 	};
 
 	wuu: system-modules@46000 {
