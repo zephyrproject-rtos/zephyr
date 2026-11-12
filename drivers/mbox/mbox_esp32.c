@@ -74,6 +74,7 @@ struct esp32_mbox_data {
 	uint32_t shm_size;
 	struct esp32_mbox_memory shm;
 	struct esp32_mbox_control *control;
+	bool pending;
 };
 
 static void esp32_mbox_isr(const struct device *dev);
@@ -132,19 +133,21 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 #endif
 	}
 
+	if (dev_data->cb == NULL) {
+		dev_data->pending = true;
+		return;
+	}
+
 	barrier_dsync_fence_full();
 	consumed = dev_data->control->busy[core_id] != 0U;
 
-	if (dev_data->cb != NULL) {
-		if (consumed) {
-			msg.data = (core_id == 0) ? (const void *)dev_data->shm.pro_cpu_shm
-						  : (const void *)dev_data->shm.app_cpu_shm;
-			msg.size = dev_data->shm_size;
-		}
-
-		dev_data->cb(dev, dev_data->other_core_id, dev_data->user_data,
-			     consumed ? &msg : NULL);
+	if (consumed) {
+		msg.data = (core_id == 0) ? (const void *)dev_data->shm.pro_cpu_shm
+					  : (const void *)dev_data->shm.app_cpu_shm;
+		msg.size = dev_data->shm_size;
 	}
+
+	dev_data->cb(dev, dev_data->other_core_id, dev_data->user_data, consumed ? &msg : NULL);
 
 	if (consumed) {
 		barrier_dsync_fence_full();
@@ -228,6 +231,11 @@ static int esp32_mbox_register_callback(const struct device *dev, mbox_channel_i
 
 	data->cb = cb;
 	data->user_data = user_data;
+
+	if (data->pending) {
+		data->pending = false;
+		esp32_mbox_isr(dev);
+	}
 
 	irq_unlock(key);
 
