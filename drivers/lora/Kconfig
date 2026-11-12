@@ -109,6 +109,7 @@ config LORA_INIT_PRIORITY
 	  System initialization priority for LoRa drivers.
 
 rsource "Kconfig.sx12xx"
+rsource "Kconfig.rui3"
 rsource "Kconfig.rylrxxx"
 rsource "lora-basics-modem/Kconfig"
 rsource "native/Kconfig"
