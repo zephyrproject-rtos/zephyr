@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 
-#define HELPER_STACK_SIZE 500
+#define HELPER_STACK_SIZE (500 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
 static struct k_thread helper_thread;
 static K_THREAD_STACK_DEFINE(helper_stack, HELPER_STACK_SIZE);
