@@ -675,7 +675,6 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->user_data       = config->user_data;
@@ -825,6 +824,10 @@ static int dma_stm32_configure(const struct device *dev,
 	/* With dma V2 and dmamux,the request ID is stored in the dma_slot */
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
+
+	/* The stream is busy once its configuration is accepted */
+	stream->busy = true;
+
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
 	/* Always enable the transfer error interrupt */

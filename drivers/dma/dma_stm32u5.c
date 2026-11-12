@@ -677,7 +677,6 @@ static int dma_stm32_configure(const struct device *dev,
 	}
 #endif /* !defined(CONFIG_SOC_SERIES_STM32C5X) */
 
-	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->user_data       = config->user_data;
@@ -747,6 +746,9 @@ static int dma_stm32_configure(const struct device *dev,
 	}
 	LOG_DBG("Channel (%d) dest inc (%x).", id,
 		LL_DMA_GetDestIncMode(STM32_DMA_GET_CHANNEL(dma, id)));
+
+	/* The stream is busy once its configuration is accepted */
+	stream->busy = true;
 
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
