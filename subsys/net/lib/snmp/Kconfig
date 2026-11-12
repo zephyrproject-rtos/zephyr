@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SNMP
+	bool "SNMP agent [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  SNMPv1 and SNMPv2c agent.
+
+if SNMP
+
+module = SNMP
+module-dep = NET_LOG
+module-str = Log level for SNMP
+module-help = Enable debug message of SNMP agent.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # SNMP
