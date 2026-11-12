@@ -1346,6 +1346,7 @@ Debug:
     - samples/subsys/debug/
     - doc/services/debugging/
     - doc/services/profiling/perf.rst
+    - doc/services/profiling/providers/
     - samples/subsys/profiling/perf/
     - scripts/profiling/stackcollapse.py
     - subsys/profiling/

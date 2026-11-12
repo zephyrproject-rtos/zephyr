@@ -40,4 +40,16 @@ config PROFILING_PERF_EVENTS_SHELL
 	  SHELL_ARGC_MAX must be at least 3 + 2 * PROFILING_PERF_EVENTS_MAX_EVENTS
 	  to accept all event selections in perf stat start.
 
+config PROFILING_PERF_EVENT_PROVIDER_CPU
+	bool "CPU performance counter providers"
+	depends on ARM64_PMUV3
+	depends on !SMP || SCHED_IPI_SUPPORTED
+	help
+	  Register cpuN providers for events described by the PMU backend.
+	  Operations run synchronously on each owning CPU, directly with
+	  interrupts locked for the current CPU or through IPI work for a
+	  remote CPU. SMP requires scheduler IPI support.
+	  Each selected CPU's PMU must be reserved exclusively for perf, and
+	  CPUs must remain online throughout a session.
+
 endif
