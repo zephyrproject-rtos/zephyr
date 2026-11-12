@@ -102,11 +102,6 @@ void nxp_wifi_internal_register_rx_cb(int (*rx_cb_fn)(struct net_if *iface, stru
 	net_internal_rx_callback = rx_cb_fn;
 }
 
-#ifdef CONFIG_WIFI_STA_AUTO_DHCPV4
-OSA_TIMER_HANDLE_DEFINE(dhcp_timer);
-static void dhcp_timer_cb(osa_timer_arg_t arg);
-#endif
-
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 static void set_supp_ready_state(bool ready)
 {
@@ -922,36 +917,6 @@ int net_get_if_name_netif(char *pif_name, struct netif *iface)
 	return WM_SUCCESS;
 }
 
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-void net_stop_dhcp_timer(void)
-{
-	(void)OSA_TimerDeactivate((osa_timer_handle_t)dhcp_timer);
-}
-
-static void stop_cb(void *ctx)
-{
-	interface_t *if_handle = (interface_t *)net_get_mlan_handle();
-#if defined(CONFIG_NET_DHCPV4)
-	net_dhcpv4_stop(if_handle->netif);
-#endif
-
-#ifdef CONFIG_NXP_WIFI_IPV6
-	if (!is_sta_ipv6_connected()) {
-		(void)net_if_dormant_on(if_handle->netif);
-	}
-#else
-	(void)net_if_dormant_on(if_handle->netif);
-#endif
-}
-
-static void dhcp_timer_cb(osa_timer_arg_t arg)
-{
-	stop_cb(NULL);
-
-	(void)wlan_wlcmgr_send_msg(WIFI_EVENT_NET_DHCP_CONFIG, WIFI_EVENT_REASON_FAILURE, NULL);
-}
-#endif
-
 void net_interface_up(void *intrfc_handle)
 {
 	net_if_dormant_off(((interface_t *)intrfc_handle)->netif);
@@ -965,11 +930,15 @@ void net_interface_down(void *intrfc_handle)
 	net_if_dormant_on(((interface_t *)intrfc_handle)->netif);
 }
 
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+void net_stop_dhcp_timer(void)
+{
+}
+#endif
+
 void net_interface_dhcp_stop(void *intrfc_handle)
 {
-#if defined(CONFIG_NET_DHCPV4)
-	net_dhcpv4_stop(((interface_t *)intrfc_handle)->netif);
-#endif
+	(void)intrfc_handle;
 }
 
 static void ipv4_mcast_add(struct net_mgmt_event_callback *cb)
@@ -1087,10 +1056,6 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 #endif
 		break;
 	case NET_ADDR_TYPE_DHCP:
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-		(void)OSA_TimerActivate((osa_timer_handle_t)dhcp_timer);
-		net_dhcpv4_restart(if_handle->netif);
-#endif
 		break;
 	case NET_ADDR_TYPE_LLA:
 		/* For dhcp, instead of netifapi_netif_set_up, a
@@ -1427,9 +1392,6 @@ static void cleanup_mgmt_events(void)
 int net_wlan_init(void)
 {
 	int ret;
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-	osa_status_t status;
-#endif
 	wifi_register_data_input_callback(&handle_data_packet);
 	wifi_register_amsdu_data_input_callback(&handle_amsdu_data_packet);
 	wifi_register_deliver_packet_above_callback(&handle_deliver_packet_above);
@@ -1465,15 +1427,6 @@ int net_wlan_init(void)
 		ethernet_init(g_uap.netif);
 #endif
 		net_wlan_init_done = 1;
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-		status = OSA_TimerCreate((osa_timer_handle_t)dhcp_timer, MSEC_TO_TICK(DHCP_TIMEOUT),
-					 &dhcp_timer_cb, NULL, KOSA_TimerOnce,
-					 OSA_TIMER_NO_ACTIVATE);
-		if (status != KOSA_StatusSuccess) {
-			net_e("Unable to start dhcp timer");
-			return -WM_FAIL;
-		}
-#endif
 	}
 
 	setup_mgmt_events();
@@ -1522,9 +1475,6 @@ static int net_netif_deinit(struct net_if *netif)
 int net_wlan_deinit(void)
 {
 	int ret;
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-	osa_status_t status;
-#endif
 	if (net_wlan_init_done != 1) {
 		return -WM_FAIL;
 	}
@@ -1539,13 +1489,6 @@ int net_wlan_deinit(void)
 	ret = net_netif_deinit(g_uap.netif);
 	if (ret != WM_SUCCESS) {
 		net_e("UAP interface deinit failed");
-		return -WM_FAIL;
-	}
-#endif
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-	status = OSA_TimerDestroy((osa_timer_handle_t)dhcp_timer);
-	if (status != KOSA_StatusSuccess) {
-		net_e("DHCP timer deletion failed");
 		return -WM_FAIL;
 	}
 #endif
