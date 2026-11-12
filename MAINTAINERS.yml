@@ -3054,6 +3054,7 @@ Documentation Infrastructure:
   collaborators:
     - teburd
     - andyross
+    - ZhaoxiangJin
   files:
     - drivers/timer/
     - include/zephyr/drivers/timer/
