@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_SUBSYS_NET_LIB_SNMP_SNMP_INTERNAL_H_
 #define ZEPHYR_SUBSYS_NET_LIB_SNMP_SNMP_INTERNAL_H_
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -36,6 +37,9 @@ enum snmp_lookup_result snmp_registry_lookup(const uint32_t *name, size_t name_l
  */
 const struct snmp_object *snmp_registry_next(const uint32_t *target, size_t target_len,
 					     uint32_t *inst, size_t *inst_len, void **row);
+
+/* Whether authenticationFailure notifications may be sent, snmpEnableAuthenTraps. */
+bool snmp_authen_traps_enabled(void);
 
 /* Error status values of the response PDU, RFC 3416 section 3. */
 #define SNMP_ERR_NO_ERROR             0
@@ -72,5 +76,20 @@ size_t snmp_process_message(const uint8_t *in, size_t in_len, uint8_t *out, size
  * the first: the re-initialization epoch that sysUpTime counts from.
  */
 int64_t snmp_agent_start_uptime(void);
+
+/*
+ * Counters of the snmp group of RFC 3418, maintained by the message
+ * processing and read by the MIB objects, both from the agent's context.
+ */
+struct snmp_counters {
+	uint32_t in_pkts;
+	uint32_t in_bad_versions;
+	uint32_t in_bad_community_names;
+	uint32_t in_bad_community_uses;
+	uint32_t in_asn_parse_errs;
+	uint32_t silent_drops;
+};
+
+extern struct snmp_counters snmp_stats;
 
 #endif /* ZEPHYR_SUBSYS_NET_LIB_SNMP_SNMP_INTERNAL_H_ */

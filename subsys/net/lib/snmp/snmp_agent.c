@@ -52,6 +52,23 @@ struct snmp_status {
 	int32_t error_index;
 };
 
+struct snmp_counters snmp_stats;
+
+/* snmpEnableAuthenTraps lives here so that it is available whether or not
+ * the snmp group that exposes it is built.
+ */
+static bool authen_traps = true;
+
+void snmp_mib2_snmp_set_authen_traps(bool enabled)
+{
+	authen_traps = enabled;
+}
+
+bool snmp_authen_traps_enabled(void)
+{
+	return authen_traps;
+}
+
 static char read_community[CONFIG_SNMP_COMMUNITY_MAX_LEN + 1] = CONFIG_SNMP_COMMUNITY_READ;
 static char write_community[CONFIG_SNMP_COMMUNITY_MAX_LEN + 1] = CONFIG_SNMP_COMMUNITY_WRITE;
 static K_MUTEX_DEFINE(community_lock);
@@ -436,6 +453,8 @@ static int32_t check_error_status(int ret)
 		return SNMP_ERR_WRONG_VALUE;
 	case -EACCES:
 		return SNMP_ERR_NOT_WRITABLE;
+	case -EBUSY:
+		return SNMP_ERR_INCONSISTENT_VALUE;
 	default:
 		return SNMP_ERR_GEN_ERR;
 	}
@@ -907,24 +926,30 @@ size_t snmp_process_message(const uint8_t *in, size_t in_len, uint8_t *out, size
 	enum snmp_access access;
 	size_t head;
 
+	snmp_stats.in_pkts++;
+
 	if (parse_request(in, in_len, &req) != 0 || validate_varbinds(&req) != 0) {
+		snmp_stats.in_asn_parse_errs++;
 		LOG_DBG("Dropping malformed message");
 		return 0U;
 	}
 
 	if (!version_supported(req.version)) {
+		snmp_stats.in_bad_versions++;
 		LOG_DBG("Dropping version %d message", req.version);
 		return 0U;
 	}
 
 	access = community_access(req.community, req.community_len);
 	if (access == SNMP_ACCESS_NONE) {
+		snmp_stats.in_bad_community_names++;
 		LOG_DBG("Dropping message with unknown community");
 		return 0U;
 	}
 
 	head = response_head_size(&req, out_size);
 	if (head >= out_size) {
+		snmp_stats.silent_drops++;
 		return 0U;
 	}
 
@@ -949,6 +974,7 @@ size_t snmp_process_message(const uint8_t *in, size_t in_len, uint8_t *out, size
 	case SNMP_BER_TAG_SET_REQUEST:
 		if (access != SNMP_ACCESS_WRITE || !IS_ENABLED(CONFIG_SNMP_SET_ENABLE)) {
 			/* RFC 3413 3.2 step 5: the community has no write view. */
+			snmp_stats.in_bad_community_uses++;
 			status = (struct snmp_status){SNMP_ERR_AUTHORIZATION_ERROR, 0};
 		} else {
 			status = process_set(&req, &w);
@@ -970,6 +996,7 @@ size_t snmp_process_message(const uint8_t *in, size_t in_len, uint8_t *out, size
 		w.pos = head;
 		if (status.error_status != SNMP_ERR_TOO_BIG || req.version == SNMP_VERSION_1) {
 			if (write_request_varbinds(&w, &req) != 0) {
+				snmp_stats.silent_drops++;
 				LOG_DBG("Dropping request whose bindings do not fit");
 				return 0U;
 			}

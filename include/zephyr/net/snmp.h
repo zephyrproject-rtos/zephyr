@@ -223,6 +223,8 @@ struct snmp_object {
 	 * @retval -EMSGSIZE Value too long, reported as wrongLength.
 	 * @retval -ERANGE Value outside the permitted range, reported as wrongValue.
 	 * @retval -EACCES Instance is read-only, reported as notWritable.
+	 * @retval -EBUSY Value conflicts with the object's current state, reported
+	 *         as inconsistentValue.
 	 * @retval -EIO Commit failed, reported as commitFailed or undoFailed.
 	 */
 	int (*set)(const struct snmp_object *obj, void *row, const struct snmp_value *val,
@@ -396,6 +398,17 @@ int snmp_mib2_system_set_contact(const char *contact);
  * @retval -EMSGSIZE @p location is too long.
  */
 int snmp_mib2_system_set_location(const char *location);
+
+/**
+ * @brief Set the snmpEnableAuthenTraps value of the MIB-2 snmp group.
+ *
+ * The object records whether authenticationFailure notifications may be
+ * generated. Managers can change it with SET; an application that persists
+ * it, as RFC 3418 recommends, restores it with this call.
+ *
+ * @param enabled true for enabled(1), false for disabled(2).
+ */
+void snmp_mib2_snmp_set_authen_traps(bool enabled);
 
 /**
  * @}
