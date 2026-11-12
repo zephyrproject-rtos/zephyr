@@ -480,11 +480,27 @@ static int gpio_dw_initialize(const struct device *port)
 	const struct gpio_dw_config *config = DEV_CFG(port);
 	mem_addr_t base_addr;
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets) || GPIO_DW_PINCTRL_ENABLED
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks) ||        \
+	GPIO_DW_PINCTRL_ENABLED
 	int ret;
 #endif
 
 	DEVICE_MMIO_NAMED_MAP(port, gpio_mmio, K_MEM_CACHE_NONE);
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	if (config->db_clk_dev != NULL) {
+		if (!device_is_ready(config->db_clk_dev)) {
+			LOG_ERR("Debounce clock controller device not ready");
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->db_clk_dev, config->db_clk_id);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable debounce clock: %d", ret);
+			return ret;
+		}
+	}
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks) */
 
 	/* Reset GPIO only if reset controller driver is supported */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
@@ -543,6 +559,10 @@ static int gpio_dw_initialize(const struct device *port)
 #define GPIO_DW_RESET_SPEC_INIT(n)								\
 	.reset = RESET_DT_SPEC_INST_GET(n),							\
 
+#define GPIO_DW_DB_CLK_INIT(n)									\
+	.db_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, db)),			\
+	.db_clk_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, db, clkid),
+
 #if GPIO_DW_PINCTRL_ENABLED
 #define GPIO_DW_PINCTRL_DEFINE(n)								\
 	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),					\
@@ -573,6 +593,8 @@ static int gpio_dw_initialize(const struct device *port)
 		GPIO_DW_PINCTRL_CONFIG(n)							\
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),					\
 			(GPIO_DW_RESET_SPEC_INIT(n)))						\
+		IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(n, db),					\
+			(GPIO_DW_DB_CLK_INIT(n)))						\
 	};											\
 												\
 	static struct gpio_dw_runtime gpio_##n##_runtime;					\
