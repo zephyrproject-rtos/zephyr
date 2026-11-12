@@ -3,6 +3,9 @@
 
 if SOC_GD32F527
 
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,rcu,clock-frequency)
+
 configdefault NUM_IRQS
 	default 104
 
