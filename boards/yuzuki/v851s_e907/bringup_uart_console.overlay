@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Bring-up only: route the Zephyr console to UART3 so boot messages are
+ * visible on a serial cable before OpenAMP/RPMsg is working.
+ *
+ * Do NOT use this overlay for the bridge application: it would compete with
+ * the bridge for UART3. Build the normal image with the RAM console instead.
+ *
+ * Usage:
+ *   west build -b v851s_e907 -s zephyr/samples/hello_world -d build-bringup
+ *     -- -DEXTRA_DTC_OVERLAY_FILE=bringup_uart_console.overlay
+ *        -DCONFIG_RAM_CONSOLE=n -DCONFIG_UART_CONSOLE=y
+ */
+
+/ {
+	chosen {
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+	};
+};

@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <allwinner/v851s.dtsi>
+
+/ {
+	model = "YuzukiPI-Lizard V851S E907";
+
+	chosen {
+		/* UART3 is dedicated to the Linkr Bee bridge, so it is NOT the
+		 * console. Zephyr uses the RAM console; the A7 side can read the
+		 * buffer over OpenAMP. See bringup_uart_console.overlay for a
+		 * temporary UART console during board bring-up.
+		 */
+		zephyr,sram = &dram0;
+		zephyr,ipc = &ipm0;
+		zephyr,ipc_shm = &dram_shm;
+	};
+
+	/* IPM over the V851S MSGBOX (both directions on channel 0). */
+	ipm0: ipm-mbox {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&msgbox 0>, <&msgbox 0>;
+		mbox-names = "tx", "rx";
+	};
+
+	/*
+	 * rpmsg buffer pool.  Linux reserves the same range as the
+	 * "vdev0buffer" shared-dma-pool carveout (256 KiB at 0x43000000);
+	 * the vrings follow at 0x43040000 and 0x43060000, so the window
+	 * covers 512 KiB.
+	 */
+	dram_shm: memory@43000000 {
+		compatible = "mmio-sram";
+		reg = <0x43000000 DT_SIZE_K(512)>;
+	};
+};
+
+/* Bridge target serial. The application owns this UART. */
+&uart3 {
+	current-speed = <115200>;
+	status = "okay";
+};

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CONSOLE=y
+CONFIG_SERIAL=y
+CONFIG_UART_NS16550=y
+
+# UART3 is dedicated to the Linkr Bee bridge, so the console goes to RAM
+# (the A7 side can read it over OpenAMP). UART3 is still opened by the
+# application as the bridge target serial.
+CONFIG_RAM_CONSOLE=y
+CONFIG_UART_CONSOLE=n
+
+# The whole image is loaded into DRAM by the A7-side remoteproc driver and
+# executed in place from RAM. There is no XIP flash on the E907.
+CONFIG_XIP=n
+
+# The E907 uses a CLIC (vectored mode), selected via CPU_XUANTIE_E907.
+CONFIG_GEN_ISR_TABLES=y
+CONFIG_GEN_SW_ISR_TABLE=y

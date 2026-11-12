@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: v851s_e907
+name: YuzukiPI-Lizard V851S E907
+vendor: yuzuki
+type: mcu
+arch: riscv
+ram: 4096
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - uart
+  - mbox
