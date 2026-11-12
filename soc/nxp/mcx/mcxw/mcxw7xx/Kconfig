@@ -56,6 +56,12 @@ config SOC_SERIES_MCXW7XX_SHUTDOWN_UNUSED_RAM
 	  critical data declared as a zephyr,memory-region). No linker symbol is
 	  used, so the decision is not tied to any single linker region.
 
+	  MCXW71/W72 Suspend-to-RAM additionally keeps the low 64 KiB of system
+	  SRAM powered for the pre-trampoline wake path. S2RAM application RAM
+	  must start at or above 0x30010000; allocated sections in either alias
+	  of the excluded area fail the build. This conservative boundary does
+	  not establish the native MCXW71 ROM workspace size.
+
 	  By default zephyr,sram spans the whole system SRAM, so only banks
 	  outside it (for example the Code-TCM banks in the common flash-execution
 	  configuration) are powered off. To free system-SRAM banks, shrink
