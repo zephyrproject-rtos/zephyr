@@ -73,6 +73,8 @@ enum {
 
 	BT_DEV_RPA_VALID,
 	BT_DEV_RPA_TIMEOUT_CHANGED,
+	/* A role took the RPA since the last RPA timeout */
+	BT_DEV_RPA_TAKEN,
 
 	BT_DEV_ID_PENDING,
 	BT_DEV_STORE_ID,

@@ -351,6 +351,8 @@ static void le_rpa_timeout_submit(void)
 	le_rpa_timeout_update();
 #endif
 
+	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TAKEN);
+
 	/* 0 means already pending: that timer keeps its recorded timeout */
 	ret = bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(timeout));
 	if (ret < 0) {
@@ -369,6 +371,9 @@ int bt_id_set_private_addr(uint8_t id)
 	if (id >= CONFIG_BT_ID_MAX) {
 		return -EINVAL;
 	}
+
+	/* Taken before the check, so that rpa_timeout() cannot miss it */
+	atomic_set_bit(bt_dev.flags, BT_DEV_RPA_TAKEN);
 
 	/* check if RPA is valid */
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID)) {
@@ -759,10 +764,26 @@ static void rpa_timeout(struct k_work *work)
 	 * shares its random address and cannot set a new one while it scans.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) || !IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bool taken = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_RPA_TAKEN);
+
 		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
 		      bt_le_scan_active_scanner_running() ||
 		      (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		       atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)))) {
+			if (taken) {
+				/* A role that took the RPA may still be starting with it:
+				 * rotate it on the next timeout, when the role shows.
+				 */
+				const uint16_t timeout = bt_dev.rpa_timeout;
+				int err = bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(timeout));
+
+				if (err < 0) {
+					LOG_WRN("Failed to keep the RPA timer (%d)", err);
+				} else if (err > 0) {
+					bt_dev.rpa_update_timeout = timeout;
+				}
+			}
+
 			return;
 		}
 	}
