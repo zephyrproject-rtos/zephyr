@@ -7,3 +7,4 @@ zephyr_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_map_layout.c)
 zephyr_sources_ifdef(CONFIG_FLASH_AREA_CHECK_INTEGRITY flash_map_integrity.c)
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)

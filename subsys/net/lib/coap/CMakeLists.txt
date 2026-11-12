@@ -15,6 +15,11 @@ zephyr_sources_ifdef(CONFIG_COAP_SERVER
   coap_server.c
 )
 
+if(CONFIG_COAP_SERVER AND CONFIG_MBEDTLS_BUILTIN)
+  # coap_server.c is built into the "zephyr" library.
+  target_link_libraries(zephyr PUBLIC tfpsacrypto)
+endif()
+
 zephyr_sources_ifdef(CONFIG_COAP_SERVER_SHELL
   coap_server_shell.c
 )

@@ -113,6 +113,7 @@ if(CONFIG_BT_CONN_DISABLE_SECURITY)
 endif()
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 zephyr_library_include_directories_ifdef(CONFIG_BUILD_WITH_TFM
   $<TARGET_PROPERTY:tfm,TFM_BINARY_DIR>/api_ns/interface/include
 )
