@@ -1086,9 +1086,8 @@ ZTEST(mqtt_client, test_mqtt_packet_before_connack)
 	test_ctx.reply_before_connack = ping_resp_reply;
 	test_ctx.reply_before_connack_len = sizeof(ping_resp_reply);
 
-	ret = mqtt_connect(&client_ctx);
+	ret = client_connect();
 	zassert_ok(ret, "MQTT client failed to connect (%d)", ret);
-	broker_process(MQTT_PKT_TYPE_CONNECT);
 	prepare_client_fds(&client_ctx);
 
 	client_wait(false);
