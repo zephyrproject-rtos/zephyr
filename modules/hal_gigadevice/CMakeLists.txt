@@ -1,4 +1,5 @@
 # Copyright (c) 2021 ATL-Electronics
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_HAS_GD32_HAL)
@@ -29,6 +30,11 @@ if(${CONFIG_GD32_HXTAL_8MHZ})
 elseif(${CONFIG_GD32_HXTAL_25MHZ})
   zephyr_compile_definitions(HXTAL_VALUE=25000000 HXTAL_VALUE_8M=25000000)
 endif()
+
+  # Series with a DTS-configured clock tree take HXTAL_VALUE from devicetree
+  if(CONFIG_GD32_HXTAL_DT_FREQ)
+    zephyr_compile_definitions(HXTAL_VALUE=${CONFIG_GD32_HXTAL_DT_FREQ})
+  endif()
 
   if((CONFIG_SOC_GD32F405 OR CONFIG_SOC_GD32F407) AND CONFIG_GD32_HXTAL_8MHZ)
     zephyr_compile_definitions(__SYSTEM_CLOCK_168M_PLL_8M_HXTAL=168000000)

@@ -21,12 +21,20 @@
 /** RCU configuration bit (from id cell) */
 #define GD32_CLOCK_ID_BIT(id)	 ((id)&0x1FU)
 
+/* Series with a DTS-configured clock tree describe HCLK on the rcu node */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(rcu), clock_frequency)
+#define CPU_FREQ         DT_PROP(DT_NODELABEL(rcu), clock_frequency)
+#define CPU_FREQ_IS_HCLK 1
+#else
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+#endif
 
+#if !defined(CPU_FREQ_IS_HCLK)
 /** AHB prescaler exponents */
 static const uint8_t ahb_exp[16] = {
 	0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 6U, 7U, 8U, 9U,
 };
+#endif
 /** APB1 prescaler exponents */
 static const uint8_t apb1_exp[8] = {
 	0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U,
@@ -101,12 +109,13 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 	const struct clock_control_gd32_config *config = dev->config;
 	uint16_t id = *(uint16_t *)sys;
 	uint32_t cfg;
-	uint8_t psc;
+	uint8_t psc = 0U;
 
 	cfg = sys_read32(config->base + RCU_CFG0_OFFSET);
 
 	switch (GD32_CLOCK_ID_OFFSET(id)) {
-#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32C2X1)
+#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32C2X1) ||                  \
+	defined(CONFIG_SOC_SERIES_GD32F527)
 	case RCU_AHB1EN_OFFSET:
 	case RCU_AHB2EN_OFFSET:
 #if defined(CONFIG_SOC_SERIES_GD32F4XX)
@@ -115,8 +124,13 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 #else
 	case RCU_AHBEN_OFFSET:
 #endif
+#if defined(CPU_FREQ_IS_HCLK)
+		/* CPU_FREQ already is HCLK, so the AHB prescaler must not be applied again */
+		*rate = CPU_FREQ;
+#else
 		psc = (cfg & RCU_CFG0_AHBPSC_MSK) >> RCU_CFG0_AHBPSC_POS;
 		*rate = CPU_FREQ >> ahb_exp[psc];
+#endif
 		break;
 	case RCU_APB1EN_OFFSET:
 #if !defined(CONFIG_SOC_SERIES_GD32VF103) && \
@@ -145,7 +159,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 			continue;
 		}
 
-#if defined(CONFIG_SOC_SERIES_GD32F4XX)
+#if defined(CONFIG_SOC_SERIES_GD32F4XX) || defined(CONFIG_SOC_SERIES_GD32F527)
 		uint32_t cfg1 = sys_read32(config->base + RCU_CFG1_OFFSET);
 
 		/*
@@ -184,7 +198,7 @@ static int clock_control_gd32_get_rate(const struct device *dev,
 		if (psc != 1U) {
 			*rate *= 2U;
 		}
-#endif /* CONFIG_SOC_SERIES_GD32F4XX */
+#endif /* CONFIG_SOC_SERIES_GD32F4XX || CONFIG_SOC_SERIES_GD32F527 */
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_timer) */
 
