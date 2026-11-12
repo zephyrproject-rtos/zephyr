@@ -2845,8 +2845,8 @@ static void uarte_nrfx_irq_tx_enable(const struct device *dev)
 
 	unsigned int key = irq_lock();
 
-	already_enabled = data->int_driven->tx_irq_enabled;
-	if (!already_enabled) {
+	already_enabled = data->int_driven->tx_irq_enabled || data->int_driven->disable_tx_irq;
+	if (!data->int_driven->tx_irq_enabled) {
 		data->int_driven->disable_tx_irq = false;
 		data->int_driven->tx_irq_enabled = true;
 		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
