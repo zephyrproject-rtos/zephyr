@@ -13,5 +13,7 @@ tests:
     # (no external pin stimulus required).
     platform_allow:
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0
     integration_platforms:
       - frdm_mcxe31b
+      - frdm_mcxe32b/mcxe32b/cpu0

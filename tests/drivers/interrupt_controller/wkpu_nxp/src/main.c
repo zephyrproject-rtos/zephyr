@@ -25,7 +25,11 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/intc_wkpu_nxp_s32.h>
+#include <zephyr/dt-bindings/gpio/nxp-siul2-gpio.h>
+#include <zephyr/sys/sys_io.h>
+#include <soc.h>
 
 /* RM: WKPU wake-up source 1 == RTC timeout. */
 #define WKPU_RTC_TIMEOUT_SOURCE 1U
@@ -98,6 +102,98 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 	zassert_equal(fired_source, WKPU_RTC_TIMEOUT_SOURCE,
 		      "WKPU fired on unexpected source %u (expected %u)",
 		      fired_source, WKPU_RTC_TIMEOUT_SOURCE);
+}
+
+ZTEST(wkpu_nxp, test_wakeup_request_configuration)
+{
+	unsigned int key = irq_lock();
+
+	for (uint8_t bank = 0; bank < DIV_ROUND_UP(CONFIG_NXP_S32_WKPU_SOURCES_MAX, 32);
+	     bank++) {
+		uint8_t source = bank * 32U + 4U;
+		mem_addr_t wrer = DT_REG_ADDR(DT_NODELABEL(wkpu)) + 0x1cU + bank * 0x40U;
+
+		wkpu_nxp_s32_enable_wakeup_interrupt(wkpu, source, WKPU_NXP_S32_RISING_EDGE);
+		zassert_equal(sys_read32(wrer) & BIT(4), BIT(4),
+			      "Wake request not enabled in bank %u", bank);
+
+		wkpu_nxp_s32_enable_interrupt(wkpu, source + 1U,
+					     WKPU_NXP_S32_FALLING_EDGE);
+		zassert_equal(sys_read32(wrer) & (BIT(4) | BIT(5)), BIT(4),
+			      "Ordinary interrupt changed wake requests");
+
+		wkpu_nxp_s32_enable_interrupt(wkpu, source, WKPU_NXP_S32_BOTH_EDGES);
+		zassert_equal(sys_read32(wrer) & BIT(4), 0U,
+			      "Reconfiguration did not disarm wake request");
+
+		wkpu_nxp_s32_enable_wakeup_interrupt(wkpu, source, WKPU_NXP_S32_RISING_EDGE);
+		wkpu_nxp_s32_disable_interrupt(wkpu, source);
+		wkpu_nxp_s32_disable_interrupt(wkpu, source + 1U);
+		zassert_equal(sys_read32(wrer) & (BIT(4) | BIT(5)), 0U,
+			      "Disabled interrupt retained a wake request");
+	}
+
+	irq_unlock(key);
+}
+
+ZTEST(wkpu_nxp, test_gpio_wakeup_pad_keeping)
+{
+	const struct gpio_dt_spec wake = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), wake_gpios);
+	const mem_addr_t mscr = DT_REG_ADDR_BY_NAME(DT_GPIO_CTLR(DT_PATH(zephyr_user),
+							      wake_gpios), mscr) +
+				sizeof(uint32_t) * wake.pin;
+	uint32_t saved = sys_read32(mscr);
+
+	zassert_true(gpio_is_ready_dt(&wake), "Wake GPIO not ready");
+
+	for (uint32_t pke = 0U; pke <= SIUL2_MSCR_PKE_MASK; pke += SIUL2_MSCR_PKE_MASK) {
+		sys_write32((saved & ~SIUL2_MSCR_PKE_MASK) | pke, mscr);
+		zexpect_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+
+		for (uint8_t repeat = 0U; repeat < 2U; repeat++) {
+			zexpect_ok(gpio_pin_interrupt_configure_dt(
+				&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+			zexpect_equal(sys_read32(mscr) & SIUL2_MSCR_PKE_MASK, 0U,
+				      "Wake input must not use pad keeping");
+		}
+
+		zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_EDGE_TO_ACTIVE));
+		zexpect_equal(sys_read32(mscr) & SIUL2_MSCR_PKE_MASK, pke,
+			      "Ordinary interrupt did not restore pad keeping");
+
+		zexpect_ok(gpio_pin_interrupt_configure_dt(
+			&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+		zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_DISABLE));
+		zexpect_equal(sys_read32(mscr) & SIUL2_MSCR_PKE_MASK, pke,
+			      "Disabling wake did not restore pad keeping");
+	}
+
+	sys_write32(saved, mscr);
+}
+
+ZTEST(wkpu_nxp, test_gpio_reconfigure_disarms_wakeup)
+{
+	const struct gpio_dt_spec wake = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), wake_gpios);
+	const mem_addr_t mscr = DT_REG_ADDR_BY_NAME(DT_GPIO_CTLR(DT_PATH(zephyr_user),
+							      wake_gpios), mscr) +
+				sizeof(uint32_t) * wake.pin;
+	const mem_addr_t wrer = DT_REG_ADDR(DT_NODELABEL(wkpu)) + 0x1cU;
+	uint32_t saved = sys_read32(mscr);
+
+	zassert_true(gpio_is_ready_dt(&wake), "Wake GPIO not ready");
+	sys_write32(saved | SIUL2_MSCR_PKE_MASK, mscr);
+	zexpect_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+	zexpect_ok(gpio_pin_interrupt_configure_dt(
+		&wake, GPIO_INT_EDGE_TO_ACTIVE | GPIO_INT_WAKEUP));
+	zexpect_ok(gpio_pin_configure(wake.port, wake.pin, GPIO_INPUT | GPIO_PULL_UP));
+	zexpect_equal(sys_read32(mscr) & SIUL2_MSCR_PKE_MASK, SIUL2_MSCR_PKE_MASK,
+		      "Changing interrupt route did not restore pad keeping");
+	zexpect_equal(sys_read32(wrer) & BIT(30), 0U,
+		      "Changing interrupt route left the old wake request armed");
+
+	zexpect_ok(gpio_pin_configure_dt(&wake, GPIO_INPUT));
+	zexpect_ok(gpio_pin_interrupt_configure_dt(&wake, GPIO_INT_DISABLE));
+	sys_write32(saved, mscr);
 }
 
 ZTEST_SUITE(wkpu_nxp, NULL, NULL, NULL, NULL, NULL);

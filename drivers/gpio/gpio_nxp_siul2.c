@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024, 2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,9 @@ struct gpio_nxp_siul2_data {
 	sys_slist_t callbacks;
 #if defined(CONFIG_NXP_S32_WKPU)
 	uint32_t pin_wkpu_mask;
+	uint32_t pin_wakeup_mask;
+	uint32_t pin_saved_pke_mask;
+	struct k_spinlock lock;
 #endif /* defined(CONFIG_NXP_S32_WKPU) */
 #endif
 };
@@ -79,6 +82,36 @@ static ALWAYS_INLINE uint16_t reverse_bits_16(uint16_t value)
 {
 	return (uint16_t)(__RBIT((uint32_t)value) >> 16);
 }
+
+#if defined(CONFIG_NXP_S32_WKPU)
+static int nxp_siul2_gpio_config_wkpu(const struct device *dev, gpio_pin_t pin,
+				      enum gpio_int_mode mode, enum gpio_int_trig trig);
+
+static void nxp_siul2_gpio_config_wakeup_pad(const struct device *dev, gpio_pin_t pin,
+					     bool wakeup)
+{
+	const struct gpio_nxp_siul2_config *config = dev->config;
+	struct gpio_nxp_siul2_data *data = dev->data;
+	uint32_t mscr = PORT_READ(pin);
+	uint32_t mask = BIT(pin);
+
+	if (wakeup) {
+		if ((data->pin_wakeup_mask & mask) == 0U) {
+			WRITE_BIT(data->pin_saved_pke_mask, pin, mscr & SIUL2_MSCR_PKE_MASK);
+		}
+		data->pin_wakeup_mask |= mask;
+		/* WKPU wake-up inputs require pad keeping to be disabled. */
+		PORT_WRITE(pin, mscr & ~SIUL2_MSCR_PKE_MASK);
+	} else if ((data->pin_wakeup_mask & mask) != 0U) {
+		mscr &= ~SIUL2_MSCR_PKE_MASK;
+		if ((data->pin_saved_pke_mask & mask) != 0U) {
+			mscr |= SIUL2_MSCR_PKE_MASK;
+		}
+		PORT_WRITE(pin, mscr);
+		data->pin_wakeup_mask &= ~mask;
+	}
+}
+#endif
 
 static int nxp_siul2_gpio_configure(const struct device *dev, gpio_pin_t pin,
 				  gpio_flags_t flags)
@@ -93,7 +126,18 @@ static int nxp_siul2_gpio_configure(const struct device *dev, gpio_pin_t pin,
 
 #if defined(CONFIG_NXP_S32_WKPU)
 	struct gpio_nxp_siul2_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+	if ((data->pin_wakeup_mask & BIT(pin)) != 0U &&
+	    (flags & NXP_SIUL2_GPIO_INT_WKPU) == 0U) {
+		int ret = nxp_siul2_gpio_config_wkpu(dev, pin, GPIO_INT_MODE_DISABLED,
+						   GPIO_INT_TRIG_LOW);
+
+		if (ret < 0) {
+			k_spin_unlock(&data->lock, key);
+			return ret;
+		}
+	}
 	WRITE_BIT(data->pin_wkpu_mask, pin, (flags & NXP_SIUL2_GPIO_INT_WKPU));
 #else
 	if (flags & NXP_SIUL2_GPIO_INT_WKPU) {
@@ -126,6 +170,10 @@ static int nxp_siul2_gpio_configure(const struct device *dev, gpio_pin_t pin,
 		}
 	}
 	PORT_WRITE(pin, mscr_val);
+
+#if defined(CONFIG_NXP_S32_WKPU)
+	k_spin_unlock(&data->lock, key);
+#endif
 
 	return 0;
 }
@@ -314,6 +362,9 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 	const struct gpio_nxp_siul2_irq_config *irq_cfg = config->wkpu_info;
 	uint8_t irq_line;
 	enum wkpu_nxp_s32_trigger wkpu_trigger;
+	bool wakeup = (trig & GPIO_INT_WAKEUP) != 0;
+
+	trig &= ~GPIO_INT_WAKEUP;
 
 	if (irq_cfg == NULL) {
 		LOG_ERR("WKPU controller not available or enabled");
@@ -336,6 +387,7 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		wkpu_nxp_s32_disable_interrupt(irq_cfg->ctrl, irq_line);
 		wkpu_nxp_s32_unset_callback(irq_cfg->ctrl, irq_line);
+		nxp_siul2_gpio_config_wakeup_pad(dev, pin, false);
 	} else {
 		if (nxp_siul2_gpio_wkpu_get_trigger(&wkpu_trigger, trig)) {
 			return -ENOTSUP;
@@ -345,7 +397,13 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 			LOG_ERR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
-		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);
+		if (wakeup) {
+			nxp_siul2_gpio_config_wakeup_pad(dev, pin, true);
+			wkpu_nxp_s32_enable_wakeup_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);
+		} else {
+			wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);
+			nxp_siul2_gpio_config_wakeup_pad(dev, pin, false);
+		}
 	}
 
 	return 0;
@@ -359,10 +417,15 @@ static int nxp_siul2_gpio_pin_interrupt_configure(const struct device *dev,
 {
 #if defined(CONFIG_NXP_S32_WKPU)
 	struct gpio_nxp_siul2_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	if (data->pin_wkpu_mask & BIT(pin)) {
-		return nxp_siul2_gpio_config_wkpu(dev, pin, mode, trig);
+		int ret = nxp_siul2_gpio_config_wkpu(dev, pin, mode, trig);
+
+		k_spin_unlock(&data->lock, key);
+		return ret;
 	}
+	k_spin_unlock(&data->lock, key);
 #endif
 
 #if defined(CONFIG_NXP_SIUL2_EIRQ)
