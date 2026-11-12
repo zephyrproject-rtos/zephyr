@@ -198,12 +198,12 @@ static inline void tcc_enable(void *pwm_reg, bool enable)
 /**
  *Wait for the PWM instance to complete synchronization.
  */
-static inline void tcc_sync_wait(void *pwm_reg)
+static inline void tcc_sync_wait(void *pwm_reg, uint32_t sync_mask)
 {
-
-	if (!WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) != 0), TIMEOUT_VALUE_US,
+	if (!WAIT_FOR((((PWM_REG(pwm_reg)->TCC_SYNCBUSY) & sync_mask) == 0), TIMEOUT_VALUE_US,
 		      k_busy_wait(DELAY_US))) {
-		LOG_ERR("TCC_SYNCBUSY wait timed out");
+		LOG_ERR("TCC_SYNCBUSY wait timed out (mask=0x%08x, syncbusy=0x%08x)", sync_mask,
+			PWM_REG(pwm_reg)->TCC_SYNCBUSY);
 	}
 	LOG_DBG("%s invoked", __func__);
 }
@@ -216,10 +216,10 @@ static int32_t tcc_set_invert(void *pwm_reg, uint32_t channel)
 	uint32_t invert_mask = 1 << (channel + TCC_DRVCTRL_INVEN0_Pos);
 
 	tcc_enable(pwm_reg, false);
-	tcc_sync_wait(pwm_reg);
+	tcc_sync_wait(pwm_reg, TCC_SYNCBUSY_ENABLE_Msk);
 	PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
 	tcc_enable(pwm_reg, true);
-	tcc_sync_wait(pwm_reg);
+	tcc_sync_wait(pwm_reg, TCC_SYNCBUSY_ENABLE_Msk);
 	LOG_DBG("tcc set invert 0x%x invoked", invert_mask);
 
 	return MCHP_PWM_SUCCESS;
@@ -232,11 +232,14 @@ void tcc_init(void *pwm_reg, uint32_t prescaler)
 {
 	prescaler = tcc_get_prescale_val(prescaler);
 	PWM_REG(pwm_reg)->TCC_CTRLA = TCC_CTRLA_SWRST(1);
-	tcc_sync_wait(pwm_reg);
+	tcc_sync_wait(pwm_reg, TCC_SYNCBUSY_SWRST_Msk);
 	PWM_REG(pwm_reg)->TCC_CTRLA |= prescaler;
 	PWM_REG(pwm_reg)->TCC_WAVE = TCC_WAVE_WAVEGEN_NPWM;
+	tcc_sync_wait(pwm_reg, TCC_SYNCBUSY_WAVE_Msk);
 	PWM_REG(pwm_reg)->TCC_PER = TCC_PER_PER(0);
+	tcc_sync_wait(pwm_reg, TCC_SYNCBUSY_PER_Msk);
 	tcc_enable(pwm_reg, true);
+	tcc_sync_wait(pwm_reg, TCC_SYNCBUSY_ENABLE_Msk);
 }
 
 /**
