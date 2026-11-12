@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -313,6 +314,12 @@ demux:
 #if defined(CONFIG_USERSPACE)
     cmp r1, #_SVC_CALL_SYSTEM_CALL
     beq _do_syscall
+
+    /* Only system calls may be issued from user mode. */
+    mrs r0, spsr
+    and r0, #MODE_MASK
+    cmp r0, #MODE_USR
+    beq _oops
 #endif
 
     cmp r1, #_SVC_CALL_CONTEXT_SWITCH
@@ -322,6 +329,15 @@ demux:
     beq _oops
 
 #if CONFIG_IRQ_OFFLOAD
+    cmp r1, #_SVC_CALL_IRQ_OFFLOAD
+    beq _offload
+#endif
+
+    /* Reject unknown SVCs instead of treating them as offloads or swaps. */
+    b _oops
+
+#if CONFIG_IRQ_OFFLOAD
+_offload:
     blx z_irq_do_offload  /* call C routine which executes the offload */
 
     /* exception return is done in z_arm_int_exit() */

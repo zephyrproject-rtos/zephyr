@@ -1,0 +1,22 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - arm
+    - userspace
+  arch_allow:
+    - arm
+  platform_allow:
+    - mps3/an536/cpu0
+    - qemu_cortex_r5/zynqmp_rpu
+  integration_platforms:
+    - mps3/an536/cpu0
+  ignore_faults: true
+tests:
+  arch.arm.cortex_r.svc_offload:
+    extra_configs:
+      - CONFIG_IRQ_OFFLOAD=y
+  arch.arm.cortex_r.svc_no_offload:
+    extra_configs:
+      - CONFIG_IRQ_OFFLOAD=n
