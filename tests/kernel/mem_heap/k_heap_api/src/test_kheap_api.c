@@ -80,6 +80,57 @@ static void thread_alloc_heap_deadline(void *p1, void *p2, void *p3)
 	zassert_is_null(p, "k_heap_alloc should fail but did not");
 }
 
+static void thread_alloc_heap_size(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	size_t bytes = (size_t)(uintptr_t)p1;
+	char *p;
+
+	p = (char *)k_heap_alloc(&k_heap_test, bytes, Z_TIMEOUT_MS(200));
+
+	zassert_not_null(p, "k_heap_alloc failed to allocate memory");
+
+	k_heap_free(&k_heap_test, p);
+}
+
+/* Largest block k_heap_test can give right now */
+static size_t heap_max_alloc(void)
+{
+	size_t lo = 0, hi = HEAP_SIZE;
+
+	while (lo < hi) {
+		size_t mid = (lo + hi + 1) / 2;
+		void *p = k_heap_alloc(&k_heap_test, mid, K_NO_WAIT);
+
+		if (p != NULL) {
+			k_heap_free(&k_heap_test, p);
+			lo = mid;
+		} else {
+			hi = mid - 1;
+		}
+	}
+
+	return lo;
+}
+
+/* Start a thread waiting for a block that does not fit yet */
+static k_tid_t start_heap_waiter(size_t bytes)
+{
+	zassert_is_null(k_heap_alloc(&k_heap_test, bytes, K_NO_WAIT),
+			"%zu bytes fit already", bytes);
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_alloc_heap_size, (void *)(uintptr_t)bytes, NULL, NULL,
+				      K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	/* Sleep long enough for child thread to go into pending */
+	k_msleep(5);
+
+	return tid;
+}
+
 /*test cases*/
 
 /* These need to be adjacent in BSS */
@@ -495,6 +546,73 @@ ZTEST(k_heap_api, test_k_heap_realloc_zero_wakes_waiter)
 	k_thread_join(tid, K_FOREVER);
 
 	zassert_equal(ret, 0, "waiter was not woken by k_heap_realloc with size 0");
+}
+
+/**
+ * @brief Test that shrinking a block with k_heap_realloc() wakes a blocked allocation.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_shrink_wakes_waiter)
+{
+	char *p = (char *)k_heap_alloc(&k_heap_test, ALLOC_SIZE_2, K_NO_WAIT);
+
+	zassert_not_null(p, "k_heap_alloc operation failed");
+
+	k_tid_t tid = start_heap_waiter(ALLOC_SIZE_2);
+	char *p2 = (char *)k_heap_realloc(&k_heap_test, p, 16, K_NO_WAIT);
+
+	zassert_equal(p2, p, "shrinking moved the block");
+
+	int ret = k_thread_join(tid, K_MSEC(100));
+
+	k_thread_join(tid, K_FOREVER);
+	k_heap_free(&k_heap_test, p2);
+
+	zassert_equal(ret, 0, "waiter was not woken by shrinking k_heap_realloc");
+}
+
+/**
+ * @brief Test that moving a block with k_heap_realloc() wakes a blocked allocation.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details The block moves to the free tail of the heap, and its old place
+ * joins the free block before it, which is then large enough for the waiter.
+ *
+ * @see k_heap_realloc()
+ */
+ZTEST(k_heap_api, test_k_heap_realloc_move_wakes_waiter)
+{
+	/* Layout: [g (freed)][a][b][filler][free tail of about 280 bytes] */
+	char *g = (char *)k_heap_alloc(&k_heap_test, 240, K_NO_WAIT);
+	char *a = (char *)k_heap_alloc(&k_heap_test, 160, K_NO_WAIT);
+	char *b = (char *)k_heap_alloc(&k_heap_test, 16, K_NO_WAIT);
+	char *filler = (char *)k_heap_alloc(&k_heap_test, heap_max_alloc() - 280, K_NO_WAIT);
+
+	zassert_true((g != NULL) && (a != NULL) && (b != NULL) && (filler != NULL),
+		     "k_heap_alloc operation failed");
+	k_heap_free(&k_heap_test, g);
+
+	/* 300 bytes fit neither before a nor in the tail */
+	k_tid_t tid = start_heap_waiter(300);
+
+	/* b keeps a from growing in place, so a moves to the tail */
+	char *a2 = (char *)k_heap_realloc(&k_heap_test, a, 250, K_NO_WAIT);
+
+	zassert_not_null(a2, "k_heap_realloc operation failed");
+	zassert_not_equal(a2, a, "k_heap_realloc did not move the block");
+
+	int ret = k_thread_join(tid, K_MSEC(100));
+
+	k_thread_join(tid, K_FOREVER);
+	k_heap_free(&k_heap_test, a2);
+	k_heap_free(&k_heap_test, b);
+	k_heap_free(&k_heap_test, filler);
+
+	zassert_equal(ret, 0, "waiter was not woken by moving k_heap_realloc");
 }
 
 /**
