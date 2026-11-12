@@ -224,6 +224,9 @@ int snmp_agent_start(void)
 		goto out;
 	}
 
+	/* Stored values take precedence over defaults and earlier setter calls. */
+	snmp_storage_restore();
+
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct net_sockaddr_in addr4 = {
 			.sin_family = NET_AF_INET,
