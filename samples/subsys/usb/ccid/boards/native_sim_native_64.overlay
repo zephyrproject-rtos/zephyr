@@ -1,0 +1,15 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/delete-node/ &zephyr_udc0;
+
+/ {
+	zephyr_uhc0: uhc {
+		compatible = "zephyr,uhc-virtual";
+		zephyr_udc0: udc {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <3>;
+			maximum-speed = "high-speed";
+		};
+	};
+};
+
+#include "../app.overlay"

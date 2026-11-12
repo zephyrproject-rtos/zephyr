@@ -1,0 +1,11 @@
+sample:
+  name: USB CCID reader backend
+  description: Demonstrate a transport-independent CCID backend with a simulated T=0 card.
+tests:
+  sample.usb.ccid:
+    depends_on: usbd
+    tags: usb
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - native_sim/native/64
+    build_only: true
