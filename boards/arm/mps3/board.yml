@@ -22,3 +22,4 @@ board:
     - name: 'fvp'
       variants:
       - name: 'ns'
+  - name: 'an524'

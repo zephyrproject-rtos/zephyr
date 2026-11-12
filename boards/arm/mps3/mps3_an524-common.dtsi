@@ -1,0 +1,91 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Common peripherals of the ARM V2M-MPS3 AN524 (SSE-200, dual Cortex-M33)
+ * platform. These nodes live inside the "peripheral" container of each
+ * board DTS file, whose base address is 0x40000000 (non-secure alias).
+ */
+
+sysclk: system-clock {
+	compatible = "fixed-clock";
+	clock-frequency = <32000000>;
+	#clock-cells = <0>;
+};
+
+timer0: timer@0 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x0 0x1000>;
+	interrupts = <3 3>;
+};
+
+timer1: timer@1000 {
+	compatible = "arm,cmsdk-timer";
+	reg = <0x1000 0x1000>;
+	interrupts = <4 3>;
+};
+
+dtimer0: dtimer@2000 {
+	compatible = "arm,cmsdk-dtimer";
+	reg = <0x2000 0x1000>;
+	interrupts = <5 3>;
+};
+
+mhu0: mhu@3000 {
+	compatible = "arm,mhu";
+	reg = <0x3000 0x1000>;
+	interrupts = <6 3>;
+};
+
+mhu1: mhu@4000 {
+	compatible = "arm,mhu";
+	reg = <0x4000 0x1000>;
+	interrupts = <7 3>;
+};
+
+gpio0: gpio@1100000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x1100000 0x1000>;
+	interrupts = <68 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio1: gpio@1101000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x1101000 0x1000>;
+	interrupts = <69 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio2: gpio@1102000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x1102000 0x1000>;
+	interrupts = <70 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+gpio3: gpio@1103000 {
+	compatible = "arm,cmsdk-gpio";
+	reg = <0x1103000 0x1000>;
+	interrupts = <71 3>;
+	gpio-controller;
+	#gpio-cells = <2>;
+};
+
+uart0: uart@1303000 {
+	compatible = "arm,cmsdk-uart";
+	reg = <0x1303000 0x1000>;
+	interrupts = <33 3 32 3>;
+	interrupt-names = "tx", "rx";
+	clocks = <&sysclk>;
+	current-speed = <115200>;
+};
+
+pinctrl: pinctrl {
+	compatible = "arm,mps3-pinctrl";
+	status = "okay";
+};

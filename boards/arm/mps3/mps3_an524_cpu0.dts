@@ -1,0 +1,77 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ARM V2M-MPS3 AN524 (SSE-200, dual Cortex-M33) - CPU0 secure image.
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+
+/ {
+	compatible = "arm,mps3-an524";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &isram;
+		zephyr,flash = &qspi;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	/*
+	 * Memory map of the AN524 (per Arm / TF-M definitions):
+	 *
+	 * QSPI (8 MB):  NS 0x00000000 / S 0x10000000
+	 * ISRAM (128K): NS 0x20000000 / S 0x30000000
+	 * BRAM (512K):  NS 0x28000000 / S 0x38000000
+	 *
+	 * CPU0 (secure image) executes from the QSPI secure alias and
+	 * keeps its data in the secure alias of the internal SRAM.
+	 */
+	qspi: memory@10000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 DT_SIZE_K(512)>;
+		zephyr,memory-region = "QSPI";
+	};
+
+	isram: memory@30000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "ISRAM";
+	};
+
+	soc {
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+#include "mps3_an524-common.dtsi"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

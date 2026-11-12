@@ -1,0 +1,83 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ARM V2M-MPS3 AN524 (SSE-200, dual Cortex-M33) - CPU1 image.
+ *
+ * CPU1 is non-secure on the SSE-200, so this image uses the non-secure
+ * aliases of the QSPI and BRAM memories.
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+
+/ {
+	compatible = "arm,mps3-an524";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram;
+		zephyr,flash = &code;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	/*
+	 * The memory regions defined below follow the AN524 memory map
+	 * (non-secure aliases):
+	 *
+	 * The code region matches TF-M's Non-Secure image partition
+	 * (256 KB at QSPI offset 0xC0000).
+	 *
+	 * The ram region is carved out of the 512 KB BRAM, leaving the
+	 * top 32 KB (0x28078000) for the inter-processor communication
+	 * shared memory used by the OpenAMP sample.
+	 */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code: memory@c0000 {
+			reg = <0x000c0000 DT_SIZE_K(256)>;
+		};
+
+		ram: memory@28000000 {
+			reg = <0x28000000 DT_SIZE_K(480)>;
+		};
+	};
+
+	soc {
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+#include "mps3_an524-common.dtsi"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -1,0 +1,10 @@
+identifier: mps3/an524/cpu1
+name: ARM V2M-MPS3 AN524 cpu1
+type: mcu
+arch: arm
+ram: 480
+flash: 256
+toolchain:
+  - gnuarmemb
+  - zephyr
+vendor: arm
