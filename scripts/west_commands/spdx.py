@@ -116,7 +116,9 @@ class ZephyrSpdx(WestCommand):
         cfg.build_dir = args.build_dir
         try:
             version_obj = parse(args.spdx_version)
-        except Exception:
+        except Exception:  # noqa BLE001 FIXME: the original error messages are probably
+            # more varied and precise. At least we abort and do not keep going like
+            # nothing happened which is frequent with BLE001
             self.die(f"Invalid SPDX version: {args.spdx_version}")
         cfg.spdx_version = version_obj
         if version_obj == SPDX_VERSION_3_1:

@@ -171,7 +171,7 @@ def get_reuse_info(project, file_path):
         # the reuse library returns these as sets, so sort them to keep the
         # generated SBOM reproducible across runs
         return sorted(licenses), sorted(copyrights)
-    except Exception:
+    except Exception:  # noqa BLE001 - not needed with ruff >= 0.16 + "exc_info"
         _logger.warning("Error getting REUSE info for %s", file_path, exc_info=True)
         return [], []
 
@@ -197,7 +197,7 @@ def scan_sbom_graph(cfg, sbom_graph):
                 reuse_project = make_reuse_project(
                     component.base_dir, [f.path for f in component.files.values()]
                 )
-            except Exception:
+            except Exception:  # noqa BLE001 - not needed with ruff >= 0.16 + "exc_info"
                 _logger.warning(
                     "Error building REUSE project for %s", component.base_dir, exc_info=True
                 )
