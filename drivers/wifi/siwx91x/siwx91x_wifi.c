@@ -289,7 +289,7 @@ sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 		return SL_STATUS_OK;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(iface, buffer->length, AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(iface, buffer->length, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("net_pkt_rx_alloc_with_buffer() failed");
 		return SL_STATUS_FAIL;
