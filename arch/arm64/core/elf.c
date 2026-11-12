@@ -62,6 +62,11 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
 #define R_AARCH64_TLSLE_ADD_TPREL_HI12    549 /* 0x225 */
 #define R_AARCH64_TLSLE_ADD_TPREL_LO12_NC 551 /* 0x227 */
 
+/* Dynamic relocations */
+#define R_AARCH64_GLOB_DAT  1025
+#define R_AARCH64_JUMP_SLOT 1026
+#define R_AARCH64_RELATIVE  1027
+
 /*
  * Variant-I TLS: tpidr_el0 points at a two-pointer TCB, with the thread's
  * TLS block immediately after it. Mirrors arch_tls_stack_setup() in
@@ -578,6 +583,21 @@ int arch_elf_relocate(struct llext_loader *ldr, struct llext *ext, elf_rela_t *r
 	case R_AARCH64_TLSLE_ADD_TPREL_LO12_NC:
 		overflow_check = false;
 		ret = tls_reloc_handler(rel, reloc_type, loc, sym.st_value);
+		break;
+
+	case R_AARCH64_GLOB_DAT:
+	case R_AARCH64_JUMP_SLOT:
+		/* S + A */
+		*(uint64_t *)loc = sym_base_addr + rel->r_addend;
+		break;
+
+	case R_AARCH64_RELATIVE:
+		/* Delta(S) + A, the load bias of the image plus the addend */
+		if (!llext_is_image(ext)) {
+			LOG_ERR("R_AARCH64_RELATIVE outside of a shared library image");
+			return -ENOEXEC;
+		}
+		*(uint64_t *)loc = llext_load_bias(ext) + rel->r_addend;
 		break;
 
 	default:
