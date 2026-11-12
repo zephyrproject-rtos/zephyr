@@ -164,6 +164,13 @@ struct llext {
 	elf_shdr_t *sect_hdrs;
 	bool sect_hdrs_on_heap;
 	bool mmu_permissions_set;
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	/* Shared library loaded as one image */
+	void *image;
+	size_t image_size;
+	/* Load address minus link address of the image */
+	uintptr_t load_bias;
+#endif
 	/** @endcond */
 };
 
@@ -401,6 +408,7 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
  *
  * @returns 0 on success, or a negative error code.
  * @retval -ENOSYS Option @kconfig{CONFIG_USERSPACE} is not enabled or supported
+ * @retval -ENOTSUP Extension is a shared library loaded as one image
  */
 int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
 

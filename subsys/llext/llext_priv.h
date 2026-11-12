@@ -36,7 +36,19 @@ int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
 int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		       const struct llext_load_param *ldr_parm);
 void llext_free_regions(struct llext *ext);
-void llext_adjust_mmu_permissions(struct llext *ext);
+void llext_adjust_mmu_permissions(struct llext_loader *ldr, struct llext *ext);
+
+/* Link address and size of a shared library image, 0 if not loaded as one */
+static inline void llext_image_range(const struct llext *ext, uintptr_t *vaddr, size_t *size)
+{
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	*vaddr = (uintptr_t)ext->image - ext->load_bias;
+	*size = ext->image_size;
+#else
+	*vaddr = 0;
+	*size = 0;
+#endif
+}
 
 /*
  * ELF parsing (llext_load.c)

@@ -1011,7 +1011,7 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	if (!ldr_parm->pre_located) {
-		llext_adjust_mmu_permissions(ext);
+		llext_adjust_mmu_permissions(ldr, ext);
 	}
 
 out:
