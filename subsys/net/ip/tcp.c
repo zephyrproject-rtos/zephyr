@@ -29,18 +29,12 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include "tcp_internal.h"
 #include "pmtu.h"
 
-#define ACK_TIMEOUT_MS tcp_max_timeout_ms
-#define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
-#define LAST_ACK_TIMEOUT_MS tcp_max_timeout_ms
-#define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
-#define FIN_TIMEOUT K_MSEC(tcp_max_timeout_ms)
 #define ACK_DELAY K_MSEC(CONFIG_NET_TCP_ACK_DELAY)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
+#define TCP_RTO_SYN_FALLBACK_MS 3000U
 
-static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = CONFIG_NET_TCP_RETRY_COUNT;
-static int tcp_max_timeout_ms;
 static uint32_t tcp_rx_window =
 #if (CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE != 0)
 	CONFIG_NET_TCP_MAX_RECV_WINDOW_SIZE;
@@ -62,11 +56,6 @@ static uint32_t tcp_tx_window =
 #else
 	MIN((uint32_t)(CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE / 3), NET_TCP_MAX_WINDOW);
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
-#endif
-#ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
-#define TCP_RTO_MS (conn->rto)
-#else
-#define TCP_RTO_MS (tcp_rto)
 #endif
 
 /* Define the number of MSS sections the congestion window is initialized at */
@@ -127,6 +116,7 @@ void net_tcp_conn_accepted(struct net_context *child_ctx)
 }
 
 static uint8_t tcp_send_options_len(struct tcp *conn);
+static bool tcp_sack_in_recovery(struct tcp *conn);
 
 static uint32_t tcp_get_seq(struct net_buf *buf)
 {
@@ -134,12 +124,18 @@ static uint32_t tcp_get_seq(struct net_buf *buf)
 }
 
 /*
- * Out of order data is only held when the receive queue is enabled, and
- * without it there is never a block to report.
+ * SACK permitted is offered when either side uses SACK. Reporting received
+ * data needs the receive queue, since only it holds data out of order.
  */
 static inline bool tcp_sack_supported(void)
 {
-	return IS_ENABLED(CONFIG_NET_TCP_SACK);
+	return IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || IS_ENABLED(CONFIG_NET_TCP_SACK_SEND);
+}
+
+/* The SACK blocks of the peer are used for loss recovery */
+static inline bool tcp_sack_send_active(struct tcp *conn)
+{
+	return IS_ENABLED(CONFIG_NET_TCP_SACK_SEND) && conn->sack_perm;
 }
 
 /*
@@ -148,7 +144,8 @@ static inline bool tcp_sack_supported(void)
  */
 static bool tcp_sack_block(struct tcp *conn, uint32_t *left, uint32_t *right)
 {
-	if (!conn->sack_perm || conn->queue_recv_data == NULL) {
+	if (!IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || !conn->sack_perm ||
+	    (conn->queue_recv_data == NULL)) {
 		return false;
 	}
 
@@ -534,23 +531,176 @@ out:
 static void tcp_derive_rto(struct tcp *conn)
 {
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
-	/* Compute a randomized rto 1 and 1.5 times tcp_rto */
-	uint32_t gain;
+	/* Pick a gain between 1 and 1.5 for the RTO */
 	uint8_t gain8;
-	uint32_t rto;
 
 	/* Getting random is computational expensive, so only use 8 bits */
 	sys_rand_get(&gain8, sizeof(uint8_t));
 
-	gain = (uint32_t)gain8;
-	gain += 1 << 9;
-
-	rto = (uint32_t)tcp_rto;
-	rto = (gain * rto) >> 9;
-	conn->rto = (uint16_t)rto;
+	conn->rto_gain = (uint16_t)gain8 + (1U << 9);
 #else
 	ARG_UNUSED(conn);
 #endif
+}
+
+/* RTO before the first RTT sample */
+#define TCP_INIT_RTO_MS \
+	((uint32_t)MAX(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT, CONFIG_NET_TCP_MIN_RTO))
+
+/* Back off an RTO by a factor 1.5 per retransmission, up to the maximum RTO. */
+static uint32_t tcp_rto_backoff(uint32_t rto, uint32_t backoff)
+{
+	uint32_t val = rto;
+
+	for (uint32_t i = 0U; (i < backoff) && (val < CONFIG_NET_TCP_MAX_RTO); i++) {
+		val += val >> 1;
+	}
+
+	return MIN(val, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+}
+
+/* RTO of the connection with its randomization, backed off the given
+ * number of times.
+ */
+static uint32_t tcp_rto_ms(const struct tcp *conn, uint32_t backoff)
+{
+	uint32_t rto = conn->rto;
+
+#ifdef CONFIG_NET_TCP_RANDOMIZED_RTO
+	rto = (rto * conn->rto_gain) >> 9;
+#endif
+
+	return tcp_rto_backoff(rto, backoff);
+}
+
+/* Current RTO of the connection */
+static uint32_t tcp_cur_rto_ms(const struct tcp *conn)
+{
+	return tcp_rto_ms(conn, conn->rto_backoff);
+}
+
+/* Longest time the retransmissions of a segment can take before the
+ * connection is closed, starting from an RTO and its backoff.
+ */
+static uint32_t tcp_retries_timeout_ms(uint32_t rto, uint32_t backoff)
+{
+	/* The last retransmission waits for one RTO without backoff */
+	uint32_t timeout = rto;
+
+	for (int i = 0; i < tcp_retries; i++) {
+		timeout += tcp_rto_backoff(rto, backoff + (uint32_t)i);
+	}
+
+	/* The randomized RTO is up to 1.5 times larger */
+	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
+		timeout += timeout >> 1;
+	}
+
+	return timeout;
+}
+
+/* Longest time the retransmissions of a segment can take before the
+ * connection is closed, starting from the current RTO.
+ */
+static uint32_t tcp_max_timeout_ms(const struct tcp *conn)
+{
+	return tcp_retries_timeout_ms(conn->rto, conn->rto_backoff);
+}
+
+/* Time a connection the application has closed waits for the peer in
+ * FIN_WAIT_1, FIN_WAIT_2 and LAST_ACK. A peer that delays its ACKs can raise
+ * the RTO up to the maximum, so the time is limited to the longer of the
+ * maximum RTO and the time from the initial RTO.
+ */
+static uint32_t tcp_close_timeout_ms(const struct tcp *conn)
+{
+	uint32_t timeout = tcp_max_timeout_ms(conn);
+	uint32_t limit = tcp_retries_timeout_ms(TCP_INIT_RTO_MS, 0U);
+
+	limit = MAX(limit, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+
+	return MIN(timeout, limit);
+}
+
+/* Update SRTT, RTTVAR and the RTO from an RTT sample (RFC 6298, section 2) */
+static void tcp_rtt_update(struct tcp *conn, uint32_t sample)
+{
+	uint32_t rtt = MIN(sample, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+	/* Clock granularity G: one kernel tick */
+	uint32_t granularity = k_ticks_to_ms_ceil32(1U);
+	uint32_t rto;
+
+	granularity = MAX(granularity, 1U);
+
+	if (!conn->rtt_sampled) {
+		/* SRTT <- R, RTTVAR <- R/2 */
+		conn->srtt = rtt << 3;
+		conn->rttvar = rtt << 1;
+		conn->rtt_sampled = true;
+	} else {
+		/* RTTVAR <- 3/4 * RTTVAR + 1/4 * |SRTT - R'|, with the SRTT
+		 * before this sample, then SRTT <- 7/8 * SRTT + 1/8 * R'.
+		 */
+		uint32_t srtt = conn->srtt >> 3;
+		uint32_t delta = (rtt > srtt) ? (rtt - srtt) : (srtt - rtt);
+
+		conn->rttvar = conn->rttvar - (conn->rttvar >> 2) + delta;
+		conn->srtt = conn->srtt - (conn->srtt >> 3) + rtt;
+	}
+
+	/* RTO <- SRTT + max(G, 4 * RTTVAR). A valid sample ends the backoff
+	 * (RFC 6298, section 5).
+	 */
+	rto = (conn->srtt >> 3) + MAX(granularity, conn->rttvar);
+	conn->rto = CLAMP(rto, (uint32_t)CONFIG_NET_TCP_MIN_RTO, (uint32_t)CONFIG_NET_TCP_MAX_RTO);
+	conn->rto_backoff = 0U;
+
+	NET_DBG("[%p] rtt=%u srtt=%u rttvar=%u rto=%u", conn, rtt, conn->srtt >> 3,
+		conn->rttvar >> 2, conn->rto);
+}
+
+/* Time a segment ending at end_seq, unless one is being timed already */
+static void tcp_rtt_start(struct tcp *conn, uint32_t end_seq)
+{
+	if (!conn->rtt_pending) {
+		conn->rtt_seq = end_seq;
+		conn->rtt_time = k_uptime_get_32();
+		conn->rtt_pending = true;
+	}
+}
+
+/* Take the RTT sample when the ACK covers the segment being timed */
+static void tcp_rtt_ack(struct tcp *conn, uint32_t ack)
+{
+	if (conn->rtt_pending && (net_tcp_seq_cmp(ack, conn->rtt_seq) >= 0)) {
+		conn->rtt_pending = false;
+		tcp_rtt_update(conn, k_uptime_get_32() - conn->rtt_time);
+	}
+}
+
+/* Karn's algorithm: an ACK received after a retransmission gives no RTT
+ * sample (RFC 6298, section 3).
+ */
+static void tcp_rtt_cancel(struct tcp *conn)
+{
+	conn->rtt_pending = false;
+}
+
+/* Take the RTT sample of the handshake when the ACK of the SYN or SYN-ACK
+ * arrives. If the SYN or SYN-ACK was retransmitted there is no sample, and
+ * the data starts with an RTO of at least 3 seconds (RFC 6298, rule 5.7).
+ */
+static void tcp_rtt_handshake_ack(struct tcp *conn, uint32_t ack)
+{
+	tcp_rtt_ack(conn, ack);
+
+	if ((conn->send_data_retries > 0U) && !conn->rtt_sampled) {
+		uint32_t rto = tcp_rto_backoff(conn->rto, conn->rto_backoff);
+
+		/* A backoff beyond 3 seconds is kept */
+		conn->rto = MAX(rto, TCP_RTO_SYN_FALLBACK_MS);
+		conn->rto_backoff = 0U;
+	}
 }
 
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
@@ -581,6 +731,25 @@ static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 		conn->ca.pending_fast_retransmit_bytes = conn->unacked_len;
 		tcp_new_reno_log(conn, "fast_retransmit");
 	}
+}
+
+/* SACK-based loss recovery, RFC 6675 step (4.2): the pipe algorithm takes
+ * the place of the window inflation.
+ */
+static void tcp_new_reno_sack_recovery(struct tcp *conn, uint32_t flight_size)
+{
+	uint32_t min_ssthresh = (uint32_t)conn_mss(conn) * 2U;
+
+	conn->ca.ssthresh = MAX(min_ssthresh, flight_size / 2U);
+	conn->ca.cwnd = conn->ca.ssthresh;
+	conn->ca.pending_fast_retransmit_bytes = 0;
+	tcp_new_reno_log(conn, "sack_recovery");
+}
+
+static void tcp_new_reno_recovery_end(struct tcp *conn)
+{
+	conn->ca.cwnd = conn->ca.ssthresh;
+	tcp_new_reno_log(conn, "recovery_end");
 }
 
 static void tcp_new_reno_timeout(struct tcp *conn)
@@ -641,6 +810,21 @@ static void tcp_ca_timeout(struct tcp *conn)
 	tcp_new_reno_timeout(conn);
 }
 
+static inline void tcp_ca_sack_recovery(struct tcp *conn, uint32_t flight_size)
+{
+	tcp_new_reno_sack_recovery(conn, flight_size);
+}
+
+static inline void tcp_ca_recovery_end(struct tcp *conn)
+{
+	tcp_new_reno_recovery_end(conn);
+}
+
+static inline uint32_t tcp_ca_cwnd(struct tcp *conn)
+{
+	return conn->ca.cwnd;
+}
+
 static void tcp_ca_dup_ack(struct tcp *conn)
 {
 	tcp_new_reno_dup_ack(conn);
@@ -657,6 +841,17 @@ static void tcp_ca_init(struct tcp *conn) { }
 static void tcp_ca_fast_retransmit(struct tcp *conn) { }
 
 static void tcp_ca_timeout(struct tcp *conn) { }
+
+static inline void tcp_ca_sack_recovery(struct tcp *conn, uint32_t flight_size) { }
+
+static inline void tcp_ca_recovery_end(struct tcp *conn) { }
+
+static inline uint32_t tcp_ca_cwnd(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+
+	return NET_TCP_MAX_WINDOW;
+}
 
 static void tcp_ca_dup_ack(struct tcp *conn) { }
 
@@ -1164,7 +1359,10 @@ static uint8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len,
 	return buf;
 }
 
-static bool tcp_options_check(struct tcp_options *recv_options,
+/* Parse the options of a received segment. The SACK blocks are stored in
+ * sack when it is not NULL, otherwise SACK options are skipped.
+ */
+static bool tcp_options_check(struct tcp_options *recv_options, struct tcp_sack_blocks *sack,
 			      struct net_pkt *pkt, ssize_t len)
 {
 	uint8_t options_buf[40]; /* TCP header max options size is 40 */
@@ -1233,6 +1431,27 @@ static bool tcp_options_check(struct tcp_options *recv_options,
 			}
 
 			recv_options->sack_perm_found = true;
+			break;
+		case NET_TCP_SACK_OPT:
+			if (sack == NULL) {
+				break;
+			}
+
+			if ((opt_len < (2 + NET_TCP_SACK_BLOCK_SIZE)) ||
+			    (opt_len > (2 + (NET_TCP_SACK_MAX_BLOCKS * NET_TCP_SACK_BLOCK_SIZE))) ||
+			    (((opt_len - 2) % NET_TCP_SACK_BLOCK_SIZE) != 0)) {
+				result = false;
+				goto end;
+			}
+
+			sack->count = (opt_len - 2) / NET_TCP_SACK_BLOCK_SIZE;
+			for (uint8_t i = 0U; i < sack->count; i++) {
+				const uint8_t *edges = options + 2 + (i * NET_TCP_SACK_BLOCK_SIZE);
+
+				sack->block[i].left = net_ntohl(UNALIGNED_GET((uint32_t *)edges));
+				sack->block[i].right =
+					net_ntohl(UNALIGNED_GET((uint32_t *)(edges + 4)));
+			}
 			break;
 		default:
 			continue;
@@ -1851,7 +2070,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_
 		 * consuming the send queue: the queued data is dropped
 		 * only when the peer acknowledges it.
 		 */
-		ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, data_len);
+		ret = tcp_pkt_peek(pkt, &conn->send_data, (size_t)(seq - conn->seq), data_len);
 		if (ret < 0) {
 			tcp_pkt_unref(pkt);
 			ret = -ENOBUFS;
@@ -2151,15 +2370,64 @@ static int tcp_unsent_len(struct tcp *conn)
 static void tcp_setup_retransmission(struct tcp *conn)
 {
 	conn->send_data_retries = 0;
-	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer, K_MSEC(TCP_RTO_MS));
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
+				    K_MSEC(tcp_cur_rto_ms(conn)));
+}
+
+/* Largest payload of a segment, after the options */
+static int tcp_send_seg_max(struct tcp *conn)
+{
+	return (int)conn_mss(conn) - (int)tcp_send_options_len(conn);
+}
+
+/* Send len bytes of the send queue from seq on, which must be at or after
+ * conn->seq. Data from send_max on is new, data below it was sent before.
+ */
+static int tcp_send_segment(struct tcp *conn, uint32_t seq, size_t len)
+{
+	uint32_t end_seq = seq + (uint32_t)len;
+	bool new_data = net_tcp_seq_cmp(seq, conn->send_max) >= 0;
+	int ret;
+
+	ret = tcp_out_ext(conn, PSH | ACK, len, seq);
+	if (ret < 0) {
+		if (ret == -ENOBUFS) {
+			NET_ERR("[%p] packet allocation failed, len=%zu", conn, len);
+		}
+
+		return ret;
+	}
+
+	/* Time one segment of new data at a time. Data below send_max
+	 * was sent before, so it is never timed (Karn's algorithm). In loss
+	 * recovery the ACK of new data also covers retransmitted data.
+	 */
+	if (new_data && !tcp_sack_in_recovery(conn)) {
+		tcp_rtt_start(conn, end_seq);
+	}
+	if (net_tcp_seq_cmp(end_seq, conn->send_max) > 0) {
+		conn->send_max = end_seq;
+	}
+
+	if (new_data) {
+		net_stats_update_tcp_sent(conn->iface, len);
+		net_stats_update_tcp_seg_sent(conn->iface);
+	} else {
+		net_stats_update_tcp_resent(conn->iface, len);
+		net_stats_update_tcp_seg_rexmit(conn->iface);
+	}
+
+	return 0;
 }
 
 static int tcp_send_data(struct tcp *conn)
 {
+	int seg_max = tcp_send_seg_max(conn);
 	int ret = 0;
 	int len;
 
-	len = MIN(tcp_unsent_len(conn), conn_mss(conn) - tcp_send_options_len(conn));
+	len = tcp_unsent_len(conn);
+	len = MIN(len, seg_max);
 	if (len < 0) {
 		ret = len;
 		goto out;
@@ -2170,19 +2438,9 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
-	ret = tcp_out_ext(conn, PSH | ACK, (size_t)len, conn->seq + conn->unacked_len);
+	ret = tcp_send_segment(conn, conn->seq + (uint32_t)conn->unacked_len, (size_t)len);
 	if (ret == 0) {
 		conn->unacked_len += len;
-
-		if (conn->data_mode == TCP_DATA_MODE_RESEND) {
-			net_stats_update_tcp_resent(conn->iface, len);
-			net_stats_update_tcp_seg_rexmit(conn->iface);
-		} else {
-			net_stats_update_tcp_sent(conn->iface, len);
-			net_stats_update_tcp_seg_sent(conn->iface);
-		}
-	} else if (ret == -ENOBUFS) {
-		NET_ERR("[%p] packet allocation failed, len=%d", conn, len);
 	}
 
 	conn_send_data_dump(conn);
@@ -2191,6 +2449,473 @@ static int tcp_send_data(struct tcp *conn)
 	return ret;
 }
 
+#ifdef CONFIG_NET_TCP_SACK_SEND
+
+static bool tcp_sack_in_recovery(struct tcp *conn)
+{
+	return conn->sack_recovery;
+}
+
+/* Largest segment for loss recovery, at least one byte */
+static uint32_t tcp_sack_seg_max(struct tcp *conn)
+{
+	int seg_max = tcp_send_seg_max(conn);
+
+	return (seg_max > 0) ? (uint32_t)seg_max : 1U;
+}
+
+/* Start of the hole below the scoreboard range idx */
+static uint32_t tcp_sack_hole_start(struct tcp *conn, uint8_t idx)
+{
+	return (idx == 0U) ? conn->seq : conn->sack_ranges[idx - 1U].right;
+}
+
+/* RFC 6675 IsLost() for the hole below range idx. Every octet of a hole has
+ * the same SACKed data above it, so the whole hole is lost or none of it:
+ * lost when DupThresh discontiguous ranges, or more than (DupThresh - 1) *
+ * SMSS octets, are SACKed above it.
+ */
+static bool tcp_sack_hole_lost(struct tcp *conn, uint8_t idx)
+{
+	uint32_t sacked = 0U;
+
+	if ((conn->sack_count - idx) >= DUPLICATE_ACK_RETRANSMIT_TRHESHOLD) {
+		return true;
+	}
+
+	for (uint8_t i = idx; i < conn->sack_count; i++) {
+		sacked += conn->sack_ranges[i].right - conn->sack_ranges[i].left;
+	}
+
+	return sacked > ((DUPLICATE_ACK_RETRANSMIT_TRHESHOLD - 1U) * (uint32_t)conn_mss(conn));
+}
+
+/* Forget the ranges the cumulative ACK una covers */
+static void tcp_sack_trim(struct tcp *conn, uint32_t una)
+{
+	uint8_t kept = 0U;
+
+	for (uint8_t i = 0U; i < conn->sack_count; i++) {
+		struct tcp_sack_block range = conn->sack_ranges[i];
+
+		if (net_tcp_seq_cmp(range.right, una) <= 0) {
+			continue;
+		}
+
+		if (net_tcp_seq_cmp(range.left, una) < 0) {
+			range.left = una;
+		}
+
+		conn->sack_ranges[kept] = range;
+		kept++;
+	}
+
+	conn->sack_count = kept;
+}
+
+/* Merge a block into the scoreboard. Returns true when the scoreboard
+ * gained octets that were not SACKed before.
+ */
+static bool tcp_sack_insert(struct tcp *conn, uint32_t left, uint32_t right)
+{
+	struct tcp_sack_block *ranges = conn->sack_ranges;
+	uint8_t i = 0U;
+	uint8_t j;
+
+	/* Skip the ranges below the block, a range that touches it merges */
+	while ((i < conn->sack_count) && (net_tcp_seq_cmp(ranges[i].right, left) < 0)) {
+		i++;
+	}
+
+	if ((i < conn->sack_count) && (net_tcp_seq_cmp(ranges[i].left, left) <= 0) &&
+	    (net_tcp_seq_cmp(ranges[i].right, right) >= 0)) {
+		return false;
+	}
+
+	/* Ranges i up to j overlap or touch the block */
+	for (j = i; (j < conn->sack_count) && (net_tcp_seq_cmp(ranges[j].left, right) <= 0); j++) {
+		if (net_tcp_seq_cmp(ranges[j].left, left) < 0) {
+			left = ranges[j].left;
+		}
+
+		if (net_tcp_seq_cmp(ranges[j].right, right) > 0) {
+			right = ranges[j].right;
+		}
+	}
+
+	if (j > i) {
+		ranges[i].left = left;
+		ranges[i].right = right;
+		memmove(&ranges[i + 1U], &ranges[j], (conn->sack_count - j) * sizeof(ranges[0]));
+		conn->sack_count -= j - i - 1U;
+
+		return true;
+	}
+
+	/* A full scoreboard forgets its highest range. That data then counts
+	 * as in flight, so it is neither skipped nor resent early.
+	 */
+	if (conn->sack_count == ARRAY_SIZE(conn->sack_ranges)) {
+		if (i == conn->sack_count) {
+			return false;
+		}
+
+		conn->sack_count--;
+	}
+
+	memmove(&ranges[i + 1U], &ranges[i], (conn->sack_count - i) * sizeof(ranges[0]));
+	ranges[i].left = left;
+	ranges[i].right = right;
+	conn->sack_count++;
+
+	return true;
+}
+
+/* RFC 6675 Update(). Returns true when the blocks report octets that were
+ * not SACKed before, which makes the ACK a duplicate ACK in the sense of
+ * RFC 6675 section 2.
+ */
+static bool tcp_sack_update(struct tcp *conn, const struct tcp_sack_blocks *sack, uint32_t una)
+{
+	bool new_info = false;
+
+	for (uint8_t i = 0U; i < sack->count; i++) {
+		uint32_t left = sack->block[i].left;
+		uint32_t right = sack->block[i].right;
+
+		/* Only data that was sent and is not acknowledged yet. This
+		 * leaves out D-SACK blocks (RFC 2883) below una.
+		 */
+		if ((net_tcp_seq_cmp(left, una) < 0) ||
+		    (net_tcp_seq_cmp(right, conn->send_max) > 0) ||
+		    (net_tcp_seq_cmp(left, right) >= 0)) {
+			NET_DBG("[%p] Ignoring SACK block %u-%u (una %u, max %u)", conn, left,
+				right, una, conn->send_max);
+			continue;
+		}
+
+		if (tcp_sack_insert(conn, left, right)) {
+			new_info = true;
+		}
+	}
+
+	return new_info;
+}
+
+/* Process the SACK information of an ACK for una, before the cumulative ACK
+ * is applied (RFC 6675 section 5). Returns true when the ACK starts loss
+ * recovery.
+ */
+static bool tcp_sack_ack(struct tcp *conn, const struct tcp_sack_blocks *sack, uint32_t una)
+{
+	bool new_info;
+
+	tcp_sack_trim(conn, una);
+	new_info = tcp_sack_update(conn, sack, una);
+
+	if (net_tcp_seq_cmp(una, conn->seq) > 0) {
+		conn->dup_ack_cnt = 0U;
+	}
+
+	if (conn->sack_rto_hold && (net_tcp_seq_cmp(una, conn->recovery_point) >= 0)) {
+		conn->sack_rto_hold = false;
+	}
+
+	if (conn->sack_recovery) {
+		if (net_tcp_seq_cmp(una, conn->recovery_point) >= 0) {
+			NET_DBG("[%p] SACK recovery done at %u", conn, una);
+			conn->sack_recovery = false;
+			tcp_ca_recovery_end(conn);
+		}
+
+		return false;
+	}
+
+	if (new_info && (conn->dup_ack_cnt < DUPLICATE_ACK_RETRANSMIT_TRHESHOLD)) {
+		conn->dup_ack_cnt++;
+	}
+
+	/* After an RTO, no recovery before the data sent until then is
+	 * acknowledged (RFC 6675 section 5.1).
+	 */
+	if (conn->sack_rto_hold || (conn->data_mode != TCP_DATA_MODE_SEND) ||
+	    (conn->sack_count == 0U)) {
+		return false;
+	}
+
+	if ((conn->dup_ack_cnt < DUPLICATE_ACK_RETRANSMIT_TRHESHOLD) &&
+	    !tcp_sack_hole_lost(conn, 0U)) {
+		return false;
+	}
+
+	/* RFC 6675 steps (4.1) and (4.2) */
+	conn->sack_recovery = true;
+	conn->recovery_point = conn->send_max;
+	conn->high_rxt = una;
+	conn->rescue_rxt = una;
+	tcp_ca_sack_recovery(conn, conn->send_max - una);
+
+	NET_DBG("[%p] SACK recovery from %u to %u, %u ranges", conn, una, conn->recovery_point,
+		conn->sack_count);
+
+	return true;
+}
+
+/* RFC 6675 SetPipe(): the octets still in flight */
+static uint32_t tcp_sack_pipe(struct tcp *conn)
+{
+	uint32_t top = conn->seq;
+	uint32_t pipe = 0U;
+
+	for (uint8_t i = 0U; i < conn->sack_count; i++) {
+		uint32_t start = tcp_sack_hole_start(conn, i);
+		uint32_t end = conn->sack_ranges[i].left;
+
+		if (!tcp_sack_hole_lost(conn, i)) {
+			pipe += end - start;
+		}
+
+		/* Retransmitted octets count once more */
+		if (net_tcp_seq_cmp(conn->high_rxt, start) > 0) {
+			if (net_tcp_seq_cmp(conn->high_rxt, end) < 0) {
+				end = conn->high_rxt;
+			}
+
+			pipe += end - start;
+		}
+
+		top = conn->sack_ranges[i].right;
+	}
+
+	/* Data above the highest SACKed octet is never considered lost */
+	if (net_tcp_seq_cmp(conn->send_max, top) > 0) {
+		pipe += conn->send_max - top;
+	}
+
+	return pipe;
+}
+
+/* New data that fits in the window of the peer, for NextSeg() rule (2) */
+static uint32_t tcp_sack_new_data_len(struct tcp *conn, uint32_t seg_max)
+{
+	uint32_t unacked = (uint32_t)conn->unacked_len;
+	uint32_t len;
+
+	if ((conn->send_data_total <= unacked) || (conn->send_win <= unacked)) {
+		return 0U;
+	}
+
+	len = MIN(conn->send_data_total - unacked, conn->send_win - unacked);
+
+	/* Nagle's algorithm, as in tcp_send_queued_data() */
+	if (!conn->tcp_nodelay && (len < seg_max)) {
+		return 0U;
+	}
+
+	return MIN(len, seg_max);
+}
+
+/* NextSeg() rule (4): one segment that ends with the highest unSACKed octet */
+static uint32_t tcp_sack_rescue_seg(struct tcp *conn, uint32_t seg_max, uint32_t *seq)
+{
+	uint32_t start;
+	uint32_t end;
+	uint8_t i;
+
+	if (net_tcp_seq_cmp(conn->seq, conn->rescue_rxt) <= 0) {
+		return 0U;
+	}
+
+	start = (conn->sack_count > 0U) ? conn->sack_ranges[conn->sack_count - 1U].right
+					: conn->seq;
+	end = conn->send_max;
+
+	/* Nothing after the highest range, take the highest hole */
+	for (i = conn->sack_count; (i > 0U) && (net_tcp_seq_cmp(start, end) >= 0); i--) {
+		start = tcp_sack_hole_start(conn, i - 1U);
+		end = conn->sack_ranges[i - 1U].left;
+	}
+
+	if (net_tcp_seq_cmp(start, end) >= 0) {
+		return 0U;
+	}
+
+	if ((end - start) > seg_max) {
+		start = end - seg_max;
+	}
+
+	*seq = start;
+
+	return end - start;
+}
+
+/* RFC 6675 NextSeg(). Returns the length of the segment to send from *seq,
+ * or 0 when there is none. *rescue is set for a rescue retransmission.
+ */
+static uint32_t tcp_sack_next_seg(struct tcp *conn, uint32_t *seq, bool *rescue)
+{
+	uint32_t seg_max = tcp_sack_seg_max(conn);
+	uint32_t len;
+
+	*rescue = false;
+
+	/* Rule (1) on the first pass: the first lost hole above high_rxt.
+	 * Rule (3) on the second pass: the first hole above high_rxt.
+	 */
+	for (uint8_t pass = 0U; pass < 2U; pass++) {
+		for (uint8_t i = 0U; i < conn->sack_count; i++) {
+			uint32_t start = tcp_sack_hole_start(conn, i);
+			uint32_t end = conn->sack_ranges[i].left;
+
+			if (net_tcp_seq_cmp(start, conn->high_rxt) < 0) {
+				start = conn->high_rxt;
+			}
+
+			if ((net_tcp_seq_cmp(start, end) >= 0) ||
+			    ((pass == 0U) && !tcp_sack_hole_lost(conn, i))) {
+				continue;
+			}
+
+			*seq = start;
+
+			return MIN(end - start, seg_max);
+		}
+
+		/* Rule (2): new data */
+		if (pass == 0U) {
+			len = tcp_sack_new_data_len(conn, seg_max);
+			if (len > 0U) {
+				*seq = conn->seq + (uint32_t)conn->unacked_len;
+
+				return len;
+			}
+		}
+	}
+
+	len = tcp_sack_rescue_seg(conn, seg_max, seq);
+	if (len > 0U) {
+		*rescue = true;
+	}
+
+	return len;
+}
+
+/* Send what loss recovery allows after an ACK, once the cumulative ACK is
+ * applied: the first lost segment when the ACK started the recovery
+ * (step 4.3), then segments while cwnd - pipe allows one (step C).
+ */
+static int tcp_sack_recover(struct tcp *conn, bool started)
+{
+	uint32_t cwnd = tcp_ca_cwnd(conn);
+	uint32_t mss = conn_mss(conn);
+	uint32_t pipe;
+	int ret = 0;
+
+	if (!conn->sack_recovery) {
+		return 0;
+	}
+
+	if (started && (conn->sack_count > 0U)) {
+		uint32_t seg_max = tcp_sack_seg_max(conn);
+		uint32_t len = MIN(conn->sack_ranges[0].left - conn->seq, seg_max);
+
+		tcp_rtt_cancel(conn);
+
+		if (len > 0U) {
+			ret = tcp_send_segment(conn, conn->seq, len);
+			if (ret < 0) {
+				return ret;
+			}
+
+			conn->high_rxt = conn->seq + len;
+			conn->rescue_rxt = conn->high_rxt;
+		}
+	}
+
+	pipe = tcp_sack_pipe(conn);
+
+	while ((cwnd > pipe) && ((cwnd - pipe) >= mss)) {
+		uint32_t seq;
+		uint32_t len;
+		bool rescue;
+		bool new_data;
+
+		len = tcp_sack_next_seg(conn, &seq, &rescue);
+		if (len == 0U) {
+			break;
+		}
+
+		new_data = net_tcp_seq_cmp(seq, conn->send_max) >= 0;
+
+		ret = tcp_send_segment(conn, seq, len);
+		if (ret < 0) {
+			break;
+		}
+
+		if (new_data) {
+			conn->unacked_len += (int)len;
+		} else if (rescue) {
+			tcp_rtt_cancel(conn);
+			conn->rescue_rxt = conn->recovery_point;
+		} else {
+			tcp_rtt_cancel(conn);
+			conn->high_rxt = seq + len;
+		}
+
+		pipe += len;
+	}
+
+	return ret;
+}
+
+/* RFC 2018 section 5 and RFC 6675 section 5.1: after a timeout the SACK
+ * information is discarded and loss recovery ends.
+ */
+static void tcp_sack_rto(struct tcp *conn)
+{
+	if (!tcp_sack_send_active(conn)) {
+		return;
+	}
+
+	conn->sack_count = 0U;
+	conn->sack_recovery = false;
+	conn->recovery_point = conn->send_max;
+	conn->sack_rto_hold = true;
+}
+
+#else
+
+static inline bool tcp_sack_in_recovery(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+
+	return false;
+}
+
+static inline bool tcp_sack_ack(struct tcp *conn, const struct tcp_sack_blocks *sack, uint32_t una)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(sack);
+	ARG_UNUSED(una);
+
+	return false;
+}
+
+static inline int tcp_sack_recover(struct tcp *conn, bool started)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(started);
+
+	return 0;
+}
+
+static inline void tcp_sack_rto(struct tcp *conn)
+{
+	ARG_UNUSED(conn);
+}
+
+#endif /* CONFIG_NET_TCP_SACK_SEND */
+
 /* Send all queued but unsent data from the send_data packet by packet
  * until the receiver's window is full. */
 static int tcp_send_queued_data(struct tcp *conn)
@@ -2198,7 +2923,8 @@ static int tcp_send_queued_data(struct tcp *conn)
 	int ret = 0;
 	bool subscribe = false;
 
-	if (conn->data_mode == TCP_DATA_MODE_RESEND) {
+	/* Loss recovery chooses what to send */
+	if ((conn->data_mode == TCP_DATA_MODE_RESEND) || tcp_sack_in_recovery(conn)) {
 		goto out;
 	}
 
@@ -2261,8 +2987,8 @@ static void tcp_resend_data(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, send_data_timer);
 	bool conn_unref = false;
+	uint32_t timeout;
 	int ret;
-	int exp_tcp_rto;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
@@ -2274,6 +3000,8 @@ static void tcp_resend_data(struct k_work *work)
 		conn_unref = true;
 		goto out;
 	}
+
+	tcp_rtt_cancel(conn);
 
 	switch (conn->state) {
 	case TCP_SYN_SENT:
@@ -2292,6 +3020,7 @@ static void tcp_resend_data(struct k_work *work)
 			}
 		}
 
+		tcp_sack_rto(conn);
 		conn->data_mode = TCP_DATA_MODE_RESEND;
 		conn->unacked_len = 0;
 
@@ -2315,17 +3044,21 @@ static void tcp_resend_data(struct k_work *work)
 
 	conn->send_data_retries++;
 
-	exp_tcp_rto = TCP_RTO_MS;
 	/* The last retransmit does not need to wait that long */
 	if (conn->send_data_retries < tcp_retries) {
-		/* Every retransmit, the retransmission timeout increases by a factor 1.5 */
-		for (int i = 0; i < conn->send_data_retries; i++) {
-			exp_tcp_rto += exp_tcp_rto >> 1;
+		/* Every retransmit backs off the RTO. The backoff is kept until
+		 * the next RTT sample, so an ACK of the retransmitted data does
+		 * not bring the RTO back down.
+		 */
+		if (conn->rto_backoff < UINT8_MAX) {
+			conn->rto_backoff++;
 		}
+		timeout = tcp_cur_rto_ms(conn);
+	} else {
+		timeout = tcp_rto_ms(conn, 0U);
 	}
 
-	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer,
-				    K_MSEC(exp_tcp_rto));
+	k_work_reschedule_for_queue(&tcp_work_q, &conn->send_data_timer, K_MSEC(timeout));
 
  out:
 	k_mutex_unlock(&conn->lock);
@@ -2348,7 +3081,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 
 static void tcp_establish_timeout(struct tcp *conn)
 {
-	NET_DBG("[%p] Did not receive %s in %dms", conn, "ACK", ACK_TIMEOUT_MS);
+	NET_DBG("[%p] Did not receive %s in time", conn, "ACK");
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2365,7 +3098,7 @@ static void tcp_fin_timeout(struct k_work *work)
 		return;
 	}
 
-	NET_DBG("[%p] Did not receive %s in %dms", conn, "FIN", tcp_max_timeout_ms);
+	NET_DBG("[%p] Did not receive %s in time", conn, "FIN");
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2398,7 +3131,7 @@ static void tcp_last_ack_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, fin_timer);
 
-	NET_DBG("[%p] Did not receive %s in %dms", conn, "last ACK", LAST_ACK_TIMEOUT_MS);
+	NET_DBG("[%p] Did not receive %s in time", conn, "last ACK");
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
@@ -2406,6 +3139,8 @@ static void tcp_last_ack_timeout(struct k_work *work)
 
 static void tcp_setup_last_ack_timer(struct tcp *conn)
 {
+	uint32_t timeout = tcp_close_timeout_ms(conn);
+
 	/* Just in case the last ack is lost, install a timer that will
 	 * close the connection in that case. Use the fin_timer for that
 	 * as the fin handling cannot be done in this passive close state.
@@ -2414,12 +3149,12 @@ static void tcp_setup_last_ack_timer(struct tcp *conn)
 	 */
 	k_work_init_delayable(&conn->fin_timer, tcp_last_ack_timeout);
 
-	NET_DBG("[%p] TCP connection in %s close, not disposing yet (waiting %dms)",
-		conn, "passive", LAST_ACK_TIMEOUT_MS);
+	NET_DBG("[%p] TCP connection in %s close, not disposing yet (waiting %ums)",
+		conn, "passive", timeout);
 
 	k_work_reschedule_for_queue(&tcp_work_q,
 				    &conn->fin_timer,
-				    LAST_ACK_TIMEOUT);
+				    K_MSEC(timeout));
 }
 
 static void tcp_cancel_last_ack_timer(struct tcp *conn)
@@ -2473,7 +3208,7 @@ static void tcp_send_zwp(struct k_work *work)
 	tcp_derive_rto(conn);
 
 	if (conn->send_win == 0) {
-		uint64_t timeout = TCP_RTO_MS;
+		uint64_t timeout = tcp_cur_rto_ms(conn);
 
 		/* Make sure the bitwise shift does not result in undefined behaviour */
 		if (conn->zwp_retries < 63) {
@@ -2541,6 +3276,8 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
 	conn->addr_ref_done = false;
+	conn->rto = TCP_INIT_RTO_MS;
+	tcp_derive_rto(conn);
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
 #endif
@@ -3347,6 +4084,9 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 	struct net_pkt *recv_pkt;
 	void *recv_user_data;
 	struct k_fifo *recv_data_fifo;
+	struct tcp_sack_blocks sack;
+	bool sack_recovering = false;
+	bool sack_started = false;
 	size_t len;
 	int ret;
 	int close_status = 0;
@@ -3421,10 +4161,13 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		goto out;
 	}
 
+	sack.count = 0U;
+
 	if (tcp_options_len > 0) {
 		struct tcp_options options = { 0 };
 
-		if (!tcp_options_check(&options, pkt, tcp_options_len)) {
+		if (!tcp_options_check(&options, tcp_sack_send_active(conn) ? &sack : NULL, pkt,
+				       tcp_options_len)) {
 			NET_DBG("[%p] DROP: Invalid TCP option list", conn);
 			net_tcp_reply_rst(pkt);
 			do_close = true;
@@ -3507,7 +4250,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		if (!k_work_delayable_is_pending(&conn->persist_timer)) {
 			conn->zwp_retries = 0;
 			(void)k_work_reschedule_for_queue(&tcp_work_q, &conn->persist_timer,
-							  K_MSEC(TCP_RTO_MS));
+							  K_MSEC(tcp_cur_rto_ms(conn)));
 		}
 	} else {
 		(void)k_work_cancel_delayable(&conn->persist_timer);
@@ -3538,6 +4281,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			tcp_win_scale_negotiate(conn);
 			(void)tcp_out_syn(conn, SYN | ACK, conn->seq);
 			conn_seq(conn, + 1);
+			tcp_rtt_start(conn, conn->seq);
 			next = TCP_SYN_RECEIVED;
 
 			tcp_setup_retransmission(conn);
@@ -3546,7 +4290,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			 */
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->establish_timer,
-						    ACK_TIMEOUT);
+						    K_MSEC(tcp_max_timeout_ms(conn)));
 			verdict = NET_OK;
 		} else {
 			k_mutex_unlock(&conn->lock);
@@ -3566,6 +4310,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 
 			k_work_cancel_delayable(&conn->establish_timer);
 			k_work_cancel_delayable(&conn->send_data_timer);
+			tcp_rtt_handshake_ack(conn, th_ack(th));
 			tcp_conn_ref(conn);
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
@@ -3632,6 +4377,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				  0, context->user_data);
 
 			next = TCP_ESTABLISHED;
+			conn->send_max = conn->seq;
 
 			tcp_ca_init(conn);
 
@@ -3661,6 +4407,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		 */
 		if (FL(&fl, &, SYN | ACK, th && th_ack(th) == conn->seq)) {
 			k_work_cancel_delayable(&conn->send_data_timer);
+			tcp_rtt_handshake_ack(conn, th_ack(th));
 			/* We offered SACK in the SYN; the peer agreed if it
 			 * came back in the SYN-ACK.
 			 */
@@ -3682,6 +4429,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			}
 
 			next = TCP_ESTABLISHED;
+			conn->send_max = conn->seq;
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			tcp_ca_init(conn);
@@ -3713,7 +4461,10 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		keep_alive_timer_restart(conn);
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
-		if (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0) {
+		if (tcp_sack_send_active(conn)) {
+			sack_recovering = tcp_sack_in_recovery(conn);
+			sack_started = tcp_sack_ack(conn, &sack, th_ack(th));
+		} else if (net_tcp_seq_cmp(th_ack(th), conn->seq) == 0) {
 			/* Only if there is pending data, increment the duplicate ack count */
 			if (conn->send_data_total > 0) {
 				/* There could be also payload, only without payload account them */
@@ -3738,6 +4489,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				conn->unacked_len = 0;
 
 				(void)tcp_send_data(conn);
+				tcp_rtt_cancel(conn);
 
 				/* Restore the current transmission */
 				conn->unacked_len = temp_unacked_len;
@@ -3773,10 +4525,21 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			}
 
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
-			/* New segment, reset duplicate ack counter */
-			conn->dup_ack_cnt = 0;
+			/* New segment, reset duplicate ack counter. With SACK,
+			 * tcp_sack_ack() has counted this ACK already.
+			 */
+			if (!tcp_sack_send_active(conn)) {
+				conn->dup_ack_cnt = 0;
+			}
 #endif
-			tcp_ca_pkts_acked(conn, len_acked);
+			tcp_rtt_ack(conn, th_ack(th));
+
+			/* The pipe algorithm sets the pace in loss recovery, and
+			 * the ACK that ends it leaves cwnd at ssthresh.
+			 */
+			if (!sack_recovering && !tcp_sack_in_recovery(conn)) {
+				tcp_ca_pkts_acked(conn, len_acked);
+			}
 
 			conn->send_data_total -= len_acked;
 			if (conn->unacked_len < len_acked) {
@@ -3822,9 +4585,9 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 				} else {
 					/* Otherwise, wait for FIN in TCP_FIN_WAIT_1 */
 					next = TCP_FIN_WAIT_1;
-					k_work_reschedule_for_queue(&tcp_work_q,
-								    &conn->fin_timer,
-								    FIN_TIMEOUT);
+					k_work_reschedule_for_queue(
+						&tcp_work_q, &conn->fin_timer,
+						K_MSEC(tcp_close_timeout_ms(conn)));
 				}
 
 				tcp_out(conn, FIN | ACK);
@@ -3847,6 +4610,15 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			if (tcp_window_full(conn)) {
 				(void)k_sem_take(&conn->tx_sem, K_NO_WAIT);
 			}
+		}
+
+		ret = tcp_sack_recover(conn, sack_started);
+		if (ret < 0 && ret != -ENOBUFS) {
+			net_tcp_reply_rst(pkt);
+			do_close = true;
+			close_status = ret;
+			verdict = NET_OK;
+			break;
 		}
 
 		if (th_seq(th) == conn->ack) {
@@ -4240,15 +5012,17 @@ int net_tcp_put(struct net_context *context, bool force_close)
 			/* How long to wait until all the data has been sent? */
 			k_work_reschedule_for_queue(&tcp_work_q,
 						    &conn->send_data_timer,
-						    K_MSEC(TCP_RTO_MS));
+						    K_MSEC(tcp_cur_rto_ms(conn)));
 
 		} else {
+			uint32_t timeout = tcp_close_timeout_ms(conn);
+
 			NET_DBG("[%p] TCP connection in %s close, "
-				"not disposing yet (waiting %dms)",
-				conn, "active", tcp_max_timeout_ms);
+				"not disposing yet (waiting %ums)",
+				conn, "active", timeout);
 			k_work_reschedule_for_queue(&tcp_work_q,
 							&conn->fin_timer,
-							FIN_TIMEOUT);
+							K_MSEC(timeout));
 
 			tcp_out(conn, FIN | ACK);
 			conn_seq(conn, + 1);
@@ -4436,6 +5210,7 @@ static int tcp_start_handshake(struct tcp *conn)
 	tcp_setup_retransmission(conn);
 
 	conn_seq(conn, + 1);
+	tcp_rtt_start(conn, conn->seq);
 	conn_state(conn, TCP_SYN_SENT);
 	tcp_conn_ref(conn);
 	k_mutex_unlock(&conn->lock);
@@ -4858,6 +5633,11 @@ static uint16_t get_ipv4_destination_mtu(struct net_if *iface,
 #endif /* CONFIG_NET_IPV4_PMTU */
 }
 
+uint32_t net_tcp_get_rto(const struct tcp *conn)
+{
+	return tcp_cur_rto_ms(conn);
+}
+
 uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 {
 	net_sa_family_t family = net_context_get_family(conn->context);
@@ -5132,9 +5912,6 @@ void net_tcp_close_all_for_iface(struct net_if *iface)
 
 void net_tcp_init(void)
 {
-	int i;
-	int rto;
-
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NET_TCP_WORKER_PRIO)
 #else
@@ -5146,21 +5923,6 @@ void net_tcp_init(void)
 	k_work_queue_start(&tcp_work_q, work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(work_q_stack), THREAD_PRIORITY,
 			   NULL);
-
-	/* Compute the largest possible retransmission timeout */
-	tcp_max_timeout_ms = 0;
-	rto = tcp_rto;
-	for (i = 0; i < tcp_retries; i++) {
-		tcp_max_timeout_ms += rto;
-		rto += rto >> 1;
-	}
-	/* At the last timeout cycle */
-	tcp_max_timeout_ms += tcp_rto;
-
-	/* When CONFIG_NET_TCP_RANDOMIZED_RTO is active in can be worse case 1.5 times larger */
-	if (IS_ENABLED(CONFIG_NET_TCP_RANDOMIZED_RTO)) {
-		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
-	}
 
 	k_thread_name_set(tcp_work_q.thread_id, "tcp_work");
 	NET_DBG("Workq started. Thread ID: %p", tcp_work_q.thread_id);

@@ -68,6 +68,28 @@ config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	help
 	  This value affects the timeout between initial retransmission
 	  of TCP data packets. The value is in milliseconds.
+	  The RTO of a connection is derived from its round trip time
+	  (RFC 6298); this value, raised to NET_TCP_MIN_RTO if it is lower,
+	  is used until the first round trip time sample has been taken.
+
+config NET_TCP_MIN_RTO
+	int "Minimum Retransmission Timeout (RTO) (in milliseconds)"
+	default NET_TCP_INIT_RETRANSMISSION_TIMEOUT
+	range 10 60000
+	help
+	  Lower limit of the RTO derived from the round trip time of a
+	  connection. RFC 6298 recommends 1 second, Linux uses 200 ms.
+	  A lower value recovers faster from a loss on a short path, at the
+	  risk of retransmitting data that was only delayed.
+
+config NET_TCP_MAX_RTO
+	int "Maximum Retransmission Timeout (RTO) (in milliseconds)"
+	default 60000
+	range 60000 120000
+	help
+	  Upper limit of the RTO of a connection, including the exponential
+	  backoff of the retransmissions. RFC 6298 requires at least 60
+	  seconds.
 
 config NET_TCP_RANDOMIZED_RTO
 	bool "Use a randomized retransmission time"
@@ -152,24 +174,58 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
-config NET_TCP_SACK
-	bool "Selective acknowledgment (SACK) of received data"
+menuconfig NET_TCP_SACK
+	bool "Selective acknowledgment (SACK)"
+	default y
+	help
+	  Offer SACK permitted in the handshake (RFC 2018). The receiving side,
+	  NET_TCP_SACK_RECV, and the sending side, NET_TCP_SACK_SEND, can be
+	  enabled separately. SACK permitted is offered when either of them is
+	  enabled.
+
+	  Disable to stop offering SACK, for example when chasing an
+	  interoperability problem.
+
+if NET_TCP_SACK
+
+config NET_TCP_SACK_RECV
+	bool "Report received out-of-order data with SACK"
 	default y
 	depends on NET_TCP_RECV_QUEUE_TIMEOUT > 0
 	help
-	  Offer SACK permitted in the handshake (RFC 2018) and, when the peer
-	  agrees, report out-of-order data held in the receive queue with a
-	  SACK block, so that the sender can resend only what is missing.
-	  Only the receiving side is implemented: SACK blocks sent by the
-	  peer are not used when retransmitting.
+	  When the peer agrees to SACK, report out-of-order data held in the
+	  receive queue with a SACK block, so that the sender can resend only
+	  what is missing.
 
 	  Queued data is still discarded after NET_TCP_RECV_QUEUE_TIMEOUT
 	  milliseconds, even if it has already been reported in a SACK block.
 	  RFC 2018 section 8 permits this and senders have to cope, but it is
 	  worth knowing when debugging a stall against this stack.
 
-	  Disable to stop offering SACK, for example when chasing an
-	  interoperability problem.
+config NET_TCP_SACK_SEND
+	bool "Use the SACK blocks of the peer when retransmitting"
+	default y
+	depends on NET_TCP_FAST_RETRANSMIT
+	help
+	  Record the SACK blocks the peer sends and recover from lost
+	  segments as RFC 6675 describes: only data the peer has not
+	  reported is retransmitted, and several holes in one window are
+	  repaired without waiting for the retransmission timer.
+
+	  After a retransmission timeout the SACK information is discarded
+	  and everything from the first unacknowledged byte is sent again.
+
+config NET_TCP_SACK_SCOREBOARD
+	int "Number of SACKed ranges recorded per connection"
+	default 4
+	range 1 16
+	depends on NET_TCP_SACK_SEND
+	help
+	  Each range costs 8 bytes per connection. The peer reports at most
+	  four ranges in one segment. When the ranges do not fit, the highest
+	  one is forgotten, and the data in it is treated as still in flight.
+
+endif # NET_TCP_SACK
 
 config NET_TCP_ACK_DELAY
 	int "TCP delayed ACK timeout (in ms)"

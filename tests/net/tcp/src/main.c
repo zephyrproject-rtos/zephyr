@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/net_pkt.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "ipv4.h"
 #include "ipv6.h"
@@ -131,6 +132,9 @@ static enum test_case_no {
 	TEST_CLIENT_WIN_SCALE_CLAMP = 30,
 	TEST_SERVER_BUF_INHERIT = 31,
 	TEST_SERVER_WIN_SCALE = 32,
+	TEST_CLIENT_RTT = 33,
+	TEST_SERVER_RTT = 34,
+	TEST_CLIENT_SACK = 35,
 } test_case_no;
 
 static enum test_state t_state;
@@ -146,6 +150,8 @@ static void handle_syn_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_syn_ack_resend(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_win_scale_client(struct net_pkt *pkt, struct tcphdr *th);
 static void handle_server_handshake(struct net_pkt *pkt, struct tcphdr *th);
+static void handle_rtt_client(struct net_pkt *pkt, struct tcphdr *th);
+static void handle_server_rtt(struct tcphdr *th);
 static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
@@ -260,6 +266,10 @@ static void test_sem_take_failure(k_timeout_t timeout, int line)
 	}
 }
 
+/* The stack offers SACK permitted when either side of SACK is enabled */
+#define TCP_SACK_OFFERED                                                                           \
+	(IS_ENABLED(CONFIG_NET_TCP_SACK_RECV) || IS_ENABLED(CONFIG_NET_TCP_SACK_SEND))
+
 /* MSS carried by tcp_options[] */
 #define TESTER_MSS 1460
 
@@ -290,6 +300,27 @@ static uint16_t tester_win = NET_IPV6_MTU;
 static uint8_t tcp_sack_options[12] = {
 	0x01, 0x01, /* NOP, NOP */
 	0x05, 0x0a, 0x00, 0x00, 0x00, 0x64, 0x00, 0x00, 0x00, 0xc8 /* SACK 100-200 */ };
+
+/* MSS the tester offers in the SACK tests, below the MSS the MTU of the
+ * test interface allows
+ */
+#define TESTER_SACK_MSS 80U
+
+/* Offset of segment n in the SACK tests, with full-sized and with small
+ * segments
+ */
+#define SEG(n) ((n) * TESTER_SACK_MSS)
+#define SMALL_SEG(n) ((n) * 20U)
+
+/* Options on the SYN-ACK of the SACK tests */
+static uint8_t tcp_sack_syn_options[8] = {
+	0x02, 0x04, 0x00, TESTER_SACK_MSS, /* Max segment */
+	0x01, 0x01, /* NOP, NOP */
+	0x04, 0x02 /* SACK permitted */ };
+
+/* Options on the other segments of the SACK tests */
+static uint8_t tester_sack_opts[4 + (NET_TCP_SACK_MAX_BLOCKS * NET_TCP_SACK_BLOCK_SIZE)];
+static uint8_t tester_sack_opts_len;
 
 /* Options the tester puts on the segment it is about to send. */
 static uint8_t tester_options(uint8_t flags, const uint8_t **opts)
@@ -330,6 +361,14 @@ static uint8_t tester_options(uint8_t flags, const uint8_t **opts)
 			return sizeof(tcp_options);
 		}
 		break;
+	case TEST_CLIENT_SACK:
+		if ((flags & SYN) != 0) {
+			*opts = tcp_sack_syn_options;
+			return sizeof(tcp_sack_syn_options);
+		}
+
+		*opts = tester_sack_opts;
+		return tester_sack_opts_len;
 	default:
 		break;
 	}
@@ -685,13 +724,12 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
 						    NULL, &wnd_shift, NULL, NULL),
 				   "Cannot read TCP options");
-			/* SACK is offered only when enabled, which needs
-			 * the receive queue to hold data out of order.
+			/* SACK is offered only when one side of it is
+			 * enabled.
 			 */
-			zassert_equal(sack_perm,
-				      IS_ENABLED(CONFIG_NET_TCP_SACK),
+			zassert_equal(sack_perm, TCP_SACK_OFFERED,
 				      "SACK permitted in the SYN does not "
-				      "match CONFIG_NET_TCP_SACK");
+				      "match the SACK configuration");
 			zexpect_equal(wnd_shift >= 0,
 				      IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
 				      "Window scale in the SYN does not match "
@@ -710,10 +748,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			/* The peer offered SACK and window scaling; they are
 			 * offered back only when enabled here.
 			 */
-			zassert_equal(sack_perm,
-				      IS_ENABLED(CONFIG_NET_TCP_SACK),
+			zassert_equal(sack_perm, TCP_SACK_OFFERED,
 				      "SACK permitted in the SYN-ACK does not "
-				      "match CONFIG_NET_TCP_SACK");
+				      "match the SACK configuration");
 			zexpect_equal(wnd_shift >= 0,
 				      IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
 				      "Window scale in the SYN-ACK does not "
@@ -755,6 +792,13 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	case TEST_SERVER_BUF_INHERIT:
 	case TEST_SERVER_WIN_SCALE:
 		handle_server_handshake(pkt, &th);
+		break;
+	case TEST_CLIENT_RTT:
+	case TEST_CLIENT_SACK:
+		handle_rtt_client(pkt, &th);
+		break;
+	case TEST_SERVER_RTT:
+		handle_server_rtt(&th);
 		break;
 	case TEST_ADVERTISED_RECV_WINDOW:
 		handle_advertised_recv_window(&th);
@@ -1439,9 +1483,9 @@ static void verify_handshake_options(struct net_pkt *pkt, struct tcphdr *th,
 	zassert_ok(read_tcp_options(pkt, th, &sack_perm, &mss, &wnd_shift, NULL, NULL),
 		   "Cannot read TCP options");
 	zexpect_not_equal(mss, 0, "No MSS in handshake segment %u", times);
-	zexpect_equal(sack_perm, IS_ENABLED(CONFIG_NET_TCP_SACK),
+	zexpect_equal(sack_perm, TCP_SACK_OFFERED,
 		      "SACK permitted in handshake segment %u does not match "
-		      "CONFIG_NET_TCP_SACK", times);
+		      "the SACK configuration", times);
 	zexpect_equal(wnd_shift >= 0, IS_ENABLED(CONFIG_NET_TCP_WINDOW_SCALE),
 		      "Window scale in handshake segment %u does not match "
 		      "CONFIG_NET_TCP_WINDOW_SCALE", times);
@@ -2171,6 +2215,1229 @@ ZTEST(net_tcp, test_server_win_scale)
 
 	server_close(ctx);
 }
+
+/* State of the RTT tests. The tester answers each segment after
+ * rtt_delay_ms, and drops the next segment when rtt_drop_next is set.
+ */
+static struct net_pkt *rtt_reply;
+static bool rtt_reply_give_sem;
+static uint32_t rtt_delay_ms;
+static bool rtt_drop_next;
+static uint16_t rtt_port;
+static bool rtt_seen_data;
+static uint32_t rtt_last_seq;
+static uint32_t rtt_last_time;
+static uint32_t rtt_rexmit;
+static uint32_t rtt_rexmit_interval;
+/* The tester answers no data while set; the test sends the ACKs itself */
+static bool rtt_hold;
+static uint32_t rtt_segments;
+/* Sequence number and length of the first data segments since rtt_segments
+ * was cleared
+ */
+static uint32_t rtt_tx_seq[16];
+static uint32_t rtt_tx_len[16];
+/* The stack sent a RST */
+static bool rtt_rst_seen;
+/* SACK block of the last ACK without data the stack sent, 0 and 0 if none */
+static uint32_t rtt_ack_sack_left;
+static uint32_t rtt_ack_sack_right;
+
+static void rtt_reply_send(struct k_work *work)
+{
+	struct net_pkt *reply = rtt_reply;
+
+	ARG_UNUSED(work);
+
+	rtt_reply = NULL;
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send reply");
+
+	if (rtt_reply_give_sem) {
+		test_sem_give();
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(rtt_reply_work, rtt_reply_send);
+
+/* Send the reply after rtt_delay_ms, and release the semaphore after it
+ * when give_sem is set.
+ */
+static void rtt_reply_after(struct net_pkt *reply, bool give_sem)
+{
+	zassert_not_null(reply, "Failed to prepare reply");
+	zassert_is_null(rtt_reply, "Reply already pending");
+
+	rtt_reply = reply;
+	rtt_reply_give_sem = give_sem;
+	k_work_reschedule(&rtt_reply_work, K_MSEC(rtt_delay_ms));
+}
+
+static void handle_rtt_client(struct net_pkt *pkt, struct tcphdr *th)
+{
+	uint32_t th_seq = net_ntohl(th->th_seq);
+	uint32_t now = k_uptime_get_32();
+	size_t len;
+
+	switch (t_state) {
+	case T_SYN:
+		test_verify_flags(th, SYN);
+		if (rtt_drop_next) {
+			rtt_drop_next = false;
+			return;
+		}
+		seq = 0U;
+		ack = th_seq + 1U;
+		rtt_port = th->th_sport;
+		t_state = T_SYN_ACK;
+		rtt_reply_after(prepare_syn_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port),
+				false);
+		return;
+	case T_SYN_ACK:
+		test_verify_flags(th, ACK);
+		seq++;
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	case T_DATA:
+		if ((th->th_flags & RST) != 0U) {
+			rtt_rst_seen = true;
+		}
+
+		len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) - net_pkt_ip_opts_len(pkt) -
+		      th->th_off * 4U;
+		if (len == 0U) {
+			bool sack_perm;
+
+			zassert_ok(read_tcp_options(pkt, th, &sack_perm, NULL, NULL,
+						    &rtt_ack_sack_left, &rtt_ack_sack_right),
+				   "Cannot read TCP options");
+			return;
+		}
+
+		if (rtt_seen_data && (th_seq == rtt_last_seq)) {
+			rtt_rexmit++;
+			rtt_rexmit_interval = now - rtt_last_time;
+		}
+		rtt_seen_data = true;
+		rtt_last_seq = th_seq;
+		rtt_last_time = now;
+
+		if (rtt_segments < ARRAY_SIZE(rtt_tx_seq)) {
+			rtt_tx_seq[rtt_segments] = th_seq;
+			rtt_tx_len[rtt_segments] = (uint32_t)len;
+		}
+
+		rtt_segments++;
+		if (rtt_hold) {
+			return;
+		}
+
+		/* A retransmission before the pending ACK is sent */
+		if (rtt_reply != NULL) {
+			return;
+		}
+
+		if (rtt_drop_next) {
+			rtt_drop_next = false;
+			return;
+		}
+
+		ack = th_seq + (uint32_t)len;
+		rtt_reply_after(prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port),
+				true);
+		return;
+	default:
+		return;
+	}
+}
+
+static void handle_server_rtt(struct tcphdr *th)
+{
+	if (t_state != T_SYN) {
+		return;
+	}
+
+	test_verify_flags(th, SYN | ACK);
+	seq++;
+	ack = net_ntohl(th->th_seq) + 1U;
+	t_state = T_DATA;
+
+	/* test_tcp_accept_cb releases the semaphore */
+	rtt_reply_after(prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), net_htons(PEER_PORT)),
+			false);
+}
+
+/* Connect to the tester, which answers the SYN after delay_ms, or only the
+ * retransmitted SYN when drop_syn is set.
+ */
+static struct net_context *rtt_connect_as(enum test_case_no tc, uint32_t delay_ms, bool drop_syn)
+{
+	struct net_context *ctx;
+	int no_delay = 1;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = tc;
+	seq = ack = 0;
+	rtt_delay_ms = delay_ms;
+	rtt_drop_next = drop_syn;
+	rtt_hold = false;
+	rtt_seen_data = false;
+	rtt_rexmit = 0U;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, K_MSEC(1000), NULL);
+	zassert_equal(ret, 0, "Failed to connect to peer");
+
+	/* The tester releases the semaphore on the ACK of the handshake */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	zassert_ok(net_tcp_set_option(ctx, TCP_OPT_NODELAY, &no_delay, sizeof(no_delay)),
+		   "Failed to disable Nagle");
+
+	return ctx;
+}
+
+static struct net_context *rtt_connect(uint32_t delay_ms, bool drop_syn)
+{
+	return rtt_connect_as(TEST_CLIENT_RTT, delay_ms, drop_syn);
+}
+
+/* Send one byte and wait until the tester has acknowledged it after
+ * delay_ms.
+ */
+static void rtt_exchange(struct net_context *ctx, uint32_t delay_ms)
+{
+	int ret;
+
+	rtt_delay_ms = delay_ms;
+
+	ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+	zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+
+	test_sem_take(K_MSEC(delay_ms + 1000U), __LINE__);
+
+	/* Let the stack process the ACK */
+	k_msleep(10);
+}
+
+static void rtt_close(struct net_context *ctx)
+{
+	struct net_pkt *reply;
+
+	(void)k_work_cancel_delayable(&rtt_reply_work);
+	if (rtt_reply != NULL) {
+		net_pkt_unref(rtt_reply);
+		rtt_reply = NULL;
+	}
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+
+	net_context_put(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   expect SYN ACK after 60 ms,
+ *   expect the first RTT sample from the handshake: SRTT of 60 ms,
+ *   RTTVAR of 30 ms and an RTO of SRTT + 4 * RTTVAR (RFC 6298, rule 2.2).
+ */
+ZTEST(net_tcp, test_client_rtt_handshake)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t srtt;
+
+	ctx = rtt_connect(60U, false);
+	conn = ctx->tcp;
+	srtt = conn->srtt >> 3;
+
+	zexpect_true(conn->rtt_sampled, "No RTT sample from the handshake");
+	/* One tick of the uptime clock on top of the delay */
+	zexpect_true((srtt >= 60U) && (srtt <= 70U), "SRTT %u for a 60 ms RTT", srtt);
+	zexpect_equal(conn->rttvar >> 2, srtt / 2U, "RTTVAR %u for SRTT %u", conn->rttvar >> 2,
+		      srtt);
+	zexpect_equal(conn->rto, 3U * srtt, "RTO %u for SRTT %u", conn->rto, srtt);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   receive SYN,
+ *   send SYN ACK,
+ *   expect ACK after 60 ms,
+ *   expect the first RTT sample of the accepted connection from the handshake.
+ */
+ZTEST(net_tcp, test_server_rtt_handshake)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t srtt;
+
+	rtt_delay_ms = 60U;
+	ctx = server_accept(TEST_SERVER_RTT, 0, 0);
+	conn = accepted_ctx->tcp;
+	srtt = conn->srtt >> 3;
+
+	zexpect_true(conn->rtt_sampled, "No RTT sample from the handshake");
+	zexpect_true((srtt >= 60U) && (srtt <= 70U), "SRTT %u for a 60 ms RTT", srtt);
+	zexpect_equal(conn->rto, 3U * srtt, "RTO %u for SRTT %u", conn->rto, srtt);
+
+	server_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   peer doesn't reply,
+ *   send SYN again, the peer replies SYN ACK,
+ *   expect no RTT sample and an RTO of 3 seconds for the data
+ *   (RFC 6298, rule 5.7),
+ *   expect the first sample from the data to replace it.
+ */
+ZTEST(net_tcp, test_client_rtt_syn_retransmitted)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	ctx = rtt_connect(0U, true);
+	conn = ctx->tcp;
+
+	zexpect_false(conn->rtt_sampled, "RTT sample from a retransmitted SYN");
+	zexpect_equal(conn->rto, MAX(3000U, CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT),
+		      "RTO %u after a retransmitted SYN", conn->rto);
+	zexpect_equal(conn->rto_backoff, 0U, "Backoff %u kept after the handshake",
+		      conn->rto_backoff);
+
+	rtt_exchange(ctx, 0U);
+
+	zexpect_true(conn->rtt_sampled, "No RTT sample from the data");
+	zexpect_equal(conn->rto, CONFIG_NET_TCP_MIN_RTO, "RTO %u after an RTT of 0 ms",
+		      conn->rto);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send data, the peer acknowledges it after a delay that grows to three
+ *   times the initial RTO,
+ *   expect the RTO to stay above the delay, so nothing is retransmitted,
+ *   send data, the peer acknowledges it at once,
+ *   expect the RTO to fall back to the minimum.
+ */
+ZTEST(net_tcp, test_client_rtt_follows_delay)
+{
+	/* Each delay stays below the RTO derived from the ones before it */
+	static const uint32_t delays[] = { 50U, 70U, 90U, 120U, 160U, 220U, 300U };
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	BUILD_ASSERT(CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT == 100,
+		     "The delays are chosen for an initial RTO of 100 ms");
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+
+	ARRAY_FOR_EACH(delays, i) {
+		rtt_exchange(ctx, delays[i]);
+		zexpect_equal(rtt_rexmit, 0U, "Retransmission with an RTT of %u ms, RTO %u",
+			      delays[i], conn->rto);
+	}
+
+	zexpect_true(conn->rto > delays[ARRAY_SIZE(delays) - 1U], "RTO %u below the RTT",
+		     conn->rto);
+
+	for (int i = 0; i < 30; i++) {
+		rtt_exchange(ctx, 0U);
+	}
+
+	zexpect_equal(conn->rto, CONFIG_NET_TCP_MIN_RTO, "RTO %u after an RTT of 0 ms",
+		      conn->rto);
+	zexpect_equal(rtt_rexmit, 0U, "%u retransmissions", rtt_rexmit);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send data, the peer drops it and acknowledges the retransmission,
+ *   expect no RTT sample from it (Karn's algorithm) and the backoff kept,
+ *   send data, the peer drops it again,
+ *   expect the retransmission after the backed off RTO,
+ *   send data, the peer acknowledges it,
+ *   expect the sample to end the backoff.
+ */
+ZTEST(net_tcp, test_client_rtt_karn)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t srtt;
+	uint32_t rttvar;
+	uint32_t backed_off;
+
+	BUILD_ASSERT(CONFIG_NET_TCP_RETRY_COUNT >= 2, "Two retransmissions are needed");
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_TCP_RANDOMIZED_RTO);
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+
+	rtt_drop_next = true;
+	rtt_exchange(ctx, 0U);
+
+	zexpect_equal(rtt_rexmit, 1U, "%u retransmissions", rtt_rexmit);
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by a retransmitted segment");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by a retransmitted segment");
+	zexpect_equal(conn->rto_backoff, 1U, "Backoff %u after the ACK of a retransmission",
+		      conn->rto_backoff);
+
+	rtt_drop_next = true;
+	rtt_exchange(ctx, 0U);
+
+	/* Less one tick, as the send time is read after the timer was set */
+	backed_off = conn->rto + (conn->rto >> 1) - k_ticks_to_ms_ceil32(1U);
+	zexpect_equal(rtt_rexmit, 2U, "%u retransmissions", rtt_rexmit);
+	zexpect_true(rtt_rexmit_interval >= backed_off,
+		     "Retransmission after %u ms, backed off RTO %u", rtt_rexmit_interval,
+		     backed_off);
+
+	rtt_exchange(ctx, 0U);
+
+	zexpect_equal(rtt_rexmit, 2U, "%u retransmissions", rtt_rexmit);
+	zexpect_equal(conn->rto_backoff, 0U, "Backoff %u after an RTT sample",
+		      conn->rto_backoff);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   raise the RTO close to the maximum and back it off,
+ *   send data, the peer drops it,
+ *   expect the retransmission timer limited to CONFIG_NET_TCP_MAX_RTO.
+ */
+ZTEST(net_tcp, test_client_rtt_max_rto)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t remaining;
+	int ret;
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+
+	conn->rto = CONFIG_NET_TCP_MAX_RTO - 1000U;
+	conn->rto_backoff = 2U;
+
+	rtt_drop_next = true;
+	ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+	zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+
+	/* The kernel adds one tick to a relative timeout */
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&conn->send_data_timer) -
+					  1);
+	zexpect_true(remaining <= CONFIG_NET_TCP_MAX_RTO, "RTO %u above the maximum", remaining);
+	zexpect_true(remaining > CONFIG_NET_TCP_MAX_RTO - 1000U, "RTO %u not backed off",
+		     remaining);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect with a retransmitted SYN, so the RTO is 3 seconds,
+ *   close the connection,
+ *   expect the FIN timer to outlast the retransmissions of the FIN.
+ */
+ZTEST(net_tcp, test_client_rtt_fin_timeout)
+{
+	struct net_context *ctx;
+	struct net_pkt *reply;
+	struct tcp *conn;
+	uint32_t last_rexmit = 0U;
+	uint32_t remaining;
+	uint32_t rto;
+
+	ctx = rtt_connect(0U, true);
+	conn = ctx->tcp;
+	zassert_true(conn->rto > CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT,
+		     "RTO %u not raised", conn->rto);
+
+	/* Time from the FIN to its last retransmission */
+	rto = conn->rto;
+	for (int i = 0; i < CONFIG_NET_TCP_RETRY_COUNT; i++) {
+		last_rexmit += rto;
+		rto += rto >> 1;
+	}
+
+	net_context_put(ctx);
+
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&conn->fin_timer));
+	zexpect_true(remaining > last_rexmit,
+		     "FIN timer %u ms, last FIN retransmission after %u ms", remaining,
+		     last_rexmit);
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   raise the RTO to the maximum, as a peer that delays its ACKs can,
+ *   close the connection,
+ *   expect the FIN timer limited to CONFIG_NET_TCP_MAX_RTO, not the time of
+ *   all the FIN retransmissions at that RTO.
+ */
+ZTEST(net_tcp, test_client_rtt_fin_timeout_limit)
+{
+	struct net_context *ctx;
+	struct net_pkt *reply;
+	struct tcp *conn;
+	uint32_t remaining;
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+
+	conn->rto = CONFIG_NET_TCP_MAX_RTO;
+
+	net_context_put(ctx);
+
+	/* The kernel adds one tick to a relative timeout */
+	remaining = k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&conn->fin_timer) - 1);
+	zexpect_true(remaining <= CONFIG_NET_TCP_MAX_RTO, "FIN timer %u ms above the maximum RTO",
+		     remaining);
+	zexpect_true(remaining > CONFIG_NET_TCP_MAX_RTO - 1000U,
+		     "FIN timer %u ms does not follow the RTO", remaining);
+
+	reply = prepare_rst_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare RST");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send RST");
+
+	k_msleep(10);
+}
+
+/* Send an ACK of ack_seq to the stack */
+static void rtt_inject_ack(uint32_t ack_seq)
+{
+	struct net_pkt *reply;
+
+	ack = ack_seq;
+	reply = prepare_ack_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port);
+	zassert_not_null(reply, "Failed to prepare ACK");
+	zassert_ok(net_recv_data(net_iface, reply), "Failed to send ACK");
+
+	/* Let the stack process the ACK */
+	k_msleep(5);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send three segments, the peer answers none,
+ *   expect the first one again after the RTO,
+ *   the peer acknowledges the first one only,
+ *   expect the stack to send the rest again without timing it,
+ *   the peer acknowledges the rest,
+ *   expect no RTT sample (Karn's algorithm) and the backoff kept,
+ *   send new data, expect the sample to end the backoff.
+ */
+ZTEST(net_tcp, test_client_rtt_karn_go_back_n)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+	uint32_t srtt;
+	uint32_t rttvar;
+	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_NET_TCP_RANDOMIZED_RTO);
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+	base = conn->seq;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+
+	rtt_hold = true;
+	for (int i = 0; i < 3; i++) {
+		ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+		zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+	}
+
+	zexpect_true(conn->rtt_pending, "First segment not timed");
+	zexpect_equal(conn->rtt_seq, base + 1U, "Timed segment ends at %u, not %u",
+		      conn->rtt_seq, base + 1U);
+
+	/* The RTO fires and the first segment is sent again */
+	k_msleep(conn->rto + 20U);
+	zexpect_false(conn->rtt_pending, "Sample kept across the RTO");
+	zexpect_equal(conn->rto_backoff, 1U, "Backoff %u after the RTO", conn->rto_backoff);
+
+	/* The ACK of the first segment makes the stack go back to the rest */
+	rtt_inject_ack(base + 1U);
+	zexpect_false(conn->rtt_pending, "Retransmitted data is being timed");
+
+	rtt_inject_ack(base + 3U);
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by retransmitted data");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by retransmitted data");
+	zexpect_equal(conn->rto_backoff, 1U, "Backoff %u after the ACK of retransmitted data",
+		      conn->rto_backoff);
+
+	rtt_hold = false;
+	rtt_exchange(ctx, 0U);
+	zexpect_equal(conn->rto_backoff, 0U, "Backoff %u after an RTT sample",
+		      conn->rto_backoff);
+
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect,
+ *   send two segments, the peer answers three duplicate ACKs,
+ *   expect the fast retransmit to cancel the running RTT sample,
+ *   the peer acknowledges everything,
+ *   expect no RTT sample, as the timed segment was sent twice.
+ */
+ZTEST(net_tcp, test_client_rtt_fast_retransmit)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+	uint32_t srtt;
+	uint32_t rttvar;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_FAST_RETRANSMIT);
+
+	ctx = rtt_connect(0U, false);
+	conn = ctx->tcp;
+	base = conn->seq;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+
+	rtt_hold = true;
+	for (int i = 0; i < 2; i++) {
+		ret = net_context_send(ctx, "A", 1U, NULL, K_NO_WAIT, NULL);
+		zassert_equal(ret, 1, "Failed to send data (%d)", ret);
+	}
+
+	zexpect_true(conn->rtt_pending, "First segment not timed");
+	rtt_segments = 0U;
+
+	for (int i = 0; i < 3; i++) {
+		rtt_inject_ack(base);
+	}
+
+	zexpect_equal(rtt_segments, 1U, "%u segments after three duplicate ACKs", rtt_segments);
+	zexpect_false(conn->rtt_pending, "Sample kept across a fast retransmit");
+
+	rtt_inject_ack(base + 2U);
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by a retransmitted segment");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by a retransmitted segment");
+
+	rtt_hold = false;
+	rtt_close(ctx);
+}
+
+#if defined(CONFIG_NET_TCP_SACK_RECV) || defined(CONFIG_NET_TCP_SACK_SEND)
+/* Connect to a tester that offers SACK and an MSS of TESTER_SACK_MSS. The
+ * handshake takes 70 ms, so the RTO of about 210 ms leaves time for the ACKs
+ * of a test. The congestion window is opened, so that a test can have many
+ * segments in flight without slow start.
+ */
+static struct net_context *sack_connect(void)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+
+	tester_sack_opts_len = 0U;
+	tester_win = NET_IPV6_MTU;
+	rtt_rst_seen = false;
+
+	ctx = rtt_connect_as(TEST_CLIENT_SACK, 70U, false);
+	conn = ctx->tcp;
+	zassert_true(conn->sack_perm, "SACK not negotiated");
+
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	conn->ca.cwnd = 16U * TESTER_SACK_MSS;
+	conn->ca.ssthresh = conn->ca.cwnd;
+#endif
+
+	return ctx;
+}
+
+static void sack_close(struct net_context *ctx)
+{
+	tester_sack_opts_len = 0U;
+	rtt_hold = false;
+	rtt_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   connect with SACK, the peer sends a segment after a hole,
+ *   expect the duplicate ACK to report the segment in a SACK block only when
+ *   CONFIG_NET_TCP_SACK_RECV is enabled.
+ */
+ZTEST(net_tcp, test_client_sack_recv_block)
+{
+	struct net_context *ctx;
+	struct net_pkt *data;
+
+	ctx = sack_connect();
+	rtt_ack_sack_left = 0U;
+	rtt_ack_sack_right = 0U;
+
+	seq += 10U;
+	data = prepare_data_packet(NET_AF_INET, net_htons(MY_PORT), rtt_port, "BBBBB", 5U);
+	seq -= 10U;
+	zassert_not_null(data, "Failed to prepare data");
+	zassert_ok(net_recv_data(net_iface, data), "Failed to send data");
+	k_msleep(10);
+
+	if (IS_ENABLED(CONFIG_NET_TCP_SACK_RECV)) {
+		zexpect_equal(rtt_ack_sack_left, seq + 10U, "SACK block from %u",
+			      rtt_ack_sack_left - seq);
+		zexpect_equal(rtt_ack_sack_right, seq + 15U, "SACK block to %u",
+			      rtt_ack_sack_right - seq);
+	} else {
+		zexpect_equal(rtt_ack_sack_right, 0U, "SACK block with SACK_RECV disabled");
+	}
+
+	sack_close(ctx);
+}
+
+#if defined(CONFIG_NET_TCP_SACK_SEND)
+/* Send count segments of len bytes, which the tester does not answer */
+static void sack_send(struct net_context *ctx, uint32_t count, uint32_t len)
+{
+	static const uint8_t data[TESTER_SACK_MSS];
+	int ret;
+
+	zassert_true(len <= TESTER_SACK_MSS, "Segments of %u bytes", len);
+
+	rtt_hold = true;
+	rtt_segments = 0U;
+
+	for (uint32_t i = 0U; i < count; i++) {
+		ret = net_context_send(ctx, data, len, NULL, K_NO_WAIT, NULL);
+		zassert_equal(ret, len, "Failed to send data (%d)", ret);
+	}
+
+	k_msleep(10);
+	zassert_equal(rtt_segments, count, "%u of %u segments sent", rtt_segments, count);
+	zassert_equal(rtt_tx_len[0], len, "Segment of %u bytes", rtt_tx_len[0]);
+
+	rtt_segments = 0U;
+}
+
+/* Send an ACK of base + ack_off that carries count SACK blocks. The edges
+ * are pairs of left and right edges, as offsets from base.
+ */
+static void sack_inject(uint32_t base, uint32_t ack_off, const int32_t *edges, size_t count)
+{
+	zassert_true(count <= NET_TCP_SACK_MAX_BLOCKS, "%zu SACK blocks", count);
+
+	if (count > 0U) {
+		tester_sack_opts[0] = NET_TCP_NOP_OPT;
+		tester_sack_opts[1] = NET_TCP_NOP_OPT;
+		tester_sack_opts[2] = NET_TCP_SACK_OPT;
+		tester_sack_opts[3] = 2U + (count * NET_TCP_SACK_BLOCK_SIZE);
+
+		for (size_t i = 0U; i < count; i++) {
+			uint8_t *block = &tester_sack_opts[4U + (i * NET_TCP_SACK_BLOCK_SIZE)];
+
+			sys_put_be32(base + (uint32_t)edges[2U * i], block);
+			sys_put_be32(base + (uint32_t)edges[(2U * i) + 1U], block + 4);
+		}
+
+		tester_sack_opts_len = 4U + (count * NET_TCP_SACK_BLOCK_SIZE);
+	}
+
+	rtt_inject_ack(base + ack_off);
+	tester_sack_opts_len = 0U;
+}
+
+
+/* Test case scenario IPv4
+ *   connect with SACK, send 8 segments of 20 bytes,
+ *   the peer loses the third one and SACKs the ones after it,
+ *   expect only the lost segment to be resent, on the third duplicate ACK,
+ *   although less than two full-sized segments are SACKed (RFC 6675
+ *   section 5, step 1),
+ *   expect no further retransmission when the rest is SACKed,
+ *   expect the recovery to end on the ACK of all data, with cwnd at ssthresh.
+ */
+ZTEST(net_tcp, test_client_sack_single_loss)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 8U, SMALL_SEG(1));
+
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(4)}, 1U);
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(5)}, 1U);
+	zexpect_equal(rtt_segments, 0U, "Retransmission before three duplicate ACKs");
+
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(6)}, 1U);
+	zexpect_true(conn->sack_recovery, "No loss recovery");
+	zexpect_equal(rtt_segments, 1U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base + SMALL_SEG(2), "Resent %u", rtt_tx_seq[0] - base);
+	zexpect_equal(rtt_tx_len[0], SMALL_SEG(1), "Resent %u bytes", rtt_tx_len[0]);
+
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(7)}, 1U);
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(8)}, 1U);
+	zexpect_equal(rtt_segments, 1U, "%u segments resent", rtt_segments);
+
+	rtt_inject_ack(base + SMALL_SEG(8));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+	zexpect_equal(conn->sack_count, 0U, "%u ranges left", conn->sack_count);
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	zexpect_equal(conn->ca.cwnd, conn->ca.ssthresh, "cwnd %u, ssthresh %u", conn->ca.cwnd,
+		      conn->ca.ssthresh);
+#endif
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 8 segments of 20 bytes, the third one arrives late,
+ *   two duplicate ACKs with SACK blocks, then the ACK of the late segment,
+ *   then a duplicate ACK for another segment out of order,
+ *   expect no retransmission, as the cumulative ACK resets the count of
+ *   duplicate ACKs (RFC 6675 section 5).
+ */
+ZTEST(net_tcp, test_client_sack_reordering)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 8U, SMALL_SEG(1));
+
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(4)}, 1U);
+	sack_inject(base, SMALL_SEG(2), (const int32_t[]){SMALL_SEG(3), SMALL_SEG(5)}, 1U);
+	rtt_inject_ack(base + SMALL_SEG(5));
+	sack_inject(base, SMALL_SEG(5), (const int32_t[]){SMALL_SEG(6), SMALL_SEG(7)}, 1U);
+	zexpect_false(conn->sack_recovery, "Loss recovery after reordering");
+	zexpect_equal(rtt_segments, 0U, "%u segments resent", rtt_segments);
+
+	rtt_inject_ack(base + SMALL_SEG(8));
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 8 segments, the peer loses the first one and SACKs the next three
+ *   in one ACK,
+ *   expect the first segment to be resent at once, as more than two segments
+ *   are SACKed above it (IsLost() of RFC 6675),
+ *   expect no RTT sample from the ACK that follows (Karn's algorithm).
+ */
+ZTEST(net_tcp, test_client_sack_lost_entry)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+	uint32_t srtt;
+	uint32_t rttvar;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	srtt = conn->srtt;
+	rttvar = conn->rttvar;
+	sack_send(ctx, 8U, TESTER_SACK_MSS);
+	zassert_true(conn->rtt_pending, "First segment not timed");
+
+	sack_inject(base, 0U, (const int32_t[]){SEG(1), SEG(4)}, 1U);
+	zexpect_true(conn->sack_recovery, "No loss recovery");
+	zexpect_equal(rtt_segments, 1U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base, "Resent %u", rtt_tx_seq[0] - base);
+	zexpect_false(conn->rtt_pending, "Sample kept across a retransmission");
+
+	rtt_inject_ack(base + SEG(8));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+	zexpect_equal(conn->srtt, srtt, "SRTT changed by a retransmitted segment");
+	zexpect_equal(conn->rttvar, rttvar, "RTTVAR changed by a retransmitted segment");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 10 segments, the peer loses the second and the fifth,
+ *   expect both to be resent once, in order, without a timeout.
+ */
+ZTEST(net_tcp, test_client_sack_holes)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	if (CONFIG_NET_TCP_SACK_SCOREBOARD < 2) {
+		ztest_test_skip();
+	}
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 10U, TESTER_SACK_MSS);
+
+	sack_inject(base, SEG(1), (const int32_t[]){SEG(2), SEG(4)}, 1U);
+	zexpect_equal(rtt_segments, 0U, "Retransmission after one duplicate ACK");
+
+	sack_inject(base, SEG(1), (const int32_t[]){SEG(5), SEG(7), SEG(2), SEG(4)}, 2U);
+	zexpect_true(conn->sack_recovery, "No loss recovery");
+
+	sack_inject(base, SEG(1), (const int32_t[]){SEG(5), SEG(10), SEG(2), SEG(4)}, 2U);
+	zexpect_equal(rtt_segments, 2U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base + SEG(1), "First resent %u", rtt_tx_seq[0] - base);
+	zexpect_equal(rtt_tx_seq[1], base + SEG(4), "Second resent %u", rtt_tx_seq[1] - base);
+
+	rtt_inject_ack(base + SEG(10));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+	zexpect_equal(rtt_segments, 2U, "%u segments resent", rtt_segments);
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 10 segments, the peer loses the second and the eighth and reports
+ *   the rest in one ACK,
+ *   expect the second segment to be resent as lost, and the eighth one too,
+ *   since cwnd allows it, although only two segments are SACKed above it
+ *   (RFC 6675 NextSeg() rule 3).
+ */
+ZTEST(net_tcp, test_client_sack_unlost_hole)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	if (CONFIG_NET_TCP_SACK_SCOREBOARD < 2) {
+		ztest_test_skip();
+	}
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 10U, TESTER_SACK_MSS);
+
+	sack_inject(base, SEG(1), (const int32_t[]){SEG(8), SEG(10), SEG(2), SEG(7)}, 2U);
+	zexpect_true(conn->sack_recovery, "No loss recovery");
+	zexpect_equal(rtt_segments, 2U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base + SEG(1), "First resent %u", rtt_tx_seq[0] - base);
+	zexpect_equal(rtt_tx_seq[1], base + SEG(7), "Second resent %u", rtt_tx_seq[1] - base);
+
+	rtt_inject_ack(base + SEG(10));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   queue 12 segments with cwnd at 6 segments, so 6 are sent,
+ *   the peer loses the first two and SACKs the other four,
+ *   expect cwnd to drop to 3 segments, both lost segments to be resent and
+ *   one new segment to be sent, as pipe allows (RFC 6675 NextSeg() rule 2),
+ *   and not timed, since its ACK also covers the resent segments,
+ *   the peer acknowledges the first segment,
+ *   expect one more new segment.
+ */
+ZTEST(net_tcp, test_client_sack_new_data)
+{
+	static const uint8_t data[12U * TESTER_SACK_MSS];
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_CONGESTION_AVOIDANCE);
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	conn->ca.cwnd = SEG(6);
+#endif
+	rtt_hold = true;
+	rtt_segments = 0U;
+
+	ret = net_context_send(ctx, data, sizeof(data), NULL, K_NO_WAIT, NULL);
+	zassert_equal(ret, sizeof(data), "Failed to send data (%d)", ret);
+	k_msleep(10);
+	zassert_equal(rtt_segments, 6U, "%u segments sent", rtt_segments);
+	rtt_segments = 0U;
+
+	sack_inject(base, 0U, (const int32_t[]){SEG(2), SEG(6)}, 1U);
+	zexpect_true(conn->sack_recovery, "No loss recovery");
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	zexpect_equal(conn->ca.cwnd, SEG(3), "cwnd %u", conn->ca.cwnd);
+#endif
+	zexpect_equal(rtt_segments, 3U, "%u segments sent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base, "First sent %u", rtt_tx_seq[0] - base);
+	zexpect_equal(rtt_tx_seq[1], base + SEG(1), "Second sent %u", rtt_tx_seq[1] - base);
+	zexpect_equal(rtt_tx_seq[2], base + SEG(6), "Third sent %u", rtt_tx_seq[2] - base);
+	zexpect_false(conn->rtt_pending, "New data timed in loss recovery");
+
+	sack_inject(base, SEG(1), (const int32_t[]){SEG(2), SEG(6)}, 1U);
+	zexpect_equal(rtt_segments, 4U, "%u segments sent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[3], base + SEG(7), "Fourth sent %u", rtt_tx_seq[3] - base);
+
+	rtt_inject_ack(base + SEG(8));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 10 segments, the peer loses the first six,
+ *   expect loss recovery with cwnd = ssthresh = five segments, half the data
+ *   in flight, and only five segments resent, as pipe allows (RFC 6675 step C),
+ *   the peer acknowledges the first one,
+ *   expect the sixth segment to be resent.
+ */
+ZTEST(net_tcp, test_client_sack_pipe)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_TCP_CONGESTION_AVOIDANCE);
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 10U, TESTER_SACK_MSS);
+
+	sack_inject(base, 0U, (const int32_t[]){SEG(6), SEG(10)}, 1U);
+	zexpect_true(conn->sack_recovery, "No loss recovery");
+#ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
+	zexpect_equal(conn->ca.cwnd, SEG(5), "cwnd %u", conn->ca.cwnd);
+	zexpect_equal(conn->ca.ssthresh, SEG(5), "ssthresh %u", conn->ca.ssthresh);
+#endif
+	zexpect_equal(rtt_segments, 5U, "%u segments resent", rtt_segments);
+	for (uint32_t i = 0U; i < MIN(rtt_segments, 5U); i++) {
+		zexpect_equal(rtt_tx_seq[i], base + (i * TESTER_SACK_MSS), "Segment %u resent %u",
+			      i, rtt_tx_seq[i] - base);
+	}
+
+	sack_inject(base, SEG(1), (const int32_t[]){SEG(6), SEG(10)}, 1U);
+	zexpect_equal(rtt_segments, 6U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[5], base + SEG(5), "Resent %u", rtt_tx_seq[5] - base);
+
+	rtt_inject_ack(base + SEG(10));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 6 segments, the peer loses the first and the last,
+ *   expect the first one to be resent,
+ *   the peer acknowledges all but the last,
+ *   expect the last one to be resent at once, as the rescue retransmission
+ *   of RFC 6675 NextSeg() rule (4), and not after the RTO.
+ */
+ZTEST(net_tcp, test_client_sack_rescue)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 6U, TESTER_SACK_MSS);
+
+	sack_inject(base, 0U, (const int32_t[]){SEG(1), SEG(5)}, 1U);
+	zexpect_equal(rtt_segments, 1U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base, "Resent %u", rtt_tx_seq[0] - base);
+
+	rtt_inject_ack(base + SEG(5));
+	zexpect_true(conn->sack_recovery, "Recovery ended early");
+	zexpect_equal(rtt_segments, 2U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[1], base + SEG(5), "Resent %u", rtt_tx_seq[1] - base);
+
+	rtt_inject_ack(base + SEG(6));
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 8 segments, the peer sends duplicate ACKs with SACK blocks below
+ *   the cumulative ACK, beyond the data sent, and with no data,
+ *   expect the blocks to be ignored and no retransmission,
+ *   the peer sends one ACK with an invalid and a valid block,
+ *   expect the valid one to be recorded.
+ */
+ZTEST(net_tcp, test_client_sack_invalid_blocks)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 8U, TESTER_SACK_MSS);
+
+	sack_inject(base, 0U, (const int32_t[]){-(int32_t)SEG(1), 0}, 1U);
+	sack_inject(base, 0U, (const int32_t[]){SEG(7), SEG(9)}, 1U);
+	sack_inject(base, 0U, (const int32_t[]){SEG(4), SEG(3)}, 1U);
+	sack_inject(base, 0U, (const int32_t[]){SEG(3), SEG(3)}, 1U);
+	zexpect_equal(conn->sack_count, 0U, "%u ranges recorded", conn->sack_count);
+	zexpect_false(conn->sack_recovery, "Loss recovery from invalid blocks");
+	zexpect_equal(rtt_segments, 0U, "%u segments resent", rtt_segments);
+	zexpect_false(rtt_rst_seen, "Connection reset");
+
+	sack_inject(base, 0U, (const int32_t[]){-(int32_t)SEG(1), 0, SEG(3), SEG(4)}, 2U);
+	zexpect_equal(conn->sack_count, 1U, "%u ranges recorded", conn->sack_count);
+	zexpect_equal(conn->sack_ranges[0].left, base + SEG(3), "Range from %u",
+		      conn->sack_ranges[0].left - base);
+	zexpect_equal(conn->sack_ranges[0].right, base + SEG(4), "Range to %u",
+		      conn->sack_ranges[0].right - base);
+
+	rtt_inject_ack(base + SEG(8));
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 2 segments, the peer sends a SACK option of 6 bytes, which holds no
+ *   complete block,
+ *   expect the connection to be reset, as for other invalid options.
+ */
+ZTEST(net_tcp, test_client_sack_bad_length)
+{
+	static const uint8_t bad_sack[8] = {
+		0x01, 0x01, /* NOP, NOP */
+		0x05, 0x06, 0x00, 0x00, 0x00, 0x64 /* SACK, 6 bytes */ };
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 2U, TESTER_SACK_MSS);
+
+	memcpy(tester_sack_opts, bad_sack, sizeof(bad_sack));
+	tester_sack_opts_len = sizeof(bad_sack);
+	rtt_inject_ack(base + SEG(2));
+	zexpect_true(rtt_rst_seen, "No RST for an invalid SACK option");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 8 segments, the peer loses the third and SACKs the fourth,
+ *   expect the RTO to resend the third segment and the SACK information to be
+ *   discarded (RFC 2018 section 5),
+ *   the peer acknowledges the third segment,
+ *   expect the fourth one to be resent although it was SACKed, since the peer
+ *   may have discarded it (RFC 2018 section 8),
+ *   the peer sends three duplicate ACKs with new SACK information,
+ *   expect no loss recovery before all data sent before the timeout is
+ *   acknowledged (RFC 6675 section 5.1).
+ */
+ZTEST(net_tcp, test_client_sack_rto)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t base;
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, 8U, TESTER_SACK_MSS);
+
+	sack_inject(base, SEG(2), (const int32_t[]){SEG(3), SEG(4)}, 1U);
+	zassert_equal(conn->sack_count, 1U, "%u ranges recorded", conn->sack_count);
+
+	/* One RTO, the next one comes after 1.5 times as long */
+	k_msleep((net_tcp_get_rto(conn) * 5U) / 4U);
+	zexpect_equal(rtt_segments, 1U, "%u segments resent", rtt_segments);
+	zexpect_equal(rtt_tx_seq[0], base + SEG(2), "Resent %u", rtt_tx_seq[0] - base);
+	zexpect_equal(conn->sack_count, 0U, "SACK information kept across the RTO");
+	zexpect_true(conn->sack_rto_hold, "No recovery point after the RTO");
+
+	rtt_inject_ack(base + SEG(3));
+	zexpect_true(rtt_segments >= 2U, "Nothing resent after the ACK");
+	zexpect_equal(rtt_tx_seq[1], base + SEG(3), "Resent %u", rtt_tx_seq[1] - base);
+
+	sack_inject(base, SEG(3), (const int32_t[]){SEG(5), SEG(6)}, 1U);
+	sack_inject(base, SEG(3), (const int32_t[]){SEG(5), SEG(7)}, 1U);
+	sack_inject(base, SEG(3), (const int32_t[]){SEG(5), SEG(8)}, 1U);
+	zexpect_false(conn->sack_recovery, "Loss recovery before the recovery point");
+
+	rtt_inject_ack(base + SEG(8));
+	zexpect_false(conn->sack_rto_hold, "Recovery point not reached");
+
+	sack_close(ctx);
+}
+
+/* Test case scenario IPv4
+ *   send 2 * (N + 1) segments, N being the size of the scoreboard, the peer
+ *   loses every other one and SACKs the others from the highest down,
+ *   expect the scoreboard to keep the N lowest ranges,
+ *   the peer acknowledges all data,
+ *   expect the scoreboard to be empty and the recovery to end.
+ */
+ZTEST(net_tcp, test_client_sack_scoreboard_full)
+{
+	struct net_context *ctx;
+	struct tcp *conn;
+	uint32_t count = 2U * (CONFIG_NET_TCP_SACK_SCOREBOARD + 1U);
+	uint32_t base;
+
+	if (count > 12U) {
+		ztest_test_skip();
+	}
+
+	ctx = sack_connect();
+	conn = ctx->tcp;
+	base = conn->seq;
+	sack_send(ctx, count, TESTER_SACK_MSS);
+
+	for (int32_t i = CONFIG_NET_TCP_SACK_SCOREBOARD; i >= 0; i--) {
+		int32_t left = ((2 * i) + 1) * (int32_t)TESTER_SACK_MSS;
+
+		sack_inject(base, 0U, (const int32_t[]){left, left + (int32_t)TESTER_SACK_MSS}, 1U);
+	}
+
+	zassert_equal(conn->sack_count, CONFIG_NET_TCP_SACK_SCOREBOARD, "%u ranges recorded",
+		      conn->sack_count);
+	zexpect_equal(conn->sack_ranges[conn->sack_count - 1U].right,
+		      base + (2U * CONFIG_NET_TCP_SACK_SCOREBOARD * TESTER_SACK_MSS),
+		      "Highest range ends at %u",
+		      conn->sack_ranges[conn->sack_count - 1U].right - base);
+
+	rtt_inject_ack(base + (count * TESTER_SACK_MSS));
+	zexpect_equal(conn->sack_count, 0U, "%u ranges left", conn->sack_count);
+	zexpect_false(conn->sack_recovery, "Recovery did not end");
+	zexpect_false(rtt_rst_seen, "Connection reset");
+
+	sack_close(ctx);
+}
+#endif /* CONFIG_NET_TCP_SACK_SEND */
+#endif /* CONFIG_NET_TCP_SACK_RECV || CONFIG_NET_TCP_SACK_SEND */
 
 static void handle_advertised_recv_window(struct tcphdr *th)
 {
