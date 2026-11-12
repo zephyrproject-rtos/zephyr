@@ -273,7 +273,9 @@ struct ticker_ext {
 					  * that ticker is forced, and is not
 					  * skipped by an overlapping ticker
 					  * that fits after it in its slot
-					  * window
+					  * window. When it can not be
+					  * re-scheduled in its slot window it
+					  * expires without slot reservation
 					  */
 	uint8_t unforce:1;             /* Start with force flag unset
 					*/

@@ -157,6 +157,7 @@ struct ticker_expire_info_internal {
 #define TICKER_RESCHEDULE_STATE_NONE     0
 #define TICKER_RESCHEDULE_STATE_PENDING  1
 #define TICKER_RESCHEDULE_STATE_DONE     2
+#define TICKER_RESCHEDULE_STATE_DEADLINE 3
 
 #if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 #define TICKER_HAS_SLOT_WINDOW(_ticker) \
@@ -164,9 +165,13 @@ struct ticker_expire_info_internal {
 #define TICKER_RESCHEDULE_PENDING(_ticker) \
 	(_ticker->ext_data && (_ticker->ext_data->reschedule_state == \
 		TICKER_RESCHEDULE_STATE_PENDING))
+#define TICKER_RESCHEDULE_DEADLINE(_ticker) \
+	(_ticker->ext_data && (_ticker->ext_data->reschedule_state == \
+		TICKER_RESCHEDULE_STATE_DEADLINE))
 #else
 #define TICKER_HAS_SLOT_WINDOW(_ticker) 0
 #define TICKER_RESCHEDULE_PENDING(_ticker) 0
+#define TICKER_RESCHEDULE_DEADLINE(_ticker) 0
 #endif
 
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
@@ -1582,12 +1587,23 @@ void ticker_worker(void *param)
 		     (instance->ticks_slot_window_previous > ticks_expired))) {
 			slot_window_collide = 1U;
 		}
+
+		/* Re-scheduling in window failed, a node with deadline in its slot
+		 * window is not ousted but expires without slot reservation, so that
+		 * the LLL decides on the overlapping event.
+		 */
+		if ((ticker->ext_data != NULL) &&
+		    (ticker->ext_data->is_deadline_in_window != 0U) &&
+		    (ticker->ext_data->reschedule_state == TICKER_RESCHEDULE_STATE_DONE)) {
+			ticker->ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_DEADLINE;
+		}
 #endif /* CONFIG_BT_TICKER_EXT */
 
 		/* Check if node has slot reservation and resolve any collision
 		 * with other ticker nodes
 		 */
-		if (((ticker->ticks_slot != 0U) || TICKER_HAS_SLOT_WINDOW(ticker)) &&
+		if (!TICKER_RESCHEDULE_DEADLINE(ticker) &&
+		    ((ticker->ticks_slot != 0U) || TICKER_HAS_SLOT_WINDOW(ticker)) &&
 		    ((slot_reserved != 0U) ||
 		     (instance->ticks_slot_previous > ticks_expired) ||
 		     (ticker_late_collision(instance, ticker, ticks_expired) != 0U) ||
@@ -1656,8 +1672,13 @@ void ticker_worker(void *param)
 		if (ticker->ext_data) {
 			ticks_drift = ticker->ext_data->ticks_drift;
 
-			/* Mark node as not re-scheduling */
-			ticker->ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
+			/* Mark node as not re-scheduling, a node that expires without slot
+			 * reservation is marked as such until handled in ticker_job.
+			 */
+			if (ticker->ext_data->reschedule_state !=
+			    TICKER_RESCHEDULE_STATE_DEADLINE) {
+				ticker->ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
+			}
 		} else {
 			ticks_drift = 0U;
 		}
@@ -2470,10 +2491,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 #endif /* CONFIG_BT_TICKER_EXT */
 
 		/* If a reschedule is set pending, we will need to keep
-		 * the slot_previous information
+		 * the slot_previous information. A node that expired without slot
+		 * reservation does not define the active slot reservation.
 		 */
 		if ((state == TICKER_NODE_STATE_EXPIRED) && (skip_collision == 0U) &&
-		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+		    !TICKER_RESCHEDULE_PENDING(ticker) && !TICKER_RESCHEDULE_DEADLINE(ticker)) {
 			uint32_t ticker_ticks_slot;
 
 			if (TICKER_HAS_SLOT_WINDOW(ticker) && (ticker->ticks_slot == 0U)) {
@@ -2515,8 +2537,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		 * being rescheduled.
 		 */
 		if ((state == TICKER_NODE_STATE_EXPIRED) && (skip_collision == 0U) &&
-		    !TICKER_RESCHEDULE_PENDING(ticker) && TICKER_HAS_SLOT_WINDOW(ticker) &&
-		    (ticker->ticks_slot == 0U)) {
+		    !TICKER_RESCHEDULE_PENDING(ticker) && !TICKER_RESCHEDULE_DEADLINE(ticker) &&
+		    TICKER_HAS_SLOT_WINDOW(ticker) && (ticker->ticks_slot == 0U)) {
 			uint32_t ticks_slot;
 
 			instance->ticker_id_slot_window_previous = id_expired;
@@ -2528,6 +2550,11 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			}
 
 			instance->ticks_slot_window_previous = ticks_slot;
+		}
+
+		/* Expiry without slot reservation handled */
+		if (TICKER_RESCHEDULE_DEADLINE(ticker)) {
+			ticker->ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
