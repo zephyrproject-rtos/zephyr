@@ -5234,8 +5234,9 @@ int bt_l2cap_br_chan_disconnect(struct bt_l2cap_chan *chan)
 static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
-	struct bt_l2cap_br_chan *chan;
+	struct bt_l2cap_br_chan *chan = NULL;
 	struct bt_l2cap_disconn_rsp *rsp = (void *)buf->data;
+	struct bt_l2cap_chan *ch = NULL;
 	uint16_t dcid, scid;
 
 	if (buf->len < sizeof(*rsp)) {
@@ -5248,17 +5249,33 @@ static void l2cap_br_disconn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struc
 
 	LOG_DBG("dcid 0x%04x scid 0x%04x", dcid, scid);
 
-	chan = l2cap_br_remove_tx_cid(conn, dcid);
-	if (!chan) {
+	/* Lookup, identifier check and removal see one state of the channel
+	 * list, whatever thread adds or removes channels meanwhile
+	 */
+	bt_dev_lock();
+
+	/* Fixed channels are never disconnected */
+	if (L2CAP_BR_CID_IS_DYN(dcid)) {
+		ch = bt_l2cap_br_lookup_tx_cid(conn, dcid);
+	}
+
+	if ((ch != NULL) && (BR_CHAN(ch)->ident == ident)) {
+		chan = BR_CHAN(ch);
+		bt_l2cap_chan_remove(conn, ch);
+	}
+
+	bt_dev_unlock();
+
+	if (ch == NULL) {
 		LOG_WRN("No dcid 0x%04x channel found", dcid);
 		return;
 	}
 
-	if (chan->ident != ident) {
-		LOG_WRN("ident mismatch (%u != %u)!", chan->ident, ident);
+	if (chan == NULL) {
+		LOG_WRN("ident %u is not the pending request's on dcid 0x%04x", ident, dcid);
 		return;
 	}
-	chan->ident = 0;
+	chan->ident = 0U;
 
 	bt_l2cap_br_chan_del(&chan->chan);
 }
