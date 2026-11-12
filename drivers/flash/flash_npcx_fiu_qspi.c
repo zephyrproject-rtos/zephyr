@@ -54,7 +54,7 @@ struct gdma_data {
 /* Device data */
 struct npcx_qspi_fiu_data {
 	/* mutex of qspi bus controller */
-	struct k_sem lock_sem;
+	struct k_mutex lock_mutex;
 	/* Current device configuration on QSPI bus */
 	const struct npcx_qspi_cfg *cur_cfg;
 	/* Current Software controlled Chip-Select number */
@@ -373,21 +373,14 @@ void qspi_npcx_fiu_mutex_lock(const struct device *dev)
 {
 	struct npcx_qspi_fiu_data *const data = dev->data;
 
-	k_sem_take(&data->lock_sem, K_FOREVER);
+	(void)k_mutex_lock(&data->lock_mutex, K_FOREVER);
 }
 
 void qspi_npcx_fiu_mutex_unlock(const struct device *dev)
 {
 	struct npcx_qspi_fiu_data *const data = dev->data;
 
-	k_sem_give(&data->lock_sem);
-}
-
-bool qspi_npcx_fiu_mutex_is_locked(const struct device *dev)
-{
-	struct npcx_qspi_fiu_data *const data = dev->data;
-
-	return (k_sem_count_get(&data->lock_sem) == 0);
+	(void)k_mutex_unlock(&data->lock_mutex);
 }
 
 void qspi_npcx_fiu_apply_cfg(const struct device *dev,
@@ -494,7 +487,7 @@ static int qspi_npcx_fiu_init(const struct device *dev)
 	}
 
 	/* initialize mutex for qspi controller */
-	k_sem_init(&data->lock_sem, 1, 1);
+	k_mutex_init(&data->lock_mutex);
 
 #if defined(CONFIG_FLASH_NPCX_FIU_USE_DMA)
 	struct gdma_data *dma = &data->dma;
