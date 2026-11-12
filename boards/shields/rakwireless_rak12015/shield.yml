@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: rakwireless_rak12015
+  full_name: RAK12015 WisBlock Vibration Sensor
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - input
