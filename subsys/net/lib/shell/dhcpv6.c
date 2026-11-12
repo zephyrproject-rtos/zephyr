@@ -116,8 +116,8 @@ static void dhcpv6_lease_cb(struct net_if *iface,
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	char iface_name[NET_IFNAMSIZ] = "";
-	char addr_str[INET6_ADDRSTRLEN] = "-";
-	char prefix_str[INET6_ADDRSTRLEN + sizeof("/128")] = "-";
+	char addr_str[NET_INET6_ADDRSTRLEN] = "-";
+	char prefix_str[NET_INET6_ADDRSTRLEN + sizeof("/128")] = "-";
 	uint32_t expiry_s;
 
 	if (*count == 0) {
@@ -135,7 +135,7 @@ static void dhcpv6_lease_cb(struct net_if *iface,
 	}
 
 	if (lease->has_prefix) {
-		char pfx[INET6_ADDRSTRLEN];
+		char pfx[NET_INET6_ADDRSTRLEN];
 
 		(void)net_addr_ntop(NET_AF_INET6, &lease->prefix, pfx,
 				    sizeof(pfx));
