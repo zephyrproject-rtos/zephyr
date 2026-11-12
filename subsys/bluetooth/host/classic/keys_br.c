@@ -219,6 +219,8 @@ static int link_key_set(const char *name, size_t len_rd,
 SETTINGS_STATIC_HANDLER_DEFINE(bt_link_key, "bt/link_key", NULL, link_key_set,
 			       NULL, NULL);
 
+#endif /* defined(CONFIG_BT_SETTINGS) */
+
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 void bt_keys_link_key_update_usage(const bt_addr_t *addr)
 {
@@ -242,5 +244,3 @@ void bt_keys_link_key_update_usage(const bt_addr_t *addr)
 	}
 }
 #endif  /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
-
-#endif /* defined(CONFIG_BT_SETTINGS) */
