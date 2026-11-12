@@ -18,20 +18,40 @@ LOG_MODULE_REGISTER(hwinfo_nxp_pmc, CONFIG_HWINFO_LOG_LEVEL);
  * PMC->AOREG1 register. The reset-cause bits are only cleared by a Power-On or
  * Brown-Out reset, or by software writing the register.
  *
+ * On parts whose header has no AOREG1 reset-cause fields (e.g. MCXW2xx) the
+ * boot ROM copies PMC->RESETCAUSE into AOREG1[15:4] and clears RESETCAUSE,
+ * so AOREG1 is read using the RESETCAUSE bit layout shifted by 4.
+ *
  * Watchdog reset sources: the windowed watchdog (WDTRESET) plus the optional
- * Code Watchdog (CDOGRESET), which only exists on some LPC55xx parts.
+ * Code Watchdog (CDOGRESET), which only exists on some parts.
  */
+#ifdef PMC_AOREG1_WDTRESET_MASK
+#define NXP_PMC_RST(name) PMC_AOREG1_##name##_MASK
 #ifdef PMC_AOREG1_CDOGRESET_MASK
-#define NXP_PMC_WATCHDOG_MASK (PMC_AOREG1_WDTRESET_MASK | PMC_AOREG1_CDOGRESET_MASK)
+#define NXP_PMC_CDOG_MASK PMC_AOREG1_CDOGRESET_MASK
+#endif
 #else
-#define NXP_PMC_WATCHDOG_MASK (PMC_AOREG1_WDTRESET_MASK)
+/* Boot ROM stores PMC->RESETCAUSE in AOREG1[15:4]. */
+#define NXP_PMC_AOREG1_RESETCAUSE_SHIFT 4U
+#define NXP_PMC_RST(name) (PMC_RESETCAUSE_##name##_MASK << NXP_PMC_AOREG1_RESETCAUSE_SHIFT)
+#ifdef PMC_RESETCAUSE_CDOGRESET_MASK
+#define NXP_PMC_CDOG_MASK (PMC_RESETCAUSE_CDOGRESET_MASK << NXP_PMC_AOREG1_RESETCAUSE_SHIFT)
+#endif
 #endif
 
-#define NXP_PMC_RESET_CAUSE_MASK                                                          \
-	(PMC_AOREG1_POR_MASK | PMC_AOREG1_PADRESET_MASK | PMC_AOREG1_BODRESET_MASK |        \
-	 PMC_AOREG1_SYSTEMRESET_MASK | PMC_AOREG1_SWRRESET_MASK | NXP_PMC_WATCHDOG_MASK |  \
-	 PMC_AOREG1_DPDRESET_WAKEUPIO_MASK | PMC_AOREG1_DPDRESET_RTC_MASK |                 \
-	 PMC_AOREG1_DPDRESET_OSTIMER_MASK)
+#ifdef NXP_PMC_CDOG_MASK
+#define NXP_PMC_WATCHDOG_MASK (NXP_PMC_RST(WDTRESET) | NXP_PMC_CDOG_MASK)
+#else
+#define NXP_PMC_WATCHDOG_MASK (NXP_PMC_RST(WDTRESET))
+#endif
+
+#define NXP_PMC_DPD_MASK                                                                           \
+	(NXP_PMC_RST(DPDRESET_WAKEUPIO) | NXP_PMC_RST(DPDRESET_RTC) | NXP_PMC_RST(DPDRESET_OSTIMER))
+
+#define NXP_PMC_RESET_CAUSE_MASK                                                                   \
+	(NXP_PMC_RST(POR) | NXP_PMC_RST(PADRESET) | NXP_PMC_RST(BODRESET) |                        \
+	 NXP_PMC_RST(SYSTEMRESET) | NXP_PMC_RST(SWRRESET) | NXP_PMC_WATCHDOG_MASK |                \
+	 NXP_PMC_DPD_MASK)
 
 /**
  * @brief Translate from PMC AOREG1 reset source mask to Zephyr hwinfo mask.
@@ -43,19 +63,19 @@ static uint32_t hwinfo_nxp_pmc_xlate_reset_sources(uint32_t sources)
 {
 	uint32_t mask = 0;
 
-	if (sources & PMC_AOREG1_POR_MASK) {
+	if (sources & NXP_PMC_RST(POR)) {
 		mask |= RESET_POR;
 	}
 
-	if (sources & PMC_AOREG1_PADRESET_MASK) {
+	if (sources & NXP_PMC_RST(PADRESET)) {
 		mask |= RESET_PIN;
 	}
 
-	if (sources & PMC_AOREG1_BODRESET_MASK) {
+	if (sources & NXP_PMC_RST(BODRESET)) {
 		mask |= RESET_BROWNOUT;
 	}
 
-	if (sources & (PMC_AOREG1_SYSTEMRESET_MASK | PMC_AOREG1_SWRRESET_MASK)) {
+	if (sources & (NXP_PMC_RST(SYSTEMRESET) | NXP_PMC_RST(SWRRESET))) {
 		mask |= RESET_SOFTWARE;
 	}
 
@@ -63,8 +83,7 @@ static uint32_t hwinfo_nxp_pmc_xlate_reset_sources(uint32_t sources)
 		mask |= RESET_WATCHDOG;
 	}
 
-	if (sources & (PMC_AOREG1_DPDRESET_WAKEUPIO_MASK | PMC_AOREG1_DPDRESET_RTC_MASK |
-		       PMC_AOREG1_DPDRESET_OSTIMER_MASK)) {
+	if (sources & NXP_PMC_DPD_MASK) {
 		mask |= RESET_LOW_POWER_WAKE;
 	}
 
