@@ -73,7 +73,7 @@ LOG_MODULE_REGISTER(uart_cdns, CONFIG_UART_LOG_LEVEL);
 #define CDNS_MR_STOPMODE_1_5_BIT 0x00000040U /**< 1.5 stop bits */
 #define CDNS_MR_STOPMODE_1_BIT   0x00000000U /**< 1 stop bit */
 #define CDNS_MR_STOPMODE_SHIFT   6U          /**< Stop bits shift */
-#define CDNS_MR_STOPMODE_MASK    0x000000A0U /**< Stop bits mask */
+#define CDNS_MR_STOPMODE_MASK    GENMASK(7, 6) /**< Stop bits mask */
 #define CDNS_MR_PARITY_NONE      0x00000020U /**< No parity mode */
 #define CDNS_MR_PARITY_MARK      0x00000018U /**< Mark parity mode */
 #define CDNS_MR_PARITY_SPACE     0x00000010U /**< Space parity mode */
