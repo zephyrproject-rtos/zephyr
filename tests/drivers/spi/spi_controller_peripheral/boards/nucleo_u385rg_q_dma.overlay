@@ -1,0 +1,24 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DMA for the SPI controller/peripheral test.
+ * GPDMA requests follow SPI1 (RX 6 / TX 7) from the loopback overlay:
+ * SPI2 RX 8, SPI2 TX 9, SPI3 RX 10, SPI3 TX 11.
+ */
+
+&gpdma1 {
+	status = "okay";
+};
+
+&spi2 {
+	dmas = <&gpdma1 0 9 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 8 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
+
+&spi3 {
+	dmas = <&gpdma1 2 11 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 3 10 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
