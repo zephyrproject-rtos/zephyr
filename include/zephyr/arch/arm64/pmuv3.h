@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -120,8 +121,12 @@ typedef enum {
 
 /** @cond INTERNAL_HIDDEN */
 
+struct pmu_event_info;
+
 int arch_pmu_init(void);
 uint32_t arch_pmu_num_counters(void);
+uint32_t arch_pmu_num_events(void);
+int arch_pmu_event_get(uint32_t index, struct pmu_event_info *info);
 void arch_pmu_get_info(pmu_info_t *info);
 int arch_pmu_counter_config(uint32_t counter, pmu_evt_t event);
 void arch_pmu_counter_enable(uint32_t counter);
@@ -140,6 +145,8 @@ void arch_pmu_counter_clear_overflow(uint32_t counter);
 
 #define pmu_init                   arch_pmu_init
 #define pmu_num_counters           arch_pmu_num_counters
+#define pmu_num_events             arch_pmu_num_events
+#define pmu_event_get              arch_pmu_event_get
 #define pmu_get_info               arch_pmu_get_info
 #define pmu_counter_config         arch_pmu_counter_config
 #define pmu_counter_enable         arch_pmu_counter_enable
