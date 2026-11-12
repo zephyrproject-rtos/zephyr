@@ -37,6 +37,10 @@
 /* Value of e that passes the check but fails the commit */
 #define TEST_E_COMMIT_FAILS 13
 
+/* An AGENT-CAPABILITIES statement the tests list in sysORTable */
+#define TEST_CAPABILITY_OID   1, 3, 6, 1, 4, 1, 99999, 2, 1
+#define TEST_CAPABILITY_DESCR "Test agent capabilities"
+
 struct test_row {
 	uint32_t idx[2];
 	size_t idx_len;

@@ -116,10 +116,12 @@ config SNMP_MIB2_SYSTEM
 	default y
 	help
 	  Implement the system group: the seven scalars of RFC 1213, sysDescr
-	  to sysServices, and sysORLastChange with an empty sysORTable, which
-	  RFC 3418 adds. sysName, sysContact and sysLocation can be changed by
-	  the application and by SET requests; their initial values come from
-	  the options below.
+	  to sysServices, and sysORLastChange with sysORTable, which RFC 3418
+	  adds. The table lists the statements declared with
+	  SNMP_CAPABILITY_DEFINE(), among them snmpBasicComplianceRev2 when the
+	  snmp group and the notifications are enabled as well. sysName,
+	  sysContact and sysLocation can be changed by the application and by
+	  SET requests; their initial values come from the options below.
 
 if SNMP_MIB2_SYSTEM
 

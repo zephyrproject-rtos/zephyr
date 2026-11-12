@@ -11,6 +11,7 @@
 #include <zephyr/ztest.h>
 
 #include "helpers.h"
+#include "test_objects.h"
 
 #define SYSTEM(n) 1, 3, 6, 1, 2, 1, 1, (n)
 
@@ -236,9 +237,9 @@ ZTEST(snmp_mib2_system, test_walk)
 	const struct req_vb vbs[] = {VB_NULL(1, 3, 6, 1, 2, 1, 1)};
 	struct response rsp;
 
-	zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_BULK_REQUEST, 0, 9, vbs,
+	zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_BULK_REQUEST, 0, 15, vbs,
 			      ARRAY_SIZE(vbs), &rsp) > 0);
-	expect_ok(&rsp, 9);
+	expect_ok(&rsp, 15);
 
 	for (uint32_t i = 0; i < 8; i++) {
 		uint32_t expected[] = {SYSTEM(i + 1), 0};
@@ -246,10 +247,18 @@ ZTEST(snmp_mib2_system, test_walk)
 		expect_oid(&rsp.vb[i], expected, ARRAY_SIZE(expected));
 	}
 
-	/* The empty sysORTable adds nothing: the walk leaves the group */
-	zassert_false(snmp_oid_has_prefix(rsp.vb[8].oid, rsp.vb[8].oid_len,
+	/* The two rows of sysORTable follow, column by column, then the walk
+	 * leaves the group.
+	 */
+	for (uint32_t col = 2; col <= 4; col++) {
+		for (uint32_t row = 1; row <= 2; row++) {
+			expect_oid(&rsp.vb[8 + (col - 2) * 2 + row - 1],
+				   OID(SYS_OR_ENTRY, col, row), OID_LEN(SYS_OR_ENTRY, col, row));
+		}
+	}
+	zassert_false(snmp_oid_has_prefix(rsp.vb[14].oid, rsp.vb[14].oid_len,
 					  OID(1, 3, 6, 1, 2, 1, 1), OID_LEN(1, 3, 6, 1, 2, 1, 1)),
-		      "A ninth object inside the system group");
+		      "A fifteenth object inside the system group");
 
 	zassert_equal(rsp.vb[0].tag, SNMP_BER_TAG_OCTET_STRING);
 	zassert_equal(rsp.vb[1].tag, SNMP_BER_TAG_OID);
@@ -262,34 +271,71 @@ ZTEST(snmp_mib2_system, test_walk)
 	zassert_equal(rsp.vb[7].u32, 0, "sysORLastChange must be zero");
 }
 
-/* RFC 3418: sysORTable exists but has no entries. */
-ZTEST(snmp_mib2_system, test_or_table_empty)
+/* RFC 3418: sysORTable lists the statements declared with
+ * SNMP_CAPABILITY_DEFINE(): the library's snmpBasicComplianceRev2, since the
+ * snmp group and the notifications are enabled, and the one of these tests.
+ */
+ZTEST(snmp_mib2_system, test_or_table)
 {
-	const struct req_vb get[] = {
-		VB_NULL(SYS_OR_LAST_CHANGE, 0), VB_NULL(SYS_OR_ENTRY, 2, 1),
-		VB_NULL(SYS_OR_ENTRY, 3, 1),    VB_NULL(SYS_OR_ENTRY, 4, 1),
+	static const uint32_t basic_compliance_rev2[] = {1, 3, 6, 1, 6, 3, 1, 2, 1, 3};
+	static const uint32_t test_capability[] = {TEST_CAPABILITY_OID};
+	const struct req_vb ids[] = {VB_NULL(SYS_OR_ENTRY, 2)};
+	const struct req_vb misc[] = {
+		VB_NULL(SYS_OR_LAST_CHANGE, 0),
+		VB_NULL(SYS_OR_ENTRY, 4, 1),
 		VB_NULL(SYS_OR_ENTRY, 1, 1),
+		VB_NULL(SYS_OR_ENTRY, 2, 3),
 	};
-	const struct req_vb next[] = {VB_NULL(SYS_OR_ENTRY)};
+	bool seen_basic = false, seen_test = false;
 	struct response rsp;
 
-	zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_REQUEST, 0, 0, get, ARRAY_SIZE(get),
-			      &rsp) > 0);
-	expect_ok(&rsp, 5);
-	zassert_equal(rsp.vb[0].tag, SNMP_BER_TAG_TIMETICKS);
-	zassert_equal(rsp.vb[0].u32, 0);
-	zassert_equal(rsp.vb[1].tag, SNMP_BER_TAG_NO_SUCH_INSTANCE, "sysORID.1");
-	zassert_equal(rsp.vb[2].tag, SNMP_BER_TAG_NO_SUCH_INSTANCE, "sysORDescr.1");
-	zassert_equal(rsp.vb[3].tag, SNMP_BER_TAG_NO_SUCH_INSTANCE, "sysORUpTime.1");
-	zassert_equal(rsp.vb[4].tag, SNMP_BER_TAG_NO_SUCH_OBJECT, "sysORIndex is not accessible");
+	/* Both rows are listed; the section decides their order */
+	zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_BULK_REQUEST, 0, 3, ids,
+			      ARRAY_SIZE(ids), &rsp) > 0);
+	expect_ok(&rsp, 3);
+	for (size_t i = 0; i < 2; i++) {
+		const struct req_vb descr[] = {
+			VB_NULL(SYS_OR_ENTRY, 3, rsp.vb[i].oid[rsp.vb[i].oid_len - 1])};
+		struct response drsp;
 
-	/* GETNEXT into the table skips it entirely */
-	zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_NEXT_REQUEST, 0, 0, next,
-			      ARRAY_SIZE(next), &rsp) > 0);
-	expect_ok(&rsp, 1);
-	zassert_false(snmp_oid_has_prefix(rsp.vb[0].oid, rsp.vb[0].oid_len, OID(SYS_OR_ENTRY),
-					  OID_LEN(SYS_OR_ENTRY)),
-		      "GETNEXT returned an instance of the empty table");
+		expect_oid(&rsp.vb[i], OID(SYS_OR_ENTRY, 2, i + 1),
+			   OID_LEN(SYS_OR_ENTRY, 2, i + 1));
+		zassert_equal(rsp.vb[i].tag, SNMP_BER_TAG_OID);
+
+		zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_REQUEST, 0, 0, descr,
+				      ARRAY_SIZE(descr), &drsp) > 0);
+		expect_ok(&drsp, 1);
+		zassert_equal(drsp.vb[0].tag, SNMP_BER_TAG_OCTET_STRING);
+
+		if (snmp_oid_cmp(rsp.vb[i].val_oid, rsp.vb[i].val_oid_len, basic_compliance_rev2,
+				 ARRAY_SIZE(basic_compliance_rev2)) == 0) {
+			seen_basic = true;
+			zassert_true(drsp.vb[0].str_len > 0);
+		} else if (snmp_oid_cmp(rsp.vb[i].val_oid, rsp.vb[i].val_oid_len, test_capability,
+					ARRAY_SIZE(test_capability)) == 0) {
+			seen_test = true;
+			zassert_equal(drsp.vb[0].str_len, strlen(TEST_CAPABILITY_DESCR));
+			zassert_mem_equal(drsp.vb[0].str, TEST_CAPABILITY_DESCR,
+					  drsp.vb[0].str_len);
+		} else {
+			zassert_unreachable("Unexpected sysORID in row %zu", i + 1);
+		}
+	}
+	zassert_true(seen_basic, "snmpBasicComplianceRev2 is not listed");
+	zassert_true(seen_test, "The test capability is not listed");
+	zassert_false(snmp_oid_has_prefix(rsp.vb[2].oid, rsp.vb[2].oid_len, OID(SYS_OR_ENTRY, 2),
+					  OID_LEN(SYS_OR_ENTRY, 2)),
+		      "A third row");
+
+	zassert_true(exchange(V2C, "public", SNMP_BER_TAG_GET_REQUEST, 0, 0, misc, ARRAY_SIZE(misc),
+			      &rsp) > 0);
+	expect_ok(&rsp, 4);
+	zassert_equal(rsp.vb[0].tag, SNMP_BER_TAG_TIMETICKS);
+	zassert_equal(rsp.vb[0].u32, 0, "sysORLastChange");
+	zassert_equal(rsp.vb[1].tag, SNMP_BER_TAG_TIMETICKS, "sysORUpTime.1");
+	zassert_equal(rsp.vb[1].u32, 0);
+	zassert_equal(rsp.vb[2].tag, SNMP_BER_TAG_NO_SUCH_OBJECT, "sysORIndex is not accessible");
+	zassert_equal(rsp.vb[3].tag, SNMP_BER_TAG_NO_SUCH_INSTANCE, "There are two rows");
 }
 
 ZTEST_SUITE(snmp_mib2_system, NULL, NULL, before, NULL, NULL);
