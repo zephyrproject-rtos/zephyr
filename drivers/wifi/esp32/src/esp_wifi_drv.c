@@ -860,9 +860,14 @@ static void esp32_wifi_handle_connect_cancel(void)
 {
 	if (esp32_data.state == ESP32_STA_CONNECTING) {
 		esp32_wifi_connect_abort(WIFI_STATUS_CONN_FAIL);
-	} else if (esp32_data.state == ESP32_STA_CONNECTED ||
-		   esp32_data.state == ESP32_STA_ROAMING) {
+	} else if (esp32_data.state == ESP32_STA_CONNECTED) {
 		(void)esp_wifi_disconnect();
+	} else if (esp32_data.state == ESP32_STA_ROAMING) {
+		(void)esp_wifi_disconnect();
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+		(void)k_work_reschedule(&esp32_data.roam_timeout_work,
+					K_MSEC(ESP32_WIFI_CONNECT_ABORT_TIMEOUT_MS));
+#endif
 	}
 }
 
@@ -1824,9 +1829,6 @@ static int esp32_wifi_disconnect(const struct device *dev __unused,
 
 	(void)k_mutex_unlock(&esp32_wifi_conn_lock);
 
-#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
-	(void)k_work_cancel_delayable(&esp32_data.roam_timeout_work);
-#endif
 #if defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
 	(void)k_work_cancel_delayable(&esp32_data.rssi_recover_work);
 #endif
