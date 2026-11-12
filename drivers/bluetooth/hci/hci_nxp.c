@@ -332,7 +332,7 @@ static int bt_nxp_get_provisioned_addr(uint8_t addr[BT_ADDR_SIZE])
 {
 	uint8_t raw[BT_ADDR_SIZE];
 
-	for (size_t i = 0; i < ARRAY_SIZE(bd_addr_cells); i++) {
+	ARRAY_FOR_EACH(bd_addr_cells, i) {
 		const struct nvmem_cell *cell = &bd_addr_cells[i];
 		bool blank_00 = true;
 		bool blank_ff = true;
@@ -349,7 +349,7 @@ static int bt_nxp_get_provisioned_addr(uint8_t addr[BT_ADDR_SIZE])
 			continue;
 		}
 
-		for (size_t j = 0; j < sizeof(raw); j++) {
+		ARRAY_FOR_EACH(raw, j) {
 			blank_00 &= (raw[j] == 0x00U);
 			blank_ff &= (raw[j] == 0xFFU);
 		}
@@ -370,11 +370,11 @@ static int bt_nxp_get_provisioned_addr(uint8_t addr[BT_ADDR_SIZE])
 
 static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 {
-	uint8_t bleDeviceAddress[BT_ADDR_SIZE] = {0};
+	uint8_t bd_addr[BT_ADDR_SIZE] = {0};
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_SET_MAC_ADDR_CMD);
-	uint8_t addrOUI[BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
+	uint8_t addr_oui[BD_ADDR_OUI_PART_SIZE] = {BD_ADDR_OUI};
 	uint8_t uid[16] = {0};
-	uint8_t uuidLen;
+	uint8_t uid_len;
 	uint32_t unique_val_crc = 0;
 	uint8_t params[HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH] = {BT_USER_BD, 0x06U};
 
@@ -385,20 +385,20 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	 */
 	if (bt_addr_eq(public_addr, BT_ADDR_ANY) || bt_addr_eq(public_addr, BT_ADDR_NONE)) {
 #if DT_INST_NODE_HAS_PROP(0, nvmem_cells)
-		if (bt_nxp_get_provisioned_addr(bleDeviceAddress) == 0) {
+		if (bt_nxp_get_provisioned_addr(bd_addr) == 0) {
 			LOG_INF("Using BD address provisioned in NVM");
 			goto send;
 		}
 #endif
-		PLATFORM_GetMCUUid(uid, &uuidLen);
+		PLATFORM_GetMCUUid(uid, &uid_len);
 
-		if (uuidLen > 0) {
+		if (uid_len > 0) {
 			/* Calculate a 32-bit IEEE CRC over the entire unique ID (uid)
 			 * Initial CRC value is 0xFFFFFFFFU for maximum randomization
 			 */
-			unique_val_crc = crc32_ieee_update(HCI_BT_MAC_ADDR_CRC_SEED, uid, uuidLen);
+			unique_val_crc = crc32_ieee_update(HCI_BT_MAC_ADDR_CRC_SEED, uid, uid_len);
 			/* Copy the lower 3 bytes (24 bits) of the CRC result */
-			memcpy((void *)bleDeviceAddress, (const void *)&unique_val_crc,
+			memcpy((void *)bd_addr, (const void *)&unique_val_crc,
 			       BD_ADDR_UUID_PART_SIZE);
 		} else {
 			LOG_ERR("UUID is empty, cannot generate address.");
@@ -406,17 +406,16 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 		}
 
 		/* Set 3 MSB of MAC address from OUI */
-		memcpy((void *)(bleDeviceAddress + BD_ADDR_UUID_PART_SIZE), (void *)addrOUI,
+		memcpy((void *)(bd_addr + BD_ADDR_UUID_PART_SIZE), (void *)addr_oui,
 		       BD_ADDR_OUI_PART_SIZE);
 	} else {
-		bt_addr_copy((bt_addr_t *)bleDeviceAddress, public_addr);
+		bt_addr_copy((bt_addr_t *)bd_addr, public_addr);
 	}
 
 #if DT_INST_NODE_HAS_PROP(0, nvmem_cells)
 send:
 #endif
-	memcpy(&params[2], (const void *)bleDeviceAddress,
-	       BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
+	memcpy(&params[2], (const void *)bd_addr, BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
 
 	(void)net_buf_simple_add_mem(&cmd, params, sizeof(params));
 
