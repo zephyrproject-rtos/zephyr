@@ -7,6 +7,8 @@
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/ztest.h>
+#include "bmp581_emul.h"
+#include "bmp581.h"
 
 #include "bmp581_emul.h"
 
@@ -112,4 +114,47 @@ ZTEST_F(bmp581, test_spi_fetch_temp)
 ZTEST_F(bmp581, test_spi_fetch_press)
 {
 	check_fetch_press(fixture->spi_dev, fixture->spi_target);
+}
+
+static uint8_t get_reg(const struct emul *target, uint8_t reg)
+{
+	uint8_t val = 0;
+
+	zassert_ok(bmp581_emul_get_reg(target, reg, &val));
+
+	return val;
+}
+
+static void check_attr_odr(const struct device *dev, const struct emul *target)
+{
+	const struct sensor_value odr = {.val1 = 0x0A};
+	uint8_t before = get_reg(target, BMP5_REG_ODR_CONFIG);
+	uint8_t reg;
+
+	zassert_ok(sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr));
+
+	reg = get_reg(target, BMP5_REG_ODR_CONFIG);
+	/* ODR is bits [6:2]; verify setting and check adjacent bits are preserved */
+	zassert_equal(BMP5_GET_BITSLICE(reg, BMP5_ODR), 0x0A);
+	zassert_equal(reg & ~BMP5_ODR_MSK, before & ~BMP5_ODR_MSK);
+}
+
+ZTEST_F(bmp581, test_i2c_attr_odr_reg)
+{
+	check_attr_odr(fixture->i2c_dev, fixture->i2c_target);
+}
+
+ZTEST_F(bmp581, test_spi_attr_odr_reg)
+{
+	check_attr_odr(fixture->spi_dev, fixture->spi_target);
+}
+
+ZTEST_F(bmp581, test_emul_get_reg_invalid)
+{
+	uint8_t val;
+
+	zassert_equal(bmp581_emul_get_reg(NULL, BMP5_REG_ODR_CONFIG, &val), -EINVAL);
+	zassert_equal(bmp581_emul_get_reg(fixture->i2c_target, BMP5_REG_ODR_CONFIG, NULL), -EINVAL);
+	zassert_equal(bmp581_emul_get_reg(fixture->i2c_target, BMP581_EMUL_NUM_REGS, &val),
+		      -EINVAL);
 }
