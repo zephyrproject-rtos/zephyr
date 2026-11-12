@@ -305,6 +305,38 @@ struct snmp_object {
 	Z_SNMP_OBJECT_DEFINE(_name, &(_table), _get, _set, _user_data, __VA_ARGS__)
 
 /**
+ * @brief A row of sysORTable: a compliance or capabilities statement the
+ * agent satisfies.
+ *
+ * Rows are placed in an iterable section by SNMP_CAPABILITY_DEFINE() and
+ * listed by the MIB-2 system group. sysORIndex is the position in the
+ * section, sysORUpTime is zero since every row exists from the start.
+ */
+struct snmp_capability {
+	/** Identifier of the MODULE-COMPLIANCE or AGENT-CAPABILITIES statement, sysORID. */
+	const uint32_t *oid;
+	/** Number of sub-identifiers in @ref oid. */
+	uint8_t oid_len;
+	/** Description of the statement, sysORDescr. */
+	const char *descr;
+};
+
+/**
+ * @brief Declare a compliance or capabilities statement for sysORTable.
+ *
+ * @param _name C identifier of the entry, unique within the build.
+ * @param _descr Description as a string literal, at most 255 characters.
+ * @param ... Sub-identifiers of the statement, for example 1, 3, 6, 1, 6, 3, 1, 2, 1, 3.
+ */
+#define SNMP_CAPABILITY_DEFINE(_name, _descr, ...)                                                 \
+	static const uint32_t _name##_oid[] = {__VA_ARGS__};                                       \
+	const STRUCT_SECTION_ITERABLE(snmp_capability, _name) = {                                  \
+		.oid = _name##_oid,                                                                \
+		.oid_len = ARRAY_SIZE(_name##_oid),                                                \
+		.descr = _descr,                                                                   \
+	}
+
+/**
  * @brief Compare two object identifiers lexicographically.
  *
  * A proper prefix sorts before any of its extensions, as SNMP requires.

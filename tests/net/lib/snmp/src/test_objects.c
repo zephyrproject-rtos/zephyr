@@ -308,6 +308,8 @@ static int u_col1_get(const struct snmp_object *obj, void *row, struct snmp_valu
 	return 0;
 }
 
+SNMP_CAPABILITY_DEFINE(test_capability, TEST_CAPABILITY_DESCR, TEST_CAPABILITY_OID);
+
 /* Defined in an order that differs from their OID order. */
 SNMP_SCALAR_DEFINE(test_b, b_get, NULL, NULL, TEST_OID_B);
 SNMP_COLUMN_DEFINE(test_t_col2, test_t.table, t_col2_get, NULL, NULL, TEST_OID_T_COL2);

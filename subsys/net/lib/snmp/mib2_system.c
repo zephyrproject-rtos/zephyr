@@ -4,8 +4,9 @@
  */
 
 /* The system group, 1.3.6.1.2.1.1: the seven scalars of RFC 1213 plus
- * sysORLastChange and sysORTable of RFC 3418, which stay at zero and empty
- * since the agent registers no capability modules.
+ * sysORLastChange and sysORTable of RFC 3418. The table lists the
+ * compliance statements this build satisfies, all present from the start,
+ * so sysORLastChange stays at zero.
  */
 
 #include <errno.h>
@@ -243,39 +244,67 @@ static int sys_or_last_change_get(const struct snmp_object *obj, void *row, stru
 	ARG_UNUSED(obj);
 	ARG_UNUSED(row);
 
-	/* No entry was ever added to sysORTable. */
+	/* Every entry of sysORTable exists since the agent started. */
 	val->type = SNMP_TYPE_TIMETICKS;
 	val->u32 = 0U;
 
 	return 0;
 }
 
-/* sysORTable has no rows, so its columns have no instances. */
+/* sysORTable rows are the snmp_capability entries of the build. The
+ * library contributes snmpBasicComplianceRev2 of RFC 3418 when the snmp
+ * group, snmpSetSerialNo and the coldStart and authenticationFailure
+ * notifications are built besides this group.
+ */
+#if defined(CONFIG_SNMP_MIB2_SNMP) && defined(CONFIG_SNMP_NOTIFICATIONS)
+SNMP_CAPABILITY_DEFINE(snmp_basic_compliance_rev2, "The MIB module for SNMP entities", 1, 3, 6, 1,
+		       6, 3, 1, 2, 1, 3);
+#endif
+
+STRUCT_SECTION_START_EXTERN(snmp_capability);
+
 static void sys_or_foreach_row(const struct snmp_table *tbl, snmp_row_cb_t cb, void *user_data)
 {
 	ARG_UNUSED(tbl);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(user_data);
+
+	STRUCT_SECTION_FOREACH(snmp_capability, cap) {
+		cb((void *)cap, user_data);
+	}
 }
 
 static int sys_or_row_index(const struct snmp_table *tbl, void *row, uint32_t *arcs,
 			    size_t max_arcs)
 {
-	ARG_UNUSED(tbl);
-	ARG_UNUSED(row);
-	ARG_UNUSED(arcs);
-	ARG_UNUSED(max_arcs);
+	const struct snmp_capability *cap = row;
 
-	return -ENOENT;
+	ARG_UNUSED(tbl);
+
+	if (max_arcs < 1U) {
+		return -EMSGSIZE;
+	}
+
+	/* sysORIndex is the position in the section, counting from one. */
+	arcs[0] = (uint32_t)(cap - STRUCT_SECTION_START(snmp_capability)) + 1U;
+
+	return 1;
 }
 
 static void *sys_or_row_lookup(const struct snmp_table *tbl, const uint32_t *arcs, size_t len)
 {
-	ARG_UNUSED(tbl);
-	ARG_UNUSED(arcs);
-	ARG_UNUSED(len);
+	const struct snmp_capability *cap;
+	size_t count;
 
-	return NULL;
+	ARG_UNUSED(tbl);
+
+	STRUCT_SECTION_COUNT(snmp_capability, &count);
+
+	if (len != 1U || arcs[0] < 1U || arcs[0] > count) {
+		return NULL;
+	}
+
+	STRUCT_SECTION_GET(snmp_capability, arcs[0] - 1U, &cap);
+
+	return (void *)cap;
 }
 
 static const struct snmp_table sys_or_table = {
@@ -284,14 +313,39 @@ static const struct snmp_table sys_or_table = {
 	.row_lookup = sys_or_row_lookup,
 };
 
-/* Never reached, since the table yields no row. */
-static int sys_or_get(const struct snmp_object *obj, void *row, struct snmp_value *val)
+static int sys_or_id_get(const struct snmp_object *obj, void *row, struct snmp_value *val)
+{
+	const struct snmp_capability *cap = row;
+
+	ARG_UNUSED(obj);
+
+	val->type = SNMP_TYPE_OID;
+	val->oid.arcs = cap->oid;
+	val->oid.len = cap->oid_len;
+
+	return 0;
+}
+
+static int sys_or_descr_get(const struct snmp_object *obj, void *row, struct snmp_value *val)
+{
+	const struct snmp_capability *cap = row;
+
+	ARG_UNUSED(obj);
+
+	value_from_cstr(val, cap->descr);
+
+	return 0;
+}
+
+static int sys_or_uptime_get(const struct snmp_object *obj, void *row, struct snmp_value *val)
 {
 	ARG_UNUSED(obj);
 	ARG_UNUSED(row);
-	ARG_UNUSED(val);
 
-	return -ENOENT;
+	val->type = SNMP_TYPE_TIMETICKS;
+	val->u32 = 0U;
+
+	return 0;
 }
 
 SNMP_SCALAR_DEFINE(mib2_sys_descr, sys_descr_get, NULL, NULL, MIB2_SYSTEM(1));
@@ -303,6 +357,8 @@ SNMP_SCALAR_DEFINE(mib2_sys_location, string_get, string_set, sys_location, MIB2
 SNMP_SCALAR_DEFINE(mib2_sys_services, sys_services_get, NULL, NULL, MIB2_SYSTEM(7));
 SNMP_SCALAR_DEFINE(mib2_sys_or_last_change, sys_or_last_change_get, NULL, NULL, MIB2_SYSTEM(8));
 /* sysORIndex is not-accessible and therefore not registered. */
-SNMP_COLUMN_DEFINE(mib2_sys_or_id, sys_or_table, sys_or_get, NULL, NULL, MIB2_SYS_OR_ENTRY(2));
-SNMP_COLUMN_DEFINE(mib2_sys_or_descr, sys_or_table, sys_or_get, NULL, NULL, MIB2_SYS_OR_ENTRY(3));
-SNMP_COLUMN_DEFINE(mib2_sys_or_uptime, sys_or_table, sys_or_get, NULL, NULL, MIB2_SYS_OR_ENTRY(4));
+SNMP_COLUMN_DEFINE(mib2_sys_or_id, sys_or_table, sys_or_id_get, NULL, NULL, MIB2_SYS_OR_ENTRY(2));
+SNMP_COLUMN_DEFINE(mib2_sys_or_descr, sys_or_table, sys_or_descr_get, NULL, NULL,
+		   MIB2_SYS_OR_ENTRY(3));
+SNMP_COLUMN_DEFINE(mib2_sys_or_uptime, sys_or_table, sys_or_uptime_get, NULL, NULL,
+		   MIB2_SYS_OR_ENTRY(4));
