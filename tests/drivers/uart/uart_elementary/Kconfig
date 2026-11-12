@@ -22,4 +22,12 @@ config UART_ELEMENTARY_NO_FLOW_CTRL
 	  Use UART_CFG_FLOW_CTRL_NONE instead of UART_CFG_FLOW_CTRL_RTS_CTS
 	  for boards whose UART driver does not support hardware flow control.
 
+config UART_INT_STRESS_TEST_TIMEOUT
+	int "Single test case length (in milliseconds)"
+	depends on DUAL_UART_TEST
+	default 3000
+	help
+	  For how long the stress test is running. The higher this number the longer the
+	  test and therefore the higher likelihood an unlikely race/event will be triggered.
+
 source "Kconfig.zephyr"
