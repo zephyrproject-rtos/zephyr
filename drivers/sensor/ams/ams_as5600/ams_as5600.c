@@ -46,9 +46,15 @@ static int as5600_fetch(const struct device *dev, enum sensor_channel chan)
 	const struct as5600_dev_cfg *dev_cfg = dev->config;
 
 	uint8_t status;
-	int err = i2c_reg_read_byte_dt(&dev_cfg->i2c_port,
-					AS5600_STATUS_REGISTER,
-					&status);
+	int err;
+
+	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_ROTATION)) {
+		return -ENOTSUP;
+	}
+
+	err = i2c_reg_read_byte_dt(&dev_cfg->i2c_port,
+				     AS5600_STATUS_REGISTER,
+				     &status);
 
 	if (err != 0) {
 		LOG_ERR("Failed to read status register: %d", err);
