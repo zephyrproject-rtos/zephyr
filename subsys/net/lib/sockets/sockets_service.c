@@ -36,6 +36,9 @@ static struct service {
 	int count;
 } svc_ctx;
 
+/* Incremented on every registration change, under the lock. */
+static atomic_t svc_generation;
+
 #define get_idx(svc) (*(svc->idx))
 
 void net_socket_service_foreach(net_socket_service_cb_t cb, void *user_data)
@@ -102,6 +105,8 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 			svc->pev[i].user_data = user_data;
 		}
 	}
+
+	atomic_inc(&svc_generation);
 
 	/* Tell the thread to re-read the variables */
 	zvfs_eventfd_write(svc_ctx.events[0].fd, 1);
@@ -196,6 +201,7 @@ static void socket_service_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	int ret, i, fd, count = 0;
+	atomic_val_t generation;
 	zvfs_eventfd_t value;
 
 	STRUCT_SECTION_COUNT(net_socket_service_desc, &ret);
@@ -246,6 +252,8 @@ restart:
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	generation = atomic_get(&svc_generation);
+
 	/* Copy individual events to the big array */
 	STRUCT_SECTION_FOREACH(net_socket_service_desc, svc) {
 		for (int j = 0; j < svc->pev_len; j++) {
@@ -284,6 +292,16 @@ restart:
 			}
 
 			if (svc_ctx.events[i].revents > 0) {
+				/* A service that closes its fds and opens new ones,
+				 * from a callback or from another thread, gets the
+				 * same fd numbers back, so the results of this round
+				 * cannot be told apart from events of the new fds.
+				 * Poll again instead.
+				 */
+				if (atomic_get(&svc_generation) != generation) {
+					goto restart;
+				}
+
 				ret = trigger_work(&svc_ctx.events[i]);
 				if (ret < 0) {
 					NET_DBG("Triggering work failed (%d)", ret);
