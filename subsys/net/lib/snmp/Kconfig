@@ -19,6 +19,58 @@ config SNMP_OID_MAX_LEN
 	  can decode, encode or return. Requests naming a longer identifier
 	  are dropped.
 
+config SNMP_V1
+	bool "Accept SNMPv1 requests"
+	default y
+	help
+	  Answer version 1 messages. Errors are reported with the version 1
+	  status codes and no exception values are used.
+
+config SNMP_V2C
+	bool "Accept SNMPv2c requests"
+	default y
+	help
+	  Answer version 2c messages, including GETBULK requests.
+
+config SNMP_MAX_VARBINDS
+	int "Maximum repeated variables in a GETBULK request"
+	default 16
+	range 1 255
+	help
+	  A GETBULK request with more repeating variable bindings than this
+	  is answered with a single repetition. Each repeater costs one object
+	  identifier of SNMP_OID_MAX_LEN sub-identifiers of RAM.
+
+config SNMP_COMMUNITY_MAX_LEN
+	int "Maximum community string length"
+	default 32
+	range 1 255
+	help
+	  Longest community string the agent stores, in bytes.
+
+config SNMP_COMMUNITY_READ
+	string "Default read community"
+	default "public"
+	help
+	  Community that grants GET, GETNEXT and GETBULK until the application
+	  calls snmp_agent_set_community(). An empty string disables read
+	  access until one is set.
+
+config SNMP_COMMUNITY_WRITE
+	string "Default write community"
+	default "private"
+	help
+	  Community that grants SET in addition to the read operations, until
+	  the application calls snmp_agent_set_community(). An empty string
+	  disables SET.
+
+config SNMP_SET_ENABLE
+	bool "Accept SET requests"
+	help
+	  Modify writable objects on SET requests carrying the write community.
+	  Without this option every SET request is answered with an
+	  authorizationError (noSuchName for SNMPv1).
+
 module = SNMP
 module-dep = NET_LOG
 module-str = Log level for SNMP
