@@ -20,6 +20,7 @@
 #include "util/mem.h"
 #include "util/memq.h"
 #include "util/mayfly.h"
+#include "util/dbuf.h"
 
 #include "ticker/ticker.h"
 
@@ -35,6 +36,10 @@
 #include "lll_adv.h"
 #include "lll_adv_pdu.h"
 #include "lll_adv_iso.h"
+#include "lll_scan.h"
+#include "lll_df_types.h"
+#include "lll_conn.h"
+#include "lll_sync.h"
 #include "lll_iso_tx.h"
 
 #include "lll_internal.h"
@@ -59,8 +64,12 @@ static int prepare_cb_common(struct lll_prepare_param *p);
 static int drift_prepare_cb(struct lll_prepare_param *p);
 static int resume_prepare_cb(struct lll_prepare_param *p);
 static uint16_t se_idx_get(const struct lll_adv_iso *lll);
+static uint32_t ticks_resume_get(void *next);
+static uint16_t se_resume_get(const struct lll_adv_iso *lll, void *next);
 static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next);
 static bool is_payload_pending(const struct lll_adv_iso *lll);
+static bool is_next_forced(void *next);
+static void resume_deadline_enqueue(struct lll_adv_iso *lll, void *next);
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
@@ -122,10 +131,19 @@ void lll_adv_iso_resume(void *param)
 	struct lll_adv_iso *lll;
 	uint32_t ticks_interval;
 	struct lll_event *e;
+	bool is_resume;
 	void *idx;
 	int err;
 
 	lll = param;
+
+	/* The yielded current BIG event can be done before the preemptor it yielded to is
+	 * dequeued, a resume prepared now would start before the preemptor and be preempted
+	 * by it again. Dequeue the preemptor first, so that the resume is prepared after it.
+	 */
+	if (lll_is_done(param, &is_resume)) {
+		ull_prepare_dequeue(TICKER_USER_ID_LLL);
+	}
 
 	/* Reservation is not of the current BIG event, its prepare is pending */
 	ticks_interval = HAL_TICKER_US_TO_TICKS(lll->iso_interval * ISO_INT_UNIT_US);
@@ -700,8 +718,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	/* Reset resume subevent flag */
 	lll->is_lll_resume = 0U;
 
-	/* Radio start and sequential subevent index of the first subevent */
-	lll->ticks_se_start = ticks_at_start;
+	/* Sequential subevent index of the first subevent */
 	lll->se_start = se_idx_get(lll);
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
@@ -848,12 +865,41 @@ static uint16_t se_idx_get(const struct lll_adv_iso *lll)
 	return se_idx;
 }
 
+/* Ticks at expire to date the resume of the current event at, so that it preempts at the end
+ * of the reserved radio use of the next event. The preempt timeout of a prepare is
+ * EVENT_OVERHEAD_XTAL_US less EVENT_OVERHEAD_PREEMPT_MIN_US after its ticks at expire.
+ */
+static uint32_t ticks_resume_get(void *next)
+{
+	const struct ull_hdr *ull_next = HDR_LLL2ULL(next);
+
+	return (ticker_ticks_now_get() + ull_next->ticks_slot +
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US)) & HAL_TICKER_CNTR_MASK;
+}
+
+/* Sequential packing index of the first subevent that the resume of the current event, dated
+ * at the end of the next event, transmits; calculated as the drift in prepare_cb_common(),
+ * with a tick of margin for the remainder.
+ */
+static uint16_t se_resume_get(const struct lll_adv_iso *lll, void *next)
+{
+	uint32_t ticks_diff;
+
+	ticks_diff = ticker_ticks_diff_get(ticks_resume_get(next), lll->ticks_anchor);
+	if ((ticks_diff & BIT(HAL_TICKER_CNTR_MSBIT)) != 0U) {
+		return 0U;
+	}
+
+	return DIV_ROUND_UP(HAL_TICKER_TICKS_TO_US(ticks_diff + 1U), lll->sub_interval);
+}
+
 /* Check if the preemptor event and the resume of the current sequential packing BIG event
  * would miss the last repetition of a BIS that has no repetition transmitted yet.
  */
 static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next)
 {
-	struct ull_hdr *ull_next;
+	const struct ull_hdr *ull_next;
 	uint16_t se_curr;
 	uint16_t se_bis;
 	uint8_t bis;
@@ -862,8 +908,6 @@ static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next)
 	se_curr = se_idx_get(lll);
 
 	for (bis = 0U, se_bis = 0U; bis < lll->num_bis; bis++, se_bis += lll->nse) {
-		uint32_t ticks_deadline;
-		uint32_t ticks_resume;
 		uint16_t se_last;
 		uint16_t se_rep;
 
@@ -885,25 +929,12 @@ static bool is_deadline_reached(const struct lll_adv_iso *lll, void *next)
 			continue;
 		}
 
-		/* Last repetition already in progress */
-		if (se_last < se_curr) {
-			return true;
-		}
-
-		/* Preemptor without a duration uses the radio for the rest of the event */
-		if (ull_next->ticks_slot == 0U) {
-			return true;
-		}
-
-		ticks_deadline = lll->ticks_se_start +
-				 HAL_TICKER_US_TO_TICKS((se_last - lll->se_start) *
-							lll->sub_interval);
-		ticks_resume = ticker_ticks_now_get() + ull_next->ticks_slot +
-			       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US +
-						      EVENT_OVERHEAD_RESUME_US);
-
-		return (ticker_ticks_diff_get(ticks_deadline, ticks_resume) &
-			BIT(HAL_TICKER_CNTR_MSBIT)) != 0U;
+		/* Last repetition already in progress, or a preemptor without a duration that
+		 * uses the radio for the rest of the event, or the resume skips the last
+		 * repetition.
+		 */
+		return (se_last < se_curr) || (ull_next->ticks_slot == 0U) ||
+		       (se_last < se_resume_get(lll, next));
 	}
 
 	return false;
@@ -945,6 +976,58 @@ static bool is_payload_pending(const struct lll_adv_iso *lll)
 
 	return false;
 }
+
+/* Check if the next event is a connection or a periodic sync event near its supervision
+ * timeout.
+ */
+static bool is_next_forced(void *next)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN)) {
+		const struct lll_conn *conn_lll = ull_conn_lll_is_valid_get(next);
+
+		if (conn_lll != NULL) {
+			return conn_lll->forced != 0U;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC)) {
+		const struct lll_sync *sync_lll = ull_sync_lll_is_valid_get(next);
+
+		if (sync_lll != NULL) {
+			return sync_lll->forced != 0U;
+		}
+	}
+
+	return false;
+}
+
+/* Prepare the resume of the current event to preempt at the end of the reserved radio use of
+ * the next event. A resume is otherwise dequeued only when there is no other prepare in the
+ * pipeline, which can be after the last repetition of a BIS.
+ */
+static void resume_deadline_enqueue(struct lll_adv_iso *lll, void *next)
+{
+	static memq_link_t link[CONFIG_BT_CTLR_ADV_ISO_SET];
+	static struct mayfly mfy[CONFIG_BT_CTLR_ADV_ISO_SET];
+	uint8_t index;
+	uint32_t ret;
+
+	lll->ticks_resume = ticks_resume_get(next);
+	lll->is_resume_due = 0U;
+
+	/* Assign the link only on the first use, the mayfly exchanges links between the
+	 * mayflies in its queue on dequeue, and the initial link can be in use by the queue.
+	 */
+	index = lll->handle;
+	if (mfy[index]._link == NULL) {
+		mfy[index]._link = &link[index];
+		mfy[index].fp = lll_adv_iso_resume;
+	}
+	mfy[index].param = lll;
+
+	ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy[index]);
+	LL_ASSERT_ERR(!ret);
+}
 #endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
@@ -971,40 +1054,30 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	}
 
 	if (next != curr) {
-		/* Do not yield when the preemptor overlaps the last repetition of a BIS
-		 * that has not yet been transmitted in this BIG event.
+		const bool is_sequential = (lll->bis_spacing >= (lll->sub_interval * lll->nse));
+
+		/* Do not abort current BIG event as next event is a scan event, a continuous
+		 * scan event is deferred and resumed after the current event.
 		 */
-		if ((lll->bis_spacing >= (lll->sub_interval * lll->nse)) &&
-		    is_deadline_reached(lll, next)) {
+		if (IS_ENABLED(CONFIG_BT_OBSERVER) && (ull_scan_lll_is_valid_get(next) != NULL)) {
 			return -EBUSY;
 		}
 
-		/* Reserved time of the BIS to resume at has already been reached, or a BIS
-		 * has no repetition transmitted yet, resume after the preemptor once it is
-		 * enqueued as resume event. A resume is otherwise dequeued only when there is
-		 * no other prepare in the pipeline, which can be after the last repetition of
-		 * the BIS.
+		/* Do not yield when the next event overlaps the last repetition of a BIS that
+		 * has not yet been transmitted in this BIG event, unless the next event is near
+		 * its supervision timeout. Another BIG event yields to the current event when
+		 * it is at its deadline, it is a newer event whose deadline is later or equal,
+		 * i.e. earliest deadline then oldest first.
 		 */
-		if ((lll->is_resume_due != 0U) ||
-		    ((lll->bis_spacing >= (lll->sub_interval * lll->nse)) &&
-		     is_payload_pending(lll))) {
-			static memq_link_t link;
-			static struct mayfly mfy = {0U, 0U, &link, NULL, lll_adv_iso_resume};
-			struct ull_hdr *ull_next;
-			uint32_t ticks_resume;
-			uint32_t ret;
+		if (is_sequential && is_deadline_reached(lll, next) && !is_next_forced(next)) {
+			return -EBUSY;
+		}
 
-			/* Resume prepare preempts at the end of the preemptor */
-			ull_next = HDR_LLL2ULL(next);
-			ticks_resume = ticker_ticks_now_get() + ull_next->ticks_slot +
-				       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US) -
-				       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-			lll->ticks_resume = ticks_resume & HAL_TICKER_CNTR_MASK;
-			lll->is_resume_due = 0U;
-
-			mfy.param = lll;
-			ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_LLL, 1U, &mfy);
-			LL_ASSERT_ERR(!ret);
+		/* Reserved time of the BIS to resume at has already been reached, or a BIS has
+		 * no repetition transmitted yet, resume at the end of the next event.
+		 */
+		if ((lll->is_resume_due != 0U) || (is_sequential && is_payload_pending(lll))) {
+			resume_deadline_enqueue(lll, next);
 		}
 
 		*resume_cb = resume_prepare_cb;
