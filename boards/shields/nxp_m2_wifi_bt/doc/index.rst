@@ -81,7 +81,7 @@ Wi-Fi Embedded supplicant:
    :board: mimxrt1060_evk@C//qspi
    :shield: nxp_m2_2ll_wifi_bt
    :goals: build
-   :gen-args: -DEXTRA_CONF_FILE="nxp/overlay_hosted_mcu.conf"
+   :gen-args: -DEXTRA_CONF_FILE="nxp/hosted_mcu.conf"
 
 Wi-Fi HostAP/WPA supplicant:
 
@@ -90,13 +90,13 @@ Wi-Fi HostAP/WPA supplicant:
    :board: mimxrt1060_evk@C//qspi
    :shield: nxp_m2_2el_wifi_bt
    :goals: build
-   :gen-args: -DEXTRA_CONF_FILE="nxp/overlay_hosted_mcu.conf;nxp/overlay_hostap_hosted_mcu.conf"
+   :gen-args: -DEXTRA_CONF_FILE="nxp/hosted_mcu.conf;nxp/hostap_hosted_mcu.conf"
 
 .. note::
-   To build Wi-Fi application, ``nxp/overlay_hosted_mcu.conf`` config file
+   To build Wi-Fi application, ``nxp/hosted_mcu.conf`` config file
    must be passed along with default conf file as mentioned in above build command.
 
-   To enable HostAP/WPA supplicant support, additional "nxp/overlay_hostap_hosted_mcu.conf" file
+   To enable HostAP/WPA supplicant support, additional "nxp/hostap_hosted_mcu.conf" file
    needs to be passed.
    In above mentioned commands, shield parameter can be modified with respect to module selection.
 
