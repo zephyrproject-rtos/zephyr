@@ -45,6 +45,18 @@ static struct bt_has_client *inst_by_conn(struct bt_conn *conn)
 	return NULL;
 }
 
+/* A failed discovery keeps the instance until disconnection, but the application
+ * has not been given it.
+ */
+static bool inst_is_usable(const struct bt_has_client *inst)
+{
+	return (inst->conn != NULL) && !atomic_test_bit(inst->flags, HAS_CLIENT_DISCOVER_FAILED);
+}
+
+/* Only called once the connection is gone: GATT has then completed the outstanding
+ * requests and removed the volatile subscriptions that use the parameters embedded
+ * in the instance, so it can be cleared.
+ */
 static void inst_cleanup(struct bt_has_client *inst)
 {
 	bt_conn_unref(inst->conn);
@@ -218,6 +230,11 @@ static uint8_t control_point_notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
+	if (atomic_test_bit(inst->flags, HAS_CLIENT_DISCOVER_FAILED)) {
+		/* The application has not been given this instance */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	if (len < sizeof(*hdr)) { /* Ignore malformed notification */
 		return BT_GATT_ITER_CONTINUE;
 	}
@@ -255,11 +272,17 @@ static void discover_complete(struct bt_has_client *inst)
 	}
 }
 
-static void discover_failed(struct bt_conn *conn, int err)
+static void discover_failed(struct bt_has_client *inst, int err)
 {
-	LOG_DBG("conn %p", (void *)conn);
+	LOG_DBG("conn %p err %d", (void *)inst->conn, err);
 
-	client_cb->discover(conn, err, NULL, 0, 0);
+	/* GATT may still use the subscribe parameters embedded in the instance, so keep it,
+	 * with its connection reference, until disconnected() clears it.
+	 */
+	atomic_set_bit(inst->flags, HAS_CLIENT_DISCOVER_FAILED);
+	atomic_clear_bit(inst->flags, HAS_CLIENT_DISCOVER_IN_PROGRESS);
+
+	client_cb->discover(inst->conn, err, NULL, 0, 0);
 }
 
 static int cp_write(struct bt_has_client *inst, struct net_buf_simple *buf,
@@ -408,6 +431,11 @@ static uint8_t active_preset_notify_cb(struct bt_conn *conn,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
+	if (atomic_test_bit(inst->flags, HAS_CLIENT_DISCOVER_FAILED)) {
+		/* The application has not been given this instance */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	if (client_cb && client_cb->preset_switch && inst->has.active_index != prev) {
 		client_cb->preset_switch(&inst->has, 0, inst->has.active_index);
 	}
@@ -421,13 +449,12 @@ static void active_index_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 	struct bt_has_client *inst = CONTAINER_OF(params, struct bt_has_client,
 						  active_index_subscription);
 
+	ARG_UNUSED(conn);
+
 	LOG_DBG("conn %p att_err 0x%02x params %p", (void *)inst->conn, att_err, params);
 
 	if (att_err != BT_ATT_ERR_SUCCESS) {
-		/* Cleanup instance so that it can be reused */
-		inst_cleanup(inst);
-
-		discover_failed(conn, att_err);
+		discover_failed(inst, att_err);
 	} else {
 		discover_complete(inst);
 	}
@@ -481,10 +508,7 @@ static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
 	return BT_GATT_ITER_STOP;
 
 fail:
-	/* Cleanup instance so that it can be reused */
-	inst_cleanup(inst);
-
-	discover_failed(conn, err);
+	discover_failed(inst, err);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -513,6 +537,8 @@ static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 						  control_point_subscription);
 	int err = att_err;
 
+	ARG_UNUSED(conn);
+
 	LOG_DBG("conn %p att_err 0x%02x", (void *)inst->conn, att_err);
 
 	if (att_err != BT_ATT_ERR_SUCCESS) {
@@ -528,10 +554,7 @@ static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 	return;
 
 fail:
-	/* Cleanup instance so that it can be reused */
-	inst_cleanup(inst);
-
-	discover_failed(conn, err);
+	discover_failed(inst, err);
 }
 
 static int control_point_subscribe(struct bt_has_client *inst, uint16_t value_handle,
@@ -584,10 +607,7 @@ static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_g
 	if (err != 0) {
 		LOG_ERR("Subscribe failed (err %d)", err);
 
-		/* Cleanup instance so that it can be reused */
-		inst_cleanup(inst);
-
-		discover_failed(conn, err);
+		discover_failed(inst, err);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -651,10 +671,7 @@ static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
 	return BT_GATT_ITER_STOP;
 
 fail:
-	/* Cleanup instance so that it can be reused */
-	inst_cleanup(inst);
-
-	discover_failed(conn, err);
+	discover_failed(inst, err);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -695,10 +712,7 @@ static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 	return;
 
 fail:
-	/* Cleanup instance so that it can be reused */
-	inst_cleanup(inst);
-
-	discover_failed(conn, err);
+	discover_failed(inst, err);
 }
 
 static uint8_t features_notify_cb(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
@@ -788,10 +802,7 @@ static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_a
 	return BT_GATT_ITER_STOP;
 
 fail:
-	/* Cleanup instance so that it can be reused */
-	inst_cleanup(inst);
-
-	discover_failed(conn, err);
+	discover_failed(inst, err);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -855,8 +866,10 @@ int bt_has_client_discover(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	if (inst->conn) {
-		return -EALREADY;
+	if (inst->conn != NULL) {
+		/* Discovered, or failed: kept until disconnection */
+		err = -EALREADY;
+		goto cleanup;
 	}
 
 	ref = bt_conn_ref(conn);
@@ -896,7 +909,7 @@ int bt_has_client_presets_read(struct bt_has *has, uint8_t start_index, uint8_t 
 
 	LOG_DBG("conn %p start_index 0x%02x count %d", (void *)inst->conn, start_index, count);
 
-	if (!inst->conn) {
+	if (!inst_is_usable(inst)) {
 		return -ENOTCONN;
 	}
 
@@ -928,7 +941,7 @@ int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync)
 
 	LOG_DBG("conn %p index 0x%02x", (void *)inst->conn, index);
 
-	if (!inst->conn) {
+	if (!inst_is_usable(inst)) {
 		return -ENOTCONN;
 	}
 
@@ -957,7 +970,7 @@ int bt_has_client_preset_next(struct bt_has *has, bool sync)
 
 	LOG_DBG("conn %p sync %d", (void *)inst->conn, sync);
 
-	if (!inst->conn) {
+	if (!inst_is_usable(inst)) {
 		return -ENOTCONN;
 	}
 
@@ -982,7 +995,7 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 
 	LOG_DBG("conn %p sync %d", (void *)inst->conn, sync);
 
-	if (!inst->conn) {
+	if (!inst_is_usable(inst)) {
 		return -ENOTCONN;
 	}
 
@@ -1016,7 +1029,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 
 	if (atomic_test_bit(inst->flags, HAS_CLIENT_DISCOVER_IN_PROGRESS)) {
-		discover_failed(conn, -ECONNABORTED);
+		discover_failed(inst, -ECONNABORTED);
 	}
 
 	inst_cleanup(inst);

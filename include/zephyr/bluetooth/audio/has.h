@@ -236,6 +236,9 @@ int bt_has_client_cb_register(const struct bt_has_client_cb *cb);
  * The @ref bt_has_client_cb.discover callback will be called when the discovery procedure
  * is complete to provide user a @ref bt_has object.
  *
+ * The discovery runs once per connection: after it has completed or failed, a new
+ * discovery on the same connection returns -EALREADY until the connection is disconnected.
+ *
  * @param conn Bluetooth connection object.
  *
  * @return 0 if success, errno on failure.
