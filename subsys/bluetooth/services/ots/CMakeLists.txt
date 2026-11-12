@@ -10,6 +10,7 @@ zephyr_sources_ifdef(
 
   zephyr_library_sources_ifdef(CONFIG_BT_OTS_DIR_LIST_OBJ ots_dir_list.c)
 
+# just a new comment.
 zephyr_library_sources_ifdef(
   CONFIG_BT_OTS_CLIENT
   ots_client.c
