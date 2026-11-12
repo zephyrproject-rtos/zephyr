@@ -302,6 +302,30 @@ int snmp_oid_cmp(const uint32_t *a, size_t a_len, const uint32_t *b, size_t b_le
 bool snmp_oid_has_prefix(const uint32_t *oid, size_t oid_len, const uint32_t *prefix,
 			 size_t prefix_len);
 
+/** Selects one of the agent's community strings. */
+enum snmp_community {
+	/** Community that grants GET, GETNEXT and GETBULK. */
+	SNMP_COMMUNITY_READ,
+	/** Community that additionally grants SET. */
+	SNMP_COMMUNITY_WRITE,
+};
+
+/**
+ * @brief Set a community string.
+ *
+ * Replaces the default from CONFIG_SNMP_COMMUNITY_READ or
+ * CONFIG_SNMP_COMMUNITY_WRITE. An empty string disables the operations that
+ * community grants.
+ *
+ * @param which Community to change.
+ * @param community NUL terminated string of at most CONFIG_SNMP_COMMUNITY_MAX_LEN bytes.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p community is NULL or @p which is unknown.
+ * @retval -EMSGSIZE @p community is too long.
+ */
+int snmp_agent_set_community(enum snmp_community which, const char *community);
+
 /**
  * @}
  */
