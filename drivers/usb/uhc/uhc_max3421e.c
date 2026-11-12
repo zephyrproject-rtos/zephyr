@@ -417,18 +417,12 @@ static void max3421e_xfer_drop_active(const struct device *dev, int err)
 static void max3421e_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
 
 	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
 		max3421e_xfer_drop_active(dev, -ECONNRESET);
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp->err == -ECONNRESET) {
-			uhc_xfer_return(dev, tmp, -ECONNRESET);
-		}
-	}
+	uhc_xfer_cleanup_cancelled(dev, NULL, NULL);
 }
 
 static int max3421e_hrslt_success(const struct device *dev)

@@ -398,18 +398,12 @@ handle_reply_err:
 static void vrt_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
 
 	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
 		vrt_xfer_drop_active(dev, -ECONNRESET);
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp->err == -ECONNRESET) {
-			uhc_xfer_return(dev, tmp, -ECONNRESET);
-		}
-	}
+	uhc_xfer_cleanup_cancelled(dev, NULL, NULL);
 }
 
 static void xfer_work_handler(struct k_work *work)

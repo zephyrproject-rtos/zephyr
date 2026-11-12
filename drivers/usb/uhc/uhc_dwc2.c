@@ -2252,63 +2252,55 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
  * halted and released with the controller interrupt disabled, so the ISR
  * cannot read or post an event for a channel being torn down.
  */
-static void dequeue_cancelled(const struct device *dev)
+static void cancel_xfer_cb(const struct device *dev, struct uhc_transfer *xfer, void *priv_data)
 {
+	ARG_UNUSED(priv_data);
 	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct uhc_data *const data = dev->data;
-	struct uhc_transfer *xfer, *tmp;
+	struct uhc_dwc2_channel *ch = NULL;
+	bool halting = false;
 
-	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&data->ctrl_xfers, xfer, tmp, node) {
-		struct uhc_dwc2_channel *ch = NULL;
-		bool halting = false;
-
-		if (xfer->err != -ECONNRESET) {
-			continue;
+	/* Find the channel the transfer is assigned to, if any */
+	for (uint32_t idx = 0; idx < priv->numhstchnl; idx++) {
+		if (priv->ch[idx].xfer == xfer) {
+			ch = &priv->ch[idx];
+			break;
 		}
-
-		/* Find the channel the transfer is assigned to, if any */
-		for (uint32_t idx = 0; idx < priv->numhstchnl; idx++) {
-			if (priv->ch[idx].xfer == xfer) {
-				ch = &priv->ch[idx];
-				break;
-			}
-		}
-
-		if (ch != NULL) {
-			/*
-			 * Initiate halting with the controller interrupt
-			 * disabled, so the ISR cannot run for this channel
-			 * concurrently.
-			 */
-			config->irq_disable_func(dev);
-
-			halting = ch_halt_initiate(ch);
-			if (!halting) {
-				/*
-				 * Channel was no longer running, finish the
-				 * teardown here.
-				 */
-				atomic_set(&ch->events, 0);
-				k_event_clear(&priv->events,
-					BIT(UHC_DWC2_EVENT_PORT_PEND_CHANNEL + ch->index));
-				ch_release(dev, ch);
-			}
-
-			config->irq_enable_func(dev);
-		}
-
-		if (halting) {
-			/*
-			 * Halt initiated and will be finished in
-			 * ch_handle_events():
-			 */
-			continue;
-		}
-
-		/* Return pending or already-stopped transfer */
-		uhc_xfer_return(dev, xfer, -ECONNRESET);
 	}
+
+	if (ch != NULL) {
+		/*
+		 * Initiate halting with the controller interrupt
+		 * disabled, so the ISR cannot run for this channel
+		 * concurrently.
+		 */
+		config->irq_disable_func(dev);
+
+		halting = ch_halt_initiate(ch);
+		if (!halting) {
+			/*
+			 * Channel was no longer running, finish the
+			 * teardown here.
+			 */
+			atomic_set(&ch->events, 0);
+			k_event_clear(&priv->events,
+				BIT(UHC_DWC2_EVENT_PORT_PEND_CHANNEL + ch->index));
+			ch_release(dev, ch);
+		}
+
+		config->irq_enable_func(dev);
+	}
+
+	if (halting) {
+		/*
+		 * Halt initiated and will be finished in
+		 * ch_handle_events():
+		 */
+		return;
+	}
+
+	/* Return pending or already-stopped transfer */
+	uhc_xfer_return(dev, xfer, -ECONNRESET);
 }
 
 static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
@@ -2334,7 +2326,7 @@ static void uhc_dwc2_thread(void *arg0, void *arg1, void *arg2)
 
 		/* Cancel transfers marked for dequeue */
 		if (event_mask & BIT(UHC_DWC2_EVENT_DEQUEUE)) {
-			dequeue_cancelled(dev);
+			uhc_xfer_cleanup_cancelled(dev, cancel_xfer_cb, NULL);
 		}
 
 		/* Check if a new transfer can be started */
