@@ -93,6 +93,59 @@ config SNMP_SET_ENABLE
 	  Without this option every SET request is answered with an
 	  authorizationError (noSuchName for SNMPv1).
 
+config SNMP_MIB2_SYSTEM
+	bool "MIB-2 system group"
+	default y
+	help
+	  Implement the system group: the seven scalars of RFC 1213, sysDescr
+	  to sysServices, and sysORLastChange with an empty sysORTable, which
+	  RFC 3418 adds. sysName, sysContact and sysLocation can be changed by
+	  the application and by SET requests; their initial values come from
+	  the options below.
+
+if SNMP_MIB2_SYSTEM
+
+config SNMP_SYS_DESCR
+	string "sysDescr"
+	help
+	  Textual description of the entity. Empty selects "Zephyr", the
+	  kernel version and the board name.
+
+config SNMP_SYS_NAME
+	string "Initial sysName"
+	help
+	  Administratively assigned name of the node, conventionally its
+	  fully qualified domain name.
+
+config SNMP_SYS_CONTACT
+	string "Initial sysContact"
+	help
+	  Contact person for this node and how to reach them.
+
+config SNMP_SYS_LOCATION
+	string "Initial sysLocation"
+	help
+	  Physical location of this node.
+
+config SNMP_SYS_SERVICES
+	int "sysServices"
+	default 72
+	range 0 127
+	help
+	  Sum of 2^(L - 1) for every OSI layer L the node offers services
+	  on. The default 72 describes a host with transport and application
+	  services, as in RFC 1213.
+
+config SNMP_SYS_STRING_MAX_LEN
+	int "Maximum length of the writable system strings"
+	default 64
+	range 1 255
+	help
+	  Size of the buffers holding sysName, sysContact and sysLocation,
+	  in bytes. RFC 1213 allows up to 255.
+
+endif # SNMP_MIB2_SYSTEM
+
 module = SNMP
 module-dep = NET_LOG
 module-str = Log level for SNMP

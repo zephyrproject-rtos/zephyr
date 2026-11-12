@@ -8,5 +8,6 @@ zephyr_library_sources(
   snmp_agent.c
   snmp_transport.c
 )
+zephyr_library_sources_ifdef(CONFIG_SNMP_MIB2_SYSTEM mib2_system.c)
 
 zephyr_linker_sources(ROM_SECTIONS iterables_snmp.ld)
