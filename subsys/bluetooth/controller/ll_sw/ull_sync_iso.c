@@ -95,6 +95,9 @@ static memq_link_t link_lll_resume[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 static struct mayfly mfy_lll_resume[CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET];
 
 static void sync_iso_resume_ticker_start(struct ll_sync_iso_set *sync_iso);
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+static uint32_t sync_iso_remaining_us_get(const struct lll_sync_iso *lll, uint8_t num_bis);
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 uint8_t ll_big_sync_create(uint8_t big_handle, uint16_t sync_handle,
@@ -765,6 +768,16 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	normal_ticker_ext[index].ticks_slot_window =
 		HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+	/* Tickers with slot window are placed after the whole BIG event */
+	if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_ISO_RESERVE_MAX)) {
+		normal_ticker_ext[index].ticks_slot_max = 0U;
+	} else {
+		normal_ticker_ext[index].ticks_slot_max =
+			MAX((HAL_TICKER_US_TO_TICKS_CEIL(slot_us +
+							 sync_iso_remaining_us_get(lll, num_bis)) +
+			     ticks_slot_overhead),
+			    normal_ticker_ext[index].ticks_slot_window);
+	}
 	normal_ticker_ext[index].is_jitter_in_window = 1U;
 	normal_ticker_ext[index].is_deadline_in_window = 1U;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
@@ -1158,6 +1171,31 @@ static void ticker_op_start_cb(uint32_t status, void *param)
 	 */
 }
 
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+/* Time of the BIG event, from the first selected BIS up to and including the BIG control
+ * subevent, that follows the time reserved for the first repetition of the first selected BIS.
+ */
+static uint32_t sync_iso_remaining_us_get(const struct lll_sync_iso *lll, uint8_t num_bis)
+{
+	uint32_t remaining_us;
+
+	if (lll->bis_spacing >= (lll->sub_interval * lll->nse)) {
+		/* Sequential packing */
+		remaining_us = (lll->bis_spacing * (num_bis - 1U)) +
+			       (lll->sub_interval * (lll->nse - lll->bn));
+	} else {
+		/* Interleaved packing */
+		remaining_us = (lll->sub_interval * (lll->nse - 1U)) -
+			       (lll->bis_spacing * num_bis * (lll->bn - 1U));
+	}
+
+	remaining_us += PDU_BIS_US(sizeof(struct pdu_big_ctrl), lll->enc, lll->phy,
+				   PHY_FLAGS_S8);
+
+	return remaining_us;
+}
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 static void sync_iso_resume_ticker_start(struct ll_sync_iso_set *sync_iso)
 {
 	const struct lll_sync_iso *lll = &sync_iso->lll;
@@ -1185,6 +1223,15 @@ static void sync_iso_resume_ticker_start(struct ll_sync_iso_set *sync_iso)
 
 	index = ARRAY_INDEX(ll_sync_iso, sync_iso);
 	resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
+	/* Tickers with slot window are placed after the remaining BIG event */
+	if (normal_ticker_ext[index].ticks_slot_max == 0U) {
+		resume_ticker_ext[index].ticks_slot_max = 0U;
+	} else if (normal_ticker_ext[index].ticks_slot_max > (ticks_offset + ticks_slot_window)) {
+		resume_ticker_ext[index].ticks_slot_max =
+			normal_ticker_ext[index].ticks_slot_max - ticks_offset;
+	} else {
+		resume_ticker_ext[index].ticks_slot_max = ticks_slot_window;
+	}
 	resume_ticker_ext[index].is_jitter_in_window = 1U;
 	resume_ticker_ext[index].is_deadline_in_window = 1U;
 	resume_ticker_ext[index].unforce = 1U;
