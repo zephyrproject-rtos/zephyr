@@ -155,7 +155,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 extern char __test_mem_map_start[];
 extern char __test_mem_map_end[];
 
-__in_section_unique(test_mem_map) __used
+__in_section_unique(test_mem_map) __used __attribute__((no_profile_instrument_function))
 static void transplanted_function(bool *executed)
 {
 	*executed = true;
