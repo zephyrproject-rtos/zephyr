@@ -237,6 +237,13 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		msgs++;
 	}
 
+#if defined(CONFIG_I2C_TARGET)
+	/* I2C_MasterTransferNonBlocking() disables the target function */
+	if (data->nr_targets_attached > 0) {
+		I2C_SlaveEnable(base, true);
+	}
+#endif
+
 	pm_policy_device_power_lock_put(dev);
 
 	k_sem_give(&data->lock);
@@ -479,25 +486,44 @@ static void i2c_target_transfer_callback(I2C_Type *base,
 	}
 }
 
-static int mcux_flexcomm_setup_target_config(const struct device *dev)
+static void mcux_flexcomm_set_target_addresses(I2C_Type *base, const i2c_slave_config_t *cfg)
+{
+	I2C_SlaveSetAddress(base, kI2C_SlaveAddressRegister0, cfg->address0.address,
+			    cfg->address0.addressDisable);
+	I2C_SlaveSetAddress(base, kI2C_SlaveAddressRegister1, cfg->address1.address,
+			    cfg->address1.addressDisable);
+	I2C_SlaveSetAddress(base, kI2C_SlaveAddressRegister2, cfg->address2.address,
+			    cfg->address2.addressDisable);
+	I2C_SlaveSetAddress(base, kI2C_SlaveAddressRegister3, cfg->address3.address,
+			    cfg->address3.addressDisable);
+}
+
+/*
+ * Starts the target function without I2C_SlaveInit(), which resets the
+ * FlexComm and with it the controller configuration.
+ */
+static int mcux_flexcomm_start_target(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
-	uint32_t clock_freq;
+	bool controller_enabled = (base->CFG & I2C_CFG_MSTEN_MASK) != 0U;
+	status_t status;
 
-	/* Get the clock frequency */
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &clock_freq)) {
-		return -EINVAL;
+	I2C_SlaveTransferCreateHandle(base, &data->target_handle,
+				      i2c_target_transfer_callback, data);
+	/* Disables the controller function */
+	status = I2C_SlaveTransferNonBlocking(base, &data->target_handle,
+					      kI2C_SlaveCompletionEvent | kI2C_SlaveTransmitEvent |
+					      kI2C_SlaveReceiveEvent | kI2C_SlaveDeselectedEvent);
+	if (controller_enabled) {
+		I2C_MasterEnable(base, true);
 	}
 
-	I2C_SlaveInit(base, &data->i2c_cfg, clock_freq);
-	I2C_SlaveTransferCreateHandle(base, &data->target_handle,
-			i2c_target_transfer_callback, data);
-	I2C_SlaveTransferNonBlocking(base, &data->target_handle,
-			kI2C_SlaveCompletionEvent | kI2C_SlaveTransmitEvent |
-			kI2C_SlaveReceiveEvent | kI2C_SlaveDeselectedEvent);
+	if (status != kStatus_Success) {
+		I2C_SlaveTransferAbort(base, &data->target_handle);
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -508,9 +534,7 @@ int mcux_flexcomm_target_register(const struct device *dev,
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	struct mcux_flexcomm_target_data *target;
-	I2C_Type *base = config->base;
-
-	I2C_MasterDeinit(base);
+	int ret;
 
 	if (!target_config) {
 		return -EINVAL;
@@ -531,11 +555,18 @@ int mcux_flexcomm_target_register(const struct device *dev,
 	}
 
 	if (mcux_flexcomm_setup_i2c_config_address(data, target, false) < 0) {
+		target->target_attached = false;
 		return -EINVAL;
 	}
 
-	if (mcux_flexcomm_setup_target_config(dev) < 0) {
-		return -EINVAL;
+	mcux_flexcomm_set_target_addresses(config->base, &data->i2c_cfg);
+
+	if (data->nr_targets_attached == 0) {
+		ret = mcux_flexcomm_start_target(dev);
+		if (ret != 0) {
+			target->target_attached = false;
+			return ret;
+		}
 	}
 
 	data->nr_targets_attached++;
@@ -565,13 +596,10 @@ int mcux_flexcomm_target_unregister(const struct device *dev,
 	data->nr_targets_attached--;
 
 	if (data->nr_targets_attached > 0) {
-		/* still targets attached, reconfigure the I2C peripheral after address removal */
-		if (mcux_flexcomm_setup_target_config(dev) < 0) {
-			return -EINVAL;
-		}
-
+		mcux_flexcomm_set_target_addresses(base, &data->i2c_cfg);
 	} else {
-		I2C_SlaveDeinit(base);
+		/* Also disables the target interrupts */
+		I2C_SlaveTransferAbort(base, &data->target_handle);
 	}
 
 	return 0;
@@ -585,8 +613,15 @@ static void mcux_flexcomm_isr(const struct device *dev)
 	I2C_Type *base = config->base;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->nr_targets_attached > 0) {
+	uint32_t int_stat = base->INTSTAT;
+
+	if ((int_stat & (I2C_INTSTAT_SLVPENDING_MASK | I2C_INTSTAT_SLVDESEL_MASK)) != 0U) {
 		I2C_SlaveTransferHandleIRQ(base, &data->target_handle);
+	}
+
+	if ((int_stat & (I2C_INTSTAT_MSTPENDING_MASK | I2C_INTSTAT_MSTARBLOSS_MASK |
+			 I2C_INTSTAT_MSTSTSTPERR_MASK | I2C_INTSTAT_EVENTTIMEOUT_MASK |
+			 I2C_INTSTAT_SCLTIMEOUT_MASK)) == 0U) {
 		return;
 	}
 #endif
