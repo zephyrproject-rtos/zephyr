@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_NXP_FSB
+	bool "NXP FSB OTP driver"
+	default y
+	depends on DT_HAS_NXP_FSB_ENABLED
+	help
+	  Enable the read-only OTP driver for the NXP Fuse Sense Block found on
+	  i.MX RT266x SoCs.

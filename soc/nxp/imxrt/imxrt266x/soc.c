@@ -26,6 +26,7 @@
 #include "soc_clock.h"
 
 #include <fsl_common.h>
+#include <fsl_modcon.h>
 #include <fsl_powercon.h>
 #include <fsl_resetcon.h>
 
@@ -113,6 +114,17 @@ static void soc_release_sleep_hold(void)
 	POWERCON_DisableSleepHold(SYSCON__POWERCON_CMC0_CTRL);
 }
 
+/*
+ * Ethernet pad/PHY interface selection, which lives in the COMM MODCON rather
+ * than in the MAC: ETH1 is the 1G ENET, wired as RGMII.
+ */
+static void soc_enet_modcon_init(void)
+{
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET)) {
+		MODCON_SetCFG((uint32_t)kModCon_COMM_ETH1, 0U, MODCON_CFG_ENET1G_RGMII_EN(1U));
+	}
+}
+
 void soc_reset_hook(void)
 {
 	/*
@@ -156,6 +168,8 @@ void soc_early_init_hook(void)
 	 * it depends on has to be working already.
 	 */
 	soc_clock_init();
+
+	soc_enet_modcon_init();
 
 	/*
 	 * Last: soc_trdc_assign_masters() writes MEDIA__TRDC, which sits on the
