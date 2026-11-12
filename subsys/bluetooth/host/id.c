@@ -613,7 +613,8 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 	}
 }
 
-static void le_update_private_addr(void)
+/* rpa_valid: the RPA was valid before it was invalidated for this update */
+static void le_update_private_addr(bool rpa_valid)
 {
 	struct bt_le_ext_adv *adv = NULL;
 	bool adv_enabled = false;
@@ -662,12 +663,18 @@ static void le_update_private_addr(void)
 	} else {
 		err = bt_id_set_private_addr(id);
 	}
-	if (err) {
+	if (err != 0) {
+		/* Enable the paused roles again anyway, with their old address. An
+		 * old RPA stays valid until the RPA timer tries again.
+		 */
 		LOG_WRN("Failed to update RPA address (%d)", err);
-		return;
+
+		if (rpa_valid) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && err == 0 && adv != NULL &&
 	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
 		/* The legacy advertiser advertises with the device-wide
 		 * random address that was just refreshed.
@@ -700,9 +707,11 @@ static void le_force_rpa_timeout(void)
 
 	k_work_cancel_delayable_sync(&bt_dev.rpa_update, &sync);
 #endif
+	bool rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+
 	(void)le_adv_rpa_timeout();
 	le_rpa_invalidate();
-	le_update_private_addr();
+	le_update_private_addr(rpa_valid);
 }
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -715,6 +724,7 @@ static int bt_gen_irk(uint8_t id)
 static void rpa_timeout(struct k_work *work)
 {
 	bool adv_enabled;
+	bool rpa_valid;
 
 	LOG_DBG("");
 
@@ -729,6 +739,7 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
+	rpa_valid = atomic_test_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 	adv_enabled = le_adv_rpa_timeout();
 	le_rpa_invalidate();
 
@@ -742,7 +753,7 @@ static void rpa_timeout(struct k_work *work)
 		}
 	}
 
-	le_update_private_addr();
+	le_update_private_addr(rpa_valid);
 }
 #endif /* CONFIG_BT_PRIVACY */
 
