@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
+#include <kernel_arch_interface.h>
 
 /**
  * @defgroup kernel_irq_offload_tests IRQ Offload
@@ -35,9 +36,23 @@ struct k_thread offload_thread;
 static void offload_function(const void *param)
 {
 	uint32_t x = POINTER_TO_INT(param);
+	bool irqs_enabled = arch_cpu_irqs_are_enabled();
+	unsigned int key1, key2;
 
 	/* Make sure we're in IRQ context */
 	zassert_true(k_is_in_isr(), "Not in IRQ context!");
+
+	key1 = arch_irq_lock();
+	zassert_true(arch_is_in_isr_irqlocked(), "Locked ISR reported as thread context");
+	zassert_false(arch_cpu_irqs_are_enabled(), "ISR check enabled IRQs");
+	key2 = arch_irq_lock();
+	zassert_true(arch_is_in_isr_irqlocked(), "Nested lock changed ISR context");
+	zassert_false(arch_cpu_irqs_are_enabled(), "ISR check released nested IRQ lock");
+	arch_irq_unlock(key2);
+	zassert_true(arch_is_in_isr_irqlocked(), "Inner unlock changed ISR context");
+	zassert_false(arch_cpu_irqs_are_enabled(), "ISR check released outer IRQ lock");
+	arch_irq_unlock(key1);
+	zassert_equal(arch_cpu_irqs_are_enabled(), irqs_enabled, "IRQ state not restored");
 
 	sentinel = x;
 }
@@ -56,6 +71,7 @@ static void offload_function(const void *param)
  * Test steps:
  * - Nest arch_irq_lock() twice and assert the returned keys report unlocked then
  *   locked state, then unlock in reverse order.
+ * - Check interrupt context under each lock without changing the IRQ lock state.
  * - Call irq_offload() with a known sentinel value as the parameter.
  * - The callback asserts it runs in ISR context and stores the parameter.
  *
@@ -70,15 +86,22 @@ ZTEST(irq_offload, test_irq_offload)
 	unsigned int key1, key2;
 
 	key1 = arch_irq_lock();
+	zassert_false(arch_is_in_isr_irqlocked(), "Locked thread reported as ISR context");
+	zassert_false(arch_cpu_irqs_are_enabled(), "ISR check enabled IRQs");
 	zassert_true(arch_irq_unlocked(key1),
 		     "IRQs should have been unlocked, but key is 0x%x\n",
 		     key1);
 	key2 = arch_irq_lock();
+	zassert_false(arch_is_in_isr_irqlocked(), "Nested lock changed thread context");
+	zassert_false(arch_cpu_irqs_are_enabled(), "ISR check released nested IRQ lock");
 	zassert_false(arch_irq_unlocked(key2),
 		      "IRQs should have been locked, but key is 0x%x\n",
 		      key2);
 	arch_irq_unlock(key2);
+	zassert_false(arch_is_in_isr_irqlocked(), "Inner unlock changed thread context");
+	zassert_false(arch_cpu_irqs_are_enabled(), "ISR check released outer IRQ lock");
 	arch_irq_unlock(key1);
+	zassert_true(arch_cpu_irqs_are_enabled(), "IRQ state not restored");
 
 	/**TESTPOINT: Offload to IRQ context*/
 	irq_offload(offload_function, (const void *)SENTINEL_VALUE);

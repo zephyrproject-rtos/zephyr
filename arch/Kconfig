@@ -57,6 +57,7 @@ config ARM64
 	bool
 	select ARCH_IS_SET
 	select 64BIT
+	select ARCH_HAS_CUSTOM_IS_IN_ISR_IRQLOCKED
 	select ARCH_HAS_FWARGS_HANDLER_HOOK
 	select ARCH_SUPPORTS_COREDUMP
 	select HAS_ARM_SMCCC
@@ -1568,6 +1569,13 @@ config ARCH_HAS_CUSTOM_CURRENT_IMPL
 	help
 	  Select when architecture implements arch_current_thread() &
 	  arch_current_thread_set().
+
+config ARCH_HAS_CUSTOM_IS_IN_ISR_IRQLOCKED
+	bool
+	help
+	  Select when the architecture provides arch_is_in_isr_irqlocked()
+	  optimized for callers that already hold a local IRQ lock. Otherwise,
+	  the kernel uses arch_is_in_isr().
 
 config ARCH_IPI_LAZY_COPROCESSORS_SAVE
 	bool

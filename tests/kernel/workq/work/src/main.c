@@ -7,6 +7,7 @@
 /* This test covers deprecated API.  Avoid inappropriate diagnostics
  * about the use of that API.
  */
+#include <zephyr/irq_offload.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest.h>
 
@@ -1487,6 +1488,7 @@ ZTEST(work, test_workq_drain_empty)
 struct test_drain_wait_timer {
 	struct k_timer timer;
 	struct k_work work;
+	struct k_work isr_work;
 	int submit_rc;
 };
 
@@ -1498,6 +1500,24 @@ static void drain_wait_timer_cb(struct k_timer *timer)
 		CONTAINER_OF(timer, struct test_drain_wait_timer, timer);
 
 	ctx->submit_rc = k_work_submit_to_queue(&coophi_queue, &ctx->work);
+}
+
+static void drain_wait_isr(const void *arg)
+{
+	struct test_drain_wait_timer *ctx = (struct test_drain_wait_timer *)arg;
+
+	zassert_true(k_is_in_isr());
+	zassert_equal(k_current_get(), coophi_queue.thread_id);
+	zassert_equal(k_work_submit_to_queue(&coophi_queue, &ctx->isr_work), -EBUSY);
+}
+
+static void drain_wait_handler(struct k_work *work)
+{
+	struct test_drain_wait_timer *ctx = CONTAINER_OF(work, struct test_drain_wait_timer, work);
+
+	delay_handler(work);
+	zassert_equal(ctx->submit_rc, -EBUSY);
+	irq_offload(drain_wait_isr, ctx);
 }
 
 /**
@@ -1512,10 +1532,11 @@ static void drain_wait_timer_cb(struct k_timer *timer)
  * - Submit an item whose handler resubmits itself once, then start a drain.
  * - From a timer callback, attempt to submit another item while the drain is
  *   running.
+ * - From the work handler, offload an interrupt that submits a separate item.
  *
  * Expected result:
  * - The drain reports one item pending and returns after both chained
- *   invocations have run, while the external submission is refused with
+ *   invocations have run, while both interrupt submissions are refused with
  *   -EBUSY.
  *
  * @ingroup kernel_workqueue_tests
@@ -1534,7 +1555,8 @@ ZTEST(work_1cpu, test_workq_1cpu_drain_wait)
 	 */
 	reset_counters();
 	atomic_set(&resubmits_left, 1);
-	k_work_init(wp, delay_handler);
+	k_work_init(wp, drain_wait_handler);
+	k_work_init(&ctx->isr_work, counter_handler);
 
 	/* Submit to the cooperative queue. */
 	rc = k_work_submit_to_queue(&coophi_queue, wp);
