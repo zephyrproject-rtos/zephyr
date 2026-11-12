@@ -5357,12 +5357,23 @@ static int gatt_cancel_encode(struct net_buf *buf, size_t len, void *user_data)
 	return 0;
 }
 
+static void gatt_cancel_all_writes_rsp(struct bt_conn *conn, int err, const void *pdu,
+				       uint16_t length, void *user_data)
+{
+	struct bt_gatt_write_params *params = user_data;
+
+	LOG_DBG("err %d", err);
+
+	/* The write was cancelled because the response did not match the request */
+	params->func(conn, BT_ATT_ERR_INVALID_PDU, params);
+}
+
 static int gatt_cancel_all_writes(struct bt_conn *conn,
 			   struct bt_gatt_write_params *params)
 {
 	LOG_DBG("");
 
-	return gatt_req_send(conn, gatt_write_rsp, params, gatt_cancel_encode,
+	return gatt_req_send(conn, gatt_cancel_all_writes_rsp, params, gatt_cancel_encode,
 			     BT_ATT_OP_EXEC_WRITE_REQ,
 			     sizeof(struct bt_att_exec_write_req),
 			     BT_ATT_CHAN_OPT(params));
