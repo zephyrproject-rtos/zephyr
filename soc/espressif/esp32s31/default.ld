@@ -1037,7 +1037,7 @@ SECTIONS
   /* Move drom0 after .text region to allow proper memory mapping. */
   .flash_rodata_dummy (NOLOAD) :
   {
-    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
+    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start + 1, CACHE_ALIGN);
   } GROUP_LINK_IN(RODATA_REGION)
 
   /* Symbols used during the application memory mapping */
