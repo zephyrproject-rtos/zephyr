@@ -66,16 +66,16 @@ Enabling TLS support
 =================================
 
 Enable TLS support in the sample by building the project with the
-``overlay-tls.conf`` overlay file enabled, for example, using these commands:
+``tls.conf`` extra config file enabled, for example, using these commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/big_http_download
    :board: qemu_x86
-   :conf: "prj.conf overlay-tls.conf"
+   :conf: "prj.conf tls.conf"
    :goals: build
    :compact:
 
-An alternative way is to specify ``-DEXTRA_CONF_FILE=overlay-tls.conf`` when
+An alternative way is to specify ``-DEXTRA_CONF_FILE=tls.conf`` when
 running ``west build`` or ``cmake``.
 
 The TLS version of this sample downloads a file from
