@@ -768,7 +768,21 @@ static int dma_stm32_configure(const struct device *dev,
 		DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
 	}
 
+	/* source_periph selects the width the data count is in: the source width when
+	 * set, the destination width otherwise.
+	 */
+#ifdef CONFIG_DMA_STM32_V1
+	/* v1: the count is in items of the peripheral port width, and that port holds
+	 * the source unless the transfer goes to a peripheral. Memory to memory
+	 * transfers are counted in the source width.
+	 */
+	stream->source_periph = (stream->direction != MEMORY_TO_PERIPHERAL);
+#else
+	/* v2: one item is moved per count, without packing between the widths. Memory
+	 * to memory transfers are counted in the destination width.
+	 */
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
+#endif /* CONFIG_DMA_STM32_V1 */
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if ((config->source_burst_length % config->source_data_size) != 0) {
@@ -1051,10 +1065,11 @@ static int dma_stm32_get_status(const struct device *dev,
 	 *
 	 * The DMA keeps track of a number of elements remaining rather than
 	 * an amount of bytes; convert to what the API expects based on the
-	 * source data size: "to be transferred" = "to be read from source".
+	 * width of the peripheral port, which counts the elements.
 	 */
 	pending_elems = LL_DMA_GetDataLength(dma, dma_stm32_id_to_stream(id));
-	stat->pending_length = pending_elems * stream->src_size;
+	stat->pending_length =
+		pending_elems * (stream->source_periph ? stream->src_size : stream->dst_size);
 
 	return 0;
 }
