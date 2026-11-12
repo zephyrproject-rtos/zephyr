@@ -17,6 +17,8 @@
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/usb/udc.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mchp_clock_control.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_sam0, CONFIG_UDC_DRIVER_LOG_LEVEL);
@@ -82,9 +84,17 @@ struct udc_sam0_padcal {
 	uint8_t trim_def;
 };
 
+struct udc_sam0_clock {
+	const struct device *dev;
+	clock_control_subsys_t mclk;
+	clock_control_subsys_t gclk;
+	int gclk_src;
+};
+
 struct udc_sam0_config {
 	mem_addr_t base;
 	const struct udc_sam0_padcal *padcal;
+	const struct udc_sam0_clock *clocks;
 	struct sam0_ep_buffer_desc *bdt;
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
@@ -879,14 +889,72 @@ static enum udc_bus_speed udc_sam0_device_speed(const struct device *dev)
 	return data->caps.hs ? UDC_BUS_SPEED_HS : UDC_BUS_SPEED_FS;
 }
 
-static int udc_sam0_enable(const struct device *dev)
+#if defined(CONFIG_CLOCK_CONTROL_MCHP_COMMON)
+static int sam0_clock_enable(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
-	const struct pinctrl_dev_config *const pcfg = config->pcfg;
-	const mem_addr_t base = config->base;
+	const struct udc_sam0_clock *clocks = config->clocks;
+	struct clock_mchp_subsys_gclkperiph_config gclk_cfg = {
+		.src = (enum clock_mchp_gclkgen)clocks->gclk_src,
+	};
 	int ret;
 
-#ifdef MCLK
+	if (!device_is_ready(clocks->dev)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_configure(clocks->dev, clocks->gclk, &gclk_cfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = clock_control_on(clocks->dev, clocks->gclk);
+	if (ret != 0 && ret != -EALREADY) {
+		return ret;
+	}
+
+	ret = clock_control_on(clocks->dev, clocks->mclk);
+	if (ret != 0 && ret != -EALREADY) {
+		(void)clock_control_off(clocks->dev, clocks->gclk);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int sam0_clock_disable(const struct device *dev)
+{
+	const struct udc_sam0_config *config = dev->config;
+	const struct udc_sam0_clock *clocks = config->clocks;
+	int ret;
+
+	ret = clock_control_off(clocks->dev, clocks->mclk);
+	if (ret != 0 && ret != -EALREADY) {
+		return ret;
+	}
+
+	ret = clock_control_off(clocks->dev, clocks->gclk);
+	if (ret != 0 && ret != -EALREADY) {
+		return ret;
+	}
+
+	return 0;
+}
+#else
+static int sam0_clock_enable(const struct device *dev)
+{
+	return -ENOTSUP;
+}
+
+static int sam0_clock_disable(const struct device *dev)
+{
+	return -ENOTSUP;
+}
+#endif
+
+static void sam0_enable_clock_legacy(void)
+{
+#if defined(MCLK)
 	/* Enable the clock in MCLK */
 	MCLK->APBBMASK.bit.USB_ = 1;
 
@@ -895,7 +963,7 @@ static int udc_sam0_enable(const struct device *dev)
 
 	while (GCLK->SYNCBUSY.reg) {
 	}
-#else
+#elif defined(PM)
 	/* Enable the clock in PM */
 	PM->APBBMASK.bit.USB_ = 1;
 
@@ -906,6 +974,47 @@ static int udc_sam0_enable(const struct device *dev)
 	while (GCLK->STATUS.bit.SYNCBUSY) {
 	}
 #endif
+}
+
+static void sam0_disable_clock_legacy(void)
+{
+#if defined(MCLK)
+	/* Disable 48 MHz clock source in GCLK */
+	GCLK->PCHCTRL[USB_GCLK_ID].reg = 0;
+
+	/* Disable the clock in MCLK */
+	MCLK->APBBMASK.bit.USB_ = 0;
+
+	while (GCLK->SYNCBUSY.reg) {
+	}
+#elif defined(PM)
+	/* Disable clock source in GCLK */
+	GCLK->CLKCTRL.reg = 0;
+
+	/* Disable the clock in PM */
+	PM->APBBMASK.bit.USB_ = 0;
+
+	while (GCLK->STATUS.bit.SYNCBUSY) {
+	}
+#endif
+}
+
+static int udc_sam0_enable(const struct device *dev)
+{
+	const struct udc_sam0_config *config = dev->config;
+	const struct pinctrl_dev_config *const pcfg = config->pcfg;
+	const mem_addr_t base = config->base;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_ASF) && config->clocks != NULL) {
+		ret = sam0_clock_enable(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable USB clocks (%d)", ret);
+			return ret;
+		}
+	} else {
+		sam0_enable_clock_legacy();
+	}
 
 	/* Reset controller */
 	sam0_write_field8(base + UDC_SAM0_CTRLA, UDC_SAM0_CTRLA_SWRST, 1U);
@@ -965,6 +1074,7 @@ static int udc_sam0_disable(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
 	const mem_addr_t base = config->base;
+	int ret;
 
 	config->irq_disable_func(dev);
 	sam0_write_field16(base + UDC_SAM0_DEVICE_CTRLB, UDC_SAM0_DEVICE_CTRLB_DETACH, 1U);
@@ -981,27 +1091,17 @@ static int udc_sam0_disable(const struct device *dev)
 		return -EIO;
 	}
 
-#ifdef MCLK
-	/* Disable 48 MHz clock source in GCLK */
-	GCLK->PCHCTRL[USB_GCLK_ID].reg = 0;
-
-	/* Disable the clock in MCLK */
-	MCLK->APBBMASK.bit.USB_ = 0;
-
-	while (GCLK->SYNCBUSY.reg) {
-	}
-#else
-	/* Disable clock source in GCLK */
-	GCLK->CLKCTRL.reg = 0;
-
-	/* Disable the clock in PM */
-	PM->APBBMASK.bit.USB_ = 0;
-
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-	}
-#endif
-
 	LOG_DBG("Disable device %s", dev->name);
+
+	if (!IS_ENABLED(CONFIG_ASF) && config->clocks != NULL) {
+		ret = sam0_clock_disable(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to disable USB clocks (%d)", ret);
+			return ret;
+		}
+	} else {
+		sam0_disable_clock_legacy();
+	}
 
 	return 0;
 }
@@ -1175,9 +1275,29 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 		    (UDC_SAM0_PADCAL_INST_DEFINE_DT(n)),			\
 		    (UDC_SAM0_PADCAL_INST_DEFINE_DEFAULT(n)))
 
+#define UDC_SAM0_GCLKPERIPH_NODE(n) DT_CHILD(DT_NODELABEL(gclkperiph), usb##n)
+
+#define UDC_SAM0_CLOCK_INST_DEFINE(n)							\
+	static const struct udc_sam0_clock sam0_clock_##n = {				\
+		.dev = DEVICE_DT_GET(DT_NODELABEL(clock)),				\
+		.mclk = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem),	\
+		.gclk = (void *)DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, subsystem),	\
+		.gclk_src = DT_ENUM_IDX(UDC_SAM0_GCLKPERIPH_NODE(n), gclkperiph_src),	\
+	}
+
+#define UDC_SAM0_CLOCK_DEFINE(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),				\
+		    (UDC_SAM0_CLOCK_INST_DEFINE(n)),				\
+		    ())
+
+#define UDC_SAM0_CLOCK_GET(n)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),				\
+		    (&sam0_clock_##n), (NULL))
+
 #define UDC_SAM0_DEVICE_DEFINE(n)						\
 	UDC_SAM0_PINCTRL_DT_INST_DEFINE(n);					\
 	UDC_SAM0_PADCAL_INST_DEFINE(n);						\
+	UDC_SAM0_CLOCK_DEFINE(n);						\
 	UDC_SAM0_IRQ_ENABLE_DEFINE(i, n);					\
 	UDC_SAM0_IRQ_DISABLE_DEFINE(i, n);					\
 										\
@@ -1223,6 +1343,7 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 		.irq_disable_func = udc_sam0_irq_disable_func_##n,		\
 		.pcfg = UDC_SAM0_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.padcal = &sam0_padcal_##n,					\
+		.clocks = UDC_SAM0_CLOCK_GET(n),				\
 		.make_thread = udc_sam0_make_thread_##n,			\
 	};									\
 										\
