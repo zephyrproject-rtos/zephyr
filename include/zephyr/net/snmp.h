@@ -462,12 +462,15 @@ int snmp_mib2_system_set_location(const char *location);
  * @brief Set the snmpEnableAuthenTraps value of the MIB-2 snmp group.
  *
  * The object records whether authenticationFailure notifications may be
- * generated. Managers can change it with SET; an application that persists
- * it, as RFC 3418 recommends, restores it with this call.
+ * generated. Managers can change it with SET. The value is written to the
+ * registered storage, if any, before it takes effect.
  *
  * @param enabled true for enabled(1), false for disabled(2).
+ *
+ * @retval 0 Success.
+ * @retval -EIO The storage could not store the value; it is unchanged.
  */
-void snmp_mib2_snmp_set_authen_traps(bool enabled);
+int snmp_mib2_snmp_set_authen_traps(bool enabled);
 
 /**
  * @brief A receiver of notifications.
@@ -541,6 +544,72 @@ void snmp_agent_clear_notification_targets(void);
  */
 int snmp_agent_notify(const uint32_t *notification, size_t len, const struct snmp_varbind *bindings,
 		      size_t count);
+
+/** Items the agent persists through @ref snmp_storage. */
+enum snmp_storage_item {
+	/** sysName, the string without NUL termination. */
+	SNMP_STORAGE_SYS_NAME,
+	/** sysContact, the string without NUL termination. */
+	SNMP_STORAGE_SYS_CONTACT,
+	/** sysLocation, the string without NUL termination. */
+	SNMP_STORAGE_SYS_LOCATION,
+	/** snmpEnableAuthenTraps, one byte holding 1 for enabled or 2 for disabled. */
+	SNMP_STORAGE_AUTHEN_TRAPS,
+};
+
+/**
+ * @brief Storage for the objects managers can change, supplied by the application.
+ *
+ * The agent loads every item in snmp_agent_start(), so stored values take
+ * precedence over the Kconfig defaults and over values the application set
+ * before starting it. A manager's SET and the application's setters write
+ * the item before the new value takes effect, and a failed write is reported
+ * to the manager as commitFailed and to the application as -EIO. Both
+ * callbacks run in the caller's context, the agent's for a SET.
+ */
+struct snmp_storage {
+	/**
+	 * @brief Read an item.
+	 *
+	 * @param item Item to read.
+	 * @param buf Destination.
+	 * @param size Size of @p buf in bytes.
+	 *
+	 * @return Number of bytes stored, zero for an empty value.
+	 * @retval -ENOENT Nothing is stored for @p item; the default applies.
+	 * @retval -EMSGSIZE The stored value is larger than @p size.
+	 * @retval -errno The medium failed; the default applies.
+	 */
+	int (*load)(enum snmp_storage_item item, void *buf, size_t size);
+
+	/**
+	 * @brief Write an item durably.
+	 *
+	 * Returns only once the data survives a reset; verifying the write is
+	 * the storage's business.
+	 *
+	 * @param item Item to write.
+	 * @param data Bytes to store.
+	 * @param len Number of bytes.
+	 *
+	 * @retval 0 Success.
+	 * @retval -errno The value could not be stored.
+	 */
+	int (*store)(enum snmp_storage_item item, const void *data, size_t len);
+};
+
+/**
+ * @brief Register the storage the agent persists to.
+ *
+ * Takes effect for writes at once and for loading at the next
+ * snmp_agent_start(). NULL disables persistence.
+ *
+ * @param storage Storage callbacks, or NULL.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p storage lacks a callback.
+ */
+int snmp_agent_set_storage(const struct snmp_storage *storage);
 
 /**
  * @}

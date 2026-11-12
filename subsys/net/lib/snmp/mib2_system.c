@@ -9,6 +9,9 @@
  * so sysORLastChange stays at zero.
  */
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(net_snmp, CONFIG_SNMP_LOG_LEVEL);
+
 #include <errno.h>
 #include <string.h>
 
@@ -40,6 +43,16 @@ BUILD_ASSERT(sizeof(CONFIG_SNMP_SYS_LOCATION) <= SYS_STRING_SIZE,
 static char sys_name[SYS_STRING_SIZE] = CONFIG_SNMP_SYS_NAME;
 static char sys_contact[SYS_STRING_SIZE] = CONFIG_SNMP_SYS_CONTACT;
 static char sys_location[SYS_STRING_SIZE] = CONFIG_SNMP_SYS_LOCATION;
+
+/* A writable string and the storage item it is persisted as. */
+struct sys_string {
+	char *buf;
+	enum snmp_storage_item item;
+};
+
+static struct sys_string sys_name_string = {sys_name, SNMP_STORAGE_SYS_NAME};
+static struct sys_string sys_contact_string = {sys_contact, SNMP_STORAGE_SYS_CONTACT};
+static struct sys_string sys_location_string = {sys_location, SNMP_STORAGE_SYS_LOCATION};
 static uint32_t sys_object_id[SNMP_OID_MAX_LEN] = {0U, 0U};
 static size_t sys_object_id_len = 2U;
 static K_MUTEX_DEFINE(lock);
@@ -70,7 +83,22 @@ static bool display_string_valid(const uint8_t *data, size_t len)
 	return true;
 }
 
-static int set_string(char *dst, const char *src)
+/* Store first, then apply: a value is never visible before it is durable. */
+static int commit_string(const struct sys_string *s, const uint8_t *data, size_t len)
+{
+	if (snmp_storage_store(s->item, data, len) != 0) {
+		return -EIO;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	memcpy(s->buf, data, len);
+	s->buf[len] = '\0';
+	k_mutex_unlock(&lock);
+
+	return 0;
+}
+
+static int set_string(const struct sys_string *s, const char *src)
 {
 	size_t len;
 
@@ -87,11 +115,36 @@ static int set_string(char *dst, const char *src)
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
-	memcpy(dst, src, len + 1U);
-	k_mutex_unlock(&lock);
+	return commit_string(s, (const uint8_t *)src, len);
+}
 
-	return 0;
+/* A stored value replaces the default unless it is unusable. */
+static void restore_string(const struct sys_string *s)
+{
+	uint8_t stored[CONFIG_SNMP_SYS_STRING_MAX_LEN];
+	int len;
+
+	len = snmp_storage_load(s->item, stored, sizeof(stored));
+	if (len == -ENOENT) {
+		return;
+	}
+
+	if (len < 0 || !display_string_valid(stored, (size_t)len)) {
+		LOG_WRN("Ignoring stored value of item %d (%d)", s->item, len);
+		return;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	memcpy(s->buf, stored, (size_t)len);
+	s->buf[len] = '\0';
+	k_mutex_unlock(&lock);
+}
+
+void snmp_mib2_system_restore(void)
+{
+	restore_string(&sys_name_string);
+	restore_string(&sys_contact_string);
+	restore_string(&sys_location_string);
 }
 
 int snmp_mib2_system_set_object_id(const uint32_t *arcs, size_t len)
@@ -120,17 +173,17 @@ int snmp_mib2_system_set_object_id(const uint32_t *arcs, size_t len)
 
 int snmp_mib2_system_set_name(const char *name)
 {
-	return set_string(sys_name, name);
+	return set_string(&sys_name_string, name);
 }
 
 int snmp_mib2_system_set_contact(const char *contact)
 {
-	return set_string(sys_contact, contact);
+	return set_string(&sys_contact_string, contact);
 }
 
 int snmp_mib2_system_set_location(const char *location)
 {
-	return set_string(sys_location, location);
+	return set_string(&sys_location_string, location);
 }
 
 static void value_from_cstr(struct snmp_value *val, const char *s)
@@ -143,7 +196,8 @@ static void value_from_cstr(struct snmp_value *val, const char *s)
 /* Getter for the writable strings; user_data points at the buffer. */
 static int string_get(const struct snmp_object *obj, void *row, struct snmp_value *val)
 {
-	const char *src = obj->user_data;
+	const struct sys_string *s = obj->user_data;
+	const char *src = s->buf;
 
 	ARG_UNUSED(row);
 
@@ -160,7 +214,7 @@ static int string_get(const struct snmp_object *obj, void *row, struct snmp_valu
 static int string_set(const struct snmp_object *obj, void *row, const struct snmp_value *val,
 		      enum snmp_set_phase phase)
 {
-	char *dst = obj->user_data;
+	const struct sys_string *s = obj->user_data;
 
 	ARG_UNUSED(row);
 
@@ -180,12 +234,7 @@ static int string_set(const struct snmp_object *obj, void *row, const struct snm
 		return 0;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
-	memcpy(dst, val->octets.data, val->octets.len);
-	dst[val->octets.len] = '\0';
-	k_mutex_unlock(&lock);
-
-	return 0;
+	return commit_string(s, val->octets.data, val->octets.len);
 }
 
 static int sys_descr_get(const struct snmp_object *obj, void *row, struct snmp_value *val)
@@ -351,9 +400,9 @@ static int sys_or_uptime_get(const struct snmp_object *obj, void *row, struct sn
 SNMP_SCALAR_DEFINE(mib2_sys_descr, sys_descr_get, NULL, NULL, MIB2_SYSTEM(1));
 SNMP_SCALAR_DEFINE(mib2_sys_object_id, sys_object_id_get, NULL, NULL, MIB2_SYSTEM(2));
 SNMP_SCALAR_DEFINE(mib2_sys_uptime, sys_uptime_get, NULL, NULL, MIB2_SYSTEM(3));
-SNMP_SCALAR_DEFINE(mib2_sys_contact, string_get, string_set, sys_contact, MIB2_SYSTEM(4));
-SNMP_SCALAR_DEFINE(mib2_sys_name, string_get, string_set, sys_name, MIB2_SYSTEM(5));
-SNMP_SCALAR_DEFINE(mib2_sys_location, string_get, string_set, sys_location, MIB2_SYSTEM(6));
+SNMP_SCALAR_DEFINE(mib2_sys_contact, string_get, string_set, &sys_contact_string, MIB2_SYSTEM(4));
+SNMP_SCALAR_DEFINE(mib2_sys_name, string_get, string_set, &sys_name_string, MIB2_SYSTEM(5));
+SNMP_SCALAR_DEFINE(mib2_sys_location, string_get, string_set, &sys_location_string, MIB2_SYSTEM(6));
 SNMP_SCALAR_DEFINE(mib2_sys_services, sys_services_get, NULL, NULL, MIB2_SYSTEM(7));
 SNMP_SCALAR_DEFINE(mib2_sys_or_last_change, sys_or_last_change_get, NULL, NULL, MIB2_SYSTEM(8));
 /* sysORIndex is not-accessible and therefore not registered. */

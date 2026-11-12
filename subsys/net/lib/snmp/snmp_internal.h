@@ -121,6 +121,18 @@ extern struct snmp_counters snmp_stats;
 int snmp_transport_send(const struct net_sockaddr *dst, net_socklen_t dst_len, const void *data,
 			size_t len);
 
+/*
+ * Access to the application's storage. Without one, load reports -ENOENT
+ * and store succeeds without doing anything.
+ */
+int snmp_storage_load(enum snmp_storage_item item, void *buf, size_t size);
+int snmp_storage_store(enum snmp_storage_item item, const void *data, size_t len);
+
+/* Load every persisted value into the RAM state; called from snmp_agent_start(). */
+void snmp_storage_restore(void);
+/* The system group's share of it. */
+void snmp_mib2_system_restore(void);
+
 /* Notifications the agent itself originates; no-ops without receivers. */
 void snmp_notify_cold_start(void);
 void snmp_notify_authentication_failure(void);

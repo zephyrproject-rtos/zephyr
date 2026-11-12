@@ -82,8 +82,9 @@ static int authen_traps_set(const struct snmp_object *obj, void *row, const stru
 		return -ERANGE;
 	}
 
-	if (phase == SNMP_SET_COMMIT) {
-		snmp_mib2_snmp_set_authen_traps(val->i32 == AUTHEN_TRAPS_ENABLED);
+	if (phase == SNMP_SET_COMMIT &&
+	    snmp_mib2_snmp_set_authen_traps(val->i32 == AUTHEN_TRAPS_ENABLED) != 0) {
+		return -EIO;
 	}
 
 	return 0;

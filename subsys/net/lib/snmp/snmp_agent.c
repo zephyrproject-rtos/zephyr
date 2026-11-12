@@ -51,14 +51,85 @@ struct snmp_status {
 
 struct snmp_counters snmp_stats;
 
+static const struct snmp_storage *storage;
+
+int snmp_agent_set_storage(const struct snmp_storage *s)
+{
+	if (s != NULL && (s->load == NULL || s->store == NULL)) {
+		return -EINVAL;
+	}
+
+	storage = s;
+
+	return 0;
+}
+
+int snmp_storage_load(enum snmp_storage_item item, void *buf, size_t size)
+{
+	if (storage == NULL) {
+		return -ENOENT;
+	}
+
+	return storage->load(item, buf, size);
+}
+
+int snmp_storage_store(enum snmp_storage_item item, const void *data, size_t len)
+{
+	if (storage == NULL) {
+		return 0;
+	}
+
+	return storage->store(item, data, len);
+}
+
 /* snmpEnableAuthenTraps lives here so that it is available whether or not
- * the snmp group that exposes it is built.
+ * the snmp group that exposes it is built. Stored as one byte with the
+ * object's own encoding.
  */
+#define AUTHEN_TRAPS_ENABLED  1U
+#define AUTHEN_TRAPS_DISABLED 2U
+
 static bool authen_traps = true;
 
-void snmp_mib2_snmp_set_authen_traps(bool enabled)
+int snmp_mib2_snmp_set_authen_traps(bool enabled)
 {
+	uint8_t stored = enabled ? AUTHEN_TRAPS_ENABLED : AUTHEN_TRAPS_DISABLED;
+
+	if (snmp_storage_store(SNMP_STORAGE_AUTHEN_TRAPS, &stored, sizeof(stored)) != 0) {
+		return -EIO;
+	}
+
 	authen_traps = enabled;
+
+	return 0;
+}
+
+static void authen_traps_restore(void)
+{
+	uint8_t stored;
+	int ret;
+
+	ret = snmp_storage_load(SNMP_STORAGE_AUTHEN_TRAPS, &stored, sizeof(stored));
+	if (ret == -ENOENT) {
+		return;
+	}
+
+	if (ret != (int)sizeof(stored) ||
+	    (stored != AUTHEN_TRAPS_ENABLED && stored != AUTHEN_TRAPS_DISABLED)) {
+		LOG_WRN("Ignoring stored snmpEnableAuthenTraps (%d)", ret);
+		return;
+	}
+
+	authen_traps = (stored == AUTHEN_TRAPS_ENABLED);
+}
+
+void snmp_storage_restore(void)
+{
+	authen_traps_restore();
+
+	if (IS_ENABLED(CONFIG_SNMP_MIB2_SYSTEM)) {
+		snmp_mib2_system_restore();
+	}
 }
 
 bool snmp_authen_traps_enabled(void)
