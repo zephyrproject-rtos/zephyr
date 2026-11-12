@@ -15,6 +15,10 @@ family:
     socs:
     - name: corstone300
     - name: corstone310
+    - name: an524
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
   - name: mps4
     socs:
     - name: corstone315

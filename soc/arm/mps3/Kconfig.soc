@@ -19,6 +19,23 @@ config SOC_CORSTONE310
 	bool
 	select SOC_SERIES_MPS3
 
+config SOC_AN524
+	bool
+	select SOC_SERIES_MPS3
+
+config SOC_AN524_CPU0
+	bool
+	select SOC_AN524
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MPS3 (AN524) CPU0
+
+config SOC_AN524_CPU1
+	bool
+	select SOC_AN524
+	help
+	  ARM Cortex-M33 SMM-SSE-200 on V2M-MPS3 (AN524) CPU1
+
 config SOC
 	default "corstone300" if SOC_CORSTONE300
 	default "corstone310" if SOC_CORSTONE310
+	default "an524" if SOC_AN524
