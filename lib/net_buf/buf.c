@@ -251,6 +251,27 @@ static uint8_t *data_ref(struct net_buf *buf, uint8_t *data)
 	return pool->alloc->cb->ref(buf, data);
 }
 
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+/* Count one more buffer of the pool as in use */
+static void pool_usage_inc(struct net_buf_pool *pool)
+{
+	atomic_val_t avail = atomic_dec(&pool->avail_count) - 1;
+	k_spinlock_key_t key;
+
+	__ASSERT_NO_MSG(avail >= 0);
+
+	/* A concurrent call must not overwrite a higher value with its own */
+	key = k_spin_lock(&pool->lock);
+	pool->max_used = max(pool->max_used, pool->buf_count - avail);
+	k_spin_unlock(&pool->lock, key);
+}
+#else
+static void pool_usage_inc(struct net_buf_pool *pool)
+{
+	ARG_UNUSED(pool);
+}
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
+
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
 					k_timeout_t timeout, const char *func,
@@ -361,16 +382,8 @@ success:
 	memset(buf->user_data, 0, buf->user_data_size);
 	net_buf_reset(buf);
 
-#if defined(CONFIG_NET_BUF_POOL_USAGE)
-	atomic_val_t avail = atomic_dec(&pool->avail_count) - 1;
+	pool_usage_inc(pool);
 
-	__ASSERT_NO_MSG(avail >= 0);
-
-	/* A concurrent allocation must not overwrite a higher value with its own */
-	key = k_spin_lock(&pool->lock);
-	pool->max_used = max(pool->max_used, pool->buf_count - avail);
-	k_spin_unlock(&pool->lock, key);
-#endif
 	return buf;
 }
 
@@ -600,6 +613,38 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 
 	NET_BUF_DBG("buf %p (old) ref %u pool_id %u",
 		    buf, old_ref, buf->pool_id);
+	return buf;
+}
+
+struct net_buf *net_buf_reuse(struct net_buf **orig)
+{
+	struct net_buf *buf;
+
+	__ASSERT_NO_MSG(orig != NULL);
+
+	/* Not net_buf_take(): that moves a reference, and this buffer has none.
+	 * Nothing else can reach the pointer of a destroy callback, so it needs
+	 * no atomic exchange either.
+	 */
+	buf = *orig;
+	*orig = NULL;
+
+	__ASSERT_NO_MSG(buf != NULL);
+	__ASSERT(buf->ref == 0U, "buf %p is referenced", buf);
+	__ASSERT((buf->flags & NET_BUF_EXTERNAL_DATA) == 0U, "buf %p has external data", buf);
+
+	NET_BUF_DBG("buf %p pool_id %u", buf, buf->pool_id);
+
+	buf->ref = 1U;
+	(void)memset(buf->user_data, 0, buf->user_data_size);
+	net_buf_reset(buf);
+
+	/* net_buf_unref() has counted the buffer as available. Other buffers
+	 * of the pool may have been allocated since, so this can be a new
+	 * maximum.
+	 */
+	pool_usage_inc(net_buf_pool_get(buf->pool_id));
+
 	return buf;
 }
 
