@@ -117,6 +117,13 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define GD32_OSPEED_10MHZ 1U
 /** Maximum 50MHz */
 #define GD32_OSPEED_50MHZ 3U
+#elif defined(CONFIG_SOC_SERIES_GD32F527)
+/** Maximum 10MHz */
+#define GD32_OSPEED_10MHZ 1U
+/** Maximum 50MHz */
+#define GD32_OSPEED_50MHZ 2U
+/** Maximum speed */
+#define GD32_OSPEED_MAX   3U
 #elif defined(CONFIG_SOC_SERIES_GD32C2X1)
 /** Speed level 0 */
 #define GD32_OSPEED_LEVEL_0 0U
