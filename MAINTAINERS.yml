@@ -2847,16 +2847,23 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/sfp.rst
     - drivers/sfp/
     - dts/bindings/sfp/
+    - include/zephyr/cmis/
+    - include/zephyr/drivers/cmis.h
     - include/zephyr/drivers/sfp.h
     - include/zephyr/sff/
+    - lib/cmis/
     - lib/sff/
     - samples/drivers/sfp/
+    - tests/drivers/cmis/
     - tests/drivers/sfp/
+    - tests/lib/cmis/
     - tests/lib/sff8472/
   labels:
     - "area: SFP"
   tests:
+    - drivers.cmis
     - drivers.sfp
+    - libraries.cmis
     - libraries.sff8472
     - sample.drivers.sfp
 
