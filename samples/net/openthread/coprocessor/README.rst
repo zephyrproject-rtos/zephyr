@@ -39,7 +39,7 @@ Build the OpenThread NCP sample application which uses CDC ACM UART device:
    :zephyr-app: samples/net/openthread/coprocessor
    :board: nrf52840dk/nrf52840
    :goals: build flash
-   :gen-args: -DDTC_OVERLAY_FILE=usb.overlay -DEXTRA_CONF_FILE=overlay-usb-nrf-br.conf
+   :gen-args: -DDTC_OVERLAY_FILE=usb.overlay -DEXTRA_CONF_FILE=usb-nrf-br.conf
    :compact:
 
 Example building for the nrf52840dk/nrf52840 for RCP:
@@ -48,7 +48,7 @@ Example building for the nrf52840dk/nrf52840 for RCP:
    :zephyr-app: samples/net/openthread/coprocessor
    :board: nrf52840dk/nrf52840
    :goals: build flash
-   :gen-args: -DEXTRA_CONF_FILE=overlay-rcp.conf
+   :gen-args: -DEXTRA_CONF_FILE=rcp.conf
    :compact:
 
 There are configuration files for different boards and setups in the
@@ -57,12 +57,12 @@ coprocessor directory:
 :file:`prj.conf`
    Generic NCP config file. Use this, if you want the NCP configuration.
 
-:file:`overlay-rcp.conf`
-   RCP overlay file. Use this in combination with prj.conf, if you want the RCP
+:file:`rcp.conf`
+   RCP extra config file. Use this in combination with prj.conf, if you want the RCP
    configuration.
 
-:file:`overlay-tri-n4m-br.conf`
-   This is an overlay for the dedicated Thread Border Router hardware
+:file:`tri-n4m-br.conf`
+   This is an extra config file for the dedicated Thread Border Router hardware
    https://www.tridonic.com/com/en/download/data_sheets/net4more_Borderrouter_PoE-Thread_en.pdf.
    The board support is not part of the Zephyr repositories, but the
    product is based on NXP K64 and AT86RF233. This file can be used as an
