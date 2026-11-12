@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2026, Trasna.io
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/drivers/modem/modem_cellular.h>
+
+#define DT_DRV_COMPAT trasna_lexi_r7
+
+MODEM_CELLULAR_COMMON_CHAT_MATCHES();
+
+MODEM_CHAT_MATCHES_DEFINE(trasna_lexi_r7_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	trasna_lexi_r7_set_baudrate_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR=" STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE),
+						       ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_set_baudrate_chat_script,
+			 trasna_lexi_r7_set_baudrate_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 2);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	trasna_lexi_r7_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMEE=1", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=1", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_init_chat_script, trasna_lexi_r7_init_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r7_network_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_network_chat_script,
+			 trasna_lexi_r7_network_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r7_dial_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CCID", ccid_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				1000));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_dial_chat_script, trasna_lexi_r7_dial_chat_script_cmds,
+			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r7_periodic_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_periodic_chat_script,
+			 trasna_lexi_r7_periodic_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 4);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(trasna_lexi_r7_shutdown_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPWROFF", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(trasna_lexi_r7_shutdown_chat_script,
+			 trasna_lexi_r7_shutdown_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 40);
+
+static const struct modem_cellular_vendor_config trasna_lexi_r7_vendor = {
+	/* clang-format off */
+	.scripts = {
+		.set_baudrate = &trasna_lexi_r7_set_baudrate_chat_script,
+		.init = &trasna_lexi_r7_init_chat_script,
+		.network = &trasna_lexi_r7_network_chat_script,
+		.dial = &trasna_lexi_r7_dial_chat_script,
+		.periodic = &trasna_lexi_r7_periodic_chat_script,
+		.shutdown = &trasna_lexi_r7_shutdown_chat_script,
+	},
+	.unsol_matches = {
+		.matches = trasna_lexi_r7_unsol,
+		.size = ARRAY_SIZE(trasna_lexi_r7_unsol),
+	},
+	/* clang-format on */
+	.chat_delimiter = "\r",
+	.chat_filter = "\n",
+	.power_pulse_duration_ms = 100,
+	.reset_pulse_duration_ms = 600,
+	.startup_time_ms = 10000,
+	.shutdown_time_ms = 5000,
+	.force_autostart = true,
+};
+
+#define MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R7(inst)                                                 \
+	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &trasna_lexi_r7_vendor, NULL)
+
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R7)
