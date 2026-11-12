@@ -19,6 +19,19 @@
 	clock-frequency = <DT_FREQ_M(40)>;
 };
 
+/* SPI clock from HCLK. */
+&spi0 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&spi1 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&spi2 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
 &itcm {
 	reg = <0x00000000 DT_SIZE_K(512)>;
 };
