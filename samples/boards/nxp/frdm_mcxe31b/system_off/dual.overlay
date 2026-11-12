@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram {
+	reg = <0x20408000 DT_SIZE_K(32)>;
+};
