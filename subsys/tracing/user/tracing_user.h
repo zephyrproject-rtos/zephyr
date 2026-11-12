@@ -668,6 +668,10 @@ void sys_trace_k_work_flush_enter(struct k_work *work);
 void sys_trace_k_work_flush_enter_user(struct k_work *work);
 void sys_trace_k_work_flush_exit(struct k_work *work, int ret);
 void sys_trace_k_work_flush_exit_user(struct k_work *work, int ret);
+void sys_trace_k_work_handler_enter(struct k_work *work);
+void sys_trace_k_work_handler_enter_user(struct k_work *work);
+void sys_trace_k_work_handler_exit(struct k_work *work);
+void sys_trace_k_work_handler_exit_user(struct k_work *work);
 void sys_trace_k_work_init(struct k_work *work);
 void sys_trace_k_work_init_user(struct k_work *work);
 void sys_trace_k_work_poll_cancel_enter(struct k_work_poll *work);
@@ -783,6 +787,8 @@ void sys_trace_k_work_submit_to_queue_exit_user(struct k_work_q *queue, struct k
 	sys_trace_k_work_flush_delayable_exit(dwork, sync, ret)
 #define sys_port_trace_k_work_flush_enter(work) sys_trace_k_work_flush_enter(work)
 #define sys_port_trace_k_work_flush_exit(work, ret) sys_trace_k_work_flush_exit(work, ret)
+#define sys_port_trace_k_work_handler_enter(work)     sys_trace_k_work_handler_enter(work)
+#define sys_port_trace_k_work_handler_exit(work)      sys_trace_k_work_handler_exit(work)
 #define sys_port_trace_k_work_init(work) sys_trace_k_work_init(work)
 #define sys_port_trace_k_work_poll_cancel_enter(work) sys_trace_k_work_poll_cancel_enter(work)
 #define sys_port_trace_k_work_poll_cancel_exit(work, ret)                                          \

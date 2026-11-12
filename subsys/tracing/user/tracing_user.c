@@ -1128,6 +1128,20 @@ void sys_trace_k_work_flush_exit(struct k_work *work, int ret)
 {
 	sys_trace_k_work_flush_exit_user(work, ret);
 }
+void __weak sys_trace_k_work_handler_enter_user(struct k_work *work)
+{
+}
+void sys_trace_k_work_handler_enter(struct k_work *work)
+{
+	sys_trace_k_work_handler_enter_user(work);
+}
+void __weak sys_trace_k_work_handler_exit_user(struct k_work *work)
+{
+}
+void sys_trace_k_work_handler_exit(struct k_work *work)
+{
+	sys_trace_k_work_handler_exit_user(work);
+}
 void __weak sys_trace_k_work_init_user(struct k_work *work) {}
 void sys_trace_k_work_init(struct k_work *work)
 {
