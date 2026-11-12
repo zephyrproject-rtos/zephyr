@@ -42,6 +42,8 @@
 #include <nrfx_clock.h>
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
+#include "chan_metrics.h"
+
 #include "lc3.h"
 #include "stream_rx.h"
 #include "usb.h"
@@ -1050,6 +1052,25 @@ static struct bt_le_per_adv_sync_cb bap_pa_sync_cb = {
 	.term = bap_pa_sync_terminated_cb,
 };
 
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+/* Delegate the vendor-specific events to their handlers, each handler is given the event from
+ * its start.
+ */
+static bool vnd_evt_cb(struct net_buf_simple *buf)
+{
+	struct net_buf_simple_state state;
+
+	net_buf_simple_save(buf, &state);
+
+	if (IS_ENABLED(CONFIG_CHAN_METRICS_PRINT) && chan_metrics_vnd_evt(buf)) {
+		return true;
+	}
+	net_buf_simple_restore(buf, &state);
+
+	return false;
+}
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
+
 static int init(void)
 {
 	const struct bt_pacs_register_param pacs_param = {
@@ -1065,6 +1086,18 @@ static int init(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	if (IS_ENABLED(CONFIG_CHAN_METRICS_PRINT)) {
+		chan_metrics_init();
+	}
+
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+	err = bt_hci_register_vnd_evt_cb(vnd_evt_cb);
+	if (err != 0) {
+		printk("Vendor-specific event callback register failed (err %d)\n", err);
+		return err;
+	}
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
 
 	leds_init();
 

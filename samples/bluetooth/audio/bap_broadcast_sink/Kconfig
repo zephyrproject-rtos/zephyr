@@ -100,6 +100,25 @@ config TARGET_BROADCAST_CHANNEL
 	  Channel Audio Location to sync to. These corresponds to the bt_audio_location,
 	  supporting mono, left and right channels
 
+config CHAN_METRICS_PRINT
+	bool "Print channel metrics histogram"
+	default y
+	depends on BT_LL_SW_SPLIT && BT_HCI_VS
+	select BT_HCI_VS_EVT_USER
+	imply BT_CTLR_CHAN_METRICS_EVENT
+	help
+	  Collect the Zephyr vendor-specific Channel Metrics events generated
+	  by the controller with the per channel reception success of the
+	  connections and of the synchronized Broadcast Isochronous Group, and
+	  periodically print a histogram of the filtered per channel score in
+	  the scale of 0 to 100.
+
+config CHAN_METRICS_PRINT_INTERVAL
+	int "Channel metrics histogram print interval in seconds"
+	default 10
+	range 1 3600
+	depends on CHAN_METRICS_PRINT
+
 config INFO_REPORTING_INTERVAL
 	int "Number of SDUs received between each information report"
 	default 1000
