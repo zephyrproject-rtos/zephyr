@@ -54,6 +54,16 @@ Boards
   * Remove custom nodes and linker sections that reserve the push area, such as
     ``nrf_kmu_reserved_push_area``. They would overlap the ``kmu_push_area`` node.
 
+* On Nordic SoCs, :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NONSECURE` no longer enables
+  :kconfig:option:`CONFIG_BUILD_WITH_TFM` by default, as TF-M is not the only possible secure
+  firmware. The in-tree ``/ns`` board targets now enable TF-M themselves. Out-of-tree non-secure
+  board targets that use TF-M must do the same, in their :file:`Kconfig.defconfig`:
+
+  .. code-block:: kconfig
+
+     configdefault BUILD_WITH_TFM
+             default y if BOARD_MY_BOARD_NRF9160_NS
+
 * :zephyr:board:`stm32_min_dev` now declares two SoCs, so the SoC qualifier is
   mandatory. Applications and test configurations that used ``stm32_min_dev``,
   ``stm32_min_dev@blue`` or ``stm32_min_dev@black`` must use
