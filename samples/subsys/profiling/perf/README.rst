@@ -74,3 +74,13 @@ Graph example
 .. image:: images/graph_example.svg
    :align: center
    :alt: graph example
+
+Arm64 event counting sessions
+*****************************
+
+Enable ``CONFIG_ARM64_PMUV3`` and ``CONFIG_PROFILING_PERF_EVENT_PROVIDER_CPU`` to use real
+``cpuN`` counters. Operations execute on the owning CPU, directly for the current CPU or
+through an IPI for a remote CPU. SMP requires scheduler IPI support. The ``sample.perf.arm64``
+scenario enables recording and event counting commands on the Arm FVP.
+Other sample configurations exercise recording without a CPU counter provider.
+See :ref:`profiling-perf-provider-cpu` for the counter lifecycle and PMU ownership requirements.

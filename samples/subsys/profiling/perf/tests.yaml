@@ -17,3 +17,17 @@ tests:
       - qemu_x86_64
       - qemu_x86
     harness: pytest
+  sample.perf.arm64:
+    tags:
+      - perf
+      - profiling
+      - pmu
+    extra_configs:
+      - CONFIG_ARM64_PMUV3=y
+      - CONFIG_PROFILING_PERF_EVENT_PROVIDER_CPU=y
+    platform_allow:
+      - fvp_base_revc_2xaem/v8a
+    integration_platforms:
+      - fvp_base_revc_2xaem/v8a
+    harness: pytest
+    timeout: 120
