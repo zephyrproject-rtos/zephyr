@@ -40,6 +40,12 @@ LOG_MODULE_REGISTER(bt_tinyhost, LOG_LEVEL_INF);
 #define BT_ATT_OP_WRITE_CMD 0x52
 #define BT_L2CAP_CID_ATT    0x0004
 
+#define BT_ATT_OP_PREPARE_WRITE_REQ 0x16U
+#define BT_ATT_OP_PREPARE_WRITE_RSP 0x17U
+#define BT_ATT_OP_EXEC_WRITE_REQ    0x18U
+#define BT_ATT_OP_EXEC_WRITE_RSP    0x19U
+#define BT_ATT_FLAG_CANCEL          0x00U
+
 DEFINE_FLAG_STATIC(is_connected);
 DEFINE_FLAG_STATIC(flag_data_length_updated);
 DEFINE_FLAG_STATIC(flag_handle);
@@ -205,6 +211,48 @@ static void handle_att_write(struct net_buf *buf)
 	send_write_rsp();
 }
 
+/* Long writes the DUT cancelled */
+static atomic_t cancelled_writes;
+
+static void handle_att_prepare_write(struct net_buf *buf)
+{
+	uint16_t handle = net_buf_pull_le16(buf);
+	uint16_t offset = net_buf_pull_le16(buf);
+	struct net_buf *rsp = alloc_l2cap_pdu();
+
+	LOG_INF("Got prepare write for 0x%04x offset %u len %u", handle, offset, buf->len);
+
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_PREPARE_WRITE_RSP);
+	net_buf_add_le16(rsp, handle);
+	net_buf_add_le16(rsp, offset);
+	(void)net_buf_add_mem(rsp, buf->data, buf->len);
+
+	if (atomic_get(&cancelled_writes) == 0) {
+		/* Echo a different value */
+		rsp->data[rsp->len - 1] ^= 0xff;
+	} else {
+		/* Echo more than was sent */
+		(void)net_buf_add_u8(rsp, 0x00);
+	}
+
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+}
+
+static void handle_att_exec_write(struct net_buf *buf)
+{
+	uint8_t flags = net_buf_pull_u8(buf);
+	struct net_buf *rsp;
+
+	LOG_INF("Got execute write flags 0x%02x", flags);
+	TEST_ASSERT(flags == BT_ATT_FLAG_CANCEL, "The prepared writes were not cancelled");
+
+	rsp = alloc_l2cap_pdu();
+	(void)net_buf_add_u8(rsp, BT_ATT_OP_EXEC_WRITE_RSP);
+	send_l2cap_packet(rsp, BT_L2CAP_CID_ATT);
+
+	(void)atomic_inc(&cancelled_writes);
+}
+
 static void handle_att(struct net_buf *buf)
 {
 	uint8_t op = net_buf_pull_u8(buf);
@@ -215,6 +263,12 @@ static void handle_att(struct net_buf *buf)
 		return;
 	case BT_ATT_OP_WRITE_REQ:
 		handle_att_write(buf);
+		return;
+	case BT_ATT_OP_PREPARE_WRITE_REQ:
+		handle_att_prepare_write(buf);
+		return;
+	case BT_ATT_OP_EXEC_WRITE_REQ:
+		handle_att_exec_write(buf);
 		return;
 	case BT_ATT_OP_WRITE_RSP:
 		LOG_INF("got ATT write RSP");
@@ -630,10 +684,28 @@ void test_procedure_0(void)
 	TEST_PASS("Tester done");
 }
 
+void test_procedure_1(void)
+{
+	init_tinyhost();
+
+	start_adv();
+	WAIT_FOR_FLAG(is_connected);
+	LOG_INF("connected");
+
+	/* The DUT cancels both of its long writes */
+	WAIT_FOR_VAL(cancelled_writes, 2);
+
+	TEST_PASS("Tester done");
+}
+
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "tester",
 		.test_main_f = test_procedure_0,
+	},
+	{
+		.test_id = "tester_long_write_echo",
+		.test_main_f = test_procedure_1,
 	},
 	BSTEST_END_MARKER,
 };

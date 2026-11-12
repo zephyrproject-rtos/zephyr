@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(dut, LOG_LEVEL_INF);
 DEFINE_FLAG_STATIC(is_connected);
 DEFINE_FLAG_STATIC(is_subscribed);
 DEFINE_FLAG_STATIC(flag_data_length_updated);
+DEFINE_FLAG_STATIC(flag_long_write_done);
 
 static atomic_t nwrites;
 static atomic_t indications;
@@ -306,10 +307,81 @@ void test_procedure_0(void)
 	TEST_PASS("DUT done");
 }
 
+static uint8_t long_write_err;
+
+static void long_write_done(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	long_write_err = err;
+	SET_FLAG(flag_long_write_done);
+}
+
+static void long_write(uint16_t offset, const uint8_t *data, uint16_t length)
+{
+	static struct bt_gatt_write_params params;
+	int err;
+
+	params.func = long_write_done;
+	params.handle = LONG_WRITE_HANDLE;
+	params.offset = offset;
+	params.data = data;
+	params.length = length;
+
+	UNSET_FLAG(flag_long_write_done);
+
+	err = bt_gatt_write(dconn, &params);
+	TEST_ASSERT(err == 0, "Failed to start the long write (err %d)", err);
+
+	WAIT_FOR_FLAG(flag_long_write_done);
+	TEST_ASSERT(long_write_err == BT_ATT_ERR_INVALID_PDU,
+		    "Long write reported 0x%02x, want a cancelled write (0x%02x)", long_write_err,
+		    BT_ATT_ERR_INVALID_PDU);
+}
+
+void test_procedure_1(void)
+{
+	/* More than one Prepare Write Request with the default ATT_MTU of 23 */
+	static uint8_t value[40];
+	int err;
+
+	for (size_t i = 0U; i < sizeof(value); i++) {
+		value[i] = (uint8_t)i;
+	}
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Can't enable Bluetooth (err %d)", err);
+
+	/* Test purpose:
+	 * Core v7.0 Vol 3 Part G 4.9.4 Write Long Characteristic Value
+	 *
+	 * 4.9.4 does not require the client to verify the Prepare Write
+	 * Response, but the Host does, as 4.9.5 Reliable Writes requires. On a
+	 * value it did not send, it cancels the write; verify the application
+	 * is then told the write failed.
+	 *
+	 * Test procedure:
+	 * - dut: long write; tester: echo with a wrong value, expect a cancel
+	 * - dut: write at an offset; tester: echo one octet more than sent,
+	 *   expect a cancel
+	 *
+	 * [verdict]
+	 * - both writes report an error to the application
+	 */
+	connect();
+
+	long_write(0U, value, sizeof(value));
+	long_write(1U, value, 4U);
+
+	TEST_PASS("DUT done");
+}
+
 static const struct bst_test_instance test_to_add[] = {
 	{
 		.test_id = "dut",
 		.test_main_f = test_procedure_0,
+	},
+	{
+		.test_id = "dut_long_write_echo",
+		.test_main_f = test_procedure_1,
 	},
 	BSTEST_END_MARKER,
 };
