@@ -1,0 +1,142 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Allwinner V851S E907 (RV32IMAC + XuanTie extensions) co-processor.
+ *
+ * Register addresses are taken from the RISC-V address space table in
+ * "V851S&V851SE_Datasheet_V1.0.pdf", section 3.1 "Memory mapping", and from
+ * the "XuanTie E907 R1S3 User Manual" sections 7 (CLINT) and 8 (CLIC).
+ *
+ * The firmware is loaded by the Cortex-A7 Linux remoteproc driver into a
+ * reserved DRAM window at 0x43c00000 (DA == PA, 1:1), and started by writing
+ * the ELF entry address to RISCV_CFG.E907_STA_ADD0_REG (0x06010204).
+ *
+ * Interrupt topology: the E907 integrates a CLINT and a CLIC (CLIC spec 0.8),
+ * NOT a PLIC. The CLIC register window is at CLINT_base + 0x800000, same as
+ * the BL808 E907 BSP (0xe0000000 -> 0xe0800000).
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		/* CLINT mtime is clocked from OSC24M. */
+		timebase-frequency = <DT_FREQ_M(24)>;
+
+		cpu0: cpu@0 {
+			compatible = "xuantie,e907", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			i-cache-line-size = <32>;
+			d-cache-line-size = <32>;
+			clock-frequency = <DT_FREQ_M(600)>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			riscv,isa-base = "rv32i";
+			/*
+			 * The V85x E907 is RV32IMAC with XuanTie custom extensions:
+			 * no P (DSP) and no F/D (floating point). This matches the
+			 * vendor U-Boot flag -march=rv32imacxthead.
+			 */
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei",
+					       "xtheadba", "xtheadbb", "xtheadbs",
+					       "xtheadcmo";
+			status = "okay";
+
+			/* RISCV_CLIC 0x30800000-0x30804FFF (20 KiB).
+			 * CLICCFG is at offset 0x800000 from MCLICBASE (0x30000000),
+			 * so software sees the window at 0x30800000.
+			 */
+			clic: clic@30800000 {
+				compatible = "nuclei,eclic";
+				reg = <0x30800000 0x5000>;
+				#address-cells = <0>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* UART1 (PE6/PE7) is NOT brought out on this board (schematic
+		 * SCH_Schematic1_2022-11-23.pdf): the pins only appear in the SoC
+		 * pin-mux table, with no net to a connector. Do not describe it as
+		 * an available port.
+		 *
+		 * UART3 (PE12/PE13, mux 7) is the E907 console per the vendor's
+		 * "V85x E907 co-processor" guide. On the YuzukiPI-Lizard
+		 * PE12/PE13 are brought out on the 12-pin expansion header behind
+		 * 2K series resistors (schematic SCH_Schematic1_2022-11-23.pdf),
+		 * so the console can be wired out there; there is no dedicated
+		 * UART3 header. The other possible UART3 pins (PE0/PE1) are used
+		 * by the camera NCSI bus and must not be re-muxed.
+		 */
+		uart3: serial@2500c00 {
+			compatible = "ns16550";
+			reg = <0x02500c00 0x400>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			/* UART3 is GIC SPI 5 => GIC 37; CLIC ID = GIC - 16 = 21.
+			 * Use "interrupts" (not interrupts-extended): the ns16550
+			 * Kconfig only selects SERIAL_SUPPORT_INTERRUPT when the
+			 * node has an "interrupts" property.
+			 */
+			interrupt-parent = <&clic>;
+			interrupts = <21 1>;
+			status = "disabled";
+		};
+
+		/* MSGBOX (RISC/E907 side). RX reads the local block, TX writes the
+		 * peer CPUX block. GIC 160 => CLIC 144 (CLIC ID = GIC - 16).
+		 * reg-names "rx" = RISC block 0x06020000, "tx" = CPUX block 0x03003000.
+		 * CCU MSGBOX_BGR (cu-base + 0x71c) gates MSGBOX1 (bit1) + reset (bit17).
+		 */
+		msgbox: msgbox@6020000 {
+			compatible = "allwinner,sunxi-msgbox-riscv";
+			reg = <0x06020000 0x1000>, <0x03003000 0x1000>;
+			reg-names = "rx", "tx";
+			interrupts-extended = <&clic 144 1>;
+			#mbox-cells = <1>;
+			allwinner,ccu-base = <0x02001000>;
+			allwinner,ccu-bgr-off = <0x71c>;
+			status = "okay";
+		};
+
+		/* RISCV_CLINT 0x30000000-0x3000FFFF (64 KiB), standard offsets:
+		 * MSIP +0x0000, MTIMECMP +0x4000, MTIME +0xbff8.
+		 * The E907 CLINT sources are CLIC interrupt IDs 0..15; the
+		 * machine timer is ID 7.
+		 */
+		mtimer: timer@3000bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0x3000bff8 0x8 0x30004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&clic 7 1>;
+		};
+
+		/* DRAM window reserved on the A7 side for the E907 firmware. */
+		dram0: memory@43c00000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x43c00000 DT_SIZE_M(4)>;
+			zephyr,memory-region = "DRAM0";
+		};
+
+		/* RISCV_MSGBOX1 lives at 0x06020000 (4 KiB, only the RISC-V core
+		 * can access it) and CPUX_MSGBOX at 0x03003000. See the msgbox
+		 * node above for the mbox/IPM endpoint.
+		 */
+	};
+};
