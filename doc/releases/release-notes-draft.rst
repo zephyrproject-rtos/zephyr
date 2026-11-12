@@ -179,6 +179,11 @@ Libraries / Subsystems
     :kconfig:option:`CONFIG_NET_TCP_MAX_RTO`. The retransmissions, and so the time until an
     unanswered connection fails with ``-ETIMEDOUT``, grow with the RTO of the connection.
 
+  * SNMP
+
+    * New :ref:`SNMPv1 and SNMPv2c agent <snmp_interface>` (:kconfig:option:`CONFIG_SNMP`)
+      with build-time registration of managed objects.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
