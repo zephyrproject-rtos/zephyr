@@ -215,7 +215,6 @@ static inline void uhc_mcux_get_hal_driver_id(struct uhc_mcux_data *priv,
 static int uhc_mcux_driver_preinit(const struct device *dev)
 {
 	const struct uhc_mcux_config *config = dev->config;
-	struct uhc_data *data = dev->data;
 	struct uhc_mcux_data *priv = uhc_get_private(dev);
 
 	uhc_mcux_get_hal_driver_id(priv, config);
@@ -223,7 +222,7 @@ static int uhc_mcux_driver_preinit(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 	pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	LOG_DBG("MCUX controller initialized");
 

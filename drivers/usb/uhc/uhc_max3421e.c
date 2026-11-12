@@ -1048,8 +1048,7 @@ static int uhc_max3421e_shutdown(const struct device *dev)
 static int max3421e_driver_init(const struct device *dev)
 {
 	const struct max3421e_config *config = dev->config;
-	struct uhc_data *data = dev->data;
-	struct max3421e_data *priv = data->priv;
+	struct max3421e_data *priv = uhc_get_private(dev);
 	int ret;
 
 	if (config->dt_rst.port) {
@@ -1097,7 +1096,7 @@ static int max3421e_driver_init(const struct device *dev)
 		return ret;
 	}
 
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 	config->make_thread(dev);
 
 	LOG_DBG("MAX3421E CPU interface initialized");

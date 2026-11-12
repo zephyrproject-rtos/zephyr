@@ -619,10 +619,9 @@ static int uhc_vrt_unlock(const struct device *dev)
 static int uhc_vrt_driver_preinit(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
 
 	priv->dev = dev;
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 
 	priv->host_node->priv = dev;
 	k_fifo_init(&priv->fifo);

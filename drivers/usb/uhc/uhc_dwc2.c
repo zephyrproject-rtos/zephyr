@@ -2451,6 +2451,8 @@ static int uhc_dwc2_preinit(const struct device *const dev)
 			(struct usb_dwc2_host_chan *)((mem_addr_t)base + USB_DWC2_HCCHAR(idx));
 	}
 
+	uhc_common_init(dev);
+
 	k_thread_create(&priv->thread,
 		config->stack,
 		config->stack_size,
@@ -2669,7 +2671,6 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	 };									\
 										\
 	static struct uhc_data uhc_data_##n = {					\
-		.mutex = Z_MUTEX_INITIALIZER(uhc_data_##n.mutex),		\
 		.priv = &uhc_dwc2_priv_##n,					\
 	};									\
 										\
