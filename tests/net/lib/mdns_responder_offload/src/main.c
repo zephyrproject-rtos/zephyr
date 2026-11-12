@@ -23,42 +23,42 @@ DNS_SD_REGISTER_TCP_SERVICE(mdns_offload, CONFIG_NET_HOSTNAME, "_zephyr", "local
  * in use. With offloaded sockets the binding lives in the offload engine, and
  * the socket layer records it for the port-in-use check.
  */
-static int listen_on_service_port(sa_family_t family)
+static int listen_on_service_port(net_sa_family_t family)
 {
-	struct sockaddr_in6 addr6 = {
-		.sin6_family = AF_INET6,
-		.sin6_addr = in6addr_any,
-		.sin6_port = htons(SERVICE_PORT),
+	struct net_sockaddr_in6 addr6 = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = net_in6addr_any,
+		.sin6_port = net_htons(SERVICE_PORT),
 	};
-	struct sockaddr_in addr4 = {
-		.sin_family = AF_INET,
-		.sin_addr.s_addr = INADDR_ANY,
-		.sin_port = htons(SERVICE_PORT),
+	struct net_sockaddr_in addr4 = {
+		.sin_family = NET_AF_INET,
+		.sin_addr.s_addr = NET_INADDR_ANY,
+		.sin_port = net_htons(SERVICE_PORT),
 	};
-	struct sockaddr *addr;
-	socklen_t addrlen;
+	struct net_sockaddr *addr;
+	net_socklen_t addrlen;
 	int sock;
 
-	if (family == AF_INET6) {
-		addr = (struct sockaddr *)&addr6;
+	if (family == NET_AF_INET6) {
+		addr = (struct net_sockaddr *)&addr6;
 		addrlen = sizeof(addr6);
 	} else {
-		addr = (struct sockaddr *)&addr4;
+		addr = (struct net_sockaddr *)&addr4;
 		addrlen = sizeof(addr4);
 	}
 
-	sock = zsock_socket(family, SOCK_STREAM, IPPROTO_TCP);
+	sock = zsock_socket(family, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	if (sock < 0) {
 		LOG_ERR("Cannot create service socket (%d)", -errno);
 		return -errno;
 	}
 
-	if (family == AF_INET6) {
+	if (family == NET_AF_INET6) {
 		int v6only = 1;
 
-		if (zsock_setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, sizeof(v6only)) <
-		    0) {
-			LOG_ERR("Cannot set IPV6_V6ONLY on service socket (%d)", -errno);
+		if (zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &v6only,
+				     sizeof(v6only)) < 0) {
+			LOG_ERR("Cannot set ZSOCK_IPV6_V6ONLY on service socket (%d)", -errno);
 			zsock_close(sock);
 			return -errno;
 		}
@@ -87,11 +87,11 @@ int main(void)
 	 * answers for it, then signal readiness to the host-side test harness.
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		(void)listen_on_service_port(AF_INET6);
+		(void)listen_on_service_port(NET_AF_INET6);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		(void)listen_on_service_port(AF_INET);
+		(void)listen_on_service_port(NET_AF_INET);
 	}
 
 	LOG_INF("mDNS offload responder ready");
