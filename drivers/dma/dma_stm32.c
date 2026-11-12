@@ -644,12 +644,8 @@ static int dma_stm32_configure(const struct device *dev,
 			dev->name);
 		return -ENOTSUP;
 	}
-	/* Support only the same data width for source and dest */
-	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
-		return -EINVAL;
-	}
-#else /* CONFIG_DMA_STM32_V1 */
+#endif /* CONFIG_DMA_STM32_V1 */
+
 	if (config->dest_data_size != 4U &&
 	    config->dest_data_size != 2U &&
 	    config->dest_data_size != 1U) {
@@ -657,7 +653,6 @@ static int dma_stm32_configure(const struct device *dev,
 			config->dest_data_size);
 		return -EINVAL;
 	}
-#endif /* CONFIG_DMA_STM32_V1 */
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
@@ -842,6 +837,23 @@ static int dma_stm32_configure(const struct device *dev,
 			DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
 		}
 	}
+
+	/* In direct mode the data is moved with the peripheral width only */
+	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_DISABLE &&
+	    config->dest_data_size != config->source_data_size) {
+		LOG_ERR("source and dest data size differ in direct mode.");
+		return -EINVAL;
+	}
+
+	/* The FIFO packs and unpacks whole items only: with different widths the block
+	 * must be a whole number of items of the wider one
+	 */
+	if (config->dest_data_size != config->source_data_size &&
+	    (config->head_block->block_size %
+	     MAX(config->source_data_size, config->dest_data_size)) != 0U) {
+		LOG_ERR("block size is not a multiple of the wider data size.");
+		return -EINVAL;
+	}
 #endif
 	if (stream->source_periph) {
 		DMA_InitStruct.NbData = config->head_block->block_size /
@@ -905,6 +917,14 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	}
 
 	stream = &config->streams[id];
+
+#ifdef CONFIG_DMA_STM32_V1
+	/* With different widths moves whole items of the wider one only */
+	if (stream->src_size != stream->dst_size &&
+	    (size % MAX(stream->src_size, stream->dst_size)) != 0U) {
+		return -EINVAL;
+	}
+#endif /* CONFIG_DMA_STM32_V1 */
 
 	if (dma_stm32_disable_stream(dma, id) != 0) {
 		return -EBUSY;
