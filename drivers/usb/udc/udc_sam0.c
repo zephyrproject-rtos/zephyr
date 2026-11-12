@@ -6,6 +6,7 @@
  */
 
 #include "udc_common.h"
+#include "udc_sam0.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@
 #include <soc.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/usb/udc.h>
 
@@ -71,7 +73,7 @@ struct sam0_ep_buffer_desc {
 BUILD_ASSERT(sizeof(struct sam0_ep_buffer_desc) == 32, "Broken endpoint buffer descriptor");
 
 struct udc_sam0_config {
-	UsbDevice *base;
+	mem_addr_t base;
 	struct sam0_ep_buffer_desc *bdt;
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
@@ -137,23 +139,42 @@ static inline uint8_t udc_pull_ep_from_bmsk(uint32_t *const bitmap)
 	}
 }
 
+static inline void sam0_write_field8(const mem_addr_t addr, const uint32_t mask,
+				     const uint32_t val)
+{
+	uint8_t reg = sys_read8(addr);
+
+	reg = (reg & ~mask) | FIELD_PREP(mask, val);
+	sys_write8(reg, addr);
+}
+
+static inline void sam0_write_field16(const mem_addr_t addr, const uint32_t mask,
+				      const uint32_t val)
+{
+	uint16_t reg = sys_read16(addr);
+
+	reg = (reg & ~mask) | FIELD_PREP(mask, val);
+	sys_write16(reg, addr);
+}
+
 /* For CTRLA.ENABLE and CTRLA.SWRST */
 static void sam0_wait_syncbusy(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
+	const mem_addr_t base = config->base;
 
-	while (base->SYNCBUSY.reg != 0) {
+	while (sys_read8(base + UDC_SAM0_SYNCBUSY) != 0U) {
 	}
 }
 
 static void sam0_load_padcal(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
+	const mem_addr_t base = config->base;
 	uint32_t pad_transn;
 	uint32_t pad_transp;
 	uint32_t pad_trim;
+	uint16_t padcal;
 
 #ifdef USB_FUSES_TRANSN_ADDR
 	pad_transn = *(uint32_t *)USB_FUSES_TRANSN_ADDR;
@@ -170,7 +191,7 @@ static void sam0_load_padcal(const struct device *dev)
 	}
 #endif
 
-	base->PADCAL.bit.TRANSN = pad_transn;
+	padcal = FIELD_PREP(UDC_SAM0_PADCAL_TRANSN_Msk, pad_transn);
 
 #ifdef USB_FUSES_TRANSP_ADDR
 #define NVM_USB_PAD_TRANSP_POS 50
@@ -187,7 +208,7 @@ static void sam0_load_padcal(const struct device *dev)
 	}
 #endif
 
-	base->PADCAL.bit.TRANSP = pad_transp;
+	padcal |= FIELD_PREP(UDC_SAM0_PADCAL_TRANSP_Msk, pad_transp);
 
 #ifdef USB_FUSES_TRIM_ADDR
 	pad_trim = *(uint32_t *)USB_FUSES_TRIM_ADDR;
@@ -204,7 +225,9 @@ static void sam0_load_padcal(const struct device *dev)
 	}
 #endif
 
-	base->PADCAL.bit.TRIM = pad_trim;
+	padcal |= FIELD_PREP(UDC_SAM0_PADCAL_TRIM_Msk, pad_trim);
+
+	sys_write16(padcal, base + UDC_SAM0_PADCAL);
 }
 
 static uint8_t sam0_get_bd_size(const uint16_t mps)
@@ -243,23 +266,19 @@ static struct sam0_ep_buffer_desc *sam0_get_ebd(const struct device *dev, const 
 	return &config->bdt[USB_EP_GET_IDX(ep)];
 }
 
-static UsbDeviceEndpoint *sam0_get_ep_reg(const struct device *dev, const uint8_t ep)
-{
-	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
-
-	return &base->DeviceEndpoint[USB_EP_GET_IDX(ep)];
-}
-
 static int sam0_prep_out(const struct device *dev,
 			 struct net_buf *const buf, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 	struct sam0_ep_buffer_desc *const bd = sam0_get_ebd(dev, ep_cfg->addr);
 	const uint16_t size = MIN(16383U, net_buf_tailroom(buf));
 	unsigned int lock_key;
+	uint8_t status;
 
-	if (!endpoint->EPSTATUS.bit.BK0RDY) {
+	status = sys_read8(base + UDC_SAM0_DEVICE_EPSTATUS(idx));
+	if ((status & UDC_SAM0_DEVICE_EPSTATUS_BK0RDY) == 0U) {
 		LOG_ERR("ep 0x%02x buffer is used by the controller", ep_cfg->addr);
 		return -EBUSY;
 	}
@@ -273,7 +292,7 @@ static int sam0_prep_out(const struct device *dev,
 		bd->bank0.size = sam0_get_bd_size(udc_mps_ep_size(ep_cfg));
 	}
 
-	endpoint->EPSTATUSCLR.bit.BK0RDY = 1;
+	sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK0RDY, base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
 	irq_unlock(lock_key);
 
 	LOG_DBG("Prepare OUT ep 0x%02x size %u", ep_cfg->addr, size);
@@ -284,12 +303,16 @@ static int sam0_prep_out(const struct device *dev,
 static int sam0_prep_in(const struct device *dev,
 			struct net_buf *const buf, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 	struct sam0_ep_buffer_desc *const bd = sam0_get_ebd(dev, ep_cfg->addr);
 	const uint16_t len = MIN(16383U, buf->len);
 	unsigned int lock_key;
+	uint8_t status;
 
-	if (endpoint->EPSTATUS.bit.BK1RDY) {
+	status = sys_read8(base + UDC_SAM0_DEVICE_EPSTATUS(idx));
+	if ((status & UDC_SAM0_DEVICE_EPSTATUS_BK1RDY) != 0U) {
 		LOG_ERR("ep 0x%02x buffer is used by the controller", ep_cfg->addr);
 		return -EAGAIN;
 	}
@@ -303,7 +326,7 @@ static int sam0_prep_in(const struct device *dev,
 	bd->bank1.byte_count = len;
 	bd->bank1.auto_zlp = 0;
 
-	endpoint->EPSTATUSSET.bit.BK1RDY = 1;
+	sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK1RDY, base + UDC_SAM0_DEVICE_EPSTATUSSET(idx));
 	irq_unlock(lock_key);
 
 	LOG_DBG("Prepare IN ep 0x%02x length %u", ep_cfg->addr, len);
@@ -459,8 +482,9 @@ static void sam0_handle_setup_isr(const struct device *dev)
 
 static void sam0_handle_out_isr(const struct device *dev, const uint8_t ep)
 {
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
 	struct sam0_ep_buffer_desc *const bd = sam0_get_ebd(dev, ep);
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep);
 	struct udc_sam0_data *const priv = udc_get_private(dev);
 	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, ep);
 	struct net_buf *buf;
@@ -496,7 +520,8 @@ static void sam0_handle_out_isr(const struct device *dev, const uint8_t ep)
 			/* This is the same as sam0_prep_out() would do for the
 			 * control OUT endpoint, but shorter.
 			 */
-			endpoint->EPSTATUSCLR.bit.BK0RDY = 1;
+			sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK0RDY,
+				   base + UDC_SAM0_DEVICE_EPSTATUSCLR(USB_EP_GET_IDX(ep)));
 		} else {
 			err = sam0_prep_out(dev, buf, ep_cfg);
 			__ASSERT(err == 0, "Failed to start new OUT transaction");
@@ -545,22 +570,23 @@ static void sam0_handle_in_isr(const struct device *dev, const uint8_t ep)
 
 static void ALWAYS_INLINE handle_ep_isr(const struct device *dev, const uint8_t idx)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, idx);
-	uint32_t intflag;
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	uint8_t intflag;
 
-	intflag = endpoint->EPINTFLAG.reg;
+	intflag = sys_read8(base + UDC_SAM0_DEVICE_EPINTFLAG(idx));
 	/* Clear endpoint interrupt flags */
-	endpoint->EPINTFLAG.reg = intflag;
+	sys_write8(intflag, base + UDC_SAM0_DEVICE_EPINTFLAG(idx));
 
-	if (intflag & USB_DEVICE_EPINTFLAG_TRCPT1) {
+	if ((intflag & UDC_SAM0_DEVICE_EPINTFLAG_TRCPT1) != 0U) {
 		sam0_handle_in_isr(dev, idx | USB_EP_DIR_IN);
 	}
 
-	if (intflag & USB_DEVICE_EPINTFLAG_TRCPT0) {
+	if ((intflag & UDC_SAM0_DEVICE_EPINTFLAG_TRCPT0) != 0U) {
 		sam0_handle_out_isr(dev, idx);
 	}
 
-	if (intflag & USB_DEVICE_EPINTFLAG_RXSTP) {
+	if ((intflag & UDC_SAM0_DEVICE_EPINTFLAG_RXSTP) != 0U) {
 		sam0_handle_setup_isr(dev);
 	}
 
@@ -569,9 +595,9 @@ static void ALWAYS_INLINE handle_ep_isr(const struct device *dev, const uint8_t 
 static void sam0_isr_handler(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
-	uint32_t epintsmry = base->EPINTSMRY.reg;
-	uint32_t intflag;
+	const mem_addr_t base = config->base;
+	uint16_t epintsmry = sys_read16(base + UDC_SAM0_DEVICE_EPINTSMRY);
+	uint16_t intflag;
 
 	/* Check endpoint interrupts bit-by-bit */
 	for (uint8_t idx = 0U; epintsmry != 0U; epintsmry >>= 1) {
@@ -582,34 +608,33 @@ static void sam0_isr_handler(const struct device *dev)
 		idx++;
 	}
 
-	intflag = base->INTFLAG.reg;
+	intflag = sys_read16(base + UDC_SAM0_DEVICE_INTFLAG);
 	/* Clear interrupt flags */
-	base->INTFLAG.reg = intflag;
+	sys_write16(intflag, base + UDC_SAM0_DEVICE_INTFLAG);
 
 	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
-	    (intflag & USB_DEVICE_INTFLAG_SOF)) {
+	    (intflag & UDC_SAM0_DEVICE_INTFLAG_SOF) != 0U) {
 		udc_submit_sof_event(dev);
 	}
 
-	if (intflag & USB_DEVICE_INTFLAG_EORST) {
-		UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, 0);
-
+	if ((intflag & UDC_SAM0_DEVICE_INTFLAG_EORST) != 0U) {
 		/* Re-enable control endpoint interrupts */
-		endpoint->EPINTENSET.reg = USB_DEVICE_EPINTENSET_TRCPT0 |
-					   USB_DEVICE_EPINTENSET_TRCPT1 |
-					   USB_DEVICE_EPINTENSET_RXSTP;
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_TRCPT0 |
+			   UDC_SAM0_DEVICE_EPINTFLAG_TRCPT1 |
+			   UDC_SAM0_DEVICE_EPINTFLAG_RXSTP,
+			   base + UDC_SAM0_DEVICE_EPINTENSET(0));
 
 		udc_submit_event(dev, UDC_EVT_RESET, 0);
 	}
 
-	if (intflag & USB_DEVICE_INTFLAG_SUSPEND) {
+	if ((intflag & UDC_SAM0_DEVICE_INTFLAG_SUSPEND) != 0U) {
 		if (!udc_is_suspended(dev)) {
 			udc_set_suspended(dev, true);
 			udc_submit_event(dev, UDC_EVT_SUSPEND, 0);
 		}
 	}
 
-	if (intflag & USB_DEVICE_INTFLAG_EORSM) {
+	if ((intflag & UDC_SAM0_DEVICE_INTFLAG_EORSM) != 0U) {
 		if (udc_is_suspended(dev)) {
 			udc_set_suspended(dev, false);
 			udc_submit_event(dev, UDC_EVT_RESUME, 0);
@@ -622,7 +647,7 @@ static void sam0_isr_handler(const struct device *dev)
 	 * GPIO pin for VBUS state detection (e.g. PA7 on SAM R21 Xplained Pro).
 	 */
 
-	if (intflag & USB_DEVICE_INTFLAG_RAMACER) {
+	if ((intflag & UDC_SAM0_DEVICE_INTFLAG_RAMACER) != 0U) {
 		udc_submit_event(dev, UDC_EVT_ERROR, -EINVAL);
 	}
 }
@@ -645,15 +670,19 @@ static int udc_sam0_ep_enqueue(const struct device *dev,
 
 static int udc_sam0_ep_dequeue(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 	unsigned int lock_key;
 
 	lock_key = irq_lock();
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
-		endpoint->EPSTATUSCLR.bit.BK1RDY = 1;
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK1RDY,
+			   base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
 	} else {
-		endpoint->EPSTATUSSET.bit.BK0RDY = 1;
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK0RDY,
+			   base + UDC_SAM0_DEVICE_EPSTATUSSET(idx));
 	}
 
 	udc_ep_cancel_queued(dev, ep_cfg);
@@ -679,7 +708,9 @@ static void setup_control_out_ep(const struct device *dev)
 
 static int udc_sam0_ep_enable(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 	uint8_t type;
 
 	switch (ep_cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
@@ -701,17 +732,24 @@ static int udc_sam0_ep_enable(const struct device *dev, struct udc_ep_config *co
 
 	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
 		setup_control_out_ep(dev);
-		endpoint->EPINTENSET.reg = USB_DEVICE_EPINTENSET_RXSTP;
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_RXSTP,
+			   base + UDC_SAM0_DEVICE_EPINTENSET(idx));
 	}
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
-		endpoint->EPCFG.bit.EPTYPE1 = type;
-		endpoint->EPSTATUSCLR.bit.BK1RDY = 1;
-		endpoint->EPINTENSET.reg = USB_DEVICE_EPINTENSET_TRCPT1;
+		sam0_write_field8(base + UDC_SAM0_DEVICE_EPCFG(idx),
+				  UDC_SAM0_DEVICE_EPCFG_EPTYPE1_Msk, type);
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK1RDY,
+			   base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_TRCPT1,
+			   base + UDC_SAM0_DEVICE_EPINTENSET(idx));
 	} else {
-		endpoint->EPCFG.bit.EPTYPE0 = type;
-		endpoint->EPSTATUSSET.bit.BK0RDY = 1;
-		endpoint->EPINTENSET.reg = USB_DEVICE_EPINTENSET_TRCPT0;
+		sam0_write_field8(base + UDC_SAM0_DEVICE_EPCFG(idx),
+				  UDC_SAM0_DEVICE_EPCFG_EPTYPE0_Msk, type);
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_BK0RDY,
+			   base + UDC_SAM0_DEVICE_EPSTATUSSET(idx));
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_TRCPT0,
+			   base + UDC_SAM0_DEVICE_EPINTENSET(idx));
 	}
 
 	LOG_DBG("Enable ep 0x%02x", ep_cfg->addr);
@@ -721,18 +759,25 @@ static int udc_sam0_ep_enable(const struct device *dev, struct udc_ep_config *co
 
 static int udc_sam0_ep_disable(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 
 	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
-		endpoint->EPINTENCLR.reg = USB_DEVICE_EPINTENCLR_RXSTP;
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_RXSTP,
+			   base + UDC_SAM0_DEVICE_EPINTENCLR(idx));
 	}
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
-		endpoint->EPINTENCLR.reg = USB_DEVICE_EPINTENCLR_TRCPT1;
-		endpoint->EPCFG.bit.EPTYPE1 = 0;
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_TRCPT1,
+			   base + UDC_SAM0_DEVICE_EPINTENCLR(idx));
+		sam0_write_field8(base + UDC_SAM0_DEVICE_EPCFG(idx),
+				  UDC_SAM0_DEVICE_EPCFG_EPTYPE1_Msk, 0U);
 	} else {
-		endpoint->EPINTENCLR.reg = USB_DEVICE_EPINTENCLR_TRCPT0;
-		endpoint->EPCFG.bit.EPTYPE0 = 0;
+		sys_write8(UDC_SAM0_DEVICE_EPINTFLAG_TRCPT0,
+			   base + UDC_SAM0_DEVICE_EPINTENCLR(idx));
+		sam0_write_field8(base + UDC_SAM0_DEVICE_EPCFG(idx),
+				  UDC_SAM0_DEVICE_EPCFG_EPTYPE0_Msk, 0U);
 	}
 
 	LOG_DBG("Disable ep 0x%02x", ep_cfg->addr);
@@ -742,12 +787,16 @@ static int udc_sam0_ep_disable(const struct device *dev, struct udc_ep_config *c
 
 static int udc_sam0_ep_set_halt(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
-		endpoint->EPSTATUSSET.bit.STALLRQ1 = 1;
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_STALLRQ1,
+			   base + UDC_SAM0_DEVICE_EPSTATUSSET(idx));
 	} else {
-		endpoint->EPSTATUSSET.bit.STALLRQ0 = 1;
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_STALLRQ0,
+			   base + UDC_SAM0_DEVICE_EPSTATUSSET(idx));
 	}
 
 	LOG_DBG("Set halt ep 0x%02x", ep_cfg->addr);
@@ -760,7 +809,9 @@ static int udc_sam0_ep_set_halt(const struct device *dev, struct udc_ep_config *
 
 static int udc_sam0_ep_clear_halt(const struct device *dev, struct udc_ep_config *const ep_cfg)
 {
-	UsbDeviceEndpoint *const endpoint = sam0_get_ep_reg(dev, ep_cfg->addr);
+	const struct udc_sam0_config *config = dev->config;
+	const mem_addr_t base = config->base;
+	const uint8_t idx = USB_EP_GET_IDX(ep_cfg->addr);
 	struct udc_sam0_data *const priv = udc_get_private(dev);
 
 	if (USB_EP_GET_IDX(ep_cfg->addr) == 0) {
@@ -768,11 +819,15 @@ static int udc_sam0_ep_clear_halt(const struct device *dev, struct udc_ep_config
 	}
 
 	if (USB_EP_DIR_IS_IN(ep_cfg->addr)) {
-		endpoint->EPSTATUSCLR.bit.STALLRQ1 = 1;
-		endpoint->EPSTATUSCLR.bit.DTGLIN = 1;
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_STALLRQ1,
+			   base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_DTGLIN,
+			   base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
 	} else {
-		endpoint->EPSTATUSCLR.bit.STALLRQ0 = 1;
-		endpoint->EPSTATUSCLR.bit.DTGLOUT = 1;
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_STALLRQ0,
+			   base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
+		sys_write8(UDC_SAM0_DEVICE_EPSTATUS_DTGLOUT,
+			   base + UDC_SAM0_DEVICE_EPSTATUSCLR(idx));
 	}
 
 	if (USB_EP_GET_IDX(ep_cfg->addr) != 0 && !udc_ep_is_busy(ep_cfg)) {
@@ -791,13 +846,13 @@ static int udc_sam0_ep_clear_halt(const struct device *dev, struct udc_ep_config
 static int udc_sam0_set_address(const struct device *dev, const uint8_t addr)
 {
 	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
+	const mem_addr_t base = config->base;
 
 	LOG_DBG("Set new address %u for %s", addr, dev->name);
 	if (addr != 0) {
-		base->DADD.reg = addr | USB_DEVICE_DADD_ADDEN;
+		sys_write8(addr | UDC_SAM0_DEVICE_DADD_ADDEN, base + UDC_SAM0_DEVICE_DADD);
 	} else {
-		base->DADD.reg = 0;
+		sys_write8(0, base + UDC_SAM0_DEVICE_DADD);
 	}
 
 	return 0;
@@ -806,10 +861,10 @@ static int udc_sam0_set_address(const struct device *dev, const uint8_t addr)
 static int udc_sam0_host_wakeup(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
+	const mem_addr_t base = config->base;
 
 	LOG_DBG("Remote wakeup from %s", dev->name);
-	base->CTRLB.bit.UPRSM = 1;
+	sam0_write_field16(base + UDC_SAM0_DEVICE_CTRLB, UDC_SAM0_DEVICE_CTRLB_UPRSM, 1U);
 
 	return 0;
 }
@@ -825,7 +880,7 @@ static int udc_sam0_enable(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
 	const struct pinctrl_dev_config *const pcfg = config->pcfg;
-	UsbDevice *const base = config->base;
+	const mem_addr_t base = config->base;
 	int ret;
 
 #ifdef MCLK
@@ -850,15 +905,15 @@ static int udc_sam0_enable(const struct device *dev)
 #endif
 
 	/* Reset controller */
-	base->CTRLA.bit.SWRST = 1;
+	sam0_write_field8(base + UDC_SAM0_CTRLA, UDC_SAM0_CTRLA_SWRST, 1U);
 	sam0_wait_syncbusy(dev);
 
 	/*
 	 * Change QOS values to have the best performance and correct USB
 	 * behaviour.
 	 */
-	base->QOSCTRL.bit.CQOS = 2;
-	base->QOSCTRL.bit.DQOS = 2;
+	sam0_write_field8(base + UDC_SAM0_QOSCTRL, UDC_SAM0_QOSCTRL_CQOS_Msk, 2U);
+	sam0_write_field8(base + UDC_SAM0_QOSCTRL, UDC_SAM0_QOSCTRL_DQOS_Msk, 2U);
 
 	ret = pinctrl_apply_state(pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
@@ -868,10 +923,10 @@ static int udc_sam0_enable(const struct device *dev)
 
 	sam0_load_padcal(dev);
 
-	base->CTRLA.reg = USB_CTRLA_MODE_DEVICE | USB_CTRLA_RUNSTDBY;
-	base->CTRLB.reg = USB_DEVICE_CTRLB_SPDCONF_FS;
+	sys_write8(UDC_SAM0_CTRLA_MODE_DEVICE | UDC_SAM0_CTRLA_RUNSTDBY, base + UDC_SAM0_CTRLA);
+	sys_write16(UDC_SAM0_DEVICE_CTRLB_SPDCONF_FS, base + UDC_SAM0_DEVICE_CTRLB);
 
-	base->DESCADD.reg = (uintptr_t)config->bdt;
+	sys_write32((uintptr_t)config->bdt, base + UDC_SAM0_DESCADD);
 
 	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
 				   USB_EP_TYPE_CONTROL, 64, 0)) {
@@ -885,16 +940,17 @@ static int udc_sam0_enable(const struct device *dev)
 		return -EIO;
 	}
 
-	base->INTENSET.reg = USB_DEVICE_INTENSET_EORSM |
-			     USB_DEVICE_INTENSET_EORST |
-			     USB_DEVICE_INTENSET_SUSPEND;
+	sys_write16(UDC_SAM0_DEVICE_INTFLAG_EORSM |
+		    UDC_SAM0_DEVICE_INTFLAG_EORST |
+		    UDC_SAM0_DEVICE_INTFLAG_SUSPEND,
+		    base + UDC_SAM0_DEVICE_INTENSET);
 	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
-		base->INTENSET.reg = USB_DEVICE_INTENSET_SOF;
+		sys_write16(UDC_SAM0_DEVICE_INTFLAG_SOF, base + UDC_SAM0_DEVICE_INTENSET);
 	}
 
-	base->CTRLA.bit.ENABLE = 1;
+	sam0_write_field8(base + UDC_SAM0_CTRLA, UDC_SAM0_CTRLA_ENABLE, 1U);
 	sam0_wait_syncbusy(dev);
-	base->CTRLB.bit.DETACH = 0;
+	sam0_write_field16(base + UDC_SAM0_DEVICE_CTRLB, UDC_SAM0_DEVICE_CTRLB_DETACH, 0U);
 
 	config->irq_enable_func(dev);
 	LOG_DBG("Enable device %s", dev->name);
@@ -905,11 +961,11 @@ static int udc_sam0_enable(const struct device *dev)
 static int udc_sam0_disable(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
-	UsbDevice *const base = config->base;
+	const mem_addr_t base = config->base;
 
 	config->irq_disable_func(dev);
-	base->CTRLB.bit.DETACH = 1;
-	base->CTRLA.bit.ENABLE = 0;
+	sam0_write_field16(base + UDC_SAM0_DEVICE_CTRLB, UDC_SAM0_DEVICE_CTRLB_DETACH, 1U);
+	sam0_write_field8(base + UDC_SAM0_CTRLA, UDC_SAM0_CTRLA_ENABLE, 0U);
 	sam0_wait_syncbusy(dev);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT)) {
@@ -1125,7 +1181,7 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 		ep_cfg_in_##n[DT_INST_PROP(n, num_bidir_endpoints)];		\
 										\
 	static const struct udc_sam0_config udc_sam0_config_##n = {		\
-		.base = (UsbDevice *)DT_INST_REG_ADDR(n),			\
+		.base = DT_INST_REG_ADDR(n),			\
 		.bdt = sam0_bdt_##n,						\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
 		.ep_cfg_in = ep_cfg_out_##n,					\
