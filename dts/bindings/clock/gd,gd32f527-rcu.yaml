@@ -1,0 +1,86 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: GigaDevice GD32F527 RCU Clock Tree Configuration
+
+description: |
+  GigaDevice GD32F527 Reset and Clock Unit (RCU) system clock tree
+  configuration.
+
+  This binding complements the MFD "gd,gd32-rcu" binding
+  (mfd/gd,gd32-rcu.yaml) and models the GD32F527 system clock source
+  selection and the AHB/APB bus prescalers. The RCU node keeps its MFD
+  role (parent of the CCTL and RCTL child nodes) and additionally carries
+  the clock tree configuration.
+
+  GD32F527 exposes a dedicated RCU_PLL register with PSC/N/P/Q fields.
+  The main PLL configuration is described by the gd,gd32-pll-clock node
+  referenced from "clocks".
+
+  Example:
+
+    rcu: reset-clock-controller@40023800 {
+        compatible = "gd,gd32f527-rcu", "gd,gd32-rcu";
+        clocks = <&pll>;               /* Select PLL as SYSCLK source */
+        clock-frequency = <DT_FREQ_M(200)>; /* = SYSCLK / AHB prescaler */
+        ahb-prescaler = <1>;
+        apb1-prescaler = <4>;
+        apb2-prescaler = <2>;
+    };
+
+compatible: "gd,gd32f527-rcu"
+
+include: gd,gd32-rcu.yaml
+
+properties:
+  clocks:
+    description: |
+      System clock source. Reference the pll, hxtal or irc16m node.
+      IRC16M is used when absent.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      HCLK frequency (Hz) = SYSCLK / AHB prescaler. It is the single
+      source for SYS_CLOCK_HW_CYCLES_PER_SEC and bus clock rates, and is
+      checked at build time against the configured clock tree.
+
+  ahb-prescaler:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 128
+      - 256
+      - 512
+    description: |
+      AHB prescaler. Defines actual core clock frequency (HCLK).
+      SYSCLK must not exceed 200 MHz.
+
+  apb1-prescaler:
+    type: int
+    default: 4
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+    description: APB1 prescaler. APB1 clock (HCLK / prescaler) must not exceed 50 MHz.
+
+  apb2-prescaler:
+    type: int
+    default: 2
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+    description: APB2 prescaler. APB2 clock (HCLK / prescaler) must not exceed 100 MHz.
