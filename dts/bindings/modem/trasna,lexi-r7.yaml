@@ -1,0 +1,12 @@
+# Copyright (c) 2026, Trasna.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Trasna LEXI-R7 modem
+
+compatible: "trasna,lexi-r7"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]
