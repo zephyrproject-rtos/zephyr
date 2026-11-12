@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_nm.h>
+#include <zephyr/net/dhcpv4.h>
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -187,5 +188,35 @@ ZTEST(net_wifi, test_wifi_nm_managed)
 	zassert_true(wifi_nm_op_called, "Scan callback not called");
 }
 
+
+
+ZTEST(net_wifi, test_auto_dhcp_starts_on_successful_connect)
+{
+	struct net_if *iface = net_if_get_first_wifi();
+
+	zassert_not_null(iface, "Wi-Fi interface not available");
+	zassert_equal(iface->config.dhcpv4.state, NET_DHCPV4_DISABLED,
+		      "DHCPv4 should be disabled before a successful connection");
+
+	wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
+
+	zassert_not_equal(iface->config.dhcpv4.state, NET_DHCPV4_DISABLED,
+			  "Successful Wi-Fi connection did not start DHCPv4");
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(net_wifi, test_auto_dhcp_does_not_start_on_failed_connect)
+{
+	struct net_if *iface = net_if_get_first_wifi();
+
+	zassert_not_null(iface, "Wi-Fi interface not available");
+	net_dhcpv4_stop(iface);
+
+	wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
+
+	zassert_equal(iface->config.dhcpv4.state, NET_DHCPV4_DISABLED,
+		      "Failed Wi-Fi connection unexpectedly started DHCPv4");
+}
 
 ZTEST_SUITE(net_wifi, NULL, NULL, NULL, NULL, NULL);

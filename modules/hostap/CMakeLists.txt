@@ -49,6 +49,7 @@ zephyr_library_compile_definitions(
   CONFIG_CTRL_IFACE_ZEPHYR
   CONFIG_SUITEB192
   CONFIG_SUITEB
+  ZEPHYR_WIFI_MGMT_HANDLES_DHCPV4
 )
 
 # Though MbedTLS is not FIPS compliant, CONFIG_FIPS is used here to strip the
