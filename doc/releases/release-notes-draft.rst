@@ -59,6 +59,9 @@ Libraries / Subsystems
   * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and
     reports changes to a registered :c:struct:`bt_pacs_cb`.
   * :c:func:`bt_l2cap_server_unregister` removes a registered L2CAP server.
+  * A GATT client can perform a reliable write, preparing several values on the
+    server with :c:func:`bt_gatt_prepare_write` and committing them in one step
+    with :c:func:`bt_gatt_execute_write`, see :ref:`bt_gatt`.
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
