@@ -241,6 +241,17 @@ struct ticker_ext {
 					* reservation may be re-scheduled
 					* to avoid collision
 					*/
+	uint32_t ticks_slot_max;       /* Maximum time used by a node, from
+					* its expiry without drift, within
+					* which nodes with ticks_slot_window,
+					* other than jitter in window nodes,
+					* are not placed. Nodes without
+					* ticks_slot_window only collide with
+					* the ticks_slot reservation. When
+					* used, ticks_slot <=
+					* ticks_slot_window <= ticks_slot_max,
+					* zero when not used
+					*/
 	uint32_t ticks_drift;          /* Actual drift since last expiry,
 					* includes any ticker update interface
 					* made changes plus drift due to
