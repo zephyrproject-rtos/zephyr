@@ -21,8 +21,10 @@ if LORA_RYLRXXX
 config LORA_RYLRXX_CMD_BUF_SIZE
 	int "cmd buffer size"
 	default 256
+	range 24 65535
 	help
-	  Configure the cmd buffer size
+	  Configure the cmd buffer size. The lower bound fits the longest
+	  configuration command, AT+PARAMETER, with its terminating NUL.
 
 config RYLRXXX_UNSOLICITED_RX_MSGQ_SIZE
 	int "number of message to store in message queue"
