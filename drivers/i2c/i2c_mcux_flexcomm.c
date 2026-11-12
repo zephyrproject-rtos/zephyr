@@ -66,6 +66,7 @@ struct mcux_flexcomm_data {
 	status_t callback_status;
 #ifdef CONFIG_I2C_TARGET
 	uint8_t nr_targets_attached;
+	struct k_spinlock target_lock;
 	i2c_slave_config_t i2c_cfg;
 	i2c_slave_handle_t target_handle;
 	struct mcux_flexcomm_target_data target_data[MCUX_FLEXCOMM_MAX_TARGETS];
@@ -181,6 +182,29 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 
 	k_sem_take(&data->lock, K_FOREVER);
 
+#if defined(CONFIG_I2C_TARGET)
+	/*
+	 * I2C_MasterTransferNonBlocking() disables the target function, which
+	 * resets a target transaction in progress. Disable it here only while
+	 * the target is idle, without the ISR running in between.
+	 */
+	if (data->nr_targets_attached > 0) {
+		k_spinlock_key_t key = k_spin_lock(&data->target_lock);
+		bool target_busy =
+			(base->STAT & (I2C_STAT_SLVSEL_MASK | I2C_STAT_SLVPENDING_MASK)) != 0U;
+
+		if (!target_busy) {
+			I2C_SlaveEnable(base, false);
+		}
+		k_spin_unlock(&data->target_lock, key);
+
+		if (target_busy) {
+			k_sem_give(&data->lock);
+			return -EIO;
+		}
+	}
+#endif
+
 	pm_policy_device_power_lock_get(dev);
 
 	/* Iterate over all the messages */
@@ -238,7 +262,7 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 	}
 
 #if defined(CONFIG_I2C_TARGET)
-	/* I2C_MasterTransferNonBlocking() disables the target function */
+	/* Re-enable the target disabled for the transfer */
 	if (data->nr_targets_attached > 0) {
 		I2C_SlaveEnable(base, true);
 	}
@@ -534,15 +558,18 @@ int mcux_flexcomm_target_register(const struct device *dev,
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	struct mcux_flexcomm_target_data *target;
-	int ret;
+	int ret = 0;
 
 	if (!target_config) {
 		return -EINVAL;
 	}
 
+	k_sem_take(&data->lock, K_FOREVER);
+
 	target = mcux_flexcomm_find_free_target(data);
 	if (!target) {
-		return -EBUSY;
+		ret = -EBUSY;
+		goto out;
 	}
 
 	target->target_cfg = target_config;
@@ -556,7 +583,8 @@ int mcux_flexcomm_target_register(const struct device *dev,
 
 	if (mcux_flexcomm_setup_i2c_config_address(data, target, false) < 0) {
 		target->target_attached = false;
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	mcux_flexcomm_set_target_addresses(config->base, &data->i2c_cfg);
@@ -565,12 +593,15 @@ int mcux_flexcomm_target_register(const struct device *dev,
 		ret = mcux_flexcomm_start_target(dev);
 		if (ret != 0) {
 			target->target_attached = false;
-			return ret;
+			goto out;
 		}
 	}
 
 	data->nr_targets_attached++;
-	return 0;
+
+out:
+	k_sem_give(&data->lock);
+	return ret;
 }
 
 int mcux_flexcomm_target_unregister(const struct device *dev,
@@ -580,29 +611,37 @@ int mcux_flexcomm_target_unregister(const struct device *dev,
 	struct mcux_flexcomm_data *data = dev->data;
 	struct mcux_flexcomm_target_data *target;
 	I2C_Type *base = config->base;
+	int ret = 0;
+
+	k_sem_take(&data->lock, K_FOREVER);
 
 	target = mcux_flexcomm_find_target_by_address(data, target_config->address);
 	if (!target || !target->target_attached) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	if (mcux_flexcomm_setup_i2c_config_address(data, target, true) < 0) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
-	target->target_cfg = NULL;
-	target->target_attached = false;
-
-	data->nr_targets_attached--;
-
-	if (data->nr_targets_attached > 0) {
+	/* Disable the address first, so the ISR still finds the target meanwhile */
+	if (data->nr_targets_attached > 1) {
 		mcux_flexcomm_set_target_addresses(base, &data->i2c_cfg);
 	} else {
 		/* Also disables the target interrupts */
 		I2C_SlaveTransferAbort(base, &data->target_handle);
 	}
 
-	return 0;
+	target->target_attached = false;
+	target->target_cfg = NULL;
+
+	data->nr_targets_attached--;
+
+out:
+	k_sem_give(&data->lock);
+	return ret;
 }
 #endif
 
