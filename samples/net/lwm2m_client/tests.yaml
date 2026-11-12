@@ -40,7 +40,7 @@ tests:
   sample.net.lwm2m_client.dtls:
     harness: net
     depends_on: netif
-    extra_args: EXTRA_CONF_FILE=overlay-dtls.conf
+    extra_args: EXTRA_CONF_FILE=dtls.conf
     platform_allow:
       - qemu_x86
       - frdm_k64f
@@ -55,7 +55,7 @@ tests:
   sample.net.lwm2m_client.dtls_cert:
     harness: net
     depends_on: netif
-    extra_args: EXTRA_CONF_FILE=overlay-dtls-cert.conf
+    extra_args: EXTRA_CONF_FILE=dtls-cert.conf
     platform_allow:
       - qemu_x86
       - native_sim
@@ -67,7 +67,7 @@ tests:
   sample.net.lwm2m_client.queue_mode:
     harness: net
     depends_on: netif
-    extra_args: EXTRA_CONF_FILE=overlay-queue.conf
+    extra_args: EXTRA_CONF_FILE=queue.conf
     platform_allow:
       - qemu_x86
       - native_sim
@@ -79,7 +79,7 @@ tests:
   sample.net.lwm2m_client.data_cache:
     harness: net
     depends_on: netif
-    extra_args: EXTRA_CONF_FILE=overlay-data-cache.conf
+    extra_args: EXTRA_CONF_FILE=data-cache.conf
     platform_allow:
       - qemu_x86
       - native_sim
@@ -91,7 +91,7 @@ tests:
   sample.net.lwm2m_client.send_scheduler:
     harness: net
     depends_on: netif
-    extra_args: EXTRA_CONF_FILE=overlay-send-scheduler.conf
+    extra_args: EXTRA_CONF_FILE=send-scheduler.conf
     platform_allow:
       - qemu_x86
       - native_sim
