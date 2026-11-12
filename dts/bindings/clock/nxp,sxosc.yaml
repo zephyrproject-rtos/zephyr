@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP slow external crystal oscillator (SXOSC).
+
+compatible: "nxp,sxosc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  delay:
+    required: true
+    type: int
+    min: 1
+    max: 255
+    description: |
+      End-of-count value (EOCV). For a 32.768 kHz crystal, the stabilization
+      counting time is approximately delay / 64 seconds.
+
+      The reset value is 125, i.e. about 1.95 s of boot time. Per the
+      reference manual, change it only while the oscillator is off.
