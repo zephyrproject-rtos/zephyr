@@ -5,9 +5,19 @@ menuconfig SNMP
 	bool "SNMP agent [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  SNMPv1 and SNMPv2c agent.
+	  SNMPv1 and SNMPv2c agent. Managed objects are registered at build
+	  time with SNMP_SCALAR_DEFINE() and SNMP_COLUMN_DEFINE().
 
 if SNMP
+
+config SNMP_OID_MAX_LEN
+	int "Maximum object identifier length"
+	default 32
+	range 2 128
+	help
+	  Maximum number of sub-identifiers in an object identifier the agent
+	  can decode, encode or return. Requests naming a longer identifier
+	  are dropped.
 
 module = SNMP
 module-dep = NET_LOG
