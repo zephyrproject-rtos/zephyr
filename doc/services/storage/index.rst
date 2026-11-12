@@ -7,6 +7,8 @@ Storage & Configuration
    :maxdepth: 1
 
    disk/access.rst
+   disk/partition.rst
+   scsi/index.rst
    fcb/fcb.rst
    file_system/index.rst
    flash_map/flash_map.rst

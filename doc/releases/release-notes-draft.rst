@@ -129,6 +129,14 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* Storage
+
+  * Transport-neutral MBR/GPT layout scan (:c:func:`disk_partition_walk`) when
+    :kconfig:option:`CONFIG_DISK_PARTITION` is enabled; see :ref:`disk_partition_layout`
+  * :ref:`SCSI mid-layer <scsi_midlayer>` for transport-neutral initiator command
+    execution, SCSI :ref:`disk_access <disk_access_api>` volumes, and generic partition
+    table parsing on block devices.
+
 Devicetree
 **********
 
