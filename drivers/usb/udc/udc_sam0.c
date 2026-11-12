@@ -176,56 +176,24 @@ static void sam0_load_padcal(const struct device *dev)
 	uint32_t pad_trim;
 	uint16_t padcal;
 
-#ifdef USB_FUSES_TRANSN_ADDR
-	pad_transn = *(uint32_t *)USB_FUSES_TRANSN_ADDR;
-#else
-#define NVM_USB_PAD_TRANSN_POS 45
-#define NVM_USB_PAD_TRANSN_SIZE 5
-	pad_transn = (*((uint32_t *)(NVMCTRL_OTP4) +
-			(NVM_USB_PAD_TRANSN_POS / 32)) >>
-		      (NVM_USB_PAD_TRANSN_POS % 32)) &
-		     ((1 << NVM_USB_PAD_TRANSN_SIZE) - 1);
-
+	pad_transn = FIELD_GET(USB_FUSES_TRANSN_Msk, *(uint32_t *)USB_FUSES_TRANSN_ADDR);
 	if (pad_transn == 0x1F) {
 		pad_transn = 5U;
 	}
-#endif
 
-	padcal = FIELD_PREP(UDC_SAM0_PADCAL_TRANSN_Msk, pad_transn);
-
-#ifdef USB_FUSES_TRANSP_ADDR
-#define NVM_USB_PAD_TRANSP_POS 50
-#define NVM_USB_PAD_TRANSP_SIZE 5
-	pad_transp = *(uint32_t *)USB_FUSES_TRANSP_ADDR;
-#else
-	pad_transp = (*((uint32_t *)(NVMCTRL_OTP4) +
-			(NVM_USB_PAD_TRANSP_POS / 32)) >>
-		      (NVM_USB_PAD_TRANSP_POS % 32)) &
-		     ((1 << NVM_USB_PAD_TRANSP_SIZE) - 1);
-
+	pad_transp = FIELD_GET(USB_FUSES_TRANSP_Msk, *(uint32_t *)USB_FUSES_TRANSP_ADDR);
 	if (pad_transp == 0x1F) {
 		pad_transp = 29U;
 	}
-#endif
 
-	padcal |= FIELD_PREP(UDC_SAM0_PADCAL_TRANSP_Msk, pad_transp);
-
-#ifdef USB_FUSES_TRIM_ADDR
-	pad_trim = *(uint32_t *)USB_FUSES_TRIM_ADDR;
-#else
-#define NVM_USB_PAD_TRIM_POS 55
-#define NVM_USB_PAD_TRIM_SIZE 3
-	pad_trim = (*((uint32_t *)(NVMCTRL_OTP4) +
-		      (NVM_USB_PAD_TRIM_POS / 32)) >>
-		    (NVM_USB_PAD_TRIM_POS % 32)) &
-		   ((1 << NVM_USB_PAD_TRIM_SIZE) - 1);
-
+	pad_trim = FIELD_GET(USB_FUSES_TRIM_Msk, *(uint32_t *)USB_FUSES_TRIM_ADDR);
 	if (pad_trim == 0x7) {
 		pad_trim = 3U;
 	}
-#endif
 
-	padcal |= FIELD_PREP(UDC_SAM0_PADCAL_TRIM_Msk, pad_trim);
+	padcal = FIELD_PREP(UDC_SAM0_PADCAL_TRANSN_Msk, pad_transn) |
+		 FIELD_PREP(UDC_SAM0_PADCAL_TRANSP_Msk, pad_transp) |
+		 FIELD_PREP(UDC_SAM0_PADCAL_TRIM_Msk, pad_trim);
 
 	sys_write16(padcal, base + UDC_SAM0_PADCAL);
 }
