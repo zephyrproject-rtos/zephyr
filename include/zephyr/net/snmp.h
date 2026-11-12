@@ -347,6 +347,57 @@ int snmp_agent_start(void);
 int snmp_agent_stop(void);
 
 /**
+ * @brief Set the sysObjectID value of the MIB-2 system group.
+ *
+ * The identifier is copied. Until this is called the agent reports zeroDotZero.
+ *
+ * @param arcs Sub-identifiers of the vendor's authoritative identification.
+ * @param len Number of sub-identifiers.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p arcs is NULL, @p len is smaller than 2 or the first two
+ *         sub-identifiers cannot be encoded.
+ * @retval -EMSGSIZE @p len exceeds SNMP_OID_MAX_LEN.
+ */
+int snmp_mib2_system_set_object_id(const uint32_t *arcs, size_t len);
+
+/**
+ * @brief Set the sysName value of the MIB-2 system group.
+ *
+ * @param name NUL terminated string of at most CONFIG_SNMP_SYS_STRING_MAX_LEN bytes,
+ *             in the DisplayString repertoire of @rfc{2579}: ASCII, with CR only as CR LF.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p name is NULL or not a DisplayString.
+ * @retval -EMSGSIZE @p name is too long.
+ */
+int snmp_mib2_system_set_name(const char *name);
+
+/**
+ * @brief Set the sysContact value of the MIB-2 system group.
+ *
+ * @param contact NUL terminated string of at most CONFIG_SNMP_SYS_STRING_MAX_LEN bytes,
+ *                in the DisplayString repertoire of @rfc{2579}.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p contact is NULL or not a DisplayString.
+ * @retval -EMSGSIZE @p contact is too long.
+ */
+int snmp_mib2_system_set_contact(const char *contact);
+
+/**
+ * @brief Set the sysLocation value of the MIB-2 system group.
+ *
+ * @param location NUL terminated string of at most CONFIG_SNMP_SYS_STRING_MAX_LEN bytes,
+ *                 in the DisplayString repertoire of @rfc{2579}.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p location is NULL or not a DisplayString.
+ * @retval -EMSGSIZE @p location is too long.
+ */
+int snmp_mib2_system_set_location(const char *location);
+
+/**
  * @}
  */
 
