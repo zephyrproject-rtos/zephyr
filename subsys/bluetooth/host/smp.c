@@ -324,6 +324,10 @@ struct bt_smp_br {
 	/* Encryption Key Size used for connection */
 	uint8_t 			enc_key_size;
 
+	/* Key distribution of an owed Pairing Response */
+	uint8_t			rsp_init_key_dist;
+	uint8_t			rsp_resp_key_dist;
+
 	/* The channel this context is associated with.
 	 * This marks the beginning of the part of the structure that will not
 	 * be memset to zero in init.
@@ -332,6 +336,15 @@ struct bt_smp_br {
 
 	/* Delayed work for timeout handling */
 	struct k_work_delayable	work;
+
+	/* The owed PDUs, a bit per SMP_OWED_* */
+	atomic_t		owed;
+
+	/* Reason of an owed Pairing Failed */
+	uint8_t			fail_reason;
+
+	/* Waits for the buffers of the owed PDUs */
+	struct bt_buf_waiter	waiter;
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
@@ -923,6 +936,12 @@ static void smp_br_reset(struct bt_smp_br *smp)
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
+	/* What was owed for the procedure is not sent. A context that is
+	 * sending keeps its bits.
+	 */
+	(void)atomic_and(&smp->owed, ~(atomic_val_t)SMP_OWED_PDUS);
+	bt_conn_pdu_waiter_cancel(&smp->waiter);
+
 	atomic_set(smp->allowed_cmds, 0);
 
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
@@ -1062,6 +1081,22 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
+	/* Nothing is owed on a link that is gone, and the waiter's work item
+	 * is not left pending in memory that is cleared below. On bt_workq,
+	 * which runs it, it can only be running if it is what got here, and
+	 * waiting for it would never end.
+	 */
+	(void)atomic_clear(&smp->owed);
+	bt_conn_pdu_waiter_cancel(&smp->waiter);
+
+	if (bt_is_work_thread()) {
+		(void)k_work_cancel(&smp->waiter.work);
+	} else {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_sync(&smp->waiter.work, &sync);
+	}
+
 	(void)memset(smp, 0, sizeof(*smp));
 }
 
@@ -1166,39 +1201,238 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	LOG_DBG("LTK derived from LinkKey");
 }
 
-static struct net_buf *smp_br_create_pdu(struct bt_smp_br *smp, uint8_t op,
-					 size_t len)
+static void smp_br_hdr_add(struct net_buf *buf, uint8_t code)
 {
-	struct bt_smp_hdr *hdr;
-	struct net_buf *buf;
-	k_timeout_t timeout;
+	struct bt_smp_hdr *hdr = net_buf_add(buf, sizeof(*hdr));
 
-	/* Don't if session had already timed out */
-	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
-		timeout = K_NO_WAIT;
-	} else {
-		timeout = SMP_TIMEOUT;
-	}
-
-	/* Use smaller timeout if returning an error since that could be
-	 * caused by lack of buffers.
-	 */
-	buf = bt_l2cap_create_pdu_timeout(NULL, 0, timeout);
-	if (!buf) {
-		/* If it was not possible to allocate a buffer within the
-		 * timeout marked it as timed out.
-		 */
-		atomic_set_bit(smp->flags, SMP_FLAG_TIMEOUT);
-		return NULL;
-	}
-
-	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->code = op;
-
-	return buf;
+	hdr->code = code;
 }
 
-static void smp_br_distribute_keys(struct bt_smp_br *smp)
+/* If Secure Connections pairing has been initiated over BR/EDR, the IO
+ * Capability, OOB data flag and Auth Req fields of the SM Pairing
+ * Request/Response PDU shall be set to zero on transmission, and ignored on
+ * reception.
+ */
+static void smp_br_pairing_build(const struct bt_smp_br *smp, struct net_buf *buf,
+				 uint8_t init_key_dist, uint8_t resp_key_dist)
+{
+	struct bt_smp_pairing *pairing = net_buf_add(buf, sizeof(*pairing));
+
+	pairing->auth_req = BT_SMP_AUTH_CT2;
+	pairing->io_capability = 0x00U;
+	pairing->oob_flag = 0x00U;
+	pairing->max_key_size = smp->enc_key_size;
+	pairing->init_key_dist = init_key_dist;
+	pairing->resp_key_dist = resp_key_dist;
+}
+
+#if defined(CONFIG_BT_PRIVACY)
+static void smp_br_ident_info_build(const struct bt_smp_br *smp, struct net_buf *buf)
+{
+	const uint8_t id = smp->chan.chan.conn->id;
+
+	smp_br_hdr_add(buf, BT_SMP_CMD_IDENT_INFO);
+	(void)net_buf_add_mem(buf, bt_dev.irk[id], sizeof(bt_dev.irk[id]));
+}
+
+static void smp_br_ident_addr_info_build(const struct bt_smp_br *smp, struct net_buf *buf)
+{
+	const uint8_t id = smp->chan.chan.conn->id;
+
+	smp_br_hdr_add(buf, BT_SMP_CMD_IDENT_ADDR_INFO);
+	(void)net_buf_add_mem(buf, &bt_dev.id_addr[id], sizeof(bt_dev.id_addr[id]));
+}
+#endif /* CONFIG_BT_PRIVACY */
+
+#if defined(CONFIG_BT_SIGNING)
+static uint8_t smp_br_signing_info_build(const struct bt_smp_br *smp, struct net_buf *buf)
+{
+	const struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_smp_signing_info *info;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
+
+	keys = bt_keys_get_addr(conn->id, &addr);
+	if (keys == NULL) {
+		LOG_ERR("No keys space for %s", bt_addr_le_str(&addr));
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	smp_br_hdr_add(buf, BT_SMP_CMD_SIGNING_INFO);
+	info = net_buf_add(buf, sizeof(*info));
+
+	if (bt_rand(info->csrk, sizeof(info->csrk)) != 0) {
+		LOG_ERR("Unable to get random bytes");
+		return BT_SMP_ERR_UNSPECIFIED;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
+		bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
+		(void)memcpy(keys->local_csrk.val, info->csrk, sizeof(keys->local_csrk.val));
+		keys->local_csrk.cnt = 0U;
+	}
+
+	return 0U;
+}
+#endif /* CONFIG_BT_SIGNING */
+
+/* Writes an owed PDU into the buffer. Returns an SMP error code, and in cb
+ * the callback for when the PDU has been sent.
+ */
+static uint8_t smp_br_owed_build(const struct bt_smp_br *smp, uint8_t owed, struct net_buf *buf,
+				 bt_conn_tx_cb_t *cb)
+{
+	uint8_t err = 0U;
+
+	*cb = NULL;
+
+	switch (owed) {
+	case SMP_OWED_PAIRING_FAIL:
+		smp_br_hdr_add(buf, BT_SMP_CMD_PAIRING_FAIL);
+		(void)net_buf_add_u8(buf, smp->fail_reason);
+		break;
+	case SMP_OWED_PAIRING_REQ:
+		smp_br_hdr_add(buf, BT_SMP_CMD_PAIRING_REQ);
+		smp_br_pairing_build(smp, buf, BR_SEND_KEYS_SC, BR_RECV_KEYS_SC);
+		break;
+	case SMP_OWED_PAIRING_RSP:
+		smp_br_hdr_add(buf, BT_SMP_CMD_PAIRING_RSP);
+		smp_br_pairing_build(smp, buf, smp->rsp_init_key_dist, smp->rsp_resp_key_dist);
+		break;
+#if defined(CONFIG_BT_PRIVACY)
+	case SMP_OWED_IDENT_INFO:
+		smp_br_ident_info_build(smp, buf);
+		break;
+	case SMP_OWED_IDENT_ADDR_INFO:
+		smp_br_ident_addr_info_build(smp, buf);
+		*cb = smp_id_sent;
+		break;
+#endif /* CONFIG_BT_PRIVACY */
+#if defined(CONFIG_BT_SIGNING)
+	case SMP_OWED_SIGNING_INFO:
+		err = smp_br_signing_info_build(smp, buf);
+		*cb = smp_sign_info_sent;
+		break;
+#endif /* CONFIG_BT_SIGNING */
+	default:
+		LOG_ERR("PDU %u cannot be owed", owed);
+		err = BT_SMP_ERR_UNSPECIFIED;
+		break;
+	}
+
+	return err;
+}
+
+/* Sends the owed PDUs in order while there are buffers for them. Once there
+ * is none, the waiter's handler calls smp_br_send_owed() again when there is
+ * one. Returns an SMP error code.
+ */
+static uint8_t smp_br_owed_send_all(struct bt_smp_br *smp)
+{
+	uint8_t err = 0U;
+
+	while (err == 0U) {
+		const uint32_t owed = (uint32_t)atomic_get(&smp->owed) & SMP_OWED_PDUS;
+		struct net_buf *buf;
+		bt_conn_tx_cb_t cb;
+		uint8_t idx;
+
+		if (owed == 0U) {
+			break;
+		}
+
+		buf = bt_l2cap_create_pdu_waiter(&smp->waiter, 0U);
+		if (buf == NULL) {
+			break;
+		}
+
+		idx = (uint8_t)(find_lsb_set(owed) - 1U);
+		atomic_clear_bit(&smp->owed, idx);
+
+		err = smp_br_owed_build(smp, idx, buf, &cb);
+		if (err != 0U) {
+			net_buf_unref(buf);
+		} else if (idx == SMP_OWED_PAIRING_FAIL) {
+			/* It does not restart the SMP timer, so smp_br_send() is
+			 * not used for it
+			 */
+			if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, NULL,
+						NULL) != 0) {
+				net_buf_unref(buf);
+			}
+		} else {
+			smp_br_send(smp, buf, cb);
+		}
+	}
+
+	return err;
+}
+
+/* One context at a time sends what is owed, as smp_send_owed() describes.
+ * Returns an SMP error code of what this context built.
+ */
+static uint8_t smp_br_send_owed(struct bt_smp_br *smp)
+{
+	uint8_t err = 0U;
+
+	atomic_set_bit(&smp->owed, SMP_OWED_AGAIN);
+
+	do {
+		if (atomic_test_and_set_bit(&smp->owed, SMP_OWED_SENDING)) {
+			break;
+		}
+
+		while ((err == 0U) && atomic_test_and_clear_bit(&smp->owed, SMP_OWED_AGAIN)) {
+			err = smp_br_owed_send_all(smp);
+		}
+
+		atomic_clear_bit(&smp->owed, SMP_OWED_SENDING);
+
+		/* Another context may have found this one sending after it
+		 * last looked
+		 */
+	} while ((err == 0U) && atomic_test_bit(&smp->owed, SMP_OWED_AGAIN));
+
+	return err;
+}
+
+/* The PDU is sent once there is a buffer for it. As for a PDU that is sent,
+ * the SMP timer runs from now, unless it is a Pairing Failed. After an SMP
+ * timeout no PDU is sent any more.
+ */
+static void smp_br_owed_add(struct bt_smp_br *smp, uint8_t owed)
+{
+	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
+		return;
+	}
+
+	atomic_set_bit(&smp->owed, owed);
+
+	if (owed != SMP_OWED_PAIRING_FAIL) {
+		__maybe_unused int err;
+
+		err = bt_work_reschedule(&smp->work, SMP_TIMEOUT);
+		__ASSERT(err >= 0, "SMP timer not started (err %d)", err);
+	}
+}
+
+/* Owes the peer a PDU and sends what is owed while there are buffers for it.
+ * Returns an SMP error code.
+ */
+static uint8_t smp_br_owe(struct bt_smp_br *smp, uint8_t owed)
+{
+	smp_br_owed_add(smp, owed);
+
+	return smp_br_send_owed(smp);
+}
+
+static uint8_t smp_br_distribute_keys(struct bt_smp_br *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
 	struct bt_keys *keys;
@@ -1211,77 +1445,25 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 
 	keys = bt_keys_get_addr(conn->id, &addr);
-	if (!keys) {
+	if (keys == NULL) {
 		LOG_ERR("No keys space for %s", bt_addr_le_str(&addr));
-		return;
+		return 0U;
 	}
 
-#if defined(CONFIG_BT_PRIVACY)
-	if ((smp->local_dist & BT_SMP_DIST_ID_KEY) &&
-	    ((smp->local_distributed & BT_SMP_DIST_ID_KEY) == 0)) {
-		struct bt_smp_ident_info *id_info;
-		struct bt_smp_ident_addr_info *id_addr_info;
-		struct net_buf *buf;
-
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) && ((smp->local_dist & BT_SMP_DIST_ID_KEY) != 0U) &&
+	    ((smp->local_distributed & BT_SMP_DIST_ID_KEY) == 0U)) {
 		smp->local_distributed |= BT_SMP_DIST_ID_KEY;
-
-		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_INFO,
-					sizeof(*id_info));
-		if (!buf) {
-			LOG_ERR("Unable to allocate Ident Info buffer");
-			return;
-		}
-
-		id_info = net_buf_add(buf, sizeof(*id_info));
-		memcpy(id_info->irk, bt_dev.irk[conn->id], 16);
-
-		smp_br_send(smp, buf, NULL);
-
-		buf = smp_br_create_pdu(smp, BT_SMP_CMD_IDENT_ADDR_INFO,
-				     sizeof(*id_addr_info));
-		if (!buf) {
-			LOG_ERR("Unable to allocate Ident Addr Info buffer");
-			return;
-		}
-
-		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
-		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
-
-		smp_br_send(smp, buf, smp_id_sent);
+		smp_br_owed_add(smp, SMP_OWED_IDENT_INFO);
+		smp_br_owed_add(smp, SMP_OWED_IDENT_ADDR_INFO);
 	}
-#endif /* CONFIG_BT_PRIVACY */
 
-#if defined(CONFIG_BT_SIGNING)
-	if ((smp->local_dist & BT_SMP_DIST_SIGN) &&
-	    ((smp->local_distributed & BT_SMP_DIST_SIGN) == 0)) {
-		struct bt_smp_signing_info *info;
-		struct net_buf *buf;
-
+	if (IS_ENABLED(CONFIG_BT_SIGNING) && ((smp->local_dist & BT_SMP_DIST_SIGN) != 0U) &&
+	    ((smp->local_distributed & BT_SMP_DIST_SIGN) == 0U)) {
 		smp->local_distributed |= BT_SMP_DIST_SIGN;
-
-		buf = smp_br_create_pdu(smp, BT_SMP_CMD_SIGNING_INFO,
-					sizeof(*info));
-		if (!buf) {
-			LOG_ERR("Unable to allocate Signing Info buffer");
-			return;
-		}
-
-		info = net_buf_add(buf, sizeof(*info));
-
-		if (bt_rand(info->csrk, sizeof(info->csrk))) {
-			LOG_ERR("Unable to get random bytes");
-			return;
-		}
-
-		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
-			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
-			memcpy(keys->local_csrk.val, info->csrk, 16);
-			keys->local_csrk.cnt = 0U;
-		}
-
-		smp_br_send(smp, buf, smp_sign_info_sent);
+		smp_br_owed_add(smp, SMP_OWED_SIGNING_INFO);
 	}
-#endif /* CONFIG_BT_SIGNING */
+
+	return smp_br_send_owed(smp);
 }
 
 static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
@@ -1338,9 +1520,8 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 {
 	struct bt_smp_pairing *req = (void *)buf->data;
 	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_smp_pairing *rsp;
-	struct net_buf *rsp_buf;
 	uint8_t max_key_size;
+	uint8_t err;
 
 	LOG_DBG("req: io_capability 0x%02X, oob_flag 0x%02X, auth_req 0x%02X, "
 		"max_key_size 0x%02X, init_key_dist 0x%02X, resp_key_dist 0x%02X",
@@ -1368,44 +1549,28 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 		return BT_SMP_ERR_ENC_KEY_SIZE;
 	}
 
-	rsp_buf = smp_br_create_pdu(smp, BT_SMP_CMD_PAIRING_RSP, sizeof(*rsp));
-	if (!rsp_buf) {
-		return BT_SMP_ERR_UNSPECIFIED;
-	}
-
 	smp_br_init(smp);
 	smp->enc_key_size = max_key_size;
+	smp->rsp_init_key_dist = req->init_key_dist & BR_RECV_KEYS_SC;
+	smp->rsp_resp_key_dist = req->resp_key_dist & BR_SEND_KEYS_SC;
 
-	/*
-	 * If Secure Connections pairing has been initiated over BR/EDR, the IO
-	 * Capability, OOB data flag and Auth Req fields of the SM Pairing
-	 * Request/Response PDU shall be set to zero on transmission, and
-	 * ignored on reception.
-	 */
-	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
+	smp->local_dist = smp->rsp_resp_key_dist;
+	smp->remote_dist = smp->rsp_init_key_dist;
 
-	rsp->auth_req = BT_SMP_AUTH_CT2;
-	rsp->io_capability = 0x00;
-	rsp->oob_flag = 0x00;
-	rsp->max_key_size = max_key_size;
-	rsp->init_key_dist = (req->init_key_dist & BR_RECV_KEYS_SC);
-	rsp->resp_key_dist = (req->resp_key_dist & BR_SEND_KEYS_SC);
+	LOG_DBG("rsp: max_key_size 0x%02X, init_key_dist 0x%02X, resp_key_dist 0x%02X",
+		smp->enc_key_size, smp->rsp_init_key_dist, smp->rsp_resp_key_dist);
 
-	smp->local_dist = rsp->resp_key_dist;
-	smp->remote_dist = rsp->init_key_dist;
-
-	LOG_DBG("rsp: io_capability 0x%02X, oob_flag 0x%02X, auth_req 0x%02X, "
-		"max_key_size 0x%02X, init_key_dist 0x%02X, resp_key_dist 0x%02X",
-		rsp->io_capability, rsp->oob_flag, rsp->auth_req,
-		rsp->max_key_size, rsp->init_key_dist, rsp->resp_key_dist);
-
-	smp_br_send(smp, rsp_buf, NULL);
+	err = smp_br_owe(smp, SMP_OWED_PAIRING_RSP);
+	if (err != 0U) {
+		return err;
+	}
 
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
-	/* If CT2 bit is set both side, set CT2 flag */
-	if ((rsp->auth_req & BT_SMP_AUTH_CT2) &&
-	    (req->auth_req & BT_SMP_AUTH_CT2)) {
+	/* The Pairing Response sets the CT2 bit: if the request does as well,
+	 * set CT2 flag
+	 */
+	if ((req->auth_req & BT_SMP_AUTH_CT2) != 0U) {
 		atomic_set_bit(smp->flags, SMP_FLAG_CT2);
 	}
 
@@ -1418,7 +1583,10 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
 
 	/* BR/EDR acceptor is like LE Peripheral and distributes keys first */
-	smp_br_distribute_keys(smp);
+	err = smp_br_distribute_keys(smp);
+	if (err != 0U) {
+		return err;
+	}
 
 	if (smp->remote_dist & BT_SMP_DIST_ID_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_IDENT_INFO);
@@ -1439,6 +1607,7 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_conn *conn = smp->chan.chan.conn;
 	uint8_t max_key_size;
+	uint8_t err;
 
 	LOG_DBG("rsp: io_capability 0x%02X, oob_flag 0x%02X, auth_req 0x%02X, "
 		"max_key_size 0x%02X, init_key_dist 0x%02X, resp_key_dist 0x%02X",
@@ -1490,7 +1659,10 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 		return 0;
 	}
 
-	smp_br_distribute_keys(smp);
+	err = smp_br_distribute_keys(smp);
+	if (err != 0U) {
+		return err;
+	}
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
@@ -1600,7 +1772,11 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	}
 
 	if (conn->role == BT_CONN_ROLE_CENTRAL && !smp->remote_dist) {
-		smp_br_distribute_keys(smp);
+		const uint8_t err = smp_br_distribute_keys(smp);
+
+		if (err != 0U) {
+			return err;
+		}
 	}
 
 	/* if all keys were distributed, pairing is done */
@@ -1643,7 +1819,11 @@ static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 	smp->remote_dist &= ~BT_SMP_DIST_SIGN;
 
 	if (conn->role == BT_CONN_ROLE_CENTRAL && !smp->remote_dist) {
-		smp_br_distribute_keys(smp);
+		const uint8_t err = smp_br_distribute_keys(smp);
+
+		if (err != 0U) {
+			return err;
+		}
 	}
 
 	/* if all keys were distributed, pairing is done */
@@ -1682,30 +1862,36 @@ static const struct {
 
 static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 {
-	struct bt_smp_pairing_fail *rsp;
-	struct net_buf *buf;
-
 	/* reset context and report */
 	smp_br_reset(smp);
 
-	buf = smp_br_create_pdu(smp, BT_SMP_CMD_PAIRING_FAIL, sizeof(*rsp));
-	if (!buf) {
-		return -ENOBUFS;
-	}
+	smp->fail_reason = reason;
 
-	rsp = net_buf_add(buf, sizeof(*rsp));
-	rsp->reason = reason;
-
-	/*
-	 * SMP timer is not restarted for PairingFailed so don't use
-	 * smp_br_send
-	 */
-	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf,
-				NULL, NULL)) {
-		net_buf_unref(buf);
+	if (smp_br_owe(smp, SMP_OWED_PAIRING_FAIL) != 0U) {
+		return -EIO;
 	}
 
 	return 0;
+}
+
+/* An owed PDU failed to build: the pairing ends */
+static void smp_br_owed_fail(struct bt_smp_br *smp, uint8_t err)
+{
+	if (smp_br_error(smp, err) != 0) {
+		LOG_WRN("Pairing Failed not sent");
+	}
+}
+
+static void smp_br_owed_work(struct k_work *work)
+{
+	struct bt_buf_waiter *waiter = CONTAINER_OF(work, struct bt_buf_waiter, work);
+	struct bt_smp_br *smp = CONTAINER_OF(waiter, struct bt_smp_br, waiter);
+	uint8_t err;
+
+	err = smp_br_send_owed(smp);
+	if (err != 0U) {
+		smp_br_owed_fail(smp, err);
+	}
 }
 
 static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
@@ -1801,6 +1987,7 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	*chan = &smp->chan.chan;
 
 	k_work_init_delayable(&smp->work, smp_br_timeout);
+	bt_buf_waiter_init(&smp->waiter, smp_br_owed_work);
 	smp_br_reset(smp);
 
 	return 0;
@@ -1821,9 +2008,8 @@ static struct bt_smp_br *smp_br_chan_get(struct bt_conn *conn)
 
 int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 {
-	struct bt_smp_pairing *req;
-	struct net_buf *req_buf;
 	uint8_t max_key_size;
+	uint8_t err;
 	struct bt_smp_br *smp;
 	uint8_t remote_fixed_chan;
 
@@ -1867,28 +2053,11 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	smp_br_init(smp);
 	smp->enc_key_size = max_key_size;
 
-	req_buf = smp_br_create_pdu(smp, BT_SMP_CMD_PAIRING_REQ, sizeof(*req));
-	if (!req_buf) {
-		return -ENOBUFS;
+	err = smp_br_owe(smp, SMP_OWED_PAIRING_REQ);
+	if (err != 0U) {
+		smp_br_owed_fail(smp, err);
+		return -EIO;
 	}
-
-	req = net_buf_add(req_buf, sizeof(*req));
-
-	/*
-	 * If Secure Connections pairing has been initiated over BR/EDR, the IO
-	 * Capability, OOB data flag and Auth Req fields of the SM Pairing
-	 * Request/Response PDU shall be set to zero on transmission, and
-	 * ignored on reception.
-	 */
-
-	req->auth_req = BT_SMP_AUTH_CT2;
-	req->io_capability = 0x00;
-	req->oob_flag = 0x00;
-	req->max_key_size = max_key_size;
-	req->init_key_dist = BR_SEND_KEYS_SC;
-	req->resp_key_dist = BR_RECV_KEYS_SC;
-
-	smp_br_send(smp, req_buf, NULL);
 
 	smp->local_dist = BR_SEND_KEYS_SC;
 	smp->remote_dist = BR_RECV_KEYS_SC;
