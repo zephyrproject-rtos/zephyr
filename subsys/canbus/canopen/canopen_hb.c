@@ -69,7 +69,8 @@ bool canopen_hb_timed_out(struct canopen_node *node)
 
 static void hb_timeout_update(struct canopen_node *node)
 {
-	if (!canopen_hb_timed_out(node)) {
+	if (!canopen_hb_timed_out(node) &&
+	    !(IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING) && canopen_guard_timed_out(node))) {
 		(void)canopen_emcy_unset(node, CANOPEN_EMCY_HEARTBEAT);
 	}
 }

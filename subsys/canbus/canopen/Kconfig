@@ -110,6 +110,15 @@ config CANOPEN_HEARTBEAT_PRODUCER_MS
 	help
 	  Power-on value of object 1017h. 0 disables the heartbeat producer.
 
+config CANOPEN_NODE_GUARDING
+	bool "Node guarding"
+	depends on CAN_ACCEPT_RTR
+	help
+	  Answer node guarding requests (remote frames on CAN-ID 700h + node-ID) and provide the
+	  guard time (100Ch) and life time factor (100Dh) objects for life guarding. Requests are
+	  only answered while the producer heartbeat time (1017h) is 0, since CiA 301 does not
+	  allow both protocols at the same time.
+
 config CANOPEN_TPDO_COUNT
 	int "Number of TPDOs"
 	default 4

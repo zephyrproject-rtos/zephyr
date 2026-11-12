@@ -125,7 +125,14 @@ static void canopen_tx_drain(struct canopen_node *node)
 
 static void canopen_dispatch(struct canopen_node *node, const struct can_frame *frame)
 {
-	if ((frame->flags & (CAN_FRAME_IDE | CAN_FRAME_RTR)) != 0U) {
+	if ((frame->flags & CAN_FRAME_IDE) != 0U) {
+		return;
+	}
+
+	if ((frame->flags & CAN_FRAME_RTR) != 0U) {
+		if (IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING)) {
+			canopen_guard_rx(node, frame);
+		}
 		return;
 	}
 
@@ -147,6 +154,8 @@ static k_timeout_t canopen_next_timeout(struct canopen_node *node)
 		canopen_pdo_deadline(node),
 		canopen_hb_deadline(node),
 		canopen_emcy_deadline(node),
+		IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING) ? canopen_guard_deadline(node)
+							 : sys_timepoint_calc(K_FOREVER),
 	};
 	k_timepoint_t next = canopen_nmt_deadline(node);
 
@@ -205,6 +214,9 @@ static void canopen_thread(void *p1, void *p2, void *p3)
 		canopen_sdo_server_process(node);
 		canopen_sync_process(node);
 		canopen_hb_process(node);
+		if (IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING)) {
+			canopen_guard_process(node);
+		}
 		canopen_pdo_process(node);
 		canopen_emcy_process(node);
 		timeout = canopen_next_timeout(node);
@@ -244,6 +256,9 @@ int canopen_node_init(struct canopen_node *node, const struct canopen_node_confi
 	k_poll_signal_init(&node->signal);
 	node->can_state_last = CAN_STATE_ERROR_ACTIVE;
 	canopen_sync_init(node);
+	if (IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING)) {
+		canopen_guard_init(node);
+	}
 	canopen_emcy_reset(node, true);
 	canopen_od_comm_reset(node);
 	canopen_sdo_server_reset(node);

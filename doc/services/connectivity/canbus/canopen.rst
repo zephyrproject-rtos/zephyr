@@ -31,9 +31,14 @@ Features
   (``1003h``). The stack reports CAN overrun, error passive, recovery from bus-off, heartbeat
   timeout, RPDO length and timeout, and SYNC length errors.
 * Error behavior (``1029h``) for bus-off and heartbeat timeouts.
+* Node guarding and life guarding (``100Ch``, ``100Dh``), enabled with
+  :kconfig:option:`CONFIG_CANOPEN_NODE_GUARDING`, which requires
+  :kconfig:option:`CONFIG_CAN_ACCEPT_RTR`. Guarding requests are answered only while the producer
+  heartbeat time (``1017h``) is 0. A life guarding timeout is reported with EMCY ``8130h`` and
+  handled by the error behavior like a heartbeat timeout.
 
-Not supported: node guarding, PDOs requested by remote frames, MPDO, the CANopen manager
-boot-up of CiA 302, LSS (CiA 305) and CANopen FD (CiA 1301).
+Not supported: the master side of node guarding, PDOs requested by remote frames, MPDO, the
+CANopen manager boot-up of CiA 302, LSS (CiA 305) and CANopen FD (CiA 1301).
 
 Object Dictionary
 *****************

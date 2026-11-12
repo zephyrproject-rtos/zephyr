@@ -304,6 +304,15 @@ struct canopen_sync {
 	bool length_error;
 };
 
+struct canopen_guard {
+	k_timepoint_t deadline;
+	int filter;
+	uint16_t guard_time;
+	uint8_t life_factor;
+	uint8_t toggle;
+	uint8_t status;
+};
+
 struct canopen_emcy {
 	k_timepoint_t inhibit_end;
 	uint32_t cob_id;
@@ -345,6 +354,9 @@ struct canopen_node {
 	struct canopen_sync sync;
 	struct canopen_emcy emcy;
 	struct canopen_hb_consumer hb[CONFIG_CANOPEN_HB_CONSUMER_COUNT];
+#ifdef CONFIG_CANOPEN_NODE_GUARDING
+	struct canopen_guard guard;
+#endif
 	struct can_state_change_callback can_state_cb;
 	atomic_t can_state;
 	struct canopen_pdo tpdo[CONFIG_CANOPEN_TPDO_COUNT];

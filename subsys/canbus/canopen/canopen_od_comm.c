@@ -148,6 +148,12 @@ uint32_t canopen_od_comm_find(struct canopen_node *node, uint16_t index, uint8_t
 		return canopen_emcy_find(node, index, sub, ref);
 	case CANOPEN_OD_HB_CONSUMER:
 		return canopen_hb_find(node, sub, ref);
+	case CANOPEN_OD_GUARD_TIME:
+	case CANOPEN_OD_LIFE_FACTOR:
+		if (!IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING)) {
+			return CANOPEN_SDO_ABORT_NO_OBJECT;
+		}
+		return canopen_guard_find(node, index, sub, ref);
 	case CANOPEN_OD_ERROR_BEHAVIOR:
 		return comm_error_behavior_find(node, sub, ref);
 	case CANOPEN_OD_DEVICE_NAME:
@@ -187,6 +193,12 @@ uint32_t canopen_od_comm_write(struct canopen_node *node, const struct canopen_o
 		return canopen_emcy_write(node, ref->index, value);
 	case CANOPEN_OD_HB_CONSUMER:
 		return canopen_hb_write(node, ref->sub, value);
+	case CANOPEN_OD_GUARD_TIME:
+	case CANOPEN_OD_LIFE_FACTOR:
+		if (!IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING)) {
+			return CANOPEN_SDO_ABORT_READ_ONLY;
+		}
+		return canopen_guard_write(node, ref->index, value);
 	case CANOPEN_OD_ERROR_BEHAVIOR:
 		if (value > CANOPEN_ERROR_BEHAVIOR_STOPPED) {
 			return CANOPEN_SDO_ABORT_INVALID_VALUE;
@@ -220,4 +232,8 @@ void canopen_od_comm_reset(struct canopen_node *node)
 	canopen_hb_reset(node);
 	canopen_sync_reset(node);
 	canopen_pdo_reset(node);
+
+	if (IS_ENABLED(CONFIG_CANOPEN_NODE_GUARDING)) {
+		canopen_guard_reset(node);
+	}
 }
