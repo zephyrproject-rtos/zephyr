@@ -56,6 +56,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+	select BT_CTLR_TIFS_PLLEN_SUPPORT if SOC_COMPATIBLE_NRF54LX
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
 	select BT_TICKER_REMAINDER_SUPPORT if !SOC_COMPATIBLE_NRF54LX
@@ -119,6 +120,9 @@ config BT_CTLR_SCHED_ADVANCED_SUPPORT
 	bool
 
 config BT_CTLR_TIFS_HW_SUPPORT
+	bool
+
+config BT_CTLR_TIFS_PLLEN_SUPPORT
 	bool
 
 config BT_CTLR_ULL_LLL_PRIO_SUPPORT
@@ -477,6 +481,18 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_SLOT_WINDOW
+	bool "Advertising Primary PDUs within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place Advertising Primary PDUs within a slot window to avoid
+	  overlapping with other periodically scheduled states/roles; and be
+	  placed after such overlapping states/roles at the end of the slot
+	  window so that it does not take the interval of the overlapped state/
+	  role.
+
 config BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT
 	bool "Drift Extended Advertising Auxiliary PDUs within a slot window"
 	depends on BT_TICKER_EXT && \
@@ -499,6 +515,17 @@ config BT_CTLR_ADV_ISO_RESERVE_MAX
 	  advertising events to preempt the BIG events but allow higher radio
 	  utilizations by allowing larger BIG events when not overlapping with
 	  extended or periodic advertising.
+
+config BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap Broadcast ISO event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_ADV_ISO && \
+		   !BT_CTLR_ADV_ISO_RESERVE_MAX
+	help
+	  Wrap Broadcast ISO event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for transmission.
 
 config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	int "Pre-defined offset between AUX_ADV_IND and AUX_SYNC_IND"
@@ -604,6 +631,17 @@ config BT_CTLR_SYNC_ISO_RESERVE_MAX
 	  Use maximum ISO Synchronized Receiver event time reservation. If
 	  disabled, then time reservation does not include the pre-transmissions
 	  and any Control subevents.
+
+config BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap ISO Synchronized Receiver event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_SYNC_ISO && \
+		   !BT_CTLR_SYNC_ISO_RESERVE_MAX
+	help
+	  Wrap ISO Synchronized Receiver event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for reception.
 
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
@@ -857,6 +895,39 @@ config BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX
 	  only time required to transmit or receive the burst number of CIS PDUs
 	  is reserved.
 
+config BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap Peripheral CIG event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_PERIPHERAL_ISO && \
+		   !BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX
+	help
+	  Wrap Peripheral CIG event around overlapping roles using ticker
+	  ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drift value to determine the
+	  correct CIS subevents to setup for reception/transmission.
+
+config BT_CTLR_CENTRAL_ISO_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Central"
+	depends on BT_CTLR_CENTRAL_ISO
+	default y
+	help
+	  Use the maximum Central CIG event time reservation.
+
+	  If maximum Central CIG event time reservation is not enabled, then
+	  only time required to transmit or receive the burst number of CIS PDUs
+	  is reserved.
+
+config BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap Central CIG event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_CENTRAL_ISO && \
+		   !BT_CTLR_CENTRAL_ISO_RESERVE_MAX
+	help
+	  Wrap Central CIG event around overlapping roles using ticker
+	  ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drift value to determine the
+	  correct CIS subevents to setup for transmission/reception.
+
 config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
 	bool "Reserve maximum event overhead in time reservations"
 	default y
@@ -1009,7 +1080,21 @@ config BT_CTLR_TIFS_HW
 	depends on BT_CTLR_TIFS_HW_SUPPORT && !BT_CTLR_RADIO_ENABLE_FAST
 	default y
 	help
-	  Enable use of hardware accelerated tIFS Trx switching.
+	  Enable use of hardware accelerated tIFS Trx switching using TIFS feature in the Radio
+	  hardware peripheral. Otherwise, software based normal or fast radio enable time tIFS Trx
+	  switching is used, which is needed for asymmetric PHY usage.
+
+config BT_CTLR_TIFS_PLLEN
+	bool "Software based tIFS Trx switching using Radio PLLEN state"
+	depends on !BT_CTLR_TIFS_HW && BT_CTLR_TIFS_PLLEN_SUPPORT
+	default y if BT_CTLR_TIFS_LOWEST
+	help
+	  Enable use of software based radio PLLEN settling time based tIFS Trx switching.
+
+config BT_CTLR_TIFS_LOWEST
+	bool "Lowest tIFS Trx switching"
+	help
+	  Enable lowest tIFS Trx switching.
 
 config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	bool "Single TIMER tIFS Trx SW switching"
@@ -1196,6 +1281,10 @@ config BT_CTLR_CONN_INTERVAL_LOW_LATENCY
 config BT_CTLR_EVENT_IFS_LOW_LAT_US
 	prompt "Low latency tIFS value in microseconds" if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
 	int
+	range 16 150 if BT_CTLR_TIFS_PLLEN
+	range 52 150 if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	range 150 150
+	default 16 if BT_CTLR_TIFS_PLLEN
 	default 52 if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
 	default 150
 	help
@@ -1234,6 +1323,27 @@ config BT_CTLR_SCAN_UNRESERVED
 	help
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
+
+config BT_CTLR_SCAN_SLOT_WINDOW
+	bool "Scan window within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_OBSERVER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place primary scan window within a slot window to avoid overlapping
+	  with other periodically scheduled states/roles; and be placed after
+	  such overlapping states/roles at the end of the slot window so that it
+	  does not take the interval of the overlapped state/role.
+
+config BT_CTLR_SCAN_SLOT_WINDOW_DRIFT
+	bool "Drift Extended Scanning within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_OBSERVER && \
+		   BT_CTLR_ADV_EXT
+	help
+	  Drift Extended Scanning within a slot window to avoid overlapping with
+	  other periodically scheduled states/roles; and be placed before or
+	  after such overlapping states/roles.
 
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
