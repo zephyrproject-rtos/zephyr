@@ -102,6 +102,26 @@ Boards
     add them to the ``interrupts-extended`` of ``plic0``, ``mtimer`` and ``plic_sw``, or include
     the :file:`riscv/andes/andes_v5_ae350_<core>mp.dtsi` of their core.
 
+* The RAKwireless ``rak11720`` board is renamed to :zephyr:board:`rak11722`. It
+  was named after the WisDuo stamp module it carries rather than the board it
+  describes, which is the RAK11722 WisBlock Core Module. The other carrier for
+  the same module is the new :zephyr:board:`rak11721` Breakout Board.
+  :file:`boards/deprecated.cmake` keeps ``-b rak11720`` working with a warning,
+  but out-of-tree code testing ``CONFIG_BOARD_RAK11720`` must switch to
+  ``CONFIG_BOARD_RAK11722``.
+
+* :zephyr:board:`rak11722` no longer defines ``led0``, ``led1`` or
+  ``mcuboot-led0``. LED1 and LED2 are WisBlock connector pins reaching LEDs on
+  the base board rather than on the module. Applications that relied on the
+  aliases, such as :zephyr:code-sample:`blinky`, need an overlay naming the
+  LEDs of the base board in use.
+
+* On :zephyr:board:`rak11722` the WisBlock I2C1 and SPI buses are no longer
+  enabled by default. They are connector signals that nothing on the board
+  drives, so the shield that uses one enables it. An application that reached
+  ``i2c2`` or ``spi0`` without a shield needs an overlay setting their
+  ``status``.
+
 Device Drivers and Devicetree
 *****************************
 

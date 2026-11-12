@@ -139,3 +139,9 @@ set(adp_xc7k/ae350_DEPRECATED
 set(adp_xc7k/ae350/clic_DEPRECATED
     adp_xc7k/ae350_d23/clic
 )
+set(rak11720/apollo3_blue_DEPRECATED
+    rak11722/apollo3_blue
+)
+set(rak11720_DEPRECATED
+    rak11722
+)

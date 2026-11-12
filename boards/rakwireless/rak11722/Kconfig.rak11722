@@ -2,5 +2,5 @@
 # Sercan Erat <sercanerat@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_RAK11720
+config BOARD_RAK11722
 	select SOC_APOLLO3_BLUE
