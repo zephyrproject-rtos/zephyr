@@ -146,6 +146,14 @@ config SNMP_SYS_STRING_MAX_LEN
 
 endif # SNMP_MIB2_SYSTEM
 
+config SNMP_MIB2_SNMP
+	bool "MIB-2 snmp group"
+	default y
+	help
+	  Implement the snmp group of RFC 3418, whose counters the agent
+	  maintains for every received message, and snmpSetSerialNo, the
+	  advisory lock that lets managers coordinate SET requests.
+
 module = SNMP
 module-dep = NET_LOG
 module-str = Log level for SNMP
