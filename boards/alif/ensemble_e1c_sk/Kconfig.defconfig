@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# Default configurations applied to the E1C SK boards
+
+if BOARD_ENSEMBLE_E1C_SK
+
+config GPIO
+	default y if SPI
+
+endif # BOARD_ENSEMBLE_E1C_SK
