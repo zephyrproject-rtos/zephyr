@@ -40,4 +40,28 @@ config PROFILING_PERF_EVENTS_SHELL
 	  SHELL_ARGC_MAX must be at least 3 + 2 * PROFILING_PERF_EVENTS_MAX_EVENTS
 	  to accept all event selections in perf stat start.
 
+menuconfig PROFILING_PERF_EVENT_PROVIDER_CPU
+	bool "CPU performance counter providers"
+	depends on ARM64_PMUV3
+	depends on NUM_METAIRQ_PRIORITIES > 0
+	depends on !SMP || SCHED_CPU_MASK
+	help
+	  Register cpuN providers for events described by the PMU backend.
+	  Operations run synchronously on each owning CPU using pinned meta-IRQ
+	  workers, which can preempt cooperative and scheduler-locked threads.
+	  Requires at least one meta-IRQ priority; ordinary workloads must use
+	  priorities below the reserved meta-IRQ range.
+	  Each selected CPU's PMU must be reserved exclusively for perf, and
+	  CPUs must remain online throughout a session.
+
+if PROFILING_PERF_EVENT_PROVIDER_CPU
+
+config PROFILING_PERF_EVENT_PROVIDER_CPU_STACK_SIZE
+	int "CPU performance provider worker stack size"
+	default 2048
+	help
+	  Stack size in bytes for each statically allocated per-CPU worker.
+
+endif # PROFILING_PERF_EVENT_PROVIDER_CPU
+
 endif

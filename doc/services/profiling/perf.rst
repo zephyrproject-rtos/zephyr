@@ -115,6 +115,17 @@ preparation even when measurement never started. A failing ``prepare()`` cleans 
 state; a failing ``start()`` undoes its partial activation. Providers without ``prepare()`` must
 release all resources themselves when ``start()`` fails.
 
+Event providers
+***************
+
+See the provider documentation for configuration, supported events, and measurement limitations.
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   providers/*
+
 API reference
 *************
 
