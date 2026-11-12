@@ -1,10 +1,12 @@
 # Copyright (c) 2022 BrainCo Inc.
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FLASH_GD32
 	bool "GigaDevice GD32 flash driver"
 	default y
-	depends on (GD32_NV_FLASH_V1 || GD32_NV_FLASH_V2 || GD32_NV_FLASH_V3)
+	depends on (GD32_NV_FLASH_V1 || GD32_NV_FLASH_V2 || GD32_NV_FLASH_V3 || \
+		GD32_NV_FLASH_F527)
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_EXPLICIT_ERASE
@@ -32,3 +34,11 @@ config GD32_NV_FLASH_V3
 	depends on DT_HAS_GD_GD32_NV_FLASH_V3_ENABLED
 	help
 	  Enable the generic backend for GD32 FMC v3 flash driver.
+
+config GD32_NV_FLASH_F527
+	bool
+	default y
+	depends on DT_HAS_GD_GD32F527_FLASH_CONTROLLER_ENABLED
+	depends on DT_HAS_GD_GD32_NV_FLASH_ENABLED
+	help
+	  Enable the backend for GD32 F527 FMC flash driver.
