@@ -241,6 +241,22 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 	}
 }
 
+/*
+ * With halt-on-error, which EDMA_GetDefaultConfig() enables, an error also
+ * halts the whole controller until software writes 0 to HALT. Call this only
+ * after the faulting channels are stopped.
+ */
+static void dma_mcux_edma_clear_halt(const struct device *dev)
+{
+#if defined(CONFIG_DMA_MCUX_EDMA_V3)
+	DEV_BASE(dev)->MP_CSR &= ~DMA_MP_CSR_HALT_MASK;
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4)
+	EDMA_MP_BASE(DEV_BASE(dev))->MP_CSR &= ~DMA_CORE_MP_CSR_HALT_MASK;
+#else
+	DEV_BASE(dev)->CR &= ~DMA_CR_HALT_MASK;
+#endif
+}
+
 /* Stop a channel that has flagged an error and tell its owner. */
 static void dma_mcux_edma_channel_error(const struct device *dev, uint32_t channel)
 {
@@ -274,6 +290,7 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 	/* Channel shares the same irq for error and transfer complete */
 	else if (flag & kEDMA_ErrorFlag) {
 		dma_mcux_edma_channel_error(dev, channel);
+		dma_mcux_edma_clear_halt(dev);
 	}
 #endif
 }
@@ -281,6 +298,8 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 #if !DT_INST_PROP(0, no_error_irq)
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
+	bool handled = false;
+
 	/*
 	 * The error interrupt is shared; act on the channels that flagged one.
 	 * A channel never configured here has no handle and may belong to
@@ -294,7 +313,13 @@ static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 		}
 		if (EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel) & kEDMA_ErrorFlag) {
 			dma_mcux_edma_channel_error(dev, i);
+			handled = true;
 		}
+	}
+
+	/* Let the other channels run again once every faulting one is stopped */
+	if (handled) {
+		dma_mcux_edma_clear_halt(dev);
 	}
 
 #if defined(CONFIG_CPU_CORTEX_M4)
