@@ -66,7 +66,8 @@ static bool secondary_holds_running_version(void)
 	struct mcuboot_img_header running;
 	struct mcuboot_img_header secondary;
 
-	if (boot_read_bank_header(boot_fetch_active_slot(), &running, sizeof(running)) != 0 ||
+	if (boot_read_bank_header(boot_fetch_active_slot_area_id(), &running, sizeof(running)) !=
+		    0 ||
 	    fota_http_get_image_header(0, &secondary) != 0) {
 		return false;
 	}

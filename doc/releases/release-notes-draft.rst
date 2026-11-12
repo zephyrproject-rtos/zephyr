@@ -129,6 +129,15 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* DFU
+
+  * Added :kconfig:option:`CONFIG_MCUBOOT_ACTIVE_SLOT_FROM_BLINFO` to determine the active image
+    slot at runtime via MCUboot blinfo retention data. This option is required (and enabled by
+    default) for RAM_LOAD bootloader modes. (:github:`120323`)
+
+  * Deprecated :c:func:`boot_fetch_active_slot` in favor of :c:func:`boot_fetch_active_slot_area_id`
+    (:github:`120323`).
+
 Devicetree
 **********
 

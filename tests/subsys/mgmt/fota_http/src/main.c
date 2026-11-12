@@ -385,7 +385,7 @@ static void erase_slot0_header(void)
 {
 	const struct flash_area *fa;
 
-	zassert_ok(flash_area_open(boot_fetch_active_slot(), &fa));
+	zassert_ok(flash_area_open(boot_fetch_active_slot_area_id(), &fa));
 	zassert_ok(flash_area_flatten(fa, 0, 4096));
 	flash_area_close(fa);
 }
@@ -454,7 +454,7 @@ static int erase_slot0_trailer(void)
 	const struct flash_area *fa;
 	int ret;
 
-	ret = flash_area_open(boot_fetch_active_slot(), &fa);
+	ret = flash_area_open(boot_fetch_active_slot_area_id(), &fa);
 	if (ret != 0) {
 		return ret;
 	}
@@ -475,7 +475,7 @@ static int plant_test_image_trailer(void)
 		return ret;
 	}
 
-	ret = flash_area_open(boot_fetch_active_slot(), &fa);
+	ret = flash_area_open(boot_fetch_active_slot_area_id(), &fa);
 	if (ret != 0) {
 		return ret;
 	}
@@ -809,7 +809,7 @@ ZTEST(fota_http, test_reject_downgrade)
 	memcpy(running, garbage, sizeof(running));
 	memset(garbage, 0x5a, sizeof(garbage));
 
-	zassert_ok(flash_area_open(boot_fetch_active_slot(), &fa));
+	zassert_ok(flash_area_open(boot_fetch_active_slot_area_id(), &fa));
 	zassert_ok(flash_area_write(fa, 0, running, sizeof(running)));
 	flash_area_close(fa);
 
