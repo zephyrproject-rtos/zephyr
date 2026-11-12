@@ -437,48 +437,67 @@ static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
-static int phy_mc_ksz8081_phy_readiness_check(const struct device *dev)
+/* Returns 0 when the PHY is out of reset, -EBUSY while it is not yet. */
+static int phy_mc_ksz8081_phy_ready(const struct device *dev, bool log)
 {
 	int ret;
 	uint32_t bmcr = 0;
 	uint32_t omso = 0;
 
-	/* According to IEEE 802.3, Section 2, Subsection 22.2.4.1.1,
-	 * a PHY reset may take up to 0.5 s.
-	 */
-	k_msleep(500);
-
-	/* Verify if PHY is ready.*/
 	ret = phy_mc_ksz8081_read(dev, MII_BMCR, &bmcr);
-
 	if (ret < 0) {
 		LOG_ERR("Failed to read PHY BMCR register. ret: %d", ret);
 		return ret;
 	}
 
 	if (IS_BIT_SET(bmcr, MII_BMCR_POWER_DOWN_BIT)) {
-		LOG_ERR("PHY is still powered down!");
-		return -ETIMEDOUT;
+		if (log) {
+			LOG_ERR("PHY is still powered down!");
+		}
+		return -EBUSY;
 	}
 
 	if (IS_BIT_SET(bmcr, MII_BMCR_RESET_BIT)) {
-		LOG_ERR("PHY Reset bit is not cleared!");
-		return -ETIMEDOUT;
+		if (log) {
+			LOG_ERR("PHY Reset bit is not cleared!");
+		}
+		return -EBUSY;
 	}
 
 	ret = phy_mc_ksz8081_read(dev, PHY_MC_KSZ8081_OMSO_REG, &omso);
-
 	if (ret < 0) {
 		LOG_ERR("Failed to read PHY OMSO register ret: %d", ret);
 		return ret;
 	}
 
 	if (IS_BIT_SET(omso, PHY_MC_KSZ8081_OMSO_FACTORY_MODE_BIT)) {
-		LOG_ERR("PHY is still in factory mode!");
-		return -ETIMEDOUT;
+		if (log) {
+			LOG_ERR("PHY is still in factory mode!");
+		}
+		return -EBUSY;
 	}
 
 	return 0;
+}
+
+static int phy_mc_ksz8081_phy_readiness_check(const struct device *dev)
+{
+	/* According to IEEE 802.3, Section 2, Subsection 22.2.4.1.1,
+	 * a PHY reset may take up to 0.5 s: poll for it rather than
+	 * always waiting that long.
+	 */
+	int64_t start = k_uptime_get();
+	int ret;
+
+	while ((ret = phy_mc_ksz8081_phy_ready(dev, false)) == -EBUSY) {
+		if (k_uptime_get() - start > 500) {
+			ret = phy_mc_ksz8081_phy_ready(dev, true);
+			return (ret == -EBUSY) ? -ETIMEDOUT : ret;
+		}
+		k_msleep(1);
+	}
+
+	return ret;
 }
 
 static int phy_mc_ksz8081_reset(const struct device *dev)
