@@ -1,0 +1,53 @@
+# Copyright (c) 2026 TeraTron GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USBD_CCID_CLASS
+	bool "USB CCID device class"
+	depends on DT_HAS_ZEPHYR_CCID_ENABLED
+	help
+	  Enable single-slot USB Chip/Smart Card Interface Devices (CCID)
+	  class function. The application must register a card backend before
+	  initializing the USB device. Each backend supplies card state, power
+	  control, protocol parameter handling, and APDU exchange independently
+	  of the card transport and application protocol.
+
+if USBD_CCID_CLASS
+
+config USBD_CCID_MAX_MESSAGE_SIZE
+	int "Maximum CCID message size"
+	range 271 4096
+	default 1024
+	help
+	  Maximum command or response message, including the 10-byte CCID bulk
+	  message header. This value is reported in dwMaxCCIDMessageLength.
+
+config USBD_CCID_MAX_APDU_SIZE
+	int "Maximum assembled APDU size"
+	range 261 65544
+	default 4096
+	help
+	  Capacity of each instance's command and response APDU buffers. This is
+	  independent of the USB message size: extended APDUs can span multiple
+	  CCID messages. Oversized APDUs fail with XFR_OVERRUN. Choose a capacity
+	  suitable for the backend and available RAM; two buffers are allocated
+	  per enabled instance.
+
+config USBD_CCID_THREAD_STACK_SIZE
+	int "CCID worker thread stack size"
+	default 1536
+	help
+	  Stack size in bytes of each thread which invokes a card backend.
+	  Each interface has a dedicated thread so backend operations may block
+	  independently of other interfaces.
+
+config USBD_CCID_THREAD_PRIORITY
+	int "CCID worker thread priority"
+	default 8
+	help
+	  Preemptive priority of each CCID worker thread.
+
+module = USBD_CCID
+module-str = usbd_ccid
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

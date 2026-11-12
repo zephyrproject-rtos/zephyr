@@ -129,6 +129,12 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* USB
+
+  * Added :ref:`USB CCID support <usb_device_ccid>` for exposing application-provided
+    smartcard backends as independent reader interfaces. Backends handle card power,
+    protocol parameters and APDU exchange while the class handles USB communication.
+
 Devicetree
 **********
 

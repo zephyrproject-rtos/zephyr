@@ -35,6 +35,8 @@ Samples
 
 * :zephyr:code-sample:`usb-cdc-acm`
 
+* :zephyr:code-sample:`usb-ccid`
+
 * :zephyr:code-sample:`usb-cdc-acm-console`
 
 * :zephyr:code-sample:`usb-mass`
@@ -206,6 +208,8 @@ instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`
 | Class or function                 | User API (if any)       | Identification string   |
 +===================================+=========================+=========================+
 | USB Audio 2 class                 | :ref:`uac2_device`      | :samp:`uac2_{n}`        |
++-----------------------------------+-------------------------+-------------------------+
+| USB CCID class                    | :ref:`usbd_ccid_api`    | :samp:`ccid_{n}`        |
 +-----------------------------------+-------------------------+-------------------------+
 | USB CDC ACM class                 | :ref:`uart_api`         | :samp:`cdc_acm_{n}`     |
 +-----------------------------------+-------------------------+-------------------------+

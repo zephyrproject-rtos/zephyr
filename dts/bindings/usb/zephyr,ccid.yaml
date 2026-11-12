@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TeraTron GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB CCID single-slot APDU-level interface
+
+compatible: "zephyr,ccid"
+
+include: base.yaml
+
+on-bus: usb
+
+properties:
+  instance-id:
+    type: int
+    required: true
+    description: |
+      Logical instance ID used by the CCID backend API and the USB class
+      registration name ccid_<instance-id>. Must be unique among all enabled
+      zephyr,ccid nodes. IDs may be sparse and do not determine the number of
+      instances or allocated resources. This is not the USB interface number
+      or the CCID slot number.
+
+  label:
+    description: |
+      ASCII7 string used for the USB interface string descriptor. Defaults to
+      "CCID" if omitted. The name does not select a card application or backend.

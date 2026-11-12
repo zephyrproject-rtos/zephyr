@@ -90,6 +90,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBD_CCID_CLASS
+  class/usbd_ccid.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBD_DFU
   class/usbd_dfu.c
 )
