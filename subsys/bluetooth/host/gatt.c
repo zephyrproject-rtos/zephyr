@@ -5281,8 +5281,20 @@ static struct {
 	struct bt_gatt_write_params *owner;
 	/* The long writes waiting for the queue */
 	sys_slist_t queue;
+	/* The reliable write session that owns the queue between its first
+	 * prepare and its Execute Write or cancel, or NULL. Only its own values
+	 * start meanwhile; the other writes wait.
+	 */
+	struct bt_gatt_reliable_write *session;
 	/* The error to report once the cancel of a failed long write completes */
 	uint8_t cancel_err;
+	/* Value octets in the Prepare Write Request of the owner in flight */
+	uint16_t sent;
+	/* A value of the session was cancelled while another one was in
+	 * flight, which then fails the session. Kept here, as the session may
+	 * be gone once the cancelled value has reported.
+	 */
+	bool failed;
 } long_writes[CONFIG_BT_MAX_CONN];
 
 static int gatt_prepare_write_first(struct bt_conn *conn, struct bt_gatt_write_params *params);
@@ -5296,29 +5308,138 @@ static void long_write_release(uint8_t i)
 	bt_dev_unlock();
 }
 
+/* Ends the reliable write session that holds the prepare queue */
+static void reliable_session_end(uint8_t i)
+{
+	bt_dev_lock();
+	long_writes[i].session = NULL;
+	bt_dev_unlock();
+}
+
+/* Moves the values of @p session that still wait to @p dropped, so that none
+ * of them starts it again. Called with the host lock held.
+ */
+static void reliable_session_drop_waiting(uint8_t i, const struct bt_gatt_reliable_write *session,
+					  sys_slist_t *dropped)
+{
+	struct bt_gatt_write_params *w, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&long_writes[i].queue, w, next, _node) {
+		if (w->_reliable == session) {
+			(void)sys_slist_find_and_remove(&long_writes[i].queue, &w->_node);
+			sys_slist_append(dropped, &w->_node);
+		}
+	}
+}
+
+/* Gives up the prepare queue after a value failed, and ends the reliable write
+ * session that holds it; its values that still wait move to @p dropped.
+ */
+static void long_write_fail_session(uint8_t i, sys_slist_t *dropped)
+{
+	struct bt_gatt_reliable_write *session;
+
+	bt_dev_lock();
+	long_writes[i].owner = NULL;
+	session = long_writes[i].session;
+	long_writes[i].session = NULL;
+	if (session != NULL) {
+		reliable_session_drop_waiting(i, session, dropped);
+	}
+	bt_dev_unlock();
+}
+
+/* Whether a value of @p session failed while another one was in flight */
+static bool reliable_session_failed(uint8_t i, const struct bt_gatt_reliable_write *session)
+{
+	bool failed;
+
+	if (session == NULL) {
+		return false;
+	}
+
+	bt_dev_lock();
+	failed = (long_writes[i].session == session) && long_writes[i].failed;
+	bt_dev_unlock();
+
+	return failed;
+}
+
+/* Reports the values of a failed reliable write session that were never sent */
+static void reliable_session_report_dropped(struct bt_conn *conn, sys_slist_t *dropped)
+{
+	struct bt_gatt_write_params *params;
+	sys_snode_t *node;
+
+	do {
+		node = sys_slist_get(dropped);
+		if (node != NULL) {
+			params = CONTAINER_OF(node, struct bt_gatt_write_params, _node);
+			params->func(conn, BT_ATT_ERR_UNLIKELY, params);
+		}
+	} while (node != NULL);
+}
+
+/* Makes @p params the owner of the prepare queue, and its reliable write the
+ * session that holds the queue if none does. Called with the host lock held.
+ */
+static void long_write_own(uint8_t i, struct bt_gatt_write_params *params)
+{
+	long_writes[i].owner = params;
+	if ((params->_reliable != NULL) && (long_writes[i].session == NULL)) {
+		long_writes[i].session = params->_reliable;
+		params->_reliable->_executing = false;
+		long_writes[i].failed = false;
+	}
+}
+
+/* Whether a write that has to go before one of @p session waits: any write
+ * with no session, else a value of the same session. Called with the host
+ * lock held.
+ */
+static bool long_write_waiting(uint8_t i, const struct bt_gatt_reliable_write *session)
+{
+	struct bt_gatt_write_params *w;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&long_writes[i].queue, w, _node) {
+		if ((session == NULL) || (w->_reliable == session)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 /* Takes the next waiting long write off the queue and makes it the owner, if
- * the queue is free. Called with the host lock held.
+ * the queue is free. While a reliable write session holds the queue, only its
+ * own values start. Called with the host lock held.
  */
 static struct bt_gatt_write_params *long_write_take(uint8_t i)
 {
-	sys_snode_t *node;
+	struct bt_gatt_write_params *w;
 
 	if (long_writes[i].owner != NULL) {
 		return NULL;
 	}
 
-	node = sys_slist_get(&long_writes[i].queue);
-	if (node == NULL) {
-		return NULL;
+	SYS_SLIST_FOR_EACH_CONTAINER(&long_writes[i].queue, w, _node) {
+		if ((long_writes[i].session == NULL) || (w->_reliable == long_writes[i].session)) {
+			(void)sys_slist_find_and_remove(&long_writes[i].queue, &w->_node);
+			long_write_own(i, w);
+
+			return w;
+		}
 	}
 
-	long_writes[i].owner = CONTAINER_OF(node, struct bt_gatt_write_params, _node);
-
-	return long_writes[i].owner;
+	return NULL;
 }
 
-/* Takes @p params off the queue of waiting long writes; true if it waited */
-static bool long_write_unqueue(struct bt_conn *conn, const void *params)
+/* Takes @p params off the queue of waiting long writes; true if it waited. A
+ * value of a reliable write fails it: the session's other waiting values move
+ * to @p dropped, and the value in flight, if any, fails once responded to.
+ */
+static bool long_write_unqueue(struct bt_conn *conn, const void *params, sys_slist_t *dropped,
+			       struct bt_gatt_reliable_write **abort)
 {
 	uint8_t i = bt_conn_index(conn);
 	struct bt_gatt_write_params *w;
@@ -5329,6 +5450,18 @@ static bool long_write_unqueue(struct bt_conn *conn, const void *params)
 		if (w == params) {
 			found = sys_slist_find_and_remove(&long_writes[i].queue, &w->_node);
 			break;
+		}
+	}
+	if (found && (w->_reliable != NULL)) {
+		reliable_session_drop_waiting(i, w->_reliable, dropped);
+		if (long_writes[i].session == w->_reliable) {
+			if (long_writes[i].owner != NULL) {
+				/* The value in flight fails the session when it completes */
+				long_writes[i].failed = true;
+			} else {
+				/* Nothing is in flight to fail it, so the caller does */
+				*abort = w->_reliable;
+			}
 		}
 	}
 	bt_dev_unlock();
@@ -5441,11 +5574,15 @@ static void gatt_cancel_all_writes_rsp(struct bt_conn *conn, int err, const void
 {
 	struct bt_gatt_write_params *params = user_data;
 	uint8_t report = long_writes[bt_conn_index(conn)].cancel_err;
+	sys_slist_t dropped;
 
 	LOG_DBG("err %d", err);
 
-	long_write_release(bt_conn_index(conn));
+	/* A failed reliable prepare cancels the session along with the queue */
+	sys_slist_init(&dropped);
+	long_write_fail_session(bt_conn_index(conn), &dropped);
 	params->func(conn, report, params);
+	reliable_session_report_dropped(conn, &dropped);
 	long_write_start_next(conn);
 }
 
@@ -5479,17 +5616,18 @@ static void long_write_cancel_failed(struct bt_conn *conn, int err)
 }
 
 /* Ends the long write that owns the prepare queue with @p att_err. What the
- * server holds for it (@p staged) is cancelled first, and the report follows
- * the cancel. Returns false once the write is reported, so that the next one
- * can start.
+ * server holds for it (@p staged), or for its reliable write session, is
+ * cancelled first, and the report follows the cancel. Returns false once the
+ * write is reported, so that the next one can start.
  */
 static bool long_write_fail(struct bt_conn *conn, struct bt_gatt_write_params *params,
 			    uint8_t att_err, bool staged)
 {
 	uint8_t i = bt_conn_index(conn);
+	sys_slist_t dropped;
 	int err;
 
-	if (staged) {
+	if (staged || (params->_reliable != NULL)) {
 		long_writes[i].cancel_err = att_err;
 		err = gatt_cancel_all_writes(conn, params);
 		if (err == 0) {
@@ -5499,8 +5637,10 @@ static bool long_write_fail(struct bt_conn *conn, struct bt_gatt_write_params *p
 		long_write_cancel_failed(conn, err);
 	}
 
-	long_write_release(i);
+	sys_slist_init(&dropped);
+	long_write_fail_session(i, &dropped);
 	params->func(conn, att_err, params);
+	reliable_session_report_dropped(conn, &dropped);
 
 	return false;
 }
@@ -5557,6 +5697,11 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 		return;
 	}
 
+	/* A value of the session was cancelled while this one was in flight */
+	if (reliable_session_failed(bt_conn_index(conn), params->_reliable)) {
+		goto fail;
+	}
+
 	if (length < sizeof(*rsp)) {
 		LOG_WRN("Parse err");
 		goto fail;
@@ -5576,6 +5721,16 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 	}
 
 	data_valid = memcmp(params->data, rsp->value, len) == 0;
+	/* A reliable write takes only the very value it sent back (Core v7.0
+	 * Vol 3 Part G 4.9.5)
+	 */
+	if ((params->_reliable != NULL) &&
+	    ((sys_le16_to_cpu(rsp->handle) != params->handle) ||
+	     (len != long_writes[bt_conn_index(conn)].sent))) {
+		LOG_ERR("Echo of handle 0x%04x, %zu octets, differs from the request",
+			sys_le16_to_cpu(rsp->handle), len);
+		data_valid = false;
+	}
 	if (params->offset != rsp->offset || !data_valid) {
 		LOG_ERR("Incorrect offset or data in response, canceling write");
 		long_writes[bt_conn_index(conn)].cancel_err = BT_ATT_ERR_INVALID_PDU;
@@ -5591,8 +5746,22 @@ static void gatt_prepare_write_rsp(struct bt_conn *conn, int err,
 	params->data = (const uint8_t *)params->data + len;
 	params->length -= len;
 
-	/* If there is no more data execute */
+	/* If there is no more data execute, unless the application drives a
+	 * reliable write and will call bt_gatt_execute_write() itself.
+	 */
 	if (!params->length) {
+		if (params->_reliable != NULL) {
+			/* The value is prepared. Release the owner but keep the
+			 * session, so the application can prepare the next value
+			 * or call bt_gatt_execute_write(); meanwhile other
+			 * writes wait.
+			 */
+			long_write_release(bt_conn_index(conn));
+			params->func(conn, 0, params);
+			long_write_start_next(conn);
+			return;
+		}
+
 		if (gatt_exec_write(conn, params)) {
 			goto fail;
 		}
@@ -5650,6 +5819,7 @@ static int gatt_prepare_write_first(struct bt_conn *conn, struct bt_gatt_write_p
 
 	len = mtu - req_len - 1;
 	len = MIN(params->length, len);
+	long_writes[bt_conn_index(conn)].sent = len;
 	len += req_len;
 
 	return gatt_req_send(conn, gatt_prepare_write_rsp, params,
@@ -5658,11 +5828,82 @@ static int gatt_prepare_write_first(struct bt_conn *conn, struct bt_gatt_write_p
 			     BT_ATT_CHAN_OPT(params));
 }
 
-/* Entry point for a long write: start it if the connection's prepare queue is
- * free, otherwise wait until the current long write is done.
+static int gatt_reliable_exec_encode(struct net_buf *buf, size_t len, void *user_data)
+{
+	struct bt_gatt_reliable_write *write = user_data;
+	struct bt_att_exec_write_req *req;
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->flags = write->_flags;
+
+	return 0;
+}
+
+static void gatt_reliable_abort_rsp(struct bt_conn *conn, int err, const void *pdu,
+				    uint16_t length, void *user_data)
+{
+	if (err != 0) {
+		LOG_WRN("Cancel of a failed reliable write got err %d", err);
+	}
+
+	reliable_session_end(bt_conn_index(conn));
+	long_write_start_next(conn);
+}
+
+/* Gives up the prepare queue after a value could not be sent. Its reliable
+ * write session, if any, fails: the values that still wait are dropped and, if
+ * the server holds values of it (@p staged), they are cancelled first.
+ */
+static void long_write_send_failed(struct bt_conn *conn, struct bt_gatt_reliable_write *write,
+				   bool staged)
+{
+	uint8_t i = bt_conn_index(conn);
+	sys_slist_t dropped;
+	int err = 0;
+
+	sys_slist_init(&dropped);
+	bt_dev_lock();
+	long_writes[i].owner = NULL;
+	if (write != NULL) {
+		reliable_session_drop_waiting(i, write, &dropped);
+		if (staged) {
+			/* Holds the queue until the cancel is responded to */
+			write->_executing = true;
+		} else {
+			long_writes[i].session = NULL;
+		}
+	}
+	bt_dev_unlock();
+
+	/* Sent before the reports, after which the session may be gone */
+	if ((write != NULL) && staged) {
+		err = gatt_req_send(conn, gatt_reliable_abort_rsp, write, gatt_cancel_encode,
+				    BT_ATT_OP_EXEC_WRITE_REQ, sizeof(struct bt_att_exec_write_req),
+				    BT_ATT_CHAN_OPT_NONE);
+		if (err != 0) {
+			long_write_cancel_failed(conn, err);
+			reliable_session_end(i);
+		}
+	}
+
+	reliable_session_report_dropped(conn, &dropped);
+
+	if ((write != NULL) && staged && (err == 0)) {
+		/* The response to the cancel starts the next one */
+		return;
+	}
+
+	long_write_start_next(conn);
+}
+
+/* Entry point for a long write or a reliable write value: start it if the
+ * connection's prepare queue is free, otherwise wait until the current long
+ * write is done. A value of the reliable write session that holds the queue
+ * goes before the other waiting writes.
  */
 static int gatt_prepare_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 {
+	struct bt_gatt_reliable_write *session;
 	uint8_t i = bt_conn_index(conn);
 	bool start;
 	int err;
@@ -5676,9 +5917,18 @@ static int gatt_prepare_write(struct bt_conn *conn, struct bt_gatt_write_params 
 		return -EBUSY;
 	}
 
-	start = (long_writes[i].owner == NULL) && sys_slist_is_empty(&long_writes[i].queue);
+	session = long_writes[i].session;
+	if ((params->_reliable != NULL) && (params->_reliable == session) && session->_executing) {
+		bt_dev_unlock();
+
+		return -EBUSY;
+	}
+
+	start = (long_writes[i].owner == NULL) &&
+		((session == NULL) || (params->_reliable == session)) &&
+		!long_write_waiting(i, session);
 	if (start) {
-		long_writes[i].owner = params;
+		long_write_own(i, params);
 	} else {
 		sys_slist_append(&long_writes[i].queue, &params->_node);
 	}
@@ -5690,9 +5940,10 @@ static int gatt_prepare_write(struct bt_conn *conn, struct bt_gatt_write_params 
 
 	err = gatt_prepare_write_first(conn, params);
 	if (err != 0) {
-		/* Not sent: give the queue to a long write that came meanwhile */
-		long_write_release(i);
-		long_write_start_next(conn);
+		/* Not sent: the value fails as one the server rejects, but the
+		 * caller gets the error instead of params->func.
+		 */
+		long_write_send_failed(conn, params->_reliable, session != NULL);
 	}
 
 	return err;
@@ -5716,6 +5967,83 @@ static int gatt_write_encode(struct net_buf *buf, size_t len, void *user_data)
 	return 0;
 }
 
+static void gatt_reliable_execute_rsp(struct bt_conn *conn, int err, const void *pdu,
+				      uint16_t length, void *user_data)
+{
+	struct bt_gatt_reliable_write *write = user_data;
+
+	LOG_DBG("err %d", err);
+
+	reliable_session_end(bt_conn_index(conn));
+	write->func(conn, att_err_from_int(err), write);
+	long_write_start_next(conn);
+}
+
+int bt_gatt_prepare_write(struct bt_conn *conn, struct bt_gatt_reliable_write *write,
+			  struct bt_gatt_write_params *params)
+{
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(write && write->func, "invalid parameters\n");
+	__ASSERT(params && params->func, "invalid parameters\n");
+	__ASSERT(params->handle, "invalid parameters\n");
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	params->_reliable = write;
+
+	return gatt_prepare_write(conn, params);
+}
+
+int bt_gatt_execute_write(struct bt_conn *conn, struct bt_gatt_reliable_write *write, bool execute)
+{
+	uint8_t i;
+	int err = 0;
+
+	__ASSERT(conn, "invalid parameters\n");
+	__ASSERT(write && write->func, "invalid parameters\n");
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	i = bt_conn_index(conn);
+
+	/* Only the reliable write session in progress on this connection may
+	 * be committed or cancelled, once none of its values is being prepared.
+	 */
+	bt_dev_lock();
+	if (long_writes[i].session != write) {
+		/* Its first value may still wait for the queue */
+		err = long_write_waiting(i, write) ? -EBUSY : -EINVAL;
+	} else if (write->_executing || (long_writes[i].owner != NULL) ||
+		   long_write_waiting(i, write)) {
+		err = -EBUSY;
+	} else {
+		write->_executing = true;
+	}
+	bt_dev_unlock();
+
+	if (err != 0) {
+		return err;
+	}
+
+	write->_flags = execute ? BT_ATT_FLAG_EXEC : BT_ATT_FLAG_CANCEL;
+
+	err = gatt_req_send(conn, gatt_reliable_execute_rsp, write, gatt_reliable_exec_encode,
+			    BT_ATT_OP_EXEC_WRITE_REQ, sizeof(struct bt_att_exec_write_req),
+			    BT_ATT_CHAN_OPT_NONE);
+	if (err != 0) {
+		/* Not sent: the session can still be committed or cancelled */
+		bt_dev_lock();
+		write->_executing = false;
+		bt_dev_unlock();
+	}
+
+	return err;
+}
+
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 {
 	size_t len;
@@ -5727,6 +6055,9 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
+
+	/* Not a reliable write: the field is the host's, callers need not set it */
+	params->_reliable = NULL;
 
 	len = sizeof(struct bt_att_write_req) + params->length;
 
@@ -5985,10 +6316,13 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 
 static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
 {
+	struct bt_gatt_reliable_write *abort = NULL;
 	struct bt_att_req *req;
 	bt_att_func_t func = NULL;
 	bool unqueued = false;
+	sys_slist_t dropped;
 
+	sys_slist_init(&dropped);
 	bt_dev_lock();
 
 	/* att_handle_rsp() processes the request state on the RX workqueue
@@ -6009,18 +6343,26 @@ static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
 		 * and its completion may queue params again, so the queue is only
 		 * looked at without a request.
 		 */
-		unqueued = long_write_unqueue(conn, params);
+		unqueued = long_write_unqueue(conn, params, &dropped, &abort);
 	}
 
 	k_sched_unlock();
 	bt_dev_unlock();
 
 	if (req == NULL) {
+		if (abort != NULL) {
+			/* Cancels the values the session staged and ends it, before
+			 * the reports, after which the session may be gone
+			 */
+			long_write_send_failed(conn, abort, true);
+		}
+
 		if (unqueued && run_completion) {
 			struct bt_gatt_write_params *write_params = params;
 
 			write_params->func(conn, BT_ATT_ERR_UNLIKELY, write_params);
 		}
+		reliable_session_report_dropped(conn, &dropped);
 
 		return;
 	}
@@ -7088,6 +7430,7 @@ static void long_write_disconnected(struct bt_conn *conn)
 	 * server clears its prepare queue when the connection is lost.
 	 */
 	long_write_release(i);
+	reliable_session_end(i);
 	do {
 		bt_dev_lock();
 		node = sys_slist_get(&long_writes[i].queue);

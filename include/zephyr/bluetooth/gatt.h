@@ -17,7 +17,7 @@
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
  * @since 1.0
- * @version 1.0.2
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -2135,6 +2135,8 @@ struct bt_gatt_write_params {
 	 *  Node for the per-connection queue of long writes.
 	 */
 	sys_snode_t _node;
+	/** Reliable write session of the value, set by the host. */
+	struct bt_gatt_reliable_write *_reliable;
 	/** @endcond */
 };
 
@@ -2165,6 +2167,133 @@ struct bt_gatt_write_params {
  *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
  */
 int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
+
+struct bt_gatt_reliable_write;
+
+/** @typedef bt_gatt_execute_write_func_t
+ *  @brief Reliable write completion callback function
+ *
+ *  @param conn Connection object.
+ *  @param err ATT error code.
+ *  @param write The reliable write session that was committed or cancelled.
+ */
+typedef void (*bt_gatt_execute_write_func_t)(struct bt_conn *conn, uint8_t err,
+					     struct bt_gatt_reliable_write *write);
+
+/** @brief GATT reliable write session
+ *
+ *  Identifies a reliable write on one connection for the whole procedure. The
+ *  application owns it, passes it to @ref bt_gatt_prepare_write for each value
+ *  and to @ref bt_gatt_execute_write. The same connection serves one reliable
+ *  write or one long write at a time, so a second session waits until this one
+ *  ends. It must stay valid until the session ends:
+ *
+ *  - when it is committed or cancelled, which @p func reports;
+ *  - when a value fails to prepare, or is cancelled while it waits, which the
+ *    callback of that value reports;
+ *  - when the connection is lost, which the callback of a value in flight
+ *    reports; with none in flight only @ref bt_conn_cb.disconnected tells it.
+ */
+struct bt_gatt_reliable_write {
+	/** Completion callback for @ref bt_gatt_execute_write, set before the
+	 *  first @ref bt_gatt_prepare_write
+	 */
+	bt_gatt_execute_write_func_t func;
+	/** @cond INTERNAL_HIDDEN
+	 *  Execute Write flags, set by bt_gatt_execute_write().
+	 */
+	uint8_t _flags;
+	/** An Execute Write is in flight: a commit, a cancel or the host's own
+	 *  cancel of a failed session. Set by the host.
+	 */
+	bool _executing;
+	/** @endcond */
+};
+
+/** @brief Prepare a value of a reliable write
+ *
+ *  A reliable write stages Characteristic Values on the server and commits
+ *  them in one step once each value is verified (Core Specification 7.0 Vol 3
+ *  Part G, Section 4.9.5). This sends the value of @p params in Prepare Write
+ *  Requests and checks each response against what was sent, but sends no
+ *  Execute Write Request. @p params->func reports once the value is prepared:
+ *
+ *  - on success (@p err 0) prepare the next value of @p write, or call
+ *    @ref bt_gatt_execute_write to commit or cancel them all;
+ *  - on an error the host has already cancelled the values prepared with
+ *    @p write and ended it; the application only reads @p err. The values of
+ *    @p write that still wait are not sent, and report #BT_ATT_ERR_UNLIKELY
+ *    after this one.
+ *
+ *  A value cancelled with @ref bt_gatt_cancel while it waits fails @p write
+ *  the same way, and so does one that cannot be sent, except that this then
+ *  returns the error instead of calling @p params->func.
+ *
+ *  The values of @p write are prepared in the order they are given. One
+ *  reliable write or one long write uses a connection at a time; the others
+ *  wait until it is committed, cancelled, or the connection is lost.
+ *
+ *  The callback runs in a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
+ *  @p params must remain valid until start of callback.
+ *
+ *  @param conn Connection object.
+ *  @param write The reliable write session the value belongs to.
+ *  @param params Write parameters.
+ *
+ *  @retval 0 Successfully queued request. Will call @p params->func on resolution.
+ *
+ *  @retval -ENOTCONN @p conn is not connected.
+ *
+ *  @retval -EINVAL @p params->chan_opt asks for both bearer kinds, or for an
+ *  enhanced bearer while @p conn has none or is not encrypted.
+ *
+ *  @retval -EBUSY @p write is being committed or cancelled, or @p params is in use
+ *  by a value that has not completed.
+ *
+ *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
+ *  The value fails @p write as described above, so start the reliable write
+ *  again from its first value, once a pending request has resolved or from a
+ *  separate thread to get blocking behavior. Queue size is controlled by
+ *  @kconfig{CONFIG_BT_ATT_TX_COUNT}.
+ */
+int bt_gatt_prepare_write(struct bt_conn *conn, struct bt_gatt_reliable_write *write,
+			  struct bt_gatt_write_params *params);
+
+/** @brief Commit or cancel a reliable write
+ *
+ *  Sends an Execute Write Request that writes every value prepared with
+ *  @p write (see @ref bt_gatt_prepare_write), in the order they were
+ *  prepared, or cancels them all if @p execute is false. Call it once every
+ *  value has been reported prepared.
+ *
+ *  The host also cancels the session on its own if a value fails to prepare,
+ *  so call this only after a successful run, or to drop a verified set.
+ *
+ *  The completion comes in callback @p write->func. The callback runs in a
+ *  thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
+ *  @p write must remain valid until start of callback.
+ *
+ *  @param conn Connection object.
+ *  @param write The reliable write session to commit or cancel.
+ *  @param execute Write the prepared values; if false, cancel them instead.
+ *
+ *  @retval 0 Successfully queued request. Will call @p write->func on resolution.
+ *
+ *  @retval -ENOTCONN @p conn is not connected.
+ *
+ *  @retval -EINVAL @p write is not the reliable write in progress on @p conn.
+ *
+ *  @retval -EBUSY A value of @p write is still being prepared, or @p write is
+ *  already being committed or cancelled.
+ *
+ *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
+ *  Allow a pending request to resolve before retrying, or call this function
+ *  from a separate thread to get blocking behavior. Queue size is controlled
+ *  by @kconfig{CONFIG_BT_ATT_TX_COUNT}.
+ */
+int bt_gatt_execute_write(struct bt_conn *conn, struct bt_gatt_reliable_write *write, bool execute);
 
 /** @brief Write Attribute Value by handle without response with callback.
  *
@@ -2445,8 +2574,15 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *   - #bt_gatt_discover
  *   - #bt_gatt_read
  *   - #bt_gatt_write
+ *   - #bt_gatt_prepare_write
+ *   - #bt_gatt_execute_write
  *   - #bt_gatt_subscribe
  *   - #bt_gatt_unsubscribe
+ *
+ *  For a reliable write, the request is that of a value given to
+ *  #bt_gatt_prepare_write, or the Execute Write. Between two values nothing is
+ *  pending, so cancelling the session does nothing: only cancelling it with
+ *  #bt_gatt_execute_write ends it.
  *
  *  @param conn The connection the request was issued on.
  *  @param params The address `params` used in the request function call.
