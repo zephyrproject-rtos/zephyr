@@ -1658,7 +1658,8 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                               \
 		.ospim_clk_port = DT_INST_PROP_OR(index, st_clk_port,                              \
 						   OSPI_INST_NUM(index)),                          \
-		.ospim_dqs_port = DT_INST_PROP_OR(index, st_dqs_port, 0),                         \
+		.ospim_dqs_port = DT_INST_PROP_OR(index, st_dqs_port,                              \
+						   OSPI_INST_NUM(index)),                          \
 		.ospim_ncs_port = DT_INST_PROP_OR(index, st_ncs_port,                              \
 						   OSPI_INST_NUM(index)),                          \
 		.ospim_io_low_port = DT_OSPI_IO_PORT_PROP_OR(st_io_low_port,                      \
