@@ -42,8 +42,23 @@
 #define EVENT_CTX_M1        0x64
 #define EVENT_CTX_USR       0x68
 #define EVENT_CTX_R28       0x6C
-#define EVENT_CTX_SCRATCH   0x70
+#define EVENT_CTX_GOSP      0x70
+#define EVENT_CTX_GBADVA    0x74
+/* EVENT_EXIT reuses the GOSP slot after the handler returns. */
+#define EVENT_CTX_SCRATCH   EVENT_CTX_GOSP
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+#define EVENT_CTX_R16_R17   0x78
+#define EVENT_CTX_R18_R19   0x80
+#define EVENT_CTX_R20_R21   0x88
+#define EVENT_CTX_R22_R23   0x90
+#define EVENT_CTX_R24_R25   0x98
+#define EVENT_CTX_R26_R27   0xA0
+#define EVENT_CTX_GP        0xA8
+#define EVENT_CTX_UGP       0xAC
+#define EVENT_CTX_SIZE      0xB0  /* 8-byte aligned */
+#else
 #define EVENT_CTX_SIZE      0x78  /* 8-byte aligned */
+#endif
 
 GTEXT(z_hexagon_enhanced_machine_check)
 GTEXT(z_hexagon_enhanced_exception)
@@ -146,6 +161,12 @@ GDATA(_kernel)
 	/* Save r28 (caller-saved, not part of r0-r15 register pairs) */
 	memw(r29+#EVENT_CTX_R28) = r28
 
+	/* Save GOSP (G2) and GBADVA (G3) as raw event-time values. */
+	r0 = g2
+	memw(r29+#EVENT_CTX_GOSP) = r0
+	r0 = g3
+	memw(r29+#EVENT_CTX_GBADVA) = r0
+
 	/* Save hardware loop, modifier, and USR registers.
 	 * These are caller-saved and will be clobbered by the C handler.
 	 */
@@ -163,6 +184,26 @@ GDATA(_kernel)
 	memw(r29+#EVENT_CTX_M1) = r0
 	r0 = usr
 	memw(r29+#EVENT_CTX_USR) = r0
+
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+	/* Save callee-saved GPRs and GP/UGP before C code can clobber them. */
+	{
+		memd(r29+#EVENT_CTX_R16_R17) = r17:16
+		memd(r29+#EVENT_CTX_R18_R19) = r19:18
+	}
+	{
+		memd(r29+#EVENT_CTX_R20_R21) = r21:20
+		memd(r29+#EVENT_CTX_R22_R23) = r23:22
+	}
+	{
+		memd(r29+#EVENT_CTX_R24_R25) = r25:24
+		memd(r29+#EVENT_CTX_R26_R27) = r27:26
+	}
+	r0 = gp
+	memw(r29+#EVENT_CTX_GP) = r0
+	r0 = ugp
+	memw(r29+#EVENT_CTX_UGP) = r0
+#endif
 
 #ifdef CONFIG_HW_STACK_PROTECTION
 #ifdef CONFIG_USERSPACE
@@ -326,6 +367,26 @@ _event_restore_\event_id:
 	m1 = r0
 	r0 = memw(r29+#EVENT_CTX_USR)
 	usr = r0
+
+#if defined(CONFIG_GDBSTUB) || defined(CONFIG_DEBUG_COREDUMP)
+	/* Restore callee-saved GPRs and GP/UGP. */
+	{
+		r17:16 = memd(r29+#EVENT_CTX_R16_R17)
+		r19:18 = memd(r29+#EVENT_CTX_R18_R19)
+	}
+	{
+		r21:20 = memd(r29+#EVENT_CTX_R20_R21)
+		r23:22 = memd(r29+#EVENT_CTX_R22_R23)
+	}
+	{
+		r25:24 = memd(r29+#EVENT_CTX_R24_R25)
+		r27:26 = memd(r29+#EVENT_CTX_R26_R27)
+	}
+	r0 = memw(r29+#EVENT_CTX_GP)
+	gp = r0
+	r0 = memw(r29+#EVENT_CTX_UGP)
+	ugp = r0
+#endif
 
 	/* Restore link register */
 	{

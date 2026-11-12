@@ -11,6 +11,13 @@ config ARCH
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
+config ARCH_HAS_STACKWALK
+	bool
+	default y
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
+
 source "arch/hexagon/core/Kconfig"
 
 endmenu
