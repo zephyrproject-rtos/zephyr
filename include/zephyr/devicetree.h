@@ -853,6 +853,7 @@
  *   whose elements are integer or string literals (like `{0, 1, 2}`,
  *   `{"hello", "world"}`, etc.)
  * - phandle: a node identifier for the node with that phandle
+ * - path: a node identifier for the node at that path
  *
  * A property's type is usually defined by its binding. In some
  * special cases, it has an assumed type defined by the devicetree
