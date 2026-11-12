@@ -4,12 +4,12 @@
  */
 
 /dts-v1/;
-#include <espressif/esp32s3/esp32s3.dtsi>
+#include <rakwireless/rak3112.dtsi>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	compatible = "rakwireless,rak3112";
-	model = "RAK3112 APPCPU";
+	compatible = "rakwireless,rak3212";
+	model = "RAK3212 Breakout Board APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -18,15 +18,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_appcpu_partition;
 	};
-};
-
-&flash0 {
-	reg = <0x0 DT_SIZE_M(16)>;
-	ranges = <0x0 0x0 DT_SIZE_M(16)>;
-};
-
-&psram0 {
-	size = <DT_SIZE_M(2)>;
 };
 
 &trng0 {

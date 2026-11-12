@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Kenneth Lu
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <espressif/esp32s3/esp32s3.dtsi>
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(2)>;
+};
