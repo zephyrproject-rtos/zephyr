@@ -10,10 +10,12 @@ tests:
       - imx8mp_evk/mimx8ml8/adsp
       - scobc_v1/versal_rpu
       - am62x_m4_bl350/am6254/m4
+      - v851s_e907
     integration_platforms:
       - stm32mp157x_dk2/stm32mp157cxx
       - imx8mp_evk/mimx8ml8/adsp
       - scobc_v1/versal_rpu
+      - v851s_e907
     tags:
       - ipm
       - openamp
