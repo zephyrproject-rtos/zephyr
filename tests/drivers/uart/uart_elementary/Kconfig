@@ -16,4 +16,12 @@ config UART_BAUDRATE_MISMATCH
 	  UART baudrate for DUT_AUX that is intentionally different from DUT
 	  to test error detection.
 
+config UART_INT_STRESS_TEST_TIMEOUT
+	int "Single test case length (in milliseconds)"
+	depends on DUAL_UART_TEST
+	default 3000
+	help
+	  For how long the stress test is running. The higher this number the longer the
+	  test and therefore the higher likelihood an unlikely race/event will be triggered.
+
 source "Kconfig.zephyr"

@@ -107,11 +107,13 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_dual_uart.overlay"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
-  drivers.uart.uart_elementary_dual_nrf54h.pm:
+  drivers.uart.uart_elementary_dual.pm:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
-    extra_args: DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_dual_uart.overlay"
+    extra_args:
+      - FILE_SUFFIX="dual_uart"
     extra_configs:
       - CONFIG_DUAL_UART_TEST=y
       - CONFIG_PM_DEVICE=y
