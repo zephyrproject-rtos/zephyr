@@ -1352,6 +1352,7 @@ int btp_bap_unicast_group_create(uint8_t cig_id,
 	param.params = pair_params;
 	param.params_count = cis_cnt;
 	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	param.sca = BT_GAP_SCA_UNKNOWN;
 
 	LOG_DBG("Creating unicast group");
 	err = bt_bap_unicast_group_create(&param, &cigs[cig_id].cig);

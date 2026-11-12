@@ -265,7 +265,6 @@ extern struct bt_bap_ep *snks[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_A
 extern struct bt_bap_ep *srcs[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
 extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
-
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
 
 #if defined(CONFIG_BT_CAP_INITIATOR)
@@ -279,6 +278,7 @@ extern struct bt_cap_unicast_group_stream_pair_param
 	cap_initiator_unicast_group_pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
 extern struct bt_cap_unicast_audio_start_param cap_initiator_unicast_audio_start_param;
 extern struct bt_cap_unicast_group_param cap_initiator_unicast_group_param;
+
 #endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
@@ -305,15 +305,19 @@ scan_delegator_sync_state_get_by_values(uint32_t broadcast_id, uint8_t addr_type
 
 static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 {
+	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u pd %u",
+		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->pd);
+
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
-	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u latency %u pd %u",
-		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency,
-		       qos->pd);
-#else
-	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u pd %u",
-		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->pd);
-#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
+	bt_shell_print("  rtn %u latency %u", qos->rtn, qos->latency);
+#endif
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	bt_shell_print("  max_pdu %u burst_number %u num_subevents %u", qos->max_pdu,
+		       qos->burst_number, qos->num_subevents);
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
+
 
 static inline void print_qos_pref(const struct bt_bap_qos_cfg_pref *pref)
 {
