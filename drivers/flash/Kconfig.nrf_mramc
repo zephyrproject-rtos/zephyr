@@ -8,7 +8,8 @@ config SOC_FLASH_NRF_MRAMC
 	bool "Nordic Semiconductor flash driver for MRAM using MRAM Controller"
 	default y
 	depends on DT_HAS_NORDIC_NRF_MRAMC_ENABLED
-	imply NRFX_MRAMC if !BUILD_WITH_TFM
+	depends on BUILD_WITH_TFM if TRUSTED_EXECUTION_NONSECURE
+	imply NRFX_MRAMC if !TRUSTED_EXECUTION_NONSECURE
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
