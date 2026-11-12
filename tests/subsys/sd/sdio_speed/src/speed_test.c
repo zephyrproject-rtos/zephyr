@@ -83,6 +83,17 @@ static int set_io(const struct device *dev, struct sdhc_io *io)
 	zassert_equal_ptr(dev, DEVICE_GET(sdio_speed_host));
 	zassert_true(fixture.card_accepted, "Host changed before CMD52 acceptance");
 	fixture.requested_io = *io;
+	if (fixture.test->validate_high_speed) {
+		bool valid = (io->signal_voltage == SD_VOL_1_8_V &&
+			      io->timing == SDHC_TIMING_SDR25) ||
+			     ((io->signal_voltage == SD_VOL_3_0_V ||
+			       io->signal_voltage == SD_VOL_3_3_V) &&
+			      io->timing == SDHC_TIMING_HS);
+
+		if (!valid) {
+			return -EINVAL;
+		}
+	}
 	return fixture.test->host_error;
 }
 
@@ -122,6 +133,12 @@ void sdio_speed_run_case(const struct speed_case *test)
 
 	sdio_select_bus_speed(&card);
 	ret = sdio_set_bus_speed(&card);
+	if (test->validate_high_speed) {
+		printk("SDIO validating host: raw=0x%02x voltage=%u timing=%u "
+		       "clock=%u ret=%d\n", fixture.last_readback,
+		       fixture.requested_io.signal_voltage, fixture.requested_io.timing,
+		       fixture.requested_io.clock, ret);
+	}
 
 	zassert_equal(ret, test->want_ret, "Unexpected return code");
 	zassert_equal(fixture.reads, 1U, "Must read initial CCCR speed once");

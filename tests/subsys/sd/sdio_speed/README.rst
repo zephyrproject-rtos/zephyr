@@ -33,3 +33,9 @@ tuning error. The fake SDHC responds to CMD5, CMD3, CMD7, CCCR reads, an END-onl
 CIS chain and four-bit width negotiation. Rejected speed changes retain the
 width update and 25 MHz/SDR12 timing without tuning. Accepted modes still tune,
 and tuning errors propagate through the real initializer.
+
+The literal 0x03 high-speed case enables host timing validation. This fake host
+accepts SDR25 at 1.8 V and HS at 3.0/3.3 V, rejects other combinations with
+-EINVAL, and otherwise returns the configured host error. The trace reports
+the actual callback arguments and the subsystem return value. This does not
+verify a physical controller's rejection behavior.

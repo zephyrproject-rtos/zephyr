@@ -24,6 +24,7 @@ struct speed_case {
 	int32_t write_error;
 	int32_t write_error_at;
 	int32_t host_error;
+	bool validate_high_speed;
 	int32_t want_ret;
 	int32_t want_writes;
 	uint32_t want_sets;

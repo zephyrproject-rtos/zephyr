@@ -12,4 +12,5 @@ target_sources(app PRIVATE
   src/speed_test.c
   src/speed_cases.c
   src/init_cases.c
+  src/timing_cases.c
 )
