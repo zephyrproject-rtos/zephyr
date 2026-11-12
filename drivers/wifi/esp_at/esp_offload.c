@@ -89,6 +89,7 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 	struct net_sockaddr dst;
 	int ret;
 	int mode;
+	int len;
 
 	if (!esp_flags_are_set(dev, EDF_STA_CONNECTED | EDF_AP_ENABLED)) {
 		return -ENETUNREACH;
@@ -114,9 +115,6 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 			 net_ntohs(net_sin(&dst)->sin_port));
 	} else {
 		if (src.sa_family == NET_AF_INET && net_sin(&src)->sin_port != 0) {
-			net_addr_ntop(src.sa_family,
-				      &net_sin(&src)->sin_addr,
-				      src_addr_str, sizeof(src_addr_str));
 			/* <mode>: In the UDP Wi-Fi passthrough
 			 *
 			 * 0: After UDP data is received, the parameters <"remote host">
@@ -145,12 +143,25 @@ static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 				mode = 0;
 			}
 
-			snprintk(connect_msg, sizeof(connect_msg),
-				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,%d,\"%s\"",
-				 sock->link_id, dst_addr_str,
-				 net_ntohs(net_sin(&dst)->sin_port),
-				 net_ntohs(net_sin(&src)->sin_port),
-				 mode, src_addr_str);
+			len = snprintk(connect_msg, sizeof(connect_msg),
+				       "AT+CIPSTART=%d,\"UDP\",\"%s\",%d,%d,%d",
+				       sock->link_id, dst_addr_str,
+				       net_ntohs(net_sin(&dst)->sin_port),
+				       net_ntohs(net_sin(&src)->sin_port),
+				       mode);
+
+			/* <local IP> only exists since ESP-AT 2.x, where it is optional:
+			 * AT 1.7 answers ERROR to it, so send it only to bind the link
+			 * to a specific address.
+			 */
+			if (!IS_ENABLED(CONFIG_WIFI_ESP_AT_VERSION_1_7) &&
+			    net_sin(&src)->sin_addr.s_addr != 0) {
+				net_addr_ntop(src.sa_family,
+					      &net_sin(&src)->sin_addr,
+					      src_addr_str, sizeof(src_addr_str));
+				snprintk(connect_msg + len, sizeof(connect_msg) - len,
+					 ",\"%s\"", src_addr_str);
+			}
 		} else {
 			snprintk(connect_msg, sizeof(connect_msg),
 				 "AT+CIPSTART=%d,\"UDP\",\"%s\",%d",
