@@ -493,11 +493,10 @@ static int rtc_pretick_init(void)
 void soc_early_init_hook(void)
 {
 #if defined(CONFIG_SOC_NRF5340_CPUAPP) && defined(CONFIG_NRF_ENABLE_CACHE)
-#if !defined(CONFIG_BUILD_WITH_TFM)
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Enable the instruction & data cache.
 	 * This can only be done from secure code.
-	 * This is handled by the TF-M platform so we skip it when TF-M is
-	 * enabled.
+	 * The secure firmware handles it for non-secure builds.
 	 */
 	nrf_cache_enable(NRF_CACHE);
 #endif
@@ -508,14 +507,13 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_SOC_NRF5340_CPUAPP
 #if DT_NODE_HAS_STATUS_OKAY(LFXO_NODE)
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, LFXO_CAP);
-#if !defined(CONFIG_BUILD_WITH_TFM)
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* This can only be done from secure code.
-	 * This is handled by the TF-M platform so we skip it when TF-M is
-	 * enabled.
+	 * The secure firmware handles it for non-secure builds.
 	 */
 	nrf_gpio_pin_control_select(PIN_XL1, LFXO_PIN_SEL);
 	nrf_gpio_pin_control_select(PIN_XL2, LFXO_PIN_SEL);
-#endif /* !defined(CONFIG_BUILD_WITH_TFM) */
+#endif /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
 #endif /* DT_NODE_HAS_STATUS_OKAY(LFXO_NODE) */
 #if defined(HFXO_CAP_VAL_X2)
 	/* This register is only accessible from secure code. */

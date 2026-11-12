@@ -69,7 +69,7 @@ config SOC_NRF7120_APPROTECT_BOOT_WORKAROUND
 config SOC_NRF7120_WICR_SETUP
 	bool
 	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED && !MCUBOOT
-	select NRFX_MRAMC if !BUILD_WITH_TFM
+	select NRFX_MRAMC if !TRUSTED_EXECUTION_NONSECURE
 	help
 	  Program the Wi-Fi Information Configuration Registers (WICR) at boot.
 	  WICR is an NVM region for configuring Wi-Fi related settings and
