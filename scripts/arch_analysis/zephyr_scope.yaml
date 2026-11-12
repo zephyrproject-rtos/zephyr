@@ -24,3 +24,8 @@
 # MAINTAINERS areas that make up the qualification scope.
 in_scope:
   - Kernel
+  - Base OS
+  - Utilities
+  - Heap Management
+  - Device Driver Model
+  - Common Architecture Interface
