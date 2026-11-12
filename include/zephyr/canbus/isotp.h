@@ -176,8 +176,8 @@ struct isotp_msg_id {
 	 * priority sections and modifies TA section in flow control frames.
 	 */
 	union {
-		uint32_t std_id  : 11;
-		uint32_t ext_id  : 29;
+		uint32_t std_id;
+		uint32_t ext_id;
 	};
 	/** ISO-TP extended address (if used) */
 	uint8_t ext_addr;
