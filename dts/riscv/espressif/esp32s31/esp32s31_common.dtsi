@@ -232,6 +232,34 @@
 			status = "disabled";
 		};
 
+		i2s0: i2s@20387000 {
+			compatible = "espressif,esp32-i2s";
+			reg = <0x20387000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_I2S0_MODULE>;
+			dmas = <&dma 2>, <&dma 3>;
+			dma-names = "rx", "tx";
+			unit = <0>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@20388000 {
+			compatible = "espressif,esp32-i2s";
+			reg = <0x20388000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_I2S1_MODULE>;
+			dmas = <&dma 4>, <&dma 5>;
+			dma-names = "rx", "tx";
+			unit = <1>;
+			status = "disabled";
+		};
+
 		pcnt: pcnt@20389000 {
 			compatible = "espressif,esp32-pcnt";
 			reg = <0x20389000 DT_SIZE_K(4)>;
