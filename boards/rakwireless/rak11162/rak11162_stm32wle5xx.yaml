@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rak11162/stm32wle5xx
+name: RAK11162 WisBlock Core Module
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 256
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - spi
+  - uart
+  - watchdog
+  - lora
+  - wisblock_io
+vendor: rakwireless

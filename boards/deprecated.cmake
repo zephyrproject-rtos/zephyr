@@ -139,3 +139,9 @@ set(adp_xc7k/ae350_DEPRECATED
 set(adp_xc7k/ae350/clic_DEPRECATED
     adp_xc7k/ae350_d23/clic
 )
+set(rak11160/stm32wle5xx_DEPRECATED
+    rak11162/stm32wle5xx
+)
+set(rak11160_DEPRECATED
+    rak11162
+)
