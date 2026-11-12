@@ -1,0 +1,33 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		power-states {
+			powerdown: powerdown {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <0>;
+				min-residency-us = <1000000>;
+				/* Includes SoC/PM restore and measured-profile margin. */
+				exit-latency-us = <3000>;
+				status = "disabled";
+			};
+		};
+	};
+
+	reserved-memory {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Conservative wake workspace; excluded only when S2RAM is enabled. */
+		s2ram_reserved: memory@30000000 {
+			reg = <0x30000000 DT_SIZE_K(64)>,
+			      <0x20000000 DT_SIZE_K(64)>;
+			reg-names = "secure", "nonsecure";
+		};
+	};
+};

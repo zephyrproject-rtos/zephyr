@@ -5,6 +5,7 @@
  */
 
 #include "nxp_mcxw7x_common.dtsi"
+#include "nxp_mcxw7x_s2ram.dtsi"
 
 &fast_peripheral1 {
 	smu2: smu2@1c0000 {
