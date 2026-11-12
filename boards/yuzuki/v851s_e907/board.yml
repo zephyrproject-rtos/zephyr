@@ -1,0 +1,6 @@
+board:
+  name: v851s_e907
+  full_name: YuzukiPI-Lizard V851S E907 co-processor
+  vendor: yuzuki
+  socs:
+    - name: v851s_e907
