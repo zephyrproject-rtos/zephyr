@@ -13,11 +13,21 @@
 #if defined(CONFIG_SOC_MCXE32B_CPU0)
 #include <fsl_power.h>
 #include <fsl_clock.h>
+
+static uint64_t wakeup_sources;
+
+uint64_t soc_mcxe32x_wakeup_sources(void)
+{
+	return wakeup_sources;
+}
 #endif
 
 void soc_early_init_hook(void)
 {
 #if defined(CONFIG_SOC_MCXE32B_CPU0)
+	if (POWER_ExitFromStandbyMode()) {
+		wakeup_sources = (uint64_t)WKPU->WISR | ((uint64_t)WKPU->WISR_64 << 32U);
+	}
 	SystemInit();
 	enable_sram_extra_latency(true);
 	/* Enable I/DCache */
