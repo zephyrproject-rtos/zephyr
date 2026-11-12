@@ -41,6 +41,10 @@ const struct snmp_object *snmp_registry_next(const uint32_t *target, size_t targ
 /* Whether authenticationFailure notifications may be sent, snmpEnableAuthenTraps. */
 bool snmp_authen_traps_enabled(void);
 
+/* Values of the version field, RFC 3584 section 5.1. */
+#define SNMP_VERSION_1  0
+#define SNMP_VERSION_2C 1
+
 /* Error status values of the response PDU, RFC 3416 section 3. */
 #define SNMP_ERR_NO_ERROR             0
 #define SNMP_ERR_TOO_BIG              1
@@ -61,6 +65,23 @@ bool snmp_authen_traps_enabled(void);
 #define SNMP_ERR_AUTHORIZATION_ERROR  16
 #define SNMP_ERR_NOT_WRITABLE         17
 #define SNMP_ERR_INCONSISTENT_NAME    18
+
+struct snmp_ber_writer;
+
+/*
+ * Size of one encoded variable binding, header included, or 0 when the name
+ * or the value cannot be encoded.
+ */
+size_t snmp_varbind_size(const uint32_t *name, size_t name_len, const struct snmp_value *val);
+
+/*
+ * Append one variable binding. With a non-zero exception tag the value is
+ * the SNMPv2c exception instead of val. Nothing is written on error: -EINVAL
+ * when the name or the value cannot be encoded, -EMSGSIZE when it does not
+ * fit.
+ */
+int snmp_write_varbind(struct snmp_ber_writer *w, const uint32_t *name, size_t name_len,
+		       const struct snmp_value *val, uint8_t exception);
 
 /*
  * Process one received message and build the response in out. Returns the
@@ -91,5 +112,17 @@ struct snmp_counters {
 };
 
 extern struct snmp_counters snmp_stats;
+
+/*
+ * Send a datagram from the agent's socket of the destination's family.
+ * Returns 0, -ENOTCONN when the agent is not running, -EAFNOSUPPORT for a
+ * family without a socket, or the negative errno of the send.
+ */
+int snmp_transport_send(const struct net_sockaddr *dst, net_socklen_t dst_len, const void *data,
+			size_t len);
+
+/* Notifications the agent itself originates; no-ops without receivers. */
+void snmp_notify_cold_start(void);
+void snmp_notify_authentication_failure(void);
 
 #endif /* ZEPHYR_SUBSYS_NET_LIB_SNMP_SNMP_INTERNAL_H_ */

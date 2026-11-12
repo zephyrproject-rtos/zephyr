@@ -31,6 +31,8 @@ static uint8_t tx_buf[CONFIG_SNMP_MAX_PDU_SIZE];
 
 static struct zsock_pollfd fds[SOCKET_COUNT];
 static int fd_count;
+static int sock_v4 = -1;
+static int sock_v6 = -1;
 static bool running;
 static int64_t start_uptime;
 static K_MUTEX_DEFINE(agent_lock);
@@ -234,6 +236,7 @@ int snmp_agent_start(void)
 			goto cleanup;
 		}
 
+		sock_v4 = ret;
 		fds[count++] = (struct zsock_pollfd){.fd = ret, .events = ZSOCK_POLLIN};
 	}
 
@@ -249,6 +252,7 @@ int snmp_agent_start(void)
 			goto cleanup;
 		}
 
+		sock_v6 = ret;
 		fds[count++] = (struct zsock_pollfd){.fd = ret, .events = ZSOCK_POLLIN};
 	}
 
@@ -262,17 +266,48 @@ int snmp_agent_start(void)
 	running = true;
 	start_uptime = k_uptime_get();
 	LOG_DBG("Agent listening on port %d", CONFIG_SNMP_PORT);
-	goto out;
+	k_mutex_unlock(&agent_lock);
+
+	/* RFC 3418: the agent announces its (re)initialization. */
+	if (IS_ENABLED(CONFIG_SNMP_NOTIFICATIONS)) {
+		snmp_notify_cold_start();
+	}
+
+	return 0;
 
 cleanup:
 	for (int i = 0; i < count; i++) {
 		(void)zsock_close(fds[i].fd);
 	}
 
+	sock_v4 = -1;
+	sock_v6 = -1;
+
 out:
 	k_mutex_unlock(&agent_lock);
 
 	return ret;
+}
+
+int snmp_transport_send(const struct net_sockaddr *dst, net_socklen_t dst_len, const void *data,
+			size_t len)
+{
+	int sock;
+
+	if (!running) {
+		return -ENOTCONN;
+	}
+
+	sock = (dst->sa_family == NET_AF_INET6) ? sock_v6 : sock_v4;
+	if (sock < 0) {
+		return -EAFNOSUPPORT;
+	}
+
+	if (zsock_sendto(sock, data, len, 0, dst, dst_len) < 0) {
+		return -errno;
+	}
+
+	return 0;
 }
 
 int64_t snmp_agent_start_uptime(void)
@@ -305,6 +340,8 @@ int snmp_agent_stop(void)
 	}
 
 	fd_count = 0;
+	sock_v4 = -1;
+	sock_v6 = -1;
 	running = false;
 
 out:
