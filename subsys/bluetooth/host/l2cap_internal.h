@@ -193,6 +193,13 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 #define bt_l2cap_create_pdu(_pool, _reserve) \
 	bt_l2cap_create_pdu_timeout(_pool, _reserve, K_FOREVER)
 
+struct bt_buf_waiter;
+
+/* Prepare an L2CAP PDU without waiting for a buffer, see
+ * bt_conn_create_pdu_waiter()
+ */
+struct net_buf *bt_l2cap_create_pdu_waiter(struct bt_buf_waiter *waiter, size_t reserve);
+
 /* Send L2CAP PDU over a connection
  *
  * Buffer ownership is transferred to stack in case of success.
