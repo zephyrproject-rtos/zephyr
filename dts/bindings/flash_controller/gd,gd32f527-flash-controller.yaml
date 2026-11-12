@@ -1,0 +1,21 @@
+# Copyright (c) 2026 GigaDevice Semiconductor Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GD32F527 flash controller.
+
+  The main flash starts at 0x08000000 and holds Bank0 and, on dual-bank
+  parts, Bank1 right after it (512KB, 1MB, 2MB or 4MB in total). Parts
+  with the extended Bank1_Ex have it at the fixed address 0x08400000
+  (up to 3584KB), which is not contiguous with the smaller main flash
+  layouts. All banks are erased by 4KB page and programmed in 64-bit
+  double-words. Bank swapping through SYSCFG FMC_SWP is not supported.
+
+  The main flash is a "gd,gd32-nv-flash" child node that also carries
+  "soc-nv-flash". Bank1_Ex, when present, is a "gd,gd32-nv-flash" child
+  node without "soc-nv-flash", and the driver exposes it as its own flash
+  device. Both must use write-block-size = <8>.
+
+compatible: "gd,gd32f527-flash-controller"
+
+include: gd,gd32-flash-controller.yaml
