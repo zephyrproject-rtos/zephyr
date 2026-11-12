@@ -2131,6 +2131,11 @@ struct bt_gatt_write_params {
 	/** Att channel options. */
 	enum bt_att_chan_opt chan_opt;
 #endif /* CONFIG_BT_EATT */
+	/** @cond INTERNAL_HIDDEN
+	 *  Node for the per-connection queue of long writes.
+	 */
+	sys_snode_t _node;
+	/** @endcond */
 };
 
 /** @brief Write Attribute Value by handle
@@ -2140,11 +2145,19 @@ struct bt_gatt_write_params {
  *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *  @p params must remain valid until start of callback.
  *
+ *  A value too long for a Write Request is written with Prepare Write
+ *  Requests, and such long writes on the same connection are done one at a
+ *  time: one given while another is in progress waits, so a return of 0 may
+ *  only mean that it is queued. When its turn comes, it reports
+ *  #BT_ATT_ERR_UNLIKELY if the host has no buffer to start it.
+ *
  *  @param conn Connection object.
  *  @param params Write parameters.
  *
  *  @retval 0 Successfully queued request. Will call @p params->func on
  *  resolution.
+ *
+ *  @retval -EBUSY @p params is in use by a long write that has not completed.
  *
  *  @retval -ENOMEM ATT request queue is full and blocking would cause deadlock.
  *  Allow a pending request to resolve before retrying, or call this function
@@ -2422,6 +2435,13 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *  This function does not release @p params for reuse. The usual callbacks
  *  for the request still apply. A successful cancel simulates a
  *  #BT_ATT_ERR_UNLIKELY response from the server.
+ *
+ *  A long write with a Prepare or Execute Write Request pending may have
+ *  values queued on the server, so the host cancels them first: its callback
+ *  then comes once the server has responded to that, with its own error if it
+ *  had already failed. With enhanced bearers, an Execute Write Request
+ *  cancelled in flight may still reach the server after the first request of
+ *  the next long write.
  *
  *  This function can cancel the following request functions:
  *   - #bt_gatt_exchange_mtu
