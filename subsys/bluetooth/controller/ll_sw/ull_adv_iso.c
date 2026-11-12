@@ -106,8 +106,11 @@ static struct lll_adv_iso_stream
 			stream_pool[CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT];
 static void *stream_free;
 
-#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 static struct ticker_ext normal_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
 static struct ticker_ext resume_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
 static memq_link_t link_lll_resume[CONFIG_BT_CTLR_ADV_ISO_SET];
 static struct mayfly mfy_lll_resume[CONFIG_BT_CTLR_ADV_ISO_SET];
@@ -1431,6 +1434,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		index = ARRAY_INDEX(ll_adv_iso, adv_iso);
 		normal_ticker_ext[index].ticks_slot_window =
 			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+		/* Tickers with slot window are placed after the whole BIG event */
+		normal_ticker_ext[index].ticks_slot_max =
+			MAX(ticks_slot_max, normal_ticker_ext[index].ticks_slot_window);
 		normal_ticker_ext[index].is_jitter_in_window = 1U;
 		normal_ticker_ext[index].is_deadline_in_window = 1U;
 
@@ -1445,7 +1451,29 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 				&normal_ticker_ext[index]);
 	}
 
-#else /* !CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+#elif defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	{
+		uint8_t index;
+
+		/* Tickers with slot window are placed after the whole BIG event and yield
+		 * to the BIG event, earliest deadline first.
+		 */
+		index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+		normal_ticker_ext[index].ticks_slot_max = ticks_slot_max;
+		normal_ticker_ext[index].is_deadline_in_window = 1U;
+
+		ret = ticker_start_ext(
+				TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+				(TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
+				ticks_anchor, 0U,
+				HAL_TICKER_US_TO_TICKS(iso_interval_us),
+				HAL_TICKER_REMAINDER(iso_interval_us),
+				TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
+				ull_ticker_status_give, (void *)&ret_cb,
+				&normal_ticker_ext[index]);
+	}
+
+#else /* !CONFIG_BT_TICKER_EXT || CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
 			   ticks_anchor, 0U,
@@ -1453,7 +1481,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
-#endif /* !CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+#endif /* !CONFIG_BT_TICKER_EXT || CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
@@ -1755,6 +1783,13 @@ static void adv_iso_resume_ticker_start(struct ll_adv_iso_set *adv_iso)
 
 	index = ARRAY_INDEX(ll_adv_iso, adv_iso);
 	resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
+	/* Tickers with slot window are placed after the remaining BIG event */
+	if (normal_ticker_ext[index].ticks_slot_max > (ticks_offset + ticks_slot_window)) {
+		resume_ticker_ext[index].ticks_slot_max =
+			normal_ticker_ext[index].ticks_slot_max - ticks_offset;
+	} else {
+		resume_ticker_ext[index].ticks_slot_max = ticks_slot_window;
+	}
 	resume_ticker_ext[index].is_jitter_in_window = 1U;
 	resume_ticker_ext[index].is_deadline_in_window = 1U;
 	resume_ticker_ext[index].unforce = 1U;
