@@ -61,6 +61,26 @@ static void register_svc_close_events(const struct net_socket_service_desc *svc)
 	}
 }
 
+/* Must be called with the lock held. Waits for the service thread to start
+ * and checks that it is running and that svc is a registered service.
+ */
+static int validate_svc(const struct net_socket_service_desc *svc)
+{
+	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
+		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
+	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
+		NET_ERR("Socket service thread not running, service %p request fails.", svc);
+		return -EIO;
+	}
+
+	if (STRUCT_SECTION_START(net_socket_service_desc) > svc ||
+	    STRUCT_SECTION_END(net_socket_service_desc) <= svc) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
 int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc,
 				       struct zsock_pollfd *fds, int len,
 				       void *user_data)
@@ -69,16 +89,8 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (thread_status == SOCKET_SERVICE_THREAD_UNINITIALIZED) {
-		(void)k_condvar_wait(&wait_start, &lock, K_FOREVER);
-	} else if (thread_status != SOCKET_SERVICE_THREAD_RUNNING) {
-		NET_ERR("Socket service thread not running, service %p register fails.", svc);
-		ret = -EIO;
-		goto out;
-	}
-
-	if (STRUCT_SECTION_START(net_socket_service_desc) > svc ||
-	    STRUCT_SECTION_END(net_socket_service_desc) <= svc) {
+	ret = validate_svc(svc);
+	if (ret < 0) {
 		goto out;
 	}
 
@@ -101,6 +113,96 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 			svc->pev[i].event = fds[i];
 			svc->pev[i].user_data = user_data;
 		}
+	}
+
+	/* Tell the thread to re-read the variables */
+	zvfs_eventfd_write(svc_ctx.events[0].fd, 1);
+	ret = 0;
+
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+int z_impl_net_socket_service_register_single_fd(const struct net_socket_service_desc *svc,
+						 struct zsock_pollfd *pfd, void *user_data)
+{
+	int i, ret = -ENOENT;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	ret = validate_svc(svc);
+	if (ret < 0) {
+		goto out;
+	}
+
+	if ((pfd == NULL) || (pfd->fd < 0)) {
+		NET_DBG("Invalid file descriptor");
+		ret = -EINVAL;
+		goto out;
+	}
+
+	for (i = 0; i < svc->pev_len; i++) {
+		if (svc->pev[i].event.fd == pfd->fd) {
+			NET_DBG("File descriptor %d already registered with service %p", pfd->fd,
+				svc);
+			ret = -EEXIST;
+			goto out;
+		}
+	}
+
+	for (i = 0; i < svc->pev_len; i++) {
+		if (svc->pev[i].event.fd == -1) {
+			svc->pev[i].event = *pfd;
+			svc->pev[i].user_data = user_data;
+			break;
+		}
+	}
+	if (i == svc->pev_len) {
+		NET_DBG("Too many file descriptors, max is %d for service %p", svc->pev_len, svc);
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	/* Tell the thread to re-read the variables */
+	zvfs_eventfd_write(svc_ctx.events[0].fd, 1);
+	ret = 0;
+
+out:
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
+int z_impl_net_socket_service_unregister_single_fd(const struct net_socket_service_desc *svc,
+						   int fd)
+{
+	int i, ret = -ENOENT;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	ret = validate_svc(svc);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Free the slot holding fd. A slot waiting for the service thread to
+	 * close its socket is left alone so that the close is not cancelled.
+	 */
+	for (i = 0; i < svc->pev_len; i++) {
+		if ((svc->pev[i].event.fd == fd) &&
+		    (svc->pev[i].event.events != SOCKET_SERVICE_CLOSE)) {
+			svc->pev[i].event.fd = -1;
+			svc->pev[i].event.events = 0;
+			svc->pev[i].user_data = NULL;
+			break;
+		}
+	}
+	if (i == svc->pev_len) {
+		NET_DBG("File descriptor %d not found in service %p", fd, svc);
+		ret = -ENOENT;
+		goto out;
 	}
 
 	/* Tell the thread to re-read the variables */
