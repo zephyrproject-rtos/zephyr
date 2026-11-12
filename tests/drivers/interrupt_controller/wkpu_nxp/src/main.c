@@ -26,6 +26,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/interrupt_controller/intc_wkpu_nxp_s32.h>
+#include <zephyr/sys/sys_io.h>
 
 /* RM: WKPU wake-up source 1 == RTC timeout. */
 #define WKPU_RTC_TIMEOUT_SOURCE 1U
@@ -71,7 +72,7 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 	zassert_ok(err, "wkpu_nxp_s32_set_callback() failed: %d", err);
 
 	wkpu_nxp_s32_enable_interrupt(wkpu, WKPU_RTC_TIMEOUT_SOURCE,
-				      WKPU_NXP_S32_RISING_EDGE);
+				      WKPU_NXP_S32_RISING_EDGE, false);
 
 	/* Program an RTC compare a few seconds out on the RTCVAL channel. The
 	 * counter is free-running from driver init.
@@ -98,6 +99,39 @@ ZTEST(wkpu_nxp, test_rtc_timeout_triggers_wkpu)
 	zassert_equal(fired_source, WKPU_RTC_TIMEOUT_SOURCE,
 		      "WKPU fired on unexpected source %u (expected %u)",
 		      fired_source, WKPU_RTC_TIMEOUT_SOURCE);
+}
+
+ZTEST(wkpu_nxp, test_wakeup_request_configuration)
+{
+	unsigned int key = irq_lock();
+
+	for (uint8_t bank = 0; bank < DIV_ROUND_UP(CONFIG_NXP_S32_WKPU_SOURCES_MAX, 32);
+	     bank++) {
+		uint8_t source = bank * 32U + 4U;
+		mem_addr_t wrer = DT_REG_ADDR(DT_NODELABEL(wkpu)) + 0x1cU + bank * 0x40U;
+
+		wkpu_nxp_s32_enable_interrupt(wkpu, source, WKPU_NXP_S32_RISING_EDGE, true);
+		zassert_equal(sys_read32(wrer) & BIT(4), BIT(4),
+			      "Wake request not enabled in bank %u", bank);
+
+		wkpu_nxp_s32_enable_interrupt(wkpu, source + 1U,
+					     WKPU_NXP_S32_FALLING_EDGE, false);
+		zassert_equal(sys_read32(wrer) & (BIT(4) | BIT(5)), BIT(4),
+			      "Ordinary interrupt changed wake requests");
+
+		wkpu_nxp_s32_enable_interrupt(wkpu, source, WKPU_NXP_S32_BOTH_EDGES,
+					     false);
+		zassert_equal(sys_read32(wrer) & BIT(4), 0U,
+			      "Reconfiguration did not disarm wake request");
+
+		wkpu_nxp_s32_enable_interrupt(wkpu, source, WKPU_NXP_S32_RISING_EDGE, true);
+		wkpu_nxp_s32_disable_interrupt(wkpu, source);
+		wkpu_nxp_s32_disable_interrupt(wkpu, source + 1U);
+		zassert_equal(sys_read32(wrer) & (BIT(4) | BIT(5)), 0U,
+			      "Disabled interrupt retained a wake request");
+	}
+
+	irq_unlock(key);
 }
 
 ZTEST_SUITE(wkpu_nxp, NULL, NULL, NULL, NULL, NULL);

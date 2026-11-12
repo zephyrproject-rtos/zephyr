@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024, 2025 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -314,6 +314,9 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 	const struct gpio_nxp_siul2_irq_config *irq_cfg = config->wkpu_info;
 	uint8_t irq_line;
 	enum wkpu_nxp_s32_trigger wkpu_trigger;
+	bool wakeup = (trig & GPIO_INT_WAKEUP) != 0;
+
+	trig &= ~GPIO_INT_WAKEUP;
 
 	if (irq_cfg == NULL) {
 		LOG_ERR("WKPU controller not available or enabled");
@@ -345,7 +348,10 @@ static int nxp_siul2_gpio_config_wkpu(const struct device *dev,
 			LOG_ERR("pin %d is already in use", pin);
 			return -EBUSY;
 		}
-		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger);
+		if (wakeup) {
+			PORT_WRITE(pin, PORT_READ(pin) | SIUL2_MSCR_PKE_MASK);
+		}
+		wkpu_nxp_s32_enable_interrupt(irq_cfg->ctrl, irq_line, wkpu_trigger, wakeup);
 	}
 
 	return 0;
