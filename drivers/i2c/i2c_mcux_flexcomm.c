@@ -179,6 +179,13 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 	status_t status;
 	int ret = 0;
 
+#if defined(CONFIG_I2C_TARGET)
+	/* With a target registered, the ISR serves only the target */
+	if (data->nr_targets_attached > 0) {
+		return -EIO;
+	}
+#endif
+
 	k_sem_take(&data->lock, K_FOREVER);
 
 	pm_policy_device_power_lock_get(dev);
