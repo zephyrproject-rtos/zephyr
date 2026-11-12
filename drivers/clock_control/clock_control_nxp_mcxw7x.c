@@ -17,12 +17,18 @@
 #include <fsl_ccm32k.h>
 #include <fsl_spc.h>
 
+#if defined(CONFIG_PM_S2RAM) && \
+	(defined(CONFIG_SOC_MCXW716C) || defined(CONFIG_SOC_MCXW727C))
+#include <zephyr/linker/sections.h>
+#include <soc.h>
+#endif
+
 #define DT_DRV_COMPAT nxp_mcxw7x_clock
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 LOG_MODULE_REGISTER(clock_control);
 
-#define MCXW7_SPC_ADDR (SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc))
+#define MCXW7_SPC_ADDR ((SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc)))
 
 extern uint32_t SystemCoreClock;
 
@@ -243,6 +249,280 @@ static int nxp_mcxw_clock_control_pm(const struct device *dev, enum pm_device_ac
 	ARG_UNUSED(action);
 	return 0;
 }
+
+#if defined(CONFIG_PM_S2RAM) && \
+	(defined(CONFIG_SOC_MCXW716C) || defined(CONFIG_SOC_MCXW727C))
+#define MCXW_CLOCK_POLL_LIMIT 1000000U
+#define MCXW_RUN_CLOCK_FIELDS (SCG_RCCR_SCS_MASK | SCG_RCCR_DIVCORE_MASK | \
+			       SCG_RCCR_DIVBUS_MASK | SCG_RCCR_DIVSLOW_MASK)
+#define MCXW_CURRENT_CLOCK_FIELDS (SCG_CSR_SCS_MASK | SCG_CSR_DIVCORE_MASK | \
+				   SCG_CSR_DIVBUS_MASK | SCG_CSR_DIVSLOW_MASK)
+#define MCXW_FIRC_CONTROLS (SCG_FIRCCSR_FIRCEN_MASK | SCG_FIRCCSR_FIRCSTEN_MASK | \
+			   SCG_FIRCCSR_FIRCTREN_MASK | SCG_FIRCCSR_FIRCTRUP_MASK | \
+			   SCG_FIRCCSR_COARSE_TRIM_BYPASS_MASK)
+#define MCXW_FIRC_TRIM_FIELDS (SCG_FIRCTCFG_TRIMSRC_MASK | SCG_FIRCTCFG_TRIMDIV_MASK)
+#define MCXW_SOSC_CONTROLS (SCG_SOSCCSR_SOSCEN_MASK | SCG_SOSCCSR_SOSCSTEN_MASK | \
+			   SCG_SOSCCSR_SOSCCM_MASK | SCG_SOSCCSR_SOSCCMRE_MASK)
+
+#define MRCC_CLOCK(member) \
+	{offsetof(MRCC_Type, member), MRCC_##member##_CC_MASK}
+#define MRCC_RESET(member) \
+	{offsetof(MRCC_Type, member), MRCC_##member##_CC_MASK | MRCC_##member##_RSTB_MASK}
+#define MRCC_ROOT(member) \
+	{offsetof(MRCC_Type, member), MRCC_##member##_CC_MASK | MRCC_##member##_RSTB_MASK | \
+				    MRCC_##member##_MUX_MASK | MRCC_##member##_DIV_MASK}
+
+/*
+ * Module domains do not establish MRCC cell retention. Guard implemented
+ * writable fields individually, including the entry-owned SECSUBSYS reset.
+ * Clock-only memory/timer cells have no reset replay; RF BIST reads can fault.
+ */
+static const struct {
+	uint16_t offset;
+	uint32_t mask;
+} mrcc_context_registers[] = {
+	MRCC_RESET(MRCC_SECSUBSYS),
+	MRCC_RESET(MRCC_EWM0), MRCC_CLOCK(MRCC_SYSPM0), MRCC_RESET(MRCC_SFA0),
+	MRCC_RESET(MRCC_CRC0), MRCC_ROOT(MRCC_LPIT0),
+#if defined(CONFIG_SOC_MCXW716C)
+	MRCC_CLOCK(MRCC_TSTMR0),
+#endif
+	MRCC_ROOT(MRCC_TPM0), MRCC_ROOT(MRCC_TPM1), MRCC_ROOT(MRCC_LPI2C0),
+	MRCC_ROOT(MRCC_LPI2C1), MRCC_ROOT(MRCC_I3C0), MRCC_ROOT(MRCC_LPSPI0),
+	MRCC_ROOT(MRCC_LPSPI1), MRCC_ROOT(MRCC_LPUART0), MRCC_ROOT(MRCC_LPUART1),
+	MRCC_ROOT(MRCC_FLEXIO0), MRCC_ROOT(MRCC_CAN0), MRCC_RESET(MRCC_SEMA0),
+	MRCC_RESET(MRCC_DATA_STREAM_2P4), MRCC_RESET(MRCC_PORTA), MRCC_RESET(MRCC_PORTB),
+	MRCC_RESET(MRCC_PORTC), MRCC_ROOT(MRCC_LPADC0), MRCC_RESET(MRCC_LPCMP0),
+	MRCC_RESET(MRCC_LPCMP1), MRCC_RESET(MRCC_VREF0), MRCC_RESET(MRCC_GPIOA),
+	MRCC_RESET(MRCC_GPIOB), MRCC_RESET(MRCC_GPIOC), MRCC_RESET(MRCC_DMA0),
+	MRCC_CLOCK(MRCC_PFLEXNVM), MRCC_CLOCK(MRCC_SRAM0),
+#if defined(CONFIG_SOC_MCXW716C)
+	MRCC_CLOCK(MRCC_SRAM1),
+#else
+	MRCC_CLOCK(MRCC_SRAM1_ECC), MRCC_CLOCK(MRCC_MTR_MASTER), MRCC_ROOT(MRCC_CAN1),
+	MRCC_CLOCK(MRCC_SRAM0_NOECC), MRCC_CLOCK(MRCC_SRAM1_NOECC),
+	MRCC_RESET(MRCC_DSP0), MRCC_RESET(MRCC_DSP0_MUA),
+	MRCC_CLOCK(MRCC_LPTMR0_IPG_CLK_ERCLK_WAKE2VSYS),
+	MRCC_CLOCK(MRCC_LPTMR1_IPG_CLK_ERCLK_WAKE2VSYS),
+	MRCC_CLOCK(MRCC_LPTMR2_IPG_CLK_ERCLK_WAKE2VSYS),
+#endif
+	MRCC_CLOCK(MRCC_SRAM2), MRCC_CLOCK(MRCC_SRAM3),
+};
+
+static struct {
+	uint32_t mrcc[ARRAY_SIZE(mrcc_context_registers)];
+	uint32_t rccr;
+	uint32_t firccsr;
+	uint32_t firccfg;
+	uint32_t firctcfg;
+	uint32_t fircstat;
+	uint32_t sosccsr;
+#if defined(CONFIG_SOC_MCXW716C)
+	uint32_t sirccsr;
+#endif
+	uint32_t clock_out;
+	uint32_t core_frequency;
+	uint32_t flash_wait_states;
+} clock_context __noinit;
+
+static volatile uint32_t *mrcc_context_register(size_t index)
+{
+	return (volatile uint32_t *)((uintptr_t)MRCC + mrcc_context_registers[index].offset);
+}
+
+static int clock_wait_register(const volatile uint32_t *reg, uint32_t mask, uint32_t expected)
+{
+	for (uint32_t i = 0; i < MCXW_CLOCK_POLL_LIMIT; i++) {
+		if ((*reg & mask) == expected) {
+			return 0;
+		}
+	}
+
+	return -ETIMEDOUT;
+}
+
+static int restore_scg_control(volatile uint32_t *reg, uint32_t controls,
+			       uint32_t lock, uint32_t saved)
+{
+	uint32_t current = *reg & (controls | lock);
+
+	if (current == saved) {
+		return 0;
+	}
+	/* Do not copy read-only or write-one-to-clear status into CSR writes. */
+	if ((current & lock) != 0) {
+		*reg = current & ~lock;
+		if ((*reg & lock) != 0) {
+			return -EIO;
+		}
+	}
+	*reg = saved;
+	return (*reg & (controls | lock)) == saved ? 0 : -EIO;
+}
+
+void nxp_mcxw7x_clock_save_context(void)
+{
+	clock_context.rccr = SCG0->RCCR & MCXW_RUN_CLOCK_FIELDS;
+	clock_context.firccsr = SCG0->FIRCCSR & (MCXW_FIRC_CONTROLS | SCG_FIRCCSR_LK_MASK);
+	clock_context.firccfg = SCG0->FIRCCFG & SCG_FIRCCFG_RANGE_MASK;
+	clock_context.firctcfg = SCG0->FIRCTCFG & MCXW_FIRC_TRIM_FIELDS;
+	clock_context.fircstat = SCG0->FIRCSTAT & SCG_FIRCSTAT_TRIMFINE_MASK;
+	clock_context.sosccsr = SCG0->SOSCCSR & (MCXW_SOSC_CONTROLS | SCG_SOSCCSR_LK_MASK);
+#if defined(CONFIG_SOC_MCXW716C)
+	clock_context.sirccsr = SCG0->SIRCCSR & (SCG_SIRCCSR_SIRCSTEN_MASK |
+					      SCG_SIRCCSR_LK_MASK);
+#endif
+	clock_context.clock_out = SCG0->CLKOUTCNFG & SCG_CLKOUTCNFG_CLKOUTSEL_MASK;
+	clock_context.core_frequency = SystemCoreClock;
+	clock_context.flash_wait_states = FMU0->FCTRL & FMU_FCTRL_RWSC_MASK;
+	for (size_t i = 0; i < ARRAY_SIZE(mrcc_context_registers); i++) {
+		clock_context.mrcc[i] = *mrcc_context_register(i) & mrcc_context_registers[i].mask;
+	}
+}
+
+static bool firc_configuration_changed(void)
+{
+	return (SCG0->FIRCCSR & MCXW_FIRC_CONTROLS) !=
+	       (clock_context.firccsr & MCXW_FIRC_CONTROLS) ||
+	       (SCG0->FIRCCFG & SCG_FIRCCFG_RANGE_MASK) != clock_context.firccfg ||
+	       (SCG0->FIRCTCFG & MCXW_FIRC_TRIM_FIELDS) != clock_context.firctcfg ||
+	       /* With auto-trim enabled, TRIMFINE is live calibration, not configuration. */
+	       ((clock_context.firccsr & SCG_FIRCCSR_FIRCTREN_MASK) == 0 &&
+		(SCG0->FIRCSTAT & SCG_FIRCSTAT_TRIMFINE_MASK) != clock_context.fircstat);
+}
+
+int nxp_mcxw7x_clock_restore_context(void)
+{
+	const uint32_t safe_clock = SCG_RCCR_SCS(kSCG_SysClkSrcSirc) |
+				   SCG_RCCR_DIVCORE(kSCG_SysClkDivBy1) |
+				   SCG_RCCR_DIVBUS(kSCG_SysClkDivBy1) |
+				   SCG_RCCR_DIVSLOW(kSCG_SysClkDivBy4);
+	bool firc_changed = firc_configuration_changed();
+	bool sosc_changed = (SCG0->SOSCCSR & MCXW_SOSC_CONTROLS) !=
+			    (clock_context.sosccsr & MCXW_SOSC_CONTROLS);
+	bool clock_changed = firc_changed || sosc_changed ||
+			     (SCG0->RCCR & MCXW_RUN_CLOCK_FIELDS) != clock_context.rccr ||
+			     (SCG0->CSR & MCXW_CURRENT_CLOCK_FIELDS) != clock_context.rccr;
+	int ret;
+
+	if (clock_changed) {
+		SCG0->RCCR = safe_clock;
+		ret = clock_wait_register(&SCG0->CSR, MCXW_CURRENT_CLOCK_FIELDS, safe_clock);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	if (firc_changed) {
+		ret = restore_scg_control(&SCG0->FIRCCSR, MCXW_FIRC_CONTROLS,
+			SCG_FIRCCSR_LK_MASK, (SCG0->FIRCCSR & MCXW_FIRC_CONTROLS) &
+					   ~SCG_FIRCCSR_FIRCEN_MASK);
+		if (ret != 0) {
+			return ret;
+		}
+		ret = clock_wait_register(&SCG0->FIRCCSR, SCG_FIRCCSR_FIRCVLD_MASK, 0);
+		if (ret != 0) {
+			return ret;
+		}
+		SCG0->FIRCCFG = clock_context.firccfg;
+		SCG0->FIRCTCFG = clock_context.firctcfg;
+		if ((clock_context.firccsr & SCG_FIRCCSR_FIRCTREN_MASK) == 0) {
+			SCG0->FIRCSTAT = clock_context.fircstat;
+		}
+		ret = restore_scg_control(&SCG0->FIRCCSR, MCXW_FIRC_CONTROLS,
+			SCG_FIRCCSR_LK_MASK, clock_context.firccsr & ~SCG_FIRCCSR_LK_MASK);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	if ((clock_context.firccsr & SCG_FIRCCSR_FIRCEN_MASK) != 0) {
+		ret = clock_wait_register(&SCG0->FIRCCSR, SCG_FIRCCSR_FIRCVLD_MASK,
+					  SCG_FIRCCSR_FIRCVLD_MASK);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	if (sosc_changed) {
+		ret = restore_scg_control(&SCG0->SOSCCSR, MCXW_SOSC_CONTROLS,
+			SCG_SOSCCSR_LK_MASK, clock_context.sosccsr & ~SCG_SOSCCSR_LK_MASK);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	if ((clock_context.sosccsr & SCG_SOSCCSR_SOSCEN_MASK) != 0) {
+		ret = clock_wait_register(&SCG0->SOSCCSR, SCG_SOSCCSR_SOSCVLD_MASK,
+					  SCG_SOSCCSR_SOSCVLD_MASK);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	ret = clock_wait_register(&MCXW7_SPC_ADDR->SC, SPC_SC_BUSY_MASK, 0);
+	if (ret != 0) {
+		return ret;
+	}
+	if ((FMU0->FCTRL & FMU_FCTRL_RWSC_MASK) != clock_context.flash_wait_states) {
+		FMU0->FCTRL = (FMU0->FCTRL & ~FMU_FCTRL_RWSC_MASK) |
+			      clock_context.flash_wait_states;
+	}
+	if ((FMU0->FCTRL & FMU_FCTRL_RWSC_MASK) != clock_context.flash_wait_states) {
+		return -EIO;
+	}
+	__DSB();
+	if (clock_changed) {
+		SCG0->RCCR = clock_context.rccr;
+	}
+	ret = clock_wait_register(&SCG0->CSR, MCXW_CURRENT_CLOCK_FIELDS, clock_context.rccr);
+	if (ret != 0) {
+		return ret;
+	}
+#if defined(CONFIG_SOC_MCXW716C)
+	ret = restore_scg_control(&SCG0->SIRCCSR, SCG_SIRCCSR_SIRCSTEN_MASK,
+				 SCG_SIRCCSR_LK_MASK, clock_context.sirccsr);
+	if (ret != 0) {
+		return ret;
+	}
+#endif
+	ret = restore_scg_control(&SCG0->FIRCCSR, MCXW_FIRC_CONTROLS,
+				 SCG_FIRCCSR_LK_MASK, clock_context.firccsr);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = restore_scg_control(&SCG0->SOSCCSR, MCXW_SOSC_CONTROLS,
+				 SCG_SOSCCSR_LK_MASK, clock_context.sosccsr);
+	if (ret != 0) {
+		return ret;
+	}
+	if ((SCG0->CLKOUTCNFG & SCG_CLKOUTCNFG_CLKOUTSEL_MASK) != clock_context.clock_out) {
+		SCG0->CLKOUTCNFG = clock_context.clock_out;
+	}
+	for (size_t i = 0; i < ARRAY_SIZE(mrcc_context_registers); i++) {
+		volatile uint32_t *reg = mrcc_context_register(i);
+		uint32_t current = *reg & mrcc_context_registers[i].mask;
+		uint32_t saved = clock_context.mrcc[i];
+		uint32_t selectors = mrcc_context_registers[i].mask & (MRCC_MUX_MASK |
+								     MRCC_DIV_MASK);
+
+		if (current == saved) {
+			continue;
+		}
+		if (((current ^ saved) & selectors) != 0) {
+			/* Gate before changing mux/dividers; retain the current reset state. */
+			*reg = current & ~MRCC_CC_MASK;
+			*reg = (current & ~(MRCC_CC_MASK | selectors)) | (saved & selectors);
+		}
+		*reg = saved;
+		if ((*reg & mrcc_context_registers[i].mask) != saved) {
+			return -EIO;
+		}
+	}
+	if (firc_configuration_changed() ||
+	    (SCG0->CLKOUTCNFG & SCG_CLKOUTCNFG_CLKOUTSEL_MASK) != clock_context.clock_out ||
+	    (SCG0->RCCR & MCXW_RUN_CLOCK_FIELDS) != clock_context.rccr) {
+		return -EIO;
+	}
+	SystemCoreClock = CLOCK_GetCoreSysClkFreq();
+	return SystemCoreClock == clock_context.core_frequency ? 0 : -EIO;
+}
+#endif /* supported MCXW S2RAM */
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 static int nxp_mcxw_clock_validate_sys_clk_src(const struct mcxw_clock_control_config *config)
