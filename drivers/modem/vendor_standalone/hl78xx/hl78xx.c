@@ -1673,6 +1673,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 {
 	int ret = 0;
 	int script_ret = 0;
+	bool terminal_error;
 	k_timeout_t tx_lock_timeout =
 		run_async ? K_NO_WAIT
 			  : K_SECONDS(req->response_timeout > 0 ? req->response_timeout
@@ -1688,7 +1689,6 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		hl78xx_dynamic_cmd_feed_lpm_timers(data, req->response_timeout);
 	}
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	hl78xx_dynamic_cmd_reset_terminal_result(data);
 
 	ret = k_mutex_lock(&data->tx_lock, tx_lock_timeout);
 	if (ret == -EAGAIN) {
@@ -1703,6 +1703,11 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		LOG_DBG("Failed to acquire tx_lock for sending command: %d", ret);
 		return ret;
 	}
+
+	/* The terminal result is shared by every command: reset and read it
+	 * under tx_lock, or a command of another thread resets it in flight.
+	 */
+	hl78xx_dynamic_cmd_reset_terminal_result(data);
 
 	ret = hl78xx_dynamic_cmd_prepare_script(data, req, run_async);
 	if (ret < 0) {
@@ -1726,6 +1731,10 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		LOG_DBG("Chat script executed successfully.");
 	}
 
+	terminal_error =
+		!run_async && (script_ret == 0) &&
+		(data->at_cmd_capture.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR);
+
 	ret = k_mutex_unlock(&data->tx_lock);
 	if (ret < 0) {
 		if (req->user_cmd == false) {
@@ -1734,8 +1743,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		return script_ret < 0 ? script_ret : ret;
 	}
 
-	if (!run_async && script_ret == 0 &&
-	    data->at_cmd_capture.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR) {
+	if (terminal_error) {
 		if (req->user_cmd == false) {
 			errno = EIO;
 		}
