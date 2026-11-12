@@ -93,9 +93,13 @@ The following roles and states are arbitrated by fairness alone:
    * - ACL Central and Peripheral in normal state
      - Laziness, Peripheral latency, must-expire
      - Supervision timeout gives many intervals of slack
-   * - Periodic sync and BIG sync
-     - Ousting of previous events, jitter in window, resume ticker without force
+   * - Periodic sync
+     - Ousting of previous events, jitter in window
      - Uses only the events it needs, other events fall back to fairness
+   * - BIG sync
+     - Ousting of previous events, jitter in window, deadline in window, resume ticker per
+       selected BIS
+     - One repetition of each selected BIS is reserved, other repetitions are in the window
    * - BIG broadcast
      - Jitter in window, deadline in window, resume ticker per BIS
      - One repetition of each BIS is reserved, other repetitions are in the window
@@ -109,23 +113,52 @@ ticker expiry, not from a static priority:
 * ACL close to supervision timeout, before connection establishment, or with a pending instant.
 * Peripheral, periodic sync and BIG sync that are skipped repeatedly or close to their timeout.
 
-The CIG and CIS resume tickers use the whole ISO interval within the flush timeout. The BIG and
-BIS resume tickers reserve one repetition of each BIS, the remaining repetitions are in their slot
-window. These tickers mark their reservation as a deadline in their slot window: the reservation
-neither yields to nor is displaced by an overlapping ticker without slot window, unless that
-ticker is forced. A deadline reservation that cannot be placed after an overlapping ticker with
-slot window is not skipped when that ticker fits after it within its own slot window, i.e. the
-earliest deadline is served first. Static ticker priorities for the CIG are only used when
+The CIG and CIS resume tickers use the whole ISO interval within the flush timeout. The BIG
+broadcast and BIG sync tickers, and their resume tickers, reserve one repetition of each BIS, or
+of each selected BIS, the remaining repetitions are in their slot window. These tickers mark
+their reservation as a deadline in their slot window: the reservation neither yields to nor is
+displaced by an overlapping ticker without slot window, unless that ticker is forced. A deadline
+reservation that cannot be placed after an overlapping ticker with slot window is not skipped
+when that ticker fits after it within its own slot window, i.e. the earliest deadline is served
+first. Static ticker priorities for the CIG are only used when
 :kconfig:option:`CONFIG_BT_TICKER_PRIORITY_SET` is enabled, which is disabled by default.
 
-A preempted BIG event is resumed at the next subevent. The Lower Link Layer does not yield the
-BIG event to a preempting event that would end after the last repetition of a BIS which has not
-been transmitted yet in the BIG event, the preempting event is cancelled instead. When a BIS
-resume ticker expires while the yielded BIG event waits in the prepare pipeline, the BIG event is
-prepared at the reserved time of that BIS and preempts the event using the radio. When the BIG
-event yields after the reserved time of a BIS, it is prepared to preempt at the end of the
-preempting event.
+A preempted BIG event, broadcast or sync, is resumed at the next subevent. Its deadline is the
+last repetition of a BIS, in sequential packing, that has not been transmitted or received yet in
+the BIG event. The resume after a preempting event is dated at the end of the reserved time of the
+preempting event, and the deadline is reached when the resume would start after the deadline.
+The Lower Link Layer decides on a preempting event that is not a BIG event as follows:
 
+.. list-table::
+   :header-rows: 1
+   :widths: 40 30 30
+
+   * - Condition
+     - BIG broadcast
+     - BIG sync
+   * - Preempting event is scanning
+     - Continue, scanning is deferred
+     - Continue, scanning is deferred
+   * - No payload remains to be received
+     - Not applicable
+     - Yield, resume when idle
+   * - Preempting event ends before the next subevent
+     - Not applicable
+     - Yield, resume in the gap
+   * - Deadline reached and the preempting event is not forced
+     - Continue, preempting event is cancelled
+     - Continue, preempting event is cancelled
+   * - Otherwise
+     - Yield, resume at the end of the preempting event
+     - Yield, resume at the end of the preempting event
+
+A connection or a periodic sync event is forced when it is close to its supervision timeout.
+Between BIG events the event with the earliest deadline continues, and on equal deadlines the
+older event continues. When a resume ticker of a BIS expires while the yielded BIG event waits in
+the prepare pipeline, the BIG event is prepared at the reserved time of that BIS and preempts the
+event using the radio. When the BIG event yields after the reserved time of a BIS, it is prepared
+to preempt at the end of the preempting event. Interleaved packing has no deadline, its BIG event
+yields to the preempting event and is resumed when idle.
 
 Upper Link Layer and Lower Link Layer
 =====================================
