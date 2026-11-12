@@ -72,8 +72,19 @@ struct sam0_ep_buffer_desc {
 
 BUILD_ASSERT(sizeof(struct sam0_ep_buffer_desc) == 32, "Broken endpoint buffer descriptor");
 
+struct udc_sam0_padcal {
+	mem_addr_t nvm;
+	uint16_t transn_bit;
+	uint16_t transp_bit;
+	uint16_t trim_bit;
+	uint8_t transn_def;
+	uint8_t transp_def;
+	uint8_t trim_def;
+};
+
 struct udc_sam0_config {
 	mem_addr_t base;
+	const struct udc_sam0_padcal *padcal;
 	struct sam0_ep_buffer_desc *bdt;
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
@@ -167,35 +178,59 @@ static void sam0_wait_syncbusy(const struct device *dev)
 	}
 }
 
+static uint8_t sam0_padcal_fuse_get(const mem_addr_t nvm, const uint16_t bit_offset,
+				    const uint8_t def, const uint32_t padcal_msk)
+{
+	/* Largest value the PADCAL field holds, an unprogrammed fuse reads as this */
+	const uint32_t max = FIELD_GET(padcal_msk, padcal_msk);
+	const uint32_t pos = bit_offset / 32U;
+	const uint32_t shift = bit_offset % 32U;
+	uint32_t word;
+	uint32_t val;
+
+	word = sys_read32(nvm + (pos * sizeof(uint32_t)));
+	val = FIELD_GET(max << shift, word);
+	if (val == max) {
+		val = def;
+	}
+
+	return val;
+}
+
+static void sam0_get_padcal(const struct device *dev,
+			    uint8_t *const transn, uint8_t *const transp,
+			    uint8_t *const trim)
+{
+	const struct udc_sam0_config *config = dev->config;
+	const struct udc_sam0_padcal *padcal = config->padcal;
+
+	*transn = sam0_padcal_fuse_get(padcal->nvm,
+				       padcal->transn_bit, padcal->transn_def,
+				       UDC_SAM0_PADCAL_TRANSN_Msk);
+	*transp = sam0_padcal_fuse_get(padcal->nvm,
+				       padcal->transp_bit, padcal->transp_def,
+				       UDC_SAM0_PADCAL_TRANSP_Msk);
+	*trim = sam0_padcal_fuse_get(padcal->nvm,
+				     padcal->trim_bit, padcal->trim_def,
+				     UDC_SAM0_PADCAL_TRIM_Msk);
+}
+
 static void sam0_load_padcal(const struct device *dev)
 {
 	const struct udc_sam0_config *config = dev->config;
 	const mem_addr_t base = config->base;
-	uint32_t pad_transn;
-	uint32_t pad_transp;
-	uint32_t pad_trim;
-	uint16_t padcal;
+	uint8_t transn;
+	uint8_t transp;
+	uint8_t trim;
+	uint16_t reg;
 
-	pad_transn = FIELD_GET(USB_FUSES_TRANSN_Msk, *(uint32_t *)USB_FUSES_TRANSN_ADDR);
-	if (pad_transn == 0x1F) {
-		pad_transn = 5U;
-	}
+	sam0_get_padcal(dev, &transn, &transp, &trim);
 
-	pad_transp = FIELD_GET(USB_FUSES_TRANSP_Msk, *(uint32_t *)USB_FUSES_TRANSP_ADDR);
-	if (pad_transp == 0x1F) {
-		pad_transp = 29U;
-	}
+	reg = FIELD_PREP(UDC_SAM0_PADCAL_TRANSN_Msk, transn) |
+	      FIELD_PREP(UDC_SAM0_PADCAL_TRANSP_Msk, transp) |
+	      FIELD_PREP(UDC_SAM0_PADCAL_TRIM_Msk, trim);
 
-	pad_trim = FIELD_GET(USB_FUSES_TRIM_Msk, *(uint32_t *)USB_FUSES_TRIM_ADDR);
-	if (pad_trim == 0x7) {
-		pad_trim = 3U;
-	}
-
-	padcal = FIELD_PREP(UDC_SAM0_PADCAL_TRANSN_Msk, pad_transn) |
-		 FIELD_PREP(UDC_SAM0_PADCAL_TRANSP_Msk, pad_transp) |
-		 FIELD_PREP(UDC_SAM0_PADCAL_TRIM_Msk, pad_trim);
-
-	sys_write16(padcal, base + UDC_SAM0_PADCAL);
+	sys_write16(reg, base + UDC_SAM0_PADCAL);
 }
 
 static uint8_t sam0_get_bd_size(const uint16_t mps)
@@ -1111,8 +1146,38 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 	COND_CODE_1(DT_INST_PINCTRL_HAS_NAME(n, default),			\
 		    ((void *)PINCTRL_DT_INST_DEV_CONFIG_GET(n)), (NULL))
 
+#define UDC_SAM0_PADCAL_INST_DEFINE_DT(n)					\
+	static const struct udc_sam0_padcal sam0_padcal_##n = {			\
+		.nvm = DT_REG_ADDR(DT_INST_PHANDLE(n, nvm_calib)),		\
+		.transn_bit = DT_INST_PROP_BY_IDX(n, calib_mapping, 0),		\
+		.transn_def = DT_INST_PROP_BY_IDX(n, calib_mapping, 1),		\
+		.transp_bit = DT_INST_PROP_BY_IDX(n, calib_mapping, 2),		\
+		.transp_def = DT_INST_PROP_BY_IDX(n, calib_mapping, 3),		\
+		.trim_bit = DT_INST_PROP_BY_IDX(n, calib_mapping, 4),		\
+		.trim_def = DT_INST_PROP_BY_IDX(n, calib_mapping, 5),		\
+	}
+
+#define UDC_SAM0_PADCAL_INST_DEFINE_DEFAULT(n)					\
+	BUILD_ASSERT(IS_ENABLED(CONFIG_ASF),					\
+		     "Pad calibration needs the Atmel HAL");			\
+	static const struct udc_sam0_padcal sam0_padcal_##n = {			\
+		.nvm = USB_FUSES_TRIM_ADDR,					\
+		.transn_bit = USB_FUSES_TRANSN_Pos,				\
+		.transn_def = 5U,						\
+		.transp_bit = USB_FUSES_TRANSP_Pos,				\
+		.transp_def = 29U,						\
+		.trim_bit = USB_FUSES_TRIM_Pos,					\
+		.trim_def = 3U,							\
+	}
+
+#define UDC_SAM0_PADCAL_INST_DEFINE(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, calib_mapping),			\
+		    (UDC_SAM0_PADCAL_INST_DEFINE_DT(n)),			\
+		    (UDC_SAM0_PADCAL_INST_DEFINE_DEFAULT(n)))
+
 #define UDC_SAM0_DEVICE_DEFINE(n)						\
 	UDC_SAM0_PINCTRL_DT_INST_DEFINE(n);					\
+	UDC_SAM0_PADCAL_INST_DEFINE(n);						\
 	UDC_SAM0_IRQ_ENABLE_DEFINE(i, n);					\
 	UDC_SAM0_IRQ_DISABLE_DEFINE(i, n);					\
 										\
@@ -1157,6 +1222,7 @@ static void udc_sam0_irq_disable_func_##n(const struct device *dev)		\
 		.irq_enable_func = udc_sam0_irq_enable_func_##n,		\
 		.irq_disable_func = udc_sam0_irq_disable_func_##n,		\
 		.pcfg = UDC_SAM0_PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.padcal = &sam0_padcal_##n,					\
 		.make_thread = udc_sam0_make_thread_##n,			\
 	};									\
 										\
