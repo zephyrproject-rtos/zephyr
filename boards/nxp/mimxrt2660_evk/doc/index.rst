@@ -273,6 +273,22 @@ module like so:
    :goals: build
    :compact:
 
+NXP RK055HDMIPI4MA0 720p MIPI Display
+=====================================
+
+The :ref:`lcd_par_s035` connects to the board's LCD socket J94 directly, but some
+modifications are required. See
+:zephyr_file:`boards/shields/rk055hdmipi4ma0/boards/mimxrt2660_evk_mimxrt2663_cm85.overlay`.
+Select J6 1&2 to use external power supply. The display sample can be built for this
+module like so:
+
+.. zephyr-app-commands::
+   :board: mimxrt2660_evk/mimxrt2663/cm85
+   :shield: rk055hdmipi4ma0
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
 References
 **********
 
