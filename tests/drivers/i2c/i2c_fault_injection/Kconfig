@@ -49,11 +49,27 @@ config I2C_FAULT_TEST_ABSENT_ADDR_10BIT
 	  before sending data, and skips if it does.  Set another address
 	  where a device on the bus uses it.
 
+config I2C_FAULT_TEST_BUS_FAULT_WIRED
+	bool "The line-forcing GPIOs are wired to the bus"
+	help
+	  Declares that the GPIOs named by sda-gpios and scl-gpios under the
+	  zephyr,user node are wired to the SDA and SCL nets of the controller
+	  under test.  The twister scenario with the i2c_bus_fault fixture
+	  sets it.
+
+	  Devicetree names the pins but cannot say that a jumper is fitted.
+	  Holding lines through pins that are not wired produces failures
+	  that look like driver defects, so without this option the tests
+	  that hold a line skip.  With it, the build fails unless both
+	  properties are present, and setup fails unless both GPIOs are
+	  ready.
+
 config I2C_FAULT_TEST_RELAXED_ERRNO
-	bool "Accept any negative errno from a failed transfer"
+	bool "Accept any negative errno from a failed transfer or recovery"
 	help
 	  The I2C API documents -EIO for a failed transfer and -ETIMEDOUT for
-	  one that reached the transfer timeout, so by default this suite
+	  one that reached the transfer timeout, and -EBUSY for a bus that is
+	  not clear after a recovery attempt, so by default this suite
 	  accepts only those.  Enable this to accept any negative value
 	  instead, which is useful when bringing up a driver that is not yet
 	  conformant.  In both modes each test logs the value the driver
@@ -105,6 +121,16 @@ config I2C_FAULT_TEST_REPEAT_COUNT
 	range 2 100
 	help
 	  Number of times a fault is repeated when checking that a driver
-	  does not latch state from the first failure.
+	  does not latch state from the first failure, and the number of
+	  consecutive recovery calls in the repeated-recovery test.
+
+config I2C_FAULT_TEST_HOLD_MS
+	int "Milliseconds a line is held low before a recovery"
+	default 20
+	range 1 1000
+	help
+	  How long the recovery-after-release test holds SDA low through a
+	  forcing GPIO before releasing it and calling i2c_recover_bus().
+	  The bus is open drain, so the hold needs no timing precision.
 
 source "Kconfig.zephyr"

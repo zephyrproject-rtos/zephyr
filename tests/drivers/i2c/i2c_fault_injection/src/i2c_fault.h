@@ -79,6 +79,8 @@ struct i2c_fault_ctx {
 	bool probe_unusable;
 	/** Set once a transfer has failed to return within the wait limit. */
 	bool hang_detected;
+	/** Set when CONFIG_I2C_FAULT_TEST_BUS_FAULT_WIRED declares the forcing GPIOs wired. */
+	bool bus_force_ready;
 };
 
 const struct i2c_fault_ctx *i2c_fault_ctx(void);
@@ -113,6 +115,9 @@ void i2c_fault_skip_unbounded(void);
 
 /** Skip the running test unless a known-good address is available. */
 void i2c_fault_require_present(void);
+
+/** Skip the running test unless the forcing GPIOs are wired and ready. */
+void i2c_fault_require_bus_force(void);
 
 /**
  * Assert that @p ret reports a failed transfer.

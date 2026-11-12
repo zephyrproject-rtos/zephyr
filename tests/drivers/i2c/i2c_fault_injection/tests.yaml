@@ -16,6 +16,19 @@ tests:
   # that declares the i2c-dut alias.
   drivers.i2c.fault_injection.basic: {}
 
+  # Adds two spare GPIOs wired to the SDA and SCL nets of the controller under
+  # test, for the tests that hold a line low and recover the bus.  Needs no
+  # second controller, so it can run on any board whose overlay names the
+  # GPIOs under zephyr,user.
+  drivers.i2c.fault_injection.bus_fault:
+    filter: dt_alias_exists("i2c-dut") and
+      dt_node_has_prop("/zephyr,user", "sda-gpios") and
+      dt_node_has_prop("/zephyr,user", "scl-gpios")
+    harness_config:
+      fixture: i2c_bus_fault
+    extra_configs:
+      - CONFIG_I2C_FAULT_TEST_BUS_FAULT_WIRED=y
+
   # Runs the suite with userspace enabled, so test_misuse_null_buffer calls
   # from a user thread and the syscall handler validates its buffer.  That
   # test expects the handler to kill its thread with K_OOPS(), so the run
@@ -43,3 +56,20 @@ tests:
       fixture: cy15framkit_001
     extra_args:
       - SHIELD=cy15framkit_001
+
+  # bus_fault with the CY15FRAMKIT-001 shield as the known-good device, for
+  # boards whose controller under test has no device of its own to answer
+  # while a line is held.  Needs both the forcing wiring and the shield.
+  drivers.i2c.fault_injection.bus_fault.shield.cy15framkit_001:
+    depends_on: arduino_i2c
+    filter: dt_alias_exists("i2c-dut") and
+      dt_node_has_prop("/zephyr,user", "sda-gpios") and
+      dt_node_has_prop("/zephyr,user", "scl-gpios")
+    harness_config:
+      fixture:
+        - i2c_bus_fault
+        - cy15framkit_001
+    extra_args:
+      - SHIELD=cy15framkit_001
+    extra_configs:
+      - CONFIG_I2C_FAULT_TEST_BUS_FAULT_WIRED=y

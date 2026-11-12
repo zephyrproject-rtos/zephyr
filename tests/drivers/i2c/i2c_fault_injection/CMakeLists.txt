@@ -9,8 +9,10 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(i2c_fault_injection)
 
 target_sources(app PRIVATE
+  src/bus_force.c
   src/i2c_timing.c
   src/main.c
   src/test_addr.c
   src/test_api_misuse.c
+  src/test_recovery.c
 )

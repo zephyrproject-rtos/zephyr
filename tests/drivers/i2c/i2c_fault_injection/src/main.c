@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
+#include "bus_force.h"
 #include "i2c_fault.h"
 #include "i2c_timing.h"
 
@@ -224,6 +225,43 @@ void i2c_fault_require_present(void)
 	}
 } /* i2c_fault_require_present() */
 
+void i2c_fault_require_bus_force(void)
+{
+	if (!ctx.bus_force_ready) {
+		TC_PRINT("  line forcing not wired; the i2c_bus_fault fixture and sda-gpios and "
+			 "scl-gpios under zephyr,user are required\n");
+		ztest_test_skip();
+	}
+} /* i2c_fault_require_bus_force() */
+
+/*
+ * Configure the forcing GPIOs, released, and check that both lines read high.
+ * An idle bus is pulled high, so a low line before any test has run means the
+ * bus is already stuck or a forcing jumper is on the wrong net, and every
+ * result after it would mislead.
+ */
+static void setup_bus_force(void)
+{
+	uint32_t level;
+	int ret;
+
+	ret = bus_force_init();
+	zassert_ok(ret, "could not configure the line-forcing GPIOs (%d)", ret);
+
+	ctx.bus_force_ready = IS_ENABLED(CONFIG_I2C_FAULT_TEST_BUS_FAULT_WIRED);
+	if (!ctx.bus_force_ready) {
+		return;
+	}
+
+	ret = bus_force_level(BUS_FORCE_SDA | BUS_FORCE_SCL);
+	zassert_true(ret >= 0, "could not read the bus lines (%d)", ret);
+	level = (uint32_t)ret;
+	zassert_equal(level, BUS_FORCE_SDA | BUS_FORCE_SCL,
+		      "SDA reads %s and SCL reads %s; check the i2c_bus_fault wiring",
+		      ((level & BUS_FORCE_SDA) != 0U) ? "high" : "low",
+		      ((level & BUS_FORCE_SCL) != 0U) ? "high" : "low");
+} /* setup_bus_force() */
+
 /* Devicetree address of one enabled child of the controller under test. */
 #define DUT_CHILD_ADDR(node_id) (uint16_t)DT_REG_ADDR(node_id),
 
@@ -323,6 +361,8 @@ static void report_environment(void)
 	} else {
 		TC_PRINT("  known-good address:    none found\n");
 	}
+
+	TC_PRINT("  line forcing:          %s\n", ctx.bus_force_ready ? "available" : "not wired");
 } /* report_environment() */
 
 void *i2c_fault_setup(void)
@@ -343,6 +383,7 @@ void *i2c_fault_setup(void)
 
 	i2c_timing_harness_start();
 
+	setup_bus_force();
 	select_addresses();
 	report_environment();
 
