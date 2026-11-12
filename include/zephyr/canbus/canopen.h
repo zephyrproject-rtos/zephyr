@@ -107,6 +107,19 @@ typedef void (*canopen_rpdo_cb_t)(struct canopen_node *node, uint16_t pdo, void 
  */
 typedef void (*canopen_sync_cb_t)(struct canopen_node *node, uint8_t counter, void *user_data);
 
+/**
+ * @brief Callback for a received TIME message.
+ *
+ * Called from the CANopen thread in NMT states pre-operational and operational.
+ *
+ * @param node      CANopen node.
+ * @param ms        Milliseconds after midnight.
+ * @param days      Days since January 1, 1984.
+ * @param user_data User data from the node configuration.
+ */
+typedef void (*canopen_time_cb_t)(struct canopen_node *node, uint32_t ms, uint16_t days,
+				  void *user_data);
+
 /** @brief Events reported by the heartbeat consumer. */
 enum canopen_hb_event {
 	/** First heartbeat, changed NMT state or heartbeat resumed after a timeout */
@@ -235,6 +248,8 @@ struct canopen_node_config {
 	canopen_sync_cb_t sync_cb;
 	/** Optional heartbeat consumer callback */
 	canopen_hb_cb_t hb_cb;
+	/** Optional TIME consumer callback, requires @kconfig{CONFIG_CANOPEN_TIME} */
+	canopen_time_cb_t time_cb;
 	/**
 	 * Power-on values of the consumer heartbeat time entries (1016h), node-ID in bits 16-23
 	 * and time in milliseconds in bits 0-15
@@ -304,6 +319,11 @@ struct canopen_sync {
 	bool length_error;
 };
 
+struct canopen_time {
+	uint32_t cob_id;
+	int filter;
+};
+
 struct canopen_emcy {
 	k_timepoint_t inhibit_end;
 	uint32_t cob_id;
@@ -345,6 +365,7 @@ struct canopen_node {
 	struct canopen_sync sync;
 	struct canopen_emcy emcy;
 	struct canopen_hb_consumer hb[CONFIG_CANOPEN_HB_CONSUMER_COUNT];
+	struct canopen_time time;
 	struct can_state_change_callback can_state_cb;
 	atomic_t can_state;
 	struct canopen_pdo tpdo[CONFIG_CANOPEN_TPDO_COUNT];
@@ -423,6 +444,24 @@ int canopen_nmt_local_cmd(struct canopen_node *node, enum canopen_nmt_cmd cmd);
  * @retval -EINVAL Invalid TPDO number.
  */
 int canopen_tpdo_trigger(struct canopen_node *node, uint16_t pdo);
+
+/**
+ * @brief Send a TIME message.
+ *
+ * Requires @kconfig{CONFIG_CANOPEN_TIME}. The node must be the TIME producer, bit 30 of the
+ * COB-ID time stamp object (1012h).
+ *
+ * @param node CANopen node.
+ * @param ms   Milliseconds after midnight, at most 0FFFFFFFh.
+ * @param days Days since January 1, 1984.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p ms out of range.
+ * @retval -EACCES The node is not the TIME producer.
+ * @retval -EPERM The node is not in NMT state pre-operational or operational.
+ * @retval -EIO Failed to queue the message.
+ */
+int canopen_time_send(struct canopen_node *node, uint32_t ms, uint16_t days);
 
 /**
  * @brief Report an application error.

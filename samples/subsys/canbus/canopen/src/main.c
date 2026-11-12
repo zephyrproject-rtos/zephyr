@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(canopen_sample, LOG_LEVEL_INF);
 #define OD_COUNTER 0x2000U
 #define OD_OUTPUT  0x2001U
 
+#define MS_PER_DAY      86400000U
+#define TIME_PERIOD_MS 1000U
+
 static uint32_t counter;
 static uint8_t output;
 
@@ -71,6 +74,27 @@ static void hb_cb(struct canopen_node *node, uint8_t remote_id, enum canopen_hb_
 		(event == CANOPEN_HB_EVENT_TIMEOUT) ? "heartbeat lost" : "heartbeat", state);
 }
 
+static struct k_spinlock time_lock;
+static int64_t time_uptime;
+static uint32_t time_ms;
+static uint16_t time_days;
+static bool time_valid;
+
+static void time_cb(struct canopen_node *node, uint32_t ms, uint16_t days, void *user_data)
+{
+	ARG_UNUSED(node);
+	ARG_UNUSED(user_data);
+
+	K_SPINLOCK(&time_lock) {
+		time_uptime = k_uptime_get();
+		time_ms = ms;
+		time_days = days;
+		time_valid = true;
+	}
+
+	LOG_INF("TIME: day %u, %u ms", days, ms);
+}
+
 static void rpdo_cb(struct canopen_node *node, uint16_t pdo, void *user_data)
 {
 	ARG_UNUSED(node);
@@ -86,6 +110,7 @@ static const struct canopen_node_config sample_cfg = {
 	.reset_app_cb = reset_app_cb,
 	.rpdo_cb = rpdo_cb,
 	.hb_cb = hb_cb,
+	.time_cb = time_cb,
 	.tpdo = sample_tpdo,
 	.rpdo = sample_rpdo,
 	.tpdo_count = ARRAY_SIZE(sample_tpdo),
@@ -94,6 +119,24 @@ static const struct canopen_node_config sample_cfg = {
 };
 
 static struct canopen_node sample_node;
+
+static void time_produce(void)
+{
+	uint64_t ms = 0U;
+	uint32_t days = 0U;
+	bool valid;
+
+	K_SPINLOCK(&time_lock) {
+		valid = time_valid;
+		ms = time_ms + (uint64_t)(k_uptime_get() - time_uptime);
+		days = time_days;
+	}
+
+	if (valid) {
+		days += (uint32_t)(ms / MS_PER_DAY);
+		(void)canopen_time_send(&sample_node, (uint32_t)(ms % MS_PER_DAY), (uint16_t)days);
+	}
+}
 
 int main(void)
 {
@@ -121,8 +164,13 @@ int main(void)
 	LOG_INF("CANopen node 0x%02x started at %u bit/s", CONFIG_SAMPLE_NODE_ID,
 		CONFIG_SAMPLE_BITRATE);
 
-	while (true) {
+	for (uint32_t elapsed = 0U; true; elapsed += CONFIG_SAMPLE_COUNTER_PERIOD_MS) {
 		k_sleep(K_MSEC(CONFIG_SAMPLE_COUNTER_PERIOD_MS));
+
+		if (IS_ENABLED(CONFIG_CANOPEN_TIME) && (elapsed >= TIME_PERIOD_MS)) {
+			elapsed = 0U;
+			time_produce();
+		}
 
 		if (canopen_od_read(&sample_node, OD_COUNTER, 0U, &value, sizeof(value)) == 0) {
 			value++;

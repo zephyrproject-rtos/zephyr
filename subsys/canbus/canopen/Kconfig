@@ -110,6 +110,13 @@ config CANOPEN_HEARTBEAT_PRODUCER_MS
 	help
 	  Power-on value of object 1017h. 0 disables the heartbeat producer.
 
+config CANOPEN_TIME
+	bool "TIME producer and consumer"
+	help
+	  Provide the COB-ID time stamp object (1012h), the TIME consumer callback and
+	  canopen_time_send(). The node consumes TIME messages on CAN-ID 100h after power-on; the
+	  producer is enabled by setting bit 30 of 1012h.
+
 config CANOPEN_TPDO_COUNT
 	int "Number of TPDOs"
 	default 4

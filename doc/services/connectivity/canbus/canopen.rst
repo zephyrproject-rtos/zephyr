@@ -31,6 +31,9 @@ Features
   (``1003h``). The stack reports CAN overrun, error passive, recovery from bus-off, heartbeat
   timeout, RPDO length and timeout, and SYNC length errors.
 * Error behavior (``1029h``) for bus-off and heartbeat timeouts.
+* TIME producer and consumer (``1012h``), enabled with :kconfig:option:`CONFIG_CANOPEN_TIME`.
+  Received time stamps are passed to the ``time_cb`` callback, :c:func:`canopen_time_send`
+  sends one.
 
 Not supported: node guarding, PDOs requested by remote frames, MPDO, the CANopen manager
 boot-up of CiA 302, LSS (CiA 305) and CANopen FD (CiA 1301).

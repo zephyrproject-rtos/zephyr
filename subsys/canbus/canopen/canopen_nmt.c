@@ -64,6 +64,9 @@ void canopen_nmt_boot(struct canopen_node *node, bool reset_app)
 	canopen_sync_update(node);
 	canopen_pdo_filters(node);
 	canopen_hb_filters(node);
+	if (IS_ENABLED(CONFIG_CANOPEN_TIME)) {
+		canopen_time_filter(node);
+	}
 	k_msgq_purge(&node->txq);
 
 	nmt_send_state(node, CANOPEN_NMT_INITIALISING);

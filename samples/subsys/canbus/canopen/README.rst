@@ -19,6 +19,9 @@ The node-ID (default 16), the bitrate (default 500 kbit/s), the counter period
 and the TPDO1 event timer are set with the ``CONFIG_SAMPLE_*`` options. The
 heartbeat producer time (``1017h``) is 1000 ms.
 
+The node consumes TIME messages. Once it has received one and is made TIME producer by setting
+bit 30 of ``1012h``, it sends its clock once per second.
+
 Requirements
 ************
 
