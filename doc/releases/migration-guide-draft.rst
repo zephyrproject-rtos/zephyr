@@ -325,6 +325,10 @@ Wi-Fi
   ``-EALREADY``. The option no longer changes how connection requests made by the application
   are handled.
 
+* :kconfig:option:`CONFIG_ESP32_WIFI_STA_RECONNECT` is now enabled by default, so an Espressif
+  station that loses an established connection reconnects on its own. Set the option to ``n`` to
+  keep the station disconnected instead.
+
 * Espressif Wi-Fi connection requests now retry authentication and association failures, such as
   an access point that rejects the first attempt after the station was reset, instead of failing
   on the first rejection. A request that leaves the ``timeout`` field of
