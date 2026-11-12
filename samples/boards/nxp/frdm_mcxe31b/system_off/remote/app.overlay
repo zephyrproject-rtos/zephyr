@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&stdby_ram {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "STDBY_MAILBOX";
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&sram1 {
+	reg = <0x2042c000 DT_SIZE_K(16)>;
+};
+
+&lpuart_5 {
+	status = "disabled";
+};

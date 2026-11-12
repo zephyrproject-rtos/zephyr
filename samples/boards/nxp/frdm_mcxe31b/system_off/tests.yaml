@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 sample:
-  name: MCXE31B System Off (standby) Sample
+  name: MCXE System Off (standby) Sample
 common:
   tags: power
 tests:
@@ -17,3 +17,59 @@ tests:
       type: one_line
       regex:
         - "Completed 10 standby cycles"
+  sample.boards.frdm_mcxe32b.system_off.rtc:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    timeout: 120
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 standby cycles"
+  sample.boards.frdm_mcxe32b.system_off.gpio:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    extra_configs:
+      - CONFIG_APP_WAKEUP_GPIO=y
+    build_only: true
+  sample.boards.frdm_mcxe32b.system_off.rtc.periodic_ticks:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    extra_configs:
+      - CONFIG_TICKLESS_KERNEL=n
+    timeout: 120
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 standby cycles"
+  sample.boards.frdm_mcxe32b.system_off.both:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    extra_configs:
+      - CONFIG_APP_WAKEUP_BOTH=y
+    build_only: true
+  sample.boards.frdm_mcxe32b.system_off.dual_core:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    sysbuild: true
+    timeout: 120
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 standby cycles"
+  sample.boards.frdm_mcxe32b.system_off.dual_core.gpio:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    sysbuild: true
+    extra_configs:
+      - CONFIG_APP_WAKEUP_GPIO=y
+    build_only: true
+  sample.boards.frdm_mcxe32b.system_off.dual_core.both:
+    platform_allow:
+      - frdm_mcxe32b/mcxe32b/cpu0
+    sysbuild: true
+    extra_configs:
+      - CONFIG_APP_WAKEUP_BOTH=y
+    build_only: true

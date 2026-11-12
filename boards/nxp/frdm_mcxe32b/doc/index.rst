@@ -66,6 +66,24 @@ Serial Port
 
 The MCXE32B LPUART5 is used for the console.
 
+Power Management
+================
+
+The only low-power mode is standby, exposed through :c:func:`sys_poweroff`
+on CPU0 with :kconfig:option:`CONFIG_POWEROFF`. Wake-up causes a functional
+reset, not a resume. Only the 32 KiB standby SRAM retains its contents.
+
+Before power-off, applications must cooperatively stop CPU1 and gate its clock,
+and stop peripheral and DMA activity. The power-off hook rejects an enabled
+CPU1 rather than interrupting its work.
+
+RTC timeout and WKPU-capable GPIO inputs can wake the device. Configure GPIO
+interrupts through WKPU with ``NXP_SIUL2_GPIO_INT_WKPU`` and ``GPIO_INT_WAKEUP``.
+This arms the wake-up request and retains the input pad configuration. PTD5
+(SW3) is not a WKPU input. The
+:zephyr:code-sample:`frdm-mcxe31b-system-off` sample demonstrates RTC and PTE0
+(Arduino D12) wake-up, including a sysbuild dual-core shutdown handshake.
+
 Programming and Debugging
 *************************
 
