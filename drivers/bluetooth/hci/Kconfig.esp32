@@ -4,6 +4,8 @@ if BT_ESP32
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	int
+	default 114688 if SOC_SERIES_ESP32S31 && BT_CLASSIC && ESP32_BT_LE_ISO_SUPPORT
+	default 98304 if SOC_SERIES_ESP32S31 && BT_CLASSIC
 	default 81920 if SOC_SERIES_ESP32S31 && ESP32_BT_LE_ISO_SUPPORT
 	default 65536 if SOC_SERIES_ESP32S31
 	default 50000 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
@@ -55,6 +57,23 @@ config ESP32_BT_CTLR_BR_EDR_MAX_ACL_CONN
 	help
 	  Maximum number of BR/EDR ACL connections.
 	  Each connection uses about 1.2 KB of DRAM.
+
+config ESP32_BT_CTLR_BR_EDR_CRYPTO
+	bool
+	default y if SOC_SERIES_ESP32S31
+	select PSA_CRYPTO
+	select MBEDTLS_CTR_DRBG_C
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_KEY_TYPE_HMAC
+	help
+	  PSA crypto used by the BR/EDR controller for Secure Simple Pairing.
 
 config ESP32_BT_CTLR_BR_EDR_MIN_ENC_KEY_SZ_DFT
 	int "BR/EDR minimum encryption key size"
