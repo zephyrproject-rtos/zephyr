@@ -579,7 +579,15 @@ static int IRAM_ATTR i2c_esp32_controller_read(const struct device *dev, struct 
 			return ret;
 		}
 
-		i2c_ll_read_rxfifo(data->hal.dev, msg_buf, rd_filled);
+		if (IS_ENABLED(CONFIG_SOC_SERIES_ESP32)) {
+			/* DPORT errata: an IRQ during a FIFO read can return a wrong byte */
+			unsigned int key = irq_lock();
+
+			i2c_ll_read_rxfifo(data->hal.dev, msg_buf, rd_filled);
+			irq_unlock(key);
+		} else {
+			i2c_ll_read_rxfifo(data->hal.dev, msg_buf, rd_filled);
+		}
 		msg_buf += rd_filled;
 		msg_len -= rd_filled;
 	}
