@@ -60,7 +60,8 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 static uint32_t tx_dummy_data;
 static uint32_t rx_dummy_data;
 
-#define IFX_CAT1_SPI_DMA_BURST_SIZE 256
+/* DataWire X/Y loop limit: one block holds 256 frames, or 256 * k frames as 2D. */
+#define IFX_CAT1_SPI_DMA_ROW 256U
 #endif
 
 typedef void (*ifx_cat1_spi_event_callback_t)(void *callback_arg, uint32_t event);
@@ -86,7 +87,8 @@ struct ifx_cat1_dma_stream {
 	const struct device *dev_dma;
 	uint32_t dma_channel;
 	struct dma_config dma_cfg;
-	struct dma_block_config blk_cfg;
+	/* Buffer part and fill/discard part, each as 256 * k frames plus the rest. */
+	struct dma_block_config blk_cfg[4];
 };
 #endif
 
@@ -287,6 +289,36 @@ static bool ifx_cat1_spi_periph_one_shot(struct spi_context *ctx)
 #endif
 }
 
+#ifdef CONFIG_SPI_INFINEON_DMA
+/* Append frames at the memory side of the stream as 256 * k frames, then the rest. */
+static void ifx_cat1_spi_dma_add(struct ifx_cat1_dma_stream *stream, uintptr_t addr, bool inc,
+				 size_t frames, uint8_t dfs)
+{
+	bool tx = (stream->dma_cfg.channel_direction == MEMORY_TO_PERIPHERAL);
+	uint32_t adj = inc ? DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE;
+
+	while (frames > 0U) {
+		size_t n = (frames > IFX_CAT1_SPI_DMA_ROW)
+				   ? frames - (frames % IFX_CAT1_SPI_DMA_ROW)
+				   : frames;
+		struct dma_block_config *blk = &stream->blk_cfg[stream->dma_cfg.block_count++];
+
+		blk->block_size = n * dfs;
+		if (tx) {
+			blk->source_address = addr;
+			blk->source_addr_adj = adj;
+		} else {
+			blk->dest_address = addr;
+			blk->dest_addr_adj = adj;
+		}
+		if (inc) {
+			addr += n * dfs;
+		}
+		frames -= n;
+	}
+}
+#endif
+
 static void transfer_chunk(const struct device *dev)
 {
 	struct ifx_cat1_spi_data *const data = dev->data;
@@ -300,12 +332,8 @@ static void transfer_chunk(const struct device *dev)
 #ifdef CONFIG_SPI_INFINEON_DMA
 	const struct ifx_cat1_spi_config *const config = dev->config;
 
-	/*
-	 * The DMA path moves tx and rx with one common block length, so a one-shot transfer is
-	 * only used when it fits the FIFO and runs on the interrupt path. Larger frames keep the
-	 * chunked transfers.
-	 */
-	if (one_shot && (MAX(ctx->tx_len, ctx->rx_len) > Cy_SCB_GetFifoSize(config->reg_addr))) {
+	/* One DMA chain per channel holds at most 256 * 256 frames. */
+	if (one_shot && (MAX(ctx->tx_len, ctx->rx_len) > IFX_CAT1_SPI_DMA_ROW * IFX_CAT1_SPI_DMA_ROW)) {
 		one_shot = false;
 	}
 #endif
@@ -344,47 +372,27 @@ static void transfer_chunk(const struct device *dev)
 		}
 		ret = -EIO;
 	} else {
+		uint8_t dfs = data->dfs_value;
+
 		Cy_SCB_SetTxFifoLevel(config->reg_addr, 1U);
 		Cy_SCB_SetRxFifoLevel(config->reg_addr, 0U);
 
-		if (chunk_len > IFX_CAT1_SPI_DMA_BURST_SIZE) {
-			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				1;
-			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
-				IFX_CAT1_SPI_DMA_BURST_SIZE;
-			if (chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE != 0) {
-				LOG_ERR("DMA (DW) only supports lengths is multiple of burst "
-					"length (%d)",
-					IFX_CAT1_SPI_DMA_BURST_SIZE);
-				goto exit;
-			}
-			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
-		} else {
-			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				1;
-			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length = 0;
-			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
-		}
+		/* Anything beyond 256 * 256 frames goes in the next chunk. */
+		chunk_len = MIN(chunk_len, IFX_CAT1_SPI_DMA_ROW * IFX_CAT1_SPI_DMA_ROW);
+		data->chunk_len = chunk_len;
+		tx_len = MIN(tx_len, chunk_len);
+		rx_len = MIN(rx_len, chunk_len);
 
-		dma_rx->blk_cfg.block_size = dma_tx->blk_cfg.block_size = chunk_len;
-
-		if (spi_context_rx_buf_on(ctx)) {
-			dma_rx->blk_cfg.dest_address = (uint32_t)ctx->rx_buf;
-			dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		} else {
-			dma_rx->blk_cfg.dest_address = (uint32_t)&rx_dummy_data;
-			dma_rx->blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
-
-		if (spi_context_tx_buf_on(ctx)) {
-			dma_tx->blk_cfg.source_address = (uint32_t)ctx->tx_buf;
-			dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-
-		} else {
-			tx_dummy_data = 0;
-			dma_tx->blk_cfg.source_address = (uint32_t)&tx_dummy_data;
-			dma_tx->blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		}
+		/* Both channels run the full chunk: past its buffer, tx sends fill, rx discards. */
+		tx_dummy_data = 0;
+		dma_tx->dma_cfg.block_count = 0;
+		dma_rx->dma_cfg.block_count = 0;
+		ifx_cat1_spi_dma_add(dma_tx, (uintptr_t)ctx->tx_buf, true, tx_len, dfs);
+		ifx_cat1_spi_dma_add(dma_tx, (uintptr_t)&tx_dummy_data, false, chunk_len - tx_len,
+				     dfs);
+		ifx_cat1_spi_dma_add(dma_rx, (uintptr_t)ctx->rx_buf, true, rx_len, dfs);
+		ifx_cat1_spi_dma_add(dma_rx, (uintptr_t)&rx_dummy_data, false, chunk_len - rx_len,
+				     dfs);
 
 		ret = dma_config(dma_rx->dev_dma, dma_rx->dma_channel, &dma_rx->dma_cfg);
 		if (ret < 0) {
@@ -798,10 +806,15 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		if (!device_is_ready(data->dma_rx.dev_dma)) {
 			return -ENODEV;
 		}
-		data->dma_rx.blk_cfg.source_address = (uint32_t)(&(config->reg_addr->RX_FIFO_RD));
-		data->dma_rx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		data->dma_rx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
+		for (size_t i = 0; i < ARRAY_SIZE(data->dma_rx.blk_cfg); i++) {
+			data->dma_rx.blk_cfg[i].source_address =
+				(uint32_t)(&(config->reg_addr->RX_FIFO_RD));
+			data->dma_rx.blk_cfg[i].source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			if (i + 1 < ARRAY_SIZE(data->dma_rx.blk_cfg)) {
+				data->dma_rx.blk_cfg[i].next_block = &data->dma_rx.blk_cfg[i + 1];
+			}
+		}
+		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg[0];
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
 		data->dma_rx.dma_cfg.source_handshake = 0;
@@ -816,10 +829,15 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		if (!device_is_ready(data->dma_tx.dev_dma)) {
 			return -ENODEV;
 		}
-		data->dma_tx.blk_cfg.dest_address = (uint32_t)(&(config->reg_addr->TX_FIFO_WR));
-		data->dma_tx.blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
-		data->dma_tx.blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
+		for (size_t i = 0; i < ARRAY_SIZE(data->dma_tx.blk_cfg); i++) {
+			data->dma_tx.blk_cfg[i].dest_address =
+				(uint32_t)(&(config->reg_addr->TX_FIFO_WR));
+			data->dma_tx.blk_cfg[i].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+			if (i + 1 < ARRAY_SIZE(data->dma_tx.blk_cfg)) {
+				data->dma_tx.blk_cfg[i].next_block = &data->dma_tx.blk_cfg[i + 1];
+			}
+		}
+		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg[0];
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
 		data->dma_tx.dma_cfg.source_handshake = 1;
@@ -861,7 +879,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.source_burst_length = 1,                                                          \
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
-		.complete_callback_en = 1,                                                         \
+		.complete_callback_en = 0,                                                         \
 	},
 
 #define SPI_DMA_CHANNEL(index, dir, ch_dir, src_data_size, dst_data_size)                          \
