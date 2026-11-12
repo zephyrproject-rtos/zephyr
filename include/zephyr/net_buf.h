@@ -24,7 +24,7 @@ extern "C" {
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
  * @since 1.0
- * @version 1.2.0
+ * @version 1.3.0
  * @ingroup os_services
  *
  * The functions that add, push, pull or remove data check with an assertion
@@ -1647,6 +1647,30 @@ static inline void net_buf_destroy(struct net_buf *buf)
 
 	k_lifo_put(&pool->free, buf);
 }
+
+/**
+ * @brief Take a buffer back into use from a custom destroy callback
+ *
+ * This helper is only intended to be used from custom destroy callbacks, in
+ * place of net_buf_destroy(), for a buffer that is to be used again at once.
+ * The buffer does not return to its pool, where another allocator could get
+ * it first.
+ *
+ * The buffer is left as net_buf_alloc() returns one: reset, without
+ * fragments, with zeroed user data and with one reference, which the caller
+ * owns. It keeps the data area and the flags it had.
+ *
+ * The pointer of the callback is set to NULL, as net_buf_take() does with a
+ * reference that moves: the returned reference is the only way to the buffer
+ * from here on, so the callback is left without a pointer that it could still
+ * destroy.
+ *
+ * @param orig Pointer to the buffer pointer that the destroy callback was
+ *             called with. Will be set to NULL on return.
+ *
+ * @return The buffer, with one reference that the caller owns.
+ */
+struct net_buf *__must_check net_buf_reuse(struct net_buf **orig);
 
 /**
  * @brief Reset buffer
