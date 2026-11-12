@@ -1,0 +1,4 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright (c) 2026 TeraTron GmbH */
+/delete-node/ &zephyr_udc0;
+#include "../virtual.overlay"

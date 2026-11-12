@@ -1,0 +1,31 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* SPDX-FileCopyrightText: Copyright (c) 2026 TeraTron GmbH */
+/ {
+	zephyr_uhc0: uhc {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <8>;
+			maximum-speed = "high-speed";
+
+			reader-a {
+				compatible = "zephyr,ccid";
+				instance-id = <2>;
+				label = "Test A";
+			};
+
+			reader-b {
+				compatible = "zephyr,ccid";
+				instance-id = <7>;
+				label = "Test B";
+			};
+
+			reader-c {
+				compatible = "zephyr,ccid";
+				instance-id = <19>;
+				label = "Test C";
+			};
+		};
+	};
+};

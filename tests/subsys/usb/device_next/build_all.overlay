@@ -72,4 +72,9 @@
 	cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
 	};
+
+	ccid-reader {
+		compatible = "zephyr,ccid";
+		instance-id = <0>;
+	};
 };
