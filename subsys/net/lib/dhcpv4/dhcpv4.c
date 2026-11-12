@@ -2149,11 +2149,9 @@ static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface
 				       void *user_data __unused)
 {
 	switch (mgmt_event) {
-#ifdef CONFIG_NET_DHCPV4_RESTART_ON_IF_UP
 	case NET_EVENT_IF_UP:
 		dhcpv4_post_events(iface, DHCPV4_EVENT_IF_UP);
 		break;
-#endif /* CONFIG_NET_DHCPV4_RESTART_ON_IF_UP */
 	case NET_EVENT_IF_DOWN:
 		dhcpv4_post_events(iface, DHCPV4_EVENT_IF_DOWN);
 		break;
@@ -2166,8 +2164,7 @@ static void dhcpv4_iface_event_handler(uint64_t mgmt_event, struct net_if *iface
  * if interface is coming back up again.
  */
 NET_MGMT_REGISTER_EVENT_HANDLER(dhcpv4_iface_events,
-				IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
-				(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN,
+				NET_EVENT_IF_UP | NET_EVENT_IF_DOWN,
 				dhcpv4_iface_event_handler, NULL);
 
 #if defined(CONFIG_NET_IPV4_ACD)
