@@ -129,6 +129,9 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 --libc++)
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)
 
+# Flag for lowering switch statements as comparisons instead of as a jump table
+set_compiler_property(PROPERTY no_jump_tables --no_switch_tables)
+
 # Flag for disabling exceptions in C++
 set_property(TARGET compiler-cpp PROPERTY no_exceptions --no_exceptions)
 

@@ -416,6 +416,10 @@ GROUP_END(DTCM)
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()
 
+#ifdef CONFIG_XIP
+#include <zephyr/linker/sw-isr-table-switch-tail.ld>
+#endif
+
 /* Must be last in romable region */
 SECTION_PROLOGUE(.last_section,,)
 {

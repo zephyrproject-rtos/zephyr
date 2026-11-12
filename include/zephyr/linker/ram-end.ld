@@ -4,6 +4,10 @@
  * end-of-used-memory symbols
  */
 
+#ifndef CONFIG_XIP
+#include <zephyr/linker/sw-isr-table-switch-tail.ld>
+#endif
+
     SECTION_PROLOGUE(.last_ram_section, (NOLOAD),)
     {
 #ifdef LAST_RAM_ALIGN
