@@ -97,6 +97,17 @@ spi0: &scb0 {
 	cs-gpios = <&gpio_prt11 1 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	dmas = <&dma1 16>, <&dma1 17>;
+	dma-names = "tx", "rx";
+	mux-states = <&trigmux CYT4DN_TRIG_OUT_1TO1_1_SCB_TX_TO_PDMA10
+		      IFX_TRIGMUX_LEVEL IFX_TRIGMUX_ON>,
+		     <&trigmux CYT4DN_TRIG_OUT_1TO1_1_SCB_RX_TO_PDMA10
+		      IFX_TRIGMUX_LEVEL IFX_TRIGMUX_ON>;
+	mux-state-names = "tx", "rx";
+};
+
+&trigmux {
+	status = "okay";
 };
 
 /* MISO floats while no peripheral is selected */
