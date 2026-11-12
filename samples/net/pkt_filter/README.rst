@@ -37,13 +37,13 @@ either ``qemu_x86`` or ``native_sim`` boards:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/pkt_filter
    :board: <board to use>
-   :conf: "prj.conf overlay-vlan.conf"
+   :conf: "prj.conf vlan.conf"
    :goals: build
    :compact:
 
 In this example, we enable VLAN support with these settings:
 
-The VLAN overlay configuration file :zephyr_file:`samples/net/pkt_filter/overlay-vlan.conf`
+The VLAN extra config file :zephyr_file:`samples/net/pkt_filter/vlan.conf`
 creates two virtual LAN networks with these settings:
 
 - VLAN tag 100: IPv4 198.51.100.1 and IPv6 2001:db8:100::1
