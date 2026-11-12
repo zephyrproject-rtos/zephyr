@@ -33,9 +33,9 @@ Caveats
   :zephyr:board:`Freedom-K64F <frdm_k64f>` kit using the ethernet connectivity.  The
   application should build and run for other platforms with same connectivity.
 
-* The sample provides overlay files to enable other technologies like WIFI,
+* The sample provides extra config files to enable other technologies like WIFI,
   802.15.4 or OpenThread.  These technologies depends on
-  hardware resources and the correspondent overlay was designed to be generic
+  hardware resources and the correspondent extra config file was designed to be generic
   instead full optimized.
 
 * It is important understand that some wireless technologies may require a
@@ -104,7 +104,7 @@ The UpdateHub Cloud is an enterprise-grade solution.  It provides almost same
 resources than UpdateHub-CE with the DTLS as main diferential.  For more
 details on how to use the UpdateHub Cloud please refer to the documentation on
 `updatehub.io`_.  The UpdateHub Cloud has the option to use CoAPS/DTLS or not.
-If you want to use the CoAPS/DTLS, simply add the ``overlay-dtls.conf`` when
+If you want to use the CoAPS/DTLS, simply add the ``dtls.conf`` when
 building the sample.  You can use the provided certificate for test this
 example or create your own.  The below procedure instruct how create a new
 certificate using openssl on a Linux machine on terminal ``terminal 2``.
@@ -131,7 +131,7 @@ directory.
 .. note::
 
     When using UpdateHub Cloud server it is necessary update your own
-    ``overlay-prj.conf`` with option :kconfig:option:`CONFIG_UPDATEHUB_CE` equal ``n``.
+    ``local.conf`` with option :kconfig:option:`CONFIG_UPDATEHUB_CE` equal ``n``.
 
 
 Step 3: Configure UpdateHub Sample
@@ -152,14 +152,14 @@ preference, remembering that the limit is between 0 and 43200 minutes
 (30 days).  The default value is 1440 minutes (24h).
 
 Set :kconfig:option:`CONFIG_UPDATEHUB_PRODUCT_UID` with your product ID.  When using
-UpdateHub-CE the valid is available at ``overlay-prj.conf.example`` file.
+UpdateHub-CE the valid is available at ``local.conf.example`` file.
 
 
 Step 4: Build UpdateHub App
 ===========================
 
-In order to correctly build UpdateHub the overlay files must be use correctly.
-More information about overlay files in :ref:`important-build-vars`.
+In order to correctly build UpdateHub the extra config files must be used correctly.
+More information about extra config files in :ref:`important-build-vars`.
 
 .. note::
     It is out of scope at this moment provide support for experimental
@@ -175,14 +175,14 @@ The ethernet depends only from base configuration.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: [ frdm_k64f | nucleo_f767zi ]
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE=overlay-prj.conf
+    :gen-args: -DEXTRA_CONF_FILE=local.conf
     :goals: build
     :compact:
 
 Step 4.2: Build for WiFi
 ------------------------
 
-For WiFi, it needs add ``overlay-wifi.conf``.  Here a shield provides WiFi
+For WiFi, it needs add ``wifi.conf``.  Here a shield provides WiFi
 connectivity using, for instance, arduino headers.  See :ref:`module_esp_8266`
 for details.
 
@@ -190,7 +190,7 @@ for details.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: [ frdm_k64f | nrf52840dk/nrf52840 | nucleo_f767zi ]
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-wifi.conf;overlay-prj.conf"
+    :gen-args: -DEXTRA_CONF_FILE="wifi.conf;local.conf"
     :shield: esp_8266_arduino
     :goals: build
     :compact:
@@ -202,7 +202,7 @@ for details.
 Step 4.3: Build for IEEE 802.15.4 [experimental]
 ------------------------------------------------
 
-For IEEE 802.15.4 needs add ``overlay-802154.conf``.  This requires two nodes:
+For IEEE 802.15.4 needs add ``802154.conf``.  This requires two nodes:
 one will be the host and the second one will be the device under test.  The
 validation needs a Linux kernel >= 4.9 with all 6loWPAN support. It is out of scope
 at this moment provide support since it is experimental.  The gateway was
@@ -212,7 +212,7 @@ tested with both native linux driver and ``atusb``.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: nrf52840dk/nrf52840
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
+    :gen-args: -DEXTRA_CONF_FILE="802154.conf;local.conf"
     :goals: build
     :compact:
 
@@ -220,7 +220,7 @@ tested with both native linux driver and ``atusb``.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: [ frdm_k64f | nucleo_f767zi ]
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
+    :gen-args: -DEXTRA_CONF_FILE="802154.conf;local.conf"
     :shield: atmel_rf2xx_arduino
     :goals: build
     :compact:
@@ -228,7 +228,7 @@ tested with both native linux driver and ``atusb``.
 Step 4.4: Build for OpenThread Network [experimental]
 -----------------------------------------------------
 
-The OpenThread requires the ``overlay-ot.conf``.  It requires two nodes:
+The OpenThread requires the ``ot.conf``.  It requires two nodes:
 one will be the host NCP and the second one will be the device under test.  The
 validation needs a Linux kernel >= 4.9 with optional NAT-64 support.  The
 start point is try reproduce the `OpenThread Router`_. It is
@@ -239,7 +239,7 @@ gateway was tested using two boards with OpenThread 1.1.1 on NCP mode.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: nrf52840dk/nrf52840
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-ot.conf;overlay-prj.conf"
+    :gen-args: -DEXTRA_CONF_FILE="ot.conf;local.conf"
     :goals: build
     :compact:
 
@@ -319,7 +319,7 @@ First, install UpdateHub Utilities (``uhu``) on your system, using:
     pip3 install --user uhu
 
 After installing uhu you will need to set the ``product-uid``.  The value for
-UpdateHub-CE can be found at ``overlay-prj.conf.example`` file.  For UpdateHub
+UpdateHub-CE can be found at ``local.conf.example`` file.  For UpdateHub
 Cloud, you need copy the value from the web interface.
 
 .. code-block:: console
@@ -378,7 +378,7 @@ be used to speed-up.
     The message ``Could not receive data`` means that the application was not
     able to reached the updatehub server for some reason.  The most common
     cases are server down, missing network routes and forget to change the
-    content of ``overlay-prj.conf`` file.
+    content of ``local.conf`` file.
 
 
 Step 11: Create a rollout
