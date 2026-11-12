@@ -1,0 +1,50 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - perf
+    - profiling
+    - pmu
+  extra_configs:
+    - CONFIG_ARM64_PMUV3=y
+    - CONFIG_NUM_METAIRQ_PRIORITIES=1
+    - platform:fvp_base_revc_2xaem/v8a/smp:CONFIG_SCHED_CPU_MASK=y
+    - CONFIG_PROFILING_PERF_EVENT_PROVIDER_CPU=y
+    - CONFIG_PROFILING_PERF_EVENTS_MAX_EVENTS=16
+  platform_allow:
+    - fvp_base_revc_2xaem/v8a
+    - fvp_base_revc_2xaem/v8a/smp
+  integration_platforms:
+    - fvp_base_revc_2xaem/v8a
+    - fvp_base_revc_2xaem/v8a/smp
+  timeout: 120
+
+tests:
+  profiling.perf_events.arm64: {}
+  profiling.perf_events.shell:
+    tags:
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_ARGC_MAX=35
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=2048
+      - CONFIG_PROFILING_PERF_EVENTS_SHELL=y
+  profiling.perf_events.shell_record:
+    tags:
+      - shell
+    extra_configs:
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_ARGC_MAX=35
+      - CONFIG_SHELL_BACKEND_SERIAL=n
+      - CONFIG_SHELL_BACKEND_DUMMY=y
+      - CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE=8192
+      - CONFIG_PROFILING_PERF_EVENTS_SHELL=y
+      - CONFIG_PROFILING_PERF=y
+      - CONFIG_PROFILING_PERF_BUFFER_SIZE=256
+      - CONFIG_ARCH_STACKWALK=y
+      - CONFIG_THREAD_STACK_INFO=y
+      - CONFIG_FRAME_POINTER=y

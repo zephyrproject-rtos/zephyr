@@ -1342,6 +1342,7 @@ Debug:
     - scripts/profiling/stackcollapse.py
     - subsys/profiling/
     - tests/subsys/logging/log_frontend_stmesp_demux/
+    - tests/subsys/profiling/perf_events/
   labels:
     - "area: Debugging"
   tests:
