@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Dev It Wise
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	pwm1_pulse_io: pwm1_pulse_io {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 3)>;
+		};
+	};
+
+	pwm1_pulse_io_sleep: pwm1_pulse_io_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 3)>;
+			low-power-enable;
+		};
+	};
+};
+
+pulse_io0: &pwm1 {
+	compatible = "nordic,nrf-pwm-pulse-io";
+	#pulse-io-cells = <1>;
+	pinctrl-0 = <&pwm1_pulse_io>;
+	pinctrl-1 = <&pwm1_pulse_io_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
