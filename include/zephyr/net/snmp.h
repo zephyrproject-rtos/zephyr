@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/net/net_ip.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/util.h>
 
@@ -33,6 +34,22 @@ extern "C" {
 
 /** Maximum number of sub-identifiers in an object identifier. */
 #define SNMP_OID_MAX_LEN CONFIG_SNMP_OID_MAX_LEN
+
+/** UDP port notification receivers conventionally listen on. */
+#define SNMP_TRAP_PORT 162
+
+/** Sub-identifiers of the coldStart notification of @rfc{3418}. */
+#define SNMP_TRAP_COLD_START             1, 3, 6, 1, 6, 3, 1, 1, 5, 1
+/** Sub-identifiers of the authenticationFailure notification of @rfc{3418}. */
+#define SNMP_TRAP_AUTHENTICATION_FAILURE 1, 3, 6, 1, 6, 3, 1, 1, 5, 5
+
+/** Protocol version of a message. */
+enum snmp_version {
+	/** SNMPv1, @rfc{1157}. */
+	SNMP_VERSION_V1 = 0,
+	/** SNMPv2c, @rfc{1901} and @rfc{3416}. */
+	SNMP_VERSION_V2C = 1,
+};
 
 /** ASN.1 types a managed object can have. */
 enum snmp_type {
@@ -83,6 +100,16 @@ struct snmp_value {
 			size_t len;
 		} oid;
 	};
+};
+
+/** One variable binding: an instance identifier and its value. */
+struct snmp_varbind {
+	/** Instance identifier, the object identifier followed by its index or 0. */
+	const uint32_t *oid;
+	/** Number of sub-identifiers in @ref oid. */
+	size_t oid_len;
+	/** Value of the instance. */
+	struct snmp_value value;
 };
 
 /** Phase of a SET request in which a setter is invoked. */
@@ -409,6 +436,79 @@ int snmp_mib2_system_set_location(const char *location);
  * @param enabled true for enabled(1), false for disabled(2).
  */
 void snmp_mib2_snmp_set_authen_traps(bool enabled);
+
+/**
+ * @brief A receiver of notifications.
+ *
+ * Initialize with a designated initializer: later releases may add members,
+ * which then default to zero.
+ */
+struct snmp_notification_target {
+	/** Address and port of the receiver, usually SNMP_TRAP_PORT. */
+	const struct net_sockaddr *addr;
+	/** Size of @ref addr. */
+	net_socklen_t addrlen;
+	/** Message version to send to this receiver. */
+	enum snmp_version version;
+	/** Community string carried by the notifications. */
+	const char *community;
+};
+
+/**
+ * @brief Add a receiver for notifications.
+ *
+ * The agent sends coldStart when it starts and authenticationFailure when
+ * it drops a request with an unknown community, as long as
+ * snmpEnableAuthenTraps permits, to every receiver added here. Receivers
+ * that should see coldStart must be added before snmp_agent_start(). The
+ * description is copied.
+ *
+ * @param target Description of the receiver.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL A pointer is NULL, the address family is unsupported or
+ *         the version is unknown.
+ * @retval -EMSGSIZE The community is longer than CONFIG_SNMP_COMMUNITY_MAX_LEN.
+ * @retval -ENOMEM CONFIG_SNMP_NOTIFICATION_TARGETS receivers are already configured.
+ */
+int snmp_agent_add_notification_target(const struct snmp_notification_target *target);
+
+/**
+ * @brief Remove all notification receivers.
+ */
+void snmp_agent_clear_notification_targets(void);
+
+/**
+ * @brief Send a notification to every receiver.
+ *
+ * The bindings are the instances named by the OBJECTS clause of the
+ * NOTIFICATION-TYPE, in that order. Version 2c receivers get an
+ * SNMPv2-Trap-PDU with sysUpTime.0, snmpTrapOID.0 and then the bindings.
+ * Version 1 receivers get a Trap-PDU translated as @rfc{3584,section-3.2}
+ * describes: a standard notification maps to its generic trap, any other to
+ * enterpriseSpecific with the enterprise derived from the notification
+ * identifier, and the bindings follow unchanged. A notification whose
+ * bindings carry a Counter64 value cannot be expressed in version 1 and is
+ * not sent to those receivers.
+ *
+ * The bindings are encoded before this function returns; the buffers they
+ * reference need not outlive the call.
+ *
+ * @param notification Sub-identifiers of the NOTIFICATION-TYPE.
+ * @param len Number of sub-identifiers, at least 2.
+ * @param bindings Variable bindings to carry, or NULL when @p count is 0.
+ * @param count Number of entries in @p bindings.
+ *
+ * @retval 0 Sent to every receiver, or no receiver is configured.
+ * @retval -EINVAL @p notification is NULL, cannot be encoded or has fewer than
+ *         2 sub-identifiers, or @p bindings is NULL with a non-zero @p count,
+ *         or a binding has no name or a name or value that cannot be encoded.
+ * @retval -EMSGSIZE The message does not fit CONFIG_SNMP_MAX_PDU_SIZE.
+ * @retval -ENOTCONN The agent is not running.
+ * @retval -errno The first error a socket call reported.
+ */
+int snmp_agent_notify(const uint32_t *notification, size_t len, const struct snmp_varbind *bindings,
+		      size_t count);
 
 /**
  * @}

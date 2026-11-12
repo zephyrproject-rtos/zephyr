@@ -17,9 +17,6 @@ LOG_MODULE_REGISTER(net_snmp, CONFIG_SNMP_LOG_LEVEL);
 #include "snmp_ber.h"
 #include "snmp_internal.h"
 
-#define SNMP_VERSION_1  0
-#define SNMP_VERSION_2C 1
-
 /* Number of GETBULK repeaters the agent keeps state for. */
 #define BULK_REPEATERS_MAX (IS_ENABLED(CONFIG_SNMP_V2C) ? CONFIG_SNMP_MAX_VARBINDS : 1)
 
@@ -359,12 +356,20 @@ static int write_value(struct snmp_ber_writer *w, const struct snmp_value *val)
 	}
 }
 
-/*
- * Append one variable binding. With a non-zero exception tag the value is
- * the SNMPv2c exception instead of val. Nothing is written on error.
- */
-static int write_varbind(struct snmp_ber_writer *w, const uint32_t *name, size_t name_len,
-			 const struct snmp_value *val, uint8_t exception)
+size_t snmp_varbind_size(const uint32_t *name, size_t name_len, const struct snmp_value *val)
+{
+	size_t name_size = snmp_ber_sizeof_oid(name, name_len);
+	size_t val_size = value_size(val);
+
+	if (name_size == 0U || val_size == 0U) {
+		return 0U;
+	}
+
+	return snmp_ber_sizeof_element(name_size + val_size);
+}
+
+int snmp_write_varbind(struct snmp_ber_writer *w, const uint32_t *name, size_t name_len,
+		       const struct snmp_value *val, uint8_t exception)
 {
 	size_t saved = w->pos;
 	size_t name_size = snmp_ber_sizeof_oid(name, name_len);
@@ -573,7 +578,7 @@ static struct snmp_status process_get(const struct snmp_request *req, struct snm
 			break;
 		}
 
-		ret = write_varbind(w, name, name_len, &val, exception);
+		ret = snmp_write_varbind(w, name, name_len, &val, exception);
 		if (ret == -EMSGSIZE) {
 			return (struct snmp_status){SNMP_ERR_TOO_BIG, 0};
 		}
@@ -622,7 +627,7 @@ static struct snmp_status getnext_bindings(const struct snmp_request *req,
 			return (struct snmp_status){SNMP_ERR_GEN_ERR, index};
 		}
 
-		ret = write_varbind(w, name, name_len, &val, exception);
+		ret = snmp_write_varbind(w, name, name_len, &val, exception);
 		if (ret == -EMSGSIZE) {
 			return (struct snmp_status){
 				partial_ok ? SNMP_ERR_NO_ERROR : SNMP_ERR_TOO_BIG, 0};
@@ -701,7 +706,7 @@ static struct snmp_status process_getbulk(const struct snmp_request *req, struct
 			return (struct snmp_status){SNMP_ERR_GEN_ERR, index};
 		}
 
-		ret = write_varbind(w, name, name_len, &val, exception);
+		ret = snmp_write_varbind(w, name, name_len, &val, exception);
 		if (ret == -EMSGSIZE) {
 			/* A partial answer is still a valid one. */
 			return (struct snmp_status){SNMP_ERR_NO_ERROR, 0};
@@ -737,7 +742,8 @@ static struct snmp_status process_getbulk(const struct snmp_request *req, struct
 				all_done = false;
 			}
 
-			ret = write_varbind(w, bulk_last[i], bulk_last_len[i], &val, exception);
+			ret = snmp_write_varbind(w, bulk_last[i], bulk_last_len[i], &val,
+						 exception);
 			if (ret == -EMSGSIZE) {
 				return (struct snmp_status){SNMP_ERR_NO_ERROR, 0};
 			}
@@ -944,6 +950,9 @@ size_t snmp_process_message(const uint8_t *in, size_t in_len, uint8_t *out, size
 	if (access == SNMP_ACCESS_NONE) {
 		snmp_stats.in_bad_community_names++;
 		LOG_DBG("Dropping message with unknown community");
+		if (IS_ENABLED(CONFIG_SNMP_NOTIFICATIONS)) {
+			snmp_notify_authentication_failure();
+		}
 		return 0U;
 	}
 

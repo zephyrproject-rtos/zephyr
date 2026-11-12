@@ -93,6 +93,24 @@ config SNMP_SET_ENABLE
 	  Without this option every SET request is answered with an
 	  authorizationError (noSuchName for SNMPv1).
 
+config SNMP_NOTIFICATIONS
+	bool "Send notifications"
+	default y
+	help
+	  Send coldStart when the agent starts and authenticationFailure when
+	  a request with an unknown community is dropped, to the receivers the
+	  application adds with snmp_agent_add_notification_target(), and let
+	  the application send its own notifications with snmp_agent_notify().
+
+config SNMP_NOTIFICATION_TARGETS
+	int "Maximum number of notification receivers"
+	default 2
+	range 1 16
+	depends on SNMP_NOTIFICATIONS
+	help
+	  Number of receivers that can be added with
+	  snmp_agent_add_notification_target().
+
 config SNMP_MIB2_SYSTEM
 	bool "MIB-2 system group"
 	default y
