@@ -120,6 +120,11 @@ Libraries / Subsystems
     enabled, so a connection can use send and receive windows above 64 KB. The window size
     options, ``SO_RCVBUF`` and ``SO_SNDBUF`` then accept values up to 65535 << 14.
 
+  * SNMP
+
+    * New :ref:`SNMPv1 and SNMPv2c agent <snmp_interface>` (:kconfig:option:`CONFIG_SNMP`)
+      with build-time registration of managed objects.
+
 * PTP Clock
 
   * :c:func:`ptp_clock_adjust_rate` adjusts the clock rate by an offset in scaled parts per
