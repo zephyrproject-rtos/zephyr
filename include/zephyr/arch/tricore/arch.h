@@ -24,7 +24,7 @@
 #include <zephyr/arch/tricore/irq.h>
 #include <zephyr/arch/tricore/cr.h>
 
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/tricore/sys_io.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/common/ffs.h>
 
