@@ -107,7 +107,13 @@ static int as5600_get(const struct device *dev, enum sensor_channel chan,
 
 static int as5600_initialize(const struct device *dev)
 {
+	const struct as5600_dev_cfg *dev_cfg = dev->config;
 	struct as5600_dev_data *const dev_data = dev->data;
+
+	if (!i2c_is_ready_dt(&dev_cfg->i2c_port)) {
+		LOG_ERR("I2C bus not ready");
+		return -ENODEV;
+	}
 
 	dev_data->position = 0;
 
