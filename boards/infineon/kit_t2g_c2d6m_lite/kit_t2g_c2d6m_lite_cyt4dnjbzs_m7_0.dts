@@ -66,5 +66,7 @@ i2c11: &scb11 {
 	clock-frequency = <100000>;
 	pinctrl-0 = <&p0_5_scb11_i2c_scl &p0_4_scb11_i2c_sda>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio_prt0 5 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt0 4 GPIO_OPEN_DRAIN>;
 	status = "okay";
 };
