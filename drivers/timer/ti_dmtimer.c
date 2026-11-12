@@ -61,6 +61,8 @@ static const struct device *systick_timer_dev = DEVICE_DT_GET(SYSTEM_TIMER_NODE)
 #define TI_DM_TIMER_WRITE(dev, data, reg, bits)                                                    \
 	ti_dm_timer_write_masks(data, DEVICE_MMIO_GET(dev) + TI_DM_TIMER_##reg,                    \
 				TI_DM_TIMER_MASK(reg##_##bits), TI_DM_TIMER_SHIFT(reg##_##bits))
+#define TI_DM_TIMER_WRITE_RAW(dev, reg, val)                            \
+	sys_write32(val, DEVICE_MMIO_GET(dev) + TI_DM_TIMER_##reg)
 
 static void ti_dm_timer_write_masks(uint32_t data, uint32_t reg, uint32_t mask, uint32_t shift)
 {
@@ -183,12 +185,6 @@ static int sys_clock_driver_init(void)
 
 	IRQ_CONNECT(TIMER_IRQ_NUM, TIMER_IRQ_PRIO, ti_dmtimer_isr, NULL, TIMER_IRQ_FLAGS);
 
-	/* Disable prescalar */
-	TI_DM_TIMER_WRITE(systick_timer_dev, 0, TCLR, PRE);
-
-	/* Select autoreload mode */
-	TI_DM_TIMER_WRITE(systick_timer_dev, 1, TCLR, AR);
-
 	/* Enable match interrupt */
 	TI_DM_TIMER_WRITE(systick_timer_dev, 1, IRQENABLE_SET, MAT_EN_FLAG);
 
@@ -201,11 +197,10 @@ static int sys_clock_driver_init(void)
 	/* Load timer compare value */
 	TI_DM_TIMER_WRITE(systick_timer_dev, CYC_PER_TICK, TMAR, COMPARE_VALUE);
 
-	/* Enable compare mode */
-	TI_DM_TIMER_WRITE(systick_timer_dev, 1, TCLR, CE);
-
-	/* Start the timer */
-	TI_DM_TIMER_WRITE(systick_timer_dev, 1, TCLR, ST);
+	/* Start the timer in autoreload and compare mode, with the prescaler disabled */
+	TI_DM_TIMER_WRITE_RAW(systick_timer_dev, TCLR,
+			      TI_DM_TIMER_MASK(TCLR_ST) | TI_DM_TIMER_MASK(TCLR_AR) |
+			      TI_DM_TIMER_MASK(TCLR_CE));
 
 	irq_enable(TIMER_IRQ_NUM);
 
