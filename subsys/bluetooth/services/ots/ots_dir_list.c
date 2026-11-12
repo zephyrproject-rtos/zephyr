@@ -295,6 +295,19 @@ void bt_ots_dir_list_update(struct bt_ots_dir_list *dir_list, void *obj_manager)
 	dir_list_update_size(dir_list, obj_manager);
 }
 
+void bt_ots_dir_list_obj_removed(struct bt_ots_dir_list *dir_list, void *obj_manager,
+				 const struct bt_gatt_ots_object *obj)
+{
+	/* A read searches for its next part from the anchor, which has to be in the list. Starting
+	 * from the first object instead finds the same offsets: during a read, the Bluetooth side
+	 * deletes only objects without a name, which have no record, and refuses to create, delete
+	 * or rename others until the read ends.
+	 */
+	if (dir_list->anchor_object == obj) {
+		bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
+	}
+}
+
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 {
 	struct bt_gatt_ots_object *dir_list_obj;

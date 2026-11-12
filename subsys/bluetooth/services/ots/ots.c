@@ -426,7 +426,9 @@ int bt_ots_obj_add(struct bt_ots *ots, const struct bt_ots_obj_add_param *param)
 	return obj->id;
 }
 
-/* An object that goes away is no longer current for any client, nor the object of the transfer */
+/* An object that goes away is no longer current for any client, nor the object of the transfer,
+ * nor where a read of the Directory Listing Object goes on from
+ */
 static void obj_refs_clear(struct bt_ots *ots, const struct bt_gatt_ots_object *obj)
 {
 	ARRAY_FOR_EACH(ots->cur_obj, i) {
@@ -437,6 +439,10 @@ static void obj_refs_clear(struct bt_ots *ots, const struct bt_gatt_ots_object *
 
 	if (ots->transfer_obj == obj) {
 		ots->transfer_obj = NULL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OTS_DIR_LIST_OBJ) && ots->dir_list != NULL) {
+		bt_ots_dir_list_obj_removed(ots->dir_list, ots->obj_manager, obj);
 	}
 }
 
