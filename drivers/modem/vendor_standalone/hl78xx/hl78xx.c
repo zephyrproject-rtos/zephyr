@@ -643,7 +643,10 @@ static void hl78xx_defer_script_start(struct hl78xx_data *data)
  *
  * A state that waits to start its script has no result of its own to get: a
  * success would end it without its script, and a failure would be taken for
- * the failure of that script.
+ * the failure of that script. An AT command timeout still reaches
+ * RUN_INIT_SCRIPT then. It says that the modem left a command unanswered, and
+ * the state resets the modem for it instead of waiting for its own script to
+ * time out as well.
  *
  * A state that started its script takes the result of that script only. The
  * chat gives itself up before it reports the script that ended, so the state
@@ -656,13 +659,62 @@ static void hl78xx_defer_script_start(struct hl78xx_data *data)
 static bool hl78xx_is_stale_script_result(struct hl78xx_data *data, enum hl78xx_event evt,
 					  const struct modem_chat_script *script)
 {
-	ARG_UNUSED(evt);
-
 	if (data->events.script_start_deferred) {
-		return true;
+		return (evt != MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT) ||
+		       (data->status.state != MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 	}
 
 	return (data->events.state_script != NULL) && (script != data->events.state_script);
+}
+
+/**
+ * @brief Start the script the current state waits for, or defer the start.
+ *
+ * The start is deferred while another script holds the chat, each holder being
+ * bounded by its own timeout, while the previous run of the script has not
+ * reported, and while a script result is queued: a result queued before the
+ * start is handled while the start is still deferred, with the timeout
+ * exception of hl78xx_is_stale_script_result().
+ *
+ * It is also deferred while a script that its state left has not reported: a
+ * state that is entered again could start that script before its first run is
+ * reported, and take the report for the result of the second run. The chat
+ * reports a script as soon as it has given it up, and a chat that was released
+ * reports nothing: once the chat is found free, the next attempt no longer
+ * waits for that report.
+ *
+ * @param data Driver data
+ * @param run_script Function that starts the script
+ *
+ * @retval 0 The script started
+ * @retval -EBUSY The start is deferred to the state timer
+ * @retval -errno The script could not be started
+ */
+static int hl78xx_start_state_script(struct hl78xx_data *data,
+				     int (*run_script)(struct hl78xx_data *data))
+{
+	int ret = -EBUSY;
+
+	if (data->events.unreported_script != NULL) {
+		if (!modem_chat_is_running(&data->chat)) {
+			/* The report comes before the next attempt, or never */
+			data->events.unreported_script = NULL;
+		}
+	} else if (atomic_get(&data->events.script_results_queued) == 0) {
+		ret = run_script(data);
+	} else {
+		/* The queued result is handled first */
+	}
+
+	if (ret == -EBUSY) {
+		hl78xx_defer_script_start(data);
+	} else if (ret == 0) {
+		data->events.script_start_deferred = false;
+	} else {
+		/* The caller decides what a script that cannot start means */
+	}
+
+	return ret;
 }
 
 void hl78xx_enter_lte_restore_state(struct hl78xx_data *data)
@@ -2374,18 +2426,49 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
+	int ret;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 		LOG_DBG("Set WAKE pin to 1 for init script");
 	}
 
-	return hl78xx_run_init_script_async(data);
+	if (modem_chat_is_running(&data->chat)) {
+		/* Another script holds the chat: after a restart the modem made on
+		 * its own, the script of a command still waiting for its answer; on
+		 * an LTE restore, a command of another thread. Abort it: the abort
+		 * runs on the chat work queue, after this event, and the init
+		 * script starts on the timeout. A driver script reports the abort
+		 * as a failure, which is not the init script's.
+		 */
+		LOG_WRN("Chat busy at the init script: aborting the active script");
+		hl78xx_chat_abort_active_script(data);
+	}
+
+	ret = hl78xx_start_state_script(data, hl78xx_run_init_script_async);
+
+	return (ret == -EBUSY) ? 0 : ret;
 }
 
 static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	switch (evt) {
+	case MODEM_HL78XX_EVENT_TIMEOUT: {
+		int ret;
+
+		if (!data->events.script_start_deferred) {
+			/* A timer the previous state left running: no start is due */
+			break;
+		}
+		/* The start deferred by the entry */
+		ret = hl78xx_start_state_script(data, hl78xx_run_init_script_async);
+		if ((ret < 0) && (ret != -EBUSY)) {
+			LOG_ERR("Init script did not start: %d", ret);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
+		}
+		break;
+	}
+
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_confirm_recovery(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT, evt);
 
@@ -2758,11 +2841,12 @@ static void hl78xx_enable_gprs_event_handler(struct hl78xx_data *data, enum hl78
 
 	case MODEM_HL78XX_EVENT_MDM_RESTART:
 		/* The restart arrived while this state ran its commands, so their
-		 * result is already queued behind it. Leave the way that result
-		 * would and handle the restart in the next state.
+		 * result is already queued behind it: the init script starts once
+		 * that result has been dropped (hl78xx_start_state_script()). Not
+		 * through AWAIT_REGISTERED, whose entry would announce the AT
+		 * channel right before the init script takes it.
 		 */
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	case MODEM_HL78XX_EVENT_SOCKET_READY:
@@ -4025,6 +4109,8 @@ static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 	hl78xx_clear_recovery(data);
 
 	modem_chat_release(&data->chat);
+	/* A released chat reports no script */
+	data->events.unreported_script = NULL;
 	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 	modem_pipe_close_async(data->uart_pipe);
 	return 0;
@@ -4137,6 +4223,10 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state)
 		hl78xx_stop_timer(data);
 		data->events.script_start_deferred = false;
 	}
+	if (data->events.state_script != NULL) {
+		/* Left before its script reported: the next script waits for it */
+		data->events.unreported_script = data->events.state_script;
+	}
 	/* The next state waits for no script until it starts one */
 	data->events.state_script = NULL;
 
@@ -4182,6 +4272,10 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 		if (script == data->events.state_script) {
 			/* The script the state started has reported */
 			data->events.state_script = NULL;
+		}
+		if (script == data->events.unreported_script) {
+			/* So has the script that its state left */
+			data->events.unreported_script = NULL;
 		}
 		if (stale) {
 			LOG_DBG("Result of the aborted script ignored: %s", hl78xx_event_str(evt));

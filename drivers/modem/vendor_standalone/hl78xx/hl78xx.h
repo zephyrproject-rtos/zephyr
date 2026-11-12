@@ -681,6 +681,13 @@ struct modem_event_system {
 	 * when the script reports and when the state changes.
 	 */
 	const struct modem_chat_script *state_script;
+	/* A script that its state started and left before it reported, NULL
+	 * for none. The state that starts a script next waits for that report,
+	 * which it could not tell from the result of its own run of the same
+	 * script: see hl78xx_start_state_script(). Cleared when the script
+	 * reports, and when the chat is released in IDLE or found free.
+	 */
+	const struct modem_chat_script *unreported_script;
 	/* The current state waits to start its script: another script held the
 	 * chat, or a script result was still queued. Until the script starts, a
 	 * script result is not the result of that script: see
