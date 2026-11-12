@@ -1,0 +1,20 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/* 32.768 kHz crystal on OSC32K_EXTAL / OSC32K_XTAL. */
+&sxosc {
+	delay = <64>;
+	status = "okay";
+};
+
+&rtc {
+	/* 0 = SXOSC, 1 = SIRC, 2 = FIRC, 3 = FXOSC. */
+	clock-source = <0>;
+	clock-frequency = <32768>;
+	prescaler = <1>;
+	status = "okay";
+};
