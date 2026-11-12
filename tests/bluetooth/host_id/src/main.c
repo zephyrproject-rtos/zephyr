@@ -974,7 +974,7 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 
 #if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
-	defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
+	!defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
 /* Scan through one expiry of the RPA timeout. Report whether
  * rpa_timeout() started the RPA timer again.
  */
@@ -1021,7 +1021,7 @@ static ZTEST(bt_id_public_api, test_rpa_timer_stops_without_active_scanner)
 	zassert_false(passive_pending, "The RPA timer kept running for a passive scanner");
 	zassert_true(active_pending, "The RPA timer stopped for an active scanner");
 }
-#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_BROADCASTER && CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
+#endif /* Observer-only build with CONFIG_BT_RPA_TIMEOUT_DYNAMIC */
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
 /* The public identity address reaches the driver through the common driver

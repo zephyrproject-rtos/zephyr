@@ -745,10 +745,14 @@ static void rpa_timeout(struct k_work *work)
 
 	/* If no roles using the RPA are running we can stop the RPA timer. Without
 	 * a Broadcaster there are no advertising sets to call rpa_expired for.
+	 * A passive scanner sends no address, but with a Central the initiator
+	 * shares its random address and cannot set a new one while it scans.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) || !IS_ENABLED(CONFIG_BT_BROADCASTER)) {
 		if (!(adv_enabled || atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING) ||
-		      bt_le_scan_active_scanner_running())) {
+		      bt_le_scan_active_scanner_running() ||
+		      (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		       atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)))) {
 			return;
 		}
 	}
