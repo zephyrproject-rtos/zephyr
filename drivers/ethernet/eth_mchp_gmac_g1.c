@@ -513,6 +513,27 @@ static int gmac_find_valid_frame(struct gmac_desc_list *rx_desc_list,
 	return 0;
 }
 
+/*
+ * Give the descriptors of the frame at the tail back to the GMAC and move the
+ * tail past it, where the GMAC continues.
+ */
+static void gmac_drop_frame(struct gmac_desc_list *rx_desc_list)
+{
+	uint16_t i = rx_desc_list->tail;
+	bool eof = false;
+
+	while (!eof) {
+		struct gmac_desc *rx_desc = &rx_desc_list->buf_desc[i];
+
+		eof = (bool)(rx_desc->status & GMAC_RXW1_EOF);
+		rx_desc->status = 0U;
+		rx_desc->addr &= ~GMAC_RXW0_OWNERSHIP;
+		MODULO_INC(i, rx_desc_list->len);
+	}
+
+	rx_desc_list->tail = i;
+}
+
 static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue, int *err_no,
 							struct gmac_frame_info *frame_info)
 {
@@ -531,15 +552,7 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 
 	rx_pkt = net_pkt_rx_alloc(K_NO_WAIT);
 	if (rx_pkt == NULL) {
-		for (int i = rx_desc_list->tail; (frame_is_complete == false);) {
-			rx_desc = &rx_desc_list->buf_desc[i];
-			frame_is_complete = (bool)(rx_desc->status & GMAC_RXW1_EOF);
-			rx_desc->status = 0U;
-			rx_desc->addr &= ~GMAC_RXW0_OWNERSHIP;
-			MODULO_INC(i, rx_desc_list->len);
-			rx_desc = &rx_desc_list->buf_desc[i];
-		}
-
+		gmac_drop_frame(rx_desc_list);
 		queue->err_rx_queue_frames_dropped++;
 		*err_no = -ENOMEM;
 
@@ -560,17 +573,7 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 		frame_len += frag_len;
 		new_frag = net_pkt_get_frag(rx_pkt, CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 		if (new_frag == NULL) {
-			bool eof_flag = false;
-
-			for (int i = rx_desc_list->tail; (eof_flag == false);) {
-				rx_desc = &rx_desc_list->buf_desc[i];
-				eof_flag = (bool)(rx_desc->status & GMAC_RXW1_EOF);
-				rx_desc->status = 0U;
-				rx_desc->addr &= ~GMAC_RXW0_OWNERSHIP;
-				MODULO_INC(i, rx_desc_list->len);
-				rx_desc = &rx_desc_list->buf_desc[i];
-			}
-
+			gmac_drop_frame(rx_desc_list);
 			queue->err_rx_queue_frames_dropped++;
 			net_pkt_unref(rx_pkt);
 			*err_no = -ENOMEM;
