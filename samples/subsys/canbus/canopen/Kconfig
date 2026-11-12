@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CANopen sample"
+
+config SAMPLE_NODE_ID
+	int "CANopen node-ID"
+	default 16
+	range 1 127
+
+config SAMPLE_BITRATE
+	int "CAN bitrate in bit/s"
+	default 500000
+
+config SAMPLE_COUNTER_PERIOD_MS
+	int "Counter increment period in milliseconds"
+	default 100
+
+config SAMPLE_TPDO_EVENT_TIMER_MS
+	int "TPDO1 event timer in milliseconds"
+	default 1000
+	range 0 65535
+
+source "Kconfig.zephyr"
