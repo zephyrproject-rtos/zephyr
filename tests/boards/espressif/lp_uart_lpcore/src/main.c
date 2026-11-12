@@ -27,6 +27,10 @@ static void mbox_cb(const struct device *dev, mbox_channel_id_t channel_id, void
 {
 	uint32_t value = 0;
 
+	if ((data == NULL) || (data->data == NULL)) {
+		return;
+	}
+
 	memcpy(&value, data->data, MIN(data->size, sizeof(value)));
 	lp_result = value;
 	k_sem_give(&rx_sem);
