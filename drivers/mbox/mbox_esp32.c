@@ -111,6 +111,7 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 	struct esp32_mbox_data *dev_data = (struct esp32_mbox_data *)dev->data;
 	struct mbox_msg msg;
 	uint32_t core_id = dev_data->this_core_id;
+	bool consumed;
 
 	/* clear interrupt flag */
 	if (core_id == 0) {
@@ -131,16 +132,24 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 #endif
 	}
 
-	if (dev_data->cb) {
-		msg.data = (dev_data->this_core_id == 0) ? (const void *)dev_data->shm.pro_cpu_shm
-							 : (const void *)dev_data->shm.app_cpu_shm;
-		msg.size = dev_data->shm_size;
+	barrier_dsync_fence_full();
+	consumed = dev_data->control->busy[core_id] != 0U;
 
-		dev_data->cb(dev, dev_data->other_core_id, dev_data->user_data, &msg);
+	if (dev_data->cb != NULL) {
+		if (consumed) {
+			msg.data = (core_id == 0) ? (const void *)dev_data->shm.pro_cpu_shm
+						  : (const void *)dev_data->shm.app_cpu_shm;
+			msg.size = dev_data->shm_size;
+		}
+
+		dev_data->cb(dev, dev_data->other_core_id, dev_data->user_data,
+			     consumed ? &msg : NULL);
 	}
 
-	barrier_dsync_fence_full();
-	dev_data->control->busy[dev_data->this_core_id] = 0;
+	if (consumed) {
+		barrier_dsync_fence_full();
+		dev_data->control->busy[core_id] = 0;
+	}
 }
 
 static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
@@ -161,17 +170,18 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 
 	uint32_t key = irq_lock();
 
-	if (dev_data->control->busy[dev_data->other_core_id]) {
-		irq_unlock(key);
-		return -EBUSY;
-	}
-	dev_data->control->busy[dev_data->other_core_id] = 1;
-
 	/* Copy data into the other core's receive region */
 	if (msg != NULL && msg->data != NULL) {
 		uint8_t *dest = (dev_data->other_core_id == 0) ? dev_data->shm.pro_cpu_shm
 							       : dev_data->shm.app_cpu_shm;
+
+		if (dev_data->control->busy[dev_data->other_core_id] != 0U) {
+			irq_unlock(key);
+			return -EBUSY;
+		}
 		memcpy(dest, msg->data, msg->size);
+		barrier_dsync_fence_full();
+		dev_data->control->busy[dev_data->other_core_id] = 1;
 	}
 
 	barrier_dsync_fence_full();
