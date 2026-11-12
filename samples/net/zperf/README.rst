@@ -16,7 +16,7 @@ Features
 - Compatible with iPerf v2.0.10 and newer. For older versions, enable
   :kconfig:option:`CONFIG_NET_ZPERF_LEGACY_HEADER_COMPAT`.
 
-- Compatible with iperf3 instead when built with ``overlay-iperf3.conf``, which
+- Compatible with iperf3 instead when built with ``iperf3.conf``, which
   enables :kconfig:option:`CONFIG_NET_ZPERF_IPERF3`.
 
 - Client or server mode allowed without need to modify the source code.
@@ -49,7 +49,7 @@ Requirements
 ************
 
 - iPerf 2.0.10 or newer installed on the host machine, or iperf3 for a build
-  with ``overlay-iperf3.conf``
+  with ``iperf3.conf``
 - Supported board
 
 Depending on the network technology chosen, extra steps may be required
@@ -64,13 +64,13 @@ the library usage.
 iperf3
 ======
 
-To measure against iperf3 rather than iperf2, build with the iperf3 overlay.
+To measure against iperf3 rather than iperf2, build with the iperf3 extra config file.
 The zperf commands are the same, and the default port becomes 5201:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/zperf
    :board: <board>
-   :gen-args: -DEXTRA_CONF_FILE=overlay-iperf3.conf
+   :gen-args: -DEXTRA_CONF_FILE=iperf3.conf
    :goals: build flash
 
 Then ``zperf tcp download`` and ``zperf udp download`` answer ``iperf3 -c

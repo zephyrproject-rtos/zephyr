@@ -81,8 +81,8 @@ traffic class (see below) this routes the traffic through the per-traffic-class
 threads in ``net_tc.c`` instead of the caller's context, so that scheduling path
 is exercised on every run.
 
-The whole thing is configured by :file:`overlay-loopback-icount.conf`, which is
-layered on top of the existing :file:`overlay-loopback.conf`.
+The whole thing is configured by :file:`loopback-icount.conf`, which is
+layered on top of the existing :file:`loopback.conf`.
 
 Configuration knobs
 ===================
@@ -111,7 +111,7 @@ Configuration knobs
 Implementation notes / gotchas
 ==============================
 
-A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
+A few non-obvious points are baked into :file:`loopback-icount.conf`:
 
 - **Stack sizes.** The loopback driver delivers every packet synchronously in
   the sender's context, so the entire receive path (and the blocking client
@@ -122,7 +122,7 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   path, which divides by the per-packet duration. With the unlimited rate that
   duration is zero, so a >1 kHz tick both avoids the division-by-zero and gives
   fine-grained pacing.
-- **Near-MTU packet size and the MSS caveat.** The overlay raises the loopback
+- **Near-MTU packet size and the MSS caveat.** The extra config file raises the loopback
   MTU (:kconfig:option:`CONFIG_NET_LOOPBACK_MTU`) to 1280 and lifts zperf's own
   packet ceiling (:kconfig:option:`CONFIG_NET_ZPERF_MAX_PACKET_SIZE`) above the
   payload, so the default 1220 byte payload produces near-MTU frames. Large
@@ -148,11 +148,11 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   the MTU. This drives the fragmentation path in ``ipv4_fragment.c`` /
   ``ipv6_fragment.c`` on TX and the reassembly path on RX (the ``*_frag``
   markers). Loopback normally delivers an oversized datagram whole, without
-  running the IP send checks, so the overlay also enables
+  running the IP send checks, so the extra config file also enables
   :kconfig:option:`CONFIG_NET_LOOPBACK_FRAGMENT`. Without it the ``*_frag``
   runs measure large unfragmented datagrams.
   :kconfig:option:`CONFIG_NET_ZPERF_MAX_PACKET_SIZE` is raised above this payload.
-- **Traffic classes and priority.** The overlay configures more than one TX/RX
+- **Traffic classes and priority.** The extra config file configures more than one TX/RX
   traffic class (:kconfig:option:`CONFIG_NET_TC_TX_COUNT` /
   :kconfig:option:`CONFIG_NET_TC_RX_COUNT` = 2) and enables
   :kconfig:option:`CONFIG_NET_CONTEXT_PRIORITY` (plus
@@ -172,7 +172,7 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   buffer the ``qemu_x86_64`` run overflows it during the first IPv4 transfers,
   and :kconfig:option:`CONFIG_LOG_MODE_OVERFLOW` then drops the three oldest
   messages - which silently swallows the ``udp4_frag`` result line, so that
-  metric never reaches the report at all. The overlay raises
+  metric never reaches the report at all. The extra config file raises
   :kconfig:option:`CONFIG_LOG_BUFFER_SIZE` to 4096. The measurement itself is
   unaffected; the 32-bit numbers are bit-identical with the larger buffer.
 
@@ -185,7 +185,7 @@ Build and run once
 .. code-block:: console
 
    west build -p -b qemu_x86 -d ../build/zperf_loop samples/net/zperf -- \
-       -DEXTRA_CONF_FILE="overlay-loopback.conf;overlay-loopback-icount.conf"
+       -DEXTRA_CONF_FILE="loopback.conf;loopback-icount.conf"
    west build -t run -d ../build/zperf_loop
 
 Expected output (values are deterministic and repeat exactly across runs on a
@@ -326,7 +326,7 @@ Two details make the comparison mean what it should:
   branch, so the difference is what the series itself does and cannot pick up
   unrelated movement on the target branch.
 - The target branch is measured with the pull request's copy of
-  :file:`samples/net/zperf/`, so the runner, the overlay and the payload sizes
+  :file:`samples/net/zperf/`, so the runner, the extra config file and the payload sizes
   are identical on both sides and only the code under test differs. A pull
   request that changes the sample therefore does not move the number by changing
   what is being measured.
