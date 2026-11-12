@@ -20,6 +20,10 @@ struct flash_mspi_nor_quirks {
 	int (*post_switch_mode)(const struct device *dev);
 	/* Called by flash_ex_op() while the flash device is acquired. */
 	int (*ex_op)(const struct device *dev, uint16_t code, const uintptr_t in, void *out);
+	/* Called instead of the generic JEDEC ID read when the chip is
+	 * in a DDR mode. Used by chips with a non-standard ID format.
+	 */
+	int (*read_jedec_id_ddr)(const struct device *dev, uint8_t *id);
 };
 
 /* Extend this macro when adding new flash chip with quirks */
@@ -221,9 +225,39 @@ static int mxicy_mx25u_pre_init(const struct device *dev)
 	return 0;
 }
 
+/* In octal DTR mode, MX25U/MX25LM chips output each JEDEC ID byte twice:
+ * A A B B C C. Read the duplicated format and keep every other byte.
+ */
+static int mxicy_mx25u_read_jedec_id_ddr(const struct device *dev, uint8_t *id)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t id_dup[JESD216_READ_ID_LEN * 2] = {0};
+	int rc;
+
+	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
+	dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdid_dummy;
+	dev_data->xfer.addr_length = dev_data->cmd_info.rdid_addr_4 ? 4 : 0;
+	dev_data->packet.address   = 0;
+	dev_data->packet.data_buf  = id_dup;
+	dev_data->packet.num_bytes = sizeof(id_dup);
+	rc = perform_xfer(dev, SPI_NOR_CMD_RDID);
+	if (rc < 0) {
+		LOG_ERR("Read JEDEC ID failed: %d", rc);
+		return rc;
+	}
+
+	for (size_t i = 0; i < JESD216_READ_ID_LEN; i++) {
+		id[i] = id_dup[i * 2];
+	}
+
+	return 0;
+}
+
 struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
 	.pre_init = mxicy_mx25u_pre_init,
 	.post_switch_mode = mxicy_mx25u_post_switch_mode,
+	.read_jedec_id_ddr = mxicy_mx25u_read_jedec_id_ddr,
 };
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25u) */
