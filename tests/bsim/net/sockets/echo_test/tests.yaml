@@ -12,18 +12,18 @@ common:
 
 tests:
   net.sockets.echo_test.802154:
-    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
+    extra_args: EXTRA_CONF_FILE="802154.conf"
     harness_config:
-      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_overlay-802154_conf
+      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_802154_conf
       tests_scripts:
         - tests_scripts/echo_test_802154.sh
     required_applications:
       - application: sample.net.sockets.echo_server.802154.bsim
         path: $ZEPHYR_BASE/samples/net/sockets/echo_server
   net.sockets.echo_test.openthread:
-    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
+    extra_args: EXTRA_CONF_FILE="ot.conf"
     harness_config:
-      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_overlay-ot_conf
+      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_ot_conf
       tests_scripts:
         - tests_scripts/echo_test_ot.sh
     required_applications:

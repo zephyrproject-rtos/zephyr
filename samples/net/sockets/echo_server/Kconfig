@@ -32,7 +32,7 @@ config NET_SAMPLE_WEBSOCKET_CONSOLE
 	default y if WEBSOCKET_CONSOLE
 	help
 	  Enable this flag, if you are interested to enable websocket console.
-	  You can use the overlay-ws-console.conf to set websocket options.
+	  You can use the ws-console.conf to set websocket options.
 
 config NET_SAMPLE_HTTPS_SERVICE
 	bool "Enable HTTPS service for the Webconsole"

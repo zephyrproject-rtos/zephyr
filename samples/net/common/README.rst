@@ -13,14 +13,14 @@ VLAN
 ****
 
 If you want to enable VLAN support to network sample application,
-then add :file:`overlay-vlan.conf` to your sample application compilation
+then add :file:`vlan.conf` to your sample application compilation
 like in this example for echo-server sample application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: native_sim
-   :conf: "prj.conf overlay-vlan.conf"
+   :conf: "prj.conf vlan.conf"
    :goals: run
    :compact:
 
