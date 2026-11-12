@@ -45,20 +45,20 @@ Enabling TLS support
 =================================
 
 Enable TLS support in the sample by building the project with the
-``overlay-tls.conf`` overlay file enabled, for example, using these commands:
+``tls.conf`` extra config file enabled, for example, using these commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/http_get
    :board: qemu_x86
-   :conf: "prj.conf overlay-tls.conf"
+   :conf: "prj.conf tls.conf"
    :goals: build
    :compact:
 
-An alternative way is to specify ``-DEXTRA_CONF_FILE=overlay-tls.conf`` when
+An alternative way is to specify ``-DEXTRA_CONF_FILE=tls.conf`` when
 running ``west build`` or ``cmake``.
 
 For boards that support TLS offloading (e.g. TI's cc3220sf_launchxl), use
-``overlay-tls-offload.conf`` instead of ``overlay-tls.conf``.
+``tls-offload.conf`` instead of ``tls.conf``.
 
 The certificate used by the sample can be found in the sample's ``src``
 directory. The certificate was selected to enable access to the default website
@@ -73,16 +73,16 @@ Enabling TLS Session Cache
 ==========================
 
 To enable persistent TLS session caching, use the
-``overlay-tls-session-cache.conf`` overlay on top of the TLS overlay:
+``tls-session-cache.conf`` extra config file on top of the TLS one:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/http_get
    :board: <board_to_use>
-   :conf: "prj.conf overlay-tls.conf overlay-tls-session-cache.conf"
+   :conf: "prj.conf tls.conf tls-session-cache.conf"
    :goals: build
    :compact:
 
-This overlay enables persistent session caching via the settings subsystem.
+This extra config file enables persistent session caching via the settings subsystem.
 Sessions are saved after each successful TLS handshake and restored on boot,
 allowing session resumption across device reboots without a full handshake.
 
