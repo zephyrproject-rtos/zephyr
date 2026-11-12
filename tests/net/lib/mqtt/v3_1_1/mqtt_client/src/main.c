@@ -89,6 +89,9 @@ static const uint8_t ping_resp_reply[] = {
 	MQTT_PKT_TYPE_PINGRSP, 0,
 };
 
+/* A type-0 fixed header is never valid in a server-to-client stream. */
+static const uint8_t type_zero_packet[] = { 0x00, 0x00 };
+
 static const uint8_t puback_reply_template[] = {
 	MQTT_PKT_TYPE_PUBACK, 0x02, 0, 0,
 };
@@ -1072,6 +1075,47 @@ ZTEST(mqtt_client, test_mqtt_second_connack_5_0)
 	client_ctx.protocol_version = MQTT_VERSION_5_0;
 
 	test_second_connack(connect_ack_reply_5_0, sizeof(connect_ack_reply_5_0));
+
+	/* MQTT 5.0 4.13.1: the client says why before closing the connection. */
+	broker_process(MQTT_PKT_TYPE_DISCONNECT);
+	zexpect_equal(test_ctx.disconnect_reason, MQTT_DISCONNECT_PROTOCOL_ERROR,
+		      "Unexpected DISCONNECT reason code 0x%02x", test_ctx.disconnect_reason);
+}
+
+static void test_unexpected_type_after_connack(void)
+{
+	int ret;
+
+	test_connect();
+	zassert_true(test_ctx.connected, "MQTT client should be connected");
+
+	test_send_reply(type_zero_packet, sizeof(type_zero_packet));
+
+	client_wait(false);
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -EBADMSG,
+		      "Unexpected packet type after CONNACK should be a protocol error (%d)",
+		      ret);
+	zexpect_false(test_ctx.connected, "MQTT client should have closed the connection");
+
+	ret = mqtt_input(&client_ctx);
+	zexpect_equal(ret, -ENOTCONN, "MQTT client should no longer be connected (%d)", ret);
+}
+
+ZTEST(mqtt_client, test_mqtt_unexpected_type_after_connack)
+{
+	test_unexpected_type_after_connack();
+}
+
+ZTEST(mqtt_client, test_mqtt_unexpected_type_after_connack_5_0)
+{
+	if (!IS_ENABLED(CONFIG_MQTT_VERSION_5_0)) {
+		ztest_test_skip();
+	}
+
+	client_ctx.protocol_version = MQTT_VERSION_5_0;
+
+	test_unexpected_type_after_connack();
 
 	/* MQTT 5.0 4.13.1: the client says why before closing the connection. */
 	broker_process(MQTT_PKT_TYPE_DISCONNECT);
