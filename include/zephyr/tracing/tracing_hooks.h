@@ -470,6 +470,22 @@
 #define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
 #endif
 
+/**
+ * @brief Trace work item handler entry
+ * @param work Work structure
+ */
+#ifndef sys_port_trace_k_work_handler_enter
+#define sys_port_trace_k_work_handler_enter(work)
+#endif
+
+/**
+ * @brief Trace work item handler exit
+ * @param work Work structure
+ */
+#ifndef sys_port_trace_k_work_handler_exit
+#define sys_port_trace_k_work_handler_exit(work)
+#endif
+
 /** @} */ /* end of subsys_tracing_apis_work */
 
 /**
