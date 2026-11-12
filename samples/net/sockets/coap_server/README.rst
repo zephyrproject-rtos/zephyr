@@ -46,7 +46,7 @@ Build the CoAP server sample application like this:
    :goals: build
    :compact:
 
-Use :zephyr_file:`overlay-dtls.conf <samples/net/sockets/coap_server/overlay-dtls.conf>`
+Use :zephyr_file:`dtls.conf <samples/net/sockets/coap_server/dtls.conf>`
 to build the sample with CoAP secure resources instead.
 
 This project has no output in case of success, the correct
