@@ -67,6 +67,7 @@ config ESP32_WIFI_AP_STA_MODE
 
 config ESP32_WIFI_STA_RECONNECT
 	bool "Wi-Fi station reconnection"
+	default y
 	help
 	  Reconnect the station when an established connection is lost,
 	  retrying with the same backoff as a connection request until it
