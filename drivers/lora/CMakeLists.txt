@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_sources(lora_common.c)
+zephyr_sources_ifdef(CONFIG_LORA_RUI3 rui3.c)
 zephyr_sources_ifdef(CONFIG_LORA_SHELL shell.c)
 
 # zephyr-keep-sorted-start

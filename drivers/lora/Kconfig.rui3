@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config LORA_RUI3
+	bool "RAKwireless RUI3 AT modem driver"
+	default y
+	depends on DT_HAS_RAKWIRELESS_RUI3_ENABLED
+	select LORA_HAS_LBT
+	select MODEM_MODULES
+	select MODEM_CHAT
+	select MODEM_PIPE
+	select MODEM_BACKEND_UART
+	select GPIO
+	help
+	  Drive a RAKwireless module running the RUI3 firmware over its AT
+	  command interface, in LoRa P2P mode.
+
+if LORA_RUI3
+
+config LORA_RUI3_CMD_BUF_SIZE
+	int "Command buffer size"
+	default 560
+	range 32 65535
+	help
+	  Size of the buffer holding one AT command. The longest command is
+	  AT+PSEND with a full payload, 239 bytes carried as 478 hexadecimal
+	  digits.
+
+config LORA_RUI3_MODEM_BUF_SIZE
+	int "Modem pipe buffer size"
+	default 576
+	range 64 65535
+	help
+	  Size of each of the UART backend and chat buffers. A received packet
+	  arrives as one line holding the payload in hexadecimal, so this bounds
+	  the payload the driver can take in.
+
+config LORA_RUI3_CMD_TIMEOUT_MS
+	int "Command response timeout in milliseconds"
+	default 3000
+	help
+	  Time to wait for the module to answer an AT command.
+
+config LORA_RUI3_TX_TIMEOUT_MS
+	int "Transmission completion timeout in milliseconds"
+	default 10000
+	help
+	  Time to wait for the transmission done event after the module has
+	  taken the send command. This bounds the airtime rather than the
+	  command exchange, so it is longer than the command timeout: a full
+	  payload at spreading factor 12 takes seconds to leave the radio.
+
+config LORA_RUI3_RESET_TIMEOUT_MS
+	int "Reset and mode switch timeout in milliseconds"
+	default 10000
+	help
+	  Time to wait for the module to come back after a reset or a change of
+	  network work mode, both of which reboot it.
+
+config LORA_RUI3_RX_MSGQ_SIZE
+	int "Number of received packets to queue"
+	default 2
+	help
+	  Packets held for lora_recv() while no caller is waiting.
+
+config LORA_RUI3_FW_VERSION_MAJOR
+	int "Expected RUI3 firmware major version"
+	default 4
+	help
+	  Major version of the RUI3 firmware this driver is written against.
+	  The firmware runs on the module and is flashed independently, so this
+	  cannot be enforced at build time: the driver queries the running
+	  firmware and warns when it is older. Nothing here changes the
+	  commands the driver sends.
+
+config LORA_RUI3_FW_VERSION_MINOR
+	int "Expected RUI3 firmware minor version"
+	default 2
+	help
+	  Minor version of the expected RUI3 firmware.
+
+config LORA_RUI3_FW_VERSION_PATCH
+	int "Expected RUI3 firmware patch version"
+	default 2
+	help
+	  Patch version of the expected RUI3 firmware. The default is the
+	  oldest release the driver has been run against, 4.2.2; 4.3.0 was
+	  exercised the same way.
+
+endif # LORA_RUI3
