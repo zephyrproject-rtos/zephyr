@@ -3792,6 +3792,11 @@ static void read_local_features_complete(struct net_buf *buf)
 
 	LOG_DBG("status 0x%02x %s", rp->status, bt_hci_err_to_str(rp->status));
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		/* The extended pages are read later, if at all: drop a previous Controller's */
+		(void)memset(bt_dev.features, 0, sizeof(bt_dev.features));
+	}
+
 	memcpy(bt_dev.features[0], rp->features, sizeof(bt_dev.features[0]));
 }
 
