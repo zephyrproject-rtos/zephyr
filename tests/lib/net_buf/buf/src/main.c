@@ -1634,4 +1634,150 @@ ZTEST(net_buf_tests, test_net_buf_ref_saturated)
 	zassert_equal(destroy_called, 1, "Buffer not freed");
 }
 
-ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, NULL, NULL);
+/* Whether the destroy callback of reuse_pool keeps the buffer instead of
+ * freeing it, and the buffer that it kept
+ */
+static bool is_reuse_enabled;
+static struct net_buf *reuse_kept;
+/* Whether net_buf_reuse() left the callback without its pointer */
+static bool is_reuse_orig_cleared;
+
+static void reuse_destroy(struct net_buf *buf)
+{
+	destroy_called++;
+
+	if (is_reuse_enabled) {
+		reuse_kept = net_buf_reuse(&buf);
+		is_reuse_orig_cleared = (buf == NULL);
+	} else {
+		net_buf_destroy(buf);
+	}
+}
+
+#define REUSE_DATA_SIZE      16U
+#define REUSE_USER_DATA_SIZE 4U
+#define REUSE_HEADROOM       2U
+
+/* A single buffer: an allocation shows whether it has gone back to the pool */
+NET_BUF_POOL_FIXED_DEFINE(reuse_pool, 1, REUSE_DATA_SIZE, REUSE_USER_DATA_SIZE, reuse_destroy);
+
+static ZTEST(net_buf_tests, test_net_buf_reuse)
+{
+	static const uint8_t data[] = {0x01U, 0x02U, 0x03U};
+	static const uint8_t no_user_data[REUSE_USER_DATA_SIZE];
+	struct net_buf *buf, *frag;
+	uint16_t size;
+
+	destroy_called = 0;
+
+	buf = net_buf_alloc(&reuse_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Failed to get buffer");
+	zassert_is_null(reuse_kept, "Buffer kept before the test");
+	size = buf->size;
+
+	/* What a newly allocated buffer does not have */
+	net_buf_reserve(buf, REUSE_HEADROOM);
+	(void)net_buf_add_mem(buf, data, sizeof(data));
+	(void)memset(net_buf_user_data(buf), 0xa5, REUSE_USER_DATA_SIZE);
+	frag = net_buf_alloc(&fixed_pool, K_NO_WAIT);
+	zassert_not_null(frag, "Failed to get fragment");
+	net_buf_frag_add(buf, net_buf_take(&frag));
+
+	/* The destroy callback gets the only buffer of the pool, and keeps it */
+	is_reuse_enabled = true;
+	net_buf_drop(&buf);
+
+	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+	zassert_not_null(reuse_kept, "Buffer not kept by its destroy callback");
+	zassert_true(is_reuse_orig_cleared, "The callback still has its pointer");
+	zassert_equal(reuse_kept->ref, 1U, "Reference count %u", reuse_kept->ref);
+	zassert_equal(reuse_kept->len, 0U, "%u bytes of data left", reuse_kept->len);
+	zassert_equal(net_buf_headroom(reuse_kept), 0U, "Headroom left");
+	zassert_equal(reuse_kept->size, size, "Size changed from %u to %u", size, reuse_kept->size);
+	zassert_is_null(reuse_kept->frags, "Fragment left");
+	zassert_mem_equal(net_buf_user_data(reuse_kept), no_user_data, REUSE_USER_DATA_SIZE,
+			  "User data left");
+	zassert_equal(atomic_get(&reuse_pool.avail_count), 0, "Buffer counted as available");
+	zassert_is_null(net_buf_alloc(&reuse_pool, K_NO_WAIT), "Buffer went back to its pool");
+
+	(void)net_buf_add_mem(reuse_kept, data, sizeof(data));
+	zassert_mem_equal(reuse_kept->data, data, sizeof(data), "Data area not usable");
+
+	/* The reference belongs to who called net_buf_reuse(): dropping it frees the buffer */
+	is_reuse_enabled = false;
+	net_buf_drop(&reuse_kept);
+
+	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
+	zassert_equal(atomic_get(&reuse_pool.avail_count), 1, "Buffer not counted as available");
+	buf = net_buf_alloc(&reuse_pool, K_NO_WAIT);
+	zassert_not_null(buf, "Buffer did not go back to its pool");
+	net_buf_unref(buf);
+}
+
+/* Whether the destroy callback of reuse_later_pool puts the buffer aside
+ * instead of freeing it, as a callback does that defers its work, and the
+ * buffer that it put aside
+ */
+static bool is_reuse_deferred;
+static struct net_buf *reuse_deferred;
+
+static void reuse_later_destroy(struct net_buf *buf)
+{
+	if (is_reuse_deferred) {
+		reuse_deferred = buf;
+	} else {
+		net_buf_destroy(buf);
+	}
+}
+
+/* Two buffers: one is allocated while the other waits to be used again */
+NET_BUF_POOL_FIXED_DEFINE(reuse_later_pool, 2, REUSE_DATA_SIZE, REUSE_USER_DATA_SIZE,
+			  reuse_later_destroy);
+
+static ZTEST(net_buf_tests, test_net_buf_reuse_max_used)
+{
+	struct net_buf *first, *second;
+
+	first = net_buf_alloc(&reuse_later_pool, K_NO_WAIT);
+	zassert_not_null(first, "Failed to get buffer");
+
+	/* The destroy callback puts the buffer aside: it counts as available */
+	is_reuse_deferred = true;
+	net_buf_drop(&first);
+	zassert_not_null(reuse_deferred, "Buffer not put aside by its destroy callback");
+
+	second = net_buf_alloc(&reuse_later_pool, K_NO_WAIT);
+	zassert_not_null(second, "Failed to get the other buffer");
+	zassert_equal(net_buf_get_max_used(&reuse_later_pool), 1U,
+		      "Maximum of %zu with one buffer in use at a time",
+		      net_buf_get_max_used(&reuse_later_pool));
+
+	/* Both buffers are in use from here on */
+	first = net_buf_reuse(&reuse_deferred);
+	zassert_equal(net_buf_get_max_used(&reuse_later_pool), 2U,
+		      "Maximum of %zu with two buffers in use",
+		      net_buf_get_max_used(&reuse_later_pool));
+
+	is_reuse_deferred = false;
+	net_buf_drop(&first);
+	net_buf_drop(&second);
+}
+
+static void net_buf_tests_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	/* What a failed test_net_buf_reuse() leaves behind */
+	is_reuse_enabled = false;
+	is_reuse_orig_cleared = false;
+	net_buf_drop(&reuse_kept);
+
+	/* What a failed test_net_buf_reuse_max_used() leaves behind */
+	is_reuse_deferred = false;
+	if (reuse_deferred != NULL) {
+		net_buf_destroy(reuse_deferred);
+		reuse_deferred = NULL;
+	}
+}
+
+ZTEST_SUITE(net_buf_tests, NULL, NULL, NULL, net_buf_tests_after, NULL);
