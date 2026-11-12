@@ -5,6 +5,7 @@
  */
 
 #include "nxp_mcxw7x_common.dtsi"
+#include "nxp_mcxw7x_s2ram.dtsi"
 
 /* TSTMR is removed from MCXW72 due to SIRC clock source instability. */
 /delete-node/ &tstmr0;
