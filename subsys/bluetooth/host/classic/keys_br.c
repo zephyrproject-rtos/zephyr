@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,7 @@
 
 #include <common/bt_str.h>
 
+#include <host/conn_internal.h>
 #include <host/hci_core.h>
 #include <host/settings.h>
 #include <host/keys.h>
@@ -31,6 +33,35 @@ static struct bt_keys_link_key key_pool[CONFIG_BT_MAX_PAIRED];
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 static uint32_t aging_counter_val;
 static struct bt_keys_link_key *last_keys_updated;
+
+struct key_data {
+	const struct bt_keys_link_key *key;
+	bool in_use;
+};
+
+static void find_key_in_use(struct bt_conn *conn, void *data)
+{
+	struct key_data *kdata = data;
+	bt_conn_state_t state = conn->state;
+
+	/* Disconnect cleanup still accesses the key in both pending-disconnect states. */
+	if ((state == BT_CONN_CONNECTED || state == BT_CONN_DISCONNECTING ||
+	     state == BT_CONN_DISCONNECT_COMPLETE) &&
+	    bt_addr_eq(&conn->br.dst, &kdata->key->addr)) {
+		kdata->in_use = true;
+	}
+}
+
+static bool key_is_in_use(const struct bt_keys_link_key *key)
+{
+	struct key_data kdata = {
+		.key = key,
+	};
+
+	bt_conn_foreach(BT_CONN_TYPE_BR, find_key_in_use, &kdata);
+
+	return kdata.in_use;
+}
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 
 struct bt_keys_link_key *bt_keys_find_link_key(const bt_addr_t *addr)
@@ -65,11 +96,14 @@ struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr)
 	if (!key) {
 		int i;
 
-		key = &key_pool[0];
-		for (i = 1; i < ARRAY_SIZE(key_pool); i++) {
+		for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys_link_key *current = &key_pool[i];
 
-			if (current->aging_counter < key->aging_counter) {
+			if (key_is_in_use(current)) {
+				continue;
+			}
+
+			if (key == NULL || current->aging_counter < key->aging_counter) {
 				key = current;
 			}
 		}
