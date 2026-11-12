@@ -40,11 +40,36 @@ static inline const char *llext_string(const struct llext_loader *ldr, const str
 	return (const char *)ext->mem[mem_idx] + idx;
 }
 
+/* Shared library loaded as one image (CONFIG_LLEXT_SHAREDLIB_IMAGE) */
+static inline bool llext_is_image(const struct llext *ext)
+{
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	return ext->image != NULL;
+#else
+	return false;
+#endif
+}
+
+/* Load address minus link address of a shared library image */
+static inline uintptr_t llext_load_bias(const struct llext *ext)
+{
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	return ext->load_bias;
+#else
+	return 0;
+#endif
+}
+
 static inline uintptr_t llext_get_reloc_instruction_location(struct llext_loader *ldr,
 							     struct llext *ext,
 							     int shndx,
 							     const elf_rela_t *rela)
 {
+	if (llext_is_image(ext)) {
+		/* In a shared library image, r_offset is a virtual address */
+		return llext_load_bias(ext) + rela->r_offset;
+	}
+
 	return (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shndx) + rela->r_offset;
 }
 

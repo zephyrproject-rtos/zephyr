@@ -1011,7 +1011,11 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	if (!ldr_parm->pre_located) {
-		llext_adjust_mmu_permissions(ext);
+		ret = llext_adjust_mmu_permissions(ldr, ext);
+		if (ret != 0) {
+			LOG_ERR("Failed to set memory permissions, ret %d", ret);
+			goto out;
+		}
 	}
 
 out:
