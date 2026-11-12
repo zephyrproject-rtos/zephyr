@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <zephyr/dsp/types.h>
+#include <zephyr/sys/util.h>
 
 /**
  * @ingroup math_dsp
@@ -15,7 +16,7 @@
  *
  * Extends the existing inttypes headers for print formatting. Usage:
  * @code{c}
- * printk("Value=%" PRIq "\n", PRIq_arg(value, 6, 2));
+ * printk("Value=%" PRIq(6) "\n", PRIq_arg(value, 6, 2));
  * @endcode
  *
  * For a Q value representing 0.5, the expected output will be:
@@ -50,6 +51,11 @@ static inline int64_t ___PRIq_arg_shift(int64_t q, int shift)
 
 /**
  * @brief Insert Q value arguments to print format
+ *
+ * The value is truncated toward zero to @p precision decimal places.
+ *
+ * @note @p q and @p shift are evaluated more than once, so they must not be expressions with
+ *       side effects.
  *
  * @param[in] q The q value
  * @param[in] precision Number of decimal points to print
