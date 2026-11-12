@@ -2306,18 +2306,86 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
+	int ret;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 		LOG_DBG("Set WAKE pin to 1 for init script");
 	}
 
-	return hl78xx_run_init_script_async(data);
+	ret = hl78xx_run_init_script_async(data);
+	if (ret != -EBUSY) {
+		return ret;
+	}
+
+	/* Another script holds the chat: after a restart the modem made on its
+	 * own, the script of a command still waiting for its answer; on an LTE
+	 * restore, a command of another thread. Abort it and start the init
+	 * script on the timeout: the abort runs on the chat work queue, after
+	 * this event. A driver script reports the abort as a failure, which is
+	 * not the init script's.
+	 */
+	LOG_WRN("Chat busy at the init script: aborting the active script");
+	data->status.boot.init_script_retry_pending = true;
+	hl78xx_chat_abort_active_script(data);
+	hl78xx_reschedule_timer(data, K_MSEC(100));
+
+	return 0;
+}
+
+static int hl78xx_on_run_init_script_state_leave(struct hl78xx_data *data)
+{
+	/* The init script retry must not fire in the next state */
+	hl78xx_stop_timer(data);
+	data->status.boot.init_script_retry_pending = false;
+	return 0;
 }
 
 static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	if (data->status.boot.init_script_retry_pending && hl78xx_is_script_result(evt)) {
+		/* The init script is not running: the result belongs to another
+		 * script, the one the busy entry aborted or one that took the
+		 * chat since. Taken for the init script's, a failure would reset
+		 * the modem and a success would skip the init script.
+		 */
+		LOG_DBG("Result of the aborted script ignored: %s", hl78xx_event_str(evt));
+		hl78xx_clear_script_failure(data);
+		return;
+	}
+
 	switch (evt) {
+	case MODEM_HL78XX_EVENT_TIMEOUT: {
+		int ret;
+
+		if (!data->status.boot.init_script_retry_pending) {
+			/* A timer the previous state left running: no retry is due */
+			break;
+		}
+		if (atomic_get(&data->events.script_results_queued) > 0) {
+			/* A result of the script that held the chat is queued behind
+			 * this timeout. Started now, the init script would get it:
+			 * wait until it has been ignored.
+			 */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+		/* The retry armed by a busy entry */
+		ret = hl78xx_run_init_script_async(data);
+		if (ret == -EBUSY) {
+			/* The aborted script, or a command sent since, still holds
+			 * the chat; each is bounded by its own timeout.
+			 */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+		} else if (ret < 0) {
+			LOG_ERR("Init script did not start: %d", ret);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
+		} else {
+			data->status.boot.init_script_retry_pending = false;
+		}
+		break;
+	}
+
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_confirm_recovery(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT, evt);
 
@@ -4419,7 +4487,7 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	[MODEM_HL78XX_STATE_RUN_INIT_SCRIPT] = {
 		hl78xx_on_run_init_script_state_enter,
-		NULL,
+		hl78xx_on_run_init_script_state_leave,
 		hl78xx_run_init_script_event_handler
 	},
 	[MODEM_HL78XX_STATE_RECOVERY] = {
