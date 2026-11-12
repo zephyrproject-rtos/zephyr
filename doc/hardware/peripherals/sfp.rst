@@ -80,6 +80,43 @@ With :kconfig:option:`CONFIG_SFP_SHELL`, the shell provides ``sfp info
 The :zephyr:code-sample:`sfp` sample runs on ``native_sim`` with an emulated
 module.
 
+CMIS Modules
+************
+
+Faster modules such as QSFP-DD and OSFP (100G to 800G and beyond) are
+managed through CMIS instead of SFF-8472. They answer at a single I2C
+address, ``0x50``, and use paged memory: 128 bytes of Lower Memory are
+always visible, and an upper page is selected by writing its number to byte
+127. Lower Memory holds the module state, the latched flags and the module
+temperature and supply voltage; Page 00h holds the identity and power
+class.
+
+The CMIS library (:kconfig:option:`CONFIG_CMIS`) and the ``cmis`` driver
+class follow the same split as the SFP support. A cage is described with
+``sff,cmis``, using the QSFP-DD signal names:
+
+.. code-block:: devicetree
+
+   qsfp0: qsfp-cage {
+           compatible = "sff,cmis";
+           i2c-bus = <&i2c2>;
+           modprsl-gpios = <&gpio1 0 GPIO_ACTIVE_LOW>;
+           intl-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+           resetl-gpios = <&gpio1 2 GPIO_ACTIVE_LOW>;
+           lpmode-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+   };
+
+:c:func:`cmis_read_id` and :c:func:`cmis_read_monitors` select the page and
+read under a lock, so several threads can share a module. Lower Memory
+bytes 8 to 11 are latched flags that the module clears when they are read.
+The driver only reads byte 9, whose temperature and supply flags it returns,
+so events such as ModuleStateChanged stay pending for the host's own
+interrupt handling.
+
+With :kconfig:option:`CONFIG_SFP_CMIS_SHELL`, the shell provides ``cmis info
+<device>`` and ``cmis mon <device>``. The ``zephyr,cmis-module-emul``
+emulator serves a module image with paging and clear-on-read flags.
+
 Testing
 *******
 
@@ -99,3 +136,7 @@ API Reference
 .. doxygengroup:: sfp_interface
 
 .. doxygengroup:: sff8472
+
+.. doxygengroup:: cmis_interface
+
+.. doxygengroup:: cmis
