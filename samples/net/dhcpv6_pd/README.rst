@@ -16,7 +16,7 @@ It can be built in two roles:
   delegated prefix and advertised via Router Advertisements, so that hosts on
   the downstream links can auto-configure addresses (SLAAC).
 
-* **Delegating router / server** (``overlay-server.conf``): a DHCPv6 server
+* **Delegating router / server** (``pd-server.conf``): a DHCPv6 server
   hands out addresses from ``2001:db8:abcd::/64`` and delegates prefixes out of
   ``2001:db8:beef::/48``, one ``/56`` per client. The two pools are deliberately
   disjoint: if a client was delegated the very subnet its own WAN address comes
@@ -39,8 +39,8 @@ The number of downstream links is bounded by
 ``zephyr,native-tap`` interfaces in :file:`boards/native_sim.overlay`) to
 delegate to more links.
 
-The server build (``overlay-server.conf``) uses a single interface named
-``zeth``: :file:`overlay-server.overlay`, disables the downstream interface and
+The server build (``pd-server.conf``) uses a single interface named
+``zeth``: :file:`pd-server.overlay`, disables the downstream interface and
 renames the remaining one, so that build attaches to ``zeth`` rather than
 ``zeth0``.
 
@@ -65,8 +65,8 @@ Delegating router (server):
 .. code-block:: console
 
    west build -b native_sim samples/net/dhcpv6_pd -- \
-       -DEXTRA_CONF_FILE=overlay-server.conf \
-       -DEXTRA_DTC_OVERLAY_FILE=overlay-server.overlay
+       -DEXTRA_CONF_FILE=pd-server.conf \
+       -DEXTRA_DTC_OVERLAY_FILE=pd-server.overlay
    west build -t run
 
 Requirements
