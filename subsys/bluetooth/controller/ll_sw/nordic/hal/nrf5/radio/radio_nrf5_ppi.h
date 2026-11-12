@@ -320,6 +320,31 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 		(uint32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR));
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* Reconfigure SW-switch timer clear from EVENTS_END to EVENTS_READY.
+ * Also reconfigure the PPI group enable from EVENTS_END to EVENTS_READY.
+ * Used for BIS subevent back-to-back reception where the timer offset
+ * is relative to the current subevent's READY timestamp.
+ */
+static inline void hal_sw_switch_timer_clear_ppi_se_rx_config(uint8_t ppi_group_index)
+{
+	ARG_UNUSED(ppi_group_index);
+
+	/* Reconfigure timer clear PPI: READY -> TASKS_CLEAR */
+	nrf_ppi_channel_endpoint_setup(
+		NRF_PPI,
+		HAL_SW_SWITCH_TIMER_CLEAR_PPI,
+		(uint32_t)&(NRF_RADIO->EVENTS_READY),
+		(uint32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR));
+
+	/* Reconfigure group enable PPI: READY -> group enable task */
+	nrf_ppi_event_endpoint_setup(
+		NRF_PPI,
+		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI,
+		(uint32_t)&(NRF_RADIO->EVENTS_READY));
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 #else /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 /* Clear event timer (sw-switch timer) on Radio end:

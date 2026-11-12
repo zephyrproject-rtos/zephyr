@@ -118,17 +118,34 @@ struct ll_sync_iso_set {
 	struct ull_hdr ull;
 	struct lll_sync_iso lll;
 
+	/* LLL prepare callback */
+	void (*lll_prepare_fp)(void *param);
+
 	/* Periodic Advertising Sync that contained the BIGInfo */
 	struct ll_sync_set *sync;
 
 	/* Pointer to semaphore used for LLL flushing */
 	struct k_sem *flush_sem;
 
+	uint8_t big_handle;
+
+	/* Flag to mark terminate procedure handling */
+	uint8_t is_stop:1;
+
 	/* Periodic Advertising Sync timeout */
 	uint16_t timeout;
 	uint16_t volatile timeout_reload; /* Non-zero when sync established */
 	uint16_t timeout_expire; /* timeout countdown */
-	uint8_t big_handle;
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* Ousted ticker expiries prepared since the last expiry that was not ousted */
+	uint16_t lazy_oust;
+
+	/* Drift compensation requested after the next event was prepared, not included in
+	 * the anchor point from which the next event measures its drift.
+	 */
+	int32_t ticks_drift_lag;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 	/* Encryption */
 	uint8_t gltk[16];

@@ -8,11 +8,14 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/sys/byteorder.h>
+
 #include <soc.h>
 
 #include <nrf_sys_event.h>
 #include <nrfx_gpiote.h>
 #include <gpiote_nrfx.h>
+
+#include <mram_latency.h>
 
 #include "util/mem.h"
 
@@ -28,6 +31,8 @@
 #include "ll_sw/pdu.h"
 
 #include "radio_internal.h"
+
+#include "hal/debug.h"
 
 /* The EVENT_TIMER is configured to 1 MHz across all nRF SOCs */
 #define HAL_EVENT_TIMER_US_TO_TICKS(x) ((uint32_t)(x))
@@ -167,6 +172,48 @@ void radio_isr_set(radio_isr_cb_t cb, void *param)
 	isr_cb = cb;
 }
 
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+/* MRAM no latency is requested, cancelled and released only in the LLL
+ * context, radio_reset() and radio_stop(). The onoff callback, in thread
+ * context or synchronously in radio_reset(), only acknowledges its client.
+ *
+ * A client is in use until its request is either cancelled or acknowledged.
+ * Two clients are used, as the callback of a released request may still be
+ * pending when the next request is made.
+ */
+#define MRAM_CLI_CNT 2U
+
+static struct onoff_client mram_cli[MRAM_CLI_CNT];
+static uint8_t mram_req[MRAM_CLI_CNT];
+static uint8_t mram_cancel[MRAM_CLI_CNT];
+static volatile uint8_t mram_ack[MRAM_CLI_CNT];
+static uint8_t mram_cli_idx;
+static uint8_t mram_refcnt;
+
+static bool mram_cli_is_busy(uint8_t idx)
+{
+	return (uint8_t)(mram_req[idx] - mram_cancel[idx] - mram_ack[idx]) != 0U;
+}
+
+static void mram_no_latency_callback(struct onoff_manager *mgr,
+				     struct onoff_client *cli,
+				     uint32_t state, int res)
+{
+	uint8_t idx;
+
+	ARG_UNUSED(mgr);
+
+	LL_ASSERT_ERR(res == 0);
+	LL_ASSERT_ERR(state == ONOFF_STATE_ON);
+
+	idx = (cli == &mram_cli[0]) ? 0U : 1U;
+	LL_ASSERT_ERR(cli == &mram_cli[idx]);
+
+	/* Acknowledge the client, the LLL context releases the request */
+	mram_ack[idx]++;
+}
+#endif /* CONFIG_SOC_SERIES_NRF54H */
+
 void radio_setup(void)
 {
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN)
@@ -196,8 +243,20 @@ void radio_setup(void)
 	hal_radio_ram_prio_setup();
 }
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* PPI group index used by the BIS subevent back-to-back reception, to restore
+ * the SW switch timer clear on Radio READY after radio_tmr_start_us() restores
+ * the clear on Radio END.
+ */
+#define SW_SWITCH_SE_RX_GROUP_INDEX_NONE 0xFFU
+static uint8_t sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+
 void radio_reset(void)
 {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* nRF SoC generic radio reset/initializations
 	 * Note: Only registers whose bits are partially modified across
@@ -218,7 +277,7 @@ void radio_reset(void)
 	hal_radio_sw_switch_ppi_group_setup();
 #endif
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->TIMING = (RADIO_TIMING_RU_Legacy << RADIO_TIMING_RU_Pos) &
 			    RADIO_TIMING_RU_Msk;
@@ -226,13 +285,58 @@ void radio_reset(void)
 	NRF_RADIO->TIMING = (RADIO_TIMING_RU_Fast << RADIO_TIMING_RU_Pos) &
 			    RADIO_TIMING_RU_Msk;
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF54H */
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_request_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put RRAMC in Standby mode.
+	 * Gives faster wake-ups, and is useful in combination with Constant Latency sub-power mode.
+	 * FIXME: Use on off service design to share this request with application implementations.
+	 */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_Standby <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Constant Latency mode */
 	NRF_POWER->TASKS_CONSTLAT = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+
+
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+	/* Check and request mram no latency if we are the first instance */
+	if (mram_refcnt == 0U) {
+		uint8_t idx;
+		int ret;
+
+		/* Use the other client if the callback of the current one is
+		 * pending.
+		 */
+		idx = mram_cli_idx;
+		if (mram_cli_is_busy(idx)) {
+			idx ^= 1U;
+			LL_ASSERT_ERR(!mram_cli_is_busy(idx));
+			mram_cli_idx = idx;
+		}
+
+		/* Mark for mram no latency requested */
+		mram_req[idx]++;
+		cpu_dmb();
+
+		sys_notify_init_callback(&mram_cli[idx].notify, mram_no_latency_callback);
+
+		ret = mram_no_latency_request(&mram_cli[idx]);
+		LL_ASSERT_ERR(ret >= 0);
+	}
+
+	mram_refcnt++;
+#endif /* CONFIG_SOC_SERIES_NRF54H */
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	hal_palna_ppi_setup();
@@ -288,6 +392,32 @@ void radio_stop(void)
 	 *       - PSEL.DFEGPIO[n]
 	 *       - DFEPACKET.PTR
 	 */
+
+#if defined(CONFIG_SOC_SERIES_NRF54H)
+	/* Check and request a cancel or release if we are the last instance */
+	if (mram_refcnt > 0U) {
+		mram_refcnt--;
+		if (mram_refcnt == 0U) {
+			uint8_t idx = mram_cli_idx;
+			int ret;
+
+			ret = mram_no_latency_cancel_or_release(&mram_cli[idx]);
+			if ((ret == ONOFF_STATE_TO_ON) || (ret == ONOFF_STATE_TO_OFF)) {
+				/* Cancelled, there will be no callback */
+				mram_cancel[idx]++;
+			} else {
+				/* Released, the callback acknowledges if
+				 * pending.
+				 */
+				LL_ASSERT_ERR(ret == ONOFF_STATE_ON);
+			}
+		}
+	} else {
+		/* NOTE: radio_stop() will be called more times than radio_reset
+		 *       hence it is ok for the refcnt being zero.
+		 */
+	}
+#endif /* CONFIG_SOC_SERIES_NRF54H */
 }
 
 void radio_phy_set(uint8_t phy, uint8_t flags)
@@ -298,7 +428,8 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 
 	NRF_RADIO->MODE = (mode << RADIO_MODE_MODE_Pos) & RADIO_MODE_MODE_Msk;
 
-#if !defined(CONFIG_SOC_SERIES_NRF51) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if !defined(CONFIG_SOC_SERIES_NRF51) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
+	!defined(CONFIG_SOC_SERIES_NRF54H)
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
 	NRF_RADIO->MODECNF0 = ((RADIO_MODECNF0_DTX_Center <<
 				RADIO_MODECNF0_DTX_Pos) &
@@ -311,7 +442,9 @@ void radio_phy_set(uint8_t phy, uint8_t flags)
 			       RADIO_MODECNF0_DTX_Pos) &
 			      RADIO_MODECNF0_DTX_Msk;
 #endif /* !CONFIG_BT_CTLR_RADIO_ENABLE_FAST */
-#endif /* !CONFIG_SOC_SERIES_NRF51 && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_SERIES_NRF51 && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tx_power_set(int8_t power)
@@ -356,19 +489,22 @@ void radio_freq_chan_set(uint32_t chan)
 
 void radio_whiten_iv_set(uint32_t iv)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 #if defined(RADIO_DATAWHITEIV_DATAWHITEIV_Msk)
 	NRF_RADIO->DATAWHITEIV = HAL_RADIO_RESET_VALUE_DATAWHITE | iv;
 #else /* !RADIO_DATAWHITEIV_DATAWHITEIV_Msk */
 	NRF_RADIO->DATAWHITE = HAL_RADIO_RESET_VALUE_DATAWHITE | iv;
 #endif /* !RADIO_DATAWHITEIV_DATAWHITEIV_Msk */
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 	nrf_radio_datawhiteiv_set(NRF_RADIO, iv);
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
-	NRF_RADIO->PCNF1 &= ~RADIO_PCNF1_WHITEEN_Msk;
-	NRF_RADIO->PCNF1 |= ((1UL) << RADIO_PCNF1_WHITEEN_Pos) &
-			    RADIO_PCNF1_WHITEEN_Msk;
+	uint32_t pcnf1;
+
+	pcnf1 = NRF_RADIO->PCNF1;
+	pcnf1 &= ~RADIO_PCNF1_WHITEEN_Msk;
+	pcnf1 |= ((1UL) << RADIO_PCNF1_WHITEEN_Pos) & RADIO_PCNF1_WHITEEN_Msk;
+	NRF_RADIO->PCNF1 = pcnf1;
 }
 
 void radio_aa_set(const uint8_t *aa)
@@ -403,7 +539,8 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X) || \
 	defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || \
-	defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	extra = 0U;
 
 	phy = RADIO_PKT_CONF_PHY_GET(flags);
@@ -451,20 +588,26 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	} else {
 		bits_s1 = 0U;
 	}
-#endif /* CONFIG_SOC_COMPATIBLE_NRF52X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF52X || CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET ||
+	* CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF54H
+	*/
 
 	NRF_RADIO->PCNF0 =
 		(((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) |
 		((((uint32_t)bits_len) << RADIO_PCNF0_LFLEN_Pos) & RADIO_PCNF0_LFLEN_Msk) |
 		((((uint32_t)bits_s1) << RADIO_PCNF0_S1LEN_Pos) & RADIO_PCNF0_S1LEN_Msk) | extra;
 
-	NRF_RADIO->PCNF1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
-			      RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
-	NRF_RADIO->PCNF1 |=
+	uint32_t pcnf1;
+
+	pcnf1 = NRF_RADIO->PCNF1;
+	pcnf1 &= ~(RADIO_PCNF1_MAXLEN_Msk | RADIO_PCNF1_STATLEN_Msk |
+		   RADIO_PCNF1_BALEN_Msk | RADIO_PCNF1_ENDIAN_Msk);
+	pcnf1 |=
 		((((uint32_t)max_len) << RADIO_PCNF1_MAXLEN_Pos) & RADIO_PCNF1_MAXLEN_Msk) |
 		(((0UL) << RADIO_PCNF1_STATLEN_Pos) & RADIO_PCNF1_STATLEN_Msk) |
 		(((3UL) << RADIO_PCNF1_BALEN_Pos) & RADIO_PCNF1_BALEN_Msk) |
 		(((RADIO_PCNF1_ENDIAN_Little) << RADIO_PCNF1_ENDIAN_Pos) & RADIO_PCNF1_ENDIAN_Msk);
+	NRF_RADIO->PCNF1 = pcnf1;
 }
 
 void radio_pkt_rx_set(void *rx_packet)
@@ -492,6 +635,11 @@ uint32_t radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
 	return hal_radio_rx_ready_delay_us_get(phy, flags);
 }
 
+uint32_t radio_rx_address_delay_get(uint8_t phy, uint8_t flags)
+{
+	return hal_radio_rx_address_delay_us_get(phy, flags);
+}
+
 uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 {
 	return hal_radio_rx_chain_delay_us_get(phy, flags);
@@ -500,7 +648,8 @@ uint32_t radio_rx_chain_delay_get(uint8_t phy, uint8_t flags)
 void radio_rx_enable(void)
 {
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -513,7 +662,9 @@ void radio_rx_enable(void)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX  ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
@@ -522,7 +673,8 @@ void radio_rx_enable(void)
 void radio_tx_enable(void)
 {
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -535,7 +687,9 @@ void radio_tx_enable(void)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
@@ -546,6 +700,10 @@ void radio_disable(void)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	hal_radio_sw_switch_cleanup();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 	/* Reset/disable PPI/DPPI */
 	radio_tmr_status_reset();
@@ -588,14 +746,21 @@ uint32_t radio_is_address(void)
 	return (NRF_RADIO->EVENTS_ADDRESS != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+static radio_tmr_isr_cb_t isr_radio_tmr_cb;
+static void *isr_radio_tmr_cb_param;
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static uint32_t last_pdu_end_latency_us;
+static uint32_t prev_pdu_end_us;
 static uint32_t last_pdu_end_us;
 
 static void last_pdu_end_us_init(uint32_t latency_us)
 {
 	last_pdu_end_latency_us = latency_us;
 	last_pdu_end_us = 0U;
+	prev_pdu_end_us = 0U;
 }
 
 uint32_t radio_is_done(void)
@@ -605,7 +770,43 @@ uint32_t radio_is_done(void)
 		 * Note: this depends on the function being called exactly once
 		 * in the ISR function.
 		 */
-		last_pdu_end_us += EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
+		uint32_t elapsed_us;
+
+		prev_pdu_end_us = last_pdu_end_us;
+		elapsed_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_TRX_END_CC_OFFSET];
+		last_pdu_end_us += elapsed_us;
+
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+		if (isr_radio_tmr_cb != NULL) {
+			uint32_t actual_us;
+
+			actual_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+			if (actual_us > elapsed_us) {
+				actual_us -= elapsed_us;
+			} else {
+				actual_us = 0U;
+			}
+
+			if (actual_us > HAL_RADIO_ISR_LATENCY_MAX_US) {
+				nrf_timer_cc_set(EVENT_TIMER,
+						 HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
+			} else {
+				radio_tmr_isr_cb_t cb;
+
+				nrf_timer_int_disable(EVENT_TIMER,
+						      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+				nrf_timer_event_clear(EVENT_TIMER,
+						      HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+				cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
+				cb = isr_radio_tmr_cb;
+				isr_radio_tmr_cb = NULL;
+
+				cb(isr_radio_tmr_cb_param, 1U);
+			}
+		}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
+
 		return 1;
 	} else {
 		return 0;
@@ -630,7 +831,13 @@ uint32_t radio_is_tx_done(void)
 
 uint32_t radio_has_disabled(void)
 {
-	return (NRF_RADIO->EVENTS_DISABLED != 0);
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	if (NRF_RADIO->EVENTS_END != 0U) {
+		return 1U;
+	}
+#endif /* CONFIG_BT_CTLR_TIFS_PLLEN */
+
+	return (NRF_RADIO->EVENTS_DISABLED != 0U);
 }
 
 uint32_t radio_is_idle(void)
@@ -746,9 +953,16 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	uint8_t radio_enable_ppi =
 		HAL_SW_SWITCH_RADIO_ENABLE_PHYEND_DELAY_COMPENSATION_PPI(sw_tifs_toggle);
 #endif /* CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
+	uint32_t cc_val;
 	uint32_t delay;
 
 	hal_radio_sw_switch_setup(sw_tifs_toggle);
+
+	/* Cache the TIFS timer compare value set by the caller via
+	 * radio_tmr_tifs_set(). hal_radio_sw_switch_setup() configures PPI
+	 * channels only and does not modify the CC[cc] register value.
+	 */
+	cc_val = SW_SWITCH_TIMER->CC[cc];
 
 	/* NOTE: As constants are passed to dir_curr and dir_next, the
 	 *       compiler should optimize out the redundant code path
@@ -761,10 +975,8 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		 */
 		if (dir_curr == SW_SWITCH_TX) {
 			delay = HAL_RADIO_NS2US_ROUND(
-			    hal_radio_tx_ready_delay_ns_get(phy_next,
-							    flags_next) +
-			    hal_radio_tx_chain_delay_ns_get(phy_curr,
-							    flags_curr));
+			    hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
+			    hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr));
 
 			hal_radio_b2b_txen_on_sw_switch(cc, ppi);
 		} else {
@@ -772,8 +984,7 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 			 * Assumption being, S8 has higher delay.
 			 */
 			delay = HAL_RADIO_NS2US_ROUND(
-			    hal_radio_tx_ready_delay_ns_get(phy_next,
-							    flags_next) +
+			    hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
 			    hal_radio_rx_chain_delay_ns_get(phy_curr, PHY_FLAGS_S8));
 
 			hal_radio_txen_on_sw_switch(cc, ppi);
@@ -782,15 +993,15 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 		if (dir_curr == SW_SWITCH_RX && end_evt_delay_en == END_EVT_DELAY_ENABLED &&
 		    !(phy_curr & PHY_CODED)) {
-			nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
-					 SW_SWITCH_TIMER->CC[cc] -
-					 HAL_EVENT_TIMER_US_TO_TICKS(RADIO_EVENTS_PHYEND_DELAY_US));
-			if (HAL_EVENT_TIMER_US_TO_TICKS(delay) < SW_SWITCH_TIMER->CC[cc]) {
+			uint32_t phyend_delay;
+
+			phyend_delay = HAL_EVENT_TIMER_US_TO_TICKS(RADIO_EVENTS_PHYEND_DELAY_US +
+								   delay);
+			if (phyend_delay < cc_val) {
 				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc,
-						 (SW_SWITCH_TIMER->CC[phyend_delay_cc] -
-						  HAL_EVENT_TIMER_US_TO_TICKS(delay)));
+						 (cc_val - phyend_delay));
 			} else {
-				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1);
+				nrf_timer_cc_set(SW_SWITCH_TIMER, phyend_delay_cc, 1U);
 			}
 
 			hal_radio_sw_switch_phyend_delay_compensation_config_set(radio_enable_ppi,
@@ -814,11 +1025,10 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 
 			/* Calculate assuming reception on S2 coding scheme. */
 			delay_s2 = HAL_RADIO_NS2US_ROUND(
-				hal_radio_tx_ready_delay_ns_get(phy_next,
-								flags_next) +
+				hal_radio_tifs_tx_ready_delay_ns_get(phy_next, flags_next) +
 				hal_radio_rx_chain_delay_ns_get(phy_curr, PHY_FLAGS_S2));
 
-			new_cc_s2_value = SW_SWITCH_TIMER->CC[cc];
+			new_cc_s2_value = cc_val;
 
 			if (delay_s2 < new_cc_s2_value) {
 				new_cc_s2_value -= delay_s2;
@@ -863,19 +1073,15 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 		/* Calculate delay with respect to current and next PHY. */
 		if (dir_curr) {
 			delay = HAL_RADIO_NS2US_CEIL(
-				hal_radio_rx_ready_delay_ns_get(phy_next,
-								flags_next) +
-				hal_radio_tx_chain_delay_ns_get(phy_curr,
-								flags_curr)) +
+				hal_radio_tifs_rx_ready_delay_ns_get(phy_next, flags_next) +
+				hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
 			hal_radio_rxen_on_sw_switch(cc, ppi);
 		} else {
 			delay = HAL_RADIO_NS2US_CEIL(
-				hal_radio_rx_ready_delay_ns_get(phy_next,
-								flags_next) +
-				hal_radio_rx_chain_delay_ns_get(phy_curr,
-								flags_curr)) +
+				hal_radio_tifs_rx_ready_delay_ns_get(phy_next, flags_next) +
+				hal_radio_rx_chain_delay_ns_get(phy_curr, flags_curr)) +
 				(EVENT_CLOCK_JITTER_US << 1);
 
 			hal_radio_b2b_rxen_on_sw_switch(cc, ppi);
@@ -902,13 +1108,11 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 
-	if (HAL_EVENT_TIMER_US_TO_TICKS(delay) < SW_SWITCH_TIMER->CC[cc]) {
-		nrf_timer_cc_set(SW_SWITCH_TIMER,
-				 cc,
-				 (SW_SWITCH_TIMER->CC[cc] -
-				  HAL_EVENT_TIMER_US_TO_TICKS(delay)));
+	if (HAL_EVENT_TIMER_US_TO_TICKS(delay) < cc_val) {
+		nrf_timer_cc_set(SW_SWITCH_TIMER, cc,
+				 (cc_val - HAL_EVENT_TIMER_US_TO_TICKS(delay)));
 	} else {
-		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1);
+		nrf_timer_cc_set(SW_SWITCH_TIMER, cc, 1U);
 	}
 
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) |
@@ -922,13 +1126,16 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	 *       time-stamp.
 	 */
 	hal_radio_end_time_capture_ppi_config();
-#if !defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if !defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
+	!defined(CONFIG_SOC_SERIES_NRF54H)
 	/* The function is not called for nRF5340 single timer configuration because
 	 * HAL_SW_SWITCH_TIMER_CLEAR_PPI is equal to HAL_RADIO_END_TIME_CAPTURE_PPI,
 	 * so channel is already enabled.
 	 */
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
@@ -943,7 +1150,11 @@ void radio_switch_complete_and_rx(uint8_t phy_rx)
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	/* NOTE: As Tx chain delays are negligible constant values (~1 us)
 	 *	 across nRF5x radios, sw_switch assumes the 1M chain delay for
@@ -962,7 +1173,11 @@ void radio_switch_complete_and_tx(uint8_t phy_rx, uint8_t flags_rx,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx,
 		  END_EVT_DELAY_DISABLED);
@@ -977,7 +1192,11 @@ void radio_switch_complete_with_delay_compensation_and_tx(
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_TX, phy_rx, flags_rx, phy_tx, flags_tx, end_delay_en);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
@@ -991,7 +1210,11 @@ void radio_switch_complete_and_b2b_tx(uint8_t phy_curr, uint8_t flags_curr,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_TXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_TX, SW_SWITCH_TX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1006,7 +1229,11 @@ void radio_switch_complete_and_b2b_rx(uint8_t phy_curr, uint8_t flags_curr,
 			    NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk |
 			    RADIO_SHORTS_DISABLED_RXEN_Msk;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
 		  END_EVT_DELAY_DISABLED);
@@ -1018,7 +1245,8 @@ void radio_switch_complete_and_b2b_tx_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_b2b_tx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1028,17 +1256,109 @@ void radio_switch_complete_and_b2b_rx_disable(void)
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_b2b_rx_disable(sw_tifs_toggle);
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+/* Pre-arm the radio enable of the subevent after the one that is being setup,
+ * at an offset from the READY of the subevent being setup. The caller has
+ * set the offset using radio_tmr_tifs_set(), with all delays accounted.
+ */
+static void sw_switch_b2b_se_rx(uint8_t phy_curr, uint8_t flags_curr,
+				uint8_t phy_next, uint8_t flags_next)
+{
+	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
+	uint32_t cc_val = SW_SWITCH_TIMER->CC[cc];
+	uint8_t ppi_group_index = sw_tifs_toggle;
+
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_PLLEN_Msk;
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
+
+	/* Stale compare event from previous use of the compare register would
+	 * be mistaken as missed radio enable by radio_switch_b2b_se_rx_is_missed().
+	 */
+	nrf_timer_event_clear(SW_SWITCH_TIMER, nrf_timer_compare_event_get(cc));
+
+	sw_switch(SW_SWITCH_RX, SW_SWITCH_RX, phy_curr, flags_curr, phy_next, flags_next,
+		  END_EVT_DELAY_DISABLED);
+
+	/* sw_switch() subtracted the Rx ready and chain delay, which the caller
+	 * has already accounted for.
+	 */
+	nrf_timer_cc_set(SW_SWITCH_TIMER, cc, cc_val);
+
+	hal_sw_switch_timer_clear_ppi_se_rx_config(ppi_group_index);
+
+	sw_switch_se_rx_group_index = ppi_group_index;
+}
+
+/* Continue the back-to-back chain: the radio enable pre-armed at the READY of
+ * the previous subevent is used for the subevent being setup, and the
+ * subevent after is pre-armed.
+ */
+void radio_switch_complete_and_b2b_se_rx(uint8_t phy_curr, uint8_t flags_curr,
+					 uint8_t phy_next, uint8_t flags_next)
+{
+	sw_switch_b2b_se_rx(phy_curr, flags_curr, phy_next, flags_next);
+}
+
+/* Start the back-to-back chain: the subevent being setup is started using the
+ * event timer, and the subevent after is pre-armed. Shall be called after
+ * radio_tmr_start(), or before radio_tmr_start_us() so that a late radio start
+ * is not missed while the radio enable task subscription is changed.
+ */
+void radio_switch_complete_and_b2b_se_rx_first(uint8_t phy_curr, uint8_t flags_curr,
+					       uint8_t phy_next, uint8_t flags_next)
+{
+	sw_switch_b2b_se_rx(phy_curr, flags_curr, phy_next, flags_next);
+
+	/* On DPPI, sw_switch() subscribes the radio enable task to the previous
+	 * sw_switch PPI, restore the subscription for the radio start on the
+	 * event timer compare.
+	 */
+	hal_radio_enable_on_tick_ppi_config_and_enable(0U);
+}
+
+/* Returns true if the radio enable used for the subevent being setup was
+ * pre-armed and triggered before radio_switch_complete_and_b2b_se_rx() was
+ * called, i.e. the radio did not start. Shall be called after
+ * radio_switch_complete_and_b2b_se_rx().
+ */
+uint32_t radio_switch_b2b_se_rx_is_missed(void)
+{
+	uint8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
+
+	return nrf_timer_event_check(SW_SWITCH_TIMER, nrf_timer_compare_event_get(cc)) &&
+	       (nrf_radio_state_get(NRF_RADIO) == NRF_RADIO_STATE_DISABLED);
+}
+
+void radio_switch_complete_and_b2b_se_rx_disable(void)
+{
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
+	/* Disable the PPI groups to cancel any pre-armed radio enable */
+	hal_radio_sw_switch_cleanup();
+
+	sw_switch_se_rx_group_index = SW_SWITCH_SE_RX_GROUP_INDEX_NONE;
+
+	/* Restore timer clear PPI to standard END-based configuration */
+	hal_sw_switch_timer_clear_ppi_config();
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
 
 void radio_switch_complete_and_disable(void)
 {
 #if defined(CONFIG_BT_CTLR_TIFS_HW)
 	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
 #else /* CONFIG_BT_CTLR_TIFS_HW */
-	NRF_RADIO->SHORTS = (RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk);
+	NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk | NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk;
+
 	hal_radio_sw_switch_disable();
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
@@ -1155,52 +1475,108 @@ uint32_t radio_bc_has_match(void)
 }
 
 #if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
-static radio_isr_cb_t isr_radio_tmr_cb;
-static void           *isr_radio_tmr_cb_param;
-
 void isr_radio_tmr(void)
 {
-	irq_disable(TIMER0_IRQn);
-	nrf_timer_int_disable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
+	irq_disable(EVENT_TIMER_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
 	nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
 
-	isr_radio_tmr_cb(isr_radio_tmr_cb_param);
+	if (isr_radio_tmr_cb != NULL) {
+		radio_tmr_isr_cb_t cb;
+
+		cb = isr_radio_tmr_cb;
+		isr_radio_tmr_cb = NULL;
+
+		cb(isr_radio_tmr_cb_param, 0U);
+	}
 }
 
-uint32_t radio_tmr_isr_set(uint32_t start_us, radio_isr_cb_t cb, void *param)
+uint32_t radio_tmr_isr_set(uint32_t start_us, radio_tmr_isr_cb_t cb, void *param)
 {
-	irq_disable(TIMER0_IRQn);
+	irq_disable(EVENT_TIMER_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+	cpu_irq_pending_clear(EVENT_TIMER_IRQn);
 
 	isr_radio_tmr_cb_param = param;
 	isr_radio_tmr_cb = cb;
 
-	/* start_us could be the current count in the timer */
-	uint32_t now_us = start_us;
+#if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* As timer is reset on every radio end, remove the accumulated
+	 * last_pdu_end_us in the given start_us.
+	 */
+	start_us -= last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+	/* start_us could be in the past, then retry at the current count plus
+	 * the latency of one compare setup iteration. Do not add the lateness
+	 * of start_us, that would delay the compare by twice the lateness.
+	 */
+	uint32_t prev_us = 0U;
+	uint32_t now_us = 0U;
+	uint32_t actual_us;
+	bool retry = false;
+
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
 	/* Setup timer compare while determining the latency in doing so */
 	do {
-		/* Set start to be, now plus the determined latency */
-		start_us = (now_us << 1) - start_us;
+		uint32_t sample_us;
+
+		if (retry) {
+			/* Set start to be, now plus the determined latency */
+			start_us = (now_us << 1) - prev_us;
+		}
+
+		/* Setup compare event with min. 1 us offset */
+		actual_us = start_us + 1U;
 
 		/* Setup compare event with min. 1 us offset */
 		nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
 		nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET,
-				 HAL_EVENT_TIMER_US_TO_TICKS(start_us + 1U));
+				 HAL_EVENT_TIMER_US_TO_TICKS(actual_us));
 
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 
-		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+		sample_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+		prev_us = retry ? now_us : sample_us;
+		now_us = sample_us;
+		retry = true;
 	} while ((now_us > start_us) &&
 		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET] == 0U));
 
-	nrf_timer_int_enable(EVENT_TIMER, TIMER_INTENSET_COMPARE2_Msk);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
-	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+	nrf_timer_int_enable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
 
-	irq_enable(TIMER0_IRQn);
+	irq_enable(EVENT_TIMER_IRQn);
 
-	return start_us + 1U;
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+	return actual_us;
+}
+
+uint32_t radio_tmr_isr_clear(void **param)
+{
+	uint32_t prev_us;
+
+	irq_disable(EVENT_TIMER_IRQn);
+	nrf_timer_int_disable(EVENT_TIMER, HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+
+	if (param != NULL) {
+		*param = isr_radio_tmr_cb_param;
+	}
+
+	isr_radio_tmr_cb_param = NULL;
+	isr_radio_tmr_cb = NULL;
+
+	prev_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+
+	return prev_us;
 }
 #endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
@@ -1343,38 +1719,58 @@ void radio_tmr_rx_status_reset(void)
 
 void radio_tmr_tx_enable(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
 	hal_radio_enable_on_tick_ppi_config_and_enable(1U);
 #endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_rx_enable(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
 	hal_radio_enable_on_tick_ppi_config_and_enable(0U);
 #endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_tx_disable(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_TXEN);
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_rx_disable(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_RXEN);
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_tifs_set(uint32_t tifs)
@@ -1383,7 +1779,8 @@ void radio_tmr_tifs_set(uint32_t tifs)
 	NRF_RADIO->TIFS = tifs;
 #else /* !CONFIG_BT_CTLR_TIFS_HW */
 	nrf_timer_cc_set(SW_SWITCH_TIMER,
-			 SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle), tifs);
+			 SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle),
+			 HAL_EVENT_TIMER_US_TO_TICKS(tifs));
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 }
 
@@ -1412,13 +1809,68 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	remainder_us += latency_us;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
-	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	EVENT_TIMER->MODE = 0;
 	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
+	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET,
 			 HAL_EVENT_TIMER_US_TO_TICKS(remainder_us));
+
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	if (isr_radio_tmr_cb != NULL) {
+		uint32_t ticks_start_old = radio_tmr_start_get();
+		uint32_t ticks_elapsed = (ticks_start - ticks_start_old) & HAL_TICKER_CNTR_MASK;
+
+		if ((ticks_elapsed != 0U) && ((ticks_elapsed & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+			uint32_t elapsed_us;
+			uint32_t actual_us;
+
+			elapsed_us = HAL_TICKER_TICKS_TO_US(ticks_elapsed);
+			actual_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+			actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+			if (actual_us > elapsed_us) {
+				actual_us -= elapsed_us;
+			} else {
+				actual_us = 0U;
+			}
+
+			if (actual_us > 1U) {
+				nrf_timer_cc_set(EVENT_TIMER,
+						 HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
+			} else {
+				radio_tmr_isr_cb_t cb;
+
+				nrf_timer_int_disable(EVENT_TIMER,
+						      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+				nrf_timer_event_clear(EVENT_TIMER,
+						      HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+				cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
+				cb = isr_radio_tmr_cb;
+				isr_radio_tmr_cb = NULL;
+
+				cb(isr_radio_tmr_cb_param, 1U);
+			}
+		} else {
+			radio_tmr_isr_cb_t cb;
+
+			nrf_timer_int_disable(EVENT_TIMER,
+					      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+			nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+			cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
+			cb = isr_radio_tmr_cb;
+			isr_radio_tmr_cb = NULL;
+
+			cb(isr_radio_tmr_cb_param, 1U);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1457,9 +1909,16 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 	/* NOTE: HERE, we have cntr_h and cntr_l in sync. */
 
-	/* Handle rollover between current and expected value */
-	if (ticks_start < cntr_l) {
-		cntr_h++;
+	/* Handle rollover between current and expected value. A start value
+	 * that is already in the past is set in the past, so that the compare
+	 * triggers immediately instead of after a counter rollover.
+	 */
+	if (((ticks_start - cntr_l) & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		if (ticks_start < cntr_l) {
+			cntr_h++;
+		}
+	} else if (ticks_start > cntr_l) {
+		cntr_h--;
 	}
 
 	/* Clear compare event, if any */
@@ -1469,9 +1928,6 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	nrf_grtc_sys_counter_cc_set(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO,
 				    ((((uint64_t)cntr_h & GRTC_CC_CCH_CCH_Msk) << 32) |
 				     ticks_start));
-
-	/* Enable compare */
-	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
@@ -1489,7 +1945,7 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	SW_SWITCH_TIMER->MODE = 0;
-	SW_SWITCH_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
+	SW_SWITCH_TIMER->PRESCALER = HAL_SW_SWITCH_TIMER_PRESCALER_VALUE;
 	SW_SWITCH_TIMER->BITMODE = 0; /* 16 bit */
 
 	hal_sw_switch_timer_start_ppi_config();
@@ -1510,6 +1966,14 @@ uint32_t radio_tmr_start(uint8_t trx, uint32_t ticks_start, uint32_t remainder)
 	 */
 #endif /* CONFIG_BT_CTLR_PHY_CODED && CONFIG_HAS_HW_NRF_RADIO_BLE_CODED */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* Enable compare after the (D)PPI setup, a compare value that is
+	 * already in the past generates the event immediately, and it must
+	 * start the event timer and the radio.
+	 */
+	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
+#endif /* CONFIG_BT_CTLR_NRF_GRTC */
 
 	return remainder_us;
 }
@@ -1539,10 +2003,69 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_STOP);
-	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 
+	EVENT_TIMER->MODE = 0;
+	EVENT_TIMER->PRESCALER = HAL_EVENT_TIMER_PRESCALER_VALUE;
+	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
+
+	nrf_timer_task_trigger(EVENT_TIMER, NRF_TIMER_TASK_CLEAR);
 	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_CC_OFFSET,
 			 HAL_EVENT_TIMER_US_TO_TICKS(remainder_us));
+
+#if defined(CONFIG_BT_CTLR_RADIO_TIMER_ISR)
+	if (isr_radio_tmr_cb != NULL) {
+		uint32_t ticks_start_old = radio_tmr_start_get();
+		uint32_t ticks_elapsed = (ticks_start - ticks_start_old) & HAL_TICKER_CNTR_MASK;
+
+		if ((ticks_elapsed != 0U) && ((ticks_elapsed & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+			uint32_t elapsed_us;
+			uint32_t actual_us;
+
+			elapsed_us = HAL_TICKER_TICKS_TO_US(ticks_elapsed);
+			actual_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+			actual_us += last_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+			if (actual_us > elapsed_us) {
+				actual_us -= elapsed_us;
+			} else {
+				actual_us = 0U;
+			}
+
+			if (actual_us > 1U) {
+				nrf_timer_cc_set(EVENT_TIMER,
+						 HAL_EVENT_TIMER_DEFERRED_TRX_CC_OFFSET, actual_us);
+			} else {
+				radio_tmr_isr_cb_t cb;
+
+				nrf_timer_int_disable(EVENT_TIMER,
+						      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+				nrf_timer_event_clear(EVENT_TIMER,
+						      HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+				cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
+				cb = isr_radio_tmr_cb;
+				isr_radio_tmr_cb = NULL;
+
+				cb(isr_radio_tmr_cb_param, 1U);
+			}
+		} else {
+			radio_tmr_isr_cb_t cb;
+
+			nrf_timer_int_disable(EVENT_TIMER,
+					      HAL_EVENT_TIMER_INTENSET_DEFERRED_TX_Msk);
+			nrf_timer_event_clear(EVENT_TIMER, HAL_EVENT_TIMER_DEFERRED_TX_EVENT);
+			cpu_irq_pending_clear(EVENT_TIMER_IRQn);
+
+			cb = isr_radio_tmr_cb;
+			isr_radio_tmr_cb = NULL;
+
+			cb(isr_radio_tmr_cb_param, 1U);
+		}
+	}
+#endif /* CONFIG_BT_CTLR_RADIO_TIMER_ISR */
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint32_t cntr_l, cntr_h, cntr_h_overflow, stale;
@@ -1581,9 +2104,16 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 
 	/* NOTE: HERE, we have cntr_h and cntr_l in sync. */
 
-	/* Handle rollover between current and expected value */
-	if (ticks_start < cntr_l) {
-		cntr_h++;
+	/* Handle rollover between current and expected value. A start value
+	 * that is already in the past is set in the past, so that the compare
+	 * triggers immediately instead of after a counter rollover.
+	 */
+	if (((ticks_start - cntr_l) & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		if (ticks_start < cntr_l) {
+			cntr_h++;
+		}
+	} else if (ticks_start > cntr_l) {
+		cntr_h--;
 	}
 
 	/* Clear compare event, if any */
@@ -1593,9 +2123,6 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	nrf_grtc_sys_counter_cc_set(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO,
 				    ((((uint64_t)cntr_h & GRTC_CC_CCH_CCH_Msk) << 32) |
 				     ticks_start));
-
-	/* Enable compare */
-	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_cc_set(NRF_RTC, 2, ticks_start);
@@ -1611,7 +2138,8 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	last_pdu_end_us_init(latency_us);
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -1624,8 +2152,18 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* Enable compare after the (D)PPI setup, a compare value that is
+	 * already in the past generates the event immediately, and it must
+	 * start the event timer and the radio.
+	 */
+	nrf_grtc_sys_counter_compare_event_enable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
+#endif /* CONFIG_BT_CTLR_NRF_GRTC */
 
 	return remainder_us;
 }
@@ -1641,7 +2179,8 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	 */
 	start_us -= last_pdu_end_us;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 	/* NOTE: Timer clear DPPI configuration is needed only for nRF53
 	 *       because of calls to radio_disable() and
 	 *       radio_switch_complete_and_disable() inside a radio event call
@@ -1654,17 +2193,36 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX)
+	if (sw_switch_se_rx_group_index != SW_SWITCH_SE_RX_GROUP_INDEX_NONE) {
+		hal_sw_switch_timer_clear_ppi_se_rx_config(sw_switch_se_rx_group_index);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SE_B2B_RX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
-	/* start_us could be the current count in the timer */
-	uint32_t now_us = start_us;
+	/* start_us could be in the past, then retry at the current count plus
+	 * the latency of one compare setup iteration. Do not add the lateness
+	 * of start_us, that would delay the compare by twice the lateness.
+	 */
+	uint32_t prev_us = 0U;
+	uint32_t now_us = 0U;
 	uint32_t actual_us;
+	bool retry = false;
+
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
 	/* Setup timer compare while determining the latency in doing so */
 	do {
-		/* Set start to be, now plus the determined latency */
-		start_us = (now_us << 1) - start_us;
+		uint32_t sample_us;
+
+		if (retry) {
+			/* Set start to be, now plus the determined latency */
+			start_us = (now_us << 1) - prev_us;
+		}
 
 		/* Setup compare event with min. 1 us offset */
 		actual_us = start_us + 1U;
@@ -1690,9 +2248,14 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 		/* Capture the current time */
 		nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 
-		now_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+		sample_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+		prev_us = retry ? now_us : sample_us;
+		now_us = sample_us;
+		retry = true;
 	} while ((now_us > start_us) &&
 		 (EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_TRX_CC_OFFSET] == 0U));
+
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	actual_us += last_pdu_end_us;
@@ -1707,9 +2270,13 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 
 	/* PPI/DPPI configuration will be done in radio_tmr_start_us() */
 
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+
 	/* Capture the current time */
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
 	start_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
+
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* As timer is reset on every radio end, add the accumulated
@@ -1717,6 +2284,15 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	 */
 	start_us += last_pdu_end_us;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+#if defined(HAL_RADIO_FEM_IS_NRF21540) && DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
+	/* Radio ready delay is shorter than the FEM PDN plus PA/LNA settle
+	 * time, defer the radio start so that the PDN and PA/LNA compares
+	 * set relative to the returned start_us are not in the past.
+	 */
+	start_us += NRF_GPIO_PDN_OFFSET + (trx ? DT_PROP(FEM_NODE, tx_en_settle_time_us) :
+						 DT_PROP(FEM_NODE, rx_en_settle_time_us));
+#endif /* HAL_RADIO_FEM_IS_NRF21540 && pdn_gpios */
 
 	/* Setup radio start at current time */
 	start_us = radio_tmr_start_us(trx, start_us);
@@ -1734,22 +2310,34 @@ uint32_t radio_tmr_start_now(uint8_t trx)
 	return start_us;
 }
 
+static uint32_t ticks_radio_tmr_start;
+
+void radio_tmr_start_save(uint32_t ticks_start)
+{
+	ticks_radio_tmr_start = ticks_start;
+}
+
+uint32_t radio_tmr_start_restore(void)
+{
+	return ticks_radio_tmr_start;
+}
+
 uint32_t radio_tmr_start_get(void)
 {
-	uint32_t start_ticks;
+	uint32_t ticks_start;
 
 #if defined(CONFIG_BT_CTLR_NRF_GRTC)
 	uint64_t cc;
 
 	cc = nrf_grtc_sys_counter_cc_get(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
 
-	start_ticks = cc & 0xffffffffUL;
+	ticks_start = cc & 0xffffffffUL;
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
-	start_ticks = nrf_rtc_cc_get(NRF_RTC, 2);
+	ticks_start = nrf_rtc_cc_get(NRF_RTC, 2);
 #endif  /* !CONFIG_BT_CTLR_NRF_GRTC */
 
-	return start_ticks;
+	return ticks_start;
 }
 
 uint32_t radio_tmr_start_latency_get(void)
@@ -1777,10 +2365,21 @@ void radio_tmr_stop(void)
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
+/* TODO: Check if this is needed for other SoCs like nRF54H20 */
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
 #if defined(CONFIG_NRF_SYS_EVENT)
 	(void)nrf_sys_event_release_global_constlat();
+
 #else /* !CONFIG_NRF_SYS_EVENT */
+	/* Refer to nRF54L Product Specifications for below quirks.
+	 * FIXME: Use on off service design to share these request with application implementations.
+	 */
+	/* Put back RRAMC in auto power down mode */
+	NRF_RRAMC->POWER.LOWPOWERCONFIG = (RRAMC_POWER_LOWPOWERCONFIG_MODE_PowerOff <<
+					   RRAMC_POWER_LOWPOWERCONFIG_MODE_Pos) &
+					  RRAMC_POWER_LOWPOWERCONFIG_MODE_Msk;
+
+	/* Enable Low-power mode (variable latency) */
 	NRF_POWER->TASKS_LOWPWR = 1U;
 #endif /* !CONFIG_NRF_SYS_EVENT */
 #endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
@@ -1821,7 +2420,15 @@ void radio_tmr_aa_capture(void)
 
 uint32_t radio_tmr_aa_get(void)
 {
-	return EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
+	uint32_t aa_us;
+
+	aa_us = EVENT_TIMER->CC[HAL_EVENT_TIMER_HCTO_CC_OFFSET];
+
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	aa_us += prev_pdu_end_us;
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+	return aa_us;
 }
 
 static uint32_t radio_tmr_aa;
@@ -1862,14 +2469,19 @@ void radio_tmr_end_capture(void)
 	 *       hal_sw_switch_timer_clear_ppi_config() and sw_switch(). There is no need to
 	 *       configure the channel again in this function.
 	 */
-#if (!defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) && !defined(CONFIG_SOC_COMPATIBLE_NRF54LX)) || \
+#if (!defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) && \
+	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
+	!defined(CONFIG_SOC_SERIES_NRF54H)) || \
 	((defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || \
-	  defined(CONFIG_SOC_COMPATIBLE_NRF54LX)) && \
+	  defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	  defined(CONFIG_SOC_SERIES_NRF54H)) && \
 	 !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* (!CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX) ||
-	* ((CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX) &&
+#endif /* (!CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	*  !CONFIG_SOC_SERIES_NRF54H) ||
+	* ((CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	*   CONFIG_SOC_SERIES_NRF54H) &&
 	*  !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	*/
 }
@@ -1892,33 +2504,21 @@ uint32_t radio_tmr_tifs_base_get(void)
 #endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static uint32_t tmr_sample_val;
-#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 void radio_tmr_sample(void)
 {
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	uint32_t cc;
+	uint32_t cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 
-	cc = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
-
 	tmr_sample_val = EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	nrf_timer_task_trigger(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_TASK);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_SAMPLE_CC_OFFSET, cc);
 }
 
 uint32_t radio_tmr_sample_get(void)
 {
-#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	return tmr_sample_val;
-#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-	return EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 #if defined(HAL_RADIO_GPIO_HAVE_PA_PIN) || \
@@ -2027,10 +2627,13 @@ void radio_gpio_lna_off(void)
 
 void radio_gpio_pa_lna_enable(uint32_t trx_us)
 {
-	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_CC_OFFSET, trx_us);
+	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_CC_OFFSET,
+			 HAL_EVENT_TIMER_US_TO_TICKS(trx_us));
+
 #if defined(HAL_RADIO_FEM_IS_NRF21540) && DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios)
 	nrf_timer_cc_set(EVENT_TIMER, HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET,
-			 (trx_us - NRF_GPIO_PDN_OFFSET));
+			 HAL_EVENT_TIMER_US_TO_TICKS(trx_us - NRF_GPIO_PDN_OFFSET));
+
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_ENABLE_PALNA_PPI) |
 					  BIT(HAL_DISABLE_PALNA_PPI) |
 					  BIT(HAL_ENABLE_FEM_PPI) |
@@ -2101,7 +2704,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
 
 	/* Select the CCM decryption mode for the SoC */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 	/* NOTE: Use fast decryption as rx data is decrypt after payload is received, compared to
 	 *       decrypting in parallel with radio reception of address in nRF51/nRF52/nRF53.
 	 */
@@ -2200,7 +2803,8 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->MODE = mode;
 
 #if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK) || \
-	defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 #if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
 #define ADATAMASK HEADERMASK
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
@@ -2220,12 +2824,14 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 #undef ADATAMASK
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK ||
-	* CONFIG_SOC_COMPATIBLE_NRF54LX
+	* CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
 	*/
 
 #if !defined(CONFIG_SOC_SERIES_NRF51) && \
 	!defined(CONFIG_SOC_NRF52832) && \
 	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
+	!defined(CONFIG_SOC_SERIES_NRF54H) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
 	const uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
@@ -2346,7 +2952,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Enabled;
 
 	/* Select the CCM encryption mode for the SoC */
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 	mode = (CCM_MODE_MODE_Encryption << CCM_MODE_MODE_Pos) &
 	       CCM_MODE_MODE_Msk;
 
@@ -2389,7 +2995,8 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->MODE = mode;
 
 #if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK) || \
-	defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+	defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H)
 #if defined(CONFIG_HAS_HW_NRF_CCM_HEADERMASK)
 #define ADATAMASK HEADERMASK
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
@@ -2409,12 +3016,14 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 #undef ADATAMASK
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK ||
-	* CONFIG_SOC_COMPATIBLE_NRF54LX
+	* CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
 	*/
 
 #if !defined(CONFIG_SOC_SERIES_NRF51) && \
 	!defined(CONFIG_SOC_NRF52832) && \
 	!defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && \
+	!defined(CONFIG_SOC_SERIES_NRF54H) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < ((HAL_RADIO_PDU_LEN_MAX) - 4U)))
 	const uint8_t max_len = (NRF_RADIO->PCNF1 & RADIO_PCNF1_MAXLEN_Msk) >>
@@ -2530,7 +3139,7 @@ uint32_t radio_ccm_is_done(void)
 		cpu_sleep();
 	}
 	nrf_ccm_int_disable(NRF_CCM, CCM_INTENCLR_ENDCRYPT_Msk);
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_CCM));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_CCM));
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
 }
@@ -2724,7 +3333,8 @@ static void ar_end_wait(void)
 		 * For all other platforms, interrupt on END is enabled by the caller of this
 		 * function, we will be woken up when the EVENTS_END occurs.
 		 */
-		if (!IS_ENABLED(CONFIG_SOC_SERIES_NRF54L)) {
+		if (!IS_ENABLED(CONFIG_SOC_SERIES_NRF54L) &&
+		    !IS_ENABLED(CONFIG_SOC_SERIES_NRF54H)) {
 			cpu_sleep();
 		}
 	}
@@ -2742,7 +3352,7 @@ uint32_t radio_ar_has_match(void)
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_AAR));
 
 	if (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) {
 		return 1U;
@@ -2782,7 +3392,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_NOTRESOLVED);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_AAR));
 
 	nrf_aar_int_enable(NRF_AAR, AAR_INTENSET_END_Msk);
 
@@ -2792,7 +3402,7 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 
 	nrf_aar_int_disable(NRF_AAR, AAR_INTENCLR_END_Msk);
 
-	NVIC_ClearPendingIRQ(nrfx_get_irq_number(NRF_AAR));
+	cpu_irq_pending_clear(nrfx_get_irq_number(NRF_AAR));
 
 	retval = (NRF_AAR->EVENTS_RESOLVED && !NRF_AAR->EVENTS_NOTRESOLVED) ?
 		 1U : 0U;

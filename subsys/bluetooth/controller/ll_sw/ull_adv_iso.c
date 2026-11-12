@@ -64,8 +64,14 @@
 
 static int init_reset(void);
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
-static struct stream *adv_iso_stream_acquire(void);
-static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream);
+static bool is_multiple(uint32_t interval1_us, uint32_t interval2_us);
+static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+			  uint32_t sdu_interval, uint16_t max_sdu,
+			  uint16_t max_latency, uint8_t rtn, uint8_t phy,
+			  uint8_t packing, uint8_t framing, uint8_t encryption,
+			  uint8_t *bcode,
+			  uint16_t iso_interval, uint8_t nse, uint16_t max_pdu,
+			  uint8_t bn, uint8_t irc, uint8_t pto, bool test_config);
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max);
 static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max);
@@ -83,6 +89,9 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param);
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+static void adv_iso_resume_ticker_start(struct ll_adv_iso_set *adv_iso);
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 static void ticker_op_cb(uint32_t status, void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void adv_iso_disable(void *param);
@@ -96,6 +105,528 @@ static struct ll_adv_iso_set ll_adv_iso[CONFIG_BT_CTLR_ADV_ISO_SET];
 static struct lll_adv_iso_stream
 			stream_pool[CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT];
 static void *stream_free;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+static struct ticker_ext normal_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
+static struct ticker_ext resume_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
+static memq_link_t link_lll_resume[CONFIG_BT_CTLR_ADV_ISO_SET];
+static struct mayfly mfy_lll_resume[CONFIG_BT_CTLR_ADV_ISO_SET];
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
+uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+		      uint32_t sdu_interval, uint16_t max_sdu,
+		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
+		      uint8_t packing, uint8_t framing, uint8_t encryption,
+		      uint8_t *bcode)
+{
+	return big_create(big_handle, adv_handle, num_bis, sdu_interval, max_sdu,
+			  max_latency, rtn, phy, packing, framing, encryption, bcode,
+			  0 /*iso_interval*/,
+			  0 /*nse*/,
+			  0 /*max_pdu*/,
+			  0 /*bn*/,
+			  0 /*irc*/,
+			  0 /*pto*/,
+			  false);
+}
+
+uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
+			   uint8_t num_bis, uint32_t sdu_interval,
+			   uint16_t iso_interval, uint8_t nse, uint16_t max_sdu,
+			   uint16_t max_pdu, uint8_t phy, uint8_t packing,
+			   uint8_t framing, uint8_t bn, uint8_t irc,
+			   uint8_t pto, uint8_t encryption, uint8_t *bcode)
+{
+	return big_create(big_handle, adv_handle, num_bis, sdu_interval, max_sdu,
+			  0 /*max_latency*/,
+			  0 /*rtn*/,
+			  phy, packing, framing, encryption, bcode,
+			  iso_interval, nse, max_pdu, bn, irc, pto, true);
+}
+
+uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
+{
+	struct lll_adv_sync *lll_adv_sync;
+	struct lll_adv_iso *lll_adv_iso;
+	struct ll_adv_iso_set *adv_iso;
+	struct pdu_adv *pdu_prev, *pdu;
+	struct node_rx_pdu *node_rx;
+	struct lll_adv *adv_lll;
+	struct ll_adv_set *adv;
+	uint16_t stream_handle;
+	uint16_t handle;
+	uint8_t num_bis;
+	uint8_t ter_idx;
+	uint8_t err;
+
+	adv_iso = adv_iso_get(big_handle);
+	if (!adv_iso) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	lll_adv_iso = &adv_iso->lll;
+	adv_lll = lll_adv_iso->adv;
+	if (!adv_lll) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	if (lll_adv_iso->term_req) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Remove ISO data path, keeping data from entering Tx pipeline */
+	num_bis = lll_adv_iso->num_bis;
+	while (num_bis--) {
+		stream_handle = lll_adv_iso->stream_handle[num_bis];
+		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
+		(void)ll_remove_iso_path(handle,
+					 BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
+	}
+
+	lll_adv_sync = adv_lll->sync;
+	adv = HDR_LLL2ULL(adv_lll);
+
+	/* Allocate next PDU */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
+	if (err) {
+		return err;
+	}
+
+	/* Remove BigInfo from ACAD in AUX_SYNC_IND */
+	err = ull_adv_sync_remove_from_acad(lll_adv_sync, pdu_prev, pdu, BT_DATA_BIG_INFO);
+	if (err) {
+		return err;
+	}
+
+	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
+
+	/* Prepare BIG terminate event, will be enqueued after tx flush  */
+	node_rx = (void *)&adv_iso->node_rx_terminate;
+	node_rx->hdr.type = NODE_RX_TYPE_BIG_TERMINATE;
+	node_rx->hdr.handle = big_handle;
+	node_rx->rx_ftr.param = adv_iso;
+
+	if (reason == BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
+		*((uint8_t *)node_rx->pdu) = BT_HCI_ERR_LOCALHOST_TERM_CONN;
+	} else {
+		*((uint8_t *)node_rx->pdu) = reason;
+	}
+
+	/* Request terminate procedure */
+	lll_adv_iso->term_reason = reason;
+	lll_adv_iso->term_req = 1U;
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+int ull_adv_iso_init(void)
+{
+	int err;
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	/* Mayfly memq links are owned by the mayfly queue once enqueued,
+	 * initialize only at power up as queues persist across HCI reset.
+	 */
+	for (uint8_t i = 0U; i < CONFIG_BT_CTLR_ADV_ISO_SET; i++) {
+		mfy_lll_resume[i]._link = &link_lll_resume[i];
+		mfy_lll_resume[i].param = &ll_adv_iso[i].lll;
+		mfy_lll_resume[i].fp = lll_adv_iso_resume;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
+	return 0;
+}
+
+int ull_adv_iso_reset(void)
+{
+	uint8_t handle;
+	int err;
+
+	handle = CONFIG_BT_CTLR_ADV_ISO_SET;
+	while (handle--) {
+		struct lll_adv_sync *adv_sync_lll;
+		struct lll_adv_iso *adv_iso_lll;
+		struct ll_adv_iso_set *adv_iso;
+		volatile uint32_t ret_cb;
+		struct lll_adv *adv_lll;
+		uint32_t ret;
+		void *mark;
+
+		adv_iso = &ll_adv_iso[handle];
+		adv_iso_lll = &adv_iso->lll;
+		adv_lll = adv_iso_lll->adv;
+		if (!adv_lll) {
+			continue;
+		}
+
+		mark = ull_disable_mark(adv_iso);
+		LL_ASSERT_DBG(mark == adv_iso);
+
+		/* Stop event scheduling */
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+				  TICKER_ID_ADV_ISO_BASE + adv_iso_lll->handle,
+				  ull_ticker_status_give, (void *)&ret_cb);
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret) {
+			mark = ull_disable_unmark(adv_iso);
+			LL_ASSERT_DBG(mark == adv_iso);
+
+			/* Assert as there shall be a ticker instance active */
+			LL_ASSERT_DBG(false);
+
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		/* Abort any events in LLL pipeline */
+		err = ull_disable(adv_iso_lll);
+		LL_ASSERT_ERR(!err || (err == -EALREADY));
+
+		mark = ull_disable_unmark(adv_iso);
+		LL_ASSERT_DBG(mark == adv_iso);
+
+		/* Reset associated streams */
+		while (adv_iso_lll->num_bis--) {
+			struct lll_adv_iso_stream *stream;
+			uint16_t stream_handle;
+
+			stream_handle = adv_iso_lll->stream_handle[adv_iso_lll->num_bis];
+			stream = ull_adv_iso_stream_get(stream_handle);
+			if (stream) {
+				stream->link_tx_free = NULL;
+			}
+		}
+
+		/* Remove Periodic Advertising association */
+		adv_sync_lll = adv_lll->sync;
+		if (adv_sync_lll) {
+			adv_sync_lll->iso = NULL;
+		}
+
+		/* Remove Extended Advertising association */
+		adv_iso_lll->adv = NULL;
+	}
+
+	err = init_reset();
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
+{
+	return adv_iso_get(handle);
+}
+
+uint8_t ull_adv_iso_chm_update(void)
+{
+	uint8_t handle;
+
+	handle = CONFIG_BT_CTLR_ADV_ISO_SET;
+	while (handle--) {
+		(void)adv_iso_chm_update(handle);
+	}
+
+	/* TODO: Should failure due to Channel Map Update being already in
+	 *       progress be returned to caller?
+	 */
+	return 0;
+}
+
+void ull_adv_iso_chm_complete(struct node_rx_pdu *rx)
+{
+	struct lll_adv_sync *sync_lll;
+	struct lll_adv_iso *iso_lll;
+	struct lll_adv *adv_lll;
+
+	iso_lll = rx->rx_ftr.param;
+	adv_lll = iso_lll->adv;
+	sync_lll = adv_lll->sync;
+
+	/* Update Channel Map in BIGInfo in the Periodic Advertising PDU */
+	while (sync_lll->iso_chm_done_req != sync_lll->iso_chm_done_ack) {
+		sync_lll->iso_chm_done_ack = sync_lll->iso_chm_done_req;
+
+		adv_iso_chm_complete_commit(iso_lll);
+	}
+}
+
+#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
+uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
+{
+	struct ll_adv_iso_set *adv_iso;
+	uint8_t idx;
+
+	adv_iso =  &ll_adv_iso[0];
+
+	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_ISO_SET; idx++, adv_iso++) {
+		if (adv_iso->lll.adv &&
+		    (adv_iso->hci_handle == hci_handle)) {
+			*handle = idx;
+			return 0U;
+		}
+	}
+
+	return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+}
+
+uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
+{
+	struct ll_adv_iso_set *adv_iso, *adv_iso_empty;
+	uint8_t idx;
+
+	adv_iso = &ll_adv_iso[0];
+	adv_iso_empty = NULL;
+
+	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_ISO_SET; idx++, adv_iso++) {
+		if (adv_iso->lll.adv) {
+			if (adv_iso->hci_handle == hci_handle) {
+				return BT_HCI_ERR_CMD_DISALLOWED;
+			}
+		} else if (!adv_iso_empty) {
+			adv_iso_empty = adv_iso;
+			*handle = idx;
+		}
+	}
+
+	if (adv_iso_empty) {
+		memset(adv_iso_empty, 0U, sizeof(*adv_iso_empty));
+		adv_iso_empty->hci_handle = hci_handle;
+		return 0U;
+	}
+
+	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+}
+#endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
+
+void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0U, 0U, &link, NULL, mfy_iso_offset_get};
+	uint32_t ret;
+
+	mfy.param = sync;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT_ERR(!ret);
+}
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+void ull_adv_iso_lll_biginfo_fill(struct pdu_adv *pdu, struct lll_adv_sync *lll_sync)
+{
+	struct lll_adv_iso *lll_iso;
+	struct pdu_big_info *bi;
+	uint64_t payload_count;
+
+	lll_iso = lll_sync->iso;
+
+	/* Calculate the payload count of the next BIG event. LLL updates the payload count and
+	 * resets latency_prepare in the BIG event prepare; latency_prepare accumulates the
+	 * events cancelled in the prepare pipeline.
+	 */
+	payload_count = lll_iso->payload_count +
+			(((uint64_t)lll_iso->latency_prepare + lll_iso->iso_lazy) * lll_iso->bn);
+
+	bi = big_info_get(pdu);
+	big_info_offset_fill(bi, lll_iso->ticks_sync_pdu_offset, 0U);
+	/* Assign the 39-bit payload count, retaining the 1 MS bit framing value */
+	bi->payload_count_framing[0] = payload_count;
+	bi->payload_count_framing[1] = payload_count >> 8;
+	bi->payload_count_framing[2] = payload_count >> 16;
+	bi->payload_count_framing[3] = payload_count >> 24;
+	bi->payload_count_framing[4] &= ~0x7F;
+	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
+
+	/* Update Channel Map in the BIGInfo until Thread context gets a
+	 * chance to update the PDU with new Channel Map.
+	 */
+	if (lll_sync->iso_chm_done_req != lll_sync->iso_chm_done_ack) {
+		pdu_big_info_chan_map_phy_set(bi->chm_phy,
+					      lll_iso->data_chan_map,
+					      lll_iso->phy);
+	}
+}
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+void ull_adv_iso_done_complete(struct node_rx_event_done *done)
+{
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
+	struct node_rx_pdu *rx;
+	memq_link_t *link;
+
+	/* switch to normal prepare */
+	mfy_lll_prepare.fp = lll_adv_iso_prepare;
+
+	/* Get reference to ULL context */
+	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
+	lll = &adv_iso->lll;
+
+	/* Prepare BIG complete event */
+	rx = (void *)&adv_iso->node_rx_complete;
+	link = rx->hdr.link;
+	if (!link) {
+		/* NOTE: When BIS events have overlapping prepare placed in
+		 *       in the pipeline, more than one done complete event
+		 *       will be generated, lets ignore the additional done
+		 *       events.
+		 */
+		return;
+	}
+	rx->hdr.link = NULL;
+
+	rx->hdr.type = NODE_RX_TYPE_BIG_COMPLETE;
+	rx->hdr.handle = lll->handle;
+	rx->rx_ftr.param = adv_iso;
+
+	ll_rx_put_sched(link, rx);
+}
+
+void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
+{
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
+	uint32_t ret;
+
+	/* Get reference to ULL context */
+	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
+	lll = &adv_iso->lll;
+
+	/* Skip if terminated already (we come here if pipeline being flushed */
+	if (unlikely(lll->handle == LLL_ADV_HANDLE_INVALID)) {
+		return;
+	}
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			  (TICKER_ID_ADV_ISO_BASE + lll->handle),
+			  ticker_stop_op_cb, adv_iso);
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
+
+	/* Invalidate the handle */
+	lll->handle = LLL_ADV_HANDLE_INVALID;
+}
+
+struct ll_adv_iso_set *ull_adv_iso_by_stream_get(uint16_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT) {
+		return NULL;
+	}
+
+	return adv_iso_get(stream_pool[handle].big_handle);
+}
+
+struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT) {
+		return NULL;
+	}
+
+	return &stream_pool[handle];
+}
+
+struct lll_adv_iso_stream *ull_adv_iso_lll_stream_get(uint16_t handle)
+{
+	return ull_adv_iso_stream_get(handle);
+}
+
+void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
+{
+	struct lll_adv_iso *lll;
+
+	lll = &adv_iso->lll;
+	while (lll->num_bis--) {
+		struct lll_adv_iso_stream *stream;
+		struct ll_iso_datapath *dp;
+		uint16_t stream_handle;
+		memq_link_t *link;
+
+		stream_handle = lll->stream_handle[lll->num_bis];
+		stream = ull_adv_iso_stream_get(stream_handle);
+
+		LL_ASSERT_DBG(!stream->link_tx_free);
+		link = memq_deinit(&stream->memq_tx.head,
+				   &stream->memq_tx.tail);
+		LL_ASSERT_DBG(link);
+		stream->link_tx_free = link;
+
+		dp = stream->dp;
+		if (dp) {
+			stream->dp = NULL;
+			isoal_source_destroy(dp->source_hdl);
+			ull_iso_datapath_release(dp);
+		}
+
+		mem_release(stream, &stream_free);
+	}
+
+	/* Remove Periodic Advertising association */
+	lll->adv->sync->iso = NULL;
+
+	/* Remove Extended Advertising association */
+	lll->adv = NULL;
+}
+
+uint32_t ull_adv_iso_max_time_get(const struct ll_adv_iso_set *adv_iso)
+{
+	return adv_iso_time_get(adv_iso, true);
+}
+
+static int init_reset(void)
+{
+	/* Add initializations common to power up initialization and HCI reset
+	 * initializations.
+	 */
+
+	mem_init((void *)stream_pool, sizeof(struct lll_adv_iso_stream),
+		 CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT, &stream_free);
+
+	return 0;
+}
+
+static struct ll_adv_iso_set *adv_iso_get(uint8_t handle)
+{
+	if (handle >= CONFIG_BT_CTLR_ADV_ISO_SET) {
+		return NULL;
+	}
+
+	return &ll_adv_iso[handle];
+}
+
+static struct stream *adv_iso_stream_acquire(void)
+{
+	return mem_acquire(&stream_free);
+}
+
+static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream)
+{
+	return mem_index_get(stream, stream_pool, sizeof(*stream));
+}
+
+static bool is_multiple(uint32_t interval1_us, uint32_t interval2_us)
+{
+	if (interval1_us > interval2_us) {
+		uint32_t swap;
+
+		swap = interval1_us;
+		interval1_us = interval2_us;
+		interval2_us = swap;
+	}
+
+	while (interval2_us >= interval1_us) {
+		interval2_us -= interval1_us;
+	}
+
+	return interval2_us == 0U;
+}
 
 static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 			  uint32_t sdu_interval, uint16_t max_sdu,
@@ -119,6 +650,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	uint32_t iso_interval_us;
 	uint32_t latency_packing;
 	uint32_t ticks_slot_sync;
+	uint32_t ticks_slot_adv;
 	uint32_t ticks_slot_aux;
 	memq_link_t *link_cmplt;
 	memq_link_t *link_term;
@@ -249,6 +781,14 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
+	/* Calculate overheads due to primary advertising. */
+	if (adv->is_enabled) {
+		ticks_slot_adv = adv->ull.ticks_slot;
+	} else {
+		/* TODO: Calculate/Get the primary channel ticks slot */
+		ticks_slot_adv = 0U;
+	}
+
 	/* Check if aux context allocated before we are creating ISO */
 	if (adv->lll.aux) {
 		aux = HDR_LLL2ULL(adv->lll.aux);
@@ -259,11 +799,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	/* Calculate overheads due to extended advertising. */
 	if (aux && aux->is_started) {
 		ticks_slot_aux = aux->ull.ticks_slot;
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
 	} else {
 		uint32_t time_us;
 
@@ -271,14 +806,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 				    adv->lll.phy_flags) +
 			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			/* Assume primary overheads may be inherited by aux */
-			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
 	}
-	ticks_slot_aux += ticks_slot_overhead;
 
 	/* Calculate overheads due to periodic advertising. */
 	sync = HDR_LLL2ULL(lll_adv_sync);
@@ -300,19 +828,44 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		ticks_slot_overhead = 0U;
 	}
 
+	/* Add ticker coarse timing jitter overhead */
+	ticks_slot_adv += ticks_slot_overhead;
+	ticks_slot_adv += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
+	ticks_slot_aux += ticks_slot_overhead;
+	ticks_slot_aux += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
 	ticks_slot_sync += ticks_slot_overhead;
+	ticks_slot_sync += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
 
-	/* Calculate total overheads due to extended and periodic advertising */
+	/* Calculate total overheads due to extended advertising */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_SLOT_WINDOW) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT)) {
+		ticks_slot_overhead = MAX(ticks_slot_adv, ticks_slot_aux);
+	} else {
+		ticks_slot_overhead = ticks_slot_adv + ticks_slot_aux;
+	}
+
+	/* Calculate total overheads due to periodic advertising */
 	if (false) {
 
 #if defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET)
 	} else if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
-		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
+		if (ticks_slot_sync > ticks_slot_overhead) {
+			ticks_slot_overhead = ticks_slot_sync;
+		}
 #endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
 
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT) && (aux != NULL) &&
+		   is_multiple(sdu_interval, (aux->interval * PERIODIC_INT_UNIT_US)) &&
+		   is_multiple(sdu_interval, (sync->interval * PERIODIC_INT_UNIT_US))) {
+		if (ticks_slot_sync > ticks_slot_overhead) {
+			ticks_slot_overhead = ticks_slot_sync;
+		}
 	} else {
-		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
+		ticks_slot_overhead += ticks_slot_sync;
 	}
+
+	/* Add ticker coarse timing jitter for the overhead */
+	ticks_slot_overhead += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
 
 	/* Store parameters in LLL context */
 	/* TODO: Move parameters to ULL if only accessed by ULL */
@@ -427,8 +980,8 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 					lll_adv_iso->phy_flags);
 		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
 					lll_adv_iso->num_bis;
-		event_spacing = latency_packing + ctrl_spacing +
-				EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		event_spacing = latency_packing + ctrl_spacing;
+		event_spacing += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 
 		/* Check if ISO interval too small to fit the calculated BIG event
 		 * timing required for the supplied BIG create parameters.
@@ -678,502 +1231,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	return BT_HCI_ERR_SUCCESS;
 }
 
-uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
-		      uint32_t sdu_interval, uint16_t max_sdu,
-		      uint16_t max_latency, uint8_t rtn, uint8_t phy,
-		      uint8_t packing, uint8_t framing, uint8_t encryption,
-		      uint8_t *bcode)
-{
-	return big_create(big_handle, adv_handle, num_bis, sdu_interval, max_sdu,
-			  max_latency, rtn, phy, packing, framing, encryption, bcode,
-			  0 /*iso_interval*/,
-			  0 /*nse*/,
-			  0 /*max_pdu*/,
-			  0 /*bn*/,
-			  0 /*irc*/,
-			  0 /*pto*/,
-			  false);
-}
-
-uint8_t ll_big_test_create(uint8_t big_handle, uint8_t adv_handle,
-			   uint8_t num_bis, uint32_t sdu_interval,
-			   uint16_t iso_interval, uint8_t nse, uint16_t max_sdu,
-			   uint16_t max_pdu, uint8_t phy, uint8_t packing,
-			   uint8_t framing, uint8_t bn, uint8_t irc,
-			   uint8_t pto, uint8_t encryption, uint8_t *bcode)
-{
-	return big_create(big_handle, adv_handle, num_bis, sdu_interval, max_sdu,
-			  0 /*max_latency*/,
-			  0 /*rtn*/,
-			  phy, packing, framing, encryption, bcode,
-			  iso_interval, nse, max_pdu, bn, irc, pto, true);
-}
-
-uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
-{
-	struct lll_adv_sync *lll_adv_sync;
-	struct lll_adv_iso *lll_adv_iso;
-	struct ll_adv_iso_set *adv_iso;
-	struct pdu_adv *pdu_prev, *pdu;
-	struct node_rx_pdu *node_rx;
-	struct lll_adv *lll_adv;
-	struct ll_adv_set *adv;
-	uint16_t stream_handle;
-	uint16_t handle;
-	uint8_t num_bis;
-	uint8_t ter_idx;
-	uint8_t err;
-
-	adv_iso = adv_iso_get(big_handle);
-	if (!adv_iso) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	}
-
-	lll_adv_iso = &adv_iso->lll;
-	lll_adv = lll_adv_iso->adv;
-	if (!lll_adv) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	}
-
-	if (lll_adv_iso->term_req) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	/* Remove ISO data path, keeping data from entering Tx pipeline */
-	num_bis = lll_adv_iso->num_bis;
-	while (num_bis--) {
-		stream_handle = lll_adv_iso->stream_handle[num_bis];
-		handle = LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle);
-		(void)ll_remove_iso_path(handle,
-					 BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
-	}
-
-	lll_adv_sync = lll_adv->sync;
-	adv = HDR_LLL2ULL(lll_adv);
-
-	/* Allocate next PDU */
-	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
-				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
-	if (err) {
-		return err;
-	}
-
-	/* Remove BigInfo from ACAD in AUX_SYNC_IND */
-	err = ull_adv_sync_remove_from_acad(lll_adv_sync, pdu_prev, pdu, BT_DATA_BIG_INFO);
-	if (err) {
-		return err;
-	}
-
-	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
-
-	/* Prepare BIG terminate event, will be enqueued after tx flush  */
-	node_rx = (void *)&adv_iso->node_rx_terminate;
-	node_rx->hdr.type = NODE_RX_TYPE_BIG_TERMINATE;
-	node_rx->hdr.handle = big_handle;
-	node_rx->rx_ftr.param = adv_iso;
-
-	if (reason == BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
-		*((uint8_t *)node_rx->pdu) = BT_HCI_ERR_LOCALHOST_TERM_CONN;
-	} else {
-		*((uint8_t *)node_rx->pdu) = reason;
-	}
-
-	/* Request terminate procedure */
-	lll_adv_iso->term_reason = reason;
-	lll_adv_iso->term_req = 1U;
-
-	return BT_HCI_ERR_SUCCESS;
-}
-
-int ull_adv_iso_init(void)
-{
-	int err;
-
-	err = init_reset();
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-int ull_adv_iso_reset(void)
-{
-	uint8_t handle;
-	int err;
-
-	handle = CONFIG_BT_CTLR_ADV_ISO_SET;
-	while (handle--) {
-		struct lll_adv_sync *adv_sync_lll;
-		struct lll_adv_iso *adv_iso_lll;
-		struct ll_adv_iso_set *adv_iso;
-		volatile uint32_t ret_cb;
-		struct lll_adv *adv_lll;
-		uint32_t ret;
-		void *mark;
-
-		adv_iso = &ll_adv_iso[handle];
-		adv_iso_lll = &adv_iso->lll;
-		adv_lll = adv_iso_lll->adv;
-		if (!adv_lll) {
-			continue;
-		}
-
-		mark = ull_disable_mark(adv_iso);
-		LL_ASSERT_DBG(mark == adv_iso);
-
-		/* Stop event scheduling */
-		ret_cb = TICKER_STATUS_BUSY;
-		ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
-				  TICKER_ID_ADV_ISO_BASE + adv_iso_lll->handle,
-				  ull_ticker_status_give, (void *)&ret_cb);
-		ret = ull_ticker_status_take(ret, &ret_cb);
-		if (ret) {
-			mark = ull_disable_unmark(adv_iso);
-			LL_ASSERT_DBG(mark == adv_iso);
-
-			/* Assert as there shall be a ticker instance active */
-			LL_ASSERT_DBG(false);
-
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		/* Abort any events in LLL pipeline */
-		err = ull_disable(adv_iso_lll);
-		LL_ASSERT_ERR(!err || (err == -EALREADY));
-
-		mark = ull_disable_unmark(adv_iso);
-		LL_ASSERT_DBG(mark == adv_iso);
-
-		/* Reset associated streams */
-		while (adv_iso_lll->num_bis--) {
-			struct lll_adv_iso_stream *stream;
-			uint16_t stream_handle;
-
-			stream_handle = adv_iso_lll->stream_handle[adv_iso_lll->num_bis];
-			stream = ull_adv_iso_stream_get(stream_handle);
-			if (stream) {
-				stream->link_tx_free = NULL;
-			}
-		}
-
-		/* Remove Periodic Advertising association */
-		adv_sync_lll = adv_lll->sync;
-		if (adv_sync_lll) {
-			adv_sync_lll->iso = NULL;
-		}
-
-		/* Remove Extended Advertising association */
-		adv_iso_lll->adv = NULL;
-	}
-
-	err = init_reset();
-	if (err) {
-		return err;
-	}
-
-	return 0;
-}
-
-struct ll_adv_iso_set *ull_adv_iso_get(uint8_t handle)
-{
-	return adv_iso_get(handle);
-}
-
-uint8_t ull_adv_iso_chm_update(void)
-{
-	uint8_t handle;
-
-	handle = CONFIG_BT_CTLR_ADV_ISO_SET;
-	while (handle--) {
-		(void)adv_iso_chm_update(handle);
-	}
-
-	/* TODO: Should failure due to Channel Map Update being already in
-	 *       progress be returned to caller?
-	 */
-	return 0;
-}
-
-void ull_adv_iso_chm_complete(struct node_rx_pdu *rx)
-{
-	struct lll_adv_sync *sync_lll;
-	struct lll_adv_iso *iso_lll;
-	struct lll_adv *adv_lll;
-
-	iso_lll = rx->rx_ftr.param;
-	adv_lll = iso_lll->adv;
-	sync_lll = adv_lll->sync;
-
-	/* Update Channel Map in BIGInfo in the Periodic Advertising PDU */
-	while (sync_lll->iso_chm_done_req != sync_lll->iso_chm_done_ack) {
-		sync_lll->iso_chm_done_ack = sync_lll->iso_chm_done_req;
-
-		adv_iso_chm_complete_commit(iso_lll);
-	}
-}
-
-#if defined(CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING)
-uint8_t ll_adv_iso_by_hci_handle_get(uint8_t hci_handle, uint8_t *handle)
-{
-	struct ll_adv_iso_set *adv_iso;
-	uint8_t idx;
-
-	adv_iso =  &ll_adv_iso[0];
-
-	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_ISO_SET; idx++, adv_iso++) {
-		if (adv_iso->lll.adv &&
-		    (adv_iso->hci_handle == hci_handle)) {
-			*handle = idx;
-			return 0U;
-		}
-	}
-
-	return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-}
-
-uint8_t ll_adv_iso_by_hci_handle_new(uint8_t hci_handle, uint8_t *handle)
-{
-	struct ll_adv_iso_set *adv_iso, *adv_iso_empty;
-	uint8_t idx;
-
-	adv_iso = &ll_adv_iso[0];
-	adv_iso_empty = NULL;
-
-	for (idx = 0U; idx < CONFIG_BT_CTLR_ADV_ISO_SET; idx++, adv_iso++) {
-		if (adv_iso->lll.adv) {
-			if (adv_iso->hci_handle == hci_handle) {
-				return BT_HCI_ERR_CMD_DISALLOWED;
-			}
-		} else if (!adv_iso_empty) {
-			adv_iso_empty = adv_iso;
-			*handle = idx;
-		}
-	}
-
-	if (adv_iso_empty) {
-		memset(adv_iso_empty, 0U, sizeof(*adv_iso_empty));
-		adv_iso_empty->hci_handle = hci_handle;
-		return 0U;
-	}
-
-	return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-}
-#endif /* CONFIG_BT_CTLR_HCI_ADV_HANDLE_MAPPING */
-
-void ull_adv_iso_offset_get(struct ll_adv_sync_set *sync)
-{
-	static memq_link_t link;
-	static struct mayfly mfy = {0U, 0U, &link, NULL, mfy_iso_offset_get};
-	uint32_t ret;
-
-	mfy.param = sync;
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
-			     &mfy);
-	LL_ASSERT_ERR(!ret);
-}
-
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-void ull_adv_iso_lll_biginfo_fill(struct pdu_adv *pdu, struct lll_adv_sync *lll_sync)
-{
-	struct lll_adv_iso *lll_iso;
-	uint16_t latency_prepare;
-	struct pdu_big_info *bi;
-	uint64_t payload_count;
-
-	lll_iso = lll_sync->iso;
-
-	/* Calculate current payload count. If refcount is non-zero, we have called
-	 * prepare and the LLL implementation has incremented latency_prepare already.
-	 * In this case we need to subtract lazy + 1 from latency_prepare
-	 */
-	latency_prepare = lll_iso->latency_prepare;
-	if (ull_ref_get(HDR_LLL2ULL(lll_iso))) {
-		/* We are in post-prepare. latency_prepare is already
-		 * incremented by lazy + 1 for next event
-		 */
-		latency_prepare -= lll_iso->iso_lazy + 1;
-	}
-
-	payload_count = lll_iso->payload_count + ((latency_prepare +
-						   lll_iso->iso_lazy) * lll_iso->bn);
-
-	bi = big_info_get(pdu);
-	big_info_offset_fill(bi, lll_iso->ticks_sync_pdu_offset, 0U);
-	/* Assign the 39-bit payload count, retaining the 1 MS bit framing value */
-	bi->payload_count_framing[0] = payload_count;
-	bi->payload_count_framing[1] = payload_count >> 8;
-	bi->payload_count_framing[2] = payload_count >> 16;
-	bi->payload_count_framing[3] = payload_count >> 24;
-	bi->payload_count_framing[4] &= ~0x7F;
-	bi->payload_count_framing[4] |= (payload_count >> 32) & 0x7F;
-
-	/* Update Channel Map in the BIGInfo until Thread context gets a
-	 * chance to update the PDU with new Channel Map.
-	 */
-	if (lll_sync->iso_chm_done_req != lll_sync->iso_chm_done_ack) {
-		pdu_big_info_chan_map_phy_set(bi->chm_phy,
-					      lll_iso->data_chan_map,
-					      lll_iso->phy);
-	}
-}
-#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
-
-void ull_adv_iso_done_complete(struct node_rx_event_done *done)
-{
-	struct ll_adv_iso_set *adv_iso;
-	struct lll_adv_iso *lll;
-	struct node_rx_pdu *rx;
-	memq_link_t *link;
-
-	/* switch to normal prepare */
-	mfy_lll_prepare.fp = lll_adv_iso_prepare;
-
-	/* Get reference to ULL context */
-	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
-	lll = &adv_iso->lll;
-
-	/* Prepare BIG complete event */
-	rx = (void *)&adv_iso->node_rx_complete;
-	link = rx->hdr.link;
-	if (!link) {
-		/* NOTE: When BIS events have overlapping prepare placed in
-		 *       in the pipeline, more than one done complete event
-		 *       will be generated, lets ignore the additional done
-		 *       events.
-		 */
-		return;
-	}
-	rx->hdr.link = NULL;
-
-	rx->hdr.type = NODE_RX_TYPE_BIG_COMPLETE;
-	rx->hdr.handle = lll->handle;
-	rx->rx_ftr.param = adv_iso;
-
-	ll_rx_put_sched(link, rx);
-}
-
-void ull_adv_iso_done_terminate(struct node_rx_event_done *done)
-{
-	struct ll_adv_iso_set *adv_iso;
-	struct lll_adv_iso *lll;
-	uint32_t ret;
-
-	/* Get reference to ULL context */
-	adv_iso = CONTAINER_OF(done->param, struct ll_adv_iso_set, ull);
-	lll = &adv_iso->lll;
-
-	/* Skip if terminated already (we come here if pipeline being flushed */
-	if (unlikely(lll->handle == LLL_ADV_HANDLE_INVALID)) {
-		return;
-	}
-
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
-			  (TICKER_ID_ADV_ISO_BASE + lll->handle),
-			  ticker_stop_op_cb, adv_iso);
-	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
-		      (ret == TICKER_STATUS_BUSY));
-
-	/* Invalidate the handle */
-	lll->handle = LLL_ADV_HANDLE_INVALID;
-}
-
-struct ll_adv_iso_set *ull_adv_iso_by_stream_get(uint16_t handle)
-{
-	if (handle >= CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT) {
-		return NULL;
-	}
-
-	return adv_iso_get(stream_pool[handle].big_handle);
-}
-
-struct lll_adv_iso_stream *ull_adv_iso_stream_get(uint16_t handle)
-{
-	if (handle >= CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT) {
-		return NULL;
-	}
-
-	return &stream_pool[handle];
-}
-
-struct lll_adv_iso_stream *ull_adv_iso_lll_stream_get(uint16_t handle)
-{
-	return ull_adv_iso_stream_get(handle);
-}
-
-void ull_adv_iso_stream_release(struct ll_adv_iso_set *adv_iso)
-{
-	struct lll_adv_iso *lll;
-
-	lll = &adv_iso->lll;
-	while (lll->num_bis--) {
-		struct lll_adv_iso_stream *stream;
-		struct ll_iso_datapath *dp;
-		uint16_t stream_handle;
-		memq_link_t *link;
-
-		stream_handle = lll->stream_handle[lll->num_bis];
-		stream = ull_adv_iso_stream_get(stream_handle);
-
-		LL_ASSERT_DBG(!stream->link_tx_free);
-		link = memq_deinit(&stream->memq_tx.head,
-				   &stream->memq_tx.tail);
-		LL_ASSERT_DBG(link);
-		stream->link_tx_free = link;
-
-		dp = stream->dp;
-		if (dp) {
-			stream->dp = NULL;
-			isoal_source_destroy(dp->source_hdl);
-			ull_iso_datapath_release(dp);
-		}
-
-		mem_release(stream, &stream_free);
-	}
-
-	/* Remove Periodic Advertising association */
-	lll->adv->sync->iso = NULL;
-
-	/* Remove Extended Advertising association */
-	lll->adv = NULL;
-}
-
-uint32_t ull_adv_iso_max_time_get(const struct ll_adv_iso_set *adv_iso)
-{
-	return adv_iso_time_get(adv_iso, true);
-}
-
-static int init_reset(void)
-{
-	/* Add initializations common to power up initialization and HCI reset
-	 * initializations.
-	 */
-
-	mem_init((void *)stream_pool, sizeof(struct lll_adv_iso_stream),
-		 CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT, &stream_free);
-
-	return 0;
-}
-
-static struct ll_adv_iso_set *adv_iso_get(uint8_t handle)
-{
-	if (handle >= CONFIG_BT_CTLR_ADV_ISO_SET) {
-		return NULL;
-	}
-
-	return &ll_adv_iso[handle];
-}
-
-static struct stream *adv_iso_stream_acquire(void)
-{
-	return mem_acquire(&stream_free);
-}
-
-static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream)
-{
-	return mem_index_get(stream, stream_pool, sizeof(*stream));
-}
-
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max)
 {
@@ -1263,11 +1320,18 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 
 	} else if (lll_iso->bis_spacing >=
 		   (lll_iso->sub_interval * lll_iso->nse)) {
-		/* Time reservation omitting PTC subevents in sequential
-		 * packing.
-		 */
-		time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
-					 lll_iso->ptc);
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)) {
+			/* Time reservation for one repetition of a BIS, the
+			 * successive BISes are reserved by the resume ticker.
+			 */
+			time_us = pdu_spacing * lll_iso->bn;
+		} else {
+			/* Time reservation omitting PTC subevents in sequential
+			 * packing.
+			 */
+			time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
+						 lll_iso->ptc);
+		}
 
 	} else {
 		/* Time reservation omitting PTC subevents in interleaved
@@ -1276,6 +1340,9 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 		time_us = pdu_spacing * ((lll_iso->nse - lll_iso->ptc) *
 					 lll_iso->num_bis);
 	}
+
+	/* Add radio tx ready delay */
+	time_us += lll_radio_tx_ready_delay_get(lll_iso->phy, lll_iso->phy_flags);
 
 	/* Add implementation defined radio event overheads */
 	time_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
@@ -1289,7 +1356,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
 	volatile uint32_t ret_cb;
+	uint32_t ticks_slot_max;
 	uint32_t ticks_anchor;
+	uint32_t slot_max_us;
 	uint32_t ticks_slot;
 	uint32_t slot_us;
 	uint32_t ret;
@@ -1310,11 +1379,12 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ticks_slot = adv_iso->ull.ticks_slot + ticks_slot_overhead;
 
 	/* Find the slot after Periodic Advertisings events */
-	ticks_anchor = ticker_ticks_now_get() +
-		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot, &ticks_anchor);
+	ticks_anchor = ticker_ticks_now_get();
+	slot_max_us = adv_iso_time_get(adv_iso, true);
+	ticks_slot_max = HAL_TICKER_US_TO_TICKS_CEIL(slot_max_us) + ticks_slot_overhead;
+	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot_max, &ticks_anchor);
 	if (!err) {
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -1325,6 +1395,42 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
 
 	ret_cb = TICKER_STATUS_BUSY;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	{
+		const struct lll_adv_iso *lll_iso = &adv_iso->lll;
+		uint32_t jitter_us;
+		uint8_t index;
+
+		if (lll_iso->bis_spacing >=
+		    (lll_iso->sub_interval * lll_iso->nse)) {
+			/* Sequential packing jitter */
+			jitter_us = lll_iso->sub_interval * lll_iso->bn *
+				    (lll_iso->irc - 1U);
+		} else {
+			/* Interleaved packing jitter */
+			jitter_us = lll_iso->bis_spacing * lll_iso->num_bis * lll_iso->bn *
+				    (lll_iso->irc - 1U);
+		}
+
+		index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+		normal_ticker_ext[index].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+		normal_ticker_ext[index].is_jitter_in_window = 1U;
+		normal_ticker_ext[index].is_deadline_in_window = 1U;
+
+		ret = ticker_start_ext(
+				TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+				(TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
+				ticks_anchor, 0U,
+				HAL_TICKER_US_TO_TICKS(iso_interval_us),
+				HAL_TICKER_REMAINDER(iso_interval_us),
+				TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
+				ull_ticker_status_give, (void *)&ret_cb,
+				&normal_ticker_ext[index]);
+	}
+
+#else /* !CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
 			   ticks_anchor, 0U,
@@ -1332,6 +1438,8 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
+#endif /* !CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
@@ -1572,12 +1680,93 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
+{
+	struct ll_adv_iso_set *adv_iso;
+	uint8_t index;
+	uint32_t ret;
+
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(force);
+
+	adv_iso = param;
+	index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+
+	/* Resume a yielded BIG event at the reserved repetition of the BIS */
+	adv_iso->lll.ticks_resume = ticks_at_expire;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0U,
+			     &mfy_lll_resume[index]);
+	LL_ASSERT_ERR(!ret);
+
+	/* Reserve a repetition of the BIS following the one just reserved */
+	adv_iso_resume_ticker_start(adv_iso);
+}
+
+static void ticker_op_start_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
+
+	/* NOTE: The reservation is not placed when it collides with other
+	 *       reservations, the BIG event may then be preempted and resumed
+	 *       without reserved time.
+	 */
+}
+
+static void adv_iso_resume_ticker_start(struct ll_adv_iso_set *adv_iso)
+{
+	const struct lll_adv_iso *lll = &adv_iso->lll;
+	uint32_t ticks_slot_window;
+	uint32_t ticks_offset;
+	uint32_t jitter_us;
+	uint32_t ret;
+	uint8_t index;
+
+	adv_iso->resume_bis++;
+	if (adv_iso->resume_bis >= lll->num_bis) {
+		return;
+	}
+
+	/* Reserve the first repetition of the BIS, the remaining repetitions
+	 * of the BIS are in the jitter window, same as the BIG ticker.
+	 */
+	jitter_us = lll->sub_interval * lll->bn * (lll->irc - 1U);
+	ticks_slot_window = HAL_TICKER_US_TO_TICKS(jitter_us) + adv_iso->ull.ticks_slot;
+	ticks_offset = HAL_TICKER_US_TO_TICKS(lll->bis_spacing * adv_iso->resume_bis);
+
+	index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+	resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
+	resume_ticker_ext[index].is_jitter_in_window = 1U;
+	resume_ticker_ext[index].is_deadline_in_window = 1U;
+	resume_ticker_ext[index].unforce = 1U;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	ret = ticker_start_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+			       (TICKER_ID_ADV_ISO_RESUME_BASE + index),
+			       adv_iso->ticks_resume_anchor, ticks_offset,
+			       TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+			       TICKER_NULL_LAZY, adv_iso->ull.ticks_slot,
+			       ticker_resume_cb, adv_iso, ticker_op_start_cb,
+			       (void *)__LINE__, &resume_ticker_ext[index]);
+	LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+		      (ret == TICKER_STATUS_BUSY));
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
 	static struct lll_prepare_param p;
-	struct ll_adv_iso_set *adv_iso = param;
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
 	uint32_t remainder_us;
 	uint64_t event_count;
 	uint32_t ret;
@@ -1585,9 +1774,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	DEBUG_RADIO_PREPARE_A(1);
 
-	event_count = adv_iso->lll.payload_count / adv_iso->lll.bn;
-	for (int i = 0; i < adv_iso->lll.num_bis; i++)  {
-		uint16_t stream_handle = adv_iso->lll.stream_handle[i];
+	adv_iso = param;
+	lll = &adv_iso->lll;
+	event_count = lll->payload_count / lll->bn;
+	for (int i = 0; i < lll->num_bis; i++)  {
+		uint16_t stream_handle = lll->stream_handle[i];
 
 		ull_iso_lll_event_prepare(LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle), event_count);
 	}
@@ -1598,10 +1789,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	p.ticks_drift = ticks_drift;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.force = force;
-	p.param = &adv_iso->lll;
+	p.param = lll;
 	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */
@@ -1616,6 +1810,21 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	adv_iso->big_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
 							   (remainder_us +
 							    EVENT_OVERHEAD_START_US));
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	if ((lll->num_bis > 1U) &&
+	    (lll->bis_spacing >= (lll->sub_interval * lll->nse))) {
+		/* The BIG ticker reserves a repetition of the first BIS, reserve
+		 * a repetition of each successive BIS in sequential packing, so
+		 * that a preempted BIG event can be resumed for transmission.
+		 */
+		adv_iso->ticks_resume_anchor = ticker_ticks_diff_get(p.ticks_at_expire,
+								     ticks_drift);
+		adv_iso->resume_bis = 0U;
+
+		adv_iso_resume_ticker_start(adv_iso);
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }

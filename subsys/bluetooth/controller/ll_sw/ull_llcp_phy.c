@@ -778,6 +778,16 @@ static void lp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+		/* A PHY change alters the event length reservation (ready
+		 * delay and Tx/Rx times depend on the PHY), so request an
+		 * update of ticks_slot even when Data Length Update is not
+		 * enabled.
+		 */
+		if (phy_changed) {
+			conn->lll.evt_len_upd = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
 		llcp_rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		ctx->data.pu.ntf_pu = (phy_changed || ctx->data.pu.host_initiated);
@@ -1207,6 +1217,16 @@ static void rp_pu_check_instant(struct ll_conn *conn, struct proc_ctx *ctx, uint
 			ctx->data.pu.ntf_dle = pu_update_eff_times(conn, ctx);
 		}
 #endif
+#if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+		/* A PHY change alters the event length reservation (ready
+		 * delay and Tx/Rx times depend on the PHY), so request an
+		 * update of ticks_slot even when Data Length Update is not
+		 * enabled.
+		 */
+		if (phy_changed) {
+			conn->lll.evt_len_upd = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE */
 		/* if PHY settings changed we should generate NTF */
 		ctx->data.pu.ntf_pu = phy_changed;
 		rp_pu_complete(conn, ctx, evt, param);

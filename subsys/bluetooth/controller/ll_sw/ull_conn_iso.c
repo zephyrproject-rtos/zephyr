@@ -66,13 +66,37 @@
 
 
 static int init_reset(void);
+static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
+				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder);
+static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
+					 struct ll_conn_iso_stream *cis, uint32_t acl_latency_us,
+					 uint32_t iso_interval_us, uint32_t *ticks_at_expire,
+					 uint32_t remainder);
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 static void cis_lazy_fill(struct ll_conn_iso_stream *cis);
 static void mfy_cis_lazy_fill(void *param);
 static void ticker_next_slot_get_op_cb(uint32_t status, void *param);
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+/* Ticker priority of CIG events, higher than the default of other roles */
+#define TICKER_PRIORITY_CIG (-1)
+/* Ticker priority of successive CIS reservations, a role skipped once in favor
+ * of a CIG event is skipped again in favor of a successive CIS reservation.
+ */
+#define TICKER_PRIORITY_CIS_RESUME (-2)
+#define TICKER_PRIORITY_CIS_RESUME_PERIPHERAL (1)
+
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void ticker_update_cig_op_cb(uint32_t status, void *param);
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param);
+static void ticker_op_start_cb(uint32_t status, void *param);
+static void cig_resume_ticker_start(struct ll_conn_iso_group *cig);
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 static void cis_disabled_cb(void *param);
 static void ticker_stop_op_cb(uint32_t status, void *param);
 static void cig_disable(void *param);
@@ -85,6 +109,14 @@ static void *cis_free;
 
 static struct ll_conn_iso_group cig_pool[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
 static void *cig_free;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static struct ticker_ext cig_ticker_ext[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
+static struct ticker_ext cig_resume_ticker_ext[CONFIG_BT_CTLR_CONN_ISO_GROUPS];
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 /* BT. 5.3 Spec - Vol 4, Part E, Sect 6.7 */
 #define CONN_ACCEPT_TIMEOUT_DEFAULT 0x1F40
@@ -600,6 +632,8 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 	if (ull_ref_get(hdr)) {
 		static memq_link_t link;
 		static struct mayfly mfy = {0, 0, &link, NULL, lll_disable};
+		uint16_t handle_iter;
+		uint8_t cis_idx;
 		uint32_t ret;
 
 		mfy.param = &cig->lll;
@@ -615,6 +649,20 @@ void ull_conn_iso_cis_stop(struct ll_conn_iso_stream *cis,
 			      (hdr->disabled_cb == cis_disabled_cb));
 		hdr->disabled_param = mfy.param;
 		hdr->disabled_cb = cis_disabled_cb;
+
+		/* Do not abort the CIG event while it serves other CISes, their
+		 * SDUs would be lost; teardown continues when the event is done.
+		 */
+		handle_iter = UINT16_MAX;
+		for (cis_idx = 0U; cis_idx < cig->lll.num_cis; cis_idx++) {
+			const struct ll_conn_iso_stream *cis_other;
+
+			cis_other = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+			if ((cis_other != NULL) && (cis_other != cis) &&
+			    (cis_other->lll.active != 0U) && (cis_other->teardown == 0U)) {
+				return;
+			}
+		}
 
 		/* Trigger LLL disable */
 		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
@@ -728,6 +776,7 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		 */
 		if (cis->lll.handle != 0xFFFF && cis->lll.active) {
 			cis->lll.event_count_prepare += (lazy + 1U);
+			cis->lll.active_prepare = 1U;
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 			cis->lll.event_count_prepare -= cis->lll.lazy_active;
@@ -762,6 +811,12 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	p.ticks_drift = ticks_drift;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.param = &cig->lll;
@@ -804,38 +859,135 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL, 0, &mfy);
 	LL_ASSERT_ERR(!err);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	if ((IS_PERIPHERAL(cig) &&
+	     IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER) &&
+	     !IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) ||
+	    (IS_CENTRAL(cig) &&
+	     IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) &&
+	     !IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_RESERVE_MAX))) {
+		/* The CIG ticker reserves the leading burst subevents of the
+		 * CIS the CIG event has drifted into; reserve the subevents of
+		 * the successive CISes, so that a preempted CIG event can be
+		 * resumed for reception.
+		 */
+		cig->ticks_resume_anchor = ticker_ticks_diff_get(ticks_at_expire, ticks_drift);
+		cig->resume_offset_us = HAL_TICKER_TICKS_TO_US(ticks_drift);
+
+		cig_resume_ticker_start(cig);
+	}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
 	/* Handle ISO Transmit Test for this CIG */
 	ull_conn_iso_transmit_test_cig_interval(cig->lll.handle, ticks_at_expire);
 }
 
-static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
-				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder)
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
 {
-	uint32_t acl_to_cig_ref_point;
-	uint32_t cis_offs_to_cig_ref;
-	uint32_t remainder_us;
+	ARG_UNUSED(ticks_at_expire);
+	ARG_UNUSED(ticks_drift);
+	ARG_UNUSED(remainder);
+	ARG_UNUSED(lazy);
+	ARG_UNUSED(force);
 
-	remainder_us = remainder;
-	hal_ticker_remove_jitter(ticks_at_expire, &remainder_us);
-
-	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
-
-	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
-	 * (cis->offset) by the difference between CIG- and CIS sync delays.
-	 */
-	acl_to_cig_ref_point = cis_offset - cis_offs_to_cig_ref;
-
-	/* Calculate the CIG reference point of first CIG event. This
-	 * calculation is inaccurate. However it is the best estimate available
-	 * until the first anchor point for the leading CIS is available.
-	 */
-	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(*ticks_at_expire),
-						       remainder_us +
-						       EVENT_OVERHEAD_START_US +
-						       acl_to_cig_ref_point);
-	/* Calculate initial ticker offset */
-	return remainder_us + acl_to_cig_ref_point;
+	/* Reserve the subevents of the CIS following the one just reserved */
+	cig_resume_ticker_start(param);
 }
+
+static void cig_resume_ticker_start(struct ll_conn_iso_group *cig)
+{
+	struct ll_conn_iso_stream *cis_next;
+	struct ll_conn_iso_stream *cis;
+	uint32_t ticks_slot_window;
+	uint16_t handle_iter;
+	uint32_t ticks_slot;
+	uint32_t ret_status;
+	uint32_t jitter_us;
+	uint32_t slot_us;
+	uint8_t burst;
+	uint8_t index;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED) && (cig->lll.packing != 0U)) {
+		return;
+	}
+
+	/* Find the active CIS with the earliest offset after the CIS reserved
+	 * last, or after the CIS the CIG event has drifted into.
+	 */
+	cis_next = NULL;
+	handle_iter = UINT16_MAX;
+	for (uint8_t i = 0U; i < cig->lll.num_cis; i++) {
+		cis = ll_conn_iso_stream_get_by_group(cig, &handle_iter);
+		if ((cis == NULL) || (cis->lll.handle == LLL_HANDLE_INVALID) ||
+		    (cis->lll.active == 0U) || (cis->lll.offset <= cig->resume_offset_us)) {
+			continue;
+		}
+
+		if ((cis_next == NULL) || (cis->lll.offset < cis_next->lll.offset)) {
+			cis_next = cis;
+		}
+	}
+
+	if (cis_next == NULL) {
+		return;
+	}
+
+	cig->resume_offset_us = cis_next->lll.offset;
+
+	/* Reserve the burst subevents of the CIS, the remaining subevents of
+	 * the CIS are in the jitter window, same as the CIG ticker.
+	 */
+	burst = MAX(cis_next->lll.tx.bn, cis_next->lll.rx.bn);
+	slot_us = cis_next->lll.sub_interval * burst;
+	jitter_us = cis_next->lll.sub_interval * (cis_next->lll.nse - burst);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+	}
+
+	ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+	ticks_slot_window = HAL_TICKER_US_TO_TICKS(jitter_us) + ticks_slot;
+
+	index = ll_conn_iso_group_handle_get(cig);
+	cig_resume_ticker_ext[index].ticks_slot_window = ticks_slot_window;
+	cig_resume_ticker_ext[index].is_jitter_in_window = 1U;
+	cig_resume_ticker_ext[index].is_deadline_in_window = 1U;
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	cig_resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	ret_status = ticker_start_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				      (TICKER_ID_CONN_ISO_RESUME_BASE + index),
+				      cig->ticks_resume_anchor,
+				      HAL_TICKER_US_TO_TICKS(cis_next->lll.offset),
+				      TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+				      TICKER_NULL_LAZY, ticks_slot,
+				      ticker_resume_cb, cig, ticker_op_start_cb,
+				      (void *)__LINE__, &cig_resume_ticker_ext[index]);
+	LL_ASSERT_ERR((ret_status == TICKER_STATUS_SUCCESS) ||
+		      (ret_status == TICKER_STATUS_BUSY));
+}
+
+static void ticker_op_start_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
+
+	/* NOTE: The reservation is not placed when it collides with other
+	 *       reservations, the CIG event may then be preempted and resumed
+	 *       without reserved time.
+	 */
+}
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 			uint32_t ticks_at_expire, uint32_t remainder,
@@ -855,6 +1007,32 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	cis->lll.offset = cig->sync_delay - cis->sync_delay;
 	cis->lll.handle = cis_handle;
+
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	/* A later CIS anchor inside an earlier CIS subinterval indicates interleaving.
+	 * Check every started CIS, since the first CIS can have NSE=1.
+	 */
+	if (cig->lll.role == BT_HCI_ROLE_PERIPHERAL && cig->lll.num_cis > 1U) {
+		struct ll_conn_iso_stream *cis_other;
+		uint16_t handle_iter = UINT16_MAX;
+
+		while ((cis_other = ll_conn_iso_stream_get_by_group(cig, &handle_iter)) != NULL) {
+			if ((cis_other == cis) || !cis_other->lll.active) {
+				continue;
+			}
+
+			if (((cis->lll.offset > cis_other->lll.offset) &&
+			     ((cis->lll.offset - cis_other->lll.offset) <
+			      cis_other->lll.sub_interval)) ||
+			    ((cis_other->lll.offset > cis->lll.offset) &&
+			     ((cis_other->lll.offset - cis->lll.offset) <
+			      cis->lll.sub_interval))) {
+				cig->lll.packing = 1U;
+				break;
+			}
+		}
+	}
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	if (conn->lll.enc_tx) {
@@ -900,15 +1078,31 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	/* Connection establishment timeout */
-	cis->event_expire = CONN_ESTAB_COUNTDOWN;
-
 	/* Check if another CIS was already started and CIG ticker is
 	 * running. If so, we just return with updated offset and
 	 * validated handle.
 	 */
 	if (cig->state == CIG_STATE_ACTIVE) {
+		/* Connection establishment timeout */
+		cis->event_expire = CONN_ESTAB_COUNTDOWN;
+
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+		uint32_t remainder_us;
+		uint32_t latency_us;
+
+		/* CIG ticker expiry of the first CIS event, at CIS offset from
+		 * the ACL event at the instant.
+		 */
+		remainder_us = remainder;
+		hal_ticker_remove_jitter(&ticks_at_expire, &remainder_us);
+		latency_us = instant_latency * conn->lll.interval * CONN_INT_UNIT_US;
+		cis->ticks_first_expire =
+			ticker_ticks_diff_get((ticks_at_expire +
+					       HAL_TICKER_US_TO_TICKS(remainder_us + cis->offset -
+								      cis->lll.offset)) &
+					      HAL_TICKER_CNTR_MASK,
+					      HAL_TICKER_US_TO_TICKS(latency_us));
+
 		/* Initialize CIS event lazy at CIS create */
 		cis->lll.lazy_active = 0U;
 
@@ -916,6 +1110,7 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		cis_lazy_fill(cis);
 #else /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 		/* Set CIS active in already active CIG */
+		cis->lll.active_prepare = 0U;
 		cis->lll.active = 1U;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
 
@@ -960,74 +1155,34 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 		}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
+		/* Connection establishment timeout */
+		cis->event_expire = CONN_ESTAB_COUNTDOWN;
+
 		if (instant_latency > 0U) {
 			/* Try to start the CIG late by finding the CIG event relative to current
 			 * ACL event, taking latency into consideration. Adjust ticker periodicity
 			 * with increased window widening.
 			 */
-			uint32_t lost_cig_events;
 			uint32_t iso_interval_us;
-			uint32_t acl_latency_us;
-			uint32_t lost_payloads;
-			uint32_t cis_offset;
+			uint64_t acl_latency_us;
 
-			acl_latency_us = instant_latency * conn->lll.interval * CONN_INT_UNIT_US;
-			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
-
-			if (acl_latency_us > iso_interval_us) {
-				/* Latency is greater than the ISO interval - find the offset from
-				 * this ACL event to the next active ISO event, and adjust the event
-				 * counter accordingly.
-				 */
-				lost_cig_events = DIV_ROUND_UP(acl_latency_us - cis->offset,
-							       iso_interval_us);
-				cis_offset = cis->offset + (lost_cig_events * iso_interval_us) -
-					     acl_latency_us;
-			} else {
-				/* Latency is less than- or equal to one ISO interval - start at
-				 * next ISO event.
-				 */
-				lost_cig_events = 1U;
-				cis_offset = cis->offset + iso_interval_us - acl_latency_us;
-			}
-			/* Correct the cis_offset to next CIG event, if the ACL and CIG overlaps.
-			 * ACL radio event at the instant was skipped and a relative CIS offset at
-			 * the current ACL event has been calculated. But the current ACL event
-			 * is partially overlapping with the other of CISes (not yet established) in
-			 * the CIG event. Hence, lets establish the CIS at the next ISO interval so
-			 * as to have a positive CIG event offset.
+			/* FIXME: Connection interval of up to 4 seconds with larger values for
+			 *        latency can overflow 32-bit.
 			 */
-			if (cis_offset < (cig->sync_delay - cis->sync_delay)) {
-				cis_offset += iso_interval_us;
-				lost_cig_events++;
-			}
+			acl_latency_us = (uint64_t)instant_latency * conn->lll.interval *
+					 CONN_INT_UNIT_US;
+			LL_ASSERT_ERR(acl_latency_us <= UINT32_MAX);
 
-			cis->lll.event_count_prepare += lost_cig_events;
-
-			if (lost_cig_events > (cis->lll.rx.ft - 1)) {
-				lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) *
-						cis->lll.rx.bn;
-			} else {
-				lost_payloads = 0U;
-			}
-			cis->lll.rx.payload_count += lost_payloads;
-
-			if (lost_cig_events > (cis->lll.tx.ft - 1)) {
-				lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) *
-						cis->lll.tx.bn;
-			} else {
-				lost_payloads = 0U;
-			}
-			cis->lll.tx.payload_count += lost_payloads;
+			iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+			acl_latency_us &= 0xFFFFFFFFUL;
+			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
+								 iso_interval_us, &ticks_at_expire,
+								 remainder);
 
 			/* Adjust for extra window widening */
-			iso_interval_us_frac = EVENT_US_TO_US_FRAC(cig->iso_interval *
-								   ISO_INT_UNIT_US);
+			iso_interval_us_frac = EVENT_US_TO_US_FRAC(iso_interval_us);
 			iso_interval_us_frac -= cig->lll.window_widening_periodic_us_frac *
 						instant_latency;
-			/* Calculate new offset */
-			cig_offset_us = cig_offset_calc(cig, cis, cis_offset, &ticks_at_expire,
-							remainder);
 		}
 
 		ticks_periodic  = EVENT_US_FRAC_TO_TICKS(iso_interval_us_frac);
@@ -1035,16 +1190,36 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO */
 
 	} else if (IS_CENTRAL(cig)) {
+		uint32_t acl_interval_us;
 		uint32_t iso_interval_us;
 
+		acl_interval_us = conn->lll.interval * CONN_INT_UNIT_US;
 		iso_interval_us = cig->iso_interval * ISO_INT_UNIT_US;
+
+		/* Connection establishment timeout */
+		cis->event_expire = (DIV_ROUND_UP((acl_interval_us - cis->offset),
+						  iso_interval_us) + 1U) * CONN_ESTAB_COUNTDOWN;
+
+		if (instant_latency > 0U) {
+			/* Try to start the CIG late by finding the CIG event relative to current
+			 * ACL event, taking latency into consideration.
+			 */
+			uint64_t acl_latency_us;
+
+			/* FIXME: Connection interval of up to 4 seconds with larger values for
+			 *        latency can overflow 32-bit.
+			 */
+			acl_latency_us = (uint64_t)instant_latency * acl_interval_us;
+			LL_ASSERT_ERR(acl_latency_us <= UINT32_MAX);
+
+			acl_latency_us &= 0xFFFFFFFFUL;
+			cig_offset_us = cig_instant_latency_calc(cig, cis, acl_latency_us,
+								 iso_interval_us, &ticks_at_expire,
+								 remainder);
+		}
+
 		ticks_periodic  = HAL_TICKER_US_TO_TICKS(iso_interval_us);
 		ticks_remainder = HAL_TICKER_REMAINDER(iso_interval_us);
-
-		/* FIXME: Handle latency due to skipped ACL events around the
-		 * instant to start CIG
-		 */
-		LL_ASSERT_ERR(instant_latency == 0U);
 	} else {
 		LL_ASSERT_DBG(0);
 
@@ -1058,6 +1233,13 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 	ull_hdr_init(&cig->ull);
 
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	uint32_t jitter_us = 0U;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 	ticks_slot = 0U;
 
@@ -1066,18 +1248,34 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 	uint32_t ticks_slot_offset;
 
 	/* Calculate time reservations for sequential and interleaved packing as
-	 * configured.
+	 * configured. The sub_interval and nse values are already calculated correctly
+	 * by ULL for both packing modes, so the same formula works for both.
 	 */
 	if (IS_PERIPHERAL(cig)) {
 		uint32_t slot_us;
 
-		/* FIXME: Time reservation for interleaved packing */
-		/* Below is time reservation for sequential packing */
+		/* Time reservation works for both sequential and interleaved packing because
+		 * sub_interval is calculated differently for each mode in ULL
+		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX)) {
 			slot_us = cis->lll.sub_interval * cis->lll.nse;
 		} else {
 			slot_us = cis->lll.sub_interval * MAX(cis->lll.tx.bn, cis->lll.rx.bn);
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+			/* Additional subevents beyond the minimum burst-number
+			 * reservation may be scheduled within a jitter window,
+			 * so let the LLL wrap the CIG event around overlapping
+			 * roles.
+			 */
+			jitter_us = cis->lll.sub_interval *
+				    (cis->lll.nse - MAX(cis->lll.tx.bn, cis->lll.rx.bn));
+#endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER */
 		}
+
+		/* CIG ticker expires at the CIG reference point, include the
+		 * offset of the CIS in the CIG event in the time reservation.
+		 */
+		slot_us += cis->lll.offset;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
@@ -1092,6 +1290,28 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 
 		/* Populate the ULL hdr with event timings overheads */
 		cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+	} else if (IS_CENTRAL(cig) &&
+		   !IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_RESERVE_MAX) &&
+		   IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)) {
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)
+		uint32_t slot_us;
+
+		/* Reserve only the minimum time for the leading CIS burst
+		 * subevents, and use the jitter window to wrap the CIG event
+		 * around overlapping roles. The jitter window is bounded so
+		 * that the CIS retains at least its burst number of subevents,
+		 * a larger drift would skip all subevents of the CIS event.
+		 */
+		slot_us = cis->lll.sub_interval * MAX(cis->lll.tx.bn, cis->lll.rx.bn);
+		jitter_us = cis->lll.sub_interval *
+			    (cis->lll.nse - MAX(cis->lll.tx.bn, cis->lll.rx.bn));
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		}
+
+		cig->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER */
 	}
 
 	ticks_slot_offset = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
@@ -1110,7 +1330,38 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
 
 	/* Start CIS peripheral CIG ticker */
-	ticker_status = ticker_start_us(TICKER_INSTANCE_ID_CTLR,
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	if (!IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) && (jitter_us != 0U) &&
+	    ((IS_PERIPHERAL(cig) &&
+	      IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)) ||
+	     (IS_CENTRAL(cig) &&
+	      IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER)))) {
+		uint8_t index = ll_conn_iso_group_handle_get(cig);
+
+		cig_ticker_ext[index].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS(jitter_us) + ticks_slot;
+		cig_ticker_ext[index].is_jitter_in_window = 1U;
+		cig_ticker_ext[index].is_deadline_in_window = 1U;
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		cig_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+		ticker_status = ticker_start_ext(TICKER_INSTANCE_ID_CTLR,
+					TICKER_USER_ID_ULL_HIGH,
+					ticker_id, ticks_at_expire,
+					HAL_TICKER_US_TO_TICKS(cig_offset_us),
+					ticks_periodic, ticks_remainder,
+					TICKER_NULL_LAZY, ticks_slot,
+					ull_conn_iso_ticker_cb, cig,
+					ticker_start_op_cb, NULL,
+					&cig_ticker_ext[index]);
+	} else
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+	{
+		ticker_status = ticker_start_us(TICKER_INSTANCE_ID_CTLR,
 					TICKER_USER_ID_ULL_HIGH,
 					ticker_id, ticks_at_expire,
 					HAL_TICKER_US_TO_TICKS(cig_offset_us),
@@ -1119,11 +1370,39 @@ void ull_conn_iso_start(struct ll_conn *conn, uint16_t cis_handle,
 					TICKER_NULL_LAZY, ticks_slot,
 					ull_conn_iso_ticker_cb, cig,
 					ticker_start_op_cb, NULL);
+	}
 	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
 		      (ticker_status == TICKER_STATUS_BUSY));
 
+#if defined(CONFIG_BT_TICKER_PRIORITY_SET)
+	/* Isochronous events have precedence over ACL events of equal latency */
+	ticker_status = ticker_priority_set(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH, ticker_id,
+					    TICKER_PRIORITY_CIG,
+					    ticker_start_op_cb, NULL);
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	ticker_status = ticker_priority_set(TICKER_INSTANCE_ID_CTLR,
+					    TICKER_USER_ID_ULL_HIGH,
+					    (TICKER_ID_CONN_ISO_RESUME_BASE +
+					     ll_conn_iso_group_handle_get(cig)),
+					    (IS_PERIPHERAL(cig) ?
+					     TICKER_PRIORITY_CIS_RESUME_PERIPHERAL :
+					     TICKER_PRIORITY_CIS_RESUME),
+					    ticker_start_op_cb, NULL);
+	LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+		      (ticker_status == TICKER_STATUS_BUSY));
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
+#endif /* CONFIG_BT_TICKER_PRIORITY_SET */
+
 	/* Set CIG and the first CIS state as active */
 	cig->state = CIG_STATE_ACTIVE;
+	cis->lll.active_prepare = 0U;
 	cis->lll.active = 1U;
 }
 
@@ -1148,6 +1427,105 @@ void ull_conn_iso_cis_terminate_done(struct node_rx_pdu *rx)
 	}
 }
 
+static uint32_t cig_offset_calc(struct ll_conn_iso_group *cig, struct ll_conn_iso_stream *cis,
+				uint32_t cis_offset, uint32_t *ticks_at_expire, uint32_t remainder)
+{
+	uint32_t acl_to_cig_ref_point;
+	uint32_t cis_offs_to_cig_ref;
+	uint32_t remainder_us;
+
+	remainder_us = remainder;
+	hal_ticker_remove_jitter(ticks_at_expire, &remainder_us);
+
+	cis_offs_to_cig_ref = cig->sync_delay - cis->sync_delay;
+
+	/* Establish the CIG reference point by adjusting ACL-to-CIS offset
+	 * (cis->offset) by the difference between CIG- and CIS sync delays.
+	 */
+	acl_to_cig_ref_point = cis_offset - cis_offs_to_cig_ref;
+
+	/* Calculate the CIG reference point of first CIG event. This
+	 * calculation is inaccurate. However it is the best estimate available
+	 * until the first anchor point for the leading CIS is available.
+	 */
+	cig->cig_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(*ticks_at_expire),
+						       remainder_us + EVENT_OVERHEAD_START_US +
+						       acl_to_cig_ref_point);
+	/* Calculate initial ticker offset */
+	return remainder_us + acl_to_cig_ref_point;
+}
+
+static uint32_t cig_instant_latency_calc(struct ll_conn_iso_group *cig,
+					 struct ll_conn_iso_stream *cis, uint32_t acl_latency_us,
+					 uint32_t iso_interval_us, uint32_t *ticks_at_expire,
+					 uint32_t remainder)
+{
+	uint32_t lost_cig_events;
+	uint32_t lost_payloads;
+	uint32_t cis_offset_us;
+	uint32_t cig_offset_us;
+
+	if (acl_latency_us > iso_interval_us) {
+		/* Latency is greater than the ISO interval - find the offset from
+		 * this ACL event to the next active ISO event, and adjust the event
+		 * counter accordingly.
+		 */
+		lost_cig_events = DIV_ROUND_UP(acl_latency_us - cis->offset, iso_interval_us);
+		cis_offset_us = cis->offset + (lost_cig_events * iso_interval_us) - acl_latency_us;
+	} else {
+		/* Latency is less than- or equal to one ISO interval - start at
+		 * next ISO event.
+		 */
+		lost_cig_events = 1U;
+		cis_offset_us = cis->offset + iso_interval_us - acl_latency_us;
+	}
+
+	/* Correct the cis_offset to next CIG event, if the ACL and CIG overlaps. ACL radio event at
+	 * the instant was skipped and a relative CIS offset at the current ACL event has been
+	 * calculated. But the current ACL event is partially overlapping with the other of CISes
+	 * (not yet established) in the CIG event. Hence, let's establish the CIS at the next ISO
+	 * interval so as to have a positive CIG event offset.
+	 */
+	if (cis_offset_us < (cig->sync_delay - cis->sync_delay)) {
+		cis_offset_us += iso_interval_us;
+		lost_cig_events++;
+	}
+
+	/* Clamp lost_cig_events to an 8-bit value to keep the 16-bit cis->event_expire bounded,
+	 * regardless of its initial value (it may be CONN_ESTAB_COUNTDOWN or a computed multiple
+	 * of the ISO interval). This limits how far the establishment can be deferred and caps
+	 * the amount of event/loss accounting performed. If a very large number of CIG events
+	 * are effectively lost, let the anchor point sync fail and eventually lead to connection
+	 * failed to be established; this is an acceptable compromise. Keep a debug assertion to
+	 * catch such extreme conditions during development.
+	 */
+	LL_ASSERT_DBG(lost_cig_events <= UINT8_MAX);
+	if (lost_cig_events > UINT8_MAX) {
+		lost_cig_events = UINT8_MAX;
+	}
+
+	cis->lll.event_count_prepare += lost_cig_events;
+	cis->event_expire += lost_cig_events;
+
+	if (lost_cig_events > (cis->lll.rx.ft - 1)) {
+		lost_payloads = (lost_cig_events - (cis->lll.rx.ft - 1)) * cis->lll.rx.bn;
+	} else {
+		lost_payloads = 0U;
+	}
+	cis->lll.rx.payload_count += lost_payloads;
+
+	if (lost_cig_events > (cis->lll.tx.ft - 1)) {
+		lost_payloads = (lost_cig_events - (cis->lll.tx.ft - 1)) * cis->lll.tx.bn;
+	} else {
+		lost_payloads = 0U;
+	}
+	cis->lll.tx.payload_count += lost_payloads;
+
+	cig_offset_us = cig_offset_calc(cig, cis, cis_offset_us, ticks_at_expire, remainder);
+
+	return cig_offset_us;
+}
+
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 static void cis_lazy_fill(struct ll_conn_iso_stream *cis)
 {
@@ -1165,8 +1543,10 @@ static void mfy_cis_lazy_fill(void *param)
 	struct ll_conn_iso_stream *cis;
 	struct ll_conn_iso_group *cig;
 	uint32_t ticks_to_expire;
+	uint32_t ticks_elapsed;
 	uint32_t ticks_current;
 	uint32_t remainder = 0U;
+	uint32_t events_missed;
 	uint16_t lazy = 0U;
 	uint8_t ticker_id;
 	uint8_t retry;
@@ -1227,13 +1607,37 @@ static void mfy_cis_lazy_fill(void *param)
 		LL_ASSERT_ERR(id != TICKER_NULL);
 	} while (id != ticker_id);
 
+	/* CIG events since the first CIS event, prepared before the CIS is set
+	 * active, are counted in the CIS event count.
+	 */
+	ticks_elapsed = ticker_ticks_diff_get((ticks_current + ticks_to_expire) &
+					      HAL_TICKER_CNTR_MASK,
+					      cis->ticks_first_expire);
+	if ((ticks_elapsed & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+		uint32_t ticks_interval;
+
+		ticks_interval = HAL_TICKER_US_TO_TICKS(cig->iso_interval * ISO_INT_UNIT_US);
+		events_missed = (ticks_elapsed + (ticks_interval >> 1)) / ticks_interval;
+	} else {
+		events_missed = 0U;
+	}
+	cis->lll.event_count_prepare = (LLL_CONN_ISO_EVENT_COUNT_MAX + events_missed) &
+				       LLL_CONN_ISO_EVENT_COUNT_MAX;
+
 	/* Set CIS active in already active CIG and any previous laziness in
 	 * CIG before the CIS gets active that be decremented when event_count
 	 * is incremented in ull_conn_iso_ticker_cb().
 	 */
 	cis->lll.prepared = 0U;
-	cis->lll.active = 1U;
+
+	/* Set lazy_active before active to prevent race with
+	 * ull_conn_iso_ticker_cb which runs at higher priority
+	 * (ULL_HIGH) and checks active flag before using lazy_active
+	 * to adjust event_count_prepare.
+	 */
 	cis->lll.lazy_active = lazy;
+	cis->lll.active_prepare = 0U;
+	cis->lll.active = 1U;
 }
 
 static void ticker_next_slot_get_op_cb(uint32_t status, void *param)

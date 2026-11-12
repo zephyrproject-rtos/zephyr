@@ -71,6 +71,9 @@ static void isr_abort(void *param);
 	* (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	*/
 static void isr_done_cleanup(void *param);
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+static bool is_pipeline_dup(const struct lll_scan *lll);
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			     uint8_t devmatch_ok, uint8_t devmatch_id,
@@ -134,7 +137,7 @@ void lll_scan_prepare(void *param)
 
 void lll_scan_isr_resume(void *param)
 {
-	static struct lll_prepare_param p;
+	struct lll_prepare_param p;
 
 	/* Clear radio status and events */
 	lll_isr_status_reset();
@@ -335,10 +338,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
+	uint32_t ticks_offset;
 	struct ull_hdr *ull;
+	uint32_t ticks_now;
 
 	ull = HDR_LLL2ULL(p->param);
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
+	ticks_offset = lll_event_offset_get(ull);
+	ticks_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US - EVENT_OVERHEAD_RESUME_US);
+	ticks_now = ticker_ticks_now_get();
+
+	p->ticks_at_expire = ticker_ticks_diff_get(ticks_now, ticks_offset);
 	p->remainder = 0;
 	p->lazy = 0;
 
@@ -475,10 +484,10 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event or extended scan to schedule auxiliary channel
-	 * reception.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 	/* scanner always measures RSSI */
@@ -528,7 +537,7 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 		static memq_link_t link;
 		static struct mayfly mfy_after_cen_offset_get = {
 			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
-		struct lll_prepare_param *prepare_param;
+		static struct lll_prepare_param *prepare_param;
 
 		/* Copy the required values to calculate the offsets */
 		prepare_param = &lll->prepare_param;
@@ -554,7 +563,30 @@ static int common_prepare_cb(struct lll_prepare_param *p, bool is_resume)
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	struct lll_scan *lll = curr;
+	struct lll_scan *lll;
+
+	lll = curr;
+
+	/* Prepare being cancelled */
+	if (next == NULL) {
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+		/* Continuous scanning is deferred, to be resumed when the current event
+		 * yields or is done, unless already in the prepare pipeline.
+		 */
+		if ((lll->ticks_window == 0U) && (lll->is_stop == 0U) &&
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		    (!lll->duration_reload || lll->duration_expire) &&
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+		    !is_pipeline_dup(lll)) {
+			*resume_cb = resume_prepare_cb;
+
+			return -EAGAIN;
+		}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
+		/* No resume for scan */
+		return 0;
+	}
 
 #if defined(CONFIG_BT_CENTRAL)
 	/* Irrespective of same state/role (initiator radio event) or different
@@ -575,8 +607,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		if (unlikely(!lll->duration_reload || lll->duration_expire))
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		{
-			/* Put back to resume state for continuous scanning */
-			if (!lll->ticks_window) {
+			/* Put back to resume state for continuous scanning if not being stopped. */
+			if ((lll->ticks_window == 0U) && (lll->is_stop == 0U)) {
 				int err;
 
 				/* Set the resume prepare function to use for
@@ -656,14 +688,45 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		return;
 	}
 
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+	/* Being put back into the pipeline as deferred event, keep the preparations */
+	if (param != NULL) {
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
+
 	/* NOTE: Else clean the top half preparations of the aborted event
 	 * currently in preparation pipeline.
 	 */
 	err = lll_hfclock_off();
 	LL_ASSERT_ERR(err >= 0);
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
+/* Check if the prepare pipeline has more than one prepare of the scan instance */
+static bool is_pipeline_dup(const struct lll_scan *lll)
+{
+	struct lll_event *e;
+	uint8_t count;
+	void *idx;
+
+	count = 0U;
+	idx = NULL;
+	while ((e = ull_prepare_dequeue_iter(&idx)) != NULL) {
+		if ((e->is_aborted == 0U) && (e->prepare_param.param == lll)) {
+			count++;
+		}
+
+		if (idx == NULL) {
+			break;
+		}
+	}
+
+	return count > 1U;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			   uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -709,6 +772,15 @@ static void isr_rx(void *param)
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR) && !trx_done) {
+		/* ISR latency is measured from the on-air packet END
+		 * timestamp, no END captured when the ISR is due to Rx timeout
+		 * or explicit radio disable, hence do not measure latency.
+		 */
+		lll_prof_latency_invalidate();
+	}
+
 	if (trx_done) {
 		crc_ok = radio_crc_is_valid();
 		devmatch_ok = radio_filter_has_match();
@@ -810,6 +882,11 @@ static void isr_tx(void *param)
 		node_rx_prof = lll_prof_reserve();
 	}
 
+	/* Call to ensure packet/event timer accumulates the elapsed time
+	 * under single timer use.
+	 */
+	(void)radio_is_tx_done();
+
 	/* Clear radio status and events */
 	lll_isr_tx_status_reset();
 
@@ -850,13 +927,17 @@ static void isr_tx(void *param)
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
-	hcto += radio_rx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
+	hcto += radio_rx_address_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(PHY_LEGACY, PHY_FLAGS_UNUSED);
 
 	radio_tmr_hcto_configure(hcto);
 
 	radio_rssi_measure();
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		radio_tmr_end_capture();
+	}
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
@@ -950,9 +1031,10 @@ static void isr_done(void *param)
 	radio_rx_enable();
 #endif /* !HAL_RADIO_GPIO_HAVE_LNA_PIN */
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 }
 
@@ -1002,9 +1084,10 @@ static void isr_window(void *param)
 	remainder_us = radio_tmr_start_now(0);
 #endif /* !CONFIG_BT_CENTRAL && !CONFIG_BT_CTLR_ADV_EXT */
 
-	/* capture end of Rx-ed PDU, for initiator to calculate first
-	 * central event.
-	 */
+	/* capture aa to have aux_offset calculated */
+	radio_tmr_aa_capture();
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first central event */
 	radio_tmr_end_capture();
 
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
@@ -1309,6 +1392,7 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 			 */
 			lll_prof_radio_end_backup();
 		}
+
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
@@ -1438,7 +1522,6 @@ static inline int isr_rx_pdu(struct lll_scan *lll, struct pdu_adv *pdu_adv_rx,
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 			lll_prof_cputime_capture();
-
 		}
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
@@ -1668,10 +1751,17 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;
 				ftr->ticks_anchor = radio_tmr_start_get();
-				ftr->radio_end_us =
-					radio_tmr_end_get() -
-					radio_rx_chain_delay_get(lll->phy,
-								 phy_flags_rx);
+
+				uint32_t aa_delay_us;
+				uint32_t aa_us;
+
+				aa_us = radio_tmr_aa_get();
+				aa_delay_us = radio_rx_address_delay_get(lll->phy, phy_flags_rx);
+				aa_delay_us += addr_us_get(lll->phy);
+				LL_ASSERT_MSG(aa_us >= aa_delay_us, "aa_us %u < aa_delay_us %u",
+					      aa_us, aa_delay_us);
+
+				ftr->radio_end_us = aa_us - aa_delay_us;
 				ftr->phy_flags = phy_flags_rx;
 				ftr->aux_lll_sched =
 					lll_scan_aux_setup(pdu_adv_rx, lll->phy,

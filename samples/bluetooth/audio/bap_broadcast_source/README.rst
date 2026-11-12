@@ -12,6 +12,17 @@ Will start advertising extended advertising with audio flags, periodic advertisi
 Broadcast Audio Source Endpoint (BASE) and finally the BIGinfo together with
 (mock) Audio (ISO) data.
 
+In addition to the broadcast advertising sets, the sample starts two more
+advertising sets that run in parallel with the LE Audio broadcast:
+
+* a connectable **extended** advertising set (device name ``BAP Ext Connectable``)
+* a connectable **legacy** advertising set (device name ``BAP Legacy Connectable``)
+
+Remote centrals can connect to either set and reconnect after
+disconnecting, while the LE Audio broadcast continues uninterrupted.
+The broadcast audio set itself uses ``CONFIG_BT_DEVICE_NAME`` (default
+``Broadcast Audio Source``) as its device name in the advertising data.
+
 The BAP Broadcast Source will reset every 30 seconds to show the full API.
 
 Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
@@ -54,6 +65,20 @@ In that case you can pair this application core image with the
 :zephyr:code-sample:`bluetooth_hci_ipc` sample
 :zephyr_file:`samples/bluetooth/hci_ipc/extra-iso-bt_ll_sw_split.conf` extra configuration.
 
+Building for an nrf54h20dk
+--------------------------
+
+The application runs on the application core and uses USB Audio input. Sysbuild adds the
+:zephyr:code-sample:`bluetooth_hci_ipc` sample with
+:zephyr_file:`samples/bluetooth/hci_ipc/extra-iso-bt_ll_sw_split.conf` as the controller image
+for the radio core:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/audio/bap_broadcast_source/
+   :board: nrf54h20dk/nrf54h20/cpuapp
+   :goals: build flash
+   :west-args: --sysbuild
+
 Building for a simulated nrf5340bsim
 ------------------------------------
 
@@ -76,3 +101,59 @@ Building for a simulated nrf52_bsim
    :board: nrf52_bsim
    :goals: build
    :gen-args: -DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
+
+USB Audio input
+---------------
+
+With :kconfig:option:`CONFIG_USE_USB_AUDIO_INPUT` (enabled for ``nrf54lm20dk/nrf54lm20a/cpuapp`` and
+``nrf54h20dk/nrf54h20/cpuapp``) the sample is a USB Audio Class 2 speaker that broadcasts the
+received 48 kHz stereo audio. The isochronous OUT endpoint is asynchronous and the broadcast is the
+clock master: the application measures the input buffer fill level each time an SDU is sent and
+reports an explicit feedback value that makes the host follow the Bluetooth clock. If the host does
+not follow the feedback, a single sample is dropped or repeated per SDU to keep the buffer bounded,
+so that no SDU is sent with missing audio. With an audio input the broadcast source is not reset.
+
+With :kconfig:option:`CONFIG_AUDIO_INPUT_TIMED` (default on ``nrf54lm20dk/nrf54lm20a/cpuapp``
+with the Zephyr Bluetooth Controller) the feedback is derived from time stamps in the
+controller's GRTC time base instead of the instantaneous fill level:
+
+* Every USB start-of-frame event captures the GRTC counter through DPPI. The SOF period
+  measured over about two seconds gives the host sample rate relative to the Bluetooth clock,
+  which is reported as the feedforward feedback value.
+* The HCI LE Read ISO TX Sync command gives the air time of each SDU. The buffer level is
+  sampled from the SOF time line at a fixed lead before that air time, so the measurement does
+  not depend on the encoder thread or USB transfer latency, and a slow phase loop holds it at
+  the target.
+
+Once locked, no sample is dropped or repeated. The fill level loop with slip and repeat
+remains the fallback when time stamps are not available.
+
+SDU transmission metrics
+------------------------
+
+Every 10 seconds the sample prints SDU transmission metrics for the last interval:
+
+* Per stream: SDUs and bytes sent, send errors, completions that left the controller queue
+  empty (a possible on-air gap) and the range of SDUs queued in the controller, and the
+  interval and jitter of the sent callbacks.
+* With an audio input: the feedback value, the buffer fill range, and the silent, underrun,
+  overrun, slipped and repeated SDU counts; the USB packet count and size range, and the input
+  sample rate in the host clock.
+
+With :kconfig:option:`CONFIG_AUDIO_INPUT_TIMED` the metrics also include:
+
+* ISO TX sync: the anchor sequence number and time, the deviation of each anchor from the air
+  time predicted from the previous one, and the SDU interval error in ppm against the local
+  clock.
+* USB SOF: the number of SOF events and those without a captured time stamp, the mean, range
+  and jitter of the captured SOF period, and the host clock offset from the controller clock.
+* Clock drift: the host clock offset over the rate measurement window and its change since the
+  last interval, and the USB input sample rate in the controller clock, which is 48000 Hz when
+  locked.
+* Encode lead time before the SDU air time, its range and jitter, and the number of late SDUs,
+  and the range of the buffer level error.
+
+The USB host can be emulated, for example in BabbleSim, with
+``-DEXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-emulated-input.conf"``. The emulated
+host clock offset is set with :kconfig:option:`CONFIG_AUDIO_INPUT_EMULATED_PPM`, and
+:kconfig:option:`CONFIG_AUDIO_INPUT_EMULATED_FEEDBACK` selects whether it follows the feedback.

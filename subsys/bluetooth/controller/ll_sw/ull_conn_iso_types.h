@@ -40,6 +40,13 @@ struct ll_conn_iso_stream {
 	uint32_t offset;          /* Offset of CIS from ACL event in us */
 	uint32_t sync_delay;
 
+#if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
+	/* CIG ticker expiry of the first CIS event, when the CIS is started in
+	 * an active CIG.
+	 */
+	uint32_t ticks_first_expire;
+#endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
 	ll_iso_stream_released_cb_t released_cb; /* CIS release callback */
 
 	uint16_t event_expire;     /* Supervision & Connect Timeout event
@@ -82,6 +89,17 @@ struct ll_conn_iso_group {
 				 * controller's clock.
 				 */
 	uint32_t sync_delay;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Ticker expiry of the CIG event without drift, and the offset of the
+	 * CIS reserved by the resume ticker in the CIG event.
+	 */
+	uint32_t ticks_resume_anchor;
+	uint32_t resume_offset_us;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 	uint16_t iso_interval;
 	uint8_t  cig_id;

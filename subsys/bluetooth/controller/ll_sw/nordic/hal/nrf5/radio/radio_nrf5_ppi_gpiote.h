@@ -12,7 +12,7 @@ static inline void hal_palna_ppi_setup(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_ENABLE_PALNA_PPI,
-		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[2]),
+		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_PA_LNA_CC_OFFSET]),
 		(uint32_t)&(gpiote_palna->p_reg->TASKS_OUT[gpiote_ch_palna]));
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
@@ -39,7 +39,7 @@ static inline void hal_fem_ppi_setup(void)
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_ENABLE_FEM_PPI,
-		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[3]),
+		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[HAL_EVENT_TIMER_PA_LNA_PDN_CC_OFFSET]),
 		(uint32_t)&(gpiote_pdn->p_reg->TASKS_OUT[gpiote_ch_pdn]));
 	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,

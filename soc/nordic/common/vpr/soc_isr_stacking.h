@@ -167,6 +167,21 @@ unstacking_is_interrupt:			\
 						\
 unstacking_keep_going:
 
+#define SOC_ISR_ENABLE_NESTING csrsi mstatus, MSTATUS_IEN
+#define SOC_ISR_DISABLE_NESTING csrci mstatus, MSTATUS_IEN
+
+/*
+ * An interrupt can still preempt another one before the first instruction of the trap handler.
+ * The preempted handler has not been accounted in the nesting counter yet, so the preempting one
+ * runs as the outermost interrupt and its return address points to the trap handler. It must return
+ * to the preempted handler on the same stack pointer the hardware stacked it on, so it must never
+ * reschedule.
+ */
+#define SOC_ISR_SKIP_RESCHEDULE				\
+	lr t0, __struct_arch_esf_mepc_OFFSET(sp);	\
+	la t1, _isr_wrapper;				\
+	beq t0, t1, no_reschedule
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* SOC_RISCV_NORDIC_NRF_COMMON_VPR_SOC_ISR_STACKING_H_ */

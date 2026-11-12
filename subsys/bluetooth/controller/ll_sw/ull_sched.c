@@ -750,6 +750,24 @@ static struct ull_hdr *ull_hdr_get_cb(uint8_t ticker_id, uint32_t *ticks_slot)
 		if (cig) {
 			*ticks_slot = cig->ull.ticks_slot;
 
+			/* Central CIG event with jitter in window reserves only
+			 * the leading burst subevents. Place other Central roles
+			 * after the complete CIG event so that CIS offsets of
+			 * the CISes in the CIG are within the ACL interval.
+			 */
+			if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) &&
+			    (cig->lll.role == BT_HCI_ROLE_CENTRAL)) {
+				uint32_t ticks_cig;
+
+				ticks_cig = HAL_TICKER_US_TO_TICKS_CEIL(cig->sync_delay);
+				if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
+					ticks_cig += HAL_TICKER_US_TO_TICKS_CEIL(
+						EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US);
+				}
+
+				*ticks_slot = MAX(*ticks_slot, ticks_cig);
+			}
+
 			return &cig->ull;
 		}
 

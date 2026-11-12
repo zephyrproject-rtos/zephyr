@@ -8,6 +8,16 @@
 #define LLL_CIS_FLUSH_PENDING   1
 #define LLL_CIS_FLUSH_COMPLETE  2
 
+/* Per-CIS channel-selection (PRN) state saved/restored when bouncing
+ * between CISes during interleaved subevent traversal.
+ */
+struct lll_conn_iso_data_chan_interleaved {
+	uint16_t prn_s;      /* Channel PRN state */
+	uint16_t remap_idx;  /* Channel remap index */
+	uint16_t id;         /* data_chan_id for this CIS */
+	uint8_t  chan_use;   /* Current channel in use */
+};
+
 struct lll_conn_iso_stream_rxtx {
 	uint64_t payload_count:39; /* cisPayloadCounter */
 	uint64_t phy_flags:1;      /* S2 or S8 coding scheme */
@@ -58,6 +68,12 @@ struct lll_conn_iso_stream {
 	uint8_t npi:1;              /* 1 if CIS LLL has Tx-ed Null PDU Indicator */
 	uint8_t flush:2;            /* See states LLL_CIS_FLUSH_XXX */
 	uint8_t active:1;           /* 1 if CIS LLL is active */
+	/* 1 if a ULL prepare of the CIG has counted the CIS event since the CIS
+	 * was set active; a CIS set active between the ULL and LLL prepare of a
+	 * CIG event, or the resume of a preempted CIG event, shall not be
+	 * picked up by that CIG event.
+	 */
+	uint8_t active_prepare:1;
 	uint8_t datapath_ready_rx:1;/* 1 if datapath for RX is ready */
 
 #if !defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
@@ -100,7 +116,7 @@ struct lll_conn_iso_group {
 	uint32_t num_cis:5;   /* Number of CISes in this CIG */
 	uint32_t role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
 	uint32_t paused:1;    /* 1: CIG is paused */
-	uint32_t rfu0:1;
+	uint32_t packing:1;   /* 0: sequential, 1: interleaved */
 
 	/* ISO interval to calculate timestamp under FT > 1,
 	 * maximum ISO interval of 4 seconds can be represented in 22-bits.
@@ -112,6 +128,29 @@ struct lll_conn_iso_group {
 	uint16_t latency_prepare;
 	uint16_t lazy_prepare;
 	uint16_t latency_event;
+
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER) || \
+	defined(CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER)
+	/* Resume subevent state to allow LLL to resume from a mid-event
+	 * position when the CIG event was wrapped around an overlapping role.
+	 */
+	uint8_t  is_lll_resume:1;
+	/* CIS handle being executed when a started CIG event was preempted to
+	 * be resumed. CISes before it in the event have already been closed and
+	 * their payload counts updated, hence must not be closed again on
+	 * resume.
+	 */
+	uint16_t cis_handle_resume;
+	/* Ticker expiry less the drift of the CIG event being executed, used
+	 * to identify the CIG event that cis_handle_resume belongs to.
+	 */
+	uint32_t ticks_anchor;
+	uint32_t ticks_start;
+	uint32_t ready_us;
+	uint32_t aa_us;
+#endif /* CONFIG_BT_CTLR_CENTRAL_ISO_SLOT_WINDOW_JITTER ||
+	* CONFIG_BT_CTLR_PERIPHERAL_ISO_SLOT_WINDOW_JITTER
+	*/
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)
 	/* Window widening. Relies on vendor specific conversion macros, e.g.
