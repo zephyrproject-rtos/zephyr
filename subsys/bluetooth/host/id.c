@@ -1724,7 +1724,13 @@ int bt_id_reset_irk(uint8_t id, uint8_t *irk)
 		(void)memcpy(irk, new_irk, sizeof(new_irk));
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	/* A running scanner or initiator uses the default identity (see above),
+	 * so the RPA it shares with the other roles stays valid.
+	 */
+	if (!(atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
+	      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
 
 #if defined(CONFIG_BT_RPA_SHARING)
 	bt_addr_copy(&bt_dev.rpa[id], BT_ADDR_NONE);
