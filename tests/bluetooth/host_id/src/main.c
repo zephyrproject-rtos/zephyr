@@ -22,6 +22,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#include <host/adv.h>
+
 #if defined(CONFIG_BT_PRIVACY)
 #include <host/hci_core.h>
 #include <host/id.h>
@@ -148,6 +150,23 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
+	if (IS_ENABLED(CONFIG_TEST_HCI_EXT_ADV)) {
+		sys_put_le64(BIT64(BT_LE_FEAT_BIT_EXT_ADV), rp->features);
+	}
+}
+
+static bool adv_set_random_addr_failure;
+
+static void le_set_adv_set_random_addr(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				       uint16_t opcode)
+{
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	rp->status = adv_set_random_addr_failure ? BT_HCI_ERR_UNSPECIFIED : BT_HCI_ERR_SUCCESS;
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -290,6 +309,11 @@ static const struct cmd_handler cmds[] = {
 		sizeof(struct bt_hci_evt_cc_status),
 		le_set_scan_enable,
 	},
+	{
+		BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR,
+		sizeof(struct bt_hci_evt_cc_status),
+		le_set_adv_set_random_addr,
+	},
 };
 
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
@@ -408,6 +432,30 @@ static void cleanup_secondary_identities(void)
 	}
 }
 
+static void adv_cleanup_func(struct bt_le_ext_adv *adv, void *data)
+{
+	ARG_UNUSED(data);
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop an advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete an advertising set");
+}
+
+/* Removes what a failed test can leave behind: advertising sets and armed failures */
+static void adv_cleanup(void)
+{
+	adv_set_random_addr_failure = false;
+
+	if (!IS_ENABLED(CONFIG_TEST_HCI_EXT_ADV)) {
+		return;
+	}
+
+	if (bt_le_adv_lookup_legacy() != NULL) {
+		zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+	}
+
+	bt_le_ext_adv_foreach(adv_cleanup_func, NULL);
+}
+
 static void *id_setup(void)
 {
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -440,6 +488,7 @@ static void id_after(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	adv_cleanup();
 	cleanup_secondary_identities();
 }
 
@@ -727,6 +776,34 @@ static ZTEST(bt_id_public_api, test_reset_irk_invalidates_cached_rpa)
 	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the new advertising set");
 }
 #endif /* defined(CONFIG_BT_RPA_SHARING) */
+
+#if defined(CONFIG_TEST_HCI_EXT_ADV)
+static ZTEST(bt_id_public_api, test_adv_start_rpa_failure)
+{
+	struct bt_le_ext_adv_info info;
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+	int err;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv),
+		   "Failed to create the advertising set");
+	/* bt_le_oob_get_local() rotates the RPAs, so the stopped set needs a new one. */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+
+	adv_set_random_addr_failure = true;
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	adv_set_random_addr_failure = false;
+	zassert_not_equal(err, 0, "The set started without a new RPA");
+	zassert_ok(bt_le_ext_adv_get_info(adv, &info), "Failed to get the set info");
+	zassert_equal(info.ext_adv_state, BT_LE_EXT_ADV_STATE_DISABLED,
+		      "The set is enabled after a failed start");
+
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+#endif /* defined(CONFIG_TEST_HCI_EXT_ADV) */
 
 static ZTEST(bt_id_public_api, test_reset_irk_rejects_random_failure)
 {
