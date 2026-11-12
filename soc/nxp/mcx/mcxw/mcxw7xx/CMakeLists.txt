@@ -12,6 +12,10 @@ zephyr_sources_ifdef(CONFIG_SOC_MCXW727C mcxw72_platform_init.S)
 zephyr_sources_ifdef(CONFIG_PM power.c)
 
 if(CONFIG_PM_S2RAM)
+  zephyr_sources(
+    s2ram.c
+    s2ram_entry.S
+  )
   if(CONFIG_SOC_MCXW716C OR CONFIG_SOC_MCXW727C)
     set(s2ram_layout_checker "${CMAKE_CURRENT_SOURCE_DIR}/check_s2ram_layout.py")
     dt_nodelabel(s2ram_reserved_node NODELABEL "s2ram_reserved" REQUIRED)

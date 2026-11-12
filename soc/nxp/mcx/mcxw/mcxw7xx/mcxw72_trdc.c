@@ -189,6 +189,10 @@ void nxp_mcxw72_trdc_init(void)
 	OPEN_PBRIDGE2(28U);  /* PCC0           - 0x4001_C000 */
 	OPEN_PBRIDGE2(30U);  /* SCG0           - 0x4001_E000 */
 	OPEN_PBRIDGE2(31U);  /* CCM32K / RTCD0 - 0x4001_F000 */
+#if defined(CONFIG_PM_S2RAM)
+	OPEN_PBRIDGE2(33U);  /* REGFILE0 */
+	OPEN_PBRIDGE2(34U);  /* REGFILE1 */
+#endif
 	OPEN_PBRIDGE2(38U);  /* TRDC0 Manager  - 0x4002_6000 */
 	OPEN_PBRIDGE2(39U);  /* TRDC0 MBC0     - 0x4002_7000 */
 	OPEN_PBRIDGE2(40U);  /* TRDC0 MBC1     - 0x4002_8000 */
