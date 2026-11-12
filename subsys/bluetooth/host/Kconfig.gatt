@@ -60,6 +60,17 @@ config BT_ATT_PREPARE_COUNT_PER_CONN
 	  long write size, at the cost of one connection being able to hold
 	  buffers that the other connections would need.
 
+config BT_ATT_CONN_MTU_LIMIT
+	bool "Per-connection local ATT MTU limits"
+	help
+	  Allow the local ATT MTU of individual connections to be limited
+	  below the default value with bt_gatt_conn_mtu_limit(). The limit
+	  is used in the ATT MTU exchange on the unenhanced ATT bearer.
+
+	  With BT_GATT_AUTO_UPDATE_MTU, the exchange is initiated before
+	  the connected callback, so the limit can only be applied to
+	  connections created with bt_conn_le_create().
+
 config BT_ATT_RETRY_ON_SEC_ERR
 	bool "Automatic security elevation and retry on security errors"
 	default y

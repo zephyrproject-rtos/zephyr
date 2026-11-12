@@ -1019,6 +1019,17 @@ static void send_err_rsp(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
 	bt_att_chan_send_rsp(chan, buf);
 }
 
+uint16_t bt_att_local_mtu(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_ATT_CONN_MTU_LIMIT)
+	if (conn->le.att_mtu_limit != 0U) {
+		return MIN(conn->le.att_mtu_limit, BT_LOCAL_ATT_MTU_UATT);
+	}
+#endif /* CONFIG_BT_ATT_CONN_MTU_LIMIT */
+
+	return BT_LOCAL_ATT_MTU_UATT;
+}
+
 static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
 	struct bt_att_exchange_mtu_req *req;
@@ -1049,7 +1060,7 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
-	mtu_server = BT_LOCAL_ATT_MTU_UATT;
+	mtu_server = bt_att_local_mtu(chan->att->conn);
 
 	LOG_DBG("Server MTU %u", mtu_server);
 
@@ -1180,7 +1191,7 @@ static uint8_t att_mtu_rsp(struct bt_att_chan *chan, struct net_buf *buf)
 	/* The following must equal the value we sent in the req. We assume this
 	 * is a rsp to `gatt_exchange_mtu_encode`.
 	 */
-	att_chan_set_rx_mtu(chan, BT_LOCAL_ATT_MTU_UATT);
+	att_chan_set_rx_mtu(chan, bt_att_local_mtu(chan->att->conn));
 	/* The ATT_EXCHANGE_MTU_REQ/RSP is just an alternative way of
 	 * communicating the L2CAP MTU.
 	 */
