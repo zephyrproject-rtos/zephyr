@@ -61,33 +61,34 @@ struct uart_reg {
 
 /* UART register fields */
 /* UICTRL bit 0 is TBE in buffer mode and TFNF in FIFO mode. */
-#define NPCM_UICTRL_TBE          0
+#define NPCM_UICTRL_TBE      0
 /* UICTRL bit 1 is RBF in buffer mode and RFLT in FIFO mode. */
-#define NPCM_UICTRL_RBF          1
-#define NPCM_UICTRL_ETI          5
-#define NPCM_UICTRL_ERI          6
-#define NPCM_UICTRL_EEI          7
-#define NPCM_USTAT_PE            0
-#define NPCM_USTAT_FE            1
-#define NPCM_USTAT_DOE           2
-#define NPCM_USTAT_ERR           3
-#define NPCM_USTAT_BKD           4
-#define NPCM_USTAT_RB9           5
-#define NPCM_USTAT_XMIP          6
-#define NPCM_UFRS_CHAR_FIELD     GENMASK(1, 0)
+#define NPCM_UICTRL_RBF      1
+#define NPCM_UICTRL_ETI      5
+#define NPCM_UICTRL_ERI      6
+#define NPCM_UICTRL_EEI      7
+#define NPCM_UICTRL_IRQ_MASK (BIT(NPCM_UICTRL_ETI) | BIT(NPCM_UICTRL_ERI) | BIT(NPCM_UICTRL_EEI))
+#define NPCM_USTAT_PE        0
+#define NPCM_USTAT_FE        1
+#define NPCM_USTAT_DOE       2
+#define NPCM_USTAT_ERR       3
+#define NPCM_USTAT_BKD       4
+#define NPCM_USTAT_RB9       5
+#define NPCM_USTAT_XMIP      6
+#define NPCM_UFRS_CHAR_FIELD GENMASK(1, 0)
 /* UFRS.CHAR: 00=8-bit, 01=7-bit, 10=9-bit, 11=diagnostic(9-bit). */
-#define NPCM_UFRS_CHAR_8BITS     0U
-#define NPCM_UFRS_CHAR_7BITS     1U
-#define NPCM_UFRS_CHAR_9BITS     2U
-#define NPCM_UFRS_STP            2
-#define NPCM_UFRS_XB9            3
-#define NPCM_UFRS_PSEL_FIELD     GENMASK(5, 4)
+#define NPCM_UFRS_CHAR_8BITS 0U
+#define NPCM_UFRS_CHAR_7BITS 1U
+#define NPCM_UFRS_CHAR_9BITS 2U
+#define NPCM_UFRS_STP        2
+#define NPCM_UFRS_XB9        3
+#define NPCM_UFRS_PSEL_FIELD GENMASK(5, 4)
 /* UFRS.PSEL: 00=odd, 01=even, 10=mark, 11=space. */
-#define NPCM_UFRS_PSEL_ODD       0U
-#define NPCM_UFRS_PSEL_EVEN      1U
-#define NPCM_UFRS_PSEL_MARK      2U
-#define NPCM_UFRS_PSEL_SPACE     3U
-#define NPCM_UFRS_PEN            6
+#define NPCM_UFRS_PSEL_ODD   0U
+#define NPCM_UFRS_PSEL_EVEN  1U
+#define NPCM_UFRS_PSEL_MARK  2U
+#define NPCM_UFRS_PSEL_SPACE 3U
+#define NPCM_UFRS_PEN        6
 #define NPCM_UPSR_UDIV10_8_FIELD GENMASK(2, 0)
 #define NPCM_UPSR_UPSC_FIELD     GENMASK(7, 3)
 #define NPCM_UPSC_NO_CLOCK       0U
@@ -151,10 +152,15 @@ struct uart_npcm_config {
 struct uart_npcm_data {
 	/* Baud rate */
 	uint32_t baud_rate;
+	/* Framing */
+	uint8_t parity;
+	uint8_t stop_bits;
+	uint8_t data_bits;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	struct k_spinlock lock;
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;
+	uint8_t irq_enabled_mask;
 #endif
 #ifdef CONFIG_PM_DEVICE
 	uint32_t pm_state;
@@ -242,6 +248,7 @@ static void uart_npcm_irq_tx_enable(const struct device *dev)
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	NPCM_REG_SET_BITS(&inst->UICTRL, BIT(NPCM_UICTRL_ETI));
+	data->irq_enabled_mask |= BIT(NPCM_UICTRL_ETI);
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -253,6 +260,7 @@ static void uart_npcm_irq_tx_disable(const struct device *dev)
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	NPCM_REG_CLR_BITS(&inst->UICTRL, BIT(NPCM_UICTRL_ETI));
+	data->irq_enabled_mask &= ~BIT(NPCM_UICTRL_ETI);
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -335,10 +343,27 @@ static void uart_npcm_irq_err_disable(const struct device *dev)
 	k_spin_unlock(&data->lock, key);
 }
 
+static bool uart_npcm_irq_err_is_enabled(const struct device *dev)
+{
+	const struct uart_npcm_config *const config = dev->config;
+	struct uart_reg *const inst = config->base;
+
+	return IS_BIT_SET(NPCM_REG_READ(&inst->UICTRL), NPCM_UICTRL_EEI);
+}
+
+static bool uart_npcm_irq_err_pending(const struct device *dev)
+{
+	const struct uart_npcm_config *const config = dev->config;
+	struct uart_reg *const inst = config->base;
+
+	return IS_BIT_SET(NPCM_REG_READ(&inst->USTAT), NPCM_USTAT_ERR);
+}
+
 static int uart_npcm_irq_is_pending(const struct device *dev)
 {
 	return uart_npcm_irq_tx_ready(dev) ||
-	       (uart_npcm_irq_rx_ready(dev) && uart_npcm_irq_rx_is_enabled(dev));
+	       (uart_npcm_irq_rx_ready(dev) && uart_npcm_irq_rx_is_enabled(dev)) ||
+	       (uart_npcm_irq_err_pending(dev) && uart_npcm_irq_err_is_enabled(dev));
 }
 
 static void uart_npcm_irq_update(const struct device *dev)
@@ -519,8 +544,7 @@ static inline bool uart_cfg2npcm_databits(uint8_t *mode_reg, enum uart_config_da
 		break;
 	case UART_CFG_DATA_BITS_9:
 	default:
-		*mode_reg = npcm_set_field(*mode_reg, NPCM_UFRS_CHAR_FIELD, NPCM_UFRS_CHAR_9BITS);
-		break;
+		return false;
 	}
 
 	return true;
@@ -573,6 +597,9 @@ static int uart_npcm_configure(const struct device *dev, const struct uart_confi
 	uart_set_npcm_baud_rate(dev, cfg->baudrate, uart_rate);
 	NPCM_REG_WRITE(&inst->UFRS, mode_reg);
 	data->baud_rate = cfg->baudrate;
+	data->parity = cfg->parity;
+	data->stop_bits = cfg->stop_bits;
+	data->data_bits = cfg->data_bits;
 
 	return 0;
 }
@@ -727,18 +754,20 @@ static void uart_set_npcm_baud_rate(const struct device *dev, int baud_rate, uin
 	clk = src_clk;
 
 	for (i = 1; i <= 31; i++) {
-		divisor = (clk * 10) / (16 * baud_rate * prescalar);
-		if (divisor == 0) {
-			divisor = 1;
-		}
+		uint32_t first_divisor =
+			CLAMP(((uint64_t)clk * 10U) / (16ULL * (uint32_t)baud_rate * prescalar), 1U,
+			      2048U);
 
-		calc_baudrate = (clk * 10) / (16 * divisor * prescalar);
-		deviation = (calc_baudrate > baud_rate) ? (calc_baudrate - baud_rate)
-							: (baud_rate - calc_baudrate);
-		if (deviation < min_deviation) {
-			min_deviation = deviation;
-			opt_prescalar = i;
-			opt_dev = divisor;
+		for (divisor = first_divisor; divisor <= MIN(first_divisor + 1U, 2048U);
+		     divisor++) {
+			calc_baudrate = ((uint64_t)clk * 10U) / (16ULL * divisor * prescalar);
+			deviation = (calc_baudrate > baud_rate) ? (calc_baudrate - baud_rate)
+								: (baud_rate - calc_baudrate);
+			if (deviation < min_deviation) {
+				min_deviation = deviation;
+				opt_prescalar = i;
+				opt_dev = divisor;
+			}
 		}
 		prescalar += 5;
 	}
@@ -757,11 +786,71 @@ static void uart_set_npcm_baud_rate(const struct device *dev, int baud_rate, uin
 					    ((opt_dev >> 8) & NPCM_UPSR_UDIV10_8_FIELD));
 }
 
-static int uart_npcm_init(const struct device *dev)
+static int uart_npcm_apply_line_format(const struct device *dev)
 {
 	const struct uart_npcm_config *const config = dev->config;
 	struct uart_npcm_data *const data = dev->data;
 	struct uart_reg *const inst = config->base;
+	uint8_t mode_reg = NPCM_REG_READ(&inst->UFRS);
+
+	switch (data->parity) {
+	case UART_CFG_PARITY_NONE:
+		mode_reg &= ~BIT(NPCM_UFRS_PEN);
+		break;
+	case UART_CFG_PARITY_ODD:
+		mode_reg |= BIT(NPCM_UFRS_PEN);
+		mode_reg = npcm_set_field(mode_reg, NPCM_UFRS_PSEL_FIELD, NPCM_UFRS_PSEL_ODD);
+		break;
+	case UART_CFG_PARITY_EVEN:
+		mode_reg |= BIT(NPCM_UFRS_PEN);
+		mode_reg = npcm_set_field(mode_reg, NPCM_UFRS_PSEL_FIELD, NPCM_UFRS_PSEL_EVEN);
+		break;
+	case UART_CFG_PARITY_MARK:
+		mode_reg |= BIT(NPCM_UFRS_PEN);
+		mode_reg = npcm_set_field(mode_reg, NPCM_UFRS_PSEL_FIELD, NPCM_UFRS_PSEL_MARK);
+		break;
+	case UART_CFG_PARITY_SPACE:
+		mode_reg |= BIT(NPCM_UFRS_PEN);
+		mode_reg = npcm_set_field(mode_reg, NPCM_UFRS_PSEL_FIELD, NPCM_UFRS_PSEL_SPACE);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (data->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		mode_reg &= ~BIT(NPCM_UFRS_STP);
+		break;
+	case UART_CFG_STOP_BITS_2:
+		mode_reg |= BIT(NPCM_UFRS_STP);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (data->data_bits) {
+	case UART_CFG_DATA_BITS_7:
+		mode_reg = npcm_set_field(mode_reg, NPCM_UFRS_CHAR_FIELD, NPCM_UFRS_CHAR_7BITS);
+		break;
+	case UART_CFG_DATA_BITS_8:
+		mode_reg = npcm_set_field(mode_reg, NPCM_UFRS_CHAR_FIELD, NPCM_UFRS_CHAR_8BITS);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	NPCM_REG_WRITE(&inst->UFRS, mode_reg);
+
+	return 0;
+}
+
+static int uart_npcm_init(const struct device *dev)
+{
+	const struct uart_npcm_config *const config = dev->config;
+	struct uart_npcm_data *const data = dev->data;
+#if CONFIG_UART_INTERRUPT_DRIVEN
+	struct uart_reg *const inst = config->base;
+#endif
 	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
 	uint32_t uart_rate;
 	int ret;
@@ -786,11 +875,11 @@ static int uart_npcm_init(const struct device *dev)
 
 	uart_set_npcm_baud_rate(dev, data->baud_rate, uart_rate);
 
-	/*
-	 * 8-N-1, FIFO enabled.  Must be done after setting
-	 * the divisor for the new divisor to take effect.
-	 */
-	NPCM_REG_WRITE(&inst->UFRS, 0x00);
+	ret = uart_npcm_apply_line_format(dev);
+	if (ret < 0) {
+		LOG_ERR("Unsupported initial UART framing in devicetree (%d)", ret);
+		return ret;
+	}
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	uint8_t ufctrl = NPCM_REG_READ(&inst->UFCTRL);
 
@@ -821,13 +910,13 @@ static int uart_npcm_init(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 static inline bool uart_npcm_device_is_transmitting(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
-		/* The transmitted transaction is completed? */
-		return !uart_npcm_irq_tx_complete(dev);
-	}
-
-	/* No need for polling mode */
-	return 0;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	/* The transmitted transaction is completed? */
+	return !uart_npcm_irq_tx_complete(dev);
+#else
+	ARG_UNUSED(dev);
+	return false;
+#endif
 }
 
 static inline int uart_npcm_get_power_state(const struct device *dev, uint32_t *state)
@@ -840,11 +929,20 @@ static inline int uart_npcm_get_power_state(const struct device *dev, uint32_t *
 
 static inline int uart_npcm_set_power_state(const struct device *dev, uint32_t next_state)
 {
+	const struct uart_npcm_config *const config = dev->config;
 	struct uart_npcm_data *const data = dev->data;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	struct uart_reg *const inst = config->base;
+#endif
+	const struct device *const clk_dev = DEVICE_DT_GET(DT_NODELABEL(pcc));
+	uint32_t prev_state = data->pm_state;
+	int ret = 0;
 
 	/* If next device power state is LOW or SUSPEND power state */
-	if (next_state == PM_DEVICE_STATE_SUSPENDING || next_state == PM_DEVICE_STATE_SUSPENDED) {
-		if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+	if (next_state == PM_DEVICE_STATE_SUSPENDING || next_state == PM_DEVICE_STATE_SUSPENDED ||
+	    next_state == PM_DEVICE_STATE_OFF) {
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		{
 			int64_t deadline = k_uptime_get() + UART_NPCM_PM_TX_DRAIN_TIMEOUT_MS;
 
 			/* Wait for TX completion with timeout to avoid suspend hangs. */
@@ -856,7 +954,70 @@ static inline int uart_npcm_set_power_state(const struct device *dev, uint32_t n
 
 				k_busy_wait(50);
 			}
+
+			/* Save and quiesce all UART interrupt sources before clock gating. */
+			data->irq_enabled_mask =
+				NPCM_REG_READ(&inst->UICTRL) & NPCM_UICTRL_IRQ_MASK;
+			NPCM_REG_CLR_BITS(&inst->UICTRL, NPCM_UICTRL_IRQ_MASK);
 		}
+#else
+		if (IS_BIT_SET(NPCM_REG_READ(&config->base->USTAT), NPCM_USTAT_XMIP)) {
+			return -EBUSY;
+		}
+#endif
+		ret = clock_control_off(clk_dev, (clock_control_subsys_t)config->clk_cfg);
+		if (ret < 0) {
+			LOG_ERR("Turn off UART clock fail %d", ret);
+			return ret;
+		}
+	} else if (next_state == PM_DEVICE_STATE_ACTIVE &&
+		   (prev_state == PM_DEVICE_STATE_SUSPENDED || prev_state == PM_DEVICE_STATE_OFF)) {
+		uint32_t uart_rate;
+
+		ret = clock_control_on(clk_dev, (clock_control_subsys_t)config->clk_cfg);
+		if (ret < 0) {
+			LOG_ERR("Turn on UART clock fail %d", ret);
+			return ret;
+		}
+
+		ret = clock_control_get_rate(clk_dev, (clock_control_subsys_t)config->clk_cfg,
+					     &uart_rate);
+		if (ret < 0) {
+			LOG_ERR("Get UART clock rate error %d", ret);
+			return ret;
+		}
+
+		uart_set_npcm_baud_rate(dev, data->baud_rate, uart_rate);
+
+		ret = uart_npcm_apply_line_format(dev);
+		if (ret < 0) {
+			LOG_ERR("Unsupported UART framing restore (%d)", ret);
+			return ret;
+		}
+
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("UART pinctrl restore failed (%d)", ret);
+			return ret;
+		}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		{
+			uint8_t ufctrl = NPCM_REG_READ(&inst->UFCTRL);
+
+			ufctrl = npcm_set_field(ufctrl, NPCM_UFCTRL_RXFTH_FIELD,
+						config->rx_fifo_threshold);
+			ufctrl |= BIT(NPCM_UFCTRL_FIFOEN);
+			NPCM_REG_WRITE(&inst->UFCTRL, ufctrl);
+
+			uart_npcm_dis_all_tx_interrupts(dev);
+			uart_npcm_clear_rx_fifo(dev);
+
+			if (data->irq_enabled_mask != 0U) {
+				NPCM_REG_SET_BITS(&inst->UICTRL, data->irq_enabled_mask);
+			}
+		}
+#endif
 	}
 
 	data->pm_state = next_state;
@@ -914,6 +1075,9 @@ static const struct uart_npcm_config uart_npcm_cfg_0 = {
 
 static struct uart_npcm_data uart_npcm_data_0 = {
 	.baud_rate = DT_INST_PROP(0, current_speed),
+	.parity = DT_INST_ENUM_IDX_OR(0, parity, UART_CFG_PARITY_NONE),
+	.stop_bits = DT_INST_ENUM_IDX_OR(0, stop_bits, UART_CFG_STOP_BITS_1),
+	.data_bits = DT_INST_ENUM_IDX_OR(0, data_bits, UART_CFG_DATA_BITS_8),
 };
 
 DEVICE_DT_INST_DEFINE(0, &uart_npcm_init,
@@ -948,6 +1112,9 @@ static const struct uart_npcm_config uart_npcm_cfg_1 = {
 
 static struct uart_npcm_data uart_npcm_data_1 = {
 	.baud_rate = DT_INST_PROP(1, current_speed),
+	.parity = DT_INST_ENUM_IDX_OR(1, parity, UART_CFG_PARITY_NONE),
+	.stop_bits = DT_INST_ENUM_IDX_OR(1, stop_bits, UART_CFG_STOP_BITS_1),
+	.data_bits = DT_INST_ENUM_IDX_OR(1, data_bits, UART_CFG_DATA_BITS_8),
 };
 
 DEVICE_DT_INST_DEFINE(1, &uart_npcm_init,
@@ -982,6 +1149,9 @@ static const struct uart_npcm_config uart_npcm_cfg_2 = {
 
 static struct uart_npcm_data uart_npcm_data_2 = {
 	.baud_rate = DT_INST_PROP(2, current_speed),
+	.parity = DT_INST_ENUM_IDX_OR(2, parity, UART_CFG_PARITY_NONE),
+	.stop_bits = DT_INST_ENUM_IDX_OR(2, stop_bits, UART_CFG_STOP_BITS_1),
+	.data_bits = DT_INST_ENUM_IDX_OR(2, data_bits, UART_CFG_DATA_BITS_8),
 };
 
 DEVICE_DT_INST_DEFINE(2, &uart_npcm_init,
@@ -1016,6 +1186,9 @@ static const struct uart_npcm_config uart_npcm_cfg_3 = {
 
 static struct uart_npcm_data uart_npcm_data_3 = {
 	.baud_rate = DT_INST_PROP(3, current_speed),
+	.parity = DT_INST_ENUM_IDX_OR(3, parity, UART_CFG_PARITY_NONE),
+	.stop_bits = DT_INST_ENUM_IDX_OR(3, stop_bits, UART_CFG_STOP_BITS_1),
+	.data_bits = DT_INST_ENUM_IDX_OR(3, data_bits, UART_CFG_DATA_BITS_8),
 };
 
 DEVICE_DT_INST_DEFINE(3, &uart_npcm_init,
