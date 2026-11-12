@@ -44,6 +44,15 @@ Building the application for mps2/an521/cpu0
    :goals: flash
    :west-args: --sysbuild
 
+Building the application for mps3/an524/cpu0
+********************************************
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/ipc/openamp
+   :board: mps3/an524/cpu0
+   :goals: flash
+   :west-args: --sysbuild
+
 Building the application for v2m_musca_b1/musca_b1
 **************************************************
 

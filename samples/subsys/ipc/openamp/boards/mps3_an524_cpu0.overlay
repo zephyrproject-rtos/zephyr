@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * OpenAMP sample overlay for mps3/an524/cpu0: use MHU0 as the doorbell
+ * and the top 32 KB of the BRAM (non-secure alias) as shared memory.
+ */
+
+/ {
+	chosen {
+		/*
+		 * shared memory reserved for the inter-processor communication
+		 */
+		zephyr,ipc_shm = &sramx;
+		zephyr,ipc = &mhu0;
+	};
+
+	sramx: memory@28078000 {
+		compatible = "mmio-sram";
+		reg = <0x28078000 0x8000>;
+	};
+};

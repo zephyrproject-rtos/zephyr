@@ -56,6 +56,7 @@ static uint32_t ipc_virtio_get_features(struct virtio_device *dev)
 static void ipc_virtio_notify(struct virtqueue *vq)
 {
 #if defined(CONFIG_SOC_AN521) || \
+	defined(CONFIG_SOC_AN524) || \
 	defined(CONFIG_SOC_MUSCA_B1)
 	uint32_t current_core = sse_200_platform_get_cpu_id();
 

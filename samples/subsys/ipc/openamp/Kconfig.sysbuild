@@ -9,6 +9,7 @@ string
 	default "lpcxpresso54114/lpc54114/m0" if $(BOARD) = "lpcxpresso54114"
 	default "lpcxpresso55s69/lpc55s69/cpu1" if $(BOARD) = "lpcxpresso55s69"
 	default "mps2/an521/cpu1" if $(BOARD) = "mps2"
+	default "mps3/an524/cpu1" if $(BOARD) = "mps3"
 	default "v2m_musca_b1/musca_b1/ns" if $(BOARD) = "v2m_musca_b1"
 	default "mimxrt1170_evk/mimxrt1176/cm4" if $(BOARD) = "mimxrt1170_evk"
 	default "mimxrt1160_evk/mimxrt1166/cm4" if $(BOARD) = "mimxrt1160_evk"
