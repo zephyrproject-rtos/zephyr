@@ -63,6 +63,27 @@ set(LLEXT_REMOVE_FLAGS
   -Os
 )
 
+if(CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+  # A shared library link would otherwise pull in the toolchain's crt0.o
+  # and C library.
+  set(LLEXT_APPEND_FLAGS
+    -nostdlib
+  )
+  # The linker aligns segments to 64 KiB by default on AArch64. LLEXT loads
+  # them in one image, so align them to the MMU page size instead, or to the
+  # 4 KiB ADRP page without an MMU.
+  if(CONFIG_LLEXT_SHAREDLIB_IMAGE)
+    if(CONFIG_MMU)
+      set(llext_max_page_size ${CONFIG_MMU_PAGE_SIZE})
+    else()
+      set(llext_max_page_size 4096)
+    endif()
+    list(APPEND LLEXT_APPEND_FLAGS
+      -Wl,-z,max-page-size=${llext_max_page_size}
+    )
+  endif()
+endif()
+
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
   --sysroot=.*
   -fmacro-prefix-map=.*
