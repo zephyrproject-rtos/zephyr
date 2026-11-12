@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(ams_as5600, CONFIG_SENSOR_LOG_LEVEL);
 #define AS5600_ANGLE_REGISTER_H	0x0E
 #define AS5600_ANGLE_REGISTER_RAW_H	0x0C
 #define AS5600_STATUS_REGISTER	0x0B
+#define AS5600_ANGLE_MASK  0x0FFFU /* 12-bit angle, bits [15:12] reserved */
 #define AS5600_FULL_ANGLE		360
 #define AS5600_PULSES_PER_REV	4096
 #define AS5600_MILLION_UNIT	1000000
@@ -80,7 +81,7 @@ static int as5600_fetch(const struct device *dev, enum sensor_channel chan)
 
 	/* invalid readings preserves the last good value */
 	if (!err) {
-		dev_data->position = sys_get_be16(buffer);
+		dev_data->position = sys_get_be16(buffer) & AS5600_ANGLE_MASK;
 	}
 
 	return err;
