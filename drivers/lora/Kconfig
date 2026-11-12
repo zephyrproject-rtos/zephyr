@@ -69,6 +69,14 @@ config LORA_HAS_RSSI
 	  Selected by a driver that implements lora_rssi(), and with it the
 	  lora_energy_detect() the common code builds on that read.
 
+config LORA_HAS_LBT
+	bool
+	help
+	  Selected by a driver that implements lora_lbt(), because the device
+	  senses the channel itself. A driver that leaves the operation out
+	  can still reach the same measurement through LORA_HAS_GFSK_MODEM
+	  and LORA_HAS_RSSI, which the caller combines.
+
 config LORA_SHELL
 	bool "LoRa Shell"
 	depends on SHELL
