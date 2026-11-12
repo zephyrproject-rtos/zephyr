@@ -700,9 +700,10 @@ static int eth_mchp_send(const struct device *dev, struct net_pkt *pkt)
 	uint8_t *frag_data;
 	uint16_t frag_len = 0;
 	uint32_t err_tx_queue_flushed_count_at_entry;
-	uint8_t pkt_buff_cnt = 0;
-	uint8_t free_desc_cnt = 0;
-	int8_t head_desc_index = 0;
+	uint16_t pkt_buff_cnt = 0;
+	uint16_t free_desc_cnt = 0;
+	/* The ring has NET_BUF_TX_COUNT + 1 descriptors, possibly more than 128 */
+	int head_desc_index = 0;
 
 	queue = &dev_data->queue_list[0];
 	err_tx_queue_flushed_count_at_entry = queue->err_tx_queue_flushed_count;
