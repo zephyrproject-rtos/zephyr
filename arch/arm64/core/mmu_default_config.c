@@ -5,6 +5,7 @@
  */
 
 #include <stddef.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/arch/arm64/arm_mmu.h>
 
 /*
