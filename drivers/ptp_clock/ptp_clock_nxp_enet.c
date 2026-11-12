@@ -38,6 +38,10 @@ struct ptp_clock_nxp_enet_data {
 	struct k_mutex ptp_mutex;
 	/* The timer is only started when its clock rate is usable */
 	bool ptp_running;
+	/* One rate limit state per instance, so that a noisy instance does not
+	 * suppress the messages of the other instances.
+	 */
+	struct log_ratelimit_state rl;
 };
 
 /* ATINC.INC holds the tick in whole nanoseconds, in 7 bits */
@@ -188,15 +192,17 @@ static int ptp_clock_nxp_enet_adjust_rate(const struct device *dev,
 	 */
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
 	if (ret != 0) {
-		LOG_ERR_RATELIMIT("Cannot read the 1588 timer clock rate (%d)", ret);
+		LOG_ERR_RATELIMIT_STATE(&data->rl, LOG_RATELIMIT_INTERVAL_MS,
+					"Cannot read the 1588 timer clock rate (%d)", ret);
 		return -EIO;
 	}
 
 	inc = (data->base->ATINC & ENET_ATINC_INC_MASK) >> ENET_ATINC_INC_SHIFT;
 	if (!ptp_clock_nxp_enet_rate_usable(enet_ref_pll_rate) ||
 	    (NSEC_PER_SEC / enet_ref_pll_rate != inc)) {
-		LOG_ERR_RATELIMIT("1588 timer clock %u Hz unusable with INC %u, rate not adjusted",
-				  enet_ref_pll_rate, inc);
+		LOG_ERR_RATELIMIT_STATE(&data->rl, LOG_RATELIMIT_INTERVAL_MS,
+					"1588 timer clock %u Hz unusable with INC %u, rate not adjusted",
+					enet_ref_pll_rate, inc);
 		return -EIO;
 	}
 
