@@ -5,7 +5,7 @@
 
 /*
  * Two gPTP ports map to two TAP interfaces: zeth0 and zeth1.
- * Use together with overlay-multiport.conf (CONFIG_NET_GPTP_NUM_PORTS=2).
+ * Use together with multiport.conf (CONFIG_NET_GPTP_NUM_PORTS=2).
  */
 
 &zeth0 {
