@@ -185,7 +185,7 @@ struct dma_block_config *i2s_siwx91x_fill_data_desc(const struct i2s_siwx91x_con
 	int num_descriptors = (size + max_chunk_size - 1) / max_chunk_size;
 	int i;
 
-	if (num_descriptors > CONFIG_I2S_SILABS_SIWX91X_DMA_MAX_BLOCKS) {
+	if (num_descriptors == 0 || num_descriptors > CONFIG_I2S_SILABS_SIWX91X_DMA_MAX_BLOCKS) {
 		return NULL;
 	}
 
@@ -635,6 +635,10 @@ static int i2s_siwx91x_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->block_size == 0) {
+		return -EINVAL;
+	}
+
 	if (i2s_cfg->word_size == 24) {
 		if (i2s_cfg->block_size % 4 != 0) {
 			return -EINVAL;
@@ -679,6 +683,10 @@ static int i2s_siwx91x_write(const struct device *dev, void *mem_block, size_t s
 
 	if (data->tx.state != I2S_STATE_RUNNING && data->tx.state != I2S_STATE_READY) {
 		return -EIO;
+	}
+
+	if (size == 0) {
+		return -EINVAL;
 	}
 
 	ret = k_sem_take(&data->tx.sem, SYS_TIMEOUT_MS(data->tx.cfg.timeout));
