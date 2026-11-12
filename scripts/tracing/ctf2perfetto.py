@@ -150,12 +150,12 @@ def closed_spans(tr):
     depth = 0
     for ev in tr.events:
         if ev.eid == THREAD_SWITCHED_IN:
-            running = (ev.ts, ev.fields.get("thread_id"))
+            running = (ev.ts, ev.fields.get("thread_id"), ev.cpu)
         elif ev.eid == THREAD_SWITCHED_OUT:
             running = None
         elif ev.eid == ISR_ENTER:
             if depth == 0:
-                isr_start = ev.ts
+                isr_start = (ev.ts, ev.cpu)
             depth += 1
         elif ev.eid in (ISR_EXIT, ISR_EXIT_TO_SCHEDULER):
             # Nested ISRs collapse into one span, as they do in the viewer.
@@ -166,11 +166,11 @@ def closed_spans(tr):
     # A reader that closed them itself appended exactly these, so appending
     # again would draw every trailing span twice.
     if running and running[1] is not None and tr.t1 > running[0]:
-        tail = (running[0], tr.t1, running[1])
+        tail = (running[0], tr.t1, running[1], running[2])
         if tail not in segments[-1:]:
             segments.append(tail)
-    if isr_start is not None and tr.t1 > isr_start:
-        tail = (isr_start, tr.t1)
+    if isr_start is not None and tr.t1 > isr_start[0]:
+        tail = (isr_start[0], tr.t1, isr_start[1])
         if tail not in isr_spans[-1:]:
             isr_spans.append(tail)
     return segments, isr_spans
@@ -244,22 +244,34 @@ def export(tr):
     tl = _Timeline()
     tid_map = {}
     segments, isr_spans = closed_spans(tr)
-    starts = [start for start, _, _ in segments]
+
+    # Indexed per CPU: on an SMP trace a thread is running on each core at
+    # once, so "what was running at this timestamp" only has an answer once
+    # the CPU is known.
+    by_cpu = {}
+    for segment in segments:
+        by_cpu.setdefault(segment[3], []).append(segment)
+    for spans in by_cpu.values():
+        spans.sort(key=lambda span: span[0])
+    starts = {cpu: [span[0] for span in spans] for cpu, spans in by_cpu.items()}
 
     def real_tid(thread_id):
         return tid_map.setdefault(int(thread_id), FIRST_THREAD_TID + len(tid_map))
 
-    def running_lane(ts):
-        """Lane of the thread on the CPU at ``ts``, for events naming none."""
-        i = bisect.bisect_right(starts, ts) - 1
-        if i >= 0 and ts <= segments[i][1]:
-            return real_tid(segments[i][2])
+    def running_lane(ts, cpu):
+        """Lane of the thread on @a cpu at ``ts``, for events naming none."""
+        spans = by_cpu.get(cpu)
+        if not spans:
+            return DEFAULT_LANE
+        i = bisect.bisect_right(starts[cpu], ts) - 1
+        if i >= 0 and ts <= spans[i][1]:
+            return real_tid(spans[i][2])
         return DEFAULT_LANE
 
-    for start, end, tid in segments:
+    for start, end, tid, _cpu in segments:
         tl.span(start, end, real_tid(tid))
 
-    for start, end in isr_spans:
+    for start, end, _cpu in isr_spans:
         tl.span(start, end, ISR_LANE, "isr_active")
 
     for ev in tr.events:
@@ -282,7 +294,7 @@ def export(tr):
                 break
         else:
             thread_id = fields.get("thread_id")
-            tid = running_lane(ev.ts) if thread_id is None else real_tid(thread_id)
+            tid = running_lane(ev.ts, ev.cpu) if thread_id is None else real_tid(thread_id)
             tl.add(name, ev.ts, "i", tid, fields)
 
     records = tl.emit()
