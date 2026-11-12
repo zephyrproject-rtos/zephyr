@@ -996,6 +996,46 @@ static ZTEST(bt_disable, test_adv_timeout_after_close_failure)
 	zassert_ok(bt_disable(), "Retrying the disable failed");
 }
 
+/* The controller reports completed packets for the connection */
+static void num_completed_recv(const struct device *dev, uint16_t count)
+{
+	struct bt_hci_evt_num_completed_packets *evt;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_NUM_COMPLETED_PACKETS, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, sizeof(*evt) + sizeof(evt->h[0]));
+	evt = net_buf_add(buf, sizeof(*evt) + sizeof(evt->h[0]));
+	evt->num_handles = 1U;
+	evt->h[0].handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	evt->h[0].count = sys_cpu_to_le16(count);
+	bt_hci_recv(dev, buf);
+}
+
+/* Once a connection is on its way down its unacknowledged packets have been
+ * returned, so there is nothing left for a completion to find. It comes to this
+ * when the thread that handles the event preempts the teardown of a connection
+ * in bt_disable() with a controller that has not been reset. Here the
+ * disconnection is reported first, which takes the connection to the same state.
+ */
+static ZTEST(bt_disable, test_completed_packets_after_disconnection)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	k_sem_reset(&disconnected_sem);
+
+	disconnect_handle = sys_cpu_to_le16(TEST_CONN_HANDLE);
+	disconn_complete_recv(dev);
+	num_completed_recv(dev, 1U);
+
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
+	bt_conn_drop(&test_conn);
+}
+
 ZTEST_SUITE(bt_conn_tx, NULL, NULL, before, NULL, NULL);
 
 /* When the driver fails to send a data packet the Host gives the connection up.
