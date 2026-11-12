@@ -1,0 +1,20 @@
+tests:
+  canbus.canopen.emcy:
+    tags:
+      - can
+      - canopen
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+  canbus.canopen.emcy.queue:
+    tags:
+      - can
+      - canopen
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
+    extra_configs:
+      - CONFIG_CANOPEN_EMCY_QUEUE_SIZE=16
+    integration_platforms:
+      - native_sim
