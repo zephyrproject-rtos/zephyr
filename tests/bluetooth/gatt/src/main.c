@@ -13,9 +13,11 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/settings/settings.h>
 
 #include "common/long_wq.h"
 #include "gatt_internal.h"
+#include "settings.h"
 
 /* Custom Service Variables */
 static const struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(
@@ -98,7 +100,25 @@ static struct bt_gatt_attr test1_attrs[] = {
 
 static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
 
-ZTEST_SUITE(test_gatt, NULL, NULL, NULL, NULL, NULL);
+static void *test_gatt_setup(void)
+{
+	/* Registrations after GATT is initialized need the settings loaded */
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		int err;
+
+		bt_gatt_init();
+
+		err = settings_subsys_init();
+		zassert_equal(err, 0, "settings init failed: %d", err);
+
+		err = settings_load();
+		zassert_equal(err, 0, "settings load failed: %d", err);
+	}
+
+	return NULL;
+}
+
+ZTEST_SUITE(test_gatt, NULL, test_gatt_setup, NULL, NULL, NULL);
 
 ZTEST(test_gatt, test_gatt_register)
 {
@@ -768,7 +788,7 @@ static void *test_gatt_db_hash_setup(void)
 {
 	bt_gatt_init();
 
-	return NULL;
+	return test_gatt_setup();
 }
 
 static void hash_svc_cleanup(struct bt_gatt_service *svc)
@@ -780,6 +800,18 @@ static void hash_svc_cleanup(struct bt_gatt_service *svc)
 	}
 }
 
+/* Set to hold the next store of the hash, before it is written */
+static atomic_t hash_store_armed;
+
+#if defined(CONFIG_SETTINGS_CUSTOM)
+void bt_testing_settings_store_hook(const char *key, const void *value, size_t val_len)
+{
+	if (strcmp(key, "bt/hash") == 0 && atomic_cas(&hash_store_armed, 1, 0)) {
+		hash_hold();
+	}
+}
+#endif /* CONFIG_SETTINGS_CUSTOM */
+
 static void test_gatt_db_hash_after(void *fixture)
 {
 	struct k_work_sync sync;
@@ -788,6 +820,7 @@ static void test_gatt_db_hash_after(void *fixture)
 
 	/* Let go of whatever a failed test left held */
 	(void)atomic_clear(&hash_walk_armed);
+	(void)atomic_clear(&hash_store_armed);
 	k_sem_give(&hash_resume);
 	(void)k_work_flush(&hash_read_work, &sync);
 	long_wq_flush();
@@ -862,3 +895,86 @@ static ZTEST(test_gatt_db_hash, test_change_during_read)
 
 	hash_check(hash_read_value);
 }
+
+#if defined(CONFIG_SETTINGS_CUSTOM)
+/* The settings backend of the test, which keeps the last stored hash */
+static uint8_t test_stored_hash[BT_GATT_DB_HASH_SIZE];
+
+static int test_settings_load(struct settings_store *cs, const struct settings_load_arg *arg)
+{
+	ARG_UNUSED(cs);
+	ARG_UNUSED(arg);
+
+	return 0;
+}
+
+static int test_settings_save(struct settings_store *cs, const char *name, const char *value,
+			      size_t val_len)
+{
+	ARG_UNUSED(cs);
+
+	if (strcmp(name, "bt/hash") == 0 && val_len == sizeof(test_stored_hash)) {
+		(void)memcpy(test_stored_hash, value, sizeof(test_stored_hash));
+	}
+
+	return 0;
+}
+
+static struct settings_store_itf test_settings_itf = {
+	.csi_load = test_settings_load,
+	.csi_save = test_settings_save,
+};
+
+static struct settings_store test_settings_store = {
+	.cs_itf = &test_settings_itf,
+};
+
+int settings_backend_init(void);
+
+int settings_backend_init(void)
+{
+	settings_dst_register(&test_settings_store);
+	settings_src_register(&test_settings_store);
+
+	return 0;
+}
+
+/* Two stores of the hash that complete out of order: the hash work's store of
+ * the hash of an older database is held until the settings commit handler has
+ * computed and stored that of a newer one.
+ */
+static ZTEST(test_gatt_db_hash, test_store_order)
+{
+	uint8_t expected[BT_GATT_DB_HASH_SIZE];
+	ssize_t len;
+	int err;
+
+	/* The read leaves no hash work pending */
+	len = read_db_hash(expected);
+	zassert_equal(len, sizeof(expected), "hash read failed: %d", (int)len);
+
+	/* A change makes the hash work compute and store the hash */
+	(void)atomic_set(&hash_store_armed, 1);
+	err = bt_gatt_service_register(&hash_before_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+
+	err = k_sem_take(&hash_held, K_SECONDS(1));
+	zassert_equal(err, 0, "hash store not held");
+
+	/* The settings commit handler computes and stores the hash after
+	 * another change
+	 */
+	err = bt_gatt_service_register(&hash_hold_svc);
+	zassert_equal(err, 0, "registration failed: %d", err);
+	err = settings_load_subtree("bt/hash");
+	zassert_equal(err, 0, "settings load failed: %d", err);
+
+	k_sem_give(&hash_resume);
+	long_wq_flush();
+
+	len = read_db_hash(expected);
+	zassert_equal(len, sizeof(expected), "hash read failed: %d", (int)len);
+	zassert_mem_equal(test_stored_hash, expected, sizeof(expected),
+			  "stored hash is not the current one");
+}
+#endif /* CONFIG_SETTINGS_CUSTOM */
