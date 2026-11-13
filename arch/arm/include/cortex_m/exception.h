@@ -219,6 +219,12 @@ static ALWAYS_INLINE void z_arm_clear_faults(void)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
+/* Called before fault classification and status clearing. Overrides must be
+ * exception-safe and must not call kernel APIs.
+ */
+void z_arm_fault_entry_hook(const struct arch_esf *esf, uint32_t msp, uint32_t psp,
+			    uint32_t exc_return);
+
 /**
  * @brief Set z_arm_coredump_fault_sp to stack pointer value expected by GDB
  *
