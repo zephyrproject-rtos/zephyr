@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -389,6 +389,11 @@ void __weak rt5xx_clock_init(void)
 
 	RESET_ClearPeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Smartdma);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio))
+	CLOCK_AttachClk(kFRO_DIV2_to_FLEXIO);
+	CLOCK_SetClkDiv(kCLOCK_DivFlexioClk, 2);
 #endif
 
 #if CONFIG_DSP_BACKEND_POWERQUAD

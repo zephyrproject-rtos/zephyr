@@ -377,6 +377,14 @@
 		status = "disabled";
 	};
 
+	flexio: flexio@32000 {
+		compatible = "nxp,flexio";
+		reg = <0x32000 0x1000>;
+		interrupts = <68 0>;
+		clocks = <&clkctl1 MCUX_FLEXIO0_CLK>;
+		status = "disabled";
+	};
+
 	i3c0: i3c@36000 {
 		compatible = "nxp,mcux-i3c";
 		reg = <0x36000 0x1000>;
