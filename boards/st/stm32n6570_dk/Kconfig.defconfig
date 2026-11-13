@@ -11,6 +11,11 @@ configdefault ETH_DRIVER
 configdefault OTP
 	default y if ETH_STM32_HAL && NVMEM
 
+# OTG2 is described for the DWC2 host driver only: the device stack runs on
+# OTG1 through the STM32 driver, and the DWC2 device driver cannot drive OTG2.
+configdefault UDC_DWC2
+	default n
+
 # MEMC needs to be enabled in order to store
 # LTDC/LVGL frame buffer and video buffer pool to external PSRAM
 config MEMC
