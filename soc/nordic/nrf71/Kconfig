@@ -81,6 +81,14 @@ config SOC_SERIES_NRF71_READ_ICR
 	  Enable the nRF71 API for reading allowlisted configuration values from
 	  UICR, with fallback to FICR and a caller-provided default.
 
+config SOC_SERIES_NRF71_MRAM_RECOVERY
+	bool "nRF71 MRAM recovery API"
+	depends on SOC_NRF7120_CPUAPP || SOC_NRF7120E_CPUAPP
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	help
+	  Enable the nRF71 API for requesting MRAM snapshots and recovery, and
+	  for reading or clearing the MRAM recovery boot count.
+
 config SOC_NRF71_WIFI_DAP
 	bool "nRF71 Wi-Fi Debug access port for debugging"
 	help
