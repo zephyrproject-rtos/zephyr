@@ -87,3 +87,17 @@ zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ARCH_DIR}/${ARCH}/include
   )
+
+if(CONFIG_NET_UNITY_BUILD)
+  zephyr_library_unity(UNDEF
+    BUF_ALLOC_TIMEOUT
+    MAX_NAME_LEN
+    MAX_REACHABLE_TIME
+    NET_BUF_TIMEOUT
+    NET_LOG_LEVEL
+    PKT_WAIT_TIME
+    THREAD_PRIORITY
+    dbg_addr
+    dbg_addr_recv
+  )
+endif()
