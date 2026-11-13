@@ -100,6 +100,16 @@ config BT_SILABS_EFR32_LINK_LAYER_STACK_SIZE
 	help
 	  Link layer thread stack size.
 
+config BT_SILABS_EFR32_PM_CONSTRAINTS
+	bool "Hold deep sleep lock while Bluetooth LL work is pending"
+	depends on PM
+	default y if SILABS_SISDK_RAIL_MULTIPROTOCOL
+	help
+	  Prevent deep sleep while the Silicon Labs Bluetooth controller has
+	  pending or actively processing link-layer work. This is primarily
+	  useful on multiprotocol builds that share RAIL between Bluetooth and
+	  802.15.4.
+
 config BT_SILABS_EFR32_MAX_QUEUED_ADV_REPORTS
 	int "Maximum queued advertising reports"
 	default 10

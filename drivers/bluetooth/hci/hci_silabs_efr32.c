@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <sl_btctrl_linklayer.h>
@@ -44,6 +45,9 @@ K_SEM_DEFINE(slz_ll_sem, 0, 1);
 
 /* Events mask for Link Layer */
 static atomic_t sli_btctrl_events;
+static atomic_t sli_btctrl_processing;
+static bool slz_deep_sleep_locked;
+static struct k_spinlock slz_pm_lock;
 
 /* FIFO for received HCI packets */
 static struct k_fifo slz_rx_fifo;
@@ -57,6 +61,33 @@ const struct {
 /* FIXME: these functions should come from the SiSDK headers! */
 int16_t BTLE_LL_SetMaxPower(int16_t power);
 bool sli_pending_btctrl_events(void);
+
+static void slz_update_pm_constraint(void)
+{
+	k_spinlock_key_t key;
+	bool need_lock;
+
+	if (!IS_ENABLED(CONFIG_BT_SILABS_EFR32_PM_CONSTRAINTS)) {
+		return;
+	}
+
+	key = k_spin_lock(&slz_pm_lock);
+
+	need_lock =
+		(atomic_get(&sli_btctrl_events) != 0) || (atomic_get(&sli_btctrl_processing) != 0);
+
+	if (need_lock) {
+		if (!slz_deep_sleep_locked) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			slz_deep_sleep_locked = true;
+		}
+	} else if (slz_deep_sleep_locked) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		slz_deep_sleep_locked = false;
+	}
+
+	k_spin_unlock(&slz_pm_lock, key);
+}
 
 static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8_t *params,
 				   int16_t params_len)
@@ -228,8 +259,12 @@ static void slz_ll_thread_func(void *p1, void *p2, void *p3)
 		uint32_t events;
 
 		k_sem_take(&slz_ll_sem, K_FOREVER);
+		atomic_set(&sli_btctrl_processing, 1);
+		slz_update_pm_constraint();
 		events = atomic_clear(&sli_btctrl_events);
 		sl_btctrl_process_events(events);
+		atomic_clear(&sli_btctrl_processing);
+		slz_update_pm_constraint();
 	}
 }
 
@@ -341,18 +376,21 @@ static int slz_bt_close(const struct device *dev)
 
 bool sli_pending_btctrl_events(void)
 {
-	return false; /* TODO: check if this should really return false! */
+	return (atomic_get(&sli_btctrl_events) != 0) || (atomic_get(&sli_btctrl_processing) != 0);
 }
 
 void sli_btctrl_events_init(void)
 {
 	atomic_clear(&sli_btctrl_events);
+	atomic_clear(&sli_btctrl_processing);
+	slz_update_pm_constraint();
 }
 
 /* Store event flags and increment the LL semaphore */
 void sl_btctrl_raise_events(uint32_t events)
 {
 	atomic_or(&sli_btctrl_events, events);
+	slz_update_pm_constraint();
 	k_sem_give(&slz_ll_sem);
 }
 
