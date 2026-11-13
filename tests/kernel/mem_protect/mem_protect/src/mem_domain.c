@@ -508,6 +508,58 @@ ZTEST(mem_protect_domain, test_mem_part_overlap)
 		0, "should fail to add memory partition");
 }
 
+/**
+ * @brief Test overlap detection after a partition has been removed
+ *
+ * @details
+ * Removing a partition leaves an unused slot in the domain's partition
+ * array, so used slots can be located beyond num_partitions. The overlap
+ * check must still find them.
+ *
+ * Test steps:
+ * - Remove ro_part from the full domain. Unless ro_part occupied the last
+ *   slot, a used slot is now located at index num_partitions.
+ * - Try to add a partition overlapping the one in the last slot.
+ * - Add ro_part back.
+ *
+ * Expected result:
+ * - Adding the overlapping partition fails.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_add_partition(), k_mem_domain_remove_partition()
+ */
+ZTEST(mem_protect_domain, test_mem_part_overlap_after_remove)
+{
+	int last = arch_mem_domain_max_partitions_get() - 1;
+	struct k_mem_partition overlap_last;
+	int ret;
+
+	set_fault_valid(false);
+
+	zassert_equal(
+		k_mem_domain_remove_partition(&test_domain, &ro_part),
+		0, "failed to remove memory partition");
+
+	overlap_last = test_domain.partitions[last];
+	if (overlap_last.size == 0U) {
+		/* ro_part was in the last slot, nothing to test */
+		ret = -EINVAL;
+	} else {
+		overlap_last.attr = K_MEM_PARTITION_P_RO_U_RO;
+		ret = k_mem_domain_add_partition(&test_domain, &overlap_last);
+		if (ret == 0) {
+			k_mem_domain_remove_partition(&test_domain, &overlap_last);
+		}
+	}
+
+	zassert_equal(
+		k_mem_domain_add_partition(&test_domain, &ro_part),
+		0, "failed to add memory partition");
+
+	zassert_not_equal(ret, 0, "should fail to add memory partition");
+}
+
 extern struct k_spinlock z_mem_domain_lock;
 
 static struct k_mem_domain test_domain_fail;
