@@ -241,6 +241,7 @@ static void disable_interrupt_line(eic_registers_t *regs, uint8_t eic_line)
 {
 	regs->EIC_INTENCLR = BIT(eic_line);
 }
+
 int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 {
 	const struct device *const dev = DEVICE_DT_INST_GET(0);
@@ -395,8 +396,13 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	}
 	LOG_DBG("%s", eic_pin_config->debounce ? "debouncing enabled" : "debouncing disabled");
 
-	enable_interrupt_line(eic_cfg->regs, eic_line);
+	/* Enable the event generation for the specific eic line */
+	if (eic_pin_config->evgen_enable) {
+		EIC_REGS->EIC_EVCTRL |= BIT(eic_line);
+		EIC_REGS->EIC_ASYNCH |= BIT(eic_line);
+	}
 
+	enable_interrupt_line(eic_cfg->regs, eic_line);
 	eic_enable(eic_cfg->regs);
 	eic_sync_wait(eic_cfg->regs);
 
