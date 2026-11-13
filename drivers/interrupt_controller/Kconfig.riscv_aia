@@ -36,6 +36,7 @@ config RISCV_APLIC_DIRECT
 	default y
 	depends on RISCV_APLIC
 	depends on !$(dt_compat_all_has_prop,$(DT_COMPAT_RISCV_APLIC),msi-parent)
+	select RISCV_HAS_NESTED_INTERRUPTS if !RISCV_S_MODE
 	help
 	  Enable direct delivery mode for the APLIC.
 	  Routes wired interrupts directly to the Hart's MEXT interrupt line.
