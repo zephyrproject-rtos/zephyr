@@ -4,6 +4,9 @@ board:
   vendor: nxp
   socs:
     - name: mimxrt1176
+      variants:
+        - name: "enet_qos"
+          cpucluster: "cm7"
   revision:
     format: "letter"
     default: "B"

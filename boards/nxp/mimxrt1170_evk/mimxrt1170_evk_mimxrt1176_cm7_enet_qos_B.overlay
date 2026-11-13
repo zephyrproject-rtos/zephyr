@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Revision overlays are not inherited by a variant, so reuse the cm7 one. */
+#include "mimxrt1170_evk_mimxrt1176_cm7_B.overlay"
+
+/* The include above recreates the ENET PHY node, which shares the MDIO pads. */
+&phy {
+	status = "disabled";
+};
+
+/*
+ * The M.2 BT HCI UART flow-control pins (DISP_B2_12/13) are the RTL8211F
+ * interrupt and reset lines, so this UART cannot be used with ENET_QOS.
+ */
+&m2_hci_uart {
+	status = "disabled";
+};
+
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};
