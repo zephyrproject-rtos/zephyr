@@ -15,6 +15,11 @@
  * Writing a new reload value while running takes effect on the next underflow
  * when compare match is enabled.
  *
+ * ULPTCMSR (compare match enable) must only be written while the counter is
+ * stopped. The counter is therefore stopped whenever an alarm is programmed,
+ * and the compare match is left enabled after the alarm expires or is
+ * cancelled; the alarm interrupt is masked instead.
+ *
  * Interrupt routing:
  *  ulpti    : Underflow interrupt, triggers the Top Callback at count 0.
  *  ulptcmai : Compare Match A interrupt, mapped to Alarm Channel 0.
@@ -34,7 +39,7 @@ LOG_MODULE_REGISTER(counter_renesas_ra_ulpt, CONFIG_COUNTER_LOG_LEVEL);
 #define RENESAS_RA_ULPT_COMPARE_CHANNEL_MAX 2U
 
 /* Cycles required for register write synchronization with count source */
-#define RENESAS_RA_ULPT_SYNC_CYCLES 5U
+#define RENESAS_RA_ULPT_SYNC_CYCLES 10U
 
 /* Absolute minimum guard to guarantee hardware compare latching */
 #define RENESAS_RA_ULPT_GUARD_PERIOD_MIN (RENESAS_RA_ULPT_SYNC_CYCLES)
@@ -79,6 +84,7 @@ static inline void renesas_ra_ulpt_top_callback(const struct device *dev)
 
 static void renesas_ra_ulpt_alarm_callback(const struct device *dev, uint8_t chan_id)
 {
+	const struct counter_renesas_ra_ulpt_config *config = dev->config;
 	struct counter_renesas_ra_ulpt_data *data = dev->data;
 	counter_alarm_callback_t callback = data->alarm[chan_id].callback;
 	void *user_data = data->alarm[chan_id].user_data;
@@ -92,7 +98,10 @@ static void renesas_ra_ulpt_alarm_callback(const struct device *dev, uint8_t cha
 	data->alarm[chan_id].callback = NULL;
 	data->alarm[chan_id].user_data = NULL;
 
-	RP_ULPT_CompareMatchDisable(&data->fsp_ctrl, chan_id);
+	/* The compare match cannot be disabled while counting; mask its interrupt.
+	 * The next set_alarm reprograms the channel with the counter stopped.
+	 */
+	irq_disable(config->alarm_irq[chan_id]);
 
 	R_ULPT_StatusGet(&data->fsp_ctrl, &status);
 
@@ -148,8 +157,20 @@ static int counter_renesas_ra_ulpt_stop(const struct device *dev)
 static int counter_renesas_ra_ulpt_reset(const struct device *dev)
 {
 	struct counter_renesas_ra_ulpt_data *data = dev->data;
+	timer_status_t status;
+	bool counting;
 
-	if (R_ULPT_Reset(&data->fsp_ctrl) != FSP_SUCCESS) {
+	if (R_ULPT_StatusGet(&data->fsp_ctrl, &status) != FSP_SUCCESS) {
+		return -EIO;
+	}
+
+	/* With compare match enabled, a counter value written while counting only
+	 * takes effect on the next underflow. Write it with the counter stopped.
+	 */
+	counting = (status.state == TIMER_STATE_COUNTING);
+	if ((counting && R_ULPT_Stop(&data->fsp_ctrl) != FSP_SUCCESS) ||
+	    R_ULPT_Reset(&data->fsp_ctrl) != FSP_SUCCESS ||
+	    (counting && R_ULPT_Start(&data->fsp_ctrl) != FSP_SUCCESS)) {
 		LOG_DBG("Failed to reset ULPT");
 		return -EIO;
 	}
@@ -201,6 +222,41 @@ static inline bool renesas_ra_ulpt_is_alarm_late(uint32_t now, uint32_t compare,
 	return (diff <= guard) || (diff >= (top - guard));
 }
 
+static inline uint8_t renesas_ra_ulpt_match_flag(uint8_t chan_id)
+{
+	return (chan_id == TIMER_COMPARE_MATCH_A) ? (uint8_t)R_ULPT0_ULPTCR_TCMAF_Msk
+						  : (uint8_t)R_ULPT0_ULPTCR_TCMBF_Msk;
+}
+
+/* Decide whether a running counter has to be stopped to program a new compare value.
+ * While counting, a new compare value reaches the compare circuit only at the next
+ * underflow and the previous value stays active until then, so the counter is stopped when:
+ * - the compare match is not enabled yet, as ULPTCMSR can only be written while stopped;
+ * - the new target is not past the next underflow, or the underflow is too close for the
+ *   value to reach the reload register in time;
+ * - the previous compare value is not past the next underflow, so the counter would hit it
+ *   before the new value is latched.
+ * The previous value is the last one written, whether or not it has been latched.
+ */
+static bool renesas_ra_ulpt_alarm_needs_stop(const struct counter_renesas_ra_ulpt_data *data,
+					     uint8_t chan_id, uint32_t now, uint32_t compare)
+{
+	const R_ULPT0_Type *reg = data->fsp_ctrl.p_reg;
+	const bool chan_a = (chan_id == TIMER_COMPARE_MATCH_A);
+	const uint32_t enable_msk = chan_a ? R_ULPT0_ULPTCMSR_TCMEA_Msk : R_ULPT0_ULPTCMSR_TCMEB_Msk;
+	const uint32_t previous = chan_a ? reg->ULPTCMA : reg->ULPTCMB;
+
+	if ((reg->ULPTCMSR & enable_msk) == 0U) {
+		return true;
+	}
+
+	if ((compare <= now) || (now <= RENESAS_RA_ULPT_SYNC_CYCLES)) {
+		return true;
+	}
+
+	return previous <= now;
+}
+
 static int counter_renesas_ra_ulpt_set_alarm(const struct device *dev, uint8_t chan_id,
 					     const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -215,7 +271,8 @@ static int counter_renesas_ra_ulpt_set_alarm(const struct device *dev, uint8_t c
 	uint32_t guard;
 	uint32_t compare;
 	uint32_t now;
-	bool need_restart;
+	bool stopped = false;
+	bool running;
 
 	__ASSERT_NO_MSG(data->guard_period < data->top_value);
 
@@ -261,40 +318,46 @@ static int counter_renesas_ra_ulpt_set_alarm(const struct device *dev, uint8_t c
 		goto late_alarm;
 	}
 
-	/* A compare value only latches on underflow or while stopped.
-	 * Force an immediate latch by stopping and restarting if:
-	 * now >= compare                     : Target reached before next underflow.
-	 * now <= RENESAS_RA_ULPT_SYNC_CYCLES : Too close to underflow to sync in time.
+	/* Program the channel with the counter stopped unless the previous compare
+	 * value and the new target allow writing it while counting.
+	 * The previous alarm may have left the compare match enabled with a stale
+	 * match flag, so clear the flag and the pending interrupt as well.
 	 */
-	need_restart = (status.state == TIMER_STATE_COUNTING) &&
-		       (now >= compare || now <= RENESAS_RA_ULPT_SYNC_CYCLES);
-
-	if (need_restart) {
-		if (R_ULPT_Stop(&data->fsp_ctrl) != FSP_SUCCESS) {
-			goto error;
-		}
-	}
-
-	if (RP_ULPT_CompareMatchSet(&data->fsp_ctrl, compare, chan_id) != FSP_SUCCESS ||
-	    RP_ULPT_CompareMatchEnable(&data->fsp_ctrl, chan_id) != FSP_SUCCESS) {
+	stopped = (status.state == TIMER_STATE_COUNTING) &&
+		  renesas_ra_ulpt_alarm_needs_stop(data, chan_id, now, compare);
+	if (stopped && R_ULPT_Stop(&data->fsp_ctrl) != FSP_SUCCESS) {
 		goto error;
 	}
+
+	/* ULPTCMSR cannot be written while counting; the compare match is already
+	 * enabled when the counter is left running.
+	 */
+	running = (status.state == TIMER_STATE_COUNTING) && !stopped;
+	if (RP_ULPT_EventClear(&data->fsp_ctrl, renesas_ra_ulpt_match_flag(chan_id)) !=
+		    FSP_SUCCESS ||
+	    RP_ULPT_CompareMatchSet(&data->fsp_ctrl, compare, chan_id) != FSP_SUCCESS ||
+	    (!running &&
+	     RP_ULPT_CompareMatchEnable(&data->fsp_ctrl, chan_id) != FSP_SUCCESS)) {
+		goto error_restart;
+	}
+
+	R_BSP_IrqStatusClear(config->alarm_irq[chan_id]);
+	NVIC_ClearPendingIRQ(config->alarm_irq[chan_id]);
 
 	/* Re-read after write: preemption or overhead may have advanced the counter */
 	if (R_ULPT_StatusGet(&data->fsp_ctrl, &status) != FSP_SUCCESS) {
-		goto error;
+		goto error_restart;
 	}
 	now = status.counter;
 
-	if (need_restart) {
-		if (R_ULPT_Start(&data->fsp_ctrl) != FSP_SUCCESS) {
-			goto error;
-		}
+	if (stopped && R_ULPT_Start(&data->fsp_ctrl) != FSP_SUCCESS) {
+		goto error;
 	}
 
-	/* Re-check if accumulated latency pushed now into the late zone */
+	/* Re-check if accumulated latency pushed now into the late zone. The
+	 * compare match stays enabled; its interrupt is not unmasked.
+	 */
 	if (unlikely(renesas_ra_ulpt_is_alarm_late(now, compare, top, guard))) {
-		RP_ULPT_CompareMatchDisable(&data->fsp_ctrl, chan_id);
 		goto late_alarm;
 	}
 
@@ -324,6 +387,10 @@ late_alarm:
 
 	return absolute ? -ETIME : 0;
 
+error_restart:
+	if (stopped) {
+		(void)R_ULPT_Start(&data->fsp_ctrl);
+	}
 error:
 	/* Release the claim so the channel is not left busy on error */
 	data->alarm[chan_id].callback = NULL;
@@ -347,10 +414,12 @@ static int counter_renesas_ra_ulpt_cancel_alarm(const struct device *dev, uint8_
 		return -ENOTSUP;
 	}
 
-	/* Hold the lock across the hardware teardown */
+	/* Hold the lock across the teardown. The compare match cannot be disabled
+	 * while counting, so only its interrupt is masked; the next set_alarm
+	 * reprograms the channel with the counter stopped.
+	 */
 	key = k_spin_lock(&data->lock);
 
-	RP_ULPT_CompareMatchDisable(&data->fsp_ctrl, chan_id);
 	atomic_and(&data->int_pending, ~BIT(chan_id));
 	irq_disable(config->alarm_irq[chan_id]);
 	NVIC_ClearPendingIRQ(config->alarm_irq[chan_id]);
@@ -370,6 +439,7 @@ static int counter_renesas_ra_ulpt_set_top_value(const struct device *dev,
 	k_spinlock_key_t key;
 	timer_status_t status;
 	uint32_t period;
+	bool was_counting;
 
 	if (cfg->callback != NULL && config->top_irq == FSP_INVALID_VECTOR) {
 		return -ENOTSUP;
@@ -395,40 +465,32 @@ static int counter_renesas_ra_ulpt_set_top_value(const struct device *dev,
 	/* FSP expects the period count, which is top_value + 1 */
 	period = cfg->ticks + 1U;
 
-	/* Reload values latch immediately if stopped or compare match is disabled.
-	 * Otherwise, they defer to the next underflow.
-	 *
-	 * Stopped:
-	 * Write latches immediately.
-	 *
-	 * Close to underflow:
-	 * Force immediate latch by stopping and restarting if now <= RENESAS_RA_ULPT_SYNC_CYCLES.
-	 *
-	 * Far from underflow:
-	 * Disable compare matches temporarily to force immediate latching.
+	/* ULPTCMSR must not be written while counting, so the reload value cannot be
+	 * forced to latch by disabling compare match. Stop the counter instead; a
+	 * reload value written while stopped latches immediately.
 	 */
 	if (R_ULPT_StatusGet(&data->fsp_ctrl, &status) != FSP_SUCCESS) {
 		goto error;
 	}
 
-	if (unlikely(status.state != TIMER_STATE_COUNTING)) {
-		if (R_ULPT_PeriodSet(&data->fsp_ctrl, period) != FSP_SUCCESS) {
-			goto error;
-		}
-	} else if (unlikely(status.counter <= RENESAS_RA_ULPT_SYNC_CYCLES)) {
-		if (R_ULPT_Stop(&data->fsp_ctrl) != FSP_SUCCESS ||
-		    R_ULPT_PeriodSet(&data->fsp_ctrl, period) != FSP_SUCCESS ||
-		    R_ULPT_Start(&data->fsp_ctrl) != FSP_SUCCESS) {
-			goto error;
-		}
-	} else {
-		if (RP_ULPT_CompareMatchDisable(&data->fsp_ctrl,
-					TIMER_COMPARE_MATCH_A) != FSP_SUCCESS ||
-		    RP_ULPT_CompareMatchDisable(&data->fsp_ctrl,
-					TIMER_COMPARE_MATCH_B) != FSP_SUCCESS ||
-		    R_ULPT_PeriodSet(&data->fsp_ctrl, period) != FSP_SUCCESS) {
-			goto error;
-		}
+	was_counting = (status.state == TIMER_STATE_COUNTING);
+	if (was_counting && R_ULPT_Stop(&data->fsp_ctrl) != FSP_SUCCESS) {
+		goto error;
+	}
+
+	if (R_ULPT_PeriodSet(&data->fsp_ctrl, period) != FSP_SUCCESS ||
+	    RP_ULPT_EventClear(&data->fsp_ctrl, (uint8_t)R_ULPT0_ULPTCR_TUNDF_Msk) !=
+		    FSP_SUCCESS) {
+		goto error_restart;
+	}
+
+	if (config->top_irq != FSP_INVALID_VECTOR) {
+		R_BSP_IrqStatusClear(config->top_irq);
+		NVIC_ClearPendingIRQ(config->top_irq);
+	}
+
+	if (was_counting && R_ULPT_Start(&data->fsp_ctrl) != FSP_SUCCESS) {
+		goto error;
 	}
 
 	data->top_value = cfg->ticks;
@@ -448,6 +510,10 @@ static int counter_renesas_ra_ulpt_set_top_value(const struct device *dev,
 	}
 
 	return 0;
+error_restart:
+	if (was_counting) {
+		(void)R_ULPT_Start(&data->fsp_ctrl);
+	}
 error:
 	k_spin_unlock(&data->lock, key);
 	return -EIO;
@@ -459,6 +525,13 @@ static uint32_t counter_renesas_ra_ulpt_get_pending_int(const struct device *dev
 	uint8_t event;
 
 	RP_ULPT_EventGet(&data->fsp_ctrl, &event);
+
+	/* Compare matches stay enabled after an alarm; ignore idle channels */
+	for (uint8_t chan = 0; chan < RENESAS_RA_ULPT_COMPARE_CHANNEL_MAX; chan++) {
+		if (data->alarm[chan].callback == NULL) {
+			event &= (uint8_t)~renesas_ra_ulpt_match_flag(chan);
+		}
+	}
 
 	return (uint32_t)(event != 0U || atomic_get(&data->int_pending) != 0);
 }

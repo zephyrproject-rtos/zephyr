@@ -197,6 +197,12 @@ static int counter_renesas_ra_agt_set_top_value(const struct device *dev,
 			goto out;
 		}
 
+		/* Underflows keep setting the interrupt status while the IRQ is masked.
+		 * The ISR calls the top callback unconditionally, so drop the stale status
+		 * to avoid a callback for an underflow that happened before registration.
+		 */
+		R_BSP_IrqStatusClear(data->agt_cfg.cycle_end_irq);
+		NVIC_ClearPendingIRQ(data->agt_cfg.cycle_end_irq);
 		irq_enable(data->agt_cfg.cycle_end_irq);
 	} else {
 		if (data->agt_cfg.cycle_end_ipl != BSP_IRQ_DISABLED) {
