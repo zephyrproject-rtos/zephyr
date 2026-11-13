@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: wa850re_v6
+name: TP-Link TL-WA850RE v6
+type: mcu
+arch: mips
+toolchain:
+  - zephyr
+ram: 31744
+vendor: tplink

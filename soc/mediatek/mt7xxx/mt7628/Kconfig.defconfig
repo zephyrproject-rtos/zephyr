@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MT7628
+
+# Only the CP0 interrupt lines are handled; the Ralink interrupt controller
+# behind them has no driver.
+config NUM_IRQS
+	default 8
+
+# The CP0 Count register of the 24KEc increments every second CPU cycle.
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(div,$(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency),2)
+
+# The UART registers are 32-bit wide and only support word access.
+configdefault UART_NS16550_ACCESS_WORD_ONLY
+	default y
+
+endif # SOC_MT7628
