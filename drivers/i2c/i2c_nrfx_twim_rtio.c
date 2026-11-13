@@ -16,6 +16,7 @@
 #include <soc.h>
 #include <nrfx_twim.h>
 #include <zephyr/linker/devicetree_regions.h>
+#include <zephyr/sys/atomic.h>
 
 #include "i2c_nrfx_twim_common.h"
 
@@ -32,6 +33,8 @@ struct i2c_nrfx_twim_rtio_data {
 	nrfx_twim_t twim;
 	uint8_t *user_rx_buf;
 	uint16_t user_rx_buf_size;
+	struct k_timer transfer_timer;
+	atomic_t transfer_done_atom;
 };
 
 static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status);
@@ -41,6 +44,34 @@ static void i2c_nrfx_twim_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, vo
 	const struct device *dev = userdata;
 
 	(void)i2c_nrfx_twim_rtio_complete(dev, 0);
+}
+
+static void i2c_nrfx_twim_rtio_reset_transfer_done(const struct device *dev)
+{
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
+
+	atomic_set(&data->transfer_done_atom, 0);
+}
+
+static bool i2c_nrfx_twim_rtio_take_transfer_done(const struct device *dev)
+{
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
+
+	return atomic_cas(&data->transfer_done_atom, 0, 1);
+}
+
+static void i2c_nrfx_twim_rtio_start_transfer_timer(const struct device *dev)
+{
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
+
+	k_timer_start(&data->transfer_timer, I2C_TRANSFER_TIMEOUT, K_FOREVER);
+}
+
+static void i2c_nrfx_twim_rtio_stop_transfer_timer(const struct device *dev)
+{
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
+
+	k_timer_stop(&data->transfer_timer);
 }
 
 static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
@@ -54,6 +85,16 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 	int error;
 	const uint8_t *buf;
 	uint32_t buf_len;
+
+	switch (sqe->op) {
+	case RTIO_OP_RX:
+	case RTIO_OP_TINY_TX:
+	case RTIO_OP_TX:
+		i2c_nrfx_twim_rtio_reset_transfer_done(dev);
+		i2c_nrfx_twim_rtio_start_transfer_timer(dev);
+	default:
+		break;
+	}
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
@@ -133,6 +174,15 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 	 * is started only upon a successful status.
 	 */
 	if (error != 0) {
+		switch (sqe->op) {
+		case RTIO_OP_RX:
+		case RTIO_OP_TINY_TX:
+		case RTIO_OP_TX:
+			i2c_nrfx_twim_rtio_stop_transfer_timer(dev);
+		default:
+			break;
+		}
+
 		*status = error;
 		return false;
 	}
@@ -212,6 +262,13 @@ static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	int status = p_event->type == NRFX_TWIM_EVT_DONE ? 0 : -EIO;
 
+	if (!i2c_nrfx_twim_rtio_take_transfer_done(dev)) {
+		/* Timer timeout will end transfer */
+		return;
+	}
+
+	i2c_nrfx_twim_rtio_stop_transfer_timer(dev);
+
 	/* RX user buffer is only set if we are doing an RX operation using the message buffer */
 	if (data->user_rx_buf != NULL) {
 		/* Copy message buffer to user RX buffer if RX operation successful */
@@ -225,6 +282,24 @@ static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 	i2c_nrfx_twim_rtio_complete(dev, status);
 }
 
+static void transfer_timeout(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
+
+	if (!i2c_nrfx_twim_rtio_take_transfer_done(dev)) {
+		/* TWIM event handler will handle transfer done */
+		return;
+	}
+
+	(void)i2c_nrfx_twim_recover_bus(dev);
+
+	/* In case this is a failed RX operation using the message buffer */
+	data->user_rx_buf = NULL;
+
+	i2c_nrfx_twim_rtio_complete(dev, -ETIMEDOUT);
+}
+
 static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 	.configure = i2c_nrfx_twim_rtio_configure,
 	.transfer = i2c_nrfx_twim_rtio_transfer,
@@ -235,8 +310,11 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 static int i2c_nrfx_twim_rtio_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
+	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 
 	i2c_rtio_init(config->ctx, dev);
+	k_timer_init(&data->transfer_timer, transfer_timeout, NULL);
+	k_timer_user_data_set(&data->transfer_timer, (void *)dev);
 	return i2c_nrfx_twim_common_init(dev);
 }
 

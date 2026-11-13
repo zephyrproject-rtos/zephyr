@@ -9,6 +9,15 @@
  * SCL = P1.23 and P1.24
  */
 
+/ {
+	zephyr,user {
+		sda0-gpios = <&gpio1 14 0>;
+		scl0-gpios = <&gpio1 24 0>;
+		sda1-gpios = <&gpio1 13 0>;
+		scl1-gpios = <&gpio1 23 0>;
+	};
+};
+
 &pinctrl {
 	i2c21_default: i2c21_default {
 		group1 {
