@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/interrupt-controller/esp-esp32s31-intmux.h>
+#include <zephyr/dt-bindings/clock/esp32s31_clock.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "espressif,riscv", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			clock-source = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
+			clock-frequency = <17500000>;
+			xtal-freq = <DT_FREQ_M(40)>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
+		};
+	};
+
+	soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash: flash-controller@20500000 {
+			compatible = "espressif,esp32-flash-controller";
+			reg = <0x20500000 0x1000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
+			};
+		};
+
+		lp_gpio: gpio@20713000 {
+			compatible = "espressif,esp32-gpio";
+			reg = <0x20713000 DT_SIZE_K(1)>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+
+		lp_uart: uart@20810000 {
+			compatible = "espressif,esp32-lpuart";
+			reg = <0x20810000 DT_SIZE_K(1)>;
+			tx-pin = <6>;
+			rx-pin = <7>;
+			rts-pin = <4>;
+			cts-pin = <5>;
+			status = "disabled";
+		};
+
+		sramlp: memory@2e000000 {
+			compatible = "mmio-sram";
+			reg = <0x2e000000 DT_SIZE_K(32)>;
+			ranges = <0x0 0x2e000000 DT_SIZE_K(32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ulp_ram: memory@0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x0 0x77f0>;
+				zephyr,memory-region = "SRAMLP_ULP";
+			};
+
+			ulp_shm: memory@77f0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x77f0 0x10>;
+				zephyr,memory-region = "SRAMLP_ULP_SHM";
+			};
+		};
+
+		intc: interrupt-controller@2e000008 {
+			compatible = "espressif,esp32-intc";
+			reg = <0x2e000008 DT_SIZE_K(4)>;
+			#address-cells = <0>;
+			#interrupt-cells = <3>;
+			interrupt-controller;
+			status = "okay";
+		};
+	};
+};

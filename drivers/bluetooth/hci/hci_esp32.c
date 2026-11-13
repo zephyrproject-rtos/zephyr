@@ -412,6 +412,8 @@ static uint16_t bt_esp32_get_hw_variant(void)
 	return BT_HCI_VS_HW_VAR_ESP32C61;
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)
 	return BT_HCI_VS_HW_VAR_ESP32H2;
+#elif defined(CONFIG_SOC_SERIES_ESP32S31)
+	return BT_HCI_VS_HW_VAR_ESP32S31;
 #else
 	return 0x0000;
 #endif
@@ -701,7 +703,7 @@ static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 		buf = bt_esp_acl_recv(data, remaining);
 		break;
 
-	case BT_HCI_H4_SCO:
+	case BT_HCI_H4_ISO:
 		buf = bt_esp_iso_recv(data, remaining);
 		break;
 
@@ -767,12 +769,20 @@ static int bt_esp32_send(const struct device *dev, struct net_buf *buf)
 static int bt_esp32_ble_init(void)
 {
 	int ret;
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	esp_bt_controller_config_t bt_cfg;
+#else
 	esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+#endif
 
 #if defined(CONFIG_BT_CLASSIC) && defined(CONFIG_SOC_SERIES_ESP32)
 	esp_bt_mode_t mode = ESP_BT_MODE_BTDM;
 #else
 	esp_bt_mode_t mode = ESP_BT_MODE_BLE;
+#endif
+
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	esp_bt_controller_get_default_config(&bt_cfg);
 #endif
 
 	ret = esp_bt_controller_init(&bt_cfg);

@@ -18,6 +18,7 @@ tests:
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - esp32p4x_function_ev_board/esp32p4/hpcore
+      - esp32s31_function_coreboard/esp32s31/hpcore
   drivers.pwm.gpio_loopback.esp.pm:
     extra_configs:
       - CONFIG_PM=y

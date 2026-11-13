@@ -17,6 +17,7 @@
 #include <soc/soc_caps.h>
 
 #define CSR_MTVT 0x307
+#define MTVEC_MODE_CLIC 3
 
 GTEXT(start_riscv)
 GTEXT(_vector_table)
@@ -63,6 +64,9 @@ aa_loop:
 #endif /* CONFIG_INIT_STACKS */
 
 	la t0, _vector_table
+#if SOC_INT_CLIC_SUPPORTED
+	ori t0, t0, MTVEC_MODE_CLIC
+#endif
 	csrw mtvec, t0
 
 #if SOC_INT_CLIC_SUPPORTED

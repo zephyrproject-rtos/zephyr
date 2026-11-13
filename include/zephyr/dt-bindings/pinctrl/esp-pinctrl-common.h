@@ -75,6 +75,36 @@
 	 (((pin) & ESP32_PIN_NUM_MASK) << ESP32_PIN_NUM_SHIFT))
 
 /**
+ * @name Ethernet RGMII signal slots
+ * @{
+ */
+#define ESP_RGMII_TX_CLK     0  /**< RGMII transmit clock */
+#define ESP_RGMII_TX_CTL     1  /**< RGMII transmit control */
+#define ESP_RGMII_TXD0       2  /**< RGMII transmit data 0 */
+#define ESP_RGMII_TXD1       3  /**< RGMII transmit data 1 */
+#define ESP_RGMII_TXD2       4  /**< RGMII transmit data 2 */
+#define ESP_RGMII_TXD3       5  /**< RGMII transmit data 3 */
+#define ESP_RGMII_RX_CLK     6  /**< RGMII receive clock */
+#define ESP_RGMII_RX_CTL     7  /**< RGMII receive control */
+#define ESP_RGMII_RXD0       8  /**< RGMII receive data 0 */
+#define ESP_RGMII_RXD1       9  /**< RGMII receive data 1 */
+#define ESP_RGMII_RXD2       10 /**< RGMII receive data 2 */
+#define ESP_RGMII_RXD3       11 /**< RGMII receive data 3 */
+#define ESP_RGMII_SLOT_COUNT 12 /**< Number of ESP_RGMII_* signal slots above */
+/** @} */
+
+/**
+ * @brief Construct an Ethernet RGMII pinmux value
+ *
+ * RGMII cells share the RMII cell layout. The Ethernet driver interprets
+ * the slot according to the configured PHY connection type.
+ *
+ * @param pin   GPIO pin number
+ * @param slot  RGMII signal slot (ESP_RGMII_*)
+ */
+#define ESP32_RGMII_PINMUX(pin, slot) ESP32_RMII_PINMUX(pin, slot)
+
+/**
  * @brief ESP32 pin configuration bit field.
  *
  * This field encodes pin configuration options used by the ESP32

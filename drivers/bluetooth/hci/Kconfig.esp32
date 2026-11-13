@@ -4,6 +4,8 @@ if BT_ESP32
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	int
+	default 81920 if SOC_SERIES_ESP32S31 && ESP32_BT_LE_ISO_SUPPORT
+	default 65536 if SOC_SERIES_ESP32S31
 	default 50000 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || \
 		SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
 	default 25600
@@ -15,7 +17,7 @@ configdefault BT_BUF_ACL_RX_SIZE
 	default 255 if BT_CONN && !BT_CLASSIC
 
 configdefault BT_HCI_ACL_FLOW_CONTROL
-	default y if BT_BUF_ACL_RX_SIZE >= 255 && !BT_CLASSIC
+	default y if BT_BUF_ACL_RX_SIZE >= 255 && !BT_CLASSIC && !SOC_SERIES_ESP32S31
 
 choice ESP_BT_HEAP
 	prompt "Bluetooth heap type"
@@ -287,7 +289,7 @@ config ESP32_BT_CTLR_COEX_PHY_CODED_TX_RX_TLIM_EFF
 endmenu # ESP32 Bluetooth Controller Configuration
 
 if SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
-	SOC_SERIES_ESP32H2
+	SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32S31
 
 menu "Espressif HCI Config"
 
@@ -315,6 +317,7 @@ menuconfig ESP32_BT_LE_50_FEATURE_SUPPORT
 config ESP32_BT_LE_LL_CFG_FEAT_LE_2M_PHY
 	bool "2M PHY support"
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	depends on !SOC_SERIES_ESP32S31
 	default y if BT_CTLR_PHY_2M
 	help
 	  Allow use of 2M PHY for higher data rates in BLE connections.
@@ -353,6 +356,7 @@ config ESP32_BT_LE_EXT_ADV_MAX_SIZE
 
 config ESP32_BT_LE_ENABLE_PERIODIC_ADV
 	bool "Periodic advertising support"
+	depends on !SOC_SERIES_ESP32S31
 	default y if BT_CTLR_ADV_PERIODIC
 	help
 	  Enable periodic advertising to synchronize broadcast events.
@@ -371,7 +375,7 @@ config ESP32_BT_LE_MAX_PERIODIC_SYNCS
 	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
 	range 0 3 if SOC_SERIES_ESP32C2
 	range 0 8 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
-		SOC_SERIES_ESP32H2
+		SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32S31
 	default BT_PER_ADV_SYNC_MAX if BT_PER_ADV_SYNC
 	default 3 if BT_HCI_RAW && SOC_SERIES_ESP32C2
 	default 8 if BT_HCI_RAW
@@ -387,6 +391,89 @@ config ESP32_BT_LE_MAX_PERIODIC_ADVERTISER_LIST
 	default 5
 	help
 	  Upper limit for the list of periodic advertisers.
+
+menuconfig ESP32_BT_LE_ISO_SUPPORT
+	bool "Isochronous channels support"
+	depends on SOC_SERIES_ESP32S31
+	depends on ESP32_BT_LE_50_FEATURE_SUPPORT
+	default y if BT_ISO
+	help
+	  Enable the controller support for connected and broadcast
+	  isochronous channels.
+
+if ESP32_BT_LE_ISO_SUPPORT
+
+config ESP32_BT_LE_ISO_BUF_COUNT
+	int "Isochronous data buffer count"
+	range 1 255
+	default 12
+	help
+	  Number of controller buffers for isochronous data packets.
+
+config ESP32_BT_LE_ISO_BUF_SIZE
+	int "Isochronous data buffer size"
+	range 1 65535
+	default 251
+	help
+	  Size in bytes of each controller isochronous data buffer.
+
+config ESP32_BT_LE_ISO_BIG
+	int "Maximum broadcast isochronous groups"
+	range 1 2
+	default 2 if BT_ISO_BROADCAST && BT_ISO_MAX_BIG > 2
+	default BT_ISO_MAX_BIG if BT_ISO_BROADCAST
+	default 1
+	help
+	  Maximum number of broadcast isochronous groups (BIGs).
+
+config ESP32_BT_LE_ISO_BIS
+	int "Maximum broadcast isochronous streams"
+	range 1 6
+	default 6 if BT_ISO_BROADCAST && BT_ISO_MAX_CHAN > 6
+	default BT_ISO_MAX_CHAN if BT_ISO_BROADCAST
+	default 2
+	help
+	  Maximum number of broadcast isochronous streams (BISes) across
+	  all groups.
+
+config ESP32_BT_LE_ISO_BIS_PER_BIG
+	int "Maximum broadcast isochronous streams per group"
+	range 1 ESP32_BT_LE_ISO_BIS
+	default ESP32_BT_LE_ISO_BIS
+	help
+	  Maximum number of BISes in one broadcast isochronous group.
+
+config ESP32_BT_LE_ISO_CIG
+	int "Maximum connected isochronous groups"
+	range 1 2
+	default 2 if BT_ISO_UNICAST && BT_ISO_MAX_CIG > 2
+	default BT_ISO_MAX_CIG if BT_ISO_UNICAST
+	default 1
+	help
+	  Maximum number of connected isochronous groups (CIGs).
+
+config ESP32_BT_LE_ISO_CIS
+	int "Maximum connected isochronous streams"
+	range 1 6
+	default 6 if BT_ISO_UNICAST && BT_ISO_MAX_CHAN > 6
+	default BT_ISO_MAX_CHAN if BT_ISO_UNICAST
+	default 2
+	help
+	  Maximum number of connected isochronous streams (CISes) across
+	  all groups.
+
+config ESP32_BT_LE_ISO_CIS_PER_CIG
+	int "Maximum connected isochronous streams per group"
+	range 1 ESP32_BT_LE_ISO_CIS
+	default ESP32_BT_LE_ISO_CIS
+	help
+	  Maximum number of CISes in one connected isochronous group.
+
+# ISO data from the controller is received without waiting for a buffer.
+configdefault BT_ISO_RX_BUF_COUNT
+	default 8 if BT_ISO_RX
+
+endif # ESP32_BT_LE_ISO_SUPPORT
 
 config ESP32_BT_LE_POWER_CONTROL_ENABLED
 	bool "Controller BLE power control"
@@ -462,6 +549,7 @@ config ESP32_BT_LE_MSYS_BUF_FROM_HEAP
 
 config ESP32_BT_LE_ACL_BUF_COUNT
 	int "ACL buffer count"
+	default BT_BUF_ACL_TX_COUNT if SOC_SERIES_ESP32S31 && BT_CONN
 	default 10
 	help
 	  Number of HCI ACL data buffers.
@@ -495,6 +583,7 @@ endmenu
 
 config ESP32_BT_LE_CONTROLLER_TASK_STACK_SIZE
 	int "Controller task stack size"
+	depends on !SOC_SERIES_ESP32S31
 	default 4096
 	help
 	  Stack size for the BLE controller task.
@@ -508,8 +597,8 @@ config ESP32_BT_LE_LL_RESOLV_LIST_SIZE
 
 menuconfig ESP32_BT_LE_SECURITY_ENABLE
 	bool "BLE security manager"
-	depends on BT_CRYPTO
-	default y if BT_CTLR_LE_ENC
+	depends on BT_CRYPTO || ESP32_BT_LE_ISO_SUPPORT
+	default y if BT_CTLR_LE_ENC || ESP32_BT_LE_ISO_SUPPORT
 	help
 	  Enable Security Manager features for BLE pairing and encryption.
 
@@ -536,6 +625,7 @@ config ESP32_BT_LE_SM_SC_DEBUG_KEYS
 config ESP32_BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
 	bool "LE encryption"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
+	depends on !SOC_SERIES_ESP32S31
 	default y if BT_CTLR_LE_ENC
 	help
 	  Support link-layer encryption for BLE connections.
@@ -543,7 +633,7 @@ config ESP32_BT_LE_LL_CFG_FEAT_LE_ENCRYPTION
 config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
 	bool "Mbed TLS crypto stack"
 	depends on ESP32_BT_LE_SECURITY_ENABLE
-	default y if BT_CTLR_LE_ENC
+	default y if BT_CTLR_LE_ENC || ESP32_BT_LE_ISO_SUPPORT
 	select PSA_CRYPTO
 	select MBEDTLS_CTR_DRBG_C
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
@@ -552,6 +642,8 @@ config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	select PSA_WANT_ECC_SECP_R1_256
 	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_KEY_TYPE_AES if SOC_SERIES_ESP32S31
+	select PSA_WANT_ALG_CMAC if SOC_SERIES_ESP32S31
 	# Keep access to legacy crypto headers
 	select MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	help
@@ -559,6 +651,7 @@ config ESP32_BT_LE_CRYPTO_STACK_MBEDTLS
 
 config ESP32_BT_LE_WHITELIST_SIZE
 	int "BLE whitelist size"
+	range 1 15 if SOC_SERIES_ESP32S31
 	range 1 31
 	default 12
 	help
@@ -580,6 +673,7 @@ config ESP32_BT_LE_LL_SCA
 
 config ESP32_BT_LE_LL_PEER_SCA_SET_ENABLE
 	bool "Use constant peer SCA"
+	depends on !SOC_SERIES_ESP32S31
 	help
 	  Enable setting of constant peer SCA, use this if peer device has SCA larger than 500 PPM.
 	  Enable this option, the controller will always use ESP32_BT_LE_LL_PEER_SCA as the peer SCA value
@@ -597,10 +691,11 @@ config ESP32_BT_LE_MAX_CONNECTIONS
 	int "Max concurrent connections"
 	range 1 2 if SOC_SERIES_ESP32C2
 	range 1 35 if SOC_SERIES_ESP32H2
-	range 1 70 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6
+	range 1 70 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
+		SOC_SERIES_ESP32S31
 	default 2 if SOC_SERIES_ESP32C2
 	default 3 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
-		SOC_SERIES_ESP32H2
+		SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32S31
 	help
 	  Maximum number of BLE connections. Each uses ~1 KB of DRAM.
 
@@ -628,6 +723,7 @@ config ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
 config ESP32_BT_LE_SLEEP_ENABLE
 	bool "BLE sleep mode"
 	depends on PM && TICKLESS_KERNEL
+	depends on !SOC_SERIES_ESP32S31
 	default y
 	select MAC_BB_PD if SOC_SERIES_ESP32C6
 	help
@@ -651,11 +747,13 @@ endchoice
 
 config ESP32_BT_LE_USE_ESP_TIMER
 	bool "Use esp-timer for callouts"
+	depends on !SOC_SERIES_ESP32S31
 	default y
 	help
 	  Use high-priority esp-timer for controller callouts.
 
-if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2 || \
+	SOC_SERIES_ESP32S31
 
 config ESP32_BT_LE_SCAN_DUPL
 	bool "BLE scan duplicate filtering"
@@ -705,11 +803,13 @@ config ESP32_BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
 
 config ESP32_BT_LE_MSYS_INIT_IN_CONTROLLER
 	bool "Init MSYS mbuf in controller"
+	depends on !SOC_SERIES_ESP32S31
 	default y
 	help
 	  Allocate MSYS mbufs within the controller instead of the host.
 
-endif # SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+endif # SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2 || \
+	SOC_SERIES_ESP32S31
 
 config ESP32_BT_LE_TX_CCA_ENABLED
 	bool "TX CCA feature"
@@ -726,10 +826,12 @@ config ESP32_BT_LE_CCA_RSSI_THRESH
 
 config ESP32_BT_LE_CTLR_CHECK_CONNECT_IND_ACCESS_ADDRESS
 	bool "Enhanced Access Address check in CONNECT_IND"
+	depends on !SOC_SERIES_ESP32S31
 	help
 	  Strictly verify Access Address in CONNECT_IND PDUs for improved security.
 
 menu "BLE ACL Configurations"
+	depends on !SOC_SERIES_ESP32S31
 
 config ESP32_BT_LE_CTLR_LLCP_CONN_UPDATE
 	bool "BLE ACL connection update procedure"
@@ -752,13 +854,14 @@ endmenu
 
 config BT_CTLR_SCAN_BACKOFF_UPPERLIMITMAX
 	int "Scan backoff upper limit value"
+	depends on !SOC_SERIES_ESP32S31
 	range 1 256
 	default 32
 	help
 	  Upperlimitmax value (power of 2) for scan backoff procedure.
 
 endif # SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || \
-	SOC_SERIES_ESP32H2
+	SOC_SERIES_ESP32H2 || SOC_SERIES_ESP32S31
 
 if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
 

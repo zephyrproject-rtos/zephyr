@@ -46,6 +46,11 @@ LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 #else
 #define APB_CYCLE_WAIT_NUM (400 * 14)
 #endif
+#elif defined CONFIG_SOC_SERIES_ESP32S31
+/* Same reading frequency as ESP32-P4, around 75 KHz, scaled by the
+ * 320 MHz default CPU frequency.
+ */
+#define APB_CYCLE_WAIT_NUM (320 * 14)
 #else
 #define APB_CYCLE_WAIT_NUM (16)
 #endif

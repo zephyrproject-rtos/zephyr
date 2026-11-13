@@ -51,7 +51,7 @@ config ETH_ALIF_DWC_ETHER_QOS
 config ETH_ESP32_DWC_ETHER_1000
 	bool "Driver for DWC Ethernet MAC-based ESP32"
 	depends on !ETH_ESP32
-	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4 || SOC_SERIES_ESP32S31
 	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
 	select ETH_DWC_ETHER_1000_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
@@ -175,6 +175,16 @@ config ETH_DWC_ETHER_1000_CORE_EDFE
 	help
 	  Increases the descriptor size to 32 bytes.
 
+config ETH_DWC_ETHER_1000_CORE_DMA_PBL
+	int "DMA programmable burst length"
+	depends on ETH_DWC_ETHER_1000_CORE
+	range 1 32
+	default 16 if SOC_SERIES_ESP32S31
+	default 32
+	help
+	  Maximum number of beats in one DMA transfer. Must be 1, 2, 4, 8, 16
+	  or 32.
+
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
 configdefault NET_BUF_ALIGNMENT
@@ -228,6 +238,7 @@ config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	depends on !SOC_SERIES_ESP32
 	depends on !SOC_SERIES_ESP32P4
+	depends on !SOC_SERIES_ESP32S31
 	default y
 	help
 	  Enable transmit checksum offload to enhance throughput

@@ -502,7 +502,7 @@ menuconfig WIFI_ESP32_MESH
 	bool "ESP Wi-Fi mesh support"
 	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || \
 		SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || \
-		SOC_SERIES_ESP32C61
+		SOC_SERIES_ESP32C61 || SOC_SERIES_ESP32S31
 	select ESP32_WIFI_SOFTAP_SUPPORT
 	help
 	  Enable the self-organizing multi-hop Wi-Fi mesh network stack.

@@ -274,8 +274,8 @@ int dwmac_platform_init(const struct device *dev);
 void dwmac_setup_multicast_filter(const struct device *dev, const struct ethernet_filter *filter);
 void dwmac_isr(const struct device *ddev);
 /*
- * Called by the QoS core whenever the PHY reports a link at a new speed, after
- * MAC_CONF has been updated. Platforms feeding the MAC from a speed-dependent
+ * Called by the core whenever the PHY reports a link at a new speed, after
+ * the MAC configuration register has been updated. Platforms feeding the MAC from a speed-dependent
  * clock, as RGMII ones typically do, override this to retune that clock. The
  * default implementation does nothing.
  */
@@ -1473,10 +1473,14 @@ extern const struct ethernet_driver_api dwmac_api;
 #define DWMAC_MACHTHR    (DWMAC_MAC_OFFSET + 0x0008)
 #define DWMAC_MACHTLR    (DWMAC_MAC_OFFSET + 0x000C)
 #define DWMAC_MACVERR    (DWMAC_MAC_OFFSET + 0x0020)
+#define DWMAC_MACIMR     (DWMAC_MAC_OFFSET + 0x003C)
 #define DWMAC_MACAHR(n)  (DWMAC_MAC_OFFSET + 0x0040 + 8 * (n))
 #define DWMAC_MACALR(n)  (DWMAC_MAC_OFFSET + 0x0044 + 8 * (n))
 #define DWMAC_MACA0HR    DWMAC_MACAHR(0)
 #define DWMAC_MACA0LR    DWMAC_MACALR(0)
+
+/* MAC interrupt mask register bits */
+#define DWMAC_MACIMR_RGSMIIIM BIT(0)
 
 /* MAC version register bits */
 #define DWMAC_MACVERR_SNPSVER GENMASK(7, 0)

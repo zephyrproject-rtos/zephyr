@@ -18,6 +18,18 @@ properties:
     description: |
       RGMII RX_CLK delay train configuration, about 150ps per step.
       See RGMII_Config1 (EXT_0xA003) register for details
+  motorcomm,tx-delay-sel-fe:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    description: |
+      RGMII TX_CLK delay train configuration at 10 and 100 Mbps, about
+      150ps per step. Left unchanged when not set.
+      See RGMII_Config1 (EXT_0xA003) register for details
+  motorcomm,rxc-delay-en:
+    type: boolean
+    description: |
+      Enable the PHY RX_CLK delay of about 2 ns.
+      See Chip_Config (EXT_0xA001) register for details
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
