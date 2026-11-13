@@ -434,11 +434,14 @@ static int init_event_obj_core_list(void)
 	z_obj_type_init(&obj_type_event, K_OBJ_TYPE_EVENT_ID,
 			offsetof(struct k_event, obj_core));
 
-	/* Initialize and link statically defined condvars */
+	/* Initialize statically defined condvars */
 
 	STRUCT_SECTION_FOREACH(k_event, event) {
-		k_obj_core_init_and_link(K_OBJ_CORE(event), &obj_type_event);
+		k_obj_core_init(K_OBJ_CORE(event), &obj_type_event);
 	}
+
+	k_obj_type_init_range(&obj_type_event, STRUCT_SECTION_START(k_event),
+			      STRUCT_SECTION_END(k_event), sizeof(struct k_event), false);
 
 	return 0;
 }
