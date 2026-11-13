@@ -11,6 +11,20 @@ menuconfig USB_DEVICE_STACK_NEXT
 
 if USB_DEVICE_STACK_NEXT
 
+config USBD_BUF_COUNT
+	int "Number of USB device stack buffers"
+	range 16 256
+	default 16
+	help
+	  Number of request buffers owned by the USB device stack.
+
+config USBD_BUF_POOL_SIZE
+	int "USB device stack buffer pool size"
+	range 64 32768
+	default 1024
+	help
+	  Total payload memory available for USB device stack requests.
+
 module = USBD
 module-str = usbd
 source "subsys/logging/Kconfig.template.log_config"
