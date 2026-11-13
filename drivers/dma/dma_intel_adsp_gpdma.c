@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(dma_intel_adsp_gpdma);
 /* Device run time data */
 struct intel_adsp_gpdma_data {
 	struct dw_dma_dev_data dw_data;
+	uint32_t dma_slot[DW_MAX_CHAN];
 };
 
 /* Device constant configuration parameters */
@@ -121,7 +122,7 @@ static inline void intel_adsp_gpdma_llp_disable(const struct device *dev,
 
 	val = dw_read(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel));
 	dw_write(dev_cfg->shim, GPDMA_CHLLPC_OFFSET(channel),
-		 val | GPDMA_CHLLPC_EN);
+		 val & ~GPDMA_CHLLPC_EN);
 #endif
 }
 
@@ -147,6 +148,7 @@ static inline void intel_adsp_gpdma_llp_read(const struct device *dev,
 static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 				struct dma_config *cfg)
 {
+	struct intel_adsp_gpdma_data *const gpdma_data = dev->data;
 	int res = dw_dma_config(dev, channel, cfg);
 
 	if (res != 0) {
@@ -158,6 +160,7 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 	case MEMORY_TO_PERIPHERAL:
 	case PERIPHERAL_TO_MEMORY:
 		LOG_DBG("%s: channel %d configuring llp for %x", dev->name, channel, cfg->dma_slot);
+		gpdma_data->dma_slot[channel] = cfg->dma_slot;
 		intel_adsp_gpdma_llp_config(dev, channel, cfg->dma_slot);
 		break;
 	default:
@@ -169,6 +172,7 @@ static int intel_adsp_gpdma_config(const struct device *dev, uint32_t channel,
 
 static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 {
+	struct intel_adsp_gpdma_data *const gpdma_data = dev->data;
 	int ret = 0;
 #if CONFIG_PM_DEVICE && CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	bool first_use = false;
@@ -189,6 +193,7 @@ static int intel_adsp_gpdma_start(const struct device *dev, uint32_t channel)
 	}
 #endif
 
+	intel_adsp_gpdma_llp_config(dev, channel, gpdma_data->dma_slot[channel]);
 	intel_adsp_gpdma_llp_enable(dev, channel);
 	ret = dw_dma_start(dev, channel);
 	if (ret != 0) {
@@ -237,6 +242,8 @@ static int intel_adsp_gpdma_copy(const struct device *dev, uint32_t channel,
 	for (int i = 0; i < chan_data->lli_count; i++) {
 		chan_data->lli[i].ctrl_hi &= ~DW_CTLH_DONE(1);
 	}
+	sys_cache_data_flush_range(chan_data->lli,
+				   sizeof(struct dw_lli) * chan_data->lli_count);
 
 	chan_data->ptr_data.current_ptr += size;
 	if (chan_data->ptr_data.current_ptr >= chan_data->ptr_data.end_ptr) {
