@@ -52,6 +52,7 @@ extern "C" {
 #define MODEM_CELLULAR_DATA_APN_LEN          (32)
 #define MODEM_CELLULAR_MAX_APN_CMDS          (2)
 #define MODEM_CELLULAR_APN_BUF_SIZE          (64)
+#define MODEM_CELLULAR_SIM_SELECT_BUF_SIZE   (32)
 
 /* Zephyr networking interface states:
  *    NET_IF_LOWER_UP: Carrier is on in AWAIT_REGISTERED and REGISTERED
@@ -69,6 +70,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_CONNECT_CMUX,
 	MODEM_CELLULAR_STATE_OPEN_DLCI1,
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
+	MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
@@ -120,9 +122,9 @@ struct modem_cellular_event_pkg {
 
 /* SIM slot, from a child of the modem's sim-slots node */
 struct modem_cellular_sim_slot {
-	/* MUX controller that routes the modem to the slot */
+	/* MUX controller that routes the modem to the slot, NULL if the modem selects it */
 	const struct device *mux;
-	/* MUX state that selects the slot */
+	/* MUX state that selects the slot, NULL if the modem selects it */
 	const struct mux_state *state;
 	/* Slot index, from the reg property */
 	uint8_t index;
@@ -226,6 +228,13 @@ struct modem_cellular_data {
 	const struct modem_cellular_sim_slot *sim_slot_active;
 	/** Set while idle with the modem powered off, or held in reset, by the driver */
 	bool powered_off;
+	/** SIM slot the modem reports as selected, -1 if unknown */
+	int16_t sim_slot_modem;
+	/** Set once the select command, rather than the query, has been sent */
+	bool sim_select_sent;
+	struct modem_chat_script_chat sim_select_chat;
+	struct modem_chat_script sim_select_script;
+	char sim_select_buf[MODEM_CELLULAR_SIM_SELECT_BUF_SIZE];
 
 	/* Ring interrupt */
 	struct gpio_callback ring_gpio_cb;
@@ -306,6 +315,30 @@ struct modem_cellular_config_scripts {
 };
 
 /**
+ * @brief Selection of the SIM interface by the modem.
+ *
+ * For modems with several SIM interfaces, selected by an AT command. The driver uses it for
+ * the SIM slots without a @c mux-states property, once CMUX is up and before the board init
+ * and APN scripts run. The init script must leave the radio off at that point, for example
+ * with @c AT+CFUN=4, as the dial script is the one that turns it on.
+ */
+struct modem_cellular_sim_select_config {
+	/**
+	 * Command that selects a SIM interface, as a format string with a single @c %u
+	 * conversion for the slot index, for example @c "AT*SELECTSIMSLOT=%u,0". NULL if the
+	 * modem has a single SIM interface.
+	 */
+	const char *select_cmd;
+	/**
+	 * Optional script that reads the selected SIM interface. A match of its response must
+	 * pass the slot index to modem_cellular_chat_on_sim_slot(). The select command is not
+	 * sent when the modem reports the slot to select, which spares a modem that stores the
+	 * selection in non-volatile memory a write on every power-up.
+	 */
+	const struct modem_chat_script *query;
+};
+
+/**
  * @brief Vendor-specific cellular modem configuration.
  *
  * Define one constant object for each modem variant. The referenced scripts and unsolicited-match
@@ -349,6 +382,8 @@ struct modem_cellular_vendor_config {
 	uint16_t shutdown_time_ms;
 	/** Force autostart regardless of the devicetree @c autostarts property. */
 	bool force_autostart;
+	/** Selection of the SIM interface by the modem. */
+	struct modem_cellular_sim_select_config sim_select;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -455,6 +490,8 @@ void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t 
 				 void *user_data);
 void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data);
+void modem_cellular_chat_on_sim_slot(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data);
 
 /** @endcond */
 
@@ -542,17 +579,21 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 
 #define MODEM_CELLULAR_SIM_SLOT_DEFINE(node_id)                                                    \
 	BUILD_ASSERT(DT_REG_ADDR(node_id) <= UINT8_MAX, "SIM slot index must not exceed 255");     \
-	MUX_STATE_DT_SPEC_DEFINE(node_id);
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, mux_states), (MUX_STATE_DT_SPEC_DEFINE(node_id);))
 
 #define MODEM_CELLULAR_SIM_SLOT_INIT(node_id)                                                      \
 	{                                                                                          \
-		.mux = MUX_STATE_DT_DEV_GET(node_id),                                              \
-		.state = MUX_STATE_DT_GET(node_id),                                                \
+		.mux = COND_CODE_1(DT_NODE_HAS_PROP(node_id, mux_states),                          \
+				   (MUX_STATE_DT_DEV_GET(node_id)), (NULL)),                       \
+		.state = COND_CODE_1(DT_NODE_HAS_PROP(node_id, mux_states),                        \
+				     (MUX_STATE_DT_GET(node_id)), (NULL)),                         \
 		.index = DT_REG_ADDR(node_id),                                                     \
 		.is_default = DT_PROP(node_id, default_sim),                                       \
 	},
 
 #define MODEM_CELLULAR_SIM_SLOT_ADD_DEFAULT(node_id) + DT_PROP(node_id, default_sim)
+
+#define MODEM_CELLULAR_SIM_SLOT_ADD_MUX(node_id) + DT_NODE_HAS_PROP(node_id, mux_states)
 
 /* Define the SIM slot table of an instance with a sim-slots node */
 #define MODEM_CELLULAR_DEFINE_SIM_SLOTS(inst)                                                      \
@@ -562,6 +603,12 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		BUILD_ASSERT((0 DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst),  \
 					MODEM_CELLULAR_SIM_SLOT_ADD_DEFAULT)) <= 1,                \
 			     "At most one SIM slot can have the default-sim property");            \
+		BUILD_ASSERT(((0 DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst), \
+					MODEM_CELLULAR_SIM_SLOT_ADD_MUX)) == 0) ||                 \
+			     ((0 DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst), \
+					MODEM_CELLULAR_SIM_SLOT_ADD_MUX)) ==                       \
+			      DT_CHILD_NUM_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst))),      \
+			     "Either all SIM slots or none have the mux-states property");         \
 		DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst),                  \
 					     MODEM_CELLULAR_SIM_SLOT_DEFINE)                       \
 		static const struct modem_cellular_sim_slot                                        \

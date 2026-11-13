@@ -6,9 +6,11 @@ description: |
 
   A node with this compatible, named "sim-slots", is a child of the modem node.
   Each of its children is one SIM slot: a SIM holder, or a SIM interface of the
-  modem. A slot is selected by applying the MUX state in its mux-states
-  property, for example a gpio-mux driving a switch that routes the SIM lines
-  of the modem to one of several SIM holders.
+  modem. A slot with a mux-states property is selected by applying that MUX
+  state, for example with a gpio-mux driving a switch that routes the SIM lines
+  of the modem to one of several SIM holders. A slot without it is a SIM
+  interface of the modem, which the modem driver selects, for example with an
+  AT command. Either all slots have a mux-states property, or none.
 
   A modem node without a sim-slots child has a single SIM.
 
@@ -45,6 +47,28 @@ description: |
             };
     };
 
+  Example of a modem with two SIM interfaces, which it selects itself:
+
+    &uart1 {
+            modem {
+                    compatible = "simcom,a76xx";
+
+                    sim-slots {
+                            compatible = "modem-sims";
+                            #address-cells = <1>;
+                            #size-cells = <0>;
+
+                            sim-slot@0 {
+                                    reg = <0>;
+                            };
+
+                            sim-slot@1 {
+                                    reg = <1>;
+                            };
+                    };
+            };
+    };
+
 compatible: "modem-sims"
 
 properties:
@@ -73,12 +97,13 @@ child-binding:
       required: true
       description: |
         Index of the SIM slot, from 0 to 255. This is the slot index of the
-        cellular API.
+        cellular API. For a SIM interface of the modem, it is the index the
+        modem gives that interface.
 
     mux-states:
-      required: true
       description: |
-        MUX state that routes the modem to this SIM slot.
+        MUX state that routes the modem to this SIM slot. Without it, the
+        modem selects the slot.
 
     default-sim:
       type: boolean

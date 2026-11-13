@@ -96,7 +96,8 @@ Libraries / Subsystems
     :ref:`MUX API <mux_api>`, for example by a :dtcompatible:`gpio-mux`.
     :c:func:`cellular_get_sim_slots` reports the slots and :c:func:`cellular_select_sim`
     selects the active one. The ``modem_cellular`` driver switches the SIM slot while the
-    modem is suspended.
+    modem is suspended. Modems with several SIM interfaces, such as the SIMCom A76xx, select
+    the slot themselves.
 
 * Networking
 

@@ -91,6 +91,8 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "open dlci1";
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
 		return "open dlci2";
+	case MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT:
+		return "run sim select script";
 	case MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT:
 		return "run board init script";
 	case MODEM_CELLULAR_STATE_WAIT_FOR_APN:
@@ -183,6 +185,7 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 	case MODEM_CELLULAR_STATE_CONNECT_CMUX:
 	case MODEM_CELLULAR_STATE_OPEN_DLCI1:
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
+	case MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT:
 	case MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT:
 	case MODEM_CELLULAR_STATE_WAIT_FOR_APN:
 		return true;
@@ -194,6 +197,12 @@ static bool modem_cellular_apn_change_allowed(enum modem_cellular_state st)
 static bool modem_cellular_has_network_script(const struct modem_cellular_config *config)
 {
 	return config->vendor->scripts.network != NULL;
+}
+
+/* SIM slots without a MUX are SIM interfaces of the modem, which selects them */
+static bool modem_cellular_modem_selects_sim(const struct modem_cellular_config *config)
+{
+	return (config->sim_slots_size > 0U) && (config->sim_slots[0].mux == NULL);
 }
 
 void modem_cellular_emit_event(struct modem_cellular_data *data,
@@ -581,6 +590,36 @@ void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t 
 
 	strncpy(data->imsi, argv[1], sizeof(data->imsi) - 1);
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_SIM_IMSI);
+}
+
+/**
+ * @brief Store the SIM interface the modem reports as selected.
+ *
+ * Match callback for the vendor SIM query script. A value that is not an index from 0 to
+ * 255 is ignored, and the selected interface then stays unknown.
+ *
+ * @param chat Chat instance, unused.
+ * @param argv Match arguments: the match string and the index of the SIM interface.
+ * @param argc Number of match arguments, 2.
+ * @param user_data Pointer to the associated @ref modem_cellular_data object.
+ */
+void modem_cellular_chat_on_sim_slot(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	long slot;
+	char *end;
+
+	if (argc != 2) {
+		return;
+	}
+
+	slot = strtol(argv[1], &end, 10);
+	if ((end == argv[1]) || (slot < 0) || (slot > UINT8_MAX)) {
+		return;
+	}
+
+	data->sim_slot_modem = (int16_t)slot;
 }
 
 static bool modem_cellular_status_is_registered(enum cellular_registration_status status)
@@ -1103,7 +1142,7 @@ static int modem_cellular_apply_sim_slot(struct modem_cellular_data *data)
 	const struct modem_cellular_sim_slot *slot = data->sim_slot_active;
 	int ret;
 
-	if (slot == NULL) {
+	if ((slot == NULL) || (slot->mux == NULL)) {
 		return 0;
 	}
 
@@ -1788,14 +1827,25 @@ static int modem_cellular_on_open_dlci2_state_enter(struct modem_cellular_data *
 	return modem_pipe_open_async(data->dlci2_pipe);
 }
 
-static void modem_cellular_open_dlci2_next(struct modem_cellular_data *data)
+static void modem_cellular_enter_board_init_or_apn_state(struct modem_cellular_data *data)
 {
-	data->cmd_pipe = data->dlci2_pipe;
-
 	if (modem_cellular_board_init_script(data->dev) != NULL) {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT);
 	} else {
 		modem_cellular_enter_apn_state(data);
+	}
+}
+
+static void modem_cellular_open_dlci2_next(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	data->cmd_pipe = data->dlci2_pipe;
+
+	if (modem_cellular_modem_selects_sim(config)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT);
+	} else {
+		modem_cellular_enter_board_init_or_apn_state(data);
 	}
 }
 
@@ -1873,6 +1923,146 @@ static bool modem_cellular_is_script_retry_exceeded(struct modem_cellular_data *
 		return true;
 	}
 	return false;
+}
+
+/**
+ * @brief Handle a failure to select the active SIM slot on the modem.
+ *
+ * The modem then stays on the slot it had selected. When it reported that slot, and it is
+ * one of the SIM slots, it becomes the active slot, so that the API reports the slot in use.
+ *
+ * @param data Modem instance data.
+ */
+static void modem_cellular_sim_select_failed(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	LOG_ERR("Failed to select SIM slot %u", data->sim_slot_active->index);
+
+	for (uint8_t i = 0U; i < config->sim_slots_size; i++) {
+		const struct modem_cellular_sim_slot *slot = &config->sim_slots[i];
+
+		if (slot->index == data->sim_slot_modem) {
+			k_mutex_lock(&data->api_lock, K_FOREVER);
+			data->sim_slot_active = slot;
+			k_mutex_unlock(&data->api_lock);
+			LOG_WRN("Modem stays on SIM slot %u", slot->index);
+			break;
+		}
+	}
+}
+
+/**
+ * @brief Send the command that selects the active SIM slot on the modem.
+ *
+ * Builds the command from the vendor format string and the index of the active slot, and
+ * runs it as a script whose result is handled by the sim select script state. If the script
+ * cannot run, the power-up goes on with the slot the modem has.
+ *
+ * @param data Modem instance data.
+ */
+static void modem_cellular_send_sim_select(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+	int ret;
+
+	data->sim_select_sent = true;
+
+	ret = snprintk(data->sim_select_buf, sizeof(data->sim_select_buf),
+		       config->vendor->sim_select.select_cmd, data->sim_slot_active->index);
+	if ((ret < 0) || (ret >= (int)sizeof(data->sim_select_buf))) {
+		LOG_ERR("SIM select command too long");
+		modem_cellular_sim_select_failed(data);
+		modem_cellular_enter_board_init_or_apn_state(data);
+		return;
+	}
+
+	modem_chat_script_chat_init(&data->sim_select_chat);
+	modem_chat_script_chat_set_request(&data->sim_select_chat, data->sim_select_buf);
+	modem_chat_script_chat_set_response_matches(&data->sim_select_chat, &ok_match, 1);
+	modem_chat_script_set_script_chats(&data->sim_select_script, &data->sim_select_chat, 1);
+
+	ret = modem_cellular_run_script(data, &data->sim_select_script);
+	if (ret < 0) {
+		LOG_ERR("Failed to run the SIM select script (%d)", ret);
+		modem_cellular_sim_select_failed(data);
+		modem_cellular_enter_board_init_or_apn_state(data);
+	}
+}
+
+static int modem_cellular_on_run_sim_select_script_state_enter(struct modem_cellular_data *data)
+{
+	modem_chat_attach(&data->chat, data->dlci1_pipe);
+
+	data->sim_slot_modem = -1;
+	data->sim_select_sent = false;
+
+	/* Allow modem time to enter command mode before running the script */
+	modem_cellular_start_timer(data, K_MSEC(200));
+	return 0;
+}
+
+/**
+ * @brief Handle the events of the state that selects the SIM slot on the modem.
+ *
+ * Reads the slot the modem has selected with the vendor query script, if any, and sends the
+ * select command only when it differs from the active slot or is unknown. A failure to
+ * select the slot does not stop the power-up: the modem then runs on the slot it had.
+ *
+ * @param data Modem instance data.
+ * @param evt Event to handle.
+ */
+static void modem_cellular_run_sim_select_script_event_handler(struct modem_cellular_data *data,
+							       enum modem_cellular_event evt)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if ((config->vendor->sim_select.query != NULL) &&
+		    (modem_cellular_run_script(data, config->vendor->sim_select.query) == 0)) {
+			break;
+		}
+
+		/* Without a query, the selected slot is unknown */
+		modem_cellular_send_sim_select(data);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		if (data->sim_select_sent) {
+			LOG_INF("SIM slot %u selected", data->sim_slot_active->index);
+			modem_cellular_enter_board_init_or_apn_state(data);
+		} else if (data->sim_slot_modem == data->sim_slot_active->index) {
+			modem_cellular_enter_board_init_or_apn_state(data);
+		} else {
+			modem_cellular_send_sim_select(data);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		if (!data->sim_select_sent) {
+			/* The selected slot is unknown, select the active one anyway */
+			modem_cellular_send_sim_select(data);
+			break;
+		}
+
+		modem_cellular_sim_select_failed(data);
+		modem_cellular_enter_board_init_or_apn_state(data);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static int modem_cellular_on_run_sim_select_script_state_leave(struct modem_cellular_data *data)
+{
+	modem_cellular_stop_timer(data);
+	return 0;
 }
 
 static int modem_cellular_on_run_board_init_script_state_enter(struct modem_cellular_data *data)
@@ -2626,6 +2816,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_open_dlci2_state_enter(data);
 		break;
 
+	case MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT:
+		ret = modem_cellular_on_run_sim_select_script_state_enter(data);
+		break;
+
 	case MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT:
 		ret = modem_cellular_on_run_board_init_script_state_enter(data);
 		break;
@@ -2713,6 +2907,10 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
 		ret = modem_cellular_on_open_dlci2_state_leave(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT:
+		ret = modem_cellular_on_run_sim_select_script_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_AWAIT_DIAL:
@@ -2832,6 +3030,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
 		modem_cellular_open_dlci2_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_RUN_SIM_SELECT_SCRIPT:
+		modem_cellular_run_sim_select_script_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT:
@@ -3215,10 +3417,11 @@ static int modem_cellular_get_sim_slots(const struct device *dev, uint8_t *count
 /**
  * @brief Select the active SIM slot.
  *
- * Applies the MUX state of the slot at once, which is only accepted while the modem is
- * in the idle state, powered off or held in reset by the driver. Clears the ICCID and IMSI
- * of the previous slot. If the MUX fails to apply the state, the MUX state of the active
- * slot is applied again.
+ * Only accepted while the modem is in the idle state. A slot with a MUX is routed at once
+ * by applying its MUX state, which is only accepted while the modem is powered off or held
+ * in reset by the driver; if the MUX fails to apply the state, the MUX state of the active
+ * slot is applied again. A slot that the modem selects is selected by the modem when it
+ * powers up. Clears the ICCID and IMSI of the previous slot.
  *
  * @param dev Modem device.
  * @param slot Index of the SIM slot, its reg property.
@@ -3259,25 +3462,31 @@ static int modem_cellular_select_sim(const struct device *dev, uint8_t slot)
 		goto out;
 	}
 
-	/* The SIM lines must only be switched while the SIM interface is inactive, so only
+	/* A MUX must only switch the SIM lines while the SIM interface is inactive, so only
 	 * while the driver holds the modem powered off. The idle state alone does not
 	 * guarantee it: a suspend during the power-up, or a failed shutdown without a power
 	 * GPIO, leaves the modem powered.
 	 */
-	if ((data->state != MODEM_CELLULAR_STATE_IDLE) || !data->powered_off) {
+	if ((data->state != MODEM_CELLULAR_STATE_IDLE) ||
+	    ((sim_slot->mux != NULL) && !data->powered_off)) {
 		ret = -EBUSY;
 		goto out;
 	}
 
-	ret = mux_state_apply(sim_slot->mux, sim_slot->state);
-	if (ret < 0) {
-		LOG_ERR("Failed to select SIM slot %u (%d)", slot, ret);
+	/* A slot without a MUX is selected by the modem when it powers up */
+	ret = 0;
+	if (sim_slot->mux != NULL) {
+		ret = mux_state_apply(sim_slot->mux, sim_slot->state);
+		if (ret < 0) {
+			LOG_ERR("Failed to select SIM slot %u (%d)", slot, ret);
 
-		/* The MUX may have changed part of its route: restore the active slot. If
-		 * that fails too, the resume keeps the modem idle until the route is restored.
-		 */
-		(void)modem_cellular_apply_sim_slot(data);
-		goto out;
+			/* The MUX may have changed part of its route: restore the active
+			 * slot. If that fails too, the resume keeps the modem idle until the
+			 * route is restored.
+			 */
+			(void)modem_cellular_apply_sim_slot(data);
+			goto out;
+		}
 	}
 
 	data->sim_slot_active = sim_slot;
@@ -3542,18 +3751,36 @@ static void modem_cellular_init_apn(struct modem_cellular_data *data)
 /**
  * @brief Set the active SIM slot to the default one.
  *
- * The default slot is the one with the default-sim property, or the first slot.
+ * The default slot is the one with the default-sim property, or the first slot. For slots
+ * that the modem selects, also prepares the script that sends the select command.
  *
  * @param data Modem instance data.
  * @param config Modem instance configuration.
  *
  * @retval 0 Success, also when the modem has no sim-slots node.
  * @retval -ENODEV MUX controller of a SIM slot is not ready.
+ * @retval -ENOTSUP SIM slots have no MUX, and the modem driver cannot select them.
  */
 static int modem_cellular_init_sim_slots(struct modem_cellular_data *data,
 					 const struct modem_cellular_config *config)
 {
 	data->sim_slot_active = NULL;
+	data->sim_slot_modem = -1;
+
+	if (modem_cellular_modem_selects_sim(config)) {
+		if (config->vendor->sim_select.select_cmd == NULL) {
+			LOG_ERR("SIM slots without mux-states, but the modem cannot select them");
+			return -ENOTSUP;
+		}
+
+		modem_chat_script_init(&data->sim_select_script);
+		modem_chat_script_set_name(&data->sim_select_script, "sim_select");
+		modem_chat_script_set_abort_matches(&data->sim_select_script, abort_matches,
+						    ARRAY_SIZE(abort_matches));
+		modem_chat_script_set_timeout(&data->sim_select_script, 10);
+		modem_chat_script_set_callback(&data->sim_select_script,
+					       modem_cellular_chat_callback_handler);
+	}
 
 	/* At boot, the driver takes a modem it can power on as powered off, unless its status
 	 * GPIO tells otherwise
@@ -3566,7 +3793,7 @@ static int modem_cellular_init_sim_slots(struct modem_cellular_data *data,
 	for (uint8_t i = 0U; i < config->sim_slots_size; i++) {
 		const struct modem_cellular_sim_slot *slot = &config->sim_slots[i];
 
-		if (!device_is_ready(slot->mux)) {
+		if ((slot->mux != NULL) && !device_is_ready(slot->mux)) {
 			LOG_ERR("MUX of SIM slot %u not ready", slot->index);
 			return -ENODEV;
 		}

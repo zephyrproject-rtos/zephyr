@@ -451,6 +451,32 @@ The MUX driver sets its initial state when it starts. When a reset of the MCU le
 powered, the SIM lines then change while the SIM interface is active, before the driver routes
 them to the active slot again.
 
+A modem with several SIM interfaces selects the active one itself. Its slots have no
+``mux-states`` property, and their ``reg`` is the index the modem gives the SIM interface:
+
+.. code-block:: devicetree
+
+   sim-slots {
+           compatible = "modem-sims";
+           #address-cells = <1>;
+           #size-cells = <0>;
+
+           sim-slot@0 {
+                   reg = <0>;
+           };
+
+           sim-slot@1 {
+                   reg = <1>;
+           };
+   };
+
+The modem driver must then provide the select command, and optionally a script that reads the
+selected SIM interface, in the ``sim_select`` member of its
+:c:struct:`modem_cellular_vendor_config`. On every power-up, once CMUX is up and before the APN
+is configured, the driver reads the selected interface and sends the select command only if the
+modem has another one selected, as some modems store it in non-volatile memory. If the command
+fails, the modem keeps the interface it had, which becomes the active slot.
+
 .. _cmux-power-saving:
 
 CMUX Power Saving
