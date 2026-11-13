@@ -10,3 +10,14 @@ include: soc-nv-flash.yaml
 properties:
   reg:
     required: true
+
+  nordic,mutexes:
+    type: phandle-array
+    specifier-space: mutex
+    description: |
+      Hardware mutexes used to serialize MRAM access across CPU domains, one
+      per MRAM bank. The list index corresponds to the mram-bank child node at
+      the same index within the mram-memory node, and each specifier is the
+      index of the mutex within the referenced MUTEX instance. When present,
+      the driver claims the bank's hardware mutex around each write and erase
+      transaction.
