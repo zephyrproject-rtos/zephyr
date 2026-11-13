@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <strings.h>
 
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/http/client.h>
@@ -26,7 +27,10 @@ LOG_MODULE_DECLARE(net_shell);
 
 #define HTTP_SCHEMA_LEN   sizeof("https://")
 #define HTTP_PROTOCOL_LEN sizeof("HTTP/1.1")
-#define HTTP_HEADERS_LEN  3
+#define HTTP_PORT_LEN     sizeof("65535")
+/* Custom headers given with -H, each followed by a CRLF entry, then the terminator. */
+#define HTTP_HEADERS_MAX  4
+#define HTTP_HEADERS_LEN  (2 * HTTP_HEADERS_MAX + 1)
 
 #if defined(CONFIG_HTTP_CLIENT)
 static K_SEM_DEFINE(l4_wait, 0, 1);
@@ -38,6 +42,7 @@ struct http_client_url_fields {
 	uint8_t uri[CONFIG_NET_SHELL_HTTP_CLIENT_URL_LEN];
 	uint16_t port;
 	bool is_ssl;
+	bool is_ip_literal;
 };
 
 struct http_client_sh_ctx {
@@ -51,6 +56,9 @@ struct http_client_sh_ctx {
 	uint16_t payload_size;
 	uint8_t protocol[HTTP_PROTOCOL_LEN];
 	const char *headers[HTTP_HEADERS_LEN];
+	uint8_t num_headers;
+	/* A custom header sets the content type. */
+	bool has_content_type;
 	bool is_ssl_verifyhost;
 	int is_ssl_verifypeer;
 	int sec_tag;
@@ -72,8 +80,10 @@ static int http_client_url_fields_get(const uint8_t *url, const struct http_pars
 	}
 
 	if (url_field == UF_PATH) {
-		/* The request URI is the path with the query and fragment that follow it. */
-		len = strlen(url) - off;
+		/* The request target is the path and the query; the fragment is not sent. */
+		const uint8_t *hash = memchr(url + off, '#', strlen(url) - off);
+
+		len = (hash != NULL ? (size_t)(hash - url) : strlen(url)) - off;
 	}
 
 	if (len >= field_len) {
@@ -96,7 +106,9 @@ static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t 
 	uint16_t *port = &ctx->url_fields.port;
 	uint8_t *uri = ctx->url_fields.uri;
 	bool *is_ssl = &ctx->url_fields.is_ssl;
-	uint8_t port_ascii[6];
+	struct net_in_addr addr4;
+	struct net_in6_addr addr6;
+	uint8_t port_ascii[HTTP_PORT_LEN];
 
 	http_parser_url_init(&purl);
 
@@ -123,6 +135,9 @@ static int http_client_url_parser(struct http_client_sh_ctx *ctx, const uint8_t 
 		PR_ERROR("Failed to parse hostname (%d)\n", ret);
 		return ret;
 	}
+
+	ctx->url_fields.is_ip_literal = net_addr_pton(NET_AF_INET6, hostname, &addr6) == 0 ||
+					net_addr_pton(NET_AF_INET, hostname, &addr4) == 0;
 
 	ret = http_client_url_fields_get(url, &purl, UF_PORT, port_ascii, sizeof(port_ascii));
 	if (ret < 0) {
@@ -277,7 +292,8 @@ static int http_client_connect_setup(struct http_client_sh_ctx *ctx)
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int ret;
 
-	if (ctx->is_ssl_verifyhost && is_ssl) {
+	/* A literal address is not a valid server name indication. */
+	if (ctx->is_ssl_verifyhost && is_ssl && !ctx->url_fields.is_ip_literal) {
 		ret = zsock_setsockopt(ctx->sockfd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME,
 				       ctx->url_fields.hostname, strlen(ctx->url_fields.hostname));
 		if (ret < 0) {
@@ -287,7 +303,7 @@ static int http_client_connect_setup(struct http_client_sh_ctx *ctx)
 		}
 	}
 
-	if (ctx->is_ssl_verifyhost == false && is_ssl) {
+	if ((ctx->is_ssl_verifyhost == false || ctx->url_fields.is_ip_literal) && is_ssl) {
 		PR_WARNING("Hostname verification is disabled\n");
 
 		ret = zsock_setsockopt(ctx->sockfd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, NULL, 0);
@@ -485,9 +501,18 @@ static int http_client_args_to_params(struct http_client_sh_ctx *ctx, size_t arg
 			ctx->payload_size = strlen(state->optarg);
 			break;
 		case 'H':
-			ctx->headers[0] = state->optarg;
-			ctx->headers[1] = HTTP_CRLF;
-			ctx->headers[2] = NULL;
+			if (ctx->num_headers >= HTTP_HEADERS_MAX) {
+				PR_ERROR("At most %d custom headers\n", HTTP_HEADERS_MAX);
+				return -EINVAL;
+			}
+			if (strncasecmp(state->optarg,
+					"Content-Type:", sizeof("Content-Type:") - 1) == 0) {
+				ctx->has_content_type = true;
+			}
+			ctx->headers[2 * ctx->num_headers] = state->optarg;
+			ctx->headers[2 * ctx->num_headers + 1] = HTTP_CRLF;
+			ctx->num_headers++;
+			ctx->headers[2 * ctx->num_headers] = NULL;
 			break;
 		case 'p':
 			ret = snprintf(ctx->protocol, sizeof(ctx->protocol), "%s", state->optarg);
@@ -530,7 +555,9 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 {
 	int ret;
 	struct http_request req;
+	uint8_t port_ascii[HTTP_PORT_LEN];
 
+	snprintf(port_ascii, sizeof(port_ascii), "%u", ctx->url_fields.port);
 	memset(&req, 0, sizeof(struct http_request));
 
 	ret = http_client_connect(ctx);
@@ -541,6 +568,7 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 	req.method = method;
 	req.url = ctx->url_fields.uri;
 	req.host = ctx->url_fields.hostname;
+	req.port = port_ascii;
 	req.header_fields = ctx->headers;
 	req.protocol = ctx->protocol;
 	req.response = ctx->cb;
@@ -550,6 +578,9 @@ static int http_client_perform(struct http_client_sh_ctx *ctx, enum http_method 
 	if (method == HTTP_POST || method == HTTP_PUT) {
 		req.payload = ctx->payload;
 		req.payload_len = ctx->payload_size;
+		if (ctx->payload != NULL && !ctx->has_content_type) {
+			req.content_type_value = "application/x-www-form-urlencoded";
+		}
 	}
 
 	ret = http_client_req(ctx->sockfd, &req, ctx->timeout, ctx);

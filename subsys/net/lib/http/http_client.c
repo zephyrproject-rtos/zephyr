@@ -663,6 +663,8 @@ int http_client_req(int sock, struct http_request *req,
 	const char *method;
 	k_timeout_t req_timeout = (timeout == SYS_FOREVER_MS) ? K_FOREVER : K_MSEC(timeout);
 	k_timepoint_t req_end_timepoint = sys_timepoint_calc(req_timeout);
+	const char *host_open;
+	const char *host_close;
 
 	if (sock < 0 || req == NULL || req->response == NULL ||
 	    req->recv_buf == NULL || req->recv_buf_len == 0) {
@@ -691,10 +693,14 @@ int http_client_req(int sock, struct http_request *req,
 
 	total_sent += ret;
 
+	/* An IPv6 literal, the only host with a colon, is bracketed in the Host header. */
+	host_open = (strchr(req->host, ':') != NULL && req->host[0] != '[') ? "[" : "";
+	host_close = host_open[0] != '\0' ? "]" : "";
+
 	if (req->port) {
 		ret = http_send_data(sock, send_buf, send_buf_max_len,
-					&send_buf_pos, req_end_timepoint, "Host", ": ", req->host,
-					":", req->port, HTTP_CRLF, NULL);
+					&send_buf_pos, req_end_timepoint, "Host", ": ", host_open,
+					req->host, host_close, ":", req->port, HTTP_CRLF, NULL);
 
 		if (ret < 0) {
 			goto out;
@@ -703,8 +709,8 @@ int http_client_req(int sock, struct http_request *req,
 		total_sent += ret;
 	} else {
 		ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, req_end_timepoint, "Host", ": ", req->host,
-				     HTTP_CRLF, NULL);
+				     &send_buf_pos, req_end_timepoint, "Host", ": ", host_open,
+				     req->host, host_close, HTTP_CRLF, NULL);
 
 		if (ret < 0) {
 			goto out;
