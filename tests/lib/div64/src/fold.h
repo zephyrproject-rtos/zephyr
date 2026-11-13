@@ -39,7 +39,8 @@ static ALWAYS_INLINE void check_folded(void)
 	CHECK_FOLDED(k_ticks_to_ms_floor64(FOLD_K));
 	CHECK_FOLDED(k_us_to_ticks_near64(FOLD_K));
 	CHECK_FOLDED(k_ticks_to_ns_floor64(FOLD_K));
-#if !defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if !defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) &&                                       \
+	!defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 	CHECK_FOLDED(k_ms_to_cyc_ceil64(FOLD_K));
 	CHECK_FOLDED(k_cyc_to_ms_floor64(FOLD_K));
 	CHECK_FOLDED(k_ns_to_cyc_near64(FOLD_K));
