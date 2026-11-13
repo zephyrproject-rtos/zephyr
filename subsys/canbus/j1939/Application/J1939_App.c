@@ -6,6 +6,10 @@
 #include <j1939_ac.h>
 #include <j1939_tp.h>
 
+#ifdef J1939_MEMORY_ACCESS
+#include <J1939Ma.h>
+#endif
+
 #ifdef J1939DM13_ENABLE
 #include <J1939Dm13.h>
 #endif
