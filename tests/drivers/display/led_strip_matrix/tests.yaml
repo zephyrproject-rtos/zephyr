@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - display
+  harness: ztest
+  platform_allow:
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  drivers.display.led_strip_matrix.rgb888: {}
+  drivers.display.led_strip_matrix.argb8888:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=argb8888.overlay
