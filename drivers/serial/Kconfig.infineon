@@ -44,7 +44,8 @@ config UART_INFINEON_PDL_MP_FIELD_QUIRK
 
 config UART_INFINEON_PDL_BYTE_WIDTH_ONLY
 	bool
-	default y if SOC_SERIES_PSOC4HVMS64K || SOC_SERIES_PSOC4HVMS128K
+	default y if SOC_SERIES_PSOC4HVMS64K || SOC_SERIES_PSOC4HVMS128K || \
+		SOC_SERIES_PSOC4HVPA144K
 	help
 	  Hidden option enabled for SoC series whose SCB is the v2 (M0S8) IP
 	  block, which has no MEM_WIDTH field in the control register and
