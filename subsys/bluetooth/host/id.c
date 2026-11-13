@@ -343,11 +343,21 @@ submit:
 
 static void le_rpa_timeout_submit(void)
 {
+	/* Read once: bt_le_set_rpa_timeout() may change it from another thread. */
+	const uint16_t timeout = bt_dev.rpa_timeout;
+	int ret;
+
 #if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)
 	le_rpa_timeout_update();
 #endif
 
-	(void)bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(bt_dev.rpa_timeout));
+	/* 0 means already pending: that timer keeps its recorded timeout */
+	ret = bt_work_schedule(&bt_dev.rpa_update, K_SECONDS(timeout));
+	if (ret < 0) {
+		LOG_ERR("Failed to schedule the RPA update: %d", ret);
+	} else if (ret > 0) {
+		bt_dev.rpa_update_timeout = timeout;
+	}
 }
 
 /* this function sets new RPA only if current one is no longer valid */
