@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: HID over GATT Profile Device"
+
+config SAMPLE_BT_USE_AUTHENTICATION
+	bool "Require an authenticated link"
+	help
+	  Request Security Level 3 instead of Level 2 and register the passkey
+	  display callback, so that the bond is protected against a
+	  Man-In-The-Middle attack. HOGP only requires an encrypted link, so
+	  this is stricter than the profile asks for.
+
+source "Kconfig.zephyr"

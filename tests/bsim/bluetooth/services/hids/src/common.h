@@ -8,6 +8,7 @@
 #define HIDS_TEST_COMMON_H_
 
 #include <zephyr/bluetooth/services/hids.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/usb/class/hid.h>
 
@@ -19,6 +20,11 @@
 #define TEST_REPORT_ID_FEATURE      0x03U
 /* A second Feature Report, long enough to need several ATT Read Blob Requests */
 #define TEST_REPORT_ID_FEATURE_LONG 0x04U
+
+/* The server advertises under this name for the second Host only, so that the
+ * second Host cannot connect before the first one.
+ */
+#define TEST_SECOND_HOST_ADV_NAME "HIDS tester 2"
 
 /* Mouse (Input), keyboard LEDs (Output) and a vendor defined byte (Feature).
  * The Report Map has to describe every Report the HID Service exposes.
@@ -110,5 +116,36 @@ static const uint8_t test_output_data[TEST_OUTPUT_REPORT_LEN] = {0x05};
 /* Feature Report payload: the vendor defined byte */
 #define TEST_FEATURE_REPORT_LEN 1U
 static const uint8_t test_feature_data[TEST_FEATURE_REPORT_LEN] = {0x5A};
+/* A Feature Report value the server application rejects */
+static const uint8_t test_feature_rejected[TEST_FEATURE_REPORT_LEN] = {0xA5};
+
+/* Lengths of the Boot Reports, fixed by the USB HID Specification */
+#define TEST_BOOT_KB_IN_LEN    ((unsigned int)sizeof(struct bt_hids_boot_kb_in_report))
+#define TEST_BOOT_KB_OUT_LEN   ((unsigned int)sizeof(struct bt_hids_boot_kb_out_report))
+#define TEST_BOOT_MOUSE_IN_LEN ((unsigned int)sizeof(struct bt_hids_boot_mouse_in_report))
+
+/* Boot Keyboard Output Report payload: the LED bitmap */
+static const uint8_t test_boot_kb_out_data[TEST_BOOT_KB_OUT_LEN] = {0x03};
+/* A Boot Keyboard Output Report value the server application rejects */
+static const uint8_t test_boot_kb_out_rejected[TEST_BOOT_KB_OUT_LEN] = {0xA5};
+
+/* Boot Keyboard Input Report payload: modifiers, reserved and six key codes */
+static const uint8_t test_boot_kb_in_data[TEST_BOOT_KB_IN_LEN] = {
+	0x02, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+/* The value the server holds for the same Boot Report, which a read returns.
+ * Distinct from the notified one, so that the read and the notification cannot
+ * pass for one another.
+ */
+static const uint8_t test_boot_kb_in_stored[TEST_BOOT_KB_IN_LEN] = {
+	0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+/* Telling the three Boot Report contexts apart relies on their lengths being
+ * distinct, so that a read or a length check identifies one of them.
+ */
+BUILD_ASSERT(TEST_BOOT_KB_IN_LEN != TEST_BOOT_KB_OUT_LEN &&
+		     TEST_BOOT_KB_IN_LEN != TEST_BOOT_MOUSE_IN_LEN &&
+		     TEST_BOOT_KB_OUT_LEN != TEST_BOOT_MOUSE_IN_LEN,
+	     "The Boot Report lengths no longer tell the contexts apart");
 
 #endif /* HIDS_TEST_COMMON_H_ */
