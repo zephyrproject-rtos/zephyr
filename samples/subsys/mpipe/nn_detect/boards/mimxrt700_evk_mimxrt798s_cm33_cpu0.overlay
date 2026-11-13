@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The 1.4 MB SRAM partition below the RAM region holds no code or data in an
+ * XIP image: declare it as a memory region for the video buffer pool, so the
+ * capture buffers stay in on-chip SRAM. SRAM1 is left to the NPU.
+ */
+&sram_shared_code0 {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "SRAM_SHARED0";
+};
