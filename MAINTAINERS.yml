@@ -3548,6 +3548,7 @@ Hexagon arch:
   status: maintained
   maintainers:
     - androm3da
+    - malto101
   collaborators:
     - dkalowsk
   files:
