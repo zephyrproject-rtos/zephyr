@@ -161,6 +161,12 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 
 	if (filter) {
 		config |= EIC_CONFIG_FILTEN0 << config_shift;
+#ifdef CONFIG_GPIO_SAM0_HW_DEBOUNCE
+		/* Enable per-line debouncer (DEBOUNCEN) for this EXTINT line */
+		if (DT_INST_PROP_OR(0, microchip_debounce_time_us, 0) > 0) {
+			EIC->DEBOUNCEN.reg |= mask;
+		}
+#endif
 	}
 
 	/* Apply the config to the EIC itself */
@@ -343,6 +349,61 @@ static int sam0_eic_init(const struct device *dev)
 	/* Enable the GCLK */
 	GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK0 |
 					 GCLK_PCHCTRL_CHEN;
+
+#ifdef CONFIG_GPIO_SAM0_HW_DEBOUNCE
+	{
+		uint32_t target_us = DT_INST_PROP_OR(0, microchip_debounce_time_us,
+						      0);
+
+		if (target_us > 0) {
+			/* Switch EIC to GCLK1 @ OSCULP32K for slow debounce */
+			GCLK->PCHCTRL[EIC_GCLK_ID].reg = GCLK_PCHCTRL_GEN_GCLK1 |
+							 GCLK_PCHCTRL_CHEN;
+
+			uint32_t best_prescaler = 0;
+			uint32_t best_states = 0;
+			uint32_t best_diff = UINT32_MAX;
+
+			for (uint32_t prescaler = 0; prescaler <= 7; prescaler++) {
+				for (uint32_t states = 0; states <= 1; states++) {
+					uint32_t samples = (states == 0) ? 2 : 3;
+					uint32_t debounce_clock = 32768
+						/ (2 * (prescaler + 1));
+					uint32_t time_us = (samples * 1000000)
+						/ debounce_clock;
+					int32_t diff = (int32_t)(time_us)
+						- (int32_t)target_us;
+
+					if (diff < 0) {
+						diff = -diff;
+					}
+
+					if ((uint32_t)diff < best_diff) {
+						best_diff = (uint32_t)diff;
+						best_prescaler = prescaler;
+						best_states = states;
+					}
+				}
+			}
+
+			/* Disable EIC for DPRESCALER + CKSEL configuration */
+			set_eic_enable(0);
+
+			EIC->DPRESCALER.reg = EIC_DPRESCALER_PRESCALER0(best_prescaler);
+
+			if (best_states != 0) {
+				EIC->DPRESCALER.reg |= EIC_DPRESCALER_STATES0;
+			}
+
+			EIC->DPRESCALER.reg |= EIC_DPRESCALER_TICKON;
+
+			EIC->CTRLA.bit.CKSEL = 1;
+
+			set_eic_enable(1);
+			wait_synchronization();
+		}
+	}
+#endif /* CONFIG_GPIO_SAM0_HW_DEBOUNCE */
 #else
 	/* Enable the EIC clock in PM */
 	PM->APBAMASK.bit.EIC_ = 1;
@@ -350,7 +411,7 @@ static int sam0_eic_init(const struct device *dev)
 	/* Enable the GCLK */
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
-#endif
+#endif /* MCLK */
 
 #if DT_INST_IRQ_HAS_CELL(0, irq)
 	SAM0_EIC_IRQ_CONNECT(0);
