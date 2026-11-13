@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+  - name: aipi_eyes_s1
+    full_name: AiPi-Eyes-S1 Multi-Functional Development Board
+    vendor: aithinker
+    socs:
+      - name: bl618m05q2i
+        variants:
+          - name: "safe_overclock"
+          - name: "unsafe_overclock"
+  - name: aipi_eyes_s2
+    full_name: AiPi-Eyes-S2 Multi-Functional Development Board
+    vendor: aithinker
+    socs:
+      - name: bl618m05q2i
+        variants:
+          - name: "safe_overclock"
+          - name: "unsafe_overclock"
