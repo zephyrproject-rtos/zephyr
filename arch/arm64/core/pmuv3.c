@@ -195,6 +195,16 @@ int arch_pmu_init(void)
 	}
 
 	/*
+	 * Disable all PMU overflow interrupts first.  Firmware (TF-A) or a
+	 * previous Zephyr session may have left PMINTENSET_EL1 non-zero; if
+	 * a counter is then enabled, the PMU will signal the GIC immediately
+	 * even before Zephyr calls irq_enable(), crashing whichever thread
+	 * happens to be interrupted.
+	 */
+	__asm__ volatile("msr pmintenclr_el1, %0" :: "r"(0xFFFFFFFFUL) : "memory");
+	barrier_isync_fence_full();
+
+	/*
 	 * Reset all counters and enable the 64-bit cycle counter.
 	 * ISB required after PMCR write for reset to take effect (ARM DDI0487).
 	 */
