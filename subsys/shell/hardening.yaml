@@ -4,6 +4,14 @@
 # Security hardening database fragment for the shell.
 
 rules:
+  DEVMEM_SHELL:
+    value: n
+    rationale: |
+      The devmem shell command, enabled by default in any non-minimal shell, reads and writes
+      arbitrary physical addresses for anyone with shell access, exposing secrets held in RAM and
+      letting them overwrite kernel data and peripheral registers.
+    references: [CWE-668]
+
   SHELL:
     value: n
     profiles: [strict]
@@ -11,3 +19,11 @@ rules:
       The shell offers interactive inspection and control of the running system to anyone with
       access to its transport.
     references: [CWE-489]
+
+  SHELL_BACKEND_TELNET:
+    value: n
+    rationale: |
+      Serves the shell on a TCP port with neither authentication nor encryption, so anyone who can
+      reach the device over the network runs shell commands and anyone on the network path reads the
+      session.
+    references: [CWE-306, CWE-319]
