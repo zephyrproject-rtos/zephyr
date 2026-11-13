@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: RA6B1 clock
+
+compatible: "renesas,ra6b1-clk"
+
+include:
+  - name: base.yaml
+    property-allowlist:
+      - status
+      - compatible
+
+properties:
+  clock-src:
+    required: true
+    type: phandle
+    description: |
+      Clock source.
