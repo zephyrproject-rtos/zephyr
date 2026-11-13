@@ -41,3 +41,5 @@ zephyr_sources_ifdef(
 )
 
 add_subdirectory_ifdef(CONFIG_ASSERT zassert)
+
+add_subdirectory_ifdef(CONFIG_CRITICAL_SECTION_MONITOR critical_section_monitor)
