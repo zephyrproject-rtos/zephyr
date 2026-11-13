@@ -5,5 +5,5 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(ethernet_test)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/ip)
-FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_SOC_ESP32_PM_SLEEP_STATS app PRIVATE src/pm.c)
