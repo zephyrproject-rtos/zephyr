@@ -11,7 +11,6 @@
 
 #define DT_DRV_COMPAT syna_sr100_clock
 
-#define PLL0_RATE CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
 #define CLK_ENABLE1 0x0
 
 #define DIV_EN    (1 << 2)
@@ -29,6 +28,7 @@
 
 struct clock_control_syna_config {
 	mem_addr_t regs;
+	uint32_t perif_rate;
 };
 
 static inline uint32_t syna_clk_read(const struct clock_control_syna_config *config, mm_reg_t addr)
@@ -45,7 +45,7 @@ static inline void syna_clk_write(const struct clock_control_syna_config *config
 static int syna_clk_set_rate(const struct device *dev, uint32_t id, uint32_t rate)
 {
 	const struct clock_control_syna_config *config = dev->config;
-	uint32_t parent_rate = PLL0_RATE;
+	uint32_t parent_rate = config->perif_rate;
 	uint32_t offset = GET_CGL_REG(id);
 	uint32_t divider = 0;
 	uint32_t value;
@@ -84,7 +84,7 @@ static uint32_t syna_clk_get_rate(const struct device *dev, uint32_t id)
 {
 	const struct clock_control_syna_config *config = dev->config;
 	uint32_t offset = GET_CGL_REG(id);
-	uint32_t parent_rate = PLL0_RATE;
+	uint32_t parent_rate = config->perif_rate;
 	uint32_t divider = 1;
 	uint32_t value;
 
@@ -221,6 +221,7 @@ static DEVICE_API(clock_control, syna_clkctrl_api) = {
 
 static const struct clock_control_syna_config syna_config = {
 	.regs = DT_INST_REG_ADDR(0),
+	.perif_rate = DT_INST_PROP_OR(0, perif_rate, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC),
 };
 
 static int syna_clkctrl_init(const struct device *dev)

@@ -48,4 +48,4 @@ tests:
       - imx943_evk/mimx94398/m33
       - imx8mp_evk/mimx8ml8/m7
   drivers.counter.build:
-    platform_allow: sr100_rdk/sr100
+    platform_allow: sr100_rdk/sr100/m55

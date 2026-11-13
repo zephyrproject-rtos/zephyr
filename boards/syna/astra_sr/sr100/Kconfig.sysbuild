@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SR100_RDK
+
+config SOC_SR100_M4_APP_DIR
+	string "Source directory of the SR100-M4 Zephyr application"
+	help
+	  Path to the SR100-M4 application source directory.
+
+endif # BOARD_SR100_RDK
