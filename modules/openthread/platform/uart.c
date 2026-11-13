@@ -199,6 +199,13 @@ void platformUartProcess(otInstance *aInstance)
 	}
 }
 
+bool platformUartIsPending(void)
+{
+	return ring_buf_size_get(ot_uart.rx_ringbuf) > 0U ||
+	       atomic_get(&ot_uart.tx_busy) != 0 ||
+	       atomic_get(&ot_uart.tx_finished) != 0;
+}
+
 otError otPlatUartEnable(void)
 {
 	ot_uart.dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_ot_uart));

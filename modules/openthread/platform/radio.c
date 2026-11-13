@@ -161,6 +161,23 @@ static void reset_pending_event(enum pending_events event)
 	atomic_clear_bit(pending_events, event);
 }
 
+bool platformRadioIsPending(void)
+{
+	for (int event = 0; event < PENDING_EVENT_COUNT; event++) {
+		if (is_pending_event_set((enum pending_events)event)) {
+			return true;
+		}
+	}
+
+	/*
+	 * RECEIVE blocks deep sleep: the radio is actively listening. Between
+	 * CSL samples the driver keeps the radio in SLEEP, so that path does
+	 * not hold the lock for the whole CSL period.
+	 */
+	return k_work_is_pending(&tx_job) || sState == OT_RADIO_STATE_TRANSMIT ||
+	       sState == OT_RADIO_STATE_RECEIVE;
+}
+
 void energy_detected(const struct device *dev, int16_t max_ed)
 {
 	if (dev == radio_dev) {
@@ -247,7 +264,15 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 		}
 		break;
 	case IEEE802154_EVENT_RX_OFF:
-		set_pending_event(PENDING_EVENT_SLEEP);
+		/*
+		 * With deep-sleep coordination, ignore RX_OFF outside RECEIVE.
+		 * Some drivers emit RX_OFF from stop() after the platform has
+		 * already transitioned to SLEEP; re-queuing would race.
+		 */
+		if (!IS_ENABLED(CONFIG_OPENTHREAD_PLATFORM_DEEP_SLEEP) ||
+		    sState == OT_RADIO_STATE_RECEIVE) {
+			set_pending_event(PENDING_EVENT_SLEEP);
+		}
 		break;
 	default:
 		/* do nothing - ignore event */
@@ -798,12 +823,29 @@ otError otPlatRadioSleep(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	if (sState != OT_RADIO_STATE_SLEEP && sState != OT_RADIO_STATE_RECEIVE) {
-		return OT_ERROR_INVALID_STATE;
-	}
+	if (IS_ENABLED(CONFIG_OPENTHREAD_PLATFORM_DEEP_SLEEP)) {
+		/*
+		 * Mark SLEEP before stop() so a synchronous RX_OFF from the
+		 * driver does not re-queue PENDING_EVENT_SLEEP.
+		 */
+		if (sState == OT_RADIO_STATE_SLEEP) {
+			return OT_ERROR_NONE;
+		}
 
-	radio_api->stop(radio_dev);
-	sState = OT_RADIO_STATE_SLEEP;
+		if (sState != OT_RADIO_STATE_RECEIVE) {
+			return OT_ERROR_INVALID_STATE;
+		}
+
+		sState = OT_RADIO_STATE_SLEEP;
+		radio_api->stop(radio_dev);
+	} else {
+		if (sState != OT_RADIO_STATE_SLEEP && sState != OT_RADIO_STATE_RECEIVE) {
+			return OT_ERROR_INVALID_STATE;
+		}
+
+		radio_api->stop(radio_dev);
+		sState = OT_RADIO_STATE_SLEEP;
+	}
 
 	return OT_ERROR_NONE;
 }

@@ -12,6 +12,7 @@ zephyr_library_sources(
   misc.c
   platform.c
   )
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_PLATFORM_DEEP_SLEEP power.c)
 
 if(NOT CONFIG_HDLC_RCP_IF)
   # Radio platform implementation dedicated for L2 Platform adaptation layer

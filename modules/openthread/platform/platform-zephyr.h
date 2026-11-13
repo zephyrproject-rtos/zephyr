@@ -14,10 +14,65 @@
 #ifndef PLATFORM_ZEPHYR_H_
 #define PLATFORM_ZEPHYR_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <openthread/instance.h>
 #include <zephyr/net/net_pkt.h>
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_DEEP_SLEEP)
+#include "power.h"
+#else
+static inline void platformPowerInit(void)
+{
+}
+
+static inline void platformPowerProcessBegin(void)
+{
+}
+
+static inline void platformPowerProcess(otInstance *instance)
+{
+	(void)instance;
+}
+
+static inline bool platformPowerHasPendingEvents(otInstance *instance)
+{
+	(void)instance;
+
+	return false;
+}
+
+static inline void platformPowerSignalPending(void)
+{
+}
+
+static inline void platformPowerNotifyAlarmMilliStart(uint32_t fire_at_ms)
+{
+	(void)fire_at_ms;
+}
+
+static inline void platformPowerNotifyAlarmMilliStop(void)
+{
+}
+
+static inline void platformPowerNotifyAlarmMilliFired(void)
+{
+}
+
+static inline void platformPowerNotifyAlarmMicroStart(uint32_t fire_at_us)
+{
+	(void)fire_at_us;
+}
+
+static inline void platformPowerNotifyAlarmMicroStop(void)
+{
+}
+
+static inline void platformPowerNotifyAlarmMicroFired(void)
+{
+}
+#endif
 
 /**
  * This function initializes the millisecond-based alarm service used by OpenThread.
@@ -57,6 +112,7 @@ void platformRadioInit(void);
  *
  */
 void platformRadioProcess(otInstance *aInstance);
+bool platformRadioIsPending(void);
 
 /**
  * This function performs UART driver processing.
@@ -64,7 +120,20 @@ void platformRadioProcess(otInstance *aInstance);
  * @param[in]  aInstance  The OpenThread instance structure.
  *
  */
+#if defined(CONFIG_OPENTHREAD_COPROCESSOR)
 void platformUartProcess(otInstance *aInstance);
+bool platformUartIsPending(void);
+#else
+static inline void platformUartProcess(otInstance *aInstance)
+{
+	(void)aInstance;
+}
+
+static inline bool platformUartIsPending(void)
+{
+	return false;
+}
+#endif
 
 /**
  * Outer component calls this method to notify UART driver that it should

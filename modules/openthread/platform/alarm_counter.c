@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 void alarm_milli_set_time_offset_ms(int32_t offset_ms);
 
 static bool timer_us_fired;
+static uint32_t timer_us_deadline;
 #if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 static int32_t time_offset_us;
 #endif
@@ -51,6 +52,7 @@ static void ot_timer_us_fired(struct k_timer *timer)
 	ARG_UNUSED(timer);
 
 	timer_us_fired = true;
+	platformPowerNotifyAlarmMicroFired();
 	otSysEventSignalPending();
 }
 
@@ -96,6 +98,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id, uint32_t ti
 	} else {
 		counter_cancel_channel_alarm(dev, chan_id);
 		timer_us_fired = true;
+		platformPowerNotifyAlarmMicroFired();
 		otSysEventSignalPending();
 	}
 }
@@ -135,10 +138,13 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 	uint32_t current_ticks;
 	uint64_t remaining_us = (uint64_t)aT0 + (uint64_t)aDt;
 
+	timer_us_deadline = aT0 + aDt;
+
 	(void)counter_get_value(alarm_counter, &current_ticks);
 	remaining_us -= counter_ticks_to_us(alarm_counter, current_ticks);
 
 	counter_cancel_channel_alarm(alarm_counter, 0);
+	platformPowerNotifyAlarmMicroStop();
 
 	if ((int64_t)remaining_us <= 0) {
 		ot_timer_us_fired(NULL);
@@ -160,12 +166,14 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 		cntr_alarm_cfg.callback = alarm_handler;
 		cntr_alarm_cfg.user_data = NULL;
 		counter_set_channel_alarm(alarm_counter, 0, &cntr_alarm_cfg);
+		platformPowerNotifyAlarmMicroStart(timer_us_deadline);
 	}
 }
 
 void otPlatAlarmMicroStop(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
+	platformPowerNotifyAlarmMicroStop();
 	counter_cancel_channel_alarm(alarm_counter, 0);
 }
 
