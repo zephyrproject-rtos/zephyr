@@ -205,7 +205,7 @@ tests:
       - pwm
       - userspace
     extra_args:
-      - platform:frdm_mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b.overlay"
+      - platform:frdm_mcxe31b:FILE_SUFFIX=emios
     platform_allow:
       - frdm_mcxe31b
     filter: dt_alias_exists("pwm-test")
