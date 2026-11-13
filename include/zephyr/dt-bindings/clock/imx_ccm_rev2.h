@@ -114,6 +114,8 @@
 #define IMX_CCM_ENET_PLL               0x1201UL
 #define IMX_CCM_ENET1G_CLK             0x1202UL
 #define IMX_CCM_ENET1G_PLL             0x1203UL
+#define IMX_CCM_ENET_QOS_CLK           0x1204UL
+#define IMX_CCM_ENET_QOS_PTP_CLK       0x1205UL
 
 /* FLEXSPI */
 #define IMX_CCM_FLEXSPI_CLK            0x1300UL

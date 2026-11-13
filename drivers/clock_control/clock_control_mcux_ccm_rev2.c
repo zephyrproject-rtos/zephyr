@@ -69,23 +69,30 @@ static int mcux_ccm_on(const struct device *dev, clock_control_subsys_t sub_syst
 	peripheral = (clock_name & IMX_CCM_PERIPHERAL_MASK);
 	instance = (clock_name & IMX_CCM_INSTANCE_MASK);
 	switch (peripheral) {
-#ifdef CONFIG_ETH_NXP_ENET
-
+#if defined(CONFIG_ETH_NXP_ENET) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 #define ENET1G_CLOCK kCLOCK_Enet1
 #else
 #define ENET_CLOCK   kCLOCK_Enet
 #define ENET1G_CLOCK kCLOCK_Enet_1g
 #endif
-#ifdef ENET_CLOCK
 	case IMX_CCM_ENET_CLK:
+#ifdef ENET_CLOCK
 		if (clock_name == IMX_CCM_ENET_CLK) {
 			CLOCK_EnableClock(ENET_CLOCK);
 		} else if (clock_name == IMX_CCM_ENET1G_CLK) {
 			CLOCK_EnableClock(ENET1G_CLOCK);
 		}
-		return 0;
 #endif
+#if defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
+		/* The timestamp clock shares LPCG114 with the MAC. */
+		if (clock_name == IMX_CCM_ENET_QOS_CLK ||
+		    clock_name == IMX_CCM_ENET_QOS_PTP_CLK) {
+			CLOCK_EnableClock(kCLOCK_Enet_Qos);
+		}
+#endif
+
+		return 0;
 #endif
 #ifdef CONFIG_I2S_MCUX_SAI
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131) || defined(CONFIG_SOC_MIMX9111)
@@ -279,15 +286,26 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subs
 		return 0;
 #endif
 
-#ifdef CONFIG_ETH_NXP_ENET
+#if defined(CONFIG_ETH_NXP_ENET) || defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
 	/*
 	 * nxp_rt11xx.dtsi defines the ENET clock and PLL IDs in the range
-	 * 0x1200 to 0x1203. The switch statement only matches on the
+	 * 0x1200 to 0x1205. The switch statement only matches on the
 	 * peripheral base (clock_name & IMX_CCM_PERIPHERAL_MASK), so all of
-	 * them fall under 0x12xx. IMX_CCM_ENET_CLK therefore covers both
-	 * ENET and ENET_1G, and the specific instance is selected below.
+	 * them fall under 0x12xx. IMX_CCM_ENET_CLK therefore covers ENET,
+	 * ENET_1G and ENET_QOS, and the specific instance is selected below.
 	 */
 	case IMX_CCM_ENET_CLK:
+#if defined(CONFIG_ETH_NXP_DWC_ETHER_QOS)
+		if (clock_name == IMX_CCM_ENET_QOS_CLK) {
+			clock_root = kCLOCK_Root_Enet_Qos;
+			break;
+		}
+		if (clock_name == IMX_CCM_ENET_QOS_PTP_CLK) {
+			clock_root = kCLOCK_Root_Enet_Timer3;
+			break;
+		}
+
+#endif
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 		clock_root = kCLOCK_Root_WakeupAxi;
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
