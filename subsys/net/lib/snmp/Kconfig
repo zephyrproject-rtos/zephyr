@@ -1,0 +1,183 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SNMP
+	bool "SNMP agent [EXPERIMENTAL]"
+	depends on NET_UDP
+	depends on NET_IPV4 || NET_IPV6
+	depends on NET_SOCKETS
+	select EXPERIMENTAL
+	select NET_SOCKETS_SERVICE
+	select NET_CONTEXT_RECV_PKTINFO
+	help
+	  SNMPv1 and SNMPv2c agent. Managed objects are registered at build
+	  time with SNMP_SCALAR_DEFINE() and SNMP_COLUMN_DEFINE().
+
+if SNMP
+
+config SNMP_PORT
+	int "UDP port"
+	default 161
+	range 1 $(UINT16_MAX)
+	help
+	  Port the agent listens on, on every enabled address family.
+
+config SNMP_MAX_PDU_SIZE
+	int "Maximum message size"
+	default 512
+	range 484 65507
+	help
+	  Size of the receive and transmit buffers in bytes. Requests larger
+	  than this are dropped and responses that would exceed it are
+	  answered with a tooBig error. RFC 3417 section 3.2 requires agents
+	  to accept messages of at least 484 bytes and recommends 1472.
+
+config SNMP_OID_MAX_LEN
+	int "Maximum object identifier length"
+	default 32
+	range 2 128
+	help
+	  Maximum number of sub-identifiers in an object identifier the agent
+	  can decode, encode or return. Requests naming a longer identifier
+	  are dropped.
+
+config SNMP_V1
+	bool "Accept SNMPv1 requests"
+	default y
+	help
+	  Answer version 1 messages. Errors are reported with the version 1
+	  status codes and no exception values are used.
+
+config SNMP_V2C
+	bool "Accept SNMPv2c requests"
+	default y
+	help
+	  Answer version 2c messages, including GETBULK requests.
+
+config SNMP_MAX_VARBINDS
+	int "Maximum repeated variables in a GETBULK request"
+	default 16
+	range 1 255
+	help
+	  A GETBULK request with more repeating variable bindings than this
+	  is answered with a single repetition. Each repeater costs one object
+	  identifier of SNMP_OID_MAX_LEN sub-identifiers of RAM.
+
+config SNMP_COMMUNITY_MAX_LEN
+	int "Maximum community string length"
+	default 32
+	range 1 255
+	help
+	  Longest community string the agent stores, in bytes.
+
+config SNMP_COMMUNITY_READ
+	string "Default read community"
+	default "public"
+	help
+	  Community that grants GET, GETNEXT and GETBULK until the application
+	  calls snmp_agent_set_community(). An empty string disables read
+	  access until one is set.
+
+config SNMP_COMMUNITY_WRITE
+	string "Default write community"
+	default "private"
+	help
+	  Community that grants SET in addition to the read operations, until
+	  the application calls snmp_agent_set_community(). An empty string
+	  disables SET.
+
+config SNMP_SET_ENABLE
+	bool "Accept SET requests"
+	help
+	  Modify writable objects on SET requests carrying the write community.
+	  Without this option every SET request is answered with an
+	  authorizationError (noSuchName for SNMPv1).
+
+config SNMP_NOTIFICATIONS
+	bool "Send notifications"
+	default y
+	help
+	  Send coldStart when the agent starts and authenticationFailure when
+	  a request with an unknown community is dropped, to the receivers the
+	  application adds with snmp_agent_add_notification_target(), and let
+	  the application send its own notifications with snmp_agent_notify().
+
+config SNMP_NOTIFICATION_TARGETS
+	int "Maximum number of notification receivers"
+	default 2
+	range 1 16
+	depends on SNMP_NOTIFICATIONS
+	help
+	  Number of receivers that can be added with
+	  snmp_agent_add_notification_target().
+
+config SNMP_MIB2_SYSTEM
+	bool "MIB-2 system group"
+	default y
+	help
+	  Implement the system group: the seven scalars of RFC 1213, sysDescr
+	  to sysServices, and sysORLastChange with sysORTable, which RFC 3418
+	  adds. The table lists the statements declared with
+	  SNMP_CAPABILITY_DEFINE(), among them snmpBasicComplianceRev2 when the
+	  snmp group and the notifications are enabled as well. sysName,
+	  sysContact and sysLocation can be changed by the application and by
+	  SET requests; their initial values come from the options below.
+
+if SNMP_MIB2_SYSTEM
+
+config SNMP_SYS_DESCR
+	string "sysDescr"
+	help
+	  Textual description of the entity. Empty selects "Zephyr", the
+	  kernel version and the board name.
+
+config SNMP_SYS_NAME
+	string "Initial sysName"
+	help
+	  Administratively assigned name of the node, conventionally its
+	  fully qualified domain name.
+
+config SNMP_SYS_CONTACT
+	string "Initial sysContact"
+	help
+	  Contact person for this node and how to reach them.
+
+config SNMP_SYS_LOCATION
+	string "Initial sysLocation"
+	help
+	  Physical location of this node.
+
+config SNMP_SYS_SERVICES
+	int "sysServices"
+	default 72
+	range 0 127
+	help
+	  Sum of 2^(L - 1) for every OSI layer L the node offers services
+	  on. The default 72 describes a host with transport and application
+	  services, as in RFC 1213.
+
+config SNMP_SYS_STRING_MAX_LEN
+	int "Maximum length of the writable system strings"
+	default 64
+	range 1 255
+	help
+	  Size of the buffers holding sysName, sysContact and sysLocation,
+	  in bytes. RFC 1213 allows up to 255.
+
+endif # SNMP_MIB2_SYSTEM
+
+config SNMP_MIB2_SNMP
+	bool "MIB-2 snmp group"
+	default y
+	help
+	  Implement the snmp group of RFC 3418, whose counters the agent
+	  maintains for every received message, and snmpSetSerialNo, the
+	  advisory lock that lets managers coordinate SET requests.
+
+module = SNMP
+module-dep = NET_LOG
+module-str = Log level for SNMP
+module-help = Enable debug message of SNMP agent.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # SNMP

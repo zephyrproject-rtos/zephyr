@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SNMP agent sample application"
+
+config NET_SAMPLE_SNMP_READ_COMMUNITY
+	string "Read community"
+	default "public"
+	help
+	  Community string that grants GET, GETNEXT and GETBULK.
+
+config NET_SAMPLE_SNMP_WRITE_COMMUNITY
+	string "Write community"
+	default "private"
+	help
+	  Community string that additionally grants SET. Empty disables SET.
+
+config NET_SAMPLE_SNMP_TRAP_RECEIVER
+	string "Notification receiver address"
+	help
+	  IPv4 or IPv6 address of a notification receiver listening on UDP
+	  port 162. Empty sends no notifications.
+
+config NET_SAMPLE_SNMP_TRAP_COMMUNITY
+	string "Notification community"
+	default "public"
+	help
+	  Community string carried by the notifications.
+
+config NET_SAMPLE_SNMP_TRAP_V1
+	bool "Send SNMPv1 traps"
+	help
+	  Send Trap-PDUs of SNMPv1 instead of SNMPv2-Trap-PDUs.
+
+source "Kconfig.zephyr"
