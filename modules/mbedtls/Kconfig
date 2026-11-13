@@ -26,6 +26,7 @@ config TF_PSA_CRYPTO_MODULE_DIR
 
 rsource "Kconfig.psa.auto"
 rsource "Kconfig.psa.logic"
+rsource "Kconfig.psa.accel.auto"
 
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
