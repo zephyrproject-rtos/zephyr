@@ -231,49 +231,47 @@ static inline void icm45686_accel_ms(uint8_t fs, int32_t in, bool high_res, int3
 static inline void icm45686_gyro_rads(uint8_t fs, int32_t in, bool high_res, int32_t *out_rads,
 				      int32_t *out_urads)
 {
-	int64_t sensitivity_x10;
-	uint64_t full_scale_range_lsb = high_res ? 524288 : 32768;
+	int64_t full_scale_mdps;
+	int64_t full_scale_range_lsb = high_res ? 524288 : 32768;
 
 	switch (fs) {
 	case ICM45686_DT_GYRO_FS_4000:
-		sensitivity_x10 = full_scale_range_lsb * 10 / 4000;
+		full_scale_mdps = 4000000;
 		break;
 	case ICM45686_DT_GYRO_FS_2000:
-		sensitivity_x10 = full_scale_range_lsb * 10 / 2000;
+		full_scale_mdps = 2000000;
 		break;
 	case ICM45686_DT_GYRO_FS_1000:
-		sensitivity_x10 = full_scale_range_lsb * 10 / 1000;
+		full_scale_mdps = 1000000;
 		break;
 	case ICM45686_DT_GYRO_FS_500:
-		sensitivity_x10 = full_scale_range_lsb * 10 / 500;
+		full_scale_mdps = 500000;
 		break;
 	case ICM45686_DT_GYRO_FS_250:
-		sensitivity_x10 = full_scale_range_lsb * 10 / 250;
+		full_scale_mdps = 250000;
 		break;
 	case ICM45686_DT_GYRO_FS_125:
-		sensitivity_x10 = full_scale_range_lsb * 10 / 125;
+		full_scale_mdps = 125000;
 		break;
 	case ICM45686_DT_GYRO_FS_62_5:
-		sensitivity_x10 = full_scale_range_lsb * 10 * 10 / 625;
+		full_scale_mdps = 62500;
 		break;
 	case ICM45686_DT_GYRO_FS_31_25:
-		sensitivity_x10 = full_scale_range_lsb * 10 * 100 / 3125;
+		full_scale_mdps = 31250;
 		break;
 	case ICM45686_DT_GYRO_FS_15_625:
-		sensitivity_x10 = full_scale_range_lsb * 10 * 1000 / 15625;
+		full_scale_mdps = 15625;
 		break;
 	default:
 		CODE_UNREACHABLE;
 	}
 
-	int64_t in10_rads = (int64_t)in * SENSOR_PI * 10LL;
+	/* in * full scale / LSB range, in microrad/s (SENSOR_PI is pi * 10^6) */
+	int64_t in_urads =
+		(int64_t)in * full_scale_mdps * SENSOR_PI / (180LL * 1000LL * full_scale_range_lsb);
 
-	/* Whole rad/s */
-	*out_rads = in10_rads / (sensitivity_x10 * 180LL * 1000000LL);
-
-	/* microrad/s */
-	*out_urads = (in10_rads - (*out_rads * sensitivity_x10 * 180LL * 1000000LL)) /
-		     (sensitivity_x10 * 180LL);
+	*out_rads = in_urads / 1000000LL;
+	*out_urads = in_urads % 1000000LL;
 }
 
 static inline void icm45686_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
