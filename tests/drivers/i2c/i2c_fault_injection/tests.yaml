@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  filter: dt_alias_exists("i2c-dut")
+  harness: ztest
+
+tests:
+  # One I2C controller and nothing else, so this scenario can run on any board
+  # that declares the i2c-dut alias.
+  drivers.i2c.fault_injection.basic: {}
+
+  # Runs the suite with userspace enabled, so test_misuse_null_buffer calls
+  # from a user thread and the syscall handler validates its buffer.  That
+  # test expects the handler to kill its thread with K_OOPS(), so the run
+  # ignores faults; an unexpected fault still fails through the ztest fatal
+  # hook.
+  drivers.i2c.fault_injection.userspace:
+    filter: dt_alias_exists("i2c-dut") and CONFIG_ARCH_HAS_USERSPACE
+    ignore_faults: true
+    extra_configs:
+      - CONFIG_USERSPACE=y
+
+  # Accepts any negative errno rather than -EIO or -ETIMEDOUT, for bringing up
+  # a driver that is not yet conformant.  Not a substitute for the strict
+  # scenarios above.
+  drivers.i2c.fault_injection.relaxed_errno:
+    extra_configs:
+      - CONFIG_I2C_FAULT_TEST_RELAXED_ERRNO=y
+
+  # Builds in the CY15FRAMKIT-001 shield, whose FM24W256 on the Arduino I2C
+  # header is then a known-good device.  Runs on boards that support the
+  # Arduino I2C header and whose overlay points i2c-dut at that controller.
+  drivers.i2c.fault_injection.shield.cy15framkit_001:
+    depends_on: arduino_i2c
+    harness_config:
+      fixture: cy15framkit_001
+    extra_args:
+      - SHIELD=cy15framkit_001
