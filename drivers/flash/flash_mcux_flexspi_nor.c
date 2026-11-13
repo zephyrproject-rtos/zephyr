@@ -798,6 +798,12 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		/* Combine both bytes: SR2 in upper byte, SR1 in lower byte */
 		buffer = ((buffer & 0xFF) << 8) | tmp_save;
 	}
+
+	if ((buffer & bit) != 0U) {
+		/* QE is already set, avoid a redundant non-volatile status write */
+		return 0;
+	}
+
 	/* Enable write */
 	ret = flash_flexspi_nor_write_enable(data);
 	if (ret < 0) {
