@@ -501,8 +501,11 @@ static int mc_cgm_init(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sirc), nxp_sirc, okay)
-	/* Disable SIRC in standby mode. */
-	CLOCK_DisableSircInStandbyMode();
+	if (NXP_SIRC_STANDBY_ENABLE) {
+		CLOCK_EnableSircInStandbyMode();
+	} else {
+		CLOCK_DisableSircInStandbyMode();
+	}
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(fxosc), nxp_fxosc, okay)
