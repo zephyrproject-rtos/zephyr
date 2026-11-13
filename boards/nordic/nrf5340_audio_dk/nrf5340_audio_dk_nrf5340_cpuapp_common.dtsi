@@ -237,6 +237,7 @@ arduino_spi: &spi4 {
 		irq-gpios = <&gpio0 19 GPIO_ACTIVE_LOW>;
 		reset-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
 		gpio9-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		cirrus,fll-ref = "mclk1";
 	};
 };
 
