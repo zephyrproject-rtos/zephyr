@@ -1,0 +1,72 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &i2s0;
+	};
+};
+
+&i2c0 {
+	audio_codec: codec@18 {
+		compatible = "ti,tlv320dac";
+		reg = <0x18>;
+		reset-gpios = <&gpio_prt8 2 GPIO_ACTIVE_HIGH>;
+		speaker-gain = <6>;
+	};
+};
+
+&peri1_group1_16_5bit_0 {
+	clock-div = <2>;
+	div-frac-value = <0>;
+	status = "okay";
+};
+
+&dma0 {
+	interrupts = <60 2>, <61 4>, <62 4>, <63 4>,
+		     <64 4>, <65 4>, <66 4>, <67 4>,
+		     <68 4>, <69 4>, <70 4>, <71 4>,
+		     <72 4>, <73 4>, <74 4>, <75 4>;
+	status = "okay";
+};
+
+&i2s0 {
+	interrupts = <135 4>, <136 2>;
+	pinctrl-0 = <&p21_3_tdm_i2s0_tx_mck &p21_2_tdm_i2s0_tx_sck
+		     &p21_1_tdm_i2s0_tx_sd &p12_3_tdm_i2s0_tx_fsync>;
+	pinctrl-names = "default";
+	dmas = <&dma0 0>, <&dma0 1>;
+	dma-names = "tx", "rx";
+	clocks = <&peri1_group1_16_5bit_0>;
+	status = "okay";
+};
+
+&p12_3_tdm_i2s0_tx_fsync {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&p21_1_tdm_i2s0_tx_sd {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&p21_2_tdm_i2s0_tx_sck {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&p21_3_tdm_i2s0_tx_mck {
+	drive-push-pull;
+	drive-strength = "half";
+};
+
+&bt_hci_uart {
+	cyw55513 {
+		hci-operation-speed = <3000000>;
+	};
+};
