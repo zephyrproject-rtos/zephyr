@@ -119,6 +119,12 @@ struct gatt_sub {
  *              <=> (subscriptions[x].peer == BT_ADDR_LE_ANY).
  */
 static struct gatt_sub subscriptions[SUB_MAX];
+
+/* What an iteration over the subscriptions on the RX workqueue goes to next. A
+ * callback or a wait during it can outlast that subscription, so removing a
+ * subscription moves this on.
+ */
+static struct bt_gatt_subscribe_params *sub_iter_next;
 static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
@@ -2748,10 +2754,28 @@ static struct bt_att_req *gatt_req_alloc(bt_att_func_t func, void *params,
 }
 
 #ifdef CONFIG_BT_GATT_CLIENT
-static int gatt_req_send(struct bt_conn *conn, bt_att_func_t func, void *params,
-			 bt_att_encode_t encode, uint8_t op, size_t len,
-			 enum bt_att_chan_opt chan_opt)
+/* Decides whether a request is still wanted once its request and buffer are
+ * there, which can take a long time.
+ */
+typedef int (*gatt_req_revalidate_t)(struct bt_conn *conn, void *params);
 
+static int gatt_req_encode_send(struct bt_conn *conn, struct bt_att_req *req,
+				bt_att_encode_t encode, size_t len, void *params)
+{
+	int err;
+
+	err = encode(req->buf, len, params);
+	if (err == 0) {
+		err = bt_att_req_send(conn, req);
+	}
+
+	return err;
+}
+
+static int gatt_req_send_revalidated(struct bt_conn *conn, bt_att_func_t func, void *params,
+				     bt_att_encode_t encode, uint8_t op, size_t len,
+				     enum bt_att_chan_opt chan_opt,
+				     gatt_req_revalidate_t revalidate)
 {
 	struct bt_att_req *req;
 	struct net_buf *buf;
@@ -2777,18 +2801,34 @@ static int gatt_req_send(struct bt_conn *conn, bt_att_func_t func, void *params,
 
 	req->buf = buf;
 
-	err = encode(buf, len, params);
-	if (err) {
-		bt_att_req_free(req);
-		return err;
+	if (revalidate != NULL) {
+		/* Wait for the host lock here, so that nothing waits from the
+		 * check until the request is queued.
+		 */
+		bt_dev_lock();
+
+		err = revalidate(conn, params);
+		if (err == 0) {
+			err = gatt_req_encode_send(conn, req, encode, len, params);
+		}
+
+		bt_dev_unlock();
+	} else {
+		err = gatt_req_encode_send(conn, req, encode, len, params);
 	}
 
-	err = bt_att_req_send(conn, req);
-	if (err) {
+	if (err != 0) {
 		bt_att_req_free(req);
 	}
 
 	return err;
+}
+
+static int gatt_req_send(struct bt_conn *conn, bt_att_func_t func, void *params,
+			 bt_att_encode_t encode, uint8_t op, size_t len,
+			 enum bt_att_chan_opt chan_opt)
+{
+	return gatt_req_send_revalidated(conn, func, params, encode, op, len, chan_opt, NULL);
 }
 #endif
 
@@ -3735,11 +3775,19 @@ static void gatt_sub_free(struct gatt_sub *sub)
 	bt_addr_le_copy(&sub->peer, BT_ADDR_LE_ANY);
 }
 
+static void sub_iter_skip(struct bt_gatt_subscribe_params *params)
+{
+	if (sub_iter_next == params) {
+		sub_iter_next = SYS_SLIST_PEEK_NEXT_CONTAINER(params, node);
+	}
+}
+
 static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 			    sys_snode_t *prev,
 			    struct bt_gatt_subscribe_params *params)
 {
 	if (params) {
+		sub_iter_skip(params);
 		/* Remove subscription from the list*/
 		sys_slist_remove(&sub->list, prev, &params->node);
 		/* Notify removal */
@@ -3764,6 +3812,19 @@ static struct gatt_sub *gatt_sub_find(struct bt_conn *conn)
 		} else if (gatt_conn_is_peer(conn, sub->id, &sub->peer)) {
 			return sub;
 		}
+	}
+
+	return NULL;
+}
+
+/* The subscriptions of the connection, if the params are among them */
+static struct gatt_sub *gatt_sub_find_params(struct bt_conn *conn,
+					     const struct bt_gatt_subscribe_params *params)
+{
+	struct gatt_sub *sub = gatt_sub_find(conn);
+
+	if (sub != NULL && sys_slist_find(&sub->list, &params->node, NULL)) {
+		return sub;
 	}
 
 	return NULL;
@@ -3828,7 +3889,7 @@ static bool check_subscribe_security_level(struct bt_conn *conn,
 static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct gatt_sub *sub,
 						 uint16_t handle, const void *data, uint16_t length)
 {
-	struct bt_gatt_subscribe_params *params, *tmp;
+	struct bt_gatt_subscribe_params *params;
 	int err;
 
 	/* Core Specification Vol 3, Part F, Section 3.2.9: the maximum length
@@ -3840,7 +3901,10 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
+	for (params = SYS_SLIST_PEEK_HEAD_CONTAINER(&sub->list, params, node); params != NULL;
+	     params = sub_iter_next) {
+		sub_iter_next = SYS_SLIST_PEEK_NEXT_CONTAINER(params, node);
+
 		if (handle != params->value_handle) {
 			continue;
 		}
@@ -3943,6 +4007,14 @@ static void remove_subscriptions(struct bt_conn *conn)
 			gatt_sub_update(conn, sub);
 			prev = &params->node;
 		}
+	}
+
+	/* Free the entry if it holds no subscription, as after a CCC discovery that found no CCC.
+	 * Look it up again: a notify callback above may have given it to another peer.
+	 */
+	sub = gatt_sub_find(conn);
+	if (sub != NULL) {
+		gatt_sub_remove(conn, sub, NULL, NULL);
 	}
 }
 
@@ -5531,21 +5603,22 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+	struct gatt_sub *sub;
 	uint8_t att_err;
 
 	LOG_DBG("err %d", err);
+
+	/* bt_gatt_clear() hands the params back with the write still in flight */
+	sub = gatt_sub_find_params(conn, params);
+	if (sub == NULL) {
+		return;
+	}
 
 	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
 
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
-		struct gatt_sub *sub;
 		sys_snode_t *node, *tmp, *prev;
-
-		sub = gatt_sub_find(conn);
-		if (!sub) {
-			return;
-		}
 
 		att_err = att_err_from_int(err);
 
@@ -5563,35 +5636,145 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			prev = node;
 		}
 	} else {
-		if (params->subscribe) {
+		if (params->subscribe != NULL) {
 			params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
-		}
-
-		if (!params->value) {
-			/* Notify with NULL data to complete unsubscribe */
-			params->notify(conn, params, NULL, 0);
 		}
 	}
 }
 
-
-static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+static void gatt_unsub_ccc_rsp(struct bt_conn *conn, int err, const void *pdu, uint16_t length,
+			       void *user_data)
 {
 	struct bt_gatt_subscribe_params *params = user_data;
+
+	LOG_DBG("err %d", err);
+
+	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+
+	/* An error there would read as a failed subscription */
+	if (err == 0 && params->subscribe != NULL) {
+		params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
+	}
+
+	/* bt_gatt_unsubscribe() removed the subscription when it queued the
+	 * write, so hand the params back whatever the response was.
+	 */
+	params->notify(conn, params, NULL, 0);
+}
+
+static void gatt_write_ccc_encode(struct net_buf *buf, struct bt_gatt_subscribe_params *params,
+				  uint16_t value)
+{
 	struct bt_att_write_req *write_req;
 
 	write_req = net_buf_add(buf, sizeof(*write_req));
 	write_req->handle = sys_cpu_to_le16(params->ccc_handle);
-	net_buf_add_le16(buf, params->value);
+	net_buf_add_le16(buf, value);
 
 	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+}
+
+static int gatt_write_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+{
+	struct bt_gatt_subscribe_params *params = user_data;
+
+	gatt_write_ccc_encode(buf, params, params->value);
 
 	return 0;
 }
 
+static int gatt_unsub_ccc_buf(struct net_buf *buf, size_t len, void *user_data)
+{
+	gatt_write_ccc_encode(buf, user_data, 0x0000U);
+
+	return 0;
+}
+
+static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
+{
+	struct bt_att_req *req;
+	bt_att_func_t func = NULL;
+
+	bt_dev_lock();
+
+	/* att_handle_rsp() processes the request state on the RX workqueue
+	 * without the host lock, relying on cooperative scheduling: hold the
+	 * scheduler lock as well so that it cannot preempt a preemptible
+	 * caller mid-cancel, or hand the params back before the completion.
+	 */
+	k_sched_lock();
+
+	req = bt_att_find_req_by_user_data(conn, params);
+	if (req != NULL) {
+		func = req->func;
+		bt_att_req_cancel(conn, req);
+	}
+
+	bt_dev_unlock();
+
+	if (run_completion && func != NULL) {
+		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
+	}
+
+	k_sched_unlock();
+}
+
+/* ATT teardown may have handed the params back during the waits, which the
+ * state of the connection does not tell: an ATT timeout does that before
+ * disconnecting. Returns -EALREADY if another subscription to the value came
+ * during the waits, which needs the CCC as it is.
+ */
+static int gatt_unsub_ccc_revalidate(struct bt_conn *conn, void *params)
+{
+	struct bt_gatt_subscribe_params *sub_params = params;
+	struct bt_gatt_subscribe_params *tmp;
+	struct gatt_sub *sub;
+
+	sub = gatt_sub_find_params(conn, sub_params);
+	if (sub == NULL) {
+		return -EINVAL;
+	}
+
+	/* A resubscription may have queued a write during the waits, whose
+	 * completion could come after the one that hands the params back.
+	 */
+	if (atomic_test_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
+		gatt_cancel(conn, params, false);
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
+		if (tmp != sub_params && tmp->value_handle == sub_params->value_handle) {
+			return -EALREADY;
+		}
+	}
+
+	return 0;
+}
+
+static int gatt_unsub_ccc(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
+{
+	size_t len = sizeof(struct bt_att_write_req) + sizeof(uint16_t);
+
+	LOG_DBG("handle 0x%04x", params->ccc_handle);
+
+	return gatt_req_send_revalidated(conn, gatt_unsub_ccc_rsp, params, gatt_unsub_ccc_buf,
+					 BT_ATT_OP_WRITE_REQ, len, BT_ATT_CHAN_OPT(params),
+					 gatt_unsub_ccc_revalidate);
+}
+
+/* The last other subscription of the peer may have gone during the waits, which
+ * frees the slot.
+ */
+static int gatt_write_ccc_revalidate(struct bt_conn *conn, void *params)
+{
+	ARG_UNUSED(params);
+
+	return (gatt_sub_add(conn) != NULL) ? 0 : -ENOMEM;
+}
+
 static int gatt_write_ccc(struct bt_conn *conn,
 			  struct bt_gatt_subscribe_params *params,
-			  bt_att_func_t rsp)
+			  bt_att_func_t rsp, gatt_req_revalidate_t revalidate)
 {
 	size_t len = sizeof(struct bt_att_write_req) + sizeof(uint16_t);
 
@@ -5602,9 +5785,8 @@ static int gatt_write_ccc(struct bt_conn *conn,
 	 */
 	atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_SENT);
 
-	return gatt_req_send(conn, rsp, params,
-			     gatt_write_ccc_buf, BT_ATT_OP_WRITE_REQ, len,
-			     BT_ATT_CHAN_OPT(params));
+	return gatt_req_send_revalidated(conn, rsp, params, gatt_write_ccc_buf, BT_ATT_OP_WRITE_REQ,
+					 len, BT_ATT_CHAN_OPT(params), revalidate);
 }
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
@@ -5666,8 +5848,7 @@ static int gatt_ccc_discover(struct bt_conn *conn,
 }
 #endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
 
-int bt_gatt_subscribe(struct bt_conn *conn,
-		      struct bt_gatt_subscribe_params *params)
+static int gatt_subscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *params)
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *tmp;
@@ -5688,17 +5869,17 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	sub = gatt_sub_add(conn);
-	if (!sub) {
-		return -ENOMEM;
-	}
-
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
 	if (params->disc_params != NULL && params->disc_params->func == gatt_ccc_discover_cb) {
 		/* Already in progress */
 		return -EBUSY;
 	}
 #endif
+
+	sub = gatt_sub_add(conn);
+	if (sub == NULL) {
+		return -ENOMEM;
+	}
 
 	/* Lookup existing subscriptions */
 	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
@@ -5721,12 +5902,28 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
 		if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
-			return gatt_ccc_discover(conn, params);
+			err = gatt_ccc_discover(conn, params);
+			if (err != 0) {
+				/* Not the slot from before the waits */
+				sub = gatt_sub_find(conn);
+				if (sub != NULL) {
+					gatt_sub_remove(conn, sub, NULL, NULL);
+				}
+			}
+
+			return err;
 		}
 #endif
-		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
+		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp, gatt_write_ccc_revalidate);
+
+		/* Not the slot from before the waits */
+		sub = gatt_sub_find(conn);
+
 		if (err) {
-			gatt_sub_remove(conn, sub, NULL, NULL);
+			if (sub != NULL) {
+				gatt_sub_remove(conn, sub, NULL, NULL);
+			}
+
 			return err;
 		}
 	}
@@ -5740,6 +5937,22 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 	return 0;
 }
 
+int bt_gatt_subscribe(struct bt_conn *conn,
+		      struct bt_gatt_subscribe_params *params)
+{
+	int err;
+
+	/* The RX workqueue uses the subscriptions without a lock and completes
+	 * the CCC write there: keep a preemptible caller cooperative until the
+	 * subscriptions match the queued write.
+	 */
+	k_sched_lock();
+	err = gatt_subscribe(conn, params);
+	k_sched_unlock();
+
+	return err;
+}
+
 int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 			     struct bt_gatt_subscribe_params *params)
 {
@@ -5750,8 +5963,12 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 	__ASSERT(params->value, "invalid parameters\n");
 	__ASSERT(params->ccc_handle, "invalid parameters\n");
 
+	/* The RX workqueue uses the subscriptions without a lock: stay cooperative */
+	k_sched_lock();
+
 	sub = gatt_sub_add_by_addr(id, peer);
 	if (!sub) {
+		k_sched_unlock();
 		return -ENOMEM;
 	}
 
@@ -5760,48 +5977,24 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
 		/* Fail if entry already exists */
 		if (tmp == params) {
 			gatt_sub_remove(NULL, sub, NULL, NULL);
+			k_sched_unlock();
 			return -EALREADY;
 		}
 	}
 
 	sys_slist_prepend(&sub->list, &params->node);
+
+	k_sched_unlock();
+
 	return 0;
 }
 
-static void gatt_cancel(struct bt_conn *conn, void *params, bool run_completion)
-{
-	struct bt_att_req *req;
-	bt_att_func_t func = NULL;
-
-	bt_dev_lock();
-
-	/* att_handle_rsp() processes the request state on the RX workqueue
-	 * without the host lock, relying on cooperative scheduling: hold the
-	 * scheduler lock as well so that it cannot preempt a preemptible
-	 * caller mid-cancel.
-	 */
-	k_sched_lock();
-
-	req = bt_att_find_req_by_user_data(conn, params);
-	if (req) {
-		func = req->func;
-		bt_att_req_cancel(conn, req);
-	}
-
-	k_sched_unlock();
-	bt_dev_unlock();
-
-	if (run_completion && func) {
-		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);
-	}
-}
-
-int bt_gatt_unsubscribe(struct bt_conn *conn,
-			struct bt_gatt_subscribe_params *params)
+static int gatt_unsubscribe(struct bt_conn *conn, struct bt_gatt_subscribe_params *params,
+			    bool *completed)
 {
 	struct gatt_sub *sub;
 	struct bt_gatt_subscribe_params *tmp;
-	bool has_subscription = false, found = false;
+	bool has_subscription = false;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params, "invalid parameters\n");
@@ -5810,25 +6003,8 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -ENOTCONN;
 	}
 
-	sub = gatt_sub_find(conn);
-	if (!sub) {
-		return -EINVAL;
-	}
-
-	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
-		if (params == tmp) {
-			found = true;
-			continue;
-		}
-
-		/* Check if there still remains any other subscription */
-		if (tmp->value_handle == params->value_handle) {
-			has_subscription = true;
-		}
-	}
-
-	if (!found) {
+	sub = gatt_sub_find_params(conn, params);
+	if (sub == NULL) {
 		return -EINVAL;
 	}
 
@@ -5838,31 +6014,70 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 	 */
 	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
 		gatt_cancel(conn, params, false);
+
+		/* The write may have failed during the wait for the host lock,
+		 * or the connection gone, either of which hands the params back.
+		 */
+		sub = gatt_sub_find_params(conn, params);
+		if (sub == NULL) {
+			return -EINVAL;
+		}
+
 		atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+	}
+
+	/* Check if there still remains any other subscription */
+	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, tmp, node) {
+		if (tmp != params && tmp->value_handle == params->value_handle) {
+			has_subscription = true;
+		}
 	}
 
 	if (!has_subscription) {
 		int err;
 
-		params->value = 0x0000;
-		err = gatt_write_ccc(conn, params, gatt_write_ccc_rsp);
-		if (err) {
+		err = gatt_unsub_ccc(conn, params);
+		if (err == -EALREADY) {
+			has_subscription = true;
+		} else if (err != 0) {
 			return err;
+		} else {
+			params->value = 0x0000;
 		}
+
+		/* A clear during the waits can move the params to another slot */
+		sub = gatt_sub_find_params(conn, params);
 	}
 
+	sub_iter_skip(params);
 	sys_slist_find_and_remove(&sub->list, &params->node);
 
 	if (gatt_sub_is_empty(sub)) {
 		gatt_sub_free(sub);
 	}
 
-	if (has_subscription) {
+	*completed = has_subscription;
+
+	return 0;
+}
+
+int bt_gatt_unsubscribe(struct bt_conn *conn,
+			struct bt_gatt_subscribe_params *params)
+{
+	bool completed = false;
+	int err;
+
+	/* The RX workqueue uses the subscriptions without a lock: stay cooperative */
+	k_sched_lock();
+	err = gatt_unsubscribe(conn, params, &completed);
+	k_sched_unlock();
+
+	if (completed) {
 		/* Notify with NULL data to complete unsubscribe */
 		params->notify(conn, params, NULL, 0);
 	}
 
-	return 0;
+	return err;
 }
 
 void bt_gatt_cancel(struct bt_conn *conn, void *params)
@@ -5888,10 +6103,19 @@ static void gatt_resub_ccc_rsp(struct bt_conn *conn, int err,
 	gatt_write_ccc_rsp(conn, err, pdu, length, user_data);
 }
 
+/* ATT teardown or an unsubscription may have handed the params back during the
+ * waits. The state of the connection does not tell: an ATT timeout does that
+ * before disconnecting.
+ */
+static int gatt_sub_linked_revalidate(struct bt_conn *conn, void *params)
+{
+	return (gatt_sub_find_params(conn, params) != NULL) ? 0 : -EINVAL;
+}
+
 static int gatt_resub_ccc(struct bt_conn *conn,
 			  struct bt_gatt_subscribe_params *params)
 {
-	return gatt_write_ccc(conn, params, gatt_resub_ccc_rsp);
+	return gatt_write_ccc(conn, params, gatt_resub_ccc_rsp, gatt_sub_linked_revalidate);
 }
 
 static void add_subscriptions(struct bt_conn *conn)
@@ -5909,7 +6133,10 @@ static void add_subscriptions(struct bt_conn *conn)
 	}
 
 	/* Lookup existing subscriptions */
-	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
+	for (params = SYS_SLIST_PEEK_HEAD_CONTAINER(&sub->list, params, node); params != NULL;
+	     params = sub_iter_next) {
+		sub_iter_next = SYS_SLIST_PEEK_NEXT_CONTAINER(params, node);
+
 		if (!atomic_test_bit(params->flags,
 				     BT_GATT_SUBSCRIBE_FLAG_SENT) &&
 		    !atomic_test_bit(params->flags,
@@ -6796,19 +7023,35 @@ static struct gatt_sub *find_gatt_sub(uint8_t id, const bt_addr_le_t *addr)
 
 static void bt_gatt_clear_subscriptions(uint8_t id, const bt_addr_le_t *addr)
 {
+	struct bt_gatt_subscribe_params *params;
 	struct gatt_sub *sub;
-	struct bt_gatt_subscribe_params *params, *tmp;
-	sys_snode_t *prev = NULL;
+	sys_snode_t *node;
+	sys_slist_t list;
+
+	/* The RX workqueue uses the subscriptions without a lock: stay cooperative */
+	k_sched_lock();
 
 	sub = find_gatt_sub(id, addr);
 	if (!sub) {
+		k_sched_unlock();
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp,
-					  node) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&sub->list, params, node) {
+		sub_iter_skip(params);
 		params->value = 0U;
-		gatt_sub_remove(NULL, sub, prev, params);
+	}
+
+	/* The callbacks may subscribe again, and block */
+	sys_slist_init(&list);
+	sys_slist_merge_slist(&list, &sub->list);
+	gatt_sub_remove(NULL, sub, NULL, NULL);
+
+	k_sched_unlock();
+
+	for (node = sys_slist_get(&list); node != NULL; node = sys_slist_get(&list)) {
+		params = CONTAINER_OF(node, struct bt_gatt_subscribe_params, node);
+		params->notify(NULL, params, NULL, 0);
 	}
 }
 
