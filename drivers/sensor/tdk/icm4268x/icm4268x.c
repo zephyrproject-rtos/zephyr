@@ -305,6 +305,35 @@ int icm4268x_init(const struct device *dev)
 		return -EIO;
 	}
 
+	if (cfg->clk_dev != NULL) {
+		uint32_t rate;
+
+		if (!device_is_ready(cfg->clk_dev)) {
+			LOG_ERR_DEVICE_NOT_READY(cfg->clk_dev);
+			return -ENODEV;
+		}
+
+		res = clock_control_on(cfg->clk_dev, cfg->clk_subsys);
+		if (res != 0) {
+			LOG_ERR("Failed to start CLKIN");
+			return res;
+		}
+
+		res = clock_control_get_rate(cfg->clk_dev, cfg->clk_subsys, &rate);
+		if (res != 0) {
+			LOG_ERR("Failed to get the CLKIN rate");
+			return res;
+		}
+
+		if (rate < 31000U || rate > 50000U) {
+			LOG_ERR("CLKIN rate %u Hz out of 31-50 kHz", rate);
+			return -EINVAL;
+		}
+
+		data->cfg.pin9_function = ICM4268X_PIN9_FUNCTION_CLKIN;
+		data->cfg.rtc_freq = rate;
+	}
+
 #ifdef CONFIG_ICM4268X_TRIGGER
 	res = icm4268x_trigger_init(dev);
 	if (res != 0) {
@@ -407,6 +436,9 @@ void icm4268x_unlock(const struct device *dev)
 		"<invensense,icm42688>, <invensense,icm42686> or <invensense,iim42653>");	   \
 												   \
 												   \
+	BUILD_ASSERT(!DT_INST_CLOCKS_HAS_IDX(inst, 0) || IS_ENABLED(CONFIG_CLOCK_CONTROL),         \
+		     "clocks requires CONFIG_CLOCK_CONTROL");                                      \
+												   \
 	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),				   \
 		    (ICM42688_BUILD_CONFIG_VALIDATION(inst)), ());				   \
 	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42653),				   \
@@ -417,6 +449,10 @@ void icm4268x_unlock(const struct device *dev)
 	static const struct icm4268x_dev_cfg icm4268x_cfg_##inst = {                               \
 		.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG),                               \
 		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
+		.clk_dev = COND_CODE_1(DT_INST_CLOCKS_HAS_IDX(inst, 0),                            \
+				       (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL)),        \
+		.clk_subsys =                                                                      \
+			(clock_control_subsys_t)(uintptr_t)DT_INST_PHA_OR(inst, clocks, id, 0),    \
 	};                                                                                         \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm4268x_init, NULL, &icm4268x_driver_##inst,           \
