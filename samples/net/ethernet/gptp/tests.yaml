@@ -41,3 +41,16 @@ tests:
     depends_on: eth
     integration_platforms:
       - frdm_k64f
+  sample.net.gptp.static_time_transmitter:
+    extra_args: EXTRA_CONF_FILE="overlay-static-time-transmitter.conf"
+    platform_allow:
+      - frdm_k64f
+      - sam_e70_xplained/same70q21
+      - native_sim
+      - native_sim/native/64
+      - nucleo_f767zi
+      - nucleo_h743zi
+      - nucleo_h753zi
+      - nucleo_h745zi_q/stm32h745xx/m7
+    integration_platforms:
+      - frdm_k64f

@@ -215,3 +215,21 @@ overlay to pin the port to the time-receiver role instead:
 This can be tested against linuxptp by running ptp4l as a grandmaster that
 sends no Announce messages, for example with a configuration based on the
 ``automotive-master.cfg`` file shipped with linuxptp.
+
+Static timeTransmitter Setup
+============================
+
+To make the sample the grandmaster of such a network, build it with the
+:zephyr_file:`samples/net/ethernet/gptp/overlay-static-time-transmitter.conf`
+overlay. It pins the port to the time-transmitter role and sends Sync and
+Follow_Up but no Announce messages:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ethernet/gptp
+   :board: <board to use>
+   :conf: "prj.conf overlay-static-time-transmitter.conf"
+   :goals: build
+   :compact:
+
+This can be tested against linuxptp by running ptp4l with a configuration
+based on the ``automotive-slave.cfg`` file shipped with linuxptp.

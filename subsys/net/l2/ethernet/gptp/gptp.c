@@ -250,12 +250,15 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 		break;
 
 	case GPTP_FOLLOWUP_MESSAGE:
-		if (GPTP_CHECK_LEN(pkt, GPTP_FOLLOW_UP_LEN)) {
+		/*
+		 * Some devices append extra data/padding after the mandatory
+		 * Follow_Up information TLV. Only the mandatory part is parsed
+		 * below, so reject only packets that are too short.
+		 */
+		if (GPTP_PACKET_LEN(pkt) < GPTP_FOLLOW_UP_LEN) {
 			NET_WARN("Invalid length for %s packet "
-				 "should have %zd bytes but has %zd bytes",
-				 "FOLLOWUP",
-				 GPTP_FOLLOW_UP_LEN,
-				 GPTP_PACKET_LEN(pkt));
+				 "should have at least %zd bytes but has %zd bytes",
+				 "FOLLOWUP", GPTP_FOLLOW_UP_LEN, GPTP_PACKET_LEN(pkt));
 			GPTP_STATS_INC(port, rx_ptp_packet_discard_count);
 			break;
 		}
