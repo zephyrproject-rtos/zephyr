@@ -1266,8 +1266,10 @@ static bool tcp_should_ack_immediately(struct tcp *conn, bool psh)
 		return true;
 	}
 
-	/* RFC 813: interactive/small-window heuristic. */
-	if (!tcp_short_window(conn) && psh) {
+	/* RFC 813: interactive/small-window heuristic, unless TCP_QUICKACK
+	 * was turned off to let a reply carry the ACK.
+	 */
+	if (!conn->delay_psh_ack && !tcp_short_window(conn) && psh) {
 		return true;
 	}
 
@@ -1540,6 +1542,36 @@ static int get_tcp_nodelay(struct tcp *conn, void *value, uint32_t *len)
 	if (len) {
 		*len = sizeof(int);
 	}
+	return 0;
+}
+
+static int set_tcp_quickack(struct tcp *conn, const void *value, uint32_t len)
+{
+	int quickack;
+
+	if (len != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	quickack = *(int *)value;
+
+	if ((quickack < 0) || (quickack > 1)) {
+		return -EINVAL;
+	}
+
+	conn->delay_psh_ack = (quickack == 0);
+
+	return 0;
+}
+
+static int get_tcp_quickack(struct tcp *conn, void *value, uint32_t *len)
+{
+	*((int *)value) = conn->delay_psh_ack ? 0 : 1;
+
+	if (len) {
+		*len = sizeof(int);
+	}
+
 	return 0;
 }
 
@@ -2544,6 +2576,7 @@ static struct tcp *tcp_conn_alloc(void)
 	conn->send_win_max = MAX(tcp_tx_window, (uint32_t)NET_IPV6_MTU);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
+	conn->delay_psh_ack = false;
 	conn->addr_ref_done = false;
 #ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 	conn->dup_ack_cnt = 0;
@@ -4984,6 +5017,9 @@ int net_tcp_set_option(struct net_context *context,
 	case TCP_OPT_KEEPCNT:
 		ret = set_tcp_keep_cnt(conn, value, len);
 		break;
+	case TCP_OPT_QUICKACK:
+		ret = set_tcp_quickack(conn, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -5020,6 +5056,9 @@ int net_tcp_get_option(struct net_context *context,
 		break;
 	case TCP_OPT_KEEPCNT:
 		ret = get_tcp_keep_cnt(conn, value, len);
+		break;
+	case TCP_OPT_QUICKACK:
+		ret = get_tcp_quickack(conn, value, len);
 		break;
 	}
 

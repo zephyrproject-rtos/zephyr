@@ -349,6 +349,8 @@ struct tcp { /* TCP connection */
 	bool keep_alive : 1;
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
 	bool tcp_nodelay : 1;
+	/* TCP_QUICKACK set to 0: delay the ACK of data with PSH set too */
+	bool delay_psh_ack : 1;
 	bool addr_ref_done : 1;
 	bool rst_received : 1;
 	/* Both ends offered SACK during the handshake. */
