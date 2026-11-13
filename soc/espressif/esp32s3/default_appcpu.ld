@@ -15,14 +15,11 @@
 #include "memory.h"
 
 /* User available SRAM memory segments */
-appcpu_iram_end = USER_IRAM_END;
-appcpu_dram_end = USER_DRAM_END;
+appcpu_iram_org = APPCPU_IRAM_START;
+appcpu_dram_org = APPCPU_DRAM_START;
 
-appcpu_iram_org = appcpu_iram_end - APPCPU_SRAM_SIZE;
-appcpu_dram_org = appcpu_dram_end - APPCPU_SRAM_SIZE;
-
-appcpu_iram_len = APPCPU_SRAM_SIZE;
-appcpu_dram_len = APPCPU_SRAM_SIZE;
+appcpu_iram_len = APPCPU_IRAM_END - APPCPU_IRAM_START;
+appcpu_dram_len = APPCPU_DRAM_END - APPCPU_DRAM_START;
 
 /* User available ROM memory segments */
 appcpu_irom_org = (ICACHE0_START + ICACHE0_SIZE) - APPCPU_ROM_SIZE;

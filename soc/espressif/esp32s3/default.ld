@@ -18,8 +18,8 @@ bootloader_dram_seg_start = BOOTLOADER_DRAM_SEG_START;
 user_dram_end = USER_DRAM_END;
 
 /* User available SRAM memory segments */
-procpu_iram_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
-procpu_dram_end = USER_DRAM_END - APPCPU_SRAM_SIZE;
+procpu_iram_end = APPCPU_IRAM_START;
+procpu_dram_end = APPCPU_DRAM_START;
 
 procpu_iram_org = SRAM_USER_IRAM_START;
 procpu_iram_len = procpu_iram_end - procpu_iram_org;

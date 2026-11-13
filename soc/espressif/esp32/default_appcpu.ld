@@ -17,12 +17,11 @@
 #include "memory.h"
 
 /* User available SRAM memory segments */
-appcpu_iram_end = USER_IRAM_END - APPCPU_DRAM_SIZE;
-appcpu_iram_org = appcpu_iram_end - APPCPU_IRAM_SIZE;
-appcpu_iram_len = APPCPU_IRAM_SIZE;
+appcpu_iram_org = APPCPU_IRAM_START;
+appcpu_iram_len = APPCPU_IRAM_END - APPCPU_IRAM_START;
 
-appcpu_dram_org = SRAM1_DRAM_USER_START;
-appcpu_dram_len = APPCPU_DRAM_SIZE;
+appcpu_dram_org = APPCPU_DRAM_START;
+appcpu_dram_len = APPCPU_DRAM_END - APPCPU_DRAM_START;
 
 /* Aliases */
 #define ROMABLE_REGION   FLASH
@@ -73,7 +72,7 @@ PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
 /* Heap size calculations for APPCPU */
-_heap_sentry = BOOTLOADER_DRAM_SEG_START + APPCPU_DRAM_SIZE;
+_heap_sentry = APPCPU_DRAM_END;
 _libc_heap_size = _heap_sentry - _end;
 
 SECTIONS

@@ -13,7 +13,7 @@
 #include "memory.h"
 
 /* User available SRAM memory segments */
-procpu_iram0_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
+procpu_iram0_end = APPCPU_IRAM_START;
 procpu_iram0_org = SRAM0_IRAM_START + SRAM0_CACHE_SIZE;
 procpu_iram0_len = procpu_iram0_end - procpu_iram0_org;
 
@@ -21,12 +21,9 @@ procpu_dram0_end = SRAM2_DRAM_END;
 procpu_dram0_org = SRAM2_DRAM_USER_START + CONFIG_ESP32_BT_RESERVE_DRAM;
 procpu_dram0_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
 
-/* The APPCPU image loads its DRAM segment at SRAM1_DRAM_USER_START while
- * its IRAM segment lands in SRAM0, so only APPCPU_DRAM_SIZE is carved out
- * of this region.
- */
-procpu_dram1_org = SRAM1_DRAM_USER_START + APPCPU_DRAM_SIZE;
-procpu_dram1_len = SRAM1_DRAM_USER_SIZE - APPCPU_DRAM_SIZE;
+/* The APPCPU DRAM region is at the start of this region. */
+procpu_dram1_org = APPCPU_DRAM_END;
+procpu_dram1_len = SRAM1_DRAM_USER_START + SRAM1_DRAM_USER_SIZE - APPCPU_DRAM_END;
 
 procpu_irom_org = ICACHE0_START;
 procpu_irom_len = ICACHE0_SIZE;
