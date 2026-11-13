@@ -13,9 +13,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/instrumentation/instrumentation.h>
+#include <instr_backend.h>
 
 #define COMMAND_BUFFER_SIZE 32
 char _cmd_buffer[COMMAND_BUFFER_SIZE];
+
+static const struct device *const instr_uart_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 __no_instrumentation__
 void handle_cmd(char *cmd, uint32_t length)
@@ -32,9 +36,9 @@ void handle_cmd(char *cmd, uint32_t length)
 	} else if (strncmp("ping", cmd, length) == 0) {
 		printk("pong\n");
 	} else if (strncmp("dump_trace", cmd, length) == 0) {
-		instr_dump_buffer_uart();
+		instr_dump_buffer();
 	} else if (strncmp("dump_profile", cmd, length) == 0) {
-		instr_dump_deltas_uart();
+		instr_dump_deltas();
 	} else if (strncmp(cmd, "trigger", strlen("trigger")) == 0) {
 		beginptr = cmd + strlen("trigger");
 		address = strtol(beginptr, &endptr, 16);
@@ -104,29 +108,45 @@ static void uart_isr(const struct device *uart_dev, void *user_data)
 }
 
 __no_instrumentation__
-static int uart_isr_init(void)
+static void instr_backend_uart_output(const struct instr_backend *backend, uint8_t *data,
+				      uint32_t length)
 {
-	static const struct device *const uart_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	ARG_UNUSED(backend);
 
-	__ASSERT(device_is_ready(uart_dev), "uart_dev is not ready");
+	for (uint32_t i = 0; i < length; i++) {
+		uart_poll_out(instr_uart_dev, data[i]);
+	}
+}
 
-	uart_irq_rx_disable(uart_dev);
-	uart_irq_tx_disable(uart_dev);
+static const struct instr_backend_api instr_backend_uart_api = {
+	.output = instr_backend_uart_output,
+};
 
-	/* Set RX irq. handler */
-	uart_irq_callback_user_data_set(uart_dev, uart_isr, NULL);
+INSTR_BACKEND_DEFINE(instr_backend_uart, instr_backend_uart_api);
 
-	/* Clean RX FIFO before enabling interrupt. */
-	while (uart_irq_rx_ready(uart_dev)) {
+/*
+ * Host-command ISR setup must wait until the console UART is ready.
+ * Data egress only needs the device at dump time.
+ */
+__no_instrumentation__
+static int instr_uart_cmd_init(void)
+{
+	__ASSERT(device_is_ready(instr_uart_dev), "uart_dev is not ready");
+
+	uart_irq_rx_disable(instr_uart_dev);
+	uart_irq_tx_disable(instr_uart_dev);
+
+	uart_irq_callback_user_data_set(instr_uart_dev, uart_isr, NULL);
+
+	while (uart_irq_rx_ready(instr_uart_dev)) {
 		uint8_t c;
 
-		uart_fifo_read(uart_dev, &c, 1);
+		uart_fifo_read(instr_uart_dev, &c, 1);
 	}
 
-	/* Enable RX interruption. */
-	uart_irq_rx_enable(uart_dev);
+	uart_irq_rx_enable(instr_uart_dev);
 
 	return 0;
 }
 
-SYS_INIT(uart_isr_init, APPLICATION, 0);
+SYS_INIT(instr_uart_cmd_init, APPLICATION, 0);

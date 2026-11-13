@@ -36,10 +36,11 @@ to control when recording is active. The default trigger and stopper functions a
 ``main()`` (configurable via Kconfig), meaning instrumentation captures the entire execution from
 when ``main()`` starts until it returns.
 
-The recorded data is stored in RAM and can be accessed from a host computer thanks to a UART backend
-that exposes a set of simple commands. :zephyr_file:`scripts/instrumentation/zaru.py` script allows
-to execute these commands through a high-level command-line interface and makes it easy to obtain
-data in a format suitable for further analysis (e.g. using `Perfetto`_).
+The recorded data is stored in RAM and can be accessed from a host computer thanks to a
+configurable data backend (UART, RAM, ITM, or semihosting). The default UART backend exposes a set
+of simple commands over the console serial port. :zephyr_file:`scripts/instrumentation/zaru.py`
+allows executing those commands through a high-level CLI and obtaining data suitable for further
+analysis (e.g. using `Perfetto`_).
 
 Operational Modes
 *****************
@@ -143,8 +144,26 @@ Enable instrumentation with:
    CONFIG_INSTRUMENTATION_MODE_CALLGRAPH=y    # For tracing
    CONFIG_INSTRUMENTATION_MODE_STATISTICAL=y  # For profiling
 
-The instrumentation subsystem communicates with the target device via a UART console. Ensure that
-the ``zephyr_console`` chosen node points to the desired UART controller.
+Data backends
+=============
+
+Dumped callgraph and profile bytes leave the target through a selected backend:
+
+- :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_UART` (default) — console UART egress
+  plus host commands for ``zaru.py``
+- :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_RAM` — dedicated RAM buffer for debugger
+  retrieval (``instr_ram_buffer`` / ``instr_ram_buffer_pos``)
+- :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_ITM` — Arm Cortex-M ITM stimulus port
+  (SWO / TPIU set up by the board or probe); see ``itm_instr_descriptor`` in the ELF
+- :kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_SEMIHOST` — host file
+  ``./instrumentation.bin`` via semihosting (useful with QEMU)
+
+With the UART backend, ensure that the ``zephyr_console`` chosen node points to the desired UART
+controller. Host commands used by ``zaru.py`` are only available with this backend.
+
+With non-UART backends, call :c:func:`instr_dump_buffer` or :c:func:`instr_dump_deltas`
+(for example from a debugger), or enable dump-on-full. RAM buffer size is set by
+:kconfig:option:`CONFIG_INSTRUMENTATION_BACKEND_RAM_BUFFER_SIZE`.
 
 :ref:`Retained memory <retention_api>` allows trigger/stopper function addresses to persist across
 reboots. This feature is optional and enabled with the

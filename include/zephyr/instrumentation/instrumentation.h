@@ -186,14 +186,30 @@ bool instr_trace_enabled(void);
 bool instr_profile_enabled(void);
 
 /**
- * @brief Dumps the buffered contents via UART (tracing).
+ * @brief Dumps the buffered callgraph records via the selected backend.
  */
-void instr_dump_buffer_uart(void);
+void instr_dump_buffer(void);
 
 /**
- * @brief Dumps the delta accumulator array via UART (profiling).
+ * @brief Dumps the profiling delta accumulator via the selected backend.
  */
-void instr_dump_deltas_uart(void);
+void instr_dump_deltas(void);
+
+/**
+ * @brief Deprecated alias for instr_dump_buffer().
+ */
+static inline void instr_dump_buffer_uart(void)
+{
+	instr_dump_buffer();
+}
+
+/**
+ * @brief Deprecated alias for instr_dump_deltas().
+ */
+static inline void instr_dump_deltas_uart(void)
+{
+	instr_dump_deltas();
+}
 
 /**
  * @brief Shared callback handler to process entry/exit events.
