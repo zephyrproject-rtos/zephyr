@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &pcie_test;
+	};
+
+	test_intc: test-intc {
+		compatible = "zephyr,test-irq-controller";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
+
+	pcie_test: pcie-test {
+		compatible = "pcie-controller";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		virtio_pci_boundary: virtio-pci-boundary {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x10f9>;
+			interrupts = <0 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_past_bar: virtio-pci-past-bar {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x10fa>;
+			interrupts = <1 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+
+		virtio_pci_wrap: virtio-pci-wrap {
+			compatible = "virtio,pci";
+			vendor-id = <0x1af4>;
+			device-id = <0x10fb>;
+			interrupts = <2 0>;
+			interrupt-parent = <&test_intc>;
+			zephyr,deferred-init;
+			status = "okay";
+		};
+	};
+};
