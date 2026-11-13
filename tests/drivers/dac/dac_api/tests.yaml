@@ -13,6 +13,7 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="dac-channel0.overlay"
     platform_allow:
       - esp32c3_devkitc
+      - esp32s31_function_coreboard/esp32s31/hpcore
       - gd32a503v_eval
       - gd32e103v_eval
       - gd32f450i_eval
