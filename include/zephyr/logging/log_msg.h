@@ -157,7 +157,7 @@ enum z_log_msg_mode {
 	 */
 	Z_LOG_MSG_MODE_ZERO_COPY,
 
-	/* Mode optimized for simple messages with 0 to 2 32 bit word arguments.*/
+	/* Mode optimized for simple messages with 0 to 3 32 bit word arguments.*/
 	Z_LOG_MSG_MODE_SIMPLE,
 };
 
@@ -248,8 +248,12 @@ enum z_log_msg_mode {
 #define _LOG_MSG_SIMPLE_XXXX0 1
 #define _LOG_MSG_SIMPLE_XXXX1 1
 #define _LOG_MSG_SIMPLE_XXXX2 1
+/* Log frontend API has no function for a simple message with three arguments. */
+#ifndef CONFIG_LOG_FRONTEND
+#define _LOG_MSG_SIMPLE_XXXX3 1
+#endif
 
-/* Determine if amount of arguments (less than 3) qualifies to  simple message. */
+/* Determine if amount of arguments (up to 3) qualifies to  simple message. */
 #define LOG_MSG_SIMPLE_ARG_CNT_CHECK(...) \
 	COND_CODE_1(UTIL_CAT(_LOG_MSG_SIMPLE_XXXX, NUM_VA_ARGS_LESS_1(__VA_ARGS__)), (1), (0))
 
@@ -258,6 +262,8 @@ enum z_log_msg_mode {
 #define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_1(fmt, arg) Z_CBPRINTF_IS_WORD_NUM(arg)
 #define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_2(fmt, arg0, arg1) \
 	Z_CBPRINTF_IS_WORD_NUM(arg0) && Z_CBPRINTF_IS_WORD_NUM(arg1)
+#define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_3(fmt, arg0, arg1, arg2) \
+	Z_CBPRINTF_IS_WORD_NUM(arg0) && Z_CBPRINTF_IS_WORD_NUM(arg1) && Z_CBPRINTF_IS_WORD_NUM(arg2)
 
 /** brief Determine if string arguments types allow to use simplified message creation mode.
  *
@@ -270,7 +276,7 @@ enum z_log_msg_mode {
  *
  * Following conditions must be met:
  * - 32 bit platform
- * - Number of arguments from 0 to 2
+ * - Number of arguments from 0 to 3 (0 to 2 with a log frontend)
  * - Type of an argument must be a numeric value that fits in 32 bit word.
  *
  * @param ... String with arguments.
@@ -283,36 +289,20 @@ enum z_log_msg_mode {
 		COND_CODE_1(LOG_MSG_SIMPLE_ARG_CNT_CHECK(__VA_ARGS__), ( \
 				LOG_MSG_SIMPLE_ARG_TYPE_CHECK(__VA_ARGS__)), (0))))
 
-/* Helper macro for handing log with one argument. Macro casts the first argument to uint32_t. */
-#define Z_LOG_MSG_SIMPLE_CREATE_1(_source, _level, ...) \
-	z_log_msg_simple_create_1(_source, _level, GET_ARG_N(1, __VA_ARGS__), \
-			(uint32_t)(uintptr_t)GET_ARG_N(2, __VA_ARGS__))
-
-/* Helper macro for handing log with two arguments. Macro casts arguments to uint32_t.
- */
-#define Z_LOG_MSG_SIMPLE_CREATE_2(_source, _level, ...) \
-	z_log_msg_simple_create_2(_source, _level, GET_ARG_N(1, __VA_ARGS__), \
-			(uint32_t)(uintptr_t)GET_ARG_N(2, __VA_ARGS__), \
-			(uint32_t)(uintptr_t)GET_ARG_N(3, __VA_ARGS__))
-
-/* Call specific function based on the number of arguments.
- * Since up 2 to arguments are supported COND_CODE_0 and COND_CODE_1 can be used to
- * handle all cases (0, 1 and 2 arguments). When tracing is enable then for each
- * function a macro is create. The difference between function and macro is that
- * macro is applied to any input arguments so we need to make sure that it is
- * always called with proper number of arguments. For that it is wrapped around
- * into another macro and dummy arguments to cover for cases when there is less
- * arguments in a log call.
- */
+/* Call specific function based on the number of arguments. */
 #define Z_LOG_MSG_SIMPLE_FUNC2(arg_cnt, _source, _level, ...) \
-	COND_CODE_0(arg_cnt, \
-			(z_log_msg_simple_create_0(_source, _level, GET_ARG_N(1, __VA_ARGS__))), \
-			(COND_CODE_1(arg_cnt, ( \
-			    Z_LOG_MSG_SIMPLE_CREATE_1(_source, _level, __VA_ARGS__, dummy) \
-			    ), ( \
-			    Z_LOG_MSG_SIMPLE_CREATE_2(_source, _level, __VA_ARGS__, dummy, dummy) \
-			    ) \
-			)))
+	UTIL_CAT(Z_LOG_MSG_SIMPLE_FUNC_, arg_cnt)(_source, _level, __VA_ARGS__)
+
+#define Z_LOG_MSG_SIMPLE_FUNC_0(_source, _level, fmt) \
+	z_log_msg_simple_create_0(_source, _level, fmt)
+#define Z_LOG_MSG_SIMPLE_FUNC_1(_source, _level, fmt, a0) \
+	z_log_msg_simple_create_1(_source, _level, fmt, (uint32_t)(uintptr_t)(a0))
+#define Z_LOG_MSG_SIMPLE_FUNC_2(_source, _level, fmt, a0, a1) \
+	z_log_msg_simple_create_2(_source, _level, fmt, (uint32_t)(uintptr_t)(a0), \
+				  (uint32_t)(uintptr_t)(a1))
+#define Z_LOG_MSG_SIMPLE_FUNC_3(_source, _level, fmt, a0, a1, a2) \
+	z_log_msg_simple_create_3(_source, _level, fmt, (uint32_t)(uintptr_t)(a0), \
+				  (uint32_t)(uintptr_t)(a1), (uint32_t)(uintptr_t)(a2))
 
 /** @brief Call specific function to create a log message.
  *
@@ -329,7 +319,7 @@ enum z_log_msg_mode {
 /** @brief Create log message using simplified method.
  *
  * Macro is gated by the argument count check to run @ref LOG_MSG_SIMPLE_FUNC only
- * on entries with 2 or less arguments.
+ * on entries with 3 or less arguments.
  *
  * @param _domain_id	Domain ID.
  * @param _source	Pointer to the source structure.
@@ -660,6 +650,18 @@ __syscall void z_log_msg_simple_create_1(const void *source, uint32_t level,
  */
 __syscall void z_log_msg_simple_create_2(const void *source, uint32_t level,
 					 const char *fmt, uint32_t arg0, uint32_t arg1);
+
+/** @brief Create log message using simplified method for string with three arguments.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ * @param arg0   String argument.
+ * @param arg1   String argument.
+ * @param arg2   String argument.
+ */
+__syscall void z_log_msg_simple_create_3(const void *source, uint32_t level, const char *fmt,
+					 uint32_t arg0, uint32_t arg1, uint32_t arg2);
 
 /** @brief Create a logging message from message details and string package.
  *

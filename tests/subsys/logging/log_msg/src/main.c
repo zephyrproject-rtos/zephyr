@@ -582,5 +582,43 @@ ZTEST(log_msg, test_saturate)
 	zassert_equal(msg, NULL, "Expected no pending messages");
 }
 
+ZTEST(log_msg, test_log_msg_simple_args)
+{
+	const void *source = (const void *)123;
+	static const uint8_t level = 2;
+	uint8_t __aligned(Z_LOG_MSG_ALIGNMENT) buf[256];
+	union log_msg_generic *msg;
+	int exp_mode = IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE) ? EXP_MODE(SIMPLE)
+								  : EXP_MODE(FROM_STACK);
+	int mode;
+
+	test_init();
+
+	Z_LOG_MSG_CREATE3(0, mode, 0, 0, source, level, NULL, 0, "%d", -1);
+	zassert_equal(mode, exp_mode);
+	msg = z_log_msg_claim(NULL);
+	msg = msg_copy_and_free(msg, buf, sizeof(buf));
+	basic_validate(&msg->log, source, 0, level, TEST_TIMESTAMP_INIT_VALUE, NULL, 0, "-1");
+
+	Z_LOG_MSG_CREATE3(0, mode, 0, 0, source, level, NULL, 0, "%d %u", -1, 2U);
+	zassert_equal(mode, exp_mode);
+	msg = z_log_msg_claim(NULL);
+	msg = msg_copy_and_free(msg, buf, sizeof(buf));
+	basic_validate(&msg->log, source, 0, level, TEST_TIMESTAMP_INIT_VALUE, NULL, 0, "-1 2");
+
+	Z_LOG_MSG_CREATE3(0, mode, 0, 0, source, level, NULL, 0, "%d %u %x", -1, 2U, 0xabU);
+	zassert_equal(mode, exp_mode);
+	msg = z_log_msg_claim(NULL);
+	msg = msg_copy_and_free(msg, buf, sizeof(buf));
+	basic_validate(&msg->log, source, 0, level, TEST_TIMESTAMP_INIT_VALUE, NULL, 0, "-1 2 ab");
+
+	Z_LOG_MSG_CREATE3(0, mode, 0, 0, source, level, NULL, 0, "%d %u %x %d", -1, 2U, 0xabU, 4);
+	zassert_equal(mode, EXP_MODE(FROM_STACK));
+	msg = z_log_msg_claim(NULL);
+	msg = msg_copy_and_free(msg, buf, sizeof(buf));
+	basic_validate(&msg->log, source, 0, level, TEST_TIMESTAMP_INIT_VALUE, NULL, 0,
+		       "-1 2 ab 4");
+}
+
 /*test case main entry*/
 ZTEST_SUITE(log_msg, NULL, NULL, NULL, NULL, NULL);
