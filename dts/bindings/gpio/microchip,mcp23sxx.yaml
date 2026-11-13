@@ -1,0 +1,13 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+include: ["microchip,mcp23xxx.yaml"]
+
+properties:
+  address-used:
+    type: int
+    description: |
+      The address bits A1-A0 of the chip if they are used. The driver
+      sets the HAEN bit in the IOCON register and set the bits in the
+      device opcode, if this property is provided.
