@@ -1881,6 +1881,12 @@ static uint8_t vs_read_static_addr(struct bt_hci_vs_static_addr addrs[], uint8_t
 
 int bt_setup_random_id_addr(void)
 {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		/* Random addresses exist only on LE */
+		LOG_ERR("No public address on a Controller without LE");
+		return -ENODEV;
+	}
+
 	/* Only read the addresses if the user has not already configured one or
 	 * more identities (!bt_dev.id_count).
 	 */
@@ -2346,6 +2352,10 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 		return -EINVAL;
 	}
 
+	if (!BT_FEAT_BREDR(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	bt_addr_copy(&oob->addr, &bt_dev.id_addr[0].a);
 
 	return 0;
@@ -2363,6 +2373,10 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
 	}
 
 	if (id >= bt_dev.id_count || bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {

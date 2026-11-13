@@ -334,7 +334,7 @@ static int commit_settings(void)
 	 * advertising / scan-response path; for BR/EDR we must
 	 * issue the HCI Write Local Name command explicitly.
 	 */
-	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && BT_FEAT_BREDR(bt_dev.features)) {
 		err = bt_br_write_local_name(bt_dev.name);
 		if (err != 0) {
 			LOG_ERR("Unable to set BR/EDR local name (err %d)", err);

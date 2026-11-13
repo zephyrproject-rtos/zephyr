@@ -3,6 +3,7 @@
 cmake_minimum_required(VERSION 3.28.0)
 set(NO_QEMU_SERIAL_BT_SERVER 1)
 
+list(APPEND DTS_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../common/fake_hci)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bluetooth)
 

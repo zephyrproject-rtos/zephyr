@@ -465,6 +465,7 @@ struct bt_br_page_scan_param {
  * @return 0 on success.
  * @return -EINVAL if the provided parameters are invalid.
  * @return -EAGAIN if the device is not ready.
+ * @retval -ENOTSUP The Controller does not support BR/EDR.
  * @return -ENOBUFS if memory allocation for HCI commands fails.
  * @return Other negative error codes for internal failures.
  */
@@ -558,6 +559,7 @@ struct bt_br_inquiry_scan_param {
  * @return 0 on success.
  * @return -EINVAL if the provided parameters are invalid.
  * @return -EAGAIN if the device is not ready.
+ * @retval -ENOTSUP The Controller does not support BR/EDR.
  * @return -ENOBUFS if memory allocation for HCI commands fails.
  * @return Other negative error codes for internal failures.
  */
@@ -582,6 +584,7 @@ int bt_br_inquiry_scan_update_param(const struct bt_br_inquiry_scan_param *param
  *
  * @retval 0 on success
  * @retval -EAGAIN if the Bluetooth device is not ready
+ * @retval -ENOTSUP The Controller does not support BR/EDR.
  * @retval -EINVAL if the provided COD value attempts to set the limited
  *         discoverable bit directly, which is not permitted
  * @retval Other negative error codes from underlying HCI command failures
@@ -598,6 +601,7 @@ int bt_br_set_class_of_device(uint32_t cod);
  *
  * @retval 0 on success
  * @retval -EAGAIN if the Bluetooth device is not ready
+ * @retval -ENOTSUP The Controller does not support BR/EDR.
  * @retval -EINVAL if @p cod is NULL
  * @retval Other negative error codes on failure
  */

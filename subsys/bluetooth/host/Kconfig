@@ -192,6 +192,11 @@ config BT_HOST_CRYPTO_PRNG
 	  depending on the length of the random data.
 	  This method is generally recommended within 16 bytes.
 
+	  The HCI calls use HCI_LE_Rand, which a Controller without LE does not
+	  support. With BT_CLASSIC and BT_PRIVACY, keep this option enabled to
+	  use such a Controller: bt_enable() fails otherwise, since the identity
+	  resolving key cannot be generated.
+
 config BT_SETTINGS
 	bool "Store Bluetooth state and configuration persistently"
 	depends on SETTINGS
