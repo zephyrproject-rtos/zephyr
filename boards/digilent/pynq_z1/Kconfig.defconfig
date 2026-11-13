@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Radu Pirea
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PYNQ_Z1
+
+configdefault ETH_DRIVER
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,arch_timer,clock-frequency)
+
+endif # BOARD_PYNQ_Z1
