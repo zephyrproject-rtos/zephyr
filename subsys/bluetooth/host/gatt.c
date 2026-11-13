@@ -4029,6 +4029,19 @@ done:
 	params->func(conn, NULL, params);
 }
 
+/* A server reports attributes from the range the client asked for, which never includes 0 */
+static bool gatt_discovered_handle_valid(const struct bt_gatt_discover_params *params,
+					 uint16_t handle)
+{
+	return handle >= params->start_handle && handle <= params->end_handle;
+}
+
+static bool gatt_discovered_group_valid(const struct bt_gatt_discover_params *params,
+					uint16_t start_handle, uint16_t end_handle)
+{
+	return gatt_discovered_handle_valid(params, start_handle) && end_handle >= start_handle;
+}
+
 static void gatt_find_type_rsp(struct bt_conn *conn, int err,
 			       const void *pdu, uint16_t length,
 			       void *user_data)
@@ -4045,6 +4058,17 @@ static void gatt_find_type_rsp(struct bt_conn *conn, int err,
 	}
 
 	count = length / sizeof(struct bt_att_handle_group);
+
+	/* Check the whole response before the first callback, which may send requests */
+	for (uint8_t i = 0U; i < count; i++) {
+		start_handle = sys_le16_to_cpu(rsp[i].start_handle);
+		end_handle = sys_le16_to_cpu(rsp[i].end_handle);
+
+		if (!gatt_discovered_group_valid(params, start_handle, end_handle)) {
+			LOG_WRN("Invalid service range 0x%04x-0x%04x", start_handle, end_handle);
+			goto done;
+		}
+	}
 
 	/* Parse attributes found */
 	for (uint8_t i = 0U; i < count; i++) {
@@ -4215,6 +4239,28 @@ static int read_included_uuid(struct bt_conn *conn,
 			     sizeof(struct bt_att_read_req), BT_ATT_CHAN_OPT(params));
 }
 
+static bool gatt_includes_valid(const struct bt_gatt_discover_params *params,
+				const struct bt_att_read_type_rsp *rsp, uint16_t length)
+{
+	for (const uint8_t *pdu = (const uint8_t *)rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		const struct bt_att_data *data = (const void *)pdu;
+		const struct gatt_incl *incl = (const void *)data->value;
+		uint16_t handle = sys_le16_to_cpu(data->handle);
+		uint16_t start_handle = sys_le16_to_cpu(incl->start_handle);
+		uint16_t end_handle = sys_le16_to_cpu(incl->end_handle);
+
+		if (!gatt_discovered_handle_valid(params, handle) || start_handle == 0U ||
+		    end_handle < start_handle) {
+			LOG_WRN("Invalid include 0x%04x of range 0x%04x-0x%04x", handle,
+				start_handle, end_handle);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 			   struct bt_gatt_discover_params *params,
 			   uint16_t length)
@@ -4252,6 +4298,11 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		goto done;
 	}
 
+	/* Check the whole response before the first callback, which may send requests */
+	if (!gatt_includes_valid(params, rsp, length - 1U)) {
+		goto done;
+	}
+
 	/* Parse include found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4260,10 +4311,6 @@ static uint16_t parse_include(struct bt_conn *conn, const void *pdu,
 		struct gatt_incl *incl = (void *)data->value;
 
 		handle = sys_le16_to_cpu(data->handle);
-		/* Handle 0 is invalid */
-		if (!handle) {
-			goto done;
-		}
 
 		/* Convert include data, bt_gatt_incl and gatt_incl
 		 * have different formats so the conversion have to be done
@@ -4315,6 +4362,27 @@ done:
 	return 0;
 }
 
+static bool gatt_chrcs_valid(const struct bt_gatt_discover_params *params,
+			     const struct bt_att_read_type_rsp *rsp, uint16_t length)
+{
+	for (const uint8_t *pdu = (const uint8_t *)rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		const struct bt_att_data *data = (const void *)pdu;
+		const struct gatt_chrc *chrc = (const void *)data->value;
+		uint16_t handle = sys_le16_to_cpu(data->handle);
+		uint16_t value_handle = sys_le16_to_cpu(chrc->value_handle);
+
+		/* The value may be outside the range, but it follows the declaration */
+		if (!gatt_discovered_handle_valid(params, handle) || value_handle <= handle) {
+			LOG_WRN("Invalid characteristic 0x%04x with value handle 0x%04x", handle,
+				value_handle);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				  struct bt_gatt_discover_params *params,
 				  uint16_t length)
@@ -4347,6 +4415,11 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		goto done;
 	}
 
+	/* Check the whole response before the first callback, which may send requests */
+	if (!gatt_chrcs_valid(params, rsp, length - 1U)) {
+		goto done;
+	}
+
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4356,10 +4429,6 @@ static uint16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 		struct gatt_chrc *chrc = (void *)data->value;
 
 		handle = sys_le16_to_cpu(data->handle);
-		/* Handle 0 is invalid */
-		if (!handle) {
-			goto done;
-		}
 
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
@@ -4403,6 +4472,23 @@ done:
 	return 0;
 }
 
+static bool gatt_descs_valid(const struct bt_gatt_discover_params *params,
+			     const struct bt_att_read_type_rsp *rsp, uint16_t length)
+{
+	for (const uint8_t *pdu = (const uint8_t *)rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		const struct bt_att_data *data = (const void *)pdu;
+		uint16_t handle = sys_le16_to_cpu(data->handle);
+
+		if (!gatt_discovered_handle_valid(params, handle)) {
+			LOG_WRN("Invalid descriptor handle 0x%04x", handle);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 					 struct bt_gatt_discover_params *params,
 					 uint16_t length)
@@ -4430,6 +4516,11 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 		goto done;
 	}
 
+	/* Check the whole response before the first callback, which may send requests */
+	if (!gatt_descs_valid(params, rsp, length - 1U)) {
+		goto done;
+	}
+
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4449,10 +4540,6 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 		data = pdu;
 
 		handle = sys_le16_to_cpu(data->handle);
-		/* Handle 0 is invalid */
-		if (!handle) {
-			goto done;
-		}
 
 		switch (uuid_val) {
 		case BT_UUID_GATT_CEP_VAL:
@@ -4587,6 +4674,24 @@ static int gatt_read_type(struct bt_conn *conn,
 			     sizeof(struct bt_att_read_type_req), BT_ATT_CHAN_OPT(params));
 }
 
+static bool gatt_services_valid(const struct bt_gatt_discover_params *params,
+				const struct bt_att_read_group_rsp *rsp, uint16_t length)
+{
+	for (const uint8_t *pdu = (const uint8_t *)rsp->data; length >= rsp->len;
+	     length -= rsp->len, pdu += rsp->len) {
+		const struct bt_att_group_data *data = (const void *)pdu;
+		uint16_t start_handle = sys_le16_to_cpu(data->start_handle);
+		uint16_t end_handle = sys_le16_to_cpu(data->end_handle);
+
+		if (!gatt_discovered_group_valid(params, start_handle, end_handle)) {
+			LOG_WRN("Invalid service range 0x%04x-0x%04x", start_handle, end_handle);
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 				  struct bt_gatt_discover_params *params,
 				  uint16_t length)
@@ -4619,6 +4724,11 @@ static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 		goto done;
 	}
 
+	/* Check the whole response before the first callback, which may send requests */
+	if (!gatt_services_valid(params, rsp, length - 1U)) {
+		goto done;
+	}
+
 	/* Parse services found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4628,14 +4738,7 @@ static uint16_t parse_service(struct bt_conn *conn, const void *pdu,
 		const struct bt_att_group_data *data = pdu;
 
 		start_handle = sys_le16_to_cpu(data->start_handle);
-		if (!start_handle) {
-			goto done;
-		}
-
 		end_handle = sys_le16_to_cpu(data->end_handle);
-		if (!end_handle || end_handle < start_handle) {
-			goto done;
-		}
 
 		switch (u.uuid.type) {
 		case BT_UUID_TYPE_16:
@@ -4785,6 +4888,17 @@ static void gatt_find_info_rsp(struct bt_conn *conn, int err,
 	/* Check if there is a least one descriptor in the response */
 	if (length < len) {
 		goto done;
+	}
+
+	/* Check the whole response before the first callback, which may send requests */
+	for (i = length / len, pdu = rsp->info; i != 0; i--, pdu = (const uint8_t *)pdu + len) {
+		info.i16 = pdu;
+		handle = sys_le16_to_cpu(info.i16->handle);
+
+		if (!gatt_discovered_handle_valid(params, handle)) {
+			LOG_WRN("Invalid attribute handle 0x%04x", handle);
+			goto done;
+		}
 	}
 
 	/* Parse descriptors found */
@@ -5650,7 +5764,10 @@ static int gatt_ccc_discover(struct bt_conn *conn,
 	params->disc_params->uuid = &ccc_uuid.uuid;
 	params->disc_params->type = BT_GATT_DISCOVER_DESCRIPTOR;
 	params->disc_params->start_handle = params->value_handle;
-	params->disc_params->end_handle = params->end_handle;
+	/* A CCC follows its value. For a value after the end of the service, search only the
+	 * value handle rather than send an invalid range.
+	 */
+	params->disc_params->end_handle = MAX(params->end_handle, params->value_handle);
 	params->disc_params->func = gatt_ccc_discover_cb;
 #if defined(CONFIG_BT_EATT)
 	params->disc_params->chan_opt = params->chan_opt;
