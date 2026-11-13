@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 Pedro Ramos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * A SIMCom A76xx modem_cellular instance on an emulated UART, with two SIM
+ * interfaces that the modem selects.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	modem_uart: uart-emul {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <4096>;
+		tx-fifo-size = <4096>;
+		status = "okay";
+
+		modem: modem {
+			compatible = "simcom,a76xx";
+			mdm-power-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			sim-slots {
+				compatible = "modem-sims";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				sim-slot@0 {
+					reg = <0>;
+				};
+
+				sim-slot@1 {
+					reg = <1>;
+					default-sim;
+				};
+			};
+		};
+	};
+};
