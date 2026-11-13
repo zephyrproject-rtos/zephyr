@@ -13,8 +13,7 @@
 
 LOG_MODULE_REGISTER(usbh_desc, CONFIG_USBH_LOG_LEVEL);
 
-bool usbh_desc_is_valid(const void *const desc,
-			const size_t size, const uint8_t type)
+bool usbh_desc_is_valid(const void *const desc, const size_t size, const uint8_t type)
 {
 	const struct usb_desc_header *const head = desc;
 
@@ -37,8 +36,7 @@ bool usbh_desc_is_valid(const void *const desc,
 
 bool usbh_desc_is_valid_interface(const void *const desc)
 {
-	return usbh_desc_is_valid(desc, sizeof(struct usb_if_descriptor),
-				  USB_DESC_INTERFACE);
+	return usbh_desc_is_valid(desc, sizeof(struct usb_if_descriptor), USB_DESC_INTERFACE);
 }
 
 bool usbh_desc_is_valid_association(const void *const desc)
@@ -49,43 +47,78 @@ bool usbh_desc_is_valid_association(const void *const desc)
 
 bool usbh_desc_is_valid_configuration(const void *const desc)
 {
-	return usbh_desc_is_valid(desc, sizeof(struct usb_cfg_descriptor),
-				  USB_DESC_CONFIGURATION);
+	return usbh_desc_is_valid(desc, sizeof(struct usb_cfg_descriptor), USB_DESC_CONFIGURATION);
 }
 
 bool usbh_desc_is_valid_endpoint(const void *const desc)
 {
-	return usbh_desc_is_valid(desc, sizeof(struct usb_ep_descriptor),
-				  USB_DESC_ENDPOINT);
+	return usbh_desc_is_valid(desc, sizeof(struct usb_ep_descriptor), USB_DESC_ENDPOINT);
 }
 
-const void *usbh_desc_get_next(const void *const desc)
+bool usbh_desc_header_in_bounds(const void *desc, const void *desc_end)
 {
-	const struct usb_desc_header *const head = desc;
+	const struct usb_desc_header *head = desc;
+	const uint8_t *d = desc;
+	const uint8_t *end = desc_end;
+
+	if (desc == NULL || desc_end == NULL || d >= end) {
+		return false;
+	}
+
+	if (d + sizeof(*head) > end) {
+		return false;
+	}
+
+	if (head->bLength == 0U) {
+		return false;
+	}
+
+	if (head->bLength < sizeof(*head)) {
+		return false;
+	}
+
+	if (d + head->bLength > end) {
+		return false;
+	}
+
+	return true;
+}
+
+const void *usbh_desc_get_next(const void *desc, const void *desc_end)
+{
+	const struct usb_desc_header *head = desc;
 	const void *next;
 
-	if (!usbh_desc_is_valid(desc, sizeof(const struct usb_desc_header), 0)) {
+	if (!usbh_desc_header_in_bounds(desc, desc_end)) {
+		return NULL;
+	}
+
+	if (!usbh_desc_is_valid(desc, sizeof(struct usb_desc_header), 0)) {
 		return NULL;
 	}
 
 	next = (const uint8_t *)desc + head->bLength;
 
-	if (!usbh_desc_is_valid(next, sizeof(const struct usb_desc_header), 0)) {
+	if (!usbh_desc_header_in_bounds(next, desc_end)) {
+		return NULL;
+	}
+
+	if (!usbh_desc_is_valid(next, sizeof(struct usb_desc_header), 0)) {
 		return NULL;
 	}
 
 	return next;
 }
 
-const void *usbh_desc_get_next_alt_setting(const void *const desc)
+const void *usbh_desc_get_next_alt_setting(const void *desc, const void *desc_end)
 {
 	const struct usb_desc_header *head = desc;
 
 	/* Skip the current interface descriptor */
-	head = usbh_desc_get_next(desc);
+	head = usbh_desc_get_next(desc, desc_end);
 
 	/* Seek to the next alternate setting for this interface */
-	for (; head != NULL; head = usbh_desc_get_next(head)) {
+	for (; head != NULL; head = usbh_desc_get_next(head, desc_end)) {
 		struct usb_if_descriptor *if_d = (void *)head;
 
 		if (head->bDescriptorType != USB_DESC_INTERFACE) {
@@ -144,8 +177,7 @@ const void *usbh_desc_get_endpoint(const struct usb_device *const udev, const ui
 }
 
 int usbh_desc_fill_filter(const struct usb_desc_header *const desc,
-			  struct usbh_class_filter *const filter,
-			  uint8_t *const iface)
+			  struct usbh_class_filter *const filter, uint8_t *const iface)
 {
 	if (desc->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 		const struct usb_association_descriptor *ia_desc = (const void *)desc;
@@ -174,7 +206,7 @@ int usbh_desc_fill_filter(const struct usb_desc_header *const desc,
 	return -EINVAL;
 }
 
-const void *usbh_desc_get_next_function(const void *const desc)
+const void *usbh_desc_get_next_function(const void *desc, const void *desc_end)
 {
 	const struct usb_desc_header *head = desc;
 	const struct usb_association_descriptor *const ass_d = desc;
@@ -188,7 +220,7 @@ const void *usbh_desc_get_next_function(const void *const desc)
 
 	while (true) {
 		/* If already on an Interface Association or Interface, this will skip it */
-		head = usbh_desc_get_next(head);
+		head = usbh_desc_get_next(head, desc_end);
 		if (head == NULL) {
 			break;
 		}
@@ -201,8 +233,7 @@ const void *usbh_desc_get_next_function(const void *const desc)
 		}
 
 		/* Only count the first Alternate Setting of an Interface */
-		if (usbh_desc_is_valid_interface(head) &&
-		    if_d->bAlternateSetting == 0) {
+		if (usbh_desc_is_valid_interface(head) && if_d->bAlternateSetting == 0) {
 			if (skip_num == 0) {
 				return head;
 			}
