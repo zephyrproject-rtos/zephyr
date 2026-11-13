@@ -108,6 +108,8 @@ class EcstArgs:
         self.error_args = invalid_arguments
 
         _populate_args(self, valid_arguments)
+        if self.firmware_entry_point is None and self.use_arm_reset is None:
+            self.use_arm_reset = True
         _populate_chip_fields(self)
 
 def _populate_chip_fields(self):
