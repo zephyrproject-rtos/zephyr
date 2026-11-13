@@ -255,10 +255,10 @@ void net_stop_dhcp_timer(void);
  */
 static inline uint32_t net_inet_aton(const char *cp)
 {
-	struct in_addr addr;
+	struct net_in_addr addr;
 
 	addr.s_addr = 0;
-	(void)net_addr_pton(AF_INET, cp, &addr);
+	(void)net_addr_pton(NET_AF_INET, cp, &addr);
 	return addr.s_addr;
 }
 
@@ -414,10 +414,10 @@ static inline void net_stack_buffer_size_adjust(void *p, int len)
  */
 static inline void net_inet_ntoa(unsigned long addr, char *cp)
 {
-	struct in_addr saddr;
+	struct net_in_addr saddr;
 
 	saddr.s_addr = addr;
-	net_addr_ntop(AF_INET, &saddr, cp, NET_IPV4_ADDR_LEN);
+	net_addr_ntop(NET_AF_INET, &saddr, cp, NET_IPV4_ADDR_LEN);
 }
 
 /* Check whether buffer is IPv4 or IPV6 packet type
@@ -429,8 +429,8 @@ static inline void net_inet_ntoa(unsigned long addr, char *cp)
  */
 static inline bool net_is_ip_or_ipv6(const uint8_t *buffer)
 {
-	if (((const struct net_eth_hdr *)(const void *)buffer)->type == htons(ETH_P_IP) ||
-	    ((const struct net_eth_hdr *)(const void *)buffer)->type == htons(ETH_P_IPV6)) {
+	if (((const struct net_eth_hdr *)(const void *)buffer)->type == net_htons(ETH_P_IP) ||
+	    ((const struct net_eth_hdr *)(const void *)buffer)->type == net_htons(ETH_P_IPV6)) {
 		return true;
 	}
 

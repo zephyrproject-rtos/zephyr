@@ -1170,7 +1170,7 @@ static int wg_validate_allowed_ip_tx(struct wg_iface_context *ctx,
 		}
 
 		NET_DBG("Destination %s not found in allowed list",
-			net_sprint_ipv6_addr((const struct in6_addr *)
+			net_sprint_ipv6_addr((const struct net_in6_addr *)
 					     NET_IPV6_HDR(pkt)->dst));
 	} else if (net_pkt_family(pkt) == NET_AF_INET) {
 		if (pkt_len < sizeof(struct net_ipv4_hdr)) {
@@ -1184,7 +1184,7 @@ static int wg_validate_allowed_ip_tx(struct wg_iface_context *ctx,
 		}
 
 		NET_DBG("Destination %s not found in allowed list",
-			net_sprint_ipv4_addr((const struct in_addr *)
+			net_sprint_ipv4_addr((const struct net_in_addr *)
 					     NET_IPV4_HDR(pkt)->dst));
 	} else {
 		vpn_stats_update_invalid_ip_family(ctx);

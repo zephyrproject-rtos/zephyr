@@ -1470,7 +1470,7 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",
-				net_sprint_ipv6_addr((const struct in6_addr *)
+				net_sprint_ipv6_addr((const struct net_in6_addr *)
 						     &NET_IPV6_HDR(pkt_decrypted)->src));
 		}
 
@@ -1484,7 +1484,7 @@ ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",
-				net_sprint_ipv4_addr((const struct in_addr *)
+				net_sprint_ipv4_addr((const struct net_in_addr *)
 						     &NET_IPV4_HDR(pkt_decrypted)->src));
 		}
 
