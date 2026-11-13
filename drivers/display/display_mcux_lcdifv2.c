@@ -115,6 +115,7 @@ static int mcux_lcdifv2_write(const struct device *dev, const uint16_t x, const 
 	/* Set framebuffer address for the layer */
 	LCDIFV2_SetLayerBufferAddr(config->base, LCDIFV2_LAYER_INDEX,
 				   (uint32_t)dev_data->active_fb);
+	LCDIFV2_EnableLayer(config->base, LCDIFV2_LAYER_INDEX, true);
 
 #if CONFIG_MCUX_LCDIFV2_FB_NUM != 0
 	/* Update index of active framebuffer */
@@ -280,13 +281,20 @@ static int mcux_lcdifv2_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 #if CONFIG_MCUX_LCDIFV2_FB_NUM != 0
+	/* Without a driver framebuffer the layer has no address yet: the first write enables it */
 	dev_data->active_fb = dev_data->fb[0];
 	LCDIFV2_SetLayerBufferAddr(config->base, LCDIFV2_LAYER_INDEX,
 				   (uint32_t)dev_data->active_fb);
+	LCDIFV2_EnableLayer(config->base, LCDIFV2_LAYER_INDEX, true);
 #endif
 
-	/* Enable the layer */
-	LCDIFV2_EnableLayer(config->base, LCDIFV2_LAYER_INDEX, true);
+	/* With no layer enabled the display scans out its background color */
+	if (IS_ENABLED(CONFIG_MCUX_LCDIFV2_START_ON_INIT)) {
+		LCDIFV2_EnableDisplay(config->base, true);
+		if (CONFIG_MCUX_LCDIFV2_FB_NUM != 0) {
+			LCDIFV2_TriggerLayerShadowLoad(config->base, LCDIFV2_LAYER_INDEX);
+		}
+	}
 
 	return 0;
 }
