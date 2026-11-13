@@ -318,6 +318,68 @@ ZTEST(mpipe_structure_api, test_cannot_intersect)
 			  "intersect with incompatible field value should fail");
 }
 
+/*
+ * A tensor capability: MPIPE_MEDIA_TENSOR with MPIPE_CAPS_TENSOR_TYPE, reusing
+ * the image geometry fields for an image-shaped tensor.
+ */
+ZTEST(mpipe_structure_api, test_tensor_media)
+{
+	struct mpipe_structure model_in;
+	struct mpipe_structure conv_out;
+	struct mpipe_structure other_type;
+	struct mpipe_structure video;
+	struct mpipe_structure result;
+	const struct mpipe_value *v;
+
+	/* A model input: fixed type and geometry, as an inference sink pad offers */
+	zassert_ok(mpipe_structure_init_fields(
+			   &model_in, MPIPE_MEDIA_TENSOR, MPIPE_CAPS_TENSOR_TYPE, MPIPE_TYPE_UINT,
+			   1, MPIPE_CAPS_NUM_CHANNELS, MPIPE_TYPE_UINT, 1, MPIPE_CAPS_IMAGE_WIDTH,
+			   MPIPE_TYPE_UINT, 96, MPIPE_CAPS_IMAGE_HEIGHT, MPIPE_TYPE_UINT, 96,
+			   MPIPE_CAPS_END),
+		   "init &model_in failed");
+
+	zassert_equal(model_in.media_type_id, MPIPE_MEDIA_TENSOR, "media_type_id mismatch");
+
+	v = mpipe_structure_get_value(&model_in, MPIPE_CAPS_TENSOR_TYPE);
+	validate_uint_value(v, 1);
+
+	/* A converter output: fixed type, open geometry, as a transform offers */
+	zassert_ok(mpipe_structure_init_fields(
+			   &conv_out, MPIPE_MEDIA_TENSOR, MPIPE_CAPS_TENSOR_TYPE, MPIPE_TYPE_UINT,
+			   1, MPIPE_CAPS_NUM_CHANNELS, MPIPE_TYPE_UINT, 1, MPIPE_CAPS_END),
+		   "init &conv_out failed");
+
+	zassert_ok(mpipe_structure_intersect(&conv_out, &model_in, &result),
+		   "tensor intersect failed");
+
+	/* Geometry present on one side only passes through */
+	v = mpipe_structure_get_value(&result, MPIPE_CAPS_IMAGE_WIDTH);
+	validate_uint_value(v, 96);
+	zassert_true(mpipe_structure_is_fixed(&result), "intersected tensor structure not fixed");
+	mpipe_structure_clear(&result);
+
+	/* A different type must not intersect */
+	zassert_ok(mpipe_structure_init_fields(&other_type, MPIPE_MEDIA_TENSOR,
+					       MPIPE_CAPS_TENSOR_TYPE, MPIPE_TYPE_UINT, 4,
+					       MPIPE_CAPS_END),
+		   "init &other_type failed");
+	zassert_equal(mpipe_structure_intersect(&other_type, &model_in, &result), -ENOENT,
+		      "different tensor types intersected");
+
+	/* A different media type must not intersect, whatever the fields */
+	zassert_ok(mpipe_structure_init_fields(&video, MPIPE_MEDIA_VIDEO, MPIPE_CAPS_IMAGE_WIDTH,
+					       MPIPE_TYPE_UINT, 96, MPIPE_CAPS_END),
+		   "init &video failed");
+	zassert_equal(mpipe_structure_intersect(&video, &model_in, &result), -EINVAL,
+		      "video x tensor != -EINVAL");
+
+	mpipe_structure_clear(&model_in);
+	mpipe_structure_clear(&conv_out);
+	mpipe_structure_clear(&other_type);
+	mpipe_structure_clear(&video);
+}
+
 ZTEST(mpipe_structure_api, test_sanity)
 {
 	struct mpipe_structure s;
