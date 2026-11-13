@@ -52,6 +52,19 @@ static struct nsem_obj *nsem_find(const char *name)
 	return NULL;
 }
 
+static struct nsem_obj *nsem_find_by_sem(const sem_t *sem)
+{
+	struct nsem_obj *nsem;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&nsem_list, nsem, snode) {
+		if (&nsem->sem == sem) {
+			return nsem;
+		}
+	}
+
+	return NULL;
+}
+
 /* Clean up a named semaphore object completely (incl its `name` buffer) */
 static void nsem_cleanup(struct nsem_obj *nsem)
 {
@@ -206,19 +219,17 @@ sem_t *sem_open(const char *name, int oflags, ...)
 {
 	va_list va;
 	mode_t mode;
-	unsigned int value;
+	unsigned int value = 0U;
 	struct nsem_obj *nsem = NULL;
 	size_t namelen;
 
-	va_start(va, oflags);
-	BUILD_ASSERT(sizeof(mode_t) <= sizeof(int));
-	mode = va_arg(va, int);
-	value = va_arg(va, unsigned int);
-	va_end(va);
-
-	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
-		errno = EINVAL;
-		return (sem_t *)SEM_FAILED;
+	if ((oflags & O_CREAT) != 0) {
+		va_start(va, oflags);
+		BUILD_ASSERT(sizeof(mode_t) <= sizeof(int));
+		mode = va_arg(va, int);
+		ARG_UNUSED(mode);
+		value = va_arg(va, unsigned int);
+		va_end(va);
 	}
 
 	if (name == NULL) {
@@ -253,6 +264,11 @@ sem_t *sem_open(const char *name, int oflags, ...)
 
 	if ((oflags & O_CREAT) == 0) {
 		errno = ENOENT;
+		goto error_unlock;
+	}
+
+	if (value > CONFIG_POSIX_SEM_VALUE_MAX) {
+		errno = EINVAL;
 		goto error_unlock;
 	}
 
@@ -328,7 +344,7 @@ unlock:
 
 int sem_close(sem_t *sem)
 {
-	struct nsem_obj *nsem = CONTAINER_OF(sem, struct nsem_obj, sem);
+	struct nsem_obj *nsem;
 
 	if (sem == NULL) {
 		errno = EINVAL;
@@ -336,6 +352,13 @@ int sem_close(sem_t *sem)
 	}
 
 	nsem_list_lock();
+	nsem = nsem_find_by_sem(sem);
+	if (nsem == NULL) {
+		nsem_list_unlock();
+		errno = EINVAL;
+		return -1;
+	}
+
 	nsem_unref(nsem);
 	nsem_list_unlock();
 	return 0;
