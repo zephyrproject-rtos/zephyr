@@ -1094,6 +1094,20 @@ int usbd_ep_enqueue(const struct usbd_class_data *const c_data,
 int usbd_ep_dequeue(struct usbd_context *uds_ctx, const uint8_t ep);
 
 /**
+ * @brief How long the oldest request on a class endpoint has been queued
+ *
+ * See udc_ep_queue_age_ms(). A class whose host driver keeps an endpoint
+ * polled (e.g. CDC-ECM/NCM bulk IN) can use this to notice that the host
+ * has stopped polling it.
+ *
+ * @param[in] c_data Pointer to USB device class data
+ * @param[in] ep     Endpoint address
+ *
+ * @return Milliseconds since the oldest request was queued, 0 if none
+ */
+uint32_t usbd_ep_queue_age_ms(const struct usbd_class_data *const c_data, const uint8_t ep);
+
+/**
  * @brief Free USB device request buffer
  *
  * Put the buffer back into the request buffer pool.

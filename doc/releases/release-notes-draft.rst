@@ -224,6 +224,11 @@ Libraries / Subsystems
     command was run without that argument and its remaining arguments, which usually failed
     with a wrong argument count.
 
+* USB
+
+  * :c:func:`usbd_ep_queue_age_ms` reports how long the oldest request on an endpoint has been
+    queued, so a class can notice a host that stopped polling an IN endpoint.
+
 Devicetree
 **********
 

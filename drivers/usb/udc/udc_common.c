@@ -575,6 +575,7 @@ int udc_ep_enqueue(const struct device *dev, struct net_buf *const buf)
 		goto ep_enqueue_error;
 	}
 
+	bi->queued_at = k_uptime_get_32();
 	LOG_DBG("Queue ep 0x%02x %p len %u", cfg->addr, buf,
 		USB_EP_DIR_IS_IN(cfg->addr) ? buf->len : buf->size);
 
@@ -656,6 +657,28 @@ bool udc_ep_queue_is_empty(const struct device *dev, const uint8_t ep)
 	api->unlock(dev);
 
 	return empty;
+}
+
+uint32_t udc_ep_queue_age_ms(const struct device *dev, const uint8_t ep)
+{
+	const struct udc_api *api = dev->api;
+	struct udc_ep_config *cfg;
+	struct net_buf *buf = NULL;
+	uint32_t age = 0;
+
+	api->lock(dev);
+
+	cfg = udc_get_ep_cfg(dev, ep);
+	if (cfg) {
+		buf = udc_buf_peek(cfg);
+	}
+	if (buf) {
+		age = k_uptime_get_32() - udc_get_buf_info(buf)->queued_at;
+	}
+
+	api->unlock(dev);
+
+	return age;
 }
 
 int udc_ep_dequeue(const struct device *dev, const uint8_t ep)

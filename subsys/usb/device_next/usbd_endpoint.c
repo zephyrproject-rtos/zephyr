@@ -158,6 +158,13 @@ int usbd_ep_buf_free(struct usbd_context *const uds_ctx, struct net_buf *buf)
 	return udc_ep_buf_free(uds_ctx->dev, buf);
 }
 
+uint32_t usbd_ep_queue_age_ms(const struct usbd_class_data *const c_data, const uint8_t ep)
+{
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+
+	return udc_ep_queue_age_ms(uds_ctx->dev, ep);
+}
+
 int usbd_ep_dequeue(struct usbd_context *const uds_ctx, const uint8_t ep)
 {
 	return udc_ep_dequeue(uds_ctx->dev, ep);
