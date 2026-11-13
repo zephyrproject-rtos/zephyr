@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,14 +29,8 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = (
-		RESET_SOFTWARE		|
-		RESET_CPU_LOCKUP	|
-		RESET_WATCHDOG		|
-		RESET_SECURITY		|
-		RESET_DEBUG		|
-		RESET_HARDWARE
-	);
+	*supported = (RESET_SOFTWARE | RESET_CPU_LOCKUP | RESET_WATCHDOG | RESET_SECURITY |
+		      RESET_DEBUG | RESET_HARDWARE | RESET_LOW_POWER_WAKE);
 
 	return 0;
 }
@@ -51,6 +45,9 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	uint32_t reset_cause = POWER_GetResetCause();
 
 	*cause = 0;
+	if (POWER_GetWakenMode() == kPOWER_Pm4 && reset_cause == 0U) {
+		*cause |= RESET_LOW_POWER_WAKE;
+	}
 
 	if (reset_cause & kPOWER_ResetCauseSysResetReq) {
 		*cause |= RESET_SOFTWARE;
