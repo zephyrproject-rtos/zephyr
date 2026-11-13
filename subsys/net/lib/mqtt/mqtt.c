@@ -26,6 +26,11 @@ static void client_reset(struct mqtt_client *client)
 	client->internal.last_activity = 0U;
 	client->internal.rx_buf_datalen = 0U;
 	client->internal.remaining_payload = 0U;
+	/* The reason describes the session that just ended; a later error on
+	 * a reconnecting client must map its own reason again. No-op on
+	 * builds without MQTT 5.0 support.
+	 */
+	set_disconnect_reason(client, MQTT_DISCONNECT_NORMAL);
 }
 
 /** @brief Initialize tx buffer. */
