@@ -55,6 +55,9 @@ if(CONFIG_MBEDTLS)
       # To ensure Mbed TLS libraries are including Zephyr include directories and
       # Zephyr compile options we link those libraries with 'zephyr_interface'.
       target_link_libraries(${lib} PRIVATE zephyr_interface)
+      if(CONFIG_OFFLOADER_PSA)
+        target_compile_definitions(${lib} PRIVATE OFFLOADER_PSA_NO_REDIRECT)
+      endif()
       # Mbed TLS libraries are external CMake targets (not zephyr_library()),
       # so they miss the automatic add_dependencies on zephyr_generated_headers
       # that zephyr_library() targets get. Without this, generated headers
