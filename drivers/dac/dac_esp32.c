@@ -12,9 +12,17 @@
 #include <zephyr/drivers/clock_control.h>
 #include <hal/dac_ll.h>
 #include <hal/dac_types.h>
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+#include <hal/dac_periph.h>
+#include <hal/dac_types_private.h>
+#include <hal/gpio_ll.h>
+#include <hal/rtc_io_ll.h>
+#include <hal/rtc_io_periph.h>
+#else
 #include <hal/rtc_io_types.h>
 #include <hal/rtc_io_hal.h>
 #include <hal/rtc_io_ll.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_dac, CONFIG_DAC_LOG_LEVEL);
@@ -25,12 +33,42 @@ struct dac_esp32_config {
 	clock_control_subsys_t clock_subsys;
 };
 
-static int dac_esp32_write_value(const struct device *dev,
-				uint8_t channel, uint32_t value)
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+static void dac_esp32_release_pad(uint8_t gpio_num)
+{
+	int rtcio_num;
+
+	gpio_ll_input_disable(&GPIO, gpio_num);
+	gpio_ll_output_disable(&GPIO, gpio_num);
+	gpio_ll_pullup_dis(&GPIO, gpio_num);
+	gpio_ll_pulldown_dis(&GPIO, gpio_num);
+	gpio_ll_func_sel(&GPIO, gpio_num, PIN_FUNC_GPIO);
+
+	rtcio_num = rtc_io_num_map[gpio_num];
+	if (rtcio_num >= 0) {
+		rtcio_ll_function_select(rtcio_num, RTCIO_LL_FUNC_DIGITAL);
+		rtcio_ll_output_disable(rtcio_num);
+		rtcio_ll_input_disable(rtcio_num);
+		rtcio_ll_pullup_disable(rtcio_num);
+		rtcio_ll_pulldown_disable(rtcio_num);
+	}
+}
+#endif
+
+static int dac_esp32_write_value(const struct device *dev, uint8_t channel, uint32_t value)
 {
 	ARG_UNUSED(dev);
 
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	if (value >= (1U << SOC_DAC_RESOLUTION)) {
+		LOG_ERR("Value %u is out of range", value);
+		return -EINVAL;
+	}
+
+	dac_ll_pad_set_output_code((dac_channel_t)channel, (uint16_t)value);
+#else
 	dac_ll_update_output_value(channel, (uint8_t)value);
+#endif
 
 	return 0;
 }
@@ -50,7 +88,21 @@ static int dac_esp32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(CONFIG_SOC_SERIES_ESP32S31)
+	if (channel_cfg->resolution != SOC_DAC_RESOLUTION) {
+		LOG_ERR("Resolution %u is not supported", channel_cfg->resolution);
+		return -ENOTSUP;
+	}
+
+	dac_esp32_release_pad(dac_periph_signal.dac_channel_io_num[channel_cfg->channel_id]);
+	dac_ll_pad_set_data_source((dac_channel_t)channel_cfg->channel_id, DAC_DATA_SOURCE_DIRECT);
+	dac_ll_pad_enable_buffer((dac_channel_t)channel_cfg->channel_id, channel_cfg->buffered);
+	dac_ll_pad_set_buffer_code_range((dac_channel_t)channel_cfg->channel_id, false);
+	dac_ll_pad_power_on((dac_channel_t)channel_cfg->channel_id);
+	dac_ll_cw_enable_dc();
+#else
 	dac_ll_power_on(channel_cfg->channel_id);
+#endif
 
 	return 0;
 }
