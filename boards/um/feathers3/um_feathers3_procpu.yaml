@@ -1,0 +1,19 @@
+identifier: um_feathers3/esp32s3/procpu
+name: Unexpected Maker FeatherS3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - watchdog
+  - entropy
+  - pwm
+  - input
+  - feather_serial
+  - feather_i2c
+  - feather_spi
+vendor: um
