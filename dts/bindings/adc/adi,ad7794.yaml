@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices AD7794 6-channel, 24-bit sigma-delta ADC.
+
+  Each channel node selects an input pair of the multiplexer with
+  zephyr,input-positive (see dt-bindings/adc/ad7794-adc.h). The input pairs
+  are fixed, so zephyr,input-negative is not used. zephyr,differential selects
+  bipolar coding, in which case samples are returned as signed values.
+
+  Supported channel properties:
+  - zephyr,gain: ADC_GAIN_1 to ADC_GAIN_128 in powers of two
+  - zephyr,reference: ADC_REF_INTERNAL (1.17 V), ADC_REF_EXTERNAL0 (REFIN1),
+    ADC_REF_EXTERNAL1 (REFIN2)
+  - zephyr,acquisition-time: ADC_ACQ_TIME_DEFAULT or
+    ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, AD7794_DR_*)
+  - zephyr,current-source-pin: [<AD7794_IEXCDIR_*> <AD7794_IEXCEN_*>]
+  - zephyr,vbias-pins: AD7794_VBIAS_*
+  - zephyr,resolution: 24
+
+  Example:
+
+    #include <zephyr/dt-bindings/adc/adc.h>
+    #include <zephyr/dt-bindings/adc/ad7794-adc.h>
+
+    adc@0 {
+      compatible = "adi,ad7794";
+      reg = <0>;
+      spi-max-frequency = <1000000>;
+      #io-channel-cells = <1>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      channel@0 {
+        reg = <0>;
+        zephyr,gain = "ADC_GAIN_16";
+        zephyr,reference = "ADC_REF_EXTERNAL1";
+        zephyr,vref-mv = <1225>;
+        zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, AD7794_DR_16_7_HZ)>;
+        zephyr,differential;
+        zephyr,resolution = <24>;
+        zephyr,input-positive = <AD7794_ADC_AIN1>;
+        zephyr,current-source-pin = [AD7794_IEXCDIR_IOUT1_IOUT2 AD7794_IEXCEN_1_MA];
+      };
+    };
+
+compatible: "adi,ad7794"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

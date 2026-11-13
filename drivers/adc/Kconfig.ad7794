@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Testo SE & Co. KGaA
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_AD7794
+	bool "Analog Devices AD7794 ADC driver"
+	default y
+	depends on DT_HAS_ADI_AD7794_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	select ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN
+	select ADC_CONFIGURABLE_VBIAS_PIN
+	help
+	  Enable the driver for the Analog Devices AD7794 24-bit
+	  sigma-delta ADC.
