@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &ctrl_a;
+	};
+
+	ctrl_a: pcie-a {
+		compatible = "vnd,pcie";
+
+		decl_a: endpoint-a {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0x5678>;
+			class-rev = <0x01080200>;
+			class-rev-mask = <0xffffffff>;
+		};
+	};
+
+	ctrl_b: pcie-b {
+		compatible = "vnd,pcie";
+
+		decl_b: endpoint-b {
+			compatible = "vnd,pcie-endpoint";
+			vendor-id = <0x1234>;
+			device-id = <0x5678>;
+			class-rev = <0x01080200>;
+			class-rev-mask = <0xffffffff>;
+		};
+	};
+};

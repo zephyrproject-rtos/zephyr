@@ -9,8 +9,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #include <zephyr/drivers/pcie/cap.h>
+#include <zephyr/drivers/pcie/controller.h>
 #include <zephyr/drivers/pcie/msi.h>
-#include <zephyr/kernel/mm.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
@@ -20,6 +20,7 @@
 #define TEST_DATA      0x41U
 #define TEST_ADDRESS   0xfee01000U
 #define TEST_ADDRESS64 0x12345678abcdef00ULL
+#define TEST_BAR       0x10000000U
 #define MSI_BASE       0x10U
 #define MSIX_BASE      0x20U
 
@@ -28,74 +29,52 @@ static struct msix_vector table[2] __aligned(4);
 static bool msi_present;
 static bool msix_present;
 static size_t write_count;
-static size_t map_count;
-static size_t mdr_count;
 static size_t master_count;
 static size_t allocation_count;
 static uint64_t its_address;
 
-uint32_t pcie_get_cap(pcie_bdf_t bdf, uint32_t cap_id)
+static uint32_t test_conf_read(const struct device *dev, pcie_bdf_t bdf, unsigned int reg)
 {
-	zassert_equal(bdf, TEST_BDF);
-	zassert_true(cap_id == PCI_CAP_ID_MSI || cap_id == PCI_CAP_ID_MSIX);
-
-	if (cap_id == PCI_CAP_ID_MSI) {
-		return msi_present ? MSI_BASE : 0U;
-	}
-
-	return msix_present ? MSIX_BASE : 0U;
-}
-
-uint32_t pcie_conf_read(pcie_bdf_t bdf, unsigned int reg)
-{
+	ARG_UNUSED(dev);
 	zassert_equal(bdf, TEST_BDF);
 	zassert_true(reg < ARRAY_SIZE(config_space));
-
+	if (reg == PCIE_CONF_CAPPTR) {
+		return (msi_present ? MSI_BASE : msix_present ? MSIX_BASE : 0U) * 4U;
+	}
+	if (reg == MSI_BASE && msix_present) {
+		return config_space[reg] | (MSIX_BASE << 10);
+	}
+	if (reg == PCIE_CONF_BAR0 && config_space[reg] == UINT32_MAX) {
+		return ~(uint32_t)(sizeof(table) - 1U);
+	}
 	return config_space[reg];
 }
 
-void pcie_conf_write(pcie_bdf_t bdf, unsigned int reg, uint32_t value)
+static void test_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned int reg,
+			    uint32_t value)
 {
+	ARG_UNUSED(dev);
 	zassert_equal(bdf, TEST_BDF);
 	zassert_true(reg < ARRAY_SIZE(config_space));
-	config_space[reg] = value;
+	if (reg == PCIE_CONF_CMDSTAT) {
+		config_space[reg] = (config_space[reg] & 0xffff0000U & ~value) | (value & 0xffffU);
+		if ((value & PCIE_CONF_CMDSTAT_MASTER) != 0U) {
+			master_count++;
+		}
+	} else {
+		config_space[reg] = value;
+	}
 	write_count++;
 }
 
-void pcie_set_cmd(pcie_bdf_t bdf, uint32_t bits, bool on)
-{
-	zassert_equal(bdf, TEST_BDF);
-	zassert_equal(bits, PCIE_CONF_CMDSTAT_MASTER);
-	zassert_true(on);
-	master_count++;
-}
-
-uint64_t pcie_msi_map(unsigned int irq, msi_vector_t *vector, uint8_t n_vector)
-{
-	zassert_equal(irq, TEST_IRQ);
-	zassert_not_null(vector);
-	zassert_true(n_vector > 0U);
-	map_count++;
-
-	return vector->arch.address;
-}
-
-uint16_t pcie_msi_mdr(unsigned int irq, msi_vector_t *vector)
-{
-	zassert_equal(irq, TEST_IRQ);
-	zassert_not_null(vector);
-	mdr_count++;
-
-	return vector->arch.eventid;
-}
-
-uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority, msi_vector_t *vectors,
-				       uint8_t n_vector)
+static uint8_t test_setup(const struct device *dev, unsigned int priority, msi_vector_t *vectors,
+			  uint8_t n_vector)
 {
 	zassert_equal(priority, TEST_PRIORITY);
 	allocation_count++;
 
 	for (uint8_t i = 0U; i < n_vector; i++) {
+		zassert_equal_ptr(vectors[i].ctrl, dev);
 		zassert_equal(vectors[i].bdf, TEST_BDF);
 		vectors[i].arch.irq = TEST_IRQ;
 		vectors[i].arch.address = TEST_ADDRESS;
@@ -106,23 +85,28 @@ uint8_t arch_pcie_msi_vectors_allocate(unsigned int priority, msi_vector_t *vect
 	return n_vector;
 }
 
-bool pcie_get_mbar(pcie_bdf_t bdf, unsigned int bar_index, struct pcie_bar *bar)
+static bool test_translate(const struct device *dev, pcie_bdf_t bdf, bool mem, bool mem64,
+			   uintptr_t bus_addr, uintptr_t *addr)
 {
+	ARG_UNUSED(dev);
 	zassert_equal(bdf, TEST_BDF);
-	zassert_equal(bar_index, 0U);
-	bar->phys_addr = (uintptr_t)table;
-	bar->size = sizeof(table);
+	zassert_true(mem);
+	zassert_false(mem64);
+	zassert_equal(bus_addr, TEST_BAR);
+	*addr = (uintptr_t)table;
 
 	return true;
 }
 
-void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32_t flags)
-{
-	zassert_equal(phys, (uintptr_t)table);
-	zassert_true(size <= sizeof(table));
-	zassert_equal(flags, K_MEM_CACHE_NONE | K_MEM_PERM_RW);
-	*virt_ptr = (uint8_t *)table;
-}
+static DEVICE_API(pcie_ctrl, test_ctrl_api) = {
+	.conf_read = test_conf_read,
+	.conf_write = test_conf_write,
+	.region_translate = test_translate,
+	.msi_device_setup = test_setup,
+};
+
+DEVICE_DT_DEFINE(DT_NODELABEL(test_pcie), NULL, NULL, NULL, NULL,
+		 PRE_KERNEL_1, CONFIG_PCIE_INIT_PRIORITY, &test_ctrl_api);
 
 /* The GICv3 ITS provider requires hardware; this exercises the API width. */
 static uint64_t test_its_address(const struct device *dev)
@@ -147,6 +131,8 @@ static msi_vector_t test_vector(uint64_t address, uint16_t data)
 	vector.bdf = TEST_BDF;
 	vector.arch.address = address;
 	vector.arch.eventid = data;
+	vector.ctrl = DEVICE_DT_GET(DT_NODELABEL(test_pcie));
+	vector.msix = msix_present;
 
 	return vector;
 }
@@ -168,11 +154,11 @@ static void before(void *fixture)
 	msi_present = true;
 	msix_present = false;
 	write_count = 0U;
-	map_count = 0U;
-	mdr_count = 0U;
 	master_count = 0U;
 	allocation_count = 0U;
 	its_address = TEST_ADDRESS64;
+	config_space[PCIE_CONF_CMDSTAT] = PCIE_CONF_CMDSTAT_CAPS;
+	config_space[PCIE_CONF_BAR0] = TEST_BAR;
 	config_space[MSI_BASE] = PCI_CAP_ID_MSI | PCIE_MSI_MCR_64 | (1U << PCIE_MSI_MCR_MMC_SHIFT);
 	config_space[MSIX_BASE] = PCI_CAP_ID_MSIX | (1U << PCIE_MSIX_MCR_TSIZE_SHIFT);
 	/*
@@ -256,11 +242,11 @@ ZTEST(pcie_msi, test_msi64_low_address_clears_upper)
 
 ZTEST(pcie_msi, test_no_capability_does_not_modify_device)
 {
+	msi_vector_t vector = test_vector(TEST_ADDRESS, TEST_DATA);
+
 	msi_present = false;
-	zassert_false(pcie_msi_enable(TEST_BDF, NULL, 1U, TEST_IRQ));
+	zassert_false(pcie_msi_enable(TEST_BDF, &vector, 1U, TEST_IRQ));
 	zassert_equal(write_count, 0U);
-	zassert_equal(map_count, 0U);
-	zassert_equal(mdr_count, 0U);
 	zassert_equal(master_count, 0U);
 }
 
@@ -283,8 +269,6 @@ ZTEST(pcie_msi, test_msix_programs_each_vector)
 		zassert_equal(table[i].vector_ctrl, 0U);
 	}
 	zassert_true((config_space[MSIX_BASE] & PCIE_MSIX_MCR_EN) != 0U);
-	zassert_equal(map_count, ARRAY_SIZE(vectors));
-	zassert_equal(mdr_count, ARRAY_SIZE(vectors));
 	zassert_equal(master_count, 1U);
 }
 
@@ -311,7 +295,6 @@ ZTEST(pcie_msi, test_msi32_rejects_high_address_without_writes)
 	zassert_false(pcie_msi_enable(TEST_BDF, &vector, 1U, TEST_IRQ));
 	zassert_mem_equal(config_space, saved_config, sizeof(saved_config));
 	zassert_equal(write_count, 0U);
-	zassert_equal(mdr_count, 0U);
 	zassert_equal(master_count, 0U);
 }
 
@@ -331,7 +314,6 @@ ZTEST(pcie_msi, test_msi32_rejects_4gib_address)
 	config_space[MSI_BASE] &= ~PCIE_MSI_MCR_64;
 	zassert_false(pcie_msi_enable(TEST_BDF, &vector, 1U, TEST_IRQ));
 	zassert_equal(write_count, 0U);
-	zassert_equal(mdr_count, 0U);
 	zassert_equal(master_count, 0U);
 }
 

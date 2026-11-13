@@ -271,6 +271,14 @@ OPAMP
 PCIe
 ====
 
+* Static PCIe declarations now retain their owning controller. With
+  :kconfig:option:`CONFIG_PCIE_CONTROLLER`, endpoints below a bridge, a ``simple-bus`` or another
+  wrapper node must add a ``pcie-controller`` phandle referencing their owning host controller,
+  for example ``pcie-controller = <&pcie>;``. The controller is resolved from this phandle or the
+  endpoint's direct parent. Drivers using ``DEVICE_PCIE_DECLARE()`` or
+  ``DEVICE_PCIE_INST_DECLARE()`` require that controller to be the ``zephyr,pcie-controller``
+  chosen node; other placements fail to build. See :ref:`pcie_api`.
+
 * :c:func:`pcie_msi_map` now returns ``uint64_t`` instead of ``uint32_t``, and the ``address``
   member of :c:struct:`msi_vector_generic` is now ``uint64_t``. Out-of-tree implementations of
   :c:func:`pcie_msi_map` and code that reads the MSI vector address must be updated. The ITS

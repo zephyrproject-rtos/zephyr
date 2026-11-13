@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  ignore_faults: true
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_cortex_m3
+  tags:
+    - drivers
+    - pcie
+
+tests:
+  drivers.pcie.endpoint: {}
+  drivers.pcie.endpoint.reverse:
+    extra_args: EXTRA_DTC_OVERLAY_FILE=reverse.overlay
+  drivers.pcie.endpoint.unready:
+    extra_args: PCIE_TEST_FAIL_CTRL_B=ON
+  drivers.pcie.endpoint.unready_reverse:
+    extra_args:
+      - PCIE_TEST_FAIL_CTRL_B=ON
+      - EXTRA_DTC_OVERLAY_FILE=reverse.overlay
+  drivers.pcie.endpoint.mmu:
+    filter: CONFIG_MMU
+    platform_allow: qemu_cortex_a53

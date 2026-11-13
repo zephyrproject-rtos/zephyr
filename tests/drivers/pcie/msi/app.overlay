@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,pcie-controller = &test_pcie;
+	};
+
+	test_pcie: pcie {
+		compatible = "vnd,pcie";
+	};
+};
