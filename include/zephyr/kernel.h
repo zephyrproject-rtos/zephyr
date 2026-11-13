@@ -223,7 +223,7 @@ static inline
 void k_thread_foreach_filter_by_cpu(unsigned int cpu,
 				    k_thread_user_cb_t user_cb, void *user_data)
 {
-	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ZASSERT_IN(KERNEL, cpu == 0, "cpu filter out of bounds");
 	ARG_UNUSED(cpu);
 	k_thread_foreach(user_cb, user_data);
 }
@@ -298,7 +298,7 @@ static inline
 void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 					     k_thread_user_cb_t user_cb, void *user_data)
 {
-	__ASSERT(cpu == 0, "cpu filter out of bounds");
+	ZASSERT_IN(KERNEL, cpu == 0, "cpu filter out of bounds");
 	ARG_UNUSED(cpu);
 	k_thread_foreach_unlocked(user_cb, user_data);
 }
@@ -858,7 +858,7 @@ static inline bool k_is_pre_kernel(void)
 __attribute_const__
 static inline k_tid_t k_current_get(void)
 {
-	__ASSERT(!k_is_pre_kernel(), "k_current_get called pre-kernel");
+	ZASSERT_IN(KERNEL, !k_is_pre_kernel(), "k_current_get called pre-kernel");
 
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 
@@ -2319,8 +2319,8 @@ static inline uint32_t k_cycle_get_32(void)
 static inline uint64_t k_cycle_get_64(void)
 {
 	if (!IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
-		__ASSERT(0, "64-bit cycle counter not enabled on this platform. "
-			    "See CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER");
+		ZASSERT_IN(KERNEL, 0, "64-bit cycle counter not enabled on this platform. "
+				      "See CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER");
 		return 0;
 	}
 

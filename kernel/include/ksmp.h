@@ -16,6 +16,7 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/sys/zassert.h>
 #include <wait_q.h>
 
 #ifdef CONFIG_SMP
@@ -74,7 +75,7 @@ static inline struct _cpu *z_smp_thread_active_elsewhere(struct k_thread *thread
 	int thread_cpu_id = thread->base.cpu;
 	struct _cpu *thread_cpu;
 
-	__ASSERT_NO_MSG((thread_cpu_id >= 0) && (thread_cpu_id < arch_num_cpus()));
+	ZASSERT_IN(KERNEL, (thread_cpu_id >= 0) && (thread_cpu_id < arch_num_cpus()));
 
 	thread_cpu = &_kernel.cpus[thread_cpu_id];
 	if ((thread_cpu->current == thread) && (thread_cpu != _current_cpu)) {

@@ -19,13 +19,16 @@
 #include <kernel_internal.h>
 #include <scheduler.h>
 #include <wait_q.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 #ifdef CONFIG_OBJ_CORE_STATS_MEM_SLAB
 
 static int k_mem_slab_stats_raw(struct k_obj_core *obj_core, void *stats)
 {
-	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
+	ZASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
 
 	struct k_mem_slab *slab;
 	k_spinlock_key_t   key;
@@ -40,7 +43,7 @@ static int k_mem_slab_stats_raw(struct k_obj_core *obj_core, void *stats)
 
 static int k_mem_slab_stats_query(struct k_obj_core *obj_core, void *stats)
 {
-	__ASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
+	ZASSERT((obj_core != NULL) && (stats != NULL), "NULL parameter");
 
 	struct k_mem_slab *slab;
 	k_spinlock_key_t   key;
@@ -63,7 +66,7 @@ static int k_mem_slab_stats_query(struct k_obj_core *obj_core, void *stats)
 
 static int k_mem_slab_stats_reset(struct k_obj_core *obj_core)
 {
-	__ASSERT(obj_core != NULL, "NULL parameter");
+	ZASSERT(obj_core != NULL, "NULL parameter");
 
 	struct k_mem_slab *slab;
 	k_spinlock_key_t   key;
@@ -227,10 +230,10 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 		*mem = slab->free_list;
 		slab->free_list = *(char **)(slab->free_list);
 		slab->info.num_used++;
-		__ASSERT((slab->free_list == NULL &&
-			  slab->info.num_used == slab->info.num_blocks) ||
-			 slab_ptr_is_good(slab, slab->free_list),
-			 "slab corruption detected");
+		ZASSERT((slab->free_list == NULL &&
+			 slab->info.num_used == slab->info.num_blocks) ||
+			slab_ptr_is_good(slab, slab->free_list),
+			"slab corruption detected");
 
 #ifdef CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION
 		slab->info.max_used = max(slab->info.num_used,
@@ -267,7 +270,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 void k_mem_slab_free(struct k_mem_slab *slab, void *mem)
 {
 	if (!slab_ptr_is_good(slab, mem)) {
-		__ASSERT(false, "Invalid memory pointer provided");
+		ZASSERT(false, "Invalid memory pointer provided");
 		k_panic();
 		return;
 	}

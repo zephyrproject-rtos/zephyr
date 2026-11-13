@@ -11,6 +11,9 @@
 /* private kernel APIs */
 #include <ksched.h>
 #include <wait_q.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 int k_heap_array_get(struct k_heap **heap)
 {
@@ -59,7 +62,7 @@ static void *z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes
 
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	ZASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	bool blocked_alloc = false;
 
@@ -111,8 +114,8 @@ void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
 
 	/* A power of 2 as well as 0 is OK */
-	__ASSERT((align & (align - 1)) == 0,
-		 "align must be a power of 2");
+	ZASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
 
 	void *ret = z_heap_alloc_helper(heap, align, bytes, timeout,
 					sys_heap_aligned_alloc);
@@ -159,7 +162,7 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, realloc, heap, ptr, bytes, timeout);
 
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	ZASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	while (ret == NULL) {
 		ret = sys_heap_realloc(&heap->heap, ptr, bytes);
