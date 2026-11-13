@@ -165,6 +165,7 @@ ZTEST_USER(stackprot, test_stackprot_no_false_positive)
  *
  * @verifies ZEP-SRS-8-12
  * @verifies ZEP-SRS-8-25
+ * @verifies ZEP-SRS-8-31
  */
 ZTEST(stackprot, test_stackprot_canary_overflow)
 {
