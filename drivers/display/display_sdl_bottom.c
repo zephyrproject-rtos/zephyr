@@ -127,6 +127,26 @@ int sdl_display_init_bottom(struct sdl_display_init_params *params)
 		return -1;
 	}
 
+	/* The planes are composed here, then the result is rotated into the window */
+	*params->compose_texture =
+		SDL_CreateTexture(*params->renderer, SDL_PIXELFORMAT_BGRA32,
+				  SDL_TEXTUREACCESS_TARGET, params->width, params->height);
+	if (*params->compose_texture == NULL) {
+		nsi_print_warning("Failed to create SDL compose texture: %s", SDL_GetError());
+		return -1;
+	}
+
+	params->plane_textures[0] = *params->texture;
+	for (uint8_t i = 1; i < params->num_planes; i++) {
+		params->plane_textures[i] =
+			SDL_CreateTexture(*params->renderer, SDL_PIXELFORMAT_BGRA32,
+					  SDL_TEXTUREACCESS_STATIC, params->width, params->height);
+		if (params->plane_textures[i] == NULL) {
+			nsi_print_warning("Failed to create SDL plane texture: %s", SDL_GetError());
+			return -1;
+		}
+	}
+
 	void *background_data;
 	int background_pitch;
 	int err;
@@ -173,6 +193,53 @@ int sdl_display_init_bottom(struct sdl_display_init_params *params)
 	return 0;
 }
 
+/*
+ * Compose the enabled planes over the background in index order, then put the
+ * result in the window with the display orientation and the mask.
+ */
+static void sdl_display_render(const struct sdl_display_render_params *params)
+{
+	SDL_SetRenderTarget(params->renderer, params->compose_texture);
+	SDL_RenderClear(params->renderer);
+	SDL_RenderCopy(params->renderer, params->background_texture, NULL, NULL);
+
+	for (uint8_t i = 0; i < params->num_planes; i++) {
+		const struct sdl_display_plane_params *plane = &params->planes[i];
+		SDL_Rect src = {0, 0, plane->width, plane->height};
+		SDL_Rect dst = {plane->x, plane->y, plane->width, plane->height};
+
+		if (!plane->enabled) {
+			continue;
+		}
+
+		/* SDL_BLENDMODE_NONE ignores the alpha modulation, so a translucent plane blends */
+		SDL_SetTextureBlendMode(plane->texture, (plane->blend || plane->alpha < 255)
+								? SDL_BLENDMODE_BLEND
+								: SDL_BLENDMODE_NONE);
+		SDL_SetTextureAlphaMod(plane->texture, plane->alpha);
+		SDL_SetTextureColorMod(plane->texture, (params->color_tint >> 16) & 0xff,
+				       (params->color_tint >> 8) & 0xff, params->color_tint & 0xff);
+		SDL_RenderCopy(params->renderer, plane->texture, &src, &dst);
+		SDL_SetTextureColorMod(plane->texture, 255, 255, 255);
+		SDL_SetTextureAlphaMod(plane->texture, 255);
+	}
+
+	SDL_SetRenderTarget(params->renderer, NULL);
+	SDL_RenderClear(params->renderer);
+	SDL_RenderCopyEx(params->renderer, params->compose_texture, NULL, NULL, params->angle, NULL,
+			 SDL_FLIP_NONE);
+
+	/* Apply ellipse mask if enabled */
+	if (params->round_disp_mask != NULL) {
+		SDL_SetRenderDrawBlendMode(params->renderer, SDL_BLENDMODE_MOD);
+		SDL_RenderCopyEx(params->renderer, params->round_disp_mask, NULL, NULL,
+				 params->angle, NULL, SDL_FLIP_NONE);
+		SDL_SetRenderDrawBlendMode(params->renderer, SDL_BLENDMODE_BLEND);
+	}
+
+	SDL_RenderPresent(params->renderer);
+}
+
 void sdl_display_write_bottom(const struct sdl_display_write_params *params)
 {
 	SDL_Rect rect;
@@ -183,7 +250,7 @@ void sdl_display_write_bottom(const struct sdl_display_write_params *params)
 	rect.w = params->width;
 	rect.h = params->height;
 
-	err = SDL_TryLockMutex(params->mutex);
+	err = SDL_TryLockMutex(params->render->mutex);
 	if (err) {
 		nsi_print_warning("Failed to lock SDL mutex: %s", SDL_GetError());
 		return;
@@ -192,26 +259,33 @@ void sdl_display_write_bottom(const struct sdl_display_write_params *params)
 	SDL_UpdateTexture(params->texture, &rect, params->buf, 4 * rect.w);
 
 	if (params->display_on && !params->frame_incomplete) {
-		SDL_RenderClear(params->renderer);
-		SDL_RenderCopyEx(params->renderer, params->background_texture, NULL,
-			NULL, params->angle, NULL, SDL_FLIP_NONE);
-		SDL_SetTextureColorMod(params->texture,
-				       (params->color_tint >> 16) & 0xff,
-				       (params->color_tint >> 8) & 0xff,
-				       params->color_tint & 0xff);
-		SDL_RenderCopyEx(params->renderer, params->texture, NULL, NULL,
-			params->angle, NULL, SDL_FLIP_NONE);
-		SDL_SetTextureColorMod(params->texture, 255, 255, 255);
+		sdl_display_render(params->render);
+	}
 
-		/* Apply ellipse mask if enabled */
-		if (params->round_disp_mask != NULL) {
-			SDL_SetRenderDrawBlendMode(params->renderer, SDL_BLENDMODE_MOD);
-			SDL_RenderCopyEx(params->renderer, params->round_disp_mask, NULL,
-				NULL, params->angle, NULL, SDL_FLIP_NONE);
-			SDL_SetRenderDrawBlendMode(params->renderer, SDL_BLENDMODE_BLEND);
+	SDL_UnlockMutex(params->render->mutex);
+}
+
+void sdl_display_commit_bottom(const struct sdl_display_render_params *params, bool display_on)
+{
+	int err;
+
+	err = SDL_TryLockMutex(params->mutex);
+	if (err) {
+		nsi_print_warning("Failed to lock SDL mutex: %s", SDL_GetError());
+		return;
+	}
+
+	for (uint8_t i = 0; i < params->num_planes; i++) {
+		const struct sdl_display_plane_params *plane = &params->planes[i];
+		SDL_Rect rect = {0, 0, plane->width, plane->height};
+
+		if (plane->update && plane->buf != NULL) {
+			SDL_UpdateTexture(plane->texture, &rect, plane->buf, 4 * rect.w);
 		}
+	}
 
-		SDL_RenderPresent(params->renderer);
+	if (display_on) {
+		sdl_display_render(params);
 	}
 
 	SDL_UnlockMutex(params->mutex);
@@ -250,26 +324,9 @@ int sdl_display_read_bottom(const struct sdl_display_read_params *params)
 	return err;
 }
 
-void sdl_display_blanking_off_bottom(const struct sdl_display_blanking_off_params *params)
+void sdl_display_blanking_off_bottom(const struct sdl_display_render_params *params)
 {
-	SDL_RenderClear(params->renderer);
-	SDL_RenderCopyEx(params->renderer, params->background_texture, NULL, NULL,
-		params->angle, NULL, SDL_FLIP_NONE);
-	SDL_SetTextureColorMod(params->texture, (params->color_tint >> 16) & 0xff,
-			       (params->color_tint >> 8) & 0xff, params->color_tint & 0xff);
-	SDL_RenderCopyEx(params->renderer, params->texture, NULL, NULL,
-		params->angle, NULL, SDL_FLIP_NONE);
-	SDL_SetTextureColorMod(params->texture, 255, 255, 255);
-
-	/* Apply ellipse mask if enabled */
-	if (params->round_disp_mask != NULL) {
-		SDL_SetRenderDrawBlendMode(params->renderer, SDL_BLENDMODE_MOD);
-		SDL_RenderCopyEx(params->renderer, params->round_disp_mask, NULL, NULL,
-			params->angle, NULL, SDL_FLIP_NONE);
-		SDL_SetRenderDrawBlendMode(params->renderer, SDL_BLENDMODE_BLEND);
-	}
-
-	SDL_RenderPresent(params->renderer);
+	sdl_display_render(params);
 }
 
 void sdl_display_blanking_on_bottom(void *renderer)
@@ -283,6 +340,18 @@ void sdl_display_cleanup_bottom(const struct sdl_display_cleanup_params *params)
 	if (*params->round_disp_mask != NULL) {
 		SDL_DestroyTexture(*params->round_disp_mask);
 		*params->round_disp_mask = NULL;
+	}
+
+	for (uint8_t i = 1; i < params->num_planes; i++) {
+		if (params->plane_textures[i] != NULL) {
+			SDL_DestroyTexture(params->plane_textures[i]);
+			params->plane_textures[i] = NULL;
+		}
+	}
+
+	if (*params->compose_texture != NULL) {
+		SDL_DestroyTexture(*params->compose_texture);
+		*params->compose_texture = NULL;
 	}
 
 	if (*params->background_texture != NULL) {

@@ -8,7 +8,7 @@
 
 / {
 	chosen {
-		zephyr,display = &lcdif;
+		zephyr,display = &zephyr_lcdif;
 		zephyr,touch = &gt911_rk055hdmipi4m;
 	};
 
@@ -72,7 +72,7 @@
 	 * (pixel clock * bits per pixel) / MIPI data lanes
 	 */
 	phy-clock = <748154880>;
-	nxp,lcdif = <&lcdif>;
+	nxp,lcdif = <&zephyr_lcdif>;
 	status = "okay";
 
 	rm68200@0 {
