@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	soc: soc {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ccu: syscon@2002000 {
+			compatible = "syscon";
+			reg = <0x02002000 0x1000>;
+			status = "disabled";
+		};
+
+		uart3: serial@2603000 {
+			compatible = "ns16550";
+			reg = <0x02603000 0x400>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		pio: syscon@3604000 {
+			compatible = "syscon";
+			reg = <0x03604000 0x900>;
+			status = "disabled";
+		};
+	};
+};

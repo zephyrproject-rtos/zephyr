@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_T153_E907
+	select CACHE_MANAGEMENT
+	select CPU_XUANTIE_E907
+	# Native LR/SC accesses to this SoC's DRAM require the data cache.
+	select DCACHE if RISCV_ISA_EXT_A
+	select RISCV
+	select RISCV_SOC_CONTEXT_SAVE
+	select SOC_EARLY_INIT_HOOK
+	imply FPU

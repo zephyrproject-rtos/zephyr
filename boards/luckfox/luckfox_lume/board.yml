@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: luckfox_lume
+  full_name: Luckfox Lume
+  vendor: luckfox
+  socs:
+    - name: t153

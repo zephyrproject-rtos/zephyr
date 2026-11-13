@@ -1,0 +1,45 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <allwinner/t153_e907.dtsi>
+
+/ {
+	compatible = "luckfox,lume";
+	model = "Luckfox Lume";
+
+	chosen {
+		zephyr,console = &uart3;
+		zephyr,sram = &e907_ram;
+	};
+
+	e907_ram: memory@421c5000 {
+		compatible = "mmio-sram";
+		reg = <0x421c5000 0x00300000>;
+		device_type = "memory";
+	};
+};
+
+&ccu {
+	status = "okay";
+};
+
+&clic {
+	status = "okay";
+};
+
+&mtimer {
+	status = "okay";
+};
+
+&pio {
+	status = "okay";
+};
+
+&uart3 {
+	current-speed = <115200>;
+	status = "okay";
+};
