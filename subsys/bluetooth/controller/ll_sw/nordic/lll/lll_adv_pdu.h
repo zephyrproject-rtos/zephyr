@@ -211,6 +211,79 @@ static inline void *lll_adv_sync_extra_data_curr_get(struct lll_adv_sync *lll)
 	return lll->data.extra_data[lll->data.first];
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+
+//struct subevent_data_meta *se;
+static inline int lll_adv_sync_rsp_data_init(struct subevent_data_meta *se)
+{
+	return lll_adv_data_init(&se->data);
+}
+
+static inline struct pdu_adv *lll_adv_sync_rsp_data_alloc(struct subevent_data_meta *se,
+						      void **extra_data,
+						      uint8_t *idx)
+{
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	return lll_adv_pdu_and_extra_data_alloc(&se->data, extra_data, idx);
+#else
+	return lll_adv_pdu_alloc(&se->data, idx);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+}
+
+static inline void lll_adv_sync_rsp_data_release(struct subevent_data_meta *se)
+{
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	lll_adv_and_extra_data_release(&se->data);
+#else
+	lll_adv_data_release(&se->data);
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+}
+
+static inline void lll_adv_sync_rsp_data_enqueue(struct subevent_data_meta *se,
+					     uint8_t idx)
+{
+	lll_adv_pdu_enqueue(&se->data, idx);
+}
+
+static inline struct pdu_adv *
+lll_adv_sync_rsp_data_peek(const struct subevent_data_meta *se, void **extra_data)
+{
+	uint8_t last = se->data.last;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+	if (extra_data) {
+		*extra_data = se->data.extra_data[last];
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
+	return (void *)se->data.pdu[last];
+}
+
+static inline struct pdu_adv *
+lll_adv_sync_rsp_data_latest_peek(const struct subevent_data_meta *const se)
+{
+	return lll_adv_pdu_latest_peek(&se->data);
+}
+
+static inline struct pdu_adv *lll_adv_sync_rsp_data_curr_get(struct subevent_data_meta *se)
+{
+	return (void *)se->data.pdu[se->data.first];
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY)
+static inline void *lll_adv_sync_rsp_extra_data_peek(struct subevent_data_meta *se)
+{
+	return se->data.extra_data[se->data.last];
+}
+
+static inline void *lll_adv_sync_rsp_extra_data_curr_get(struct subevent_data_meta *se)
+{
+	return se->data.extra_data[se->data.first];
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY */
+
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
