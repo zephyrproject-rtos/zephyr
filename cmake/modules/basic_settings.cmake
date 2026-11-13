@@ -28,6 +28,11 @@ This ensures that quotes and lists are correctly preserved.
 
 include_guard(GLOBAL)
 
+# Variables used in preset files to support `west build --sysbuild ... -- --preset=<name>` usage.
+# Those variables are consumed by sysbuild but ignored in the application build.
+set(silence ${CMAKE_PRESET})
+set(silence ${CMAKE_PRESET_SYSBUILD_FIELD})
+
 if(SYSBUILD)
   add_custom_target(sysbuild_cache)
   file(STRINGS "${SYSBUILD_CACHE}" sysbuild_cache_strings ENCODING UTF-8)

@@ -405,6 +405,13 @@ function(ExternalZephyrProject_Add)
     )
   endforeach()
 
+  set(preset_argument)
+  if(ZBUILD_APP_TYPE STREQUAL "MAIN" AND DEFINED CMAKE_PRESET)
+    set(preset_argument "--preset=${CMAKE_PRESET}")
+  elseif(DEFINED ${ZBUILD_APPLICATION}_CMAKE_PRESET)
+    set(preset_argument "--preset=${${ZBUILD_APPLICATION}_CMAKE_PRESET}")
+  endif()
+
   include(ExternalProject)
   set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
@@ -417,6 +424,7 @@ function(ExternalZephyrProject_Add)
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
                ${shared_cmake_vars_argument}
                ${image_extra_kconfig_targets}
+               ${preset_argument}
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""
     BUILD_ALWAYS True
