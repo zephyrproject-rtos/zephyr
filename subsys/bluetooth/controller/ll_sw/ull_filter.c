@@ -59,6 +59,11 @@ LOG_MODULE_REGISTER(bt_ctlr_ull_filter);
 /* Hardware Filter Accept List */
 static struct lll_filter fal_filter;
 
+/* The anonymous entry of the Filter Accept List, which matches advertising
+ * without AdvA and so has no place in the address lists
+ */
+static bool fal_anon;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 #include "common/rpa.h"
 
@@ -221,6 +226,8 @@ uint8_t ll_fal_clear(void)
 	filter_clear(&fal_filter);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+	fal_anon = false;
+
 	return 0;
 }
 
@@ -239,6 +246,8 @@ uint8_t ll_fal_add(bt_addr_le_t *addr)
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
+		fal_anon = true;
+
 		return 0;
 	}
 
@@ -264,6 +273,8 @@ uint8_t ll_fal_remove(bt_addr_le_t *addr)
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
+		fal_anon = false;
+
 		return 0;
 	}
 
@@ -272,6 +283,11 @@ uint8_t ll_fal_remove(bt_addr_le_t *addr)
 #else
 	return filter_remove(&fal_filter, addr->type, addr->a.val);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+}
+
+bool ull_filter_ull_fal_anon_listed(void)
+{
+	return fal_anon;
 }
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -631,6 +647,7 @@ void ull_filter_reset(bool init)
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	fal_clear();
+	fal_anon = false;
 
 	rl_enable = 0U;
 	rpa_timeout_ms = DEFAULT_RPA_TIMEOUT_MS;
@@ -651,6 +668,7 @@ void ull_filter_reset(bool init)
 	}
 #elif defined(CONFIG_BT_CTLR_FILTER_ACCEPT_LIST)
 	filter_clear(&fal_filter);
+	fal_anon = false;
 #endif /* CONFIG_BT_CTLR_FILTER_ACCEPT_LIST */
 }
 

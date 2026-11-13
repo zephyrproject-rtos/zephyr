@@ -178,9 +178,9 @@ static atomic_val_t scan(uint8_t options)
 
 	/* Scan for a fixed time, as the kinds that are not reported are part
 	 * of what is checked. The playback device of the test scripts sends
-	 * for the first 6 seconds of the simulation, which two scans fit in.
+	 * for the first 6 seconds of the simulation, which three scans fit in.
 	 */
-	(void)k_sleep(K_SECONDS(3));
+	(void)k_sleep(K_SECONDS(2));
 
 	err = bt_le_scan_stop();
 	TEST_ASSERT(err == 0, "Scan stop failed (err %d)", err);
@@ -205,20 +205,32 @@ static void scanner_init(void)
 
 static void test_anon_scan(void)
 {
+	const atomic_val_t to_scanner = REPORT_UNDIRECTED | REPORT_DIRECTED |
+					REPORT_UNDIRECTED_AD | REPORT_DIRECTED_AD |
+					REPORT_DIRECTED_PRI_AD;
+	const bt_addr_le_t anon = { .type = BT_ADDR_LE_ANONYMOUS };
 	atomic_val_t reported;
+	int err;
 
 	TEST_START("anon_scan");
 
 	scanner_init();
 
 	reported = scan(BT_LE_SCAN_OPT_NONE);
-	TEST_ASSERT(reported == (REPORT_UNDIRECTED | REPORT_DIRECTED | REPORT_UNDIRECTED_AD |
-				 REPORT_DIRECTED_AD | REPORT_DIRECTED_PRI_AD),
-		    "Anonymous advertising reported as 0x%lx", (unsigned long)reported);
+	TEST_ASSERT(reported == to_scanner, "Anonymous advertising reported as 0x%lx",
+		    (unsigned long)reported);
 
 	/* The Filter Accept List has no entry for anonymous advertising */
 	reported = scan(BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST);
 	TEST_ASSERT(reported == 0, "Anonymous advertising reported as 0x%lx with the list",
+		    (unsigned long)reported);
+
+	err = bt_le_filter_accept_list_add(&anon);
+	TEST_ASSERT(err == 0, "Filter Accept List add failed (err %d)", err);
+
+	reported = scan(BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST);
+	TEST_ASSERT(reported == to_scanner,
+		    "Anonymous advertising reported as 0x%lx with the anonymous entry",
 		    (unsigned long)reported);
 
 	TEST_PASS("anon_scan");
