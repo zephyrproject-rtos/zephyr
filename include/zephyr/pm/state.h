@@ -30,6 +30,15 @@ extern "C" {
 
 /**
  * @enum pm_state Power management state
+ *
+ * @satisfies ZEP-SRS-13-4
+ * @satisfies ZEP-SRS-13-15
+ * @satisfies ZEP-SRS-13-16
+ * @satisfies ZEP-SRS-13-17
+ * @satisfies ZEP-SRS-13-18
+ * @satisfies ZEP-SRS-13-19
+ * @satisfies ZEP-SRS-13-20
+ * @satisfies ZEP-SRS-13-21
  */
 enum pm_state {
 	/**
