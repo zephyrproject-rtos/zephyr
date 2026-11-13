@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* High-power I2S0 transmits into LP I2S. Wire GPIO20/32/33 to LP IO 2/3/6 */
+
+&pinctrl {
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_BCK_GPIO20>,
+				 <I2S0_O_WS_GPIO32>,
+				 <I2S0_O_SD_GPIO33>;
+		};
+	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 1>;
+	dma-names = "tx";
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};

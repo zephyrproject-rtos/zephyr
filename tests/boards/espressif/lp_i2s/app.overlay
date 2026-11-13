@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lp_i2s {
+	bck-pin = <2>;
+	ws-pin = <3>;
+	sd-pin = <6>;
+	status = "okay";
+};
