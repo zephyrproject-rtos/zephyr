@@ -781,7 +781,6 @@ static int bdma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	channel->busy		= true;
 	channel->bdma_callback	= config->dma_callback;
 	channel->direction	= config->channel_direction;
 	channel->user_data	= config->user_data;
@@ -897,6 +896,10 @@ static int bdma_stm32_configure(const struct device *dev,
 	 */
 	BDMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
+
+	/* The channel is busy once its configuration is accepted */
+	channel->busy = true;
+
 	LL_BDMA_Init(bdma, bdma_stm32_id_to_channel(id), &BDMA_InitStruct);
 
 	LL_BDMA_EnableIT_TC(bdma, bdma_stm32_id_to_channel(id));

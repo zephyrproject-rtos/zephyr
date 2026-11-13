@@ -357,6 +357,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #endif
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
 
+/* FIFO size of a stream of the v1 controllers */
+#define DMA_STM32_FIFO_SIZE 16U
+
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
 	LL_DMA_MDATAALIGN_HALFWORD,
@@ -641,12 +644,8 @@ static int dma_stm32_configure(const struct device *dev,
 			dev->name);
 		return -ENOTSUP;
 	}
-	/* Support only the same data width for source and dest */
-	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("source and dest data size differ.");
-		return -EINVAL;
-	}
-#else /* CONFIG_DMA_STM32_V1 */
+#endif /* CONFIG_DMA_STM32_V1 */
+
 	if (config->dest_data_size != 4U &&
 	    config->dest_data_size != 2U &&
 	    config->dest_data_size != 1U) {
@@ -654,7 +653,6 @@ static int dma_stm32_configure(const struct device *dev,
 			config->dest_data_size);
 		return -EINVAL;
 	}
-#endif /* CONFIG_DMA_STM32_V1 */
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
@@ -675,7 +673,6 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->user_data       = config->user_data;
@@ -766,7 +763,21 @@ static int dma_stm32_configure(const struct device *dev,
 		DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
 	}
 
+	/* source_periph selects the width the data count is in: the source width when
+	 * set, the destination width otherwise.
+	 */
+#ifdef CONFIG_DMA_STM32_V1
+	/* v1: the count is in items of the peripheral port width, and that port holds
+	 * the source unless the transfer goes to a peripheral. Memory to memory
+	 * transfers are counted in the source width.
+	 */
+	stream->source_periph = (stream->direction != MEMORY_TO_PERIPHERAL);
+#else
+	/* v2: one item is moved per count, without packing between the widths. Memory
+	 * to memory transfers are counted in the destination width.
+	 */
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
+#endif /* CONFIG_DMA_STM32_V1 */
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if ((config->source_burst_length % config->source_data_size) != 0) {
@@ -804,13 +815,44 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.Channel = dma_stm32_slot_to_channel(config->dma_slot);
 #endif
 
-	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
-					config->head_block->fifo_mode_control);
-
-	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
+		/* Memory to memory transfers must not use direct mode. Nothing paces
+		 * them, so the FIFO threshold only sets how much the FIFO buffers
+		 * before it drains: a full FIFO suits a single beat and every burst
+		 * that fits the FIFO. A burst must fit it on either port.
+		 */
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
+		DMA_InitStruct.FIFOThreshold = LL_DMA_FIFOTHRESHOLD_FULL;
+		if (config->source_burst_length > DMA_STM32_FIFO_SIZE ||
+		    config->dest_burst_length > DMA_STM32_FIFO_SIZE) {
+			LOG_ERR("burst exceeds the FIFO.");
+			return -EINVAL;
+		}
 	} else {
-		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
+		DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
+						config->head_block->fifo_mode_control);
+		if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+			DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
+		} else {
+			DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
+		}
+	}
+
+	/* In direct mode the data is moved with the peripheral width only */
+	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_DISABLE &&
+	    config->dest_data_size != config->source_data_size) {
+		LOG_ERR("source and dest data size differ in direct mode.");
+		return -EINVAL;
+	}
+
+	/* The FIFO packs and unpacks whole items only: with different widths the block
+	 * must be a whole number of items of the wider one
+	 */
+	if (config->dest_data_size != config->source_data_size &&
+	    (config->head_block->block_size %
+	     MAX(config->source_data_size, config->dest_data_size)) != 0U) {
+		LOG_ERR("block size is not a multiple of the wider data size.");
+		return -EINVAL;
 	}
 #endif
 	if (stream->source_periph) {
@@ -825,6 +867,10 @@ static int dma_stm32_configure(const struct device *dev,
 	/* With dma V2 and dmamux,the request ID is stored in the dma_slot */
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
+
+	/* The stream is busy once its configuration is accepted */
+	stream->busy = true;
+
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
 
 	/* Always enable the transfer error interrupt */
@@ -871,6 +917,14 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	}
 
 	stream = &config->streams[id];
+
+#ifdef CONFIG_DMA_STM32_V1
+	/* With different widths moves whole items of the wider one only */
+	if (stream->src_size != stream->dst_size &&
+	    (size % MAX(stream->src_size, stream->dst_size)) != 0U) {
+		return -EINVAL;
+	}
+#endif /* CONFIG_DMA_STM32_V1 */
 
 	if (dma_stm32_disable_stream(dma, id) != 0) {
 		return -EBUSY;
@@ -1031,10 +1085,11 @@ static int dma_stm32_get_status(const struct device *dev,
 	 *
 	 * The DMA keeps track of a number of elements remaining rather than
 	 * an amount of bytes; convert to what the API expects based on the
-	 * source data size: "to be transferred" = "to be read from source".
+	 * width of the peripheral port, which counts the elements.
 	 */
 	pending_elems = LL_DMA_GetDataLength(dma, dma_stm32_id_to_stream(id));
-	stat->pending_length = pending_elems * stream->src_size;
+	stat->pending_length =
+		pending_elems * (stream->source_periph ? stream->src_size : stream->dst_size);
 
 	return 0;
 }
