@@ -48,6 +48,7 @@ ZASSERT_MODULE(DEFAULT); /* for BT_AUDIO_LOCK_ASSERT */
 
 /* Mutex that should guard all access to aics_insts and the individual instances in that array */
 static K_MUTEX_DEFINE(aics_mutex);
+static K_SEM_DEFINE(sem_callback, 1, 1);
 
 #if defined(CONFIG_BT_AICS)
 
@@ -495,6 +496,18 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 	ARG_UNUSED(conn);
 	ARG_UNUSED(flags);
 
+	if (conn == NULL) { /* local write */
+		if (!k_sem_take(&sem_callback, K_NO_WAIT)) {
+			LOG_DBG("Local write rejected because callback is pending");
+			return -EBUSY;
+		}
+	} else {
+		if (!k_sem_take(&sem_callback, K_MSEC(500))) {
+			LOG_DBG("Remote write rejected because callback is pending");
+			return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+		}
+	}
+
 	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	ret = aics_control_write(inst, buf, len, offset, &state_change);
@@ -504,12 +517,16 @@ static ssize_t write_aics_control(struct bt_conn *conn, const struct bt_gatt_att
 		gain = inst->srv.state.gain;
 		mute = inst->srv.state.mute;
 		gain_mode = inst->srv.state.gain_mode;
+	} else {
+		/* Free early if we can */
+		k_sem_give(&sem_callback);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
 	if (state_cb != NULL) {
 		state_cb(inst, 0, gain, mute, gain_mode);
+		k_sem_give(&sem_callback);
 	}
 
 	return ret;
@@ -598,6 +615,11 @@ static int aics_local_control_write(struct bt_aics *inst, struct bt_aics_gain_co
 	int8_t gain = 0;
 	ssize_t ret;
 
+	if (!k_sem_take(&sem_callback, K_NO_WAIT)) {
+		LOG_DBG("Write rejected because callback is pending");
+		return -EBUSY;
+	}
+
 	bt_audio_mutex_lock_forever(&aics_mutex);
 
 	cp->cp.counter = inst->srv.state.change_counter;
@@ -608,12 +630,16 @@ static int aics_local_control_write(struct bt_aics *inst, struct bt_aics_gain_co
 		gain = inst->srv.state.gain;
 		mute = inst->srv.state.mute;
 		gain_mode = inst->srv.state.gain_mode;
+	} else {
+		/* Free early if we can */
+		k_sem_give(&sem_callback);
 	}
 
 	bt_audio_mutex_unlock(&aics_mutex);
 
 	if (state_cb != NULL) {
 		state_cb(inst, 0, gain, mute, gain_mode);
+		k_sem_give(&sem_callback);
 	}
 
 	if (ret < 0) {
