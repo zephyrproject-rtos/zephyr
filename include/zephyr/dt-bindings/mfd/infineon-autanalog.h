@@ -130,4 +130,12 @@
 #define IFX_AUTANALOG_DAC_DIR_REVERSE  2 /**< Backward / decrement */
 /** @} */
 
+/**
+ * @name AC Timer clock source values (cy_en_autanalog_timer_clk_src_t)
+ * @{
+ */
+#define IFX_AUTANALOG_TIMER_CLK_LP 0 /**< CLK_LPOSC (nominally 4.096 MHz) */
+#define IFX_AUTANALOG_TIMER_CLK_LF 1 /**< CLK_LF (nominally 32 kHz) */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_MFD_INFINEON_AUTANALOG_H_ */

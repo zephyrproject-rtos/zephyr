@@ -66,6 +66,31 @@ properties:
       sequence (basic mode) and automatically populates SAR fields based on
       the SAR ADC child node status.
 
+  ac-timer-enable:
+    type: boolean
+    description: |
+      Enable the Autonomous Controller timer.  The timer fires a
+      TIMER_DONE_WAKE condition each time the counter reaches the
+      period set by ac-timer-period.
+
+  ac-timer-clk-src:
+    type: int
+    default: 0
+    description: |
+      AC timer clock source.
+        0 = CLK_LPOSC (nominally 4.096 MHz, LP oscillator)
+        1 = CLK_LF    (nominally 32 kHz, low-frequency clock)
+      Use CLK_LF for maximum sleep duration between samples.
+
+  ac-timer-period:
+    type: int
+    default: 0
+    description: |
+      AC timer period (0-65535).  The timer counts clock ticks
+      (selected by ac-timer-clk-src) and fires TIMER_DONE_WAKE when
+      the count reaches this value.  Only meaningful when
+      ac-timer-enable is set.
+
 examples:
   - |
     /* Example of custom 4-state sequence using SAR.

@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 
 #define IFX_AUTANALOG_SAR_SAMPLETIME_COUNT 4
 #define IFX_AUTANALOG_SAR_MAX_FIR_FILTERS  2
+#define IFX_AUTANALOG_SAR_LIMIT_CFG_NUM    4
+#define IFX_AUTANALOG_SAR_CORR_COEFF_NUM   8
 
 #define IFX_AUTANALOG_HF_CLK_SRC 9
 
@@ -135,6 +137,13 @@ struct ifx_autanalog_sar_channel_dt_config {
 	uint8_t channel_id;
 	uint8_t fifo_sel;
 	bool mux_buf_bypass;
+	bool sign;
+	bool differential;
+	uint8_t neg_pin;
+	uint8_t pos_coeff;
+	uint8_t neg_coeff;
+	bool acc_shift;
+	uint8_t limit;
 };
 
 struct ifx_autanalog_sar_fir_config {
@@ -145,6 +154,12 @@ struct ifx_autanalog_sar_fir_config {
 	bool wait_tap_init;
 	uint8_t fir_limit;
 	uint8_t fifo_sel;
+};
+
+struct ifx_autanalog_sar_limit_config {
+	uint8_t condition;
+	int32_t low;
+	int32_t high;
 };
 
 struct ifx_autanalog_sar_seq_hs_config {
@@ -202,6 +217,12 @@ struct ifx_autanalog_sar_adc_config {
 	bool static_sample_time;
 	uint8_t num_sample_times;
 	uint16_t sample_times[IFX_AUTANALOG_SAR_SAMPLETIME_COUNT];
+	struct ifx_autanalog_sar_limit_config limit_cond[IFX_AUTANALOG_SAR_LIMIT_CFG_NUM];
+	uint8_t limit_cond_mask; /* bitmask of which limit conditions are configured */
+	bool ac_advanced;        /* true when parent MFD uses advanced AC (ac-states in DT) */
+	bool has_gain_offset_corr;
+	uint16_t gain_corr[IFX_AUTANALOG_SAR_CORR_COEFF_NUM];
+	int16_t offset_corr[IFX_AUTANALOG_SAR_CORR_COEFF_NUM];
 };
 
 struct ifx_autanalog_sar_adc_channel_config {
@@ -218,8 +239,20 @@ struct ifx_autanalog_sar_adc_channel_config {
 	 * Cy_AutAnalog_SAR_LoadStaticConfig() call instead of being kept in .bss.
 	 */
 	uint8_t pos_pin;
-	/* Negative input pin for MUX channels. */
+	/* Negative input pin for MUX channels, or negative GPIO pin for differential mode. */
 	uint8_t neg_pin;
+	/* Sign extension enable */
+	bool sign;
+	/* Differential mode enable (GPIO channels only) */
+	bool differential;
+	/* Positive correction coefficient */
+	uint8_t pos_coeff;
+	/* Negative correction coefficient */
+	uint8_t neg_coeff;
+	/* Accumulator shift enable */
+	bool acc_shift;
+	/* Limit status / range detection selection */
+	uint8_t limit;
 };
 
 struct ifx_autanalog_sar_adc_data {
@@ -255,6 +288,9 @@ struct ifx_autanalog_sar_adc_data {
 
 	/* PDL structure for FIFO configuration */
 	cy_stc_autanalog_fifo_cfg_t pdl_fifo_cfg;
+
+	/* PDL structures for range detection / limit conditions */
+	cy_stc_autanalog_sar_limit_t pdl_limit_cond[IFX_AUTANALOG_SAR_LIMIT_CFG_NUM];
 
 	/* FIFO watermark callback */
 	adc_ifx_autanalog_sar_fifo_callback_t fifo_callback;
@@ -410,10 +446,22 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 		.chanID = cfg->fifo_chan_id,
 		.shiftMode = cfg->shift_mode,
 		.intMuxChan = {NULL}, /* MUX channels configured during channel setup */
-		.limitCond = {NULL},  /* We don't expose the range detection */
-		.muxResultMask = 0u,  /* MUX result mask updated during channel setup */
+		.limitCond = {NULL},
+		.muxResultMask = 0u, /* MUX result mask updated during channel setup */
 		.firResultMask = cfg->fir_result_mask,
 	};
+
+	/* Populate range detection limit conditions from DT */
+	for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_LIMIT_CFG_NUM; i++) {
+		if ((cfg->limit_cond_mask & BIT(i)) != 0) {
+			data->pdl_limit_cond[i] = (cy_stc_autanalog_sar_limit_t){
+				.cond = (cy_en_autanalog_sar_cond_t)cfg->limit_cond[i].condition,
+				.low = cfg->limit_cond[i].low,
+				.high = cfg->limit_cond[i].high,
+			};
+			data->pdl_adc_top_static_obj.limitCond[i] = &data->pdl_limit_cond[i];
+		}
+	}
 
 	if (!cfg->lp_mode) {
 		data->pdl_adc_hs_static_obj = (cy_stc_autanalog_sar_sta_hs_t){
@@ -879,7 +927,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	const struct ifx_autanalog_sar_adc_config *cfg = data->dev->config;
 	const struct adc_sequence *sequence = &ctx->sequence;
 	uint32_t result_status;
-	cy_stc_autanalog_state_t ac_state;
 
 	data->repeat_buffer = data->conversion_buffer;
 	if (data->conversion_buffer == NULL || sequence->buffer_size == 0) {
@@ -905,11 +952,15 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		return;
 	}
 
-	Cy_AutAnalog_GetControllerState(&ac_state);
-	if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
-		LOG_ERR("Autonomous Controller is busy");
-		ifx_autanalog_sar_complete_error(data, -EBUSY);
-		return;
+	if (!cfg->ac_advanced) {
+		cy_stc_autanalog_state_t ac_state;
+
+		Cy_AutAnalog_GetControllerState(&ac_state);
+		if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
+			LOG_ERR("Autonomous Controller is busy");
+			ifx_autanalog_sar_complete_error(data, -EBUSY);
+			return;
+		}
 	}
 
 	if (Cy_AutAnalog_SAR_IsBusy(0)) {
@@ -928,65 +979,71 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		Cy_AutAnalog_SAR_ClearMuxChanResultStatus(0, mux_ch);
 	}
 
-	if (cfg->lp_mode) {
-		if (cfg->lp_seq != NULL) {
-			/* DT-defined LP sequencer: force last entry to single-shot */
-			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
-				0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
-		} else {
-			if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building LP ADC Sequencer Configuration");
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			data->pdl_adc_seq_lp_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			result_status =
-				Cy_AutAnalog_SAR_LoadLPseqTable(0, 1, &data->pdl_adc_seq_lp_cfg[0]);
-		}
-	} else {
-		if (cfg->hs_seq != NULL) {
-			/* DT-defined HS sequencer: force last entry to single-shot */
-			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
-		} else {
-			if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building HS ADC Sequencer Configuration");
-				ifx_autanalog_sar_complete_error(data, -EINVAL);
-				return;
-			}
-			data->pdl_adc_seq_hs_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-			result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
-		}
-	}
-
-	if (result_status != CY_AUTANALOG_SUCCESS) {
-		LOG_ERR("Failed to load ADC sequencer: %u", (unsigned int)result_status);
-		ifx_autanalog_sar_complete_error(data, -EIO);
-		return;
-	}
-
-	/* State 0 is used for LP/HS mode selection and peripheral power up.
-	 * State 1 is the stop/reconfiguration state.
-	 * State 2 is the SAR sampling state.
-	 * State 3 jumps back to state 1
+	/* In advanced AC mode the state machine is already running and
+	 * triggers SAR conversions according to its STT.  Skip sequencer
+	 * loading and AC start — just wait for results below.
 	 */
-	Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
-	ifx_autanalog_start_autonomous_control(cfg->mfd);
+	if (!cfg->ac_advanced) {
+		if (cfg->lp_mode) {
+			if (cfg->lp_seq != NULL) {
+				/* DT-defined LP sequencer: force last entry to single-shot */
+				data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+					0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
+			} else {
+				if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building LP ADC Sequencer Configuration");
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				data->pdl_adc_seq_lp_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+					0, 1, &data->pdl_adc_seq_lp_cfg[0]);
+			}
+		} else {
+			if (cfg->hs_seq != NULL) {
+				/* DT-defined HS sequencer: force last entry to single-shot */
+				data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+					0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+			} else {
+				if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building HS ADC Sequencer Configuration");
+					ifx_autanalog_sar_complete_error(data, -EINVAL);
+					return;
+				}
+				data->pdl_adc_seq_hs_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+				result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+					0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+			}
+		}
+		if (result_status != CY_AUTANALOG_SUCCESS) {
+			LOG_ERR("Error Loading ADC Sequencer Configuration: %u",
+				(unsigned int)result_status);
+			ifx_autanalog_sar_complete_error(data, -EIO);
+			return;
+		}
+
+		/* State 0 is used for LP/HS mode selection and peripheral power up.
+		 * State 1 is the stop/reconfiguration state.
+		 * State 2 is the SAR sampling state.
+		 * State 3 jumps back to state 1
+		 */
+		Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+		ifx_autanalog_start_autonomous_control(cfg->mfd);
+	}
 
 #if defined(CONFIG_ADC_ASYNC)
 	if (!data->ctx.asynchronous) {
@@ -1315,13 +1372,15 @@ static int ifx_apply_static_config(struct ifx_autanalog_sar_adc_data *data)
 			}
 
 			hs_chans[ch].posPin = (cy_en_autanalog_sar_pin_hs_t)ccfg->pos_pin;
-			hs_chans[ch].hsDiffEn = false;
-			hs_chans[ch].sign = false;
-			hs_chans[ch].posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-			hs_chans[ch].negPin = CY_AUTANALOG_SAR_PIN_GPIO0;
-			hs_chans[ch].accShift = false;
-			hs_chans[ch].negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-			hs_chans[ch].hsLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+			hs_chans[ch].hsDiffEn = ccfg->differential;
+			hs_chans[ch].sign = ccfg->sign;
+			hs_chans[ch].posCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->pos_coeff;
+			hs_chans[ch].negPin = ccfg->differential
+						      ? (cy_en_autanalog_sar_pin_hs_t)ccfg->neg_pin
+						      : CY_AUTANALOG_SAR_PIN_GPIO0;
+			hs_chans[ch].accShift = ccfg->acc_shift;
+			hs_chans[ch].negCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->neg_coeff;
+			hs_chans[ch].hsLimit = (cy_en_autanalog_sar_limit_t)ccfg->limit;
 			hs_chans[ch].fifoSel = (cy_en_autanalog_fifo_sel_t)ccfg->fifo_sel;
 
 			data->pdl_adc_hs_static_obj.hsGpioChan[ch] = &hs_chans[ch];
@@ -1340,13 +1399,13 @@ static int ifx_apply_static_config(struct ifx_autanalog_sar_adc_data *data)
 		}
 
 		mux_chans[idx].posPin = (cy_en_autanalog_sar_pin_mux_t)ccfg->pos_pin;
-		mux_chans[idx].sign = false;
-		mux_chans[idx].posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+		mux_chans[idx].sign = ccfg->sign;
+		mux_chans[idx].posCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->pos_coeff;
 		mux_chans[idx].negPin = (cy_en_autanalog_sar_pin_mux_t)ccfg->neg_pin;
 		mux_chans[idx].buffBypass = ccfg->mux_buf_bypass;
-		mux_chans[idx].accShift = false;
-		mux_chans[idx].negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-		mux_chans[idx].muxLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+		mux_chans[idx].accShift = ccfg->acc_shift;
+		mux_chans[idx].negCoeff = (cy_en_autanalog_sar_ch_coeff_t)ccfg->neg_coeff;
+		mux_chans[idx].muxLimit = (cy_en_autanalog_sar_limit_t)ccfg->limit;
 		mux_chans[idx].fifoSel = (cy_en_autanalog_fifo_sel_t)ccfg->fifo_sel;
 
 		data->pdl_adc_top_static_obj.intMuxChan[idx] = &mux_chans[idx];
@@ -1400,6 +1459,7 @@ static int ifx_autanalog_sar_setup_gpio_channel(struct ifx_autanalog_sar_adc_dat
 
 	data->autanalog_channel_cfg[hw_channel].pos_pin = channel_cfg->input_positive;
 	data->autanalog_channel_cfg[hw_channel].sample_time_idx = sample_time_idx;
+
 	data->pdl_adc_hs_static_obj.hsGpioResultMask |= BIT(hw_channel);
 	data->enabled_channels |= BIT(hw_channel);
 
@@ -1437,6 +1497,7 @@ static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data
 	data->autanalog_channel_cfg[hw_channel].pos_pin = channel_cfg->input_positive;
 	data->autanalog_channel_cfg[hw_channel].neg_pin = channel_cfg->input_negative;
 	data->autanalog_channel_cfg[hw_channel].sample_time_idx = sample_time_idx;
+
 	data->pdl_adc_top_static_obj.muxResultMask |= BIT(mux_idx);
 	data->enabled_channels |= BIT(hw_channel);
 
@@ -1669,6 +1730,12 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		data->autanalog_channel_cfg[i].mux_buf_bypass = false;
 		data->autanalog_channel_cfg[i].pos_pin = 0;
 		data->autanalog_channel_cfg[i].neg_pin = 0;
+		data->autanalog_channel_cfg[i].sign = false;
+		data->autanalog_channel_cfg[i].differential = false;
+		data->autanalog_channel_cfg[i].pos_coeff = 0;
+		data->autanalog_channel_cfg[i].neg_coeff = 0;
+		data->autanalog_channel_cfg[i].acc_shift = false;
+		data->autanalog_channel_cfg[i].limit = 0;
 	}
 
 	data->dev = dev;
@@ -1682,6 +1749,14 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 			data->autanalog_channel_cfg[ch].mux_buf_bypass =
 				cfg->dt_channels[i].mux_buf_bypass;
 			data->autanalog_channel_cfg[ch].fifo_sel = cfg->dt_channels[i].fifo_sel;
+			data->autanalog_channel_cfg[ch].sign = cfg->dt_channels[i].sign;
+			data->autanalog_channel_cfg[ch].differential =
+				cfg->dt_channels[i].differential;
+			data->autanalog_channel_cfg[ch].neg_pin = cfg->dt_channels[i].neg_pin;
+			data->autanalog_channel_cfg[ch].pos_coeff = cfg->dt_channels[i].pos_coeff;
+			data->autanalog_channel_cfg[ch].neg_coeff = cfg->dt_channels[i].neg_coeff;
+			data->autanalog_channel_cfg[ch].acc_shift = cfg->dt_channels[i].acc_shift;
+			data->autanalog_channel_cfg[ch].limit = cfg->dt_channels[i].limit;
 		}
 	}
 
@@ -1707,6 +1782,16 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	if (result_val != CY_AUTANALOG_SUCCESS) {
 		LOG_ERR("Failed to initialize AutAnalog SAR ADC");
 		return -EIO;
+	}
+
+	/* Load offset and gain correction coefficients if provided via DT */
+	if (cfg->has_gain_offset_corr) {
+		result_val = Cy_AutAnalog_SAR_LoadOffsetGainCorr(0, (uint16_t *)cfg->gain_corr,
+								 (int16_t *)cfg->offset_corr);
+		if (result_val != CY_AUTANALOG_SUCCESS) {
+			LOG_ERR("Failed to load offset/gain correction coefficients");
+			return -EIO;
+		}
 	}
 
 	/* Note: We can only partially initialize the AutAnalog system here.  If we try to
@@ -2150,12 +2235,19 @@ static void ifx_autanalog_sar_submit_stream(const struct device *dev,
 		return;
 	}
 
-	Cy_AutAnalog_GetControllerState(&ac_state);
-	if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
-		LOG_ERR("Autonomous Controller is busy");
-		data->stream_sqe = NULL;
-		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
-		return;
+	/* In advanced AC mode the user-defined state machine is expected to be
+	 * running already (it drives SAR conversions via the STT), so a RUNNING
+	 * controller is normal.  Only reject a busy AC when the driver itself is
+	 * responsible for starting it.
+	 */
+	if (!cfg->ac_advanced) {
+		Cy_AutAnalog_GetControllerState(&ac_state);
+		if (ac_state.ac.status == CY_AUTANALOG_AC_STATUS_RUNNING) {
+			LOG_ERR("Autonomous Controller is busy");
+			data->stream_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
+			return;
+		}
 	}
 
 	/* Build channel-to-FIFO mapping from the sequence channel mask */
@@ -2208,87 +2300,98 @@ static void ifx_autanalog_sar_submit_stream(const struct device *dev,
 		data->stream_num_channels++;
 	}
 
-	/* Configure the sequencer for continuous mode */
-	if (cfg->lp_mode) {
-		if (cfg->lp_seq != NULL) {
-			/* DT-defined LP sequencer: set last entry to continuous */
-			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+	/* In advanced AC mode the state machine is already running and
+	 * triggers SAR conversions via the STT.
+	 */
+	if (!cfg->ac_advanced) {
+		/* Configure the sequencer for continuous mode */
+		if (cfg->lp_mode) {
+			if (cfg->lp_seq != NULL) {
+				/* DT-defined LP sequencer: set last entry to continuous */
+				data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, true) != 0) {
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+			} else {
+				if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building LP ADC sequencer for stream");
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+				/* Continuous mode: loop back to start after each conversion */
+				data->pdl_adc_seq_lp_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+			}
+
+			uint32_t result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
+				0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
+
+			if (result_status != CY_AUTANALOG_SUCCESS) {
+				LOG_ERR("Failed to load LP sequencer for stream: %u",
+					(unsigned int)result_status);
 				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				rtio_iodev_sqe_err(iodev_sqe, -EIO);
 				return;
 			}
 		} else {
-			if (ifx_build_lp_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building LP ADC sequencer for stream");
+			if (cfg->hs_seq != NULL) {
+				/* DT-defined HS sequencer: set last entry to continuous */
+				data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+				if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+			} else {
+				if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
+					LOG_ERR("Error building ADC sequencer for stream");
+					data->stream_sqe = NULL;
+					rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+					return;
+				}
+				/* Continuous mode: loop back to start after each conversion */
+				data->pdl_adc_seq_hs_cfg[0].nextAction =
+					CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
+			}
+
+			uint32_t result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
+				0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
+
+			if (result_status != CY_AUTANALOG_SUCCESS) {
+				LOG_ERR("Failed to load sequencer for stream: %u",
+					(unsigned int)result_status);
 				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+				rtio_iodev_sqe_err(iodev_sqe, -EIO);
 				return;
 			}
-			data->pdl_adc_seq_lp_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-		}
-
-		uint32_t result_status = Cy_AutAnalog_SAR_LoadLPseqTable(
-			0, cfg->num_lp_seq, &data->pdl_adc_seq_lp_cfg[0]);
-
-		if (result_status != CY_AUTANALOG_SUCCESS) {
-			LOG_ERR("Failed to load LP sequencer for stream: %u",
-				(unsigned int)result_status);
-			data->stream_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -EIO);
-			return;
-		}
-	} else {
-		if (cfg->hs_seq != NULL) {
-			/* DT-defined HS sequencer: set last entry to continuous */
-			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-			if (ifx_apply_dynamic_seq_sample_times(data, cfg, false) != 0) {
-				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-				return;
-			}
-		} else {
-			if (ifx_build_hs_sequencer_entry(sequence->channels, data) != 0) {
-				LOG_ERR("Error building ADC sequencer for stream");
-				data->stream_sqe = NULL;
-				rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
-				return;
-			}
-			data->pdl_adc_seq_hs_cfg[0].nextAction =
-				CY_AUTANALOG_SAR_NEXT_ACTION_GO_TO_ENTRY_ADDR;
-		}
-
-		uint32_t result_status = Cy_AutAnalog_SAR_LoadHSseqTable(
-			0, cfg->num_hs_seq, &data->pdl_adc_seq_hs_cfg[0]);
-
-		if (result_status != CY_AUTANALOG_SUCCESS) {
-			LOG_ERR("Failed to load sequencer for stream: %u",
-				(unsigned int)result_status);
-			data->stream_sqe = NULL;
-			rtio_iodev_sqe_err(iodev_sqe, -EIO);
-			return;
 		}
 	}
 
-	/* Re-enable the FIFO level interrupt for this stream's channels. Restore under
-	 * interrupt lock so the ISR cannot observe a partial state transition.
+	/* Enable the FIFO level interrupt for this stream's channels and mark the
+	 * driver as streaming.  Restore under interrupt lock so the ISR cannot
+	 * observe a partial state transition.  In advanced AC mode the user's state
+	 * machine already drives SAR conversions.
 	 */
 	key = irq_lock();
 	Cy_AutAnalog_FIFO_SetInterruptMask(0, Cy_AutAnalog_FIFO_GetInterruptMask(0) |
 						      ifx_stream_level_mask(data));
-
-	/* State 0 is used for LP/HS mode selection and peripheral power up.
-	 * State 1 is the stop/reconfiguration state.
-	 * State 2 is the SAR sampling state.
-	 * State 3 jumps back to state 1
-	 */
 	data->streaming = true;
 	irq_unlock(key);
-	Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
-	ifx_autanalog_start_autonomous_control(cfg->mfd);
+
+	if (!cfg->ac_advanced) {
+		/* State 0 is used for LP/HS mode selection and peripheral power up.
+		 * State 1 is the stop/reconfiguration state.
+		 * State 2 is the SAR sampling state.
+		 * State 3 jumps back to state 1
+		 */
+		Cy_AutAnalog_OverrideControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+		ifx_autanalog_start_autonomous_control(cfg->mfd);
+	}
 
 	LOG_DBG("ADC stream started with %d channels", data->stream_num_channels);
 }
@@ -2309,18 +2412,21 @@ int adc_ifx_autanalog_sar_stream_stop(const struct device *dev)
 	 * single-shot (nextAction = STOP), then re-trigger the AC from the SAR
 	 * sampling state.  The AC runs one more SAR scan, now using the STOP
 	 * sequencer, after which the SAR powers down and the AC walks back to its
-	 * STOP state.
+	 * STOP state.  In advanced AC mode the user's state machine owns the
+	 * sequencer and the controller.
 	 */
-	if (cfg->lp_mode) {
-		data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
-			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-		(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, cfg->num_lp_seq,
-						      &data->pdl_adc_seq_lp_cfg[0]);
-	} else {
-		data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
-			CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
-		(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, cfg->num_hs_seq,
-						      &data->pdl_adc_seq_hs_cfg[0]);
+	if (!cfg->ac_advanced) {
+		if (cfg->lp_mode) {
+			data->pdl_adc_seq_lp_cfg[cfg->num_lp_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			(void)Cy_AutAnalog_SAR_LoadLPseqTable(0, cfg->num_lp_seq,
+							      &data->pdl_adc_seq_lp_cfg[0]);
+		} else {
+			data->pdl_adc_seq_hs_cfg[cfg->num_hs_seq - 1].nextAction =
+				CY_AUTANALOG_SAR_NEXT_ACTION_STATE_STOP;
+			(void)Cy_AutAnalog_SAR_LoadHSseqTable(0, cfg->num_hs_seq,
+							      &data->pdl_adc_seq_hs_cfg[0]);
+		}
 	}
 
 	/* Clear the streaming state under an interrupt lock so the final STOP scan's
@@ -2338,23 +2444,26 @@ int adc_ifx_autanalog_sar_stream_stop(const struct device *dev)
 	/* Re-trigger the AC from the SAR sampling state so it issues one final scan
 	 * with the STOP sequencer and then halts.  Safe because the AC is not RUNNING
 	 * during streaming (it self-stopped after kicking off the continuous scan).
+	 * Skipped in advanced AC mode, where the user's state machine keeps running.
 	 */
-	Cy_AutAnalog_RunControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
-	ifx_autanalog_start_autonomous_control(cfg->mfd);
+	if (!cfg->ac_advanced) {
+		Cy_AutAnalog_RunControllerState(IFX_AUTANALOG_SAR_AC_STATE_SAR_SAMPLE);
+		ifx_autanalog_start_autonomous_control(cfg->mfd);
 
-	/* Wait for the single STOP scan to complete and the SAR to power down,
-	 * so a subsequent adc_read() does not race the in-flight conversion.
-	 * This is a deterministic single-conversion wait.
-	 */
-	for (int i = 0; i < IFX_AUTANALOG_SAR_STREAM_STOP_RETRIES; i++) {
-		if (!Cy_AutAnalog_SAR_IsBusy(0)) {
-			break;
+		/* Wait for the single STOP scan to complete and the SAR to power down,
+		 * so a subsequent adc_read() does not race the in-flight conversion.
+		 * This is a deterministic single-conversion wait.
+		 */
+		for (int i = 0; i < IFX_AUTANALOG_SAR_STREAM_STOP_RETRIES; i++) {
+			if (!Cy_AutAnalog_SAR_IsBusy(0)) {
+				break;
+			}
+			k_busy_wait(IFX_AUTANALOG_SAR_STREAM_STOP_POLL_US);
 		}
-		k_busy_wait(IFX_AUTANALOG_SAR_STREAM_STOP_POLL_US);
-	}
-	if (Cy_AutAnalog_SAR_IsBusy(0)) {
-		LOG_WRN("SAR did not go idle after stream stop");
-		ret = -EBUSY;
+		if (Cy_AutAnalog_SAR_IsBusy(0)) {
+			LOG_WRN("SAR did not go idle after stream stop");
+			ret = -EBUSY;
+		}
 	}
 
 	/* Terminate the in-flight multishot SQE (if any) so RTIO does not stall.
@@ -2563,6 +2672,13 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 			.channel_id = (uint8_t)DT_REG_ADDR(child_node_id),                         \
 			.mux_buf_bypass = DT_PROP_OR(child_node_id, mux_buf_bypass, 0),            \
 			.fifo_sel = (uint8_t)DT_PROP_OR(child_node_id, fifo_sel, 0),               \
+			.sign = DT_PROP_OR(child_node_id, sign, 0),                                \
+			.differential = DT_PROP_OR(child_node_id, differential, 0),                \
+			.neg_pin = (uint8_t)DT_PROP_OR(child_node_id, neg_pin, 0),                 \
+			.pos_coeff = (uint8_t)DT_PROP_OR(child_node_id, pos_coeff, 0),             \
+			.neg_coeff = (uint8_t)DT_PROP_OR(child_node_id, neg_coeff, 0),             \
+			.acc_shift = DT_PROP_OR(child_node_id, acc_shift, 0),                      \
+			.limit = (uint8_t)DT_PROP_OR(child_node_id, limit, 0),                     \
 		},), ())
 
 #define IFX_CHAN_DT_CFG_ARRAY(n)                                                                   \
@@ -2669,6 +2785,35 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_SEQ_LP_CFG_ENTRY)                         \
 	}
 
+/* Limit condition configuration from DT properties limit-cond-0 through limit-cond-3.
+ * Each property is an array of <condition low high>.
+ */
+#define IFX_LIMIT_COND_INIT(n, idx)                                                                \
+	{                                                                                          \
+		.condition = (uint8_t)DT_INST_PROP_BY_IDX(n, limit_cond_##idx, 0),                 \
+		.low = (int32_t)DT_INST_PROP_BY_IDX(n, limit_cond_##idx, 1),                      \
+		.high = (int32_t)DT_INST_PROP_BY_IDX(n, limit_cond_##idx, 2),                     \
+	}
+
+#define IFX_LIMIT_COND_MASK(n)                                                                     \
+	((DT_INST_NODE_HAS_PROP(n, limit_cond_0) << 0) |                                          \
+	 (DT_INST_NODE_HAS_PROP(n, limit_cond_1) << 1) |                                          \
+	 (DT_INST_NODE_HAS_PROP(n, limit_cond_2) << 2) |                                          \
+	 (DT_INST_NODE_HAS_PROP(n, limit_cond_3) << 3))
+
+/* Gain/offset correction: true if either gain-corr or offset-corr is defined */
+#define IFX_HAS_GAIN_OFFSET_CORR(n)                                                                \
+	(DT_INST_NODE_HAS_PROP(n, gain_corr) || DT_INST_NODE_HAS_PROP(n, offset_corr))
+
+/* Default gain is 0x8000 (unity).  Default offset is 0. */
+#define IFX_GAIN_CORR_ELEM(n, idx)                                                                 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gain_corr),                                          \
+		    ((uint16_t)DT_INST_PROP_BY_IDX(n, gain_corr, idx)), (0x8000u))
+
+#define IFX_OFFSET_CORR_ELEM(n, idx)                                                               \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, offset_corr),                                        \
+		    ((int16_t)DT_INST_PROP_BY_IDX(n, offset_corr, idx)), (0))
+
 /* Device Instantiation */
 /* Expand one element of the ADC-node sample-times array */
 #define IFX_SAMPLE_TIME_ELEM(node_id, prop, idx) DT_PROP_BY_IDX(node_id, prop, idx)
@@ -2739,6 +2884,31 @@ static int ifx_autanalog_sar_get_decoder(const struct device *dev,
 			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, sample_times),                        \
 				(DT_INST_FOREACH_PROP_ELEM_SEP(n, sample_times,                    \
 					IFX_SAMPLE_TIME_ELEM, (,))), ())                           \
+		},                                                                                 \
+		.limit_cond = {                                                                    \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_0),                        \
+				    (IFX_LIMIT_COND_INIT(n, 0)), ({0})),                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_1),                        \
+				    (IFX_LIMIT_COND_INIT(n, 1)), ({0})),                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_2),                        \
+				    (IFX_LIMIT_COND_INIT(n, 2)), ({0})),                           \
+			COND_CODE_1(DT_INST_NODE_HAS_PROP(n, limit_cond_3),                        \
+				    (IFX_LIMIT_COND_INIT(n, 3)), ({0})),                           \
+		},                                                                                 \
+		.limit_cond_mask = IFX_LIMIT_COND_MASK(n),                                         \
+		.ac_advanced = DT_NODE_HAS_PROP(DT_INST_PARENT(n), ac_states),                     \
+		.has_gain_offset_corr = IFX_HAS_GAIN_OFFSET_CORR(n),                               \
+		.gain_corr = {                                                                     \
+			IFX_GAIN_CORR_ELEM(n, 0), IFX_GAIN_CORR_ELEM(n, 1),                       \
+			IFX_GAIN_CORR_ELEM(n, 2), IFX_GAIN_CORR_ELEM(n, 3),                       \
+			IFX_GAIN_CORR_ELEM(n, 4), IFX_GAIN_CORR_ELEM(n, 5),                       \
+			IFX_GAIN_CORR_ELEM(n, 6), IFX_GAIN_CORR_ELEM(n, 7),                       \
+		},                                                                                 \
+		.offset_corr = {                                                                   \
+			IFX_OFFSET_CORR_ELEM(n, 0), IFX_OFFSET_CORR_ELEM(n, 1),                   \
+			IFX_OFFSET_CORR_ELEM(n, 2), IFX_OFFSET_CORR_ELEM(n, 3),                   \
+			IFX_OFFSET_CORR_ELEM(n, 4), IFX_OFFSET_CORR_ELEM(n, 5),                   \
+			IFX_OFFSET_CORR_ELEM(n, 6), IFX_OFFSET_CORR_ELEM(n, 7),                   \
 		},                                                                                 \
 	};                                                                                     \
 	static struct ifx_autanalog_sar_adc_data ifx_autanalog_sar_adc_data_##n = {                \
