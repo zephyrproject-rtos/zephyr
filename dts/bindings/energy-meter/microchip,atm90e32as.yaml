@@ -1,0 +1,349 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip ATM90E32AS poly-phase energy metering IC (formerly Atmel M90E32AS).
+
+  The chip is accessed over a 4-wire SPI bus in mode 3 (CPOL=1, CPHA=1).
+
+  Calibration and configuration values are written to the chip at
+  initialization and after every exit from Idle mode, which resets the
+  chip. Every register property defaults to the power-on value from the
+  datasheet; properties that take one value per phase are ordered
+  <phase-A phase-B phase-C>. All register values are 16-bit.
+
+  Example:
+
+    &spi0 {
+      meter@0 {
+        compatible = "microchip,atm90e32as";
+        reg = <0>;
+        spi-max-frequency = <1000000>;
+        meter-constant = <3200>;
+        mmode0 = <0x0185>;
+        u-gain = <0x8000 0x8000 0x8000>;
+        i-gain = <0x8000 0x8000 0x8000>;
+        irq0-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        pm0-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        pm1-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+      };
+    };
+
+compatible: "microchip,atm90e32as"
+
+include: spi-device.yaml
+
+properties:
+  meter-constant:
+    type: int
+    default: 3200
+    description: |
+      Meter constant (MC) in pulses per kWh. One CF pulse corresponds to
+      1 kWh / MC. Used to convert the energy registers to watt-hours; it
+      must match the value pl-constant was derived from.
+
+  current-scale:
+    type: array
+    default: [1, 1]
+    description: |
+      Ratio <numerator denominator> of the actual current to the current
+      the chip is calibrated to read. Each value is from 1 to 65535.
+
+      The RMS current registers stop at 65.535 A, and the power registers
+      overflow with it. To measure larger currents, calibrate the chip
+      (i-gain and pq-gain) to read a fraction of the actual current, as
+      the datasheet suggests in section 6.2.2, Table-17 note 1, and set
+      this property to the inverse of that fraction. The driver multiplies
+      current, current peak, power and energy by the ratio; voltage, power
+      factor, angles and frequency are not affected. Keep meter-constant
+      and pl-constant as calibrated, so that energy scales with power.
+
+      For example, a meter calibrated to read one tenth of a 400 A load
+      uses <10 1>, and one calibrated to read 40% of the load uses <5 2>.
+
+  pm0-gpios:
+    type: phandle-array
+    description: |
+      PM0 power mode pin. Together with pm1-gpios it allows the driver to
+      move the chip between Normal and Idle mode on device suspend and
+      resume. Without both pins the chip is assumed to be held in Normal
+      mode by the board.
+
+  pm1-gpios:
+    type: phandle-array
+    description: PM1 power mode pin. See pm0-gpios.
+
+  irq0-gpios:
+    type: phandle-array
+    description: IRQ0 interrupt output, reported as alarm event 0.
+
+  irq1-gpios:
+    type: phandle-array
+    description: IRQ1 interrupt output, reported as alarm event 1.
+
+  wrn-out-gpios:
+    type: phandle-array
+    description: WarnOut fatal error warning output, reported as fault event 0.
+
+  cf1-gpios:
+    type: phandle-array
+    description: CF1 active energy pulse output, reported as pulse event 0.
+
+  cf2-gpios:
+    type: phandle-array
+    description: CF2 reactive/apparent energy pulse output, reported as pulse event 1.
+
+  cf3-gpios:
+    type: phandle-array
+    description: CF3 active fundamental energy pulse output, reported as pulse event 2.
+
+  cf4-gpios:
+    type: phandle-array
+    description: CF4 active harmonic energy pulse output, reported as pulse event 3.
+
+  # Status and special registers
+
+  channel-map-i:
+    type: int
+    default: 0x0210
+    description: ChannelMapI (01h), current channel mapping.
+
+  channel-map-u:
+    type: int
+    default: 0x0654
+    description: ChannelMapU (02h), voltage channel mapping.
+
+  sag-peak-det-cfg:
+    type: int
+    default: 0x143f
+    description: SagPeakDetCfg (05h), sag and peak detector period.
+
+  ov-th-cfg:
+    type: int
+    default: 0xc000
+    description: OVthCfg (06h), over voltage threshold.
+
+  zx-config:
+    type: int
+    default: 0x0001
+    description: ZXConfig (07h), zero-crossing pin configuration.
+
+  sag-th:
+    type: int
+    default: 0x1000
+    description: SagTh (08h), voltage sag threshold.
+
+  phase-loss-th:
+    type: int
+    default: 0x0400
+    description: PhaseLossTh (09h), voltage phase losing threshold.
+
+  in-warn-th:
+    type: int
+    default: 0xffff
+    description: INWarnTh (0Ah), calculated neutral current warning threshold.
+
+  oi-th:
+    type: int
+    default: 0xc000
+    description: OIth (0Bh), over current threshold.
+
+  freq-lo-th:
+    type: int
+    default: 0x1324
+    description: FreqLoTh (0Ch), low frequency threshold.
+
+  freq-hi-th:
+    type: int
+    default: 0x13ec
+    description: FreqHiTh (0Dh), high frequency threshold.
+
+  pm-pwr-ctrl:
+    type: int
+    default: 0x010f
+    description: PMPwrCtrl (0Eh), partial measurement mode power control.
+
+  irq0-merge-cfg:
+    type: int
+    default: 0x0000
+    description: IRQ0MergeCfg (0Fh), IRQ0 merge configuration.
+
+  emm-int-en:
+    type: array
+    default: [0x0000, 0x0000]
+    description: |
+      EMMIntEn0 (75h) and EMMIntEn1 (76h), sources routed to the IRQ0 and
+      IRQ1 pins.
+
+  # Low power mode and segment compensation registers
+
+  detect-ctrl:
+    type: int
+    default: 0x0000
+    description: DetectCtrl (10h), current detect control.
+
+  detect-th:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: DetectTh1..3 (11h-13h), current thresholds in Detection mode.
+
+  idc-offset:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: IDCoffsetA..C (14h-16h), current DC offsets.
+
+  udc-offset:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: UDCoffsetA..C (17h-19h), voltage DC offsets.
+
+  u-gain-tab:
+    type: int
+    default: 0x0000
+    description: UGainTAB (1Ah), voltage gain temperature compensation, phases A/B.
+
+  u-gain-tc:
+    type: int
+    default: 0x0000
+    description: UGainTC (1Bh), voltage gain temperature compensation, phase C.
+
+  phi-freq-comp:
+    type: int
+    default: 0x0000
+    description: PhiFreqComp (1Ch), phase compensation for frequency.
+
+  log-irms:
+    type: array
+    default: [0x0000, 0x0000]
+    description: LOGIrms0 and LOGIrms1 (20h-21h), segment compensation thresholds.
+
+  f0:
+    type: int
+    default: 5000
+    description: F0 (22h), nominal frequency in 0.01 Hz.
+
+  t0:
+    type: int
+    default: 25
+    description: T0 (23h), nominal temperature in degrees Celsius.
+
+  phi-irms01:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PhiAIrms01, PhiBIrms01, PhiCIrms01 (24h/28h/2Ch).
+
+  phi-irms2:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PhiAIrms2, PhiBIrms2, PhiCIrms2 (25h/29h/2Dh).
+
+  gain-irms01:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: GainAIrms01, GainBIrms01, GainCIrms01 (26h/2Ah/2Eh).
+
+  gain-irms2:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: GainAIrms2, GainBIrms2, GainCIrms2 (27h/2Bh/2Fh).
+
+  # Configuration registers
+
+  pl-constant:
+    type: int
+    default: 0x0861c468
+    description: PL_Constant, written to PLconstH (31h) and PLconstL (32h).
+
+  mmode0:
+    type: int
+    default: 0x0087
+    description: MMode0 (33h), metering method configuration.
+
+  mmode1:
+    type: int
+    default: 0x0000
+    description: MMode1 (34h), PGA gain configuration.
+
+  p-start-th:
+    type: int
+    default: 0x0000
+    description: PStartTh (35h), active startup power threshold.
+
+  q-start-th:
+    type: int
+    default: 0x0000
+    description: QStartTh (36h), reactive startup power threshold.
+
+  s-start-th:
+    type: int
+    default: 0x0000
+    description: SStartTh (37h), apparent startup power threshold.
+
+  p-phase-th:
+    type: int
+    default: 0x0000
+    description: PPhaseTh (38h), per-phase active energy accumulation threshold.
+
+  q-phase-th:
+    type: int
+    default: 0x0000
+    description: QPhaseTh (39h), per-phase reactive energy accumulation threshold.
+
+  s-phase-th:
+    type: int
+    default: 0x0000
+    description: SPhaseTh (3Ah), per-phase apparent energy accumulation threshold.
+
+  # Energy calibration registers
+
+  p-offset:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PoffsetA..C (41h/43h/45h), active power offsets.
+
+  q-offset:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: QoffsetA..C (42h/44h/46h), reactive power offsets.
+
+  pq-gain:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PQGainA..C (47h/49h/4Bh), calibration gains.
+
+  phi:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PhiA..C (48h/4Ah/4Ch), calibration phase angles.
+
+  p-offset-fund:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PoffsetAF..CF (51h-53h), fundamental active power offsets.
+
+  p-gain-fund:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: PGainAF..CF (54h-56h), fundamental calibration gains.
+
+  # Measurement calibration registers
+
+  u-gain:
+    type: array
+    default: [0x8000, 0x8000, 0x8000]
+    description: UgainA..C (61h/65h/69h), voltage RMS gains.
+
+  i-gain:
+    type: array
+    default: [0x8000, 0x8000, 0x8000]
+    description: IgainA..C (62h/66h/6Ah), current RMS gains.
+
+  u-offset:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: UoffsetA..C (63h/67h/6Bh), voltage RMS offsets.
+
+  i-offset:
+    type: array
+    default: [0x0000, 0x0000, 0x0000]
+    description: IoffsetA..C (64h/68h/6Ch), current RMS offsets.

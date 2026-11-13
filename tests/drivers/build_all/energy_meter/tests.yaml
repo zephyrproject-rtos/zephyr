@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - energy_meter
+  build_only: true
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.energy_meter.build: {}
+  drivers.energy_meter.all_options.build:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_SHELL=y
+      - CONFIG_ENERGY_METER_SHELL=y
+      - CONFIG_ATM90E32AS_EVENTS=y
+      - CONFIG_ATM90E32AS_VERIFY_READ=y
+      - CONFIG_ATM90E32AS_SHELL=y

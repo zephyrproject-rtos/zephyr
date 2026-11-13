@@ -59,6 +59,11 @@ Libraries / Subsystems
   * Display timings can be read and set at runtime with
     :c:func:`display_get_timing` and :c:func:`display_set_timing`.
 
+* Energy meter
+
+  * Added the :ref:`energy meter API <energy_meter_api>` for electrical energy metering ICs, with
+    an ``energy_meter`` shell command that reads any meter that implements it.
+
 * FIDO2
 
   * Added a PSA Protected Storage backend, enabled with

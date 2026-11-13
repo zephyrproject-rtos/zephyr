@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - energy_meter
+tests:
+  drivers.energy_meter.api:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+  drivers.energy_meter.api.userspace:
+    tags:
+      - userspace
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_USERSPACE=y
