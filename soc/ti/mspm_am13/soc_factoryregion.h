@@ -3,16 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_TI_MSPM_COMMON_SOC_FACTORYREGION_H_
-#define ZEPHYR_SOC_TI_MSPM_COMMON_SOC_FACTORYREGION_H_
+#ifndef ZEPHYR_SOC_TI_COMMON_SOC_FACTORYREGION_H_
+#define ZEPHYR_SOC_TI_COMMON_SOC_FACTORYREGION_H_
 
 /**
- * @brief MSPM Factory Region Register Offsets
+ * @brief TI Factory Region Register Offsets
  *
  * Read-only flash region containing factory-programmed calibration data.
  * Must disable CPUSS instruction cache before accessing (see soc_cpuss.h).
  */
-#if defined(CONFIG_SOC_SERIES_MSPM33C)
+#if defined(CONFIG_SOC_SERIES_MSPM33C) || defined(CONFIG_SOC_SERIES_AM13E)
 #define FACTORY_PLLSTARTUP0_4_8_OFFSET   0x20 /**< PLL param0 4-8 MHz */
 #define FACTORY_PLLSTARTUP1_4_8_OFFSET   0x24 /**< PLL param1 4-8 MHz */
 #define FACTORY_PLLSTARTUP0_8_16_OFFSET  0x28 /**< PLL param0 8-16 MHz */
@@ -36,4 +36,4 @@
 #define FACTORY_PLLSTARTUP1_32_48_OFFSET 0x38 /**< PLL param1 32-48 MHz */
 #endif
 
-#endif /* ZEPHYR_SOC_TI_MSPM_COMMON_SOC_FACTORYREGION_H_ */
+#endif /* ZEPHYR_SOC_TI_COMMON_SOC_FACTORYREGION_H_ */
