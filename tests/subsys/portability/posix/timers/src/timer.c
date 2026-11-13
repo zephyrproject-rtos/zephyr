@@ -232,6 +232,57 @@ ZTEST(posix_timers, test_TIMER_ABSTIME_large_timeout)
 	zassert_equal(exp_count, 1, "TIMER_ABSTIME fired %d times, expected 1", exp_count);
 }
 
+ZTEST(posix_timers, test_timer_create_null_evp)
+{
+	struct itimerspec value, ovalue;
+
+	zassert_ok(timer_create(CLOCK_MONOTONIC, NULL, &timerid));
+	zassert_not_equal(timerid, -1);
+
+	/* Arm one-shot timer with short expiration (50 ms) */
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_nsec = 0;
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_nsec = 50 * NSEC_PER_MSEC;
+	zassert_ok(timer_settime(timerid, 0, &value, &ovalue));
+
+	/* Verify remaining time is initially non-zero */
+	zassert_ok(timer_gettime(timerid, &value));
+	zassert_true(value.it_value.tv_sec > 0 || value.it_value.tv_nsec > 0);
+
+	/* Wait for timer expiration */
+	k_sleep(K_MSEC(100));
+
+	/*
+	 * Under IEEE Std 1003.1-2017, NULL evp defaults to SIGEV_SIGNAL/SIGALRM.
+	 * Asynchronous signal delivery is not yet implemented in Zephyr,
+	 * so verify observable expiration state via timer_gettime().
+	 */
+	zassert_ok(timer_gettime(timerid, &value));
+	zassert_equal(value.it_value.tv_sec, 0);
+	zassert_equal(value.it_value.tv_nsec, 0);
+
+	/* Verify timer delete succeeds */
+	zassert_ok(timer_delete(timerid));
+	timerid = -1;
+}
+
+ZTEST(posix_timers, test_timer_create_invalid_params)
+{
+	timer_t tid;
+
+	/* Null timerid must fail with EINVAL */
+	zassert_equal(timer_create(CLOCK_MONOTONIC, NULL, NULL), -1);
+	zassert_equal(errno, EINVAL);
+
+	/* Invalid clockid must fail with EINVAL */
+	zassert_equal(timer_create((clockid_t)-1, NULL, &tid), -1);
+	zassert_equal(errno, EINVAL);
+
+	zassert_equal(timer_create((clockid_t)9999, NULL, &tid), -1);
+	zassert_equal(errno, EINVAL);
+}
+
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
