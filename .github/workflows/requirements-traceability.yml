@@ -192,6 +192,6 @@ jobs:
     - name: Upload to AWS S3
       run: |
         aws s3 sync --only-show-errors html-output/html \
-          s3://testing.zephyrproject.org/doc/safety/ --delete
+          s3://testing.zephyrproject.org/doc/safety/
         aws s3 sync --only-show-errors traceability-output/traceability-out \
-          s3://testing.zephyrproject.org/true-traceability/ --delete
+          s3://testing.zephyrproject.org/true-traceability/
