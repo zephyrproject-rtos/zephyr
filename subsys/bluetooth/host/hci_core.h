@@ -40,6 +40,10 @@ enum {
 	BT_DEV_DISABLING,   /* Host stack is being disabled */
 	BT_DEV_OPEN,        /* HCI transport is open */
 	BT_DEV_CTLR_RX,     /* Controller has sent a packet during bt_enable() */
+	BT_DEV_HCI_LOST,    /* HCI driver reported the Controller gone, transport still open */
+	BT_DEV_SETTINGS_WAIT, /* bt_enable() has returned, the settings are yet to be loaded */
+	BT_DEV_NOTIFY_UNAVAILABLE, /* Application is to be told that the Controller has gone */
+	BT_DEV_NOTIFY_AVAILABLE,   /* Application is to be told that the Controller is back */
 	BT_DEV_READY,       /* Host stack has completed init */
 	BT_DEV_PRESET_ID,
 	BT_DEV_HAS_PUB_KEY,
@@ -93,6 +97,10 @@ enum {
 				 BIT(BT_DEV_DISABLING) | \
 				 BIT(BT_DEV_OPEN) | \
 				 BIT(BT_DEV_CTLR_RX) | \
+				 BIT(BT_DEV_HCI_LOST) | \
+				 BIT(BT_DEV_SETTINGS_WAIT) | \
+				 BIT(BT_DEV_NOTIFY_UNAVAILABLE) | \
+				 BIT(BT_DEV_NOTIFY_AVAILABLE) | \
 				 BIT(BT_DEV_PRESET_ID))
 
 #if defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
@@ -462,6 +470,14 @@ struct bt_dev {
 #endif
 
 	struct k_work           init;
+
+#if defined(CONFIG_BT_HCI_STATE_REPORT)
+	/* Acts on the reports of the HCI driver */
+	struct k_work           state_work;
+
+	/* Keeps a report of the HCI driver in one piece */
+	struct k_spinlock       state_lock;
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
 
 	ATOMIC_DEFINE(flags, BT_DEV_NUM_FLAGS);
 

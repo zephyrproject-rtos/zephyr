@@ -21,4 +21,11 @@ config TEST_SEND_BLOCKS
 	  the command timeout of the Host. The Host asserts in that test, so no
 	  other test can run after it.
 
+config TEST_DRIVER_STATE_REPORT
+	bool "Have the test HCI driver report the availability of its controller"
+	select BT_HCI_STATE_REPORT
+	help
+	  Build the tests where the driver reports that its controller has gone
+	  away and that it is back.
+
 source "Kconfig.zephyr"

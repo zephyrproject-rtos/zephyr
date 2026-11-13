@@ -38,6 +38,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/classic/classic.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -60,7 +61,7 @@ extern "C" {
  *
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
- * @version 1.1.2
+ * @version 1.2.0
  * @ingroup bluetooth
  * @{
  */
@@ -347,7 +348,9 @@ typedef void (*bt_ready_cb_t)(int err);
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -EALREADY Bluetooth is already enabled, or being enabled.
- * @retval -EAGAIN Bluetooth is being disabled; retry once bt_disable() has returned.
+ * @retval -EAGAIN Bluetooth is being disabled; retry once bt_disable() has returned, or for
+ *         a Controller that has gone away, once @ref bt_controller_cb.unavailable has been
+ *         called.
  * @retval -ENODEV The HCI driver is not ready.
  * @retval -ETIMEDOUT The Controller did not respond to any command. The HCI transport is
  *         closed, so bt_enable() can be called again without bt_disable(). With a @p cb,
@@ -386,6 +389,10 @@ int bt_enable(bt_ready_cb_t cb);
  * @retval -EALREADY Bluetooth is already disabled, or being disabled.
  * @retval -EAGAIN Bluetooth is still being enabled, which with @kconfig{CONFIG_BT_SETTINGS}
  *                 includes loading the Bluetooth settings; retry once bt_is_ready() returns true.
+ * @retval -EHOSTDOWN The Controller could not be reset. Bluetooth is disabled all the same: the
+ *                    HCI transport is closed, and bt_enable() resets the Controller again. Until
+ *                    then the Controller may go on with what it was doing, unless the HCI driver
+ *                    stops it when it closes the transport.
  */
 int bt_disable(void);
 
@@ -395,6 +402,49 @@ int bt_disable(void);
  * @return true when Bluetooth is ready, false otherwise
  */
 bool bt_is_ready(void);
+
+struct bt_dev;
+
+/**
+ * @brief Callbacks for the availability of the Controller
+ *
+ * Some HCI drivers can tell when their Controller, or the transport to it, goes away, for
+ * example when a coprocessor restarts. Defined with @ref BT_CONTROLLER_CB_DEFINE. The callbacks
+ * are called from a thread context internal to the stack, never from an ISR; see
+ * @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
+ */
+struct bt_controller_cb {
+	/**
+	 * @brief The Controller has gone away.
+	 *
+	 * Bluetooth has been disabled, as by bt_disable() except that the Controller has not been
+	 * reset. A disconnected callback of a connection may still follow. To start again the
+	 * application calls bt_enable(), with a ready callback or from a thread of its own, and
+	 * restores what bt_disable() clears.
+	 *
+	 * @param dev The Host instance of the Controller. There is only one so far.
+	 */
+	void (*unavailable)(struct bt_dev *dev);
+
+	/**
+	 * @brief The Controller is back.
+	 *
+	 * bt_enable() can be tried. Not every HCI driver can tell: bt_enable() can be tried at any
+	 * time after @ref bt_controller_cb.unavailable. It fails until the Controller is back, and
+	 * bt_disable() is then called before the next try.
+	 *
+	 * @param dev The Host instance of the Controller. There is only one so far.
+	 */
+	void (*available)(struct bt_dev *dev);
+};
+
+/**
+ * @brief Define a set of callbacks for the availability of the Controller.
+ *
+ * @param _name Name of callback structure.
+ */
+#define BT_CONTROLLER_CB_DEFINE(_name)                                                             \
+	static const STRUCT_SECTION_ITERABLE(bt_controller_cb, _CONCAT(bt_controller_cb_, _name))
 
 /**
  * @brief Set Bluetooth Device Name

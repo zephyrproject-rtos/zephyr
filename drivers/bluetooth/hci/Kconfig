@@ -339,6 +339,15 @@ config BT_HCI_SET_PUBLIC_ADDR
 	  transport and does not select this option; the Host then sets the address with
 	  the HCI_VS_Write_BD_ADDR command where the controller supports it, see BT_HCI_VS.
 
+config BT_HCI_STATE_REPORT
+	bool
+	help
+	  Report the availability of the controller to the user of the HCI transport
+
+	  This option should be enabled by drivers that can tell when their controller goes
+	  away or comes back, and report it with bt_hci_report_unavailable() and
+	  bt_hci_report_available(). Such a driver implements close().
+
 config BT_HCI_SETUP
 	bool
 	select DEPRECATED
