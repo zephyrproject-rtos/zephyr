@@ -1,0 +1,7 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_SAMA7G54_CPRO
+	select SOC_SAMA7G54
