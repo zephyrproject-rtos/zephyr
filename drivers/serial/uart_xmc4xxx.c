@@ -1238,3 +1238,43 @@ static DEVICE_API(uart, uart_xmc4xxx_driver_api) = {
 			      &uart_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)
+
+/*
+ * The two channels of a USIC share one 64-entry FIFO buffer. Make sure that
+ * the FIFO regions of two channels in the same USIC do not overlap, otherwise
+ * the data of one channel silently ends up on the other. The layout below
+ * follows the one set up in uart_xmc4xxx_init().
+ */
+#define XMC4XXX_FIFO_ALIGN(pos, size) ROUND_UP(pos, MAX(size, 1))
+
+#define XMC4XXX_FIFO_TX_START(node)                                                                \
+	XMC4XXX_FIFO_ALIGN(DT_PROP(node, fifo_start_offset), DT_PROP(node, fifo_tx_size))
+
+#define XMC4XXX_FIFO_RX_START(node)                                                                \
+	XMC4XXX_FIFO_ALIGN(XMC4XXX_FIFO_TX_START(node) + DT_PROP(node, fifo_tx_size),              \
+			   DT_PROP(node, fifo_rx_size))
+
+#define XMC4XXX_FIFO_MASK(start, size)                                                             \
+	((size) == 0 ? 0ULL                                                                        \
+		     : GENMASK64(MIN((start) + MAX(size, 1) - 1, MAX_FIFO_SIZE - 1),               \
+				 MIN(start, MAX_FIFO_SIZE - 1)))
+
+#define XMC4XXX_FIFO_USED(node)                                                                    \
+	(XMC4XXX_FIFO_MASK(XMC4XXX_FIFO_TX_START(node), DT_PROP(node, fifo_tx_size)) |             \
+	 XMC4XXX_FIFO_MASK(XMC4XXX_FIFO_RX_START(node), DT_PROP(node, fifo_rx_size)))
+
+/* Channel 0 and channel 1 of a USIC are 0x200 apart */
+#define XMC4XXX_USIC_BASE(node) (DT_REG_ADDR(node) & ~0x200UL)
+
+/* Each pair is checked once, from the channel with the lower address */
+#define XMC4XXX_FIFO_CHECK_PAIR(other, node)                                                       \
+	BUILD_ASSERT(DT_REG_ADDR(node) >= DT_REG_ADDR(other) ||                                    \
+			     XMC4XXX_USIC_BASE(node) != XMC4XXX_USIC_BASE(other) ||                \
+			     (XMC4XXX_FIFO_USED(node) & XMC4XXX_FIFO_USED(other)) == 0,            \
+		     "FIFO regions of " DT_NODE_PATH(node) " and " DT_NODE_PATH(                   \
+			     other) " overlap: check fifo-start-offset");
+
+#define XMC4XXX_FIFO_CHECK(index)                                                                  \
+	DT_FOREACH_STATUS_OKAY_VARGS(DT_DRV_COMPAT, XMC4XXX_FIFO_CHECK_PAIR, DT_DRV_INST(index))
+
+DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_FIFO_CHECK)
