@@ -12,6 +12,7 @@ config SOC_SERIES_MEC174X
 	select HAS_SWO
 	select HAS_PM
 	select SOC_PREP_HOOK
+	select HAS_MCHP_MEC_I2C_SMB_V38
 
 if SOC_SERIES_MEC174X
 
