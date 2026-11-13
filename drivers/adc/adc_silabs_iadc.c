@@ -249,15 +249,6 @@ static bool iadc_sampling_end(const struct device *dev)
 	return true;
 }
 
-static void iadc_sampling_failed(struct iadc_data *data, int status)
-{
-	/* Unlike adc_context_on_sampling_done(), adc_context_complete() leaves the timer of a
-	 * sequence with an interval running.
-	 */
-	adc_context_disable_timer(&data->ctx);
-	adc_context_complete(&data->ctx, status);
-}
-
 #ifdef CONFIG_ADC_SILABS_IADC_DMA
 static void iadc_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel, int status)
 {
@@ -272,13 +263,13 @@ static void iadc_dma_cb(const struct device *dma_dev, void *user_data, uint32_t 
 
 	if (status < 0) {
 		LOG_ERR("DMA transfer error: %d", status);
-		iadc_sampling_failed(data, status);
+		adc_context_complete(&data->ctx, status);
 		return;
 	}
 
 	if (err != 0U) {
 		LOG_ERR("IADC error, flags=%08x", err);
-		iadc_sampling_failed(data, -EIO);
+		adc_context_complete(&data->ctx, -EIO);
 		return;
 	}
 
@@ -581,7 +572,7 @@ static void iadc_start_scan(const struct device *dev)
 		ret = iadc_dma_start(dev);
 		if (ret < 0) {
 			atomic_clear(&data->sampling);
-			iadc_sampling_failed(data, ret);
+			adc_context_complete(&data->ctx, ret);
 			return;
 		}
 
@@ -632,7 +623,7 @@ static void iadc_isr(void *arg)
 		 */
 		if (iadc_sampling_end(dev)) {
 			LOG_ERR("IADC error, flags=%08x", err);
-			iadc_sampling_failed(data, -EIO);
+			adc_context_complete(&data->ctx, -EIO);
 		}
 
 		sl_hal_iadc_clear_interrupts(iadc, flags);
