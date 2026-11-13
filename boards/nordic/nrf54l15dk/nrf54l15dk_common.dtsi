@@ -107,6 +107,23 @@
 			   <13 0 &gpio1 13 0>,
 			   <14 0 &gpio1 14 0>;
 	};
+
+	/*
+	 * Note the header is marked "PORT P2" on the DK and only
+	 * a subset of the pins are available by default. P2.00-P2.05
+	 * are connected to external flash rather than the header by default.
+	 */
+	nordic_expansion_header_p2: nordic_expansion_header_p2 {
+		compatible = "nordic,expansion-board-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <6 0 &gpio2 6 0>,
+			   <7 0 &gpio2 7 0>,
+			   <8 0 &gpio2 8 0>,
+			   <9 0 &gpio2 9 0>,
+			   <10 0 &gpio2 10 0>;
+	};
 };
 
 &uart20 {
