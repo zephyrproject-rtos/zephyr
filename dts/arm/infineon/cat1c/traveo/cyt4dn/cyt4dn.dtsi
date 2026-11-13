@@ -113,6 +113,24 @@
 			};
 		};
 
+		/* System-reserved: channels 0-4; interrupt 0.
+		 * ch0, ch1 and ch2 are the CM0+, CM7_0 and CM7_1 system call channels
+		 * ch3 is the DAP system call channel
+		 * ch4 is used to handle PDL semaphores
+		 * intr0 is used for system calls to ROM
+		 * Application-usable: channels 5-7; interrupts 1-7.
+		 */
+		ipc0: ipc@40220000 {
+			compatible = "infineon,ipc";
+			reg = <0x40220000 0x1200>;
+			#ipc-config-cells = <2>;
+			channel-count = <8>;
+			interrupt-count = <8>;
+			channel-mask = <0xe0>;
+			interrupt-mask = <0xfe>;
+			status = "disabled";
+		};
+
 		flash_controller: flash-controller@40240000 {
 			reg = <0x40240000 0x10000>;
 			ranges;
