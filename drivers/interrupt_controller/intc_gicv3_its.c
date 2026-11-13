@@ -505,7 +505,7 @@ static int gicv3_its_map_intid(const struct device *dev, uint32_t device_id, uin
 
 	/* TOFIX check device_id, event_id & intid bounds */
 
-	if (intid < 8192) {
+	if (intid < GIC_LPI_INT_BASE) {
 		return -EINVAL;
 	}
 

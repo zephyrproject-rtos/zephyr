@@ -70,7 +70,7 @@ mem_addr_t gic_rdists[CONFIG_MP_MAX_NUM_CPUS];
 #ifdef CONFIG_GIC_V3_ITS
 static uintptr_t lpi_prop_table;
 
-atomic_t nlpi_intid = ATOMIC_INIT(8192);
+atomic_t nlpi_intid = ATOMIC_INIT(GIC_LPI_INT_BASE);
 #endif
 
 static inline mem_addr_t gic_get_rdist(void)
@@ -105,7 +105,7 @@ static int gic_wait_rwp(uint32_t intid)
 #ifdef CONFIG_GIC_V3_ITS
 static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - GIC_LPI_INT_BASE];
 
 	if (enable) {
 		*cfg |= BIT(0);
@@ -124,7 +124,7 @@ static void arm_gic_lpi_setup(unsigned int intid, bool enable)
 
 static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - GIC_LPI_INT_BASE];
 
 	*cfg &= 0xfc;
 	*cfg |= prio & 0xfc;
@@ -140,7 +140,7 @@ static void arm_gic_lpi_set_priority(unsigned int intid, unsigned int prio)
 
 static bool arm_gic_lpi_is_enabled(unsigned int intid)
 {
-	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - 8192];
+	uint8_t *cfg = &((uint8_t *)lpi_prop_table)[intid - GIC_LPI_INT_BASE];
 
 	return (*cfg & BIT(0));
 }
@@ -175,7 +175,7 @@ void arm_gic_irq_set_affinity(unsigned int intid, uint64_t mpidr)
 void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t flags)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_set_priority(intid, prio);
 		return;
 	}
@@ -226,7 +226,7 @@ void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t fl
 void arm_gic_irq_enable(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_setup(intid, true);
 		return;
 	}
@@ -258,7 +258,7 @@ void arm_gic_irq_enable(unsigned int intid)
 void arm_gic_irq_disable(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		arm_gic_lpi_setup(intid, false);
 		return;
 	}
@@ -280,7 +280,7 @@ void arm_gic_irq_disable(unsigned int intid)
 bool arm_gic_irq_is_enabled(unsigned int intid)
 {
 #ifdef CONFIG_GIC_V3_ITS
-	if (intid >= 8192) {
+	if (intid >= GIC_LPI_INT_BASE) {
 		return arm_gic_lpi_is_enabled(intid);
 	}
 #endif
@@ -297,6 +297,11 @@ bool arm_gic_irq_is_enabled(unsigned int intid)
 
 bool arm_gic_irq_is_pending(unsigned int intid)
 {
+	if (intid >= GIC_LPI_INT_BASE) {
+		__ASSERT(false, "LPI pending state is not supported");
+		return false;
+	}
+
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
@@ -310,6 +315,11 @@ bool arm_gic_irq_is_pending(unsigned int intid)
 
 void arm_gic_irq_set_pending(unsigned int intid)
 {
+	if (intid >= GIC_LPI_INT_BASE) {
+		__ASSERT(false, "LPI pending state is not supported");
+		return;
+	}
+
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
@@ -323,6 +333,11 @@ void arm_gic_irq_set_pending(unsigned int intid)
 
 void arm_gic_irq_clear_pending(unsigned int intid)
 {
+	if (intid >= GIC_LPI_INT_BASE) {
+		__ASSERT(false, "LPI pending state is not supported");
+		return;
+	}
+
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = GIC_IS_ESPI(intid) ? ((intid - GIC_ESPI_START) / GIC_NUM_INTR_PER_REG)
 					  : (intid / GIC_NUM_INTR_PER_REG);
