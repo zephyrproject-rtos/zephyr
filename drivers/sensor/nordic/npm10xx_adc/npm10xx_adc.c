@@ -142,12 +142,11 @@ static const int32_t ibat_fullscale_ua[] = {256000, 128000, 64000, 32000};
 /* Charge/discharge current (µA) */
 #define IBAT_CHG_UA(ictrl, ibat, cal)                                                              \
 	(((ibat) < 69) ? 0                                                                         \
-		       : 1000LL * ((int64_t)ictrl + 1LL) * (15LL * (int64_t)(ibat) - 1024LL) /     \
-				 ((int64_t)(cal)))
+		       : 1000 * ((int32_t)(ictrl) + 1) * ((int32_t)(ibat) - 68) / (int32_t)(cal))
+#define IBAT_CHG_DIG_UA(ictrl, irange) (125 * ((int32_t)(ictrl) + 1) * (1 << (irange)) / 4)
 #define IBAT_DIS_UA(ictrl, ibat, cal)                                                              \
 	(((ibat) < 69) ? 0                                                                         \
-		       : 250LL * ((int64_t)ictrl + 1LL) * (15LL * (int64_t)(ibat) - 1024LL) /      \
-				 ((int64_t)(cal)))
+		       : 250 * ((int32_t)(ictrl) + 1) * ((int32_t)(ibat) - 68) / (int32_t)(cal))
 /* Battery temperature (milli-°C) */
 #define BAT_TEMP_MC(beta, tbat)                                                                    \
 	(lroundf(1000.f /                                                                          \
@@ -182,6 +181,7 @@ struct npm10xx_adc_data {
 	int32_t die_mC;
 	int32_t ntc_mC;
 	int32_t ibat_ua;
+	int32_t ibat_dig_ua;
 };
 
 struct npm10xx_adc_config {
@@ -317,7 +317,7 @@ static int npm10xx_sensor_sample_fetch(const struct device *dev, enum sensor_cha
 	int ret;
 	uint8_t bat_res[BAT_RES_NUM];
 	enum npm10xx_chrg_mode charger_mode;
-	int16_t ictrl, ibat, vbat, ntc;
+	int16_t ictrl, irange, ibat, vbat, ntc;
 	uint8_t ntc_regs[2];
 
 	if (chan != SENSOR_CHAN_ALL) {
@@ -372,14 +372,16 @@ static int npm10xx_sensor_sample_fetch(const struct device *dev, enum sensor_cha
 	/* fall through */
 	case NPM10XX_CHRG_MODE_DROPOUT:
 		ictrl = bat_res[IDX_ICTRL];
-		data->ibat_ua = (int32_t)IBAT_CHG_UA(ictrl, ibat, data->calchg);
+		irange = FIELD_GET(BAT_STATUS1_IRANGE_Msk, bat_res[IDX_STATUS1]);
+		data->ibat_ua = IBAT_CHG_UA(ictrl, ibat, data->calchg);
+		data->ibat_dig_ua = IBAT_CHG_DIG_UA(ictrl, irange);
 		break;
 
 	case NPM10XX_CHRG_MODE_DISCH:
 	/* fall through */
 	case NPM10XX_CHRG_MODE_SUPP:
 		ictrl = charger_mode == NPM10XX_CHRG_MODE_DISCH ? bat_res[IDX_ICTRL] : 255;
-		data->ibat_ua = -(int32_t)IBAT_DIS_UA(ictrl, ibat, data->caldis);
+		data->ibat_ua = -IBAT_DIS_UA(ictrl, ibat, data->caldis);
 		break;
 
 	default:
@@ -433,6 +435,9 @@ static int npm10xx_sensor_channel_get(const struct device *dev, enum sensor_chan
 		val->val1 = data->offset;
 		return 0;
 
+	case NPM10XX_SENSOR_CHAN_GAUGE_DIG_CURRENT:
+		return sensor_value_from_micro(val, data->ibat_dig_ua);
+
 	default:
 		return -ENOTSUP;
 	}
@@ -457,8 +462,8 @@ static int npm10xx_sensor_init(const struct device *dev)
 		return ret;
 	}
 
-	data->caldis = 15 * ADC_RESULT(cal_regs[0], cal_regs[2], BAT_CALLSBS_DISLSB_Msk) - 1024;
-	data->calchg = 15 * ADC_RESULT(cal_regs[1], cal_regs[2], BAT_CALLSBS_CHGLSB_Msk) - 1024;
+	data->caldis = ADC_RESULT(cal_regs[0], cal_regs[2], BAT_CALLSBS_DISLSB_Msk) - 68;
+	data->calchg = ADC_RESULT(cal_regs[1], cal_regs[2], BAT_CALLSBS_CHGLSB_Msk) - 68;
 
 	if (data->caldis < 0 || data->calchg < 0) {
 		LOG_ERR("Read invalid calibrations for battery current");

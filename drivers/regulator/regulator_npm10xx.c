@@ -144,9 +144,10 @@ static const struct linear_range ldo_vout_range = LINEAR_RANGE_INIT(1000000, 500
 
 #define LDO_LOADSW_ILIM_OFF -1
 #define LDO_LOADSW_ILIM_UA  125000
-#define BUCK_ILIM_MIN_IDX   4U
 static const int32_t buck_ilim_ua[] = {66000,  91000,  117000, 142000,
 				       167000, 192000, 217000, 291000};
+
+#define LDO_LDSW_SS_CURR_MAX_IDX 3U
 
 /* GPIO enable control mask for all regulators is the same */
 #define REG_GPIO_ENABLE_Msk BUCK_GPIO_ENABLE_Msk
@@ -904,47 +905,29 @@ static int configure_soft_start(const struct regulator_npm10xx_config *config)
 	if (config->soft_start_curr_idx != UINT8_MAX) {
 		switch (config->source) {
 		case NPM10XX_SOURCE_BUCK:
-			if (config->soft_start_curr_idx < BUCK_ILIM_MIN_IDX) {
-				LOG_ERR("invalid regulator-soft-start-microamp for BUCK");
-				return -EINVAL;
-			}
 			addr = NPM10_BUCK_ILIM;
 			mask = BUCK_ILIM_STARTLVL_Msk;
-			value = FIELD_PREP(BUCK_ILIM_STARTLVL_Msk,
-					   config->soft_start_curr_idx - BUCK_ILIM_MIN_IDX);
 			break;
 
 		case NPM10XX_SOURCE_LDO:
-			if (config->soft_start_curr_idx >= BUCK_ILIM_MIN_IDX) {
-				LOG_ERR("invalid regulator-soft-start-microamp for LDO");
-				return -EINVAL;
-			}
 			addr = NPM10_LDO1_CONFIG0;
 			mask = LDO1_CONFIG0_ILIMLVL_Msk;
-			value = FIELD_PREP(LDO1_CONFIG0_ILIMLVL_Msk, config->soft_start_curr_idx);
 			break;
 
 		case NPM10XX_SOURCE_LDSW:
-			if (config->soft_start_curr_idx >= BUCK_ILIM_MIN_IDX) {
-				LOG_ERR("invalid regulator-soft-start-microamp for LOADSW");
-				return -EINVAL;
-			}
 			addr = NPM10_LOADSW2_CONFIG;
 			mask = LOADSW2_CONFIG_LVL_Msk;
-			value = FIELD_PREP(LOADSW2_CONFIG_LVL_Msk, config->soft_start_curr_idx);
 			break;
 
 		default:
 			return -ENODEV;
 		}
+
+		value = FIELD_PREP(mask, config->soft_start_curr_idx);
 	}
 
 	if (config->soft_start_timeout_idx != UINT8_MAX) {
 		switch (config->source) {
-		case NPM10XX_SOURCE_BUCK:
-			LOG_ERR("Soft start timeout configuration is not supported on BUCK");
-			return -ENOTSUP;
-
 		case NPM10XX_SOURCE_LDO:
 			addr = NPM10_LDO1_CONFIG0;
 			mask |= LDO1_CONFIG0_SOFTSTARTTIME_Msk;
@@ -1117,7 +1100,7 @@ static DEVICE_API(regulator, regulator_npm10xx_driver_api) = {
 		.passthru = DT_PROP(node_id, regulator_allow_bypass),                              \
 		.oc_protection = DT_PROP(node_id, regulator_over_current_protection),              \
 		.soft_start_curr_idx =                                                             \
-			DT_ENUM_IDX_OR(node_id, regulator_soft_start_microamp, UINT8_MAX),         \
+			DT_PROP_OR(node_id, regulator_soft_start_current_idx, UINT8_MAX),          \
 		.soft_start_timeout_idx =                                                          \
 			DT_ENUM_IDX_OR(node_id, regulator_soft_start_us, UINT8_MAX),               \
 		.pull_down_idx = DT_ENUM_IDX_OR(node_id, regulator_pull_down_ohms, UINT8_MAX),     \
@@ -1134,6 +1117,13 @@ static DEVICE_API(regulator, regulator_npm10xx_driver_api) = {
 		    ())
 
 #define REGULATOR_NPM10XX_DEFINE_ALL(n)                                                            \
+	BUILD_ASSERT(DT_PROP_OR(DT_INST_CHILD(n, ldo), regulator_soft_start_current_idx, 0) <=     \
+			LDO_LDSW_SS_CURR_MAX_IDX, "Invalid soft-start-current-idx for LDO");       \
+	BUILD_ASSERT(DT_PROP_OR(DT_INST_CHILD(n, ldsw), regulator_soft_start_current_idx, 0) <=    \
+			LDO_LDSW_SS_CURR_MAX_IDX, "Invalid soft-start-current-idx for LDSW");      \
+	BUILD_ASSERT(DT_ENUM_IDX_OR(DT_INST_CHILD(n, buck), regulator_soft_start_us, -1) == -1,    \
+			"regulator-soft-start-us is not supported on BUCK");                       \
+                                                                                                   \
 	static const struct regulator_npm10xx_pconfig regulator_config##n = {                      \
 		.i2c = I2C_DT_SPEC_GET(DT_INST_PARENT(n)),                                         \
 		.dvs_state_pins = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, dvs_gpios, 0, {0}),          \

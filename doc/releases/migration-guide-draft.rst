@@ -300,6 +300,19 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+Regulator
+=========
+
+* In the :dtcompatible:`nordic,npm10xx-regulator` binding, ``regulator-soft-start-microamp`` has
+  been replaced by ``regulator-soft-start-current-idx``, which takes the register index (0 to 7)
+  of the startup current limit. The limit that an index selects depends on the regulator type
+  (BUCK, LDO or LDSW), see the binding for the values. The previous values did not match the
+  hardware for LDO and LDSW.
+
+  In the same binding, ``regulator-soft-start-us`` accepts 0 instead of 1500. This value is used to
+  select hardware's default (independently of whether it was altered by UICR), which is 20.5ms for
+  LDO and 1.5ms for LDSW. Omitting this property will still keep the register field unchanged.
+
 Timers
 ======
 

@@ -28,6 +28,8 @@ enum npm10xx_sensor_chan {
 	NPM10XX_SENSOR_CHAN_VBUS,
 	/** ADC offset value */
 	NPM10XX_SENSOR_CHAN_OFFSET,
+	/** Digital charge current (not ADC result), in ampere */
+	NPM10XX_SENSOR_CHAN_GAUGE_DIG_CURRENT,
 };
 
 /** @} */
