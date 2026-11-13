@@ -58,6 +58,103 @@ are tested on this board:
 - :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
   SPI interface of the shield, connected to the LCDIC on-chip peripheral.
 
+Power management
+****************
+
+SVC voltage initialization
+==========================
+
+RW6xx SoC clock initialization reads the chip's SVC and package data from
+OTP before switching the CPU to 260 MHz. It configures BUCK levels and
+voltage-sensor thresholds with the power HAL on cold boot and PM3 recovery.
+Applications do not need to duplicate this initialization.
+
+Low-power configuration
+=======================
+
+Enable :kconfig:option:`CONFIG_PM` for system power management.
+:kconfig:option:`CONFIG_PM_DEVICE` and
+:kconfig:option:`CONFIG_PM_DEVICE_SYSTEM_MANAGED` enable device suspend and
+resume around system sleep.
+
+The optional :kconfig:option:`CONFIG_SOC_SERIES_RW6XX_T3_CAU_POWER_SAVE` setting applies
+to RW610 and RW612 and is disabled by default. It disables T3 at the end of
+the default SoC clock initialization on cold boot and PM3 recovery. DTRNG,
+GDET and peripherals requiring T3 clocks cannot be used. The option excludes
+Flexcomm I2C/SPI, CTIMER, ELS/PKC and
+clock monitoring drivers. CAU sleep power-down is enabled for RC32K or
+XTAL32K; CAU is retained when CLK32K uses NCO32K.
+
+The board uses iBuck supplies and retains the CAU reference clock needed by
+LPOSC. PM1 and PM2 use the OS Timer for timed wakeup. PM3 requires the RTC
+high-resolution companion for timed wakeup and time compensation.
+
+Power management test
+=====================
+
+Build the standard test with::
+
+   west build -p always -b frdm_rw612 tests/subsys/pm/power_mgmt_soc
+
+The JP9 measurements below used this test with the following configuration:
+
+* :kconfig:option:`CONFIG_SOC_SERIES_RW6XX_T3_CAU_POWER_SAVE` is enabled, with
+  immediate logging and a 1024-byte idle stack. UART output remains at
+  115200 baud.
+* The board test configuration disables unused CTIMER, MRT and PINT drivers.
+  The test overlay disables the watchdog and GPIO controller 1.
+  Board pinctrl keeps the RGB LEDs off using pull-ups and high sleep output
+  levels on GPIO0, GPIO1 and GPIO12.
+* The RTC high-resolution companion remains enabled. The measured board
+  used RC32K, whose accuracy affects sleep duration.
+
+Selecting a mode
+----------------
+
+The standard test uses the board's enabled CPU power states. Its "light"
+and "deep" messages describe short and long intervals, not fixed hardware
+modes. Check the PM state counters to identify the selected mode.
+
+For a separate measurement of one mode, restrict ``cpu-power-states``
+in :zephyr_file:`tests/subsys/pm/power_mgmt_soc/boards/frdm_rw612.overlay`.
+For example, select PM2 with::
+
+   &cpu0 {
+           cpu-power-states = <&suspend>;
+   };
+
+Use ``<&idle>`` for PM1 or ``<&standby>`` for PM3, then rebuild.
+Without this restriction, long sleeps normally select PM3.
+
+JP9 current measurements
+------------------------
+
+The sleep currents in the following table were measured at JP9.
+
+.. list-table:: Stable JP9 sleep current
+   :header-rows: 1
+   :widths: 10 35 15 40
+
+   * - Mode
+     - Zephyr state
+     - Current
+     - Timed wakeup
+   * - PM1
+     - ``PM_STATE_RUNTIME_IDLE``
+     - 17.795 mA
+     - OS Timer
+   * - PM2
+     - ``PM_STATE_SUSPEND_TO_IDLE``
+     - 7.425 mA
+     - OS Timer
+   * - PM3
+     - ``PM_STATE_STANDBY``
+     - 0.818 mA
+     - RTC high-resolution counter
+
+PM1--PM3 used the common board configuration above, with only the corresponding
+CPU state selected. Each passed all three ztests in three reset runs.
+
 Programming and Debugging
 *************************
 

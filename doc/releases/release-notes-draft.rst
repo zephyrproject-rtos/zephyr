@@ -177,6 +177,14 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* NXP
+
+  * RW610 and RW612 SoC clock initialization now applies SVC voltage and
+    voltage-sensor thresholds before raising the CPU clock, including PM3
+    recovery. This applies to all RW6xx boards using the default clock
+    initialization, including builds without system power management. See the
+    :ref:`migration guide <migration_4.6>` for downstream voltage configuration.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

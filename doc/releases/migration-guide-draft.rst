@@ -37,6 +37,17 @@ Kernel
 Boards
 ******
 
+* RW610 and RW612 boards using the default SoC ``clock_init()`` now apply SVC
+  voltage settings on cold boot and PM3 recovery. Applications or board code
+  that configure custom BUCK levels must account for the SVC configuration
+  being reapplied during PM3 recovery. Code that overrides the weak
+  ``clock_init()`` remains responsible for voltage initialization.
+  OTP initialization, package-read or deinitialization
+  errors and values outside the power HAL's supported package or DRO range stop
+  initialization with :c:func:`k_panic`. A failed SVC lookup uses the SDK's fixed-voltage fallback;
+  the HAL does not distinguish a missing SVC record from a read timeout.
+  (:github:`124843`)
+
 * On the Nordic nRF54L and nRF71 Series SoCs, the push area that the Key Management Unit (KMU) of
   CRACEN uses to push keys is now reserved at the start of the SRAM by the ``kmu_push_area``
   devicetree node of the SoC. The ``zephyr,sram`` chosen node of the in-tree boards is now
