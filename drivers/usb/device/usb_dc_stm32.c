@@ -574,8 +574,10 @@ static int usb_dc_stm32_clock_enable(void)
 static int usb_dc_stm32_clock_disable(void)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	int ret;
 
-	if (clock_control_off(clk, (clock_control_subsys_t)&pclken[0]) != 0) {
+	ret = clock_control_off(clk, (clock_control_subsys_t)&pclken[0]);
+	if (ret != 0 && ret != -ENOTSUP) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
