@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/irq_offload.h>
 
 #if defined(CONFIG_TEST_FORCE_STORAGE_PARTITION)
 #define TEST_AREA	storage_partition
@@ -340,6 +341,31 @@ ZTEST(flash_driver, test_flash_erase)
 	 */
 	zassert_not_equal(expected[0], erase_value, "These values shall be different");
 }
+
+#ifdef CONFIG_TEST_FLASH_WRITE_FROM_ISR
+static int isr_write_rc;
+
+static void write_from_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	isr_write_rc = flash_write(flash_dev, page_info.start_offset, expected, EXPECTED_SIZE);
+}
+
+ZTEST(flash_driver, test_flash_write_from_isr)
+{
+	uint8_t read_buf[EXPECTED_SIZE];
+	int rc;
+
+	isr_write_rc = -EINVAL;
+	irq_offload(write_from_isr, NULL);
+	zassert_ok(isr_write_rc, "Cannot write to flash from ISR context");
+
+	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+	zassert_ok(rc, "Cannot read flash");
+	zassert_mem_equal(read_buf, expected, EXPECTED_SIZE, "Data written from ISR differs");
+}
+#endif /* CONFIG_TEST_FLASH_WRITE_FROM_ISR */
 
 ZTEST(flash_driver, test_flash_write_read_over_the_packet_limit)
 {
