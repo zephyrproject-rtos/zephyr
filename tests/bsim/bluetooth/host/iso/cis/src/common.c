@@ -16,6 +16,18 @@
 
 extern enum bst_result_t bst_result;
 struct bt_conn *default_conn;
+
+/* A connected CIS reports the address of its ACL connection */
+void expect_cis_peer_addr(const struct bt_iso_chan *chan)
+{
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(chan->iso, &info);
+	TEST_ASSERT(err == 0, "Failed to get the connection info: %d", err);
+	TEST_ASSERT(bt_addr_le_eq(info.le.dst, bt_conn_get_dst(default_conn)),
+		    "The CIS reports another peer address");
+}
 atomic_t flag_connected;
 atomic_t flag_conn_updated;
 
