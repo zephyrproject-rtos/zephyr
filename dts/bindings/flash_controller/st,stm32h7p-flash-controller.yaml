@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32H7P flash controller
+
+description: STM32H7P on-chip flash memory controller
+
+compatible: "st,stm32h7p-flash-controller"
+
+include: flash-controller.yaml
