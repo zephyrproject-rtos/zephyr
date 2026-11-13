@@ -84,6 +84,8 @@ struct dma_mcux_channel_transfer_edma_settings {
 
 /* CITER/BITER without channel linking. */
 #define EDMA_MAX_MAJOR_LOOP 0x7FFFU
+/* CITER/BITER with minor loop linking: LINKCH sits above a 9-bit count. */
+#define EDMA_MAX_LINKED_MAJOR_LOOP 0x1FFU
 
 struct call_back {
 	edma_transfer_config_t transferConfig;
@@ -93,6 +95,7 @@ struct call_back {
 	dma_callback_t dma_callback;
 	struct dma_mcux_channel_transfer_edma_settings transfer_settings;
 	bool busy;
+	bool error_callback_dis;
 };
 
 struct dma_mcux_edma_data {
@@ -235,7 +238,42 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 		ret = DMA_STATUS_COMPLETE;
 	}
 	LOG_DBG("transfer %d", tcds);
-	data->dma_callback(data->dev, data->user_data, channel, ret);
+	if (data->dma_callback != NULL) {
+		data->dma_callback(data->dev, data->user_data, channel, ret);
+	}
+}
+
+/*
+ * With halt-on-error, which EDMA_GetDefaultConfig() enables, an error also
+ * halts the whole controller until software writes 0 to HALT. Call this only
+ * after the faulting channels are stopped.
+ */
+static void dma_mcux_edma_clear_halt(const struct device *dev)
+{
+#if defined(CONFIG_DMA_MCUX_EDMA_V3)
+	DEV_BASE(dev)->MP_CSR &= ~DMA_MP_CSR_HALT_MASK;
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4)
+	EDMA_MP_BASE(DEV_BASE(dev))->MP_CSR &= ~DMA_CORE_MP_CSR_HALT_MASK;
+#else
+	DEV_BASE(dev)->CR &= ~DMA_CR_HALT_MASK;
+#endif
+}
+
+/* Stop a channel that has flagged an error and tell its owner. */
+static void dma_mcux_edma_channel_error(const struct device *dev, uint32_t channel)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
+
+	LOG_ERR("channel %d error status is 0x%x", hw_channel,
+		EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
+	EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
+	EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
+	data->busy = false;
+
+	if (data->dma_callback != NULL && !data->error_callback_dis) {
+		data->dma_callback(data->dev, data->user_data, channel, -EIO);
+	}
 }
 
 static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
@@ -253,10 +291,8 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 #if DT_INST_PROP(0, no_error_irq)
 	/* Channel shares the same irq for error and transfer complete */
 	else if (flag & kEDMA_ErrorFlag) {
-		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel, 0xFFFFFFFF);
-		EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
-		DEV_CHANNEL_DATA(dev, channel)->busy = false;
-		LOG_INF("channel %d error status is 0x%x", channel, flag);
+		dma_mcux_edma_channel_error(dev, channel);
+		dma_mcux_edma_clear_halt(dev);
 	}
 #endif
 }
@@ -264,18 +300,28 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 #if !DT_INST_PROP(0, no_error_irq)
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
-	int i = 0;
-	uint32_t hw_channel;
+	bool handled = false;
 
-	for (i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
-		if (DEV_CHANNEL_DATA(dev, i)->busy) {
-			hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
-			LOG_ERR("channel %d error status is 0x%x", hw_channel,
-					EDMA_GetErrorStatusFlags(DEV_BASE(dev)));
-			EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, i));
-			EDMA_ClearChannelStatusFlags(DEV_BASE(dev), hw_channel, 0xFFFFFFFF);
-			DEV_CHANNEL_DATA(dev, i)->busy = false;
+	/*
+	 * The error interrupt is shared; act on the channels that flagged one.
+	 * A channel never configured here has no handle and may belong to
+	 * another core sharing the controller, so leave it alone.
+	 */
+	for (uint32_t i = 0; i < DEV_CFG(dev)->dma_channels; i++) {
+		uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, i);
+
+		if (DEV_CHANNEL_DATA(dev, i)->dev == NULL) {
+			continue;
 		}
+		if (EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel) & kEDMA_ErrorFlag) {
+			dma_mcux_edma_channel_error(dev, i);
+			handled = true;
+		}
+	}
+
+	/* Let the other channels run again once every faulting one is stopped */
+	if (handled) {
+		dma_mcux_edma_clear_halt(dev);
 	}
 
 #if defined(CONFIG_CPU_CORTEX_M4)
@@ -324,6 +370,8 @@ static void edma_configure_dmamux(const struct device *dev, uint32_t channel,
 		LOG_DBG("ALWAYS ON");
 		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, true);
 	} else {
+		/* SetSource keeps A_ON, which an earlier configuration may have set. */
+		DMAMUX_EnableAlwaysOn(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, false);
 		DMAMUX_SetSource(DEV_DMAMUX_BASE(dev, dmamux_idx), dmamux_channel, slot);
 	}
 #else
@@ -735,6 +783,31 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 		return -EINVAL;
 	}
 
+	/*
+	 * With minor loop linking CITER/BITER keep the link channel in their
+	 * upper bits, leaving 9 bits for the loop count.
+	 */
+	if (config->source_chaining_en) {
+		/* The looped scatter/gather path counts in data units, the others in bursts. */
+		bool sg_loop = config->cyclic &&
+			       (block_config->source_gather_en || block_config->dest_scatter_en);
+		uint32_t unit = sg_loop ? MAX(config->source_data_size, 1U)
+					: MAX(config->source_burst_length, 1U);
+		struct dma_block_config *blk = block_config;
+
+		for (uint32_t i = 0; i < config->block_count && blk != NULL;
+		     i++, blk = blk->next_block) {
+			uint32_t loops = DIV_ROUND_UP(blk->block_size, unit);
+
+			if (loops > EDMA_MAX_LINKED_MAJOR_LOOP) {
+				LOG_ERR("block of %u bytes needs %u major loops, %u is the "
+					"most with minor loop linking",
+					blk->block_size, loops, EDMA_MAX_LINKED_MAJOR_LOOP);
+				return -EINVAL;
+			}
+		}
+	}
+
 	if (block_config->source_gather_en || block_config->dest_scatter_en) {
 		if (config->block_count > CONFIG_DMA_TCD_QUEUE_SIZE) {
 			LOG_ERR("please config DMA_TCD_QUEUE_SIZE as %d", config->block_count);
@@ -850,12 +923,11 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	data->busy = false;
-	if (config->dma_callback) {
-		LOG_DBG("INSTALL call back on channel %d", channel);
-		data->user_data = config->user_data;
-		data->dma_callback = config->dma_callback;
-		data->dev = dev;
-	}
+	/* Replace the callback even with none, so a previous one is not kept. */
+	data->user_data = config->user_data;
+	data->dma_callback = config->dma_callback;
+	data->error_callback_dis = config->error_callback_dis;
+	data->dev = dev;
 
 	irq_unlock(key);
 
@@ -1171,7 +1243,7 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 		 */
 		status->pending_length =
 			EDMA_GetRemainingMajorLoopCount(DEV_BASE(dev), hw_channel) *
-			xfer_settings->source_data_size;
+			xfer_settings->source_burst_length;
 	} else {
 		status->busy = false;
 		status->pending_length = 0;
