@@ -14,11 +14,6 @@
 
 #define BT_AUDIO_LOCATION_MASK BIT_MASK(28)
 
-struct bt_pac_codec {
-	uint8_t  id;			/* Codec ID */
-	uint16_t cid;			/* Company ID */
-	uint16_t vid;			/* Vendor specific Codec ID */
-} __packed;
 
 struct bt_pac_ltv {
 	uint8_t  len;
@@ -31,8 +26,21 @@ struct bt_pac_ltv_data {
 	struct bt_pac_ltv data[];
 } __packed;
 
-struct bt_pacs_read_rsp {
+struct bt_pac_codec {
+	uint8_t  id;			/* Codec ID */
+	uint16_t cid;			/* Company ID */
+	uint16_t vid;			/* Vendor specific Codec ID */
+} __packed;
+
+struct bt_pac_record {
+	struct bt_pac_codec codec;
+	/* struct bt_pac_ltv_data for codec specific capabilities data */
+	/* struct bt_pac_ltv_data for metadata */
+} __packed;
+
+struct bt_pac_value {
 	uint8_t  num_pac;		/* Number of PAC Records*/
+	struct bt_pac_record pac_records[];
 } __packed;
 
 struct bt_pacs_context {
