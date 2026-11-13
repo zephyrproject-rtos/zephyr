@@ -546,6 +546,7 @@ _west_twister() {
   '(-o --report-dir)'{-o,--report-dir}'[report directory]:dir:_directories'
   '--alt-config-root[alt config root]:dir:_directories'
   '--coverage-basedir[coverage basedir]:dir:_directories'
+  '--coverage-exclude-dir[directory to exclude from coverage]:dir:_directories'
 
   # File options
   '--compare-report[compare report]:file:_files'

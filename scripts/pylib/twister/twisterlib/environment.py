@@ -507,6 +507,13 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     coverage_group.add_argument("--coverage-basedir", default=ZEPHYR_BASE,
                     help="Base source directory for coverage report.")
 
+    coverage_group.add_argument("--coverage-exclude-dir", action="append", default=[],
+                    help="Directory name to exclude from coverage reports, matching "
+                         "the same style as the built-in 'tests'/'samples' "
+                         "exclusions. Wildcard/regex metacharacters are interpreted "
+                         "differently by gcovr and lcov, so prefer plain directory "
+                         "names. This option may be used multiple times.")
+
     coverage_group.add_argument("--coverage-platform", action="append", default=[],
                     help="Platforms to run coverage reports on. "
                          "This option may be used multiple times. "
