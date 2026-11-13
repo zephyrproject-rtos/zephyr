@@ -11,6 +11,7 @@
 #include <zephyr/mgmt/ec_host_cmd/ec_host_cmd.h>
 #include <zephyr/mgmt/ec_host_cmd/backend.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -392,6 +393,39 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 	}
 }
 
+ZTESTABLE_STATIC enum ec_host_cmd_status ec_host_cmd_process(struct ec_host_cmd_handler_args *args)
+{
+	const struct ec_host_cmd_handler *found_handler = NULL;
+	enum ec_host_cmd_status status;
+
+	STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
+		if (handler->id == args->command) {
+			found_handler = handler;
+			break;
+		}
+	}
+
+	/* No handler in this image for requested command */
+	if (found_handler == NULL) {
+		return EC_HOST_CMD_INVALID_COMMAND;
+	}
+
+	args->output_buf_size = 0;
+
+	status = validate_handler(found_handler, args);
+	if (status != EC_HOST_CMD_SUCCESS) {
+		return status;
+	}
+
+	/*
+	 * Preemptively clear the entire response buffer so we do not
+	 * have any left over contents from previous host commands.
+	 */
+	memset(args->output_buf, 0, args->output_buf_max);
+
+	return found_handler->handler(args);
+}
+
 FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg2);
@@ -400,7 +434,6 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 	struct ec_host_cmd *hc = (struct ec_host_cmd *)hc_handle;
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
-	const struct ec_host_cmd_handler *found_handler;
 	const struct ec_host_cmd_request_header *const rx_header = (void *)rx->buf;
 	/* The pointer to rx buffer is constant during communication */
 	struct ec_host_cmd_handler_args args = {
@@ -427,39 +460,12 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 
 		ec_host_cmd_log_request(rx->buf);
 
-		found_handler = NULL;
-		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
-			if (handler->id == rx_header->cmd_id) {
-				found_handler = handler;
-				break;
-			}
-		}
-
-		/* No handler in this image for requested command */
-		if (found_handler == NULL) {
-			ec_host_cmd_send_response(EC_HOST_CMD_INVALID_COMMAND, &args);
-			continue;
-		}
-
 		args.command = rx_header->cmd_id;
 		args.version = rx_header->cmd_ver;
 		args.input_buf_size = rx_header->data_len;
-		args.output_buf_max = tx->len_max - TX_HEADER_SIZE,
-		args.output_buf_size = 0;
+		args.output_buf_max = tx->len_max - TX_HEADER_SIZE;
 
-		status = validate_handler(found_handler, &args);
-		if (status != EC_HOST_CMD_SUCCESS) {
-			ec_host_cmd_send_response(status, &args);
-			continue;
-		}
-
-		/*
-		 * Preemptively clear the entire response buffer so we do not
-		 * have any left over contents from previous host commands.
-		 */
-		memset(args.output_buf, 0, args.output_buf_max);
-
-		status = found_handler->handler(&args);
+		status = ec_host_cmd_process(&args);
 
 		ec_host_cmd_send_response(status, &args);
 	}

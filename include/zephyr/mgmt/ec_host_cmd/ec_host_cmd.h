@@ -377,6 +377,29 @@ struct ec_host_cmd_response_header {
  */
 int ec_host_cmd_init(struct ec_host_cmd_backend *backend);
 
+#ifdef CONFIG_ZTEST
+/**
+ * @brief Process a host command request directly
+ *
+ * Looks up the registered handler for @a args->command, validates
+ * request/response sizes and command version, clears the output buffer, and
+ * invokes the handler synchronously on the calling thread.
+ *
+ * @note This function is only available for testing when
+ *       @kconfig{CONFIG_ZTEST} is enabled.
+ *
+ * @param[in,out] args Pointer to the handler arguments structure.
+ *
+ * @retval EC_HOST_CMD_SUCCESS Command processed successfully.
+ * @retval EC_HOST_CMD_INVALID_COMMAND No handler for @a args->command.
+ * @retval EC_HOST_CMD_REQUEST_TRUNCATED Input smaller than handler minimum.
+ * @retval EC_HOST_CMD_INVALID_RESPONSE Output smaller than handler minimum.
+ * @retval EC_HOST_CMD_INVALID_VERSION Command version not supported by handler.
+ * @retval status Any other @ref ec_host_cmd_status returned by the handler.
+ */
+enum ec_host_cmd_status ec_host_cmd_process(struct ec_host_cmd_handler_args *args);
+#endif /* CONFIG_ZTEST */
+
 /**
  * @brief Send the host command response
  *

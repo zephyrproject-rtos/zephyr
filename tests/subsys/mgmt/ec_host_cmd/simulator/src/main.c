@@ -840,6 +840,29 @@ ZTEST(ec_host_cmd, test_log_on_request_max_version)
 	verify_tx_error(EC_HOST_CMD_INVALID_VERSION);
 }
 
+/*
+ * Only test the basic direct call here; all error cases and output buffer
+ * clearing in ec_host_cmd_process() are already covered by the other tests
+ * in this suite when ec_host_cmd_thread() calls ec_host_cmd_process().
+ */
+ZTEST(ec_host_cmd, test_process_direct)
+{
+	struct ec_params_add req = {.in_data = 0x10203040};
+	struct ec_response_add rsp = {.out_data = 0xffffffff};
+	struct ec_host_cmd_handler_args args = {
+		.command = EC_CMD_HELLO,
+		.version = 0,
+		.input_buf = &req,
+		.input_buf_size = sizeof(req),
+		.output_buf = &rsp,
+		.output_buf_max = sizeof(rsp),
+	};
+
+	zassert_equal(ec_host_cmd_process(&args), EC_HOST_CMD_SUCCESS);
+	zassert_equal(args.output_buf_size, sizeof(rsp));
+	zassert_equal(rsp.out_data, 0x11223344);
+}
+
 static void *ec_host_cmd_tests_setup(void)
 {
 	ec_host_cmd_backend_sim_install_send_cb(host_send, &sent);
