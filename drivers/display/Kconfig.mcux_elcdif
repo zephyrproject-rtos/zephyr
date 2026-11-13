@@ -38,10 +38,14 @@ config MCUX_ELCDIF_FB_SIZE
 
 config MCUX_ELCDIF_START_ON_INIT
 	bool "Start the ELCDIF display driver during initialization"
-	default y if MCUX_ELCDIF_FB_NUM != 0
+	depends on MCUX_ELCDIF_FB_NUM != 0
+	default y
 	help
-	  Optionally start the ELCDIF display driver from the initialization step,
-	  which can be required for some connected display controllers to function properly.
+	  Start scanning the first driver framebuffer at initialization instead
+	  of at the first display_write(). Panel controllers that need the pixel
+	  stream before they accept commands, such as MIPI DSI panels in video
+	  mode, require it; without a driver framebuffer there is nothing to
+	  scan, so MCUX_ELCDIF_FB_NUM must be at least 1 for them.
 
 config MCUX_ELCDIF_PXP
 	bool "Use PXP for display rotation"
