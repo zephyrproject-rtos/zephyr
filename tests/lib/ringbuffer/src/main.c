@@ -11,6 +11,15 @@
 #define DATA_SIZE 12
 #define HALF_DATA_SIZE (DATA_SIZE / 2)
 
+/**
+ * @brief Verify byte copy storage and retrieval, including wrap-around and reset.
+ *
+ * @ingroup lib_ringbuffer_tests
+ * @verifies ZEP-SRS-40-1
+ * @verifies ZEP-SRS-40-2
+ * @verifies ZEP-SRS-40-3
+ * @verifies ZEP-SRS-40-9
+ */
 ZTEST(ringbuffer_api, test_ringbuffer_copy_api)
 {
 	uint8_t ring_storage[BUF_SIZE];
@@ -61,6 +70,16 @@ ZTEST(ringbuffer_api, test_ringbuffer_copy_api)
 		      "Buffer capacity was not fully recovered after reset");
 }
 
+/**
+ * @brief Verify the zero-copy claim and finish operations in both directions.
+ *
+ * @ingroup lib_ringbuffer_tests
+ * @verifies ZEP-SRS-40-5
+ * @verifies ZEP-SRS-40-6
+ * @verifies ZEP-SRS-40-8
+ * @verifies ZEP-SRS-40-11
+ * @verifies ZEP-SRS-40-12
+ */
 ZTEST(ringbuffer_api, test_ringbuffer_zero_copy)
 {
 	uint8_t *ref, *ref2;
@@ -338,6 +357,12 @@ static void check_peek(struct ring_buf *rb, const uint8_t *expected, uint32_t le
 	zassert_equal(ring_buf_size_get(rb), 0, "Buffer should be empty after get");
 }
 
+/**
+ * @brief Verify peeking returns data without removing it.
+ *
+ * @ingroup lib_ringbuffer_tests
+ * @verifies ZEP-SRS-40-4
+ */
 ZTEST(ringbuffer_api, test_ringbuffer_peek)
 {
 	uint8_t ring_storage[BUF_SIZE];

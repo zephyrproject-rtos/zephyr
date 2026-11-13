@@ -43,6 +43,12 @@ ZTEST(ringbuffer_index_math, test_init_at_max_size)
 	zassert_false(ring_buf_is_full(&rb));
 }
 
+/**
+ * @brief Verify a maximum-size ring buffer fills completely and reports empty and full states.
+ *
+ * @ingroup lib_ringbuffer_tests
+ * @verifies ZEP-SRS-40-8
+ */
 ZTEST(ringbuffer_index_math, test_fill_completely_max_size)
 {
 	struct ring_buf rb;

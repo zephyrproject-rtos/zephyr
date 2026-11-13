@@ -38,6 +38,8 @@ extern "C" {
  * the application.
  *
  * @{
+ *
+ * @satisfies ZEP-SRS-40-10
  */
 
 /** @cond INTERNAL_HIDDEN */
@@ -182,6 +184,8 @@ static ALWAYS_INLINE void rb_store_relaxed(ring_buf_idx_t *p, ring_buf_idx_t v)
  *
  * @param name  Name of the ring buffer.
  * @param size8 buffer capacity in bytes.
+ *
+ * @satisfies ZEP-SRS-40-1
  */
 #define RING_BUF_DECLARE(name, size8)							\
 	BUILD_ASSERT((size8) <= RING_BUFFER_MAX_SIZE, RING_BUFFER_SIZE_ASSERT_MSG);	\
@@ -225,6 +229,8 @@ static inline uint32_t ring_buf_size_get(const struct ring_buf *rb)
  * @param rb Address of ring buffer.
  *
  * @return Ring buffer free space (in bytes).
+ *
+ * @satisfies ZEP-SRS-40-8
  */
 static inline uint32_t ring_buf_space_get(const struct ring_buf *rb)
 {
@@ -237,6 +243,8 @@ static inline uint32_t ring_buf_space_get(const struct ring_buf *rb)
  * @param rb Address of ring buffer.
  *
  * @return true if the ring buffer is empty, or false if not.
+ *
+ * @satisfies ZEP-SRS-40-8
  */
 static inline bool ring_buf_is_empty(const struct ring_buf *rb)
 {
@@ -262,6 +270,8 @@ static inline bool ring_buf_is_full(const struct ring_buf *rb)
  * @brief Reset ring buffer state.
  *
  * @param rb Address of ring buffer.
+ *
+ * @satisfies ZEP-SRS-40-9
  */
 static inline void ring_buf_reset(struct ring_buf *rb)
 {
@@ -284,6 +294,8 @@ static inline void ring_buf_reset(struct ring_buf *rb)
  * @param size Buffer capacity (in bytes). A @p size of 0 produces a
  *             degenerate buffer with capacity 0.
  * @param data Ring buffer data area (uint8_t data[size]).
+ *
+ * @satisfies ZEP-SRS-40-1
  */
 static inline void ring_buf_init(struct ring_buf *rb, uint32_t size, uint8_t *data)
 {
@@ -414,6 +426,8 @@ static inline void ring_buf_consume(struct ring_buf *rb, size_t size)
  * @param size Data size (in bytes).
  *
  * @return Number of bytes written.
+ *
+ * @satisfies ZEP-SRS-40-2
  */
 static inline uint32_t ring_buf_put(struct ring_buf *rb, const uint8_t *data, uint32_t size)
 {
@@ -444,6 +458,8 @@ static inline uint32_t ring_buf_put(struct ring_buf *rb, const uint8_t *data, ui
  * @param size Maximum number of bytes to read.
  *
  * @return Number of bytes read.
+ *
+ * @satisfies ZEP-SRS-40-3
  */
 static inline uint32_t ring_buf_get(struct ring_buf *rb, uint8_t *data, uint32_t size)
 {
@@ -479,6 +495,8 @@ static inline uint32_t ring_buf_get(struct ring_buf *rb, uint8_t *data, uint32_t
  * @param size Maximum number of bytes to peek.
  *
  * @return Number of bytes copied into @p data.
+ *
+ * @satisfies ZEP-SRS-40-4
  */
 static inline uint32_t ring_buf_peek(const struct ring_buf *rb, uint8_t *data, uint32_t size)
 {
@@ -614,7 +632,9 @@ static inline uint32_t ring_buf_item_space_get(const struct ring_buf *rb)
  * @return Size of allocated buffer which can be smaller than requested if
  *	   there is not enough free space or buffer wraps.
  */
-__deprecated /* use ring_buf_put_ptr(...) & ring_buf_commit(...) instead */
+__deprecated /* use ring_buf_put_ptr(...) & ring_buf_commit(...) instead *
+ * @satisfies ZEP-SRS-40-5
+ */
 static inline uint32_t ring_buf_put_claim(struct ring_buf *rb, uint8_t **data, uint32_t size)
 {
 	uint32_t claimed = MIN(ring_buf_put_ptr(rb, data, rb->put_claimed), size);
@@ -645,7 +665,9 @@ static inline uint32_t ring_buf_put_claim(struct ring_buf *rb, uint8_t **data, u
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds free space in the ring buffer.
  */
-__deprecated /* use ring_buf_put_ptr(...) & ring_buf_commit(...) instead */
+__deprecated /* use ring_buf_put_ptr(...) & ring_buf_commit(...) instead *
+ * @satisfies ZEP-SRS-40-11
+ */
 static inline int ring_buf_put_finish(struct ring_buf *rb, uint32_t size)
 {
 	if (rb->put_claimed < size) {
@@ -681,7 +703,9 @@ static inline int ring_buf_put_finish(struct ring_buf *rb, uint32_t size)
  * @return Number of valid bytes in the provided buffer which can be smaller
  *	   than requested if there is not enough free space or buffer wraps.
  */
-__deprecated /* use ring_buf_get_ptr(...) & ring_buf_consume(...) instead */
+__deprecated /* use ring_buf_get_ptr(...) & ring_buf_consume(...) instead *
+ * @satisfies ZEP-SRS-40-6
+ */
 static inline uint32_t ring_buf_get_claim(struct ring_buf *rb, uint8_t **data, uint32_t size)
 {
 	uint32_t claimed = MIN(ring_buf_get_ptr(rb, data, rb->get_claimed), size);
@@ -712,7 +736,9 @@ static inline uint32_t ring_buf_get_claim(struct ring_buf *rb, uint8_t **data, u
  * @retval 0 Successful operation.
  * @retval -EINVAL Provided @a size exceeds valid bytes in the ring buffer.
  */
-__deprecated /* use ring_buf_get_ptr(...) & ring_buf_consume(...) instead */
+__deprecated /* use ring_buf_get_ptr(...) & ring_buf_consume(...) instead *
+ * @satisfies ZEP-SRS-40-12
+ */
 static inline int ring_buf_get_finish(struct ring_buf *rb, uint32_t size)
 {
 	if (rb->get_claimed < size) {
@@ -776,7 +802,9 @@ static inline void z_rb_write_no_commit(struct ring_buf *rb, const uint8_t *data
  * @retval 0 Data item was written.
  * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
-__deprecated /* use #include <zephyr/sys/ringq.h> instead */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead *
+ * @satisfies ZEP-SRS-40-7
+ */
 static inline int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 					uint32_t *data, uint8_t size32)
 {
@@ -820,7 +848,9 @@ static inline int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t
  * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
  *         the number of 32-bit words needed.
  */
-__deprecated /* use #include <zephyr/sys/ringq.h> instead */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead *
+ * @satisfies ZEP-SRS-40-13
+ */
 static inline int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 					uint32_t *data, uint8_t *size32)
 {

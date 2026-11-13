@@ -90,6 +90,8 @@ extern void test_ringbuffer_item_stress(void);
  * @ingroup lib_ringbuffer_tests
  *
  * @see ring_buf_item_put, ring_buf_item_get
+ * @verifies ZEP-SRS-40-7
+ * @verifies ZEP-SRS-40-13
  */
 ZTEST(deprecated_ringbuffer_api, test_ring_buffer_main)
 {
