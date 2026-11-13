@@ -868,6 +868,25 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_ESP32_SPI_TARGET
+	if (data->target_mode) {
+		unsigned int key = irq_lock();
+
+		data->target_mode = false;
+		spi_ll_reset_register(cfg->dma_host + 1);
+		spi_hal_init(hal, cfg->dma_host + 1);
+		spi_ll_enable_clock(cfg->dma_host + 1, true);
+		spi_ll_set_clk_source(cfg->spi, cfg->clock_source);
+#ifndef SOC_GDMA_SUPPORTED
+		hal->dma_enabled = cfg->dma_enabled;
+#endif
+		spi_ll_disable_int(cfg->spi);
+		spi_ll_clear_int_stat(cfg->spi);
+
+		irq_unlock(key);
+	}
+#endif /* CONFIG_ESP32_SPI_TARGET */
+
 	/*
 	 * CS handling:
 	 * - When using GPIO CS (cs-gpios property), the spi_context manages
