@@ -4,6 +4,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 
 #include <zephyr/sys/util.h>
@@ -29,7 +30,19 @@ LOG_MODULE_REGISTER(soc);
 
 void sys_arch_reboot(int type)
 {
+	enum {
+		RSTEN_OFFSET = 0x8U,
+		SORTRIGGER_OFFSET = 0x1cU,
+	};
+	const uintptr_t base = DT_REG_ADDR(DT_NODELABEL(sysctrl));
+	const uintptr_t rsten = base + RSTEN_OFFSET;
+	const uintptr_t sortrigger = base + SORTRIGGER_OFFSET;
+
 	ARG_UNUSED(type);
+
+	/* Enable and trigger software reset. */
+	sys_set_bit(rsten, 0U);
+	sys_set_bit(sortrigger, 0U);
 }
 
 #define SY1XX_ARCHI_REF_CLOCK 32768
