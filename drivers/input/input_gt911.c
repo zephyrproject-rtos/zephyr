@@ -356,7 +356,11 @@ static int gt911_init(const struct device *dev)
 	 * below to find the device.
 	 */
 	if (config->int_gpio.port != NULL) {
-		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_INACTIVE);
+		/* The GT911 samples the physical INT level during reset to
+		 * select its I2C address. Use GPIO_OUTPUT_LOW so address
+		 * selection is independent of the interrupt polarity.
+		 */
+		r = gpio_pin_configure_dt(&config->int_gpio, GPIO_OUTPUT_LOW);
 		if (r < 0) {
 			LOG_ERR("Could not configure int GPIO pin");
 			return r;
