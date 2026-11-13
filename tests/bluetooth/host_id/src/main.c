@@ -971,6 +971,102 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 	zassert_ok(unpair_err, "Failed to remove the test bond");
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP) */
+
+#if defined(CONFIG_BT_OBSERVER)
+static ZTEST(bt_id_public_api, test_rpa_adv_shares_rpa_with_scanner)
+{
+	int adv_stop_err = 0;
+	int scan_stop_err;
+	int adv_err;
+
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+
+	/* The random address cannot change while scanning, so the
+	 * advertiser has to use the scanner's RPA.
+	 */
+	adv_err = bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U);
+	if (adv_err == 0) {
+		adv_stop_err = bt_le_adv_stop();
+	}
+	scan_stop_err = bt_le_scan_stop();
+
+	zassert_ok(adv_err, "Advertising failed next to the scanner: %d", adv_err);
+	zassert_ok(adv_stop_err, "Failed to stop advertising");
+	zassert_ok(scan_stop_err, "Failed to stop scanning");
+}
+
+static ZTEST(bt_id_public_api, test_rpa_of_other_identity_replaced)
+{
+	struct bt_le_adv_param param = *BT_LE_ADV_NCONN;
+	bt_addr_le_t addr = test_addr(0x49U);
+	/* Differs from the IRK of the default identity */
+	uint8_t irk[BT_IRK_SIZE] = {2U};
+	bt_addr_t scan_addr;
+	bt_addr_t adv_addr;
+	int id;
+
+	id = bt_id_create(&addr, irk);
+	zassert_true(id > 0, "Failed to create an identity: %d", id);
+	param.id = (uint8_t)id;
+
+	/* Set a valid RPA of the default identity */
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+	zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+
+	zassert_ok(bt_le_adv_start(&param, NULL, 0U, NULL, 0U),
+		   "Failed to start advertising with the new identity");
+	bt_addr_copy(&adv_addr, &random_addr);
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+
+	zassert_ok(bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL), "Failed to start scanning");
+	bt_addr_copy(&scan_addr, &random_addr);
+	zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+
+	zassert_true(bt_addr_matches_irk(&adv_addr, irk),
+		     "The advertiser used an RPA of another identity");
+	zassert_true(bt_addr_matches_irk(&scan_addr, bt_dev.irk[BT_ID_DEFAULT]),
+		     "The scanner used an RPA of another identity");
+}
+#endif /* defined(CONFIG_BT_OBSERVER) */
+
+static ZTEST(bt_id_public_api, test_rpa_adv_replaces_identity_addr)
+{
+	bt_addr_t adv_addr;
+
+	/* Set a valid RPA */
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U),
+		   "Failed to start advertising");
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+
+	/* Replace it with the identity address */
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_NCONN_IDENTITY, NULL, 0U, NULL, 0U),
+		   "Failed to start advertising with the identity address");
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U),
+		   "Failed to start advertising");
+	bt_addr_copy(&adv_addr, &random_addr);
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+
+	zassert_true(bt_addr_matches_irk(&adv_addr, bt_dev.irk[BT_ID_DEFAULT]),
+		     "The advertiser did not go back to an RPA after the identity address");
+}
+
+static ZTEST(bt_id_public_api, test_rpa_adv_uses_oob_addr)
+{
+	struct bt_le_oob oob;
+	bt_addr_t adv_addr;
+
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U),
+		   "Failed to start advertising");
+	bt_addr_copy(&adv_addr, &random_addr);
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+
+	zassert_true(bt_addr_eq(&adv_addr, &oob.addr.a),
+		     "The advertiser did not use the address of the OOB data");
+}
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 
 #if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
