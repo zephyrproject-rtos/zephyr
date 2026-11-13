@@ -16,6 +16,7 @@
 #include <stdbool.h>
 
 #include <zephyr/arch/cpu.h>
+#include <zephyr/debug/lockdep.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/time_units.h>
@@ -203,6 +204,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	k.key = arch_irq_lock();
 
 	z_spinlock_validate_pre(l);
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_before_acquire(l, Z_LOCKDEP_SPINLOCK, false, Z_LOCKDEP_CALLER_ADDR);
+#endif
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
 	/*
@@ -223,6 +227,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 	z_spinlock_validate_post(l);
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_after_acquire(l, Z_LOCKDEP_SPINLOCK, false, Z_LOCKDEP_CALLER_ADDR);
+#endif
 
 	return k;
 }
@@ -248,6 +255,9 @@ static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *
 	int key = arch_irq_lock();
 
 	z_spinlock_validate_pre(l);
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_before_acquire(l, Z_LOCKDEP_SPINLOCK, true, Z_LOCKDEP_CALLER_ADDR);
+#endif
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
 	/*
@@ -280,6 +290,9 @@ static ALWAYS_INLINE int k_spin_trylock(struct k_spinlock *l, k_spinlock_key_t *
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 	z_spinlock_validate_post(l);
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_after_acquire(l, Z_LOCKDEP_SPINLOCK, true, Z_LOCKDEP_CALLER_ADDR);
+#endif
 
 	k->key = key;
 
@@ -330,6 +343,10 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 		 l, delta, CONFIG_SPIN_LOCK_TIME_LIMIT);
 #endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
 #endif /* CONFIG_SPIN_VALIDATE */
+
+#ifdef CONFIG_LOCKDEP
+	z_lockdep_release(l, Z_LOCKDEP_SPINLOCK);
+#endif
 
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
@@ -386,6 +403,10 @@ static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
 	ARG_UNUSED(l);
 #ifdef CONFIG_SPIN_VALIDATE
 	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock %p", l);
+#endif
+#ifdef CONFIG_LOCKDEP
+	/* Scheduler lock handoff deliberately permits a non-LIFO release. */
+	z_lockdep_release_unordered(l, Z_LOCKDEP_SPINLOCK);
 #endif
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
