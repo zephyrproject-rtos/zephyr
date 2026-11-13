@@ -683,8 +683,8 @@ static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_
 	}
 
 	if (!is_valid_range(offset, len, data->flash_size)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", data->flash_size,
-			offset, len);
+		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#tx, len=%u", data->flash_size,
+			(ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -698,7 +698,7 @@ static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_
 
 		ret = m1k_flash_read(dev, offset, dst, read_len);
 		if (ret != 0) {
-			LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
+			LOG_ERR("%s: failed at offset=%#tx", __func__, (ptrdiff_t)offset);
 			break;
 		}
 
@@ -725,16 +725,16 @@ static int flash_it51xxx_write(const struct device *dev, off_t offset, const voi
 	int ret;
 	const uint8_t *src = (const uint8_t *)src_data;
 
-	LOG_DBG("%s: offset=%lx, data addr=%p, len=%u", __func__,
-		(long)offset, (const uint8_t *)src_data, len);
+	LOG_DBG("%s: offset=%tx, data addr=%p, len=%u", __func__,
+		(ptrdiff_t)offset, (const uint8_t *)src_data, len);
 
 	if (len == 0) {
 		return 0;
 	}
 
 	if (!is_valid_range(offset, len, data->flash_size)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", data->flash_size,
-			offset, len);
+		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#tx, len=%u", data->flash_size,
+			(ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -745,7 +745,7 @@ static int flash_it51xxx_write(const struct device *dev, off_t offset, const voi
 
 		ret = m1k_flash_write(dev, offset, src, write_len);
 		if (ret != 0) {
-			LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
+			LOG_ERR("%s: failed at offset=%#tx", __func__, (ptrdiff_t)offset);
 			break;
 		}
 
@@ -769,22 +769,22 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 	struct flash_it51xxx_dev_data *data = dev->data;
 	int ret;
 
-	LOG_DBG("%s: offset=%lx, len=%u", __func__, (long)offset, len);
+	LOG_DBG("%s: offset=%tx, len=%u", __func__, (ptrdiff_t)offset, len);
 
 	if (len == 0) {
 		return 0;
 	}
 
 	if (!is_valid_range(offset, len, data->flash_size)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", data->flash_size,
-			offset, len);
+		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#tx, len=%u", data->flash_size,
+			(ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
 	/* Check that the offset and length are multiples of the erase block size */
 	if ((offset % data->layout.pages_size) || (len % data->layout.pages_size)) {
-		LOG_ERR("Erase range is not a multiple of the block size. offset=%#lx, len=%u",
-			offset, len);
+		LOG_ERR("Erase range is not a multiple of the block size. offset=%#tx, len=%u",
+			(ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -792,7 +792,7 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 
 	ret = m1k_flash_erase(dev, offset, len);
 	if (ret != 0) {
-		LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
+		LOG_ERR("%s: failed at offset=%#tx", __func__, (ptrdiff_t)offset);
 	}
 
 	k_sem_give(&data->sem);

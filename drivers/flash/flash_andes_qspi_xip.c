@@ -301,8 +301,8 @@ static __ramfunc void cleanup_after_flashing(const struct device *dev, off_t add
 		const struct flash_andes_qspi_xip_config *config = dev->config;
 
 		/* Invalidate modified flash memory. */
-		cache_data_invd_range((void *)(addr + config->mapped_base), size);
-		cache_instr_invd_range((void *)(addr + config->mapped_base), size);
+		cache_data_invd_range((void *)((ptrdiff_t)addr + config->mapped_base), size);
+		cache_instr_invd_range((void *)((ptrdiff_t)addr + config->mapped_base), size);
 	}
 #endif /* CONFIG_CACHE_MANAGEMENT */
 }
@@ -321,7 +321,7 @@ static int flash_andes_qspi_xip_read(const struct device *dev, off_t addr, void 
 	}
 
 	/* Use memory-mapped mechanism for reading. */
-	memcpy(dest, (void *)(config->mapped_base + addr), size);
+	memcpy(dest, (void *)(config->mapped_base + (ptrdiff_t)addr), size);
 
 	return 0;
 }

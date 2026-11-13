@@ -216,8 +216,8 @@ static int validate_flash_parameters(const struct nvmctrl_mchp_g2_config *const 
 {
 	if (offset > config->size || size > config->size || (offset + size) > config->size) {
 		LOG_WRN("Offset+Size is beyond flash addressable range."
-			" Off: %#08x, Sz: %#08x, MaxSz: %#08x",
-			(uint32_t)offset, size, config->size);
+			" Off: %#08tx, Sz: %#08tx, MaxSz: %#08x",
+			(ptrdiff_t)offset, size, config->size);
 		return -EINVAL;
 	}
 
@@ -228,8 +228,8 @@ static int validate_flash_parameters(const struct nvmctrl_mchp_g2_config *const 
 		if ((config->base_addr + offset + size) > unimp_region_start &&
 		    (config->base_addr + offset + size) <= unimp_region_end) {
 			LOG_WRN("Offset+Size lies in unimplemented flash range."
-				" Off: %#08x, Sz: %#08x",
-				(uint32_t)offset, size);
+				" Off: %#08tx, Sz: %#08zx",
+				(ptrdiff_t)offset, size);
 			return -EINVAL;
 		}
 	}
@@ -241,14 +241,14 @@ static int validate_flash_parameters(const struct nvmctrl_mchp_g2_config *const 
 
 		if (!(IS_MCHP_FLASH_G2_ALIGNED(offset, config->write_block_size))) {
 			LOG_WRN("WRITE: Offset should be multiples of write block size."
-				" Off: %#08x",
-				(uint32_t)offset);
+				" Off: %#08tx",
+				(ptrdiff_t)offset);
 			return -EINVAL;
 		}
 
 		if (!(IS_MCHP_FLASH_G2_ALIGNED(size, config->write_block_size))) {
 			LOG_WRN("WRITE: Size should be multiples of write block size."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
@@ -257,21 +257,21 @@ static int validate_flash_parameters(const struct nvmctrl_mchp_g2_config *const 
 
 		if (size < config->erase_block_size) {
 			LOG_WRN("ERASE: Cannot erase less than a size of an erase block."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
 
 		if (!IS_MCHP_FLASH_G2_ALIGNED(size, config->erase_block_size)) {
 			LOG_WRN("ERASE: Size should be multiples of erase block size."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
 
 		if (!IS_MCHP_FLASH_G2_ALIGNED(offset, config->erase_block_size)) {
 			LOG_WRN("ERASE: Offset should be multiples of erase-block size."
-				" Sz: %#08x",
+				" Sz: %#08zx",
 				size);
 			return -EINVAL;
 		}
@@ -303,7 +303,7 @@ static int flash_mchp_read(const struct device *dev, off_t offset, void *data_bu
 	}
 
 	k_sem_take(&data->sem_lock, K_FOREVER);
-	memcpy(data_buff, (uint8_t *)(config->base_addr + offset), no_of_bytes);
+	memcpy(data_buff, (uint8_t *)(config->base_addr + (ptrdiff_t)offset), no_of_bytes);
 	k_sem_give(&data->sem_lock);
 
 	return 0;
@@ -319,7 +319,7 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 	uint32_t i;
 	uint32_t word_value;
 	const uint8_t *src = (const uint8_t *)data_buff;
-	uint32_t *dst = (uint32_t *)(config->base_addr + offset);
+	uint32_t *dst = (uint32_t *)(config->base_addr + (ptrdiff_t)offset);
 
 	if (no_of_bytes == 0) {
 		return 0;
@@ -340,8 +340,8 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 	}
 
 	while (no_of_bytes > 0) {
-		LOG_DBG("Writing block at address %#08x, Size: %#08x",
-			(uint32_t)(config->base_addr + offset), no_of_bytes);
+		LOG_DBG("Writing block at address %#08tx, Size: %#08zx",
+			(ptrdiff_t)(config->base_addr + offset), no_of_bytes);
 
 		k_sem_take(&data->sem_lock, K_FOREVER);
 		for (i = 0U; i < (config->write_block_size / 4U); i++) {
@@ -354,8 +354,8 @@ static int flash_mchp_write(const struct device *dev, off_t offset, const void *
 		k_sem_give(&data->sem_lock);
 
 		if (nvm_error != 0) {
-			LOG_ERR("Error while writing block at address %#08x, Size: %#08x",
-				(uint32_t)(config->base_addr + offset), no_of_bytes);
+			LOG_ERR("Error while writing block at address %#08tx, Size: %#08zx",
+				(ptrdiff_t)(config->base_addr + offset), no_of_bytes);
 			break;
 		}
 
@@ -392,14 +392,14 @@ static int flash_mchp_erase(const struct device *dev, off_t offset, size_t no_of
 	}
 
 	while (no_of_bytes > 0U) {
-		LOG_DBG("Erasing block at address %#08x", (uint32_t)(config->base_addr + offset));
+		LOG_DBG("Erasing block at address %#08tx", (ptrdiff_t)(config->base_addr + offset));
 		k_sem_take(&data->sem_lock, K_FOREVER);
 		nvm_error = set_addr_execute_cmd(dev, (config->base_addr + offset), command);
 		k_sem_give(&data->sem_lock);
 
 		if (nvm_error != 0) {
-			LOG_ERR("Error while erasing block at address %#08x",
-				(uint32_t)(config->base_addr + offset));
+			LOG_ERR("Error while erasing block at address %#08tx",
+				(ptrdiff_t)(config->base_addr + offset));
 			break;
 		}
 
