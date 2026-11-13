@@ -2036,6 +2036,20 @@ Documentation Infrastructure:
     - sample.drivers.espi
     - drivers.espi
 
+"Drivers: Energy Meter":
+  status: maintained
+  maintainers:
+    - pedrohqr
+  files:
+    - doc/hardware/peripherals/energy_meter.rst
+    - drivers/energy_meter/
+    - include/zephyr/drivers/energy_meter.h
+    - tests/drivers/energy_meter/
+  labels:
+    - "area: Energy Meter"
+  tests:
+    - drivers.energy_meter
+
 "Drivers: Entropy":
   status: maintained
   maintainers:

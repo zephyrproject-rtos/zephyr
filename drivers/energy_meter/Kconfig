@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENERGY_METER
+	bool "Energy meter drivers"
+	help
+	  Enable drivers for electrical energy metering ICs.
+
+if ENERGY_METER
+
+module = ENERGY_METER
+module-str = energy_meter
+source "subsys/logging/Kconfig.template.log_config"
+
+config ENERGY_METER_INIT_PRIORITY
+	int "Energy meter init priority"
+	default 90
+	help
+	  Energy meter device driver initialization priority.
+
+config ENERGY_METER_SHELL
+	bool "Energy meter shell"
+	depends on SHELL
+	help
+	  Enable the energy_meter shell command, which lists the values an
+	  energy meter measures and reads them once or periodically.
+
+endif # ENERGY_METER
