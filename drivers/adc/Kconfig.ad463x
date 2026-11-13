@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_AD463X
+	bool "Analog Devices AD463x precision SAR ADC"
+	default y
+	depends on DT_HAS_ADI_AD463X_ENABLED
+	depends on SPI_ADI_AXI_SPI_ENGINE
+	depends on DMA_ADI_AXI_DMAC
+	depends on CLOCK_CONTROL_ADI_AXI_CLKGEN
+	depends on PWM_ADI_AXI_PWMGEN
+	help
+	  Driver for the Analog Devices AD463x family precision SAR ADCs
+	  (AD4630-x / AD4631-x / AD4632-x). Operates in offload mode using
+	  the AXI SPI Engine, AXI DMAC, AXI CLKGEN, and AXI PWMGEN cores.
+
+if ADC_AD463X
+
+module = ADC_AD463X
+module-str = adc_ad463x
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
