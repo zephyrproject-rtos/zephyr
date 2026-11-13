@@ -208,7 +208,7 @@ def test_if_hardware_adapter_raises_exception_empty_command(device: HardwareAdap
     device.command = []
     exception_msg = 'Flash command is empty, please verify if it was generated properly.'
     with pytest.raises(TwisterHarnessException, match=exception_msg):
-        device._flash_and_run()
+        device._device_launch()
 
 
 @mock.patch('twister_harness.device.hardware_adapter.subprocess.Popen')

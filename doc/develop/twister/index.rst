@@ -1669,6 +1669,141 @@ Would result in calling ``./custom_flash_script.py
 --build-dir <build directory> --board-id <board identification>
 --flag "complex, argument"``.
 
+Hardware Hooks
+--------------
+
+Twister supports running custom scripts at specific points during the
+device test lifecycle. These are called **hooks** and can be defined in the
+hardware map file using the ``hooks`` field. Hooks replace the legacy
+``pre_script``, ``post_script``, ``post_flash_script``, and ``script_param``
+fields, which are still supported for backward compatibility.
+
+The ``hooks`` object uses lifecycle point names as keys. Supported keys are:
+
+- ``pre`` – runs before the serial connection is opened and the device is
+  flashed.
+- ``pre_flash`` – runs immediately before flashing starts.
+- ``post_flash`` – runs immediately after flashing completes.
+- ``post`` – runs after the test finishes and the serial connection is
+  closed.
+
+Each value can be either a plain string (the script path) or an object
+with the following properties:
+
+- ``script`` *(required)*: Path to the script or executable to run.
+  Environment variables such as ``${ZEPHYR_BASE}`` are expanded in both
+  script paths and arguments.  Relative paths that contain a directory
+  separator are resolved against the directory containing the hardware
+  map file; bare command names are looked up via ``PATH``.
+- ``args`` *(optional)*: A list of arguments passed to the script.
+  Defaults to an empty list.
+- ``timeout`` *(optional)*: Maximum time in seconds to wait for the script
+  to complete. Defaults to 60 seconds. If the timeout is exceeded, the
+  process is killed and the hook is treated as failed.
+
+Example hardware map entry with hooks:
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 000683759358
+     platform: nrf52840dk/nrf52840
+     product: J-Link
+     runner: nrfjprog
+     serial: /dev/ttyACM0
+     hooks:
+       pre:
+         script: /path/to/pre_test_setup.sh
+         args:
+           - --reset
+           - --verbose
+         timeout: 30
+       pre_flash:
+         script: /path/to/pre_flash_setup.sh
+         timeout: 10
+       post_flash:
+         script: /path/to/verify_flash.sh
+         timeout: 15
+       post: /path/to/cleanup.sh
+
+Hook scripts receive the following environment variables:
+
+- ``TWISTER_HOOK``: The hook type being executed (``pre``, ``pre_flash``,
+  ``post_flash``, or ``post``).
+- ``TWISTER_PLATFORM``: The platform name of the DUT.
+- ``TWISTER_DUT_ID``: The hardware ID of the DUT.
+- ``TWISTER_DUT_SERIAL``: The serial port of the DUT.
+- ``TWISTER_RUNNER``: The flash runner being used.
+- ``TWISTER_BUILD_DIR``: The build output directory.
+- ``TWISTER_TEST_NAME``: The name of the test being run (twister native
+  handler only; not available in ``pytest-twister-harness``).
+- ``TWISTER_HARDWARE_MAP``: The path to the hardware map file (twister
+  native handler only; not available in ``pytest-twister-harness``).
+
+If a ``pre`` or ``pre_flash`` hook fails (non-zero exit, timeout,
+permission error, or script not found), the test instance is set to
+ERROR and execution stops.  A ``post_flash`` failure also sets ERROR
+but allows the test run to complete.  The ``post`` hook always runs
+for cleanup.
+
+Legacy Script Fields (Deprecated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following fields are still supported but are converted internally to the
+``hooks`` format. New configurations should use ``hooks`` instead.
+
+- ``pre_script``: Equivalent to the ``pre`` hook.
+- ``post_script``: Equivalent to the ``post`` hook.
+- ``post_flash_script``: Equivalent to the ``post_flash`` hook.
+- ``script_param``: An object that previously controlled timeouts for the
+  above scripts via ``pre_script_timeout``, ``post_script_timeout``, and
+  ``post_flash_timeout``. These are now specified directly in the hook's
+  ``timeout`` field.
+
+Example using legacy fields (still functional):
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 000683759358
+     platform: stm32n6570_dk/stm32n657xx/sb
+     product: BOOT-SERIAL
+     runner: stm32cubeprogrammer
+     serial: /dev/ttyACM0
+     pre_script: /path/to/board_power_reset.sh
+     post_flash_script: /path/to/verify.sh
+     script_param:
+       pre_script_timeout: 30
+       post_flash_timeout: 15
+
+The equivalent configuration using the new ``hooks`` format:
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 000683759358
+     platform: stm32n6570_dk/stm32n657xx/sb
+     product: BOOT-SERIAL
+     runner: stm32cubeprogrammer
+     serial: /dev/ttyACM0
+     hooks:
+       pre:
+         script: /path/to/board_power_reset.sh
+         timeout: 30
+       post_flash:
+         script: /path/to/verify.sh
+         timeout: 15
+
+If both ``hooks`` and legacy script fields are present in a hardware map
+entry, a ``ValueError`` is raised.  Migrate to the ``hooks`` format and
+remove the legacy fields.
+
+The legacy fields ``pre_script``, ``post_script``, ``post_flash_script``
+and ``script_param`` emit ``DeprecationWarning`` when loaded.  The
+``--pre-script``, ``--post-script`` and ``--post-flash-script`` CLI options
+in ``pytest-twister-harness`` are also deprecated; they are only applied to
+DUTs that have no ``hooks`` defined in the hardware map.
+
 .. _twister_fixtures:
 
 Fixtures

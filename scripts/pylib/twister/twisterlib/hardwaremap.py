@@ -11,9 +11,11 @@ import logging
 import os
 import platform
 import re
+import warnings
 from dataclasses import dataclass
 from multiprocessing import Lock, Value
 from pathlib import Path
+from typing import Any
 
 import scl
 import yaml
@@ -230,7 +232,7 @@ class HardwareMap:
         device = DUT(
             platform=platform,
             connected=True,
-            pre_script=pre_script,
+            hooks=self._prepare_hooks_from_scripts(pre_script=pre_script),
             serial_baud=baud,
             flash_timeout=flash_timeout,
             flash_with_test=flash_with_test,
@@ -243,15 +245,101 @@ class HardwareMap:
 
         self.duts.append(device)
 
+    def _prepare_hooks_from_scripts(
+        self,
+        pre_script: str | None = None,
+        post_script: str | None = None,
+        post_flash_script: str | None = None,
+        script_param: dict | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Convert script parameters to hooks format for backward compatibility."""
+        hooks: dict[str, dict[str, Any]] = {}
+        if pre_script:
+            hooks['pre'] = {
+                'script': pre_script,
+                'args': [],
+                'timeout': script_param.get('pre_script_timeout', 60) if script_param else 60,
+            }
+        if post_script:
+            hooks['post'] = {
+                'script': post_script,
+                'args': [],
+                'timeout': script_param.get('post_script_timeout', 60) if script_param else 60,
+            }
+        if post_flash_script:
+            hooks['post_flash'] = {
+                'script': post_flash_script,
+                'args': [],
+                'timeout': script_param.get('post_flash_timeout', 60) if script_param else 60,
+            }
+        return hooks
+
+    @staticmethod
+    def _resolve_hook_scripts(hooks, hwmap_dir):
+        """Resolve relative hook script paths against the hardware map directory.
+
+        Expands environment variables first, then resolves relative paths
+        that contain a directory separator.  Bare command names (no separator)
+        are left for PATH lookup.
+        """
+        for hook_type, hook in hooks.items():
+            if isinstance(hook, str):
+                script = os.path.expandvars(hook)
+                if not os.path.isabs(script) and os.sep in script:
+                    script = str(hwmap_dir / script)
+                hooks[hook_type] = script
+            elif isinstance(hook, dict) and 'script' in hook:
+                script = os.path.expandvars(hook['script'])
+                if not os.path.isabs(script) and os.sep in script:
+                    script = str(hwmap_dir / script)
+                hook['script'] = script
+
     def load(self, map_file):
         hwm_schema = scl.yaml_load(self.schema_path)
         duts = scl.yaml_load_verify(map_file, hwm_schema)
+        hwmap_dir = Path(map_file).resolve().parent
         for dut in duts:
             pre_script = dut.get('pre_script')
             script_param = dut.get('script_param')
             post_script = dut.get('post_script')
             post_flash_script = dut.get('post_flash_script')
+            has_legacy = any([pre_script, post_script, post_flash_script, script_param])
+            has_hooks = 'hooks' in dut
+
+            if has_legacy and has_hooks:
+                raise ValueError(
+                    f"DUT '{dut.get('id', '?')}': cannot mix legacy script fields "
+                    f"(pre_script, post_script, post_flash_script, script_param) "
+                    f"with 'hooks'; use 'hooks' only"
+                )
+
+            if has_legacy:
+                for field_name in ('pre_script', 'post_script',
+                                   'post_flash_script', 'script_param'):
+                    if dut.get(field_name):
+                        warnings.warn(
+                            f"DUT '{dut.get('id', '?')}': '{field_name}' is "
+                            f"deprecated, use 'hooks' instead",
+                            DeprecationWarning,
+                            stacklevel=2,
+                        )
+
+            if has_hooks:
+                hooks = dut['hooks']
+            elif has_legacy:
+                hooks = self._prepare_hooks_from_scripts(
+                    pre_script=pre_script,
+                    post_script=post_script,
+                    post_flash_script=post_flash_script,
+                    script_param=script_param,
+                )
+            else:
+                hooks = {}
+
+            self._resolve_hook_scripts(hooks, hwmap_dir)
+
             flash_timeout = dut.get('flash_timeout') or self.options.device_flash_timeout
+
             flash_with_test = dut.get('flash_with_test')
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
@@ -292,11 +380,8 @@ class HardwareMap:
                               serial=serial,
                               serial_baud=serial_baud,
                               connected=connected,
-                              pre_script=pre_script,
+                              hooks=hooks,
                               flash_before=flash_before,
-                              post_script=post_script,
-                              post_flash_script=post_flash_script,
-                              script_param=script_param,
                               flash_timeout=flash_timeout,
                               flash_with_test=flash_with_test,
                               run_with_fixture_only=run_with_fixture_only,
