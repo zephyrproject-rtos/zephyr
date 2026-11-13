@@ -16,13 +16,11 @@ config ZTEST_TEST_DELAY_MS
 	default 100
 endif
 
-config CONSOLE
-	def_bool y
+configdefault CONSOLE
+	default y
 
-if CONSOLE && !SIMULATOR_XTENSA
-config WINSTREAM_CONSOLE
-	def_bool y
-endif
+configdefault WINSTREAM_CONSOLE
+	default y if CONSOLE && !SIMULATOR_XTENSA
 
 configdefault CACHE_MANAGEMENT
 	default y
