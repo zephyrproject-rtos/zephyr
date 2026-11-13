@@ -10,6 +10,14 @@ tests:
       - nucleo_h753zi
     integration_platforms:
       - nucleo_h753zi
+  drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_pll_hse_96_pll2_no_auto_enable:
+    extra_args:
+      DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_96.overlay;boards/pll2_no_auto_enable.overlay"
+    platform_allow:
+      - nucleo_h743zi
+      - nucleo_h753zi
+    integration_platforms:
+      - nucleo_h753zi
   drivers.clock.stm32_clock_configuration.h7_core.sysclksrc_pll_hsi_96:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_96.overlay"
     platform_allow:

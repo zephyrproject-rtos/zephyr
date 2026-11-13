@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PLL2 is configured but only runs while requested.
+ * It is assumed that this overlay is applied after pll_hse_96.overlay.
+ */
+
+&pll2 {
+	div-m = <1>;
+	mul-n = <24>;
+	div-p = <2>;
+	clocks = <&clk_hse>;
+	no-auto-enable;
+	status = "okay";
+};
