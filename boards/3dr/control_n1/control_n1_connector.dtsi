@@ -1,0 +1,110 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/3dr-control-n1-connector.h>
+
+/ {
+	/* SD_DET and GP1 to GP4 are not mapped: their MCU pins are not documented. */
+	cn1_connector: cn1-connector {
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CN1_SG1_TX 0 &gpiod 5 0>,
+			   <CN1_SG1_RX 0 &gpiod 6 0>,
+			   <CN1_SG1_CTS 0 &gpiod 3 0>,
+			   <CN1_SG1_RTS 0 &gpiod 4 0>,
+			   <CN1_SG2_TX 0 &gpiod 1 0>,
+			   <CN1_SG2_RX 0 &gpiod 0 0>,
+			   <CN1_SG2_CTS 0 &gpiob 0 0>,
+			   <CN1_SG2_RTS 0 &gpioa 15 0>,
+			   <CN1_SG3_TX 0 &gpioe 8 0>,
+			   <CN1_SG3_RX 0 &gpioe 7 0>,
+			   <CN1_SG3_CTS 0 &gpioe 10 0>,
+			   <CN1_SG3_RTS 0 &gpioe 9 0>,
+			   <CN1_SG4_TX 0 &gpiod 8 0>,
+			   <CN1_SG4_RX 0 &gpiod 9 0>,
+			   <CN1_SG5_TX 0 &gpioa 9 0>,
+			   <CN1_SG5_RX 0 &gpioa 10 0>,
+			   <CN1_SG6_TX 0 &gpioc 6 0>,
+			   <CN1_SG6_RX 0 &gpioc 7 0>,
+			   <CN1_SG7_TX 0 &gpioe 1 0>,
+			   <CN1_SG7_RX 0 &gpioe 0 0>,
+			   <CN1_I2C1_SCL 0 &gpiob 8 0>,
+			   <CN1_I2C1_SDA 0 &gpiob 7 0>,
+			   <CN1_I2C2_SCL 0 &gpiob 10 0>,
+			   <CN1_I2C2_SDA 0 &gpiob 11 0>,
+			   <CN1_SPI_SCK 0 &gpioe 2 0>,
+			   <CN1_SPI_SDI 0 &gpioe 5 0>,
+			   <CN1_SPI_SDO 0 &gpioe 6 0>,
+			   <CN1_SPI_NCS 0 &gpiob 2 0>,
+			   <CN1_SDIO_CK 0 &gpioc 12 0>,
+			   <CN1_SDIO_CMD 0 &gpiod 2 0>,
+			   <CN1_SDIO_D0 0 &gpioc 8 0>,
+			   <CN1_SDIO_D1 0 &gpioc 9 0>,
+			   <CN1_SDIO_D2 0 &gpioc 10 0>,
+			   <CN1_SDIO_D3 0 &gpioc 11 0>,
+			   <CN1_ALARM 0 &gpiob 9 0>,
+			   <CN1_CH1 0 &gpioa 8 0>,
+			   <CN1_CH2 0 &gpioe 11 0>,
+			   <CN1_CH3 0 &gpioe 13 0>,
+			   <CN1_CH4 0 &gpioe 14 0>,
+			   <CN1_CH5 0 &gpioa 3 0>,
+			   <CN1_CH6 0 &gpioa 2 0>,
+			   <CN1_CH7 0 &gpioa 1 0>,
+			   <CN1_CH8 0 &gpioa 0 0>,
+			   <CN1_CH9 0 &gpiod 12 0>,
+			   <CN1_CH10 0 &gpiod 13 0>,
+			   <CN1_CH11 0 &gpiod 14 0>,
+			   <CN1_CH12 0 &gpiod 15 0>;
+	};
+
+	cn1_pwm: cn1-pwm {
+		#pwm-cells = <3>;
+		pwm-map-mask = <0xffffffff 0x0 0x0>;
+		pwm-map-pass-thru = <0x0 0xffffffff 0xffffffff>;
+		pwm-map = <1 0 0 &pwm1 1 0 0>,
+			  <2 0 0 &pwm1 2 0 0>,
+			  <3 0 0 &pwm1 3 0 0>,
+			  <4 0 0 &pwm1 4 0 0>,
+			  <5 0 0 &pwm2 4 0 0>,
+			  <6 0 0 &pwm2 3 0 0>,
+			  <7 0 0 &pwm2 2 0 0>,
+			  <8 0 0 &pwm2 1 0 0>,
+			  <9 0 0 &pwm4 1 0 0>,
+			  <10 0 0 &pwm4 2 0 0>,
+			  <11 0 0 &pwm4 3 0 0>,
+			  <12 0 0 &pwm4 4 0 0>;
+	};
+
+	cn1_adc: cn1-adc {
+		#io-channel-cells = <1>;
+		io-channel-map = <1 &adc1 18>,
+				 <2 &adc1 10>;
+	};
+};
+
+cn1_sg1_serial: &usart2 {};
+
+cn1_sg2_serial: &uart4 {};
+
+cn1_sg3_serial: &uart7 {};
+
+cn1_sg4_serial: &usart3 {};
+
+cn1_sg5_serial: &usart1 {};
+
+cn1_sg6_serial: &usart6 {};
+
+cn1_sg7_serial: &uart8 {};
+
+cn1_i2c1: &i2c1 {};
+
+cn1_i2c2: &i2c2 {};
+
+cn1_spi: &spi4 {};
+
+cn1_can1: &fdcan1 {};
+
+cn1_can2: &fdcan2 {};
