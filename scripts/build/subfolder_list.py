@@ -6,7 +6,7 @@
 
 """Write subfolder list to a file
 
-This script will walk the specified directory and write the file specified with
+This script will walk the specified directories and write the file specified with
 the list of all sub-directories found. If the output file already exists, the
 file will only be updated in case sub-directories have been added or removed
 since the previous invocation.
@@ -14,6 +14,7 @@ since the previous invocation.
 """
 
 import argparse
+import hashlib
 import os
 
 
@@ -26,7 +27,11 @@ def parse_args():
     )
 
     parser.add_argument(
-        '-d', '--directory', required=True, help='Directory to walk for sub-directory discovery'
+        '-d',
+        '--directory',
+        required=True,
+        action='append',
+        help='Directory to walk for sub-directory discovery (may be repeated)',
     )
     parser.add_argument(
         '-c',
@@ -41,6 +46,12 @@ def parse_args():
         help='File to write containing a list of all directories found',
     )
     parser.add_argument(
+        '--exclude-directory',
+        action='append',
+        default=[],
+        help='Subdirectory to omit during discovery (may be repeated)',
+    )
+    parser.add_argument(
         '-t', '--trigger-file', required=False, help='Trigger file to be touched to re-run CMake'
     )
 
@@ -49,9 +60,15 @@ def parse_args():
     return args
 
 
-def get_subfolder_list(directory, create_links=None):
-    """Return subfolder list of a directory"""
+def get_subfolder_list(directory, create_links=None, exclude_dirs=()):
+    """Return directories, pruning exclusions below explicit scan roots."""
+    if not os.path.isdir(directory):
+        return []
+
     dirlist = []
+    excluded_dirs = {os.path.realpath(path) for path in exclude_dirs}
+    if create_links is not None:
+        excluded_dirs.add(os.path.realpath(create_links))
 
     if create_links is not None:
         if not os.path.exists(create_links):
@@ -65,7 +82,12 @@ def get_subfolder_list(directory, create_links=None):
         dirlist.append(directory)
 
     for root, dirs, _ in os.walk(directory, topdown=True):
-        dirs.sort()
+        dirs[:] = sorted(
+            subdir
+            for subdir in dirs
+            if subdir != '.git'
+            and os.path.realpath(os.path.join(root, subdir)) not in excluded_dirs
+        )
         for subdir in dirs:
             if create_links is not None:
                 targetdirectory = os.path.join(root, subdir)
@@ -120,7 +142,18 @@ def main():
     """Parse command line arguments and take respective actions"""
     args = parse_args()
 
-    dirs = get_subfolder_list(args.directory, args.create_links)
+    exclude_dirs = args.exclude_directory
+    if args.create_links is not None:
+        exclude_dirs = [*exclude_dirs, args.create_links]
+
+    dirs = []
+    for directory in sorted(set(args.directory)):
+        links = args.create_links
+        if links is not None:
+            # Keep each root's links separate and stable when roots are added or removed.
+            root_id = hashlib.sha256(os.path.abspath(directory).encode()).hexdigest()
+            links = os.path.join(links, root_id)
+        dirs.extend(get_subfolder_list(directory, links, exclude_dirs))
     gen_out_file(args.out_file, dirs)
 
     # Always touch trigger file to ensure json files are updated

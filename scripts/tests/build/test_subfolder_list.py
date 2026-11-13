@@ -9,7 +9,7 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.path.join(os.environ["ZEPHYR_BASE"], "scripts"))
+sys.path.insert(0, os.path.join(os.environ["ZEPHYR_BASE"], "scripts", "build"))
 import subfolder_list as iut  # Implementation Under Test
 
 OUT_FILE = "out_file.txt"
@@ -57,8 +57,9 @@ def test_links(tmpdir):
     for i in dirs_range:
         expect_links.append("%s_%s%d" % (dirs_dir, DIR_NAME_PREFIX, i))
     for i in subdirs_range:
-        expect_links.append("%s_%s%d_%s%d" % (
-            dirs_dir, DIR_NAME_PREFIX, subdirs_parent_sfx, DIR_NAME_PREFIX, i))
+        expect_links.append(
+            "%s_%s%d_%s%d" % (dirs_dir, DIR_NAME_PREFIX, subdirs_parent_sfx, DIR_NAME_PREFIX, i)
+        )
 
     tmpdir.mkdir(dirs_dir)
     os.chdir(dirs_dir)

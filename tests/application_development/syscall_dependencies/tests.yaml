@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  buildsystem.syscall_dependencies:
+    harness: ctest
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_xtensa/dc233c
+    integration_platforms:
+      - qemu_cortex_m3
+    tags:
+      - buildsystem
+      - syscalls
+    timeout: 120
