@@ -19,6 +19,8 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 					    uintptr_t *location,
 					    bool page_fault)
 {
+	ARG_UNUSED(page_fault);
+
 	if (k_mem_page_frame_is_backed(pf)) {
 		return k_mem_paging_backing_store_location_query(
 				k_mem_page_frame_to_virt(pf), location);
@@ -30,10 +32,13 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 
 void k_mem_paging_backing_store_location_free(uintptr_t location)
 {
+	ARG_UNUSED(location);
 }
 
 void k_mem_paging_backing_store_page_out(uintptr_t location)
 {
+	ARG_UNUSED(location);
+
 	__ASSERT(false, "not ever supposed to be called");
 	k_panic();
 }
@@ -51,6 +56,8 @@ void k_mem_paging_backing_store_page_in(uintptr_t location)
 void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location)
 {
+	ARG_UNUSED(location);
+
 	k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_BACKED);
 }
 

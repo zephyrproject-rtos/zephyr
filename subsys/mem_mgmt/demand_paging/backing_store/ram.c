@@ -89,6 +89,8 @@ int k_mem_paging_backing_store_location_get(struct k_mem_page_frame *pf,
 	int ret;
 	void *slab;
 
+	ARG_UNUSED(pf);
+
 	if ((!page_fault && free_slabs == 1) || free_slabs == 0) {
 		return -ENOMEM;
 	}
@@ -127,6 +129,8 @@ void k_mem_paging_backing_store_page_in(uintptr_t location)
 void k_mem_paging_backing_store_page_finalize(struct k_mem_page_frame *pf,
 					      uintptr_t location)
 {
+	ARG_UNUSED(pf);
+
 #ifdef CONFIG_DEMAND_MAPPING
 	/* ignore those */
 	if (location == ARCH_UNPAGED_ANON_ZERO || location == ARCH_UNPAGED_ANON_UNINIT) {

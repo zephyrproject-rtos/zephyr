@@ -30,6 +30,8 @@ static void nru_periodic_update(struct k_timer *timer)
 	struct k_mem_page_frame *pf;
 	unsigned int key = irq_lock();
 
+	ARG_UNUSED(timer);
+
 	K_MEM_PAGE_FRAME_FOREACH(phys, pf) {
 		if (!k_mem_page_frame_is_evictable(pf)) {
 			continue;
