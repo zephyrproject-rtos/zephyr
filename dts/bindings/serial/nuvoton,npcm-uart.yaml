@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCM-UART node
+
+compatible: "nuvoton,npcm-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  rx-fifo-threshold:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3]
+    description: |
+      RX FIFO interrupt threshold encoding for UFCTRL.RXFTH.
+
+      - 0: interrupt when RX FIFO level >= 1 byte
+      - 1: interrupt when RX FIFO level >= 4 bytes
+      - 2: interrupt when RX FIFO level >= 8 bytes
+      - 3: interrupt when RX FIFO level >= 14 bytes
