@@ -7,6 +7,7 @@
 Tests for handlers.py classes' methods
 """
 
+import io
 import itertools
 import os
 import signal
@@ -284,7 +285,7 @@ def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
 
 TESTDATA_3 = [
     (
-        [b'This\\r\\n\n', b'is\r', b'some \x1B[31mANSI\x1B[39m in\n', b'a short\n', b'file.'],
+        ['This\\r\\n\n', 'is\r', 'some \x1B[31mANSI\x1B[39m in\n', 'a short\n', 'file.'],
         mock.Mock(status=TwisterStatus.NONE, capture_coverage=False, fault=False),
         [
             mock.call('This\\r\\n\n'),
@@ -304,7 +305,7 @@ TESTDATA_3 = [
         False
     ),
     (
-        [b'Too much.'] * 120,  # Should be more than the timeout
+        ['Too much.'] * 120,  # Should be more than the timeout
         mock.Mock(status=TwisterStatus.PASS, capture_coverage=False, fault=False),
         None,
         None,
@@ -312,7 +313,7 @@ TESTDATA_3 = [
         False
     ),
     (
-        [b'Too much.'] * 120,  # Should be more than the timeout
+        ['Too much.'] * 120,  # Should be more than the timeout
         mock.Mock(status=TwisterStatus.PASS, capture_coverage=False, fault=False),
         None,
         None,
@@ -320,7 +321,7 @@ TESTDATA_3 = [
         False
     ),
     (
-        [b'Too much.'] * 120,  # Should be more than the timeout
+        ['Too much.'] * 120,  # Should be more than the timeout
         mock.Mock(status=TwisterStatus.PASS, capture_coverage=True, fault=False),
         None,
         None,
@@ -359,7 +360,7 @@ def test_binaryhandler_output_handler(
         def readline(self):
             if self.line_index == len(self.text):
                 self.line_index = 0
-                return b''
+                return ''
             else:
                 line = self.text[self.line_index]
                 self.line_index += 1
@@ -400,6 +401,39 @@ def test_binaryhandler_output_handler(
             assert mock_file.return_value.write.call_count == len(proc_stdout)
     if timeout_wait:
         handler.terminate.assert_called_once_with(proc)
+
+
+def test_binaryhandler_output_handler_text_stream(mocked_instance, faux_timer):
+    raw_bytes = (
+        b'Running TESTSUITE suite_a\r\n'
+        b'Invalid UTF-8 byte \xff in output\n'
+        b'PROJECT EXECUTION SUCCESSFUL\n'
+    )
+    text_stream = io.TextIOWrapper(
+        io.BytesIO(raw_bytes), encoding='utf-8', errors='replace'
+    )
+    proc = mock.Mock(pid=1, stdout=text_stream, wait=mock.Mock())
+    harness = mock.Mock(
+        status=TwisterStatus.NONE, capture_coverage=False, fault=False
+    )
+
+    handler = BinaryHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
+    assert handler.line == ''
+
+    with mock.patch('builtins.open', mock.mock_open(read_data='')) as mock_file, \
+         mock.patch('time.time', side_effect=faux_timer.time):
+        handler._output_handler(proc, harness)
+
+    mock_file.return_value.write.assert_has_calls([
+        mock.call('Running TESTSUITE suite_a\n'),
+        mock.call('Invalid UTF-8 byte \ufffd in output\n'),
+        mock.call('PROJECT EXECUTION SUCCESSFUL\n'),
+    ])
+    harness.handle.assert_has_calls([
+        mock.call('Running TESTSUITE suite_a'),
+        mock.call('Invalid UTF-8 byte \ufffd in output'),
+        mock.call('PROJECT EXECUTION SUCCESSFUL'),
+    ])
 
 
 TESTDATA_4 = [
@@ -599,6 +633,17 @@ def test_binaryhandler_handle(
 
     assert 'Spawning BinaryHandler Thread for Dummy Name' in caplog.text
 
+    popen_mock.assert_called_once_with(
+        ['dummy', 'command'],
+        stdin=mock.ANY,
+        stdout=subprocess.PIPE,
+        stderr=mock.ANY,
+        cwd='build_dir',
+        env=[],
+        text=True,
+        encoding='utf-8',
+        errors='replace',
+    )
     thread_mock_obj.join.assert_called()
     handler._update_instance_info.assert_called_once()
     handler._final_handle_actions.assert_called_once()
