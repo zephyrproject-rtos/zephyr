@@ -1,0 +1,30 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.att.conn_mtu_limit.server_only:
+    build_only: true
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_conn_mtu_limit_overlay-server_only_conf
+    extra_args:
+      EXTRA_CONF_FILE=overlay-server_only.conf
+  bluetooth.host.att.conn_mtu_limit.auto_update:
+    build_only: true
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_att_conn_mtu_limit_overlay-auto_update_conf
+    extra_args:
+      EXTRA_CONF_FILE=overlay-auto_update.conf
+  bluetooth.host.att.conn_mtu_limit:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_att_conn_mtu_limit_prj_conf
+      tests_scripts:
+        - test_scripts
+    required_applications:
+      - application: bluetooth.host.att.conn_mtu_limit.server_only
+      - application: bluetooth.host.att.conn_mtu_limit.auto_update
