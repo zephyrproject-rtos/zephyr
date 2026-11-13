@@ -93,6 +93,12 @@ static inline void spi_esp32_complete(const struct device *dev,
 	spi_ll_clear_int_stat(spi);
 #endif
 
+	if (status != 0) {
+		spi_ll_master_keep_cs(spi, 0);
+		spi_ll_master_select_cs(spi, -1);
+		spi_ll_apply_config(spi);
+	}
+
 	spi_context_cs_control(&data->ctx, false);
 
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
@@ -337,6 +343,9 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 		err = spi_esp32_gdma_start(dev, SPI_DMA_TX);
 		if (err) {
+			if (hal_trans->rcv_buffer) {
+				dma_stop(cfg->dma_dev, cfg->dma_rx_ch);
+			}
 			goto free;
 		}
 	}
@@ -391,6 +400,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	/* send data */
+	spi_ll_master_select_cs(hal->hw, hal_dev->cs_pin_id);
 	spi_hal_user_start(hal);
 	spi_context_update_tx(&data->ctx, data->dfs, transfer_len_frames);
 
@@ -548,6 +558,7 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 	const struct device *dev = (const struct device *)arg;
 	const struct spi_esp32_config *cfg = dev->config;
 	struct spi_esp32_data *data = dev->data;
+	int ret;
 
 #ifdef CONFIG_ESP32_SPI_TARGET
 	if (data->target_mode) {
@@ -568,10 +579,10 @@ static void IRAM_ATTR spi_esp32_isr(void *arg)
 #endif /* CONFIG_ESP32_SPI_TARGET */
 
 	do {
-		spi_esp32_transfer(dev);
-	} while (spi_esp32_transfer_ongoing(data));
+		ret = spi_esp32_transfer(dev);
+	} while (ret == 0 && spi_esp32_transfer_ongoing(data));
 
-	spi_esp32_complete(dev, data, cfg->spi, 0);
+	spi_esp32_complete(dev, data, cfg->spi, ret);
 
 #if CONFIG_PM
 	spi_esp32_pm_policy_state_lock_put(dev);
@@ -1050,7 +1061,7 @@ static int transceive(const struct device *dev,
 
 	if (!asynchronous) {
 		ret = spi_context_wait_for_completion(&data->ctx);
-		if (ret != 0) {
+		if (ret == -ETIMEDOUT) {
 			/* A late ISR completion must not signal the context of
 			 * the next transfer
 			 */
