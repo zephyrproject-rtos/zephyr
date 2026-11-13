@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,18 +48,72 @@
 		interrupt-parent = <&gic>;
 
 		atcm: memory@0 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x00000000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "ATCM";
 		};
 
 		btcm: memory@100000 {
 			compatible = "mmio-sram";
-			reg = <0x00100000 DT_SIZE_K(64)>;
+			reg = <0x100000 DT_SIZE_K(64)>;
+			ranges = <0 0x100000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			reserved_btcm: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 0x2000>;
+			};
+
+			usable_btcm: memory@2000 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x2000 (DT_SIZE_K(64) - 0x2000)>;
+				zephyr,memory-region = "BTCM";
+			};
 		};
 
 		sram: memory@10000000 {
 			compatible = "mmio-sram";
 			reg = <0x10000000 DT_SIZE_M(1)>;
+			ranges = <0 0x10000000 DT_SIZE_M(1)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Work RAM of debuggers, such as the J-Link flash loader */
+			debugger_ram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(32)>;
+			};
+
+			sram0: memory@8000 {
+				compatible = "mmio-sram";
+				reg = <0x8000 (DT_SIZE_M(1) - DT_SIZE_K(32))>;
+			};
+		};
+
+		cpu0_atcm_axis: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(512)>;
+		};
+
+		cpu0_btcm_axis: memory@20100000 {
+			compatible = "mmio-sram";
+			reg = <0x20100000 DT_SIZE_K(64)>;
+		};
+
+		mirror_sram: memory@30000000 {
+			compatible = "mmio-sram";
+			reg = <0x30000000 DT_SIZE_M(1)>;
+		};
+
+		mirror_ext_space: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x40000000 DT_SIZE_M(512)>;
+		};
+
+		ext_space: memory@60000000 {
+			compatible = "mmio-sram";
+			reg = <0x60000000 DT_SIZE_M(512)>;
 		};
 
 		gpt7: gpt7@80000000 {
