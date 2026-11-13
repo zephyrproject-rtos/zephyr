@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pressure-sensor = &bme680_rak1906;
+	};
+};
+
+&wisblock_i2c1 {
+	status = "okay";
+
+	bme680_rak1906: bme680@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
+};
