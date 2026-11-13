@@ -398,11 +398,6 @@ struct elf64_rela {
 #define ELF64_R_TYPE(i) ((i) & 0xffffffff)
 
 /**
- * Dynamic features currently not used by LLEXT
- * @cond ignore
- */
-
-/**
  * @brief Program header(32-bit)
  */
 struct elf32_phdr {
@@ -421,12 +416,12 @@ struct elf32_phdr {
  */
 struct elf64_phdr {
 	elf64_word p_type;      /**< Type of segment */
+	elf64_word p_flags;     /**< Segment flags */
 	elf64_off p_offset;     /**< Offset in file */
 	elf64_addr p_vaddr;     /**< Virtual address in memory */
 	elf64_addr p_paddr;     /**< Physical address (usually reserved) */
 	elf64_xword p_filesz;   /**< Size of segment in file */
 	elf64_xword p_memsz;    /**< Size of segment in memory */
-	elf64_word p_flags;     /**< Segment flags */
 	elf64_xword p_align;    /**< Alignment of segment */
 };
 
@@ -434,6 +429,15 @@ struct elf64_phdr {
  * @brief Program segment type
  */
 #define PT_LOAD 1
+
+#define PF_X 0x1 /**< Segment is executable */
+#define PF_W 0x2 /**< Segment is writable */
+#define PF_R 0x4 /**< Segment is readable */
+
+/**
+ * Dynamic features currently not used by LLEXT
+ * @cond ignore
+ */
 
 /**
  * @brief Dynamic section entry(32-bit)

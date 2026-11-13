@@ -278,8 +278,13 @@ int llext_lookup_symbol(struct llext_loader *ldr, struct llext *ext, uintptr_t *
 		 * For regular symbols, the link address is obtained by adding st_value to the start
 		 * address of the section in which the target symbol resides.
 		 */
-		*link_addr =
-			(uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) + sym->st_value;
+		if (llext_is_image(ext)) {
+			/* In a shared library, st_value is a virtual address */
+			*link_addr = llext_load_bias(ext) + sym->st_value;
+		} else {
+			*link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sym->st_shndx) +
+				     sym->st_value;
+		}
 	} else {
 		LOG_ERR("cannot apply relocation: "
 			"target symbol has unexpected section index %d (%#x)",
@@ -558,24 +563,42 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			continue;
 		}
 
-		if (!(ext->sect_hdrs[shdr->sh_info].sh_flags & SHF_ALLOC)) {
-			/* ignore relocations acting on volatile (debug) sections */
-			continue;
+		/* Range of valid r_offset values */
+		uintptr_t tgt_lo;
+		size_t tgt_size;
+
+		if (llext_is_image(ext)) {
+			/*
+			 * A shared library image only takes the dynamic
+			 * relocations in allocated sections, e.g. .rela.dyn and
+			 * .rela.plt. Their r_offset is a virtual address in the
+			 * image, and sh_info is 0 for .rela.dyn.
+			 */
+			if (!(shdr->sh_flags & SHF_ALLOC)) {
+				continue;
+			}
+			llext_image_range(ext, &tgt_lo, &tgt_size);
+		} else {
+			if (!(ext->sect_hdrs[shdr->sh_info].sh_flags & SHF_ALLOC)) {
+				/* ignore relocations acting on volatile (debug) sections */
+				continue;
+			}
+
+			enum llext_mem mem_idx = ldr->sect_map[shdr->sh_info].mem_idx;
+
+			if (mem_idx == LLEXT_MEM_COUNT) {
+				LOG_ERR("Section %d not loaded in any memory region",
+					shdr->sh_info);
+				return -ENOEXEC;
+			}
+
+			sect_base = (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
+			tgt_lo = 0;
+			tgt_size = ext->sect_hdrs[shdr->sh_info].sh_size;
 		}
 
 		LOG_DBG("relocation section %s (%d) acting on section %d has %zd relocations",
 			name, i, shdr->sh_info, (size_t)rel_cnt);
-
-		enum llext_mem mem_idx = ldr->sect_map[shdr->sh_info].mem_idx;
-
-		if (mem_idx == LLEXT_MEM_COUNT) {
-			LOG_ERR("Section %d not loaded in any memory region", shdr->sh_info);
-			return -ENOEXEC;
-		}
-
-		sect_base = (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
-
-		size_t tgt_sect_size = ext->sect_hdrs[shdr->sh_info].sh_size;
 
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
@@ -591,15 +614,16 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 			/*
 			 * The relocation writes a field starting at r_offset
-			 * within the target section. Reject an offset at or past
-			 * the section end before applying it. This bounds the
-			 * start of the write; the field width is relocation-type
-			 * specific and left to the per-arch handler.
+			 * within the target section, or the image. Reject an
+			 * offset outside of it before applying it. This bounds
+			 * the start of the write; the field width is
+			 * relocation-type specific and left to the per-arch
+			 * handler.
 			 */
-			if (rel.r_offset >= tgt_sect_size) {
+			if (rel.r_offset - tgt_lo >= tgt_size) {
 				LOG_ERR("relocation r_offset %#zx out of section %d "
 					"(size %#zx)",
-					(size_t)rel.r_offset, shdr->sh_info, tgt_sect_size);
+					(size_t)rel.r_offset, shdr->sh_info, tgt_size);
 				return -ENOEXEC;
 			}
 

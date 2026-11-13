@@ -271,9 +271,235 @@ int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
 	return ret;
 }
 
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+
+/* Regions holding segment contents, which point into the image */
+static bool llext_region_in_image(enum llext_mem mem_idx)
+{
+	switch (mem_idx) {
+	case LLEXT_MEM_TEXT:
+	case LLEXT_MEM_DATA:
+	case LLEXT_MEM_RODATA:
+	case LLEXT_MEM_BSS:
+	case LLEXT_MEM_EXPORT:
+	case LLEXT_MEM_PREINIT:
+	case LLEXT_MEM_INIT:
+	case LLEXT_MEM_FINI:
+#ifdef CONFIG_LLEXT_RODATA_NO_RELOC
+	case LLEXT_MEM_RODATA_NO_RELOC:
+#endif
+		return true;
+	default:
+		return false;
+	}
+}
+
+static int llext_read_phdr(struct llext_loader *ldr, unsigned int idx, elf_phdr_t *phdr)
+{
+	int ret = llext_seek(ldr, ldr->hdr.e_phoff + idx * ldr->hdr.e_phentsize);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	return llext_read(ldr, phdr, sizeof(*phdr));
+}
+
+static void llext_free_image(struct llext *ext)
+{
+#ifdef CONFIG_MMU
+	if (ext->mmu_permissions_set) {
+		/* restore default RAM permissions */
+		k_mem_update_flags(ext->image, ext->image_size, K_MEM_PERM_RW);
+	}
+#endif
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
+		if (llext_region_in_image(mem_idx)) {
+			ext->mem[mem_idx] = NULL;
+			ext->mem_size[mem_idx] = 0;
+		}
+	}
+
+	llext_free_instr(ext, ext->image);
+	ext->image = NULL;
+}
+
+/*
+ * Load all PT_LOAD segments of a shared library into one allocation, each at
+ * its linked offset from the others, and point the program regions into it.
+ */
+static int llext_copy_image(struct llext_loader *ldr, struct llext *ext)
+{
+	uintptr_t lo = UINTPTR_MAX;
+	uintptr_t hi = 0;
+	uintptr_t base;
+	elf_phdr_t phdr;
+	size_t size;
+	int ret;
+
+	if (ldr->hdr.e_phentsize != sizeof(elf_phdr_t)) {
+		LOG_ERR("Invalid program header size %u", ldr->hdr.e_phentsize);
+		return -ENOEXEC;
+	}
+
+	for (unsigned int i = 0; i < ldr->hdr.e_phnum; i++) {
+		ret = llext_read_phdr(ldr, i, &phdr);
+		if (ret != 0) {
+			return ret;
+		}
+		if (phdr.p_type != PT_LOAD || phdr.p_memsz == 0) {
+			continue;
+		}
+		if (phdr.p_filesz > phdr.p_memsz) {
+			LOG_ERR("Segment %u file size exceeds memory size", i);
+			return -ENOEXEC;
+		}
+		if (phdr.p_vaddr + phdr.p_memsz < phdr.p_vaddr) {
+			LOG_ERR("Segment %u wraps around the address space", i);
+			return -ENOEXEC;
+		}
+		lo = MIN(lo, phdr.p_vaddr);
+		hi = MAX(hi, phdr.p_vaddr + phdr.p_memsz);
+	}
+
+	if (lo >= hi) {
+		LOG_ERR("No loadable segment");
+		return -ENOEXEC;
+	}
+
+	base = ROUND_DOWN(lo, LLEXT_PAGE_SIZE);
+	size = ROUND_UP(hi - base, LLEXT_PAGE_SIZE);
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	size = ROUND_UP(size, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
+#endif
+
+	ext->image = llext_aligned_alloc_instr(ext, LLEXT_PAGE_SIZE, size);
+	if (ext->image == NULL) {
+		LOG_ERR("Failed allocating %zu bytes for the image", size);
+		return -ENOMEM;
+	}
+	ext->image_size = size;
+	ext->load_bias = (uintptr_t)ext->image - base;
+
+	/* Gaps between segments and the part of each segment past its file data are zero */
+	memset(ext->image, 0, size);
+
+	for (unsigned int i = 0; i < ldr->hdr.e_phnum; i++) {
+		ret = llext_read_phdr(ldr, i, &phdr);
+		if (ret != 0) {
+			goto err;
+		}
+		if (phdr.p_type != PT_LOAD || phdr.p_filesz == 0) {
+			continue;
+		}
+		ret = llext_seek(ldr, phdr.p_offset);
+		if (ret == 0) {
+			ret = llext_read(ldr, (void *)(ext->load_bias + phdr.p_vaddr),
+					 phdr.p_filesz);
+		}
+		if (ret != 0) {
+			goto err;
+		}
+	}
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
+		elf_shdr_t *region = ldr->sects + mem_idx;
+
+		if (!llext_region_in_image(mem_idx) || region->sh_type == SHT_NULL ||
+		    region->sh_size == 0) {
+			continue;
+		}
+		if (region->sh_addr < lo || region->sh_addr + region->sh_size > hi) {
+			LOG_ERR("Region %d is outside the loadable segments", mem_idx);
+			ret = -ENOEXEC;
+			goto err;
+		}
+		ext->mem[mem_idx] = (void *)(ext->load_bias + region->sh_addr);
+		ext->mem_size[mem_idx] = region->sh_size;
+		ext->mem_on_heap[mem_idx] = false;
+	}
+
+	ext->alloc_size += size;
+
+	LOG_DBG("image: %p, size %zu, load bias %#lx", ext->image, size, ext->load_bias);
+
+	return 0;
+
+err:
+	llext_free_image(ext);
+	return ret;
+}
+
+#ifdef CONFIG_MMU
+static void llext_set_image_flags(uintptr_t start, uintptr_t end, uint32_t p_flags)
+{
+	uint32_t flags = 0;
+
+	if ((p_flags & PF_W) != 0U) {
+		flags |= K_MEM_PERM_RW;
+	}
+	if ((p_flags & PF_X) != 0U) {
+		flags |= K_MEM_PERM_EXEC;
+	}
+	k_mem_update_flags((void *)start, end - start, flags);
+}
+
+/*
+ * Set the permissions of each segment from its p_flags. Segments are sorted
+ * by address. When two segments share a page, that page gets the
+ * permissions of both. Pages outside any segment keep the default RW.
+ */
+static void llext_adjust_image_permissions(struct llext_loader *ldr, struct llext *ext)
+{
+	uintptr_t prev_end = 0;
+	uint32_t prev_flags = 0;
+	elf_phdr_t phdr;
+
+	sys_cache_data_flush_range(ext->image, ext->image_size);
+	sys_cache_instr_invd_range(ext->image, ext->image_size);
+
+	for (unsigned int i = 0; i < ldr->hdr.e_phnum; i++) {
+		if (llext_read_phdr(ldr, i, &phdr) != 0) {
+			LOG_ERR("Failed reading program header %u", i);
+			return;
+		}
+		if (phdr.p_type != PT_LOAD || phdr.p_memsz == 0) {
+			continue;
+		}
+
+		uintptr_t start = ROUND_DOWN(ext->load_bias + phdr.p_vaddr, LLEXT_PAGE_SIZE);
+		uintptr_t end =
+			ROUND_UP(ext->load_bias + phdr.p_vaddr + phdr.p_memsz, LLEXT_PAGE_SIZE);
+
+		if (start < prev_end) {
+			llext_set_image_flags(start, prev_end, prev_flags | phdr.p_flags);
+			start = prev_end;
+		}
+		if (start < end) {
+			llext_set_image_flags(start, end, phdr.p_flags);
+		}
+		prev_end = end;
+		prev_flags = phdr.p_flags;
+	}
+}
+#endif /* CONFIG_MMU */
+
+#endif /* CONFIG_LLEXT_SHAREDLIB_IMAGE */
+
 int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		       const struct llext_load_param *ldr_parm)
 {
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	if (ldr->hdr.e_type == ET_DYN && !ldr_parm->pre_located) {
+		int ret = llext_copy_image(ldr, ext);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
+
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
 		/* strings have already been copied */
 		if (ext->mem[mem_idx]) {
@@ -311,12 +537,20 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 }
 
-void llext_adjust_mmu_permissions(struct llext *ext)
+void llext_adjust_mmu_permissions(struct llext_loader *ldr, struct llext *ext)
 {
 #ifdef CONFIG_MMU
 	void *addr;
 	size_t size;
 	uint32_t flags;
+
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	if (ext->image != NULL) {
+		llext_adjust_image_permissions(ldr, ext);
+		ext->mmu_permissions_set = true;
+		return;
+	}
+#endif
 
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
 		addr = ext->mem[mem_idx];
@@ -357,6 +591,12 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 
 void llext_free_regions(struct llext *ext)
 {
+#ifdef CONFIG_LLEXT_SHAREDLIB_IMAGE
+	if (ext->image != NULL) {
+		llext_free_image(ext);
+	}
+#endif
+
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
 		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 &&
@@ -395,6 +635,11 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 {
 #ifdef CONFIG_USERSPACE
 	int ret = 0;
+
+	if (llext_is_image(ext)) {
+		/* No memory partitions are defined for an image */
+		return -ENOTSUP;
+	}
 
 	for (int i = 0; i < LLEXT_MEM_PARTITIONS; i++) {
 		if (ext->mem_size[i] == 0) {

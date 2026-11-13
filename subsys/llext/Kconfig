@@ -183,6 +183,18 @@ config LLEXT_RODATA_NO_RELOC
 	  This feature requires the extension to manually tag that data with
 	  the LLEXT_RODATA_NO_RELOC macro.
 
+config LLEXT_SHAREDLIB_IMAGE
+	bool "Load shared libraries as one image"
+	depends on ARM64
+	default y
+	help
+	  Load shared library extensions as one memory image that keeps the
+	  linked distance between segments. Linked code may address another
+	  segment PC-relatively with no relocation left to fix it up, e.g.
+	  ADRP from .text to .rodata or from .plt to .got.plt on AArch64.
+	  Dynamic relocations then use virtual addresses in that image.
+	  llext_add_domain() returns -ENOTSUP for such an extension.
+
 config LLEXT_EXPORT_DEVICES
 	bool "Export all DT devices to llexts"
 	select LLEXT_EXPORT_SYMBOL_GROUP_DEVICE
