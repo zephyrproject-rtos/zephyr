@@ -6,7 +6,10 @@
 
 /* Address by default is 0x55 */
 
+/* Compatible with st1633i */
 #define DT_DRV_COMPAT sitronix_cf1133
+
+#include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
@@ -16,6 +19,16 @@
 #include <stdbool.h>
 
 LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
+
+/* Reset pulse width and maximum time for the controller to become ready */
+#define RESET_PULSE_MS     10
+#define READY_POLL_MS      5
+#define READY_TIMEOUT_MS   500
+
+/* STATUS_REG values (lower nibble) meaning the controller is operational */
+#define STATUS_NORMAL       0x0
+#define STATUS_IDLE         0x4
+#define STATUS_MSK          GENMASK(3, 0)
 
 /* cf1133 used registers */
 #define FIRMWARE_VERSION    0x0
@@ -45,7 +58,7 @@ LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
 #define PAGE_REG            0xFF
 
 /* Constants */
-#define SUPPORTED_POINT			 0x1
+#define SUPPORTED_POINT	         0x1
 #define PIXEL_DATA_LENGTH_B      0x3
 #define PIXEL_DATA_LENGTH_A      0x4
 #define SITRONIX_RESERVED_TYPE_0 0x0
@@ -63,12 +76,18 @@ LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
 #define X_COORD_L                0x1
 #define Y_COORD_L                0x2
 
+#define USE_RESET DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(DT_DRV_COMPAT, reset_gpios)
+
 /* CF1133 configuration (DT) */
 struct cf1133_config {
 	/** Common touchscreen config, must stay first. */
 	struct input_touchscreen_common_config common;
 	/** I2C bus. */
 	struct i2c_dt_spec bus;
+#if USE_RESET
+	/** Reset GPIO information (optional). */
+	struct gpio_dt_spec reset_gpio;
+#endif
 #ifdef CONFIG_INPUT_CF1133_INTERRUPT
 	/** Interrupt GPIO information. */
 	struct gpio_dt_spec int_gpio;
@@ -165,6 +184,47 @@ static int cf1133_get_protocol_type(const struct device *dev)
 	return 0;
 }
 
+static int cf1133_reset(const struct device *dev)
+{
+#if USE_RESET
+	const struct cf1133_config *config = dev->config;
+	int ret;
+
+	if (config->reset_gpio.port == NULL) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&config->reset_gpio)) {
+		LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Could not configure reset GPIO pin");
+		return ret;
+	}
+
+	k_msleep(RESET_PULSE_MS);
+
+	return gpio_pin_set_dt(&config->reset_gpio, 0);
+#endif
+	return 0;
+}
+
+static bool cf1133_is_ready(const struct i2c_dt_spec *bus)
+{
+	uint8_t status;
+
+	if (i2c_reg_read_byte_dt(bus, STATUS_REG, &status) != 0) {
+		return false;
+	}
+
+	status &= STATUS_MSK;
+
+	return status == STATUS_NORMAL || status == STATUS_IDLE;
+}
+
 static int cf1133_ts_init(const struct device *dev)
 {
 	struct cf1133_data *data = dev->data;
@@ -215,16 +275,10 @@ static int cf1133_process(const struct device *dev)
 		y = (uint16_t)(buffer[1 + XY_COORD_H] & 0x07) << 8 | buffer[1 + Y_COORD_L];
 		data->pressed = true;
 
-		if (!data->pressed_old) {
-			/* Finger pressed */
-			input_touchscreen_report_pos(dev, x, y, K_FOREVER);
-			input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-			LOG_DBG("Finger is touching x = %i y = %i", x, y);
-		} else if (data->pressed_old) {
-			/* Continuous pressed */
-			input_touchscreen_report_pos(dev, x, y, K_FOREVER);
-			LOG_DBG("Finger keeps touching x = %i y = %i", x, y);
-		}
+		input_touchscreen_report_pos(dev, x, y, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+		LOG_DBG("Finger %s x = %i y = %i",
+			data->pressed_old ? "keeps touching" : "is touching", x, y);
 	} else {
 		data->pressed = false;
 
@@ -277,6 +331,21 @@ static int cf1133_init(const struct device *dev)
 
 	data->dev = dev;
 	k_work_init(&data->work, cf1133_work_handler);
+
+	ret = cf1133_reset(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * After power-up or reset the controller does not answer on I2C until its
+	 * firmware has booted. Poll the status register until it reports normal or
+	 * idle operation.
+	 */
+	if (!WAIT_FOR(cf1133_is_ready(&config->bus),
+		      READY_TIMEOUT_MS * USEC_PER_MSEC, k_msleep(READY_POLL_MS))) {
+		LOG_WRN("Controller not ready after %d ms", READY_TIMEOUT_MS);
+	}
 
 	/*
 	 * Probe the controller before arming anything that can call
@@ -332,6 +401,9 @@ static int cf1133_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_INST_GET(index),					\
 		IF_ENABLED(CONFIG_INPUT_CF1133_INTERRUPT,				\
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),			\
+		))									\
+		IF_ENABLED(USE_RESET,							\
+		(.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(index, reset_gpios, {0}),	\
 		))									\
 		};									\
 	static struct cf1133_data cf1133_data_##index;					\
