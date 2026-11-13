@@ -8,16 +8,13 @@
 #define __CERTIFICATE_H__
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-#define CA_CERTIFICATE_TAG 1
-
-static const unsigned char server_certificate[] = {
-    #include "servercert.der.inc"
+/* Mbed TLS only parses PEM, and so more than one certificate, from a
+ * NUL-terminated buffer.
+ */
+static const unsigned char updatehub_root_ca[] = {
+#include "updatehub-root-ca.pem.inc"
+0x00
 };
-
-
-static const unsigned char private_key[] = {
-    #include "privkey.der.inc"
-};
-
 #endif
+
 #endif /* __CERTIFICATE_H__ */

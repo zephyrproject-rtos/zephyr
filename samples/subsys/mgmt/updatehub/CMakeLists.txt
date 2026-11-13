@@ -13,16 +13,11 @@ project(updatehub)
 target_sources(app PRIVATE src/main.c)
 
 if(CONFIG_UPDATEHUB_DTLS)
-    set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
-
-    foreach(inc_file
-            servercert.der
-            privkey.der
-            )
-        generate_inc_file_for_target(
-            ${ZEPHYR_CURRENT_LIBRARY}
-            src/certificates/${inc_file}
-            ${gen_dir}/${inc_file}.inc
-            )
-    endforeach()
+  get_filename_component(root_ca ${CONFIG_UPDATEHUB_SAMPLE_ROOT_CA_FILE}
+    ABSOLUTE BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+  generate_inc_file_for_target(app
+    ${root_ca}
+    ${ZEPHYR_BINARY_DIR}/include/generated/updatehub-root-ca.pem.inc
+  )
 endif()
