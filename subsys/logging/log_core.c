@@ -336,7 +336,13 @@ static uint32_t z_log_init(bool blocking, bool can_sleep)
 		return 0;
 	}
 
-	__ASSERT_NO_MSG(log_backend_count_get() <= LOG_FILTERS_MAX_BACKENDS);
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
+		/* Each backend needs its own runtime filter slot. */
+		__ASSERT_NO_MSG(log_backend_count_get() <= LOG_FILTERS_MAX_BACKENDS);
+	}
+
+	/* The activation mask has one bit per backend. */
+	__ASSERT_NO_MSG(log_backend_count_get() <= sizeof(mask) * BITS_PER_BYTE);
 
 	if (atomic_inc(&initialized) != 0) {
 		return 0;
