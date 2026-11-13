@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strnlen() */
+
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
@@ -236,6 +240,12 @@ static int append_string(cbprintf_convert_cb cb, void *ctx, const char *str, uin
 	return cb(str, strl, ctx);
 }
 
+/* Length of a string argument, bounded by its precision if it has one. */
+static size_t str_arg_len(const char *s, int prec)
+{
+	return (prec < 0) ? strlen(s) : strnlen(s, (size_t)prec);
+}
+
 int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		      const char *fmt, va_list ap)
 {
@@ -256,6 +266,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	unsigned int align;        /* current argument's required alignment */
 	uint8_t str_ptr_pos[16];   /* string pointer positions */
 	uint8_t str_ptr_arg[16];   /* string pointer argument index */
+	int str_ptr_prec[16];      /* string precision, negative if none */
 	unsigned int s_idx = 0;    /* index into str_ptr_pos[] */
 	unsigned int s_rw_cnt = 0; /* number of rw strings */
 	unsigned int s_ro_cnt = 0; /* number of ro strings */
@@ -263,6 +274,9 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	unsigned int i;
 	const char *s;
 	bool parsing = false;
+	int prec = -1;             /* precision of the current conversion */
+	bool in_prec = false;      /* parsing the precision field */
+	bool prec_arg = false;     /* precision is the next int argument */
 	/* Flag indicates that rw strings are stored as array with positions,
 	 * instead of appending them to the package.
 	 */
@@ -480,6 +494,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				if (*fmt == '%') {
 					parsing = true;
 					arg_idx++;
+					prec = -1;
+					in_prec = false;
 					align = VA_STACK_ALIGN(int);
 					size = sizeof(int);
 				}
@@ -495,6 +511,11 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			case '-':
 			case '+':
 			case ' ':
+			case 'h':
+			case 'l':
+			case 'L':
+				continue;
+
 			case '0':
 			case '1':
 			case '2':
@@ -505,13 +526,18 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			case '7':
 			case '8':
 			case '9':
+				if (in_prec && prec <= (INT_MAX - 9) / 10) {
+					prec = prec * 10 + (*fmt - '0');
+				}
+				continue;
+
 			case '.':
-			case 'h':
-			case 'l':
-			case 'L':
+				in_prec = true;
+				prec = 0;
 				continue;
 
 			case '*':
+				prec_arg = in_prec;
 				break;
 
 			case 'j':
@@ -655,6 +681,7 @@ process_string:
 					 */
 					str_ptr_pos[s_idx] = s_ptr_idx;
 					str_ptr_arg[s_idx] = arg_idx;
+					str_ptr_prec[s_idx] = prec;
 					if (is_ro) {
 						/* flag read-only string. */
 						str_ptr_pos[s_idx] |= STR_POS_RO_FLAG;
@@ -679,7 +706,7 @@ process_string:
 					 * Add the string length, the final '\0'
 					 * and size of the pointer position prefix.
 					 */
-					len += strlen(s) + 1 + 1;
+					len += str_arg_len(s, prec) + 1 + 1;
 				}
 
 				s_idx++;
@@ -689,6 +716,12 @@ process_string:
 			is_str_arg = false;
 		} else if (size == sizeof(int)) {
 			int v = va_arg(ap, int);
+
+			if (prec_arg) {
+				/* A negative precision argument means no precision. */
+				prec = (v < 0) ? -1 : v;
+				prec_arg = false;
+			}
 
 			if (buf0 != NULL) {
 				*(int *)buf = v;
@@ -795,7 +828,7 @@ process_string:
 			/* clear the in-buffer pointer (less entropy if compressed) */
 			*(char **)(buf0 + str_ptr_pos[i] * sizeof(int)) = NULL;
 			/* find the string length including terminating '\0' */
-			size = strlen(s) + 1;
+			size = str_arg_len(s, str_ptr_prec[i]) + 1;
 		}
 
 		/* make sure it fits */
@@ -805,8 +838,11 @@ process_string:
 		/* store the pointer position prefix */
 		*(uint8_t *)buf = str_ptr_pos[i];
 		++buf;
-		/* copy the string with its terminating '\0' */
-		memcpy((void *)buf, (uint8_t *)s, size);
+		/* copy the string, which the precision may cut, and terminate it */
+		if (size > 0) {
+			memcpy((void *)buf, (uint8_t *)s, size - 1);
+			*(uint8_t *)(buf + size - 1) = '\0';
+		}
 		buf += size;
 	}
 
