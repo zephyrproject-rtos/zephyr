@@ -5,9 +5,50 @@ config UART_RPI_PICO_PIO
 	bool "Raspberry Pi PIO UART driver"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_UART_PIO_ENABLED
+	depends on PIO_RPI_PICO
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	select PICOSDK_USE_PIO
 	select PICOSDK_USE_CLAIM
 	select PINCTRL
 	select SERIAL_HAS_POST_KERNEL_INIT
+	select DMA if UART_INTERRUPT_DRIVEN
+	select DMA_RPI_PICO if UART_INTERRUPT_DRIVEN
 	depends on RESET
+
+if UART_RPI_PICO_PIO && UART_INTERRUPT_DRIVEN
+
+config UART_RPI_PICO_PIO_POLL_STACK_SIZE
+	int "Stack size of the PIO UART service thread"
+	default 512
+	help
+	  RX is captured by a self-reloading DMA ring buffer. A dedicated
+	  thread per instance periodically invokes the registered
+	  uart_irq_callback to service it.
+
+config UART_RPI_PICO_PIO_POLL_THREAD_PRIORITY
+	int "Priority of the PIO UART service thread"
+	default 1
+	help
+	  RX bytes are already held in the DMA ring when this thread runs,
+	  so it tolerates scheduling latency. Higher priorities can starve
+	  other low-priority threads under sustained traffic.
+
+config UART_RPI_PICO_PIO_POLL_PERIOD_US
+	int "Poll period, in microseconds, of the PIO UART service thread"
+	default 2000
+	help
+	  Shorter periods raise the CPU load of every PIO UART instance.
+	  Longer periods deliver RX bytes to the callback in larger bursts.
+
+config UART_RPI_PICO_PIO_RX_RING_BUF_SIZE
+	int "Size, in bytes, of the RX DMA ring buffer"
+	default 256
+	range 2 32768
+	help
+	  Must be a power of two, as required by the DMA address wrapping.
+	  Bounds how far the service thread can fall behind before RX bytes
+	  are lost. Size it for the longest expected stall at the configured
+	  baudrate.
+
+endif # UART_RPI_PICO_PIO && UART_INTERRUPT_DRIVEN
