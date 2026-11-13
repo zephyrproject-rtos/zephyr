@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Pixhawk TELEM connector
+
+description: |
+  6-pin JST-GH serial port with hardware flow control, as defined by the
+  Pixhawk Connector Standard (DS-009). Flight controllers use TELEM ports
+  for telemetry radios and companion computers.
+
+  This binding provides a nexus mapping for the signal pins, indexed by
+  connector pin number. Use the PIXHAWK_TELEM_* constants in
+  <zephyr/dt-bindings/gpio/pixhawk-connector.h> to refer to them.
+
+    1  VCC (5 V)
+    2  TX (output)
+    3  RX (input)
+    4  CTS (input)
+    5  RTS (output)
+    6  GND
+
+  See https://github.com/pixhawk/Pixhawk-Standards for the standard.
+
+compatible: "pixhawk-telem-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

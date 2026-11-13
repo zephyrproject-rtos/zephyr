@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Pixhawk GPS connector
+
+description: |
+  6-pin JST-GH port combining a serial port and an I2C bus, as defined by
+  the Pixhawk Connector Standard (DS-009). Flight controllers use it for
+  GNSS receivers with an integrated magnetometer. See
+  pixhawk-full-gps-connector for the 10-pin full GPS port.
+
+  This binding provides a nexus mapping for the signal pins, indexed by
+  connector pin number. Use the PIXHAWK_GPS_* constants in
+  <zephyr/dt-bindings/gpio/pixhawk-connector.h> to refer to them.
+
+    1  VCC (5 V)
+    2  TX (output)
+    3  RX (input)
+    4  SCL
+    5  SDA
+    6  GND
+
+  See https://github.com/pixhawk/Pixhawk-Standards for the standard.
+
+compatible: "pixhawk-gps-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
