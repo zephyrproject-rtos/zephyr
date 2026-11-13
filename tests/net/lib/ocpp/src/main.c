@@ -108,15 +108,18 @@ static int test_ocpp_user_notify_cb(enum ocpp_notify_reason reason,
 
 	case OCPP_USR_RESET:
 		TC_PRINT("reset type %d\n", io->reset.type);
+		io->reset.status = OCPP_REQ_ACCEPTED;
 		return 0;
 
 	case OCPP_USR_CHANGE_AVAILABILITY:
 		TC_PRINT("change availability connector %d type %d\n",
 			 io->change_avail.id_con, io->change_avail.type);
+		io->change_avail.status = OCPP_REQ_ACCEPTED;
 		return 0;
 
 	case OCPP_USR_DATA_TRANSFER:
 		TC_PRINT("data transfer vendor %s\n", io->data_transfer.vendor_id);
+		io->data_transfer.status = OCPP_REQ_ACCEPTED;
 		return 0;
 	}
 
