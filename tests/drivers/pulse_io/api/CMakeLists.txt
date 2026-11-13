@@ -6,3 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(pulse_io_api)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_PULSE_IO_NRF_PWM app PRIVATE src/nrf_pwm.c)

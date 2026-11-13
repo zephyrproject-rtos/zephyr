@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+
+title: nRF PWM pulse_io controller
+
+description: |
+  The nRF PWM peripheral exposed through the pulse_io API. Select it by
+  overwriting the compatible of an nRF PWM node.
+
+compatible: "nordic,nrf-pwm-pulse-io"
+
+include: [base.yaml, pinctrl-device.yaml, memory-region.yaml, pulse-io-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  idleout-supported:
+    type: boolean
+    description: |
+      Indicates if the PWM instance has the IDLEOUT register. Set by the
+      SoC devicetree on nRF PWM nodes.
+
+examples:
+  - |
+    &pinctrl {
+            pwm1_default: pwm1_default {
+                    group1 {
+                            psels = <NRF_PSEL(PWM_OUT0, 1, 3)>;
+                    };
+            };
+
+            pwm1_sleep: pwm1_sleep {
+                    group1 {
+                            psels = <NRF_PSEL(PWM_OUT0, 1, 3)>;
+                            low-power-enable;
+                    };
+            };
+    };
+
+    &pwm1 {
+            compatible = "nordic,nrf-pwm-pulse-io";
+            status = "okay";
+            #pulse-io-cells = <1>;
+            pinctrl-0 = <&pwm1_default>;
+            pinctrl-1 = <&pwm1_sleep>;
+            pinctrl-names = "default", "sleep";
+    };
+
+    / {
+            led_strip: ws2812 {
+                    compatible = "worldsemi,ws2812-pulse-io";
+                    pulse-ios = <&pwm1 0>;
+                    chain-length = <8>;
+                    color-mapping = <LED_COLOR_ID_GREEN
+                                     LED_COLOR_ID_RED
+                                     LED_COLOR_ID_BLUE>;
+            };
+    };

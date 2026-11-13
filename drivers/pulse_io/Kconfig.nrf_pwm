@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+
+config PULSE_IO_NRF_PWM
+	bool "nRF PWM Pulse IO backend"
+	default y
+	depends on DT_HAS_NORDIC_NRF_PWM_PULSE_IO_ENABLED
+	select NRFX_PWM
+	select PINCTRL
+	help
+	  Enable the Pulse IO backend on the nRF PWM peripheral. It
+	  transmits CELL mode streams on one line, one EasyDMA word per
+	  cell.
+
+config PULSE_IO_NRF_PWM_CELLS
+	int "Maximum cells per nRF PWM transmit"
+	depends on PULSE_IO_NRF_PWM
+	default 768
+	range 1 32766
+	help
+	  Size of the static per-instance EasyDMA buffer, in cells
+	  (2 bytes each). A transmit request with more cells fails with
+	  -ENOMEM. The default holds 32 RGB LEDs.
