@@ -338,7 +338,7 @@ static void _test_kernel_cpu_idle(int atomic)
  *   duration within tolerance.
  *
  * @see k_cpu_atomic_idle()
- * @verifies ZEP-SRS-13-14
+ * @verifies ZEP-SRS-13-40
  */
 ZTEST(context_cpu_idle, test_cpu_idle_atomic)
 {
