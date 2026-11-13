@@ -105,7 +105,7 @@ config NXP_RF_IMU
 	default y
 
 config OPENTHREAD_SYS_INIT_PRIORITY
-	default 80 if OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION
+	default 80 if OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION && SOC_MCXW70AC
 
 endif # IEEE802154
 
@@ -120,6 +120,19 @@ endif
 
 config WUC
 	default y if DT_HAS_NXP_WUC_WUU_ENABLED
+
+if HAS_MCUX_SGI_PKC && MBEDTLS_PSA_CRYPTO_C
+
+# The SGI PKC builds its CPU and PKC "workareas" in the stack frame of the calling thread.
+# These are defaults only, so an application remains free to lower or raise them.
+configdefault MAIN_STACK_SIZE
+	default 4096
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # HAS_MCUX_SGI_PKC && MBEDTLS_PSA_CRYPTO_C
+
 
 if SOC_MCXW70AC && PM
 
