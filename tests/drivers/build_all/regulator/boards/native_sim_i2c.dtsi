@@ -272,3 +272,23 @@ tps62873@d {
 	regulator-max-microvolt = <3350000>;
 	regulator-boot-on;
 };
+
+bq25896@e {
+	compatible = "ti,bq25896";
+	reg = <0xe>;
+
+	regulator {
+		compatible = "ti,bq25896-regulator";
+		regulator-init-microvolt = <4998000>;
+		regulator-init-microamp = <500000>;
+	};
+};
+
+sy6970@f {
+	compatible = "silergy,sy6970";
+	reg = <0xf>;
+
+	regulator {
+		compatible = "silergy,sy6970-regulator";
+	};
+};

@@ -69,6 +69,16 @@
 				#io-channel-cells = <1>;
 			};
 
+			test_i2c_bq25896: bq25896@2 {
+				compatible = "ti,bq25896";
+				reg = <0x2>;
+			};
+
+			test_i2c_sy6970: sy6970@3 {
+				compatible = "silergy,sy6970";
+				reg = <0x3>;
+			};
+
 			sc18is606: sc18is606@28 {
 				compatible = "nxp,sc18is606";
 				reg = <0x28>;
