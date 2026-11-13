@@ -52,6 +52,18 @@ LOG_MODULE_REGISTER(i2s_esp32, CONFIG_I2S_LOG_LEVEL);
 #endif
 #define I2S_ESP32_DMA_BUFFER_MAX_SIZE 4092
 
+#define I2S_ESP32_PDM_TX_SUPPORTED (SOC_I2S_SUPPORTS_PCM2PDM && SOC_I2S_HW_VERSION_2)
+
+#if I2S_ESP32_PDM_TX_SUPPORTED
+#define I2S_ESP32_PDM_TX_UP_SAMPLE_FP 960U
+#define I2S_ESP32_PDM_TX_UP_SAMPLE_FS 480U
+#define I2S_ESP32_PDM_TX_BCLK_DIV_MIN 8U
+#define I2S_ESP32_PDM_TX_BCLK_DIV_MAX 64U
+#define I2S_ESP32_PDM_TX_MCLK_DIV_MIN 2U
+#define I2S_ESP32_PDM_TX_MCLK_DIV_MAX 255U
+#define I2S_ESP32_PDM_TX_HP_CUTOFF    355U
+#endif /* I2S_ESP32_PDM_TX_SUPPORTED */
+
 #define I2S_ESP32_NUM_INST_OK          DT_NUM_INST_STATUS_OKAY(espressif_esp32_i2s)
 #define I2S_ESP32_IS_DIR_INST_EN(i, d) DT_INST_DMAS_HAS_NAME(i, d) || DT_INST_IRQ_HAS_NAME(i, d)
 #define I2S_ESP32_IS_DIR_EN(d)         (LISTIFY(I2S_ESP32_NUM_INST_OK, I2S_ESP32_IS_DIR_INST_EN,   \
@@ -107,6 +119,7 @@ struct i2s_esp32_cfg {
 	clock_control_subsys_t clock_subsys;
 	struct i2s_esp32_stream rx;
 	struct i2s_esp32_stream tx;
+	uint8_t pdm_tx_line_mode;
 };
 
 struct i2s_esp32_data {
@@ -1432,6 +1445,66 @@ static int i2s_esp32_config_check(const struct device *dev, enum i2s_dir dir,
 
 	data_format = i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK;
 
+	if (data_format == I2S_FMT_DATA_FORMAT_PDM) {
+#if I2S_ESP32_PDM_TX_SUPPORTED
+		if (dir != I2S_DIR_TX || !i2s_ll_is_pcm2pdm_supported(dev_cfg->unit)) {
+			LOG_DBG("PDM is only supported for TX on I2S0");
+			return -EINVAL;
+		}
+
+		if (dev_cfg->rx.data != NULL && dev_cfg->rx.data->configured) {
+			LOG_DBG("PDM TX cannot share the clocks with RX");
+			return -EINVAL;
+		}
+
+		if (i2s_cfg->word_size != 16) {
+			LOG_DBG("PDM TX only supports 16-bit samples");
+			return -EINVAL;
+		}
+
+		if (i2s_cfg->channels != 1 && i2s_cfg->channels != 2) {
+			LOG_DBG("PDM TX supports 1 or 2 channels");
+			return -EINVAL;
+		}
+
+		if ((dev_cfg->pdm_tx_line_mode == I2S_PDM_TX_ONE_LINE_DAC &&
+		     i2s_cfg->channels != 1) ||
+		    (dev_cfg->pdm_tx_line_mode == I2S_PDM_TX_TWO_LINE_DAC &&
+		     i2s_cfg->channels != 2)) {
+			LOG_DBG("%u channels not supported in PDM TX line mode %u",
+				i2s_cfg->channels, dev_cfg->pdm_tx_line_mode);
+			return -EINVAL;
+		}
+
+		if ((i2s_cfg->options & (I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET)) != 0) {
+			LOG_DBG("PDM TX only supports controller mode");
+			return -EINVAL;
+		}
+
+		if ((i2s_cfg->options & (I2S_OPT_LOOPBACK | I2S_OPT_PINGPONG)) != 0) {
+			LOG_DBG("Unsupported option: 0x%x", (unsigned int)i2s_cfg->options);
+			return -EINVAL;
+		}
+
+		if ((i2s_cfg->format & (I2S_FMT_DATA_ORDER_LSB | I2S_FMT_CLK_FORMAT_MASK)) != 0) {
+			LOG_DBG("Unsupported PDM TX format: 0x%x", (unsigned int)i2s_cfg->format);
+			return -EINVAL;
+		}
+
+		return 0;
+#else
+		LOG_DBG("PDM format not supported");
+		return -EINVAL;
+#endif /* I2S_ESP32_PDM_TX_SUPPORTED */
+	}
+
+	if (dir == I2S_DIR_RX && dev_cfg->tx.data != NULL && dev_cfg->tx.data->configured &&
+	    (dev_cfg->tx.data->i2s_cfg.format & I2S_FMT_DATA_FORMAT_MASK) ==
+		    I2S_FMT_DATA_FORMAT_PDM) {
+		LOG_DBG("RX cannot share the clocks with PDM TX");
+		return -EINVAL;
+	}
+
 	if (data_format != I2S_FMT_DATA_FORMAT_I2S &&
 	    data_format != I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED &&
 	    data_format != I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED) {
@@ -1468,6 +1541,99 @@ static int i2s_esp32_config_check(const struct device *dev, enum i2s_dir dir,
 
 	return 0;
 }
+
+#if I2S_ESP32_PDM_TX_SUPPORTED
+static int i2s_esp32_pdm_tx_configure(const struct device *dev, const struct i2s_config *i2s_cfg)
+{
+	struct i2s_esp32_data *dev_data = dev->data;
+	const struct i2s_esp32_cfg *dev_cfg = dev->config;
+	i2s_hal_context_t *hal = (i2s_hal_context_t *)&(dev_cfg->hal);
+	bool is_mono = i2s_cfg->channels == 1U;
+	i2s_hal_slot_config_t slot_cfg = {0};
+	i2s_hal_clock_info_t clk_info = {0};
+	uint64_t best_div = 0U;
+	uint32_t up_fs;
+	uint64_t bclk;
+
+	/* Use the largest product of integer MCLK and BCLK dividers that keeps
+	 * BCLK at or above the nominal rate, then trim the up-sampling ratio
+	 * to the remaining clock error.
+	 */
+	bclk = (uint64_t)i2s_cfg->frame_clk_freq * I2S_LL_PDM_BCK_FACTOR *
+	       (I2S_ESP32_PDM_TX_UP_SAMPLE_FP / I2S_ESP32_PDM_TX_UP_SAMPLE_FS);
+	clk_info.sclk = i2s_esp32_get_source_clk_freq(I2S_ESP32_CLK_SRC);
+
+	for (uint32_t bclk_div = I2S_ESP32_PDM_TX_BCLK_DIV_MIN;
+	     bclk_div <= I2S_ESP32_PDM_TX_BCLK_DIV_MAX; bclk_div++) {
+		uint64_t mclk_div = clk_info.sclk / (bclk * bclk_div);
+
+		if (mclk_div < I2S_ESP32_PDM_TX_MCLK_DIV_MIN) {
+			break;
+		}
+
+		mclk_div = MIN(mclk_div, I2S_ESP32_PDM_TX_MCLK_DIV_MAX);
+		if (mclk_div * bclk_div > best_div) {
+			best_div = mclk_div * bclk_div;
+			clk_info.bclk_div = bclk_div;
+			clk_info.mclk_div = (uint32_t)mclk_div;
+		}
+	}
+
+	up_fs = (best_div == 0U) ? 0U
+				 : (uint32_t)((I2S_ESP32_PDM_TX_UP_SAMPLE_FS * best_div * bclk +
+					       clk_info.sclk / 2U) /
+					      clk_info.sclk);
+	if (up_fs <= I2S_ESP32_PDM_TX_UP_SAMPLE_FS / 2U) {
+		LOG_DBG("PDM TX sample rate %u out of range", i2s_cfg->frame_clk_freq);
+		return -EINVAL;
+	}
+
+	clk_info.mclk = clk_info.sclk / clk_info.mclk_div;
+	clk_info.bclk = clk_info.mclk / clk_info.bclk_div;
+
+	slot_cfg.data_bit_width = I2S_DATA_BIT_WIDTH_16BIT;
+	slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO;
+	slot_cfg.slot_mode = is_mono ? I2S_SLOT_MODE_MONO : I2S_SLOT_MODE_STEREO;
+	slot_cfg.pdm_tx.data_fmt = I2S_PDM_DATA_FMT_PCM;
+	slot_cfg.pdm_tx.sd_prescale = 0U;
+	slot_cfg.pdm_tx.sd_scale = I2S_PDM_SIG_SCALING_MUL_1;
+	slot_cfg.pdm_tx.lp_scale = I2S_PDM_SIG_SCALING_MUL_1;
+	slot_cfg.pdm_tx.sinc_scale = I2S_PDM_SIG_SCALING_MUL_1;
+	if (dev_cfg->pdm_tx_line_mode != UINT8_MAX) {
+		slot_cfg.pdm_tx.line_mode = (i2s_pdm_tx_line_mode_t)dev_cfg->pdm_tx_line_mode;
+	} else {
+		slot_cfg.pdm_tx.line_mode =
+			is_mono ? I2S_PDM_TX_ONE_LINE_DAC : I2S_PDM_TX_ONE_LINE_CODEC;
+	}
+	slot_cfg.pdm_tx.hp_scale = slot_cfg.pdm_tx.line_mode == I2S_PDM_TX_ONE_LINE_CODEC
+					   ? I2S_PDM_SIG_SCALING_DIV_2
+					   : I2S_PDM_SIG_SCALING_MUL_1;
+	slot_cfg.pdm_tx.hp_en = true;
+	slot_cfg.pdm_tx.hp_cut_off_freq_hzx10 = I2S_ESP32_PDM_TX_HP_CUTOFF;
+	slot_cfg.pdm_tx.sd_dither = 0U;
+	slot_cfg.pdm_tx.sd_dither2 = 1U;
+
+	i2s_hal_pdm_set_tx_slot(hal, false, &slot_cfg);
+	i2s_ll_tx_set_bit_order(hal->dev, false);
+	i2s_ll_tx_enable_left_align(hal->dev, true);
+	i2s_ll_tx_enable_big_endian(hal->dev, false);
+
+	i2s_ll_tx_set_pdm_fpfs(hal->dev, I2S_ESP32_PDM_TX_UP_SAMPLE_FP, up_fs);
+	i2s_ll_tx_set_pdm_over_sample_ratio(hal->dev, I2S_ESP32_PDM_TX_UP_SAMPLE_FP / up_fs);
+	i2s_hal_set_tx_clock(hal, &clk_info, I2S_ESP32_CLK_SRC, NULL);
+	i2s_ll_tx_set_raw_clk_div(hal->dev, clk_info.mclk_div, 1U, 1U, 0U, 0U);
+
+	i2s_hal_pdm_enable_tx_channel(hal, true);
+	i2s_ll_share_bck_ws(hal->dev, false);
+
+	memcpy(&dev_cfg->tx.data->i2s_cfg, i2s_cfg, sizeof(struct i2s_config));
+	dev_cfg->tx.data->configured = true;
+
+	dev_data->state = I2S_STATE_READY;
+
+	return 0;
+}
+#endif /* I2S_ESP32_PDM_TX_SUPPORTED */
 
 static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 			       const struct i2s_config *i2s_cfg)
@@ -1521,6 +1687,12 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	data_format = i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK;
+
+#if I2S_ESP32_PDM_TX_SUPPORTED
+	if (data_format == I2S_FMT_DATA_FORMAT_PDM) {
+		return i2s_esp32_pdm_tx_configure(dev, i2s_cfg);
+	}
+#endif /* I2S_ESP32_PDM_TX_SUPPORTED */
 
 	slot_cfg.data_bit_width = i2s_cfg->word_size;
 	slot_cfg.slot_mode = I2S_SLOT_MODE_STEREO;
@@ -1585,6 +1757,9 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 #if I2S_ESP32_IS_DIR_EN(tx)
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 		i2s_hal_std_set_tx_slot(hal, is_target, &slot_cfg);
+#if I2S_ESP32_PDM_TX_SUPPORTED
+		i2s_ll_tx_set_pdm_chan_mod(hal->dev, 0U);
+#endif /* I2S_ESP32_PDM_TX_SUPPORTED */
 		i2s_hal_set_tx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC, NULL);
 		i2s_ll_tx_enable_std(hal->dev);
 
@@ -2037,6 +2212,7 @@ static DEVICE_API(i2s, i2s_esp32_driver_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(index, offset),        \
 		I2S_ESP32_STREAM_INIT(index, rx),                                                  \
 		I2S_ESP32_STREAM_INIT(index, tx),                                                  \
+		.pdm_tx_line_mode = DT_INST_ENUM_IDX_OR(index, pdm_tx_line_mode, UINT8_MAX),       \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, &i2s_esp32_initialize, NULL, &i2s_esp32_data_##index,         \

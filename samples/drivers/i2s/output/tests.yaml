@@ -15,3 +15,18 @@ tests:
       type: one_line
       regex:
         - "All I2S blocks written"
+  sample.drivers.i2s.output.pdm:
+    filter: dt_alias_exists("i2s-tx")
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+    integration_platforms:
+      - esp32c6_devkitc/esp32c6/hpcore
+    extra_configs:
+      - CONFIG_SAMPLE_I2S_FORMAT_PDM=y
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="pdm_esp32c6_devkitc_hpcore.overlay"
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "All I2S blocks written"

@@ -177,6 +177,14 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* I2S
+
+  * New :c:macro:`I2S_FMT_DATA_FORMAT_PDM` data format for controllers that convert PCM samples
+    to a pulse density modulated stream. :dtcompatible:`espressif,esp32-i2s` supports it for
+    transmit on I2S0 of the SoCs with a PCM to PDM converter, except the ESP32. The new
+    ``output-invert`` pin property of :dtcompatible:`espressif,esp32-pinctrl` lets two pins
+    carry a differential PDM output.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

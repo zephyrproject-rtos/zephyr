@@ -34,6 +34,9 @@
 #define ESP32_PIN_SLEEP_HOLD(_cfg)                                                                 \
 	(((_cfg) >> ESP32_PIN_SLEEP_HOLD_SHIFT) & ESP32_PIN_SLEEP_HOLD_MASK)
 
+/** @brief Extract output invert configuration from pin config */
+#define ESP32_PIN_OUT_INV(_cfg) (((_cfg) >> ESP32_PIN_OUT_INV_SHIFT) & ESP32_PIN_OUT_INV_MASK)
+
 /** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_ESP32_COMMON_H_ */
