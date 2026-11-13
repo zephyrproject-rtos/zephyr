@@ -144,6 +144,8 @@ void map_rom_segments(int core, struct rom_segments *map)
 	esp_image_segment_header_t WORD_ALIGNED_ATTR segment_hdr;
 	size_t offset = PARTITION_OFFSET(boot_partition);
 	bool checksum = false;
+	bool irom_found = (map->irom_size == 0);
+	bool drom_found = (map->drom_size == 0);
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
@@ -192,13 +194,19 @@ void map_rom_segments(int core, struct rom_segments *map)
 		/* Fix drom and irom produced be the linker, as it could
 		 * be invalidated by the elf2image and flash load offset
 		 */
-		if (segment_hdr.load_addr == map->drom_map_addr) {
-			map->drom_flash_offset = offset + sizeof(esp_image_segment_header_t);
+		if (map->drom_map_addr >= segment_hdr.load_addr &&
+		    map->drom_map_addr < segment_hdr.load_addr + segment_hdr.data_len) {
+			map->drom_flash_offset = offset + sizeof(esp_image_segment_header_t) +
+						 (map->drom_map_addr - segment_hdr.load_addr);
 			app_drom_start_align = map->drom_flash_offset & MMU_FLASH_MASK;
+			drom_found = true;
 		}
-		if (segment_hdr.load_addr == map->irom_map_addr) {
-			map->irom_flash_offset = offset + sizeof(esp_image_segment_header_t);
+		if (map->irom_map_addr >= segment_hdr.load_addr &&
+		    map->irom_map_addr < segment_hdr.load_addr + segment_hdr.data_len) {
+			map->irom_flash_offset = offset + sizeof(esp_image_segment_header_t) +
+						 (map->irom_map_addr - segment_hdr.load_addr);
 			app_irom_start_align = map->irom_flash_offset & MMU_FLASH_MASK;
+			irom_found = true;
 		}
 		if (IS_SRAM(segment_hdr) || IS_RTC(segment_hdr)) {
 			ram_segments++;
@@ -210,9 +218,20 @@ void map_rom_segments(int core, struct rom_segments *map)
 			offset += (CHECKSUM_ALIGN - 1) - (offset % CHECKSUM_ALIGN) + 1;
 			checksum = true;
 		}
+
+		if (irom_found && drom_found) {
+			break;
+		}
 	}
 	if (segments == 0 || segments > ESP_IMAGE_MAX_SEGMENTS) {
 		ESP_EARLY_LOGE(TAG, "Error parsing segments");
+		abort();
+	}
+	if (!irom_found || !drom_found) {
+		ESP_EARLY_LOGE(TAG, "%s segment not found", irom_found ? "DROM" : "IROM");
+#if CONFIG_ESP_CONSOLE_UART_NUM >= 0
+		esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+#endif
 		abort();
 	}
 #else /* CONFIG_BOOTLOADER_MCUBOOT */
