@@ -106,21 +106,23 @@
 
 &spi0 {
 	pinctrl-0 = <&spi0_sclk_pb3 &spi0_pico_pb2 &spi0_poci_pa7>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	pinctrl-1 = <&spi0_cs0_pa8>;
+	pinctrl-names = "default", "hw_cs";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+	clock-frequency = <DT_FREQ_M(32)>;
 	status = "okay";
 };
 
 &spi1 {
 	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb8 &spi1_poci_pb7>;
-	pinctrl-names = "default";
-	cs-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+	pinctrl-1 = <&spi1_cs0_pb6>;
+	pinctrl-names = "default", "hw_cs";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+	clock-frequency = <DT_FREQ_M(32)>;
 	status = "okay";
 };
 

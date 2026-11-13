@@ -14,5 +14,8 @@ properties:
   pinctrl-0:
     required: true
 
+  interrupts:
+    required: true
+
   clocks:
     required: true

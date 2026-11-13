@@ -103,6 +103,7 @@
 		spi2: spi@4046c000 {
 			compatible = "ti,mspm0-spi";
 			reg = <0x4046c000 0x2000>;
+			interrupts = <11 0>;
 			status = "disabled";
 		};
 
