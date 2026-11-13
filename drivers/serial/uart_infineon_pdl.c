@@ -243,9 +243,11 @@ static inline void ifx_cat1_uart_pm_ref_put(const struct device *dev,
 	 * count in POLL_TX, which the TX-done IRQ SUSPEND just armed releases only
 	 * once drained; irq_lock keeps that IRQ out until the slot is taken. Re-take
 	 * the power lock unconditionally so the POLL_TX put stays balanced.
+	 * The synchronous put is ISR safe here and, unlike put_async, does not
+	 * depend on CONFIG_PM_DEVICE_RUNTIME_ASYNC.
 	 */
 	key = irq_lock();
-	if (pm_device_runtime_put_async(dev, K_NO_WAIT) == -EBUSY &&
+	if (pm_device_runtime_put(dev) == -EBUSY &&
 	    !atomic_test_and_set_bit(data->pm_refs, IFX_CAT1_UART_PM_REF_POLL_TX)) {
 		pm_policy_device_power_lock_get(dev);
 	}
