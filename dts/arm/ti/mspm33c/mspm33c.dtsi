@@ -148,6 +148,13 @@
 			status = "okay";
 		};
 
+		iwdt: iwdt@400d9300 {
+			compatible = "ti,mspm0-iwdt";
+			reg = <0x400d9300 0x100>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@400f0000 {
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x400f0000 0x6000>;
