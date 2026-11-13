@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments LP5814 four-channel I2C LED controller.
+
+  Each child describes one physical output. The LED API indexes children
+  in devicetree order; write_channels addresses physical outputs directly.
+  The driver supports manual PWM brightness with per-output current limits.
+  Autonomous animation and fading are not supported.
+
+compatible: "ti,lp5814"
+
+include: [i2c-device.yaml, led-controller.yaml]
+
+child-binding:
+  description: LED connected to a constant-current output
+  properties:
+    index:
+      required: true
+      enum: [0, 1, 2, 3]
+      description: Physical output number (OUT0 through OUT3).
+
+    led-max-microamp:
+      type: int
+      required: true
+      description: |
+        Maximum current through this LED in microamperes, from 0 to 51000.
+        The controller uses 100 microampere steps when all outputs are at
+        most 25500 microamperes, otherwise 200 microampere steps. Values
+        are rounded down to the nearest supported current.

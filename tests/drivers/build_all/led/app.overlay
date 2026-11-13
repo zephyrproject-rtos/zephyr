@@ -278,6 +278,21 @@
 				};
 			};
 
+			lp5814@1a {
+				compatible = "ti,lp5814";
+				reg = <0x1a>;
+
+				led0 {
+					index = <3>;
+					led-max-microamp = <40000>;
+				};
+
+				led1 {
+					index = <0>;
+					led-max-microamp = <10000>;
+				};
+			};
+
 			pmic@20 {
 				compatible = "nordic,npm10xx";
 				reg = <0x20>;
