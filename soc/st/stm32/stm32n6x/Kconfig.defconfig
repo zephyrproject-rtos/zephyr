@@ -5,6 +5,9 @@
 
 if SOC_SERIES_STM32N6X
 
+configdefault CLOCK_STM32_N6_CPU_SCALING
+	default y if CPU_FREQ && DT_HAS_ST_STM32N6_PSTATE_ENABLED
+
 DT_STM32_CPU_CLOCK_PATH := $(dt_nodelabel_path,cpusw)
 DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clock-frequency)
 

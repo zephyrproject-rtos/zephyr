@@ -16,6 +16,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/barrier.h>
+#include <zephyr/irq.h>
 #include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
@@ -33,6 +35,79 @@
 #define PLL3_ID		3
 #define PLL4_ID		4
 
+#if defined(CONFIG_CLOCK_STM32_N6_CPU_SCALING)
+BUILD_ASSERT(IS_ENABLED(STM32_CPUCLK_SRC_IC1) && IS_ENABLED(STM32_IC1_ENABLED),
+	     "STM32N6 CPU scaling requires IC1 as the CPU clock source");
+
+/* Access the fixed PLL selected for IC1 by devicetree. */
+#define CPU_PLL_NAME  CONCAT(LL_RCC_PLL, STM32_IC1_PLL_SRC)
+#define CPU_PLL(op)   CONCAT(CPU_PLL_NAME, op)()
+#define CPU_BOOT_RATE DT_PROP(DT_NODELABEL(cpusw), clock_frequency)
+#define CPU_MAX_RATE  MHZ(800)
+
+#define IC1_NODE       DT_NODELABEL(ic1)
+#define CPU_PLL_NODE   DT_NODELABEL(CONCAT(pll, DT_PROP(IC1_NODE, pll_src)))
+#define CPU_PLL_SOURCE DT_CLOCKS_CTLR(CPU_PLL_NODE)
+#define CPU_PLL_NUMERATOR                                                                          \
+	((uint64_t)DT_PROP(CPU_PLL_SOURCE, clock_frequency) * DT_PROP(CPU_PLL_NODE, mul_n))
+#define CPU_PLL_DENOMINATOR                                                                        \
+	((uint64_t)DT_PROP(CPU_PLL_NODE, div_m) * DT_PROP(CPU_PLL_NODE, div_p1) *                  \
+	 DT_PROP(CPU_PLL_NODE, div_p2) * DT_PROP_OR(CPU_PLL_SOURCE, hsi_div, 1))
+#define CPU_PLL_HZ (CPU_PLL_NUMERATOR / CPU_PLL_DENOMINATOR)
+
+BUILD_ASSERT(DT_NODE_HAS_STATUS(CPU_PLL_NODE, okay), "CPU PLL must be enabled");
+BUILD_ASSERT(DT_SAME_NODE(CPU_PLL_SOURCE, DT_NODELABEL(clk_hsi)) ||
+		     DT_SAME_NODE(CPU_PLL_SOURCE, DT_NODELABEL(clk_hse)),
+	     "CPU scaling requires an HSI or HSE PLL source");
+BUILD_ASSERT(CPU_PLL_DENOMINATOR > 0U && CPU_PLL_NUMERATOR % CPU_PLL_DENOMINATOR == 0U,
+	     "CPU PLL must have an exact integer frequency");
+BUILD_ASSERT(DT_PROP(IC1_NODE, ic_div) >= 1U && DT_PROP(IC1_NODE, ic_div) <= 256U,
+	     "Boot IC1 divider is out of range");
+BUILD_ASSERT(CPU_BOOT_RATE > 0U && CPU_BOOT_RATE <= CPU_MAX_RATE &&
+		     CPU_PLL_HZ == (uint64_t)CPU_BOOT_RATE * DT_PROP(IC1_NODE, ic_div),
+	     "Boot CPU frequency must match the fixed IC1 parent and divider");
+
+/* The PLL rate helpers use the undivided HSI frequency. */
+BUILD_ASSERT(DT_PROP_OR(CPU_PLL_SOURCE, hsi_div, 1) == 1U,
+	     "CPU scaling requires an undivided PLL source");
+
+static int cpu_scaling_status = -EAGAIN;
+
+static int validate_cpu_boot_config(void)
+{
+	uint32_t source = CPU_PLL(_GetSource);
+	uint32_t expected_source = DT_SAME_NODE(CPU_PLL_SOURCE, DT_NODELABEL(clk_hsi))
+					   ? LL_RCC_PLLSOURCE_HSI
+					   : LL_RCC_PLLSOURCE_HSE;
+
+	if (LL_RCC_GetCpuClkSource() != LL_RCC_CPU_CLKSOURCE_STATUS_IC1 ||
+	    LL_RCC_IC1_GetSource() != ic_src_pll(STM32_IC1_PLL_SRC) ||
+	    LL_RCC_IC1_GetDivider() != STM32_IC1_DIV || source != expected_source ||
+	    CPU_PLL(_GetM) != DT_PROP(CPU_PLL_NODE, div_m) ||
+	    CPU_PLL(_GetN) != DT_PROP(CPU_PLL_NODE, mul_n) ||
+	    CPU_PLL(_GetP1) != DT_PROP(CPU_PLL_NODE, div_p1) ||
+	    CPU_PLL(_GetP2) != DT_PROP(CPU_PLL_NODE, div_p2) || CPU_PLL(_IsEnabledBypass) != 0U ||
+	    CPU_PLL(_GetFRACN) != 0U || CPU_PLL(_IsEnabledModulationSpreadSpectrum) != 0U ||
+	    CPU_PLL(_IsEnabledFractionalModulationSpreadSpectrum) != 0U) {
+		return -ENOTSUP;
+	}
+	if (LL_RCC_IC1_IsEnabled() != 1U || CPU_PLL(_IsReady) != 1U) {
+		return -EAGAIN;
+	}
+	if (source == LL_RCC_PLLSOURCE_HSI) {
+		if (LL_RCC_HSI_GetDivider() != LL_RCC_HSI_DIV_1) {
+			return -ENOTSUP;
+		}
+		if (LL_RCC_HSI_IsReady() != 1U) {
+			return -EAGAIN;
+		}
+	} else if (LL_RCC_HSE_IsReady() != 1U) {
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_CLOCK_STM32_N6_CPU_SCALING */
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
@@ -120,7 +195,7 @@ static uint32_t get_pllout_frequency(int pll_id)
 
 	__ASSERT_NO_MSG(pllm_div && pllout_div1 && pllout_div2);
 
-	return (pllsrc_freq / pllm_div) * plln_mul / (pllout_div1 * pllout_div2);
+	return (uint64_t)pllsrc_freq * plln_mul / ((uint64_t)pllm_div * pllout_div1 * pllout_div2);
 }
 
 __unused uint32_t get_icout_frequency(uint32_t icsrc, int div)
@@ -138,6 +213,39 @@ __unused uint32_t get_icout_frequency(uint32_t icsrc, int div)
 	__ASSERT(0, "No IC Source configured");
 	return 0;
 }
+
+#if defined(CONFIG_CLOCK_STM32_N6_CPU_SCALING)
+int stm32_clock_control_set_cpu_rate(uint32_t hz)
+{
+	uint32_t parent_rate;
+	uint32_t divider;
+	unsigned int key;
+
+	if (hz == 0U || hz > MIN(CPU_MAX_RATE, CPU_BOOT_RATE)) {
+		return -EINVAL;
+	}
+	if (cpu_scaling_status != 0) {
+		return cpu_scaling_status;
+	}
+
+	parent_rate = get_pllout_frequency(STM32_IC1_PLL_SRC);
+	divider = parent_rate / hz;
+	if (parent_rate % hz != 0U || divider < 1U || divider > 256U) {
+		return -EINVAL;
+	}
+
+	key = irq_lock();
+	if (divider != LL_RCC_IC1_GetDivider()) {
+		LL_RCC_IC1_SetDivider(divider);
+		barrier_dsync_fence_full();
+		barrier_isync_fence_full();
+	}
+	SystemCoreClock = hz;
+	irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_CLOCK_STM32_N6_CPU_SCALING */
 
 static uint32_t get_sysclk_frequency(void)
 {
@@ -382,7 +490,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #endif /* STM32_CKPER_ENABLED */
 #if defined(STM32_IC1_ENABLED)
 	case STM32_SRC_IC1:
+#if defined(CONFIG_CLOCK_STM32_N6_CPU_SCALING)
+		if (cpu_scaling_status != 0) {
+			return cpu_scaling_status;
+		}
+		*rate = get_icout_frequency(LL_RCC_IC1_GetSource(), LL_RCC_IC1_GetDivider());
+#else
 		*rate = get_icout_frequency(LL_RCC_IC1_GetSource(), STM32_IC1_DIV);
+#endif
 		break;
 #endif /* STM32_IC1_ENABLED */
 #if defined(STM32_IC2_ENABLED)
@@ -979,7 +1094,12 @@ int stm32_clock_control_init(const struct device *dev)
 	 */
 	if (IS_ENABLED(CONFIG_CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG)) {
 		SystemCoreClockUpdate();
+#if defined(CONFIG_CLOCK_STM32_N6_CPU_SCALING)
+		cpu_scaling_status = validate_cpu_boot_config();
+		return cpu_scaling_status;
+#else
 		return 0;
+#endif
 	}
 
 	/* Set up individual enabled clocks */
@@ -1043,7 +1163,10 @@ int stm32_clock_control_init(const struct device *dev)
 	}
 
 	/* Update CMSIS variable */
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	SystemCoreClock = STM32_CORE_FREQUENCY;
+#if defined(CONFIG_CLOCK_STM32_N6_CPU_SCALING)
+	cpu_scaling_status = 0;
+#endif
 
 	return r;
 }
