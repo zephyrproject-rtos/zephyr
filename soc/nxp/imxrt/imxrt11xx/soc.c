@@ -254,7 +254,7 @@ __weak void clock_init(void)
 		CLOCK_InitArmPll(&armPllConfig);
 	}
 
-	if (IS_ENABLED(CONFIG_ETH_NXP_ENET)) {
+	if (IS_ENABLED(CONFIG_ETH_NXP_ENET) || IS_ENABLED(CONFIG_ETH_NXP_DWC_ETHER_QOS)) {
 		/* For default clocking, we will only use pll1 for div2 output for enet */
 		static const clock_sys_pll1_config_t sysPll1Config = {
 			.pllDiv2En = true,
@@ -499,6 +499,35 @@ __weak void clock_init(void)
 			     IOMUXC_GPR_GPR5_ENET1G_TX_CLK_SEL(0x1U));
 #endif
 #endif
+#endif
+#endif
+
+#if defined(CONFIG_ETH_NXP_DWC_ETHER_QOS) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_qos))
+	BUILD_ASSERT(DT_ENUM_HAS_VALUE(DT_NODELABEL(enet_qos), phy_connection_type, rgmii),
+			"RT11xx ENET_QOS: only RGMII is supported");
+
+	/* RGMII needs a 125 MHz reference clock: SysPll1Div2 / 4. */
+	rootCfg.mux = kCLOCK_ENET_QOS_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet_Qos, &rootCfg);
+
+	/*
+	 * INTF_SEL is latched by the MAC software reset in the driver probe.
+	 * RGMII_EN drives ENET_QOS_CLK_ROOT out on TX_CLK; REF_CLK is RMII-only.
+	 */
+	IOMUXC_GPR->GPR6 = (IOMUXC_GPR->GPR6 & ~IOMUXC_GPR_GPR6_ENET_QOS_INTF_SEL_MASK) |
+				IOMUXC_GPR_GPR6_ENET_QOS_INTF_SEL(1U);
+	IOMUXC_GPR->GPR6 |= IOMUXC_GPR_GPR6_ENET_QOS_CLKGEN_EN_MASK |
+				IOMUXC_GPR_GPR6_ENET_QOS_RGMII_EN_MASK;
+
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	/* ENET_QOS timestamp clock root, from the devicetree */
+	BUILD_ASSERT(DT_PROP(DT_NODELABEL(enet_timer3_root), clock_mux) !=
+			     kCLOCK_ENET_TIMER3_ClockRoot_MuxSysPll1Div5,
+		     "SYS_PLL1_DIV5 is not enabled, select another ENET_TIMER3 root");
+	rootCfg.mux = DT_PROP(DT_NODELABEL(enet_timer3_root), clock_mux);
+	rootCfg.div = DT_PROP(DT_NODELABEL(enet_timer3_root), clock_div);
+	CLOCK_SetRootClock(kCLOCK_Root_Enet_Timer3, &rootCfg);
 #endif
 #endif
 
