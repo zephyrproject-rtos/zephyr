@@ -1,0 +1,27 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sfp
+  harness: ztest
+
+tests:
+  drivers.sfp.sff8472:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+  drivers.sfp.sff8472.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    platform_allow:
+      - qemu_x86
+      - mps2/an385
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_TEST_USERSPACE=y
