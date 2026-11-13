@@ -1864,6 +1864,107 @@ flagged.
 {undef_desc}""")
 
 
+class KconfigDefconfigCheck(ComplianceTest):
+    """
+    Checks that defconfig Kconfig files do not declare new Kconfigs
+    """
+
+    name = "KconfigDefconfig"
+    doc = zephyr_doc_detail_builder(
+        "/build/kconfig/setting.html#configuring-invisible-kconfig-symbols"
+    )
+    kconfig_types = [
+        'bool',
+        'string',
+        'int',
+        'hex',
+        'def_bool',
+        'def_string',
+        'def_int',
+        'def_hex',
+        'prompt',
+    ]
+
+    def run(self):
+        config_regex = re.compile('^config(\\s+([a-zA-Z0-9_-]+)|\\s*\\\\)\\s*$')
+        menuconfig_regex = re.compile('^menuconfig(\\s+([a-zA-Z0-9_-]+)|\\s*\\\\)\\s*$')
+        choice_regex = re.compile('^choice($|(\\s+$)|(\\s+([a-zA-Z0-9_-]+|\\s*\\\\)\\s*$))')
+        kconfig_regex = []
+
+        for check in self.kconfig_types:
+            kconfig_regex.append(re.compile(f'^{check}\\s*($|(".*"\\s*$)|\\\\\\s*$)'))
+
+        for file in get_files(filter="d"):
+            if Path(file).name.startswith("Kconfig") and "defconfig" in Path(file).name:
+                diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+
+                for patch in unidiff.PatchSet.from_string(diff):
+                    for hunk in patch:
+                        for line in hunk:
+                            if not line.is_added or line.target_line_no is None:
+                                continue
+
+                            if line.value[0] in ['+', '-']:
+                                trimmed_value = line.value[1:].strip()
+                            else:
+                                trimmed_value = line.value.strip()
+
+                            found = False
+
+                            for check in kconfig_regex:
+                                if re.match(check, trimmed_value) is not None:
+                                    found = True
+                                    break
+
+                            if found is False:
+                                continue
+
+                            i = line.target_line_no - 1
+                            kconfig_name = ""
+
+                            with open(file) as fp:
+                                file_data = fp.readlines()
+
+                                while i >= 0:
+                                    trimmed_value = file_data[i].strip()
+
+                                    regex_check = re.search(config_regex, trimmed_value)
+
+                                    if regex_check is not None:
+                                        kconfig_name = regex_check.group(2)
+                                        break
+
+                                    regex_check = re.search(menuconfig_regex, trimmed_value)
+
+                                    if regex_check is not None:
+                                        kconfig_name = regex_check.group(2)
+                                        break
+
+                                    regex_check = re.search(choice_regex, trimmed_value)
+
+                                    if regex_check is not None:
+                                        if not regex_check.group(1):
+                                            kconfig_name = "(Choice with no name)"
+                                        else:
+                                            kconfig_name = regex_check.group(1).strip()
+                                        break
+
+                                    i = i - 1
+
+                                if kconfig_name is None and (i + 1) < len(file_data):
+                                    kconfig_name = file_data[i + 1].strip()
+
+                            self.fmtd_failure(
+                                "error",
+                                "KconfigDefconfigCheck",
+                                file,
+                                line.target_line_no,
+                                desc=f"""
+Kconfig defconfig declares a new Kconfig item: {kconfig_name}
+""",
+                            )
+
+
 class KconfigBasicCheck(KconfigCheck):
     """
     Checks if we are introducing any new warnings/errors with Kconfig,
