@@ -10,4 +10,9 @@ config INFO_REPORTING_INTERVAL
 	  Determines how often information about received data is logged.
 	  Set to 0 to disable reporting.
 
+config ISO_PACKING_INTERLEAVED
+	bool "Use interleaved packing"
+	help
+	  Use interleaved packing between CIS ISO stream subevents.
+
 source "Kconfig.zephyr"

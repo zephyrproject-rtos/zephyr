@@ -25,6 +25,11 @@ When building targeting an nrf52 series board with the Zephyr Bluetooth Controll
 use ``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
 
+To explicitly use sequential or interleaved packing in the Connected Isochronous Group, use
+``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf;overlay-sequential.conf`` or
+``-DEXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf;overlay-interleaved.conf``, respectively when
+building.
+
 Building for an nrf52840dk
 --------------------------
 
