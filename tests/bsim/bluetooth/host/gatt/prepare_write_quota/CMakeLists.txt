@@ -22,4 +22,5 @@ target_sources(app PRIVATE
   src/main.c
   src/server.c
   src/central.c
+  src/kept_conn.c
 )
