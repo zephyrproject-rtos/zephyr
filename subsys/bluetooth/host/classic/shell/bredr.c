@@ -1654,13 +1654,10 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (default_conn != NULL) {
-		bt_conn_unref(default_conn);
-	}
+	bt_conn_drop(&default_conn);
+	default_conn = bt_conn_take(&conn);
 
-	default_conn = conn;
-
-	shell_print(sh, "Selected conn is now: %s", bt_conn_dst_str(conn));
+	shell_print(sh, "Selected conn is now: %s", bt_conn_dst_str(default_conn));
 
 	return 0;
 }

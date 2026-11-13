@@ -40,10 +40,7 @@ static void br_connected(struct bt_conn *conn, uint8_t conn_err)
 static void br_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_DBG("disconnected: conn %p reason 0x%02x", (void *)conn, reason);
-	if (acl_conn != NULL) {
-		bt_conn_unref(acl_conn);
-		acl_conn = NULL;
-	}
+	bt_conn_drop(&acl_conn);
 	k_sem_give(&disconnected_sem);
 }
 
