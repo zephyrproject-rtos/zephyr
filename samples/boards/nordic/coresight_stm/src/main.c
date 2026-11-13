@@ -77,6 +77,8 @@ int main(void)
 	char str[] = "test string";
 	int load;
 
+	k_msleep(15000);
+
 	get_core_name();
 
 #ifdef CONFIG_CPP
