@@ -520,6 +520,8 @@ uint8_t ll_connect_disable(void **rx)
 		node_rx = (void *)&conn->llcp_terminate.node_rx.rx;
 		link = node_rx->hdr.link;
 		LL_ASSERT_DBG(link);
+		/* hdr.next aliases hdr.link; terminate the single-node list */
+		node_rx->hdr.next = NULL;
 
 		/* free the memq link early, as caller could overwrite it */
 		ll_rx_link_release(link);
