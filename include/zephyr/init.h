@@ -29,6 +29,15 @@ extern "C" {
  * @version 1.0.0
  * @ingroup os_services
  *
+ * @satisfies ZEP-SRS-12-3
+ * @satisfies ZEP-SRS-12-4
+ * @satisfies ZEP-SRS-12-5
+ * @satisfies ZEP-SRS-12-6
+ * @satisfies ZEP-SRS-12-7
+ * @satisfies ZEP-SRS-12-8
+ * @satisfies ZEP-SRS-12-9
+ * @satisfies ZEP-SRS-12-10
+ *
  * Zephyr offers an infrastructure to call initialization code before `main`.
  * Such initialization calls can be registered using SYS_INIT() or
  * SYS_INIT_NAMED() macros. By using a combination of initialization levels and
@@ -129,6 +138,9 @@ struct init_entry {
  * APPLICATION, SMP).
  *
  * @return Init level ordinal.
+ *
+ * @satisfies ZEP-SRS-12-13
+ * @satisfies ZEP-SRS-12-14
  */
 #define INIT_LEVEL_ORD(level)                                                  \
 	COND_CASE_1(Z_INIT_EARLY_##level, (Z_INIT_ORD_EARLY),                  \
@@ -156,6 +168,11 @@ struct init_entry {
  * equivalent symbolic name (e.g. `#define MY_INIT_PRIO 32`); symbolic
  * expressions are **not** permitted (e.g.
  * `CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5`).
+ *
+ * @satisfies ZEP-SRS-12-1
+ * @satisfies ZEP-SRS-12-2
+ * @satisfies ZEP-SRS-12-12
+ * @satisfies ZEP-SRS-12-15
  */
 #define SYS_INIT(init_fn, level, prio)                                         \
 	SYS_INIT_NAMED(init_fn, init_fn, level, prio)
@@ -174,6 +191,8 @@ struct init_entry {
  * @param prio See SYS_INIT().
  *
  * @see SYS_INIT()
+ *
+ * @satisfies ZEP-SRS-12-11
  */
 #define SYS_INIT_NAMED(name, init_fn_, level, prio)                                       \
 	static const Z_DECL_ALIGN(struct init_entry)                                      \

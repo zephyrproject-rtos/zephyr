@@ -92,6 +92,7 @@ DEVICE_DT_DEINIT_DEFINE(DT_PATH(fakedeferdriver_fa000000), fakedeferdriver_retry
  *
  * @see device_get_binding()
  * @see DEVICE_DEFINE()
+ * @verifies ZEP-SRS-12-15
  * @verifies ZEP-SRS-14-3
  * @verifies ZEP-SRS-14-4
  * @verifies ZEP-SRS-14-22
@@ -327,6 +328,8 @@ SYS_INIT_NAMED(init5, init_fn, APPLICATION, 999);
  * @see SYS_INIT_NAMED()
  * @verifies ZEP-SRS-12-1
  * @verifies ZEP-SRS-12-4
+ * @verifies ZEP-SRS-12-11
+ * @verifies ZEP-SRS-12-12
  */
 ZTEST(device, test_sys_init_multiple)
 {
