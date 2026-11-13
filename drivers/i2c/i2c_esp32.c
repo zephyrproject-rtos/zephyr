@@ -153,6 +153,8 @@ struct i2c_esp32_config {
 
 	const uint32_t bitrate;
 	const uint32_t scl_timeout;
+
+	const bool recover_bus_on_init;
 };
 
 static uint32_t i2c_get_src_clk_freq(i2c_clock_source_t clk_src)
@@ -1208,6 +1210,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	int ret;
 
 #ifndef I2C_LL_SUPPORT_HW_CLR_BUS
 	if (!gpio_is_ready_dt(&config->scl)) {
@@ -1220,7 +1223,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		return -EINVAL;
 	}
 #endif
-	int ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
 	if (ret < 0) {
 		LOG_ERR("Failed to configure I2C pins");
@@ -1245,6 +1248,15 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
 		return ret;
 	}
+
+#ifdef CONFIG_I2C_BUS_RECOVERY
+	if (config->recover_bus_on_init) {
+		ret = i2c_esp32_recover(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+#endif
 
 	i2c_hal_init(&data->hal, config->index);
 
@@ -1316,6 +1328,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
+		.recover_bus_on_init = DT_PROP(I2C(idx), recover_bus_on_init), \
 	};											   \
 	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
 			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \

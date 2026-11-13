@@ -48,3 +48,10 @@ properties:
 
       If not set or 0, the timeout is disabled or set to the maximum possible
       value if the MCU does not support disabling the timeout.
+
+  recover-bus-on-init:
+    type: boolean
+    description: |
+      Recover the I2C bus during driver initialization, in case the bus is
+      held low after reset. This uses the controller driver's existing bus
+      recovery implementation.
