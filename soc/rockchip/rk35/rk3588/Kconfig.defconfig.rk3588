@@ -10,7 +10,10 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default 0
 
+# Reserve 8192 LPI interrupt IDs starting at 8192 when the GICv3 ITS is used,
+# matching the other Cortex-A SoCs that enable CONFIG_GIC_V3_ITS.
 config NUM_IRQS
+	default 16384 if GIC_V3_ITS
 	default 508
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
