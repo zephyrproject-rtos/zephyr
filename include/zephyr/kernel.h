@@ -1840,6 +1840,7 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * @return Timeout delay value
  *
  * @satisfies ZEP-SRS-28-14
+ * @satisfies ZEP-SRS-28-18
  */
 #define K_TIMEOUT_ABS_TICKS(t) \
 	Z_TIMEOUT_TICKS(Z_TICK_ABS((k_ticks_t)CLAMP(t, 0, (INT64_MAX - 1))))
@@ -2000,6 +2001,8 @@ struct k_timer_observer {
  * @defgroup timer_apis Timer APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * @satisfies ZEP-SRS-28-20
  */
 
 /**
