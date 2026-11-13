@@ -21,6 +21,7 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
+		watchdog0 = &swt_0;
 	};
 
 	chosen {
@@ -119,6 +120,10 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
+&edma {
+	status = "okay";
+};
+
 &gpiob_h {
 	status = "okay";
 };
@@ -192,5 +197,21 @@
 
 &sema42 {
 	domain-id = <0>;
+	status = "okay";
+};
+
+&pit_0 {
+	status = "okay";
+};
+
+&pit_1 {
+	status = "okay";
+};
+
+&pit_2 {
+	status = "okay";
+};
+
+&swt_0 {
 	status = "okay";
 };
