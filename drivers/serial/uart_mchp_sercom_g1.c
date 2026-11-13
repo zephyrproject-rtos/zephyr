@@ -41,6 +41,15 @@ LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
 #define SAMPLING_RATE_16X_ARITHMETIC 20U
 
 /******************************************************************************
+ * @brief SERCOM USART SWRST macro compatibility
+ *****************************************************************************/
+#if defined(SERCOM_USART_CTRLA_SWRST_Msk)
+#define USART_SERCOM_CTRLA_SWRST_Msk SERCOM_USART_CTRLA_SWRST_Msk
+#elif defined(SERCOM_USART_INT_CTRLA_SWRST_Msk)
+#define USART_SERCOM_CTRLA_SWRST_Msk SERCOM_USART_INT_CTRLA_SWRST_Msk
+#endif
+
+/******************************************************************************
  * @brief Data type definitions
  *****************************************************************************/
 /**
@@ -1140,7 +1149,7 @@ static int uart_mchp_init(const struct device *dev)
 		usart_regs->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_ENABLE_Msk;
 		uart_wait_sync(regs, is_clock_external);
 
-		usart_regs->SERCOM_CTRLA = SERCOM_USART_CTRLA_SWRST_Msk;
+		usart_regs->SERCOM_CTRLA = USART_SERCOM_CTRLA_SWRST_Msk;
 		uart_wait_sync(regs, is_clock_external);
 	}
 

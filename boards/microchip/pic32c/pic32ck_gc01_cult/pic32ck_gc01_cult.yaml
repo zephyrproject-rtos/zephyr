@@ -12,6 +12,7 @@ ram: 512
 supported:
   - clock_control
   - gpio
+  - interrupt_controller
   - pinctrl
   - uart
   - watchdog

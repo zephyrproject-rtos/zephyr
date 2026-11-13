@@ -6,7 +6,12 @@
 
 / {
 	soc {
+		eic: eic@4401a000 {
+			reg = <0x4401a000 0x2000>;
+		};
+
 		pinctrl: pinctrl@44800000 {
+			reg = <0x44800000 0x200>;
 			ranges = <0x0 0x44800000 0x200>;
 		};
 	};
