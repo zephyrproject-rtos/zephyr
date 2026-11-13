@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - uart
+  platform_allow:
+    - stm32h7_renode_reference_board
+  integration_platforms:
+    - stm32h7_renode_reference_board
+tests:
+  drivers.uart.stm32.tx_irq: {}
+  drivers.uart.stm32.tx_irq.async:
+    extra_configs:
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_DMA=y

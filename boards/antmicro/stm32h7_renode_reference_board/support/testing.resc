@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+$platform?=$ORIGIN/testing.repl
+include $ORIGIN/stm32h7_renode_reference_board.resc

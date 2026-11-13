@@ -1133,20 +1133,17 @@ static void uart_stm32_irq_tx_enable(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 #ifdef CONFIG_PM
 	struct uart_stm32_data *data = dev->data;
-	unsigned int key;
 #endif
+	unsigned int key = irq_lock();
 
 #ifdef CONFIG_PM
-	key = irq_lock();
 	data->tx_poll_stream_on = false;
 	data->tx_int_stream_on = true;
 	uart_stm32_pm_policy_state_lock_get(dev);
 #endif
 	LL_USART_EnableIT_TC(config->usart);
-
-#ifdef CONFIG_PM
+	ll_usart_irq_tx_enable(config->usart);
 	irq_unlock(key);
-#endif
 }
 
 static void uart_stm32_irq_tx_disable(const struct device *dev)
@@ -1154,11 +1151,10 @@ static void uart_stm32_irq_tx_disable(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 #ifdef CONFIG_PM
 	struct uart_stm32_data *data = dev->data;
-	unsigned int key;
-
-	key = irq_lock();
 #endif
+	unsigned int key = irq_lock();
 
+	ll_usart_irq_tx_disable(config->usart);
 	LL_USART_DisableIT_TC(config->usart);
 
 #ifdef CONFIG_PM
@@ -1166,17 +1162,14 @@ static void uart_stm32_irq_tx_disable(const struct device *dev)
 	uart_stm32_pm_policy_state_lock_put(dev);
 #endif
 
-#ifdef CONFIG_PM
 	irq_unlock(key);
-#endif
 }
 
 static int uart_stm32_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 
-	return ll_usart_is_active_txe(config->usart) &&
-		LL_USART_IsEnabledIT_TC(config->usart);
+	return ll_usart_is_active_txe(config->usart) && ll_usart_is_enabled_txe(config->usart);
 }
 
 static int uart_stm32_irq_tx_complete(const struct device *dev)
@@ -1261,10 +1254,9 @@ static int uart_stm32_irq_is_pending(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
 
-	return ((ll_usart_is_active_rxne(usart) &&
-		 ll_usart_is_enabled_rxne(usart)) ||
-		(LL_USART_IsActiveFlag_TC(usart) &&
-		 LL_USART_IsEnabledIT_TC(usart)));
+	return ((ll_usart_is_active_rxne(usart) && ll_usart_is_enabled_rxne(usart)) ||
+		(ll_usart_is_active_txe(usart) && ll_usart_is_enabled_txe(usart)) ||
+		(LL_USART_IsActiveFlag_TC(usart) && LL_USART_IsEnabledIT_TC(usart)));
 }
 
 static void uart_stm32_irq_callback_set(const struct device *dev,
