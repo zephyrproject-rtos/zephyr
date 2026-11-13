@@ -1087,13 +1087,25 @@ static int read_write_in_indirect_mode(const struct device *dev,
 		case MSPI_ACCESS_ASYNC:
 			hal_ret = HAL_XSPI_Receive_IT(&dev_data->hmspi.xspi, packet->data_buf);
 			break;
-		case MSPI_ACCESS_DMA:
-			uint8_t *dma_buf = k_aligned_alloc(CONFIG_MSPI_STM32_BUFFER_ALIGNMENT,
-							   packet->num_bytes);
+		case MSPI_ACCESS_DMA: {
+			size_t alignment = MAX(CONFIG_MSPI_STM32_BUFFER_ALIGNMENT,
+					       sys_cache_data_line_size_get());
+			size_t dma_buf_size = ROUND_UP(packet->num_bytes, alignment);
+			uint8_t *dma_buf = k_aligned_alloc(alignment, dma_buf_size);
+			int ret;
 
 			if (dma_buf == NULL) {
 				LOG_ERR("DMA buffer allocation failed");
 				return -EIO;
+			}
+
+			/* Keep cache maintenance within cache lines owned by the buffer. */
+			if (IS_ENABLED(CONFIG_DCACHE)) {
+				ret = sys_cache_data_flush_and_invd_range(dma_buf, dma_buf_size);
+				if (ret != 0) {
+					k_free(dma_buf);
+					return ret;
+				}
 			}
 
 			hal_ret = HAL_XSPI_Receive_DMA(&dev_data->hmspi.xspi, dma_buf);
@@ -1103,11 +1115,19 @@ static int read_write_in_indirect_mode(const struct device *dev,
 					k_free(dma_buf);
 					return -EIO;
 				}
+				if (IS_ENABLED(CONFIG_DCACHE)) {
+					ret = sys_cache_data_invd_range(dma_buf, dma_buf_size);
+					if (ret != 0) {
+						k_free(dma_buf);
+						return ret;
+					}
+				}
 				memcpy(packet->data_buf, dma_buf, packet->num_bytes);
 			}
 
 			k_free(dma_buf);
 			goto end;
+		}
 		default:
 			/* Not correct */
 			hal_ret = HAL_BUSY;
@@ -1124,6 +1144,17 @@ static int read_write_in_indirect_mode(const struct device *dev,
 			hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hmspi.xspi, packet->data_buf);
 			break;
 		case MSPI_ACCESS_DMA:
+			if (IS_ENABLED(CONFIG_DCACHE)) {
+				size_t line_size = sys_cache_data_line_size_get();
+				uintptr_t base = ROUND_DOWN((uintptr_t)packet->data_buf, line_size);
+				uintptr_t end = ROUND_UP(
+					(uintptr_t)packet->data_buf + packet->num_bytes, line_size);
+				int ret = sys_cache_data_flush_range((void *)base, end - base);
+
+				if (ret != 0) {
+					return ret;
+				}
+			}
 			hal_ret = HAL_XSPI_Transmit_DMA(&dev_data->hmspi.xspi, packet->data_buf);
 			break;
 		default:
