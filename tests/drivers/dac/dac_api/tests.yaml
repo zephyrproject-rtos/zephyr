@@ -13,16 +13,11 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="dac-channel0.overlay"
     platform_allow:
       - esp32c3_devkitc
-      - esp32_devkitc/esp32/procpu
-      - esp_wrover_kit/esp32/procpu
-      - esp32s2_saola
-      - esp32s2_devkitc
       - gd32a503v_eval
       - gd32e103v_eval
       - gd32f450i_eval
       - gd32f450z_eval
       - gd32f470i_eval
-      - yd_esp32/esp32/appcpu
       - mimxrt1170_evk@A/mimxrt1176/cm4
       - mimxrt1170_evk@B/mimxrt1176/cm4
       - mimxrt1170_evk@A/mimxrt1176/cm7
@@ -33,6 +28,15 @@ tests:
       - frdm_imxrt1186/mimxrt1186/cm7
       - frdm_mcxc444
       - phyboard_atlas/mimxrt1176/cm7
+  drivers.dac.api.dac_channel0_8bit:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac-channel0-8bit.overlay"
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp_wrover_kit/esp32/procpu
+      - yd_esp32/esp32/appcpu
+      - esp32s2_saola
+      - esp32s2_devkitc
   drivers.dac.api.dacc_channel0:
     platform_allow:
       - sam4l_ek
