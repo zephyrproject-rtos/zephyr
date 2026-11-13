@@ -61,6 +61,9 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define LP50XX_RESET(nmodules)			\
 	(LP50XX_OUT0_COLOR(nmodules) + LP50XX_COLORS_PER_LED * (nmodules))
 
+/* AL5887 specific registers */
+#define AL5887_LED_GLOBAL_DIMMING	0x66
+
 /* Register values */
 #define CONFIG0_CHIP_EN			BIT(6)
 
@@ -70,8 +73,14 @@ LOG_MODULE_REGISTER(lp50xx, CONFIG_LED_LOG_LEVEL);
 #define CONFIG1_AUTO_INCR_EN		BIT(3)
 #define CONFIG1_POWER_SAVE_EN		BIT(4)
 #define CONFIG1_LOG_SCALE_EN		BIT(5)
+#define CONFIG1_PHASE_SHIFT_EN		BIT(7)
 
 #define RESET_SW			0xFF
+
+enum lp50xx_chip {
+	LP50XX_CHIP_TI,
+	LP50XX_CHIP_AL5887,
+};
 
 struct lp50xx_config {
 	struct i2c_dt_spec bus;
@@ -79,14 +88,21 @@ struct lp50xx_config {
 	uint8_t num_modules;
 	uint8_t max_leds;
 	uint8_t num_leds;
-	bool log_scale_en;
-	bool max_curr_opt;
+	uint8_t config1;
+	uint8_t chip; /* enum lp50xx_chip */
+	uint8_t global_dimming;
 	const struct led_info *leds_info;
 };
 
 struct lp50xx_data {
 	uint8_t *chan_buf;
 };
+
+static inline bool lp50xx_is_al5887(const struct lp50xx_config *config)
+{
+	return DT_HAS_COMPAT_STATUS_OKAY(diodes_al5887) &&
+	       (config->chip == LP50XX_CHIP_AL5887);
+}
 
 static const struct led_info *lp50xx_led_to_info(
 			const struct lp50xx_config *config, uint32_t led)
@@ -202,16 +218,19 @@ static int lp50xx_reset(const struct device *dev)
 
 	/* After reset, apply configuration since all registers are reset. */
 	buf[0] = LP50XX_DEVICE_CONFIG1;
-	buf[1] = CONFIG1_PWM_DITHERING_EN | CONFIG1_AUTO_INCR_EN
-		| CONFIG1_POWER_SAVE_EN;
-	if (config->max_curr_opt) {
-		buf[1] |= CONFIG1_MAX_CURRENT_OPT;
-	}
-	if (config->log_scale_en) {
-		buf[1] |= CONFIG1_LOG_SCALE_EN;
+	buf[1] = config->config1;
+	err = i2c_write_dt(&config->bus, buf, 2);
+	if (err < 0) {
+		return err;
 	}
 
-	return i2c_write_dt(&config->bus, buf, 2);
+	if (lp50xx_is_al5887(config)) {
+		buf[0] = AL5887_LED_GLOBAL_DIMMING;
+		buf[1] = config->global_dimming;
+		err = i2c_write_dt(&config->bus, buf, 2);
+	}
+
+	return err;
 }
 
 static int lp50xx_hw_enable(const struct device *dev, bool enable)
@@ -357,29 +376,45 @@ static DEVICE_API(led, lp50xx_led_api) = {
 		.color_mapping	= color_mapping_##led_node_id,			\
 	},
 
-#define LP50XX_DEVICE(n, id, nmodules)						\
+#define LP50XX_CONFIG1(n)							\
+	(CONFIG1_PWM_DITHERING_EN | CONFIG1_AUTO_INCR_EN |			\
+	 CONFIG1_POWER_SAVE_EN |						\
+	 (DT_INST_PROP(n, max_curr_opt) ? CONFIG1_MAX_CURRENT_OPT : 0) |	\
+	 (DT_INST_PROP(n, log_scale_en) ? CONFIG1_LOG_SCALE_EN : 0))
+
+#define LP50XX_TI_CONFIG(n)							\
+	.chip = LP50XX_CHIP_TI,							\
+	.config1 = LP50XX_CONFIG1(n),
+
+#define AL5887_CONFIG(n)							\
+	.chip = LP50XX_CHIP_AL5887,						\
+	.config1 = LP50XX_CONFIG1(n) |						\
+		   (DT_INST_PROP(n, phase_shift_disable) ?			\
+		    0 : CONFIG1_PHASE_SHIFT_EN),				\
+	.global_dimming = DT_INST_PROP(n, global_dimming),
+
+#define LP50XX_DEVICE(n, id, nmodules, nleds, chip_config)			\
 	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)					\
 										\
-	static const struct led_info lp##id##_leds_##n[] = {			\
+	static const struct led_info id##_leds_##n[] = {			\
 		DT_INST_FOREACH_CHILD(n, LED_INFO)				\
 	};									\
 										\
-	static const struct lp50xx_config lp##id##_config_##n = {		\
+	static const struct lp50xx_config id##_config_##n = {		\
 		.bus			= I2C_DT_SPEC_INST_GET(n),		\
 		.gpio_enable		=					\
 			GPIO_DT_SPEC_INST_GET_OR(n, enable_gpios, {0}),		\
 		.num_modules		= nmodules,				\
-		.max_leds		= LP##id##_MAX_LEDS,			\
-		.num_leds		= ARRAY_SIZE(lp##id##_leds_##n),	\
-		.log_scale_en		= DT_INST_PROP(n, log_scale_en),	\
-		.max_curr_opt		= DT_INST_PROP(n, max_curr_opt),	\
-		.leds_info		= lp##id##_leds_##n,			\
+		.max_leds		= nleds,				\
+		.num_leds		= ARRAY_SIZE(id##_leds_##n),		\
+		.leds_info		= id##_leds_##n,			\
+		chip_config(n)							\
 	};									\
 										\
-	static uint8_t lp##id##_chan_buf_##n[LP50XX_MAX_CHANNELS(nmodules) + 1];\
+	static uint8_t id##_chan_buf_##n[LP50XX_MAX_CHANNELS(nmodules) + 1];	\
 										\
-	static struct lp50xx_data lp##id##_data_##n = {				\
-		.chan_buf	= lp##id##_chan_buf_##n,			\
+	static struct lp50xx_data id##_data_##n = {				\
+		.chan_buf	= id##_chan_buf_##n,				\
 	};									\
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, lp50xx_pm_action);				\
@@ -387,31 +422,42 @@ static DEVICE_API(led, lp50xx_led_api) = {
 	DEVICE_DT_INST_DEFINE(n,						\
 			      lp50xx_init,					\
 			      PM_DEVICE_DT_INST_GET(n),				\
-			      &lp##id##_data_##n,				\
-			      &lp##id##_config_##n,				\
+			      &id##_data_##n,					\
+			      &id##_config_##n,					\
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,		\
 			      &lp50xx_led_api);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5009
-DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, 5009, LP5012_NUM_MODULES)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5009, LP5012_NUM_MODULES,
+				  LP5009_MAX_LEDS, LP50XX_TI_CONFIG)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5012
-DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, 5012, LP5012_NUM_MODULES)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5012, LP5012_NUM_MODULES,
+				  LP5012_MAX_LEDS, LP50XX_TI_CONFIG)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5018
-DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, 5018, LP5024_NUM_MODULES)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5018, LP5024_NUM_MODULES,
+				  LP5018_MAX_LEDS, LP50XX_TI_CONFIG)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5024
-DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, 5024, LP5024_NUM_MODULES)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5024, LP5024_NUM_MODULES,
+				  LP5024_MAX_LEDS, LP50XX_TI_CONFIG)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5030
-DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, 5030, LP5036_NUM_MODULES)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5030, LP5036_NUM_MODULES,
+				  LP5030_MAX_LEDS, LP50XX_TI_CONFIG)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT ti_lp5036
-DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, 5036, LP5036_NUM_MODULES)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, lp5036, LP5036_NUM_MODULES,
+				  LP5036_MAX_LEDS, LP50XX_TI_CONFIG)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT diodes_al5887
+DT_INST_FOREACH_STATUS_OKAY_VARGS(LP50XX_DEVICE, al5887, LP5036_NUM_MODULES,
+				  AL5887_MAX_LEDS, AL5887_CONFIG)

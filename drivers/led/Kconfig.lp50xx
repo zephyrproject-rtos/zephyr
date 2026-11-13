@@ -6,10 +6,11 @@ config LP50XX
 	bool "LP50XX LED controller"
 	default y
 	depends on DT_HAS_TI_LP5009_ENABLED || DT_HAS_TI_LP5012_ENABLED || \
-		   DT_HAS_TI_LP5018_ENABLED || DT_HAS_TI_LP5024_ENABLED || \
-		   DT_HAS_TI_LP5030_ENABLED || DT_HAS_TI_LP5036_ENABLED
+		DT_HAS_TI_LP5018_ENABLED || DT_HAS_TI_LP5024_ENABLED || \
+		DT_HAS_TI_LP5030_ENABLED || DT_HAS_TI_LP5036_ENABLED || \
+		DT_HAS_DIODES_AL5887_ENABLED
 	select I2C
 	help
 	  Enable driver for the Texas Instruments LP50XX I2C LED
-	  controllers. It supports: LP5009, LP5012, LP5018, LP5024,
-	  LP5030 and LP5036.
+	  controllers and compatible devices. It supports: LP5009, LP5012,
+	  LP5018, LP5024, LP5030, LP5036 and Diodes AL5887.
