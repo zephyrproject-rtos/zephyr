@@ -571,6 +571,7 @@ struct efi_boot_services {
 	efi_reinstall_protocol_interface_t ReinstallProtocolInterface;
 	efi_uninstall_protocol_interface_t UninstallProtocolInterface;
 	efi_handle_protocol_t HandleProtocol;
+	void *Reserved;
 	efi_register_protocol_notify_t RegisterProtocolNotify;
 	efi_locate_handle_t LocateHandle;
 	efi_locate_device_path_t LocateDevicePath;
