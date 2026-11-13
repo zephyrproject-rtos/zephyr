@@ -29,6 +29,16 @@ void nxp_mcxw7x_power_init(void);
  */
 void nxp_mcxw7x_dcdc_init(void);
 
+#if defined(CONFIG_PM_S2RAM)
+#include <zephyr/devicetree.h>
+
+int nxp_mcxw7x_s2ram_suspend(void);
+
+/* Conservative wake-workspace exclusion; the native W71 extent is unconfirmed. */
+#define MCXW7X_S2RAM_ROM_BASE DT_REG_ADDR_BY_NAME(DT_NODELABEL(s2ram_reserved), secure)
+#define MCXW7X_S2RAM_ROM_SIZE DT_REG_SIZE_BY_NAME(DT_NODELABEL(s2ram_reserved), secure)
+#endif
+
 /* Program the TRDC so the host CM33 can reach every peripheral device tree
  * enables. MCXW72-specific: the MBC/slave-memory layout differs per NPI, so
  * this is built and called only for SOC_MCXW727C.

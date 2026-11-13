@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/arch/arch_interface.h>
+#include <soc.h>
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat)
@@ -56,11 +57,15 @@ struct mcxw7x_keep_region {
  * Regions to keep powered: the chosen RAM node (whole node, not up to
  * _image_ram_end), the chosen flash node when it is linked on-chip, and every
  * status-okay zephyr,memory-region (this is how an application keeps a distinct
- * region alive, e.g. an ECC region holding critical data). Banks overlapping
- * none of these are powered off.
+ * region alive, e.g. an ECC region holding critical data). S2RAM also keeps the
+ * low-SRAM wake workspace powered. Banks overlapping none of these are powered
+ * off.
  */
 static const struct mcxw7x_keep_region mcxw7x_keep_regions[] = {
 	MCXW7_KEEP_ENTRY(DT_CHOSEN(zephyr_sram))
+#if defined(CONFIG_PM_S2RAM)
+	{MCXW7X_S2RAM_ROM_BASE, MCXW7X_S2RAM_ROM_SIZE},
+#endif
 #if DT_HAS_CHOSEN(zephyr_flash)
 	MCXW7_KEEP_ENTRY(DT_CHOSEN(zephyr_flash))
 #endif
@@ -169,6 +174,31 @@ static void mcxw70_radio_lp_exit(void)
 }
 #endif /* MCXW70_HOST_RADIO_LP */
 
+#if defined(CONFIG_PM_S2RAM)
+static int s2ram_entry_error;
+
+static void s2ram_notify_exit(enum pm_state state)
+{
+	if (state == PM_STATE_SUSPEND_TO_RAM && s2ram_entry_error != 0) {
+		/* Report aborted entries after the PM core has resumed devices. */
+		LOG_ERR("S2RAM entry failed: %d", s2ram_entry_error);
+		s2ram_entry_error = 0;
+	}
+}
+
+static struct pm_notifier s2ram_notifier = {
+	.state_exit = s2ram_notify_exit,
+};
+
+static int s2ram_register_notifier(void)
+{
+	pm_notifier_register(&s2ram_notifier);
+	return 0;
+}
+
+SYS_INIT(s2ram_register_notifier, APPLICATION, 0);
+#endif
+
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -176,6 +206,18 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	unsigned int key;
 
 	set_cmc_configuration();
+#if defined(CONFIG_PM_S2RAM)
+	if (state == PM_STATE_SUSPEND_TO_RAM) {
+		if (substate_id != 0) {
+			s2ram_entry_error = -EINVAL;
+			return;
+		}
+		key = arch_pm_state_set_prepare();
+		s2ram_entry_error = nxp_mcxw7x_s2ram_suspend();
+		arch_pm_state_set_finish(key);
+		return;
+	}
+#endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_vbat)
 	deinit_vbat();
 #endif
