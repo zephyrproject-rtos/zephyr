@@ -29,6 +29,11 @@ their state, and manage interrupts. Key features include:
   drivers and applications to reference them in a hardware-agnostic way using
   :c:struct:`gpio_dt_spec`.
 
+.. toctree::
+   :maxdepth: 1
+
+   shell.rst
+
 Devicetree Configuration
 ************************
 
@@ -141,7 +146,7 @@ Configuration Options
 Main configuration options:
 
 * :kconfig:option:`CONFIG_GPIO`
-* :kconfig:option:`CONFIG_GPIO_SHELL`
+* :kconfig:option:`CONFIG_GPIO_SHELL` (see :ref:`gpio_shell`)
 * :kconfig:option:`CONFIG_GPIO_GET_DIRECTION`
 * :kconfig:option:`CONFIG_GPIO_GET_CONFIG`
 * :kconfig:option:`CONFIG_GPIO_HOGS`
