@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * SPDX-FileCopyrightText: Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 /delete-node/ &sram_l;
 /delete-node/ &sram_u;
+/delete-node/ &osc32;
 
 / {
 	chosen {

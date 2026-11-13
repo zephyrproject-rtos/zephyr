@@ -6,6 +6,8 @@
 
 board_runner_args(linkserver  "--device=MKE15Z256xxx7:FRDM-KE15Z")
 board_runner_args(jlink "--device=MKE15Z256xxx7" "--reset-after-load")
+board_runner_args(pyocd "--target=ke15z7")
 
 include(${ZEPHYR_BASE}/boards/common/linkserver.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
