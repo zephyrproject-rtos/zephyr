@@ -12,3 +12,11 @@ config UART_MSPM0
 	select PINCTRL
 	help
 	  This option enables the TI MSPM0 UART driver.
+
+config UART_MSPM0_DRV_CMD
+	bool "Driver Commands"
+	depends on UART_MSPM0
+	depends on UART_DRV_CMD
+	help
+	  This enables the API for applications to send extra commands to the
+	  MSPM0 UART driver.
