@@ -1641,20 +1641,38 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
  * z_sched_ready_locked, z_sched_add_to_waitq_locked) exposed via ksched.h.
  */
 
-void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
+static int thread_priority_set(k_tid_t thread, int prio, bool deny_raise)
 {
+	bool need_sched;
+
 	/*
 	 * Use NULL, since we cannot know what the entry point is (we do not
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
 
-	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
+#if Z_MUTEX_PI_ENABLED
+	int ret = z_mutex_thread_priority_set(thread, prio, deny_raise, &need_sched);
+
+	if (ret != 0) {
+		return ret;
+	}
+#else
+	ARG_UNUSED(deny_raise);
+	need_sched = z_thread_prio_set(thread, prio);
+#endif
 
 	if ((need_sched) && (IS_ENABLED(CONFIG_SMP) ||
 			     (_current->base.sched_locked == 0U))) {
 		z_reschedule_unlocked();
 	}
+
+	return 0;
+}
+
+void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
+{
+	(void)thread_priority_set(thread, prio, false);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1663,12 +1681,19 @@ static inline void z_vrfy_k_thread_priority_set(k_tid_t thread, int prio)
 	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 				    "invalid thread priority %d", prio));
+#if Z_MUTEX_PI_ENABLED
+	int ret = thread_priority_set(thread, prio,
+				      !IS_ENABLED(CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY));
+
+	K_OOPS(K_SYSCALL_VERIFY_MSG(ret == 0, "thread priority may only be downgraded"));
+#else
 #ifndef CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY
 	K_OOPS(K_SYSCALL_VERIFY_MSG((int8_t)prio >= thread->base.prio,
 				    "thread priority may only be downgraded (%d < %d)",
 				    prio, thread->base.prio));
 #endif /* CONFIG_USERSPACE_THREAD_MAY_RAISE_PRIORITY */
 	z_impl_k_thread_priority_set(thread, prio);
+#endif /* Z_MUTEX_PI_ENABLED */
 }
 #include <zephyr/syscalls/k_thread_priority_set_mrsh.c>
 #endif /* CONFIG_USERSPACE */
