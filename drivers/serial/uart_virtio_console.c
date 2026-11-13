@@ -534,20 +534,24 @@ static int virtconsole_init(const struct device *dev)
 			multiport = false;
 			LOG_WRN("could not enable multiport feature");
 		}
-		if (virtio_commit_feature_bits(config->vdev)) {
-			multiport = false;
-			LOG_WRN("could not commit feature bits; disabling multiport feature");
-		} else {
-			n_queues = (sys_le16_to_cpu(data->virtio_devcfg->max_nr_ports) + 1) * 2;
-		}
 	}
-	if (!multiport) {
+#endif
+	int ret = virtio_commit_feature_bits(config->vdev);
+
+	if (ret) {
+		LOG_ERR("could not commit feature bits");
+		return ret;
+	}
+#ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
+	if (multiport) {
+		n_queues = (sys_le16_to_cpu(data->virtio_devcfg->max_nr_ports) + 1) * 2;
+	} else {
 		/* If the multiport feature is off, use the default */
 		data->n_console_ports = 1;
 		data->console_ports = 1; /* Enable port 0 */
 	}
 #endif
-	int ret = virtio_init_virtqueues(config->vdev, n_queues, virtconsole_enum_queues_cb, NULL);
+	ret = virtio_init_virtqueues(config->vdev, n_queues, virtconsole_enum_queues_cb, NULL);
 
 	if (ret) {
 		LOG_ERR("error initializing virtqueues!");
