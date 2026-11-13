@@ -1,0 +1,27 @@
+/ {
+	aliases {
+		ext-flash = &gd25wb256;
+	};
+
+	/* Configure partition manager to use mx25r64 as the external flash */
+	chosen {
+		nordic,pm-ext-flash = &gd25wb256;
+	};
+};
+
+
+&gd25wb256 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		fcb_storage: partition@0 {
+			label = "reserved_storage";
+			reg = <0x00000000 0x00010000>;
+			label = "fcb_storage";
+			reg = <0x00010000 0x00020000>;
+		};
+	};
+};
