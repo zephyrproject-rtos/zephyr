@@ -48,9 +48,6 @@ ZASSERT_MODULE(DEFAULT);
 				     struct bt_l2cap_le_chan, rtx_work)
 #define CHAN_RX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, rx_work)
 
-#define L2CAP_LE_MIN_MTU		23
-#define L2CAP_LE_MIN_MPS		23
-
 #define L2CAP_LE_MAX_CREDITS		(BT_BUF_ACL_RX_COUNT - 1)
 
 #define L2CAP_LE_CID_FIXED_START 0x0001
@@ -1815,8 +1812,8 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	/* Validate parameters. Requirements are from Core Spec v6.0, Vol 3.A.4.22. Valid credit
 	 * range is from 0 to UINT16_MAX, thus no credit validation is needed.
 	 */
-	if (!IN_RANGE(mtu, L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
-	    !IN_RANGE(mps, L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS)) {
+	if (!IN_RANGE(mtu, BT_L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
+	    !IN_RANGE(mps, BT_L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS)) {
 		LOG_ERR("Invalid le conn req params: mtu %u mps %u", mtu, mps);
 		result = BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 		goto rsp;
@@ -2444,8 +2441,8 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, uint8_t ident,
 		 * validation is needed.
 		 */
 		if ((!L2CAP_LE_CID_IS_DYN(dcid) ||
-		     !IN_RANGE(mtu, L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
-		     !IN_RANGE(mps, L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS))) {
+		     !IN_RANGE(mtu, BT_L2CAP_LE_MIN_MTU, BT_L2CAP_MAX_MTU) ||
+		     !IN_RANGE(mps, BT_L2CAP_LE_MIN_MPS, BT_L2CAP_MAX_MPS))) {
 			LOG_WRN("Invalid conn rsp params: dcid 0x%04x mtu %u mps %u. "
 				"Disconnecting.",
 				dcid, mtu, mps);
