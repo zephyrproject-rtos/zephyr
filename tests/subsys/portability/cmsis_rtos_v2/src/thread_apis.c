@@ -451,4 +451,95 @@ ZTEST(cmsis_thread_apis, test_thread_apis_multiple_new_static)
 		zassert_equal(status, osOK, "osThreadJoin failed with status=%d!", status);
 	}
 }
+
+static K_THREAD_STACK_DEFINE(test_stack10_a, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb10_a;
+static const osThreadAttr_t os_thread10_a_attr = {
+	.name = "Thread10A",
+	.attr_bits = osThreadJoinable,
+	.cb_mem = &test_cb10_a,
+	.cb_size = sizeof(test_cb10_a),
+	.stack_mem = &test_stack10_a,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+
+static K_THREAD_STACK_DEFINE(test_stack10_b, STACKSZ);
+static struct cmsis_rtos_thread_cb test_cb10_b;
+static const osThreadAttr_t os_thread10_b_attr = {
+	.name = "Thread10B",
+	.cb_mem = &test_cb10_b,
+	.cb_size = sizeof(test_cb10_b),
+	.stack_mem = &test_stack10_b,
+	.stack_size = STACKSZ,
+	.priority = osPriorityNormal,
+};
+
+static K_SEM_DEFINE(thread10_b_hold_sem, 0, 1);
+
+static void thread10_short(void *argument)
+{
+	ARG_UNUSED(argument);
+
+	osThreadExit();
+}
+
+static void thread10_blocking(void *argument)
+{
+	ARG_UNUSED(argument);
+
+	(void)k_sem_take(&thread10_b_hold_sem, K_FOREVER);
+}
+
+ZTEST(cmsis_thread_apis, test_thread_static_cb_reuse_preserves_thread_list)
+{
+	osThreadId_t id_a;
+	osThreadId_t id_b;
+	osThreadState_t state_b;
+	osStatus_t status;
+
+	k_sem_reset(&thread10_b_hold_sem);
+
+	/* 1. Create and join short-lived Thread10A using static test_cb10_a. */
+	id_a = osThreadNew(thread10_short, NULL, &os_thread10_a_attr);
+	zassert_not_null(id_a, "Failed to create initial Thread10A");
+	status = osThreadJoin(id_a);
+	zassert_equal(status, osOK, "First osThreadJoin(id_a) failed: %d", status);
+
+	/*
+	 * 2. Create blocking Thread10B using static test_cb10_b so test_cb10_a
+	 * is no longer at the tail of thread_list ([..., test_cb10_a, test_cb10_b]).
+	 */
+	id_b = osThreadNew(thread10_blocking, NULL, &os_thread10_b_attr);
+	zassert_not_null(id_b, "Failed to create Thread10B");
+	k_msleep(10);
+	zassert_equal(osThreadGetState(id_b), osThreadBlocked,
+		      "Expected Thread10B to be blocked before static CB reuse");
+
+	/*
+	 * 3. Reuse static test_cb10_a via osThreadNew. Without unlinking the
+	 * terminated node first, sys_dlist_append() overwrites test_cb10_a.node.next
+	 * with &thread_list and severs test_cb10_b from thread_list.
+	 */
+	id_a = osThreadNew(thread10_short, NULL, &os_thread10_a_attr);
+	zassert_not_null(id_a, "Failed to recreate Thread10A with reused static CB");
+	status = osThreadJoin(id_a);
+	zassert_equal(status, osOK, "Second osThreadJoin(id_a) failed: %d", status);
+
+	state_b = osThreadGetState(id_b);
+	if (state_b == osThreadBlocked) {
+		zassert_is_null(osThreadNew(thread10_short, NULL, &os_thread10_b_attr),
+				"Reusing active static CB should fail");
+	}
+	status = osThreadTerminate(id_b);
+	if (status != osOK) {
+		k_thread_abort(&test_cb10_b.z_thread);
+	}
+
+	zassert_equal(state_b, osThreadBlocked,
+		      "Thread10B severed from thread_list after static CB reuse (state=%d)",
+		      state_b);
+	zassert_equal(status, osOK,
+		      "osThreadTerminate(id_b) failed after static CB reuse (status=%d)", status);
+}
 ZTEST_SUITE(cmsis_thread_apis, NULL, NULL, NULL, NULL, NULL);
