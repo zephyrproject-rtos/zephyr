@@ -103,6 +103,10 @@ struct bt_gatt_ots_object_state {
 		struct bt_gatt_ots_object_read_op {
 			struct bt_gatt_ots_oacp_read_params oacp_params;
 			uint32_t sent_len;
+			/* The confirmation of the response has started the read. sent_len cannot
+			 * tell: it stays 0 when obj_read() gives an empty chunk.
+			 */
+			bool started;
 		} read_op;
 		struct bt_gatt_ots_object_write_op {
 			struct bt_gatt_ots_oacp_write_params oacp_params;
@@ -115,20 +119,31 @@ struct bt_gatt_ots_object {
 	uint64_t id;
 	struct bt_ots_obj_metadata metadata;
 	struct bt_gatt_ots_object_state state;
+	/* The connection that deletes the object when it goes down, if the object still has no
+	 * name then (OTS 1.0 section 3.7). It is the one that created the object with OACP Create,
+	 * or the one transferring it when that one went down. Holds a reference; NULL for an
+	 * object that the application added.
+	 */
+	struct bt_conn *creator;
 };
 
 struct bt_gatt_ots_indicate {
 	struct bt_gatt_indicate_params params;
 	struct bt_gatt_attr attr;
 	struct bt_gatt_ccc_managed_user_data ccc;
-	bool is_enabled;
 	struct k_work work;
 	uint8_t res[OACP_OLCP_RES_MAX_SIZE];
 };
 
 struct bt_ots {
 	struct bt_ots_feat features;
-	struct bt_gatt_ots_object *cur_obj;
+	/* The Current Object of each connection, by bt_conn_index() (OTS 1.0 section 1.12.1) */
+	struct bt_gatt_ots_object *cur_obj[CONFIG_BT_MAX_CONN];
+	/* The object of the last read or write accepted on the Object Transfer Channel. The
+	 * transfer stays on it whatever its client selects meanwhile, and its state says whether
+	 * the transfer still runs.
+	 */
+	struct bt_gatt_ots_object *transfer_obj;
 	struct bt_gatt_service *service;
 	struct bt_gatt_ots_indicate oacp_ind;
 	struct bt_gatt_ots_indicate olcp_ind;

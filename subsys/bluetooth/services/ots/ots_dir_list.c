@@ -41,10 +41,22 @@ BUILD_ASSERT(CONFIG_BT_OTS_MAX_OBJ_CNT <= MAX_DIR_OBJ_RECORDS,
 
 static struct bt_ots_dir_list dir_lists[CONFIG_BT_OTS_MAX_INST_CNT];
 
+/* An Object Record has an Object Name of 1 to 120 octets (OTS 1.0 section 4.1.1, Table 4.1). An
+ * object that a client has created and not named yet has an empty name, so it has no record.
+ */
+static bool dir_list_object_is_listed(const struct bt_gatt_ots_object *obj)
+{
+	return obj->metadata.name[0] != '\0';
+}
+
 static size_t dir_list_object_record_size(const struct bt_gatt_ots_object *obj)
 {
 	uint16_t len;
 	size_t obj_name_len;
+
+	if (!dir_list_object_is_listed(obj)) {
+		return 0U;
+	}
 
 	/* Record Length */
 	len = sizeof(len);
@@ -92,6 +104,10 @@ static void dir_list_object_encode(const struct bt_gatt_ots_object *obj,
 	uint8_t *start;
 	uint16_t len;
 	size_t obj_name_len;
+
+	if (!dir_list_object_is_listed(obj)) {
+		return;
+	}
 
 	BT_OTS_DIR_LIST_SET_FLAG_PROPERTIES(flags);
 	BT_OTS_DIR_LIST_SET_FLAG_CUR_SIZE(flags);
@@ -273,18 +289,23 @@ static void dir_list_update_size(struct bt_ots_dir_list *dir_list, void *obj_man
 	dir_list->dir_list_obj->metadata.size.cur = len;
 }
 
-void bt_ots_dir_list_selected(struct bt_ots_dir_list *dir_list, void *obj_manager,
-			      struct bt_gatt_ots_object *cur_obj)
+void bt_ots_dir_list_update(struct bt_ots_dir_list *dir_list, void *obj_manager)
 {
-	if (dir_list->dir_list_obj != cur_obj) {
-		/* We only need to update the object directory listing if it is currently selected,
-		 * as we otherwise only create it when it is selected.
-		 */
-		return;
-	}
-
 	bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
 	dir_list_update_size(dir_list, obj_manager);
+}
+
+void bt_ots_dir_list_obj_removed(struct bt_ots_dir_list *dir_list, void *obj_manager,
+				 const struct bt_gatt_ots_object *obj)
+{
+	/* A read searches for its next part from the anchor, which has to be in the list. Starting
+	 * from the first object instead finds the same offsets: during a read, the Bluetooth side
+	 * deletes only objects without a name, which have no record, and refuses to create, delete
+	 * or rename others until the read ends.
+	 */
+	if (dir_list->anchor_object == obj) {
+		bt_ots_dir_list_reset_anchor(dir_list, obj_manager);
+	}
 }
 
 void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
