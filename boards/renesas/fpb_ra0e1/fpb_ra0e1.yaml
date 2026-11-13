@@ -9,3 +9,4 @@ toolchain:
 supported:
   - gpio
   - uart
+  - i2c
