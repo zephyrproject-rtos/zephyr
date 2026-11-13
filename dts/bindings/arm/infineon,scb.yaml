@@ -23,3 +23,11 @@ properties:
 
   system-interrupts:
     description: Required for cat1c devices
+
+  fifo-depth:
+    type: int
+    default: 128
+    enum: [16, 128]
+    description: |
+      Depth of each of the TX and RX FIFOs in 8-bit elements. The default is
+      the depth of the SCB with a 256-byte buffer.
