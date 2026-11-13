@@ -639,6 +639,15 @@ void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status)
 	wifi_mgmt_raise_connect_result_status_event(iface, &cnx_status);
 }
 
+void wifi_mgmt_sta_roamed(struct net_if *iface, const uint8_t *bssid)
+{
+	struct wifi_sta_roam_info info;
+
+	memcpy(info.bssid, bssid, sizeof(info.bssid));
+	net_if_attachment_changed(iface);
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_STA_ROAMED, iface, &info, sizeof(info));
+}
+
 void wifi_mgmt_raise_disconnect_result_status_event(struct net_if *iface,
 						    const struct wifi_status *status)
 {

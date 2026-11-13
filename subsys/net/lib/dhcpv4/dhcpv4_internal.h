@@ -130,9 +130,17 @@ struct dhcp_msg {
 
 int net_dhcpv4_init(void);
 
+/* Schedule a check of the active lease after the link changes attachment. */
+void net_dhcpv4_attachment_changed(struct net_if *iface);
+
 #else
 
 #define net_dhcpv4_init() 0
+
+static inline void net_dhcpv4_attachment_changed(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
 
 #endif /* CONFIG_NET_DHCPV4 */
 
