@@ -8,17 +8,18 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/lora.h>
-#include <zephyr/sys/atomic.h>
 
 #include "lr11xx_hal.h"
 #include "lr11xx_regs.h"
 
-enum lr11xx_state {
-	LR11XX_STATE_SLEEP = 0,
-	LR11XX_STATE_IDLE,
-	LR11XX_STATE_TX,
-	LR11XX_STATE_RX,
-	LR11XX_STATE_RX_DUTY_CYCLE,
+/* What the radio is claimed for */
+enum lr11xx_op {
+	LR11XX_OP_NONE = 0,
+	LR11XX_OP_CONFIG,
+	LR11XX_OP_TX,
+	LR11XX_OP_CW,
+	LR11XX_OP_RX,
+	LR11XX_OP_RX_DUTY_CYCLE,
 };
 
 /* A caller blocked on an operation, and where its result goes */
@@ -34,9 +35,9 @@ struct lr11xx_waiter {
 struct lr11xx_data {
 	struct lr11xx_hal_data hal;
 
-	/* Current state (atomic for lock-free state transitions) */
-	atomic_t state;
+	/* Guards the operation state and every exchange with the radio */
 	struct k_mutex lock;
+	enum lr11xx_op op;
 
 	/* Current configuration */
 	struct lora_modem_config config;
