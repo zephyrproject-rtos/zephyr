@@ -80,27 +80,31 @@ int fido2_crypto_hash_authdata(const uint8_t *auth_data, size_t auth_data_len,
 int fido2_crypto_destroy_key(uint32_t key_id);
 
 /**
- * Wrap a PSA key_id and rp_id_hash into a credential ID.
+ * Wrap a PSA key_id and rp_id_hash into a credential ID, authenticating the
+ * credProtect level along with them.
  *
  * @param key_id        PSA key ID
  * @param rp_id_hash    SHA-256 of the relying party ID
+ * @param cred_protect  credProtect level (enum fido2_cred_protect), 0 if none
  * @param cred_id_out   Output buffer, FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE bytes
  * @return 0 on success, non-zero on failure
  */
 int fido2_crypto_wrap_credential(uint32_t key_id, const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
-				 uint8_t *cred_id_out);
+				 uint8_t cred_protect, uint8_t *cred_id_out);
 
 /**
- * Unwrap a credential ID back to key_id.
+ * Unwrap a credential ID back to key_id and credProtect level.
  *
  * @param cred_id Credential ID, FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE bytes
  * @param rp_id_hash SHA-256 of the relying party ID
  * @param key_id_out Recovered PSA key identifier
+ * @param cred_protect_out Recovered credProtect level, at least
+ *                         FIDO2_CRED_PROTECT_UV_OPTIONAL
  * @return 0 on success, non-zero on failure
  */
 int fido2_crypto_unwrap_credential(const uint8_t *cred_id,
 				   const uint8_t rp_id_hash[FIDO2_SHA256_SIZE],
-				   uint32_t *key_id_out);
+				   uint32_t *key_id_out, uint8_t *cred_protect_out);
 
 /**
  * Generate a ECDH P-256 keypair and return the PSA key ID.

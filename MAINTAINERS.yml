@@ -519,9 +519,11 @@ Authentication:
     - subsys/authentication/fido2/
     - samples/subsys/authentication/fido2/
     - doc/services/authentication/fido2/
+    - tests/subsys/authentication/fido2/
   labels:
     - "area: FIDO2"
   tests:
+    - authentication.fido2
     - sample.authentication.fido2
 
 BLIIoT Platforms:

@@ -103,7 +103,28 @@ static void notify_wire(const struct fido2_transport *transport, uint32_t cid,
 	}
 }
 
-static bool mc_check_exclude_list(void)
+/*
+ * credProtect policy: whether a credential may be used, or its existence
+ * revealed, in an operation performed with or without user verification.
+ */
+static bool cred_protect_allows(uint8_t cred_protect, bool user_verified, bool from_allow_list)
+{
+	if (user_verified) {
+		return true;
+	}
+
+	if (cred_protect == FIDO2_CRED_PROTECT_UV_REQUIRED) {
+		return false;
+	}
+
+	if (cred_protect == FIDO2_CRED_PROTECT_UV_OPTIONAL_WITH_LIST && !from_allow_list) {
+		return false;
+	}
+
+	return true;
+}
+
+static bool mc_check_exclude_list(bool user_verified)
 {
 	for (int i = 0; i < mc_params.num_exclude; ++i) {
 		if (mc_params.exclude_id_lens[i] == FIDO2_DISCOVERABLE_CRED_ID_SIZE) {
@@ -118,18 +139,20 @@ static bool mc_check_exclude_list(void)
 				   FIDO2_SHA256_SIZE) != 0) {
 				continue;
 			}
-#if defined(CONFIG_FIDO2_EXT_CRED_PROTECT)
-			if (existing_cred.cred_protect == FIDO2_CRED_PROTECT_UV_REQUIRED) {
+			if (!cred_protect_allows(existing_cred.cred_protect, user_verified, true)) {
 				continue;
 			}
-#endif
 			return true;
 		} else if (mc_params.exclude_id_lens[i] == FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE) {
 			uint32_t key_id;
+			uint8_t cred_protect;
 
 			if (fido2_crypto_unwrap_credential(mc_params.exclude_ids[i],
-							   mc_credential.rp_id_hash,
-							   &key_id) != 0) {
+							   mc_credential.rp_id_hash, &key_id,
+							   &cred_protect) != 0) {
+				continue;
+			}
+			if (!cred_protect_allows(cred_protect, user_verified, true)) {
 				continue;
 			}
 
@@ -174,7 +197,7 @@ static int mc_populate_credential(void)
 	} else {
 		mc_credential.id_len = FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE;
 		ret = fido2_crypto_wrap_credential(mc_credential.key_id, mc_credential.rp_id_hash,
-						   mc_credential.id);
+						   mc_credential.cred_protect, mc_credential.id);
 		if (ret) {
 			LOG_ERR("Credential ID wrap failed: %d", ret);
 			return ret;
@@ -370,7 +393,7 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 		return FIDO2_ERR_OPERATION_DENIED;
 	}
 
-	if (mc_check_exclude_list()) {
+	if (mc_check_exclude_list(user_verified)) {
 		set_runtime_state(FIDO2_RUNTIME_STATE_WAITING_USER_PRESENCE);
 		notify_wire(transport, cid, FIDO2_WIRE_STATUS_UP_NEEDED);
 
@@ -490,9 +513,10 @@ static int ga_check_allow_list(uint8_t rp_id_hash[FIDO2_SHA256_SIZE], size_t *fo
 			}
 		} else if (ga_params.allow_id_lens[i] == FIDO2_NON_DISCOVERABLE_CRED_ID_SIZE) {
 			uint32_t key_id;
+			uint8_t cred_protect;
 
 			ret = fido2_crypto_unwrap_credential(ga_params.allow_ids[i], rp_id_hash,
-							     &key_id);
+							     &key_id, &cred_protect);
 			if (!ret && *found_count < CONFIG_FIDO2_MAX_CREDENTIALS) {
 				memset(&cred, 0, sizeof(cred));
 				memcpy(cred.rp_id_hash, rp_id_hash, FIDO2_SHA256_SIZE);
@@ -502,12 +526,34 @@ static int ga_check_allow_list(uint8_t rp_id_hash[FIDO2_SHA256_SIZE], size_t *fo
 				cred.key_id = key_id;
 				cred.algorithm = FIDO2_COSE_ES256;
 				cred.discoverable = false;
+				cred.cred_protect = cred_protect;
 				memcpy(&ga_credentials[(*found_count)++], &cred, sizeof(cred));
 			}
 		}
 	}
 
 	return 0;
+}
+
+/* Drop the credentials whose credProtect level forbids this assertion. */
+static size_t ga_filter_cred_protect(size_t found_count, bool user_verified)
+{
+	bool from_allow_list = ga_params.num_allow > 0;
+	size_t kept = 0;
+
+	for (size_t i = 0; i < found_count; ++i) {
+		if (!cred_protect_allows(ga_credentials[i].cred_protect, user_verified,
+					 from_allow_list)) {
+			continue;
+		}
+		if (kept != i) {
+			memcpy(&ga_credentials[kept], &ga_credentials[i],
+			       sizeof(ga_credentials[kept]));
+		}
+		++kept;
+	}
+
+	return kept;
 }
 
 static int build_assertion_response(const struct fido2_credential *cred,
@@ -655,6 +701,11 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 			return FIDO2_ERR_PUAT_REQUIRED;
 		}
 		return FIDO2_ERR_OPERATION_DENIED; /* alwaysUV true, no PIN set */
+	}
+
+	found_creds_count = ga_filter_cred_protect(found_creds_count, user_verified);
+	if (found_creds_count == 0) {
+		return FIDO2_ERR_NO_CREDENTIALS;
 	}
 
 	if (ga_params.up) {
