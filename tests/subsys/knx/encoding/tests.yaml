@@ -1,0 +1,5 @@
+tests:
+  knx.encoding:
+    tags:
+      - knx
+    type: unit
