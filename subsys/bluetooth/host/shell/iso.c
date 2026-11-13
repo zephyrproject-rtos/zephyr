@@ -34,6 +34,8 @@
 #include "common/bt_shell_private.h"
 
 #if defined(CONFIG_BT_ISO_TX)
+#define MAX_SDU_SIZE 120
+
 #define DEFAULT_IO_QOS                                                                             \
 	{                                                                                          \
 		.sdu = 40u,                                                                        \
@@ -48,6 +50,13 @@ static uint32_t cis_sn_last;
 static uint32_t bis_sn_last;
 static int64_t cis_sn_last_updated_ticks;
 static int64_t bis_sn_last_updated_ticks;
+
+#define ISO_DATA_GEN(_i, _) (uint8_t)_i
+static const uint8_t mock_iso_data[] = {
+	LISTIFY(MAX_SDU_SIZE, ISO_DATA_GEN, (,)),
+};
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(MAX_SDU_SIZE),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 /**
  * @brief Get the next sequence number based on the last used values
@@ -185,9 +194,6 @@ struct bt_iso_chan iso_chan = {
 	.ops = &iso_ops,
 	.qos = &cis_iso_qos,
 };
-
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if defined(CONFIG_BT_ISO_CENTRAL)
 static struct bt_iso_cig *cig;
@@ -567,7 +573,6 @@ static int cmd_listen(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {[0 ...(CONFIG_BT_ISO_TX_MTU - 1)] = 0xff};
 	unsigned long count = 1;
 	struct net_buf *buf;
 	int ret = 0;
@@ -598,7 +603,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	len = MIN(iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
+	len = MIN(iso_chan.qos->tx->sdu, MAX_SDU_SIZE);
 	cis_sn_last = get_next_sn(cis_sn_last, &cis_sn_last_updated_ticks, cis_sdu_interval_us);
 
 	while (count--) {
@@ -610,7 +615,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-		net_buf_add_mem(buf, buf_data, len);
+		net_buf_add_mem(buf, mock_iso_data, len);
 		shell_info(sh, "send: %d bytes of data with PSN %u", len, cis_sn_last);
 		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last);
 		if (ret < 0) {
@@ -679,13 +684,8 @@ static struct bt_iso_chan *bis_channels[BIS_ISO_CHAN_COUNT] = {&bis_iso_chan};
 #if defined(CONFIG_BT_ISO_BROADCASTER)
 static uint32_t bis_sdu_interval_us;
 
-NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, BIS_ISO_CHAN_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
-
 static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU] = {[0 ...(CONFIG_BT_ISO_TX_MTU - 1)] = 0xff};
 	unsigned long count = 1;
 	struct net_buf *buf;
 	int ret = 0;
@@ -716,11 +716,11 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	len = MIN(bis_iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
+	len = MIN(bis_iso_chan.qos->tx->sdu, MAX_SDU_SIZE);
 	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks, bis_sdu_interval_us);
 
 	while (count--) {
-		buf = net_buf_alloc(&bis_tx_pool, TX_BUF_TIMEOUT);
+		buf = net_buf_alloc(&tx_pool, TX_BUF_TIMEOUT);
 		if (buf == NULL) {
 			shell_error(sh, "Failed to get buffer...");
 			return -ENOEXEC;
@@ -728,7 +728,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-		net_buf_add_mem(buf, buf_data, len);
+		net_buf_add_mem(buf, mock_iso_data, len);
 		shell_info(sh, "send: %d bytes of data with PSN %u", len, bis_sn_last);
 		ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last);
 		if (ret < 0) {
@@ -758,7 +758,7 @@ static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 	bis_iso_qos.tx = &iso_tx_qos;
 	bis_iso_qos.tx->phy = BT_GAP_LE_PHY_2M; /* 2 MBit */
 	bis_iso_qos.tx->rtn = 2;
-	bis_iso_qos.tx->sdu = CONFIG_BT_ISO_TX_MTU;
+	bis_iso_qos.tx->sdu = MAX_SDU_SIZE;
 
 	bis_sdu_interval_us = param.interval = 10000; /* us */
 	param.latency = 20;                           /* ms */
