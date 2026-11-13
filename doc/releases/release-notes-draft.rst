@@ -44,7 +44,9 @@ Libraries / Subsystems
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
-    the HID Device role of the HID over GATT Profile is built on.
+    the HID Device role of the HID over GATT Profile is built on. It tracks the
+    Protocol Mode and the Suspend state of each Host, read with
+    :c:func:`bt_hids_protocol_mode_get` and :c:func:`bt_hids_suspend_state_get`.
   * :c:func:`bt_addr_matches_irk` is now public, so a scanner can check whether a
     resolvable private address was generated from an IRK it holds.
   * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and

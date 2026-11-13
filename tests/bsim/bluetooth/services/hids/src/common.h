@@ -20,6 +20,11 @@
 /* A second Feature Report, long enough to need several ATT Read Blob Requests */
 #define TEST_REPORT_ID_FEATURE_LONG 0x04U
 
+/* The server advertises under this name for the second Host only, so that the
+ * second Host cannot connect before the first one.
+ */
+#define TEST_SECOND_HOST_ADV_NAME "HIDS tester 2"
+
 /* Mouse (Input), keyboard LEDs (Output) and a vendor defined byte (Feature).
  * The Report Map has to describe every Report the HID Service exposes.
  */
@@ -110,5 +115,7 @@ static const uint8_t test_output_data[TEST_OUTPUT_REPORT_LEN] = {0x05};
 /* Feature Report payload: the vendor defined byte */
 #define TEST_FEATURE_REPORT_LEN 1U
 static const uint8_t test_feature_data[TEST_FEATURE_REPORT_LEN] = {0x5A};
+/* A Feature Report value the server application rejects */
+static const uint8_t test_feature_rejected[TEST_FEATURE_REPORT_LEN] = {0xA5};
 
 #endif /* HIDS_TEST_COMMON_H_ */
