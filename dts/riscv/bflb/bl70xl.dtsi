@@ -357,6 +357,12 @@
 			reg = <0x4000f000 0x1000>;
 		};
 
+		aon_scratch: aon-scratch@4000f93c {
+			compatible = "zephyr,retained-reg";
+			reg = <0x4000f93c 0x8>;
+			reg-io-width = <4>;
+		};
+
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;

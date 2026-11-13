@@ -370,6 +370,12 @@
 			status = "disabled";
 		};
 
+		aon_scratch: aon-scratch@2000f93c {
+			compatible = "zephyr,retained-reg";
+			reg = <0x2000f93c 0x8>;
+			reg-io-width = <4>;
+		};
+
 		memc: memc@20052000 {
 			compatible = "bflb,bl61x-psram";
 			reg = <0x20052000 DT_SIZE_K(4)>;
