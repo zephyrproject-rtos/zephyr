@@ -55,6 +55,13 @@
 			};
 		};
 
+		otp: otp@14c07000 {
+			compatible = "aspeed,ast2700-otp";
+			reg = <0x14c07000 0x800>;
+			aspeed,word-size = <2>;
+			status = "disabled";
+		};
+
 		uart12: serial@14c33b00 {
 			compatible = "ns16550";
 			reg = <0x14c33b00 0x100>;
