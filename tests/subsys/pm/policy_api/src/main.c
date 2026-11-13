@@ -25,6 +25,10 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * CONFIG_PM_POLICY_DEFAULT=y.
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-6
+ * @verifies ZEP-SRS-13-41
  */
 ZTEST(policy_api, test_pm_policy_next_state_default)
 {
@@ -103,6 +107,11 @@ ZTEST(policy_api, test_pm_policy_state_all_lock)
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * states are allowed/disallowed and CONFIG_PM_POLICY_DEFAULT=y.
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-8
+ * @verifies ZEP-SRS-13-23
+ * @verifies ZEP-SRS-13-24
  */
 ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 {
@@ -192,6 +201,13 @@ static void on_pm_policy_latency_changed(int32_t latency)
 /**
  * @brief Test the behavior of pm_policy_next_state() when
  * latency requirements are imposed and CONFIG_PM_POLICY_DEFAULT=y.
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-9
+ * @verifies ZEP-SRS-13-25
+ * @verifies ZEP-SRS-13-26
+ * @verifies ZEP-SRS-13-27
+ * @verifies ZEP-SRS-13-28
  */
 ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 {
@@ -301,6 +317,12 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	pm_policy_latency_changed_unsubscribe(&sreq1);
 }
 
+/**
+ * @brief Verify a NULL callback disables a latency change subscription.
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-28
+ */
 ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
 {
 	struct pm_policy_latency_request req;
@@ -513,6 +535,9 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
 /**
  * @brief Test that a custom policy can be implemented when
  * CONFIG_PM_POLICY_CUSTOM=y.
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-22
  */
 ZTEST(policy_api, test_pm_policy_next_state_custom)
 {

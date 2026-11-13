@@ -135,6 +135,21 @@ DEVICE_DEINIT_DEFINE(pm_transition_test_dev, "test_dev",
 	PM_DEVICE_GET(pm_transition_test_dev_pm), &dev_data, NULL,
 	POST_KERNEL, 0, NULL);
 
+/**
+ * @brief Verify device PM actions during init and deinit.
+ *
+ * @details
+ * The device PM callback records each action it receives together with the
+ * device state at that point. The test checks the turn-on and resume actions
+ * from initialization, that deinit is refused while the device is active,
+ * that an explicit suspend transition succeeds, and that deinit then runs
+ * without further PM actions.
+ *
+ * @see pm_device_action_run()
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-11
+ */
 ZTEST(device_driver_init, test_device_driver_init_pm_state)
 {
 #ifdef CONFIG_PM_DEVICE

@@ -17,6 +17,12 @@
 #include <zephyr/pm/policy.h>
 #include "dummy_driver.h"
 
+/**
+ * @brief Power Management Tests
+ * @defgroup power_tests Power Management
+ * @ingroup all_tests
+ */
+
 #define SLEEP_MSEC 100
 #define SLEEP_TIMEOUT K_MSEC(SLEEP_MSEC)
 
@@ -400,7 +406,7 @@ static void notify_pm_state_exit(enum pm_state state)
 
 }
 
-/*
+/**
  * @brief test power idle
  *
  * @details
@@ -414,6 +420,7 @@ static void notify_pm_state_exit(enum pm_state state)
  * @see pm_policy_next_state()
  *
  * @ingroup power_tests
+ * @verifies ZEP-SRS-13-41
  */
 ZTEST(power_management_1cpu, test_power_idle)
 {
@@ -509,7 +516,7 @@ static struct pm_notifier notifier = {
 	.state_exit = notify_pm_state_exit,
 };
 
-/*
+/**
  * @brief test power state transition
  *
  * @details
@@ -521,6 +528,8 @@ static struct pm_notifier notifier = {
  * @see pm_notify_pm_state_entry(), pm_notify_pm_state_exit()
  *
  * @ingroup power_tests
+ * @verifies ZEP-SRS-13-1
+ * @verifies ZEP-SRS-13-5
  */
 ZTEST(power_management_1cpu, test_power_state_trans)
 {
@@ -575,7 +584,7 @@ ZTEST(power_management_1cpu, test_timer_resume_order)
 }
 #endif
 
-/*
+/**
  * @brief notification between system and device
  *
  * @details
@@ -588,6 +597,12 @@ ZTEST(power_management_1cpu, test_timer_resume_order)
  *      pm_device_action_run(), pm_device_state_get()
  *
  * @ingroup power_tests
+ * @verifies ZEP-SRS-13-3
+ * @verifies ZEP-SRS-13-13
+ * @verifies ZEP-SRS-13-29
+ * @verifies ZEP-SRS-13-30
+ * @verifies ZEP-SRS-13-31
+ * @verifies ZEP-SRS-13-32
  */
 ZTEST(power_management_1cpu, test_power_state_notification)
 {
@@ -665,6 +680,19 @@ ZTEST(power_management_1cpu, test_empty_states)
 	zassert_equal(state, 0);
 }
 
+/**
+ * @brief Verify a forced power state is used on the next idle entry.
+ *
+ * @details
+ * pm_state_force() bypasses the power management policy: the forced state
+ * must be the one entered when the system next goes idle, which the suite's
+ * state entry hook checks against the forced state.
+ *
+ * @see pm_state_force()
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-7
+ */
 ZTEST(power_management_1cpu, test_force_state)
 {
 	const struct pm_state_info *cpu_states;
