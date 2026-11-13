@@ -24,6 +24,7 @@
 		sw0 = &btn0;
 		sw1 = &btn1;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -171,5 +172,9 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

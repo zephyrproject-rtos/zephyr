@@ -21,6 +21,7 @@
 		led0 = &led0;
 		pwm-led0 = &pwm_led0;
 		watchdog0 = &wdt0;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -178,5 +179,9 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };

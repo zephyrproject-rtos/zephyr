@@ -18,4 +18,5 @@ supported:
   - vref
   - trng
   - watchdog
+  - rtc
 vendor: ti

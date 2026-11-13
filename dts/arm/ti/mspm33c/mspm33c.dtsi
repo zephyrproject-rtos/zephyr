@@ -148,6 +148,15 @@
 			status = "okay";
 		};
 
+		rtc: rtc@400d8000 {
+			compatible = "ti,mspm0-rtc";
+			reg = <0x400d8000 0x2000>;
+			interrupts = <42 0>;
+			alarms-count = <2>;
+			ti,rtc-x;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@400f0000 {
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x400f0000 0x6000>;
