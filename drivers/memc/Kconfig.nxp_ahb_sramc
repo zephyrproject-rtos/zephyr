@@ -19,3 +19,18 @@ config MEMC_NXP_AHB_SRAMC_INIT_PRIORITY
 	  be initialized before the devices attached to its chip selects, so this
 	  value must not exceed MEMC_INIT_PRIORITY. Equal priorities use devicetree
 	  dependency ordering.
+
+if MEMC_NXP_AHB_SRAMC
+
+config MEMC_NXP_AHB_SRAMC_SRAM
+	bool "NXP AHB SRAMC SRAM device driver"
+	default y
+	depends on DT_HAS_NXP_AHB_SRAMC_SRAM_ENABLED
+	help
+	  Enable the driver for external asynchronous SRAM attached to the NXP AHB
+	  SRAM Controller. Each enabled devicetree node with the
+	  nxp,ahb-sramc-sram compatible has its chip select programmed during
+	  driver initialization and is registered as a memory controller device
+	  of its own.
+
+endif # MEMC_NXP_AHB_SRAMC
