@@ -331,9 +331,8 @@ static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void 
 	assert(mbar.phys_addr + cap->offset + cap->length <= mbar.phys_addr + mbar.size);
 
 #ifdef CONFIG_MMU
-	k_mem_map_phys_bare(
-		(uint8_t **)virt_ptr, mbar.phys_addr + cap->offset, cap->length, K_MEM_PERM_RW
-	);
+	k_mem_map_phys_bare((uint8_t **)virt_ptr, mbar.phys_addr + cap->offset,
+			    cap->length, K_MEM_PERM_RW | K_MEM_CACHE_NONE);
 #else
 	*virt_ptr = (void *)(mbar.phys_addr + cap->offset);
 #endif
