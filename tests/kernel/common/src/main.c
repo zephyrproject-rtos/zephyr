@@ -18,18 +18,6 @@
  *
  */
 
-#ifndef CONFIG_PRINTK
-/**
- * @brief Skipped stub of the printk test used when CONFIG_PRINTK is disabled.
- *
- * @ingroup kernel_printk_tests
- */
-ZTEST(printk, test_printk)
-{
-	ztest_test_skip();
-}
-#endif
-
 /**
  * @brief Verify sys_kernel_version_get() reports the build-time kernel version.
  *
