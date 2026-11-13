@@ -5,8 +5,8 @@
  */
 
 &agt0 {
-	interrupts = <27 1>, <24 1>;
-	interrupt-names = "agti", "agtcmai";
+	interrupts = <27 1>, <24 1>, <25 1>;
+	interrupt-names = "agti", "agtcmai", "agtcmbi";
 	renesas,count-source = "AGT_CLOCK_LOCO";
 	renesas,prescaler = <4>;
 	status = "okay";
