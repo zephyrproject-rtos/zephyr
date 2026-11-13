@@ -78,3 +78,13 @@ config KERNEL_THREAD_SHELL_KILL
 	select KERNEL_THREAD_SHELL
 	help
 	  Internal helper macro to compile the 'kill' subcommad
+
+config KERNEL_THREAD_SHELL_MEMPARTS
+	bool
+	default y
+	depends on THREAD_MONITOR
+	depends on USERSPACE
+	depends on ARCH_HAS_MEMPARTS_ATTR_STR
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'memparts' subcommand
