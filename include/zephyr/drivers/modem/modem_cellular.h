@@ -17,6 +17,8 @@
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/mux.h>
+#include <zephyr/devicetree/mux.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/modem/chat.h>
 #include <zephyr/modem/cmux.h>
@@ -116,6 +118,18 @@ struct modem_cellular_event_pkg {
 	const void *ptr;
 };
 
+/* SIM slot, from a child of the modem's sim-slots node */
+struct modem_cellular_sim_slot {
+	/* MUX controller that routes the modem to the slot */
+	const struct device *mux;
+	/* MUX state that selects the slot */
+	const struct mux_state *state;
+	/* Slot index, from the reg property */
+	uint8_t index;
+	/* Slot selected when the device starts */
+	bool is_default;
+};
+
 /** @endcond */
 
 /**
@@ -205,6 +219,9 @@ struct modem_cellular_data {
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
+
+	/** Active SIM slot, NULL when the modem has no sim-slots node */
+	const struct modem_cellular_sim_slot *sim_slot_active;
 
 	/* Ring interrupt */
 	struct gpio_callback ring_gpio_cb;
@@ -347,6 +364,8 @@ struct modem_cellular_config {
 	k_timeout_t cmux_idle_timeout;
 	struct modem_cellular_user_pipe *user_pipes;
 	uint8_t user_pipes_size;
+	const struct modem_cellular_sim_slot *sim_slots;
+	uint8_t sim_slots_size;
 };
 
 /** @brief Initialize the cellular modem
@@ -475,6 +494,50 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 				      MODEM_CELLULAR_GET_PIPE_NAME_ARG _args,                      \
 				      MODEM_CELLULAR_GET_DLCI_ADDRESS_ARG _args)
 
+#define MODEM_CELLULAR_SIM_SLOTS_NODE(inst) DT_INST_CHILD(inst, sim_slots)
+
+#define MODEM_CELLULAR_HAS_SIM_SLOTS(inst)                                                         \
+	DT_NODE_HAS_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst))
+
+#define MODEM_CELLULAR_SIM_SLOT_DEFINE(node_id)                                                    \
+	BUILD_ASSERT(DT_REG_ADDR(node_id) <= UINT8_MAX, "SIM slot index must not exceed 255");     \
+	MUX_STATE_DT_SPEC_DEFINE(node_id);
+
+#define MODEM_CELLULAR_SIM_SLOT_INIT(node_id)                                                      \
+	{                                                                                          \
+		.mux = MUX_STATE_DT_DEV_GET(node_id),                                              \
+		.state = MUX_STATE_DT_GET(node_id),                                                \
+		.index = DT_REG_ADDR(node_id),                                                     \
+		.is_default = DT_PROP(node_id, default_sim),                                       \
+	},
+
+#define MODEM_CELLULAR_SIM_SLOT_ADD_DEFAULT(node_id) + DT_PROP(node_id, default_sim)
+
+/* Define the SIM slot table of an instance with a sim-slots node */
+#define MODEM_CELLULAR_DEFINE_SIM_SLOTS(inst)                                                      \
+	IF_ENABLED(MODEM_CELLULAR_HAS_SIM_SLOTS(inst), (                                           \
+		BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst)) > 0,    \
+			     "sim-slots node must have at least one enabled SIM slot");            \
+		BUILD_ASSERT((0 DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst),  \
+					MODEM_CELLULAR_SIM_SLOT_ADD_DEFAULT)) <= 1,                \
+			     "At most one SIM slot can have the default-sim property");            \
+		DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst),                  \
+					     MODEM_CELLULAR_SIM_SLOT_DEFINE)                       \
+		static const struct modem_cellular_sim_slot                                        \
+			MODEM_CELLULAR_INST_NAME(sim_slots, inst)[] = {                            \
+			DT_FOREACH_CHILD_STATUS_OKAY(MODEM_CELLULAR_SIM_SLOTS_NODE(inst),          \
+						     MODEM_CELLULAR_SIM_SLOT_INIT)                 \
+		};                                                                                 \
+	))
+
+#define MODEM_CELLULAR_GET_SIM_SLOTS(inst)                                                         \
+	COND_CODE_1(MODEM_CELLULAR_HAS_SIM_SLOTS(inst),                                            \
+		    (MODEM_CELLULAR_INST_NAME(sim_slots, inst)), (NULL))
+
+#define MODEM_CELLULAR_GET_SIM_SLOTS_SIZE(inst)                                                    \
+	COND_CODE_1(MODEM_CELLULAR_HAS_SIM_SLOTS(inst),                                            \
+		    (ARRAY_SIZE(MODEM_CELLULAR_INST_NAME(sim_slots, inst))), (0))
+
 /** @endcond */
 
 /**
@@ -587,6 +650,7 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
  */
 #define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config, _vendor_specific)                      \
 	BUILD_ASSERT(vendor_config != NULL, "vendor_config must be non-NULL");                     \
+	MODEM_CELLULAR_DEFINE_SIM_SLOTS(inst)                                                      \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.vendor = vendor_config,                                                           \
@@ -616,6 +680,8 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
 		.user_pipes = MODEM_CELLULAR_GET_USER_PIPES(inst),                                 \
 		.user_pipes_size = ARRAY_SIZE(MODEM_CELLULAR_GET_USER_PIPES(inst)),                \
+		.sim_slots = MODEM_CELLULAR_GET_SIM_SLOTS(inst),                                   \
+		.sim_slots_size = MODEM_CELLULAR_GET_SIM_SLOTS_SIZE(inst),                         \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(inst, modem_cellular_pm_action);                                  \

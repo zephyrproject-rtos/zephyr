@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Pedro Ramos
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Two modem_cellular instances on emulated UARTs. The first has two SIM slots,
+ * switched by one emulated GPIO through a gpio-mux, the second a single SIM.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	sim_mux: sim-mux {
+		compatible = "gpio-mux";
+		#mux-control-cells = <0>;
+		#mux-state-cells = <1>;
+		mux-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+
+	modem_uart: uart-emul-0 {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+		status = "okay";
+
+		modem: modem {
+			compatible = "quectel,eg25-g";
+			status = "okay";
+
+			sim-slots {
+				compatible = "modem-sims";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				sim-slot@0 {
+					reg = <0>;
+					mux-states = <&sim_mux 0>;
+				};
+
+				sim-slot@1 {
+					reg = <1>;
+					mux-states = <&sim_mux 1>;
+					default-sim;
+				};
+			};
+		};
+	};
+
+	single_sim_modem_uart: uart-emul-1 {
+		compatible = "zephyr,uart-emul";
+		current-speed = <115200>;
+		rx-fifo-size = <256>;
+		tx-fifo-size = <256>;
+		status = "okay";
+
+		single_sim_modem: single-sim-modem {
+			compatible = "quectel,eg25-g";
+			status = "okay";
+		};
+	};
+};

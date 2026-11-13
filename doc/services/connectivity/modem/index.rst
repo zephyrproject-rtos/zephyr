@@ -382,6 +382,65 @@ advances the connect sequence, so any callback set on the script is ignored.
 
    MODEM_CELLULAR_BOARD_INIT_DEFINE(DT_NODELABEL(modem), &board_init);
 
+SIM slots
+=========
+
+A modem can be routed to one of several SIM slots, for example by an analog switch on the SIM
+lines driven by GPIOs. The slots are the children of a ``sim-slots`` node
+(:dtcompatible:`modem-sims`) under the modem node. Each slot references the state of a
+:ref:`MUX <mux_api>` controller that routes the modem to it, here a :dtcompatible:`gpio-mux`:
+
+.. code-block:: devicetree
+
+   sim_mux: sim-mux {
+           compatible = "gpio-mux";
+           #mux-control-cells = <0>;
+           #mux-state-cells = <1>;
+           mux-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+   };
+
+   &uart1 {
+           modem: modem {
+                   compatible = "quectel,bg95";
+                   mdm-power-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+
+                   sim-slots {
+                           compatible = "modem-sims";
+                           #address-cells = <1>;
+                           #size-cells = <0>;
+
+                           sim-slot@0 {
+                                   reg = <0>;
+                                   mux-states = <&sim_mux 0>;
+                                   default-sim;
+                           };
+
+                           sim-slot@1 {
+                                   reg = <1>;
+                                   mux-states = <&sim_mux 1>;
+                           };
+                   };
+           };
+   };
+
+The ``reg`` of a slot is its index in :c:func:`cellular_get_sim_slots` and
+:c:func:`cellular_select_sim`. The driver routes the modem to the ``default-sim`` slot, or to
+the first slot, every time it powers the modem up.
+
+The SIM lines must only be switched while the SIM interface is inactive, so the driver switches
+the SIM slot only while the modem is suspended. The modem must be powered off while suspended,
+for example through ``mdm-power-gpios``. To switch the SIM slot of a running modem:
+
+.. code-block:: c
+
+   pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND);
+   cellular_select_sim(modem, 1);
+   cellular_set_apn(modem, "apn.of.the.second.operator");
+   pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
+
+The ICCID and IMSI of the previous SIM are cleared by the switch, and read again from the new
+SIM, if the modem's init script reads them, when the modem powers up.
+
 .. _cmux-power-saving:
 
 CMUX Power Saving
