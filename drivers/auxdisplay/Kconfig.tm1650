@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Smile
+
+config AUXDISPLAY_TM1650
+	bool "Titan Micro TM1650 7-segment display support"
+	default y
+	depends on DT_HAS_TITANMEC_TM1650_ENABLED
+	select I2C
+	help
+	  Enable driver for TM (Shenzhen Titan Micro Elec) TM1650 7-segment LED display.
+	  This driver supports 4-digit 7-segment displays commonly found in clock modules
+	  and simple numeric displays.
+
+	  The TM1650 uses an I2C compatible two-wire serial interface (CLK and DIO) and can control
+	  up to 4 digits with brightness control.
+
+	  This driver implements the auxdisplay API, allowing generic display usage.
