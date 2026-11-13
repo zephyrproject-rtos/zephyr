@@ -1,0 +1,60 @@
+# Copyright 2026 Ezurio
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP PCA series I2C GPIO expander segment
+
+description: |
+  A Zephyr GPIO controller is limited to 32 pins, so a PCA series expander
+  node only covers its first 32 pins. On parts with more pins, the remaining
+  pins are exposed by optional child nodes of this type. Each one is a
+  separate GPIO controller covering up to 32 pins, sharing the expander I2C
+  bus, lock and interrupt.
+
+  Currently supported parts with more than 32 pins:
+    - PCAL6534: pins 32-33 (P4_0, P4_1), with "reg = <4>" and "ngpios = <2>".
+
+  Example:
+
+    pcal6534: pcal6534@22 {
+      compatible = "nxp,pcal6534";
+      reg = <0x22>;
+      gpio-controller;
+      #gpio-cells = <2>;
+      ngpios = <32>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      pcal6534_p4: gpio-port@4 {
+        compatible = "nxp,pca-series-gpio-port";
+        reg = <4>;
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <2>;
+      };
+    };
+
+compatible: "nxp,pca-series-gpio-port"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      First 8-pin hardware port of the segment. Must be a multiple of 4, so
+      each segment starts on a 32-pin boundary.
+
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+    min: 1
+    max: 32
+    description: |
+      Number of pins of the segment, from 1 to 32. The segment must not
+      extend past the last pin of the part.
+
+gpio-cells:
+  - pin
+  - flags
