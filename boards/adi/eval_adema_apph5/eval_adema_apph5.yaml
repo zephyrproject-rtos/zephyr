@@ -1,0 +1,18 @@
+identifier: eval_adema_apph5
+name: ADI EVAL-ADEMA-APPH5 (STM32H573ZI)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 640
+flash: 2048
+supported:
+  - gpio
+  - spi
+  - uart
+  - counter
+  - pwm
+  - dma
+  - watchdog
+vendor: adi

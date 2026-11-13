@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2026 Analog Devices Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h5/stm32h573Xi.dtsi>
+#include "eval_adema_apph5-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "adi,eval-adema-apph5";
+	model = "ADI EVAL-ADEMA127 eval_adema_apph5";
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		uart-host = &uart5;
+		ade-spi = &spi1;
+		adespislave = &spi1dev;
+		fram-spi = &spi6;
+		framspislave = &spi6dev;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpioe 8 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led_2 {
+			gpios = <&gpioe 10 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		led3: led_3 {
+			gpios = <&gpioe 12 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+	};
+
+	gpio_drdy_node {
+		compatible = "gpio-keys";
+
+		gpio_drdy: gpio_drdy {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "ADC DREADY";
+		};
+	};
+
+	gpio_reset_node {
+		compatible = "gpio-keys";
+
+		gpio_reset: gpio_reset {
+			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+			label = "ADC RESET";
+		};
+	};
+
+	gpio_amp_pd_node {
+		compatible = "gpio-keys";
+
+		gpio_amp_pd: gpio_amp_pd {
+			gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+			label = "AMP Power Down";
+		};
+	};
+
+	gpio_stdby_node {
+		compatible = "gpio-keys";
+
+		gpio_stdby: gpio_stdby {
+			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+			label = "Standby";
+		};
+	};
+};
+
+/* Clock tree: 25 MHz HSE -> PLL1 -> 250 MHz SYSCLK */
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <2>;
+	mul-n = <40>;
+	div-p = <2>;
+	div-q = <13>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(250)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&gpdma2 {
+	status = "okay";
+};
+
+&uart5 {
+	pinctrl-0 = <&uart5_tx_pb13 &uart5_rx_pb15>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	dmas = <&gpdma1 2 30 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&gpdma1 3 29 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&spi1 {
+	clock-frequency = <20000000>;
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	dmas = <&gpdma1 6 7 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&gpdma1 7 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+
+	spi1dev: spi-device@0 {
+		reg = <0>;
+	};
+};
+
+&spi6 {
+	clock-frequency = <20000000>;
+	pinctrl-0 = <&spi6_sck_pc12 &spi6_miso_pb4 &spi6_mosi_pb5>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+	dmas = <&gpdma2 7 52 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&gpdma2 6 51 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+
+	spi6dev: spi-device@0 {
+		reg = <0>;
+	};
+};
+
+&timers5 {
+	st,prescaler = <9>;
+	status = "okay";
+
+	pwm5: pwm {
+		pinctrl-0 = <&tim5_ch4_pa3>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+
+	counter5: counter {
+		status = "okay";
+	};
+};
+
+&timers3 {
+	st,prescaler = <9>;
+	status = "okay";
+
+	counter3: counter {
+		status = "okay";
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
