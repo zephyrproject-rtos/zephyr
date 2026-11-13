@@ -69,3 +69,11 @@ tests:
       - CONFIG_MULTITHREADING=n
       - CONFIG_TEST_USERSPACE=n
       - CONFIG_SPIN_VALIDATE=n
+  kernel.timer.ti_mspm0:
+    platform_allow:
+      - lp_mspm0g3507
+    integration_platforms:
+      - lp_mspm0g3507
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/lp_mspm0g3507.overlay"
+      - CONFIG_TI_MSPM0_SYSTEM_TIMER=y
