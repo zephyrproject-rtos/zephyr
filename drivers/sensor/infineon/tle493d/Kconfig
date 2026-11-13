@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TLE493D
+	bool "TLE493D sensor"
+	default y
+	depends on DT_HAS_INFINEON_TLE493D_ENABLED
+	select I2C
+	help
+	  Enable the driver for Infineon TLE493D 3D hall sensor.
+
+if TLE493D
+
+config TLE493D_RESET_DELAY
+	int "Driver reset delay (ms)"
+	range 0 100
+	default 30
+
+endif # TLE493D
