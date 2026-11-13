@@ -562,7 +562,16 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U)) {
 		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
 
-		uint16_t supervision_expire = conn->supervision_expire;
+		uint16_t supervision_expire;
+
+		/* Connection failed to establish countdown until the connection is established,
+		 * then the supervision timeout.
+		 */
+		if (conn->connect_expire != 0U) {
+			supervision_expire = conn->connect_expire;
+		} else {
+			supervision_expire = conn->supervision_expire;
+		}
 
 		/* Supervision timeout reload, if not started already */
 		if (supervision_expire == 0U) {
@@ -583,9 +592,10 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 		/* NOTE: lazy has been incremented by one when ousted */
 		uint16_t elapsed_event = lazy;
+		bool is_timeout = (supervision_expire <= elapsed_event);
 
 		/* Check supervision timeout threshold */
-		if (supervision_expire > elapsed_event) {
+		if (!is_timeout) {
 			supervision_expire -= elapsed_event;
 
 			if (supervision_expire <= CONN_ESTAB_COUNTDOWN) {
@@ -628,13 +638,18 @@ void ull_periph_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 					      (ticker_status == TICKER_STATUS_BUSY) ||
 					      ((void *)conn == ull_disable_mark_get()));
 			}
-		} else {
+		} else if (conn->connect_expire == 0U) {
 			LL_ASSERT_MSG(false, "%s: %p Ousted %u lazy %u\n", __func__,
 				      &conn->lll, conn->event_counter, lazy);
 		}
 
-		DEBUG_RADIO_CLOSE_S(0);
-		return;
+		/* Failed to establish while being ousted, proceed with the prepare so that the
+		 * event done handling terminates the connection.
+		 */
+		if (!is_timeout || (conn->connect_expire == 0U)) {
+			DEBUG_RADIO_CLOSE_S(0);
+			return;
+		}
 	}
 
 	/* Reset latency oust */
