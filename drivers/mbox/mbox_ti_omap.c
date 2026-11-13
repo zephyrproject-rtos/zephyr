@@ -30,6 +30,7 @@ struct omap_mailbox_data {
 	mbox_callback_t cb[MAILBOX_MAX_CHANNELS];
 	void *user_data[MAILBOX_MAX_CHANNELS];
 	bool channel_enable[MAILBOX_MAX_CHANNELS];
+	bool channel_drained[MAILBOX_MAX_CHANNELS];
 	uint32_t received_data;
 	struct k_spinlock lock;
 };
@@ -166,6 +167,7 @@ static int omap_mailbox_set_enabled(const struct device *dev, uint32_t channel, 
 	volatile struct omap_mailbox_regs *regs;
 	k_spinlock_key_t key;
 	uint32_t irqstatus;
+	uint32_t stale = 0;
 
 	if (channel >= MAILBOX_MAX_CHANNELS) {
 		return -EINVAL;
@@ -178,6 +180,22 @@ static int omap_mailbox_set_enabled(const struct device *dev, uint32_t channel, 
 	key = k_spin_lock(&data->lock);
 	regs = DEV_REG_BASE(dev);
 	irqstatus = regs->irq_regs[cfg->usr_id].enable_set;
+
+	if (enable && !data->channel_drained[channel]) {
+		/*
+		 * A core reset does not reset the mailbox, so on the first enable
+		 * after boot the FIFO can still hold messages sent to the previous
+		 * image, such as a remoteproc shutdown request that a hung image
+		 * never read. Drop them, and their pending interrupt, rather than
+		 * deliver them to this one. A later enable keeps what is queued.
+		 */
+		while (regs->msg_status[channel] != 0U) {
+			(void)regs->message[channel];
+			stale++;
+		}
+		regs->irq_regs[cfg->usr_id].status_clear = MAILBOX_IRQ_NEWMSG(channel);
+		data->channel_drained[channel] = true;
+	}
 
 	if (enable) {
 		irqstatus |= MAILBOX_IRQ_NEWMSG(channel);
@@ -195,6 +213,11 @@ static int omap_mailbox_set_enabled(const struct device *dev, uint32_t channel, 
 	}
 
 	k_spin_unlock(&data->lock, key);
+
+	if (stale != 0U) {
+		LOG_DBG("channel %u: dropped %u message(s) left by the previous image", channel,
+			stale);
+	}
 
 	return 0;
 }
