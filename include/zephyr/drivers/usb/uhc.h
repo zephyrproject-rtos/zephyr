@@ -222,7 +222,7 @@ struct uhc_event {
  * At the higher level, the event is to be inserted into a message queue.
  *
  * @param[in] dev      Pointer to device struct of the driver instance
- * @param[in] event    Point to event structure
+ * @param[in] event    Pointer to event structure
  *
  * @return 0 on success, all other values should be treated as error.
  */
@@ -480,9 +480,13 @@ void uhc_xfer_ref(struct uhc_transfer *const xfer);
 bool uhc_xfer_unref(struct uhc_transfer *const xfer);
 
 /**
- * @brief Free UHC transfer and any buffers
+ * @brief Free UHC transfer
  *
- * Free any buffers and put the transfer back into the transfer pool.
+ * Drop the reference to the transfer, like uhc_xfer_unref(). The transfer is
+ * put back into the transfer pool once the last reference is dropped.
+ * The transfer buffer is not freed.
+ *
+ * This function is superfluous, uhc_xfer_unref() should be used instead.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] xfer   Pointer to UHC transfer
@@ -501,7 +505,8 @@ int uhc_xfer_free(const struct device *dev,
  * @param[in] xfer   Pointer to UHC transfer
  * @param[in] buf    Pointer to UHC request buffer
  *
- * @return pointer to allocated request or NULL on error.
+ * @return 0 on success, all other values should be treated as error.
+ * @retval -EBUSY transfer is already queued
  */
 int uhc_xfer_buf_add(const struct device *dev,
 		     struct uhc_transfer *const xfer,
@@ -509,8 +514,7 @@ int uhc_xfer_buf_add(const struct device *dev,
 /**
  * @brief Allocate UHC transfer buffer
  *
- * Allocate a new buffer from common request buffer pool and
- * assign it to the transfer if the xfer parameter is not NULL.
+ * Allocate a new buffer from common request buffer pool.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] size   Size of the request buffer
@@ -546,8 +550,6 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Remove a USB host controller transfers from queue
- *
- * Not implemented yet.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] xfer   Pointer to UHC transfer
@@ -608,6 +610,7 @@ int uhc_disable(const struct device *dev);
  * @param[in] dev    Pointer to device struct of the driver instance
  *
  * @return 0 on success, all other values should be treated as error.
+ * @retval -EBUSY controller is enabled
  * @retval -EALREADY controller is already uninitialized
  */
 int uhc_shutdown(const struct device *dev);
