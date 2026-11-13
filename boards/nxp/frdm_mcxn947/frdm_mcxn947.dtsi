@@ -380,6 +380,11 @@ arduino_serial: &flexcomm2_lpuart2 {};
 	pinctrl-names = "default";
 };
 
+&micfil {
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
+};
+
 &sai1 {
 	pinctrl-0 = <&pinmux_sai1>;
 	pinctrl-names = "default";

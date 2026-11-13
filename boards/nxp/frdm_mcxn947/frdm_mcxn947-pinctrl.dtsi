@@ -118,6 +118,16 @@
 		};
 	};
 
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <PDM0_CLK_PIO0_16>,
+				 <PDM0_DATA0_PIO0_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_sai1: pinmux_sai1 {
 		group0 {
 			pinmux = <SAI1_TX_BCLK_PIO3_16>,
