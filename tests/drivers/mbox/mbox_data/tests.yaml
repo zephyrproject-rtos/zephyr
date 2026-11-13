@@ -2,7 +2,7 @@ common:
   tags:
     - drivers
     - mbox
-  filter: dt_compat_enabled("vnd,mbox-consumer")
+  filter: dt_compat_enabled("zephyr,mbox-consumer") or dt_compat_enabled("vnd,mbox-consumer")
 tests:
   drivers.mbox.mbox_data:
     sysbuild: true
@@ -10,15 +10,25 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
     platform_exclude:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
   drivers.mbox.mbox_data.single_cpu:
     platform_allow:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
-    extra_configs:
-      - CONFIG_TEST_SINGLE_CPU=y
