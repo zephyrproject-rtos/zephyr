@@ -8009,6 +8009,144 @@ ZTEST(net_socket_quic, test_543_ack_and_loss_keep_stream_references)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_506_orphan_release_keeps_a_held_endpoint)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 1 } } },
+	};
+	struct quic_endpoint *ep;
+
+	/* A client endpoint that is on no connection, as left behind by a
+	 * failed open
+	 */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+
+	/* Someone else, such as the receive path in the middle of a packet,
+	 * holds the endpoint too.
+	 */
+	atomic_inc(&ep->refcount);
+
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The reference of another holder was dropped");
+
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 1, "The list reference was dropped twice");
+
+	/* Let the other holder go as well */
+	ep->list_ref_dropped = false;
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	zexpect_equal(atomic_get(&ep->refcount), 0, "The endpoint was not released");
+}
+
+ZTEST(net_socket_quic, test_523_orphan_release_leaves_a_closing_context_alone)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 2 } } },
+	};
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	atomic_val_t ctx_ref;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54367");
+
+	/* A client endpoint on a context, held also by the receive path */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	atomic_inc(&ep->refcount);
+
+	/* The context is being released: its reference count has reached
+	 * zero, but its teardown has not taken the locks yet. The endpoint
+	 * is still on its list and not an orphan.
+	 */
+	ctx_ref = atomic_get(&ctx->refcount);
+	atomic_set(&ctx->refcount, 0);
+	quic_release_orphan_client_endpoints((struct net_sockaddr *)&remote);
+	atomic_set(&ctx->refcount, ctx_ref);
+
+	zexpect_false(ep->list_ref_dropped, "List reference taken from a closing context");
+	zexpect_equal(atomic_get(&ep->refcount), 2, "Reference dropped by the orphan cleanup");
+
+	/* The teardown drops the list reference, once */
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The reference of the receive path was dropped too");
+
+	/* Let the receive path go */
+	quic_test_endpoint_unref(ep);
+}
+
+ZTEST(net_socket_quic, test_536_timeout_drops_the_list_reference_once)
+{
+	struct net_sockaddr_in remote = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4433),
+		.sin_addr = { { { 192, 0, 2, 3 } } },
+	};
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54374");
+
+	/* A client endpoint on a context, held also by the receive path */
+	ep = quic_test_endpoint_alloc();
+	zassert_not_null(ep, "Cannot allocate an endpoint");
+	ep->is_server = false;
+	ep->handshake.completed = true;
+	ep->sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(ep->sock >= 0, "Cannot create a socket (%d)", errno);
+	memcpy(&ep->remote_addr, &remote, sizeof(remote));
+	atomic_inc(&ep->refcount);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	/* Nothing has been received for longer than the idle timeout */
+	ep->idle.idle_timeout_disabled = false;
+	ep->idle.negotiated_timeout_ms = 1U;
+	ep->idle.last_rx_time = 1;
+
+	quic_test_check_idle_timeouts();
+	zexpect_true(ep->list_ref_dropped, "The timeout did not mark the list reference");
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The timeout did not drop the list reference alone");
+
+	/* The teardown unlinks the endpoint and leaves the reference of the
+	 * receive path alone
+	 */
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "The teardown dropped the list reference again");
+
+	/* The endpoint is still expired, a later check leaves it alone too */
+	quic_test_check_idle_timeouts();
+	zexpect_equal(atomic_get(&ep->refcount), 1,
+		      "A later timeout check dropped another reference");
+
+	/* Let the receive path go */
+	quic_test_endpoint_unref(ep);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {

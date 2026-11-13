@@ -3154,7 +3154,14 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
-		released[released_count++] = ep;
+
+		/* The list reference is dropped once, by whoever takes it
+		 * first
+		 */
+		if (!ep->list_ref_dropped) {
+			ep->list_ref_dropped = true;
+			released[released_count++] = ep;
+		}
 
 		if (ctx->listen == ep) {
 			ctx->listen = NULL;
@@ -3162,7 +3169,11 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	if (ctx->listen != NULL) {
-		released[released_count++] = ctx->listen;
+		if (!ctx->listen->list_ref_dropped) {
+			ctx->listen->list_ref_dropped = true;
+			released[released_count++] = ctx->listen;
+		}
+
 		ctx->listen = NULL;
 	}
 
@@ -3928,6 +3939,14 @@ static void quic_check_idle_timeouts(struct k_work *work)
 			continue;
 		}
 
+		/* The references left on an endpoint whose list reference is
+		 * gone belong to whoever is using it, and they drop them
+		 * themselves
+		 */
+		if (ep->list_ref_dropped) {
+			continue;
+		}
+
 		/* Skip handshake timeout for listening endpoints (server parent).
 		 * Listening endpoints don't perform handshakes, they just wait for
 		 * incoming connections. Only child endpoints (with parent != NULL)
@@ -3950,6 +3969,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 								    QUIC_ERROR_PROTOCOL_VIOLATION,
 								    "Handshake timeout");
 
+				ep->list_ref_dropped = true;
 				expired[expired_count++] = ep;
 				continue;
 			}
@@ -3983,6 +4003,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 				 ep, quic_get_by_ep(ep), idle_time);
 
 			/* Per RFC 9000: No CONNECTION_CLOSE is sent for idle timeout */
+			ep->list_ref_dropped = true;
 			expired[expired_count++] = ep;
 			continue;
 		}
@@ -3997,6 +4018,10 @@ static void quic_check_idle_timeouts(struct k_work *work)
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference held for the endpoint list. The endpoint stays
+	 * on the list: the teardown of its context unlinks it, or the last
+	 * unref does if it comes first.
+	 */
 	for (int i = 0; i < expired_count; i++) {
 		quic_endpoint_unref(expired[i]);
 	}
@@ -5998,6 +6023,29 @@ void quic_test_streams_lock(bool lock)
 }
 #endif /* CONFIG_NET_TEST */
 
+#if defined(CONFIG_NET_TEST)
+/* Let tests take an endpoint from the pool, as a connection would */
+struct quic_endpoint *quic_test_endpoint_alloc(void)
+{
+	return endpoint_alloc_from_slab(&endpoints_slab, K_NO_WAIT);
+}
+
+/* Let tests drop a reference, which frees the endpoint with the last one */
+void quic_test_endpoint_unref(struct quic_endpoint *ep)
+{
+	(void)quic_endpoint_unref(ep);
+}
+
+/* Let tests run the idle and handshake timeout check and wait for it */
+void quic_test_check_idle_timeouts(void)
+{
+	struct k_work_sync sync;
+
+	k_work_reschedule(&idle_timeout_work, K_NO_WAIT);
+	(void)k_work_flush_delayable(&idle_timeout_work, &sync);
+}
+#endif /* CONFIG_NET_TEST */
+
 static struct quic_context *quic_context_init(struct quic_context *ctx)
 {
 	k_fifo_init(&ctx->pending.accept_q);
@@ -6508,14 +6556,15 @@ static int quic_client_endpoint_init_cids(struct quic_endpoint *ep,
 	return 0;
 }
 
-static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
+static bool quic_endpoint_on_context_list(const struct quic_endpoint *ep)
 {
+	/* Every context counts, also one whose reference count reached zero:
+	 * it is being released and its teardown, which runs once it gets
+	 * contexts_lock, unlinks the endpoint and drops the list reference
+	 * itself. An unused context has no endpoints.
+	 */
 	for (int i = 0; i < ARRAY_SIZE(contexts); i++) {
 		struct quic_endpoint *endp, *tmp;
-
-		if (!quic_context_is_used(&contexts[i])) {
-			continue;
-		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&contexts[i].endpoints, endp, tmp, node) {
 			if (endp == ep) {
@@ -6532,7 +6581,7 @@ static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
  * without unlinking the endpoint (e.g. setsockopt failed before the endpoint
  * was attached to the context list).
  */
-static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
+ZTESTABLE_STATIC void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
 {
 	struct quic_endpoint *orphans[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
 	int orphan_count = 0;
@@ -6544,8 +6593,13 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 		struct quic_endpoint *ep = endpoints[i];
 		struct quic_endpoint *matched;
 
+		/* An endpoint that a context has let go of is not an orphan,
+		 * even when it is on no context: the references it still has
+		 * belong to whoever is using it, for example the receive path
+		 * in the middle of a packet, and they drop them themselves.
+		 */
 		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
-		    ep->sock < 0) {
+		    ep->sock < 0 || ep->list_ref_dropped) {
 			continue;
 		}
 
@@ -6554,20 +6608,23 @@ static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remo
 			continue;
 		}
 
-		if (quic_endpoint_on_active_context(ep)) {
+		if (quic_endpoint_on_context_list(ep)) {
 			continue;
 		}
 
+		ep->list_ref_dropped = true;
 		orphans[orphan_count++] = ep;
 	}
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
 
+	/* Drop the reference that was meant for the endpoint list, and only
+	 * that one. Dropping every reference would free the endpoint under
+	 * anyone still using it.
+	 */
 	for (int i = 0; i < orphan_count; i++) {
-		while (atomic_get(&orphans[i]->refcount) > 0) {
-			quic_endpoint_unref(orphans[i]);
-		}
+		quic_endpoint_unref(orphans[i]);
 	}
 }
 

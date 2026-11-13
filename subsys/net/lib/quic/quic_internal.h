@@ -1014,6 +1014,13 @@ struct quic_endpoint {
 	 */
 	uint16_t max_tx_payload_size;
 
+	/** The reference held for the endpoint list of a context has been
+	 * dropped. References left are held by whoever is using the endpoint
+	 * at the moment. Not a bit field: it is written under contexts_lock,
+	 * the bits below are not.
+	 */
+	bool list_ref_dropped;
+
 	/** Is this endpoint in a server role.
 	 */
 	bool is_server : 1;
@@ -1609,5 +1616,9 @@ void quic_test_streams_lock(bool lock);
 void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
 struct quic_stream *quic_get_stream(struct quic_context *conn);
 bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
+void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr);
+struct quic_endpoint *quic_test_endpoint_alloc(void);
+void quic_test_endpoint_unref(struct quic_endpoint *ep);
+void quic_test_check_idle_timeouts(void);
 
 #endif /* CONFIG_NET_TEST */
