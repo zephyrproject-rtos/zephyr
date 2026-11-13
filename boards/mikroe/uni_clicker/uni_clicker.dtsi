@@ -1,0 +1,168 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Generic UNI Clicker carrier description. The MCU-card specific
+ * connector mapping (left_connector / right_connector) must be included
+ * by the board DTS before this file.
+ */
+
+/ {
+	aliases {
+		led0 = &led_a;
+		led1 = &led_b;
+		led2 = &led_c;
+		led3 = &led_d;
+		sw0 = &button_a;
+		sw1 = &button_b;
+		sw2 = &button_c;
+		sw3 = &button_d;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+
+		led_a: led_a {
+			gpios = <&left_connector 34 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		led_b: led_b {
+			gpios = <&left_connector 35 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+
+		led_c: led_c {
+			gpios = <&left_connector 36 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+
+		led_d: led_d {
+			gpios = <&left_connector 24 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_a: button_a {
+			label = "User Button 1";
+			gpios = <&left_connector 88 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button_b: button_b {
+			label = "User Button 2";
+			gpios = <&left_connector 94 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button_c: button_c {
+			label = "User Button 3";
+			gpios = <&left_connector 93 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		button_d: button_d {
+			label = "User Button 4";
+			gpios = <&left_connector 61 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	mikrobus_1_header: mikrobus-connector-1 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &left_connector 143 0>,	/* AN */
+			   <1 0 &left_connector 142 0>,	/* RST */
+			   <2 0 &left_connector 141 0>,	/* CS */
+			   <3 0 &left_connector 140 0>,	/* SCK */
+			   <4 0 &left_connector 139 0>,	/* MISO */
+			   <5 0 &left_connector 138 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &left_connector 137 0>,	/* PWM */
+			   <7 0 &left_connector 136 0>,	/* INT */
+			   <8 0 &left_connector 135 0>,	/* RX */
+			   <9 0 &left_connector 134 0>,	/* TX */
+			   <10 0 &left_connector 133 0>, /* SCL */
+			   <11 0 &left_connector 132 0>; /* SDA */
+		/* +5V */
+		/* GND */
+	};
+
+	mikrobus_2_header: mikrobus-connector-2 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &left_connector 131 0>,	/* AN */
+			   <1 0 &left_connector 130 0>,	/* RST */
+			   <2 0 &left_connector 129 0>,	/* CS */
+			   <3 0 &left_connector 128 0>,	/* SCK */
+			   <4 0 &left_connector 127 0>,	/* MISO */
+			   <5 0 &left_connector 126 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &left_connector 125 0>,	/* PWM */
+			   <7 0 &left_connector 124 0>,	/* INT */
+			   <8 0 &left_connector 123 0>,	/* RX  */
+			   <9 0 &left_connector 122 0>,	/* TX */
+			   <10 0 &left_connector 121 0>, /* SCL */
+			   <11 0 &left_connector 120 0>; /* SDA */
+		/* +5V */
+		/* GND */
+	};
+
+	mikrobus_3_header: mikrobus-connector-3 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &left_connector 119 0>,	/* AN */
+			   <1 0 &left_connector 118 0>,	/* RST */
+			   <2 0 &left_connector 117 0>,	/* CS */
+			   <3 0 &left_connector 116 0>,	/* SCK */
+			   <4 0 &left_connector 115 0>,	/* MISO */
+			   <5 0 &left_connector 114 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &left_connector 113 0>,	/* PWM */
+			   <7 0 &left_connector 112 0>,	/* INT */
+			   <8 0 &left_connector 111 0>,	/* RX */
+			   <9 0 &left_connector 110 0>,	/* TX */
+			   <10 0 &left_connector 109 0>, /* SCL */
+			   <11 0 &left_connector 108 0>; /* SDA */
+		/* +5V */
+		/* GND */
+	};
+
+	mikrobus_4_header: mikrobus-connector-4 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &left_connector 107 0>,	/* AN */
+			   <1 0 &left_connector 106 0>,	/* RST */
+			   <2 0 &left_connector 105 0>,	/* CS */
+			   <3 0 &left_connector 104 0>,	/* SCK */
+			   <4 0 &left_connector 103 0>,	/* MISO */
+			   <5 0 &left_connector 102 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &left_connector 101 0>,	/* PWM */
+			   <7 0 &left_connector 100 0>,	/* INT */
+			   <8 0 &left_connector 99 0>,	/* RX */
+			   <9 0 &left_connector 98 0>,	/* TX */
+			   <10 0 &left_connector 97 0>,	/* SCL */
+			   <11 0 &left_connector 96 0>;	/* SDA */
+		/* +5V */
+		/* GND */
+	};
+};
+
+mikrobus_header: &mikrobus_1_header {};
