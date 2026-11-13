@@ -23,4 +23,19 @@ config FCB_ALLOW_FIXED_ENDMARKER
 	  This allows the FCB instances to disable CRC checks in
 	  favor of increased write throughput.
 
+config FCB_ENDMARKER_NEVER_ERASED
+	bool "Never use the erased value as an entry's end marker"
+	help
+	  The end marker of an entry is the CRC-8 of its length and data, written
+	  after the data. When that CRC-8 equals the erased value of the flash,
+	  a finished entry cannot be told from one whose write was cut short by
+	  a power loss before its end marker was written: both read back as
+	  valid, and the cut-short one hands half-written data to the reader.
+	  With this option such a CRC-8 is written as its complement instead, so
+	  an end marker that is still erased never validates an entry.
+
+	  Entries written without this option whose CRC-8 is the erased value
+	  (one in 256) read as invalid with it, so turn it on before data is
+	  first written, or accept losing those entries once.
+
 endif
