@@ -826,13 +826,20 @@ Apply only for working with non-compliant Windows UAC2 driver"
 #define AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR_PTR(node)			\
 	(struct usb_desc_header *) &DESCRIPTOR_NAME(fs_feedback_ep, node),
 
+/* bInterval 4 = 8 microframes = 1 ms. A high-speed feedback endpoint must not request
+ * an interval that makes hosts allocate one isochronous packet per URB: Linux derives
+ * syncinterval from bInterval (this descriptor is 7 bytes long, so it carries no
+ * bRefresh field) and then clamps max_packs_per_urb to 1 << syncinterval. With
+ * bInterval 1 that clamp is 1, and the host cannot keep a 125 us data endpoint fed.
+ */
+
 #define AS_EXPLICIT_FEEDBACK_ENDPOINT_HS_DESCRIPTOR(node)			\
 	0x07,						/* bLength */		\
 	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
 	AS_NEXT_IN_EP_ADDR(node),			/* bEndpointAddress */	\
 	0x11,						/* bmAttributes */	\
 	U16_LE(0x04),					/* wMaxPacketSize */	\
-	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
+	0x04,						/* bInterval */
 
 #define AS_EXPLICIT_FEEDBACK_HS_DESCRIPTOR_ARRAY(node)				\
 	static uint8_t DESCRIPTOR_NAME(hs_feedback_ep, node)[] = {		\
