@@ -324,6 +324,86 @@ int video_write_cci_multiregs8(const struct i2c_dt_spec *i2c, const struct video
 int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct video_reg16 *regs,
 				size_t num_regs);
 
+/** Continuous block of register entries supporting 8-bit or 16-bit address encoded with
+ *  CCI size flags and variable length data
+ */
+struct video_block_reg {
+	/** Starting register address with CCI flags (e.g. VIDEO_REG_ADDR16_DATA8) */
+	uint32_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint16_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Continuous block of register entries supporting 8-bit address and variable length data */
+struct video_block_reg8 {
+	/** Starting 8-bit register address */
+	uint8_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint8_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Continuous block of register entries supporting 16-bit address and variable length data */
+struct video_block_reg16 {
+	/** Starting 16-bit register address */
+	uint16_t addr;
+	/** Number of contiguous registers / data bytes */
+	uint16_t num_regs;
+	/** Pointer to array of contiguous data bytes */
+	const uint8_t *data;
+};
+
+/** Macro to initialize a struct video_block_reg element */
+#define VIDEO_BLOCK_REG(start_addr, ...)                                                           \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/** Macro to initialize a struct video_block_reg8 element */
+#define VIDEO_BLOCK_REG8(start_addr, ...)                                                          \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/** Macro to initialize a struct video_block_reg16 element */
+#define VIDEO_BLOCK_REG16(start_addr, ...)                                                         \
+	{                                                                                          \
+		.addr = (start_addr), .num_regs = sizeof((const uint8_t[]){__VA_ARGS__}),          \
+		.data = (const uint8_t[])                                                          \
+		{                                                                                  \
+			__VA_ARGS__                                                                \
+		}                                                                                  \
+	}
+
+/**
+ * @brief Write contiguous blocks starting at 16-bit register addresses using zero-copy.
+ */
+int video_write_cci_multiblocks_reg16(const struct i2c_dt_spec *i2c,
+				      const struct video_block_reg16 *blocks, size_t num_blocks);
+
+/**
+ * @brief Write contiguous blocks starting at 8-bit register addresses using zero-copy.
+ */
+int video_write_cci_multiblocks_reg8(const struct i2c_dt_spec *i2c,
+				     const struct video_block_reg8 *blocks, size_t num_blocks);
+
+/**
+ * @brief Write contiguous blocks starting at generic register addresses using zero-copy.
+ */
+int video_write_cci_multiblocks_reg(const struct i2c_dt_spec *i2c,
+				    const struct video_block_reg *blocks, size_t num_blocks);
+
 /**
  * @}
  */
