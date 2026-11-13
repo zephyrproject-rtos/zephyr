@@ -207,6 +207,7 @@ static void delay_handler(struct k_work *work)
  * @ingroup kernel_workqueue_tests
  * @see K_WORK_DEFINE()
  * @see k_work_init()
+ * @verifies ZEP-SRS-38-34
  */
 ZTEST(work, test_workq_work_define_matches_init)
 {
@@ -239,6 +240,7 @@ ZTEST(work, test_workq_work_define_matches_init)
  * @ingroup kernel_workqueue_tests
  * @see K_WORK_DELAYABLE_DEFINE()
  * @see k_work_init_delayable()
+ * @verifies ZEP-SRS-38-35
  */
 ZTEST(work, test_workq_delayable_define_matches_init)
 {
@@ -357,6 +359,8 @@ static void start_test_queues(void)
  * @see k_work_queue_init()
  * @see k_work_queue_start()
  * @see k_thread_name_get()
+ * @verifies ZEP-SRS-38-29
+ * @verifies ZEP-SRS-38-30
  */
 ZTEST(work, test_workq_queue_start_config)
 {
@@ -1046,6 +1050,7 @@ ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel)
  * @see k_work_cancel_delayable_sync()
  * @see k_work_schedule_for_queue()
  * @verifies ZEP-SRS-38-24
+ * @verifies ZEP-SRS-38-43
  */
 ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel_sync)
 {
@@ -1099,6 +1104,7 @@ ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel_sync)
  * @see k_work_cancel_delayable_sync()
  * @verifies ZEP-SRS-38-19
  * @verifies ZEP-SRS-38-24
+ * @verifies ZEP-SRS-38-43
  */
 ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel_sync_wait)
 {
@@ -1553,6 +1559,7 @@ static void drain_wait_timer_cb(struct k_timer *timer)
  * @see k_work_submit_to_queue()
  * @see k_work_queue_drain()
  * @verifies ZEP-SRS-38-5
+ * @verifies ZEP-SRS-38-32
  */
 ZTEST(work_1cpu, test_workq_1cpu_drain_wait)
 {
@@ -2187,6 +2194,7 @@ ZTEST(work_1cpu, test_workq_1cpu_queue_no_yield)
  * @see k_work_busy_get()
  * @see k_work_submit()
  * @verifies ZEP-SRS-38-10
+ * @verifies ZEP-SRS-38-33
  */
 ZTEST(work_1cpu, test_workq_1cpu_system_queue)
 {
@@ -2242,6 +2250,7 @@ ZTEST(work_1cpu, test_workq_1cpu_system_queue)
  * @see k_work_schedule()
  * @verifies ZEP-SRS-38-10
  * @verifies ZEP-SRS-38-21
+ * @verifies ZEP-SRS-38-36
  */
 ZTEST(work_1cpu, test_workq_1cpu_system_schedule)
 {

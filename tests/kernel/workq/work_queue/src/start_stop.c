@@ -104,6 +104,7 @@ ZTEST(workqueue_api, test_workq_start_stop)
  * @see k_work_queue_start()
  * @see k_work_queue_stop()
  * @verifies ZEP-SRS-38-8
+ * @verifies ZEP-SRS-38-31
  * @verifies ZEP-SRS-38-46
  */
 ZTEST(workqueue_api, test_workq_stop_essential)
@@ -170,6 +171,7 @@ static void run_q_main(void *workq_ptr, void *sem_ptr, void *p3)
  * @see k_work_queue_stop()
  * @see k_work_queue_drain()
  * @verifies ZEP-SRS-38-8
+ * @verifies ZEP-SRS-38-41
  */
 ZTEST(workqueue_api, test_workq_run_stop)
 {
