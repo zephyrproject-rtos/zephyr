@@ -39,9 +39,10 @@ void btp_bap_audio_stream_tx_init(void);
  * @param bap_stream The stream to register
  *
  * @retval 0 on success
- * @retval -EINVAL @p bap_stream is NULL
- * @retval -EINVAL @p bap_stream is not configured for TX
- * @retval -EINVAL @p bap_stream.codec_cfg contains invalid values
+ * @retval -EINVAL
+ *     - @p bap_stream is NULL
+ *     - @p bap_stream is not configured for TX
+ *     - @p bap_stream.codec_cfg contains invalid values
  * @retval -ENOMEM if not more streams can be registered
  */
 int btp_bap_audio_stream_tx_register(struct btp_bap_audio_stream *stream);
@@ -54,8 +55,9 @@ int btp_bap_audio_stream_tx_register(struct btp_bap_audio_stream *stream);
  * @param bap_stream The stream to unregister
  *
  * @retval 0 on success
- * @retval -EINVAL @p bap_stream is NULL
- * @retval -EINVAL @p bap_stream is not configured for TX
+ * @retval -EINVAL
+ *     - @p bap_stream is NULL
+ *     - @p bap_stream is not configured for TX
  * @retval -EALREADY @p bap_stream is currently not registered
  */
 int btp_bap_audio_stream_tx_unregister(struct btp_bap_audio_stream *stream);
