@@ -976,31 +976,38 @@ static int uart_sam0_tx(const struct device *dev, const uint8_t *buf,
 		return -EINVAL;
 	}
 
+	/*
+	 * Keep interrupts locked until the transmission is set up, so that
+	 * neither the ISR nor another uart_tx() sees it half done, and its
+	 * completion can't run before the timeout is scheduled.
+	 */
 	unsigned int key = irq_lock();
 
 	if (dev_data->tx_len != 0U) {
 		retval = -EBUSY;
-		goto err;
+		goto out;
+	}
+
+	retval = dma_reload(cfg->dma_dev, cfg->tx_dma_channel, (uint32_t)buf,
+			    (uint32_t)(&(regs->DATA.reg)), len);
+	if (retval != 0) {
+		goto out;
+	}
+
+	retval = dma_start(cfg->dma_dev, cfg->tx_dma_channel);
+	if (retval != 0) {
+		goto out;
 	}
 
 	dev_data->tx_buf = buf;
 	dev_data->tx_len = len;
-
-	irq_unlock(key);
-
-	retval = dma_reload(cfg->dma_dev, cfg->tx_dma_channel, (uint32_t)buf,
-			    (uint32_t)(&(regs->DATA.reg)), len);
-	if (retval != 0U) {
-		return retval;
-	}
 
 	if (timeout != SYS_FOREVER_US) {
 		k_work_reschedule(&dev_data->tx_timeout_work,
 				      K_USEC(timeout));
 	}
 
-	return dma_start(cfg->dma_dev, cfg->tx_dma_channel);
-err:
+out:
 	irq_unlock(key);
 	return retval;
 }
@@ -1054,7 +1061,7 @@ static int uart_sam0_rx_enable(const struct device *dev, uint8_t *buf,
 			    (uint32_t)(&(regs->DATA.reg)),
 			    (uint32_t)buf, len);
 	if (retval != 0) {
-		return retval;
+		goto err;
 	}
 
 	dev_data->rx_buf = buf;
