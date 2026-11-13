@@ -10,13 +10,24 @@ description: |
 
     Two GPIO pads can only be connected to the DAC peripheral.
 
+    Pad mapping uses a zero-based dac-channel-id.
+
     ESP32 pads
-      - GPIO25 as DAC channel 1
-      - GPIO26 as DAC channel 2
+      - GPIO25 uses dac-channel-id 0
+      - GPIO26 uses dac-channel-id 1
 
     ESP32-S2 pads
-      - GPIO17 as DAC channel 1
-      - GPIO18 as DAC channel 2
+      - GPIO17 uses dac-channel-id 0
+      - GPIO18 uses dac-channel-id 1
+
+    ESP32-S31 pads
+      - GPIO4 uses dac-channel-id 0
+      - GPIO5 uses dac-channel-id 1
+
+    ESP32 and ESP32-S2 resolution is 8 bits. ESP32-S31 resolution is
+    12 bits. A buffered ESP32-S31 channel uses the wide output swing:
+    codes 248 to 3848 are linear, and codes outside that range may
+    saturate. The driver still accepts codes 0 through 4095.
 
     To enable the DAC peripheral it must be enabled in the board
     dts, or in subsequent overlay file.
@@ -27,8 +38,8 @@ description: |
 
     To specify the DAC channel to use, dts overlay must include
     properties 'dac-channel-id', which uses zero based channel index.
-    Variable 'dac-resolution' must be also specified, although ESP32
-    only supported resolution is 8bits.
+    Variable 'dac-resolution' must be also specified. Use 8 for ESP32
+    and ESP32-S2, and 12 for ESP32-S31.
 
           / {
             zephyr,user {
