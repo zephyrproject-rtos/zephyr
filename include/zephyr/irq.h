@@ -28,6 +28,8 @@ extern "C" {
  * @defgroup isr_apis Interrupt Service Routine APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * @satisfies ZEP-SRS-14-2
  */
 
 /**
