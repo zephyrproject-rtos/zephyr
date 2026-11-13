@@ -6,9 +6,13 @@ Overview
 The Raspberry Pi Pico 2 and Pico 2W are second-generation products in the Raspberry Pi
 Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html>`_ is referred to as Pico 2.
 
-The RP2350 SoC has two Cortex-M33 cores and two Hazard3 (RISC-V) cores. Zephyr
-supports builds targeting either CPU architecture, but currently runs on one
-core only; running code on the second core is not supported.
+The RP2350 SoC has two cores. Each core can run either an ARM Cortex-M33
+processor or a Hazard3 RISC-V processor. Zephyr supports builds targeting either
+architecture for core 0.
+
+Zephyr also supports running both cores with the M33 processor in an AMP
+configuration. Zephyr does not yet support Hazard3-Hazard3 nor heterogeneous
+M33-Hazard3 multicore configurations.
 
 Hardware
 ********
@@ -55,6 +59,29 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
     :flash-args: --openocd /usr/local/bin/openocd
 
 The blinky sample is not yet supported on Pico 2W, so try the :zephyr:code-sample:`wifi-shell` application to connect to the network.
+
+Multi-Core AMP (Cortex-M33)
+===========================
+
+The Pico 2 supports running a Zephyr image on both Cortex-M33 cores
+simultaneously. The CPU0 image boots normally and is responsible for launching
+the CPU1 image.
+
+An example application using sysbuild to build for both cores can be found in
+the :zephyr:code-sample:`sysbuild_hello_world` application.
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/sysbuild/hello_world
+    :board: rpi_pico2/rp2350a/m33_0
+    :goals: build flash
+    :west-args: --sysbuild
+    :flash-args: --openocd /usr/local/bin/openocd
+
+.. note::
+
+   The ``rpi_pico2/rp2350a/m33_1`` board target cannot be built standalone.
+   It must be built as part of a sysbuild configuration launched by the main
+   board target.
 
 Wi-Fi Firmware Setup
 =====================
