@@ -216,11 +216,11 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	spi_hal_context_t *hal = &data->hal;
 	spi_hal_dev_config_t *hal_dev = &data->dev_config;
 	spi_hal_trans_config_t *hal_trans = &data->trans_config;
-	size_t chunk_len_bytes = spi_context_max_continuous_chunk(&data->ctx) * data->dfs;
 	size_t max_buf_sz =
 		cfg->dma_enabled ? SPI_DMA_MAX_BUFFER_SIZE : SOC_SPI_MAXIMUM_BUFFER_SIZE;
-	size_t transfer_len_bytes = MIN(chunk_len_bytes, max_buf_sz);
-	size_t transfer_len_frames = transfer_len_bytes / data->dfs;
+	size_t transfer_len_frames =
+		MIN(spi_context_max_continuous_chunk(&data->ctx), max_buf_sz / data->dfs);
+	size_t transfer_len_bytes = transfer_len_frames * data->dfs;
 	size_t bit_len = transfer_len_bytes << 3;
 	uint8_t *rx_temp = NULL;
 	uint8_t *tx_temp = NULL;
