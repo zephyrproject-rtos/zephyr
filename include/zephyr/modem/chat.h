@@ -23,7 +23,7 @@ extern "C" {
  * @brief Modem Chat
  * @defgroup modem_chat Modem Chat
  * @since 3.5
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup modem
  * @{
  */
@@ -337,6 +337,8 @@ struct modem_chat {
 
 	/* User data passed with match callbacks */
 	void *user_data;
+	/* Optional observer of events from the attached pipe */
+	modem_pipe_api_callback pipe_callback;
 
 	/* Receive buffer */
 	uint8_t *receive_buf;
@@ -413,6 +415,14 @@ struct modem_chat {
 struct modem_chat_config {
 	/** Free to use user data passed with modem match callbacks */
 	void *user_data;
+	/**
+	 * Optional callback which observes events from the attached pipe.
+	 *
+	 * Invoked from the pipe event callback context with the pipe spinlock held
+	 * and receives the chat's user_data. It must not block or call modem_pipe
+	 * or modem_chat APIs on the attached pipe; defer recovery actions to a work item.
+	 */
+	modem_pipe_api_callback pipe_callback;
 	/** Receive buffer used to store parsed arguments */
 	uint8_t *receive_buf;
 	/** Size of receive buffer should be longest line + longest match */
