@@ -624,6 +624,7 @@ Biometrics Drivers:
     - include/zephyr/drivers/biometrics/
     - samples/drivers/biometrics/
     - tests/drivers/biometrics/
+    - tests/drivers/build_all/biometrics/
     - doc/hardware/peripherals/biometrics.rst
   labels:
     - "area: Biometrics"
