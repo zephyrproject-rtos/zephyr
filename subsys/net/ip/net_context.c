@@ -3356,8 +3356,16 @@ static int context_sendto(struct net_context *context,
 #endif /* CONFIG_NET_UDP_OPTIONS */
 
 	iface = net_context_get_iface(context);
-	if (iface && !net_if_is_up(iface)) {
-		return -ENETDOWN;
+	if (iface != NULL) {
+		/* Packet sockets can send before the link is operational. */
+		bool up = (family == NET_AF_PACKET) ?
+			  (net_if_is_admin_up(iface) && net_if_is_carrier_ok(iface) &&
+			   !net_if_flag_is_set(iface, NET_IF_SUSPENDED)) :
+			  net_if_is_up(iface);
+
+		if (!up) {
+			return -ENETDOWN;
+		}
 	}
 
 	context->send_cb = cb;
