@@ -17,6 +17,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/pm/pm.h>
 #include <cmsis_core.h>
+#include <zephyr/arch/arm/arm-m-switch.h>
 
 /**
  *
