@@ -135,12 +135,17 @@ void arm_isr_handler(const void *args)
 }
 
 /**
- * @brief Test custom interrupt controller handling with CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER.
  * @addtogroup kernel_interrupt_tests
  * @ingroup all_tests
  * @{
  */
 
+/**
+ * @brief Test custom interrupt controller handling with CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER.
+ *
+ * @see arch_irq_is_enabled()
+ * @verifies ZEP-SRS-7-12
+ */
 ZTEST(arm_custom_interrupt, test_arm_custom_interrupt)
 {
 	zassert_true(custom_init_called, "Custom IRQ init not called\n");

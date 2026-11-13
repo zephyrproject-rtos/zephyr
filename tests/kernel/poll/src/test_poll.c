@@ -73,6 +73,7 @@ static volatile bool wake_up_by_poll = true;
  * @verifies ZEP-SRS-33-1
  * @verifies ZEP-SRS-33-3
  * @verifies ZEP-SRS-33-4
+ * @verifies ZEP-SRS-33-11
  */
 ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 {
@@ -470,6 +471,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type, bool is_ava
  * @verifies ZEP-SRS-33-1
  * @verifies ZEP-SRS-33-2
  * @verifies ZEP-SRS-33-4
+ * @verifies ZEP-SRS-33-11
  */
 ZTEST(poll_api_1cpu, test_poll_wait)
 {

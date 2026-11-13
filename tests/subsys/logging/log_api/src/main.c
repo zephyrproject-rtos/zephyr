@@ -815,6 +815,7 @@ ZTEST(test_log_api_1cpu, test_log_msg_dropped_notification)
  * @ingroup logging_tests
  * @verifies ZEP-SRS-11-8
  * @verifies ZEP-SRS-11-13
+ * @verifies ZEP-SRS-11-27
  */
 ZTEST(test_log_api, test_log_panic)
 {
