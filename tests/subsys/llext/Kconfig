@@ -3,6 +3,9 @@
 
 mainmenu "LLEXT tests"
 
+config MP_MAX_NUM_CPUS
+	default 1 if LLEXT_READONLY_1CPU
+
 source "Kconfig.zephyr"
 
 config LLEXT_INC_IN_TEXT
@@ -12,3 +15,10 @@ config LLEXT_INC_IN_TEXT
 	  in .text instead of .data by default. This is useful for when the
 	  memory region the linker places .data in by default is not suitable
 	  for execution.
+
+config LLEXT_READONLY_1CPU
+	bool "Enable this when using readonly elf buffer on 1 CPU"
+	depends on SOC_SERIES_INTEL_ADSP_ACE20 || \
+		SOC_SERIES_INTEL_ADSP_ACE30 || \
+		SOC_SERIES_INTEL_ADSP_ACE40
+	select LLEXT_CUSTOM_HEAP_PLACEMENT
