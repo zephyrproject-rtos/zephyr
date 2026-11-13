@@ -358,6 +358,7 @@ static void thread_offload(void (*f)(const void *p), const void *param)
  * @see k_thread_deadline_set()
  * @verifies ZEP-SRS-2-19
  * @verifies ZEP-SRS-2-17
+ * @verifies ZEP-SRS-2-27
  */
 ZTEST(suite_deadline, test_thread_reschedule)
 {

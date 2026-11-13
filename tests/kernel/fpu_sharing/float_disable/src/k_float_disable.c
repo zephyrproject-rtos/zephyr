@@ -74,6 +74,7 @@ static void usr_fp_thread_entry_2(void *p1, void *p2, void *p3)
  *
  * @ingroup kernel_fpsharing_tests
  * @verifies ZEP-SRS-29-1
+ * @verifies ZEP-SRS-29-2
  * @verifies ZEP-SRS-29-3
  * @verifies ZEP-SRS-29-5
  * @verifies ZEP-SRS-29-6
