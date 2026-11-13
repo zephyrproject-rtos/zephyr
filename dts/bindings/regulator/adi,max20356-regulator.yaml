@@ -1,0 +1,329 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20356/MAX20358 PMIC regulators.
+
+  The regulators node is a child of the MAX20356 MFD parent. Each rail is a
+  child node whose node name selects the rail; the driver strictly matches these
+  names: BUCK1, BUCK2, BUCK3, BUCKBOOST, LDO1, LDO2, LDO3, LDO4, LSW1, LSW2,
+  LSW3.
+
+  Bucks support dynamic voltage scaling (DVS): I2C (Mode 0, default), GPIO
+  (Mode 1, an MPC-pin pair selects one of four preset voltages) and SPI (Mode 2,
+  MPC0/1/2 driven by the controller referenced by the parent's spi-dvs phandle).
+  The buck-boost and LDOs do not participate in MPC/SPI DVS.
+
+  LDO1 and LDO2 can operate as a linear regulator or a load switch, selected via
+  regulator-initial-mode using the MAX20356_MODE_* macros from
+  <zephyr/dt-bindings/mfd/max20356.h>.
+
+  Any of the eight multi-purpose control pins (MPC0..MPC7) can be routed to
+  enable-control a rail through the adi,mpc-enable-rails property. A routed pin
+  sets the rail's <rail>Ctr bit and puts its enable into "controlled by MPC" mode;
+  the rail must also be in sequencing slot 7 (adi,sequence-slot = <7>) for the
+  routing to take effect. Such pins must not also be claimed by the GPIO child.
+
+compatible: "adi,max20356-regulator"
+
+include: base.yaml
+
+properties:
+  adi,mpc-enable-rails:
+    type: array
+    description: |
+      Routes each multi-purpose control pin (MPC0..MPC7) to the regulator rail it
+      enable-controls. Eight cells; the cell index is the MPC pin number and the
+      cell value is a MAX20356_MPC_* selector from
+      <zephyr/dt-bindings/mfd/max20356.h> (MAX20356_MPC_NONE leaves the pin
+      unrouted). A pin routed to a rail sets that rail's <rail>Ctr.<rail>MPC<pin>
+      bit and puts the rail's enable field into "controlled by MPC" mode
+      (<rail>En = 10); the rail must also be in sequencing slot 7
+      (adi,sequence-slot = <7>) for the routing to take effect in hardware. Pins
+      routed here must not also be claimed by the GPIO child or used for GPIO/SPI
+      DVS.
+
+      Example Usage:
+        adi,mpc-enable-rails =
+          <MAX20356_MPC_NONE MAX20356_MPC_NONE MAX20356_MPC_NONE
+            MAX20356_MPC_NONE MAX20356_MPC_NONE MAX20356_MPC_NONE
+            MAX20356_MPC_LSW1 MAX20356_MPC_BUCK3>;
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-init-microvolt
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-initial-mode
+        - regulator-allowed-modes
+        - regulator-active-discharge
+
+  properties:
+    adi,buck-voltage-step-microvolt:
+      type: int
+      default: 50000
+      enum: [10000, 25000, 50000]
+      description: |
+        Buck rail voltage step (Buck<n>VStep). Selects the buck output scale:
+        0.500-1.130V at 10mV, 0.500-2.075V at 25mV, or 0.500-3.650V at 50mV,
+        all from a 0.5V base (Buck<n>VSet[5:0]). Ignored for non-buck rails.
+
+    adi,dvs-mode:
+      type: string
+      default: "i2c"
+      enum:
+        - "i2c"
+        - "gpio"
+        - "spi"
+      description: |
+        Dynamic voltage scaling mode for a buck rail (Buck<n>DvsCfg). "i2c"
+        drives the voltage over the I2C bus; "gpio" selects one of four preset
+        voltages from an MPC-pin pair (see adi,dvs-mpc-pair and adi,dvs-voltages);
+        "spi" repurposes MPC0/1/2 as an SPI DVS interface (requires the parent's
+        spi-dvs phandle). Ignored for the buck-boost, LDOs and load switches.
+
+    adi,dvs-mpc-pair:
+      type: array
+      description: |
+        For adi,dvs-mode = "gpio": the ordered MPC-pin pair (two entries, each
+        0..7) that selects the active DVS voltage. The first entry is the low
+        select bit, the second the high select bit, per the datasheet decode
+        table. These pins must not also be claimed by the GPIO child.
+
+    adi,dvs-voltages:
+      type: array
+      description: |
+        For adi,dvs-mode = "gpio": the four alternate output voltages in
+        microvolts (Buck<n>DvsVlt0..3) corresponding to MPC select states
+        00/01/10/11. Each value must lie within the rail's configured range.
+
+    adi,dvs-valley-current-microamp:
+      type: int
+      default: 500000
+      enum: [500000, 1000000]
+      description: |
+        DVS valley (inductor) current limit (Buck<n>DvsCfg0.Buck<n>DvsCur).
+
+    adi,ldo4-always-on-off-on-pfn1:
+      type: boolean
+      description: |
+        LDO4 only, MAX20358 variant only: enable "Always-On LDO Off Through PFN1"
+        (LDO4Cfg.LDO4RTC, 0x67 bit 7). On the MAX20356 this request is rejected
+        with -ENOTSUP and the bit is left cleared.
+
+    adi,lock-enable:
+      type: boolean
+      description: |
+        Password-lock handling for this rail's registers (bucks, buck-boost and
+        LDOs; ignored for the load switches, which have no lock domain). When set
+        the driver wraps every register write in the LockMsk/LockUnlock password
+        sequence, so a rail left in its OTP-locked state stays writable through
+        that sequence. When unset (default) the rail's registers are written
+        directly, skipping the password sequence; this requires the rail to
+        already be unlocked in hardware (the driver does not issue an unlock),
+        otherwise the writes are dropped by the chip.
+
+    adi,sequence-slot:
+      type: int
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]
+      description: |
+        Power-up sequencing slot for this rail (<rail>Ena.<rail>Seq[7:5]). Only
+        the sequencing field is written; the enable field is left untouched.
+
+    adi,buck-enb-integrator:
+      type: boolean
+      description: |
+        Disable the buck integrator feedback (Buck<n>Cfg0.Buck<n>EnbINTGR).
+        Setting this property sets the bit, which disables integrator feedback.
+
+    adi,buck-pgood-enable:
+      type: boolean
+      description: Enable the buck PGOOD comparator (Buck<n>Cfg0.Buck<n>PGOODena).
+
+    adi,buck-fast:
+      type: boolean
+      description: Enable buck pretrigger (fast) mode (Buck<n>Cfg0.Buck<n>Fast).
+
+    adi,buck-passive-discharge:
+      type: boolean
+      description: Enable buck passive discharge (Buck<n>Cfg0.Buck<n>PsvDsc).
+
+    adi,buck-low-emi:
+      type: boolean
+      description: Enable buck low-EMI mode (Buck<n>Cfg0.Buck<n>LowEMI).
+
+    adi,buck-force-fet-scaling:
+      type: boolean
+      description: |
+        Force buck FET scaling, halving the FET size to optimize efficiency when
+        Buck<n>ISet must be below 100mA (Buck<n>Cfg0.Buck<n>FET).
+
+    adi,buck-enable-lx-sense:
+      type: boolean
+      description: |
+        Enable buck LX sense, selecting the freewheeling-FET turn-on condition
+        (Buck<n>Cfg0.Buck<n>EnLxSns). Keep unset for Buck<n>Vset <= 1.6V.
+
+    adi,buck-low-bandwidth:
+      type: boolean
+      description: |
+        Enable buck low-bandwidth mode, reducing the capacitance needed to
+        minimize DCM-to-CCM jitter (Buck<n>Cfg1.Buck<n>LowBW).
+
+    adi,buck-force-dcm:
+      type: boolean
+      description: |
+        Force buck discontinuous conduction mode for light-load efficiency
+        (Buck<n>Cfg1.Buck<n>FrcDCM).
+
+    adi,buck-mpc2-fast:
+      type: boolean
+      description: Enable buck fast mode controlled by MPC2 (Buck<n>Cfg1.Buck<n>MPCFast).
+
+    adi,buck-forced-pwm:
+      type: boolean
+      description: Force buck PWM mode (Buck<n>Cfg1.Buck<n>FPWM).
+
+    adi,buck-enb-adaptive-peak:
+      type: boolean
+      description: |
+        Adaptive peak-current mode control (Buck<n>Cfg1.Buck<n>EnbIADPT). Setting
+        this property sets the raw bit.
+
+    adi,buck-iset-lookup-disable:
+      type: boolean
+      description: |
+        Disable the buck peak-current lookup table so Buck<n>ISet takes effect
+        (Buck<n>Iset.Buck<n>ISetLookUpb). Setting this property sets the bit.
+
+    adi,buck-dvs-ipmax:
+      type: boolean
+      description: |
+        Buck DVS ISet peak-current control (Buck<n>DvsCfg0.Buck<n>DvsIpMax). This
+        shares its register with the DVS mode/valley-current fields, which are
+        programmed separately; only this bit is touched here.
+
+    adi,bbst-ipset-lookup-disable:
+      type: boolean
+      description: |
+        Disable the buck-boost peak-current lookup table (BBstCfg.BBstIPSetLookUpb).
+        Setting this property sets the bit.
+
+    adi,bbst-low-emi:
+      type: boolean
+      description: Enable buck-boost low-EMI mode (BBstCfg.BBstLowEMI).
+
+    adi,bbst-ramp-enable:
+      type: boolean
+      description: Enable buck-boost output ramp (BBstCfg.BBstRampEna).
+
+    adi,bbst-mode:
+      type: boolean
+      description: |
+        Buck-boost operating mode select (BBstCfg.BBstMode). See the datasheet for
+        the mode selected when the bit is set.
+
+    adi,bbst-passive-discharge:
+      type: boolean
+      description: Enable buck-boost passive discharge (BBstCfg.BBstPsvDisc).
+
+    adi,bbst-ippad-adaptive-enable:
+      type: boolean
+      description: |
+        Enable buck-boost adaptive peak/valley current adjustment
+        (BBstCfg1.BBstIpPadPEnb).
+
+    adi,bbst-fast:
+      type: boolean
+      description: Enable buck-boost fast mode (BBstCfg1.BBstFast).
+
+    adi,bbst-zero-cross-comp-disable:
+      type: boolean
+      description: |
+        Disable the buck-boost zero-crossing comparator (BBstCfg1.BBZCCmpEnB).
+        Setting this property sets the bit.
+
+    adi,bbst-force-fet-scaling:
+      type: boolean
+      description: |
+        Force buck-boost FET scaling, halving the FET size for light-load
+        efficiency (BBstCfg1.BBstFFET).
+
+    adi,bbst-mpc1-fast:
+      type: boolean
+      description: |
+        Enable buck-boost fast mode by MPC1 for interoperability with the
+        MAX86170/MAX86171 (BBstCfg1.BBstMPC1FCT).
+
+    adi,bbst-fhigh-threshold-kilohertz:
+      type: int
+      enum: [25, 35, 50, 100]
+      description: |
+        Buck-boost fHIGH switching-frequency threshold (BBstCfg1.BBFHighSh), in
+        kHz. When fSW exceeds fHIGH all blocks are kept on (higher IQ); the
+        regulator resumes low-IQ mode once fSW drops to fHIGH/4.
+
+    adi,ldo1-internal-supply:
+      type: boolean
+      description: |
+        Always-on LDO1 internal switchover supply control (LDO1Cfg.LDO1IntSup).
+
+    adi,ldo1-passive-discharge:
+      type: boolean
+      description: Enable LDO1 passive discharge (LDO1Cfg.LDO1PsvDsc).
+
+    adi,ldo2-mpc0-config:
+      type: boolean
+      description: LDO2 MPC0 configuration bit (LDO2Cfg.LDO2_MPC0CNF).
+
+    adi,ldo2-mpc0-control:
+      type: boolean
+      description: LDO2 MPC0 control bit (LDO2Cfg.LDO2_MPC0CNT).
+
+    adi,ldo2-passive-discharge:
+      type: boolean
+      description: Enable LDO2 passive discharge (LDO2Cfg.LDO2PsvDsc).
+
+    adi,ldo3-mpc-config:
+      type: boolean
+      description: LDO3 MPC configuration bit (LDO3Cfg.LDO3_MPC_CNF).
+
+    adi,ldo3-no-clip-protection:
+      type: boolean
+      description: |
+        Disable the LDO3 short-circuit protection trigger on clipping
+        (LDO3Cfg.LDO3_NOCLP). Setting this property sets the bit.
+
+    adi,ldo3-high-current-cout:
+      type: boolean
+      description: LDO3 high-current COUT selection (LDO3Cfg.LDO3_HICOUT).
+
+    adi,ldo3-force-high-current:
+      type: boolean
+      description: Force LDO3 high-current mode (LDO3Cfg.LDO3_FRC_HIC).
+
+    adi,ldo3-proportional-mode:
+      type: boolean
+      description: Enable LDO3 proportional regulation mode (LDO3Cfg.LDO3_PMOD).
+
+    adi,ldo3-passive-discharge:
+      type: boolean
+      description: Enable LDO3 passive discharge (LDO3Cfg.LDO3PsvDsc).
+
+    adi,ldo4-passive-discharge:
+      type: boolean
+      description: Enable LDO4 passive discharge (LDO4Cfg.LDO4PsvDsc).
+
+    adi,lsw-low-iq:
+      type: boolean
+      description: |
+        Enable load-switch low-quiescent mode, which disables the switch voltage
+        protection (LSW<n>Cfg.LSW<n>LowIq).
+
+    adi,lsw-passive-discharge:
+      type: boolean
+      description: Enable load-switch passive discharge (LSW<n>Cfg.LSW<n>PsvDsc).
