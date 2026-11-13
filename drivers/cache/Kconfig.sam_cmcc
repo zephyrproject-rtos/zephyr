@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config CACHE_SAM_CMCC
+	bool "Atmel SAM Cortex-M Cache Controller (CMCC) driver"
+	default y
+	depends on SOC_ATMEL_SAM_HAS_CMCC
+	select CACHE_HAS_DRIVER
+	help
+	  Driver for the CMCC of the Atmel SAM4S and SAM4E, which caches the
+	  internal flash on the code bus. It is managed as the i-cache.

@@ -20,4 +20,19 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config WATCHDOG
 	default y
 
+if SOC_ATMEL_SAM_HAS_CMCC
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+# The CMCC line is 4 words
+configdefault ICACHE_LINE_SIZE
+	default 16
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # SOC_ATMEL_SAM_HAS_CMCC
+
 endif # SOC_FAMILY_ATMEL_SAM
