@@ -23,6 +23,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
 #include <kernel_internal.h>
+#include <zephyr/sys/zassert.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -38,6 +39,8 @@ K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+ZASSERT_MODULE(KERNEL);
 
 /* The originally synchronization strategy made heavy use of recursive
  * irq_locking, which ports poorly to spinlocks which are
@@ -137,9 +140,9 @@ uint8_t *z_priv_stack_find(k_thread_stack_t *stack)
 {
 	struct k_object *obj = k_object_find(stack);
 
-	__ASSERT(obj != NULL, "stack object not found");
-	__ASSERT(obj->type == K_OBJ_THREAD_STACK_ELEMENT,
-		 "bad stack object");
+	ZASSERT(obj != NULL, "stack object not found");
+	ZASSERT(obj->type == K_OBJ_THREAD_STACK_ELEMENT,
+		"bad stack object");
 
 	return obj->data.stack_data->priv;
 }
@@ -707,7 +710,7 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 
 	struct dyn_obj *dyn = CONTAINER_OF(vko, struct dyn_obj, kobj);
 
-	__ASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
+	ZASSERT(IS_PTR_ALIGNED(dyn, struct dyn_obj), "unaligned z_object");
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		if (ko->perms[i] != 0U) {

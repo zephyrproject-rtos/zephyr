@@ -34,6 +34,9 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <scheduler.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_MODULE(KERNEL);
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
@@ -56,7 +59,7 @@ K_OBJ_TYPE_DEFINE(obj_type_event, k_event, K_OBJ_TYPE_EVENT_ID, NULL);
 
 void z_impl_k_event_init(struct k_event *event)
 {
-	__ASSERT_NO_MSG(!arch_is_in_isr());
+	ZASSERT(!arch_is_in_isr());
 
 	event->events = 0;
 	event->lock = (struct k_spinlock) {};
@@ -284,8 +287,8 @@ static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
 {
 	uint32_t  rv = 0;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	ZASSERT(((arch_is_in_isr() == false) ||
+		 K_TIMEOUT_EQ(timeout, K_NO_WAIT)));
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_event, wait, event, events,
 					options, timeout);

@@ -11,6 +11,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
+#include <zephyr/sys/zassert.h>
 
 
 #define Z_STATE_STR_DUMMY       "dummy"
@@ -240,7 +241,7 @@ static ALWAYS_INLINE bool should_preempt(const struct k_thread *thread,
 		return true;
 	}
 
-	__ASSERT(_current != NULL, "");
+	ZASSERT_IN(KERNEL, _current != NULL);
 
 	/* Or if we're pended/suspended/dummy (duh) */
 	if (z_is_thread_prevented_from_running(_current)) {
