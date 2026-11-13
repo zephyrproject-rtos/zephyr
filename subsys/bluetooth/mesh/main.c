@@ -386,7 +386,11 @@ void bt_mesh_reset(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		(void)bt_mesh_proxy_gatt_disable();
+		int err = bt_mesh_proxy_gatt_disable();
+
+		if (err != 0 && err != -EALREADY) {
+			LOG_WRN("Disabling GATT proxy failed (err %d)", err);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
@@ -461,6 +465,26 @@ int bt_mesh_suspend(void)
 		return err;
 	}
 
+	/* This can be refused while another thread is in a callback for the
+	 * Proxy service: do it now, when only the scanning has to be restored.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		err = bt_mesh_proxy_gatt_disable();
+		if (err != 0 && err != -EALREADY) {
+			int scan_err;
+
+			LOG_WRN("Disabling GATT proxy failed (err %d)", err);
+
+			scan_err = bt_mesh_scan_enable();
+			if (scan_err != 0) {
+				LOG_WRN("Re-enabling scanning failed (err %d)", scan_err);
+			}
+
+			atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+			return err;
+		}
+	}
+
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_CLIENT)) {
 		bt_mesh_proxy_disconnect(BT_MESH_KEY_ANY);
 	}
@@ -481,14 +505,6 @@ int bt_mesh_suspend(void)
 		return err;
 	}
 #endif
-
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		err = bt_mesh_proxy_gatt_disable();
-		if (err && err != -EALREADY) {
-			LOG_WRN("Disabling GATT proxy failed (err %d)", err);
-			return err;
-		}
-	}
 
 	err = bt_mesh_adv_disable();
 	if (err) {

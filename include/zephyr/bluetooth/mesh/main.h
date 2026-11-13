@@ -614,7 +614,8 @@ void bt_mesh_reset(void);
  *  the function returns an error.
  *
  *  @retval 0 Success.
- *  @retval -EBUSY Provisioning is active.
+ *  @retval -EBUSY Provisioning is active, or another thread is in a callback from
+ *                 the stack for the GATT Proxy service. Try again later.
  *  @retval Other negative errno code on failure.
  */
 int bt_mesh_suspend(void);

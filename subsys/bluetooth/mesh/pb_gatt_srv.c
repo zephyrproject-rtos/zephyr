@@ -176,11 +176,17 @@ static struct bt_gatt_service prov_svc = BT_GATT_SERVICE(prov_attrs);
 
 static int prov_gatt_service_unregister(void)
 {
+	int err;
+
 	if (!service_registered) {
 		return -EALREADY;
 	}
 
-	(void)bt_gatt_service_unregister(&prov_svc);
+	err = bt_gatt_service_unregister(&prov_svc);
+	if (err != 0 && err != -ENOENT) {
+		return err;
+	}
+
 	service_registered = false;
 
 	return 0;

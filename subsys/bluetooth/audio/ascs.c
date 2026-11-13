@@ -3627,7 +3627,8 @@ int bt_ascs_unregister(void)
 	/* Unregister the GATT service first to prevent any GATT operations while cleaning up */
 	err = bt_gatt_service_unregister(&ascs_svc);
 	if (err != 0) {
-		__ASSERT(err == -ENOENT, "Unexpected bt_gatt_service_unregister error: %d", err);
+		__ASSERT(err == -ENOENT || err == -EBUSY,
+			 "Unexpected bt_gatt_service_unregister error: %d", err);
 
 		LOG_DBG("Failed to unregister ASCS: %d", err);
 

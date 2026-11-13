@@ -123,6 +123,48 @@ static sys_slist_t callback_list = SYS_SLIST_STATIC_INIT(&callback_list);
 
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
 static sys_slist_t db;
+
+/* Held while db is iterated or changed, and for db_iters. Changes are also
+ * made under the host lock, so code that holds the host lock can read db
+ * without it. It is never held while another lock is taken or while the stack
+ * calls out of the GATT core, so that it can be taken under any other lock, as
+ * in the settings handlers that iterate db.
+ */
+static K_MUTEX_DEFINE(db_mutex);
+
+static void db_lock(void)
+{
+	__maybe_unused int err = k_mutex_lock(&db_mutex, K_FOREVER);
+
+	__ASSERT(err == 0, "failed to lock the GATT database (err %d)", err);
+}
+
+static void db_unlock(void)
+{
+	__maybe_unused int err = k_mutex_unlock(&db_mutex);
+
+	__ASSERT(err == 0, "failed to unlock the GATT database (err %d)", err);
+}
+
+#define DB_LOCK_ASSERT()                                                                           \
+	__ASSERT(db_mutex.owner == k_current_get(), "GATT database lock not held by %p",           \
+		 k_current_get())
+
+/* An iteration of db lets go of db_mutex while it calls back into an
+ * attribute. This record of it keeps other threads from unregistering svc
+ * meanwhile, so that the iteration can carry on from svc, and the callback can
+ * use svc. The thread itself can unregister svc from the callback: the iteration
+ * then finds its place again by handle, and the record goes on keeping other
+ * threads out, in case the callback registers svc again.
+ */
+struct db_iter {
+	sys_snode_t node;
+	const struct bt_gatt_service *svc;
+	k_tid_t thread;
+	bool svc_unregistered;
+};
+
+static sys_slist_t db_iters;
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 
 enum gatt_global_flags {
@@ -1183,6 +1225,8 @@ static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 {
 	struct bt_gatt_service *tmp, *prev = NULL;
 
+	DB_LOCK_ASSERT();
+
 	if (last_handle == 0 || svc->attrs[0].handle > last_handle) {
 		sys_slist_append(&db, &svc->node);
 		return;
@@ -1201,6 +1245,32 @@ static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 
 		prev = tmp;
 	}
+}
+
+/* Find the first attribute in db with a handle of at least handle */
+static bool db_find(uint16_t handle, struct bt_gatt_service **found, size_t *attr_index)
+{
+	struct bt_gatt_service *svc;
+
+	DB_LOCK_ASSERT();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
+		/* The application owns svc and could have emptied it */
+		__ASSERT(svc->attr_count > 0U, "GATT service %p has no attributes", svc);
+		if (svc->attr_count == 0U || svc->attrs[svc->attr_count - 1].handle < handle) {
+			continue;
+		}
+
+		for (size_t i = 0; i < svc->attr_count; i++) {
+			if (svc->attrs[i].handle >= handle) {
+				*found = svc;
+				*attr_index = i;
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 static int gatt_register(struct bt_gatt_service *svc)
@@ -1243,7 +1313,9 @@ populate:
 			bt_uuid_str(attrs->uuid), attrs->perm);
 	}
 
+	db_lock();
 	gatt_insert(svc, last_handle);
+	db_unlock();
 
 	return 0;
 }
@@ -1664,11 +1736,52 @@ static void gatt_unregister_ccc(struct bt_gatt_ccc_managed_user_data *ccc)
 	}
 }
 
+/* Whether another thread's iteration is calling back into an attribute of svc */
+static bool db_iter_in_svc(const struct bt_gatt_service *svc)
+{
+	struct db_iter *iter;
+
+	DB_LOCK_ASSERT();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&db_iters, iter, node) {
+		if (iter->svc == svc && iter->thread != k_current_get()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Tell the iterations of this thread that call back into svc that it is gone */
+static void db_iters_svc_unregistered(const struct bt_gatt_service *svc)
+{
+	struct db_iter *iter;
+
+	DB_LOCK_ASSERT();
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&db_iters, iter, node) {
+		if (iter->svc == svc) {
+			iter->svc_unregistered = true;
+		}
+	}
+}
+
 static int gatt_unregister(struct bt_gatt_service *svc)
 {
+	db_lock();
+
+	if (db_iter_in_svc(svc)) {
+		db_unlock();
+		return -EBUSY;
+	}
+
 	if (!sys_slist_find_and_remove(&db, &svc->node)) {
+		db_unlock();
 		return -ENOENT;
 	}
+
+	db_iters_svc_unregistered(svc);
+	db_unlock();
 
 	for (uint16_t i = 0; i < svc->attr_count; i++) {
 		struct bt_gatt_attr *attr = &svc->attrs[i];
@@ -1713,10 +1826,10 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 
 	bt_dev_lock();
 
-	/* The RX-path readers of the database (the ATT request handlers
-	 * iterating the attributes) do not take the host lock and rely on
-	 * cooperative scheduling: hold the scheduler lock as well so that
-	 * they cannot preempt a preemptible caller mid-update.
+	/* The database itself is under db_mutex, but the RX-path readers of
+	 * the other state that is changed here do not take the host lock and
+	 * rely on cooperative scheduling: hold the scheduler lock as well so
+	 * that they cannot preempt a preemptible caller mid-update.
 	 */
 	k_sched_lock();
 
@@ -1997,6 +2110,16 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
 }
 
+/* Whether attr has the UUID and the user data asked for. A NULL uuid or
+ * attr_data matches any attribute.
+ */
+static bool gatt_attr_matches(const struct bt_gatt_attr *attr, const struct bt_uuid *uuid,
+			      const void *attr_data)
+{
+	return (uuid == NULL || bt_uuid_cmp(uuid, attr->uuid) == 0) &&
+	       (attr_data == NULL || attr_data == attr->user_data);
+}
+
 static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 				 uint16_t handle, uint16_t start_handle,
 				 uint16_t end_handle,
@@ -2016,13 +2139,7 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	/* Match attribute UUID if set */
-	if (uuid && bt_uuid_cmp(uuid, attr->uuid)) {
-		return BT_GATT_ITER_CONTINUE;
-	}
-
-	/* Match attribute user_data if set */
-	if (attr_data && attr_data != attr->user_data) {
+	if (!gatt_attr_matches(attr, uuid, attr_data)) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -2037,40 +2154,88 @@ static uint8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 	return result;
 }
 
+/* Iterate db with the matching of gatt_foreach_iter(). db_mutex is held while
+ * the attributes are found and matched, and let go of while the iteration calls
+ * back into them. Services can then be added or removed, but only this thread
+ * can remove the one that the iteration is in (see struct db_iter).
+ */
 static void foreach_attr_type_dyndb(uint16_t start_handle, uint16_t end_handle,
 				    const struct bt_uuid *uuid,
 				    const void *attr_data, uint16_t num_matches,
 				    bt_gatt_attr_func_t func, void *user_data)
 {
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-	size_t i;
 	struct bt_gatt_service *svc;
+	struct db_iter iter;
+	size_t attr_index;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
-		struct bt_gatt_service *next;
+	db_lock();
 
-		next = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
-		if (next) {
-			/* Skip ahead if start is not within service handles */
-			if (next->attrs[0].handle <= start_handle) {
+	if (!db_find(start_handle, &svc, &attr_index)) {
+		db_unlock();
+		return;
+	}
+
+	while (true) {
+		const struct bt_gatt_attr *attr;
+		uint16_t handle;
+		uint8_t result;
+
+		if (attr_index >= svc->attr_count) {
+			/* Go on with the next service, also past an empty one */
+			svc = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
+			if (svc == NULL) {
+				break;
+			}
+
+			attr_index = 0;
+			continue;
+		}
+
+		attr = &svc->attrs[attr_index];
+		handle = attr->handle;
+		if (handle > end_handle) {
+			break;
+		}
+
+		if (gatt_attr_matches(attr, uuid, attr_data)) {
+			/* num_matches counts the matches that are still to
+			 * be called back for
+			 */
+			num_matches--;
+
+			iter.svc = svc;
+			iter.thread = k_current_get();
+			iter.svc_unregistered = false;
+			sys_slist_append(&db_iters, &iter.node);
+			db_unlock();
+
+			result = func(attr, handle, user_data);
+
+			db_lock();
+			(void)sys_slist_find_and_remove(&db_iters, &iter.node);
+
+			if (result == BT_GATT_ITER_STOP || num_matches == 0U) {
+				break;
+			}
+
+			if (iter.svc_unregistered) {
+				/* The callback unregistered the service: carry on
+				 * after the attribute just visited.
+				 */
+				if (handle == BT_ATT_LAST_ATTRIBUTE_HANDLE ||
+				    !db_find(handle + 1U, &svc, &attr_index)) {
+					break;
+				}
+
 				continue;
 			}
 		}
 
-		for (i = 0; i < svc->attr_count; i++) {
-			struct bt_gatt_attr *attr = &svc->attrs[i];
-
-			if (gatt_foreach_iter(attr, attr->handle,
-					      start_handle,
-					      end_handle,
-					      uuid, attr_data,
-					      &num_matches,
-					      func, user_data) ==
-			    BT_GATT_ITER_STOP) {
-				return;
-			}
-		}
+		attr_index++;
 	}
+
+	db_unlock();
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
 }
 
@@ -3672,14 +3837,21 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 			return false;
 		}
 
+		/* Each lookup is an iteration of its own, and another thread can
+		 * unregister the service in between
+		 */
 		attr = bt_gatt_attr_next(attr);
-		__ASSERT(attr, "No more attributes\n");
+		if (attr == NULL) {
+			return false;
+		}
 	}
 
 	/* Check if attribute is a characteristic value */
 	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) != 0) {
 		attr = bt_gatt_attr_next(attr);
-		__ASSERT(attr, "No more attributes\n");
+		if (attr == NULL) {
+			return false;
+		}
 	}
 
 	/* Find the CCC Descriptor */
