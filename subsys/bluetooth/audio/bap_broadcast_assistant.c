@@ -955,6 +955,12 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 
 		if (info.state == BT_CONN_STATE_CONNECTED) {
 			for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_state_sub_params); i++) {
+				/* Workaround: discovery completes with subscriptions in flight, and
+				 * this CCC discovery would make the retried subscribe fail.
+				 * TODO: Subscribe serially after discovery, busy until done.
+				 */
+				bt_gatt_cancel(conn, &inst->recv_state_disc_params[i]);
+
 				/* It's okay if this fail with -EINVAL as that means that they are
 				 * not currently subscribed
 				 */
@@ -970,9 +976,8 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 		bt_conn_drop(&inst->conn);
 	}
 
-	/* The subscribe parameters must remain instact so they can get cleaned up by GATT */
+	/* The subscribe and CCC discovery parameters belong to GATT until it has called back */
 	memset(&inst->disc_params, 0, sizeof(inst->disc_params));
-	memset(&inst->recv_state_disc_params, 0, sizeof(inst->recv_state_disc_params));
 	memset(&inst->read_params, 0, sizeof(inst->read_params));
 	memset(&inst->write_params, 0, sizeof(inst->write_params));
 
