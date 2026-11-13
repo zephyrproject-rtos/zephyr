@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/pinctrl.h>
 
 LOG_MODULE_REGISTER(nxp_cmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
@@ -30,6 +31,7 @@ struct nxp_cmp_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	const struct pinctrl_dev_config *pincfg;
 };
 
 struct nxp_cmp_data {
@@ -172,6 +174,12 @@ static int nxp_cmp_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		LOG_ERR("Failed to apply pinctrl state");
+		return ret;
+	}
+
 	config->base->CR0 = ((config->base->CR0 & ~CMP_CR0_HYSTCTR_MASK) |
 			CMP_CR0_HYSTCTR(config->hysteresis_mode));
 
@@ -214,49 +222,44 @@ static DEVICE_API(comparator, nxp_cmp_api) = {
 	.trigger_is_pending = nxp_cmp_trigger_is_pending,
 };
 
-#define NXP_CMP_DEVICE_INIT(inst)						\
-										\
-	static struct nxp_cmp_data _CONCAT(data, inst) = {			\
-		.interrupt_mask = 0,						\
-	};									\
-										\
-	PM_DEVICE_DT_INST_DEFINE(inst, nxp_cmp_pm_callback);			\
-										\
-	static void _CONCAT(nxp_cmp_irq_config, inst)(const struct device *dev)	\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),	\
-			nxp_cmp_irq_handler, DEVICE_DT_INST_GET(inst), 0);	\
-		irq_enable(DT_INST_IRQN(inst));					\
-	}									\
-										\
-	static const struct nxp_cmp_config _CONCAT(config, inst) = {		\
-		.base = (CMP_Type *)DT_INST_REG_ADDR(inst),			\
-		.enable_high_speed_mode = DT_INST_PROP(inst,			\
-					enable_high_speed_mode),		\
-		.invert_output = DT_INST_PROP(inst, invert_output),		\
-		.enable_pin_out = DT_INST_PROP(inst, enable_pin_out),		\
-		.use_unfiltered_output = DT_INST_PROP(inst,			\
-					use_unfiltered_output),			\
-		.filter_count = DT_INST_PROP_OR(inst, filter_count, 0),		\
-		.filter_period = DT_INST_PROP_OR(inst, filter_period, 0),	\
-		.positive_mux_input = DT_ENUM_IDX_OR(DT_DRV_INST(inst),		\
-				positive_mux_input, 0),				\
-		.negative_mux_input = DT_ENUM_IDX_OR(DT_DRV_INST(inst),		\
-				negative_mux_input, 0),				\
-		.dac_value = DT_INST_PROP_OR(inst, dac_value, 0),		\
-		.dac_vref_source = DT_ENUM_IDX_OR(DT_DRV_INST(inst),		\
-				dac_vref_source, 0),				\
-		.hysteresis_mode = DT_INST_PROP_OR(DT_DRV_INST(inst),		\
-				hysteresis_mode, 0),				\
-		.irq_config_func = _CONCAT(nxp_cmp_irq_config, inst),		\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, nxp_cmp_init, PM_DEVICE_DT_INST_GET(inst),	\
-			&_CONCAT(data, inst), &_CONCAT(config, inst),		\
-			POST_KERNEL, CONFIG_COMPARATOR_INIT_PRIORITY,		\
-			&nxp_cmp_api);
+#define NXP_CMP_DEVICE_INIT(inst)                                                                  \
+                                                                                                   \
+	static struct nxp_cmp_data _CONCAT(data, inst) = {                                         \
+		.interrupt_mask = 0,                                                               \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, nxp_cmp_pm_callback);                                       \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static void _CONCAT(nxp_cmp_irq_config, inst)(const struct device *dev)                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), nxp_cmp_irq_handler,  \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}                                                                                          \
+                                                                                                   \
+	static const struct nxp_cmp_config _CONCAT(config, inst) = {                               \
+		.base = (CMP_Type *)DT_INST_REG_ADDR(inst),                                        \
+		.enable_high_speed_mode = DT_INST_PROP(inst, enable_high_speed_mode),              \
+		.invert_output = DT_INST_PROP(inst, invert_output),                                \
+		.enable_pin_out = DT_INST_PROP(inst, enable_pin_out),                              \
+		.use_unfiltered_output = DT_INST_PROP(inst, use_unfiltered_output),                \
+		.filter_count = DT_INST_PROP_OR(inst, filter_count, 0),                            \
+		.filter_period = DT_INST_PROP_OR(inst, filter_period, 0),                          \
+		.positive_mux_input = DT_ENUM_IDX_OR(DT_DRV_INST(inst), positive_mux_input, 0),    \
+		.negative_mux_input = DT_ENUM_IDX_OR(DT_DRV_INST(inst), negative_mux_input, 0),    \
+		.dac_value = DT_INST_PROP_OR(inst, dac_value, 0),                                  \
+		.dac_vref_source = DT_ENUM_IDX_OR(DT_DRV_INST(inst), dac_vref_source, 0),          \
+		.hysteresis_mode = DT_INST_PROP_OR(DT_DRV_INST(inst), hysteresis_mode, 0),         \
+		.irq_config_func = _CONCAT(nxp_cmp_irq_config, inst),                              \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),           \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, nxp_cmp_init, PM_DEVICE_DT_INST_GET(inst),                     \
+			      &_CONCAT(data, inst), &_CONCAT(config, inst), POST_KERNEL,           \
+			      CONFIG_COMPARATOR_INIT_PRIORITY, &nxp_cmp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_CMP_DEVICE_INIT)
