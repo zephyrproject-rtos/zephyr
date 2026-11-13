@@ -407,9 +407,12 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
 
     # Arguments in this order to allow specific to override general:
     #
-    # - runner-specific runners.yaml arguments
+    # - runner-specific runners.yaml arguments (common to all commands)
+    # - runner-specific runners.yaml arguments scoped to this command
     # - user-provided command line arguments
-    final_argv = runners_yaml['args'][runner_name] + runner_args
+    command_args = runners_yaml.get('command_args') or {}
+    runner_args_cmd_specific = (command_args.get(runner_name) or {}).get(command_name) or []
+    final_argv = runners_yaml['args'][runner_name] + runner_args_cmd_specific + runner_args
 
     # If flashing multiple images, the runner supports reset after flashing and
     # the board has enabled this functionality, check if the board should be
@@ -853,6 +856,17 @@ def dump_runner_args(command, group, runners_yaml, indent=''):
             command.inf(f'{indent}{INDENT}{arg}')
     else:
         command.inf(f'{msg} (none)', colorize=True)
+
+    # Also show arguments scoped to the command being queried, set in the
+    # board files via board_runner_args(<runner> <args>... COMMANDS <command>...).
+    command_args = runners_yaml.get('command_args') or {}
+    cmd_args = (command_args.get(group) or {}).get(command.name) or []
+    if cmd_args:
+        command.inf(f'{indent}{group} arguments for "west {command.name}" '
+                    'from runners.yaml:', colorize=True)
+        for arg in cmd_args:
+            command.inf(f'{indent}{INDENT}{arg}')
+
 
 def dump_all_runner_context(command, runners_yaml, board, build_dir):
     all_cls = {cls.name(): cls for cls in ZephyrBinaryRunner.get_runners() if
