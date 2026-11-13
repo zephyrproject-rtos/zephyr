@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_TLE927X
+	bool "Infineon TLE927x SBC VCC2 regulator driver"
+	default y
+	depends on DT_HAS_INFINEON_TLE927X_VCC2_ENABLED
+	depends on MFD_TLE927X
+	select REGULATOR_THREAD_SAFE_REFCNT
+	help
+	  Enable the Infineon TLE927x SBC VCC2 regulator driver. The refcount is
+	  made thread safe because the rail may be switched from more than one
+	  thread context.
+
+if REGULATOR_TLE927X
+
+config REGULATOR_TLE927X_INIT_PRIORITY
+	int "TLE927x regulator driver init priority"
+	default 78
+	help
+	  Init priority for the TLE927x regulator driver. It must be strictly
+	  greater than MFD_TLE927X_INIT_PRIORITY: any SPI command moves the SBC
+	  from Init to Normal mode and the parent must own that transition.
+
+endif # REGULATOR_TLE927X
