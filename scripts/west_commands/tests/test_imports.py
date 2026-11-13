@@ -25,6 +25,7 @@ def test_runner_imports():
         # zephyr-keep-sorted-start
         'alif_flash',
         'amebaflash',
+        'ap_bootloader',
         'arc-nsim',
         'bflb_flash_command',
         'bflb_mcu_tool',
