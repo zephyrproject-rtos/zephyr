@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "common.dtsi"
+
+&flash0 {
+	test_partition: partition@0 {
+		compatible = "zephyr,mapped-partition";
+		reg = <0x0 0x30000>;
+	};
+};
