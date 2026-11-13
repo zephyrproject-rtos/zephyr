@@ -373,6 +373,18 @@ Bluetooth HCI
 Bluetooth Host
 ==============
 
+* For an established ACL connection, :c:func:`bt_conn_disconnect` no longer waits for the
+  controller: a return value of zero now means that the request has been queued. If the controller
+  refuses the request, the call no longer returns an error such as ``-EACCES``: a warning is logged,
+  the connection stays up and :c:member:`bt_conn_cb.disconnected` is not called. The Zephyr
+  Bluetooth Controller can do this for a few connection intervals while several connections are
+  being set up. Applications that wait for the callback after a successful call need to bound the
+  wait and call the function again if the connection is still up.
+
+* A controller that stops responding to HCI commands is now given up on after the command timeout.
+  With :kconfig:option:`CONFIG_BT_ASSERT` disabled, the command fails with ``-ETIMEDOUT`` and every
+  later command with ``-EHOSTDOWN``, until :c:func:`bt_disable` followed by :c:func:`bt_enable`.
+
 * The ATT prepare write buffers (:kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT`) are now shared
   equally between connections: a single connection holds at most
   :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` of them, which defaults to
