@@ -84,10 +84,6 @@ struct lp50xx_config {
 	const struct led_info *leds_info;
 };
 
-struct lp50xx_data {
-	uint8_t *chan_buf;
-};
-
 static const struct led_info *lp50xx_led_to_info(
 			const struct lp50xx_config *config, uint32_t led)
 {
@@ -165,14 +161,12 @@ static int lp50xx_write_channels(const struct device *dev,
 				 uint32_t num_channels, const uint8_t *buf)
 {
 	const struct lp50xx_config *config = dev->config;
-	struct lp50xx_data *data = dev->data;
-	uint8_t base_channel, end_channel, max_channels;
+	uint8_t base_channel = LP50XX_BANK_BASE(config->num_modules);
+	uint32_t max_channels = LP50XX_MAX_CHANNELS(config->num_modules);
+	uint8_t chan_buf[LP50XX_MAX_CHANNELS(LP5036_NUM_MODULES) + 1];
 
-	base_channel = LP50XX_BANK_BASE(config->num_modules);
-	end_channel = base_channel + start_channel + num_channels;
-	max_channels = base_channel + LP50XX_MAX_CHANNELS(config->num_modules);
-
-	if (end_channel > max_channels) {
+	if ((start_channel > max_channels) ||
+	    (num_channels > (max_channels - start_channel))) {
 		return -EINVAL;
 	}
 
@@ -180,10 +174,10 @@ static int lp50xx_write_channels(const struct device *dev,
 	 * Unfortunately this controller doesn't support commands split into
 	 * two I2C messages.
 	 */
-	data->chan_buf[0] = base_channel + start_channel;
-	memcpy(data->chan_buf + 1, buf, num_channels);
+	chan_buf[0] = base_channel + start_channel;
+	memcpy(chan_buf + 1, buf, num_channels);
 
-	return i2c_write_dt(&config->bus, data->chan_buf, num_channels + 1);
+	return i2c_write_dt(&config->bus, chan_buf, num_channels + 1);
 }
 
 static int lp50xx_reset(const struct device *dev)
@@ -358,6 +352,9 @@ static DEVICE_API(led, lp50xx_led_api) = {
 	},
 
 #define LP50XX_DEVICE(n, id, nmodules)						\
+	BUILD_ASSERT((nmodules) <= LP5036_NUM_MODULES,				\
+		     "write_channels buffer too small");			\
+										\
 	DT_INST_FOREACH_CHILD(n, COLOR_MAPPING)					\
 										\
 	static const struct led_info lp##id##_leds_##n[] = {			\
@@ -376,18 +373,12 @@ static DEVICE_API(led, lp50xx_led_api) = {
 		.leds_info		= lp##id##_leds_##n,			\
 	};									\
 										\
-	static uint8_t lp##id##_chan_buf_##n[LP50XX_MAX_CHANNELS(nmodules) + 1];\
-										\
-	static struct lp50xx_data lp##id##_data_##n = {				\
-		.chan_buf	= lp##id##_chan_buf_##n,			\
-	};									\
-										\
 	PM_DEVICE_DT_INST_DEFINE(n, lp50xx_pm_action);				\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      lp50xx_init,					\
 			      PM_DEVICE_DT_INST_GET(n),				\
-			      &lp##id##_data_##n,				\
+			      NULL,						\
 			      &lp##id##_config_##n,				\
 			      POST_KERNEL, CONFIG_LED_INIT_PRIORITY,		\
 			      &lp50xx_led_api);
