@@ -233,12 +233,7 @@ static void esp32_wifi_set_sta_ip(void)
 }
 
 #if defined(CONFIG_NET_IPV4)
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-#define ESP32_WIFI_IPV4_EVENT_MASK                                                                 \
-	(NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED | NET_EVENT_IPV4_DHCP_BOUND)
-#else
 #define ESP32_WIFI_IPV4_EVENT_MASK (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED)
-#endif
 
 static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				size_t info_length __unused, void *user_data __unused)
@@ -252,11 +247,6 @@ static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *
 	case NET_EVENT_IPV4_ACD_SUCCEED:
 		esp32_wifi_set_sta_ip();
 		break;
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-	case NET_EVENT_IPV4_DHCP_BOUND:
-		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
-		break;
-#endif
 	default:
 		break;
 	}
@@ -687,9 +677,6 @@ static void esp32_wifi_handle_roam_timeout(void)
 	 */
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_SKIP_DHCP_ON_ROAMING)) {
 		net_if_dormant_on(esp32_wifi_iface);
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-		net_dhcpv4_stop(esp32_wifi_iface);
-#endif
 		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface,
 							WIFI_REASON_DISCONN_UNSPECIFIED);
 	}
@@ -734,11 +721,7 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 	}
 #endif
 
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-	net_dhcpv4_start(esp32_wifi_iface);
-#else
 	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, WIFI_STATUS_CONN_SUCCESS);
-#endif
 }
 
 /* A transition the supplicant drives itself, which it reconnects from on its
@@ -797,9 +780,6 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	 */
 	if (esp32_data.state == ESP32_STA_CONNECTED || esp32_data.state == ESP32_STA_ROAMING) {
 		net_if_dormant_on(esp32_wifi_iface);
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-		net_dhcpv4_stop(esp32_wifi_iface);
-#endif
 		switch (event->reason) {
 		case WIFI_REASON_ASSOC_LEAVE:
 			result.disconn_reason = WIFI_REASON_DISCONN_USER_REQUEST;

@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/toolchain.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
@@ -625,6 +626,19 @@ void wifi_mgmt_raise_connect_result_status_event(struct net_if *iface,
 		roaming_params.roaming_cnt_11v = 0;
 	}
 #endif
+
+	/* Address configuration belongs to the networking layer, not to individual
+	 * Wi-Fi drivers. Start the client once the station reports a usable link.
+	 * DHCPv4's IF_DOWN/IF_UP lifecycle handles link loss and recovery.
+	 * The supplicant reports roams separately when the link stays up.
+	 */
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+	if (status->status == 0 &&
+	    iface->config.dhcpv4.state == NET_DHCPV4_DISABLED) {
+		net_dhcpv4_start(iface);
+	}
+#endif
+
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CONNECT_RESULT,
 					iface, status,
 					sizeof(struct wifi_status));
@@ -637,6 +651,13 @@ void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status)
 	};
 
 	wifi_mgmt_raise_connect_result_status_event(iface, &cnx_status);
+}
+
+void wifi_mgmt_handle_sta_roam(struct net_if *iface, bool keep_lease)
+{
+	if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4) && !keep_lease) {
+		net_dhcpv4_restart(iface);
+	}
 }
 
 void wifi_mgmt_raise_disconnect_result_status_event(struct net_if *iface,

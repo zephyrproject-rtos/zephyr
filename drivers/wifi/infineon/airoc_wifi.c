@@ -635,8 +635,11 @@ static void airoc_event_handler(whd_event_data_t *event_data)
 		break;
 	case WLC_E_ASSOC:
 		if (data->is_sta_connected == false) {
+			/* EAPOL is sent through the regular L2 path. Keep the interface
+			 * active during the supplicant handshake.
+			 */
+			net_if_dormant_off(data->iface);
 			data->is_sta_connected = true;
-			net_if_dormant_off(airoc_wifi_iface);
 			memset(&event, 0, sizeof(event));
 			event.assoc_info.addr = data->bssid;
 			event.assoc_info.authorized = 0;
@@ -664,8 +667,8 @@ static void airoc_event_handler(whd_event_data_t *event_data)
 	case WLC_E_EAPOL_MSG:
 		/* Send associated evet to supp, if its not done */
 		if (data->is_sta_connected == false) {
+			net_if_dormant_off(data->iface);
 			data->is_sta_connected = true;
-			net_if_dormant_off(airoc_wifi_iface);
 			memset(&event, 0, sizeof(event));
 			event.assoc_info.addr = data->bssid;
 			event.assoc_info.authorized = 0;
@@ -990,9 +993,6 @@ error:
 	} else {
 		net_if_dormant_off(iface);
 		data->is_sta_connected = true;
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-		net_dhcpv4_restart(iface);
-#endif /* defined(CONFIG_WIFI_STA_AUTO_DHCPV4) */
 	}
 
 	wifi_mgmt_raise_connect_result_event(iface, ret);

@@ -240,12 +240,6 @@ int wrapper_wlan_handle_rx_packet(t_u16 datalen, RxPD * rxpd, void *p, void *pay
 void user_recv_monitor_data(void *p, RxPD * rxpd, t_u16 intf_pkt_len);
 #endif
 
-#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
-/* Deactivate the dhcp timer
- */
-void net_stop_dhcp_timer(void);
-#endif
-
 /* Converts Internet host address from the IPv4 dotted-decimal notation into
  * binary form (in network byte order)
  *
@@ -547,14 +541,15 @@ void net_interface_up(void *intrfc_handle);
  */
 void net_interface_down(void *intrfc_handle);
 
-/* Stop DHCP client on given interface
- *
- * Stop the DHCP client on given interface state. Use net_get_sta_handle(),
- * net_get_uap_handle() to get interface handle.
- *
- * \param[in] intrfc_handle interface handle
- *
- * \return void
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+/* Compatibility hook for the pinned hal_nxp. DHCP timers are managed by
+ * Zephyr's DHCPv4 interface lifecycle.
+ */
+void net_stop_dhcp_timer(void);
+#endif
+
+/* Compatibility hook for the pinned hal_nxp. DHCPv4 is managed by Zephyr's
+ * DHCPv4 interface lifecycle.
  */
 void net_interface_dhcp_stop(void *intrfc_handle);
 

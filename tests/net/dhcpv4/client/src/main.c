@@ -1568,7 +1568,6 @@ ZTEST(dhcpv4_tests, test_init_reboot_unanswered_falls_back_to_discover)
 }
 
 #if IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT) && \
-	IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) && \
 	IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)
 
 ZTEST(dhcpv4_tests, test_init_reboot_dns_after_iface_down)
@@ -1870,7 +1869,6 @@ static void check_if_down_drops_lease(enum net_dhcpv4_state state)
 ZTEST(dhcpv4_tests, test_if_down_in_renewing_drops_lease)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
-	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP);
 
 	check_if_down_drops_lease(NET_DHCPV4_RENEWING);
 }
@@ -1878,7 +1876,6 @@ ZTEST(dhcpv4_tests, test_if_down_in_renewing_drops_lease)
 ZTEST(dhcpv4_tests, test_if_down_in_rebinding_drops_lease)
 {
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
-	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP);
 
 	check_if_down_drops_lease(NET_DHCPV4_REBINDING);
 }
