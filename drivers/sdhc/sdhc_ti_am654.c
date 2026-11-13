@@ -1427,12 +1427,23 @@ static int ti_am654_set_io(const struct device *dev, struct sdhc_io *ios)
 {
 	struct ti_am654_data *data = DEV_DATA(dev);
 	int rv;
+	bool reconfigure = false;
 
 	LOG_DBG("SDHC I/O: bus width %u, clk %uHz, power %s, voltage %s", ios->bus_width,
 		ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
 		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
 
-	if (ios->clock < data->props.f_min || ios->clock > data->props.f_max) {
+	/* configure power */
+	if (ios->power_mode == SDHC_POWER_OFF) {
+		/* save */
+		data->ios = *ios;
+		return ti_am654_configure_power(dev, ios->power_mode);
+	} else if (ios->power_mode != data->ios.power_mode) {
+		/* reconfigure all ios as the card is just powered on again. */
+		reconfigure = true;
+	}
+
+	if (ios->clock > data->props.f_max) {
 		LOG_ERR("Invalid clock frequency: %uHz", ios->clock);
 		return -EINVAL;
 	}
@@ -1449,12 +1460,13 @@ static int ti_am654_set_io(const struct device *dev, struct sdhc_io *ios)
 	}
 
 	/* configure bus width */
-	if (ios->bus_width != data->ios.bus_width) {
+	if (reconfigure || ios->bus_width != data->ios.bus_width) {
 		ti_am654_configure_bus_width(dev, ios->bus_width);
 	}
 
 	/* configure voltage */
-	if (ios->signal_voltage != data->ios.signal_voltage || ios->timing != data->ios.timing) {
+	if (reconfigure || ios->signal_voltage != data->ios.signal_voltage
+		|| ios->timing != data->ios.timing) {
 		rv = ti_am654_configure_voltage(dev, ios->signal_voltage, ios->timing);
 		if (rv != 0) {
 			return rv;
@@ -1462,7 +1474,7 @@ static int ti_am654_set_io(const struct device *dev, struct sdhc_io *ios)
 	}
 
 	/* set clock */
-	if (ios->clock != data->ios.clock || ios->clock == 0) {
+	if (reconfigure || ios->clock != data->ios.clock || ios->clock == 0) {
 		rv = ti_am654_configure_clock(dev, ios->clock);
 		if (rv != 0) {
 			return rv;
@@ -1470,7 +1482,7 @@ static int ti_am654_set_io(const struct device *dev, struct sdhc_io *ios)
 	}
 
 	/* configure timing */
-	if (ios->timing != data->ios.timing || ios->clock != data->ios.clock) {
+	if (reconfigure || ios->timing != data->ios.timing || ios->clock != data->ios.clock) {
 		rv = ti_am654_configure_timing(dev, ios->timing, ios->clock);
 		if (rv != 0) {
 			return rv;
