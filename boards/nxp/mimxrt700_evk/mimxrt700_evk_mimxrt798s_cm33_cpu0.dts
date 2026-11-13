@@ -41,6 +41,7 @@
 		zephyr,shell-uart = &flexcomm0_lpuart0;
 		zephyr,display = &lcdif;
 		zephyr,crc = &crc;
+		zephyr,entropy = &trng;
 	};
 
 	leds {
@@ -575,6 +576,10 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 };
 
 &crc {
+	status = "okay";
+};
+
+&trng {
 	status = "okay";
 };
 

@@ -419,6 +419,15 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 #endif
 
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(trng), okay)
+	if ((uint32_t)sub_system == MCUX_ELS_CLK) {
+		CLOCK_EnableClock(kCLOCK_Els);
+		CLOCK_EnableClock(kCLOCK_TrngRef);
+	}
+#endif
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 #if defined(CONFIG_SOC_SERIES_IMXRT7XX)
 	CLOCK_EnableClock(kCLOCK_Pdm);
