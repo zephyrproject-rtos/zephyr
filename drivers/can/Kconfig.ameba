@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# Realtek AMEBA CAN configuration options
+config CAN_AMEBA_CAN
+	bool "Realtek CAN driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_CAN_ENABLED
+	select PINCTRL
+	help
+	  This enables support for the Realtek Controller Area Network  (CAN)
+	  driver.
+
+if CAN_AMEBA_CAN
+
+config CAN_AMEBA_MAX_FILTERS
+	int "Maximum number of concurrent active RX filters"
+	default 16
+	range 1 32
+	help
+	  The Realtek Ameba CAN driver filters received CAN frames in software.
+	  This defines the size of the RX filter array.
+
+endif # CAN_AMEBA_CAN
