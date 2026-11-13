@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Kevin Ahr <kevin@kevinbot.net>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H743_CAN_HS
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_STM32H743_CAN_HS
