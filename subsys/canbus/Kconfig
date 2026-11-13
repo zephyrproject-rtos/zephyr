@@ -1,10 +1,12 @@
 # CAN bus subsystem configuration options
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
+# Copyright (c) 2026 Deere & Company
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Controller Area Network (CAN) bus subsystem"
 
 source "subsys/canbus/isotp/Kconfig"
+source "subsys/canbus/j1939/Kconfig"
 
 endmenu
