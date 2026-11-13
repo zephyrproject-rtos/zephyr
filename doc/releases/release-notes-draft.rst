@@ -126,6 +126,13 @@ Libraries / Subsystems
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes. A device finds out
     its public address with the Binding transaction or the blocking socket client.
 
+  * OCPP: the charge point can authenticate to the central system with HTTP Basic
+    authentication (:kconfig:option:`CONFIG_OCPP_BASIC_AUTH`), with the credentials set in the
+    new :c:struct:`ocpp_basic_auth` member of :c:struct:`ocpp_cs_info`. This is the charge
+    point authentication of the security profiles 1 and 2 of the OCPP 1.6 security
+    whitepaper. Their ``AuthorizationKey`` configuration key is not implemented, see
+    :ref:`ocpp_basic_auth`.
+
   * Ethernet bridge
 
     * The bridge learns the port of each source MAC address into its FDB
