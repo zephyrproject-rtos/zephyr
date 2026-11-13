@@ -147,6 +147,7 @@ static void dpu_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = dpu_supported_fmts;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 }
 
 static void *dpu_get_framebuffer(const struct device *dev)

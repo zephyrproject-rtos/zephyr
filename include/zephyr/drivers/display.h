@@ -348,6 +348,14 @@ enum display_screen_info {
 	 * Screen has x alignment constrained to width.
 	 */
 	SCREEN_INFO_X_ALIGNMENT_WIDTH	= BIT(4),
+	/**
+	 * A write covering the whole panel at (0, 0) with a pitch equal to the
+	 * width holds the caller's buffer: it may be scanned out of the buffer
+	 * itself instead of being copied, so the buffer must stay unchanged until
+	 * the next such write returns, which also releases the buffer of the
+	 * previous one. Partial writes are always copied.
+	 */
+	SCREEN_INFO_WRITE_HOLDS_BUFFER	= BIT(5),
 };
 
 /**
@@ -684,6 +692,14 @@ __subsystem struct display_driver_api {
 
 /**
  * @brief Write data to display
+ *
+ * Unless the display reports @ref SCREEN_INFO_WRITE_HOLDS_BUFFER in its
+ * capabilities, the buffer may be reused as soon as this call returns. With
+ * it, a write covering the whole panel at (0, 0) with a pitch equal to the
+ * width holds the buffer: it may be scanned out of the buffer itself instead
+ * of being copied, so the buffer must stay unchanged until the next such
+ * write returns, which also releases the buffer of the previous one. Partial
+ * writes are always copied.
  *
  * @param dev Pointer to device structure
  * @param x x Coordinate of the upper left corner where to write the buffer

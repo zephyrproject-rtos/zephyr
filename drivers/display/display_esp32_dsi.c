@@ -866,6 +866,7 @@ static void display_esp32_dsi_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = config->pixel_format;
 	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 	capabilities->supported_events = DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_FRAME_DONE;
 }
 

@@ -312,7 +312,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 					PIXEL_FORMAT_RGB_565 |
 					PIXEL_FORMAT_L_8 |
 					(IS_ENABLED(STM32_LTDC_HAS_YUV) ? PIXEL_FORMAT_YUYV : 0);
-	capabilities->screen_info = 0;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 
 	capabilities->current_pixel_format = data->current_pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;

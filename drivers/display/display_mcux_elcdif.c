@@ -343,6 +343,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = supported_fmts;
 	capabilities->current_pixel_format = ((struct mcux_elcdif_data *)dev->data)->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->screen_info = SCREEN_INFO_WRITE_HOLDS_BUFFER;
 	capabilities->supported_events =
 		DISPLAY_EVENT_FRAME_DONE | DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_FIFO_UNDERFLOW;
 }
