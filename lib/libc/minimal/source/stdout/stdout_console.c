@@ -27,7 +27,12 @@ void __stdout_hook_install(int (*hook)(int c))
 
 int z_impl_zephyr_fputc(int c, FILE *stream)
 {
-	return ((stream == stdout) || (stream == stderr)) ? _stdout_hook(c) : EOF;
+	if ((stream != stdout) && (stream != stderr)) {
+		return EOF;
+	}
+
+	c = (unsigned char)c;
+	return (_stdout_hook(c) == EOF) ? EOF : c;
 }
 
 #ifdef CONFIG_USERSPACE
