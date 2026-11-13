@@ -25,7 +25,7 @@
  * - 00..07 (8 bits): inst
  *
  * - 08..13 (6 bits): gclkperiph
- * (values from 0 to 47)
+ * (values from 0 to 63 (GCLK_NUM - 1))
  *
  * - 14..19 (6 bits): mclkmaskbit
  * (values from 0 to 31)
