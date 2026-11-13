@@ -99,8 +99,30 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter,
  *          Backends must switch to blocking mode or halt. All pending logs
  *          are flushed after switching to panic mode. In panic mode, all log
  *          messages must be processed in the context of the call.
+ *
+ *          On SMP, a message that a thread is processing on another CPU is
+ *          finished first, and no other message is processed there during the
+ *          flush. A thread that was switched out in the middle of a message
+ *          can still resume during the flush and mix its output with it,
+ *          unless the caller stops the other CPUs first: see
+ *          log_panic_prepare().
  */
 __syscall void log_panic(void);
+
+/**
+ * @brief Stop the processing of log messages ahead of log_panic().
+ *
+ * For a caller that stops the other CPUs before it calls log_panic(), such as
+ * a fatal error handler. A message that a thread is processing on another CPU
+ * is given the time to be finished, as stopping that CPU would cut the message
+ * short, and no other message is processed there from then on. The caller can
+ * then stop the other CPUs and call log_panic(), which flushes the pending
+ * messages on its own.
+ *
+ * Has no effect on a single CPU, in the immediate mode, or once the logger is
+ * in the panic mode.
+ */
+void log_panic_prepare(void);
 
 /**
  * @brief Process one pending log message.
@@ -314,6 +336,7 @@ int log_mem_get_max_usage(uint32_t *max);
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_PANIC() log_panic()
+#define LOG_PANIC_PREPARE() log_panic_prepare()
 #if defined(CONFIG_LOG_FRONTEND_ONLY)
 #define LOG_INIT() 0
 #define LOG_PROCESS() false
@@ -325,6 +348,7 @@ int log_mem_get_max_usage(uint32_t *max);
 #define LOG_CORE_INIT() do { } while (false)
 #define LOG_INIT() 0
 #define LOG_PANIC() /* Empty */
+#define LOG_PANIC_PREPARE() /* Empty */
 #define LOG_PROCESS() false
 #endif
 /** @endcond */
