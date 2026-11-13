@@ -1,0 +1,9 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_M483
+
+config NUM_IRQS
+	default 108
+
+endif # SOC_M483
