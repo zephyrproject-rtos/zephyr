@@ -15,7 +15,9 @@
 int bt_rpa_create(const uint8_t irk[16], bt_addr_t *rpa);
 
 /**
- * @brief Random address hash function ah, defined in Bluetooth Core Spec Vol 3, Part H, Section 2.2.2.
+ * @brief Random address hash function ah
+ *
+ * Defined in Bluetooth Core Spec Vol 3, Part H, Section 2.2.2.
  *
  * @param irk Key of 16 octets, least significant octet first.
  * @param r   Random value of 3 octets, least significant octet first.

@@ -67,6 +67,8 @@ Libraries / Subsystems
   * :c:member:`bt_gatt_cb.execute_write_ended` tells the application how an Execute
     Write Request ended: whether the client's prepared values were written, cancelled,
     or discarded after a write failed.
+  * Added experimental support for Decision-Based Advertising Filtering
+    (:kconfig:option:`CONFIG_BT_DECISION_BASED_ADV_FILTERING`), see :c:group:`bt_le_decision`.
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.

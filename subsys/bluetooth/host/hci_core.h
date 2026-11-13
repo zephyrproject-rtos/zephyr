@@ -21,6 +21,8 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "decision_internal.h"
+
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
@@ -226,6 +228,11 @@ struct bt_le_ext_adv {
 	/* Current target address */
 	bt_addr_le_t            target_addr;
 
+#if defined(CONFIG_BT_DECISION_BASED_ADV_FILTERING)
+	/* DBAF decision data */
+	struct bt_le_decision_state decision;
+#endif /* CONFIG_BT_DECISION_BASED_ADV_FILTERING */
+
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 
 	/** The options used to set the parameters for this advertising set
@@ -408,6 +415,10 @@ enum bt_dev_cmd {
 	BT_DEV_CMD_LE_READ_ALL_LOCAL_SUPPORTED_FEATURES,
 	/* LE CS Read Local Supported Capabilities [v2] */
 	BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2,
+	/* LE Set Decision Data */
+	BT_DEV_CMD_LE_SET_DECISION_DATA,
+	/* LE Set Decision Instructions */
+	BT_DEV_CMD_LE_SET_DECISION_INSTRUCTIONS,
 
 	/* Total number of commands - must be at the end */
 	BT_DEV_CMD_NUM,

@@ -64,6 +64,13 @@ tests:
       - CONFIG_BT_SCAN_EXT_FILTER_POLICY=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
+  bluetooth.shell.decision_based_adv_filtering:
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_BT_DECISION_BASED_ADV_FILTERING=y
+      - CONFIG_BT_LL_SW_SPLIT=n
+    build_only: true
   bluetooth.shell.shorter_connection_intervals:
     integration_platforms:
       - native_sim

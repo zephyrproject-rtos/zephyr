@@ -911,6 +911,40 @@ enum bt_le_adv_opt {
 	 * (equivalent to @ref BT_HCI_LE_ADV_TX_POWER_NO_PREF).
 	 */
 	BT_LE_ADV_OPT_TX_POWER = BIT(22),
+
+	/**
+	 * @brief Advertise with decision PDUs.
+	 *
+	 * Each advertising event starts with a decision PDU carrying the decision data set with
+	 * @ref bt_le_ext_adv_set_decision_data. Scanners use the decision data to decide whether
+	 * to receive the rest of the advertisement. Scanners that do not process decision PDUs
+	 * do not see the advertising set at all.
+	 *
+	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV. Cannot be used for directed advertising.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_LE_ADV_OPT_DECISION_PDUS = BIT(23),
+
+	/**
+	 * @brief Include the advertiser address in decision PDUs.
+	 *
+	 * Required for scanners that test the advertiser address in their decision instructions.
+	 *
+	 * @note Requires @ref BT_LE_ADV_OPT_DECISION_PDUS.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_LE_ADV_OPT_DECISION_ADVA = BIT(24),
+
+	/**
+	 * @brief Include the Advertising Data Info (ADI) in decision PDUs.
+	 *
+	 * @note Requires @ref BT_LE_ADV_OPT_DECISION_PDUS.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_LE_ADV_OPT_DECISION_ADI = BIT(25),
 };
 
 /** LE Advertising Parameters. */
@@ -2490,6 +2524,31 @@ enum bt_le_scan_opt {
 	 *       @ref bt_le_scan_start returns @c -ENOTSUP otherwise.
 	 */
 	BT_LE_SCAN_OPT_EXT_FILTER_POLICY = BIT(4),
+
+	/**
+	 * @brief Report advertisements that use decision PDUs.
+	 *
+	 * Advertisements that use decision PDUs are reported only if their decision data passes
+	 * the instructions set with @ref bt_le_scan_set_decision_instructions. The Filter Accept
+	 * List does not apply to them. Other advertisements are reported as they would be without
+	 * this option, including filtering by @ref BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_LE_SCAN_OPT_DECISIONS = BIT(5),
+
+	/**
+	 * @brief Report only advertisements that use decision PDUs.
+	 *
+	 * Advertisements that use decision PDUs are reported only if their decision data passes
+	 * the instructions set with @ref bt_le_scan_set_decision_instructions. The Filter Accept
+	 * List does not apply to them. All other advertisements are ignored.
+	 *
+	 * @note Requires @ref BT_LE_SCAN_OPT_DECISIONS.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_LE_SCAN_OPT_DECISIONS_ONLY = BIT(6),
 };
 
 enum bt_le_scan_type {
@@ -2799,7 +2858,9 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  * @retval -EINVAL if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and
  *         @kconfig{CONFIG_BT_SCAN_EXT_FILTER_POLICY} is disabled.
  * @retval -ENOTSUP if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and the Controller does
- *         not support the Extended Scanner Filter Policies.
+ *         not support the Extended Scanner Filter Policies, or if
+ *         @ref BT_LE_SCAN_OPT_DECISIONS is set and the Controller does not support
+ *         Decision-Based Advertising Filtering.
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 

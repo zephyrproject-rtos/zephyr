@@ -76,6 +76,11 @@ if(CONFIG_BT_HCI_HOST)
     cs.c
     )
 
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_DECISION_BASED_ADV_FILTERING
+    decision.c
+    )
+
   if(CONFIG_BT_DF)
     zephyr_library_sources(
       direction.c

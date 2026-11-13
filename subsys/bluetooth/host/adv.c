@@ -374,9 +374,39 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 	return bt_le_adv_set_enable_legacy(adv, enable);
 }
 
+#define ADV_OPT_DECISION_ALL                                                                       \
+	(BT_LE_ADV_OPT_DECISION_PDUS | BT_LE_ADV_OPT_DECISION_ADVA | BT_LE_ADV_OPT_DECISION_ADI)
+
+static bool valid_adv_decision_param(const struct bt_le_adv_param *param)
+{
+	const uint32_t options = param->options;
+
+	if ((options & ADV_OPT_DECISION_ALL) == 0U) {
+		return true;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) ||
+	    (options & BT_LE_ADV_OPT_DECISION_PDUS) == 0U ||
+	    (options & BT_LE_ADV_OPT_EXT_ADV) == 0U || param->peer != NULL) {
+		return false;
+	}
+
+	/* Anonymous advertising omits the address from all PDUs, including decision PDUs */
+	if ((options & BT_LE_ADV_OPT_DECISION_ADVA) != 0U &&
+	    (options & BT_LE_ADV_OPT_ANONYMOUS) != 0U) {
+		return false;
+	}
+
+	return true;
+}
+
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
 	const bool is_ext_adv = (param->options & BT_LE_ADV_OPT_EXT_ADV) != 0U;
+
+	if (!valid_adv_decision_param(param)) {
+		return false;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
@@ -1215,6 +1245,18 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		props |= BT_HCI_LE_ADV_PROP_ANON;
 	}
 
+	if (param->options & BT_LE_ADV_OPT_DECISION_PDUS) {
+		props |= BT_HCI_LE_ADV_PROP_DECISION;
+	}
+
+	if (param->options & BT_LE_ADV_OPT_DECISION_ADVA) {
+		props |= BT_HCI_LE_ADV_PROP_DECISION_ADVA;
+	}
+
+	if (param->options & BT_LE_ADV_OPT_DECISION_ADI) {
+		props |= BT_HCI_LE_ADV_PROP_DECISION_ADI;
+	}
+
 	if (param->options & BT_LE_ADV_OPT_NOTIFY_SCAN_REQ) {
 		cp->scan_req_notify_enable = BT_HCI_LE_ADV_SCAN_REQ_ENABLE;
 	}
@@ -1546,6 +1588,12 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 	return 0;
 }
 
+static bool adv_decision_supported(const struct bt_le_adv_param *param)
+{
+	return !IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) ||
+	       (param->options & ADV_OPT_DECISION_ALL) == 0U || bt_le_decision_supported();
+}
+
 int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 			 const struct bt_le_ext_adv_cb *cb,
 			 struct bt_le_ext_adv **out_adv)
@@ -1567,7 +1615,7 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 		return -EINVAL;
 	}
 
-	if (!adv_peer_addr_res_ok(param)) {
+	if (!adv_peer_addr_res_ok(param) || !adv_decision_supported(param)) {
 		return -ENOTSUP;
 	}
 
@@ -1602,7 +1650,7 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 		return -EINVAL;
 	}
 
-	if (!adv_peer_addr_res_ok(param)) {
+	if (!adv_peer_addr_res_ok(param) || !adv_decision_supported(param)) {
 		return -ENOTSUP;
 	}
 
@@ -1634,6 +1682,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			const struct bt_le_ext_adv_start_param *param)
 {
 	struct bt_conn *conn = NULL;
+	int addr_err = 0;
 	int err;
 
 	if (adv == NULL) {
@@ -1667,7 +1716,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
 		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
-			bt_id_set_adv_private_addr(adv, adv->options);
+			addr_err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
 	} else {
 		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
@@ -1675,8 +1724,21 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
 		     (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 		      !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID)))) {
-			bt_id_set_adv_private_addr(adv, adv->options);
+			addr_err = bt_id_set_adv_private_addr(adv, adv->options);
 		}
+	}
+
+	/* The Resolvable Tag may not have been regenerated for the new address. Advertising them
+	 * together would let observers link the old and new addresses.
+	 */
+	if (IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) && addr_err != 0 &&
+	    bt_le_decision_has_key(adv)) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			bt_conn_unref(conn);
+		}
+
+		return addr_err;
 	}
 
 	err = bt_le_adv_set_enable_ext(adv, true, param);
@@ -1790,6 +1852,10 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv)
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REMOVE_ADV_SET, net_buf_take_plain(&buf), NULL);
 	if (err) {
 		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING)) {
+		bt_le_decision_data_clear(adv);
 	}
 
 	adv_delete(adv);

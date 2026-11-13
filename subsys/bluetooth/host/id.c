@@ -217,6 +217,11 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		bt_addr_le_copy_addr(&adv->adv_addr, addr, BT_ADDR_LE_RANDOM);
 	}
 
+	if (IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) &&
+	    IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		return bt_le_decision_data_refresh(adv);
+	}
+
 	return 0;
 }
 
@@ -615,6 +620,12 @@ static void adv_enable_rpa(struct bt_le_ext_adv *adv, void *data)
 		err = bt_id_set_adv_private_addr(adv, adv->options);
 		if (err) {
 			LOG_WRN("Failed to update advertiser RPA address (%d)", err);
+
+			if (IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) &&
+			    IS_ENABLED(CONFIG_BT_BROADCASTER) && bt_le_decision_has_key(adv)) {
+				LOG_ERR("Advertising set with a Resolvable Tag left disabled");
+				return;
+			}
 		}
 
 		err = bt_le_adv_set_enable_ext(adv, true, NULL);

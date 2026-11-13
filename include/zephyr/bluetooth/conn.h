@@ -1808,6 +1808,56 @@ enum {
 	 *  @note Requires @ref BT_CONN_LE_OPT_CODED.
 	 */
 	BT_CONN_LE_OPT_NO_1M = BIT(1),
+
+	/**
+	 * @brief Connect to devices in the Filter Accept List or accepted by the decision
+	 *        instructions.
+	 *
+	 * Connectable advertisements that use decision PDUs are accepted from any device whose
+	 * decision data passes the instructions set with
+	 * @ref bt_le_scan_set_decision_instructions. Other connectable advertisements are
+	 * accepted only from devices in the Filter Accept List. This matches scanning with
+	 * @ref BT_LE_SCAN_OPT_DECISIONS and @ref BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST.
+	 *
+	 * @note Only valid with @ref bt_conn_le_create_auto.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_CONN_LE_OPT_DECISIONS = BIT(2),
+
+	/**
+	 * @brief Connect only to devices accepted by the decision instructions.
+	 *
+	 * Only connectable advertisements that use decision PDUs are considered, and they are
+	 * accepted from any device whose decision data passes the instructions. The Filter
+	 * Accept List is not used.
+	 *
+	 * @note Requires @ref BT_CONN_LE_OPT_DECISIONS. Cannot be used together with
+	 *       @ref BT_CONN_LE_OPT_DECISIONS_FILTER_ACCEPT_LIST.
+	 *
+	 * @note Only valid with @ref bt_conn_le_create_auto.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_CONN_LE_OPT_DECISIONS_ONLY = BIT(3),
+
+	/**
+	 * @brief Connect only to devices in the Filter Accept List, checking their decision
+	 *        PDUs against the decision instructions.
+	 *
+	 * Connectable advertisements that use decision PDUs are accepted from devices in the
+	 * filter accept list only if their decision data passes the instructions.
+	 * Other connectable advertisements from devices in the filter accept list are accepted
+	 * without checking the instructions. Devices not in the list are ignored.
+	 *
+	 * @note Requires @ref BT_CONN_LE_OPT_DECISIONS. Cannot be used together with
+	 *       @ref BT_CONN_LE_OPT_DECISIONS_ONLY.
+	 *
+	 * @note Only valid with @ref bt_conn_le_create_auto.
+	 *
+	 * @kconfig_dep{CONFIG_BT_DECISION_BASED_ADV_FILTERING}
+	 */
+	BT_CONN_LE_OPT_DECISIONS_FILTER_ACCEPT_LIST = BIT(4),
 };
 
 struct bt_conn_le_create_param {
@@ -1973,11 +2023,17 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *  procedure should be started again in the connected callback after a
  *  new connection has been established.
  *
+ *  The BT_CONN_LE_OPT_DECISIONS* options let the decision instructions select
+ *  devices to connect to, either together with the filter accept list or in
+ *  place of it.
+ *
  *  @param create_param Create connection parameters
  *  @param conn_param   Initial connection parameters.
  *
  *  @return Zero on success or (negative) error code on failure.
  *  @return -ENOMEM No free connection object available.
+ *  @retval -ENOTSUP A BT_CONN_LE_OPT_DECISIONS* option is set and the Controller does not
+ *                   support Decision-Based Advertising Filtering.
  */
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *conn_param);

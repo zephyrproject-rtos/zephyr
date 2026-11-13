@@ -709,6 +709,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			return -EINVAL;
 		case BT_HCI_ERR_CMD_DISALLOWED:
 			return -EACCES;
+		case BT_HCI_ERR_LIMIT_REACHED:
+			return -ENOSPC;
 		default:
 			return -EIO;
 		}
@@ -950,6 +952,27 @@ static void set_phy_conn_param(const struct bt_conn *conn,
 	phy->max_ce_len = 0;
 }
 
+/* Select the initiator filter policy for connecting to devices in the Filter Accept List, or
+ * accepted by the decision instructions.
+ */
+static uint8_t get_create_conn_filter_policy(uint32_t options)
+{
+	if (!IS_ENABLED(CONFIG_BT_DECISION_BASED_ADV_FILTERING) ||
+	    (options & BT_CONN_LE_OPT_DECISIONS) == 0U) {
+		return BT_HCI_LE_CREATE_CONN_FP_FILTER;
+	}
+
+	if ((options & BT_CONN_LE_OPT_DECISIONS_ONLY) != 0U) {
+		return BT_HCI_LE_CREATE_CONN_FP_DECISION_ONLY;
+	}
+
+	if ((options & BT_CONN_LE_OPT_DECISIONS_FILTER_ACCEPT_LIST) != 0U) {
+		return BT_HCI_LE_CREATE_CONN_FP_FILTER_AND_DECISION;
+	}
+
+	return BT_HCI_LE_CREATE_CONN_FP_DECISION_OR_FILTER;
+}
+
 int bt_le_create_conn_ext(const struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_ext_create_conn *cp;
@@ -980,7 +1003,7 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	if (use_filter) {
 		/* User Initiated procedure use fast scan parameters. */
 		bt_addr_le_copy(&cp->peer_addr, BT_ADDR_LE_ANY);
-		cp->filter_policy = BT_HCI_LE_CREATE_CONN_FP_FILTER;
+		cp->filter_policy = get_create_conn_filter_policy(bt_dev.create_param.options);
 	} else {
 		const bt_addr_le_t *peer_addr = &conn->le.dst;
 
@@ -3808,6 +3831,10 @@ static void read_supported_commands_complete(struct net_buf *buf)
 	atomic_set_bit_to(bt_dev.supported_commands,
 			  BT_DEV_CMD_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2,
 			  BT_LE_CS_READ_LOCAL_SUPPORTED_CAPABILITIES_V2_SUPPORTED(cmds) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_SET_DECISION_DATA,
+			  BT_LE_SET_DECISION_DATA_SUPPORTED(cmds) != 0U);
+	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_SET_DECISION_INSTRUCTIONS,
+			  BT_LE_SET_DECISION_INSTRUCTIONS_SUPPORTED(cmds) != 0U);
 }
 
 static void read_local_features_complete(struct net_buf *buf)

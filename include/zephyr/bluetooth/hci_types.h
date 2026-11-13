@@ -285,6 +285,9 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_ADV_CODING_SEL)
 #define BT_FEAT_LE_ADV_CODING_SEL_HOST(feat)	  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_ADV_CODING_SEL_HOST)
+/** Test if the Decision-Based Advertising Filtering feature is supported */
+#define BT_FEAT_LE_DECISION_ADV_FILTER(feat)      BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_DECISION_ADV_FILTER)
 #define BT_FEAT_LE_PAWR_ADVERTISER(feat)	  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PAWR_ADVERTISER)
 #define BT_FEAT_LE_PAWR_SCANNER(feat)             BT_LE_FEAT_TEST(feat, \
@@ -1775,6 +1778,12 @@ struct bt_hci_cp_le_set_adv_set_random_addr {
 #define BT_HCI_LE_ADV_PROP_LEGACY               BIT(4)
 #define BT_HCI_LE_ADV_PROP_ANON                 BIT(5)
 #define BT_HCI_LE_ADV_PROP_TX_POWER             BIT(6)
+/** Use decision PDUs when advertising */
+#define BT_HCI_LE_ADV_PROP_DECISION             BIT(7)
+/** Include AdvA in the extended header of all decision PDUs */
+#define BT_HCI_LE_ADV_PROP_DECISION_ADVA        BIT(8)
+/** Include ADI in the extended header of all decision PDUs */
+#define BT_HCI_LE_ADV_PROP_DECISION_ADI         BIT(9)
 
 #define BT_HCI_LE_PRIM_ADV_INTERVAL_MIN         0x000020
 #define BT_HCI_LE_PRIM_ADV_INTERVAL_MAX         0xFFFFFF
@@ -1946,6 +1955,14 @@ struct bt_hci_ext_scan_phy {
 #define BT_HCI_LE_EXT_SCAN_PHY_2M               BIT(1)
 #define BT_HCI_LE_EXT_SCAN_PHY_CODED            BIT(2)
 
+/* Extends BT_HCI_LE_SCAN_FP_* */
+/** Scanning filter policy bits that select the decision mode */
+#define BT_HCI_LE_SCAN_FP_DECISION_MASK         (BIT(2) | BIT(3))
+/** Process decision PDUs and all other advertising PDUs */
+#define BT_HCI_LE_SCAN_FP_DECISION_ALL_PDUS     BIT(2)
+/** Process only decision PDUs and ignore all other advertising PDUs */
+#define BT_HCI_LE_SCAN_FP_DECISION_ONLY         (BIT(2) | BIT(3))
+
 struct bt_hci_cp_le_set_ext_scan_param {
 	uint8_t  own_addr_type;
 	uint8_t  filter_policy;
@@ -1977,6 +1994,14 @@ struct bt_hci_ext_conn_phy {
 	uint16_t max_ce_len;
 } __packed;
 
+/* Extends BT_HCI_LE_CREATE_CONN_FP_*, valid only for LE Extended Create Connection */
+/** Process only decision PDUs, the Filter Accept List is not used */
+#define BT_HCI_LE_CREATE_CONN_FP_DECISION_ONLY         0x02
+/** Process PDUs from devices in the Filter Accept List, decision PDUs must pass the instructions */
+#define BT_HCI_LE_CREATE_CONN_FP_FILTER_AND_DECISION   0x03
+/** Process all decision PDUs, and other PDUs from devices in the Filter Accept List */
+#define BT_HCI_LE_CREATE_CONN_FP_DECISION_OR_FILTER    0x04
+
 struct bt_hci_cp_le_ext_create_conn {
 	uint8_t      filter_policy;
 	uint8_t      own_addr_type;
@@ -1993,6 +2018,134 @@ struct bt_hci_cp_le_ext_create_conn_v2 {
 	bt_addr_le_t peer_addr;
 	uint8_t      phys;
 	struct bt_hci_ext_conn_phy p[0];
+} __packed;
+
+/** LE Set Decision Data command opcode */
+#define BT_HCI_OP_LE_SET_DECISION_DATA          BT_OP(BT_OGF_LE, 0x0080) /* 0x2080 */
+/** Test if the Controller supports the LE Set Decision Data command */
+#define BT_LE_SET_DECISION_DATA_SUPPORTED(cmd)  BT_CMD_TEST(cmd, 46, 3)
+
+/** Decision_Type_Flags bit. A Resolvable Tag subfield is present in the decision data */
+#define BT_HCI_LE_DECISION_TYPE_RESOLVABLE_TAG  BIT(0)
+
+/** Maximum length of the decision data in octets */
+#define BT_HCI_LE_DECISION_DATA_LEN_MAX         8
+/** Length of a Resolvable Tag in octets. A 3-octet hash followed by a 3-octet random value */
+#define BT_HCI_LE_DECISION_RESOLVABLE_TAG_LEN   6
+
+/** LE Set Decision Data command parameters */
+struct bt_hci_cp_le_set_decision_data {
+	/** Advertising handle */
+	uint8_t handle;
+	/** Subfields present in the decision data, see BT_HCI_LE_DECISION_TYPE_* */
+	uint8_t type_flags;
+	/** Length of @ref data in octets */
+	uint8_t len;
+	/** Decision data */
+	uint8_t data[];
+} __packed;
+
+/** LE Set Decision Instructions command opcode */
+#define BT_HCI_OP_LE_SET_DECISION_INSTRUCTIONS  BT_OP(BT_OGF_LE, 0x0081) /* 0x2081 */
+/** Test if the Controller supports the LE Set Decision Instructions command */
+#define BT_LE_SET_DECISION_INSTRUCTIONS_SUPPORTED(cmd) BT_CMD_TEST(cmd, 46, 4)
+
+/** Test_Flags bit: the test starts a new test group */
+#define BT_HCI_LE_DECISION_TEST_FLAG_NEW_GROUP     BIT(0)
+/** Test_Flags bit: the test passes if the field is present and the check passes */
+#define BT_HCI_LE_DECISION_TEST_FLAG_PASS_MATCH    BIT(1)
+/** Test_Flags bit: the test passes if the field is present and the check fails */
+#define BT_HCI_LE_DECISION_TEST_FLAG_PASS_NO_MATCH BIT(2)
+/** Test_Flags bit: the test passes if the field is absent */
+#define BT_HCI_LE_DECISION_TEST_FLAG_PASS_ABSENT   BIT(3)
+
+/** Test_Field: Resolvable Tag */
+#define BT_HCI_LE_DECISION_TEST_FIELD_RESOLVABLE_TAG     0
+/** Test_Field: AdvMode, which is always present */
+#define BT_HCI_LE_DECISION_TEST_FIELD_ADV_MODE           6
+/** Test_Field: RSSI */
+#define BT_HCI_LE_DECISION_TEST_FIELD_RSSI               7
+/** Test_Field: path loss, computed from the TxPower field and the RSSI */
+#define BT_HCI_LE_DECISION_TEST_FIELD_PATH_LOSS          8
+/** Test_Field: AdvA */
+#define BT_HCI_LE_DECISION_TEST_FIELD_ADVA               9
+/** Test_Field: Arbitrary Data of exactly @p len octets, where @p len is 1 to 8 */
+#define BT_HCI_LE_DECISION_TEST_FIELD_DATA_EXACT(len)    (16 + (len))
+/** Test_Field: Arbitrary Data of at least @p len octets, where @p len is 1 to 8 */
+#define BT_HCI_LE_DECISION_TEST_FIELD_DATA_AT_LEAST(len) (32 + (len))
+/** Test_Field: Arbitrary Data of 1 to @p len octets, where @p len is 1 to 8 */
+#define BT_HCI_LE_DECISION_TEST_FIELD_DATA_AT_MOST(len)  (48 + (len))
+/** Test_Field: first vendor-specific field */
+#define BT_HCI_LE_DECISION_TEST_FIELD_VS_MIN             240
+
+/** AdvMode test: pass for non-connectable and non-scannable undirected events */
+#define BT_HCI_LE_DECISION_ADV_MODE_NON_CONN_NON_SCAN BIT(0)
+/** AdvMode test: pass for connectable undirected events */
+#define BT_HCI_LE_DECISION_ADV_MODE_CONN              BIT(1)
+/** AdvMode test: pass for scannable undirected events */
+#define BT_HCI_LE_DECISION_ADV_MODE_SCAN              BIT(2)
+
+/** AdvA test: pass if the advertiser is in the Filter Accept List */
+#define BT_HCI_LE_DECISION_ADVA_CHECK_FAL             0x00
+/** AdvA test: pass if the advertiser is Address 1 */
+#define BT_HCI_LE_DECISION_ADVA_CHECK_ADDR_1          0x01
+/** AdvA test: pass if the advertiser is Address 1 or Address 2 */
+#define BT_HCI_LE_DECISION_ADVA_CHECK_ADDR_1_OR_2     0x02
+
+/** Size of the Test_Parameters of a test in octets */
+#define BT_HCI_LE_DECISION_TEST_PARAMS_LEN      16
+/** Size of the mask and of the target of an Arbitrary Data test in octets */
+#define BT_HCI_LE_DECISION_TEST_DATA_LEN        8
+
+/* Test_Parameters layouts for each Test_Field, zero-padded to BT_HCI_LE_DECISION_TEST_PARAMS_LEN */
+/** Test_Parameters of an RSSI test */
+struct bt_hci_le_decision_params_rssi {
+	/** Minimum RSSI in dBm */
+	int8_t min;
+	/** Maximum RSSI in dBm */
+	int8_t max;
+} __packed;
+
+/** Test_Parameters of a path loss test */
+struct bt_hci_le_decision_params_path_loss {
+	/** Minimum path loss in dB */
+	uint8_t min;
+	/** Maximum path loss in dB */
+	uint8_t max;
+} __packed;
+
+/** Test_Parameters of an AdvA test */
+struct bt_hci_le_decision_params_adva {
+	/** Check to apply, see BT_HCI_LE_DECISION_ADVA_CHECK_* */
+	uint8_t      check;
+	/** Address 1 and Address 2, each of type public or random */
+	bt_addr_le_t addr[2];
+} __packed;
+
+/** Test_Parameters of an Arbitrary Data test */
+struct bt_hci_le_decision_params_data {
+	/** Mask applied to the Arbitrary Data, padded with zeros to 8 octets */
+	uint8_t mask[BT_HCI_LE_DECISION_TEST_DATA_LEN];
+	/** Value the masked Arbitrary Data must equal */
+	uint8_t target[BT_HCI_LE_DECISION_TEST_DATA_LEN];
+} __packed;
+
+/** A single test of the LE Set Decision Instructions command */
+struct bt_hci_le_decision_test {
+	/** Test_Flags, see BT_HCI_LE_DECISION_TEST_FLAG_* */
+	uint8_t flags;
+	/** Test_Field, see BT_HCI_LE_DECISION_TEST_FIELD_* */
+	uint8_t field;
+	/** Test_Parameters, with a layout that depends on @ref field */
+	uint8_t params[BT_HCI_LE_DECISION_TEST_PARAMS_LEN];
+} __packed;
+
+/** LE Set Decision Instructions command parameters */
+struct bt_hci_cp_le_set_decision_instructions {
+	/** Number of tests */
+	uint8_t                        num_tests;
+	/** Tests */
+	struct bt_hci_le_decision_test tests[];
 } __packed;
 
 #define BT_HCI_OP_LE_SET_PER_ADV_SUBEVENT_DATA  BT_OP(BT_OGF_LE, 0x0082) /* 0x2082 */
