@@ -2,7 +2,15 @@
 
 set(ARM_C_FLAGS)
 
-list(APPEND ARM_C_FLAGS   -mcpu=${GCC_M_CPU})
+if(DEFINED GCC_M_ARCH)
+  # The CPU alone cannot express the requested architecture features
+  list(APPEND ARM_C_FLAGS   -march=${GCC_M_ARCH})
+  if(DEFINED GCC_M_TUNE)
+    list(APPEND ARM_C_FLAGS -mtune=${GCC_M_TUNE})
+  endif()
+else()
+  list(APPEND ARM_C_FLAGS   -mcpu=${GCC_M_CPU})
+endif()
 
 if(CONFIG_COMPILER_ISA_THUMB2)
   list(APPEND ARM_C_FLAGS   -mthumb)

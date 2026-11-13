@@ -1,0 +1,11 @@
+tests:
+  arch.arm.cde_cp0:
+    tags:
+      - arm
+    build_only: true
+    arch_allow:
+      - arm
+    platform_allow:
+      - mps2/an521/cpu0
+      - mps2/an521/cpu0/ns
+      - lp_am13e230
