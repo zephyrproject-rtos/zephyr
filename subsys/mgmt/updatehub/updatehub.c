@@ -232,6 +232,12 @@ static bool start_coap_client(void)
 		LOG_ERR("Failed to set TLS_PEER_VERIFY option");
 		goto error;
 	}
+
+	if (zsock_setsockopt(ctx.sock, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, UPDATEHUB_SERVER,
+			     sizeof(UPDATEHUB_SERVER)) < 0) {
+		LOG_ERR("Failed to set TLS_HOSTNAME option");
+		goto error;
+	}
 #endif
 
 	if (zsock_connect(ctx.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
