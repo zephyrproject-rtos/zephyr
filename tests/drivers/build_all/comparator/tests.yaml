@@ -124,11 +124,10 @@ tests:
       - DTC_OVERLAY_FILE="mcux_acmp/mke15z7_mux_mux.overlay"
     platform_allow:
       - frdm_ke15z
-  drivers.comparator.build.nxp_cmp.frdm_mcxc242:
-    extra_args:
-      - DTC_OVERLAY_FILE="nxp_cmp/frdm_mcxc242.overlay"
+  drivers.comparator.build.nxp_cmp:
     platform_allow:
       - frdm_mcxc242
+      - frdm_mcxc444
   drivers.comparator.build.nxp_lpacmp.frdm_mcxl255:
     extra_args:
       - DTC_OVERLAY_FILE="nxp_lpacmp/frdm_mcxl255.overlay"

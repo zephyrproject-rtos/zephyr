@@ -72,6 +72,9 @@ tests:
   drivers.comparator.gpio_loopback.nxp_acomp:
     platform_allow:
       - frdm_rw612
+  drivers.comparator.gpio_loopback.nxp_cmp:
+    platform_allow:
+      - frdm_mcxc444
   drivers.comparator.gpio_loopback.nxp_lpacmp:
     platform_allow:
       - frdm_mcxl255/mcxl255/cpu0
