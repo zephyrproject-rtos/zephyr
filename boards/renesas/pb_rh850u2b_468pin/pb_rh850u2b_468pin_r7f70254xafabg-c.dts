@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/input/input-event-codes.h>
+#include <rh850/renesas/rh850u2b/r7f70254xxfabg-c.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
+
+#include "pb_rh850u2b_468pin-pinctrl.dtsi"
+
+/ {
+	compatible = "renesas,pb-rh850u2b-468pin", "renesas,u2b";
+	model = "Renesas RH850 U2B 468pin";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_flash;
+		zephyr,system-timer = &ostm0;
+	};
+};
+
+&ostm0 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&rlin30 {
+	pinctrl-0 = <&rlin30_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};

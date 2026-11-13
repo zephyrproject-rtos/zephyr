@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 FE level Interrupt controller (FEINC)
+compatible: "renesas,rh850-feinc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  "#interrupt-cells":
+    const: 1
+
+  num-lines:
+    type: int
+    required: true
+    description: Number of interrupt lines supported by the interrupt controller.
+
+  renesas,pe-id:
+    type: int
+    required: true
+    description: Hardware PEID of the processor element owning this FEINC instance.
+
+interrupt-cells:
+  - irq

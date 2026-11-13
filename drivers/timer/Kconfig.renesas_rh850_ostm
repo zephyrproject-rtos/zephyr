@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RH850_OSTM_SYSTEM_TIMER
+	bool "Renesas RH850 OSTM as system timer (periodic/tickless)"
+	default y
+	depends on DT_HAS_RENESAS_RH850_OSTM_TIMER_ENABLED
+	select USE_RH850_FSP_OSTM
+	select TICKLESS_CAPABLE
+	help
+	  Use RH850 OSTM via FSP as the system timer (periodic tick / tickless).

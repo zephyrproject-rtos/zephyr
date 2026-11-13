@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 external interrupt controller
+
+compatible: "renesas,rh850-ext-irq"
+
+include: [interrupt-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 2
+
+  trigger-type:
+    required: true
+    type: string
+    description: |
+      Indicates the condition that will trigger an interrupt when detected.
+    enum:
+      - "disable"
+      - "rising"
+      - "falling"
+      - "both_edge"
+      - "level_low"
+      - "level_high"
+
+  "#irq-cells":
+    type: int
+    const: 1
+
+irq-cells:
+  - pin

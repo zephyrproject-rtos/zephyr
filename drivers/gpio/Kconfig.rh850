@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RH850
+	bool "Renesas RH850 GPIO"
+	default y
+	depends on DT_HAS_RENESAS_RH850_GPIO_ENABLED
+	select USE_RH850_FSP_IOPORT
+	help
+	  Enable Renesas RH850 GPIO driver.

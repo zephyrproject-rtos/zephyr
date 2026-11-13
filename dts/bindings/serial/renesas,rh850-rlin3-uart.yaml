@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RH850 RLIN3 UART controller
+
+compatible: "renesas,rh850-rlin3-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  channel:
+    type: int
+    required: true
