@@ -11,6 +11,8 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/intc_infineon_aurix.h>
 
+#include <kernel_arch_func.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 void arch_irq_enable(unsigned int irq)
@@ -47,7 +49,6 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 
 	LOG_ERR("Spurious interrupt detected! IRQ: %d", irq);
 
-	extern void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower);
 	z_tricore_fatal_error((uint32_t)K_ERR_SPURIOUS_IRQ, NULL);
 	CODE_UNREACHABLE;
 #endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
