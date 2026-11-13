@@ -1,0 +1,18 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: ztest
+  sidecar: bumble
+tests:
+  bluetooth.classic.sim.l2cap_echo.basic:
+    timeout: 120
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address={addr1} -test=l2cap_echo_device1::test_01_send_echo_req_and_recv_rsp
+          - --peer_bd_address={addr0} -test=l2cap_echo_device2::test_01_send_echo_req_and_recv_rsp
