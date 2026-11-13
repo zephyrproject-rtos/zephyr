@@ -19,6 +19,10 @@ tests:
     extra_configs:
       - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
       - CONFIG_NET_TCP_SACK=n
+  net.tcp.no_fast_retransmit:
+    extra_configs:
+      - CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT=1000
+      - CONFIG_NET_TCP_FAST_RETRANSMIT=n
   net.tcp.variable_buf_size:
     extra_configs:
       - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y

@@ -572,6 +572,14 @@ static void tcp_new_reno_init(struct tcp *conn)
 	tcp_new_reno_log(conn, "init");
 }
 
+static void tcp_new_reno_timeout(struct tcp *conn)
+{
+	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
+	conn->ca.cwnd = conn_mss(conn);
+	tcp_new_reno_log(conn, "timeout");
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
 static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 {
 	if (conn->ca.pending_fast_retransmit_bytes == 0) {
@@ -583,13 +591,6 @@ static void tcp_new_reno_fast_retransmit(struct tcp *conn)
 	}
 }
 
-static void tcp_new_reno_timeout(struct tcp *conn)
-{
-	conn->ca.ssthresh = MAX(conn_mss(conn) * 2, conn->unacked_len / 2);
-	conn->ca.cwnd = conn_mss(conn);
-	tcp_new_reno_log(conn, "timeout");
-}
-
 /* For every duplicate ack increment the cwnd by mss */
 static void tcp_new_reno_dup_ack(struct tcp *conn)
 {
@@ -599,6 +600,7 @@ static void tcp_new_reno_dup_ack(struct tcp *conn)
 	conn->ca.cwnd = MIN(new_win, NET_TCP_MAX_WINDOW);
 	tcp_new_reno_log(conn, "dup_ack");
 }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_new_reno_pkts_acked(struct tcp *conn, uint32_t acked_len)
 {
@@ -631,20 +633,22 @@ static void tcp_ca_init(struct tcp *conn)
 	tcp_new_reno_init(conn);
 }
 
-static void tcp_ca_fast_retransmit(struct tcp *conn)
-{
-	tcp_new_reno_fast_retransmit(conn);
-}
-
 static void tcp_ca_timeout(struct tcp *conn)
 {
 	tcp_new_reno_timeout(conn);
+}
+
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static void tcp_ca_fast_retransmit(struct tcp *conn)
+{
+	tcp_new_reno_fast_retransmit(conn);
 }
 
 static void tcp_ca_dup_ack(struct tcp *conn)
 {
 	tcp_new_reno_dup_ack(conn);
 }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len)
 {
@@ -654,11 +658,13 @@ static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len)
 
 static void tcp_ca_init(struct tcp *conn) { }
 
-static void tcp_ca_fast_retransmit(struct tcp *conn) { }
-
 static void tcp_ca_timeout(struct tcp *conn) { }
 
+#ifdef CONFIG_NET_TCP_FAST_RETRANSMIT
+static void tcp_ca_fast_retransmit(struct tcp *conn) { }
+
 static void tcp_ca_dup_ack(struct tcp *conn) { }
+#endif /* CONFIG_NET_TCP_FAST_RETRANSMIT */
 
 static void tcp_ca_pkts_acked(struct tcp *conn, uint32_t acked_len) { }
 
