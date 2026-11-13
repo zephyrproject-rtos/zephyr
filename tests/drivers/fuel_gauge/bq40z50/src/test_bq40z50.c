@@ -103,8 +103,8 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 		FUEL_GAUGE_CURRENT_UA,
 		FUEL_GAUGE_CHARGE_CUTOFF,
 		FUEL_GAUGE_CYCLE_COUNT,
-		FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
-		FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+		FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+		FUEL_GAUGE_REMAINING_CAPACITY,
 		FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
 		FUEL_GAUGE_SBS_MFR_ACCESS,
 		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT,
@@ -135,8 +135,8 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_equal(vals[1].current_ua, 1 * 1000);
 	/* Not testing props[2]. This is the charger cutoff and has a boolean.*/
 	zassert_equal(vals[3].cycle_count, 1);
-	zassert_equal(vals[4].full_charge_capacity_uah, 1 * 1000);
-	zassert_equal(vals[5].remaining_capacity_uah, 1 * 1000);
+	zassert_equal(vals[4].full_charge_capacity, 1 * 1000);
+	zassert_equal(vals[5].remaining_capacity, 1 * 1000);
 	zassert_equal(vals[6].runtime_to_empty_mins, 65535);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */
 	zassert_equal(vals[8].absolute_state_of_charge_pct, 100);
@@ -162,8 +162,8 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_between_inclusive(vals[1].current_ua, -32767 * 1000, 32768 * 1000);
 	/* Not testing props[2]. This is the charger cutoff and has a boolean.*/
 	zassert_between_inclusive(vals[3].cycle_count, 0, 65535);
-	zassert_between_inclusive(vals[4].full_charge_capacity_uah, 0, 65535 * 1000);
-	zassert_between_inclusive(vals[5].remaining_capacity_uah, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[4].full_charge_capacity, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[5].remaining_capacity, 0, 65535 * 1000);
 	zassert_between_inclusive(vals[6].runtime_to_empty_mins, 0, 65535);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */
 	zassert_between_inclusive(vals[8].absolute_state_of_charge_pct, 0, 100);
