@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(pcie_ecam, LOG_LEVEL_ERR);
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/util.h>
 #ifdef CONFIG_GIC_V3_ITS
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #endif
@@ -317,27 +318,34 @@ static bool pcie_ecam_region_translate(const struct device *dev, pcie_bdf_t bdf,
 				       bool mem, bool mem64, uintptr_t bar_bus_addr,
 				       uintptr_t *bar_addr)
 {
-	struct pcie_ecam_data *data = dev->data;
-	enum pcie_region_type type;
+	const struct pcie_ecam_data *data = dev->data;
+
+	ARG_UNUSED(bdf);
+	ARG_UNUSED(mem64);
 
 	/* Means it hasn't been allocated */
-	if (!bar_bus_addr) {
+	if (bar_bus_addr == 0U) {
 		return false;
 	}
 
-	if (mem && ((mem64 && data->regions[PCIE_REGION_MEM64].size) ||
-		    (data->regions[PCIE_REGION_MEM64].size &&
-		     !data->regions[PCIE_REGION_MEM].size))) {
-		type = PCIE_REGION_MEM64;
-	} else if (mem) {
-		type = PCIE_REGION_MEM;
-	} else {
-		type = PCIE_REGION_IO;
+	/* A 64-bit BAR may be assigned to the 32-bit memory window. */
+	for (size_t i = 0U; i < ARRAY_SIZE(data->regions); i++) {
+		const uintptr_t bus_start = data->regions[i].bus_start;
+
+		if ((mem && (i == (size_t)PCIE_REGION_IO)) ||
+		    (!mem && (i != (size_t)PCIE_REGION_IO))) {
+			continue;
+		}
+
+		if ((bar_bus_addr >= bus_start) &&
+		    ((bar_bus_addr - bus_start) < data->regions[i].size)) {
+			*bar_addr = data->regions[i].phys_start + (bar_bus_addr - bus_start);
+
+			return true;
+		}
 	}
 
-	*bar_addr = data->regions[type].phys_start + (bar_bus_addr - data->regions[type].bus_start);
-
-	return true;
+	return false;
 }
 
 #if CONFIG_PCIE_MSI
