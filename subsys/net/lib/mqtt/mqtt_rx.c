@@ -194,7 +194,17 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 #endif
 
 	default:
-		/* Nothing to notify. */
+		/* The remaining packet types cannot be received by a client:
+		 * CONNECT, SUBSCRIBE, UNSUBSCRIBE and PINGREQ are
+		 * client-to-server only, and type 0 is reserved (v3.1.1
+		 * section 2.2.1, v5.0 section 2.1.2). Receiving one means the
+		 * peer violates the protocol: report a protocol error so the
+		 * connection is closed instead of silently dropping the
+		 * packet and leaving the session state undefined.
+		 */
+		NET_ERR("[CID %p]: Unexpected packet type 0x%02x!",
+			client, type_and_flags);
+		err_code = -EBADMSG;
 		notify_event = false;
 		break;
 	}
