@@ -847,6 +847,10 @@ static void modem_chat_pipe_callback(struct modem_pipe *pipe, enum modem_pipe_ev
 	default:
 		break;
 	}
+
+	if (chat->pipe_callback != NULL) {
+		chat->pipe_callback(pipe, event, chat->user_data);
+	}
 }
 
 static bool modem_chat_validate_array(const void *array, size_t size)
@@ -893,6 +897,7 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 	memset(chat, 0x00, sizeof(*chat));
 	chat->pipe = NULL;
 	chat->user_data = config->user_data;
+	chat->pipe_callback = config->pipe_callback;
 	chat->receive_buf = config->receive_buf;
 	chat->receive_buf_size = config->receive_buf_size;
 	chat->argv = config->argv;

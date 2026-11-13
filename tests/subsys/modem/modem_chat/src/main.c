@@ -47,6 +47,14 @@ static struct modem_pipe *mock_pipe;
 #define MODEM_CHAT_UTEST_ON_RESTART_SCRIPT_CALLBACK_BIT	 (12)
 
 static atomic_t callback_called;
+static atomic_t pipe_events;
+
+static void on_pipe_event(struct modem_pipe *pipe, enum modem_pipe_event event, void *user_data)
+{
+	zassert_equal(pipe, mock_pipe);
+	zassert_equal(user_data, &cmd_user_data);
+	atomic_set_bit(&pipe_events, event);
+}
 
 /*************************************************************************************************/
 /*                                  Script callbacks args copy                                   */
@@ -325,6 +333,7 @@ static void *test_modem_chat_setup(void)
 {
 	const struct modem_chat_config cmd_config = {
 		.user_data = &cmd_user_data,
+		.pipe_callback = on_pipe_event,
 		.receive_buf = cmd_receive_buf,
 		.receive_buf_size = ARRAY_SIZE(cmd_receive_buf),
 		.delimiter = cmd_delimiter,
@@ -357,6 +366,7 @@ static void test_modem_chat_before(void *f)
 {
 	/* Reset callback called */
 	atomic_set(&callback_called, 0);
+	atomic_set(&pipe_events, 0);
 	script_result_script_chat = NULL;
 	restart_script_result = MODEM_CHAT_SCRIPT_RESULT_TIMEOUT;
 	restart_script_run_ret = -EALREADY;
@@ -381,6 +391,20 @@ static uint8_t buffer[4096];
 /*************************************************************************************************/
 /*                                           Tests                                               */
 /*************************************************************************************************/
+ZTEST(modem_chat, test_pipe_events_observed)
+{
+	modem_pipe_notify_receive_ready(mock_pipe);
+	modem_pipe_notify_transmit_idle(mock_pipe);
+	modem_pipe_notify_closed(mock_pipe);
+	/* Restore the shared fixture to the open state expected by later tests. */
+	modem_pipe_notify_opened(mock_pipe);
+
+	for (int event = MODEM_PIPE_EVENT_OPENED; event <= MODEM_PIPE_EVENT_CLOSED; event++) {
+		zassert_true(atomic_test_bit(&pipe_events, event), "pipe event %d not observed",
+			     event);
+	}
+}
+
 ZTEST(modem_chat, test_script_no_error)
 {
 	bool called;
