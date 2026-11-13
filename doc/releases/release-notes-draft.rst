@@ -94,6 +94,13 @@ Libraries / Subsystems
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
 
+  * OCPP: the charge point can authenticate to the central system with HTTP Basic
+    authentication (:kconfig:option:`CONFIG_OCPP_BASIC_AUTH`), with the credentials set in the
+    new :c:struct:`ocpp_basic_auth` member of :c:struct:`ocpp_cs_info`. This is the charge
+    point authentication of the security profiles 1 and 2 of the OCPP 1.6 security
+    whitepaper. Their ``AuthorizationKey`` configuration key is not implemented, see
+    :ref:`ocpp_basic_auth`.
+
   * Ethernet bridge
 
     * The bridge learns the port of each source MAC address into its FDB
