@@ -1268,7 +1268,9 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 		k_spin_unlock(&xtensa_counter_lock, key);
 		return;
 	}
+	k_spin_unlock(&xtensa_counter_lock, key);
 
+	/* alloc_l2_table() takes xtensa_counter_lock itself. */
 	l2_table = dup_l2_table(src_l2_table, action);
 
 	/* The page table is using kernel ASID because we don't
@@ -1276,6 +1278,7 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	 */
 	l1_table[l1_pos] = PTE((uint32_t)l2_table, RING_KERNEL, XTENSA_MMU_PAGE_TABLE_ATTR);
 
+	key = k_spin_lock(&xtensa_counter_lock);
 	l2_page_tables_counter_dec(src_l2_table);
 
 	k_spin_unlock(&xtensa_counter_lock, key);
@@ -1413,6 +1416,7 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		uint32_t page = start + offset;
 		uint32_t l1_pos = XTENSA_MMU_L1_POS(page);
 		uint32_t l2_pos = XTENSA_MMU_L2_POS(page);
+		bool old_exec;
 
 		if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
 			/* Make sure we grab a fresh copy of L1 page table */
@@ -1432,6 +1436,12 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		pte = l2_table[l2_pos];
 		pte = PTE_PPN_SET(pte, start + offset);
 
+		/* Need to keep track of the old PTE's exec bit.
+		 * So that if we are removing the exec bit, we need to invalidate
+		 * the iTLB to prevent those pages being executable.
+		 */
+		old_exec = (pte & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X;
+
 		if ((option & OPTION_RESTORE_ATTRS) == OPTION_RESTORE_ATTRS) {
 			new_attrs = PTE_BCKUP_ATTR_GET(pte);
 			new_ring = PTE_BCKUP_RING_GET(pte);
@@ -1450,6 +1460,10 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 		xtensa_dtlb_vaddr_invalidate((void *)page);
+
+		if (old_exec || ((new_attrs & XTENSA_MMU_PERM_X) == XTENSA_MMU_PERM_X)) {
+			xtensa_itlb_vaddr_invalidate((void *)page);
+		}
 	}
 }
 
@@ -1713,6 +1727,11 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 	/* addr/size arbitrary, fix this up into an aligned region */
 	k_mem_region_align((uintptr_t *)&virt, &aligned_size,
 			   (uintptr_t)addr, size, CONFIG_MMU_PAGE_SIZE);
+
+	/* Reject if the buffer end or its page-aligned size wraps */
+	if ((size > (UINTPTR_MAX - (uintptr_t)addr)) || (aligned_size < size)) {
+		return -1;
+	}
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
