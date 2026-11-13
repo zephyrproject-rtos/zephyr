@@ -137,6 +137,10 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(sensing_sensor, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* CONFIG_SENSING */
 
+#if defined(CONFIG_RC)
+	ITERABLE_SECTION_RAM(rc_raw_iodev_data, Z_LINK_ITERABLE_SUBALIGN)
+#endif /* CONFIG_RC */
+
 #if defined(CONFIG_ZBUS)
 	ITERABLE_SECTION_RAM(zbus_channel_observation_mask, 1)
 #endif /* CONFIG_ZBUS */
