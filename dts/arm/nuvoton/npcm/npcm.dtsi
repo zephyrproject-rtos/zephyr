@@ -61,6 +61,12 @@
 			reg = <0x400c3000 0x1000>;
 			reg-io-width = <1>;
 		};
+
+		twd0: watchdog@400d8000 {
+			compatible = "nuvoton,npcm-watchdog";
+			reg = <0x400d8000 0x20>;
+			nuvoton,scfg = <&scfg>;
+		};
 	};
 };
 

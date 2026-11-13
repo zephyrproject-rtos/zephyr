@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NPCM
+	bool "Nuvoton NPCM Watchdog Timer driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  This option enables the Watchdog Timer driver for the Nuvoton NPCM
+	  family of processors.
