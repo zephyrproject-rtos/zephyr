@@ -213,6 +213,9 @@ struct i2c_dw_dev_config {
 #endif
 
 	struct i2c_target_config *target_cfg;
+	/* SMBus ARP engine enabled */
+	bool smbus_arp;
+	bool smbus_arp_persistent;
 
 	i2c_api_recover_bus_t recover_bus_cb;
 	struct device *recover_bus_dev;
