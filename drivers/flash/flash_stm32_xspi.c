@@ -2546,7 +2546,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 			if (ret != 0) {
 				LOG_ERR("SFDP BFP failed: %d", ret);
-				break;
+				return ret;
 			}
 		}
 		if (id == JESD216_SFDP_PARAM_ID_4B_ADDR_INSTR) {
