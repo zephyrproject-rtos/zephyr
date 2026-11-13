@@ -44,6 +44,24 @@ struct arch_esf {
 	uint64_t x16;
 	uint64_t x17;
 	uint64_t x18;
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
+	/*
+	 * Callee-saved registers (x19-x28). Saved on every exception
+	 * entry and restored on every exception exit, adding 80 bytes
+	 * of stack space and ~10 STP/LDP pairs to the interrupt
+	 * latency of every exception.
+	 */
+	uint64_t x19;
+	uint64_t x20;
+	uint64_t x21;
+	uint64_t x22;
+	uint64_t x23;
+	uint64_t x24;
+	uint64_t x25;
+	uint64_t x26;
+	uint64_t x27;
+	uint64_t x28;
+#endif
 	uint64_t lr;
 	uint64_t spsr;
 	uint64_t elr;
