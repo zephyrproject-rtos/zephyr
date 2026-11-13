@@ -110,7 +110,8 @@ Integration in main manifest file (west.yaml)
 
 Integrating external code into the main :file:`west.yml` manifest file is
 limited to code that is used by a Zephyr subsystem (libraries), by a platform,
-drivers (HAL) or tooling needed to test or build Zephyr components.
+drivers (HAL) or tooling needed to test or build Zephyr components. HAL modules
+must also follow the :ref:`HAL guidelines <modules_hals>`.
 
 The integration of modules in this group is validated by the Zephyr project CI,
 and verified to be working with each Zephyr release.
