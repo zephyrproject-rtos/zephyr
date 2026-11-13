@@ -89,6 +89,21 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("rstc", RSTC_BASE_ADDRESS, 0x10,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
+#define MMU_REGION_QSPI_DEFN(idx, n)						\
+		IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(qspi##n)),	\
+			(MMU_REGION_FLAT_ENTRY("qspi"#n,			\
+				DT_REG_ADDR_BY_IDX(DT_NODELABEL(qspi##n), 0),	\
+				DT_REG_SIZE_BY_IDX(DT_NODELABEL(qspi##n), 0),	\
+				MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),	\
+			MMU_REGION_FLAT_ENTRY("qspi"#n"mem",			\
+				DT_REG_ADDR_BY_IDX(DT_NODELABEL(qspi##n), 1),	\
+				DT_REG_SIZE_BY_IDX(DT_NODELABEL(qspi##n), 1),	\
+				MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),	\
+			)							\
+		)
+
+	FOR_EACH_IDX(MMU_REGION_QSPI_DEFN, (), 0, 1)
+
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
@@ -235,5 +250,19 @@ void soc_early_init_hook(void)
 		SFR_REGS->SFR_UTMI0R[1] |= SFR_UTMI0R_VBUS_Msk;
 		SFR_REGS->SFR_UTMI0R[1] &= ~SFR_UTMI0R_COMMONONN_Msk;
 		RSTC_REGS->RSTC_GRSTR &= ~RSTC_GRSTR_USB_RST2_Msk;
+	}
+
+	/* Enable generic clock for QSPI0, frequency is 50MHz */
+	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(qspi0))) {
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
+			    PMC_PCR_GCLKDIV(7) | PMC_PCR_GCLKCSS_SYSPLL |
+			    PMC_PCR_PID(ID_QSPI0);
+	}
+
+	/* Enable generic clock for QSPI1, frequency is 50MHz */
+	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(qspi1))) {
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |
+			    PMC_PCR_GCLKDIV(7) | PMC_PCR_GCLKCSS_SYSPLL |
+			    PMC_PCR_PID(ID_QSPI1);
 	}
 }

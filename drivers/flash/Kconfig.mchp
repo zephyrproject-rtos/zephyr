@@ -50,3 +50,14 @@ config FLASH_MCHP_NVMCTRL_G3
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable Microchip's G3 Non-Volatile Memory Controller for Flash operations.
+
+config FLASH_SAM_QSPI
+	bool "Microchip Quad SPI Flash driver"
+	default y
+	depends on DT_HAS_MICROCHIP_QSPI_G1_FLASH_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select DMA if $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_QSPI_G1_FLASH),dmas)
+	help
+	  Enable Microchip QUAD SPI flash driver.
