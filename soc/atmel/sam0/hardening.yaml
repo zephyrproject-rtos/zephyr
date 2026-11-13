@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Atmel SAM0 SoCs.
+
+rules:
+  SOC_ATMEL_SAML_DEBUG_PAUSE:
+    value: n
+    rationale: |
+      Busy-waits at reset, before the system clock is configured, to widen the window in which a
+      debug probe can halt the core before any firmware initialization has run.
+    references: [CWE-1244]

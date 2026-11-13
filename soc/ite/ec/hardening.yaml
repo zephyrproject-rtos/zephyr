@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for ITE EC SoCs.
+
+rules:
+  SOC_IT8XXX2_JTAG_DEBUG_INTERFACE:
+    value: n
+    rationale: |
+      Turns pins GPIOA0, A1 and A4 to A6 into a JTAG port, so anyone who can probe those pins gets
+      debugger control of the IT8XXX2 embedded controller.
+    references: [CWE-1244]
