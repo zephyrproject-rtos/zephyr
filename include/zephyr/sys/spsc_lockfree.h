@@ -321,7 +321,7 @@ struct spsc {
  */
 #define spsc_prev(spsc, item)                                                                      \
 	({                                                                                         \
-		unsigned long idx = ((item) - &(spsc)->buffer[0]) / sizeof((spsc)->buffer[0]);     \
+		unsigned long idx = ((item) - &(spsc)->buffer[0]);                                 \
 		bool has_prev = idx != z_spsc_mask(spsc, z_spsc_out(spsc));                        \
 		has_prev ? &((spsc)->buffer[z_spsc_mask(spsc, idx - 1)]) : NULL;                   \
 	})
