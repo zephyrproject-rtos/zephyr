@@ -1,0 +1,64 @@
+common:
+  tags:
+    - drivers
+    - counter
+    - pm
+  depends_on: counter
+  harness: ztest
+tests:
+  drivers.counter.pm.esp:
+    extra_dtc_overlay_files:
+      - boards/espressif.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+  drivers.counter.pm.esp.periph_pd:
+    extra_dtc_overlay_files:
+      - boards/espressif.overlay
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32p4_function_ev_board/esp32p4/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    extra_configs:
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+  drivers.counter.pm.nxp_mcx.ctimer:
+    extra_dtc_overlay_files:
+      - boards/nxp_mcx_ctimer.overlay
+    extra_args:
+      - EXTRA_CONF_FILE=nxp_mcx.conf
+    platform_allow:
+      - frdm_mcxa153/mcxa153
+      - frdm_mcxa156/mcxa156
+      - frdm_mcxa266/mcxa266
+      - frdm_mcxa344/mcxa344
+      - frdm_mcxa346/mcxa346
+      - frdm_mcxa366/mcxa366
+      - frdm_mcxa577/mcxa577
+      - frdm_mcxn236/mcxn236
+      - frdm_mcxn947/mcxn947/cpu0
+  drivers.counter.pm.nxp_mcxn.lptmr:
+    extra_dtc_overlay_files:
+      - boards/nxp_mcxn_lptmr.overlay
+    extra_args:
+      - EXTRA_CONF_FILE=nxp_mcx.conf
+    extra_configs:
+      - CONFIG_COUNTER_MCUX_LPTMR_ALARM=y
+    platform_allow:
+      - frdm_mcxn236/mcxn236
+      - frdm_mcxn947/mcxn947/cpu0
