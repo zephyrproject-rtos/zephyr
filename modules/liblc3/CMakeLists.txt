@@ -4,6 +4,13 @@ zephyr_library_compile_options(
   -O3 -std=c11 -ffast-math -Wno-array-bounds -Wall -Wextra -Wdouble-promotion -Wvla -pedantic
 )
 
+  if(CONFIG_CPU_CORTEX_M55 AND CMAKE_C_COMPILER_ID STREQUAL "GNU"
+     AND CMAKE_C_COMPILER_VERSION VERSION_EQUAL "14.3.0")
+    set_property(SOURCE "${ZEPHYR_LIBLC3_MODULE_DIR}/src/sns.c"
+      APPEND PROPERTY COMPILE_OPTIONS -fno-tree-vectorize
+    )
+  endif()
+
 # LC3plus and LC3plusHR support is enabled by default in liblc3.
 # In our case, we prefer those to be explicitly enabled by the user if needed.
 if(CONFIG_LIBLC3_PLUS)
