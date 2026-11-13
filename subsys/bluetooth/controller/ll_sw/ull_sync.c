@@ -1721,10 +1721,16 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U)) {
 		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
 
-		uint16_t timeout_expire = sync->timeout_expire;
+		uint16_t timeout_expire;
 
-		/* Supervision timeout, if not started already */
-		if (timeout_expire == 0U) {
+		/* Failed to establish countdown until the synchronization is established, then
+		 * the supervision timeout, if not started already.
+		 */
+		if (sync->sync_expire != 0U) {
+			timeout_expire = sync->sync_expire;
+		} else if (sync->timeout_expire != 0U) {
+			timeout_expire = sync->timeout_expire;
+		} else {
 			timeout_expire = sync->timeout_reload;
 		}
 
@@ -1738,8 +1744,9 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 				uint8_t handle = ull_sync_handle_get(sync);
 				uint32_t ticker_status;
 
-				/* Near supervision timeout, the next event preempts overlapping
-				 * events that yield to a forced periodic sync event.
+				/* During establishment or near supervision timeout, the next
+				 * event preempts overlapping events that yield to a forced
+				 * periodic sync event.
 				 */
 				lll->forced = 1U;
 
@@ -1763,7 +1770,8 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		}
 
 		/* Timeout elapsed while being ousted, proceed with the prepare so that the
-		 * event done handling terminates the synchronization.
+		 * event done handling terminates the synchronization or reports the failure
+		 * to establish.
 		 */
 	}
 
