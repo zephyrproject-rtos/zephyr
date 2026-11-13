@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * RAK12013 is an RCWL-9196 Doppler radar on the WisBlock IO slot.
+ * Connector pin 31 (OUT) is IO3 and is high while motion is detected.
+ * Connector pin 32 (EN) is IO4 and enables the radar when high.
+ * The module is powered from the base 3V3_S rail, which WisBlock IO2
+ * switches. This shield does not drive that pin. IO4 is driven high
+ * at boot.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		sw0 = &rak12013_out;
+	};
+
+	rak12013_en: rak12013-en {
+		compatible = "regulator-fixed";
+		regulator-name = "rak12013-en";
+		enable-gpios = <&wisblock_io WISBLOCK_IO_IO4 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		rak12013_out: motion {
+			gpios = <&wisblock_io WISBLOCK_IO_IO3 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};

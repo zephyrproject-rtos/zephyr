@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: rakwireless_rak12013
+  full_name: RAK12013 WisBlock Radar Sensor
+  vendor: rakwireless
+  supported_features:
+    - gpio
+    - input
+    - regulator
