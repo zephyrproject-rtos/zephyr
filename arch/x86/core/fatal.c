@@ -399,8 +399,7 @@ static void dump_page_fault(struct arch_esf *esf)
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
-				     const struct arch_esf *esf)
+void z_x86_fatal_error(unsigned int reason, const struct arch_esf *esf)
 {
 	if (esf != NULL) {
 #ifdef CONFIG_EXCEPTION_DEBUG
@@ -422,7 +421,6 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 #endif
 	}
 	z_fatal_error(reason, esf);
-	CODE_UNREACHABLE;
 }
 
 FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
@@ -434,6 +432,7 @@ FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
 	ARG_UNUSED(vector);
 #endif
 	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	k_fatal_halt(K_ERR_CPU_EXCEPTION);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -532,6 +531,7 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 #ifdef CONFIG_THREAD_STACK_INFO
 	if (z_x86_check_stack_bounds(esf_get_sp(esf), 0, esf->cs)) {
 		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+		k_fatal_halt(K_ERR_STACK_CHK_FAIL);
 	}
 #endif
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
@@ -539,11 +539,12 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 
 	if (z_x86_check_guard_page((uintptr_t)fault_addr)) {
 		z_x86_fatal_error(K_ERR_STACK_CHK_FAIL, esf);
+		k_fatal_halt(K_ERR_STACK_CHK_FAIL);
 	}
 #endif
 
 	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
-	CODE_UNREACHABLE;
+	k_fatal_halt(K_ERR_CPU_EXCEPTION);
 }
 
 void z_x86_do_kernel_oops(const struct arch_esf *esf)
@@ -568,5 +569,10 @@ void z_x86_do_kernel_oops(const struct arch_esf *esf)
 	}
 #endif
 
+	/* Returns if the faulting context survives (an ISR, or a thread that
+	 * was already dead, as for the panic raised when an essential thread
+	 * ends); the exception stub then resumes it after the software
+	 * interrupt
+	 */
 	z_x86_fatal_error(reason, esf);
 }

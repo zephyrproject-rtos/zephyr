@@ -72,14 +72,17 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	return (flags & 0x200UL) != 0; /* IF bit */
 }
 
+/* Returns if k_sys_fatal_error_handler() returned and the context survives:
+ * an ISR, or a thread that was already dead, as for the panic raised when an
+ * essential thread ends
+ */
 #define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"movq %[reason], %%rax\n\t" \
 		"int $32\n\t" \
 		: \
 		: [reason] "i" (reason_p) \
-		: "memory"); \
-	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
+		: "rax", "memory"); \
 } while (false)
 
 #ifdef CONFIG_PCIE
