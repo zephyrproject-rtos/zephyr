@@ -919,7 +919,7 @@ static int mspi_stm32_xspi_memmap_on(const struct device *controller)
 	struct mspi_stm32_xspi_cmd cmd = {
 		.op_type = MSPI_STM32_XSPI_CMD_READ_CFG,
 		.instruction = dev_data->dev_cfg.read_cmd,
-		.addr_length = (dev_data->ctx.xfer.addr_length == 4U) ? 4U : 3U,
+		.addr_length = (dev_data->dev_cfg.addr_length == 4U) ? 4U : 3U,
 		.dummy_cycles = dev_data->dev_cfg.rx_dummy,
 	};
 
@@ -1197,33 +1197,27 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 	}
 
 	if (dev_data->memmap_cfg.enable) {
-		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
-		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
-		    (packet->cmd == MSPI_NOR_CMD_SE) ||
-		    ((dev_data->dev_cfg.addr_length != 4U) &&
-		     (dev_data->dev_cfg.io_mode == MSPI_IO_MODE_SINGLE))) {
-			LOG_DBG(" MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported in "
-				"memory map mode, switching to indirect mode");
+		bool memory_read =
+			packet->dir == MSPI_RX && packet->cmd == dev_data->dev_cfg.read_cmd;
+		bool memory_write = packet->dir == MSPI_TX &&
+				    packet->cmd == dev_data->dev_cfg.write_cmd &&
+				    dev_data->memmap_cfg.permission == MSPI_MEMMAP_READ_WRITE;
 
-			xspi_lock_thread(dev);
-
-			ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
-
-			xspi_unlock_thread(dev);
-			if (ret != 0) {
-				return ret;
-			}
-
-			goto indirect;
+		if ((memory_read || memory_write) &&
+		    ((dev_data->dev_cfg.io_mode != MSPI_IO_MODE_SINGLE) ||
+		     (dev_data->dev_cfg.addr_length == 4U))) {
+			return read_write_in_memory_map_mode(dev, packet);
 		}
 
-		if (read_write_in_memory_map_mode(dev, packet) == -EPROTONOSUPPORT) {
-			goto indirect;
+		/* Register and control commands must use their own transfer parameters. */
+		xspi_lock_thread(dev);
+		ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
+		xspi_unlock_thread(dev);
+		if (ret != 0) {
+			return ret;
 		}
-		return 0;
 	}
 
-indirect:
 	(void)pm_device_runtime_get(dev);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
