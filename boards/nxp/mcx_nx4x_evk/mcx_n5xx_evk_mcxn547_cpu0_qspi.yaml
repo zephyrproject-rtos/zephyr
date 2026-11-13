@@ -1,0 +1,14 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mcx_n5xx_evk/mcxn547/cpu0/qspi
+name: NXP MCX-N5XX-EVK (CPU0) (QSPI)
+type: mcu
+arch: arm
+ram: 320
+flash: 3072
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported: []
+vendor: nxp

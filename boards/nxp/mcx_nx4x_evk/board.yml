@@ -15,5 +15,7 @@ boards:
     socs:
       - name: mcxn547
         variants:
+          - name: qspi
+            cpucluster: 'cpu0'
           - name: ns
             cpucluster: 'cpu0'
