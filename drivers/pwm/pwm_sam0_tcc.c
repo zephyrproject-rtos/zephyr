@@ -81,9 +81,36 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
 	regs->CCBUF[channel].reg = TCC_CCBUF_CCBUF(pulse_cycles);
 	regs->PERBUF.reg = TCC_PERBUF_PERBUF(period_cycles);
 #else
-	/* SAMD21 naming */
+	/*
+	 * SAMD21 naming. A PERB write that overlaps an update condition can
+	 * be lost, and holding CTRLB.LUPD does not prevent it at large
+	 * prescalers. Write PER directly instead.
+	 *
+	 * PER reads back the last value written, which is the period in use.
+	 * If the new period is shorter, COUNT may already be past it, and the
+	 * counter would run to its maximum value before it wraps. Restart the
+	 * cycle instead. A COUNT read is not used: with a slow GCLK, a READSYNC
+	 * read can return a stale value.
+	 */
+	bool shorter = period_cycles < regs->PER.reg;
+
+	regs->PER.reg = TCC_PER_PER(period_cycles);
+	wait_synchronization(regs);
+	if (shorter) {
+		regs->CTRLBSET.reg = TCC_CTRLBSET_CMD_RETRIGGER;
+		wait_synchronization(regs);
+	}
+
+	/*
+	 * Write CC through CCB with the update lock held. The new pulse width
+	 * loads at the next update, so no cycle skips its compare match.
+	 */
+	regs->CTRLBSET.reg = TCC_CTRLBSET_LUPD;
+	wait_synchronization(regs);
 	regs->CCB[channel].reg = TCC_CCB_CCB(pulse_cycles);
-	regs->PERB.reg = TCC_PERB_PERB(period_cycles);
+	wait_synchronization(regs);
+	regs->CTRLBCLR.reg = TCC_CTRLBCLR_LUPD;
+	wait_synchronization(regs);
 #endif
 
 	if (invert != inverted) {
