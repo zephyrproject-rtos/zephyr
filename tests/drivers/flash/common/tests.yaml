@@ -144,6 +144,12 @@ tests:
     platform_allow: mr_canhubk3
     extra_configs:
       - CONFIG_FLASH_NXP_S32_QSPI_SFDP_RUNTIME=y
+  drivers.flash.common.npcm_nor:
+    platform_allow: npcm400_evb
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=33554432
+    integration_platforms:
+      - npcm400_evb
   drivers.flash.common.spi_nor:
     platform_allow: nrf52840dk/nrf52840
     extra_configs:

@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Properties defining the NPCM Quad-SPI peripheral of Flash Interface Unit (FIU).
+    A npcm quad-fiu-spi dt node would typically looks like:
+
+        &qspi_fiu0 {
+            status = "okay";
+
+            ext_flash_shd: shd-flash@1 {
+                status = "okay";
+                reg = <1>;
+                ranges = <0x0 0x70000000 DT_SIZE_M(32)>;
+                ...
+            };
+        };
+
+    Child flash nodes are addressed by their chip select (reg) and describe
+    their Direct Read Access window with their own ranges property.
+
+compatible: "nuvoton,npcm-fiu-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
