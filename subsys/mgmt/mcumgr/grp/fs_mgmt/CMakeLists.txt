@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_GRP_FS_HASH_SHA256 src/fs_mgmt_hash_c
 
 if(CONFIG_MCUMGR_GRP_FS_CHECKSUM_HASH AND CONFIG_MCUMGR_GRP_FS_HASH_SHA256)
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 endif()
 
 zephyr_library_include_directories(include)

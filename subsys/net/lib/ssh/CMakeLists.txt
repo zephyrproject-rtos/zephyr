@@ -16,3 +16,4 @@ zephyr_library_sources_ifdef(CONFIG_SSH_SERVER ssh_server.c)
 zephyr_library_sources_ifdef(CONFIG_SSH_CLIENT ssh_client.c)
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)

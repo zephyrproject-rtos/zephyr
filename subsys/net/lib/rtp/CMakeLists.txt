@@ -24,3 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_SRTP
   srtp.c
   srtp_crypto.c
 )
+
+if(CONFIG_SRTP)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
+endif()

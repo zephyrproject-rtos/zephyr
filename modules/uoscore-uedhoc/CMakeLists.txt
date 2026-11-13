@@ -26,6 +26,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
   )
 
   zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 
   if(CONFIG_BUILD_WITH_TFM)
     zephyr_library_include_directories(
@@ -72,6 +73,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
     )
 
     zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 
   endif() # CONFIG_UOSCORE
 
@@ -132,6 +134,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
     )
 
     zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)
 
   endif() # CONFIG_UEDHOC
 

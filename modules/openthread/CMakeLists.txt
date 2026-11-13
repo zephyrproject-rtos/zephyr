@@ -288,7 +288,6 @@ endif()
 
 if(CONFIG_HDLC_RCP_IF)
   list(APPEND ot_libs
-    ot-config
     openthread-platform
     openthread-radio-spinel
     openthread-spinel-ncp
@@ -310,4 +309,7 @@ if(CONFIG_OPENTHREAD_SETTINGS_RAM OR CONFIG_OPENTHREAD_RADIO_VENDOR_IMPLEMENTATI
   endif()
 endif()
 
-zephyr_link_libraries(${ot_libs})
+# Link OpenThread libraries through "openthread_platform" rather than
+# zephyr_interface, so that their dependencies (e.g. Mbed TLS) are not
+# propagated to every Zephyr library.
+target_link_libraries(openthread_platform PUBLIC ${ot_libs})

@@ -24,6 +24,8 @@ zephyr_library_sources_ifdef(CONFIG_HDLC_RCP_IF
   radio_spinel.cpp
   hdlc_interface.cpp
   )
+# Spinel/HDLC and border router sources include OpenThread internal headers.
+zephyr_library_link_libraries_ifdef(CONFIG_HDLC_RCP_IF ot-config)
 
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_BLE_TCAT ble.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_COPROCESSOR uart.c)
@@ -81,3 +83,4 @@ if(CONFIG_OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION)
 endif()
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN tfpsacrypto)

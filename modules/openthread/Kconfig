@@ -299,7 +299,7 @@ endif # OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
-	default "mbedtls_iface"
+	default "mbedtls_iface mbedtls"
 	help
 	  This option allows to specify one or more mbedtls library files to be
 	  linked with OpenThread. Separate multiple values with space " ".
