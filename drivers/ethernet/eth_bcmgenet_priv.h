@@ -25,6 +25,16 @@
 #define GENET_ID_MODE_DIS        BIT(16)
 #define GENET_RGMII_CFG          (GENET_RGMII_LINK | GENET_RGMII_MODE_EN | GENET_ID_MODE_DIS)
 
+#define GENET_INTRL2_0_OFF       0x200
+#define GENET_INTRL2_1_OFF       0x240
+#define GENET_INTRL2_CPU_STAT    0x00
+#define GENET_INTRL2_CPU_CLEAR   0x08
+#define GENET_INTRL2_MASK_STATUS 0x0C
+#define GENET_INTRL2_MASK_SET    0x10
+#define GENET_INTRL2_MASK_CLEAR  0x14
+#define GENET_IRQ_RXDMA_MBDONE   BIT(13)
+#define GENET_IRQ_TXDMA_MBDONE   BIT(16)
+
 #define GENET_RBUF_CTRL      0x0300
 #define GENET_RBUF_SIZE_CTRL 0x3B4
 #define GENET_RBUF_ALIGN_2B  BIT(1)
@@ -56,6 +66,16 @@
 #define GENET_NB_RX_DESCS 256
 #define GENET_NB_TX_DESCS 256
 
+/*
+ * Rx descriptors in use: a power of two up to half of the Rx buffer pool,
+ * so that the network stack keeps buffers while the ring is full.
+ */
+#define GENET_RX_POOL_HALF  (CONFIG_NET_BUF_RX_COUNT / 2)
+#define GENET_RX_RING_DESCS (GENET_RX_POOL_HALF >= 256 ? 256                                       \
+			   : GENET_RX_POOL_HALF >= 128 ? 128                                       \
+			   : GENET_RX_POOL_HALF >= 64 ? 64                                         \
+			   : 32)
+
 #define GENET_QUEUES     16
 #define GENET_QUEUES_CFG (1 << GENET_QUEUES)
 
@@ -76,7 +96,8 @@
 #define GENET_DMA_DESC_OFF_GET(i, o) (((i) * GENET_DMA_DESC_SIZE) + (o))
 
 /* Tx/Rx DMA descriptor bits */
-#define GENET_DMA_EN BIT(0)
+#define GENET_DMA_EN   BIT(0)
+#define GENET_DMA_CTRL (GENET_DMA_RING_BUF_EN(GENET_QUEUES) | GENET_DMA_EN)
 
 #define GENET_DMA_MAX_BURST_LEN       BIT(3)
 #define GENET_DMA_WRAP                BIT(12)
@@ -134,7 +155,7 @@
 #define GENET_RX_DMA_READ_PTR         (GENET_RX_DMA_RING_REG_BASE + 0x2c)
 
 #define GENET_DMA_FC_THRESH_LOW   5
-#define GENET_DMA_FC_THRESH_HIGH  (GENET_NB_RX_DESCS >> 4)
+#define GENET_DMA_FC_THRESH_HIGH  (GENET_RX_RING_DESCS >> 4)
 #define GENET_DMA_FC_THRESH_VALUE ((GENET_DMA_FC_THRESH_LOW << 16) | GENET_DMA_FC_THRESH_HIGH)
 
 #define GENET_TX_TIMEOUT_US     100000
@@ -142,6 +163,6 @@
 #define GENET_BUF_SIZE          CONFIG_NET_BUF_DATA_SIZE
 
 #define GENET_BUF_RX_COUNT \
-	(GENET_NB_RX_DESCS + DIV_ROUND_UP(GENET_MAX_FRAME_LEN, GENET_BUF_SIZE))
+	(GENET_RX_RING_DESCS + DIV_ROUND_UP(GENET_MAX_FRAME_LEN, GENET_BUF_SIZE))
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_BCMGENET_H_ */

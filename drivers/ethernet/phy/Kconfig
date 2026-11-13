@@ -76,6 +76,14 @@ config PHY_ADIN2111
 	help
 	  Enable ADIN2111 PHY driver.
 
+config PHY_BCM54213PE
+	bool "Broadcom BCM54213PE PHY Driver"
+	default y
+	depends on DT_HAS_BRCM_BCM54213PE_ENABLED
+	select MDIO
+	help
+	  Enable Broadcom BCM54213PE Ethernet PHY Driver
+
 config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 PHY Driver"
 	default y
