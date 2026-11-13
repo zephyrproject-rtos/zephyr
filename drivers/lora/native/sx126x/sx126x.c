@@ -1150,6 +1150,67 @@ static int sx126x_lora_send(const struct device *dev,
 	return result.status;
 }
 
+/*
+ * rx_ms is how long the radio listens: until it gives up on a plain
+ * reception, 0 for no limit, or in each window of a duty-cycled one.
+ */
+static int sx126x_rx_start(const struct device *dev, enum sx126x_state state,
+			   uint32_t rx_ms, uint32_t sleep_ms,
+			   lora_recv_cb cb, void *user_data)
+{
+	struct sx126x_data *data = dev->data;
+	int ret;
+
+	if (!data->config_valid) {
+		LOG_ERR("Not configured");
+		return -EINVAL;
+	}
+
+	if (!atomic_cas(&data->state, SX126X_REST_STATE, state)) {
+		LOG_ERR("Busy");
+		return -EBUSY;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	ret = sx126x_ensure_ready(dev);
+	if (ret < 0) {
+		atomic_set(&data->state, SX126X_REST_STATE);
+		goto unlock;
+	}
+
+	data->rx_cb = cb;
+	data->rx_cb_user_data = user_data;
+	k_msgq_purge(&data->rx_msgq);
+
+	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
+	if (ret == 0) {
+		sx126x_set_rf_path(dev, true, false);
+
+		if (state == SX126X_STATE_RX_DUTY_CYCLE) {
+			data->duty_cycle.rx_period = SX126X_MS_TO_TIMEOUT(rx_ms);
+			data->duty_cycle.sleep_period = SX126X_MS_TO_TIMEOUT(sleep_ms);
+			ret = sx126x_set_rx_duty_cycle(dev, data->duty_cycle.rx_period,
+						       data->duty_cycle.sleep_period);
+		} else {
+			ret = sx126x_set_rx(dev, rx_ms);
+		}
+	}
+
+	if (ret < 0) {
+		data->rx_cb = NULL;
+		data->rx_cb_user_data = NULL;
+		if (state == SX126X_STATE_RX_DUTY_CYCLE) {
+			atomic_set(&data->state, SX126X_REST_STATE);
+		}
+		sx126x_set_sleep(dev);
+	}
+
+unlock:
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
 static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 			    uint8_t size, k_timeout_t timeout,
 			    int16_t *rssi, int8_t *snr)
@@ -1159,50 +1220,13 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	uint32_t timeout_ms;
 	int ret;
 
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		return -EINVAL;
-	}
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
-		LOG_ERR("Busy");
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->rx_cb = NULL;
-	k_msgq_purge(&data->rx_msgq);
-
-	/* Set packet parameters for variable length reception */
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
-	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	/* Enable antenna and set RX path */
-	sx126x_set_rf_path(dev, true, false);
-
-	/* Start reception (0 = continuous for K_FOREVER) */
+	/* 0 = continuous for K_FOREVER */
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
 		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
-	ret = sx126x_set_rx(dev, timeout_ms);
+	ret = sx126x_rx_start(dev, SX126X_STATE_RX, timeout_ms, 0, NULL, NULL);
 	if (ret < 0) {
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
 		return ret;
 	}
-
-	k_mutex_unlock(&data->lock);
 
 	/* Wait for RX completion */
 	ret = k_msgq_get(&data->rx_msgq, &result, timeout);
@@ -1235,12 +1259,10 @@ static int sx126x_lora_recv_async(const struct device *dev,
 				  lora_recv_cb cb, void *user_data)
 {
 	struct sx126x_data *data = dev->data;
-	int ret;
-
-	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (cb == NULL) {
 		/* Stop async reception */
+		k_mutex_lock(&data->lock, K_FOREVER);
 		data->rx_cb = NULL;
 		data->rx_cb_user_data = NULL;
 		if (atomic_cas(&data->state, SX126X_STATE_RX, SX126X_STATE_IDLE)) {
@@ -1251,51 +1273,7 @@ static int sx126x_lora_recv_async(const struct device *dev,
 		return 0;
 	}
 
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		k_mutex_unlock(&data->lock);
-		return -EINVAL;
-	}
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
-		LOG_ERR("Busy");
-		k_mutex_unlock(&data->lock);
-		return -EBUSY;
-	}
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->rx_cb = cb;
-	data->rx_cb_user_data = user_data;
-
-	/* Set packet parameters */
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
-	if (ret < 0) {
-		data->rx_cb = NULL;
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	/* Enable antenna and set RX path */
-	sx126x_set_rf_path(dev, true, false);
-
-	/* Start continuous reception */
-	ret = sx126x_set_rx(dev, 0);
-	if (ret < 0) {
-		data->rx_cb = NULL;
-		sx126x_set_sleep(dev);
-		k_mutex_unlock(&data->lock);
-		return ret;
-	}
-
-	k_mutex_unlock(&data->lock);
-	return 0;
+	return sx126x_rx_start(dev, SX126X_STATE_RX, 0, 0, cb, user_data);
 }
 
 /*
@@ -1351,74 +1329,6 @@ static void sx126x_duty_cycle_stop(const struct device *dev)
 	sx126x_set_sleep(dev);
 }
 
-static int sx126x_duty_cycle_start(const struct device *dev,
-				   k_timeout_t rx_period,
-				   k_timeout_t sleep_period)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	data->duty_cycle.rx_period = SX126X_MS_TO_TIMEOUT(
-		k_ticks_to_ms_ceil32(rx_period.ticks));
-	data->duty_cycle.sleep_period = SX126X_MS_TO_TIMEOUT(
-		k_ticks_to_ms_ceil32(sleep_period.ticks));
-
-	ret = sx126x_set_configured_packet_params(dev, SX126X_MAX_PAYLOAD_LEN, true);
-	if (ret < 0) {
-		goto out_error;
-	}
-
-	sx126x_set_rf_path(dev, true, false);
-
-	ret = sx126x_set_rx_duty_cycle(dev, data->duty_cycle.rx_period,
-				       data->duty_cycle.sleep_period);
-	if (ret < 0) {
-		goto out_error;
-	}
-
-	k_mutex_unlock(&data->lock);
-	return 0;
-
-out_error:
-	data->rx_cb = NULL;
-	atomic_set(&data->state, SX126X_REST_STATE);
-	sx126x_set_sleep(dev);
-	k_mutex_unlock(&data->lock);
-	return ret;
-}
-
-static int sx126x_duty_cycle_enter(const struct device *dev,
-				   lora_recv_cb cb, void *user_data)
-{
-	struct sx126x_data *data = dev->data;
-	int ret;
-
-	if (!data->config_valid) {
-		LOG_ERR("Not configured");
-		return -EINVAL;
-	}
-
-	if (!atomic_cas(&data->state, SX126X_REST_STATE,
-			SX126X_STATE_RX_DUTY_CYCLE)) {
-		LOG_ERR("Busy");
-		return -EBUSY;
-	}
-
-	k_mutex_lock(&data->lock, K_FOREVER);
-
-	ret = sx126x_ensure_ready(dev);
-	if (ret < 0) {
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_REST_STATE);
-		return ret;
-	}
-
-	data->rx_cb = cb;
-	data->rx_cb_user_data = user_data;
-
-	return 0;
-}
-
 static int sx126x_lora_recv_duty_cycle(const struct device *dev,
 				       k_timeout_t rx_period,
 				       k_timeout_t sleep_period,
@@ -1430,14 +1340,9 @@ static int sx126x_lora_recv_duty_cycle(const struct device *dev,
 	struct sx126x_rx_result result;
 	int ret;
 
-	ret = sx126x_duty_cycle_enter(dev, NULL, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	k_msgq_purge(&data->rx_msgq);
-
-	ret = sx126x_duty_cycle_start(dev, rx_period, sleep_period);
+	ret = sx126x_rx_start(dev, SX126X_STATE_RX_DUTY_CYCLE,
+			      k_ticks_to_ms_ceil32(rx_period.ticks),
+			      k_ticks_to_ms_ceil32(sleep_period.ticks), NULL, NULL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1474,7 +1379,6 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 					     lora_recv_cb cb, void *user_data)
 {
 	struct sx126x_data *data = dev->data;
-	int ret;
 
 	if (cb == NULL) {
 		k_mutex_lock(&data->lock, K_FOREVER);
@@ -1488,12 +1392,9 @@ static int sx126x_lora_recv_duty_cycle_async(const struct device *dev,
 		return 0;
 	}
 
-	ret = sx126x_duty_cycle_enter(dev, cb, user_data);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return sx126x_duty_cycle_start(dev, rx_period, sleep_period);
+	return sx126x_rx_start(dev, SX126X_STATE_RX_DUTY_CYCLE,
+			       k_ticks_to_ms_ceil32(rx_period.ticks),
+			       k_ticks_to_ms_ceil32(sleep_period.ticks), cb, user_data);
 }
 
 static uint32_t sx126x_lora_airtime(const struct device *dev, uint32_t data_len)
