@@ -1,0 +1,19 @@
+common:
+  tags:
+    - drivers
+    - dma
+  depends_on: dma
+  # The test reads the eDMA v2 CR register (CR[HOE], CR[HALT])
+  filter: CONFIG_DMA_MCUX_EDMA and dt_nodelabel_enabled("edma0")
+  platform_allow:
+    - frdm_k64f
+    - mimxrt1060_evk/mimxrt1062/qspi
+    - mimxrt1170_evk@A/mimxrt1176/cm7
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+  integration_platforms:
+    - mimxrt1170_evk@B/mimxrt1176/cm7
+tests:
+  drivers.dma.mcux_edma.halt_on_error: {}
+  drivers.dma.mcux_edma.no_halt_on_error:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="no_halt_on_error.overlay"

@@ -56,6 +56,8 @@ struct dma_mcux_edma_config {
 	uint32_t channel_gap[2];
 #endif
 	struct reset_dt_spec reset;
+	/* From nxp,no-halt-on-error: do not halt the eDMA on a channel error */
+	bool no_halt_on_error;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
@@ -1281,6 +1283,13 @@ static int dma_mcux_edma_init(const struct device *dev)
 #endif
 
 	EDMA_GetDefaultConfig(&userConfig);
+	/*
+	 * The HAL default enables halt-on-error: an error on any channel then
+	 * halts the service of all channels until software clears HALT.
+	 */
+	if (config->no_halt_on_error) {
+		userConfig.enableHaltOnError = false;
+	}
 	EDMA_Init(DEV_BASE(dev), &userConfig);
 #ifdef CONFIG_DMA_MCUX_EDMA_V3
 	/* Channel linking available and will be controlled by each channel's link settings */
@@ -1408,8 +1417,18 @@ static int dma_mcux_edma_init(const struct device *dev)
 /*
  * define the dma
  */
+/* nxp,no-halt-on-error is supported on eDMA v2 only (CR[HOE]): the tested version */
+#if defined(CONFIG_DMA_MCUX_EDMA)
+#define DMA_MCUX_EDMA_NO_HALT_CHECK(n)
+#else
+#define DMA_MCUX_EDMA_NO_HALT_CHECK(n)						\
+	BUILD_ASSERT(!DT_INST_PROP(n, nxp_no_halt_on_error),			\
+		     "nxp,no-halt-on-error needs nxp,version = <2>");
+#endif
+
 #define DMA_INIT(n)								\
 	DMAMUX_BASE_INIT_DEFINE(n)						\
+	DMA_MCUX_EDMA_NO_HALT_CHECK(n)						\
 	static void dma_imx_config_func_##n(const struct device *dev);		\
 	static __aligned(DMA_TCD_ALIGN_SIZE) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t	\
 	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
@@ -1428,6 +1447,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
+		.no_halt_on_error = DT_INST_PROP(n, nxp_no_halt_on_error),	\
 		.tcdpool = dma_tcdpool##n,					\
 	};									\
 										\
