@@ -7,3 +7,14 @@ tests:
     tags:
       - samples
       - ipm
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Flash IPM sample program \\(remote CPU\\)"
+        - "Erasing first [0-9]+ bytes of partition.. OK"
+        - "Verifying page erased.. OK"
+        - "Write ascii pattern..OK"
+        - "Verifying pattern.. OK"

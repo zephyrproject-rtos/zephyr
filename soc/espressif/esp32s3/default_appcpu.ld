@@ -116,7 +116,7 @@ SECTIONS
      */
     LONG(ADDR(.dram0.data))
     LONG(LOADADDR(.dram0.data))
-    LONG(_data_end - _data_start)
+    LONG(_data_end - ADDR(.dram0.data))
 
     /* RTC_IRAM metadata:
      * 8. Destination address (VMA) for RTC_IRAM region
