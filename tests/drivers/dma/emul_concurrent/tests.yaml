@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  min_ram: 16
+  depends_on: dma
+  tags:
+    - drivers
+    - dma
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+  filter: dt_nodelabel_enabled("tst_dma0")
+tests:
+  drivers.dma.emul_concurrent: {}
+  drivers.dma.emul_concurrent.shuffle_repeat:
+    extra_configs:
+      - CONFIG_ZTEST_SHUFFLE=y
+      - CONFIG_ZTEST_REPEAT=y
+      - CONFIG_ZTEST_SUITE_REPEAT_COUNT=2
+      - CONFIG_ZTEST_TEST_REPEAT_COUNT=2
