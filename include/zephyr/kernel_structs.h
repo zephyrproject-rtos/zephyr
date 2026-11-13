@@ -260,6 +260,20 @@ extern struct z_kernel _kernel;
 
 extern atomic_t _cpus_active;
 
+#if defined(CONFIG_SCHED_THREAD_USAGE_HISTORY) && (CONFIG_SCHED_THREAD_USAGE_HISTORY > 0)
+struct z_sched_usage_history_entry {
+	uint32_t cycles;
+	struct k_thread *thread;
+};
+
+struct z_sched_usage_history {
+	uint32_t seq;
+	struct z_sched_usage_history_entry entries[CONFIG_SCHED_THREAD_USAGE_HISTORY];
+};
+
+extern struct z_sched_usage_history z_sched_usage_history;
+#endif /* CONFIG_SCHED_THREAD_USAGE_HISTORY > 0 */
+
 #ifdef CONFIG_SMP
 
 /* True if the current context can be preempted and migrated to

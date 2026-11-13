@@ -177,6 +177,12 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Kernel
+
+  * :kconfig:option:`CONFIG_SCHED_THREAD_USAGE_HISTORY` records the most recent thread switch-ins
+    with their runtime usage timestamps in a RAM ring, so a core dump shows which threads ran
+    before a fault or a watchdog reset.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
