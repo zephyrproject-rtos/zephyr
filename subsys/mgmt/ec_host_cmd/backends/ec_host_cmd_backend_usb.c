@@ -78,6 +78,7 @@ enum ec_host_cmd_usb_state {
 enum {
 	EC_HOST_CMD_CLASS_ENABLED,
 	EC_HOST_CMD_EVENT_PENDING,
+	EC_HOST_CMD_REENABLED_IN_PROCESSING,
 };
 
 static const char *const state_name[] = {
@@ -105,7 +106,10 @@ struct ec_host_cmd_usb_ctx {
 	struct net_buf *usb_tx_buf;
 	enum ec_host_cmd_usb_state state;
 	atomic_t flags;
-	/* Protects access to state across USB callbacks, handler, and reset_work. */
+	/*
+	 * Protects access to state and synchronizes state and flags transitions
+	 * across USB callbacks, handler, and reset_work.
+	 */
 	struct k_spinlock state_lock;
 	struct k_work_delayable reset_work;
 };
@@ -392,8 +396,9 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 {
 	struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 	struct udc_buf_info *bi;
+	k_spinlock_key_t key;
+	bool defer_rx;
 
-	atomic_set_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
 	if (!ctx->usb_tx_buf) {
 		LOG_ERR("Host Commands not initialized");
 		return;
@@ -403,7 +408,20 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	bi = udc_get_buf_info(ctx->usb_tx_buf);
 	bi->ep = ec_host_cmd_get_in_bulk_ep(c_data);
 
-	if (arm_rx(c_data) != 0) {
+	key = k_spin_lock(&ctx->state_lock);
+	atomic_set_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
+	defer_rx = (ctx->state == USB_EC_HOST_CMD_STATE_PROCESSING);
+	if (!defer_rx) {
+		atomic_clear_bit(&ctx->flags, EC_HOST_CMD_REENABLED_IN_PROCESSING);
+	}
+	k_spin_unlock(&ctx->state_lock, key);
+
+	/*
+	 * If the class was re-enabled while a command is still being processed,
+	 * defer re-arming EP OUT until ec_host_cmd_backend_send() finishes so
+	 * incoming USB traffic does not overwrite the active RX buffer.
+	 */
+	if (!defer_rx && (arm_rx(c_data) != 0)) {
 		return;
 	}
 
@@ -435,13 +453,16 @@ static void ec_host_cmd_disable(struct usbd_class_data *const c_data)
 	enum ec_host_cmd_usb_state prev_state;
 	k_spinlock_key_t key;
 
-	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
-
 	k_work_cancel_delayable(&ctx->reset_work);
 
 	key = k_spin_lock(&ctx->state_lock);
+	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED);
 	prev_state = ctx->state;
-	ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
+	if (ctx->state == USB_EC_HOST_CMD_STATE_PROCESSING) {
+		atomic_set_bit(&ctx->flags, EC_HOST_CMD_REENABLED_IN_PROCESSING);
+	} else {
+		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
+	}
 	k_spin_unlock(&ctx->state_lock, key);
 
 	if (prev_state != USB_EC_HOST_CMD_STATE_READY_TO_RX) {
@@ -512,6 +533,7 @@ static int ec_host_cmd_backend_init(const struct ec_host_cmd_backend *backend,
 	ctx->rx_ctx = rx_ctx;
 	ctx->tx_buf = tx;
 
+	atomic_clear_bit(&ctx->flags, EC_HOST_CMD_REENABLED_IN_PROCESSING);
 	set_usb_state(ctx, USB_EC_HOST_CMD_STATE_DISABLED);
 
 	k_work_init_delayable(&ctx->reset_work, ec_host_cmd_reset);
@@ -539,20 +561,35 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	struct usbd_class_data *const c_data = ctx->c_data;
 	struct net_buf *buf;
 	k_spinlock_key_t key;
+	bool reenabled_in_processing;
 	int ret;
 
+	key = k_spin_lock(&ctx->state_lock);
+	reenabled_in_processing =
+		atomic_test_and_clear_bit(&ctx->flags, EC_HOST_CMD_REENABLED_IN_PROCESSING);
 	if (!atomic_test_bit(&ctx->flags, EC_HOST_CMD_CLASS_ENABLED)) {
+		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
+		k_spin_unlock(&ctx->state_lock, key);
 		LOG_ERR("Class not enabled");
 		return -EACCES;
 	}
 
-	key = k_spin_lock(&ctx->state_lock);
 	if (ctx->state != USB_EC_HOST_CMD_STATE_PROCESSING) {
 		enum ec_host_cmd_usb_state bad_state = ctx->state;
 
 		k_spin_unlock(&ctx->state_lock, key);
 		LOG_ERR("Unexpected state when sending: %s", state_name[bad_state]);
 		return -EACCES;
+	}
+
+	if (reenabled_in_processing) {
+		k_spin_unlock(&ctx->state_lock, key);
+		LOG_WRN("Dropping response after class re-enable during processing");
+		ret = arm_rx(c_data);
+		if (ret != 0) {
+			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
+		}
+		return ret;
 	}
 
 	ctx->state = USB_EC_HOST_CMD_STATE_SENDING;
