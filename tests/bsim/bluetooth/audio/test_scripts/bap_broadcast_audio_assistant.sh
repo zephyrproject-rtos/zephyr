@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2023-2025 Nordic Semiconductor ASA
+# Copyright (c) 2023-2026 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,7 +16,7 @@ printf "\n\n======== Running BAP Broadcast Audio Assistant =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 \
-  -testid=broadcast_sink_with_assistant -RealEncryption=1 -rs=24 -D=3
+  -testid=broadcast_sink_with_assistant -RealEncryption=1 -rs=24 -D=3 -argstest past 0
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 \

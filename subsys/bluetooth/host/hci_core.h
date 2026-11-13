@@ -104,7 +104,9 @@ enum {
 #endif
 
 enum {
-	/* Advertising set has been created in the host. */
+	/* Advertising set has been reserved for creation in the host. */
+	BT_ADV_RESERVED,
+	/* Advertising set has been created and finalized for use */
 	BT_ADV_CREATED,
 	/* Advertising parameters has been set in the controller.
 	 * This implies that the advertising set has been created in the
@@ -226,8 +228,6 @@ struct bt_le_ext_adv {
 	/* Current target address */
 	bt_addr_le_t            target_addr;
 
-	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
-
 #if defined(CONFIG_BT_LIM_ADV)
 	struct k_work_delayable	lim_adv_timeout_work;
 #endif /* CONFIG_BT_LIM_ADV */
@@ -236,6 +236,9 @@ struct bt_le_ext_adv {
 	 * @ref bt_le_adv_param
 	 */
 	uint32_t options;
+
+	/* Shall be the last field in this struct */
+	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 };
 
 enum {
