@@ -61,6 +61,26 @@ static int generic_emul_sample_fetch(const struct device *dev, enum sensor_chann
 	return data->fetch_rc;
 }
 
+/*
+ * The X, Y or Z channel (axis 0, 1 or 2) of a three-axis channel. Any other channel is its own
+ * axis 0.
+ */
+static enum sensor_channel generic_emul_axis_channel(enum sensor_channel chan, int axis)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		return SENSOR_CHAN_ACCEL_X + axis;
+	case SENSOR_CHAN_GYRO_XYZ:
+		return SENSOR_CHAN_GYRO_X + axis;
+	case SENSOR_CHAN_MAGN_XYZ:
+		return SENSOR_CHAN_MAGN_X + axis;
+	case SENSOR_CHAN_POS_DXYZ:
+		return SENSOR_CHAN_POS_DX + axis;
+	default:
+		return chan;
+	}
+}
+
 static int generic_emul_channel_get(const struct device *dev, enum sensor_channel chan,
 				    struct sensor_value *val)
 {
@@ -68,6 +88,23 @@ static int generic_emul_channel_get(const struct device *dev, enum sensor_channe
 
 	if (chan >= SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
+	}
+
+	/* A three-axis channel reads the values of its X, Y and Z channels */
+	if (SENSOR_CHANNEL_3_AXIS(chan)) {
+		for (int i = 0; i < 3; i++) {
+			enum sensor_channel axis = generic_emul_axis_channel(chan, i);
+
+			if (!atomic_test_bit(data->channels_set, axis)) {
+				return -ENOTSUP;
+			}
+		}
+
+		for (int i = 0; i < 3; i++) {
+			val[i] = data->channel_values[generic_emul_axis_channel(chan, i)];
+		}
+
+		return 0;
 	}
 
 	if (!atomic_test_bit(data->channels_set, chan)) {
@@ -137,6 +174,18 @@ static int generic_emul_set_channel(const struct emul *target, struct sensor_cha
 
 	if (sensor_value_from_micro(&val, micro) != 0) {
 		return -ERANGE;
+	}
+
+	/* A three-axis channel sets each of its X, Y and Z channels */
+	if (SENSOR_CHANNEL_3_AXIS(ch.chan_type)) {
+		for (int i = 0; i < 3; i++) {
+			enum sensor_channel axis = generic_emul_axis_channel(ch.chan_type, i);
+
+			data->channel_values[axis] = val;
+			atomic_set_bit(data->channels_set, axis);
+		}
+
+		return 0;
 	}
 
 	data->channel_values[ch.chan_type] = val;

@@ -88,7 +88,7 @@ ZTEST(drivers_sensor_generic_emul, test_value_echo)
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(test_sensor));
 	const struct emul *emul = EMUL_DT_GET(DT_NODELABEL(test_sensor));
 	struct sensor_chan_spec chan = {.chan_idx = 0};
-	struct sensor_value val_read;
+	struct sensor_value val_read[3];
 	q31_t sample;
 	q31_t lower;
 	q31_t upper;
@@ -98,7 +98,10 @@ ZTEST(drivers_sensor_generic_emul, test_value_echo)
 	zassert_equal(0, sensor_sample_fetch(dev));
 
 	for (int i = 0; i < SENSOR_CHAN_ALL; i++) {
-		zassert_equal(-ENOTSUP, sensor_channel_get(dev, i, &val_read));
+		/* A three-axis channel is already set by its X, Y and Z channels */
+		if (!SENSOR_CHANNEL_3_AXIS(i)) {
+			zassert_equal(-ENOTSUP, sensor_channel_get(dev, i, val_read));
+		}
 
 		chan.chan_type = i;
 		shift = 8;
@@ -107,14 +110,14 @@ ZTEST(drivers_sensor_generic_emul, test_value_echo)
 								      &epsilon, &shift));
 		zassert_equal(0, emul_sensor_backend_set_channel(emul, chan, &sample, 8));
 
-		zassert_equal(0, sensor_channel_get(dev, i, &val_read));
-		zassert_equal(i + 1, val_read.val1);
-		zassert_equal(0, val_read.val2);
+		zassert_equal(0, sensor_channel_get(dev, i, val_read));
+		zassert_equal(i + 1, val_read[0].val1);
+		zassert_equal(0, val_read[0].val2);
 	}
 
 	generic_emul_reset(emul, true);
 	for (int i = 0; i < SENSOR_CHAN_ALL; i++) {
-		zassert_equal(-ENOTSUP, sensor_channel_get(dev, i, &val_read));
+		zassert_equal(-ENOTSUP, sensor_channel_get(dev, i, val_read));
 	}
 }
 
