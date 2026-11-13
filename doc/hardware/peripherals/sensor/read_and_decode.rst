@@ -100,3 +100,10 @@ should be captured with the event.
 
 .. literalinclude:: accel_stream.c
    :language: c
+
+A stream runs until it is canceled with :c:func:`rtio_sqe_cancel`, using the
+handle that :c:func:`sensor_stream` returned. The stream then ends with one
+completion, with the result ``-ECANCELED``. A driver that implements the
+optional ``cancel`` operation of :c:struct:`sensor_driver_api` ends a stream
+that waits for its next trigger at once. Without it, the stream ends when the
+driver completes its next submission.
