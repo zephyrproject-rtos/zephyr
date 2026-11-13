@@ -118,7 +118,10 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 	struct bt_iso_chan *chan = iso->iso.chan;
 	struct bt_iso_chan_ops *ops;
 
-	__ASSERT(chan != NULL, "NULL chan for iso %p", iso);
+	if (chan == NULL) {
+		/* The channel has been detached */
+		return;
+	}
 
 	ops = chan->ops;
 
@@ -273,6 +276,17 @@ static void bt_iso_chan_add(struct bt_conn *iso, struct bt_iso_chan *chan)
 #endif /* CONFIG_BT_ISO_TX */
 
 	LOG_DBG("iso %p chan %p", iso, chan);
+}
+
+static void bt_iso_chan_del(struct bt_iso_chan *chan)
+{
+	struct bt_conn *iso = bt_conn_take(&chan->iso);
+
+	if (iso != NULL) {
+		/* The object can outlive the channel when others hold a reference */
+		iso->iso.chan = NULL;
+		bt_conn_unref(iso);
+	}
 }
 
 static int validate_iso_setup_data_path_parms(const struct bt_iso_chan *chan, uint8_t dir,
@@ -511,6 +525,16 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			chan->ops->send_failed(chan, -ESHUTDOWN);
 		}
 	}
+
+	/* Report the SDUs the controller has acknowledged, and let a report in progress
+	 * finish. After a Disconnection Complete that has been done already, but a BIS gets
+	 * none, and neither does a CIS that bt_iso_reset() takes down. None can be added
+	 * once the state is set above.
+	 */
+	if (!sys_slist_is_empty(&chan->iso->tx_complete) ||
+	    k_work_busy_get(&chan->iso->tx_complete_work) != 0) {
+		bt_conn_tx_notify(chan->iso, true);
+	}
 #endif /* CONFIG_BT_ISO_TX */
 
 	/* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
@@ -531,7 +555,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		bt_iso_cleanup_acl(chan->iso);
 
 		if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
-			bt_conn_drop(&chan->iso);
+			bt_iso_chan_del(chan);
 #if defined(CONFIG_BT_ISO_CENTRAL)
 		} else {
 			bool is_chan_connected;
@@ -555,15 +579,6 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 			}
 #endif /* CONFIG_BT_ISO_CENTRAL */
 		}
-	} else if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) &&
-		   conn_type == BT_ISO_CHAN_TYPE_BROADCASTER) {
-		/* BIS do not get a HCI Disconnected event and will not handle cleanup of pending TX
-		 * complete in the same way as ACL and CIS do. Call bt_conn_tx_notify directly here
-		 * to flush the chan->iso->tx_complete for each disconnected BIS
-		 */
-		bt_conn_tx_notify(chan->iso, true);
-	} else {
-		/* No special handling for BT_ISO_CHAN_TYPE_SYNC_RECEIVER */
 	}
 }
 
@@ -580,7 +595,7 @@ void bt_iso_disconnected(struct bt_conn *iso)
 
 	chan = iso_chan(iso);
 	if (chan == NULL) {
-		LOG_ERR("Could not lookup chan from disconnected ISO");
+		LOG_DBG("No chan for disconnected ISO %p", iso);
 		return;
 	}
 
@@ -863,8 +878,10 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 static bool iso_has_data(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_ISO_TX)
-	return ((conn->iso.chan->state == BT_ISO_STATE_CONNECTED) &&
-		!k_fifo_is_empty(&conn->iso.txq));
+	const struct bt_iso_chan *chan = conn->iso.chan;
+
+	return chan != NULL && chan->state == BT_ISO_STATE_CONNECTED &&
+	       !k_fifo_is_empty(&conn->iso.txq);
 #else  /* !CONFIG_BT_ISO_TX */
 	return false;
 #endif /* CONFIG_BT_ISO_TX */
@@ -890,7 +907,9 @@ static struct net_buf *iso_data_pull(struct bt_conn *conn, size_t amount, size_t
 
 	__ASSERT_NO_MSG(conn->state == BT_CONN_CONNECTED);
 
-	if (conn->iso.chan->state != BT_ISO_STATE_CONNECTED) {
+	const struct bt_iso_chan *chan = conn->iso.chan;
+
+	if (chan == NULL || chan->state != BT_ISO_STATE_CONNECTED) {
 		LOG_DBG("channel has been disconnected");
 
 		/* Service other connections */
@@ -1719,8 +1738,8 @@ void hci_le_cis_req(struct net_buf *buf)
 
 	err = hci_le_accept_cis(cis_handle);
 	if (err) {
-		bt_iso_cleanup_acl(iso);
-		bt_conn_unref(iso);
+		iso->err = BT_HCI_ERR_UNSPECIFIED;
+		bt_iso_disconnected(iso);
 		hci_le_reject_cis(cis_handle, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
 	}
@@ -2073,7 +2092,7 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	struct bt_iso_chan *cis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
-		bt_conn_drop(&cis->iso);
+		bt_iso_chan_del(cis);
 
 		sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 	}
@@ -2315,7 +2334,7 @@ static void restore_cig(struct bt_iso_cig *cig, uint8_t existing_num_cis)
 		 * bt_iso_cig_reconfigure was called
 		 */
 		if (cis->iso != NULL && cis->iso->iso.info.unicast.cis_id >= existing_num_cis) {
-			bt_conn_drop(&cis->iso);
+			bt_iso_chan_del(cis);
 
 			sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 			cig->num_cis--;
@@ -2479,7 +2498,7 @@ static bool iso_chans_connecting(void)
 		}
 
 		iso_chan = iso_chan(iso);
-		if (iso_chan->state == BT_ISO_STATE_CONNECTING) {
+		if (iso_chan != NULL && iso_chan->state == BT_ISO_STATE_CONNECTING) {
 			return true;
 		}
 	}
@@ -2611,7 +2630,7 @@ static void cleanup_big(struct bt_iso_big *big)
 	struct bt_iso_chan *bis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis_channels, bis, tmp, node) {
-		bt_conn_drop(&bis->iso);
+		bt_iso_chan_del(bis);
 
 		sys_slist_remove(&big->bis_channels, NULL, &bis->node);
 	}
@@ -3528,20 +3547,32 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 
 void bt_iso_reset(void)
 {
-#if defined(CONFIG_BT_ISO_CENTRAL)
-	for (size_t i = 0U; i < ARRAY_SIZE(cigs); i++) {
-		struct bt_iso_cig *cig = &cigs[i];
-		struct bt_iso_chan *cis;
+	/* After the controller reset no event reports the end of a CIS */
+	ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+		struct bt_conn *iso = bt_conn_ref(iso_conn);
+		struct bt_iso_chan *chan;
 
-		SYS_SLIST_FOR_EACH_CONTAINER(&cig->cis_channels, cis, node) {
-			if (cis->state != BT_ISO_STATE_DISCONNECTED) {
-				cis->iso->err = BT_HCI_ERR_UNSPECIFIED;
-
-				bt_iso_chan_disconnected(cis, BT_HCI_ERR_UNSPECIFIED);
-			}
+		if (iso == NULL) {
+			continue;
 		}
 
-		cleanup_cig(cig);
+		/* No more fragments come after the controller reset */
+		bt_conn_reset_rx_state(iso);
+
+		chan = iso->iso.chan;
+		if ((iso->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
+		     iso->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
+		    chan != NULL && chan->state != BT_ISO_STATE_DISCONNECTED) {
+			iso->err = BT_HCI_ERR_UNSPECIFIED;
+			bt_iso_chan_disconnected(chan, BT_HCI_ERR_UNSPECIFIED);
+		}
+
+		bt_conn_unref(iso);
+	}
+
+#if defined(CONFIG_BT_ISO_CENTRAL)
+	for (size_t i = 0U; i < ARRAY_SIZE(cigs); i++) {
+		cleanup_cig(&cigs[i]);
 	}
 #endif /* CONFIG_BT_ISO_CENTRAL */
 
