@@ -16,6 +16,8 @@ config SOC_SERIES_BL616CL
 	imply CODE_DATA_RELOCATION
 	imply FLASH
 	imply FPU
+	imply REBOOT
+	imply RETAINED_MEM
 	imply XIP
 
 config BFLB_BL616CL_WL_RMEM_SIZE
