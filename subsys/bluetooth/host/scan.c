@@ -1070,14 +1070,28 @@ cont:
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC)
+/* The sync objects are set up, change state and are deleted with the host
+ * lock held, and never across a call that blocks: the application threads,
+ * the RX work and bt_disable() all do so. A call reads the generation of its
+ * object when it starts. Once it has blocked, such as for a command buffer or
+ * on an HCI command, it changes the object only if the generation is still
+ * the same, which a command about the object is checked for with the host lock
+ * held right before it is queued (bt_hci_cmd_send_sync_checked()).
+ */
 static void per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 {
+	BT_DEV_LOCK_ASSERT();
+
+	per_adv_sync->gen++;
 	atomic_clear(per_adv_sync->flags);
 }
 
 static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 {
 	struct bt_le_per_adv_sync *per_adv_sync = NULL;
+	uint32_t gen;
+
+	BT_DEV_LOCK_ASSERT();
 
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		if (!atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_CREATED)) {
@@ -1090,7 +1104,9 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 		return NULL;
 	}
 
+	gen = per_adv_sync->gen;
 	(void)memset(per_adv_sync, 0, sizeof(*per_adv_sync));
+	per_adv_sync->gen = gen;
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_CREATED);
 
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
@@ -1104,6 +1120,8 @@ static struct bt_le_per_adv_sync *per_adv_sync_new(void)
 
 static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
 {
+	BT_DEV_LOCK_ASSERT();
+
 	for (int i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		if (atomic_test_bit(per_adv_sync_pool[i].flags, BT_PER_ADV_SYNC_SYNCING)) {
 			return &per_adv_sync_pool[i];
@@ -1115,9 +1133,13 @@ static struct bt_le_per_adv_sync *get_pending_per_adv_sync(void)
 
 void bt_periodic_sync_disable(void)
 {
+	bt_dev_lock();
+
 	for (size_t i = 0; i < ARRAY_SIZE(per_adv_sync_pool); i++) {
 		per_adv_sync_delete(&per_adv_sync_pool[i]);
 	}
+
+	bt_dev_unlock();
 }
 
 struct bt_le_per_adv_sync *bt_hci_per_adv_sync_lookup_handle(uint16_t handle)
@@ -1307,25 +1329,106 @@ static int per_adv_sync_terminate(uint16_t handle)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf, NULL);
 }
 
-static void per_adv_sync_terminated(struct bt_le_per_adv_sync *per_adv_sync, uint8_t reason)
+int bt_per_adv_sync_cmd_check(const void *data)
 {
-	/* Terminate the PA sync and notify app */
-	const struct bt_le_per_adv_sync_term_info term_info = {
-		.addr = &per_adv_sync->addr,
-		.sid = per_adv_sync->sid,
-		.reason = reason,
-	};
+	const struct bt_per_adv_sync_cmd *cmd = data;
+
+	if (cmd->sync->gen != cmd->gen) {
+		return -EINVAL;
+	}
+
+	if (cmd->handle != NULL) {
+		sys_put_le16(cmd->sync->handle, cmd->handle);
+	}
+
+	return 0;
+}
+
+int bt_per_adv_sync_gen_get(const struct bt_le_per_adv_sync *sync, uint32_t *gen)
+{
+	int err = 0;
+
+	bt_dev_lock();
+
+	if (atomic_test_bit(sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
+		*gen = sync->gen;
+	} else {
+		err = -EINVAL;
+	}
+
+	bt_dev_unlock();
+
+	return err;
+}
+
+/* Whether the sync object has been deleted since its generation gen was read */
+static bool per_adv_sync_deleted(const struct bt_le_per_adv_sync *per_adv_sync, uint32_t gen)
+{
+	bool deleted;
+
+	bt_dev_lock();
+	deleted = (per_adv_sync->gen != gen);
+	bt_dev_unlock();
+
+	return deleted;
+}
+
+/* Delete the sync object and notify the application, unless the object has been
+ * deleted since its generation gen was read.
+ */
+static void per_adv_sync_terminated(struct bt_le_per_adv_sync *per_adv_sync, uint32_t gen,
+				    uint8_t reason)
+{
+	struct bt_le_per_adv_sync_term_info term_info;
 	struct bt_le_per_adv_sync_cb *listener, *tmp;
+	bt_addr_le_t addr;
+
+	bt_dev_lock();
+
+	if (per_adv_sync->gen != gen) {
+		bt_dev_unlock();
+		return;
+	}
+
+	/* A listener can reuse the object for a new sync */
+	bt_addr_le_copy(&addr, &per_adv_sync->addr);
+	term_info.addr = &addr;
+	term_info.sid = per_adv_sync->sid;
+	term_info.reason = reason;
 
 	/* Deleting before callback, so the caller will be able
 	 * to restart sync in the callback.
 	 */
 	per_adv_sync_delete(per_adv_sync);
 
+	bt_dev_unlock();
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pa_sync_cbs, listener, tmp, node) {
 		if (listener->term) {
 			listener->term(per_adv_sync, &term_info);
 		}
+	}
+}
+
+/* Stop the scanner if it was running only for a sync that is no longer pending */
+static void per_adv_sync_scan_update(void)
+{
+	int err;
+
+	err = scan_update();
+	if (err != 0) {
+		LOG_ERR("Could not update scan (%d)", err);
+	}
+}
+
+/* Give the call that creates the sync the object, unless it has it already */
+static void per_adv_sync_out_store(struct bt_le_per_adv_sync *per_adv_sync)
+{
+	BT_DEV_LOCK_ASSERT();
+
+	if (per_adv_sync->out_sync != NULL) {
+		*per_adv_sync->out_sync = per_adv_sync;
+		per_adv_sync->out_sync = NULL;
 	}
 }
 
@@ -1343,48 +1446,69 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	struct bt_le_per_adv_sync *pending_per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener, *tmp;
 	bt_addr_le_t pending_id_addr;
+	bt_addr_le_t pending_addr;
 	bt_addr_le_t id_addr;
 	bool unexpected_evt;
-	int err;
-
-	pending_per_adv_sync = get_pending_per_adv_sync();
-
-	if (pending_per_adv_sync) {
-		atomic_clear_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
-		err = bt_le_scan_user_remove(BT_LE_SCAN_USER_PER_SYNC);
-
-		if (err) {
-			LOG_ERR("Could not update scan (%d)", err);
-		}
-	}
+	uint32_t gen = 0U;
 
 	if (evt->status == BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
-		/* Cancelled locally, don't call CB */
-		if (pending_per_adv_sync) {
-			per_adv_sync_delete(pending_per_adv_sync);
-		} else {
+		bt_dev_lock();
+
+		pending_per_adv_sync = get_pending_per_adv_sync();
+		if (pending_per_adv_sync == NULL) {
+			bt_dev_unlock();
 			LOG_ERR("Unexpected per adv sync cancelled event");
+			return;
 		}
 
+		/* Cancelled locally, don't call CB */
+		atomic_clear_bit(scan_state.scan_flags, BT_LE_SCAN_USER_PER_SYNC);
+		per_adv_sync_delete(pending_per_adv_sync);
+
+		bt_dev_unlock();
+
+		per_adv_sync_scan_update();
 		return;
 	}
 
+	/* Resolving an address can block, so it is done without the host
+	 * lock, and the pending sync is checked again afterwards.
+	 */
 	if (bt_addr_le_is_resolved(&evt->adv_addr)) {
 		bt_addr_le_copy_resolved(&id_addr, &evt->adv_addr);
 	} else {
 		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, &evt->adv_addr));
 	}
 
-	if (pending_per_adv_sync != NULL) {
-		bt_addr_le_t *addr_to_check = &pending_per_adv_sync->addr;
+	bt_dev_lock();
 
-		if (bt_addr_le_is_resolved(addr_to_check)) {
-			bt_addr_le_copy_resolved(&pending_id_addr, addr_to_check);
+	pending_per_adv_sync = get_pending_per_adv_sync();
+	if (pending_per_adv_sync != NULL) {
+		bt_addr_le_copy(&pending_addr, &pending_per_adv_sync->addr);
+		gen = pending_per_adv_sync->gen;
+	}
+
+	bt_dev_unlock();
+
+	if (pending_per_adv_sync != NULL) {
+		if (bt_addr_le_is_resolved(&pending_addr)) {
+			bt_addr_le_copy_resolved(&pending_id_addr, &pending_addr);
 		} else {
-			bt_addr_le_copy(
-				&pending_id_addr,
-				bt_lookup_id_addr(BT_ID_DEFAULT, addr_to_check));
+			bt_addr_le_copy(&pending_id_addr,
+					bt_lookup_id_addr(BT_ID_DEFAULT, &pending_addr));
 		}
+	}
+
+	bt_dev_lock();
+
+	if (pending_per_adv_sync != NULL && pending_per_adv_sync->gen != gen) {
+		/* Deleted meanwhile */
+		pending_per_adv_sync = NULL;
+	}
+
+	if (pending_per_adv_sync != NULL) {
+		atomic_clear_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
+		atomic_clear_bit(scan_state.scan_flags, BT_LE_SCAN_USER_PER_SYNC);
 	}
 
 	if (!pending_per_adv_sync ||
@@ -1392,30 +1516,41 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	     ((pending_per_adv_sync->sid != evt->sid) ||
 	      !bt_addr_le_eq(&pending_id_addr, &id_addr)))) {
 		LOG_ERR("Unexpected per adv sync established event");
-		/* Request terminate of pending periodic advertising in controller */
-		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
-
 		unexpected_evt = true;
 	} else {
 		unexpected_evt = false;
 	}
 
 	if (unexpected_evt || evt->status != BT_HCI_ERR_SUCCESS) {
-		if (pending_per_adv_sync) {
+		if (pending_per_adv_sync != NULL &&
+		    atomic_test_bit(pending_per_adv_sync->flags,
+				    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
+			/* Update the addr and sid for the callback
+			 * Already set if not using the sync list
+			 */
+			bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
+			pending_per_adv_sync->sid = evt->sid;
+		}
+
+		bt_dev_unlock();
+
+		if (unexpected_evt) {
+			/* Request terminate of pending periodic advertising in
+			 * controller. This comes before the callbacks, which can
+			 * disable and enable Bluetooth, after which the handle
+			 * could be that of another sync.
+			 */
+			per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
+		}
+
+		if (pending_per_adv_sync != NULL) {
 			const uint8_t reason =
 				unexpected_evt ? BT_HCI_ERR_UNSPECIFIED : evt->status;
 
-			if (atomic_test_bit(pending_per_adv_sync->flags,
-					    BT_PER_ADV_SYNC_SYNCING_USE_LIST)) {
-				/* Update the addr and sid for the callback
-				 * Already set if not using the sync list
-				 */
-				bt_addr_le_copy(&pending_per_adv_sync->addr, &id_addr);
-				pending_per_adv_sync->sid = evt->sid;
-			}
-
-			per_adv_sync_terminated(pending_per_adv_sync, reason);
+			per_adv_sync_terminated(pending_per_adv_sync, gen, reason);
+			per_adv_sync_scan_update();
 		}
+
 		return;
 	}
 
@@ -1460,11 +1595,18 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	sync_info.recv_enabled =
 		!atomic_test_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
 
+	/* The callbacks may look for it there before the create call returns */
+	per_adv_sync_out_store(pending_per_adv_sync);
+
+	bt_dev_unlock();
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pa_sync_cbs, listener, tmp, node) {
 		if (listener->synced) {
 			listener->synced(pending_per_adv_sync, &sync_info);
 		}
 	}
+
+	per_adv_sync_scan_update();
 }
 
 void bt_hci_le_per_adv_sync_established(struct net_buf *buf)
@@ -1483,7 +1625,9 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 				struct bt_le_per_adv_sync_subevent_params *params)
 {
 	struct bt_hci_cp_le_set_pawr_sync_subevent *cp;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
+	int err;
 
 	if (!IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync)) {
 		LOG_DBG("Invalid per_adv_sync pointer %p", per_adv_sync);
@@ -1494,6 +1638,11 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 		return -EINVAL;
 	}
 
+	err = bt_per_adv_sync_gen_get(per_adv_sync, &check.gen);
+	if (err != 0) {
+		return err;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -1501,12 +1650,15 @@ int bt_le_per_adv_sync_subevent(struct bt_le_per_adv_sync *per_adv_sync,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
-	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->periodic_adv_properties = sys_cpu_to_le16(params->properties);
 	cp->num_subevents = params->num_subevents;
 	net_buf_add_mem(buf, params->subevents, cp->num_subevents);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->sync_handle;
+
+	return bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_PER_ADV_SYNC_SUBEVENT, buf, NULL,
+					    bt_per_adv_sync_cmd_check, &check);
 }
 
 int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
@@ -1514,11 +1666,18 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 				    const struct net_buf_simple *data)
 {
 	struct bt_hci_cp_le_set_pawr_response_data *cp;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
+	int err;
 
 	if (!IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync)) {
 		LOG_DBG("Invalid per_adv_sync pointer %p", per_adv_sync);
 		return -EINVAL;
+	}
+
+	err = bt_per_adv_sync_gen_get(per_adv_sync, &check.gen);
+	if (err != 0) {
+		return err;
 	}
 
 	if (per_adv_sync->num_subevents == 0) {
@@ -1544,7 +1703,6 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
-	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->request_event = sys_cpu_to_le16(param->request_event);
 	cp->request_subevent = param->request_subevent;
 	cp->response_subevent = param->response_subevent;
@@ -1553,7 +1711,11 @@ int bt_le_per_adv_set_response_data(struct bt_le_per_adv_sync *per_adv_sync,
 
 	net_buf_add_mem(buf, data->data, cp->response_data_length);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->sync_handle;
+
+	return bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_PER_ADV_RESPONSE_DATA, buf, NULL,
+					    bt_per_adv_sync_cmd_check, &check);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 
@@ -1562,8 +1724,16 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	struct bt_hci_evt_le_per_adv_sync_lost *evt =
 		(struct bt_hci_evt_le_per_adv_sync_lost *)buf->data;
 	struct bt_le_per_adv_sync *per_adv_sync;
+	uint32_t gen = 0U;
+
+	bt_dev_lock();
 
 	per_adv_sync = bt_hci_per_adv_sync_lookup_handle(sys_le16_to_cpu(evt->handle));
+	if (per_adv_sync != NULL) {
+		gen = per_adv_sync->gen;
+	}
+
+	bt_dev_unlock();
 
 	if (!per_adv_sync) {
 		LOG_ERR("Unknown handle 0x%04X for periodic adv sync lost",
@@ -1572,7 +1742,7 @@ void bt_hci_le_per_adv_sync_lost(struct net_buf *buf)
 	}
 
 	/* There is no status in the per. adv. sync lost event */
-	per_adv_sync_terminated(per_adv_sync, BT_HCI_ERR_UNSPECIFIED);
+	per_adv_sync_terminated(per_adv_sync, gen, BT_HCI_ERR_UNSPECIFIED);
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
@@ -1584,7 +1754,23 @@ static void past_disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	/* The core spec does not explicit state that the mode of a connection handle is cleared on
 	 * disconnect, but let's assume it is.
 	 */
+	bt_dev_lock();
 	conn_past_modes[bt_conn_index(conn)] = BT_HCI_LE_PAST_MODE_NO_SYNC;
+	bt_dev_unlock();
+}
+
+/* Set the mode of a connection unless it has been disconnected, which clears
+ * the mode after the connection state has changed, with the host lock held.
+ */
+static void past_conn_mode_set(const struct bt_conn *conn, uint8_t mode)
+{
+	bt_dev_lock();
+
+	if (conn->state == BT_CONN_CONNECTED) {
+		conn_past_modes[bt_conn_index(conn)] = mode;
+	}
+
+	bt_dev_unlock();
 }
 
 BT_CONN_CB_DEFINE(past_conn_callbacks) = {
@@ -1620,8 +1806,29 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 		return;
 	}
 
+	/* Resolving an address can block, so it is done without the host lock */
+	if (bt_addr_le_is_resolved(&evt->addr)) {
+		bt_addr_le_copy_resolved(&id_addr, &evt->addr);
+	} else {
+		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));
+	}
+
+	bt_dev_lock();
+
+	/* bt_disable() clears the flag with the host lock held, and then
+	 * deletes the objects.
+	 */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_dev_unlock();
+		LOG_DBG("PA sync from PAST while disabling");
+		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
+		bt_conn_unref(sync_info.conn);
+		return;
+	}
+
 	per_adv_sync = per_adv_sync_new();
 	if (!per_adv_sync) {
+		bt_dev_unlock();
 		LOG_WRN("Could not allocate new PA sync from PAST");
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->sync_handle));
 		bt_conn_unref(sync_info.conn);
@@ -1629,12 +1836,6 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	}
 
 	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED);
-
-	if (bt_addr_le_is_resolved(&evt->addr)) {
-		bt_addr_le_copy_resolved(&id_addr, &evt->addr);
-	} else {
-		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, &evt->addr));
-	}
 
 	per_adv_sync->handle = sys_le16_to_cpu(evt->sync_handle);
 	per_adv_sync->interval = sys_le16_to_cpu(evt->interval);
@@ -1674,6 +1875,8 @@ static void bt_hci_le_past_received_common(struct net_buf *buf)
 	sync_info.response_slot_delay = per_adv_sync->response_slot_delay;
 	sync_info.response_slot_spacing = per_adv_sync->response_slot_spacing;
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC_RSP) */
+
+	bt_dev_unlock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pa_sync_cbs, listener, tmp, node) {
 		if (listener->synced) {
@@ -2123,14 +2326,12 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	struct bt_hci_cp_le_per_adv_create_sync *cp;
 	struct net_buf *buf;
 	struct bt_le_per_adv_sync *per_adv_sync;
+	struct bt_per_adv_sync_cmd check;
+	uint32_t gen;
 	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
-	}
-
-	if (get_pending_per_adv_sync()) {
-		return -EBUSY;
 	}
 
 	if (param->sid > BT_GAP_SID_MAX || param->skip > BT_GAP_PER_ADV_MAX_SKIP ||
@@ -2144,23 +2345,67 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 		return -ENOTSUP;
 	}
 
+	bt_dev_lock();
+
+	/* bt_disable() clears the flag with the host lock held, and deletes
+	 * the objects that were set up before.
+	 */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_dev_unlock();
+		return -EAGAIN;
+	}
+
+	if (get_pending_per_adv_sync() != NULL) {
+		bt_dev_unlock();
+		return -EBUSY;
+	}
+
 	per_adv_sync = per_adv_sync_new();
 	if (!per_adv_sync) {
+		bt_dev_unlock();
 		return -ENOMEM;
+	}
+
+	bt_addr_le_copy(&per_adv_sync->addr, &param->addr);
+	per_adv_sync->sid = param->sid;
+
+	if ((param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) != 0U) {
+		atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING_USE_LIST);
+	}
+
+	if ((param->options & BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED) != 0U) {
+		atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
+	}
+
+	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
+	gen = per_adv_sync->gen;
+	per_adv_sync->out_sync = out_sync;
+
+	/* Syncing requires that scan is enabled. If the caller doesn't enable
+	 * scan first, we enable it here, and disable it once the sync has been
+	 * established. We don't need to use any callbacks since we rely on
+	 * the advertiser address in the sync params. It is enabled before the
+	 * sync is created, as the sync established event disables it again.
+	 */
+	atomic_set_bit(scan_state.scan_flags, BT_LE_SCAN_USER_PER_SYNC);
+
+	bt_dev_unlock();
+
+	err = scan_update();
+	if (err != 0) {
+		goto fail;
 	}
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
-		per_adv_sync_delete(per_adv_sync);
-		return -ENOBUFS;
+		err = -ENOBUFS;
+		goto fail;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST) {
-		atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING_USE_LIST);
-
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST;
 	} else {
 		/* If BT_LE_PER_ADV_SYNC_OPT_USE_PER_ADV_LIST is set, then the
@@ -2174,8 +2419,6 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_REPORTING_INITIALLY_DISABLED) {
 		cp->options |= BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED;
-
-		atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
 	}
 
 	if (param->options & BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE) {
@@ -2201,49 +2444,81 @@ int bt_le_per_adv_sync_create(const struct bt_le_per_adv_sync_param *param,
 	cp->skip = sys_cpu_to_le16(param->skip);
 	cp->sync_timeout = sys_cpu_to_le16(param->timeout);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, buf, NULL);
-	if (err) {
+	check.sync = per_adv_sync;
+	check.handle = NULL;
+	check.gen = gen;
+
+	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, buf, NULL,
+					   bt_per_adv_sync_cmd_check, &check);
+	if (err != 0) {
+		goto fail;
+	}
+
+	bt_dev_lock();
+
+	if (per_adv_sync->gen != gen) {
+		/* Deleted meanwhile: by bt_disable(), or as the sync
+		 * failed to be established.
+		 */
+		bt_dev_unlock();
+		return -ECANCELED;
+	}
+
+	per_adv_sync_out_store(per_adv_sync);
+
+	bt_dev_unlock();
+
+	return 0;
+
+fail:
+	bt_dev_lock();
+
+	if (per_adv_sync->gen == gen) {
+		atomic_clear_bit(scan_state.scan_flags, BT_LE_SCAN_USER_PER_SYNC);
 		per_adv_sync_delete(per_adv_sync);
+	} else {
+		err = -ECANCELED;
+	}
+
+	bt_dev_unlock();
+
+	/* Also if deleted meanwhile, as the scanner may have been started since */
+	per_adv_sync_scan_update();
+
+	return err;
+}
+
+/* The check of a cancel, which cancels whichever sync is pending */
+static int per_adv_sync_cancel_check(const void *data)
+{
+	const struct bt_per_adv_sync_cmd *cmd = data;
+	int err;
+
+	err = bt_per_adv_sync_cmd_check(data);
+	if (err != 0) {
 		return err;
 	}
 
-	atomic_set_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING);
-
-	/* Syncing requires that scan is enabled. If the caller doesn't enable
-	 * scan first, we enable it here, and disable it once the sync has been
-	 * established. We don't need to use any callbacks since we rely on
-	 * the advertiser address in the sync params.
+	/* Established meanwhile: too late to cancel, as the controller would
+	 * answer.
 	 */
-	err = bt_le_scan_user_add(BT_LE_SCAN_USER_PER_SYNC);
-	if (err) {
-		int per_sync_remove_err = bt_le_scan_user_remove(BT_LE_SCAN_USER_PER_SYNC);
-
-		if (per_sync_remove_err) {
-			LOG_WRN("Error while updating the scanner (%d)", per_sync_remove_err);
-		}
-
-		bt_le_per_adv_sync_delete(per_adv_sync);
-		return err;
+	if (!atomic_test_bit(cmd->sync->flags, BT_PER_ADV_SYNC_SYNCING)) {
+		return -EACCES;
 	}
-
-	*out_sync = per_adv_sync;
-	bt_addr_le_copy(&per_adv_sync->addr, &param->addr);
-	per_adv_sync->sid = param->sid;
 
 	return 0;
 }
 
-static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_sync)
+static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_sync, uint32_t gen)
 {
+	const struct bt_per_adv_sync_cmd check = {
+		.sync = per_adv_sync,
+		.gen = gen,
+	};
 	struct net_buf *buf;
 	int err;
 
-	if (get_pending_per_adv_sync() != per_adv_sync) {
-		return -EINVAL;
-	}
-
-	err = bt_le_scan_user_remove(BT_LE_SCAN_USER_PER_SYNC);
-
+	err = scan_update();
 	if (err) {
 		return err;
 	}
@@ -2253,39 +2528,25 @@ static int bt_le_per_adv_sync_create_cancel(struct bt_le_per_adv_sync *per_adv_s
 		return -ENOBUFS;
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, buf, NULL);
-	if (err) {
-		return err;
+	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL, buf, NULL,
+					   per_adv_sync_cancel_check, &check);
+	if (err != 0 && per_adv_sync_deleted(per_adv_sync, gen)) {
+		/* No longer pending: the creation has been cancelled, or
+		 * bt_disable() has deleted the object.
+		 */
+		return 0;
 	}
 
-	return 0;
-}
-
-static int bt_le_per_adv_sync_terminate(struct bt_le_per_adv_sync *per_adv_sync)
-{
-	int err;
-
-	if (!IS_ARRAY_ELEMENT(per_adv_sync_pool, per_adv_sync)) {
-		LOG_DBG("Invalid per_adv_sync pointer %p", per_adv_sync);
-		return -EINVAL;
-	}
-
-	if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
-		return -EINVAL;
-	}
-
-	err = per_adv_sync_terminate(per_adv_sync->handle);
-
-	if (err) {
-		return err;
-	}
-
-	return 0;
+	return err;
 }
 
 int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 {
-	int err = 0;
+	struct bt_hci_cp_le_per_adv_terminate_sync *cp;
+	struct bt_per_adv_sync_cmd check;
+	struct net_buf *buf;
+	uint32_t gen;
+	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -2296,20 +2557,51 @@ int bt_le_per_adv_sync_delete(struct bt_le_per_adv_sync *per_adv_sync)
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
-		err = bt_le_per_adv_sync_terminate(per_adv_sync);
+	bt_dev_lock();
 
-		if (!err) {
-			per_adv_sync_terminated(per_adv_sync, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	gen = per_adv_sync->gen;
+
+	if (atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
+		bt_dev_unlock();
+
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
 		}
-	} else if (get_pending_per_adv_sync() == per_adv_sync) {
-		err = bt_le_per_adv_sync_create_cancel(per_adv_sync);
+
+		cp = net_buf_add(buf, sizeof(*cp));
+		(void)memset(cp, 0, sizeof(*cp));
+
+		check.sync = per_adv_sync;
+		check.handle = (uint8_t *)&cp->handle;
+		check.gen = gen;
+
+		err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_TERMINATE_SYNC, buf, NULL,
+						   bt_per_adv_sync_cmd_check, &check);
+		if (err != 0) {
+			/* Unless terminated meanwhile */
+			return per_adv_sync_deleted(per_adv_sync, gen) ? 0 : err;
+		}
+
+		per_adv_sync_terminated(per_adv_sync, gen, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+
+		return 0;
+	}
+
+	if (get_pending_per_adv_sync() == per_adv_sync) {
+		atomic_clear_bit(scan_state.scan_flags, BT_LE_SCAN_USER_PER_SYNC);
+
+		bt_dev_unlock();
+
 		/* Delete of the per_adv_sync will be done in the event
 		 * handler when cancelling.
 		 */
+		return bt_le_per_adv_sync_create_cancel(per_adv_sync, gen);
 	}
 
-	return err;
+	bt_dev_unlock();
+
+	return 0;
 }
 
 int bt_le_per_adv_sync_cb_register(struct bt_le_per_adv_sync_cb *cb)
@@ -2343,6 +2635,8 @@ static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync
 	struct bt_le_per_adv_sync_state_info info;
 	struct net_buf *buf;
 	struct bt_hci_cmd_state_set state;
+	struct bt_per_adv_sync_cmd check;
+	uint32_t gen;
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
@@ -2358,14 +2652,22 @@ static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync
 		return -EINVAL;
 	}
 
+	bt_dev_lock();
+
 	if (!atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCED)) {
+		bt_dev_unlock();
 		return -EINVAL;
 	}
 
 	if ((enable && !atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED)) ||
 	    (!enable && atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED))) {
+		bt_dev_unlock();
 		return -EALREADY;
 	}
+
+	gen = per_adv_sync->gen;
+
+	bt_dev_unlock();
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -2375,19 +2677,33 @@ static int bt_le_set_per_adv_recv_enable(struct bt_le_per_adv_sync *per_adv_sync
 	cp = net_buf_add(buf, sizeof(*cp));
 	(void)memset(cp, 0, sizeof(*cp));
 
-	cp->handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->enable = enable ? 1 : 0;
 
 	bt_hci_cmd_state_set_init(buf, &state, per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED,
 				  !enable);
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->handle;
+	check.gen = gen;
 
+	/* -EINVAL if the sync has ended meanwhile */
+	err = bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_SET_PER_ADV_RECV_ENABLE, buf, NULL,
+					   bt_per_adv_sync_cmd_check, &check);
 	if (err) {
 		return err;
 	}
 
+	bt_dev_lock();
+
+	if (per_adv_sync->gen != gen) {
+		/* The sync has ended meanwhile */
+		bt_dev_unlock();
+		return 0;
+	}
+
 	info.recv_enabled = !atomic_test_bit(per_adv_sync->flags, BT_PER_ADV_SYNC_RECV_DISABLED);
+
+	bt_dev_unlock();
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&pa_sync_cbs, listener, tmp, node) {
 		if (listener->state_changed) {
@@ -2413,7 +2729,9 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 				const struct bt_conn *conn, uint16_t service_data)
 {
 	struct bt_hci_cp_le_per_adv_sync_transfer *cp;
+	struct bt_per_adv_sync_cmd check;
 	struct net_buf *buf;
+	int err;
 
 	if (!BT_FEAT_LE_EXT_PER_ADV(bt_dev.le.features)) {
 		return -ENOTSUP;
@@ -2426,6 +2744,11 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 		return -EINVAL;
 	}
 
+	err = bt_per_adv_sync_gen_get(per_adv_sync, &check.gen);
+	if (err != 0) {
+		return err;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -2435,10 +2758,13 @@ int bt_le_per_adv_sync_transfer(const struct bt_le_per_adv_sync *per_adv_sync,
 	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->conn_handle = sys_cpu_to_le16(conn->handle);
-	cp->sync_handle = sys_cpu_to_le16(per_adv_sync->handle);
 	cp->service_data = sys_cpu_to_le16(service_data);
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf, NULL);
+	check.sync = per_adv_sync;
+	check.handle = (uint8_t *)&cp->sync_handle;
+
+	return bt_hci_cmd_send_sync_checked(BT_HCI_OP_LE_PER_ADV_SYNC_TRANSFER, buf, NULL,
+					    bt_per_adv_sync_cmd_check, &check);
 }
 #endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER */
 
@@ -2544,15 +2870,14 @@ int bt_le_per_adv_sync_transfer_subscribe(const struct bt_conn *conn,
 	}
 
 	if (conn) {
-		const uint8_t conn_idx = bt_conn_index(conn);
-		const uint8_t old_mode = conn_past_modes[conn_idx];
+		const uint8_t old_mode = conn_past_modes[bt_conn_index(conn)];
 
-		conn_past_modes[conn_idx] = mode;
+		past_conn_mode_set(conn, mode);
 
 		err = past_param_set(conn, mode, param->skip, param->timeout, cte_type);
 		if (err != 0) {
 			/* Restore old mode */
-			conn_past_modes[conn_idx] = old_mode;
+			past_conn_mode_set(conn, old_mode);
 		}
 	} else {
 		const uint8_t old_mode = default_past_mode;
@@ -2580,15 +2905,14 @@ int bt_le_per_adv_sync_transfer_unsubscribe(const struct bt_conn *conn)
 	}
 
 	if (conn) {
-		const uint8_t conn_idx = bt_conn_index(conn);
-		const uint8_t old_mode = conn_past_modes[conn_idx];
+		const uint8_t old_mode = conn_past_modes[bt_conn_index(conn)];
 
-		conn_past_modes[conn_idx] = BT_HCI_LE_PAST_MODE_NO_SYNC;
+		past_conn_mode_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC);
 
 		err = past_param_set(conn, BT_HCI_LE_PAST_MODE_NO_SYNC, 0, 0x0a, 0);
 		if (err != 0) {
 			/* Restore old mode */
-			conn_past_modes[conn_idx] = old_mode;
+			past_conn_mode_set(conn, old_mode);
 		}
 	} else {
 		const uint8_t old_mode = default_past_mode;
