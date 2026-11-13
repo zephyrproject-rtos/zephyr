@@ -177,6 +177,11 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Raspberry Pi
+
+  * RP2040 now supports 200 MHz system and peripheral clocks. The default remains 125 MHz.
+    Use the :ref:`snippet-rp2040-200mhz` snippet to enable 200 MHz operation.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
