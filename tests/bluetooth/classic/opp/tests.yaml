@@ -1,0 +1,17 @@
+common:
+  tags:
+    - bluetooth
+    - classic
+    - opp
+    - pytest
+    - multidut
+  harness: pytest
+
+tests:
+  bluetooth.classic.opp.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    timeout: 800
+    build_only: true
