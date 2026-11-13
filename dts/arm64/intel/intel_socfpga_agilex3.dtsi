@@ -1,0 +1,15 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (C) 2026 Altera Corporation
+ *
+ */
+
+#include "intel_socfpga_agilex5.dtsi"
+
+/ {
+	cpus {
+		/delete-node/ cpu@200;
+		/delete-node/ cpu@300;
+	};
+};
