@@ -11,9 +11,9 @@ common:
     - nrf5340bsim/nrf5340/cpuapp
 
 tests:
-  # Note: By now twister's bsim(script) harness does not parallelize tests scripts
-  # that are part of the same test. As we have lots of test scripts for this, we split it in several
-  # chunks so they are at least parallelized at that level.
+  # Note: twister runs the scripts of one scenario in parallel only as far as it has free job
+  # slots. As this image has lots of test scripts, they are also split in several chunks so that
+  # twister can schedule them on more than one worker.
   # See #116077
 
   bluetooth.audio.bsim:
