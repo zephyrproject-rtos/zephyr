@@ -30,6 +30,7 @@ properties:
       - "no-auto-dle"
       - "no-flow-control"
       - "no-adv-term-on-dir-timeout"
+      - "fc-closed-conn-credits"
   bt-hci-vs-ext:
     type: boolean
     description: Zephyr HCI vendor extensions are supported

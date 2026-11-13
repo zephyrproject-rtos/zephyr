@@ -1054,4 +1054,69 @@ static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
 	bt_conn_unref(test_conn);
 	test_conn = NULL;
 }
+
+/* A packet that arrives after its connection is gone is reported for its handle
+ * when the controller keeps the credits of closed connections, and is not
+ * reported otherwise.
+ */
+static ZTEST(bt_host_ncp, test_packet_after_disconnect)
+{
+	const uint8_t data = 0x00U;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE) ||
+	    !IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	(void)k_sem_take(&disconnected_sem, K_NO_WAIT);
+	zassert_ok(bt_conn_disconnect(test_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN),
+		   "Disconnect failed");
+	zassert_ok(k_sem_take(&disconnected_sem, K_SECONDS(1)), "No disconnection");
+	host_ncp_reset();
+
+	l2cap_pdu_recv(TEST_UNKNOWN_CID, &data, sizeof(data));
+	if ((BT_DT_HCI_QUIRKS_INST_GET(0) & BT_HCI_QUIRK_FC_CLOSED_CONN_CREDITS) != 0U) {
+		expect_host_ncp(TEST_CONN_HANDLE, 1U);
+	} else {
+		expect_no_more_host_ncp();
+	}
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
+
+/* A packet that the Host still holds when bt_disable() resets the controller is
+ * not reported to it.
+ */
+static ZTEST(bt_host_ncp, test_held_packet_not_reported_on_disable)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_acl_hdr *hdr;
+	struct net_buf *buf;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE) ||
+	    !IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
+		ztest_test_skip();
+	}
+
+	connect_as_peripheral();
+	host_ncp_reset();
+
+	/* The first fragment of a PDU whose rest never arrives */
+	buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(TEST_CONN_HANDLE, BT_ACL_START));
+	hdr->len = sys_cpu_to_le16(BT_L2CAP_HDR_SIZE);
+	net_buf_add_le16(buf, 1U);
+	net_buf_add_le16(buf, TEST_UNKNOWN_CID);
+	bt_hci_recv(dev, buf);
+	expect_no_more_host_ncp();
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	expect_no_more_host_ncp();
+	bt_conn_unref(test_conn);
+	test_conn = NULL;
+}
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_GATT_CLIENT */
