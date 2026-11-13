@@ -45,6 +45,7 @@ LOG_MODULE_REGISTER(i2c_npcx_port, CONFIG_I2C_LOG_LEVEL);
 struct i2c_npcx_port_config {
 	uint32_t bitrate;
 	uint8_t port;
+	k_timeout_t transfer_timeout;
 	const struct device *i2c_ctrl;
 	/* pinmux configuration */
 	const struct pinctrl_dev_config *pcfg;
@@ -115,7 +116,7 @@ static int i2c_npcx_port_transfer(const struct device *dev,
 
 	/* Start transaction with i2c controller */
 	ret = npcx_i2c_ctrl_transfer(config->i2c_ctrl, msgs, num_msgs, addr,
-								config->port);
+				     config->port, config->transfer_timeout);
 
 	/* Unlock mutex of i2c/smb controller */
 	npcx_i2c_ctrl_mutex_unlock(config->i2c_ctrl);
@@ -239,6 +240,7 @@ static DEVICE_API(i2c, i2c_port_npcx_driver_api) = {
 	static const struct i2c_npcx_port_config i2c_npcx_port_cfg_##inst = {  \
 		.port = DT_INST_PROP(inst, port),                              \
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                \
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst),        \
 		.i2c_ctrl = DEVICE_DT_GET(DT_INST_PHANDLE(inst, controller)),  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                  \
 	};                                                                     \

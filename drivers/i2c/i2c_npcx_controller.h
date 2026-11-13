@@ -66,7 +66,6 @@ struct i2c_ctrl_config {
 	uintptr_t base;              /* i2c controller base address */
 	struct npcx_clk_cfg clk_cfg; /* clock configuration */
 	uint8_t irq;                 /* i2c controller irq */
-	k_timeout_t transfer_timeout;
 #ifdef CONFIG_I2C_TARGET
 	/* i2c wake-up input source configuration */
 	const struct npcx_wui smb_wui;
@@ -84,6 +83,7 @@ struct i2c_ctrl_data {
 #endif
 	enum npcx_i2c_oper_state oper_state; /* controller operation state */
 	int trans_err;                       /* error code during transaction */
+	k_timeout_t transfer_timeout;        /* transfer timeout of current port */
 	struct i2c_msg *msg;                 /* cache msg for transaction state machine */
 	struct i2c_msg *msg_head;
 	int is_write;     /* direction of current msg */
@@ -262,6 +262,7 @@ int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed);
  * @param num_msgs Number of messages to transfer.
  * @param addr Address of the I2C target device.
  * @param port Port index of selected i2c port.
+ * @param timeout Maximum time to wait for each transaction step of the port.
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
@@ -269,7 +270,8 @@ int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed);
  * @retval -ETIMEDOUT Timeout occurred for a i2c transaction.
  */
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,
-			      uint8_t num_msgs, uint16_t addr, uint8_t port);
+			      uint8_t num_msgs, uint16_t addr, uint8_t port,
+			      k_timeout_t timeout);
 
 /**
  * @brief Toggle the SCL to generate maximum 9 clocks until the target release
