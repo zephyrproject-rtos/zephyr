@@ -723,11 +723,15 @@ class Pytest(ReportHarness):
         self.pytest_params.duts = self.instance.reserved_duts
         self.pytest_params.required_builds = self.instance.required_build_dirs
 
-        if handler.options.extra_test_args and handler.type_str == 'native':
-            self.pytest_params.extra_test_args = shlex.join(handler.options.extra_test_args)
+        if handler.type_str == 'native':
+            # The instance's own include the command line's, and a sidecar's on top of them.
+            extra_test_args = handler.extra_test_args or handler.options.extra_test_args
+            if extra_test_args:
+                self.pytest_params.extra_test_args = shlex.join(extra_test_args)
 
-        # Add any additional pytest args from YAML or CLI
+        # Add any additional pytest args from YAML, the instance or CLI
         command.extend(config.pytest_args)
+        command.extend(handler.extra_pytest_args)
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
 

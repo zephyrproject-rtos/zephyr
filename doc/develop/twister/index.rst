@@ -1305,6 +1305,20 @@ built but not run:
              - '--peer_bd_address={addr1} -test=central::connect'
              - '--peer_bd_address={addr0} -test=peripheral::connect'
 
+A test on the ``pytest`` harness can be a Bluetooth peer itself. ``pytest_args``
+hands it a controller, with the same placeholders:
+
+.. code-block:: yaml
+
+   tests:
+     some.test:
+       harness: pytest
+       sidecar: bumble
+       sidecar_config:
+         bumble:
+           pytest_args:
+             - '--hci-transport=tcp-client:{ctrl1}'
+
 
 Selecting platform scope
 ************************
