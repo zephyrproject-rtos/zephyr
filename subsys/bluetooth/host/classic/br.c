@@ -61,56 +61,113 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	return 0;
 }
 
-static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
+/* The answer of the application to a request: a reason to reject it, or the role to accept it in */
+static uint8_t conn_req_answer(const struct bt_hci_evt_conn_request *evt, uint8_t *role)
+{
+	enum bt_br_conn_req_rsp rsp;
+	uint32_t cod;
+
+	if (br_conn_req_func == NULL) {
+		*role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ?
+			BT_HCI_ROLE_CENTRAL : BT_HCI_ROLE_PERIPHERAL;
+		return BT_HCI_ERR_SUCCESS;
+	}
+
+	cod = sys_get_le24(evt->dev_class);
+	rsp = br_conn_req_func(&evt->bdaddr, cod);
+
+	switch (rsp) {
+	case BT_BR_CONN_REQ_ACCEPT_CENTRAL:
+	case BT_BR_CONN_REQ_ACCEPT_PERIPHERAL:
+		*role = (uint8_t)rsp;
+		return BT_HCI_ERR_SUCCESS;
+	case BT_BR_CONN_REQ_REJECT_NO_RESOURCES:
+	case BT_BR_CONN_REQ_REJECT_SECURITY:
+	case BT_BR_CONN_REQ_REJECT_ADDR:
+		return (uint8_t)rsp;
+	default:
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+	}
+}
+
+static int accept_conn(const bt_addr_t *bdaddr, uint8_t role)
 {
 	struct bt_hci_cp_accept_conn_req *cp;
 	struct net_buf *buf;
-	uint32_t cod;
-	int err;
-	enum bt_br_conn_req_rsp rsp;
-	uint8_t role;
-
-	if (br_conn_req_func != NULL) {
-		cod = sys_get_le24(evt->dev_class);
-		rsp = br_conn_req_func(&evt->bdaddr, cod);
-
-		switch (rsp) {
-		case BT_BR_CONN_REQ_ACCEPT_CENTRAL:
-		case BT_BR_CONN_REQ_ACCEPT_PERIPHERAL:
-			role = (uint8_t)rsp;
-			break;
-		case BT_BR_CONN_REQ_REJECT_NO_RESOURCES:
-		case BT_BR_CONN_REQ_REJECT_SECURITY:
-		case BT_BR_CONN_REQ_REJECT_ADDR:
-			return (uint8_t)rsp;
-		default:
-			return BT_HCI_ERR_UNSPECIFIED;
-		}
-	} else {
-		role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ?
-			BT_HCI_ROLE_CENTRAL : BT_HCI_ROLE_PERIPHERAL;
-	}
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (buf == NULL) {
-		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		return -ENOBUFS;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
+	bt_addr_copy(&cp->bdaddr, bdaddr);
 	cp->role = role;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
-	if (err != 0) {
-		return BT_HCI_ERR_UNSPECIFIED;
+	return bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
+}
+
+/* A single ACL logical transport can exist with a peer (Core Vol 2, Part B, 4.4), so a request can
+ * only join a Create Connection of this side.
+ */
+static void conn_req_existing(struct bt_conn *conn, const struct bt_hci_evt_conn_request *evt,
+			      uint8_t err, uint8_t role)
+{
+	bool accepting = false;
+
+	if (err == BT_HCI_ERR_SUCCESS) {
+		if (conn->state == BT_CONN_INITIATING &&
+		    !atomic_test_and_set_bit(conn->flags, BT_CONN_BR_ACCEPT_PENDING)) {
+			if (accept_conn(&evt->bdaddr, role) == 0) {
+				conn->role = BT_CONN_ROLE_PERIPHERAL;
+				return;
+			}
+
+			accepting = true;
+			err = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		} else {
+			err = BT_HCI_ERR_BD_ADDR_UNACCEPTABLE;
+		}
 	}
 
-	return BT_HCI_ERR_SUCCESS;
+	LOG_WRN("Rejecting conn from %s (err %u), connection in state %u",
+		bt_addr_str(&evt->bdaddr), err, conn->state);
+
+	if (reject_conn(&evt->bdaddr, err) == 0) {
+		conn->br.reject_reason = err;
+	}
+
+	if (accepting) {
+		conn->err = err;
+		bt_conn_br_setup_cmd_failed(conn, BT_CONN_BR_ACCEPT_PENDING);
+	}
+}
+
+static struct bt_conn *conn_add_incoming(const bt_addr_t *addr)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_add_br(addr);
+	if (conn == NULL) {
+		return NULL;
+	}
+
+	/* The role is peripheral by default. If CONFIG_BT_ACCEPT_CONN_AS_CENTRAL is enabled,
+	 * the role will be updated by the role change event if the role switch is accepted by
+	 * the peer device.
+	 */
+	conn->role = BT_CONN_ROLE_PERIPHERAL;
+	atomic_set_bit(conn->flags, BT_CONN_BR_ACCEPT_PENDING);
+	/* From here on the address lookup finds the connection */
+	bt_conn_set_state(conn, BT_CONN_INITIATING);
+
+	return conn;
 }
 
 void bt_hci_conn_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
+	uint8_t role = BT_HCI_ROLE_PERIPHERAL;
 	struct bt_conn *conn;
 	uint8_t err;
 
@@ -124,26 +181,35 @@ void bt_hci_conn_req(struct net_buf *buf)
 		return;
 	}
 
-	conn = bt_conn_add_br(&evt->bdaddr);
+	err = conn_req_answer(evt, &role);
+
+	/* After the answer: the application may have started a connection to the peer meanwhile */
+	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (conn != NULL) {
+		conn_req_existing(conn, evt, err, role);
+		bt_conn_unref(conn);
+		return;
+	}
+
+	if (err != BT_HCI_ERR_SUCCESS) {
+		reject_conn(&evt->bdaddr, err);
+		return;
+	}
+
+	conn = conn_add_incoming(&evt->bdaddr);
 	if (conn == NULL) {
 		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
 		return;
 	}
 
-	err = accept_conn(evt);
-	if (err != BT_HCI_ERR_SUCCESS) {
-		LOG_ERR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
-		reject_conn(&evt->bdaddr, err);
-		bt_conn_unref(conn);
-		return;
+	if (accept_conn(&evt->bdaddr, role) != 0) {
+		LOG_ERR("Failed to accept conn from %s", bt_addr_str(&evt->bdaddr));
+		reject_conn(&evt->bdaddr, BT_HCI_ERR_INSUFFICIENT_RESOURCES);
+		/* bt_conn_create_br() can have handed out the object meanwhile */
+		conn->err = BT_HCI_ERR_INSUFFICIENT_RESOURCES;
+		bt_conn_br_setup_cmd_failed(conn, BT_CONN_BR_ACCEPT_PENDING);
 	}
 
-	/* The role is peripheral by default. If CONFIG_BT_ACCEPT_CONN_AS_CENTRAL is enabled,
-	 * the role will be updated by the role change event if the role switch is accepted by
-	 * the peer device.
-	 */
-	conn->role = BT_CONN_ROLE_PERIPHERAL;
-	bt_conn_set_state(conn, BT_CONN_INITIATING);
 	bt_conn_unref(conn);
 }
 
@@ -244,6 +310,13 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 		return;
 	}
 
+	if (sco_conn->state != BT_CONN_INITIATING) {
+		LOG_WRN("No SCO connection being set up with %s (status 0x%02x)",
+			bt_addr_str(&evt->bdaddr), evt->status);
+		bt_conn_unref(sco_conn);
+		return;
+	}
+
 	if (evt->status) {
 		sco_conn->err = evt->status;
 		bt_conn_set_state(sco_conn, BT_CONN_DISCONNECTED);
@@ -262,6 +335,22 @@ void bt_hci_synchronous_conn_complete(struct net_buf *buf)
 	bt_conn_unref(sco_conn);
 }
 
+/* The event does not tell which command it is for (Core Vol 4, Part E, 7.7.3), and a Controller may
+ * report the commands of a crossing with one event. So a failure ends the setup, unless it can only
+ * be about the other command.
+ */
+static bool conn_failure_of_other_cmd(struct bt_conn *conn, uint8_t status)
+{
+	if (status == conn->br.reject_reason) {
+		conn->br.reject_reason = BT_HCI_ERR_SUCCESS;
+		return true;
+	}
+
+	return status == BT_HCI_ERR_CONN_ALREADY_EXISTS &&
+	       atomic_test_bit(conn->flags, BT_CONN_BR_ACCEPT_PENDING) &&
+	       atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_CREATE_PENDING);
+}
+
 void bt_hci_conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_complete *evt = (void *)buf->data;
@@ -272,14 +361,42 @@ void bt_hci_conn_complete(struct net_buf *buf)
 	LOG_DBG("status 0x%02x, handle %u, type 0x%02x", evt->status, handle, evt->link_type);
 
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
+	if (conn == NULL && evt->status == BT_HCI_ERR_SUCCESS) {
+		/* A failure ended the object, and the other command has brought up the link */
+		conn = conn_add_incoming(&evt->bdaddr);
+		if (conn == NULL) {
+			LOG_ERR("No object for conn with %s, disconnecting",
+				bt_addr_str(&evt->bdaddr));
+			if (bt_hci_disconnect(handle, BT_HCI_ERR_REMOTE_LOW_RESOURCES) != 0) {
+				LOG_ERR("Failed to disconnect handle %u", handle);
+			}
+
+			return;
+		}
+	}
+
 	if (!conn) {
 		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
 	}
 
+	/* The failure of an attempt that lost says nothing about the connection */
+	if (conn->state != BT_CONN_INITIATING) {
+		if (evt->status == BT_HCI_ERR_SUCCESS) {
+			LOG_ERR("Second connection with %s, handle %u", bt_addr_str(&evt->bdaddr),
+				handle);
+		}
+
+		bt_conn_unref(conn);
+		return;
+	}
+
 	if (evt->status) {
-		conn->err = evt->status;
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		if (!conn_failure_of_other_cmd(conn, evt->status)) {
+			conn->err = evt->status;
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		}
+
 		bt_conn_unref(conn);
 		return;
 	}
