@@ -15,6 +15,7 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dsi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include "display_nt35510.h"
@@ -409,6 +410,26 @@ static int nt35510_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int nt35510_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = nt35510_write_reg(dev, MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = nt35510_write_reg(dev, MIPI_DCS_ENTER_SLEEP_MODE, NULL, 0);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif
+
 static DEVICE_API(display, nt35510_api) = {
 	.blanking_on = nt35510_blanking_on,
 	.blanking_off = nt35510_blanking_off,
@@ -432,7 +453,9 @@ static DEVICE_API(display, nt35510_api) = {
 	static struct nt35510_data nt35510_data_##n = {                                            \
 		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nt35510_init, NULL, &nt35510_data_##n, &nt35510_config_##n,      \
-			      POST_KERNEL, CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, nt35510_pm_action);                                         \
+	DEVICE_DT_INST_DEFINE(n, &nt35510_init, PM_DEVICE_DT_INST_GET(inst), &nt35510_data_##n,    \
+			      &nt35510_config_##n, POST_KERNEL,                                    \
+			      CONFIG_DISPLAY_NT35510_INIT_PRIORITY, &nt35510_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NT35510_DEFINE)
