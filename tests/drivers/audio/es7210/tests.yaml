@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.audio.es7210:
+    tags:
+      - drivers
+      - audio
+      - i2c
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
