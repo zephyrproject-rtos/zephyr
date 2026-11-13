@@ -40,6 +40,16 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 /* The DMA bus master interface is a 32-bit AHB interface on this IP */
 #define DATA_BUS_WIDTH 32
 
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+/* FB without a BLEN bit is single-beat DMA, too slow to drain the RX FIFO. */
+#define NXP_ETH_DMA_SYSBUS_MODE                                                                 \
+	(DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB |          \
+		DMA_SYSBUS_MODE_BLEN16 |                         \
+	 DMA_SYSBUS_MODE_BLEN8 | DMA_SYSBUS_MODE_BLEN4)
+#else
+#define NXP_ETH_DMA_SYSBUS_MODE (DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB)
+#endif
+
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
 #if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
@@ -55,6 +65,10 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 #elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, internal) && defined(CONFIG_SOC_FAMILY_MCXA)
 #define PHY_MODE 0U
 #define PHY_INTERNAL 1U
+#elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rgmii) && \
+	defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#define PHY_MODE 1U
+#define PHY_INTERNAL 0U
 #else
 #error "Unsupported PHY connection type"
 #endif
@@ -146,7 +160,8 @@ static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_G
  * no reset line, gating the MAC clocks takes that role there instead.
  */
 BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, resets) || IS_ENABLED(CONFIG_SOC_SERIES_MCXE31X) ||
-		     IS_ENABLED(CONFIG_SOC_SERIES_S32K3),
+		     IS_ENABLED(CONFIG_SOC_SERIES_S32K3) ||
+		     IS_ENABLED(CONFIG_SOC_SERIES_IMXRT11XX),
 	     "Ethernet node is missing the resets property");
 
 static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
@@ -160,7 +175,9 @@ static const clock_control_subsys_t eth0_clocks[] = {
 	NXP_ETH_CLOCK_SUBSYS(tx),
 	NXP_ETH_CLOCK_SUBSYS(rx),
 #endif
+#if DT_INST_CLOCKS_HAS_NAME(0, ptp)
 	NXP_ETH_CLOCK_SUBSYS(ptp),
+#endif
 	NXP_ETH_CLOCK_SUBSYS(mac),
 };
 
@@ -222,11 +239,19 @@ int dwmac_bus_init(const struct device *dev)
 		(SYSCON->ENET_CTRL &
 		 ~(SYSCON_ENET_CTRL_PHY_INTF_MASK | SYSCON_ENET_CTRL_PHY_SEL_MASK)) |
 		SYSCON_ENET_CTRL_PHY_INTF(PHY_MODE) | SYSCON_ENET_CTRL_PHY_SEL(PHY_INTERNAL);
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	IOMUXC_GPR->GPR6 = (IOMUXC_GPR->GPR6 & ~IOMUXC_GPR_GPR6_ENET_QOS_INTF_SEL_MASK) |
+			   IOMUXC_GPR_GPR6_ENET_QOS_INTF_SEL(PHY_MODE);
+	IOMUXC_GPR->GPR6 |= IOMUXC_GPR_GPR6_ENET_QOS_CLKGEN_EN_MASK |
+			    IOMUXC_GPR_GPR6_ENET_QOS_RGMII_EN_MASK;
+	/* The SoC drives the RGMII reference clock out to the PHY. */
+	IOMUXC_GPR->GPR6 &= ~IOMUXC_GPR_GPR6_ENET_QOS_REF_CLK_DIR_MASK;
 #endif
 
 	/*
-	 * The transmit, receive and timestamp clocks are derived from clocks the
-	 * PHY drives into the SoC, which is why the pads are muxed first.
+	 * RX_CLK comes in from the PHY, so the pads are muxed before the clocks
+	 * are gated on. On RT11xx the SoC itself generates TX_CLK and the
+	 * timestamp clock from the ENET_QOS clock roots.
 	 */
 	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
 		ret = clock_control_on(cfg->clock, eth0_clocks[n]);
@@ -328,9 +353,7 @@ int dwmac_platform_init(const struct device *dev)
 			MAC_CONF_PS |
 			MAC_CONF_FES |
 			MAC_CONF_DM);
-	DWMAC_REG_WRITE(DMA_SYSBUS_MODE,
-			DMA_SYSBUS_MODE_AAL |
-			DMA_SYSBUS_MODE_FB);
+	DWMAC_REG_WRITE(DMA_SYSBUS_MODE, NXP_ETH_DMA_SYSBUS_MODE);
 
 	/* Set up IRQs (still masked for now) */
 #if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
@@ -342,7 +365,8 @@ int dwmac_platform_init(const struct device *dev)
 	NXP_ETH_IRQ_CONNECT(common);
 	NXP_ETH_IRQ_CONNECT(tx);
 	NXP_ETH_IRQ_CONNECT(rx);
-#elif defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA)
+#elif defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA) ||                        \
+	defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	NXP_ETH_IRQ_CONNECT(mac);
 #endif
 

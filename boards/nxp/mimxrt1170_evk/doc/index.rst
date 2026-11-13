@@ -409,6 +409,24 @@ Current default of ethernet driver is to use 100M Ethernet instance ENET.
 To use the 1G Ethernet instance ENET1G, include the overlay to west build with
 the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
 
+ENET_QOS Driver
+===============
+
+ENET_QOS shares the RGMII pins and the RTL8211F PHY with ENET1G, so only one of
+the two can be enabled at a time. To use ENET_QOS, build with its overlay:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: mimxrt1170_evk/mimxrt1176/cm7
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="nxp,enet_qos.overlay"
+   :goals: build flash
+   :compact:
+
+The overlay disables ENET1G, hands the shared RGMII pins and the PHY reset and
+interrupt lines to ENET_QOS, and selects the Synopsys DesignWare MAC driver
+(``CONFIG_ETH_NXP_DWC_ETHER_QOS``). The link supports 10, 100 and 1000 Mbit
+full duplex.
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MIMXRT1170-EVK Website:

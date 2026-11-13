@@ -39,6 +39,6 @@ config IMX_USDHC_DAT3_PWR_TOGGLE
 endif # DISK_DRIVERS
 
 configdefault ETH_DRIVER
-	default y if DT_HAS_NXP_ENET_ENABLED
+	default y if DT_HAS_NXP_ENET_ENABLED || DT_HAS_NXP_ENET_QOS_ENABLED
 
 endif
