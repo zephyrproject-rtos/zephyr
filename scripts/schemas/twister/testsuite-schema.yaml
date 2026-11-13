@@ -183,6 +183,8 @@ $defs:
             type: array
             items:
               type: string
+          tests_scripts_parallel:
+            type: boolean
           ztest_suite_repeat:
             type: integer
           ztest_test_repeat:
