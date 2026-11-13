@@ -363,6 +363,15 @@ static int cmd_log_backend_halt(const struct shell *sh,
 	return shell_backend_cmd_execute(sh, argc, argv, log_halt);
 }
 
+static uint32_t log_cmd_backend_default_level(void)
+{
+#if defined(CONFIG_LOG_RUNTIME_FILTERING) && defined(CONFIG_LOG_RUNTIME_DEFAULT_LEVEL)
+	return CONFIG_LOG_RUNTIME_DEFAULT_LEVEL;
+#else
+	return CONFIG_LOG_MAX_LEVEL;
+#endif
+}
+
 static int log_go(const struct shell *sh,
 		  const struct log_backend *backend,
 		  size_t argc,
@@ -377,7 +386,8 @@ static int log_go(const struct shell *sh,
 				}
 			}
 			if (log_backend_is_ready(backend) == 0) {
-				log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
+				log_backend_enable(backend, backend->cb->ctx,
+						   log_cmd_backend_default_level());
 			}
 		} else {
 			log_backend_activate(backend, backend->cb->ctx);
