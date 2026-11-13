@@ -287,6 +287,11 @@ int fxas21002_set_power(const struct device *dev, enum fxas21002_power power)
 					     FXAS21002_CTRLREG1_POWER_MASK, power);
 }
 
+uint32_t fxas21002_get_sample_period(uint8_t dr)
+{
+	return sample_period[dr];
+}
+
 uint32_t fxas21002_get_transition_time(enum fxas21002_power start,
 				       enum fxas21002_power end,
 				       uint8_t dr)

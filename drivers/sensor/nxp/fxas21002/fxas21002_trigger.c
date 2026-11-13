@@ -74,9 +74,20 @@ static void fxas21002_thread_main(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	struct fxas21002_data *data = p1;
+	const struct fxas21002_config *config = data->dev->config;
+	k_timeout_t timeout = K_USEC(2U * fxas21002_get_sample_period(config->dr));
 
 	while (true) {
-		k_sem_take(&data->trig_sem, K_FOREVER);
+		k_timeout_t wait_timeout = (data->drdy_handler != NULL) ? timeout : K_FOREVER;
+
+		if (k_sem_take(&data->trig_sem, wait_timeout) != 0) {
+			if (gpio_pin_get_dt(&config->int_gpio) <= 0) {
+				continue;
+			}
+
+			LOG_DBG("Missed data-ready edge");
+		}
+
 		fxas21002_handle_int(data->dev);
 	}
 }
