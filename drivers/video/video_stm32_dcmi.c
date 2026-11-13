@@ -8,19 +8,17 @@
 
 #include <errno.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video/stm32_dcmi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/video/video.h>
-
-#include <stm32_ll_dma.h>
 
 #include "video_common.h"
 
@@ -29,27 +27,33 @@ LOG_MODULE_REGISTER(video_stm32_dcmi, CONFIG_VIDEO_LOG_LEVEL);
 typedef void (*irq_config_func_t)(const struct device *dev);
 
 struct stream {
-	DMA_TypeDef *reg;
 	const struct device *dma_dev;
 	uint32_t channel;
 	struct dma_config cfg;
+	struct dma_block_config block;
 };
 
-struct video_stm32_dcmi_ctrls {
-	struct video_ctrl snapshot;
+enum stm32_dcmi_state {
+	STM32_DCMI_STOPPED = 0,
+	STM32_DCMI_WAIT_FOR_BUFFER,
+	STM32_DCMI_RUNNING,
 };
 
 struct video_stm32_dcmi_data {
 	const struct device *dev;
 	DCMI_HandleTypeDef hdcmi;
 	struct video_format fmt;
-	struct video_stm32_dcmi_ctrls ctrls;
 	int capture_rate;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
+	struct k_spinlock lock;
+	enum stm32_dcmi_state state;
 	struct video_buffer *vbuf;
+	bool continuous;
 	struct stream dma;
-	uint32_t snapshot_start_time;
+	struct stream dma_m2m;
+	uint32_t capture_offset;
+	bool copy_pending;
 };
 
 struct video_stm32_dcmi_config {
@@ -57,97 +61,308 @@ struct video_stm32_dcmi_config {
 	irq_config_func_t irq_config;
 	const struct pinctrl_dev_config *pctrl;
 	const struct device *sensor_dev;
-	bool snapshot_mode;
-	int snapshot_timeout;
 };
 
-static void stm32_dcmi_process_dma_error(DCMI_HandleTypeDef *hdcmi)
+static void stm32_dcmi_capture_start(struct video_stm32_dcmi_data *data)
 {
-	struct video_stm32_dcmi_data *dev_data =
-		CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
+	data->hdcmi.Instance->CR &= ~(DCMI_CR_CM);
+	data->hdcmi.Instance->CR |= data->continuous ? DCMI_MODE_CONTINUOUS : DCMI_MODE_SNAPSHOT;
+	data->hdcmi.Instance->CR |= DCMI_CR_CAPTURE;
+
+	__HAL_DCMI_ENABLE_IT(&data->hdcmi, DCMI_IT_ERR | DCMI_IT_OVR);
+}
+
+static void stm32_dcmi_abort_capture(struct video_stm32_dcmi_data *data)
+{
+	data->hdcmi.Instance->CR &= ~DCMI_CR_CAPTURE;
+	__HAL_DCMI_DISABLE(&data->hdcmi);
+	__HAL_DCMI_DISABLE_IT(&data->hdcmi, DCMI_IT_ERR | DCMI_IT_OVR);
+	__HAL_DCMI_CLEAR_FLAG(&data->hdcmi, DCMI_FLAG_ERRRI | DCMI_FLAG_OVRRI);
+
+	if (dma_stop(data->dma.dma_dev, data->dma.channel) < 0) {
+		LOG_ERR("Failed to stop DCMI DMA channel");
+	}
+	if (data->dma.cfg.cyclic &&
+	    dma_stop(data->dma_m2m.dma_dev, data->dma_m2m.channel) < 0) {
+		LOG_ERR("Failed to stop DCMI M2M DMA channel");
+	}
+	data->copy_pending = false;
+}
+
+static uint32_t stm32_dcmi_dma_period(uint32_t frame_size, uint32_t limit)
+{
+	uint32_t half_words = frame_size / (2 * sizeof(uint32_t));
+	uint32_t max_half_words = limit / (2 * sizeof(uint32_t));
+	uint32_t best = 0;
+
+	if ((frame_size % (2 * sizeof(uint32_t))) != 0) {
+		return 0;
+	}
+
+	for (uint32_t divisor = 1; divisor <= half_words / divisor; divisor++) {
+		uint32_t other;
+
+		if ((half_words % divisor) != 0) {
+			continue;
+		}
+		other = half_words / divisor;
+		if (divisor <= max_half_words) {
+			best = MAX(best, divisor);
+		}
+		if (other <= max_half_words) {
+			best = MAX(best, other);
+		}
+	}
+
+	return best * 2 * sizeof(uint32_t);
+}
+
+static int stm32_dcmi_configure_cyclic(struct video_stm32_dcmi_data *data,
+				      struct video_buffer *vbuf, uint32_t frame_size)
+{
+	struct stream *dma = &data->dma;
+	struct stream *m2m = &data->dma_m2m;
+	uint32_t period = stm32_dcmi_dma_period(frame_size, frame_size / 2);
+	int ret = -ENOTSUP;
+
+	dma->cfg.cyclic = 1;
+	dma->cfg.half_complete_callback_en = 1;
+	dma->block.source_reload_en = 1;
+	dma->block.dest_reload_en = 1;
+
+	/* Let the DMA controller determine the supported period size. */
+	while (period != 0) {
+		dma->block.dest_address = (uintptr_t)vbuf->buffer + frame_size - period;
+		dma->block.block_size = period;
+		ret = dma_config(dma->dma_dev, dma->channel, &dma->cfg);
+		if (ret == 0) {
+			break;
+		}
+		period = stm32_dcmi_dma_period(frame_size, period / 2);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+
+	m2m->block.source_address = dma->block.dest_address;
+	m2m->block.dest_address = (uintptr_t)vbuf->buffer;
+	m2m->block.block_size = period / 2;
+	data->capture_offset = 0;
+	data->copy_pending = false;
+
+	return dma_config(m2m->dma_dev, m2m->channel, &m2m->cfg);
+}
+
+/* Try to (re)arm the DCMI capture, either in snapshot (if at most one spare
+ * buffer is available) or continuous (if at least two spare buffers are
+ * available).
+ */
+static int stm32_dcmi_start_dma(struct video_stm32_dcmi_data *data, struct video_buffer *vbuf);
+static int stm32_dcmi_arm_capture(struct video_stm32_dcmi_data *data)
+{
+	struct video_buffer *vbuf;
+	int ret;
+
+	vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+	if (vbuf == NULL) {
+		LOG_DBG("arm_capture: no buffer, waiting");
+		data->state = STM32_DCMI_WAIT_FOR_BUFFER;
+		return -ENOMEM;
+	}
+	sys_cache_data_invd_range(vbuf->buffer, vbuf->bytesused);
+
+	data->continuous = !k_fifo_is_empty(&data->fifo_in);
+	ret = stm32_dcmi_start_dma(data, vbuf);
+	if (ret == 0) {
+		stm32_dcmi_capture_start(data);
+	}
+
+	return ret;
+}
+
+/* Complete a frame while holding data->lock. */
+static struct video_buffer *stm32_dcmi_finish_frame(struct video_stm32_dcmi_data *data)
+{
+	struct video_buffer *vbuf_done = data->vbuf;
+	struct video_buffer *vbuf_next;
+
+	data->vbuf = NULL;
+
+	if (data->continuous) {
+		if (dma_stop(data->dma.dma_dev, data->dma.channel) != 0) {
+			LOG_ERR("Failed to stop completed DCMI DMA transfer");
+			stm32_dcmi_abort_capture(data);
+			data->state = STM32_DCMI_WAIT_FOR_BUFFER;
+			data->continuous = false;
+			return vbuf_done;
+		}
+
+		vbuf_next = k_fifo_get(&data->fifo_in, K_NO_WAIT);
+		if (vbuf_next == NULL) {
+			stm32_dcmi_abort_capture(data);
+			data->state = STM32_DCMI_WAIT_FOR_BUFFER;
+			data->continuous = false;
+		} else {
+			sys_cache_data_invd_range(vbuf_next->buffer, vbuf_next->bytesused);
+			if (stm32_dcmi_start_dma(data, vbuf_next) != 0) {
+				stm32_dcmi_abort_capture(data);
+			}
+		}
+	} else {
+		stm32_dcmi_abort_capture(data);
+		stm32_dcmi_arm_capture(data);
+	}
+
+	return vbuf_done;
+}
+
+static void stm32_dcmi_process_dma_error(struct video_stm32_dcmi_data *data)
+{
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&data->lock);
+	if (data->state != STM32_DCMI_RUNNING) {
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
 
 	LOG_DBG("Restart DMA after Error!");
+	stm32_dcmi_abort_capture(data);
+	data->continuous = false;
 
-	/* Lets try to recover by stopping and restart */
-	if (HAL_DCMI_Stop(&dev_data->hdcmi) != HAL_OK) {
-		LOG_DBG("HAL_DCMI_Stop FAILED!");
+	if (data->vbuf != NULL) {
+		k_fifo_put(&data->fifo_in, data->vbuf);
+		data->vbuf = NULL;
 	}
 
-	if (HAL_DCMI_Start_DMA(&dev_data->hdcmi,
-			       dev_data->ctrls.snapshot.val ?
-					DCMI_MODE_SNAPSHOT : DCMI_MODE_CONTINUOUS,
-			       (uint32_t)dev_data->vbuf->buffer,
-			       dev_data->vbuf->bytesused / 4) != HAL_OK) {
-		LOG_WRN("HAL_DCMI_Start_DMA FAILED!");
-		return;
-	}
-}
+	stm32_dcmi_arm_capture(data);
 
-void HAL_DCMI_ErrorCallback(DCMI_HandleTypeDef *hdcmi)
-{
-	stm32_dcmi_process_dma_error(hdcmi);
-}
-
-void HAL_DCMI_FrameEventCallback(DCMI_HandleTypeDef *hdcmi)
-{
-	struct video_stm32_dcmi_data *dev_data =
-			CONTAINER_OF(hdcmi, struct video_stm32_dcmi_data, hdcmi);
-	struct video_buffer *vbuf;
-	HAL_StatusTypeDef __maybe_unused hal_ret;
-
-	if (dev_data->ctrls.snapshot.val) {
-		/* we remove the buffer from the camera and add it to fifo_out */
-		vbuf = dev_data->vbuf;
-		dev_data->vbuf = NULL;
-		vbuf->timestamp = k_uptime_get_32();
-		k_fifo_put(&dev_data->fifo_out, vbuf);
-		return;
-	}
-
-	/* Not in snapshot_mode */
-	hal_ret = HAL_DCMI_Suspend(hdcmi);
-	__ASSERT_NO_MSG(hal_ret == HAL_OK);
-
-	vbuf = k_fifo_get(&dev_data->fifo_in, K_NO_WAIT);
-
-	if (vbuf == NULL) {
-		LOG_DBG("Failed to get buffer from fifo");
-		goto resume;
-	}
-
-	vbuf->timestamp = k_uptime_get_32();
-	memcpy(vbuf->buffer, dev_data->vbuf->buffer, vbuf->bytesused);
-
-	k_fifo_put(&dev_data->fifo_out, vbuf);
-
-resume:
-	hal_ret = HAL_DCMI_Resume(hdcmi);
-	__ASSERT_NO_MSG(hal_ret == HAL_OK);
+	k_spin_unlock(&data->lock, key);
 }
 
 static void stm32_dcmi_isr(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
+	uint32_t misr = data->hdcmi.Instance->MISR;
+	bool error = false;
 
-	HAL_DCMI_IRQHandler(&data->hdcmi);
+	if ((misr & DCMI_FLAG_ERRRI) != 0) {
+		LOG_DBG("Synchronization error detected");
+		__HAL_DCMI_CLEAR_FLAG(&data->hdcmi, DCMI_FLAG_ERRRI);
+		error = true;
+	}
+	if ((misr & DCMI_FLAG_OVRRI) != 0) {
+		LOG_DBG("Overrun error detected");
+		__HAL_DCMI_CLEAR_FLAG(&data->hdcmi, DCMI_FLAG_OVRRI);
+		error = true;
+	}
+
+	if (error) {
+		stm32_dcmi_process_dma_error(data);
+	}
 }
 
 static void dcmi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
-	DMA_HandleTypeDef *hdma = arg;
+	struct video_stm32_dcmi_data *data = arg;
+	struct video_buffer *vbuf_done = NULL;
+	k_spinlock_key_t key;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel);
-	ARG_UNUSED(status);
 
-	HAL_DMA_IRQHandler(hdma);
+	if (status < 0) {
+		LOG_ERR("DCMI DMA transfer failed: %d", status);
+		stm32_dcmi_process_dma_error(data);
+		return;
+	}
+	if (status != DMA_STATUS_COMPLETE &&
+	    !(data->dma.cfg.cyclic &&
+	      (status == DMA_STATUS_BLOCK || status == DMA_STATUS_HALF_COMPLETE))) {
+		LOG_ERR("Unexpected DCMI DMA status: %d", status);
+		stm32_dcmi_process_dma_error(data);
+		return;
+	}
+
+	key = k_spin_lock(&data->lock);
+	if (data->state != STM32_DCMI_RUNNING) {
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
+
+	if (data->dma.cfg.cyclic) {
+		struct stream *m2m = &data->dma_m2m;
+		uint32_t half_size = data->dma.block.block_size / 2;
+		uint32_t tail_offset = data->vbuf->bytesused - data->dma.block.block_size;
+		bool second_half = (data->capture_offset % data->dma.block.block_size) != 0;
+		int ret;
+
+		if (data->copy_pending ||
+		    second_half != (status == DMA_STATUS_COMPLETE)) {
+			k_spin_unlock(&data->lock, key);
+			LOG_ERR("DCMI DMA staging buffer overrun");
+			stm32_dcmi_process_dma_error(data);
+			return;
+		}
+
+		if (data->capture_offset < tail_offset) {
+			ret = dma_reload(m2m->dma_dev, m2m->channel,
+					 data->dma.block.dest_address +
+					 (second_half ? half_size : 0),
+					 (uintptr_t)data->vbuf->buffer + data->capture_offset,
+					 half_size);
+			if (ret == 0) {
+				data->copy_pending = true;
+				ret = dma_start(m2m->dma_dev, m2m->channel);
+			}
+			if (ret < 0) {
+				k_spin_unlock(&data->lock, key);
+				LOG_ERR("Failed to start DCMI M2M transfer: %d", ret);
+				stm32_dcmi_process_dma_error(data);
+				return;
+			}
+		}
+		data->capture_offset += half_size;
+		if (data->capture_offset < data->vbuf->bytesused) {
+			k_spin_unlock(&data->lock, key);
+			return;
+		}
+	}
+
+	vbuf_done = stm32_dcmi_finish_frame(data);
+	k_spin_unlock(&data->lock, key);
+
+	if (vbuf_done != NULL) {
+		sys_cache_data_invd_range(vbuf_done->buffer, vbuf_done->bytesused);
+		vbuf_done->timestamp = k_uptime_get_32();
+		k_fifo_put(&data->fifo_out, vbuf_done);
+	}
+}
+
+static void stm32_dcmi_m2m_callback(const struct device *dev, void *arg, uint32_t channel,
+				   int status)
+{
+	struct video_stm32_dcmi_data *data = arg;
+	k_spinlock_key_t key;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel);
+
+	if (status != DMA_STATUS_COMPLETE) {
+		LOG_ERR("DCMI M2M DMA transfer failed: %d", status);
+		stm32_dcmi_process_dma_error(data);
+		return;
+	}
+
+	key = k_spin_lock(&data->lock);
+	data->copy_pending = false;
+	k_spin_unlock(&data->lock, key);
 }
 
 static int stm32_dma_init(const struct device *dev)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	struct stream *dma = &data->dma;
-	int ret;
 
 	/* Check if the DMA device is ready */
 	if (!device_is_ready(dma->dma_dev)) {
@@ -155,56 +370,76 @@ static int stm32_dma_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/*
-	 * DMA configuration
-	 * Due to use of DMA HAL API in current driver,
-	 * both HAL and Zephyr DMA drivers should be configured.
-	 * The required configuration for Zephyr DMA driver should only provide
-	 * the minimum information to inform the DMA slot will be in used and
-	 * how to route callbacks.
-	 */
-	struct dma_config *dma_cfg = &dma->cfg;
-	static DMA_HandleTypeDef hdma;
+	dma->cfg.head_block = &dma->block;
+	dma->cfg.block_count = 1;
+	dma->cfg.complete_callback_en = 1;
+	dma->cfg.dma_callback = dcmi_dma_callback;
 
-	/* Proceed to the minimum Zephyr DMA driver init */
-	dma_cfg->user_data = &hdma;
-	dma_cfg->cyclic = 1;
-	/* HACK: This field is used to inform driver that it is overridden */
-	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
-	ret = dma_config(dma->dma_dev, dma->channel, dma_cfg);
-	if (ret != 0) {
-		LOG_ERR("Failed to configure DMA channel %d", dma->channel);
-		return ret;
-	}
-
-	dma_cfg->dma_slot = DMA_REQUEST_DCMI;
-	dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
-
-	ret = dma_stm32_zcfg_to_halcfg(dma->dma_dev, dma_cfg, &hdma.Init,
-				       DMA_ADDR_ADJ_NO_CHANGE, DMA_ADDR_ADJ_INCREMENT);
-	if (ret < 0) {
-		return ret;
-	}
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
-	if (STM32_DMA_FEATURES_FIFO_THRESHOLD(DT_INST_DMAS_CELL_BY_IDX(0, 0, features)) ==
-	    DMA_FIFO_THRESHOLD_FULL) {
-		hdma.Init.FIFOMode = DMA_FIFOMODE_ENABLE;
-		hdma.Init.FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
-	}
-#endif
-
-	hdma.Instance = STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
-
-	/* Initialize DMA HAL */
-	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
-
-	if (HAL_DMA_Init(&hdma) != HAL_OK) {
-		LOG_ERR("DCMI DMA Init failed");
-		return -EIO;
+	dma = &data->dma_m2m;
+	if (dma->dma_dev != NULL) {
+		if (!device_is_ready(dma->dma_dev)) {
+			LOG_ERR("%s M2M DMA device not ready", dma->dma_dev->name);
+			return -ENODEV;
+		}
+		if (dma->cfg.channel_direction != MEMORY_TO_MEMORY ||
+		    dma->block.source_addr_adj != DMA_ADDR_ADJ_INCREMENT ||
+		    dma->block.dest_addr_adj != DMA_ADDR_ADJ_INCREMENT ||
+		    (dma->dma_dev == data->dma.dma_dev && dma->channel == data->dma.channel)) {
+			return -EINVAL;
+		}
+		dma->cfg.head_block = &dma->block;
+		dma->cfg.block_count = 1;
+		dma->cfg.complete_callback_en = 1;
+		dma->cfg.dma_callback = stm32_dcmi_m2m_callback;
 	}
 
 	return 0;
+}
+
+/* Configure and start a DMA transfer for one captured frame. */
+static int stm32_dcmi_start_dma(struct video_stm32_dcmi_data *data, struct video_buffer *vbuf)
+{
+	struct stream *dma = &data->dma;
+	int ret;
+
+	dma->block.source_address = (uintptr_t)&data->hdcmi.Instance->DR;
+	dma->block.dest_address = (uintptr_t)vbuf->buffer;
+	dma->block.block_size = vbuf->bytesused;
+	dma->block.next_block = NULL;
+	dma->block.source_reload_en = 0;
+	dma->block.dest_reload_en = 0;
+	dma->cfg.block_count = 1;
+	dma->cfg.half_complete_callback_en = 0;
+	data->vbuf = vbuf;
+
+	ret = dma_config(dma->dma_dev, dma->channel, &dma->cfg);
+	if (ret < 0 && data->dma_m2m.dma_dev != NULL) {
+		ret = stm32_dcmi_configure_cyclic(data, vbuf, vbuf->bytesused);
+	}
+	if (ret < 0) {
+		LOG_ERR("Failed to configure DMA channel %u: %d", dma->channel, ret);
+		goto error;
+	}
+
+	ret = dma_start(dma->dma_dev, dma->channel);
+	if (ret < 0) {
+		LOG_ERR("Failed to start DCMI DMA transfer: %d", ret);
+		goto error;
+	}
+
+	data->state = STM32_DCMI_RUNNING;
+	__HAL_DCMI_ENABLE(&data->hdcmi);
+
+	return 0;
+
+error:
+	stm32_dcmi_abort_capture(data);
+	data->vbuf = NULL;
+	k_fifo_put(&data->fifo_in, vbuf);
+	data->state = STM32_DCMI_WAIT_FOR_BUFFER;
+	data->continuous = false;
+
+	return ret;
 }
 
 static int stm32_dcmi_enable_clock(const struct device *dev)
@@ -270,52 +505,48 @@ static int video_stm32_dcmi_set_stream(const struct device *dev, bool enable,
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const struct video_stm32_dcmi_config *config = dev->config;
-	HAL_StatusTypeDef hal_ret;
+	struct video_buffer *vbuf;
+	k_spinlock_key_t key;
 	int err;
 
 	if (!enable) {
-		hal_ret = HAL_DCMI_Stop(&data->hdcmi);
-		if (hal_ret != HAL_OK) {
-			LOG_DBG("Failed to stop DCMI");
-		}
+		key = k_spin_lock(&data->lock);
+
+		vbuf = data->vbuf;
+		data->vbuf = NULL;
+		data->continuous = false;
+		data->state = STM32_DCMI_STOPPED;
+		stm32_dcmi_abort_capture(data);
+
+		k_spin_unlock(&data->lock, key);
 
 		err = video_stream_stop(config->sensor_dev, type);
 		if (err < 0) {
 			return err;
 		}
 
-		/* Release the video buffer allocated when start streaming */
-		if (data->vbuf) {
-			k_fifo_put(&data->fifo_in, data->vbuf);
-			data->vbuf = NULL;
+		/* Release the buffer which was being used */
+		key = k_spin_lock(&data->lock);
+		if (vbuf != NULL) {
+			k_fifo_put(&data->fifo_in, vbuf);
 		}
+		k_spin_unlock(&data->lock, key);
 
 		return 0;
-	}
-
-	if (!data->ctrls.snapshot.val) {
-		data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
-
-		if (data->vbuf == NULL) {
-			LOG_ERR("No buffers");
-			return -ENOMEM;
-		}
 	}
 
 	/* Set the frame control */
 	data->hdcmi.Instance->CR &= ~(DCMI_CR_FCRC_0 | DCMI_CR_FCRC_1);
 	data->hdcmi.Instance->CR |= STM32_DCMI_GET_CAPTURE_RATE(data->capture_rate);
 
-	/* don't start the DCMI DMA if we are in Snapshot mode */
-	if (!data->ctrls.snapshot.val) {
-		hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_CONTINUOUS,
-					     (uint32_t)data->vbuf->buffer,
-					     data->vbuf->bytesused / 4);
-		if (hal_ret != HAL_OK) {
-			LOG_ERR("Failed to start DCMI DMA");
-			return -EIO;
-		}
+	key = k_spin_lock(&data->lock);
+	err = stm32_dcmi_arm_capture(data);
+	if (err < 0) {
+		data->state = STM32_DCMI_STOPPED;
+		k_spin_unlock(&data->lock, key);
+		return err;
 	}
+	k_spin_unlock(&data->lock, key);
 
 	return video_stream_start(config->sensor_dev, type);
 }
@@ -324,6 +555,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 {
 	struct video_stm32_dcmi_data *data = dev->data;
 	const uint32_t buffer_size = data->fmt.pitch * data->fmt.height;
+	k_spinlock_key_t key;
 
 	if (buffer_size > vbuf->size) {
 		return -EINVAL;
@@ -332,79 +564,14 @@ static int video_stm32_dcmi_enqueue(const struct device *dev, struct video_buffe
 	vbuf->bytesused = buffer_size;
 	vbuf->line_offset = 0;
 
+	key = k_spin_lock(&data->lock);
+
 	k_fifo_put(&data->fifo_in, vbuf);
-
-	return 0;
-}
-
-static int video_stm32_dcmi_snapshot(const struct device *dev, struct video_buffer **vbuf,
-				     k_timeout_t timeout)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-	const struct video_stm32_dcmi_config *config = dev->config;
-	HAL_StatusTypeDef hal_ret;
-
-	LOG_DBG("dequeue snapshot: %p %llu", data->vbuf, timeout.ticks);
-
-	/* See if we were already called and have an active buffer */
-	if (data->vbuf == NULL) {
-		/* check first to see if we already have a buffer returned */
-		*vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT);
-		if (*vbuf != NULL) {
-			if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
-				LOG_DBG("HAL_DCMI_Stop FAILED!");
-			}
-
-			/* return the retrieved buffer */
-			return 0;
-		}
-		data->vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
-		if (data->vbuf == NULL) {
-			LOG_WRN("Snapshot: No Buffers available!");
-			return -ENOMEM;
-		}
-
-		hal_ret = HAL_DCMI_Start_DMA(&data->hdcmi, DCMI_MODE_SNAPSHOT,
-				       (uint32_t)data->vbuf->buffer,
-				       data->vbuf->bytesused / 4);
-		if (hal_ret != HAL_OK) {
-			LOG_WRN("Snapshot: HAL_DCMI_Start_DMA FAILED!");
-			return -EIO;
-		}
-
-		/* remember when we started this request */
-		data->snapshot_start_time = k_uptime_get_32();
+	if (data->state == STM32_DCMI_WAIT_FOR_BUFFER) {
+		stm32_dcmi_arm_capture(data);
 	}
 
-	*vbuf = k_fifo_get(&data->fifo_out, timeout);
-	if (*vbuf == NULL) {
-		uint32_t time_since_start_time =
-			(uint32_t)(k_uptime_get_32() - data->snapshot_start_time);
-
-		if (time_since_start_time > config->snapshot_timeout) {
-			LOG_WRN("Snapshot: Timed out!");
-			if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
-				LOG_DBG("HAL_DCMI_Stop FAILED!");
-			}
-
-			/* verify it did not come in during this processing */
-			*vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT);
-			if (*vbuf != NULL) {
-				return 0;
-			}
-
-			if (data->vbuf != NULL) {
-				k_fifo_put(&data->fifo_in, data->vbuf);
-				data->vbuf = NULL;
-			}
-		}
-
-		return -ETIMEDOUT;
-	}
-
-	if (HAL_DCMI_Stop(&data->hdcmi) != HAL_OK) {
-		LOG_DBG("HAL_DCMI_Stop FAILED!");
-	}
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -413,10 +580,6 @@ static int video_stm32_dcmi_dequeue(const struct device *dev, struct video_buffe
 				    k_timeout_t timeout)
 {
 	struct video_stm32_dcmi_data *data = dev->data;
-
-	if (data->ctrls.snapshot.val) {
-		return video_stm32_dcmi_snapshot(dev, vbuf, timeout);
-	}
 
 	*vbuf = k_fifo_get(&data->fifo_out, timeout);
 
@@ -427,7 +590,6 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
 
-	/* 2 buffers are needed for DCMI_MODE_CONTINUOUS, one 1 for DCMI_MODE_SNAPSHOT */
 	caps->min_vbuf_count = 1;
 
 	/* Forward the message to the sensor device */
@@ -572,17 +734,6 @@ static DEVICE_API(video, video_stm32_dcmi_driver_api) = {
 	.get_selection = video_stm32_dcmi_get_selection,
 };
 
-static int video_stm32_dcmi_init_controls(const struct device *dev)
-{
-	struct video_stm32_dcmi_data *data = dev->data;
-	struct video_stm32_dcmi_ctrls *ctrls = &data->ctrls;
-	const struct video_stm32_dcmi_config *config = dev->config;
-
-	return video_init_ctrl(&ctrls->snapshot, dev, VIDEO_CID_ST_SNAPSHOT_MODE,
-			       (struct video_ctrl_range){.min = 0, .max = 1, .step = 1,
-							 .def = config->snapshot_mode});
-}
-
 static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
@@ -590,28 +741,36 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-#define DCMI_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
-	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			\
-	.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),				\
-	.reg = (DMA_TypeDef *)DT_REG_ADDR(						\
-				DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),		\
+#define DCMI_DMA_CHANNEL_INIT(inst, index, src_dev, dest_dev)				\
+	.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(inst, index)),		\
+	.channel = DT_INST_DMAS_CELL_BY_IDX(inst, index, channel),			\
 	.cfg = {									\
-		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0),			\
+		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(inst, index),			\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
-		/* single transfers on the DCMI side, 4 beat bursts to memory */	\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
+		/* single source transfers, 4 beat bursts to the destination */	\
 		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.dest_burst_length = 4 * STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
-			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
-		.dma_callback = dcmi_dma_callback,					\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)),		\
+		.user_data = &video_stm32_dcmi_data_0,					\
 	},										\
+	.block = {									\
+		.source_addr_adj = STM32_DMA_CONFIG_PERIPHERAL_ADDR_INC(		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)) ?	\
+				DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE,	\
+		.dest_addr_adj = STM32_DMA_CONFIG_MEMORY_ADDR_INC(			\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, index)) ?	\
+				DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE,	\
+		.fifo_mode_control = STM32_DMA_FEATURES_FIFO_THRESHOLD(			\
+				DT_INST_DMAS_CELL_BY_IDX(inst, index, features)),	\
+	}
 
 PINCTRL_DT_INST_DEFINE(0);
 
@@ -621,13 +780,6 @@ PINCTRL_DT_INST_DEFINE(0);
 	(bus_width) == 12 ? DCMI_EXTEND_DATA_12B :					\
 	(bus_width) == 14 ? DCMI_EXTEND_DATA_14B :					\
 	DCMI_EXTEND_DATA_8B)
-
-#define DCMI_DMA_CHANNEL(id, src, dest)							\
-	.dma = {									\
-		COND_CODE_1(DT_INST_DMAS_HAS_IDX(id, 0),				\
-			(DCMI_DMA_CHANNEL_INIT(id, src, dest)),				\
-			(NULL))								\
-	},
 
 static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 	.hdcmi = {
@@ -654,7 +806,13 @@ static struct video_stm32_dcmi_data video_stm32_dcmi_data_0 = {
 				.LineSelectStart = DCMI_OELS_ODD,
 		},
 	},
-	DCMI_DMA_CHANNEL(0, PERIPHERAL, MEMORY)
+	.dma = {
+		DCMI_DMA_CHANNEL_INIT(0, 0, PERIPHERAL, MEMORY),
+	},
+	.dma_m2m = {
+		COND_CODE_1(DT_INST_DMAS_HAS_IDX(0, 1),
+			    (DCMI_DMA_CHANNEL_INIT(0, 1, PERIPHERAL, MEMORY)), ())
+	}
 };
 
 #define SOURCE_DEV(n) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(n, 0, 0)))
@@ -664,8 +822,6 @@ static const struct video_stm32_dcmi_config video_stm32_dcmi_config_0 = {
 	.irq_config = video_stm32_dcmi_irq_config_func,
 	.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.sensor_dev = SOURCE_DEV(0),
-	.snapshot_mode = DT_INST_PROP(0, snapshot_mode),
-	.snapshot_timeout = DT_INST_PROP(0, snapshot_timeout)
 };
 
 static int video_stm32_dcmi_init(const struct device *dev)
@@ -699,6 +855,7 @@ static int video_stm32_dcmi_init(const struct device *dev)
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
 	data->capture_rate = 1;
+	data->state = STM32_DCMI_STOPPED;
 
 	/* Run IRQ init */
 	config->irq_config(dev);
@@ -709,13 +866,10 @@ static int video_stm32_dcmi_init(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sleep(K_MSEC(100));
+	/* Avoid unused interrupts reasons */
+	__HAL_DCMI_DISABLE_IT(&data->hdcmi, DCMI_IT_LINE | DCMI_IT_VSYNC | DCMI_IT_FRAME);
 
-	/* Initialize controls */
-	err =  video_stm32_dcmi_init_controls(dev);
-	if (err < 0) {
-		return err;
-	}
+	k_sleep(K_MSEC(100));
 
 	LOG_DBG("%s inited", dev->name);
 

@@ -394,6 +394,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	struct dma_stm32_stream *stream;
 	uint32_t callback_arg;
 	int status;
+	bool notify_client = true;
 
 	__ASSERT_NO_MSG(id < config->max_streams);
 
@@ -420,17 +421,50 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		if (!stream->hal_override) {
 			dma_stm32_clear_ht(dma, id);
 		}
+#if defined(CONFIG_DMA_STM32_V1)
+		if (stream->dbm.enable) {
+			notify_client = false;
+		}
+#endif
 		status = DMA_STATUS_BLOCK;
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
-		/* Circular buffer never stops receiving as long as peripheral is enabled */
-		if (!stream->cyclic) {
-			stream->busy = false;
-		}
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
 		}
-		status = DMA_STATUS_COMPLETE;
+#if defined(CONFIG_DMA_STM32_V1)
+		if (stream->dbm.enable) {
+			stream->dbm.chunks_completed++;
+			if (stream->dbm.chunks_completed == stream->dbm.chunks_total) {
+				stm32_dma_disable_stream(dma, id);
+				stream->dbm.completed = true;
+				stream->busy = false;
+				status = DMA_STATUS_COMPLETE;
+			} else {
+				if (stream->dbm.next_chunk < stream->dbm.chunks_total) {
+					uint32_t address =
+						dma_stm32_chunk_address(stream,
+									stream->dbm.next_chunk);
+
+					dma_stm32_set_inactive_target(dma, id, stream, address);
+					stream->dbm.next_chunk++;
+				}
+				status = DMA_STATUS_BLOCK;
+				notify_client = false;
+			}
+		} else {
+#endif
+			/*
+			 * Circular buffer never stops receiving as long as peripheral is
+			 * enabled.
+			 */
+			if (!stream->cyclic) {
+				stream->busy = false;
+			}
+			status = DMA_STATUS_COMPLETE;
+#if defined(CONFIG_DMA_STM32_V1)
+		}
+#endif
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
@@ -439,7 +473,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			stm32_dma_clear_stream_irq(dma, id);
 		}
 		status = -EIO;
-	} else {
+	} else if (stm32_dma_is_irq_active(dma, id)) {
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			LOG_ERR("Transfer Error.");
@@ -448,9 +482,12 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 			dma_stm32_clear_stream_irq(dev, id);
 		}
 		status = -EIO;
+	} else {
+		/* Ignore a pending IRQ after its transfer flags have been cleared. */
+		return;
 	}
 
-	if (stream->dma_callback != NULL) {
+	if (notify_client && stream->dma_callback != NULL) {
 		stream->dma_callback(dev, stream->user_data, callback_arg, status);
 	}
 }
@@ -589,6 +626,12 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
 	LL_DMA_InitTypeDef DMA_InitStruct;
 	struct dma_stm32_stream *stream;
+#if defined(CONFIG_DMA_STM32_V1)
+	bool dbm_enable = false;
+	uint32_t chunk_items_nb = 0;
+#endif
+	uint32_t transfer_unit_size;
+	uint32_t transfer_items_nb;
 	int ret;
 
 	LL_DMA_StructInit(&DMA_InitStruct);
@@ -606,7 +649,6 @@ static int dma_stm32_configure(const struct device *dev,
 		LOG_ERR("dma stream %d is busy.", id);
 		return -EBUSY;
 	}
-
 	if (dma_stm32_disable_stream(dma, id) != 0) {
 		LOG_ERR("could not disable dma stream %d.", id);
 		return -EBUSY;
@@ -625,13 +667,10 @@ static int dma_stm32_configure(const struct device *dev,
 		stream->dma_callback = config->dma_callback;
 		stream->user_data = config->user_data;
 		stream->cyclic = false;
+#if defined(CONFIG_DMA_STM32_V1)
+		stream->dbm.enable = false;
+#endif
 		return 0;
-	}
-
-	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
-		LOG_ERR("Data size too big: %d\n",
-		       config->head_block->block_size);
-		return -EINVAL;
 	}
 
 #ifdef CONFIG_DMA_STM32_V1
@@ -675,7 +714,42 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	stream->busy		= true;
+	transfer_unit_size = (config->channel_direction == MEMORY_TO_PERIPHERAL) ?
+		config->dest_data_size : config->source_data_size;
+	if (config->head_block->block_size == 0 ||
+	    (config->head_block->block_size % transfer_unit_size) != 0) {
+		return -EINVAL;
+	}
+	transfer_items_nb = config->head_block->block_size / transfer_unit_size;
+#if defined(CONFIG_DMA_STM32_V1)
+	if (transfer_items_nb > DMA_STM32_MAX_DATA_ITEMS) {
+		if (config->channel_direction == MEMORY_TO_MEMORY ||
+		    config->head_block->source_reload_en) {
+			LOG_DBG("M2M and cyclic mode cannot be used with double-buffer mode.");
+			return -ENOTSUP;
+		}
+		uint16_t peripheral_addr_adj =
+			(config->channel_direction == MEMORY_TO_PERIPHERAL) ?
+			config->head_block->dest_addr_adj : config->head_block->source_addr_adj;
+
+		if (peripheral_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+			LOG_DBG("DBM transfer requires a fixed peripheral address.");
+			return -ENOTSUP;
+		}
+		dbm_enable = true;
+		chunk_items_nb = dma_stm32_chunk_items(transfer_items_nb);
+		if (chunk_items_nb == 0) {
+			LOG_DBG("DBM transfer cannot be divided into equal large chunks.");
+			return -ENOTSUP;
+		}
+	}
+#else
+	if (transfer_items_nb > DMA_STM32_MAX_DATA_ITEMS) {
+		LOG_DBG("Transfer size exceeds %u data items", DMA_STM32_MAX_DATA_ITEMS);
+		return -ENOTSUP;
+	}
+#endif
+
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->user_data       = config->user_data;
@@ -766,9 +840,26 @@ static int dma_stm32_configure(const struct device *dev,
 		DMA_InitStruct.Mode = LL_DMA_MODE_NORMAL;
 	}
 
-	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
+	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY ||
+				 stream->direction == MEMORY_TO_MEMORY);
 
 #if defined(CONFIG_DMA_STM32_V1)
+	stream->dbm.transfer_unit_size = transfer_unit_size;
+	stream->dbm.memory_addr_adj = memory_addr_adj;
+	stream->dbm.periph_addr_adj = periph_addr_adj;
+
+	if (dbm_enable) {
+		stream->dbm.completed = false;
+		stream->dbm.total_items = transfer_items_nb;
+		stream->dbm.chunk_items_nb = chunk_items_nb;
+		stream->dbm.chunks_total = transfer_items_nb / stream->dbm.chunk_items_nb;
+		stream->dbm.chunks_completed = 0;
+		stream->dbm.next_chunk = 2;
+		stream->dbm.memory_address = stream->source_periph ?
+			(uint32_t)config->head_block->dest_address :
+			(uint32_t)config->head_block->source_address;
+	}
+
 	if ((config->source_burst_length % config->source_data_size) != 0) {
 		LOG_ERR("Source burst length %d is not aligned to source data size %d",
 			config->source_burst_length, config->source_data_size);
@@ -807,25 +898,35 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.FIFOThreshold = stm32_dma_get_fifo_threshold(
 					config->head_block->fifo_mode_control);
 
-	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct)) {
+	/* M2M always requires FIFO mode */
+	if (stm32_dma_check_fifo_mburst(&DMA_InitStruct) || stream->direction == MEMORY_TO_MEMORY) {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_ENABLE;
 	} else {
 		DMA_InitStruct.FIFOMode = LL_DMA_FIFOMODE_DISABLE;
 	}
 #endif
-	if (stream->source_periph) {
-		DMA_InitStruct.NbData = config->head_block->block_size /
-					config->source_data_size;
-	} else {
-		DMA_InitStruct.NbData = config->head_block->block_size /
-					config->dest_data_size;
+	DMA_InitStruct.NbData = transfer_items_nb;
+#if defined(CONFIG_DMA_STM32_V1)
+	if (dbm_enable) {
+		DMA_InitStruct.NbData = stream->dbm.chunk_items_nb;
 	}
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
 	/* With dma V2 and dmamux,the request ID is stored in the dma_slot */
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
+
+#if defined(CONFIG_DMA_STM32_V1)
+	if (dbm_enable) {
+		dma_stm32_program_chunked(dma, id, stream);
+		LL_DMA_EnableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
+	} else {
+		LL_DMA_DisableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
+	}
+	stream->dbm.enable = dbm_enable;
+#endif
 
 	/* Always enable the transfer error interrupt */
 	LL_DMA_EnableIT_TE(dma, dma_stm32_id_to_stream(id));
@@ -838,6 +939,8 @@ static int dma_stm32_configure(const struct device *dev,
 	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
 	if (stream->cyclic && stream->dma_callback != NULL) {
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+	} else {
+		LL_DMA_DisableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
 
 #if defined(CONFIG_DMA_STM32_V1)
@@ -852,6 +955,7 @@ static int dma_stm32_configure(const struct device *dev,
 	 */
 	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 #endif
+	stream->busy = true;
 	return ret;
 }
 
@@ -862,6 +966,12 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
+	uint32_t transfer_unit_size;
+	uint32_t transfer_items_nb;
+#if defined(CONFIG_DMA_STM32_V1)
+	bool dbm_enable;
+	uint32_t chunk_items_nb = 0;
+#endif
 
 	/* Give channel from index 0 */
 	id = id - STM32_DMA_STREAM_OFFSET;
@@ -871,6 +981,31 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	}
 
 	stream = &config->streams[id];
+	transfer_unit_size = stream->source_periph ? stream->src_size : stream->dst_size;
+	if (transfer_unit_size == 0 || size == 0 || size > UINT32_MAX ||
+	    (size % transfer_unit_size) != 0) {
+		return -EINVAL;
+	}
+	transfer_items_nb = size / transfer_unit_size;
+#if defined(CONFIG_DMA_STM32_V1)
+	dbm_enable = transfer_items_nb > DMA_STM32_MAX_DATA_ITEMS;
+	if (dbm_enable &&
+	    (stream->direction == MEMORY_TO_MEMORY || stream->cyclic ||
+	     stream->dbm.periph_addr_adj != DMA_ADDR_ADJ_NO_CHANGE)) {
+		return -ENOTSUP;
+	}
+	if (dbm_enable) {
+		chunk_items_nb = dma_stm32_chunk_items(transfer_items_nb);
+		if (chunk_items_nb == 0) {
+			return -ENOTSUP;
+		}
+	}
+#else
+	if (transfer_items_nb > DMA_STM32_MAX_DATA_ITEMS) {
+		LOG_DBG("Transfer size exceeds %u data items", DMA_STM32_MAX_DATA_ITEMS);
+		return -ENOTSUP;
+	}
+#endif
 
 	if (dma_stm32_disable_stream(dma, id) != 0) {
 		return -EBUSY;
@@ -880,23 +1015,44 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	case MEMORY_TO_PERIPHERAL:
 		LL_DMA_SetMemoryAddress(dma, dma_stm32_id_to_stream(id), src);
 		LL_DMA_SetPeriphAddress(dma, dma_stm32_id_to_stream(id), dst);
+#if defined(CONFIG_DMA_STM32_V1)
+		if (dbm_enable) {
+			stream->dbm.memory_address = src;
+		}
+#endif
 		break;
 	case MEMORY_TO_MEMORY:
 	case PERIPHERAL_TO_MEMORY:
 		LL_DMA_SetPeriphAddress(dma, dma_stm32_id_to_stream(id), src);
 		LL_DMA_SetMemoryAddress(dma, dma_stm32_id_to_stream(id), dst);
+#if defined(CONFIG_DMA_STM32_V1)
+		if (dbm_enable) {
+			stream->dbm.memory_address = dst;
+		}
+#endif
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	if (stream->source_periph) {
-		LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id),
-				     size / stream->src_size);
+#if defined(CONFIG_DMA_STM32_V1)
+	if (dbm_enable) {
+		stream->dbm.total_items = transfer_items_nb;
+		stream->dbm.chunk_items_nb = chunk_items_nb;
+		stream->dbm.chunks_total = transfer_items_nb / stream->dbm.chunk_items_nb;
+		stream->dbm.chunks_completed = 0;
+		stream->dbm.next_chunk = 2;
+		stream->dbm.completed = false;
+		dma_stm32_program_chunked(dma, id, stream);
+		LL_DMA_EnableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
 	} else {
-		LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id),
-				     size / stream->dst_size);
+		LL_DMA_DisableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
+		LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id), transfer_items_nb);
 	}
+	stream->dbm.enable = dbm_enable;
+#else
+	LL_DMA_SetDataLength(dma, dma_stm32_id_to_stream(id), transfer_items_nb);
+#endif
 
 	/* When reloading the dma, the stream is busy again before enabling */
 	stream->busy = true;
@@ -929,6 +1085,14 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 
 	/* When starting the dma, the stream is busy before enabling */
 	stream = &config->streams[id];
+#if defined(CONFIG_DMA_STM32_V1)
+	if (stream->dbm.enable) {
+		stream->dbm.completed = false;
+		stream->dbm.chunks_completed = 0;
+		stream->dbm.next_chunk = 2;
+		dma_stm32_program_chunked(dma, id, stream);
+	}
+#endif
 	stream->busy = true;
 
 	dma_stm32_clear_stream_irq(dev, id);
@@ -959,6 +1123,7 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_dma_is_enabled_stream(dma, id)) {
+		stream->busy = false;
 		return 0;
 	}
 
@@ -1025,6 +1190,23 @@ static int dma_stm32_get_status(const struct device *dev,
 	stream = &config->streams[id];
 	stat->dir = stream->direction;
 	stat->busy = stream->busy;
+
+#if defined(CONFIG_DMA_STM32_V1)
+	if (stream->dbm.enable) {
+		if (stream->dbm.completed) {
+			stat->pending_length = 0;
+		} else {
+			pending_elems = LL_DMA_GetDataLength(
+				dma, dma_stm32_id_to_stream(id));
+			stat->pending_length =
+				(stream->dbm.total_items -
+				 (stream->dbm.chunks_completed * stream->dbm.chunk_items_nb +
+				  stream->dbm.chunk_items_nb - pending_elems)) *
+				stream->dbm.transfer_unit_size;
+		}
+		return 0;
+	}
+#endif
 
 	/*
 	 * "Pending length to be transferred in bytes, HW specific"

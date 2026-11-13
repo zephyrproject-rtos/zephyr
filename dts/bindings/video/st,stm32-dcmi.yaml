@@ -21,6 +21,11 @@ properties:
   dmas:
     required: true
     description: |
+      The first channel captures from the DCMI peripheral to memory. An optional
+      second channel performs memory-to-memory copies, with both addresses
+      incrementing. It is needed for frames exceeding the DMA transfer limit on
+      controllers without double-buffer mode.
+
       phandle of DMA controller. The DMA controller should be compatible with
       DMA channel specifier. Specifies a phandle reference to the dma controller,
       the channel number, the slot number, channel configuration and finally features.
@@ -29,14 +34,21 @@ properties:
               STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
               STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_FULL>;
 
-  snapshot-mode:
-    type: boolean
-    description: Set DCMI to Snapshot mode, instead of the default Capture mode.
+      Example with a second channel on an STM32L4+ DMA controller:
 
-  snapshot-timeout:
-    type: int
-    description: Set capture timeout in milliseconds, default is 1000.
-    default: 1000
+      dmas = <&dma1 1 90 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
+              STM32_DMA_MEM_INC | STM32_DMA_PERIPH_32BITS | STM32_DMA_MEM_32BITS |
+              STM32_DMA_PRIORITY_HIGH)>,
+             <&dma2 1 0 (STM32_DMA_MEMORY_TO_MEMORY | STM32_DMA_PERIPH_INC |
+              STM32_DMA_MEM_INC | STM32_DMA_PERIPH_32BITS | STM32_DMA_MEM_32BITS |
+              STM32_DMA_PRIORITY_VERY_HIGH)>;
+      dma-names = "rx", "m2m";
+
+  dma-names:
+    type: string-array
+    description: |
+      Optional channel names, in order: "rx" for peripheral capture and "m2m"
+      for the optional memory-to-memory copy channel.
 
 child-binding:
   child-binding:
