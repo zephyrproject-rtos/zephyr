@@ -8,7 +8,7 @@
 #include <zephyr/canbus/j1939.h>
 
 /**
- * @brief Initializes the address claim module
+ * @brief Reset claim state and candidate cursors, preserving effective NAMEs.
  */
 void j1939_ac_init(void);
 
@@ -171,6 +171,10 @@ bool j1939_ac_get_name_array_node(j1939_node_t node, uint8_t *data);
 /**
  * @brief Allows the caller to set a new J1939 name for the specified J1939 address node
  *
+ * Call from thread context. The update is serialized with address claiming and
+ * restarts claiming from the preferred address. Invalid NAMEs or alternate
+ * policies leave the current NAME and claim state unchanged.
+ *
  * @param node J1939 address node to set the information for
  * @param name name structure to set the new name to
  *
@@ -178,48 +182,8 @@ bool j1939_ac_get_name_array_node(j1939_node_t node, uint8_t *data);
  */
 bool j1939_ac_set_name_config_node(j1939_node_t node, j1939_name_t *name);
 
-#ifdef J1939AC_SELF_CONFIGURABLE
-/**
- * @brief Function to set a source address in the list of source addresses we use when we lose
- * conention.
- *
- * @param node J1939 address node to set for
- * @param index list index to set
- * @param source source address to use
- */
-void j1939_ac_set_arbitrary_list_entry(j1939_node_t node, j1939_counter_t index,
-				       j1939_source_address_t source);
-#endif
-
-/** Initializes any application specific address claim handling */
-void j1939_ac_app_init(void);
-
-/**
- * @brief Application specific handling for address claim.  This function will be called
- * periodically as well as when any address claimed PGN is received
- *
- * @param message Will be NULL when called periodically, will point to the CAN message containing
- * the address claimed PGN otherwise.
- */
-void j1939_ac_app_task(const struct can_frame *message);
-
-/**
- * @brief Generates the name for this module and the specified node
- *
- * @param node Node to generate for
- */
-void j1939_ac_app_generate_name(j1939_node_t node);
-
-/**
- * @brief This function is called by the address claim module at startup to obtain the first source
- * address the node will attempt to claim.  This function must be able to determine the desired
- * default source address prior to InitCANJ1939() being called. It is therefore called before the
- * rest of the address claim module is initialized, including before j1939_ac_app_init()
- *
- * @param node CAN node to get the default source address for
- *
- * @return Default source address for the specified node
- */
-j1939_source_address_t j1939_ac_app_get_default_source_address(j1939_node_t node);
+/** Validate NAME, preferred address, and the node's static alternate policy. */
+int j1939_ac_validate_config(j1939_node_t node, const j1939_name_t *name,
+			     uint16_t preferred_address);
 
 #endif

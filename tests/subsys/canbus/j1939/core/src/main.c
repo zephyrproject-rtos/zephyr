@@ -98,7 +98,7 @@ static void *core_suite_setup(void)
 	 * only be called once for the whole binary, never per-test, or successive calls leak
 	 * threads that race on shared state (message queues, node struct) and crash.
 	 */
-	j1939_init();
+	zassert_ok(j1939_init(), "Failed to start J1939");
 	k_sleep(TX_SETTLE_TIME);
 	return NULL;
 }

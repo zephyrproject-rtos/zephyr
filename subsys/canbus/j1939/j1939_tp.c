@@ -647,10 +647,9 @@ void j1939_tp_update_send_message_times(j1939_timer_t callPeriod)
 							j1939_tp_transmit_message_list
 								[index1]
 									.destination),
-						j1939_tp_transmit_message_list
-							[index1]
-								.node
-								->source_address);
+						j1939_ac_get_source_address(
+							j1939_tp_transmit_message_list[index1]
+								.node));
 
 					/* Send the message out to the appropriate node. */
 					if (!j1939_build_and_queue_message(
@@ -718,8 +717,8 @@ void j1939_tp_update_send_message_times(j1939_timer_t callPeriod)
 				0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
 				j1939_build_pgn_from_pdu(J1939_TP_DATA_TRANSFER_PF,
 					J1939_GLOBAL_ADDRESS),
-				j1939_tp_transmit_message_list[index1]
-					.node->source_address);
+				j1939_ac_get_source_address(
+					j1939_tp_transmit_message_list[index1].node));
 
 			/* Send the message out to the appropriate node. */
 			(void)j1939_build_and_queue_message(
@@ -1083,8 +1082,8 @@ J1939Tp_Message_T j1939_tp_transmit_multi_packet(j1939_pgn_t pgn,
 				(j1939_priority_t)CONFIG_J1939TP_PRIORITY,
 				j1939_build_pgn_from_pdu(J1939_TP_CONN_MANAGEMENT_PF,
 					destination),
-				j1939_tp_transmit_message_list[txSessionIndex]
-					.node->source_address);
+				j1939_ac_get_source_address(
+					j1939_tp_transmit_message_list[txSessionIndex].node));
 
 			/* Send the message out to the appropriate node. */
 			(void)j1939_build_and_queue_message(
@@ -1212,8 +1211,8 @@ void j1939_tp_process_dt(j1939_source_address_t source, const uint8_t *packetDat
 					0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
 					j1939_build_pgn_from_pdu(
 						J1939_TP_CONN_MANAGEMENT_PF, source),
-					J1939Tp_ReceiveMessageList[rxSessionIndex]
-						.node->source_address);
+					j1939_ac_get_source_address(
+						J1939Tp_ReceiveMessageList[rxSessionIndex].node));
 
 				/* Send the message out to the appropriate node. */
 				(void)j1939_build_and_queue_message(
@@ -1428,7 +1427,7 @@ static void j1939_tp_transmit_connection_abort(j1939_tp_abort_code_t abortCode, 
 	/* Build identifier for message */
 	id = j1939_build_message_id(0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
 				j1939_build_pgn_from_pdu(J1939_TP_CONN_MANAGEMENT_PF, source),
-				node->source_address);
+				j1939_ac_get_source_address(node));
 
 	/* Send the message out to the appropriate node. */
 	(void)j1939_build_and_queue_message(node, id, CAN_MAX_DLC, true, data);
@@ -1790,8 +1789,9 @@ static void j1939_tp_process_bam_rts(j1939_pdu_format_t control, j1939_source_ad
 						0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
 						j1939_build_pgn_from_pdu(
 							J1939_TP_CONN_MANAGEMENT_PF, source),
-						J1939Tp_ReceiveMessageList[rxSessionIndex]
-							.node->source_address);
+						j1939_ac_get_source_address(
+							J1939Tp_ReceiveMessageList[rxSessionIndex]
+								.node));
 
 					/* Send the message out to the appropriate node. */
 					(void)j1939_build_and_queue_message(
@@ -1937,7 +1937,7 @@ static void j1939_tp_transmit_cts(j1939_destination_address_t destination, j1939
 	id = j1939_build_message_id(
 		0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
 		j1939_build_pgn_from_pdu(J1939_TP_CONN_MANAGEMENT_PF, destination),
-		J1939Tp_ReceiveMessageList[index].node->source_address);
+		j1939_ac_get_source_address(J1939Tp_ReceiveMessageList[index].node));
 
 	(void)j1939_build_and_queue_message(J1939Tp_ReceiveMessageList[index].node, id, CAN_MAX_DLC,
 						true, data);

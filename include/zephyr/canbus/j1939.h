@@ -23,6 +23,8 @@
  */
 
 #include <zephyr/drivers/can.h>
+#include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 
 /** Extract the low byte from a 16-bit value. */
 #define LOBYTE(w) ((uint8_t)((uint16_t)(w) & 0xFFU))
@@ -293,15 +295,18 @@ typedef struct j1939_tp_pgn_params_s {
 } j1939_tp_pgn_params_t;
 
 /**
- * @brief Compile-time configuration for one J1939 virtual node.
+ * @brief Configuration and runtime state for one J1939 virtual node.
  *
- * Populated entirely from devicetree; no runtime init required.
+ * Declare nodes with J1939_NODE_DEFINE() or J1939_NODE_DEFINE_WITH_ALTERNATES().
+ * Do not modify the fields directly after initialization.
+ * The top-level NAME fields retain declaration defaults; the effective NAME is
+ * stored in j1939_ac_bus_info and updated only through configuration APIs.
  */
 struct j1939_node_cfg {
 	/** Pointer to the underlying CAN controller device. */
 	const struct device *can_dev;
 
-	/** J1939 source address (0x00–0xFD). */
+	/** Preferred J1939 source address (0x00-0xFD), not the current claimed address. */
 	uint8_t source_address;
 
 	/** J1939 NAME: 21-bit identity number. */
@@ -330,6 +335,18 @@ struct j1939_node_cfg {
 
 	/** J1939 NAME: arbitrary address capable (self-configurable). */
 	bool arbitrary_address_capable;
+
+	/** Ordered alternate addresses; immutable storage with static lifetime, or NULL. */
+	const j1939_source_address_t *alternate_addresses;
+
+	/** Number of entries in alternate_addresses (0-254). */
+	size_t alternate_address_count;
+
+	/** Index of the next alternate address to try. */
+	size_t alternate_address_index;
+
+	/** RX filter owned by this node at stack startup, or -1. */
+	int rx_filter_id;
 
 	/** State of the address claim process for this node. */
 	j1939_ac_state_t node_state;
@@ -392,8 +409,57 @@ struct j1939_node_cfg {
  */
 #define J1939_NODE_DEFINE(node_name, _can_dev, _source_address, _id_number, \
 			  _manufacturer_code, _ecu_instance, _function_instance, _function, \
-				  _vehicle_system, _vehicle_system_instance, _industry_group, \
-				  _arbitrary_address_capable) \
+			  _vehicle_system, _vehicle_system_instance, _industry_group, \
+			  _arbitrary_address_capable) \
+	J1939_NODE_DEFINE_WITH_ALTERNATES(node_name, _can_dev, _source_address, _id_number, \
+		_manufacturer_code, _ecu_instance, _function_instance, _function, \
+		_vehicle_system, _vehicle_system_instance, _industry_group, \
+		_arbitrary_address_capable, NULL, 0)
+
+/**
+ * @brief Define a virtual node with an explicit alternate-address policy.
+ *
+ * The identity parameters have the same meaning as in J1939_NODE_DEFINE().
+ * Addresses are tried in array order after losing the preferred address.
+ * The preferred address may occur once in the array and is skipped.
+ * An arbitrary-address-capable node requires at least one other usable address.
+ *
+ * @param node_name Symbol name for the generated node object.
+ * @param _can_dev CAN controller device pointer.
+ * @param _source_address Preferred source address (0x00-0xFD).
+ * @param _id_number 21-bit identity number.
+ * @param _manufacturer_code 11-bit manufacturer code.
+ * @param _ecu_instance 3-bit ECU instance.
+ * @param _function_instance 5-bit function instance.
+ * @param _function 8-bit function.
+ * @param _vehicle_system 7-bit vehicle system.
+ * @param _vehicle_system_instance 4-bit vehicle system instance.
+ * @param _industry_group 3-bit industry group.
+ * @param _arbitrary_address_capable Arbitrary-address-capable flag.
+ * @param _alternates Immutable address array with static lifetime, or NULL when count is zero.
+ * @param _alternate_count Number of entries, at most 254. Entries must be unique and below 0xFE.
+ */
+#define J1939_NODE_DEFINE_WITH_ALTERNATES(node_name, _can_dev, _source_address, _id_number, \
+		_manufacturer_code, _ecu_instance, _function_instance, _function, \
+		_vehicle_system, _vehicle_system_instance, _industry_group, \
+		_arbitrary_address_capable, _alternates, _alternate_count) \
+	BUILD_ASSERT((_source_address) >= 0 && (_source_address) <= 0xFD, \
+		     "Invalid J1939 preferred address"); \
+	BUILD_ASSERT((_id_number) >= 0 && (_id_number) <= 0x1FFFFF, "Invalid J1939 identity"); \
+	BUILD_ASSERT((_manufacturer_code) >= 0 && (_manufacturer_code) <= 0x7FF, \
+		     "Invalid J1939 manufacturer"); \
+	BUILD_ASSERT((_ecu_instance) >= 0 && (_ecu_instance) <= 7, "Invalid J1939 ECU instance"); \
+	BUILD_ASSERT((_function_instance) >= 0 && (_function_instance) <= 31, \
+		     "Invalid J1939 function instance"); \
+	BUILD_ASSERT((_function) >= 0 && (_function) <= 255, "Invalid J1939 function"); \
+	BUILD_ASSERT((_vehicle_system) >= 0 && (_vehicle_system) <= 127, \
+		     "Invalid J1939 vehicle system"); \
+	BUILD_ASSERT((_vehicle_system_instance) >= 0 && (_vehicle_system_instance) <= 15, \
+		     "Invalid J1939 vehicle system instance"); \
+	BUILD_ASSERT((_industry_group) >= 0 && (_industry_group) <= 7, \
+		     "Invalid J1939 industry group"); \
+	BUILD_ASSERT((_alternate_count) >= 0 && (_alternate_count) <= 254, \
+		     "Invalid J1939 alternate address count"); \
 	STRUCT_SECTION_ITERABLE(j1939_node_cfg, node_name) = { \
 		.can_dev = _can_dev, \
 		.source_address = _source_address, \
@@ -406,6 +472,23 @@ struct j1939_node_cfg {
 		.vehicle_system_instance = _vehicle_system_instance, \
 		.industry_group = _industry_group, \
 		.arbitrary_address_capable = _arbitrary_address_capable, \
+		.alternate_addresses = _alternates, \
+		.alternate_address_count = _alternate_count, \
+		.rx_filter_id = -1, \
+		.j1939_ac_bus_info = { \
+			.source = _source_address, \
+			.name = { \
+				.idNumber = _id_number, \
+				.mfgCode = _manufacturer_code, \
+				.ecuInstance = _ecu_instance, \
+				.functionInstance = _function_instance, \
+				.function = _function, \
+				.vehicleSystem = _vehicle_system, \
+				.vehicleSystemInstance = _vehicle_system_instance, \
+				.industryGroup = _industry_group, \
+				.isSelfConfig = _arbitrary_address_capable, \
+			}, \
+		}, \
 		.node_state = J1939_AC_STATE_WAITING_STARTUP_INIT, \
 		.ac_timestamp = 0, \
 		.recorded_bus_info_count = 0, \
@@ -479,9 +562,36 @@ static inline j1939_arbitration_t j1939_build_message_id(bool DP,
 }
 
 /**
- * Initialize J1939 routines
+ * @brief Configure a declared node before stack startup.
+ *
+ * Call from thread context, before j1939_init(). The NAME is copied; the caller
+ * retains ownership. The node's statically declared alternate policy is validated
+ * against the supplied capability and preferred address. No hardware ID is generated.
+ *
+ * @param node Node declared with a J1939 node-definition macro.
+ * @param name Complete effective NAME, including a zero reserved bit; must not be NULL.
+ * @param preferred_address Preferred source address (0x00-0xFD).
+ *
+ * @retval 0 Configuration copied.
+ * @retval -EINVAL Unknown node, invalid NAME, address, or candidate policy.
+ * @retval -EBUSY Stack startup has begun or completed.
  */
-void j1939_init(void);
+int j1939_configure_node(j1939_node_t node, const j1939_name_t *name,
+			 uint16_t preferred_address);
+
+/**
+ * @brief Validate nodes and start the J1939 worker.
+ *
+ * Call once from thread context after configuring and starting the CAN devices.
+ * A failed attempt releases its RX filters and may be retried.
+ *
+ * @retval 0 Stack started.
+ * @retval -EALREADY Stack already started.
+ * @retval -EINVAL Invalid node identity or address policy.
+ * @retval -ENODEV No nodes declared or a CAN device is not ready.
+ * @return Negative CAN driver error if RX filter registration fails.
+ */
+int j1939_init(void);
 
 /**
  * Periodic J1939 message processing routine.  This routine updates the various features that are

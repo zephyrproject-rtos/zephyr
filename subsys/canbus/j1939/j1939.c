@@ -9,7 +9,9 @@
 #include "j1939_ac.h"
 #include "j1939_tp.h"
 #include "J1939Timer.h"
+#include "CriticalSectionManager.h"
 #include <Can_Transmit.h>
+#include <errno.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
 
@@ -403,11 +405,68 @@ static inline bool j1939_run_message_callback(const struct can_frame *message,
 
 K_THREAD_STACK_DEFINE(j1939_task_thread_stack, CONFIG_J1939_STACK_SIZE);
 static struct k_thread j1939_task_thread_data;
+static bool j1939_started;
+
+int j1939_configure_node(j1939_node_t node, const j1939_name_t *name,
+			 uint16_t preferred_address)
+{
+	int err = -EINVAL;
+
+	CriticalSection_Lock();
+	if (j1939_started) {
+		CriticalSection_Unlock();
+		LOG_ERR("Cannot configure a node after stack startup");
+		return -EBUSY;
+	}
+
+	STRUCT_SECTION_FOREACH(j1939_node_cfg, declared_node) {
+		if (declared_node == node) {
+			err = j1939_ac_validate_config(node, name, preferred_address);
+			if (err == 0) {
+				node->source_address = (j1939_source_address_t)preferred_address;
+				node->j1939_ac_bus_info.name = *name;
+				node->j1939_ac_bus_info.source = node->source_address;
+			}
+			CriticalSection_Unlock();
+			return err;
+		}
+	}
+	CriticalSection_Unlock();
+	LOG_ERR("Cannot configure an undeclared J1939 node");
+	return err;
+}
 
 /**************************************************************************************************/
-void j1939_init(void)
+int j1939_init(void)
 {
-	/** Nodes are initialized to off view the J1939_NODE_DEFINE struct */
+	size_t node_count;
+	int err;
+
+	CriticalSection_Lock();
+	if (j1939_started) {
+		CriticalSection_Unlock();
+		LOG_ERR("J1939 is already started");
+		return -EALREADY;
+	}
+	STRUCT_SECTION_COUNT(j1939_node_cfg, &node_count);
+	if (node_count == 0U) {
+		CriticalSection_Unlock();
+		LOG_ERR("No J1939 nodes declared");
+		return -ENODEV;
+	}
+	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
+		err = j1939_ac_validate_config(node, &node->j1939_ac_bus_info.name,
+					       node->source_address);
+		if (err != 0) {
+			CriticalSection_Unlock();
+			return err;
+		}
+		if ((node->can_dev == NULL) || !device_is_ready(node->can_dev)) {
+			LOG_ERR("CAN device is not ready for node %p", (void *)node);
+			CriticalSection_Unlock();
+			return -ENODEV;
+		}
+	}
 
 	/* Set our initial number of PGN request messages to zero */
 	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
@@ -475,7 +534,7 @@ void j1939_init(void)
 
 	/* TODO - I feel like there should be a compile time way to do this, leaving for now */
 	/* loop through all j1939 nodes and register the callback for each physical bus */
-	for (size_t node_index = 0; node_index < CONFIG_J1939_NODES_COUNT; node_index++) {
+	for (size_t node_index = 0; node_index < node_count; node_index++) {
 		struct j1939_node_cfg *node;
 
 		STRUCT_SECTION_GET(j1939_node_cfg, node_index, &node);
@@ -488,16 +547,33 @@ void j1939_init(void)
 		int filter_id = can_add_rx_filter(can_dev, j1939_rx_filter_callback, NULL, &filter);
 
 		if (filter_id < 0) {
-			LOG_ERR("add filter failed for %s: %d\n", can_dev->name, filter_id);
+			LOG_ERR("Add filter failed for %s: %d", can_dev->name, filter_id);
+			err = filter_id;
+			goto remove_filters;
 		}
+		node->rx_filter_id = filter_id;
 	}
 
+	j1939_started = true;
 	k_tid_t tid = k_thread_create(&j1939_task_thread_data, j1939_task_thread_stack,
 						K_THREAD_STACK_SIZEOF(j1939_task_thread_stack),
 						j1939_task_thread, NULL, NULL, NULL,
 						CONFIG_J1939_TASK_PRIORITY, 0, K_NO_WAIT);
 
 	k_thread_name_set(tid, "j1939_task");
+	CriticalSection_Unlock();
+	return 0;
+
+remove_filters:
+	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
+		if (node->rx_filter_id >= 0) {
+			can_remove_rx_filter(node->can_dev, node->rx_filter_id);
+			node->rx_filter_id = -1;
+		}
+	}
+	k_msgq_purge(&j1939_can_msgq);
+	CriticalSection_Unlock();
+	return err;
 }
 
 /**************************************************************************************************/
@@ -638,7 +714,7 @@ void j1939_acknowledge(const j1939_pgn_t pgn, j1939_response_t control,
 			   const j1939_destination_address_t destination, j1939_node_t node)
 {
 	j1939_arbitration_t id;
-	j1939_source_address_t source = node->source_address;
+	j1939_source_address_t source = j1939_ac_get_source_address(node);
 	uint8_t data[CAN_MAX_DLC];
 
 	/* Build the response ID */
@@ -756,7 +832,7 @@ bool j1939_transmit_pgn(j1939_priority_t priority, j1939_pgn_t pgn,
 		if (count <= CAN_MAX_DLC) {
 			/* Create the identifier for the message */
 			id = j1939_build_message_id(dataPage, extendedDataPage, priority, pgn,
-							node->source_address);
+							j1939_ac_get_source_address(node));
 
 			/* Send the message out to the appropriate node. */
 			result = j1939_build_and_queue_message(node, id, count, true, data);
@@ -1227,18 +1303,6 @@ static inline bool j1939_route_with_loopback(const struct can_frame *message)
 }
 #else
 
-static inline bool j1939_get_node(uint8_t sourceAddress, j1939_node_t *node)
-{
-	STRUCT_SECTION_FOREACH(j1939_node_cfg, search_node) {
-		if (search_node->source_address == sourceAddress) {
-			*node = search_node;
-			return true;
-		}
-	}
-
-	return false; /* Return false if not found */
-}
-
 /**************************************************************************************************/
 static inline bool j1939_route_without_loopback(const struct can_frame *message,
 						const struct device *can_dev)
@@ -1247,13 +1311,12 @@ static inline bool j1939_route_without_loopback(const struct can_frame *message,
 	j1939_pdu_specific_t ps = j1939_get_pdu_specific(message->id);
 	j1939_pdu_format_t pf = j1939_get_pdu_format(message->id);
 
-	j1939_node_t node;
-
-	/* Determine if the message is for us or global and what we should do with it. */
-	if ((j1939_get_node(ps, &node))) {
-		/* TODO - global messages are not handled, do we need to forward to all nodes?*/
-		/* || (pf >= J1939_PDUF_240) || (ps == J1939_GLOBAL_ADDRESS))) { */
-		result = j1939_run_message_callback(message, pf, node);
+	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
+		if ((node->can_dev == can_dev) &&
+		    ((ps == J1939_GLOBAL_ADDRESS) || (pf >= J1939_PDUF_240) ||
+		     (ps == j1939_ac_get_source_address(node)))) {
+			result |= j1939_run_message_callback(message, pf, node);
+		}
 	}
 
 	return result;

@@ -4,6 +4,7 @@
  */
 
 #include <string.h>
+#include <errno.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
@@ -16,9 +17,6 @@
 /* Address claim PF (0xEE) as seen in a built 29-bit arbitration ID. */
 #define J1939_AC_PDU_FORMAT ((j1939_pdu_format_t)0xEE)
 
-/* Background j1939_task thread runs every CONFIG_J1939_TASK_INTERVAL_MS; give it several
- * ticks to drain the loopback CAN queue before we check results.
- */
 #define RX_SETTLE_TIME K_MSEC(50)
 
 static const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
@@ -36,6 +34,12 @@ J1939_NODE_DEFINE(test_node,
 	0,     /* industry group */
 	false  /* arbitrary address capable */
 );
+
+static const j1939_source_address_t alternates[] = {0x40, 0x41, 0x42, 0x43};
+
+J1939_NODE_DEFINE_WITH_ALTERNATES(arbitrary_node, can_dev, 0x40, 200, 1, 0, 0, 0, 0, 0, 0,
+				true, alternates, ARRAY_SIZE(alternates));
+J1939_NODE_DEFINE(other_node, can_dev, 0x42, 300, 1, 0, 0, 0, 0, 0, 0, false);
 
 /* Captures the most recent address-claim frame transmitted by the node under test. */
 static struct can_frame captured_claim_frame;
@@ -79,13 +83,7 @@ static void encode_name_bytes(j1939_id_number_t id_number, j1939_manufacturer_co
 	}
 }
 
-/*
- * Address claim frames are broadcast (PDU-Specific = J1939_GLOBAL_ADDRESS). The default routing
- * path (j1939_route_without_loopback(), active since J1939_LOOPBACK_ENABLE is off) only forwards
- * frames whose PDU-Specific byte matches one of our own node source addresses, so a broadcast
- * frame sent via can_send()+j1939_process_rx_msgs() would never reach j1939_ac_is_received(). See
- * repo memory J1939_core_dispatch_notes.md. Call the routing handler directly instead.
- */
+/* Unit tests drive AC directly without starting the background worker. */
 static void inject_address_claim(j1939_source_address_t source, const uint8_t *name_bytes)
 {
 	struct can_frame frame = {0};
@@ -130,9 +128,7 @@ static void *ac_suite_setup(void)
 	 * device mode includes CAN_MODE_LOOPBACK.
 	 */
 	zassert_equal(can_set_mode(can_dev, CAN_MODE_LOOPBACK), 0, "Failed to set loopback mode");
-	can_start(can_dev);
-	j1939_init();
-	k_sleep(RX_SETTLE_TIME);
+	zassert_ok(can_start(can_dev));
 	return NULL;
 }
 
@@ -140,6 +136,12 @@ static void ac_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 	captured_claim_frame_valid = false;
+	test_node.source_address = 0x20;
+	test_node.j1939_ac_bus_info.name = (j1939_name_t){.idNumber = 100, .mfgCode = 1};
+	arbitrary_node.j1939_ac_bus_info.name =
+		(j1939_name_t){.idNumber = 200, .mfgCode = 1, .isSelfConfig = true};
+	arbitrary_node.alternate_addresses = alternates;
+	arbitrary_node.alternate_address_count = ARRAY_SIZE(alternates);
 	j1939_ac_init();
 }
 
@@ -209,6 +211,15 @@ ZTEST(j1939_ac, test_ac_set_get_name_config_round_trip)
 		     "Getting the node NAME config should succeed");
 	zassert_true(j1939_ac_is_name_match(&set_name, &read_name),
 		     "Read back NAME should match what was set");
+	uint8_t actual[8];
+	const uint8_t expected[] = {0x39, 0x30, 0x60, 0x0C, 0x1A, 0x04, 0x0A, 0x76};
+
+	j1939_ac_name_config_to_byte_array(&test_node, actual);
+	zassert_mem_equal(actual, expected, sizeof(expected));
+	j1939_ac_init();
+	zassert_true(j1939_ac_get_name_config_node(&test_node, &read_name));
+	zassert_true(j1939_ac_is_name_match(&set_name, &read_name),
+		     "AC reset must preserve the effective NAME");
 }
 
 ZTEST(j1939_ac, test_ac_get_source_address)
@@ -326,4 +337,137 @@ ZTEST(j1939_ac, test_ac_process_request_defers_when_not_yet_claimed)
 
 	zassert_true(test_node.j1939_ac_is_requested,
 		     "Request should be deferred (flagged) while address claim is pending");
+}
+
+ZTEST(j1939_ac, test_name_maximum_fields)
+{
+	j1939_name_t name = {
+		.idNumber = 0x1FFFFF, .mfgCode = 0x7FF, .ecuInstance = 7,
+		.functionInstance = 31, .function = 255, .vehicleSystem = 127,
+		.vehicleSystemInstance = 15, .industryGroup = 7, .isSelfConfig = true,
+	};
+	const uint8_t expected[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFF};
+	uint8_t actual[8];
+
+	zassert_true(j1939_ac_set_name_config_node(&arbitrary_node, &name));
+	j1939_ac_name_config_to_byte_array(&arbitrary_node, actual);
+	zassert_mem_equal(actual, expected, sizeof(expected));
+}
+
+ZTEST(j1939_ac, test_provisioning_validates_before_copy)
+{
+	j1939_name_t name = {.idNumber = 0x12345, .mfgCode = 0x123};
+	j1939_name_t readback;
+	j1939_name_t invalid[] = {
+		{.idNumber = 0x200000}, {.mfgCode = 0x800}, {.ecuInstance = 8},
+		{.functionInstance = 32}, {.vehicleSystem = 128}, {.vehicleSystemInstance = 16},
+		{.industryGroup = 8}, {.reservedBit = 1}, {.isSelfConfig = true},
+	};
+
+	zassert_ok(j1939_configure_node(&test_node, &name, 0xFD));
+	zassert_equal(j1939_ac_get_source_address(&test_node), 0xFD);
+	zassert_equal(j1939_configure_node(NULL, &name, 0x20), -EINVAL);
+	zassert_equal(j1939_configure_node(&test_node, NULL, 0x20), -EINVAL);
+	zassert_equal(j1939_configure_node(&test_node, &name, 0xFE), -EINVAL);
+	zassert_equal(j1939_configure_node(&test_node, &name, 0xFF), -EINVAL);
+	zassert_equal(j1939_configure_node(&test_node, &name, 0x100), -EINVAL);
+	for (size_t i = 0; i < ARRAY_SIZE(invalid); i++) {
+		zassert_equal(j1939_configure_node(&test_node, &invalid[i], 0x20), -EINVAL);
+		zassert_false(j1939_ac_set_name_config_node(&test_node, &invalid[i]));
+	}
+	zassert_true(j1939_ac_get_name_config_node(&test_node, &readback));
+	zassert_true(j1939_ac_is_name_match(&name, &readback));
+	zassert_equal(test_node.source_address, 0xFD);
+}
+
+ZTEST(j1939_ac, test_invalid_alternate_policies)
+{
+	static const j1939_source_address_t duplicates[] = {0x41, 0x41};
+	static const j1939_source_address_t reserved[] = {0xFE, 0xFF};
+	static const j1939_source_address_t preferred_only[] = {0x40};
+	const j1939_name_t *name = &arbitrary_node.j1939_ac_bus_info.name;
+
+	arbitrary_node.alternate_addresses = duplicates;
+	arbitrary_node.alternate_address_count = ARRAY_SIZE(duplicates);
+	zassert_equal(j1939_configure_node(&arbitrary_node, name, 0x40), -EINVAL);
+	arbitrary_node.alternate_addresses = reserved;
+	zassert_equal(j1939_configure_node(&arbitrary_node, name, 0x40), -EINVAL);
+	arbitrary_node.alternate_addresses = preferred_only;
+	arbitrary_node.alternate_address_count = ARRAY_SIZE(preferred_only);
+	zassert_equal(j1939_configure_node(&arbitrary_node, name, 0x40), -EINVAL);
+	arbitrary_node.alternate_addresses = NULL;
+	zassert_equal(j1939_configure_node(&arbitrary_node, name, 0x40), -EINVAL);
+	arbitrary_node.alternate_address_count = 0;
+	zassert_equal(j1939_configure_node(&arbitrary_node, name, 0x40), -EINVAL);
+	arbitrary_node.alternate_address_count = 255;
+	zassert_equal(j1939_configure_node(&arbitrary_node, name, 0x40), -EINVAL);
+}
+
+ZTEST(j1939_ac, test_alternate_selection_and_exhaustion)
+{
+	arbitrary_node.recorded_bus_info[0].source = 0x41;
+	arbitrary_node.recorded_bus_info_count = 1;
+	arbitrary_node.node_state = J1939_AC_STATE_LOST_CONTENTION;
+	j1939_ac_task();
+	zassert_equal(j1939_ac_get_source_address(&arbitrary_node), 0x43,
+		      "Skip preferred, foreign-claimed, and other local node addresses");
+	zassert_equal(arbitrary_node.node_state, J1939_AC_STATE_START);
+	zassert_equal(arbitrary_node.source_address, 0x40);
+	zassert_equal(test_node.alternate_address_index, 0);
+
+	arbitrary_node.node_state = J1939_AC_STATE_LOST_CONTENTION;
+	j1939_ac_task();
+	zassert_equal(arbitrary_node.node_state, J1939_AC_STATE_WAITING_CANNOT_CLAIM);
+	arbitrary_node.ac_timestamp = 0;
+	k_sleep(K_MSEC(1));
+	j1939_ac_task();
+	zassert_equal(arbitrary_node.node_state, J1939_AC_STATE_CANNOT_CLAIM);
+	zassert_equal(j1939_ac_get_source_address(&arbitrary_node), J1939_NULL_ADDRESS);
+
+	j1939_ac_init();
+	zassert_equal(arbitrary_node.alternate_address_index, 0);
+	zassert_equal(j1939_ac_get_source_address(&arbitrary_node), 0x40);
+}
+
+ZTEST(j1939_ac, test_fixed_node_cannot_claim)
+{
+	test_node.node_state = J1939_AC_STATE_LOST_CONTENTION;
+	j1939_ac_task();
+	zassert_equal(test_node.node_state, J1939_AC_STATE_WAITING_CANNOT_CLAIM);
+}
+
+ZTEST(j1939_ac, test_contention_uses_effective_name)
+{
+	j1939_name_t name = {.idNumber = 50, .mfgCode = 1};
+	const uint8_t peer_name[] = {75, 0, 0x20, 0, 0, 0, 0, 0};
+
+	zassert_true(j1939_ac_set_name_config_node(&test_node, &name));
+	test_node.node_state = J1939_AC_STATE_CLAIMED;
+	inject_address_claim(0x20, peer_name);
+	zassert_equal(test_node.node_state, J1939_AC_STATE_CLAIMED);
+	name.idNumber = 80;
+	zassert_true(j1939_ac_set_name_config_node(&test_node, &name));
+	inject_address_claim(0x20, peer_name);
+	zassert_equal(test_node.node_state, J1939_AC_STATE_LOST_CONTENTION);
+}
+
+ZTEST(j1939_ac, test_claim_transmits_effective_name_and_current_address)
+{
+	struct can_filter filter = {
+		.id = 0x18EEFF43, .mask = CAN_EXT_ID_MASK, .flags = CAN_FILTER_IDE,
+	};
+	const uint8_t expected[] = {0xC8, 0, 0x20, 0, 0, 0, 0, 0x80};
+	int filter_id = can_add_rx_filter(can_dev, capture_claim_frame, NULL, &filter);
+
+	zassert_true(filter_id >= 0);
+	arbitrary_node.recorded_bus_info[0].source = 0x41;
+	arbitrary_node.recorded_bus_info_count = 1;
+	arbitrary_node.node_state = J1939_AC_STATE_LOST_CONTENTION;
+	j1939_ac_task();
+	j1939_ac_task();
+	k_sleep(RX_SETTLE_TIME);
+	zassert_true(captured_claim_frame_valid);
+	zassert_equal(j1939_get_source_address(captured_claim_frame.id), 0x43);
+	zassert_mem_equal(captured_claim_frame.data, expected, sizeof(expected));
+	can_remove_rx_filter(can_dev, filter_id);
 }

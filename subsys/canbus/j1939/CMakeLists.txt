@@ -1,8 +1,11 @@
 zephyr_library()
 
+if(CONFIG_J1939_NAME_MANAGEMENT)
+  message(FATAL_ERROR "J1939 Name Management is not ported to the Zephyr node API")
+endif()
+
 zephyr_library_include_directories(
     .
-    Application
     port
 )
 
@@ -14,10 +17,6 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_J1939_TRANSPORT_PROTOCOL j1939_tp.c)
-
-zephyr_library_sources(
-    Application/J1939Ac_App.c
-)
 
 zephyr_library_sources(
     port/j1939_can_port_stub.c

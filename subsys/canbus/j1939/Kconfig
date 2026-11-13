@@ -206,6 +206,8 @@ menuconfig J1939_NAME_MANAGEMENT
 	default n
 	help
 	  Allow the stack to manage the J1939 NAME of this node and other nodes on the bus
+	  This legacy implementation is not ported to the Zephyr node API.
+	  Enabling it currently produces a build error.
 
 if J1939_NAME_MANAGEMENT
 

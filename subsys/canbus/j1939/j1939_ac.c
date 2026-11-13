@@ -6,6 +6,10 @@
 #include "J1939Timer.h"
 #include "CriticalSectionManager.h"
 #include <Can_Transmit.h>
+#include <errno.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_DECLARE(j1939, CONFIG_J1939_LOG_LEVEL);
 
 /*==========================================================================
  * Possible Future Improvements
@@ -22,18 +26,6 @@
 #define J1939_PF_ADDRESS_CLAIMED ((j1939_pdu_format_t)0xEE)
 #define J1939_NAME_LENGTH        ((j1939_counter_t)8)
 
-#ifdef J1939AC_SELF_CONFIGURABLE
-/* If we are arbitrary address capable, then we need a list of the addresses we will attempt to */
-/* claim, in the order we will attempt to claim them, when we lose arbitration.  The application */
-/* developer is responsible for filling in this information in j1939_ac_app_init() */
-/* using the j1939_ac_set_arbitrary_list_entry() function */
-static j1939_counter_t J1939Ac_ArbitraryAddressListIndex[CONFIG_J1939_NODES_COUNT];
-/* Keeps track of the index of the next address to use */
-static j1939_source_address_t
-	J1939Ac_ArbitraryAddressCapableSourceAddressList[CONFIG_J1939_NODES_COUNT]
-							[J1939AC_ALT_ADDRESS_LIST_LENGTH];
-#endif
-
 static void j1939_ac_cannot_claim_delay(j1939_node_t node);
 static void j1939_ac_address_claim_start(j1939_node_t node);
 static void j1939_ac_address_claim_waiting(j1939_node_t node);
@@ -44,36 +36,59 @@ static void j1939_ac_claim_address(j1939_node_t node);
 static void j1939_ac_update_recorded_bus_info(j1939_source_address_t source,
 				const uint8_t *nameData, j1939_node_t node);
 
-#ifdef J1939AC_SELF_CONFIGURABLE
 static j1939_source_address_t j1939_ac_get_next_alternate_address(j1939_node_t node);
-#endif
+
+int j1939_ac_validate_config(j1939_node_t node, const j1939_name_t *name,
+			     uint16_t preferred_address)
+{
+	bool usable_alternate = false;
+
+	if ((name == NULL) || (preferred_address >= J1939_NULL_ADDRESS) ||
+	    (name->idNumber > 0x1FFFFFU) || (name->mfgCode > 0x7FFU) ||
+	    (name->ecuInstance > 7U) || (name->functionInstance > 31U) ||
+	    (name->vehicleSystem > 127U) || (name->vehicleSystemInstance > 15U) ||
+	    (name->industryGroup > 7U) || (name->reservedBit != 0U)) {
+		LOG_ERR("Invalid NAME or preferred address for node %p", (void *)node);
+		return -EINVAL;
+	}
+
+	if ((node->alternate_address_count > 254U) ||
+	    ((node->alternate_address_count > 0U) && (node->alternate_addresses == NULL))) {
+		LOG_ERR("Invalid alternate address array for node %p", (void *)node);
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < node->alternate_address_count; i++) {
+		j1939_source_address_t address = node->alternate_addresses[i];
+
+		if (address >= J1939_NULL_ADDRESS) {
+			LOG_ERR("Reserved alternate address for node %p", (void *)node);
+			return -EINVAL;
+		}
+		for (size_t j = 0; j < i; j++) {
+			if (node->alternate_addresses[j] == address) {
+				LOG_ERR("Duplicate alternate address for node %p", (void *)node);
+				return -EINVAL;
+			}
+		}
+		if (address != preferred_address) {
+			usable_alternate = true;
+		}
+	}
+	if (name->isSelfConfig && !usable_alternate) {
+		LOG_ERR("Node %p needs an alternate address policy", (void *)node);
+		return -EINVAL;
+	}
+	return 0;
+}
 
 /**************************************************************************************************/
 void j1939_ac_init(void)
 {
+	CriticalSection_Lock();
 	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
-		/* Retrieve the default source address we will claim from the application specific
-		 * module
-		 */
-		node->j1939_ac_bus_info.source = j1939_ac_app_get_default_source_address(node);
-
-#ifdef J1939AC_SELF_CONFIGURABLE
-		J1939Ac_ArbitraryAddressListIndex[node_index] = 0;
-
-		for (uint16_t index = 0; index < J1939AC_ALT_ADDRESS_LIST_LENGTH; index++) {
-			/* Initialize the list of alternate source addresses for address claim to
-			 * the NULL address
-			 */
-			/* This is done here, just so the application developer doesn't forget to do
-			 * it in the
-			 */
-			/* application file */
-			J1939Ac_ArbitraryAddressCapableSourceAddressList[node_index][index] =
-				J1939_NULL_ADDRESS;
-		}
-#endif
-
-		j1939_ac_app_generate_name(node);
+		node->j1939_ac_bus_info.source = node->source_address;
+		node->alternate_address_index = 0;
 
 		/* Disable Transmit queue(s) until we have claimed our address */
 		j1939_disable_virtual_mode_transmit(node);
@@ -103,12 +118,13 @@ void j1939_ac_init(void)
 		}
 	}
 
-	j1939_ac_app_init();
+	CriticalSection_Unlock();
 }
 
 /**************************************************************************************************/
 void j1939_ac_task(void)
 {
+	CriticalSection_Lock();
 	/* Loop through all the nodes */
 	STRUCT_SECTION_FOREACH(j1939_node_cfg, node) {
 		switch (node->node_state) {
@@ -157,9 +173,7 @@ void j1939_ac_task(void)
 		}
 	}
 
-	/* Handle any application specific operations.  Pass NULL since we are calling */
-	/* from the periodic function. */
-	j1939_ac_app_task(NULL);
+	CriticalSection_Unlock();
 }
 
 /**
@@ -183,8 +197,7 @@ static void j1939_ac_claim_address(j1939_node_t node)
 	id = j1939_build_message_id(
 		0, 0, J1939_PR_ADDRESS_CLAIMED,
 		j1939_build_pgn_from_pdu(J1939_PF_ADDRESS_CLAIMED, J1939_GLOBAL_ADDRESS),
-		/* TODO - not use j1939_ac_bus_info - need to refactor*/
-		node->source_address);
+		node->j1939_ac_bus_info.source);
 
 	j1939_ac_name_config_to_byte_array(node, name);
 
@@ -412,28 +425,24 @@ bool j1939_ac_address_has_been_claimed(j1939_source_address_t address, j1939_nod
 /**************************************************************************************************/
 void j1939_ac_name_config_to_byte_array(j1939_node_t node, uint8_t *array)
 {
-	if (node && array) {
-		array[0] = (uint8_t)LOBYTE(LOWORD(node->id_number));
-		array[1] = (uint8_t)HIBYTE(LOWORD(node->id_number));
-		array[2] =
-			(uint8_t)(((uint8_t)(((j1939_manufacturer_code_t)node->manufacturer_code &
-					0x07) << 5)) | (LOBYTE(HIWORD(node->id_number)) & 0x1F));
-		array[3] = (uint8_t)((j1939_manufacturer_code_t)(node->manufacturer_code & 0x7FF) >>
-					3);
-		array[4] = (uint8_t)(((node->function_instance & 0x1F) << 3) |
-					(node->ecu_instance & 0x07));
-		array[5] = (uint8_t)node->function;
-		array[6] = (uint8_t)((node->vehicle_system & 0x7F) << 1);
-		array[7] = (uint8_t)(((node->industry_group & 0x07) << 4) |
-					(node->vehicle_system_instance & 0x0F));
-
-		if (node->arbitrary_address_capable) {
-			array[7] |= 0x80;
-		}
-
-		/* reserved bit is always 0 */
-		array[6] |= (uint8_t)(0 & 0x01);
+	if ((node == NULL) || (array == NULL)) {
+		LOG_ERR("Cannot encode NAME without a node and output buffer");
+		return;
 	}
+
+	CriticalSection_Lock();
+	const j1939_name_t *name = &node->j1939_ac_bus_info.name;
+
+	array[0] = (uint8_t)name->idNumber;
+	array[1] = (uint8_t)(name->idNumber >> 8);
+	array[2] = (uint8_t)((name->idNumber >> 16) | (name->mfgCode << 5));
+	array[3] = (uint8_t)(name->mfgCode >> 3);
+	array[4] = (uint8_t)((name->functionInstance << 3) | name->ecuInstance);
+	array[5] = name->function;
+	array[6] = (uint8_t)(name->vehicleSystem << 1);
+	array[7] = (uint8_t)((name->isSelfConfig ? 0x80U : 0U) |
+			    (name->industryGroup << 4) | name->vehicleSystemInstance);
+	CriticalSection_Unlock();
 }
 
 /**************************************************************************************************/
@@ -506,6 +515,14 @@ bool j1939_ac_is_received(const struct can_frame *message, j1939_node_t node)
 		 */
 		if ((source == node->j1939_ac_bus_info.source) &&
 			(node->j1939_ac_bus_info.source != J1939_NULL_ADDRESS)) {
+			uint8_t own_name[J1939_NAME_LENGTH];
+
+			j1939_ac_name_config_to_byte_array(node, own_name);
+			/* A loopback controller also delivers our own claim. */
+			if (memcmp(own_name, message->data, sizeof(own_name)) == 0) {
+				CriticalSection_Unlock();
+				return false;
+			}
 			/* Check name contention with message just received */
 			if (j1939_ac_check_address_contention(node, message->data)) {
 				/* We lost contention. */
@@ -527,9 +544,6 @@ bool j1939_ac_is_received(const struct can_frame *message, j1939_node_t node)
 		CriticalSection_Unlock();
 	}
 
-	/* Handle any application specific operations */
-	j1939_ac_app_task(message);
-
 	/* Return false so we don't destroy the message.  This allows other functions to also
 	 * process the message
 	 */
@@ -539,12 +553,12 @@ bool j1939_ac_is_received(const struct can_frame *message, j1939_node_t node)
 /**************************************************************************************************/
 j1939_source_address_t j1939_ac_get_source_address(j1939_node_t node)
 {
-	/* TODO - need to range check node here */
-	if (true) {
-		return (j1939_source_address_t)(node->source_address);
-	} else {
-		return J1939_NULL_ADDRESS;
-	}
+	j1939_source_address_t source;
+
+	CriticalSection_Lock();
+	source = node->j1939_ac_bus_info.source;
+	CriticalSection_Unlock();
+	return source;
 }
 
 /**
@@ -659,26 +673,23 @@ static void j1939_ac_lost_contention(j1939_node_t node)
 	 */
 	/* in the call chain to this function */
 
-#if defined(J1939AC_SELF_CONFIGURABLE)
-	j1939_source_address_t tempAddress;
+	j1939_source_address_t address = J1939_NULL_ADDRESS;
 
 	CriticalSection_Lock();
-	tempAddress = j1939_ac_get_next_alternate_address(node);
+	j1939_disable_virtual_mode_transmit(node);
+	if (node->j1939_ac_bus_info.name.isSelfConfig) {
+		address = j1939_ac_get_next_alternate_address(node);
+	}
 
-	if (tempAddress == J1939_NULL_ADDRESS) {
+	if (address == J1939_NULL_ADDRESS) {
 		/* We have run out of alternate addresses.  Do the contention handling */
 		j1939_ac_common_contention_handling(node);
 	} else {
 		/* Start over to claim a new address. */
-		node->j1939_ac_bus_info.source = tempAddress;
+		node->j1939_ac_bus_info.source = address;
 		node->node_state = J1939_AC_STATE_START;
 	}
 	CriticalSection_Unlock();
-#else
-	CriticalSection_Lock();
-	j1939_ac_common_contention_handling(node);
-	CriticalSection_Unlock();
-#endif
 }
 
 /**
@@ -753,9 +764,6 @@ bool j1939_ac_get_name_array_node(j1939_node_t node, uint8_t *data)
 	/* not checking if node is valid since it should only be created via iterable section*/
 	if (data != NULL) {
 		CriticalSection_Lock();
-		/* TODO - need to decide on whether to keep around ac bus info or just
-		 * use name info direct
-		 */
 		j1939_ac_name_config_to_byte_array(node, data);
 		CriticalSection_Unlock();
 
@@ -768,48 +776,40 @@ bool j1939_ac_get_name_array_node(j1939_node_t node, uint8_t *data)
 /**************************************************************************************************/
 bool j1939_ac_set_name_config_node(j1939_node_t node, j1939_name_t *name)
 {
-	bool result = false;
-
-	/* not checking if node is valid since it should only be created via iterable section*/
-	if (name != NULL) {
-		CriticalSection_Lock();
-		node->j1939_ac_bus_info.name = *name;
+	CriticalSection_Lock();
+	if (j1939_ac_validate_config(node, name, node->source_address) != 0) {
 		CriticalSection_Unlock();
-		result = true;
+		return false;
 	}
 
-	return result;
+	node->j1939_ac_bus_info.name = *name;
+	node->alternate_address_index = 0;
+	node->j1939_ac_bus_info.source = node->source_address;
+	node->node_state = J1939_AC_STATE_START;
+	j1939_disable_virtual_mode_transmit(node);
+	CriticalSection_Unlock();
+	return true;
 }
 
-#ifdef J1939AC_SELF_CONFIGURABLE
 /**************************************************************************************************/
 static j1939_source_address_t j1939_ac_get_next_alternate_address(j1939_node_t node)
 {
-	j1939_source_address_t source = J1939_NULL_ADDRESS;
+	while (node->alternate_address_index < node->alternate_address_count) {
+		j1939_source_address_t source =
+			node->alternate_addresses[node->alternate_address_index++];
+		bool local_claim = false;
 
-	do {
-		if (J1939Ac_ArbitraryAddressListIndex[node] < J1939AC_ALT_ADDRESS_LIST_LENGTH) {
-			source = J1939Ac_ArbitraryAddressCapableSourceAddressList
-				[node][J1939Ac_ArbitraryAddressListIndex[node]];
-			J1939Ac_ArbitraryAddressListIndex[node]++;
-		} else {
-			/* We have reached the end of our array and therefore have no source
-			 * addresses.  Break out of the loop and return the null address.
-			 */
-			source = J1939_NULL_ADDRESS;
-			break;
+		STRUCT_SECTION_FOREACH(j1939_node_cfg, other) {
+			if ((other != node) && (other->can_dev == node->can_dev) &&
+			    (other->j1939_ac_bus_info.source == source)) {
+				local_claim = true;
+				break;
+			}
 		}
-	} while ((source != J1939_NULL_ADDRESS) && j1939_ac_address_has_been_claimed(source, node));
-
-	return source;
-}
-
-/**************************************************************************************************/
-void j1939_ac_set_arbitrary_list_entry(j1939_node_t node, j1939_counter_t index,
-					j1939_source_address_t source)
-{
-	if ((node < CONFIG_J1939_NODES_COUNT) && (index < J1939AC_ALT_ADDRESS_LIST_LENGTH)) {
-		J1939Ac_ArbitraryAddressCapableSourceAddressList[node][index] = source;
+		if ((source != node->source_address) && !local_claim &&
+		    !j1939_ac_address_has_been_claimed(source, node)) {
+			return source;
+		}
 	}
+	return J1939_NULL_ADDRESS;
 }
-#endif
