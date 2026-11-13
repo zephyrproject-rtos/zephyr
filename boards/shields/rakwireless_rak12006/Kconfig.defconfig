@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_RAKWIRELESS_RAK12006
+
+config GPIO
+	default y
+
+config INPUT
+	default y
+
+endif # SHIELD_RAKWIRELESS_RAK12006
