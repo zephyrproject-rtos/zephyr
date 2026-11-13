@@ -2976,7 +2976,7 @@ int bt_conn_set_security(struct bt_conn *conn, bt_security_t sec)
 
 	err = start_security(conn);
 
-	if (err == -EALREADY) {
+	if (err == -EALREADY || err == -EBUSY) {
 		/* keep the settings of the request already in flight */
 		conn->required_sec_level = prev_sec_level;
 		atomic_set_bit_to(conn->flags, BT_CONN_FORCE_PAIR, prev_force_pair);
