@@ -21,6 +21,7 @@ tests:
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
     extra_configs:
       - CONFIG_SPI=y
+      - CONFIG_MFD=y
     platform_allow:
       - native_sim
       - native_sim/native/64
