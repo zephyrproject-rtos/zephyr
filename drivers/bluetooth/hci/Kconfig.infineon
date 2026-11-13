@@ -240,7 +240,7 @@ config CYW55513IUBG_SM
 	  that support single-stream, tri-band,mWi-Fi 6/6E, IEEE 802.11ax compliant
 	  Wi-Fi MAC/baseband/radio, and Bluetooth®/Bluetooth® Low Energy 5.4.
 
-config CYW55513_MURATA_2FY
+config CYW55513_MURATA_2FY_SM
 	bool "CYW55513 Murata 2FY Module"
 	help
 	  Type 2FY is a small and high performance module based on Infineon CYW55513
@@ -255,7 +255,7 @@ endchoice
 
 config BT_CYW555XX
 	bool "Bluetooth support for CYW555XX"
-	default y if CYW55513_MURATA_2FY || CYW55513IUBG_SM
+	default y if CYW55513_MURATA_2FY_SM || CYW55513IUBG_SM
 	help
 	  Common Bluetooth configuration for CYW555XX-based designs,
 	  including Murata 2FY modules and discrete chip implementations.

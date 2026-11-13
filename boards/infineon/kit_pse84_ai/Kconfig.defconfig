@@ -17,7 +17,7 @@ choice AIROC_PART
 endchoice
 
 choice CYW55500_MODULE
-	default CYW55513_MURATA_2FY
+	default CYW55513_MURATA_2FY_SM
 endchoice
 
 config MAIN_STACK_SIZE
