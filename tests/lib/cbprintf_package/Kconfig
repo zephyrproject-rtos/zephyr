@@ -1,0 +1,8 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_EXTRA_STACK_SIZE
+	default 8192 if COVERAGE_GCOV
+	default 1024
+
+source "Kconfig.zephyr"
