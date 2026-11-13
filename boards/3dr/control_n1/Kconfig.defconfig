@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CONTROL_N1 && !BOARD_CONTROL_N1_STM32H743XX_BARE
+
+# The ArduPilot bootloader jumps to the application with its own clock,
+# interrupt and peripheral setup.
+
+configdefault USE_DT_CODE_PARTITION
+	default y
+
+configdefault INIT_ARCH_HW_AT_BOOT
+	default y
+
+endif # BOARD_CONTROL_N1 && !BOARD_CONTROL_N1_STM32H743XX_BARE
