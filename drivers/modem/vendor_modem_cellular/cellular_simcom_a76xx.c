@@ -56,6 +56,18 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_periodic_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_periodic_chat_script, simcom_a76xx_periodic_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 4);
 
+/* The A7663E answers AT*SELECTSIMSLOT? with "*SELECTUSIM: <slot>" */
+MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(simcom_a76xx_selectusim_match, "*SELECTUSIM: ", "",
+				    modem_cellular_chat_on_sim_slot);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_sim_query_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT*SELECTSIMSLOT?",
+							      simcom_a76xx_selectusim_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(simcom_a76xx_sim_query_chat_script,
+			 simcom_a76xx_sim_query_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 5);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_a76xx_shutdown_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPOF", ok_match));
 
@@ -73,6 +85,11 @@ static const struct modem_cellular_vendor_config simcom_a76xx_vendor = {
 	.unsol_matches = {
 		.matches = simcom_a76xx_unsol,
 		.size = ARRAY_SIZE(simcom_a76xx_unsol),
+	},
+	/* The modem stores the selected SIM interface in non-volatile memory */
+	.sim_select = {
+		.select_cmd = "AT*SELECTSIMSLOT=%u,0",
+		.query = &simcom_a76xx_sim_query_chat_script,
 	},
 	/* clang-format on */
 	.chat_delimiter = "\r",
