@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
 #include <stdbool.h>
 
@@ -223,6 +224,11 @@ struct i2c_dw_dev_config {
 #endif
 	uint32_t i2c_stat_not_ready;
 	uint32_t not_ready_cnt;
+
+	/* One rate limit state per instance, so that a noisy bus does not
+	 * suppress the messages of the other instances.
+	 */
+	struct log_ratelimit_state rl;
 };
 
 #define Z_REG_READ(__sz)  sys_read##__sz

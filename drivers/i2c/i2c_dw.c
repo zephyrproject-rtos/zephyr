@@ -157,7 +157,8 @@ static int i2c_dw_error_chk(const struct device *dev)
 		/* check 7bit NACK Tx Abort */
 		if (ic_txabrt_src.bits.ADDR7BNACK) {
 			dw->state |= I2C_DW_NACK;
-			LOG_ERR_RATELIMIT("NACK on %s", dev->name);
+			LOG_ERR_RATELIMIT_STATE(&dw->rl, LOG_RATELIMIT_INTERVAL_MS, "NACK on %s",
+						dev->name);
 		}
 		/* check SDA stuck low Tx abort, need to do bus recover */
 		if (ic_txabrt_src.bits.SDASTUCKLOW) {
@@ -177,7 +178,8 @@ static int i2c_dw_error_chk(const struct device *dev)
 		/* TX abrt because STOP */
 		if (intr_stat.bits.stop_det) {
 			dw->state |= I2C_DW_USER_ABRT;
-			LOG_ERR_RATELIMIT("ABR and STOP on %s", dev->name);
+			LOG_ERR_RATELIMIT_STATE(&dw->rl, LOG_RATELIMIT_INTERVAL_MS,
+						"ABR and STOP on %s", dev->name);
 		}
 	}
 
@@ -190,7 +192,8 @@ static int i2c_dw_error_chk(const struct device *dev)
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 		dw->need_setup = true;
 #endif
-		LOG_ERR_RATELIMIT("IO Fail on %s", dev->name);
+		LOG_ERR_RATELIMIT_STATE(&dw->rl, LOG_RATELIMIT_INTERVAL_MS, "IO Fail on %s",
+					dev->name);
 		return -EIO;
 	}
 	return 0;
