@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 #include "updatehub_storage.h"
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-#define CA_CERTIFICATE_TAG 1
 #include <zephyr/net/tls_credentials.h>
 #endif
 
@@ -188,7 +187,7 @@ static bool start_coap_client(void)
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	int verify = ZSOCK_TLS_PEER_VERIFY_REQUIRED;
-	sec_tag_t sec_list[] = { CA_CERTIFICATE_TAG };
+	sec_tag_t sec_list[] = {CONFIG_UPDATEHUB_DTLS_SEC_TAG};
 	int protocol = NET_IPPROTO_DTLS_1_2;
 	char port[] = "5684";
 #else

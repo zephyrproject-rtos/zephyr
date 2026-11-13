@@ -82,6 +82,16 @@ config UPDATEHUB_DTLS
 	  Enables DTLS communication between the UpdateHub
 	  client and the server
 
+config UPDATEHUB_DTLS_SEC_TAG
+	int "Security tag holding the DTLS trust anchor"
+	default 1
+	depends on UPDATEHUB_DTLS
+	help
+	  TLS credentials security tag the client uses for the DTLS
+	  handshake. The application must register the CA certificate that
+	  signs the UpdateHub server certificate under this tag before the
+	  first probe.
+
 config UPDATEHUB_COAP_CONN_TIMEOUT
 	int "CoAP connection timeout in seconds"
 	default 10
