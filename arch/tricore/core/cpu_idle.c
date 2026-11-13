@@ -12,7 +12,7 @@
 void __weak arch_cpu_idle(void)
 {
 	sys_trace_idle();
-	irq_unlock((1 << 15));
+	irq_unlock((1UL << 15));
 
 	__asm volatile("wait");
 }

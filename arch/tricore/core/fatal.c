@@ -6,14 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
-#include <zephyr/kernel.h>
+#include <zephyr/fatal.h>
 #include <zephyr/fatal_types.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/arch/tricore/exception.h>
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
-
 #include "kernel_arch_data.h"
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 static const char *const z_tricore_trap_cause_str(uint8_t trap_class, uint8_t tin)
 {
@@ -103,12 +103,12 @@ static const char *const z_tricore_trap_cause_str(uint8_t trap_class, uint8_t ti
 	return trap_class_cause_str[trap_class][tin];
 }
 
-void z_tricore_fatal_error(unsigned int reason, const struct arch_esf *lower)
+void z_tricore_fatal_error(uint32_t reason, const struct arch_esf *lower)
 {
 #if CONFIG_EXCEPTION_DEBUG
 	struct z_tricore_upper_context *upper = NULL;
 
-	if (lower != NULL && (lower->pcxi & 0xFFFFF) != 0) {
+	if ((lower != NULL) && ((lower->pcxi & 0xFFFFFU) != 0)) {
 		upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	}
 
@@ -146,10 +146,10 @@ void z_tricore_fault(uint8_t trap_class, uint8_t tin)
 	LOG_ERR("TriCore Trap: Class %u TIN %u (%s)", trap_class, tin,
 		z_tricore_trap_cause_str(trap_class, tin));
 
-	z_tricore_fatal_error(K_ERR_CPU_EXCEPTION, lower);
+	z_tricore_fatal_error((uint32_t)K_ERR_CPU_EXCEPTION, lower);
 }
 
-void __weak z_tricore_fault_fcu(void)
+FUNC_NORETURN void __weak z_tricore_fault_fcu(void)
 {
 #if CONFIG_TEST
 	__asm("debug");

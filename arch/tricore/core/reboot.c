@@ -11,9 +11,7 @@
  * @brief TriCore reboot interface
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 /**
  * @brief Reset the system

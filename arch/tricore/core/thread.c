@@ -7,17 +7,15 @@
  */
 
 #include "kernel_arch_data.h"
-#include "zephyr/arch/tricore/thread.h"
-#include "zephyr/sys/util_macro.h"
-#include <zephyr/kernel.h>
-#include <ksched.h>
-#include <sys/cdefs.h>
+#include <kthread.h>
 #include <zephyr/tracing/tracing.h>
 
 union z_tricore_context __kstackmem __aligned(4 * 16) z_tricore_csa[CONFIG_TRICORE_CSA_COUNT];
 
 int arch_coprocessors_disable(struct k_thread *thread)
 {
+	ARG_UNUSED(thread);
+
 	return -ENOTSUP;
 }
 
@@ -41,11 +39,11 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 
 void z_tricore_reclaim_csa(struct k_thread *thread)
 {
-	uint32_t pcxi = thread->callee_saved.pcxi & 0xFFFFF;
+	uint32_t pcxi = thread->callee_saved.pcxi & 0xFFFFFU;
 	struct z_tricore_lower_context *csa;
-	unsigned int key;
+	uint32_t key;
 
-	if (pcxi == 0) {
+	if (pcxi == 0U) {
 		return;
 	}
 
@@ -53,21 +51,22 @@ void z_tricore_reclaim_csa(struct k_thread *thread)
 	key = irq_lock();
 	__asm volatile("dsync" ::: "memory");
 
-	while (csa->pcxi != 0) {
-		csa->pcxi &= 0xFFFFF;
+	while (csa->pcxi != 0U) {
+		csa->pcxi &= 0xFFFFFU;
 		csa = UINT_TO_POINTER(z_tricore_pcx_to_addr(csa->pcxi));
 	}
 
 	csa->pcxi = cr_read(TRICORE_FCX);
 	cr_write(TRICORE_FCX, pcxi);
-	thread->callee_saved.pcxi = 0;
+	thread->callee_saved.pcxi = 0U;
 
 	irq_unlock(key);
 }
 
-unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
+static uint32_t z_tricore_create_context(struct k_thread *thread, k_thread_entry_t entry, void *p1,
 				      void *p2, void *p3, char *stack_ptr)
 {
+	ARG_UNUSED(thread);
 	uint32_t icr = cr_read(TRICORE_ICR);
 
 	__asm volatile("disable" ::: "memory");
@@ -75,7 +74,7 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 	z_tricore_lower_context_t *lower = UINT_TO_POINTER(z_tricore_pcx_to_addr(fcx));
 	z_tricore_upper_context_t *upper = UINT_TO_POINTER(z_tricore_pcx_to_addr(lower->pcxi));
 	cr_write(TRICORE_FCX, upper->pcxi);
-	if (icr & 0x8000) {
+	if ((icr & 0x8000U) != 0U) {
 		__asm volatile("enable" ::: "memory");
 	}
 
@@ -83,15 +82,15 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 	lower->a5 = (uint32_t)p1;
 	lower->a6 = (uint32_t)p2;
 	lower->a7 = (uint32_t)p3;
-	lower->a11 = (uint32_t)z_thread_entry;
-	lower->pcxi |= (1 << 21) | (1 << 20); /* Set PIE and UL bits */
+	lower->a11 = (uint32_t)&z_thread_entry;
+	lower->pcxi |= (1UL << 21) | (1UL << 20); /* Set PIE and UL bits */
 
 	upper->a10 = (uint32_t)stack_ptr;
-	upper->a11 = (uint32_t)z_thread_entry;
-	upper->psw = (1 << 7); /* Set CDE bit*/
+	upper->a11 = (uint32_t)&z_thread_entry;
+	upper->psw = (1UL << 7); /* Set CDE bit*/
 	upper->pcxi = 0;
 
-	upper->psw |= (1 << 8) | (2 << 10); /* GW & Privileged mode */
+	upper->psw |= (1UL << 8) | (2UL << 10); /* GW & Privileged mode */
 
 	return fcx;
 }
@@ -99,6 +98,8 @@ unsigned int z_tricore_create_context(struct k_thread *thread, k_thread_entry_t 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 		     k_thread_entry_t entry, void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(stack);
+
 	thread->callee_saved.pcxi = z_tricore_create_context(thread, entry, p1, p2, p3, stack_ptr);
 
 	/* our switch handle is the thread pointer itself */
@@ -108,7 +109,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *sta
 void z_impl_k_thread_abort(k_tid_t thread)
 {
 	bool self_abort = (thread == _current);
-	unsigned int key = 0U;
+	uint32_t key = 0U;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, abort, thread);
 
