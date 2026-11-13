@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Sahaj Sarup
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LITEWING
+
+if FUEL_GAUGE
+
+config ADC
+	default y
+
+config SENSOR
+	default y
+
+endif # FUEL_GAUGE
+
+endif # BOARD_LITEWING
