@@ -21,9 +21,9 @@ description: |
      - 'pwm_led0' is a node representing a device (e.g., an LED) controlled by PWM.
      - The 'pwms' property uses the phandle to the PWM controller (here, 'tc0'),
        specifies channel 2, sets the PWM period to 20 milliseconds,
-       and uses a polarity of 0 (normal).
+       and uses flags of 0 (PWM_POLARITY_NORMAL).
      - The order of the 'pwms' arguments matches the 'pwm-cells' definition:
-         <&controller channel period polarity>
+         <&controller channel period flags>
      - This allows the device to be driven with a specific PWM configuration using
        the Microchip PWM TC driver.
 
@@ -40,4 +40,4 @@ properties:
 pwm-cells:
   - channel
   - period
-  - polarity
+  - flags
