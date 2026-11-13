@@ -35,3 +35,26 @@ config IPC_SERVICE_ICMSG_ME
 	select EVENTS
 	help
 	  Multi-endpoint functionality for the icmsg library
+
+config IPC_SERVICE_LINK
+	bool "IPC link protocol core"
+	select CRC
+	help
+	  Protocol core of the IPC link backend: frames with a sequence
+	  number, acknowledgment and receive credits over any transport
+	  that exchanges frames between two processors.
+
+config IPC_SERVICE_LINK_STATS
+	bool "IPC link statistics"
+	depends on IPC_SERVICE_LINK
+	help
+	  Count the frames, payloads, retransmissions, errors and session
+	  changes of each link in its core state.
+
+if IPC_SERVICE_LINK
+
+module = IPC_SERVICE_LINK
+module-str = IPC link protocol core
+source "subsys/debug/zassert/Kconfig.template.assert"
+
+endif # IPC_SERVICE_LINK

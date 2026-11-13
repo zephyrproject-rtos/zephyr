@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IPC service instance over an SPI bus, the IPC link backend's SPI transport in the controller
+  role. A child node of the SPI controller connected to the peer, which runs the peripheral role.
+
+compatible: "zephyr,ipc-spi"
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    &spi1 {
+        ipc0: ipc-spi@0 {
+            compatible = "zephyr,ipc-spi";
+            reg = <0>;
+            spi-max-frequency = <8000000>;
+            rdy-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+            irq-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        };
+    };
+
+include: ipc-link-spi.yaml

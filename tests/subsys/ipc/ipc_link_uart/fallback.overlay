@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Side B on a UART without the asynchronous API: its transport falls back to interrupts */
+&uart_b {
+	supported-modes = "polling", "interrupt-driven";
+};
