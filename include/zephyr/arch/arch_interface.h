@@ -668,6 +668,8 @@ bool arch_irq_is_used(unsigned int irq);
  * the time of trap should not be disturbed from the calling context.
  *
  * @param reason_p K_ERR_ scoped reason code for the fatal error.
+ *
+ * @satisfies ZEP-SRS-19-3
  */
 #ifdef __DOXYGEN__
 #define ARCH_EXCEPT(reason_p)
@@ -833,6 +835,8 @@ int arch_page_phys_get(void *virt, uintptr_t *phys);
  *
  * @param call_id System call ID
  * @return Return value of the system call. Void system calls return 0 here.
+ *
+ * @satisfies ZEP-SRS-19-14
  */
 static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id);
 
@@ -939,6 +943,8 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
  * Indicate whether we are currently running in user mode
  *
  * @return True if the CPU is currently running with user permissions
+ *
+ * @satisfies ZEP-SRS-19-13
  */
 static inline bool arch_is_user_context(void);
 
@@ -1132,6 +1138,8 @@ size_t arch_virt_region_align(uintptr_t phys, size_t size);
  * @param p1 1st parameter to user thread
  * @param p2 2nd parameter to user thread
  * @param p3 3rd parameter to user thread
+ *
+ * @satisfies ZEP-SRS-19-4
  */
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3);
@@ -1247,6 +1255,8 @@ void arch_gdb_continue(void);
  * @brief Continue with one step
  *
  * Continue software execution until reaches the next statement.
+ *
+ * @satisfies ZEP-SRS-19-24
  */
 void arch_gdb_step(void);
 
@@ -1262,6 +1272,8 @@ void arch_gdb_step(void);
  *
  * @return Length of hexadecimal string written.
  *         Return 0 if error or not supported.
+ *
+ * @satisfies ZEP-SRS-19-12
  */
 size_t arch_gdb_reg_readall(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen);
 
@@ -1277,6 +1289,8 @@ size_t arch_gdb_reg_readall(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen);
  *
  * @return Length of hexadecimal string parsed.
  *         Return 0 if error or not supported.
+ *
+ * @satisfies ZEP-SRS-19-12
  */
 size_t arch_gdb_reg_writeall(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen);
 
@@ -1325,6 +1339,8 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
  * @retval 0  Operation successful
  * @retval -1 Error encountered
  * @retval -2 Not supported
+ *
+ * @satisfies ZEP-SRS-19-23
  */
 int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			    uintptr_t addr, uint32_t kind);
@@ -1340,6 +1356,8 @@ int arch_gdb_add_breakpoint(struct gdb_ctx *ctx, uint8_t type,
  * @retval 0  Operation successful
  * @retval -1 Error encountered
  * @retval -2 Not supported
+ *
+ * @satisfies ZEP-SRS-19-23
  */
 int arch_gdb_remove_breakpoint(struct gdb_ctx *ctx, uint8_t type,
 			       uintptr_t addr, uint32_t kind);
@@ -1575,6 +1593,8 @@ typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
  * thread	NULL	Stack trace from thread (can be _current)
  * thread	esf	Stack trace starting on esf
  * ============ ======= ============================================
+ *
+ * @satisfies ZEP-SRS-19-10
  */
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf);

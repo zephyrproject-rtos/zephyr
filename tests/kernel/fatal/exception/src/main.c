@@ -429,6 +429,7 @@ ZTEST(fatal_exception, test_fatal_cpu_exception_extended)
  * @verifies ZEP-SRS-16-5
  * @verifies ZEP-SRS-16-7
  * @verifies ZEP-SRS-16-10
+ * @verifies ZEP-SRS-19-3
  */
 ZTEST(fatal_exception, test_fatal_oops)
 {
@@ -459,6 +460,7 @@ ZTEST(fatal_exception, test_fatal_oops)
  * @verifies ZEP-SRS-16-4
  * @verifies ZEP-SRS-16-6
  * @verifies ZEP-SRS-16-7
+ * @verifies ZEP-SRS-19-3
  */
 ZTEST(fatal_exception, test_fatal_panic)
 {

@@ -115,6 +115,8 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  * @see k_is_user_context()
  * @verifies ZEP-SRS-8-3
  * @verifies ZEP-SRS-8-9
+ * @verifies ZEP-SRS-19-4
+ * @verifies ZEP-SRS-19-13
  */
 ZTEST_USER(userspace, test_userspace_is_usermode)
 {

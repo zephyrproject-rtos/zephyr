@@ -127,6 +127,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
  * @param switch_to Incoming thread's switch handle
  * @param switched_from Pointer to outgoing thread's switch handle storage
  *        location, which must be updated.
+ *
+ * @satisfies ZEP-SRS-19-2
  */
 static inline void arch_switch(void *switch_to, void **switched_from);
 #endif /* CONFIG_USE_SWITCH */
@@ -649,6 +651,8 @@ static inline void arch_nop(void);
  * This dumps architecture-specific information during coredump.
  *
  * @param esf Exception Stack Frame (arch-specific)
+ *
+ * @satisfies ZEP-SRS-19-11
  */
 void arch_coredump_info_dump(const struct arch_esf *esf);
 
