@@ -91,6 +91,19 @@ config FLASH_STM32_OPTION_BYTES
 	  Enables flash extended operations that can be used to read and write
 	  STM32 option bytes.
 
+DT_ST_SINGLE_BANK := st,single-bank
+
+config FLASH_STM32G0_SINGLE_BANK
+	bool
+	depends on SOC_SERIES_STM32G0X
+	default y if FLASH_SIZE <= 128
+	default y if FLASH_SIZE = 256 && $(dt_nodelabel_bool_prop,flash,$(DT_ST_SINGLE_BANK))
+	help
+	  The flash memory runs as a single bank. The devices with 128KiB of
+	  flash or less always do, those with 512KiB never do, and those with
+	  256KiB do when the flash controller node has the st,single-bank
+	  property.
+
 config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	bool "Include patch for Microchip qspi flash when running with stm32"
 	depends on FLASH_STM32_QSPI || FLASH_STM32_OSPI || FLASH_STM32_XSPI
