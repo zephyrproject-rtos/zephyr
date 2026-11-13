@@ -2,4 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory_ifdef(CONFIG_PROFILING_PERF perf)
+if(CONFIG_PROFILING_PERF OR CONFIG_PROFILING_PERF_EVENTS)
+  add_subdirectory(perf)
+endif()
