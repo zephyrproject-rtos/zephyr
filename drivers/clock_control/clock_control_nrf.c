@@ -83,6 +83,7 @@ static uint64_t hf_stop_tstamp;
 /* Client to request HFXO to synthesize low frequency clock. */
 static struct onoff_client lfsynth_cli;
 #endif
+static z_nrf_clock_control_lf_on_cb_t lfclk_user_cb;
 
 static struct nrf_clock_control_sub_data *get_sub_data(const struct device *dev,
 						       enum clock_control_nrf_type type)
@@ -665,7 +666,20 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 }
 
-void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
+static void lfclk_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
+{
+	ARG_UNUSED(mgr);
+	ARG_UNUSED(cli);
+	ARG_UNUSED(state);
+	ARG_UNUSED(res);
+
+	if (lfclk_user_cb) {
+		lfclk_user_cb();
+	}
+}
+
+void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode,
+			       z_nrf_clock_control_lf_on_cb_t cb)
 {
 	static atomic_t on;
 	static struct onoff_client cli;
@@ -676,7 +690,12 @@ void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
 				get_onoff_manager(CLOCK_DEVICE,
 						  CLOCK_CONTROL_NRF_TYPE_LFCLK);
 
-		sys_notify_init_spinwait(&cli.notify);
+		if (cb) {
+			lfclk_user_cb = cb;
+			sys_notify_init_callback(&cli.notify, lfclk_cb);
+		} else {
+			sys_notify_init_spinwait(&cli.notify);
+		}
 		err = onoff_request(mgr, &cli);
 		__ASSERT_NO_MSG(err >= 0);
 	}
