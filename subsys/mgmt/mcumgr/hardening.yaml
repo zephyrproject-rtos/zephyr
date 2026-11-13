@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for MCUmgr.
+
+rules:
+  MCUMGR_GRP_FS:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Lets MCUmgr clients download and overwrite any file in the file system, including
+      application-stored secrets such as private keys, unless an access hook filters the requested
+      paths.
+    references: [CWE-552]
+
+  MCUMGR_GRP_IMG_VERBOSE_ERR:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Adds a reason string such as "header malformed", "magic mismatch" or "downgrade" to rejected
+      image management requests, telling a remote client which check stopped its upload.
+    references: [CWE-209]
+
+  MCUMGR_GRP_SHELL:
+    value: n
+    rationale: |
+      Executes shell commands received from MCUmgr clients and returns their output, putting every
+      command the local shell offers in the hands of anyone who can send SMP requests.
+    references: [CWE-489]
+
+  MCUMGR_TRANSPORT_UDP_DTLS:
+    value: y
+    rationale: |
+      Without DTLS the SMP UDP transport carries management requests and responses, such as image
+      uploads and file transfers, as plaintext that anyone on the network path can read or modify
+      in transit.
+    references: [CWE-306, CWE-319]
