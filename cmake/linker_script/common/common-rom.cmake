@@ -176,7 +176,7 @@ endif()
 
 zephyr_iterable_section(NAME log_strings KVMA RAM_REGION GROUP RODATA_REGION)
 
-zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION)
+zephyr_iterable_section(NAME log_const KVMA RAM_REGION GROUP RODATA_REGION GC_ALLOWED)
 
 zephyr_linker_section(NAME symbol_to_keep GROUP RODATA_REGION NOINPUT)
 zephyr_linker_section_configure(SECTION symbol_to_keep INPUT ".symbol_to_keep*" KEEP SORT NAME)

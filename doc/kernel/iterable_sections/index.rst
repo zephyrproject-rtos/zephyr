@@ -91,6 +91,13 @@ ROM-resident example (instances declared ``const`` in C):
    # CMakeLists.txt
    zephyr_iterable_section(NAME my_data GROUP RODATA_REGION)
 
+Add the ``GC_ALLOWED`` option when entries that are not referenced directly may be removed by
+linker garbage collection:
+
+.. code-block:: cmake
+
+   zephyr_iterable_section(NAME my_data GROUP RODATA_REGION GC_ALLOWED)
+
 
 See ``zephyr_iterable_section()`` in ``cmake/modules/extensions.cmake`` for the full argument list
 and a more detailed explanation of the available ``GROUP`` options.
@@ -119,6 +126,9 @@ ROM-resident:
 
    ITERABLE_SECTION_ROM(my_data, Z_LINK_ITERABLE_SUBALIGN)
 
+Use :c:macro:`ITERABLE_SECTION_RAM_GC_ALLOWED` or
+:c:macro:`ITERABLE_SECTION_ROM_GC_ALLOWED` for garbage-collectable entries.
+
 Register the linker-script from ``CMakeLists.txt``:
 
 .. code-block:: cmake
@@ -127,6 +137,16 @@ Register the linker-script from ``CMakeLists.txt``:
 
 See ``zephyr_linker_sources()`` in ``cmake/modules/extensions.cmake`` for the full argument list and
 a more detailed explanation of the available ``<location>`` options.
+
+Retention and garbage collection
+********************************
+
+Normal iterable sections retain every entry, including entries that have no direct references.
+This is required when iteration is the only way entries are discovered.
+
+Garbage-collectable iterable sections retain only entries reachable through normal linker
+references. Related iterable sections that must remain index-aligned need an explicit dependency
+that causes all entries for an object to be retained or discarded together.
 
 Iterating over the entries
 **************************
