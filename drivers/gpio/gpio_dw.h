@@ -9,6 +9,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
 
@@ -34,6 +35,11 @@ struct gpio_dw_config {
 #endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 	const struct reset_dt_spec reset;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	/* debounce clock, NULL if the instance has none */
+	const struct device *db_clk_dev;
+	clock_control_subsys_t db_clk_id;
 #endif
 };
 

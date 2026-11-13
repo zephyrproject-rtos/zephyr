@@ -11,6 +11,18 @@ properties:
   reg:
     required: true
 
+  clocks:
+    description: |
+      Debounce clock (dbclk), with which the debounce logic samples the
+      interrupt inputs of port A. Only needed where the SoC gates it; the
+      driver enables it at initialization.
+
+  clock-names:
+    description: |
+      Must be "db" for the debounce clock.
+    enum:
+      - "db"
+
   "#gpio-cells":
     const: 2
 
