@@ -40,6 +40,20 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 }
 
+/**
+ * @brief Verify the CPU power states match the devicetree definitions.
+ *
+ * @details
+ * The set of system power states available to a CPU is defined in the
+ * devicetree. The test compares the states and state information reported by
+ * pm_state_cpu_get_all() and the devicetree helper macros against the
+ * expected set, including a mismatching set as a negative check.
+ *
+ * @see pm_state_cpu_get_all()
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-4
+ */
 ZTEST(power_states_1cpu, test_power_states)
 {
 	uint8_t ret;

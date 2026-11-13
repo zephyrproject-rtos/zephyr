@@ -50,6 +50,18 @@ static void get_runner(void *arg1, void *arg2, void *arg3)
  * - get + put
  * - get + asynchronous put until suspended
  * - get + asynchronous put + get (while suspend still ongoing)
+ *
+ * Runtime PM is enabled by the case fixture and disabled again at the end of
+ * the case, and the device state is checked around every transition.
+ *
+ * @ingroup power_tests
+ * @verifies ZEP-SRS-13-10
+ * @verifies ZEP-SRS-13-12
+ * @verifies ZEP-SRS-13-13
+ * @verifies ZEP-SRS-13-36
+ * @verifies ZEP-SRS-13-37
+ * @verifies ZEP-SRS-13-38
+ * @verifies ZEP-SRS-13-39
  */
 ZTEST(device_runtime_api, test_api)
 {
