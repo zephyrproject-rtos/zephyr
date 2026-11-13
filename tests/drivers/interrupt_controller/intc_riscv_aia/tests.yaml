@@ -17,6 +17,10 @@ common:
     - qemu_riscv32/qemu_virt_riscv32/aia-imsic/smp
     - qemu_riscv32/qemu_virt_riscv32/aia-direct
     - qemu_riscv32/qemu_virt_riscv32/aia-direct/smp
+    - qemu_riscv64/qemu_virt_riscv64/aia-imsic
+    - qemu_riscv64/qemu_virt_riscv64/aia-imsic/smp
+    - qemu_riscv64/qemu_virt_riscv64/aia-direct
+    - qemu_riscv64/qemu_virt_riscv64/aia-direct/smp
   integration_platforms:
     - qemu_riscv32/qemu_virt_riscv32/aia-imsic
     - qemu_riscv32/qemu_virt_riscv32/aia-direct

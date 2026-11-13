@@ -127,7 +127,9 @@ ZTEST(intc_riscv_aia, test_smaia_isa_ext)
 	int ret = -1;
 
 	csr_write(mie, 0);
+#ifndef CONFIG_64BIT
 	csr_write(mieh, 0);
+#endif
 
 	/*
 	 * Start at bit 16: bits 0-15 include standard interrupt bits with

@@ -30,8 +30,16 @@ else()
   set(qemu_bios none)
 endif()
 
+if(CONFIG_RISCV_APLIC_MSI)
+  set(QEMU_MACH virt,aia=aplic-imsic)
+elseif(CONFIG_RISCV_APLIC_DIRECT)
+  set(QEMU_MACH virt,aia=aplic)
+else()
+  set(QEMU_MACH virt)
+endif()
+
 set(QEMU_BOARD_FLAGS
-  -machine virt
+  -machine ${QEMU_MACH}
   -bios ${qemu_bios}
   -m 256
   -cpu ${qemu_riscv_cpu}
