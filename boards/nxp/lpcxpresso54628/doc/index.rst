@@ -65,12 +65,31 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 Configuring a Debug Probe
 =========================
 
-LinkServer is the default runner for this board. A debug probe is used for both
-flashing and debugging the board. This board is configured by default to use the
-on-board :ref:`lpclink2-cmsis-onboard-debug-probe` in the CMSIS-DAP mode. To use
-this probe with Zephyr, you need to install the :ref:`linkserver-debug-host-tools`
-and make sure they are in your search path. Refer to the detailed overview about
-:ref:`application_debugging` for additional information.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the on-board
+:ref:`lpclink2-cmsis-onboard-debug-probe`.
+
+Using LinkServer
+----------------
+
+LinkServer is the default runner for this board and works with the LPC-Link2
+CMSIS-DAP firmware. Install the :ref:`linkserver-debug-host-tools` and make sure
+they are in your search path.
+Refer to the detailed overview about :ref:`application_debugging` for additional
+information.
+
+Using J-Link
+------------
+
+The on-board LPC-Link2 can be updated with Segger J-Link firmware by following
+the instructions in :ref:`lpclink2-jlink-onboard-debug-probe`. To put the
+LPC-Link2 in ``DFU mode`` to program the firmware, short jumper JP5. Install the
+:ref:`jlink-debug-host-tools` and make sure they are in your search path, then
+use the ``-r jlink`` option with west to use the jlink runner.
+
+.. code-block:: console
+
+   west flash -r jlink
 
 Configuring a Console
 =====================
@@ -83,6 +102,22 @@ settings:
 - Data: 8 bits
 - Parity: None
 - Stop bits: 1
+
+Using SWO
+---------
+
+SWO is routed from P0_10 to the on-board LPC-Link2 and to the SWD connector P1.
+It can be used as a logging backend by setting ``CONFIG_LOG_BACKEND_SWO=y``.
+Configure your SWO viewer with a CPU frequency of 220 MHz and an SWO frequency
+of 2 MHz.
+
+The CMSIS-DAP firmware of the on-board LPC-Link2 does not provide SWO data to
+other tools than the MCUXpresso IDE, so use the LPC-Link2 with J-Link firmware
+or an external J-Link on P1, for example:
+
+.. code-block:: console
+
+   JLinkSWOViewerCLExe -device LPC54628J512 -cpufreq 220000000 -swofreq 2000000 -itmmask 0x1
 
 Flashing
 ========
