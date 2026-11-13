@@ -111,6 +111,19 @@ level at the call site and declare nothing in scope:
    ZASSERT_NORMAL(ptr != NULL);
    ZASSERT_VERBOSE(ptr != NULL, "ptr must not be NULL");
 
+Neither form works for a macro defined in a header. A macro expands at its call
+sites, which are in other translation units: the in-body ``ZASSERT_MODULE()``
+is not in scope there, and the fixed-level forms would pin the level so it could
+never be configured. Use :c:macro:`ZASSERT_IN` instead, which names the module
+at the point of use and so keeps that module wherever the macro expands:
+
+.. code-block:: c
+
+   #define CHECK_PTR(ptr) ZASSERT_IN(MYMODULE, (ptr) != NULL, "ptr must not be NULL")
+
+The level still comes from ``CONFIG_ASSERT_MODULE_MYMODULE_LEVEL``, regardless of
+which module the including file selected, or whether it selected one at all.
+
 The ``ZASSERT_LEVEL_TERSE``, ``ZASSERT_LEVEL_NORMAL`` and ``ZASSERT_LEVEL_VERBOSE``
 defines configure module assertion levels, while
 ``ZASSERT_TERSE()``, ``ZASSERT_NORMAL()`` and ``ZASSERT_VERBOSE()`` perform
@@ -123,8 +136,8 @@ fixed-level assertions.
    - ``ZASSERT_MODULE()`` must appear before the first ``ZASSERT()`` in the
      translation unit, and only one module may be selected per file.
    - Using ``ZASSERT()`` with no module in scope is a compile error. Select a
-     module first, or use the fixed-level ``ZASSERT_TERSE()``, ``ZASSERT_NORMAL()``
-     or ``ZASSERT_VERBOSE()`` form.
+     module first, or use ``ZASSERT_IN()`` or the fixed-level
+     ``ZASSERT_TERSE()``, ``ZASSERT_NORMAL()`` or ``ZASSERT_VERBOSE()`` form.
    - :kconfig:option:`CONFIG_ASSERT` remains the master switch: when it is
      disabled the module level is forced to ``ZASSERT_LEVEL_OFF`` regardless of the
      configured level.
