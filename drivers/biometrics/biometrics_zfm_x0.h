@@ -84,7 +84,7 @@
 /* Data sizes */
 #define ZFM_X0_TEMPLATE_SIZE       512
 #define ZFM_X0_DATA_PACKET_SIZE    128
-#define ZFM_X0_SYS_PARAMS_SIZE     32
+#define ZFM_X0_SYS_PARAMS_SIZE     17
 #define ZFM_X0_MATCH_RESPONSE_SIZE 16
 #define ZFM_X0_INDEX_TABLE_SIZE    33
 
@@ -146,10 +146,8 @@ struct zfm_x0_data {
 	uint16_t last_match_id;
 
 	int32_t match_threshold;
-	int32_t enroll_quality;
 	int32_t security_level;
 	uint32_t timeout_ms;
-	int32_t image_quality;
 
 	enum biometric_led_state led_state;
 };

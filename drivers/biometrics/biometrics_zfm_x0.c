@@ -311,7 +311,6 @@ static int zfm_x0_poll_finger(const struct device *dev, uint32_t timeout_ms)
 static int zfm_x0_enroll_capture_blocking(const struct device *dev, uint8_t buffer_id,
 					  uint32_t timeout_ms)
 {
-	struct zfm_x0_data *data = dev->data;
 	int ret;
 
 	ret = zfm_x0_poll_finger(dev, timeout_ms);
@@ -325,8 +324,6 @@ static int zfm_x0_enroll_capture_blocking(const struct device *dev, uint8_t buff
 		return zfm_x0_err_to_errno(ret);
 	}
 
-	data->image_quality = 0;
-
 	return 0;
 }
 
@@ -337,6 +334,7 @@ static int zfm_x0_match_blocking(const struct device *dev, enum biometric_match_
 	uint8_t params[5];
 	uint8_t response[ZFM_X0_MATCH_RESPONSE_SIZE];
 	uint16_t response_len = sizeof(response);
+	uint16_t score;
 	const uint8_t buffer = ZFM_X0_BUFFER_1;
 	int ret;
 
@@ -349,8 +347,6 @@ static int zfm_x0_match_blocking(const struct device *dev, enum biometric_match_
 	if (ret != ZFM_X0_OK) {
 		return zfm_x0_err_to_errno(ret);
 	}
-
-	data->image_quality = 0;
 
 	if (mode == BIOMETRIC_MATCH_VERIFY) {
 		params[0] = ZFM_X0_BUFFER_2;
@@ -369,7 +365,11 @@ static int zfm_x0_match_blocking(const struct device *dev, enum biometric_match_
 		if (response_len < 3) {
 			return -EBADMSG;
 		}
-		return sys_get_be16(&response[1]);
+		score = sys_get_be16(&response[1]);
+		if (score < data->match_threshold) {
+			return -ENOENT;
+		}
+		return score;
 	}
 
 	params[0] = ZFM_X0_BUFFER_1;
@@ -385,20 +385,25 @@ static int zfm_x0_match_blocking(const struct device *dev, enum biometric_match_
 		return -EBADMSG;
 	}
 
+	score = sys_get_be16(&response[3]);
+	if (score < data->match_threshold) {
+		return -ENOENT;
+	}
+
 	data->last_match_id = sys_get_be16(&response[1]) + 1;
-	return sys_get_be16(&response[3]);
+	return score;
 }
 
 static int zfm_x0_get_capabilities(const struct device *dev, struct biometric_capabilities *caps)
 {
 	struct zfm_x0_data *data = dev->data;
 
-	caps->type = BIOMETRIC_TYPE_FINGERPRINT;
+	caps->supported_modalities = BIOMETRIC_MODALITY_FINGERPRINT;
 	caps->max_templates = data->max_templates;
 	caps->template_size = ZFM_X0_TEMPLATE_SIZE;
 	caps->storage_modes = BIOMETRIC_STORAGE_DEVICE;
 	caps->enrollment_samples_required = 2;
-
+	caps->async_operations = 0;
 	return 0;
 }
 
@@ -412,12 +417,11 @@ static int zfm_x0_attr_set(const struct device *dev, enum biometric_attribute at
 
 	switch (attr) {
 	case BIOMETRIC_ATTR_MATCH_THRESHOLD:
+		if (val < 0 || val > UINT16_MAX) {
+			ret = -EINVAL;
+			break;
+		}
 		data->match_threshold = val;
-		ret = 0;
-		break;
-
-	case BIOMETRIC_ATTR_ENROLLMENT_QUALITY:
-		data->enroll_quality = val;
 		ret = 0;
 		break;
 
@@ -431,7 +435,8 @@ static int zfm_x0_attr_set(const struct device *dev, enum biometric_attribute at
 
 		ret = zfm_x0_transceive(dev, ZFM_X0_CMD_SET_PARAM, params, 2, NULL, NULL);
 		if (ret == ZFM_X0_OK) {
-			data->security_level = val;
+			/* Convert to API's 1-10 scale. */
+			data->security_level = params[1] * 2;
 			ret = 0;
 		} else {
 			LOG_ERR("Failed to set security level: %d", ret);
@@ -472,17 +477,11 @@ static int zfm_x0_attr_get(const struct device *dev, enum biometric_attribute at
 	case BIOMETRIC_ATTR_MATCH_THRESHOLD:
 		*val = data->match_threshold;
 		break;
-	case BIOMETRIC_ATTR_ENROLLMENT_QUALITY:
-		*val = data->enroll_quality;
-		break;
 	case BIOMETRIC_ATTR_SECURITY_LEVEL:
 		*val = data->security_level;
 		break;
 	case BIOMETRIC_ATTR_TIMEOUT_MS:
 		*val = data->timeout_ms;
-		break;
-	case BIOMETRIC_ATTR_IMAGE_QUALITY:
-		*val = data->image_quality;
 		break;
 	case BIOMETRIC_ATTR_PRIV_START: /* Last matched template ID */
 		*val = data->last_match_id;
@@ -579,7 +578,7 @@ static int zfm_x0_enroll_capture(const struct device *dev, k_timeout_t timeout,
 		result->samples_captured =
 			(data->enroll_state == ZFM_X0_ENROLL_WAIT_SAMPLE_2) ? 1 : 2;
 		result->samples_required = 2;
-		result->quality = (uint8_t)CLAMP(data->image_quality, 0, 100);
+		result->quality = 0;
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -775,7 +774,8 @@ static int zfm_x0_match(const struct device *dev, enum biometric_match_mode mode
 			result->template_id = (mode == BIOMETRIC_MATCH_IDENTIFY)
 						      ? data->last_match_id
 						      : template_id;
-			result->image_quality = (uint8_t)CLAMP(data->image_quality, 0, 100);
+			result->image_quality = 0;
+			result->modality = BIOMETRIC_MODALITY_FINGERPRINT;
 		}
 		LOG_INF("Match completed (mode=%d, score=%d)", mode, confidence);
 		ret = 0;
@@ -866,6 +866,7 @@ static int zfm_x0_init(const struct device *dev)
 	uint8_t params[4];
 	uint8_t response[ZFM_X0_SYS_PARAMS_SIZE];
 	uint16_t response_len;
+	uint16_t security_level;
 	int ret;
 
 	if (!device_is_ready(cfg->uart_dev)) {
@@ -877,10 +878,7 @@ static int zfm_x0_init(const struct device *dev)
 	data->comm_addr = cfg->comm_addr;
 	data->enroll_state = ZFM_X0_ENROLL_IDLE;
 	data->timeout_ms = CONFIG_ZFM_X0_TIMEOUT_MS;
-	data->security_level = 6;
-	data->match_threshold = 100;
-	data->enroll_quality = 100;
-	data->image_quality = 0;
+	data->match_threshold = 0;
 	data->led_state = BIOMETRIC_LED_OFF;
 	data->rx_error = ZFM_X0_RX_OK;
 	data->last_match_id = 0;
@@ -906,6 +904,9 @@ static int zfm_x0_init(const struct device *dev)
 		LOG_ERR("Failed to read system parameters");
 		return -EIO;
 	}
+	if (response_len < ZFM_X0_SYS_PARAMS_SIZE) {
+		return -EBADMSG;
+	}
 
 	/* ZFM-x0 system parameters response:
 	 * Byte 0: Confirmation code
@@ -918,6 +919,11 @@ static int zfm_x0_init(const struct device *dev)
 	 * Byte 15-16: Baud rate
 	 */
 	data->max_templates = sys_get_be16(&response[5]);
+	security_level = sys_get_be16(&response[7]);
+	if (security_level < 1 || security_level > 5) {
+		return -EBADMSG;
+	}
+	data->security_level = security_level * 2;
 
 	response_len = sizeof(response);
 	ret = zfm_x0_transceive(dev, ZFM_X0_CMD_TEMPLATE_COUNT, NULL, 0, response, &response_len);

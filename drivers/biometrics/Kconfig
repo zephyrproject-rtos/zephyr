@@ -27,6 +27,7 @@ config BIOMETRICS_SHELL
 	  management, and device information queries.
 
 # zephyr-keep-sorted-start
+source "drivers/biometrics/Kconfig.ai10"
 source "drivers/biometrics/Kconfig.emul"
 source "drivers/biometrics/Kconfig.gt5x"
 source "drivers/biometrics/Kconfig.zfm_x0"
