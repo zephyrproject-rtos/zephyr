@@ -5,5 +5,11 @@ board:
   socs:
   - name: polarfire
     variants:
+    - name: qemu
+      cpucluster: e51
+    - name: qemu
+      cpucluster: u54
     - name: smp
       cpucluster: u54
+      variants:
+      - name: qemu

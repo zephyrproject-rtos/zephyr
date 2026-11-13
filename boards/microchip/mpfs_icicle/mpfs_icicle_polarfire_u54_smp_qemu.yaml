@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mpfs_icicle/polarfire/u54/smp/qemu
+name: Microchip PolarFire SoC Icicle Kit (U54 SMP, QEMU)
+type: qemu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+simulation:
+  - name: qemu
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: microchip
