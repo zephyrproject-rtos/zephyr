@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow: qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+  tags:
+    - drivers
+    - gpio
+tests:
+  drivers.gpio.pca_series: {}
+  drivers.gpio.pca_series.threadless:
+    extra_configs:
+      - CONFIG_MULTITHREADING=n
+  drivers.gpio.pca_series.cache_minimal:
+    extra_configs:
+      - CONFIG_GPIO_PCA_SERIES_CACHE_ALL=n
+  drivers.gpio.pca_series.cache_minimal.threadless:
+    extra_configs:
+      - CONFIG_GPIO_PCA_SERIES_CACHE_ALL=n
+      - CONFIG_MULTITHREADING=n
