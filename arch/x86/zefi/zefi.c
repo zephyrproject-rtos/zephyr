@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-#include "efi.h"
+#include <efi.h>
 #include "printf.h"
 #include <zefi-segments.h>
 #include <zephyr/arch/x86/efi.h>

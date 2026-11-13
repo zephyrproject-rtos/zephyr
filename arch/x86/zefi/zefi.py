@@ -112,7 +112,7 @@ def build_elf(elf_file, include_dirs):
     #  + We need pic to enforce that the linker adds no relocations
     #  + UEFI can take interrupts on our stack, so no red zone
     #  + UEFI API assumes 16-bit wchar_t
-    includes = []
+    includes = ["-I", os.path.join(base_dir, "..", "..", "common", "include")]
     for include_dir in include_dirs:
         includes.extend(["-I", include_dir])
     cmd = ([args.compiler, "-shared", "-Wall", "-Werror", "-I."] + includes +
