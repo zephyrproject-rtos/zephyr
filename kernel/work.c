@@ -750,7 +750,9 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		k_spin_unlock(&work_lock, key);
 
 		__ASSERT_NO_MSG(handler != NULL);
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, handler, work);
 		handler(work);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work, handler, work);
 
 		/* Mark the work item as no longer running and deal
 		 * with any cancellation and flushing issued while it
