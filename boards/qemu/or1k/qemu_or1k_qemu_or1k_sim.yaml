@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: qemu_or1k/qemu_or1k/sim
+name: QEMU emulation for OpenRISC 1000 (or1k-sim machine)
+type: qemu
+simulation:
+  - name: qemu
+arch: openrisc
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 131072
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: qemu
