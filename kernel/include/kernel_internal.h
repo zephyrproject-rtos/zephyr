@@ -35,6 +35,9 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 FUNC_NORETURN void z_cstart(void);
 
+struct init_entry;
+void z_sys_init_run_entry(const struct init_entry *entry, unsigned int level);
+
 /*
  * Lean kernel-internal init model.
  *

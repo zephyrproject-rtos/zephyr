@@ -20,15 +20,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <errno.h>
 #include "nsi_utils.h"
 #include "nce_if.h"
+#include "nsi_sem.h"
 #include "nsi_safe_call.h"
 
 struct nce_status_t {
-	sem_t sem_sw; /* Semaphore to hold the CPU/SW thread(s) */
-	sem_t sem_hw; /* Semaphore to hold the HW thread */
+	nsi_sem_t sem_sw; /* Semaphore to hold the CPU/SW thread(s) */
+	nsi_sem_t sem_hw; /* Semaphore to hold the HW thread */
 	bool cpu_halted;
 	bool terminate; /* Are we terminating the program == cleaning up */
 	void (*start_routine)(void);
@@ -48,11 +48,11 @@ struct nce_status_t {
 
 extern void nsi_exit(int exit_code);
 
-NSI_INLINE int nce_sem_rewait(sem_t *semaphore)
+NSI_INLINE int nce_sem_rewait(nsi_sem_t *semaphore)
 {
 	int ret;
 
-	while (((ret = sem_wait(semaphore)) == -1) && (errno == EINTR)) {
+	while (((ret = nsi_sem_wait(semaphore)) == -1) && (errno == EINTR)) {
 		/* Restart wait if we were interrupted */
 	}
 	return ret;
@@ -75,8 +75,8 @@ void *nce_init(void)
 	this->cpu_halted = true;
 	this->terminate = false;
 
-	NSI_SAFE_CALL(sem_init(&this->sem_sw, 0, 0));
-	NSI_SAFE_CALL(sem_init(&this->sem_hw, 0, 0));
+	NSI_SAFE_CALL(nsi_sem_init(&this->sem_sw, 0U));
+	NSI_SAFE_CALL(nsi_sem_init(&this->sem_hw, 0U));
 
 	return (void *)this;
 }
@@ -116,7 +116,7 @@ void nce_terminate(void *this_arg)
 		this->terminate = true;
 		this->cpu_halted = true;
 
-		NSI_SAFE_CALL(sem_post(&this->sem_hw));
+		NSI_SAFE_CALL(nsi_sem_post(&this->sem_hw));
 
 		while (1) {
 			sleep(1);
@@ -192,7 +192,7 @@ void nce_halt_cpu(void *this_arg)
 	}
 	this->cpu_halted = true;
 
-	NSI_SAFE_CALL(sem_post(&this->sem_hw));
+	NSI_SAFE_CALL(nsi_sem_post(&this->sem_hw));
 	NSI_SAFE_CALL(nce_sem_rewait(&this->sem_sw));
 
 	NCE_DEBUG("CPU awaken, HW thread held\n");
@@ -217,7 +217,7 @@ void nce_wake_cpu(void *this_arg)
 
 	this->cpu_halted = false;
 
-	NSI_SAFE_CALL(sem_post(&this->sem_sw));
+	NSI_SAFE_CALL(nsi_sem_post(&this->sem_sw));
 	NSI_SAFE_CALL(nce_sem_rewait(&this->sem_hw));
 
 	NCE_DEBUG("CPU went to sleep, HW continues\n");
