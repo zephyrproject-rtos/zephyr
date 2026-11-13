@@ -15,3 +15,27 @@ properties:
     description:
       Value to return in init function (negated due to devicetree limitation
       to unsigned integers).
+
+  sampling-frequency:
+    type: int
+    description:
+      Rate in Hz at which the FIFO gains a sample, rounded to whole kernel
+      ticks. Samples arrive fifo-watermark at a time. Setting it enables
+      streaming. Pending stream reads, multishot or plain, are served in
+      submission order, from the sampling timer. A plain read's buffer must
+      hold fifo-watermark samples; the samples that do not fit stay in the
+      FIFO. A full RTIO memory pool ends the read with -ENOMEM. Sampling
+      continues while no read is pending, until a cancel leaves none.
+
+  fifo-watermark:
+    type: int
+    default: 1
+    description:
+      Samples held before a streaming read completes, from 1 to fifo-depth.
+
+  fifo-depth:
+    type: int
+    default: 32
+    description:
+      Samples the FIFO holds. Once it is full, each new sample replaces the
+      oldest, which counts as an overrun.

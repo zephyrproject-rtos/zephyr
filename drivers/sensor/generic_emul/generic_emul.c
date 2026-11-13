@@ -16,24 +16,15 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
-struct generic_emul_data {
-	struct sensor_value channel_values[SENSOR_CHAN_ALL];
-	ATOMIC_DEFINE(channels_set, SENSOR_CHAN_ALL);
-	int resume_rc;
-	int suspend_rc;
-	int fetch_rc;
-};
-
-struct generic_emul_cfg {
-	const struct emul *emul;
-	int init_rc;
-};
+#include "generic_emul.h"
 
 void generic_emul_reset(const struct emul *target, bool reset_rc)
 {
 	struct generic_emul_data *data = target->data;
 
-	memset(data->channels_set, 0, sizeof(data->channels_set));
+	K_SPINLOCK(&data->lock) {
+		memset(data->channels_set, 0, sizeof(data->channels_set));
+	}
 	if (reset_rc) {
 		data->resume_rc = 0;
 		data->suspend_rc = 0;
@@ -59,26 +50,6 @@ static int generic_emul_sample_fetch(const struct device *dev, enum sensor_chann
 	}
 
 	return data->fetch_rc;
-}
-
-/*
- * The X, Y or Z channel (axis 0, 1 or 2) of a three-axis channel. Any other channel is its own
- * axis 0.
- */
-static enum sensor_channel generic_emul_axis_channel(enum sensor_channel chan, int axis)
-{
-	switch (chan) {
-	case SENSOR_CHAN_ACCEL_XYZ:
-		return SENSOR_CHAN_ACCEL_X + axis;
-	case SENSOR_CHAN_GYRO_XYZ:
-		return SENSOR_CHAN_GYRO_X + axis;
-	case SENSOR_CHAN_MAGN_XYZ:
-		return SENSOR_CHAN_MAGN_X + axis;
-	case SENSOR_CHAN_POS_DXYZ:
-		return SENSOR_CHAN_POS_DX + axis;
-	default:
-		return chan;
-	}
 }
 
 static int generic_emul_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -140,6 +111,36 @@ static DEVICE_API(sensor, generic_emul_driver_api) = {
 	.channel_get = generic_emul_channel_get,
 };
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+/* For instances that stream; the others use the RTIO fallback */
+static DEVICE_API(sensor, generic_emul_stream_api) = {
+	.sample_fetch = generic_emul_sample_fetch,
+	.channel_get = generic_emul_channel_get,
+	.submit = generic_emul_submit,
+	.get_decoder = generic_emul_get_decoder,
+};
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
+/* A three-axis channel sets each of its X, Y and Z channels */
+static void set_value(struct generic_emul_data *data, enum sensor_channel chan,
+		      struct sensor_value val, q31_t value, int8_t shift)
+{
+	int axes = SENSOR_CHANNEL_3_AXIS(chan) ? 3 : 1;
+
+	K_SPINLOCK(&data->lock) {
+		for (int i = 0; i < axes; i++) {
+			enum sensor_channel axis = generic_emul_axis_channel(chan, i);
+
+			data->channel_values[axis] = val;
+			if (data->stream != NULL) {
+				data->stream->q31[axis] = value;
+				data->stream->shift[axis] = shift;
+			}
+			atomic_set_bit(data->channels_set, axis);
+		}
+	}
+}
+
 static int generic_emul_set_channel(const struct emul *target, struct sensor_chan_spec ch,
 				    const q31_t *value, int8_t shift)
 {
@@ -176,20 +177,7 @@ static int generic_emul_set_channel(const struct emul *target, struct sensor_cha
 		return -ERANGE;
 	}
 
-	/* A three-axis channel sets each of its X, Y and Z channels */
-	if (SENSOR_CHANNEL_3_AXIS(ch.chan_type)) {
-		for (int i = 0; i < 3; i++) {
-			enum sensor_channel axis = generic_emul_axis_channel(ch.chan_type, i);
-
-			data->channel_values[axis] = val;
-			atomic_set_bit(data->channels_set, axis);
-		}
-
-		return 0;
-	}
-
-	data->channel_values[ch.chan_type] = val;
-	atomic_set_bit(data->channels_set, ch.chan_type);
+	set_value(data, ch.chan_type, val, *value, shift);
 
 	return 0;
 }
@@ -229,6 +217,12 @@ static int generic_emul_init(const struct device *dev)
 		return cfg->init_rc;
 	}
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+	if (cfg->stream != NULL) {
+		generic_emul_stream_init(dev);
+	}
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 	return cfg->emul->init(cfg->emul, dev);
 }
 
@@ -241,17 +235,45 @@ static int generic_emul_backend_init(const struct emul *target, const struct dev
 	return 0;
 }
 
+#if defined(CONFIG_SENSOR_ASYNC_API)
+#define GENERIC_EMUL_STREAMS(inst) DT_INST_NODE_HAS_PROP(inst, sampling_frequency)
+#else
+#define GENERIC_EMUL_STREAMS(inst) 0
+#endif
+
+#define GENERIC_EMUL_STREAM_DEFINE(inst)                                                           \
+	BUILD_ASSERT(DT_INST_PROP(inst, sampling_frequency) > 0,                                   \
+		     "sampling-frequency must be > 0");                                            \
+	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(inst, fifo_watermark), 1,                               \
+			      DT_INST_PROP(inst, fifo_depth)),                                     \
+		     "fifo-watermark must be from 1 to fifo-depth");                               \
+	static struct generic_emul_stream generic_emul_stream_##inst;                              \
+	static const struct generic_emul_stream_cfg generic_emul_stream_cfg_##inst = {             \
+		.period_ticks = MAX(1, DIV_ROUND_CLOSEST(CONFIG_SYS_CLOCK_TICKS_PER_SEC,           \
+							 DT_INST_PROP(inst, sampling_frequency))), \
+		.fifo_watermark = DT_INST_PROP(inst, fifo_watermark),                              \
+		.fifo_depth = DT_INST_PROP(inst, fifo_depth),                                      \
+	};
+
 #define GENERIC_EMUL_DEFINE(inst)                                                                  \
-	static struct generic_emul_data generic_emul_data_##inst;                                  \
+	IF_ENABLED(GENERIC_EMUL_STREAMS(inst), (GENERIC_EMUL_STREAM_DEFINE(inst)))                 \
+	static struct generic_emul_data generic_emul_data_##inst = {                               \
+		.stream = COND_CODE_1(GENERIC_EMUL_STREAMS(inst),                                  \
+				      (&generic_emul_stream_##inst), (NULL)),                      \
+	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, generic_emul_pm_control);                                   \
 	static const struct generic_emul_cfg generic_emul_cfg_##inst = {                           \
 		.emul = EMUL_DT_GET(DT_DRV_INST(inst)),                                            \
-		.init_rc = -DT_INST_PROP(inst, negated_init_rc),                                  \
+		.init_rc = -DT_INST_PROP(inst, negated_init_rc),                                   \
+		.stream = COND_CODE_1(GENERIC_EMUL_STREAMS(inst),                                  \
+				      (&generic_emul_stream_cfg_##inst), (NULL)),                  \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, generic_emul_init, PM_DEVICE_DT_INST_GET(inst),         \
 				     &generic_emul_data_##inst, &generic_emul_cfg_##inst,          \
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                    \
-				     &generic_emul_driver_api);                                    \
+				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,                     \
+				     COND_CODE_1(GENERIC_EMUL_STREAMS(inst),                       \
+						 (&generic_emul_stream_api),                       \
+						 (&generic_emul_driver_api)));                     \
 	EMUL_DT_INST_DEFINE(inst, generic_emul_backend_init, &generic_emul_data_##inst, NULL,      \
 			    NULL, &generic_emul_backend_api);
 
