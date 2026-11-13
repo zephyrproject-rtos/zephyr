@@ -508,33 +508,20 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* get filename and content-type from url */
-	len = http_server_path_len_without_query(client->url_buffer);
-	if (len == 1) {
-		/* url is just the leading slash, use index.html as filename */
-		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
-	} else {
-		http_server_get_content_type_from_extension(client->url_buffer, content_type,
-							    sizeof(content_type));
-		snprintk(fname, sizeof(fname), "%s%.*s", static_fs_detail->fs_path, len,
-			 client->url_buffer);
-	}
-
-	/* open file, if it exists */
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
-	ret = http_server_find_file(fname, sizeof(fname), &file_size,
-					client->supported_compression, &chosen_compression);
+	ret = http_server_find_static_fs_file(static_fs_detail, client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, client->supported_compression,
+					      &chosen_compression);
 #else
-	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
+	ret = http_server_find_static_fs_file(static_fs_detail, client->url_buffer, fname,
+					      sizeof(fname), content_type, sizeof(content_type),
+					      &file_size, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
 
-		ret = send_headers_frame(client, HTTP_404_NOT_FOUND, frame->stream_identifier, NULL,
-					 0, NULL, 0);
-		if (ret < 0) {
-			LOG_DBG("Cannot write to socket (%d)", ret);
-		}
-		return ret;
+		return send_http2_404(client, frame);
 	}
 	fs_file_t_init(&file);
 	ret = fs_open(&file, fname, FS_O_READ);
