@@ -49,6 +49,20 @@ enum phy_link_speed {
 	LINK_FULL_2500BASE = BIT(6),
 	/** 5GBase Full-Duplex */
 	LINK_FULL_5000BASE = BIT(7),
+	/** 10GBase Full-Duplex */
+	LINK_FULL_10000BASE = BIT(8),
+	/** 25GBase Full-Duplex */
+	LINK_FULL_25000BASE = BIT(9),
+	/** 40GBase Full-Duplex */
+	LINK_FULL_40000BASE = BIT(10),
+	/** 50GBase Full-Duplex */
+	LINK_FULL_50000BASE = BIT(11),
+	/** 100GBase Full-Duplex */
+	LINK_FULL_100000BASE = BIT(12),
+	/** 200GBase Full-Duplex */
+	LINK_FULL_200000BASE = BIT(13),
+	/** 400GBase Full-Duplex */
+	LINK_FULL_400000BASE = BIT(14),
 };
 
 /**
