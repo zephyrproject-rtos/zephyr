@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/pm/pm.h>
 
 #include <infineon_kconfig.h>
 #include <cy_tdm.h>
@@ -56,6 +60,10 @@ struct i2s_stream {
 	uint32_t max_transfer_size; /* bytes */
 	bool last_block;
 	bool drain;
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* True while a device runtime PM reference is held for this stream. */
+	bool pm_ref_held;
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 };
 
 struct dma_channel {
@@ -78,6 +86,51 @@ struct ifx_i2s_data {
 	uint8_t clock_peri_group;
 	bool tx_waiting_to_start;
 };
+
+/*
+ * Per-stream device runtime PM references.  A reference is taken when a stream
+ * starts and dropped once it returns to I2S_STATE_READY.  The get() may sleep,
+ * so it is only ever called from thread context outside the trigger's IRQ lock;
+ * releases can originate from an ISR, so they use the async put.  The flag makes
+ * the get/put idempotent per stream so no path can imbalance the count.  All
+ * calls are inert no-ops under system-managed PM.
+ */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+static bool i2s_stream_pm_acquire(const struct device *dev, struct i2s_stream *stream)
+{
+	if (stream->pm_ref_held) {
+		return false;
+	}
+	stream->pm_ref_held = true;
+	(void)pm_device_runtime_get(dev);
+	/* Block power-loss states while the stream runs. */
+	pm_policy_device_power_lock_get(dev);
+	return true;
+}
+
+static void i2s_stream_pm_release(const struct device *dev, struct i2s_stream *stream)
+{
+	if (!stream->pm_ref_held) {
+		return;
+	}
+	stream->pm_ref_held = false;
+	pm_policy_device_power_lock_put(dev);
+	(void)pm_device_runtime_put_async(dev, K_NO_WAIT);
+}
+#else
+static inline bool i2s_stream_pm_acquire(const struct device *dev, struct i2s_stream *stream)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(stream);
+	return false;
+}
+
+static inline void i2s_stream_pm_release(const struct device *dev, struct i2s_stream *stream)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(stream);
+}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 /* This function is executed in the interrupt context */
 static void dma_tx_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
@@ -132,6 +185,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 		if (data->rx.last_block) {
 			i2s_rx_stream_disable(dev, false);
 			data->rx.state = I2S_STATE_READY;
+			i2s_stream_pm_release(dev, &data->rx);
 			return;
 		}
 	}
@@ -761,6 +815,8 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	struct i2s_stream *stream;
 	unsigned int key;
 	int ret = 0;
+	bool acquired_here = false;
+	bool release_ref = false;
 
 	switch (dir) {
 	case I2S_DIR_RX:
@@ -774,6 +830,14 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		return -ENOSYS;
 	default:
 		return -EINVAL;
+	}
+
+	if (cmd == I2S_TRIGGER_START) {
+		/*
+		 * Resume the device before touching hardware. The get() may sleep,
+		 * so it must run outside the IRQ-locked state transition below.
+		 */
+		acquired_here = i2s_stream_pm_acquire(dev, stream);
 	}
 
 	key = irq_lock();
@@ -843,6 +907,7 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		}
 
 		stream->state = I2S_STATE_READY;
+		release_ref = true;
 		break;
 
 	case I2S_TRIGGER_PREPARE:
@@ -859,6 +924,7 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		}
 
 		stream->state = I2S_STATE_READY;
+		release_ref = true;
 		break;
 
 	default:
@@ -868,13 +934,58 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 
 	irq_unlock(key);
 
+	if (release_ref || (acquired_here && ret < 0)) {
+		/*
+		 * Drop the reference on the paths that return the stream to
+		 * I2S_STATE_READY (DROP/PREPARE) or when START failed after taking
+		 * one. Normal stream completion releases from the ISR instead.
+		 */
+		i2s_stream_pm_release(dev, stream);
+	}
+
 	return ret;
 }
 
-static int i2s_init(const struct device *dev)
+/*
+ * Register-level bring-up.  Repeated on every warm boot through the PM TURN_ON
+ * action, so it must not touch software state: the queues and the blocks still
+ * held in them survive in retained RAM.
+ */
+static int i2s_hw_init(const struct device *dev)
 {
-	int ret = 0;
+	int ret;
 	cy_rslt_t status;
+	struct ifx_i2s_data *const data = dev->data;
+	const struct ifx_i2s_config *const config = dev->config;
+	TDM_TX_STRUCT_Type *tdm_tx = &((TDM_STRUCT_Type *)config->reg_addr)->TDM_TX_STRUCT;
+	TDM_RX_STRUCT_Type *tdm_rx = &((TDM_STRUCT_Type *)config->reg_addr)->TDM_RX_STRUCT;
+
+	/* Configure dt provided device signals when available */
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Connect I2S to the configured peripheral clock */
+	status = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+	if (status != CY_RSLT_SUCCESS) {
+		return -EIO;
+	}
+
+	Cy_AudioTDM_SetTxInterruptMask(tdm_tx, CY_TDM_INTR_TX_MASK);
+	Cy_AudioTDM_SetRxInterruptMask(tdm_rx, CY_TDM_INTR_RX_MASK);
+
+	/* make sure the rx fifo is empty (after soft reset) */
+	while (Cy_AudioTDM_GetNumInRxFifo(tdm_rx) > 0) {
+		(void)Cy_AudioTDM_ReadRxData(tdm_rx);
+	}
+
+	return 0;
+}
+
+static int ifx_i2s_init(const struct device *dev)
+{
+	int ret;
 	struct ifx_i2s_data *const data = dev->data;
 	const struct ifx_i2s_config *const config = dev->config;
 	TDM_TX_STRUCT_Type *tdm_tx = &((TDM_STRUCT_Type *)config->reg_addr)->TDM_TX_STRUCT;
@@ -909,34 +1020,76 @@ static int i2s_init(const struct device *dev)
 		data->dma_tx.dma_cfg.dma_callback = dma_tx_callback;
 	}
 
-	/* Configure dt provided device signals when available */
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	config->irq_config_func(dev);
+
+	ret = i2s_hw_init(dev);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Connect I2S to the configured peripheral clock */
-	status = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
-	if (status != CY_RSLT_SUCCESS) {
-		return -EIO;
-	}
-
-	config->irq_config_func(dev);
-	Cy_AudioTDM_SetTxInterruptMask(tdm_tx, CY_TDM_INTR_TX_MASK);
-	Cy_AudioTDM_SetRxInterruptMask(tdm_rx, CY_TDM_INTR_RX_MASK);
-
 	data->rx.state = I2S_STATE_NOT_READY;
 	data->tx.state = I2S_STATE_NOT_READY;
 
-	/* make sure the rx fifo is empty (after soft reset) */
-	while (Cy_AudioTDM_GetNumInRxFifo(tdm_rx) > 0) {
-		(void)Cy_AudioTDM_ReadRxData(tdm_rx);
+	/* Enable device runtime PM; system-managed PM still applies when unused. */
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	LOG_DBG("Device %s inited", dev->name);
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_i2s_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_i2s_data *const data = dev->data;
+	const struct ifx_i2s_config *const config = dev->config;
+	TDM_STRUCT_Type *tdm = config->reg_addr;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse while either direction is running or draining its FIFO. */
+		if ((data->tx.state == I2S_STATE_RUNNING) ||
+		    (data->tx.state == I2S_STATE_STOPPING) ||
+		    (data->rx.state == I2S_STATE_RUNNING) ||
+		    (data->rx.state == I2S_STATE_STOPPING)) {
+			return -EBUSY;
+		}
+		/* Gate only the directions i2s_configure() initialized. */
+		if (data->tx.state != I2S_STATE_NOT_READY) {
+			Cy_AudioTDM_DisableTx(&tdm->TDM_TX_STRUCT);
+		}
+		if (data->rx.state != I2S_STATE_NOT_READY) {
+			Cy_AudioTDM_DisableRx(&tdm->TDM_RX_STRUCT);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-enable the configured directions; configuration is retained. */
+		if (data->tx.state != I2S_STATE_NOT_READY) {
+			Cy_AudioTDM_EnableTx(&tdm->TDM_TX_STRUCT);
+		}
+		if (data->rx.state != I2S_STATE_NOT_READY) {
+			Cy_AudioTDM_EnableRx(&tdm->TDM_RX_STRUCT);
+		}
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Power was lost: rebuild the registers only; the queues keep the
+		 * blocks the next i2s_configure() has to free.
+		 */
+		data->rx.state = I2S_STATE_NOT_READY;
+		data->tx.state = I2S_STATE_NOT_READY;
+		return i2s_hw_init(dev);
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 /* This function is executed in the interrupt context */
 static void i2s_tx_isr(const struct device *dev)
@@ -957,6 +1110,7 @@ static void i2s_tx_isr(const struct device *dev)
 		i2s_tx_stream_disable(dev, false);
 		if (stream->last_block && stream->drain) {
 			data->tx.state = I2S_STATE_READY;
+			i2s_stream_pm_release(dev, &data->tx);
 		} else {
 			LOG_DBG("I2S TX FIFO underflow");
 			stream->state = I2S_STATE_ERROR;
@@ -1114,7 +1268,10 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.tx_irq_num = DT_INST_IRQN_BY_IDX(index, 1),                                       \
 		.irq_config_func = ifx_i2s_irq_config_func_##index};                               \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &i2s_init, NULL, &i2s_data_##index, &i2s_config_##index,      \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_i2s_api);
+	PM_DEVICE_DT_INST_DEFINE(index, ifx_i2s_pm_action);                                        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &ifx_i2s_init, PM_DEVICE_DT_INST_GET(index),                  \
+			      &i2s_data_##index, &i2s_config_##index, POST_KERNEL,                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_i2s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_I2S_INIT)
