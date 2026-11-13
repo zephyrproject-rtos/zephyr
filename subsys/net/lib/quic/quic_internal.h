@@ -1263,6 +1263,12 @@ __net_socket struct quic_context {
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
 
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 
@@ -1609,5 +1615,6 @@ void quic_test_streams_lock(bool lock);
 void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
 struct quic_stream *quic_get_stream(struct quic_context *conn);
 bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
 
 #endif /* CONFIG_NET_TEST */
