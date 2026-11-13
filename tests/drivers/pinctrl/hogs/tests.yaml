@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Axonne Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - pinctrl
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.pinctrl.hogs: {}
+  drivers.pinctrl.hogs.pre_kernel_1:
+    extra_configs:
+      - CONFIG_PINCTRL_HOGS_INIT_PRE_KERNEL_1=y
+  drivers.pinctrl.hogs.pre_kernel_2:
+    extra_configs:
+      - CONFIG_PINCTRL_HOGS_INIT_PRE_KERNEL_2=y
+  drivers.pinctrl.hogs.logging:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_PINCTRL_LOG_LEVEL_DBG=y
+  drivers.pinctrl.hogs.no_logging:
+    extra_configs:
+      - CONFIG_TEST_LOGGING_DEFAULTS=n
+      - CONFIG_LOG=n
+  drivers.pinctrl.hogs.log_override:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_PINCTRL_LOG_LEVEL_OFF=y
+      - CONFIG_LOG_OVERRIDE_LEVEL=4

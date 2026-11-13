@@ -1,0 +1,88 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Axonne Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	empty-controller {
+		compatible = "vnd,pinctrl-hogs";
+		pinctrl-0 = <>;
+		pinctrl-names = "default";
+	};
+
+	consumer {
+		compatible = "vnd,pinctrl-hogs";
+		pinctrl-0 = <&test_pins>;
+		pinctrl-names = "default";
+	};
+
+	disabled-controller {
+		compatible = "vnd,pinctrl-hogs";
+		pinctrl-0 = <&disabled_pins>;
+		pinctrl-names = "default";
+		status = "disabled";
+
+		disabled_pins: disabled-pins {
+			group1 {
+				pins = <0x8>;
+			};
+		};
+	};
+
+	primary_pinctrl: pinctrl@1000 {
+		compatible = "vnd,pinctrl-hogs";
+		reg = <0x1000 0x100>;
+
+		pinctrl-0 = <&sleep_pins>;
+		pinctrl-1 = <&private_pins>;
+		pinctrl-2 = <&hog1 &hog2>;
+		pinctrl-names = "sleep", "private", "default";
+
+		test_pins: test-pins {
+			group1 {
+				pins = <0x1>;
+			};
+		};
+
+		hog1: hog1 {
+			group1 {
+				pins = <0x2>;
+			};
+
+			group2 {
+				pins = <0x3>;
+			};
+		};
+
+		hog2: hog2 {
+			group1 {
+				pins = <0x4>, <0x5>, <0x6>;
+			};
+		};
+
+		sleep_pins: sleep-pins {
+			group1 {
+				pins = <0x7>;
+			};
+		};
+
+		private_pins: private-pins {
+			group1 {
+				pins = <0x9>;
+			};
+		};
+	};
+
+	secondary_pinctrl: pinctrl@2000 {
+		compatible = "vnd,pinctrl-hogs";
+		reg = <0x2000 0x100>;
+		pinctrl-0 = <&secondary_pins>;
+		pinctrl-names = "default";
+
+		secondary_pins: secondary-pins {
+			group1 {
+				pins = <0xa>;
+			};
+		};
+	};
+};

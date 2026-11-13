@@ -38,6 +38,15 @@ Security Vulnerability Related
   removed APIs and options, boards, shields, drivers and samples are generated
   into the change inventory at release time.
 
+Drivers and Sensors
+*******************
+
+* Pin control
+
+  * :ref:`Pin controller hogs <pinctrl-hogs>` apply a controller's own default
+    state at startup. Boards can configure pin muxing and bias settings without
+    adding a peripheral driver or board initialization function.
+
 Libraries / Subsystems
 **********************
 

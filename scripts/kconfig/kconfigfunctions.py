@@ -1146,6 +1146,27 @@ def dt_gpio_hogs_enabled(kconf, _):
 
     return "n"
 
+def dt_pinctrl_hogs_enabled(kconf, _):
+    """
+    Return "y" if a controller references its own default state, otherwise "n".
+    """
+
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.nodes:
+        if node.status != "okay":
+            continue
+
+        for state in node.pinctrls:
+            if state.name != "default":
+                continue
+
+            if any(config.parent is node for config in state.conf_nodes):
+                return "y"
+
+    return "n"
+
 def dt_highest_controller_irq_number(kconfig, _, path, irq_cell_name):
     """
     Given the path to an interrupt controller node and the name of an
@@ -1411,6 +1432,7 @@ functions = {
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
         "dt_node_array_prop_has_val": (dt_node_array_prop_has_val, 3, 3),
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
+        "dt_pinctrl_hogs_enabled": (dt_pinctrl_hogs_enabled, 0, 0),
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
         "dt_highest_controller_irq_number": (dt_highest_controller_irq_number, 2, 2),

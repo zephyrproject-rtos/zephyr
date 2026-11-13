@@ -37,6 +37,10 @@ Kernel
 Boards
 ******
 
+* :zephyr:board:`twr_ke18f`: CLKOUT routing is now configured in devicetree.
+  Replace ``CONFIG_BOARD_TWR_KE18F_FLEXIO_CLKOUT`` with a controller default
+  state in an overlay, as shown in :ref:`twr_ke18f_clkout`.
+
 * On the Nordic nRF54L and nRF71 Series SoCs, the push area that the Key Management Unit (KMU) of
   CRACEN uses to push keys is now reserved at the start of the SRAM by the ``kmu_push_area``
   devicetree node of the SoC. The ``zephyr,sram`` chosen node of the in-tree boards is now
