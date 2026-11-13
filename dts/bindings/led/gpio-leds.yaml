@@ -8,6 +8,8 @@ description: |
 
 compatible: "gpio-leds"
 
+include: base.yaml
+
 class: led
 
 child-binding:
