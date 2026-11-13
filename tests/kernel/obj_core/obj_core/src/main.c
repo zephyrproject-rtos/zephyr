@@ -8,6 +8,12 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/mem_blocks.h>
 
+/**
+ * @brief Kernel Object Inspection Tests
+ * @defgroup obj_core_tests Kernel Object Inspection
+ * @ingroup all_tests
+ */
+
 SYS_MEM_BLOCKS_DEFINE(block1, 32, 4, 16);
 SYS_MEM_BLOCKS_DEFINE(block2, 128, 2, 8);
 
@@ -156,6 +162,10 @@ static void common_obj_core_test(uint32_t type_id, const char *str,
  * @verifies ZEP-SRS-35-2
  * @verifies ZEP-SRS-35-3
  * @verifies ZEP-SRS-35-4
+ * @verifies ZEP-SRS-35-8
+ * @verifies ZEP-SRS-35-9
+ * @verifies ZEP-SRS-35-15
+ * @verifies ZEP-SRS-35-16
  */
 ZTEST(obj_core, test_obj_core_thread)
 {
@@ -674,6 +684,12 @@ static int count_walk(uint32_t type_id, struct k_obj_core *obj_core)
 	return walk_data.count;
 }
 
+/**
+ * @brief Verify re-initializing an object leaves it reported exactly once.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-8
+ */
 ZTEST(obj_core, test_obj_core_reinit)
 {
 	/* Re-initializing a static object and a registered object leaves each
@@ -689,6 +705,13 @@ ZTEST(obj_core, test_obj_core_reinit)
 	zassert_equal(count_walk(K_OBJ_TYPE_MUTEX_ID, K_OBJ_CORE(&mutex2)), 1);
 }
 
+/**
+ * @brief Verify an unregistered object disappears from iteration and can be registered again.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-2
+ * @verifies ZEP-SRS-35-8
+ */
 ZTEST(obj_core, test_obj_core_unlink)
 {
 	k_mutex_init(&mutex2);
@@ -729,6 +752,12 @@ ZTEST(obj_core, test_obj_core_storage_reuse)
 static struct k_sem fill_sems[CONFIG_OBJ_CORE_MAX_DYNAMIC_OBJECTS];
 static struct k_sem extra_sem;
 
+/**
+ * @brief Verify registrations are refused and counted once the registry is full.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-11
+ */
 ZTEST(obj_core, test_obj_core_registry_full)
 {
 	struct k_obj_type *type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
@@ -786,6 +815,12 @@ static void work_handler(struct k_work *work)
 	ARG_UNUSED(work);
 }
 
+/**
+ * @brief Verify objects in thread or interrupt stack storage are not registered.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-10
+ */
 ZTEST(obj_core, test_obj_core_stack_storage)
 {
 	struct k_obj_type *type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
@@ -838,6 +873,12 @@ static struct k_msgq msgq3;
 static struct k_stack stack3;
 static struct k_timer timer3;
 
+/**
+ * @brief Verify object cleanup ends the object's registration.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-2
+ */
 ZTEST(obj_core, test_obj_core_cleanup)
 {
 	/* Releasing an object's allocated buffer, or cleaning up a timer,
@@ -861,6 +902,12 @@ ZTEST(obj_core, test_obj_core_cleanup)
 	zassert_equal(count_walk(K_OBJ_TYPE_TIMER_ID, K_OBJ_CORE(&timer3)), 0);
 }
 
+/**
+ * @brief Verify a freed dynamic kernel object stops being reported.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-13
+ */
 ZTEST(obj_core, test_obj_core_object_free)
 {
 #ifdef CONFIG_DYNAMIC_OBJECTS
@@ -885,6 +932,13 @@ struct embedded {
 
 K_MEM_SLAB_DEFINE(slab3, ROUND_UP(sizeof(struct embedded), 8), 2, 8);
 
+/**
+ * @brief Verify objects in memory released to an allocator stop being reported.
+ *
+ * @ingroup obj_core_tests
+ * @verifies ZEP-SRS-35-12
+ * @verifies ZEP-SRS-35-13
+ */
 ZTEST(obj_core, test_obj_core_released_memory)
 {
 	struct embedded *heap_obj = k_malloc(sizeof(struct embedded));

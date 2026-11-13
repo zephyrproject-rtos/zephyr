@@ -17,6 +17,8 @@
  * @defgroup obj_core_apis Object Core APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * @satisfies ZEP-SRS-35-9
  */
 
 /**
@@ -327,6 +329,9 @@ void k_obj_type_init_range(struct k_obj_type *type, const void *start,
  *
  * @retval NULL if object type not found
  * @return Pointer to object type if found
+ *
+ * @satisfies ZEP-SRS-35-3
+ * @satisfies ZEP-SRS-35-14
  */
 struct k_obj_type *k_obj_type_find(uint32_t type_id);
 
@@ -348,6 +353,9 @@ struct k_obj_type *k_obj_type_find(uint32_t type_id);
  * @param data  Custom data passed to the callback
  *
  * @retval non-zero if walk is terminated by the callback; otherwise 0
+ *
+ * @satisfies ZEP-SRS-35-4
+ * @satisfies ZEP-SRS-35-16
  */
 int k_obj_type_walk_locked(struct k_obj_type *type,
 			   int (*func)(struct k_obj_core *obj_core, void *data),
@@ -370,6 +378,9 @@ int k_obj_type_walk_locked(struct k_obj_type *type,
  * @param data  Custom data passed to the callback
  *
  * @retval non-zero if walk is terminated by the callback; otherwise 0
+ *
+ * @satisfies ZEP-SRS-35-15
+ * @satisfies ZEP-SRS-35-16
  */
 int k_obj_type_walk_unlocked(struct k_obj_type *type,
 			     int (*func)(struct k_obj_core *obj_core, void *data),
@@ -383,6 +394,8 @@ int k_obj_type_walk_unlocked(struct k_obj_type *type,
  *
  * @param obj_core Pointer to the kernel object to initialize
  * @param type Pointer to the kernel object type
+ *
+ * @satisfies ZEP-SRS-35-1
  */
 void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type);
 
@@ -402,6 +415,10 @@ void k_obj_core_init(struct k_obj_core *obj_core, struct k_obj_type *type);
  * count is incremented.
  *
  * @param obj_core Pointer to the kernel object
+ *
+ * @satisfies ZEP-SRS-35-8
+ * @satisfies ZEP-SRS-35-10
+ * @satisfies ZEP-SRS-35-11
  */
 void k_obj_core_link(struct k_obj_core *obj_core);
 
@@ -426,6 +443,8 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
  * be called from any context.
  *
  * @param obj_core Pointer to the kernel object
+ *
+ * @satisfies ZEP-SRS-35-2
  */
 void k_obj_core_unlink(struct k_obj_core *obj_core);
 
@@ -439,6 +458,9 @@ void k_obj_core_unlink(struct k_obj_core *obj_core);
  *
  * @param addr Start of the released memory
  * @param len Size of the released memory in bytes
+ *
+ * @satisfies ZEP-SRS-35-12
+ * @satisfies ZEP-SRS-35-13
  */
 void k_obj_core_evict_range(const void *addr, size_t len);
 
@@ -494,6 +516,9 @@ static inline void k_obj_core_stats_init(struct k_obj_core *obj_core,
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-17
+ * @satisfies ZEP-SRS-35-23
  */
 int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
 			      size_t stats_len);
@@ -509,6 +534,8 @@ int k_obj_core_stats_register(struct k_obj_core *obj_core, void *stats,
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-18
  */
 int k_obj_core_stats_deregister(struct k_obj_core *obj_core);
 
@@ -526,6 +553,9 @@ int k_obj_core_stats_deregister(struct k_obj_core *obj_core);
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-19
+ * @satisfies ZEP-SRS-35-22
  */
 int k_obj_core_stats_raw(struct k_obj_core *obj_core, void *stats,
 			 size_t stats_len);
@@ -545,6 +575,8 @@ int k_obj_core_stats_raw(struct k_obj_core *obj_core, void *stats,
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-5
  */
 int k_obj_core_stats_query(struct k_obj_core *obj_core, void *stats,
 			   size_t stats_len);
@@ -559,6 +591,8 @@ int k_obj_core_stats_query(struct k_obj_core *obj_core, void *stats,
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-7
  */
 int k_obj_core_stats_reset(struct k_obj_core *obj_core);
 
@@ -573,6 +607,8 @@ int k_obj_core_stats_reset(struct k_obj_core *obj_core);
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-20
  */
 int k_obj_core_stats_disable(struct k_obj_core *obj_core);
 
@@ -586,6 +622,9 @@ int k_obj_core_stats_disable(struct k_obj_core *obj_core);
  *
  * @retval 0 on success
  * @retval -errno on failure
+ *
+ * @satisfies ZEP-SRS-35-6
+ * @satisfies ZEP-SRS-35-21
  */
 int k_obj_core_stats_enable(struct k_obj_core *obj_core);
 
