@@ -750,6 +750,9 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR2,
 				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
@@ -1612,9 +1615,12 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
-		/* Device uses bit 1 of status reg 2 for QE */
+		/*
+		 * Device uses bit 1 of status reg 2 for QE. Write it alone with
+		 * 31h so that status reg 1 (block protect bits) is not rewritten.
+		 */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
-						     JESD216_DW15_QER_VAL_S2B1v5);
+						     JESD216_DW15_QER_VAL_S2B1v6);
 	case 0x3A25C2:
 		/* MX25U51245G flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
