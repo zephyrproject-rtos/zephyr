@@ -18,6 +18,9 @@ properties:
     type: string
     description: |
       Specifies the interface connection type between ethernet MAC and PHY.
+      The enum indices are defined in
+      include/zephyr/dt-bindings/ethernet/phy_connection_type.h, so new
+      values must only be appended and added there as well.
     enum:
       - "mii"
       - "rmii"
