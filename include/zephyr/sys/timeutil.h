@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/math_extras.h>
@@ -691,6 +692,73 @@ static inline k_timeout_t timespec_to_timeout(const struct timespec *req, struct
 
 	return timeout;
 }
+
+/**
+ * @}
+ */
+
+/**
+ * @defgroup timeutil_delay_apis Time Delay APIs
+ * @since 4.6
+ * @version 0.1.0
+ * @ingroup timeutil_apis
+ * @{
+ */
+
+/**
+ * @brief Execute a counted NOP delay loop.
+ *
+ * Executes @p count NOP instructions in a tight loop. The loop is
+ * unrolled at compile time, producing cycle-accurate delays suitable for
+ * bit-bang timing.
+ *
+ * @param count Number of NOP instructions to execute. Must be an integer
+ * constant expression, as the unrolling pragma takes the count at compile
+ * time.
+ *
+ * @note The time of the delay is dependent on the speed of the CPU. To make
+ * this platform independent, it should be combined with a macro like
+ * ns_to_cyc_at_hz_floor32() to convert a time duration in nanoseconds to a
+ * cycle count at the CPU frequency.
+ *
+ * @note Requires toolchain support for TOOLCHAIN_PRAGMA_UNROLL(). Toolchains
+ * without it cannot unroll the loop, which would add loop overhead to every
+ * iteration and make the delay longer than requested, so using this macro is
+ * a build error there.
+ *
+ * @note Unrolling is a request the compiler may decline, so the loop is only
+ * unrolled at some optimization levels. Building with
+ * @kconfig{CONFIG_NO_OPTIMIZATIONS} or @kconfig{CONFIG_DEBUG_OPTIMIZATIONS}
+ * leaves the loop rolled, and @kconfig{CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE}
+ * may unroll it only partially, keeping a loop around a run of NOPs. Either
+ * way the loop overhead makes the delay longer than requested, so using this
+ * macro warns in those configurations.
+ *
+ * @see ns_to_cyc_at_hz_floor32()
+ */
+#ifdef TOOLCHAIN_PRAGMA_UNROLL
+#if defined(CONFIG_NO_OPTIMIZATIONS) || defined(CONFIG_DEBUG_OPTIMIZATIONS)
+#define Z_TIMEUTIL_DELAY_CYCLES_NO_UNROLL_WARN                                                     \
+	__WARN("timeutil_delay_cycles() does not unroll unoptimized; delay is too long")
+#elif defined(CONFIG_SIZE_OPTIMIZATIONS_AGGRESSIVE)
+#define Z_TIMEUTIL_DELAY_CYCLES_NO_UNROLL_WARN                                                     \
+	__WARN("timeutil_delay_cycles() unrolls only partially at -Oz; delay is too long")
+#else
+#define Z_TIMEUTIL_DELAY_CYCLES_NO_UNROLL_WARN
+#endif
+
+#define timeutil_delay_cycles(count)                                                               \
+	do {                                                                                       \
+		Z_TIMEUTIL_DELAY_CYCLES_NO_UNROLL_WARN                                             \
+		TOOLCHAIN_PRAGMA_UNROLL(count)                                                     \
+		for (unsigned int _nop_i = 0; _nop_i < (unsigned int)(count); _nop_i++) {          \
+			arch_nop();                                                                \
+		}                                                                                  \
+	} while (0)
+#else
+#define timeutil_delay_cycles(count)                                                               \
+	BUILD_ASSERT(0, "timeutil_delay_cycles() requires TOOLCHAIN_PRAGMA_UNROLL() support")
+#endif
 
 /**
  * @}

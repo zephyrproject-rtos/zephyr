@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - timeutils
+  # timeutil_delay_cycles() is a build error without TOOLCHAIN_PRAGMA_UNROLL,
+  # which these toolchains do not provide.
+  toolchain_exclude:
+    - arcmwdt
+    - xcc
+  # timeutil_delay_cycles() builds on arch_nop(), so cover one platform per
+  # supported architecture rather than a single platform.
+  platform_key:
+    - arch
+    - simulation
+  integration_platforms:
+    - native_sim
+
+# The macro only delivers the requested delay where the compiler fully
+# unrolls the loop, so each scenario pins an optimization level that does.
+# Aggressive size optimization may unroll only partially, which the macro
+# warns about, so it is not covered here.
+tests:
+  libraries.timeutil_delay.size:
+    extra_configs:
+      - CONFIG_SIZE_OPTIMIZATIONS=y
+
+  libraries.timeutil_delay.speed:
+    extra_configs:
+      - CONFIG_SPEED_OPTIMIZATIONS=y
