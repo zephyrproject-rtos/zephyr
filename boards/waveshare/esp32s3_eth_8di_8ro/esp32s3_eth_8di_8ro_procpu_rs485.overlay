@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Benjamin Schilling <benjamin.schilling33@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32s3_eth_8di_8ro-pinctrl.dtsi"
+#include "esp32s3_eth_8di_8ro_rs485-pinctrl.dtsi"
+
+/ {
+	model = "ESP32-S3-ETH-8DI-8RO PROCPU";
+	compatible = "waveshare,esp32-s3-eth-8di-8ro";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	compatible = "espressif,esp32-uart";
+	hw-rs485-hd-mode;
+	current-speed = <9600>;
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+	};
+};
