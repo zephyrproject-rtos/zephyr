@@ -10,7 +10,7 @@
 
 / {
 	compatible = "espressif,esp32";
-	model = "Adafruit Feather ESP32 APPCPU";
+	model = "Adafruit Feather ESP32 V2 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
