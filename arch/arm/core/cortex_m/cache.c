@@ -22,7 +22,16 @@ void arch_dcache_enable(void)
 
 void arch_dcache_disable(void)
 {
+	/*
+	 * SCB_DisableDCache() disables the cache before cleaning it. Between
+	 * those two operations, reads from the CPU may return corrupt data, as
+	 * Armv7-M says it's "IMPLEMENTATION DEFINED whether an access can
+	 * generate a cache hit when the cache is disabled". Ensure that nothing
+	 * can interrupt us until both operations complete.
+	 */
+	unsigned int key = arch_irq_lock();
 	SCB_DisableDCache();
+	arch_irq_unlock(key);
 }
 
 int arch_dcache_flush_all(void)
