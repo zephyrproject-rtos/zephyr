@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+if RC
+
+menu "Remote control drivers"
+
+# zephyr-keep-sorted-start
+source "drivers/rc/Kconfig.gpio_ir_receiver"
+source "drivers/rc/Kconfig.loopback"
+# zephyr-keep-sorted-stop
+
+endmenu
+
+endif # RC

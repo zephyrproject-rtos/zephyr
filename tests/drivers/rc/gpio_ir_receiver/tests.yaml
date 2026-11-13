@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - rc
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.rc.gpio_ir_receiver: {}

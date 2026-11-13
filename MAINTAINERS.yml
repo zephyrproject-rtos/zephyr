@@ -5802,6 +5802,29 @@ Release:
   labels:
     - "Release"
 
+Remote Control:
+  status: maintained
+  maintainers:
+    - parthitce
+  files:
+    - drivers/rc/
+    - dts/bindings/rc/
+    - include/zephyr/drivers/rc.h
+    - include/zephyr/drivers/rc/
+    - include/zephyr/dt-bindings/rc/
+    - include/zephyr/rc/
+    - subsys/rc/
+    - tests/drivers/build_all/rc/
+    - tests/drivers/rc/
+    - tests/subsys/rc/
+  description: >-
+    Remote control (IR) subsystem and drivers
+  labels:
+    - "area: Remote Control"
+  tests:
+    - drivers.rc
+    - rc
+
 Renesas R-Car Platforms:
   status: maintained
   maintainers:
