@@ -51,3 +51,10 @@
 &psgpio {
 	status = "okay";
 };
+
+&flash0 {
+	reg = <0xc0000000 DT_SIZE_M(64)>;
+	ranges = <0x0 0xc0000000 DT_SIZE_M(64)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+};
