@@ -12,4 +12,4 @@ target_include_directories(app PRIVATE
   ${ZEPHYR_HAL_TDK_MODULE_DIR}/icm456xx
   ${ZEPHYR_HAL_TDK_MODULE_DIR}/icm456xx/icm456xx_h
 )
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE src/main.c src/convert.c)
