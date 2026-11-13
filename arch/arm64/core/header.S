@@ -28,7 +28,7 @@ SECTION_SUBSEC_FUNC(image_header,_image_header_section,_image_header)
 	.quad	0				// Image load offset from start
 						// of RAM, little-endian
 
-	.quad	_flash_used			// Effective size of kernel
+	.quad	_aarch64_image_size		// Effective size of kernel
 						// image, little-endian
 
 	.quad	HEADER_FLAGS			// Informative flags,

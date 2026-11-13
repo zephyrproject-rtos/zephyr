@@ -372,4 +372,9 @@ SECTIONS
      * calculate this value here. */
     _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 
+#ifdef CONFIG_AARCH64_IMAGE_HEADER
+    /* Size field of the arm64 Image header, which sits at __text_region_start */
+    _aarch64_image_size = LOADADDR(.last_section) + SIZEOF(.last_section) - __text_region_start;
+#endif
+
 }
