@@ -670,14 +670,6 @@ bool j1939_build_and_queue_message(j1939_node_t node, j1939_arbitration_t arbitr
 							bool isExtendedMessage,
 							const uint8_t *data);
 
-/** Application-level PF routing table used by the J1939 core. */
-extern const j1939_routing_callback_t J1939_App_RoutingTable[];
-
-/**
- * Application specific initialization
- */
-void j1939_app_init(void);
-
 /** Device identification strings for J1939 ECU/software identification messages. */
 typedef struct j1939_device_info_s {
 	/** Serial number of the device */
@@ -728,23 +720,11 @@ void j1939_app_transmit_ecu_id(j1939_destination_address_t destination, j1939_no
 void j1939_app_transmit_software_id(j1939_destination_address_t destination, j1939_node_t node);
 
 /**
- * Get the J1939 address node index based on the PDU specific field in J1939Nodee message and
- * the physical node associated to it.
- * @param[in] address
- * @return J1939 address node index
- */
-j1939_node_t j1939_app_get_j1939_node_from_source_address(j1939_source_address_t address);
-
-/**
  * @brief Get the J1939 for a given source address
  * @param address Source address to match to J1939 node
  * @return J1939 node that source address belongs
  */
-static inline j1939_node_t j1939_get_j1939_node_from_source_address(
-	j1939_source_address_t address)
-{
-	return j1939_app_get_j1939_node_from_source_address(address);
-}
+j1939_node_t j1939_get_j1939_node_from_source_address(j1939_source_address_t address);
 
 /**
  * @}
