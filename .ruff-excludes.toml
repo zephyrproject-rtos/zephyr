@@ -29,8 +29,20 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP009",    # https://docs.astral.sh/ruff/rules/utf8-encoding-declaration
 ]
+"./doc/_extensions/zephyr/kconfig/__init__.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./doc/_scripts/gen_boards_catalog.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./doc/_scripts/redirects.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
+]
+"./doc/conf.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./modules/hal_nordic/ironside/se/scripts/periphconf/builder.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./modules/mbedtls/create_psa_files.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -38,6 +50,9 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
+]
+"./samples/drivers/modem/at_client/script/hl78xx_firmware_update_xmodem_1k.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./samples/modules/tflite-micro/magic_wand/train/data_augmentation.py" = [
     "B007",     # https://docs.astral.sh/ruff/rules/unused-loop-control-variable
@@ -119,10 +134,12 @@
     "UP010",    # https://docs.astral.sh/ruff/rules/unnecessary-future-import
 ]
 "./samples/net/cellular_modem/server/te_udp_echo.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
 ]
 "./samples/net/cellular_modem/server/te_udp_receive.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
 ]
@@ -133,8 +150,17 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM112",   # https://docs.astral.sh/ruff/rules/uncapitalized-environment-variables
 ]
+"./scripts/build/fs_raw_instance.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/build/gen_app_partitions.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
+]
+"./scripts/build/gen_kobject_list.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/build/gen_zms_provision_data.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./scripts/build/uf2conv.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
@@ -155,6 +181,9 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
+"./scripts/cmake/cmake_style.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/coredump/coredump_parser/elf_parser.py" = [
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
 ]
@@ -163,6 +192,9 @@
 ]
 "./scripts/coredump/coredump_serial_log_parser.py" = [
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
+]
+"./scripts/dashboard/dashboard.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./scripts/dts/python-devicetree/src/devicetree/_private.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -173,6 +205,7 @@
     "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
 ]
 "./scripts/dts/python-devicetree/src/devicetree/edtlib.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
     "UP007",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union
     "UP045",    # https://docs.astral.sh/ruff/rules/non-pep604-annotation-optional
@@ -212,6 +245,9 @@
     "SIM401",   # https://docs.astral.sh/ruff/rules/if-else-block-instead-of-dict-get
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
+"./scripts/footprint/size_report.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/footprint/track.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -224,6 +260,7 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
 "./scripts/gen_gcov_files.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "SIM105",   # https://docs.astral.sh/ruff/rules/suppressible-exception
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
@@ -260,6 +297,9 @@
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
+"./scripts/kconfig/kconfig_style.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/kconfig/kconfigfunctions.py" = [
     "B011",     # https://docs.astral.sh/ruff/rules/assert-false
     "SIM118",   # https://docs.astral.sh/ruff/rules/in-dict-keys
@@ -267,6 +307,7 @@
 ]
 "./scripts/kconfig/kconfiglib.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
@@ -291,6 +332,9 @@
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
+"./scripts/list_undocumented_licenses.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/net/enumerate_http_status.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
@@ -303,6 +347,18 @@
 ]
 "./scripts/pylib/build_helpers/domains.py" = [
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
+]
+"./scripts/pylib/display-twister-harness/camera_shield/main.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/display-twister-harness/camera_shield/plugins/signature_plugin.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/display-twister-harness/camera_shield/uvc_core/camera_controller.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/power-twister-harness/stm32l562e_dk/PowerShield.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./scripts/pylib/pytest-twister-harness/src/twister_harness/device/factory.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -369,6 +425,7 @@
     "SIM905",   # https://docs.astral.sh/ruff/rules/split-static-string
 ]
 "./scripts/pylib/twister/expr_parser.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "SIM103",   # https://docs.astral.sh/ruff/rules/needless-bool
     "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
@@ -379,7 +436,23 @@
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
     "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
 ]
+"./scripts/pylib/twister/twisterlib/harness.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/twister/twisterlib/reports.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/twister/twisterlib/runner.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/twister/twisterlib/size_calc.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/pylib/twister/twisterlib/statuses.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/pylib/twister/twisterlib/testplan.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "F401",     # https://docs.astral.sh/ruff/rules/unused-import
 ]
 "./scripts/pylint/checkers/argparse-checker.py" = [
@@ -400,6 +473,7 @@
     "B009",     # https://docs.astral.sh/ruff/rules/get-attr-with-constant
     "B010",     # https://docs.astral.sh/ruff/rules/set-attr-with-constant
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP004",    # https://docs.astral.sh/ruff/rules/useless-object-inheritance
@@ -487,10 +561,15 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./scripts/tracing/trace_capture_usb.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
+"./scripts/tracing/trace_viewer.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/utils/convert_guidelines.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
@@ -502,7 +581,11 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
 "./scripts/utils/migrate_mcumgr_kconfigs.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+]
+"./scripts/utils/migrate_posix_kconfigs.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./scripts/utils/ntc_thermistor_table.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
@@ -515,6 +598,12 @@
     "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
     "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
+"./scripts/utils/tls_creds_installer.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/west_commands/build.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/west_commands/fetchers/__init__.py" = [
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
@@ -526,16 +615,30 @@
 "./scripts/west_commands/fetchers/http.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
+"./scripts/west_commands/patch.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/west_commands/run_common.py" = [
     "B904",     # https://docs.astral.sh/ruff/rules/raise-without-from-inside-except
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM102",   # https://docs.astral.sh/ruff/rules/collapsible-if
     "SIM114",   # https://docs.astral.sh/ruff/rules/if-with-same-arms
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
+"./scripts/west_commands/runners/core.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/west_commands/runners/jlink.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./scripts/west_commands/runners/rfp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./scripts/west_commands/sdk.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E713",     # https://docs.astral.sh/ruff/rules/not-in-test
     "E741",     # https://docs.astral.sh/ruff/rules/ambiguous-variable-name
@@ -624,6 +727,7 @@
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
 "./soc/intel/intel_adsp/tools/cavstool.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "E701",     # https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
@@ -639,6 +743,7 @@
     "UP039",    # https://docs.astral.sh/ruff/rules/unnecessary-class-parentheses
 ]
 "./soc/intel/intel_adsp/tools/remote-fw-service.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP012",    # https://docs.astral.sh/ruff/rules/unnecessary-encode-utf8
@@ -673,8 +778,59 @@
     "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
     "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
 ]
+"./soc/renesas/ra/tools/gen_rpd.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
 "./soc/silabs/silabs_sim3/sim3u/gen_crossbar_config.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
+]
+"./tests/bluetooth/classic/a2dp_sink/pytest/test_a2dp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/a2dp_source/pytest/test_a2dp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/bumble/common/controllers.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/gap_c/pytest/test_gap_c.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/gap_s/pytest/test_gap_s.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/l2cap_c/pytest/test_l2cap_common.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/l2cap_s/pytest/test_l2cap_common.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/rfcomm_c/pytest/test_rfcomm_c.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/rfcomm_s/pytest/test_rfcomm_s.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/sdp_c/pytest/test_sdp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/sdp_s/pytest/test_sdp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/smp_bonding/pytest/test_smp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/smp_general/pytest/test_smp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/smp_io_cap/pytest/test_smp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/smp_key_persist/pytest/test_smp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
+]
+"./tests/bluetooth/classic/smp_sc_only/pytest/test_smp.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py" = [
     "B905",     # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict
@@ -697,6 +853,9 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+]
+"./tests/net/lib/lwm2m/interop/pytest/test_blockwise.py" = [
+    "BLE001",   # https://docs.astral.sh/ruff/rules/blind-except
 ]
 "./tests/net/lib/lwm2m/interop/pytest/test_bootstrap.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long

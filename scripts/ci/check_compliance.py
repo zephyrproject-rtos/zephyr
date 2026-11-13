@@ -2817,7 +2817,7 @@ class PythonCompatCheck(ComplianceTest):
         ] + py_files
         try:
             result = subprocess.run(cmd, check=False, capture_output=True, cwd=GIT_TOP)
-        except Exception as ex:
+        except Exception as ex:  # noqa - BLE001 - check=False!? FIXME
             self.error(f"Failed to run vermin: {ex}")
         output = result.stdout.decode("utf-8")
         failed = False
@@ -3223,7 +3223,7 @@ def _run_test(testcase):
         # Let Ctrl-C (SIGINT) abort the whole run instead of being turned into
         # a failure for the current check.
         raise
-    except BaseException:
+    except BaseException:  # noqa BLE001 does not see test.failure(traceback)
         test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
     return test
 
