@@ -97,7 +97,21 @@ t_ignore = " \t\n"
 def t_error(t):
     raise SyntaxError("Unexpected token '%s'" % t.value)
 
-lex.lex()
+lexer = lex.lex()
+
+
+def symbols(expr_text):
+    """Return the symbols an expression refers to, in order of appearance.
+
+    Operators, literals and the reserved words are not symbols and are left
+    out. Raises SyntaxError on text the lexer does not recognise.
+    """
+    # The lexer holds the position in the text it is scanning, so give each
+    # caller its own.
+    scanner = lexer.clone()
+    scanner.input(expr_text)
+    return [token.value for token in scanner if token.type == "SYMBOL"]
+
 
 precedence = (
     ('left', 'OR'),
