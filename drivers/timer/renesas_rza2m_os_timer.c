@@ -78,7 +78,6 @@ static struct k_spinlock lock;
 static uint32_t last_cycle;
 static uint32_t last_tick;
 static uint32_t last_elapsed;
-extern unsigned int z_clock_hw_cycles_per_sec;
 
 static void ostm_irq_handler(const struct device *dev)
 {
@@ -167,6 +166,7 @@ static int sys_clock_driver_init(void)
 	int ret;
 	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(RZA2M_OSTM(0)));
 	uint32_t clock_subsys = DT_CLOCKS_CELL(RZA2M_OSTM(0), clk_id);
+	uint32_t rate;
 
 	if (!device_is_ready(clock_dev)) {
 		return -ENODEV;
@@ -178,11 +178,11 @@ static int sys_clock_driver_init(void)
 		return ret;
 	}
 
-	ret = clock_control_get_rate(clock_dev, (clock_control_subsys_t)&clock_subsys,
-				     &z_clock_hw_cycles_per_sec);
+	ret = clock_control_get_rate(clock_dev, (clock_control_subsys_t)&clock_subsys, &rate);
 	if (ret < 0) {
 		return ret;
 	}
+	z_sys_clock_hw_cycles_per_sec_set(rate);
 
 	last_tick = 0;
 	last_cycle = 0;

@@ -134,9 +134,9 @@ Usage
 *****
 
 Time unit conversions such as :c:func:`k_cyc_to_ms_floor64` and
-:c:func:`k_ns_to_ticks_floor64` already use these helpers when the rates are
-constants, so most code gets the benefit without changes. Use them directly
-when dividing a 64-bit value in your own code.
+:c:func:`k_ns_to_ticks_floor64` already use these helpers, so most code gets
+the benefit without changes. Use them directly when dividing a 64-bit value in
+your own code.
 
 Constant divisors
 =================

@@ -58,10 +58,33 @@ extern "C" {
  */
 __syscall unsigned int sys_clock_hw_cycles_per_sec_runtime_get(void);
 
+/** @cond INTERNAL_HIDDEN */
+
+/* z_sys_clock_cyc_recip holds the reciprocal of the system timer frequency,
+ * with the frequency in .div. z_sys_clock_hw_cycles_per_sec_set() updates
+ * it under a spinlock. Readers of more than .div take the same lock.
+ */
+extern struct sys_div64_recip z_sys_clock_cyc_recip;
+
+static inline unsigned int z_sys_clock_hw_cycles_per_sec_get(void)
+{
+	return z_sys_clock_cyc_recip.div;
+}
+
+/* The reciprocal of the system timer frequency, coherent with itself,
+ * copied to buf. For time conversions on 32-bit targets.
+ */
+__syscall const struct sys_div64_recip *z_sys_clock_cyc_recip_get(struct sys_div64_recip *buf);
+
+/* The system timer frequency, read only. z_sys_clock_hw_cycles_per_sec_set()
+ * changes it.
+ */
+#define z_clock_hw_cycles_per_sec z_sys_clock_hw_cycles_per_sec_get()
+
+/** @endcond */
+
 static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 {
-	extern unsigned int z_clock_hw_cycles_per_sec;
-
 	return z_clock_hw_cycles_per_sec;
 }
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
@@ -112,11 +135,12 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * result is 32 bits.
  *
  * This isn't intended to be used directly, instead being wrapped
- * appropriately in a user-facing API.  The boolean arguments are:
+ * appropriately in a user-facing API.  The other arguments are:
  *
- *    const_hz  - The hz arguments are known to be compile-time
+ *    const_hz  - true if the hz arguments are known to be compile-time
  *                constants (because otherwise the modulus test would
- *                have to be done at runtime)
+ *                have to be done at runtime), Z_TMCVT_RT_CYC if one of
+ *                them is the cycle rate set at run time, else false
  *    result32  - The result will be truncated to 32 bits on use
  *    round_up  - Return the ceiling of the resulting fraction
  *    round_off - Return the nearest value to the resulting fraction
@@ -240,9 +264,80 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 	 z_tmcvt_gen_64_fast(__dv, __t, __from_hz, __to_hz, __round_up, __round_off) : \
 	 z_tmcvt_gen_64_slow(__dv, __t, __from_hz, __to_hz, __round_up, __round_off))
 
+/* const_hz for a conversion to or from the cycle rate set at run time */
+#define Z_TMCVT_RT_CYC 2
+
+/* The cast keeps g++ from warning that a bool is compared with 2 */
+#define z_tmcvt_const_hz_is(__const_hz, __val) ((int)(__const_hz) == (__val))
+
+#if !defined(CONFIG_64BIT) &&                                                                      \
+	(defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||                                   \
+	 defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE))
+/* z_tmcvt_cyc() modes */
+#define Z_TMCVT_CYC_UP   1U
+#define Z_TMCVT_CYC_NEAR 2U
+#define Z_TMCVT_CYC_32   4U
+
+/* (t * to_hz + rounding) / the cycle rate, through its reciprocal. A 64-bit
+ * result takes two steps, as z_tmcvt_gen_64_slow(), with one copy of the
+ * reciprocal for both divisions.
+ */
+static ALWAYS_INLINE uint64_t z_tmcvt_cyc_inline(uint64_t t, uint32_t to_hz, uint32_t mode)
+{
+	struct sys_div64_recip buf;
+	const struct sys_div64_recip *r = z_sys_clock_cyc_recip_get(&buf);
+	uint32_t from_hz = r->div;
+	uint32_t off = ((mode & Z_TMCVT_CYC_NEAR) != 0U) ? (from_hz / 2U) :
+		       (((mode & Z_TMCVT_CYC_UP) != 0U) ? (from_hz - 1U) : 0U);
+	uint64_t q;
+	uint32_t rem;
+
+	if ((mode & Z_TMCVT_CYC_32) != 0U) {
+		return (uint32_t)sys_div64_recip_div((t * to_hz) + off, r);
+	}
+
+	q = sys_div64_recip_div(t, r);
+	rem = (uint32_t)t - ((uint32_t)q * from_hz);
+
+	return (q * to_hz) + sys_div64_recip_div(((uint64_t)rem * to_hz) + off, r);
+}
+
+uint64_t z_tmcvt_cyc_out(uint64_t t, uint32_t to_hz, uint32_t mode);
+
+static ALWAYS_INLINE uint64_t z_tmcvt_cyc(uint64_t t, uint32_t to_hz, bool round_up,
+					  bool round_off, bool result32)
+{
+	uint32_t mode = (round_off ? Z_TMCVT_CYC_NEAR : (round_up ? Z_TMCVT_CYC_UP : 0U)) |
+			(result32 ? Z_TMCVT_CYC_32 : 0U);
+
+	if (IS_ENABLED(CONFIG_SPEED_OPTIMIZATIONS)) {
+		return z_tmcvt_cyc_inline(t, to_hz, mode);
+	}
+
+	return z_tmcvt_cyc_out(t, to_hz, mode);
+}
+
+/* With Z_TMCVT_RT_CYC, a source rate that is not constant is the cycle rate */
+#define z_tmcvt_rt_32(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off)          \
+	((z_tmcvt_const_hz_is(__const_hz, Z_TMCVT_RT_CYC) &&                                       \
+	  !Z_DIV64_IF_CONST(__from_hz, true, false))                                               \
+		 ? (uint32_t)z_tmcvt_cyc(__t, __to_hz, __round_up, __round_off, true)              \
+		 : z_tmcvt_gen_32(__dv, __t, __from_hz, __to_hz, __round_up, __round_off))
+#define z_tmcvt_rt_64(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off)          \
+	((z_tmcvt_const_hz_is(__const_hz, Z_TMCVT_RT_CYC) &&                                       \
+	  !Z_DIV64_IF_CONST(__from_hz, true, false))                                               \
+		 ? z_tmcvt_cyc(__t, __to_hz, __round_up, __round_off, false)                       \
+		 : z_tmcvt_gen_64_slow(__dv, __t, __from_hz, __to_hz, __round_up, __round_off))
+#else
+#define z_tmcvt_rt_32(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off)          \
+	z_tmcvt_gen_32(__dv, __t, __from_hz, __to_hz, __round_up, __round_off)
+#define z_tmcvt_rt_64(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off)          \
+	z_tmcvt_gen_64_slow(__dv, __t, __from_hz, __to_hz, __round_up, __round_off)
+#endif
+
 /* Convert, generating a 32-bit result */
 #define z_tmcvt_32_dv(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) \
-	((__const_hz) ?							\
+	(z_tmcvt_const_hz_is(__const_hz, 1) ?						\
 	 (								\
 		 z_tmcvt_is_identity(__from_hz, __to_hz) ?		\
 		 (uint32_t) (__t)					\
@@ -256,12 +351,12 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 		 z_tmcvt_gen_32(__dv, __t, __from_hz, __to_hz, __round_up, __round_off) \
 		 )							\
 	 :								\
-	 z_tmcvt_gen_32(__dv, __t, __from_hz, __to_hz, __round_up, __round_off) \
+	 z_tmcvt_rt_32(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) \
 		)
 
 /* Convert, generating a 64-bit result */
 #define z_tmcvt_64_dv(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) \
-	((__const_hz) ?							\
+	(z_tmcvt_const_hz_is(__const_hz, 1) ?						\
 	 (								\
 		 z_tmcvt_is_identity(__from_hz, __to_hz) ?		\
 		 (uint64_t) (__t)					\
@@ -275,7 +370,7 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 		 z_tmcvt_gen_64(__dv, __t, __from_hz, __to_hz, __round_up, __round_off) \
 		 )							\
 	 :								\
-	 z_tmcvt_gen_64_slow(__dv, __t, __from_hz, __to_hz, __round_up, __round_off) \
+	 z_tmcvt_rt_64(__dv, __t, __from_hz, __to_hz, __const_hz, __round_up, __round_off) \
 		)
 
 #define z_tmcvt_dv(__dv, __t, __from_hz, __to_hz, __const_hz, __result32, __round_up, __round_off) \
@@ -385,8 +480,12 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #define Z_HZ_ns 1000000000
 #define Z_HZ_cyc sys_clock_hw_cycles_per_sec()
 #define Z_HZ_ticks CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#define Z_CCYC (!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) && \
-		!IS_ENABLED(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE))
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+#define Z_CCYC Z_TMCVT_RT_CYC
+#else
+#define Z_CCYC true
+#endif
 
 /** @brief Convert seconds to hardware cycles. 32 bits. Truncates.
  *

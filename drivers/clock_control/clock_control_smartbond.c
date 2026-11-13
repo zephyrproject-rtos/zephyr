@@ -17,6 +17,7 @@
 #include <shm.h>
 #endif
 #include <zephyr/drivers/regulator.h>
+#include <zephyr/drivers/timer/system_timer.h>
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -39,10 +40,6 @@ struct lpc_clock_state {
 #define CALIBRATION_INTERVAL(clk) DT_PROP(DT_NODELABEL(clk), calibration_interval)
 #define RCX_CALIBRATION_INTERVAL CALIBRATION_INTERVAL(rcx)
 #define RC32K_CALIBRATION_INTERVAL CALIBRATION_INTERVAL(rc32k)
-
-#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-extern unsigned int z_clock_hw_cycles_per_sec;
-#endif
 
 static void calibration_work_cb(struct k_work *work);
 static void xtal32k_settle_work_cb(struct k_work *work);
@@ -96,10 +93,10 @@ static void calibration_work_cb(struct k_work *work)
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	switch (smartbond_source_clock(SMARTBOND_CLK_LP_CLK)) {
 	case SMARTBOND_CLK_RCX:
-		z_clock_hw_cycles_per_sec = lpc_clock_state.rcx_freq;
+		z_sys_clock_hw_cycles_per_sec_set(lpc_clock_state.rcx_freq);
 		break;
 	case SMARTBOND_CLK_RC32K:
-		z_clock_hw_cycles_per_sec = lpc_clock_state.rc32k_freq;
+		z_sys_clock_hw_cycles_per_sec_set(lpc_clock_state.rc32k_freq);
 		break;
 	default:
 		break;
@@ -481,13 +478,13 @@ int z_smartbond_select_lp_clk(enum smartbond_clock lp_clk)
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 		switch (lp_clk) {
 		case SMARTBOND_CLK_RCX:
-			z_clock_hw_cycles_per_sec = lpc_clock_state.rcx_freq;
+			z_sys_clock_hw_cycles_per_sec_set(lpc_clock_state.rcx_freq);
 			break;
 		case SMARTBOND_CLK_RC32K:
-			z_clock_hw_cycles_per_sec = lpc_clock_state.rc32k_freq;
+			z_sys_clock_hw_cycles_per_sec_set(lpc_clock_state.rc32k_freq);
 			break;
 		default:
-			z_clock_hw_cycles_per_sec = 32768;
+			z_sys_clock_hw_cycles_per_sec_set(32768U);
 			break;
 		}
 #endif

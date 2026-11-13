@@ -29,11 +29,10 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(RTC_NODE, nxp_rtc_jdp),
 
 /*
  * The RTC counter rate (clock-frequency / prescaler) is published at runtime
- * through z_clock_hw_cycles_per_sec (the driver selects
+ * through z_sys_clock_hw_cycles_per_sec_set() (the driver selects
  * TIMER_READS_ITS_FREQUENCY_AT_RUNTIME), so the devicetree prescaler is the
  * single source of truth for the tick rate.
  */
-extern unsigned int z_clock_hw_cycles_per_sec;
 
 /* Map the numeric prescaler (1/32/512/16384) to the SDK clock-divide enum */
 #define RTC_JDP_DIV_ENUM						\
@@ -220,7 +219,7 @@ static int sys_clock_driver_init(void)
 		return -EINVAL;
 	}
 
-	z_clock_hw_cycles_per_sec = cycle_rate;
+	z_sys_clock_hw_cycles_per_sec_set(cycle_rate);
 	/*
 	 * Schedule at most half the counter range ahead; a compare further out
 	 * would wrap past the 32-bit counter and be indistinguishable from a

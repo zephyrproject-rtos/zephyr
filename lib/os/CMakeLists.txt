@@ -84,6 +84,11 @@ endif()
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifndef(CONFIG_64BIT div64.c)
+if(NOT CONFIG_64BIT AND NOT CONFIG_SPEED_OPTIMIZATIONS AND
+   (CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR
+    CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE))
+  zephyr_sources(time_units.c)
+endif()
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
 add_subdirectory_ifdef(CONFIG_CPU_LOAD cpu_load)
 

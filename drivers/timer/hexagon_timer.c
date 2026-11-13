@@ -56,7 +56,6 @@ static void hexagon_timer_isr(const void *arg)
 
 static int sys_clock_driver_init(void)
 {
-	extern unsigned int z_clock_hw_cycles_per_sec;
 	uint64_t freq = hexagon_vm_timerop(hvmt_getfreq, 0, 0);
 
 	__ASSERT(freq != 0, "hvmt_getfreq returned 0: hypervisor timer is unusable");
@@ -65,7 +64,7 @@ static int sys_clock_driver_init(void)
 	 * (CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME reads it back through
 	 * sys_clock_hw_cycles_per_sec()).
 	 */
-	z_clock_hw_cycles_per_sec = (unsigned int)freq;
+	z_sys_clock_hw_cycles_per_sec_set((uint32_t)freq);
 
 	IRQ_CONNECT(HEXAGON_TIMER_IRQ, HEXAGON_TIMER_IRQ_PRIORITY, hexagon_timer_isr, NULL, 0);
 	irq_enable(HEXAGON_TIMER_IRQ);

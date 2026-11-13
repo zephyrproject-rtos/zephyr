@@ -25,11 +25,11 @@ extern "C" {
 static ALWAYS_INLINE void arm_arch_timer_init(void)
 {
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-	extern unsigned int z_clock_hw_cycles_per_sec;
+	extern void z_sys_clock_hw_cycles_per_sec_set(uint32_t hz);
 	uint64_t cntfrq_el0 = read_cntfrq_el0();
 
 	__ASSERT(cntfrq_el0 < UINT_MAX, "cntfrq_el0 cannot fit in system 'unsigned int'");
-	z_clock_hw_cycles_per_sec = (unsigned int) cntfrq_el0;
+	z_sys_clock_hw_cycles_per_sec_set((uint32_t)cntfrq_el0);
 #endif
 }
 

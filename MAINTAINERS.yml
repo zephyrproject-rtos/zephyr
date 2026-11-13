@@ -1511,6 +1511,7 @@ Division by Reciprocal:
     - doc/kernel/div64.rst
     - include/zephyr/sys/div64.h
     - lib/os/div64.c
+    - lib/os/time_units.c
     - tests/lib/div64/
     - tests/unit/time_units/reciprocal.c
   tests:

@@ -34,6 +34,9 @@ Build System
 Kernel
 ******
 
+* ``z_clock_hw_cycles_per_sec`` can no longer be assigned. Timer drivers and SoC code that set the
+  system timer frequency at run time must call ``z_sys_clock_hw_cycles_per_sec_set()`` instead.
+
 Boards
 ******
 
