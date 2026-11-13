@@ -24,4 +24,10 @@ config TEST_FORCE_STORAGE_PARTITION
 	  the storage area by default. Set this config to prioritize
 	  testing the storage partition instead.
 
+config TEST_SOC_FLASH_NRF_PREEMPT
+	bool "Test that NVMC operations are not preempted"
+	depends on SOC_FLASH_NRF
+	help
+	  Build the soc_flash_nrf preemption test suite.
+
 source "Kconfig.zephyr"
