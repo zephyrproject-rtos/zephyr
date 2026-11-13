@@ -17,6 +17,9 @@ LOG_MODULE_DECLARE(INA2XX, CONFIG_SENSOR_LOG_LEVEL);
 /** @brief INA237 calibration scaling value (scaled by 10^-5) */
 #define INA237_CAL_SCALING 8192ULL
 
+/** @brief INA237 maximum value of shunt calibration register value */
+#define INA2XX_MAX_CAL_VALUE 0x7FFFU
+
 /** @brief Timeout (ms) waiting for CNVRF (conversion ready) in triggered mode */
 #define INA237_CNVRF_TIMEOUT_MS 5000
 
@@ -390,9 +393,9 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 	(DT_INST_ENUM_IDX(inst, avg_count))
 
 #define INA2XX_DT_CAL(inst, scaling)             \
-	CAL_PRECISION_MULTIPLIER(inst) * (scaling) * \
+	(CAL_PRECISION_MULTIPLIER(inst) * (scaling) * \
 	DT_INST_PROP(inst, current_lsb_microamps) *  \
-	DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL
+	DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL)
 
 #define INA237_DRIVER_INIT(inst)                                               \
 	static struct ina237_data ina237_data_##inst;                              \
@@ -402,7 +405,7 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
 			.config = INA237_DT_CONFIG(inst),                                  \
 			.adc_config = INA237_DT_ADC_CONFIG(inst),                          \
-			.cal = INA2XX_DT_CAL(inst, INA237_CAL_SCALING),                    \
+			.cal = ((uint16_t)INA2XX_DT_CAL(inst, INA237_CAL_SCALING)),        \
 			.id_reg = &ina237_mfr_id,                                          \
 			.config_reg = &ina237_config,                                      \
 			.adc_config_reg = &ina237_adc_config,                              \
@@ -412,6 +415,8 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),        \
 		.alert_config = DT_INST_PROP_OR(inst, alert_config, 0x01),             \
 	};                                                                         \
+	BUILD_ASSERT(INA2XX_DT_CAL(inst, INA237_CAL_SCALING) <= INA2XX_MAX_CAL_VALUE, \
+				"Value of shunt calibration word must not exceed 0x7FFF !"); \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina237_init, NULL,                     \
 					&ina237_data_##inst, &ina237_config_##inst, POST_KERNEL,   \
 				    CONFIG_SENSOR_INIT_PRIORITY, &ina237_driver_api);
@@ -423,7 +428,7 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 			.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
 			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
 			.adc_config = INA237_DT_ADC_CONFIG(inst),                          \
-			.cal = INA2XX_DT_CAL(inst, INA228_CAL_SCALING),                    \
+			.cal = ((uint16_t)INA2XX_DT_CAL(inst, INA228_CAL_SCALING)),        \
 			.id_reg = &ina237_mfr_id,                                          \
 			.config_reg = &ina237_config,                                      \
 			.adc_config_reg = &ina237_adc_config,                              \
@@ -431,6 +436,8 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 			.channels = &ina228_channels,                                      \
 		},                                                                     \
 	};                                                                         \
+	BUILD_ASSERT(INA2XX_DT_CAL(inst, INA228_CAL_SCALING) <= INA2XX_MAX_CAL_VALUE, \
+				"Value of shunt calibration word must not exceed 0x7FFF !"); \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina237_init, NULL,                     \
 				&ina228_data_##inst, &ina228_config_##inst, POST_KERNEL,       \
 				CONFIG_SENSOR_INIT_PRIORITY, &ina228_driver_api);

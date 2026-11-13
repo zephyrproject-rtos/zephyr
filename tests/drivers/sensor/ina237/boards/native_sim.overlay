@@ -26,23 +26,68 @@
 		status = "okay";
 	};
 
-	/* high precision mode, maximum current lsb */
+	/*
+	 * High precision mode, maximum current lsb
+	 *
+	 * For INA237, the equation for calculating the SHUNT_CAL register
+	 * value is given by:
+	 *
+	 * SHUNT_CAL = (819.2 * 10^6 * R_SHUNT * I_LSB * ( 1 + 3*high_precision ))
+	 *
+	 * According to the datasheet, the maximum value of SHUNT_CAL is 0x7FFF.
+	 *
+	 * Since high precision mode is enabled, the above equation becomes:
+	 *
+	 * SHUNT_CAL = (3276.8 * 10^6 * R_SHUNT * I_LSB)
+	 *
+	 * Using the maximum value of SHUNT_CAL of 0x7FFF gives:
+	 *
+	 * 0x7FFF = (3276.8 * 10^6 * R_SHUNT * I_LSB)
+	 *
+	 * R_SHUNT * I_LSB = (32767 * 10^-5)/32768.
+	 *
+	 * For maximum current LSB = 0xFFFF uA:
+	 * R_SHUNT = (32767 * 10^-5)/(32768 * 65535 * 10^-6) =  152
+	 *
+	 */
 	ina237@42 {
 		compatible = "ti,ina237";
 		reg = <0x42>;
 		high-precision;
-		rshunt-micro-ohms = <0x00ff>;
+		rshunt-micro-ohms = <152>;
 		current-lsb-microamps = <0xffff>;
 		status = "okay";
 	};
 
-	/* high precision mode, maximum rshunt */
+	/* high precision mode, maximum rshunt
+	 *
+	 * For INA237, the equation for calculating the SHUNT_CAL register
+	 * value is given by:
+	 *
+	 * SHUNT_CAL = (819.2 * 10^6 * R_SHUNT * I_LSB * ( 1 + 3*high_precision ))
+	 *
+	 * According to the datasheet, the maximum value of SHUNT_CAL is 0x7FFF.
+	 *
+	 * Since high precision mode is enabled, the above equation becomes:
+	 *
+	 * SHUNT_CAL = (3276.8 * 10^6 * R_SHUNT * I_LSB)
+	 *
+	 * Using the maximum value of SHUNT_CAL of 0x7FFF gives:
+	 *
+	 * 0x7FFF = (3276.8 * 10^6 * R_SHUNT * I_LSB)
+	 *
+	 * R_SHUNT * I_LSB = (32767 * 10^-5)/32768.
+	 *
+	 * For maximum rshunt value = 0xFFFF uOhm:
+	 * I_LSB = (32767 * 10^-5)/(32768 * 65535 * 10^-6) =  152
+	 *
+	 */
 	ina237@43 {
 		compatible = "ti,ina237";
 		reg = <0x43>;
 		high-precision;
 		rshunt-micro-ohms = <0xffff>;
-		current-lsb-microamps = <0x00ff>;
+		current-lsb-microamps = <152>;
 		status = "okay";
 	};
 };
