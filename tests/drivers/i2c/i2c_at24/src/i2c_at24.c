@@ -52,6 +52,8 @@ BUILD_ASSERT(IS_POWER_OF_TWO(PAGE_SIZE),
 
 #define TEST_AREA_BASE 0x00
 
+#define UNCLAIMABLE_I2C_ADDR 0x7f
+
 static const struct i2c_dt_spec eeprom = I2C_DT_SPEC_GET(EEPROM_NODE);
 static uint8_t tx_buf[ADDR_BYTES + PAGE_SIZE];
 static uint8_t rx_buf[PAGE_SIZE];
@@ -258,7 +260,7 @@ ZTEST(i2c_at24, test_nack_invalid_addr)
 {
 	uint8_t dummy;
 	int ret;
-	uint16_t bad_addr = eeprom.addr ^ BIT(3);
+	uint16_t bad_addr = UNCLAIMABLE_I2C_ADDR;
 
 	ret = i2c_read(eeprom.bus, &dummy, 1, bad_addr);
 	zassert_equal(ret, -EIO, "Expected -EIO for invalid addr, got %d", ret);
