@@ -16,7 +16,10 @@ int getpwnam_r(const char *nam, struct passwd *pwd, char *buffer, size_t bufsize
 	ARG_UNUSED(pwd);
 	ARG_UNUSED(buffer);
 	ARG_UNUSED(bufsize);
-	ARG_UNUSED(result);
+
+	if (result != NULL) {
+		*result = NULL;
+	}
 
 	return ENOSYS;
 }
@@ -27,7 +30,10 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, stru
 	ARG_UNUSED(pwd);
 	ARG_UNUSED(buffer);
 	ARG_UNUSED(bufsize);
-	ARG_UNUSED(result);
+
+	if (result != NULL) {
+		*result = NULL;
+	}
 
 	return ENOSYS;
 }
