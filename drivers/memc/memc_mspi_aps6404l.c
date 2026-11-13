@@ -295,7 +295,10 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 		return -EIO;
 	}
 
-	if (data->dev_cfg.io_mode == MSPI_IO_MODE_QUAD) {
+	/* The device keeps QPI mode across a host reset: leave it before talking SPI.
+	 * QPI commands are ignored by a device in SPI mode.
+	 */
+	if (cfg->tar_dev_cfg.io_mode == MSPI_IO_MODE_QUAD) {
 		if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL,
 				    &cfg->quad_cfg)) {
 			LOG_ERR("Failed to config mspi controller/%u", __LINE__);
@@ -382,7 +385,7 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #define MSPI_DEVICE_CONFIG_SERIAL(n)                                                              \
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
-		.freq               = 12000000,                                                   \
+		.freq               = MIN(12000000, DT_INST_PROP(n, mspi_max_frequency)),        \
 		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
@@ -402,8 +405,8 @@ static int memc_mspi_aps6404l_init(const struct device *psram)
 #define MSPI_DEVICE_CONFIG_QUAD(n)                                                                \
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
-		.freq               = 24000000,                                                   \
-		.io_mode            = MSPI_IO_MODE_SINGLE,                                        \
+		.freq               = MIN(24000000, DT_INST_PROP(n, mspi_max_frequency)),        \
+		.io_mode            = MSPI_IO_MODE_QUAD,                                          \
 		.data_rate          = MSPI_DATA_RATE_SINGLE,                                      \
 		.cpp                = MSPI_CPP_MODE_0,                                            \
 		.endian             = MSPI_XFER_LITTLE_ENDIAN,                                    \
