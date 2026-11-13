@@ -123,6 +123,19 @@
 		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_ANALOG)>;
 		input-enable;
 	};
+
+	spi0_poci_pa04: spi0_poci_pa04 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	spi0_pico_pa05: spi0_pico_pa05 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	spi0_sclk_pa06: spi0_sclk_pa06 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_3)>;
+	};
 };
 
 &uart0 {
@@ -257,4 +270,15 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <12>;
 	};
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sclk_pa06 &spi0_pico_pa05 &spi0_poci_pa04>;
+	pinctrl-names = "default";
+	/* TODO: Remove once hardware chipselect support is added to driver. */
+	cs-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&ckm MSPM0_CLOCK_MCLK>;
 };
