@@ -11,6 +11,7 @@
 
 #include <zephyr/bluetooth/ead.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -60,7 +61,20 @@ static int get_passkey_confirmation(struct bt_conn *conn)
 	return 0;
 }
 
-static void central_main(void)
+static atomic_t failed_connections;
+
+static void test_connected(struct bt_conn *conn, uint8_t err)
+{
+	if (err != 0) {
+		(void)atomic_inc(&failed_connections);
+	}
+}
+
+BT_CONN_CB_DEFINE(test_conn_callbacks) = {
+	.connected = test_connected,
+};
+
+static void central_run(void)
 {
 	int err;
 
@@ -96,6 +110,23 @@ static void central_main(void)
 	if (memcmp(expected_data, received_data, expected_data_size) != 0) {
 		FAIL("Received data does not match expected ones.\n");
 	}
+}
+
+static void central_main(void)
+{
+	central_run();
+
+	PASS("Central test passed.\n");
+}
+
+static void central_retry_main(void)
+{
+	central_run();
+
+	/* The central has to have tried the decoy first */
+	if (atomic_get(&failed_connections) == 0) {
+		FAIL("No connection attempt failed\n");
+	}
 
 	PASS("Central test passed.\n");
 }
@@ -109,6 +140,38 @@ static void peripheral_main(void)
 	}
 
 	PASS("Peripheral test passed.\n");
+}
+
+static void decoy_main(void)
+{
+	/* Connectable, but with an empty filter accept list it ignores every connection request,
+	 * so that the central's connection attempt to it times out
+	 */
+	const struct bt_le_adv_param *param = BT_LE_ADV_PARAM(
+		BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_FILTER_CONN,
+		BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
+	struct bt_le_ext_adv *adv;
+	int err;
+
+	err = bt_enable(NULL);
+	if (err != 0) {
+		FAIL("Bluetooth init failed (err %d)\n", err);
+	}
+
+	err = bt_le_ext_adv_create(param, NULL, &adv);
+	if (err != 0) {
+		FAIL("Failed to create advertiser (err %d)\n", err);
+	}
+
+	/* Stop after 2 s, before that attempt times out after 3 s, so that the next scan of the
+	 * central finds only the peripheral
+	 */
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_PARAM(200, 0));
+	if (err != 0) {
+		FAIL("Failed to start advertiser (err %d)\n", err);
+	}
+
+	PASS("Decoy test passed.\n");
 }
 
 void test_tick(bs_time_t HW_device_time)
@@ -134,11 +197,23 @@ static const struct bst_test_instance test_def[] = {
 		.test_main_f = central_main,
 	},
 	{
+		.test_id = "central_retry",
+		.test_descr = "Central device whose first connection attempt fails",
+		.test_pre_init_f = test_ead_sample_init,
+		.test_tick_f = test_tick,
+		.test_main_f = central_retry_main,
+	},
+	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral device",
 		.test_pre_init_f = test_ead_sample_init,
 		.test_tick_f = test_tick,
 		.test_main_f = peripheral_main,
+	},
+	{
+		.test_id = "decoy",
+		.test_descr = "Advertiser that accepts no connection request",
+		.test_main_f = decoy_main,
 	},
 	BSTEST_END_MARKER};
 
