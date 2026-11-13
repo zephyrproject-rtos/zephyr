@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas R-Car RS-CANFD controller global for R-Car V4H which
+  shares a single interrupt ID to all channels
+
+compatible: "renesas,rcar-v4h-rscanfd-global"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
