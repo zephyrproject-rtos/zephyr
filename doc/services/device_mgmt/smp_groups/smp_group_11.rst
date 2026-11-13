@@ -27,6 +27,11 @@ Transport management group defines the following commands:
 .. note::
     Transport management is experimental and subject to change without notice.
 
+Applications can also connect a bridge with :c:func:`transport_mgmt_connect_bridge`, giving it
+the same CBOR parameters as the connect command, and disconnect it with
+:c:func:`transport_mgmt_disconnect_bridge` and the related functions. These bridges are the same
+as the ones connected with the connect command.
+
 Connect (bridge) transport command
 **********************************
 
