@@ -603,7 +603,7 @@ bool j1939_is_pgn_valid(j1939_pgn_t pgn)
 }
 
 /**************************************************************************************************/
-static inline bool J1939_IsMessageForMe(const struct can_frame *message, j1939_node_t node)
+bool j1939_is_msg_for_me(const struct can_frame *message, j1939_node_t node)
 {
 	bool result = false;
 	j1939_pdu_specific_t ps;
