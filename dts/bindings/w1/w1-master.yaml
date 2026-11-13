@@ -1,14 +1,6 @@
 # Copyright (c) 2022 Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
 
-# Common fields for 1-Wire masters
+# Deprecated. Use w1-controller.yaml instead.
 
-include: base.yaml
-
-bus: w1
-
-properties:
-  active-pullup:
-    type: boolean
-    description: |
-      Enable the active pullup for the 1-Wire bus.
+include: w1-controller.yaml
