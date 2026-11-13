@@ -175,63 +175,11 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 		case SENSOR_CHAN_ACCEL_Z:
 		case SENSOR_CHAN_ACCEL_XYZ:
 			edata->has_accel = 1;
-
-			struct rtio_regs outx_regs;
-			struct rtio_regs_list xl_regs_list[] = {
-				{
-					0x80 | IIS3DWB_OUTX_L_A, /* SPI read transaction */
-					(uint8_t *)edata->accel,
-					6,
-				},
-			};
-
-			outx_regs.rtio_regs_list = xl_regs_list;
-			outx_regs.rtio_regs_num = ARRAY_SIZE(xl_regs_list);
-
-			/*
-			 * Prepare rtio enabled bus to read IIS3DWB_OUTX_L_A register
-			 * where accelerometer data is available.
-			 * Then iis3dwb_one_shot_complete_cb callback will be invoked.
-			 *
-			 * STMEMSC API equivalent code:
-			 *
-			 *   uint8_t accel_raw[6];
-			 *
-			 *   iis3dwb_acceleration_raw_get(&dev_ctx, accel_raw);
-			 */
-			rtio_read_regs_async(data->rtio_ctx, data->iodev, RTIO_BUS_SPI, &outx_regs,
-					     iodev_sqe, dev, iis3dwb_one_shot_complete_cb);
 			break;
 
 #if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
 		case SENSOR_CHAN_DIE_TEMP:
 			edata->has_temp = 1;
-
-			struct rtio_regs outt_regs;
-			struct rtio_regs_list t_regs_list[] = {
-				{
-					0x80 | IIS3DWB_OUT_TEMP_L, /* SPI read transaction */
-					(uint8_t *)&edata->temp,
-					2,
-				},
-			};
-
-			outt_regs.rtio_regs_list = t_regs_list;
-			outt_regs.rtio_regs_num = ARRAY_SIZE(t_regs_list);
-
-			/*
-			 * Prepare rtio enabled bus to read IIS3DWB_OUT_TEMP_L register
-			 * where temperature data is available.
-			 * Then iis3dwb_one_shot_complete_cb callback will be invoked.
-			 *
-			 * STMEMSC API equivalent code:
-			 *
-			 *   int16_t val;
-			 *
-			 *   iis3dwb_temperature_raw_get(&dev_ctx, &val);
-			 */
-			rtio_read_regs_async(data->rtio_ctx, data->iodev, RTIO_BUS_SPI, &outt_regs,
-					     iodev_sqe, dev, iis3dwb_one_shot_complete_cb);
 			break;
 #endif
 
@@ -242,7 +190,48 @@ static void iis3dwb_submit_one_shot(const struct device *dev, struct rtio_iodev_
 
 	if (edata->has_accel == 0 && edata->has_temp == 0) {
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
+		return;
 	}
+
+	struct rtio_regs out_regs;
+	struct rtio_regs_list regs_list[2];
+	size_t num_regs = 0;
+
+	if (edata->has_accel) {
+		regs_list[num_regs].reg_addr = 0x80 | IIS3DWB_OUTX_L_A; /* SPI read transaction */
+		regs_list[num_regs].bufp = (uint8_t *)edata->accel;
+		regs_list[num_regs].len = 6;
+		num_regs++;
+	}
+
+#if defined(CONFIG_IIS3DWB_ENABLE_TEMP)
+	if (edata->has_temp) {
+		regs_list[num_regs].reg_addr = 0x80 | IIS3DWB_OUT_TEMP_L; /* SPI read transaction */
+		regs_list[num_regs].bufp = (uint8_t *)&edata->temp;
+		regs_list[num_regs].len = 2;
+		num_regs++;
+	}
+#endif
+
+	out_regs.rtio_regs_list = regs_list;
+	out_regs.rtio_regs_num = num_regs;
+
+	/*
+	 * Prepare rtio enabled bus to read the IIS3DWB_OUTX_L_A and/or IIS3DWB_OUT_TEMP_L
+	 * registers where accelerometer and temperature data are available.
+	 * Then iis3dwb_one_shot_complete_cb callback will be invoked once, when all the
+	 * requested registers have been read.
+	 *
+	 * STMEMSC API equivalent code:
+	 *
+	 *   uint8_t accel_raw[6];
+	 *   int16_t val;
+	 *
+	 *   iis3dwb_acceleration_raw_get(&dev_ctx, accel_raw);
+	 *   iis3dwb_temperature_raw_get(&dev_ctx, &val);
+	 */
+	rtio_read_regs_async(data->rtio_ctx, data->iodev, RTIO_BUS_SPI, &out_regs, iodev_sqe, dev,
+			     iis3dwb_one_shot_complete_cb);
 }
 
 void iis3dwb_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
