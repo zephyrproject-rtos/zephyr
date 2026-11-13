@@ -448,6 +448,15 @@ Shell
   ``-ENOEXEC`` instead of ``SHELL_CMD_HELP_PRINTED`` (1). The help is still printed. Update code
   that checks the return value of :c:func:`shell_execute_cmd` for this case.
 
+IPC
+===
+
+* :kconfig:option:`CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE` has been renamed to
+  :kconfig:option:`CONFIG_IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE`, as it configures the RPMsg
+  support library. Update application and board configuration files to use the new name. The old
+  option remains as a deprecated alias: its value is used unless the new option is explicitly set.
+  (:github:`101918`)
+
 Modules
 *******
 

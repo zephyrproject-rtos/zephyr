@@ -1,10 +1,17 @@
 # Copyright (c) 2022 Nordic Semiconductor (ASA)
+# SPDX-FileCopyrightText: Copyright 2025-2026 Arm Limited and/or its affiliates
 # SPDX-License-Identifier: Apache-2.0
 
 config IPC_SERVICE_RPMSG
 	bool "RPMsg support library"
 	help
 	  "RPMsg library"
+
+if IPC_SERVICE_RPMSG
+
+rsource "Kconfig.rpmsg"
+
+endif
 
 config IPC_SERVICE_STATIC_VRINGS
 	bool "Static VRINGs support library"
