@@ -65,8 +65,9 @@ int pmu_configure_counters(const struct pmu_counter_config *configs, uint32_t nu
  * @param n Number of entries in @a src.
  *
  * @retval true Counters configured.
- * @retval false @a n exceeds @kconfig{CONFIG_PMU_MAX_COUNTERS}.
- * @retval false Counter configuration failed.
+ * @retval false
+ *     - @a n exceeds @kconfig{CONFIG_PMU_MAX_COUNTERS}.
+ *     - Counter configuration failed.
  */
 static inline bool pmu_apply_counter_group(struct pmu_counter_config *counter_configs,
 					   const struct pmu_counter_config *src, size_t n)
