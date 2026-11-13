@@ -26,6 +26,11 @@ static void client_reset(struct mqtt_client *client)
 	client->internal.last_activity = 0U;
 	client->internal.rx_buf_datalen = 0U;
 	client->internal.remaining_payload = 0U;
+	/* The reason describes the session that just ended; a later error on
+	 * a reconnecting client must map its own reason again. No-op on
+	 * builds without MQTT 5.0 support.
+	 */
+	set_disconnect_reason(client, MQTT_DISCONNECT_NORMAL);
 }
 
 /** @brief Initialize tx buffer. */
@@ -272,6 +277,11 @@ int mqtt_connect(struct mqtt_client *client)
 		err_code = -ENOMEM;
 		goto error;
 	}
+
+	/* A new connection must not inherit a disconnect reason left over
+	 * from a previous session on the same client instance.
+	 */
+	set_disconnect_reason(client, MQTT_DISCONNECT_NORMAL);
 
 	err_code = client_connect(client);
 
