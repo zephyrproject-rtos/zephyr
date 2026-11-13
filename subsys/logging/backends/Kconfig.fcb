@@ -1,0 +1,33 @@
+# Copyright (c) 2023 Victor Chavez
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_FCB
+	bool "Flash Circular Buffer FCB backend"
+	depends on FCB && FLASH_MAP && LOG
+	depends on !LOG_MODE_IMMEDIATE
+	select LOG_OUTPUT
+	default n
+	help
+	  Immediate log mode is not supported as log entries could be written to flash 
+	  from interrupt or thread(s) using a mutex.
+	  
+config FCB_LOGS_INIT_PRIORITY
+	int "FCB logs init priority"
+	default 81
+	help
+	  Must be higher than the init priority of the external flash driver. 
+	  If the flash device is not ready at init point, FCB logging is not enabled.
+	  
+config FCB_LOG_SHELL
+	bool"FCB logs shell"
+	depends on LOG_BACKEND_FCB && SHELL
+	default n
+
+
+if LOG_BACKEND_FCB
+
+backend = FCB
+backend-str = fcb
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_FCB

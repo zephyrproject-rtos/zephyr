@@ -1,0 +1,14 @@
+sample:
+  name: Log backend FCB Sample
+tests:
+  sample.loggin.fcb:
+    tags:
+      - LED
+      - gpio
+      - flash
+      - logging
+      - shell
+    depends_on: gpio, external flash 
+    integration_platforms:
+      - nrf52840dk
+      - nrf9151dk
