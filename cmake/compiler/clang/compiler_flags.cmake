@@ -183,3 +183,10 @@ set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong
 set_compiler_property(PROPERTY security_canaries_all -fstack-protector-all)
 set_compiler_property(PROPERTY security_canaries_explicit -fstack-protector-explicit)
 set_compiler_property(PROPERTY security_canaries_global)
+
+# Clang supports -finstrument-functions (inherited from gcc/compiler_flags.cmake)
+# but not the GCC-only exclude-function/file-list options. Clear those so they
+# are not passed to the compiler; exclude hot paths with __no_instrumentation__
+# instead (see CONFIG_INSTRUMENTATION_EXCLUDE_* Kconfig help).
+set_compiler_property(PROPERTY func_instrumentation_exclude_function_list)
+set_compiler_property(PROPERTY func_instrumentation_exclude_file_list)
