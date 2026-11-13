@@ -197,6 +197,23 @@
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
 #endif
 
+/* Sleep mode clock enable (LPENR) register matching a bus clock enable register */
+static mem_addr_t stm32h7_bus_lpen_reg(uint32_t bus)
+{
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* AHB3 and APB5 LPENR registers do not follow the common offset */
+	if (bus == STM32_CLOCK_BUS_AHB3) {
+		return DT_REG_ADDR(DT_NODELABEL(rcc)) + offsetof(RCC_TypeDef, AHB3LPENR);
+	}
+	if (bus == STM32_CLOCK_BUS_APB5) {
+		return DT_REG_ADDR(DT_NODELABEL(rcc)) + offsetof(RCC_TypeDef, APB5LPENR);
+	}
+#endif
+
+	return STM32H7_BUS_CLK_REG + bus +
+	       (offsetof(RCC_TypeDef, AHB1LPENR) - offsetof(RCC_TypeDef, AHB1ENR));
+}
+
 #if IS_ENABLED(STM32_PLL_P_ENABLED)
 BUILD_ASSERT(((STM32_PLL_P_DIVISOR == 1) || (STM32_PLL_P_DIVISOR % 2) == 0),
 	     "STM32H7/H7RS PLL1 DIVP divisor factor must be 1 or even");
@@ -464,6 +481,8 @@ static int stm32_clock_control_on(const struct device *dev, clock_control_subsys
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	sys_set_bits(STM32H7_BUS_CLK_REG + pclken->bus, pclken->enr);
+	/* Keep the clock running in CSleep, whatever the LPENR value found at boot */
+	sys_set_bits(stm32h7_bus_lpen_reg(pclken->bus), pclken->enr);
 	/* Delay after enabling the clock, to allow it to become active.
 	 * See RM0433 8.5.10 "Clock enabling delays"
 	 */
@@ -489,6 +508,7 @@ static int stm32_clock_control_off(const struct device *dev, clock_control_subsy
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
 	sys_clear_bits(STM32H7_BUS_CLK_REG + pclken->bus, pclken->enr);
+	sys_clear_bits(stm32h7_bus_lpen_reg(pclken->bus), pclken->enr);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
