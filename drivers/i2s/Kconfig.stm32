@@ -43,4 +43,12 @@ config I2S_STM32_SAI_BLOCK_COUNT
 	int "SAI queue length"
 	default 4
 
+config I2S_STM32_SAI_MCLK_CLOCK_CONTROL
+	bool "STM32 SAI MCLK clock control provider"
+	help
+	  Expose the MCLK output of each SAI sub-block through the clock
+	  control API. This allows consumers, such as audio codecs, to
+	  reference the MCLK clock using a clocks phandle to the "mclk"
+	  child node and retrieve its configured rate.
+
 endif # I2S_STM32_SAI
