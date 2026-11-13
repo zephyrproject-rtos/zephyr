@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_NXP_AHB_SRAMC
+	bool "NXP AHB SRAM Controller (AHB_SRAMC)"
+	default y
+	depends on DT_HAS_NXP_AHB_SRAMC_ENABLED
+	select PINCTRL
+	help
+	  Enable the NXP AHB SRAM Controller driver. The AHB SRAM Controller is a
+	  memory controller for asynchronous SRAM or SRAM-like FPGA devices.
+
+config MEMC_NXP_AHB_SRAMC_INIT_PRIORITY
+	int "NXP AHB SRAMC driver initialization priority"
+	default MEMC_INIT_PRIORITY
+	depends on MEMC_NXP_AHB_SRAMC
+	help
+	  Initialization priority for the AHB SRAM controller. The controller must
+	  be initialized before the devices attached to its chip selects, so this
+	  value must not exceed MEMC_INIT_PRIORITY. Equal priorities use devicetree
+	  dependency ordering.
