@@ -111,8 +111,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_ZTEST), "Missing DT chosen property for HCI");
 
 void bt_tx_irq_raise(void);
 
-#define HCI_CMD_TIMEOUT      K_SECONDS(10)
-
 /* Stacks for the threads */
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);

@@ -99,14 +99,15 @@ static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
 	}
 }
 
-static struct net_buf *get_rx_evt(const uint8_t *data)
+static struct net_buf *get_rx_evt(const struct uc_data *uc, const uint8_t *data)
 {
 	const struct bt_hci_evt_hdr *evt = (const void *)data;
 	const bool discardable = is_hci_event_discardable(evt);
 	const k_timeout_t timeout = discardable ? K_NO_WAIT : K_SECONDS(1);
-	struct net_buf *buf;
+	struct net_buf *buf = NULL;
 
-	do {
+	/* close() waits for this thread, and no buffer may get freed before it returns. */
+	while ((buf == NULL) && (uc->fd >= 0)) {
 		buf = bt_buf_get_evt(evt->evt, discardable, timeout);
 		if (buf == NULL) {
 			if (discardable) {
@@ -115,7 +116,7 @@ static struct net_buf *get_rx_evt(const uint8_t *data)
 			}
 			LOG_WRN("Couldn't allocate a buffer after waiting 1 second.");
 		}
-	} while (!buf);
+	}
 
 	return buf;
 }
@@ -144,13 +145,13 @@ static struct net_buf *get_rx_iso(const uint8_t *data)
 	return buf;
 }
 
-static struct net_buf *get_rx(const uint8_t *buf)
+static struct net_buf *get_rx(const struct uc_data *uc, const uint8_t *buf)
 {
 	uint8_t hci_h4_type = buf[0];
 
 	switch (hci_h4_type) {
 	case BT_HCI_H4_EVT:
-		return get_rx_evt(&buf[1]);
+		return get_rx_evt(uc, &buf[1]);
 	case BT_HCI_H4_ACL:
 		return get_rx_acl(&buf[1]);
 	case BT_HCI_H4_ISO:
@@ -262,7 +263,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 	long frame_size = 0;
 
-	while (1) {
+	while (uc->fd >= 0) {
 		static uint8_t frame[RX_FRAME_SIZE];
 		struct net_buf *buf;
 		size_t buf_tailroom;
@@ -285,20 +286,25 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		len = nsi_host_read(uc->fd, frame + frame_size, sizeof(frame) - frame_size);
 		if (len < 0) {
-			if (nsi_host_get_errno() == EINTR) {
+			const int err = nsi_host_get_errno();
+
+			if (err == EINTR) {
 				k_yield();
 				continue;
 			}
 
-			LOG_ERR("Reading socket failed, errno %d", errno);
-			(void)nsi_host_close(uc->fd);
-			uc->fd = -1;
-			return;
+			LOG_ERR("Reading socket failed, errno %d", err);
+			break;
+		}
+
+		if (len == 0) {
+			LOG_ERR("Connection closed by the peer");
+			break;
 		}
 
 		frame_size += len;
 
-		while (frame_size > 0) {
+		while ((frame_size > 0) && (uc->fd >= 0)) {
 			const uint8_t *buf_add;
 			const uint8_t packet_type = frame_start[0];
 			const int32_t decoded_len = hci_packet_complete(frame_start, frame_size);
@@ -320,7 +326,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 			buf_add = frame_start + sizeof(packet_type);
 			buf_add_len = decoded_len - sizeof(packet_type);
 
-			buf = get_rx(frame_start);
+			buf = get_rx(uc, frame_start);
 
 			frame_size -= decoded_len;
 			frame_start += decoded_len;
@@ -346,6 +352,14 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 		k_yield();
 	}
+
+	/* The socket is still open if the connection was lost, rather than close() called. */
+	if (uc->fd >= 0) {
+		if (nsi_host_close(uc->fd) < 0) {
+			LOG_ERR("Closing the socket failed, errno %d", nsi_host_get_errno());
+		}
+		uc->fd = -1;
+	}
 }
 
 static int uc_send(const struct device *dev, struct net_buf *buf)
@@ -359,7 +373,7 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 		return -EIO;
 	}
 
-	if (nsi_host_write(uc->fd, buf->data, buf->len) < 0) {
+	if (user_chan_send(uc->fd, buf->data, buf->len) < 0) {
 		return -nsi_host_get_errno();
 	}
 
@@ -407,18 +421,19 @@ static int uc_close(const struct device *dev)
 	struct uc_data *uc = dev->data;
 	int rc;
 
+	/* The RX thread has closed the socket and ended on losing the connection. */
 	if (uc->fd < 0) {
-		return -ENETDOWN;
+		return 0;
 	}
 
 	rc = nsi_host_close(uc->fd);
 	if (rc < 0) {
-		return -nsi_errno_from_mid(-rc);
+		return -nsi_host_get_errno();
 	}
 
 	uc->fd = -1;
 
-	return 0;
+	return k_thread_join(&rx_thread_data, K_FOREVER);
 }
 
 static DEVICE_API(bt_hci, uc_drv_api) = {
