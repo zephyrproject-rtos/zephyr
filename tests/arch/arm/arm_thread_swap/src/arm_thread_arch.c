@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Nordic Semiconductor ASA.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,24 +108,24 @@ static void verify_callee_saved(const _callee_saved_t *src, const _callee_saved_
 /* Create the alternative thread with K_FP_REGS options */
 #define ALT_THREAD_OPTIONS K_FP_REGS
 
-/* Arbitrary values for the floating-point callee-saved registers */
+/* Distinct, exactly representable values for the floating-point callee-saved registers. */
 struct _preempt_float ztest_thread_fp_callee_saved_regs = {
-	.s16 = 0x11111111,
-	.s17 = 0x22222222,
-	.s18 = 0x33333333,
-	.s19 = 0x44444444,
-	.s20 = 0x55555555,
-	.s21 = 0x66666666,
-	.s22 = 0x77777777,
-	.s23 = 0x88888888,
-	.s24 = 0x99999999,
-	.s25 = 0xaaaaaaaa,
-	.s26 = 0xbbbbbbbb,
-	.s27 = 0xcccccccc,
-	.s28 = 0xdddddddd,
-	.s29 = 0xeeeeeeee,
-	.s30 = 0xffffffff,
-	.s31 = 0x00000000,
+	.s16 = 1.0f,
+	.s17 = 2.0f,
+	.s18 = 3.0f,
+	.s19 = 4.0f,
+	.s20 = 5.0f,
+	.s21 = 6.0f,
+	.s22 = 7.0f,
+	.s23 = 8.0f,
+	.s24 = 9.0f,
+	.s25 = 10.0f,
+	.s26 = 11.0f,
+	.s27 = 12.0f,
+	.s28 = 13.0f,
+	.s29 = 14.0f,
+	.s30 = 15.0f,
+	.s31 = 16.0f,
 };
 
 static void load_fp_callee_saved_regs(const volatile struct _preempt_float *regs)
