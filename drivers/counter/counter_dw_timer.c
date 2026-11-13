@@ -74,6 +74,10 @@ struct counter_dw_timer_drv_data {
 #endif
 	/* spin lock to protect user data */
 	struct k_spinlock lock;
+	/* top value set by start() or set_top_value(), the load count
+	 * register cannot be used as it also holds the alarm interval
+	 */
+	uint32_t top;
 	/* top callback function */
 	counter_top_callback_t top_cb;
 	/* alarm callback function */
@@ -116,6 +120,8 @@ static void counter_dw_timer_irq_handler(const struct device *timer_dev)
 static int counter_dw_timer_start(const struct device *dev)
 {
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, timer_mmio);
+	struct counter_dw_timer_drv_data *const data = DEV_DATA(dev);
+	k_spinlock_key_t key;
 
 	/* disable timer before starting in free-running mode */
 	sys_clear_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
@@ -127,6 +133,11 @@ static int counter_dw_timer_start(const struct device *dev)
 
 	/* enable timer */
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
+
+	key = k_spin_lock(&data->lock);
+	data->top = FREE_RUNNING_MODE_VAL;
+	k_spin_unlock(&data->lock, key);
+
 	return 0;
 }
 
@@ -208,6 +219,8 @@ static int counter_dw_timer_set_top_value(const struct device *timer_dev,
 	sys_write32(top_cfg->ticks, reg_base + LOADCOUNT_OFST);
 	sys_set_bit(reg_base + CONTROLREG_OFST, TIMER_CONTROL_ENABLE_BIT);
 
+	data->top = top_cfg->ticks;
+
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -241,6 +254,12 @@ static int counter_dw_timer_set_alarm(const struct device *timer_dev, uint8_t ch
 	}
 
 	key = k_spin_lock(&data->lock);
+
+	if (alarm_cfg->ticks > data->top) {
+		k_spin_unlock(&data->lock, key);
+		LOG_ERR("Alarm ticks exceed the top value");
+		return -EINVAL;
+	}
 
 	/* check if alarm is already active */
 	if (data->alarm_cb != NULL) {
@@ -313,9 +332,12 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 {
 	DEVICE_MMIO_NAMED_MAP(timer_dev, timer_mmio, K_MEM_CACHE_NONE);
 	const struct counter_dw_timer_config *timer_config = DEV_CFG(timer_dev);
+	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
 	int ret;
 #endif
+
+	data->top = timer_config->info.max_top_value;
 
 	/*
 	 * get clock rate from clock_frequency property if valid,
@@ -323,8 +345,6 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 	 * rate
 	 */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
-	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
-
 	if (!device_is_ready(timer_config->clk_dev)) {
 		LOG_ERR("clock controller device not ready");
 		return -ENODEV;
