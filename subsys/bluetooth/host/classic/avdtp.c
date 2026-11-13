@@ -1710,12 +1710,18 @@ static void avdtp_get_configuration_rsp(struct bt_avdtp *session, struct net_buf
 /* Timeout handler */
 static void avdtp_timeout(struct k_work *work)
 {
-	struct bt_avdtp_req *req = (AVDTP_KWORK(work))->req;
+	struct bt_avdtp *session = AVDTP_KWORK(work);
+	struct bt_avdtp_req *req = session->req;
 
 	/* add process code */
 	/* Gracefully Disconnect the Signalling and streaming L2cap chann*/
 	if (req) {
 		LOG_DBG("Failed Signal_id = %d", req->sig);
+
+		/* Retire the request before invoking the callback so that it can
+		 * issue a new command synchronously.
+		 */
+		bt_avdtp_clear_req(session);
 
 		switch (req->sig) {
 		case BT_AVDTP_DISCOVER:
@@ -1732,8 +1738,6 @@ static void avdtp_timeout(struct k_work *work)
 		default:
 			break;
 		}
-
-		AVDTP_KWORK(work)->req = NULL;
 	}
 }
 
