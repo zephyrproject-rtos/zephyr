@@ -8,17 +8,18 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/lora.h>
-#include <zephyr/sys/atomic.h>
 
 #include "sx126x_hal.h"
 #include "sx126x_regs.h"
 
-enum sx126x_state {
-	SX126X_STATE_SLEEP = 0,
-	SX126X_STATE_IDLE,
-	SX126X_STATE_TX,
-	SX126X_STATE_RX,
-	SX126X_STATE_RX_DUTY_CYCLE,
+/* What the radio is claimed for */
+enum sx126x_op {
+	SX126X_OP_NONE = 0,
+	SX126X_OP_CONFIG,
+	SX126X_OP_TX,
+	SX126X_OP_CW,
+	SX126X_OP_RX,
+	SX126X_OP_RX_DUTY_CYCLE,
 };
 
 /* A caller blocked on an operation, and where its result goes */
@@ -34,9 +35,9 @@ struct sx126x_waiter {
 struct sx126x_data {
 	struct sx126x_hal_data hal;
 
-	/* Current state (atomic for lock-free state transitions) */
-	atomic_t state;
+	/* Guards the operation state and every exchange with the radio */
 	struct k_mutex lock;
+	enum sx126x_op op;
 
 	/* Current configuration */
 	struct lora_modem_config config;
