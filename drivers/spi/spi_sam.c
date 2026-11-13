@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(spi_sam);
 
 #include "spi_context.h"
 #include <errno.h>
+#include <zephyr/cache.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
@@ -58,6 +59,9 @@ struct spi_sam_data {
 
 #ifdef CONFIG_SPI_SAM_DMA
 	struct k_sem dma_sem;
+	/* RX buffer of the running DMA transfer, invalidated in the data cache when it is done */
+	const uint8_t *dma_rx_buf;
+	uint32_t dma_rx_len;
 #endif /* CONFIG_SPI_SAM_DMA */
 };
 
@@ -383,6 +387,22 @@ static __aligned(4) uint32_t rx_dummy;
 static void spi_sam_iodev_complete(const struct device *dev, int status);
 #endif
 
+/*
+ * The core may have speculatively loaded the RX buffer into the data cache
+ * while the DMA wrote it, drop these lines before the CPU reads the data.
+ * The lines are clean since the buffer was flushed before the transfer, so
+ * flush and invalidate only drops them, and unlike invalidate it accepts a
+ * range that is not aligned to cache lines.
+ */
+static void spi_sam_dma_rx_invd(struct spi_sam_data *drv_data)
+{
+	if (drv_data->dma_rx_buf != NULL) {
+		(void)sys_cache_data_flush_and_invd_range((void *)drv_data->dma_rx_buf,
+							  drv_data->dma_rx_len);
+		drv_data->dma_rx_buf = NULL;
+	}
+}
+
 static void dma_callback(const struct device *dma_dev, void *user_data,
 	uint32_t channel, int status)
 {
@@ -397,6 +417,7 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 	struct spi_rtio *rtio_ctx = drv_data->rtio_ctx;
 
 	if (rtio_ctx->txn_head != NULL) {
+		spi_sam_dma_rx_invd(drv_data);
 		spi_sam_iodev_complete(dev, status);
 		return;
 	}
@@ -434,7 +455,8 @@ static int spi_sam_dma_txrx(const struct device *dev,
 		.source_burst_length = 1,
 		.dest_burst_length = 1,
 		.complete_callback_en = true,
-		.dma_callback = NULL,
+		/* RX completes last, TX is done once the last byte is in SPI_TDR */
+		.dma_callback = dma_callback,
 		.user_data = (void *)dev,
 	};
 
@@ -466,7 +488,7 @@ static int spi_sam_dma_txrx(const struct device *dev,
 		.source_burst_length = 1,
 		.dest_burst_length = 1,
 		.complete_callback_en = true,
-		.dma_callback = dma_callback,
+		.dma_callback = NULL,
 		.user_data = (void *)dev,
 	};
 
@@ -488,6 +510,22 @@ static int spi_sam_dma_txrx(const struct device *dev,
 	};
 
 	tx_dma_cfg.head_block = &tx_block_cfg;
+
+	/*
+	 * The DMA bypasses the data cache: write the TX data to the memory, and
+	 * write back and drop the RX lines, so no dirty line is evicted over the
+	 * data the DMA writes.
+	 */
+	if (tx_buf != NULL) {
+		(void)sys_cache_data_flush_range((void *)tx_buf, len);
+	}
+
+	if (rx_buf != NULL) {
+		(void)sys_cache_data_flush_and_invd_range((void *)rx_buf, len);
+	}
+
+	drv_data->dma_rx_buf = rx_buf;
+	drv_data->dma_rx_len = len;
 
 	res = dma_config(drv_cfg->dma_dev, drv_cfg->dma_rx_channel, &rx_dma_cfg);
 	if (res != 0) {
@@ -518,6 +556,7 @@ static int spi_sam_dma_txrx(const struct device *dev,
 	if (blocking) {
 		k_sem_take(&drv_data->dma_sem, K_FOREVER);
 		spi_sam_finish(regs);
+		spi_sam_dma_rx_invd(drv_data);
 	} else {
 		res = -EWOULDBLOCK;
 	}
