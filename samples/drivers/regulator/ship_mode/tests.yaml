@@ -1,0 +1,17 @@
+sample:
+  description: Enter ship mode using regulator parent
+  name: Regulator parent ship mode
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "(.*) entering ship mode"
+  tags:
+    - regulator
+    - ship_mode
+
+tests:
+  sample.drivers.regulator.ship_mode:
+    platform_allow:
+      - nrf54lv10dk/nrf54lv10a/cpuapp
