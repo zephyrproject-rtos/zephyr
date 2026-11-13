@@ -12,6 +12,7 @@ Process an ELF file to generate size report on RAM and ROM.
 """
 
 import argparse
+import gzip
 import json
 import locale
 import os
@@ -1035,7 +1036,8 @@ def parse_args():
         "--json",
         help='Store results in the given JSON file '
         + '(a "{target}" string in the filename will '
-        + 'be replaced by "ram", "rom", or "all").',
+        + 'be replaced by "ram", "rom", or "all". '
+        + 'A ".gz" suffix will gzip the output file.',
     )
     parser.add_argument(
         "--filter-address-range",
@@ -1116,8 +1118,12 @@ def main():
                 data = dict()
                 data["symbols"] = exporter.export(root)
                 data["total_size"] = symsize
-                with open(jsonout, "w") as fp:
-                    json.dump(data, fp, indent=4)
+                if jsonout.lower().endswith('.gz'):
+                    with gzip.open(jsonout, "wt") as fp:
+                        json.dump(data, fp, indent=4)
+                else:
+                    with open(jsonout, "w") as fp:
+                        json.dump(data, fp, indent=4)
 
 
 if __name__ == "__main__":
