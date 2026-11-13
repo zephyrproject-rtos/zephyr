@@ -7,11 +7,8 @@
 
 #define DT_DRV_COMPAT     infineon_qspi_flash
 
-#if defined(CONFIG_DT_HAS_FIXED_PARTITIONS_ENABLED)
-#define SOC_NV_FLASH_NODE DT_PARENT(DT_INST(0, fixed_partitions))
-#else
-#define SOC_NV_FLASH_NODE DT_MEM_FROM_MAPPED_PARTITION(DT_INST(0, zephyr_mapped_partition))
-#endif
+#define SOC_NV_FLASH_NODE                                                                          \
+	GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(0, SOC_NV_FLASH_COMPAT_NODE, (,)))
 
 #define PAGE_LEN DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
@@ -22,6 +19,7 @@
 #include <zephyr/logging/log.h>
 
 #include <infineon_kconfig.h>
+#include "flash_priv.h"
 #include "mtb_serial_memory.h"
 #include "cy_device_headers.h"
 
