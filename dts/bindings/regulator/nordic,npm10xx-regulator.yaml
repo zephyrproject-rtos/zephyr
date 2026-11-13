@@ -97,34 +97,27 @@ child-binding:
         Enable automatic pass-through mode when BUCK output does not reach the target due to low
         supply voltage. BUCK only.
 
-    regulator-soft-start-microamp:
+    regulator-soft-start-current-idx:
       type: int
-      enum:
-        - 10000
-        - 20000
-        - 35000
-        - 50000
-        - 66000
-        - 91000
-        - 117000
-        - 142000
-        - 167000
-        - 192000
-        - 217000
-        - 291000
+      min: 0
+      max: 7
       description: |
         Peak current limit for startup. The values are:
-        10mA, 20mA, 35mA, 50mA - for LDO and LOADSW
-        66mA, 91mA, 117mA, 142mA, 167mA, 192mA, 217mA, 291mA - for BUCK
+          LDO (in LDO mode) - 0: 20mA; 1: 30mA; 2: 50mA; 3: 80mA
+          LDO (in Load Switch mode) - 0: 25mA; 1: 40mA; 2: 60mA; 3: 100mA
+          LDSW - 0: 10mA; 1: 15mA; 2: 30mA; 3: 45mA
+          BUCK - 0: 66mA; 1: 91mA; 2: 117mA; 3: 142mA; 4: 167mA; 5: 192mA; 6: 217mA; 7: 291mA
 
     regulator-soft-start-us:
       type: int
       enum:
-        - 1500
+        - 0
         - 4500
         - 7500
         - 10500
-      description: Soft start time. LDO and LOADSW.
+      description: |
+        Soft start time. LDO and LDSW. Value 0 maps to hardware's default which is 20.5ms for LDO
+        and 1.5ms for LDSW.
 
     regulator-pull-down-ohms:
       type: int
@@ -181,7 +174,7 @@ examples:
 
         LDSW {
           regulator-boot-off;
-          regulator-soft-start-microamp = <10000>;
+          regulator-soft-start-current-idx = <1>;  /* 15mA */
           /* ... */
         };
       };
