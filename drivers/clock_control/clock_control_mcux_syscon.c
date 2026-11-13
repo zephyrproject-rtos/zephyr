@@ -232,6 +232,33 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	if ((uint32_t)sub_system == MCUX_FRO_1M_CLK) {
+		/* Also sets FRO1MHZ_UTICK_ENA, the 1 MHz FRO gate into the
+		 * frequency-measure block.
+		 */
+		CLOCK_Enable1MFRO(true);
+	}
+
+	if ((uint32_t)sub_system == MCUX_FRO_HF_FREQM_CLK) {
+		SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO_HF_FREQM_ENA_MASK;
+	}
+	if ((uint32_t)sub_system == MCUX_FRO_12M_FREQM_CLK) {
+		SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO12MHZ_FREQM_ENA_MASK;
+	}
+	if ((uint32_t)sub_system == MCUX_XTAL32M_FREQM_CLK) {
+		SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_XTAL32MHZ_FREQM_ENA_MASK;
+	}
+
+	/* The frequency-measure block has its own gate (kCLOCK_Freqme) on top of the
+	 * analog-control gate; both are needed for FREQ_ME_CTRL.
+	 */
+	if ((uint32_t)sub_system == MCUX_ANALOG_CTRL_CLK) {
+		CLOCK_EnableClock(kCLOCK_AnalogCtrl);
+		CLOCK_EnableClock(kCLOCK_Freqme);
+	}
+#endif
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
@@ -567,6 +594,30 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	if ((uint32_t)sub_system == MCUX_FRO_1M_CLK) {
+		CLOCK_Enable1MFRO(false);
+	}
+
+	/*
+	 * MCUX_ANALOG_CTRL_CLK deliberately has no off path: RM 11.2 states that the
+	 * clock to the analog controller module is enabled at boot by the bootloader
+	 * and must always remain enabled, and the clock_monitor back-end relies on
+	 * that (it never calls clock_control_off() for it).
+	 */
+
+	/* Measure-only gates: safe to clear (unlike FRO1MHZ_UTICK_ENA above). */
+	if ((uint32_t)sub_system == MCUX_FRO_HF_FREQM_CLK) {
+		SYSCON->CLOCK_CTRL &= ~SYSCON_CLOCK_CTRL_FRO_HF_FREQM_ENA_MASK;
+	}
+	if ((uint32_t)sub_system == MCUX_FRO_12M_FREQM_CLK) {
+		SYSCON->CLOCK_CTRL &= ~SYSCON_CLOCK_CTRL_FRO12MHZ_FREQM_ENA_MASK;
+	}
+	if ((uint32_t)sub_system == MCUX_XTAL32M_FREQM_CLK) {
+		SYSCON->CLOCK_CTRL &= ~SYSCON_CLOCK_CTRL_XTAL32MHZ_FREQM_ENA_MASK;
+	}
+#endif
+
 #if defined(CONFIG_COUNTER_NXP_MRT)
 	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
 #if defined(CONFIG_SOC_FAMILY_LPC) || defined(CONFIG_SOC_SERIES_RW6XX) ||                          \
@@ -709,6 +760,17 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 	case MCUX_EXT_CLK:
 		*rate = CLOCK_GetSysOscFreq();
+		break;
+#endif
+#if defined(CONFIG_SOC_SERIES_MCXW2XX)
+	case MCUX_FRO_1M_CLK:
+		*rate = CLOCK_GetFro1MFreq();
+		break;
+	case MCUX_FRO_HF_CLK:
+		*rate = CLOCK_GetFroHfFreq();
+		break;
+	case MCUX_FRO_12M_CLK:
+		*rate = CLOCK_GetFro12MFreq();
 		break;
 #endif
 
@@ -1278,6 +1340,9 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
 		break;
 #endif
+	default:
+		/* Report an unknown identifier instead of leaving *rate untouched. */
+		return -ENOTSUP;
 	}
 
 	return 0;

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - clock_monitor
+    - pm
+tests:
+  drivers.clock_monitor.pm:
+    # A board opts in by adding an overlay that declares a
+    # "test-clock-monitor-pm" fixture node.
+    filter: dt_compat_enabled("test-clock-monitor-pm")

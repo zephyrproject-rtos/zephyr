@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+
+/ {
+	test-required-clocks {
+		compatible = "test-required-clocks";
+		clocks = <&syscon MCUX_FRO_1M_CLK>;
+	};
+
+	clock-monitor-pm-test {
+		compatible = "test-clock-monitor-pm";
+
+		/* reference = system AHB clock (~32 MHz), target = 1 MHz FRO. */
+		anactrl_fm {
+			monitor = <&anactrl>;
+		};
+	};
+};
+
+&anactrl {
+	status = "okay";
+};
+
+&inputmux {
+	status = "okay";
+};
