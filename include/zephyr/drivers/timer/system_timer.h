@@ -54,6 +54,19 @@ extern "C" {
  */
 
 /**
+ * @brief The kernel timer spinlock.
+ *
+ * This lock protects tick accounting and the timeout queue inside
+ * kernel/timeout.c.  It is exposed here solely so that the
+ * sys_clock_lock(), sys_clock_unlock() and sys_clock_announce_locked()
+ * declarations can carry thread safety annotations that Clang can verify
+ * at every call site.
+ *
+ * @warning Driver code must never use this lock directly.
+ */
+extern struct k_spinlock z_timeout_lock;
+
+/**
  * @brief Lock the system clock.
  *
  * Acquires the kernel timer lock that protects tick accounting and
@@ -89,6 +102,7 @@ extern "C" {
  *         or sys_clock_unlock().
  */
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+Z_ACQUIRES(z_timeout_lock)
 k_spinlock_key_t sys_clock_lock(void);
 #else
 /*
@@ -97,17 +111,15 @@ k_spinlock_key_t sys_clock_lock(void);
  * ignored.  Inline this to avoid the overhead of an extra function
  * call for legacy drivers using sys_clock_announce().
  */
+Z_ACQUIRES(z_timeout_lock)
 static inline k_spinlock_key_t sys_clock_lock(void)
 {
-	k_spinlock_key_t key;
-
 	/* If this fires, a new config grew real spinlock content and
 	 * the #if guard above needs updating.
 	 */
 	BUILD_ASSERT(sizeof(struct k_spinlock) <= 1);
 
-	key.key = arch_irq_lock();
-	return key;
+	return k_spin_lock(&z_timeout_lock);
 }
 #endif
 
@@ -122,11 +134,13 @@ static inline k_spinlock_key_t sys_clock_lock(void)
  * @param key Lock key returned by sys_clock_lock().
  */
 #if defined(CONFIG_SMP) || defined(CONFIG_SPIN_VALIDATE)
+Z_RELEASES(z_timeout_lock)
 void sys_clock_unlock(k_spinlock_key_t key);
 #else
+Z_RELEASES(z_timeout_lock)
 static inline void sys_clock_unlock(k_spinlock_key_t key)
 {
-	arch_irq_unlock(key.key);
+	k_spin_unlock(&z_timeout_lock, key);
 }
 #endif
 
@@ -183,6 +197,7 @@ bool sys_clock_is_locked(void);
  *        whose fallback passes true here.  Scheduled for removal in a future
  *        release; new code must ignore it.
  */
+Z_REQUIRES(z_timeout_lock)
 void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
 /**
@@ -219,6 +234,7 @@ void sys_clock_idle_exit(void);
  * @param ticks Elapsed time, in ticks
  * @param key Lock key obtained from sys_clock_lock().
  */
+Z_RELEASES(z_timeout_lock)
 void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key);
 
 /**
@@ -247,6 +263,7 @@ static inline void sys_clock_announce(uint32_t ticks)
  * @note This function is called by the kernel with the system clock
  * lock held.
  */
+Z_REQUIRES(z_timeout_lock)
 uint32_t sys_clock_elapsed(void);
 
 /**
@@ -284,6 +301,7 @@ void sys_clock_disable(void);
  * K_TICKS_FOREVER was here, so a driver that has not migrated and still keys
  * on that value stops its clock as it always did.
  */
+Z_REQUIRES(z_timeout_lock)
 void sys_clock_no_timeout(void);
 
 /**
@@ -310,6 +328,7 @@ void sys_clock_no_timeout(void);
  *
  * @note Called with the system clock lock held.
  */
+Z_REQUIRES(z_timeout_lock)
 void sys_clock_idle_enter(uint32_t ticks);
 
 /**

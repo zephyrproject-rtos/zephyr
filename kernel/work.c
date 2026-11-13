@@ -1107,6 +1107,7 @@ static int schedule_for_queue_locked(struct k_work_q **queuep,
  * @return true if and only if work had been delayed so the timeout
  * was cancelled.
  */
+Z_NO_THREAD_SAFETY_ANALYSIS
 static inline bool unschedule_locked(struct k_work_delayable *dwork,
 				     k_spinlock_key_t *key)
 {

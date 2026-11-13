@@ -76,7 +76,7 @@ static inline bool z_timeout_q_remove(struct _timeout *to)
 	return was_first;
 }
 
-/* Ticks from curr_tick until @to expires. Caller holds timeout_lock and has
+/* Ticks from curr_tick until @to expires. Caller holds z_timeout_lock and has
  * verified that @to is active.
  */
 static inline k_ticks_t z_timeout_q_remainder(const struct _timeout *to)
