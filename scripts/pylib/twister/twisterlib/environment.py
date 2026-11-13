@@ -225,6 +225,11 @@ Artificially long but functional example:
                         for testing on hardware that is listed in the file.
                         """)
 
+    device.add_argument("--skip-hwmap-schema-check", action="store_true",
+                        help="""Skip hardware-map schema validation. Unsupported
+                        properties are ignored with a warning.
+                        """)
+
     parser.add_argument("--persistent-hardware-map", action='store_true',
                         help="""With --generate-hardware-map, tries to use
                         persistent names for serial devices on platforms
