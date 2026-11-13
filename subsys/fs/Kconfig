@@ -92,6 +92,12 @@ config FILE_SYSTEM_SHELL_LS_SIZE
 	  While listing files in the file system shell, also list the size of
 	  each file.
 
+config FILE_SYSTEM_SHELL_RM_RECURSIVE
+	bool "File system shell rm -r command"
+	help
+	  Enable the -r flag for the fs rm shell command, which recursively
+	  removes a directory tree.
+
 endif # FILE_SYSTEM_SHELL
 
 config FILE_SYSTEM_MKFS

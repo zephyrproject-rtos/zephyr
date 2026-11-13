@@ -279,17 +279,147 @@ static int cmd_mkdir(const struct shell *sh, size_t argc, char **argv)
 	return err;
 }
 
+#if defined(CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE)
+
+/*
+ * Iterative post-order tree removal. The path buffer acts as the traversal
+ * stack (append "/child" to descend, cut to last '/' to ascend). At most one
+ * directory handle is open at a time and is closed before every fs_unlink().
+ */
+static int rm_tree(const struct shell *sh, char *path)
+{
+	const size_t root_len = strlen(path);
+	size_t len = root_len;
+	struct fs_dirent entry;
+	struct fs_dir_t dir;
+	int err;
+	int close_err;
+
+	while (true) {
+		err = fs_stat(path, &entry);
+		if (err != 0) {
+			goto fail;
+		}
+
+		if (entry.type == FS_DIR_ENTRY_DIR) {
+			/*
+			 * Peek at the first remaining child.
+			 * fs_readdir() skips "." and ".." for all backends.
+			 */
+			fs_dir_t_init(&dir);
+			err = fs_opendir(&dir, path);
+			if (err != 0) {
+				goto fail;
+			}
+			err = fs_readdir(&dir, &entry);
+			close_err = fs_closedir(&dir);
+			if (err == 0) {
+				err = close_err;
+			}
+			if (err != 0) {
+				goto fail;
+			}
+
+			if (entry.name[0] != '\0') {
+				/* Descend into child. */
+				int n = snprintf(path + len, MAX_PATH_LEN - len, "/%s", entry.name);
+
+				if (n < 0 || (size_t)n >= MAX_PATH_LEN - len) {
+					err = -ENAMETOOLONG;
+					goto fail;
+				}
+
+				len += (size_t)n;
+				continue;
+			}
+		}
+
+		/* File or now-empty directory: delete it. */
+		err = fs_unlink(path);
+		if (err != 0) {
+			goto fail;
+		}
+
+		if (len == root_len) {
+			return 0;
+		}
+
+		/* Ascend one level. */
+		len = (size_t)(strrchr(path, '/') - path);
+		path[len] = '\0';
+	}
+
+fail:
+	shell_error(sh, "Failed to remove %s (%d)", path, err);
+	return err;
+}
+
+#endif /* CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE */
+
+static bool is_mount_point(const char *path)
+{
+	int index = 0;
+	const char *name;
+
+	while (fs_readmount(&index, &name) == 0) {
+		if (strcmp(path, name) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static int cmd_rm(const struct shell *sh, size_t argc, char **argv)
 {
 	int err;
 	char path[MAX_PATH_LEN];
+	bool recursive = false;
 
-	create_abs_path(argv[1], path, sizeof(path));
+	if (argc == 3) {
+		if (strcmp(argv[1], "-r") != 0) {
+			shell_error(sh, "Usage: rm [-r] <path>");
+			return -EINVAL;
+		}
+		recursive = true;
+		create_abs_path(argv[2], path, sizeof(path));
+	} else if (argc == 2) {
+		if (strcmp(argv[1], "-r") == 0) {
+			shell_error(sh, "Usage: rm [-r] <path>");
+			return -EINVAL;
+		}
+		create_abs_path(argv[1], path, sizeof(path));
+	} else {
+		shell_error(sh, "Usage: rm [-r] <path>");
+		return -EINVAL;
+	}
 
-	err = fs_unlink(path);
-	if (err != 0) {
-		shell_error(sh, "Failed to remove %s (%d)", path, err);
-		err = -EIO;
+	if (recursive) {
+		int norm_err = fs_normalize_path(path, path, sizeof(path));
+
+		if (norm_err != 0) {
+			shell_error(sh, "Invalid path (%d)", norm_err);
+			return norm_err;
+		}
+	}
+
+	if (strcmp(path, "/") == 0 || is_mount_point(path)) {
+		shell_error(sh, "Refusing to remove mount point %s", path);
+		return -EPERM;
+	}
+
+	if (recursive) {
+#if defined(CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE)
+		err = rm_tree(sh, path);
+#else
+		shell_error(sh, "Recursive rm not enabled (CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE)");
+		err = -ENOTSUP;
+#endif /* CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE */
+	} else {
+		err = fs_unlink(path);
+		if (err != 0) {
+			shell_error(sh, "Failed to remove %s (%d)", path, err);
+			err = -EIO;
+		}
 	}
 
 	return err;
@@ -1051,7 +1181,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		      SHELL_HELP("Concatenate files and print on the standard output",
 				 "<path> [<path> ...]"),
 		      cmd_cat, 2, 255),
-	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "<path>"), cmd_rm, 2, 0),
+	SHELL_CMD_ARG(rm, NULL,
+		      SHELL_HELP("Remove file or directory",
+				 IS_ENABLED(CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE) ? "[-r] <path>"
+										   : "<path>"),
+		      cmd_rm, 2, 1),
 	SHELL_CMD_ARG(cp, NULL, SHELL_HELP("Copy file", "<source> <dest>"), cmd_cp, 3, 0),
 	SHELL_CMD_ARG(mv, NULL, SHELL_HELP("Move file", "<source> <dest>"), cmd_mv, 3, 0),
 	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),

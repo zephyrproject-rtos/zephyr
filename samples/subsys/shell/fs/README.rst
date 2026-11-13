@@ -230,6 +230,13 @@ Remove a file or directory
 
   fs rm <path>
 
+Use the ``-r`` flag (requires ``CONFIG_FILE_SYSTEM_SHELL_RM_RECURSIVE=y``) to
+remove a non-empty directory and all of its contents recursively.
+
+.. code-block:: console
+
+  fs rm -r <path>
+
 Flash Host Access
 =================
 
