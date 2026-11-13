@@ -267,7 +267,6 @@ config BT_RPA
 
 config BT_PRIVATE_SHELL
 	bool
-	default n
 
 config BT_ASSERT
 	bool "Custom Bluetooth assert implementation"

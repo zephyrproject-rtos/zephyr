@@ -112,7 +112,7 @@ config LOG_DICTIONARY_SUPPORT
 config LOG_DOMAIN_NAME_PREFIX
 	bool "Domain name prefix"
 	help
-		Enable support for prefixing the log source with the domain name.
+	  Enable support for prefixing the log source with the domain name.
 
 config LOG_THREAD_ID_PREFIX
 	bool "Thread ID prefix"
@@ -130,7 +130,6 @@ config LOG_CORE_ID_PREFIX
 
 config LOG_CUSTOM_FORMAT_SUPPORT
 	bool "Custom format support"
-	default n
 	help
 	  Enable support for custom formatter.
 	  Allows custom format callbacks registering for logging backend.

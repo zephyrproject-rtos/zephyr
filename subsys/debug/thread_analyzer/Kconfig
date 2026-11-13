@@ -72,7 +72,6 @@ config THREAD_ANALYZER_RUN_UNLOCKED
 
 config THREAD_ANALYZER_STACK_SAFETY
 	bool "Thread analysis includes thread runtime stack safety check"
-	default n
 	select THREAD_RUNTIME_STACK_SAFETY
 	help
 	  If enabled, the stack usage analysis is enhanced by calling a customizable handler

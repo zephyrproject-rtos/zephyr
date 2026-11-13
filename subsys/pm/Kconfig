@@ -70,7 +70,6 @@ config PM_STATE_SET_IRQ_UNLOCKED
 config PM_EARLY_SYSTEM_TIMER_RESUME
 	bool "Resume the system timer before devices [EXPERIMENTAL]"
 	depends on PM
-	default n
 	select EXPERIMENTAL
 	help
 	  Use the experimental system resume sequence: SoC exit post-ops,

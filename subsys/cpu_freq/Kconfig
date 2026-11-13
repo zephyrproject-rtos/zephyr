@@ -28,7 +28,6 @@ config CPU_FREQ_INTERVAL_MS
 
 config CPU_FREQ_PER_CPU_SCALING
 	bool "Per-CPU frequency scaling"
-	default n
 	depends on SMP
 	help
 	  Enable per-CPU frequency scaling support. If disabled, setting the
