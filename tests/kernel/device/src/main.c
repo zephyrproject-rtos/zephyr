@@ -92,6 +92,9 @@ DEVICE_DT_DEINIT_DEFINE(DT_PATH(fakedeferdriver_fa000000), fakedeferdriver_retry
  *
  * @see device_get_binding()
  * @see DEVICE_DEFINE()
+ * @verifies ZEP-SRS-14-3
+ * @verifies ZEP-SRS-14-4
+ * @verifies ZEP-SRS-14-22
  */
 ZTEST(device, test_dummy_device)
 {
@@ -432,6 +435,7 @@ ZTEST(device, test_device_init_sub_priority)
  * driver instance will call their own implementations.
  *
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-1
  */
 ZTEST(device, test_abstraction_driver_common)
 {
@@ -470,7 +474,11 @@ ZTEST(device, test_abstraction_driver_common)
  *
  * @see device_init
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-6
  * @verifies ZEP-SRS-14-7
+ * @verifies ZEP-SRS-14-25
+ * @verifies ZEP-SRS-14-26
+ * @verifies ZEP-SRS-14-27
  */
 ZTEST(device, test_deferred_init)
 {
@@ -561,6 +569,10 @@ static int fakedeferdriver_retry_deinit(const struct device *dev)
  * @see device_deinit
  * @see device_is_ready
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-16
+ * @verifies ZEP-SRS-14-17
+ * @verifies ZEP-SRS-14-18
+ * @verifies ZEP-SRS-14-19
  */
 ZTEST(device, test_deferred_init_retry)
 {
@@ -814,6 +826,7 @@ ZTEST_USER(device, test_deferred_init_user)
  *
  * @see device_is_ready
  * @ingroup kernel_device_tests
+ * @verifies ZEP-SRS-14-24
  */
 ZTEST_USER(device, test_device_is_ready_null_user)
 {

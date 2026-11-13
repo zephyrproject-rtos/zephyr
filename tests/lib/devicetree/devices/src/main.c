@@ -94,6 +94,8 @@ static const struct device *const comma_inst_devs[] = {
  * @ingroup kernel_device_tests
  * @see DEVICE_INIT_DT_GET()
  * @see DEVICE_DT_GET()
+ * @verifies ZEP-SRS-14-5
+ * @verifies ZEP-SRS-14-13
  */
 ZTEST(devicetree_devices, test_init_get)
 {
@@ -379,7 +381,7 @@ ZTEST(devicetree_devices, test_get_or_null)
  *
  * @ingroup kernel_device_tests
  * @see device_supported_handles_get, device_supported_foreach
- * @verifies ZEP-SRS-14-11
+ * @verifies ZEP-SRS-14-20
  */
 ZTEST(devicetree_devices, test_supports)
 {
