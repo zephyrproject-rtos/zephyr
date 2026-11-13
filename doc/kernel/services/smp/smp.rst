@@ -443,7 +443,8 @@ Thread Queue Ordering
 =====================
 
 When a thread is preempted by another thread of higher priority in an SMP
-system, it is moved to the back of the queue for its priority level. In
-contrast, on UP systems, a preempted thread does not move to the back of its
-priority queue; it simply waits to regain the CPU, preserving its original
-ordering relative to other threads of the same priority.
+system, it is moved to the back of the queue for its priority level. UP
+systems do the same when time slicing (:kconfig:option:`CONFIG_TIMESLICING`)
+is enabled. Without it, a preempted thread on a UP system does not move to
+the back of its priority queue; it simply waits to regain the CPU, preserving
+its original ordering relative to other threads of the same priority.
