@@ -97,13 +97,12 @@ static void hub_log_info(struct usbh_hub_data *const hub_data)
 	struct usb_device *udev = hub_data->udev;
 
 	LOG_INF("=== USB Hub Information ===");
-	LOG_INF("Hub Level: %d", udev->level);
+	LOG_INF("Hub depth: %u", udev->depth);
 	LOG_INF("Vendor ID: 0x%04x", dev_desc->idVendor);
 	LOG_INF("Product ID: 0x%04x", dev_desc->idProduct);
 	LOG_INF("Device Address: %d", udev->addr);
-	if (udev->hub) {
-		LOG_INF("Parent Hub Level: %d, Port: %d", udev->hub->level,
-			udev->hub_port);
+	if (udev->parent != NULL) {
+		LOG_INF("Parent hub depth: %u, port: %u", udev->parent->depth, udev->hub_port);
 	} else {
 		LOG_INF("Root Hub (no parent)");
 	}
@@ -114,8 +113,7 @@ static void hub_recursive_disconnect(struct usbh_hub_data *const hub_data)
 {
 	struct usb_device *port_udev;
 
-	LOG_DBG("Recursively disconnecting Hub level %d and all children",
-		hub_data->udev->level);
+	LOG_DBG("Recursively disconnecting hub depth %u and all children", hub_data->udev->depth);
 
 	for (uint8_t i = 0; i < hub_data->port_count; i++) {
 		hub_data->port_list[i].enum_pending = false;
@@ -156,8 +154,8 @@ static int enumerate_port_device(struct usbh_hub_data *hub_data,
 
 	udev->hub_port = port_num;
 	udev->speed = speed;
-	udev->level = hub_data->udev->level + 1;
-	udev->hub = hub_data->udev;
+	udev->depth = hub_data->udev->depth + 1U;
+	udev->parent = hub_data->udev;
 
 	ret = usbh_device_connect(hub_data->uhs_ctx, udev);
 	if (ret != 0) {
@@ -460,10 +458,9 @@ static void hub_process_data(struct usbh_hub_data *const hub_data)
 		}
 
 		if (port_index != 0) {
-			LOG_DBG("Hub level %d port %d status changed, starting processing",
-				hub_data->udev->level, port_index);
-			hub_port_handle_change(hub_data,
-					       &hub_data->port_list[port_index - 1]);
+			LOG_DBG("Hub depth %u port %u status changed, starting processing",
+				hub_data->udev->depth, port_index);
+			hub_port_handle_change(hub_data, &hub_data->port_list[port_index - 1]);
 		} else {
 			hub_changed = true;
 		}
@@ -472,7 +469,7 @@ static void hub_process_data(struct usbh_hub_data *const hub_data)
 	memset(hub_data->int_buffer, 0, sizeof(hub_data->int_buffer));
 
 	if (hub_changed) {
-		LOG_INF("Hub level %d status changed, processing", hub_data->udev->level);
+		LOG_INF("Hub depth %u status changed, processing", hub_data->udev->depth);
 		ret = usbh_req_get_hub_status(hub_data->udev, &hub_status, &hub_change);
 
 		if (!hub_data->connected || hub_data->state != HUB_STATE_OPERATIONAL) {
@@ -552,14 +549,13 @@ static int hub_interrupt_in_cb(struct usb_device *const udev,
 	}
 
 	if (xfer->err != 0 || buf == NULL || buf->len == 0) {
-		LOG_WRN("Hub level %d interrupt transfer failed (err=%d)",
-			hub_data->udev->level, xfer->err);
+		LOG_WRN("Hub depth %u interrupt transfer failed (err=%d)", hub_data->udev->depth,
+			xfer->err);
 	} else {
 		memcpy(hub_data->int_buffer, buf->data,
 		       MIN(buf->len, sizeof(hub_data->int_buffer)));
 
-		LOG_DBG("Hub level %d interrupt data received: length=%d",
-			hub_data->udev->level,
+		LOG_DBG("Hub depth %u interrupt data received: length=%d", hub_data->udev->depth,
 			buf->len);
 	}
 
@@ -701,9 +697,8 @@ static int usbh_hub_probe(struct usbh_class_data *const c_data,
 	const void *desc_end;
 	uint8_t target_iface;
 
-	if (udev->level > CONFIG_USBH_HUB_MAX_LEVELS) {
-		LOG_ERR("Hub chain depth limit exceeded (%d > %d)",
-			udev->level,
+	if ((udev->depth + 1U) > CONFIG_USBH_HUB_MAX_LEVELS) {
+		LOG_ERR("Hub chain depth limit exceeded (%u > %d)", udev->depth + 1U,
 			CONFIG_USBH_HUB_MAX_LEVELS);
 		return -ENOSPC;
 	}
@@ -773,12 +768,12 @@ static int usbh_hub_removed(struct usbh_class_data *const cdata)
 	struct k_work_sync sync;
 	uint16_t vendor_id;
 	uint16_t product_id;
-	uint8_t level;
+	uint8_t depth;
 	int ret;
 
 	hub_data = cdata->priv;
 
-	level = hub_data->udev->level;
+	depth = hub_data->udev->depth;
 	vendor_id = hub_data->udev->dev_desc.idVendor;
 	product_id = hub_data->udev->dev_desc.idProduct;
 
@@ -803,8 +798,8 @@ static int usbh_hub_removed(struct usbh_class_data *const cdata)
 		LOG_DBG("Interrupt transfer cancelled");
 	}
 
-	LOG_INF("Hub (level %d, Vendor ID: 0x%04x, Product ID: 0x%04x) removal completed",
-		level, vendor_id, product_id);
+	LOG_INF("Hub (depth %u, Vendor ID: 0x%04x, Product ID: 0x%04x) removal completed", depth,
+		vendor_id, product_id);
 
 	return 0;
 }
