@@ -1,4 +1,6 @@
 common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
   platform_allow:
     - native_sim
     - native_sim/native/64
@@ -9,3 +11,6 @@ common:
     - host
 tests:
   bluetooth.host_l2cap_br_sig: {}
+  bluetooth.host_l2cap_br_sig.no_tx_thread:
+    extra_configs:
+      - CONFIG_BT_TX_PROCESSOR_THREAD=n
