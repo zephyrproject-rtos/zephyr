@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_OLED_C_CLICK
+
+# The EN pin of the OLED supply is controlled by a regulator-fixed node
+configdefault REGULATOR
+	default y
+
+endif # SHIELD_MIKROE_OLED_C_CLICK
