@@ -152,7 +152,7 @@ selected_cmd_get(const struct shell *sh)
 }
 
 static void tab_item_print(const struct shell *sh, const char *option,
-			   uint16_t longest_option)
+			   int32_t longest_option)
 {
 	static const char *tab = "  ";
 	uint16_t columns;
@@ -166,9 +166,14 @@ static void tab_item_print(const struct shell *sh, const char *option,
 
 	longest_option += z_shell_strlen(tab);
 
+	/* Signed division handles terminal widths smaller than the indentation. */
 	columns = (sh->ctx->vt100_ctx.cons.terminal_wid
 			- z_shell_strlen(tab)) / longest_option;
-	__ASSERT_NO_MSG(columns != 0);
+	if (columns == 0U) {
+		z_shell_fprintf(sh, SHELL_OPTION, "\n%s%s", tab, option);
+		return;
+	}
+
 	diff = longest_option - z_shell_strlen(option);
 
 	if (sh->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {

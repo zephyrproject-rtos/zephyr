@@ -95,6 +95,77 @@ static void test_shell_wait_for_output(const struct shell *sh, const char *expec
 			 expected, sh_dummy->buf);
 }
 
+SHELL_STATIC_SUBCMD_SET_CREATE(tab_options,
+	SHELL_CMD(long_completion_option_alpha, NULL, NULL, NULL),
+	SHELL_CMD(long_completion_option_beta, NULL, NULL, NULL),
+	SHELL_CMD(short, NULL, NULL, NULL),
+	SHELL_CMD(small, NULL, NULL, NULL),
+	SHELL_SUBCMD_SET_END
+);
+SHELL_CMD_REGISTER(tab_test, &tab_options, NULL, NULL);
+
+static struct {
+	uint16_t width;
+	char prompt[SIZEOF_FIELD(struct shell_ctx, prompt)];
+	int colors;
+	bool active;
+} tab_state;
+
+static void test_tab_options(uint16_t width, const char *input, const char *expected)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_PROMPT_CHANGE)) {
+		ztest_test_skip();
+	}
+	if (!tab_state.active) {
+		tab_state.width = sh->ctx->vt100_ctx.cons.terminal_wid;
+		strcpy(tab_state.prompt, sh->ctx->prompt);
+		tab_state.active = true;
+		tab_state.colors = shell_use_colors_set(sh, false);
+		zassert_true(tab_state.colors >= 0);
+		zassert_ok(shell_prompt_change(sh, ""));
+	}
+	test_shell_reset_state(sh);
+	sh->ctx->vt100_ctx.cons.terminal_wid = width;
+	test_shell_push_input(sh, input);
+	test_shell_push_input(sh, "\t");
+	test_shell_wait_for_cmd(sh, input);
+	test_shell_wait_for_output(sh, expected);
+	shell_backend_dummy_clear_output(sh);
+	test_shell_push_input(sh, "x\x1b[D\t");
+	zassert_equal(sh->ctx->cmd_buff_pos, strlen(input));
+	zassert_mem_equal(sh->ctx->cmd_buff, input, strlen(input));
+	zassert_str_equal(&sh->ctx->cmd_buff[strlen(input)], "x");
+}
+
+ZTEST(sh, test_tab_long_options)
+{
+	static const uint16_t widths[] = {1, 2, 20, 31};
+
+	ARRAY_FOR_EACH(widths, i) {
+		test_tab_options(widths[i], "tab_test ",
+				 "\r\n  long_completion_option_alpha"
+				 "\r\n  long_completion_option_beta"
+				 "\r\n  short\r\n  small\r\n");
+	}
+}
+
+ZTEST(sh, test_tab_options_fit_one_column)
+{
+	test_tab_options(32, "tab_test ",
+			 "\r\n  long_completion_option_alpha\x1b[2C"
+			 "\r\n  long_completion_option_beta\x1b[3C");
+}
+
+ZTEST(sh, test_tab_options_multiple_columns)
+{
+	test_tab_options(
+		80, "tab_test ",
+		"\r\n  long_completion_option_alpha\x1b[2Clong_completion_option_beta\x1b[3C\r\n");
+	test_tab_options(20, "tab_test s", "\r\n  short\x1b[2Csmall\x1b[2C");
+}
+
 ZTEST(shell_1cpu, test_cmd_help)
 {
 	test_shell_execute_cmd("help", 0);
@@ -826,8 +897,27 @@ static void *shell_setup(void)
 	return NULL;
 }
 
+static void shell_after(void *data)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+	int prompt_ret = 0;
+	int colors_ret = 0;
+
+	if (tab_state.active) {
+		sh->ctx->vt100_ctx.cons.terminal_wid = tab_state.width;
+		prompt_ret = shell_prompt_change(sh, tab_state.prompt);
+		colors_ret = shell_use_colors_set(sh, tab_state.colors != 0);
+		test_shell_reset_state(sh);
+		tab_state.active = false;
+	}
+
+	ztest_simple_1cpu_after(data);
+	zassert_ok(prompt_ret);
+	zassert_true(colors_ret >= 0);
+}
+
 ZTEST_SUITE(shell_1cpu, NULL, shell_setup, ztest_simple_1cpu_before,
 			ztest_simple_1cpu_after, NULL);
 
 ZTEST_SUITE(sh, NULL, shell_setup, ztest_simple_1cpu_before,
-		ztest_simple_1cpu_after, NULL);
+		shell_after, NULL);
