@@ -134,8 +134,9 @@
 		};
 
 		gpio_prt0: gpio@40310000 {
-			compatible = "infineon,gpio";
-			reg = <0x40310000 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310000 0x80>, <0x40300000 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <24 0>;
 			gpio-controller;
@@ -145,8 +146,9 @@
 		};
 
 		gpio_prt1: gpio@40310080 {
-			compatible = "infineon,gpio";
-			reg = <0x40310080 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310080 0x80>, <0x40300010 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <25 0>;
 			gpio-controller;
@@ -156,8 +158,9 @@
 		};
 
 		gpio_prt2: gpio@40310100 {
-			compatible = "infineon,gpio";
-			reg = <0x40310100 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310100 0x80>, <0x40300020 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <26 0>;
 			gpio-controller;
@@ -167,8 +170,9 @@
 		};
 
 		gpio_prt3: gpio@40310180 {
-			compatible = "infineon,gpio";
-			reg = <0x40310180 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310180 0x80>, <0x40300030 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <27 0>;
 			gpio-controller;
@@ -178,8 +182,9 @@
 		};
 
 		gpio_prt4: gpio@40310200 {
-			compatible = "infineon,gpio";
-			reg = <0x40310200 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310200 0x80>, <0x40300040 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <28 0>;
 			gpio-controller;
@@ -189,8 +194,9 @@
 		};
 
 		gpio_prt5: gpio@40310280 {
-			compatible = "infineon,gpio";
-			reg = <0x40310280 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310280 0x80>, <0x40300050 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <29 0>;
 			gpio-controller;
@@ -200,8 +206,9 @@
 		};
 
 		gpio_prt6: gpio@40310300 {
-			compatible = "infineon,gpio";
-			reg = <0x40310300 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310300 0x80>, <0x40300060 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <30 0>;
 			gpio-controller;
@@ -211,8 +218,9 @@
 		};
 
 		gpio_prt7: gpio@40310380 {
-			compatible = "infineon,gpio";
-			reg = <0x40310380 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310380 0x80>, <0x40300070 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <31 0>;
 			gpio-controller;
@@ -222,8 +230,9 @@
 		};
 
 		gpio_prt8: gpio@40310400 {
-			compatible = "infineon,gpio";
-			reg = <0x40310400 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310400 0x80>, <0x40300080 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <32 0>;
 			gpio-controller;
@@ -233,8 +242,9 @@
 		};
 
 		gpio_prt9: gpio@40310480 {
-			compatible = "infineon,gpio";
-			reg = <0x40310480 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310480 0x80>, <0x40300090 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <33 0>;
 			gpio-controller;
@@ -244,8 +254,9 @@
 		};
 
 		gpio_prt11: gpio@40310580 {
-			compatible = "infineon,gpio";
-			reg = <0x40310580 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310580 0x80>, <0x403000b0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <35 0>;
 			gpio-controller;
@@ -255,8 +266,9 @@
 		};
 
 		gpio_prt12: gpio@40310600 {
-			compatible = "infineon,gpio";
-			reg = <0x40310600 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310600 0x80>, <0x403000c0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <36 0>;
 			gpio-controller;
@@ -266,8 +278,9 @@
 		};
 
 		gpio_prt13: gpio@40310680 {
-			compatible = "infineon,gpio";
-			reg = <0x40310680 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310680 0x80>, <0x403000d0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <53 0>;
 			gpio-controller;
@@ -277,8 +290,9 @@
 		};
 
 		gpio_prt14: gpio@40310700 {
-			compatible = "infineon,gpio";
-			reg = <0x40310700 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310700 0x80>, <0x403000e0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <54 0>;
 			gpio-controller;
@@ -288,8 +302,9 @@
 		};
 
 		gpio_prt15: gpio@40310780 {
-			compatible = "infineon,gpio";
-			reg = <0x40310780 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310780 0x80>, <0x403000f0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <55 0>;
 			gpio-controller;
@@ -299,8 +314,9 @@
 		};
 
 		gpio_prt16: gpio@40310800 {
-			compatible = "infineon,gpio";
-			reg = <0x40310800 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310800 0x80>, <0x40300100 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <56 0>;
 			gpio-controller;
@@ -310,8 +326,9 @@
 		};
 
 		gpio_prt17: gpio@40310880 {
-			compatible = "infineon,gpio";
-			reg = <0x40310880 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310880 0x80>, <0x40300110 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <57 0>;
 			gpio-controller;
@@ -321,8 +338,9 @@
 		};
 
 		gpio_prt18: gpio@40310900 {
-			compatible = "infineon,gpio";
-			reg = <0x40310900 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310900 0x80>, <0x40300120 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <58 0>;
 			gpio-controller;
@@ -332,8 +350,9 @@
 		};
 
 		gpio_prt19: gpio@40310980 {
-			compatible = "infineon,gpio";
-			reg = <0x40310980 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310980 0x80>, <0x40300130 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <59 0>;
 			gpio-controller;
@@ -343,8 +362,9 @@
 		};
 
 		gpio_prt20: gpio@40310a00 {
-			compatible = "infineon,gpio";
-			reg = <0x40310a00 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310a00 0x80>, <0x40300140 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <60 0>;
 			gpio-controller;
@@ -354,8 +374,9 @@
 		};
 
 		gpio_prt21: gpio@40310a80 {
-			compatible = "infineon,gpio";
-			reg = <0x40310a80 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310a80 0x80>, <0x40300150 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <61 0>;
 			gpio-controller;
@@ -365,8 +386,9 @@
 		};
 
 		gpio_prt23: gpio@40310b80 {
-			compatible = "infineon,gpio";
-			reg = <0x40310b80 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310b80 0x80>, <0x40300170 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <63 0>;
 			gpio-controller;
@@ -376,8 +398,9 @@
 		};
 
 		gpio_prt24: gpio@40310c00 {
-			compatible = "infineon,gpio";
-			reg = <0x40310c00 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310c00 0x80>, <0x40300180 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <64 0>;
 			gpio-controller;
@@ -387,8 +410,9 @@
 		};
 
 		gpio_prt25: gpio@40310c80 {
-			compatible = "infineon,gpio";
-			reg = <0x40310c80 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310c80 0x80>, <0x40300190 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <65 0>;
 			gpio-controller;
@@ -398,8 +422,9 @@
 		};
 
 		gpio_prt26: gpio@40310d00 {
-			compatible = "infineon,gpio";
-			reg = <0x40310d00 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310d00 0x80>, <0x403001a0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <66 0>;
 			gpio-controller;
@@ -409,8 +434,9 @@
 		};
 
 		gpio_prt27: gpio@40310d80 {
-			compatible = "infineon,gpio";
-			reg = <0x40310d80 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310d80 0x80>, <0x403001b0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <67 0>;
 			gpio-controller;
@@ -420,8 +446,9 @@
 		};
 
 		gpio_prt28: gpio@40310e00 {
-			compatible = "infineon,gpio";
-			reg = <0x40310e00 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310e00 0x80>, <0x403001c0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <68 0>;
 			gpio-controller;
@@ -431,8 +458,9 @@
 		};
 
 		gpio_prt29: gpio@40310e80 {
-			compatible = "infineon,gpio";
-			reg = <0x40310e80 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310e80 0x80>, <0x403001d0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <37 0>;
 			gpio-controller;
@@ -442,8 +470,9 @@
 		};
 
 		gpio_prt30: gpio@40310f00 {
-			compatible = "infineon,gpio";
-			reg = <0x40310f00 0x80>;
+			compatible = "infineon,ioss-gpio";
+			reg = <0x40310f00 0x80>, <0x403001e0 0x10>;
+			reg-names = "gpio", "hsiom";
 			interrupt-parent = <&intmux_ch0>;
 			interrupts = <69 0>;
 			gpio-controller;
