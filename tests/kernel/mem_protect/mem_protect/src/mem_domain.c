@@ -432,6 +432,7 @@ static void spin_entry(void *p1, void *p2, void *p3)
  *   changes nothing.
  *
  * @see k_mem_domain_add_thread()
+ * @verifies ZEP-SRS-8-30
  */
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
@@ -512,6 +513,7 @@ ZTEST(mem_protect_domain, test_mem_domain_migration)
  *
  * @see k_mem_domain_add_partition()
  * @verifies ZEP-SRS-8-21
+ * @verifies ZEP-SRS-8-29
  */
 ZTEST(mem_protect_domain, test_mem_part_overlap)
 {
