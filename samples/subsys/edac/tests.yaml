@@ -26,3 +26,4 @@ tests:
       - frdm_mcxa346
       - frdm_mcxa366
       - frdm_mcxa577
+      - frdm_mcxa287
