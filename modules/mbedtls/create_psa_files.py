@@ -29,13 +29,9 @@ KCONFIG_HEADER="""\
 # from {}.
 # Some manual additions are made, but no deletion.
 
-if PSA_CRYPTO
-
 config PSA_CRYPTO_ENABLE_ALL
-	bool "All PSA crypto features"
+	bool "All PSA crypto features" if !PSA_PROMPTLESS
 """.format(os.path.basename(__file__), INPUT_REL_PATH)
-
-KCONFIG_FOOTER="\nendif # PSA_CRYPTO\n"
 
 H_HEADER="""\
 /*
@@ -61,7 +57,7 @@ H_FOOTER="\n#endif /* CONFIG_PSA_H */\n"
 # (see "modules/crypto/mbedtls/include/psa/crypto_adjust_config_key_pair_types.h").
 # Therefore we mimic the same pattern with Kconfigs as follows:
 # - do not add _BASIC Kconfigs to the automatic generated file (KCONFIG_PATH);
-# - add _BASIC Kconfigs to Kconfig.psa.logic and let them "default y" as soon as
+# - add _BASIC Kconfigs to Kconfig.psa and let them "default y" as soon as
 #   any other _IMPORT, _EXPORT, _GENERATE or _DERIVE Kconfigs are enabled.
 SKIP_SYMBOLS = [
     "PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC",
@@ -86,11 +82,11 @@ def generate_kconfig_content(symbols: List[str]) -> str:
             continue
         output.append("""
 config {0}
-\tbool "{0}" if !MBEDTLS_PROMPTLESS
+\tbool "{0}" if !PSA_PROMPTLESS
 \tdefault y if PSA_CRYPTO_ENABLE_ALL
 """.format(sym))
 
-    return KCONFIG_HEADER + "".join(output) + KCONFIG_FOOTER
+    return KCONFIG_HEADER + "".join(output)
 
 def generate_header_content(symbols: List[str]) -> str:
     output = []

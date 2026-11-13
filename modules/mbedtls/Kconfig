@@ -8,11 +8,16 @@ config ZEPHYR_MBEDTLS_MODULE
 
 config MBEDTLS_PROMPTLESS
 	bool
+	select DEPRECATED
+	select PSA_PROMPTLESS
 	help
-	  Symbol to disable the prompt for MBEDTLS selection.
-	  This symbol may be used internally in a Kconfig tree to hide the
-	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
-	  dependent sub-configurations and thus prevent stuck symbol behavior.
+	  This Kconfig option is deprecated. Use PSA_PROMPTLESS instead.
+
+config PSA_PROMPTLESS
+	bool
+	help
+	  Symbol for PSA Crypto providers with a fixed feature set to hide the
+	  configurable PSA feature prompts.
 
 config MBEDTLS_VERSION_4_x
 	bool
@@ -24,12 +29,13 @@ config TF_PSA_CRYPTO_MODULE_DIR
 	string
 	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}"
 
-rsource "Kconfig.psa.auto"
-rsource "Kconfig.psa.logic"
+rsource "Kconfig.psa"
+rsource "Kconfig.tf-psa-crypto"
 
 menuconfig MBEDTLS
 	bool "mbed TLS Support" if !MBEDTLS_PROMPTLESS
 	depends on PSA_CRYPTO
+	select TF_PSA_CRYPTO
 	help
 	  This option enables the Mbed TLS cryptography library.
 
@@ -53,29 +59,7 @@ config MBEDTLS_CUSTOM
 
 endchoice # MBEDTLS_IMPLEMENTATION
 
-choice TF_PSA_CRYPTO_IMPLEMENTATION
-	prompt "TF-PSA-Crypto implementation"
-	default TF_PSA_CRYPTO_BUILTIN
-
-config TF_PSA_CRYPTO_BUILTIN
-	bool "Zephyr in-tree TF-PSA-Crypto version"
-	help
-	  Link with TF-PSA-Crypto sources included with Zephyr distribution.
-	  Included TF-PSA-Crypto version is well integrated with and supported
-	  by Zephyr, and the recommended choice for most users.
-
-config TF_PSA_CRYPTO_CUSTOM
-	bool "Custom TF-PSA-Crypto library"
-	help
-	  The TF-PSA-Crypto library must be configured and added out of tree.
-	  If using MBEDTLS_BUILTIN with this option TF-PSA-Crypto won't be added and built
-	  by Mbed TLS but Mbed TLS will still expect a tfpsacrypto CMake library to exist.
-	  Zephyr itself won't create or use the tfpsacrypto CMake library but you are expected to provide it for the CMake of Mbed TLS.
-
-endchoice # TF_PSA_CRYPTO_IMPLEMENTATION
-
 rsource "Kconfig.mbedtls"
-rsource "Kconfig.tf-psa-crypto"
 rsource "Kconfig.ciphersuites"
 rsource "Kconfig.deprecated"
 

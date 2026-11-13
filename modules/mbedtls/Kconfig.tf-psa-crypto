@@ -1,40 +1,38 @@
 # Copyright (c) 2026 BayLibre SAS
 # SPDX-License-Identifier: Apache-2.0
 
-config TF_PSA_CRYPTO_CONFIG_FILE
-	string "TF-PSA-Crypto configuration file"
-	default "config-tf-psa-crypto.h"
+if PSA_CRYPTO
+
+rsource "Kconfig.tf-psa-crypto.interface"
+
+endif # PSA_CRYPTO
+
+config TF_PSA_CRYPTO
+	bool
+
+if TF_PSA_CRYPTO
+
+choice TF_PSA_CRYPTO_IMPLEMENTATION
+	prompt "TF-PSA-Crypto implementation"
+	default TF_PSA_CRYPTO_BUILTIN
+
+config TF_PSA_CRYPTO_BUILTIN
+	bool "Zephyr in-tree TF-PSA-Crypto version"
 	help
-	  Specify the configuration header file to be used when building
-	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
+	  Link with TF-PSA-Crypto sources included with Zephyr distribution.
+	  Included TF-PSA-Crypto version is well integrated with and supported
+	  by Zephyr, and the recommended choice for most users.
 
-if TF_PSA_CRYPTO_CONFIG_FILE = "config-tf-psa-crypto.h"
-
-config TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
-	string
+config TF_PSA_CRYPTO_CUSTOM
+	bool "Custom TF-PSA-Crypto library"
 	help
-	  Optional driver configuration header to be included at the end of
-	  TF_PSA_CRYPTO_CONFIG_FILE. This file is intended to be used to supply
-	  configuration options needed by the driver dispatch interface.
+	  The TF-PSA-Crypto library must be configured and added out of tree.
+	  If using MBEDTLS_BUILTIN with this option TF-PSA-Crypto won't be added and built
+	  by Mbed TLS but Mbed TLS will still expect a tfpsacrypto CMake library to exist.
+	  Zephyr itself won't create or use the tfpsacrypto CMake library but you are expected
+	  to provide it for the CMake of Mbed TLS.
 
-config TF_PSA_CRYPTO_DRIVER_CONFIG
-	def_bool TF_PSA_CRYPTO_DRIVER_CONFIG_FILE != ""
-
-endif # TF_PSA_CRYPTO_CONFIG_FILE = "config-tf-psa-crypto.h"
-
-config TF_PSA_CRYPTO_USER_CONFIG_FILE
-	string "User configuration file for TF-PSA-Crypto"
-	help
-	  If defined, this is a header which will be included after TF_PSA_CRYPTO_CONFIG_FILE.
-	  This allows you to modify the default configuration,
-	  including the ability to undefine options that are enabled.
-
-config TF_PSA_CRYPTO_USER_CONFIG
-	def_bool TF_PSA_CRYPTO_USER_CONFIG_FILE != ""
-
-config TF_PSA_CRYPTO_DISPATCH_DIR
-	string
-	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch"
+endchoice # TF_PSA_CRYPTO_IMPLEMENTATION
 
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
@@ -187,6 +185,9 @@ config MBEDTLS_MD_C
 config MBEDTLS_ASN1_PARSE_C
 	bool "Support for ASN1 parser functions"
 
+config MBEDTLS_ASN1_WRITE_C
+	bool "Support for ASN1 write functions"
+
 config MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
 	bool "Remove usage of standard libc functions"
 	help
@@ -280,8 +281,15 @@ config MBEDTLS_PK_PARSE_C
 
 config MBEDTLS_PK_WRITE_C
 	bool "The generic public (asymmetric) key writer"
+	select MBEDTLS_ASN1_WRITE_C
 	help
 	  Enable generic public key write functions.
+
+config MBEDTLS_PK_C
+	bool
+	default y if MBEDTLS_PK_PARSE_C || MBEDTLS_PK_WRITE_C
+	# PK also DER-encodes the raw ECDSA signatures that PSA Crypto produces.
+	select MBEDTLS_ASN1_WRITE_C if (PSA_WANT_ALG_ECDSA || PSA_WANT_ALG_DETERMINISTIC_ECDSA)
 
 config MBEDTLS_X509_USE_C
 	bool "X.509 core for using certificates"
@@ -358,10 +366,6 @@ config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on !BUILD_WITH_TFM
 	select CSPRNG_NEEDED if PSA_CRYPTO_PROVIDER_MBEDTLS
-
-config MBEDTLS_PSA_CRYPTO_CLIENT
-	def_bool y
-	depends on PSA_CRYPTO
 
 config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
@@ -456,3 +460,5 @@ config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
 	  The long term goal is to remove this option once all users are on the
 	  PSA Crypto API.
+
+endif # TF_PSA_CRYPTO

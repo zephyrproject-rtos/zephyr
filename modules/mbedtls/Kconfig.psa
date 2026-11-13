@@ -9,9 +9,12 @@ config PSA_CRYPTO
 	  PSA_CRYPTO_PROVIDER_CUSTOM can be selected to use an out-of-tree
 	  implementation.
 
+if PSA_CRYPTO
+
+rsource "Kconfig.psa.auto"
+
 choice PSA_CRYPTO_PROVIDER
 	prompt "PSA Crypto API provider"
-	depends on PSA_CRYPTO
 
 config PSA_CRYPTO_PROVIDER_TFM
 	bool "Use TF-M"
@@ -30,27 +33,29 @@ config PSA_CRYPTO_PROVIDER_CUSTOM
 
 endchoice # PSA_CRYPTO_PROVIDER
 
-# The following section extends Kconfig.psa.auto (which is automatically
-# generated) by adding some logic between PSA_WANT symbols.
-
 config PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 	bool
 	default y
-	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT || \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT || \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE || \
-		   PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
+	depends on \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT   || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT   || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE || \
+		PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
 
 config PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
 	bool
 	default y
-	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT || \
-		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT || \
-		   PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
+	depends on \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT   || \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT   || \
+		PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE
 
 config PSA_WANT_KEY_TYPE_DH_KEY_PAIR_BASIC
 	bool
 	default y
-	depends on PSA_WANT_KEY_TYPE_DH_KEY_PAIR_IMPORT || \
-		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT || \
-		   PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE
+	depends on \
+		PSA_WANT_KEY_TYPE_DH_KEY_PAIR_IMPORT   || \
+		PSA_WANT_KEY_TYPE_DH_KEY_PAIR_EXPORT   || \
+		PSA_WANT_KEY_TYPE_DH_KEY_PAIR_GENERATE
+
+endif # PSA_CRYPTO
