@@ -426,6 +426,7 @@ static int adin1140_process_rx_chunks(const struct device *dev, uint8_t num_chun
 	uint32_t ftr;
 	uint16_t len, rx_idx;
 	uint8_t chunk, ebo;
+	const uint8_t *data;
 
 	for (chunk = 0, rx_idx = 0; chunk < num_chunks; chunk++) {
 		ftr = sys_be32_to_cpu(*(uint32_t *)&ctx->oa_rx_buf[rx_idx + tc6->cps]);
@@ -486,7 +487,44 @@ static int adin1140_process_rx_chunks(const struct device *dev, uint8_t num_chun
 			continue;
 		}
 
-		rc = adin1140_rx_frame_append(ctx, &ctx->oa_rx_buf[rx_idx], len);
+		data = &ctx->oa_rx_buf[rx_idx];
+
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+		/* FTSE prepends an 8-byte HW RX timestamp (32-bit seconds +
+		 * 32-bit nanoseconds, big-endian) ahead of the frame itself.
+		 * CPS is always >= 8 (the smallest supported chunk payload
+		 * size), so this always fits entirely within the
+		 * start-of-frame chunk -- no cross-chunk/cross-call state
+		 * needed. RTSA is only ever set by the MAC-PHY on the
+		 * start-of-frame chunk, so no need to additionally test SV.
+		 */
+		if (FIELD_GET(OA_DATA_FTR_RTSA, ftr)) {
+			struct net_ptp_time ts;
+
+			if (len < ADIN1140_RX_TIMESTAMP_LEN) {
+				LOG_ERR("OA Rx: Frame too short for FTSE prefix!");
+				adin1140_rx_frame_reset(ctx);
+				rx_idx += tc6->cps + sizeof(uint32_t);
+				continue;
+			}
+
+			ts.second = sys_get_be32(&data[0]);
+			ts.nanosecond = sys_get_be32(&data[4]);
+
+			net_pkt_set_timestamp(ctx->rx_pkt, &ts);
+			/* Gates delivery via SO_TIMESTAMPING/cmsg in
+			 * recvmsg() -- see sockets_packet.c's
+			 * zpacket_recvmsg_set_control(). Without this,
+			 * net_pkt_timestamp() is set but nothing ever
+			 * hands it to an application socket.
+			 */
+			net_pkt_set_rx_timestamping(ctx->rx_pkt, true);
+			data += ADIN1140_RX_TIMESTAMP_LEN;
+			len -= ADIN1140_RX_TIMESTAMP_LEN;
+		}
+#endif
+
+		rc = adin1140_rx_frame_append(ctx, data, len);
 		if (rc < 0) {
 			LOG_WRN("Failed to allocate buffer for Rx packet");
 			adin1140_rx_frame_reset(ctx);
@@ -587,6 +625,17 @@ static int adin1140_send_frame(const struct device *dev, struct net_pkt *pkt)
 			hdr |= FIELD_PREP(OA_DATA_HDR_EV, 1) | FIELD_PREP(OA_DATA_HDR_EBO, ebo);
 		}
 
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+		/* Set on every chunk, not just the last -- the MAC-PHY likely
+		 * needs to know a frame is capture-requested from its very
+		 * first chunk, not decide retroactively once transmission is
+		 * already underway.
+		 */
+		if (net_pkt_is_tx_timestamping(pkt)) {
+			hdr |= FIELD_PREP(ADIN1140_DATA_HDR_TSC, ADIN1140_TSC_CAPTURE_A);
+		}
+#endif
+
 		/* Get parity bit and place chunk header in Tx buffer */
 		hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
 
@@ -613,7 +662,53 @@ static int adin1140_send_frame(const struct device *dev, struct net_pkt *pkt)
 		return rc;
 	}
 
-	return adin1140_process_rx_chunks(dev, total_chunks);
+	rc = adin1140_process_rx_chunks(dev, total_chunks);
+	if (rc < 0) {
+		return rc;
+	}
+
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+	if (net_pkt_is_tx_timestamping(pkt)) {
+		uint32_t status0 = 0;
+		uint32_t sec, ns;
+		struct net_ptp_time ts;
+		int retry;
+
+		/* The SPI transfer only hands the frame to the MAC-PHY's own
+		 * TX queue -- actual departure onto the (possibly
+		 * PLCA-arbitrated) wire, and therefore the capture, can lag
+		 * behind by more than one poll interval.
+		 */
+		for (retry = 0; retry < ADIN1140_TTSCAA_POLL_MAX_RETRIES; retry++) {
+			int reg_rc = oa_tc6_reg_read(tc6, ADIN1140_MAC_STATUS0, &status0);
+
+			if (reg_rc < 0) {
+				LOG_WRN("TX ts: MAC_STATUS0 read failed [%d] (retry=%d)",
+					reg_rc, retry);
+			} else if (status0 & ADIN1140_MAC_STATUS0_TTSCAA) {
+				break;
+			}
+			k_sleep(K_USEC(ADIN1140_TTSCAA_POLL_INTERVAL_US));
+		}
+
+		if (status0 & ADIN1140_MAC_STATUS0_TTSCAA) {
+			oa_tc6_reg_read(tc6, ADIN1140_MAC_TTSCAH, &sec);
+			oa_tc6_reg_read(tc6, ADIN1140_MAC_TTSCAL, &ns);
+			/* Write-1-to-clear, matching MAC_STATUS0's other bits. */
+			oa_tc6_reg_write(tc6, ADIN1140_MAC_STATUS0,
+					 ADIN1140_MAC_STATUS0_TTSCAA);
+
+			ts.second = sec;
+			ts.nanosecond = ns;
+			net_pkt_set_timestamp(pkt, &ts);
+			net_if_add_tx_timestamp(pkt);
+		} else {
+			LOG_WRN("TX timestamp capture timed out");
+		}
+	}
+#endif
+
+	return 0;
 }
 
 /**
@@ -736,6 +831,14 @@ static int adin1140_configure(const struct device *dev)
 	if (ctx->rx_cut_through_en) {
 		val |= OA_CONFIG0_RXCTE;
 	}
+
+#ifdef CONFIG_ETH_ADIN1140_TIMESTAMP
+	/* Prepend an 8-byte HW RX timestamp to every received frame; stripped
+	 * back out and exposed via net_pkt_set_timestamp() in
+	 * adin1140_process_rx_chunks().
+	 */
+	val |= ADIN1140_CONFIG0_FTSE | ADIN1140_CONFIG0_FTSS;
+#endif
 
 	/* Chunk Payload Size (CPS) */
 	val &= ~GENMASK(2, 0);
