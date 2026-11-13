@@ -214,6 +214,8 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_NTN_POSREQ,
 #endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED,
+	/* Full functionality requested before the init chain ran in this session */
+	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #ifdef CONFIG_HL78XX_GNSS
 	MODEM_HL78XX_EVENT_GNSS_START_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED,
@@ -225,7 +227,6 @@ enum hl78xx_event {
 	/* Explicit GNSS mode switching events */
 	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
-	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	MODEM_HL78XX_EVENT_DEVICE_ASLEEP,
@@ -437,6 +438,15 @@ struct hl78xx_modem_boot_status {
 	bool is_booted_previously;
 	bool init_sequence_completed;
 	enum hl78xx_module_status status;
+	/* RUN_INIT_SCRIPT waits to start the init script: the chat was busy at
+	 * the entry, or a pending power down stopped the script. Until it starts,
+	 * a script result is not the init script's.
+	 */
+	bool init_script_retry_pending;
+	/* AIRPLANE waits to enter the state again after a restart of the modem:
+	 * until it does, a script result belongs to the ended session.
+	 */
+	bool airplane_restart_pending;
 };
 
 struct hl78xx_gprs_status {
@@ -654,6 +664,11 @@ struct modem_event_system {
 	uint8_t event_buf[8];
 	struct ring_buf event_rb;
 	struct k_mutex event_rb_lock;
+	/* Script results (success, failure, AT command timeout) queued and not
+	 * handled yet: a state that must tell the result of its own script from
+	 * that of an earlier one starts its script when none is left.
+	 */
+	atomic_t script_results_queued;
 };
 
 enum hl78xx_at_cmd_terminal_result {

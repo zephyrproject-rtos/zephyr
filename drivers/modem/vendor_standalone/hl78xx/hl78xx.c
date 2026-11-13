@@ -173,6 +173,8 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 #endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	case MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED:
 		return "phone functionality changed";
+	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
+		return "lte restore requested";
 #ifdef CONFIG_HL78XX_GNSS
 	case MODEM_HL78XX_EVENT_GNSS_START_REQUESTED:
 		return "gnss event start requested";
@@ -192,8 +194,6 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "gnss mode enter requested";
 	case MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED:
 		return "gnss mode exit requested";
-	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
-		return "lte restore requested";
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	case MODEM_HL78XX_EVENT_DEVICE_ASLEEP:
@@ -240,6 +240,12 @@ static void hl78xx_log_event(enum hl78xx_event evt)
 static void hl78xx_enter_restart_fallback_state(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
+
+	/* A reset abandons whatever the chat was doing, as a requested restart
+	 * does: a script started before it would keep the chat through the
+	 * reset and refuse the post-restart script that listens for +KSUP.
+	 */
+	hl78xx_chat_abort_active_script(data);
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
@@ -554,6 +560,16 @@ static void hl78xx_log_state_changed(enum hl78xx_state last_state, enum hl78xx_s
 	LOG_INF("switch from %s to %s", hl78xx_state_str(last_state), hl78xx_state_str(new_state));
 }
 
+/**
+ * @brief Tell whether an event reports the result of a chat script.
+ */
+static bool hl78xx_is_script_result(enum hl78xx_event evt)
+{
+	return (evt == MODEM_HL78XX_EVENT_SCRIPT_SUCCESS) ||
+	       (evt == MODEM_HL78XX_EVENT_SCRIPT_FAILED) ||
+	       (evt == MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
+}
+
 static void hl78xx_event_dispatch_handler(struct k_work *item)
 {
 	struct hl78xx_data *data =
@@ -568,6 +584,10 @@ static void hl78xx_event_dispatch_handler(struct k_work *item)
 	LOG_DBG("dequeued %d events", events_cnt);
 
 	for (uint8_t i = 0; i < events_cnt; i++) {
+		/* A result counts as queued until its turn comes */
+		if (hl78xx_is_script_result((enum hl78xx_event)events[i])) {
+			(void)atomic_dec(&data->events.script_results_queued);
+		}
 		hl78xx_event_handler(data, (enum hl78xx_event)events[i]);
 	}
 }
@@ -575,7 +595,10 @@ static void hl78xx_event_dispatch_handler(struct k_work *item)
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	k_mutex_lock(&data->events.event_rb_lock, K_FOREVER);
-	ring_buf_put(&data->events.event_rb, (uint8_t *)&evt, 1);
+	if ((ring_buf_put(&data->events.event_rb, (uint8_t *)&evt, 1) == 1U) &&
+	    hl78xx_is_script_result(evt)) {
+		(void)atomic_inc(&data->events.script_results_queued);
+	}
 	k_mutex_unlock(&data->events.event_rb_lock);
 	k_work_submit_to_queue(&modem_workq, &data->events.event_dispatch_work);
 }
@@ -1650,6 +1673,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 {
 	int ret = 0;
 	int script_ret = 0;
+	bool terminal_error;
 	k_timeout_t tx_lock_timeout =
 		run_async ? K_NO_WAIT
 			  : K_SECONDS(req->response_timeout > 0 ? req->response_timeout
@@ -1665,7 +1689,6 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		hl78xx_dynamic_cmd_feed_lpm_timers(data, req->response_timeout);
 	}
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	hl78xx_dynamic_cmd_reset_terminal_result(data);
 
 	ret = k_mutex_lock(&data->tx_lock, tx_lock_timeout);
 	if (ret == -EAGAIN) {
@@ -1680,6 +1703,11 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		LOG_DBG("Failed to acquire tx_lock for sending command: %d", ret);
 		return ret;
 	}
+
+	/* The terminal result is shared by every command: reset and read it
+	 * under tx_lock, or a command of another thread resets it in flight.
+	 */
+	hl78xx_dynamic_cmd_reset_terminal_result(data);
 
 	ret = hl78xx_dynamic_cmd_prepare_script(data, req, run_async);
 	if (ret < 0) {
@@ -1703,6 +1731,10 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		LOG_DBG("Chat script executed successfully.");
 	}
 
+	terminal_error =
+		!run_async && (script_ret == 0) &&
+		(data->at_cmd_capture.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR);
+
 	ret = k_mutex_unlock(&data->tx_lock);
 	if (ret < 0) {
 		if (req->user_cmd == false) {
@@ -1711,8 +1743,7 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		return script_ret < 0 ? script_ret : ret;
 	}
 
-	if (!run_async && script_ret == 0 &&
-	    data->at_cmd_capture.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR) {
+	if (terminal_error) {
 		if (req->user_cmd == false) {
 			errno = EIO;
 		}
@@ -2179,18 +2210,35 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 
-	case MODEM_HL78XX_EVENT_BUS_OPENED:
+	case MODEM_HL78XX_EVENT_BUS_OPENED: {
 		modem_chat_attach(&data->chat, data->uart_pipe);
 #ifdef CONFIG_MODEM_HL78XX_AUTOBAUD_AT_BOOT
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
 #else
-		hl78xx_run_post_restart_script_async(data);
+		int ret = hl78xx_run_post_restart_script_async(data);
+
+		if (ret == -EBUSY) {
+			/* A command sent while the modem was reset holds the chat,
+			 * and the script that listens for +KSUP cannot start. Abort
+			 * it and enter the state again: the abort runs on the chat
+			 * work queue, and the start-up wait opens the bus once more.
+			 */
+			LOG_WRN("Chat busy at the post-restart script: aborting the active script");
+			hl78xx_chat_abort_active_script(data);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_POWER_ON);
+		} else if (ret < 0) {
+			LOG_ERR("Post-restart script did not start: %d", ret);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
+		} else {
+			/* Started: the script listens for +KSUP */
+		}
 #endif /* CONFIG_MODEM_HL78XX_AUTOBAUD_AT_BOOT */
 		break;
+	}
 
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		(void)hl78xx_get_uart_config(data);
-		/* Reset per-cycle flag so AT_CMD_READY is dispatched exactly once. */
+		/* Reset the per-session flag so AT_CMD_READY is dispatched once for it. */
 		data->status.at_cmd_ready_sent = false;
 		LOG_DBG("Current baudrate after post-restart script: %d",
 			data->status.uart.current_baudrate);
@@ -2289,18 +2337,93 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
+	int ret;
 
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 		LOG_DBG("Set WAKE pin to 1 for init script");
 	}
 
-	return hl78xx_run_init_script_async(data);
+	ret = hl78xx_run_init_script_async(data);
+	if (ret != -EBUSY) {
+		return ret;
+	}
+
+	/* Another script holds the chat: after a restart the modem made on its
+	 * own, the script of a command still waiting for its answer; on an LTE
+	 * restore, a command of another thread. Abort it and start the init
+	 * script on the timeout: the abort runs on the chat work queue, after
+	 * this event. A driver script reports the abort as a failure, which is
+	 * not the init script's.
+	 */
+	LOG_WRN("Chat busy at the init script: aborting the active script");
+	data->status.boot.init_script_retry_pending = true;
+	hl78xx_chat_abort_active_script(data);
+	hl78xx_reschedule_timer(data, K_MSEC(100));
+
+	return 0;
+}
+
+static int hl78xx_on_run_init_script_state_leave(struct hl78xx_data *data)
+{
+	/* The init script retry must not fire in the next state */
+	hl78xx_stop_timer(data);
+	data->status.boot.init_script_retry_pending = false;
+	return 0;
 }
 
 static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	if (data->status.boot.init_script_retry_pending && hl78xx_is_script_result(evt)) {
+		/* The init script is not running: the result belongs to another
+		 * script, the one the busy entry aborted or one that took the
+		 * chat since. Taken for the init script's, a failure would reset
+		 * the modem and a success would skip the init script.
+		 */
+		LOG_DBG("Result of the aborted script ignored: %s", hl78xx_event_str(evt));
+		hl78xx_clear_script_failure(data);
+		return;
+	}
+
 	switch (evt) {
+	case MODEM_HL78XX_EVENT_TIMEOUT: {
+		int ret;
+
+		if (!data->status.boot.init_script_retry_pending) {
+			/* A timer the previous state left running: no retry is due */
+			break;
+		}
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if (data->status.lpm.power_down.shutdown_pending) {
+			/* Wait for the decision on the pending power down */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+		if (atomic_get(&data->events.script_results_queued) > 0) {
+			/* A result of the script that held the chat is queued behind
+			 * this timeout. Started now, the init script would get it:
+			 * wait until it has been ignored.
+			 */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+		/* The retry armed by a busy entry or a power down */
+		ret = hl78xx_run_init_script_async(data);
+		if (ret == -EBUSY) {
+			/* The aborted script, or a command sent since, still holds
+			 * the chat; each is bounded by its own timeout.
+			 */
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+		} else if (ret < 0) {
+			LOG_ERR("Init script did not start: %d", ret);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
+		} else {
+			data->status.boot.init_script_retry_pending = false;
+		}
+		break;
+	}
+
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_confirm_recovery(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT, evt);
 
@@ -2316,6 +2439,23 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if ((evt == MODEM_HL78XX_EVENT_SCRIPT_FAILED) &&
+		    data->status.lpm.power_down.shutdown_pending) {
+			/* The power down aborted the init script to take the chat
+			 * and owns the modem from here: a reset would race its
+			 * power off. If the power down is aborted, the timeout
+			 * starts the init script again, as after a busy entry: a
+			 * command sent on the free chat meanwhile is waited for,
+			 * and a script result is not the init script's.
+			 */
+			LOG_INF("Init script stopped for a pending power down");
+			hl78xx_clear_script_failure(data);
+			data->status.boot.init_script_retry_pending = true;
+			hl78xx_reschedule_timer(data, K_MSEC(100));
+			break;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 		break;
 
@@ -3695,8 +3835,33 @@ static int hl78xx_on_airplane_mode_state_enter(struct hl78xx_data *data)
 	return hl78xx_run_cfun_query_script_async(data);
 }
 
+/**
+ * @brief Enter AIRPLANE again for the session that a restart of the modem began.
+ *
+ * Waits on the state timer while a script still holds the chat, the aborted
+ * one or a command sent since, or while a script result is still queued.
+ */
+static void hl78xx_airplane_restart_entry(struct hl78xx_data *data)
+{
+	if (modem_chat_is_running(&data->chat) ||
+	    (atomic_get(&data->events.script_results_queued) > 0)) {
+		hl78xx_reschedule_timer(data, K_MSEC(100));
+		return;
+	}
+
+	hl78xx_enter_state(data, MODEM_HL78XX_STATE_AIRPLANE);
+}
+
 static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	if (data->status.boot.airplane_restart_pending && hl78xx_is_script_result(evt)) {
+		/* The result of a script the restart interrupted: the state is
+		 * entered again for the new session.
+		 */
+		LOG_DBG("Result of the ended session ignored: %s", hl78xx_event_str(evt));
+		return;
+	}
+
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		if (!data->status.at_cmd_ready_sent) {
@@ -3719,16 +3884,38 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 #endif /* CONFIG_HL78XX_GNSS */
 		break;
 
+	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
+		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		/* The modem restarted while it waited in airplane mode, and the new
+		 * session is not configured. Enter the state again: the entry sets
+		 * airplane mode on the new session and its result announces the AT
+		 * channel. A script that still waits for the ended session is
+		 * aborted first, and the entry follows on the timeout.
+		 */
+		LOG_DBG("Modem restart detected %d", __LINE__);
+		data->status.boot.init_sequence_completed = false;
+		data->status.boot.airplane_restart_pending = true;
+		if (modem_chat_is_running(&data->chat)) {
+			hl78xx_chat_abort_active_script(data);
+		}
+		hl78xx_airplane_restart_entry(data);
+		break;
+
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (data->status.boot.airplane_restart_pending) {
+			hl78xx_airplane_restart_entry(data);
+		}
+		break;
+
 #ifdef CONFIG_HL78XX_GNSS
 	case MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED:
 		/* User explicitly requested GNSS mode while in airplane state */
 		LOG_INF("GNSS mode requested - transitioning to GNSS init state");
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
-		break;
-
-	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
-		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 #endif /* CONFIG_HL78XX_GNSS */
 
@@ -3748,6 +3935,9 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 
 static int hl78xx_on_airplane_mode_state_leave(struct hl78xx_data *data)
 {
+	/* The entry after a restart must not fire in the next state */
+	hl78xx_stop_timer(data);
+	data->status.boot.airplane_restart_pending = false;
 	return 0;
 }
 /* pwroff script moved to hl78xx_chat.c */
@@ -3814,19 +4004,31 @@ static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum h
 		hl78xx_stop_timer(data);
 		break;
 
-	case MODEM_HL78XX_EVENT_MDM_RESTART:
+	case MODEM_HL78XX_EVENT_MDM_RESTART: {
+		int ret;
+
 		/* The modem rebooted underneath the power-off (its +KSUP banner
-		 * arrived while AT+CFUN=0/AT+CPWROFF was in flight), so the
-		 * response the script is waiting for will never come. The
-		 * decision to power off is already final: drop the orphaned
-		 * script and complete the power-off now instead of stalling
-		 * for the full script timeout with the board unrecoverable.
+		 * arrived while AT+CFUN=0/AT+CPWROFF was in flight): the response
+		 * the script is waiting for will never come, and the modem is on
+		 * again. Drop the orphaned script and send the power-off to the
+		 * new session. The chat is released rather than aborted: an abort
+		 * reports a failure, which this state takes for the end of the
+		 * power-off, and nothing waits on this asynchronous script. Each
+		 * attempt is still bounded by the script timeout.
 		 */
-		LOG_WRN("Modem restarted during power-off; completing power-off immediately");
-		hl78xx_stop_timer(data);
-		hl78xx_chat_abort_active_script(data);
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		LOG_WRN("Modem restarted during power-off; sending the power-off again");
+		modem_chat_release(&data->chat);
+		ret = modem_chat_attach(&data->chat, data->uart_pipe);
+		if (ret == 0) {
+			ret = hl78xx_run_pwroff_script_async(data);
+		}
+		if (ret < 0) {
+			LOG_WRN("Power-off not sent again (%d); powering down anyway", ret);
+			hl78xx_stop_timer(data);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		}
 		break;
+	}
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		/* A PM suspend arrived while the graceful detach was still
@@ -4352,7 +4554,7 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 	[MODEM_HL78XX_STATE_RUN_INIT_SCRIPT] = {
 		hl78xx_on_run_init_script_state_enter,
-		NULL,
+		hl78xx_on_run_init_script_state_leave,
 		hl78xx_run_init_script_event_handler
 	},
 	[MODEM_HL78XX_STATE_RECOVERY] = {

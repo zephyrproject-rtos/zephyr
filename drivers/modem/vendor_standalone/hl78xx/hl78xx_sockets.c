@@ -2563,7 +2563,14 @@ static int offload_close(void *obj)
 		return 0;
 	}
 	if (validate_socket(sock, socket_data) == 0) {
-		socket_close(socket_data, sock);
+		/* A session the peer closed, whose end the reader sees after its
+		 * data: the modem refuses to close it again (+CME ERROR: 922),
+		 * and the delete ends it.
+		 */
+		if ((sock->type != NET_SOCK_STREAM) ||
+		    !hl78xx_has_pending_tcp_socket_error(socket_data, sock->id)) {
+			(void)socket_close(socket_data, sock);
+		}
 		socket_delete(socket_data, sock);
 		modem_socket_put(&socket_data->control.socket_config, sock->sock_fd);
 		sock->is_connected = false;

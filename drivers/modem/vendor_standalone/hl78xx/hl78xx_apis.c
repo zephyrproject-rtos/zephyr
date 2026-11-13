@@ -70,6 +70,8 @@ struct at_cmd_ctx {
 	uint16_t match_count;
 	char *response;
 	size_t response_size;
+	/* The capture as the command left it, taken before the AT channel is released */
+	struct hl78xx_at_cmd_capture_ctx outcome;
 };
 /* Shared executor for internal helpers and public AT helpers.
  * Terminal handling semantics depend on the response matches supplied by the caller.
@@ -77,6 +79,8 @@ struct at_cmd_ctx {
 static int hl78xx_at_cmd_execute(struct hl78xx_data *data, modem_chat_script_callback chat_cb,
 				 struct at_cmd_ctx *ctx)
 {
+	int ret;
+
 	if ((data == NULL) || (ctx == NULL) || (ctx->cmd == NULL)) {
 		return -EINVAL;
 	}
@@ -85,19 +89,37 @@ static int hl78xx_at_cmd_execute(struct hl78xx_data *data, modem_chat_script_cal
 		return -EINVAL;
 	}
 
+	/* The capture is shared by every command: prepare it, run the command and
+	 * take its outcome under tx_lock, which the send takes again (recursive),
+	 * so that a command of another thread cannot take the capture over while
+	 * this one is in flight.
+	 */
+	ret = k_mutex_lock(&data->tx_lock, K_SECONDS(MDM_CMD_TIMEOUT));
+	if (ret < 0) {
+		LOG_WRN("Timed out waiting %u s for tx_lock before sending %.*s", MDM_CMD_TIMEOUT,
+			(int)ctx->cmd_len, ctx->cmd);
+		/* No command ran: the caller reads an empty response */
+		if (ctx->response != NULL) {
+			ctx->response[0] = '\0';
+		}
+		return -EBUSY;
+	}
+
 	hl78xx_at_cmd_capture_prepare(&data->at_cmd_capture, ctx->response, ctx->response_size);
 
-	int ret = modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
-							   .script_user_callback = chat_cb,
-							   .cmd = (const uint8_t *)ctx->cmd,
-							   .cmd_len = ctx->cmd_len,
-							   .response_matches = ctx->matches,
-							   .matches_size = ctx->match_count,
-							   .response_timeout = MDM_CMD_TIMEOUT,
-							   .user_cmd = true,
-						   });
+	ret = modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
+						       .script_user_callback = chat_cb,
+						       .cmd = (const uint8_t *)ctx->cmd,
+						       .cmd_len = ctx->cmd_len,
+						       .response_matches = ctx->matches,
+						       .matches_size = ctx->match_count,
+						       .response_timeout = MDM_CMD_TIMEOUT,
+						       .user_cmd = true,
+					       });
 
+	ctx->outcome = data->at_cmd_capture;
 	hl78xx_at_cmd_capture_release(&data->at_cmd_capture);
+	(void)k_mutex_unlock(&data->tx_lock);
 
 	return ret;
 }
@@ -380,13 +402,12 @@ static int hl78xx_modem_at_exec(struct hl78xx_data *data, char *response, size_t
 
 	ret = hl78xx_at_cmd_execute(data, NULL, &ctx);
 
-	if (data->at_cmd_capture.truncated) {
+	if (ctx.outcome.truncated) {
 		return -E2BIG;
 	}
 
-	if ((ret == -EIO) &&
-	    (data->at_cmd_capture.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR)) {
-		return hl78xx_modem_at_encode_error(&data->at_cmd_capture);
+	if ((ret == -EIO) && (ctx.outcome.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR)) {
+		return hl78xx_modem_at_encode_error(&ctx.outcome);
 	}
 
 	return ret;
@@ -1197,18 +1218,21 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	struct hl78xx_evt event = {.type = HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE};
 	int ret = 0;
 
-#ifdef CONFIG_HL78XX_GNSS
+	/* A session that left airplane mode (or GNSS) before the init chain ran has an
+	 * unconfigured modem: a bare CFUN=1 would register without the identity, RAT and
+	 * power configuration, and hl78xx_on_cxreg() discards its registration URCs. The
+	 * restore path runs the init chain first. RUN_ENABLE_GPRS_SCRIPT is already the
+	 * deferred LTE restore path.
+	 */
 	if (!reset && functionality == HL78XX_FULLY_FUNCTIONAL &&
 	    data->status.phone_functionality.valid &&
 	    data->status.phone_functionality.functionality == HL78XX_AIRPLANE &&
 	    data->status.state != MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT &&
 	    data->status.boot.init_sequence_completed == false) {
-		/* RUN_ENABLE_GPRS_SCRIPT is already the deferred LTE restore path. */
-		LOG_INF("Restoring LTE after GNSS: delegating to modem_workq");
+		LOG_INF("Restoring LTE on an unconfigured session: delegating to modem_workq");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED);
 		return 0;
 	}
-#endif /* CONFIG_HL78XX_GNSS */
 	LOG_DBG("Setting phone functionality to %d with reset %d", functionality, reset);
 
 	/* Mark the transition in flight BEFORE the command goes out, not on its

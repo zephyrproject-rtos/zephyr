@@ -1432,7 +1432,7 @@ int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 	 * against the CFUN=4 script's SCRIPT_SUCCESS (that success is then
 	 * consumed by THIS state's handler). Without the announcement the
 	 * application waits forever for a power-up that already happened.
-	 * The per-power-cycle flag makes this a no-op when the airplane or
+	 * The per-session flag makes this a no-op when the airplane or
 	 * await-registered handler already dispatched it.
 	 */
 	if (!data->status.at_cmd_ready_sent) {
