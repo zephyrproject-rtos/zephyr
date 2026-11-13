@@ -1,0 +1,6 @@
+board:
+  name: sk_am62a
+  full_name: SK-AM62A
+  vendor: ti
+  socs:
+  - name: am62a7
