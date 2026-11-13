@@ -97,6 +97,7 @@ static void thread_handler(void *p1, void *p2, void *p3)
  * if all the threads gets executed.
  * @verifies ZEP-SRS-2-14
  * @verifies ZEP-SRS-2-15
+ * @verifies ZEP-SRS-19-2
  */
 ZTEST(threads_scheduling, test_yield_cooperative)
 {

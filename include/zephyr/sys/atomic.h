@@ -58,6 +58,7 @@ extern "C" {
  * @ingroup kernel_apis
  * @{
  *
+ * @satisfies ZEP-SRS-19-1
  * @satisfies ZEP-SRS-26-3
  * @satisfies ZEP-SRS-26-4
  * @satisfies ZEP-SRS-26-5

@@ -277,6 +277,7 @@ static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
  * @see k_usermode_string_nlen()
  * @verifies ZEP-SRS-8-14
  * @verifies ZEP-SRS-8-15
+ * @verifies ZEP-SRS-19-14
  */
 ZTEST_USER(syscalls, test_syscall_string_nlen)
 {
