@@ -15,16 +15,16 @@ M5Stack CoreS3/CoreS3 SE features consist of:
 - ESP32-S3 chip (dual-core Xtensa LX7 processor @240MHz, WIFI, OTG and CDC functions)
 - PSRAM 8MB
 - Flash 16MB
-- LCD ISP 2", 320x240 pixel ILI9342C
+- LCD IPS 2", 320x240 pixel ILI9342C
 - Capacitive multi touch FT6336U
 - Speaker 1W AW88298
-- Dual Microphones ES7210 Audio decoder
+- Dual microphones with ES7210 audio ADC
 - RTC BM8563
 - USB-C
 - SD-Card slot
 - PMIC AXP2101
 - Battery 500mAh 3.7 V (Not available for CoreS3 SE)
-- Camera 30W pixel GC0308 (Not available for CoreS3 SE)
+- Camera 0.3 MP GC0308 (Not available for CoreS3 SE)
 - Geomagnetic sensor BMM150 (Not available for CoreS3 SE)
 - Proximity sensor LTR-553ALS-WA (Not available for CoreS3 SE)
 - 6-Axis IMU BMI270 (Not available for CoreS3 SE)
