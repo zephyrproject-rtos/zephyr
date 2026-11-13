@@ -95,6 +95,9 @@ struct bt_br_discovery_param {
  * fits in provided result storage, only ones with highest RSSI will be
  * reported.
  *
+ * Called from another thread, this waits for the Bluetooth workqueue, so it
+ * must not be called while holding a lock that a discovery callback takes.
+ *
  * @param param Discovery parameters.
  * @param results Storage for discovery results.
  * @param count Number of results in storage. Valid range: 1-255.
@@ -110,6 +113,12 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
  *
  * Stops ongoing BR/EDR discovery. If discovery was stopped by this call
  * results won't be reported
+ *
+ * Once this returns, no discovery callback is in progress and the results
+ * storage passed to @ref bt_br_discovery_start is no longer used.
+ *
+ * Called from another thread, this waits for the Bluetooth workqueue, so it
+ * must not be called while holding a lock that a discovery callback takes.
  *
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.

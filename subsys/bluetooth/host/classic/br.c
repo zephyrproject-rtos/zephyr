@@ -34,6 +34,10 @@ enum __packed resolve_name_state {
 struct bt_br_discovery_result *discovery_results;
 static size_t discovery_results_size;
 static size_t discovery_results_count;
+/* Inquiry Complete has been received, names are being resolved */
+static bool discovery_inquiry_complete;
+/* Counts the starts, so that an event handler can tell a restart */
+static uint32_t discovery_starts;
 static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
 
 static bt_br_conn_req_func_t br_conn_req_func;
@@ -378,6 +382,26 @@ void bt_br_discovery_reset(void)
 	discovery_results = NULL;
 	discovery_results_size = 0;
 	discovery_results_count = 0;
+	discovery_inquiry_complete = false;
+}
+
+/* Return false if a listener has stopped or restarted discovery */
+static bool discovery_recv(const struct bt_br_discovery_result *result)
+{
+	uint32_t starts = discovery_starts;
+	struct bt_br_discovery_cb *listener, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->recv != NULL) {
+			listener->recv(result);
+		}
+
+		if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY) || discovery_starts != starts) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static bool check_request_name(void)
@@ -412,10 +436,29 @@ static bool check_request_name(void)
 	return resolving_names;
 }
 
+static void discovery_complete(void)
+{
+	struct bt_br_discovery_result *results = discovery_results;
+	size_t count = discovery_results_count;
+	struct bt_br_discovery_cb *listener, *next;
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
+
+	/* Reset before reporting, a listener may start a new discovery */
+	bt_br_discovery_reset();
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->timeout != NULL) {
+			listener->timeout(results, count);
+		}
+	}
+}
+
 static void report_discovery_results(void)
 {
 	int i;
-	struct bt_br_discovery_cb *listener, *next;
+
+	discovery_inquiry_complete = true;
 
 	for (i = 0; i < discovery_results_count; i++) {
 		struct bt_br_discovery_priv *priv;
@@ -428,26 +471,42 @@ static void report_discovery_results(void)
 		return;
 	}
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->timeout) {
-			listener->timeout(discovery_results, discovery_results_count);
-		}
-	}
-
-	bt_br_discovery_reset();
+	discovery_complete();
 }
 
 void bt_hci_inquiry_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_inquiry_complete *evt = (void *)buf->data;
 
+	/* The inquiry that stop failed to cancel, a new one may have started */
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_INQUIRY_CANCEL_FAILED)) {
+		return;
+	}
+
+	/* Queued before the inquiry was stopped */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
 	if (evt->status) {
 		LOG_ERR("Failed to complete inquiry");
 	}
 
 	report_discovery_results();
+}
+
+static struct bt_br_discovery_result *find_resolving_result(const bt_addr_t *addr)
+{
+	size_t i;
+
+	for (i = 0; i < discovery_results_count; i++) {
+		if (bt_addr_eq(addr, &discovery_results[i].addr) &&
+		    discovery_results[i]._priv.resolve_state == RESOLVE_REMOTE_NAME_RESOLVING) {
+			return &discovery_results[i];
+		}
+	}
+
+	return NULL;
 }
 
 static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int8_t rssi)
@@ -511,7 +570,6 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		struct bt_hci_evt_inquiry_result_with_rssi *evt;
 		struct bt_br_discovery_result *result;
 		struct bt_br_discovery_priv *priv;
-		struct bt_br_discovery_cb *listener, *next;
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end to buffer");
@@ -536,10 +594,8 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		/* we could reuse slot so make sure EIR is cleared */
 		(void)memset(result->eir, 0, sizeof(result->eir));
 
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-			if (listener->recv) {
-				listener->recv(result);
-			}
+		if (!discovery_recv(result)) {
+			return;
 		}
 	}
 }
@@ -549,7 +605,6 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
 	struct bt_br_discovery_result *result;
 	struct bt_br_discovery_priv *priv;
-	struct bt_br_discovery_cb *listener, *next;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return;
@@ -570,11 +625,7 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 	memcpy(result->cod, evt->cod, 3);
 	memcpy(result->eir, evt->eir, sizeof(result->eir));
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->recv) {
-			listener->recv(result);
-		}
-	}
+	(void)discovery_recv(result);
 }
 
 void bt_hci_remote_name_request_complete(struct net_buf *buf)
@@ -584,10 +635,12 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 	struct bt_br_discovery_priv *priv;
 	int eir_len = 240;
 	uint8_t *eir;
-	struct bt_br_discovery_cb *listener, *next;
 
-	result = get_result_slot(&evt->bdaddr, RSSI_INVALID);
-	if (!result) {
+	/* A request cancelled by a stop completes after it, maybe once a new
+	 * discovery has started
+	 */
+	result = find_resolving_result(&evt->bdaddr);
+	if (result == NULL) {
 		return;
 	}
 
@@ -637,10 +690,8 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf)
 		eir += eir[0] + 1;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->recv) {
-			listener->recv(result);
-		}
+	if (!discovery_recv(result)) {
+		return;
 	}
 
 check_names:
@@ -650,13 +701,7 @@ check_names:
 	}
 
 	/* all names resolved, report discovery results */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->timeout) {
-			listener->timeout(discovery_results, discovery_results_count);
-		}
-	}
+	discovery_complete();
 }
 
 void bt_hci_read_remote_features_complete(struct net_buf *buf)
@@ -1077,10 +1122,89 @@ static bool valid_br_discov_param(const struct bt_br_discovery_param *param, siz
 	return true;
 }
 
+struct discovery_call {
+	struct k_work work;
+	int (*func)(const void *arg);
+	const void *arg;
+	int err;
+};
+
+static void discovery_call_handler(struct k_work *work)
+{
+	struct discovery_call *call = CONTAINER_OF(work, struct discovery_call, work);
+
+	call->err = call->func(call->arg);
+}
+
+/* The discovery state and callbacks are owned by the Bluetooth workqueue, so
+ * run start and stop there: once they return no callback is in progress and
+ * the results storage is not accessed anymore.
+ */
+static int discovery_call(int (*func)(const void *arg), const void *arg)
+{
+	struct discovery_call call = {
+		.func = func,
+		.arg = arg,
+	};
+	struct k_work_sync sync;
+	int err;
+
+	if (bt_is_work_thread()) {
+		return func(arg);
+	}
+
+	k_work_init(&call.work, discovery_call_handler);
+
+	err = bt_work_submit(&call.work);
+	if (err < 0) {
+		return err;
+	}
+
+	(void)k_work_flush(&call.work, &sync);
+
+	return call.err;
+}
+
+struct discovery_start_arg {
+	const struct bt_br_discovery_param *param;
+	struct bt_br_discovery_result *results;
+	size_t cnt;
+};
+
+static int discovery_start(const void *arg)
+{
+	const struct discovery_start_arg *start = arg;
+	int err;
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return -EALREADY;
+	}
+
+	err = br_start_inquiry(start->param);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
+	discovery_starts++;
+
+	(void)memset(start->results, 0, sizeof(*start->results) * start->cnt);
+
+	discovery_results = start->results;
+	discovery_results_size = start->cnt;
+	discovery_results_count = 0;
+
+	return 0;
+}
+
 int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 			  struct bt_br_discovery_result *results, size_t cnt)
 {
-	int err;
+	const struct discovery_start_arg start = {
+		.param = param,
+		.results = results,
+		.cnt = cnt,
+	};
 
 	LOG_DBG("");
 
@@ -1092,33 +1216,15 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
-		return -EALREADY;
-	}
-
-	err = br_start_inquiry(param);
-	if (err) {
-		return err;
-	}
-
-	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
-
-	(void)memset(results, 0, sizeof(*results) * cnt);
-
-	discovery_results = results;
-	discovery_results_size = cnt;
-	discovery_results_count = 0;
-
-	return 0;
+	return discovery_call(discovery_start, &start);
 }
 
-int bt_br_discovery_stop(void)
+static int discovery_stop(const void *arg)
 {
-	bool resolving_names = false;
 	int err;
 	int i;
 
-	LOG_DBG("");
+	ARG_UNUSED(arg);
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return -EALREADY;
@@ -1135,8 +1241,6 @@ int bt_br_discovery_stop(void)
 			continue;
 		}
 
-		resolving_names = true;
-
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			continue;
@@ -1148,32 +1252,38 @@ int bt_br_discovery_stop(void)
 		bt_hci_cmd_send_sync(BT_HCI_OP_REMOTE_NAME_CANCEL, buf, NULL);
 	}
 
-	/* A remote name is only requested once the controller has reported
-	 * Inquiry Complete, and the Host is only told to issue Inquiry Cancel
-	 * before that event (Core Specification 6.3, Vol 4, Part E,
-	 * Section 7.1.2), so skip the cancel while a name is outstanding.
+	/* The Host is only told to issue Inquiry Cancel before the Inquiry
+	 * Complete event (Core Specification 6.3, Vol 4, Part E, Section 7.1.2),
+	 * so skip the cancel once names are being resolved.
 	 */
-	if (!resolving_names) {
+	if (!discovery_inquiry_complete) {
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-		/* The inquiry may complete while the cancel is in flight.
-		 * If the event started no name request it has already
-		 * cleared the flag, and a failure with the flag clear is
-		 * that completion, not an error. If it started one the flag
-		 * stays set until the last name request completes, and the
-		 * error is returned: discovery is still resolving names.
+		/* If the cancel fails the inquiry was not cancelled, and its
+		 * Inquiry Complete (Core Specification 6.3, Vol 4, Part E,
+		 * Section 7.1.1) may be handled once a new discovery has started.
 		 */
-		if (err != 0 && atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
-			return err;
+		if (err != 0) {
+			LOG_DBG("Inquiry Cancel failed (err %d)", err);
+			atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY_CANCEL_FAILED);
 		}
 	}
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	discovery_results = NULL;
-	discovery_results_size = 0;
-	discovery_results_count = 0;
+	bt_br_discovery_reset();
 
 	return 0;
+}
+
+int bt_br_discovery_stop(void)
+{
+	LOG_DBG("");
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	return discovery_call(discovery_stop, NULL);
 }
 
 void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb)
