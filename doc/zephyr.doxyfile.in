@@ -606,8 +606,15 @@ LOOKUP_CACHE_SIZE      = 9
 # encounter. Generating dot graphs in parallel is controlled by the
 # DOT_NUM_THREADS setting.
 # Minimum value: 0, maximum value: 512, default value: 1.
+#
+# Multi-threaded input processing leaks macro definitions between files: a
+# file whose preprocessing races with ztest_test.h expands ZTEST()/ZTEST_USER()
+# through the real test-framework macros instead of the PREDEFINED stubs below,
+# detaching the test documentation and silently dropping its \verifies links
+# from the output. Keep input processing single-threaded until that is fixed
+# in Doxygen.
 
-NUM_PROC_THREADS       = 0
+NUM_PROC_THREADS       = 1
 
 # If the TIMESTAMP tag is set different from NO then each generated page will
 # contain the date or date and time when the page was generated. Setting this to
