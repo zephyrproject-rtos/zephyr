@@ -1,0 +1,10 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_AST27X0
+	bool "ASPEED AST27x0 OTP driver"
+	default y
+	depends on DT_HAS_ASPEED_AST2700_OTP_ENABLED
+	help
+	  Enable read-only access to the OTP controller of the ASPEED AST27x0
+	  series.
