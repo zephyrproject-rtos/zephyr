@@ -261,7 +261,13 @@ SECTION_FUNC(TEXT, z_arm_svc)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     ldr r1, =_kernel
     ldr r1, [r1, #_kernel_offset_to_current]
+#if _thread_offset_to_priv_stack_start > 0xFF
+    /* offset is too large to fit into `T2: adds <Rdn>, #<imm8>`. */
+    ldr r3, =_thread_offset_to_priv_stack_start
+    adds r1, r3
+#else
     adds r1, r1, #_thread_offset_to_priv_stack_start
+#endif
     ldr r1, [r1] /* bottom of priv stack */
     ldr r3, =CONFIG_PRIVILEGED_STACK_SIZE
     subs r3, #(_EXC_HW_SAVED_BASIC_SF_SIZE+8) /* 8 for original sp and pc */
