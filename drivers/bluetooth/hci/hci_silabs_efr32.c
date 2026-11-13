@@ -46,7 +46,7 @@ K_SEM_DEFINE(slz_ll_sem, 0, 1);
 static atomic_t sli_btctrl_events;
 
 /* FIFO for received HCI packets */
-static struct k_fifo slz_rx_fifo;
+static K_FIFO_DEFINE(slz_rx_fifo);
 
 const struct {
 	uint32_t buffer_memory_size;
@@ -271,7 +271,23 @@ static int slz_bt_open(const struct device *dev)
 	BUILD_ASSERT(CONFIG_BT_SILABS_EFR32_LL_THREAD_PRIO < CONFIG_NUM_METAIRQ_PRIORITIES,
 		     "Config BT_SILABS_EFR32_LL_THREAD_PRIO must be a meta-IRQ priority");
 
-	k_fifo_init(&slz_rx_fifo);
+	/* slz_bt_close() and a failed open stop the threads before sl_btctrl_deinit(), so events
+	 * raised in between by sl_btctrl_raise_events() and packets not yet passed to bt_hci_recv()
+	 * can be left over. Drop them: the LL thread starts before sl_btctrl_init() and would pass
+	 * stale events to sl_btctrl_process_events() on a deinitialized Controller.
+	 */
+	k_sem_reset(&slz_ll_sem);
+	(void)atomic_clear(&sli_btctrl_events);
+
+	while (true) {
+		struct net_buf *buf = k_fifo_get(&slz_rx_fifo, K_NO_WAIT);
+
+		if (buf == NULL) {
+			break;
+		}
+
+		net_buf_unref(buf);
+	}
 
 	k_thread_create(&slz_ll_thread, slz_ll_stack, K_KERNEL_STACK_SIZEOF(slz_ll_stack),
 			slz_ll_thread_func, NULL, NULL, NULL,
