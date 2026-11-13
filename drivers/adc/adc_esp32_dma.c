@@ -17,6 +17,7 @@
 
 #include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/policy.h>
 LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 
 #if SOC_GDMA_SUPPORTED
@@ -417,32 +418,44 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 	}
 #endif /* !SOC_GDMA_SUPPORTED */
 
+#if defined(CONFIG_PM)
+	pm_policy_state_all_lock_get();
+#endif
+
 	err = adc_esp32_digi_start(dev, &adc_hal_digi_ctrlr_cfg, number_of_adc_samples,
 				   unit_attenuation, number_of_adc_dma_data_bytes);
-	if (err) {
-		return err;
-	}
+	if (err == 0) {
+		int stop_err;
 
-	err = adc_esp32_wait_for_dma_conv_done(dev);
-	if (err) {
-		return err;
-	}
-
-	adc_esp32_digi_stop(dev);
-
+		err = adc_esp32_wait_for_dma_conv_done(dev);
+		adc_esp32_digi_stop(dev);
 #if SOC_GDMA_SUPPORTED
-	err = adc_esp32_dma_stop(dev);
+		stop_err = adc_esp32_dma_stop(dev);
 #else
-	err = esp_intr_disable(data->irq_handle);
-#endif /* SOC_GDMA_SUPPORTED */
-	if (err) {
-		return err;
+		stop_err = esp_intr_disable(data->irq_handle);
+#endif
+		if (err == 0) {
+			err = stop_err;
+		} else {
+			k_sem_reset(&data->dma_conv_wait_lock);
+		}
+	}
+#if !SOC_GDMA_SUPPORTED
+	else {
+		(void)esp_intr_disable(data->irq_handle);
+	}
+#endif
+
+#if defined(CONFIG_PM)
+	pm_policy_state_all_lock_put();
+#endif
+
+	if (err == 0) {
+		sys_cache_data_flush_and_invd_range(data->dma_buffer, ADC_DMA_BUFFER_SIZE);
+		adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_samples);
 	}
 
-	sys_cache_data_flush_and_invd_range(data->dma_buffer, ADC_DMA_BUFFER_SIZE);
-	adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_samples);
-
-	return 0;
+	return err;
 }
 
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
