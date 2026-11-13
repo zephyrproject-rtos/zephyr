@@ -46,6 +46,7 @@ _names = [
     'jlink',
     'linkserver',
     'lldbac',
+    'mchp_hss',
     'mdb',
     'minichlink',
     'misc',
