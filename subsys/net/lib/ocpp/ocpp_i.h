@@ -39,6 +39,8 @@ enum ocpp_pdu_msg {
 	PDU_CHANGE_AVAILABILITY,
 	PDU_UNLOCK_CONNECTOR,
 	PDU_RESET,
+	PDU_STATUS_NOTIFICATION,
+	PDU_DATA_TRANSFER,
 
 	PDU_MSG_END,
 
@@ -128,6 +130,7 @@ struct ocpp_idtag_info {
 
 struct ocpp_upstream_info {
 	struct k_mutex ws_sndlock; /* to server */
+	struct k_mutex ws_txlock; /* one websocket frame on the wire at a time */
 	struct k_poll_signal ws_rspsig; /* wait for resp parsed */
 	int tcpsock;
 	int wssock;
@@ -194,11 +197,19 @@ void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn);
 int parse_rpc_msg(char *msg, int msglen, char *uid, int uidlen,
 		  int *pdu, bool *is_rsp);
 int ocpp_send_to_server(struct ocpp_wamp_rpc_msg *snd, k_timeout_t timeout);
+int ocpp_ws_send(struct ocpp_info *ctx, int sock, const uint8_t *msg,
+		 size_t len, enum websocket_opcode opcode, int32_t timeout);
 int ocpp_receive_from_server(struct ocpp_wamp_rpc_msg *rcv, uint32_t *msg_type,
 			     uint32_t timeout);
 
 int ocpp_unlock_connector(struct ocpp_info *ctx,
 			  struct internal_msg *msg, char *uid);
+int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid);
+int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
+			     char *uid);
+int ocpp_clear_cache(struct ocpp_info *ctx, char *uid);
+int ocpp_data_transfer(struct ocpp_info *ctx, struct internal_msg *msg,
+		       char *uid);
 int ocpp_get_configuration(enum ocpp_key key, struct ocpp_info *ctx, char *uid);
 int ocpp_boot_notification(ocpp_session_handle_t hndl,
 			   struct ocpp_cp_info *cpi);

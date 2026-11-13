@@ -47,6 +47,8 @@ static struct ocpp_msg_table pdu_msg_table[] = {
 	FILL_PDU_TABLE(PDU_CHANGE_AVAILABILITY, "ChangeAvailability"),
 	FILL_PDU_TABLE(PDU_UNLOCK_CONNECTOR, "UnlockConnector"),
 	FILL_PDU_TABLE(PDU_RESET, "Reset"),
+	FILL_PDU_TABLE(PDU_STATUS_NOTIFICATION, "StatusNotification"),
+	FILL_PDU_TABLE(PDU_DATA_TRANSFER, "DataTransfer"),
 };
 
 const char *ocpp_get_pdu_literal(enum ocpp_pdu_msg pdu)
@@ -152,6 +154,14 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 #endif
 	}
 
+	/* The websocket sends its close frame on tcpsock, so drop it before
+	 * the fd is closed and handed out again to the new socket.
+	 */
+	if (ui->wssock >= 0) {
+		websocket_disconnect(ui->wssock);
+		ui->wssock = -1;
+	}
+
 	if (ui->tcpsock >= 0) {
 		zsock_close(ui->tcpsock);
 	}
@@ -195,11 +205,6 @@ static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 	if (ret < 0 && errno != EALREADY && errno != EISCONN) {
 		LOG_ERR("tcp socket connect fail %d %d", ret, errno);
 		return ret;
-	}
-
-	if (ui->wssock >= 0) {
-		websocket_disconnect(ui->wssock);
-		ui->wssock = -1;
 	}
 
 	if (ui->wssock < 0) {
@@ -532,6 +537,37 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		ocpp_unlock_connector(ctx, &msg, uid);
 		break;
 
+	case PDU_RESET:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_RESET;
+
+		ret = fn(ui->recv_buf, &msg.usr.reset.type);
+		ocpp_reset(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
+	case PDU_CHANGE_AVAILABILITY:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_CHANGE_AVAILABILITY;
+
+		ret = fn(ui->recv_buf, &msg.usr.change_avail.id_con,
+			 &msg.usr.change_avail.type);
+		ocpp_change_availability(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
+	case PDU_CLEAR_CACHE:
+		ocpp_clear_cache(ctx, uid);
+		break;
+
+	case PDU_DATA_TRANSFER:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_DATA_TRANSFER;
+
+		ret = fn(ui->recv_buf, msg.usr.data_transfer.vendor_id,
+			 msg.usr.data_transfer.msg_id,
+			 msg.usr.data_transfer.data);
+		ocpp_data_transfer(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
 	case PDU_METER_VALUES:
 	default:
 		break;
@@ -549,6 +585,8 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 	struct ocpp_info *ctx = p1;
 	struct ocpp_upstream_info *ui = &ctx->ui;
 	struct zsock_pollfd tcpfd;
+	union ocpp_keyval *val;
+	int64_t last_ping = 0;
 	int ret;
 	uint8_t retry_cnt = 0;
 
@@ -566,9 +604,27 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 				if (ret != 0) {
 					continue;
 				}
+				last_ping = k_uptime_get();
 			} else {
 				/* delay reconnection attempt */
 				k_msleep(200);
+				continue;
+			}
+		}
+
+		/* Keep the link alive with a websocket ping at the configured
+		 * interval. An idle connection can be dropped silently by a NAT
+		 * or the server, and poll() does not report that. A failed ping
+		 * tells us the link is gone so we can reconnect.
+		 */
+		val = ocpp_get_key_val(CFG_WEBSOCK_PING_INTERVAL);
+		if (val != NULL && val->ival > 0 &&
+		    (k_uptime_get() - last_ping) >= ((int64_t)val->ival * MSEC_PER_SEC)) {
+			ret = ocpp_ws_send(ctx, ui->wssock, NULL, 0,
+					   WEBSOCKET_OPCODE_PING, 100);
+			last_ping = k_uptime_get();
+			if (ret < 0) {
+				ctx->is_cs_offline = true;
 				continue;
 			}
 		}
@@ -606,9 +662,8 @@ static void ocpp_wsreader(void *p1, void *p2, void *p3)
 			}
 
 			if (msg_type & WEBSOCKET_FLAG_PING) {
-				websocket_send_msg(ctx->ui.wssock, NULL, 0,
-						   WEBSOCKET_OPCODE_PONG, true,
-						   true, 100);
+				ocpp_ws_send(ctx, ui->wssock, NULL, 0,
+					     WEBSOCKET_OPCODE_PONG, 100);
 			} else if (msg_type & WEBSOCKET_FLAG_CLOSE) {
 				ctx->is_cs_offline = true;
 			} else {
@@ -643,6 +698,7 @@ int ocpp_upstream_init(struct ocpp_info *ctx, struct ocpp_cs_info *csi)
 	ui->tcpsock = -1;
 
 	k_mutex_init(&ui->ws_sndlock);
+	k_mutex_init(&ui->ws_txlock);
 	k_poll_signal_init(&ui->ws_rspsig);
 	ui->wssock = -1;
 

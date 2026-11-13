@@ -115,7 +115,7 @@ static struct ocpp_cfg_info cached_key_cfg[OCPP_CFG_END] = {
 	FILL_KEY_TABLE(KEY_TYPE_BOOL,	1, CFG_UNLOCK_CONN_ON_EVSIDE_DISCON,
 			   "UnlockConnectorOnEVSideDisconnect", 0),
 	FILL_KEY_TABLE(KEY_TYPE_INT,	1, CFG_WEBSOCK_PING_INTERVAL,
-			   "WebSocketPingInterval", 0),
+			   "WebSocketPingInterval", 30),
 
 	/* optional */
 };

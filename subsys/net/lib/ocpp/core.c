@@ -402,6 +402,85 @@ int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 	return ret;
 }
 
+static const char * const cp_status_str[] = {
+	[OCPP_CP_STATUS_AVAILABLE]	= "Available",
+	[OCPP_CP_STATUS_PREPARING]	= "Preparing",
+	[OCPP_CP_STATUS_CHARGING]	= "Charging",
+	[OCPP_CP_STATUS_SUSPENDED_EVSE]	= "SuspendedEVSE",
+	[OCPP_CP_STATUS_SUSPENDED_EV]	= "SuspendedEV",
+	[OCPP_CP_STATUS_FINISHING]	= "Finishing",
+	[OCPP_CP_STATUS_RESERVED]	= "Reserved",
+	[OCPP_CP_STATUS_UNAVAILABLE]	= "Unavailable",
+	[OCPP_CP_STATUS_FAULTED]	= "Faulted",
+};
+
+static const char * const cp_error_str[] = {
+	[OCPP_CP_ERR_NO_ERROR]			= "NoError",
+	[OCPP_CP_ERR_CONNECTOR_LOCK_FAILURE]	= "ConnectorLockFailure",
+	[OCPP_CP_ERR_EV_COMMUNICATION_ERROR]	= "EVCommunicationError",
+	[OCPP_CP_ERR_GROUND_FAILURE]		= "GroundFailure",
+	[OCPP_CP_ERR_HIGH_TEMPERATURE]		= "HighTemperature",
+	[OCPP_CP_ERR_INTERNAL_ERROR]		= "InternalError",
+	[OCPP_CP_ERR_LOCAL_LIST_CONFLICT]	= "LocalListConflict",
+	[OCPP_CP_ERR_OTHER_ERROR]		= "OtherError",
+	[OCPP_CP_ERR_OVER_CURRENT_FAILURE]	= "OverCurrentFailure",
+	[OCPP_CP_ERR_OVER_VOLTAGE]		= "OverVoltage",
+	[OCPP_CP_ERR_POWER_METER_FAILURE]	= "PowerMeterFailure",
+	[OCPP_CP_ERR_POWER_SWITCH_FAILURE]	= "PowerSwitchFailure",
+	[OCPP_CP_ERR_READER_FAILURE]		= "ReaderFailure",
+	[OCPP_CP_ERR_RESET_FAILURE]		= "ResetFailure",
+	[OCPP_CP_ERR_UNDER_VOLTAGE]		= "UnderVoltage",
+	[OCPP_CP_ERR_WEAK_SIGNAL]		= "WeakSignal",
+};
+
+int ocpp_status_notification(ocpp_session_handle_t hndl,
+			     int conn_id,
+			     enum ocpp_cp_status status,
+			     enum ocpp_cp_error_code error,
+			     uint32_t timeout_ms)
+{
+	struct ocpp_session *sh = (struct ocpp_session *)hndl;
+	struct ocpp_info *ctx;
+	struct ocpp_upstream_info *ui;
+	char buf[OCPP_USER_REQ_PDU_BUF];
+	char utc[CISTR25] = {0};
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	if (!ocpp_session_is_valid(sh) || conn_id < 0 ||
+	    status > OCPP_CP_STATUS_FAULTED || error > OCPP_CP_ERR_WEAK_SIGNAL) {
+		return -EINVAL;
+	}
+
+	ctx = sh->ctx;
+	if (ctx->state < CP_STATE_READY) {
+		return -EAGAIN;
+	}
+
+	if (ctx->is_cs_offline) {
+		return -EAGAIN;
+	}
+
+	fn = ctx->cfn[PDU_STATUS_NOTIFICATION];
+	ocpp_get_utc_now(utc);
+	ret = fn(buf, sizeof(buf), sh, conn_id, cp_status_str[status],
+		 cp_error_str[error], utc);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ui = &ctx->ui;
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	rmsg.sndlock = &ui->ws_sndlock;
+	rmsg.rspsig = &ui->ws_rspsig;
+	ret = ocpp_send_to_server(&rmsg, K_MSEC(timeout_ms));
+
+	return ret;
+}
+
 int ocpp_remote_start_transaction(struct ocpp_info *ctx,
 				  struct internal_msg *msg,
 				  char *uid)
@@ -488,6 +567,123 @@ int ocpp_unlock_connector(struct ocpp_info *ctx,
 
 	fn = ctx->cfn[PDU_UNLOCK_CONNECTOR];
 	fn(buf, sizeof(ctx->pdu_buf), resp, uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
+static const char * const req_status_str[] = {
+	[OCPP_REQ_ACCEPTED]	= "Accepted",
+	[OCPP_REQ_REJECTED]	= "Rejected",
+	[OCPP_REQ_SCHEDULED]	= "Scheduled",
+	[OCPP_REQ_UNKNOWN_VENDOR_ID]	= "UnknownVendorId",
+	[OCPP_REQ_UNKNOWN_MESSAGE_ID]	= "UnknownMessageId",
+};
+
+int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	enum ocpp_req_status status = OCPP_REQ_REJECTED;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	if (msg != NULL) {
+		msg->usr.reset.status = OCPP_REQ_REJECTED;
+		ret = ctx->cb(OCPP_USR_RESET, &msg->usr, ctx->user_data);
+		if (ret == 0 && msg->usr.reset.status == OCPP_REQ_ACCEPTED) {
+			status = OCPP_REQ_ACCEPTED;
+		}
+	}
+
+	fn = ctx->cfn[PDU_RESET];
+	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
+int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
+			     char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	enum ocpp_req_status status = OCPP_REQ_REJECTED;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	union ocpp_keyval *nconn;
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	nconn = ocpp_get_key_val(CFG_NO_OF_CONNECTORS);
+	if (msg != NULL && msg->usr.change_avail.id_con >= 0 &&
+	    msg->usr.change_avail.id_con <= nconn->ival) {
+		msg->usr.change_avail.status = OCPP_REQ_REJECTED;
+		ret = ctx->cb(OCPP_USR_CHANGE_AVAILABILITY, &msg->usr,
+			      ctx->user_data);
+		if (ret == 0 && (msg->usr.change_avail.status == OCPP_REQ_ACCEPTED ||
+				 msg->usr.change_avail.status == OCPP_REQ_SCHEDULED)) {
+			status = msg->usr.change_avail.status;
+		}
+	}
+
+	fn = ctx->cfn[PDU_CHANGE_AVAILABILITY];
+	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
+int ocpp_clear_cache(struct ocpp_info *ctx, char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	/* No local authorization cache is maintained, so accept the request. */
+	fn = ctx->cfn[PDU_CLEAR_CACHE];
+	fn(buf, sizeof(ctx->pdu_buf), "Accepted", uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
+int ocpp_data_transfer(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	enum ocpp_req_status status = OCPP_REQ_REJECTED;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	if (msg != NULL) {
+		msg->usr.data_transfer.status = OCPP_REQ_REJECTED;
+		ret = ctx->cb(OCPP_USR_DATA_TRANSFER, &msg->usr, ctx->user_data);
+		if (ret < 0) {
+			status = OCPP_REQ_UNKNOWN_VENDOR_ID;
+		} else if (msg->usr.data_transfer.status != OCPP_REQ_SCHEDULED &&
+			   msg->usr.data_transfer.status < ARRAY_SIZE(req_status_str)) {
+			status = msg->usr.data_transfer.status;
+		}
+	}
+
+	fn = ctx->cfn[PDU_DATA_TRANSFER];
+	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;

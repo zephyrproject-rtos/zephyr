@@ -46,6 +46,39 @@ enum ocpp_auth_status {
 	OCPP_AUTH_CONCURRENT_TX /**< Parallel access of same IdTag */
 };
 
+/** @brief OCPP charge point status reported in StatusNotification */
+enum ocpp_cp_status {
+	OCPP_CP_STATUS_AVAILABLE,	/**< connector available */
+	OCPP_CP_STATUS_PREPARING,	/**< preparing to charge */
+	OCPP_CP_STATUS_CHARGING,	/**< charging in progress */
+	OCPP_CP_STATUS_SUSPENDED_EVSE,	/**< charging suspended by EVSE */
+	OCPP_CP_STATUS_SUSPENDED_EV,	/**< charging suspended by EV */
+	OCPP_CP_STATUS_FINISHING,	/**< transaction finishing */
+	OCPP_CP_STATUS_RESERVED,	/**< connector reserved */
+	OCPP_CP_STATUS_UNAVAILABLE,	/**< connector not available */
+	OCPP_CP_STATUS_FAULTED,		/**< fault present */
+};
+
+/** @brief OCPP charge point error code reported in StatusNotification */
+enum ocpp_cp_error_code {
+	OCPP_CP_ERR_NO_ERROR,			/**< no error */
+	OCPP_CP_ERR_CONNECTOR_LOCK_FAILURE,	/**< connector lock failed */
+	OCPP_CP_ERR_EV_COMMUNICATION_ERROR,	/**< communication with EV lost */
+	OCPP_CP_ERR_GROUND_FAILURE,		/**< ground fault detected */
+	OCPP_CP_ERR_HIGH_TEMPERATURE,		/**< over temperature */
+	OCPP_CP_ERR_INTERNAL_ERROR,		/**< internal error */
+	OCPP_CP_ERR_LOCAL_LIST_CONFLICT,	/**< local list version conflict */
+	OCPP_CP_ERR_OTHER_ERROR,		/**< other error */
+	OCPP_CP_ERR_OVER_CURRENT_FAILURE,	/**< over current */
+	OCPP_CP_ERR_OVER_VOLTAGE,		/**< over voltage */
+	OCPP_CP_ERR_POWER_METER_FAILURE,	/**< power meter failure */
+	OCPP_CP_ERR_POWER_SWITCH_FAILURE,	/**< power switch failure */
+	OCPP_CP_ERR_READER_FAILURE,		/**< id reader failure */
+	OCPP_CP_ERR_RESET_FAILURE,		/**< reset failure */
+	OCPP_CP_ERR_UNDER_VOLTAGE,		/**< under voltage */
+	OCPP_CP_ERR_WEAK_SIGNAL,		/**< weak signal */
+};
+
 enum ocpp_notify_reason {
 	/** User must fill the current reading */
 	OCPP_USR_GET_METER_VALUE,
@@ -60,6 +93,36 @@ enum ocpp_notify_reason {
 
 	/** Unlock mechanical connector of CP */
 	OCPP_USR_UNLOCK_CONNECTOR,
+
+	/** Reset the charge point (hard or soft) */
+	OCPP_USR_RESET,
+
+	/** Change availability of a connector (operative/inoperative) */
+	OCPP_USR_CHANGE_AVAILABILITY,
+
+	/** Vendor specific data received from central system (DataTransfer) */
+	OCPP_USR_DATA_TRANSFER,
+};
+
+/** @brief OCPP reset type requested by central system */
+enum ocpp_reset_type {
+	OCPP_RESET_HARD,	/**< full reboot of the charge point */
+	OCPP_RESET_SOFT,	/**< restart of the application only */
+};
+
+/** @brief Reply status the application sets for a central system request */
+enum ocpp_req_status {
+	OCPP_REQ_ACCEPTED,	/**< request accepted */
+	OCPP_REQ_REJECTED,	/**< request rejected */
+	OCPP_REQ_SCHEDULED,	/**< ChangeAvailability applied after transaction */
+	OCPP_REQ_UNKNOWN_VENDOR_ID,	/**< DataTransfer vendor id not known */
+	OCPP_REQ_UNKNOWN_MESSAGE_ID,	/**< DataTransfer message id not known */
+};
+
+/** @brief OCPP availability type requested in ChangeAvailability */
+enum ocpp_availability_type {
+	OCPP_AVAILABILITY_INOPERATIVE,	/**< connector taken out of service */
+	OCPP_AVAILABILITY_OPERATIVE,	/**< connector put into service */
 };
 
 /** @brief OCPP meter readings to be filled on user callback request from
@@ -121,6 +184,25 @@ union ocpp_io_value {
 	struct {
 		int id_con;	/**< Input to user, to unlock connector id. */
 	} unlock_con;
+
+	struct {
+		enum ocpp_reset_type type; /**< Input to user, reset type requested */
+		enum ocpp_req_status status; /**< To be filled by user, reply status */
+	} reset; /**< Reset request from CS */
+
+	struct {
+		int id_con;	/**< Input to user, connector id (0 = whole CP) */
+		enum ocpp_availability_type type; /**< Input to user, requested availability */
+		enum ocpp_req_status status; /**< To be filled by user, reply status */
+	} change_avail; /**< ChangeAvailability request from CS */
+
+	struct {
+		char vendor_id[CISTR50];  /**< Input to user, vendor id */
+		char msg_id[CISTR50];	  /**< Input to user, message id (optional) */
+		char data[CISTR50];	  /**< Input to user, payload (optional, truncated) */
+		/** To be filled by user, reply status, UnknownVendorId on callback error */
+		enum ocpp_req_status status;
+	} data_transfer; /**< DataTransfer request from CS */
 };
 
 /** @brief Parameters for ocpp_init information about Charge Point (CP)
@@ -168,6 +250,11 @@ typedef void *ocpp_session_handle_t;
  * @brief Asynchronous event notification callback registered by the
  *        application. advised callback should not be hold for longer time
  *        to unblock the ocpp protocol stack/lib.
+ *
+ * For a request whose io carries a status, the callback runs in the
+ * receive thread and the reply to the central system uses the status set
+ * by the user. Such a callback must not call an ocpp API that waits for
+ * the central system, as that reply is read by the same thread.
  *
  * @param[in] reason for callback invoked.
  * @param[in] io referred corresponding to reason.
@@ -259,6 +346,23 @@ int ocpp_start_transaction(ocpp_session_handle_t hndl,
 int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 			  int meter_val,
 			  uint32_t timeout_ms);
+
+/**
+ * @brief Notify connector status to CS via StatusNotification
+ *
+ * @param[in] hndl session handle
+ * @param[in] conn_id connector id, 0 refers to the charge point itself
+ * @param[in] status connector status
+ * @param[in] error error code, OCPP_CP_ERR_NO_ERROR if none
+ * @param[in] timeout_ms timeout in msec
+ *
+ * @return 0 on success or a negative error code (errno.h) indicating reason of failure
+ */
+int ocpp_status_notification(ocpp_session_handle_t hndl,
+			     int conn_id,
+			     enum ocpp_cp_status status,
+			     enum ocpp_cp_error_code error,
+			     uint32_t timeout_ms);
 
 #ifdef __cplusplus
 }

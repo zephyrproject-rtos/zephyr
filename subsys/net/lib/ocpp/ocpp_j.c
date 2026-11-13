@@ -353,6 +353,47 @@ static int frame_start_txn_msg(char *buf, int len, struct ocpp_session *ses,
 	return 0;
 }
 
+static int frame_status_notification_msg(char *buf, int len,
+					 struct ocpp_session *ses, int conn_id,
+					 char *status, char *error,
+					 char *timestamp)
+{
+	int ret;
+	char tmp_buf[JSON_MSG_BUF_256];
+
+	struct json_ocpp_status_notif_msg msg = {
+		.connector_id = conn_id,
+		.error_code = error,
+		.status = status,
+		.timestamp = timestamp,
+	};
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "connectorId",
+					  connector_id, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "errorCode",
+					  error_code, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "status",
+					  status, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "timestamp",
+					  timestamp, JSON_TOK_STRING),
+	};
+
+	ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr), &msg,
+				  tmp_buf, sizeof(tmp_buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = frame_rpc_call_req(buf, len, PDU_STATUS_NOTIFICATION,
+				 (uintptr_t)ses, tmp_buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int frame_getconfig_msg(char *buf, int len, char *key, char *val,
 			       bool is_rw, char *uid)
 {
@@ -831,6 +872,115 @@ static int parse_unlock_connectormsg(char *json, int *idcon)
 	return 0;
 }
 
+static int parse_reset_msg(char *json, enum ocpp_reset_type *type)
+{
+	int ret;
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_common_payload_field_str, "type",
+					  val1, JSON_TOK_STRING),
+	};
+
+	struct json_common_payload_field_str payload = { 0 };
+
+	ret = json_obj_parse(json, strlen(json), descr, ARRAY_SIZE(descr), &payload);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (payload.val1 == NULL) {
+		return -EINVAL;
+	}
+
+	if (strcmp(payload.val1, "Hard") == 0) {
+		*type = OCPP_RESET_HARD;
+	} else if (strcmp(payload.val1, "Soft") == 0) {
+		*type = OCPP_RESET_SOFT;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int parse_change_availability_msg(char *json, int *idcon,
+					 enum ocpp_availability_type *type)
+{
+	int ret;
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_common_payload_field, "connectorId",
+					  val1, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_common_payload_field, "type",
+					  val2, JSON_TOK_STRING),
+	};
+
+	struct json_common_payload_field payload = { 0 };
+
+	ret = json_obj_parse(json, strlen(json), descr, ARRAY_SIZE(descr), &payload);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if ((ret & (BIT(0) | BIT(1))) != (BIT(0) | BIT(1)) ||
+	    payload.val2 == NULL) {
+		return -EINVAL;
+	}
+
+	if (strcmp(payload.val2, "Operative") == 0) {
+		*type = OCPP_AVAILABILITY_OPERATIVE;
+	} else if (strcmp(payload.val2, "Inoperative") == 0) {
+		*type = OCPP_AVAILABILITY_INOPERATIVE;
+	} else {
+		return -EINVAL;
+	}
+
+	*idcon = payload.val1;
+
+	return 0;
+}
+
+static int parse_data_transfer_msg(char *json, char *vendor, char *msgid, char *data)
+{
+	int ret;
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_datatransfer_msg, "vendorId",
+					  vendor_id, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_datatransfer_msg, "messageId",
+					  message_id, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_datatransfer_msg, "data",
+					  data, JSON_TOK_STRING),
+	};
+
+	struct json_ocpp_datatransfer_msg payload = { 0 };
+
+	ret = json_obj_parse(json, strlen(json), descr, ARRAY_SIZE(descr), &payload);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* vendorId is mandatory, messageId and data are optional */
+	if (payload.vendor_id == NULL) {
+		return -EINVAL;
+	}
+
+	strncpy(vendor, payload.vendor_id, CISTR50 - 1);
+	vendor[CISTR50 - 1] = '\0';
+
+	if (payload.message_id != NULL) {
+		strncpy(msgid, payload.message_id, CISTR50 - 1);
+		msgid[CISTR50 - 1] = '\0';
+	}
+
+	if (payload.data != NULL) {
+		strncpy(data, payload.data, CISTR50 - 1);
+		data[CISTR50 - 1] = '\0';
+	}
+
+	return 0;
+}
+
 static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
 	[PDU_BOOTNOTIFICATION]	= (ocpp_msg_fp_t)parse_bootnotification_msg,
 	[PDU_AUTHORIZE]		= (ocpp_msg_fp_t)parse_authorize_msg,
@@ -843,6 +993,9 @@ static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
 	[PDU_REMOTE_START_TRANSACTION]	= (ocpp_msg_fp_t)parse_remote_start_txn_msg,
 	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)parse_remote_stop_txn_msg,
 	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)parse_unlock_connectormsg,
+	[PDU_RESET]		= (ocpp_msg_fp_t)parse_reset_msg,
+	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)parse_change_availability_msg,
+	[PDU_DATA_TRANSFER]	= (ocpp_msg_fp_t)parse_data_transfer_msg,
 };
 
 static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
@@ -857,6 +1010,11 @@ static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
 	[PDU_REMOTE_START_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_STATUS_NOTIFICATION] = (ocpp_msg_fp_t)frame_status_notification_msg,
+	[PDU_RESET]		= (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_CLEAR_CACHE]	= (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_DATA_TRANSFER]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 };
 
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn)

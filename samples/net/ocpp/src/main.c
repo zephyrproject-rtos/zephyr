@@ -79,7 +79,7 @@ static int ocpp_get_time_from_sntp(void)
 	struct sntp_time stime;
 	struct sockaddr addr;
 	socklen_t addrlen;
-	struct timespec tv;
+	struct timespec tv = {0};
 	int ret;
 
 	ret = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT,
@@ -103,9 +103,13 @@ static int ocpp_get_time_from_sntp(void)
 
 	LOG_INF("SNTP success, epoch seconds: %llu\n", stime.seconds);
 	tv.tv_sec = stime.seconds;
-	clock_settime(CLOCK_REALTIME, &tv);
+	if (clock_settime(CLOCK_REALTIME, &tv) < 0) {
+		ret = -errno;
+		LOG_ERR("Failed to set time (%d)", ret);
+	}
+
 	sntp_close(&ctx);
-	return 0;
+	return ret;
 }
 
 ZBUS_CHAN_DEFINE(ch_event, /* Name */
@@ -183,6 +187,27 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 	case OCPP_USR_UNLOCK_CONNECTOR:
 		LOG_INF("unlock connector %d\n", io->unlock_con.id_con);
 		return 0;
+
+	case OCPP_USR_RESET:
+		LOG_INF("reset requested type %s\n",
+			io->reset.type == OCPP_RESET_HARD ? "Hard" : "Soft");
+		io->reset.status = OCPP_REQ_ACCEPTED;
+		return 0;
+
+	case OCPP_USR_CHANGE_AVAILABILITY:
+		LOG_INF("change availability connector %d to %s\n",
+			io->change_avail.id_con,
+			io->change_avail.type == OCPP_AVAILABILITY_OPERATIVE ?
+			"Operative" : "Inoperative");
+		io->change_avail.status = OCPP_REQ_ACCEPTED;
+		return 0;
+
+	case OCPP_USR_DATA_TRANSFER:
+		LOG_INF("data transfer vendor %s msg %s data %s\n",
+			io->data_transfer.vendor_id, io->data_transfer.msg_id,
+			io->data_transfer.data);
+		io->data_transfer.status = OCPP_REQ_ACCEPTED;
+		return 0;
 	}
 
 	return -ENOTSUP;
@@ -236,6 +261,8 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 		union ocpp_io_value io;
 
 		LOG_INF("ocpp start charging connector id %d\n", idcon);
+		ocpp_status_notification(sh, idcon, OCPP_CP_STATUS_CHARGING,
+					 OCPP_CP_ERR_NO_ERROR, timeout_ms);
 		memset(&io, 0xff, sizeof(io));
 
 		/* wait for stop charging event from main or remote CS */
@@ -258,6 +285,8 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 	}
 
 	LOG_INF("ocpp stop charging connector id %d\n", idcon);
+	ocpp_status_notification(sh, idcon, OCPP_CP_STATUS_AVAILABLE,
+				 OCPP_CP_ERR_NO_ERROR, timeout_ms);
 	k_sleep(K_SECONDS(1));
 	ocpp_session_close(sh);
 	tid[idcon - 1] = NULL;

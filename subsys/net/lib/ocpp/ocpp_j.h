@@ -96,6 +96,19 @@ struct json_ocpp_start_txn_msg {
 	int reservation_id;
 };
 
+struct json_ocpp_status_notif_msg {
+	int connector_id;
+	char *error_code;
+	char *status;
+	char *timestamp;
+};
+
+struct json_ocpp_datatransfer_msg {
+	char *vendor_id;
+	char *message_id;
+	char *data;
+};
+
 struct json_ocpp_getconfig_msg {
 	struct json_ocpp_key_val {
 		char *key;
