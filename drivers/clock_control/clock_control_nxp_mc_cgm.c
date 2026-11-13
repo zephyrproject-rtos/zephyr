@@ -338,6 +338,33 @@ static int mc_cgm_emac_attach(const struct mc_cgm_emac_clk *clk)
 }
 #endif /* defined(MC_CGM_HAS_EMAC) */
 
+#if defined(FSL_FEATURE_MC_CGM_HAS_SXOSC) && (FSL_FEATURE_MC_CGM_HAS_SXOSC != 0U) && \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(sxosc), nxp_sxosc, okay)
+#define MC_CGM_SXOSC_ENABLED 1
+
+#define MC_CGM_SXOSC_EOCV ((uint8_t)DT_PROP(DT_NODELABEL(sxosc), delay))
+
+static int mc_cgm_sxosc_start(void)
+{
+	/* SXOSC has its own MC_ME gate, so open it before reading the register
+	 * block below.
+	 */
+	CLOCK_EnableClock(kCLOCK_Sxosc);
+
+	/* Leave a running oscillator alone */
+	if ((SXOSC->SXOSC_STAT & SXOSC_SXOSC_STAT_OSC_STAT_MASK) != 0U ||
+	    (SXOSC->SXOSC_CTRL & SXOSC_SXOSC_CTRL_OSCON_MASK) != 0U) {
+		return 0;
+	}
+
+	if (CLOCK_InitSxosc(true, MC_CGM_SXOSC_EOCV) != kStatus_Success) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* MC_CGM_SXOSC_ENABLED */
+
 static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_name = (uint32_t)sub_system;
@@ -439,6 +466,11 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_FXOSC_CLK:
 		*rate = CLOCK_GetFxoscFreq();
 		return 0;
+#if defined(MC_CGM_SXOSC_ENABLED)
+	case MCUX_SXOSC_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_SxoscClk);
+		return 0;
+#endif
 	case MCUX_CORESYS_CLK:
 #if defined(CONFIG_MCUX_FLEXIO)
 	case MCUX_FLEXIO_CLK:
@@ -513,6 +545,15 @@ static int mc_cgm_init(const struct device *dev)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), nxp_plldig, okay)
 	/* Enable PLL. */
 	CLOCK_InitPll(&pll_config);
+#endif
+
+#if defined(MC_CGM_SXOSC_ENABLED)
+	/* SXOSC is optional: a missing or defective crystal must not stop the
+	 * boot, so only report it and carry on.
+	 */
+	if (mc_cgm_sxosc_start() != 0) {
+		LOG_WRN("SXOSC did not stabilize");
+	}
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(mc_cgm), nxp_mc_cgm, okay)
