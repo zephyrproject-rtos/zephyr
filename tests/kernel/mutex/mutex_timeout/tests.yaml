@@ -1,0 +1,4 @@
+tests:
+  kernel.mutex.timeout:
+    tags:
+      - kernel
