@@ -101,5 +101,6 @@
 /* LP peripherals */
 #define ESP32_LP_I2C0_MODULE      134 /**< LP I2C0 module */
 #define ESP32_LP_UART0_MODULE     135 /**< LP UART0 module */
+#define ESP32_LP_DAC_MODULE       136 /**< LP DAC module */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32S31_CLOCK_H_ */
