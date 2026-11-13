@@ -269,3 +269,44 @@ config BT_SILABS_EFR32_LL_THREAD_PRIO
 	def_int 0
 
 endmenu
+
+config BT_HCI_SILABS_NCP
+	bool "Silicon Labs network co-processor HCI driver"
+	default y
+	depends on DT_HAS_SILABS_NCP_HCI_ENABLED
+	depends on MFD_SILABS_NCP
+	select EXPERIMENTAL
+	help
+	  Bluetooth HCI driver for a controller running on a Silicon Labs
+	  network co-processor. HCI packets (H4 framing) are carried by a CPC
+	  endpoint of the co-processor.
+
+if BT_HCI_SILABS_NCP
+
+config BT_HCI_SILABS_NCP_INIT_PRIORITY
+	int "Initialization priority"
+	default 90
+	help
+	  Must be greater than MFD_SILABS_NCP_INIT_PRIORITY.
+
+config BT_HCI_SILABS_NCP_RX_COUNT
+	int "Number of receive buffers handed to CPC"
+	range 1 255
+	default 4
+	help
+	  Buffers the driver hands to CPC for the packets of the controller.
+	  They are the receive window the co-processor gets for HCI: it sends
+	  that many packets before the host must acknowledge one. Each buffer
+	  holds the largest HCI event or data packet of the host configuration;
+	  a longer packet, such as a Command Complete event of up to 255
+	  bytes, takes several of them.
+
+config BT_HCI_SILABS_NCP_TX_COUNT
+	int "Number of packets in flight towards the co-processor"
+	range 1 255
+	default 4
+	help
+	  Packets sent to the co-processor and not yet acknowledged by it.
+	  Beyond that, the send operation waits for an acknowledgment.
+
+endif # BT_HCI_SILABS_NCP
