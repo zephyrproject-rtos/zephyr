@@ -234,7 +234,7 @@
 		io-channels = <&adc1 18>;
 	};
 
-	otghs_fs_phy: otghs_fs_phy {
+	otghs_fs_phy: otghs-fs-usb-phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};

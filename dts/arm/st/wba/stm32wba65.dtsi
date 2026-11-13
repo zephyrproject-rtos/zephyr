@@ -156,7 +156,7 @@
 		};
 	};
 
-	otghs_phy: otghs_phy {
+	otghs_phy: otghs-usb-phy {
 		compatible = "st,stm32u5-otghs-phy";
 		clocks = <&rcc STM32_CLOCK(AHB2, 15)>;
 		#phy-cells = <0>;

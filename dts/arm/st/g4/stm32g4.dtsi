@@ -911,7 +911,7 @@
 		status = "disabled";
 	};
 
-	usb_fs_phy: usbphy {
+	usb_fs_phy: usb-phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
 	};
