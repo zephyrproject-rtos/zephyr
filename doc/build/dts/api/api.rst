@@ -442,8 +442,9 @@ device.
        this property is used to tell MCUboot the load address of the image, which
        will be the ``reg`` of the chosen node.
    * - zephyr,boot-mode
-     - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
-       what image on a device should be booted.
+     - Selects the node that stores the :ref:`boot_mode_api` selection, which specifies what
+       image on a device should be booted. Its compatible selects the backend, for example a
+       :ref:`retention_api` area.
    * - zephyr,bootloader-info
      - Selects the :ref:`retention_api` area used to share information with the bootloader.
    * - zephyr,bt-c2h-uart

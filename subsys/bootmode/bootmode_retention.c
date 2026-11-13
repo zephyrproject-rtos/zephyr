@@ -6,9 +6,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/bootmode.h>
 #include <zephyr/retention/retention.h>
 
-static const struct device *boot_mode_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_boot_mode));
+#define BOOT_MODE_NODE DT_CHOSEN(zephyr_boot_mode)
+
+static const struct device *boot_mode_dev = DEVICE_DT_GET(BOOT_MODE_NODE);
 
 int bootmode_check(uint8_t boot_mode)
 {

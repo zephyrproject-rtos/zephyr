@@ -5,7 +5,7 @@
  */
 #include <zephyr/cache.h>
 #include <zephyr/drivers/retained_mem.h>
-#include <zephyr/retention/bootmode.h>
+#include <zephyr/bootmode.h>
 #include <zephyr/ztest.h>
 #include <errno.h>
 #include <zephyr/sys/reboot.h>

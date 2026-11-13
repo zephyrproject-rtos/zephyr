@@ -1,0 +1,29 @@
+# Copyright (c) 2026, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_BOOT_MODE := zephyr,boot-mode
+
+menuconfig BOOT_MODE
+	bool "Boot mode"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_BOOT_MODE))
+	help
+	  Adds a boot mode subsystem that allows for changing execution flow
+	  depending upon the value of a boot mode parameter. Can be used for
+	  e.g. entering a bootloader serial recovery mode.
+
+	  The backend is selected by the compatible of the "zephyr,boot-mode"
+	  chosen node.
+
+if BOOT_MODE
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.retention"
+# zephyr-keep-sorted-stop
+
+config BOOT_MODE_SHELL
+	bool "Boot mode shell"
+	depends on SHELL
+	help
+	  Adds the bootmode shell command to check, set and clear the boot mode.
+
+endif # BOOT_MODE

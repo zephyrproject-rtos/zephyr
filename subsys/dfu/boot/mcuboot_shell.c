@@ -13,8 +13,8 @@
 
 #include "mcuboot_priv.h"
 
-#ifdef CONFIG_RETENTION_BOOT_MODE
-#include <zephyr/retention/bootmode.h>
+#ifdef CONFIG_BOOT_MODE
+#include <zephyr/bootmode.h>
 #ifdef CONFIG_REBOOT
 #include <zephyr/sys/reboot.h>
 #endif
@@ -158,7 +158,7 @@ static int cmd_mcuboot_request_upgrade(const struct shell *sh, size_t argc,
 	return err;
 }
 
-#ifdef CONFIG_RETENTION_BOOT_MODE
+#ifdef CONFIG_BOOT_MODE
 static int cmd_mcuboot_serial_recovery(const struct shell *sh, size_t argc,
 				       char **argv)
 {
@@ -249,7 +249,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mcuboot_cmds,
 	SHELL_CMD_ARG(erase, NULL, "erase <area_id>", cmd_mcuboot_erase, 2, 0),
 	SHELL_CMD_ARG(request_upgrade, NULL, "request_upgrade [permanent]",
 		      cmd_mcuboot_request_upgrade, 1, 1),
-#ifdef CONFIG_RETENTION_BOOT_MODE
+#ifdef CONFIG_BOOT_MODE
 	SHELL_CMD_ARG(serial_recovery, NULL, "serial_recovery", cmd_mcuboot_serial_recovery, 1, 0),
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */

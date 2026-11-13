@@ -44,22 +44,27 @@ config RETENTION_BUFFER_SIZE
 menu "Retention modules"
 
 config RETENTION_BOOT_MODE
-	bool "Boot mode"
+	bool "Boot mode [DEPRECATED]"
+	select BOOT_MODE
+	select BOOT_MODE_RETENTION
+	select DEPRECATED
 	help
+	  Deprecated, use BOOT_MODE instead. The retention backend is enabled by
+	  default when the "zephyr,boot-mode" chosen node is a retention area.
+
 	  Adds a boot mode system that allows for changing execution flow
 	  depending upon the value of a boot mode parameter. Can be used for
 	  e.g. button-less bootloader serial recovery mode entering from the
 	  application.
 
+	  Enables BOOT_MODE with the retention backend (BOOT_MODE_RETENTION).
+	  This is the same as enabling BOOT_MODE when the "zephyr,boot-mode"
+	  chosen node is a retention area, where BOOT_MODE_RETENTION is enabled
+	  by default.
+
 	  In order to use this, a retention area with at least 1 usable user
 	  byte must be created and set as the "zephyr,boot-mode" chosen node
 	  via device tree.
-
-config RETENTION_BOOT_MODE_SHELL
-	bool "Boot mode shell"
-	depends on RETENTION_BOOT_MODE && SHELL
-	help
-	  Adds the bootmode shell command to check, set and clear the boot mode.
 
 source "subsys/retention/Kconfig.blinfo"
 

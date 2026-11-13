@@ -441,6 +441,18 @@ Networking
 Other subsystems
 ****************
 
+* The :ref:`boot_mode_api` is moved out of the retention subsystem into ``subsys/bootmode``, so
+  that it is no longer tied to retention areas and can have other backends.
+
+  * The backend is enabled from the compatible of the ``zephyr,boot-mode`` chosen node.
+    A retention area enables :kconfig:option:`CONFIG_BOOT_MODE_RETENTION` by default.
+  * :kconfig:option:`CONFIG_RETENTION_BOOT_MODE` has been deprecated in favor of
+    :kconfig:option:`CONFIG_BOOT_MODE`. Until it is removed it enables
+    :kconfig:option:`CONFIG_BOOT_MODE` and :kconfig:option:`CONFIG_BOOT_MODE_RETENTION`,
+    so existing configurations keep working.
+  * ``<zephyr/retention/bootmode.h>`` has been deprecated in favor of ``<zephyr/bootmode.h>``.
+    Including the deprecated header will emit a warning and include the new header.
+
 Shell
 =====
 
