@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Applet subsystem test"
+
+config TEST_APPLET_HALT_SYSTEM
+	bool "Cover APPLET_HALT_ON_FAULT_SYSTEM"
+	depends on APPLET_FATAL_HANDLER
+	help
+	  Run the halt-on-fault SYSTEM case instead of the main ztest suite.
+	  That mode ends in k_fatal_halt(), so the image never returns to the
+	  test runner and the result has to be matched on the console.
+
+source "Kconfig.zephyr"
