@@ -38,6 +38,16 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+config BT_H5_RX_STACK_SIZE
+	int "H:5 RX thread stack size"
+	depends on BT_H5
+	default 2048 if ARM64
+	default 1024
+	help
+	  Stack size of the H:5 driver's RX thread, which handles the link
+	  establishment messages and calls the HCI receive callback with every
+	  received HCI packet.
+
 config BT_HCI_IPC
 	bool
 	default y
