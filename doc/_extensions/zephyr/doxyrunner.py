@@ -177,7 +177,7 @@ def process_doxyfile(
 
     content = re.sub(
         r"^\s*QUIET\s*=.*$",
-        "QUIET=" + "YES" if silent else "NO",
+        "QUIET=" + ("YES" if silent else "NO"),
         content,
         flags=re.MULTILINE,
     )
