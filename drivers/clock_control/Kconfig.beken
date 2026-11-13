@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_BEKEN_BK7258
+	bool "Beken BK7258 clock controller"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_CLOCK_CONTROLLER_ENABLED
