@@ -9,6 +9,14 @@
 #include "tests.inc"
 
 /* clang-format off */
+ZTEST(math_extras, test_u16_add) {
+	run_u16_add();
+}
+
+ZTEST(math_extras, test_u16_mul) {
+	run_u16_mul();
+}
+
 ZTEST(math_extras, test_u32_add) {
 	run_u32_add();
 }
