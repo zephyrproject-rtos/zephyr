@@ -9,7 +9,7 @@
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE
-	     > 2 * CONFIG_SECURE_STORAGE_ITS_MAX_DATA_SIZE);
+	     > 2 * SECURE_STORAGE_ITS_TRANSFORM_MAX_STORED_DATA_SIZE);
 
 #define PARTITION_DT_NODE DT_CHOSEN(zephyr_secure_storage_its_partition)
 
@@ -17,13 +17,13 @@ static struct zms_fs s_zms = {
 	.flash_device = PARTITION_NODE_DEVICE(PARTITION_DT_NODE),
 	.offset = PARTITION_NODE_OFFSET(PARTITION_DT_NODE),
 	.sector_size = CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE,
+	.sector_count = PARTITION_NODE_SIZE(PARTITION_DT_NODE) /
+			CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE,
 };
 
 static int init_zms(void)
 {
 	int ret;
-
-	s_zms.sector_count = PARTITION_NODE_SIZE(PARTITION_DT_NODE) / s_zms.sector_size;
 
 	ret = zms_mount(&s_zms);
 	if (ret) {
@@ -112,8 +112,10 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 		return PSA_ERROR_INVALID_ARGUMENT;
 	}
 
-	zms_ret = zms_read(&s_zms, zms_id, data, data_size);
-	if (zms_ret > 0) {
+	zms_ret = zms_read_hist(&s_zms, zms_id, data, data_size, 0);
+	if (zms_ret > (ssize_t)data_size) {
+		psa_ret = PSA_ERROR_DATA_CORRUPT;
+	} else if (zms_ret > 0) {
 		*data_length = zms_ret;
 		psa_ret = PSA_SUCCESS;
 	} else if (zms_ret == -ENOENT) {
@@ -122,7 +124,7 @@ psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t d
 		psa_ret = PSA_ERROR_STORAGE_FAILURE;
 	}
 	LOG_DBG("%s " ZMS_ID_FMT " for up to %zu bytes. (%zd)",
-		(psa_ret != PSA_ERROR_STORAGE_FAILURE) ? "Read" : "Failed to read",
+		(psa_ret == PSA_SUCCESS) ? "Read" : "Failed to read",
 		ZMS_ID_ARG(zms_id), data_size, zms_ret);
 	return psa_ret;
 }
