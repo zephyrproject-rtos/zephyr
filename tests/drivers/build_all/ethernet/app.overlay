@@ -102,6 +102,14 @@
 					reset-deassert-us = <10000>;
 					status = "okay";
 				};
+
+				ethernet-phy@b {
+					compatible = "ti,dp83tc811";
+					reg = <0xb>;
+					reset-gpios = <&test_gpio 0 0>;
+					int-gpios = <&test_gpio 0 0>;
+					status = "okay";
+				};
 			};
 		};
 

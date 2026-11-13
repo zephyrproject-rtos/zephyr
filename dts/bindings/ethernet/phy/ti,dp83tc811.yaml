@@ -1,0 +1,26 @@
+# Copyright (c) 2026 ZAL Zentrum für Angewandte Luftfahrtforschung GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI DP83TC811 100BASE-T1 automotive Ethernet PHY.
+
+  The link is always 100 Mbit/s full duplex. The MAC interface (MII, RMII,
+  RGMII) and the master/slave role are selected by strap pins only.
+
+compatible: "ti,dp83tc811"
+
+include:
+  - name: ethernet-phy-common.yaml
+  - name: ethernet-phy-reset-gpios.yaml
+
+on-bus: mdio
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. If present, link changes are signalled by interrupt;
+      otherwise the link is polled every CONFIG_PHY_MONITOR_PERIOD.
+
+  default-speeds:
+    default: ["100BASE Full-Duplex"]
