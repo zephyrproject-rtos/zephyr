@@ -32,7 +32,9 @@ struct flash_mspi_nor_quirks {
 		    (&flash_quirks_st_m95p32),					\
 	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, infineon_s28hx512t, okay), \
 		    (FLASH_QUIRKS_INFINEON_S28HX512T(node)),                    \
-		    (NULL))))))))
+	(COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS(node, winbond_w35t51nw, okay), \
+		    (&flash_quirks_w35t51nw),                                  \
+		    (NULL))))))))))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(mxicy_mx25r)
 
@@ -235,5 +237,9 @@ struct flash_mspi_nor_quirks flash_quirks_mxicy_mx25u = {
 #ifdef CONFIG_FLASH_MSPI_INFINEON_S28HX512T
 #include "flash_mspi_nor_quirks_infineon_s28hx512t.h"
 #endif /* CONFIG_FLASH_MSPI_INFINEON_S28HX512T */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(winbond_w35t51nw)
+#include "flash_mspi_nor_quirks_w35t51nw.h"
+#endif
 
 #endif /*__FLASH_MSPI_NOR_QUIRKS_H__*/

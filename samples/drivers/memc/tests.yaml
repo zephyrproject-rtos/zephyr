@@ -22,6 +22,7 @@ tests:
       - apollo3p_evb
       - apollo510_evb
     platform_exclude:
+      - art_pi2
       - stm32h7s78_dk
       - b_u585i_iot02a
   sample.drivers.memc.nrf_mspi:
@@ -41,9 +42,11 @@ tests:
   sample.drivers.memc.stm32_mspi:
     tags: mspi
     platform_allow:
+      - art_pi2
       - b_u585i_iot02a/stm32u585xx
       - stm32h5f5j_dk
       - stm32h7s78_dk
     integration_platforms:
+      - art_pi2
       - b_u585i_iot02a/stm32u585xx
       - stm32h7s78_dk
