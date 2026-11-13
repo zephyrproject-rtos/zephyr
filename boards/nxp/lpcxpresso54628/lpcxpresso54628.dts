@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/lpc/nxp_lpc546xx.dtsi>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "lpcxpresso54628-pinctrl.dtsi"
@@ -67,6 +68,41 @@
 			label = "User LED3";
 		};
 	};
+
+	/*
+	 * Arduino Uno R3 footprint on the inner rows of J9, J10, J12 and J13.
+	 * Several pins are shared with on-board functions: A4 is the
+	 * accelerometer interrupt, A5 the user button SW5, D5 user LED1, and
+	 * the I2C pins are the shared FlexComm2 bus.
+	 */
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpio0 16 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpio0 31 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpio1 0 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpio2 0 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpio3 4 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpio1 1 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpio3 26 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpio3 27 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpio3 2 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpio4 5 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpio3 10 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpio3 14 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpio3 1 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpio1 22 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpio4 7 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpio2 1 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpio3 30 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpio3 21 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpio3 22 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpio3 20 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpio3 23 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpio3 24 0>;
+	};
 };
 
 &cpu0 {
@@ -112,7 +148,7 @@ zephyr_udc0: &usbhs {
 	};
 };
 
-&flexcomm2 {
+arduino_i2c: &flexcomm2 {
 	compatible = "nxp,lpc-i2c";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
@@ -132,6 +168,24 @@ zephyr_udc0: &usbhs {
 		reg = <0x1d>;
 		int1-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
 	};
+};
+
+/* Arduino D0 (RX) and D1 (TX). */
+arduino_serial: &flexcomm4 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm4_usart>;
+	pinctrl-names = "default";
+};
+
+/* Arduino D13 (SCK), D11 (MOSI), D12 (MISO) and D10 (SSEL0). */
+arduino_spi: &flexcomm9 {
+	compatible = "nxp,lpc-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm9_spi>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ctimer0 {

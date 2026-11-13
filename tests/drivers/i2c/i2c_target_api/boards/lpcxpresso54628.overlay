@@ -1,0 +1,44 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * FlexComm4 as I2C on Arduino D0 (SDA) and D1 (SCL), wired to D14 (SDA) and
+ * D15 (SCL) of the Arduino I2C bus, FlexComm2.
+ */
+&pinctrl {
+	pinmux_flexcomm4_i2c: pinmux_flexcomm4_i2c {
+		group0 {
+			pinmux = <FC4_RXD_SDA_MOSI_PIO3_26>,
+				 <FC4_TXD_SCL_MISO_PIO3_27>;
+			drive-open-drain;
+			slew-rate = "standard";
+		};
+	};
+};
+
+&flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	/delete-property/ current-speed;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm4_i2c>;
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&arduino_i2c {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

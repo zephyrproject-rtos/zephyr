@@ -79,4 +79,24 @@
 			slew-rate = "standard";
 		};
 	};
+
+	/* FlexComm4 USART: Arduino D0 (RX, P3_26) and D1 (TX, P3_27). */
+	pinmux_flexcomm4_usart: pinmux_flexcomm4_usart {
+		group0 {
+			pinmux = <FC4_RXD_SDA_MOSI_PIO3_26>,
+				 <FC4_TXD_SCL_MISO_PIO3_27>;
+			slew-rate = "standard";
+		};
+	};
+
+	/* FlexComm9 SPI: Arduino D13 (SCK), D11 (MOSI), D12 (MISO), D10 (SSEL0). */
+	pinmux_flexcomm9_spi: pinmux_flexcomm9_spi {
+		group0 {
+			pinmux = <FC9_SCK_PIO3_20>,
+				 <FC9_RXD_SDA_MOSI_PIO3_21>,
+				 <FC9_TXD_SCL_MISO_PIO3_22>,
+				 <FC9_CTS_SDA_SSEL0_PIO3_30>;
+			slew-rate = "standard";
+		};
+	};
 };
