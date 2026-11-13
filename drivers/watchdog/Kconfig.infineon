@@ -12,3 +12,11 @@ config WDT_INFINEON_CAT1
 	select USE_INFINEON_WDT
 	help
 	  Enable Watchdog driver for Infineon CAT1 devices.
+
+config WDT_INFINEON_HVMS
+	bool
+	default y if SOC_SERIES_PSOC4HVMS64K || SOC_SERIES_PSOC4HVMS128K
+	depends on WDT_INFINEON_CAT1
+	help
+	  The watchdog is a free-running 32-bit counter compared against absolute
+	  limits (PSOC4 HVMS), instead of the ignore-bits/match model.
