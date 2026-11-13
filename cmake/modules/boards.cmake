@@ -139,6 +139,33 @@ if("${BOARD_QUALIFIERS}" STREQUAL "")
 else()
   set(board_deprecated_key ${BOARD}/${BOARD_QUALIFIERS})
 endif()
+
+# No direct mapping, so let's evaluate the possibility of an omitted SoC.
+if(NOT DEFINED ${board_deprecated_key}_DEPRECATED
+   AND board_deprecated_key MATCHES "^(${BOARD}$|${BOARD}//)"
+)
+  get_directory_property(deprecated_var_names VARIABLES)
+  list(FILTER deprecated_var_names INCLUDE REGEX "^${BOARD}/.+_DEPRECATED$")
+
+  foreach(var ${deprecated_var_names})
+    string(REGEX REPLACE "_DEPRECATED$" "" var "${var}")
+    string(REGEX REPLACE "^([^/]+)/[^/]+" "\\1/" short_form "${var}")
+    string(REGEX REPLACE "/$" "" short_form "${short_form}")
+
+    if(NOT DEFINED ${short_form}_DEPRECATED)
+      string(REGEX REPLACE "^([^/]+)/[^/]+" "\\1/" short_val "${${var}_DEPRECATED}")
+      string(REGEX REPLACE "/$" "" short_val "${short_val}")
+      set(${short_form}_DEPRECATED "${short_val}")
+    else()
+      set(${short_form}_DEPRECATED "${short_form}-NOTFOUND")
+    endif()
+  endforeach()
+  if("${${board_deprecated_key}_DEPRECATED}" STREQUAL "${board_deprecated_key}")
+    # The key is identical to its short form value --> SoC rename.
+    # Clear the deprecated key and let the board handling take care of the rest.
+    unset(${board_deprecated_key}_DEPRECATED)
+  endif()
+endif()
 if(${board_deprecated_key}_DEPRECATED)
   set(BOARD_DEPRECATED ${board_deprecated_key} CACHE STRING "Deprecated BOARD, provided by user")
   message(WARNING
