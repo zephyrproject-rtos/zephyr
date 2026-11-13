@@ -517,6 +517,16 @@
 		status = "disabled";
 	};
 
+	sema42: hwspinlock@112000 {
+		compatible = "nxp,sema42";
+		reg = <0x112000 0x1000>;
+		clocks = <&clkctl1 MCUX_SEMA42_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(1, 29)>;
+		#hwlock-cells = <1>;
+		num-locks = <16>;
+		status = "disabled";
+	};
+
 	os_timer: timers@113000 {
 		compatible = "nxp,os-timer";
 		reg = <0x113000 0x1000>;
