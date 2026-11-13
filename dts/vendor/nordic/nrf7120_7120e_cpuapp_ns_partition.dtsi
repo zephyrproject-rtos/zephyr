@@ -72,6 +72,14 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+
+		/* Non-Secure application RAM, without the Wi-Fi IPC shared memory at the start
+		 * and the shared regions at the end of RAM03
+		 */
+		sram0_ns_app: sram@5000 {
+			compatible = "mmio-sram";
+			reg = <0x5000 (DT_SIZE_K(920) - 0x5000 - 0x320)>;
+		};
 	};
 };
 

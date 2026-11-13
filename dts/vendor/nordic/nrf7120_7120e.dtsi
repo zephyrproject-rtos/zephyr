@@ -198,10 +198,10 @@
 
 			cpuapp_sram: memory@0 {
 				compatible = "mmio-sram";
-				reg = <0x0 (DT_SIZE_K(1016) - 0x20)>;
+				reg = <0x0 (DT_SIZE_K(1016) - 0x320)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 (DT_SIZE_K(1016) - 0x20)>;
+				ranges = <0x0 0x0 (DT_SIZE_K(1016) - 0x320)>;
 
 				ram00_sram: memory@0 {
 					compatible = "mmio-sram";
@@ -229,18 +229,27 @@
 
 				ram03_sram: memory@e0000 {
 					compatible = "mmio-sram";
-					reg = <0xe0000 (DT_SIZE_K(120) - 0x20)>;
-					ranges = <0x0 0xe0000 (DT_SIZE_K(120) - 0x20)>;
+					reg = <0xe0000 (DT_SIZE_K(120) - 0x320)>;
+					ranges = <0x0 0xe0000 (DT_SIZE_K(120) - 0x320)>;
 					#address-cells = <1>;
 					#size-cells = <1>;
 				};
 
 #ifndef USE_NON_SECURE_ADDRESS_MAP
-				cpuapp_sram_app: memory@60 {
+				cpuapp_sram_app: memory@5060 {
 					compatible = "mmio-sram";
-					reg = <0x60 (DT_SIZE_K(1016) - 0x20 - 0x60)>;
+					reg = <0x5060 (DT_SIZE_K(1016) - 0x320 - 0x5060)>;
 				};
 #endif
+			};
+
+			sdc_dma_region_default: memory@fdce0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0xfdce0 0x300>;
+				ranges = <0x0 0xfdce0 0x300>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				zephyr,memory-region = "NRF_RADIO_DMA";
 			};
 
 			vtf_region_default: memory@fdfe0 {

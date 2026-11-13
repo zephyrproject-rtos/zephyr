@@ -24,8 +24,8 @@
 
 &cpuapp_sram_app {
 	/* Shrink SRAM to avoid overlap with retained memory region. The SRAM ends at
-	 * DT_SIZE_K(184), and starts at 0x60 after the KMU push area, so the size is that
-	 * end offset minus 0x60.
+	 * DT_SIZE_K(184), and starts at 0x5060 after the KMU push area and the Wi-Fi IPC
+	 * shared memory, so the size is that end offset minus 0x5060.
 	 */
-	reg = <0x60 (DT_SIZE_K(184) - 0x60)>;
+	reg = <0x5060 (DT_SIZE_K(184) - 0x5060)>;
 };

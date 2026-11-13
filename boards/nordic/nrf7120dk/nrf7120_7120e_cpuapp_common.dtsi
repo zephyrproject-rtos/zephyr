@@ -32,10 +32,18 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
+		/* Below zephyr,sram: after TF-M secure RAM (NS) or the KMU push area */
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+		ipc_shm_area_cpuapp_cpuuma: memory@20018000 {
 			compatible = "mmio-sram";
-			reg = <0x200c0000 0x5000>;
-			ranges = <0x0 0x200c0000 0x5000>;
+			reg = <0x20018000 0x5000>;
+			ranges = <0x0 0x20018000 0x5000>;
+#else
+		ipc_shm_area_cpuapp_cpuuma: memory@20000060 {
+			compatible = "mmio-sram";
+			reg = <0x20000060 0x5000>;
+			ranges = <0x0 0x20000060 0x5000>;
+#endif
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
