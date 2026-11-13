@@ -192,6 +192,12 @@
 		.mair_idx = MPU_MAIR_INDEX_SRAM,           /* Cache-ability */                     \
 		.r_limit = limit - 1,                      /* Region Limit */                      \
 	}
+#define REGION_RAM_PRIV_RWX_ATTR(limit)                                                            \
+	{                                                                                          \
+		.rbar = P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */                        \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,           /* Cache-ability */                     \
+		.r_limit = (limit) - 1,                    /* Region Limit */                      \
+	}
 
 #define REGION_RAM_RO_ATTR(limit)                                                                  \
 	{                                                                                          \
@@ -199,11 +205,29 @@
 		.mair_idx = MPU_MAIR_INDEX_SRAM,                      /* Cache-ability */          \
 		.r_limit = limit - 1,                                 /* Region Limit */           \
 	}
+#define REGION_RAM_PRIV_RO_XN_ATTR(limit)                                                          \
+	{                                                                                          \
+		.rbar = NOT_EXEC | P_RO_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */             \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,                      /* Cache-ability */          \
+		.r_limit = (limit) - 1,                               /* Region Limit */           \
+	}
+#define REGION_RAM_PRIV_RX_ATTR(limit)                                                             \
+	{                                                                                          \
+		.rbar = P_RO_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */                        \
+		.mair_idx = MPU_MAIR_INDEX_SRAM,           /* Cache-ability */                     \
+		.r_limit = (limit) - 1,                    /* Region Limit */                      \
+	}
 #define REGION_RAM_NOCACHE_ATTR(limit)                                                             \
 	{                                                                                          \
 		.rbar = NOT_EXEC | P_RW_U_NA_Msk | NON_SHAREABLE_Msk, /* AP, XN, SH */             \
 		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,              /* Cache-ability */          \
 		.r_limit = limit - 1,                                 /* Region Limit */           \
+	}
+#define REGION_RAM_NOCACHE_OUTER_SHAREABLE_P_RW_U_RW_XN_ATTR(limit)                                \
+	{                                                                                          \
+		.rbar = NOT_EXEC | P_RW_U_RW_Msk | OUTER_SHAREABLE_Msk,                           \
+		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,                                          \
+		.r_limit = (limit) - 1,                                                           \
 	}
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 /* Note that the access permissions allow for un-privileged writes, contrary
@@ -253,7 +277,7 @@
 		IF_ENABLED(CONFIG_ARM_MPU_PXN, (.pxn = !PRIV_EXEC_NEVER,))			   \
 	}
 
-#define REGION_RAM_WT_ATTR(base, size)                                                            \
+#define REGION_RAM_WT_ATTR(base, size)                                                             \
 	{                                                                                          \
 		.rbar = IF_ENABLED(CONFIG_XIP, (NOT_EXEC |)) P_RW_U_NA_Msk |                       \
 			NON_SHAREABLE_Msk,                /* AP, XN, SH */                         \
@@ -274,7 +298,7 @@
 /** This attribute allows for execution from RAM region even when CONFIG_XIP=y in
  * case the region is used for code relocation.
  */
-#define REGION_RAM_ATTR_WITH_EXEC(base, size)                                  \
+#define REGION_RAM_ATTR_WITH_EXEC(base, size)                                                      \
 	{                                                                          \
 		.rbar =  P_RW_U_NA_Msk | NON_SHAREABLE_Msk,    /* AP, SH */            \
 		.mair_idx = MPU_MAIR_INDEX_SRAM,               /* Cache-ability */     \
