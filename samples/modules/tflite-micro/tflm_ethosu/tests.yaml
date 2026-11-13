@@ -12,6 +12,7 @@ tests:
     platform_allow:
       - mps3/corstone300/fvp
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - fvp_corstone1000/a320
     integration_platforms:
       - mps3/corstone300/fvp
       - kit_pse84_ai/pse846gps2dbzc4a/m55
