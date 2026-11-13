@@ -80,10 +80,10 @@ endif()
 
 zephyr_linker_section_configure(SECTION /DISCARD/ INPUT ".note.GNU-stack")
 
-zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-  RAM_SECTIONS
-  ramfunc.ld
-)
+# Add the ramfunc section to RAM unless the linker script places it
+if(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT AND NOT CONFIG_RAMFUNC_CUSTOM_PLACEMENT)
+  zephyr_linker_sources(RAM_SECTIONS ${ZEPHYR_BASE}/include/zephyr/linker/ramfunc.ld)
+endif()
 
 zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   RAM_SECTIONS
