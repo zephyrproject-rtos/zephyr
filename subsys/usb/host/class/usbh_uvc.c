@@ -3127,7 +3127,7 @@ static struct usbh_class_api usbh_uvc_class_api = {
 static struct usbh_class_filter usbh_uvc_filters[] = {
 	{
 		.flags = USBH_CLASS_MATCH_CODE_TRIPLE,
-		.class = USB_BCC_VIDEO,
+		.class_code = USB_BCC_VIDEO,
 		.sub = UVC_SC_VIDEO_INTERFACE_COLLECTION,
 		.proto = 0,
 	},
