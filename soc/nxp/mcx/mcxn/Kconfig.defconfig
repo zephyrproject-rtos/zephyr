@@ -36,6 +36,12 @@ config FLASH_FILL_BUFFER_SIZE
 	default 16 if (SOC_MCXN947 || SOC_MCXN547) # Initially, only Nx4x uses the k4 driver
 	default 128
 
+configdefault ZMS_CUSTOMIZE_BLOCK_SIZE
+	default y if FLASH && FLASH_FILL_BUFFER_SIZE > 32
+
+configdefault ZMS_CUSTOM_BLOCK_SIZE
+	default FLASH_FILL_BUFFER_SIZE if FLASH
+
 # The existing SAI diver cannot initialize the PLL on the board,
 # so the PLL settings will not be performed in the driver.
 config I2S_HAS_PLL_SETTING
