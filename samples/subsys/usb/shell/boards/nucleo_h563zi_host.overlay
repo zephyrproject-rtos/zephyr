@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Hamza Bahri
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* PG6 switches VBUS onto the user USB-C connector; host mode only. */
+&gpiog {
+	usb-vbus-en {
+		gpio-hog;
+		gpios = <6 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "usb-vbus-en";
+	};
+};
