@@ -2327,7 +2327,8 @@ static int quic_stream_shutdown_vmeth(void *obj, int how)
 	int ret = 0;
 
 	if (!PART_OF_ARRAY(streams, stream)) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	/* One endpoint, held by a reference, is used for everything that is
@@ -2434,7 +2435,13 @@ out:
 		ret = wr_ret;
 	}
 
-	return ret;
+	/* zsock_shutdown() returns the result as it is: -1 and errno */
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
 }
 
 static const struct socket_op_vtable quic_ctx_fd_op_vtable = {
