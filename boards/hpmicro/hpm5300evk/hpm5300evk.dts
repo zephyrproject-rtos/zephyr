@@ -1,0 +1,98 @@
+/*
+ * Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <hpmicro/hpm5361.dtsi>
+#include "hpm5300evk-pinctrl.dtsi"
+
+/ {
+	compatible = "hpmicro,hpm5300evk";
+	model = "HPMicro HPM5300EVK";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram;
+		zephyr,itcm = &ilm;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &xpi0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioa 23 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_key: button_0 {
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			label = "USER KEY";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &user_key;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pa00_uart0_txd &pa01_uart0_rxd>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&xpi0 {
+	status = "okay";
+
+	/*
+	 * The BootROM maps the QSPI NOR flash at 0x80000000. The first
+	 * 0x3000 bytes are reserved for the NOR configuration and boot header.
+	 */
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_M(1)>;
+		ranges = <0x0 0x80000000 DT_SIZE_M(1)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <4>;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x0 0x3000>;
+				label = "bootrom";
+				read-only;
+			};
+
+			slot0_partition: partition@3000 {
+				compatible = "zephyr,mapped-partition";
+				reg = <0x3000 0xfd000>;
+				label = "image-0";
+			};
+		};
+	};
+};

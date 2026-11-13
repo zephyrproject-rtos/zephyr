@@ -1,0 +1,69 @@
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_HPM5300
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+	select DYNAMIC_INTERRUPTS
+
+config SOC_HPM5361
+	select ATOMIC_OPERATIONS_C
+	select INCLUDE_RESET_VECTOR
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select RISCV_PMP if !MCUBOOT
+	select USE_HPMSDK_PCFG
+	select USE_HPMSDK_PLLCTLV2
+	select HAS_HPMSDK_ACMP
+	select HAS_HPMSDK_ADC16
+	select HAS_HPMSDK_CRC
+	select HAS_HPMSDK_DAC
+	select HAS_HPMSDK_DMAMUX
+	select HAS_HPMSDK_DMAV2
+	select HAS_HPMSDK_EWDG
+	select HAS_HPMSDK_GPIO
+	select HAS_HPMSDK_GPIOM
+	select HAS_HPMSDK_GPTMR
+	select HAS_HPMSDK_I2C
+	select HAS_HPMSDK_IOC
+	select HAS_HPMSDK_KEYM
+	select HAS_HPMSDK_MBX
+	select HAS_HPMSDK_MCAN
+	select HAS_HPMSDK_MCHTMR
+	select HAS_HPMSDK_MMC
+	select HAS_HPMSDK_MON
+	select HAS_HPMSDK_OPAMP
+	select HAS_HPMSDK_OTP
+	select HAS_HPMSDK_PCFG
+	select HAS_HPMSDK_PDGO
+	select HAS_HPMSDK_PGPR
+	select HAS_HPMSDK_PLB
+	select HAS_HPMSDK_PLIC
+	select HAS_HPMSDK_PLICSW
+	select HAS_HPMSDK_PLLCTLV2
+	select HAS_HPMSDK_PMP
+	select HAS_HPMSDK_PPOR
+	select HAS_HPMSDK_PTPC
+	select HAS_HPMSDK_PWM
+	select HAS_HPMSDK_QEIV2
+	select HAS_HPMSDK_QEO
+	select HAS_HPMSDK_RDC
+	select HAS_HPMSDK_RNG
+	select HAS_HPMSDK_SDP
+	select HAS_HPMSDK_SEC
+	select HAS_HPMSDK_SEI
+	select HAS_HPMSDK_SPI
+	select HAS_HPMSDK_SYNT
+	select HAS_HPMSDK_SYSCTL
+	select HAS_HPMSDK_TRGM
+	select HAS_HPMSDK_TSNS
+	select HAS_HPMSDK_UART
+	select HAS_HPMSDK_USB
+	select HAS_HPMSDK_XPI
+	help
+	  HPM5361 single-core RISC-V MCU. The CPU has no programmable PMA.
+	  Uncached sections use the fixed data local memory (DLM), as in the
+	  vendor linker scripts; no memory attribute CSRs need programming.

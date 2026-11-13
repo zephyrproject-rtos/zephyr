@@ -1,0 +1,20 @@
+# Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+description: HPMicro XPI flash controller
+
+compatible: "hpmicro,xpi"
+
+include: flash-controller.yaml
+
+properties:
+  ranges:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 1

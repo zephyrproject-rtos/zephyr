@@ -1,0 +1,50 @@
+# Copyright (c) 2025 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_HPM5300
+
+configdefault SOC_SERIES
+	default "hpm5300"
+
+configdefault CLOCK_CONTROL
+	default y
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,mtimer),clock-frequency)
+
+configdefault KERNEL_ENTRY
+	default "_start"
+
+configdefault ICACHE
+	default y
+
+configdefault DCACHE
+	default y
+
+configdefault RISCV_SOC_INTERRUPT_INIT
+	default y
+
+configdefault 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+configdefault 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+configdefault MAX_IRQ_PER_AGGREGATOR
+	default 128
+
+configdefault NUM_IRQS
+	default 140
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+configdefault CACHE_ANDES_INIT_PRIORITY
+	default 60
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # SOC_SERIES_HPM5300

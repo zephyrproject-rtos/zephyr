@@ -1,0 +1,22 @@
+/*
+ * Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/hpmicro-pinctrl-common.h>
+
+&pinctrl {
+	/omit-if-no-ref/ pa00_uart0_txd: pa00_uart0_txd {
+		group0 {
+			pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTA, 0),
+						 IOC_TYPE_IOC, 0, 2)>;
+		};
+	};
+
+	/omit-if-no-ref/ pa01_uart0_rxd: pa01_uart0_rxd {
+		group0 {
+			pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTA, 1),
+						 IOC_TYPE_IOC, 0, 2)>;
+		};
+	};
+};

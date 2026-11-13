@@ -1,0 +1,12 @@
+# Copyright (c) 2024 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_HPMICRO
+	bool "HPMicro IOC pin controller"
+	default y
+	depends on DT_HAS_HPMICRO_HPM_PINCTRL_ENABLED
+	depends on HAS_HPMSDK_IOC
+	help
+	  Enable the pin controller driver for the HPMicro IOC and PIOC
+	  controllers.

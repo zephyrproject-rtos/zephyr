@@ -3498,6 +3498,22 @@ Google Platforms:
   tests:
     - sample.boards.google_twinkie_v2
 
+HPMicro Platforms:
+  status: maintained
+  maintainers:
+    - discodyer
+  files:
+    - boards/hpmicro/
+    - drivers/*/*hpmicro*
+    - dts/riscv/hpmicro/
+    - dts/bindings/*/hpmicro,*
+    - include/zephyr/drivers/pinctrl/pinctrl_hpmicro_common.h
+    - include/zephyr/dt-bindings/clock/hpm5361-clocks.h
+    - include/zephyr/dt-bindings/pinctrl/hpmicro-pinctrl-common.h
+    - soc/hpmicro/
+  labels:
+    - "platform: HPMicro"
+
 Hash Utilities:
   status: maintained
   maintainers:
@@ -7310,6 +7326,14 @@ West:
     - modules/hal_gigadevice/
   labels:
     - "platform: GD32"
+
+"West project: hal_hpmicro":
+  status: maintained
+  maintainers:
+    - discodyer
+  files: []
+  labels:
+    - "platform: HPMicro"
 
 "West project: hal_infineon":
   status: maintained

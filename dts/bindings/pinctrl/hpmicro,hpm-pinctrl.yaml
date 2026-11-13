@@ -1,0 +1,105 @@
+# Copyright (c) 2022-2025 HPMicro
+# Copyright (c) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  HPMicro IOC and PIOC pin controller.
+
+  Pin configurations are grouped below a state node. Each group contains one
+  or more pinmux entries encoded with HPMICRO_PINMUX() and optional pad
+  properties shared by all pins in the group. For example:
+
+    #include <zephyr/dt-bindings/pinctrl/hpmicro-pinctrl-common.h>
+
+    &pinctrl {
+      uart0_default: uart0_default {
+        group0 {
+          pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTA, 0),
+                                   IOC_TYPE_IOC, 0, 2)>,
+                   <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTA, 1),
+                                   IOC_TYPE_IOC, 0, 2)>;
+        };
+      };
+    };
+
+  A consumer then references the state with pinctrl-0 and pinctrl-names.
+
+compatible: "hpmicro,hpm-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: HPMicro pin controller state.
+  child-binding:
+    description: HPMicro pin controller configuration group.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+          - input-enable
+          - input-schmitt-enable
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+        description: |
+          Pin mux entries constructed with HPMICRO_PINMUX(). The arguments
+          select the pad number, IOC controller type, analog mode and
+          alternate function.
+
+      drive-strength:
+        type: string
+        default: "r000"
+        enum:
+          - "r000"
+          - "r001"
+          - "r010"
+          - "r011"
+          - "r100"
+          - "r101"
+          - "r110"
+          - "r111"
+        description: |
+          Pad drive strength, written directly to the IOC DS field. The
+          resulting resistance depends on the selected IO supply voltage.
+
+      slew-rate:
+        type: string
+        default: "slow"
+        enum:
+          - "slow"
+          - "fast"
+        description: Pad output slew rate.
+
+      hpmicro,slew-pd:
+        type: string
+        default: "50M"
+        enum:
+          - "50M"
+          - "100M"
+          - "150M"
+          - "200M"
+        description: Pad slew rate frequency range selection.
+
+      hpmicro,pull-resistance:
+        type: string
+        default: "100KOhm"
+        enum:
+          - "100KOhm"
+          - "47KOhm"
+          - "22KOhm"
+        description: Internal pull resistor selection.
+
+      hpmicro,keeper-disable:
+        type: boolean
+        description: |
+          Disable the pad keeper. The keeper is enabled when this property is
+          absent.

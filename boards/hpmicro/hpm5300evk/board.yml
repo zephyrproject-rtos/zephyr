@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Cody Gu <gujiaqi@iscas.ac.cn>
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: hpm5300evk
+  full_name: HPMicro HPM5300EVK
+  vendor: hpmicro
+  socs:
+    - name: hpm5361

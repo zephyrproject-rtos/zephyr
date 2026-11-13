@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2024-2025 HPMicro
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HPM5361_CLOCKS_H
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HPM5361_CLOCKS_H
+
+/*
+ * <---------------------- AUTO_GENERATE ---------------------->
+ * This file was auto-generated, do not edit anything.
+ * Generated on 2025-10-20 16:16:33.
+ */
+
+#define CLK_SRC_OSC24M      0
+#define CLK_SRC_PLL0_CLK0   1
+#define CLK_SRC_PLL0_CLK1   2
+#define CLK_SRC_PLL0_CLK2   3
+#define CLK_SRC_PLL1_CLK0   4
+#define CLK_SRC_PLL1_CLK1   5
+#define CLK_SRC_PLL1_CLK2   6
+#define CLK_SRC_PLL1_CLK3   7
+#define CLK_SRC_OSC32K      8
+#define CLK_ADC_SRC_AHB0    16
+#define CLK_ADC_SRC_ANA0    17
+#define CLK_ADC_SRC_ANA1    17
+#define CLK_DAC_SRC_AHB0    112
+#define CLK_DAC_SRC_ANA2    113
+#define CLK_DAC_SRC_ANA3    113
+#define CLK_WDG_SRC_AHB0    48
+#define CLK_WDG_SRC_OSC32K  49
+#define CLK_PWDG_SRC_OSC24M 176
+#define CLK_PWDG_SRC_OSC32K 177
+#define CLK_SRC_INVALID     255
+
+#define CLOCK_CPU0      2556
+#define CLOCK_MCHTMR0   16908288
+#define CLOCK_CAN0      17039361
+#define CLOCK_CAN1      17104898
+#define CLOCK_CAN2      17170435
+#define CLOCK_CAN3      17235972
+#define CLOCK_GPTMR0    17629193
+#define CLOCK_GPTMR1    17694730
+#define CLOCK_GPTMR2    17760267
+#define CLOCK_GPTMR3    17825804
+#define CLOCK_I2C0      17891341
+#define CLOCK_I2C1      17956878
+#define CLOCK_I2C2      18022415
+#define CLOCK_I2C3      18087952
+#define CLOCK_SPI0      18153489
+#define CLOCK_SPI1      18219026
+#define CLOCK_SPI2      18284563
+#define CLOCK_SPI3      18350100
+#define CLOCK_UART0     18415637
+#define CLOCK_UART1     18481174
+#define CLOCK_UART2     18546711
+#define CLOCK_UART3     18612248
+#define CLOCK_UART4     18677785
+#define CLOCK_UART5     18743322
+#define CLOCK_UART6     18808859
+#define CLOCK_UART7     18874396
+#define CLOCK_XPI0      20119581
+#define CLOCK_REF0      20250658
+#define CLOCK_REF1      20316195
+#define CLOCK_AHB       4294772222
+#define CLOCK_WATCHDOG0 18940672
+#define CLOCK_WATCHDOG1 19006209
+#define CLOCK_PWDG      4294904576
+#define CLOCK_LMM0      16845056
+#define CLOCK_MBX0      19072256
+#define CLOCK_CRC0      19203329
+#define CLOCK_ACMP0     19531010
+#define CLOCK_OPA0      19596547
+#define CLOCK_OPA1      19662084
+#define CLOCK_MOT0      19727621
+#define CLOCK_RNG       19793158
+#define CLOCK_SDP       19858695
+#define CLOCK_KMAN      19924232
+#define CLOCK_GPIO      19989769
+#define CLOCK_HDMA      20055306
+#define CLOCK_ROM       16975115
+#define CLOCK_TSNS      19137804
+#define CLOCK_USB0      20186381
+#define CLOCK_PTPC      17302798
+#define CLOCK_PTMR      4294902784
+#define CLOCK_PUART     4294902785
+#define CLOCK_PGPIO     4294902786
+#define CLOCK_ANA0      4294901790
+#define CLOCK_ANA1      4294901791
+#define CLOCK_ADC0      19267840
+#define CLOCK_ADC1      19333377
+#define CLOCK_ANA2      4294901792
+#define CLOCK_ANA3      4294901793
+#define CLOCK_DAC0      19400448
+#define CLOCK_DAC1      19465985
+#define CLK_OSC0CLK0    2099712
+#define CLK_PLL0CLK0    2230785
+#define CLK_PLL0CLK1    2296322
+#define CLK_PLL0CLK2    2361859
+#define CLK_PLL1CLK0    2492932
+#define CLK_PLL1CLK1    2558469
+#define CLK_PLL1CLK2    2624006
+#define CLK_PLL1CLK3    2689543
+#define CLOCK_ACMP      CLOCK_ACMP0
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_HPM5361_CLOCKS_H */
