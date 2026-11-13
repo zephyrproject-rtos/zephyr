@@ -105,12 +105,14 @@ struct uhc_dwc2_channel_data {
 	uint8_t ep;
 	/* PID value, used for the next data stage transfer */
 	uint8_t next_pid;
-	/* Next scheduled frame for the periodic transfer */
-	uint16_t scheduled_frame;
+	/* Next scheduled microframe for the periodic transfer */
+	uint32_t scheduled_microframe;
 	/* Periodic transfer has been queued and active */
 	bool periodic_started;
 	/* Periodic transfer has been scheduled and waiting for the SOF */
 	bool periodic_scheduled;
+	/* Frame number counter, arbitrary start value, but accurately incremented */
+	uint32_t microframe_number;
 };
 
 struct uhc_dwc2_channel {
@@ -153,6 +155,10 @@ struct uhc_dwc2_data {
 	bool debouncing;
 	/* Root port has an attached device */
 	bool has_device;
+	/* Time in 125us units incremented between two SOF interrupts, 8 or 1 depending on speed */
+	uint8_t microframe_increment;
+	/* Current frame counter incremented every SoF interrupt */
+	atomic_t microframe_number;
 };
 
 struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev)
@@ -210,20 +216,6 @@ static inline uint8_t calc_next_pid(const uint8_t pid, const uint32_t pkt_cnt)
 	return (pid == USB_DWC2_HCTSIZ_PID_DATA0) ?
 		USB_DWC2_HCTSIZ_PID_DATA1 :
 		USB_DWC2_HCTSIZ_PID_DATA0;
-}
-
-static inline bool periodic_frame_overrun(uint16_t current_frame, uint16_t scheduled_frame)
-{
-	uint16_t delta;
-
-	delta = (scheduled_frame - current_frame) & PERIODIC_FRAME_MASK;
-
-	/* When delta == 0, it means the scheduled frame is already current
-	 * and we missed the scheduling.
-	 * A delta in the upper half of the frame-number space means
-	 * the scheduled frame is behind current_frame.
-	 */
-	return delta == 0U || delta >= PERIODIC_FRAME_HALF;
 }
 
 static inline void dwc2_set_reset(struct usb_dwc2_reg *const base, const bool reset)
@@ -1254,7 +1246,7 @@ static int ch_claim(const struct device *const dev,
 		return -ENOMEM;
 	}
 
-	ch->data->scheduled_frame = 0;
+	ch->data->scheduled_microframe = 0;
 	ch->data->periodic_started = false;
 	ch->data->periodic_scheduled = false;
 
@@ -1372,7 +1364,7 @@ static void ch_release(const struct device *dev, struct uhc_dwc2_channel *const 
 	/* Release channel */
 	ch->xfer = NULL;
 
-	ch->data->scheduled_frame = 0;
+	ch->data->scheduled_microframe = 0;
 	ch->data->periodic_started = false;
 	ch->data->periodic_scheduled = false;
 	ch->data = NULL;
@@ -1519,21 +1511,17 @@ static void ch_start_bulk(const struct device *dev,
 static void ch_schedule_interrupt(const struct device *dev,
 				  struct uhc_dwc2_channel *const ch)
 {
-	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
-	uint32_t hfnum;
-	uint16_t current_frame;
-
-	hfnum = sys_read32((mem_addr_t)&base->hfnum);
-	current_frame = usb_dwc2_get_hfnum_frnum(hfnum);
 
 	if (!ch->data->periodic_started) {
 		/*
 		 * We don't start the interrupt transfer immediately,
-		 * just schedule at the next frame
+		 * just schedule at the next microframe
 		 * and calculate the parity in ch_start_interrupt()
 		 */
-		ch->data->scheduled_frame = (current_frame + 1U) & PERIODIC_FRAME_MASK;
+		ch->data->scheduled_microframe =
+			priv->microframe_number + priv->microframe_increment;
 		ch->data->periodic_started = true;
 	} else {
 		/*
@@ -1541,10 +1529,9 @@ static void ch_schedule_interrupt(const struct device *dev,
 		 * preserve periodic phase by using the polling interval
 		 * and mark the channel for periodic transfer in the closest SOF
 		 */
-
-		/* TODO: Consider the High-speed microframes as well, only Full-speed for now */
-		ch->data->scheduled_frame = (ch->data->scheduled_frame + xfer->interval) &
-					     PERIODIC_FRAME_MASK;
+		ch->data->scheduled_microframe =
+			ch->data->scheduled_microframe
+			+ priv->microframe_increment * xfer->microframe_interval;
 		ch->data->periodic_scheduled = true;
 	}
 }
@@ -1552,14 +1539,12 @@ static void ch_schedule_interrupt(const struct device *dev,
 static void ch_start_interrupt(const struct device *dev,
 			       struct uhc_dwc2_channel *const ch)
 {
-	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
 	mem_addr_t dma_addr;
 	uint16_t pkt_cnt;
 	uint32_t hctsiz;
 	uint32_t hcchar;
-	uint32_t hfnum;
-	uint16_t frame;
 
 	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
 	dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
@@ -1568,10 +1553,10 @@ static void ch_start_interrupt(const struct device *dev,
 		ch->index,
 		xfer->ep,
 		xfer->mps,
-		xfer->interval,
+		xfer->microframe_interval,
 		ch->length,
 		ch->data->next_pid,
-		ch->data->scheduled_frame);
+		ch->data->scheduled_microframe);
 
 	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
 
@@ -1593,10 +1578,7 @@ static void ch_start_interrupt(const struct device *dev,
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
 
-	hfnum = sys_read32((mem_addr_t)&base->hfnum);
-	frame = usb_dwc2_get_hfnum_frnum(hfnum);
-
-	if (periodic_frame_overrun(frame, ch->data->scheduled_frame)) {
+	if (xfer_seq_cmp(priv->microframe_number, ch->data->scheduled_microframe)) {
 		/* We already missed the frame, schedule to the next suitable frame */
 		ch_schedule_interrupt(dev, ch);
 		/* TODO: Emulate the situation, when we passed two frame intervals */
@@ -1605,7 +1587,7 @@ static void ch_start_interrupt(const struct device *dev,
 
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
 
-	if (ch->data->scheduled_frame & 1U) {
+	if (ch->data->scheduled_microframe & 1U) {
 		hcchar |= USB_DWC2_HCCHAR_ODDFRM;
 	} else {
 		hcchar &= ~USB_DWC2_HCCHAR_ODDFRM;
@@ -1650,12 +1632,9 @@ static void ch_reinit(const struct device *dev,
 static void port_start_periodic(const struct device *dev)
 {
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
-	uint32_t hfnum;
-	uint16_t next_frame;
+	uint32_t next_microframe;
 
-	hfnum = sys_read32((mem_addr_t)&base->hfnum);
-	next_frame = (usb_dwc2_get_hfnum_frnum(hfnum) + 1U) & PERIODIC_FRAME_MASK;
+	next_microframe = priv->microframe_number + 1;
 
 	for (uint8_t idx = 0; idx < priv->numhstchnl; idx++) {
 		struct uhc_dwc2_channel *const ch = &priv->ch[idx];
@@ -1664,10 +1643,15 @@ static void port_start_periodic(const struct device *dev)
 			continue;
 		}
 
-		if (next_frame == ch->data->scheduled_frame) {
+		/* TODO: check this:
+		 *   scheduled_uframe < next_uframe < scheduled_uframe + uframe_interval
+		 * in case a transfer was delayed due to the current frame having too many
+		 * transfers.
+		 */
+		if (next_microframe == ch->data->scheduled_microframe) {
 			LOG_DBG("TODO: Channel%d schedule periodic to frame=%u",
 				ch->index,
-				ch->data->scheduled_frame);
+				ch->data->scheduled_microframe);
 			ch->data->periodic_scheduled = false;
 			ch_start_interrupt(dev, ch);
 		}
@@ -1683,12 +1667,15 @@ static inline void submit_new_device(const struct device *dev)
 	switch (usb_dwc2_get_hprt_prtspd(hprt)) {
 	case USB_DWC2_HPRT_PRTSPD_HIGH:
 		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_HS, 0);
+		priv->microframe_increment = 1;
 		break;
 	case USB_DWC2_HPRT_PRTSPD_FULL:
 		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
+		priv->microframe_increment = 8;
 		break;
 	case USB_DWC2_HPRT_PRTSPD_LOW:
 		uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
+		priv->microframe_increment = 8;
 		break;
 	default:
 		LOG_WRN("Port has unexpected speed, submit as full speed");
@@ -1888,7 +1875,7 @@ static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 		return -ENOTSUP;
 	}
 
-	if (xfer->interval == 0U) {
+	if (xfer->microframe_interval == 0U) {
 		LOG_ERR("Interrupt transfer interval is zero");
 		return -EINVAL;
 	}
@@ -1917,9 +1904,9 @@ static int submit_xfer(const struct device *const dev, struct uhc_transfer *cons
 	struct uhc_dwc2_channel *ch = NULL;
 	int ret;
 
-	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_frame=%d, stage=%d, no_status=%d",
-		xfer->udev->addr, xfer->ep, xfer->mps, xfer->interval,
-		xfer->start_frame, xfer->stage, xfer->no_status);
+	LOG_DBG("addr=%u, ep=%02Xh, mps=%d, int=%d, start_microframe=%d, stage=%d, no_status=%d",
+		xfer->udev->addr, xfer->ep, xfer->mps, xfer->microframe_interval,
+		xfer->start_microframe, xfer->stage, xfer->no_status);
 
 	switch (xfer->type) {
 	case USB_EP_TYPE_CONTROL:
@@ -2026,6 +2013,7 @@ static void submit_pending(const struct device *const dev)
 
 static void port_handle_events(const struct device *dev, uint32_t event_mask)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
 	LOG_DBG("Port events: %08Xh", event_mask);
@@ -2095,6 +2083,7 @@ static void port_handle_events(const struct device *dev, uint32_t event_mask)
 	}
 
 	if (event_mask & BIT(UHC_DWC2_EVENT_SOF)) {
+		priv->microframe_number++;
 		port_start_periodic(dev);
 	}
 }
@@ -2405,7 +2394,9 @@ static int uhc_dwc2_bus_resume(const struct device *const dev)
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
 {
-	(void)uhc_xfer_append(dev, xfer);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+
+	(void)uhc_xfer_append(dev, xfer, priv->microframe_number);
 
 	/*
 	 * Try to start a new transfer. If no channel/endpoint is free it stays
