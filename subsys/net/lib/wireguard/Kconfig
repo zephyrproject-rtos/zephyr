@@ -107,6 +107,27 @@ config WIREGUARD_PORT
 	  or when connecting to other hosts.
 	  If set to 0, then let Wireguard code to select the port.
 
+config WIREGUARD_WORKQ_STACK_SIZE
+	int "Stack size of the Wireguard work queue"
+	default 0
+	help
+	  The periodic timer of the peers (handshake initiation, keepalive,
+	  rekey) runs on a work queue. With 0 it is the system work queue.
+	  A positive value starts a work queue of its own with this stack
+	  size, so that the X25519 computation of a handshake initiation does
+	  not set the stack size of the system work queue. The first
+	  initiation to a peer, started by the first packet sent to it or by
+	  wireguard_peer_keepalive(), then runs there too instead of in the
+	  calling thread. The handshake messages received from a peer are
+	  still processed, X25519 included, on the network RX thread.
+
+config WIREGUARD_WORKQ_PRIORITY
+	int "Priority of the Wireguard work queue"
+	depends on WIREGUARD_WORKQ_STACK_SIZE > 0
+	default SYSTEM_WORKQUEUE_PRIORITY
+	help
+	  Thread priority of the Wireguard work queue.
+
 module = WIREGUARD
 module-dep = NET_LOG
 module-str = Log level for Wireguard VPN service
