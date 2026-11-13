@@ -50,6 +50,9 @@ Libraries / Subsystems
   * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and
     reports changes to a registered :c:struct:`bt_pacs_cb`.
   * :c:func:`bt_l2cap_server_unregister` removes a registered L2CAP server.
+  * The host can request the lowest ACL frame space on connection establishment, for any
+    combination of the 1M, 2M and Coded PHYs
+    (:kconfig:option:`CONFIG_BT_AUTO_FRAME_SPACE_UPDATE_2M`).
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
