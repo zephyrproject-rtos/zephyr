@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_PY32
+	bool "Puya PY32 ADC driver"
+	default y
+	depends on DT_HAS_PUYA_PY32_ADC_ENABLED
+	select PINCTRL
+	select RESET
+	help
+	  Enable the Puya PY32 ADC with single-ended inputs, 6/8/10/12-bit
+	  conversions and synchronous or asynchronous sampling. Channels 0-9
+	  are external inputs, 11 is the temperature sensor and 12 is VREFINT.
