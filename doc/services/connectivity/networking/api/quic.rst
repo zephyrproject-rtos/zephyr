@@ -169,6 +169,44 @@ descriptor for a new stream initiated by a peer.
    }
 
 
+Socket Options of the Connection
+--------------------------------
+
+A connection socket answers the ``ZSOCK_SOL_QUIC`` and ``ZSOCK_SOL_TLS`` options
+itself. Every other socket option is applied to the UDP socket underneath,
+which a client connection creates in :c:func:`quic_connection_open` and a
+server's accepted connections share with the listening socket. To bind a
+connection to a network interface, set ``ZSOCK_SO_BINDTODEVICE`` on the
+connection socket before the first stream is opened, or on the listening
+socket of a server.
+
+Closing a Connection
+--------------------
+
+:c:func:`quic_connection_close` ends the connection with a CONNECTION_CLOSE
+frame carrying the transport error NO_ERROR (:rfc:`9000` Section 10.2). An
+application protocol that has to report an error of its own sets
+``ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE`` on the connection socket first; the
+close then carries that code in a CONNECTION_CLOSE frame of the application
+type. A connection closed before its handshake is complete is ended with the
+transport error APPLICATION_ERROR instead, as :rfc:`9000` Section 10.2.3
+requires.
+
+The peer's connection socket reports ``ZSOCK_POLLHUP`` and ``ECONNRESET`` from
+``SO_ERROR`` once a CONNECTION_CLOSE frame arrives. The frame itself, the type
+of close and its error code, can be read with ``ZSOCK_QUIC_SO_PEER_CLOSE``:
+
+.. code-block:: c
+
+   struct quic_peer_close close;
+   net_socklen_t optlen = sizeof(close);
+
+   if (zsock_getsockopt(conn_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE,
+                        &close, &optlen) == 0 && close.application) {
+       LOG_INF("Peer closed with application error 0x%llx", close.error_code);
+   }
+
+
 TLS & Security Configuration
 ****************************
 

@@ -227,6 +227,22 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 			return 0;
 		}
 
+		case ZSOCK_QUIC_SO_PEER_CLOSE: {
+			if (!ctx->peer_closed) {
+				errno = ENOTCONN;
+				return -1;
+			}
+
+			if (*optlen < sizeof(ctx->peer_close)) {
+				errno = ENOBUFS;
+				return -1;
+			}
+
+			memcpy(optval, &ctx->peer_close, sizeof(ctx->peer_close));
+			*optlen = sizeof(ctx->peer_close);
+			return 0;
+		}
+
 		default:
 			break;
 		}
@@ -425,6 +441,27 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 
 			err = quic_tls_set_session_state(&ep->crypto.tls, optval);
 			break;
+
+		case ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE: {
+			uint64_t code;
+
+			if (optval == NULL || optlen != sizeof(code)) {
+				err = -EINVAL;
+				break;
+			}
+
+			/* The code has to fit a varint (RFC 9000 ch. 16) */
+			memcpy(&code, optval, sizeof(code));
+			if (code > QUIC_VARINT_MAX) {
+				err = -EINVAL;
+				break;
+			}
+
+			ctx->app_close_code = code;
+			ctx->app_close = true;
+			err = 0;
+			break;
+		}
 
 		case ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE:
 			if (!ep->is_server || optval == NULL || optlen != sizeof(int)) {
@@ -762,7 +799,7 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 				 * POLLHUP handler, with no SO_ERROR probe needed.
 				 */
 				if (ctx->error_code == 0) {
-					ctx->error_code = -ECONNRESET;
+					ctx->error_code = ECONNRESET;
 				}
 
 				pfd->revents |= ZSOCK_POLLHUP;
@@ -770,13 +807,16 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 

@@ -1877,6 +1877,7 @@ static int handle_connection_close_frame(struct quic_endpoint *ep,
 {
 	size_t pos = 0;
 	uint8_t frame_type = data[pos++];
+	struct quic_context *ctx;
 	uint64_t error_code;
 	uint64_t frame_type_field = 0;
 	uint64_t reason_len;
@@ -1930,6 +1931,17 @@ static int handle_connection_close_frame(struct quic_endpoint *ep,
 	}
 
 	pos += reason_len;
+
+	/* Keep what the peer said for the application to read */
+	ctx = quic_find_context(ep);
+	if (ctx != NULL) {
+		ctx->peer_close.error_code = error_code;
+		ctx->peer_close.frame_type = frame_type_field;
+		ctx->peer_close.application =
+			frame_type == QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION;
+		ctx->peer_closed = true;
+	}
+
 	*consumed = pos;
 
 	return 0;

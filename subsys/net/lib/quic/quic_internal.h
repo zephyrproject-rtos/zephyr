@@ -74,6 +74,9 @@ struct quic_buffer {
 #define QUIC_AEAD_TAG_LEN 16
 #define QUIC_RESET_TOKEN_LEN 16
 
+/* Largest value a variable-length integer holds (RFC 9000 ch. 16) */
+#define QUIC_VARINT_MAX ((1ULL << 62) - 1)
+
 #define MAX_QUIC_MIN_INITIAL_SIZE 1200
 #define MAX_QUIC_FRAME_SIZE 1300
 
@@ -1263,6 +1266,24 @@ __net_socket struct quic_context {
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
 
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
+	/** The CONNECTION_CLOSE frame received from the peer */
+	struct quic_peer_close peer_close;
+
+	/** Application error code sent when the connection is closed */
+	uint64_t app_close_code;
+
+	/** A CONNECTION_CLOSE frame was received from the peer */
+	bool peer_closed : 1;
+
+	/** Close with an application error instead of a transport NO_ERROR */
+	bool app_close : 1;
+
 	/** Stream priority */
 	uint8_t stream_priority;
 
@@ -1545,6 +1566,12 @@ int handle_crypto_level_packet(struct quic_endpoint *ep,
 			       size_t payload_len,
 			       size_t total_packet_len,
 			       bool *ack_only);
+int quic_build_connection_close(uint8_t *frame, size_t frame_len,
+				uint8_t type, uint64_t error_code,
+				uint64_t frame_type, const char *reason);
+void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
+			       uint64_t *error_code, uint64_t *frame_type,
+			       const char **reason);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
@@ -1609,5 +1636,6 @@ void quic_test_streams_lock(bool lock);
 void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
 struct quic_stream *quic_get_stream(struct quic_context *conn);
 bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
 
 #endif /* CONFIG_NET_TEST */
