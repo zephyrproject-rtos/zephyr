@@ -18,6 +18,12 @@ config SOC_FAMILY_MCXW
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_PM if SOC_MCXW716C || SOC_MCXW727C
 
+# Parts within the MCXW family that integrate the SGI PKC crypto accelerator.
+# Only W70 has SGI PKC; W716C/W727C use the ELE S200 instead, so this must be
+# selected per-SoC and not at the SOC_SERIES_MCXW7XX level.
+config SOC_MCXW70AC
+	select HAS_MCUX_SGI_PKC
+
 # These selects are therefore done in the per-SoC (and per-core) Kconfig files.
 if SOC_FAMILY_MCXW
 
