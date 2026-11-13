@@ -772,6 +772,25 @@ static struct bt_avdtp_sep *avdtp_get_cmd_sep(struct net_buf *buf, uint8_t *erro
 	return sep;
 }
 
+/*
+ * Look up the SEP addressed by a command that acts on a configured stream. SEIDs are shared by
+ * all sessions, so only the session that configured the SEP may address it. Any other session
+ * is answered as if the SEID did not exist.
+ */
+static struct bt_avdtp_sep *avdtp_get_session_cmd_sep(struct bt_avdtp *session, struct net_buf *buf,
+						      uint8_t *error_code, uint8_t *seid)
+{
+	struct bt_avdtp_sep *sep;
+
+	sep = avdtp_get_cmd_sep(buf, error_code, seid);
+	if ((sep != NULL) && (sep->session != session)) {
+		LOG_WRN("SEID %u is not configured by this session", sep->sep_info.id);
+		return NULL;
+	}
+
+	return sep;
+}
+
 static void avdtp_get_caps_cmd_internal(struct bt_avdtp *session, struct net_buf *buf, uint8_t tid,
 					bool get_all_caps)
 {
@@ -954,7 +973,11 @@ static void avdtp_process_configuration_cmd(struct bt_avdtp *session, struct net
 	struct net_buf_simple_state state;
 	uint8_t service_category = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	if (reconfig) {
+		sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, NULL);
+	} else {
+		sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	}
 	avdtp_sep_lock(sep);
 
 	if (sep == NULL) {
@@ -1107,7 +1130,7 @@ static void avdtp_open_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8_
 	struct net_buf *rsp_buf;
 	uint8_t avdtp_err_code = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, NULL);
 	avdtp_sep_lock(sep);
 
 	if (sep == NULL) {
@@ -1202,7 +1225,7 @@ static void avdtp_start_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 	uint8_t avdtp_err_code = 0;
 	uint8_t acp_seid = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, &acp_seid);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, &acp_seid);
 
 	avdtp_sep_lock(sep);
 
@@ -1290,7 +1313,7 @@ static void avdtp_close_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 	struct net_buf *rsp_buf;
 	uint8_t avdtp_err_code = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, NULL);
 	avdtp_sep_lock(sep);
 
 	if (sep == NULL) {
@@ -1404,7 +1427,7 @@ static void avdtp_suspend_cmd(struct bt_avdtp *session, struct net_buf *buf, uin
 	uint8_t avdtp_err_code = 0;
 	uint8_t acp_seid = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, &acp_seid);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, &acp_seid);
 	avdtp_sep_lock(sep);
 
 	if (sep == NULL) {
@@ -1483,7 +1506,7 @@ static void avdtp_abort_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 	struct net_buf *rsp_buf;
 	uint8_t avdtp_err_code = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, NULL);
 	avdtp_sep_lock(sep);
 
 	if (sep == NULL) {
@@ -1588,7 +1611,7 @@ static void avdtp_delay_report_cmd(struct bt_avdtp *session, struct net_buf *buf
 	struct net_buf *rsp_buf;
 	uint8_t avdtp_err_code = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, NULL);
 
 	if (sep == NULL) {
 		err = -ENOENT;
@@ -1647,7 +1670,7 @@ static void avdtp_get_configuration_cmd(struct bt_avdtp *session, struct net_buf
 	struct bt_avdtp_sep *sep;
 	uint8_t avdtp_err_code = 0;
 
-	sep = avdtp_get_cmd_sep(buf, &avdtp_err_code, NULL);
+	sep = avdtp_get_session_cmd_sep(session, buf, &avdtp_err_code, NULL);
 
 	if (sep == NULL) {
 		err = -ENOENT;
