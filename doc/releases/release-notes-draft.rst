@@ -172,6 +172,12 @@ Devicetree
 Other notable changes
 *********************
 
+* Architectures
+
+  * ARM Cortex-A/R: with :kconfig:option:`CONFIG_USE_SWITCH`, ISRs run in SYS mode and nested
+    interrupts use the interrupt stack, which fixes return address corruption by a nested IRQ
+    (:github:`122601`).
+
 * Bluetooth
 
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
