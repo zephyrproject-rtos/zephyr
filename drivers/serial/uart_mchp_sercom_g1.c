@@ -1488,10 +1488,14 @@ static int uart_mchp_irq_tx_ready(const struct device *dev)
  */
 static int uart_mchp_irq_tx_complete(const struct device *dev)
 {
+	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	uart_mchp_dev_data_t *const dev_data = dev->data;
 	int retval = 0;
 
 	if (dev_data->is_tx_completed_cache == true) {
+		retval = 1;
+	} else if (uart_is_tx_complete(cfg->regs, cfg->is_clock_external) == true) {
+		dev_data->is_tx_completed_cache = true;
 		retval = 1;
 	}
 
