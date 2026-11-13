@@ -80,6 +80,7 @@ static int i2c_recovery_bus(const struct device *dev)
 {
 	int ret = 0;
 	struct i2c_dw_dev_config *const dw = dev->data;
+	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	if (dw->recover_bus_cb) {
 		/* callback customize recovery function */
@@ -88,7 +89,27 @@ static int i2c_recovery_bus(const struct device *dev)
 			/* recovery success */
 			dw->state = I2C_DW_STATE_READY;
 		}
+	} else {
+		set_bit_enable_en(reg_base);
+		set_bit_enable_sdarecov(reg_base);
+		for (uint32_t i = 0U;
+		     i < I2C_DW_SDA_RECOV_POLL_COUNT && test_bit_enable_sdarecov(reg_base); i++) {
+			k_busy_wait(I2C_DW_SDA_RECOV_DELAY_US);
+		}
+
+		if (test_bit_enable_sdarecov(reg_base) || test_bit_status_sdanotrecov(reg_base)) {
+			clear_bit_enable_sdarecov(reg_base);
+			LOG_ERR("SDA Stuck Low not recovered on %s", dev->name);
+			ret = -EIO;
+		} else {
+			dw->state = I2C_DW_STATE_READY;
+		}
 	}
+
+	read_clr_intr(reg_base);
+	read_clr_tx_abrt(reg_base);
+	clear_bit_enable_en(reg_base);
+
 	return ret;
 }
 
@@ -147,6 +168,13 @@ static int i2c_dw_error_chk(const struct device *dev)
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 	union ic_interrupt_register intr_stat;
 	union ic_txabrt_register ic_txabrt_src;
+	union ic_tar_register ic_tar;
+	bool is_flush;
+	uint32_t value;
+
+	ic_tar.raw = read_tar(reg_base);
+	is_flush = (ic_tar.bits.ic_tar == I2C_DW_FLUSH_ADDR);
+
 	/* Cache ic_intr_stat and txabrt_src for processing,
 	 * so there is no need to read the register multiple times.
 	 */
@@ -154,24 +182,28 @@ static int i2c_dw_error_chk(const struct device *dev)
 	ic_txabrt_src.raw = read_txabrt_src(reg_base);
 	/* NACK and SDA_STUCK are below TX_Abort */
 	if (intr_stat.bits.tx_abrt) {
-		/* check 7bit NACK Tx Abort */
-		if (ic_txabrt_src.bits.ADDR7BNACK) {
+		/* check 7bit/data NACK Tx Abort */
+		if (ic_txabrt_src.bits.ADDR7BNACK || ic_txabrt_src.bits.TXDATANACK) {
 			dw->state |= I2C_DW_NACK;
-			LOG_ERR_RATELIMIT("NACK on %s", dev->name);
+			if (!is_flush) {
+				LOG_ERR_RATELIMIT("NACK on %s", dev->name);
+			}
 		}
 		/* check SDA stuck low Tx abort, need to do bus recover */
 		if (ic_txabrt_src.bits.SDASTUCKLOW) {
 			dw->state |= I2C_DW_SDA_STUCK;
 			LOG_ERR("SDA Stuck Low on %s", dev->name);
+		} else {
+			value = read_clr_tx_abrt(reg_base);
 		}
 		/* check if user abort the transmit */
 		if (ic_txabrt_src.bits.USRABRT) {
 			dw->state |= I2C_DW_USER_ABRT;
 			LOG_ERR("User Abort on %s", dev->name);
 		}
-		/* check if user abort the transmit */
+		/* check arbitration lost */
 		if (ic_txabrt_src.bits.ARBLOST) {
-			dw->state |= I2C_DW_USER_ABRT;
+			dw->state |= I2C_DW_TX_ABRT;
 			LOG_ERR("ARB lost on %s", dev->name);
 		}
 		/* TX abrt because STOP */
@@ -190,7 +222,9 @@ static int i2c_dw_error_chk(const struct device *dev)
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 		dw->need_setup = true;
 #endif
-		LOG_ERR_RATELIMIT("IO Fail on %s", dev->name);
+		if (!is_flush) {
+			LOG_ERR_RATELIMIT("IO Fail on %s, state: 0x%x", dev->name, dw->state);
+		}
 		return -EIO;
 	}
 	return 0;
@@ -500,7 +534,9 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
-	value = read_clr_intr(reg_base);
+	if (!(dw->state & I2C_DW_SDA_STUCK)) {
+		value = read_clr_intr(reg_base);
+	}
 #ifdef CONFIG_I2C_RTS5912
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	/*
@@ -680,6 +716,7 @@ done:
 
 static int i2c_dw_setup(const struct device *dev, uint16_t target_address)
 {
+	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	uint32_t value;
 	union ic_con_register ic_con;
@@ -701,10 +738,19 @@ static int i2c_dw_setup(const struct device *dev, uint16_t target_address)
 	/* Disable the device controller to be able set TAR */
 	clear_bit_enable_en(reg_base);
 
-	/* enable bus clear feature */
-	ic_con.bits.bus_clear = 1U;
-	/* enable tx empty control to fix timing issue */
-	ic_con.bits.tx_empty_ctl = 1U;
+	if (IS_ENABLED(CONFIG_I2C_DW_BUS_CLEAR)) {
+		/* enable bus clear feature */
+		ic_con.bits.bus_clear = 1U;
+#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
+		write_sdatimeout(rom->sda_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000U,
+				 reg_base);
+#endif
+	} else {
+		/* disable bus clear feature */
+		ic_con.bits.bus_clear = 0U;
+	}
+	/* disable tx empty control to fix timing issue */
+	ic_con.bits.tx_empty_ctl = 0U;
 
 	/* Disable interrupts */
 	write_intr_mask(0, reg_base);
@@ -841,8 +887,8 @@ bool i2c_dw_is_busy(const struct device *dev)
 	return false;
 }
 
-static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t target_address)
+static int i2c_dw_transfer_once(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+				uint16_t target_address)
 {
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
@@ -853,49 +899,18 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 	uint32_t value = 0;
 
-	__ASSERT_NO_MSG(msgs);
-
-	ret = pm_device_runtime_get(dev);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* semaphore to support I2C_CALLBACK */
-	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
-	if (ret != 0) {
-		pm_device_runtime_put(dev);
-		return ret;
-	}
-
-	/* check if the state is sda/scl stuck at low state */
-	if (dw->state & I2C_DW_STUCK_ERR_MASK) {
-		/* try to recovery */
-		if (i2c_recovery_bus(dev)) {
-			ret = -ETIME;
-			goto error;
-		}
-		/* reset state */
-		dw->state = I2C_DW_STATE_READY;
-	}
-
-	if (i2c_check_bus(dev)) {
-		ret = -ETIME;
-		goto error;
-	}
-
 	/* First step, check if there is current activity
 	 * Skip if last read did not stop
 	 */
 	if (i2c_dw_is_busy(dev)) {
-		ret = -EBUSY;
-		goto error;
+		return -EBUSY;
 	}
 
 	dw->state |= I2C_DW_BUSY;
 
 	ret = i2c_dw_setup(dev, target_address);
 	if (ret) {
-		goto error;
+		return ret;
 	}
 
 	/* Enable controller */
@@ -993,7 +1008,7 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		if (dw->state & I2C_DW_ERR_MASK) {
 			if (dw->state & (I2C_DW_SDA_STUCK | I2C_DW_SCL_STUCK)) {
 				ret = -ETIME;
-			} else if (dw->state & (I2C_DW_NACK | I2C_DW_CMD_ERROR)) {
+			} else if (dw->state & (I2C_DW_NACK | I2C_DW_CMD_ERROR | I2C_DW_TX_ABRT)) {
 				ret = -EIO;
 			}
 			break;
@@ -1008,9 +1023,73 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	if (IS_ENABLED(CONFIG_I2C_DW_PM_POLICY_STATE_LOCK)) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	}
-error:
+
+	return ret;
+}
+
+static int i2c_dw_transfer_unlocked(const struct device *dev, struct i2c_msg *msgs,
+				    uint8_t num_msgs, uint16_t target_address)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	int ret = 0;
+
+	/* check if the state is sda/scl stuck at low state */
+	if (dw->state & I2C_DW_STUCK_ERR_MASK) {
+		/* try to recovery */
+		ret = i2c_recovery_bus(dev);
+		if (ret != 0) {
+			return ret;
+		}
+		/* reset state */
+		dw->state = I2C_DW_STATE_READY;
+	}
+
+	for (uint32_t recovery_cnt = 0U; recovery_cnt < I2C_DW_MAX_RECOVERY_RETRIES;
+	     recovery_cnt++) {
+		dw->state = I2C_DW_STATE_READY;
+		ret = i2c_dw_transfer_once(dev, msgs, num_msgs, target_address);
+		if (ret == 0) {
+			break;
+		}
+		if (!((dw->state & I2C_DW_SDA_STUCK) && i2c_recovery_bus(dev) == 0) &&
+		    !(dw->state & I2C_DW_TX_ABRT)) {
+			break;
+		}
+	}
+
 	/* keep error mask for bus recovery */
 	dw->state &= I2C_DW_STUCK_ERR_MASK;
+
+	return ret;
+}
+
+static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
+			   uint16_t target_address)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	int ret;
+
+	__ASSERT_NO_MSG(msgs);
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* semaphore to support I2C_CALLBACK */
+	ret = k_sem_take(&dw->bus_sem, K_FOREVER);
+	if (ret != 0) {
+		pm_device_runtime_put(dev);
+		return ret;
+	}
+
+	if (i2c_check_bus(dev)) {
+		ret = -ETIME;
+		goto error;
+	}
+
+	ret = i2c_dw_transfer_unlocked(dev, msgs, num_msgs, target_address);
+error:
 	if (dw->i2c_stat_not_ready == I2C_DW_MAGIC_KEY) {
 		dw->not_ready_cnt++;
 		if (dw->not_ready_cnt >= 3) {
@@ -1533,6 +1612,26 @@ static int i2c_dw_initialize(const struct device *dev)
 
 	k_sem_init(&dw->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dw->bus_sem, 1, 1);
+
+	/*
+	 * On real DW_apb_i2c HW, IC_RAW_INTR_STAT.TX_EMPTY is 0 while
+	 * IC_ENABLE=0, whereas Mimik reports 1 and does
+	 * not model reserved address 0x7f.
+	 */
+	if (IS_ENABLED(CONFIG_I2C_DW_BUS_CLEAR)) {
+		mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
+
+		if (!(read_rawintr_stat(reg_base) & DW_INTR_STAT_TX_EMPTY)) {
+			uint8_t dummy;
+			struct i2c_msg flush_msg = {
+				.buf = &dummy,
+				.len = sizeof(dummy),
+				.flags = I2C_MSG_READ | I2C_MSG_STOP,
+			};
+
+			i2c_dw_transfer_unlocked(dev, &flush_msg, 1U, I2C_DW_FLUSH_ADDR);
+		}
+	}
 
 	LOG_DBG("initialize done");
 
