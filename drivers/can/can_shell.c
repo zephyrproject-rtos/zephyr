@@ -10,6 +10,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 
@@ -71,6 +73,13 @@ static struct k_poll_event can_shell_rx_msgq_events[] = {
 };
 
 static struct can_shell_dump_context can_shell_dump_ctx;
+
+/*
+ * Print the transmit and receive events from a dedicated work queue: printing can block until
+ * the shell transport drains, which may itself need the system work queue (e.g. USB CDC ACM).
+ */
+static K_KERNEL_STACK_DEFINE(can_shell_work_q_stack, CONFIG_CAN_SHELL_WORKQUEUE_STACK_SIZE);
+static struct k_work_q can_shell_work_q;
 
 /* Forward declarations */
 static void can_shell_tx_msgq_triggered_work_handler(struct k_work *work);
@@ -155,8 +164,9 @@ static int can_shell_tx_msgq_poll_submit(const struct shell *sh)
 		k_work_poll_init(&can_shell_tx_msgq_work, can_shell_tx_msgq_triggered_work_handler);
 	}
 
-	err = k_work_poll_submit(&can_shell_tx_msgq_work, can_shell_tx_msgq_events,
-				 ARRAY_SIZE(can_shell_tx_msgq_events), K_FOREVER);
+	err = k_work_poll_submit_to_queue(&can_shell_work_q, &can_shell_tx_msgq_work,
+					  can_shell_tx_msgq_events,
+					  ARRAY_SIZE(can_shell_tx_msgq_events), K_FOREVER);
 	if (err != 0) {
 		shell_error(can_shell_tx_msgq_sh, "failed to submit tx msgq polling (err %d)",
 			    err);
@@ -224,8 +234,9 @@ static int can_shell_rx_msgq_poll_submit(const struct shell *sh)
 		k_work_poll_init(&can_shell_rx_msgq_work, can_shell_rx_msgq_triggered_work_handler);
 	}
 
-	err = k_work_poll_submit(&can_shell_rx_msgq_work, can_shell_rx_msgq_events,
-				 ARRAY_SIZE(can_shell_rx_msgq_events), K_FOREVER);
+	err = k_work_poll_submit_to_queue(&can_shell_work_q, &can_shell_rx_msgq_work,
+					  can_shell_rx_msgq_events,
+					  ARRAY_SIZE(can_shell_rx_msgq_events), K_FOREVER);
 	if (err != 0) {
 		shell_error(can_shell_rx_msgq_sh, "failed to submit rx msgq polling (err %d)",
 			    err);
@@ -1240,3 +1251,17 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 );
 
 SHELL_CMD_REGISTER(can, &sub_can_cmds, "CAN controller commands", NULL);
+
+static int can_shell_init(void)
+{
+	const struct k_work_queue_config cfg = {.name = "can_shell_work_q"};
+
+	k_work_queue_init(&can_shell_work_q);
+	k_work_queue_start(&can_shell_work_q, can_shell_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(can_shell_work_q_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, &cfg);
+
+	return 0;
+}
+
+SYS_INIT(can_shell_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
