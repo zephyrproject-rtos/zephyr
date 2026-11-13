@@ -1708,6 +1708,13 @@ static int udc_nrf_enable(const struct device *dev)
 	nrf_usbd_legacy_enable();
 	irq_unlock(key);
 
+	/* A soft reset leaves the regulator on and settled, and it then raises no new
+	 * USBPWRRDY, so take the pull-up from its state as well as from the event.
+	 */
+	if (nrfx_power_usbstatus_get() == NRFX_POWER_USB_STATE_READY) {
+		nrf_usbd_legacy_start(IS_ENABLED(CONFIG_UDC_ENABLE_SOF));
+	}
+
 	return 0;
 }
 
