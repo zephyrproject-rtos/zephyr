@@ -805,6 +805,14 @@
 		status = "disabled";
 	};
 
+	gpu: gpu@40240000 {
+		compatible = "vsi,gpu-gc255";
+		reg = <0x40240000 0x4000>;
+		interrupts = <70 0>;
+		clocks = <&clkctl0 26>;
+		status = "okay";
+	};
+
 	/*
 	 * Note that the offsets here are relative to the base address
 	 * defined in either nxp_rt5xx_ns.dtsi or nxp_rt5xx.dtsi. The base
