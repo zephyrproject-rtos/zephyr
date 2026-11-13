@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config BASIC_RADIO_CC23X0
+	bool "TI CC23x0 RCL backend"
+	default y
+	depends on DT_HAS_TI_CC23X0_BASIC_RADIO_ENABLED
+	depends on SOC_SERIES_CC23X0
+	select SIMPLELINK_F3_RADIO_DRIVER
+	select SIMPLELINK_F3_RADIO_PHYS
+	select PM
+	help
+	  Backend for TI CC23x0 SimpleLink SoCs.
+
+if BASIC_RADIO_CC23X0
+
+config BASIC_RADIO_CC23X0_RX_BUFFER_SIZE
+	int "RX MultiBuffer size in bytes"
+	default 512
+	help
+	  Size of each RCL MultiBuffer used for RX. One buffer can hold
+	  several received packets.
+
+config BASIC_RADIO_CC23X0_MAX_HDR_LEN
+	int "Maximum frame header length in bytes"
+	range 1 4
+	default 2
+	help
+	  Largest frame header, up to and including the length field, of any
+	  PHY passed to basic_radio_config(). TX buffers are sized for it.
+	  basic_radio_config() rejects a PHY with a longer header.
+
+# Certified boot PHYs depend on the SoCs whose catalog defines them
+# (basic_radio_cc23x0_phy_catalog_<soc>.c). A new device adds its SoC
+# symbol to the "depends on" of each PHY it supports, and a new PHY gets
+# an option here plus a branch in the BOOT_PHY selection of
+# basic_radio_cc23x0.c. CUSTOM and NONE are available on every device.
+choice BASIC_RADIO_CC23X0_BOOT_PHY
+	prompt "Boot PHY"
+	default BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_1M if SOC_CC2340R5
+	default BASIC_RADIO_CC23X0_BOOT_PHY_NONE
+	help
+	  PHY selected at init. basic_radio_config() with a NULL phy keeps it
+	  and only applies the runtime parameters.
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_1M
+	bool "BLE 5 generic, 1 Mbps"
+	depends on SOC_CC2340R5
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_2M
+	bool "BLE 5 generic, 2 Mbps"
+	depends on SOC_CC2340R5
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_BLE5_CODED
+	bool "BLE 5 generic, LE Coded"
+	depends on SOC_CC2340R5
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_IEEE_802_15_4
+	bool "IEEE 802.15.4 generic, 250 kbps O-QPSK"
+	depends on SOC_CC2340R5
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_PROP_250KBPS_MSK_FEC
+	bool "Proprietary, 250 kbps MSK, FEC"
+	depends on SOC_CC2340R5
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_PROP_2MBPS_320KHZ_GFSK
+	bool "Proprietary, 2 Mbps GFSK, 320 kHz deviation"
+	depends on SOC_CC2340R5
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_CUSTOM
+	bool "Custom"
+	help
+	  SmartRF Studio export added by the application with
+	  target_sources(app PRIVATE rcl_settings_<n>.c). The export must
+	  keep its default LRF_config name and use the generic PBE image.
+
+config BASIC_RADIO_CC23X0_BOOT_PHY_NONE
+	bool "None"
+	help
+	  No PHY at init. The application passes a PHY object, certified or
+	  custom (see <zephyr/drivers/basic_radio/ti/cc23x0.h>), to
+	  basic_radio_config() before the first send() or recv().
+
+endchoice
+
+config BASIC_RADIO_CC23X0_CUSTOM_PHY_FEATURES
+	hex "Custom PHY phyFeatures"
+	default 0x0
+	range 0x0 0xffff
+	depends on BASIC_RADIO_CC23X0_BOOT_PHY_CUSTOM
+	help
+	  Sub-PHY selection of the custom export, one of the
+	  RCL_PHY_FEATURE_* values in its header. 0x0 for exports without
+	  sub-PHYs.
+
+endif # BASIC_RADIO_CC23X0

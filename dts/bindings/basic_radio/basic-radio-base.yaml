@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties of basic_radio devices. Vendor bindings include this
+  file.
+
+  The PHY is not described in devicetree. The application passes a vendor
+  PHY object to basic_radio_config(); see the vendor header under
+  <zephyr/drivers/basic_radio/<vendor>/>.
+
+include: base.yaml

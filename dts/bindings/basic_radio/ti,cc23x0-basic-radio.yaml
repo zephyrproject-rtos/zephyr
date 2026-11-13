@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  basic_radio device on TI CC23x0 SoCs, built on the Radio Control Layer.
+
+  The boot PHY is selected with CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY. Other
+  PHYs are passed at runtime as struct basic_radio_cc23x0_phy objects
+  (<zephyr/drivers/basic_radio/ti/cc23x0.h>).
+
+  Example:
+
+    / {
+        basic_radio0: basic-radio {
+            compatible = "ti,cc23x0-basic-radio";
+            status = "okay";
+        };
+    };
+
+compatible: "ti,cc23x0-basic-radio"
+
+include: basic-radio-base.yaml

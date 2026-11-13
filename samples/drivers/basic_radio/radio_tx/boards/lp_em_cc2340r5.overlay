@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * basic_radio sample overlay for CC23x0-based LaunchPads. The boot PHY is
+ * selected with CONFIG_BASIC_RADIO_CC23X0_BOOT_PHY (default BLE 1 Mbps).
+ */
+
+/ {
+	basic_radio0: basic_radio {
+		compatible = "ti,cc23x0-basic-radio";
+		status = "okay";
+	};
+};
