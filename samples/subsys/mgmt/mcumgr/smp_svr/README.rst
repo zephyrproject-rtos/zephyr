@@ -163,7 +163,7 @@ included. The ``smp_svr`` sample comes in different flavours.
          :board: beagleconnect_freedom
          :goals: build
          :west-args: --sysbuild
-         :gen-args: -DEXTRA_CONF_FILE="overlay-udp.conf;802154-subg.conf"
+         :gen-args: -DEXTRA_CONF_FILE="udp.conf;802154-subg.conf"
          :compact:
 
       To build the UDP with DTLS sample:
