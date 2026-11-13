@@ -16,5 +16,6 @@ app=tests/bsim/net/sockets/echo_test conf_overlay=overlay-802154.conf compile
 
 app=samples/net/sockets/echo_server conf_overlay=overlay-ot.conf compile
 app=tests/bsim/net/sockets/echo_test conf_overlay=overlay-ot.conf compile
+app=tests/bsim/net/sockets/echo_test conf_overlay="overlay-ot.conf;ot-sed.conf" compile
 
 wait_for_background_jobs

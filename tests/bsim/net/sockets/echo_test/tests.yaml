@@ -29,3 +29,12 @@ tests:
     required_applications:
       - application: sample.net.sockets.echo_server.openthread.bsim
         path: $ZEPHYR_BASE/samples/net/sockets/echo_server
+  net.sockets.echo_test.openthread.sed:
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf;ot-sed.conf"
+    harness_config:
+      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_overlay-ot_conf_ot-sed_conf
+      tests_scripts:
+        - tests_scripts/echo_test_ot_sed.sh
+    required_applications:
+      - application: sample.net.sockets.echo_server.openthread.bsim
+        path: $ZEPHYR_BASE/samples/net/sockets/echo_server
