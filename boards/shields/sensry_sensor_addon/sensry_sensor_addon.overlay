@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2026 Sensry GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+sensry_i2c: &i2c22 {};
+
+sensry_spi: &spi21 {};
+
+sensry_pdm: &pdm21 {};
+
+/ {
+	sensry-leds {
+		compatible = "gpio-leds";
+
+		shield_led: shield-led {
+			gpios = <&i2s_gpio_controller 0 GPIO_ACTIVE_HIGH>;
+			label = "Shield LED";
+		};
+	};
+};
+
+&sensry_i2c {
+	i2s_gpio_controller: gpio@21 {
+		compatible = "nxp,pca9554";
+		reg = <0x21>;
+		no-auto-reset;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+
+	light_sensor: opt3002@44 {
+		compatible = "ti,opt3001";
+		reg = <0x44>;
+		label = "light_sensor";
+	};
+
+	external_rtc: rtc@51 {
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
+	};
+
+	environmental_sensor: bme680@76 {
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+		label = "environmental_sensor";
+	};
+};
+
+&sensry_spi {
+	imu: imu@0 {
+		compatible = "bosch,bmi270";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		label = "imu";
+		spi-cpol;
+		spi-cpha;
+	};
+
+	magnetometer: lis2mdl@1 {
+		compatible = "st,lis2mdl";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		label = "magnetometer";
+	};
+};
+
+microphone: &sensry_pdm {
+	status = "okay";
+};
