@@ -1,0 +1,56 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ATM90E26
+	bool "Microchip ATM90E26 energy metering IC"
+	default y
+	depends on DT_HAS_MICROCHIP_ATM90E26_ENABLED
+	depends on SERIAL || !$(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_ATM90E26),uart)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_ATM90E26),spi)
+	select UART_INTERRUPT_DRIVEN if $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_ATM90E26),uart)
+	help
+	  Enable the driver for the Microchip ATM90E26 single-phase energy
+	  metering IC on SPI or UART. An instance on a UART requires the
+	  serial driver to be enabled.
+
+if ATM90E26
+
+config ATM90E26_BUS_SPI
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_ATM90E26),spi)
+
+config ATM90E26_BUS_UART
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_MICROCHIP_ATM90E26),uart)
+
+config ATM90E26_EVENTS
+	bool "Event support"
+	depends on GPIO
+	help
+	  Report the IRQ, WarnOut, CF1 and CF2 pins through the energy meter
+	  event callback. The callback runs in the system work queue.
+
+config ATM90E26_VERIFY_READ
+	bool "Verify register reads"
+	help
+	  Read the LastData register after every register read and compare it
+	  with the value received, to detect corrupted transfers. This doubles
+	  the number of bus transactions per read. Register writes are always
+	  verified, and UART frames are always checked against their checksum.
+
+config ATM90E26_SHELL
+	bool "Register access shell commands"
+	depends on SHELL
+	help
+	  Enable the atm90e26 shell command, which reads and writes chip
+	  registers for calibration and debugging. Writing a calibration
+	  register rewrites its block with a new checksum. Registers written
+	  from the shell keep their value until the chip is reset.
+
+config EMUL_ATM90E26
+	bool "Emulator for the ATM90E26"
+	default y
+	depends on EMUL
+	help
+	  Enable the SPI and UART emulator for the ATM90E26, used by the driver
+	  tests.
+
+endif # ATM90E26

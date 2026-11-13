@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip ATM90E26 single-phase energy metering IC on a UART. The USEL
+  pin must select UART. The UART must run at 2400 or 9600 baud, 8 data
+  bits, no parity and 1 stop bit; the chip detects the baud rate by itself.
+
+  Example:
+
+    &uart1 {
+      current-speed = <9600>;
+
+      meter {
+        compatible = "microchip,atm90e26";
+        meter-constant = <3200>;
+      };
+    };
+
+compatible: "microchip,atm90e26"
+
+include: [uart-device.yaml, "microchip,atm90e26-common.yaml"]

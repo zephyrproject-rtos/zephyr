@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip ATM90E26 single-phase energy metering IC on a 4-wire SPI bus,
+  mode 3 (CPOL=1, CPHA=1). The USEL pin must select SPI.
+
+compatible: "microchip,atm90e26"
+
+include: [spi-device.yaml, "microchip,atm90e26-common.yaml"]

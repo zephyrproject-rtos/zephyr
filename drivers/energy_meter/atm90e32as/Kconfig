@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Pedro Ramos
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ATM90E32AS
+	bool "Microchip ATM90E32AS energy metering IC"
+	default y
+	depends on DT_HAS_MICROCHIP_ATM90E32AS_ENABLED
+	select SPI
+	help
+	  Enable the driver for the Microchip ATM90E32AS poly-phase energy
+	  metering IC.
+
+if ATM90E32AS
+
+config ATM90E32AS_EVENTS
+	bool "Event support"
+	depends on GPIO
+	help
+	  Report the IRQ0, IRQ1, WarnOut and CF1-CF4 pins through the energy
+	  meter event callback. The callback runs in the system work queue.
+
+config ATM90E32AS_VERIFY_READ
+	bool "Verify register reads"
+	help
+	  Read the LastSPIData register after every register read and compare
+	  it with the value received, to detect transfers corrupted by noise on
+	  the SPI lines. This doubles the number of SPI transfers per read.
+	  Register writes are always verified.
+
+config ATM90E32AS_SHELL
+	bool "Register access shell commands"
+	depends on SHELL
+	help
+	  Enable the atm90e32as shell command, which reads and writes chip
+	  registers for calibration and debugging. Registers written from the
+	  shell keep their value until the chip is reset or resumed.
+
+config EMUL_ATM90E32AS
+	bool "Emulator for the ATM90E32AS"
+	default y
+	depends on EMUL
+	help
+	  Enable the SPI emulator for the ATM90E32AS, used by the driver tests.
+
+endif # ATM90E32AS
