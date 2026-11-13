@@ -46,6 +46,23 @@
 
 static enum bt_gmap_role gmap_role;
 
+static const enum bt_audio_location supported_sink_audio_location = DEFAULT_LOCATION;
+static const enum bt_audio_location supported_source_audio_location = DEFAULT_LOCATION;
+static const enum bt_audio_codec_cap_freq supported_sampling_freq = BT_AUDIO_CODEC_CAP_FREQ_16KHZ |
+								    BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
+								    BT_AUDIO_CODEC_CAP_FREQ_48KHZ;
+static const enum bt_audio_codec_cap_frame_dur supported_frame_dur =
+	BT_AUDIO_CODEC_CAP_DURATION_ANY;
+static const uint16_t supported_min_octets_per_codec_frame = 30U;
+static const uint16_t supported_max_octets_per_codec_frame = 120U;
+static const enum bt_audio_codec_cap_chan_count supported_chan_count =
+	BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U);
+
+static const struct bt_audio_codec_cap gmap_lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+	supported_sampling_freq, supported_frame_dur, supported_chan_count,
+	supported_min_octets_per_codec_frame, supported_max_octets_per_codec_frame,
+	MAX_CODEC_FRAMES_PER_SDU, BT_AUDIO_CONTEXT_TYPE_GAME);
+
 size_t gmap_ad_data_add(struct bt_data data[], size_t data_size)
 {
 	static uint8_t ad_gmap[3] = {
@@ -66,6 +83,16 @@ size_t gmap_ad_data_add(struct bt_data data[], size_t data_size)
 	data[0].data = &ad_gmap[0];
 
 	return 1U;
+}
+
+bool gmap_supported_lc3_config_data(enum bt_audio_dir dir,
+				    const struct bt_audio_codec_cfg *codec_cfg)
+{
+	const enum bt_audio_location location = dir == BT_AUDIO_DIR_SINK
+							? supported_sink_audio_location
+							: supported_source_audio_location;
+
+	return supported_lc3_config(&gmap_lc3_codec_cap, location, codec_cfg);
 }
 
 static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role role,
@@ -129,17 +156,12 @@ static void set_gmap_features(struct bt_gmap_feat *features)
 
 static int cmd_gmap_init(const struct shell *sh, size_t argc, char **argv)
 {
-	static const struct bt_audio_codec_cap gmap_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-		BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
-			BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
-		BT_AUDIO_CODEC_CAP_DURATION_ANY, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U,
-		120U, MAX_CODEC_FRAMES_PER_SDU, BT_AUDIO_CONTEXT_TYPE_GAME);
 	struct bt_gmap_feat features;
 	static struct bt_pacs_cap gmap_cap_sink = {
-		.codec_cap = &gmap_codec_cap,
+		.codec_cap = &gmap_lc3_codec_cap,
 	};
 	static struct bt_pacs_cap gmap_cap_source = {
-		.codec_cap = &gmap_codec_cap,
+		.codec_cap = &gmap_lc3_codec_cap,
 	};
 	static bool initialized;
 	int err;
