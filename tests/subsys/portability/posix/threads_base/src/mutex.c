@@ -48,7 +48,7 @@ static void *recursive_mutex_entry(void *p1)
 static void test_mutex_common(int type, void *(*entry)(void *arg))
 {
 	pthread_t th;
-	int protocol;
+	__maybe_unused int protocol;
 	int actual_type;
 	pthread_mutexattr_t mut_attr;
 	struct sched_param schedparam;
@@ -61,6 +61,7 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 	zassert_ok(pthread_mutexattr_gettype(&mut_attr, &actual_type),
 		   "reading mutex type is failed");
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
 	zassert_not_ok(pthread_mutexattr_getprotocol(NULL, &protocol));
 	zassert_not_ok(pthread_mutexattr_getprotocol(&mut_attr, NULL));
 	zassert_not_ok(pthread_mutexattr_getprotocol(NULL, NULL));
@@ -70,12 +71,16 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 	zassert_ok(pthread_mutexattr_setprotocol(&mut_attr, PTHREAD_PRIO_NONE));
 	zassert_ok(pthread_mutexattr_getprotocol(&mut_attr, &protocol),
 		   "reading mutex protocol is failed");
+#endif /* defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT) */
+
 	zassert_ok(pthread_mutexattr_destroy(&mut_attr));
 
 	zassert_ok(pthread_mutex_lock(&mutex));
 
 	zassert_equal(actual_type, type, "mutex type is not normal");
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
 	zassert_equal(protocol, PTHREAD_PRIO_NONE, "mutex protocol is not prio_none");
+#endif /* defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT) */
 
 	zassert_ok(pthread_create(&th, NULL, entry, NULL));
 
@@ -88,13 +93,14 @@ static void test_mutex_common(int type, void *(*entry)(void *arg))
 
 ZTEST(mutex, test_mutex_prioceiling_stubs)
 {
-#ifdef CONFIG_POSIX_THREAD_PRIO_PROTECT
+#if defined(_POSIX_THREAD_PRIO_PROTECT)
 	zassert_equal(pthread_mutex_getprioceiling(NULL, NULL), ENOSYS);
 	zassert_equal(pthread_mutex_setprioceiling(NULL, 0, NULL), ENOSYS);
+#endif
+
+#if defined(_POSIX_THREAD_PRIO_INHERIT) || defined(_POSIX_THREAD_PRIO_PROTECT)
 	zassert_equal(pthread_mutexattr_getprioceiling(NULL, NULL), ENOSYS);
 	zassert_equal(pthread_mutexattr_setprioceiling(NULL, 0), ENOSYS);
-#else
-	ztest_test_skip();
 #endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
 }
 

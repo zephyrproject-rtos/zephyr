@@ -132,6 +132,7 @@ struct sigevent {
 
 /* SIGRTMIN and SIGRTMAX defined above */
 
+/* slightly out of order w.r.t. the specification */
 #if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
 typedef struct {
 	void *si_addr;
@@ -197,6 +198,7 @@ typedef struct {
 #define __mcontext_defined
 #endif
 
+/* slightly out of order w.r.t. the specification */
 #if !defined(_STACK_T_DECLARED) && !defined(__stack_t_defined)
 typedef struct {
 	void *ss_sp;

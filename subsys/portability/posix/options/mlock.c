@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/sys/mman.h>
+#include <sys/mman.h>
 
 #include <zephyr/kernel/mm/demand_paging.h>
 

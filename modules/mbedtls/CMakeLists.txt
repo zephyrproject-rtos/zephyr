@@ -109,6 +109,12 @@ if(CONFIG_MBEDTLS)
     list_append_ifdef(CONFIG_MBEDTLS_SHELL zephyr_mbedtls_src
       ${CMAKE_CURRENT_LIST_DIR}/shell.c
     )
+    # Workaround for NET_NAMESPACE_COMPAT_MODE. AF_INET6 is defined wherever <arpa/inet.h> is
+    # visible, so mbedtls calls the platform inet_pton() even without POSIX_NETWORKING. See #125657.
+    if(CONFIG_MBEDTLS_X509_CRT_PARSE_C AND CONFIG_NET_NAMESPACE_COMPAT_MODE
+       AND NOT CONFIG_POSIX_NETWORKING AND NOT CONFIG_NATIVE_LIBC)
+      list(APPEND zephyr_mbedtls_src ${ZEPHYR_BASE}/subsys/portability/posix/options/inet_pton.c)
+    endif()
     if(zephyr_mbedtls_src)
       zephyr_library()
       zephyr_library_sources(${zephyr_mbedtls_src})

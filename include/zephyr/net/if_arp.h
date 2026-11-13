@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_POSIX_NET_IF_ARP_H_
-#define ZEPHYR_INCLUDE_POSIX_NET_IF_ARP_H_
+#ifndef ZEPHYR_INCLUDE_NET_IF_ARP_H_
+#define ZEPHYR_INCLUDE_NET_IF_ARP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,4 +83,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_POSIX_NET_IF_ARP_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_IF_ARP_H_ */

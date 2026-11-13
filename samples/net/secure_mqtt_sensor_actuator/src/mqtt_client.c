@@ -10,10 +10,10 @@ LOG_MODULE_REGISTER(app_mqtt, LOG_LEVEL_DBG);
 #include <zephyr/data/json.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/mqtt.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/netdb.h>
-#include <zephyr/posix/poll.h>
-#include <zephyr/posix/sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <poll.h>
+#include <sys/socket.h>
 #include <zephyr/random/random.h>
 
 #include "mqtt_client.h"

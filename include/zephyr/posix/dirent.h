@@ -8,12 +8,28 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 #define ZEPHYR_INCLUDE_POSIX_DIRENT_H_
 
-#include <zephyr/posix/sys/dirent.h>
+#include <limits.h>
+
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#if !defined(NAME_MAX) && defined(_XOPEN_SOURCE)
+#define NAME_MAX _XOPEN_NAME_MAX
+#endif
+
+#if !defined(NAME_MAX) && defined(_POSIX_C_SOURCE)
+#define NAME_MAX _POSIX_NAME_MAX
+#endif
+
+typedef void DIR;
+
+struct dirent {
+	unsigned int d_ino;
+	char d_name[NAME_MAX + 1];
+};
 
 #if (_POSIX_C_SOURCE >= 200809L) || (_XOPEN_SOURCE >= 700)
 int alphasort(const struct dirent **d1, const struct dirent **d2);

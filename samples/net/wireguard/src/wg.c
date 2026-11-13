@@ -9,9 +9,9 @@ LOG_MODULE_DECLARE(vpn_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/base64.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/virtual_mgmt.h>
 #include <zephyr/net/wireguard.h>
