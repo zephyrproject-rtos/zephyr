@@ -37,16 +37,17 @@ config ETH_DWC_ETHER_1000_CORE
 
 config ETH_ALIF_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based Alif Ensemble"
-	depends on SOC_FAMILY_ENSEMBLE_RTSS
+	depends on SOC_FAMILY_ENSEMBLE_RTSS || SOC_FAMILY_ENSEMBLE_APSS
 	depends on DT_HAS_ALIF_ENSEMBLE_ETH_ENABLED
+	select ETH_DWMAC_MMU_UTILS if MMU
 	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
 	select CLOCK_CONTROL
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver on the RTSS cores of
-	  Alif Ensemble SoCs.
+	  This enables the Synopsys DesignWare MAC driver on the Alif Ensemble
+	  SoCs.
 
 config ETH_ESP32_DWC_ETHER_1000
 	bool "Driver for DWC Ethernet MAC-based ESP32"
@@ -162,6 +163,7 @@ config ETH_DWMAC_MMU
 	depends on CPU_HAS_MMU
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
+	select ETH_DWMAC_MMU_UTILS
 	default y
 	help
 	  This enables the Synopsys DesignWare MAC driver on MMU based
@@ -174,6 +176,13 @@ config ETH_DWC_ETHER_1000_CORE_EDFE
 	default y if PTP_CLOCK_DWC_MAC
 	help
 	  Increases the descriptor size to 32 bytes.
+
+config ETH_DWMAC_MMU_UTILS
+	bool
+	depends on MMU
+	help
+	  Enable utility functions for Synopsys DesignWare MAC driver on
+	  MMU based platforms.
 
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 

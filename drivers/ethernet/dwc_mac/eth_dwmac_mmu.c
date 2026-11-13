@@ -15,9 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DT_DRV_COMPAT snps_designware_ethernet
 
 #include <sys/types.h>
-#include <zephyr/kernel/mm.h>
 #include <zephyr/kernel.h>
-#include <zephyr/cache.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/irq.h>
 
@@ -44,30 +42,9 @@ int dwmac_platform_init(const struct device *dev)
 {
 	struct dwmac_priv *p = dev->data;
 	int ret;
-	uint8_t *desc_uncached_addr;
-	uintptr_t desc_phys_addr;
 
-	/* make sure no valid cache lines map to the descriptor area */
-	sys_cache_data_invd_range(dwmac_tx_rx_descriptors,
-				  sizeof(dwmac_tx_rx_descriptors));
-
-	desc_phys_addr = k_mem_phys_addr(dwmac_tx_rx_descriptors);
-
-	/* remap descriptor rings uncached */
-	k_mem_map_phys_bare(&desc_uncached_addr, desc_phys_addr,
-			    sizeof(dwmac_tx_rx_descriptors),
-			    K_MEM_PERM_RW | K_MEM_CACHE_NONE);
-
-	LOG_DBG("desc virt %p uncached %p phys 0x%lx",
-		dwmac_tx_rx_descriptors, desc_uncached_addr, desc_phys_addr);
-
-	p->tx_descs = (void *)desc_uncached_addr;
-	desc_uncached_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
-	p->rx_descs = (void *)desc_uncached_addr;
-
-	p->tx_descs_phys = UINT_TO_POINTER(desc_phys_addr);
-	desc_phys_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
-	p->rx_descs_phys = UINT_TO_POINTER(desc_phys_addr);
+	dwmac_map_descriptors(dev, dwmac_tx_rx_descriptors, NB_RX_DESCS,
+			      dwmac_tx_rx_descriptors + NB_RX_DESCS, NB_TX_DESCS);
 
 	/* basic configuration for this platform */
 	DWMAC_REG_WRITE(MAC_CONF,
