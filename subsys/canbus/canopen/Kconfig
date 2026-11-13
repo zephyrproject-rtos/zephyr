@@ -1,0 +1,172 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CANOPEN
+	bool "CANopen protocol stack"
+	depends on CAN
+	select POLL
+	help
+	  Enable the native CANopen protocol stack (CiA 301).
+
+if CANOPEN
+
+module = CANOPEN
+module-str = CANOPEN
+source "subsys/logging/Kconfig.template.log_config"
+
+config CANOPEN_THREAD_STACK_SIZE
+	int "CANopen thread stack size"
+	default 1024 if CAN_MCP2515 || CAN_MCP251XFD || CAN_TCAN4X5X || LOG_MODE_IMMEDIATE
+	default 896
+	help
+	  Stack size of the thread running the protocol of a CANopen node. The thread also runs
+	  the CAN driver's send and filter functions and the application callbacks, so SPI
+	  attached CAN controllers and immediate logging get a larger default. Increase it for
+	  application callbacks with large stack frames.
+
+config CANOPEN_THREAD_PRIORITY
+	int "CANopen thread priority"
+	default 2
+	help
+	  Priority of the thread running the protocol of a CANopen node.
+
+config CANOPEN_RX_QUEUE_SIZE
+	int "CANopen receive queue size"
+	default 8
+	range 1 256
+	help
+	  Number of received CAN frames buffered per node before frames are dropped.
+
+config CANOPEN_TX_QUEUE_SIZE
+	int "CANopen transmit queue size"
+	default 8
+	range 1 256
+	help
+	  Number of CAN frames buffered per node while all CAN transmit mailboxes are busy.
+
+config CANOPEN_SDO_BUFFER_SIZE
+	int "SDO server buffer size"
+	default 64
+	range 8 65535
+	help
+	  Largest object dictionary value in bytes transferred by the SDO server.
+
+config CANOPEN_SDO_SERVER_TIMEOUT_MS
+	int "SDO server timeout in milliseconds"
+	default 1000
+	range 1 65535
+	help
+	  Time without a request from the SDO client after which a segmented transfer is aborted.
+
+config CANOPEN_DEVICE_TYPE
+	hex "Device type"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1000h.
+
+config CANOPEN_VENDOR_ID
+	hex "Vendor-ID"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1018h sub-index 1, assigned by CAN in Automation.
+
+config CANOPEN_PRODUCT_CODE
+	hex "Product code"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1018h sub-index 2.
+
+config CANOPEN_REVISION_NUMBER
+	hex "Revision number"
+	default 0x0
+	range 0x0 0xffffffff
+	help
+	  Value of object 1018h sub-index 3.
+
+config CANOPEN_DEVICE_NAME
+	string "Manufacturer device name"
+	default "Zephyr"
+	help
+	  Value of object 1008h. The object is omitted if the string is empty.
+
+config CANOPEN_HW_VERSION
+	string "Manufacturer hardware version"
+	help
+	  Value of object 1009h. The object is omitted if the string is empty.
+
+config CANOPEN_SW_VERSION
+	string "Manufacturer software version"
+	help
+	  Value of object 100Ah. The object is omitted if the string is empty.
+
+config CANOPEN_HEARTBEAT_PRODUCER_MS
+	int "Default producer heartbeat time in milliseconds"
+	default 0
+	range 0 65535
+	help
+	  Power-on value of object 1017h. 0 disables the heartbeat producer.
+
+config CANOPEN_TIME
+	bool "TIME producer and consumer"
+	help
+	  Provide the COB-ID time stamp object (1012h), the TIME consumer callback and
+	  canopen_time_send(). The node consumes TIME messages on CAN-ID 100h after power-on; the
+	  producer is enabled by setting bit 30 of 1012h.
+
+config CANOPEN_TPDO_COUNT
+	int "Number of TPDOs"
+	default 4
+	range 1 512
+	help
+	  Number of transmit PDOs of a CANopen node.
+
+config CANOPEN_RPDO_COUNT
+	int "Number of RPDOs"
+	default 4
+	range 1 512
+	help
+	  Number of receive PDOs of a CANopen node.
+
+config CANOPEN_PDO_MAPPED_MAX
+	int "Maximum number of objects mapped into a PDO"
+	default 8
+	range 1 64
+	help
+	  Number of mapping entries of each PDO mapping parameter object.
+
+config CANOPEN_EMCY_HISTORY_SIZE
+	int "Error history size"
+	default 8
+	range 1 254
+	help
+	  Number of entries of the pre-defined error field (1003h).
+
+config CANOPEN_EMCY_ACTIVE_MAX
+	int "Maximum number of active errors"
+	default 8
+	range 1 255
+	help
+	  Number of errors that can be active at the same time.
+
+config CANOPEN_EMCY_QUEUE_SIZE
+	int "Emergency message queue size"
+	default 4
+	range 1 255
+	help
+	  Number of emergency messages held back during the EMCY inhibit time (1015h) or while
+	  the node is in NMT state Stopped. When the queue is full the oldest message is
+	  dropped.
+
+config CANOPEN_HB_CONSUMER_COUNT
+	int "Number of heartbeat consumer entries"
+	default 4
+	range 1 127
+	help
+	  Number of entries of the consumer heartbeat time object (1016h). Each configured
+	  entry uses one CAN RX filter.
+
+endif # CANOPEN
