@@ -86,6 +86,17 @@ uart9: &scb9 {
 	/* UART pins */
 	pinctrl-0 = <&p29_0_scb9_uart_rx &p29_1_scb9_uart_tx>;
 	pinctrl-names = "default";
+	dmas = <&dma1 34>, <&dma1 35>;
+	dma-names = "tx", "rx";
+	mux-states = <&trigmux CYT4DN_TRIG_OUT_1TO1_1_SCB_TX_TO_PDMA19
+		      IFX_TRIGMUX_EDGE IFX_TRIGMUX_ON>,
+		     <&trigmux CYT4DN_TRIG_OUT_1TO1_1_SCB_RX_TO_PDMA19
+		      IFX_TRIGMUX_LEVEL IFX_TRIGMUX_ON>;
+	mux-state-names = "tx", "rx";
+};
+
+&trigmux {
+	status = "okay";
 };
 
 &gpio_prt7 {

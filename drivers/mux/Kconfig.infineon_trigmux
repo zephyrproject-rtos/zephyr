@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_INFINEON_TRIGMUX
+	bool "Infineon trigger multiplexer MUX driver"
+	default y
+	depends on DT_HAS_INFINEON_TRIGMUX_ENABLED
+	help
+	  Enable the Infineon PERI trigger multiplexer driver.
