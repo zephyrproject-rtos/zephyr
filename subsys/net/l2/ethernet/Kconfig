@@ -165,6 +165,17 @@ config NET_QBV
 	  gate during which a packet will be sent, granular control by software of
 	  packet transmission.
 
+config NET_QBU
+	bool "Qbu support"
+	depends on (NET_TC_TX_COUNT > 0)
+	select NET_L2_ETHERNET_MGMT
+	help
+	  Enable Qbu (IEEE 802.1Qbu) and Qbr (IEEE 802.3br) frame preemption
+	  management support by exposing commands to configure Qbu/Qbr.
+	  Frame preemption allows high-priority express frames to interrupt
+	  the transmission of lower-priority preemptable frames, reducing
+	  latency for time-critical traffic.
+
 config NET_CHECKSUM_OFFLOAD_SUPPORTED
 	bool
 	help
