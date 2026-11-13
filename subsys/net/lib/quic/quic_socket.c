@@ -80,7 +80,7 @@ static int quic_connection_init(struct quic_context *ctx,
 					&net_sin(remote_addr)->sin_addr));
 	}
 
-	ctx->stream_id_counter = 0ULL;
+	memset(ctx->stream_id_counter, 0, sizeof(ctx->stream_id_counter));
 	ctx->id = connection_ids++;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
@@ -224,6 +224,22 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 			}
 
 			*optlen = sizeof(*state);
+			return 0;
+		}
+
+		case ZSOCK_QUIC_SO_PEER_CLOSE: {
+			if (!ctx->peer_closed) {
+				errno = ENOTCONN;
+				return -1;
+			}
+
+			if (*optlen < sizeof(ctx->peer_close)) {
+				errno = ENOBUFS;
+				return -1;
+			}
+
+			memcpy(optval, &ctx->peer_close, sizeof(ctx->peer_close));
+			*optlen = sizeof(ctx->peer_close);
 			return 0;
 		}
 
@@ -425,6 +441,27 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 
 			err = quic_tls_set_session_state(&ep->crypto.tls, optval);
 			break;
+
+		case ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE: {
+			uint64_t code;
+
+			if (optval == NULL || optlen != sizeof(code)) {
+				err = -EINVAL;
+				break;
+			}
+
+			/* The code has to fit a varint (RFC 9000 ch. 16) */
+			memcpy(&code, optval, sizeof(code));
+			if (code > QUIC_VARINT_MAX) {
+				err = -EINVAL;
+				break;
+			}
+
+			ctx->app_close_code = code;
+			ctx->app_close = true;
+			err = 0;
+			break;
+		}
 
 		case ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE:
 			if (!ep->is_server || optval == NULL || optlen != sizeof(int)) {
@@ -762,7 +799,7 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 				 * POLLHUP handler, with no SO_ERROR probe needed.
 				 */
 				if (ctx->error_code == 0) {
-					ctx->error_code = -ECONNRESET;
+					ctx->error_code = ECONNRESET;
 				}
 
 				pfd->revents |= ZSOCK_POLLHUP;
@@ -770,13 +807,16 @@ static int quic_conn_poll_update_ctx(struct quic_context *ctx,
 		}
 	}
 
-	/* Report POLLHUP when the connection has been closed (no endpoints
-	 * remain). This allows upper layers (e.g. the HTTP server) to
-	 * immediately detect and clean up stale connections instead of
-	 * waiting for an inactivity timer. POLLHUP is always reported
-	 * regardless of the requested events, per POSIX semantics.
+	/* Report POLLHUP when the connection has been closed: no endpoints
+	 * remain, or the connection was closed while streams the peer opened
+	 * are still waiting to be accepted. Those make the socket readable
+	 * too, so the hang-up would otherwise not show until they are taken.
+	 * This allows upper layers (e.g. the HTTP server) to immediately
+	 * detect and clean up stale connections instead of waiting for an
+	 * inactivity timer. POLLHUP is always reported regardless of the
+	 * requested events, per POSIX semantics.
 	 */
-	if (quic_ctx_is_eof(ctx)) {
+	if (quic_ctx_is_eof(ctx) || (!ctx->is_listening && ctx->closed)) {
 		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
@@ -2496,7 +2536,9 @@ int quic_connection_close(int sock)
 
 static uint64_t quic_stream_id_get(struct quic_stream *stream)
 {
-	return ((stream->conn->stream_id_counter++) << 2) | (uint64_t)stream->type;
+	uint64_t *counter = quic_stream_id_counter(stream->conn, stream->type);
+
+	return ((*counter)++ << 2) | (uint64_t)stream->type;
 }
 
 int quic_stream_open(int connection_sock,
@@ -2603,6 +2645,32 @@ have_endpoint:
 		} else if (!ep->handshake.completed) {
 			NET_DBG("[EP:%p/%d] Allowing client stream open with 0-RTT armed",
 				ep, quic_get_by_ep(ep));
+		}
+	}
+
+	/* RFC 9000 ch. 4.6: no more streams of a type than the peer allows.
+	 * It raises the limit with a MAX_STREAMS frame; tell it once per
+	 * limit that we are waiting for one.
+	 */
+	if (ep->peer_params.parsed) {
+		bool bidi = direction == QUIC_STREAM_BIDIRECTIONAL;
+		uint64_t limit = bidi ? ep->peer_params.max_streams_bidi
+				      : ep->peer_params.max_streams_uni;
+		uint64_t opened = *quic_stream_id_counter(ctx, direction);
+		uint64_t *blocked_sent = bidi ? &ep->tx_sl.blocked_sent_bidi
+					      : &ep->tx_sl.blocked_sent_uni;
+
+		if (opened >= limit) {
+			NET_DBG("[EP:%p/%d] Peer allows no more than %" PRIu64 " %s streams",
+				ep, quic_get_by_ep(ep), limit, bidi ? "bidi" : "uni");
+
+			if (*blocked_sent != limit &&
+			    quic_send_streams_blocked(ep, bidi, limit) == 0) {
+				*blocked_sent = limit;
+			}
+
+			quic_stats_update_stream_open_failed();
+			return -EAGAIN;
 		}
 	}
 

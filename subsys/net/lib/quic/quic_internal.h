@@ -74,6 +74,9 @@ struct quic_buffer {
 #define QUIC_AEAD_TAG_LEN 16
 #define QUIC_RESET_TOKEN_LEN 16
 
+/* Largest value a variable-length integer holds (RFC 9000 ch. 16) */
+#define QUIC_VARINT_MAX ((1ULL << 62) - 1)
+
 #define MAX_QUIC_MIN_INITIAL_SIZE 1200
 #define MAX_QUIC_FRAME_SIZE 1300
 
@@ -668,6 +671,23 @@ struct quic_long_header_info {
 	size_t pn_offset;
 };
 
+/* A peer can leave at most as many stream IDs of a type unused as it may
+ * still open, and that is bounded by the streams we allow it.
+ */
+#define QUIC_STREAM_SEQ_GAPS_MAX MAX(CONFIG_QUIC_MAX_STREAMS_BIDI, CONFIG_QUIC_MAX_STREAMS_UNI)
+
+/**
+ * The sequence numbers of one type of peer-initiated streams that have been
+ * opened: every number below @a next, except the @a gap_count numbers in
+ * @a gaps. A gap is a stream that a higher one opened implicitly (RFC 9000
+ * ch. 2.1) and that has not been used yet.
+ */
+struct quic_stream_seq_set {
+	uint64_t next;
+	uint64_t gaps[QUIC_STREAM_SEQ_GAPS_MAX];
+	uint8_t gap_count;
+};
+
 /**
  * QUIC endpoint information
  */
@@ -898,7 +918,21 @@ struct quic_endpoint {
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
 		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
 		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
+		/* Which peer-initiated streams were opened, so that a late
+		 * frame for a closed one does not open it again.
+		 */
+		struct quic_stream_seq_set opened_bidi;
+		struct quic_stream_seq_set opened_uni;
 	} rx_sl;
+
+	/** The limits the peer set on the streams opened here, kept in
+	 * peer_params, as far as the peer was told that they block us
+	 * (RFC 9000 ch. 4.6).
+	 */
+	struct {
+		uint64_t blocked_sent_bidi; /* bidi limit STREAMS_BLOCKED was last sent for */
+		uint64_t blocked_sent_uni;  /* uni limit STREAMS_BLOCKED was last sent for */
+	} tx_sl;
 
 	/** Peer's transport parameters */
 	struct {
@@ -1257,11 +1291,34 @@ __net_socket struct quic_context {
 	bool stats_metadata_valid;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
-	/** Stream id counter */
-	uint64_t stream_id_counter;
+	/** Sequence number of the next stream of our own, per direction:
+	 * index 0 for bidirectional and 1 for unidirectional streams. The
+	 * IDs of each stream type are used in order (RFC 9000 ch. 2.1), so
+	 * the two directions need their own count. Use
+	 * quic_stream_id_counter() to pick one.
+	 */
+	uint64_t stream_id_counter[2];
 
 	/** Error code to be passed to application when connection is closed. */
 	int error_code;
+
+	/** The connection was closed, by the peer or by its endpoint going
+	 * away. Reported as POLLHUP, whether or not streams are still waiting
+	 * to be accepted.
+	 */
+	bool closed;
+
+	/** The CONNECTION_CLOSE frame received from the peer */
+	struct quic_peer_close peer_close;
+
+	/** Application error code sent when the connection is closed */
+	uint64_t app_close_code;
+
+	/** A CONNECTION_CLOSE frame was received from the peer */
+	bool peer_closed : 1;
+
+	/** Close with an application error instead of a transport NO_ERROR */
+	bool app_close : 1;
 
 	/** Stream priority */
 	uint8_t stream_priority;
@@ -1279,6 +1336,15 @@ __net_socket struct quic_context {
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
+
+/**
+ * The counter of our own streams of the direction of a stream ID or a
+ * stream type: bit 1 of either is set for a unidirectional stream.
+ */
+static inline uint64_t *quic_stream_id_counter(struct quic_context *ctx, uint64_t id_or_type)
+{
+	return &ctx->stream_id_counter[(id_or_type & 2U) != 0U ? 1 : 0];
+}
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 struct quic_closed_context_stats {
@@ -1545,6 +1611,12 @@ int handle_crypto_level_packet(struct quic_endpoint *ep,
 			       size_t payload_len,
 			       size_t total_packet_len,
 			       bool *ack_only);
+int quic_build_connection_close(uint8_t *frame, size_t frame_len,
+				uint8_t type, uint64_t error_code,
+				uint64_t frame_type, const char *reason);
+void quic_close_frame_at_level(enum quic_secret_level level, uint8_t *type,
+			       uint64_t *error_code, uint64_t *frame_type,
+			       const char **reason);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
@@ -1609,5 +1681,10 @@ void quic_test_streams_lock(bool lock);
 void quic_connection_accept_enqueue(struct quic_endpoint *child_ep);
 struct quic_stream *quic_get_stream(struct quic_context *conn);
 bool quic_ctx_queue_incoming_stream(struct quic_context *ctx, struct quic_stream *stream);
+void quic_endpoint_notify_streams_closed(struct quic_endpoint *ep);
+
+bool stream_seq_was_opened(const struct quic_stream_seq_set *set, uint64_t seq);
+bool stream_seq_gaps_fit(const struct quic_stream_seq_set *set, uint64_t seq);
+void stream_seq_mark_opened(struct quic_stream_seq_set *set, uint64_t seq);
 
 #endif /* CONFIG_NET_TEST */

@@ -948,6 +948,51 @@ ZTEST(net_socket_quic, test_040_stream_type_helpers_for_local_streams)
 	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_041_local_stream_ids_count_per_direction)
+{
+	static const struct {
+		int direction;
+		uint64_t id;
+	} opens[] = {
+		/* The IDs of each type are used in order (RFC 9000 ch. 2.1),
+		 * whatever streams of the other direction are opened between
+		 * them.
+		 */
+		{ QUIC_STREAM_BIDIRECTIONAL, 1 },
+		{ QUIC_STREAM_UNIDIRECTIONAL, 3 },
+		{ QUIC_STREAM_UNIDIRECTIONAL, 7 },
+		{ QUIC_STREAM_BIDIRECTIONAL, 5 },
+	};
+	int socks[ARRAY_SIZE(opens)];
+	int ret, conn_sock;
+
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	conn_sock = ret;
+
+	ARRAY_FOR_EACH(opens, i) {
+		uint64_t stream_id = UINT64_MAX;
+
+		ret = quic_stream_open(conn_sock, QUIC_STREAM_SERVER, opens[i].direction, 0);
+		zassert_true(ret >= 0, "Failed to open stream %zu (%d)", i, ret);
+		socks[i] = ret;
+
+		ret = quic_stream_get_id(socks[i], &stream_id);
+		zassert_equal(ret, 0, "Failed to get the ID of stream %zu (%d)", i, ret);
+		zexpect_equal(stream_id, opens[i].id, "Stream %zu got ID %" PRIu64 ", expected %"
+			      PRIu64, i, stream_id, opens[i].id);
+	}
+
+	ARRAY_FOR_EACH(socks, i) {
+		ret = quic_stream_close(socks[i]);
+		zassert_equal(ret, 0, "Failed to close stream %zu (%d)", i, ret);
+	}
+
+	ret = quic_connection_close(conn_sock);
+	zassert_equal(ret, 0, "Failed to close QUIC connection (%d)", ret);
+}
+
 /* Test 050: Variable-length integer encoding/decoding */
 ZTEST(net_socket_quic, test_050_len_encode_decode)
 {
@@ -7209,7 +7254,8 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 * None has been opened on this connection.
 	 */
 	ep->is_server = true;
-	zassert_equal(ctx->stream_id_counter, 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[0], 0, "Unexpected streams on a new context");
+	zassert_equal(ctx->stream_id_counter[1], 0, "Unexpected streams on a new context");
 
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_equal(ret, -EPROTO,
@@ -7229,10 +7275,10 @@ ZTEST(net_socket_quic, test_494_stop_sending_for_stream_never_opened)
 	 */
 	ep = reset_test_ep(&test_ep_a);
 	ep->is_server = true;
-	ctx->stream_id_counter = 1;
+	ctx->stream_id_counter[0] = 1;
 	ret = stop_sending_for_stream(ep, ctx, 1);
 	zassert_true(ret >= 0, "STOP_SENDING for a closed stream must be ignored (%d)", ret);
-	ctx->stream_id_counter = 0;
+	ctx->stream_id_counter[0] = 0;
 
 	/* A stream of the peer that we do not know is not ours to judge
 	 * here either.
@@ -8009,6 +8055,293 @@ ZTEST(net_socket_quic, test_543_ack_and_loss_keep_stream_references)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_503_close_notifies_only_its_connection)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx_a;
+	struct quic_context *ctx_b;
+	int sock_a;
+	int sock_b;
+	int ret;
+
+	ctx_a = open_test_listener(&sock_a, "127.0.0.1:54355");
+	ctx_b = open_test_listener(&sock_b, "127.0.0.1:54356");
+
+	/* Use the contexts as connections. The endpoint belongs to the
+	 * first one only.
+	 */
+	ctx_a->is_listening = false;
+	ctx_b->is_listening = false;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx_a->endpoints, &ep->node);
+	k_sem_reset(&ctx_a->incoming.stream_sem);
+	k_sem_reset(&ctx_b->incoming.stream_sem);
+	ctx_b->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_equal(k_sem_count_get(&ctx_a->incoming.stream_sem), 1,
+		      "The connection of the endpoint was not woken");
+	zexpect_equal(ctx_a->error_code, ECONNRESET, "Wrong error %d", ctx_a->error_code);
+	zexpect_true(ctx_a->closed, "The connection of the endpoint was not closed");
+
+	zexpect_equal(k_sem_count_get(&ctx_b->incoming.stream_sem), 0,
+		      "Another connection was woken");
+	zexpect_equal(ctx_b->error_code, 0, "Another connection got error %d", ctx_b->error_code);
+	zexpect_false(ctx_b->closed, "Another connection was closed");
+
+	(void)sys_slist_find_and_remove(&ctx_a->endpoints, &ep->node);
+	ctx_a->is_listening = true;
+	ctx_b->is_listening = true;
+
+	ret = quic_connection_close(sock_a);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_a, -errno);
+	ret = quic_connection_close(sock_b);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock_b, -errno);
+}
+
+ZTEST(net_socket_quic, test_531_failed_connection_leaves_its_listener_open)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54381");
+
+	/* A connection of the listener that is not accepted yet, with a
+	 * stream the peer opened, goes away.
+	 */
+	ep->is_server = true;
+	ep->parent = ctx->listen;
+	ep->handshake.completed = true;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 0);
+	k_sem_reset(&ctx->incoming.stream_sem);
+	ctx->error_code = 0;
+
+	quic_endpoint_notify_streams_closed(ep);
+
+	zexpect_is_null(waiting.ep, "The stream of the connection was not notified");
+	zexpect_equal(ctx->error_code, 0, "The listener got error %d", ctx->error_code);
+	zexpect_false(ctx->closed, "The listener was closed");
+	zexpect_equal(k_sem_count_get(&ctx->incoming.stream_sem), 0, "The listener was woken");
+
+	/* Its own endpoint going away closes the listener */
+	quic_endpoint_notify_streams_closed(ctx->listen);
+
+	zexpect_equal(ctx->error_code, ECONNRESET, "Wrong error %d", ctx->error_code);
+	zexpect_true(ctx->closed, "The listener was not closed");
+
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->error_code = 0;
+	ctx->closed = false;
+	ep->parent = NULL;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_504_closed_connection_hangs_up_with_streams_waiting)
+{
+	static struct quic_stream waiting;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct zsock_pollfd pfd;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54357");
+
+	/* Use the context as a connection whose peer opened a stream that
+	 * is not accepted yet, and then closed the connection.
+	 */
+	ctx->is_listening = false;
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	link_test_stream(&waiting, ctx, ep, 3);
+	k_fifo_put(&ctx->incoming.stream_q, &waiting);
+	ctx->closed = true;
+
+	pfd.fd = sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+	ret = zsock_poll(&pfd, 1, 0);
+	zexpect_equal(ret, 1, "poll() returned %d", ret);
+	zexpect_true((pfd.revents & ZSOCK_POLLIN) != 0, "The waiting stream is not reported");
+	zexpect_true((pfd.revents & ZSOCK_POLLHUP) != 0, "The hang-up is not reported");
+
+	(void)k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+	unlink_test_stream(&waiting, ctx);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	ctx->closed = false;
+	ctx->is_listening = true;
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* Feed a STREAM frame with the FIN bit and no data to the endpoint */
+static int stream_fin_for_stream(struct quic_endpoint *ep, struct quic_context *ctx,
+				 uint8_t stream_id)
+{
+	const uint8_t payload[] = {
+		QUIC_FRAME_TYPE_STREAM_BASE | 0x01, /* FIN, data to the end */
+		stream_id,
+	};
+	bool ack_only = false;
+	int ret;
+
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload), sizeof(payload),
+					 &ack_only);
+
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+/* Take the stream a frame just opened off the context, as if it had been
+ * accepted and closed again.
+ */
+static struct quic_stream *take_opened_stream(struct quic_context *ctx, uint64_t stream_id)
+{
+	struct quic_stream *stream = k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT);
+
+	zassert_not_null(stream, "Stream %" PRIu64 " was not opened", stream_id);
+	zassert_equal(stream->id, stream_id, "Opened stream %" PRIu64 " instead of %" PRIu64,
+		      stream->id, stream_id);
+	zassert_true(sys_slist_find_and_remove(&ctx->streams, &stream->node),
+		     "Stream %" PRIu64 " not on the context", stream_id);
+	k_sem_reset(&ctx->incoming.stream_sem);
+
+	return stream;
+}
+
+/* Put a stream back, so that closing the context releases it */
+static void return_opened_stream(struct quic_context *ctx, struct quic_stream *stream)
+{
+	sys_slist_append(&ctx->streams, &stream->node);
+	k_fifo_put(&ctx->incoming.stream_q, stream);
+}
+
+ZTEST(net_socket_quic, test_502_late_frame_does_not_reopen_a_closed_stream)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_stream *closed_4;
+	struct quic_stream *closed_8;
+	struct quic_stream *opened_0;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54354");
+
+	ep->is_server = true;
+	ep->rx_sl.max_bidi = 8;
+	ep->rx_sl.max_uni = 8;
+
+	/* The peer opens streams 8 and 4, in that order as packets can be
+	 * reordered. Opening 8 first must not stop 4 from being opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zassert_true(ret >= 0, "STREAM frame for stream 8 failed (%d)", ret);
+	closed_8 = take_opened_stream(ctx, 8);
+
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zassert_true(ret >= 0, "STREAM frame for stream 4 failed (%d)", ret);
+	closed_4 = take_opened_stream(ctx, 4);
+
+	/* Both are closed now. A late frame for either of them is ignored
+	 * and does not open the stream again.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 8);
+	zexpect_true(ret >= 0, "Late frame for stream 8 failed (%d)", ret);
+	ret = stream_fin_for_stream(ep, ctx, 4);
+	zexpect_true(ret >= 0, "Late frame for stream 4 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed peer stream was opened again");
+
+	/* Stream 0 was opened implicitly by stream 4 (RFC 9000 ch. 2.1) but
+	 * not used yet, so it can still be opened.
+	 */
+	ret = stream_fin_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STREAM frame for stream 0 failed (%d)", ret);
+	opened_0 = take_opened_stream(ctx, 0);
+
+	/* A stream of our own that was opened and closed, stream 1 */
+	ctx->stream_id_counter[0] = 1;
+	ret = stream_fin_for_stream(ep, ctx, 1);
+	zexpect_true(ret >= 0, "Late frame for our stream 1 failed (%d)", ret);
+	zexpect_true(k_fifo_is_empty(&ctx->incoming.stream_q),
+		     "A closed stream of our own was opened as a peer stream");
+	ctx->stream_id_counter[0] = 0;
+
+	return_opened_stream(ctx, opened_0);
+	return_opened_stream(ctx, closed_4);
+	return_opened_stream(ctx, closed_8);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_508_unused_stream_ids_stay_unopened)
+{
+	struct quic_stream_seq_set set = { 0 };
+	uint64_t top = ARRAY_SIZE(set.gaps);
+
+	/* The peer leaves stream 0 unused while it opens and closes more
+	 * streams than any fixed window would cover. Stream 0 is opened
+	 * implicitly only and can still be used later.
+	 */
+	for (uint64_t seq = 1; seq <= 70; seq++) {
+		zassert_true(stream_seq_gaps_fit(&set, seq), "No room for stream %" PRIu64, seq);
+		stream_seq_mark_opened(&set, seq);
+	}
+
+	zexpect_false(stream_seq_was_opened(&set, 0), "An unused stream was taken as opened");
+	zexpect_true(stream_seq_was_opened(&set, 1), "An opened stream was not taken as opened");
+	zexpect_true(stream_seq_was_opened(&set, 70), "An opened stream was not taken as opened");
+	zexpect_false(stream_seq_was_opened(&set, 71),
+		      "A stream not opened yet was taken as opened");
+
+	stream_seq_mark_opened(&set, 0);
+	zexpect_true(stream_seq_was_opened(&set, 0), "A late first stream was not opened");
+	zexpect_equal(set.gap_count, 0, "%u unused streams left", set.gap_count);
+
+	/* Packets reordered: the highest stream the gaps allow comes first,
+	 * then each lower one. All of them can be opened.
+	 */
+	memset(&set, 0, sizeof(set));
+	zassert_true(stream_seq_gaps_fit(&set, top), "No room for stream %" PRIu64, top);
+	stream_seq_mark_opened(&set, top);
+
+	for (uint64_t seq = 0; seq < top; seq++) {
+		zexpect_false(stream_seq_was_opened(&set, seq),
+			      "Stream %" PRIu64 " taken as opened before it was used", seq);
+	}
+
+	for (uint64_t seq = top; seq > 0; seq--) {
+		stream_seq_mark_opened(&set, seq - 1U);
+	}
+
+	for (uint64_t seq = 0; seq <= top; seq++) {
+		zexpect_true(stream_seq_was_opened(&set, seq),
+			     "Stream %" PRIu64 " not opened", seq);
+	}
+
+	/* Leaving more streams unused than there is room for is more than
+	 * the peer may open.
+	 */
+	memset(&set, 0, sizeof(set));
+	zexpect_false(stream_seq_gaps_fit(&set, top + 1U),
+		      "Room claimed for more unused streams than can be kept");
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
@@ -8561,6 +8894,551 @@ ZTEST(net_socket_quic, test_510_client_retry_rejects_late_retry_without_mutation
 		      "Late Retry must preserve peer CID length");
 	zassert_mem_equal(ep->peer_cid, initial_scid, sizeof(initial_scid),
 			  "Late Retry must preserve peer CID");
+}
+
+/* Hand a payload with one CONNECTION_CLOSE frame to the frame parser, with
+ * the endpoint attached to a listening context that records the close.
+ */
+static int connection_close_from_peer(struct quic_endpoint *ep, struct quic_context *ctx,
+				      const uint8_t *payload, size_t len)
+{
+	bool ack_only = false;
+	int ret;
+
+	/* The parser drops a reference when it gives up on the connection */
+	atomic_set(&ep->refcount, 2);
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, len, len, &ack_only);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+
+	return ret;
+}
+
+ZTEST(net_socket_quic, test_553_peer_connection_close_is_kept)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint8_t app_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+		0x41, 0x00, /* Error code 0x100 */
+		0,          /* Reason phrase length */
+	};
+	const uint8_t transport_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		0x0a,       /* Error code PROTOCOL_VIOLATION */
+		0x08,       /* Frame type STREAM */
+		3, 'b', 'a', 'd',
+	};
+	struct quic_peer_close close;
+	struct quic_context *ctx;
+	net_socklen_t optlen;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54358");
+
+	/* Nothing to read before the peer closes */
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_equal(ret, -1, "Peer close read before any close (%d)", ret);
+	zassert_equal(errno, ENOTCONN, "Expected ENOTCONN before any close (%d)", errno);
+
+	ret = connection_close_from_peer(ep, ctx, app_close, sizeof(app_close));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_ok(ret, "Failed to read the peer close (%d)", -errno);
+	zassert_equal(optlen, sizeof(close), "Unexpected option length %u", optlen);
+	zassert_true(close.application, "Expected an application close");
+	zassert_equal(close.error_code, 0x100, "Error code 0x%" PRIx64, close.error_code);
+	zassert_equal(close.frame_type, 0, "Frame type 0x%" PRIx64, close.frame_type);
+
+	ep = reset_test_ep(&test_ep_a);
+	ret = connection_close_from_peer(ep, ctx, transport_close, sizeof(transport_close));
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	optlen = sizeof(close);
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_ok(ret, "Failed to read the peer close (%d)", -errno);
+	zassert_false(close.application, "Expected a transport close");
+	zassert_equal(close.error_code, 0x0a, "Error code 0x%" PRIx64, close.error_code);
+	zassert_equal(close.frame_type, 0x08, "Frame type 0x%" PRIx64, close.frame_type);
+
+	/* A buffer too small for the answer is refused */
+	optlen = sizeof(close) - 1;
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, &close, &optlen);
+	zassert_equal(ret, -1, "Peer close read into a short buffer (%d)", ret);
+	zassert_equal(errno, ENOBUFS, "Expected ENOBUFS for a short buffer (%d)", errno);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+/* Wait for one of the events on a socket */
+static void wait_for_revents(int fd, short events, const char *what)
+{
+	struct zsock_pollfd pfd = {
+		.fd = fd,
+		.events = events,
+	};
+	int ret;
+
+	ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
+	zassert_true(ret > 0, "Timed out waiting for %s (%d)", what, ret < 0 ? -errno : ret);
+}
+
+/* A server and a client connected over loopback, with one stream of the
+ * client accepted by the server.
+ */
+struct reset_test_peers {
+	int server_sock;
+	int server_conn;
+	int server_stream;
+	int client_sock;
+	int client_stream;
+};
+
+/* As reset_test_connect(), with the client connection bound to a network
+ * interface before its first stream is opened.
+ */
+static void reset_test_connect_bound(struct reset_test_peers *peers, const char *server,
+				     const char *client, const char *ifname)
+{
+	static const char * const alpn_list[] = {
+		"test-quic",
+		NULL
+	};
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	ret = net_ipaddr_parse(server, strlen(server), (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server address %s", server);
+	ret = net_ipaddr_parse(client, strlen(client), (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client address %s", client);
+
+	prepare_quic_socket(&peers->server_sock, NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	setup_quic_certs(peers->server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(peers->server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	prepare_quic_socket(&peers->client_sock, (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+	setup_quic_certs(peers->client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(peers->client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	if (ifname != NULL) {
+		struct net_ifreq ifreq = { 0 };
+
+		strncpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name) - 1);
+		ret = zsock_setsockopt(peers->client_sock, ZSOCK_SOL_SOCKET,
+				       ZSOCK_SO_BINDTODEVICE, &ifreq, sizeof(ifreq));
+		zassert_ok(ret, "Failed to bind the client to %s (%d)", ifname, -errno);
+	}
+
+	peers->client_stream = quic_stream_open(peers->client_sock, QUIC_STREAM_CLIENT,
+						QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(peers->client_stream >= 0, "Failed to open client stream (%d)",
+		     peers->client_stream);
+
+	wait_for_revents(peers->server_sock, ZSOCK_POLLIN, "the connection");
+	peers->server_conn = zsock_accept(peers->server_sock, NULL, NULL);
+	zassert_true(peers->server_conn >= 0, "Failed to accept the connection (%d)", -errno);
+
+	/* The server learns of the stream from the first data on it */
+	ret = quic_test_send_all(peers->client_stream, (const uint8_t *)"x", 1);
+	zassert_ok(ret, "Failed to send on the client stream (%d)", ret);
+
+	wait_for_revents(peers->server_conn, ZSOCK_POLLIN, "the stream");
+	peers->server_stream = zsock_accept(peers->server_conn, NULL, NULL);
+	zassert_true(peers->server_stream >= 0, "Failed to accept the stream (%d)", -errno);
+}
+
+static void reset_test_connect(struct reset_test_peers *peers, const char *server,
+			       const char *client)
+{
+	reset_test_connect_bound(peers, server, client, NULL);
+}
+
+ZTEST(net_socket_quic, test_557_close_frame_before_handshake_is_transport_close)
+{
+	const uint8_t app_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+		0x41, 0x00, /* Error code 0x100 */
+		0,          /* Reason phrase length */
+	};
+	const uint8_t transport_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		0x0a,       /* Error code PROTOCOL_VIOLATION */
+		0x08,       /* Frame type STREAM */
+		3, 'b', 'a', 'd',
+	};
+	const uint8_t converted_close[] = {
+		QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		0x0c,       /* Error code APPLICATION_ERROR */
+		0,          /* Frame type */
+		0,          /* Reason phrase length */
+	};
+	const char *reason = "bad";
+	const char *app_reason = "app";
+	uint64_t error_code = 0x0a;
+	uint64_t frame_type = 0x08;
+	uint8_t type = QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT;
+	uint8_t frame[32];
+	int len;
+
+	/* RFC 9000 ch. 19.19: only a transport close carries the type of the
+	 * frame that caused it.
+	 */
+	len = quic_build_connection_close(frame, sizeof(frame),
+					  QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+					  0x100, 0x08, NULL);
+	zassert_equal(len, sizeof(app_close), "Application close of %d bytes", len);
+	zassert_mem_equal(frame, app_close, sizeof(app_close), "Application close mismatch");
+
+	len = quic_build_connection_close(frame, sizeof(frame), type, error_code, frame_type,
+					  reason);
+	zassert_equal(len, sizeof(transport_close), "Transport close of %d bytes", len);
+	zassert_mem_equal(frame, transport_close, sizeof(transport_close),
+			  "Transport close mismatch");
+
+	/* A transport close is sent as it is at every level, an application
+	 * close only once the application keys are in use. Before that it
+	 * becomes a transport close with APPLICATION_ERROR and no reason
+	 * (RFC 9000 ch. 10.2.3).
+	 */
+	quic_close_frame_at_level(QUIC_SECRET_LEVEL_HANDSHAKE, &type, &error_code, &frame_type,
+				  &reason);
+	zassert_equal(type, QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT, "Type changed to 0x%02x",
+		      type);
+	zassert_equal(error_code, 0x0a, "Error code changed to 0x%" PRIx64, error_code);
+
+	type = QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION;
+	error_code = 0x100;
+	frame_type = 0;
+	reason = app_reason;
+	quic_close_frame_at_level(QUIC_SECRET_LEVEL_APPLICATION, &type, &error_code, &frame_type,
+				  &reason);
+	zassert_equal(type, QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION,
+		      "Type changed to 0x%02x at the application level", type);
+	zassert_equal(error_code, 0x100, "Error code changed to 0x%" PRIx64, error_code);
+	zassert_equal_ptr(reason, app_reason, "Reason dropped at the application level");
+
+	quic_close_frame_at_level(QUIC_SECRET_LEVEL_INITIAL, &type, &error_code, &frame_type,
+				  &reason);
+	zassert_equal(type, QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT,
+		      "Application close kept before the handshake (0x%02x)", type);
+	zassert_equal(error_code, 0x0c, "Expected APPLICATION_ERROR, got 0x%" PRIx64,
+		      error_code);
+	zassert_is_null(reason, "Reason kept before the handshake");
+
+	len = quic_build_connection_close(frame, sizeof(frame), type, error_code, frame_type,
+					  reason);
+	zassert_equal(len, sizeof(converted_close), "Converted close of %d bytes", len);
+	zassert_mem_equal(frame, converted_close, sizeof(converted_close),
+			  "Converted close mismatch");
+}
+
+/* Wait for a CONNECTION_CLOSE from the peer and read it */
+static void wait_for_peer_close(int fd, struct quic_peer_close *close)
+{
+	net_socklen_t optlen;
+	int ret;
+
+	for (int i = 0; i < 100; i++) {
+		optlen = sizeof(*close);
+		ret = zsock_getsockopt(fd, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_PEER_CLOSE, close,
+				       &optlen);
+		if (ret == 0) {
+			return;
+		}
+
+		zassert_equal(errno, ENOTCONN, "Failed to read the peer close (%d)", errno);
+		k_msleep(10);
+	}
+
+	zassert_unreachable("Timed out waiting for the peer to close");
+}
+
+ZTEST(net_socket_quic, test_554_application_close_reaches_the_peer)
+{
+	struct reset_test_peers peers;
+	struct quic_peer_close close;
+	uint64_t code = 0x100;
+	net_socklen_t optlen;
+	int err;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54359", "127.0.0.1:19959");
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+
+	/* A code that does not fit a varint is refused (RFC 9000 ch. 16) */
+	code = 1ULL << 62;
+	ret = zsock_setsockopt(peers.client_sock, ZSOCK_SOL_QUIC,
+			       ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE, &code, sizeof(code));
+	zassert_equal(ret, -1, "Accepted a close code that does not fit a varint");
+	zassert_equal(errno, EINVAL, "Expected EINVAL for too large a code (%d)", errno);
+
+	/* With the code set, closing the connection sends an application
+	 * close carrying it, which the server reads from its connection
+	 * socket.
+	 */
+	code = 0x100;
+	ret = zsock_setsockopt(peers.client_sock, ZSOCK_SOL_QUIC,
+			       ZSOCK_QUIC_SO_APPLICATION_CLOSE_CODE, &code, sizeof(code));
+	zassert_ok(ret, "Failed to set the application close code (%d)", -errno);
+
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+
+	wait_for_peer_close(peers.server_conn, &close);
+	zassert_true(close.application, "Expected an application close");
+	zassert_equal(close.error_code, code, "Error code 0x%" PRIx64, close.error_code);
+
+	optlen = sizeof(err);
+	ret = zsock_getsockopt(peers.server_conn, ZSOCK_SOL_SOCKET, ZSOCK_SO_ERROR, &err,
+			       &optlen);
+	zassert_ok(ret, "Failed to read SO_ERROR (%d)", -errno);
+	zassert_equal(err, ECONNRESET, "SO_ERROR %d once the peer closed", err);
+
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+static void log_stream_cb(struct quic_stream *stream, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	LOG_ERR("Stream %" PRIu64 " (sock %d, %s) is still there", stream->id, stream->sock,
+		stream->ep != NULL && stream->ep->is_server ? "server" : "client");
+}
+
+/* Wait for closed streams to be released until count streams are left */
+static void wait_for_streams(int count)
+{
+	struct test_config cfg;
+
+	for (int i = 0; i < 20; i++) {
+		memset(&cfg, 0, sizeof(cfg));
+		quic_stream_foreach(test_stream_cb, &cfg);
+		if (cfg.stream_count == count) {
+			return;
+		}
+
+		k_msleep(50);
+	}
+
+	quic_stream_foreach(log_stream_cb, NULL);
+	zassert_unreachable("%d streams left, expected %d", cfg.stream_count, count);
+}
+
+/* Wait for the streams of a closed connection to be released */
+static void wait_for_streams_released(void)
+{
+	wait_for_streams(0);
+}
+
+/* The network context of the UDP socket underneath a client connection */
+static struct net_context *client_udp_context(int conn_sock)
+{
+	struct quic_context *ctx = quic_get_context(conn_sock);
+	struct quic_endpoint *ep;
+	struct net_context *net_ctx;
+
+	zassert_not_null(ctx, "No context for the client connection");
+	ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
+	zassert_not_null(ep, "No endpoint for the client connection");
+	zassert_true(ep->sock >= 0, "No UDP socket for the client connection");
+
+	net_ctx = zvfs_get_fd_obj(ep->sock, NULL, 0);
+	zassert_not_null(net_ctx, "No network context for the UDP socket");
+
+	return net_ctx;
+}
+
+ZTEST(net_socket_quic, test_556_connection_socket_binds_to_interface)
+{
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	struct reset_test_peers peers;
+	struct net_context *net_ctx;
+	struct net_ifreq ifreq = { 0 };
+	char ifname[NET_IFNAMSIZ];
+	int client_sock;
+	int ret;
+
+	/* Bound to the loopback interface, the handshake with a server on it
+	 * goes through, and the UDP socket underneath carries the binding.
+	 */
+	ret = net_if_get_name(lo0, ifname, sizeof(ifname));
+	zassert_true(ret > 0, "Cannot get the loopback interface name (%d)", ret);
+
+	reset_test_connect_bound(&peers, "127.0.0.1:54361", "127.0.0.1:19961", ifname);
+
+	net_ctx = client_udp_context(peers.client_sock);
+	zassert_true(net_context_is_bound_to_iface(net_ctx), "UDP socket not bound");
+	zassert_equal_ptr(net_context_get_iface(net_ctx), lo0,
+			  "UDP socket bound to the wrong interface");
+
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+	ret = quic_connection_close(peers.client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers.server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	wait_for_streams_released();
+
+	/* A connection can be bound to any interface before anything is
+	 * sent on it, but not to a name no interface has.
+	 */
+	ret = net_ipaddr_parse("127.0.0.1:54361", strlen("127.0.0.1:54361"),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server address");
+	ret = net_ipaddr_parse("127.0.0.1:19962", strlen("127.0.0.1:19962"),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client address");
+
+	prepare_quic_socket(&client_sock, (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	ret = net_if_get_name(eth_iface, ifname, sizeof(ifname));
+	zassert_true(ret > 0, "Cannot get the Ethernet interface name (%d)", ret);
+
+	strncpy(ifreq.ifr_name, ifname, sizeof(ifreq.ifr_name) - 1);
+	ret = zsock_setsockopt(client_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+			       &ifreq, sizeof(ifreq));
+	zassert_ok(ret, "Failed to bind the client to %s (%d)", ifname, -errno);
+
+	net_ctx = client_udp_context(client_sock);
+	zassert_true(net_context_is_bound_to_iface(net_ctx), "UDP socket not bound");
+	zassert_equal_ptr(net_context_get_iface(net_ctx), eth_iface,
+			  "UDP socket bound to the wrong interface");
+
+	strcpy(ifreq.ifr_name, "nosuch0");
+	ret = zsock_setsockopt(client_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+			       &ifreq, sizeof(ifreq));
+	zassert_equal(ret, -1, "Bound the client to an interface that does not exist");
+	zassert_equal(errno, ENOENT, "Expected ENOENT for an unknown interface (%d)", errno);
+
+	ret = quic_connection_close(client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers.server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+static void reset_test_disconnect(struct reset_test_peers *peers)
+{
+	int ret;
+
+	ret = quic_connection_close(peers->server_conn);
+	zassert_ok(ret, "Failed to close the server connection (%d)", ret);
+	ret = quic_connection_close(peers->client_sock);
+	zassert_ok(ret, "Failed to close the client connection (%d)", ret);
+	ret = quic_connection_close(peers->server_sock);
+	zassert_ok(ret, "Failed to close the server socket (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_555_stream_open_honours_peer_stream_limit)
+{
+	struct reset_test_peers peers;
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+	uint64_t stream_id;
+	int stream;
+	int ret;
+
+	reset_test_connect(&peers, "127.0.0.1:54360", "127.0.0.1:19960");
+
+	ctx = quic_get_context(peers.client_sock);
+	zassert_not_null(ctx, "No context for the client connection");
+	ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
+	zassert_not_null(ep, "No endpoint for the client connection");
+
+	/* The limits start out as the server's transport parameters */
+	zassert_equal(ep->peer_params.max_streams_bidi, CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI,
+		      "Bidi stream limit %" PRIu64, ep->peer_params.max_streams_bidi);
+	zassert_equal(ep->peer_params.max_streams_uni, CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI,
+		      "Uni stream limit %" PRIu64, ep->peer_params.max_streams_uni);
+	zassert_equal(ctx->stream_id_counter[0], 1, "Opened %" PRIu64 " bidi streams",
+		      ctx->stream_id_counter[0]);
+
+	/* The streams of each type are numbered on their own, so a stream of
+	 * the other type does not count: the first unidirectional stream is
+	 * stream 2, whatever was opened before (RFC 9000 ch. 2.1).
+	 */
+	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
+				  QUIC_STREAM_UNIDIRECTIONAL, 0);
+	zassert_true(stream >= 0, "Failed to open a unidirectional stream (%d)", stream);
+	ret = quic_stream_get_id(stream, &stream_id);
+	zassert_ok(ret, "Failed to get the stream id (%d)", ret);
+	zassert_equal(stream_id, 2, "Unidirectional stream %" PRIu64 ", expected 2", stream_id);
+	zassert_equal(ctx->stream_id_counter[0], 1, "Opened %" PRIu64 " bidi streams",
+		      ctx->stream_id_counter[0]);
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+
+	/* Its FIN opens the stream at the server, which accepts and closes it */
+	wait_for_revents(peers.server_conn, ZSOCK_POLLIN, "the unidirectional stream");
+	stream = zsock_accept(peers.server_conn, NULL, NULL);
+	zassert_true(stream >= 0, "Failed to accept the unidirectional stream (%d)", -errno);
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	wait_for_streams(2);
+
+	/* With as many streams open as the peer allows, no more is opened
+	 * and the peer is told so, once per limit.
+	 */
+	ep->peer_params.max_streams_bidi = 1;
+
+	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
+				  QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_equal(stream, -EAGAIN, "Stream opened past the peer's limit (%d)", stream);
+	zassert_equal(ep->tx_sl.blocked_sent_bidi, 1, "STREAMS_BLOCKED not sent for limit 1");
+
+	/* The server closes its end of the stream, which frees a stream slot
+	 * and makes it raise the limit with a MAX_STREAMS frame.
+	 */
+	ret = zsock_close(peers.server_stream);
+	zassert_ok(ret, "Failed to close the server stream (%d)", -errno);
+	wait_for_streams(1);
+
+	for (int i = 0; i < 100 && ep->peer_params.max_streams_bidi <= 1; i++) {
+		k_msleep(10);
+	}
+
+	zassert_true(ep->peer_params.max_streams_bidi > 1,
+		     "Bidi stream limit %" PRIu64 " not raised", ep->peer_params.max_streams_bidi);
+
+	stream = quic_stream_open(peers.client_sock, QUIC_STREAM_CLIENT,
+				  QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(stream >= 0, "Failed to open a stream within the limit (%d)", stream);
+	zassert_equal(ctx->stream_id_counter[0], 2, "Opened %" PRIu64 " bidi streams",
+		      ctx->stream_id_counter[0]);
+
+	ret = zsock_close(stream);
+	zassert_ok(ret, "Failed to close the stream (%d)", -errno);
+	ret = zsock_close(peers.client_stream);
+	zassert_ok(ret, "Failed to close the client stream (%d)", -errno);
+
+	reset_test_disconnect(&peers);
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
