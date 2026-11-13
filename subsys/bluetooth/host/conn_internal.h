@@ -92,6 +92,7 @@ enum {
 
 	BT_CONN_LE_FEATURES_EXCHANGED,        /* bt_conn.le.features is valid */
 	BT_CONN_AUTO_VERSION_INFO,            /* Auto-initiated LE version done */
+	BT_CONN_LTK_DERIVED_LATER,            /* LTK derived over BR/EDR after LE ACL created */
 
 	BT_CONN_CTE_RX_ENABLED,               /* CTE receive and sampling is enabled */
 	BT_CONN_CTE_RX_PARAMS_SET,            /* CTE parameters are set */

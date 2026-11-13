@@ -148,6 +148,7 @@ enum {
 	SMP_FLAG_BR_CONNECTED,	/* if BR/EDR channel is connected */
 	SMP_FLAG_BR_PAIR,	/* if should start BR/EDR pairing */
 	SMP_FLAG_CT2,		/* if should use H7 for keys derivation */
+	SMP_FLAG_DERIVE_LTK,	/* if LTK should be derived */
 
 	/* Total number of flags - must be at the end */
 	SMP_NUM_FLAGS,
@@ -392,6 +393,15 @@ no_callbacks:
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 static uint8_t legacy_get_pair_method(struct bt_smp *smp, uint8_t remote_io);
 #endif
+
+/* Core v7.0, Vol 3, Part H, 2.4.3.2: an LTK derived from a BR/EDR link key
+ * only encrypts LE ACLs created after the pairing over BR/EDR completed.
+ */
+static bool ltk_derived_later(const struct bt_conn *conn)
+{
+	return IS_ENABLED(CONFIG_BT_SMP_DERIVE_LTK) &&
+	       atomic_test_bit(conn->flags, BT_CONN_LTK_DERIVED_LATER);
+}
 
 static bool smp_keys_check(struct bt_conn *conn)
 {
@@ -766,6 +776,40 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 #endif /* CONFIG_BT_SIGNING */
 
 #if defined(CONFIG_BT_CLASSIC)
+static void br_conn_link_key_drop(struct bt_conn *conn, void *data)
+{
+	if (conn->br.link_key == data) {
+		conn->br.link_key = NULL;
+	}
+}
+
+/* A BR/EDR connection to the same device can still reference the link key, and
+ * the pool slot is reused for another device once cleared. Clearing can block,
+ * so the references are dropped after it.
+ */
+static void smp_link_key_clear(struct bt_keys_link_key *link_key)
+{
+	bt_keys_link_key_clear(link_key);
+	bt_conn_foreach(BT_CONN_TYPE_BR, br_conn_link_key_drop, link_key);
+}
+
+static void le_conn_keys_drop(struct bt_conn *conn, void *data)
+{
+	if (conn->le.keys == data) {
+		conn->le.keys = NULL;
+	}
+}
+
+/* An LE connection to the same device can still reference the keys, and the
+ * pool slot is reused for another device once cleared. Clearing can block, so
+ * the references are dropped after it.
+ */
+static void smp_br_keys_clear(struct bt_keys *keys)
+{
+	bt_keys_clear(keys);
+	bt_conn_foreach(BT_CONN_TYPE_LE, le_conn_keys_drop, keys);
+}
+
 static bool ltk_derive_link_key_allowed(struct bt_smp *smp)
 {
 	struct bt_conn *conn;
@@ -831,7 +875,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 	/* Remove the bonding information */
 	link_key = bt_keys_find_link_key(&conn->le.dst.a);
 	if (link_key != NULL) {
-		bt_keys_link_key_clear(link_key);
+		smp_link_key_clear(link_key);
 	}
 
 	/*
@@ -866,6 +910,7 @@ static void sc_derive_link_key(struct bt_smp *smp)
 
 	if (bt_crypto_h6(ilk, lebr, link_key->val)) {
 		bt_keys_link_key_clear(link_key);
+		return;
 	}
 
 	if (conn->le.keys->flags & BT_KEYS_SC) {
@@ -934,6 +979,99 @@ static void smp_br_id_add_replace(struct bt_keys *keys)
 	bt_id_add(keys);
 }
 
+static void le_conn_ltk_derived(struct bt_conn *conn, void *data)
+{
+	const struct bt_keys *keys = data;
+
+	if ((conn->state == BT_CONN_CONNECTED) &&
+	    bt_conn_is_peer_addr_le(conn, keys->id, &keys->addr)) {
+		atomic_set_bit(conn->flags, BT_CONN_LTK_DERIVED_LATER);
+	}
+}
+
+/* Runs when the pairing completes: no LE ACL may be encrypted with the LTK
+ * before that, and only LE ACLs created later afterwards.
+ */
+static void smp_br_derive_ltk(struct bt_smp_br *smp)
+{
+	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
+	static const uint8_t brle[4] = { 0x65, 0x6c, 0x72, 0x62 };
+	struct bt_conn *conn = smp->chan.chan.conn;
+	struct bt_keys_link_key *link_key = conn->br.link_key;
+	struct bt_keys *keys;
+	bt_addr_le_t addr;
+	uint8_t ilk[16];
+
+	LOG_DBG("");
+
+	if (link_key == NULL) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) &&
+	    conn->encrypt != BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
+		LOG_WRN("Using P192 Link Key for P256 LTK derivation");
+	}
+
+	/*
+	 * For dualmode devices LE address is same as BR/EDR address and is of
+	 * public type.
+	 */
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
+
+	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
+	if (keys == NULL) {
+		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
+		return;
+	}
+
+	if (atomic_test_bit(smp->flags, SMP_FLAG_CT2)) {
+		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
+		static const uint8_t salt[16] = { 0x32, 0x70, 0x6d, 0x74,
+					       0x00, 0x00, 0x00, 0x00,
+					       0x00, 0x00, 0x00, 0x00,
+					       0x00, 0x00, 0x00, 0x00 };
+
+		if (bt_crypto_h7(salt, link_key->val, ilk) != 0) {
+			smp_br_keys_clear(keys);
+			return;
+		}
+	} else {
+		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
+		static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
+
+		if (bt_crypto_h6(link_key->val, tmp2, ilk) != 0) {
+			smp_br_keys_clear(keys);
+			return;
+		}
+	}
+
+	if (bt_crypto_h6(ilk, brle, keys->ltk.val) != 0) {
+		smp_br_keys_clear(keys);
+		return;
+	}
+
+	(void)memset(keys->ltk.ediv, 0, sizeof(keys->ltk.ediv));
+	(void)memset(keys->ltk.rand, 0, sizeof(keys->ltk.rand));
+	keys->enc_size = smp->enc_key_size;
+
+	if ((link_key->flags & BT_LINK_KEY_AUTHENTICATED) != 0U) {
+		keys->flags |= BT_KEYS_AUTHENTICATED;
+	} else {
+		keys->flags &= ~BT_KEYS_AUTHENTICATED;
+	}
+
+	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
+		keys->flags |= BT_KEYS_SC;
+	} else {
+		keys->flags &= ~BT_KEYS_SC;
+	}
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, le_conn_ltk_derived, keys);
+
+	LOG_DBG("LTK derived from LinkKey");
+}
+
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -946,13 +1084,18 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 	 * and is of public type.
 	 */
 	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
+
+	if ((status == 0U) && atomic_test_bit(smp->flags, SMP_FLAG_DERIVE_LTK)) {
+		smp_br_derive_ltk(smp);
+	}
+
 	keys = bt_keys_find_addr(conn->id, &addr);
 
 	if (status) {
 		struct bt_conn_auth_info_cb *listener, *next;
 
 		if (keys) {
-			bt_keys_clear(keys);
+			smp_br_keys_clear(keys);
 		}
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
@@ -1065,25 +1208,15 @@ static void smp_br_init(struct bt_smp_br *smp)
 	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_FAIL);
 }
 
-static void smp_br_derive_ltk(struct bt_smp_br *smp)
+/* The LTK itself is derived when the pairing completes */
+static void smp_br_derive_ltk_prepare(struct bt_smp_br *smp)
 {
-	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
-	static const uint8_t brle[4] = { 0x65, 0x6c, 0x72, 0x62 };
 	struct bt_conn *conn = smp->chan.chan.conn;
-	struct bt_keys_link_key *link_key = conn->br.link_key;
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
-	uint8_t ilk[16];
 
-	LOG_DBG("");
-
-	if (!link_key) {
+	if (conn->br.link_key == NULL) {
 		return;
-	}
-
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR) &&
-	    conn->encrypt != BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
-		LOG_WRN("Using P192 Link Key for P256 LTK derivation");
 	}
 
 	/*
@@ -1095,58 +1228,10 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	keys = bt_keys_find_addr(conn->id, &addr);
 	if (keys != NULL) {
 		LOG_DBG("Clear the current keys for %s", bt_addr_le_str(&addr));
-		bt_keys_clear(keys);
+		smp_br_keys_clear(keys);
 	}
 
-	keys = bt_keys_get_type(BT_KEYS_LTK_P256, conn->id, &addr);
-	if (!keys) {
-		LOG_ERR("Unable to get keys for %s", bt_addr_le_str(&addr));
-		return;
-	}
-
-	if (atomic_test_bit(smp->flags, SMP_FLAG_CT2)) {
-		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
-		static const uint8_t salt[16] = { 0x32, 0x70, 0x6d, 0x74,
-					       0x00, 0x00, 0x00, 0x00,
-					       0x00, 0x00, 0x00, 0x00,
-					       0x00, 0x00, 0x00, 0x00 };
-
-		if (bt_crypto_h7(salt, link_key->val, ilk)) {
-			bt_keys_link_key_clear(link_key);
-			return;
-		}
-	} else {
-		/* constants as specified in Core Spec Vol.3 Part H 2.4.2.5 */
-		static const uint8_t tmp2[4] = { 0x32, 0x70, 0x6d, 0x74 };
-
-		if (bt_crypto_h6(link_key->val, tmp2, ilk)) {
-			bt_keys_clear(keys);
-			return;
-		}
-	}
-
-	if (bt_crypto_h6(ilk, brle, keys->ltk.val)) {
-		bt_keys_clear(keys);
-		return;
-	}
-
-	(void)memset(keys->ltk.ediv, 0, sizeof(keys->ltk.ediv));
-	(void)memset(keys->ltk.rand, 0, sizeof(keys->ltk.rand));
-	keys->enc_size = smp->enc_key_size;
-
-	if (link_key->flags & BT_LINK_KEY_AUTHENTICATED) {
-		keys->flags |= BT_KEYS_AUTHENTICATED;
-	} else {
-		keys->flags &= ~BT_KEYS_AUTHENTICATED;
-	}
-
-	if (conn->encrypt == BT_HCI_ENCRYPTION_ON_BR_AES_CCM) {
-		keys->flags |= BT_KEYS_SC;
-	} else {
-		keys->flags &= ~BT_KEYS_SC;
-	}
-
-	LOG_DBG("LTK derived from LinkKey");
+	atomic_set_bit(smp->flags, SMP_FLAG_DERIVE_LTK);
 }
 
 static struct net_buf *smp_br_create_pdu(struct bt_smp_br *smp, uint8_t op,
@@ -1395,7 +1480,7 @@ static uint8_t smp_br_pairing_req(struct bt_smp_br *smp, struct net_buf *buf)
 	/* derive LTK if requested and clear distribution bits */
 	if ((smp->local_dist & BT_SMP_DIST_ENC_KEY) &&
 	    (smp->remote_dist & BT_SMP_DIST_ENC_KEY)) {
-		smp_br_derive_ltk(smp);
+		smp_br_derive_ltk_prepare(smp);
 	}
 	smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
 	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
@@ -1463,7 +1548,7 @@ static uint8_t smp_br_pairing_rsp(struct bt_smp_br *smp, struct net_buf *buf)
 	/* derive LTK if requested and clear distribution bits */
 	if ((smp->local_dist & BT_SMP_DIST_ENC_KEY) &&
 	    (smp->remote_dist & BT_SMP_DIST_ENC_KEY)) {
-		smp_br_derive_ltk(smp);
+		smp_br_derive_ltk_prepare(smp);
 	}
 	smp->local_dist &= ~BT_SMP_DIST_ENC_KEY;
 	smp->remote_dist &= ~BT_SMP_DIST_ENC_KEY;
@@ -1530,16 +1615,23 @@ static void convert_to_id_on_irk_match(struct bt_conn *conn, void *data)
 {
 	struct bt_keys *keys = data;
 
-	if (!bt_addr_le_is_rpa(&conn->le.dst)) {
+	if ((conn->id != keys->id) || !bt_addr_le_is_rpa(&conn->le.dst)) {
 		return;
 	}
 
 	if (bt_addr_matches_irk(&conn->le.dst.a, keys->irk.val)) {
 		if (conn->le.keys != NULL && conn->le.keys != keys) {
-			bt_keys_clear(conn->le.keys);
+			smp_br_keys_clear(conn->le.keys);
 		}
 
 		conn->le.keys = keys;
+		/* An LTK the keys hold already can be a derived one, which this
+		 * older LE ACL may not use.
+		 */
+		if ((keys->keys & BT_KEYS_LTK_P256) != 0U) {
+			atomic_set_bit(conn->flags, BT_CONN_LTK_DERIVED_LATER);
+		}
+
 		/* always update last use RPA */
 		bt_addr_copy(&keys->irk.rpa, &conn->le.dst.a);
 		bt_addr_le_copy(&conn->le.dst, &keys->addr);
@@ -1588,11 +1680,6 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 
 	/* if all keys were distributed, pairing is done */
 	if (!smp->local_dist && !smp->remote_dist) {
-		/* TODO: consider the follow cases (BLE to BR derivation need to consider them too):
-		 * (1) the ble connection is already encrypted, then the new LTK is derived.
-		 * (2) the ble connection is not encrypted, the LTK is derived,
-		 *     how to trigger the BLE encryption.
-		 */
 		smp_pairing_br_complete(smp, 0);
 	}
 
@@ -3061,6 +3148,11 @@ bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv, uint
 		return true;
 	}
 
+	if (ltk_derived_later(conn)) {
+		LOG_WRN("LTK derived after this LE ACL was created");
+		goto no_key;
+	}
+
 	if (!conn->le.keys) {
 		conn->le.keys = bt_keys_find(BT_KEYS_LTK_P256, conn->id,
 					     &conn->le.dst);
@@ -3101,6 +3193,7 @@ bool bt_smp_request_ltk(struct bt_conn *conn, uint64_t rand, uint16_t ediv, uint
 	}
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
+no_key:
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
 		/* Notify higher level that security failed if security was
 		 * initiated by peripheral.
@@ -3141,16 +3234,29 @@ static int smp_send_security_req(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	/* early verify if required sec level if reachable */
-	if (!(sec_level_reachable(smp) || smp_keys_check(conn))) {
-		return -EINVAL;
+	if (ltk_derived_later(conn)) {
+		return -EPERM;
 	}
 
-	if (!conn->le.keys) {
+	/* The keys can be cleared or replaced from the Bluetooth RX context,
+	 * which can preempt an application thread here.
+	 */
+	k_sched_lock();
+
+	/* early verify if required sec level if reachable */
+	if (!(sec_level_reachable(smp) || smp_keys_check(conn))) {
+		err = -EINVAL;
+	} else if (conn->le.keys == NULL) {
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
-		if (!conn->le.keys) {
-			return -ENOMEM;
-		}
+		err = (conn->le.keys == NULL) ? -ENOMEM : 0;
+	} else {
+		err = 0;
+	}
+
+	k_sched_unlock();
+
+	if (err != 0) {
+		return err;
 	}
 
 	if (atomic_test_and_set_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
@@ -3364,6 +3470,7 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	struct bt_smp *smp;
 	struct bt_smp_pairing *req;
 	struct net_buf *req_buf;
+	bool has_keys;
 
 	LOG_DBG("");
 
@@ -3399,11 +3506,21 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (!conn->le.keys) {
+	/* As in smp_send_security_req(): the lookup and the assignment must
+	 * not be split by a change of the keys.
+	 */
+	k_sched_lock();
+
+	if (conn->le.keys == NULL) {
 		conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);
-		if (!conn->le.keys) {
-			return -ENOMEM;
-		}
+	}
+
+	has_keys = (conn->le.keys != NULL);
+
+	k_sched_unlock();
+
+	if (!has_keys) {
+		return -ENOMEM;
 	}
 
 	if (smp_init(smp)) {
@@ -4431,6 +4548,11 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 	    !(conn->le.keys->keys & BT_KEYS_LTK_P256)) {
 		LOG_INF("New auth requirements: 0x%x, repairing", auth);
 		goto pair;
+	}
+
+	if (ltk_derived_later(conn)) {
+		LOG_WRN("LTK derived after this LE ACL was created");
+		return BT_SMP_ERR_PAIRING_NOTSUPP;
 	}
 
 	if (bt_conn_le_start_encryption(conn, conn->le.keys->ltk.rand,
@@ -6288,6 +6410,8 @@ int bt_smp_start_security(struct bt_conn *conn)
 	{
 		int err;
 		struct bt_smp *smp;
+		struct bt_ltk ltk;
+		uint8_t enc_size;
 
 		smp = smp_chan_get(conn);
 		if (!smp) {
@@ -6304,16 +6428,29 @@ int bt_smp_start_security(struct bt_conn *conn)
 			return -EBUSY;
 		}
 
+		/* The keys can be cleared or replaced from the Bluetooth RX
+		 * context, which can preempt an application thread here.
+		 */
+		k_sched_lock();
+
 		if (!smp_keys_check(conn)) {
+			k_sched_unlock();
 			return smp_send_pairing_req(conn);
 		}
 
+		/* The LE ACL has to be re-created first */
+		if (ltk_derived_later(conn)) {
+			k_sched_unlock();
+			return -EPERM;
+		}
+
 		/* LE SC LTK and legacy central LTK are stored in same place */
-		err = bt_conn_le_start_encryption(conn,
-						  conn->le.keys->ltk.rand,
-						  conn->le.keys->ltk.ediv,
-						  conn->le.keys->ltk.val,
-						  conn->le.keys->enc_size);
+		ltk = conn->le.keys->ltk;
+		enc_size = conn->le.keys->enc_size;
+
+		k_sched_unlock();
+
+		err = bt_conn_le_start_encryption(conn, ltk.rand, ltk.ediv, ltk.val, enc_size);
 		if (err) {
 			return err;
 		}
@@ -6351,6 +6488,8 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	 */
 	if (conn->le.keys) {
 		bt_keys_clear(conn->le.keys);
+		/* An LTK derived over BR/EDR is gone with the old keys */
+		atomic_clear_bit(conn->flags, BT_CONN_LTK_DERIVED_LATER);
 	}
 
 	conn->le.keys = bt_keys_get_addr(conn->id, &conn->le.dst);

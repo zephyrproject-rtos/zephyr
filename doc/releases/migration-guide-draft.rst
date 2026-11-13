@@ -386,6 +386,12 @@ Bluetooth Host
   multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
   of the other connections.
 
+* An LTK derived from a BR/EDR link key no longer encrypts an LE connection that existed before
+  the pairing over BR/EDR completed (Core v7.0, Vol 3, Part H, 2.4.3.2). On such a connection
+  :c:func:`bt_conn_set_security` returns ``-EPERM`` instead, and the peer's requests to encrypt
+  it are rejected. Applications that need the connection encrypted with the derived LTK have to
+  disconnect and connect again.
+
 Bluetooth Mesh
 ==============
 
