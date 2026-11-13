@@ -323,6 +323,9 @@ static int slz_bt_open(const struct device *dev)
 
 	return 0;
 deinit:
+	k_thread_abort(&slz_ll_thread);
+	k_thread_abort(&slz_rx_thread);
+
 	sl_btctrl_deinit(); /* No-op if controller initialization failed */
 	return ret;
 }
