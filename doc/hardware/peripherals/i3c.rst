@@ -236,6 +236,27 @@ For I3C devices, the ``reg`` property has 3 elements:
   bits 16-31 of the PID) and the instance ID (left-shifted by 12,
   bits 12-15 of the PID).
 
+.. mermaid::
+   :caption: 48-bit Provisioned ID, most significant bit first
+   :alt: 48-bit Provisioned ID: bits 33 to 47 hold the manufacturer ID, bit 32
+         the ID type selector, bits 16 to 31 the part ID, bits 12 to 15 the
+         instance ID and bits 0 to 11 additional vendor-defined bits. The second
+         reg element holds bits 32 to 47 and the third reg element bits 0 to 31.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 48
+       bitWidth: 20
+   ---
+   packet
+     0-11: "Additional ID"
+     12-15: "Instance"
+     16-31: "Part ID"
+     32: "T"
+     33-47: "Manufacturer ID"
+
 Note that the unit-address (the part after ``@``) must match
 the ``reg`` property fully where each element is treated as
 32-bit integer, combining to form a 96-bit integer. This is
@@ -287,6 +308,23 @@ has 3 elements:
     * ``0`` is FM+ mode.
 
     * ``1`` is FM mode.
+
+.. mermaid::
+   :caption: LVR bits 7 to 0, most significant bit first
+   :alt: Legacy Virtual Register low byte: bits 5 to 7 hold the I2C device
+         index, bit 4 the I2C mode indicator, and bits 0 to 3 are reserved.
+
+   ---
+   config:
+     packet:
+       bitOrder: descending
+       bitsPerRow: 8
+       bitWidth: 64
+   ---
+   packet
+     0-3: "Reserved"
+     4: "Mode"
+     5-7: "Device index"
 
 Similar to I3C devices, the unit-address must match the ``reg``
 property fully where each element is treated as 32-bit integer,
