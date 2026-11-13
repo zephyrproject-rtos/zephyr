@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.pcie.capability_walkers:
+    platform_allow:
+      - qemu_x86
+    tags:
+      - drivers
+      - pcie
