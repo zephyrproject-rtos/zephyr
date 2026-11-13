@@ -217,9 +217,8 @@ static void virtio_pci_notify_queue(const struct device *dev, uint16_t queue_idx
 }
 
 /*
- * According to the spec 4.1.3.1, PCI virtio driver must use n byte accesses for n byte fields,
- * except for 64 bit fields where 32 bit accesses have to be used, so we are using this
- * function to write 64 bit values to 64 bit fields
+ * VirtIO PCI spec 4.1.3.1 requires 64-bit fields to be written
+ * as two individually little-endian 32-bit words.
  */
 static void virtio_pci_write64(uint64_t val, uint64_t *dst)
 {
