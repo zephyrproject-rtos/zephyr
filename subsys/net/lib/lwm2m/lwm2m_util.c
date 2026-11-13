@@ -144,8 +144,19 @@ int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit)
 {
 	size_t len;
 	char buf[PRECISION64_LEN + 1];
-	int64_t val1 = (int64_t)*input;
-	int64_t val2 = (*input - (int64_t)*input) * PRECISION64;
+	int64_t val1;
+	int64_t val2;
+
+	/*
+	 * The whole part is printed from an int64_t. NaN fails both comparisons, and the
+	 * infinities and larger values have no int64_t: converting them is undefined.
+	 */
+	if (!(*input >= (double)INT64_MIN && *input < (double)INT64_MAX)) {
+		return -EINVAL;
+	}
+
+	val1 = (int64_t)*input;
+	val2 = (*input - (int64_t)*input) * PRECISION64;
 
 	len = snprintk(buf, sizeof(buf), "%0*lld", PRECISION64_LEN,
 		       (long long)llabs(val2));
