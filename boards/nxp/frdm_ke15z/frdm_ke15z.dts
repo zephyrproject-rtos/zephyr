@@ -163,6 +163,11 @@
 	status = "okay";
 };
 
+&lptmr0 {
+	clock-frequency = <32768>;
+	clk-source = <2>;
+};
+
 &osc32 {
 	status = "okay";
 };
