@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2015-2016 Intel Corporation
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -323,7 +323,7 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 
 static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 {
-	struct bt_hci_cp_accept_sync_conn_req *cp;
+	struct bt_hci_cp_accept_sync_conn_req cp;
 	struct net_buf *buf;
 	int err;
 
@@ -332,21 +332,23 @@ static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 		return err;
 	}
 
+	bt_addr_copy(&cp.bdaddr, bdaddr);
+	cp.pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
+	cp.tx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp.rx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp.max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
+	cp.retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
+	cp.content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
+
+	/* Callbacks may need command buffers for controller configuration. */
+	notify_accept_sco_req_cmd(&cp);
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
-	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
-	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
-	cp->max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
-	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
-	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
-
-	notify_accept_sco_req_cmd(cp);
+	net_buf_add_mem(buf, &cp, sizeof(cp));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_SYNC_CONN_REQ, buf, NULL);
 	if (err) {
@@ -417,30 +419,29 @@ void bt_sco_cleanup_acl(struct bt_conn *sco)
 
 static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 {
+	struct bt_hci_cp_setup_sync_conn cp;
 	struct net_buf *buf;
-	struct bt_hci_cp_setup_sync_conn *cp;
 	int err;
+
+	LOG_DBG("handle : %x", sco_conn->sco.acl->handle);
+
+	cp.handle = sys_cpu_to_le16(sco_conn->sco.acl->handle);
+	cp.pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
+	cp.tx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp.rx_bandwidth = sys_cpu_to_le32(0x00001f40);
+	cp.max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
+	cp.retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
+	cp.content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
+
+	/* Callbacks may need command buffers for controller configuration. */
+	notify_setup_sco_cmd(sco_conn->sco.acl, &cp);
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
-	cp = net_buf_add(buf, sizeof(*cp));
-
-	(void)memset(cp, 0, sizeof(*cp));
-
-	LOG_DBG("handle : %x", sco_conn->sco.acl->handle);
-
-	cp->handle = sys_cpu_to_le16(sco_conn->sco.acl->handle);
-	cp->pkt_type = sys_cpu_to_le16(sco_conn->sco.pkt_type);
-	cp->tx_bandwidth = sys_cpu_to_le32(0x00001f40);
-	cp->rx_bandwidth = sys_cpu_to_le32(0x00001f40);
-	cp->max_latency = sys_cpu_to_le16(BT_HCI_SCO_MAX_LATENCY_DEFAULT);
-	cp->retrans_effort = BT_HCI_SCO_RETRANS_EFFORT_DEFAULT;
-	cp->content_format = sys_cpu_to_le16(sco_conn->sco.chan->voice_setting);
-
-	notify_setup_sco_cmd(sco_conn->sco.acl, cp);
+	net_buf_add_mem(buf, &cp, sizeof(cp));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_SETUP_SYNC_CONN, buf, NULL);
 	if (err < 0) {

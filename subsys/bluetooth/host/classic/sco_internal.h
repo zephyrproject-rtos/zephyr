@@ -2,7 +2,7 @@
  *  @brief Internal APIs for Bluetooth SCO handling.
  */
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -236,6 +236,10 @@ int bt_sco_conn_cb_unregister(struct bt_sco_conn_cb *cb);
  * The callbacks are typically used by audio profiles like HFP/HSP to
  * configure codec parameters, packet types, and other connection-specific
  * settings based on negotiated audio codec and quality requirements.
+ *
+ * Callbacks run before the SCO command buffer is allocated, allowing them to
+ * send controller configuration commands without holding that buffer.
+ * Command parameters may be modified and are valid only during the callback.
  *
  * @note Callbacks are optional and may be NULL if default behavior is desired
  */
