@@ -31,9 +31,9 @@ static const struct device *const sensors[] = {LISTIFY(10, DHT_DEVICE, ())};
 LISTIFY(10, DHT_IODEV, (;));
 
 #define DHT_IODEV_REF(i, _)                                                   \
-	COND_CODE_1(DT_NODE_EXISTS(DHT_ALIAS(i)), (CONCAT(&dht_iodev, i)), (NULL))
+	IF_ENABLED(DT_NODE_EXISTS(DHT_ALIAS(i)), (CONCAT(&dht_iodev, i),))
 
-static struct rtio_iodev *dht_iodev[] = { LISTIFY(10, DHT_IODEV_REF, (,)) };
+static struct rtio_iodev *dht_iodev[] = {LISTIFY(10, DHT_IODEV_REF, ())};
 
 RTIO_DEFINE(dht_ctx, 1, 1);
 
