@@ -8138,6 +8138,31 @@ ZTEST(net_socket_quic, test_548_reset_during_rejected_early_data_replay)
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
 }
 
+ZTEST(net_socket_quic, test_549_stream_shutdown_failure_sets_errno)
+{
+	struct quic_stream *stream;
+	int ret;
+
+	multi_server_start();
+	multi_client_connect(0);
+
+	stream = zvfs_get_fd_obj(multi_client_stream[0], NULL, 0);
+	zassert_not_null(stream, "No stream behind fd %d", multi_client_stream[0]);
+
+	/* The sending half was reset, so no FIN can be sent */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	stream->tx_reset = true;
+	k_mutex_unlock(&stream->tx_lock);
+
+	/* A failed shutdown() returns -1 and sets errno, as for any socket */
+	errno = 0;
+	ret = zsock_shutdown(multi_client_stream[0], ZSOCK_SHUT_WR);
+	zexpect_equal(ret, -1, "shutdown() returned %d", ret);
+	zexpect_equal(errno, EPIPE, "shutdown() set errno to %d", errno);
+
+	multi_server_stop(1);
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
