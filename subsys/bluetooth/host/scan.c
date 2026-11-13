@@ -1963,6 +1963,10 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		return -EAGAIN;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !BT_FEAT_LE(bt_dev.features)) {
+		return -ENOTSUP;
+	}
+
 	/* Check that the parameters have valid values */
 	if (!valid_le_scan_param(param)) {
 		return -EINVAL;

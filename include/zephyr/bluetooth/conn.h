@@ -1978,6 +1978,7 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *
  *  @return Zero on success or (negative) error code on failure.
  *  @return -ENOMEM No free connection object available.
+ *  @retval -ENOTSUP The Controller does not support LE.
  */
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *conn_param);
