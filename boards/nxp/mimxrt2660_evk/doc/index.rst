@@ -143,6 +143,23 @@ route them to LPSPI0. The board has no SPI target, so ``spi_loopback`` also need
 J56 pin 5 (SDO) shorted to J56 pin 6 (SDI). ``gpio_basic_api`` needs J51 pin 2
 shorted to pin 3; no jumper change is required for those pads.
 
+SRAMC Expansion Interface
+=========================
+
+J73 is a reserved SRAMC connector. The board pinctrl defines DA00..DA15 on
+PIO5_1..PIO5_16, CS0# on PIO5_0, WE# on PIO5_17, OE# on PIO5_18, ADV# on
+PIO5_19 and WAIT0 on PIO5_20. LB# and UB# are not routed to J73.
+
+On revision C1, the SRAMC routing resistors are unpopulated, and these PIO5
+pads connect to the XSPI1 PSRAM by default. Using J73 requires hardware rework
+and an external SRAM device. The SRAMC controller is disabled by default to
+preserve the boot-initialized PSRAM used for application data, stacks and heap.
+Hardware use also requires a memory layout that does not depend on that PSRAM.
+
+The :zephyr_file:`tests/drivers/build_all/memc` overlay enables SRAMC and
+supplies a hypothetical external SRAM and timings for compilation only.
+It must not be run with the default PSRAM memory layout.
+
 System Clock
 ============
 
