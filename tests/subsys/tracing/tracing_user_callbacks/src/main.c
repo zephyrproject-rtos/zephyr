@@ -46,6 +46,12 @@ void sys_trace_isr_exit_user(void)
 K_SEM_DEFINE(cb_sem, 0, 1);
 K_MUTEX_DEFINE(cb_mutex);
 
+/**
+ * @brief Verify user tracing callbacks identify the objects being traced.
+ *
+ * @ingroup tracing_api_tests
+ * @verifies ZEP-SRS-10-5
+ */
 ZTEST(tracing_user_callbacks, test_object_callbacks_fire)
 {
 	unsigned int sem_before = sem_give_calls;

@@ -118,6 +118,9 @@ TRACING_BACKEND_DEFINE(tracing_backend_uart, tracing_uart_backend_api);
  * output from the backend is equal to the input.
  *
  * @ingroup tracing_api_tests
+ * @verifies ZEP-SRS-10-1
+ * @verifies ZEP-SRS-10-7
+ * @verifies ZEP-SRS-10-10
  */
 ZTEST(tracing_api, test_tracing_sys_api)
 {
@@ -205,6 +208,8 @@ ZTEST(tracing_api, test_tracing_sys_api)
  * check the output for the backend.
  *
  * @ingroup tracing_api_tests
+ * @verifies ZEP-SRS-10-1
+ * @verifies ZEP-SRS-10-10
  */
 ZTEST(tracing_api, test_tracing_sys_api)
 {
@@ -223,6 +228,7 @@ ZTEST(tracing_api, test_tracing_sys_api)
  * check the output for the self-designed uart backend.
  *
  * @ingroup tracing_api_tests
+ * @verifies ZEP-SRS-10-3
  */
 ZTEST(tracing_api, test_tracing_data_format)
 {
@@ -252,6 +258,7 @@ ZTEST(tracing_api, test_tracing_data_format)
  * tracing_cmd_handle to detect the tracing behavior.
  *
  * @ingroup tracing_api_tests
+ * @verifies ZEP-SRS-10-2
  */
 ZTEST(tracing_api, test_tracing_cmd_manual)
 {

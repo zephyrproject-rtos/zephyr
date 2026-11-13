@@ -60,12 +60,25 @@
  * @version 0.8.0
  * @ingroup os_services
  * @{
+ *
+ * @satisfies ZEP-SRS-10-1
+ * @satisfies ZEP-SRS-10-2
+ * @satisfies ZEP-SRS-10-3
+ * @satisfies ZEP-SRS-10-4
+ * @satisfies ZEP-SRS-10-5
+ * @satisfies ZEP-SRS-10-6
+ * @satisfies ZEP-SRS-10-8
+ * @satisfies ZEP-SRS-10-9
+ * @satisfies ZEP-SRS-10-10
  */
 
 /**
  * @defgroup subsys_tracing_apis Tracing hooks
  * @ingroup subsys_tracing
  * @brief Hook points used by tracing backends.
+ *
+ * @satisfies ZEP-SRS-10-7
+ * @satisfies ZEP-SRS-10-11
  *
  * Macros invoked across kernel and subsystem code to mark entry, blocking, exit, and various
  * lifecycle events.
