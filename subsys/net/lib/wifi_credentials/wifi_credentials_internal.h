@@ -25,6 +25,16 @@ void wifi_credentials_cache_ssid(size_t idx, const struct wifi_credentials_heade
 void wifi_credentials_uncache_ssid(size_t idx);
 
 /**
+ * @brief Mark a slot as unusable.
+ *
+ * Called by the backend from wifi_credentials_backend_init() for a slot holding an entry that
+ * can neither be loaded nor removed.
+ *
+ * @param idx credential index
+ */
+void wifi_credentials_mark_unusable(size_t idx);
+
+/**
  * @brief Stores settings entry in flash.
  *
  * @param idx credential index
@@ -38,7 +48,8 @@ int wifi_credentials_store_entry(size_t idx, const void *buf, size_t buf_len);
  * @brief Deletes settings entry from flash.
  *
  * @param idx credential index
- * @return 0 on success, otherwise a negative error code
+ * @return 0 on success, -ENOENT if there is no entry at this index,
+ *         otherwise a negative error code
  */
 int wifi_credentials_delete_entry(size_t idx);
 

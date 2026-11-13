@@ -22,8 +22,11 @@ To use the Wi-Fi credentials library, enable the :kconfig:option:`CONFIG_WIFI_CR
 
 You can pick the backend using the following options:
 
-* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA` - Default option for non-secure targets, which includes a TF-M partition (non-minimal TF-M profile type).
-* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS` - Default option for secure targets.
+* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` - Default option for board targets with a PSA Protected Storage implementation.
+  It stores credentials using the PSA Protected Storage API.
+* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA` - Deprecated option for non-secure targets that use TF-M.
+  It stores credentials as persistent keys using the PSA Crypto API.
+* :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS` - Default option for other targets.
 
 To configure the maximum number of networks, use the :kconfig:option:`CONFIG_WIFI_CREDENTIALS_MAX_ENTRIES` Kconfig option.
 

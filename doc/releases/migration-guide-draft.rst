@@ -438,6 +438,21 @@ Networking
   ``DEVICE_API(wifi_offload, name)`` otherwise. ``struct net_wifi_mgmt_offload`` remains available
   to refer to the selected type. (:github:`124334`)
 
+* The default Wi-Fi credentials backend has changed for some targets:
+
+  * Non-secure targets with the TF-M Protected Storage partition now use
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` instead of
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA`.
+  * Targets that enable :kconfig:option:`CONFIG_SECURE_STORAGE` now use
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA_PS` instead of
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS`.
+  * Other non-secure targets with TF-M now use
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_SETTINGS` instead of
+    :kconfig:option:`CONFIG_WIFI_CREDENTIALS_BACKEND_PSA`, which is deprecated.
+
+  The new default backends can't read credentials that the previous backends stored. To keep
+  those credentials after updating, enable the previous backend explicitly.
+
 Other subsystems
 ****************
 
