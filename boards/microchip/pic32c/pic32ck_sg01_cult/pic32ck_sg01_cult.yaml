@@ -13,6 +13,7 @@ supported:
   - clock_control
   - gpio
   - pinctrl
+  - spi
   - uart
   - watchdog
 vendor: microchip
