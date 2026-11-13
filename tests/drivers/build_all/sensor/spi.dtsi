@@ -586,3 +586,9 @@ test_spi_adis16607_3: adis16607@46 {
 	reset-gpios = <&test_gpio 0 0>;
 	odr = <1000>;
 };
+
+test_spi_dps310: dps310@47 {
+	compatible = "infineon,dps310";
+	reg = <0x47>;
+	spi-max-frequency = <0>;
+};
