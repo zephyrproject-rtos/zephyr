@@ -23,6 +23,7 @@ supported:
   - i2c
   - interrupt_controller
   - mcuboot
+  - mspi
   - netif:eth
   - pinctrl
   - pwm

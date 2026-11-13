@@ -64,6 +64,21 @@
 		};
 	};
 
+	qspi_default: qspi_default {
+		group_data {
+			pinmux = <PA8H_QSPI_DATA0>, <PA9H_QSPI_DATA1>,
+				 <PA10H_QSPI_DATA2>, <PA11H_QSPI_DATA3>;
+			input-enable;
+			drive-strength = <1>;
+		};
+
+		group_ctrl {
+			pinmux = <PB10H_QSPI_SCK>, <PB11H_QSPI_CS>;
+			input-enable;
+			drive-strength = <1>;
+		};
+	};
+
 	adc0_default: adc0_default {
 		group1 {
 			pinmux = <PA3B_ADC0_AIN1>,	/* EXT2 pin 4 */
