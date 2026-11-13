@@ -64,3 +64,26 @@ tests:
     platform_allow:
       - b_u585i_iot02a
       - nucleo_u575zi_q
+  drivers.dma.chan_blen_transfer.channel_api:
+    min_ram: 16
+    tags:
+      - dma
+    filter: dt_compat_enabled("nxp,lpc-dma")
+    integration_platforms:
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    extra_configs:
+      - CONFIG_DMA_TEST_CHANNEL_API=y
+  drivers.dma.chan_blen_transfer.channel_api.single_slot:
+    min_ram: 16
+    tags:
+      - dma
+    filter: dt_compat_enabled("nxp,lpc-dma")
+    integration_platforms:
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    extra_configs:
+      - CONFIG_DMA_TEST_CHANNEL_API=y
+      - CONFIG_DMA_MCUX_LPC_NUMBER_OF_CHANNELS_ALLOCATED=1

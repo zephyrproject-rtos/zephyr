@@ -50,3 +50,10 @@ config DMA_TRANSFER_OVERSIZE_BLOCK_SIZE
 	  When non-zero, check that dma_config() rejects one block of this
 	  many bytes with -EINVAL, returns with interrupts unlocked, and
 	  leaves the channel usable for the next transfer.
+
+config DMA_TEST_CHANNEL_API
+	bool "Test DMA channel API state and bounds"
+	depends on DMA_MCUX_LPC
+	help
+	  Run channel validation and transfer restart tests instead of burst tests.
+	  These cases check the LPC driver's channel-state expectations.
