@@ -1066,6 +1066,33 @@ static void i2s_stm32_fd_flush_rx(const struct i2s_stm32_cfg *cfg,
 }
 
 /*
+ * Queue one frame of zeros in the transmitter. A master that runs out of
+ * transmit data repeats the last word, so this makes an idle transmitter send
+ * zeros. It also gives the master data to start the clock with.
+ */
+static void i2s_stm32_fd_tx_idle_frame(const struct i2s_stm32_cfg *cfg,
+				       const struct i2s_stm32_stream *stream)
+{
+	uint32_t written = 0U;
+	uint32_t wait_us = 0U;
+
+	while ((written < 2U) && (wait_us < 1000U)) {
+		if (LL_SPI_IsActiveFlag_TXP(cfg->i2s) == 0U) {
+			k_busy_wait(1);
+			wait_us++;
+			continue;
+		}
+
+		if (stream->cfg.word_size <= 16U) {
+			LL_SPI_TransmitData16(cfg->i2s, 0U);
+		} else {
+			LL_SPI_TransmitData32(cfg->i2s, 0U);
+		}
+		written++;
+	}
+}
+
+/*
  * Start one direction of a full duplex instance. The first direction to start
  * sets the mode and enables the peripheral. A direction that starts while the
  * other one runs only enables its own DMA request and interrupts.
@@ -1153,6 +1180,14 @@ static int i2s_stm32_fd_stream_start(struct i2s_stm32_stream *stream, const stru
 
 	if (first) {
 		LL_I2S_Enable(cfg->i2s);
+		if (!is_tx && stream->master) {
+			/*
+			 * The master starts the clock only when the transmitter
+			 * has data. Without it a receiver that is started alone
+			 * never gets a clock.
+			 */
+			i2s_stm32_fd_tx_idle_frame(cfg, stream);
+		}
 		LL_SPI_StartMasterTransfer(cfg->i2s);
 	}
 
@@ -1198,6 +1233,9 @@ static void i2s_stm32_fd_stream_disable(struct i2s_stm32_stream *stream, const s
 			dev_data->fd_active = false;
 		}
 
+		if (is_tx && (ll_i2s_is_enabled(cfg->i2s) != 0U)) {
+			i2s_stm32_fd_tx_idle_frame(cfg, stream);
+		}
 	}
 
 	irq_unlock(key);
