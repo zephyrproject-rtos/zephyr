@@ -83,6 +83,34 @@ properties:
     description: |
       eDMA IP revision number.
 
+  nxp,channel-preemption:
+    type: boolean
+    description: |
+      Let a higher priority channel suspend a running lower priority channel
+      after its current read/write sequence. The driver sets DCHPRIn[ECP] on
+      all channels at init. Without this property, a channel that requests
+      service waits until the running channel completes its minor loop.
+      The hardware has one preemption level: a channel that preempts another
+      one cannot be preempted. Preemption needs fixed priority arbitration,
+      which is what the driver uses.
+      Only eDMA version 2 (nxp,version = <2>) supports this property.
+
+  nxp,channel-priorities:
+    type: array
+    description: |
+      List of <channel priority> pairs that the driver applies at init.
+      With fixed priority arbitration, the channel with the higher priority
+      value is served first. The channels are arbitrated in groups that have
+      one channel for each priority value (for example, two groups of 16 on
+      a 32-channel eDMA), and the priorities in a group must be unique. To
+      keep them unique, the channel that has the requested priority gets the
+      old priority of the listed channel. All other channels keep the reset
+      priority, which is the channel number in its group.
+      A channel can occur only one time, and two channels of the same group
+      cannot request the same priority.
+      Example: nxp,channel-priorities = <0 15>, <20 0>;
+      Only eDMA version 2 (nxp,version = <2>) supports this property.
+
   channels-shared-irq-mask:
     type: array
     description: |
