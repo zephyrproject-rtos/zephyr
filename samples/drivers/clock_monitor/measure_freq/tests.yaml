@@ -42,3 +42,7 @@ tests:
       - mimxrt595_evk/mimxrt595s/cm33
       - frdm_rw612
       - rd_rw612_bga
+
+  sample.drivers.clock_monitor.measure_freq.sfa:
+    platform_allow:
+      - frdm_mcxw72

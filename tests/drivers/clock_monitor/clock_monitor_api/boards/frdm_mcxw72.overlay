@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		/* SFA0, MEASURE and WINDOW: 32 kHz clock against the 96 MHz CPU
+		 * clock (MODE 0).
+		 */
+		sfa {
+			monitor = <&sfa0>;
+			measure-expected-hz = <32768>;
+		};
+	};
+};
+
+&sfa0 {
+	status = "okay";
+};

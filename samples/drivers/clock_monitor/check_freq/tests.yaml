@@ -38,3 +38,7 @@ tests:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="../clock_monitor.overlay"
+
+  sample.drivers.clock_monitor.check_freq.sfa:
+    platform_allow:
+      - frdm_mcxw72
