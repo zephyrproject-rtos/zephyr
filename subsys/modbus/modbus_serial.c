@@ -373,7 +373,7 @@ static void cb_handler_rx(struct modbus_context *ctx)
 			cfg->uart_buf_ctr = 0;
 		}
 
-		if (cfg->uart_buf_ctr < CONFIG_MODBUS_BUFFER_SIZE) {
+		if (cfg->uart_buf_ctr < sizeof(cfg->uart_buf)) {
 			*cfg->uart_buf_ptr++ = c;
 			cfg->uart_buf_ctr++;
 		}

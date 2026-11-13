@@ -68,6 +68,17 @@
 /* Modbus ADU constants */
 #define MODBUS_ADU_PROTO_ID			0x0000
 
+/*
+ * An ASCII frame needs two characters per ADU byte, plus the start, LRC and
+ * end characters. For the largest ADU, that is 2 * (CONFIG_MODBUS_BUFFER_SIZE
+ * - 4) + 9 characters.
+ */
+#ifdef CONFIG_MODBUS_ASCII_MODE
+#define MODBUS_SERIAL_BUF_SIZE		(2 * CONFIG_MODBUS_BUFFER_SIZE + 1)
+#else
+#define MODBUS_SERIAL_BUF_SIZE		CONFIG_MODBUS_BUFFER_SIZE
+#endif
+
 struct modbus_serial_config {
 	/* UART device */
 	const struct device *dev;
@@ -84,7 +95,7 @@ struct modbus_serial_config {
 	/* Number of bytes received or to send */
 	uint16_t uart_buf_ctr;
 	/* Storage of received characters or characters to send */
-	uint8_t uart_buf[CONFIG_MODBUS_BUFFER_SIZE];
+	uint8_t uart_buf[MODBUS_SERIAL_BUF_SIZE];
 };
 
 #define MODBUS_STATE_CONFIGURED		0

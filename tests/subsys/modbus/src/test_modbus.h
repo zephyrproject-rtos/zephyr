@@ -15,8 +15,12 @@
 #define MB_TEST_BAUDRATE_HIGH	115200
 #define MB_TEST_PARITY		UART_CFG_PARITY_NONE
 #define MB_TEST_RESPONSE_TO	50000
+/* A 513 character ASCII frame takes about 45 ms on the wire at 115200 baud */
+#define MB_TEST_RESPONSE_TO_ASCII	150000
 #define MB_TEST_NODE_ADDR	0x01
 #define MB_TEST_FP_OFFSET	5000
+#define MB_TEST_LARGE_OFFSET	0x1000
+#define MB_TEST_LARGE_QTY	125
 
 /*
  * Integration platform for this test is FRDM-K64F.
@@ -46,6 +50,8 @@ void test_input_reg(void);
 void test_holding_reg(void);
 void test_diagnostic(void);
 void test_client_disable(void);
+void test_ascii_server_oversized_response(void);
+void test_ascii_gateway_oversized_adu(void);
 
 int client_raw_cb(const int iface, const struct modbus_adu *adu,
 		void *user_data);
