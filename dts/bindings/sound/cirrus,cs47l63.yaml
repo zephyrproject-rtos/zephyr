@@ -21,6 +21,27 @@ properties:
     description:
       Digital reset input.
 
+  cirrus,asp:
+    type: int
+    enum: [1, 2]
+    default: 1
+    description: |
+      Audio serial port the host's I2S is wired to. ASP1 on the
+      nRF5340 Audio DK.
+
+  cirrus,gpio-defaults:
+    type: array
+    description: |
+      GPIOn_CTRL1 values, one per codec GPIO starting at GPIO1, written
+      as given each time the driver brings the part out of reset. An entry with a reserved
+      bit set, conventionally 0xffffffff, or a GPIO past the end of the
+      list, is left at its reset value. At most 12 entries. The four
+      pads of a serial port the driver uses (GPIO1-4 for ASP1, GPIO5-8
+      for ASP2) are driven by the driver and must be 0xffffffff here.
+
+      For example, 0x410001fa as the tenth entry drives GPIO10 as a CMOS
+      output of the output signal path status (GPn_FN = 0x1fa).
+
   gpio1-gpios:
     type: phandle-array
     description:
@@ -80,3 +101,15 @@ properties:
     type: phandle-array
     description:
       GPIO12 input with bus-keeper
+
+child-binding:
+  description: |
+    Second audio serial port of the same CS47L63, exposed as its own
+    audio_codec device. Clocks, output volume and mute, and the input
+    paths stay with the parent.
+  properties:
+    cirrus,asp:
+      type: int
+      required: true
+      enum: [1, 2]
+      description: Serial port this device drives; must differ from the parent's.
