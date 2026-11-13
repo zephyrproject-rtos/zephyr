@@ -17,3 +17,12 @@ tests:
     tags:
       - ipm
       - openamp
+  sample.ipc.openamp_rs_table.ti_k3_crash_report:
+    build_only: true
+    platform_allow:
+      - am62x_m4_bl350/am6254/m4
+    extra_configs:
+      - CONFIG_IPM_TI_K3_RPROC_CRASH_REPORT=y
+    tags:
+      - ipm
+      - openamp
