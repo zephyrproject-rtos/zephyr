@@ -199,6 +199,10 @@ void *workq_setup(void)
  * @see k_object_access_grant()
  * @verifies ZEP-SRS-38-11
  * @verifies ZEP-SRS-38-13
+ * @verifies ZEP-SRS-38-37
+ * @verifies ZEP-SRS-38-38
+ * @verifies ZEP-SRS-38-39
+ * @verifies ZEP-SRS-38-40
  */
 ZTEST_USER(workqueue_api, test_workq_user_mode)
 {
