@@ -12,6 +12,7 @@ ram: 128
 supported:
   - can
   - clock_control
+  - counter
   - dma
   - flash
   - gpio

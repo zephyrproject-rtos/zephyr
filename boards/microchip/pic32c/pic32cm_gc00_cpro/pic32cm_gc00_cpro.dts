@@ -194,6 +194,12 @@
 			gclkperiph-src = "gclk2";
 			gclkperiph-en = <1>;
 		};
+
+		tcc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_TCC1>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkdomain: mclkdomain {
@@ -221,6 +227,11 @@
 
 		can1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_CAN1>;
+			mclk-en = <1>;
+		};
+
+		tcc1 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_TCC1>;
 			mclk-en = <1>;
 		};
 	};
@@ -303,4 +314,10 @@ i2c0: &sercom1 {
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
+};
+
+&tcc1 {
+	compatible = "microchip,tcc-g1-counter";
+	prescaler = <1024>;
+	status = "okay";
 };
