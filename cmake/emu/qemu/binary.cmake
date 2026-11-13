@@ -46,12 +46,14 @@ if(qemu_alternate_path)
     PATHS ${qemu_alternate_path}
     NO_DEFAULT_PATH
     NAMES qemu-system-${QEMU_BINARY_SUFFIX}
+    VALIDATOR qemu_validator
   )
 else()
   find_program(
     QEMU
     qemu-system-${QEMU_BINARY_SUFFIX}
     HINTS ${QEMU_BINARY_HINTS}
+    VALIDATOR qemu_validator
   )
 endif()
 

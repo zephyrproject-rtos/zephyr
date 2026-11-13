@@ -1,8 +1,16 @@
-board:
-  name: qemu_x86_64
-  full_name: QEMU Emulation for X86 64bit
-  vendor: intel
-  socs:
-    - name: atom
-      variants:
-        - name: 'nokpti'
+boards:
+  - name: qemu_x86_64
+    full_name: QEMU Emulation for X86 64bit
+    vendor: intel
+    socs:
+      - name: atom
+        variants:
+          - name: 'nokpti'
+
+  - name: qemu_x86_64_kvm
+    full_name: QEMU Emulation for X86 64bit, KVM enabled
+    vendor: intel
+    socs:
+      - name: atom
+        variants:
+          - name: 'nokpti'

@@ -12,11 +12,13 @@ tests:
     extra_configs:
       - CONFIG_X86_CET_IBT=y
       - CONFIG_DEBUG_COREDUMP=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
   arch.x86.cet.kernel.ibt64:
     arch_allow: x86
     filter: CONFIG_X86_64
     extra_configs:
       - CONFIG_X86_CET_IBT=y
+      - CONFIG_PICOLIBC_USE_MODULE=y
   arch.x86.cet.kernel.shstk64:
     arch_allow: x86
     filter: CONFIG_X86_64
