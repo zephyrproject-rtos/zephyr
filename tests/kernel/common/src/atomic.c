@@ -68,6 +68,7 @@ atomic_t total_atomic;
  * ATOMIC_DEFINE
  *
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-9
  * @verifies ZEP-SRS-26-10
  * @verifies ZEP-SRS-26-11
  * @verifies ZEP-SRS-26-12
@@ -90,6 +91,9 @@ atomic_t total_atomic;
  * @verifies ZEP-SRS-26-29
  * @verifies ZEP-SRS-26-30
  * @verifies ZEP-SRS-26-31
+ * @verifies ZEP-SRS-26-32
+ * @verifies ZEP-SRS-26-33
+ * @verifies ZEP-SRS-26-34
  * @verifies ZEP-SRS-26-35
  * @verifies ZEP-SRS-26-36
  * @verifies ZEP-SRS-26-37
@@ -344,6 +348,7 @@ void atomic_handler(void *p1, void *p2, void *p3)
  *
  * @see atomic_inc()
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-3
  * @verifies ZEP-SRS-26-4
  * @verifies ZEP-SRS-26-5
  */
@@ -395,6 +400,7 @@ ZTEST(atomic, test_threads_access_atomic)
  *
  * @see atomic_inc()
  * @verifies ZEP-SRS-19-1
+ * @verifies ZEP-SRS-26-1
  * @verifies ZEP-SRS-26-2
  * @verifies ZEP-SRS-26-19
  * @verifies ZEP-SRS-26-20
