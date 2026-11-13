@@ -156,6 +156,7 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	void *ret = NULL;
 
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
+	size_t old_size = (ptr != NULL) ? sys_heap_usable_size(&heap->heap, ptr) : 0U;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, realloc, heap, ptr, bytes, timeout);
 
@@ -178,7 +179,10 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 		key = k_spin_lock(&heap->lock);
 	}
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING) && (ptr != NULL) && (bytes == 0U) &&
+	if (IS_ENABLED(CONFIG_MULTITHREADING) && (ptr != NULL) &&
+	    ((bytes == 0U) || ((ret != NULL) && (ret != ptr)) ||
+	     ((ret == ptr) && (bytes < old_size) &&
+	      (sys_heap_usable_size(&heap->heap, ret) < old_size))) &&
 	    (z_unpend_all(&heap->wait_q) != 0)) {
 		z_reschedule(&heap->lock, key);
 	} else {
