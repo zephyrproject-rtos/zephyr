@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Nordic Semiconductor ASA.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,20 +66,21 @@ static void load_callee_saved_regs(const _callee_saved_t *regs)
 {
 	/* Load the callee-saved registers with given values */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	__asm__ volatile("mov r1, r7;\n\t"
+	__asm__ volatile(".syntax unified\n\t"
+			 "mov r1, r7;\n\t"
 			 "mov r0, %0;\n\t"
-			 "add r0, #16;\n\t"
+			 "adds r0, #16;\n\t"
 			 "ldmia r0!, {r4-r7};\n\t"
 			 "mov r8, r4;\n\t"
 			 "mov r9, r5;\n\t"
 			 "mov r10, r6;\n\t"
 			 "mov r11, r7;\n\t"
-			 "sub r0, #32;\n\t"
+			 "subs r0, #32;\n\t"
 			 "ldmia r0!, {r4-r7};\n\t"
 			 "mov r7, r1;\n\t"
 			 : /* no output */
 			 : "r"(regs)
-			 : "memory", "r1", "r0");
+			 : "memory", "cc", "r1", "r0");
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile("mov r1, r7;\n\t"
 			 "ldmia %0, {v1-v8};\n\t"
@@ -276,15 +278,14 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 	 * switch.
 	 *
 	 * Note: preserve r7 register (frame pointer).
+	 *
+	 * irq_unlock(0) is inlined in assembly to avoid compiler-generated stack
+	 * accesses while SP is temporarily adjusted.
 	 */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	__asm__ volatile(
-		/* Stash r4-r11 in stack, they will be restored much later in
-		 * another inline asm -- that should be reworked since stack
-		 * must be balanced when we leave any inline asm. We could
-		 * use simply an alternative stack for storing them instead
-		 * of the function's stack.
-		 */
+		".syntax unified\n\t"
+		/* Keep the stack balanced within this block; C code may access stack locals. */
 		"push {r4-r7};\n\t"
 		"mov r2, r8;\n\t"
 		"mov r3, r9;\n\t"
@@ -302,53 +303,55 @@ static void alt_thread_entry(void *p1, void *p2, void *p3)
 
 		/* Load struct into r4-r11 */
 		"mov r0, %0;\n\t"
-		"add r0, #16;\n\t"
+		"adds r0, #16;\n\t"
 		"ldmia r0!, {r4-r7};\n\t"
 		"mov r8, r4;\n\t"
 		"mov r9, r5;\n\t"
 		"mov r10, r6;\n\t"
 		"mov r11, r7;\n\t"
-		"sub r0, #32;\n\t"
+		"subs r0, #32;\n\t"
 		"ldmia r0!, {r4-r7};\n\t"
 
 		/* Restore r0 and r7 */
 		"pop {r0, r7};\n\t"
 
+		/* PendSV is write-one-to-set. Take it before restoring the registers. */
+		"ldr r0, =%c1;\n\t"
+		"ldr r2, =%c2;\n\t"
+		"dmb;\n\t"
+		"str r2, [r0];\n\t"
+		"cpsie i;\n\t"
+		"isb;\n\t"
+
+		"pop {r4, r5, r6, r7};\n\t"
+		"mov r10, r4;\n\t"
+		"mov r11, r5;\n\t"
+		"mov r8, r6;\n\t"
+		"mov r9, r7;\n\t"
+		"pop {r4, r5, r6, r7};\n\t"
 		: /* no output */
-		: "r"(&ztest_thread_callee_saved_regs_container)
-		: "memory", "r0", "r2", "r3");
+		: "r"(&ztest_thread_callee_saved_regs_container),
+		  "i"(&SCB->ICSR), "i"(SCB_ICSR_PENDSVSET_Msk)
+		: "memory", "cc", "r0", "r2", "r3");
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile("push {v1-v8};\n\t"
 			 "push {r0, r1};\n\t"
 			 "mov r0, r7;\n\t"
 			 "ldmia %0, {v1-v8};\n\t"
 			 "mov r7, r0;\n\t"
+			 "ldr r0, =%c1;\n\t"
+			 "ldr r1, =%c2;\n\t"
+			 "dmb;\n\t"
+			 "str r1, [r0];\n\t"
+			 "movs r0, #0;\n\t"
+			 "msr BASEPRI, r0;\n\t"
+			 "isb;\n\t"
 			 "pop {r0, r1};\n\t"
+			 "pop {v1-v8};\n\t"
 			 : /* no output */
-			 : "r"(&ztest_thread_callee_saved_regs_container)
-			 : "memory", "r0");
-#endif
-
-	/* Manually trigger a context-switch, to swap-out
-	 * the alternative test thread.
-	 */
-	barrier_dmem_fence_full();
-	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
-	irq_unlock(0);
-
-	/* Restore stacked callee-saved registers */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	__asm__ volatile("pop {r4, r5, r6, r7};\n\t"
-			 "mov r8, r4;\n\t"
-			 "mov r9, r5;\n\t"
-			 "mov r10, r6;\n\t"
-			 "mov r11, r7;\n\t"
-			 "pop {r4, r5, r6, r7};\n\t"
-			 :
-			 :
-			 :);
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__asm__ volatile("pop {v1-v8};\n\t" : : :);
+			 : "r"(&ztest_thread_callee_saved_regs_container),
+			   "i"(&SCB->ICSR), "i"(SCB_ICSR_PENDSVSET_Msk)
+			 : "memory", "cc", "r0");
 #endif
 
 	/* Verify that the main test thread has managed to resume, before
