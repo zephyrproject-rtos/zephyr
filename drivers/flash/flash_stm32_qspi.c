@@ -25,6 +25,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/policy.h>
 
 #ifdef CONFIG_USERSPACE
 #include <zephyr/syscall.h>
@@ -219,6 +220,27 @@ static inline void qspi_unlock_thread(const struct device *dev)
 	k_sem_give(&dev_data->sem);
 }
 
+/*
+ * Waits for the end of an operation started with HAL_QSPI_*_IT or HAL_QSPI_*_DMA.
+ * The QUADSPI is not clocked in Stop (STM32L4: RM0351 rev 11, table 23), so
+ * the SoC is kept out of Stop until then; otherwise the operation would only
+ * complete once something else woke the SoC.
+ */
+static void qspi_wait_sync(struct k_sem *sync)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+
+	k_sem_take(sync, K_FOREVER);
+
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
 static inline void qspi_set_address_size(const struct device *dev,
 					 QSPI_CommandTypeDef *cmd)
 {
@@ -293,7 +315,7 @@ static int qspi_send_cmd(const struct device *dev, const QSPI_CommandTypeDef *cm
 	}
 	LOG_DBG("CCR 0x%x", dev_data->hqspi.Instance->CCR);
 
-	k_sem_take(&dev_data->sync, K_FOREVER);
+	qspi_wait_sync(&dev_data->sync);
 
 	return dev_data->cmd_status;
 }
@@ -327,7 +349,7 @@ static int qspi_read_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 		return -EIO;
 	}
 
-	k_sem_take(&dev_data->sync, K_FOREVER);
+	qspi_wait_sync(&dev_data->sync);
 
 	return dev_data->cmd_status;
 }
@@ -364,7 +386,7 @@ static int qspi_write_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 	}
 	LOG_DBG("CCR 0x%x", dev_data->hqspi.Instance->CCR);
 
-	k_sem_take(&dev_data->sync, K_FOREVER);
+	qspi_wait_sync(&dev_data->sync);
 
 	return dev_data->cmd_status;
 }
