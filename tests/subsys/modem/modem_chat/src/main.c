@@ -166,6 +166,18 @@ static void on_restart_script_start_next(struct modem_chat *chat,
 					 const struct modem_chat_script_completion_info *info,
 					 void *user_data);
 
+static void on_script_result_release(struct modem_chat *cmd, enum modem_chat_script_result result,
+				     const struct modem_chat_script_completion_info *info,
+				     void *user_data)
+{
+	modem_chat_release(cmd);
+	on_script_result(cmd, result, info, user_data);
+}
+
+static void on_restart_during_release(struct modem_chat *chat, enum modem_chat_script_result result,
+				     const struct modem_chat_script_completion_info *info,
+				     void *user_data);
+
 /*************************************************************************************************/
 /*                                            Script                                             */
 /*************************************************************************************************/
@@ -223,6 +235,24 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 
 MODEM_CHAT_SCRIPT_DEFINE(script_timeout_cmd, script_timeout_cmd_cmds, abort_matches,
 			 on_script_result, 10);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(release_wait_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(release_short_script, release_wait_cmds, abort_matches,
+			 on_script_result, 1);
+MODEM_CHAT_SCRIPT_DEFINE(release_long_script, release_wait_cmds, abort_matches,
+			 on_script_result, 10);
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(release_delay_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 1000),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(release_delay_script, release_delay_cmds, abort_matches,
+			 on_script_result, 10);
+MODEM_CHAT_SCRIPT_DEFINE(release_from_timeout_script, release_wait_cmds, abort_matches,
+			 on_script_result_release, 1);
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(release_from_delay_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 100));
+MODEM_CHAT_SCRIPT_DEFINE(release_from_delay_script, release_from_delay_cmds, abort_matches,
+			 on_script_result_release, 10);
+MODEM_CHAT_SCRIPT_DEFINE(release_restart_script, release_wait_cmds, abort_matches,
+			 on_restart_during_release, 1);
 
 /*************************************************************************************************/
 /*                           Small echo script and mock transactions                             */
@@ -381,6 +411,107 @@ static uint8_t buffer[4096];
 /*************************************************************************************************/
 /*                                           Tests                                               */
 /*************************************************************************************************/
+static void check_release_cancels_timers(const struct modem_chat_script *old_script,
+					struct k_work_delayable *old_timer)
+{
+	zassert_ok(modem_chat_run_script_async(&cmd, old_script));
+	k_msleep(100);
+	zassert_true(k_work_delayable_is_pending(old_timer), "old timer was not armed");
+	modem_chat_release(&cmd);
+	zassert_false(k_work_delayable_is_pending(&cmd.script_timeout_work));
+	zassert_false(k_work_delayable_is_pending(&cmd.script_send_timeout_work));
+
+	zassert_ok(modem_chat_attach(&cmd, mock_pipe));
+	zassert_ok(modem_chat_run_script_async(&cmd, &release_long_script));
+	/* Cross the old deadline while the new script is still awaiting OK. */
+	k_msleep(1100);
+	zassert_true(modem_chat_is_running(&cmd), "released timer stopped the new script");
+	zassert_false(atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT),
+		      "released timer advanced the new script");
+}
+
+ZTEST(modem_chat, test_release_cancels_script_timeout)
+{
+	check_release_cancels_timers(&release_short_script, &cmd.script_timeout_work);
+}
+
+ZTEST(modem_chat, test_release_cancels_send_timeout)
+{
+	check_release_cancels_timers(&release_delay_script, &cmd.script_send_timeout_work);
+}
+
+static void check_release_from_timer(const struct modem_chat_script *script,
+				     enum modem_chat_script_result expected)
+{
+	zassert_ok(modem_chat_run_script_async(&cmd, script));
+	k_msleep(1200);
+	zassert_true(atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT),
+		     "release from timer callback did not return");
+	zassert_equal(script_result, expected);
+	zassert_is_null(cmd.pipe);
+	zassert_false(k_work_delayable_is_pending(&cmd.script_timeout_work));
+	zassert_false(k_work_delayable_is_pending(&cmd.script_send_timeout_work));
+	zassert_ok(modem_chat_attach(&cmd, mock_pipe));
+}
+
+ZTEST(modem_chat, test_release_from_script_timeout_callback)
+{
+	check_release_from_timer(&release_from_timeout_script, MODEM_CHAT_SCRIPT_RESULT_TIMEOUT);
+}
+
+ZTEST(modem_chat, test_release_from_send_timeout_callback)
+{
+	check_release_from_timer(&release_from_delay_script, MODEM_CHAT_SCRIPT_RESULT_SUCCESS);
+}
+
+static K_SEM_DEFINE(release_callback_entered, 0, 1);
+static K_SEM_DEFINE(release_callback_continue, 0, 1);
+static K_SEM_DEFINE(release_done, 0, 1);
+static K_THREAD_STACK_DEFINE(release_stack, 2048);
+static struct k_thread release_thread;
+static int release_restart_result;
+
+static void on_restart_during_release(struct modem_chat *chat, enum modem_chat_script_result result,
+				     const struct modem_chat_script_completion_info *info,
+				     void *user_data)
+{
+	ARG_UNUSED(result);
+	ARG_UNUSED(info);
+	ARG_UNUSED(user_data);
+	k_sem_give(&release_callback_entered);
+	zassert_ok(k_sem_take(&release_callback_continue, K_SECONDS(2)));
+	release_restart_result = modem_chat_run_script_async(chat, &release_long_script);
+}
+
+static void release_thread_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+	modem_chat_release(&cmd);
+	k_sem_give(&release_done);
+}
+
+ZTEST(modem_chat, test_release_prevents_callback_restart)
+{
+	zassert_ok(modem_chat_run_script_async(&cmd, &release_restart_script));
+	zassert_ok(k_sem_take(&release_callback_entered, K_SECONDS(2)));
+	k_thread_create(&release_thread, release_stack, K_THREAD_STACK_SIZEOF(release_stack),
+			release_thread_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	/* The detached pipe proves release has started. It cannot finish until
+	 * this script's completion callback returns.
+	 */
+	zassert_true(WAIT_FOR(mock_pipe->callback == NULL, USEC_PER_SEC, k_msleep(1)));
+	k_sem_give(&release_callback_continue);
+	zassert_ok(k_sem_take(&release_done, K_SECONDS(2)));
+	zassert_ok(k_thread_join(&release_thread, K_SECONDS(1)));
+	zassert_equal(release_restart_result, -EBUSY, "callback restarted a chat being released");
+	zassert_is_null(cmd.pipe);
+	zassert_false(k_work_delayable_is_pending(&cmd.script_timeout_work));
+	zassert_false(k_work_delayable_is_pending(&cmd.script_send_timeout_work));
+	zassert_ok(modem_chat_attach(&cmd, mock_pipe));
+}
+
 ZTEST(modem_chat, test_script_no_error)
 {
 	bool called;
