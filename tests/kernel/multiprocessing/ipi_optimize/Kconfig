@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_IPI_PM_HOOKS
+	bool "PM hooks provided by the test"
+	depends on ARM64 || RISCV
+	select HAS_PM
+	# depends on PM would be recursive: PM depends on HAS_PM, selected here
+	select PM
+	help
+	  The test provides pm_state_set() and pm_state_exit_post_ops(): every
+	  power state waits for an interrupt with interrupts locked, as SoC
+	  hooks do. The wait is a WFI instruction.
+
+source "Kconfig.zephyr"
