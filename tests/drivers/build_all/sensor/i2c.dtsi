@@ -1754,3 +1754,9 @@ test_i2c_stc31: stc31@e3 {
 	reg = <0xe3>;
 	binary-gas = <0x0001>;
 };
+
+test_i2c_adxl373: adxl373@e4 {
+	compatible = "adi,adxl373";
+	reg = <0xe4>;
+	int1-gpios = <&test_gpio 0 0>;
+};
