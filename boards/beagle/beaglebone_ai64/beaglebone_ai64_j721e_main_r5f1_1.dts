@@ -16,6 +16,8 @@
 		zephyr,sram = &ddr1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
+		zephyr,console = &rpmsg0;
+		zephyr,shell-uart = &rpmsg0;
 	};
 
 	cpus {
