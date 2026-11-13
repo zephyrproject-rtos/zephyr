@@ -1290,7 +1290,10 @@ static void udc_dwc2_ep_disable(const struct device *dev,
 		/* Endpoint gets disabled in INEPNAKEFF handler */
 	}
 
-	if (wait) {
+	/* The endpoint disable interrupts can only fire when the PHY is
+	 * actively clocked, so there is no point in waiting without the clock.
+	 */
+	if (wait && !dwc2_quirk_is_phy_clk_off(dev)) {
 		uint32_t ret;
 
 		ret = k_event_wait(&priv->ep_disabled, BIT(ep_bit), false, K_MSEC(100));
