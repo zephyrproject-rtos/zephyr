@@ -1,0 +1,6 @@
+board:
+  name: stm32h743_coreboard
+  full_name: STM32H743IIT6 Core Board
+  vendor: others
+  socs:
+    - name: stm32h743xx
