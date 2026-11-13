@@ -19,8 +19,6 @@
 		zephyr,dtcm = &dtcm1;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &cpu1_code_partition;
-		zephyr,console = &lpuart_5;
-		zephyr,shell-uart = &lpuart_5;
 	};
 };
 
@@ -51,13 +49,6 @@
 	clock-frequency = <DT_FREQ_M(160)>;
 };
 
-&lpuart_5 {
-	current-speed = <115200>;
-	pinctrl-0 = <&pinmux_lpuart_5>;
-	pinctrl-names = "default";
-	status = "okay";
-};
-
 &mc_rgm {
 	status = "okay";
 };
@@ -72,11 +63,6 @@
 	workmode = "crystal";
 	delay = <49>;
 	overdrive = <12>;
-	status = "okay";
-};
-
-&stm_0 {
-	prescaler = <1>;
 	status = "okay";
 };
 

@@ -11,6 +11,4 @@ flash: 1872
 toolchain:
   - zephyr
   - gnuarmemb
-supported:
-  - serial
 vendor: nxp
