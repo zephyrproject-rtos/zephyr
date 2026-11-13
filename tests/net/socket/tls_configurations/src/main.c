@@ -79,6 +79,53 @@ static int check_cached_ticket(void)
 	mbedtls_ssl_session_free(&session);
 	return ret;
 }
+
+#if defined(USE_CERTIFICATE)
+static int check_hostname_scoped(void)
+{
+	mbedtls_ssl_session session;
+	int ret;
+
+	/*
+	 * main() connected with "localhost" and that session is cached. The
+	 * cache is keyed per hostname: a different name on the same address must
+	 * not find it (resuming it would reuse a session established for another
+	 * server), while "localhost" still does. Resumption is not observable
+	 * from the client side, so the cache lookup is checked directly.
+	 */
+	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "other",
+			       sizeof("other"));
+	if (ret < 0) {
+		LOG_ERR("Failed to set TLS_HOSTNAME option (%d)", errno);
+		return -errno;
+	}
+
+	mbedtls_ssl_session_init(&session);
+	ret = ztls_get_cached_session(socket_fd, &session);
+	mbedtls_ssl_session_free(&session);
+	if (ret != -ENOENT) {
+		LOG_ERR("A different hostname matched the cached session (%d)", ret);
+		return -EINVAL;
+	}
+
+	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "localhost",
+			       sizeof("localhost"));
+	if (ret < 0) {
+		LOG_ERR("Failed to set TLS_HOSTNAME option (%d)", errno);
+		return -errno;
+	}
+
+	mbedtls_ssl_session_init(&session);
+	ret = ztls_get_cached_session(socket_fd, &session);
+	mbedtls_ssl_session_free(&session);
+	if (ret != 0) {
+		LOG_ERR("The original hostname did not match its session (%d)", ret);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* USE_CERTIFICATE */
 #endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
 
 static int wait_for_event(void)
@@ -335,6 +382,13 @@ int main(void)
 		goto exit;
 	}
 #endif /* CONFIG_NET_SOCKETS_TEST_SESSION_CACHE */
+
+#if defined(CONFIG_NET_SOCKETS_TEST_SESSION_CACHE) && defined(USE_CERTIFICATE)
+	ret = check_hostname_scoped();
+	if (ret < 0) {
+		goto exit;
+	}
+#endif
 
 	ret = memcmp(TEST_STRING, test_buf, data_len);
 	if (ret != 0) {
