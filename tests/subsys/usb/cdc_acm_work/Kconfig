@@ -1,0 +1,4 @@
+# Copyright (c) 2026 Neoventor AB
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
