@@ -1,0 +1,10 @@
+# TI MSPM0 Family
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config OPAMP_MSPM0_GPAMP
+	bool "TI MSPM0 GPAMP driver"
+	default y
+	select SYSCON
+	depends on DT_HAS_TI_MSPM0_GPAMP_ENABLED
