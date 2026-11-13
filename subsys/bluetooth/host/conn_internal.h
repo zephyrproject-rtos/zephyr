@@ -168,6 +168,9 @@ struct bt_conn_sco {
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
 
+	/* Address of the peer at setup, as the reference can go away at any time */
+	bt_addr_t               dst;
+
 	/* Reference to the struct bt_sco_chan */
 	struct bt_sco_chan      *chan;
 
@@ -182,6 +185,9 @@ struct bt_conn_iso {
 #if defined(CONFIG_BT_ISO_UNICAST)
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+
+	/* Address of the peer at setup, as the reference can go away at any time */
+	bt_addr_le_t            dst;
 #endif /* CONFIG_BT_ISO_UNICAST */
 
 	/* Reference to the struct bt_iso_chan */
