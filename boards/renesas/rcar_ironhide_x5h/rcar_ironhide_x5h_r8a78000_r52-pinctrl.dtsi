@@ -177,4 +177,84 @@
 	can15_tx_default: can15_tx_default {
 		pin = <PIN_CAN15TX FUNC_CAN15TX_B>;
 	};
+
+	rswitch_etha0_phyint_default: rswitch_etha0_phyint_default {
+		pin = <PIN_ETH10G0_PHYINT FUNC_ETH10G0_PHYINT>;
+	};
+
+	rswitch_etha0_link_default: rswitch_etha0_link_default {
+		pin = <PIN_ETH10G0_LINK FUNC_ETH10G0_LINK>;
+	};
+
+	rswitch_etha0_mdc_default: rswitch_etha0_mdc_default {
+		pin = <PIN_ETH10G0_MDC FUNC_ETH10G0_MDC>;
+	};
+
+	rswitch_etha0_mdio_default: rswitch_etha0_mdio_default {
+		pin = <PIN_ETH10G0_MDIO FUNC_ETH10G0_MDIO>;
+	};
+
+	rswitch_etha1_phyint_default: rswitch_etha1_phyint_default {
+		pin = <PIN_ETH10G0_PHYINT FUNC_ETH10G1_PHYINT>;
+	};
+
+	rswitch_etha1_link_default: rswitch_etha1_link_default {
+		pin = <PIN_ETH10G0_LINK FUNC_ETH10G1_LINK>;
+	};
+
+	rswitch_etha1_mdc_default: rswitch_etha1_mdc_default {
+		pin = <PIN_ETH10G0_MDC FUNC_ETH10G1_MDC>;
+	};
+
+	rswitch_etha1_mdio_default: rswitch_etha1_mdio_default {
+		pin = <PIN_ETH10G0_MDIO FUNC_ETH10G1_MDIO>;
+	};
+
+	rswitch_etha2_phyint_default: rswitch_etha2_phyint_default {
+		pin = <PIN_ETH25G0_PHYINT FUNC_ETH25G0_PHYINT>;
+	};
+
+	rswitch_etha2_link_default: rswitch_etha2_link_default {
+		pin = <PIN_ETH25G0_LINK FUNC_ETH25G0_LINK>;
+	};
+
+	rswitch_etha2_mdc_default: rswitch_etha2_mdc_default {
+		pin = <PIN_ETH25G0_MDC FUNC_ETH25G0_MDC>;
+	};
+
+	rswitch_etha2_mdio_default: rswitch_etha2_mdio_default {
+		pin = <PIN_ETH25G0_MDIO FUNC_ETH25G0_MDIO>;
+	};
+
+	rswitch_etha3_phyint_default: rswitch_etha3_phyint_default {
+		pin = <PIN_ETH25G0_PHYINT FUNC_ETH25G1_PHYINT>;
+	};
+
+	rswitch_etha3_link_default: rswitch_etha3_link_default {
+		pin = <PIN_ETH25G0_LINK FUNC_ETH25G1_LINK>;
+	};
+
+	rswitch_etha3_mdc_default: rswitch_etha3_mdc_default {
+		pin = <PIN_ETH25G0_MDC FUNC_ETH25G1_MDC>;
+	};
+
+	rswitch_etha3_mdio_default: rswitch_etha3_mdio_default {
+		pin = <PIN_ETH25G0_MDIO FUNC_ETH25G1_MDIO>;
+	};
+
+	rswitch_etha4_phyint_default: rswitch_etha4_phyint_default {
+		pin = <PIN_ETH25G0_PHYINT FUNC_ETH25G2_PHYINT>;
+	};
+
+	rswitch_etha4_link_default: rswitch_etha4_link_default {
+		pin = <PIN_ETH25G0_LINK FUNC_ETH25G2_LINK>;
+	};
+
+	rswitch_etha4_mdc_default: rswitch_etha4_mdc_default {
+		pin = <PIN_ETH25G0_MDC FUNC_ETH25G2_MDC>;
+	};
+
+	rswitch_etha4_mdio_default: rswitch_etha4_mdio_default {
+		pin = <PIN_ETH25G0_MDIO FUNC_ETH25G2_MDIO>;
+	};
 };
