@@ -65,9 +65,9 @@ ZTEST(timer_fn, test_timer)
 
 	for (i = 0U; i < 1000000; i++) {
 		t_now = k_cycle_get_32();
+		diff = t_now - t_last;
 
-		if (t_now < t_last) {
-			diff = t_now - t_last;
+		if (diff < 0) {
 			TC_PRINT("diff = %d (t_last = %u : t_now = %u);"
 				"i = %u\n", diff, t_last, t_now, i);
 			errors++;

@@ -162,6 +162,35 @@ static void evt_timer_enable(void)
 					   IT8XXX2_EXT_ETXRST);
 }
 
+static inline uint32_t ite_ext_cntox_get(enum ext_timer_idx ext_timer)
+{
+	/*
+	 * External timers clocked by the 32.768 kHz domain update their
+	 * observation registers asynchronously to the CPU clock and can
+	 * briefly latch a transient value on a multi-bit borrow edge.
+	 *
+	 * Lock interrupts so all reads complete in well under one 32.768 kHz
+	 * tick period (~30.5 us), guaranteeing at most one clock edge can
+	 * occur across the sequence:
+	 * - If cnt1 == cnt2, no edge occurred during or between the two reads,
+	 *   so cnt1 is stable.
+	 * - If cnt1 != cnt2, the single edge occurred during or between cnt1
+	 *   and cnt2; the borrow has settled and the next edge is ~30 us away,
+	 *   so a third read is guaranteed to sample the stable new count.
+	 */
+	unsigned int key = irq_lock();
+	uint32_t cnt1 = IT8XXX2_EXT_CNTOX(ext_timer);
+	uint32_t cnt2 = IT8XXX2_EXT_CNTOX(ext_timer);
+
+	if (cnt1 != cnt2) {
+		cnt1 = IT8XXX2_EXT_CNTOX(ext_timer);
+	}
+
+	irq_unlock(key);
+
+	return cnt1;
+}
+
 /*
  * The counter and the alarm are two different timers here. The cycle domain is
  * the free-running 32-bit timer, counting down from 0xffffffff and read back
@@ -183,7 +212,7 @@ static inline uint32_t timer_driver_cycle_get(void)
 	 *       combined mode, the observer count value is the same as NOT
 	 *       count operation.
 	 */
-	return ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+	return ~ite_ext_cntox_get(FREE_RUN_TIMER);
 }
 
 static void timer_driver_set_reload(uint32_t cycles)
@@ -308,8 +337,8 @@ static int timer_init(enum ext_timer_idx ext_timer,
 
 bool ite_it8xxx2_timer_block_idle(void)
 {
-	return (IT8XXX2_EXT_CNTOX(EVENT_TIMER) < IDLE_BLOCK_TIMER_TICKS) ||
-	       (IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER) < IDLE_BLOCK_TIMER_TICKS);
+	return (ite_ext_cntox_get(EVENT_TIMER) < IDLE_BLOCK_TIMER_TICKS) ||
+	       (ite_ext_cntox_get(FREE_RUN_TIMER) < IDLE_BLOCK_TIMER_TICKS);
 }
 
 #ifdef CONFIG_PM
@@ -318,12 +347,12 @@ static uint32_t cyc_enter_deep_sleep;
 
 void ite_ec_clock_capture_low_freq_timer(void)
 {
-	cyc_enter_deep_sleep = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+	cyc_enter_deep_sleep = ~ite_ext_cntox_get(FREE_RUN_TIMER);
 }
 
 void ite_ec_clock_compensate_system_timer(void)
 {
-	uint32_t now = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+	uint32_t now = ~ite_ext_cntox_get(FREE_RUN_TIMER);
 	uint32_t cyc_elapsed_in_deep = now - cyc_enter_deep_sleep;
 
 	cyc_deep_sleep_total += cyc_elapsed_in_deep;
