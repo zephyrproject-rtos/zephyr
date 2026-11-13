@@ -1202,6 +1202,45 @@ static int cyw43_wifi_init(const struct device *dev)
 	return 0;
 }
 
+static enum ethernet_hw_caps cyw43_wifi_get_capabilities(const struct device *dev,
+							 struct net_if *iface)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
+
+	return ETHERNET_HW_FILTERING;
+}
+
+/*
+ * The chip passes up only the multicast addresses on its list, so keep
+ * the joined groups there.
+ */
+static int cyw43_wifi_set_config(const struct device *dev, struct net_if *iface,
+				 enum ethernet_config_type type,
+				 const struct ethernet_config *config)
+{
+	uint8_t addr[WIFI_MAC_ADDR_LEN];
+	int ret;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
+
+	if ((type != ETHERNET_CONFIG_TYPE_FILTER) ||
+	    (config->filter.type != ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS)) {
+		return -ENOTSUP;
+	}
+
+	memcpy(addr, config->filter.mac_address.addr, sizeof(addr));
+	ret = cyw43_wifi_update_multicast_filter(&cyw43_state, addr,
+						config->filter.set);
+	if (ret != 0) {
+		LOG_ERR("cyw43_wifi_update_multicast_filter(): %d", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops cyw43_wifi_mgmt_api = {
 	.scan = cyw43_wifi_mgmt_scan,
 	.connect = cyw43_wifi_mgmt_connect,
@@ -1218,6 +1257,8 @@ static const struct wifi_mgmt_ops cyw43_wifi_mgmt_api = {
 
 static const struct net_wifi_mgmt_offload cyw43_wifi_api = {
 	.wifi_iface.iface_api.init = cyw43_wifi_iface_init,
+	.wifi_iface.get_capabilities = cyw43_wifi_get_capabilities,
+	.wifi_iface.set_config = cyw43_wifi_set_config,
 	.wifi_iface.send = cyw43_wifi_send,
 	.wifi_mgmt_api = &cyw43_wifi_mgmt_api,
 };
