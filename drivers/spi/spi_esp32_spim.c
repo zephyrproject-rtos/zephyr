@@ -807,7 +807,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return 0;
 	}
 
-	ctx->config = spi_cfg;
+	ctx->config = NULL;
 
 	if (spi_cfg->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -855,6 +855,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		spi_ll_clear_int_stat(cfg->spi);
 
 		irq_unlock(key);
+		ctx->config = spi_cfg;
 		return 0;
 #else
 		LOG_ERR("Target mode requires CONFIG_ESP32_SPI_TARGET");
@@ -879,7 +880,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	if (spi_cs_is_gpio(spi_cfg)) {
 		hal_dev->cs_pin_id = -1;
 	} else {
-		hal_dev->cs_pin_id = ctx->config->peripheral;
+		hal_dev->cs_pin_id = spi_cfg->peripheral;
 	}
 
 	uint32_t clk_src_hz = data->clock_source_hz;
@@ -908,8 +909,6 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		LOG_ERR("Frequency %u Hz not supported in full-duplex mode, set half-duplex or "
 			"dummy-comp in devicetree or lower the frequency",
 			spi_cfg->frequency);
-		/* Force a full reconfiguration at the next transfer */
-		ctx->config = NULL;
 		return -ENOTSUP;
 	}
 
@@ -970,6 +969,8 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 #endif
 
+	ctx->config = spi_cfg;
+
 	/* Workaround: dummy transaction needed to sync CLK and software
 	 * controlled CS when CPOL is set. Not needed on ESP32/ESP32-S2.
 	 */
@@ -1016,12 +1017,6 @@ static int transceive(const struct device *dev,
 
 	data->dfs = spi_esp32_get_frame_size(spi_cfg);
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
-
-	if (data->ctx.tx_buf == NULL && data->ctx.rx_buf == NULL) {
-		goto done;
-	}
-
 	spi_context_buffers_setup(&data->ctx, NULL, NULL, data->dfs);
 
 #if CONFIG_PM
@@ -1034,6 +1029,13 @@ static int transceive(const struct device *dev,
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
+
+	if (data->ctx.tx_buf == NULL && data->ctx.rx_buf == NULL) {
+		if (asynchronous) {
+			spi_context_complete(&data->ctx, dev, 0);
+		}
+		goto done;
+	}
 
 #ifdef CONFIG_ESP32_SPI_TARGET
 	if (data->target_mode) {
