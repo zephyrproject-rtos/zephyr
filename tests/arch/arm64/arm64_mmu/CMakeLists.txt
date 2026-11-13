@@ -8,6 +8,10 @@ project(arm64_mmu)
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
+  ${ZEPHYR_BASE}
   )
 
-target_sources(app PRIVATE src/main.c)
+# The table accounting suite asserts exact table counts, which only hold
+# without memory domains; the domain suite needs them. One per build.
+target_sources_ifndef(CONFIG_USERSPACE app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_USERSPACE app PRIVATE src/domain_attrs.c)
