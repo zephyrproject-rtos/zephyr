@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mr_mcxn_t1_uwb
+  full_name: MR-MCXN-T1-UWB
+  vendor: nxp
+  supported_features:
+    - uwb
