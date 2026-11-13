@@ -48,14 +48,26 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
+		if (sqe->rx.buf_len == 0) {
+			*status = 0;
+			return false;
+		}
 		error = i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
 					    dt_spec->addr);
 		break;
 	case RTIO_OP_TINY_TX:
+		if (sqe->tiny_tx.buf_len == 0) {
+			*status = 0;
+			return false;
+		}
 		error = i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
 					    dt_spec->addr);
 		break;
 	case RTIO_OP_TX:
+		if (sqe->tx.buf_len == 0) {
+			*status = 0;
+			return false;
+		}
 		error = i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
 					    dt_spec->addr);
 		break;
