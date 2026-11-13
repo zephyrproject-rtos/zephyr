@@ -43,6 +43,8 @@ i2c0: &scb0 {
 
 	pinctrl-0 = <&p1_0_scb0_i2c_scl &p1_1_scb0_i2c_sda>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio_prt1 0 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt1 1 GPIO_OPEN_DRAIN>;
 	status = "okay";
 };
 
