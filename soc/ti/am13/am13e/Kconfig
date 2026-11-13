@@ -14,3 +14,4 @@ config SOC_AM13E23019
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
+	select CLOCK_CONTROL
