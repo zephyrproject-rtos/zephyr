@@ -269,6 +269,14 @@ bool z_arm_fault_undef_instruction_fp(void)
 bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 {
 #if defined(CONFIG_FPU_SHARING)
+#if defined(CONFIG_USE_SWITCH)
+	/* Entry saved the original VFP state and enabled it for handlers. */
+	if ((esf->fpu.undefined & FPEXC_EN) == 0U) {
+		esf->fpu.undefined |= FPEXC_EN;
+		_current->base.user_options |= K_FP_REGS;
+		return false;
+	}
+#else
 	/*
 	 * This is a true undefined instruction and we will be crashing
 	 * so save away the VFP registers.
@@ -276,6 +284,7 @@ bool z_arm_fault_undef_instruction(struct arch_esf *esf)
 	esf->fpu.undefined = __get_FPEXC();
 	esf->fpu.fpscr = __get_FPSCR();
 	z_arm_fpu_caller_save(&esf->fpu);
+#endif
 #endif
 
 #if defined(CONFIG_GDBSTUB)
