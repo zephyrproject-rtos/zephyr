@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <math.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
@@ -240,6 +242,27 @@ ZTEST(net_content_plain_text, test_put_float)
 		zassert_equal(test_out.out_cpkt->offset, offset,
 			      "Invalid packet offset");
 	}
+}
+
+ZTEST(net_content_plain_text, test_put_float_not_printable)
+{
+	int ret;
+	int i;
+	double value[] = { (double)NAN, (double)INFINITY, -(double)INFINITY, 1e19, -1e19 };
+	double int64_min = -0x1p63;
+	const char *int64_min_payload = "-9223372036854775808.0";
+
+	for (i = 0; i < ARRAY_SIZE(value); i++) {
+		ret = plain_text_writer.put_float(&test_out, &test_path, &value[i]);
+		zassert_equal(ret, -EINVAL, "Invalid error code returned");
+		zassert_equal(test_out.out_cpkt->offset, 0, "Invalid packet offset");
+	}
+
+	/* INT64_MIN is exact in binary64 and is printed. */
+	ret = plain_text_writer.put_float(&test_out, &test_path, &int64_min);
+	zassert_equal(ret, strlen(int64_min_payload), "Invalid length returned");
+	zassert_mem_equal(test_out.out_cpkt->data, int64_min_payload, strlen(int64_min_payload),
+			  "Invalid payload format");
 }
 
 ZTEST(net_content_plain_text_nomem, test_put_float_nomem)

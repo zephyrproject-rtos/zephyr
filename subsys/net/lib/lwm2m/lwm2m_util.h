@@ -19,7 +19,7 @@ int lwm2m_b64_to_float(uint8_t *b64, size_t len, double *out);
 
 /* convert string to float */
 int lwm2m_atof(const char *input, double *out);
-/* convert float to string */
+/* convert float to string; -EINVAL for NaN, infinities and values out of int64_t range */
 int lwm2m_ftoa(double *input, char *out, size_t outlen, int8_t dec_limit);
 
 uint16_t lwm2m_atou16(const uint8_t *buf, uint16_t buflen, uint16_t *len);
