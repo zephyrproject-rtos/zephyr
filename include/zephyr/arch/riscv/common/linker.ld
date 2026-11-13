@@ -443,7 +443,7 @@ GROUP_END(DTCM)
 /* Output section descriptions are needed for these sections to suppress
  * warnings when "--orphan-handling=warn" is set for lld.
  */
-#if defined(CONFIG_LLVM_USE_LLD)
+#if defined(__LLD_LINKER_CMD__)
     SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
     SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
     SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
