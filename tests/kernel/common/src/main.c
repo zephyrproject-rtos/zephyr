@@ -50,6 +50,11 @@ ZTEST(printk, test_printk)
  *   KERNEL_PATCHLEVEL build-time constant.
  *
  * @see sys_kernel_version_get()
+ * @verifies ZEP-SRS-39-1
+ * @verifies ZEP-SRS-39-2
+ * @verifies ZEP-SRS-39-3
+ * @verifies ZEP-SRS-39-4
+ * @verifies ZEP-SRS-39-5
  */
 ZTEST(common, test_version)
 {
