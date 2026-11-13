@@ -353,15 +353,13 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 
 	do {
 		/* If the event timer or free-run timer is close to expiration when system
-		 * enters idle with I2C target DMA mode enabled, the memory and CPU clocks
-		 * may become unsynchronized after wakeup. This causes CPU to fetch incorrect
-		 * data and eventually trigger SoC watchdog timeout.
+		 * enters idle, the memory and CPU clocks may become unsynchronized after
+		 * wakeup. This causes CPU to fetch incorrect data and eventually trigger
+		 * SoC watchdog timeout.
 		 * Due to this hardware limitation, SoC should skip entering idle mode if
 		 * the remaining timer value is less than 150µs(safe margin).
 		 */
-		if (IS_ENABLED(CONFIG_I2C_ITE_ENHANCE) &&
-		    IS_ENABLED(CONFIG_I2C_TARGET_BUFFER_MODE) &&
-		    ite_it8xxx2_timer_block_idle()) {
+		if (IS_ENABLED(CONFIG_ITE_IT8XXX2_TIMER) && ite_it8xxx2_timer_block_idle()) {
 			break;
 		}
 
