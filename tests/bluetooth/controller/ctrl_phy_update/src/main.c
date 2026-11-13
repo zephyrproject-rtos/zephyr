@@ -1902,5 +1902,175 @@ ZTEST(phy_periph, test_phy_update_periph_loc_unexpected_pdu_awaiting_instant)
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+/* The Host disconnects after the LL_PHY_UPDATE_IND went out, before or
+ * after its acknowledgment. The peer changes the PHY at the instant, so the
+ * central has to as well, and it sends the LL_TERMINATE_IND after the instant.
+ */
+static void phy_update_central_loc_terminate(bool before_ack)
+{
+	struct pdu_data_llctrl_terminate_ind terminate_ind = {
+		.error_code = BT_HCI_ERR_REMOTE_USER_TERM_CONN,
+	};
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M,
+					       .tx_phys = PHY_1M | PHY_2M };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .c_to_p_phy = PHY_2M,
+						   .p_to_c_phy = PHY_2M };
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
+	struct node_rx_pdu *ntf;
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t err;
+
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	err = ull_cp_phy_update(&conn, PHY_2M, PREFER_S8_CODING, PHY_2M, HOST_INITIATED);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	event_prepare(&conn);
+	lt_rx(LL_PHY_REQ, &conn, &tx, &req);
+	lt_rx_q_is_empty(&conn);
+	lt_tx(LL_PHY_RSP, &conn, &rsp);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	event_prepare(&conn);
+	/* PHY_UPDATE_INSTANT_DELTA events ahead, without peripheral latency */
+	ind.instant = instant = event_counter(&conn) + 6U;
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, &ind);
+	lt_rx_q_is_empty(&conn);
+
+	if (before_ack) {
+		err = ull_cp_terminate(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS);
+	}
+
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	if (!before_ack) {
+		err = ull_cp_terminate(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS);
+	}
+
+	while (!is_instant_reached(&conn, instant)) {
+		event_prepare(&conn);
+		lt_rx_q_is_empty(&conn);
+		event_done(&conn);
+
+		CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
+	}
+
+	/* The instant */
+	event_prepare(&conn);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
+
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	release_ntf(ntf);
+
+	event_prepare(&conn);
+	lt_rx(LL_TERMINATE_IND, &conn, &tx, &terminate_ind);
+	lt_rx_q_is_empty(&conn);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	ut_rx_q_is_empty();
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+static ZTEST(phy_central, test_phy_update_central_loc_terminate_awaiting_instant)
+{
+	phy_update_central_loc_terminate(false);
+}
+
+static ZTEST(phy_central, test_phy_update_central_loc_terminate_awaiting_ack)
+{
+	phy_update_central_loc_terminate(true);
+}
+
+/* The Host disconnects while a PHY update of the central waits for its
+ * instant. The peripheral sends the LL_TERMINATE_IND at once, and changes the
+ * PHY at the instant in case the central has not received it by then.
+ */
+static ZTEST(phy_periph, test_phy_update_periph_rem_terminate_awaiting_instant)
+{
+	struct pdu_data_llctrl_terminate_ind terminate_ind = {
+		.error_code = BT_HCI_ERR_REMOTE_USER_TERM_CONN,
+	};
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_2M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED,
+					       .tx_phys = PHY_1M | PHY_2M | PHY_CODED };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .c_to_p_phy = PHY_2M,
+						   .p_to_c_phy = PHY_2M };
+	struct node_rx_pu pu = { .status = BT_HCI_ERR_SUCCESS };
+	struct node_rx_pdu *ntf;
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t err;
+
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	event_prepare(&conn);
+	lt_tx(LL_PHY_REQ, &conn, &req);
+	event_done(&conn);
+
+	event_prepare(&conn);
+	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
+	lt_rx_q_is_empty(&conn);
+	/* The central uses the smallest instant offset it may use */
+	ind.instant = instant = event_counter(&conn) + 6U;
+	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	err = ull_cp_terminate(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* The central does not acknowledge the LL_TERMINATE_IND before the instant */
+	event_prepare(&conn);
+	lt_rx(LL_TERMINATE_IND, &conn, &tx, &terminate_ind);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	while (!is_instant_reached(&conn, instant)) {
+		event_prepare(&conn);
+		lt_rx_q_is_empty(&conn);
+		event_done(&conn);
+
+		CHECK_CURRENT_PHY_STATE(conn, PHY_1M, PREFER_S8_CODING, PHY_1M);
+	}
+
+	/* The instant */
+	event_prepare(&conn);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	CHECK_CURRENT_PHY_STATE(conn, PHY_2M, PREFER_S8_CODING, PHY_2M);
+
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	release_ntf(ntf);
+
+	event_prepare(&conn);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	ut_rx_q_is_empty();
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 ZTEST_SUITE(phy_central, NULL, NULL, phy_setup, NULL, NULL);
 ZTEST_SUITE(phy_periph, NULL, NULL, phy_setup, NULL, NULL);

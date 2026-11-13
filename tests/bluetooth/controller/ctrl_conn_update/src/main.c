@@ -4702,6 +4702,130 @@ ZTEST(central_loc_no_param_req, test_conn_update_central_loc_accept_no_param_req
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 
+/* Start a connection update of the central and send its
+ * LL_CONNECTION_UPDATE_IND. Return the instant.
+ */
+static uint16_t central_loc_send_conn_update_ind(void)
+{
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t err;
+
+	test_set_role(&conn, BT_HCI_ROLE_CENTRAL);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* The termination timeout is counted in connection intervals. Keep
+	 * the interval different from the new one.
+	 */
+	conn.lll.interval = 2U * INTVL_MAX;
+
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	event_prepare(&conn);
+	conn_update_ind.instant = instant = event_counter(&conn) + 6U;
+	lt_rx(LL_CONNECTION_UPDATE_IND, &conn, &tx, &conn_update_ind);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	return instant;
+}
+
+/* The Host disconnects while the connection update waits for its instant. The
+ * peripheral moves to the new parameters at the instant, so the central has to
+ * as well, and it sends the LL_TERMINATE_IND after the instant.
+ */
+static ZTEST(central_loc_no_param_req, test_conn_update_central_loc_terminate_no_param_req)
+{
+	struct pdu_data_llctrl_terminate_ind terminate_ind = {
+		.error_code = BT_HCI_ERR_REMOTE_USER_TERM_CONN,
+	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
+	struct node_rx_pdu *ntf;
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t err;
+
+	instant = central_loc_send_conn_update_ind();
+
+	err = ull_cp_terminate(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	while (!is_instant_reached(&conn, instant)) {
+		event_prepare(&conn);
+		lt_rx_q_is_empty(&conn);
+		event_done(&conn);
+
+		ut_rx_q_is_empty();
+	}
+
+	/* The instant */
+	event_prepare(&conn);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	release_ntf(ntf);
+
+	event_prepare(&conn);
+	lt_rx(LL_TERMINATE_IND, &conn, &tx, &terminate_ind);
+	lt_rx_q_is_empty(&conn);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	ut_rx_q_is_empty();
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* As above, but other connections hold all free procedure contexts. The
+ * termination takes the context of the connection update and goes out at once.
+ */
+static ZTEST(central_loc_no_param_req, test_conn_update_central_loc_terminate_no_ctx_no_param_req)
+{
+	struct pdu_data_llctrl_terminate_ind terminate_ind = {
+		.error_code = BT_HCI_ERR_REMOTE_USER_TERM_CONN,
+	};
+	struct proc_ctx *ctx;
+	struct node_tx *tx;
+	sys_snode_t *node;
+	sys_slist_t held;
+	uint8_t err;
+
+	(void)central_loc_send_conn_update_ind();
+
+	sys_slist_init(&held);
+	ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
+	while (ctx != NULL) {
+		sys_slist_append(&held, &ctx->node);
+		ctx = llcp_create_local_procedure(PROC_VERSION_EXCHANGE);
+	}
+
+	err = ull_cp_terminate(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	event_prepare(&conn);
+	lt_rx(LL_TERMINATE_IND, &conn, &tx, &terminate_ind);
+	lt_rx_q_is_empty(&conn);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	node = sys_slist_get(&held);
+	while (node != NULL) {
+		llcp_proc_ctx_release(CONTAINER_OF(node, struct proc_ctx, node));
+		node = sys_slist_get(&held);
+	}
+
+	ut_rx_q_is_empty();
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 /*
  * Parameter Request Procedure not supported.
  * Peripheral-initiated Connection Update/Connection Parameter Request procedure
@@ -4940,6 +5064,78 @@ ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_accept_no_param_req)
 			release_ntf(ntf);
 		}
 	} while (parameters_changed-- > 0U);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/* The Host disconnects while a connection update of the central waits for its
+ * instant. The peripheral sends the LL_TERMINATE_IND at once and moves to the
+ * new parameters at the instant, where the termination timeout keeps the time
+ * it has left.
+ */
+static ZTEST(periph_rem_no_param_req, test_conn_update_periph_rem_terminate_no_param_req)
+{
+	struct pdu_data_llctrl_terminate_ind terminate_ind = {
+		.error_code = BT_HCI_ERR_REMOTE_USER_TERM_CONN,
+	};
+	struct node_rx_pu cu = { .status = BT_HCI_ERR_SUCCESS };
+	struct node_rx_pdu *ntf;
+	uint16_t term_expire;
+	struct node_tx *tx;
+	uint16_t instant;
+	uint8_t err;
+
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Twice the new interval, and a termination timeout of several events */
+	conn.lll.interval = 2U * INTVL_MAX;
+	conn.supervision_timeout = TIMEOUT;
+
+	event_prepare(&conn);
+	conn_update_ind.instant = instant = event_counter(&conn) + 6U;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+	event_done(&conn);
+
+	err = ull_cp_terminate(&conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* The central does not acknowledge the LL_TERMINATE_IND before the instant */
+	event_prepare(&conn);
+	lt_rx(LL_TERMINATE_IND, &conn, &tx, &terminate_ind);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	term_expire = conn.llcp.local.prt_expire;
+
+	while (!is_instant_reached(&conn, instant)) {
+		event_prepare(&conn);
+		lt_rx_q_is_empty(&conn);
+		event_done(&conn);
+
+		ut_rx_q_is_empty();
+	}
+
+	/* The instant */
+	event_prepare(&conn);
+	lt_rx_q_is_empty(&conn);
+	event_done(&conn);
+
+	ut_rx_node(NODE_CONN_UPDATE, &ntf, &cu);
+	release_ntf(ntf);
+
+	/* Half the interval, twice the events */
+	zassert_equal(conn.llcp.local.prt_expire, 2U * term_expire,
+		      "Termination timeout %u events, expected %u", conn.llcp.local.prt_expire,
+		      2U * term_expire);
+
+	event_prepare(&conn);
+	event_tx_ack(&conn, tx);
+	event_done(&conn);
+	ull_cp_release_tx(&conn, tx);
+
+	ut_rx_q_is_empty();
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());
