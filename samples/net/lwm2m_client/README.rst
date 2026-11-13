@@ -252,7 +252,7 @@ shield do the following:
    :zephyr-app: samples/net/lwm2m_client
    :host-os: unix
    :board: <board to use>
-   :conf: "prj.conf overlay-wncm14a2a.conf"
+   :shield: wnc_m14a2a
    :goals: build
    :compact:
 

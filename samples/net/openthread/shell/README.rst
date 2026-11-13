@@ -20,8 +20,8 @@ There are configuration files for different boards and setups in the shell direc
 - :file:`prj.conf`
   Generic config file.
 
-- :file:`overlay-ot-rcp-host-nxp.conf`
-  This overlay config enables support of OpenThread RCP host running on NXP chips over IMU interface.
+- :file:`prj-ot-host.conf`
+  This config file enables support of OpenThread RCP host running on NXP chips over IMU interface.
 
 Build shell application like this:
 

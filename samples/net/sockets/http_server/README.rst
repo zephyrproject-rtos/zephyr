@@ -168,7 +168,8 @@ First of all build the sample enabling HTTPS service and flash the board:
          :zephyr-app: samples/net/sockets/http_server/
          :board: nrf52840dk/nrf52840
          :goals: build
-         :gen-args: -DCONFIG_NET_SAMPLE_HTTPS_SERVICE=y -DEXTRA_CONF_FILE=overlay-netusb.conf
+         :gen-args: -DEXTRA_CONF_FILE="tls.conf;usbd.conf" \
+                    -DEXTRA_DTC_OVERLAY_FILE=usbd_cdc_ncm.overlay
 
 Then connect the USB cable to the host PC and issue:
 
