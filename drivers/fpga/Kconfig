@@ -30,6 +30,7 @@ config FPGA_SHELL
 source "drivers/fpga/Kconfig.altera_agilex_bridge"
 source "drivers/fpga/Kconfig.eos_s3"
 source "drivers/fpga/Kconfig.ice40"
+source "drivers/fpga/Kconfig.machxo2"
 source "drivers/fpga/Kconfig.mpfs"
 source "drivers/fpga/Kconfig.slg471x5"
 source "drivers/fpga/Kconfig.slg47910"

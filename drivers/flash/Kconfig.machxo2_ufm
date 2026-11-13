@@ -1,0 +1,28 @@
+# Copyright (c) 2026 FIRST RF
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_MACHXO2_UFM
+	bool "Lattice MachXO2 UFM flash driver"
+	default y
+	depends on FLASH
+	depends on FPGA
+	depends on DT_HAS_LATTICE_MACHXO2_UFM_ENABLED
+	depends on DT_HAS_LATTICE_MACHXO2_FPGA_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MACHXO2_FPGA
+	select SPI
+	help
+	  Enable support for the Lattice MachXO2 user flash memory (UFM). The
+	  UFM is accessed through the sysCONFIG transport of the MachXO2 FPGA
+	  driver.
+
+config MACHXO2_UFM_INIT_PRIORITY
+	int "MachXO2 UFM flash driver init priority"
+	default 76
+	range 0 999
+	depends on FLASH_MACHXO2_UFM
+	help
+	  Initialization priority for the MachXO2 UFM flash driver. It must run
+	  after the parent MachXO2 FPGA driver has initialized the transport.
