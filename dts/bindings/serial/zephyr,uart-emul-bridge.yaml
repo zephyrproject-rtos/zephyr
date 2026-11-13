@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Emulated UART bridge
+
+  Bridges a UART with the wire side of a zephyr,uart-emul device: data
+  received on the UART is queued on the receive side of the emulated UART,
+  and data the emulated UART transmits is sent on the UART. A terminal on
+  the UART then drives the console or shell running on the emulated UART.
+
+  The direction property restricts the bridge to one way. The emulated UART
+  reports its transmit data to a single consumer, so the backward direction
+  cannot be combined with another consumer of that data, such as a display
+  terminal attached to the same emulated UART; use the forward direction
+  there.
+
+compatible: "zephyr,uart-emul-bridge"
+
+include: base.yaml
+
+properties:
+  uart:
+    type: phandle
+    required: true
+    description: |
+      UART at the wire side of the bridge.
+
+  emul:
+    type: phandle
+    required: true
+    description: |
+      The zephyr,uart-emul device at the other side.
+
+  direction:
+    type: string
+    default: "both"
+    enum:
+      - "both"
+      - "forward"
+      - "backward"
+    description: |
+      Direction of the data flow: both ways, forward from the UART to the
+      emulated UART, or backward from the emulated UART to the UART.
+
+examples:
+  - |
+    / {
+            uart_console: uart_console {
+                    compatible = "zephyr,uart-emul";
+            };
+
+            uart_kbd {
+                    compatible = "zephyr,uart-emul-bridge";
+                    uart = <&uart0>;
+                    emul = <&uart_console>;
+                    direction = "forward";
+            };
+    };
