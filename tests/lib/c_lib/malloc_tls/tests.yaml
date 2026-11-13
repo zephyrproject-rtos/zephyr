@@ -1,0 +1,4 @@
+tests:
+  libraries.libc.malloc_tls:
+    filter: CONFIG_COMMON_LIBC_MALLOC_TLS
+    tags: clib
