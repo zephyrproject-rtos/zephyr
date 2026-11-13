@@ -149,10 +149,10 @@
 			portc-unsupported-pins = <0x20004300>; /*8|9|14|29*/
 			portd-supported-pins = <0x301f03>; /*0|1|8|9|10|11|12|20|21*/
 
-			portb-special-pins-1 = <0x3c000000 0x2>; /*26|27|28|29*/
-			portc-special-pins-1 = <0x80 0x2>; /*7*/
-			portd-special-pins-1 = <0x1f00 0x5>; /*8|9|10|11|12*/
-			portd-special-pins-2 = <0x300000 0x6>; /*20|21*/
+			porta-eic-lines = [10 32 54 76 00 ba dc fe 10 32 54 76 98 b0 00 fe];
+			portb-eic-lines = [10 32 54 76 98 ba dc fe 10 32 54 76 98 dc fe fe];
+			portc-eic-lines = [10 32 54 96 00 ba dc f0 10 32 54 76 98 ba 0c fe];
+			portd-eic-lines = [10 00 00 00 43 65 07 00 00 00 ba 00 00 00 00 00];
 		};
 
 		sercom0: sercom@40003000 {

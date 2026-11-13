@@ -5,3 +5,10 @@
  */
 
 #include <microchip/pic32c/pic32cm_sg_gc/common/pic32cm_sg_gc.dtsi>
+
+&eic {
+	porta-unsupported-pins = <0xfffffc00>; /*10..31*/
+	portb-unsupported-pins = <0xffffff80>; /*7..31*/
+	portc-unsupported-pins = <0xffffff80>; /*7..31*/
+	portd-supported-pins = <0x000003b2>; /*1|4|5|7|8|9*/
+};

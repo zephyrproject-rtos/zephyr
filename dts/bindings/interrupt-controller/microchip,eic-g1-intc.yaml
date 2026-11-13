@@ -13,7 +13,10 @@ description: |
   The devicetree binding provides the hardware-specific information including:
    - GPIO pins that support external interrupts.
    - GPIO pins that do not support external interrupts.
-   - GPIO pins whose EIC line mapping differs from the default mapping.
+   - The EIC line of each GPIO pin, as a per-port table.
+
+  Each port's portX-eic-lines table gives the EIC line of its pins, two pins
+  per byte.
 
   Group g1 EIC supports following hardware peripherals:
     - module name="EIC" id="U2254" version="3.0.0"
@@ -74,101 +77,41 @@ properties:
       Each bit in the property denotes a pin number. This shows the pins which
       support interrupt in portd
 
-  porta-special-pins-1:
-    type: array
-    default: [0, 0]
+  porta-eic-lines:
+    type: uint8-array
+    min-len: 16
+    max-len: 16
     description: |
-      Each bit in this number denotes a pin number. These pins are derived from datasheet
-      by listing down the eic line and port-pin mapping.
-      The eic line mapping to the pin number requires a manipulation with an offset.
+      EXTINT line of each port A pin, two pins per byte: byte n holds pin 2n
+      in its low nibble and pin 2n + 1 in its high nibble. 16 bytes. Pins
+      the port's supported or unsupported mask rejects are not read.
 
-  "#porta-special-pins-1-cells":
-    type: int
-    default: 2
+  portb-eic-lines:
+    type: uint8-array
+    min-len: 16
+    max-len: 16
     description: |
-      Number of cells in portb-special-pins-1 property
+      EXTINT line of each port B pin, two pins per byte: byte n holds pin 2n
+      in its low nibble and pin 2n + 1 in its high nibble. 16 bytes. Pins
+      the port's supported or unsupported mask rejects are not read.
 
-  portb-special-pins-1:
-    type: array
-    default: [0, 0]
+  portc-eic-lines:
+    type: uint8-array
+    min-len: 16
+    max-len: 16
     description: |
-      Each bit in this number denotes a pin number. These pins are derived from datasheet
-      by listing down the eic line and port-pin mapping.
-      The eic line mapping to the pin number requires a manipulation with an offset.
+      EXTINT line of each port C pin, two pins per byte: byte n holds pin 2n
+      in its low nibble and pin 2n + 1 in its high nibble. 16 bytes. Pins
+      the port's supported or unsupported mask rejects are not read.
 
-  "#portb-special-pins-1-cells":
-    type: int
-    default: 2
+  portd-eic-lines:
+    type: uint8-array
+    min-len: 16
+    max-len: 16
     description: |
-      Number of cells in portb-special-pins-1 property
-
-  portc-special-pins-1:
-    type: array
-    default: [0, 0]
-    description: |
-      Each bit in this number denotes a pin number. These pins are derived from datasheet
-      The eic line mapping to the pin number requires a manipulation with an offset.
-
-  "#portc-special-pins-1-cells":
-    type: int
-    default: 2
-    description: |
-      Number of cells in portc-special-pins-1 property
-
-  portc-special-pins-2:
-    type: array
-    default: [0, 0]
-    description: |
-      Each bit in this number denotes a pin number. These pins are derived from datasheet
-      The eic line mapping to the pin number requires a manipulation with an offset.
-
-  "#portc-special-pins-2-cells":
-    type: int
-    default: 2
-    description: |
-      Number of cells in portc-special-pins-1 property
-
-  portd-special-pins-1:
-    type: array
-    default: [0, 0]
-    description: |
-      Each bit in this number denotes a pin number. These pins are derived from datasheet
-      The eic line mapping to the pin number requires a manipulation with an offset.
-
-  "#portd-special-pins-1-cells":
-    type: int
-    default: 2
-    description: |
-      Number of cells in portd-special-pins-1 property
-
-  portd-special-pins-2:
-    type: array
-    default: [0, 0]
-    description: |
-      Each bit in this number denotes a pin number. These pins are derived from datasheet
-      The eic line mapping to the pin number requires a manipulation with an offset.
-
-  "#portd-special-pins-2-cells":
-    type: int
-    default: 2
-    description: |
-      Number of cells in portd-special-pins-2 property
-
-portb-special-pins-1-cells:
-  - pins_val
-  - offset
-
-portc-special-pins-1-cells:
-  - pins_val
-  - offset
-
-portd-special-pins-1-cells:
-  - pins_val
-  - offset
-
-portd-special-pins-2-cells:
-  - pins_val
-  - offset
+      EXTINT line of each port D pin, two pins per byte: byte n holds pin 2n
+      in its low nibble and pin 2n + 1 in its high nibble. 16 bytes. Pins
+      the port's supported or unsupported mask rejects are not read.
 
 examples:
   - |
@@ -177,9 +120,8 @@ examples:
      * *-supported-pins and *-unsupported-pins properties describe the
      * interrupt capabilities of GPIO pins for each port.
      *
-     * The *-special-pins-* properties are used for GPIO pins whose EIC line
-     * cannot be derived directly from the pin number (for example, using
-     * pin_number % 16). Each entry consists of a pin bitmask and an offset.
+     * The portX-eic-lines properties give the EIC line of each pin of a port,
+     * two pins per byte, low nibble first.
      *
      * GPIO pins can be configured for interrupt operation using the standard
      * Zephyr GPIO APIs in the same way as any other GPIO pin.
@@ -193,5 +135,5 @@ examples:
 
       porta-unsupported-pins = <0x00000030>;
       portc-supported-pins = <0x00FF0000>;
-      portc-special-pins-1 = <0x03000000 16>;
+      portc-eic-lines = [00 00 00 00 00 00 00 00 10 32 54 76 00 00 00 00];
     };
