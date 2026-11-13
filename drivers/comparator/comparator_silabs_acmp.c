@@ -60,7 +60,7 @@ static int acmp_pm_action(const struct device *dev, enum pm_device_action action
 
 		err = clock_control_off(config->clock_dev,
 					(clock_control_subsys_t)&config->clock_cfg);
-		if (err < 0) {
+		if (err != 0 && err != -ENOTSUP) {
 			return err;
 		}
 
