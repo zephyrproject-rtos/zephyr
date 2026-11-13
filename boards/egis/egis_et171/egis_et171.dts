@@ -80,3 +80,7 @@
 &wdt {
 	status = "okay";
 };
+
+&otp {
+	status = "okay";
+};
