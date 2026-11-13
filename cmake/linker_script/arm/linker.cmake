@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
 set(COMMON_ZEPHYR_LINKER_DIR ${ZEPHYR_BASE}/cmake/linker_script/common)
 
 # This should be different for cortex_r or cortex_a....
@@ -95,11 +99,11 @@ foreach(path IN LISTS paths)
 endforeach()
 
 if(CONFIG_XIP)
-  zephyr_linker_group(NAME ROM_REGION LMA FLASH)
+  zephyr_linker_group(NAME ROM_REGION LMA FLASH LINK_IN ROM)
   set(rom_start ${FLASH_ADDR})
   set(XIP_ALIGN_WITH_INPUT ALIGN_WITH_INPUT)
 else()
-  zephyr_linker_group(NAME ROM_REGION LMA RAM)
+  zephyr_linker_group(NAME ROM_REGION LMA RAM LINK_IN ROM)
   set(rom_start ${RAM_ADDR})
 endif()
 
@@ -125,8 +129,8 @@ if(CONFIG_ROMSTART_RELOCATION_ROM)
 endif()
 zephyr_linker_group(NAME TEXT_REGION GROUP ROM_REGION SYMBOL SECTION)
 zephyr_linker_group(NAME RODATA_REGION GROUP ROM_REGION)
-zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION SYMBOL SECTION)
-zephyr_linker_group(NAME NOINIT_REGION GROUP RAM_REGION SYMBOL SECTION)
+zephyr_linker_group(NAME DATA_REGION GROUP RAM_REGION LINK_IN DATA SYMBOL SECTION)
+zephyr_linker_group(NAME NOINIT_REGION GROUP RAM_REGION LINK_IN NOLOAD SYMBOL SECTION)
 
 # should go to a relocation.cmake - from include/linker/rel-sections.ld - start
 zephyr_linker_section(NAME  .rel.plt  HIDDEN)
@@ -202,7 +206,7 @@ if(CONFIG_USERSPACE)
   zephyr_linker_symbol(SYMBOL "_app_smem_rom_start" EXPR "@__app_smem_group_load_start@")
 
 
-  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION LINK_IN NOLOAD TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
 
@@ -222,14 +226,14 @@ include(${COMMON_ZEPHYR_LINKER_DIR}/common-ram.cmake)
 include(${COMMON_ZEPHYR_LINKER_DIR}/kobject-data.cmake)
 
 if(NOT CONFIG_USERSPACE)
-  zephyr_linker_section(NAME .bss GROUP RAM_REGION TYPE BSS)
+  zephyr_linker_section(NAME .bss GROUP RAM_REGION LINK_IN NOLOAD TYPE BSS)
   zephyr_linker_section_configure(SECTION .bss INPUT COMMON)
   zephyr_linker_section_configure(SECTION .bss INPUT ".kernel_bss.*")
   # As memory is cleared in words only, it is simpler to ensure the BSS
   # section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
   zephyr_linker_section_configure(SECTION .bss ALIGN 4)
 
-  zephyr_linker_section(NAME .noinit GROUP NOINIT_REGION TYPE NOLOAD NOINIT)
+  zephyr_linker_section(NAME .noinit GROUP NOINIT_REGION LINK_IN NOLOAD TYPE NOLOAD NOINIT)
   # This section is used for non-initialized objects that
   # will not be cleared during the boot process.
   zephyr_linker_section_configure(SECTION .noinit INPUT ".kernel_noinit.*")
@@ -288,8 +292,8 @@ if(DEFINED chosen_dtcm)
   if(${status_result})
     zephyr_linker_group(NAME DTCM_REGION VMA DTCM LMA ROM_REGION)
 
-    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION ALIGN 4 TYPE BSS)
-    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION ALIGN 4 TYPE NOLOAD NOINIT)
+    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION LINK_IN NOLOAD ALIGN 4 TYPE BSS)
+    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION LINK_IN NOLOAD ALIGN 4 TYPE NOLOAD NOINIT)
     zephyr_linker_section(NAME .dtcm_data GROUP DTCM_REGION ALIGN 4)
   endif()
 endif()
