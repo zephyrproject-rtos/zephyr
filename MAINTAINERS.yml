@@ -6764,6 +6764,7 @@ TriCore arch:
     - cmake/toolchain/tricore/
     - doc/hardware/arch/tricore.rst
     - include/zephyr/arch/tricore/
+    - tests/arch/tricore/
   labels:
     - "area: TriCore"
 

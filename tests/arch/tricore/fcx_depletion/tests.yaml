@@ -1,0 +1,7 @@
+tests:
+  arch.tricore.fcx_depletion:
+    arch_allow: tricore
+    tags:
+      - arch
+      - tricore
+      - csa
