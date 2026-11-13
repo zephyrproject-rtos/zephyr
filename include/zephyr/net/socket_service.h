@@ -182,6 +182,44 @@ static inline int net_socket_service_unregister(const struct net_socket_service_
 }
 
 /**
+ * @brief Register a single pollable socket to a socket service by placing
+ *        it in the first free slot of the service's event array. Unlike
+ *        net_socket_service_register(), existing entries are left untouched, so this
+ *        can be called repeatedly to add sockets one at a time.
+ *
+ * @param service Pointer to a service description.
+ * @param pfd Pollable socket.
+ * @param user_data User specific data passed to the callback for this socket.
+ *
+ * @retval 0 No error
+ * @retval -ENOENT Service is not found.
+ * @retval -EINVAL @p pfd is NULL or its file descriptor is negative.
+ * @retval -EEXIST The file descriptor is already registered with the service.
+ * @retval -ENOMEM All file descriptor slots of the service are in use.
+ * @retval -EIO The socket service thread is not running.
+ */
+__syscall int net_socket_service_register_single_fd(const struct net_socket_service_desc *service,
+						    struct zsock_pollfd *pfd, void *user_data);
+
+/**
+ * @brief Unregister a single pollable socket from a socket service.
+ *
+ * The socket is not closed. If the socket is already scheduled to be closed
+ * by net_socket_service_close(), it is left registered so that the close
+ * still happens, and -ENOENT is returned.
+ *
+ * @param service Pointer to a service description.
+ * @param fd File descriptor of the pollable socket.
+ *
+ * @retval 0 No error
+ * @retval -ENOENT Service is not found, or @p fd is not registered with the
+ *                 service (or is scheduled to be closed).
+ * @retval -EIO The socket service thread is not running.
+ */
+__syscall int net_socket_service_unregister_single_fd(const struct net_socket_service_desc *service,
+						      int fd);
+
+/**
  * @brief Unregister pollable sockets and automatically close the socket.
  *
  * @param service Pointer to a service description.
