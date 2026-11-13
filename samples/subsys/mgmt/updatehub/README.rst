@@ -145,7 +145,8 @@ value will select UpdateHub-CE otherwise ``n`` selects UpdateHub Cloud.
 
 Set :kconfig:option:`CONFIG_UPDATEHUB_SERVER` with your local IP address that runs the
 UpdateHub-CE server edition.  If your are using a service provider a DNS name
-is a valid option too.  This option is only valid when using UpdateHub-CE.
+is a valid option too.  When using UpdateHub Cloud it defaults to
+``coap.updatehub.io``.
 
 Set :kconfig:option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the polling period of your
 preference, remembering that the limit is between 0 and 43200 minutes

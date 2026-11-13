@@ -57,11 +57,13 @@ config UPDATEHUB_CE
 	  updatehub.io enterprise server.
 
 config UPDATEHUB_SERVER
-	string "User address for the updatehub-ce-server"
-	depends on UPDATEHUB_CE
+	string "UpdateHub server address"
+	default "coap.updatehub.io" if !UPDATEHUB_CE
 	help
-	  This configuration is default, if need to use
-	  other address, must be set on the UpdateHub shell
+	  Host name or IP address of the UpdateHub server. It defaults to
+	  UpdateHub Cloud and must be set when UPDATEHUB_CE is enabled.
+	  With UPDATEHUB_DTLS, the server certificate must be valid for
+	  this name.
 
 config UPDATEHUB_SHELL
 	bool "UpdateHub shell utilities"
