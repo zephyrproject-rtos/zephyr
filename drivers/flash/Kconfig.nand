@@ -32,3 +32,55 @@ config SPI_NAND_BAD_BLOCK_CACHE
 	  increased memory usage.
 
 endif # SPI_NAND
+
+menuconfig MSPI_NAND
+	bool "MSPI NAND Flash"
+	default y
+	depends on DT_HAS_JEDEC_MSPI_NAND_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP
+	select MSPI
+	select CRC
+
+if MSPI_NAND
+
+config MSPI_NAND_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Device driver initialization priority. Device is connected to
+	  MSPI bus, it has to be initialized after MSPI driver.
+
+config MSPI_NAND_BAD_BLOCK_CACHE
+	bool "Bad block cache"
+	depends on FLASH_EX_OP_ENABLED
+	default y
+	help
+	  Enable bad block cache by keeping a bad block table in memory.
+	  This will speed up bad block checking at the cost of slightly
+	  increased memory usage.
+
+config MSPI_NAND_DMA_DATA_XFER
+	bool "Use DMA for Flash MSPI NAND data transfers"
+	depends on MSPI_DMA
+	default y
+	help
+	  Transfer mode for cache read and program load MSPI transactions.
+	  Since these transfer whole pages, it is generally recommended to use
+	  MSPI_DMA to reduce CPU load and improve throughput. Will default to
+	  MSPI_DMA if CONFIG_MSPI_DMA is enabled, otherwise it will default to
+	  MSPI_PIO.
+
+config MSPI_NAND_DMA_CONTROL_XFER
+	bool "Use DMA for Flash MSPI NAND control transfers"
+	depends on MSPI_DMA
+	default n
+	help
+	  Transfer mode for feature register reads/writes and command MSPI
+	  transactions. Since these are shorter transfers, it is generally
+	  recommended to use MSPI_PIO (programmed I/O) due to there being less
+	  overhead compared to setting up a DMA transfer.
+
+endif # MSPI_NAND

@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Generic NAND flash on the MSPI bus
+
+description: |
+  Serial NAND flash memory on an MSPI bus that uses the command set common
+  to SPI NAND devices.
+
+  The command, address and dummy lengths follow from the command set, so
+  rx-dummy, tx-dummy, read-command, write-command, command-length and
+  address-length are not used. A page is transferred in one packet: if the
+  controller has a packet-data-limit, write-block-size must not exceed it.
+
+  The geometry and the maximum operation durations are not discovered at
+  run time and are taken from the device datasheet. During initialization
+  the device is reset, its ID is compared with jedec-id, the ONFI parameter
+  page is read and all blocks are unlocked. Initialization fails if the ID
+  differs or no valid parameter page is found. A geometry that differs from
+  the parameter page is reported as a warning.
+
+compatible: "jedec,mspi-nand"
+
+include: [mspi-device.yaml, "jedec,spi-nand-common.yaml"]
+
+properties:
+  mspi-endian:
+    default: "MSPI_BIG_ENDIAN"
+
+  transfer-timeout:
+    type: int
+    default: 10
+    description: |
+      Maximum time, in milliseconds, allowed for a single transfer on the MSPI
+      bus in communication with the flash chip. The longest transfer is a
+      page of write-block-size bytes, which is not split into smaller
+      packets, so the value has to exceed the duration of a page transfer at
+      the clock frequency in use. The default covers a 2048-byte page at 2 MHz
+      and a 4096-byte page at 4 MHz.

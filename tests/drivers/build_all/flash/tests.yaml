@@ -15,3 +15,26 @@ tests:
       - native_sim
     extra_configs:
       - CONFIG_EMUL=y
+  drivers.flash.mspi.build:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=mspi.overlay
+    extra_configs:
+      - CONFIG_EMUL=y
+  drivers.flash.mspi.ex_op.build:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=mspi.overlay
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_FLASH_EX_OP_ENABLED=y
+  drivers.flash.mspi.dma.build:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=mspi.overlay
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_MSPI_DMA=y

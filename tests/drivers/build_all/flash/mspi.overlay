@@ -1,0 +1,27 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mspi0 {
+	mspi-nand@0 {
+		compatible = "jedec,mspi-nand";
+		reg = <0>;
+		mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+
+		/* w25n01gv parameters */
+		jedec-id = [ef aa 21];
+		size-bytes = <DT_SIZE_M(128)>;
+		plane-bytes = <DT_SIZE_M(128)>;
+		erase-block-size = <DT_SIZE_K(128)>;
+		write-block-size = <DT_SIZE_K(2)>;
+		block-erase-duration-max = <10000>;
+		page-program-duration-max = <700>;
+		page-read-duration-max = <200>;
+		reset-duration-max = <500>;
+
+		status = "okay";
+	};
+};
