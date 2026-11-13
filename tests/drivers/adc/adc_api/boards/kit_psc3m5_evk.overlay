@@ -33,11 +33,8 @@
 		zephyr,resolution = <12>;
 	};
 
+	/* The potentiometer channel comes from the board; only its reference differs here. */
 	channel@c {
-		reg = <12>;
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_EXTERNAL0";
-		zephyr,resolution = <12>;
 	};
 };
