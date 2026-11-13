@@ -3038,6 +3038,12 @@ static const struct cellular_stats *modem_cellular_get_stats(const struct device
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 
+	/* Receive losses are counted by the modem modules themselves */
+	data->stats.uart_rx_dropped_bytes =
+		modem_backend_uart_get_receive_dropped(&data->uart_backend);
+	data->stats.cmux_frames_dropped = modem_cmux_get_frames_dropped(&data->cmux);
+	data->stats.cmux_rx_dropped_bytes = modem_cmux_get_receive_dropped(&data->cmux);
+
 	return &data->stats;
 }
 #endif

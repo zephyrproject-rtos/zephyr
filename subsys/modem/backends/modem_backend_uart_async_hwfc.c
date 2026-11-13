@@ -181,6 +181,7 @@ static void modem_backend_uart_async_hwfc_event_handler(const struct device *dev
 			rx_event.len = evt->data.rx.len;
 			err = k_msgq_put(&backend->async.rx_queue, &rx_event, K_NO_WAIT);
 			if (err) {
+				backend->receive_dropped += evt->data.rx.len;
 				LOG_WRN("%s: RX queue overflow: %d (dropped %u)",
 					backend->uart->name, err, evt->data.rx.len);
 				rx_buf_unref(&backend->async, evt->data.rx.buf);

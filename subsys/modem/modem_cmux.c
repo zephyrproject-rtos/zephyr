@@ -1208,6 +1208,7 @@ static void modem_cmux_on_dlci_frame_uih(struct modem_cmux_dlci *dlci)
 	written = ring_buf_put(&dlci->receive_rb, cmux->frame.data, cmux->frame.data_len);
 	k_mutex_unlock(&dlci->receive_rb_lock);
 	if (written < cmux->frame.data_len) {
+		cmux->receive_dropped += cmux->frame.data_len - written;
 		LOG_ERR("DLCI %u receive buffer overrun (dropped %u out of %u bytes)",
 			dlci->dlci_address, cmux->frame.data_len - written, cmux->frame.data_len);
 		dlci->rx_full = true;
@@ -1331,6 +1332,7 @@ static void modem_cmux_drop_frame(struct modem_cmux *cmux)
 #endif
 
 	LOG_WRN("Dropped frame");
+	cmux->frames_dropped++;
 	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
 	cmux->frame_start = 0;
 
@@ -2381,4 +2383,14 @@ void modem_cmux_release(struct modem_cmux *cmux)
 
 	/* Reset state */
 	set_state(cmux, MODEM_CMUX_STATE_DISCONNECTED);
+}
+
+uint32_t modem_cmux_get_frames_dropped(const struct modem_cmux *cmux)
+{
+	return cmux->frames_dropped;
+}
+
+uint32_t modem_cmux_get_receive_dropped(const struct modem_cmux *cmux)
+{
+	return cmux->receive_dropped;
 }
