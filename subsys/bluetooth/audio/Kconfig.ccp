@@ -69,6 +69,11 @@ config BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH
 	help
 	  Sets the maximum length of the bearer URI schemes support list.
 
+config BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH
+	bool "Support for the bearer signal strength feature"
+	help
+	  Enables support for the optional signal strength feature and TBS characteristic
+
 module = BT_CCP_CALL_CONTROL_SERVER
 module-str = Call Control Profile Call Control Server
 source "subsys/logging/Kconfig.template.log_config"
