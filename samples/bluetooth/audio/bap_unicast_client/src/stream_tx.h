@@ -39,8 +39,9 @@ void stream_tx_init(void);
  * This will add it to the list of streams the TX thread will attempt to send on.
  *
  * @retval 0 on success
- * @retval -EINVAL if @p bap_stream is NULL
- * @retval -EINVAL if @p bap_stream.codec_cfg contains invalid values
+ * @retval -EINVAL
+ *     - @p bap_stream is NULL
+ *     - @p bap_stream.codec_cfg contains invalid values
  * @retval -ENOEXEC if the LC3 encoder failed to initialize
  * @retval -ENOMEM if not more streams can be registered
  */
