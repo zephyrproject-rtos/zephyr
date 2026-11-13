@@ -95,10 +95,10 @@
 	status = "okay";
 };
 
-/* PLL3R outputs ~9.375 MHz for the LTDC pixel clock (25 MHz / 8 * 60 / 20). */
+/* PLL3R outputs ~9.375 MHz for the LTDC pixel clock (25 MHz / 16 * 120 / 20). */
 &pll3 {
-	div-m = <8>;
-	mul-n = <60>;
+	div-m = <16>;
+	mul-n = <120>;
 	div-p = <2>;
 	div-q = <2>;
 	div-r = <20>;
