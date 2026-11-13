@@ -344,6 +344,17 @@ if(CONFIG_BUILD_WITH_TFM)
   # images.
   list(APPEND TFM_CMAKE_ARGS -DTFM_CREATE_SIGNING_LAYOUT_OBJECTS=ON)
 
+  # TF-M sets up its own toolchain and does not inherit the compiler launcher
+  # of the Zephyr build.
+  if(CCACHE)
+    list(APPEND TFM_CMAKE_ARGS
+      -DCMAKE_C_COMPILER_LAUNCHER=${CCACHE}
+      -DCMAKE_C_LINKER_LAUNCHER=${CCACHE}
+      -DCMAKE_CXX_COMPILER_LAUNCHER=${CCACHE}
+      -DCMAKE_CXX_LINKER_LAUNCHER=${CCACHE}
+    )
+  endif()
+
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
     DEPENDS ${TFM_BINARY_DIR}/CMakeCache.txt
