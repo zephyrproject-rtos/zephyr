@@ -38,6 +38,8 @@ extern "C" {
  * @since 1.0
  * @version 1.1.0
  * @{
+ *
+ * @satisfies ZEP-SRS-14-1
  */
 
 /** @cond INTERNAL_HIDDEN */
@@ -190,6 +192,8 @@ typedef int16_t device_handle_t;
  * @brief Create a device object and set it up for boot time initialization.
  *
  * @see DEVICE_DEINIT_DEFINE()
+ *
+ * @satisfies ZEP-SRS-14-3
  */
 #define DEVICE_DEFINE(dev_id, name, init_fn, pm, data, config, level, prio,    \
 		      api)                                                     \
@@ -261,6 +265,9 @@ typedef int16_t device_handle_t;
  * for boot time initialization.
  *
  * @see DEVICE_DT_DEINIT_DEFINE()
+ *
+ * @satisfies ZEP-SRS-14-3
+ * @satisfies ZEP-SRS-14-21
  */
 #define DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, prio, api, \
 			 ...)                                                  \
@@ -319,6 +326,8 @@ typedef int16_t device_handle_t;
  * @param node_id A devicetree node identifier
  *
  * @return A pointer to the device object created for that node
+ *
+ * @satisfies ZEP-SRS-14-5
  */
 #define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
 
@@ -342,6 +351,8 @@ typedef int16_t device_handle_t;
  *
  * @param inst `DT_DRV_COMPAT` instance number
  * @return A pointer to the device object created for that instance
+ *
+ * @satisfies ZEP-SRS-14-15
  */
 #define DEVICE_DT_INST_GET(inst) DEVICE_DT_GET(DT_DRV_INST(inst))
 
@@ -372,6 +383,10 @@ typedef int16_t device_handle_t;
  *
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device, or NULL
+ *
+ * @satisfies ZEP-SRS-14-14
+ * @satisfies ZEP-SRS-14-29
+ * @satisfies ZEP-SRS-14-31
  */
 #define DEVICE_DT_GET_ANY(compat)                                              \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),                         \
@@ -393,6 +408,8 @@ typedef int16_t device_handle_t;
  *
  * @param compat lowercase-and-underscores devicetree compatible
  * @return a pointer to a device
+ *
+ * @satisfies ZEP-SRS-14-23
  */
 #define DEVICE_DT_GET_ONE(compat)                                              \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat),                         \
@@ -438,6 +455,8 @@ typedef int16_t device_handle_t;
  * @param dev_id Device identifier.
  *
  * @return A pointer to the device object created by DEVICE_DEFINE()
+ *
+ * @satisfies ZEP-SRS-14-13
  */
 #define DEVICE_GET(dev_id) (&DEVICE_NAME_GET(dev_id))
 
@@ -522,7 +541,12 @@ typedef uint8_t device_flags_t;
  * @{
  */
 
-/** Device initialization is deferred */
+/**
+ * Device initialization is deferred
+ *
+ * @satisfies ZEP-SRS-14-7
+ * @satisfies ZEP-SRS-14-26
+ */
 #define DEVICE_FLAG_INIT_DEFERRED BIT(0)
 
 /** @} */
@@ -815,6 +839,8 @@ device_supported_handles_get(const struct device *dev, size_t *count)
  *
  * @return The number of devices that were visited if all visits succeed, or
  * the negative value returned from the first visit that did not succeed.
+ *
+ * @satisfies ZEP-SRS-14-11
  */
 int device_required_foreach(const struct device *dev,
 			    device_visitor_callback_t visitor_cb,
@@ -848,6 +874,8 @@ int device_required_foreach(const struct device *dev,
  *
  * @return The number of devices that were visited if all visits succeed, or the
  * negative value returned from the first visit that did not succeed.
+ *
+ * @satisfies ZEP-SRS-14-20
  */
 int device_supported_foreach(const struct device *dev,
 			     device_visitor_callback_t visitor_cb,
@@ -874,6 +902,9 @@ int device_supported_foreach(const struct device *dev,
  * @return pointer to device structure with the given name; `NULL` if the device
  * is not found or if the device with that name's initialization function
  * failed.
+ *
+ * @satisfies ZEP-SRS-14-4
+ * @satisfies ZEP-SRS-14-22
  */
 __syscall const struct device *device_get_binding(const char *name);
 
@@ -902,6 +933,10 @@ size_t z_device_get_all_static(const struct device **devices);
  * @retval true If the device is ready for use.
  * @retval false If the device is not ready for use or if a NULL device pointer
  * is passed as argument.
+ *
+ * @satisfies ZEP-SRS-14-6
+ * @satisfies ZEP-SRS-14-24
+ * @satisfies ZEP-SRS-14-25
  */
 __syscall bool device_is_ready(const struct device *dev);
 
@@ -977,6 +1012,11 @@ static inline bool z_impl_device_is_ready(const struct device *dev)
  * @retval 0 If successful
  * @retval -EALREADY Device is already initialized.
  * @retval -errno Error returned by the device initialization function.
+ *
+ * @satisfies ZEP-SRS-14-8
+ * @satisfies ZEP-SRS-14-16
+ * @satisfies ZEP-SRS-14-18
+ * @satisfies ZEP-SRS-14-27
  */
 __syscall int device_init(const struct device *dev);
 
@@ -1004,6 +1044,13 @@ __syscall int device_init(const struct device *dev);
  * @retval -ENOTSUP If device does not support de-initialization, or if the
  *         feature is not enabled (see CONFIG_DEVICE_DEINIT_SUPPORT)
  * @retval -errno For any other errors.
+ *
+ * @satisfies ZEP-SRS-14-9
+ * @satisfies ZEP-SRS-14-10
+ * @satisfies ZEP-SRS-14-17
+ * @satisfies ZEP-SRS-14-19
+ * @satisfies ZEP-SRS-14-28
+ * @satisfies ZEP-SRS-14-30
  */
 __syscall int device_deinit(const struct device *dev);
 
@@ -1162,6 +1209,8 @@ struct device_dt_metadata {
  * @return a device reference for a device created from a node with that
  *         node label, or NULL if either no such device exists or the device
  *         failed to initialize
+ *
+ * @satisfies ZEP-SRS-14-12
  */
 __syscall const struct device *device_get_by_dt_nodelabel(const char *nodelabel);
 
