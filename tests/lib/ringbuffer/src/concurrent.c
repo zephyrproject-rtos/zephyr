@@ -109,6 +109,12 @@ static void test_ptr_ztress(ztress_handler high_handler, ztress_handler low_hand
 		       ZTRESS_THREAD(low_handler, NULL, 0, 2000, Z_TIMEOUT_TICKS(20)));
 }
 
+/**
+ * @brief Verify one producer and one consumer can run concurrently without extra locking.
+ *
+ * @ingroup lib_ringbuffer_tests
+ * @verifies ZEP-SRS-40-10
+ */
 ZTEST(ringbuffer_api, test_ringbuffer_ptr_stress)
 {
 	PRINT("Producing interrupts consuming\n");
