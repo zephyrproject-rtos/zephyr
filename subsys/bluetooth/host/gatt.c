@@ -562,6 +562,11 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	struct gatt_cf_cfg *cfg;
 	const uint8_t *value = buf;
 
+	/* The features are stored per peer, a local write has no peer to store them for */
+	if (conn == NULL) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+
 	if (offset > sizeof(cfg->data)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
@@ -2277,6 +2282,11 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	struct bt_gatt_ccc_cfg *cfg;
 	bool value_changed;
 	uint16_t value;
+
+	/* The configuration is stored per peer, a local write has no peer to store it for */
+	if (conn == NULL) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
 
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);

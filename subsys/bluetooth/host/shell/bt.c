@@ -86,6 +86,19 @@ static struct bt_conn_auth_info_cb auth_info_cb;
 
 #define AD_SIZE 9
 
+/* Upper bound of the entries ad_init() appends after the user-provided ones:
+ * Flags, appearance, the CSIS RSI and, with LE Audio, the ASCS, BASS, CAP and
+ * GMAP entries, the Broadcast Audio Announcement and the 16-bit service UUIDs.
+ */
+#define AD_INIT_SIZE                                                                               \
+	(2U + IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER) +                                              \
+	 (IS_ENABLED(CONFIG_BT_AUDIO)                                                              \
+		  ? (1U + IS_ENABLED(CONFIG_BT_ASCS) + IS_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR) +  \
+		     IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR) +                                          \
+		     IS_ENABLED(CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER) + IS_ENABLED(CONFIG_BT_GMAP) +  \
+		     IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE))                                   \
+		  : 0U))
+
 /*
  * Based on the maximum number of parameters for HCI_LE_Generate_DHKey
  * See BT Core Spec V5.2 Vol. 4, Part E, section 7.8.37
@@ -2422,8 +2435,8 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	static uint8_t hex_data[1650];
 	bool appearance = false;
 	struct bt_data *data;
-	struct bt_data ad[AD_SIZE];
-	struct bt_data sd[AD_SIZE];
+	struct bt_data ad[AD_SIZE + AD_INIT_SIZE];
+	struct bt_data sd[AD_SIZE + AD_INIT_SIZE];
 	size_t hex_data_len;
 	size_t ad_len = 0;
 	size_t sd_len = 0;
@@ -2447,7 +2460,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (name && !dev_name && name_value == NULL) {
-			if (*data_len == ARRAY_SIZE(ad)) {
+			if (*data_len == AD_SIZE) {
 				/* Maximum entries limit reached. */
 				shell_print(sh, "Failed to set advertising data: "
 					    "Maximum entries limit reached");
@@ -2467,7 +2480,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 			continue;
 		}
 
-		if (strcmp(arg, "scan-response") && *data_len == ARRAY_SIZE(ad)) {
+		if (strcmp(arg, "scan-response") && *data_len == AD_SIZE) {
 			/* Maximum entries limit reached. */
 			shell_print(sh, "Failed to set advertising data: "
 				    "Maximum entries limit reached");
@@ -2519,7 +2532,7 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (name && dev_name && name_value == NULL) {
-		if (*data_len == ARRAY_SIZE(ad)) {
+		if (*data_len == AD_SIZE) {
 			/* Maximum entries limit reached. */
 			shell_print(sh, "Failed to set advertising data: "
 				    "Maximum entries limit reached");
@@ -2535,7 +2548,8 @@ static int cmd_adv_data(const struct shell *sh, size_t argc, char *argv[])
 	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_DISCOVERABLE, discoverable);
 	atomic_set_bit_to(adv_set_opt[selected_adv], SHELL_ADV_OPT_APPEARANCE, appearance);
 
-	len = ad_init(&data[*data_len], AD_SIZE - *data_len, adv_set_opt[selected_adv]);
+	len = ad_init(&data[*data_len], (AD_SIZE + AD_INIT_SIZE) - *data_len,
+		      adv_set_opt[selected_adv]);
 	if (len < 0) {
 		shell_error(sh, "Failed to initialize stack advertising data");
 
@@ -5328,6 +5342,19 @@ int ead_update_ad(void)
 
 		if (ad->data_len > 0) {
 			if (ad->type == BT_DATA_ENCRYPTED_AD_DATA) {
+				/* The stored length is the size of the data once
+				 * encrypted, so it must be at least the encryption
+				 * overhead, otherwise the decrypted-size computation
+				 * below underflows and overflows the output buffer.
+				 */
+				if (ad->data_len < BT_EAD_RANDOMIZER_SIZE + BT_EAD_MIC_SIZE) {
+					bt_shell_error("Failed to update AD: encrypted AD data "
+						       "too short (%u < %u)",
+						       ad->data_len,
+						       BT_EAD_RANDOMIZER_SIZE + BT_EAD_MIC_SIZE);
+					return -ENOEXEC;
+				}
+
 				/* for EAD the size used to store the non-encrypted data
 				 * is the size of those data when encrypted
 				 */
