@@ -572,13 +572,14 @@ static void posix_thread_recycle(void)
 {
 	struct posix_thread *t;
 	struct posix_thread *safe_t;
+	bool retry = false;
 	sys_dlist_t recyclables = SYS_DLIST_STATIC_INIT(&recyclables);
 
 	SYS_SEM_LOCK(&pthread_pool_lock) {
 		SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&posix_thread_q[POSIX_THREAD_DONE_Q], t, safe_t,
 						  q_node) {
-			if (t->attr.detachstate == PTHREAD_CREATE_JOINABLE) {
-				/* thread has not been joined yet */
+			if (t->attr.detachstate == PTHREAD_CREATE_JOINABLE || t->joining) {
+				/* An active joiner must consume retval before recycling. */
 				continue;
 			}
 
@@ -593,7 +594,20 @@ static void posix_thread_recycle(void)
 
 	LOG_DBG("Recycling %zu threads", sys_dlist_len(&recyclables));
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&recyclables, t, q_node) {
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&recyclables, t, safe_t, q_node) {
+		int ret = k_thread_join(&t->thread, K_NO_WAIT);
+
+		/* DONE is published before the exiting thread aborts itself. */
+		if (ret != 0) {
+			__ASSERT_NO_MSG(ret == -EBUSY);
+			retry = true;
+			SYS_SEM_LOCK(&pthread_pool_lock) {
+				sys_dlist_remove(&t->q_node);
+				posix_thread_q_set(t, POSIX_THREAD_DONE_Q);
+			}
+			continue;
+		}
+
 		if (t->attr.caller_destroys) {
 			t->attr = (struct posix_thread_attr){0};
 		} else {
@@ -606,6 +620,12 @@ static void posix_thread_recycle(void)
 			t = CONTAINER_OF(sys_dlist_get(&recyclables), struct posix_thread, q_node);
 			posix_thread_q_set(t, POSIX_THREAD_READY_Q);
 		}
+	}
+
+	if (retry) {
+		/* Let the exiting thread run even when the configured delay is zero. */
+		(void)k_work_schedule(&posix_thread_recycle_work,
+				      K_MSEC(MAX(1, CONFIG_PTHREAD_RECYCLER_DELAY_MS)));
 	}
 }
 
@@ -637,6 +657,7 @@ int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadrou
 					 struct posix_thread, q_node);
 
 			/* initialize thread state */
+			t->joining = false;
 			posix_thread_q_set(t, POSIX_THREAD_RUN_Q);
 			sys_slist_init(&t->key_list);
 			sys_slist_init(&t->cleanup_list);
@@ -1141,6 +1162,7 @@ static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeou
 		 * let's ensure that the thread cannot be joined again after this point.
 		 */
 		ret = 0;
+		t->joining = true;
 		t->attr.detachstate = PTHREAD_CREATE_DETACHED;
 	}
 
@@ -1160,6 +1182,7 @@ static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeou
 		/* when joining failed, ensure that the thread can be joined later */
 		SYS_SEM_LOCK(&pthread_pool_lock) {
 			t->attr.detachstate = PTHREAD_CREATE_JOINABLE;
+			t->joining = false;
 		}
 	}
 	if (ret == -EBUSY) {
@@ -1169,12 +1192,19 @@ static int pthread_timedjoin_internal(pthread_t pthread, void **status, k_timeou
 	}
 	/* Can only be ok or -EDEADLK, which should never occur for pthreads */
 	__ASSERT_NO_MSG(ret == 0);
+	if (ret != 0) {
+		return -ret;
+	}
 
 	LOG_DBG("Joined pthread %p", &t->thread);
 
 	if (status != NULL) {
 		LOG_DBG("Writing status to %p", status);
 		*status = t->retval;
+	}
+
+	SYS_SEM_LOCK(&pthread_pool_lock) {
+		t->joining = false;
 	}
 
 	posix_thread_recycle();
