@@ -107,6 +107,10 @@
  * 32 bits each and is used for all data computation.
  */
 .macro FPU_REG_SAVE
+	/* float compares write the BR boolean register; losing it to an
+	 * interrupt between a compare and its branch flips the branch */
+	rsr.br	a0
+	s32i	a0, a1, ___xtensa_irq_bsa_t_br_OFFSET
 	rur.fcr	a0
 	s32i	a0, a1, ___xtensa_irq_bsa_t_fcr_OFFSET
 	rur.fsr	a0
@@ -130,6 +134,8 @@
 .endm
 
 .macro FPU_REG_RESTORE
+	l32i	a0, a1, ___xtensa_irq_bsa_t_br_OFFSET
+	wsr.br	a0
 	l32i.n	a0, a1, ___xtensa_irq_bsa_t_fcr_OFFSET
 	wur.fcr	a0
 	l32i.n	a0, a1, ___xtensa_irq_bsa_t_fsr_OFFSET
