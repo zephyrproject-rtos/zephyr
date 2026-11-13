@@ -300,6 +300,7 @@
 			interrupts = <28 0>;
 			interrupt-names = "rtc";
 			clocks = <&cmu_aon SIWX91X_CLK_RTC>;
+			alarms-count = <1>;
 			status = "disabled";
 		};
 
