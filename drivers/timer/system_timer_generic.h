@@ -367,12 +367,6 @@ static timer_core_ticks_t timer_core_last_elapsed;
 
 #if TIMER_CORE_TICK_IS_WHOLE
 
-/* Cycle position of tick @p t, counted from tick zero. */
-static inline uint64_t timer_core_cyc_at_tick(uint64_t t)
-{
-	return t * TIMER_CORE_CYC_PER_TICK;
-}
-
 /* Whole ticks in @p c cycles counted from tick zero. */
 static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
 {
@@ -433,30 +427,6 @@ static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
  * (TICKS_PER_SEC - 1) - (x + TICKS_PER_SEC - 1) % TICKS_PER_SEC is how much
  * that rounding added.
  */
-
-/* Cycle tick @p t starts on. Whole seconds convert exactly, so only the rest
- * is rounded up. The split also keeps t * CYCLES_PER_SEC from overflowing.
- */
-static inline uint64_t timer_core_cyc_at_tick(uint64_t t)
-{
-	uint64_t whole = t / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	uint64_t part = t % CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	return (whole * TIMER_CORE_CYCLES_PER_SEC) +
-	       DIV_ROUND_UP(part * TIMER_CORE_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-}
-
-/* last_rem for a baseline at tick @p t: what rounding its start up added.
- * Whole seconds add nothing, so only the rest counts.
- */
-static inline uint32_t timer_core_rem_at_tick(uint64_t t)
-{
-	uint64_t part = ((t % CONFIG_SYS_CLOCK_TICKS_PER_SEC) * TIMER_CORE_CYCLES_PER_SEC) +
-			(CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U);
-
-	return (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
-	       (uint32_t)(part % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-}
 
 /* Ticks started by cycle @p c, counted from tick zero. */
 static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
@@ -905,33 +875,54 @@ uint64_t sys_clock_cycle_get_64(void)
 }
 #endif
 
-/* Switch the baseline to a new counter rate. A driver that changes the timer
- * frequency at run time calls this after rescaling its own counter.
+#if !TIMER_CORE_RATE_IS_CONSTANT
+/*
+ * Switch to a new counter rate. A driver that changes its counter rate at run
+ * time calls this with the clock lock held. @p cycles is its counter value at
+ * the moment of the change, as timer_driver_cycle_get() would return it. The
+ * driver passes it because its getter may not work then: cortex_m_systick's
+ * does not while its counter is stopped. @p from_hz and @p to_hz are the rates
+ * before and after the change.
+ *
+ * Cycles map to ticks along a line whose slope is the rate. Ticks must not
+ * jump, and the counter keeps counting, so the line at the new rate has to
+ * start where the old one reached, rather than from cycle zero. The baseline
+ * is that start: move it to where tick last_tick starts on the new line. Time
+ * past the start of last_tick is kept in cycles times TICKS_PER_SEC, as for
+ * last_rem, so it converts between rates without rounding to whole cycles.
  */
-static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
+static inline void timer_core_rescale(uint64_t cycles, uint32_t to_hz, uint32_t from_hz)
 {
-	ARG_UNUSED(from_hz);
-#ifdef TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
-	/* The rate changed: recompute what derives from it. The arm ceiling would
-	 * otherwise overstate the counter's span once the rate goes up.
+	uint64_t since = MIN((cycles - timer_core_last_cycle) & TIMER_CORE_COUNTER_MASK,
+			     TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
+	/* That time at the old rate: k whole ticks, and f into the next one. */
+	uint64_t span = (since * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem;
+	uint64_t k = span / from_hz;
+	uint64_t f = span - (k * from_hz);
+	/* The same time at the new rate. f < from_hz, so f * to_hz fits in 64
+	 * bits, and the scaled part stays under a tick: the new line has
+	 * exactly k ticks between the baseline and @p cycles.
+	 */
+	uint64_t at_new = (k * to_hz) + ((f * to_hz) / from_hz);
+
+	__ASSERT(at_new / CONFIG_SYS_CLOCK_TICKS_PER_SEC <= TIMER_CORE_MAX_UNANNOUNCED_CYCLES,
+		 "the rate went up too far past the last announce for the counter to span");
+
+	/* The first whole cycle at or after the start of last_tick on the new line,
+	 * and how far past that start it is.
+	 */
+	timer_core_last_cycle = timer_core_last_cycle + since -
+				(at_new / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	timer_core_last_rem = at_new % CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	/* Recompute what derives from the rate. The arm ceiling would otherwise
+	 * overstate the counter's span once the rate goes up.
 	 * TIMER_CORE_CYCLES_PER_SEC already returns the new rate.
 	 */
 	timer_core_cyc_per_tick = to_hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
-#else
-	ARG_UNUSED(to_hz);
-#endif
-	/*
-	 * Recompute last_cycle from last_tick, which doesn't depend on the rate,
-	 * so it stays on a tick boundary, and last_rem with it. Scaling the old
-	 * value instead could leave it a fraction of a tick off, and the compare
-	 * arm path could then underflow.
-	 */
-	timer_core_last_cycle = timer_core_cyc_at_tick(timer_core_last_tick);
-#if !TIMER_CORE_TICK_IS_WHOLE
-	timer_core_last_rem = timer_core_rem_at_tick(timer_core_last_tick);
-#endif /* !TIMER_CORE_TICK_IS_WHOLE */
 }
+#endif /* !TIMER_CORE_RATE_IS_CONSTANT */
 
 /* Arm this CPU's timer one tick past the last announce. An SMP driver calls
  * this from smp_timer_init().
