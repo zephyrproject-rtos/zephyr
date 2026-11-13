@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-# Locate the qemu-system-* binary matching the target architecture, and wrap it
-# in uefi-run when booting through UEFI.
+# Locate the qemu-system-* binary matching the target architecture, and the
+# UEFI firmware when booting through UEFI.
 #
 # A board that runs on a qemu-system-* whose name is not its ARCH sets
 # QEMU_BINARY_SUFFIX; otherwise ARCH is used, with a few well known exceptions.
@@ -57,7 +57,7 @@ endif()
 
 # We need to set up uefi-run and OVMF environment
 # for testing UEFI method on qemu platforms
-if(CONFIG_QEMU_UEFI_BOOT)
+if(CONFIG_QEMU_UEFI_BOOT AND CONFIG_X86_64)
   find_program(UEFI NAMES uefi-run REQUIRED)
   if(DEFINED ENV{OVMF_FD_PATH})
     set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
@@ -66,4 +66,25 @@ if(CONFIG_QEMU_UEFI_BOOT)
   endif()
   list(APPEND UEFI -b ${OVMF_FD_PATH} -q ${QEMU})
   set(QEMU ${UEFI})
+elseif(CONFIG_QEMU_UEFI_BOOT AND CONFIG_ARM64)
+  # EDK2 firmware for the virt machine: QEMU_EFI_FD_PATH if set, otherwise the
+  # copy QEMU or the distribution ships
+  if(DEFINED ENV{QEMU_EFI_FD_PATH})
+    set(QEMU_EFI_FD_PATH $ENV{QEMU_EFI_FD_PATH})
+  else()
+    get_filename_component(qemu_bin_dir ${QEMU} DIRECTORY)
+    find_file(QEMU_EFI_FD_PATH
+      NAMES edk2-aarch64-code.fd QEMU_EFI.fd
+      PATHS
+        ${qemu_bin_dir}/../share/qemu
+        ${qemu_bin_dir}/../xilinx/share/qemu-xilinx
+        /usr/share/qemu
+        /usr/share/qemu-efi-aarch64
+        /usr/share/edk2/aarch64
+      NO_DEFAULT_PATH
+    )
+    if(NOT QEMU_EFI_FD_PATH)
+      message(FATAL_ERROR "No aarch64 UEFI firmware found, set QEMU_EFI_FD_PATH.")
+    endif()
+  endif()
 endif()
