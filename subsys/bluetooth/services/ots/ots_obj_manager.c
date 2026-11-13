@@ -87,7 +87,7 @@ int bt_gatt_ots_obj_manager_last_obj_get(
 		return -ENOENT;
 	}
 
-	obj_dnode = sys_dlist_peek_tail(&obj_manager->list);
+	obj_dnode = sys_dlist_peek_tail_not_empty(&obj_manager->list);
 	last_item = CONTAINER_OF(obj_dnode, struct bt_gatt_ots_pool_item,
 				 dnode);
 	*obj = &last_item->val;
