@@ -97,6 +97,11 @@ struct pm_policy_event {
  *
  * @return The power state the system should use for the given cpu. The function
  * will return NULL if system should remain into PM_STATE_ACTIVE.
+ *
+ * @satisfies ZEP-SRS-13-6
+ * @satisfies ZEP-SRS-13-22
+ * @satisfies ZEP-SRS-13-25
+ * @satisfies ZEP-SRS-13-41
  */
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
 
@@ -123,6 +128,8 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks);
  *		      substates in the given power state.
  *
  * @see pm_policy_state_lock_put()
+ *
+ * @satisfies ZEP-SRS-13-8
  */
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
 
@@ -134,6 +141,8 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id);
  *		      substates in the given power state.
  *
  * @see pm_policy_state_lock_get()
+ *
+ * @satisfies ZEP-SRS-13-23
  */
 void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id);
 
@@ -188,6 +197,8 @@ void pm_policy_state_constraints_put(struct pm_state_constraints *constraints);
  *
  * @retval true Power state lock is active.
  * @retval false Power state lock is not active.
+ *
+ * @satisfies ZEP-SRS-13-24
  */
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
 
@@ -447,6 +458,8 @@ static inline bool pm_policy_device_is_disabling_state(const struct device *dev,
  *
  * @param req Latency request.
  * @param value_us Maximum allowed latency in microseconds.
+ *
+ * @satisfies ZEP-SRS-13-9
  */
 void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
 				   uint32_t value_us);
@@ -456,6 +469,8 @@ void pm_policy_latency_request_add(struct pm_policy_latency_request *req,
  *
  * @param req Latency request.
  * @param value_us New maximum allowed latency in microseconds.
+ *
+ * @satisfies ZEP-SRS-13-26
  */
 void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
 				      uint32_t value_us);
@@ -464,6 +479,8 @@ void pm_policy_latency_request_update(struct pm_policy_latency_request *req,
  * @brief Remove a latency requirement.
  *
  * @param req Latency request.
+ *
+ * @satisfies ZEP-SRS-13-27
  */
 void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
 
@@ -472,6 +489,8 @@ void pm_policy_latency_request_remove(struct pm_policy_latency_request *req);
  *
  * @param req Subscription request.
  * @param cb Callback function (NULL to disable).
+ *
+ * @satisfies ZEP-SRS-13-28
  */
 void pm_policy_latency_changed_subscribe(struct pm_policy_latency_subscription *req,
 					 pm_policy_latency_changed_cb_t cb);

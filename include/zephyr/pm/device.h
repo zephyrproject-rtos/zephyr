@@ -74,7 +74,11 @@ enum pm_device_flag {
  */
 #define PM_DEVICE_ISR_SAFE 1
 
-/** @brief Device power states. */
+/**
+ * @brief Device power states.
+ *
+ * @satisfies ZEP-SRS-13-10
+ */
 enum pm_device_state {
 	/**
 	 * @brief Device hardware is powered, and the device is needed by the system.
@@ -502,6 +506,11 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @retval -EBUSY Device is changing its state.
  * @retval -ENOSYS Device does not support PM.
  * @retval -EPERM Device has power state locked.
+ *
+ * @satisfies ZEP-SRS-13-11
+ * @satisfies ZEP-SRS-13-33
+ * @satisfies ZEP-SRS-13-34
+ * @satisfies ZEP-SRS-13-35
  */
 int pm_device_action_run(const struct device *dev,
 		enum pm_device_action action);
@@ -529,6 +538,8 @@ void pm_device_children_action_run(const struct device *dev,
  *
  * @retval 0 on success.
  * @retval -ENOSYS Device does not implement power management.
+ *
+ * @satisfies ZEP-SRS-13-13
  */
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state);

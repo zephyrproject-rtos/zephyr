@@ -40,6 +40,9 @@ extern "C" {
  * @version 1.0.0
  * @ingroup subsys_pm
  * @{
+ *
+ * @satisfies ZEP-SRS-13-1
+ * @satisfies ZEP-SRS-13-5
  */
 
 /**
@@ -59,6 +62,9 @@ extern "C" {
  * @note It is not allowed to call @ref pm_notifier_unregister or
  *       @ref pm_notifier_register from these callbacks because they are called
  *       with the spin locked in those functions.
+ *
+ * @satisfies ZEP-SRS-13-31
+ * @satisfies ZEP-SRS-13-32
  */
 struct pm_notifier {
 	sys_snode_t _node;
@@ -113,6 +119,8 @@ struct pm_notifier {
  * @param cpu CPU index.
  * @param info Power state which should be used in the ongoing
  *	suspend operation.
+ *
+ * @satisfies ZEP-SRS-13-7
  */
 bool pm_state_force(uint8_t cpu, const struct pm_state_info *info);
 
@@ -123,6 +131,9 @@ bool pm_state_force(uint8_t cpu, const struct pm_state_info *info);
  * list.
  *
  * @param notifier pm_notifier object to be registered.
+ *
+ * @satisfies ZEP-SRS-13-3
+ * @satisfies ZEP-SRS-13-29
  */
 void pm_notifier_register(struct pm_notifier *notifier);
 
@@ -135,6 +146,8 @@ void pm_notifier_register(struct pm_notifier *notifier);
  * @param notifier pm_notifier object to be unregistered.
  *
  * @return 0 on success, negative errno value on failure.
+ *
+ * @satisfies ZEP-SRS-13-30
  */
 int pm_notifier_unregister(struct pm_notifier *notifier);
 

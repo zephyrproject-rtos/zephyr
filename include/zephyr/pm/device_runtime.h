@@ -59,6 +59,8 @@ int pm_device_runtime_auto_enable(const struct device *dev);
  * @retval -ENOTSUP Device does not support PM.
  *
  * @see pm_device_init_suspended()
+ *
+ * @satisfies ZEP-SRS-13-36
  */
 int pm_device_runtime_enable(const struct device *dev);
 
@@ -73,6 +75,8 @@ int pm_device_runtime_enable(const struct device *dev);
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Device does not support PM.
+ *
+ * @satisfies ZEP-SRS-13-37
  */
 int pm_device_runtime_disable(const struct device *dev);
 
@@ -97,6 +101,8 @@ int pm_device_runtime_disable(const struct device *dev);
  * @return 0 on success (including when runtime PM is not enabled or not
  * available), negative errno value on failure.
  * @retval -EWOULDBLOCK Call would block but it is not allowed (e.g. in ISR).
+ *
+ * @satisfies ZEP-SRS-13-12
  */
 int pm_device_runtime_get(const struct device *dev);
 
@@ -118,6 +124,8 @@ int pm_device_runtime_get(const struct device *dev);
  * calls are unbalanced).
  *
  * @see pm_device_runtime_put_async()
+ *
+ * @satisfies ZEP-SRS-13-38
  */
 int pm_device_runtime_put(const struct device *dev);
 
@@ -144,6 +152,8 @@ int pm_device_runtime_put(const struct device *dev);
  * calls are unbalanced).
  *
  * @see pm_device_runtime_put()
+ *
+ * @satisfies ZEP-SRS-13-39
  */
 int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
 
