@@ -305,6 +305,15 @@ struct bt_le_per_adv_sync {
 	 */
 	bool report_truncated;
 
+	/** Changed whenever the object is deleted, so that a call that has
+	 * blocked meanwhile can tell, the object being free or in use again.
+	 * The object's state changes with the host lock held.
+	 */
+	uint32_t gen;
+
+	/** Where the call that creates the sync wants the object, until it is there */
+	struct bt_le_per_adv_sync **out_sync;
+
 	/** Flags */
 	ATOMIC_DEFINE(flags, BT_PER_ADV_SYNC_NUM_FLAGS);
 
@@ -322,6 +331,23 @@ struct bt_le_per_adv_sync {
 	uint8_t response_slot_spacing;
 #endif /* CONFIG_BT_PER_ADV_SYNC_RSP */
 };
+
+/* A command about a periodic advertising sync, sent with
+ * bt_hci_cmd_send_sync_checked() and bt_per_adv_sync_cmd_check(): it is
+ * queued only if the sync object is still the sync of generation gen, which
+ * the call read when it started (bt_per_adv_sync_gen_get()). The handle of the
+ * sync is then written to handle, unless that is NULL.
+ */
+struct bt_per_adv_sync_cmd {
+	const struct bt_le_per_adv_sync *sync;
+	uint8_t *handle;
+	uint32_t gen;
+};
+
+int bt_per_adv_sync_cmd_check(const void *data);
+
+/* The generation of an established sync, -EINVAL if it is not established */
+int bt_per_adv_sync_gen_get(const struct bt_le_per_adv_sync *sync, uint32_t *gen);
 
 struct bt_dev_le {
 	/* LE features */
@@ -577,6 +603,14 @@ struct bt_hci_cmd_state_set {
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
 			       atomic_t *target, int bit, bool val);
+
+/* As bt_hci_cmd_send_sync(), for a command about an object that the Host can
+ * delete or reuse while the caller waits for a command buffer: check is called
+ * with the host lock held right before the command is queued, and the command
+ * is queued only if it returns 0. Its error is returned otherwise.
+ */
+int bt_hci_cmd_send_sync_checked(uint16_t opcode, struct net_buf *buf, struct net_buf **rsp,
+				 int (*check)(const void *data), const void *data);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 
