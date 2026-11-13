@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Revision overlays are not inherited by a variant, so reuse the cm7 one. */
+#include "mimxrt1170_evk_mimxrt1176_cm7_A.overlay"
