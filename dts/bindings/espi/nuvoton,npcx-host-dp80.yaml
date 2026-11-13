@@ -1,0 +1,22 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCX Host Sub-Module - Debug Port 80 (DP80)
+
+compatible: "nuvoton,npcx-host-dp80"
+
+include: [base.yaml]
+
+properties:
+  clocks:
+    required: true
+    description: Clock configuration for the DP80 (Port 80) module.
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupt names for the DP80 module. Must contain "dp80_fifo" for
+      the Port80 FIFO Not Empty interrupt.
