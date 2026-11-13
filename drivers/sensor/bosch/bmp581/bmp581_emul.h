@@ -10,6 +10,9 @@
 #include <zephyr/drivers/emul.h>
 #include <stdint.h>
 
+/* Size of the emulated register file (highest register is CMD at 0x7E). */
+#define BMP581_EMUL_NUM_REGS 0x80
+
 /**
  * @brief Set the raw temperature sample registers.
  *
@@ -25,5 +28,17 @@ void bmp581_emul_set_temp_raw(const struct emul *target, int32_t raw_temp);
  * @param raw_press Raw 24-bit pressure value (LSB = 1/64 Pa).
  */
 void bmp581_emul_set_press_raw(const struct emul *target, uint32_t raw_press);
+
+/**
+ * @brief Read back a register from the emulator's internal register file.
+ *
+ * @param target Pointer to the emulator instance.
+ * @param reg Register address.
+ * @param val Pointer to store the register value.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p target or @p val is NULL, or @p reg is out of range
+ */
+int bmp581_emul_get_reg(const struct emul *target, uint8_t reg, uint8_t *val);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_EMUL_H_ */
