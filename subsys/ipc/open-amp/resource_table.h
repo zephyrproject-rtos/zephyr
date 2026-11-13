@@ -86,10 +86,17 @@ struct fw_resource_table {
 #endif
 
 #if defined(CONFIG_RAM_CONSOLE)
+	#if defined(CONFIG_RAM_CONSOLE_BUFFER_SECTION)
+		/* The console writes there, and the address is a constant on 64-bit too */
+		#define CM_TRACE_DA	DT_REG_ADDR(DT_CHOSEN(zephyr_ram_console))
+	#else
+		#define CM_TRACE_DA	(uint32_t)ram_console_buf
+	#endif
+
 	#define CM_TRACE_ENTRY							\
 		.cm_trace = {							\
 			RSC_TRACE,						\
-			(uint32_t)ram_console_buf, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,\
+			CM_TRACE_DA, CONFIG_RAM_CONSOLE_BUFFER_SIZE, 0,		\
 			"Zephyr_log",						\
 		},
 #else
