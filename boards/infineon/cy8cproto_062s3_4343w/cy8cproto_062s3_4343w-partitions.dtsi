@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCUboot runs on the Cortex-M4. The boot ROM starts the Cortex-M0+ from the
+ * start of flash, where the prebuilt Cortex-M0+ image sits, and that image
+ * releases the Cortex-M4 at a fixed CY_FLASH_BASE + 0x2000. boot_partition
+ * therefore starts at zero and holds both: the prebuilt image in its first 8K
+ * and MCUboot immediately after, which is how a Cortex-M4 image links anyway.
+ *
+ * The images MCUboot loads drop the prebuilt image, since it is already in
+ * flash, and link at the slot they run from. The last 16K is left free for
+ * storage partitions that applications and tests add.
+ */
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x00000000 DT_SIZE_K(96)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@18000 {
+			reg = <0x00018000 DT_SIZE_K(200)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@4a000 {
+			reg = <0x0004a000 DT_SIZE_K(200)>;
+			label = "image-1";
+		};
+	};
+};

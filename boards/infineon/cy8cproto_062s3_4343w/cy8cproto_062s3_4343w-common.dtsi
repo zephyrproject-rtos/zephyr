@@ -31,6 +31,13 @@
 	};
 };
 
+/* The prebuilt Cortex-M0+ image keeps running after it releases the
+ * Cortex-M4, so the first 8 KB of SRAM stays out of the application's reach.
+ */
+&sram0 {
+	reg = <0x08002000 DT_SIZE_K(248)>;
+};
+
 &gpio_prt0 {
 	status = "okay";
 };
