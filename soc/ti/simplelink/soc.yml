@@ -8,6 +8,9 @@ family:
     - name: cc1352r
     - name: cc2652p
     - name: cc2652r
+  - name: cc13x4_cc26x4
+    socs:
+    - name: cc1354p10
   - name: cc13x2x7_cc26x2x7
     socs:
     - name: cc1352p7
