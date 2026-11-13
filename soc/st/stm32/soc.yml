@@ -196,6 +196,7 @@ family:
     - name: stm32l151xe
     - name: stm32l152xc
     - name: stm32l152xe
+    - name: stm32l162xe
   - name: stm32l4x
     socs:
     - name: stm32l412xx
