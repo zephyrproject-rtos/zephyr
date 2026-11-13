@@ -45,17 +45,20 @@ void _StackCheckHandler(void)
 /*
  * Symbol referenced by GCC compiler generated code for canary value.
  * The canary value gets initialized in z_cstart().
+ *
+ * With LTO, the compiler emits the canary references only after the
+ * link-time symbol resolution, so mark the symbol used to keep it global.
  */
 #ifdef CONFIG_STACK_CANARIES_TLS
 #ifdef CONFIG_STACK_CANARIES_TLS_PREPEND
-__attribute__((section(".stack_chk.guard"))) Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
+Z_GENERIC_SECTION(.stack_chk.guard) __used Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #else
-Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
+__used Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
 #endif
 #elif CONFIG_USERSPACE
-K_APP_DMEM(z_libc_partition) volatile uintptr_t __stack_chk_guard;
+K_APP_DMEM(z_libc_partition) __used volatile uintptr_t __stack_chk_guard;
 #else
-__noinit volatile uintptr_t __stack_chk_guard;
+__noinit __used volatile uintptr_t __stack_chk_guard;
 #endif
 
 /**
@@ -63,6 +66,7 @@ __noinit volatile uintptr_t __stack_chk_guard;
  * @brief Referenced by GCC compiler generated code
  *
  * This routine is invoked when a stack canary error is detected, indicating
- * a buffer overflow or stack corruption problem.
+ * a buffer overflow or stack corruption problem. Marked used for the same
+ * reason as __stack_chk_guard.
  */
-FUNC_ALIAS(_StackCheckHandler, __stack_chk_fail, void);
+__used FUNC_ALIAS(_StackCheckHandler, __stack_chk_fail, void);
