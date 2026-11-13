@@ -19,6 +19,19 @@
 	soc {
 		compatible = "st,stm32l432", "st,stm32l4", "simple-bus";
 
+		/* UFQFPN32 only: PC13 (WKUP2) and PC5 (WKUP5) are not bonded */
+		power@40007000 {
+			wakeup-controller {
+				wkup@2 {
+					/delete-property/ wkup-gpios;
+				};
+
+				wkup@5 {
+					/delete-property/ wkup-gpios;
+				};
+			};
+		};
+
 		timers7: timers@40001400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001400 0x400>;

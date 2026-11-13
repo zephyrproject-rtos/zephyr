@@ -238,22 +238,27 @@
 				status = "disabled";
 
 				wkup@1 {
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 					reg = <0x1>;
 				};
 
 				wkup@2 {
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 					reg = <0x2>;
 				};
 
 				wkup@3 {
+					/* PE6, only on parts with GPIOE */
 					reg = <0x3>;
 				};
 
 				wkup@4 {
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 					reg = <0x4>;
 				};
 
 				wkup@5 {
+					wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
 					reg = <0x5>;
 				};
 			};
