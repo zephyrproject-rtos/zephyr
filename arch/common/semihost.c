@@ -95,3 +95,25 @@ long semihost_write(long fd, const void *buf, long len)
 
 	return semihost_exec(SEMIHOST_WRITE, &args);
 }
+
+__weak bool semihost_debugger_attached(void)
+{
+	/* Emulators always service semihosting */
+	return IS_ENABLED(CONFIG_QEMU_TARGET);
+}
+
+int semihost_exit(enum semihost_exit_reason reason, long status)
+{
+	struct semihost_exit_extended_args args = {
+		.reason = reason,
+		.status = status
+	};
+
+	if (!semihost_debugger_attached()) {
+		return -ENODEV;
+	}
+
+	(void)semihost_exec(SEMIHOST_EXIT_EXTENDED, &args);
+
+	return -EIO;
+}

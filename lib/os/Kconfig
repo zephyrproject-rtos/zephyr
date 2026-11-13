@@ -138,6 +138,14 @@ config RESET_ON_FATAL_ERROR
 	help
 		Initiate a system reset when a fatal error would normally halt the system.
 
+config SEMIHOST_EXIT_ON_FATAL_ERROR
+	bool "Report fatal errors to an attached debugger through semihosting"
+	depends on SEMIHOST
+	help
+	  After a fatal error is logged, call semihost_exit() with the fatal
+	  error reason as status. Without a debugger attached, the system halts
+	  or resets as usual.
+
 config HAS_POWEROFF
 	bool
 	help
