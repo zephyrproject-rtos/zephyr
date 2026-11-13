@@ -293,6 +293,7 @@ config ARMV9_A
 	  performance, and machine learning capabilities while maintaining
 	  backward compatibility with ARMv8-A software.
 
+rsource "efi/Kconfig"
 rsource "xen/Kconfig"
 
 endif # CPU_CORTEX_A

@@ -786,16 +786,20 @@ config BUILD_OUTPUT_BIN
 
 config BUILD_OUTPUT_EFI
 	bool "Build as an EFI application"
-	depends on X86_64
+	depends on X86_64 || (ARM64 && AARCH64_IMAGE_HEADER && !XIP)
+	select BUILD_OUTPUT_BIN if ARM64
 	help
-	  Build as an EFI application.
+	  Build as an EFI application, zephyr/zephyr.efi in the build directory.
 
-	  This works by creating a "zephyr.efi" EFI binary containing a zephyr
-	  image extracted from a built zephyr.elf file.  EFI applications are
-	  relocatable, and cannot be placed at specific locations in memory.
-	  Instead, the stub code will copy the embedded zephyr sections to the
-	  appropriate locations at startup, clear any zero-filled (BSS, etc...)
-	  areas, then jump into the 64 bit entry point.
+	  EFI applications are relocatable, and cannot be placed at specific
+	  locations in memory. Instead, stub code copies the Zephyr image to
+	  its link address at startup and jumps to its entry point.
+
+	  On x86_64, zephyr.efi is a separate EFI binary embedding the
+	  sections extracted from zephyr.elf.
+
+	  On arm64, zephyr.bin itself gets a PE/COFF header and is copied to
+	  zephyr.efi. It still boots as a Linux arm64 Image.
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"

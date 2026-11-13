@@ -38,6 +38,16 @@ Security Vulnerability Related
   removed APIs and options, boards, shields, drivers and samples are generated
   into the change inventory at release time.
 
+Architectures
+*************
+
+* ARM64
+
+  * UEFI firmware can start Zephyr as an EFI application, the way it starts Linux.
+    :kconfig:option:`CONFIG_BUILD_OUTPUT_EFI` adds a PE/COFF header and a stub to
+    ``zephyr.bin``. The stub copies the image to its link address, exits boot
+    services and keeps the UEFI memory map for :c:func:`arm64_efi_boot_info_get`.
+
 Libraries / Subsystems
 **********************
 
