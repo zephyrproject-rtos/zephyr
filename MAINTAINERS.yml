@@ -425,8 +425,13 @@ Allwinner Platforms:
     - khaidox
   files:
     - boards/xunlong/opi_zero2w/
+    - boards/yuzuki/v851s_e907/
     - dts/arm/allwinner/
     - dts/arm64/allwinner/
+    - dts/riscv/allwinner/
+    - dts/bindings/mbox/allwinner,sunxi-msgbox-riscv.yaml
+    - drivers/mbox/mbox_sunxi_msgbox.c
+    - drivers/mbox/Kconfig.sunxi_msgbox
     - soc/allwinner/
   labels:
     - "platform: Allwinner"

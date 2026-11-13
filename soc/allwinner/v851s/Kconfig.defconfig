@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_V851S
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+configdefault NUM_IRQS
+	default 256
+
+configdefault RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+endif # SOC_SERIES_V851S

@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Allwinner V851S MSGBOX, RISC (E907) side. Two register windows: the local
+  (RISC) MSGBOX block for RX and the peer CPUX block for TX.
+
+compatible: "allwinner,sunxi-msgbox-riscv"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  "#mbox-cells":
+    const: 1
+  reg:
+    required: true
+  reg-names:
+    required: true
+  interrupts-extended:
+    required: true
+  allwinner,ccu-base:
+    type: int
+    description: |
+      CCU base address, used to ungate and de-assert the RISC-V MSGBOX block.
+      The A7 only enables CPUX MSGBOX, so the E907 has to turn its own block on.
+  allwinner,ccu-bgr-off:
+    type: int
+    default: 0x71c
+    description: Offset of MSGBOX_BGR_REG inside the CCU
+  allwinner,ccu-riscv-bits:
+    type: int
+    default: 0x20002
+    description: |
+      Bits in MSGBOX_BGR_REG that gate (bit 1) and de-assert the reset
+      (bit 17) of the RISC-V MSGBOX block.
+
+mbox-cells:
+  - channel

@@ -856,6 +856,7 @@ yna	YSH & ATIL
 yones-toptech	Yones Toptech Co., Ltd.
 ys	Shenzhen Yashi Changhua Intelligent Technology Co., Ltd.
 ysoft	Y Soft Corporation a.s.
+yuzuki	Yuzuki
 zarlink	Zarlink Semiconductor
 zb	Zbit Semiconductor, Inc.
 zealz	Zealz

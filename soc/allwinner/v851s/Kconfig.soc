@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_V851S
+	bool
+	select SOC_FAMILY_ALLWINNER
+	help
+	  Allwinner V851S E907 RISC-V co-processor.
+
+	  The E907 integrates a CLINT and a CLIC (CLIC spec 0.8), not a PLIC.
+	  CPU_XUANTIE_E907 selects RISCV_HAS_CLIC, RISCV_VECTORED_MODE,
+	  GEN_IRQ_VECTOR_TABLE, RISCV_MACHINE_TIMER and the reset vector, which
+	  is exactly the interrupt path used by the BL808 E907 BSP.
+
+config SOC_SERIES
+	default "v851s" if SOC_SERIES_V851S
+
+config SOC_V851S_E907
+	bool
+	select SOC_SERIES_V851S
+
+config SOC
+	default "v851s_e907" if SOC_V851S_E907
