@@ -172,8 +172,8 @@ Complete lists: `doc/contribute/style/code.rst`, `doc/contribute/coding_guidelin
   file's pattern for small edits.
 - Public symbols carry their subsystem prefix (`k_`, `sys_`, `net_`, `bt_`, `i2c_`, ...). Public
   functions have Doxygen with a brief description, `@param` and `@retval <value> <text>` for
-  each discrete return value, success first and a value repeated when different conditions
-  produce it: `@retval -EINVAL Invalid argument`, not "if the argument is invalid"
+  each discrete return value, success first: `@retval -EINVAL Invalid argument`, not "if the
+  argument is invalid". One `@retval` per value lists every condition that produces it
   (`doc/contribute/style/doxygen.rst`).
 - Every `CONFIG_` symbol referenced in code or Kconfig must be defined in the tree (KconfigBasic
   check). Symbol naming and `menuconfig`/`if` structure: `doc/contribute/style/kconfig.rst`;
