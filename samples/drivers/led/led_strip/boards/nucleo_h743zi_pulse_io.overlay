@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+
+	led_strip: ws2812 {
+		compatible = "worldsemi,ws2812-pulse-io";
+		pulse-ios = <&tim3_pio 3>;
+		chain-length = <16>; /* arbitrary; change at will */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+/* WS2812 data on PB1 (TIM3_CH4), TIM3_UP DMA request through DMAMUX1 */
+&timers3 {
+	status = "okay";
+
+	tim3_pio: pulse-io {
+		compatible = "st,stm32-pulse-io";
+		pinctrl-0 = <&tim3_ch4_pb1>;
+		pinctrl-names = "default";
+		dmas = <&dmamux1 0 27 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
+		dma-names = "tx";
+		#pulse-io-cells = <1>;
+	};
+};

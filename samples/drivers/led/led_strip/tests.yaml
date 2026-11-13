@@ -16,5 +16,9 @@ tests:
     extra_args: FILE_SUFFIX=pulse_io
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu
+      - nucleo_h743zi
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+      - nucleo_h743zi
     harness_config:
       fixture: fixture_led_strip
