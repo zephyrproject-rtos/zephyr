@@ -317,6 +317,7 @@ static inline uint32_t ifx_uart_divider(uint32_t freq, uint32_t baud, uint32_t o
 	return (freq + ((baud * oversample) / 2U)) / (baud * oversample);
 }
 
+#if (CY_IP_MXSCB_VERSION >= 2) || (CY_IP_MXS22SCB_VERSION >= 1)
 static inline uint32_t ifx_uart_mem_width(uint32_t data_width)
 {
 #if defined(CONFIG_UART_INFINEON_PDL_BYTE_WIDTH_ONLY)
@@ -331,6 +332,7 @@ static inline uint32_t ifx_uart_mem_width(uint32_t data_width)
 						 : CY_SCB_MEM_WIDTH_HALFWORD;
 #endif
 }
+#endif
 
 cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 {

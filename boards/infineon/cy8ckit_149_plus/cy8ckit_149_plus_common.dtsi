@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "cy8ckit_149_plus-pinctrl.dtsi"
+
+/ {
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+};
+
+uart3: &scb3 {
+	compatible = "infineon,uart";
+	current-speed = <115200>;
+	clocks = <&peri_clk_div1>;
+	pinctrl-0 = <&p7_1_scb3_uart_tx &p7_0_scb3_uart_rx>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&peri_clk_div0 {
+	status = "okay";
+};
+
+&peri_clk_div1 {
+	status = "okay";
+};
+
+&peri_clk_div3 {
+	clock-div = <11500>;
+	status = "okay";
+};
+
+&peri_clk_div4 {
+	clock-div = <4>;
+	status = "okay";
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&gpio_prt7 {
+	status = "okay";
+};
+
+&watchdog0 {
+	status = "okay";
+};
