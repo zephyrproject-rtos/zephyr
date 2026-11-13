@@ -42,6 +42,10 @@ config SOC_DIE_PSC3M6
 	bool
 	select SOC_FAMILY_INFINEON_CAT1B
 
+config SOC_DIE_PSC3M8
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
 # SOC Packages for Infineon PSC3 series MCUs
 config SOC_PACKAGE_PSC3_E_LQFP_80
 	bool
@@ -302,6 +306,86 @@ config SOC_PSC3M6FDS2ACQ1
 	select SOC_SERIES_PSC3
 	select SOC_DIE_PSC3M6
 
+config SOC_PSC3M8GFS3PAHQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_100
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8GFS3PAHQ1_MAIN
+	bool
+	select SOC_PSC3M8GFS3PAHQ1
+
+config SOC_PSC3M8GFS3PAFQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_80
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8GFS3PAFQ1_MAIN
+	bool
+	select SOC_PSC3M8GFS3PAFQ1
+
+config SOC_PSC3M8GFS3PACQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8GFS3PACQ1_MAIN
+	bool
+	select SOC_PSC3M8GFS3PACQ1
+
+config SOC_PSC3M8GFS3PLHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8GFS3PLHQ1_MAIN
+	bool
+	select SOC_PSC3M8GFS3PLHQ1
+
+config SOC_PSC3M8FES2PLHQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_64
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8FES2PLHQ1_MAIN
+	bool
+	select SOC_PSC3M8FES2PLHQ1
+
+config SOC_PSC3M8GFS3PABQ1
+	bool
+	select SOC_PACKAGE_PSC3_E_LQFP_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8GFS3PABQ1_MAIN
+	bool
+	select SOC_PSC3M8GFS3PABQ1
+
+config SOC_PSC3M8GFS3PLGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8GFS3PLGQ1_MAIN
+	bool
+	select SOC_PSC3M8GFS3PLGQ1
+
+config SOC_PSC3M8FES2PLGQ1
+	bool
+	select SOC_PACKAGE_PSC3_VQFN_48
+	select SOC_SERIES_PSC3
+	select SOC_DIE_PSC3M8
+
+config SOC_PSC3M8FES2PLGQ1_MAIN
+	bool
+	select SOC_PSC3M8FES2PLGQ1
+
 config SOC
 	default "psc3m5fds2afq1" if SOC_PSC3M5FDS2AFQ1
 	default "psc3m5fds2lgq1" if SOC_PSC3M5FDS2LGQ1
@@ -343,3 +427,11 @@ config SOC
 	default "psc3m6fds2afq1" if SOC_PSC3M6FDS2AFQ1
 	default "psc3m6ges3acq1" if SOC_PSC3M6GES3ACQ1
 	default "psc3m6fds2acq1" if SOC_PSC3M6FDS2ACQ1
+	default "psc3m8gfs3pahq1" if SOC_PSC3M8GFS3PAHQ1
+	default "psc3m8gfs3pafq1" if SOC_PSC3M8GFS3PAFQ1
+	default "psc3m8gfs3pacq1" if SOC_PSC3M8GFS3PACQ1
+	default "psc3m8gfs3plhq1" if SOC_PSC3M8GFS3PLHQ1
+	default "psc3m8fes2plhq1" if SOC_PSC3M8FES2PLHQ1
+	default "psc3m8gfs3pabq1" if SOC_PSC3M8GFS3PABQ1
+	default "psc3m8gfs3plgq1" if SOC_PSC3M8GFS3PLGQ1
+	default "psc3m8fes2plgq1" if SOC_PSC3M8FES2PLGQ1

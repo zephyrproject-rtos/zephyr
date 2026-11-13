@@ -68,7 +68,7 @@
 #if defined(CONFIG_SOC_SERIES_PSC3)
 
 /* mtb-hal-cat1 is not built for the PSC3M6 DSL target. */
-#if !defined(CONFIG_SOC_DIE_PSC3M6)
+#if !defined(CONFIG_SOC_DIE_PSC3M6) && !defined(CONFIG_SOC_DIE_PSC3M8)
 #ifndef CY_USING_HAL
 #define CY_USING_HAL
 #endif
@@ -126,6 +126,50 @@
 #endif
 
 #endif /* CONFIG_SOC_DIE_PSC3M6 */
+
+#if defined(CONFIG_SOC_DIE_PSC3M8)
+
+/* cy_device_headers.h picks the device header off the bare part number. */
+#if defined(CONFIG_SOC_PSC3M8FES2PLGQ1)
+#ifndef PSC3M8FES2PLGQ1
+#define PSC3M8FES2PLGQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8FES2PLHQ1)
+#ifndef PSC3M8FES2PLHQ1
+#define PSC3M8FES2PLHQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8GFS3PABQ1)
+#ifndef PSC3M8GFS3PABQ1
+#define PSC3M8GFS3PABQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8GFS3PACQ1)
+#ifndef PSC3M8GFS3PACQ1
+#define PSC3M8GFS3PACQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8GFS3PAFQ1)
+#ifndef PSC3M8GFS3PAFQ1
+#define PSC3M8GFS3PAFQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8GFS3PAHQ1)
+#ifndef PSC3M8GFS3PAHQ1
+#define PSC3M8GFS3PAHQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8GFS3PLGQ1)
+#ifndef PSC3M8GFS3PLGQ1
+#define PSC3M8GFS3PLGQ1
+#endif
+#elif defined(CONFIG_SOC_PSC3M8GFS3PLHQ1)
+#ifndef PSC3M8GFS3PLHQ1
+#define PSC3M8GFS3PLHQ1
+#endif
+#endif
+
+/* SRF needs the mtb-srf middleware, which is not built for this target. */
+#ifndef CY_SRF_DISABLE
+#define CY_SRF_DISABLE
+#endif
+
+#endif /* CONFIG_SOC_DIE_PSC3M8 */
 
 #if defined(CONFIG_SOC_SERIES_PSOC4100TP)
 
