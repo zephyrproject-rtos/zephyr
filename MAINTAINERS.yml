@@ -3987,10 +3987,10 @@ Linters and Static Analyzers:
     - scripts/checkpatch.pl
     - scripts/checkpatch/
     - scripts/ci/check_compliance.py
-    - scripts/ci/guideline_check.py
     - scripts/ci/pylintrc
     - scripts/coccicheck
     - scripts/coccinelle/
+    - scripts/coding_guidelines/
     - scripts/gitlint/
     - scripts/pylint/
     - scripts/spelling.txt

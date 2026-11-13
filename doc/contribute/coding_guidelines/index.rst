@@ -15,6 +15,26 @@ The severity and other references in the table below are for informational
 purposes only. The listed rules are all required for Zephyr and all new code
 should comply with the rules listed below.
 
+The rules that can be decided from the syntax of a single file are enforced in
+CI by the ``CodingGuidelines`` compliance check on the lines a pull request
+changes; the list of rules it covers is in the header of
+``scripts/coding_guidelines/coding_guidelines.py``. The same check can be run
+locally on any file or directory:
+
+.. code-block:: console
+
+   pip install tree-sitter tree-sitter-c
+   ./scripts/coding_guidelines/coding_guidelines.py drivers/gpio/gpio_nrfx.c
+   ./scripts/coding_guidelines/coding_guidelines.py include/zephyr/drivers/
+
+With ``--fix`` the script rewrites the issues whose correction is a matter of
+spelling only (integer constant suffixes, binary literals as hexadecimal,
+``true``/``false`` for booleans, ``//`` comments, braces around a statement
+body) and reports the rest.
+
+The complete rule set is checked by static analysis on the whole tree, see
+:ref:`static_analysis`.
+
 
 .. note::
 

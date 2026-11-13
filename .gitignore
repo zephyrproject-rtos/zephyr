@@ -96,6 +96,7 @@ BoardYml.txt
 Checkpatch.txt
 ClangFormat.txt
 CMakeStyle.txt
+CodingGuidelines.txt
 DeviceAPI.txt
 DeviceMmioCheck.txt
 DevicetreeBindings.txt
