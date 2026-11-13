@@ -765,6 +765,11 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 	uint8_t id_even[JESD216_READ_ID_LEN + 1] = {0};
 	int rc;
 
+	if (in_ddr(dev) && (dev_config->quirks != NULL) &&
+	    (dev_config->quirks->read_jedec_id_ddr != NULL)) {
+		return dev_config->quirks->read_jedec_id_ddr(dev, id);
+	}
+
 	set_up_xfer(dev, MSPI_RX, dev_config->control_xfer_mode);
 	if (in_octal_io(dev)) {
 		dev_data->xfer.rx_dummy    = dev_data->cmd_info.rdid_dummy;
