@@ -150,3 +150,10 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  sample.net.wifi.nxp.11ac_disabled:
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_NXP_WIFI_11AC=n
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
