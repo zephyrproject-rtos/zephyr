@@ -1168,6 +1168,7 @@ static int h3_end_response(struct http_client_ctx *client)
 
 	ret = zsock_shutdown(client->fd, ZSOCK_SHUT_RDWR);
 	if (ret < 0) {
+		ret = -errno;
 		LOG_DBG("[%p] H3: shutdown(SHUT_RDWR) failed (%d)", client, ret);
 	}
 
