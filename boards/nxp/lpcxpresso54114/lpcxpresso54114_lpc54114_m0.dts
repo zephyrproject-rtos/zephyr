@@ -6,11 +6,11 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/lpc54xxx/nxp_lpc54xxx_m0.dtsi>
+#include <nxp/lpc/lpc54xxx/nxp_lpc5411x_m0.dtsi>
 #include "lpcxpresso54114.dtsi"
 
 / {
-	compatible = "nxp,lpc54xxx", "nxp,lpc";
+	compatible = "nxp,lpc5411x", "nxp,lpc";
 	model = "NXP LPCXPRESSO54114 board";
 
 	chosen {

@@ -115,6 +115,18 @@ Boards
   that relied on the alias, such as :zephyr:code-sample:`blinky`, need an
   overlay pointing at a LED wired to the headers.
 
+* The NXP LPC54xxx DTSI files are named after the sub-family they describe and all live in
+  :file:`dts/arm/nxp/lpc/lpc54xxx/`. Out-of-tree boards must update their includes:
+
+  * LPC5411x: :file:`nxp/lpc/lpc54xxx/nxp_lpc54xxx.dtsi`,
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc54xxx_m4.dtsi` and
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc54xxx_m0.dtsi` are now
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc5411x.dtsi`,
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc5411x_m4.dtsi` and
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc5411x_m0.dtsi`.
+  * LPC546xx: :file:`nxp/lpc/nxp_lpc546xx.dtsi` is now
+    :file:`nxp/lpc/lpc54xxx/nxp_lpc546xx.dtsi`.
+
 Device Drivers and Devicetree
 *****************************
 

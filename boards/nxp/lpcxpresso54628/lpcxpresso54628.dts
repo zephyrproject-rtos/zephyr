@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc546xx.dtsi>
+#include <nxp/lpc/lpc54xxx/nxp_lpc546xx.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "lpcxpresso54628-pinctrl.dtsi"

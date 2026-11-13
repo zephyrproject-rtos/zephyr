@@ -6,12 +6,12 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/lpc54xxx/nxp_lpc54xxx_m4.dtsi>
+#include <nxp/lpc/lpc54xxx/nxp_lpc5411x_m4.dtsi>
 #include "lpcxpresso54114.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	compatible = "nxp,lpc54xxx", "nxp,lpc";
+	compatible = "nxp,lpc5411x", "nxp,lpc";
 	model = "NXP LPCXpresso54114 board";
 
 	aliases {

@@ -1,0 +1,15 @@
+# NXP LPC546XX platform configuration options
+
+# Copyright 2017, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_LPC54628
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 57
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_LPC54628
