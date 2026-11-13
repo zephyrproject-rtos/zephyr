@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: rak11310
+  full_name: RAK11310 WisBlock Core Module
+  vendor: rakwireless
+  socs:
+  - name: rp2040

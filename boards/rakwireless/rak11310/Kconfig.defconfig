@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK11310
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+configdefault I2C_DW_CLOCK_SPEED
+	default 125
+
+configdefault USB_SELF_POWERED
+	default n
+
+endif # BOARD_RAK11310
