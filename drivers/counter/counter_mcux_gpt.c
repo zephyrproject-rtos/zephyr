@@ -11,6 +11,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/atomic.h>
 #include <fsl_gpt.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
@@ -56,6 +57,7 @@ struct mcux_gpt_config {
 	const struct pinctrl_dev_config *pincfg;
 #endif
 	void (*irq_config_func)(void);
+	unsigned int irqn;
 };
 
 struct mcux_gpt_data {
@@ -64,6 +66,8 @@ struct mcux_gpt_data {
 	counter_top_callback_t top_callback;
 	void *alarm_user_data;
 	void *top_user_data;
+	uint32_t guard_period;
+	atomic_t alarm_late;
 #ifdef CONFIG_COUNTER_CAPTURE
 	counter_capture_cb_t capture_callback[IMX_GPT_N_CAPTURE_CHANNELS];
 	void *capture_user_data[IMX_GPT_N_CAPTURE_CHANNELS];
@@ -121,18 +125,29 @@ static int mcux_gpt_get_value(const struct device *dev, uint32_t *ticks)
 static int mcux_gpt_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
+	const struct mcux_gpt_config *config = dev->config;
 	GPT_Type *base = get_base(dev);
 	struct mcux_gpt_data *data = dev->data;
-
+	const uint32_t top = config->info.max_top_value;
+	bool absolute = (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0U;
 	uint32_t current = GPT_GetCurrentTimerCount(base);
 	uint32_t ticks = alarm_cfg->ticks;
+	uint32_t max_rel_val;
+	bool irq_on_late;
+	int err = 0;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
 
-	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
+	if (absolute) {
+		max_rel_val = top - data->guard_period;
+		irq_on_late = (alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) != 0U;
+	} else {
+		/* A short relative alarm can be set after its expiry: detect it and expire it */
+		irq_on_late = ticks < (top / 2U);
+		max_rel_val = irq_on_late ? (top / 2U) : top;
 		ticks += current;
 	}
 
@@ -143,11 +158,30 @@ static int mcux_gpt_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
 
+	/* Drop a compare event of a cancelled alarm, which would fire this one at once */
+	GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1, current - 1U);
+	GPT_ClearStatusFlags(base, kGPT_OutputCompare1Flag);
+
 	GPT_SetOutputCompareValue(base, kGPT_OutputCompare_Channel1,
 				  ticks);
-	GPT_EnableInterrupts(base, kGPT_OutputCompare1InterruptEnable);
 
-	return 0;
+	/* ticks - 1 also catches an alarm set to the current count */
+	if ((ticks - 1U - GPT_GetCurrentTimerCount(base)) > max_rel_val) {
+		if (absolute) {
+			err = -ETIME;
+		}
+
+		if (irq_on_late) {
+			atomic_set(&data->alarm_late, 1);
+			k_irq_set_pending(config->irqn);
+		} else {
+			data->alarm_callback = NULL;
+		}
+	} else {
+		GPT_EnableInterrupts(base, kGPT_OutputCompare1InterruptEnable);
+	}
+
+	return err;
 }
 
 static int mcux_gpt_cancel_alarm(const struct device *dev, uint8_t chan_id)
@@ -161,6 +195,7 @@ static int mcux_gpt_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	}
 
 	GPT_DisableInterrupts(base, kGPT_OutputCompare1InterruptEnable);
+	atomic_clear(&data->alarm_late);
 	data->alarm_callback = NULL;
 
 	return 0;
@@ -171,6 +206,7 @@ void mcux_gpt_isr(const struct device *dev)
 	GPT_Type *base = get_base(dev);
 	struct mcux_gpt_data *data = dev->data;
 	uint32_t current = GPT_GetCurrentTimerCount(base);
+	bool late = atomic_cas(&data->alarm_late, 1, 0);
 	uint32_t status;
 
 	status =  GPT_GetStatusFlags(base, kGPT_OutputCompare1Flag |
@@ -181,7 +217,7 @@ void mcux_gpt_isr(const struct device *dev)
 	GPT_ClearStatusFlags(base, status);
 	barrier_dsync_fence_full();
 
-	if ((status & kGPT_OutputCompare1Flag) && data->alarm_callback) {
+	if (((status & kGPT_OutputCompare1Flag) || late) && data->alarm_callback) {
 		GPT_DisableInterrupts(base,
 				      kGPT_OutputCompare1InterruptEnable);
 		counter_alarm_callback_t alarm_cb = data->alarm_callback;
@@ -262,6 +298,31 @@ static uint32_t mcux_gpt_get_top_value(const struct device *dev)
 	const struct mcux_gpt_config *config = dev->config;
 
 	return config->info.max_top_value;
+}
+
+static uint32_t mcux_gpt_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	struct mcux_gpt_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	return data->guard_period;
+}
+
+static int mcux_gpt_set_guard_period(const struct device *dev, uint32_t guard, uint32_t flags)
+{
+	const struct mcux_gpt_config *config = dev->config;
+	struct mcux_gpt_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	if (guard > config->info.max_top_value) {
+		return -EINVAL;
+	}
+
+	data->guard_period = guard;
+
+	return 0;
 }
 
 #ifdef CONFIG_COUNTER_CAPTURE
@@ -487,6 +548,8 @@ static DEVICE_API(counter, mcux_gpt_driver_api) = {
 	.set_top_value = mcux_gpt_set_top_value,
 	.get_pending_int = mcux_gpt_get_pending_int,
 	.get_top_value = mcux_gpt_get_top_value,
+	.get_guard_period = mcux_gpt_get_guard_period,
+	.set_guard_period = mcux_gpt_set_guard_period,
 	.reset = mcux_gpt_reset,
 #ifdef CONFIG_COUNTER_CAPTURE
 	.capture_configure = mcux_gpt_capture_configure,
@@ -526,6 +589,7 @@ static DEVICE_API(counter, mcux_gpt_driver_api) = {
 				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
 			},                                                                         \
 		.irq_config_func = mcux_gpt_irq_config_##n,                                        \
+		.irqn = DT_INST_IRQN(n),                                                           \
 		MCUX_GPT_PINCTRL_INIT(n)};                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mcux_gpt_init, NULL, &mcux_gpt_data_##n, &mcux_gpt_config_##n,    \
