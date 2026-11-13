@@ -15,9 +15,11 @@ tests:
     tags: mspi
     filter: dt_alias_exists("psram0")
     platform_allow:
+      - art_pi2
       - b_u585i_iot02a/stm32u585xx
       - stm32h5f5j_dk
       - stm32h7s78_dk
     integration_platforms:
+      - art_pi2
       - b_u585i_iot02a/stm32u585xx
       - stm32h7s78_dk
