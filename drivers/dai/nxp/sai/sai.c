@@ -844,7 +844,7 @@ static int sai_clks_enable_disable(const struct device *dev, bool enable)
 			ret = clock_control_off(cfg->clk_data.dev, clk_id);
 		}
 
-		if (ret < 0) {
+		if (ret != 0 && ret != -ENOTSUP) {
 			LOG_ERR("failed to gate/ungate clock %u: %d",
 				cfg->clk_data.clocks[i], ret);
 			return ret;
