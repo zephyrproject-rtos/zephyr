@@ -41,6 +41,15 @@ via Kconfig:
 - ``CONFIG_NET_SAMPLE_SNTP_SERVER``: SNTP server IP address to get the time
   from network
 
+- ``CONFIG_NET_SAMPLE_OCPP_AUTH_USERNAME`` and
+  ``CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD``: credentials of the HTTP Basic
+  authentication, sent to the central system when
+  :kconfig:option:`CONFIG_OCPP_BASIC_AUTH` is enabled. The username must be
+  equal to the charge point identity, the last element of
+  ``CONFIG_NET_SAMPLE_OCPP_WS_PATH``, and the password is the authorization
+  key, of 16 to 40 printable characters by default. See
+  :ref:`ocpp_basic_auth` for the rules of the OCPP 1.6 security whitepaper.
+
 Generating keys and certificate for TLS (Optional):
 ***************************************************
 
