@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - gpio
+    - mfd
+    - spi
+  platform_allow:
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+  harness: ztest
+tests:
+  drivers.gpio.tlc6c59xx.12bit: {}
+  drivers.gpio.tlc6c59xx.8bit:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=8bit.overlay
+  drivers.gpio.tlc6c59xx.reset_active_low:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=reset-active-low.overlay
+  drivers.gpio.tlc6c59xx.reset_active_high:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=reset-active-high.overlay
