@@ -59,6 +59,12 @@ Libraries / Subsystems
   * Display timings can be read and set at runtime with
     :c:func:`display_get_timing` and :c:func:`display_set_timing`.
 
+* DSP
+
+  * Added complex and real FFT functions in Q15, Q31, float16 and float32 to the
+    :ref:`DSP API <zdsp_api>`, such as :c:func:`zdsp_cfft_q15` and
+    :c:func:`zdsp_rfft_fast_f32`.
+
 * FIDO2
 
   * Added a PSA Protected Storage backend, enabled with

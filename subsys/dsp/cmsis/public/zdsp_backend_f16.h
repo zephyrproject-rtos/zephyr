@@ -68,6 +68,43 @@ static inline void zdsp_clip_f16(const float16_t *src, float16_t *dst, float16_t
 	arm_clip_f16(src, dst, low, high, num_samples);
 }
 
+/*
+ * Transform (FFT) functions.
+ */
+struct zdsp_cfft_instance_f16 {
+	arm_cfft_instance_f16 arm;
+};
+
+static inline zdsp_transform_status zdsp_cfft_init_f16(struct zdsp_cfft_instance_f16 *inst,
+						       uint16_t fft_len)
+{
+	return arm_cfft_init_f16(&inst->arm, fft_len) == ARM_MATH_SUCCESS
+		       ? ZDSP_TRANSFORM_STATUS_OK
+		       : ZDSP_TRANSFORM_STATUS_ERROR;
+}
+static inline void zdsp_cfft_f16(const struct zdsp_cfft_instance_f16 *inst, float16_t *p,
+				 uint8_t ifft_flag, uint8_t bit_reverse_flag)
+{
+	arm_cfft_f16(&inst->arm, p, ifft_flag, bit_reverse_flag);
+}
+
+struct zdsp_rfft_fast_instance_f16 {
+	arm_rfft_fast_instance_f16 arm;
+};
+
+static inline zdsp_transform_status
+zdsp_rfft_fast_init_f16(struct zdsp_rfft_fast_instance_f16 *inst, uint16_t fft_len)
+{
+	return arm_rfft_fast_init_f16(&inst->arm, fft_len) == ARM_MATH_SUCCESS
+		       ? ZDSP_TRANSFORM_STATUS_OK
+		       : ZDSP_TRANSFORM_STATUS_ERROR;
+}
+static inline void zdsp_rfft_fast_f16(const struct zdsp_rfft_fast_instance_f16 *inst, float16_t *p,
+				      float16_t *out, uint8_t ifft_flag)
+{
+	arm_rfft_fast_f16(&inst->arm, p, out, ifft_flag);
+}
+
 #ifdef __cplusplus
 }
 #endif
