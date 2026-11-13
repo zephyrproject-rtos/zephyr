@@ -18,6 +18,10 @@
 #include <xtensa/config/tie.h>
 #endif
 
+#ifdef CONFIG_XTENSA_LIBC
+#include <sys/reent.h>
+#endif
+
 /* Xtensa doesn't use these structs, but Zephyr core requires they be
  * defined so they can be included in struct _thread_base.  Dummy
  * field exists for sizeof compatibility with C++.
@@ -56,6 +60,10 @@ struct _thread_arch {
 #ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
 	/* A non-BSA region is required for lazy save/restore */
 	uint8_t hifi_regs[XCHAL_CP1_SA_SIZE] __aligned(XCHAL_CP1_SA_ALIGN);
+#endif
+
+#ifdef CONFIG_XTENSA_LIBC
+	struct _reent reent;
 #endif
 };
 

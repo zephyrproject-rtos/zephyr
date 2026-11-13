@@ -161,6 +161,14 @@ _high_restore_done:
  */
 .global _restore_context
 _restore_context:
+#if defined(CONFIG_XTENSA_LIBC) && !defined(CONFIG_XTENSA_LIBC_DYNAMIC_REENT)
+	/* Update the reentrancy pointer for the new current thread */
+	rsr   a6, ZSR_CPU
+	l32i  a6, a6, ___cpu_t_current_OFFSET
+	addi  a6, a6, _thread_offset_to_reent
+	movi  a7, _reent_ptr
+	s32i  a6, a7, 0
+#endif
 	call0 xtensa_restore_high_regs
 
 	l32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
