@@ -30,9 +30,10 @@ void bap_stream_tx_init(void);
  * @param bap_stream The stream to register
  *
  * @retval 0 on success
- * @retval -EINVAL @p bap_stream is NULL
- * @retval -EINVAL @p bap_stream is not configured for TX
- * @retval -EINVAL @p bap_stream.codec_cfg contains invalid values
+ * @retval -EINVAL
+ *     - @p bap_stream is NULL
+ *     - @p bap_stream is not configured for TX
+ *     - @p bap_stream.codec_cfg contains invalid values
  * @retval -ENOMEM if not more streams can be registered
  */
 int bap_stream_tx_register(struct bt_bap_stream *bap_stream);
