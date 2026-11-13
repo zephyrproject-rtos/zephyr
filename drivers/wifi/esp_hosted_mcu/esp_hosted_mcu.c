@@ -28,6 +28,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp_hosted_mcu, CONFIG_WIFI_LOG_LEVEL);
 
+BUILD_ASSERT(!IS_ENABLED(CONFIG_ESP_HOSTED_MCU_SPI) || CONFIG_NET_TC_TX_COUNT > 0,
+	     "SPI transport needs a network TX thread (CONFIG_NET_TC_TX_COUNT > 0)");
+
 #define ESP_HOSTED_MCU_MAC_ADDR_LEN (6)
 #define ESP_HOSTED_MCU_MAX_SSID_LEN (32)
 #define ESP_HOSTED_MCU_MAX_PASS_LEN (64)
