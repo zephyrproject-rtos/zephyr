@@ -39,6 +39,12 @@ tests:
       - frdm_k22f
       - frdm_k64f
       - twr_ke18f
+  drivers.dac.loopback.ti_dac0_chan0_adc0_chan4:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ti-dac0-channel0-adc0-channel4.overlay"
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
   drivers.dac.loopback.blxxx_dvk:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="blxxx_dvk.overlay"
