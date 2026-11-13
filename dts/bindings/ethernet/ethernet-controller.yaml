@@ -8,6 +8,11 @@ include:
   - name: ethernet-mac-address.yaml
 
 properties:
+  max-speed:
+    type: int
+    description: |
+      Specifies the maximum supported speed of the Ethernet controller in Mbit/s.
+
   phy-handle:
     type: phandle
     dependency-mode: ignore
@@ -37,7 +42,42 @@ properties:
       - "trgmii"
       - "internal"
 
+  pcs-handle:
+    type: phandles
+    dependency-mode: ignore
+    description: |
+      Physical coding sublayer (PCS) devices used by this Ethernet controller,
+      for example on an MDIO bus. An external PHY behind the PCS is described
+      by phy-handle.
+
+  pcs-handle-names:
+    type: string-array
+    description: |
+      Names for the pcs-handle entries, in the same order.
+
   ptp-clock:
     type: phandle
     description: |
       Corresponding ptp clock device.
+
+  rx-fifo-depth:
+    type: int
+    description: |
+      Specifies the depth of the receive FIFO buffer.
+
+  tx-fifo-depth:
+    type: int
+    description: |
+      Specifies the depth of the transmit FIFO buffer.
+
+  rx-internal-delay-ps:
+    type: int
+    description: |
+      Specifies the internal delay of the receive path in picoseconds.
+      Only for RGMII interfaces. Applied by the MAC.
+
+  tx-internal-delay-ps:
+    type: int
+    description: |
+      Specifies the internal delay of the transmit path in picoseconds.
+      Only for RGMII interfaces. Applied by the MAC.
