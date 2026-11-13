@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_SCI_INTR
+	bool "TI K3 TISCI Interrupt Router"
+	default y
+	depends on DT_HAS_TI_SCI_INTR_ENABLED
+	depends on DT_HAS_TI_SCI_INTR_OUT_ENABLED
+	depends on TISCI
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Enable support for Texas Instruments K3 Interrupt Router blocks that
+	  are programmed through TISCI (for example MAIN/MCU GPIOMUX INTROUTER
+	  on J722S). With ti,sci-intr-out children, peripherals use ordinary
+	  IRQ_CONNECT / irq_enable; the parent programs the TISCI route.
+
+	  The SoC or board must configure the multilevel IRQ layout before
+	  using this driver: NUM_IRQS, 1ST_LEVEL_INTERRUPT_BITS (wide enough
+	  for native parent IRQs such as VIM), NUM_2ND_LEVEL_AGGREGATORS,
+	  MAX_IRQ_PER_AGGREGATOR, 2ND_LVL_ISR_TBL_OFFSET, and one
+	  2ND_LVL_INTR_*_OFFSET per ti,sci-intr-out parent IRQ.
