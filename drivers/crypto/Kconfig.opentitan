@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 Yousef Kitaneh
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_OPENTITAN_HMAC
+	bool "lowRISC OpenTitan HMAC SHA-256 accelerator driver"
+	default y
+	depends on DT_HAS_LOWRISC_OPENTITAN_HMAC_ENABLED
+	help
+	  Enable the lowRISC OpenTitan HMAC hardware accelerator driver
+	  for SHA-256 hash operations.
