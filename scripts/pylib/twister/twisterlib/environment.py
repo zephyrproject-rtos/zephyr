@@ -292,12 +292,30 @@ Artificially long but functional example:
     parser.add_argument(
         "-a", "--arch", action="append",
         help="Arch filter for testing. Takes precedence over --platform. "
-             "If unspecified, test all arches. Multiple invocations "
-             "are treated as a logical 'or' relationship")
+             "When combined with --vendor or --platform-filter, those filters "
+             "select the initial platform scope and --arch narrows the "
+             "resulting instances. If unspecified, test all arches. "
+             "Multiple invocations are treated as a logical 'or' relationship")
 
     parser.add_argument(
             "--vendor", action="append", default=[],
             help="Vendor filter for testing")
+
+    parser.add_argument(
+        "--platform-filter", metavar="EXPR",
+        help="Filter platforms using an expression over their static metadata "
+             "attributes: name, arch, vendor, soc, soc_series and soc_family "
+             "(soc, soc_series and soc_family as declared in the SoC's soc.yml "
+             "file, empty for platforms that do not resolve to a known SoC). "
+             "Uses the same expression syntax as a testsuite's 'filter:' key "
+             "(==, !=, and, or, not, in, parentheses - all attributes are "
+             "strings), without access to the devicetree/Kconfig-based "
+             "predicates, which are not available until build time. E.g. "
+             "--platform-filter 'soc_family == \"stm32\"' or "
+             "--platform-filter 'arch == \"arm\" and vendor == \"st\"'. "
+             "May be combined with --vendor, in which case a platform must "
+             "match both. Use 'and'/'or'/parentheses inside the expression "
+             "to combine multiple conditions.")
 
     parser.add_argument(
         "-p", "--platform", action="append", default=[],

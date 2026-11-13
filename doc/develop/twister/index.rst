@@ -129,6 +129,15 @@ name:
 vendor:
   The board vendor. Used by the ``vendor_allow`` and ``vendor_exclude`` test
   scenario filters.
+soc:
+  The SoC backing this platform, as declared in the SoC's :file:`soc.yml` file.
+  Available to the ``--platform-filter`` command line filter.
+soc_series:
+  The SoC series ``soc`` belongs to, as declared in :file:`soc.yml`. Available
+  to the ``--platform-filter`` command line filter.
+soc_family:
+  The SoC family ``soc`` belongs to, as declared in :file:`soc.yml`. Available
+  to the ``--platform-filter`` command line filter.
 tier:
   An optional integer indicating the board support tier. Used for reporting and
   to group platforms by their level of support.
@@ -1331,6 +1340,18 @@ Command line arguments define the initial scope in the following way:
 * ``-G/--integration``: all platforms from an ``integration_platforms`` list in
   a given test configuration file. If a test has no ``integration_platforms``
   *"scope presumption"* will happen;
+* ``--vendor`` (can be used multiple times) and/or ``--platform-filter <EXPR>``:
+  platforms matching the given vendor and/or an expression over the
+  platform's static metadata attributes (``name``, ``arch``, ``vendor``,
+  ``soc``, ``soc_series`` and ``soc_family``), e.g.
+  ``--platform-filter 'soc_family == "stm32"'`` or
+  ``--platform-filter 'arch == "arm" and vendor == "st"'``. These compose:
+  when both are given, only platforms matching *all* of them are selected;
+  multiple ``--vendor`` values are combined with a logical "or". Use
+  "and"/"or"/parentheses inside the ``--platform-filter`` expression to
+  combine multiple conditions. When combined with ``--arch``, ``--vendor``
+  and ``--platform-filter`` choose the initial platform scope and
+  ``--arch`` narrows the resulting instances.
 * No scope argument: *"scope presumption"* will happen.
 
 *"Scope presumption"*: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
