@@ -8,6 +8,7 @@ config ENTROPY_LITEX_RNG
 	default y
 	depends on DT_HAS_LITEX_PRBS_ENABLED
 	select ENTROPY_HAS_DRIVER
+	select USE_LITEX_CSR
 	help
 	  This option enables the RNG module, which is an entropy number
 	  generator, based on Pseudo-Random Binary Sequences (PRBS)

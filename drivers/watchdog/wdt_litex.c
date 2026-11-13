@@ -7,14 +7,13 @@
 #define DT_DRV_COMPAT litex_watchdog
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_litex, CONFIG_WDT_LOG_LEVEL);
-
-#include <soc.h>
 
 struct wdt_litex_data {
 	wdt_callback_t callback;
