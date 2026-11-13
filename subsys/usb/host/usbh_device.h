@@ -14,13 +14,6 @@
 typedef int (*usbh_udev_cb_t)(struct usb_device *const udev,
 			      struct uhc_transfer *const xfer);
 
-/*
- * This will return the first available USB device; for a single-point
- * connection without hub support, this is the device connected directly to the
- * host controller.
- */
-struct usb_device *usbh_device_get_any(struct usbh_context *const ctx);
-
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr);
 
 /* Allocate/free USB device */

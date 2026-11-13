@@ -50,16 +50,6 @@ void usbh_device_free(struct usb_device *const udev)
 	k_mem_slab_free(&usb_device_slab, (void *)udev);
 }
 
-struct usb_device *usbh_device_get_any(struct usbh_context *const uhs_ctx)
-{
-	sys_dnode_t *const node = sys_dlist_peek_head(&uhs_ctx->udevs);
-	struct usb_device *udev;
-
-	udev = SYS_DLIST_CONTAINER(node, udev, node);
-
-	return udev;
-}
-
 struct usb_device *usbh_device_get(struct usbh_context *const uhs_ctx, const uint8_t addr)
 {
 	struct usb_device *udev;
@@ -513,7 +503,6 @@ struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 
 int usbh_device_init(struct usb_device *const udev)
 {
-	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
 
@@ -526,14 +515,6 @@ int usbh_device_init(struct usb_device *const udev)
 	if (err) {
 		LOG_ERR("Failed to lock USB device");
 		return err;
-	}
-
-	if (usbh_device_is_root(uhs_ctx, udev)) {
-		err = uhc_bus_reset(uhs_ctx->dev);
-		if (err) {
-			LOG_ERR("Failed to signal bus reset");
-			return err;
-		}
 	}
 
 	/*
