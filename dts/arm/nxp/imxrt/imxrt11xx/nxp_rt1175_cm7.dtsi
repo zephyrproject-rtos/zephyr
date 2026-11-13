@@ -20,6 +20,9 @@
 /delete-node/ &mipi_dsi;
 /delete-node/ &mipi_csi2rx;
 
+/* The RT1175 has no ENET_QOS either */
+/delete-node/ &enet_qos;
+
 /* RT1175 shares the RT1176 silicon: ARM PLL is set to 996MHz for this core */
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(996)>;
