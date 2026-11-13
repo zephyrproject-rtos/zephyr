@@ -4,3 +4,5 @@
 # Common fields for PHY devices
 
 include: base.yaml
+
+class: ethernet_phy
