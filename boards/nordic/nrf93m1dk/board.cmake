@@ -7,7 +7,7 @@ elseif(CONFIG_SOC_NRF54L15_CPUFLPR)
   board_runner_args(jlink "--device=nRF54L15_RV32")
 endif()
 
-if(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+if(CONFIG_BUILD_WITH_TFM)
   set(TFM_PUBLIC_KEY_FORMAT "full")
 endif()
 

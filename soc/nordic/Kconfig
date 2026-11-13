@@ -67,12 +67,6 @@ config NRF_SOC_SECURE_SUPPORTED
 	  For non-secure the functions must redirect to secure services exposed
 	  by the secure firmware.
 
-config BUILD_WITH_TFM
-	default y if TRUSTED_EXECUTION_NONSECURE
-	help
-	  By default, if we build for a Non-Secure version of the board,
-	  enable building with TF-M as the Secure Execution Environment.
-
 if BUILD_WITH_TFM
 
 config TFM_FLASH_MERGED_BINARY
