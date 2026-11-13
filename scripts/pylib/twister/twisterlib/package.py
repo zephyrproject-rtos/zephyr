@@ -61,6 +61,7 @@ class Artifacts:
                     f"Missing testsuite artifact path for '{testsuite['name']}' in '{build_root}'"
                 )
 
+            testsuite_path = testsuite_path.rsplit(os.pardir + os.path.sep, 1)[-1]
             candidate = self._safe_artifact_relpath(testsuite_path, testsuite['name'])
             if candidate is None:
                 raise ValueError(
