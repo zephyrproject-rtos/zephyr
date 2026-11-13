@@ -393,10 +393,13 @@ void riscv_plic_irq_set_pending(uint32_t irq)
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	const uint32_t local_irq = irq_from_level_2(irq);
 	mem_addr_t pend_addr = get_pending_reg(dev, local_irq);
-	uint32_t pend_value = sys_read32(pend_addr);
 
-	WRITE_BIT(pend_value, local_irq & PLIC_REG_MASK, true);
-	sys_write32(pend_value, pend_addr);
+	/*
+	 * The Andes NCEPLIC100 pending registers are write-1-to-set, and writing 0
+	 * doesn't clear a pending bit, so write the pending register directly
+	 * instead of a read-modify-write.
+	 */
+	sys_write32(BIT(local_irq & PLIC_REG_MASK), pend_addr);
 }
 #endif /* CONFIG_PLIC_SUPPORTS_SOFT_INTERRUPT */
 
