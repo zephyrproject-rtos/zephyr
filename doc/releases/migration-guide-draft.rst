@@ -237,6 +237,60 @@ I2S
   :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_PATH`, which also accept ALSA devices. Without the
   ALSA backend the old options still provide their default. (:github:`123474`)
 
+Interrupt Controllers
+=====================
+
+* GIC v3 LPI and ITS tables now use static storage instead of the system heap.
+  Applications must provision enough table capacity for their devices and interrupt vectors.
+  (:github:`120728`)
+
+  Enabling :kconfig:option:`CONFIG_GIC_V3_ITS` requires :kconfig:option:`CONFIG_NUM_IRQS` to be
+  greater than 8192 because LPI INTIDs start at 8192. Set :kconfig:option:`CONFIG_NUM_IRQS` to at
+  least 8192 plus the total number of required LPIs across all ITS instances. Hardware support
+  and ``zephyr,lpi-id-bits`` can further limit the usable LPI range.
+
+  Set :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_DEVICES` to at least the number of distinct DeviceIDs
+  registered with each ITS instance; the default is 16. Set
+  :kconfig:option:`CONFIG_GIC_V3_ITS_MAX_VECTORS` to at least the largest number of vectors
+  requested for any one device, rounded up to a power of two; the default is 32. Increasing these
+  capacities increases the statically reserved memory, including space for devices that are not
+  registered.
+
+  The ``zephyr,device-id-bits`` property of :dtcompatible:`arm,gic-v3-its` must cover the largest
+  DeviceID used by the platform, rather than the number of devices. Its default of 16 covers the
+  PCIe RequesterID space. The ``zephyr,lpi-id-bits`` property of :dtcompatible:`arm,gic-v3` controls
+  the LPI table provision and defaults to 16; reduce it only when all required INTIDs fit in the
+  smaller range.
+
+  Remove application or board :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE` overrides that only
+  reserved space for GIC v3 LPI or ITS tables. The ITS no longer contributes a minimum heap size.
+  Retain any heap space needed by other drivers or application allocations.
+
+  :c:func:`its_alloc_intid` now returns 0 or a negative error code and reports the allocated
+  INTID through an output parameter. ``*intid`` is left unchanged on failure. Update callers
+  that used the return value as the INTID, for example:
+
+  .. code-block:: c
+
+     /* Before */
+     int intid = its_alloc_intid(dev);
+
+     if (intid == 0) {
+             /* No INTID available. */
+     }
+
+     /* After */
+     unsigned int intid;
+     int ret = its_alloc_intid(dev, &intid);
+
+     if (ret != 0) {
+             /* ret is -ENOSPC or another negative error code. */
+     }
+
+  The new :c:func:`its_alloc_intids` and :c:func:`its_alloc_map_intids` functions use the
+  same convention: they return 0 on success, a negative error code on failure, and store the
+  first allocated INTID through the output parameter.
+
 Modem
 =====
 
