@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * Copyright (c) 2019-2021 Vestas Wind Systems A/S
  *
  * Based on NXP k6x soc.c, which is:
@@ -184,6 +184,11 @@ __weak void clk_init(void)
 	/* Init SOSC according to board configuration. */
 	CLOCK_InitSysOsc(&scg_sosc_config);
 	CLOCK_SetXtal0Freq(scg_sosc_config.freq);
+#endif
+#if DT_NODE_EXISTS(DT_NODELABEL(osc32)) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(osc32))
+	/* Init OSC32 according to board configuration. */
+	OSC32_Init(OSC32, kOSC32_CrystalEnableInStop);
+	CLOCK_SetXtal32Freq(32768);
 #endif
 
 	CLOCK_CONFIG_FircSafeConfig(&scg_firc_config);
