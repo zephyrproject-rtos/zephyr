@@ -147,6 +147,11 @@ Libraries / Subsystems
     as defined in :rfc:`3629`; overlong sequences, UTF-16 surrogates and code
     points above U+10FFFF are refused.
 
+  * :c:func:`sys_read64_lo_hi`, :c:func:`sys_read64_hi_lo`, :c:func:`sys_write64_lo_hi` and
+    :c:func:`sys_write64_hi_lo` access a 64-bit register as two 32-bit accesses in an explicit
+    word order, for registers that allow it on targets without a single 64-bit access. They are
+    declared in :zephyr_file:`include/zephyr/sys/sys_io_non_atomic.h`.
+
 * Shell
 
   * With :kconfig:option:`CONFIG_SHELL_WILDCARD` enabled, an argument containing ``*`` or ``?``
