@@ -69,6 +69,15 @@ Libraries / Subsystems
   * The native backend now supports the AS923 region
     (:kconfig:option:`CONFIG_LORAWAN_REGION_AS923`).
 
+* Modem
+
+  * :ref:`Cellular modems <cellular-modem>` can have several SIM slots, described by a
+    :dtcompatible:`modem-sims` child node of the modem and switched through the
+    :ref:`MUX API <mux_api>`, for example by a :dtcompatible:`gpio-mux`.
+    :c:func:`cellular_get_sim_slots` reports the slots and :c:func:`cellular_select_sim`
+    selects the active one. The ``modem_cellular`` driver switches the SIM slot while the
+    modem is suspended.
+
 * Networking
 
   * :kconfig:option:`CONFIG_NET_DHCPV6_START_ON_RA` starts the DHCPv6 client
