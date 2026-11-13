@@ -552,7 +552,7 @@ FUNC_NORETURN
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
 	int err;
-	int barrier;
+	pthread_barrier_t barrier;
 	void *(*fun_ptr)(void *arg) = arg2;
 	struct posix_thread *t = CONTAINER_OF(k_current_get(), struct posix_thread, thread);
 
