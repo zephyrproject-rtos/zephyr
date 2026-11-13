@@ -24,10 +24,13 @@ ZTEST(test_hci, test_bt_hci_err_to_str)
 			  strlen("BT_HCI_ERR_REMOTE_USER_TERM_CONN"));
 	zassert_mem_equal(bt_hci_err_to_str(BT_HCI_ERR_TOO_EARLY),
 			  "BT_HCI_ERR_TOO_EARLY", strlen("BT_HCI_ERR_TOO_EARLY"));
+	zassert_str_equal(bt_hci_err_to_str(BT_HCI_ERR_DEBUG_KEY_NOT_ALLOWED),
+			  "BT_HCI_ERR_DEBUG_KEY_NOT_ALLOWED");
 
 	/* Test a entries that is not used */
 	zassert_mem_equal(bt_hci_err_to_str(0x2b),
 			  "(unknown)", strlen("(unknown)"));
+	zassert_str_equal(bt_hci_err_to_str(0x4c), "(unknown)");
 	zassert_mem_equal(bt_hci_err_to_str(0xFF),
 			  "(unknown)", strlen("(unknown)"));
 

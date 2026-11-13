@@ -4712,6 +4712,14 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_HCI_ERR_PACKET_TOO_LONG              0x45
 #define BT_HCI_ERR_TOO_LATE                     0x46
 #define BT_HCI_ERR_TOO_EARLY                    0x47
+/** Insufficient Channels. The operation would yield too few physical channels. */
+#define BT_HCI_ERR_INSUFFICIENT_CHANNELS        0x48
+/** Invalid Packet Format. The connection was lost on a packet with an invalid format. */
+#define BT_HCI_ERR_INVALID_PACKET_FORMAT        0x49
+/** Invalid Public Key. The peer provided a public key that is not valid. */
+#define BT_HCI_ERR_INVALID_PUBLIC_KEY           0x4a
+/** Debug Key Not Allowed. The device does not allow the debug key for encryption. */
+#define BT_HCI_ERR_DEBUG_KEY_NOT_ALLOWED        0x4b
 
 #ifdef __cplusplus
 }

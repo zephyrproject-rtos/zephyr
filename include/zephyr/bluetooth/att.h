@@ -14,7 +14,7 @@
  * @brief Attribute Protocol (ATT)
  * @defgroup bt_att Attribute Protocol (ATT)
  * @since 1.1
- * @version 1.1.0
+ * @version 1.2.0
  * @ingroup bluetooth
  * @{
  */
@@ -83,6 +83,8 @@ extern "C" {
 #define BT_ATT_ERR_DB_OUT_OF_SYNC		0x12
 /** The attribute parameter value was not allowed */
 #define BT_ATT_ERR_VALUE_NOT_ALLOWED		0x13
+/** The MIC used for encrypting this link is too short */
+#define BT_ATT_ERR_MIC_LEN_TOO_SHORT		0x14
 
 /* Common Profile Error Codes
  *
