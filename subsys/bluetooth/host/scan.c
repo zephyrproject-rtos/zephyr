@@ -782,9 +782,16 @@ check_pending_conn:
 void bt_hci_le_scan_timeout(struct net_buf *buf)
 {
 	struct bt_le_scan_cb *listener, *next;
+	int err;
 
-	int err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	/* A limited scanner keeps its RPA through RPA timeouts. Invalidate it
+	 * before the scanner restarts for its other users, so that they get a
+	 * new one, as bt_le_scan_stop() does.
+	 */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
+	err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
 	if (err) {
 		k_yield();
 		err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
@@ -793,9 +800,6 @@ void bt_hci_le_scan_timeout(struct net_buf *buf)
 	if (err) {
 		LOG_WRN("Could not stop the explicit scanner (%d)", err);
 	}
-
-	atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
 #if defined(CONFIG_BT_SMP)
 	bt_id_pending_keys_update();
