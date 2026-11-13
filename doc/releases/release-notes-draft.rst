@@ -53,6 +53,9 @@ Libraries / Subsystems
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.
+  * GATT over BR/EDR: :kconfig:option:`CONFIG_BT_ATT_BR` adds an ATT bearer on
+    BR/EDR connections, opened with :c:func:`bt_att_br_connect` and closed with
+    :c:func:`bt_att_br_disconnect`.
 
 * Display
 

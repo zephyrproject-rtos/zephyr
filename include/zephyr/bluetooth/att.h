@@ -186,6 +186,44 @@ int bt_eatt_connect(struct bt_conn *conn, size_t num_channels);
  */
 size_t bt_eatt_count(struct bt_conn *conn);
 
+/** @brief Connect the ATT bearer over BR/EDR
+ *
+ * Creates the Unenhanced ATT bearer by connecting an L2CAP channel to the
+ * ATT PSM (0x001F) of the peer. GATT procedures can be used on @p conn once
+ * the bearer is connected, which is signaled with the
+ * @ref bt_gatt_cb.att_mtu_updated callback. The ATT_MTU is negotiated by
+ * L2CAP configuration, so the Exchange MTU procedure is not used.
+ *
+ * The connection is encrypted before the channel is connected, as required by
+ * Core v6.2 Vol 3 Part G 5.1.2.
+ *
+ * @kconfig_dep{CONFIG_BT_ATT_BR}
+ *
+ * @param conn BR/EDR ACL connection.
+ *
+ * @retval 0 Connection procedure started.
+ * @retval -EINVAL @p conn is NULL or not a BR/EDR connection.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -EALREADY An ATT bearer exists or is being connected on @p conn.
+ * @retval -ENOMEM No ATT context or channel available.
+ */
+int bt_att_br_connect(struct bt_conn *conn);
+
+/** @brief Disconnect the ATT bearer over BR/EDR
+ *
+ * Disconnects the L2CAP channel of the ATT bearer. The ACL connection is not
+ * affected.
+ *
+ * @kconfig_dep{CONFIG_BT_ATT_BR}
+ *
+ * @param conn BR/EDR ACL connection.
+ *
+ * @retval 0 Disconnection procedure started.
+ * @retval -EINVAL @p conn is NULL or not a BR/EDR connection.
+ * @retval -ENOTCONN No ATT bearer on @p conn.
+ */
+int bt_att_br_disconnect(struct bt_conn *conn);
+
 /** @brief ATT channel option bit field values.
  * @note @ref BT_ATT_CHAN_OPT_UNENHANCED_ONLY and @ref BT_ATT_CHAN_OPT_ENHANCED_ONLY are mutually
  * exclusive and both bits may not be set.
