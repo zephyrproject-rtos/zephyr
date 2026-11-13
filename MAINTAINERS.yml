@@ -5521,6 +5521,29 @@ Precision Timing:
     - sample.subsys.precision_timing
     - subsys.precision_timing
 
+Puya PY32 Platforms:
+  status: maintained
+  maintainers:
+    - kholia
+  files:
+    - boards/puya/
+    - drivers/adc/*py32*
+    - drivers/clock_control/*py32*
+    - drivers/gpio/*py32*
+    - drivers/i2c/*py32*
+    - drivers/interrupt_controller/*py32*
+    - drivers/pinctrl/*py32*
+    - drivers/reset/*py32*
+    - drivers/serial/*py32*
+    - dts/arm/puya/
+    - dts/bindings/*/puya,*.yaml
+    - include/zephyr/drivers/clock_control/py32_clock_control.h
+    - include/zephyr/drivers/interrupt_controller/gpio_intc_py32.h
+    - include/zephyr/dt-bindings/*/puya_*.h
+    - soc/puya/
+    - tests/drivers/adc/adc_py32/
+    - tests/drivers/interrupt_controller/intc_gpio_py32/
+
 QNX Hypervisor Platforms:
   status: maintained
   maintainers:
@@ -7430,6 +7453,13 @@ West:
     - modules/Kconfig.vega
   labels:
     - "platform: openisa/RV32M1"
+
+"West project: hal_py32":
+  status: maintained
+  maintainers:
+    - kholia
+  files:
+    - modules/hal_py32/
 
 "West project: hal_quicklogic":
   status: odd fixes

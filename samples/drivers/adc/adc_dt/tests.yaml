@@ -10,6 +10,9 @@ tests:
     depends_on:
       - adc
     platform_allow:
+      - py32f030_startkit
+      - py32f003_minimal/py32f003x6/l16s6tu
+      - py32f003_minimal/py32f003x6/w16s6tu
       - nucleo_l073rz
       - nucleo_h753zi
       - disco_l475_iot1

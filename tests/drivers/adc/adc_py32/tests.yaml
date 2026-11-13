@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.adc.py32:
+    tags:
+      - adc
+      - drivers
+    platform_allow:
+      - py32f003_minimal/py32f003x6/l16s6tu
+      - py32f003_minimal/py32f003x6/w16s6tu
+      - py32f030_startkit
+    integration_platforms:
+      - py32f003_minimal/py32f003x6/l16s6tu
+    min_ram: 4
+    min_flash: 32
+    harness: ztest

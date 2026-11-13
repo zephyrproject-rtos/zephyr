@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PY32F030_STARTKIT
+
+configdefault MAIN_STACK_SIZE
+	default 512
+
+configdefault IDLE_STACK_SIZE
+	default 200
+
+configdefault ISR_STACK_SIZE
+	default 512
+
+endif # BOARD_PY32F030_STARTKIT

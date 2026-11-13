@@ -19,6 +19,8 @@ manifest:
     remote: upstream
 
   remotes:
+    - name: kholia
+      url-base: https://github.com/kholia
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
@@ -220,6 +222,12 @@ manifest:
     - name: hal_openisa
       revision: eabd530a64d71de91d907bad257cd61aacf607bc
       path: modules/hal/openisa
+      groups:
+        - hal
+    - name: hal_py32
+      revision: 5fe1c81f5c931efe07d73164012fd13457a778ca
+      path: modules/hal/py32
+      remote: kholia
       groups:
         - hal
     - name: hal_quicklogic

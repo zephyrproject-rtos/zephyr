@@ -1,0 +1,196 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_PY32
+
+config USE_PY32_ASSERT
+	bool
+	help
+	  Enable the Puya PY32 ASSERT implementation.
+
+config USE_PY32_HAL_ADC
+	bool
+	help
+	  Enable the Puya PY32 HAL ADC implementation.
+
+config USE_PY32_HAL_ADC_EX
+	bool
+	help
+	  Enable the Puya PY32 HAL ADC EX implementation.
+
+config USE_PY32_HAL_COMP
+	bool
+	help
+	  Enable the Puya PY32 HAL COMP implementation.
+
+config USE_PY32_HAL_CORTEX
+	bool
+	help
+	  Enable the Puya PY32 HAL CORTEX implementation.
+
+config USE_PY32_HAL_CRC
+	bool
+	help
+	  Enable the Puya PY32 HAL CRC implementation.
+
+config USE_PY32_HAL_DMA
+	bool
+	help
+	  Enable the Puya PY32 HAL DMA implementation.
+
+config USE_PY32_HAL_EXTI
+	bool
+	help
+	  Enable the Puya PY32 HAL EXTI implementation.
+
+config USE_PY32_HAL_FLASH
+	bool
+	help
+	  Enable the Puya PY32 HAL FLASH implementation.
+
+config USE_PY32_HAL_GPIO
+	bool
+	help
+	  Enable the Puya PY32 HAL GPIO implementation.
+
+config USE_PY32_HAL_I2C
+	bool
+	help
+	  Enable the Puya PY32 HAL I2C implementation.
+
+config USE_PY32_HAL_IRDA
+	bool
+	help
+	  Enable the Puya PY32 HAL IRDA implementation.
+
+config USE_PY32_HAL_IWDG
+	bool
+	help
+	  Enable the Puya PY32 HAL IWDG implementation.
+
+config USE_PY32_HAL_LPTIM
+	bool
+	help
+	  Enable the Puya PY32 HAL LPTIM implementation.
+
+config USE_PY32_HAL_PWR
+	bool
+	help
+	  Enable the Puya PY32 HAL PWR implementation.
+
+config USE_PY32_HAL_RTC
+	bool
+	help
+	  Enable the Puya PY32 HAL RTC implementation.
+
+config USE_PY32_HAL_RTC_EX
+	bool
+	help
+	  Enable the Puya PY32 HAL RTC EX implementation.
+
+config USE_PY32_HAL_SPI
+	bool
+	help
+	  Enable the Puya PY32 HAL SPI implementation.
+
+config USE_PY32_HAL_TIM
+	bool
+	help
+	  Enable the Puya PY32 HAL TIM implementation.
+
+config USE_PY32_HAL_TIM_EX
+	bool
+	help
+	  Enable the Puya PY32 HAL TIM EX implementation.
+
+config USE_PY32_HAL_UART
+	bool
+	help
+	  Enable the Puya PY32 HAL UART implementation.
+
+config USE_PY32_HAL_USART
+	bool
+	help
+	  Enable the Puya PY32 HAL USART implementation.
+
+config USE_PY32_HAL_WWDG
+	bool
+	help
+	  Enable the Puya PY32 HAL WWDG implementation.
+
+config USE_PY32_LL_ADC
+	bool
+	help
+	  Enable the Puya PY32 LL ADC implementation.
+
+config USE_PY32_LL_COMP
+	bool
+	help
+	  Enable the Puya PY32 LL COMP implementation.
+
+config USE_PY32_LL_CRC
+	bool
+	help
+	  Enable the Puya PY32 LL CRC implementation.
+
+config USE_PY32_LL_DMA
+	bool
+	help
+	  Enable the Puya PY32 LL DMA implementation.
+
+config USE_PY32_LL_EXTI
+	bool
+	help
+	  Enable the Puya PY32 LL EXTI implementation.
+
+config USE_PY32_LL_GPIO
+	bool
+	help
+	  Enable the Puya PY32 LL GPIO implementation.
+
+config USE_PY32_LL_I2C
+	bool
+	help
+	  Enable the Puya PY32 LL I2C implementation.
+
+config USE_PY32_LL_LPTIM
+	bool
+	help
+	  Enable the Puya PY32 LL LPTIM implementation.
+
+config USE_PY32_LL_PWR
+	bool
+	help
+	  Enable the Puya PY32 LL PWR implementation.
+
+config USE_PY32_LL_RCC
+	bool
+	help
+	  Enable the Puya PY32 LL RCC implementation.
+
+config USE_PY32_LL_RTC
+	bool
+	help
+	  Enable the Puya PY32 LL RTC implementation.
+
+config USE_PY32_LL_SPI
+	bool
+	help
+	  Enable the Puya PY32 LL SPI implementation.
+
+config USE_PY32_LL_TIM
+	bool
+	help
+	  Enable the Puya PY32 LL TIM implementation.
+
+config USE_PY32_LL_USART
+	bool
+	help
+	  Enable the Puya PY32 LL USART implementation.
+
+config USE_PY32_LL_UTILS
+	bool
+	help
+	  Enable the Puya PY32 LL UTILS implementation.
+
+endif # SOC_FAMILY_PY32

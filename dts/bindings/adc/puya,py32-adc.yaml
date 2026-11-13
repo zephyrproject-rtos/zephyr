@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Puya PY32 ADC. Conversion reference is VDD. External input channels are
+  numbered 0 through 9; channels 11 and 12 select the internal temperature
+  sensor and voltage reference. Internal channels use the longest acquisition
+  time. The ADC uses one common sampling time, chosen as the longest requested
+  time among the channels in each sequence.
+
+compatible: "puya,py32-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+  reg-names:
+    required: true
+  clocks:
+    required: true
+  resets:
+    required: true
+  interrupts:
+    required: true
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

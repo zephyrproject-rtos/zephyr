@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_PY32
+	select BUILD_OUTPUT_HEX
+	select HAS_CMSIS_CORE
+
+if SOC_FAMILY_PY32
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_PY32

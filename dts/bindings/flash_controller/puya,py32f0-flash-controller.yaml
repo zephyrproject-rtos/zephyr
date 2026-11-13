@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Puya PY32F0 internal flash controller
+
+compatible: "puya,py32f0-flash-controller"
+
+include: flash-controller.yaml
