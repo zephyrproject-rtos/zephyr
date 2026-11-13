@@ -333,15 +333,26 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	region_num++;
 #endif /* CONFIG_MPU_STACK_GUARD */
 
-	/* Configure the dynamic MPU regions */
+	/*
+	 * Configure the dynamic MPU regions. Dynamic regions only ever come
+	 * from a thread's memory domain / user stack (CONFIG_USERSPACE) or a
+	 * stack guard (CONFIG_MPU_STACK_GUARD). When neither is enabled no
+	 * thread has any dynamic region, the static map programmed at boot is
+	 * already complete, and this reprogram would only rewrite the MPU to
+	 * the identical layout on every context switch - on Armv8-R a full MPU
+	 * disable, region clear, gap-fill repartition and enable with dsb/isb
+	 * barriers. Skip it in that case.
+	 */
+	if (IS_ENABLED(CONFIG_USERSPACE) || IS_ENABLED(CONFIG_MPU_STACK_GUARD)) {
 #ifdef CONFIG_AARCH32_ARMV8_R
-	arm_core_mpu_disable();
+		arm_core_mpu_disable();
 #endif
-	arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
-						   region_num);
+		arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
+							   region_num);
 #ifdef CONFIG_AARCH32_ARMV8_R
-	arm_core_mpu_enable();
+		arm_core_mpu_enable();
 #endif
+	}
 }
 
 #if defined(CONFIG_USERSPACE)
