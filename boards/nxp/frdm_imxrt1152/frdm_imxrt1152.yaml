@@ -14,6 +14,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - entropy
   - gpio
   - uart
 vendor: nxp
