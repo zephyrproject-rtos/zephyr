@@ -16,9 +16,11 @@ tests:
       - frdm_k22f
       - frdm_k64f
       - frdm_k82f
+      - frdm_ke15z
       - frdm_ke17z
       - frdm_ke17z512
       - frdm_mcxa156
+      - frdm_mcxe247
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxw71
@@ -43,6 +45,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
       - rddrone_fmuk66
       - twr_ke18f
       - vmu_rt1170/mimxrt1176/cm7

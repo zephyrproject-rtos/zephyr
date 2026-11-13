@@ -23,11 +23,14 @@
 		sw1 = &user_button_3;
 		rtc = &counter_rtc;
 		accel0 = &fxls8974;
+		mcuboot-button0 = &user_button_2;
 	};
 
 	chosen {
 		zephyr,sram = &sram_l;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart2;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,canbus = &flexcan0;
@@ -162,6 +165,42 @@
 
 &fircdiv2_clk {
 	clock-div = <1>;
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 4KB.
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(64)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x10000 DT_SIZE_K(704)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@c0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0xc0000 DT_SIZE_K(704)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@170000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x170000 DT_SIZE_K(64)>;
+			label = "storage";
+		};
+	};
 };
 
 &flexcan0 {
