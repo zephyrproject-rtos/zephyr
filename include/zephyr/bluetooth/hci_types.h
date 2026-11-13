@@ -157,6 +157,8 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_2EV3_PKT(feat)                  BT_FEAT_TEST(feat, 0, 5, 5)
 #define BT_FEAT_3EV3_PKT(feat)                  BT_FEAT_TEST(feat, 0, 5, 6)
 #define BT_FEAT_3SLOT_PKT(feat)                 BT_FEAT_TEST(feat, 0, 5, 7)
+/** Test if the Non-Flushable Packet Boundary Flag feature is supported */
+#define BT_FEAT_NON_FLUSH_PB(feat)              BT_FEAT_TEST(feat, 0, 6, 6)
 
 /* LE features */
 #define BT_LE_FEAT_BIT_ENC                      0
@@ -813,6 +815,18 @@ struct bt_hci_rp_read_class_of_device {
 #define BT_HCI_OP_WRITE_CLASS_OF_DEVICE         BT_OP(BT_OGF_BASEBAND, 0x0024) /* 0x0c24 */
 struct bt_hci_cp_write_class_of_device {
 	uint8_t  class_of_device[3];
+} __packed;
+
+/** Write Automatic Flush Timeout command opcode */
+#define BT_HCI_OP_WRITE_AUTO_FLUSH_TIMEOUT      BT_OP(BT_OGF_BASEBAND, 0x0028) /* 0x0c28 */
+/** Largest Automatic Flush Timeout, 0x07ff x 0.625 ms = 1279.375 ms */
+#define BT_HCI_AUTO_FLUSH_TIMEOUT_MAX           0x07ffU
+/** Write Automatic Flush Timeout command parameters */
+struct bt_hci_cp_write_auto_flush_timeout {
+	/** Connection handle */
+	uint16_t handle;
+	/** Flush timeout in 0.625 ms units, 0x0000 means never flush */
+	uint16_t timeout;
 } __packed;
 
 #define BT_TX_POWER_LEVEL_CURRENT               0x00

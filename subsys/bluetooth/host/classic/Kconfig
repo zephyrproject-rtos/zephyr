@@ -76,6 +76,22 @@ config BT_L2CAP_RX_FLUSH_TO
 	  may be overridden on a packet by packet basis by marking individual L2CAP packets
 	  as non-automatically-flushable via the Packet_Boundary_Flag in the HCI ACL Data packet.
 
+config BT_L2CAP_TX_FLUSH_TO
+	int "Bluetooth L2CAP TX flush timeout in milliseconds"
+	default 0
+	range 0 1279
+	help
+	  Flush timeout of the L2CAP channels that are flushable, see the
+	  flushable field of struct bt_l2cap_br_chan. Their configuration
+	  announces it, and once the peer accepted it the Automatic Flush
+	  Timeout of the ACL link is set to it, so that the Controller discards
+	  the PDUs of these channels it could not deliver in time instead of
+	  retransmitting them. A peer may propose another value, which is then
+	  used. The Automatic Flush Timeout applies to the whole ACL link, but
+	  the PDUs of the other channels stay non-flushable. 1 means no
+	  retransmissions. 0 disables flushing. Requires a Controller that
+	  supports the Non-flushable Packet Boundary Flag.
+
 config BT_L2CAP_SIG_TX_BUF_COUNT
 	int "Bluetooth L2CAP signalling channel TX buffer count"
 	default BT_L2CAP_TX_BUF_COUNT

@@ -29,6 +29,7 @@
 #include <host/conn_internal.h>
 #include <host/keys.h>
 #include "l2cap_br_internal.h"
+#include "conn_br_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 #include "did_internal.h"
@@ -72,6 +73,17 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 #define L2CAP_BR_CONN_INIT_TIMEOUT K_SECONDS(10)
 #define L2CAP_BR_CONN_TIMEOUT K_SECONDS(40)
 #define L2CAP_BR_ECHO_TIMEOUT K_SECONDS(30)
+
+/* Flush Timeout option value of a channel that is not flushed */
+#define L2CAP_BR_FLUSH_TIMEOUT_INFINITE 0xffffU
+
+/* Largest flush timeout in milliseconds that the Automatic Flush Timeout of the
+ * link can hold, 0x07ff x 0.625 ms
+ */
+#define L2CAP_BR_FLUSH_TIMEOUT_MAX 1279U
+
+/* Smallest Automatic Flush Timeout all Controllers support, 1.25 ms */
+#define L2CAP_BR_AUTO_FLUSH_TIMEOUT_MIN 0x0002U
 
 #define L2CAP_FEAT_FC_MASK           BIT(0)
 #define L2CAP_FEAT_RET_MASK          BIT(1)
@@ -1917,6 +1929,13 @@ done:
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+/* Whether the PDUs of a channel are sent automatically flushable */
+static bool l2cap_br_chan_flushable(const struct bt_l2cap_br_chan *br_chan)
+{
+	return (br_chan->_flush_timeout != 0U) &&
+	       (br_chan->_flush_timeout != L2CAP_BR_FLUSH_TIMEOUT_INFINITE);
+}
+
 struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *length)
 {
 	const sys_snode_t *pdu_ready = sys_slist_peek_head(&conn->l2cap_data_ready);
@@ -1931,6 +1950,11 @@ struct net_buf *l2cap_br_data_pull(struct bt_conn *conn, size_t amount, size_t *
 	struct bt_l2cap_br_chan *br_chan;
 
 	br_chan = CONTAINER_OF(pdu_ready, struct bt_l2cap_br_chan, _pdu_ready);
+
+	/* Fragments of different PDUs are not interleaved, so this holds until
+	 * the PDU returned here has been sent.
+	 */
+	conn->br.tx_flushable = l2cap_br_chan_flushable(br_chan);
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
@@ -2363,6 +2387,18 @@ static void l2cap_br_conf_add_mtu(struct net_buf *buf, const uint16_t mtu)
 	net_buf_add_le16(buf, mtu);
 }
 
+static void l2cap_br_conf_add_flush_timeout(struct net_buf *buf, const uint16_t timeout)
+{
+	if (net_buf_tailroom(buf) <
+	    (sizeof(struct bt_l2cap_conf_opt) + sizeof(struct bt_l2cap_conf_opt_flush_timeout))) {
+		LOG_WRN("No tail room for opt flush_timeout");
+		return;
+	}
+	(void)net_buf_add_u8(buf, BT_L2CAP_CONF_OPT_FLUSH_TIMEOUT);
+	(void)net_buf_add_u8(buf, sizeof(struct bt_l2cap_conf_opt_flush_timeout));
+	net_buf_add_le16(buf, timeout);
+}
+
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 static void l2cap_br_conf_add_ret_fc(struct net_buf *buf,
 				     const struct bt_l2cap_conf_opt_ret_fc *ret_fc)
@@ -2578,6 +2614,15 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 		break;
 	}
 
+	/* Enhanced Retransmission and Streaming mode have their own rules for the
+	 * flush timeout (Core Vol 3, Part A, 8.6.2.1 and 8.7), which are not
+	 * handled, so only a channel in Basic mode is flushable
+	 */
+	if (br_chan->_flush_timeout != 0U && br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_BASIC) {
+		LOG_WRN("Chan %p is not flushable, not in Basic mode", br_chan);
+		br_chan->_flush_timeout = 0U;
+	}
+
 	atomic_set_bit(br_chan->flags, L2CAP_FLAG_NEW_I_FRAME);
 
 	switch (br_chan->rx.mode) {
@@ -2671,11 +2716,40 @@ static void l2cap_br_chan_disconn(struct bt_l2cap_chan *chan)
 	}
 }
 
+/* A flushable channel announces CONFIG_BT_L2CAP_TX_FLUSH_TO in its first
+ * configuration request
+ */
+static void l2cap_br_flush_timeout_init(struct bt_l2cap_br_chan *br_chan)
+{
+	br_chan->_flush_timeout = 0U;
+
+	if (!br_chan->flushable || CONFIG_BT_L2CAP_TX_FLUSH_TO == 0) {
+		return;
+	}
+
+	/* Without the Non-flushable Packet Boundary Flag the Controller cannot
+	 * tell flushable PDUs from the others
+	 */
+	if (!BT_FEAT_NON_FLUSH_PB(bt_dev.features)) {
+		LOG_WRN("Chan %p is not flushable, no Non-flushable PB flag", br_chan);
+		return;
+	}
+
+	br_chan->_flush_timeout = CONFIG_BT_L2CAP_TX_FLUSH_TO;
+}
+
 static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan, bool init)
 {
 	struct bt_l2cap_sig_hdr *hdr;
 	struct bt_l2cap_conf_req *conf;
 	struct net_buf *buf;
+
+	/* Before the mode is checked, which may drop the flush timeout. The
+	 * next requests keep the value the peer agreed on.
+	 */
+	if (init) {
+		l2cap_br_flush_timeout_init(BR_CHAN(chan));
+	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (init) {
@@ -2689,8 +2763,6 @@ static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 			return;
 		}
 	}
-#else
-	ARG_UNUSED(init);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 	buf = l2cap_br_get_allocated_buf(l2cap);
@@ -2712,6 +2784,13 @@ static void l2cap_br_conf(struct bt_l2cap_br *l2cap, struct bt_l2cap_chan *chan,
 	 */
 	if (BR_CHAN(chan)->rx.mtu != L2CAP_BR_DEFAULT_MTU) {
 		l2cap_br_conf_add_mtu(buf, BR_CHAN(chan)->rx.mtu);
+	}
+
+	/* Core Vol 3, Part A, 5.2: a flush timeout other than the default
+	 * 0xFFFF has to be specified
+	 */
+	if (BR_CHAN(chan)->_flush_timeout != 0U) {
+		l2cap_br_conf_add_flush_timeout(buf, BR_CHAN(chan)->_flush_timeout);
 	}
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -3243,8 +3322,14 @@ static uint16_t l2cap_br_conf_rsp_opt_flush_timeout(struct bt_l2cap_chan *chan, 
 		goto done;
 	}
 
-	/* For tx, only support the default value (0xFFFF - infinite amount of retransmissions) */
-	if (opt_to->timeout != 0xFFFF) {
+	/* For tx, only the flush timeout of the request is supported, which
+	 * is 0xFFFF (infinite amount of retransmissions) if it had none
+	 */
+	if (BR_CHAN(chan)->_flush_timeout != 0U) {
+		if (opt_to->timeout != BR_CHAN(chan)->_flush_timeout) {
+			result = BT_L2CAP_CONF_UNACCEPT;
+		}
+	} else if (opt_to->timeout != L2CAP_BR_FLUSH_TIMEOUT_INFINITE) {
 		result = BT_L2CAP_CONF_UNACCEPT;
 	}
 
@@ -3716,6 +3801,7 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_flush_timeout(struct bt_l2cap_cha
 {
 	uint16_t result = BT_L2CAP_CONF_SUCCESS;
 	struct bt_l2cap_conf_opt_flush_timeout *opt_to;
+	uint16_t timeout;
 
 	if (len != sizeof(*opt_to)) {
 		LOG_ERR("qos frame length %zu invalid", len);
@@ -3724,8 +3810,27 @@ static uint16_t l2cap_br_conf_rsp_unaccept_opt_flush_timeout(struct bt_l2cap_cha
 	}
 
 	opt_to = (struct bt_l2cap_conf_opt_flush_timeout *)buf->data;
+	timeout = sys_le16_to_cpu(opt_to->timeout);
 
-	LOG_DBG("Flash timeout %u", opt_to->timeout);
+	LOG_DBG("Flush timeout %u", timeout);
+
+	if (BR_CHAN(chan)->_flush_timeout == 0U) {
+		/* The request had none, nor will the next one */
+		goto done;
+	}
+
+	/* Take the value the peer can accept if the link can hold it, with
+	 * 0xFFFF the channel is not flushed. Else the channel is disconnected,
+	 * see Core Vol 3, Part A, 5.2. The next request carries the value, see
+	 * 7.1.4.
+	 */
+	if (timeout == L2CAP_BR_FLUSH_TIMEOUT_INFINITE ||
+	    (timeout != 0U && timeout <= L2CAP_BR_FLUSH_TIMEOUT_MAX)) {
+		BR_CHAN(chan)->_flush_timeout = timeout;
+	} else {
+		LOG_WRN("Flush timeout %u cannot be used", timeout);
+		result = BT_L2CAP_CONF_REJECT;
+	}
 
 done:
 	return result;
@@ -4072,6 +4177,38 @@ invalid_opt:
 	return -EINVAL;
 }
 
+/* Flush timeout in milliseconds to Automatic Flush Timeout in 0.625 ms units.
+ * 1 ms means no retransmissions, which the smallest supported value gives.
+ */
+static uint16_t l2cap_br_flush_timeout_to_hci(uint16_t timeout)
+{
+	uint16_t hci_timeout = (uint16_t)(((uint32_t)timeout * 8U) / 5U);
+
+	return MAX(hci_timeout, L2CAP_BR_AUTO_FLUSH_TIMEOUT_MIN);
+}
+
+/* Set the Automatic Flush Timeout of the link once the peer accepted the flush
+ * timeout, before the channel is connected. This waits for the Controller, so it
+ * runs where the response of the peer is received and never from a TX callback,
+ * which the host may run from the work queue that delivers the HCI events.
+ */
+static void l2cap_br_flush_timeout_apply(struct bt_l2cap_chan *chan)
+{
+	struct bt_l2cap_br_chan *br_chan = BR_CHAN(chan);
+	int err;
+
+	if (!l2cap_br_chan_flushable(br_chan)) {
+		return;
+	}
+
+	err = bt_conn_br_set_auto_flush_timeout(
+		chan->conn, l2cap_br_flush_timeout_to_hci(br_chan->_flush_timeout));
+	if (err != 0) {
+		LOG_WRN("Flush timeout of chan %p not set (err %d)", br_chan, err);
+		br_chan->_flush_timeout = L2CAP_BR_FLUSH_TIMEOUT_INFINITE;
+	}
+}
+
 static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
 			      struct net_buf *buf)
 {
@@ -4126,6 +4263,9 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 			/* currently disconnect channel if opt is invalid */
 			bt_l2cap_chan_disconnect(chan);
 			break;
+		}
+		if (br_chan->state == BT_L2CAP_CONFIG) {
+			l2cap_br_flush_timeout_apply(chan);
 		}
 		if (br_chan->state == BT_L2CAP_CONFIG &&
 		    atomic_test_bit(br_chan->flags, L2CAP_FLAG_CONN_RCONF_DONE)) {

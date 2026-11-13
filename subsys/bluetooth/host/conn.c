@@ -547,6 +547,11 @@ static int send_acl(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	case FRAG_START:
 	case FRAG_SINGLE:
 		flags = BT_ACL_START_NO_FLUSH;
+#if defined(CONFIG_BT_CLASSIC)
+		if (conn->type == BT_CONN_TYPE_BR && conn->br.tx_flushable) {
+			flags = BT_ACL_START;
+		}
+#endif /* CONFIG_BT_CLASSIC */
 		break;
 	case FRAG_CONT:
 	case FRAG_END:
