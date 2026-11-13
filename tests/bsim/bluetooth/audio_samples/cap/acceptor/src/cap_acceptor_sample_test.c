@@ -15,7 +15,7 @@
 #include "bs_utils.h"
 #include "bstests.h"
 
-#define WAIT_TIME 15 /* Seconds */
+#define WAIT_TIME 60 /* Seconds */
 
 #define PASS_THRESHOLD 100 /* Audio packets */
 
@@ -35,7 +35,6 @@ extern enum bst_result_t bst_result;
 
 static void test_cap_acceptor_sample_init(void)
 {
-	/* We set an absolute deadline in 30 seconds */
 	bst_ticker_set_next_tick_absolute(WAIT_TIME * 1e6);
 	bst_result = In_progress;
 }

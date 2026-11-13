@@ -1967,6 +1967,7 @@ static uint8_t ull_adv_sync_remove_adi(struct lll_adv_sync *lll_sync,
 		pdu = lll_adv_pdu_linked_next_get(pdu);
 	}
 #else /* !CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
+	ull_adv_sync_copy_pdu(pdu_prev, pdu);
 	ull_adv_sync_remove_from_header(pdu, &remove_fields, false);
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
 
