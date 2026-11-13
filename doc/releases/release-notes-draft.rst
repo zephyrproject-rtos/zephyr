@@ -50,6 +50,9 @@ Libraries / Subsystems
   * PACS exposes the audio locations through :c:func:`bt_pacs_get_location` and
     reports changes to a registered :c:struct:`bt_pacs_cb`.
   * :c:func:`bt_l2cap_server_unregister` removes a registered L2CAP server.
+  * :c:func:`bt_gatt_conn_mtu_limit` limits the local ATT MTU of a single connection, for
+    example when its data is forwarded over a link with a smaller MTU
+    (:kconfig:option:`CONFIG_BT_ATT_CONN_MTU_LIMIT`).
   * The ``bt_mcp_media_control_server_`` API controls the local media player and
     replaces the removed ``media_proxy_`` API, see the :ref:`migration guide
     <migration_4.6>`.

@@ -3751,6 +3751,29 @@ static void gatt_sub_remove(struct bt_conn *conn, struct gatt_sub *sub,
 	}
 }
 
+#if defined(CONFIG_BT_ATT_CONN_MTU_LIMIT)
+int bt_gatt_conn_mtu_limit(struct bt_conn *conn, uint16_t mtu)
+{
+	__ASSERT(conn, "invalid parameter\n");
+
+	if (!bt_conn_is_le(conn)) {
+		return -EINVAL;
+	}
+
+	if ((mtu != 0U) && (mtu < BT_ATT_DEFAULT_LE_MTU)) {
+		return -EINVAL;
+	}
+
+	/* The MTU can only be exchanged once per connection */
+	if (atomic_test_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED)) {
+		return -EALREADY;
+	}
+
+	conn->le.att_mtu_limit = mtu;
+	return 0;
+}
+#endif /* CONFIG_BT_ATT_CONN_MTU_LIMIT */
+
 #if defined(CONFIG_BT_GATT_CLIENT)
 static struct gatt_sub *gatt_sub_find(struct bt_conn *conn)
 {
@@ -3957,10 +3980,12 @@ static void gatt_mtu_rsp(struct bt_conn *conn, int err, const void *pdu,
 static int gatt_exchange_mtu_encode(struct net_buf *buf, size_t len,
 				    void *user_data)
 {
+	struct bt_gatt_exchange_params *params = user_data;
 	struct bt_att_exchange_mtu_req *req;
 	uint16_t mtu;
 
-	mtu = BT_LOCAL_ATT_MTU_UATT;
+	/* Local MTU of the connection, see `bt_gatt_exchange_mtu` */
+	mtu = params->_mtu;
 
 	LOG_DBG("Client MTU %u", mtu);
 
@@ -3986,6 +4011,9 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	if (atomic_test_and_set_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED)) {
 		return -EALREADY;
 	}
+
+	/* The request encoder only has access to the parameters */
+	params->_mtu = bt_att_local_mtu(conn);
 
 	err = gatt_req_send(conn, gatt_mtu_rsp, params,
 			    gatt_exchange_mtu_encode, BT_ATT_OP_MTU_REQ,

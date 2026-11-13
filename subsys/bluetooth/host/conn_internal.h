@@ -86,9 +86,7 @@ enum {
 	BT_CONN_PERIPHERAL_PARAM_SET,         /* If periph param were set from app */
 	BT_CONN_PERIPHERAL_PARAM_L2CAP,       /* If should force L2CAP for CPUP */
 	BT_CONN_FORCE_PAIR,                   /* Pairing even with existing keys. */
-#if defined(CONFIG_BT_GATT_CLIENT)
 	BT_CONN_ATT_MTU_EXCHANGED,            /* If ATT MTU has been exchanged. */
-#endif /* CONFIG_BT_GATT_CLIENT */
 
 	BT_CONN_LE_FEATURES_EXCHANGED,        /* bt_conn.le.features is valid */
 	BT_CONN_AUTO_VERSION_INFO,            /* Auto-initiated LE version done */
@@ -141,6 +139,11 @@ struct bt_conn_le {
 
 #if defined(CONFIG_BT_SUBRATING)
 	struct bt_conn_le_subrating_info subrate;
+#endif
+
+#if defined(CONFIG_BT_ATT_CONN_MTU_LIMIT)
+	/* Limit of the local ATT MTU on the unenhanced bearer (0 for no limit) */
+	uint16_t att_mtu_limit;
 #endif
 };
 
