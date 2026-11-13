@@ -1442,6 +1442,42 @@ ZTEST(server_function_tests, test_http1_dynamic_upgrade_post)
 	common_verify_http1_dynamic_upgrade_post("POST");
 }
 
+ZTEST(server_function_tests, test_http1_dynamic_upgrade_post_split_body)
+{
+	static const char http1_headers[] = "POST /dynamic HTTP/1.1\r\n"
+					    "Host: 127.0.0.1:8080\r\n"
+					    "Content-Length: 17\r\n"
+					    "Connection: Upgrade, HTTP2-Settings\r\n"
+					    "Upgrade: h2c\r\n"
+					    "HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+					    "\r\n";
+	size_t offset = 0;
+	int ret;
+
+	memset(buf, 0, sizeof(buf));
+
+	ret = zsock_send(client_fd, http1_headers, strlen(http1_headers), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	/* Let the server process the headers before the body arrives */
+	k_msleep(100);
+
+	ret = zsock_send(client_fd, TEST_DYNAMIC_POST_PAYLOAD,
+			 strlen(TEST_DYNAMIC_POST_PAYLOAD), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http1_switching_protocols(&offset);
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_headers_frame(&offset, UPGRADE_STREAM_ID,
+				   HTTP2_FLAG_END_HEADERS | HTTP2_FLAG_END_STREAM, NULL, 0);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+	zexpect_true(dynamic_complete, "Callback not called with transaction complete status");
+}
+
 /* Common code to verify POST/PUT/PATCH */
 static void common_verify_http1_dynamic_post(const uint8_t *method)
 {
@@ -2108,6 +2144,220 @@ ZTEST(server_function_tests, test_http1_dynamic_delete)
 
 	test_read_data(&offset, sizeof(expected_response) - 1);
 	zassert_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
+			  "Received data doesn't match expected response");
+}
+
+struct http1_exchange {
+	const char *request;
+	const char *response;
+};
+
+/* Follow-up requests whose responses differ from the response under test */
+static const struct http1_exchange followup_delete = {
+	.request = "DELETE /dynamic HTTP/1.1\r\n"
+		   "Host: 127.0.0.1:8080\r\n"
+		   "\r\n",
+	.response = "HTTP/1.1 200\r\n"
+		    "Transfer-Encoding: chunked\r\n"
+		    "Content-Type: text/plain\r\n"
+		    "\r\n"
+		    "0\r\n\r\n",
+};
+
+static const struct http1_exchange followup_static_get = {
+	.request = "GET / HTTP/1.1\r\n"
+		   "Host: 127.0.0.1:8080\r\n"
+		   "\r\n",
+	.response = "HTTP/1.1 200 OK\r\n"
+		    "Content-Type: text/html\r\n"
+		    "Content-Length: 13\r\n"
+		    "\r\n"
+		    TEST_STATIC_PAYLOAD,
+};
+
+static size_t count_http1_status_lines(void)
+{
+	const char *pos = strstr((const char *)buf, "HTTP/1.1 ");
+	size_t count = 0;
+
+	while (pos != NULL) {
+		count++;
+		pos = strstr(pos + 1, "HTTP/1.1 ");
+	}
+
+	return count;
+}
+
+/* Send a request whose body arrives after the server has processed the
+ * headers, then a follow-up request on the same connection. The server must
+ * send exactly one response to the first request, followed by the response to
+ * the follow-up request.
+ */
+static void test_http1_split_body(const char *headers, const char *body,
+				  const char *expected_response,
+				  const struct http1_exchange *followup)
+{
+	const size_t expected_len = strlen(expected_response);
+	const size_t followup_len = strlen(followup->response);
+	size_t offset = 0;
+	int ret;
+
+	memset(buf, 0, sizeof(buf));
+
+	ret = zsock_send(client_fd, headers, strlen(headers), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	/* Let the server process the headers before the body arrives */
+	k_msleep(100);
+
+	ret = zsock_send(client_fd, body, strlen(body), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	k_msleep(100);
+
+	test_read_data(&offset, expected_len);
+	zassert_mem_equal(buf, expected_response, expected_len,
+			  "Received data doesn't match expected response");
+
+	/* The dynamic resource callback fails on a second completion */
+	dynamic_complete = false;
+
+	ret = zsock_send(client_fd, followup->request, strlen(followup->request), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	while (offset < expected_len + followup_len ||
+	       memcmp(buf + offset - followup_len, followup->response, followup_len) != 0) {
+		zassert_true(offset < sizeof(buf) - 1, "Too much data received");
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - 1 - offset, 0);
+		zassert_true(ret > 0, "recv() failed (%d)", errno);
+		offset += ret;
+	}
+
+	zexpect_equal(count_http1_status_lines(), 2,
+		      "Expected one response to each of the two requests:\n%s", (char *)buf);
+}
+
+ZTEST(server_function_tests, test_http1_static_get_split_body)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+
+	test_http1_split_body("GET / HTTP/1.1\r\n"
+			      "Host: 127.0.0.1:8080\r\n"
+			      "Content-Length: 4\r\n"
+			      "\r\n",
+			      "abcd", expected_response, &followup_delete);
+}
+
+ZTEST(server_function_tests, test_http1_static_post_split_body)
+{
+	static const char expected_response[] = "HTTP/1.1 405 Method Not Allowed\r\n"
+						"Content-Length: 18\r\n"
+						"\r\n"
+						"Method Not Allowed";
+
+	test_http1_split_body("POST / HTTP/1.1\r\n"
+			      "Host: 127.0.0.1:8080\r\n"
+			      "Content-Length: 13\r\n"
+			      "\r\n",
+			      TEST_STATIC_PAYLOAD, expected_response, &followup_delete);
+}
+
+ZTEST(server_function_tests, test_http1_not_found_split_body)
+{
+	static const char expected_response[] = "HTTP/1.1 404 Not Found\r\n"
+						"Content-Length: 9\r\n"
+						"\r\n"
+						"Not Found";
+
+	test_http1_split_body("POST /not_found HTTP/1.1\r\n"
+			      "Host: 127.0.0.1:8080\r\n"
+			      "Content-Length: 4\r\n"
+			      "\r\n",
+			      "abcd", expected_response, &followup_delete);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_get_split_body)
+{
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"10\r\n" TEST_DYNAMIC_GET_PAYLOAD "\r\n"
+						"0\r\n\r\n";
+
+	dynamic_payload_len = strlen(TEST_DYNAMIC_GET_PAYLOAD);
+	memcpy(dynamic_payload, TEST_DYNAMIC_GET_PAYLOAD, dynamic_payload_len);
+
+	test_http1_split_body("GET /dynamic HTTP/1.1\r\n"
+			      "Host: 127.0.0.1:8080\r\n"
+			      "Content-Length: 4\r\n"
+			      "\r\n",
+			      "abcd", expected_response, &followup_static_get);
+}
+
+ZTEST(server_function_tests, test_http1_dynamic_post_split_body)
+{
+	static const char expected_response[] = "HTTP/1.1 200\r\n"
+						"Transfer-Encoding: chunked\r\n"
+						"Content-Type: text/plain\r\n"
+						"\r\n"
+						"0\r\n\r\n";
+
+	test_http1_split_body("POST /dynamic HTTP/1.1\r\n"
+			      "Host: 127.0.0.1:8080\r\n"
+			      "Content-Length: 17\r\n"
+			      "\r\n",
+			      TEST_DYNAMIC_POST_PAYLOAD, expected_response, &followup_static_get);
+
+	zexpect_equal(dynamic_payload_len, strlen(TEST_DYNAMIC_POST_PAYLOAD),
+		      "Wrong dynamic resource length");
+	zexpect_mem_equal(dynamic_payload, TEST_DYNAMIC_POST_PAYLOAD,
+			  strlen(TEST_DYNAMIC_POST_PAYLOAD), "Wrong dynamic resource data");
+}
+
+ZTEST(server_function_tests, test_http1_0_upgrade_split_body)
+{
+	static const char headers[] = "GET / HTTP/1.0\r\n"
+				      "Host: 127.0.0.1:8080\r\n"
+				      "Connection: Upgrade, HTTP2-Settings\r\n"
+				      "Upgrade: h2c\r\n"
+				      "HTTP2-Settings: AAMAAABkAAQAoAAAAAIAAAAA\r\n"
+				      "Content-Length: 4\r\n"
+				      "\r\n";
+	static const char body[] = "abcd";
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Type: text/html\r\n"
+						"Content-Length: 13\r\n"
+						"\r\n"
+						TEST_STATIC_PAYLOAD;
+	size_t offset = 0;
+	int ret;
+
+	memset(buf, 0, sizeof(buf));
+
+	ret = zsock_send(client_fd, headers, strlen(headers), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	/* Let the server process the headers before the body arrives */
+	k_msleep(100);
+
+	ret = zsock_send(client_fd, body, strlen(body), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	/* The server closes the connection after the response to HTTP/1.0 */
+	do {
+		ret = zsock_recv(client_fd, buf + offset, sizeof(buf) - 1 - offset, 0);
+		zassert_true(ret >= 0, "recv() failed (%d)", errno);
+		offset += (size_t)ret;
+	} while (ret > 0 && offset < sizeof(buf) - 1);
+
+	zexpect_equal(count_http1_status_lines(), 1, "Expected one response:\n%s", (char *)buf);
+	zexpect_equal(offset, sizeof(expected_response) - 1, "Unexpected response length");
+	zexpect_mem_equal(buf, expected_response, sizeof(expected_response) - 1,
 			  "Received data doesn't match expected response");
 }
 
@@ -4400,6 +4650,25 @@ ZTEST(server_function_tests, test_http1_static_fs_keep_alive)
 	 */
 	ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
 	zassert_equal(ret, 0, "Connection should've been closed");
+}
+
+ZTEST(server_function_tests, test_http1_static_fs_split_body)
+{
+	static const char expected_response[] = "HTTP/1.1 200 OK\r\n"
+						"Content-Length: 30\r\n"
+						"Content-Type: text/html\r\n"
+						"\r\n"
+						TEST_STATIC_FS_PAYLOAD;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	test_http1_split_body("GET /static_file.html HTTP/1.1\r\n"
+			      "Host: 127.0.0.1:8080\r\n"
+			      "Content-Length: 4\r\n"
+			      "\r\n",
+			      "abcd", expected_response, &followup_delete);
 }
 
 /* HPACK-encoded "GET /static_file.html" request, END_STREAM | END_HEADERS set.
