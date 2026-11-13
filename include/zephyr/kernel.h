@@ -2373,12 +2373,34 @@ struct k_queue {
  * @defgroup queue_apis Queue APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * A queue is a kernel object, so a user thread reaches one only after the
+ * object has been granted to that thread with k_object_access_grant().
+ *
+ * Only the entry points declared as system calls may be called from a user
+ * thread: k_queue_init(), k_queue_cancel_wait(), k_queue_alloc_append(),
+ * k_queue_alloc_prepend(), k_queue_get(), k_queue_is_empty(),
+ * k_queue_peek_head() and k_queue_peek_tail(). k_queue_append() and the other
+ * list, removal and duplicate-check entry points execute in supervisor mode
+ * only and are not available across the boundary.
+ *
+ * The data pointer crosses the system call boundary unchecked in both
+ * directions. The allocating variants store it in a kernel-allocated link node
+ * without dereferencing it, and k_queue_get() and the peek variants hand back
+ * the stored pointer unchanged. Nothing checks that the receiving thread can
+ * reach the memory the item lives in, so an item queued by one user thread can
+ * be retrieved by another that cannot use it; keeping the two consistent is the
+ * application's responsibility, not the queue's.
  */
 
 /**
  * @brief Initialize a queue.
  *
- * This routine initializes a queue object, prior to its first use.
+ * This routine initializes a queue object, prior to its first use. The queue
+ * is left empty, with no thread waiting on it.
+ *
+ * @note @a queue must be initialized before any other queue API is called on
+ *       it, and must not be initialized again while it is in use.
  *
  * @param queue Address of the queue.
  */
@@ -2387,11 +2409,14 @@ __syscall void k_queue_init(struct k_queue *queue);
 /**
  * @brief Cancel waiting on a queue.
  *
- * This routine causes first thread pending on @a queue, if any, to
- * return from k_queue_get() call with NULL value (as if timeout expired).
- * If the queue is being waited on by k_poll(), it will return with
- * -EINTR and K_POLL_STATE_CANCELLED state (and per above, subsequent
- * k_queue_get() will return NULL).
+ * This routine causes the first thread pending on @a queue, if any, to return
+ * from k_queue_get() with a null value, as if its timeout had expired.
+ *
+ * A thread waiting in k_poll() is woken with -EINTR and the
+ * K_POLL_STATE_CANCELLED state, and as described above a subsequent call to
+ * k_queue_get() returns a null value.
+ *
+ * @note Does nothing when no thread is waiting on @a queue.
  *
  * @isr_ok
  *
@@ -2402,9 +2427,19 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
 /**
  * @brief Append an element to the end of a queue.
  *
- * This routine appends a data item to @a queue. A queue data item must be
- * aligned as required for a pointer, and its first pointer-sized field is
- * reserved for the kernel's use.
+ * This routine appends @a data to the end of @a queue.
+ *
+ * The item is not copied. The queue keeps its link in the first
+ * pointer-sized field of @a data, which is why that field is reserved for the
+ * kernel and why @a data must be aligned as required for a pointer. The item
+ * must stay valid until it has been retrieved with k_queue_get() or removed
+ * with k_queue_remove(), and the reserved field must not be written to while
+ * the item is queued. The rest of the item stays available to the caller and
+ * may be updated in place.
+ *
+ * If a thread is already waiting in k_queue_get() on @a queue, @a data is
+ * handed to that thread directly and never enters the queue. The thread is
+ * made ready and consumes @a data as soon as it runs.
  *
  * @isr_ok
  *
@@ -2414,12 +2449,29 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
 void k_queue_append(struct k_queue *queue, void *data);
 
 /**
- * @brief Append an element to a queue.
+ * @brief Append an element to the end of a queue, allocating the link.
  *
- * This routine appends a data item to @a queue. There is an implicit memory
- * allocation to create an additional temporary bookkeeping data structure from
- * the calling thread's resource pool, which is automatically freed when the
- * item is removed. The data itself is not copied.
+ * This routine appends @a data to the end of @a queue, like k_queue_append(),
+ * except that the queue link is taken from a pool instead of from @a data
+ * itself. The link is released automatically once the item has been retrieved
+ * or removed, and the first pointer-sized field of @a data stays available to
+ * the caller. The data is not copied.
+ *
+ * The link is allocated from the resource pool of the calling thread, or from
+ * the system heap when called from ISR context. A thread inherits the resource
+ * pool of the thread that creates it, and the main thread starts on the system
+ * heap when CONFIG_HEAP_MEM_POOL_SIZE is set, so threads have a pool by
+ * default; see k_thread_heap_assign() and k_thread_system_pool_assign(). Only
+ * a thread left without a pool fails here, with -ENOMEM, and it does so
+ * whether or not CONFIG_HEAP_MEM_POOL_SIZE is set.
+ *
+ * If a thread is already waiting in k_queue_get() on @a queue, @a data is
+ * handed to that thread directly, no link is allocated, and this routine
+ * cannot fail.
+ *
+ * @note The link is allocated with the queue lock held, so the allocator's
+ *       lock nests inside the queue lock and the cost of the allocation is
+ *       part of the critical section.
  *
  * @isr_ok
  *
@@ -2427,16 +2479,26 @@ void k_queue_append(struct k_queue *queue, void *data);
  * @param data Address of the data item.
  *
  * @retval 0 on success
- * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ * @retval -ENOMEM The resource pool of the calling thread has insufficient RAM
  */
 __syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
 
 /**
  * @brief Prepend an element to a queue.
  *
- * This routine prepends a data item to @a queue. A queue data item must be
- * aligned as required for a pointer, and its first pointer-sized field is
- * reserved for the kernel's use.
+ * This routine prepends @a data to @a queue.
+ *
+ * The item is not copied. The queue keeps its link in the first
+ * pointer-sized field of @a data, which is why that field is reserved for the
+ * kernel and why @a data must be aligned as required for a pointer. The item
+ * must stay valid until it has been retrieved with k_queue_get() or removed
+ * with k_queue_remove(), and the reserved field must not be written to while
+ * the item is queued. The rest of the item stays available to the caller and
+ * may be updated in place.
+ *
+ * If a thread is already waiting in k_queue_get() on @a queue, @a data is
+ * handed to that thread directly and never enters the queue. The thread is
+ * made ready and consumes @a data as soon as it runs.
  *
  * @isr_ok
  *
@@ -2446,12 +2508,29 @@ __syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
 void k_queue_prepend(struct k_queue *queue, void *data);
 
 /**
- * @brief Prepend an element to a queue.
+ * @brief Prepend an element to a queue, allocating the link.
  *
- * This routine prepends a data item to @a queue. There is an implicit memory
- * allocation to create an additional temporary bookkeeping data structure from
- * the calling thread's resource pool, which is automatically freed when the
- * item is removed. The data itself is not copied.
+ * This routine prepends @a data to @a queue, like k_queue_prepend(), except
+ * that the queue link is taken from a pool instead of from @a data itself.
+ * The link is released automatically once the item has been retrieved or
+ * removed, and the first pointer-sized field of @a data stays available to the
+ * caller. The data is not copied.
+ *
+ * The link is allocated from the resource pool of the calling thread, or from
+ * the system heap when called from ISR context. A thread inherits the resource
+ * pool of the thread that creates it, and the main thread starts on the system
+ * heap when CONFIG_HEAP_MEM_POOL_SIZE is set, so threads have a pool by
+ * default; see k_thread_heap_assign() and k_thread_system_pool_assign(). Only
+ * a thread left without a pool fails here, with -ENOMEM, and it does so
+ * whether or not CONFIG_HEAP_MEM_POOL_SIZE is set.
+ *
+ * If a thread is already waiting in k_queue_get() on @a queue, @a data is
+ * handed to that thread directly, no link is allocated, and this routine
+ * cannot fail.
+ *
+ * @note The link is allocated with the queue lock held, so the allocator's
+ *       lock nests inside the queue lock and the cost of the allocation is
+ *       part of the critical section.
  *
  * @isr_ok
  *
@@ -2459,21 +2538,41 @@ void k_queue_prepend(struct k_queue *queue, void *data);
  * @param data Address of the data item.
  *
  * @retval 0 on success
- * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ * @retval -ENOMEM The resource pool of the calling thread has insufficient RAM
  */
 __syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
 
 /**
- * @brief Inserts an element to a queue.
+ * @brief Insert an element into a queue.
  *
- * This routine inserts a data item to @a queue after previous item. A queue
- * data item must be aligned as required for a pointer, and its first
- * pointer-sized field is reserved for the kernel's use.
+ * This routine inserts @a data into @a queue directly after @a prev. When
+ * @a prev is a null pointer, @a data is inserted at the head of the queue.
+ *
+ * @a prev must itself be queued without an allocated link, that is through
+ * k_queue_append(), k_queue_prepend() or k_queue_insert(). The queue stores
+ * its links in the items themselves, whereas an item queued by
+ * k_queue_alloc_append() or k_queue_alloc_prepend() is represented by a link
+ * allocated on its behalf; passing such a data pointer here makes the queue
+ * treat the item as that link and corrupts the list.
+ *
+ * The item is not copied. The queue keeps its link in the first
+ * pointer-sized field of @a data, which is why that field is reserved for the
+ * kernel and why @a data must be aligned as required for a pointer. The item
+ * must stay valid until it has been retrieved with k_queue_get() or removed
+ * with k_queue_remove(), and the reserved field must not be written to while
+ * the item is queued. The rest of the item stays available to the caller and
+ * may be updated in place.
+ *
+ * If a thread is already waiting in k_queue_get() on @a queue, @a data is
+ * handed to that thread directly and never enters the queue; @a prev plays no
+ * part in that case.
  *
  * @isr_ok
  *
  * @param queue Address of the queue.
- * @param prev Address of the previous data item.
+ * @param prev Address of the item to insert @a data after, or a null pointer
+ *             to insert at the head of the queue. The item must have been
+ *             queued without an allocated link.
  * @param data Address of the data item.
  */
 void k_queue_insert(struct k_queue *queue, void *prev, void *data);
@@ -2486,6 +2585,11 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * field in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
+ * Waiting threads are served first, one item each, until either the list is
+ * exhausted or no thread is left waiting. Only what remains is appended to the
+ * queue, and the whole operation is done under a single acquisition of the
+ * queue lock.
+ *
  * @isr_ok
  *
  * @param queue Address of the queue.
@@ -2493,7 +2597,7 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @param tail Pointer to last node in singly-linked list.
  *
  * @retval 0 on success
- * @retval -EINVAL on invalid supplied data
+ * @retval -EINVAL @a head or @a tail is a null pointer
  *
  */
 int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
@@ -2507,23 +2611,33 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * The caller is responsible for ensuring that @a list is not concurrently
  * accessed by other threads or ISRs.
  *
+ * As with k_queue_append_list(), waiting threads are served first, one item
+ * each, and only the remainder reaches the queue.
+ *
  * @isr_ok
  *
  * @param queue Address of the queue.
  * @param list Pointer to sys_slist_t object.
  *
  * @retval 0 on success
- * @retval -EINVAL on invalid data
+ * @retval -EINVAL @a list is empty
  */
 int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 
 /**
  * @brief Get an element from a queue.
  *
- * This routine removes first data item from @a queue. The first pointer-sized
- * field of the data item is reserved for the kernel's use.
+ * This routine removes and returns the first data item of @a queue.
+ *
+ * When the item was queued by k_queue_alloc_append() or
+ * k_queue_alloc_prepend(), the link allocated on its behalf is released here
+ * and the caller receives the original data pointer. The queue lock is
+ * released before the call returns.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ *
+ * @note A timeout and a k_queue_cancel_wait() are both reported as a null
+ *       return; the two cannot be told apart from the return value alone.
  *
  * @isr_ok
  *
@@ -2531,40 +2645,61 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
  * @param timeout Waiting period to obtain a data item, or one of the special
  *                values K_NO_WAIT and K_FOREVER.
  *
- * @return Address of the data item if successful; NULL if returned
- * without waiting, or waiting period timed out.
+ * @retval non-NULL Address of the data item that was removed.
+ * @retval NULL The queue was empty and @a timeout was K_NO_WAIT, the waiting
+ *              period expired, or the wait was cancelled by
+ *              k_queue_cancel_wait().
  */
 __syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
 
 /**
  * @brief Remove an element from a queue.
  *
- * This routine removes data item from @a queue. The first pointer-sized field
- * of the data item is reserved for the kernel's use. Removing elements from
- * k_queue rely on sys_slist_find_and_remove which is not a constant time operation.
+ * This routine removes @a data from @a queue, wherever it sits in the queue,
+ * and releases the link allocated for it if it was queued by
+ * k_queue_alloc_append() or k_queue_alloc_prepend().
+ *
+ * Queued items are compared by their data pointer, so items queued through the
+ * allocating variants are found as well. The queue is walked once, so the cost
+ * grows with the number of queued items.
+ *
+ * @note Removing an item does not wake a thread waiting in k_queue_get().
  *
  * @isr_ok
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
  *
- * @return true if data item was removed
+ * @retval true @a data was found and removed.
+ * @retval false @a data was not queued.
  */
 bool k_queue_remove(struct k_queue *queue, void *data);
 
 /**
  * @brief Append an element to a queue only if it's not present already.
  *
- * This routine appends data item to @a queue. The first pointer-sized field of
- * the data item is reserved for the kernel's use. Appending elements to
- * k_queue relies on sys_slist_is_node_in_list which is not a constant time operation.
+ * This routine appends @a data to @a queue unless an item carrying the same
+ * data pointer is already queued. The membership test walks the queue, so the
+ * cost grows with the number of queued items.
+ *
+ * The item is not copied, and its first pointer-sized field is used by the
+ * queue as it is with k_queue_append().
+ *
+ * Items are compared by their data pointer, so items queued through
+ * k_queue_alloc_append() or k_queue_alloc_prepend() are reported as present
+ * as well, even though the queue holds a link allocated on their behalf
+ * rather than the item itself.
+ *
+ * @note Returns true when a waiting thread takes @a data at once, in which
+ *       case nothing is left in the queue.
  *
  * @isr_ok
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
  *
- * @return true if data item was added, false if not
+ * @retval true @a data was added, or handed directly to a waiting thread.
+ * @retval false An item carrying the same data pointer was already queued.
  */
 bool k_queue_unique_append(struct k_queue *queue, void *data);
 
@@ -2578,8 +2713,8 @@ bool k_queue_unique_append(struct k_queue *queue, void *data);
  *
  * @param queue Address of the queue.
  *
- * @return Non-zero if the queue is empty.
- * @return 0 if data is available.
+ * @retval 1 @a queue is empty.
+ * @retval 0 @a queue holds at least one item.
  */
 __syscall int k_queue_is_empty(struct k_queue *queue);
 
@@ -2593,9 +2728,12 @@ static inline int z_impl_k_queue_is_empty(struct k_queue *queue)
  *
  * Return element from the head of queue without removing it.
  *
+ * @isr_ok
+ *
  * @param queue Address of the queue.
  *
- * @return Head element, or NULL if queue is empty.
+ * @retval non-NULL Address of the head element.
+ * @retval NULL @a queue is empty.
  */
 __syscall void *k_queue_peek_head(struct k_queue *queue);
 
@@ -2604,9 +2742,12 @@ __syscall void *k_queue_peek_head(struct k_queue *queue);
  *
  * Return element from the tail of queue without removing it.
  *
+ * @isr_ok
+ *
  * @param queue Address of the queue.
  *
- * @return Tail element, or NULL if queue is empty.
+ * @retval non-NULL Address of the tail element.
+ * @retval NULL @a queue is empty.
  */
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
 
@@ -2990,12 +3131,25 @@ struct k_fifo {
  * @defgroup fifo_apis FIFO APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * A FIFO is a typed view of a queue, so for user threads the object to grant
+ * with k_object_access_grant() is the underlying @ref k_queue, not the wrapper.
+ * The macros that expand to a system call are callable from a user thread:
+ * k_fifo_init(), k_fifo_cancel_wait(), k_fifo_alloc_put(), k_fifo_get(),
+ * k_fifo_is_empty(), k_fifo_peek_head() and k_fifo_peek_tail(). k_fifo_put(),
+ * k_fifo_put_list() and k_fifo_put_slist() expand to k_queue_append(),
+ * k_queue_append_list() and k_queue_merge_slist(), none of which is a system
+ * call, so those three stay in supervisor mode.
  */
 
 /**
  * @brief Initialize a FIFO queue.
  *
- * This routine initializes a FIFO queue, prior to its first use.
+ * This routine initializes a FIFO queue, prior to its first use. The FIFO is
+ * left empty, with no thread waiting on it.
+ *
+ * @note @a fifo must be initialized before any other FIFO API is called on it,
+ *       and must not be initialized again while it is in use.
  *
  * @param fifo Address of the FIFO queue.
  */
@@ -3011,9 +3165,12 @@ struct k_fifo {
 /**
  * @brief Cancel waiting on a FIFO queue.
  *
- * This routine causes first thread pending on @a fifo, if any, to
- * return from k_fifo_get() call with NULL value (as if timeout
- * expired).
+ * This routine causes the first thread pending on @a fifo, if any, to return
+ * from k_fifo_get() with a null value, as if its timeout had expired. A thread
+ * waiting in k_poll() is woken with -EINTR and the K_POLL_STATE_CANCELLED
+ * state.
+ *
+ * @note Does nothing when no thread is waiting on @a fifo.
  *
  * @isr_ok
  *
@@ -3029,9 +3186,18 @@ struct k_fifo {
 /**
  * @brief Add an element to a FIFO queue.
  *
- * This routine adds a data item to @a fifo. A FIFO data item must be aligned
- * as required for a pointer, and its first pointer-sized field is reserved
- * for the kernel's use.
+ * This routine adds @a data to the end of @a fifo.
+ *
+ * The item is not copied. The FIFO keeps its link in the first pointer-sized
+ * field of @a data, which is why that field is reserved for the kernel and why
+ * @a data must be aligned as required for a pointer. The item must stay valid
+ * until it has been retrieved with k_fifo_get(), and the reserved field must
+ * not be written to while it is queued. The rest of the item stays available
+ * to the caller and may be updated in place; k_fifo_peek_head() and
+ * k_fifo_peek_tail() rely on exactly that.
+ *
+ * If a thread is already waiting in k_fifo_get() on @a fifo, @a data is handed
+ * to that thread directly and never enters the FIFO.
  *
  * @isr_ok
  *
@@ -3049,10 +3215,26 @@ struct k_fifo {
 /**
  * @brief Add an element to a FIFO queue.
  *
- * This routine adds a data item to @a fifo. There is an implicit memory
- * allocation to create an additional temporary bookkeeping data structure from
- * the calling thread's resource pool, which is automatically freed when the
- * item is removed. The data itself is not copied.
+ * This routine adds @a data to the end of @a fifo, like k_fifo_put(), except
+ * that the queue link is taken from a pool instead of from @a data itself. The
+ * link is released automatically once the item has been retrieved, and the
+ * first pointer-sized field of @a data stays available to the caller. The data
+ * is not copied.
+ *
+ * The link is allocated from the resource pool of the calling thread, or from
+ * the system heap when called from ISR context. A thread inherits the resource
+ * pool of the thread that creates it, and the main thread starts on the system
+ * heap when CONFIG_HEAP_MEM_POOL_SIZE is set, so threads have a pool by
+ * default; see k_thread_heap_assign() and k_thread_system_pool_assign(). Only
+ * a thread left without a pool fails here, with -ENOMEM, and it does so
+ * whether or not CONFIG_HEAP_MEM_POOL_SIZE is set.
+ *
+ * If a thread is already waiting in k_fifo_get() on @a fifo, @a data is handed
+ * to that thread directly, no link is allocated, and this routine cannot fail.
+ *
+ * @note The link is allocated with the queue lock held, so the allocator's
+ *       lock nests inside the queue lock and the cost of the allocation is
+ *       part of the critical section.
  *
  * @isr_ok
  *
@@ -3060,7 +3242,7 @@ struct k_fifo {
  * @param data Address of the data item.
  *
  * @retval 0 on success
- * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ * @retval -ENOMEM The resource pool of the calling thread has insufficient RAM
  */
 #define k_fifo_alloc_put(fifo, data) \
 	({ \
@@ -3079,6 +3261,11 @@ struct k_fifo {
  * field in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
+ * Waiting threads are served first, one item each, until either the list is
+ * exhausted or no thread is left waiting. Only what remains is added to the
+ * FIFO, and the whole operation is done under a single acquisition of the
+ * queue lock.
+ *
  * @isr_ok
  *
  * @param fifo Address of the FIFO queue.
@@ -3086,7 +3273,7 @@ struct k_fifo {
  * @param tail Pointer to last node in singly-linked list.
  *
  * @retval 0 on success
- * @retval -EINVAL on invalid supplied data
+ * @retval -EINVAL @a head or @a tail is a null pointer
  */
 #define k_fifo_put_list(fifo, head, tail) \
 	({ \
@@ -3100,8 +3287,12 @@ struct k_fifo {
  *
  * This routine adds a list of data items to @a fifo in one operation.
  * The data items must be in a singly-linked list implemented using a
- * sys_slist_t object. Upon completion, the sys_slist_t object is invalid
- * and must be re-initialized via sys_slist_init().
+ * sys_slist_t object. Upon completion, the original list is empty.
+ * The caller is responsible for ensuring that @a list is not concurrently
+ * accessed by other threads or ISRs.
+ *
+ * As with k_fifo_put_list(), waiting threads are served first, one item each,
+ * and only the remainder reaches the FIFO.
  *
  * @isr_ok
  *
@@ -3109,7 +3300,7 @@ struct k_fifo {
  * @param list Pointer to sys_slist_t object.
  *
  * @retval 0 on success
- * @retval -EINVAL on invalid supplied data
+ * @retval -EINVAL @a list is empty
  */
 #define k_fifo_put_slist(fifo, list) \
 	({ \
@@ -3121,11 +3312,17 @@ struct k_fifo {
 /**
  * @brief Get an element from a FIFO queue.
  *
- * This routine removes a data item from @a fifo in a "first in, first out"
- * manner. The first pointer-sized field of the data item is reserved for the
- * kernel's use.
+ * This routine removes and returns the first data item of @a fifo, that is the
+ * one that was added first.
+ *
+ * When the item was added by k_fifo_alloc_put(), the link allocated on its
+ * behalf is released here and the caller receives the original data pointer.
+ * The queue lock is released before the call returns.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ *
+ * @note A timeout and a k_fifo_cancel_wait() are both reported as a null
+ *       return; the two cannot be told apart from the return value alone.
  *
  * @isr_ok
  *
@@ -3133,8 +3330,10 @@ struct k_fifo {
  * @param timeout Waiting period to obtain a data item,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @return Address of the data item if successful; NULL if returned
- * without waiting, or waiting period timed out.
+ * @retval non-NULL Address of the data item that was removed.
+ * @retval NULL The FIFO was empty and @a timeout was K_NO_WAIT, the waiting
+ *              period expired, or the wait was cancelled by
+ *              k_fifo_cancel_wait().
  */
 #define k_fifo_get(fifo, timeout) \
 	({ \
@@ -3148,14 +3347,14 @@ struct k_fifo {
  * @brief Query a FIFO queue to see if it has data available.
  *
  * Note that the data might be already gone by the time this function returns
- * if other threads is also trying to read from the FIFO.
+ * if other threads are also trying to read from the FIFO.
  *
  * @isr_ok
  *
  * @param fifo Address of the FIFO queue.
  *
- * @return Non-zero if the FIFO queue is empty.
- * @return 0 if data is available.
+ * @retval 1 @a fifo is empty.
+ * @retval 0 @a fifo holds at least one item.
  */
 #define k_fifo_is_empty(fifo) \
 	k_queue_is_empty(&(fifo)->_queue)
@@ -3169,9 +3368,12 @@ struct k_fifo {
  * and some data processed out of it, and only if the container is empty,
  * it will be completely remove from the FIFO queue.
  *
+ * @isr_ok
+ *
  * @param fifo Address of the FIFO queue.
  *
- * @return Head element, or NULL if the FIFO queue is empty.
+ * @retval non-NULL Address of the head element.
+ * @retval NULL @a fifo is empty.
  */
 #define k_fifo_peek_head(fifo) \
 	({ \
@@ -3188,9 +3390,12 @@ struct k_fifo {
  * for this is if elements of the FIFO queue are themselves containers. Then
  * it may be useful to add more data to the last container in a FIFO queue.
  *
+ * @isr_ok
+ *
  * @param fifo Address of the FIFO queue.
  *
- * @return Tail element, or NULL if a FIFO queue is empty.
+ * @retval non-NULL Address of the tail element.
+ * @retval NULL @a fifo is empty.
  */
 #define k_fifo_peek_tail(fifo) \
 	({ \
@@ -3248,12 +3453,22 @@ struct k_lifo {
  * @defgroup lifo_apis LIFO APIs
  * @ingroup kernel_apis
  * @{
+ *
+ * A LIFO is a typed view of a queue, so the same rule applies as for the FIFO:
+ * a user thread needs the underlying @ref k_queue granted to it. k_lifo_init(),
+ * k_lifo_alloc_put() and k_lifo_get() expand to system calls and are callable
+ * from a user thread, while k_lifo_put() expands to k_queue_prepend(), which is
+ * supervisor mode only.
  */
 
 /**
  * @brief Initialize a LIFO queue.
  *
- * This routine initializes a LIFO queue object, prior to its first use.
+ * This routine initializes a LIFO queue object, prior to its first use. The
+ * LIFO is left empty, with no thread waiting on it.
+ *
+ * @note @a lifo must be initialized before any other LIFO API is called on it,
+ *       and must not be initialized again while it is in use.
  *
  * @param lifo Address of the LIFO queue.
  */
@@ -3269,9 +3484,18 @@ struct k_lifo {
 /**
  * @brief Add an element to a LIFO queue.
  *
- * This routine adds a data item to @a lifo. A LIFO queue data item must be
- * aligned as required for a pointer, and its first pointer-sized field is
- * reserved for the kernel's use.
+ * This routine adds @a data to the head of @a lifo, so that it is the next
+ * item k_lifo_get() returns.
+ *
+ * The item is not copied. The LIFO keeps its link in the first pointer-sized
+ * field of @a data, which is why that field is reserved for the kernel and why
+ * @a data must be aligned as required for a pointer. The item must stay valid
+ * until it has been retrieved with k_lifo_get(), and the reserved field must
+ * not be written to while it is queued. The rest of the item stays available
+ * to the caller and may be updated in place.
+ *
+ * If a thread is already waiting in k_lifo_get() on @a lifo, @a data is handed
+ * to that thread directly and never enters the LIFO.
  *
  * @isr_ok
  *
@@ -3289,10 +3513,26 @@ struct k_lifo {
 /**
  * @brief Add an element to a LIFO queue.
  *
- * This routine adds a data item to @a lifo. There is an implicit memory
- * allocation to create an additional temporary bookkeeping data structure from
- * the calling thread's resource pool, which is automatically freed when the
- * item is removed. The data itself is not copied.
+ * This routine adds @a data to the head of @a lifo, like k_lifo_put(), except
+ * that the queue link is taken from a pool instead of from @a data itself. The
+ * link is released automatically once the item has been retrieved, and the
+ * first pointer-sized field of @a data stays available to the caller. The data
+ * is not copied.
+ *
+ * The link is allocated from the resource pool of the calling thread, or from
+ * the system heap when called from ISR context. A thread inherits the resource
+ * pool of the thread that creates it, and the main thread starts on the system
+ * heap when CONFIG_HEAP_MEM_POOL_SIZE is set, so threads have a pool by
+ * default; see k_thread_heap_assign() and k_thread_system_pool_assign(). Only
+ * a thread left without a pool fails here, with -ENOMEM, and it does so
+ * whether or not CONFIG_HEAP_MEM_POOL_SIZE is set.
+ *
+ * If a thread is already waiting in k_lifo_get() on @a lifo, @a data is handed
+ * to that thread directly, no link is allocated, and this routine cannot fail.
+ *
+ * @note The link is allocated with the queue lock held, so the allocator's
+ *       lock nests inside the queue lock and the cost of the allocation is
+ *       part of the critical section.
  *
  * @isr_ok
  *
@@ -3300,7 +3540,7 @@ struct k_lifo {
  * @param data Address of the data item.
  *
  * @retval 0 on success
- * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
+ * @retval -ENOMEM The resource pool of the calling thread has insufficient RAM
  */
 #define k_lifo_alloc_put(lifo, data) \
 	({ \
@@ -3314,11 +3554,18 @@ struct k_lifo {
 /**
  * @brief Get an element from a LIFO queue.
  *
- * This routine removes a data item from @a LIFO in a "last in, first out"
- * manner. The first pointer-sized field of the data item is reserved for the
- * kernel's use.
+ * This routine removes and returns the most recently added data item of
+ * @a lifo.
+ *
+ * When the item was added by k_lifo_alloc_put(), the link allocated on its
+ * behalf is released here and the caller receives the original data pointer.
+ * The queue lock is released before the call returns.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ *
+ * @note A timeout is reported as a null return. No cancel operation exists for
+ *       a LIFO, so a null return from a waiting call is a timeout and nothing
+ *       else.
  *
  * @isr_ok
  *
@@ -3326,8 +3573,9 @@ struct k_lifo {
  * @param timeout Waiting period to obtain a data item,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
- * @return Address of the data item if successful; NULL if returned
- * without waiting, or waiting period timed out.
+ * @retval non-NULL Address of the data item that was removed.
+ * @retval NULL The LIFO was empty and @a timeout was K_NO_WAIT, or the waiting
+ *              period expired.
  */
 #define k_lifo_get(lifo, timeout) \
 	({ \
