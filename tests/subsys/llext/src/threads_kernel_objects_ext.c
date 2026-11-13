@@ -47,6 +47,7 @@ void test_thread(void *arg0, void *arg1, void *arg2)
 	/* Verify device API functionality, console must be ready in CI tests */
 	zassert_true(device_is_ready(console_dev));
 
+#ifdef CONFIG_UART_CONSOLE
 	/* Verify DEVICE_API exports: DEVICE_API_GET/DEVICE_API_IS must resolve
 	 * symbols properly from extension code, and the API pointer must match
 	 * the one in the device structure.
@@ -55,6 +56,7 @@ void test_thread(void *arg0, void *arg1, void *arg2)
 
 	zassert_true(DEVICE_API_IS(uart, console_dev));
 	zassert_equal_ptr(api, console_dev->api);
+#endif /* CONFIG_UART_CONSOLE */
 #endif
 }
 
