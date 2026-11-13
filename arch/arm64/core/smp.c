@@ -258,17 +258,16 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		uint64_t target_mpidr = cpu_map[i];
-		uint8_t aff0;
 
 		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 
-		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+		if (gic_raise_sgi_by_affinity(ipi, target_mpidr) != 0) {
+			__ASSERT(false, "Failed to send IPI to target affinity");
+		}
 #else
-		ARG_UNUSED(aff0);
 		/*
 		 * Only the scheduler IPI is routed through the SoC hook.
 		 * CONFIG_USERSPACE's mem-cfg IPI has no custom-intc
@@ -339,19 +338,18 @@ void z_arm64_flush_fpu_ipi_handler(const void *unused)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	const uint64_t mpidr = cpu_map[cpu];
-	uint8_t aff0;
 
 	if (mpidr == INV_MPID) {
 		return;
 	}
 
-	aff0 = MPIDR_AFFLVL(mpidr, 0);
 	/* Publish before the SGI, including when the target has IRQs masked. */
 	atomic_set(&fpu_flush_requests[cpu].pending, 1);
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+	if (gic_raise_sgi_by_affinity(SGI_FPU_IPI, mpidr) != 0) {
+		__ASSERT(false, "Failed to send FPU IPI to target affinity");
+	}
 #else
-	ARG_UNUSED(aff0);
 	soc_flush_fpu_ipi(mpidr);
 #endif
 }
@@ -550,7 +548,6 @@ void arch_coredump_freeze_other_cpus(void)
 
 	for (unsigned int i = 0; i < num_cpus; i++) {
 		uint64_t mpidr;
-		uint8_t aff0;
 
 		if (i == self) {
 			continue;
@@ -563,8 +560,9 @@ void arch_coredump_freeze_other_cpus(void)
 			continue;
 		}
 
-		aff0 = MPIDR_AFFLVL(mpidr, 0);
-		gic_raise_sgi(SGI_COREDUMP_FREEZE_IPI, mpidr, 1 << aff0);
+		if (gic_raise_sgi_by_affinity(SGI_COREDUMP_FREEZE_IPI, mpidr) != 0) {
+			atomic_set(&freeze_state[i], FREEZE_IDLE);
+		}
 	}
 
 	for (unsigned int i = 0; i < num_cpus; i++) {

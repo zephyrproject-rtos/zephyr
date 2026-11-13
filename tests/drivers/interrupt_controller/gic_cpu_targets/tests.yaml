@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.interrupt_controller.gic_cpu_targets:
+    tags:
+      - drivers
+      - interrupt
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
