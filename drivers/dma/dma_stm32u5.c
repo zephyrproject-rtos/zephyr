@@ -393,7 +393,43 @@ static int dma_stm32_get_direction(enum dma_channel_direction direction,
 	return 0;
 }
 
-#ifndef CONFIG_STM32_HAL2
+#ifdef CONFIG_STM32_HAL2
+int dma_stm32_configure_zcfg(const struct device *dma, const struct dma_config *zephyr_config,
+			     hal_dma_handle_t *hdma, hal_dma_src_addr_increment_t source_addr_adj,
+			     hal_dma_dest_addr_increment_t dest_addr_adj);
+{
+	hal_dma_direct_xfer_config_t xfer_cfg = {0};
+	uint32_t dir, prio;
+	int ret;
+
+	__ASSERT_NO_MSG(dma != NULL && zephyr_config != NULL);
+
+	xfer_cfg.request = (hal_dma_request_source_t)zephyr_config->dma_slot;
+	xfer_cfg.src_inc = source_addr_adj;
+	xfer_cfg.dest_inc = dest_addr_adj;
+	xfer_cfg.src_data_width = HAL_DMA_SRC_DATA_WIDTH_BYTE;
+	xfer_cfg.dest_data_width = HAL_DMA_DEST_DATA_WIDTH_BYTE;
+
+	ret = dma_stm32_get_direction(zephyr_config->channel_direction, &dir);
+	if (ret < 0) {
+		return ret;
+	}
+	xfer_cfg.direction = (hal_dma_direction_t)dir;
+
+	ret = dma_stm32_get_priority(zephyr_config->channel_priority, &prio);
+	if (ret < 0) {
+		return ret;
+	}
+	xfer_cfg.priority = (hal_dma_priority_t)prio;
+
+	if (HAL_DMA_SetConfigDirectXfer(hdma, &xfer_cfg) != HAL_OK) {
+		LOG_ERR("DMA configuration failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+#else /* CONFIG_STM32_HAL2 */
 static int dma_stm32_hal_map_data_size(uint32_t z_size, uint32_t *hal_size, uint32_t hal_byte,
 				       uint32_t hal_halfword, uint32_t hal_word)
 {
