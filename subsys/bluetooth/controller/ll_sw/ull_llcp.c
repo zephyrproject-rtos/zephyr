@@ -542,6 +542,21 @@ void ull_cp_prt_reload_set(struct ll_conn *conn, uint32_t conn_intv_us)
 	conn->llcp.prt_reload = RADIO_CONN_EVENTS((40U * 1000U * 1000U), conn_intv_us);
 }
 
+static void prt_rescale(uint16_t *expire, uint32_t old_intv_us, uint32_t new_intv_us)
+{
+	if (*expire != 0U) {
+		const uint64_t left_us = (uint64_t)*expire * old_intv_us;
+
+		*expire = (uint16_t)MIN(DIV_ROUND_UP(left_us, new_intv_us), UINT16_MAX);
+	}
+}
+
+void ull_cp_prt_rescale(struct ll_conn *conn, uint32_t old_intv_us, uint32_t new_intv_us)
+{
+	prt_rescale(&conn->llcp.local.prt_expire, old_intv_us, new_intv_us);
+	prt_rescale(&conn->llcp.remote.prt_expire, old_intv_us, new_intv_us);
+}
+
 void ull_cp_run(struct ll_conn *conn)
 {
 	llcp_rr_run(conn);
