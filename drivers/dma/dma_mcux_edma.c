@@ -52,6 +52,7 @@ struct dma_mcux_edma_config {
 	uint8_t dmamux_reg_offset;
 	int dma_requests;
 	int dma_channels; /* number of channels */
+	bool no_error_irq;
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
@@ -250,9 +251,9 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 		LOG_DBG("IRQ DONE");
 	}
 
-#if DT_INST_PROP(0, no_error_irq)
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(no_error_irq)
 	/* Channel shares the same irq for error and transfer complete */
-	else if (flag & kEDMA_ErrorFlag) {
+	else if (DEV_CFG(dev)->no_error_irq && ((flag & kEDMA_ErrorFlag) != 0U)) {
 		EDMA_ClearChannelStatusFlags(DEV_BASE(dev), channel, 0xFFFFFFFF);
 		EDMA_AbortTransfer(DEV_EDMA_HANDLE(dev, channel));
 		DEV_CHANNEL_DATA(dev, channel)->busy = false;
@@ -261,7 +262,7 @@ static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel
 #endif
 }
 
-#if !DT_INST_PROP(0, no_error_irq)
+#if !DT_ALL_INST_HAS_BOOL_STATUS_OKAY(no_error_irq)
 static void dma_mcux_edma_error_irq_handler(const struct device *dev)
 {
 	int i = 0;
@@ -1294,11 +1295,10 @@ static int dma_mcux_edma_init(const struct device *dev)
 }
 
 /* The shared error interrupt (if have) must be declared as the last element in devicetree */
-#if !DT_INST_PROP(0, no_error_irq)
-#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))
-#else
-#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)	DT_NUM_IRQS(DT_DRV_INST(n))
-#endif
+#define NUM_IRQS_WITHOUT_ERROR_IRQ(n)					\
+	COND_CODE_1(DT_INST_PROP(n, no_error_irq),				\
+		    (DT_NUM_IRQS(DT_DRV_INST(n))),			\
+		    (UTIL_DEC(DT_NUM_IRQS(DT_DRV_INST(n)))))
 
 #define IRQ_CONFIG(n, idx, fn)							\
 	{									\
@@ -1423,6 +1423,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		DMAMUX_BASE_INIT(n)						\
 		.dma_requests = DT_INST_PROP(n, dma_requests),			\
 		.dma_channels = DT_INST_PROP(n, dma_channels),			\
+		.no_error_irq = DT_INST_PROP(n, no_error_irq),			\
 		CHANNELS_PER_MUX(n)						\
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
