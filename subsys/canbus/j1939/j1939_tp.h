@@ -23,6 +23,10 @@ typedef enum j1939_tp_message_e {
 #define J1939TP_MAX_BYTES (1785)
 #define J1939TP_MIN_BYTES (9)
 
+#define J1939TP_NUM_ALL_BUFFERS                                                      \
+	(CONFIG_J1939TP_NUM_SMALL_BUFFERS + CONFIG_J1939TP_NUM_MEDIUM_BUFFERS +          \
+	 CONFIG_J1939TP_NUM_LARGE_BUFFERS + CONFIG_J1939TP_NUM_MAX_BUFFERS)
+
 /** Initialize the transport session handler */
 void j1939_tp_init(void);
 
