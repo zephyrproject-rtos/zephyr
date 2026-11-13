@@ -11,7 +11,6 @@ zephyr_library_include_directories(
 
 zephyr_library_sources(
     j1939.c
-    J1939Timer.c
     j1939_ac.c
     CriticalSectionManager.c
 )

@@ -8,7 +8,6 @@
 #include <zephyr/drivers/can.h>
 #include "j1939_ac.h"
 #include "j1939_tp.h"
-#include "J1939Timer.h"
 #include "CriticalSectionManager.h"
 #include <Can_Transmit.h>
 #include <errno.h>
@@ -514,10 +513,7 @@ int j1939_init(void)
 	j1939_dm4_init();
 #endif
 
-	/* Init the elapsed time counter.  The first call returns an invalid value, so we ignore it
-	 */
-	j1939_last_current_time = 0;
-	(void)j1939_timer_elapse(&j1939_last_current_time);
+	j1939_last_current_time = k_uptime_get_32();
 
 	/* Initialize the timers for the periodic routine and the DTC counter */
 #ifdef J1939_PERIODIC_ROUTINE
@@ -641,9 +637,10 @@ void j1939_process_rx_msgs(void)
 void j1939_task(void)
 {
 	/* Find amount of time which has gone by since last time this function was called. */
-	j1939_timer_t elapsedCanTime = j1939_timer_elapse(&j1939_last_current_time);
+	j1939_timer_t currentTime = k_uptime_get_32();
+	j1939_timer_t elapsedCanTime = currentTime - j1939_last_current_time;
 
-	(void)elapsedCanTime;
+	j1939_last_current_time = currentTime;
 
 	j1939_process_rx_msgs();
 

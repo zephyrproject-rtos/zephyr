@@ -33,7 +33,7 @@ each node in the application instead. Global Kconfig options select subsystem
 features and resources, not per-node identity.
 
 Provisioning and startup
-=======================
+========================
 
 Applications may call :c:func:`j1939_configure_node` before startup to replace a
 declared node's complete effective NAME and preferred source address. The

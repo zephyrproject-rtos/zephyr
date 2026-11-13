@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "j1939_ac.h"
-#include "J1939Timer.h"
 #include "CriticalSectionManager.h"
 #include <Can_Transmit.h>
 #include <errno.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(j1939, CONFIG_J1939_LOG_LEVEL);
@@ -204,7 +204,7 @@ static void j1939_ac_claim_address(j1939_node_t node)
 	if (j1939_build_and_queue_message(node, id, J1939_NAME_LENGTH, true, name)) {
 		/* If this is the first time the node is claiming its address, set the timestamp */
 		if (node->node_state == J1939_AC_STATE_START) {
-			node->ac_timestamp = j1939_timer_get_time();
+			node->ac_timestamp = k_uptime_get_32();
 		}
 
 		Can_Transmit_SendQueues();
@@ -575,7 +575,7 @@ static void j1939_ac_cannot_claim_delay(j1939_node_t node)
 	/* in the call chain to this function */
 
 	/* Note that this handles overflow as we want it to. */
-	if (j1939_timer_get_time() > node->ac_timestamp) {
+	if (k_uptime_get_32() > node->ac_timestamp) {
 		CriticalSection_Lock();
 
 		/* Enable Tx Queue for this node. */
@@ -637,7 +637,7 @@ static void j1939_ac_address_claim_waiting(j1939_node_t node)
 	/* in the call chain to this function */
 
 	/* Wait at least 250 ms - the first part will take care of rolling over */
-	if ((j1939_timer_get_time() - node->ac_timestamp) > J1939_AC_WAIT_TIME) {
+	if ((k_uptime_get_32() - node->ac_timestamp) > J1939_AC_WAIT_TIME) {
 		CriticalSection_Lock();
 
 		/* Enable Tx Queue for this J1939 address node. */
@@ -717,7 +717,7 @@ static void j1939_ac_common_contention_handling(j1939_node_t node)
 	/* generate the same pseudo-random number if they contend at startup.  This algorithm was */
 	/* tested in Visual Studio for all possible 16-bit NAME and 16 bit timer combinations and */
 	/* was shown to generate a reasonable good distribution. */
-	wTempTime = j1939_timer_get_time();
+	wTempTime = k_uptime_get_32();
 
 	/* Calculate the time at which we want to send the CANNOT CLAIM message.  Overflow is */
 	/* desired behavior for this calculation when it occurs.  Per section per section 4.2.2.3 of
