@@ -3,4 +3,5 @@
 
 rsource "Kconfig.fake"
 rsource "lr11xx/Kconfig"
+rsource "lr20xx/Kconfig"
 rsource "sx126x/Kconfig"
