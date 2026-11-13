@@ -50,8 +50,7 @@ TESTDATA_1 = [
             'dummy',
         ],
         'When --device-testing is used with --device-serial' \
-        ' or --device-serial-pty, exactly one platform must' \
-        ' be specified'
+        ' or --device-serial-pty, exactly one platform must be specified'
     ),
     (
         None,
@@ -67,8 +66,7 @@ TESTDATA_1 = [
             'dummy_platform2'
         ],
         'When --device-testing is used with --device-serial' \
-        ' or --device-serial-pty, exactly one platform must' \
-        ' be specified'
+        ' or --device-serial-pty, exactly one platform must be specified'
     ),
 # Note the underscore.
     (
