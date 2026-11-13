@@ -1,0 +1,6 @@
+board:
+  name: gd32f527i_eval
+  full_name: GD32F527I-EVAL
+  vendor: gd
+  socs:
+    - name: gd32f527
