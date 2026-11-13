@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+#
+# SoC-level defaults. Anything that differs per board belongs in the board.
+
+if SOC_BK7258
+
+# Interrupts go straight to the NVIC; there is no cascaded interrupt controller.
+config NUM_IRQS
+	default 64
+
+# Code executes in place from the flash window and is not copied to SRAM.
+config XIP
+	default y
+
+# The SoC init switches the core to 120 MHz, whether it started from the crystal
+# or from the firmware the device ships with, so the frequency is stated in the
+# cpu node in devicetree.
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+# One tick per millisecond, which is what the firmware the device ships with
+# uses, and fine enough for a device that cares about wakeup latency without
+# spending a large share of the core in the tick interrupt.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+# The firmware the device ships with configured UART0 before this image
+# started; without it the driver has to set the port up itself.
+config UART_BK7258_NO_HW_INIT
+	default y if SOC_BK7258_VENDOR_FIRMWARE
+
+endif # SOC_BK7258

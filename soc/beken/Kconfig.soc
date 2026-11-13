@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_BEKEN_ARM
+	bool
+	help
+	  Beken SoC family based on Arm Cortex-M.
+
+config SOC_FAMILY
+	default "beken" if SOC_FAMILY_BEKEN_ARM
+
+rsource "*/Kconfig.soc"

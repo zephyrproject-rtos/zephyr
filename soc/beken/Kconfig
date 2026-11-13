@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Beken Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr sources only the four files at the vendor root; anything in the series
+# sub-directories has to be pulled in from here.
+
+# Not wrapped in "if SOC_FAMILY_BEKEN_ARM": the series selects the family, so
+# the family condition would make the two symbols depend on each other and
+# kconfig would report a dependency loop.
+rsource "*/Kconfig"
