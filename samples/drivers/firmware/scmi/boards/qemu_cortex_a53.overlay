@@ -19,15 +19,21 @@
 
 		scmi {
 			compatible = "linaro,scmi-optee";
-			linaro,optee = <&optee>;
-			linaro,optee-channel-id = <0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			linaro,optee = <&optee>;
+			linaro,optee-channel-id = <0>;
 
 			scmi_clock: protocol@14 {
 				compatible = "arm,scmi-clock";
 				reg = <0x14>;
 				#clock-cells = <1>;
+			};
+
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
 			};
 		};
 	};
