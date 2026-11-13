@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/counter/counter-capture.h>
+
+&counter0 {
+	rising-edge;
+	falling-edge;
+};
+
+&uart1 {
+	status = "okay";
+
+	gnss: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+		counter-captures = <&counter0 0 COUNTER_CAPTURE_RISING_EDGE>;
+	};
+};
