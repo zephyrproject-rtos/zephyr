@@ -387,6 +387,29 @@ static void send_receive_rtr(const struct can_filter *filter, const struct can_f
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
+static void send_and_expect_rx_msgq(const struct can_frame *frame)
+{
+	struct can_frame frame_buffer;
+	int err;
+
+	send_test_frame(can_dev, frame);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_ok(err, "receive timeout");
+	assert_frame_equal(&frame_buffer, frame, 0);
+}
+
+static void send_and_expect_no_rx_msgq(const struct can_frame *frame)
+{
+	struct can_frame frame_buffer;
+	int err;
+
+	send_test_frame(can_dev, frame);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "received unexpected frame");
+}
+
 /**
  * @brief Test getting the CAN core clock rate.
  */
@@ -1423,6 +1446,141 @@ ZTEST_USER(can_classic, test_set_mode_while_started)
 	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_not_equal(err, 0, "changed mode while started");
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test standard filter delivery after removing a filter with extended filters configured.
+ */
+ZTEST_USER(can_classic, test_std_filter_after_remove_with_extended_filter_offset)
+{
+	enum { NUM_EXT_FILTERS = 7, NUM_STD_FILTERS = 8 };
+	struct can_filter ext_filters[NUM_EXT_FILTERS];
+	struct can_filter std_filters[NUM_STD_FILTERS];
+	int ext_filter_ids[NUM_EXT_FILTERS];
+	int std_filter_ids[NUM_STD_FILTERS];
+	const struct can_frame frame = {
+		.id = 0x101,
+		.dlc = 1,
+		.data = {0x01},
+	};
+
+	if (can_get_max_filters(can_dev, true) < NUM_EXT_FILTERS ||
+	    can_get_max_filters(can_dev, false) < NUM_STD_FILTERS) {
+		ztest_test_skip();
+	}
+
+	for (int i = 0; i < NUM_EXT_FILTERS; i++) {
+		ext_filters[i].flags = CAN_FILTER_IDE;
+		ext_filters[i].id = i;
+		ext_filters[i].mask = CAN_EXT_ID_MASK;
+		ext_filter_ids[i] = can_common_add_rx_msgq(can_dev, &ext_filters[i]);
+	}
+
+	for (int i = 0; i < NUM_STD_FILTERS; i++) {
+		std_filters[i].flags = 0U;
+		std_filters[i].id = 0x100 + i;
+		std_filters[i].mask = CAN_STD_ID_MASK;
+		std_filter_ids[i] = can_common_add_rx_msgq(can_dev, &std_filters[i]);
+	}
+
+	can_remove_rx_filter(can_dev, std_filter_ids[0]);
+	send_and_expect_rx_msgq(&frame);
+
+	for (int i = 1; i < NUM_STD_FILTERS; i++) {
+		can_remove_rx_filter(can_dev, std_filter_ids[i]);
+	}
+
+	for (int i = 0; i < NUM_EXT_FILTERS; i++) {
+		can_remove_rx_filter(can_dev, ext_filter_ids[i]);
+	}
+}
+
+/**
+ * @brief Test that removing first of two paired standard filters does not drop ID 0 frames.
+ */
+ZTEST_USER(can_classic, test_remove_std_filter_pair_first_keeps_other_filters)
+{
+	const struct can_filter filter_0 = {
+		.flags = 0U,
+		.id = 0x000,
+		.mask = CAN_STD_ID_MASK,
+	};
+	const struct can_frame frame_0 = {
+		.id = filter_0.id,
+		.dlc = 1,
+		.data = {0x00},
+	};
+	int filter_id_1;
+	int filter_id_2;
+	int filter_id_3;
+	int filter_id_0;
+
+	if (can_get_max_filters(can_dev, false) < 3) {
+		ztest_test_skip();
+	}
+
+	filter_id_1 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_1);
+	filter_id_2 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_2);
+	filter_id_3 = can_common_add_rx_msgq(can_dev, &test_std_some_filter);
+	filter_id_0 = can_common_add_rx_msgq(can_dev, &filter_0);
+
+	send_and_expect_rx_msgq(&test_std_frame_1);
+	send_and_expect_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_1);
+
+	send_and_expect_no_rx_msgq(&test_std_frame_1);
+	send_and_expect_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_2);
+	can_remove_rx_filter(can_dev, filter_id_3);
+	can_remove_rx_filter(can_dev, filter_id_0);
+}
+
+/**
+ * @brief Test that removing second of two paired standard filters does not drop ID 0 frames.
+ */
+ZTEST_USER(can_classic, test_remove_std_filter_pair_second_keeps_other_filters)
+{
+	const struct can_filter filter_0 = {
+		.flags = 0U,
+		.id = 0x000,
+		.mask = CAN_STD_ID_MASK,
+	};
+	const struct can_frame frame_0 = {
+		.id = filter_0.id,
+		.dlc = 1,
+		.data = {0x00},
+	};
+	int filter_id_1;
+	int filter_id_2;
+	int filter_id_3;
+	int filter_id_0;
+
+	if (can_get_max_filters(can_dev, false) < 3) {
+		ztest_test_skip();
+	}
+
+	filter_id_1 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_1);
+	filter_id_2 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_2);
+	filter_id_3 = can_common_add_rx_msgq(can_dev, &test_std_some_filter);
+	filter_id_0 = can_common_add_rx_msgq(can_dev, &filter_0);
+
+	send_and_expect_rx_msgq(&test_std_frame_1);
+	send_and_expect_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_2);
+
+	send_and_expect_rx_msgq(&test_std_frame_1);
+	send_and_expect_no_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_1);
+	can_remove_rx_filter(can_dev, filter_id_3);
+	can_remove_rx_filter(can_dev, filter_id_0);
 }
 
 void *can_classic_setup(void)
