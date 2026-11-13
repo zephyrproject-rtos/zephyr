@@ -192,3 +192,6 @@ int can_common_add_rx_filter(const struct device *dev, const struct can_filter *
  * @param initial_mode Initial CAN controller operational mode.
  */
 void can_common_test_setup(can_mode_t initial_mode);
+
+/** Common teardown function for the CAN controller device under test. */
+void can_common_test_teardown(void);

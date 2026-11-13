@@ -266,3 +266,8 @@ void can_common_test_setup(can_mode_t initial_mode)
 	err = can_start(can_dev);
 	zassert_ok(err, "failed to start CAN controller (err %d)", err);
 }
+
+void can_common_test_teardown(void)
+{
+	(void)can_stop(can_dev);
+}
