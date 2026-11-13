@@ -198,9 +198,12 @@ config CPU_CORTEX_R52
 	select AARCH32_ARMV8_R
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
+	select CPU_CACHE_INCOHERENT
+	select CACHE_CAN_SAY_MEM_COHERENCE if ARM_MPU && DCACHE && ARCH_CACHE && USE_SWITCH && !XIP
 	select VFP_SP_D16 if !USE_SWITCH
 	help
 	  This option signifies the use of a Cortex-R52 CPU
+	  Kernel coherence is supported only for execution from RAM (XIP=n).
 
 config CPU_CORTEX_R52_CACHE_SEGREGATION
 	bool "Control segregation of L1 I/D-Cache ways between Flash and AXIM"
@@ -313,6 +316,10 @@ configdefault DCACHE_LINE_SIZE
 configdefault ICACHE_LINE_SIZE
 	default 64 if CPU_CORTEX_R52 && !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
+
+# Stack coherence needs more scheduler stack space; retain the larger coverage default.
+configdefault IDLE_STACK_SIZE
+	default 512 if CPU_CORTEX_R52 && KERNEL_COHERENCE && !COVERAGE_GCOV
 
 endif # CPU_AARCH32_CORTEX_R
 
