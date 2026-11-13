@@ -22,3 +22,5 @@ tests:
         path: ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_source/
       - application: sample.bluetooth.audio.bap_broadcast_source.sequential.bsim
         path: ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_source/
+      - application: sample.bluetooth.audio.bap_broadcast_source.scanning.bsim
+        path: ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_source/

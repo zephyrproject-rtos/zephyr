@@ -23,12 +23,22 @@ Remote centrals can connect to either set and reconnect after
 disconnecting, while the LE Audio broadcast continues uninterrupted.
 The connectable advertising stops while a central is connected and resumes on disconnect.
 
-The LEDs show the state, using the ``led-red``, ``led-green`` and ``led-blue`` aliases when
-present, else ``led0``, ``led1`` and ``led2``:
+Button 2 enables or disables continuous active extended scanning, which is off at boot unless
+:kconfig:option:`CONFIG_SCAN_BACKGROUND` is enabled. With
+:kconfig:option:`CONFIG_CHAN_MAP_UPDATE`, the Zephyr Controller channel metrics of the connection
+and of the scanning receptions, timeouts counted as failures, exclude the bad channels from the
+channel map of the broadcast. Every :kconfig:option:`CONFIG_CHAN_MAP_RESET_INTERVAL` seconds the
+full channel map is used again until the channel metrics report a channel as bad.
 
-* red blinks while the broadcast ISO is active
-* green blinks while the connectable advertising is active
-* blue blinks while a central is connected
+The LEDs show the state, using the ``led-red``, ``led-green`` and ``led-blue`` aliases when
+present, else ``led0``, ``led1`` and ``led2``, as in the :zephyr:code-sample:`bluetooth_bap_broadcast_sink`
+sample:
+
+* red blinks while scanning
+* green blinks while a central is connected
+* blue blinks while the broadcast ISO is active
+* ``led3`` blinks while the connectable advertising is active
+
 The broadcast audio set itself uses ``CONFIG_BT_DEVICE_NAME`` (default
 ``Broadcast Audio Source``) as its device name in the advertising data.
 

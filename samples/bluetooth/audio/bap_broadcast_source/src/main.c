@@ -232,8 +232,13 @@ static bool stopping;
 static K_SEM_DEFINE(sem_started, 0U, 1U);
 static K_SEM_DEFINE(sem_stopped, 0U, 1U);
 
-/* Red blinks while the broadcast ISO is active, green while connectable advertising is active
- * and blue while an ACL connection exists
+static volatile bool big_active;
+static volatile bool conn_adv_active;
+static volatile uint8_t acl_conn_count;
+static volatile bool scanning;
+
+/* Red blinks while scanning, blue while the BIG is active, green while connected and led3 while
+ * connectable advertising is active
  */
 #if DT_NODE_EXISTS(DT_ALIAS(led_red))
 #define LED_RED_NODE DT_ALIAS(led_red)
@@ -250,6 +255,7 @@ static K_SEM_DEFINE(sem_stopped, 0U, 1U);
 #else
 #define LED_BLUE_NODE DT_ALIAS(led2)
 #endif
+#define LED_ADV_NODE DT_ALIAS(led3)
 
 #define LED_BLINK_INTERVAL K_MSEC(250)
 
@@ -257,6 +263,7 @@ enum led_id {
 	LED_RED,
 	LED_GREEN,
 	LED_BLUE,
+	LED_ADV,
 	LED_COUNT,
 };
 
@@ -264,9 +271,10 @@ static const struct gpio_dt_spec leds[LED_COUNT] = {
 	[LED_RED] = GPIO_DT_SPEC_GET_OR(LED_RED_NODE, gpios, {0}),
 	[LED_GREEN] = GPIO_DT_SPEC_GET_OR(LED_GREEN_NODE, gpios, {0}),
 	[LED_BLUE] = GPIO_DT_SPEC_GET_OR(LED_BLUE_NODE, gpios, {0}),
+	[LED_ADV] = GPIO_DT_SPEC_GET_OR(LED_ADV_NODE, gpios, {0}),
 };
-static volatile bool led_blink[LED_COUNT];
 static bool led_ready[LED_COUNT];
+static volatile bool led_blink[LED_COUNT];
 static bool led_phase_on;
 
 static void led_work_handler(struct k_work *work);
@@ -287,15 +295,24 @@ static void led_work_handler(struct k_work *work)
 	(void)k_work_reschedule(&led_work, LED_BLINK_INTERVAL);
 }
 
+static void leds_update(void)
+{
+	led_blink[LED_RED] = scanning;
+	led_blink[LED_GREEN] = (acl_conn_count > 0U);
+	led_blink[LED_BLUE] = big_active;
+	led_blink[LED_ADV] = conn_adv_active;
+}
+
 static void leds_init(void)
 {
 	for (size_t i = 0U; i < LED_COUNT; i++) {
-		if ((leds[i].port != NULL) && gpio_is_ready_dt(&leds[i]) &&
-		    (gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE) == 0)) {
+		if (leds[i].port != NULL && gpio_is_ready_dt(&leds[i]) &&
+		    gpio_pin_configure_dt(&leds[i], GPIO_OUTPUT_INACTIVE) == 0) {
 			led_ready[i] = true;
 		}
 	}
 
+	leds_update();
 	(void)k_work_reschedule(&led_work, K_NO_WAIT);
 }
 
@@ -950,7 +967,8 @@ static void source_started_cb(struct bt_bap_broadcast_source *source)
 {
 	printk("Broadcast source %p started\n", source);
 
-	led_blink[LED_RED] = true;
+	big_active = true;
+	leds_update();
 
 	k_sem_give(&sem_started);
 }
@@ -959,7 +977,8 @@ static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t re
 {
 	printk("Broadcast source %p stopped with reason 0x%02X\n", source, reason);
 
-	led_blink[LED_RED] = false;
+	big_active = false;
+	leds_update();
 
 	k_sem_give(&sem_stopped);
 }
@@ -999,7 +1018,6 @@ static const struct bt_data conn_legacy_ad[] = {
  * only when there is no ACL connection, and resumes on disconnect.
  */
 static volatile bool conn_adv_enabled;
-static volatile uint8_t acl_conn_count;
 
 static int conn_adv_set_update(struct bt_le_ext_adv *adv, bool start, const char *name)
 {
@@ -1086,8 +1104,8 @@ static void conn_adv_update_work_handler(struct k_work *work)
 	err_ext = conn_adv_set_update(conn_ext_adv, start, "extended");
 	err_legacy = conn_adv_set_update(conn_legacy_adv, start, "legacy");
 
-	led_blink[LED_GREEN] = (start && ((err_ext == 0) || (err_legacy == 0)));
-	led_blink[LED_BLUE] = connected;
+	conn_adv_active = (start && ((err_ext == 0) || (err_legacy == 0)));
+	leds_update();
 }
 
 static K_WORK_DEFINE(conn_adv_update_work, conn_adv_update_work_handler);
@@ -1128,67 +1146,262 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected_cb,
 };
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(sw0))
-#define BUTTON_DEBOUNCE K_MSEC(30)
+#endif /* CONFIG_BT_PERIPHERAL */
 
-static const struct gpio_dt_spec button_adv = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
-static struct gpio_callback button_adv_cb_data;
+#if defined(CONFIG_BT_OBSERVER)
+/* Continuous active scanning, the 1M and the Coded PHY scan windows together cover the scan
+ * interval. Auxiliary channel receptions provide the Controller channel metrics used to update the
+ * Broadcast ISO channel map. No duplicate filtering, so that every auxiliary PDU is received.
+ */
+static volatile bool scan_user = IS_ENABLED(CONFIG_SCAN_BACKGROUND);
 
-static void button_adv_work_handler(struct k_work *work)
+#define NAME_LEN 128U
+
+static bool data_name_cb(struct bt_data *data, void *user_data)
 {
-	ARG_UNUSED(work);
+	char *name = user_data;
+	uint8_t len;
 
-	if (gpio_pin_get_dt(&button_adv) <= 0) {
-		return;
+	switch (data->type) {
+	case BT_DATA_NAME_SHORTENED:
+	case BT_DATA_NAME_COMPLETE:
+	case BT_DATA_BROADCAST_NAME:
+		len = MIN(data->data_len, NAME_LEN - 1);
+		(void)memcpy(name, data->data, len);
+		name[len] = '\0';
+		return false;
+	default:
+		return true;
+	}
+}
+
+static const char *phy2str(uint8_t phy)
+{
+	switch (phy) {
+	case BT_GAP_LE_PHY_NONE: return "No packets";
+	case BT_GAP_LE_PHY_1M: return "LE 1M";
+	case BT_GAP_LE_PHY_2M: return "LE 2M";
+	case BT_GAP_LE_PHY_CODED: return "LE Coded";
+	default: return "Unknown";
+	}
+}
+
+static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
+{
+	char le_addr[BT_ADDR_LE_STR_LEN];
+	struct net_buf_simple buf;
+	char name[NAME_LEN];
+	uint8_t data_status;
+	uint16_t data_len;
+
+	(void)memset(name, 0, sizeof(name));
+
+	data_len = ad->len;
+	net_buf_simple_clone(ad, &buf);
+	bt_data_parse(&buf, data_name_cb, name);
+
+	data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info->adv_props);
+
+	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i "
+	       "Data status: %u, AD data len: %u Name: %s "
+	       "C:%u S:%u D:%u SR:%u E:%u Pri PHY: %s, Sec PHY: %s, "
+	       "Interval: 0x%04x (%u ms), SID: %u\n",
+	       le_addr, info->adv_type, info->tx_power, info->rssi,
+	       data_status, data_len, name,
+	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_SCAN_RESPONSE) != 0,
+	       (info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0,
+	       phy2str(info->primary_phy), phy2str(info->secondary_phy),
+	       info->interval, info->interval * 5 / 4, info->sid);
+}
+
+static struct bt_le_scan_cb scan_cb = {
+	.recv = scan_recv,
+};
+
+static int scan_start(void)
+{
+	struct bt_le_scan_param scan_param = {
+		.type           = BT_LE_SCAN_TYPE_ACTIVE,
+		.options        = BT_LE_SCAN_OPT_CODED,
+		.interval       = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+		.window         = BT_GAP_SCAN_FAST_WINDOW,
+		.interval_coded = BT_GAP_SCAN_FAST_INTERVAL_MIN,
+		.window_coded   = BT_GAP_SCAN_FAST_WINDOW,
+	};
+	int err;
+
+	if (scanning) {
+		return 0;
 	}
 
-	conn_adv_enabled = !conn_adv_enabled;
-	printk("Connectable advertising %s\n", conn_adv_enabled ? "enabled" : "disabled");
+	err = bt_le_scan_start(&scan_param, NULL);
+	if (err != 0 && err != -EALREADY) {
+		printk("Unable to start scan: %d\n", err);
+		return err;
+	}
 
-	(void)k_work_submit(&conn_adv_update_work);
+	scanning = true;
+	leds_update();
+
+	return 0;
 }
 
-static K_WORK_DELAYABLE_DEFINE(button_adv_work, button_adv_work_handler);
-
-static void button_adv_isr(const struct device *port, struct gpio_callback *cb,
-			   gpio_port_pins_t pins)
-{
-	ARG_UNUSED(port);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(pins);
-
-	(void)k_work_reschedule(&button_adv_work, BUTTON_DEBOUNCE);
-}
-
-static int button_adv_init(void)
+static int scan_stop(void)
 {
 	int err;
 
-	if (!gpio_is_ready_dt(&button_adv)) {
-		return -ENODEV;
-	}
-
-	err = gpio_pin_configure_dt(&button_adv, GPIO_INPUT);
-	if (err != 0) {
+	err = bt_le_scan_stop();
+	if (err != 0 && err != -EALREADY) {
 		return err;
 	}
 
-	err = gpio_pin_interrupt_configure_dt(&button_adv, GPIO_INT_EDGE_TO_ACTIVE);
-	if (err != 0) {
-		return err;
-	}
+	scanning = false;
+	leds_update();
 
-	gpio_init_callback(&button_adv_cb_data, button_adv_isr, BIT(button_adv.pin));
-
-	return gpio_add_callback_dt(&button_adv, &button_adv_cb_data);
+	return 0;
 }
-#else
-static int button_adv_init(void)
+
+/* Called from the system workqueue to apply the user scan state */
+static void scan_update(struct k_work *work)
 {
-	return -ENODEV;
+	int err;
+
+	ARG_UNUSED(work);
+
+	if (scan_user) {
+		if (!scanning) {
+			err = scan_start();
+			if (err == 0) {
+				printk("Scanning started\n");
+			}
+		}
+	} else if (scanning) {
+		err = scan_stop();
+		if (err != 0) {
+			printk("Failed to stop scanning: %d\n", err);
+		} else {
+			printk("Scanning stopped\n");
+		}
+	}
 }
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(sw0)) */
+
+static K_WORK_DEFINE(scan_update_work, scan_update);
+
+/* Called from any thread, the system workqueue starts or stops scanning */
+static void scan_user_set(bool enable)
+{
+	scan_user = enable;
+
+	if (enable) {
+		printk("Scanning enabled\n");
+	} else {
+		printk("Scanning disabled\n");
+	}
+
+	(void)k_work_submit(&scan_update_work);
+}
+#endif /* CONFIG_BT_OBSERVER */
+
+/* sw0 enables or disables connectable advertising, sw2 enables or disables scanning */
+#define BUTTON_DEBOUNCE K_MSEC(30)
+
+enum button_id {
+	BUTTON_ADV,
+	BUTTON_SCAN,
+	BUTTON_COUNT,
+};
+
+static const struct gpio_dt_spec buttons[BUTTON_COUNT] = {
+	[BUTTON_ADV] = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0), gpios, {0}),
+	[BUTTON_SCAN] = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw2), gpios, {0}),
+};
+static struct gpio_callback button_cb_data[BUTTON_COUNT];
+static struct k_work_delayable button_work[BUTTON_COUNT];
+
+static void button_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	const size_t id = (size_t)(dwork - &button_work[0]);
+
+	if (gpio_pin_get_dt(&buttons[id]) <= 0) {
+		return;
+	}
+
+	switch (id) {
+#if defined(CONFIG_BT_PERIPHERAL)
+	case BUTTON_ADV:
+		conn_adv_enabled = !conn_adv_enabled;
+		printk("Connectable advertising %s\n",
+		       conn_adv_enabled ? "enabled" : "disabled");
+		(void)k_work_submit(&conn_adv_update_work);
+		break;
 #endif /* CONFIG_BT_PERIPHERAL */
+#if defined(CONFIG_BT_OBSERVER)
+	case BUTTON_SCAN:
+		scan_user_set(!scanning);
+		break;
+#endif /* CONFIG_BT_OBSERVER */
+	default:
+		break;
+	}
+}
+
+static void button_isr(const struct device *port, struct gpio_callback *cb, gpio_port_pins_t pins)
+{
+	const size_t id = (size_t)(cb - &button_cb_data[0]);
+
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	(void)k_work_reschedule(&button_work[id], BUTTON_DEBOUNCE);
+}
+
+static void button_init(enum button_id id)
+{
+	const struct gpio_dt_spec *btn = &buttons[id];
+	int err;
+
+	if (btn->port == NULL || !gpio_is_ready_dt(btn)) {
+		return;
+	}
+
+	err = gpio_pin_configure_dt(btn, GPIO_INPUT);
+	if (err != 0) {
+		printk("Failed to configure button %d: %d\n", id, err);
+		return;
+	}
+
+	k_work_init_delayable(&button_work[id], button_work_handler);
+	gpio_init_callback(&button_cb_data[id], button_isr, BIT(btn->pin));
+
+	err = gpio_add_callback_dt(btn, &button_cb_data[id]);
+	if (err != 0) {
+		printk("Failed to add button %d callback: %d\n", id, err);
+		return;
+	}
+
+	err = gpio_pin_interrupt_configure_dt(btn, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err != 0) {
+		printk("Failed to configure button %d interrupt: %d\n", id, err);
+	}
+}
+
+static void buttons_init(void)
+{
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		printk("Press button 0 to toggle connectable advertising\n");
+		button_init(BUTTON_ADV);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		printk("Press button 2 to toggle scanning\n");
+		button_init(BUTTON_SCAN);
+	}
+}
 
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 /* Delegate the vendor-specific events to their handlers, each handler is given the event from
@@ -1247,13 +1460,8 @@ int main(void)
 	 * so a remote central can connect and disconnect repeatedly while the
 	 * broadcast continues.
 	 */
-	printk("Press button 0 to toggle connectable advertising as \"%s\" and \"%s\"\n",
-	       CONN_EXT_ADV_NAME, CONN_LEGACY_ADV_NAME);
-
-	err = button_adv_init();
-	if (err != 0) {
-		printk("Button 0 not available (err %d)\n", err);
-	}
+	printk("Connectable advertising as \"%s\" and \"%s\" is off\n", CONN_EXT_ADV_NAME,
+	       CONN_LEGACY_ADV_NAME);
 
 	if (IS_ENABLED(CONFIG_CHAN_MAP_UPDATE)) {
 		chan_map_init();
@@ -1267,6 +1475,16 @@ int main(void)
 		return 0;
 	}
 #endif /* CONFIG_BT_HCI_VS_EVT_USER */
+
+	buttons_init();
+
+#if defined(CONFIG_BT_OBSERVER)
+	bt_le_scan_cb_register(&scan_cb);
+
+	if (scan_user) {
+		(void)k_work_submit(&scan_update_work);
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	for (size_t i = 0U; i < ARRAY_SIZE(send_pcm_data); i++) {
 		/* Initialize mock data */

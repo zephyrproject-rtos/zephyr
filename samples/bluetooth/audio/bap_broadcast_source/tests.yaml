@@ -71,6 +71,21 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: samples_bluetooth_audio_bap_broadcast_source_prj_conf_overlay-interleaved_conf
+  sample.bluetooth.audio.bap_broadcast_source.scanning.bsim:
+    depends_on: bsim
+    build_only: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    sysbuild: true
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-bt_ll_sw_split.conf;overlay-scan.conf"
+      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE="overlay-scan.conf"
+      # Note the last provided EXTRA_CONF_FILE definition will be used by cmake
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_audio_bap_broadcast_source_prj_conf_overlay-scan_conf
   sample.bluetooth.audio.bap_broadcast_source.emulated_input.bsim:
     depends_on: bsim
     build_only: true

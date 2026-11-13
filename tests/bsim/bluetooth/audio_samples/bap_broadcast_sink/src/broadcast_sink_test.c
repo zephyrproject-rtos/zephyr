@@ -76,6 +76,30 @@ static void test_broadcast_sink_sample_tick(bs_time_t HW_device_time)
 	}
 }
 
+static void test_broadcast_sink_no_loss_tick(bs_time_t HW_device_time)
+{
+	extern uint64_t total_rx_iso_packet_count;
+	size_t loss_cnt = 0U;
+
+	ARG_UNUSED(HW_device_time);
+
+	for (size_t i = 0U; i < ARRAY_SIZE(rx_streams); i++) {
+		loss_cnt += rx_streams[i].reporting_info.loss_cnt +
+			    rx_streams[i].reporting_info.error_cnt;
+	}
+
+	bs_trace_info_time(2, "%" PRIu64 " packets received, %zu lost or with errors\n",
+			   total_rx_iso_packet_count, loss_cnt);
+
+	if (total_rx_iso_packet_count >= PASS_THRESHOLD && loss_cnt == 0U) {
+		PASS("broadcast_sink_no_loss PASSED\n");
+		bs_trace_exit("Done, disconnecting from simulation\n");
+	} else {
+		FAIL("broadcast_sink_no_loss FAILED (%" PRIu64 " received, %zu lost or with errors)\n",
+		     total_rx_iso_packet_count, loss_cnt);
+	}
+}
+
 static void test_broadcast_sink_resync_init(void)
 {
 	bst_ticker_set_period(RESYNC_POLL_PERIOD_US);
@@ -138,6 +162,15 @@ static const struct bst_test_instance test_sample[] = {
 			      "many ISO packets have been received correctly",
 		.test_pre_init_f = test_broadcast_sink_sample_init,
 		.test_tick_f = test_broadcast_sink_sample_tick,
+	},
+	{
+		.test_id = "bap_broadcast_sink_no_loss",
+		.test_descr = "Test based on the broadcast audio sink sample. "
+			      "It expects to be connected to a compatible broadcast audio source, "
+			      "waits for " STR(WAIT_TIME) " seconds, and checks that ISO packets "
+			      "have been received and that none was lost or had errors",
+		.test_pre_init_f = test_broadcast_sink_sample_init,
+		.test_tick_f = test_broadcast_sink_no_loss_tick,
 	},
 	{
 		.test_id = "bap_broadcast_sink_resync",
