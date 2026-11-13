@@ -33,6 +33,12 @@ TRACING_BACKEND_DEFINE(test_fanout_backend, test_backend_api);
 
 K_SEM_DEFINE(fanout_sem, 0, 1);
 
+/**
+ * @brief Verify trace data reaches every registered backend.
+ *
+ * @ingroup tracing_api_tests
+ * @verifies ZEP-SRS-10-9
+ */
 ZTEST(tracing_backend_fanout, test_second_backend_receives)
 {
 	atomic_set(&fanout_bytes, 0);

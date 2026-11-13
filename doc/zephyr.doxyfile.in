@@ -1117,6 +1117,7 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
 			 @ZEPHYR_BASE@/tests/subsys/logging \
 			 @ZEPHYR_BASE@/tests/subsys/pm \
 			 @ZEPHYR_BASE@/tests/subsys/fs/fs_api \
+			 @ZEPHYR_BASE@/tests/subsys/tracing \
 			 @ZEPHYR_BASE@/kernel/ \
                          @DOXY_REQ_INPUT@ \
 
