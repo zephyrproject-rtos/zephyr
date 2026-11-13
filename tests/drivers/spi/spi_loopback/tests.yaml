@@ -58,6 +58,7 @@ tests:
       - esp32h2_devkitm
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - esp8684_devkitm
+      - pic32cm_jh01_cpro
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
@@ -83,6 +84,7 @@ tests:
       - pic32cx_sg41_cult
       - pic32cm_gc00_cpro
       - pic32cz_ca80_cult
+      - pic32cm_jh01_cpro
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
