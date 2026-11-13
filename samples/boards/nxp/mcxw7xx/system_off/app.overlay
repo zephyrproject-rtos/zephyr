@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* LPTMR0 is the PM system timer on MCXW7x. Without PM the system timer is
+ * SysTick, so release LPTMR0 to the counter driver for the timed wakeup.
+ */
+/ {
+	chosen {
+		/delete-property/ zephyr,system-timer;
+	};
+};

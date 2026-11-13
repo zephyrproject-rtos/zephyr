@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "NXP MCXW7x system off sample"
+
+choice
+	prompt "System off wakeup source"
+	default SAMPLE_SYSTEM_OFF_WAKEUP_TIMER
+	help
+	  Select how the SoC is woken from system off.
+
+config SAMPLE_SYSTEM_OFF_WAKEUP_TIMER
+	bool "Timed wakeup"
+	help
+	  Wake after a fixed delay using a low-power timer.
+
+config SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON
+	bool "Button wakeup"
+	help
+	  Wake on a user button press.
+
+endchoice
+
+config SAMPLE_APP_TEST_CYCLES
+	int "Number of system-off cycles to execute"
+	range 1 1000
+	default 10
+	help
+	  Number of times the sample arms the wakeup source and enters system
+	  off before it stops. The completed cycle count is kept in a register
+	  file register across each wake reset so a test harness can confirm
+	  every wakeup happened.
+
+source "Kconfig.zephyr"
