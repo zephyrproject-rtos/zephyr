@@ -933,6 +933,11 @@ static void nxp_s32_msg_data_to_zcan_frame(Canexcel_RxFdMsg msg_data,
 		frame->flags |= CAN_FRAME_BRS;
 	}
 
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if ((frame->flags & CAN_FRAME_FDF) == 0U && frame->dlc > CAN_MAX_DLC) {
+		frame->dlc = CAN_MAX_DLC;
+	}
+
 	if (!!(msg_data.Header.Id & CANXL_TX_HEADER_RTR_MASK)) {
 		frame->flags |= CAN_FRAME_RTR;
 	} else {
@@ -977,6 +982,11 @@ static void nxp_s32_msg_data_to_zcan_frame(uint32_t *msg_data,
 
 	if (!!(msg_data[RX_CONTROL] & CANXL_TX_HEADER_BRS_MASK)) {
 		frame->flags |= CAN_FRAME_BRS;
+	}
+
+	/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+	if ((frame->flags & CAN_FRAME_FDF) == 0U && frame->dlc > CAN_MAX_DLC) {
+		frame->dlc = CAN_MAX_DLC;
 	}
 
 	if (!!(msg_data[RX_ID] & CANXL_TX_HEADER_RTR_MASK)) {

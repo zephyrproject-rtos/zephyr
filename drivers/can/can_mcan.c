@@ -751,6 +751,11 @@ static void can_mcan_get_message(const struct device *dev, uint16_t fifo_offset,
 			frame.flags |= CAN_FRAME_ESI;
 		}
 
+		/* A classical CAN frame with a DLC greater than 8 carries 8 data bytes */
+		if ((frame.flags & CAN_FRAME_FDF) == 0U && frame.dlc > CAN_MAX_DLC) {
+			frame.dlc = CAN_MAX_DLC;
+		}
+
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 		frame.timestamp = hdr.rxts;
 #endif /* CONFIG_CAN_RX_TIMESTAMP */
