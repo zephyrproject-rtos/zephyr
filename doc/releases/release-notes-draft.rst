@@ -177,6 +177,12 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Serial
+
+  * :c:func:`uart_fifo_read_flagged` reads received data together with the error flags of each
+    byte, so that protocols such as DMX512 can tell which byte a break, framing error, or parity
+    error belongs to.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?

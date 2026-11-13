@@ -62,6 +62,19 @@ volatile struct pl011_regs *get_uart(const struct device *dev)
 #define PL011_FBRD_BAUD_DIVFRAC		0x3f
 #define PL011_FBRD_WIDTH		6u
 
+/* PL011 Data register
+ *
+ * A read of DR returns the received byte in the low 8 bits together with the
+ * error status of that same byte in bits 8..11, so the error is inherently
+ * associated with the byte it applies to (ARM DDI 0183, UARTDR). The SBSA
+ * generic UART keeps this layout (ARM DEN0094, Appendix B).
+ */
+#define PL011_DR_DATA_MASK	0xffU	/* received byte */
+#define PL011_DR_FE		BIT(8)	/* framing error */
+#define PL011_DR_PE		BIT(9)	/* parity error */
+#define PL011_DR_BE		BIT(10)	/* break error */
+#define PL011_DR_OE		BIT(11)	/* overrun error */
+
 /* PL011 Receive status register / error clear register */
 #define PL011_RSR_ECR_FE	BIT(0)	/* framing error */
 #define PL011_RSR_ECR_PE	BIT(1)	/* parity error */

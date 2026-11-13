@@ -91,6 +91,10 @@ __subsystem struct uart_driver_api {
 	int (*fifo_read_u16)(const struct device *dev, uint16_t *rx_data, const int size);
 #endif
 
+	/** Interrupt driven FIFO read function reporting per-byte error flags */
+	int (*fifo_read_flagged)(const struct device *dev, uint8_t *rx_data, uint8_t *flags,
+				 const int size);
+
 	/** Interrupt driven transfer enabling function */
 	void (*irq_tx_enable)(const struct device *dev);
 
@@ -294,6 +298,26 @@ static inline int uart_fifo_read_u16(const struct device *dev, uint16_t *rx_data
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(rx_data);
+	ARG_UNUSED(size);
+	return -ENOTSUP;
+#endif
+}
+
+static inline int uart_fifo_read_flagged(const struct device *dev, uint8_t *rx_data,
+					 uint8_t *flags, const int size)
+{
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	const struct uart_driver_api *api = DEVICE_API_GET(uart, dev);
+
+	if (api->fifo_read_flagged == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->fifo_read_flagged(dev, rx_data, flags, size);
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(rx_data);
+	ARG_UNUSED(flags);
 	ARG_UNUSED(size);
 	return -ENOTSUP;
 #endif
