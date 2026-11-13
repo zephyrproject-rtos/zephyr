@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC2209 tmc22xx)
+add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC2300 tmc2300)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC50XX tmc50xx)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC51XX tmc51xx)
 add_subdirectory_ifdef(CONFIG_STEPPER_ADI_TMC522X tmc522x)

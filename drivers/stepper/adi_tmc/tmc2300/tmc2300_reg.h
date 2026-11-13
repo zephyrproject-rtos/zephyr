@@ -1,0 +1,49 @@
+/**
+ * @file drivers/stepper/adi_tmc/tmc2300/tmc2300_reg.h
+ *
+ * @brief TMC2300 Registers
+ */
+
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Swarovski Optik AG & Co. KG
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_STEPPER_ADI_TMC_TMC2300_TMC2300_REG_H_
+#define ZEPHYR_DRIVERS_STEPPER_ADI_TMC_TMC2300_TMC2300_REG_H_
+
+#include <zephyr/sys/util.h>
+
+#define TMC2300_GCONF      0x00U
+#define TMC2300_GSTAT      0x01U
+#define TMC2300_IFCNT      0x02U
+#define TMC2300_IOIN       0x06U
+#define TMC2300_IHOLD_IRUN 0x10U
+#define TMC2300_TPOWERDOWN 0x11U
+#define TMC2300_CHOPCONF   0x6CU
+
+#define TMC2300_GCONF_EXTCAP         BIT(1)
+#define TMC2300_GCONF_MULTISTEP_FILT BIT(6)
+
+#define TMC2300_GSTAT_RESET   BIT(0)
+#define TMC2300_GSTAT_DRV_ERR BIT(1)
+
+#define TMC2300_IFCNT_MASK GENMASK(7, 0)
+
+#define TMC2300_IOIN_STEPPER      BIT(5)
+#define TMC2300_IOIN_MODE         BIT(7)
+#define TMC2300_IOIN_VERSION_MASK GENMASK(31, 24)
+#define TMC2300_IOIN_VERSION      0x40U
+
+#define TMC2300_IHOLD_IRUN_IHOLD_MASK      GENMASK(4, 0)
+#define TMC2300_IHOLD_IRUN_IRUN_MASK       GENMASK(12, 8)
+#define TMC2300_IHOLD_IRUN_IHOLDDELAY_MASK GENMASK(19, 16)
+
+#define TMC2300_CHOPCONF_ENABLEDRV BIT(0)
+#define TMC2300_CHOPCONF_MRES_MASK GENMASK(27, 24)
+#define TMC2300_CHOPCONF_DEDGE     BIT(29)
+
+/* CHOPCONF reset default: intpol=1, MRES=32 microsteps, TBL=%01, enabledrv=1 */
+#define TMC2300_CHOPCONF_RESET 0x13008001U
+
+#endif /* ZEPHYR_DRIVERS_STEPPER_ADI_TMC_TMC2300_TMC2300_REG_H_ */
