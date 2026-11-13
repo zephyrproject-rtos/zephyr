@@ -1,6 +1,8 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Renesas Electronics Corporation
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +14,75 @@
 #include "usbh_desc.h"
 
 LOG_MODULE_REGISTER(usbh_desc, CONFIG_USBH_LOG_LEVEL);
+
+const void *usbh_desc_get_bos(const struct usb_device *const udev)
+{
+	return udev->bos_desc;
+}
+
+static inline bool
+usbh_desc_validate_capability(const struct usb_bos_descriptor *const bos_desc,
+			      const struct usb_bos_capability_header *const cap_header)
+{
+	return !((cap_header == NULL) || (((uintptr_t)cap_header < (uintptr_t)bos_desc)) ||
+		 ((uintptr_t)cap_header >= (uintptr_t)bos_desc + bos_desc->wTotalLength) ||
+		 ((uintptr_t)cap_header + cap_header->bLength >
+		  (uintptr_t)bos_desc + bos_desc->wTotalLength) ||
+		 (cap_header->bDescriptorType != USB_DESC_DEVICE_CAPABILITY));
+}
+
+const void *usbh_desc_get_next_capability(const struct usb_bos_descriptor *const bos_desc,
+					  const void *const seek_desc, uint8_t capability)
+{
+	struct usb_bos_capability_header *cap_header;
+	const struct usb_desc_header *next_desc = (struct usb_desc_header *)bos_desc;
+	int i = 0;
+
+	/* Seek to expected descriptor, verify descriptor chain */
+	if (seek_desc != bos_desc) {
+		for (; i < bos_desc->bNumDeviceCaps; i++) {
+			next_desc = usbh_desc_get_next(next_desc);
+			cap_header = (struct usb_bos_capability_header *)next_desc;
+			if (!usbh_desc_validate_capability(bos_desc, cap_header)) {
+				return NULL;
+			}
+			/* Found seek descriptor */
+			if (next_desc == seek_desc) {
+				i++;
+				break;
+			}
+		}
+	}
+
+	/* seek_descriptor was not found */
+	if ((i >= bos_desc->bNumDeviceCaps) || (next_desc != seek_desc)) {
+		return NULL;
+	}
+
+	/* Get next descriptor */
+	for (; i < bos_desc->bNumDeviceCaps; i++) {
+		next_desc = usbh_desc_get_next(next_desc);
+		cap_header = (struct usb_bos_capability_header *)next_desc;
+		if (!usbh_desc_validate_capability(bos_desc, cap_header)) {
+			return NULL;
+		}
+		if (capability == 0) {
+			/* Found next capability */
+			break;
+		}
+		/* Found capability of expected type */
+		if (cap_header->bDevCapabilityType == capability) {
+			break;
+		}
+	}
+
+	/* End of chain, expected descriptor was not found*/
+	if (i >= bos_desc->bNumDeviceCaps) {
+		return NULL;
+	}
+
+	return next_desc;
+}
 
 bool usbh_desc_is_valid(const void *const desc,
 			const size_t size, const uint8_t type)
