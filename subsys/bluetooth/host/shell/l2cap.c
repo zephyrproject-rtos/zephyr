@@ -549,7 +549,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(ecred-connect, NULL, "<psm (hex)> [sec_level (dec)]",
 		cmd_ecred_connect, 2, 1),
 	SHELL_CMD_ARG(ecred-reconfigure, NULL, "<mtu (dec)>",
-		cmd_ecred_reconfigure, 1, 1),
+		cmd_ecred_reconfigure, 2, 0),
 #endif /* CONFIG_BT_L2CAP_ECRED */
 	SHELL_SUBCMD_SET_END
 );
