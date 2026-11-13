@@ -163,6 +163,10 @@
 	status = "okay";
 };
 
+&osc32 {
+	status = "okay";
+};
+
 &sosc_clk {
 	clock-frequency = <DT_FREQ_M(8)>;
 	status = "okay";
