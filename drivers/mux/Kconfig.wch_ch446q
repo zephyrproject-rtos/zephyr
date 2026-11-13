@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_WCH_CH446Q
+	bool "WCH CH446Q analog crosspoint switch MUX driver"
+	default y
+	depends on DT_HAS_WCH_CH446Q_ENABLED
+	select GPIO
+	help
+	  Enable the WCH CH446Q 8x16 analog crosspoint switch, in serial
+	  address mode, as a MUX controller. Each X line is a control line
+	  whose state is the bitmask of the Y lines it connects to.
+
+if MUX_WCH_CH446Q
+
+config MUX_WCH_CH446Q_INIT_PRIORITY
+	int "CH446Q init priority"
+	default 60
+	help
+	  Device initialization priority. The CH446Q is driven through GPIO
+	  lines, often on an I2C GPIO expander, so it must initialize later
+	  than that GPIO controller while still being earlier than any MUX
+	  consumer that references it.
+
+endif # MUX_WCH_CH446Q
