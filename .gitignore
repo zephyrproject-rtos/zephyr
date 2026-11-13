@@ -108,6 +108,7 @@ KconfigBasic.txt
 KconfigBasicNoModules.txt
 KconfigFormat.txt
 KconfigHWMv2.txt
+KconfigPrefix.txt
 KeepSorted.txt
 LicenseAndCopyrightCheck.txt
 MaintainersFormat.txt

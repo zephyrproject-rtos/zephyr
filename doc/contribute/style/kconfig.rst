@@ -101,7 +101,9 @@ The specific formats by subtree:
 * **Tests (/tests)**: Use ``TEST_`` for symbols, this is to prevent conflicts with external
   modules.
 
-* **Boards (/boards)**: Use ``BOARD_`` for symbols.
+* **Boards (/boards)**: Use ``BOARD_`` for symbols (excluding shields).
+
+* **Shields (/boards/shields)**: Use ``SHIELD_`` for symbols.
 
 * **SoCs (/soc)**: Use the most appropriate base for symbols: ``SOC_VENDOR_{SoC vendor}_`` if it
   relates to several families from a SoC vendor, ``SOC_FAMILY_{SoC family}_`` if it
