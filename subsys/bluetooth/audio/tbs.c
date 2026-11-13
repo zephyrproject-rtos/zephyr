@@ -124,13 +124,35 @@ static K_MUTEX_DEFINE(tbs_mutex);
 
 static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst);
 
-#define READ_BUF_SIZE                                                                             \
-	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                             \
-	    MAX((CONFIG_BT_TBS_MAX_CALLS * sizeof(struct bt_tbs_current_call_item) *              \
-		(1U + ARRAY_SIZE(svc_insts))),                                                    \
-		(CONFIG_BT_TBS_BEARER_COUNT * CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH +              \
-		CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH)))
-NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE);
+#define TOTAL_BEARERS (1U /* GTBS */ + ARRAY_SIZE(svc_insts))
+
+#define BEARER_PROVIDER_NAME_MAX_SIZE CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH
+
+/* GTBS contains a union of all calls from all TBS bearers plus its own calls */
+#define BEARER_LIST_CURRENT_CALLS_MAX_SIZE                                                         \
+	((CONFIG_BT_TBS_MAX_CALLS * sizeof(struct bt_tbs_current_call_item)) * TOTAL_BEARERS)
+
+/* GTBS contains a union of all URI supported lists from all TBS bearers plus its own list */
+#define BEARER_URI_SCHEMES_SUPPORTS_LIST_MAX_SIZE                                                  \
+	CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH * TOTAL_BEARERS
+
+#define CALL_FRIENDLY_NAME_MAX_SIZE (1U /* index */ + CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH)
+
+/* Define the buffer size based on the maximum possible characteristic value. Any other
+ * characteristic besides these 4 are either constant size, or a subset of the current call list or
+ * URI schemes list
+ */
+#define READ_BUF_SIZE                                                                              \
+	MAX(BEARER_PROVIDER_NAME_MAX_SIZE,                                                         \
+	    MAX(BEARER_LIST_CURRENT_CALLS_MAX_SIZE,                                                \
+		MAX(BEARER_URI_SCHEMES_SUPPORTS_LIST_MAX_SIZE, CALL_FRIENDLY_NAME_MAX_SIZE)))
+
+BUILD_ASSERT(READ_BUF_SIZE <= BT_ATT_MAX_ATTRIBUTE_LEN,
+	     "Current configuration cannot fit data in a characteristic value (max 512 octets)");
+/* Several functions in this file use string functions on this buffer, so append memory for the NULL
+ * terminator at the end of the buffer to ensure correctness
+ */
+NET_BUF_SIMPLE_DEFINE_STATIC(read_buf, READ_BUF_SIZE + sizeof((char)'\0'));
 
 /* Used to notify app with held calls in case of join */
 static struct bt_tbs_call *held_calls[CONFIG_BT_TBS_MAX_CALLS];
@@ -709,6 +731,9 @@ static bool is_tbs_uri_unique(const char *uri_list, const char *uri_to_search)
 static void net_buf_put_uri_scheme_list(const struct tbs_inst *inst, struct net_buf_simple *buf)
 {
 	net_buf_simple_reset(buf);
+
+	/* Reset all data in the buffer as we want to treat it as a string */
+	(void)memset(buf->data, 0, buf->size);
 
 	net_buf_simple_add_mem(buf, inst->uri_scheme_list, strlen(inst->uri_scheme_list));
 
