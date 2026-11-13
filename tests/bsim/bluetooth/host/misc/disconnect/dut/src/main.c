@@ -50,7 +50,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	LOG_INF("%s: %p %s (reason 0x%02x)", __func__, conn, bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(dconn);
+	bt_conn_drop(&dconn);
 	UNSET_FLAG(is_connected);
 }
 
