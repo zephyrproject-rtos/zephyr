@@ -1968,7 +1968,9 @@ int bt_conn_le_create_synced(const struct bt_le_ext_adv *adv,
  *
  *  This uses the Auto Connection Establishment procedure.
  *  The procedure will continue until a single connection is established or the
- *  procedure is stopped through @ref bt_conn_create_auto_stop.
+ *  procedure is stopped through @ref bt_conn_create_auto_stop. If the Host cannot
+ *  restart the procedure after an RPA rotation, it ends and the connected callback
+ *  reports @ref BT_HCI_ERR_UNSPECIFIED.
  *  To establish connections to all devices in the filter accept list the
  *  procedure should be started again in the connected callback after a
  *  new connection has been established.
@@ -2264,6 +2266,10 @@ struct bt_conn_cb {
 	 *  - @p BT_HCI_ERR_ADV_TIMEOUT High duty cycle directed connectable
 	 *    advertiser started by @ref bt_le_adv_start failed to be connected
 	 *    within the timeout.
+	 *  - @ref BT_HCI_ERR_UNSPECIFIED The Host could not start or restart the
+	 *    initiator of a connection started by @ref bt_conn_le_create or
+	 *    @ref bt_conn_le_create_auto, for example because the Controller
+	 *    refused a new random address at an RPA rotation.
 	 */
 	void (*connected)(struct bt_conn *conn, uint8_t err);
 
