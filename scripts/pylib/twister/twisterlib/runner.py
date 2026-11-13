@@ -58,6 +58,11 @@ if sys.platform == 'linux':
 
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
+from twisterlib.diff_filter import (
+    DEFAULT_BUILD_ALL_PATTERNS,
+    find_affecting_change,
+    get_diff_changes,
+)
 from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Harness, HarnessImporter
 from twisterlib.log_helper import log_command
@@ -677,6 +682,15 @@ class ProjectBuilder(FilterBuilder):
     def trace(self) -> bool:
         return self.options.verbose > 2
 
+    def is_affected_by_diff(self) -> bool:
+        if self.env.diff_changes is None:
+            return True
+        reason = find_affecting_change(
+            self.env.diff_changes, self.instance.testsuite.source_dir, self.instance.build_dir
+        )
+        logger.debug(f"{self.instance.name}: --diff-base: {reason or 'not changed'}")
+        return reason is not None
+
     def log_info(self, filename, inline_logs, log_only_failed=False):
         filename = os.path.abspath(os.path.realpath(filename))
         if inline_logs:
@@ -840,6 +854,12 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug(f"filtering {self.instance.name}")
                     self.instance.status = TwisterStatus.FILTER
                     self.instance.reason = RUNTIME_FILTER_REASON
+                    results.filtered_runtime_increment()
+                    self.instance.add_missing_case_status(TwisterStatus.FILTER)
+                    next_op = 'report'
+                elif not self.is_affected_by_diff():
+                    self.instance.status = TwisterStatus.FILTER
+                    self.instance.reason = "not changed (--diff-base)"
                     results.filtered_runtime_increment()
                     self.instance.add_missing_case_status(TwisterStatus.FILTER)
                     next_op = 'report'
@@ -2040,6 +2060,11 @@ class TwisterRunner:
             logger.info(f"JOBS: {self.jobs}")
 
         self.update_counting_before_pipeline()
+
+        # Get the changes once, before the worker processes start
+        self.env.diff_changes = get_diff_changes(
+            self.options.diff_base, DEFAULT_BUILD_ALL_PATTERNS + self.options.diff_force_build_on
+        ) if self.options.diff_base else None
 
         monitor, console_ui, console_ui_thread = self._start_monitors()
 

@@ -490,6 +490,14 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         "--cmake-only", action="store_true",
         help="Only run cmake, do not build or run.")
 
+    parser.add_argument(
+        "--diff-base", metavar="REF",
+        help="Only build configurations that use a file changed since REF.")
+
+    parser.add_argument(
+        "--diff-force-build-on", metavar="REGEX", action="append", default=[],
+        help="Build all if a changed file matches REGEX. Kconfig and CMake files always do.")
+
     coverage_group.add_argument("--enable-coverage", action="store_true",
                      help="Enable code coverage collection using gcov.")
 
