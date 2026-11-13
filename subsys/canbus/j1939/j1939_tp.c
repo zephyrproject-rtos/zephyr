@@ -1345,31 +1345,35 @@ static bool j1939_tp_buffer_allocate(j1939_counter_t sizeMessage, uint8_t **buff
 	}
 
 #if (CONFIG_J1939TP_NUM_SMALL_BUFFERS > 0)
-	if ((slab == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_SMALL_SIZE)) {
+	if ((ptr == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_SMALL_SIZE)) {
 		slab = &j1939_tp_small_slab;
 		slabSize = CONFIG_J1939TP_BUFFER_SMALL_SIZE;
+		(void)k_mem_slab_alloc(slab, &ptr, K_NO_WAIT);
 	}
 #endif
 #if (CONFIG_J1939TP_NUM_MEDIUM_BUFFERS > 0)
-	if ((slab == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_MEDIUM_SIZE)) {
+	if ((ptr == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_MEDIUM_SIZE)) {
 		slab = &j1939_tp_medium_slab;
 		slabSize = CONFIG_J1939TP_BUFFER_MEDIUM_SIZE;
+		(void)k_mem_slab_alloc(slab, &ptr, K_NO_WAIT);
 	}
 #endif
 #if (CONFIG_J1939TP_NUM_LARGE_BUFFERS > 0)
-	if ((slab == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_LARGE_SIZE)) {
+	if ((ptr == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_LARGE_SIZE)) {
 		slab = &j1939_tp_large_slab;
 		slabSize = CONFIG_J1939TP_BUFFER_LARGE_SIZE;
+		(void)k_mem_slab_alloc(slab, &ptr, K_NO_WAIT);
 	}
 #endif
 #if (CONFIG_J1939TP_NUM_MAX_BUFFERS > 0)
-	if ((slab == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_MAX_SIZE)) {
+	if ((ptr == NULL) && (sizeMessage <= CONFIG_J1939TP_BUFFER_MAX_SIZE)) {
 		slab = &j1939_tp_max_slab;
 		slabSize = CONFIG_J1939TP_BUFFER_MAX_SIZE;
+		(void)k_mem_slab_alloc(slab, &ptr, K_NO_WAIT);
 	}
 #endif
 
-	if ((slab == NULL) || (k_mem_slab_alloc(slab, &ptr, K_NO_WAIT) != 0)) {
+	if (ptr == NULL) {
 		return false;
 	}
 
