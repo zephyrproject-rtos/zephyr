@@ -212,9 +212,12 @@ static int tach_rts5912_init(const struct device *dev)
 	k_sem_init(&data->sem, 0, 1);
 #endif
 
-	/* write one clear the status */
+	/* Stop counter and mask interrupts before write one clear of status
+	 * and enabling irq.
+	 */
+	tach->ctrl = 0;
+	tach->int_en = 0;
 	tach->status = TACHO_STS_LIMIT | TACHO_STS_CHG | TACHO_STS_CNTRDY;
-	tach->ctrl &= ~TACHO_CTRL_SELEDGE_Msk;
 	tach->ctrl = ((0x01ul << TACHO_CTRL_SELEDGE_Pos) | TACHO_CTRL_READMODE | TACHO_CTRL_EN);
 
 	cfg->irq_config_func();
@@ -234,6 +237,7 @@ static DEVICE_API(sensor, tach_rts5912_driver_api) = {
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), tach_rts5912_isr,     \
 			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		k_irq_clear_pending(DT_INST_IRQN(inst));                                           \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}                                                                                          \
                                                                                                    \
