@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NPCM Timer and Watchdog (TWD)
+
+compatible: "nuvoton,npcm-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nuvoton,scfg:
+    type: phandle
+    required: true
+    description: |
+      System configuration (SCFG) node, used to control the debug freeze
+      of the watchdog counter.
