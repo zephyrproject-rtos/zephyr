@@ -496,6 +496,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 
 void bt_conn_connected(struct bt_conn *conn);
 
+/* Disconnect a new BR/EDR link that the Host does not accept, and tell the application */
+void bt_conn_br_refuse(struct bt_conn *conn, uint8_t reason);
+
 void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status);
 
 void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
