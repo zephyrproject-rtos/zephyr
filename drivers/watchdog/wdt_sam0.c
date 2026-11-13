@@ -114,10 +114,10 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 		return -ENOTSUP;
 	}
 
-	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
-		LOG_ERR("Pause when halted by debugger not supported");
-		return -ENOTSUP;
-	}
+	/*
+	 * WDT_OPT_PAUSE_HALTED_BY_DBG needs nothing: on every SAM0 family the WDT halts while the
+	 * CPU is halted in debug mode (datasheet, WDT "Debug Operation").
+	 */
 
 	/* Enable watchdog */
 	wdt_sam0_set_enable(1);
