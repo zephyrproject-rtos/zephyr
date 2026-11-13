@@ -58,6 +58,8 @@ struct dma_mcux_edma_config {
 	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
+	/* Bit n set: channel n is not in dma-channel-mask, the driver must not use it */
+	uint32_t reserved_channel_mask;
 };
 
 struct dma_mcux_channel_transfer_edma_settings {
@@ -205,6 +207,32 @@ static ALWAYS_INLINE uint32_t dma_mcux_edma_remove_channel_gap(const struct devi
 #define dma_mcux_edma_remove_channel_gap(dev, channel) channel
 #endif /* DMA_MCUX_HAS_CHANNEL_GAP */
 
+/**
+ * @brief Check that a channel exists and that Zephyr can use it.
+ *
+ * The channel index is the DMA API index, before dma_mcux_edma_add_channel_gap().
+ * A channel that is not in the dma-channel-mask devicetree property belongs to
+ * the firmware, to the application or to another core. The driver must not
+ * touch its registers or its data.
+ *
+ * @param dev DMA device.
+ * @param channel DMA API channel index.
+ *
+ * @return true if the channel is in range and not reserved.
+ */
+static ALWAYS_INLINE bool dma_mcux_edma_channel_is_usable(const struct device *dev,
+							  uint32_t channel)
+{
+	const struct dma_mcux_edma_config *config = DEV_CFG(dev);
+
+	if (channel >= (uint32_t)config->dma_channels) {
+		return false;
+	}
+
+	/* The mask covers channels 0..31 only, see the BUILD_ASSERT in DMA_INIT() */
+	return (channel >= 32U) || ((config->reserved_channel_mask & BIT(channel)) == 0U);
+}
+
 static bool data_size_valid(const size_t data_size)
 {
 	return IS_POWER_OF_TWO(data_size) &&
@@ -240,6 +268,14 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 
 static void dma_mcux_edma_irq_handler(const struct device *dev, uint32_t channel)
 {
+	/*
+	 * A reserved channel can share the interrupt line with a Zephyr channel.
+	 * Its owner handles its flags, and the driver has no handle for it.
+	 */
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return;
+	}
+
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 	uint32_t flag = EDMA_GetChannelStatusFlags(DEV_BASE(dev), hw_channel);
 
@@ -701,8 +737,8 @@ static inline int dma_mcux_edma_validate_cfg(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (channel >= DEV_CFG(dev)->dma_channels) {
-		LOG_ERR("out of DMA channel %d", channel);
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		LOG_ERR("DMA channel %d is out of range or reserved", channel);
 		return -EINVAL;
 	}
 	LOG_DBG("channel is %d", channel);
@@ -864,6 +900,10 @@ static int dma_mcux_edma_configure(const struct device *dev, uint32_t channel,
 
 static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 {
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return -EINVAL;
+	}
+
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	LOG_DBG("START TRANSFER");
@@ -902,6 +942,10 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 	struct dma_mcux_edma_data *data = DEV_DATA(dev);
 	uint32_t hw_channel;
 
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return -EINVAL;
+	}
+
 	hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
 	data->data_cb[channel].transfer_settings.valid = false;
@@ -921,6 +965,10 @@ static int dma_mcux_edma_stop(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return -EINVAL;
+	}
+
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	if (data->transfer_settings.transfer_type == kEDMA_MemoryToMemory &&
@@ -938,6 +986,10 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 
 static int dma_mcux_edma_resume(const struct device *dev, uint32_t channel)
 {
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return -EINVAL;
+	}
+
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
 	if (!data->busy) {
@@ -1098,6 +1150,10 @@ static int dma_mcux_edma_reload(const struct device *dev, uint32_t channel,
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	int ret = 0;
 
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return -EINVAL;
+	}
+
 	/* Lock the channel configuration */
 	const unsigned int key = irq_lock();
 
@@ -1150,6 +1206,10 @@ cleanup:
 static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 				    struct dma_status *status)
 {
+	if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+		return -EINVAL;
+	}
+
 	uint32_t hw_channel = dma_mcux_edma_add_channel_gap(dev, channel);
 
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings =
@@ -1214,6 +1274,14 @@ static bool dma_mcux_edma_channel_filter(const struct device *dev,
 					 int channel_id, void *param)
 {
 	enum dma_channel_filter *filter = (enum dma_channel_filter *)param;
+
+	/*
+	 * Init marks the reserved channels as allocated. This check keeps them
+	 * out of dma_request_channel() also after a dma_release_channel() on them.
+	 */
+	if (!dma_mcux_edma_channel_is_usable(dev, (uint32_t)channel_id)) {
+		return false;
+	}
 
 	if (filter && *filter == DMA_CHANNEL_PERIODIC) {
 		if (channel_id > 3) {
@@ -1290,6 +1358,14 @@ static int dma_mcux_edma_init(const struct device *dev)
 	data->dma_ctx.magic = DMA_MAGIC;
 	data->dma_ctx.dma_channels = config->dma_channels;
 	data->dma_ctx.atomic = data->channels_atomic;
+
+	/* A reserved channel is always allocated, dma_request_channel() skips it */
+	for (uint32_t channel = 0U; channel < (uint32_t)config->dma_channels; channel++) {
+		if (!dma_mcux_edma_channel_is_usable(dev, channel)) {
+			atomic_set_bit(data->channels_atomic, channel);
+		}
+	}
+
 	return 0;
 }
 
@@ -1362,6 +1438,12 @@ static int dma_mcux_edma_init(const struct device *dev)
 #define DMA_MCUX_EDMA_CHANNEL_GAP(n)
 #endif
 
+/*
+ * dma-channel-mask lists the channels that Zephyr can use. The driver keeps the
+ * complement, so a node without the property has no reserved channel.
+ */
+#define DMA_MCUX_EDMA_RESERVED_MASK(n) (~(uint32_t)DT_INST_PROP_OR(n, dma_channel_mask, UINT32_MAX))
+
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 #define DMA_MCUX_EDMA_MUX(idx, n)						\
 	(DMAMUX_Type *)DT_INST_REG_ADDR_BY_IDX(n, UTIL_INC(idx))
@@ -1409,6 +1491,9 @@ static int dma_mcux_edma_init(const struct device *dev)
  * define the dma
  */
 #define DMA_INIT(n)								\
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(n, dma_channel_mask) ||		\
+		     DT_INST_PROP(n, dma_channels) <= 32,			\
+		     "dma-channel-mask covers 32 channels only");		\
 	DMAMUX_BASE_INIT_DEFINE(n)						\
 	static void dma_imx_config_func_##n(const struct device *dev);		\
 	static __aligned(DMA_TCD_ALIGN_SIZE) EDMA_TCDPOOL_CACHE_ATTR edma_tcd_t	\
@@ -1429,6 +1514,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.tcdpool = dma_tcdpool##n,					\
+		.reserved_channel_mask = DMA_MCUX_EDMA_RESERVED_MASK(n),	\
 	};									\
 										\
 	static struct call_back							\
