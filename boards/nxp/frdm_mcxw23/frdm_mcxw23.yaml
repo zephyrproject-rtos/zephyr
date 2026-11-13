@@ -25,4 +25,5 @@ supported:
   - spi
   - dma
   - gint
+  - hwinfo
 vendor: nxp
