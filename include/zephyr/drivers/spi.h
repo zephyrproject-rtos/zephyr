@@ -787,7 +787,7 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 	uint32_t tx_bytes;
 	uint32_t rx_bytes;
 
-	if (error) {
+	if (error < 0) {
 		SPI_STATS_TRANSFER_ERROR_INC(dev);
 	}
 
