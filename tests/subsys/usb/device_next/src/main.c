@@ -86,7 +86,7 @@ ZTEST(device_next, test_get_desc_string)
 	udev = usbh_device_get_any(&uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
-	buf = usbh_xfer_buf_alloc(udev, UINT8_MAX);
+	buf = usbh_xfer_buf_alloc(udev, USB_CONTROL_EP_IN, UINT8_MAX, K_NO_WAIT);
 	zassert_not_null(udev, "Failed to allocate buffer");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -131,7 +131,7 @@ ZTEST(device_next, test_vendor_control_in)
 	udev = usbh_device_get_any(&uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
-	buf = usbh_xfer_buf_alloc(udev, wLength);
+	buf = usbh_xfer_buf_alloc(udev, USB_CONTROL_EP_IN, wLength, K_NO_WAIT);
 	zassert_not_null(udev, "Failed to allocate buffer");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));
@@ -189,7 +189,7 @@ ZTEST(device_next, test_vendor_control_out)
 	udev = usbh_device_get_any(&uhs_ctx);
 	zassert_not_null(udev, "No USB device available");
 
-	buf = usbh_xfer_buf_alloc(udev, wLength);
+	buf = usbh_xfer_buf_alloc(udev, USB_CONTROL_EP_OUT, wLength, K_NO_WAIT);
 	zassert_not_null(udev, "Failed to allocate buffer");
 
 	err = k_mutex_lock(&udev->mutex, K_MSEC(200));

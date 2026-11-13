@@ -42,7 +42,7 @@ static int usbh_foo_init(struct usbh_class_data *const c_data)
 {
 	struct usbh_foo_priv *priv = c_data->priv;
 
-	LOG_DBG("initializing %p, priv value 0x%x", c_data, *priv);
+	LOG_DBG("initializing %p, priv value 0x%x", c_data, priv->state);
 
 	zassert_equal(priv->state, FOO_CLASS_PRIV_INACTIVE,
 		      "Class should be initialized only once");
