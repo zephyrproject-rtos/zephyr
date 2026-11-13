@@ -17,8 +17,10 @@
  * HAL includes go first to
  * avoid BIT macro redefinition
  */
+#include <esp_cpu.h>
 #include <esp_efuse.h>
 #include <esp_flash.h>
+#include <esp_memory_utils.h>
 #include <spi_flash_mmap.h>
 #include <soc/spi_struct.h>
 #include <esp_flash_encrypt.h>
@@ -58,9 +60,17 @@ struct flash_esp32_dev_config {
 	spi_dev_t *controller;
 };
 
-#ifdef CONFIG_ESP_FLASH_ASYNC
+#if defined(CONFIG_ESP_FLASH_ASYNC) || defined(CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF)
+#define FLASH_HAS_REQ 1
+#endif
 
-#ifdef CONFIG_ESP_FLASH_ASYNC_WORK
+#if defined(CONFIG_ESP_FLASH_ASYNC_WORK) || defined(CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF)
+#define FLASH_HAS_WORKQ 1
+#endif
+
+#ifdef FLASH_HAS_REQ
+
+#ifdef FLASH_HAS_WORKQ
 K_THREAD_STACK_DEFINE(esp_flash_workqueue_stack, CONFIG_ESP_FLASH_ASYNC_WORK_STACK_SIZE);
 static struct k_work_q esp_flash_workqueue;
 #endif
@@ -89,11 +99,11 @@ enum host_remote_cmd {
 	CMD_RESPONSE
 };
 #endif
-#endif /* CONFIG_ESP_FLASH_ASYNC */
+#endif /* FLASH_HAS_REQ */
 
 struct flash_esp32_dev_data {
 #ifdef CONFIG_MULTITHREADING
-#ifdef CONFIG_ESP_FLASH_ASYNC
+#ifdef FLASH_HAS_REQ
 	const struct device *dev;
 	struct k_mutex lock;
 	struct flash_req req;
@@ -135,6 +145,45 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 #define flash_esp32_sem_give(dev) do {} while (0)
 
 #endif /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
+
+#ifdef CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF
+/*
+ * External RAM is unreachable while a flash operation has the cache disabled, so a caller
+ * running on a stack in external RAM hands the operation to the flash work queue, whose stack
+ * is in internal RAM. The work queue thread runs the operation directly, as its stack is not in
+ * external RAM.
+ */
+static bool flash_esp32_stack_in_ext_ram(void)
+{
+	return !k_is_in_isr() && esp_ptr_external_ram(esp_cpu_get_sp());
+}
+
+static int flash_esp32_handoff(const struct device *dev, enum flash_op op, off_t addr, void *buf,
+			       size_t len)
+{
+	struct flash_esp32_dev_data *data = dev->data;
+	struct flash_req *req = &data->req;
+	int ret;
+
+	(void)k_mutex_lock(&data->lock, K_FOREVER);
+	req->op = op;
+	req->addr = addr;
+	req->len = len;
+	req->buf = buf;
+
+	ret = k_work_submit_to_queue(&esp_flash_workqueue, &data->work);
+	if (ret < 0) {
+		k_mutex_unlock(&data->lock);
+		return ret;
+	}
+
+	(void)k_sem_take(&data->sync, K_FOREVER);
+	ret = req->result;
+	k_mutex_unlock(&data->lock);
+
+	return ret;
+}
+#endif /* CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF */
 
 #ifdef CONFIG_ESP_FLASH_HOST
 #ifndef CONFIG_MCUBOOT
@@ -423,6 +472,11 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 		}
 	}
 #else
+#ifdef CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF
+	if (flash_esp32_stack_in_ext_ram()) {
+		return flash_esp32_handoff(dev, FLASH_OP_READ, address, buffer, length);
+	}
+#endif
 	flash_esp32_sem_take(dev);
 	ret = flash_esp32_read_check_enc(address, buffer, length);
 	flash_esp32_sem_give(dev);
@@ -451,6 +505,11 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 
 	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
 #else
+#ifdef CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF
+	if (flash_esp32_stack_in_ext_ram()) {
+		return flash_esp32_handoff(dev, FLASH_OP_WRITE, address, (void *)buffer, length);
+	}
+#endif
 	flash_esp32_sem_take(dev);
 
 #ifdef CONFIG_ESP_FLASH_ENCRYPTION
@@ -489,6 +548,11 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 #ifdef CONFIG_MCUBOOT
 	ret = esp_rom_flash_erase_range(start, len);
 #else
+#ifdef CONFIG_ESP_FLASH_PSRAM_STACK_HANDOFF
+	if (flash_esp32_stack_in_ext_ram()) {
+		return flash_esp32_handoff(dev, FLASH_OP_ERASE, start, NULL, len);
+	}
+#endif
 	flash_esp32_sem_take(dev);
 
 #ifdef CONFIG_ESP_FLASH_ENCRYPTION
@@ -610,7 +674,9 @@ static IRAM_ATTR int flash_esp32_erase_async(const struct device *dev, off_t sta
 
 	return req->result;
 }
+#endif /* CONFIG_ESP_FLASH_ASYNC */
 
+#ifdef FLASH_HAS_REQ
 #ifdef CONFIG_ESP_FLASH_HOST
 static void flash_process_request(const struct device *dev, struct flash_req *req)
 {
@@ -687,7 +753,7 @@ static void flash_cpu01_receive_cb(const struct device *ipm, void *user_data, ui
 #endif
 }
 #endif
-#endif /* CONFIG_ESP_FLASH_ASYNC */
+#endif /* FLASH_HAS_REQ */
 
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_esp32_pages_layout = {
@@ -727,17 +793,24 @@ static int flash_esp32_init(const struct device *dev)
 #ifdef CONFIG_MULTITHREADING
 	struct flash_esp32_dev_data *const data = dev->data;
 
-#ifdef CONFIG_ESP_FLASH_ASYNC
+#ifdef FLASH_HAS_REQ
+	data->dev = dev;
 	k_mutex_init(&data->lock);
-	k_sem_init(&data->sem, 0, 1);
 	k_sem_init(&data->sync, 0, 1);
 	k_work_init(&data->work, flash_worker);
+#endif
 
-#ifdef CONFIG_ESP_FLASH_ASYNC_WORK
+#ifdef FLASH_HAS_WORKQ
 	k_work_queue_init(&esp_flash_workqueue);
 	k_work_queue_start(&esp_flash_workqueue, esp_flash_workqueue_stack,
 			   K_THREAD_STACK_SIZEOF(esp_flash_workqueue_stack),
 			   CONFIG_ESP_FLASH_ASYNC_WORK_PRIORITY, NULL);
+#endif
+
+#ifdef CONFIG_ESP_FLASH_ASYNC
+	k_sem_init(&data->sem, 0, 1);
+
+#ifdef CONFIG_ESP_FLASH_ASYNC_WORK
 	k_work_submit_to_queue(&esp_flash_workqueue, &data->work);
 #endif
 

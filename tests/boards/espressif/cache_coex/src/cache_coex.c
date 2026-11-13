@@ -16,6 +16,7 @@
 /* definitions used in Flash & RAM operations */
 #define SPIRAM_ALLOC_SIZE               (24 * 1024)
 #define FLASH_PAGE_TESTED               (1023)
+#define FLASH_PAGE_PSRAM_STACK          (1022)
 #define FLASH_PAGE_OFFSET               (0)
 #define FLASH_BYTE_PATTERN              (0x38)
 #define FLASH_READBACK_LEN              (1024)
@@ -25,6 +26,10 @@
 /* common thread definitions */
 #define STACKSIZE 1024
 #define PRIORITY 7
+
+/* thread running flash operations on a stack placed in external RAM */
+#define PSRAM_STACK_SIZE                (2048)
+#define PSRAM_STACK_DATA_LEN            (64)
 
 static const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 static struct flash_pages_info page_info;
@@ -37,6 +42,15 @@ static bool buffer_ready;
 static bool needs_fill = true;
 static bool unfinished_tasks = true;
 static struct k_spinlock lock;
+
+struct psram_stack_results {
+	bool stack_in_ext_ram;
+	int erase_rc;
+	int write_rc;
+	int read_rc;
+	bool data_ok;
+};
+static struct psram_stack_results psram_stack_result;
 
 struct coex_test_results {
 	bool using_ext_ram;
@@ -246,6 +260,51 @@ static void flash_init(void)
 		TC_ERROR("flash controller not ready\n");
 	}
 	flash_test();
+}
+
+static void psram_stack_flash_op(void *p1, void *p2, void *p3)
+{
+	struct flash_pages_info info;
+	uint8_t wr[PSRAM_STACK_DATA_LEN] = {0};
+	uint8_t rd[PSRAM_STACK_DATA_LEN] = {0};
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	psram_stack_result.stack_in_ext_ram = esp_ptr_external_ram(wr);
+
+	psram_stack_result.erase_rc =
+		flash_get_page_info_by_idx(flash_dev, FLASH_PAGE_PSRAM_STACK, &info);
+	if (psram_stack_result.erase_rc != 0) {
+		return;
+	}
+	for (size_t i = 0; i < sizeof(wr); ++i) {
+		wr[i] = (uint8_t)(i ^ 0x5a);
+	}
+
+	psram_stack_result.erase_rc = flash_erase(flash_dev, info.start_offset, info.size);
+	psram_stack_result.write_rc = flash_write(flash_dev, info.start_offset, wr, sizeof(wr));
+	psram_stack_result.read_rc = flash_read(flash_dev, info.start_offset, rd, sizeof(rd));
+	psram_stack_result.data_ok = (memcmp(wr, rd, sizeof(wr)) == 0);
+}
+
+ZTEST(cache_coex, test_flash_from_psram_stack)
+{
+	static Z_KERNEL_STACK_DEFINE_IN(psram_stack, PSRAM_STACK_SIZE,
+					Z_GENERIC_SECTION(.ext_ram.bss));
+	static struct k_thread psram_stack_thread;
+
+	k_thread_create(&psram_stack_thread, psram_stack, K_KERNEL_STACK_SIZEOF(psram_stack),
+			psram_stack_flash_op, NULL, NULL, NULL, PRIORITY, 0, K_NO_WAIT);
+	zassert_ok(k_thread_join(&psram_stack_thread, K_SECONDS(10)), "flash op did not finish");
+
+	zassert_true(esp_ptr_external_ram(psram_stack), "thread stack is not in external RAM");
+	zassert_true(psram_stack_result.stack_in_ext_ram, "thread is not running on external RAM");
+	zassert_equal(0, psram_stack_result.erase_rc, "flash erase failed");
+	zassert_equal(0, psram_stack_result.write_rc, "flash write failed");
+	zassert_equal(0, psram_stack_result.read_rc, "flash read failed");
+	zassert_true(psram_stack_result.data_ok, "flash read-back mismatch");
 }
 
 ZTEST(cache_coex, test_using_spiram)
