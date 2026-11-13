@@ -24,13 +24,10 @@ LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 #undef DMIC_NRFX_CLOCK_FREQ
-#define DMIC_NRFX_CLOCK_FREQ       MHZ(16)
-#define DMIC_NRFX_AUDIO_CLOCK_FREQ DT_PROP_OR(DT_NODELABEL(audiopll), frequency, 0)
-#define AUDIO_ASSERT_MSG                                                                           \
-	"Clock source ACLK requires frequency property to be set in the audiopll node."
-#define AUDIO_FREQUENCY_DEFINED DT_NODE_HAS_PROP(DT_NODELABEL(audiopll), frequency)
+#define DMIC_NRFX_CLOCK_FREQ MHZ(16)
+#endif
 
-#elif DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+#if DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
 #define AUXPLL_FREQUENCY_SETTING DT_PROP(NODE_AUDIO_AUXPLL, nordic_frequency)
 BUILD_ASSERT((AUXPLL_FREQUENCY_SETTING == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
 		     (AUXPLL_FREQUENCY_SETTING == NRF_AUXPLL_FREQ_DIV_AUDIO_44K1),
@@ -40,6 +37,12 @@ BUILD_ASSERT((AUXPLL_FREQUENCY_SETTING == NRF_AUXPLL_FREQ_DIV_AUDIO_48K) ||
 #define AUDIO_ASSERT_MSG                                                                           \
 	"Clock source ACLK requires nordic_frequency property to be set in the audio_auxpll node."
 #define AUDIO_FREQUENCY_DEFINED DT_NODE_HAS_PROP(DT_NODELABEL(audio_auxpll), nordic_frequency)
+
+#elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
+#define DMIC_NRFX_AUDIO_CLOCK_FREQ DT_PROP_OR(DT_NODELABEL(audiopll), frequency, 0)
+#define AUDIO_ASSERT_MSG                                                                           \
+	"Clock source ACLK requires frequency property to be set in the audiopll node."
+#define AUDIO_FREQUENCY_DEFINED DT_NODE_HAS_PROP(DT_NODELABEL(audiopll), frequency)
 
 #elif CONFIG_CLOCK_CONTROL_NRF
 #define DMIC_NRFX_AUDIO_CLOCK_FREQ                                                                 \
