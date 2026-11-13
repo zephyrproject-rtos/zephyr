@@ -92,6 +92,16 @@ void tracing_trigger_output(bool before_put_is_empty);
  */
 bool is_tracing_thread(void);
 
+/**
+ * @brief Check if a kernel object belongs to the tracing subsystem itself.
+ *
+ * @param object Thread, timer or semaphore to check.
+ *
+ * @return True for the tracing thread, its timer and its semaphore when
+ *         CONFIG_TRACING_SKIP_INTERNAL_OBJECTS is enabled; false otherwise.
+ */
+bool is_tracing_internal(const void *object);
+
 #ifdef __cplusplus
 }
 #endif

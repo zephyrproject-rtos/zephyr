@@ -8,6 +8,7 @@
 #include <zephyr/toolchain.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
+#include <tracing_core.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket_poll.h>
@@ -46,6 +47,10 @@ void sys_trace_k_thread_switched_out(void)
 	struct k_thread *thread;
 
 	thread = k_sched_current_thread_query();
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	_get_thread_name(thread, &name);
 
 	ctf_top_thread_switched_out((uint32_t)(uintptr_t)thread, name);
@@ -63,6 +68,10 @@ void sys_trace_k_thread_user_mode_enter(void)
 
 void sys_trace_k_thread_wakeup(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -75,6 +84,10 @@ void sys_trace_k_thread_switched_in(void)
 	ctf_bounded_string_t name = {"unknown"};
 
 	thread = k_sched_current_thread_query();
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	_get_thread_name(thread, &name);
 
 	ctf_top_thread_switched_in((uint32_t)(uintptr_t)thread, name);
@@ -82,6 +95,10 @@ void sys_trace_k_thread_switched_in(void)
 
 void sys_trace_k_thread_priority_set(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -101,6 +118,10 @@ void sys_trace_k_thread_sleep_ticks_exit(k_timeout_t timeout, int ret)
 
 void sys_trace_k_thread_create(struct k_thread *thread, size_t stack_size, int prio)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -139,6 +160,10 @@ void sys_trace_k_thread_resume(struct k_thread *thread)
 
 void sys_trace_k_thread_ready(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -152,6 +177,10 @@ void sys_trace_k_thread_start(struct k_thread *thread)
 
 void sys_trace_k_thread_pend(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -160,6 +189,10 @@ void sys_trace_k_thread_pend(struct k_thread *thread)
 
 void sys_trace_k_thread_info(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 #if defined(CONFIG_THREAD_STACK_INFO)
 	ctf_bounded_string_t name = {"unknown"};
 
@@ -171,6 +204,10 @@ void sys_trace_k_thread_info(struct k_thread *thread)
 
 void sys_trace_k_thread_name_set(struct k_thread *thread, int ret)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -254,6 +291,10 @@ void sys_trace_k_thread_sched_unlock(void)
 
 void sys_trace_k_thread_sched_wakeup(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -262,6 +303,10 @@ void sys_trace_k_thread_sched_wakeup(struct k_thread *thread)
 
 void sys_trace_k_thread_sched_abort(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -270,6 +315,10 @@ void sys_trace_k_thread_sched_abort(struct k_thread *thread)
 
 void sys_trace_k_thread_sched_priority_set(struct k_thread *thread, int prio)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -278,6 +327,10 @@ void sys_trace_k_thread_sched_priority_set(struct k_thread *thread, int prio)
 
 void sys_trace_k_thread_sched_ready(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -286,6 +339,10 @@ void sys_trace_k_thread_sched_ready(struct k_thread *thread)
 
 void sys_trace_k_thread_sched_pend(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -294,6 +351,10 @@ void sys_trace_k_thread_sched_pend(struct k_thread *thread)
 
 void sys_trace_k_thread_sched_resume(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -302,6 +363,10 @@ void sys_trace_k_thread_sched_resume(struct k_thread *thread)
 
 void sys_trace_k_thread_sched_suspend(struct k_thread *thread)
 {
+	if (is_tracing_internal(thread)) {
+		return;
+	}
+
 	ctf_bounded_string_t name = {"unknown"};
 
 	_get_thread_name(thread, &name);
@@ -839,18 +904,30 @@ void sys_trace_k_sem_init(struct k_sem *sem, int ret)
 
 void sys_trace_k_sem_take_enter(struct k_sem *sem, k_timeout_t timeout)
 {
+	if (is_tracing_internal(sem)) {
+		return;
+	}
+
 	ctf_top_semaphore_take_enter((uint32_t)(uintptr_t)sem,
 				     k_ticks_to_us_floor32((uint32_t)timeout.ticks));
 }
 
 void sys_trace_k_sem_take_blocking(struct k_sem *sem, k_timeout_t timeout)
 {
+	if (is_tracing_internal(sem)) {
+		return;
+	}
+
 	ctf_top_semaphore_take_blocking((uint32_t)(uintptr_t)sem,
 					k_ticks_to_us_floor32((uint32_t)timeout.ticks));
 }
 
 void sys_trace_k_sem_take_exit(struct k_sem *sem, k_timeout_t timeout, int ret)
 {
+	if (is_tracing_internal(sem)) {
+		return;
+	}
+
 	ctf_top_semaphore_take_exit((uint32_t)(uintptr_t)sem,
 				    k_ticks_to_us_floor32((uint32_t)timeout.ticks), (uint32_t)ret);
 }
@@ -862,11 +939,19 @@ void sys_trace_k_sem_reset(struct k_sem *sem)
 
 void sys_trace_k_sem_give_enter(struct k_sem *sem)
 {
+	if (is_tracing_internal(sem)) {
+		return;
+	}
+
 	ctf_top_semaphore_give_enter((uint32_t)(uintptr_t)sem);
 }
 
 void sys_trace_k_sem_give_exit(struct k_sem *sem)
 {
+	if (is_tracing_internal(sem)) {
+		return;
+	}
+
 	ctf_top_semaphore_give_exit((uint32_t)(uintptr_t)sem);
 }
 
@@ -907,11 +992,19 @@ void sys_trace_k_mutex_unlock_exit(struct k_mutex *mutex, int ret)
 /* Timer */
 void sys_trace_k_timer_init(struct k_timer *timer)
 {
+	if (is_tracing_internal(timer)) {
+		return;
+	}
+
 	ctf_top_timer_init((uint32_t)(uintptr_t)timer);
 }
 
 void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration, k_timeout_t period)
 {
+	if (is_tracing_internal(timer)) {
+		return;
+	}
+
 	ctf_top_timer_start((uint32_t)(uintptr_t)timer,
 			    k_ticks_to_us_floor32((uint32_t)duration.ticks),
 			    k_ticks_to_us_floor32((uint32_t)period.ticks));
@@ -919,6 +1012,10 @@ void sys_trace_k_timer_start(struct k_timer *timer, k_timeout_t duration, k_time
 
 void sys_trace_k_timer_stop(struct k_timer *timer)
 {
+	if (is_tracing_internal(timer)) {
+		return;
+	}
+
 	ctf_top_timer_stop((uint32_t)(uintptr_t)timer);
 }
 
@@ -940,11 +1037,19 @@ void sys_trace_k_timer_status_sync_exit(struct k_timer *timer, uint32_t result)
 
 void sys_trace_k_timer_expiry_enter(struct k_timer *timer)
 {
+	if (is_tracing_internal(timer)) {
+		return;
+	}
+
 	ctf_top_timer_expiry_enter((uint32_t)(uintptr_t)timer);
 }
 
 void sys_trace_k_timer_expiry_exit(struct k_timer *timer)
 {
+	if (is_tracing_internal(timer)) {
+		return;
+	}
+
 	ctf_top_timer_expiry_exit((uint32_t)(uintptr_t)timer);
 }
 
