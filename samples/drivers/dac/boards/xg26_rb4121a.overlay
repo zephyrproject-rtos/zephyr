@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+/ {
+	zephyr,user {
+		dac = <&vdac1>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+/* VDAC1 CH0 main-output is PB2, connected to LED0 (WSTK F10 / P19). */
+&vdac1 {
+	voltage-reference = "AVDD";
+
+	channel@0 {
+		main-output;
+	};
+};
