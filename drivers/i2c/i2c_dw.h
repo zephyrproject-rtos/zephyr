@@ -73,13 +73,12 @@ typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 #define DW_DISABLE_ALL_I2C_INT 0x00000000
 
 /* IC_CON Low count and high count default values */
-/* TODO verify values for high speed */
 #define I2C_STD_HCNT (CONFIG_I2C_DW_CLOCK_SPEED * 4)
 #define I2C_STD_LCNT (CONFIG_I2C_DW_CLOCK_SPEED * 5)
-#define I2C_FS_HCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 6) / 8)
-#define I2C_FS_LCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 7) / 8)
-#define I2C_FSP_HCNT ((CONFIG_I2C_DW_CLOCK_SPEED * 2) / 8)
-#define I2C_FSP_LCNT ((CONFIG_I2C_DW_CLOCK_SPEED * 2) / 8)
+#define I2C_FS_HCNT  (CONFIG_I2C_DW_CLOCK_SPEED)
+#define I2C_FS_LCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 3) / 2)
+#define I2C_FSP_HCNT ((CONFIG_I2C_DW_CLOCK_SPEED * 2) / 5)
+#define I2C_FSP_LCNT ((CONFIG_I2C_DW_CLOCK_SPEED * 3) / 5)
 #define I2C_HS_HCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 6) / 8)
 #define I2C_HS_LCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 7) / 8)
 
