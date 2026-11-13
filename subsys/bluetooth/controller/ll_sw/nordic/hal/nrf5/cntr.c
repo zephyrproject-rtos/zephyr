@@ -84,6 +84,26 @@ void cntr_init(void)
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 }
 
+void cntr_deinit(void)
+{
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* GRTC is shared with the system timer and keeps running after cntr_stop().
+	 * Disarm controller compares and clear their events before disabling the
+	 * controller IRQ, and disconnect the radio compare's hardware trigger.
+	 */
+	nrf_grtc_int_group_disable(NRF_GRTC, 1U, HAL_CNTR_GRTC_INTENSET_COMPARE_TICKER_Msk);
+	nrf_grtc_sys_counter_compare_event_disable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_TICKER);
+	nrf_grtc_sys_counter_compare_event_disable(NRF_GRTC, HAL_CNTR_GRTC_CC_IDX_RADIO);
+	nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_TICKER);
+	nrf_grtc_event_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO);
+	nrf_grtc_publish_clear(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO);
+#else /* !CONFIG_BT_CTLR_NRF_GRTC */
+	nrf_rtc_int_disable(NRF_RTC, RTC_INTENCLR_COMPARE0_Msk);
+	nrf_rtc_event_disable(NRF_RTC, RTC_EVTENCLR_COMPARE0_Msk);
+	nrf_rtc_event_clear(NRF_RTC, NRF_RTC_EVENT_COMPARE_0);
+#endif /* !CONFIG_BT_CTLR_NRF_GRTC */
+}
+
 uint32_t cntr_start(void)
 {
 	if (_refcount++) {

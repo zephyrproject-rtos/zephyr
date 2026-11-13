@@ -366,6 +366,11 @@ int lll_deinit(void)
 		radio_gpio_pa_lna_deinit();
 	}
 
+	/* Disarm the ticker counter compare before its IRQ is disabled, so
+	 * that no interrupt request is left pending in the counter peripheral
+	 */
+	cntr_deinit();
+
 	/* Disable IRQs */
 	irq_disable(HAL_RADIO_IRQn);
 	irq_disable(HAL_RTC_IRQn);
@@ -374,6 +379,11 @@ int lll_deinit(void)
 		(CONFIG_BT_CTLR_ULL_HIGH_PRIO != CONFIG_BT_CTLR_ULL_LOW_PRIO)) {
 		irq_disable(HAL_SWI_JOB_IRQ);
 	}
+
+#if defined(CONFIG_BT_CTLR_NRF_GRTC)
+	/* The ticker IRQ can also be pended by the controller's software worker. */
+	NVIC_ClearPendingIRQ(HAL_RTC_IRQn);
+#endif /* CONFIG_BT_CTLR_NRF_GRTC */
 
 	/* Disconnect dynamic ISRs used */
 #if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
