@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon AURIX pin controller.
+
+  The node covers the register blocks of all ports. Each child node without
+  a compatible configures one pin. The SoC pinctrl dtsi files provide these
+  nodes for the pin functions of a device, and boards reference them:
+
+    #include <zephyr/dt-bindings/pinctrl/infineon-aurix-pinctrl.h>
+
+    &pinctrl {
+      asclin0_tx_p14_0: asclin0_tx_p14_0 {
+        pinmux = <AURIX_PINMUX(14, 0, 2)>;
+        output-enable;
+      };
+
+      asclin0_rx_p14_1: asclin0_rx_p14_1 {
+        pinmux = <AURIX_PINMUX(14, 1, 0)>;
+      };
+    };
+
+    &asclin0 {
+      pinctrl-0 = <&asclin0_tx_p14_0 &asclin0_rx_p14_1>;
+      pinctrl-names = "default";
+    };
+
+  A pin with output-enable drives the alternate output function of its
+  pinmux cell (0 selects GPIO); push-pull unless drive-open-drain is set.
+  Any other pin is an input, tri-state unless a bias property is set. The
+  peripheral selects which input pin it uses.
+
+compatible: "infineon,aurix-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: Configuration of one pin.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - output-enable
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Pin and function, encoded with AURIX_PINMUX() of
+        zephyr/dt-bindings/pinctrl/infineon-aurix-pinctrl.h.
