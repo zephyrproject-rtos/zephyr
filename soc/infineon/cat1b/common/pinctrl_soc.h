@@ -18,6 +18,10 @@
 #include <stdint.h>
 #include <zephyr/devicetree.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(infineon_ioss_pinctrl)
+#include "../../common/pinctrl_soc.h"
+#else
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,5 +133,7 @@ typedef struct {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(infineon_ioss_pinctrl) */
 
 #endif /* ZEPHYR_SOC_ARM_INFINEON_CAT1_COMMON_PINCTRL_SOC_H_ */
