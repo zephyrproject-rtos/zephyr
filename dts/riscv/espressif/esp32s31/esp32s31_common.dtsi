@@ -453,6 +453,16 @@
 			status = "disabled";
 		};
 
+		dac: dac@2081a000 {
+			compatible = "espressif,esp32-dac";
+			reg = <0x2081a000 0x400>;
+			interrupts = <LP_DAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_LP_DAC_MODULE>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		adc0: adc@20815000 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x20815000 4>;
