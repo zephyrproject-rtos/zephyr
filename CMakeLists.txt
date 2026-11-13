@@ -277,8 +277,6 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${ASM_OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${COMPILER_OPTIMIZATION_FLAG}>)
 zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${COMPILER_OPTIMIZATION_FLAG}>)
 add_link_options(${LINKER_OPTIMIZATION_FLAG})
-compiler_simple_options(simple_options)
-toolchain_linker_add_compiler_options(${simple_options})
 
 if(CONFIG_LTO)
   if(CONFIG_LTO_SINGLE_THREADED)
@@ -769,6 +767,12 @@ add_dependencies(zephyr_generated_headers version_h)
 # e.g. subsys/.
 add_subdirectory(arch)
 add_subdirectory(lib)
+
+# Wait until after arch so that we get its compiler flags too
+
+compiler_simple_options(simple_options)
+toolchain_linker_add_compiler_options(${simple_options})
+
 # We use include instead of add_subdirectory to avoid creating a new directory scope.
 # This is because source file properties are directory scoped, including the GENERATED
 # property which is set implicitly for custom command outputs
@@ -967,6 +971,24 @@ if(CONFIG_LEGACY_GENERATED_INCLUDE_PATH)
     ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 endif()
 
+set(cmake_c_compiler_command ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS})
+
+# Add LLVM target if set
+if(DEFINED CMAKE_C_COMPILER_TARGET)
+  list(APPEND cmake_c_compiler_command "--target=${CMAKE_C_COMPILER_TARGET}")
+endif()
+
+# Add target selection flags
+list(APPEND cmake_c_compiler_command ${simple_options})
+
+# We might need the include paths to find the C library headers
+list(APPEND cmake_c_compiler_command -I$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>, -I>)
+list(APPEND cmake_c_compiler_command -isystem $<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>, -isystem >)
+
+if(CMAKE_HOST_UNIX)
+  set(cmake_c_compiler_command "'${cmake_c_compiler_command}'")
+endif()
+
 add_custom_command(
   OUTPUT
   include/generated/zephyr/syscall_dispatch.c
@@ -983,6 +1005,7 @@ add_custom_command(
   --syscall-exports-llext  ${ZEPHYR_BINARY_DIR}/syscall_exports_llext.c # compiled in LLEXT subsys
   --syscall-weakdefs-llext syscall_weakdefs_llext.c # compiled in CMake library 'syscall_weakdefs'
   --syscall-list     ${syscall_list_h}
+  --c-compiler       "${cmake_c_compiler_command}"
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
   ${SYSCALL_SPLIT_TIMEOUT_ARG}
@@ -2443,6 +2466,7 @@ if(CONFIG_LLEXT_EDK)
       --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
       --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
       --syscall-list     ${edk_syscall_list_h}
+      --c-compiler       "${cmake_c_compiler_command}"
       $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
       ${SYSCALL_LONG_REGISTERS_ARG}
       ${SYSCALL_SPLIT_TIMEOUT_ARG}
