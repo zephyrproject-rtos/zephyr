@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESP32_SDM
+	bool "Espressif sigma-delta modulator"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_SDM_ENABLED
+	help
+	  Enable the sigma-delta modulator for Espressif SoCs. Each channel
+	  outputs a pulse-density stream on one GPIO selected through pinctrl.
