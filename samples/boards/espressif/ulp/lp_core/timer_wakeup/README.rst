@@ -17,7 +17,7 @@ The HP core boots, prints its wake count, and enters deep sleep via
 wakeups across deep sleep cycles.
 
 The sleep duration is configured via
-:kconfig:option:`CONFIG_ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US`
+:kconfig:option:`CONFIG_SOC_FAMILY_ESPRESSIF_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US`
 (default: 2000000 us = 2 seconds).
 
 How it works

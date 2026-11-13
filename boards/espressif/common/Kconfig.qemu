@@ -30,4 +30,4 @@ config ESPRESSIF_QEMU
 
 	  On ESP32, the run target supplies an ECO3 eFuse image (CHIP_VER_REV1
 	  and CHIP_VER_REV2) so the guest reports chip revision v3.0 without
-	  enabling CONFIG_ESP32_USE_UNSUPPORTED_REVISION.
+	  enabling CONFIG_SOC_ESP32_USE_UNSUPPORTED_REVISION.

@@ -150,7 +150,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 
 static int clock_control_esp32_init(const struct device *dev)
 {
-#if !defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
+#if !defined(CONFIG_SOC_FAMILY_ESPRESSIF_APPCPU_TARGET)
 	const struct esp32_clock_config *cfg = dev->config;
 	int ret;
 

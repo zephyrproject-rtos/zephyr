@@ -18,8 +18,8 @@ procpu_iram0_org = SRAM0_IRAM_START + SRAM0_CACHE_SIZE;
 procpu_iram0_len = procpu_iram0_end - procpu_iram0_org;
 
 procpu_dram0_end = SRAM2_DRAM_END;
-procpu_dram0_org = SRAM2_DRAM_USER_START + CONFIG_ESP32_BT_RESERVE_DRAM;
-procpu_dram0_len = SRAM2_DRAM_USER_SIZE - CONFIG_ESP32_BT_RESERVE_DRAM;
+procpu_dram0_org = SRAM2_DRAM_USER_START + CONFIG_SOC_ESP32_BT_RESERVE_DRAM;
+procpu_dram0_len = SRAM2_DRAM_USER_SIZE - CONFIG_SOC_ESP32_BT_RESERVE_DRAM;
 
 /* The APPCPU image loads its DRAM segment at SRAM1_DRAM_USER_START while
  * its IRAM segment lands in SRAM0, so only APPCPU_DRAM_SIZE is carved out
@@ -33,7 +33,7 @@ procpu_irom_len = ICACHE0_SIZE;
 procpu_drom_org = DCACHE0_START;
 procpu_drom_len = DCACHE0_SIZE;
 
-#ifdef CONFIG_ESP_SPIRAM
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
 procpu_ext_ram_org = DCACHE1_START;
 procpu_ext_ram_len = DCACHE1_SIZE;
 #endif
@@ -53,7 +53,7 @@ rtc_iram_len = RCT_FAST_RAM_SIZE;
 #define DRAM_REGION       dram0_0_seg
 #define RAMABLE_REGION    dram0_0_seg
 
-#ifndef CONFIG_ESP32_REGION_1_NOINIT
+#ifndef CONFIG_SOC_ESP32_REGION_1_NOINIT
 #define RAMABLE_REGION_2  dram0_0_seg
 #else
 #define RAMABLE_REGION_2  dram1_0_seg
@@ -100,23 +100,23 @@ MEMORY
   drom0_0_seg(R):  org = procpu_drom_org, len = procpu_drom_len
 
   rtc_iram_seg(RWX): org = rtc_iram_org, len = rtc_iram_len
-  rtc_slow_seg(RW):  org = rtc_slow_org, len = rtc_slow_len - CONFIG_RESERVE_RTC_MEM
+  rtc_slow_seg(RW):  org = rtc_slow_org, len = rtc_slow_len - CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM
   rtc_data_seg(RW):  org = rtc_data_org, len = rtc_data_len
 
-  /* We reduced the size of rtc_slow_seg by CONFIG_RESERVE_RTC_MEM value.
+  /* We reduced the size of rtc_slow_seg by CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM value.
    *  It reserves the amount of RTC slow memory that we use for this memory segment.
    *  This segment is intended for keeping rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c files).
    *  The aim of this is to keep data that will not be moved around and have a fixed address.
-   *  org = 0x50000000 + 0x2000 - CONFIG_RESERVE_RTC_MEM
+   *  org = 0x50000000 + 0x2000 - CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM
    */
-#if (CONFIG_RESERVE_RTC_MEM > 0)
-  rtc_slow_reserved_seg(RW): org = rtc_slow_org + rtc_slow_len - CONFIG_RESERVE_RTC_MEM,
-                             len = CONFIG_RESERVE_RTC_MEM
+#if (CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM > 0)
+  rtc_slow_reserved_seg(RW): org = rtc_slow_org + rtc_slow_len - CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM,
+                             len = CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM
 #endif
 
-#ifdef CONFIG_ESP_SPIRAM
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
   ext_ram_seg(RW): org = procpu_ext_ram_org, len = procpu_ext_ram_len
-#endif /* CONFIG_ESP_SPIRAM */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM */
 
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST(RW): org = 0x3ebfe010, len = 0x2000
@@ -291,7 +291,7 @@ SECTIONS
    * This section holds RTC SLOW data that should have fixed addresses.
    * The data are not initialized at power-up and are retained during deep sleep.
    */
-#if (CONFIG_RESERVE_RTC_MEM > 0)
+#if (CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM > 0)
   .rtc_slow_reserved (NOLOAD) :
   {
     . = ALIGN(4);
@@ -319,8 +319,8 @@ SECTIONS
   ASSERT((LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.data)) ==
          (ADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - ADDR(.rtc.data)),
          "RTC SLOW loadable sections must be contiguous with equal VMA and LMA offsets")
-  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
-         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
+  ASSERT((_rtc_reserved_length <= CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_SOC_FAMILY_ESPRESSIF_RESERVE_RTC_MEM.")
 
   /* --- RTC END --- */
 
@@ -437,7 +437,7 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
-#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD)
     *libzephyr.a:spi_flash_dpd_enable.*(.literal .literal.* .text .text.*)
 #endif
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
@@ -475,7 +475,7 @@ SECTIONS
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
     *libzephyr.a:sleep_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
-#if defined(CONFIG_ESP32_PM_SLP_IRAM_OPT)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT)
     *libzephyr.a:phy_override.*(.literal.phy_get_tsens_value .text.phy_get_tsens_value)
     *libzephyr.a:sleep_modes.*(.literal .literal.* .text .text.*)
     *libzephyr.a:sleep_modem.*(.literal .literal.* .text .text.*)
@@ -572,7 +572,7 @@ SECTIONS
 
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
 
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
   .loader.text :
   {
     . =  ALIGN(4);
@@ -612,7 +612,7 @@ SECTIONS
     . += 16;
     . = ALIGN(16);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
-#endif /* CONFIG_ESP_SIMPLE_BOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT */
 
   /* Marks the end of IRAM code segment */
   .iram0.text_end (NOLOAD) :
@@ -733,7 +733,7 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.*)
-#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD)
     *libzephyr.a:spi_flash_dpd_enable.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 #endif
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -797,7 +797,7 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
   .loader.data :
   {
     . = ALIGN(4);
@@ -823,7 +823,7 @@ SECTIONS
     . = ALIGN(4);
     _loader_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(DRAM_REGION, ROMABLE_REGION)
-#endif /* CONFIG_ESP_SIMPLE_BOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT */
 
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>
@@ -920,7 +920,7 @@ SECTIONS
   /* --- SPIRAM BEGIN --- */
 
   /* The SPIRAM section needs to be spilled before the dram0.noinit */
-#ifdef CONFIG_ESP_SPIRAM
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
   .ext_ram (NOLOAD):
   {
     _ext_ram_start = ABSOLUTE(.);
@@ -958,13 +958,13 @@ SECTIONS
     _ext_ram_bss_end = ABSOLUTE(.);
 
     _ext_ram_heap_start = ABSOLUTE(.);
-    . = . + CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . = . + CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_HEAP_SIZE;
     . = ALIGN(16);
     _ext_ram_heap_end = ABSOLUTE(.);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(ext_ram_seg)
-#endif /* CONFIG_ESP_SPIRAM */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM */
 
   /* --- SPIRAM END --- */
 
@@ -1201,7 +1201,7 @@ SECTIONS
 
   /* --- XTENSA GLUE AND DEBUG END --- */
 
-#ifdef CONFIG_ESP_SPIRAM
-ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
+ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
-#endif /* CONFIG_ESP_SPIRAM */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM */

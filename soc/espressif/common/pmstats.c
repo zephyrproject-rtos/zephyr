@@ -142,7 +142,7 @@ static void sleep_stats_top_reason(char *buf, size_t len)
 {
 	size_t n = 0;
 
-	if (!IS_ENABLED(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)) {
+	if (!IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)) {
 		snprintf(buf, len, "config");
 		return;
 	}
@@ -171,7 +171,7 @@ static void sleep_stats_top_reason(char *buf, size_t len)
 /* "config" if flash PD is off; "hal" if we asked and HAL kept flash on. */
 static const char *sleep_stats_flash_reason(void)
 {
-	return IS_ENABLED(CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH) ? "hal" : "config";
+	return IS_ENABLED(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_POWER_DOWN_FLASH) ? "hal" : "config";
 }
 #endif
 

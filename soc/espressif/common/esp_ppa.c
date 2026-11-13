@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(esp_ppa, CONFIG_SOC_LOG_LEVEL);
 
 #define ESP_PPA_RX_DONE_MASK DMA2D_LL_EVENT_RX_SUC_EOF
 
-#define ESP_PPA_MAX_PENDING CONFIG_ESP32_PPA_MAX_PENDING
+#define ESP_PPA_MAX_PENDING CONFIG_SOC_FAMILY_ESPRESSIF_PPA_MAX_PENDING
 
 /* Reset is acknowledged within a few bus cycles. Bounded because this runs
  * under the queue spinlock, from the path that gives up on a transfer.
@@ -728,7 +728,7 @@ static esp_err_t esp_ppa_run(struct esp_ppa_txn *txn, ppa_trans_mode_t mode)
 	txn->done = &done;
 	esp_ppa_submit(txn, true);
 
-	int ret = k_sem_take(&done, K_USEC(CONFIG_ESP32_PPA_WAIT_TIMEOUT_US));
+	int ret = k_sem_take(&done, K_USEC(CONFIG_SOC_FAMILY_ESPRESSIF_PPA_WAIT_TIMEOUT_US));
 
 	if (ret != 0) {
 		k_spinlock_key_t key = k_spin_lock(&ppa_state.queue_lock);

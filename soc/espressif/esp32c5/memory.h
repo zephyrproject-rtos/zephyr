@@ -13,7 +13,7 @@
 #define LPSRAM_SIZE                  DT_REG_SIZE(DT_NODELABEL(sramlp))
 #define LPSRAM_RTC_START             DT_REG_ADDR(DT_NODELABEL(lp_rtc))
 #define LPSRAM_RTC_SIZE              DT_REG_SIZE(DT_NODELABEL(lp_rtc))
-#define ESP32_ULP_COPROC_RESERVE_MEM CONFIG_ESP32_ULP_COPROC_RESERVE_MEM
+#define ESP32_ULP_COPROC_RESERVE_MEM CONFIG_SOC_FAMILY_ESPRESSIF_ULP_RESERVE_MEM
 #define ESP32_ULP_SHARED_MEM_SIZE    DT_REG_SIZE(DT_NODELABEL(ulp_shm))
 #define ESP32_ULP_SHARED_MEM_ADDR    DT_REG_ADDR(DT_NODELABEL(ulp_shm))
 
@@ -97,7 +97,7 @@
  * the linker uses the full virtual range the MMU can map (32 MB on c5),
  * not the physical chip size. Shares the same bus as IROM/DROM (unified
  * cache). Physical PSRAM size is enforced by the ext_ram-overflow ASSERT
- * in default.ld using CONFIG_ESP_SPIRAM_SIZE.
+ * in default.ld using CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE.
  */
 #define EXTRAM_START DT_REG_ADDR(DT_NODELABEL(ext_ram))
 #define EXTRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(ext_ram))

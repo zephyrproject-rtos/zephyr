@@ -1828,7 +1828,8 @@ static int sdhc_esp32_controller_init(const struct device *dev)
 	/* Enable DMA */
 	sdmmc_ll_init_dma(sdio_hw);
 
-#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) && defined(SOC_PM_SUPPORT_CNNT_PD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP) &&                \
+	defined(SOC_PM_SUPPORT_CNNT_PD)
 	/*
 	 * The host has no sleep retention and sits in the CNNT domain, which
 	 * powers down together with TOP. Keep CNNT on so TOP can still power

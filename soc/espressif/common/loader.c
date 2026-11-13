@@ -65,7 +65,7 @@
 #include <kernel_tls.h>
 #endif
 
-#if defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_APPCPU_TARGET)
 #error "APPCPU does not need this file!"
 #endif
 
@@ -94,7 +94,7 @@
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
-#if !defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
+#if !defined(CONFIG_SOC_FAMILY_ESPRESSIF_APPCPU_TARGET)
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_code_partition))
 #define PART_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #else
@@ -223,8 +223,8 @@ void map_rom_segments(int core, struct rom_segments *map)
 		map->drom_flash_offset, map->drom_map_addr, map->drom_size, map->drom_size);
 #endif /* !CONFIG_BOOTLOADER_MCUBOOT */
 
-#if CONFIG_ESP_CONSOLE_UART_NUM >= 0
-	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+#if CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM >= 0
+	esp_rom_output_tx_wait_idle(CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM);
 #endif
 
 #if CONFIG_SOC_SERIES_ESP32
@@ -338,7 +338,7 @@ static void boot_start(void)
 #endif
 
 /* Initialize hardware only during 1st boot  */
-#if defined(CONFIG_MCUBOOT) || defined(CONFIG_ESP_SIMPLE_BOOT)
+#if defined(CONFIG_MCUBOOT) || defined(CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT)
 	if (hardware_init()) {
 		ESP_EARLY_LOGE(TAG, "HW init failed, aborting");
 		abort();
@@ -347,7 +347,7 @@ static void boot_start(void)
 
 	soc_random_enable();
 
-#if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT) || defined(CONFIG_BOOTLOADER_MCUBOOT)
 	map_rom_segments(0, &map);
 
 #if defined(CONFIG_RISCV) && defined(CONFIG_THREAD_LOCAL_STORAGE)
@@ -363,7 +363,7 @@ static void boot_start(void)
 	soc_random_disable();
 
 	__esp_platform_app_start();
-#endif /* CONFIG_ESP_SIMPLE_BOOT || CONFIG_BOOTLOADER_MCUBOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT || CONFIG_BOOTLOADER_MCUBOOT */
 
 #if defined(CONFIG_MCUBOOT)
 	__esp_platform_mcuboot_start();

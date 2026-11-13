@@ -91,7 +91,8 @@
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
 
-#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_UART_SUPPORT_SLEEP_RETENTION
+#if CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP &&                         \
+	SOC_UART_SUPPORT_SLEEP_RETENTION
 #define UART_SLEEP_RETENTION_ENABLED 1
 #else
 #define UART_SLEEP_RETENTION_ENABLED 0
@@ -195,10 +196,10 @@ struct uart_esp32_data {
  * uses, so take the widest line in this build.
  */
 #if defined(CONFIG_DCACHE)
-#if defined(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
-#define UART_ESP32_SOC_CACHE_LINE CONFIG_ESP32_CACHE_L2_LINE_SIZE
-#elif defined(CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE)
-#define UART_ESP32_SOC_CACHE_LINE CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE
+#if defined(CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE)
+#define UART_ESP32_SOC_CACHE_LINE CONFIG_SOC_ESP32P4_CACHE_L2_LINE_SIZE
+#elif defined(CONFIG_SOC_ESP32S3_DATA_CACHE_LINE_SIZE)
+#define UART_ESP32_SOC_CACHE_LINE CONFIG_SOC_ESP32S3_DATA_CACHE_LINE_SIZE
 #else
 #define UART_ESP32_SOC_CACHE_LINE 0
 #endif
@@ -1306,7 +1307,7 @@ static bool uart_esp32_tx_dma_capable(const uint8_t *buf)
 		return true;
 	}
 
-#if defined(CONFIG_ESP_SPIRAM)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
 	if (esp_ptr_dma_ext_capable(buf)) {
 		return true;
 	}
@@ -1591,7 +1592,7 @@ static esp_err_t uart_create_sleep_retention_cb(void *arg)
 
 static void uart_esp32_sleep_retention_init(int port)
 {
-	if (port == CONFIG_ESP_CONSOLE_UART_NUM) {
+	if (port == CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE_UART_NUM) {
 		return;
 	}
 
@@ -1646,7 +1647,7 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-#if CONFIG_UART_ASYNC_API && CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_UART_ASYNC_API && CONFIG_SOC_FAMILY_ESPRESSIF_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 		/*
 		 * UHCI has no sleep-retention link and is reset when the peripheral
 		 * power domain is powered down. Re-apply configuration on wake.

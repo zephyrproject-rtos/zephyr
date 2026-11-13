@@ -15,7 +15,7 @@
  * "iram_loader_seg" start address (that should not be overlapped).
  * If no bootloader is used, we can extend it to gain more user ram.
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
 user_sram_end = DRAM_SHARED_BUFFERS_END;
 #else
 user_sram_end = BOOTLOADER_DRAM_LOADER_SEG_START;
@@ -30,7 +30,7 @@ user_sram_size = (user_sram_end - user_sram_org);
 #define RODATA_REGION      drom0_0_seg
 #define RAMABLE_REGION     sram0_0_seg
 #define ROMABLE_REGION     FLASH
-#ifdef CONFIG_ESP_SPIRAM
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
 #define EXT_DRAM_REGION    ext_dram_seg
 #endif
 
@@ -86,7 +86,7 @@ MEMORY
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
 
-#if defined(CONFIG_ESP_SPIRAM)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
   /* ext_dram_seg and irom0_0_seg share the same bus (unified cache address space).
    * Size the segment to the cache window so the dummy section reserved for
    * flash content plus the PSRAM heap window always fit; the actual usable
@@ -284,7 +284,7 @@ SECTIONS
     *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
-#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD)
     *libzephyr.a:spi_flash_dpd_enable.*(.literal .literal.* .text .text.*)
 #endif
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
@@ -318,7 +318,7 @@ SECTIONS
     *libzephyr.a:pmu_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:pmu_param.*(.literal .literal.* .text .text.*)
     *libzephyr.a:pmu_sleep.*(.literal .literal.* .text .text.*)
-#if defined(CONFIG_ESP32_PM_SLP_IRAM_OPT)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT)
     *libzephyr.a:phy_override.*(.literal.phy_get_tsens_value .text.phy_get_tsens_value)
     *libzephyr.a:temperature_sensor_hal.*(.literal.temperature_sensor_hal_get_raw_value .text.temperature_sensor_hal_get_raw_value)
     *libzephyr.a:sleep_console.*(.literal .literal.* .text .text.*)
@@ -393,7 +393,7 @@ SECTIONS
     . = ALIGN(4) + 16;
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
   .loader.text :
   {
     . = ALIGN(4);
@@ -435,7 +435,7 @@ SECTIONS
     . = ALIGN(4) + 16;
     _loader_text_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* CONFIG_ESP_SIMPLE_BOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT */
 
   .iram0.text_end (NOLOAD) :
   {
@@ -545,7 +545,7 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.* .srodata .srodata.*)
-#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SLEEP_SET_FLASH_DPD)
     *libzephyr.a:spi_flash_dpd_enable.*(.rodata .rodata.* .srodata .srodata.*)
 #endif
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
@@ -605,7 +605,7 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT
   /* Secondary loader sections */
   .loader.data :
   {
@@ -631,7 +631,7 @@ SECTIONS
     . = ALIGN(16);
     _loader_data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* CONFIG_ESP_SIMPLE_BOOT */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT */
 
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>
@@ -751,8 +751,8 @@ SECTIONS
 
   ASSERT(((_end - ORIGIN(sram0_0_seg)) <= LENGTH(sram0_0_seg)), "SRAM code/data does not fit.")
 
-#if defined(CONFIG_ESP_SPIRAM)
-  ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_ESP_SPIRAM_SIZE),
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
+  ASSERT(((_ext_ram_end - _ext_ram_start) <= CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_SIZE),
           "External SPIRAM overflowed.")
 #endif
 
@@ -928,7 +928,7 @@ SECTIONS
 
   /* --- START OF SPIRAM --- */
 
-#if defined(CONFIG_ESP_SPIRAM)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM)
   /* This section is required to skip flash content because ext_dram_seg
    * and irom0_0_seg/drom0_0_seg share the same bus (unified cache).
    * The MMU reserves pages for both IROM and DROM from the same address
@@ -978,13 +978,13 @@ SECTIONS
 
     /* Used by Shared Multi Heap */
     _ext_ram_heap_start = ABSOLUTE(.);
-    . += CONFIG_ESP_SPIRAM_HEAP_SIZE;
+    . += CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM_HEAP_SIZE;
     . = ALIGN(16);
     _ext_ram_heap_end = ABSOLUTE(.);
 
     _ext_ram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(EXT_DRAM_REGION)
-#endif /* CONFIG_ESP_SPIRAM */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM */
 
   /* --- END OF SPIRAM --- */
 

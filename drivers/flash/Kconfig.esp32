@@ -56,7 +56,7 @@ config ESP_FLASH_ASYNC_IPM
 
 config ESP_FLASH_REMOTE
 	bool "Remote IPM flash driver"
-	default y if (SOC_ESP32_APPCPU_TARGET || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
+	default y if (SOC_FAMILY_ESPRESSIF_APPCPU_TARGET || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
 
 config ESP_FLASH_HOST
 	bool "Host functionality flash driver"
@@ -96,5 +96,26 @@ config ESP_FLASH_WRITE_CHUNK_SIZE
 	help
 	  A write is issued in windows of at most this size. The cache is
 	  re-enabled between windows and the yield check runs before each.
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_FLASH_WRITE_BLOCK_SIZE := $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),write-block-size)
+
+config ESP32_FLASH_ENCRYPTION
+	bool "Hardware flash encryption compatibility"
+	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
+	help
+	  Enable Espressif's hardware flash encryption compatibility with MCUboot
+	  Espressif Port.
+	  The flash encryption configuration must be enabled on the bootloader and
+	  the flash write block size must be set to 32 bytes on Zephyr's device tree.
+
+config ESP_FLASH_ENCRYPTION
+	bool "Hardware flash encryption compatibility [DEPRECATED]"
+	depends on !SOC_FAMILY_ESPRESSIF_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
+	select DEPRECATED
+	imply ESP32_FLASH_ENCRYPTION
+	help
+	  Deprecated. Use ESP32_FLASH_ENCRYPTION instead.
 
 endif # SOC_FLASH_ESP32

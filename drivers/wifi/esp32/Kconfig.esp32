@@ -79,7 +79,7 @@ config ESP32_WIFI_STA_SCAN_ALL
 
 config ESP32_WIFI_NET_ALLOC_SPIRAM
 	bool "Allocate memory of WiFi and NET in SPIRAM"
-	depends on ESP_SPIRAM
+	depends on SOC_FAMILY_ESPRESSIF_SPIRAM
 	help
 	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
 	  for application stack.
@@ -170,7 +170,7 @@ config ESP32_WIFI_STATIC_TX_BUFFER_NUM
 
 config ESP32_WIFI_CACHE_TX_BUFFER_NUM
 	int "Max number of WiFi cache TX buffers"
-	depends on ESP_SPIRAM && ESP_WIFI_HEAP_SPIRAM
+	depends on SOC_FAMILY_ESPRESSIF_SPIRAM && ESP_WIFI_HEAP_SPIRAM
 	range 16 128
 	default 32
 	help
@@ -295,7 +295,7 @@ config ESP32_WIFI_RX_BA_WIN
 
 config ESP32_WIFI_AMSDU_TX_ENABLED
 	bool "WiFi AMSDU TX"
-	depends on ESP_SPIRAM
+	depends on SOC_FAMILY_ESPRESSIF_SPIRAM
 	help
 	  Select this option to enable AMSDU TX feature
 
@@ -315,7 +315,7 @@ config ESP32_WIFI_IRAM_OPT
 
 config ESP32_WIFI_EXTRA_IRAM_OPT
 	bool "Wi-Fi EXTRA IRAM speed optimization"
-	default y if SOC_ESP32_WIFI_HE_SUPPORT
+	default y if SOC_FAMILY_ESPRESSIF_WIFI_HE_SUPPORT
 	help
 	  Select this option to place additional frequently called Wi-Fi library functions
 	  in IRAM. When this option is disabled, more than 5Kbytes of IRAM memory will be saved
@@ -330,11 +330,11 @@ config ESP32_WIFI_RX_IRAM_OPT
 
 config ESP32_WIFI_SLP_IRAM_OPT
 	bool "Wi-Fi SLP IRAM speed optimization"
-	select SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT if PM && TICKLESS_KERNEL
-	select ESP32_PM_SLP_IRAM_OPT if PM && TICKLESS_KERNEL
+	select SOC_FAMILY_ESPRESSIF_PM_SLP_DEFAULT_PARAMS_OPT if PM && TICKLESS_KERNEL
+	select SOC_FAMILY_ESPRESSIF_PM_SLP_IRAM_OPT if PM && TICKLESS_KERNEL
 	# Keep disabled in no-blobs builds: without CONFIG_PM this path
 	# links a modem sleep function that only the blobs provide.
-	default y if SOC_ESP32_WIFI_HE_SUPPORT && !BUILD_ONLY_NO_BLOBS
+	default y if SOC_FAMILY_ESPRESSIF_WIFI_HE_SUPPORT && !BUILD_ONLY_NO_BLOBS
 	help
 	  Select this option to place called Wi-Fi library TBTT process and receive
 	  beacon functions in IRAM. Some functions can be put in IRAM either by
@@ -668,7 +668,7 @@ endif # WIFI_ESP32_MESH
 
 config ESP32_WIFI_ENHANCED_LIGHT_SLEEP
 	bool "Wi-Fi modem automatically receives the beacon [EXPERIMENTAL]"
-	depends on MAC_BB_PD && SOC_ESP32_PM_SUPPORT_BEACON_WAKEUP
+	depends on ESP32_MAC_BB_PD && SOC_FAMILY_ESPRESSIF_PM_SUPPORT_BEACON_WAKEUP
 	select EXPERIMENTAL
 	help
 	  The Wi-Fi modem automatically receives the beacon frame during light sleep
@@ -676,12 +676,12 @@ config ESP32_WIFI_ENHANCED_LIGHT_SLEEP
 	  state machine instead of the RTC timer.
 
 	  EXPERIMENTAL: known to cause system hangs on disconnect in some
-	  configurations. Use plain MAC_BB_PD light sleep (without this option)
+	  configurations. Use plain ESP32_MAC_BB_PD light sleep (without this option)
 	  for reliable connected light sleep.
 
 config ESP32_WIFI_SLP_BEACON_LOST_OPT
 	bool "Wi-Fi sleep optimize when beacon lost"
-	depends on MAC_BB_PD
+	depends on ESP32_MAC_BB_PD
 	help
 	  Enable Wi-Fi sleep optimization when beacon loss occurs and immediately enter
 	  sleep mode when the Wi-Fi module detects beacon loss.
@@ -708,7 +708,8 @@ config ESP32_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
 	int "Delta early time for RF PHY on"
 	range 0 100
 	default 2
-	depends on ESP32_WIFI_SLP_BEACON_LOST_OPT && SOC_ESP32_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+	depends on ESP32_WIFI_SLP_BEACON_LOST_OPT
+	depends on SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
 	help
 	  Delta early time for rf phy on, When the beacon is lost, the next rf phy on will
 	  be earlier the time specified by the configuration item, Unit: 32 microsecond.
@@ -717,7 +718,8 @@ config ESP32_WIFI_SLP_PHY_OFF_DELTA_TIMEOUT_TIME
 	int "Delta timeout time for RF PHY off"
 	range 0 8
 	default 2
-	depends on ESP32_WIFI_SLP_BEACON_LOST_OPT && SOC_ESP32_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+	depends on ESP32_WIFI_SLP_BEACON_LOST_OPT
+	depends on SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
 	help
 	  Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
 	  be delayed for the time specified by the configuration item. Unit: 1024 microsecond.

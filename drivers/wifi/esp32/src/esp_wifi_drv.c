@@ -149,7 +149,7 @@ struct esp32_wifi_runtime {
 #define ESP32_WIFI_DFS_CHAN_LO 52
 #define ESP32_WIFI_DFS_CHAN_HI 144
 
-#if defined(CONFIG_SOC_ESP32_WIFI_SUPPORT_5G)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_5G)
 /* Channel number for each bit of wifi_5g_channel_bit_t, which starts at BIT(1). */
 static const uint8_t esp32_wifi_5g_chan[] = {
 	36,  40,  44,  48,  52,  56,  60,  64,  100, 104, 108, 112, 116, 120,
@@ -2588,7 +2588,7 @@ static void esp32_wifi_fill_chan_info(struct wifi_reg_chan_info *info, uint8_t c
 static unsigned int esp32_wifi_fill_5g(struct wifi_reg_domain *reg_domain, unsigned int written,
 				       const wifi_country_t *country)
 {
-#if defined(CONFIG_SOC_ESP32_WIFI_SUPPORT_5G)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_5G)
 	/* An all-zero mask means every channel allowed by the regulatory rules. */
 	uint32_t mask =
 		(country->wifi_5g_channel_mask == 0U) ? UINT32_MAX : country->wifi_5g_channel_mask;
@@ -2616,7 +2616,7 @@ static unsigned int esp32_wifi_fill_5g(struct wifi_reg_domain *reg_domain, unsig
 
 static unsigned int esp32_wifi_count_5g(const wifi_country_t *country)
 {
-#if defined(CONFIG_SOC_ESP32_WIFI_SUPPORT_5G)
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_WIFI_SUPPORT_5G)
 	uint32_t mask =
 		(country->wifi_5g_channel_mask == 0U) ? UINT32_MAX : country->wifi_5g_channel_mask;
 	unsigned int count = 0;

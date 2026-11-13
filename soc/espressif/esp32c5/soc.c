@@ -47,7 +47,7 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_efuse_init_virtual();
 
-#if CONFIG_ESP_SPIRAM
+#if CONFIG_SOC_FAMILY_ESPRESSIF_SPIRAM
 	esp_init_psram();
 
 #if CONFIG_SHARED_MULTI_HEAP

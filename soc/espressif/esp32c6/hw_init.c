@@ -49,17 +49,17 @@ int hardware_init(void)
 	apm_ll_lp_apm_enable_ctrl_filter_all(false);
 	apm_ll_lp_apm0_enable_ctrl_filter_all(false);
 
-#ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_BOOTLOADER_REGION_PROTECTION_ENABLE
 	esp_cpu_configure_region_protection();
 #endif
 
 	bootloader_clock_configure();
 
-#ifdef CONFIG_ESP_CONSOLE
+#ifdef CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE
 	/* initialize console, from now on, we can log */
 	esp_console_init();
 	print_banner();
-#endif /* CONFIG_ESP_CONSOLE */
+#endif /* CONFIG_SOC_FAMILY_ESPRESSIF_CONSOLE */
 
 	cache_hal_config_t cache_config = {
 		.core_nums = 1,
