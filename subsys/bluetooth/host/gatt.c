@@ -3764,12 +3764,10 @@ int bt_gatt_conn_mtu_limit(struct bt_conn *conn, uint16_t mtu)
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_BT_GATT_CLIENT)
 	/* The MTU can only be exchanged once per connection */
 	if (atomic_test_bit(conn->flags, BT_CONN_ATT_MTU_EXCHANGED)) {
 		return -EALREADY;
 	}
-#endif /* CONFIG_BT_GATT_CLIENT */
 
 	conn->le.att_mtu_limit = mtu;
 	return 0;

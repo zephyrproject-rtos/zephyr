@@ -1077,15 +1077,14 @@ static uint8_t att_mtu_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("Negotiated MTU %u", bt_att_mtu(chan));
 
-#if defined(CONFIG_BT_GATT_CLIENT)
 	/* Mark the MTU Exchange as complete.
-	 * This will skip sending ATT Exchange MTU from our side.
+	 * This will skip sending ATT Exchange MTU from our side, and stops the
+	 * local MTU limit from being changed.
 	 *
 	 * Core 5.3 | Vol 3, Part F 3.4.2.2:
 	 * If MTU is exchanged in one direction, that is sufficient for both directions.
 	 */
 	atomic_set_bit(chan->att->conn->flags, BT_CONN_ATT_MTU_EXCHANGED);
-#endif /* CONFIG_BT_GATT_CLIENT */
 
 	att_chan_mtu_updated(chan);
 
