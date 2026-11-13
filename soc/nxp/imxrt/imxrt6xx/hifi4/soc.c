@@ -77,10 +77,10 @@ __weak void mimxrt685s_hifi4_irq_init(void)
 void mimxrt685s_hifi4_copy_nocache_init(void)
 {
 	arch_early_memcpy(&_nocache_load_ram_start, &_nocache_load_rom_start,
-		(uintptr_t) &_nocache_load_ram_size);
+			  LINKER_SECTION_SIZE(_nocache_load_ram_start, _nocache_load_ram_end));
 
 	arch_early_memset(&_nocache_noload_ram_start, 0,
-		(uintptr_t) _nocache_noload_ram_size);
+			  LINKER_SECTION_SIZE(_nocache_noload_ram_start, _nocache_noload_ram_end));
 }
 #endif
 

@@ -168,7 +168,7 @@ static void configure_nocache_region(void)
 {
 	const struct pma_region nocache_region = {
 		.start = (unsigned long)&_nocache_ram_start,
-		.size = (unsigned long)&_nocache_ram_size,
+		.size = LINKER_SECTION_SIZE(_nocache_ram_start, _nocache_ram_end),
 		.attr = {PMACFG_MTYPE_MEMORY_NOCACHE_BUFFERABLE},
 	};
 

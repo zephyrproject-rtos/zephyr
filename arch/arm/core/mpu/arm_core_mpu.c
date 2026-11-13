@@ -61,7 +61,6 @@ extern char __ram_text_reloc_size[];
 
 #if defined(CONFIG_SRAM_VECTOR_TABLE)
 extern char _sram_vector_start[];
-extern char _sram_vector_size[];
 #endif
 
 static const struct z_arm_mpu_partition static_regions[] = {
@@ -71,7 +70,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
 		 * to function
 		 */
 		.start = (uint32_t)&__gcov_bss_start,
-		.size = (uint32_t)&__gcov_bss_size,
+		.size = (uint32_t)LINKER_SECTION_SIZE_CONST(__gcov_bss_size),
 		.attr = K_MEM_PARTITION_P_RW_U_RW,
 	},
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
@@ -79,7 +78,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
 	{
 		/* Special non-cacheable RAM area */
 		.start = (uint32_t)&_nocache_ram_start,
-		.size = (uint32_t)&_nocache_ram_size,
+		.size = (uint32_t)LINKER_SECTION_SIZE_CONST(_nocache_ram_size),
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
 	},
 #endif /* CONFIG_NOCACHE_MEMORY */
@@ -87,7 +86,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
 	{
 		/* Special RAM area for program text */
 		.start = (uint32_t)&__ramfunc_start,
-		.size = (uint32_t)&__ramfunc_size,
+		.size = (uint32_t)LINKER_SECTION_SIZE_CONST(__ramfunc_size),
 #if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
 		.attr = K_MEM_PARTITION_P_R_U_RX,
 #else
@@ -99,7 +98,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
 	{
 		/* RAM area for relocated text */
 		.start = (uint32_t)&__ram_text_reloc_start,
-		.size = (uint32_t)&__ram_text_reloc_size,
+		.size = (uint32_t)LINKER_SECTION_SIZE_CONST(__ram_text_reloc_size),
 #if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
 		.attr = K_MEM_PARTITION_P_R_U_RX,
 #else
@@ -111,7 +110,7 @@ static const struct z_arm_mpu_partition static_regions[] = {
 	{
 		/* Vector table in SRAM */
 		.start = (uint32_t)&_sram_vector_start,
-		.size = (uint32_t)&_sram_vector_size,
+		.size = (uint32_t)LINKER_SECTION_SIZE_CONST(_sram_vector_size),
 #if defined(CONFIG_ARM_MPU_PXN) && defined(CONFIG_USERSPACE)
 		.attr = K_MEM_PARTITION_P_R_U_RX,
 #else

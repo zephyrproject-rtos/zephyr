@@ -17,6 +17,7 @@ Developing with Zephyr
    flash_debug/index
    modules.rst
    west/index
+   linker_sizes
    twister/index
    test/index
    sca/index
