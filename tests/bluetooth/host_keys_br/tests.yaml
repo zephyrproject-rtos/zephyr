@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - qemu_x86
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+  timeout: 300
+
+tests:
+  bluetooth.host_keys_br:
+    {}
+  bluetooth.host_keys_br.no_overwrite:
+    extra_configs:
+      - CONFIG_BT_KEYS_OVERWRITE_OLDEST=n
+  bluetooth.host_keys_br.no_settings:
+    extra_configs:
+      - CONFIG_BT_SETTINGS=n
+      - CONFIG_SETTINGS=n
+      - CONFIG_SETTINGS_RUNTIME=n
