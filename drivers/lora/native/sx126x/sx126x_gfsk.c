@@ -272,7 +272,7 @@ int sx126x_lora_config_gfsk(const struct device *dev, const struct lora_modem_co
 		gfsk->bitrate, gfsk->freq_deviation, gfsk->bandwidth, gfsk->tx_power);
 
 out:
-	sx126x_set_sleep(dev);
+	ret = sx126x_finish(dev, ret);
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
