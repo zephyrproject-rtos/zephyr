@@ -3031,14 +3031,18 @@ int bt_avrcp_connect(struct bt_conn *conn)
 
 	avrcp->session.ops = &avctp_ops;
 	init_avctp_control_channel(&(avrcp->session));
+
+	/* avrcp_disconnected() needs it, also for a failure before the call below returns */
+	avrcp->acl_conn = bt_conn_ref(conn);
+
 	err = bt_avctp_connect(conn, BT_L2CAP_PSM_AVRCP, &(avrcp->session));
 	if (err < 0) {
 		/* If error occurs, undo the saving and return the error */
+		bt_conn_drop(&avrcp->acl_conn);
 		memset(avrcp, 0, sizeof(struct bt_avrcp));
 		LOG_DBG("AVCTP Connect failed");
 		return err;
 	}
-	avrcp->acl_conn = bt_conn_ref(conn);
 
 	LOG_DBG("Connection request sent");
 	return err;
