@@ -90,6 +90,19 @@ config IPM_TI_K3_RPROC_INIT_PRIORITY
 	  Must be after the IPM device it sits in front of, which is
 	  initialized at KERNEL_INIT_PRIORITY_DEVICE.
 
+config IPM_TI_K3_RPROC_CRASH_REPORT
+	bool "Report a fatal error to the host"
+	depends on IPM_TI_K3_RPROC
+	depends on !RESET_ON_FATAL_ERROR
+	help
+	  Provide k_sys_fatal_error_handler(), which sends RP_MBOX_CRASH to
+	  the host and halts the core in WFI. The report is sent only while
+	  the application has the IPM device enabled, so the mailbox is known
+	  to be ready. A host kernel that passes the report to remoteproc
+	  recovery restarts this core alone. Other kernels log it. An
+	  application that defines its own fatal error handler must leave
+	  this off.
+
 # zephyr-keep-sorted-start
 source "drivers/ipm/Kconfig.imx"
 source "drivers/ipm/Kconfig.ivshmem"
