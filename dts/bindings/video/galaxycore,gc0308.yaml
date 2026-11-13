@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2024 Felipe Neves
+# SPDX-FileCopyrightText: Copyright (c) 2026 Victor Hogeweij
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Galaxy Core GC0308 CMOS video sensor
+
+compatible: "galaxycore,gc0308"
+
+include: i2c-device.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency in Hz of the clock the board drives the sensor XCLK pin with.
+      The sensor derives all of its timing from it, so the driver needs it to
+      report and select frame intervals.
+  pclk-drive-strength:
+    type: int
+    enum: [2, 4, 8, 10]
+    description: |
+      Drive strength in mA of the PCLK output pad. Left out, the sensor keeps
+      the 2 mA the vendor register sequence selects. Raise it for a receiver
+      that needs faster edges, at the cost of more radiated emissions.
+  data-drive-strength:
+    type: int
+    enum: [4, 6, 10, 12]
+    description: |
+      Drive strength in mA of the pixel data output pads, 4 mA when left out.
+      See pclk-drive-strength.
+  sync-drive-strength:
+    type: int
+    enum: [4, 8, 12, 16]
+    description: |
+      Drive strength in mA of the HSYNC and VSYNC output pads, 4 mA when left
+      out. See pclk-drive-strength.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to power down the sensor. The sensor
+      receives this as an active high signal
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
