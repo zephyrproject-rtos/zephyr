@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config RC_LOOPBACK
+	bool "Software loopback remote control driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RC_LOOPBACK_ENABLED
+	select RC_TX if $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_RC_LOOPBACK),rx-only,False)
+	help
+	  Enable the software loopback remote control driver, used to test
+	  the remote control subsystem without hardware.
+
+config RC_LOOPBACK_TX_WORDS
+	int "Words kept from the last loopback transmission"
+	default 64
+	depends on RC_LOOPBACK && RC_TX
+	help
+	  Also the maximum words per transmission the loopback driver
+	  reports in its capabilities.
