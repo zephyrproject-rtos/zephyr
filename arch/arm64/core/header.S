@@ -25,10 +25,10 @@ _ASM_FILE_PROLOGUE
 SECTION_SUBSEC_FUNC(image_header,_image_header_section,_image_header)
 	b	__start				// branch to kernel start
 	.long	0				// reserved
-	.quad	0				// Image load offset from start
+	.quad	_aarch64_text_offset		// Image load offset from start
 						// of RAM, little-endian
 
-	.quad	_flash_used			// Effective size of kernel
+	.quad	_aarch64_image_size		// Effective size of kernel
 						// image, little-endian
 
 	.quad	HEADER_FLAGS			// Informative flags,

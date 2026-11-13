@@ -372,4 +372,17 @@ SECTIONS
      * calculate this value here. */
     _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_start;
 
+#ifdef CONFIG_AARCH64_IMAGE_HEADER
+    /* arm64 Image header values, see CONFIG_AARCH64_IMAGE_DRAM_BASE */
+#ifdef CONFIG_AARCH64_IMAGE_DRAM_BASE
+    _aarch64_dram_base = ALIGN(CONFIG_AARCH64_IMAGE_DRAM_BASE, 0x200000);
+    ASSERT(_aarch64_dram_base <= __text_region_start,
+           "CONFIG_AARCH64_IMAGE_DRAM_BASE rounded up to 2 MiB is above the image")
+    _aarch64_text_offset = __text_region_start - _aarch64_dram_base;
+#else
+    _aarch64_text_offset = 0;
+#endif
+    _aarch64_image_size = LOADADDR(.last_section) + SIZEOF(.last_section) - __text_region_start;
+#endif
+
 }
