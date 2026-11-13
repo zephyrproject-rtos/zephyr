@@ -16,6 +16,30 @@
 		status = "okay";
 	};
 
+	stream_sensor: stream_sensor {
+		compatible = "zephyr,generic-emul-sensor";
+		sampling-frequency = <100>;
+		fifo-watermark = <4>;
+		fifo-depth = <4>;
+		status = "okay";
+	};
+
+	wm_sensor: wm_sensor {
+		compatible = "zephyr,generic-emul-sensor";
+		sampling-frequency = <100>;
+		fifo-watermark = <3>;
+		fifo-depth = <4>;
+		status = "okay";
+	};
+
+	slow_sensor: slow_sensor {
+		compatible = "zephyr,generic-emul-sensor";
+		sampling-frequency = <1>;
+		fifo-watermark = <6>;
+		fifo-depth = <6>;
+		status = "okay";
+	};
+
 	test_sensor_pm: test_sensor_pm {
 		compatible = "zephyr,generic-emul-sensor";
 		zephyr,pm-device-runtime-auto;
