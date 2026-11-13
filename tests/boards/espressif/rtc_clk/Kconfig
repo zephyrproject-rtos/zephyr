@@ -7,4 +7,3 @@ source "Kconfig.zephyr"
 
 config FIXTURE_XTAL
 	bool "Selected when external crystal is present"
-	default n
