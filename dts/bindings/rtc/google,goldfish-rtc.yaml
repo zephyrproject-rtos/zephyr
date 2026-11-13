@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Google Goldfish real-time clock
+
+compatible: "google,goldfish-rtc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  big-endian:
+    type: boolean
+    description: |
+      MMIO registers use big-endian byte order. If absent, registers use the
+      little-endian Goldfish byte order.
