@@ -218,6 +218,9 @@ struct cmd_data {
 	/** The state to update when command completes with success. */
 	struct bt_hci_cmd_state_set *state;
 
+	/** The address to cache as bt_dev.random_addr when command completes with success. */
+	const bt_addr_t *random_addr;
+
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
 };
@@ -245,6 +248,11 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 	state->bit = bit;
 	state->val = val;
 	cmd(buf)->state = state;
+}
+
+void bt_hci_cmd_random_addr_set_init(struct net_buf *buf, const bt_addr_t *addr)
+{
+	cmd(buf)->random_addr = addr;
 }
 
 /* HCI command buffers. Derive the needed size from both Command and Event
@@ -435,6 +443,7 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 	cmd(buf)->opcode = 0;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
+	cmd(buf)->random_addr = NULL;
 
 	return buf;
 }
@@ -2864,6 +2873,10 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		struct bt_hci_cmd_state_set *update = cmd(buf)->state;
 
 		atomic_set_bit_to(update->target, update->bit, update->val);
+	}
+
+	if (cmd(buf)->random_addr != NULL && status == BT_HCI_ERR_SUCCESS) {
+		bt_addr_copy(&bt_dev.random_addr, cmd(buf)->random_addr);
 	}
 
 	/* If the command was synchronous wake up bt_hci_cmd_send_sync() */

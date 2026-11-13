@@ -123,8 +123,8 @@ enum {
 	 * of the RPA timeout.
 	 */
 	BT_ADV_RPA_VALID,
-	/* The private random address of the advertiser is being updated. */
-	BT_ADV_RPA_UPDATE,
+	/* Disabled for an RPA update: the RPA rotation enables it again, a stop cancels that. */
+	BT_ADV_RPA_PAUSED,
 	/* The advertiser set is limited by a timeout, or number of advertising
 	 * events, or both.
 	 */
@@ -577,6 +577,11 @@ struct bt_hci_cmd_state_set {
 void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       struct bt_hci_cmd_state_set *state,
 			       atomic_t *target, int bit, bool val);
+
+/* Cache addr as bt_dev.random_addr when the LE Set Random Address command in buf
+ * completes successfully. addr must stay valid until then.
+ */
+void bt_hci_cmd_random_addr_set_init(struct net_buf *buf, const bt_addr_t *addr);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 

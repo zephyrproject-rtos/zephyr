@@ -22,7 +22,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#include <host/adv.h>
+
 #if defined(CONFIG_BT_PRIVACY)
+#include <host/conn_internal.h>
 #include <host/hci_core.h>
 #include <host/id.h>
 #include <host/keys.h>
@@ -148,6 +151,63 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
+	if (IS_ENABLED(CONFIG_TEST_HCI_EXT_ADV)) {
+		sys_put_le64(BIT64(BT_LE_FEAT_BIT_EXT_ADV), rp->features);
+	}
+}
+
+/* Each hook runs once while the Host waits for the command it is named after */
+static void hook_run_once(void (**hook)(void))
+{
+	void (*func)(void) = *hook;
+
+	if (func != NULL) {
+		*hook = NULL;
+		func();
+	}
+}
+
+static bool adv_set_random_addr_failure;
+static void (*adv_set_random_addr_hook)(void);
+
+static void le_set_adv_set_random_addr(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				       uint16_t opcode)
+{
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	hook_run_once(&adv_set_random_addr_hook);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	rp->status = adv_set_random_addr_failure ? BT_HCI_ERR_UNSPECIFIED : BT_HCI_ERR_SUCCESS;
+}
+
+static bool adv_enable_failure;
+static bool adv_disable_failure;
+static void (*adv_enable_hook)(void);
+static void (*adv_disable_hook)(void);
+static uint8_t last_adv_enable;
+
+static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				  uint16_t opcode)
+{
+	const struct bt_hci_cp_le_set_ext_adv_enable *cp = (const void *)buf->data;
+	struct bt_hci_evt_cc_status *rp;
+
+	ARG_UNUSED(len);
+
+	hook_run_once(cp->enable != 0U ? &adv_enable_hook : &adv_disable_hook);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	if ((adv_enable_failure && cp->enable != 0U) || (adv_disable_failure && cp->enable == 0U)) {
+		rp->status = BT_HCI_ERR_UNSPECIFIED;
+		return;
+	}
+
+	rp->status = BT_HCI_ERR_SUCCESS;
+	last_adv_enable = cp->enable;
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -234,6 +294,27 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt, uin
 	generic_success(buf, evt, len, opcode);
 }
 
+/* Once armed, the response to the next LE Set Random Address is held back until the
+ * test sends it, as by a Controller that is slow to respond.
+ */
+static bool random_addr_rsp_hold_armed;
+static struct net_buf *held_rsp;
+static K_SEM_DEFINE(rsp_held_sem, 0, 1);
+
+/* Return true if the response is held back */
+static bool hold_rsp_if_armed(uint16_t opcode, struct net_buf *evt)
+{
+	if (opcode != BT_HCI_OP_LE_SET_RANDOM_ADDRESS || !random_addr_rsp_hold_armed) {
+		return false;
+	}
+
+	random_addr_rsp_hold_armed = false;
+	held_rsp = evt;
+	k_sem_give(&rsp_held_sem);
+
+	return true;
+}
+
 static const struct cmd_handler cmds[] = {
 	{
 		BT_HCI_OP_READ_LOCAL_FEATURES,
@@ -290,6 +371,16 @@ static const struct cmd_handler cmds[] = {
 		sizeof(struct bt_hci_evt_cc_status),
 		le_set_scan_enable,
 	},
+	{
+		BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR,
+		sizeof(struct bt_hci_evt_cc_status),
+		le_set_adv_set_random_addr,
+	},
+	{
+		BT_HCI_OP_LE_SET_EXT_ADV_ENABLE,
+		sizeof(struct bt_hci_evt_cc_status),
+		le_set_ext_adv_enable,
+	},
 };
 
 static void cmd_handle(const struct device *dev, struct net_buf *cmd)
@@ -304,6 +395,10 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	for (size_t i = 0U; i < ARRAY_SIZE(cmds); i++) {
 		if (cmds[i].opcode == opcode) {
 			cmds[i].handler(cmd, &evt, cmds[i].len, opcode);
+			if (hold_rsp_if_armed(opcode, evt)) {
+				return;
+			}
+
 			bt_hci_recv(dev, evt);
 			return;
 		}
@@ -408,6 +503,72 @@ static void cleanup_secondary_identities(void)
 	}
 }
 
+static struct k_thread hook_thread;
+static bool hook_thread_started;
+
+static void adv_cleanup_func(struct bt_le_ext_adv *adv, void *data)
+{
+	ARG_UNUSED(data);
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop an advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete an advertising set");
+}
+
+/* Removes what a failed test can leave behind: advertising sets, armed failures and hooks, and
+ * the thread a hook started
+ */
+static void adv_cleanup(void)
+{
+	adv_set_random_addr_failure = false;
+	adv_enable_failure = false;
+	adv_disable_failure = false;
+	adv_set_random_addr_hook = NULL;
+	adv_enable_hook = NULL;
+	adv_disable_hook = NULL;
+
+	if (hook_thread_started) {
+		hook_thread_started = false;
+		zassert_ok(k_thread_join(&hook_thread, K_FOREVER), "Failed to join the thread");
+	}
+
+	if (!IS_ENABLED(CONFIG_TEST_HCI_EXT_ADV)) {
+		return;
+	}
+
+	if (bt_le_adv_lookup_legacy() != NULL) {
+		zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+	}
+
+	bt_le_ext_adv_foreach(adv_cleanup_func, NULL);
+}
+
+/* The application thread of test_rpa_timeout_during_adv_start() */
+static struct k_thread adv_start_thread;
+static bool adv_start_thread_created;
+
+/* What a failed advertiser start leaves behind: the held response, the thread
+ * that waits for it and the advertiser
+ */
+static void adv_start_cleanup(void)
+{
+	random_addr_rsp_hold_armed = false;
+	k_sem_reset(&rsp_held_sem);
+
+	if (held_rsp != NULL) {
+		bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&held_rsp));
+	}
+
+	if (adv_start_thread_created) {
+		adv_start_thread_created = false;
+		zassert_ok(k_thread_join(&adv_start_thread, K_FOREVER),
+			   "Failed to join the thread");
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && bt_le_adv_lookup_legacy() != NULL) {
+		zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+	}
+}
+
 static void *id_setup(void)
 {
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
@@ -440,6 +601,8 @@ static void id_after(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	adv_start_cleanup();
+	adv_cleanup();
 	cleanup_secondary_identities();
 }
 
@@ -728,6 +891,349 @@ static ZTEST(bt_id_public_api, test_reset_irk_invalidates_cached_rpa)
 }
 #endif /* defined(CONFIG_BT_RPA_SHARING) */
 
+#if defined(CONFIG_TEST_HCI_EXT_ADV)
+static ZTEST(bt_id_public_api, test_adv_start_rpa_failure)
+{
+	struct bt_le_ext_adv_info info;
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+	int err;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv),
+		   "Failed to create the advertising set");
+	/* bt_le_oob_get_local() rotates the RPAs, so the stopped set needs a new one. */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+
+	adv_set_random_addr_failure = true;
+	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
+	adv_set_random_addr_failure = false;
+	zassert_not_equal(err, 0, "The set started without a new RPA");
+	zassert_ok(bt_le_ext_adv_get_info(adv, &info), "Failed to get the set info");
+	zassert_equal(info.ext_adv_state, BT_LE_EXT_ADV_STATE_DISABLED,
+		      "The set is enabled after a failed start");
+
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+
+static bool rpa_expired_rotate(struct bt_le_ext_adv *adv)
+{
+	ARG_UNUSED(adv);
+
+	return true;
+}
+
+static const struct bt_le_ext_adv_cb rotate_cb = {
+	.rpa_expired = rpa_expired_rotate,
+};
+
+static enum bt_le_ext_adv_state adv_state(const struct bt_le_ext_adv *adv)
+{
+	struct bt_le_ext_adv_info info;
+
+	zassert_ok(bt_le_ext_adv_get_info(adv, &info), "Failed to get the set info");
+
+	return info.ext_adv_state;
+}
+
+/* Runs the timed RPA rotation now, or nothing if the RPA timer is not running */
+static void rpa_timed_rotation(void)
+{
+	struct k_work_sync sync;
+
+	(void)k_work_flush_delayable(&bt_dev.rpa_update, &sync);
+}
+
+/* Forces an RPA rotation in which LE Set Advertising Set Random Address fails */
+static void rpa_rotation_fail(void)
+{
+	struct bt_le_oob oob = {0};
+
+	adv_set_random_addr_failure = true;
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+	adv_set_random_addr_failure = false;
+}
+
+static ZTEST(bt_id_public_api, test_adv_rpa_update_failure)
+{
+	struct bt_le_ext_adv_info info;
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+	bt_addr_le_t old_rpa;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &rotate_cb, &adv),
+		   "Failed to create the advertising set");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	zassert_ok(bt_le_ext_adv_get_info(adv, &info), "Failed to get the set info");
+	bt_addr_le_copy(&old_rpa, info.addr);
+
+	rpa_rotation_fail();
+	zassert_equal(adv_state(adv), BT_LE_EXT_ADV_STATE_DISABLED,
+		      "The set resumed without a new RPA");
+	rpa_timed_rotation();
+	zassert_equal(adv_state(adv), BT_LE_EXT_ADV_STATE_ENABLED,
+		      "The set did not resume at the next RPA rotation");
+	zassert_false(atomic_test_bit(adv->flags, BT_ADV_RPA_PAUSED),
+		      "The resumed set still has an RPA update pending");
+	zassert_ok(bt_le_ext_adv_get_info(adv, &info), "Failed to get the set info");
+	zassert_false(bt_addr_le_eq(&old_rpa, info.addr), "The set resumed with its old RPA");
+
+	adv_enable_failure = true;
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+	adv_enable_failure = false;
+	rpa_timed_rotation();
+	zassert_equal(adv_state(adv), BT_LE_EXT_ADV_STATE_ENABLED,
+		      "The set did not resume after a failed enable");
+
+	rpa_rotation_fail();
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	rpa_timed_rotation();
+	zassert_equal(adv_state(adv), BT_LE_EXT_ADV_STATE_DISABLED,
+		      "A set stopped while paused resumed at the next RPA rotation");
+
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+
+static void adv_conn_count_func(struct bt_conn *conn, void *data)
+{
+	size_t *count = data;
+
+	if (conn->state == BT_CONN_ADV_CONNECTABLE) {
+		(*count)++;
+	}
+}
+
+/* Connection objects held by undirected connectable advertising sets */
+static size_t adv_conn_count(void)
+{
+	size_t count = 0U;
+
+	bt_conn_foreach(BT_CONN_TYPE_LE, adv_conn_count_func, &count);
+
+	return count;
+}
+
+static ZTEST(bt_id_public_api, test_adv_rpa_update_failure_conn)
+{
+	struct bt_le_ext_adv *adv;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &rotate_cb, &adv),
+		   "Failed to create the advertising set");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	rpa_rotation_fail();
+
+	zassert_equal(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT), -EALREADY,
+		      "A paused set was started again");
+	zassert_equal(bt_le_ext_adv_delete(adv), -EINVAL, "A paused set was deleted");
+	zassert_equal(bt_le_ext_adv_update_param(adv, BT_LE_EXT_ADV_NCONN), -EINVAL,
+		      "A paused set got new parameters");
+	zassert_equal(adv_conn_count(), 1U, "A paused set does not hold one connection");
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_equal(adv_conn_count(), 0U, "Stopping a paused set leaked its connection");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+
+static ZTEST(bt_id_public_api, test_adv_rpa_pause_failure_conn)
+{
+	struct bt_le_ext_adv *adv;
+	struct bt_le_ext_adv *other;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &rotate_cb, &adv),
+		   "Failed to create the advertising set");
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &rotate_cb, &other),
+		   "Failed to create the other advertising set");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	zassert_ok(bt_le_ext_adv_start(other, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the other advertising set");
+
+	/* Both sets stay enabled and keep their RPA update pending */
+	adv_disable_failure = true;
+	rpa_rotation_fail();
+	adv_disable_failure = false;
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_equal(adv_conn_count(), 1U, "Stopping a set released the other set's connection");
+
+	zassert_ok(bt_le_ext_adv_stop(other), "Failed to stop the other advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(other), "Failed to delete the other advertising set");
+}
+
+static ZTEST(bt_id_public_api, test_adv_rpa_pause_failure_terminated)
+{
+	struct bt_hci_evt_le_adv_set_terminated evt = {
+		.status = BT_HCI_ERR_ADV_TIMEOUT,
+		.conn_handle = sys_cpu_to_le16(UINT16_MAX),
+	};
+	struct net_buf buf = {
+		.data = (uint8_t *)&evt,
+	};
+	struct bt_le_ext_adv *adv;
+	struct bt_le_ext_adv *other;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &rotate_cb, &adv),
+		   "Failed to create the advertising set");
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &rotate_cb, &other),
+		   "Failed to create the other advertising set");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	zassert_ok(bt_le_ext_adv_start(other, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the other advertising set");
+
+	adv_disable_failure = true;
+	rpa_rotation_fail();
+	adv_disable_failure = false;
+
+	/* Ends the set that is still advertising, which releases its connection */
+	evt.adv_handle = adv->handle;
+	bt_hci_le_adv_set_terminated(&buf);
+	zassert_equal(adv_conn_count(), 1U, "The ended set did not release its connection");
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the ended set");
+	zassert_equal(adv_conn_count(), 1U, "Stopping the ended set released another connection");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the ended set again");
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_ok(bt_le_ext_adv_stop(other), "Failed to stop the other advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(other), "Failed to delete the other advertising set");
+}
+
+static struct bt_le_ext_adv *hook_adv;
+static int hook_stop_err;
+
+static void hook_thread_func(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	hook_stop_err = bt_le_ext_adv_stop(hook_adv);
+}
+
+/* Stops the set as an application thread could. The thread has a higher priority than the caller,
+ * so it runs until it waits for its own disable command, which follows the current command.
+ */
+static void hook_adv_stop(void)
+{
+	static K_THREAD_STACK_DEFINE(stack, 2048);
+
+	(void)k_thread_create(&hook_thread, stack, K_THREAD_STACK_SIZEOF(stack), hook_thread_func,
+			      NULL, NULL, NULL, K_PRIO_COOP(0), 0, K_NO_WAIT);
+	hook_thread_started = true;
+	k_yield();
+}
+
+/* Stops a connectable set while an RPA rotation waits for the command that the hook is for */
+static void adv_stop_during_rotation(void (**hook)(void), bool enable_failure)
+{
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, &rotate_cb, &adv),
+		   "Failed to create the advertising set");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+
+	hook_adv = adv;
+	*hook = hook_adv_stop;
+	adv_enable_failure = enable_failure;
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+	adv_enable_failure = false;
+	zassert_is_null(*hook, "The rotation did not send the command");
+	zassert_ok(k_thread_join(&hook_thread, K_FOREVER), "Failed to join the thread");
+	hook_thread_started = false;
+	zassert_ok(hook_stop_err, "Failed to stop the advertising set");
+
+	zassert_equal(adv_state(adv), BT_LE_EXT_ADV_STATE_DISABLED,
+		      "The rotation enabled the stopped set");
+	zassert_equal(last_adv_enable, 0U, "The stopped set is advertising");
+	zassert_equal(adv_conn_count(), 0U, "The stop did not release the connection");
+
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+	zassert_equal(adv_state(adv), BT_LE_EXT_ADV_STATE_DISABLED,
+		      "The next rotation resumed the stopped set");
+
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+
+static ZTEST(bt_id_public_api, test_adv_stop_during_pause)
+{
+	adv_stop_during_rotation(&adv_disable_hook, false);
+}
+
+static ZTEST(bt_id_public_api, test_adv_stop_during_rpa_update)
+{
+	adv_stop_during_rotation(&adv_set_random_addr_hook, false);
+}
+
+static ZTEST(bt_id_public_api, test_adv_stop_during_resume)
+{
+	adv_stop_during_rotation(&adv_enable_hook, false);
+}
+
+static ZTEST(bt_id_public_api, test_adv_stop_during_failed_resume)
+{
+	adv_stop_during_rotation(&adv_enable_hook, true);
+}
+
+static ZTEST(bt_id_public_api, test_adv_rpa_update_failure_legacy_api)
+{
+	zassert_ok(bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, NULL, 0, NULL, 0),
+		   "Failed to start advertising");
+	rpa_rotation_fail();
+	zassert_equal(last_adv_enable, 0U, "Advertising resumed without a new RPA");
+
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+	zassert_equal(adv_conn_count(), 0U, "Stopping paused advertising leaked its connection");
+}
+
+static size_t kept_rpa_calls;
+
+static bool rpa_expired_keep(struct bt_le_ext_adv *adv)
+{
+	ARG_UNUSED(adv);
+
+	kept_rpa_calls++;
+
+	return false;
+}
+
+static ZTEST(bt_id_public_api, test_adv_start_restarts_rpa_timer)
+{
+	static const struct bt_le_ext_adv_cb cb = {
+		.rpa_expired = rpa_expired_keep,
+	};
+	struct bt_le_ext_adv *adv;
+	struct bt_le_oob oob = {0};
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, &cb, &adv),
+		   "Failed to create the advertising set");
+
+	/* The forced rotation schedules the next one, which stops the RPA timer since nothing
+	 * advertises. The set keeps its RPA in both.
+	 */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to rotate the RPAs");
+	rpa_timed_rotation();
+	zassert_equal(kept_rpa_calls, 2U, "Unexpected number of rpa_expired calls");
+
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Failed to start the advertising set");
+	rpa_timed_rotation();
+	zassert_equal(kept_rpa_calls, 3U, "Starting the set did not restart the RPA timer");
+
+	zassert_ok(bt_le_ext_adv_stop(adv), "Failed to stop the advertising set");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the advertising set");
+}
+#endif /* defined(CONFIG_TEST_HCI_EXT_ADV) */
+
 static ZTEST(bt_id_public_api, test_reset_irk_rejects_random_failure)
 {
 	uint8_t supplied_irk[BT_IRK_SIZE] = {1U};
@@ -971,6 +1477,85 @@ static ZTEST(bt_id_public_api, test_nrpa_adv_rejects_conn_create_with_host_resol
 	zassert_ok(unpair_err, "Failed to remove the test bond");
 }
 #endif /* defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_SMP) */
+
+/* Below the Host's threads, as application threads usually are */
+#define ADV_START_PRIO K_PRIO_PREEMPT(5)
+
+/* Ample for bt_le_adv_start() */
+#define ADV_START_STACK_SIZE 2048U
+
+/* How long before the RPA timeout the advertiser is started. Its response is held
+ * back until past the RPA timeout, so this stays well below the command timeout.
+ */
+#define ADV_START_LEAD_MS 100U
+
+static void adv_start_func(void *p1, void *p2, void *p3)
+{
+	int *err = p1;
+
+	ARGS_UNUSED(p2, p3);
+
+	*err = bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U);
+}
+
+/* Without a Central the RPA timeout sets a new RPA also while no role uses one.
+ * Here it expires before the Controller responds to the LE Set Random Address of
+ * an advertiser that is being started, so its own address goes to the Controller
+ * after the advertiser's.
+ */
+static ZTEST(bt_id_public_api, test_rpa_timeout_during_adv_start)
+{
+	static K_THREAD_STACK_DEFINE(stack, ADV_START_STACK_SIZE);
+	uint32_t rpa_timeout_left_ms;
+	bt_addr_t adv_start_addr;
+	static int adv_start_err;
+	struct bt_le_oob oob;
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		/* With a Central the RPA timeout sets nothing while no role uses an RPA */
+		ztest_test_skip();
+	}
+
+	/* Start a new RPA period, so that the RPA timeout is a known time ahead */
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &oob), "Failed to get the local address");
+	rpa_timeout_left_ms =
+		k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&bt_dev.rpa_update));
+	/* Start the advertiser shortly before the RPA timeout */
+	(void)k_sleep(K_MSEC(rpa_timeout_left_ms - ADV_START_LEAD_MS));
+
+	random_addr_rsp_hold_armed = true;
+	adv_start_thread_created = true;
+	(void)k_thread_create(&adv_start_thread, stack, K_THREAD_STACK_SIZEOF(stack),
+			      adv_start_func, &adv_start_err, NULL, NULL, ADV_START_PRIO, 0,
+			      K_NO_WAIT);
+	/* The command reaches the driver with no simulated time passing, so the
+	 * timeout only ends a failed wait before the RPA timeout
+	 */
+	zassert_ok(k_sem_take(&rsp_held_sem, K_MSEC(ADV_START_LEAD_MS)),
+		   "The advertiser did not set a random address");
+	bt_addr_copy(&adv_start_addr, &random_addr);
+
+	/* Until one tick past the RPA timeout, which runs until it waits for a
+	 * command buffer or for the response to its own command
+	 */
+	(void)k_sleep(K_TICKS(k_work_delayable_remaining_get(&bt_dev.rpa_update) + 1));
+	zassert_true((k_work_delayable_busy_get(&bt_dev.rpa_update) & K_WORK_RUNNING) != 0U,
+		     "The RPA timeout is not running");
+
+	bt_hci_recv(DEVICE_DT_INST_GET(0), net_buf_take(&held_rsp));
+	zassert_ok(k_thread_join(&adv_start_thread, K_FOREVER), "Failed to join the thread");
+	adv_start_thread_created = false;
+	zassert_ok(adv_start_err, "Failed to start advertising");
+	zassert_false(bt_addr_eq(&random_addr, &adv_start_addr),
+		      "The RPA timeout did not set an address after the advertiser");
+
+	zassert_true(bt_addr_eq(&bt_dev.random_addr, &random_addr),
+		     "The Host's random address is not the Controller's");
+	/* What bt_le_ext_adv_get_info() reports for the advertiser */
+	zassert_true(bt_addr_eq(&bt_le_adv_lookup_legacy()->adv_addr.a, &random_addr),
+		     "The advertiser's address is not the Controller's");
+	zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+}
 #endif /* CONFIG_BT_BROADCASTER && (!CONFIG_BT_EXT_ADV || CONFIG_BT_EXT_ADV_LEGACY_SUPPORT) */
 
 #if defined(CONFIG_BT_OBSERVER) && !defined(CONFIG_BT_BROADCASTER) &&                              \
