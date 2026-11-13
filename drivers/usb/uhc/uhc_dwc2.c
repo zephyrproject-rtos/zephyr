@@ -1633,6 +1633,19 @@ static uint32_t ch_handle_in_interrupt(struct uhc_dwc2_channel *const ch,
 {
 	uint32_t ch_events = 0;
 
+	if (ch->do_split) {
+		switch (ch->split_state) {
+		case UHC_DWC2_SPLIT_SSPLIT:
+			return ch_handle_in_ssplit(ch, hcint);
+		case UHC_DWC2_SPLIT_CSPLIT:
+			return ch_handle_in_csplit(ch, hcint);
+		default:
+			LOG_ERR("Invalid Interrupt IN SPLIT state");
+			return BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
+			BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		}
+	}
+
 	if (hcint & USB_DWC2_HCINT_CHHLTD) {
 		if (hcint & (USB_DWC2_HCINT_XFERCOMPL | USB_DWC2_HCINT_STALL |
 			     USB_DWC2_HCINT_BBLERR)) {
@@ -1693,6 +1706,77 @@ static uint32_t ch_handle_in_interrupt(struct uhc_dwc2_channel *const ch,
 	return ch_events;
 }
 
+static uint32_t ch_handle_out_interrupt(struct uhc_dwc2_channel *const ch,
+					uint32_t hcint)
+{
+	uint32_t ch_events = 0;
+
+	if (ch->do_split) {
+		switch (ch->split_state) {
+		case UHC_DWC2_SPLIT_SSPLIT:
+			return ch_handle_out_ssplit(ch, hcint);
+		case UHC_DWC2_SPLIT_CSPLIT:
+			return ch_handle_out_csplit(ch, hcint);
+		default:
+			LOG_ERR("Invalid Interrupt OUT SPLIT state");
+			return BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
+			BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		}
+	}
+
+	if (hcint & USB_DWC2_HCINT_CHHLTD) {
+		if (hcint & USB_DWC2_HCINT_XFERCOMPL) {
+			/* Transfer completed successfully. */
+			ch->error_count = 0;
+			ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_CPLT);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+
+		} else if (hcint & USB_DWC2_HCINT_STALL) {
+			/* Endpoint STALL. */
+			ch->error_count = 0;
+			ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_STALL);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+
+		} else if (hcint & USB_DWC2_HCINT_XACTERR) {
+			/* Transaction error: retry at the next interval. */
+			ch->error_count++;
+
+			if (ch->error_count >= 3) {
+				LOG_ERR("OUT channel%d error retry limit, HCINT 0x%08x",
+					ch->index, hcint);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+			} else {
+				LOG_DBG("OUT channel%d error, HCINT 0x%08x, retry %u",
+					ch->index, hcint, ch->error_count);
+				ch_events |= BIT(UHC_DWC2_CHANNEL_DO_WAIT_SOF);
+			}
+
+		} else if (hcint & (USB_DWC2_HCINT_NAK |
+				    USB_DWC2_HCINT_NYET |
+				    USB_DWC2_HCINT_FRMOVRUN)) {
+			ch->error_count = 0;
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_WAIT_SOF);
+
+		} else {
+			LOG_ERR("OUT channel%d halted, HCINT 0x%08x",
+				ch->index, hcint);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_EVENT_ERROR);
+			ch_events |= BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+		}
+	} else if (hcint & (USB_DWC2_HCINT_ACK |
+			    USB_DWC2_HCINT_NAK)) {
+		/* Wait for the channel halt event. */
+		LOG_DBG("OUT channel%d ACK/NAK, HCINT 0x%08x",
+			ch->index, hcint);
+	} else {
+		LOG_WRN("OUT channel%d not halted, HCINT 0x%08x",
+			ch->index, hcint);
+	}
+
+	return ch_events;
+}
+
 static uint32_t ch_handle_irq_events(const struct device *dev,
 				     struct uhc_dwc2_channel *const ch)
 {
@@ -1745,9 +1829,7 @@ static uint32_t ch_handle_irq_events(const struct device *dev,
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
 			ch_events = ch_handle_in_interrupt(ch, hcint);
 		} else {
-			LOG_ERR("Interrupt OUT isn't supported yet");
-			ch_events = BIT(UHC_DWC2_CHANNEL_EVENT_ERROR) |
-				    BIT(UHC_DWC2_CHANNEL_DO_RELEASE);
+			ch_events = ch_handle_out_interrupt(ch, hcint);
 		}
 	} else {
 		LOG_ERR("Unhandled transfer type %u, HCINT 0x%08x", xfer->type, hcint);
@@ -2227,21 +2309,17 @@ static void ch_start_interrupt(const struct device *dev,
 	uint32_t hfnum;
 	uint16_t frame;
 
-	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
-	dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
+	/* TODO: Split for multipacket? */
 
-	LOG_DBG("INT IN, ch=%u, ep=%02Xh, mps=%u, interval=%u, size=%u, pid=%u, frame=%u",
-		ch->index,
-		xfer->ep,
-		xfer->mps,
-		xfer->interval,
-		ch->length,
-		ch->data->next_pid,
-		ch->data->scheduled_frame);
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
+		dma_addr = (mem_addr_t)net_buf_tail(xfer->buf);
+	} else {
+		ch->length = MIN(xfer->buf->len, xfer->mps);
+		dma_addr = (mem_addr_t)(xfer->buf->data /* + ch->offset */);
+	}
 
 	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
-
-	/* TODO: Do not forget to flush pids on disconnection. Remove if 120943 is merged. */
 
 	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
 		 usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
@@ -2264,13 +2342,18 @@ static void ch_start_interrupt(const struct device *dev,
 	frame = usb_dwc2_get_hfnum_frnum(hfnum);
 
 	if (periodic_frame_overrun(frame, ch->data->scheduled_frame)) {
-		/* We already missed the frame, schedule to the next suitable frame */
+		/*
+		 * TODO: With bInterval=1, processing delays (e.g. debug logging or high load)
+		 * may cause repeated frame overruns. Rescheduling relative to the
+		 * previous scheduled frame may never catch up with the current frame.
+		 * Maybe need to adjust the schedule based on the current frame.
+		 */
 		ch_schedule_interrupt(dev, ch);
+
 		/* TODO: Emulate the situation, when we passed two frame intervals */
+
 		return;
 	}
-
-	/* TODO: Split? */
 
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
 
@@ -2280,9 +2363,9 @@ static void ch_start_interrupt(const struct device *dev,
 		hcchar &= ~USB_DWC2_HCCHAR_ODDFRM;
 	}
 
-	hcchar |= USB_DWC2_HCCHAR_CHENA;
-	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
 	sys_write32(hcchar, (mem_addr_t)&ch->regs->hcchar);
+
+	ch_enable(dev, ch);
 }
 
 static void ch_reinit(const struct device *dev,
@@ -2347,10 +2430,6 @@ static void port_sof(const struct device *dev)
 		next_frame = (usb_dwc2_get_hfnum_frnum(hfnum) + 1U) & PERIODIC_FRAME_MASK;
 
 		if (next_frame == ch->data->scheduled_frame) {
-			LOG_DBG("Channel%d schedule periodic to frame=%u",
-				ch->index,
-				ch->data->scheduled_frame);
-
 			ch->data->periodic_scheduled = false;
 			ch_start_interrupt(dev, ch);
 		}
@@ -2567,11 +2646,6 @@ static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 		LOG_ERR("Interrupt transfer requires buffer");
 		return -EINVAL;
 	}
-	/* TODO: Support only IN EP for now */
-	if (!USB_EP_DIR_IS_IN(xfer->ep)) {
-		LOG_ERR("Interrupt OUT is not supported yet");
-		return -ENOTSUP;
-	}
 
 	if (xfer->mps == 0U || xfer->mps > 1024U) {
 		LOG_ERR("Invalid interrupt MPS %u", xfer->mps);
@@ -2589,20 +2663,40 @@ static int validate_interrupt_xfer(const struct uhc_transfer *xfer)
 		return -EINVAL;
 	}
 
-	/* The buffer must have space for at least one packet. */
-	if (net_buf_tailroom(xfer->buf) == 0) {
-		LOG_ERR("Interrupt IN transfer has no tailroom");
-		return -ENOMEM;
-	}
-
 	/*
 	 * DWC2 DMA mode requires word-aligned DMA buffers.
-	 * For IN, DMA writes to net_buf_tail().
 	 */
-	if (!IS_ALIGNED(net_buf_tail(xfer->buf), 4)) {
-		LOG_ERR("Interrupt IN buffer tail %p is not 4-byte aligned",
-			net_buf_tail(xfer->buf));
-		return -EINVAL;
+	if (USB_EP_DIR_IS_IN(xfer->ep)) {
+		/* IN requires space for the received packet. */
+		if (net_buf_tailroom(xfer->buf) == 0) {
+			LOG_ERR("Interrupt IN transfer has no tailroom");
+			return -ENOMEM;
+		}
+
+		if (!IS_ALIGNED(net_buf_tail(xfer->buf), 4)) {
+			LOG_ERR("Interrupt IN buffer tail %p is not 4-byte aligned",
+				net_buf_tail(xfer->buf));
+			return -EINVAL;
+		}
+	} else {
+		/* OUT payload is already present in the buffer. */
+		if (xfer->buf->len == 0) {
+			LOG_ERR("Interrupt OUT ZLP is not supported");
+			return -ENOTSUP;
+		}
+
+		/* Only single-packet OUT transfers for now. */
+		if (xfer->buf->len > xfer->mps) {
+			LOG_ERR("Interrupt OUT length %u exceeds MPS %u",
+				xfer->buf->len, xfer->mps);
+			return -ENOTSUP;
+		}
+
+		if (!IS_ALIGNED(xfer->buf->data, 4)) {
+			LOG_ERR("Interrupt OUT buffer data %p is not 4-byte aligned",
+				xfer->buf->data);
+			return -EINVAL;
+		}
 	}
 
 	return 0;
