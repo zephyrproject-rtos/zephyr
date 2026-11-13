@@ -109,7 +109,7 @@ int z_impl_zvfs_select(int nfds, struct zvfs_fd_set *ZRESTRICT readfds,
 		}
 
 		do {
-			if (ored_mask & bit_mask) {
+			if (fd_no < nfds && (ored_mask & bit_mask) != 0U) {
 				int events = 0;
 
 				if (num_pfds >= ARRAY_SIZE(pfds)) {
