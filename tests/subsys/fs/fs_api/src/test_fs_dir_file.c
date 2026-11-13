@@ -9,7 +9,7 @@
  * @brief Test cases for filesystem api
  *
  * @defgroup filesystem_api File system API
- * @ingroup filesystem
+ * @ingroup all_tests
  * @{
  * @}
  */
@@ -221,6 +221,7 @@ void test_unmount(void)
  * @brief Test fs_statvfs() interface in file system core
  *
  * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-17
  */
 ZTEST(fs_api_dir_file, test_file_statvfs)
 {
@@ -661,6 +662,7 @@ static int _test_file_sync(void)
  * @brief Test fs_sync() interface in file system core
  *
  * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-11
  */
 ZTEST(fs_api_dir_file, test_file_sync)
 {
@@ -931,6 +933,7 @@ void test_file_close(void)
  * @brief Test fs_rename() interface in file system core
  *
  * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-6
  */
 ZTEST(fs_api_dir_file, test_file_rename)
 {
@@ -976,6 +979,7 @@ ZTEST(fs_api_dir_file, test_file_rename)
  * @brief Test fs_stat() interface in filesystem core
  *
  * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-16
  */
 ZTEST(fs_api_dir_file, test_file_stat)
 {
@@ -1013,6 +1017,7 @@ ZTEST(fs_api_dir_file, test_file_stat)
  * @brief Test fs_unlink() interface in filesystem core
  *
  * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-7
  */
 ZTEST(fs_api_dir_file, test_file_unlink)
 {
@@ -1074,6 +1079,18 @@ static void fs_api_teardown(void *fixtrue)
 	fs_unregister(TEST_FS_1, &temp_fs);
 }
 
+/**
+ * @brief Test directory operations in the file system core
+ *
+ * @details Exercises creating a directory, opening and closing it, and
+ * listing its entries.
+ *
+ * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-12
+ * @verifies ZEP-SRS-17-13
+ * @verifies ZEP-SRS-17-14
+ * @verifies ZEP-SRS-17-15
+ */
 ZTEST(fs_api_dir_file, test_fs_dir)
 {
 	test_mkdir();
@@ -1083,6 +1100,22 @@ ZTEST(fs_api_dir_file, test_fs_dir)
 	test_lsdir();
 }
 
+/**
+ * @brief Test file operations in the file system core
+ *
+ * @details Exercises creating and opening a file, writing to it, reading it
+ * back, seeking and reporting the position, truncating it and closing it.
+ *
+ * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-1
+ * @verifies ZEP-SRS-17-2
+ * @verifies ZEP-SRS-17-3
+ * @verifies ZEP-SRS-17-4
+ * @verifies ZEP-SRS-17-5
+ * @verifies ZEP-SRS-17-8
+ * @verifies ZEP-SRS-17-9
+ * @verifies ZEP-SRS-17-10
+ */
 ZTEST(fs_api_dir_file, test_file_ops)
 {
 	test_file_open();
@@ -1093,6 +1126,13 @@ ZTEST(fs_api_dir_file, test_file_ops)
 	test_file_close();
 }
 
+/**
+ * @brief Test mounting and unmounting a file system
+ *
+ * @ingroup filesystem_api
+ * @verifies ZEP-SRS-17-18
+ * @verifies ZEP-SRS-17-19
+ */
 ZTEST(fs_api_register_mount, test_mount_unmount)
 {
 	fs_register(TEST_FS_1, &temp_fs);

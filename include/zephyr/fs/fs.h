@@ -323,6 +323,9 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval -EACCES when trying to truncate a file without opening it for write.
  * @retval <0 an other negative errno code, depending on a file system back-end.
+ *
+ * @satisfies ZEP-SRS-17-1
+ * @satisfies ZEP-SRS-17-2
  */
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
 
@@ -336,6 +339,8 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);
  * @retval 0 on success;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-5
  */
 int fs_close(struct fs_file_t *zfp);
 
@@ -352,6 +357,8 @@ int fs_close(struct fs_file_t *zfp);
  *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-7
  */
 int fs_unlink(const char *path);
 
@@ -379,6 +386,8 @@ int fs_unlink(const char *path);
  *	   with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-6
  */
 int fs_rename(const char *from, const char *to);
 
@@ -397,6 +406,8 @@ int fs_rename(const char *from, const char *to);
  * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-3
  */
 ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
 
@@ -418,6 +429,8 @@ ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
  * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-4
  */
 ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
 
@@ -438,6 +451,8 @@ ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
  * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP if not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-8
  */
 int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
 
@@ -454,6 +469,8 @@ int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
  * @retval <0 an other negative errno code on error.
  *
  * The current revision does not validate the file object.
+ *
+ * @satisfies ZEP-SRS-17-9
  */
 off_t fs_tell(struct fs_file_t *zfp);
 
@@ -476,6 +493,8 @@ off_t fs_tell(struct fs_file_t *zfp);
  * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 an other negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-10
  */
 int fs_truncate(struct fs_file_t *zfp, off_t length);
 
@@ -494,6 +513,8 @@ int fs_truncate(struct fs_file_t *zfp, off_t length);
  * @retval -EBADF when invoked on zfp that represents unopened/closed file;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-11
  */
 int fs_sync(struct fs_file_t *zfp);
 
@@ -510,6 +531,8 @@ int fs_sync(struct fs_file_t *zfp);
  *         file system has been mounted with the FS_MOUNT_FLAG_READ_ONLY flag;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 another negative errno code on error
+ *
+ * @satisfies ZEP-SRS-17-12
  */
 int fs_mkdir(const char *path);
 
@@ -526,6 +549,8 @@ int fs_mkdir(const char *path);
  * @retval -EBUSY when zdp is already used;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-13
  */
 int fs_opendir(struct fs_dir_t *zdp, const char *path);
 
@@ -547,6 +572,8 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
  * @retval -ENOENT when no such directory found;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-14
  */
 int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
 
@@ -560,6 +587,8 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
  * @retval 0 on success;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 a negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-15
  */
 int fs_closedir(struct fs_dir_t *zdp);
 
@@ -592,6 +621,8 @@ int fs_closedir(struct fs_dir_t *zdp);
  * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY
  *	   has been set;
  * @retval <0 another negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-18
  */
 int fs_mount(struct fs_mount_t *mp);
 
@@ -608,6 +639,8 @@ int fs_mount(struct fs_mount_t *mp);
  * @retval -EINVAL if no system has been mounted at given mount point;
  * @retval -ENOTSUP when not supported by underlying file system driver;
  * @retval <0 an other negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-19
  */
 int fs_unmount(struct fs_mount_t *mp);
 
@@ -643,6 +676,8 @@ int fs_readmount(int *index, const char **name);
  * @retval -ENOENT when no such directory or file is found;
  * @retval -ENOTSUP when not supported by underlying file system driver;
  * @retval <0 negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-16
  */
 int fs_stat(const char *path, struct fs_dirent *entry);
 
@@ -659,6 +694,8 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  * @retval -EINVAL when a bad path to a directory, or a file, is given;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
  * @retval <0 another negative errno code on error.
+ *
+ * @satisfies ZEP-SRS-17-17
  */
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
@@ -722,6 +759,8 @@ int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags);
  * @retval -EALREADY when a file system of a given type has already been registered;
  * @retval -ENOSCP when there is no space left, in file system registry, to add
  *	   this file system type.
+ *
+ * @satisfies ZEP-SRS-17-20
  */
 int fs_register(int type, const struct fs_file_system_t *fs);
 
@@ -735,6 +774,8 @@ int fs_register(int type, const struct fs_file_system_t *fs);
  *
  * @retval 0 on success;
  * @retval -EINVAL when file system of a given type has not been registered.
+ *
+ * @satisfies ZEP-SRS-17-20
  */
 int fs_unregister(int type, const struct fs_file_system_t *fs);
 
