@@ -20,15 +20,17 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 {
 	int ret;
 
-	if (rqtp == NULL) {
-		errno = EFAULT;
-		return -1;
+	if ((flags & ~TIMER_ABSTIME) != 0) {
+		return EINVAL;
+	}
+
+	if ((rqtp == NULL) || (rqtp->tv_sec < 0) || !timespec_is_valid(rqtp)) {
+		return EINVAL;
 	}
 
 	ret = sys_clock_nanosleep(sys_clock_from_clockid((int)clock_id), flags, rqtp, rmtp);
 	if (ret < 0) {
-		errno = -ret;
-		return -1;
+		return -ret;
 	}
 
 	return 0;
@@ -53,7 +55,7 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id)
 	struct posix_condattr *const attr = (struct posix_condattr *)att;
 
 	if (clock_id != CLOCK_REALTIME && clock_id != CLOCK_MONOTONIC) {
-		return -EINVAL;
+		return EINVAL;
 	}
 
 	if ((attr == NULL) || !attr->initialized) {
