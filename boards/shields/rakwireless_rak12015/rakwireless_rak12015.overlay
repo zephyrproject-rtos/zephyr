@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 RAKwireless Technology Limited
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * RAK12015 is an ANT-801S vibration sensor on the WisBlock IO slot.
+ * Connector pin 22 (AIN1) is low while still and pulses high while
+ * vibrating. The module is powered from the base 3V3_S rail, which
+ * WisBlock IO2 switches. This shield does not drive that pin. The
+ * optional IO4 conditioning circuit is not fitted.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/wisblock-io-slot.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		sw0 = &rak12015_out;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		rak12015_out: vibration {
+			gpios = <&wisblock_io WISBLOCK_IO_AIN1 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
