@@ -1,11 +1,12 @@
 # Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+# SPDX-FileCopyrightText: Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP OS Timer on i.MX-RT5xx/6xx
 
 compatible: "nxp,os-timer"
 
-include: base.yaml
+include: [base.yaml, wuc-device.yaml]
 
 properties:
   reg:

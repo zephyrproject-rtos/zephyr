@@ -169,6 +169,11 @@ Devicetree
   Configure the optional ``cd-gpios`` property in :dtcompatible:`espressif,esp32-sdhc-slot`.
   An optional sleep pinctrl state controls the signal pins while card power is off.
 
+* On NXP RW61x, the wakeup routes used by the PM, wireless and RD button
+  samples can be configured through ``wakeup-ctrls`` using peripheral IRQn
+  values. Peripheral alarm, interrupt and pin configuration remain separate
+  from wakeup routing.
+
 Other notable changes
 *********************
 

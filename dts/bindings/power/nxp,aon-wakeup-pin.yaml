@@ -1,11 +1,11 @@
-# Copyright 2024, NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: Some NXP SoC's have pins dedicated to generate a wakeup interrupt.
 
 compatible: "nxp,aon-wakeup-pin"
 
-include: base.yaml
+include: [base.yaml, wuc-device.yaml]
 
 properties:
   interrupts:

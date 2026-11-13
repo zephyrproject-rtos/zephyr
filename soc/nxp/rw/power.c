@@ -14,6 +14,7 @@
 #endif
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/wuc.h>
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
 		    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))
 #include <zephyr/drivers/gpio/gpio_mcux_lpc.h>
@@ -43,6 +44,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 extern void clock_init(void);
 
 power_sleep_config_t slp_cfg;
+
+static const struct wuc_dt_spec rtc_wakeup = WUC_DT_SPEC_GET(DT_NODELABEL(rtc));
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
 pinctrl_soc_pin_t pin_cfg;
@@ -82,6 +85,8 @@ static void pin0_isr(const struct device *dev)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
+static const struct wuc_dt_spec pin1_wakeup = WUC_DT_SPEC_GET(DT_NODELABEL(pin1));
+
 static void pin1_isr(const struct device *dev)
 {
 	uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level)) & 0x1;
@@ -89,7 +94,9 @@ static void pin1_isr(const struct device *dev)
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, level);
 	k_irq_clear_pending(DT_IRQN(DT_NODELABEL(pin1)));
 	DisableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
-	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
+	if (wuc_disable_wakeup_source_dt(&pin1_wakeup) != 0) {
+		LOG_ERR("Failed to disable pin1 wakeup");
+	}
 }
 #endif
 
@@ -220,10 +227,16 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level));
-	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin1)));
+	if (wuc_clear_wakeup_source_triggered_dt(&pin1_wakeup) != 0) {
+		LOG_ERR("Failed to clear pin1 wakeup");
+		return;
+	}
 	k_irq_clear_pending(DT_IRQN(DT_NODELABEL(pin1)));
 	EnableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
-	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
+	if (wuc_enable_wakeup_source_dt(&pin1_wakeup) != 0) {
+		LOG_ERR("Failed to enable pin1 wakeup");
+		return;
+	}
 #endif
 
 #if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
@@ -265,8 +278,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif /* CONFIG_MPU */
 
 		/* Clear RTC wakeup status from previous wake before re-arming */
-		POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
-		POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
+		if (wuc_clear_wakeup_source_triggered_dt(&rtc_wakeup) != 0 ||
+		    wuc_enable_wakeup_source_dt(&rtc_wakeup) != 0) {
+			LOG_ERR("Failed to arm RTC wakeup");
+			break;
+		}
 
 		{
 			k_spinlock_key_t key = sys_clock_lock();
@@ -282,12 +298,15 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif
 			/* Go back to PM Mode 3 if RTC wakeup is to be ignored.*/
 			while (z_nxp_os_timer_ignore_timer_wakeup() &&
-			       (PMU->WAKEUP_STATUS & PMU_WAKEUP_STATUS_RTC_MASK)) {
+			       wuc_check_wakeup_source_triggered_dt(&rtc_wakeup) > 0) {
 				config_wakeup_gpio_pins();
 				/* Reinitialize the OS Timer */
 				CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
 				/* Clear the RTC wakeup bits */
-				POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
+				if (wuc_clear_wakeup_source_triggered_dt(&rtc_wakeup) != 0) {
+					LOG_ERR("Failed to clear RTC wakeup");
+					break;
+				}
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
 				RTC_ClearStatusFlags(RTC, kRTC_WakeupFlag);
 #endif
@@ -338,7 +357,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			sys_clock_idle_exit();
 		}
 
-		POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
+		if (wuc_disable_wakeup_source_dt(&rtc_wakeup) != 0) {
+			LOG_ERR("Failed to disable RTC wakeup");
+		}
 
 		break;
 	default:
@@ -411,8 +432,11 @@ void nxp_rw6xx_power_init(void)
 #endif
 
 	/* Clear the RTC wakeup bits */
-	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
-	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
+	if (wuc_clear_wakeup_source_triggered_dt(&rtc_wakeup) != 0 ||
+	    wuc_disable_wakeup_source_dt(&rtc_wakeup) != 0) {
+		LOG_ERR("Failed to initialize RTC wakeup");
+		return;
+	}
 
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
 		    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))

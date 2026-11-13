@@ -155,6 +155,7 @@
 
 	imu: nxp_wifi {
 		compatible = "nxp,wifi";
+		wakeup-ctrls = <&wuc 72>;
 		/* first index is the imu interrupt, the second is the wakeup done interrupt */
 		interrupts = <72 2>, <64 2>;
 		power-domains = <&peripheral_domain>;
@@ -211,6 +212,7 @@
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
+		wakeup-ctrls = <&wuc 90>;
 		interrupts = <90 2>, <82 2>;
 		interrupt-names = "nbu_rx_int", "wakeup_int";
 	};
@@ -444,6 +446,7 @@
 		compatible = "nxp,lpc-rtc";
 		reg = <0x30000 0x1000>;
 		interrupts = <32 0>;
+		wakeup-ctrls = <&wuc 32>;
 		status = "disabled";
 
 		rtc_highres: rtc_highres {
@@ -456,6 +459,11 @@
 		compatible = "nxp,rw-pmu";
 		reg = <0x31000 0x130>;
 
+		wuc: wakeup-controller {
+			compatible = "nxp,rw-pmu-wuc";
+			#wakeup-ctrl-cells = <1>;
+		};
+
 		pin0: pin0 {
 			compatible = "nxp,aon-wakeup-pin";
 			interrupts = <100 0>;
@@ -464,6 +472,7 @@
 
 		pin1: pin1 {
 			compatible = "nxp,aon-wakeup-pin";
+			wakeup-ctrls = <&wuc 101>;
 			interrupts = <101 0>;
 			status = "disabled";
 		};
@@ -714,6 +723,7 @@
 	os_timer: timers@13b000 {
 		compatible = "nxp,os-timer";
 		reg = <0x13b000 0x1000>;
+		wakeup-ctrls = <&wuc 41>;
 		interrupts = <41 0>;
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 27)>;
 		status = "disabled";

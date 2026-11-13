@@ -8,6 +8,14 @@ config WUC_MCUX_LLWU
 	help
 	  Enable support for NXP LLWU(Low Leakage Wakeup Unit) wakeup controller driver.
 
+config WUC_MCUX_RW_PMU
+	bool "NXP RW6xx PMU wakeup control"
+	default y
+	depends on DT_HAS_NXP_RW_PMU_WUC_ENABLED
+	help
+	  Enable the RW6xx Power Management Unit wakeup controller. Wakeup
+	  sources are identified by their peripheral interrupt numbers.
+
 config WUC_MCUX_SLEEPCON
 	bool "NXP SLEEPCON wakeup control"
 	default y
