@@ -34,6 +34,11 @@ Build System
 Kernel
 ******
 
+* :c:func:`k_queue_cancel_wait` and :c:macro:`k_fifo_cancel_wait` now wake every :c:func:`k_poll`
+  call waiting on the queue with ``-EINTR`` and submit every :c:func:`k_work_poll_submit` item
+  waiting on it, not only the first. Code that treated a cancel as addressed to one waiter must
+  re-check its own condition.
+
 Boards
 ******
 
