@@ -1,0 +1,16 @@
+# Copyright (C) 2025-2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_SAM9X7
+
+DT_CHOSEN_Z_SYS_TIMER := zephyr,system-timer
+
+configdefault NUM_IRQS
+	default 102
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_chosen_path,$(DT_CHOSEN_Z_SYS_TIMER)),clock-frequency)
+
+endif # SOC_SERIES_SAM9X7
