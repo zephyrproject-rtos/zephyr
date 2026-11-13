@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,14 +153,23 @@ bool pm_policy_state_is_available(enum pm_state state, uint8_t substate_id)
 
 bool pm_policy_state_any_active(void)
 {
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 	/* Check if there is any power state that is not locked and not disabled due
 	 * to latency requirements.
 	 */
-	return (atomic_get(&global_lock_cnt) == 0) &&
-	       (atomic_get(&unlock_mask) & atomic_get(&latency_mask));
+	return (pm_policy_state_available_mask() != 0);
+}
+
+uint32_t pm_policy_state_available_mask(void)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	if (atomic_get(&global_lock_cnt) != 0) {
+		return 0;
+	}
+
+	return (uint32_t)(atomic_get(&unlock_mask) & atomic_get(&latency_mask));
+#else
+	return 0xFFFFFFFF;
 #endif
-	return true;
 }
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
