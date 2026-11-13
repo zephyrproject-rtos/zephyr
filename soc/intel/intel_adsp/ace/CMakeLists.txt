@@ -33,8 +33,7 @@ zephyr_library_sources_ifdef(
 zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_INTEL_ADSP_TRIPLE_FAULT_BREADCRUMB asm_breadcrumb.S)
 
 if(CONFIG_XTENSA_MMU)
-  zephyr_library_sources_ifdef(CONFIG_SOC_ACE30 mmu_ace30.c)
-  zephyr_library_sources_ifdef(CONFIG_SOC_ACE40 mmu_ace40.c)
+  zephyr_library_sources(mmu_ace.c)
 endif()
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
