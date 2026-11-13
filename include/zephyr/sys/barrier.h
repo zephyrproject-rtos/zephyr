@@ -77,6 +77,8 @@ extern "C" {
  * @note When no barrier backend is available for the architecture and
  * toolchain in use, this falls back to a compiler barrier, which orders the
  * accesses the compiler emits but places no constraint on the hardware.
+ *
+ * @satisfies ZEP-SRS-19-27
  */
 static ALWAYS_INLINE void barrier_sync_synchronize(void)
 {
@@ -92,6 +94,8 @@ static ALWAYS_INLINE void barrier_sync_synchronize(void)
  * @note When no barrier backend is available for the architecture and
  * toolchain in use, this falls back to a compiler barrier, which orders the
  * accesses the compiler emits but places no constraint on the hardware.
+ *
+ * @satisfies ZEP-SRS-19-25
  */
 static ALWAYS_INLINE void barrier_dmem_fence_full(void)
 {
@@ -110,6 +114,8 @@ static ALWAYS_INLINE void barrier_dmem_fence_full(void)
  * @note When not supported by hardware or architecture, this instruction falls
  * back to a full/sequentially-consistent data memory barrier, and to a
  * compiler barrier when no backend is available at all.
+ *
+ * @satisfies ZEP-SRS-19-26
  */
 static ALWAYS_INLINE void barrier_dsync_fence_full(void)
 {
