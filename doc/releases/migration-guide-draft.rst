@@ -300,6 +300,12 @@ PTP Clock
   addend register from its nominal value. All in-tree drivers have been converted.
   (:github:`120828`)
 
+SPI
+===
+
+* ``CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS`` has been removed: the SPI shell now takes its list of SPI
+  buses from the devicetree. Remove the option from application configurations.
+
 Timers
 ======
 
