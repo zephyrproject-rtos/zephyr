@@ -159,7 +159,8 @@ typedef union acp_sw_intr_trig {
 typedef union dsp_interrupt_routing_ctrl_0 {
 	struct {
 		unsigned int dma_intr_level: 3;
-		unsigned int: 18;
+		unsigned int ext_timer1_intr_level: 3;
+		unsigned int: 15;
 		unsigned int watchdog_intr_level: 3;
 		unsigned int az_sw_tdm_intr_level: 3;
 		unsigned int sha_intr_level: 3;

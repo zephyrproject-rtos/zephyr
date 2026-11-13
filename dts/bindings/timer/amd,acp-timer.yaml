@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD ACP External Countdown Timer
+
+compatible: "amd,acp-timer"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Timer clock frequency in Hz (typically 24000000 for ACPRefClk)

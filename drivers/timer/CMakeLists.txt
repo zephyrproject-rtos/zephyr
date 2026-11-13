@@ -7,6 +7,7 @@ zephyr_library_sources_ifndef(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE sys_lpm_hoo
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/counter)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_AMBIQ_STIMER_TIMER ambiq_stimer.c)
+zephyr_library_sources_ifdef(CONFIG_AMD_ACP_TIMER amd_acp_timer.c)
 zephyr_library_sources_ifdef(CONFIG_AMD_TMRCTR amd_tmrctr.c)
 zephyr_library_sources_ifdef(CONFIG_APIC_TIMER apic_timer.c)
 zephyr_library_sources_ifdef(CONFIG_APIC_TIMER_TSC apic_tsc.c)

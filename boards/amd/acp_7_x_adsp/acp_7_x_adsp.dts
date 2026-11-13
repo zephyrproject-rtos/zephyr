@@ -11,4 +11,15 @@
 / {
 	compatible = "acp_7_x";
 	model = "AMD ACP_7_X Audio DSP";
+
+	soc {
+		/* ACP DSP0 External Timer1 */
+		acp_timer: acp-timer {
+			compatible = "amd,acp-timer";
+			interrupts = <4>;
+			interrupt-parent = <&acp_intc>;
+			clock-frequency = <24000000>;
+			status = "okay";
+		};
+	};
 };
