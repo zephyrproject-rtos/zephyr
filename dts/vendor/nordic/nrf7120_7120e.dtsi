@@ -913,7 +913,8 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				interrupts = <232 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&pclk32m>;
+				clocks = <&pclk32m>, <&audio_auxpll>;
+				clock-names = "pclk", "aclk";
 				status = "disabled";
 			};
 
