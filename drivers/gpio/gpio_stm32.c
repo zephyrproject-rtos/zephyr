@@ -306,13 +306,12 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	/* Enable device clock before configuration (requires bank writes) */
-	if ((((flags & GPIO_OUTPUT) != 0) || ((flags & GPIO_INPUT) != 0)) &&
-	    !(data->pin_has_clock_enabled & BIT(pin))) {
+	if (((flags & (GPIO_OUTPUT | GPIO_INPUT)) != 0) &&
+	    !atomic_test_and_set_bit(&data->pin_has_clock_enabled, pin)) {
 		err = pm_device_runtime_get(dev);
 		if (err < 0) {
 			return err;
 		}
-		data->pin_has_clock_enabled |= BIT(pin);
 	}
 
 	if ((flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) != 0) {
@@ -361,13 +360,12 @@ static int gpio_stm32_config(const struct device *dev,
 #endif /* CONFIG_STM32_WKUP_PINS */
 
 	/* Decrement GPIO usage count only if pin is now disconnected after being connected */
-	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0) &&
-	    (data->pin_has_clock_enabled & BIT(pin))) {
+	if (((flags & (GPIO_OUTPUT | GPIO_INPUT)) == 0) &&
+	    atomic_test_and_clear_bit(&data->pin_has_clock_enabled, pin)) {
 		err = pm_device_runtime_put(dev);
 		if (err < 0) {
 			return err;
 		}
-		data->pin_has_clock_enabled &= ~BIT(pin);
 	}
 
 	return 0;
