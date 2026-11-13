@@ -1,0 +1,112 @@
+.. _can_j1939:
+
+J1939 Protocol
+##############
+
+.. contents::
+    :local:
+    :depth: 2
+
+Overview
+********
+
+J1939 is a higher-layer protocol for CAN (Controller Area Network) defined
+by the Society of Automotive Engineers (SAE) in the standard SAE J1939. It
+is widely used in commercial vehicles and off-road machinery for communication
+and diagnostics.
+
+Node identity and address claiming
+**********************************
+
+Applications declare logical nodes with :c:macro:`J1939_NODE_DEFINE`. Each node
+references an existing Zephyr CAN device and supplies its preferred source address
+and J1939 NAME fields. Multiple logical nodes can share a controller. Logical node
+identities do not require a separate device driver or devicetree binding.
+
+The declared NAME initializes the node's effective NAME. Address-claim payloads,
+contention comparisons, and NAME getters all use that effective value. The
+preferred source address remains separate from the current claimed address:
+losing contention can change the claimed address without changing the preference.
+
+Do not edit subsystem sources to customize identity or claim policy. Configure
+each node in the application instead. Global Kconfig options select subsystem
+features and resources, not per-node identity.
+
+Provisioning and startup
+========================
+
+Applications may call :c:func:`j1939_configure_node` before startup to replace a
+declared node's complete effective NAME and preferred source address. The
+configuration is validated and copied; the caller retains ownership of its
+NAME buffer. Invalid configuration leaves the node unchanged.
+
+Read manufacturing data, strapping pins, or settings in the application before
+starting the stack. A hardware identifier is not automatically converted to the
+21-bit J1939 identity number: truncating or hashing it does not guarantee
+uniqueness. Provision a stable identity within the manufacturer's allocation and
+handle storage or HWINFO errors explicitly.
+
+Initialize in this order:
+
+#. Check that the CAN devices are ready and configure their operating modes.
+#. Load and validate any product-specific identity, then configure the nodes.
+#. Start the CAN controllers.
+#. Call :c:func:`j1939_init` and check its return value.
+
+Initialization validates every node before installing RX filters or starting the
+shared J1939 worker. Invalid NAMEs, reserved source addresses, and inconsistent
+alternate-address policies return ``-EINVAL``. A missing or unready controller
+returns ``-ENODEV``. RX-filter registration failures release filters acquired by
+that attempt, allowing the application to retry. Initialization does not start
+the CAN controller or change its mode.
+
+After successful startup, another initialization call returns ``-EALREADY`` and
+provisioning returns ``-EBUSY``. Both functions require thread context.
+
+Alternate-address policy
+========================
+
+An arbitrary-address-capable node must use
+:c:macro:`J1939_NODE_DEFINE_WITH_ALTERNATES` and provide an explicit, immutable
+address array with static lifetime. The application chooses addresses appropriate
+to its product and the applicable J1939 allocation rules; the stack does not
+invent a fallback range.
+
+The candidate array must contain unique addresses from ``0x00`` through ``0xFD``,
+with at least one entry different from the preferred address. Its maximum length
+is 254. A fixed-address node may retain a candidate array, but does not use it
+unless its effective NAME advertises arbitrary-address capability.
+
+After losing contention, the core walks that node's candidates in order,
+skipping its preferred address, known foreign claims, and addresses in use by
+other local nodes on the same controller. Candidate cursors are per node; claims
+on another controller do not consume addresses on this bus. Exhausting the list,
+or losing contention as a fixed-address node, follows the cannot-claim path and
+transmits the effective NAME from the NULL source address.
+
+The internal AC reset preserves the effective NAME, returns to the preferred
+address, and resets candidate cursors. The internal NAME setter validates an
+update, serializes it with claim processing, and restarts claiming from the
+preferred address. A successful setter therefore changes subsequent transmitted
+NAMEs as well as getter results.
+
+Broadcast address claims are dispatched to all nodes on the receiving CAN
+controller. Identical NAME/source claims are ignored to prevent a loopback
+controller's own transmissions from causing self-contention. Products must still
+provision distinct NAMEs; identical identities cannot be distinguished on the bus.
+
+Application integration
+=======================
+
+Address claiming uses the existing shared worker; no application polling hook
+or per-node thread is required. Application-specific periodic work belongs in
+application threads or Zephyr work items.
+
+The legacy Name Management implementation is not ported to the Zephyr node API.
+Enabling :kconfig:option:`CONFIG_J1939_NAME_MANAGEMENT` produces an explicit build
+error. It must not be used as an identity provisioning or persistence mechanism.
+
+API Reference
+*************
+
+.. doxygengroup:: can_j1939
