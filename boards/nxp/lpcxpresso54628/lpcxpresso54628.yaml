@@ -18,6 +18,7 @@ supported:
   - crc
   - gpio
   - hwinfo
+  - netif:eth
   - pwm
   - uart
   - watchdog
