@@ -741,4 +741,126 @@ ZTEST(net_socket_service, test_reconfigure_from_callback)
 	zassert_equal(ret, 0, "close failed");
 }
 
+/* A server that restarts from its callback closes all its descriptors and
+ * opens new ones, which get the same numbers. The new registration then has
+ * the same fd and event mask as the old one, but the poll results still
+ * pending in the same round belong to the closed descriptors.
+ */
+#define RECONFIG_REUSE_MAX_HELD 8
+
+struct reconfig_reuse_state {
+	struct reconfig_mock_fd mock[2];
+	struct reconfig_mock_fd reopened[2];
+	struct zsock_pollfd pollfd[2];
+	int old_fd[2];
+	struct k_sem cb_sem;
+	int cb_count;
+	int cb_result;
+};
+
+/* New fds get the lowest free number, and earlier tests may leave free numbers
+ * below the closed one. Hold those temporarily so that the reopened fd gets
+ * the number that was just closed, as it would in a server with no other free
+ * fds.
+ */
+static int reconfig_mock_alloc_at(struct reconfig_mock_fd *mock, int number)
+{
+	int held[RECONFIG_REUSE_MAX_HELD];
+	int count = 0;
+	int fd;
+
+	fd = reconfig_mock_alloc(mock);
+	while ((fd >= 0) && (fd != number) && (count < ARRAY_SIZE(held))) {
+		held[count++] = fd;
+		fd = reconfig_mock_alloc(mock);
+	}
+
+	for (int i = 0; i < count; i++) {
+		(void)zvfs_close(held[i]);
+	}
+
+	return fd;
+}
+
+static void reconfig_reuse_handler(struct net_socket_service_event *pev)
+{
+	struct reconfig_reuse_state *state = pev->user_data;
+
+	state->cb_count++;
+	if (state->cb_count == 1) {
+		for (int i = 0; i < ARRAY_SIZE(state->pollfd); i++) {
+			(void)zvfs_close(state->pollfd[i].fd);
+		}
+
+		for (int i = 0; i < ARRAY_SIZE(state->pollfd); i++) {
+			state->pollfd[i].fd =
+				reconfig_mock_alloc_at(&state->reopened[i], state->old_fd[i]);
+		}
+
+		state->cb_result = net_socket_service_register(pev->svc, state->pollfd,
+							       ARRAY_SIZE(state->pollfd), state);
+	} else {
+		/* Only reachable if a stale poll result of a closed fd was
+		 * delivered; stop the callbacks so the test can fail cleanly.
+		 */
+		(void)net_socket_service_unregister(pev->svc);
+	}
+
+	k_sem_give(&state->cb_sem);
+}
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(reconfig_reuse_service, reconfig_reuse_handler, 2);
+
+ZTEST(net_socket_service, test_reopen_reused_fds_from_callback)
+{
+	static struct reconfig_reuse_state state;
+	int cb, sync, ret;
+
+	k_sem_init(&state.cb_sem, 0, UINT_MAX);
+	state.cb_count = 0;
+	state.cb_result = 0;
+
+	for (int i = 0; i < ARRAY_SIZE(state.pollfd); i++) {
+		reconfig_mock_init(&state.mock[i]);
+		reconfig_mock_init(&state.reopened[i]);
+		state.pollfd[i].fd = reconfig_mock_alloc(&state.mock[i]);
+		state.pollfd[i].events = ZSOCK_POLLIN;
+		state.old_fd[i] = state.pollfd[i].fd;
+		zassert_true(state.pollfd[i].fd >= 0, "Cannot allocate fd (%d)",
+			     state.pollfd[i].fd);
+
+		/* Both fds are ready before the first poll round, so both are
+		 * reported by the same round.
+		 */
+		k_sem_give(&state.mock[i].readable);
+	}
+
+	ret = net_socket_service_register(&reconfig_reuse_service, state.pollfd,
+					  ARRAY_SIZE(state.pollfd), &state);
+	zassert_equal(ret, 0, "Cannot register service (%d)", ret);
+
+	cb = k_sem_take(&state.cb_sem, RECONFIG_TIMEOUT);
+	/* A stale result would be delivered before the next poll round, which
+	 * prepares the reopened fds.
+	 */
+	sync = (cb == 0) ? k_sem_take(&state.reopened[1].prepared, RECONFIG_TIMEOUT) : -ETIMEDOUT;
+
+	(void)net_socket_service_unregister(&reconfig_reuse_service);
+	for (int i = 0; i < ARRAY_SIZE(state.pollfd); i++) {
+		if (state.pollfd[i].fd >= 0) {
+			(void)zvfs_close(state.pollfd[i].fd);
+		}
+	}
+
+	zassert_ok(cb, "Timeout while waiting callback");
+	zassert_ok(state.cb_result, "Cannot register reopened fds (%d)", state.cb_result);
+	for (int i = 0; i < ARRAY_SIZE(state.pollfd); i++) {
+		zassert_equal(state.pollfd[i].fd, state.old_fd[i],
+			      "Reopened fd %d did not reuse the number %d", state.pollfd[i].fd,
+			      state.old_fd[i]);
+	}
+	zassert_equal(state.cb_count, 1, "Stale poll result of a closed fd was delivered");
+	zassert_ok(sync, "Reopened fds were not polled");
+}
+
 ZTEST_SUITE(net_socket_service, NULL, NULL, NULL, NULL, NULL);
