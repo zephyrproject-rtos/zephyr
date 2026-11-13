@@ -1,0 +1,18 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - peci
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  platform_allow:
+    - qemu_x86
+  integration_platforms:
+    - qemu_x86
+tests:
+  drivers.peci.userspace:
+    harness: ztest
+    # The *_rejected cases expect a kernel oops
+    ignore_faults: true
