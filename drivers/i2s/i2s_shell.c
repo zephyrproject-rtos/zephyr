@@ -198,7 +198,7 @@ static void i2s_shell_feeder(void *p1, void *p2, void *p3)
 
 static int cmd_tone_start(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct i2s_config cfg;
+	struct i2s_config cfg = {0};
 	const struct device *dev;
 	uint32_t freq = I2S_SHELL_DEFAULT_FREQ;
 	uint32_t rate = I2S_SHELL_DEFAULT_RATE;

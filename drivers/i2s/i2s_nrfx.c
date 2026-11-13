@@ -380,6 +380,11 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
+	if (i2s_cfg->tdm.channel_disable_mask != 0U) {
+		LOG_ERR("TDM channel masking is not supported");
+		return -EINVAL;
+	}
+
 	nrfx_cfg = drv_cfg->nrfx_def_cfg;
 
 	switch (i2s_cfg->word_size) {
