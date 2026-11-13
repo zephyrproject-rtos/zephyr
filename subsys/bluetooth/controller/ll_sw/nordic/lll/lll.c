@@ -375,6 +375,12 @@ int lll_deinit(void)
 		irq_disable(HAL_SWI_JOB_IRQ);
 	}
 
+	/* Disarm the ticker counter compare after its IRQ is disabled, so
+	 * that no interrupt request is left pending in the counter peripheral
+	 * and clear any pending interrupt requests.
+	 */
+	cntr_deinit();
+
 	/* Disconnect dynamic ISRs used */
 #if defined(CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS)
 #if defined(CONFIG_SHARED_INTERRUPTS)
