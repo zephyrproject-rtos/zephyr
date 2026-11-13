@@ -78,7 +78,6 @@
 					compatible = "nxp,sc18is606-spi";
 					#address-cells = <1>;
 					#size-cells = <0>;
-					frequency = <1875>;
 					status = "okay";
 				};
 
@@ -87,6 +86,27 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <3>;
+					status = "okay";
+				};
+			};
+
+			sc18is602: sc18is602@29 {
+				compatible = "nxp,sc18is602";
+				reg = <0x29>;
+				status = "okay";
+
+				spi_ext_602: sc18is602_spi {
+					compatible = "nxp,sc18is60x-spi";
+					#address-cells = <1>;
+					#size-cells = <0>;
+					status = "okay";
+				};
+
+				gpio_ext_602: sc18is602_gpio {
+					compatible = "nxp,sc18is60x-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <4>;
 					status = "okay";
 				};
 			};
