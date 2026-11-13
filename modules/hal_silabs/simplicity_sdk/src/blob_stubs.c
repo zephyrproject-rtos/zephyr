@@ -213,6 +213,10 @@ int16_t sl_btctrl_hci_receive(uint8_t *data, int16_t len, bool lastFragment)
 	return 0;
 }
 
+void sl_btctrl_hci_transmit_complete(uint32_t status)
+{
+}
+
 void sl_btctrl_process_events(uint32_t events)
 {
 }
