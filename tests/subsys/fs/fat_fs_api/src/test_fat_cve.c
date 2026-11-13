@@ -5,10 +5,7 @@
  */
 
 /*
- * Regression tests for vendored FatFs (ff.c) security fixes that are only
- * reachable through the FatFs API directly. The Zephyr fs_* layer clamps
- * fs_seek() to the current file size and zero-fills fs_truncate() growth, so
- * those wrappers cannot reach the underlying bug; these tests therefore drive
+ * Regression tests for vendored FatFs (ff.c) security fixes. These tests drive
  * ff.c's f_lseek() extend path directly on the already-mounted volume.
  */
 
