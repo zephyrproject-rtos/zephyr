@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_GPIO_RENESAS_RH850_H_
+#define ZEPHYR_DRIVERS_GPIO_RENESAS_RH850_H_
+
+/* Define Pin maximum value */
+#define RH850_PINCTRL_PIN_MAX       16
+
+#define GPIO_RH850_INT_UNSUPPORTED  0xF
+#define GPIO_RH850_MAX_EXT_INT_NUM  43
+
+#define GPIO_RH850_INT_EDGE_DISABLE 0x0
+#define GPIO_RH850_INT_EDGE_RISING  0x1
+#define GPIO_RH850_INT_EDGE_FALLING 0x2
+#define GPIO_RH850_INT_BOTH_EDGE    0x3
+#define GPIO_RH850_INT_LEVEL_LOW    0x4
+#define GPIO_RH850_INT_LEVEL_HIGH   0x5
+
+#define GPIO_RH850_INT_ENABLE  0x1
+#define GPIO_RH850_INT_DISABLE 0x0
+
+#define GPIO_RH850_CURRENT_PORT_CONFIG_MASK  0x100FUL
+
+#define GPIO_RH850_INT_UNMAPPED 0xFF
+
+#endif /* ZEPHYR_DRIVERS_GPIO_RENESAS_RH850_H_ */

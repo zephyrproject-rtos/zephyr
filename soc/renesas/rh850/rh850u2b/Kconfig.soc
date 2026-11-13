@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RH850U2B
+	bool
+	select SOC_FAMILY_RENESAS_RH850
+	help
+	  Renesas RH850U2B series
+
+config SOC_R7F70254XAFABG_C
+	bool
+	select SOC_SERIES_RH850U2B
+
+config SOC_SERIES
+	default "rh850u2b" if SOC_SERIES_RH850U2B
+
+config SOC
+	default "r7f70254xafabg-c"  if SOC_R7F70254XAFABG_C

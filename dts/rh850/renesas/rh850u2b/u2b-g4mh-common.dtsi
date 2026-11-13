@@ -1,0 +1,3290 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "renesas,g4mh";
+			reg = <0>;
+			device_type = "cpu";
+			status = "okay";
+		};
+
+		cpu1: cpu@1 {
+			compatible = "renesas,g4mh";
+			reg = <1>;
+			device_type = "cpu";
+			status = "disabled";
+		};
+
+		cpu2: cpu@2 {
+			compatible = "renesas,g4mh";
+			reg = <2>;
+			device_type = "cpu";
+			status = "disabled";
+		};
+
+		cpu3: cpu@3 {
+			compatible = "renesas,g4mh";
+			reg = <3>;
+			device_type = "cpu";
+			status = "disabled";
+		};
+	};
+
+	intc: interrupt-controller {
+		compatible = "simple-bus";
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		intc1: intc1 {
+			compatible = "simple-bus";
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			intc1_pe0: interrupt-controller@fffc4000 {
+				compatible = "renesas,rh850-intc1";
+				reg = <0xfffc4000 0x40>,
+				      <0xfffc4100 0x80>;
+				#address-cells = <1>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				reg-names = "EIC", "EIBD";
+				num-lines = <32>;
+				renesas,pe-id = <0>;
+			};
+
+			intc1_pe1: interrupt-controller@fffc8000 {
+				compatible = "renesas,rh850-intc1";
+				reg = <0xfffc8000 0x40>,
+				      <0xfffc8100 0x80>;
+				#address-cells = <1>;
+				#interrupt-cells = <2>;
+				interrupt-controller;
+				reg-names = "EIC", "EIBD";
+				num-lines = <32>;
+				renesas,pe-id = <1>;
+			};
+		};
+
+		feinc: feinc {
+			compatible = "simple-bus";
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			feinc_pe0: interrupt-controller@ff9a3b00 {
+				compatible = "renesas,rh850-feinc";
+				reg = <0xff9a3b00 0x4>,
+				      <0xff9a3b04 0x4>,
+				      <0xff9a3b08 0x4>;
+				#address-cells = <1>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+				reg-names = "FEINTF", "FEINTMSK", "FEINTC";
+				num-lines = <3>;
+				renesas,pe-id = <0>;
+			};
+
+			feinc_pe1: interrupt-controller@ff9a3c00 {
+				compatible = "renesas,rh850-feinc";
+				reg = <0xff9a3c00 0x4>,
+				      <0xff9a3c04 0x4>,
+				      <0xff9a3c08 0x4>;
+				#address-cells = <1>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+				reg-names = "FEINTF", "FEINTMSK", "FEINTC";
+				num-lines = <3>;
+				renesas,pe-id = <1>;
+			};
+		};
+
+		intif: intif@ff090800 {
+			compatible = "renesas,rh850-intif";
+			reg = <0xff090800 0x13c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intc2>;
+
+			rlin3i_mux0: rlin3i_mux0@0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x0>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <320 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux0: rlin3txi_mux0@1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <321 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux0: rlin3rxi_mux0@2 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <322 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux0: rlin3eri_mux0@3 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <323 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux1: rlin3i_mux1@4 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <328 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux1: rlin3txi_mux1@5 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <329 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux1: rlin3rxi_mux1@6 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <330 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux1: rlin3eri_mux1@7 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <331 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux2: rlin3i_mux2@8 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <332 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux2: rlin3txi_mux2@9 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <333 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux2: rlin3rxi_mux2@a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <334 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux2: rlin3eri_mux2@b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <335 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux3: rlin3i_mux3@c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <344 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux3: rlin3txi_mux3@d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <345 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux3: rlin3rxi_mux3@e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <346 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux3: rlin3eri_mux3@f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xf>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <347 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux4: rlin3i_mux4@10 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x10>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <348 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux4: rlin3txi_mux4@11 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x11>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <349 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux4: rlin3rxi_mux4@12 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x12>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <350 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux4: rlin3eri_mux4@13 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x13>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <351 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux5: rlin3i_mux5@14 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x14>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <387 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux5: rlin3txi_mux5@15 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x15>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <388 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux5: rlin3rxi_mux5@16 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x16>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <389 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux5: rlin3eri_mux5@17 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x17>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <390 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux6: rlin3i_mux6@18 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x18>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <391 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux6: rlin3txi_mux6@19 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x19>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <392 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux6: rlin3rxi_mux6@1a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1a>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <393 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux6: rlin3eri_mux6@1b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1b>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <394 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux7: rlin3i_mux7@1c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1c>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <521 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux7: rlin3txi_mux7@1d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1d>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <522 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux7: rlin3rxi_mux7@1e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1e>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <523 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux7: rlin3eri_mux7@1f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x1f>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <524 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux8: rlin3i_mux8@20 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x20>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <525 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux8: rlin3txi_mux8@21 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x21>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <526 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux8: rlin3rxi_mux8@22 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x22>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <527 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux8: rlin3eri_mux8@23 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x23>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <528 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux9: rlin3i_mux9@24 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x24>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <529 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux9: rlin3txi_mux9@25 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x25>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <530 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux9: rlin3rxi_mux9@26 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x26>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <531 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux9: rlin3eri_mux9@27 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x27>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <532 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux10: rlin3i_mux10@28 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x28>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <545 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux10: rlin3txi_mux10@29 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x29>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <546 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux10: rlin3rxi_mux10@2a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2a>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <547 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux10: rlin3eri_mux10@2b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2b>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <548 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux11: rlin3i_mux11@2c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2c>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <549 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux11: rlin3txi_mux11@2d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2d>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <550 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux11: rlin3rxi_mux11@2e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2e>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <551 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux11: rlin3eri_mux11@2f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x2f>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <552 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux12: rlin3i_mux12@30 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x30>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <553 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux12: rlin3txi_mux12@31 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x31>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <554 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux12: rlin3rxi_mux12@32 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x32>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <555 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux12: rlin3eri_mux12@33 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x33>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <556 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux13: rlin3i_mux13@34 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x34>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <557 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux13: rlin3txi_mux13@35 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x35>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <558 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux13: rlin3rxi_mux13@36 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x36>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <559 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux13: rlin3eri_mux13@37 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x37>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <560 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux14: rlin3i_mux14@38 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x38>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <564 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux14: rlin3txi_mux14@39 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x39>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <565 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux14: rlin3rxi_mux14@3a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3a>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <566 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux14: rlin3eri_mux14@3b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3b>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <567 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux15: rlin3i_mux15@3c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3c>;
+				#address-cells = <0>;
+				channel = <15>;
+				interrupt-controller;
+				interrupts = <568 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux15: rlin3txi_mux15@3d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3d>;
+				#address-cells = <0>;
+				channel = <15>;
+				interrupt-controller;
+				interrupts = <569 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux15: rlin3rxi_mux15@3e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3e>;
+				#address-cells = <0>;
+				channel = <15>;
+				interrupt-controller;
+				interrupts = <570 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux15: rlin3eri_mux15@3f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x3f>;
+				#address-cells = <0>;
+				channel = <15>;
+				interrupt-controller;
+				interrupts = <571 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux16: rlin3i_mux16@40 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x40>;
+				#address-cells = <0>;
+				channel = <16>;
+				interrupt-controller;
+				interrupts = <572 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux16: rlin3txi_mux16@41 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x41>;
+				#address-cells = <0>;
+				channel = <16>;
+				interrupt-controller;
+				interrupts = <573 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux16: rlin3rxi_mux16@42 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x42>;
+				#address-cells = <0>;
+				channel = <16>;
+				interrupt-controller;
+				interrupts = <574 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux16: rlin3eri_mux16@43 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x43>;
+				#address-cells = <0>;
+				channel = <16>;
+				interrupt-controller;
+				interrupts = <575 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux17: rlin3i_mux17@44 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x44>;
+				#address-cells = <0>;
+				channel = <17>;
+				interrupt-controller;
+				interrupts = <733 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux17: rlin3txi_mux17@45 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x45>;
+				#address-cells = <0>;
+				channel = <17>;
+				interrupt-controller;
+				interrupts = <734 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux17: rlin3rxi_mux17@46 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x46>;
+				#address-cells = <0>;
+				channel = <17>;
+				interrupt-controller;
+				interrupts = <735 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux17: rlin3eri_mux17@47 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x47>;
+				#address-cells = <0>;
+				channel = <17>;
+				interrupt-controller;
+				interrupts = <736 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux18: rlin3i_mux18@48 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x48>;
+				#address-cells = <0>;
+				channel = <18>;
+				interrupt-controller;
+				interrupts = <737 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux18: rlin3txi_mux18@49 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x49>;
+				#address-cells = <0>;
+				channel = <18>;
+				interrupt-controller;
+				interrupts = <738 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux18: rlin3rxi_mux18@4a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4a>;
+				#address-cells = <0>;
+				channel = <18>;
+				interrupt-controller;
+				interrupts = <739 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux18: rlin3eri_mux18@4b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4b>;
+				#address-cells = <0>;
+				channel = <18>;
+				interrupt-controller;
+				interrupts = <740 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux19: rlin3i_mux19@4c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4c>;
+				#address-cells = <0>;
+				channel = <19>;
+				interrupt-controller;
+				interrupts = <765 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux19: rlin3txi_mux19@4d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4d>;
+				#address-cells = <0>;
+				channel = <19>;
+				interrupt-controller;
+				interrupts = <766 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux19: rlin3rxi_mux19@4e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4e>;
+				#address-cells = <0>;
+				channel = <19>;
+				interrupt-controller;
+				interrupts = <767 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux19: rlin3eri_mux19@4f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x4f>;
+				#address-cells = <0>;
+				channel = <19>;
+				interrupt-controller;
+				interrupts = <768 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux20: rlin3i_mux20@50 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x50>;
+				#address-cells = <0>;
+				channel = <20>;
+				interrupt-controller;
+				interrupts = <769 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux20: rlin3txi_mux20@51 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x51>;
+				#address-cells = <0>;
+				channel = <20>;
+				interrupt-controller;
+				interrupts = <770 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux20: rlin3rxi_mux20@52 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x52>;
+				#address-cells = <0>;
+				channel = <20>;
+				interrupt-controller;
+				interrupts = <771 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux20: rlin3eri_mux20@53 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x53>;
+				#address-cells = <0>;
+				channel = <20>;
+				interrupt-controller;
+				interrupts = <772 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux21: rlin3i_mux21@54 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x54>;
+				#address-cells = <0>;
+				channel = <21>;
+				interrupt-controller;
+				interrupts = <773 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux21: rlin3txi_mux21@55 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x55>;
+				#address-cells = <0>;
+				channel = <21>;
+				interrupt-controller;
+				interrupts = <774 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux21: rlin3rxi_mux21@56 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x56>;
+				#address-cells = <0>;
+				channel = <21>;
+				interrupt-controller;
+				interrupts = <775 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux21: rlin3eri_mux21@57 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x57>;
+				#address-cells = <0>;
+				channel = <21>;
+				interrupt-controller;
+				interrupts = <776 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux22: rlin3i_mux22@58 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x58>;
+				#address-cells = <0>;
+				channel = <22>;
+				interrupt-controller;
+				interrupts = <777 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux22: rlin3txi_mux22@59 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x59>;
+				#address-cells = <0>;
+				channel = <22>;
+				interrupt-controller;
+				interrupts = <778 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux22: rlin3rxi_mux22@5a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5a>;
+				#address-cells = <0>;
+				channel = <22>;
+				interrupt-controller;
+				interrupts = <779 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux22: rlin3eri_mux22@5b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5b>;
+				#address-cells = <0>;
+				channel = <22>;
+				interrupt-controller;
+				interrupts = <780 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux23: rlin3i_mux23@5c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5c>;
+				#address-cells = <0>;
+				channel = <23>;
+				interrupt-controller;
+				interrupts = <781 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux23: rlin3txi_mux23@5d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5d>;
+				#address-cells = <0>;
+				channel = <23>;
+				interrupt-controller;
+				interrupts = <782 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux23: rlin3rxi_mux23@5e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5e>;
+				#address-cells = <0>;
+				channel = <23>;
+				interrupt-controller;
+				interrupts = <783 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux23: rlin3eri_mux23@5f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x5f>;
+				#address-cells = <0>;
+				channel = <23>;
+				interrupt-controller;
+				interrupts = <784 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux24: rlin3i_mux24@60 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x60>;
+				#address-cells = <0>;
+				channel = <24>;
+				interrupt-controller;
+				interrupts = <785 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux24: rlin3txi_mux24@61 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x61>;
+				#address-cells = <0>;
+				channel = <24>;
+				interrupt-controller;
+				interrupts = <786 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux24: rlin3rxi_mux24@62 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x62>;
+				#address-cells = <0>;
+				channel = <24>;
+				interrupt-controller;
+				interrupts = <787 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux24: rlin3eri_mux24@63 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x63>;
+				#address-cells = <0>;
+				channel = <24>;
+				interrupt-controller;
+				interrupts = <788 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux25: rlin3i_mux25@64 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x64>;
+				#address-cells = <0>;
+				channel = <25>;
+				interrupt-controller;
+				interrupts = <789 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux25: rlin3txi_mux25@65 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x65>;
+				#address-cells = <0>;
+				channel = <25>;
+				interrupt-controller;
+				interrupts = <790 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux25: rlin3rxi_mux25@66 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x66>;
+				#address-cells = <0>;
+				channel = <25>;
+				interrupt-controller;
+				interrupts = <791 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux25: rlin3eri_mux25@67 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x67>;
+				#address-cells = <0>;
+				channel = <25>;
+				interrupt-controller;
+				interrupts = <792 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux26: rlin3i_mux26@68 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x68>;
+				#address-cells = <0>;
+				channel = <26>;
+				interrupt-controller;
+				interrupts = <882 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux26: rlin3txi_mux26@69 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x69>;
+				#address-cells = <0>;
+				channel = <26>;
+				interrupt-controller;
+				interrupts = <883 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux26: rlin3rxi_mux26@6a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6a>;
+				#address-cells = <0>;
+				channel = <26>;
+				interrupt-controller;
+				interrupts = <884 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux26: rlin3eri_mux26@6b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6b>;
+				#address-cells = <0>;
+				channel = <26>;
+				interrupt-controller;
+				interrupts = <885 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux27: rlin3i_mux27@6c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6c>;
+				#address-cells = <0>;
+				channel = <27>;
+				interrupt-controller;
+				interrupts = <890 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux27: rlin3txi_mux27@6d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6d>;
+				#address-cells = <0>;
+				channel = <27>;
+				interrupt-controller;
+				interrupts = <891 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux27: rlin3rxi_mux27@6e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6e>;
+				#address-cells = <0>;
+				channel = <27>;
+				interrupt-controller;
+				interrupts = <892 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux27: rlin3eri_mux27@6f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x6f>;
+				#address-cells = <0>;
+				channel = <27>;
+				interrupt-controller;
+				interrupts = <893 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux28: rlin3i_mux28@70 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x70>;
+				#address-cells = <0>;
+				channel = <28>;
+				interrupt-controller;
+				interrupts = <894 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux28: rlin3txi_mux28@71 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x71>;
+				#address-cells = <0>;
+				channel = <28>;
+				interrupt-controller;
+				interrupts = <895 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux28: rlin3rxi_mux28@72 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x72>;
+				#address-cells = <0>;
+				channel = <28>;
+				interrupt-controller;
+				interrupts = <896 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux28: rlin3eri_mux28@73 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x73>;
+				#address-cells = <0>;
+				channel = <28>;
+				interrupt-controller;
+				interrupts = <897 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux29: rlin3i_mux29@74 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x74>;
+				#address-cells = <0>;
+				channel = <29>;
+				interrupt-controller;
+				interrupts = <898 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux29: rlin3txi_mux29@75 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x75>;
+				#address-cells = <0>;
+				channel = <29>;
+				interrupt-controller;
+				interrupts = <899 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux29: rlin3rxi_mux29@76 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x76>;
+				#address-cells = <0>;
+				channel = <29>;
+				interrupt-controller;
+				interrupts = <900 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux29: rlin3eri_mux29@77 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x77>;
+				#address-cells = <0>;
+				channel = <29>;
+				interrupt-controller;
+				interrupts = <901 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux30: rlin3i_mux30@78 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x78>;
+				#address-cells = <0>;
+				channel = <30>;
+				interrupt-controller;
+				interrupts = <902 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux30: rlin3txi_mux30@79 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x79>;
+				#address-cells = <0>;
+				channel = <30>;
+				interrupt-controller;
+				interrupts = <903 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux30: rlin3rxi_mux30@7a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7a>;
+				#address-cells = <0>;
+				channel = <30>;
+				interrupt-controller;
+				interrupts = <904 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux30: rlin3eri_mux30@7b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7b>;
+				#address-cells = <0>;
+				channel = <30>;
+				interrupt-controller;
+				interrupts = <905 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux31: rlin3i_mux31@7c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7c>;
+				#address-cells = <0>;
+				channel = <31>;
+				interrupt-controller;
+				interrupts = <906 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux31: rlin3txi_mux31@7d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7d>;
+				#address-cells = <0>;
+				channel = <31>;
+				interrupt-controller;
+				interrupts = <907 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux31: rlin3rxi_mux31@7e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7e>;
+				#address-cells = <0>;
+				channel = <31>;
+				interrupt-controller;
+				interrupts = <908 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux31: rlin3eri_mux31@7f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x7f>;
+				#address-cells = <0>;
+				channel = <31>;
+				interrupt-controller;
+				interrupts = <909 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux32: rlin3i_mux32@80 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x80>;
+				#address-cells = <0>;
+				channel = <32>;
+				interrupt-controller;
+				interrupts = <951 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux32: rlin3txi_mux32@81 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x81>;
+				#address-cells = <0>;
+				channel = <32>;
+				interrupt-controller;
+				interrupts = <952 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux32: rlin3rxi_mux32@82 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x82>;
+				#address-cells = <0>;
+				channel = <32>;
+				interrupt-controller;
+				interrupts = <953 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux32: rlin3eri_mux32@83 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x83>;
+				#address-cells = <0>;
+				channel = <32>;
+				interrupt-controller;
+				interrupts = <954 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3i_mux33: rlin3i_mux33@84 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x84>;
+				#address-cells = <0>;
+				channel = <33>;
+				interrupt-controller;
+				interrupts = <955 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3txi_mux33: rlin3txi_mux33@85 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x85>;
+				#address-cells = <0>;
+				channel = <33>;
+				interrupt-controller;
+				interrupts = <956 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3rxi_mux33: rlin3rxi_mux33@86 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x86>;
+				#address-cells = <0>;
+				channel = <33>;
+				interrupt-controller;
+				interrupts = <957 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			rlin3eri_mux33: rlin3eri_mux33@87 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x87>;
+				#address-cells = <0>;
+				channel = <33>;
+				interrupt-controller;
+				interrupts = <958 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux0: canfderi_mux0@88 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x88>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <576 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux0: canfdrxi_mux0@89 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x89>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <577 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux0: canfdtxi_mux0@8a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8a>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <578 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux0: canfdvmtxi_mux0@8b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8b>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <579 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux0: canfdvmrxi_mux0@8c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8c>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <580 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux0: canfdvmeri_mux0@8d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8d>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <581 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux1: canfderi_mux1@8e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8e>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <582 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux1: canfdrxi_mux1@8f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x8f>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <583 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux1: canfdtxi_mux1@90 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x90>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <584 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux1: canfdvmtxi_mux1@91 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x91>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <585 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux1: canfdvmrxi_mux1@92 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x92>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <586 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux1: canfdvmeri_mux1@93 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x93>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <587 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux2: canfderi_mux2@94 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x94>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <588 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux2: canfdrxi_mux2@95 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x95>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <589 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux2: canfdtxi_mux2@96 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x96>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <590 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux2: canfdvmtxi_mux2@97 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x97>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <591 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux2: canfdvmrxi_mux2@98 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x98>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <592 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux2: canfdvmeri_mux2@99 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x99>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <593 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux3: canfderi_mux3@9a {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9a>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <594 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux3: canfdrxi_mux3@9b {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9b>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <595 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux3: canfdtxi_mux3@9c {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9c>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <596 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux3: canfdvmtxi_mux3@9d {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9d>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <597 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux3: canfdvmrxi_mux3@9e {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9e>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <598 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux3: canfdvmeri_mux3@9f {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0x9f>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <599 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux4: canfderi_mux4@a0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa0>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <600 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux4: canfdrxi_mux4@a1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa1>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <601 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux4: canfdtxi_mux4@a2 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa2>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <602 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux4: canfdvmtxi_mux4@a3 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa3>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <603 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux4: canfdvmrxi_mux4@a4 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa4>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <604 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux4: canfdvmeri_mux4@a5 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa5>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <605 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux5: canfderi_mux5@a6 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa6>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <606 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux5: canfdrxi_mux5@a7 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa7>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <607 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux5: canfdtxi_mux5@a8 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa8>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <608 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux5: canfdvmtxi_mux5@a9 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xa9>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <609 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux5: canfdvmrxi_mux5@aa {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xaa>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <610 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux5: canfdvmeri_mux5@ab {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xab>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <611 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux6: canfderi_mux6@ac {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xac>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <612 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux6: canfdrxi_mux6@ad {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xad>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <613 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux6: canfdtxi_mux6@ae {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xae>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <614 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux6: canfdvmtxi_mux6@af {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xaf>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <615 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux6: canfdvmrxi_mux6@b0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb0>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <616 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux6: canfdvmeri_mux6@b1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb1>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <617 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux7: canfderi_mux7@b2 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb2>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <722 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux7: canfdrxi_mux7@b3 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb3>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <723 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux7: canfdtxi_mux7@b4 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb4>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <724 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux7: canfdvmtxi_mux7@b5 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb5>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <725 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux7: canfdvmrxi_mux7@b6 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb6>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <726 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux7: canfdvmeri_mux7@b7 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb7>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <727 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux8: canfderi_mux8@b8 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb8>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <851 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux8: canfdrxi_mux8@b9 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xb9>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <852 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux8: canfdtxi_mux8@ba {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xba>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <853 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux8: canfdvmtxi_mux8@bb {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xbb>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <854 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux8: canfdvmrxi_mux8@bc {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xbc>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <855 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux8: canfdvmeri_mux8@bd {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xbd>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <856 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux9: canfderi_mux9@be {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xbe>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <863 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux9: canfdrxi_mux9@bf {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xbf>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <864 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux9: canfdtxi_mux9@c0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc0>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <865 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux9: canfdvmtxi_mux9@c1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc1>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <866 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux9: canfdvmrxi_mux9@c2 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc2>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <867 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux9: canfdvmeri_mux9@c3 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc3>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <868 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux10: canfderi_mux10@c4 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc4>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <871 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux10: canfdrxi_mux10@c5 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc5>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <872 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux10: canfdtxi_mux10@c6 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc6>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <873 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux10: canfdvmtxi_mux10@c7 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc7>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <874 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux10: canfdvmrxi_mux10@c8 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc8>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <875 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux10: canfdvmeri_mux10@c9 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xc9>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <876 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux11: canfderi_mux11@ca {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xca>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <917 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux11: canfdrxi_mux11@cb {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xcb>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <918 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux11: canfdtxi_mux11@cc {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xcc>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <919 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux11: canfdvmtxi_mux11@cd {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xcd>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <920 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux11: canfdvmrxi_mux11@ce {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xce>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <921 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux11: canfdvmeri_mux11@cf {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xcf>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <922 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux12: canfderi_mux12@d0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd0>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <924 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux12: canfdrxi_mux12@d1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd1>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <925 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux12: canfdtxi_mux12@d2 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd2>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <926 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux12: canfdvmtxi_mux12@d3 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd3>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <927 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux12: canfdvmrxi_mux12@d4 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd4>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <928 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux12: canfdvmeri_mux12@d5 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd5>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <929 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux13: canfderi_mux13@d6 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd6>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <930 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux13: canfdrxi_mux13@d7 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd7>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <931 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux13: canfdtxi_mux13@d8 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd8>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <932 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux13: canfdvmtxi_mux13@d9 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xd9>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <933 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux13: canfdvmrxi_mux13@da {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xda>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <934 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux13: canfdvmeri_mux13@db {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xdb>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <935 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfderi_mux14: canfderi_mux14@dc {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xdc>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <936 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdrxi_mux14: canfdrxi_mux14@dd {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xdd>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <937 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdtxi_mux14: canfdtxi_mux14@de {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xde>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <938 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmtxi_mux14: canfdvmtxi_mux14@df {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xdf>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <939 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmrxi_mux14: canfdvmrxi_mux14@e0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe0>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <940 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			canfdvmeri_mux14: canfdvmeri_mux14@e1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe1>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <941 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud30i_sel: taud30i_sel@e2 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe2>;
+				#address-cells = <0>;
+				channel = <0>;
+				interrupt-controller;
+				interrupts = <379 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud31i_sel: taud31i_sel@e3 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe3>;
+				#address-cells = <0>;
+				channel = <1>;
+				interrupt-controller;
+				interrupts = <380 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud32i_sel: taud32i_sel@e4 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe4>;
+				#address-cells = <0>;
+				channel = <2>;
+				interrupt-controller;
+				interrupts = <381 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud33i_sel: taud33i_sel@e5 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe5>;
+				#address-cells = <0>;
+				channel = <3>;
+				interrupt-controller;
+				interrupts = <382 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud34i_sel: taud34i_sel@e6 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe6>;
+				#address-cells = <0>;
+				channel = <4>;
+				interrupt-controller;
+				interrupts = <383 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud35i_sel: taud35i_sel@e7 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe7>;
+				#address-cells = <0>;
+				channel = <5>;
+				interrupt-controller;
+				interrupts = <384 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud36i_sel: taud36i_sel@e8 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe8>;
+				#address-cells = <0>;
+				channel = <6>;
+				interrupt-controller;
+				interrupts = <385 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud37i_sel: taud37i_sel@e9 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xe9>;
+				#address-cells = <0>;
+				channel = <7>;
+				interrupt-controller;
+				interrupts = <386 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud38i_sel: taud38i_sel@ea {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xea>;
+				#address-cells = <0>;
+				channel = <8>;
+				interrupt-controller;
+				interrupts = <387 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud39i_sel: taud39i_sel@eb {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xeb>;
+				#address-cells = <0>;
+				channel = <9>;
+				interrupt-controller;
+				interrupts = <388 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud310i_sel: taud310i_sel@ec {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xec>;
+				#address-cells = <0>;
+				channel = <10>;
+				interrupt-controller;
+				interrupts = <389 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud311i_sel: taud311i_sel@ed {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xed>;
+				#address-cells = <0>;
+				channel = <11>;
+				interrupt-controller;
+				interrupts = <390 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud312i_sel: taud312i_sel@ee {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xee>;
+				#address-cells = <0>;
+				channel = <12>;
+				interrupt-controller;
+				interrupts = <391 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud313i_sel: taud313i_sel@ef {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xef>;
+				#address-cells = <0>;
+				channel = <13>;
+				interrupt-controller;
+				interrupts = <392 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud314i_sel: taud314i_sel@f0 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xf0>;
+				#address-cells = <0>;
+				channel = <14>;
+				interrupt-controller;
+				interrupts = <393 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+
+			taud315i_sel: taud315i_sel@f1 {
+				compatible = "renesas,rh850-intif-intsel";
+				reg = <0xf1>;
+				#address-cells = <0>;
+				channel = <15>;
+				interrupt-controller;
+				interrupts = <394 1>;
+				#interrupt-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		intc2: interrupt-controller@fff80000 {
+			compatible = "renesas,rh850-intc2";
+			reg = <0xfff80000 0x7c0>,
+			      <0xfff82000 0xf80>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg-names = "EIC", "EIBD";
+			num-lines = <992>;
+
+			irq0: irq0@0 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x00>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <765 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq1: irq1@1 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x01>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <766 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq2: irq2@2 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x02>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <767 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq3: irq3@3 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x03>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <768 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq4: irq4@4 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x04>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <769 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq5: irq5@5 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x05>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <770 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq6: irq6@6 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x06>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <771 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq7: irq7@7 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x07>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <772 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq8: irq0@8 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x08>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <773 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq9: irq9@9 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x09>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <774 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq10: irq10@a {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x0a>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <775 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq11: irq11@b {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x0b>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <776 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq12: irq12@c {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x0c>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <777 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq13: irq13@d {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x0d>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <778 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq14: irq14@e {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x0e>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <779 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq15: irq15@f {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x0f>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <780 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq16: irq16@10 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x10>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <781 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq17: irq17@11 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x11>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <782 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq18: irq18@12 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x12>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <783 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq19: irq19@13 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x13>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <784 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq20: irq20@14 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x14>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <785 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq21: irq21@15 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x15>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <786 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq22: irq22@16 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x16>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <787 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq23: irq23@17 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x17>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <788 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq24: irq24@18 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x18>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <789 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq25: irq25@19 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x19>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <790 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq26: irq26@1a {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x1a>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <791 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq27: irq27@1b {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x1b>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <792 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq28: irq28@1c {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x1c>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <793 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq29: irq29@1d {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x1d>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <794 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq30: irq30@1e {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x1e>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <795 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq31: irq31@1f {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x1f>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <796 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq32: irq32@20 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x20>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <797 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq33: irq33@21 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x21>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <798 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq34: irq34@22 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x22>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <799 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq35: irq35@23 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x23>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <800 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq36: irq36@24 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x24>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <801 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq37: irq37@25 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x25>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <802 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq38: irq38@26 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x26>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <803 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq39: irq39@27 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x27>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <804 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq40: irq40@28 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x28>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <817 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq41: irq41@29 {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x29>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <818 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq42: irq42@2a {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x2a>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <819 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+
+			irq43: irq43@2b {
+				compatible = "renesas,rh850-ext-irq";
+				reg = <0x2b>;
+				#address-cells = <1>;
+				interrupt-controller;
+				interrupts = <820 1>;
+				#interrupt-cells = <2>;
+				#irq-cells = <1>;
+				status = "disabled";
+			};
+		};
+	};
+
+	sys_reset: reset-controller@ff980800 {
+		compatible = "renesas,rh850-sys-reset";
+		reg = <0xff980800 0x8038>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+	};
+};
