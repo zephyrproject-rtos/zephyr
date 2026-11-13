@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2026 Linumiz
- *
+ * SPDX-FileCopyrightText: 2026 Linumiz
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,10 +10,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/dt-bindings/dma/ti-mspm0-dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include <driverlib/dl_dma.h>
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(ti_mspm0_dma, CONFIG_DMA_LOG_LEVEL);
 
@@ -20,16 +24,92 @@ LOG_MODULE_REGISTER(ti_mspm0_dma, CONFIG_DMA_LOG_LEVEL);
 #define DMA_GET_CHANNEL_FROM_STATUS(status)	\
 			((status) - DMA_TI_MSPM0_BASE_CHANNEL_NUM)
 
-/* Data Transfer Width */
+/* DMA register offsets */
+#define DMA_MSPM0_CPU_INT_IIDX   0x1020
+#define DMA_MSPM0_CPU_INT_IMASK  0x1028
+#define DMA_MSPM0_DMAPRIO        0x1100
+#define DMA_MSPM0_DMATCTL(n)     (0x1110 + ((n) * 0x4))
+#define DMA_MSPM0_DMACTL(n)      (0x1200 + ((n) * 0x10))
+#define DMA_MSPM0_DMASA(n)       (0x1204 + ((n) * 0x10))
+#define DMA_MSPM0_DMADA(n)       (0x1208 + ((n) * 0x10))
+#define DMA_MSPM0_DMASZ(n)       (0x120C + ((n) * 0x10))
+
+/* dmactl bits (per-channel) */
+#define DMA_MSPM0_CTL_DMAREQ    BIT(0)
+#define DMA_MSPM0_CTL_DMAEN     BIT(1)
+#define DMA_MSPM0_CTL_SRCWDTH   GENMASK(10, 8)
+#define DMA_MSPM0_CTL_DSTWDTH   GENMASK(14, 12)
+#define DMA_MSPM0_CTL_SRCINCR   GENMASK(19, 16)
+#define DMA_MSPM0_CTL_DSTINCR   GENMASK(23, 20)
+#define DMA_MSPM0_CTL_EM        GENMASK(25, 24)
+#define DMA_MSPM0_CTL_TM        GENMASK(29, 28)
+#define DMA_MSPM0_CTL_PREIRQ    GENMASK(6, 4)
+
+#define DMA_MSPM0_WIDTH_BYTE     0x0U
+#define DMA_MSPM0_WIDTH_HALF     0x1U
+#define DMA_MSPM0_WIDTH_WORD     0x2U
+#define DMA_MSPM0_WIDTH_LONG     0x3U
+
+#define DMA_MSPM0_INCR_UNCHANGED 0x0U
+#define DMA_MSPM0_INCR_DECREMENT 0x2U
+#define DMA_MSPM0_INCR_INCREMENT 0x3U
+#define DMA_MSPM0_INCR_STRIDE(n) (0x8U + ((n) - 2U))
+
+#define DMA_MSPM0_EM_NORMAL      0x0U
+#define DMA_MSPM0_EM_GATHER      0x1U
+#define DMA_MSPM0_EM_FILL        0x2U
+#define DMA_MSPM0_EM_TABLE       0x3U
+
+#define DMA_MSPM0_TM_SINGLE      0x0U
+#define DMA_MSPM0_TM_BLOCK       0x1U
+#define DMA_MSPM0_TM_RPTSNGL     0x2U
+#define DMA_MSPM0_TM_RPTBLCK     0x3U
+
+#define DMA_MSPM0_PREIRQ_DISABLE 0x0U
+#define DMA_MSPM0_PREIRQ_HALF    0x7U
+
+/* dmatctl bits (per-channel, dmatctl[n]) */
+#define DMA_MSPM0_TCTL_DMATSEL  GENMASK(5, 0)
+#define DMA_MSPM0_TCTL_DMATINT  BIT(7)
+#define DMA_MSPM0_TCTL_SWREQ    0x0U
+
+/* dmaprio bits (instance-wide) */
+#define DMA_MSPM0_PRIO_ROUNDROBIN BIT(0)
+#define DMA_MSPM0_PRIO_BURSTSZ    GENMASK(17, 16)
+#define DMA_MSPM0_BURST_INFINITE  0x0U
+#define DMA_MSPM0_BURST_8         0x1U
+#define DMA_MSPM0_BURST_16        0x2U
+#define DMA_MSPM0_BURST_32        0x3U
+
+/* cpu_int / gen_event IIDX status codes:
+ * channel N reports (N + 1)
+ * early/pre-IRQ event reports (0x11 + N)
+ */
+#define DMA_MSPM0_IIDX_NONE        0x00U
+#define DMA_MSPM0_IIDX_PREIRQ_BASE 0x11U
+#define DMA_MSPM0_IIDX_PREIRQ_LAST 0x18U
+#define DMA_MSPM0_IIDX_ADDRERR     0x19U
+#define DMA_MSPM0_IIDX_DATAERR     0x1AU
+#define DMA_MSPM0_IMASK_PREIRQ(n)  BIT(16U + (n))
+#define DMA_MSPM0_IMASK_ADDRERR    BIT(24)
+#define DMA_MSPM0_IMASK_DATAERR    BIT(25)
+#define DMA_MSPM0_PREIRQ_MAX_CHANNELS \
+	(DMA_MSPM0_IIDX_PREIRQ_LAST - DMA_MSPM0_IIDX_PREIRQ_BASE + 1)
+
+/* Data Transfer Width, in bytes -- matches Zephyr's source/dest_data_size */
 #define DMA_TI_MSPM0_DATAWIDTH_BYTE	1
 #define DMA_TI_MSPM0_DATAWIDTH_HALF	2
 #define DMA_TI_MSPM0_DATAWIDTH_WORD	4
 #define DMA_TI_MSPM0_DATAWIDTH_LONG	8
 
 struct dma_ti_mspm0_config {
-	DMA_Regs *regs;
+	mm_reg_t base;
 	uint8_t dma_max_channels;
 	void (*irq_config_func)(void);
+	uint8_t num_full_channels;
+	bool gather_mode;
+	bool round_robin;
+	uint8_t burst_size;
 };
 
 struct dma_ti_mspm0_channel_data {
@@ -37,6 +117,12 @@ struct dma_ti_mspm0_channel_data {
 	void *user_data;
 	uint8_t direction;
 	bool busy;
+	uint8_t data_size;
+	bool cyclic;
+	bool error_dis;
+	bool sw_triggered;
+	struct dma_block_config *next_block;
+	bool per_block_cb;
 };
 
 struct dma_ti_mspm0_data {
@@ -54,13 +140,13 @@ static inline int dma_ti_mspm0_get_memory_increment(uint8_t adj,
 
 	switch (adj) {
 	case DMA_ADDR_ADJ_INCREMENT:
-		*increment = DL_DMA_ADDR_INCREMENT;
+		*increment = DMA_MSPM0_INCR_INCREMENT;
 		break;
 	case DMA_ADDR_ADJ_NO_CHANGE:
-		*increment = DL_DMA_ADDR_UNCHANGED;
+		*increment = DMA_MSPM0_INCR_UNCHANGED;
 		break;
 	case DMA_ADDR_ADJ_DECREMENT:
-		*increment = DL_DMA_ADDR_DECREMENT;
+		*increment = DMA_MSPM0_INCR_DECREMENT;
 		break;
 	default:
 		return -EINVAL;
@@ -69,24 +155,55 @@ static inline int dma_ti_mspm0_get_memory_increment(uint8_t adj,
 	return 0;
 }
 
-static inline int dma_ti_mspm0_get_dstdatawidth(uint8_t wd, uint32_t *dwidth)
+/*
+ * HW stride steps by n * width every transfer, with no grouping/jump concept, so it only matches
+ * gather/scatter's count-then-jump semantics when count <= 1; interval is n itself (a
+ * dimensionless multiplier), not a byte offset. Every stride encoding only increments, never
+ * decrements, so it's only valid alongside DMA_ADDR_ADJ_INCREMENT.
+ */
+static inline int dma_ti_mspm0_get_stride_incr(bool gather_scatter_en, uint16_t count,
+					       uint16_t interval, uint8_t addr_adj, uint32_t *incr)
 {
-	if (dwidth == NULL) {
+	if (gather_scatter_en) {
+		if (count > 1) {
+			return -ENOTSUP;
+		}
+
+		if (interval > 9) {
+			return -EINVAL;
+		}
+
+		if (interval >= 2) {
+			if (addr_adj != DMA_ADDR_ADJ_INCREMENT) {
+				return -EINVAL;
+			}
+
+			*incr = DMA_MSPM0_INCR_STRIDE(interval);
+			return 0;
+		}
+	}
+
+	return dma_ti_mspm0_get_memory_increment(addr_adj, incr);
+}
+
+static inline int dma_ti_mspm0_get_datawidth(uint8_t wd, uint32_t *width)
+{
+	if (width == NULL) {
 		return -EINVAL;
 	}
 
 	switch (wd) {
 	case DMA_TI_MSPM0_DATAWIDTH_BYTE:
-		*dwidth = DL_DMA_WIDTH_BYTE;
+		*width = DMA_MSPM0_WIDTH_BYTE;
 		break;
 	case DMA_TI_MSPM0_DATAWIDTH_HALF:
-		*dwidth = DMA_DMACTL_DMADSTWDTH_HALF;
+		*width = DMA_MSPM0_WIDTH_HALF;
 		break;
 	case DMA_TI_MSPM0_DATAWIDTH_WORD:
-		*dwidth = DMA_DMACTL_DMADSTWDTH_WORD;
+		*width = DMA_MSPM0_WIDTH_WORD;
 		break;
 	case DMA_TI_MSPM0_DATAWIDTH_LONG:
-		*dwidth = DMA_DMACTL_DMADSTWDTH_LONG;
+		*width = DMA_MSPM0_WIDTH_LONG;
 		break;
 	default:
 		return -EINVAL;
@@ -95,27 +212,45 @@ static inline int dma_ti_mspm0_get_dstdatawidth(uint8_t wd, uint32_t *dwidth)
 	return 0;
 }
 
-static inline int dma_ti_mspm0_get_srcdatawidth(uint8_t wd, uint32_t *dwidth)
+static inline bool dma_ti_mspm0_is_full_channel(const struct dma_ti_mspm0_config *cfg,
+						uint32_t channel)
 {
-	if (dwidth == NULL) {
-		return -EINVAL;
-	}
+	return channel < cfg->num_full_channels;
+}
 
-	switch (wd) {
-	case DMA_TI_MSPM0_DATAWIDTH_BYTE:
-		*dwidth = DL_DMA_WIDTH_BYTE;
+static inline uint32_t dma_ti_mspm0_get_transfer_mode(struct dma_config *config)
+{
+	switch (config->channel_direction) {
+	case MEMORY_TO_MEMORY:
+		return config->cyclic ? DMA_MSPM0_TM_RPTBLCK : DMA_MSPM0_TM_BLOCK;
+	default:
+		return config->cyclic ? DMA_MSPM0_TM_RPTSNGL : DMA_MSPM0_TM_SINGLE;
+	}
+}
+
+static inline int dma_ti_mspm0_get_extended_mode(const struct dma_ti_mspm0_config *cfg,
+						 uint32_t dma_slot, uint32_t *em)
+{
+	uint32_t extmode = TI_MSPM0_DMA_SLOT_EXTMODE(dma_slot);
+
+	switch (extmode) {
+	case TI_MSPM0_DMA_SLOT_EXTMODE_FILL:
+		*em = DMA_MSPM0_EM_FILL;
 		break;
-	case DMA_TI_MSPM0_DATAWIDTH_HALF:
-		*dwidth = DMA_DMACTL_DMASRCWDTH_HALF;
+	case TI_MSPM0_DMA_SLOT_EXTMODE_TABLE:
+		*em = DMA_MSPM0_EM_TABLE;
 		break;
-	case DMA_TI_MSPM0_DATAWIDTH_WORD:
-		*dwidth = DMA_DMACTL_DMASRCWDTH_WORD;
-		break;
-	case DMA_TI_MSPM0_DATAWIDTH_LONG:
-		*dwidth = DMA_DMACTL_DMASRCWDTH_LONG;
+	case TI_MSPM0_DMA_SLOT_EXTMODE_GATHER:
+		if (!cfg->gather_mode) {
+			LOG_ERR("Gather mode not supported by this DMA");
+			return -ENOTSUP;
+		}
+
+		*em = DMA_MSPM0_EM_GATHER;
 		break;
 	default:
-		return -EINVAL;
+		*em = DMA_MSPM0_EM_NORMAL;
+		break;
 	}
 
 	return 0;
@@ -124,12 +259,16 @@ static inline int dma_ti_mspm0_get_srcdatawidth(uint8_t wd, uint32_t *dwidth)
 static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
 {
+	uint32_t ctl = 0;
 	uint32_t temp;
 	const struct dma_ti_mspm0_config *cfg = dev->config;
 	struct dma_ti_mspm0_data *dma_data = dev->data;
 	struct dma_ti_mspm0_channel_data *data = NULL;
 	struct dma_block_config *b_cfg = NULL;
-	DL_DMA_Config dma_cfg = {0};
+	uint32_t trigger = TI_MSPM0_DMA_SLOT_DMATSEL(config->dma_slot);
+	uint32_t tm;
+	uint32_t em;
+	int ret = 0;
 
 	if ((config == NULL) || (channel >= cfg->dma_max_channels)) {
 		return -EINVAL;
@@ -146,53 +285,126 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("Source and Destination data width is not same");
-		return -EINVAL;
+	if (config->cyclic && b_cfg->next_block != NULL) {
+		return -ENOTSUP;
 	}
 
-	if (dma_ti_mspm0_get_memory_increment(b_cfg->source_addr_adj, &temp)) {
+	ret = dma_ti_mspm0_get_stride_incr(b_cfg->source_gather_en, b_cfg->source_gather_count,
+					   b_cfg->source_gather_interval, b_cfg->source_addr_adj,
+					   &temp);
+	if (ret < 0) {
 		LOG_ERR("Invalid Source address increment");
-		return -EINVAL;
+		return ret;
 	}
 
-	dma_cfg.srcIncrement = temp;
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCINCR, temp);
 
-	if (dma_ti_mspm0_get_memory_increment(b_cfg->dest_addr_adj, &temp)) {
+	ret = dma_ti_mspm0_get_stride_incr(b_cfg->dest_scatter_en, b_cfg->dest_scatter_count,
+					   b_cfg->dest_scatter_interval, b_cfg->dest_addr_adj,
+					   &temp);
+	if (ret < 0) {
 		LOG_ERR("Invalid Destination address increment");
-		return -EINVAL;
+		return ret;
 	}
 
-	dma_cfg.destIncrement = temp;
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTINCR, temp);
 
-	if (dma_ti_mspm0_get_dstdatawidth(config->dest_data_size, &temp)) {
-		LOG_ERR("Invalid Destination data width");
-		return -EINVAL;
+	ret = dma_ti_mspm0_get_extended_mode(cfg, config->dma_slot, &em);
+	if (ret < 0) {
+		return ret;
 	}
 
-	dma_cfg.destWidth = temp;
-
-	if (dma_ti_mspm0_get_srcdatawidth(config->source_data_size, &temp)) {
-		LOG_ERR("Invalid Source data width");
-		return -EINVAL;
+	if (em != DMA_MSPM0_EM_NORMAL && !dma_ti_mspm0_is_full_channel(cfg, channel)) {
+		return -ENOTSUP;
 	}
 
-	dma_cfg.srcWidth = temp;
+	if (em == DMA_MSPM0_EM_TABLE) {
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, DMA_MSPM0_WIDTH_LONG) |
+		       FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, DMA_MSPM0_WIDTH_WORD);
+
+		data->data_size = DMA_TI_MSPM0_DATAWIDTH_LONG;
+	} else if (em == DMA_MSPM0_EM_GATHER) {
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, DMA_MSPM0_WIDTH_WORD) |
+		       FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, DMA_MSPM0_WIDTH_WORD);
+
+		data->data_size = DMA_TI_MSPM0_DATAWIDTH_WORD;
+	} else {
+		if (dma_ti_mspm0_get_datawidth(config->source_data_size, &temp)) {
+			LOG_ERR("Invalid Source data width");
+			return -EINVAL;
+		}
+
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, temp);
+
+		if (dma_ti_mspm0_get_datawidth(config->dest_data_size, &temp)) {
+			LOG_ERR("Invalid Destination data width");
+			return -EINVAL;
+		}
+
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, temp);
+
+		if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
+			data->data_size = config->source_data_size;
+		} else {
+			data->data_size = config->dest_data_size;
+		}
+	}
+
+	tm = dma_ti_mspm0_get_transfer_mode(config);
+
+	if ((tm == DMA_MSPM0_TM_RPTSNGL || tm == DMA_MSPM0_TM_RPTBLCK) &&
+	    !dma_ti_mspm0_is_full_channel(cfg, channel)) {
+		return -ENOTSUP;
+	}
+
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_TM, tm);
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, em);
+
+	if (config->half_complete_callback_en) {
+		if (channel < DMA_MSPM0_PREIRQ_MAX_CHANNELS &&
+		    dma_ti_mspm0_is_full_channel(cfg, channel)) {
+			ctl |= FIELD_PREP(DMA_MSPM0_CTL_PREIRQ, DMA_MSPM0_PREIRQ_HALF);
+		} else {
+			return -ENOTSUP;
+		}
+	}
+
 	data->direction = config->channel_direction;
 	data->dma_callback = config->dma_callback;
 	data->user_data = config->user_data;
-	dma_cfg.transferMode = DL_DMA_SINGLE_TRANSFER_MODE;
-	dma_cfg.extendedMode = DL_DMA_NORMAL_MODE;
-	dma_cfg.triggerType = DL_DMA_TRIGGER_TYPE_EXTERNAL;
-	dma_cfg.trigger	= config->dma_slot;
+	data->cyclic = config->cyclic;
+	data->error_dis = config->error_callback_dis;
+	data->sw_triggered = trigger == DMA_MSPM0_TCTL_SWREQ;
+	data->next_block = b_cfg->next_block;
+	data->per_block_cb = config->complete_callback_en;
 
 	K_SPINLOCK(&dma_data->lock) {
-		DL_DMA_disableInterrupt(cfg->regs, BIT(channel));
-		DL_DMA_setTransferSize(cfg->regs, channel, b_cfg->block_size);
-		DL_DMA_initChannel(cfg->regs, channel, &dma_cfg);
-		DL_DMA_setSrcAddr(cfg->regs, channel, b_cfg->source_address);
-		DL_DMA_setDestAddr(cfg->regs, channel, b_cfg->dest_address);
-		DL_DMA_enableInterrupt(cfg->regs, BIT(channel));
+		sys_clear_bit(cfg->base + DMA_MSPM0_CPU_INT_IMASK, channel);
+		sys_write32(b_cfg->block_size / data->data_size,
+			    cfg->base + DMA_MSPM0_DMASZ(channel));
+		sys_write32(FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, trigger),
+			    cfg->base + DMA_MSPM0_DMATCTL(channel));
+
+		if (config->source_chaining_en || config->dest_chaining_en) {
+			sys_write32(DMA_MSPM0_TCTL_DMATINT |
+				    FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, channel),
+				    cfg->base + DMA_MSPM0_DMATCTL(config->linked_channel));
+			sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(config->linked_channel),
+				     DMA_MSPM0_CTL_DMAEN);
+		}
+
+		sys_write32(ctl, cfg->base + DMA_MSPM0_DMACTL(channel));
+		sys_write32(b_cfg->source_address, cfg->base + DMA_MSPM0_DMASA(channel));
+		sys_write32(b_cfg->dest_address, cfg->base + DMA_MSPM0_DMADA(channel));
+		sys_set_bit(cfg->base + DMA_MSPM0_CPU_INT_IMASK, channel);
+		if (config->half_complete_callback_en && channel < DMA_MSPM0_PREIRQ_MAX_CHANNELS) {
+			sys_set_bits(cfg->base + DMA_MSPM0_CPU_INT_IMASK,
+				     DMA_MSPM0_IMASK_PREIRQ(channel));
+		} else {
+			sys_clear_bits(cfg->base + DMA_MSPM0_CPU_INT_IMASK,
+				       DMA_MSPM0_IMASK_PREIRQ(channel));
+		}
+
 		data->busy = true;
 	}
 
@@ -204,12 +416,30 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 static int dma_ti_mspm0_start(const struct device *dev, const uint32_t channel)
 {
 	const struct dma_ti_mspm0_config *cfg = dev->config;
+	struct dma_ti_mspm0_data *dma_data = dev->data;
 
 	if (channel >= cfg->dma_max_channels) {
 		return -EINVAL;
 	}
 
-	DL_DMA_enableChannel(cfg->regs, channel);
+	sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
+
+	if (dma_data->ch_data[channel].sw_triggered) {
+		sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAREQ);
+	}
+
+	return 0;
+}
+
+static int dma_ti_mspm0_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct dma_ti_mspm0_config *cfg = dev->config;
+
+	if (channel >= cfg->dma_max_channels) {
+		return -EINVAL;
+	}
+
+	sys_clear_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
 
 	return 0;
 }
@@ -223,7 +453,7 @@ static int dma_ti_mspm0_stop(const struct device *dev, const uint32_t channel)
 		return -EINVAL;
 	}
 
-	DL_DMA_disableChannel(cfg->regs, channel);
+	sys_clear_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
 	data->ch_data[channel].busy = false;
 
 	return 0;
@@ -241,19 +471,10 @@ static int dma_ti_mspm0_reload(const struct device *dev, uint32_t channel,
 	}
 
 	data = &dma_data->ch_data[channel];
-	switch (data->direction) {
-	case PERIPHERAL_TO_MEMORY:
-		DL_DMA_setDestAddr(cfg->regs, channel, dest_addr);
-		break;
-	case MEMORY_TO_PERIPHERAL:
-		DL_DMA_setSrcAddr(cfg->regs, channel, src_addr);
-		break;
-	default:
-		LOG_ERR("Unsupported data direction");
-		return -ENOTSUP;
-	}
-
-	DL_DMA_setTransferSize(cfg->regs, channel, size);
+	sys_write32(src_addr, cfg->base + DMA_MSPM0_DMASA(channel));
+	sys_write32(dest_addr, cfg->base + DMA_MSPM0_DMADA(channel));
+	sys_write32(size / data->data_size, cfg->base + DMA_MSPM0_DMASZ(channel));
+	data->next_block = NULL;
 	data->busy = true;
 
 	return 0;
@@ -271,11 +492,33 @@ static int dma_ti_mspm0_get_status(const struct device *dev, uint32_t channel,
 	}
 
 	data = &dma_data->ch_data[channel];
-	stat->pending_length = DL_DMA_getTransferSize(cfg->regs, channel);
+	stat->pending_length = sys_read32(cfg->base + DMA_MSPM0_DMASZ(channel));
 	stat->dir = data->direction;
 	stat->busy = data->busy;
 
 	return 0;
+}
+
+static inline bool dma_ti_mspm0_chain_next_block(const struct dma_ti_mspm0_config *cfg,
+						 struct dma_ti_mspm0_channel_data *data,
+						 uint32_t channel)
+{
+	struct dma_block_config *block = data->next_block;
+
+	if (block == NULL) {
+		return false;
+	}
+
+	data->next_block = block->next_block;
+	sys_write32(block->source_address, cfg->base + DMA_MSPM0_DMASA(channel));
+	sys_write32(block->dest_address, cfg->base + DMA_MSPM0_DMADA(channel));
+	sys_write32(block->block_size / data->data_size, cfg->base + DMA_MSPM0_DMASZ(channel));
+	sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
+	if (data->sw_triggered) {
+		sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAREQ);
+	}
+
+	return true;
 }
 
 static inline void dma_ti_mspm0_isr(const struct device *dev)
@@ -286,34 +529,118 @@ static inline void dma_ti_mspm0_isr(const struct device *dev)
 	struct dma_ti_mspm0_data *dma_data = dev->data;
 	struct dma_ti_mspm0_channel_data *data;
 
-	status = DL_DMA_getPendingInterrupt(cfg->regs);
-	if (!status) {
+	/* Reading IIDX also latches-clears the highest priority pending flag */
+	status = sys_read32(cfg->base + DMA_MSPM0_CPU_INT_IIDX);
+	if (status == DMA_MSPM0_IIDX_NONE) {
+		return;
+	}
+
+	if (status == DMA_MSPM0_IIDX_ADDRERR || status == DMA_MSPM0_IIDX_DATAERR) {
+		int err = (status == DMA_MSPM0_IIDX_ADDRERR) ? -EFAULT : -EIO;
+
+		for (channel = 0; channel < cfg->dma_max_channels; channel++) {
+			data = &dma_data->ch_data[channel];
+			if (data->busy && data->dma_callback != NULL && !data->error_dis) {
+				data->dma_callback(dev, data->user_data, channel, err);
+			}
+		}
+
+		return;
+	}
+
+	if (status >= DMA_MSPM0_IIDX_PREIRQ_BASE && status <= DMA_MSPM0_IIDX_PREIRQ_LAST) {
+		channel = status - DMA_MSPM0_IIDX_PREIRQ_BASE;
+		if (channel >= cfg->dma_max_channels) {
+			return;
+		}
+
+		data = &dma_data->ch_data[channel];
+		if (data->dma_callback != NULL) {
+			data->dma_callback(dev, data->user_data, channel,
+					    DMA_STATUS_HALF_COMPLETE);
+		}
+
 		return;
 	}
 
 	channel = DMA_GET_CHANNEL_FROM_STATUS(status);
-	if (channel < cfg->dma_max_channels) {
-		status = DMA_STATUS_COMPLETE;
-	} else {
+	if (channel >= cfg->dma_max_channels) {
 		return;
 	}
 
 	data = &dma_data->ch_data[channel];
-	DL_DMA_disableChannel(cfg->regs, channel);
 
-	data->busy = false;
-	if (data->dma_callback !=  NULL) {
-		data->dma_callback(dev, data->user_data, channel, status);
+	if (dma_ti_mspm0_chain_next_block(cfg, data, channel)) {
+		if (data->per_block_cb && data->dma_callback != NULL) {
+			data->dma_callback(dev, data->user_data, channel, DMA_STATUS_BLOCK);
+		}
+		return;
 	}
+
+	if (!data->cyclic) {
+		sys_clear_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
+		data->busy = false;
+	}
+
+	if (data->dma_callback != NULL) {
+		data->dma_callback(dev, data->user_data, channel, DMA_STATUS_COMPLETE);
+	}
+}
+
+static inline uint32_t dma_ti_mspm0_encode_burst_size(uint32_t burst_size)
+{
+	switch (burst_size) {
+	case 32:
+		return DMA_MSPM0_BURST_32;
+	case 16:
+		return DMA_MSPM0_BURST_16;
+	case 8:
+		return DMA_MSPM0_BURST_8;
+	default:
+		return DMA_MSPM0_BURST_INFINITE;
+	}
+}
+
+static bool dma_ti_mspm0_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	const struct dma_ti_mspm0_config *cfg = dev->config;
+	struct dma_ti_mspm0_data *dma_data = dev->data;
+
+	if (channel >= cfg->dma_max_channels) {
+		return false;
+	}
+
+	if (dma_data->ch_data[channel].busy) {
+		return false;
+	}
+
+	if (filter_param == NULL) {
+		return true;
+	}
+
+	return channel == *(uint32_t *)filter_param;
 }
 
 static int dma_ti_mspm0_init(const struct device *dev)
 {
 	const struct dma_ti_mspm0_config *cfg = dev->config;
+	uint32_t dmaprio = 0;
 
 	if (cfg->irq_config_func != NULL) {
 		cfg->irq_config_func();
 	}
+
+	if (cfg->round_robin) {
+		dmaprio |= DMA_MSPM0_PRIO_ROUNDROBIN;
+	}
+
+	dmaprio |= FIELD_PREP(DMA_MSPM0_PRIO_BURSTSZ,
+			      dma_ti_mspm0_encode_burst_size(cfg->burst_size));
+
+	sys_write32(dmaprio, cfg->base + DMA_MSPM0_DMAPRIO);
+
+	sys_set_bits(cfg->base + DMA_MSPM0_CPU_INT_IMASK,
+		     DMA_MSPM0_IMASK_ADDRERR | DMA_MSPM0_IMASK_DATAERR);
 
 	return 0;
 }
@@ -322,14 +649,21 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	.config		= dma_ti_mspm0_configure,
 	.start		= dma_ti_mspm0_start,
 	.stop		= dma_ti_mspm0_stop,
+	.suspend	= dma_ti_mspm0_suspend,
+	.resume		= dma_ti_mspm0_start,
 	.reload		= dma_ti_mspm0_reload,
 	.get_status	= dma_ti_mspm0_get_status,
+	.chan_filter	= dma_ti_mspm0_chan_filter,
 };
 
 #define MSPM0_DMA_INIT(inst)							\
 										\
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, dma_channels),			\
 		     "DMA channels is required");				\
+										\
+	BUILD_ASSERT(DT_INST_PROP(inst, ti_num_full_channels) <=			\
+		     DT_INST_PROP(inst, dma_channels),				\
+		     "ti,num-full-channels can't exceed dma-channels");	\
 										\
 	static inline void dma_ti_mspm0_irq_cfg_##inst(void)			\
 	{									\
@@ -343,13 +677,25 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	static struct dma_ti_mspm0_channel_data					\
 			channel_data_##inst[DT_INST_PROP(inst, dma_channels)];	\
 										\
+	static ATOMIC_DEFINE(dma_channels_atomic_##inst,			\
+			      DT_INST_PROP(inst, dma_channels));		\
+										\
 	static const struct dma_ti_mspm0_config dma_cfg_##inst = {		\
-		.regs		  = (DMA_Regs *)DT_INST_REG_ADDR(inst),		\
+		.num_full_channels = DT_INST_PROP(inst, ti_num_full_channels),	\
+		.gather_mode	  = DT_INST_PROP(inst, ti_gather_mode),		\
+		.base		  = DT_INST_REG_ADDR(inst),	\
 		.dma_max_channels = DT_INST_PROP(inst, dma_channels),		\
 		.irq_config_func  = dma_ti_mspm0_irq_cfg_##inst,		\
+		.round_robin	   = DT_INST_PROP(inst, ti_round_robin_priority),\
+		.burst_size	   = DT_INST_PROP(inst, ti_burst_size),		\
 	};									\
 										\
 	static struct dma_ti_mspm0_data dma_data_##inst = {			\
+		.dma_ctx = {							\
+			.magic	      = DMA_MAGIC,				\
+			.dma_channels = DT_INST_PROP(inst, dma_channels),	\
+			.atomic	      = dma_channels_atomic_##inst,		\
+		},								\
 		.ch_data = channel_data_##inst,					\
 	};									\
 										\
