@@ -155,6 +155,17 @@ static bool br_sufficient_key_size(struct bt_conn *conn)
 	uint8_t key_size;
 	int err;
 
+	if (!bt_dev_cmd_supported(BT_DEV_CMD_READ_ENC_KEY_SIZE)) {
+		if (!IS_ENABLED(CONFIG_BT_BR_ALLOW_UNKNOWN_ENC_KEY_SIZE)) {
+			LOG_WRN("Controller cannot report the encryption key size");
+			return false;
+		}
+
+		/* The key size stays 0, as unknown */
+		LOG_DBG("Encryption key size unknown");
+		return conn->sec_level < BT_SECURITY_L4;
+	}
+
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		LOG_ERR("Failed to allocate command buffer");

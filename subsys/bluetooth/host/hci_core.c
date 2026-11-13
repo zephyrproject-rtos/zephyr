@@ -3775,6 +3775,10 @@ static void read_supported_commands_complete(struct net_buf *buf)
 			  BT_CMD_TEST(cmds, 7, 3) != 0U);
 	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_SET_CTL_TO_HOST_FLOW,
 			  BT_CMD_TEST(cmds, 10, 5) != 0U);
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_READ_ENC_KEY_SIZE,
+				  BT_CMD_TEST(cmds, 20, 4) != 0U);
+	}
 	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_SET_HOST_CHAN_CLASSIF,
 			  BT_CMD_TEST(cmds, 27, 3) != 0U);
 	atomic_set_bit_to(bt_dev.supported_commands, BT_DEV_CMD_LE_RAND,
