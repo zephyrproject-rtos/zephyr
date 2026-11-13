@@ -5,6 +5,7 @@ config MISC_MAX2221X
 	bool "Analog Devices MAX22216/MAX22217 Misc driver"
 	default y
 	depends on DT_HAS_ADI_MAX2221X_MISC_ENABLED
+	depends on SPI
 	select MFD
 	help
 	  Enable driver for MAX2221X MISC.
