@@ -195,3 +195,9 @@ jobs:
           s3://testing.zephyrproject.org/doc/safety/
         aws s3 sync --only-show-errors traceability-output/traceability-out \
           s3://testing.zephyrproject.org/true-traceability/
+        # Re-upload the entry page with no-cache so browsers always pick up
+        # the latest run instead of a cached copy.
+        aws s3 cp --only-show-errors \
+          --cache-control "no-cache" \
+          traceability-output/traceability-out/index.html \
+          s3://testing.zephyrproject.org/true-traceability/index.html
