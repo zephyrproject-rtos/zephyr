@@ -10,6 +10,15 @@
 #include <zephyr/zsr.h>
 #include "xtensa_asm2_context.h"
 
+/* Leave the debug level unmasked for hardware debuggers, except with
+ * GDBSTUB, which handles debug exceptions in this code.
+ */
+#ifdef CONFIG_GDBSTUB
+#define EXCINT_MASK_LEVEL 0xf
+#else
+#define EXCINT_MASK_LEVEL ZSR_RFI_LEVEL
+#endif
+
 #include <zephyr/offsets.h>
 #include <offsets_short.h>
 
@@ -338,7 +347,7 @@ _swap_page_table_\@:
  * clobbered.  A4-A15 become part of called frames and MUST NOT BE IN
  * USE by the code that expands this macro.  The called function gets
  * the context save handle in A1 as it's first argument.  On return
- * PS.INTLEVEL is XCHAL_NUM_INTLEVELS.
+ * PS.INTLEVEL is EXCINT_MASK_LEVEL.
  */
 .macro CROSS_STACK_CALL
 	/* Since accessing A4-A11 may trigger window overflows so
@@ -386,7 +395,7 @@ _xstack_call0_\@:
 	callx4 a7		/* call handler */
 	mov a2, a6		/* copy return value */
 
-	rsil a6, XCHAL_NUM_INTLEVELS
+	rsil a6, EXCINT_MASK_LEVEL
 
 #ifdef CONFIG_USERSPACE
 	/* If "next" handle to be restored is the same as
@@ -494,11 +503,11 @@ _excint_skip_ps_save_to_thread:
 	 * allow nested interrupts.  But we do need EXCM unmasked, as
 	 * we use CALL/ENTRY instructions in the process and need to
 	 * handle exceptions to spill caller/interruptee frames.  Use
-	 * PS.INTLEVEL at maximum to mask all interrupts and stash the
-	 * current value in our designated EPS register (which is
+	 * PS.INTLEVEL at EXCINT_MASK_LEVEL to mask all interrupts and stash
+	 * the current value in our designated EPS register (which is
 	 * guaranteed unused across the call)
 	 */
-	rsil a0, 0xf
+	rsil a0, EXCINT_MASK_LEVEL
 
 	/* Since we are unmasking EXCM, we need to set RING bits to kernel
 	 * mode, otherwise we won't be able to run the exception handler in C.
@@ -545,7 +554,11 @@ _not_l1:
 	wsr.ZSR_EPS a0
 #endif /* CONFIG_XTENSA_INTERRUPT_NONPREEMPTABLE */
 
-	movi a3, PS_INTLEVEL(0xf)
+#ifndef CONFIG_GDBSTUB
+	movi a3, ~(PS_INTLEVEL_MASK)
+	and a0, a0, a3
+#endif
+	movi a3, PS_INTLEVEL(EXCINT_MASK_LEVEL)
 	or a0, a0, a3
 	wsr.ps a0
 	rsync
