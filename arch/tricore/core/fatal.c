@@ -12,6 +12,7 @@
 #include <zephyr/arch/tricore/exception.h>
 #include <zephyr/logging/log.h>
 #include "kernel_arch_data.h"
+#include <kernel_arch_func.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
