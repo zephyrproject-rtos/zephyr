@@ -100,7 +100,7 @@ int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id);
 
 #ifdef CONFIG_DMA_STM32_V1
 void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id);
-bool stm32_dma_check_fifo_mburst(LL_DMA_InitTypeDef *DMAx);
+bool stm32_dma_check_fifo_mburst(uint32_t msize, uint32_t mburst, uint32_t fifo_level);
 uint32_t stm32_dma_get_fifo_threshold(uint16_t fifo_mode_control);
 uint32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph);
 uint32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph);
