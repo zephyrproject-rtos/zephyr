@@ -344,6 +344,18 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 
 	unsigned int key = irq_lock();
 
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	/* Leave the divided XTAL clock before the BBPLL is recalibrated */
+	if (new_config.source == SOC_CPU_CLK_SRC_PLL && old_config.source == SOC_CPU_CLK_SRC_XTAL &&
+	    old_config.div > 1) {
+		rtc_cpu_freq_config_t xtal_config;
+
+		if (rtc_clk_cpu_freq_mhz_to_config(cpu_cfg->xtal_freq, &xtal_config)) {
+			rtc_clk_cpu_freq_set_config(&xtal_config);
+		}
+	}
+#endif
+
 	rtc_clk_cpu_freq_set_config(&new_config);
 
 	esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * cpu_cfg->cpu_freq /

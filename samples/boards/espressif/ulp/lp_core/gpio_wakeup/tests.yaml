@@ -7,3 +7,10 @@ tests:
     tags:
       - samples
     sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "First boot, LP core will wake us on LP GPIO level"
+        - "HP core entering deep sleep"
