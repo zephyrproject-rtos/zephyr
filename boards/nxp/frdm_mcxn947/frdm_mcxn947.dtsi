@@ -5,6 +5,8 @@
  */
 
 #include "frdm_mcxn947-pinctrl.dtsi"
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/gpio/mikro-bus.h>
@@ -427,6 +429,26 @@ arduino_serial: &flexcomm2_lpuart2 {};
 &lpadc0 {
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+};
+
+/* mikroBUS AN is the dedicated ANA_4/ADC1_A0 input. */
+&lpadc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/* VDD_ANA (3.3 V) covers the full AN input range. */
+	voltage-ref = <2>;
+	/* VREF supplies the LPADC bias current. */
+	nxp,references = <&vref 1800>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <MCUX_LPADC_CH0A>;
+	};
 };
 
 zephyr_mipi_dbi_parallel: &flexio0_lcd {
