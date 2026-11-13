@@ -42,7 +42,7 @@ static void test_arm_max_f16(
 	arm_max_f16((float16_t *)input1, length, &val, &index);
 
 	/* Validate output */
-	zassert_equal(val, ((float16_t *)ref_max_val)[ref_index],
+	zassert_equal((float)val, (float)((float16_t *)ref_max_val)[ref_index],
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 
 	zassert_equal(index, ref_max_idx[ref_index],
@@ -62,7 +62,7 @@ static void test_arm_max_no_idx_f16(
 	arm_max_no_idx_f16((float16_t *)input1, length, &val);
 
 	/* Validate output */
-	zassert_equal(val, ((float16_t *)ref_max_val)[ref_index],
+	zassert_equal((float)val, (float)((float16_t *)ref_max_val)[ref_index],
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 }
 
@@ -80,7 +80,7 @@ static void test_arm_min_f16(
 	arm_min_f16((float16_t *)input1, length, &val, &index);
 
 	/* Validate output */
-	zassert_equal(val, ((float16_t *)ref_min_val)[ref_index],
+	zassert_equal((float)val, (float)((float16_t *)ref_min_val)[ref_index],
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 
 	zassert_equal(index, ref_min_idx[ref_index],
@@ -101,7 +101,7 @@ static void test_arm_absmax_f16(
 	arm_absmax_f16((float16_t *)input1, length, &val, &index);
 
 	/* Validate output */
-	zassert_equal(val, ((float16_t *)ref_absmax_val)[ref_index],
+	zassert_equal((float)val, (float)((float16_t *)ref_absmax_val)[ref_index],
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 
 	zassert_equal(index, ref_absmax_idx[ref_index],
@@ -122,7 +122,7 @@ static void test_arm_absmin_f16(
 	arm_absmin_f16((float16_t *)input1, length, &val, &index);
 
 	/* Validate output */
-	zassert_equal(val, ((float16_t *)ref_absmin_val)[ref_index],
+	zassert_equal((float)val, (float)((float16_t *)ref_absmin_val)[ref_index],
 		ASSERT_MSG_INCORRECT_COMP_RESULT);
 
 	zassert_equal(index, ref_absmin_idx[ref_index],

@@ -56,7 +56,7 @@ static void test_arm_distance_f16(int op, bool scratchy, const uint16_t *dims,
 
 	/* Enumerate input */
 	for (index = 0; index < length; index++) {
-		float16_t val;
+		float16_t val = 0.0f;
 
 		/* Load input values into the scratch buffers */
 		if (scratchy) {

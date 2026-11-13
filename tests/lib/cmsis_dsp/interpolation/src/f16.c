@@ -13,7 +13,7 @@
 
 #include "f16.pat"
 
-#define SNR_ERROR_THRESH	((float16_t)55)
+#define SNR_ERROR_THRESH	((float32_t)55)
 #define REL_ERROR_THRESH	(5.0e-3)
 #define ABS_ERROR_THRESH	(5.0e-3)
 
