@@ -1,0 +1,17 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BK7258
+	bool
+	help
+	  Beken BK7258
+
+config SOC_BK7258_CPU0
+	bool
+	select SOC_BK7258
+	help
+	  Beken BK7258 CPU0, the core the BootROM starts. The other cores
+	  stay halted.
+
+config SOC
+	default "bk7258" if SOC_BK7258

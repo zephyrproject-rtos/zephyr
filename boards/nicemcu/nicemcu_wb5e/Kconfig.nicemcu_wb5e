@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NICEMCU_WB5E
+	select SOC_BK7258_CPU0 if BOARD_NICEMCU_WB5E_BK7258_CPU0

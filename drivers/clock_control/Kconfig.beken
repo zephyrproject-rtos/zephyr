@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_BEKEN_BK7258
+	bool "Beken BK7258 clock generation unit"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_CGU_ENABLED
+	help
+	  This option enables the driver for the Beken BK7258 clock generation
+	  unit.

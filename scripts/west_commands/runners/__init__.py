@@ -30,6 +30,7 @@ _names = [
     'amebaflash',
     'bflb_flash_command',
     'bflb_mcu_tool',
+    'bkflash',
     'blackmagicprobe',
     'bossac',
     'canopen_program',

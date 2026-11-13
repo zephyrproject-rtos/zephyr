@@ -1,0 +1,6 @@
+board:
+  name: nicemcu_wb5e
+  full_name: NiceMCU WB5E
+  vendor: nicemcu
+  socs:
+  - name: bk7258
