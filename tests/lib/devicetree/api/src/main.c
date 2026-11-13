@@ -1241,6 +1241,12 @@ struct gpios_struct {
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_phandle_holder
+ZTEST(devicetree_api, test_path_properties)
+{
+	zassert_true(DT_SAME_NODE(DT_PROP(TEST_PH, path_by_label), TEST_ARRAYS));
+	zassert_true(DT_SAME_NODE(DT_PROP(TEST_PH, path_by_string), TEST_ARRAYS));
+}
+
 ZTEST(devicetree_api, test_phandles)
 {
 	bool gpio_controller = DT_PROP_BY_PHANDLE(TEST_PH, ph, gpio_controller);

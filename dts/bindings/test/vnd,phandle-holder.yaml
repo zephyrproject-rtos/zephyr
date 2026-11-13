@@ -8,6 +8,8 @@ compatible: "vnd,phandle-holder"
 include: [base.yaml]
 
 properties:
+  path-by-label: {type: "path"}
+  path-by-string: {type: "path"}
   ph: {type: "phandle"}
   phs: {type: "phandles"}
   ph-conn: {type: "phandle"}
