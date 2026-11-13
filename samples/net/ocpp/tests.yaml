@@ -9,6 +9,19 @@ tests:
       - net
       - ocpp
 
+  sample.net.ocpp.basic_auth:
+    harness: net
+    depends_on: netif
+    extra_configs:
+      - CONFIG_OCPP_BASIC_AUTH=y
+      - CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD="zephyr-ocpp-sample-1"
+    tags:
+      - net
+      - ocpp
+    platform_allow:
+      - qemu_x86
+      - native_sim
+
   sample.net.ocpp.tls:
     harness: net
     depends_on: netif

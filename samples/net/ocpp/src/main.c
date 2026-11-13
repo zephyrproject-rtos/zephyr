@@ -33,6 +33,15 @@
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+BUILD_ASSERT(sizeof(CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD) - 1 >=
+	     OCPP_BASIC_AUTH_PASSWORD_MIN_LEN,
+	     "CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD is not set or too short");
+BUILD_ASSERT(sizeof(CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD) - 1 <=
+	     CONFIG_OCPP_BASIC_AUTH_PASSWORD_MAX_LEN,
+	     "CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD is too long");
+#endif
+
 #define NO_OF_CONN 2
 K_KERNEL_STACK_ARRAY_DEFINE(cp_stk, NO_OF_CONN, 2 * 1024);
 
@@ -371,6 +380,11 @@ int main(void)
 	csi.creds.tls_hostname = TLS_PEER_HOSTNAME;
 	csi.creds.sec_tag_list_size = sizeof(tags);
 	csi.creds.tls_hostname_size = strlen(TLS_PEER_HOSTNAME);
+#endif
+#if defined(CONFIG_OCPP_BASIC_AUTH)
+	csi.auth.username = CONFIG_NET_SAMPLE_OCPP_AUTH_USERNAME;
+	csi.auth.password = (const uint8_t *)CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD;
+	csi.auth.password_len = strlen(CONFIG_NET_SAMPLE_OCPP_AUTH_PASSWORD);
 #endif
 	ret = ocpp_init(&cpi,
 			&csi,
