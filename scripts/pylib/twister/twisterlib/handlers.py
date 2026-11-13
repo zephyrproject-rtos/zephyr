@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import codecs
 import contextlib
 import csv
 import logging
@@ -963,6 +964,43 @@ class DeviceHandler(Handler):
             self.run_custom_script(post_script, timeout)
 
 
+class _QEMUConsoleDecoder:
+    """Incremental UTF-8 decoder for the QEMU console byte stream.
+
+    Both QEMU handlers read the console one byte at a time, from a fifo or
+    from a named pipe, so a multi-byte character is always split across
+    reads. Decoding each byte on its own can therefore never work: the
+    decoder state has to be kept between reads instead, which is what
+    ``codecs.getincrementaldecoder()`` provides.
+
+    Invalid input is reported by raising ``UnicodeDecodeError`` instead of
+    being replaced, so a corrupted byte still fails the test rather than
+    being silently dropped from the log.
+    """
+
+    def __init__(self):
+        self._decoder = codecs.getincrementaldecoder("utf-8")()
+
+    def decode(self, data: bytes) -> str:
+        """Decode the next chunk of the stream.
+
+        @return the text carried by *data*. Empty when *data* holds only the
+                first bytes of a character, whose remainder is expected in a
+                later call.
+        @raises UnicodeDecodeError if *data* cannot be part of valid UTF-8.
+        """
+        return self._decoder.decode(data)
+
+    def flush(self) -> str:
+        """Decode whatever is still buffered when the stream ends.
+
+        @return the text held back by ``decode()``, empty if there is none.
+        @raises UnicodeDecodeError if the stream ended in the middle of a
+                character.
+        """
+        return self._decoder.decode(b"", True)
+
+
 class QEMUHandlerBase(Handler):
     """Shared behaviour for the POSIX and Windows QEMU handlers.
 
@@ -1099,7 +1137,7 @@ class QEMUHandler(QEMUHandlerBase):
             # Disable internal buffering, we don't
             # want read() or poll() to ever block if there is data in there
             open(fifo_out, "rb", buffering=0) as in_fp,
-            open(logfile, "w") as log_out_fp
+            open(logfile, "w", encoding="utf-8") as log_out_fp
         ):
             start_time = time.time()
             timeout_time = start_time + timeout
@@ -1110,6 +1148,11 @@ class QEMUHandler(QEMUHandlerBase):
 
             line = ""
             timeout_extended = False
+
+            # Output is read one byte at a time, so keep the UTF-8 decoder
+            # state across reads to let multibyte characters through.
+            decoder = _QEMUConsoleDecoder()
+            at_eof = False
 
             pid = 0
             if os.path.exists(pid_fn):
@@ -1147,28 +1190,44 @@ class QEMUHandler(QEMUHandlerBase):
                     with open(pid_fn) as pid_file:
                         pid = int(pid_file.read())
 
-                try:
-                    c = in_fp.read(1).decode("utf-8")
-                except UnicodeDecodeError:
-                    # Test is writing something weird, fail
-                    _status = TwisterStatus.FAIL
-                    _reason = "unexpected byte"
-                    break
-
-                if c == "":
-                    # EOF, this shouldn't happen unless QEMU crashes
-                    # Don't overwrite an already-recorded failure (e.g. a
-                    # fault): that reason is more precise than the EOF that
-                    # follows it.
-                    if not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
+                raw = in_fp.read(1)
+                if not raw:
+                    # EOF, this shouldn't happen unless QEMU crashes. QEMU can
+                    # go away in the middle of a character or of a line, so
+                    # drain the decoder and keep the text already received
+                    # before reporting the end of the stream.
+                    try:
+                        c = decoder.flush()
+                    except UnicodeDecodeError:
+                        # A character was cut in half: still invalid input
                         _status = TwisterStatus.FAIL
-                        _reason = "unexpected eof"
-                    break
-                line = line + c
-                if c != "\n":
-                    continue
+                        _reason = "unexpected byte"
+                        break
+                    at_eof = True
+                else:
+                    try:
+                        c = decoder.decode(raw)
+                    except UnicodeDecodeError:
+                        # Test is writing something weird, fail
+                        _status = TwisterStatus.FAIL
+                        _reason = "unexpected byte"
+                        break
+                    if not c:
+                        # Only the first bytes of a multi-byte character are
+                        # in so far, the rest comes with the next read
+                        continue
+                    at_eof = False
 
-                # line contains a full line of data output from QEMU
+                line = line + c
+                if not at_eof and c != "\n":
+                    continue
+                if at_eof and not line:
+                    # Nothing was left pending by QEMU
+                    break
+
+                # line contains a full line of data output from QEMU, or the
+                # last one when QEMU stopped writing without a newline: both
+                # reach the log and the harness
                 log_out_fp.write(strip_ansi_sequences(line))
                 log_out_fp.flush()
                 line = line.rstrip()
@@ -1202,6 +1261,16 @@ class QEMUHandler(QEMUHandlerBase):
                     timeout_extended = True
                     timeout_time = QEMUHandler._extend_timeout_on_status(harness)
                 line = ""
+
+                if at_eof:
+                    # The tail of the stream was handed over just above
+                    break
+
+            if at_eof and not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
+                # Don't overwrite an already-recorded failure (e.g. a fault):
+                # that reason is more precise than the EOF that follows it.
+                _status = TwisterStatus.FAIL
+                _reason = "unexpected eof"
 
             handler.execution_time = time.time() - start_time
             logger.debug(
@@ -1429,7 +1498,7 @@ class QEMUWinHandler(QEMUHandlerBase):
 
     @staticmethod
     def _open_log_file(logfile):
-        return open(logfile, "w")
+        return open(logfile, "w", encoding="utf-8")
 
     @staticmethod
     def _close_log_file(log_file):
@@ -1483,6 +1552,11 @@ class QEMUWinHandler(QEMUHandlerBase):
 
         log_out_fp = self._open_log_file(logfile)
 
+        # Output is read one byte at a time, so keep the UTF-8 decoder state
+        # across reads to let multibyte characters through.
+        decoder = _QEMUConsoleDecoder()
+        at_eof = False
+
         while True:
             this_timeout = int((timeout_time - time.time()) * 1000)
             if this_timeout < 0:
@@ -1516,31 +1590,47 @@ class QEMUWinHandler(QEMUHandlerBase):
                     self.pid = int(pid_file.read())
 
             try:
-                c = queue.get_nowait()
+                raw = queue.get_nowait()
             except Empty:
                 continue
-            try:
-                c = c.decode("utf-8")
-            except UnicodeDecodeError:
-                # Test is writing something weird, fail
-                _status = TwisterStatus.FAIL
-                _reason = "unexpected byte"
-                break
 
-            if c == "":
-                # EOF, this shouldn't happen unless QEMU crashes
-                # Don't overwrite an already-recorded failure (e.g. a
-                # fault): that reason is more precise than the EOF that
-                # follows it.
-                if not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
+            if not raw:
+                # EOF, the reader thread got nothing back from the pipe.
+                # QEMU can go away in the middle of a character or of a
+                # line, so drain the decoder and keep the text already
+                # received before reporting the end of the stream.
+                try:
+                    c = decoder.flush()
+                except UnicodeDecodeError:
+                    # A character was cut in half: still invalid input
                     _status = TwisterStatus.FAIL
-                    _reason = "unexpected eof"
-                break
-            line = line + c
-            if c != "\n":
-                continue
+                    _reason = "unexpected byte"
+                    break
+                at_eof = True
+            else:
+                try:
+                    c = decoder.decode(raw)
+                except UnicodeDecodeError:
+                    # Test is writing something weird, fail
+                    _status = TwisterStatus.FAIL
+                    _reason = "unexpected byte"
+                    break
+                if not c:
+                    # Only the first bytes of a multi-byte character are in
+                    # so far, the rest comes with the next read
+                    continue
+                at_eof = False
 
-            # line contains a full line of data output from QEMU
+            line = line + c
+            if not at_eof and c != "\n":
+                continue
+            if at_eof and not line:
+                # Nothing was left pending by QEMU
+                break
+
+            # line contains a full line of data output from QEMU, or the last
+            # one when QEMU stopped writing without a newline: both reach the
+            # log and the harness
             log_out_fp.write(line)
             log_out_fp.flush()
             line = line.rstrip()
@@ -1575,7 +1665,17 @@ class QEMUWinHandler(QEMUHandlerBase):
                 timeout_time = self._extend_timeout_on_status(harness)
             line = ""
 
+            if at_eof:
+                # The tail of the stream was handed over just above
+                break
+
         self.stop_thread = True
+
+        if at_eof and not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
+            # Don't overwrite an already-recorded failure (e.g. a fault):
+            # that reason is more precise than the EOF that follows it.
+            _status = TwisterStatus.FAIL
+            _reason = "unexpected eof"
 
         self.execution_time = time.time() - start_time
         logger.debug(
