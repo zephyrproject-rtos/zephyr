@@ -350,7 +350,7 @@ static void telnet_recv(struct zsock_pollfd *pollfd)
 			len -= cmd_total_len;
 			cmd_total_len = 0;
 
-			memmove(buf + off, buf + data_off, len);
+			memmove(buf + off, buf + data_off, len - off);
 		}
 
 		off++;
