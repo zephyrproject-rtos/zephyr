@@ -72,11 +72,15 @@ Programming and Debugging
 *************************
 
 The XIAO MG24 contains an SAMD11 with CMSIS-DAP, allowing flashing, debugging, logging, etc. over
-the USB port. Doing so requires a version of OpenOCD that includes support for the flash on the MG24
-MCU. Until those changes are included in stock OpenOCD, the version bundled with Arduino can be
-used, or can be installed from the `OpenOCD Arduino Fork`_. When flashing, debugging, etc. you may
-need to include ``--openocd=/usr/local/bin/openocd
---openocd-search=/usr/local/share/openocd/scripts/`` options to the command.
+the USB port.
+
+SDK versions before 1.0.1 require an OpenOCD version that supports the MG24 MCU. Use the version
+bundled with Arduino or install one from the `OpenOCD Arduino Fork`_. You may need to pass the
+``--openocd=/usr/local/bin/openocd`` and ``--openocd-search=/usr/local/share/openocd/scripts/``
+options to west commands.
+
+SDK version 1.0.1 and later work with the standard west commands, like ``west flash`` and
+``west debug``.
 
 PyOCD can also be used by passing ``-r pyocd`` to the flashing and debugging commands. Add support
 for the XIAO MG24 by installing the CMSIS Device Family Pack if not already installed.
