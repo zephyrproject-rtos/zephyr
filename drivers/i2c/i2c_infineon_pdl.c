@@ -985,9 +985,10 @@ static int _i2c_controller_transfer_async(const struct device *dev, uint16_t add
  *
  * @retval 0 Every message completed.
  * @retval -EINVAL A message uses ten-bit addressing or carries a NULL buffer.
- * @retval -EIO The bus could not be claimed for this caller.
- * @retval -EIO A message failed on the bus.
- * @retval -EIO A read took in more bytes than it asked for.
+ * @retval -EIO
+ *     - The bus could not be claimed for this caller.
+ *     - A message failed on the bus.
+ *     - A read took in more bytes than it asked for.
  * @retval -ETIMEDOUT A message did not complete within the bus timeout.
  */
 static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, uint8_t num_msgs,
