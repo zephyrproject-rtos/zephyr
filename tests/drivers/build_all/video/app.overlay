@@ -23,6 +23,12 @@
 		#clock-cells = <0>;
 	};
 
+	sc2336_input_clock: sc2336-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -187,6 +193,14 @@
 				compatible = "sony,imx219";
 				reg = <0xe>;
 				clocks = <&imx219_input_clock>;
+			};
+
+			test_i2c_sc2336: sc2336@f {
+				compatible = "smartsens,sc2336";
+				reg = <0xf>;
+				clocks = <&sc2336_input_clock>;
+				reset-gpios = <&test_gpio 0 1>;
+				powerdown-gpios = <&test_gpio 1 0>;
 			};
 		};
 
