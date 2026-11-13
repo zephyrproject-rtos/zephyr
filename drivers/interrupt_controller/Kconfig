@@ -29,6 +29,7 @@ config HAZARD3_INTC
 	default y
 	select PICOSDK_USE_CLAIM
 	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL if MULTITHREADING
 	depends on DT_HAS_HAZARD3_HAZARD3_INTC_ENABLED
 	help
 	  IRQ implementation for Hazard3 Interrupt Controller found on the RP2350 series SoCs
