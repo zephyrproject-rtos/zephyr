@@ -92,6 +92,15 @@ config SD_DATA_RETRIES
 	help
 	  Number of times to retry sending data to SD card in case of failure
 
+config SD_RETAIN_CID
+	bool "Keep the card identification register after initialization"
+	help
+	  Store the raw 16-byte CID register read during card identification in
+	  the sd_card structure, so that DISK_IOCTL_GET_CARD_CID can return it
+	  for an initialized card without touching the bus. Without this option
+	  the ioctl re-issues ALL_SEND_CID (CMD2), which a card only answers in
+	  identification state, so it fails once the card is in use.
+
 
 config SD_UHS_PROTOCOL
 	bool "Ultra high speed SD card protocol support"
