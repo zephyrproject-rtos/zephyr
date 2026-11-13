@@ -11,6 +11,7 @@ supported:
   - arduino_i2s
   - arduino_spi
   - counter
+  - crc
   - gpio
   - spi
   - i2c

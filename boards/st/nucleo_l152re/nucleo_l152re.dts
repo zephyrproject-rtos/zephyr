@@ -68,6 +68,10 @@
 	status = "okay";
 };
 
+&crc {
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(32)>;

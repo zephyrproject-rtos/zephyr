@@ -103,3 +103,7 @@
 		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};
