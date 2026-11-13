@@ -780,11 +780,31 @@ uint8_t ull_cp_phy_update(struct ll_conn *conn, uint8_t tx, uint8_t flags, uint8
 uint8_t ull_cp_terminate(struct ll_conn *conn, uint8_t error_code)
 {
 	struct proc_ctx *ctx;
+	bool key;
 
-	llcp_lr_terminate(conn);
-	llcp_rr_terminate(conn);
+	/* A procedure that has fixed an instant keeps running: the peer
+	 * changes the PHY, the connection parameters or the channel map at
+	 * the instant, and the connection is lost if the LL_TERMINATE_IND
+	 * has not got through by then. The lock keeps the procedure from
+	 * completing between the check and the flush.
+	 */
+	key = llcp_shared_data_lock();
+	llcp_lr_terminate_keep_instant(conn);
+	llcp_rr_terminate_keep_instant(conn);
+	llcp_shared_data_unlock(key);
 
 	ctx = llcp_create_local_procedure(PROC_TERMINATE);
+	if (ctx == NULL) {
+		/* The contexts are shared by all connections. Without a free
+		 * one, the termination takes the one of the kept procedure.
+		 */
+		key = llcp_shared_data_lock();
+		llcp_lr_terminate(conn);
+		llcp_shared_data_unlock(key);
+
+		ctx = llcp_create_local_procedure(PROC_TERMINATE);
+	}
+
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
