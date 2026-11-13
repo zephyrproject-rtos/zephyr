@@ -30,7 +30,7 @@ Building and Running
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/pmci/mctp/host
    :host-os: unix
-   :board: nrf52840_nrf52840dk
+   :board: nrf52840dk/nrf52840
    :goals: run
    :compact:
 
