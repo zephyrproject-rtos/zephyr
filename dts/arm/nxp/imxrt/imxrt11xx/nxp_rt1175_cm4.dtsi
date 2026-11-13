@@ -20,6 +20,9 @@
 /delete-node/ &mipi_dsi;
 /delete-node/ &mipi_csi2rx;
 
+/* The RT1175 has no ENET_QOS either */
+/delete-node/ &enet_qos;
+
 /* RT1175 shares the RT1176 silicon: the CM4 core runs at 400MHz */
 &cpu1 {
 	clock-frequency = <DT_FREQ_M(400)>;
