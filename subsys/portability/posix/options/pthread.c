@@ -471,6 +471,15 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	struct pthread_key_data *key_data;
+	struct __pthread_cleanup *c;
+
+	/* Execute all cleanup handlers pushed by this thread */
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->cleanup_list, node_l, node_s) {
+		c = CONTAINER_OF(node_l, struct __pthread_cleanup, node);
+		if (c->routine != NULL) {
+			c->routine(c->arg);
+		}
+	}
 
 	/*
 	 * PTHREAD_DESTRUCTOR_ITERATIONS limits passes over the thread's keys, not destructor
