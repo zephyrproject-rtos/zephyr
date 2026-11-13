@@ -40,6 +40,7 @@
 
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
+#include "ull_adv_iso_internal.h"
 #include "ull_chan_internal.h"
 #include "ull_sched_internal.h"
 #include "ull_iso_internal.h"
@@ -126,7 +127,7 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	uint32_t slot_overhead;
 	uint32_t event_spacing;
 	uint16_t ctrl_spacing;
-	uint8_t sdu_per_event;
+	uint8_t bn_event;
 	uint8_t ter_idx;
 	uint32_t ret;
 	uint8_t err;
@@ -324,27 +325,6 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	/* Mandatory Num_BIS = 1 */
 	lll_adv_iso->num_bis = num_bis;
 
-	/* Allocate streams */
-	for (uint8_t i = 0U; i < num_bis; i++) {
-		struct lll_adv_iso_stream *stream;
-
-		stream = (void *)adv_iso_stream_acquire();
-		stream->big_handle = big_handle;
-		stream->dp = NULL;
-
-		if (!stream->link_tx_free) {
-			stream->link_tx_free = &stream->link_tx;
-		}
-		memq_init(stream->link_tx_free, &stream->memq_tx.head,
-			  &stream->memq_tx.tail);
-		stream->link_tx_free = NULL;
-
-		stream->pkt_seq_num = 0U;
-
-		lll_adv_iso->stream_handle[i] =
-			adv_iso_stream_handle_get(stream);
-	}
-
 	if (test_config) {
 		lll_adv_iso->bn = bn;
 		lll_adv_iso->iso_interval = iso_interval;
@@ -363,35 +343,18 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
 		}
 
-		/* FIXME: SDU per max latency, consider how to use Pre-transmission in the
-		 *        calculations.
-		 *        Take decision based on how ptc_calc function forces the use of
-		 *        Pre-Transmission when not using test command. Refer to comments in
-		 *        ptc_calc function.
-		 */
-		sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
-				1U;
+		iso_interval_us = ull_adv_iso_interval_calc(sdu_interval, max_sdu,
+							    lll_adv_iso->max_pdu, framing,
+							    &bn_event, &bn);
+		if (iso_interval_us == 0U) {
+			/* Release allocated link buffers */
+			ll_rx_link_release(link_cmplt);
+			ll_rx_link_release(link_term);
 
-		/* BN (Burst Count), Mandatory BN = 1 */
-		bn = DIV_ROUND_UP(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
-		if (bn > PDU_BIG_BN_MAX) {
-			/* Restrict each BIG event to maximum burst per BIG event */
-			lll_adv_iso->bn = PDU_BIG_BN_MAX;
-
-			/* Ceil the required burst count per SDU to next maximum burst
-			 * per BIG event.
-			 */
-			bn = DIV_ROUND_UP(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
-		} else {
-			lll_adv_iso->bn = bn;
+			return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 		}
 
-		/* Calculate ISO interval */
-		/* iso_interval shall be at least SDU interval,
-		 * or integer multiple of SDU interval for unframed PDUs
-		 */
-		iso_interval_us = ((sdu_interval * lll_adv_iso->bn * sdu_per_event) /
-				(bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
+		lll_adv_iso->bn = bn_event;
 		lll_adv_iso->iso_interval = iso_interval_us / PERIODIC_INT_UNIT_US;
 	}
 
@@ -467,8 +430,21 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		}
 	} else {
 		/* Pre-Transmission Offset (PTO) */
+		const uint8_t pto_sel = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
+
+		/* No room for extra pre-transmission subevents: use one repetition
+		 * as a pre-transmission instead, latency permitting.
+		 */
+		if (ull_adv_iso_can_pto_from_repetitions(lll_adv_iso->ptc, lll_adv_iso->irc,
+							 pto_sel, event_spacing, iso_interval_us,
+							 sdu_interval, max_latency, framing)) {
+			lll_adv_iso->irc--;
+			lll_adv_iso->nse -= lll_adv_iso->bn;
+			lll_adv_iso->ptc = lll_adv_iso->bn;
+		}
+
 		if (lll_adv_iso->ptc) {
-			lll_adv_iso->pto = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
+			lll_adv_iso->pto = pto_sel;
 		} else {
 			lll_adv_iso->pto = 0U;
 		}
@@ -637,6 +613,29 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 		return err;
 	}
 
+	/* Allocate streams, after all parameter checks so that a rejected BIG
+	 * does not hold them.
+	 */
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		struct lll_adv_iso_stream *stream;
+
+		stream = (void *)adv_iso_stream_acquire();
+		stream->big_handle = big_handle;
+		stream->dp = NULL;
+
+		if (!stream->link_tx_free) {
+			stream->link_tx_free = &stream->link_tx;
+		}
+		memq_init(stream->link_tx_free, &stream->memq_tx.head,
+			  &stream->memq_tx.tail);
+		stream->link_tx_free = NULL;
+
+		stream->pkt_seq_num = 0U;
+
+		lll_adv_iso->stream_handle[i] =
+			adv_iso_stream_handle_get(stream);
+	}
+
 	/* Associate the ISO instance with an Extended Advertising instance */
 	lll_adv_iso->adv = &adv->lll;
 
@@ -652,10 +651,10 @@ static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bi
 	if (ret) {
 		/* Failed to schedule BIG events */
 
-		/* Reset the association of ISO instance with the Extended
-		 * Advertising Instance
+		/* Release the streams and reset the association of ISO instance
+		 * with the Extended Advertising Instance
 		 */
-		lll_adv_iso->adv = NULL;
+		ull_adv_iso_stream_release(adv_iso);
 
 		/* Release allocated link buffers */
 		ll_rx_link_release(link_cmplt);
