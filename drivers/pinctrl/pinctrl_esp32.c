@@ -142,12 +142,10 @@ static int esp32_pin_apply_config(uint32_t pin, uint32_t flags)
 		}
 	}
 
-	if (flags & ESP32_DIR_INP_FLAG) {
+	if (flags & (ESP32_DIR_INP_FLAG | ESP32_PIN_IN_EN_FLAG)) {
 		gpio_ll_input_enable(&GPIO, pin);
 	} else {
-		if (!(flags & ESP32_PIN_IN_EN_FLAG)) {
-			gpio_ll_input_disable(&GPIO, pin);
-		}
+		gpio_ll_input_disable(&GPIO, pin);
 	}
 
 end:
