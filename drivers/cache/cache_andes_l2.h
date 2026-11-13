@@ -31,10 +31,15 @@
 /* L2 cache control registers bitfields */
 #define L2C_CTRL_CEN		BIT(0)
 #define L2C_CTRL_IPFDPT_3	GENMASK(4, 3)
-#define L2C_CTRL_DPFDPT_8	GENMASK(7, 6)
+#define L2C_CTRL_DPFDPT_8	GENMASK(6, 5)
 
 /* L2 cache CCTL Access Line registers bitfields */
 #define L2C_CCTLACC_WAY_SHIFT	28
+
+/* L2 cache CCTL Status registers bitfields */
+#define L2C_CCTLST_MASK		BIT_MASK(4)
+#define L2C_CCTLST_RUNNING	1U
+#define L2C_CCTLST_ILLEGAL	2U
 
 /* L2 CCTL Command */
 #define CCTL_L2_IX_INVAL	0x00
@@ -66,15 +71,17 @@ static ALWAYS_INLINE int nds_l2_cache_is_inclusive(void)
 
 }
 
-static ALWAYS_INLINE void nds_l2_cache_wait_status(uint8_t hart_id)
+static ALWAYS_INLINE int nds_l2_cache_wait_status(uint8_t hart_id)
 {
 	uint32_t status;
 
 	do {
 		status = sys_read32(L2C_CCTLST(hart_id));
 		status >>= hart_id * l2_cache_cfg.status_shift;
-		status &= BIT_MASK(4);
-	} while (status == 1);
+		status &= L2C_CCTLST_MASK;
+	} while (status == L2C_CCTLST_RUNNING);
+
+	return (status == L2C_CCTLST_ILLEGAL) ? -EIO : 0;
 }
 
 static ALWAYS_INLINE int nds_l2_cache_all(int op)
@@ -82,9 +89,10 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 	unsigned long ways, sets, index, cmd;
 	uint8_t hart_id;
 	unsigned long status = csr_read(mstatus);
+	int ret;
 
 	if (!l2_cache_cfg.size) {
-		return -ENOTSUP;
+		return -ENODEV;
 	} else if (l2_cache_cfg.size >= 128 * 1024) {
 		ways = 16;
 	} else {
@@ -119,7 +127,10 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 		sys_write32(CCTL_L2_WBINVAL_ALL, L2C_CCTLCMD(hart_id));
 
 		/* Wait L2 CCTL Commands finished */
-		nds_l2_cache_wait_status(hart_id);
+		ret = nds_l2_cache_wait_status(hart_id);
+		if (ret < 0) {
+			return ret;
+		}
 	} else {
 		sets = l2_cache_cfg.size / (ways * l2_cache_cfg.line_size);
 		/* Invalidate all cache line by each way and each set */
@@ -135,7 +146,10 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 				sys_write32(cmd, L2C_CCTLCMD(hart_id));
 
 				/* Wait L2 CCTL Commands finished */
-				nds_l2_cache_wait_status(hart_id);
+				ret = nds_l2_cache_wait_status(hart_id);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 		}
 	}
@@ -147,9 +161,10 @@ static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op)
 {
 	unsigned long last_byte, align_addr, cmd;
 	uint8_t hart_id;
+	int ret;
 
 	if (!l2_cache_cfg.size) {
-		return -ENOTSUP;
+		return -ENODEV;
 	}
 
 	switch (op) {
@@ -176,7 +191,10 @@ static ALWAYS_INLINE int nds_l2_cache_range(void *addr, size_t size, int op)
 		align_addr += l2_cache_cfg.line_size;
 
 		/* Wait L2 CCTL Commands finished */
-		nds_l2_cache_wait_status(hart_id);
+		ret = nds_l2_cache_wait_status(hart_id);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -239,13 +257,13 @@ static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size)
 	l2_cache_cfg.size = size * 128 * 1024;
 
 	if (sys_read32(L2C_CONFIG) & L2C_CONFIG_MAP) {
-		l2_cache_cfg.cmd_offset = 0x10;
-		l2_cache_cfg.status_offset = 0;
-		l2_cache_cfg.status_shift = 4;
-	} else {
 		l2_cache_cfg.cmd_offset = 0x1000;
 		l2_cache_cfg.status_offset = 0x1000;
 		l2_cache_cfg.status_shift = 0;
+	} else {
+		l2_cache_cfg.cmd_offset = 0x10;
+		l2_cache_cfg.status_offset = 0;
+		l2_cache_cfg.status_shift = 4;
 	}
 
 	l2_cache_cfg.version = (sys_read32(L2C_CONFIG) >> L2C_CONFIG_VERSION_SHIFT) & BIT_MASK(8);
@@ -258,14 +276,25 @@ static ALWAYS_INLINE int nds_l2_cache_init(uint8_t line_size)
 	__asm__ volatile ("fence.i");
 	sys_write32(l2c_ctrl, L2C_CTRL);
 
-	if (IS_ENABLED(CONFIG_SMP)) {
-		if (l2_cache_cfg.size) {
-			l2c_ctrl = sys_read32(L2C_CTRL);
+	if (l2_cache_cfg.size) {
+		l2c_ctrl = sys_read32(L2C_CTRL);
 
-			if (!(l2c_ctrl & L2C_CTRL_CEN)) {
+		if (IS_ENABLED(CONFIG_DCACHE)) {
+			/*
+			 * The GEN1 L2 cache is disabled by default. Enable it with
+			 * a second write after the prefetch depth is configured.
+			 */
+			if (l2_cache_cfg.version < 16) {
 				WRITE_BIT(l2c_ctrl, 0, true);
 				sys_write32(l2c_ctrl, L2C_CTRL);
 			}
+		} else {
+			/*
+			 * The GEN2 L2 cache is enabled by default. Disable it to
+			 * prevent DMA from accessing it through IOCP.
+			 */
+			WRITE_BIT(l2c_ctrl, 0, false);
+			sys_write32(l2c_ctrl, L2C_CTRL);
 		}
 	}
 
