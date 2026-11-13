@@ -1754,3 +1754,9 @@ test_i2c_stc31: stc31@e3 {
 	reg = <0xe3>;
 	binary-gas = <0x0001>;
 };
+
+test_i2c_rak12035: rak12035@e4 {
+	compatible = "rakwireless,rak12035";
+	reg = <0xe4>;
+	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+};
