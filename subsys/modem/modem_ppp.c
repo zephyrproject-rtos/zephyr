@@ -600,21 +600,23 @@ static void modem_ppp_process_handler(struct k_work *item)
 	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, process_work);
 	int ret;
 
-	ret = modem_pipe_receive(ppp->pipe, ppp->receive_buf, ppp->buf_size);
-	if (ret < 1) {
-		return;
-	}
+	/* CMUX yields after a batch; drain it before the producer runs again. */
+	while ((ret = modem_pipe_receive(ppp->pipe, ppp->receive_buf, ppp->buf_size)) > 0) {
 
 #if CONFIG_MODEM_STATS
-	advertise_receive_buf_stats(ppp, ret);
+		advertise_receive_buf_stats(ppp, ret);
 #endif
 
-	for (int i = 0; i < ret; i++) {
-		i += modem_ppp_process_received_bytes_fast(ppp, &ppp->receive_buf[i], ret - i);
-		modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
+		for (int i = 0; i < ret; i++) {
+			i += modem_ppp_process_received_bytes_fast(ppp, &ppp->receive_buf[i],
+								   ret - i);
+			modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
+		}
 	}
 
-	modem_work_submit(&ppp->process_work);
+	if (ret < 0) {
+		LOG_ERR("Pipe receiving error: %d", ret);
+	}
 }
 
 static void modem_ppp_ppp_api_init(struct net_if *iface)
