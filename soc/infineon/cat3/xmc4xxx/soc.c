@@ -6,6 +6,8 @@
  *
  */
 
+#include <string.h>
+
 #include <xmc_scu.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
@@ -17,9 +19,19 @@
 #define PMU_FLASH_WS		(0x4U)
 #endif
 
+/* The startup software in the boot ROM writes the 16-byte unique chip ID at
+ * the start of DSRAM1, which Zephyr uses as RAM.
+ */
+#define XMC4XXX_CHIPID_ADDR 0x20000000UL
+
 void soc_reset_hook(void)
 {
 	uint32_t temp;
+
+	/* Save the chip ID before the RAM is initialized. g_chipid is in
+	 * .no_init, which the RAM initialization leaves untouched.
+	 */
+	memcpy(g_chipid, (const void *)XMC4XXX_CHIPID_ADDR, sizeof(g_chipid));
 
 	/* unaligned trap bit is enabled on reset. disable it here and set later via */
 	/* CONFIG_TRAP_UNALIGNED_ACCESS if needed. */

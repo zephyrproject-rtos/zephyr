@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Marcelo Roberto Jimenez
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_XMC4XXX
+	bool "Infineon XMC4xxx unique chip ID and reset cause"
+	default y
+	depends on SOC_SERIES_XMC4XXX
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the hwinfo driver for Infineon XMC4xxx: the 16-byte unique
+	  chip ID written by the boot ROM and the reset cause from SCU RSTSTAT.
