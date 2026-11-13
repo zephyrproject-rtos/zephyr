@@ -103,30 +103,44 @@ Step 2.2: UpdateHub Cloud
 The UpdateHub Cloud is an enterprise-grade solution.  It provides almost same
 resources than UpdateHub-CE with the DTLS as main diferential.  For more
 details on how to use the UpdateHub Cloud please refer to the documentation on
-`updatehub.io`_.  The UpdateHub Cloud has the option to use CoAPS/DTLS or not.
-If you want to use the CoAPS/DTLS, simply add the ``overlay-dtls.conf`` when
-building the sample.  You can use the provided certificate for test this
-example or create your own.  The below procedure instruct how create a new
-certificate using openssl on a Linux machine on terminal ``terminal 2``.
+`updatehub.io`_.
 
-.. code-block:: console
+The UpdateHub Cloud accepts plain CoAP on port 5683 and CoAPS (DTLS 1.2) on
+port 5684.  To use CoAPS, add ``overlay-dtls.conf`` when building the sample.
+The server authenticates with an ECDSA P-256 certificate signed by an
+UpdateHub root CA, and the device verifies that chain and the server name
+:kconfig:option:`CONFIG_UPDATEHUB_SERVER`.  The device does not authenticate
+itself with a certificate, so it never holds a private key.
 
-    openssl genrsa -out privkey.pem 512
-    openssl req -new -x509 -key privkey.pem -out servercert.pem
+The sample ships the UpdateHub root CA certificates in
+:zephyr_file:`samples/subsys/mgmt/updatehub/src/certificates/updatehub-root-ca.pem`
+and registers them as one ``TLS_CREDENTIAL_CA_CERTIFICATE`` under the security
+tag :kconfig:option:`CONFIG_UPDATEHUB_DTLS_SEC_TAG`:
 
-The ``servercert`` and ``privkey`` files must be embedded in the application
-by ``certificates.h`` file.  The following procedure can be used to generated
-the required ``der`` files:
+* ``UpdateHub Device Root CA R1``, which signs the current server certificate,
+  SHA-256 fingerprint
+  ``D2:D8:AB:2C:24:05:FC:1D:71:85:7C:96:62:3C:B6:60:11:2A:D2:32:77:74:89:52:29:CA:58:88:E7:02:49:3E``
+* ``UpdateHub Device Root CA R2``, a standby root, so the server can move to
+  it without a firmware update, SHA-256 fingerprint
+  ``73:E8:0C:AE:CF:AD:A9:4E:89:0C:EC:F4:E1:C0:D1:39:F6:90:D5:E8:EB:D7:7E:74:09:3D:7B:29:A0:1D:C2:AB``
 
-.. code-block:: console
+Keep both roots in products so they keep working when the server moves to the
+standby root.  Zephyr keeps one credential per type and security tag, so several
+roots must share one PEM file rather than be added one by one.
 
-    openssl x509 -in servercert.pem -outform DER -out servercert.der
-    openssl pkcs8 -topk8 -inform PEM -outform DER -nocrypt -in privkey.pem
-      -out privkey.der
+To test against a server of your own, build with
+``CONFIG_UPDATEHUB_SAMPLE_ROOT_CA_FILE`` pointing to a PEM file with the root
+CA that signs that server's certificate, and set
+:kconfig:option:`CONFIG_UPDATEHUB_SERVER` to a name present in the server
+certificate.
 
+.. note::
 
-The ``der`` files should be placed on the sample source at certificates
-directory.
+    Certificate validity dates are only checked when
+    :kconfig:option:`CONFIG_MBEDTLS_HAVE_TIME_DATE` is enabled, which requires a
+    trusted wall clock (for example SNTP or an RTC) to be set before the first
+    connection.  With the option enabled and no valid clock, the handshake
+    rejects every certificate as not yet valid.
 
 .. note::
 
@@ -145,7 +159,8 @@ value will select UpdateHub-CE otherwise ``n`` selects UpdateHub Cloud.
 
 Set :kconfig:option:`CONFIG_UPDATEHUB_SERVER` with your local IP address that runs the
 UpdateHub-CE server edition.  If your are using a service provider a DNS name
-is a valid option too.  This option is only valid when using UpdateHub-CE.
+is a valid option too.  When using UpdateHub Cloud it defaults to
+``coap.updatehub.io``.
 
 Set :kconfig:option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the polling period of your
 preference, remembering that the limit is between 0 and 43200 minutes
