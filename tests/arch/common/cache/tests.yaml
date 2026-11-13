@@ -10,6 +10,7 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c
       - qemu_cortex_a53
+      - qemu_cortex_a9
       - nsim/nsim_em
       - qemu_x86
       - qemu_x86_64
@@ -25,6 +26,7 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c
       - qemu_cortex_a53
+      - qemu_cortex_a9
       - nsim/nsim_em
       - qemu_x86
       - qemu_x86_64
