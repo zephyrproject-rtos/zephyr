@@ -20,11 +20,15 @@ properties:
       if CONFIG_PINCTRL is enabled).
 
   current-speed:
+    type: int
     required: true
     description: |
-      Initial baud rate setting for UART. Only a fixed set of baud
-      rates are selectable on these devices.
-    enum:
+      Initial baud rate setting for UART.
+
+  current-speed-is-enum:
+    type: boolean
+    description: |
+      Baudrate setting is treated as an enum with following values:
       - 1200
       - 2400
       - 4800

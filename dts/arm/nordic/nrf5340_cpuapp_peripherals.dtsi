@@ -69,8 +69,8 @@ clock: clock@5000 {
 
 	hfclk: hfclk {
 		compatible = "nordic,nrf-clock-hfclk";
-		status = "okay";
 		supported-clock-frequencies = <DT_FREQ_M(128) DT_FREQ_M(64)>;
+		status = "okay";
 	};
 
 	lfclk: lfclk {
@@ -80,8 +80,8 @@ clock: clock@5000 {
 
 	hfclk192m: hfclk192m {
 		compatible = "nordic,nrf-clock-hfclk192m";
-		status = "okay";
 		supported-clock-frequencies = <DT_FREQ_M(192) DT_FREQ_M(96) DT_FREQ_M(48)>;
+		status = "okay";
 	};
 
 	hfclkaudio: hfclkaudio {
@@ -165,6 +165,7 @@ uart0: uart@8000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
+	current-speed-is-enum;
 	status = "disabled";
 };
 
@@ -206,6 +207,7 @@ uart1: uart@9000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
+	current-speed-is-enum;
 	status = "disabled";
 };
 
@@ -260,6 +262,7 @@ uart2: uart@b000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
+	current-speed-is-enum;
 	status = "disabled";
 };
 
@@ -301,6 +304,7 @@ uart3: uart@c000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0xc000 0x1000>;
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
+	current-speed-is-enum;
 	status = "disabled";
 };
 

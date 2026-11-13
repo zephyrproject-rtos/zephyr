@@ -151,6 +151,7 @@
 			compatible = "nordic,nrf-uarte";
 			reg = <0x40002000 0x1000>;
 			interrupts = <2 NRF_DEFAULT_IRQ_PRIORITY>;
+			current-speed-is-enum;
 			status = "disabled";
 		};
 
