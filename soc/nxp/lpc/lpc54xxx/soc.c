@@ -226,6 +226,11 @@ __weak void clock_init(void)
 	SYSCON->WDTOSCCTRL = SYSCON_WDTOSCCTRL_FREQSEL(14U) | SYSCON_WDTOSCCTRL_DIVSEL(0U);
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rng), nxp_lpc_rng, okay)
+	/* The RNG is powered down out of reset. */
+	POWER_DisablePD(kPDRUNCFG_PD_rng);
+#endif
+
 	if (IS_ENABLED(CONFIG_NXP_GINT)) {
 		CLOCK_EnableClock(kCLOCK_Gint);
 	}

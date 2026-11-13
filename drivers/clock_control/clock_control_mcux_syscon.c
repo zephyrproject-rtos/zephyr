@@ -551,6 +551,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rng), nxp_lpc_rng, okay)
+	if ((uint32_t)sub_system == MCUX_RNG_CLK) {
+		CLOCK_EnableClock(kCLOCK_Rng);
+	}
+#endif
+
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
 	{
 		clock_ip_name_t gate;
