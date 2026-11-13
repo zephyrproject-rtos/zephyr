@@ -16,6 +16,8 @@ config STEPPER_ADI_TMC_I2C
 config STEPPER_ADI_TMC_UART
 	bool "Use Trinamic Stepper Controller with single wire UART"
 	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	select UART_USE_RUNTIME_CONFIGURE
 	help
 	  A Trinamic Stepper Controller with single wire UART is enabled
 
