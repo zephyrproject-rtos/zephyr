@@ -8,36 +8,36 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/lora.h>
-#include <zephyr/sys/atomic.h>
 
 #include "sx126x_hal.h"
 #include "sx126x_regs.h"
 
-enum sx126x_state {
-	SX126X_STATE_SLEEP = 0,
-	SX126X_STATE_IDLE,
-	SX126X_STATE_TX,
-	SX126X_STATE_RX,
-	SX126X_STATE_RX_DUTY_CYCLE,
+/* What the radio is claimed for */
+enum sx126x_op {
+	SX126X_OP_NONE = 0,
+	SX126X_OP_CONFIG,
+	SX126X_OP_TX,
+	SX126X_OP_CW,
+	SX126X_OP_RX,
+	SX126X_OP_RX_DUTY_CYCLE,
 };
 
-struct sx126x_tx_result {
+/* A caller blocked on an operation, and where its result goes */
+struct sx126x_waiter {
+	struct k_sem done;
 	int status;
-};
-
-struct sx126x_rx_result {
-	int16_t rssi;
-	int8_t snr;
-	uint8_t len;
-	int status;
+	uint8_t *buf;
+	uint8_t size;
+	int16_t *rssi;
+	int8_t *snr;
 };
 
 struct sx126x_data {
 	struct sx126x_hal_data hal;
 
-	/* Current state (atomic for lock-free state transitions) */
-	atomic_t state;
+	/* Guards the operation state and every exchange with the radio */
 	struct k_mutex lock;
+	enum sx126x_op op;
 
 	/* Current configuration */
 	struct lora_modem_config config;
@@ -48,15 +48,9 @@ struct sx126x_data {
 	struct lora_modem_config_gfsk gfsk_config;
 	bool gfsk;
 
-	/* TX completion via message queue */
-	struct k_msgq tx_msgq;
-	struct sx126x_tx_result tx_result;
+	struct sx126x_waiter *waiter;
 
-	/* RX completion via message queue */
-	struct k_msgq rx_msgq;
-	struct sx126x_rx_result rx_result;
-
-	/* RX data buffer (shared between IRQ handler and recv) */
+	/* RX data buffer */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];
 
 	/* Async RX callback */
@@ -79,8 +73,8 @@ struct sx126x_data {
 
 int sx126x_set_packet_type(const struct device *dev, uint8_t type);
 int sx126x_set_rx_gain(const struct device *dev, bool boosted);
-int sx126x_set_sleep(const struct device *dev);
 int sx126x_config_begin(const struct device *dev);
+void sx126x_config_end(const struct device *dev);
 int sx126x_config_carrier(const struct device *dev, uint32_t frequency, int8_t tx_power);
 
 #endif /* ZEPHYR_DRIVERS_LORA_SX126X_SX126X_INTERNAL_H_ */

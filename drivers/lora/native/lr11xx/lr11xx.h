@@ -8,50 +8,44 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/lora.h>
-#include <zephyr/sys/atomic.h>
 
 #include "lr11xx_hal.h"
 #include "lr11xx_regs.h"
 
-enum lr11xx_state {
-	LR11XX_STATE_SLEEP = 0,
-	LR11XX_STATE_IDLE,
-	LR11XX_STATE_TX,
-	LR11XX_STATE_RX,
-	LR11XX_STATE_RX_DUTY_CYCLE,
+/* What the radio is claimed for */
+enum lr11xx_op {
+	LR11XX_OP_NONE = 0,
+	LR11XX_OP_CONFIG,
+	LR11XX_OP_TX,
+	LR11XX_OP_CW,
+	LR11XX_OP_RX,
+	LR11XX_OP_RX_DUTY_CYCLE,
 };
 
-struct lr11xx_tx_result {
+/* A caller blocked on an operation, and where its result goes */
+struct lr11xx_waiter {
+	struct k_sem done;
 	int status;
-};
-
-struct lr11xx_rx_result {
-	int16_t rssi;
-	int8_t snr;
-	uint8_t len;
-	int status;
+	uint8_t *buf;
+	uint8_t size;
+	int16_t *rssi;
+	int8_t *snr;
 };
 
 struct lr11xx_data {
 	struct lr11xx_hal_data hal;
 
-	/* Current state (atomic for lock-free state transitions) */
-	atomic_t state;
+	/* Guards the operation state and every exchange with the radio */
 	struct k_mutex lock;
+	enum lr11xx_op op;
 
 	/* Current configuration */
 	struct lora_modem_config config;
 	bool config_valid;
 
-	/* TX completion via message queue */
-	struct k_msgq tx_msgq;
-	struct lr11xx_tx_result tx_result;
+	struct lr11xx_waiter *waiter;
 
-	/* RX completion via message queue */
-	struct k_msgq rx_msgq;
-	struct lr11xx_rx_result rx_result;
-
-	/* RX data buffer (shared between IRQ handler and recv) */
+	/* RX data buffer */
 	uint8_t rx_buf[LR11XX_MAX_PAYLOAD_LEN];
 
 	/* Async RX callback */
