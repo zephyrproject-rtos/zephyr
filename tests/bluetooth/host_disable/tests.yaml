@@ -27,3 +27,11 @@ tests:
       - CONFIG_BT_PERIPHERAL=y
       - CONFIG_BT_GATT_CLIENT=y
       - CONFIG_BT_SMP=y
+  bluetooth.host_disable.ext_adv:
+    extra_configs:
+      - CONFIG_BT_PERIPHERAL=y
+      - CONFIG_BT_EXT_ADV=y
+      - CONFIG_BT_EXT_ADV_MAX_ADV_SET=2
+      # Extended advertising raises the default, and the test with a command
+      # response that is too long needs one that does not fit.
+      - CONFIG_BT_BUF_CMD_TX_SIZE=65

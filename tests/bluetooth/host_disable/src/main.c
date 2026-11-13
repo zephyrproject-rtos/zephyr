@@ -130,6 +130,10 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt, ui
 	rp = cmd_complete(evt, sizeof(*rp), opcode);
 	rp->status = BT_HCI_ERR_SUCCESS;
 	(void)memset(rp->features, 0, sizeof(rp->features));
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		rp->features[BT_LE_FEAT_BIT_EXT_ADV / 8U] |= BIT(BT_LE_FEAT_BIT_EXT_ADV % 8U);
+	}
 }
 
 static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -1055,3 +1059,114 @@ static ZTEST(bt_host_ncp, test_dropped_packets_not_reported)
 	test_conn = NULL;
 }
 #endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_GATT_CLIENT */
+
+#if defined(CONFIG_BT_PERIPHERAL) && defined(CONFIG_BT_EXT_ADV) &&                                 \
+	(CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
+#define TEST_EXT_ADV_CONN_HANDLE_OLD 0x0001U
+#define TEST_EXT_ADV_CONN_HANDLE_NEW 0x0002U
+
+static K_SEM_DEFINE(ext_adv_connected_sem, 0, 1);
+static struct bt_conn *ext_adv_conn;
+
+static void ext_adv_connected(struct bt_conn *conn, uint8_t err)
+{
+	zassert_equal(err, 0U, "Connection failed (0x%02x)", err);
+
+	ext_adv_conn = bt_conn_ref(conn);
+	k_sem_give(&ext_adv_connected_sem);
+}
+
+BT_CONN_CB_DEFINE(ext_adv_conn_callbacks) = {
+	.connected = ext_adv_connected,
+};
+
+static void le_meta_evt_send(uint8_t subevent, const void *data, size_t len)
+{
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct bt_hci_evt_le_meta_event *meta;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(BT_HCI_EVT_LE_META_EVENT, false, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta) + len);
+	meta = net_buf_add(buf, sizeof(*meta));
+	meta->subevent = subevent;
+	net_buf_add_mem(buf, data, len);
+	bt_hci_recv(dev, buf);
+}
+
+static void enh_conn_complete_send(uint16_t handle)
+{
+	struct bt_hci_evt_le_enh_conn_complete evt = {0};
+
+	evt.status = BT_HCI_ERR_SUCCESS;
+	evt.handle = sys_cpu_to_le16(handle);
+	evt.role = BT_HCI_ROLE_PERIPHERAL;
+	evt.peer_addr.type = BT_ADDR_LE_RANDOM;
+	evt.peer_addr.a.val[5] = 0xc6U;
+	evt.interval = sys_cpu_to_le16(BT_GAP_INIT_CONN_INT_MIN);
+	evt.supv_timeout = sys_cpu_to_le16(BT_GAP_MS_TO_CONN_TIMEOUT(4000U));
+	le_meta_evt_send(BT_HCI_EVT_LE_ENH_CONN_COMPLETE, &evt, sizeof(evt));
+}
+
+static void adv_set_terminated_send(const struct bt_le_ext_adv *adv, uint16_t conn_handle)
+{
+	const struct bt_hci_evt_le_adv_set_terminated evt = {
+		.status = BT_HCI_ERR_SUCCESS,
+		.adv_handle = bt_le_ext_adv_get_index(adv),
+		.conn_handle = sys_cpu_to_le16(conn_handle),
+	};
+
+	le_meta_evt_send(BT_HCI_EVT_LE_ADV_SET_TERMINATED, &evt, sizeof(evt));
+}
+
+static struct bt_le_ext_adv *ext_adv_start(void)
+{
+	struct bt_le_ext_adv *adv;
+
+	zassert_ok(bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &adv),
+		   "Failed to create an advertising set");
+	zassert_ok(bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT),
+		   "Advertising failed to start");
+
+	return adv;
+}
+
+ZTEST_SUITE(bt_ext_adv, NULL, NULL, before, NULL, NULL);
+
+/* With more than one advertising set, the Host holds the LE Enhanced Connection
+ * Complete event of a peripheral connection back until the LE Advertising Set
+ * Terminated event that follows it names the set. When bt_disable() comes in
+ * between, the second event never arrives, and the held one must not outlive
+ * the disable: with one connection, there is room for one event only, and the
+ * next connection would find none.
+ */
+static ZTEST(bt_ext_adv, test_disable_with_conn_complete_held)
+{
+	struct bt_le_ext_adv *adv;
+	uint16_t handle;
+
+	if (IS_ENABLED(CONFIG_TEST_DRIVER_NO_CLOSE)) {
+		ztest_test_skip();
+	}
+
+	(void)ext_adv_start();
+	enh_conn_complete_send(TEST_EXT_ADV_CONN_HANDLE_OLD);
+	k_sleep(K_MSEC(10));
+	zassert_equal(k_sem_take(&ext_adv_connected_sem, K_NO_WAIT), -EBUSY,
+		      "Connected before the advertising set terminated");
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_ok(bt_enable(NULL), "Bluetooth init after a disable failed");
+
+	adv = ext_adv_start();
+	enh_conn_complete_send(TEST_EXT_ADV_CONN_HANDLE_NEW);
+	adv_set_terminated_send(adv, TEST_EXT_ADV_CONN_HANDLE_NEW);
+	zassert_ok(k_sem_take(&ext_adv_connected_sem, K_SECONDS(1)), "No connection");
+	zassert_ok(bt_hci_get_conn_handle(ext_adv_conn, &handle), "No connection handle");
+	zassert_equal(handle, TEST_EXT_ADV_CONN_HANDLE_NEW, "Connected with handle 0x%04x", handle);
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	bt_conn_unref(ext_adv_conn);
+	ext_adv_conn = NULL;
+}
+#endif /* CONFIG_BT_PERIPHERAL && CONFIG_BT_EXT_ADV && CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1 */
