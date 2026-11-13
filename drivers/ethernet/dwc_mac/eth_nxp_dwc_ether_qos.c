@@ -37,8 +37,26 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "eth_dwmac_priv.h"
 
-/* The DMA bus master interface is a 32-bit AHB interface on this IP */
+/* The DMA bus master interface is 64-bit AXI on RT11xx, 32-bit AHB elsewhere */
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#define DATA_BUS_WIDTH 64
+#else
 #define DATA_BUS_WIDTH 32
+#endif
+
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX)
+/*
+ * FB limits AXI bursts to the enabled BLEN sizes; with none the DMA cannot
+ * drain the RX FIFO at 1 Gbit. OSR_LMT stays at its reset value of 1; a soak
+ * with 3 showed memory corruption that was not root-caused.
+ */
+#define NXP_ETH_DMA_SYSBUS_MODE                                                                    \
+	(DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB |                                                \
+	 DMA_SYSBUS_MODE_BLEN16 | DMA_SYSBUS_MODE_BLEN8 | DMA_SYSBUS_MODE_BLEN4 |                  \
+	 FIELD_PREP(DMA_SYSBUS_MODE_RD_OSR_LMT, 1) | FIELD_PREP(DMA_SYSBUS_MODE_WR_OSR_LMT, 1))
+#else
+#define NXP_ETH_DMA_SYSBUS_MODE (DMA_SYSBUS_MODE_AAL | DMA_SYSBUS_MODE_FB)
+#endif
 
 DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
@@ -55,6 +73,10 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 #elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, internal) && defined(CONFIG_SOC_FAMILY_MCXA)
 #define PHY_MODE 0U
 #define PHY_INTERNAL 1U
+#elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rgmii) &&                                     \
+	defined(CONFIG_SOC_SERIES_IMXRT11XX)
+#define PHY_MODE 1U
+#define PHY_INTERNAL 0U
 #else
 #error "Unsupported PHY connection type"
 #endif
@@ -143,11 +165,19 @@ static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_G
 /*
  * The PHY interface selection is sampled when the MAC leaves reset, so the MAC
  * has to be held there while dwmac_bus_init() sets it. MCXE31x and S32K3 have
- * no reset line, gating the MAC clocks takes that role there instead.
+ * no reset line, gating the MAC clocks takes that role there instead. RT11xx
+ * has none either and latches the selection at the DMA software reset, which
+ * dwmac_probe() issues after this function returns.
  */
 BUILD_ASSERT(DT_INST_NODE_HAS_PROP(0, resets) || IS_ENABLED(CONFIG_SOC_SERIES_MCXE31X) ||
-		     IS_ENABLED(CONFIG_SOC_SERIES_S32K3),
+		     IS_ENABLED(CONFIG_SOC_SERIES_S32K3) ||
+		     IS_ENABLED(CONFIG_SOC_SERIES_IMXRT11XX),
 	     "Ethernet node is missing the resets property");
+
+/* The mii/rmii cases above are not valid for RT11xx, where INTF_SEL 1 is RGMII. */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_SERIES_IMXRT11XX) ||
+		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rgmii),
+	     "RT11xx ENET_QOS: only RGMII is supported");
 
 static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET_OR(0, {0});
 
@@ -225,12 +255,11 @@ int dwmac_bus_init(const struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_LPC54XXX)
 	SYSCON->ETHPHYSEL = (SYSCON->ETHPHYSEL & ~SYSCON_ETHPHYSEL_PHY_SEL_MASK) |
 			    SYSCON_ETHPHYSEL_PHY_SEL(PHY_MODE);
+#elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	IOMUXC_GPR->GPR6 = (IOMUXC_GPR->GPR6 & ~IOMUXC_GPR_GPR6_ENET_QOS_INTF_SEL_MASK) |
+			   IOMUXC_GPR_GPR6_ENET_QOS_INTF_SEL(PHY_MODE);
 #endif
 
-	/*
-	 * The transmit, receive and timestamp clocks are derived from clocks the
-	 * PHY drives into the SoC, which is why the pads are muxed first.
-	 */
 	for (size_t n = 0; n < ARRAY_SIZE(eth0_clocks); n++) {
 		ret = clock_control_on(cfg->clock, eth0_clocks[n]);
 		if (ret != 0) {
@@ -331,9 +360,7 @@ int dwmac_platform_init(const struct device *dev)
 			MAC_CONF_PS |
 			MAC_CONF_FES |
 			MAC_CONF_DM);
-	DWMAC_REG_WRITE(DMA_SYSBUS_MODE,
-			DMA_SYSBUS_MODE_AAL |
-			DMA_SYSBUS_MODE_FB);
+	DWMAC_REG_WRITE(DMA_SYSBUS_MODE, NXP_ETH_DMA_SYSBUS_MODE);
 
 	/* Set up IRQs (still masked for now) */
 #if defined(CONFIG_SOC_SERIES_MCXE31X) || defined(CONFIG_SOC_SERIES_S32K3)
@@ -346,7 +373,7 @@ int dwmac_platform_init(const struct device *dev)
 	NXP_ETH_IRQ_CONNECT(tx);
 	NXP_ETH_IRQ_CONNECT(rx);
 #elif defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA) ||                        \
-	defined(CONFIG_SOC_SERIES_LPC54XXX)
+	defined(CONFIG_SOC_SERIES_LPC54XXX) || defined(CONFIG_SOC_SERIES_IMXRT11XX)
 	NXP_ETH_IRQ_CONNECT(mac);
 #endif
 
