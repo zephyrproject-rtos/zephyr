@@ -42,4 +42,4 @@ strictdoc>=0.28.1
 reuse>=6.3.0
 
 # Requirements traceability (items, matrices, coverage) in the Sphinx docs
-sphinx-needs
+sphinx-needs[plotting]
