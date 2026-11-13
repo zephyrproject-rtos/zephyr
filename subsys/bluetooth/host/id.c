@@ -2076,6 +2076,25 @@ static bool is_legacy_adv_using_id_addr(void)
 			   && atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY);
 }
 
+/* A legacy advertiser that advertises with the public identity address does
+ * not set a random address, so a scanner sharing its address must use the
+ * public address too.
+ */
+static bool is_legacy_adv_using_public_addr(void)
+{
+	struct bt_le_ext_adv *adv;
+
+	if (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
+	    (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+		return false;
+	}
+
+	adv = bt_le_adv_lookup_legacy();
+
+	return adv != NULL && atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
+	       adv->adv_addr.type == BT_ADDR_LE_PUBLIC;
+}
+
 int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 {
 	int err;
@@ -2127,6 +2146,8 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 				} else {
 					*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
 				}
+			} else if (is_legacy_adv_using_public_addr()) {
+				*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
 			} else if (is_legacy_adv_enabled()) {
 				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
 			} else {
