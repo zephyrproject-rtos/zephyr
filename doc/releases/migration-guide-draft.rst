@@ -399,6 +399,17 @@ Bluetooth Mesh
     :c:member:`bt_mesh_prov.output_numeric`, which receives the numeric value as a
     little-endian byte array and its size.
 
+* The Bluetooth Mesh shell ``sar rx-set`` command now takes its arguments in the order the SAR
+  Receiver states are documented and printed: ``<SegThresh> <AckDelayInc> <DiscardTimeout>
+  <RxSegIntStep> <AckRetransCount>``. ``AckRetransCount`` moved from the third position to the
+  last, so an existing invocation keeps the same number of arguments but assigns them to
+  different states. The ``sar rx-get`` and ``sar rx-set`` responses are printed in this new
+  order too. Update scripts that call ``sar rx-set`` or parse those responses.
+
+* The Bluetooth Mesh shell ``dfu cli send`` command now takes the transfer mode as ``push`` or
+  ``pull`` instead of a number, matching ``blob cli tx``. Replace a numeric mode argument with
+  ``push`` or ``pull``.
+
 Networking
 **********
 

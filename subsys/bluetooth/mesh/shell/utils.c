@@ -27,6 +27,23 @@ bool bt_mesh_shell_mdl_first_get(uint16_t id, const struct bt_mesh_model **mod)
 	return false;
 }
 
+bool bt_mesh_shell_mdl_match_get(uint16_t id, bool (*match)(const struct bt_mesh_model *mod),
+				 const struct bt_mesh_model **mod)
+{
+	const struct bt_mesh_comp *comp = bt_mesh_comp_get();
+
+	for (size_t i = 0; i < comp->elem_count; i++) {
+		const struct bt_mesh_model *found = bt_mesh_model_find(&comp->elem[i], id);
+
+		if (found && match(found)) {
+			*mod = found;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int bt_mesh_shell_mdl_instance_set(const struct shell *sh, const struct bt_mesh_model **mod,
 				 uint16_t mod_id, uint8_t elem_idx)
 {

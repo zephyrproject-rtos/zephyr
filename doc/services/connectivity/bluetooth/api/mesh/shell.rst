@@ -45,6 +45,14 @@ provision the device with the default network key and address ``0x0001``, execut
 
 	uart:~$ mesh prov local 0 0x0001
 
+If the Configuration database is enabled (:kconfig:option:`CONFIG_BT_MESH_CDB`), as in
+``tests/bluetooth/mesh_shell``, ``mesh prov local`` uses the network key stored in the database, so
+create the database first. Pass the default network key to use the same key as other
+self-provisioned devices::
+
+	uart:~$ mesh cdb create 0123456789abcdef0123456789abcdef
+	uart:~$ mesh prov local 0 0x0001
+
 Since all mesh nodes use the same values for the default network key, this can be done on multiple
 devices, as long as they're assigned non-overlapping unicast addresses. Alternatively, to provision
 the device into an existing network, the unprovisioned beacon can be enabled with
@@ -134,7 +142,7 @@ The Bluetooth Mesh shell commands are parsed with a variety of formats:
 	  - ``deadbeef01234``
 	* - Booleans
 	  - Boolean values are denoted in the API documentation as ``<val(off, on)>``.
-	  - ``on``, ``off``, ``enabled``, ``disabled``, ``1``, ``0``
+	  - ``on``, ``off``, ``enable``, ``disable``, ``true``, ``false``, ``1``, ``0``
 
 Commands
 ********
@@ -268,15 +276,15 @@ Health Server Test
 
 	Register a new Health Server Fault for the Linux Foundation Company ID.
 
-	* ``FaultID``: ID of the fault to register (``0x0001`` to ``0xFFFF``)
+	* ``FaultID``: ID of the fault to register (``0x01`` to ``0xFF``)
 
 
 ``mesh test health-srv del-fault [FaultID]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-	Remove registered Health Server faults for the Linux Foundation Company ID.
+	Remove current Health Server faults for the Linux Foundation Company ID.
 
-	* ``FaultID``: If present, the given fault ID will be deleted. If omitted, all registered faults will be cleared.
+	* ``FaultID``: If present, the given fault ID will be deleted. If omitted, all current faults will be cleared.
 
 Provisioning
 ============
@@ -389,6 +397,13 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 	* ``IVI``: Indicates the current network IV index. Defaults to 0 if omitted.
 
 
+``mesh prov comp-change``
+-------------------------
+
+	Indicate that the Composition Data of the local node will change on the next boot, so that the
+	current Composition Data is backed up.
+
+
 ``mesh prov beacon-listen <Val(off, on)>``
 ------------------------------------------
 
@@ -411,7 +426,6 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 
 	* ``Action`` - Input action. Allowed values:
 
-		* ``0`` - No input action.
 		* ``1`` - Push action set.
 		* ``2`` - Twist action set.
 		* ``4`` - Enter number action set.
@@ -425,14 +439,14 @@ and :kconfig:option:`CONFIG_BT_MESH_PB_GATT_CLIENT` configuration options must b
 
 	* ``Action`` - Output action. Allowed values:
 
-		* ``0`` - No output action.
 		* ``1`` - Blink action set.
-		* ``2`` - Vibrate action set.
-		* ``4`` - Display number action set.
-		* ``8`` - Display String action set.
+		* ``2`` - Beep action set.
+		* ``4`` - Vibrate action set.
+		* ``8`` - Display number action set.
+		* ``16`` - Display String action set.
 	* ``Size`` - Authentication size.
 
-``mesh prov auth-method static <Val(1-16 hex)>``
+``mesh prov auth-method static <Val(1-32 hex)>``
 ------------------------------------------------
 	From the provisioner device, instruct the unprovisioned device to use static OOB
 	authentication, and use the given static authentication value when provisioning.
@@ -522,16 +536,6 @@ an example of how you can set up a device to start using the Configuration Clien
 * Monitor the newly provisioned nodes and their addresses (``mesh cdb show``).
 * Monitor the composition data of the target device (``mesh models cfg get-comp``).
 * Configure the node as desired with the Configuration Client commands.
-
-``mesh models cfg target get``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-	Get the target Configuration server for the Configuration Client model.
-
-``mesh models cfg help``
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-	Print information for the Configuration Client shell module.
 
 ``mesh models cfg reset``
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -758,7 +762,7 @@ an example of how you can set up a device to start using the Configuration Clien
 			* ``0x03``: The Step Resolution is 10 minutes
 		* ``PerSteps``: Number of publication period steps, or 0 to disable periodic publication.
 		* ``Count``: Number of retransmission for each published message (``0`` to ``7``).
-		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
+		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50 in the range 50 to 1600.
 
 ``mesh models cfg model pub-va <Addr> <UUID(1-16 hex)> <AppKeyIdx> <Cred(off, on)> <TTL> <PerRes> <PerSteps> <Count> <Int(ms)> <MID> [CID]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -783,7 +787,7 @@ an example of how you can set up a device to start using the Configuration Clien
 			* ``0x03``: The Step Resolution is 10 minutes
 		* ``PerSteps``: Number of publication period steps, or 0 to disable periodic publication.
 		* ``Count``: Number of retransmission for each published message (``0`` to ``7``).
-		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50.
+		* ``Int`` The interval between each retransmission, in milliseconds. Must be a multiple of 50 in the range 50 to 1600.
 
 
 ``mesh models cfg model sub-add <ElemAddr> <SubAddr> <MID> [CID]``
@@ -880,11 +884,10 @@ an example of how you can set up a device to start using the Configuration Clien
 	Get or set the key refresh phase of a subnet.
 
 	* ``NetKeyIdx``: The identified network key used to Get/Set the current Key Refresh Phase state.
-	* ``Phase``: New Key Refresh Phase. Valid phases are:
+	* ``Phase``: Key Refresh Phase transition to request. Valid transitions are:
 
-		* ``0x00``: Normal operation; Key Refresh procedure is not active
-		* ``0x01``: First phase of Key Refresh procedure
-		* ``0x02``: Second phase of Key Refresh procedure
+		* ``0x02``: Start the second phase of the Key Refresh procedure, using the new key.
+		* ``0x03``: Finish the Key Refresh procedure and revoke the old key.
 
 ``mesh models cfg hb-sub [<Src> <Dst> <Per>]``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1080,8 +1083,8 @@ The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling th
 	* ``TimeoutBase``: Optional time to wait for responses from Target nodes, in 10-second increments.
 
 
-``mesh models blob cli tx <Id> <Size> <BlockSizeLog> <ChunkSize> [<Group> [<Mode(push, pull)>]]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models blob cli tx <Id> <Size> <BlockSizeLog> <ChunkSize> [<Group> [<Mode(push, pull)> [<TimeoutBase>]]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Perform a BLOB transfer to Target nodes. The BLOB Transfer Client will send a dummy BLOB to
 	all Target nodes, then post a message when the transfer is completed. Note that all Target
@@ -1094,6 +1097,7 @@ The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling th
 	* ``ChunkSize``: Chunk size in bytes.
 	* ``Group``: Optional group address to use when communicating with Target nodes. If omitted or set to 0, the BLOB Transfer Client will address each Target node individually.
 	* ``Mode``: BLOB transfer mode to use. Must be either ``push`` (Push BLOB Transfer Mode) or ``pull`` (Pull BLOB Transfer Mode). If omitted, ``push`` will be used by default.
+	* ``TimeoutBase``: Optional time to wait for responses from Target nodes, in 10-second increments.
 
 
 ``mesh models blob cli tx-cancel``
@@ -1121,7 +1125,7 @@ The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling th
 
 	Resume the suspended BLOB transfer.
 
-``mesh models blob cli instance-set <ElemIdx>``
+``mesh models blob cli instance set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Use the BLOB Transfer Client model instance on the specified element when using the other
@@ -1129,7 +1133,7 @@ The :ref:`bluetooth_mesh_blob_cli` can be added to the mesh shell by enabling th
 
 	* ``ElemIdx``: The element on which to find the BLOB Transfer Client model instance to use.
 
-``mesh models blob cli instance-get-all``
+``mesh models blob cli instance get-all``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all BLOB Transfer Client model instances on the node.
@@ -1157,7 +1161,7 @@ receiving any BLOB data, but the implementation in the mesh shell will discard t
 
 	Cancel an ongoing BLOB transfer.
 
-``mesh models blob srv instance-set <ElemIdx>``
+``mesh models blob srv instance set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Use the BLOB Transfer Server model instance on the specified element when using the other
@@ -1165,7 +1169,7 @@ receiving any BLOB data, but the implementation in the mesh shell will discard t
 
 	* ``ElemIdx``: The element on which to find the BLOB Transfer Server model instance to use.
 
-``mesh models blob srv instance-get-all``
+``mesh models blob srv instance get-all``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all BLOB Transfer Server model instances on the node.
@@ -1222,6 +1226,12 @@ update to a set of Target nodes.
 	* ``SlotIdx``: Index of the slot to delete.
 
 
+``mesh models dfu slot del-all``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Delete all DFU image slots.
+
+
 ``mesh models dfu slot get <SlotIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1237,6 +1247,13 @@ update to a set of Target nodes.
 
 	* ``Addr``: Unicast address of the Target node.
 	* ``ImgIdx``: Image index to address on the Target node.
+
+
+``mesh models dfu cli targets-reset``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+	Reset the transfer state of all added Target nodes, so that they can be used in a new DFU
+	transfer.
 
 
 ``mesh models dfu cli target-state``
@@ -1264,13 +1281,16 @@ update to a set of Target nodes.
 	* ``TargetImgIdx``: Index of the Target node's DFU image to check.
 
 
-``mesh models dfu cli send <SlotIdx> [<Group>]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models dfu cli send <SlotIdx> [<Group> [<Mode(push, pull)> [<BlockSizeLog> <ChunkSize>]]]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Start a DFU transfer to all added Target nodes.
 
 	* ``SlotIdx``: Index of the local DFU image slot to send.
-	* ``Group``: Optional group address to use when communicating with the Target nodes. If omitted, the Firmware Update Client will address each Target node individually.
+	* ``Group``: Optional group address to use when communicating with the Target nodes. If omitted or set to 0, the Firmware Update Client will address each Target node individually.
+	* ``Mode``: BLOB transfer mode to use. Must be either ``push`` (Push BLOB Transfer Mode) or ``pull`` (Pull BLOB Transfer Mode). If omitted, ``push`` will be used by default.
+	* ``BlockSizeLog``: Optional logarithmic representation of the block size. The block size will be ``1 << BlockSizeLog`` bytes. Must be given together with ``ChunkSize``.
+	* ``ChunkSize``: Optional chunk size in bytes. Must be given together with ``BlockSizeLog``.
 
 
 ``mesh models dfu cli cancel [<Addr>]``
@@ -1316,7 +1336,7 @@ update to a set of Target nodes.
 	Check the progress of the current transfer.
 
 
-``mesh models dfu cli instance-set <ElemIdx>``
+``mesh models dfu cli instance set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Use the Firmware Update Client model instance on the specified element when using the other
@@ -1324,7 +1344,7 @@ update to a set of Target nodes.
 
 	* ``ElemIdx``: The element on which to find the Firmware Update Client model instance to use.
 
-``mesh models dfu cli instance-get-all``
+``mesh models dfu cli instance get-all``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all Firmware Update Client model instances on the node.
@@ -1361,7 +1381,7 @@ proper firmware update Target node.
 
 	Cancel incoming DFU transfer.
 
-``mesh models dfu srv instance-set <ElemIdx>``
+``mesh models dfu srv instance set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Use the Firmware Update Server model instance on the specified element when using the other
@@ -1369,7 +1389,7 @@ proper firmware update Target node.
 
 	* ``ElemIdx``: The element on which to find the Firmware Update Server model instance to use.
 
-``mesh models dfu srv instance-get-all``
+``mesh models dfu srv instance get-all``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all Firmware Update Server model instances on the node.
@@ -1474,7 +1494,7 @@ commands, a Firmware Distribution Server must be instantiated by the application
 
 	Delete all firmware images from the server.
 
-``mesh models dfd instance-set <ElemIdx>``
+``mesh models dfd instance set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Use the Firmware Distribution Server model instance on the specified element when using the
@@ -1482,7 +1502,7 @@ commands, a Firmware Distribution Server must be instantiated by the application
 
 	* ``ElemIdx``: The element on which to find the Firmware Distribution Server model instance to use.
 
-``mesh models dfd instance-get-all``
+``mesh models dfd instance get-all``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all Firmware Distribution Server model instances on the node.
@@ -1713,8 +1733,8 @@ Provisioning Servers on devices in a mesh network.
 	* ``Timeout``: Scan timeout in seconds. Must be at least 1 second.
 	* ``UUID``: Device UUID to scan for. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. If omitted, all devices will be reported.
 
-``mesh models rpr scan-ext <Timeout(s)> <UUID(1-16 hex)> [<ADType> ... ]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models rpr scan-ext <Timeout(s)> <UUID(1-16 hex)> <ADType> [<ADType> ... ]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Start the extended scanning for unprovisioned devices.
 
@@ -1722,8 +1742,8 @@ Provisioning Servers on devices in a mesh network.
 	* ``UUID``: Device UUID to start extended scanning for. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest.
 	* ``ADType``: List of AD types to include in the scan report. Must contain 1 to :kconfig:option:`CONFIG_BT_MESH_RPR_AD_TYPES_MAX` entries.
 
-``mesh models rpr scan-srv [<ADType> ... ]``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``mesh models rpr scan-srv <ADType> [<ADType> ... ]``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Start the extended scanning for the Remote Provisioning Server.
 
@@ -1771,7 +1791,7 @@ Provisioning Servers on devices in a mesh network.
 	* ``Addr``: Address to assign to remote device. If ``addr`` is 0, the lowest available address will be chosen.
 	* ``CompChanged``: The Target node has indicated that its Composition Data has changed.  Defaults to false.
 
-``mesh models rpr instance-set <ElemIdx>``
+``mesh models rpr instance set <ElemIdx>``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Use the Remote Provisioning Client model instance on the specified element when using the
@@ -1779,7 +1799,7 @@ Provisioning Servers on devices in a mesh network.
 
 	* ``ElemIdx``: The element on which to find the Remote Provisioning Client model instance to use.
 
-``mesh models rpr instance-get-all``
+``mesh models rpr instance get-all``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	Get a list of all Remote Provisioning Client model instances on the node.
@@ -1899,7 +1919,7 @@ network and configuring them.
 
 	Create a Configuration database.
 
-	* ``NetKey``: Optional network key value of the primary network key (NetKeyIndex=0).  Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. Defaults to the default key value if omitted.
+	* ``NetKey``: Optional network key value of the primary network key (NetKeyIndex=0).  Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest. A random key is generated if omitted.
 
 
 ``mesh cdb clear``
@@ -1918,7 +1938,7 @@ network and configuring them.
 --------------------------------------------------------------------------------------
 
 	Manually add a mesh node to the configuration database. Note that devices provisioned with
-	``mesh provision`` and ``mesh provision-adv`` will be added automatically if the
+	``mesh prov remote-adv`` and ``mesh prov remote-gatt`` will be added automatically if the
 	Configuration Database is enabled and created.
 
 	* ``UUID``: 128-bit hexadecimal UUID of the node. Providing a hex-string shorter than 16 bytes will populate the N most significant bytes of the array and zero-pad the rest.
@@ -1932,7 +1952,7 @@ network and configuring them.
 ----------------------------
 
 	Delete a mesh node from the Configuration database. If possible, the node should be reset
-	with ``mesh reset`` before it is deleted from the Configuration database, to avoid
+	with ``mesh models cfg reset`` before it is deleted from the Configuration database, to avoid
 	unexpected behavior and uncontrolled access to the network.
 
 	* ``Addr`` Address of the node to delete.
@@ -1983,8 +2003,8 @@ On-Demand Private GATT Proxy Client
 The On-Demand Private GATT Proxy Client model is an optional mesh subsystem that can be enabled
 through the :kconfig:option:`CONFIG_BT_MESH_OD_PRIV_PROXY_CLI` configuration option.
 
-``mesh models od_priv_proxy od-priv-gatt-proxy [Dur(s)]``
----------------------------------------------------------
+``mesh models od_priv_proxy gatt-proxy [Dur(s)]``
+-------------------------------------------------
 
 	Set the On-Demand Private GATT Proxy state on active target, or fetch the value of this
 	state from it.
@@ -1998,8 +2018,8 @@ Solicitation PDU RPL Client
 The Solicitation PDU RPL Client model is an optional mesh subsystem that can be enabled through the
 :kconfig:option:`CONFIG_BT_MESH_SOL_PDU_RPL_CLI` configuration option.
 
-``mesh models sol_pdu_rpl sol-pdu-rpl-clear <RngStart> <Ackd> [RngLen]``
-------------------------------------------------------------------------
+``mesh models sol_pdu_rpl clear <RngStart> <Ackd> [RngLen]``
+------------------------------------------------------------
 
 	Clear active target's solicitation replay protection list (SRPL) in given range of
 	solicitation source (SSRC) addresses.

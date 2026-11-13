@@ -9,6 +9,7 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
 
+#include "common/bt_shell_private.h"
 #include "utils.h"
 
 static const struct bt_mesh_model *mod;
@@ -312,6 +313,10 @@ static int cmd_link_close(const struct shell *sh, size_t argc, char *argv[])
 	};
 	int err;
 
+	if (!mod && !bt_mesh_shell_mdl_first_get(BT_MESH_MODEL_ID_REMOTE_PROV_CLI, &mod)) {
+		return -ENODEV;
+	}
+
 	err = bt_mesh_rpr_link_close((struct bt_mesh_rpr_cli *)mod->rt->user_data, &srv, &rsp);
 	if (err) {
 		shell_print(sh, "Link close failed: %d %u", err, rsp.status);
@@ -381,7 +386,7 @@ static int cmd_reprovision_remote(const struct shell *sh, size_t argc, char *arg
 		return err;
 	}
 
-	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
+	if (addr && !BT_MESH_ADDR_IS_UNICAST(addr)) {
 		shell_print(sh, "Must be a valid unicast address");
 		return -EINVAL;
 	}
@@ -406,10 +411,10 @@ BT_MESH_SHELL_MDL_INSTANCE_CMDS(instance_cmds, BT_MESH_MODEL_ID_REMOTE_PROV_CLI,
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	rpr_cli_cmds,
 	SHELL_CMD_ARG(scan, NULL, "<Timeout(s)> [<UUID(1-16 hex)>]", cmd_scan, 2, 1),
-	SHELL_CMD_ARG(scan-ext, NULL, "<Timeout(s)> <UUID(1-16 hex)> [<ADType> ... ]",
-		      cmd_scan_ext, 3, CONFIG_BT_MESH_RPR_AD_TYPES_MAX),
-	SHELL_CMD_ARG(scan-srv, NULL, "[<ADType> ... ]", cmd_scan_srv, 1,
-		      CONFIG_BT_MESH_RPR_AD_TYPES_MAX),
+	SHELL_CMD_ARG(scan-ext, NULL, "<Timeout(s)> <UUID(1-16 hex)> <ADType> [<ADType> ... ]",
+		      cmd_scan_ext, 4, CONFIG_BT_MESH_RPR_AD_TYPES_MAX - 1),
+	SHELL_CMD_ARG(scan-srv, NULL, "<ADType> [<ADType> ... ]", cmd_scan_srv, 2,
+		      CONFIG_BT_MESH_RPR_AD_TYPES_MAX - 1),
 	SHELL_CMD_ARG(scan-caps, NULL, NULL, cmd_scan_caps, 1, 0),
 	SHELL_CMD_ARG(scan-get, NULL, NULL, cmd_scan_get, 1, 0),
 	SHELL_CMD_ARG(scan-stop, NULL, NULL, cmd_scan_stop, 1, 0),
