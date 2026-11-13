@@ -17,6 +17,7 @@ tests:
       - esp_wrover_kit/esp32/procpu
       - esp32s2_saola
       - esp32s2_devkitc
+      - esp32s31_function_coreboard/esp32s31/hpcore
       - gd32a503v_eval
       - gd32e103v_eval
       - gd32f450i_eval
