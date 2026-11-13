@@ -371,7 +371,7 @@ static int cmd_history(const struct shell *sh, size_t argc, char **argv)
 
 	while (1) {
 		z_shell_history_get(sh->history, true,
-				    sh->ctx->temp_buff, &len);
+				    (uint8_t *)sh->ctx->temp_buff, &len);
 
 		if (len) {
 			shell_print(sh, "[%3d] %s",
