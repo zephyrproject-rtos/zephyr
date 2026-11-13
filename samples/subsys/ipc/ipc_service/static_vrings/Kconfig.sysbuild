@@ -18,6 +18,7 @@ string
 	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
 	default "mimxrt1180_evk/mimxrt1189/cm7" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "mimxrt1180_evk/mimxrt1189/cm33"
 	default "frdm_imxrt1186/mimxrt1186/cm7" if $(BOARD) = "frdm_imxrt1186"
+	default "frdm_imxrt700/mimxrt798s/cm33_cpu1" if $(BOARD) = "frdm_imxrt700"
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
 	default "imx943_evk/mimx94398/m33" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_1"
 	default "imx943_evk/mimx94398/m33" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_0"
