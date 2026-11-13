@@ -78,6 +78,7 @@ static void cc_ntf_established(struct ll_conn *conn, struct proc_ctx *ctx)
 
 	pdu->cis_handle = ctx->data.cis_create.cis_handle;
 	pdu->status = ctx->data.cis_create.error;
+	pdu->central = (conn->lll.role == BT_HCI_ROLE_CENTRAL);
 
 	if (!piggy_back) {
 		/* Enqueue notification towards LL */
@@ -841,10 +842,8 @@ void llcp_lp_cc_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
 
-		/* Release any retained RX node before completing the procedure,
-		 * the node would otherwise be leaked
-		 */
-		llcp_rx_node_release(ctx);
+		/* Notify failure before completing so thread context releases the reservation. */
+		llcp_lp_cc_flush(conn, ctx);
 
 		llcp_lr_complete(conn);
 		ctx->state = LP_CC_STATE_IDLE;
@@ -866,12 +865,17 @@ void llcp_lp_cc_flush(struct ll_conn *conn, struct proc_ctx *ctx)
 		ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
 	}
 
-	/* FIXME - we currently have no way to recover if we cannot allocate a node here */
-	ctx->node_ref.rx = llcp_ntf_alloc();
-	LL_ASSERT_ERR(ctx->node_ref.rx);
+	if (ctx->node_ref.rx == NULL) {
+		struct ll_conn_iso_stream *cis;
 
-	/* Mark node as RETAIN to trigger put/sched */
-	ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+		cis = ll_conn_iso_stream_get(ctx->data.cis_create.cis_handle);
+		ctx->node_ref.rx = &cis->node_rx_estab.rx;
+		LL_ASSERT_DBG(ctx->node_ref.rx->hdr.type == NODE_RX_TYPE_NONE);
+		/* Use the thread-reserved link in hdr.link; dequeue releases it. */
+		LL_ASSERT_DBG(ctx->node_ref.rx->hdr.link != NULL);
+		/* Mark node as RETAIN to trigger put/sched */
+		ctx->node_ref.rx->hdr.type = NODE_RX_TYPE_RETAIN;
+	}
 
 	cc_ntf_established(conn, ctx);
 }
