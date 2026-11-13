@@ -61,9 +61,6 @@ class symtab_entry:
         self.offset = offset
         self.name = name
 
-    def __eq__(self, other):
-        return self.addr == other.addr
-
 
 first_addr = 0
 symtab_list = []
@@ -89,6 +86,7 @@ def main():
 
         # Find the symbol table.
         symtab = elf.get_section_by_name('.symtab')
+        entries_by_addr = {}
 
         for symbol in symtab.iter_symbols():
             symbol_type = describe_symbol_type(symbol['st_info']['type'])
@@ -99,9 +97,13 @@ def main():
                 symbol_name = sanitize_func_name(symbol.name)
                 dummy_offset = 0  # offsets will be calculated later after we know the first address
                 entry = symtab_entry(symbol_addr, symbol_size, dummy_offset, symbol_name)
-                # Prevent entries with duplicated addresses
-                if entry not in symtab_list:
-                    symtab_list.append(entry)
+                # Keep one entry per address, preferring a sized symbol so that
+                # an alias without .size does not shadow the function it aliases
+                kept = entries_by_addr.get(symbol_addr)
+                if kept is None or (kept.size == 0 and entry.size > 0):
+                    entries_by_addr[symbol_addr] = entry
+
+        symtab_list.extend(entries_by_addr.values())
 
         # Sort the address in ascending order
         symtab_list.sort(key=lambda x: x.addr, reverse=False)
