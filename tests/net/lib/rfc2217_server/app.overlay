@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	euart0: uart-emul-0 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+	};
+
+	euart1: uart-emul-1 {
+		compatible = "zephyr,uart-emul";
+		status = "okay";
+		current-speed = <115200>;
+	};
+
+	rfc2217-server {
+		compatible = "zephyr,rfc2217-server";
+		uart = <&euart0>;
+		port = <2217>;
+	};
+};

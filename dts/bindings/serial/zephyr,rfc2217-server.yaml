@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: RFC 2217 server
+
+description: |
+  A UART served over TCP with the Telnet COM port control option (RFC 2217),
+  started at boot. Clients such as pyserial's rfc2217:// set the line and
+  exchange data with the UART.
+
+  Example:
+
+    rfc2217-server {
+            compatible = "zephyr,rfc2217-server";
+            uart = <&uart1>;
+            port = <2217>;
+    };
+
+compatible: "zephyr,rfc2217-server"
+
+include: base.yaml
+
+properties:
+  uart:
+    type: phandle
+    required: true
+    description: UART the clients get. Its driver must support the interrupt-driven API.
+
+  port:
+    type: int
+    default: 2217
+    description: TCP port the server listens on.

@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_RFC2217
+	bool "Telnet COM port control (RFC 2217)"
+	help
+	  The server side of the Telnet COM port control option: a client
+	  such as pyserial's rfc2217:// sets the line of a serial port and
+	  exchanges data with it over a Telnet connection.
+
+if NET_RFC2217
+
+config NET_RFC2217_SIGNATURE
+	string "Signature"
+	default "Zephyr"
+	help
+	  The text the server sends when a client asks for its signature.
+
+config NET_RFC2217_SERVER
+	bool "RFC 2217 server"
+	default y if DT_HAS_ZEPHYR_RFC2217_SERVER_ENABLED
+	depends on NET_TCP && NET_SOCKETS
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	select NET_SOCKETS_SERVICE
+	help
+	  A UART over TCP, one client at a time, defined in the devicetree
+	  (zephyr,rfc2217-server) or by the application.  Each server
+	  takes three of the socket service's poll entries
+	  (CONFIG_ZVFS_POLL_MAX).
+
+if NET_RFC2217_SERVER
+
+config NET_RFC2217_SERVER_RX_SIZE
+	int "UART receive buffer size"
+	default 512
+	help
+	  Bytes received from the UART and not yet sent to the client.
+
+config NET_RFC2217_SERVER_TX_SIZE
+	int "UART transmit buffer size"
+	default 512
+	help
+	  Bytes received from the client and not yet transmitted on the
+	  UART.  The server stops reading from the client while it is full.
+
+config NET_RFC2217_SERVER_OUT_SIZE
+	int "Output buffer size"
+	default 256
+	help
+	  Escaped serial data and replies on their way to the client.
+
+config NET_RFC2217_SERVER_INIT_PRIORITY
+	int "Devicetree servers init priority"
+	default 90
+	help
+	  Initialization priority, at the APPLICATION level, of the servers
+	  defined in the devicetree.
+
+module = NET_RFC2217_SERVER
+module-dep = NET_LOG
+module-str = Log level for the RFC 2217 server
+module-help = Enables the RFC 2217 server to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_RFC2217_SERVER
+
+endif # NET_RFC2217
