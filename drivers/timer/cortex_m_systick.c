@@ -374,11 +374,8 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 		overflow_cyc = 0U;
 	}
 
-	/* Rescale the synthesized counter and the core's announce baseline from
-	 * old cycles to new cycles so the tick accounting stays continuous.
-	 */
-	cycle_count = (uint32_t)(((uint64_t)cycle_count * (uint64_t)new_hz) / (uint64_t)old_hz);
-	timer_core_rescale(new_hz, old_hz);
+	/* The synthesized count goes on at the new rate from where it is. */
+	timer_core_rescale(cycle_count, new_hz, old_hz);
 
 	if (load_old != TIMER_STOPPED) {
 		uint32_t new_load;
