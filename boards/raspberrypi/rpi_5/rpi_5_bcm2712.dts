@@ -37,6 +37,22 @@
 			label = "ACT";
 		};
 	};
+
+	reserved-memory {
+		ranges;
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		/*
+		 * Buffer for the VideoCore firmware property interface. One
+		 * MMU page, the minimum device_map() accepts.
+		 */
+		vc_mem: memory@3f800000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0 0x3f800000 0x1000>;
+			zephyr,memory-region = "VC_SHARED_RAM";
+		};
+	};
 };
 
 &gio_aon {
@@ -51,5 +67,9 @@
 };
 
 &gpio0_0 {
+	status = "okay";
+};
+
+&mbox0 {
 	status = "okay";
 };
