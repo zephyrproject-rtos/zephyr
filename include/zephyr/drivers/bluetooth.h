@@ -20,7 +20,7 @@
  * @defgroup bt_hci_api Bluetooth HCI
  *
  * @since 3.7
- * @version 0.3.0
+ * @version 0.4.0
  *
  * @ingroup bluetooth
  * @{
@@ -158,6 +158,18 @@ struct bt_hci_driver_config {
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 
 /**
+ * @brief Report a change in the availability of the controller
+ *
+ * Registered with bt_hci_state_cb_set(). The HCI driver may invoke this callback from any
+ * context, including ISRs, so it must not block. See bt_hci_report_unavailable() and
+ * bt_hci_report_available() for what the two reports mean.
+ *
+ * @param dev       HCI device
+ * @param available true when the controller can be used again, false when it has gone away.
+ */
+typedef void (*bt_hci_state_cb_t)(const struct device *dev, bool available);
+
+/**
  * @brief Common Bluetooth HCI driver data.
  *
  * This structure is common to all Bluetooth HCI drivers and must be the first member
@@ -180,6 +192,17 @@ struct bt_hci_driver_data {
 	 */
 	bt_addr_t public_addr;
 #endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
+#if defined(CONFIG_BT_HCI_STATE_REPORT) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback for the driver's reports on the availability of the controller.
+	 *
+	 * Set with bt_hci_state_cb_set(). Unlike the recv callback it stays set when the
+	 * transport is closed, as a controller can come back while it is.
+	 *
+	 * @kconfig_dep{CONFIG_BT_HCI_STATE_REPORT}
+	 */
+	bt_hci_state_cb_t state_cb;
+#endif /* CONFIG_BT_HCI_STATE_REPORT */
 };
 
 /**
@@ -381,6 +404,8 @@ static inline bool bt_hci_can_close(const struct device *dev)
  * the recv callback, so that a driver is free to stop the thread it delivers
  * its data from. It may block, and is called from thread context.
  *
+ * After bt_hci_report_unavailable() the function must succeed, without the controller.
+ *
  * The transport must be open, see bt_hci_send().
  *
  * @param dev HCI device
@@ -436,6 +461,64 @@ static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
 {
 	return DEVICE_API_GET(bt_hci, dev)->send(dev, buf);
 }
+
+/**
+ * @brief Set the callback for the driver's reports on the availability of the controller.
+ *
+ * Reports are for the one user of the transport. Unlike the recv callback of bt_hci_open(),
+ * which only means something while the transport is open, this one is set for the device and
+ * stays set across bt_hci_close() and bt_hci_open(): a controller comes back while the
+ * transport is closed, and a report is what tells the user to open it. A driver that does not
+ * select @kconfig{CONFIG_BT_HCI_STATE_REPORT} makes no reports, and the function is not
+ * available.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_STATE_REPORT}
+ *
+ * @param dev HCI device
+ * @param cb  Callback, or NULL for no reports.
+ *
+ * @retval 0 The callback is set.
+ * @retval -EALREADY The device has another callback set: remove that one first.
+ */
+int bt_hci_state_cb_set(const struct device *dev, bt_hci_state_cb_t cb);
+
+/**
+ * @brief Report that the controller has gone away.
+ *
+ * For a driver whose controller, or the transport to it, has gone away. It covers a controller
+ * that restarted behind a transport that survived, as that one has none of the state it was
+ * given. An open transport cannot go on with what comes back, so this ends it, and the
+ * controller is next brought up by bt_hci_open().
+ *
+ * bt_hci_send() must fail from before this report until the transport is closed.
+ * Packets that were received before the controller went away may still be delivered until
+ * bt_hci_close() returns. bt_hci_close() must succeed, and must not depend on the controller.
+ * A driver that makes this report therefore implements close().
+ *
+ * The report also applies while the transport is closed, where it only informs the user.
+ * It may be made from any context, including ISRs.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_STATE_REPORT}
+ *
+ * @param dev HCI device
+ */
+void bt_hci_report_unavailable(const struct device *dev);
+
+/**
+ * @brief Report that the controller can be used again.
+ *
+ * For a driver that can tell that its controller or transport is back. It says that
+ * bt_hci_open() can be tried, and nothing about a transport that was open before: that one
+ * ended with bt_hci_report_unavailable(), which comes first. A driver that cannot tell does
+ * not make this report, and its user finds out from bt_hci_open().
+ *
+ * It may be made from any context, including ISRs.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_STATE_REPORT}
+ *
+ * @param dev HCI device
+ */
+void bt_hci_report_available(const struct device *dev);
 
 #if defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)
 /**
