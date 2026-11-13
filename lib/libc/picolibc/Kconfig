@@ -29,6 +29,18 @@ config PICOLIBC_USE_TOOLCHAIN
 
 endchoice # PICOLIBC_SOURCE
 
+config PICOLIBC_LINK_SPEED_OPTIMIZED
+	bool "Speed-optimized C library in size-optimized builds"
+	depends on PICOLIBC_USE_TOOLCHAIN
+	depends on SIZE_OPTIMIZATIONS || SIZE_OPTIMIZATIONS_AGGRESSIVE
+	depends on !LTO
+	help
+	  Link the speed-optimized variant of the libraries of the toolchain,
+	  picolibc among them, while Zephyr and the application stay compiled
+	  for size. The size-optimized picolibc implements memcpy() and
+	  memset() as byte loops, several times slower than the
+	  speed-optimized ones, which take more flash.
+
 choice PICOLIBC_IO_LEVEL
 	prompt "Picolibc printf/scanf level"
 	default PICOLIBC_IO_MINIMAL if CBPRINTF_NANO
