@@ -80,21 +80,27 @@ int sys_sem_give(struct sys_sem *sem)
 
 int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
-	int ret = 0;
-	atomic_t old_value;
+	k_timepoint_t end;
+	int ret;
+
+	if (bounded_dec(&sem->futex.val, SYS_SEM_MINIMUM) > 0) {
+		return 0;
+	}
+
+	end = sys_timepoint_calc(timeout);
 
 	do {
-		old_value = bounded_dec(&sem->futex.val,
-					SYS_SEM_MINIMUM);
-		if (old_value > 0) {
+		ret = k_futex_wait(&sem->futex, SYS_SEM_CONTENDED, timeout);
+		if ((ret != 0) && (ret != -EAGAIN)) {
+			return ret;
+		}
+		if (bounded_dec(&sem->futex.val, SYS_SEM_MINIMUM) > 0) {
 			return 0;
 		}
+		timeout = sys_timepoint_timeout(end);
+	} while (!K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
-		ret = k_futex_wait(&sem->futex,
-				   SYS_SEM_CONTENDED, timeout);
-	} while (ret == 0 || ret == -EAGAIN);
-
-	return ret;
+	return -ETIMEDOUT;
 }
 
 unsigned int sys_sem_count_get(struct sys_sem *sem)
