@@ -100,6 +100,10 @@ config OPENTHREAD_COAP_OBSERVE
 config OPENTHREAD_COAPS
 	bool "Secure CoAP API support"
 	depends on OPENTHREAD_COAP
+	help
+	  Enable the OpenThread Secure CoAP (CoAPS) API. With the default
+	  security configuration, the Mbed TLS and PSA options needed for
+	  DTLS_PSK_WITH_AES_128_CCM_8 are enabled.
 
 config OPENTHREAD_COMMISSIONER
 	bool "Commissioner functions support"
