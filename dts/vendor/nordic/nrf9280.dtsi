@@ -235,6 +235,7 @@
 			cpuapp_resetinfo: resetinfo@1e000 {
 				compatible = "nordic,nrf-resetinfo";
 				reg = <0x1e000 0x1000>;
+				reset-reason-available;
 			};
 		};
 
@@ -272,6 +273,7 @@
 			cpurad_resetinfo: resetinfo@1e000 {
 				compatible = "nordic,nrf-resetinfo";
 				reg = <0x1e000 0x1000>;
+				reset-reason-available;
 			};
 
 			dppic020: dppic@22000 {
