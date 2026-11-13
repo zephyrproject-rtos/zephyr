@@ -278,6 +278,13 @@ typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_even
 /** API for reading operational statistics */
 typedef const struct cellular_stats *(*cellular_api_get_stats)(const struct device *dev);
 
+/** API for getting the number of SIM slots and the active slot */
+typedef int (*cellular_api_get_sim_slots)(const struct device *dev, uint8_t *count,
+					  uint8_t *active);
+
+/** API for selecting the active SIM slot */
+typedef int (*cellular_api_select_sim)(const struct device *dev, uint8_t slot);
+
 /**
  * @driver_ops{Cellular}
  */
@@ -300,6 +307,10 @@ __subsystem struct cellular_driver_api {
 	cellular_api_set_callback set_callback;
 	/** @driver_ops_optional @copybrief cellular_get_stats */
 	cellular_api_get_stats get_stats;
+	/** @driver_ops_optional @copybrief cellular_get_sim_slots */
+	cellular_api_get_sim_slots get_sim_slots;
+	/** @driver_ops_optional @copybrief cellular_select_sim */
+	cellular_api_select_sim select_sim;
 };
 
 /** @} */
@@ -526,6 +537,68 @@ static inline const struct cellular_stats *cellular_get_stats(const struct devic
 	}
 
 	return api->get_stats(dev);
+}
+
+/**
+ * @brief Get the number of SIM slots and the active slot
+ *
+ * @details A slot is a SIM holder, or a SIM interface of the modem, that the device can
+ * route to the modem. Slots are identified by an index. A device with a single SIM
+ * reports one slot, with index 0.
+ *
+ * @param dev Cellular network device instance.
+ * @param count Number of SIM slots of the device.
+ * @param active Index of the active SIM slot.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ */
+static inline int cellular_get_sim_slots(const struct device *dev, uint8_t *count, uint8_t *active)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_sim_slots == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_sim_slots(dev, count, active);
+}
+
+/**
+ * @brief Select the active SIM slot
+ *
+ * @details The device switches the SIM only while the SIM interface of the modem is
+ * inactive. A device may accept the request only in some states, for example while it is
+ * suspended, and returns -EBUSY otherwise. A data connection on the previous SIM does not
+ * survive the switch.
+ *
+ * The SIM identity read from the previous slot (@ref CELLULAR_MODEM_INFO_SIM_ICCID and
+ * @ref CELLULAR_MODEM_INFO_SIM_IMSI) is cleared. The device emits
+ * @ref CELLULAR_EVENT_MODEM_INFO_CHANGED when it reads them from the new slot.
+ *
+ * The APN usually depends on the SIM operator, and can be changed with cellular_set_apn()
+ * along with the SIM slot.
+ *
+ * @param dev Cellular network device instance.
+ * @param slot Index of the SIM slot to select.
+ *
+ * @retval 0 Success.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -ENOTSUP Device has a single SIM slot.
+ * @retval -EINVAL No SIM slot has this index.
+ * @retval -EALREADY Slot is already the active one, nothing to do.
+ * @retval -EBUSY SIM slot cannot be changed in the current device state.
+ * @retval -errno Other negative errno on failure to switch the SIM slot.
+ */
+static inline int cellular_select_sim(const struct device *dev, uint8_t slot)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->select_sim == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->select_sim(dev, slot);
 }
 
 #ifdef __cplusplus
