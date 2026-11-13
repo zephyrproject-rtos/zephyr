@@ -7001,6 +7001,7 @@ static void link_test_stream(struct quic_stream *stream, struct quic_context *ct
 	k_mutex_init(&stream->cond.data_available);
 	k_condvar_init(&stream->cond.recv);
 	k_poll_signal_init(&stream->recv.signal);
+	k_mutex_init(&stream->tx_lock);
 
 	sys_slist_append(&ctx->streams, &stream->node);
 }
@@ -8007,6 +8008,159 @@ ZTEST(net_socket_quic, test_543_ack_and_loss_keep_stream_references)
 
 	ret = quic_connection_close(sock);
 	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_527_reset_stream_final_size_is_fixed)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	ctx = open_test_listener(&sock, "127.0.0.1:54372");
+	ep->is_server = true;
+	link_test_stream(&stream, ctx, ep, 0);
+	/* A lookup takes a reference, so the stream needs one of its own */
+	atomic_set(&stream.refcount, 1);
+
+	/* 100 bytes are queued for sending. The send of the last 40 is
+	 * under way and not counted in bytes_sent yet, but the peer can
+	 * get them: the final size must cover them, and so must the
+	 * connection flow control count.
+	 */
+	stream.tx_buf.base_offset = 0U;
+	stream.tx_buf.len = 100U;
+	stream.bytes_sent = 60U;
+	ep->tx_fc.bytes_sent = 60U;
+
+	quic_test_reset_final_size = UINT64_MAX;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_true(stream.tx_reset, "Stream not reset");
+	zexpect_equal(quic_test_reset_final_size, 100U,
+		      "Final size %" PRIu64 " is not the end of the queued data",
+		      quic_test_reset_final_size);
+	zexpect_equal(stream.bytes_sent, 100U,
+		      "Stream counts %" PRIu64 " bytes sent, not the final size",
+		      stream.bytes_sent);
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Connection counts %" PRIu64 " bytes sent, not the final size",
+		      ep->tx_fc.bytes_sent);
+
+	/* The peer acknowledges part of the data. A repeated STOP_SENDING
+	 * gets the same final size and counts nothing again.
+	 */
+	stream.tx_buf.base_offset = 60U;
+	stream.tx_buf.len = 40U;
+
+	quic_test_reset_final_size = UINT64_MAX;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_equal(quic_test_reset_final_size, 100U,
+		      "Final size changed to %" PRIu64 " on a repeated reset",
+		      quic_test_reset_final_size);
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Repeated reset changed the connection count to %" PRIu64,
+		      ep->tx_fc.bytes_sent);
+
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Stream reference not given back");
+	unlink_test_stream(&stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_548_reset_during_rejected_early_data_replay)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep;
+	struct quic_context *ctx;
+	int sock;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		ztest_test_skip();
+	}
+
+	ep = reset_test_ep(&test_ep_a);
+	ctx = open_test_listener(&sock, "127.0.0.1:54393");
+	link_test_stream(&stream, ctx, ep, 0);
+	/* A lookup takes a reference, so the stream needs one of its own */
+	atomic_set(&stream.refcount, 1);
+
+	/* 100 bytes and a FIN went out in rejected 0-RTT packets. The
+	 * rejection rolls the sent counters back, and the data stays
+	 * queued for the replay.
+	 */
+	stream.tx_buf.base_offset = 0U;
+	stream.tx_buf.len = 100U;
+	stream.bytes_sent = 100U;
+	stream.replay_fin_pending = true;
+	ep->tx_fc.bytes_sent = 100U;
+	ep->tx_fc.max_data = 1000U;
+
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	ret = quic_prepare_rejected_early_data_replay(ep);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	zassert_ok(ret, "Replay preparation failed (%d)", ret);
+	zassert_equal(stream.bytes_sent, 0U, "Sent count not rolled back");
+
+	/* STOP_SENDING arrives before the replay. The final size covers
+	 * the queued data, so the connection counts all of it as sent.
+	 */
+	quic_test_reset_final_size = UINT64_MAX;
+	ret = stop_sending_for_stream(ep, ctx, 0);
+	zassert_true(ret >= 0, "STOP_SENDING handling failed (%d)", ret);
+	zexpect_equal(quic_test_reset_final_size, 100U,
+		      "Final size %" PRIu64 " is not the end of the queued data",
+		      quic_test_reset_final_size);
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Connection counts %" PRIu64 " bytes sent, the peer counts 100",
+		      ep->tx_fc.bytes_sent);
+
+	/* The replay skips the reset stream without an error, which would
+	 * stop the replay of the streams after it, and sends no FIN.
+	 */
+	sys_slist_append(&ctx->endpoints, &ep->node);
+	ret = quic_replay_rejected_early_data(ep);
+	(void)sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
+	zexpect_ok(ret, "Replay stopped at the reset stream (%d)", ret);
+	zexpect_false(stream.replay_fin_pending, "FIN still pending on a reset stream");
+	zexpect_equal(ep->tx_fc.bytes_sent, 100U,
+		      "Replay changed the connection count to %" PRIu64,
+		      ep->tx_fc.bytes_sent);
+
+	zexpect_equal(atomic_get(&stream.refcount), 1, "Stream reference not given back");
+	unlink_test_stream(&stream, ctx);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Cannot close socket %d (%d)", sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_549_stream_shutdown_failure_sets_errno)
+{
+	struct quic_stream *stream;
+	int ret;
+
+	multi_server_start();
+	multi_client_connect(0);
+
+	stream = zvfs_get_fd_obj(multi_client_stream[0], NULL, 0);
+	zassert_not_null(stream, "No stream behind fd %d", multi_client_stream[0]);
+
+	/* The sending half was reset, so no FIN can be sent */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	stream->tx_reset = true;
+	k_mutex_unlock(&stream->tx_lock);
+
+	/* A failed shutdown() returns -1 and sets errno, as for any socket */
+	errno = 0;
+	ret = zsock_shutdown(multi_client_stream[0], ZSOCK_SHUT_WR);
+	zexpect_equal(ret, -1, "shutdown() returned %d", ret);
+	zexpect_equal(errno, EPIPE, "shutdown() set errno to %d", errno);
+
+	multi_server_stop(1);
 }
 
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
