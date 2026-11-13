@@ -133,11 +133,6 @@ static int sreq_set_configuration(struct usbd_context *const uds_ctx)
 		return -EPERM;
 	}
 
-	if (setup->wValue == usbd_get_config_value(uds_ctx)) {
-		LOG_DBG("Already in the configuration %u", setup->wValue);
-		return 0;
-	}
-
 	ret = usbd_config_set(uds_ctx, setup->wValue);
 	if (ret) {
 		LOG_ERR("Failed to set configuration %u, %d",
