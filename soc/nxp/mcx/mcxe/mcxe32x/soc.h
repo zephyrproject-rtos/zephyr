@@ -25,6 +25,16 @@ extern "C" {
 
 void enable_sram_extra_latency(bool en);
 
+#if defined(CONFIG_SOC_MCXE32B_CPU0)
+/**
+ * @brief Get WKPU status captured before driver initialization on this boot.
+ *
+ * A set bit identifies a pending wake-up source. The value is zero on a boot
+ * that did not follow standby; multiple wake-up sources can be reported.
+ */
+uint64_t soc_mcxe32x_wakeup_sources(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

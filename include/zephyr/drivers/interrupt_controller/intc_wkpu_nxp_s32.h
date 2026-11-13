@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_WKPU_NXP_S32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_WKPU_NXP_S32_H_
+
+#include <stdbool.h>
 
 /** NXP WKPU callback */
 typedef void (*wkpu_nxp_s32_callback_t)(uint8_t pin, void *arg);
@@ -55,9 +57,10 @@ int wkpu_nxp_s32_set_callback(const struct device *dev, uint8_t irq, uint8_t pin
  * @param dev  WKPU device
  * @param irq  WKPU interrupt number
  * @param trigger pin activation trigger
+ * @param wakeup enable the standby wake-up request in addition to the interrupt
  */
 void wkpu_nxp_s32_enable_interrupt(const struct device *dev, uint8_t irq,
-				   enum wkpu_nxp_s32_trigger trigger);
+				   enum wkpu_nxp_s32_trigger trigger, bool wakeup);
 
 /**
  * @brief Disable interrupt for WKPU line

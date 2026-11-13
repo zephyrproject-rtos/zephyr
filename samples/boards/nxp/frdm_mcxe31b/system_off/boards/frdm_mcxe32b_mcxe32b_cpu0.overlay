@@ -1,0 +1,48 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/nxp-siul2-gpio.h>
+#include "../app.overlay"
+
+/ {
+	zephyr,user {
+		wake-gpios = <&gpioe_l 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP |
+					  NXP_SIUL2_GPIO_INT_WKPU)>;
+	};
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
+};
+
+&gpioe_l {
+	status = "okay";
+};
+
+&wkpu {
+	status = "okay";
+};
+
+&stdby_ram {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};
+
+&code_partition {
+	reg = <0x100 (DT_SIZE_K(2048) - 0x100)>;
+};
+
+&flash0 {
+	partitions {
+		cpu1_code_partition: partition@200000 {
+			reg = <0x200000 DT_SIZE_K(1872)>;
+			label = "cpu1-code-partition";
+		};
+	};
+};

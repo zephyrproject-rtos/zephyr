@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config APP_USE_CPU1
+	bool "Build the companion CPU1 image"
+	default y if $(BOARD) = "frdm_mcxe32b"

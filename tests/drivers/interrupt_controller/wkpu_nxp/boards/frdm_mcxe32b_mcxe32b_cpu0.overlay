@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wkpu {
+	status = "okay";
+};
+
+&rtc {
+	prescaler = <1>;
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
+};

@@ -315,8 +315,8 @@ if(CONFIG_SOC_S32K344 OR CONFIG_SOC_SERIES_MCXE31X OR CONFIG_SOC_SERIES_MCXE32X)
   set_variable_ifdef(CONFIG_SOC_FLASH_MCUX_C40 CONFIG_MCUX_COMPONENT_driver.flash_c40)
 endif()
 
-# MCXE31X routes the RTC alarm through the WKPU to wake from standby in sys_poweroff
-if(CONFIG_SOC_SERIES_MCXE31X AND CONFIG_POWEROFF)
+# MCXE standby wake-up sources are routed through WKPU.
+if((CONFIG_SOC_SERIES_MCXE31X OR CONFIG_SOC_SERIES_MCXE32X) AND CONFIG_POWEROFF)
   set(CONFIG_MCUX_COMPONENT_driver.wkpu ON)
 endif()
 

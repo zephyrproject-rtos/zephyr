@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,7 @@ struct wkpu_nxp_s32_cb {
 
 struct wkpu_nxp_s32_data {
 	struct wkpu_nxp_s32_cb *cb;
+	struct k_spinlock lock;
 };
 
 static void wkpu_nxp_s32_interrupt_handler(const struct device *dev)
@@ -62,7 +63,7 @@ static void wkpu_nxp_s32_interrupt_handler(const struct device *dev)
 		irq = u64_count_trailing_zeros(irq_mask);
 
 		/* Clear status flag */
-		REG_WRITE(WKPU_WISR(irq / 32U), REG_READ(WKPU_WISR(irq / 32U)) | irq_mask);
+		REG_WRITE(WKPU_WISR(irq / 32U), BIT(irq % 32U));
 
 		if (data->cb[irq].cb != NULL) {
 			data->cb[irq].cb(data->cb[irq].pin, data->cb[irq].data);
@@ -106,14 +107,20 @@ void wkpu_nxp_s32_unset_callback(const struct device *dev, uint8_t irq)
 }
 
 void wkpu_nxp_s32_enable_interrupt(const struct device *dev, uint8_t irq,
-				   enum wkpu_nxp_s32_trigger trigger)
+				   enum wkpu_nxp_s32_trigger trigger, bool wakeup)
 {
 	const struct wkpu_nxp_s32_config *config = dev->config;
+	struct wkpu_nxp_s32_data *data = dev->data;
 	uint32_t mask = BIT(irq % 32U);
 	uint8_t reg_idx = irq / 32U;
 	uint32_t reg_val;
+	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(irq < CONFIG_NXP_S32_WKPU_SOURCES_MAX);
+
+	key = k_spin_lock(&data->lock);
+	REG_WRITE(WKPU_IRER(reg_idx), REG_READ(WKPU_IRER(reg_idx)) & ~mask);
+	REG_WRITE(WKPU_WRER(reg_idx), REG_READ(WKPU_WRER(reg_idx)) & ~mask);
 
 	/* Configure trigger */
 	reg_val = REG_READ(WKPU_WIREER(reg_idx));
@@ -133,25 +140,35 @@ void wkpu_nxp_s32_enable_interrupt(const struct device *dev, uint8_t irq,
 	REG_WRITE(WKPU_WIFEER(reg_idx), reg_val);
 
 	/* Clear status flag and unmask interrupt */
-	REG_WRITE(WKPU_WISR(reg_idx), REG_READ(WKPU_WISR(reg_idx)) | mask);
+	REG_WRITE(WKPU_WISR(reg_idx), mask);
+	if (wakeup) {
+		REG_WRITE(WKPU_WRER(reg_idx), REG_READ(WKPU_WRER(reg_idx)) | mask);
+	}
 	REG_WRITE(WKPU_IRER(reg_idx), REG_READ(WKPU_IRER(reg_idx)) | mask);
+	k_spin_unlock(&data->lock, key);
 }
 
 void wkpu_nxp_s32_disable_interrupt(const struct device *dev, uint8_t irq)
 {
 	const struct wkpu_nxp_s32_config *config = dev->config;
+	struct wkpu_nxp_s32_data *data = dev->data;
 	uint32_t mask = BIT(irq % 32U);
 	uint8_t reg_idx = irq / 32U;
+	k_spinlock_key_t key;
 
 	__ASSERT_NO_MSG(irq < CONFIG_NXP_S32_WKPU_SOURCES_MAX);
+
+	key = k_spin_lock(&data->lock);
+	REG_WRITE(WKPU_IRER(reg_idx), REG_READ(WKPU_IRER(reg_idx)) & ~mask);
+	REG_WRITE(WKPU_WRER(reg_idx), REG_READ(WKPU_WRER(reg_idx)) & ~mask);
 
 	/* Disable triggers */
 	REG_WRITE(WKPU_WIREER(reg_idx), REG_READ(WKPU_WIREER(reg_idx)) & ~mask);
 	REG_WRITE(WKPU_WIFEER(reg_idx), REG_READ(WKPU_WIFEER(reg_idx)) & ~mask);
 
 	/* Clear status flag and mask interrupt */
-	REG_WRITE(WKPU_WISR(reg_idx), REG_READ(WKPU_WISR(reg_idx)) | mask);
-	REG_WRITE(WKPU_IRER(reg_idx), REG_READ(WKPU_IRER(reg_idx)) & ~mask);
+	REG_WRITE(WKPU_WISR(reg_idx), mask);
+	k_spin_unlock(&data->lock, key);
 }
 
 uint64_t wkpu_nxp_s32_get_pending(const struct device *dev)
@@ -176,6 +193,7 @@ static int wkpu_nxp_s32_init(const struct device *dev)
 	REG_WRITE(WKPU_WIFEER(0U), 0U);
 	REG_WRITE(WKPU_WISR(0U), 0xffffffff);
 	REG_WRITE(WKPU_IRER(0U), 0U);
+	REG_WRITE(WKPU_WRER(0U), 0U);
 
 	/* Configure glitch filters */
 	REG_WRITE(WKPU_WIFER(0U), (uint32_t)config->filter_enable);
@@ -185,6 +203,7 @@ static int wkpu_nxp_s32_init(const struct device *dev)
 		REG_WRITE(WKPU_WIFEER(1U), 0U);
 		REG_WRITE(WKPU_WISR(1U), 0xffffffff);
 		REG_WRITE(WKPU_IRER(1U), 0U);
+		REG_WRITE(WKPU_WRER(1U), 0U);
 		REG_WRITE(WKPU_WIFER(1U), (uint32_t)(config->filter_enable >> 32U));
 	}
 
