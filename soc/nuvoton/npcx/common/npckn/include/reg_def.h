@@ -333,6 +333,9 @@ struct uart_reg {
 #define NPCX_UFRCTL_RNEMPTY_EN                6
 #define NPCX_UFRCTL_ERR_EN                    7
 
+#define NPCX_UFCTRL_NXMIP_EN 1
+#define NPCX_UTXFLV_NXMIP    7
+
 /* Macro functions for MIWU multi-registers */
 #define NPCX_WKEDG(base, group) \
 	(*(volatile uint8_t *)(base +  NPCX_WKEDG_OFFSET(group)))
