@@ -306,7 +306,7 @@ The file header consists of the following fields:
      - Indicate which target (e.g. architecture or SoC) so the parser
        can instantiate the correct register block parser.
    * - Pointer size
-     - 'uint8_t'
+     - ``uint8_t``
      - Size of ``uintptr_t`` in power of 2. (e.g. 5 for 32-bit,
        6 for 64-bit). This is needed to accommodate 32-bit and 64-bit
        target in parsing the memory block addresses.
