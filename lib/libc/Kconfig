@@ -161,6 +161,21 @@ endchoice # LIBC_IMPLEMENTATION
 config HAS_NEWLIB_LIBC_NANO
 	bool
 
+config LIBC_SPEED_OPTIMIZED
+	bool "Link the speed-optimized C library"
+	depends on (PICOLIBC && !PICOLIBC_USE_MODULE) || NEWLIB_LIBC
+	depends on SIZE_OPTIMIZATIONS
+	depends on !LTO
+	help
+	  The toolchain ships its C library in a size-optimized and a speed-optimized
+	  build, and the linker driver picks between them by the optimization flag of
+	  the link, which follows the compiler's: an image compiled for size links a
+	  memcpy(), memset() and strcmp() that move one byte per iteration. Link with
+	  the speed flag instead, so that the library's optimized string and memory
+	  routines are used while every object of the image is still compiled for
+	  size. Costs a few hundred bytes of text. Without LTO the flag affects only
+	  which library is linked.
+
 rsource "common/Kconfig"
 rsource "minimal/Kconfig"
 rsource "newlib/Kconfig"
