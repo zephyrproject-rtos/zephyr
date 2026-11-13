@@ -120,7 +120,11 @@ cleanup:
 		 * when tranmiting chain of chars.
 		 * As errors cannot be returned, ignore the return value
 		 */
-		(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
+		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_ASYNC)) {
+			(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
+		} else {
+			(void)pm_device_runtime_put(uart_dev);
+		}
 	}
 
 	return length;
