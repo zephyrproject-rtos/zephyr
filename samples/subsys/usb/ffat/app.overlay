@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ffatdisk0 {
+		compatible = "zephyr,ffat-disk";
+		disk-name = "FFAT16";
+		sector-size = <512>;
+		sector-count = <8192>;
+		sector-per-cluster = <1>;
+	};
+
+	ffatdisk1 {
+		compatible = "zephyr,ffat32-disk", "zephyr,ffat-disk";
+		disk-name = "FFAT32";
+		sector-size = <512>;
+		sector-count = <7744512>;
+		sector-per-cluster = <8>;
+	};
+};
