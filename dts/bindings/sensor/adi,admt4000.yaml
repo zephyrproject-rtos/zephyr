@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADMT4000 True Power-On Multiturn Sensor
+
+compatible: "adi,admt4000"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  busy-gpios:
+    type: phandle-array
+    description: GPIO to signal device busy status
+
+  acalc-gpios:
+    type: phandle-array
+    description: GPIO for analog calculation enable/control
+
+  coil-rs-gpios:
+    type: phandle-array
+    description: GPIO for coil reset control
+
+  cnv-gpios:
+    type: phandle-array
+    description: GPIO for conversion trigger
+
+  adi,vdd-variant:
+    type: int
+    description: Voltage variant selection (0 = 3.3V, 1 = 5V)
