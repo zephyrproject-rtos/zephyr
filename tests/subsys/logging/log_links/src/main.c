@@ -58,62 +58,54 @@ static void log_setup(bool backend2_enable)
 	}
 }
 
-
-static struct mock_log_link_source domain1_sources[] = {
+static struct mock_log_link_source link1_sources[] = {
 	{ .source = "abc", .clevel = 4, .rlevel = 4},
 	{ .source = "xxx", .clevel = 3, .rlevel = 3},
 	{ .source = "yyy", .clevel = 2, .rlevel = 2},
 	{ .source = "zzz", .clevel = 4, .rlevel = 1},
 };
 
-static struct mock_log_link_source domain2_sources[] = {
+static struct mock_log_link_source link2_sources[] = {
 	{ .source = "abc2", .clevel = 2, .rlevel = 1},
 	{ .source = "xxx2", .clevel = 2, .rlevel = 2},
 	{ .source = "yyy2", .clevel = 3, .rlevel = 3},
 	{ .source = "zzz2", .clevel = 4, .rlevel = 4},
 };
 
-static struct mock_log_link_source domain3_sources[] = {
+static struct mock_log_link_source link3_sources[] = {
 	{ .source = "abc", .clevel = 4, .rlevel = 4},
 	{ .source = "xxx", .clevel = 3, .rlevel = 3},
 	{ .source = "yyy", .clevel = 2, .rlevel = 2},
 	{ .source = "zzz", .clevel = 2, .rlevel = 1},
 };
 
-static struct mock_log_link_domain domain1 = {
-	.source_cnt = ARRAY_SIZE(domain1_sources),
-	.sources = domain1_sources,
-	.name = "domain1"
+static struct mock_log_link mock_link1_ctx = {
+	.source_cnt = ARRAY_SIZE(link1_sources),
+	.sources = link1_sources
 };
 
-static struct mock_log_link_domain domain2 = {
-	.source_cnt = ARRAY_SIZE(domain2_sources),
-	.sources = domain2_sources,
-	.name = "domain2"
+static struct mock_log_link mock_link2_ctx = {
+	.source_cnt = ARRAY_SIZE(link2_sources),
+	.sources = link2_sources
 };
 
-static struct mock_log_link_domain domain3 = {
-	.source_cnt = ARRAY_SIZE(domain3_sources),
-	.sources = domain3_sources,
-	.name = "domain3"
+static struct mock_log_link mock_link3_ctx = {
+	.source_cnt = ARRAY_SIZE(link3_sources),
+	.sources = link3_sources
 };
 
-static struct mock_log_link_domain *domains_a[] = {&domain1, &domain2};
-static struct mock_log_link mock_link_a = {
-	.domain_cnt = ARRAY_SIZE(domains_a),
-	.domains = domains_a
+MOCK_LOG_LINK_DEFINE(mock_link1, &mock_link1_ctx);
+MOCK_LOG_LINK_DEFINE(mock_link2, &mock_link2_ctx);
+MOCK_LOG_LINK_DEFINE(mock_link3, &mock_link3_ctx);
+
+/* Each link provides a single domain. Domain IDs are assigned in the order in
+ * which links are activated, starting from 1 (0 is the local domain).
+ */
+static struct mock_log_link *links[] = {
+	&mock_link1_ctx, &mock_link2_ctx, &mock_link3_ctx
 };
 
-static struct mock_log_link_domain *domains_b[] = {&domain3};
-static struct mock_log_link mock_link_b = {
-	.domain_cnt = ARRAY_SIZE(domains_b),
-	.domains = domains_b
-};
-
-extern struct log_link_api mock_log_link_api;
-
-LOG_LINK_DEF(mock_link1, mock_log_link_api, 0, &mock_link_a);
-LOG_LINK_DEF(mock_link2, mock_log_link_api, 0, &mock_link_b);
+#define LINK_DOMAIN(_domain_id) links[(_domain_id) - 1]
 
 ZTEST(log_links, test_log_domain_count)
 {
@@ -122,7 +114,7 @@ ZTEST(log_links, test_log_domain_count)
 
 	log_setup(false);
 
-	exp_domains_cnt = 1 + mock_link_a.domain_cnt + mock_link_b.domain_cnt;
+	exp_domains_cnt = 1 + ARRAY_SIZE(links);
 	domains_cnt = log_domains_count();
 	zassert_equal(domains_cnt, exp_domains_cnt,
 			"Unexpected number of domains (%d)", domains_cnt);
@@ -130,19 +122,18 @@ ZTEST(log_links, test_log_domain_count)
 
 ZTEST(log_links, test_log_source_count)
 {
-	uint8_t exp_source_cnt[] = {
+	uint32_t exp_source_cnt[] = {
 		log_const_source_id(TYPE_SECTION_END(log_const)),
-		/*link1*/
-		domains_a[0]->source_cnt,
-		domains_a[1]->source_cnt,
-		domains_b[0]->source_cnt,
+		LINK_DOMAIN(1)->source_cnt,
+		LINK_DOMAIN(2)->source_cnt,
+		LINK_DOMAIN(3)->source_cnt,
 	};
 
 	log_setup(false);
 
 
 	for (uint8_t d = 0; d < log_domains_count(); d++) {
-		uint16_t source_cnt = log_src_cnt_get(d);
+		uint32_t source_cnt = log_src_cnt_get(d);
 
 		zassert_equal(source_cnt, exp_source_cnt[d],
 			      "Unexpected source count (%d:%d)", d, source_cnt);
@@ -162,11 +153,11 @@ ZTEST(log_links, test_log_compiled_level_get)
 {
 	log_setup(false);
 
-	test_single_compile_level(1, 0, domains_a[0]->sources[0].clevel);
-	test_single_compile_level(1, 1, domains_a[0]->sources[1].clevel);
-	test_single_compile_level(1, 3, domains_a[0]->sources[3].clevel);
-	test_single_compile_level(2, 2, domains_a[1]->sources[2].clevel);
-	test_single_compile_level(3, 2, domains_b[0]->sources[2].clevel);
+	test_single_compile_level(1, 0, LINK_DOMAIN(1)->sources[0].clevel);
+	test_single_compile_level(1, 1, LINK_DOMAIN(1)->sources[1].clevel);
+	test_single_compile_level(1, 3, LINK_DOMAIN(1)->sources[3].clevel);
+	test_single_compile_level(2, 2, LINK_DOMAIN(2)->sources[2].clevel);
+	test_single_compile_level(3, 2, LINK_DOMAIN(3)->sources[2].clevel);
 }
 
 static void test_single_runtime_level(uint8_t d, uint16_t s, uint8_t *link_level)
@@ -203,22 +194,23 @@ ZTEST(log_links, test_log_runtime_level_set)
 {
 	log_setup(true);
 
-	test_single_runtime_level(1, 0, &domains_a[0]->sources[0].rlevel);
-	test_single_runtime_level(1, 3, &domains_a[0]->sources[3].rlevel);
-	test_single_runtime_level(2, 1, &domains_a[1]->sources[1].rlevel);
-	test_single_runtime_level(3, 1, &domains_b[0]->sources[1].rlevel);
+	test_single_runtime_level(1, 0, &LINK_DOMAIN(1)->sources[0].rlevel);
+	test_single_runtime_level(1, 3, &LINK_DOMAIN(1)->sources[3].rlevel);
+	test_single_runtime_level(2, 1, &LINK_DOMAIN(2)->sources[1].rlevel);
+	test_single_runtime_level(3, 1, &LINK_DOMAIN(3)->sources[1].rlevel);
 }
 
 ZTEST(log_links, test_log_domain_name_get)
 {
-	zassert_str_equal(log_domain_name_get(0), "",
+	/* Remote domain is named after the link which provides it. */
+	zassert_str_equal(log_domain_name_get(0), CONFIG_LOG_DOMAIN_NAME,
 			  "Unexpected domain name");
-	zassert_equal(strcmp(log_domain_name_get(1), "domain1"), 0,
-			"Unexpected domain name (%s)", log_domain_name_get(1));
-	zassert_equal(strcmp(log_domain_name_get(2), "domain2"), 0,
-			"Unexpected domain name (%s)", log_domain_name_get(2));
-	zassert_equal(strcmp(log_domain_name_get(3), "domain3"), 0,
-			"Unexpected domain name (%s)", log_domain_name_get(3));
+	zassert_str_equal(log_domain_name_get(1), "mock_link1",
+			  "Unexpected domain name (%s)", log_domain_name_get(1));
+	zassert_str_equal(log_domain_name_get(2), "mock_link2",
+			  "Unexpected domain name (%s)", log_domain_name_get(2));
+	zassert_str_equal(log_domain_name_get(3), "mock_link3",
+			  "Unexpected domain name (%s)", log_domain_name_get(3));
 }
 
 static void test_single_log_source_name_get(uint8_t d, uint16_t s,
@@ -237,21 +229,21 @@ static void test_single_log_source_name_get(uint8_t d, uint16_t s,
 
 ZTEST(log_links, test_log_source_name_get)
 {
-	const char *exp_name = domains_a[0]->sources[0].source;
+	const char *exp_name = LINK_DOMAIN(1)->sources[0].source;
 
 	log_setup(false);
 
 	test_single_log_source_name_get(1, 0, exp_name);
-	test_single_log_source_name_get(1, 1, domains_a[0]->sources[1].source);
-	test_single_log_source_name_get(2, 2, domains_a[1]->sources[2].source);
-	test_single_log_source_name_get(3, 3, domains_b[0]->sources[3].source);
+	test_single_log_source_name_get(1, 1, LINK_DOMAIN(1)->sources[1].source);
+	test_single_log_source_name_get(2, 2, LINK_DOMAIN(2)->sources[2].source);
+	test_single_log_source_name_get(3, 3, LINK_DOMAIN(3)->sources[3].source);
 
 	/* Try fetching invalid sources, it should not change the cached name */
 	for (uint16_t s = 0; s < CONFIG_LOG_SOURCE_NAME_CACHE_ENTRY_COUNT; s++) {
 		test_single_log_source_name_get(1, s + 100, NULL);
 	}
 
-	domains_a[0]->sources[0].source = "new_name";
+	LINK_DOMAIN(1)->sources[0].source = "new_name";
 	/* Even though source name changed, the cached name should not change. */
 	test_single_log_source_name_get(1, 0, exp_name);
 }

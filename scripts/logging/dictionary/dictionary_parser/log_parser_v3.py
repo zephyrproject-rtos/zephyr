@@ -64,10 +64,13 @@ logger = logging.getLogger("parser")
 
 
 class LogParserV3(LogParser):
-    """Log Parser V1"""
+    """Log Parser V3"""
 
-    def __init__(self, database):
-        super().__init__(database=database)
+    def __init__(self, database, additional_databases=None):
+        super().__init__(database=database, additional_databases=additional_databases)
+
+        # Message headers are produced by the core which outputs the logs (described by the
+        # primary database), so all databases are expected to share the header layout.
 
         if self.database.is_tgt_little_endian():
             endian = "<"
@@ -229,8 +232,9 @@ class LogParserV3(LogParser):
         return tbl
 
     @staticmethod
-    def print_hexdump(hex_data, prefix_len, color):
-        """Print hex dump"""
+    def format_hexdump(hex_data, prefix_len, color):
+        """Format hex dump, returns text with each line terminated with newline"""
+        lines = ""
         hex_vals = ""
         chr_vals = ""
         chr_done = 0
@@ -245,17 +249,25 @@ class LogParserV3(LogParser):
                 chr_vals += " "
 
             elif chr_done == HEX_BYTES_IN_LINE:
-                print(f"{color}%s%s|%s{Fore.RESET}" % ((" " * prefix_len), hex_vals, chr_vals))
+                lines += f"{color}%s%s|%s{Fore.RESET}\n" % (
+                    (" " * prefix_len),
+                    hex_vals,
+                    chr_vals,
+                )
                 hex_vals = ""
                 chr_vals = ""
                 chr_done = 0
 
         if len(chr_vals) > 0:
             hex_padding = "   " * (HEX_BYTES_IN_LINE - chr_done)
-            print(
-                f"{color}%s%s%s|%s{Fore.RESET}"
-                % ((" " * prefix_len), hex_vals, hex_padding, chr_vals)
+            lines += f"{color}%s%s%s|%s{Fore.RESET}\n" % (
+                (" " * prefix_len),
+                hex_vals,
+                hex_padding,
+                chr_vals,
             )
+
+        return lines
 
     def get_full_msg_hdr_size(self):
         """Get the size of the full message header"""
@@ -273,6 +285,39 @@ class LogParserV3(LogParser):
             offset + struct.calcsize(self.fmt_msg_type),
         )
         return self.get_full_msg_hdr_size() + pkg_len + data_len
+
+    def select_database(self, domain_id, logdata, offset, pkg_len):
+        """Select the database (and its data types) which describes the message.
+
+        Messages from domain 0 are always described by the primary database. For other domains
+        (when more than one database is provided) the format string of the message is looked up
+        in each database and the first database containing it is selected. If the string cannot
+        be found in any database, the primary database is used.
+
+        :param domain_id: Domain ID of the message.
+        :param logdata: Binary log data.
+        :param offset: Offset of the packaged message (cbprintf package) in logdata.
+        :param pkg_len: Length of the packaged message.
+        :return: Tuple of (database index, database, data types).
+        """
+        if domain_id != 0 and len(self.databases) > 1:
+            for idx, (database, data_types) in enumerate(
+                zip(self.databases, self.databases_data_types, strict=True)
+            ):
+                ptr_size = data_types.get_sizeof(DataTypes.PTR)
+                if pkg_len < 2 * ptr_size or offset + 2 * ptr_size > len(logdata):
+                    continue
+
+                # Format string pointer is located just after the package header.
+                fmt_str_ptr = struct.unpack_from(
+                    data_types.get_formatter(DataTypes.PTR), logdata, offset + ptr_size
+                )[0]
+                if database.find_string(fmt_str_ptr) is not None:
+                    return idx, database, data_types
+
+            logger.debug("Format string of domain %d message not found in any database", domain_id)
+
+        return 0, self.databases[0], self.databases_data_types[0]
 
     def parse_one_normal_msg(self, logdata, offset):
         """Parse one normal log message and print the encoded message"""
@@ -294,7 +339,14 @@ class LogParserV3(LogParser):
             level = (domain_lvl >> 4) & 0x0F
 
         level_str, color = get_log_level_str_color(level)
+
+        # Find the database which describes this message and use it for decoding it.
+        _, self.database, self.data_types = self.select_database(
+            domain_id, logdata, offset, pkg_len
+        )
         source_id_str = self.database.get_log_source_string(domain_id, source_id)
+        if len(self.databases) > 1:
+            source_id_str = f"cpu{domain_id}.{source_id_str}"
 
         # Skip over data to point to next message (save as return value)
         next_msg_offset = offset + pkg_len + data_len
@@ -352,15 +404,17 @@ class LogParserV3(LogParser):
         log_msg = fmt_str % args
 
         if level == 0:
-            print(f"{log_msg}", end='')
+            text = f"{log_msg}"
             log_prefix = ""
         else:
             log_prefix = f"[{timestamp:>10}] <{level_str}> {source_id_str}: "
-            print(f"{color}%s%s{Fore.RESET}" % (log_prefix, log_msg))
+            text = f"{color}%s%s{Fore.RESET}\n" % (log_prefix, log_msg)
 
         if data_len > 0:
             # Has hexdump data
-            self.print_hexdump(extra_data, len(log_prefix), color)
+            text += self.format_hexdump(extra_data, len(log_prefix), color)
+
+        self.emit(timestamp, text)
 
         # Point to next message
         return next_msg_offset
@@ -381,7 +435,8 @@ class LogParserV3(LogParser):
             num_dropped = struct.unpack_from(self.fmt_dropped_cnt, logdata, offset)[0]
             offset += struct.calcsize(self.fmt_dropped_cnt)
 
-            print(f"--- {num_dropped} messages dropped ---")
+            # Dropped message has no timestamp, keep it in the position of the newest message.
+            self.emit(None, f"--- {num_dropped} messages dropped ---\n")
 
         elif msg_type == MSG_TYPE_NORMAL:
             if (offset + self.get_full_msg_hdr_size() > len(logdata)) or (

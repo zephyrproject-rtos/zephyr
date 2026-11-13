@@ -28,10 +28,13 @@ LOG_HEX_SEP = "##ZLOGV1##"
 
 def parse_args():
     """Parse command line arguments"""
-    argparser = argparse.ArgumentParser(allow_abbrev=False)
-
-    argparser.add_argument("dbfile", help="Dictionary Logging Database file")
-    argparser.add_argument("logfile", help="Log Data file")
+    argparser = argparse.ArgumentParser(
+        allow_abbrev=False,
+        description=(
+            "Decode dictionary logs from a file. Pass one or more database JSON files, "
+            "then the log data file."
+        ),
+    )
     argparser.add_argument(
         "--hex", action="store_true", help="Log Data file is in hexadecimal strings"
     )
@@ -39,8 +42,19 @@ def parse_args():
         "--rawhex", action="store_true", help="Log file only contains hexadecimal log data"
     )
     argparser.add_argument("--debug", action="store_true", help="Print extra debugging information")
+    parserlib.add_sorting_arguments(argparser)
 
-    return argparser.parse_args()
+    args, remainder = argparser.parse_known_args()
+    parserlib.check_sorting_arguments(argparser, args)
+    if len(remainder) < 2:
+        argparser.error(
+            "at least one dbfile and logfile are required "
+            "(e.g. app/log_dictionary.json remote/log_dictionary.json capture.bin)"
+        )
+
+    args.logfile = remainder[-1]
+    args.dbfile = parserlib.normalize_dbfiles(remainder[:-1])
+    return args
 
 
 def read_log_file(args):
@@ -62,12 +76,10 @@ def read_log_file(args):
                 for line in hexfile.readlines():
                     hexdata += line.strip()
 
-            if LOG_HEX_SEP not in hexdata:
+            found, hexdata = parserlib.skip_to_sync(hexdata, LOG_HEX_SEP)
+            if not found:
                 logger.error("ERROR: Cannot find start of log data, exiting...")
                 sys.exit(1)
-
-            idx = hexdata.index(LOG_HEX_SEP) + len(LOG_HEX_SEP)
-            hexdata = hexdata[idx:]
 
             if len(hexdata) % 2 != 0:
                 # Make sure there are even number of characters
@@ -107,6 +119,13 @@ def read_log_file(args):
                 logdata = logdata[newline_idx + 1 :]
                 logger.debug("Found 'Process:' in the RTT header, trimmed data")
 
+        # Binary log data must contain the synchronization sequence (the equivalent of
+        # the hexadecimal separator in the hex mode). Data before it is discarded.
+        found, logdata = parserlib.skip_to_sync(logdata)
+        if not found:
+            logger.error("ERROR: Cannot find synchronization sequence, exiting...")
+            sys.exit(1)
+
     return logdata
 
 
@@ -121,14 +140,24 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+    log_parser = parserlib.get_log_parser(
+        args.dbfile, logger, latency_ms=args.latency, ts_freq=args.ts_freq
+    )
 
     logdata = read_log_file(args)
     if logdata is None:
         logger.error("ERROR: cannot read log from file: %s, exiting...", args.logfile)
         sys.exit(1)
 
-    parsed_data_offset = parserlib.parser(logdata, log_parser, logger)
+    parsed_data_offset, error = parserlib.parser(logdata, log_parser, logger)
+
+    # All data was read, print messages which are still cached for sorting.
+    log_parser.flush()
+
+    if error is not None:
+        logger.error("ERROR: Failed to process log data: %s", error)
+        sys.exit(1)
+
     if parsed_data_offset != len(logdata):
         logger.error(
             'ERROR: Not all data was parsed, %d bytes left unparsed',

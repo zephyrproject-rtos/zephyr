@@ -9,20 +9,20 @@
 
 #include <zephyr/logging/log_link.h>
 
+extern struct log_link_api mock_log_link_api;
+
 struct mock_log_link_source {
 	const char *source;
 	uint8_t clevel;
 	uint8_t rlevel;
 };
-struct mock_log_link_domain {
-	uint16_t source_cnt;
-	struct mock_log_link_source *sources;
-	const char *name;
-};
 
 struct mock_log_link {
-	uint8_t domain_cnt;
-	struct mock_log_link_domain **domains;
+	uint16_t source_cnt;
+	struct mock_log_link_source *sources;
 };
+
+#define MOCK_LOG_LINK_DEFINE(_name, _ctx) \
+	LOG_LINK_DEFINE(_name, mock_log_link_api, _ctx)
 
 #endif /* MOCK_LOG_LINK_H__ */
