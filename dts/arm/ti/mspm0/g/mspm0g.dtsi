@@ -194,6 +194,11 @@
 	};
 };
 
+&run0 {
+	exit-latency-us = <2>; /* 1.3us */
+	min-residency-us = <5000>;
+};
+
 &run1 {
 	exit-latency-us = <2>; /* 1.5us */
 	min-residency-us = <5000>;
