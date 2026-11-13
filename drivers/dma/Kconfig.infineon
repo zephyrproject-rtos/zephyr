@@ -19,14 +19,24 @@ config DMA_INFINEON_CAT1_PDL
 	default y
 	depends on DT_HAS_INFINEON_DMA_ENABLED
 	depends on !USE_INFINEON_LEGACY_HAL
+	depends on !DMA_INFINEON_DW
 	select USE_INFINEON_DMA
 	help
 	  This option enables the PDL-based DMA driver for Infineon CAT1 family.
 
+config DMA_INFINEON_DW
+	bool "Infineon DataWire (P-DMA) register-level driver"
+	default y
+	depends on DT_HAS_INFINEON_DMA_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	help
+	  This option enables the register-level DataWire (P-DMA) driver for
+	  Infineon CAT1 family. When disabled, the PDL-based driver is used.
+
 config DMA_INFINEON_DESCRIPTOR_COUNT
 	int "Number of available descriptors per channel"
 	default 2
-	depends on DMA_INFINEON_CAT1_PDL
+	depends on DMA_INFINEON_CAT1_PDL || DMA_INFINEON_DW
 	help
 	  This option determines the number of descriptors that are allocated for each DMA
 	  channel. This must be set to a value of 1 or greater.
