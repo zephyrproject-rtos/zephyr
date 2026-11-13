@@ -3073,14 +3073,18 @@ static inline void ticker_job_list_inquire(struct ticker_instance *instance)
 
 	users = &instance->users[0];
 	count_user = instance->count_user;
-	/* Traverse user operation queue - first to last (with wrap) */
+	/* Traverse user operation queue - first to middle (with wrap).
+	 * Operations enqueued beyond middle, by a user context that preempted
+	 * the ticker job, have not been managed yet and will be handled in the
+	 * next ticker job.
+	 */
 	while (count_user--) {
 		struct ticker_user_op *user_op;
 		struct ticker_user *user;
 
 		user = &users[count_user];
 		user_op = &user->user_op[0];
-		while (user->first != user->last) {
+		while (user->first != user->middle) {
 			uint8_t first;
 
 			ticker_job_op_inquire(instance, &user_op[user->first]);
