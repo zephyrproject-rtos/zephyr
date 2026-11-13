@@ -1815,7 +1815,7 @@ ZTEST(lib_json_test, test_json_2dim_obj_arr_decoding)
 ZTEST(lib_json_test, test_json_string_array_size)
 {
 	int ret;
-	struct elt elt_ts;
+	struct elt elt_ts = {0};
 	char encoded[] = "{\"name_buf\":\"a12345678\"}";
 
 	ret = json_obj_parse(encoded, sizeof(encoded),
@@ -1831,7 +1831,7 @@ ZTEST(lib_json_test, test_json_string_array_size)
 ZTEST(lib_json_test, test_json_string_array_empty)
 {
 	int ret;
-	struct elt elt_ts;
+	struct elt elt_ts = {0};
 	char encoded[] = "{\"name_buf\":\"\"}";
 
 	ret = json_obj_parse(encoded, sizeof(encoded),
@@ -1846,7 +1846,7 @@ ZTEST(lib_json_test, test_json_string_array_empty)
 ZTEST(lib_json_test, test_json_string_array_max)
 {
 	int ret;
-	struct elt elt_ts;
+	struct elt elt_ts = {0};
 	char encoded[] = "{\"name_buf\":\"a123456789\"}";
 
 	ret = json_obj_parse(encoded, sizeof(encoded),
