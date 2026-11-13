@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <zephyr/drivers/dai.h>
 #include <zephyr/irq.h>
@@ -29,10 +30,6 @@ static const uint32_t dmic_base[4] = {PDM0, PDM1, PDM2, PDM3};
 
 /* global data shared between all dmic instances */
 struct dai_dmic_global_shared dai_dmic_global;
-
-/* Helper macro to read 64-bit data using two 32-bit data read */
-#define sys_read64(addr)    (((uint64_t)(sys_read32(addr + 4)) << 32) | \
-			     sys_read32(addr))
 
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *spec_config);
 
