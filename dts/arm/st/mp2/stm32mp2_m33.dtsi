@@ -34,7 +34,8 @@
 			reg = <0x400b0000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI2, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI2, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(10) NO_SEL>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
 			st,spi-data-width = "full-4-to-32-bit";
@@ -46,7 +47,8 @@
 			reg = <0x400c0000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(10) NO_SEL>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
 			st,spi-data-width = "full-4-to-32-bit";
@@ -56,7 +58,8 @@
 		usart2: serial@400e0000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x400e0000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(USART2, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(USART2, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(8) NO_SEL>;
 			resets = <&rctl STM32_RESET(USART2, STM32_RST)>;
 			status = "disabled";
 		};
@@ -64,7 +67,8 @@
 		usart3: serial@400f0000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x400f0000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(USART3, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(USART3, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(9) NO_SEL>;
 			resets = <&rctl STM32_RESET(USART3, STM32_RST)>;
 			status = "disabled";
 		};
@@ -72,7 +76,8 @@
 		uart4: serial@40100000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40100000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART4, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(UART4, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(8) NO_SEL>;
 			resets = <&rctl STM32_RESET(UART4, STM32_RST)>;
 			status = "disabled";
 		};
@@ -80,7 +85,8 @@
 		uart5: serial@40110000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40110000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART5, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(UART5, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(9) NO_SEL>;
 			resets = <&rctl STM32_RESET(UART5, STM32_RST)>;
 			status = "disabled";
 		};
@@ -91,7 +97,8 @@
 			#address-cells = <3>;
 			#size-cells = <0>;
 			resets = <&rctl STM32_RESET(I3C1, STM32_RST)>;
-			clocks = <&rcc STM32_CLOCK(I3C1, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I3C1, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(12) NO_SEL>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};
@@ -102,7 +109,8 @@
 			#address-cells = <3>;
 			#size-cells = <0>;
 			resets = <&rctl STM32_RESET(I3C2, STM32_RST)>;
-			clocks = <&rcc STM32_CLOCK(I3C2, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(I3C2, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(12) NO_SEL>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};
@@ -110,7 +118,8 @@
 		usart6: serial@40220000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40220000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(USART6, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(USART6, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(20) NO_SEL>;
 			resets = <&rctl STM32_RESET(USART6, STM32_RST)>;
 			status = "disabled";
 		};
@@ -120,7 +129,8 @@
 			reg = <0x40230000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI1, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI1, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(16) NO_SEL>;
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
 			st,spi-data-width = "full-4-to-32-bit";
@@ -132,7 +142,8 @@
 			reg = <0x40240000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI4, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI4, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(17) NO_SEL>;
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
 			st,spi-data-width = "full-4-to-16-bit";
@@ -144,7 +155,8 @@
 			reg = <0x40280000 DT_SIZE_K(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(SPI5, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(SPI5, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(17) NO_SEL>;
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
 			st,spi-data-width = "full-4-to-16-bit";
@@ -155,7 +167,8 @@
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x402d0000 0x400>, <0x40310000 0xd50>;
 			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(26) NO_SEL>;
 			bosch,mram-cfg = <0x0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
@@ -164,7 +177,8 @@
 			compatible = "st,stm32h7-fdcan";
 			reg = <0x402e0000 0x400>, <0x40310000 0x1aa0>;
 			reg-names = "m_can", "message_ram";
-			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(26) NO_SEL>;
 			bosch,mram-cfg = <0xd50 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
@@ -172,7 +186,8 @@
 		usart1: serial@40330000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40330000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(USART1, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(USART1, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(19) NO_SEL>;
 			resets = <&rctl STM32_RESET(USART1, STM32_RST)>;
 			status = "disabled";
 		};
@@ -180,7 +195,8 @@
 		uart7: serial@40370000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40370000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(UART7, STM32_CLK)>;
+			clocks = <&rcc STM32_CLOCK(UART7, STM32_CLK)>,
+				 <&rcc STM32_SRC_FLEXGEN(21) NO_SEL>;
 			resets = <&rctl STM32_RESET(UART7, STM32_RST)>;
 			status = "disabled";
 		};
