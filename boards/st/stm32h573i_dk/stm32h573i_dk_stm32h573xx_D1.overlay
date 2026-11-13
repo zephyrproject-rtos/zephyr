@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* SAI2_MCLK_A output, driven from PLL3_P (25MHz / 2 * 28 / 31) */
+	wm8904_fll_ref: sai2a-mclk {
+		compatible = "fixed-clock";
+		clock-frequency = <11290322>;
+		#clock-cells = <0>;
+	};
+};
+
+&i2c4 {
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		clocks = <&wm8904_fll_ref>;
+		clock-names = "mclk";
+		input-pga-select = <1>;
+
+		wolfson,mic-bias-voltage = "avdd-9-10";
+		status = "okay";
+	};
+};
