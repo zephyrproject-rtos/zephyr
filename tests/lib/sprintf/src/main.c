@@ -13,6 +13,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/test_toolchain.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -888,6 +889,24 @@ ZTEST(sprintf, test_put)
 	ret = fputc('T', stdin);
 	zassert_equal(ret, EOF, "fputc to stdin");
 }
+
+#ifdef CONFIG_MINIMAL_LIBC
+/**
+ * @brief Verify character output returns the converted byte.
+ */
+ZTEST(sprintf, test_put_unsigned_char)
+{
+	const int above = 'T' + (UCHAR_MAX + 1);
+	const int below = 'T' - (UCHAR_MAX + 1);
+	int ret;
+
+	ret = fputc(above, stdout);
+	zexpect_equal(ret, 'T', "fputc to stdout returned %d", ret);
+
+	ret = fputc(below, stderr);
+	zexpect_equal(ret, 'T', "fputc to stderr returned %d", ret);
+}
+#endif
 
 /**
  *
