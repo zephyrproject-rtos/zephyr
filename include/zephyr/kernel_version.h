@@ -31,9 +31,29 @@ extern "C" {
  * Each of these elements must therefore be in the range 0 to 255, inclusive.
  *
  * Part 2: The least significant byte is reserved for future use.
+ *
+ * @satisfies ZEP-SRS-39-1
+ */
+
+/**
+ * @brief Extract the major release from a kernel version code.
+ *
+ * @satisfies ZEP-SRS-39-3
  */
 #define SYS_KERNEL_VER_MAJOR(ver) (((ver) >> 24) & 0xFF)
+
+/**
+ * @brief Extract the minor release from a kernel version code.
+ *
+ * @satisfies ZEP-SRS-39-4
+ */
 #define SYS_KERNEL_VER_MINOR(ver) (((ver) >> 16) & 0xFF)
+
+/**
+ * @brief Extract the patchlevel release from a kernel version code.
+ *
+ * @satisfies ZEP-SRS-39-5
+ */
 #define SYS_KERNEL_VER_PATCHLEVEL(ver) (((ver) >> 8) & 0xFF)
 
 /* kernel version routines */
@@ -45,6 +65,8 @@ extern "C" {
  * file "kernel_version.h".
  *
  * @return kernel version
+ *
+ * @satisfies ZEP-SRS-39-2
  */
 uint32_t sys_kernel_version_get(void);
 
