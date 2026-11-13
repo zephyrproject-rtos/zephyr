@@ -1264,7 +1264,9 @@ class Node:
     maps:
       A dictionary that contains a list of MapEntry instances associated with each string key.
       The key is the basename-part of the node property name, the value is
-      the entries of the property value.
+      the entries of the property value. Only nexus maps are included: a '<space>-map'
+      property is parsed if the node has a '#<space>-cells' property. The 'msi-map',
+      'iommu-map' and 'phy-map' properties are not nexus maps and are never parsed.
 
     is_pci_device:
       True if the node is a PCI device.
@@ -1591,7 +1593,20 @@ class Node:
 
             return 0
 
-        for prop in [v for k, v in self._node.props.items() if k.endswith("-map")]:
+        def is_nexus_map(prop_name: str) -> bool:
+            """Return True if *prop_name* is a nexus map property of this node."""
+
+            # msi-map and iommu-map use the PCI requester-ID layout and phy-map is
+            # a bitmap, not the nexus layout, although '#<space>-cells' exists.
+            non_nexus_maps = frozenset({"msi-map", "iommu-map", "phy-map"})
+
+            return (
+                prop_name.endswith("-map")
+                and prop_name not in non_nexus_maps
+                and f"#{prop_name[:-4]}-cells" in self._node.props
+            )
+
+        for prop in [v for k, v in self._node.props.items() if is_nexus_map(k)]:
             specifier_space = prop.name[:-4]  # Strip '-map'
             entries: list[MapEntry] = []
             raw = prop.value

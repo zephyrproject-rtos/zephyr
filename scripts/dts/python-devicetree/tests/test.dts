@@ -484,6 +484,28 @@
 	};
 
 	//
+	// Test that only nexus maps are parsed into Node.maps
+	//
+
+	map-exclusions {
+		// '*-map' without '#*-cells'
+		no-cells {
+			foo-map = <1 2 3>;
+		};
+
+		// PCI requester-ID layout, not a nexus map
+		msi {
+			#msi-cells = <1>;
+			msi-map = <0 &{/map-exclusions/msi} 0 1>;
+		};
+
+		// Boolean property on reserved-memory nodes
+		no-map-node {
+			no-map;
+		};
+	};
+
+	//
 	// For testing Node.props with 'default:' values in binding
 	//
 

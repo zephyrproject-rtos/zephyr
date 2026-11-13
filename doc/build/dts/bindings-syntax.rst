@@ -1146,6 +1146,12 @@ Nexus nodes and maps
 All ``phandle-array`` type properties support mapping through ``*-map``
 properties, e.g. ``gpio-map``, as defined by the Devicetree specification.
 
+Map macros are generated for a ``<space>-map`` property only if its node also has a
+``#<space>-cells`` property. ``msi-map``, ``iommu-map`` and ``phy-map`` are excluded,
+because they are not nexus maps although a ``#msi-cells``, ``#iommu-cells`` or ``#phy-cells``
+property exists. The first two map PCI requester IDs and end each entry with a length cell,
+and ``phy-map`` is a bitmap of PHY addresses.
+
 This is used, for example, to define connector nodes for common breakout
 headers, such as the ``arduino_header`` nodes that are conventionally defined
 in the devicetrees for boards with Arduino compatible expansion headers.
