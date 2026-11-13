@@ -144,7 +144,8 @@
 			#size-cells = <1>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
-					       "xtheadba", "xtheadbb", "xtheadbs", "xtheadcmo";
+					       "xtheadba", "xtheadbb", "xtheadbs",
+					       "xtheadsync", "xtheadcmo";
 			status = "okay";
 
 			clic: clic@e0800000 {
@@ -472,15 +473,15 @@
 		wifi0: wifi@24000000 {
 			compatible = "bflb,wifi4";
 			reg = <0x24000000 0x1000>;
+
 			interrupts = <70 1>, <79 1>;
 			interrupt-names = "wifi", "wifi-ipc";
 			interrupt-parent = <&clic>;
 			clocks = <&clocks BL808_CLKID_CLK_WIFIPLL>;
-			status = "disabled";
-
 			pwr-table-11b = <17 17 17 17>;
 			pwr-table-11g = <15 15 15 15 15 15 15 15>;
 			pwr-table-11n = <14 14 14 14 14 14 14 14>;
+			status = "disabled";
 		};
 
 		psram_uhs_ctrl: psram-uhs@3000f000 {

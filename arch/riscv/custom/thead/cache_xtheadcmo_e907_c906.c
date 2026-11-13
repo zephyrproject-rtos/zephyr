@@ -8,8 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 
-/* "a Hardware CSR" */
-#define THEAD_MHCR "0x7C1"
+#include "cache_xtheadcmo_csr.h"
 
 void arch_icache_enable(void)
 {
@@ -23,7 +22,7 @@ void arch_icache_enable(void)
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
 		: "=r"(tmp));
-	tmp |= (1 << 0);
+	tmp |= THEAD_MHCR_IE;
 	__asm__ volatile(
 		"csrw " THEAD_MHCR ", %0"
 		:
@@ -31,6 +30,7 @@ void arch_icache_enable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 }
 
@@ -46,7 +46,7 @@ void arch_dcache_enable(void)
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
 		: "=r"(tmp));
-	tmp |= (1 << 1) | (1 << 2) | (1 << 3) | (1 << 4);
+	tmp |= THEAD_MHCR_DE | THEAD_MHCR_WB | THEAD_MHCR_WA | THEAD_MHCR_RS;
 	__asm__ volatile(
 		"csrw " THEAD_MHCR ", %0"
 		:
@@ -54,6 +54,7 @@ void arch_dcache_enable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 }
 
@@ -69,7 +70,7 @@ void arch_icache_disable(void)
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
 		: "=r"(tmp));
-	tmp &= ~(1 << 0);
+	tmp &= ~THEAD_MHCR_IE;
 	__asm__ volatile(
 		"csrw " THEAD_MHCR ", %0"
 		:
@@ -77,6 +78,7 @@ void arch_icache_disable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 }
 
@@ -92,7 +94,7 @@ void arch_dcache_disable(void)
 	__asm__ volatile(
 		"csrr %0, " THEAD_MHCR
 		: "=r"(tmp));
-	tmp &= ~((1 << 1) | (1 << 2) | (1 << 3) | (1 << 4));
+	tmp &= ~(THEAD_MHCR_DE | THEAD_MHCR_WB | THEAD_MHCR_WA | THEAD_MHCR_RS);
 	__asm__ volatile(
 		"csrw " THEAD_MHCR ", %0"
 		:
@@ -100,5 +102,6 @@ void arch_dcache_disable(void)
 	__asm__ volatile (
 		"fence\n"
 		"fence.i\n"
+		::: "memory"
 	);
 }

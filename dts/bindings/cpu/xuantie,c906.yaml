@@ -1,0 +1,16 @@
+# Copyright (c) 2026 MASSDRIVER EI
+# SPDX-License-Identifier: Apache-2.0
+
+title: Xuantie C906 Core CPU
+
+description: |
+  C906 is an 'ultra high-performance' 64-bit CPU built on the RISC-V instruction set architecture.
+
+compatible: "xuantie,c906"
+
+include: riscv-common.yaml
+
+properties:
+  hardware-exec-breakpoint-count:
+    type: int
+    description: Number of hardware break points
