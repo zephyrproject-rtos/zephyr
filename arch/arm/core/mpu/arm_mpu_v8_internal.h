@@ -743,10 +743,35 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 {
 	int mpu_reg_index = static_regions_num;
 
+#if defined(CONFIG_CPU_CORTEX_M)
+	/* Index one past the highest dynamic MPU region ever programmed.
+	 * All regions at or above this index are known to be disabled, so
+	 * they do not need to be cleared again on every reconfiguration
+	 * (i.e. on every context switch).  UINT8_MAX marks the initial,
+	 * unknown hardware state, making the first call clear all regions
+	 * above the static ones.  A single instance is sufficient: on
+	 * uniprocessor Cortex-M all callers are serialized (context
+	 * switches cannot nest and user-mode entry runs with IRQs locked),
+	 * as the caller's static dynamic_regions[] buffer already assumes.
+	 */
+	static uint8_t dyn_regions_end = UINT8_MAX;
+
+	if (dyn_regions_end == UINT8_MAX) {
+		dyn_regions_end = get_num_regions();
+	}
+
+	/* Disable the dynamic MPU regions programmed by the previous call
+	 * that are not about to be reprogrammed below.
+	 */
+	for (int i = mpu_reg_index; i < dyn_regions_end; i++) {
+		mpu_clear_region(i);
+	}
+#else
 	/* Disable all MPU regions except for the static ones. */
 	for (int i = mpu_reg_index; i < get_num_regions(); i++) {
 		mpu_clear_region(i);
 	}
+#endif
 
 #if defined(CONFIG_MPU_GAP_FILLING)
 	/* Reset MPU regions inside which dynamic memory regions may
@@ -780,6 +805,19 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 		regions_num, mpu_reg_index, true);
 
 #endif /* CONFIG_MPU_GAP_FILLING */
+
+#if defined(CONFIG_CPU_CORTEX_M)
+	if (mpu_reg_index == -EINVAL) {
+		/* A partial failure may have left regions enabled above the
+		 * mark: mark the hardware state unknown again so that the
+		 * next call clears everything above the static regions.
+		 */
+		dyn_regions_end = UINT8_MAX;
+	} else {
+		dyn_regions_end = (uint8_t)mpu_reg_index;
+	}
+#endif
+
 	return mpu_reg_index;
 }
 
