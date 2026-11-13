@@ -1,0 +1,11 @@
+# Copyright (c) 2026 ASPEED Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_ASPEED_HWRNG
+	bool "ASPEED HWRNG entropy driver"
+	default y
+	depends on DT_HAS_ASPEED_HWRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the driver for the hardware random number generator in the
+	  ASPEED SCU, a control and a data register.
