@@ -1,0 +1,14 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AP33772S
+	bool "Diodes AP33772S USB PD3.1 EPR sink controller sensor driver"
+	default y
+	depends on DT_HAS_DIODES_AP33772S_ENABLED
+	select I2C
+	select GPIO
+	help
+	  Enable driver for the Diodes Incorporated AP33772S I2C USB PD3.1
+	  EPR sink controller. Exposes output voltage, current, and die
+	  temperature via the sensor API, and allows PDO negotiation via
+	  sensor attributes.
