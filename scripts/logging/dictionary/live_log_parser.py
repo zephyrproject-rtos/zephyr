@@ -205,9 +205,31 @@ def main():
     else:
         logger.setLevel(logging.INFO)
 
-    log_parser = parserlib.get_log_parser(args.dbfile, logger)
+    def load_log_parser():
+        """Read the database files and create the log parser. Returns None on failure."""
+        try:
+            return parserlib.get_log_parser(args.dbfile, logger)
+        except Exception as e:  # noqa: BLE001
+            logger.error("ERROR: Failed to load the log database: %s", e)
+            return None
+
+    # Stdin in file mode is fed with binary log data converted from a hexadecimal UART stream
+    # (after the ##ZLOGV1## marker). That stream does not include the binary synchronization
+    # sequence, so there is nothing to wait for and no way to resynchronize.
+    stdin_mode = args.mode == "file" and args.filepath is None
 
     data = b''
+    log_parser = None
+    # Input data is skipped until the synchronization sequence is found. The database files are
+    # read only after that, so if the target is reflashed (and the databases changed), the new
+    # databases are picked up when the synchronization sequence is received again.
+    synced = False
+
+    if stdin_mode:
+        log_parser = load_log_parser()
+        if log_parser is None:
+            sys.exit(1)
+        synced = True
 
     if args.mode == "serial":
         reader = SerialReader(args.port, args.baudrate)
@@ -220,14 +242,57 @@ def main():
     else:
         raise ValueError("Invalid mode selected. Use 'serial' or 'file'.")
 
+    # Set when buffered data has to be searched for the synchronization sequence before waiting
+    # for any new data.
+    rescan = False
+
     with reader.open():
         while True:
-            if hasattr(reader, 'fileno') and sys.platform != "win32":
-                _, _, _ = select.select([reader], [], [])
+            if rescan:
+                rescan = False
             else:
-                time.sleep(args.polling_interval)
-            data += reader.read_non_blocking()
-            parsed_data_offset = parserlib.parser(data, log_parser, logger)
+                if hasattr(reader, 'fileno') and sys.platform != "win32":
+                    _, _, _ = select.select([reader], [], [])
+                else:
+                    time.sleep(args.polling_interval)
+                data += reader.read_non_blocking()
+
+            if not synced:
+                synced, remaining = parserlib.skip_to_sync(data)
+                if synced:
+                    logger.debug("Synchronization sequence found")
+                elif len(remaining) != len(data):
+                    logger.debug(
+                        "Skipped %d bytes while waiting for sync", len(data) - len(remaining)
+                    )
+                data = remaining
+                if not synced:
+                    continue
+
+                # Database files are read every time the synchronization is (re)established,
+                # because they may have changed since the previous one.
+                log_parser = load_log_parser()
+                if log_parser is None:
+                    logger.error("Waiting for the next synchronization sequence...")
+                    synced = False
+                    continue
+
+            parsed_data_offset, error = parserlib.parser(data, log_parser, logger)
+            if error is not None:
+                # The data does not match the database, most likely the target was reflashed
+                # and the databases changed. Look for the synchronization sequence in the data
+                # (and in the data which will follow).
+                if stdin_mode:
+                    logger.error("ERROR: Failed to process log data: %s", error)
+                    sys.exit(1)
+                logger.error(
+                    "ERROR: Failed to process log data: %s. Waiting for synchronization...", error
+                )
+                log_parser = None
+                synced = False
+                rescan = True
+                continue
+
             data = data[parsed_data_offset:]
 
 
