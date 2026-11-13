@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * KIT_PSC3M5_EVK for the I2C fault injection suite.  The controller under test
+ * is SCB0 (i2c0) on P9[0] SCL and P9[2] SDA, at J3.10 and J3.9 (kit user
+ * guide 002-39385 Rev. *B, Table 3).  The kit pulls both lines up to VTARG_REF
+ * through 4.7 kOhm (R50, R51), so the bus needs no shield for its pull-ups.
+ *
+ * i2c_bus_fault fixture:
+ *   - J5.25 (P9[1]) to J5.21 (SCL)
+ *   - J5.11 (P9[4]) to J5.23 (SDA)
+ *
+ * P9[4] is also routed to the Shield2Go headers (J6.5, J18.5), so fit no
+ * Shield2Go board while it is wired.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		i2c-dut = &i2c0;
+	};
+
+	zephyr,user {
+		scl-gpios = <&gpio_prt9 1 GPIO_ACTIVE_HIGH>;
+		sda-gpios = <&gpio_prt9 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+/* Enables CONFIG_I2C_INFINEON_BUS_RECOVERY for the recovery tests. */
+&i2c0 {
+	scl-gpios = <&gpio_prt9 0 GPIO_OPEN_DRAIN>;
+	sda-gpios = <&gpio_prt9 2 GPIO_OPEN_DRAIN>;
+};
