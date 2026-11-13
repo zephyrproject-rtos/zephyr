@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE comparator_handlers.c)
 zephyr_library_include_directories_ifdef(CONFIG_COMPARATOR_INFINEON_HPPASS_CSG ${ZEPHYR_BASE}/drivers/mfd)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_COMPARATOR_ADC comparator_adc.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_ESP32_ANA_CMPR comparator_esp32_ana_cmpr.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_FAKE_COMP comparator_fake_comp.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_INFINEON_AUTANALOG_PTCOMP comparator_infineon_autanalog_ptcomp.c)
