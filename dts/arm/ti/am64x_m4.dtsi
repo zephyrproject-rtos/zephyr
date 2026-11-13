@@ -12,6 +12,8 @@
 #include <ti/am64x_mcu.dtsi>
 
 / {
+	interrupt-parent = <&nvic>;
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -51,35 +53,28 @@
 
 &mcu_uart0 {
 	interrupts = <24 4>;
-	interrupt-parent = <&nvic>;
 };
 
 &mcu_uart1 {
 	interrupts = <25 4>;
-	interrupt-parent = <&nvic>;
 };
 
 &mcu_i2c0 {
 	interrupts = <17 4>;
-	interrupt-parent = <&nvic>;
 };
 
 &mcu_i2c1 {
 	interrupts = <18 4>;
-	interrupt-parent = <&nvic>;
 };
 
 &main_mbox6 {
 	interrupts = <56 4>;
-	interrupt-parent = <&nvic>;
 };
 
 &main_mbox7 {
 	interrupts = <57 4>;
-	interrupt-parent = <&nvic>;
 };
 
 &mcu_rti0 {
 	interrupts = <19 4>;
-	interrupt-parent = <&nvic>;
 };

@@ -13,6 +13,8 @@
 #include <ti/k3-am62-main.dtsi>
 
 / {
+	interrupt-parent = <&nvic>;
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -84,6 +86,7 @@
 	mcu_rti0: watchdog@4880000 {
 		compatible = "ti,j7-rti-wdt";
 		reg = <0x04880000 0x100>;
+		interrupts = <19 4>;
 		clock-frequency = <DT_FREQ_M(25)>;
 		status = "disabled";
 	};
@@ -92,7 +95,6 @@
 		compatible = "ti,omap-i2c";
 		reg = <0x04900000 0x100>;
 		interrupts = <17 4>;
-		interrupt-parent = <&nvic>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
@@ -102,7 +104,6 @@
 		compatible = "ns16550";
 		reg = <0x04a00000 0x200>;
 		interrupts = <24 4>;
-		interrupt-parent = <&nvic>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		current-speed = <115200>;
 		reg-shift = <2>;
@@ -113,7 +114,6 @@
 		compatible = "ti,omap-mailbox";
 		reg = <0x29000000 0x200>;
 		interrupts = <50 4>;
-		interrupt-parent = <&nvic>;
 		usr-id = <2>;
 		#mbox-cells = <1>;
 	};
