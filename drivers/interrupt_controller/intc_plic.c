@@ -943,14 +943,20 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 
 #define PLIC_INTC_IRQ_FUNC_DECLARE(n) static void plic_irq_config_func_##n(void)
 
+#ifdef CONFIG_RISCV_S_MODE
+#define PLIC_HART_IRQ(n) RISCV_IRQ_SEXT
+#else
+#define PLIC_HART_IRQ(n) DT_INST_IRQN(n)
+#endif
+
 #define PLIC_INTC_IRQ_FUNC_DEFINE(n)                                                               \
 	static void plic_irq_config_func_##n(void)                                                 \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0);       \
-		irq_enable(DT_INST_IRQN(n));                                                       \
+		IRQ_CONNECT(PLIC_HART_IRQ(n), 0, plic_irq_handler, DEVICE_DT_INST_GET(n), 0);      \
+		irq_enable(PLIC_HART_IRQ(n));                                                      \
 	}
 
-#define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), DT_INST_IRQN(n)), (i,))
+#define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), PLIC_HART_IRQ(n)), (i,))
 #define PLIC_HART_CONTEXT_DECLARE(n)                                                               \
 	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CHILD_NUM(DT_PATH(cpus))] = {    \
 		LISTIFY(DT_INST_NUM_IRQS(n), HART_CONTEXTS, (), n)}
