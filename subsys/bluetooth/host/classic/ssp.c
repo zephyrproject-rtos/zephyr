@@ -625,6 +625,21 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
 }
 
+static bool io_capa_resp_valid(const struct bt_hci_evt_io_capa_resp *evt)
+{
+	if (evt->authentication > BT_HCI_GENERAL_BONDING_MITM) {
+		LOG_WRN("Invalid remote authentication requirements");
+		return false;
+	}
+
+	if (evt->capability > BT_IO_NO_INPUT_OUTPUT) {
+		LOG_WRN("Invalid remote io capability requirements");
+		return false;
+	}
+
+	return true;
+}
+
 void bt_hci_io_capa_resp(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_resp *evt = (void *)buf->data;
@@ -633,23 +648,30 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 	LOG_DBG("remote %s, IOcapa 0x%02x, auth 0x%02x", bt_addr_str(&evt->bdaddr), evt->capability,
 		evt->authentication);
 
-	if (evt->authentication > BT_HCI_GENERAL_BONDING_MITM) {
-		LOG_ERR("Invalid remote authentication requirements");
-		io_capa_neg_reply(&evt->bdaddr,
-				  BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
-		return;
-	}
-
-	if (evt->capability > BT_IO_NO_INPUT_OUTPUT) {
-		LOG_ERR("Invalid remote io capability requirements");
-		io_capa_neg_reply(&evt->bdaddr,
-				  BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
-		return;
-	}
-
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
-	if (!conn) {
+	if (conn == NULL) {
 		LOG_ERR("Unable to find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (!io_capa_resp_valid(evt)) {
+		if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR)) {
+			int err;
+
+			/* The HCI_IO_Capability_Request event has been answered already */
+			ssp_pairing_complete(conn, bt_security_err_get(BT_HCI_ERR_AUTH_FAIL));
+			err = bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+			if (err != 0) {
+				LOG_WRN("Failed to disconnect (err %d)", err);
+			}
+		} else {
+			/* A responder gets the HCI_IO_Capability_Request event next
+			 * (Core Vol 2, Part F, 4.2.7)
+			 */
+			atomic_set_bit(conn->flags, BT_CONN_BR_IO_CAPA_INVALID);
+		}
+
+		bt_conn_unref(conn);
 		return;
 	}
 
@@ -697,6 +719,12 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 	conn = bt_conn_lookup_addr_br(&evt->bdaddr);
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_BR_IO_CAPA_INVALID)) {
+		io_capa_neg_reply(&evt->bdaddr, BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL);
+		bt_conn_unref(conn);
 		return;
 	}
 
