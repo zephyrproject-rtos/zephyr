@@ -76,7 +76,7 @@ struct i2c_ctrl_config {
 
 /* Driver data */
 struct i2c_ctrl_data {
-	struct k_sem lock_sem;               /* mutex of i2c controller */
+	struct k_mutex lock_mutex;           /* mutex of i2c controller */
 	struct k_sem sync_sem;               /* semaphore used for synchronization */
 	uint32_t bus_freq;                   /* operation freq of i2c */
 #if defined(CONFIG_I2C_NPCX_INVALID_STOP_WORKAROUND)

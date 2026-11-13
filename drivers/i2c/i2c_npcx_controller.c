@@ -732,14 +732,14 @@ void npcx_i2c_ctrl_mutex_lock(const struct device *i2c_dev)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 
-	k_sem_take(&data->lock_sem, K_FOREVER);
+	(void)k_mutex_lock(&data->lock_mutex, K_FOREVER);
 }
 
 void npcx_i2c_ctrl_mutex_unlock(const struct device *i2c_dev)
 {
 	struct i2c_ctrl_data *const data = i2c_dev->data;
 
-	k_sem_give(&data->lock_sem);
+	(void)k_mutex_unlock(&data->lock_mutex);
 }
 
 int npcx_i2c_ctrl_configure(const struct device *i2c_dev, uint32_t dev_config)
@@ -1196,7 +1196,7 @@ static int i2c_ctrl_init(const struct device *dev)
 #endif /* CONFIG_I2C_TARGET */
 
 	/* initialize mutex and semaphore for i2c/smb controller */
-	k_sem_init(&data->lock_sem, 1, 1);
+	k_mutex_init(&data->lock_mutex);
 	k_sem_init(&data->sync_sem, 0, K_SEM_MAX_LIMIT);
 
 	/* Initialize driver status machine */
