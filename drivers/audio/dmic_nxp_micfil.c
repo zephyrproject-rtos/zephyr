@@ -614,10 +614,37 @@ static int nxp_micfil_init(const struct device *dev)
 	return 0;
 }
 
+static int nxp_micfil_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	const struct nxp_micfil_cfg *cfg = dev->config;
+	struct nxp_micfil_drv_data *data = dev->data;
+	/*
+	 * nxp_micfil_configure() only accepts hardware channels that fit in
+	 * hw_chan[] and are enabled in devicetree, so report only those.
+	 */
+	uint8_t usable_mask = cfg->ch_enabled_mask & BIT_MASK(ARRAY_SIZE(data->hw_chan));
+	uint8_t max_chan = (uint8_t)POPCOUNT(usable_mask);
+
+	memset(caps, 0, sizeof(struct audio_caps));
+
+	caps->min_total_channels = MIN(1U, max_chan);
+	caps->max_total_channels = max_chan;
+	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_16000;
+	/* Currently, driver supports only 32-bit samples */
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = 4;
+	caps->min_frame_interval = 1000;   /* 1ms minimum */
+	caps->max_frame_interval = 100000; /* 100ms maximum */
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static DEVICE_API(dmic, dmic_ops) = {
 	.configure = nxp_micfil_configure,
 	.trigger = nxp_micfil_trigger,
 	.read = nxp_micfil_read,
+	.get_caps = nxp_micfil_get_caps,
 };
 
 #define NXP_MICFIL_IRQ_CONFIG(inst)							\

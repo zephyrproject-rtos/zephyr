@@ -6,7 +6,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/audio/audio_caps.h>
 #include <zephyr/drivers/i2s.h>
+
 #include "i2s_api_test.h"
 
 #define INVALID_TRIGGER_SETTING 7
@@ -198,4 +200,148 @@ ZTEST(i2s_errors, test_i2s_write_exhausted_slab_no_wait)
 ZTEST_USER(i2s_errors, test_i2s_write_exhausted_slab_timeout)
 {
 	write_to_exhausted_slab(TIMEOUT, -EAGAIN);
+}
+
+/**
+ * @brief Test the i2s_get_caps API function
+ *
+ * This test validates the I2S get_caps API functionality by testing both
+ * successful operation and error handling scenarios.
+ */
+ZTEST_USER(i2s_errors, test_i2s_get_caps)
+{
+	int ret;
+	struct audio_caps caps;
+
+	/**
+	 * Test Case 1: Normal operation - Valid parameters
+	 * Expected: Function should return 0 (success) or -ENOSYS (not implemented)
+	 */
+	ret = i2s_get_caps(dev_i2s, &caps, I2S_DIR_RX);
+
+	/* Handle case where driver doesn't implement get_caps */
+	if (ret == -ENOSYS) {
+		TC_PRINT("I2S get_caps not implemented by driver\n");
+		ztest_test_skip();
+		return;
+	}
+
+	/* Verify successful execution */
+	zassert_equal(ret, 0, "i2s_get_caps should return 0, got %d", ret);
+
+	/**
+	 * Test Case 2: Capability value validation
+	 * Verify that returned capability values are within reasonable ranges
+	 */
+	zassert_true(caps.min_total_channels >= 1, "min_total_channels should be >= 1, got %u",
+		     caps.min_total_channels);
+
+	zassert_true(caps.max_total_channels >= caps.min_total_channels,
+		     "max_total_channels (%u) should be >= min_total_channels (%u)",
+		     caps.max_total_channels, caps.min_total_channels);
+
+	zassert_not_equal(caps.supported_sample_rates, 0, "supported_sample_rates should not be 0");
+
+	zassert_not_equal(caps.supported_bit_widths, 0, "supported_bit_widths should not be 0");
+
+	zassert_true(caps.min_num_buffers >= 1, "min_num_buffers should be >= 1, got %u",
+		     caps.min_num_buffers);
+
+	zassert_true(caps.max_frame_interval >= caps.min_frame_interval,
+		     "max_frame_interval (%u) should be >= min_frame_interval (%u)",
+		     caps.max_frame_interval, caps.min_frame_interval);
+
+	/**
+	 * Test Case 3: Error handling - NULL caps pointer
+	 * Expected: Function should return -EINVAL for invalid parameter
+	 */
+	ret = i2s_get_caps(dev_i2s, NULL, I2S_DIR_RX);
+	zassert_equal(ret, -EINVAL,
+		      "i2s_get_caps should return -EINVAL for NULL caps pointer, got %d", ret);
+}
+
+/**
+ * @brief Verify that RX can start with only the reported minimum number of buffers
+ *
+ * All but caps.min_num_buffers blocks of the RX slab are reserved before the
+ * START trigger, so a driver that under-reports its RX buffer requirement
+ * fails to start. Runs in kernel mode because k_mem_slab_alloc() is not a
+ * system call.
+ */
+ZTEST(i2s_errors, test_i2s_get_caps_rx_min_num_buffers)
+{
+	void *reserved[NUM_RX_BLOCKS];
+	uint32_t num_reserved = 0U;
+	struct audio_caps caps;
+	int ret;
+
+	ret = i2s_get_caps(dev_i2s_rx, &caps, I2S_DIR_RX);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+	zassert_equal(ret, 0, "i2s_get_caps failed: %d", ret);
+
+	if (caps.min_num_buffers > NUM_RX_BLOCKS) {
+		TC_PRINT("RX min_num_buffers %u exceeds test slab size %u\n",
+			 caps.min_num_buffers, NUM_RX_BLOCKS);
+		ztest_test_skip();
+		return;
+	}
+
+	while (k_mem_slab_num_free_get(&rx_mem_slab) > caps.min_num_buffers) {
+		ret = k_mem_slab_alloc(&rx_mem_slab, &reserved[num_reserved], K_NO_WAIT);
+		zassert_equal(ret, 0, "Failed to reserve RX slab block: %d", ret);
+		num_reserved++;
+	}
+
+	ret = i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_START);
+
+	/* Release the stream and the reserved blocks before checking the result */
+	if (ret == 0) {
+		(void)i2s_trigger(dev_i2s_rx, I2S_DIR_RX, I2S_TRIGGER_DROP);
+	}
+	for (uint32_t i = 0U; i < num_reserved; i++) {
+		k_mem_slab_free(&rx_mem_slab, reserved[i]);
+	}
+
+	zassert_equal(ret, 0, "RX START failed with the reported min_num_buffers (%u): %d",
+		      caps.min_num_buffers, ret);
+}
+
+/**
+ * @brief Verify that TX can start after queueing the reported minimum number of buffers
+ */
+ZTEST_USER(i2s_errors, test_i2s_get_caps_tx_min_num_buffers)
+{
+	char tx_data[BLOCK_SIZE] = {0};
+	struct audio_caps caps;
+	int ret;
+
+	ret = i2s_get_caps(dev_i2s_tx, &caps, I2S_DIR_TX);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+	zassert_equal(ret, 0, "i2s_get_caps failed: %d", ret);
+
+	if (caps.min_num_buffers > NUM_TX_BLOCKS) {
+		TC_PRINT("TX min_num_buffers %u exceeds test slab size %u\n",
+			 caps.min_num_buffers, NUM_TX_BLOCKS);
+		ztest_test_skip();
+		return;
+	}
+
+	for (uint32_t i = 0U; i < caps.min_num_buffers; i++) {
+		ret = i2s_buf_write(dev_i2s_tx, tx_data, BLOCK_SIZE);
+		zassert_equal(ret, 0, "TX write %u failed: %d", i, ret);
+	}
+
+	ret = i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_START);
+	if (ret == 0) {
+		(void)i2s_trigger(dev_i2s_tx, I2S_DIR_TX, I2S_TRIGGER_DROP);
+	}
+
+	zassert_equal(ret, 0, "TX START failed with the reported min_num_buffers (%u): %d",
+		      caps.min_num_buffers, ret);
 }
