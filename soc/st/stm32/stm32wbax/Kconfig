@@ -63,4 +63,13 @@ config STM32WBA_BLE_CTLR_THREAD_PRIO
 	help
 	  This option sets the cooperative priority of the BLE Controller thread.
 
+config SOC_SERIES_STM32WBAX_LL_USE_TEMP_BASED_RADIO_CALIB
+	bool "STM32WBA Radio calibration based on temperature sensor"
+	default y
+	depends on BT_STM32WBA || IEEE802154_STM32WBA
+	select SENSOR
+	select STM32_TEMP
+	help
+	  Allows the linklayer to calibrate radio according the temperature retrieved by ADC4
+
 endif # SOC_SERIES_STM32WBAX
