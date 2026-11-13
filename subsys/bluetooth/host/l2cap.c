@@ -2162,10 +2162,12 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			   struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
-	struct bt_l2cap_le_chan *chan;
+	struct bt_l2cap_le_chan *chan = NULL;
 	struct bt_l2cap_disconn_req *req = (void *)buf->data;
 	struct bt_l2cap_disconn_rsp *rsp;
+	struct bt_l2cap_chan *ch = NULL;
 	uint16_t dcid;
+	uint16_t scid;
 
 	if (buf->len != sizeof(*req)) {
 		LOG_ERR("Invalid LE conn req packet size (%u != %zu)",
@@ -2174,18 +2176,47 @@ static void le_disconn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	dcid = sys_le16_to_cpu(req->dcid);
+	scid = sys_le16_to_cpu(req->scid);
 
-	LOG_DBG("dcid 0x%04x scid 0x%04x", dcid, sys_le16_to_cpu(req->scid));
+	LOG_DBG("dcid 0x%04x scid 0x%04x", dcid, scid);
 
-	chan = l2cap_remove_rx_cid(conn, dcid);
-	if (!chan) {
+	/* Lookup, CID checks and removal see one state of the channel list,
+	 * whatever thread adds or removes channels meanwhile
+	 */
+	bt_dev_lock();
+
+	/* Fixed channels are never disconnected */
+	if (L2CAP_LE_CID_IS_DYN(dcid)) {
+		ch = bt_l2cap_le_lookup_rx_cid(conn, dcid);
+	}
+
+	/* The source CID must be the peer's endpoint of the channel, which a
+	 * fixed CID never is
+	 */
+	if ((ch != NULL) && L2CAP_LE_CID_IS_DYN(scid) && (BT_L2CAP_LE_CHAN(ch)->tx.cid == scid)) {
+		chan = BT_L2CAP_LE_CHAN(ch);
+		bt_l2cap_chan_remove(conn, ch);
+	}
+
+	bt_dev_unlock();
+
+	if (ch == NULL) {
 		struct bt_l2cap_cmd_reject_cid_data data;
 
-		data.scid = req->scid;
-		data.dcid = req->dcid;
+		/* Local endpoint first, which is the destination of the request */
+		data.scid = req->dcid;
+		data.dcid = req->scid;
 
 		l2cap_send_reject(conn, ident, BT_L2CAP_REJ_INVALID_CID, &data,
 				  sizeof(data));
+		return;
+	}
+
+	if (chan == NULL) {
+		/* The destination CID names a channel and the source CID does
+		 * not: the request is silently discarded
+		 */
+		LOG_WRN("scid 0x%04x is not the remote endpoint of dcid 0x%04x", scid, dcid);
 		return;
 	}
 
