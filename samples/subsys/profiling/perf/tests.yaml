@@ -16,4 +16,6 @@ tests:
       - qemu_riscv32
       - qemu_x86_64
       - qemu_x86
+      - qemu_tc4x
+      - qemu_tc3x
     harness: pytest
