@@ -83,7 +83,19 @@ static void timer_isr(const void *arg)
 	 */
 	sbi_set_timer(UINT64_MAX);
 
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	/*
+	 * The SBI timer call above clears STIP, so enable interrupts to let
+	 * the announce below be preempted.
+	 */
+	arch_irq_unlock(RV_STATUS_IE);
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
+
 	timer_core_announce();
+
+#ifdef CONFIG_RISCV_NESTED_INTERRUPTS
+	(void)arch_irq_lock();
+#endif /* CONFIG_RISCV_NESTED_INTERRUPTS */
 }
 
 static int sys_clock_driver_init(void)

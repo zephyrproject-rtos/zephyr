@@ -868,6 +868,7 @@ config RISCV_M_MODE
 config RISCV_S_MODE
 	bool "Supervisor mode (S-mode)"
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),s)
+	select RISCV_HAS_NESTED_INTERRUPTS
 	help
 	  Indicates that the kernel runs in Supervisor mode (S-mode).
 
