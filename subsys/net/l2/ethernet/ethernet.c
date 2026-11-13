@@ -1253,7 +1253,7 @@ void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 	NET_ASSERT(ctx != NULL);
 
 	if (atomic_test_and_set_bit_to(&ctx->flags, ETH_CARRIER_UP, carrier_up)) {
-		k_work_submit(&ctx->carrier_work);
+		net_work_submit(&ctx->carrier_work);
 	}
 }
 

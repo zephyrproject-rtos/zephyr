@@ -302,7 +302,7 @@ static void cname_build_answer(struct net_pkt *pkt)
 
 /* Copy the DNS message of the query in pkt to last_query_msg. Not inlined, so
  * that its locals do not grow the frame of sender_iface(), which also runs on
- * the small system work queue stack.
+ * the small stack of the work queue that sends the DNS queries.
  */
 static __noinline void capture_query_msg(struct net_pkt *pkt)
 {
@@ -341,8 +341,9 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 
 	send_count++;
 
-	/* Queries are also sent from the system work queue, whose stack is
-	 * small, so record them only for the tests that look at them.
+	/* Queries are also sent from the work queue running the DNS query
+	 * timeouts, whose stack is small, so record them only for the tests
+	 * that look at them.
 	 */
 	if (record_queries) {
 		query_udp = net_udp_get_hdr(pkt, NULL);
@@ -367,7 +368,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 			cname_ports[cname_queries] = net_ntohs(udp->src_port);
 			if (cname_queries == 0) {
 				cname_build_answer(pkt);
-				k_work_submit(&cname_inject_work);
+				net_work_submit(&cname_inject_work);
 			}
 
 			cname_queries++;
@@ -412,7 +413,7 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 			ctx = dns_resolve_get_default();
 			slot = get_slot_by_id(ctx, current_dns_id);
 			if (slot >= 0) {
-				k_work_submit(&multi_server_response_work);
+				net_work_submit(&multi_server_response_work);
 			}
 		}
 #else

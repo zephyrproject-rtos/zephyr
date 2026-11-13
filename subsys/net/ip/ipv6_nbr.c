@@ -452,8 +452,8 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 		if (remaining > 0) {
 			if (!k_work_delayable_remaining_get(
 				    &ipv6_ns_reply_timer)) {
-				k_work_reschedule(&ipv6_ns_reply_timer,
-						  K_MSEC(remaining));
+				net_work_reschedule(&ipv6_ns_reply_timer,
+						    K_MSEC(remaining));
 			}
 
 			continue;
@@ -508,8 +508,8 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 				data->send_ns = k_uptime_get();
 
 				if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
-					k_work_reschedule(&ipv6_ns_reply_timer,
-							  K_MSEC(NS_REPLY_TIMEOUT));
+					net_work_reschedule(&ipv6_ns_reply_timer,
+							    K_MSEC(NS_REPLY_TIMEOUT));
 				}
 
 				continue;
@@ -1686,7 +1686,7 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time)
 	remaining = k_ticks_to_ms_ceil32(
 		k_work_delayable_remaining_get(&ipv6_nd_reachable_timer));
 	if (!remaining || remaining > time) {
-		k_work_reschedule(&ipv6_nd_reachable_timer, K_MSEC(time));
+		net_work_reschedule(&ipv6_nd_reachable_timer, K_MSEC(time));
 	}
 }
 
@@ -2285,8 +2285,8 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 			/* Let's start the timer if necessary */
 			if (!k_work_delayable_remaining_get(&ipv6_ns_reply_timer)) {
-				k_work_reschedule(&ipv6_ns_reply_timer,
-						  K_MSEC(NS_REPLY_TIMEOUT));
+				net_work_reschedule(&ipv6_ns_reply_timer,
+						    K_MSEC(NS_REPLY_TIMEOUT));
 			}
 		} else {
 			/* If there is already a pending packet
@@ -2614,8 +2614,8 @@ static void ipv6_ra_timeout(struct k_work *work)
 	}
 
 	if (ipv6_ra_have_router()) {
-		k_work_reschedule(&ipv6_ra_timer,
-				  K_SECONDS(CONFIG_NET_IPV6_ND_RA_TX_INTERVAL));
+		net_work_reschedule(&ipv6_ra_timer,
+				    K_SECONDS(CONFIG_NET_IPV6_ND_RA_TX_INTERVAL));
 	}
 }
 
@@ -2623,8 +2623,8 @@ void net_ipv6_ra_update_timer(void)
 {
 	if (ipv6_ra_have_router()) {
 		/* Do not restart an already running period. */
-		k_work_schedule(&ipv6_ra_timer,
-				K_SECONDS(CONFIG_NET_IPV6_ND_RA_TX_INTERVAL));
+		net_work_schedule(&ipv6_ra_timer,
+				  K_SECONDS(CONFIG_NET_IPV6_ND_RA_TX_INTERVAL));
 	} else {
 		(void)k_work_cancel_delayable(&ipv6_ra_timer);
 	}
@@ -2653,8 +2653,8 @@ static void ipv6_ra_solicited_update(void)
 	}
 
 	if (next != 0) {
-		k_work_reschedule(&ipv6_ra_solicited_timer,
-				  K_MSEC(MAX(next - now, 0)));
+		net_work_reschedule(&ipv6_ra_solicited_timer,
+				    K_MSEC(MAX(next - now, 0)));
 	}
 }
 

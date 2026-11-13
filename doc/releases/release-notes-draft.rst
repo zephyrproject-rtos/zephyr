@@ -93,6 +93,11 @@ Libraries / Subsystems
   * Added the :ref:`STUN <stun_interface>` library, a codec for the messages of
     :rfc:`8489` with the attributes of ICE (:rfc:`8445`): parsing, building,
     MESSAGE-INTEGRITY, FINGERPRINT and the address attributes.
+  * The native network stack runs its protocol timers and deferred work on a dedicated work queue
+    instead of the system work queue, so that a slow system work queue item no longer delays DHCP,
+    Neighbor Discovery, address conflict detection or DNS timeouts, and the stack no longer holds
+    up other system work queue users. See :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE` and the
+    :ref:`migration guide <migration_4.6>`.
 
   * Ethernet bridge
 

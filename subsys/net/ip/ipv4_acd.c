@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(net_ipv4_acd, CONFIG_NET_IPV4_ACD_LOG_LEVEL);
 #include "net_private.h"
 #include "../l2/ethernet/arp.h"
 
+/* Taken after the interface lock wherever both are held. */
 static K_MUTEX_DEFINE(ipv4_acd_lock);
 
 static void ipv4_acd_timeout(struct k_work *work);
@@ -70,6 +71,7 @@ static sys_slist_t active_acd_timers;
 
 enum ipv4_acd_state {
 	IPV4_ACD_PROBE,    /* Probing state */
+	IPV4_ACD_PROBED,   /* Probing done, address not yet marked valid */
 	IPV4_ACD_ANNOUNCE, /* Announce state */
 };
 
@@ -156,10 +158,11 @@ static void acd_timer_reschedule(void)
 		return;
 	}
 
-	k_work_reschedule(&ipv4_acd_timer, timeout);
+	net_work_reschedule(&ipv4_acd_timer, timeout);
 }
 
-static void ipv4_acd_manage_timeout(struct net_if_addr *ifaddr)
+/* Returns true if the address has to be marked valid. */
+static bool ipv4_acd_manage_timeout(struct net_if_addr *ifaddr)
 {
 	switch (ifaddr->acd_state) {
 	case IPV4_ACD_PROBE:
@@ -186,12 +189,13 @@ static void ipv4_acd_manage_timeout(struct net_if_addr *ifaddr)
 			break;
 		}
 
-		net_if_ipv4_acd_succeeded(net_if_get_by_index(ifaddr->ifindex),
-					  ifaddr);
-
-		ifaddr->acd_state = IPV4_ACD_ANNOUNCE;
-		ifaddr->acd_count = 0;
+		/* Marking the address valid takes the interface lock, so it
+		 * is left to ipv4_acd_mark_probed_valid().
+		 */
+		ifaddr->acd_state = IPV4_ACD_PROBED;
 		__fallthrough;
+	case IPV4_ACD_PROBED:
+		return true;
 	case IPV4_ACD_ANNOUNCE:
 		if (ifaddr->acd_count < IPV4_ACD_ANNOUNCE_NUM) {
 			NET_DBG("Sending announcement for %s",
@@ -219,11 +223,48 @@ static void ipv4_acd_manage_timeout(struct net_if_addr *ifaddr)
 	default:
 		break;
 	}
+
+	return false;
+}
+
+/* Mark the addresses that passed probing valid and start announcing them.
+ * Their timeouts stay expired and the timer is already due again, so it
+ * sends the first announcement next.
+ */
+static void ipv4_acd_mark_probed_valid(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		int ifindex = net_if_get_by_iface(iface);
+		sys_snode_t *current, *next;
+
+		net_if_lock(iface);
+		k_mutex_lock(&ipv4_acd_lock, K_FOREVER);
+
+		SYS_SLIST_FOR_EACH_NODE_SAFE(&active_acd_timers, current, next) {
+			struct net_if_addr *ifaddr =
+				CONTAINER_OF(current, struct net_if_addr, acd_node);
+
+			if (ifaddr->ifindex != ifindex ||
+			    ifaddr->acd_state != IPV4_ACD_PROBED) {
+				continue;
+			}
+
+			ifaddr->acd_state = IPV4_ACD_ANNOUNCE;
+			ifaddr->acd_count = 0;
+			ifaddr->acd_timeout = sys_timepoint_calc(K_NO_WAIT);
+
+			net_if_ipv4_acd_succeeded(iface, ifaddr);
+		}
+
+		k_mutex_unlock(&ipv4_acd_lock);
+		net_if_unlock(iface);
+	}
 }
 
 static void ipv4_acd_timeout(struct k_work *work)
 {
 	sys_snode_t *current, *next;
+	bool probed = false;
 
 	ARG_UNUSED(work);
 
@@ -233,14 +274,19 @@ static void ipv4_acd_timeout(struct k_work *work)
 		struct net_if_addr *ifaddr =
 			CONTAINER_OF(current, struct net_if_addr, acd_node);
 
-		if (sys_timepoint_expired(ifaddr->acd_timeout)) {
-			ipv4_acd_manage_timeout(ifaddr);
+		if (sys_timepoint_expired(ifaddr->acd_timeout) &&
+		    ipv4_acd_manage_timeout(ifaddr)) {
+			probed = true;
 		}
 	}
 
 	acd_timer_reschedule();
 
 	k_mutex_unlock(&ipv4_acd_lock);
+
+	if (probed) {
+		ipv4_acd_mark_probed_valid();
+	}
 }
 
 static void acd_start_timer(struct net_if *iface, struct net_if_addr *ifaddr)
@@ -292,6 +338,8 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 
 	arp_hdr = NET_ARP_HDR(pkt);
 
+	/* Failing the address takes the interface lock. */
+	net_if_lock(iface);
 	k_mutex_lock(&ipv4_acd_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&active_acd_timers, current, next) {
@@ -331,12 +379,14 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 			net_if_ipv4_acd_failed(addr_iface, ifaddr);
 
 			k_mutex_unlock(&ipv4_acd_lock);
+			net_if_unlock(iface);
 
 			return NET_DROP;
 		}
 	}
 
 	k_mutex_unlock(&ipv4_acd_lock);
+	net_if_unlock(iface);
 
 	ipv4 = iface->config.ip.ipv4;
 	if (ipv4 == NULL) {

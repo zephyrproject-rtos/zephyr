@@ -64,8 +64,8 @@ static struct net_ipv4_reassembly *ipv4_reassembly_get(uint16_t id, const uint8_
 		return NULL;
 	}
 
-	k_work_reschedule(&ipv4_reassembly[avail].timer,
-			  K_SECONDS(CONFIG_NET_IPV4_FRAGMENT_TIMEOUT));
+	net_work_reschedule(&ipv4_reassembly[avail].timer,
+			    K_SECONDS(CONFIG_NET_IPV4_FRAGMENT_TIMEOUT));
 
 	net_ipv4_addr_copy_raw(ipv4_reassembly[avail].src.s4_addr, src);
 	net_ipv4_addr_copy_raw(ipv4_reassembly[avail].dst.s4_addr, dst);

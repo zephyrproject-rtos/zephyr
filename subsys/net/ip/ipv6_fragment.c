@@ -158,7 +158,7 @@ static struct net_ipv6_reassembly *reassembly_get(uint32_t id,
 		return NULL;
 	}
 
-	k_work_reschedule(&reassembly[avail].timer, IPV6_REASSEMBLY_TIMEOUT);
+	net_work_reschedule(&reassembly[avail].timer, IPV6_REASSEMBLY_TIMEOUT);
 
 	net_ipv6_addr_copy_raw(reassembly[avail].src.s6_addr, src);
 	net_ipv6_addr_copy_raw(reassembly[avail].dst.s6_addr, dst);

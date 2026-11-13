@@ -277,5 +277,13 @@ The net_mgmt event thread stack size is controlled by
 :kconfig:option:`CONFIG_NET_MGMT_EVENT_QUEUE_SIZE` option. It is recommended
 to not do any blocking operations in the callback function.
 
+The network stack runs its timers and deferred work, for example the DHCP clients, Neighbor
+Discovery, address conflict detection, address and route lifetimes and DNS query timeouts, on the
+dedicated ``net_workq`` work queue thread if :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE` is
+enabled, which it is by default for the native network stack. The work sends packets and, if
+:kconfig:option:`CONFIG_NET_MGMT_EVENT_DIRECT` is enabled, runs the network management event
+callbacks for the events it raises, so :kconfig:option:`CONFIG_NET_DEDICATED_WORKQUEUE_STACK_SIZE`
+must allow for both. If the option is disabled, the system work queue runs this work instead.
+
 The network thread stack utilization can be monitored from kernel shell by
 the **kernel threads** command.
