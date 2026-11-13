@@ -406,6 +406,20 @@ def test_discover_fragments(tmp_path):
     ]
 
 
+def test_resolve_cwe_non_cwe_reference():
+    resolved = hardeninglib.resolve_cwe("https://example.com/advisory")
+    assert resolved == {"id": "https://example.com/advisory", "name": None}
+
+
+def test_resolve_cwe():
+    resolved = hardeninglib.resolve_cwe("CWE-121")
+    assert resolved["id"] == "CWE-121"
+    assert isinstance(resolved["name"], str) and resolved["name"]
+
+    unknown = hardeninglib.resolve_cwe("CWE-99999999")
+    assert unknown == {"id": "CWE-99999999", "name": None}
+
+
 def test_recommended_str():
     def rule(**kwargs):
         return {"value": None, "min": None, "max": None, **kwargs}

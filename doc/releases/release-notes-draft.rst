@@ -177,6 +177,11 @@ Other notable changes
   * :kconfig:option:`CONFIG_BT_PRIVACY` can now be enabled in Broadcaster- and Observer-only builds,
     without :kconfig:option:`CONFIG_BT_SMP`.
 
+* Build system
+
+  * The :ref:`hardening tool <hardening>` report resolves the CWE references of the
+    recommendations to their names, using the ``cwe2`` package.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the documentation of the change?
