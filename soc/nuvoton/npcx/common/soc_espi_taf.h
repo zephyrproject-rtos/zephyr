@@ -8,6 +8,8 @@
 #define _NUVOTON_NPCX_SOC_ESPI_TAF_H_
 
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +72,13 @@ extern "C" {
 #define NPCX_FLASH_SHARING_CAP_SUPP_TAF            2
 #define NPCX_FLASH_SHARING_CAP_SUPP_TAF_AND_CAF    3
 
+#define NPCX_ESPI_FLASH_HEADER_LEN                 1
+#define NPCX_ESPI_FLASH_HEADER_ADDRESS_LEN         2
+
+/* Get the eSPI receive payload size from Devicetree. */
+#define NPCX_TAF_RX_PAYLOAD_BYTES DT_PROP(DT_INST(0, nuvoton_npcx_espi), rx_plsize)
+#define NPCX_TAF_RX_PAYLOAD_WORDS DIV_ROUND_UP(NPCX_TAF_RX_PAYLOAD_BYTES, sizeof(uint32_t))
+
 enum NPCX_ESPI_TAF_REQ {
 	NPCX_ESPI_TAF_REQ_READ,
 	NPCX_ESPI_TAF_REQ_WRITE,
@@ -126,17 +135,13 @@ struct espi_saf_protection {
 	const struct espi_saf_pr *pregions;
 };
 
-struct espi_taf_npcx_pckt {
-	uint8_t tag;
-	uint8_t *data;
-};
-
 struct espi_taf_pckt {
 	uint8_t  type;
 	uint8_t  tag;
 	uint32_t addr;
 	uint16_t len;
-	uint32_t src[16];
+	uint32_t src[NPCX_TAF_RX_PAYLOAD_WORDS];
+	uint8_t  invalid_flag;
 };
 
 struct npcx_taf_head {
