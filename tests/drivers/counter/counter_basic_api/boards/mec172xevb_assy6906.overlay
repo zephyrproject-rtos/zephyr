@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* timer5 is the RTOS timer driver's busy-wait timer; leave it disabled. */
+&timer4 {
+	status = "okay";
+};

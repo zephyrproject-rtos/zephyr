@@ -28,6 +28,8 @@
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
 #include <zephyr/drivers/counter.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -46,6 +48,7 @@ struct counter_xec_data {
 	counter_alarm_callback_t alarm_cb;
 	counter_top_callback_t top_cb;
 	void *user_data;
+	uint32_t ctrl;
 };
 
 #define COUNTER_XEC_REG_BASE(_dev)                                                                 \
@@ -265,6 +268,48 @@ static void counter_xec_isr(const struct device *dev)
 	}
 }
 
+static int counter_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
+	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
+	const struct pm_state_info *next;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		if (data->ctrl & MCHP_BTMR_CTRL_ENABLE) {
+			counter->CTRL |= MCHP_BTMR_CTRL_ENABLE;
+			if (data->ctrl & MCHP_BTMR_CTRL_START) {
+				counter->CTRL |= MCHP_BTMR_CTRL_START;
+			}
+
+			data->ctrl = 0;
+		}
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Only SUSPEND_TO_RAM turns the PLL off. In lighter states the
+		 * timer keeps running, so a pending alarm still fires and wakes
+		 * the CPU.
+		 */
+		next = pm_state_next_get(_current_cpu->id);
+		if ((next == NULL) || (next->state != PM_STATE_SUSPEND_TO_RAM)) {
+			break;
+		}
+
+		if (counter->CTRL & MCHP_BTMR_CTRL_ENABLE) {
+			data->ctrl = counter->CTRL;
+
+			counter->CTRL &= ~(MCHP_BTMR_CTRL_START);
+			counter->CTRL &= ~(MCHP_BTMR_CTRL_ENABLE);
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+	}
+	return ret;
+}
+
 static DEVICE_API(counter, counter_xec_api) = {
 	.start = counter_xec_start,
 	.stop = counter_xec_stop,
@@ -297,7 +342,7 @@ static int counter_xec_init(const struct device *dev)
 
 	counter_cfg->config_func();
 
-	return 0;
+	return pm_device_driver_init(dev, counter_xec_pm_action);
 }
 
 #define DEV_CFG_GIRQ(inst, idx)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, idx))
@@ -326,9 +371,10 @@ static int counter_xec_init(const struct device *dev)
 		.enc_pcr = DT_INST_PROP(0, pcr_src),                                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, counter_xec_init, NULL, &counter_xec_dev_data_##inst,          \
-			      &counter_xec_dev_config_##inst, POST_KERNEL,                         \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_xec_api);                     \
+	PM_DEVICE_DT_INST_DEFINE(inst, counter_xec_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, counter_xec_init, PM_DEVICE_DT_INST_GET(inst),                 \
+			      &counter_xec_dev_data_##inst, &counter_xec_dev_config_##inst,        \
+			      POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY, &counter_xec_api);        \
                                                                                                    \
 	static void counter_xec_irq_config_##inst(void)                                            \
 	{                                                                                          \
