@@ -398,10 +398,11 @@ config CORTEX_M_DEBUG_MONITOR_HOOK
 	  Enable this option to configure debug monitor exception to low priority
 	  for debugging purposes.
 
-# enabled, which may increase ESF stacking requirements for
-# threads.
+# Account for floating-point context and MPU guards carved out of thread stacks.
 config TEST_EXTRA_STACK_SIZE
 	default 512 if TEST_ARM_CORTEX_M && FPU_SHARING
+	default ARM_MPU_REGION_MIN_ALIGN_AND_SIZE if TEST_ARM_CORTEX_M && \
+		CPU_CORTEX_M0PLUS && USERSPACE && MPU_STACK_GUARD
 
 config TRAP_UNALIGNED_ACCESS
 	bool "Unaligned access trap"
