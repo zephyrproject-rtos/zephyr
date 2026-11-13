@@ -1,0 +1,34 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Bluetooth: Broadcaster"
+
+config SAMPLE_BT_USE_DISABLE
+	bool "Periodically disable Bluetooth"
+	help
+	  When enabled, the sample enables Bluetooth and broadcasts for a
+	  configurable duration, then disables Bluetooth for a configurable
+	  duration, and repeats the cycle. When disabled (default), the sample
+	  keeps Bluetooth enabled and broadcasts continuously.
+
+if SAMPLE_BT_USE_DISABLE
+
+config SAMPLE_BT_BROADCAST_DURATION_MS
+	int "Broadcast duration (milliseconds)"
+	range 1 2147483647
+	default 5000
+	help
+	  Duration in milliseconds during which Bluetooth is enabled and the
+	  sample broadcasts advertising packets before disabling Bluetooth.
+
+config SAMPLE_BT_DISABLE_DURATION_MS
+	int "Disable duration (milliseconds)"
+	range 1 2147483647
+	default 5000
+	help
+	  Duration in milliseconds during which Bluetooth is disabled before it
+	  is enabled again to resume broadcasting.
+
+endif # SAMPLE_BT_USE_DISABLE
+
+source "Kconfig.zephyr"
