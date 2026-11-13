@@ -90,7 +90,8 @@ config ETH_NXP_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based NXP"
 	depends on !ETH_NXP_ENET_QOS
 	depends on !ETH_NXP_S32_GMAC
-	depends on SOC_SERIES_MCXE31X || SOC_FAMILY_MCXN || SOC_FAMILY_MCXA || SOC_SERIES_S32K3
+	depends on SOC_SERIES_MCXE31X || SOC_FAMILY_MCXN || SOC_FAMILY_MCXA || \
+			SOC_SERIES_S32K3 || SOC_SERIES_IMXRT11XX
 	depends on DT_HAS_NXP_ENET_QOS_ENABLED || DT_HAS_NXP_S32_GMAC_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
@@ -100,8 +101,8 @@ config ETH_NXP_DWC_ETHER_QOS
 	select CRC
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver on NXP MCX N/MCX A/MCX E31
-	  and S32K3 series SoCs, where the IP is named EMAC.
+	  This enables the Synopsys DesignWare MAC driver on NXP MCX N/MCX A/MCX E31,
+	  S32K3 and i.MX RT11xx series SoCs, where the IP is named EMAC or ENET_QOS.
 
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
