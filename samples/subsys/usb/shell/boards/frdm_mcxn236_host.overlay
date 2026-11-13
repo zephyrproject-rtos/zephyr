@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* USB1 is shared by the device and host roles, switch it to host. */
+&zephyr_udc0 {
+	status = "disabled";
+};
+
+&zephyr_uhc0 {
+	status = "okay";
+};
