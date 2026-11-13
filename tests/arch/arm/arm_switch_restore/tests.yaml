@@ -1,0 +1,13 @@
+tests:
+  arch.arm.switch_restore:
+    tags:
+      - arm
+      - kernel
+    arch_allow:
+      - arm
+    filter: CONFIG_USE_SWITCH_SUPPORTED
+    platform_allow:
+      - qemu_cortex_m3
+      - mps2/an521/cpu0
+      - mps3/corstone300/an547
+      - mps3/corstone300/fvp
