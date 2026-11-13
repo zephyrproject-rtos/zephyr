@@ -196,6 +196,47 @@ void test_holding_reg(void)
 		      "FC16FP verify failed");
 }
 
+void test_illegal_data_value(void)
+{
+	uint16_t hr_wr[2] = {0, MB_TEST_INVAL_VALUE};
+	float fhr_wr[2] = {0.5f, -1.0f};
+	uint8_t coil = BIT(0);
+	int err;
+
+	/* Write callbacks return -EINVAL for invalid values, -ENOTSUP for invalid addresses */
+	err = modbus_write_coil(client_iface, node, MB_TEST_INVAL_COIL, true);
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_VAL, "FC05 invalid value: %d", err);
+
+	err = modbus_write_coil(client_iface, node, offset_oor, true);
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_ADDR, "FC05 out of range: %d", err);
+
+	err = modbus_write_coils(client_iface, node, MB_TEST_INVAL_COIL, &coil, 1);
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_VAL, "FC15 invalid value: %d", err);
+
+	err = modbus_write_coils(client_iface, node, offset_oor, &coil, 1);
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_ADDR, "FC15 out of range: %d", err);
+
+	err = modbus_write_holding_reg(client_iface, node, 0, MB_TEST_INVAL_VALUE);
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_VAL, "FC06 invalid value: %d", err);
+
+	err = modbus_write_holding_reg(client_iface, node, offset_oor, 0);
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_ADDR, "FC06 out of range: %d", err);
+
+	err = modbus_write_holding_regs(client_iface, node, 0, hr_wr, ARRAY_SIZE(hr_wr));
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_VAL, "FC16 invalid value: %d", err);
+
+	err = modbus_write_holding_regs(client_iface, node, offset_oor, hr_wr, ARRAY_SIZE(hr_wr));
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_ADDR, "FC16 out of range: %d", err);
+
+	err = modbus_write_holding_regs_fp(client_iface, node, fp_offset, fhr_wr,
+					   ARRAY_SIZE(fhr_wr));
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_VAL, "FC16 FP invalid value: %d", err);
+
+	err = modbus_write_holding_regs_fp(client_iface, node, fp_offset_oor, fhr_wr,
+					   ARRAY_SIZE(fhr_wr));
+	zassert_equal(err, MODBUS_EXC_ILLEGAL_DATA_ADDR, "FC16 FP out of range: %d", err);
+}
+
 void test_diagnostic(void)
 {
 	uint16_t data = 0xcafe;
@@ -345,6 +386,11 @@ void test_input_reg(void)
 }
 
 void test_holding_reg(void)
+{
+	ztest_test_skip();
+}
+
+void test_illegal_data_value(void)
 {
 	ztest_test_skip();
 }

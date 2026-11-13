@@ -17,6 +17,10 @@
 #define MB_TEST_RESPONSE_TO	50000
 #define MB_TEST_NODE_ADDR	0x01
 #define MB_TEST_FP_OFFSET	5000
+/* Coil which only accepts OFF, ON is rejected with -EINVAL */
+#define MB_TEST_INVAL_COIL	16
+/* Holding register value rejected with -EINVAL */
+#define MB_TEST_INVAL_VALUE	0xdead
 
 /*
  * Integration platform for this test is FRDM-K64F.
@@ -44,6 +48,7 @@ void test_coil_wr_rd(void);
 void test_di_rd(void);
 void test_input_reg(void);
 void test_holding_reg(void);
+void test_illegal_data_value(void);
 void test_diagnostic(void);
 void test_client_disable(void);
 
