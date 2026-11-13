@@ -1754,3 +1754,8 @@ test_i2c_stc31: stc31@e3 {
 	reg = <0xe3>;
 	binary-gas = <0x0001>;
 };
+
+test_i2c_ictx53xx: ictx53xx@e4 {
+	compatible = "invensense,ictx53xx";
+	reg = <0xe4>;
+};
