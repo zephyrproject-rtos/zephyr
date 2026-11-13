@@ -1,0 +1,12 @@
+# NXP MR-VMU-TROPIC board
+
+# Copyright 2018,2023 NXP
+# Copyright (c) 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MR_VMU_TROPIC
+
+configdefault ETH_DRIVER
+	default y
+
+endif # BOARD_MR_VMU_TROPIC
