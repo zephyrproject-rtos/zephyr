@@ -400,7 +400,7 @@ static int get_block_increments(const struct dma_config *config,
 			/* The current controller only supports incrementing the
 			 * source and destination up to 4 time transfer width
 			 */
-			if ((src_inc > 4) || (src_inc == 3)) {
+			if ((src_inc > 4) || (src_inc == 3) || (src_inc < 0)) {
 				return -EINVAL;
 			}
 		}
@@ -410,7 +410,7 @@ static int get_block_increments(const struct dma_config *config,
 			/* The current controller only supports incrementing the
 			 * source and destination up to 4 time transfer width
 			 */
-			if ((dst_inc > 4) || (dst_inc == 3)) {
+			if ((dst_inc > 4) || (dst_inc == 3) || (dst_inc < 0)) {
 				return -EINVAL;
 			}
 		}
@@ -447,7 +447,7 @@ static int get_block_increments(const struct dma_config *config,
 			/* The current controller only supports incrementing the
 			 * source and destination up to 4 time transfer width
 			 */
-			if ((dst_inc > 4) || (dst_inc == 3)) {
+			if ((dst_inc > 4) || (dst_inc == 3) || (dst_inc < 0)) {
 				return -EINVAL;
 			}
 		}
