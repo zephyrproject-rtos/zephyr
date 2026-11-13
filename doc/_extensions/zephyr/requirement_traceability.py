@@ -113,6 +113,15 @@ def _inline_text(el: ET.Element) -> str:
     return text
 
 
+def _escape_inline(text: str) -> str:
+    """Backslash-escape RST inline markup in text taken verbatim from the
+    sources, where a stray ``*`` or ``|`` opens markup with no end-string
+    and a word with a trailing underscore (``K_ERR_``, ``init_fn_``) becomes
+    an unresolved reference."""
+    text = re.sub(r"([\\*`|])", r"\\\1", text)
+    return re.sub(r"_(?=\W|$)", r"\\_", text)
+
+
 def _description_to_rst(desc: ET.Element | None) -> list[str]:
     """Convert a Doxygen ``<...description>`` element into RST body lines
     (unindented). Handles paragraphs, bullet lists and ``\\see``-style sections."""
@@ -123,30 +132,30 @@ def _description_to_rst(desc: ET.Element | None) -> list[str]:
         buf = para.text or ""
         for child in para:
             if child.tag in ("itemizedlist", "orderedlist"):
-                flushed = " ".join(buf.split())
+                flushed = _escape_inline(" ".join(buf.split()))
                 if flushed:
                     lines += [flushed, ""]
                 buf = ""
                 for item in child.findall("listitem"):
-                    item_text = " ".join(_inline_text(item).split())
+                    item_text = _escape_inline(" ".join(_inline_text(item).split()))
                     if item_text:
                         lines.append(f"- {item_text}")
                 lines.append("")
                 buf = child.tail or ""
             elif child.tag == "simplesect":
-                flushed = " ".join(buf.split())
+                flushed = _escape_inline(" ".join(buf.split()))
                 if flushed:
                     lines += [flushed, ""]
                 buf = ""
                 kind = child.get("kind", "")
                 label = SIMPLESECT_LABELS.get(kind, kind.capitalize())
-                sect = " ".join(_inline_text(child).split())
+                sect = _escape_inline(" ".join(_inline_text(child).split()))
                 if sect:
                     lines += [f"*{label}:* {sect}", ""]
                 buf = child.tail or ""
             else:
                 buf += _inline_text(child) + (child.tail or "")
-        flushed = " ".join(buf.split())
+        flushed = _escape_inline(" ".join(buf.split()))
         if flushed:
             lines += [flushed, ""]
     while lines and lines[-1] == "":
