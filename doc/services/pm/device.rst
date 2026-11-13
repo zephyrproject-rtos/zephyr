@@ -719,6 +719,105 @@ later calling :c:func:`pm_device_wakeup_enable`.
    It is responsibility of driver or the application to do any additional
    configuration required by the device to support it.
 
+.. _pm-device-wakeup-power-states:
+
+Wakeup capability per power state
+=================================
+
+The :c:func:`pm_device_wakeup_is_capable` function returns whether or not
+a device can wake the system based on the presence of the ``wakeup-source``
+property in devicetree. However, a given device may be unable to wake
+the system from specific power states, for example because it belongs
+in a power domain which is turned off, or a clock domain which is disabled.
+Two properties are used to describe such power states:
+
+* ``zephyr,disabling-power-states``: This property lists all power states
+  in which power to the device is disabled. While the system is in any
+  of those power states, the device is powered off and thus unable to
+  wake the system.
+
+* ``zephyr,wakeup-disabling-power-states``: This property lists all power
+  states in which power to the device is **not** disabled but the device
+  is not capable of waking the system regardless, due to another reason;
+  for example, a power state in which the device's clock is disabled
+  would go in this property. Unlike ``zephyr,disabling-power-states``,
+  residency in any of these power states does not affect the device state
+  (since the device remains powered).
+
+When :kconfig:option:`CONFIG_PM_DEVICE_WAKEUP_POWER_STATES` is enabled,
+function :c:func:`pm_device_wakeup_is_capable_from_state` can be called
+at runtime to query whether a device can wake the system from a specified
+power state. The application is responsible for calling the function
+and reacting according to the returned value; the PM subsystem never
+calls this function itself.
+
+For example, with three power states and three wakeup capable devices:
+
+.. code-block:: devicetree
+
+   power-states {
+           idle: idle {
+                   compatible = "zephyr,power-state";
+                   power-state-name = "suspend-to-idle";
+           };
+
+           stop: stop {
+                   compatible = "zephyr,power-state";
+                   power-state-name = "standby";
+           };
+
+           deep: deep {
+                   compatible = "zephyr,power-state";
+                   power-state-name = "suspend-to-ram";
+           };
+   };
+
+   rtc0: rtc@40008000 {
+           ...
+           wakeup-source;
+   };
+
+   gpio0: gpio@40010000 {
+           ...
+           wakeup-source;
+           zephyr,disabling-power-states = <&deep>;
+   };
+
+   lptmr0: lptmr@40040000 {
+           ...
+           wakeup-source;
+           zephyr,wakeup-disabling-power-states = <&stop>;
+           zephyr,disabling-power-states = <&deep>;
+   };
+
+The two functions return the following, where the ``idle``, ``stop`` and ``deep``
+columns are the result of :c:func:`pm_device_wakeup_is_capable_from_state` for
+that power state:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Device
+     - :c:func:`pm_device_wakeup_is_capable`
+     - ``idle``
+     - ``stop``
+     - ``deep``
+   * - ``rtc0``
+     - ``true``
+     - ``true``
+     - ``true``
+     - ``true``
+   * - ``gpio0``
+     - ``true``
+     - ``true``
+     - ``true``
+     - ``false``
+   * - ``lptmr0``
+     - ``true``
+     - ``true``
+     - ``false``
+     - ``false``
+
 Examples
 ********
 

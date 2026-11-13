@@ -274,6 +274,16 @@ config PM_DEVICE_SYSTEM_MANAGED
 	  the core wakes up from low power mode all suspended devices
 	  are resumed.
 
+config PM_DEVICE_WAKEUP_POWER_STATES
+	bool "Per-power-state wake up capability"
+	depends on PM
+	help
+	  Enable PM subsystem functions which allow checking at runtime
+	  if a device can wake the system from a specific power state.
+
+	  The function is only provided for use by the application; the PM
+	  subsystem does not take the associated information into account.
+
 
 endif # PM_DEVICE
 
