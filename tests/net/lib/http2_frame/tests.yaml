@@ -1,0 +1,10 @@
+common:
+  depends_on: netif
+  min_ram: 60
+  tags:
+    - net
+    - http
+  integration_platforms:
+    - native_sim
+tests:
+  net.http.http2_frame: {}
