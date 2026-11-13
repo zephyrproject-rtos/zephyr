@@ -229,9 +229,10 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	bool prepare_data = true;
 	int err = 0;
 
+	/* bit_len needs to be at least one byte long */
+	bit_len = !bit_len ? 8 : bit_len;
+
 	if (cfg->dma_enabled) {
-		/* bit_len needs to be at least one byte long when using DMA */
-		bit_len = !bit_len ? 8 : bit_len;
 		if (ctx->tx_buf && !esp_ptr_dma_capable((uint32_t *)&ctx->tx_buf[0])) {
 			LOG_DBG("Tx buffer not DMA capable");
 			tx_temp = k_malloc(dma_len_tx);
@@ -299,8 +300,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	hal_trans->cs_keep_active =
-		(UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (ctx->num_cs_gpios == 0)) &&
-		 (tx_remaining > 0 || rx_remaining > 0));
+		!spi_cs_is_gpio(ctx->config) && (tx_remaining > 0 || rx_remaining > 0);
 
 	/* configure SPI */
 	spi_hal_setup_trans(hal, hal_dev, hal_trans);
@@ -970,13 +970,12 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	}
 #endif
 
-	/*
-	 * Workaround: dummy transaction needed to sync CLK and software
-	 * controlled CS when SPI is in mode 3. Not needed on ESP32/ESP32-S2.
+	/* Workaround: dummy transaction needed to sync CLK and software
+	 * controlled CS when CPOL is set. Not needed on ESP32/ESP32-S2.
 	 */
 #if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
 	!defined(DT_SPI_CTX_HAS_NO_CS_GPIOS)
-	if ((ctx->num_cs_gpios != 0) && (hal_dev->mode & (SPI_MODE_CPOL | SPI_MODE_CPHA))) {
+	if (spi_cs_is_gpio(spi_cfg) && (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)) {
 		spi_esp32_transfer(dev);
 	}
 #endif
@@ -1023,6 +1022,8 @@ static int transceive(const struct device *dev,
 		goto done;
 	}
 
+	spi_context_buffers_setup(&data->ctx, NULL, NULL, data->dfs);
+
 #if CONFIG_PM
 	spi_esp32_pm_policy_state_lock_get(dev);
 #endif
@@ -1031,6 +1032,8 @@ static int transceive(const struct device *dev,
 	if (ret) {
 		goto done;
 	}
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 
 #ifdef CONFIG_ESP32_SPI_TARGET
 	if (data->target_mode) {
