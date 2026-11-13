@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BK7258
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config NUM_IRQS
+	default 64
+
+# Limit timer interrupt load while CPU0 executes from flash at 26 MHz.
+config SYS_CLOCK_TICKS_PER_SEC
+	default 500
+
+endif # SOC_BK7258
