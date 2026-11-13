@@ -15,7 +15,9 @@
 #include <stdbool.h>
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CZ_CA)
 #include <zephyr/dt-bindings/adc/mchp_pic32cz_ca_adc.h>
-#endif /* SOC_FAMILY_MICROCHIP_PIC32CZ_CA */
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_SG_GC)
+#include <zephyr/dt-bindings/adc/mchp_pic32cm_sg_gc_adc.h>
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -525,15 +527,11 @@ static int adc_mchp_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-/* Validate differential configurations */
-#if defined(CONFIG_ADC_MCHP_G2_MULTI_CORE)
-
+	/* Validate differential configurations */
 	if ((channel_cfg->differential == true) && (BIT(core_id) & ADC_CORES_NO_DIFF_SUPPORT)) {
 		LOG_ERR("Invalid differential core\n");
 		return -EINVAL;
 	}
-
-#endif /* End of CONFIG_ADC_MCHP_G2_MULTI_CORE */
 
 	if ((channel_cfg->differential == true) && (channel_id != MCHP_ADC_AIN0) &&
 	    (channel_id != MCHP_ADC_AIN2) && (channel_id != MCHP_ADC_AIN4)) {

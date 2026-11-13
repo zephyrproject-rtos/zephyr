@@ -304,3 +304,16 @@ i2c0: &sercom1 {
 		max-bitrate = <5000000>;
 	};
 };
+
+&adc {
+	ctrl-clock-div = <0>;
+	adc-wkup-clock-count = <11>;
+	status = "okay";
+};
+
+&adc0 {
+	adc-div-ratio = <2>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
