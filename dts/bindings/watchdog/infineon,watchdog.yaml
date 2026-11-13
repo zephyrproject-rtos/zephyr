@@ -18,3 +18,11 @@ properties:
 
   system-interrupts:
     description: Required for cat1c devices
+
+  infineon,wdt-lock:
+    type: boolean
+    description: |
+      The watchdog block has lock/unlock registers (WDT_LOCK) that must be
+      cleared before its registers can be written. Set this on SoCs whose PDL
+      provides Cy_WDT_Lock()/Cy_WDT_Unlock(); leave it unset on parts without
+      the lock registers (for example PSoC 4 / S8SRSSLT).

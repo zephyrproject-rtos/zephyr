@@ -76,6 +76,12 @@ static void systeminit_enable_peri(void)
 
 void soc_early_init_hook(void)
 {
+	/* Quiesce the ROM-armed WDT; re-enabled later by wdt_setup(). */
+	Cy_WDT_Unlock();
+	Cy_WDT_Disable();
+	Cy_WDT_MaskInterrupt();
+	Cy_WDT_Lock();
+
 	systeminit_enable_clocks();
 	systeminit_enable_peri();
 
