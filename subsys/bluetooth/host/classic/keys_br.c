@@ -239,6 +239,11 @@ static int link_key_set(const char *name, size_t len_rd,
 		return 0;
 	}
 
+	if (link_key == NULL) {
+		LOG_ERR("Unable to restore link key for %s", bt_addr_le_str(&le_addr));
+		return -ENOMEM;
+	}
+
 	memcpy(link_key->storage_start, val, len);
 	LOG_DBG("Successfully restored link key for %s", bt_addr_le_str(&le_addr));
 #if defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
