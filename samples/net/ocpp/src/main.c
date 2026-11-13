@@ -191,6 +191,7 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 	case OCPP_USR_RESET:
 		LOG_INF("reset requested type %s\n",
 			io->reset.type == OCPP_RESET_HARD ? "Hard" : "Soft");
+		io->reset.status = OCPP_REQ_ACCEPTED;
 		return 0;
 
 	case OCPP_USR_CHANGE_AVAILABILITY:
@@ -198,12 +199,14 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 			io->change_avail.id_con,
 			io->change_avail.type == OCPP_AVAILABILITY_OPERATIVE ?
 			"Operative" : "Inoperative");
+		io->change_avail.status = OCPP_REQ_ACCEPTED;
 		return 0;
 
 	case OCPP_USR_DATA_TRANSFER:
 		LOG_INF("data transfer vendor %s msg %s data %s\n",
 			io->data_transfer.vendor_id, io->data_transfer.msg_id,
 			io->data_transfer.data);
+		io->data_transfer.status = OCPP_REQ_ACCEPTED;
 		return 0;
 	}
 
