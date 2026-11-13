@@ -77,7 +77,7 @@
 
 &pll {
 	div-m = <5>;
-	mul-n = <192>;
+	mul-n = <160>;
 	div-p = <2>;
 	div-q = <15>;
 	div-r = <4>;
@@ -87,7 +87,7 @@
 
 &pll2 {
 	div-m = <5>;
-	mul-n = <192>;
+	mul-n = <160>;
 	div-p = <2>;
 	div-q = <12>;
 	div-r = <4>;
@@ -108,7 +108,7 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(480)>;
+	clock-frequency = <DT_FREQ_M(400)>;
 };
 
 &usart1 {
@@ -331,8 +331,8 @@
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x220>;
-		/* 64 ms / 4096 rows x 80 MHz SDCLK (HCLK3 / 3) - 20 */
-		refresh-rate = <1230>;
+		/* 64 ms / 4096 rows x 66.67 MHz SDCLK (HCLK3 / 3) - 20 */
+		refresh-rate = <1021>;
 		status = "okay";
 
 		bank@1 {

@@ -34,5 +34,5 @@
 };
 
 &rcc {
-	clock-frequency = <DT_FREQ_M(240)>;
+	clock-frequency = <DT_FREQ_M(200)>;
 };
