@@ -125,6 +125,11 @@ static int spi_gd32_configure(const struct device *dev,
 	struct spi_gd32_data *data = dev->data;
 	const struct spi_gd32_config *cfg = dev->config;
 	uint32_t bus_freq;
+	uint32_t word_size = SPI_WORD_SIZE_GET(config->operation);
+
+	if (word_size != 8U && word_size != 16U) {
+		return -ENOTSUP;
+	}
 
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
@@ -140,7 +145,7 @@ static int spi_gd32_configure(const struct device *dev,
 	SPI_CTL0(cfg->reg) |= SPI_MASTER;
 	SPI_CTL0(cfg->reg) &= ~SPI_TRANSMODE_BDTRANSMIT;
 
-	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+	if (word_size == 8) {
 		SPI_CTL0(cfg->reg) |= SPI_FRAMESIZE_8BIT;
 	} else {
 		SPI_CTL0(cfg->reg) |= SPI_FRAMESIZE_16BIT;
