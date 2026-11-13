@@ -242,10 +242,8 @@ Return Values
   first word, followed by the description (e.g., ``@retval -EINVAL Invalid arguments``, not
   ``@retval -EINVAL if invalid arguments``).
 
-  .. note::
-
-     Since there might be multiple reasons for the same discrete value to be returned, it is
-     allowed to use the same value in multiple ``@retval`` statements.
+- Use a single ``@retval`` per value. When several conditions produce the same value, list them
+  in that one ``@retval`` as a bulleted list.
 
 Example:
 
@@ -265,7 +263,9 @@ Example:
     * @retval -EBUSY Returned without waiting.
     * @retval -EAGAIN Waiting period timed out.
     * @retval -ENOMEM No memory in TX slab queue.
-    * @retval -EINVAL Size parameter larger than TX queue memory block.
+    * @retval -EINVAL
+    *     - @p buf is NULL.
+    *     - @p size is larger than the TX queue memory block.
     */
    int i2s_buf_write(const struct device *dev, void *buf, size_t size);
 
