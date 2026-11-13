@@ -157,6 +157,9 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 "-std=c++26"
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 
+# Flag for lowering switch statements as comparisons instead of as a jump table
+set_compiler_property(PROPERTY no_jump_tables -fno-jump-tables)
+
 # Extra warning options
 set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
 set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)

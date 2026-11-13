@@ -77,6 +77,9 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp26)
 # Flag for disabling strict aliasing rule in C and C++
 set_compiler_property(PROPERTY no_strict_aliasing)
 
+# Flag for lowering switch statements as comparisons instead of as a jump table
+set_compiler_property(PROPERTY no_jump_tables)
+
 # Extra warnings options for twister run
 set_property(TARGET compiler PROPERTY warnings_as_errors)
 set_property(TARGET asm PROPERTY warnings_as_errors)
