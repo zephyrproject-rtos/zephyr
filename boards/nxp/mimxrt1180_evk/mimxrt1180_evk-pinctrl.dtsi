@@ -372,4 +372,14 @@
 			input-enable;
 		};
 	};
+
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_00_mic_clk>,
+				 <&iomuxc_gpio_ad_01_mic_bitstream0>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };
