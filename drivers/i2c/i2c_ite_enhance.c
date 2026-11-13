@@ -838,7 +838,7 @@ static int enhanced_i2c_cq_isr(const struct device *dev)
 		}
 	} else {
 		/* Device 1 error have occurred. eg. nack, timeout... */
-		if (IT8XXX2_I2C_NST(base) & IT8XXX2_I2C_NST_ID_NACK) {
+		if ((IT8XXX2_I2C_NST(base) & IT8XXX2_I2C_NST_NACK_MASK) != 0U) {
 			data->err = E_HOSTA_ACK;
 		} else {
 			data->err = IT8XXX2_I2C_STR(base) &
