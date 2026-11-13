@@ -39,15 +39,15 @@ static inline uint32_t vexriscv_litex_irq_pending(void)
 
 #define LITEX_IRQ_ADD_HELPER(n)                                                                    \
 	if (irqs & (1 << DT_IRQN(n))) {                                                            \
-		ite = &_sw_isr_table[DT_IRQN(n)];                                                  \
-		ite->isr(ite->arg);                                                                \
+		z_sw_isr_table_lookup(DT_IRQN(n), &ite);                                           \
+		ite.isr(ite.arg);                                                                  \
 	}
 
 #define LITEX_IRQ_ADD(n) IF_ENABLED(DT_IRQ_HAS_IDX(n, 0), (LITEX_IRQ_ADD_HELPER(n)))
 
 static void vexriscv_litex_irq_handler(const void *device)
 {
-	const struct _isr_table_entry *ite;
+	struct _isr_table_entry ite;
 	uint32_t pending, mask, irqs;
 
 	pending = vexriscv_litex_irq_pending();
