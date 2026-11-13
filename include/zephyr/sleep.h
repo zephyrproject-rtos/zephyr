@@ -207,10 +207,9 @@ static ALWAYS_INLINE int32_t z_sleep_ticks_to_int32_us(k_ticks_t ticks)
  * @satisfies ZEP-SRS-28-8
  * @satisfies ZEP-SRS-28-10
  * @satisfies ZEP-SRS-28-12
- *
- * @satisfies ZEP-SRS-28-8
- * @satisfies ZEP-SRS-28-10
- * @satisfies ZEP-SRS-28-12
+ * @satisfies ZEP-SRS-28-16
+ * @satisfies ZEP-SRS-28-17
+ * @satisfies ZEP-SRS-28-19
  */
 static ALWAYS_INLINE int32_t k_sleep(k_timeout_t timeout)
 {
