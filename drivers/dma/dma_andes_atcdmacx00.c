@@ -111,7 +111,7 @@ LOG_MODULE_REGISTER(dma_andes_atcdmacx00);
 #define DMA_INT_STATUS_TC_VAL(x)	FIELD_GET(DMA_INT_STATUS_TC_MASK, (x))
 #define DMA_INT_STATUS_ABORT_VAL(x)	FIELD_GET(DMA_INT_STATUS_ABORT_MASK, (x))
 #define DMA_INT_STATUS_ERROR_VAL(x)	FIELD_GET(DMA_INT_STATUS_ERROR_MASK, (x))
-#define DMA_INT_STATUS_CH_MSK(ch)	(0x111 << ch)
+#define DMA_INT_STATUS_CH_MSK(ch)	(0x10101U << (ch))
 
 typedef void (*atcdmacx00_cfg_func_t)(void);
 
