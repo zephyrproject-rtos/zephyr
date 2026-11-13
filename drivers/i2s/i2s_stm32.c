@@ -58,7 +58,7 @@ static int queue_put(struct k_msgq *q, void *mem_block, size_t size, int32_t tim
 	return k_msgq_put(q, &item, SYS_TIMEOUT_MS(timeout));
 }
 
-static void stream_queue_drop(struct stream *s)
+static void stream_queue_drop(struct i2s_stm32_stream *s)
 {
 	size_t size;
 	void *mem_block;
@@ -148,14 +148,27 @@ static int i2s_stm32_set_clock(const struct device *dev,
 	return 0;
 }
 
-static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
-			       const struct i2s_config *i2s_cfg)
+/*
+ * Parameters that both directions of a full duplex instance have to share:
+ * the peripheral has a single clock, format and role.
+ */
+static bool i2s_stm32_shared_params_equal(const struct i2s_config *a, const struct i2s_config *b)
+{
+	const uint32_t mask = I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET |
+			      I2S_OPT_BIT_CLK_GATED;
+
+	return (a->frame_clk_freq == b->frame_clk_freq) && (a->word_size == b->word_size) &&
+	       (a->channels == b->channels) && (a->format == b->format) &&
+	       ((a->options & mask) == (b->options & mask));
+}
+
+/* Program the clock and the frame format, shared by both directions */
+static int i2s_stm32_configure_hw(const struct device *dev, const struct i2s_config *i2s_cfg,
+				  bool master)
 {
 	const struct i2s_stm32_cfg *const cfg = dev->config;
-	struct i2s_stm32_data *const dev_data = dev->data;
 	/* For words greater than 16-bit the channel length is considered 32-bit */
 	const uint32_t channel_length = i2s_cfg->word_size > 16U ? 32U : 16U;
-	const uint32_t word_size_bytes = channel_length / 8;
 	/*
 	 * comply with the i2s_config driver remark:
 	 * When I2S data format is selected parameter channels is ignored,
@@ -165,45 +178,12 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		((i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) == I2S_FMT_DATA_FORMAT_I2S)
 			? 2U
 			: i2s_cfg->channels;
-	struct stream *stream;
 	uint32_t bit_clk_freq;
 	bool enable_mck;
 	int ret;
 
-	if (dir == I2S_DIR_RX) {
-		stream = &dev_data->rx;
-	} else if (dir == I2S_DIR_TX) {
-		stream = &dev_data->tx;
-	} else if (dir == I2S_DIR_BOTH) {
-		return -ENOSYS;
-	} else {
-		LOG_ERR("Either RX or TX direction must be selected");
-		return -EINVAL;
-	}
-
-	if (stream->state != I2S_STATE_NOT_READY &&
-	    stream->state != I2S_STATE_READY) {
-		LOG_ERR("invalid state");
-		return -EINVAL;
-	}
-
-	stream->master = true;
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET ||
-	    i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) {
-		stream->master = false;
-	}
-
-	if (i2s_cfg->frame_clk_freq == 0U) {
-		stream_queue_drop(stream);
-		memset(&stream->cfg, 0, sizeof(struct i2s_config));
-		stream->state = I2S_STATE_NOT_READY;
-		return 0;
-	}
-
-	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
-
 	/* conditions to enable master clock output */
-	enable_mck = stream->master && cfg->master_clk_sel;
+	enable_mck = master && cfg->master_clk_sel;
 
 	/* set I2S bitclock */
 	bit_clk_freq = i2s_cfg->frame_clk_freq *
@@ -230,11 +210,6 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	} else {
 		LL_I2S_DisableMasterClock(cfg->i2s);
 	}
-
-	stream->dma_cfg.source_data_size = word_size_bytes;
-	stream->dma_cfg.dest_data_size = word_size_bytes;
-	stream->dma_cfg.source_burst_length = word_size_bytes;
-	stream->dma_cfg.dest_burst_length = word_size_bytes;
 
 	/*
 	 * set I2S Data Format
@@ -285,15 +260,151 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		LL_I2S_SetClockPolarity(cfg->i2s, STM32_I2S_CLOCK_POLARITY_LOW);
 	}
 
+	return 0;
+}
+
+static int i2s_stm32_configure_both(const struct device *dev, const struct i2s_config *i2s_cfg);
+
+static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
+			       const struct i2s_config *i2s_cfg)
+{
+	const struct i2s_stm32_cfg *const cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	/* For words greater than 16-bit the channel length is considered 32-bit */
+	const uint32_t channel_length = i2s_cfg->word_size > 16U ? 32U : 16U;
+	const uint32_t word_size_bytes = channel_length / 8;
+	struct i2s_stm32_stream *stream;
+	struct i2s_stm32_stream *other;
+	bool program_hw = true;
+	int ret;
+
+	if (dir == I2S_DIR_BOTH) {
+		return i2s_stm32_configure_both(dev, i2s_cfg);
+	}
+
+	if (dir == I2S_DIR_RX) {
+		stream = &dev_data->rx;
+		other = &dev_data->tx;
+	} else if (dir == I2S_DIR_TX) {
+		stream = &dev_data->tx;
+		other = &dev_data->rx;
+	} else {
+		LOG_ERR("Either RX or TX direction must be selected");
+		return -EINVAL;
+	}
+
+	if (stream->state != I2S_STATE_NOT_READY &&
+	    stream->state != I2S_STATE_READY) {
+		LOG_ERR("invalid state");
+		return -EINVAL;
+	}
+
+	stream->master = true;
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET ||
+	    i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) {
+		stream->master = false;
+	}
+
+	if (i2s_cfg->frame_clk_freq == 0U) {
+		stream_queue_drop(stream);
+		memset(&stream->cfg, 0, sizeof(struct i2s_config));
+		stream->state = I2S_STATE_NOT_READY;
+		if (other->state == I2S_STATE_NOT_READY) {
+			dev_data->fd_configured = false;
+		}
+		return 0;
+	}
+
+	if (dev_data->fd_configured && (other->state != I2S_STATE_NOT_READY)) {
+		/*
+		 * Configured together with the other direction, which is
+		 * possibly running: the clock, format and role are shared and
+		 * already programmed.
+		 */
+		if (!i2s_stm32_shared_params_equal(&other->cfg, i2s_cfg)) {
+			LOG_ERR("rate, format and role must match the other direction");
+			return -EINVAL;
+		}
+		program_hw = false;
+	}
+
+	memcpy(&stream->cfg, i2s_cfg, sizeof(struct i2s_config));
+
+	stream->dma_cfg.source_data_size = word_size_bytes;
+	stream->dma_cfg.dest_data_size = word_size_bytes;
+	stream->dma_cfg.source_burst_length = word_size_bytes;
+	stream->dma_cfg.dest_burst_length = word_size_bytes;
+
+	if (program_hw) {
+		if (dev_data->fd_configured && !dev_data->rx.hw_active && !dev_data->tx.hw_active &&
+		    (ll_i2s_is_enabled(cfg->i2s) != 0U)) {
+			/* Left enabled by a continuous clock, but writable only when disabled */
+			LL_I2S_Disable(cfg->i2s);
+		}
+
+		ret = i2s_stm32_configure_hw(dev, i2s_cfg, stream->master);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	stream->state = I2S_STATE_READY;
 	return 0;
+}
+
+/* A stream can only be reconfigured while it is not started */
+static bool i2s_stm32_stream_idle(const struct i2s_stm32_stream *stream)
+{
+	return stream->state == I2S_STATE_NOT_READY || stream->state == I2S_STATE_READY;
+}
+
+/*
+ * I2S_DIR_BOTH configures both directions at once, with the same parameters.
+ * Streaming is not affected: each direction is still started and stopped on
+ * its own.
+ */
+static int i2s_stm32_configure_both(const struct device *dev, const struct i2s_config *i2s_cfg)
+{
+	const struct i2s_stm32_cfg *const cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	int ret;
+
+	if (!cfg->full_duplex) {
+		return -ENOSYS;
+	}
+
+	if (!i2s_stm32_stream_idle(&dev_data->rx) || !i2s_stm32_stream_idle(&dev_data->tx)) {
+		LOG_ERR("invalid state");
+		return -EINVAL;
+	}
+
+	/* Start from a clean state, so that the shared parameters can change */
+	dev_data->rx.state = I2S_STATE_NOT_READY;
+	dev_data->tx.state = I2S_STATE_NOT_READY;
+	dev_data->fd_configured = (i2s_cfg->frame_clk_freq != 0U);
+
+	ret = i2s_stm32_configure(dev, I2S_DIR_TX, i2s_cfg);
+	if (ret == 0) {
+		ret = i2s_stm32_configure(dev, I2S_DIR_RX, i2s_cfg);
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Configuring both directions failed (%d), none is configured", ret);
+
+		/* Do not leave one direction configured */
+		dev_data->rx.state = I2S_STATE_NOT_READY;
+		dev_data->tx.state = I2S_STATE_NOT_READY;
+		dev_data->fd_configured = false;
+	}
+
+	return ret;
 }
 
 static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
 						     enum i2s_dir dir)
 {
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = NULL;
+	struct i2s_stm32_stream *stream = NULL;
 
 	if (dir == I2S_DIR_RX) {
 		stream = &dev_data->rx;
@@ -308,12 +419,28 @@ static const struct i2s_config *i2s_stm32_config_get(const struct device *dev,
 	return NULL;
 }
 
+/*
+ * Whether the stream still has a block in flight. In full duplex the TX
+ * complete flag belongs to the whole peripheral and cannot tell the
+ * directions apart.
+ */
+static bool stream_dma_busy(const struct device *dev, struct i2s_stm32_stream *stream)
+{
+	const struct i2s_stm32_cfg *const cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+
+	if (dev_data->fd_active) {
+		return stream->mem_block != NULL;
+	}
+
+	return ll_i2s_dma_busy(cfg->i2s) != 0U;
+}
+
 static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			     enum i2s_trigger_cmd cmd)
 {
 	struct i2s_stm32_data *const dev_data = dev->data;
-	const struct i2s_stm32_cfg *const cfg = dev->config;
-	struct stream *stream;
+	struct i2s_stm32_stream *stream;
 	unsigned int key;
 	int ret;
 
@@ -356,7 +483,7 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			return -EIO;
 		}
 do_trigger_stop:
-		if (ll_i2s_dma_busy(cfg->i2s)) {
+		if (stream_dma_busy(dev, stream)) {
 			stream->state = I2S_STATE_STOPPING;
 			/*
 			 * Indicate that the transition to I2S_STATE_STOPPING
@@ -381,7 +508,7 @@ do_trigger_stop:
 
 		if (dir == I2S_DIR_TX) {
 			if ((queue_is_empty(stream->msgq) == false) ||
-						(ll_i2s_dma_busy(cfg->i2s))) {
+						(stream_dma_busy(dev, stream))) {
 				stream->state = I2S_STATE_STOPPING;
 				/*
 				 * Indicate that the transition to I2S_STATE_STOPPING
@@ -529,8 +656,8 @@ static int start_dma(const struct device *dev_dma, uint32_t channel,
 	return ret;
 }
 
-static void rx_stream_disable(struct stream *stream, const struct device *dev);
-static void tx_stream_disable(struct stream *stream, const struct device *dev);
+static void rx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev);
+static void tx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev);
 
 /* This function is executed in the interrupt context */
 static void dma_rx_callback(const struct device *dma_dev, void *arg,
@@ -540,7 +667,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	const struct device *dev = arg;
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->rx;
+	struct i2s_stm32_stream *stream = &dev_data->rx;
 	void *mblk_tmp;
 	int ret;
 
@@ -563,6 +690,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
 			       K_NO_WAIT);
 	if (ret < 0) {
+		/* The completed block is not queued, give it back */
+		k_mem_slab_free(stream->cfg.mem_slab, mblk_tmp);
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
@@ -578,6 +707,8 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 			stream->cfg.block_size);
 	if (ret < 0) {
 		LOG_DBG("Failed to start RX DMA transfer: %d", ret);
+		k_mem_slab_free(stream->cfg.mem_slab, mblk_tmp);
+		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
 
@@ -590,6 +721,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg,
 	if (ret < 0) {
 		LOG_ERR("queue_put() <FAILED>: ret=%d, used=%d/%d", ret,
 			k_msgq_num_used_get(stream->msgq), CONFIG_I2S_STM32_RX_BLOCK_COUNT);
+		k_mem_slab_free(stream->cfg.mem_slab, mblk_tmp);
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
@@ -613,7 +745,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	const struct device *dev = arg;
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->tx;
+	struct i2s_stm32_stream *stream = &dev_data->tx;
 	size_t mem_block_size = 0;
 	int ret;
 
@@ -697,8 +829,12 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	return;
 
 tx_disable:
-	if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0) {
+	if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0 || dev_data->fd_active) {
 		tx_stream_disable(stream, dev);
+	} else if (stream->mem_block != NULL) {
+		/* Bit clock keeps running, but do not leak the pending block */
+		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
+		stream->mem_block = NULL;
 	}
 }
 
@@ -729,7 +865,7 @@ static int i2s_stm32_initialize(const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
-	struct stream *stream = &dev_data->tx;
+	struct i2s_stm32_stream *stream = &dev_data->tx;
 	int ret;
 
 	/* Initialize the variable used to handle the TX */
@@ -779,10 +915,22 @@ static int i2s_stm32_initialize(const struct device *dev)
 	return 0;
 }
 
-static int rx_stream_start(struct stream *stream, const struct device *dev)
+#if I2S_STM32_HAS_FULL_DUPLEX
+static bool i2s_stm32_use_fd(const struct device *dev);
+static int i2s_stm32_fd_stream_start(struct i2s_stm32_stream *stream, const struct device *dev);
+static void i2s_stm32_fd_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev);
+#endif
+
+static int rx_stream_start(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	int ret;
+
+#if I2S_STM32_HAS_FULL_DUPLEX
+	if (i2s_stm32_use_fd(dev)) {
+		return i2s_stm32_fd_stream_start(stream, dev);
+	}
+#endif
 
 	ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block,
 			       K_NO_WAIT);
@@ -828,11 +976,295 @@ static int rx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
-static int tx_stream_start(struct stream *stream, const struct device *dev)
+/*
+ * Wait until the last frame is shifted out. The wait is bounded because in
+ * slave mode the bit clock may be absent and the busy flag would never clear.
+ */
+static void tx_wait_idle(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	/*
+	 * The DMA completes when the last word is written to the FIFO, which
+	 * can hold several frames, plus one frame in the shift register.
+	 */
+	const uint32_t frame_freq = dev_data->tx.cfg.frame_clk_freq != 0U ?
+				    dev_data->tx.cfg.frame_clk_freq : 8000U;
+	uint32_t timeout_us = (8U * USEC_PER_SEC) / frame_freq + 10U;
+
+	while (ll_i2s_dma_busy(cfg->i2s) != 0U) {
+		if (timeout_us == 0U) {
+			LOG_DBG("TX did not become idle in time");
+			break;
+		}
+		k_busy_wait(1);
+		timeout_us--;
+	}
+}
+
+static void tx_hw_disable(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+
+	if (ll_i2s_is_enabled(cfg->i2s) != 0U) {
+		tx_wait_idle(dev);
+		LL_I2S_Disable(cfg->i2s);
+	}
+
+	LL_I2S_DisableDMAReq_TX(cfg->i2s);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
+	LL_I2S_DisableIT_OVR(cfg->i2s);
+	LL_I2S_DisableIT_UDR(cfg->i2s);
+	LL_I2S_DisableIT_FRE(cfg->i2s);
+#else
+	LL_I2S_DisableIT_ERR(cfg->i2s);
+#endif
+
+	dma_stop(dev_data->tx.dev_dma, dev_data->tx.dma_channel);
+}
+
+#if I2S_STM32_HAS_FULL_DUPLEX
+
+/* Number of directions currently enabled in the shared peripheral */
+static uint32_t i2s_stm32_fd_users(const struct i2s_stm32_data *dev_data)
+{
+	return (dev_data->rx.hw_active ? 1U : 0U) + (dev_data->tx.hw_active ? 1U : 0U);
+}
+
+/*
+ * Full duplex is used when the directions were configured together with
+ * I2S_DIR_BOTH. Everyone else keeps the single direction behavior.
+ */
+static bool i2s_stm32_use_fd(const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+
+	return cfg->full_duplex && dev_data->fd_configured;
+}
+
+/*
+ * Drop what the receiver collected while the direction was idle, so that a
+ * late start begins with fresh data.
+ */
+static void i2s_stm32_fd_flush_rx(const struct i2s_stm32_cfg *cfg,
+				  const struct i2s_stm32_stream *stream)
+{
+	uint32_t count = 0U;
+
+	while ((LL_SPI_IsActiveFlag_RXP(cfg->i2s) != 0U) && (count < 32U)) {
+		if (stream->cfg.word_size <= 16U) {
+			(void)LL_SPI_ReceiveData16(cfg->i2s);
+		} else {
+			(void)LL_SPI_ReceiveData32(cfg->i2s);
+		}
+		count++;
+	}
+
+	LL_I2S_ClearFlag_OVR(cfg->i2s);
+}
+
+/*
+ * Queue one frame of zeros in the transmitter. A master that runs out of
+ * transmit data repeats the last word, so this makes an idle transmitter send
+ * zeros. It also gives the master data to start the clock with.
+ */
+static void i2s_stm32_fd_tx_idle_frame(const struct i2s_stm32_cfg *cfg,
+				       const struct i2s_stm32_stream *stream)
+{
+	uint32_t written = 0U;
+	uint32_t wait_us = 0U;
+
+	while ((written < 2U) && (wait_us < 1000U)) {
+		if (LL_SPI_IsActiveFlag_TXP(cfg->i2s) == 0U) {
+			k_busy_wait(1);
+			wait_us++;
+			continue;
+		}
+
+		if (stream->cfg.word_size <= 16U) {
+			LL_SPI_TransmitData16(cfg->i2s, 0U);
+		} else {
+			LL_SPI_TransmitData32(cfg->i2s, 0U);
+		}
+		written++;
+	}
+}
+
+/*
+ * Start one direction of a full duplex instance. The first direction to start
+ * sets the mode and enables the peripheral. A direction that starts while the
+ * other one runs only enables its own DMA request and interrupts.
+ */
+static int i2s_stm32_fd_stream_start(struct i2s_stm32_stream *stream, const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	const bool is_tx = (stream == &dev_data->tx);
+	size_t mem_block_size = 0;
+	unsigned int key;
+	bool first;
+	int ret;
+
+	if (is_tx) {
+		ret = queue_get(stream->msgq, &stream->mem_block, &mem_block_size, 0);
+		if (ret < 0) {
+			LOG_ERR("queue_get() <FAILED>: ret=%d, used=%d/%d", ret,
+				k_msgq_num_used_get(stream->msgq), CONFIG_I2S_STM32_TX_BLOCK_COUNT);
+			return ret;
+		}
+
+		/* Assure cache coherency before DMA read operation */
+		sys_cache_data_flush_range(stream->mem_block, mem_block_size);
+	} else {
+		ret = k_mem_slab_alloc(stream->cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	key = irq_lock();
+
+	first = (i2s_stm32_fd_users(dev_data) == 0U);
+	if (first) {
+		/* The mode can only be changed while the peripheral is disabled */
+		if (ll_i2s_is_enabled(cfg->i2s) != 0U) {
+			LL_I2S_Disable(cfg->i2s);
+		}
+
+		LL_I2S_SetTransferMode(cfg->i2s, stream->master ?
+				       LL_I2S_MODE_MASTER_FULL_DUPLEX :
+				       LL_I2S_MODE_SLAVE_FULL_DUPLEX);
+		LL_SPI_SetUDRConfiguration(cfg->i2s, LL_SPI_UDR_CONFIG_REGISTER_PATTERN);
+		LL_I2S_ClearFlag_OVR(cfg->i2s);
+		LL_I2S_ClearFlag_UDR(cfg->i2s);
+	} else if (is_tx) {
+		LL_I2S_ClearFlag_UDR(cfg->i2s);
+	} else {
+		i2s_stm32_fd_flush_rx(cfg, stream);
+	}
+
+	if (is_tx) {
+		ret = start_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg,
+				stream->mem_block, stream->src_addr_increment,
+				(void *)LL_SPI_DMA_GetTxRegAddr(cfg->i2s),
+				stream->dst_addr_increment, stream->fifo_threshold,
+				stream->cfg.block_size);
+	} else {
+		ret = start_dma(stream->dev_dma, stream->dma_channel, &stream->dma_cfg,
+				(void *)LL_SPI_DMA_GetRxRegAddr(cfg->i2s),
+				stream->src_addr_increment, stream->mem_block,
+				stream->dst_addr_increment, stream->fifo_threshold,
+				stream->cfg.block_size);
+	}
+	if (ret < 0) {
+		irq_unlock(key);
+		LOG_ERR("Failed to start %s DMA transfer: %d", is_tx ? "TX" : "RX", ret);
+		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
+		stream->mem_block = NULL;
+		return ret;
+	}
+
+	if (is_tx) {
+		LL_I2S_EnableDMAReq_TX(cfg->i2s);
+		LL_I2S_EnableIT_UDR(cfg->i2s);
+	} else {
+		LL_I2S_EnableDMAReq_RX(cfg->i2s);
+		LL_I2S_EnableIT_OVR(cfg->i2s);
+	}
+	LL_I2S_EnableIT_FRE(cfg->i2s);
+
+	stream->hw_active = true;
+	dev_data->fd_active = true;
+
+	if (first) {
+		LL_I2S_Enable(cfg->i2s);
+		if (!is_tx && stream->master) {
+			/*
+			 * The master starts the clock only when the transmitter
+			 * has data. Without it a receiver that is started alone
+			 * never gets a clock.
+			 */
+			i2s_stm32_fd_tx_idle_frame(cfg, stream);
+		}
+		LL_SPI_StartMasterTransfer(cfg->i2s);
+	}
+
+	irq_unlock(key);
+
+	return 0;
+}
+
+/*
+ * Stop one direction of a full duplex instance. The other direction is left
+ * running: the peripheral is disabled only when the last direction stops, and
+ * only if the bit clock is gated.
+ */
+static void i2s_stm32_fd_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev)
+{
+	const struct i2s_stm32_cfg *cfg = dev->config;
+	struct i2s_stm32_data *const dev_data = dev->data;
+	const bool is_tx = (stream == &dev_data->tx);
+	unsigned int key = irq_lock();
+
+	if (stream->hw_active) {
+		if (is_tx) {
+			LL_I2S_DisableDMAReq_TX(cfg->i2s);
+			LL_I2S_DisableIT_UDR(cfg->i2s);
+		} else {
+			LL_I2S_DisableDMAReq_RX(cfg->i2s);
+			LL_I2S_DisableIT_OVR(cfg->i2s);
+		}
+
+		dma_stop(stream->dev_dma, stream->dma_channel);
+		stream->hw_active = false;
+
+		if (i2s_stm32_fd_users(dev_data) == 0U) {
+			LL_I2S_DisableIT_FRE(cfg->i2s);
+
+			if ((stream->cfg.options & I2S_OPT_BIT_CLK_GATED) != 0) {
+				if (is_tx) {
+					tx_wait_idle(dev);
+				}
+				LL_I2S_Disable(cfg->i2s);
+			}
+
+			dev_data->fd_active = false;
+		}
+
+		if (is_tx && (ll_i2s_is_enabled(cfg->i2s) != 0U)) {
+			i2s_stm32_fd_tx_idle_frame(cfg, stream);
+		}
+	}
+
+	irq_unlock(key);
+
+	if (stream->mem_block != NULL) {
+		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
+		stream->mem_block = NULL;
+	}
+}
+
+#endif /* I2S_STM32_HAS_FULL_DUPLEX */
+
+static int tx_stream_start(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	size_t mem_block_size = 0;
 	int ret;
+
+#if I2S_STM32_HAS_FULL_DUPLEX
+	if (i2s_stm32_use_fd(dev)) {
+		return i2s_stm32_fd_stream_start(stream, dev);
+	}
+#endif
+
+	/*
+	 * With a continuous bit clock the peripheral is left enabled after a
+	 * stop. Mode and DMA can only be reconfigured while it is disabled.
+	 */
+	tx_hw_disable(dev);
 
 	ret = queue_get(stream->msgq, &stream->mem_block,
 			&mem_block_size, 0);
@@ -883,9 +1315,17 @@ static int tx_stream_start(struct stream *stream, const struct device *dev)
 	return 0;
 }
 
-static void rx_stream_disable(struct stream *stream, const struct device *dev)
+static void rx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
+#if I2S_STM32_HAS_FULL_DUPLEX
+	struct i2s_stm32_data *const dev_data = dev->data;
+
+	if (dev_data->fd_active) {
+		i2s_stm32_fd_stream_disable(stream, dev);
+		return;
+	}
+#endif
 
 	LL_I2S_Disable(cfg->i2s);
 
@@ -905,24 +1345,19 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 	}
 }
 
-static void tx_stream_disable(struct stream *stream, const struct device *dev)
+static void tx_stream_disable(struct i2s_stm32_stream *stream, const struct device *dev)
 {
-	const struct i2s_stm32_cfg *cfg = dev->config;
+#if I2S_STM32_HAS_FULL_DUPLEX
+	struct i2s_stm32_data *const dev_data = dev->data;
 
-	/* Wait for TX queue to drain before disabling */
-	k_busy_wait(100);
-	LL_I2S_Disable(cfg->i2s);
-
-	LL_I2S_DisableDMAReq_TX(cfg->i2s);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
-	LL_I2S_DisableIT_OVR(cfg->i2s);
-	LL_I2S_DisableIT_UDR(cfg->i2s);
-	LL_I2S_DisableIT_FRE(cfg->i2s);
-#else
-	LL_I2S_DisableIT_ERR(cfg->i2s);
+	if (dev_data->fd_active) {
+		i2s_stm32_fd_stream_disable(stream, dev);
+		return;
+	}
 #endif
 
-	dma_stop(stream->dev_dma, stream->dma_channel);
+	tx_hw_disable(dev);
+
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
@@ -962,6 +1397,14 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 										\
 	static void i2s_stm32_irq_config_func_##index(const struct device *dev);\
 										\
+	BUILD_ASSERT(!DT_INST_PROP_OR(index, st_full_duplex, 0) ||			\
+		     IS_ENABLED(I2S_STM32_HAS_FULL_DUPLEX),				\
+		     "st,full-duplex is not supported on this SoC");		\
+	BUILD_ASSERT(!DT_INST_PROP_OR(index, st_full_duplex, 0) ||			\
+		     (DT_INST_DMAS_HAS_NAME(index, rx) &&				\
+		      DT_INST_DMAS_HAS_NAME(index, tx)),				\
+		     "st,full-duplex needs a tx and a rx DMA");			\
+										\
 	PINCTRL_DT_INST_DEFINE(index);						\
 										\
 	static const struct stm32_pclken clk_##index[] = STM32_DT_INST_CLOCKS(index); \
@@ -974,6 +1417,7 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		.irq_config = i2s_stm32_irq_config_func_##index,		\
 		.master_clk_sel = DT_INST_PROP(index, mck_enabled),		\
 		.ioswp = DT_INST_PROP(index, ioswp),				\
+		.full_duplex = DT_INST_PROP_OR(index, st_full_duplex, 0),		\
 	};									\
 										\
 	K_MSGQ_DEFINE_STATIC_TYPE(rx_##index##_queue, struct queue_item,	\
