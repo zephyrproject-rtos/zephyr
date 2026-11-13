@@ -38,6 +38,8 @@
 				compatible = "ti,tlv320dac";
 				reg = <0x1>;
 				reset-gpios = <&test_gpio 0 0>;
+				use-internal-pll-with-bclk;
+				round-up-slot-width-for-internal-pll;
 				status = "okay";
 			};
 
