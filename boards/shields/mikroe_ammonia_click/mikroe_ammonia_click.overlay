@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
+
+/ {
+	/* Low-side MOSFET switch between the 5 V rail and the MQ-137 heater */
+	heater_mikroe_ammonia_click: mq137-heater {
+		compatible = "regulator-fixed";
+		regulator-name = "mq137-heater";
+		enable-gpios = <&mikrobus_header MIKROBUS_PWM GPIO_ACTIVE_HIGH>;
+	};
+};

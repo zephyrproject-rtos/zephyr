@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_AMMONIA_CLICK
+	def_bool $(shields_list_contains,mikroe_ammonia_click)
+
+config SHIELD_MIKROE_AMMONIA_CLICK_SPI
+	def_bool $(shields_list_contains,mikroe_ammonia_click_spi)
