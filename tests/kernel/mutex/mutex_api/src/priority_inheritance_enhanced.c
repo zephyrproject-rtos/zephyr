@@ -1093,3 +1093,126 @@ ZTEST(mutex_api_1cpu, test_chain_boost_3hops_4threads)
 	k_thread_join(&t_extra, K_FOREVER);
 	k_thread_join(&t_high, K_FOREVER);
 }
+
+static volatile bool high_or_med_ran;
+
+static void t_mark_ran(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	high_or_med_ran = true;
+	k_sem_give(&sem_done);
+}
+
+/**
+ * @brief Verify k_mutex_unlock() reschedules when owner priority drops and no waiters remain
+ *
+ * When a boosted owner thread unlocks a mutex whose waiter has already been
+ * removed from wait_q (e.g. via timeout or abort) while the owner was running
+ * at boosted priority, adjust_owner_prio() lowers the owner's priority below
+ * ready threads in the run queue while new_owner is NULL. k_mutex_unlock()
+ * must still call z_reschedule() so higher-priority ready threads preempt
+ * immediately before k_mutex_unlock() returns.
+ */
+ZTEST(mutex_api_1cpu, test_unlock_reschedules_on_priority_drop_without_waiters)
+{
+	int orig_prio = k_thread_priority_get(k_current_get());
+
+	k_mutex_init(&mutex_a);
+	k_sem_reset(&sem_done);
+	high_or_med_ran = false;
+
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(PRIO_ORIG));
+	k_mutex_lock(&mutex_a, K_FOREVER);
+
+	/* Boosts main from PRIO_ORIG (7) to PRIO_HIGH (1) */
+	k_thread_create(&t_high, stack_high, STACK_SIZE,
+			t_waiter, &mutex_a, NULL, NULL,
+			K_PRIO_PREEMPT(PRIO_HIGH), 0, K_NO_WAIT);
+
+	/* Ready a PRIO_MID (3) thread while main is boosted to PRIO_HIGH (1) */
+	k_thread_create(&t_med, stack_med, STACK_SIZE,
+			t_mark_ran, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(PRIO_MID), 0, K_NO_WAIT);
+
+	/* Remove t_high from mutex_a.wait_q while main remains boosted at PRIO_HIGH (1) */
+	k_thread_abort(&t_high);
+
+	/*
+	 * Unlocking mutex_a drops main's priority from PRIO_HIGH (1) back to
+	 * PRIO_ORIG (7) with new_owner == NULL. k_mutex_unlock() MUST reschedule
+	 * immediately so t_med (3) preempts main (7) before k_mutex_unlock() returns.
+	 */
+	k_mutex_unlock(&mutex_a);
+
+	zassert_true(high_or_med_ran,
+		     "k_mutex_unlock() failed to reschedule after lowering owner priority");
+
+	k_sem_take(&sem_done, K_FOREVER);
+	k_thread_join(&t_med, K_FOREVER);
+	k_thread_priority_set(k_current_get(), orig_prio);
+}
+
+/**
+ * @brief Verify timeout in a multi-hop chain restores priority across deeper chain owners
+ *
+ * When a high-priority waiter times out at the end of a multi-hop ownership
+ * chain, priority recalculation must propagate down the chain so intermediate
+ * waiters and deeper owners do not remain over-boosted in wait queues.
+ */
+ZTEST(mutex_api_1cpu, test_chain_timeout_restores_deeper_waitq_order)
+{
+	static struct chain_link_args low_args, med_args;
+	static k_timeout_t short_to = K_MSEC(20);
+	int orig_prio = k_thread_priority_get(k_current_get());
+
+	k_mutex_init(&mutex_a);
+	k_mutex_init(&mutex_b);
+	k_mutex_init(&mutex_c);
+	k_sem_reset(&sem_ready);
+	k_sem_reset(&sem_done);
+
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(PRIO_ORIG));
+	k_mutex_lock(&mutex_a, K_FOREVER);
+
+	/* t_low (prio 5) holds mutex_b, waits K_FOREVER on mutex_a */
+	low_args = (struct chain_link_args){ &mutex_b, &mutex_a, K_FOREVER };
+	k_thread_create(&t_low, stack_low, STACK_SIZE, t_chain_link, &low_args, NULL, NULL,
+		K_PRIO_PREEMPT(PRIO_LOW), 0, K_NO_WAIT);
+	k_sem_take(&sem_ready, K_FOREVER);
+	k_sleep(K_MSEC(5));
+
+	/* t_med (prio 3) holds mutex_c, waits K_FOREVER on mutex_b */
+	med_args = (struct chain_link_args){ &mutex_c, &mutex_b, K_FOREVER };
+	k_thread_create(&t_med, stack_med, STACK_SIZE, t_chain_link, &med_args, NULL, NULL,
+		K_PRIO_PREEMPT(PRIO_MID), 0, K_NO_WAIT);
+	k_sem_take(&sem_ready, K_FOREVER);
+	k_sleep(K_MSEC(5));
+
+	/* t_high (prio 1) waits 20ms on mutex_c, boosting t_med, t_low, and main to 1 */
+	k_thread_create(&t_high, stack_high, STACK_SIZE, t_timeout_waiter, &mutex_c, &short_to,
+			NULL, K_PRIO_PREEMPT(PRIO_HIGH), 0, K_NO_WAIT);
+	k_sem_take(&sem_done, K_FOREVER);
+	k_thread_join(&t_high, K_FOREVER);
+
+	/*
+	 * After t_high times out on mutex_c, t_low's highest waiter on mutex_b
+	 * is t_med (prio 3), so t_low's priority must be 3 (not 1), and main's
+	 * priority must be 3 (not 1).
+	 */
+	zassert_equal(t_low.base.prio, PRIO_MID,
+		      "t_low remained over-boosted at %d (expected %d)",
+		      t_low.base.prio, PRIO_MID);
+	zassert_equal(k_thread_priority_get(k_current_get()), PRIO_MID,
+		      "main remained over-boosted at %d (expected %d)",
+		      k_thread_priority_get(k_current_get()), PRIO_MID);
+
+	k_mutex_unlock(&mutex_a);
+	k_sem_take(&sem_done, K_FOREVER);
+	k_sem_take(&sem_done, K_FOREVER);
+	k_thread_join(&t_low, K_FOREVER);
+	k_thread_join(&t_med, K_FOREVER);
+	k_thread_priority_set(k_current_get(), orig_prio);
+}
