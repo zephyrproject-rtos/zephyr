@@ -26,6 +26,15 @@ config WS2812_STRIP_SPI_FORCE_NOCACHE
 	  For SPI communication using DMA, place the WS2812 SPI buffer in the __nocache section to
 	  ensure it is stored in uncached memory, as DMA usually requires access to uncached regions.
 
+config WS2812_STRIP_SPI_ASYNC
+	bool "Non-blocking updates"
+	depends on SPI_ASYNC
+	help
+	  Start the SPI transfer and return without waiting for it to end. The next update waits
+	  for the transfer and the reset delay before it reuses the pixel buffer. Transfer errors
+	  are logged instead of returned. The SPI controller driver must support the asynchronous
+	  API.
+
 endif
 
 config WS2812_STRIP_UART
