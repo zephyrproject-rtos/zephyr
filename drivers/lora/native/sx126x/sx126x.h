@@ -21,15 +21,14 @@ enum sx126x_state {
 	SX126X_STATE_RX_DUTY_CYCLE,
 };
 
-struct sx126x_tx_result {
+/* A caller blocked on an operation, and where its result goes */
+struct sx126x_waiter {
+	struct k_sem done;
 	int status;
-};
-
-struct sx126x_rx_result {
-	int16_t rssi;
-	int8_t snr;
-	uint8_t len;
-	int status;
+	uint8_t *buf;
+	uint8_t size;
+	int16_t *rssi;
+	int8_t *snr;
 };
 
 struct sx126x_data {
@@ -48,15 +47,9 @@ struct sx126x_data {
 	struct lora_modem_config_gfsk gfsk_config;
 	bool gfsk;
 
-	/* TX completion via message queue */
-	struct k_msgq tx_msgq;
-	struct sx126x_tx_result tx_result;
+	struct sx126x_waiter *waiter;
 
-	/* RX completion via message queue */
-	struct k_msgq rx_msgq;
-	struct sx126x_rx_result rx_result;
-
-	/* RX data buffer (shared between IRQ handler and recv) */
+	/* RX data buffer */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];
 
 	/* Async RX callback */
