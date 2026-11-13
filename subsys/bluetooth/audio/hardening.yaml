@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Bluetooth LE Audio.
+
+rules:
+  BT_CSIP_SET_COORDINATOR_TEST_SAMPLE_DATA:
+    value: n
+    rationale: |
+      Decrypts SIRKs read from set members with the sample key published in the CSIS specification
+      instead of the link's LTK, so the coordinator only accepts SIRKs protected by a key anyone can
+      look up.
+    references: [CWE-798]
+
+  BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA:
+    value: n
+    rationale: |
+      Replaces the application's SIRK with the sample SIRK from the CSIS specification and
+      advertises a constant RSI built from the sample prand, so any observer can track the device
+      and resolve it as a set member. The SIRK it hands to coordinators is encrypted with the
+      published sample key instead of the link's LTK.
+    references: [CWE-798]
