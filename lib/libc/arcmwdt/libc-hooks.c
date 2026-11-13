@@ -45,9 +45,6 @@ int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 	int i;
 
 	for (i = 0; i < nbytes; i++) {
-		if (*(buf + i) == '\n') {
-			_stdout_hook('\r');
-		}
 		_stdout_hook(*(buf + i));
 	}
 	return nbytes;
