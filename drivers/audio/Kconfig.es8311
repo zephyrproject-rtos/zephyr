@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_ES8311
+	bool "Everest ES8311 audio codec"
+	default y
+	depends on DT_HAS_EVEREST_ES8311_ENABLED
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_EVEREST_ES8311),pa-gpios)
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_EVEREST_ES8311),vin-supply)
+	help
+	  Enable playback through the ES8311 mono audio codec.
+
+config AUDIO_CODEC_ES8311_INIT_PRIORITY
+	int "ES8311 initialization priority"
+	default 90
+	depends on AUDIO_CODEC_ES8311
+	help
+	  Initialize after the I2C controller, GPIO controller and optional
+	  codec supply regulator.
