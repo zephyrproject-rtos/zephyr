@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect the PB09(EXT1 pin 11) to PD13(EXT2 pin 14) and PB10(EXT1 pin 12) to PD14(EXT2 pin 13) */
+
+dut: &sercom1 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+dut_aux: &sercom4 {
+	status = "okay";
+
+	eeprom1: eeprom@58 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x58>;
+		size = <256>;
+	};
+};
+
+&pinctrl {
+	sercom1_i2c_default: sercom1_i2c_default {
+		group1 {
+			pinmux = <PD13C_SERCOM1_PAD0>,
+				 <PD14C_SERCOM1_PAD1>;
+		};
+	};
+};
