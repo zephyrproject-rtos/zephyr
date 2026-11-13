@@ -11,6 +11,11 @@ This sample app demonstrates use of a USB Mass Storage driver by the Zephyr
 project. This very simple driver enumerates a board with either RAM or FLASH
 into an USB disk.
 
+The device class uses shared SCSI command opcodes from
+:zephyr_file:`include/zephyr/scsi/scsi_opcode.h` (see :ref:`scsi_midlayer`).
+:kconfig:option:`CONFIG_USBD_MSC_CLASS` does not enable the initiator
+mid-layer (:kconfig:option:`CONFIG_SCSI`).
+
 Requirements
 ************
 
