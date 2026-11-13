@@ -2,6 +2,7 @@
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
  * Copyright (c) 2022 T-Mobile USA, Inc.
  * Copyright (c) 2025 Byteflies NV
+ * Copyright (c) 2026 Antmicro <antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -213,7 +214,7 @@ static int tmp108_attr_set(const struct device *dev,
 	}
 
 	switch ((int) attr) {
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	case SENSOR_ATTR_HYSTERESIS:
 		if (TI_TMP108_HYSTER_0_C(dev) == TI_TMP108_CONF_NA) {
 			LOG_WRN("AS621x Series lacks Hysterisis settings");
@@ -273,7 +274,7 @@ static int tmp108_attr_set(const struct device *dev,
 					     TI_TMP108_CONF_POL_MASK(dev),
 					     mode);
 		break;
-#endif /* CONFIG_TMP108_ALERT_INTERRUPTS */
+#endif /* CONFIG_TMP108_TRIGGER */
 
 	case SENSOR_ATTR_SAMPLING_FREQUENCY: {
 		struct tmp_108_reg_def ams_as6212_reg_def = AMS_AS6212_CONF;
@@ -343,51 +344,10 @@ static DEVICE_API(sensor, tmp108_driver_api) = {
 	.attr_get = tmp108_attr_get,
 	.sample_fetch = tmp108_sample_fetch,
 	.channel_get = tmp108_channel_get,
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	.trigger_set = tmp_108_trigger_set,
 #endif
 };
-
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
-static int setup_interrupts(const struct device *dev)
-{
-	struct tmp108_data *drv_data = dev->data;
-	const struct tmp108_config *config = dev->config;
-	const struct gpio_dt_spec *alert_gpio = &config->alert_gpio;
-	int result;
-
-	if (!device_is_ready(alert_gpio->port)) {
-		LOG_ERR_DEVICE_NOT_READY(alert_gpio->port);
-		return -ENODEV;
-	}
-
-	result = gpio_pin_configure_dt(alert_gpio, GPIO_INPUT);
-
-	if (result < 0) {
-		return result;
-	}
-
-	gpio_init_callback(&drv_data->temp_alert_gpio_cb,
-			   tmp108_trigger_handle_alert,
-			   BIT(alert_gpio->pin));
-
-	result = gpio_add_callback(alert_gpio->port,
-				   &drv_data->temp_alert_gpio_cb);
-
-	if (result < 0) {
-		return result;
-	}
-
-	result = gpio_pin_interrupt_configure_dt(alert_gpio,
-						 GPIO_INT_EDGE_BOTH);
-
-	if (result < 0) {
-		return result;
-	}
-
-	return 0;
-}
-#endif
 
 static int tmp108_init(const struct device *dev)
 {
@@ -399,13 +359,13 @@ static int tmp108_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-#ifdef CONFIG_TMP108_ALERT_INTERRUPTS
+#ifdef CONFIG_TMP108_TRIGGER
 	struct tmp108_data *drv_data = dev->data;
 
 	/* save this driver instance for passing to other functions */
 	drv_data->tmp108_dev = dev;
 
-	result = setup_interrupts(dev);
+	result = tmp108_setup_trigger(dev);
 
 	if (result < 0) {
 		return result;
@@ -422,9 +382,9 @@ static int tmp108_init(const struct device *dev)
 	static struct tmp108_data tmp108_prv_data_##inst##t;                                       \
 	static const struct tmp108_config tmp108_config_##inst##t = {                              \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
-		IF_ENABLED(CONFIG_TMP108_ALERT_INTERRUPTS,                                         \
-			   (.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),))              \
-		.reg_def = t##_CONF};                                                              \
+		IF_ENABLED(CONFIG_TMP108_TRIGGER,                                                  \
+			(.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios),)) .reg_def =      \
+				    t##_CONF};                                                     \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, &tmp108_init, NULL, &tmp108_prv_data_##inst##t,         \
 				     &tmp108_config_##inst##t, POST_KERNEL,                        \
 				     CONFIG_SENSOR_INIT_PRIORITY, &tmp108_driver_api);
