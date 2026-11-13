@@ -1,0 +1,12 @@
+tests:
+  drivers.timer.system_clock:
+    # Simulated-time platforms advance the clock only when the kernel asks for
+    # a timeout, so "how much work fits between two ticks" is not a question
+    # they can answer.
+    filter: CONFIG_TICKLESS_KERNEL and not CONFIG_ARCH_POSIX
+    tags:
+      - drivers
+      - timer
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_m3
