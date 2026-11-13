@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip Programmable Multibit Error Correcting Code (PMECC) G1.
+
+  SAM PMECC is based on the following hardware peripherals:
+    - module name="PMECC" id="11038" version="105"
+    - module name="PMERRLOC" id="11039" version="102"
+    - module name="SMC" id="11036" version="304"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &pmecc {
+        status = "okay";
+      };
+
+compatible: "microchip,pmecc-g1-flash"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  ecc-rom:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the BCH Galois Field tables.
+
+  max-strength:
+    type: int
+    default: 24
+    enum:
+      - 24
+      - 32
+    description: |
+      Maximum ECC strength bits.
+      ECC bit support
+      SAMA7  2, 4, 8, 12, 24, 32
+      SAM9X7 2, 4, 8, 12, 24
