@@ -106,11 +106,10 @@ static void wait_synchronization(SercomUsart *const usart)
 #endif
 }
 
-static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
-				  uint32_t clk_freq_hz)
+static int uart_sam0_calc_baud(uint32_t baudrate, uint32_t clk_freq_hz,
+			       uint16_t *baud)
 {
 	uint64_t tmp;
-	uint16_t baud;
 
 	tmp = (uint64_t)baudrate << 20;
 	tmp = (tmp + (clk_freq_hz >> 1)) / clk_freq_hz;
@@ -120,7 +119,22 @@ static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
 		return -ERANGE;
 	}
 
-	baud = 65536 - (uint16_t)tmp;
+	*baud = 65536 - (uint16_t)tmp;
+
+	return 0;
+}
+
+static int uart_sam0_set_baudrate(SercomUsart * const usart, uint32_t baudrate,
+				  uint32_t clk_freq_hz)
+{
+	uint16_t baud;
+	int retval;
+
+	retval = uart_sam0_calc_baud(baudrate, clk_freq_hz, &baud);
+	if (retval != 0) {
+		return retval;
+	}
+
 	usart->BAUD.reg = baud;
 	wait_synchronization(usart);
 
@@ -397,12 +411,12 @@ static int uart_sam0_configure(const struct device *dev,
 	const struct uart_sam0_dev_cfg *const cfg = dev->config;
 	struct uart_sam0_dev_data *const dev_data = dev->data;
 	SercomUsart * const usart = cfg->regs;
+	uint16_t baud;
 
-	wait_synchronization(usart);
-
-	usart->CTRLA.bit.ENABLE = 0;
-	wait_synchronization(usart);
-
+	/*
+	 * Validate everything before touching the hardware, so that a
+	 * refused configuration leaves the old one running.
+	 */
 	if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 		/* Flow control not yet supported though in principle possible
 		 * on this soc family.
@@ -410,10 +424,18 @@ static int uart_sam0_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	dev_data->config_cache.flow_ctrl = new_cfg->flow_ctrl;
+	retval = uart_sam0_calc_baud(new_cfg->baudrate,
+				     SOC_ATMEL_SAM0_GCLK0_FREQ_HZ, &baud);
+	if (retval != 0) {
+		return retval;
+	}
+
+	wait_synchronization(usart);
 
 	SERCOM_USART_CTRLA_Type CTRLA_temp = usart->CTRLA;
 	SERCOM_USART_CTRLB_Type CTRLB_temp = usart->CTRLB;
+
+	CTRLA_temp.bit.ENABLE = 0;
 
 	switch (new_cfg->parity) {
 	case UART_CFG_PARITY_NONE:
@@ -431,8 +453,6 @@ static int uart_sam0_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	dev_data->config_cache.parity = new_cfg->parity;
-
 	switch (new_cfg->stop_bits) {
 	case UART_CFG_STOP_BITS_1:
 		CTRLB_temp.bit.SBMODE = 0;
@@ -443,8 +463,6 @@ static int uart_sam0_configure(const struct device *dev,
 	default:
 		return -ENOTSUP;
 	}
-
-	dev_data->config_cache.stop_bits = new_cfg->stop_bits;
 
 	switch (new_cfg->data_bits) {
 	case UART_CFG_DATA_BITS_5:
@@ -466,11 +484,12 @@ static int uart_sam0_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	dev_data->config_cache.data_bits = new_cfg->data_bits;
-
 #if (SAM0_SERCOM_HAS_ERROR_FLAGS)
 	CTRLB_temp.bit.COLDEN = cfg->pads;
 #endif
+
+	usart->CTRLA.bit.ENABLE = 0;
+	wait_synchronization(usart);
 
 	usart->CTRLA = CTRLA_temp;
 	wait_synchronization(usart);
@@ -478,13 +497,10 @@ static int uart_sam0_configure(const struct device *dev,
 	usart->CTRLB = CTRLB_temp;
 	wait_synchronization(usart);
 
-	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate,
-					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
-	if (retval != 0) {
-		return retval;
-	}
+	usart->BAUD.reg = baud;
+	wait_synchronization(usart);
 
-	dev_data->config_cache.baudrate = new_cfg->baudrate;
+	dev_data->config_cache = *new_cfg;
 
 	usart->CTRLA.bit.ENABLE = 1;
 	wait_synchronization(usart);
