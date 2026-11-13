@@ -437,6 +437,10 @@ struct bt_dev {
 	 */
 	struct {
 		bool valid;
+		/* Reason of a disconnection reported ahead of the terminated
+		 * event, BT_HCI_ERR_SUCCESS if there was none.
+		 */
+		uint8_t disconnect_reason;
 		struct bt_hci_evt_le_enh_conn_complete evt;
 	} cached_conn_complete[MIN(CONFIG_BT_MAX_CONN,
 				CONFIG_BT_EXT_ADV_MAX_ADV_SET)];
@@ -632,7 +636,9 @@ void bt_hci_auth_complete(struct net_buf *buf);
 
 /* Common HCI event handlers */
 void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
-				 const struct bt_le_ext_adv *ext_adv);
+				 const struct bt_le_ext_adv *ext_adv,
+				 uint8_t cached_disconnect_reason);
+void bt_hci_conn_disconnected(uint16_t handle, uint8_t reason);
 
 /* Scan HCI event handlers */
 void bt_hci_le_adv_report(struct net_buf *buf);
