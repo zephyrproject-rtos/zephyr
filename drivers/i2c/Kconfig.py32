@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2C_PY32
+	bool "Puya PY32 I2C controller driver"
+	default y
+	depends on DT_HAS_PUYA_PY32_I2C_ENABLED
+	select PINCTRL
+	select RESET
+	help
+	  Enable polling controller transfers with 7-bit addresses at 100 or
+	  400 kHz. Repeated starts and fragmented buffers are supported.
+	  Each transfer must end with STOP. Target mode is not supported.
+
+if I2C_PY32
+
+config I2C_PY32_TIMEOUT_MS
+	int "Transfer timeout (ms)"
+	default 1000
+	range 1 60000
+	help
+	  Maximum duration of a complete I2C transfer, including clock stretching
+	  and waiting for an idle bus. A timeout resets the peripheral.
+
+endif # I2C_PY32
