@@ -35,6 +35,50 @@ static void *threads_scheduling_tests_setup(void)
 	return NULL;
 }
 
+static bool in_stack(uintptr_t addr, const void *stack, size_t size)
+{
+	return addr >= (uintptr_t)stack && addr < (uintptr_t)stack + size;
+}
+
+struct leftovers {
+	k_tid_t tid[MAX_NUM_THREAD + 2];
+	size_t count;
+};
+
+static void find_leftover(const struct k_thread *thread, void *data)
+{
+	struct leftovers *left = data;
+	uintptr_t start = thread->stack_info.start;
+
+	if ((in_stack(start, tstacks, sizeof(tstacks)) ||
+	     in_stack(start, tstack, sizeof(tstack)) ||
+	     in_stack(start, ustack, sizeof(ustack))) &&
+	    left->count < ARRAY_SIZE(left->tid)) {
+		left->tid[left->count++] = (k_tid_t)thread;
+	}
+}
+
+/* A failed assertion ends the test before it aborts its threads. Abort
+ * them here: the next test reuses their stacks and thread objects.
+ */
+static void threads_scheduling_after(void *data)
+{
+	struct leftovers left = { .count = 0 };
+
+	ARG_UNUSED(data);
+
+	k_thread_foreach(find_leftover, &left);
+	for (size_t i = 0; i < left.count; i++) {
+		k_thread_abort(left.tid[i]);
+	}
+}
+
+static void threads_scheduling_1cpu_after(void *data)
+{
+	threads_scheduling_after(data);
+	ztest_simple_1cpu_after(data);
+}
+
 /**
  * @brief Test scheduling
  *
@@ -45,6 +89,7 @@ static void *threads_scheduling_tests_setup(void)
  * @{
  * @}
  */
-ZTEST_SUITE(threads_scheduling, NULL, threads_scheduling_tests_setup, NULL, NULL, NULL);
+ZTEST_SUITE(threads_scheduling, NULL, threads_scheduling_tests_setup, NULL,
+	    threads_scheduling_after, NULL);
 ZTEST_SUITE(threads_scheduling_1cpu, NULL, threads_scheduling_tests_setup,
-			ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+			ztest_simple_1cpu_before, threads_scheduling_1cpu_after, NULL);
