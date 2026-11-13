@@ -493,6 +493,7 @@ static int sdio_set_bus_speed(struct sd_card *card)
 	int ret, timing, retries = CONFIG_SD_RETRY_COUNT;
 	uint32_t bus_clock;
 	uint8_t speed_reg, target_speed;
+	bool accepted = false;
 
 	switch (card->card_speed) {
 	/* Set bus clock speed */
@@ -514,7 +515,8 @@ static int sdio_set_bus_speed(struct sd_card *card)
 	case SD_TIMING_HIGH_SPEED:
 		bus_clock = MIN(card->host_props.f_max, card->switch_caps.hs_max_dtr);
 		target_speed = SDIO_CCCR_SPEED_SDR25;
-		timing = SDHC_TIMING_HS;
+		timing = (card->bus_io.signal_voltage == SD_VOL_1_8_V) ?
+			SDHC_TIMING_SDR25 : SDHC_TIMING_HS;
 		break;
 	case SD_TIMING_DEFAULT:
 		bus_clock = MIN(card->host_props.f_max, MHZ(25));
@@ -541,8 +543,10 @@ static int sdio_set_bus_speed(struct sd_card *card)
 		if (ret) {
 			return ret;
 		}
-	} while (((speed_reg & target_speed) != target_speed) && retries-- > 0);
-	if (retries == 0) {
+		accepted = ((speed_reg & SDIO_CCCR_SPEED_MASK) >>
+			    SDIO_CCCR_SPEED_SHIFT) == target_speed;
+	} while (!accepted && retries-- > 0);
+	if (!accepted) {
 		/* Don't error out, as card can still work */
 		LOG_WRN("Could not set target SDIO speed");
 	} else {
@@ -684,9 +688,9 @@ int sdio_card_init(struct sd_card *card)
 	if (ret) {
 		return ret;
 	}
-	if (card->card_speed == SD_TIMING_SDR50 ||
-		card->card_speed == SD_TIMING_SDR104) {
-		/* SDR104, SDR50, and DDR50 mode need tuning */
+	if (card->bus_io.timing == SDHC_TIMING_SDR50 ||
+		card->bus_io.timing == SDHC_TIMING_SDR104) {
+		/* Tune only the active SDR50 and SDR104 modes. */
 		ret = sdhc_execute_tuning(card->sdhc);
 		if (ret) {
 			LOG_ERR("SD tuning failed: %d", ret);
