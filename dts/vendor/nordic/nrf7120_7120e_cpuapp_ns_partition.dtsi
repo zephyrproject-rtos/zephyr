@@ -72,6 +72,12 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+
+		/* Non-Secure application RAM, without the shared regions at the end of RAM03 */
+		sram0_ns_app: sram@0 {
+			compatible = "mmio-sram";
+			reg = <0x0 (DT_SIZE_K(920) - 0x320)>;
+		};
 	};
 };
 

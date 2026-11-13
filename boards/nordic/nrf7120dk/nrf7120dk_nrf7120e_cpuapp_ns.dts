@@ -17,7 +17,7 @@
 
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
-		zephyr,sram = &sram0_ns;
+		zephyr,sram = &sram0_ns_app;
 		zephyr,entropy = &psa_rng;
 	};
 
