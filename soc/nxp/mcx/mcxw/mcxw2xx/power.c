@@ -46,7 +46,7 @@ static const struct gpio_dt_spec wakeup_pin_dt = GPIO_DT_SPEC_GET(WAKEUP_BUTTON_
 #error "System timer LPM hooks are needed. OS timer will replace SYSTICK during low power."
 #else
 /* OS Timer configuration for low power wakeup */
-#define OSTIMER_NODE DT_NODELABEL(os_timer)
+#define OSTIMER_NODE DT_NODELABEL(ostimer0)
 
 #if DT_NODE_HAS_STATUS(OSTIMER_NODE, okay)
 #define OSTIMER_IRQ_NUM  DT_IRQN(OSTIMER_NODE)

@@ -345,7 +345,7 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 };
 
 /* OS Timer is the wakeup source for PM mode 2 */
-&os_timer {
+&ostimer0 {
 	wakeup-source;
 	deep-sleep-counter = <&rtc_highres>;
 	status = "okay";
