@@ -1,0 +1,63 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * ENET_QOS binding overlay. ENET_QOS, ENET_1G and the RTL8211F PHY share the
+ * DISP_B1 RGMII and EMC_B2 MDIO pads, so the enet MACs are disabled here and
+ * the PHY is managed over the ENET_QOS MDIO instead.
+ */
+
+&enet1g_mac {
+	status = "disabled";
+};
+
+&enet_mac {
+	status = "disabled";
+};
+
+&enet {
+	status = "disabled";
+};
+
+&enet_mdio {
+	status = "disabled";
+};
+
+&phy {
+	status = "disabled";
+};
+
+&enet_ptp_clock {
+	status = "disabled";
+};
+
+&enet_qos {
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+	phy-handle = <&enet_qos_phy>;
+	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+	status = "okay";
+};
+
+&enet_qos_ptp_clock {
+	status = "okay";
+};
+
+&enet_qos_mdio {
+	pinctrl-0 = <&pinmux_enet_qos_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	enet_qos_phy: ethernet-phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <1>;
+		/* Shared with ENET_1G: PHY reset and interrupt lines. */
+		reset-gpios = <&gpio11 14 GPIO_ACTIVE_HIGH>;
+		int-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
+		/* The MAC adds no RGMII delay, so the PHY must insert it. */
+		realtek,rgmii-delay = "id";
+		status = "okay";
+	};
+};
