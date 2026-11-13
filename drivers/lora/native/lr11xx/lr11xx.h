@@ -35,13 +35,15 @@ struct lr11xx_rx_result {
 struct lr11xx_data {
 	struct lr11xx_hal_data hal;
 
-	/* Current state (atomic for lock-free state transitions) */
+	/* Radio state and operation ownership, protected by lock */
 	atomic_t state;
 	struct k_mutex lock;
+	bool sync_pending;
 
 	/* Current configuration */
 	struct lora_modem_config config;
 	bool config_valid;
+	bool needs_reset;
 
 	/* TX completion via message queue */
 	struct k_msgq tx_msgq;
@@ -54,9 +56,13 @@ struct lr11xx_data {
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[LR11XX_MAX_PAYLOAD_LEN];
 
-	/* Async RX callback */
+	/* Async RX callback and generation, protected by lock */
+	uint32_t rx_generation;
 	lora_recv_cb rx_cb;
 	void *rx_cb_user_data;
+	/* Thread running rx_cb without the lock, signalled on rx_cb_done */
+	k_tid_t rx_cb_thread;
+	struct k_condvar rx_cb_done;
 
 	/* RX duty cycle parameters (in LR11xx timeout ticks) */
 	struct {
@@ -66,8 +72,17 @@ struct lr11xx_data {
 
 	/* Async TX signal */
 	struct k_poll_signal *tx_async_signal;
+	struct k_work_delayable tx_timeout_work;
+	k_timepoint_t tx_deadline;
+	bool tx_watchdog_active;
+
+	/* Deadline and interrupt timing shared with the ISR. */
+	struct k_spinlock irq_lock;
+	k_timepoint_t irq_deadline;
+	bool irq_late;
 
 	/* Deferred work for interrupt handling */
+	atomic_t irq_pending;
 	struct k_work irq_work;
 	const struct device *dev;
 };
