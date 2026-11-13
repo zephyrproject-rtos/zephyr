@@ -2795,6 +2795,71 @@ ZTEST(net_socket_tcp, test_ioctl_fionread_v6)
 	test_ioctl_fionread_common(NET_AF_INET6);
 }
 
+/* With TCP_QUICKACK off on the receiver, the ACK of data with PSH set is
+ * delayed, and a reply sent within the delay carries it. The client's Nagle
+ * algorithm makes this visible: it holds its second byte until the first one
+ * is ACKed.
+ */
+static void test_tcp_quickack_common(int af)
+{
+	enum fde {
+		SERVER,
+		CLIENT,
+		ACCEPT,
+	};
+	int fd[] = {-1, -1, -1};
+	net_socklen_t optlen = sizeof(int);
+	int optval = -1;
+	int avail;
+	char c;
+
+	test_ioctl_fionread_setup(af, fd);
+
+	zassert_ok(zsock_getsockopt(fd[SERVER], NET_IPPROTO_TCP, ZSOCK_TCP_QUICKACK, &optval,
+				    &optlen));
+	zassert_equal(optval, 1, "TCP_QUICKACK should be on by default");
+
+	optval = 0;
+	zassert_ok(zsock_setsockopt(fd[SERVER], NET_IPPROTO_TCP, ZSOCK_TCP_QUICKACK, &optval,
+				    sizeof(optval)));
+	optval = -1;
+	zassert_ok(zsock_getsockopt(fd[SERVER], NET_IPPROTO_TCP, ZSOCK_TCP_QUICKACK, &optval,
+				    &optlen));
+	zassert_equal(optval, 0, "TCP_QUICKACK should be off");
+
+	zassert_equal(1, zsock_send(fd[CLIENT], "a", 1, 0));
+	zassert_equal(1, zsock_send(fd[CLIENT], "b", 1, 0));
+
+	/* The ACK of "a" is delayed, so Nagle still holds "b" */
+	k_msleep(CONFIG_NET_TCP_ACK_DELAY / 2);
+	zassert_ok(zsock_ioctl(fd[SERVER], ZFD_IOCTL_FIONREAD, &avail));
+	zassert_equal(1, avail, "exp: 1: act: %d", avail);
+
+	/* The reply carries the ACK of "a", which releases "b" */
+	zassert_equal(1, zsock_send(fd[SERVER], "r", 1, 0));
+	k_msleep(CONFIG_NET_TCP_ACK_DELAY / 4);
+	zassert_ok(zsock_ioctl(fd[SERVER], ZFD_IOCTL_FIONREAD, &avail));
+	zassert_equal(2, avail, "exp: 2: act: %d", avail);
+	zassert_equal(1, zsock_recv(fd[CLIENT], &c, 1, 0));
+	zassert_equal('r', c);
+
+	zsock_close(fd[SERVER]);
+	zsock_close(fd[CLIENT]);
+	zsock_close(fd[ACCEPT]);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_tcp_quickack_v4)
+{
+	test_tcp_quickack_common(NET_AF_INET);
+}
+
+ZTEST(net_socket_tcp, test_tcp_quickack_v6)
+{
+	test_tcp_quickack_common(NET_AF_INET6);
+}
+
 static void test_ioctl_fionwrite_wait_until_empty(int sock)
 {
 	int avail = -1;
