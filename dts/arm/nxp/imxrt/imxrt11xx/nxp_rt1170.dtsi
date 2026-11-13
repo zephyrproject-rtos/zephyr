@@ -26,5 +26,40 @@
 			reg = <0x202c0000 DT_SIZE_K(512)>;
 			zephyr,memory-region = "OCRAM2";
 		};
+
+		enet_qos: ethernet@4043c000 {
+			compatible = "nxp,enet-qos", "snps,dwmac";
+			reg = <0x4043c000 0x4000>;
+			clocks = <&ccm IMX_CCM_ENET_QOS_CLK 0 0>,
+				 <&ccm IMX_CCM_ENET_QOS_PTP_CLK 0 0>;
+			/* mac: BUS_CLK_ROOT, feeds CSR and AXI; ptp: ENET_TIMER3_CLK_ROOT */
+			clock-names = "mac", "ptp";
+			interrupts = <216 0>;
+			interrupt-names = "mac";
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <64>;
+			status = "disabled";
+
+			enet_qos_mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			enet_qos_ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&ccm {
+	enet_timer3_root: enet-timer3-root {
+		compatible = "nxp,imxrt11xx-enet-timer-root";
+		#clock-cells = <0>;
+		clock-mux = <IMXRT11XX_ENET_TIMER_SRC_SYS_PLL1_DIV2>;
+		clock-div = <5>;
 	};
 };
