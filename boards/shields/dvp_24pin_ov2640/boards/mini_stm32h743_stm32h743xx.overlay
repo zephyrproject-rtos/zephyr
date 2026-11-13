@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Panoramix Labs
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../common/dvp_stm32_dcmi.overlay"
+
+&dvp_24pin_ep_in {
+	/* This is a bug, this should be both hsync/vsync-active high, see notes on ov2640 dts */
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pclk-sample = <0>;
+};
