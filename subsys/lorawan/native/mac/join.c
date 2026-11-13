@@ -57,34 +57,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 
-#define MHDR_JOIN_REQUEST	0x00
-#define MHDR_JOIN_ACCEPT	0x20
-
-#define JA_CFLIST_SIZE		16
-
 #define DL_RX1_DR_OFFSET_MASK	GENMASK(6, 4)
 #define DL_RX2_DATARATE_MASK	GENMASK(3, 0)
 
 #define JOIN_ACCEPT_DELAY1_MS	5000
-
-struct pkt_join_request {
-	uint8_t mhdr;
-	uint8_t join_eui[EUI_SIZE];
-	uint8_t dev_eui[EUI_SIZE];
-	uint8_t dev_nonce[DEV_NONCE_SIZE];
-	uint8_t mic[LWAN_MIC_SIZE];
-} __packed;
-
-struct pkt_join_accept {
-	uint8_t join_nonce[JOIN_NONCE_SIZE];
-	uint8_t net_id[NET_ID_SIZE];
-	uint8_t dev_addr[DEV_ADDR_SIZE];
-	uint8_t dl_settings;
-	uint8_t rx_delay;
-} __packed;
-
-#define JA_MIN_SIZE		(sizeof(struct pkt_join_accept) + LWAN_MIC_SIZE)
-#define JA_MAX_SIZE		(sizeof(struct pkt_join_accept) + JA_CFLIST_SIZE + LWAN_MIC_SIZE)
 
 struct join_rx_ctx {
 	psa_key_id_t nwk_cmac;

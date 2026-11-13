@@ -430,6 +430,8 @@ static int eu868_select_join_channel(const struct lwan_channel *ch,
 			int64_t wait = earliest - k_uptime_get() + 1;
 
 			*delay_ms = (wait > 0) ? (int32_t)wait : 1;
+			/* Use DR0 for join requests (maximum range) */
+			*dr = 0;
 			return -ENOBUFS;
 		}
 		return -ENOENT;
