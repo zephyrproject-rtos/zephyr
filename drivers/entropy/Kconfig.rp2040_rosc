@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_RP2040_ROSC
+	bool "RP2040 ring-oscillator entropy driver"
+	default y
+	depends on SOC_SERIES_RP2040
+	depends on SYS_CLOCK_EXISTS
+	depends on DT_HAS_RASPBERRYPI_RP2040_ROSC_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	select ENTROPY_NEEDS_PRNG
+	help
+	  Read the RP2040 ring oscillator's random-bit register directly, without
+	  the Pico SDK random generator. RP2040 has no hardware TRNG, so this is
+	  the platform entropy source, as in the Pico SDK's pico_rand and
+	  pico_mbedtls. The RP2040 datasheet does not recommend the ring
+	  oscillator for security applications; use an external TRNG or secure
+	  element where stronger guarantees are required.
+	  The oscillator must be enabled and stable, and the system clock must
+	  use XOSC or a PLL. Clock configuration must remain unchanged during
+	  a request. This driver does not reconfigure or enable the oscillator.
