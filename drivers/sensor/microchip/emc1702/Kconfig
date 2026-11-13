@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+config EMC1702
+	bool "Microchip EMC1702 high-side current sense & temperature monitor"
+	default y
+	depends on DT_HAS_MICROCHIP_EMC1702_ENABLED
+	select I2C
+	help
+	  Enable driver for Microchip EMC1702. Reports internal die
+	  temperature, ambient temperature, bus voltage, current
+	  through an external sense resistor and computed power
+	  via the Zephyr sensor API.
+
+if EMC1702
+
+choice
+	prompt "EMC1702 trigger mode"
+	default EMC1702_TRIGGER_NONE
+
+config EMC1702_TRIGGER_NONE
+	bool "No trigger"
+
+config EMC1702_TRIGGER_GLOBAL_THREAD
+	bool "Use system workqueue"
+	select EMC1702_TRIGGER
+	depends on GPIO
+
+endchoice
+
+config EMC1702_TRIGGER
+	bool
+
+endif # EMC1702
