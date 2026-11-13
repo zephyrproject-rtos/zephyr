@@ -2519,6 +2519,140 @@ ZTEST(net_socket_tcp, test_v6_msg_waitall)
 	test_context_cleanup();
 }
 
+/* Several receive windows: the peer can send it all only if recv() opens the window.
+ * The peer may fill the default window before it sees the SO_RCVBUF one, so the
+ * length also exceeds the default window.
+ */
+#define TEST_WAITALL_LARGE_LEN    4096
+#define TEST_WAITALL_LARGE_RCVBUF 512
+#define TEST_WAITALL_LARGE_CHUNK  256
+
+struct test_msg_waitall_large_data {
+	struct k_work_delayable tx_work;
+	int sock;
+	size_t offset;
+};
+
+static void test_msg_waitall_large_tx_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct test_msg_waitall_large_data *test_data =
+		CONTAINER_OF(dwork, struct test_msg_waitall_large_data, tx_work);
+	uint8_t chunk[TEST_WAITALL_LARGE_CHUNK];
+	size_t len = MIN(sizeof(chunk), TEST_WAITALL_LARGE_LEN - test_data->offset);
+	ssize_t ret;
+
+	for (size_t i = 0; i < len; i++) {
+		chunk[i] = (uint8_t)(test_data->offset + i);
+	}
+
+	ret = zsock_send(test_data->sock, chunk, len, ZSOCK_MSG_DONTWAIT);
+	if (ret > 0) {
+		test_data->offset += ret;
+	}
+
+	if (test_data->offset < TEST_WAITALL_LARGE_LEN) {
+		k_work_reschedule(&test_data->tx_work, K_MSEC(1));
+	}
+}
+
+static void test_msg_waitall_large(int c_sock, int new_sock)
+{
+	static uint8_t rx_buf[TEST_WAITALL_LARGE_LEN];
+	struct test_msg_waitall_large_data test_data = {
+		.sock = c_sock,
+	};
+	struct timeval timeo_optval = {
+		.tv_sec = 2,
+		.tv_usec = 0,
+	};
+	int rcvbuf_optval = TEST_WAITALL_LARGE_RCVBUF;
+	struct k_work_sync sync;
+	int ret;
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVBUF, &rcvbuf_optval,
+			       sizeof(rcvbuf_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	/* Bound the test: without the window update the recv() would block forever */
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_RCVTIMEO, &timeo_optval,
+			       sizeof(timeo_optval));
+	zassert_equal(ret, 0, "setsockopt failed (%d)", errno);
+
+	k_work_init_delayable(&test_data.tx_work, test_msg_waitall_large_tx_work_handler);
+	k_work_reschedule(&test_data.tx_work, K_MSEC(10));
+
+	ret = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_WAITALL);
+	(void)k_work_cancel_delayable_sync(&test_data.tx_work, &sync);
+
+	zassert_equal(ret, sizeof(rx_buf), "Invalid length received (%d)", ret);
+	for (size_t i = 0; i < sizeof(rx_buf); i++) {
+		zassert_equal(rx_buf[i], (uint8_t)i, "Invalid data at offset %zu", i);
+	}
+}
+
+ZTEST(net_socket_tcp, test_v4_msg_waitall_large)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr;
+	struct net_sockaddr_in s_saddr;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct net_sockaddr_in), "Wrong addrlen");
+
+	test_msg_waitall_large(c_sock, new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	test_context_cleanup();
+}
+
+ZTEST(net_socket_tcp, test_v6_msg_waitall_large)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct net_sockaddr_in6), "Wrong addrlen");
+
+	test_msg_waitall_large(c_sock, new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+	test_close(c_sock);
+
+	test_context_cleanup();
+}
+
 #ifdef CONFIG_USERSPACE
 #define CHILD_STACK_SZ		(2048 + CONFIG_TEST_EXTRA_STACK_SIZE)
 struct k_thread child_thread;
