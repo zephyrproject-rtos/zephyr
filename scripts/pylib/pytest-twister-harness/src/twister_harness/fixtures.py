@@ -131,7 +131,17 @@ def get_ready_shell(dut: DeviceAdapter) -> Shell:
 
 
 @pytest.fixture(scope=determine_scope)
-def shell(dut: DeviceAdapter) -> Shell:
+def post_flash(dut: DeviceAdapter) -> None:
+    """Run after the device is launched and before the shell waits for a prompt.
+
+    The default does nothing. A test module overrides this fixture with the
+    same name and can use the open connection on ``dut``.
+    """
+    return None
+
+
+@pytest.fixture(scope=determine_scope)
+def shell(dut: DeviceAdapter, post_flash: None) -> Shell:
     """Return ready to use shell interface"""
     return get_ready_shell(dut)
 
