@@ -1,0 +1,24 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_MUSB
+	bool
+	help
+	  Mentor Graphics Inventra MUSB host controller core, used by the
+	  vendor glue drivers.
+
+if UHC_MUSB
+
+config UHC_MUSB_STACK_SIZE
+	int "MUSB driver thread stack size"
+	default 1024
+	help
+	  MUSB host controller driver thread stack size.
+
+config UHC_MUSB_THREAD_PRIORITY
+	int "MUSB driver thread priority"
+	default 8
+	help
+	  MUSB host controller driver thread priority.
+
+endif # UHC_MUSB
