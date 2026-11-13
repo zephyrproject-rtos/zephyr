@@ -40,7 +40,7 @@ config BT_TBS_MAX_SCHEME_LIST_LENGTH
 	default 30
 	range 1 512
 	help
-	  Sets the maximum length of the URI scheme list.
+	  Sets the maximum length of the URI scheme list in octets (without NULL terminator).
 
 config BT_TBS_LOCK_TIMEOUT
 	int "Milliseconds of timeout when handling concurrent operations"

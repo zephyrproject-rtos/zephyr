@@ -27,7 +27,7 @@
 #define CALLER_ID "friend"
 
 static uint8_t new_call_index;
-static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 
 static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 

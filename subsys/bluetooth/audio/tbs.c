@@ -75,7 +75,7 @@ struct tbs_inst {
 	 * user of TBS. This will be done once the CCP API is complete as the CCP Server will own
 	 * all the data instead of the TBS
 	 */
-	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
+	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + sizeof((char)'\0')];
 	char uci[BT_TBS_MAX_UCI_SIZE];
 	enum bt_bearer_tech technology;
 	uint8_t signal_strength;
@@ -86,7 +86,7 @@ struct tbs_inst {
 	struct bt_tbs_in_uri incoming_uri;
 	struct bt_tbs_friendly_name friendly_name;
 	struct bt_tbs_in_uri in_call;
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
+	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH + sizeof((char)'\0')];
 	struct bt_tbs_terminate_reason terminate_reason;
 	struct bt_tbs_call calls[CONFIG_BT_TBS_MAX_CALLS];
 
@@ -326,7 +326,7 @@ static bool uri_scheme_in_list(const char *uri_scheme, const char *uri_scheme_li
 
 static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t uri_len)
 {
-	char uri_scheme[CONFIG_BT_TBS_MAX_URI_LENGTH] = {0};
+	char uri_scheme[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')] = {0};
 
 	if (uri_len == 0U) {
 		return NULL;
@@ -1907,7 +1907,7 @@ static void notify_app(struct bt_conn *conn, struct tbs_inst *inst, uint16_t len
 		}
 		break;
 	case BT_TBS_CALL_OPCODE_ORIGINATE: {
-		char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+		char uri[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0')];
 		const uint16_t uri_len = len - sizeof(ccp->originate);
 		bool remote_party_alerted = false;
 		struct bt_tbs_call *call;
@@ -2839,7 +2839,8 @@ int bt_tbs_terminate(uint8_t call_index)
 int bt_tbs_originate(uint8_t bearer_index, char *remote_uri, uint8_t *call_index)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
-	uint8_t buf[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof(struct bt_tbs_call_cp_originate)];
+	uint8_t buf[CONFIG_BT_TBS_MAX_URI_LENGTH + sizeof((char)'\0') +
+		    sizeof(struct bt_tbs_call_cp_originate)];
 	struct bt_tbs_call_cp_originate *ccp = (struct bt_tbs_call_cp_originate *)buf;
 	struct tbs_inst *target_inst = NULL;
 	size_t uri_len;
@@ -3177,7 +3178,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 	const size_t len = strlen(name);
 	int err;
 
-	if (len >= CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH || len == 0U) {
+	if (len > CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH || len == 0U) {
 		return -EINVAL;
 	} else if (inst == NULL) {
 		return -EINVAL;
