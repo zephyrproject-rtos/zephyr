@@ -1,0 +1,18 @@
+common:
+  tags:
+    - safety_test
+  integration_platforms:
+    - qemu_x86_64
+    - qemu_cortex_m3
+    - frdm_mcxa156
+tests:
+  subsys.safety_test.core: {}
+  subsys.safety_test.budget_fails:
+    extra_configs:
+      - CONFIG_SAFETY_TEST_BUDGET_FAILS=y
+  subsys.safety_test.boot_fail:
+    extra_configs:
+      - CONFIG_SAFETY_TEST_TESTS_BOOT_FAIL=y
+  subsys.safety_test.boot_none:
+    extra_configs:
+      - CONFIG_SAFETY_TEST_TESTS_BOOT_NONE=y
