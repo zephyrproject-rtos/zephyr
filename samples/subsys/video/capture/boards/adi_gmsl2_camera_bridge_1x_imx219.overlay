@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026 Charles Dias
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * IMX219 of a Raspberry Pi Camera Module 2 on the serializer board of the ADI GMSL2
+ * camera bridge, with the raspberry_pi_camera_module_2 shield listed before the
+ * adi_gmsl2_camera_bridge shield.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/*
+ * The camera shield declares the sensor on the host bus, where it sits without the bridge.
+ * Behind the bridge every access to it goes through the deserializer and the serializer, so
+ * the node is recreated under the serializer's I2C gate with the same labels and clock.
+ */
+/delete-node/ &imx219;
+
+&ser_i2c {
+	imx219: imx219@10 {
+		compatible = "sony,imx219";
+		reg = <0x10>;
+		clocks = <&imx219_input_clock>;
+		/*
+		 * The module's ENABLE (FFC pin 11) sits on serializer MFP0. It powers the module,
+		 * so "reset released" must be high: declare it active low.
+		 */
+		reset-gpios = <&ser_gpio 0 GPIO_ACTIVE_LOW>;
+
+		port {
+			imx219_ep_out: endpoint {
+				remote-endpoint-label = "ser_csi_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
+};
+
+&max96717 {
+	ports {
+		port@0 {
+			reg = <0>;
+
+			ser_csi_in: endpoint {
+				remote-endpoint-label = "imx219_ep_out";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
+			};
+		};
+	};
+};
