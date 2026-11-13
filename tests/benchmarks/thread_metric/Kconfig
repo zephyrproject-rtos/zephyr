@@ -28,8 +28,9 @@ config TM_COOPERATIVE
 
 config TM_INTERRUPT
 	bool "Interrupt processing"
+	depends on ARCH_HAS_IRQ_PENDING_OPS && GEN_SW_ISR_TABLE_ARRAY
 	select TEST
-	select IRQ_OFFLOAD
+	select DYNAMIC_INTERRUPTS
 	help
 	  The interrupt processing benchmark has a single thread that causes
 	  an interrupt which results in its ISR incrementing a counter and then
@@ -39,8 +40,9 @@ config TM_INTERRUPT
 
 config TM_INTERRUPT_PREEMPTION
 	bool "Interrupt processing preemption"
+	depends on ARCH_HAS_IRQ_PENDING_OPS && GEN_SW_ISR_TABLE_ARRAY
 	select TEST
-	select IRQ_OFFLOAD
+	select DYNAMIC_INTERRUPTS
 	help
 	  The interrupt preemption benchmark counts the number of times that
 	  an ISR from a software generated interrupt results in the preemption
