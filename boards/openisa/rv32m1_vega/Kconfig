@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BT
+
+config HAS_RV32M1_CAU3_BLE
+	bool
+	default y if BT_CTLR_CRYPTO && \
+		(BT_CTLR_LE_ENC_SUPPORT || BT_CTLR_PRIVACY_SUPPORT)
+
+endif # BT

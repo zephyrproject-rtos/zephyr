@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if WIFI
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 15000
+
+endif # WIFI
