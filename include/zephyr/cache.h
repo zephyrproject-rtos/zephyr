@@ -45,6 +45,7 @@ extern "C" {
  *
  * Enable the data cache
  *
+ * @satisfies ZEP-SRS-19-7
  */
 static ALWAYS_INLINE void sys_cache_data_enable(void)
 {
@@ -58,6 +59,7 @@ static ALWAYS_INLINE void sys_cache_data_enable(void)
  *
  * Disable the data cache
  *
+ * @satisfies ZEP-SRS-19-21
  */
 static ALWAYS_INLINE void sys_cache_data_disable(void)
 {
@@ -71,6 +73,7 @@ static ALWAYS_INLINE void sys_cache_data_disable(void)
  *
  * Enable the instruction cache
  *
+ * @satisfies ZEP-SRS-19-19
  */
 static ALWAYS_INLINE void sys_cache_instr_enable(void)
 {
@@ -84,6 +87,7 @@ static ALWAYS_INLINE void sys_cache_instr_enable(void)
  *
  * Disable the instruction cache
  *
+ * @satisfies ZEP-SRS-19-22
  */
 static ALWAYS_INLINE void sys_cache_instr_disable(void)
 {
@@ -99,6 +103,8 @@ static ALWAYS_INLINE void sys_cache_instr_disable(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-5
  */
 static ALWAYS_INLINE int sys_cache_data_flush_all(void)
 {
@@ -115,6 +121,8 @@ static ALWAYS_INLINE int sys_cache_data_flush_all(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-6
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_all(void)
 {
@@ -131,6 +139,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_all(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-15
  */
 static ALWAYS_INLINE int sys_cache_data_invd_all(void)
 {
@@ -147,6 +157,8 @@ static ALWAYS_INLINE int sys_cache_data_invd_all(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-17
  */
 static ALWAYS_INLINE int sys_cache_instr_invd_all(void)
 {
@@ -163,6 +175,8 @@ static ALWAYS_INLINE int sys_cache_instr_invd_all(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-16
  */
 static ALWAYS_INLINE int sys_cache_data_flush_and_invd_all(void)
 {
@@ -179,6 +193,8 @@ static ALWAYS_INLINE int sys_cache_data_flush_and_invd_all(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-18
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_all(void)
 {
@@ -205,6 +221,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_all(void)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-5
  */
 __syscall_always_inline int sys_cache_data_flush_range(void *addr, size_t size);
 
@@ -236,6 +254,8 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_flush_range(void *addr, size_t si
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-6
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
 {
@@ -266,6 +286,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_range(void *addr, size_t size)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-15
  */
 __syscall_always_inline int sys_cache_data_invd_range(void *addr, size_t size);
 
@@ -298,6 +320,8 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_invd_range(void *addr, size_t siz
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-17
  */
 static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
 {
@@ -328,6 +352,8 @@ static ALWAYS_INLINE int sys_cache_instr_invd_range(void *addr, size_t size)
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-16
  */
 __syscall_always_inline int sys_cache_data_flush_and_invd_range(void *addr, size_t size);
 
@@ -360,6 +386,8 @@ static ALWAYS_INLINE int z_impl_sys_cache_data_flush_and_invd_range(void *addr, 
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP If not supported.
+ *
+ * @satisfies ZEP-SRS-19-18
  */
 static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t size)
 {
@@ -386,6 +414,8 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t
  *
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
+ *
+ * @satisfies ZEP-SRS-19-8
  */
 static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 {
@@ -416,6 +446,8 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
  *
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
+ *
+ * @satisfies ZEP-SRS-19-20
  */
 static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
 {
@@ -444,6 +476,8 @@ static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
  *
  * @retval True if pointer is in cached region.
  * @retval False if pointer is not in cached region.
+ *
+ * @satisfies ZEP-SRS-19-9
  */
 static ALWAYS_INLINE bool sys_cache_is_ptr_cached(void *ptr)
 {

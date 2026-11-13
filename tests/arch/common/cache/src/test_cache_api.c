@@ -47,6 +47,11 @@ static ZTEST_BMEM uint8_t user_buffer[SIZE];
  * @see sys_cache_instr_flush_range()
  * @see sys_cache_instr_invd_range()
  * @see sys_cache_instr_flush_and_invd_range()
+ * @verifies ZEP-SRS-19-6
+ * @verifies ZEP-SRS-19-17
+ * @verifies ZEP-SRS-19-18
+ * @verifies ZEP-SRS-19-19
+ * @verifies ZEP-SRS-19-22
  */
 ZTEST(cache_api, test_instr_cache_api)
 {
@@ -109,6 +114,11 @@ ZTEST(cache_api, test_instr_cache_api)
  * @see sys_cache_data_flush_range()
  * @see sys_cache_data_invd_range()
  * @see sys_cache_data_flush_and_invd_range()
+ * @verifies ZEP-SRS-19-5
+ * @verifies ZEP-SRS-19-7
+ * @verifies ZEP-SRS-19-15
+ * @verifies ZEP-SRS-19-16
+ * @verifies ZEP-SRS-19-21
  */
 ZTEST(cache_api, test_data_cache_api)
 {
@@ -166,6 +176,9 @@ ZTEST(cache_api, test_data_cache_api)
  * @see sys_cache_data_flush_range()
  * @see sys_cache_data_invd_range()
  * @see sys_cache_data_flush_and_invd_range()
+ * @verifies ZEP-SRS-19-5
+ * @verifies ZEP-SRS-19-15
+ * @verifies ZEP-SRS-19-16
  */
 ZTEST_USER(cache_api, test_data_cache_api_user)
 {
