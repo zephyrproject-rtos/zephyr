@@ -1,0 +1,42 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	sfp0: sfp-cage {
+		compatible = "sff,sfp";
+		i2c-bus = <&sfp_i2c>;
+		mod-def0-gpios = <&sfp_gpio 0 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	sfp_i2c: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		/* the module plugged into the cage */
+		sfp_module: sfp-module@50 {
+			compatible = "zephyr,sfp-module-emul";
+			reg = <0x50>;
+			status = "okay";
+		};
+	};
+
+	sfp_gpio: gpio@200 {
+		compatible = "zephyr,gpio-emul";
+		reg = <0x200 4>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		status = "okay";
+	};
+};

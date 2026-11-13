@@ -1,0 +1,30 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * An SFP cage on an emulated I2C bus, with an emulated module plugged in.
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	sfp0: sfp-cage {
+		compatible = "sff,sfp";
+		i2c-bus = <&sfp_i2c>;
+	};
+
+	sfp_i2c: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		sfp-module@50 {
+			compatible = "zephyr,sfp-module-emul";
+			reg = <0x50>;
+		};
+	};
+};

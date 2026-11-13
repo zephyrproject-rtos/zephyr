@@ -16,6 +16,7 @@ Serial buses (I2C, SPI, UART, CAN) and other communication interfaces.
    uart.rst
    espi.rst
    mdio.rst
+   sfp.rst
    mspi.rst
    smbus.rst
    ipm.rst

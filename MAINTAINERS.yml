@@ -2900,6 +2900,27 @@ Documentation Infrastructure:
     - drivers.sent
     - sample.drivers.sent
 
+"Drivers: SFP":
+  status: maintained
+  maintainers:
+    - gudiri1
+  files:
+    - doc/hardware/peripherals/sfp.rst
+    - drivers/sfp/
+    - dts/bindings/sfp/
+    - include/zephyr/drivers/sfp.h
+    - include/zephyr/sff/
+    - lib/sff/
+    - samples/drivers/sfp/
+    - tests/drivers/sfp/
+    - tests/lib/sff8472/
+  labels:
+    - "area: SFP"
+  tests:
+    - drivers.sfp
+    - libraries.sff8472
+    - sample.drivers.sfp
+
 "Drivers: SMBus":
   status: odd fixes
   files:
